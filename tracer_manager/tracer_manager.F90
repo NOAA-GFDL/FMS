@@ -117,6 +117,7 @@ integer, parameter :: MAX_TRACER_METHOD = 20
 integer, parameter :: NO_TRACER         = -1
 
 integer :: total_tracers(NUM_MODELS), prog_tracers(NUM_MODELS), diag_tracers(NUM_MODELS), family_tracers(NUM_MODELS)
+logical :: model_registered(NUM_MODELS) = .FALSE.
 
 type, private ::  tracer_type
    character(len=32)        :: tracer_name, tracer_units
@@ -142,8 +143,8 @@ end type inst_type
 type(tracer_type), save  :: tracers(MAX_TRACER_FIELDS)
 type(inst_type)  , save  :: instantiations(MAX_TRACER_FIELDS)
 
-character(len=128) :: version = '$Id: tracer_manager.F90,v 10.0 2003/10/24 22:01:41 fms Exp $'
-character(len=128) :: tagname = '$Name: jakarta $'
+character(len=128) :: version = '$Id: tracer_manager.F90,v 11.0 2004/09/28 20:06:40 fms Exp $'
+character(len=128) :: tagname = '$Name: khartoum $'
 logical            :: module_is_initialized = .false.
 
 logical            :: verbose_local
@@ -230,16 +231,48 @@ character(len=128) :: list_name , control
 integer            :: index_list_name
 logical :: fm_success
 
-num_tracers = 0; num_prog = 0; num_diag = 0; num_family = 0
-
-call field_manager_init(nfields)
-call tracer_manager_init
 
 !   <ERROR MSG="invalid model type" STATUS="FATAL">
 !     The index for the model type is invalid.
 !   </ERROR>
 if (model .ne. MODEL_ATMOS .and. model .ne. MODEL_LAND .and. &
     model .ne. MODEL_OCEAN .and. model .ne. MODEL_ICE) call mpp_error(FATAL,'register_tracers : invalid model type')
+
+! One should only call register_tracers once for each model type
+! Therefore need to set up an array to stop the subroutine being 
+! unnecssarily called multiple times.
+
+if ( model_registered(model) ) then
+! This routine has already been called for the component model.
+! Fill in the values from the previous registration and return.
+  num_tracers = total_tracers(model)
+  num_prog    = prog_tracers(model)
+  num_diag    = diag_tracers(model) 
+  num_family  = family_tracers(model)
+  select case(model)
+    case (MODEL_ATMOS)
+      name = "atmospheric"
+    case (MODEL_OCEAN)
+      name = "oceanic"
+    case (MODEL_ICE  )
+      name = "ice"
+    case (MODEL_LAND )
+      name = "land"
+    case default
+      name = "ERROR"
+    end select
+if (mpp_pe() == mpp_root_pe()) &
+  call mpp_error(NOTE,&
+  'register_tracers : This routine has already been called for the '//trim(name)//' component model.')
+
+  return
+endif
+
+! Initialize the number of tracers to zero.
+num_tracers = 0; num_prog = 0; num_diag = 0; num_family = 0
+
+call field_manager_init(nfields)
+call tracer_manager_init
 
 
 !   <ERROR MSG="No tracers are available to be registered." STATUS="NOTE">
@@ -546,10 +579,20 @@ enddo
 
 num_tracers = num_prog + num_diag + num_family
 ! Make the number of tracers available publicly.
-total_tracers(model)  = num_tracers
-prog_tracers(model)   = num_prog
-diag_tracers(model)   = num_diag
-family_tracers(model) = num_family
+total_tracers(model)    = num_tracers
+prog_tracers(model)     = num_prog
+diag_tracers(model)     = num_diag
+family_tracers(model)   = num_family
+model_registered(model) = .TRUE.
+!   <ERROR MSG="Families of tracers should be used with great caution." STATUS="NOTE">
+!     Families of tracers were originally implemented in order to allow the advection of 
+!     a family as one tracer. Unless the spatial profile of the family members is
+!     similar, there will be leakage of one tracer to it's siblings. Therefore one 
+!     should be very careful when utilizing families of tracers.
+!   </ERROR>
+if (num_family > 0 ) &
+  call mpp_error(NOTE,"register_tracers : Families of tracers should be used with great caution.")
+
 ! Now sort through the tracer fields and sort them so that the 
 ! prognostic tracers are first. This should include the family tracers.
 
@@ -822,7 +865,7 @@ j = TRACER_ARRAY(model,i)
 !   <ERROR MSG="index array size too small in get_tracer_indices" STATUS="FATAL">
 !     The global index array is too small and cannot contain all the tracer numbers.
 !   </ERROR>
-         if (n > size(ind)) call mpp_error(FATAL,'get_tracer_indices : index array size too small in get_tracer_indices')
+         if (n > size(ind(:))) call mpp_error(FATAL,'get_tracer_indices : index array size too small in get_tracer_indices')
          ind(n) = i
       endif
 
@@ -831,7 +874,7 @@ j = TRACER_ARRAY(model,i)
 !   <ERROR MSG="family array size too small in get_tracer_indices" STATUS="FATAL">
 !     The family index array is too small and cannot contain all the tracer numbers.
 !   </ERROR>
-         if (nf > size(fam_ind)) call mpp_error(FATAL,'get_tracer_indices : family array size too small in get_tracer_indices')
+         if (nf > size(fam_ind(:))) call mpp_error(FATAL,'get_tracer_indices : family array size too small in get_tracer_indices')
          fam_ind(nf) = i
          cycle
       endif
@@ -841,7 +884,8 @@ j = TRACER_ARRAY(model,i)
 !   <ERROR MSG="prognostic array size too small in get_tracer_indices" STATUS="FATAL">
 !     The prognostic index array is too small and cannot contain all the tracer numbers.
 !   </ERROR>
-         if (np > size(prog_ind)) call mpp_error(FATAL,'get_tracer_indices : prognostic array size too small in get_tracer_indices')
+         if ( np > size( prog_ind(:)))call mpp_error(FATAL,&
+                                          'get_tracer_indices : prognostic array size too small in get_tracer_indices')
          prog_ind(np) = i
       else if (.not.tracers(j)%is_prognostic .and. .not. tracers(j)%is_family &
              .and.PRESENT(diag_ind)) then
@@ -849,7 +893,8 @@ j = TRACER_ARRAY(model,i)
 !   <ERROR MSG="diagnostic array size too small in get_tracer_indices" STATUS="FATAL">
 !     The diagnostic index array is too small and cannot contain all the tracer numbers.
 !   </ERROR>
-         if (nd > size(diag_ind)) call mpp_error(FATAL,'get_tracer_indices : diagnostic array size too small in get_tracer_indices')
+         if (nd > size(diag_ind(:))) call mpp_error(FATAL,&
+                                         'get_tracer_indices : diagnostic array size too small in get_tracer_indices')
          diag_ind(nd) = i
       endif
    endif
@@ -902,7 +947,7 @@ integer :: i
 get_tracer_index = NO_TRACER
 
 if (PRESENT(indices)) then
-    do i = 1, size(indices)
+    do i = 1, size(indices(:))
        if (model == tracers(indices(i))%model .and. lowercase(trim(name)) == trim(tracers(indices(i))%tracer_name)) then
            get_tracer_index = i
            exit
@@ -911,7 +956,7 @@ if (PRESENT(indices)) then
 else
     do i=1, num_tracer_fields
        if (lowercase(trim(name)) == trim(tracers(TRACER_ARRAY(model,i))%tracer_name)) then
-           get_tracer_index = TRACER_ARRAY(model,i)
+           get_tracer_index = i!TRACER_ARRAY(model,i)
            exit
        endif
     enddo
@@ -932,6 +977,7 @@ return
 
 end function get_tracer_index
 !</FUNCTION>
+
 
 ! <SUBROUTINE NAME="assign_tracer_field" >
 !   <OVERVIEW>
@@ -1280,12 +1326,16 @@ if ( n == NO_TRACER ) then
 endif  
 
 !Convert local model index to tracer_manager index
+!if (n < 1 .or. n > num_tracer_fields) &
 if (TRACER_ARRAY(model,n) < 1 .or. TRACER_ARRAY(model,n) > num_tracer_fields) &
     call mpp_error(FATAL,'get_tracer_names : invalid tracer index for '//trim(name))
 
 name=tracers(TRACER_ARRAY(model,n))%tracer_name
 if (PRESENT(longname)) longname =tracers(TRACER_ARRAY(model,n))%tracer_longname
 if (PRESENT(units)) units =tracers(TRACER_ARRAY(model,n))%tracer_units
+!name=tracers(n)%tracer_name
+!if (PRESENT(longname)) longname =tracers(n)%tracer_longname
+!if (PRESENT(units)) units =tracers(n)%tracer_units
 
 end subroutine get_tracer_names
 !</SUBROUTINE>
@@ -1399,7 +1449,7 @@ integer ::n
 
 is_family_member = .false.
 
-if (size(is_family_member) < num_tracer_fields) call mpp_error(FATAL,'find_family_members : array too short')
+if (size(is_family_member(:)) < num_tracer_fields) call mpp_error(FATAL,'find_family_members : array too short')
 
 do n=1,num_tracer_fields
    if(trim(tracers(TRACER_ARRAY(model,n))%tracer_family) == trim(family_name) .and. &
@@ -2065,11 +2115,11 @@ if ( n .ne. NO_TRACER ) then
 !    list_name = trim(list_name)//"/longname"
   if ( fm_exists(list_name)) then
     success = fm_change_list(list_name)
-    if ( present(longname) .and. longname .ne. "" ) then
-      index = fm_new_value('longname',longname)
+    if ( present(longname) ) then
+      if ( longname .ne. "" ) index = fm_new_value('longname',longname)
     endif
-    if ( present(units) .and. units .ne. "" ) then
-      index = fm_new_value('units',units)
+    if ( present(units) ) then
+      if (units .ne. "" ) index = fm_new_value('units',units)
     endif
   endif  
 
@@ -2166,6 +2216,7 @@ use field_manager_mod, only : MODEL_ATMOS, &
                               MODEL_OCEAN, &
                               field_manager_init, &
                               fm_dump_list, &
+                              fm_query_method, &
                               fm_exists, &
                               fm_new_value, &
                               fm_get_value, &
@@ -2209,9 +2260,10 @@ type(domain2d) :: domain ! just using a single domain type for all tracers here 
                          ! need different calls for different domains ...)
    
 character(len=128) :: name, longname, units, scheme_name, control, family_name, list_name
+character(len=512) :: meth_name, meth_control
 integer :: halo, ndivs, isc, iec, jsc, jec, isd, ied, jsd, jed, tau, taum1, taup1, tmp, n, m, mm
 integer, dimension(MAX_TRACER_FIELDS) :: atmos_order, ocean_order
-integer :: co2_index, color_index, temp_index,k,nfields, index
+integer :: co2_index, color_index, temp_index,k,nfields, index, jsphum
 real :: surf_value,multiplier, param
 
 call mpp_io_init
@@ -2228,6 +2280,12 @@ model_time = set_date(1982,1,1,0,0,0)
 call register_tracers(MODEL_ATMOS, num_tracers_atmos, num_tracer_prog_atmos, num_tracer_diag_atmos, &
                      num_tracer_fam_atmos)
 
+write(*,*) "The number of tracers in the atmosphere AFTER THE CALL TO register_tracers are ", &
+            num_tracers_atmos, num_tracer_prog_atmos, num_tracer_diag_atmos, num_tracer_fam_atmos                     
+!Try to register the tracers for the atmospheric model a second time.
+call register_tracers(MODEL_ATMOS, num_tracers_atmos, num_tracer_prog_atmos, num_tracer_diag_atmos, &
+                     num_tracer_fam_atmos)
+! This should result in a note that register_tracers has already been called for the atmospheric model.
 ! Silly exmaple of how to use get_number_tracers. 
 ! As the ocean tracers have not been registered by the tracer manager these will all be zero.
 call get_number_tracers(MODEL_OCEAN, num_tracers_ocean, num_tracer_prog_ocean, num_tracer_diag_ocean, &
@@ -2256,6 +2314,18 @@ call set_tracer_atts(MODEL_ATMOS,"radon_contr","control_radon","g/g")
 write(*,*) 'Using fm_dump_list("/atmos_mod/tracer/radon_contr",.true.) to provide listing of radon_contr field'
 result = fm_dump_list("/atmos_mod/tracer/radon_contr",.true.)
 
+!write(*,*) 'Using fm_query_method("/atmos_mod/tracer/radon",meth_name,meth_control) to query &
+!           &for methods of the radon field.'
+result = fm_query_method("/atmos_mod/TRACER/tsurf",meth_name,meth_control)
+write(*,*) "meth_name = ",trim(meth_name)
+write(*,*) "meth_control = ",trim(meth_control)
+
+     jsphum = get_tracer_index ( model_atmos, 'sphum' )
+write(*,*) "tracer index for sphum is  ",jsphum
+     call get_tracer_names ( model_atmos, jsphum, name, longname, units )
+
+write(*,*) 'name associated with ',jsphum,' is ',trim(name)
+
 do i=1,max(nx,ny,nz)
    data(i) = float(i)
 enddo
@@ -2269,7 +2339,16 @@ call alloc_tracers
 ! atmos initialization
 
 do m=1,num_tracer_prog_atmos
+       call get_tracer_names(MODEL_ATMOS,m,name,longname,units)
+index= get_tracer_index(MODEL_ATMOS,name)
+ write(*,*) trim(name)," ",trim(longname)," ", trim(units),index,atmos_prog_ind(m)
 
+if(query_method ( 'emissions',MODEL_ATMOS,index,longname,units)) then
+ write(*,*) trim(longname), " ", trim(units)
+
+endif
+enddo
+do m=1,num_tracer_prog_atmos
 ! Find the name, longname and units of a tracer given a model and index.
    call get_tracer_names(MODEL_ATMOS, atmos_prog_ind(m), name, longname, units)
 ! Provide a flag that the tracer requires initialization.

@@ -176,8 +176,8 @@ private
 !-----------------------------------------------------------------------
 !  cvs version and tag name
 
-character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 10.0 2003/10/24 22:01:39 fms Exp $'
-character(len=128) :: tagname = '$Name: jakarta $'
+character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 11.0 2004/09/28 20:05:59 fms Exp $'
+character(len=128) :: tagname = '$Name: khartoum $'
 
 !-----------------------------------------------------------------------
 !  parameters for table size and resolution
@@ -572,7 +572,7 @@ contains
 ! </FUNCTION>
  function compute_es_1d (tem) result (es)
  real, intent(in) :: tem(:)
- real :: es(size(tem))
+ real :: es(size(tem,1))
 
  real, parameter :: TBASW = TFREEZE+100.
  real, parameter :: TBASI = TFREEZE
@@ -582,7 +582,7 @@ contains
  real    :: x, esice, esh2o
  integer :: i
 
-   do i = 1, size(tem)
+   do i = 1, size(tem(:))
 
 !  compute es over ice 
 

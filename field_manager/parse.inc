@@ -12,7 +12,7 @@ integer :: is, ie, id, k, last
   is = is + len_trim(label)            ! move starting pointer after label
   is = is + scan( text(is:last), '=' ) ! move starting pointer after "="
 
-  do k = 1, size(values)
+  do k = 1, size(values(:))
 
    ! position of ending pointer
      id = scan( text(is:last), ',' )

@@ -27,9 +27,10 @@ module time_interp_mod
 
 use time_manager_mod, only: time_type, get_date, set_date, set_time, &
                             days_in_year, days_in_month, leap_year,  &
+                            time_type_to_real, real_to_time_type,    &
                             operator(+), operator(-), operator(>),   &
                             operator(<), operator( // ), operator( / ),  &
-                            operator(>=), operator(<=)
+                            operator(>=), operator(<=), operator( * )
 
 use          fms_mod, only: write_version_number, &
                             error_mesg, FATAL
@@ -67,17 +68,34 @@ public :: time_interp_init, time_interp, fraction_of_year
 !      call time_interp( Time, weight, year1, year2, month1, month2, day1, day2 )
 !   </TEMPLATE>
 !   <TEMPLATE>
-!      call time_interp( Time, weightTime, Timelist, weight, index1, index2 [, modtime] )
+!      call time_interp( Time, Timelist, weight, index1, index2 [, modtime] )
+!   </TEMPLATE>
+!   <TEMPLATE>
+!      call time_interp( Time, Time_beg, Time_end, Timelist, weight, index1, index2)
 !   </TEMPLATE>
 !   <IN NAME="Time">
 !      The time at which the the weight is computed.
 !   </IN>
+!   <IN NAME="Time_beg">
+!      For cyclical interpolation: Time_beg specifies the begining time of a cycle.
+!   </IN>
+!   <IN NAME="Time_end">
+!      For cyclical interpolation: Time_end specifies the ending time of a cycle.
+!   </IN>
 !   <IN NAME="Timelist">
+!      For cyclical interpolation: Timelist is an array of times between Time_beg and Time_end.
+!                                  Must be monotonically increasing.
 !   </IN>
 !   <IN NAME="modtime">
 !   </IN>
+!   <IN NAME="index1">
+!      Timelist(index1) = The largest value of Timelist which is less than mod(Time,Time_end-Time_beg)
+!   </IN>
+!   <IN NAME="index2">
+!      Timelist(index2) = The smallest value of Timelist which is greater than mod(Time,Time_end-Time_beg)
+!   </IN>
 !   <OUT NAME="weight">
-!     The fractional amount (between 0,1) into the year as given by argument Time.
+!     weight = (mod(Time,Time_end-Time_beg) - Timelist(index1)) / (Timelist(index2) - Timelist(index1))
 !   </OUT>
 !   <OUT NAME="year1"> </OUT>
 !   <OUT NAME="year2"> </OUT>
@@ -122,7 +140,7 @@ public :: time_interp_init, time_interp, fraction_of_year
 interface time_interp
     module procedure time_interp_frac,  time_interp_year, &
                      time_interp_month, time_interp_day,  &
-                     time_interp_list
+                     time_interp_list,  time_interp_modulo
 end interface
 ! </INTERFACE>
 
@@ -141,8 +159,8 @@ integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
    integer :: yrmod, momod, dymod
    logical :: mod_leapyear
 
-   character(len=128) :: version='$Id: time_interp.F90,v 10.0 2003/10/24 22:01:40 fms Exp $'
-   character(len=128) :: tagname='$Name: jakarta $'
+   character(len=128) :: version='$Id: time_interp.F90,v 11.0 2004/09/28 20:06:12 fms Exp $'
+   character(len=128) :: tagname='$Name: khartoum $'
 
    logical :: module_is_initialized=.FALSE.
 
@@ -356,6 +374,71 @@ contains
  end subroutine time_interp_day
 
 !#######################################################################
+! <SUBROUTINE NAME="time_interp_modulo" INTERFACE="time_interp">
+!   <IN NAME="Time" TYPE="time_type" > </IN>
+!   <IN NAME="Time_beg" TYPE="time_type"> </IN>
+!   <IN NAME="Time_end" TYPE="time_type"> </IN>
+!   <IN NAME="Timelist" TYPE="time_type" DIM="(:)"> </IN>
+!   <OUT NAME="weight" TYPE="real"> </OUT>
+!   <OUT NAME="index1" TYPE="real"> </OUT>
+!   <OUT NAME="index2" TYPE="real"> </OUT>
+! </SUBROUTINE>
+
+subroutine time_interp_modulo(Time, Time_beg, Time_end, Timelist, weight, index1, index2)
+type(time_type), intent(in)  :: Time, Time_beg, Time_end, Timelist(:)
+real           , intent(out) :: weight
+integer        , intent(out) :: index1, index2
+
+type(time_type) :: Period, Time_between
+integer :: nn, nlist
+
+nlist = size(Timelist(:))
+
+! Check that all values of Timelist are in ascending order.
+do nn=2,nlist
+  if (Timelist(nn) < Timelist(nn-1)) then
+    call error_mesg('time_interp_modulo','input time list not in ascending order',FATAL)
+  endif
+enddo
+
+! Check that all values of Timelist fall between Time_beg and Time_end.
+do nn=1,nlist
+  if(Timelist(nn) < Time_beg .or. Timelist(nn) > Time_end) then
+    call error_mesg('time_interp_modulo','input time list not all between Time_beg and Time_end',FATAL)
+  endif
+enddo
+
+Period = Time_end - Time_beg
+
+! Must convert time_type variables to real for some operations because a negative value of
+! time results. The time manager_mod does not allow negative values of time_type variables.
+
+! floor yeilds the desired result when its argument is negative, int does not.
+nn = floor((time_type_to_real(Time) - time_type_to_real(Time_beg)) / time_type_to_real(Period))
+Time_between = real_to_time_type(time_type_to_real(Time) - time_type_to_real(Period) * nn)
+
+if(Time_between <= Timelist(1)) then
+  index1 = nlist
+  index2 = 1
+  weight = (Time_between + Period - Timelist(nlist)) // (Timelist(1) + Period - Timelist(nlist))
+else if(Time_between >= Timelist(nlist)) then
+  index1 = nlist
+  index2 = 1
+  weight = (Time_between - Timelist(nlist)) // (Timelist(1) + Period - Timelist(nlist))
+else
+  do nn=2,nlist
+    if(Time_between >= Timelist(nn-1) .and. Time_between <= Timelist(nn)) then
+      index1 = nn-1
+      index2 = nn
+      weight = (Time_between - Timelist(nn-1)) // (Timelist(nn) - Timelist(nn-1))
+      exit
+    endif
+  enddo
+endif
+
+end subroutine time_interp_modulo
+
+!#######################################################################
 ! <SUBROUTINE NAME="time_interp_list" INTERFACE="time_interp">
 !   <IN NAME="Time" TYPE="time_type" > </IN>
 !   <IN NAME="Timelist" TYPE="time_type" DIM="(:)"> </IN>
@@ -375,7 +458,7 @@ integer :: i, n, hr, mn, se
 type(time_type) :: T, T1, T2, Ts, Te, Td, Period, Time_mod
 
   weight = 0.; index1 = 0; index2 = 0
-  n = size(Timelist)
+  n = size(Timelist(:))
 
 ! check list for ascending order
   do i = 2, n

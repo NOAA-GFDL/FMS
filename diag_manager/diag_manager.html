@@ -28,7 +28,7 @@
 <a name="HEADER"></a>
 <!-- BEGIN HEADER -->
 <div>
-<b>Contact:&nbsp;</b><a href="mailto:Matthew.Harrison@noaa.gov">   Matt Harrison </a>,&nbsp;
+<b>Contact:&nbsp;</b><a href="mailto:Matthew.Harrison@gfdl.noaa.gov">   Matt Harrison </a>,&nbsp;
     <a href="mailto:Giang.Nong@noaa.gov">   Giang Nong </a>
 <br>
 <b>Reviewers:&nbsp;</b>
@@ -56,21 +56,37 @@
    Run-time specification of diagnostics are input through the diagnostics table. <br> 
 <b>   Usage</b>   of <tt>   diag_manager</tt>   includes the following steps:<br>   1. Create diag_table as described in <a href="diag_table_tk.html">diag_table_tk</a>   documentation.<br>   2. Call <tt>diag_manager_init</tt>   to initialize diag_manager_mod <br>   3. Call <tt>   register_diag_field</tt>   to register the field to be outputted. <br> 
 <b>   NOTE</b>   ALL fields in diag_table should be registered BEFORE the first send_data call
-   4. Call <tt>send_data</tt>   to send data to output fields <br>   5. Call <tt>diag_manager_end</tt>   to exit diag_manager <br> 
-<b>   New Features </b>   of <tt>   diag_manager_mod </tt>: <br>   1. Ability to output scalars (see <tt>send_data </tt>and <tt>   register_diag_field</tt>)<br>   2. Ability to output time average of fields that have time dependent mask. <br>   3. Give optional warning if <tt>register_diag_field </tt>fails due to misspelled module name
-   or field name. <br>   4. Give warning if a field in diag_table is never registered by the end of the program. <br>   5. Check for duplicate lines in diag_table<br>   6. diag_table can contain fields that are NOT written to any files. The file name in diag_table
-   of these fields is <tt>   null</tt> 
+   4. Call <tt>send_data</tt>   to send data to output fields <br>   5. Call <tt>diag_manager_end</tt>   to exit diag_manager <br>
+<br> 
+<b>   New Features </b>   of <tt>   diag_manager_mod </tt>: <br>   1. Ability to output scalars (see <tt>send_data </tt>and <tt>register_diag_field</tt>)<br>   2. Ability to output time average of fields that have time dependent mask. <br>   3. Give optional warning if <tt>register_diag_field </tt>fails due to misspelled module name
+   or field name. <br>   4. Check if a field is registered twice.<br>   5. Check for duplicate lines in <a href="diag_table_tk.html">diag_table</a>. <br>   6. <a href="diag_table_tk.html">diag_table</a>   can contain fields that are NOT written to any files. 
+   The file name in diag_table of these fields is <tt>   null</tt> 
 <br>   7. By default, a field is output in its global grid, it is now possible to output a field in 
-   a region specified by user, see send_data for more details <br> 
-<b>Features of <tt>diag_manager_mod</tt> </b>include: <br>   Simple, minimal API.<br>   Run-time choice of diagnostics.<br>   Self-describing files: comprehensive header information
-   (metadata) in the file itself.<br>   Strong parallel write performance.<br>   Integrated netCDF capability: <a href="http://www.unidata.ucar.edu/packages/netcdf/">netCDF</a>   is a
+   a region specified by user, see <tt>send_data</tt>   for more details <br>   8. To check if the diag table is set up correctly, user should set <tt>init_verbose=.true.</tt>   in 
+   diag namelist, then the the content of diag_table is printed in stdout. <br>   9. New optional format of file information in <a href="diag_table_tk.html">diag_table</a>
+<br>   It is possible to have just one file name and reuse it many times. A time string will be suffixed
+   to the base file name each time a new file is opened. The time string can be any combination from
+   year to second of current model time. Here is an example of file information: <br> 
+<tt>"file2_yr_dy%1yr%3dy",  5, "days",1,"hours","Time", 10, "days", "1 1 7 0 0 0"</tt> 
+<br>   From left to right we have: file name, output frequency, output frequency unit, Format (should always
+   be 1), time axis unit, time axis name, frequency for creating new file, unit for creating new file,
+   start time of the new file.<br>   In this example the string <tt>10, "days", "1 1 7 0 0 0"</tt>   is optional.<br>   Keyword for the time string suffix is <tt>%xyr,%xmo,%xdy,%xhr,%xmi,%xsc</tt>   where <tt>x</tt>   is mandatory 1 digit number specifying the width of field used in writing the string<br>   10. New time axis for time averaged fields <br>   users can use a namelist option to handle the time value written to time axis for time averaged fields.<br>   If <tt>mix_snapshot_average_fields=.true.</tt>   then a time averaged file will be labeled at the end
+   of the averaging period. e.g. January monthly average is labeled Feb01. Users can have both snapshot and
+   averaged fields in one file. <br>   If <tt>mix_snapshot_average_fields=.false.</tt>   The time value written to time axis for time averaged fields is the middle on the averaging time.
+   For example, January monthly mean will be written at Jan.16 not Feb.01 as before. However, to use this 
+   new feature users should <b>separate</b>   snapshot fields and time averaged fields in <b>different</b>   files 
+   or a fatal error will occur.<br>   The namelist <b>default</b>   value is <tt>mix_snapshot_average_fields=.false.</tt> 
+<br>
+<br>   11 Time average, Max and Min <br>   In addition to time average users can also get Max or Min value during the same interval of time as time
+   average. For this purpose, in the diag table users must replace <tt>.true.</tt>   or <tt>.false.</tt>   by <tt>"max"</tt>   or <tt>   "min"</tt>. <br>   Currently, Max and Min are not available for regional output. <br>
+<br> 
+<b>Features of <tt>diag_manager_mod</tt> </b>include: <br>   Integrated netCDF capability: <a href="http://www.unidata.ucar.edu/packages/netcdf/">netCDF</a>   is a
    data format widely used in the climate/weather modeling
    community. netCDF is considered the principal medium of data storage
-   for <tt>diag_manager_mod</tt>. Raw unformatted
-   fortran I/O capability is also available.<br>   Requires off-line post-processing: a tool for this purpose, <tt>mppnccombine</tt>, is available. GFDL users may use <tt>~hnv/pub/mppnccombine</tt>. Outside users may obtain the
-   source <a href="ftp://ftp.gfdl.gov/perm/hnv/mpp/mppnccombine.c">here</a>.  It
-   can be compiled on any C compiler and linked with the netCDF
-   library. The program is free and is covered by the <a href="ftp://ftp.gfdl.gov/perm/hnv/mpp/LICENSE">GPL license</a>. </div>
+   for <tt>diag_manager_mod</tt>.
+   <br>
+<br> 
+</div>
 <br>
 <!-- END DESCRIPTION -->
 <a name="OTHER%20MODULES%20USED"></a>
@@ -135,7 +151,7 @@
 <a name="send_data"></a>
 <h4>send_data</h4>
 <pre> 
-<b>send_data</b> (diag_field_id, field, time, is_in, js_in, ks_in, &amp; mask, rmask, weight)</pre>
+<b>send_data</b> (diag_field_id, field, time, is_in, js_in, ks_in, mask, rmask, ie_in, je_in, ke_in, weight)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -146,23 +162,33 @@
    range of the array. Optional argument is_in can be used to update
    sub-arrays of the entire field.  Additionally, an optional logical or real
    mask can be used to apply missing values to the array.<br>   If a field is declared to be mask_variant in <tt>   register_diag_field</tt>   logical mask 
-   should be mandatory.<br>   For the real  mask, the mask is applied if the mask value is less than 0.5.  The
-   weight array is currently not implemented.
+   should be mandatory.<br>   For the real  mask, the mask is applied if the mask value is less than 0.5.
    <br>
 <br>
    By default, a field will be written out entirely in its global grid. Users can also specify
    region in which the field will be output. The region is specified in diag-table just before
-   the end of output_field replacing "none". For example:<br>   by default:<br>   "ocean_mod","Vorticity","vorticity","file1","all",.false.,"none",2 <br>   for regional output:<br>   "ocean_mod","Vorticity","vorticity_local","file2","all",.false.,"0.5 53.5 -89.5 -28.5 1 1",2<br>   the format of region is "xbegin xend ybegin yend zbegin zend". If it is a 2D field use (1 1)
-   for (zbegin zend) as in the example above. The units used for region are the actual units used in 
-   grid_spec.nc (for example degrees for lat, lon). Fatal error will occur if region's boundaries
-   are not found in grid_spec.nc<br> 
+   the end of output_field replacing "none". For example:<br>   by default:<br>   "ocean_mod","Vorticity","vorticity","file1","all",.false.,"none",2 <br>   for regional output:<br>   "ocean_mod","Vorticity","vorticity_local","file2","all",.false.,"0.5 53.5 -89.5 -28.5 -1 -1",2<br>   the format of region is "xbegin xend ybegin yend zbegin zend". If it is a 2D field use (-1 -1)
+   for (zbegin zend) as in the example above. For a 3D field use (-1 -1) for (zbegin zend) when you want to
+   write the whole vertical extent, otherwise specify real coordinates. The units used for region are the 
+   actual units used in grid_spec.nc (for example degrees for lat, lon). Fatal error will occur if region's 
+   boundaries are not found in grid_spec.nc<br> 
 <br>   Special note when using regional output: result files containing regional outputs should be 
    different from files containing global (default) output. It is FATAL error to have one file
    containing both regional and global results. For maximum flexibility and independence from
    PE counts one file should contain just one region.<br> 
 <br>   Time averaging is supported in regional output.<br> 
 <br>   Physical fields (written in "physics windows" of atmospheric code) are 
-   currently NOT supported for regional outputs. </dd>
+   currently fully supported for regional outputs.<br>
+<br>   Note of dimension of field in send_data<br>   Most fields are defined in data_domain but used in compute domain. In send_data users can pass EITHER
+   field in data domain OR field in compute domain. If data domain is used, users should also pass the
+   starting and ending indices of compute domain (isc, iec ...). If compute domain is used no indices
+   are needed. These indices are for determining halo exclusively. If users want to ouput the field
+   partially they should use regional output as mentioned above.<br>
+<br>   Weight in Time averaging is now supported, each time level may have a different weight. The default 
+   of weight is 1.
+   <br>
+<br> 
+</dd>
 <br>
 <br>
 <dt>
@@ -258,7 +284,7 @@
 <dd>   Return field index for subsequent calls to <a href="#send_data">   send_data </a> 
 <br> 
 <tt>   axes</tt>   are axis ID returned from <tt>diag_axis_init</tt>, <tt>axes</tt>   are required
-   for fields of 1-3 dimension and NOT required for scalars. <br>   optional <tt>   mask_variant</tt>   is for fields that have a time-dependent mask. If <tt>mask_variant</tt>   is
+   for fields of 1-3 dimension and NOT required for scalars. <br>   for a static scalar (constant) init_time is not needed. <br>   optional <tt>   mask_variant</tt>   is for fields that have a time-dependent mask. If <tt>mask_variant</tt>   is
    true then <tt>mask</tt>   must be present in argument list of <tt>send_data</tt> 
 <br>   When optional <tt>   verbose</tt>   is true a warning will be given if <tt>   register_diag_field</tt>   fails due to misspelled field name or module name. The default <tt>   verbose</tt>   is false. <br>   The pair (module_name, fieldname) should be registered only once or a FATAL error will occur
    <br>

@@ -15,12 +15,12 @@
         </STYLE>
 </head>
 <body>
-<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC INTERFACE">PUBLIC INTERFACE </a>~
-          <a href="#PUBLIC DATA">PUBLIC DATA </a>~
-          <a href="#PUBLIC ROUTINES">PUBLIC ROUTINES </a>~
+<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC%20INTERFACE">PUBLIC INTERFACE </a>~
+          <a href="#PUBLIC%20DATA">PUBLIC DATA </a>~
+          <a href="#PUBLIC%20ROUTINES">PUBLIC ROUTINES </a>~
           <a href="#NAMELIST">NAMELIST </a>~
-          <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
-          <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
+          <a href="#DIAGNOSTIC%20FIELDS">DIAGNOSTIC FIELDS </a>~
+          <a href="#ERROR%20MESSAGES">ERROR MESSAGES </a>~
           <a href="#REFERENCES">REFERENCES </a>~ 
           <a href="#NOTES">NOTES</a></font>
 <hr>
@@ -28,11 +28,12 @@
 <a name="HEADER"></a>
 <!-- BEGIN HEADER -->
 <div>
-<b>Contact:&nbsp;</b><a href="mailto:Bruce.Wyman@noaa.gov">   Bruce Wyman </a>
+<b>Contact:&nbsp;</b><a href="mailto:Zhi.Liang@noaa.gov">   Zhi Liang </a>,&nbsp;
+    <a href="mailto:Bruce.Wyman@noaa.gov">   Bruce Wyman </a>
 <br>
 <b>Reviewers:&nbsp;</b>
 <br>
-<b>Change History:&nbsp;</b><a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi">WebCVS Log home</a>
+<b>Change History:&nbsp;</b><a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/horiz_interp">WebCVS Log</a>
 <br>
 <br>
 </div>
@@ -62,16 +63,16 @@
    the input mask to show where output data exists. </div>
 <br>
 <!-- END DESCRIPTION -->
-<a name="OTHER MODULES USED"></a>
+<a name="OTHER%20MODULES%20USED"></a>
 <hr>
 <h4>OTHER MODULES USED</h4>
 <!-- BEGIN OTHER MODULES USED -->
 <div>
-<pre>      fms_mod<br>      mpp_mod<br>constants_mod</pre>
+<pre>                   fms_mod<br>                   mpp_mod<br>             constants_mod<br>     horiz_interp_type_mod<br> horiz_interp_conserve_mod<br> horiz_interp_bilinear_mod<br>horiz_interp_spherical_mod</pre>
 </div>
 <!-- END OTHER MODULES USED -->
 <!-- BEGIN PUBLIC INTERFACE -->
-<a name="PUBLIC INTERFACE"></a>
+<a name="PUBLIC%20INTERFACE"></a>
 <hr>
 <h4>PUBLIC INTERFACE</h4>
 <div>
@@ -91,7 +92,7 @@
 </div>
 <br>
 <!-- END PUBLIC INTERFACE -->
-<a name="PUBLIC DATA"></a>
+<a name="PUBLIC%20DATA"></a>
 <hr>
 <h4>PUBLIC DATA</h4>
 <!-- BEGIN PUBLIC DATA -->
@@ -99,7 +100,7 @@
 <br>
 </div>
 <!-- END PUBLIC DATA -->
-<a name="PUBLIC ROUTINES"></a>
+<a name="PUBLIC%20ROUTINES"></a>
 <hr>
 <h4>PUBLIC ROUTINES</h4>
 <!-- BEGIN PUBLIC ROUTINES -->
@@ -111,7 +112,8 @@
 <tr>
 <td>
 <pre> subroutine horiz_interp_init (Interp, lon_in, lat_in, lon_out, lat_out,  &amp;
-                                  verbose, interp_method, num_nbrs, max_dist, src_modulo)</pre>
+                                  verbose, interp_method, num_nbrs, max_dist, src_modulo, &amp;
+                                  grid_at_center)</pre>
 </td>
 </tr>
 </table>
@@ -307,46 +309,13 @@
 </li>
 </ol>
 <!-- END PUBLIC ROUTINES -->
-<a name="PUBLIC TYPES"></a>
+<a name="PUBLIC%20TYPES"></a>
 <!-- BEGIN PUBLIC TYPES -->
-<hr>
-<h4>PUBLIC TYPES</h4>
-<div>
-<table cellspacing="0" CELLPADDING="0" BORDER="0">
-<tr>
-<td>
-<pre> type horiz_interp_type
-   private
-   real,    dimension(:,:), pointer   :: faci, facj  !weights for conservative scheme
-   integer, dimension(:,:), pointer   :: ilon, jlat  !indices for conservative scheme
-   real,    dimension(:,:), pointer   :: area_src    !area of the source grid
-   real,    dimension(:,:), pointer   :: area_dst    !area of the destination grid
-   real,    dimension(:,:,:), pointer :: wti,wtj     !weights for bilinear interpolation 
-   integer, dimension(:,:,:), pointer :: i_lon, j_lat!indices for bilinear interpolation 
-                                                     !and spherical regrid
-   real,    dimension(:,:,:), pointer :: src_dist    !distance between destination grid and 
-                                                     !neighbor source grid.
-   logical, dimension(:,:), pointer   :: found_neighbors    !indicate whether destination grid 
-                                                            !has some source grid around it.
-   real                               :: max_src_dist
-   integer                            :: nlon_src, nlat_src !size of source grid
-   integer                            :: nlon_dst, nlat_dst !size of destination grid
-   character(len=64)                  :: interp_method      !interpolation method.
-                                                            !="conservative", conservative scheme
-                                                            !="bilinear", bilinear interpolation
-                                                            !="spherical", spherical regrid
- end type</pre>
-</td>
-</tr>
-</table>
-</div>
-<br>
-<!-- END PUBLIC TYPES -->
-<a name="NAMELIST"></a>
+<!-- END PUBLIC TYPES --><a name="NAMELIST"></a>
 <!-- BEGIN NAMELIST -->
-<!-- END NAMELIST --><a name="DIAGNOSTIC FIELDS"></a>
+<!-- END NAMELIST --><a name="DIAGNOSTIC%20FIELDS"></a>
 <!-- BEGIN DIAGNOSTIC FIELDS -->
-<!-- END DIAGNOSTIC FIELDS --><a name="DATA SETS"></a>
+<!-- END DIAGNOSTIC FIELDS --><a name="DATA%20SETS"></a>
 <!-- BEGIN DATA SETS -->
 <hr>
 <h4>DATA SETS</h4>
@@ -354,9 +323,9 @@
 <br>
 </div>
 <!-- END DATA SETS -->
-<a name="PUBLIC CODE"></a>
+<a name="PUBLIC%20CODE"></a>
 <!-- BEGIN PUBLIC CODE -->
-<!-- END PUBLIC CODE --><a name="ERROR MESSAGES"></a>
+<!-- END PUBLIC CODE --><a name="ERROR%20MESSAGES"></a>
 <!-- BEGIN ERROR MESSAGES -->
 <hr>
 <h4>ERROR MESSAGES</h4>
@@ -393,7 +362,7 @@
       </div>
 <br>
 <!-- END REFERENCES -->
-<a name="COMPILER SPECIFICS"></a>
+<a name="COMPILER%20SPECIFICS"></a>
 <hr>
 <h4>COMPILER SPECIFICS</h4>
 <!-- BEGIN COMPILER SPECIFICS -->
@@ -402,7 +371,7 @@
       </div>
 <br>
 <!-- END COMPILER SPECIFICS -->
-<a name="PRECOMPILER OPTIONS"></a>
+<a name="PRECOMPILER%20OPTIONS"></a>
 <hr>
 <h4>PRECOMPILER OPTIONS</h4>
 <!-- BEGIN PRECOMPILER OPTIONS -->
@@ -411,7 +380,7 @@
       </div>
 <br>
 <!-- END PRECOMPILER OPTIONS -->
-<a name="LOADER OPTIONS"></a>
+<a name="LOADER%20OPTIONS"></a>
 <hr>
 <h4>LOADER OPTIONS</h4>
 <!-- BEGIN LOADER -->
@@ -419,7 +388,7 @@
 <br>
 </div>
 <!-- END LOADER OPTIONS -->
-<a name="TEST PROGRAM"></a>
+<a name="TEST%20PROGRAM"></a>
 <hr>
 <h4>TEST PROGRAM</h4>
 <!-- BEGIN TEST PROGRAM -->
@@ -462,7 +431,7 @@
          real, intent(out) :: x(:)
          integer :: i
            x(1) = xo
-           do i=2,size(x)
+           do i=2,size(x(:))
              x(i) = x(i-1)+dx
            enddo
          end subroutine setaxis
@@ -473,7 +442,7 @@
 </div>
 <br>
 <!-- END TEST PROGRAM -->
-<a name="KNOWN BUGS"></a>
+<a name="KNOWN%20BUGS"></a>
 <hr>
 <h4>KNOWN BUGS</h4>
 <!-- BEGIN KNOWN BUGS -->
@@ -498,7 +467,7 @@
    num_iters (default 4). </div>
 <br>
 <!-- END NOTES -->
-<a name="FUTURE PLANS"></a>
+<a name="FUTURE%20PLANS"></a>
 <hr>
 <h4>FUTURE PLANS</h4>
 <!-- BEGIN FUTURE PLANS -->

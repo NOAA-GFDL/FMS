@@ -16,10 +16,10 @@
 <a NAME="HEADER"></a>
 <!-- BEGIN HEADER -->
 <div>
-<b>Contact:</b>&nbsp; Matt Harrison <br>
+<b>Contact:</b>&nbsp; Matt Harrison, Giang Nong <br>
 <b>Reviewers:</b>&nbsp;         <br>
 <b>Change History:</b> <a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/diag_manager/diag_table_tk">WebCVS Log</a> <br>
-<b>Last Modified:</b>&nbsp; $Date: 2003/10/24 22:01:28 $ <br>
+<b>Last Modified:</b>&nbsp; $Date: 2004/09/28 20:27:16 $ <br>
 <b>Language:</b>&nbsp; Perl/Tk
 <br><br></div>
 <!-- END HEADER -->
@@ -41,7 +41,8 @@ choice of fields at run time. The table consists of comma-separated ASCII
 values and may be hand-edited. The preferred method of building a table
 is to use the provided GUI interface diag_table_tk. A default diag table
 is provided with each runscript.</p>
-<p>The table is separated into three sections.</p>
+<p>The table is separated into three sections. Sign # is used for
+        comment in diag_table.</p>
 <ol>
 <li>
 <b>Global section:</b> The first two lines of the table contain the experiment
@@ -56,8 +57,7 @@ output frequency units, file format (currently only support NetCDF), time
 units and long name for time axis. The format is as follows:
 
 <pre>
-"file_name", output_freq, "output_freq_units", format, "time_units", "time_long_name"
-
+"file_name",output_freq,"output_freq_units",format,"time_units","time_long_name","new_file_freq","new_file_freq_unit","start_time"
 
 output_freq:  
          &#62; 0  output frequency in "output_units"
@@ -67,17 +67,26 @@ output_freq:
 output_freq_units = units used for output frequency
         (years, months, days, minutes, hours, seconds)
 
-format:   1 NetCDF
+format:   1 NetCDF (this is the ONLY supported format)
 
 time_units   = units used to label the time axis
          (days, minutes, hours, seconds)
+
+new_file_freq: frequency for closing existing file and creating a new file.
+
+new_file_freq_unit: time units for new_file_freq (from seconds to
+years)
+
+start_time: time to start the file for the first time
 </pre>
+<p>Note: "new_file_freq","new_file_freq_unit","start_time" are optional</p>
+          
 </li>
 <li>
 <b>Field section:</b> Field lines contain 8 fields - module name, field
 name, output field name, file name, time sampling (for averaging, currently
-only support all timesteps), time average, other operations (currently
-not implemented) and pack value (1,2,4 or 8). The format is as follows:
+only support all timesteps), time average, other operations (for
+regional output) and pack value (1,2,4 or 8). The format is as follows:
 <pre>
 "module_name", "field_name", "output_name", "file_name" "time_sampling", 
 time_avg, "other_opts", packing
@@ -90,6 +99,26 @@ packing  = 1  double precision
          = 2  float
          = 4  packed 16-bit integers
          = 8  packed 1-byte (not tested?)
+
+other_opts is used to specify bounds of a region in regional output
+</pre>
+</li>
+<li>
+<b> example</b> of diag table
+<pre>
+"diag manager test"
+1999 1 1 0 0 0
+
+#output files
+10_days,               10, "days",1,"hours","Time"
+temp_local,             1, "days",1,"hours","Time"
+"file1_hr%hr3",         5, "days",1,"hours","Time", 15, "days"
+"file2_yr_dy%yr1%dy3",  5, "days",1,"hours","Time", 10, "days", "1 1 7 0 0 0"
+
+#output variables
+"ice_mod","ice","ice","10_days","all",.false.,"none", 2
+"ocean_mod","temp", "temp","temp_local",  "all",.false., "5 259.5 -59.5 59.5 1 1", 2
+
 </pre>
 </li>
 </ol>

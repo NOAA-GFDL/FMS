@@ -134,7 +134,8 @@ use       mpp_io_mod, only:  mpp_io_init, mpp_open, mpp_close,         &
                        MPP_ASCII, MPP_NATIVE, MPP_IEEE32, MPP_NETCDF,  &
                        MPP_RDONLY, MPP_WRONLY, MPP_APPEND, MPP_OVERWR, &
                        MPP_SEQUENTIAL, MPP_DIRECT,                     &
-                       MPP_SINGLE, MPP_MULTI, MPP_DELETE, mpp_io_exit
+                       MPP_SINGLE, MPP_MULTI, MPP_DELETE, mpp_io_exit, &
+                       fieldtype, mpp_get_atts, mpp_get_info, mpp_get_fields
 
 use fms_io_mod, only : read_data, write_data, fms_io_init, fms_io_exit, field_size, &
                        open_namelist_file, open_restart_file, open_ieee32_file, close_file, &
@@ -142,6 +143,8 @@ use fms_io_mod, only : read_data, write_data, fms_io_init, fms_io_exit, field_si
                        open_file, open_direct_file
 
 use memutils_mod, only: print_memuse_stats, memutils_init
+use constants_mod, only: PI, RADIAN, constants_version=>version, constants_tagname=>tagname !Balaji: initialize here
+
 implicit none
 private
 
@@ -158,7 +161,7 @@ public :: set_domain, read_data, write_data
 public :: get_domain_decomp, field_size, nullify_domain
 
 ! miscellaneous i/o routines
-public :: file_exist, check_nml_error,      &
+public :: file_exist, check_nml_error, field_exist,     &
           write_version_number, error_mesg
 
 ! miscellaneous utilities (non i/o)
@@ -183,7 +186,6 @@ integer, public :: clock_flag_default
 
 ! temporary interface (to be removed before next release)
 public :: mpp_clock_init
-           
 
 !------ namelist interface -------
 !------ adjustable severity level for warnings ------
@@ -271,8 +273,8 @@ public :: mpp_clock_init
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: fms.F90,v 10.0 2003/10/24 22:01:30 fms Exp $'
-  character(len=128) :: tagname = '$Name: jakarta $'
+  character(len=128) :: version = '$Id: fms.F90,v 11.0 2004/09/28 19:59:22 fms Exp $'
+  character(len=128) :: tagname = '$Name: khartoum $'
 
   logical :: module_is_initialized = .FALSE.
 
@@ -402,6 +404,10 @@ subroutine fms_init ( )
     call memutils_init( print_memory_usage )
     call print_memuse_stats('fms_init')
 
+    call write_version_number (constants_version,constants_tagname)
+    PI = 4.0*ATAN(1.0)
+    RADIAN = 180.0/PI
+
 end subroutine fms_init
 ! </SUBROUTINE>
 
@@ -436,6 +442,70 @@ subroutine fms_end ( )
 
 end subroutine fms_end
 ! </SUBROUTINE>
+
+!#######################################################################
+! <FUNCTION NAME="file_exist">
+
+!   <OVERVIEW>
+!     check if a given field name exists in a given file name. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     check if a given field name exists in a given file name. 
+!     If the field_name string has zero length or the
+!     first character is blank return a false result.
+!     if the file file_name don't exist, return a false result.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     field_exist ( file_name, field_name )
+!   </TEMPLATE>
+
+!   <IN NAME="file_name"  TYPE="character" >
+!     A file name (or path name) that is checked for existence.
+!   </IN>
+!   <IN NAME="field_name"  TYPE="character" >
+!     A field name that is checked for existence.
+!   </IN>
+!   <OUT NAME=""  TYPE="logical" >
+!     This function returns a logical result.  If field exists in the 
+!     file file_name, the result is true, otherwise false is returned.
+!     If the length of character string "field_name" is zero or the first
+!     character is blank, then the returned value will be false.
+!     if the file file_name don't exist, return a false result.
+!   </OUT>
+
+ function field_exist (file_name, field_name)
+  character(len=*), intent(in) :: file_name
+  character(len=*), intent(in) :: field_name
+  logical                      :: field_exist
+  integer                      :: unit, ndim, nvar, natt, ntime, i
+  character(len=64)            :: name
+  type(fieldtype), allocatable :: fields(:)
+
+
+   field_exist = .false.
+   if(.not.file_exist(file_name)) return
+   if (len_trim(field_name) == 0) return
+   if (field_name(1:1) == ' ')    return
+
+   !--- open the file file_name
+    call mpp_open(unit, trim(file_name), MPP_RDONLY, MPP_NETCDF, threading=MPP_MULTI, &
+         fileset = MPP_SINGLE)
+    call mpp_get_info(unit, ndim, nvar, natt, ntime)
+    allocate(fields(nvar))
+    call mpp_get_fields(unit,fields)
+
+    do i=1, nvar
+       call mpp_get_atts(fields(i),name=name)
+       if(trim(name) == trim(field_name)) field_exist = .true.
+    enddo
+
+    deallocate(fields)
+    call mpp_close(unit)
+
+    return
+
+ end function field_exist
+! </FUNCTION>
 
 !#######################################################################
 ! check the existence of the given file name
@@ -806,7 +876,7 @@ integer :: i
   found = .false.
   if (present(index)) index = 0
 
-  do i = 1, size(string_array)
+  do i = 1, size(string_array(:))
     ! found a string match ?
     if ( trim(string) == trim(string_array(i)) ) then
          found = .true.
@@ -862,11 +932,11 @@ integer :: i
   if (present(direction)) direction = 0
 
 ! array too short
-  if ( size(array) < 2 ) return
+  if ( size(array(:)) < 2 ) return
 
 ! ascending
-  if ( array(1) < array(size(array)) ) then
-     do i = 2, size(array)
+  if ( array(1) < array(size(array(:))) ) then
+     do i = 2, size(array(:))
        if (array(i-1) < array(i)) cycle
        return
      enddo
@@ -875,7 +945,7 @@ integer :: i
 
 ! descending
   else
-     do i = 2, size(array)
+     do i = 2, size(array(:))
        if (array(i-1) > array(i)) cycle
        return
      enddo

@@ -33,8 +33,8 @@ private
 !----------- ****** VERSION NUMBER ******* ---------------------------
 
 
-character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 10.0 2003/10/24 22:01:26 fms Exp $'
-character(len=128)  :: tag     =  '$Name: jakarta $'
+character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 11.0 2004/09/28 19:58:33 fms Exp $'
+character(len=128)  :: tag     =  '$Name: khartoum $'
 
 
 
@@ -142,8 +142,8 @@ real, dimension(:), intent(in)   :: lonb_in, latb_in
 !    save the input lat and lon fields. define the delta of latitude
 !    and longitude.
 !--------------------------------------------------------------------
-      allocate ( latb_deg (size(latb_in)) )
-      allocate ( lonb_deg (size(lonb_in)) )
+      allocate ( latb_deg (size(latb_in(:))) )
+      allocate ( lonb_deg (size(lonb_in(:))) )
       latb_deg = latb_in*RADIAN
       lonb_deg = lonb_in*RADIAN
       dellat = latb_in(2) - latb_in(1)
@@ -181,7 +181,7 @@ integer, dimension(:), intent(in)    :: global_i, global_j
 real   , dimension(:), intent(in)    :: global_lat_latlon,    &
                                         global_lon_latlon 
 logical, dimension(:), intent(out)   :: do_column_diagnostics
-integer, dimension(:), intent(out)   :: diag_i, diag_j        
+integer, dimension(:), intent(inout) :: diag_i, diag_j        
 real   , dimension(:), intent(out)   :: diag_lat, diag_lon
 integer, dimension(:), intent(out)   :: diag_units
 !---------------------------------------------------------------------
@@ -215,7 +215,7 @@ integer, dimension(:), intent(out)   :: diag_units
 !--------------------------------------------------------------------
 !    local variables:
 
-      real, dimension(size(diag_i)) :: global_lat, global_lon
+      real, dimension(size(diag_i,1)) :: global_lat, global_lon
 
       integer            ::  num_diag_pts
       integer            ::  i, j, nn
@@ -245,7 +245,7 @@ integer, dimension(:), intent(out)   :: diag_units
       diag_j(:) = -99
       diag_lat(:) = -999.
       diag_lon(:) = -999.
-      num_diag_pts = size(diag_i)
+      num_diag_pts = size(diag_i(:))
 
 !--------------------------------------------------------------------
 !    define an array of lat-lon values for all diagnostic columns.
@@ -289,10 +289,10 @@ integer, dimension(:), intent(out)   :: diag_units
 !    i and j processor-coordinates and the latitude and longitude of 
 !    the diagnostics column.
 !--------------------------------------------------------------------
-        do j=1,size(latb_deg) - 1
+        do j=1,size(latb_deg(:)) - 1
           if (global_lat(nn) .ge. latb_deg(j) .and.  &
               global_lat(nn) .lt. latb_deg(j+1)) then
-            do i=1,size(lonb_deg) - 1
+            do i=1,size(lonb_deg(:)) - 1
               if (global_lon(nn) .ge. lonb_deg(i)     .and.&
                   global_lon(nn) .lt. lonb_deg(i+1))  then
                 do_column_diagnostics(j) = .true.
@@ -445,7 +445,7 @@ integer, dimension(:), intent(in)  :: diag_units
 !--------------------------------------------------------------------
 !    close the unit associated with each diagnostic column.
 !--------------------------------------------------------------------
-      do nn=1, size(diag_units)
+      do nn=1, size(diag_units(:))
         if (diag_units(nn) /= -1) then
           call mpp_close (diag_units(nn))
         endif

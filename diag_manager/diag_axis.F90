@@ -1,25 +1,40 @@
 module diag_axis_mod
 
+! <CONTACT EMAIL="Giang.Nong@noaa.gov">
+!   Giang Nong
+! </CONTACT>
+
+! <OVERVIEW>
+!   <TT>diag_axis_mod</TT> is an integral part of diag_manager_mod. It helps to create
+! axis IDs that are used in register_diag_field.
+! </OVERVIEW>
+
+! <DESCRIPTION>
+! Users first create axis ID by calling diag_axis_init, then use this axis ID in 
+! register_diag_field.
+!
+!</DESCRIPTION>
+
 use mpp_domains_mod, only: domain1d, domain2d, mpp_get_compute_domain, &
                            mpp_get_domain_components, null_domain1d, &
                            null_domain2d, operator(/=)
-use         fms_mod, only: error_mesg, write_version_number
+use         fms_mod, only: error_mesg, write_version_number, lowercase, FATAL
 implicit none
 
 private
 public  diag_axis_init, get_diag_axis, get_domain1d, get_domain2d, &
         get_axis_length, get_axis_global_length, diag_subaxes_init, &
-        get_diag_axis_cart, get_diag_axis_data
+        get_diag_axis_cart, get_diag_axis_data, max_axes
 
-integer, parameter :: FATAL = 2
 !maximum number of independent axes
-integer, parameter :: max_axes = 50, max_subaxes = 10
+integer, parameter  :: max_subaxes = 10
+integer             :: max_axes = 60
 !character string lengths (function of netcdf)
-integer, parameter :: mxch  = 128
-integer, parameter :: mxchl = 256
+integer, parameter  :: mxch  = 128
+integer, parameter  :: mxchl = 256
 !counter of number of axes defined
-integer            :: num_subaxes(max_axes) = 0
-integer            :: num_def_axes = 0
+integer,allocatable :: num_subaxes(:)
+integer             :: num_def_axes = 0
 
 ! --- defined type ---
 type diag_axis_type
@@ -54,11 +69,11 @@ integer, parameter :: max_num_axis_sets = 25
 integer            :: num_axis_sets = 0
 character(len=128) :: Axis_sets(max_num_axis_sets)
 ! ---- global storage for all defined axes ----
-type (diag_axis_type), dimension(max_axes), save :: Axes
+type (diag_axis_type), allocatable, save :: Axes(:)
 logical            :: module_is_initialized = .FALSE.
 character(len=128) :: &
-     version='$Id: diag_axis.F90,v 10.0 2003/10/24 22:01:27 fms Exp $'
-character(len=128) :: tagname='$Name: jakarta $'
+     version='$Id: diag_axis.F90,v 11.0 2004/09/28 19:58:47 fms Exp $'
+character(len=128) :: tagname='$Name: khartoum $'
 
 contains
 !#######################################################################
@@ -95,7 +110,11 @@ function diag_axis_init (name, data, units, cart_name, long_name,     &
   if ( .not.module_is_initialized ) then
      call write_version_number( version, tagname )
   endif
-
+  if (.not. allocated(Axes)) allocate(Axes(max_axes))
+  if (.not. allocated(num_subaxes)) then
+     allocate(num_subaxes(max_axes))
+     num_subaxes = 0
+  endif
 !---- is there an axis set? ----
   if ( present(set_name) ) then
      set = get_axis_set_num (set_name)
@@ -112,17 +131,25 @@ function diag_axis_init (name, data, units, cart_name, long_name,     &
      set = 0
   endif
 
-!---- see if axis already exists ----
+!---- see if axis already exists --
+! if this is time axis, return the ID of a previously defined
+! if this is spatial axis, FATAL error
   do i = 1, num_def_axes
-     if (name == Axes(i)%name .and. set == Axes(i)%set)     &
-          call error_mesg ('diag_axis_mod', &
-          'axis_name '//trim(name)//' and axis_set already exists', FATAL)
+     if (name == Axes(i)%name .and. set == Axes(i)%set) then
+        if(trim(lowercase(name))=='time'.or.trim(lowercase(cart_name))=='t') then
+           index = i
+           return
+        else
+           call error_mesg ('diag_axis_mod', &
+                'axis_name '//trim(name)//' and axis_set already exists', FATAL)
+        endif
+     endif
   enddo
 
 !---- register axis ----
   num_def_axes = num_def_axes + 1
   if (num_def_axes > max_axes) call error_mesg ('diag_axis_mod',  &
-       'too many axes, increase max_axes', FATAL)
+       'max_axes exceeded, increase it via diag_manager_nml', FATAL)
   index = num_def_axes
 
 !---- check and then save cart_name name ----
@@ -133,13 +160,15 @@ function diag_axis_init (name, data, units, cart_name, long_name,     &
   else if (cart_name == 'z' .or.cart_name == 'Z' ) then
      Axes(index)%cart_name = 'Z'
   else if (cart_name == 't' .or.cart_name == 'T' ) then
-     Axes(index)%cart_name = 'T'
-  else
-     call error_mesg('axis_mod', 'Invalid cart_name name.', FATAL)
+      Axes(index)%cart_name = 'T'
+  else if (cart_name == 'n' .or.cart_name == 'N' ) then
+      Axes(index)%cart_name = 'N' 
+  else     
+      call error_mesg('axis_mod', 'Invalid cart_name name.', FATAL)
   endif
 
 !---- allocate storage for coordinate values of axis ----
-  axlen = size(data)
+  axlen = size(data(:))
   if ( Axes(index)%cart_name == 'T' ) axlen = 0
   allocate ( Axes(index)%data(1:axlen) )
   Axes(index)%name   = name
@@ -151,20 +180,7 @@ function diag_axis_init (name, data, units, cart_name, long_name,     &
   Axes(index)%start = -1
   Axes(index)%end = -1
   Axes(index)%subaxis_name = ""
-!---- check and then save cart_name name ----
 
-  if (cart_name == 'x' .or.cart_name == 'X' ) then
-     Axes(index)%cart_name = 'X'
-  else if (cart_name == 'y' .or.cart_name == 'Y' ) then
-     Axes(index)%cart_name = 'Y'
-  else if (cart_name == 'z' .or.cart_name == 'Z' ) then
-     Axes(index)%cart_name = 'Z'
-  else if (cart_name == 't' .or.cart_name == 'T' ) then
-     Axes(index)%cart_name = 'T'
-  else
-     call error_mesg('axis_mod', 'Invalid cart_name name.', FATAL)
-  endif
-!---- long name (optional) default use short name ----
   if (present(long_name))then
      Axes(index)%long_name = long_name
   else
@@ -223,7 +239,6 @@ function diag_subaxes_init(axis,subdata,start_indx,end_indx,domain_1d,domain_2d)
 
   integer                        :: index
   integer                        :: i,nsub_axis
-  integer                        :: nsub(max_axes) ! number of subaxes on ONE parent axis
   character(len=128)             :: name, nsub_name   
   character(len=128)             :: units
   character(len=128)             :: cart_name
@@ -310,7 +325,7 @@ subroutine get_diag_axis (id, name, units, long_name, cart_name, &
   direction = Axes(id)%direction
   edges     = Axes(id)%edges
   Domain    = Axes(id)%Domain
-  if (Axes(id)%length > size(data)) call error_mesg ('diag_axis_mod', &
+  if (Axes(id)%length > size(data(:))) call error_mesg ('diag_axis_mod', &
        'array data is too small', FATAL)
   data(1:Axes(id)%length) = Axes(id)%data
 !#####################################################################
@@ -330,7 +345,7 @@ subroutine get_diag_axis_data(id,data)
 !  id         =  axis number
   integer, intent(in) :: id
   real, intent(out)   :: data(:)
-  if (Axes(id)%length > size(data)) call error_mesg ('diag_axis_mod', &
+  if (Axes(id)%length > size(data(:))) call error_mesg ('diag_axis_mod', &
        'array data is too small', FATAL)
   data(1:Axes(id)%length) = Axes(id)%data
 end subroutine get_diag_axis_data
@@ -371,12 +386,12 @@ function get_domain2d (ids) result (Domain2)
   type(domain2d)      :: Domain2
   integer             :: i, id, flag
 
-  if ( size(ids) < 1 .or. size(ids) > 4 ) call error_mesg  &
+  if ( size(ids(:)) < 1 .or. size(ids(:)) > 4 ) call error_mesg  &
        ('get_domain2d in diag_axis_mod', &
        'input argument has incorrect size', FATAL)
   Domain2 = null_domain2d
   flag = 0
-  do i = 1, size(ids)
+  do i = 1, size(ids(:))
      id = ids(i)
      if ( Axes(id)%cart_name == 'X' .or.  &
           Axes(id)%cart_name == 'Y' ) flag = flag + 1

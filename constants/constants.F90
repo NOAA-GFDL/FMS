@@ -19,15 +19,11 @@ module constants_mod
 !   Constants are accessed through the "use" statement.
 ! </DESCRIPTION>
 
-use fms_mod, only: write_version_number
-
 implicit none
 private
 
-character(len=128) :: version='$Id: constants.F90,v 10.0 2003/10/24 22:01:26 fms Exp $'
-character(len=128) :: tagname='$Name: jakarta $'
-logical :: do_log = .true.
-logical :: module_is_initialized = .FALSE.
+character(len=128) :: version='$Id: constants.F90,v 11.0 2004/09/28 19:58:38 fms Exp $'
+character(len=128) :: tagname='$Name: khartoum $'
 !dummy variable to use in HUGE initializations
 real :: realnumber
 
@@ -198,43 +194,19 @@ real, public, parameter :: C2DBARS = 1.e-4
 real, public, parameter :: KELVIN  = 273.15
 real, public, parameter :: EPSLN   = 1.0e-40
 !-----------------------------------------------------------------------
-
-public constants_init
+! version and tagname published
+! so that write_version_number can be called for constants_mod by fms_init
+public :: version, tagname
+!-----------------------------------------------------------------------
+public :: constants_init
 
 contains
 
-! <SUBROUTINE NAME="constants_init">
-
-!   <OVERVIEW>
-!     Initialization routine. The purpose of this routine 
-!     is initialize the value of PI and RADIAN, and to write the 
-!     version and tag name information to the log file.   
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     If this routine is called more than once or called
-!     from other than the root PE it will return silently.
-!     There are no arguments.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call constants_init
-!   </TEMPLATE>
-
 subroutine constants_init
 
-  if (module_is_initialized) return
-  module_is_initialized = .TRUE.
-
-  if (.not.do_log) return
-  call write_version_number (version,tagname)
-  do_log = .false.
-
-  PI = 4.0*ATAN(1.0)
-  RADIAN = 180.0/PI
+! dummy routine. Initialization of PI and RADIAN is done by fms_init.
 
 end subroutine constants_init
-! </SUBROUTINE>
-
-!-----------------------------------------------------------------------
 
 end module constants_mod
 

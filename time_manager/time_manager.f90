@@ -1,6 +1,6 @@
 module time_manager_mod
 
-! <CONTACT EMAIL="fMike.Spelman@noaa.gov">
+! <CONTACT EMAIL="fms@gfdl.noaa.gov">
 !   fms
 ! </CONTACT>
 
@@ -40,7 +40,8 @@ module time_manager_mod
 !    contains two PRIVATE variables: seconds and days.
 ! </DATA>
 
-use fms_mod, only: error_mesg, FATAL, write_version_number, stdout, lowercase
+use fms_mod, only: error_mesg, FATAL, WARNING, write_version_number, stdout, lowercase, &
+                   mpp_pe, mpp_root_pe, stdlog, close_file, open_namelist_file, check_nml_error
 
 implicit none
 private
@@ -55,7 +56,7 @@ public operator(+),  operator(-),   operator(*),   operator(/),  &
 
 ! Subroutines and functions operating on time_type
 public set_time, increment_time, decrement_time, get_time, interval_alarm
-public repeat_alarm
+public repeat_alarm, time_type_to_real, real_to_time_type
 
 ! List of available calendar types
 public    THIRTY_DAY_MONTHS,    JULIAN,    GREGORIAN,  NOLEAP,   NO_CALENDAR
@@ -127,12 +128,31 @@ interface operator (//);  module procedure time_real_divide; end interface
 
 !======================================================================
 
-character(len=128) :: version='$Id: time_manager.f90,v 10.0 2003/10/24 22:01:40 fms Exp $'
-character(len=128) :: tagname='$Id: time_manager.f90,v 10.0 2003/10/24 22:01:40 fms Exp $'
-logical :: do_init = .true.
+interface set_time
+  module procedure set_time_i, set_time_c
+end interface
+
+interface set_date
+  module procedure set_date_i, set_date_c
+end interface
 
 !======================================================================
 
+character(len=128) :: version='$Id: time_manager.f90,v 11.0 2004/09/28 20:06:26 fms Exp $'
+character(len=128) :: tagname='$Name: khartoum $'
+logical :: module_is_initialized = .false.
+
+!======================================================================
+
+logical :: zero_year_warning = .true.
+logical :: no_calendar_conversion=.false. ! for backward compability
+                                          ! where true, assume that
+                                          ! calendar for external data
+                                          ! is identical to model 
+                                          ! calendar in get_cal_time
+namelist / time_manager_nml / zero_year_warning, no_calendar_conversion
+
+!======================================================================
 contains
 
 ! First define all operations on time intervals independent of calendar
@@ -162,14 +182,14 @@ contains
 !     A time interval corresponding to this number of days and seconds.
 !   </OUT>
 
-function set_time(seconds, days)
+function set_time_i(seconds, days)
 
 ! Returns a time interval corresponding to this number of days and seconds.
 ! The arguments must not be negative but are otherwise unrestricted.
 
 implicit none
 
-type(time_type) :: set_time
+type(time_type) :: set_time_i
 integer, intent(in) :: seconds
 integer, intent(in), optional :: days
 integer :: days_in
@@ -177,19 +197,50 @@ integer :: days_in
 days_in = 0;  if (present(days)) days_in = days
 
 ! Negative time offset is illegal
-if(seconds < 0 .or. days_in < 0) call error_handler('Negative input in set_time')
+if(seconds < 0 .or. days_in < 0) call error_handler('Negative input in set_time_i')
 
 ! Make sure seconds greater than a day are fixed up
-set_time%seconds = seconds - seconds / (60*60*24) * (60*60*24)
+set_time_i%seconds = seconds - seconds / (60*60*24) * (60*60*24)
 
 ! Check for overflow on days before doing operation
 if(seconds / (60*60*24)  >= huge(days_in) - days_in) &
-   call error_handler('Integer overflow in days in set_time')
-set_time%days = days_in + seconds / (60*60*24)
+   call error_handler('Integer overflow in days in set_time_i')
+set_time_i%days = days_in + seconds / (60*60*24)
 
-end function set_time
+end function set_time_i
 ! </FUNCTION>
+!---------------------------------------------------------------------------
 
+function set_time_c(string)
+
+implicit none
+
+type(time_type) :: set_time_c
+character(len=*), intent(in) :: string
+character(len=4) :: formt='(i )'
+integer :: i1, i2, day, second
+character(len=32) :: string_sifted_left
+
+string_sifted_left = adjustl(string)
+i1 = index(trim(string_sifted_left),' ')
+if(i1 == 0) then
+  call error_mesg('set_time_c','Form of character time stamp is incorrect.'// &
+  ' It must include days and seconds.'// &
+  ' The character time stamp is: '//trim(string),FATAL)
+endif
+if(index(string,'-') /= 0 .or. index(string,':') /= 0) then
+  call error_mesg('set_time_c','Form of character time stamp is incorrect.'// &
+  ' The character time stamp is: '//trim(string)//' It should consist of days'// &
+  ' and seconds separated by a blank. Note: use set_date if time stamp is in the form of a calendar date.',FATAL)
+endif
+write(formt(3:3),'(i1)') i1-1
+read(string_sifted_left(1:i1-1),formt) day
+i2 = len_trim(cut0(string_sifted_left))
+write(formt(3:3),'(i1)') i2-i1
+read(string_sifted_left(i1+1:i2),formt) second
+set_time_c = set_time(second, day)
+
+end function set_time_c
 !---------------------------------------------------------------------------
 ! <SUBROUTINE NAME="get_time">
 
@@ -839,6 +890,60 @@ end function time_real_divide
 ! </FUNCTION>
 
 !-------------------------------------------------------------------------
+! <FUNCTION NAME="time_type_to_real">
+!   <OVERVIEW>
+!       Converts time to seconds and returns it as a real number
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!       Converts time to seconds and returns it as a real number
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     time_type_to_real(time)
+!   </TEMPLATE>
+!   <IN NAME="time" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+
+function time_type_to_real(time)
+
+implicit none
+
+double precision :: time_type_to_real
+type(time_type), intent(in) :: time
+
+time_type_to_real = dble(time%days) * 86400.d0 + dble(time%seconds)
+
+end function time_type_to_real
+! </FUNCTION>
+
+!-------------------------------------------------------------------------
+! <FUNCTION NAME="real_to_time_type">
+!   <OVERVIEW>
+!       Converts a real number of seconds to a time_type variable
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!       Converts a real number of seconds to a time_type variable
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     real_to_time_type(x)
+!   </TEMPLATE>
+!   <IN NAME="x" UNITS="" TYPE="real" DIM="">
+!      A real number of seconds
+!   </IN>
+
+function real_to_time_type(x)
+type(time_type) :: real_to_time_type
+real, intent(in) :: x
+integer :: seconds, days
+
+days = floor(x/86400.)
+seconds = int(x - 86400.*days)
+real_to_time_type = set_time(seconds, days)
+
+end function real_to_time_type
+! </FUNCTION>
+
+!-------------------------------------------------------------------------
 ! <FUNCTION NAME="time_scalar_divide">
 
 !   <OVERVIEW>
@@ -1051,8 +1156,13 @@ implicit none
 
 integer, intent(in) :: type
 
+! Do not check for initalization until all modules call the constructor of all used modules.
+!if(.not.module_is_initialized) then
+!  call error_mesg('set_calendar_type','time_manager_init has not been called',FATAL)
+!endif
+
 if(type <  0 .or. type > max_type) &
-   call error_handler('Illegal type in set_calendar_type')
+   call error_handler('Illegal calendar type passed to set_calendar_type')
 calendar_type = type
 
 if(type == GREGORIAN) &
@@ -1148,7 +1258,6 @@ end subroutine get_date
 ! hours since 1980-1-1 0:0:0
 ! minutes since 0001-4-12
 
-! days, hours, minutes, seconds are acceptable; years and months are not
 ! year number must occupy 4 spaces.
 ! months, days, hours, minutes, seconds may occupy 1 or 2 spaces
 ! year, month and day must be separated by a '-'
@@ -1159,6 +1268,85 @@ end subroutine get_date
 ! day and second, with day number appearing first
 
 ! Example: "days since 100 0" Indicates 100 days 0 seconds
+!------------------------------------------------------------------------
+! <FUNCTION NAME="get_cal_time">
+!   <OVERVIEW>
+!      Given a time_interval as a real number, returns the corresponding
+!      time under the selected calendar as a time_type variable. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Given a time_interval as a real number, returns the corresponding
+!      time under the selected calendar as a time_type variable. 
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     get_cal_time(time_increment, units, calendar)
+!   </TEMPLATE>
+!   <IN NAME="time_increment" TYPE="real"> A time interval.</IN>
+!   <IN NAME="units" TYPE="character">
+!
+! Examples of acceptable values of units:
+!
+! 'days since 1980-01-01 00:00:00',
+! 'hours since 1980-1-1 0:0:0',
+! 'minutes since 0001-4-12'
+!
+! The first word in the string must be
+! 'years', 'months', 'days', 'hours', 'minutes' or 'seconds'.
+! The second word must be 'since'
+!
+! year number must occupy 4 spaces.
+! Number of months, days, hours, minutes, seconds may occupy 1 or 2 spaces
+! year, month and day must be separated by a '-'
+! hour, minute, second must be separated by a ':'
+! hour, minute, second are optional. If not present then zero is assumed.
+!
+! Because months are not equal increments of time, and, for julian calendar,
+! neither are years, the 'years since' and 'month since' cases deserve
+! further explaination. 
+!
+! When 'years since' is used:
+! The year number is increased by floor(time_increment)   to obtain a time T1.
+! The year number is increased by floor(time_increment)+1 to obtain a time T2.
+! The time returned is T1 + (time_increment-floor(time_increment))*(T2-T1).
+!
+! When 'months since' is used:
+! The month number is increased by floor(time_increment). If it falls outside
+! to range 1 to 12 then it is adjusted along with the year number to convert
+! to a valid date. The number of days in the month of this date is used to
+! compute the time interval of the fraction.
+! That is:
+! The month number is increased by floor(time_increment) to obtain a time T1.
+! delt = the number of days in the month in which T1 falls.
+! The time returned is T1 + ((time_increment-floor(time_increment))*delt.
+! Two of the consequences of this scheme should be kept in mind.
+! -- The time since should not be from the 29'th to 31'st of a month,
+!    since an invalid date is likely to result, triggering an error stop.
+! -- When time since is from the begining of a month, the fraction of a month
+!    will never advance into the month after that which results from only
+!    the whole number.
+!
+! When NO_CALENDAR is in effect, units attribute must specify a starting
+! day and second, with day number appearing first
+!
+! Example: 'days since 100 0' Indicates 100 days 0 seconds
+!
+!   </IN>
+!
+!   <IN NAME="calendar" TYPE="character">
+!
+! When present, then it will be checked against the calendar in use
+! by the time manager. If it does not match the calendar in use then
+! the program will terminate with an error message.
+! When not present, no such check is done.
+! 
+! Acceptable values of calendar are:
+! noleap
+! 365_day
+! 360_day
+! julian
+! thirty_day_months
+! no_calendar
+!   </IN>
 
 function get_cal_time(time_increment, units, calendar)
 real, intent(in) :: time_increment
@@ -1166,11 +1354,15 @@ character(len=*), intent(in) :: units
 character(len=*), intent(in) :: calendar
 type(time_type) :: get_cal_time
 integer :: year, month, day, hour, minute, second
-integer :: i1, i2, i3, i4, i5, i6, increment_seconds, increment_days
+integer :: i1, i2, i3, i4, i5, i6, increment_seconds, increment_days, increment_years, increment_months
+real    :: month_fraction
+integer :: curr_calendar, calendar_type2
 logical :: correct_form
 character(len=32) :: substring, calendar_att
 character(len=4) :: formt='(i )'
-type(time_type) :: base_time, new_time
+type(time_type) :: base_time, base_time_plus_one_yr, base_time_plus_one_mo
+type(time_type) :: time_inc, base_time2
+real :: dt
 
 calendar_att = lowercase(trim(cut0(calendar)))
 if(calendar_att /= 'unspecified') then
@@ -1183,16 +1375,52 @@ if(calendar_att /= 'unspecified') then
      ' is not an acceptable calendar attribute. acceptable calendars are: noleap, 365_day, 360_day, julian, no_calendar',FATAL)
   endif
 
-  correct_form = (trim(calendar_att) == 'noleap'            .and. calendar_type == NOLEAP)            .or. &
-                 (trim(calendar_att) == '365_day'           .and. calendar_type == NOLEAP)            .or. &
-                 (trim(calendar_att) == '360_day'           .and. calendar_type == THIRTY_DAY_MONTHS) .or. &
-                 (trim(calendar_att) == 'thirty_day_months' .and. calendar_type == THIRTY_DAY_MONTHS) .or. &
-                 (trim(calendar_att) == 'julian'            .and. calendar_type == JULIAN)            .or. &
-                 (trim(calendar_att) == 'no_calendar'       .and. calendar_type == NO_CALENDAR)
-  if(.not.correct_form) then
-    call error_mesg('get_cal_time','calendar not consistent with calendar type in use by time_manager.'// &
-          ' calendar='//trim(calendar_att)//'. Type in use by time_manager='//valid_calendar_types(calendar_type),FATAL)
-  endif
+!   correct_form = (trim(calendar_att) == 'noleap'            .and. calendar_type == NOLEAP)            .or. &
+!                  (trim(calendar_att) == '365_day'           .and. calendar_type == NOLEAP)            .or. &
+!                  (trim(calendar_att) == '360_day'           .and. calendar_type == THIRTY_DAY_MONTHS) .or. &
+!                  (trim(calendar_att) == 'thirty_day_months' .and. calendar_type == THIRTY_DAY_MONTHS) .or. &
+!                  (trim(calendar_att) == 'julian'            .and. calendar_type == JULIAN)            .or. &
+!                  (trim(calendar_att) == 'no_calendar'       .and. calendar_type == NO_CALENDAR)
+!   if(.not.correct_form) then
+!     call error_mesg('get_cal_time','calendar not consistent with calendar type in use by time_manager.'// &
+!           ' calendar='//trim(calendar_att)//'. Type in use by time_manager='//valid_calendar_types(calendar_type),FATAL)
+!   endif
+
+
+endif
+
+calendar_type2 = get_calendar_type()
+
+if (.not.no_calendar_conversion) then
+    select case (trim(calendar_att))
+    case ('noleap')
+        calendar_type2 = NOLEAP
+    case ('365_day')
+        calendar_type2 = NOLEAP
+    case ('360_day')
+        calendar_type2 = THIRTY_DAY_MONTHS
+    case ('thirty_day_months')
+        calendar_type2 = THIRTY_DAY_MONTHS
+    case ('julian')
+        calendar_type2 = JULIAN
+    case ('no_calendar')
+        calendar_type2 = NO_CALENDAR
+    case ('unspecified')
+        call error_mesg('get_cal_time','calendar attribute required.&
+             &  Check your dataset to make sure calendar attribute exists',FATAL)
+    case default
+        call error_mesg('get_cal_time','Invalid calendar attribute specified in call to get_cal_time',FATAL)
+    end select
+end if
+
+correct_form = lowercase(units(1:10)) == 'days since'    .or. &
+               lowercase(units(1:11)) == 'hours since'   .or. &
+               lowercase(units(1:13)) == 'minutes since' .or. &
+               lowercase(units(1:13)) == 'seconds since' .or. &
+               lowercase(units(1:11)) == 'years since'   .or. &
+               lowercase(units(1:12)) == 'months since'
+if(.not.correct_form) then
+  call error_mesg('get_cal_time','The units attribute of time must begin with a time unit then the word "since"',FATAL)
 endif
 
 ! index(string, substring[,back])
@@ -1203,56 +1431,11 @@ endif
 ! last such substring is returned.
 ! Returns zero if substring is not a substring of string (regardless of value of back)
 
+i1 = index(units,'since') + 5
 if(calendar_type == NO_CALENDAR) then
-  if(index(units,'-') /= 0 .or. index(units,':') /= 0) then
-    call error_mesg('get_cal_time','Form of units attribute of time is incorrect.'// &
-        ' A date is not valid when time_manager is in NO_CALENDAR mode.'// &
-        ' units='//trim(units),FATAL)
-  endif
-  i1 = index(units,'since') + 4
-  substring = adjustl(units(i1+1:len_trim(units)))
-  i2 = index(trim(substring),' ')
-  if(i2 == 0) then
-    call error_mesg('get_cal_time','Form of units attribute of time is incorrect.'// &
-        ' It must include days and seconds when time_manager is in NO_CALENDAR mode.'// &
-        ' units='//trim(units),FATAL)
-  endif
-  write(formt(3:3),'(i1)') i2-1
-  read(substring(1:i2-1),formt) day ! formt could be replaced with '(i)', but '(i)' is an extension to the Fortran standard.
-  write(formt(3:3),'(i1)') len_trim(substring)-i2
-  read(substring(i2+1:len_trim(substring)),formt) second
-  base_time = set_time(second, day)
+  base_time = set_time(units(i1:len_trim(units)))
 else
-  i1 = index(units,'-')
-  i2 = index(units,'-',back=.true.)
-  i3 = index(units,':')
-  i4 = index(units,':',back=.true.)
-  i5 = len_trim(cut0(units))
-  i6  = index(units,'.',back=.true.)
-  if(i6==i4+2 .or. i6==i4+3)i5=i6-1  ! if frac sec present, truncate
-  correct_form = (i2-i1 == 2 .or. i2-i1 == 3) ! month number must occupy 1 or 2 spaces
-  correct_form = correct_form .and. (i5 == i2+1 .or. i5 == i2+2 .or. i5 == i4+1 .or. i5 == i4+2) ! end of string must be either day number or seconds
-  correct_form = correct_form .and. (i3 == 0 .or. (i4-i3 == 2 .or. i4-i3 == 3)) ! if minute number exists, it must occupy 1 or 2 spaces
-  if(.not.correct_form) then
-    call error_mesg('get_cal_time','Form of units attribute of time is incorrect. units='//trim(units),FATAL)
-  endif
-  read(units(i1-4:i1-1),'(i4)') year
-  write(formt(3:3),'(i1)') i2-i1-1
-  read(units(i1+1:i2-1),formt) month
-  i6 = min(i2+2,i5)
-  read(units(i2+1:i6),'(i2)') day
-  if(i3 == 0) then
-    hour = 0
-    minute = 0
-    second = 0
-  else
-    read(units(i3-2:i3-1),'(i2)') hour
-    write(formt(3:3),'(i1)') i4-i3-1
-    read(units(i3+1:i4-1),formt) minute
-    write(formt(3:3),'(i1)') i5-i4
-    read(units(i4+1:i5  ),formt) second
-  endif
-  base_time = set_date(year, month, day, hour, minute, second)
+  base_time = set_date(units(i1:len_trim(units)))
 endif
 
 if(lowercase(units(1:10)) == 'days since') then
@@ -1267,14 +1450,49 @@ else if(lowercase(units(1:13)) == 'minutes since') then
 else if(lowercase(units(1:13)) == 'seconds since') then
   increment_days = floor(time_increment/86400)
   increment_seconds = 86400*(time_increment/86400 - increment_days)
+else if(lowercase(units(1:11)) == 'years since') then
+! The time period between between (base_time + time_increment) and
+! (base_time + time_increment + 1 year) may be 360, 365, or 366 days.
+! This must be determined to handle time increments with year fractions.
+  call get_date(base_time, year,month,day,hour,minute,second)
+  base_time             = set_date(year+floor(time_increment)  ,month,day,hour,minute,second)
+  base_time_plus_one_yr = set_date(year+floor(time_increment)+1,month,day,hour,minute,second)
+  call get_time(base_time_plus_one_yr - base_time, second, day)
+  dt = (day*86400+second)*(time_increment-floor(time_increment))
+  increment_days = floor(dt/86400)
+  increment_seconds = dt - increment_days*86400
+else if(lowercase(units(1:12)) == 'months since') then
+  month_fraction = time_increment - floor(time_increment)
+  increment_years  = floor(time_increment/12)
+  increment_months = floor(time_increment) - 12*increment_years
+  call get_date(base_time, year,month,day,hour,minute,second)
+  base_time = set_date(year+increment_years,month+increment_months  ,day,hour,minute,second)
+  dt = 86400*days_in_month(base_time) * month_fraction
+  increment_days = floor(dt/86400)
+  increment_seconds = dt - increment_days*86400
 else
   call error_mesg('get_cal_time','"'//trim(units)//'"'//' is not an acceptable units attribute of time.'// &
-    ' It must begin with: "days since", "hours since", "minutes since", or "seconds since"',FATAL)
+    ' It must begin with: "years since", "months since", "days since", "hours since", "minutes since", or "seconds since"',FATAL)
 endif
 
-get_cal_time = base_time + set_time(increment_seconds, increment_days)
+if (calendar_type2 /= calendar_type) then
+! if no calendar attribute is specified, assume the incoming time units
+! correspond to the Julian calendar
+    curr_calendar = get_calendar_type()
+    call get_date(base_time,year, month, day, hour, minute, second)
+    call set_calendar_type(calendar_type2)
+    base_time2  = set_date(year,month,day,hour,minute,second)
+    time_inc = set_time(increment_seconds, increment_days)
+    get_cal_time = time_plus(base_time2,time_inc)
+    call get_date(get_cal_time,year,month,day,hour,minute,second)
+    call set_calendar_type(curr_calendar)
+    get_cal_time = set_date(year,month,day,hour,minute,second)
+else
+    get_cal_time = base_time + set_time(increment_seconds, increment_days)
+endif
 
 end function get_cal_time
+! </FUNCTION>
 !------------------------------------------------------------------------
 
 subroutine get_date_gregorian(time, year, month, day, hour, minute, second)
@@ -1372,8 +1590,12 @@ character(len=*), intent(in) :: string
 integer :: i
 
 cut0 = string
-i = index(string,achar(0))
-if(i > 0) cut0(i:i) = ' '
+
+do i=1,len(string)
+  if(ichar(string(i:i)) == 0 ) then
+    cut0(i:i) = ' '
+  endif
+enddo
 
 return
 end function cut0
@@ -1516,7 +1738,7 @@ end subroutine get_date_no_leap
 !   <IN NAME="hour" TYPE="integer"></IN>
 !   <OUT NAME="set_date" TYPE="time_type"> A time interval.</OUT>
 
-function set_date(year, month, day, hours, minutes, seconds)
+function set_date_i(year, month, day, hours, minutes, seconds)
 
 ! Given a date, computes the corresponding time given the selected
 ! date time mapping algorithm.  Note that it is possible to specify
@@ -1525,7 +1747,7 @@ function set_date(year, month, day, hours, minutes, seconds)
 
 implicit none
 
-type(time_type) :: set_date
+type(time_type) :: set_date_i
 integer, intent(in) :: day, month, year
 integer, intent(in), optional :: seconds, minutes, hours
 integer :: oseconds, ominutes, ohours
@@ -1537,19 +1759,89 @@ ohours = 0; if(present(hours)) ohours = hours
 
 select case(calendar_type)
 case(THIRTY_DAY_MONTHS)
-   set_date = set_date_thirty(year, month, day, ohours, ominutes, oseconds)
+   set_date_i = set_date_thirty(year, month, day, ohours, ominutes, oseconds)
 case(GREGORIAN)
-   set_date = set_date_gregorian(year, month, day, ohours, ominutes, oseconds)
+   set_date_i = set_date_gregorian(year, month, day, ohours, ominutes, oseconds)
 case(JULIAN)
-   set_date = set_date_julian(year, month, day, ohours, ominutes, oseconds)
+   set_date_i = set_date_julian(year, month, day, ohours, ominutes, oseconds)
 case(NOLEAP)
-   set_date = set_date_no_leap(year, month, day, ohours, ominutes, oseconds)
+   set_date_i = set_date_no_leap(year, month, day, ohours, ominutes, oseconds)
+case (NO_CALENDAR)
+   call error_mesg('set_date_i','Cannot compute a date when calendar type=NO_CALENDAR',FATAL)
 case default
-   call error_handler('Invalid calendar type in set_date')
+   call error_mesg('set_date_i','Invalid calendar type.',FATAL)
 end select
-end function set_date
+end function set_date_i
 ! </FUNCTION>
 
+!------------------------------------------------------------------------
+
+function set_date_c(string)
+
+! Examples of acceptable forms of string:
+
+! 1980-01-01 00:00:00
+! 1980-1-1 0:0:0
+! 1980-1-1
+
+! year number must occupy 4 spaces.
+! months, days, hours, minutes, seconds may occupy 1 or 2 spaces
+! year, month and day must be separated by a '-'
+! hour, minute, second must be separated by a ':'
+! hour, minute, second are optional. If not present then zero is assumed.
+
+implicit none
+
+type(time_type) :: set_date_c
+character(len=*), intent(in) :: string
+character(len=4) :: formt='(i )'
+logical :: correct_form
+integer :: i1, i2, i3, i4, i5, i6
+character(len=32) :: string_sifted_left
+integer :: year, month, day, hour, minute, second
+
+string_sifted_left = adjustl(string)
+i1 = index(string_sifted_left,'-')
+i2 = index(string_sifted_left,'-',back=.true.)
+i3 = index(string_sifted_left,':')
+i4 = index(string_sifted_left,':',back=.true.)
+i5 = len_trim(cut0(string_sifted_left))
+i6 = index(string_sifted_left,'.',back=.true.)
+if(i6==i4+2 .or. i6==i4+3) i5=i6-1  ! if fraction second is present, truncate
+correct_form = (i1 == 5) ! year number must occupy 4 spaces
+correct_form = (i2-i1 == 2 .or. i2-i1 == 3) ! month number must occupy 1 or 2 spaces
+correct_form = correct_form .and. (i5 == i2+1 .or. i5 == i2+2 .or. i5 == i4+1 .or. i5 == i4+2) ! end of string must be either day number or seconds
+correct_form = correct_form .and. (i3 == 0 .or. (i4-i3 == 2 .or. i4-i3 == 3)) ! if minute number exists, it must occupy 1 or 2 spaces
+if(.not.correct_form) then
+  call error_mesg('set_date_c','Form of character time stamp is incorrect.'// &
+  ' It must be in the form: year-month-day or year-month-day hr:min:sec'// &
+  ' The character time stamp is: '//trim(string),FATAL)
+endif
+read(string_sifted_left(1:4),'(i4)') year
+if(year == 0) then
+  year = 1
+  if(zero_year_warning) then
+    call error_mesg('set_date_c','Year zero is invalid when a calendar is in effect. Resetting year to 1', WARNING)
+  endif
+endif
+write(formt(3:3),'(i1)') i2-i1-1
+read(string_sifted_left(i1+1:i2-1),formt) month
+i6 = min(i2+2,i5)
+read(string_sifted_left(i2+1:i6),'(i2)') day
+if(i3 == 0) then
+  hour = 0
+  minute = 0
+  second = 0
+else
+  read(string_sifted_left(i3-2:i3-1),'(i2)') hour
+  write(formt(3:3),'(i1)') i4-i3-1
+  read(string_sifted_left(i3+1:i4-1),formt) minute
+  write(formt(3:3),'(i1)') i5-i4
+  read(string_sifted_left(i4+1:i5  ),formt) second
+endif
+set_date_c = set_date(year, month, day, hour, minute, second)
+
+end function set_date_c
 !------------------------------------------------------------------------
 
 function set_date_gregorian(year, month, day, hours, minutes, seconds)
@@ -1610,6 +1902,7 @@ integer, intent(in), optional :: seconds, minutes, hours
 integer :: oseconds, ominutes, ohours
 integer ndays, m, nleapyr
 logical :: leap
+character(len=36) :: chdate
 
 ! Missing optionals are set to 0
 oseconds = 0; if(present(seconds)) oseconds = seconds
@@ -1619,8 +1912,10 @@ ohours = 0; if(present(hours)) ohours = hours
 ! Need to check for bogus dates
 if(oseconds > 59 .or. oseconds < 0 .or. ominutes > 59 .or. ominutes < 0 &
    .or. ohours > 23 .or. ohours < 0 .or. day < 1 &
-   .or. month > 12 .or. month < 1 .or. year < 1) &
-   call error_handler('Invalid date in set_date_julian')
+   .or. month > 12 .or. month < 1 .or. year < 1) then
+   write(chdate,'(6i6)') year,month,day,ohours,ominutes,oseconds
+   call error_handler('Invalid date in set_date_julian. Date='//chdate)
+endif
 if(month /= 2 .and. day > days_per_month(month)) &
    call error_handler('Invalid day in set_date_julian')
 
@@ -1697,6 +1992,8 @@ if(oseconds > 59 .or. oseconds < 0 .or. ominutes > 59 .or. ominutes < 0 &
    .or. month > 12 .or. month < 1 .or. year < 1) then
    call error_handler('Invalid date in set_date_no_leap')
 endif
+
+if(day > days_per_month(month)) call error_handler('Invalid day in set_date_no_leap')
 
 ndays = 0
 do m = 1, month - 1
@@ -2731,10 +3028,21 @@ subroutine time_manager_init ( )
 ! this routine does not have to be called, all it does is write
 ! the version information to the log file
 
-  if (.not.do_init) return  ! silent return if already called
+integer :: unit, ierr, io
+
+  if (module_is_initialized) return  ! silent return if already called
+
+  unit = open_namelist_file()
+  ierr=1
+  do while (ierr /= 0)
+    read(unit, nml=time_manager_nml, iostat=io, end=20)
+    ierr = check_nml_error (io, 'time_manager_nml')
+  enddo
+  20 call close_file (unit)
 
   call write_version_number (version, tagname)
-  do_init = .false.
+  if(mpp_pe() == mpp_root_pe()) write (stdlog(), nml=time_manager_nml)
+  module_is_initialized = .true.
 
 end subroutine time_manager_init
 ! </SUBROUTINE>

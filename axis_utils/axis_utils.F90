@@ -5,7 +5,7 @@ module axis_utils_mod
   !<REVIEWER EMAIL="Bruce.Wyman@noaa.gov">Bruce Wyman</REVIEWER>
   !
 
-  !</OVERVIEW>
+  !<OVERVIEW>
   ! A set of utilities for manipulating axes and extracting axis
   ! attributes
   !</OVERVIEW>
@@ -24,7 +24,8 @@ module axis_utils_mod
   !</DESCRIPTION>
   !
 
-  use mpp_io_mod
+  use mpp_io_mod, only: axistype, atttype, default_axis, default_att, &
+                        mpp_get_atts, mpp_get_axis_data, mpp_modify_meta
   use mpp_mod, only : mpp_error, FATAL, stdout
   use fms_mod, only : lowercase, string_array_index  
 
@@ -32,15 +33,16 @@ module axis_utils_mod
 
 # include <netcdf.inc>
 
-  public get_axis_cart, get_axis_bounds, get_axis_modulo, get_axis_fold, lon_in_range, tranlon, frac_index, nearest_index, interp_1d
+  public get_axis_cart, get_axis_bounds, get_axis_modulo, get_axis_fold, lon_in_range, &
+         tranlon, frac_index, nearest_index, interp_1d, get_axis_modulo_times
 
   private
 
   integer, parameter :: maxatts = 100
   real, parameter    :: epsln= 1.e-10
   real, parameter    :: fp5 = 0.5, f360 = 360.0
-  character(len=256) :: version = '$Id: axis_utils.F90,v 10.0 2003/10/24 22:01:26 fms Exp $'
-  character(len=256) :: tagname = '$Name: jakarta $'   
+  character(len=256) :: version = '$Id: axis_utils.F90,v 11.0 2004/09/28 19:58:28 fms Exp $'
+  character(len=256) :: tagname = '$Name: khartoum $'   
 
   interface interp_1d
      module procedure interp_1d_1d
@@ -59,9 +61,9 @@ contains
     character(len=16), dimension(2) :: lon_names, lat_names
     character(len=16), dimension(3) :: z_names
     character(len=16), dimension(2) :: t_names
-    character(len=16), dimension(2) :: lon_units, lat_units
+    character(len=16), dimension(3) :: lon_units, lat_units
     character(len=8) , dimension(4) :: z_units
-    character(len=3) , dimension(4) :: t_units
+    character(len=3) , dimension(6) :: t_units
     character(len=32) :: name
     integer :: i,j
 
@@ -69,10 +71,10 @@ contains
     lat_names = (/'lat','y  '/)
     z_names = (/'depth ','height','z     '/)
     t_names = (/'time','t   '/)
-    lon_units = (/'degrees_e   ', 'degrees_east'/)
-    lat_units = (/'degrees_n    ', 'degrees_north'/)
+    lon_units = (/'degrees_e   ', 'degrees_east', 'degreese    '/)
+    lat_units = (/'degrees_n    ', 'degrees_north', 'degreesn     '/)
     z_units = (/'cm ','m  ','pa ','hpa'/)
-    t_units = (/'sec', 'min','hou','day'/)
+    t_units = (/'sec', 'min','hou','day','mon','yea'/)
 
     call mpp_get_atts(axis,cartesian=axis_cart)
     cart = 'N'
@@ -85,33 +87,33 @@ contains
     if (cart /= 'X' .and. cart /= 'Y' .and. cart /= 'Z' .and. cart /= 'T') then
        call mpp_get_atts(axis,name=name)
        name = lowercase(name)
-       do i=1,size(lon_names)
-          if (lowercase(name(1:3)) == trim(lon_names(i))) cart = 'X'
+       do i=1,size(lon_names(:))
+          if (trim(name(1:3)) == trim(lon_names(i))) cart = 'X'
        enddo
-       do i=1,size(lat_names)
-          if (name(1:3) == trim(lat_names(i))) cart = 'Y'
+       do i=1,size(lat_names(:))
+          if (trim(name(1:3)) == trim(lat_names(i))) cart = 'Y'
        enddo
-       do i=1,size(z_names)
-          if (name == trim(z_names(i))) cart = 'Z'
+       do i=1,size(z_names(:))
+          if (trim(name) == trim(z_names(i))) cart = 'Z'
        enddo
-       do i=1,size(t_names)
-          if (name(1:3) == t_names(i)) cart = 'T'
+       do i=1,size(t_names(:))
+          if (trim(name) == t_names(i)) cart = 'T'
        enddo
     end if
 
     if (cart /= 'X' .and. cart /= 'Y' .and. cart /= 'Z' .and. cart /= 'T') then
        call mpp_get_atts(axis,units=name)
        name = lowercase(name)
-       do i=1,size(lon_units)
+       do i=1,size(lon_units(:))
           if (trim(name) == trim(lon_units(i))) cart = 'X'
        enddo
-       do i=1,size(lat_units)
+       do i=1,size(lat_units(:))
           if (trim(name) == trim(lat_units(i))) cart = 'Y'
        enddo
-       do i=1,size(z_units)
+       do i=1,size(z_units(:))
           if (trim(name) == trim(z_units(i))) cart = 'Z'
        enddo
-       do i=1,size(t_units)
+       do i=1,size(t_units(:))
           if (name(1:3) == trim(t_units(i))) cart = 'T'
        enddo
     end if
@@ -150,7 +152,7 @@ contains
     enddo
 
     if (trim(bounds_name) /= 'none') then
-       do i=1,size(axes)
+       do i=1,size(axes(:))
           call mpp_get_atts(axes(i),name=name)
           if (lowercase(trim(name)) == lowercase(trim(bounds_name))) then
              axis_bound = axes(i)
@@ -205,6 +207,50 @@ contains
 
     return
   end function get_axis_modulo
+
+  function get_axis_modulo_times(axis, tbeg, tend)
+
+    logical :: get_axis_modulo_times
+    type(axistype), intent(in) :: axis
+    character(len=*), intent(out) :: tbeg, tend
+    integer :: natt, i
+    type(atttype), dimension(:), allocatable :: atts
+    logical :: found_tbeg, found_tend
+    
+    call mpp_get_atts(axis,natts=natt)
+    allocate(atts(natt))
+    call mpp_get_atts(axis,atts=atts)
+  
+    found_tbeg = .false.
+    found_tend = .false.
+
+    do i = 1,natt
+      if(lowercase(trim(atts(i)%name)) == 'modulo_beg') then
+        if(atts(i)%len > len(tbeg)) then
+          call mpp_error(FATAL,'error in get: len(tbeg) too small to hold attribute')
+        endif
+        tbeg = trim(atts(i)%catt)
+        found_tbeg = .true.
+      endif
+      if(lowercase(trim(atts(i)%name)) == 'modulo_end') then
+        if(atts(i)%len > len(tend)) then
+          call mpp_error(FATAL,'error in get: len(tend) too small to hold attribute')
+        endif
+        tend = trim(atts(i)%catt)
+        found_tend = .true.
+      endif
+    enddo
+
+    if(found_tbeg .and. .not.found_tend) then
+      call mpp_error(FATAL,'error in get: Found modulo_beg but not modulo_end')
+    endif
+    if(.not.found_tbeg .and. found_tend) then
+      call mpp_error(FATAL,'error in get: Found modulo_end but not modulo_beg')
+    endif
+
+    get_axis_modulo_times = found_tbeg 
+
+  end function get_axis_modulo_times
 
   function get_axis_fold(axis)
 
@@ -271,9 +317,9 @@ contains
 
 
     integer :: len, i
-    real :: lon_strt, tmp(size(lon)-1)
+    real :: lon_strt, tmp(size(lon(:))-1)
 
-    len = size(lon)
+    len = size(lon(:))
 
     do i=1,len
        lon(i) = lon_in_range(lon(i),lon_start)
@@ -348,7 +394,7 @@ contains
     real, dimension(:) :: array
     logical keep_going
     
-    ia = size(array)
+    ia = size(array(:))
 
     do i=2,ia
        if (array(i) < array(i-1)) then
@@ -423,7 +469,7 @@ contains
     real, dimension(:) :: array
     logical keep_going
 
-    ia = size(array)
+    ia = size(array(:))
 
     do i=2,ia
        if (array(i) < array(i-1)) then
@@ -461,8 +507,8 @@ contains
     integer :: n1, n2, i, n, ext
     real :: w
 
-    n1 = size(grid_1)
-    n2 = size(grid_2)
+    n1 = size(grid_1(:))
+    n2 = size(grid_2(:))
 
 
     do i=2,n1

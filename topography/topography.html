@@ -15,25 +15,25 @@
         </STYLE>
 </head>
 <body>
-<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC INTERFACE">PUBLIC INTERFACE </a>~
-          <a href="#PUBLIC DATA">PUBLIC DATA </a>~
-          <a href="#PUBLIC ROUTINES">PUBLIC ROUTINES </a>~
+<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC%20INTERFACE">PUBLIC INTERFACE </a>~
+          <a href="#PUBLIC%20DATA">PUBLIC DATA </a>~
+          <a href="#PUBLIC%20ROUTINES">PUBLIC ROUTINES </a>~
           <a href="#NAMELIST">NAMELIST </a>~
-          <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
-          <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
+          <a href="#DIAGNOSTIC%20FIELDS">DIAGNOSTIC FIELDS </a>~
+          <a href="#ERROR%20MESSAGES">ERROR MESSAGES </a>~
           <a href="#REFERENCES">REFERENCES </a>~ 
           <a href="#NOTES">NOTES</a></font>
 <hr>
-<h2>module topography_mod</h2>
+<h2>Module topography_mod</h2>
 <a name="HEADER"></a>
 <!-- BEGIN HEADER -->
 <div>
-<b>Contact:</b>&nbsp;<a href="mailto:Bruce.Wyman@noaa.gov">   Bruce Wyman </a>
+<b>Contact:&nbsp;</b><a href="mailto:Bruce.Wyman@noaa.gov">   Bruce Wyman </a>
 <br>
-<b>Reviewers:</b>&nbsp;<br>
-<b>Change History: </b>&nbsp;<a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/">WebCVS Log</a>
+<b>Reviewers:&nbsp;</b>
 <br>
-<b>Last Modified:</b>&nbsp;2002/03/22 01:45:05<br>
+<b>Change History:&nbsp;</b><a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/topography">WebCVS Log</a>
+<br>
 <br>
 </div>
 <!-- END HEADER -->
@@ -61,20 +61,19 @@
    The interfaces get_gaussian_topog and gaussian_topog_init are documented in <a href="gaussian_topog.html">gaussian_topog_mod</a>. </div>
 <br>
 <!-- END DESCRIPTION -->
-<a name="OTHER MODULES USED"></a>
+<a name="OTHER%20MODULES%20USED"></a>
 <hr>
 <h4>OTHER MODULES USED</h4>
 <!-- BEGIN OTHER MODULES USED -->
 <div>
-<pre>gaussian_topog_mod<br>  horiz_interp_mod<br>           fms_mod</pre>
+<pre>gaussian_topog_mod<br>  horiz_interp_mod<br>           fms_mod<br>        fms_io_mod</pre>
 </div>
 <!-- END OTHER MODULES USED -->
 <!-- BEGIN PUBLIC INTERFACE -->
-<a name="PUBLIC INTERFACE"></a>
+<a name="PUBLIC%20INTERFACE"></a>
 <hr>
 <h4>PUBLIC INTERFACE</h4>
 <div>
-<pre>use topography_mod [, only:  get_topog_mean,<br>                             get_topog_stdev,<br>                             get_ocean_frac,<br>                             get_ocean_mask,<br>                             get_water_frac,<br>                             get_water_mask ]</pre>
 <dl>
 <dt>
 <a href="#get_topog_mean">get_topog_mean</a>:</dt>
@@ -99,7 +98,7 @@
 </div>
 <br>
 <!-- END PUBLIC INTERFACE -->
-<a name="PUBLIC DATA"></a>
+<a name="PUBLIC%20DATA"></a>
 <hr>
 <h4>PUBLIC DATA</h4>
 <!-- BEGIN PUBLIC DATA -->
@@ -107,7 +106,7 @@
 <br>
 </div>
 <!-- END PUBLIC DATA -->
-<a name="PUBLIC ROUTINES"></a>
+<a name="PUBLIC%20ROUTINES"></a>
 <hr>
 <h4>PUBLIC ROUTINES</h4>
 <!-- BEGIN PUBLIC ROUTINES -->
@@ -115,7 +114,9 @@
 <li>
 <a name="get_topog_mean"></a>
 <h4>get_topog_mean</h4>
-<pre>flag = &lt;B&gt; <b>get_topog_mean</b> &lt;/B&gt; ( blon, blat, zmean )</pre>
+<pre> 
+<b>get_topog_mean</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -162,7 +163,9 @@
 <li>
 <a name="get_topog_stdev"></a>
 <h4>get_topog_stdev</h4>
-<pre>flag = &lt;B&gt; <b>get_topog_stdev</b> &lt;/B&gt; ( blon, blat, stdev )</pre>
+<pre> 
+<b>get_topog_stdev</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -209,7 +212,9 @@
 <li>
 <a name="get_ocean_frac"></a>
 <h4>get_ocean_frac</h4>
-<pre>flag = &lt;B&gt; <b>get_ocean_frac</b> &lt;/B&gt; ( blon, blat, ocean_frac )</pre>
+<pre> 
+<b>get_ocean_frac</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -253,7 +258,9 @@
 <li>
 <a name="get_ocean_mask"></a>
 <h4>get_ocean_mask</h4>
-<pre>flag = &lt;B&gt; <b>get_ocean_mask</b> &lt;/B&gt; ( blon, blat, ocean_mask )</pre>
+<pre> 
+<b>get_ocean_mask</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -297,7 +304,9 @@
 <li>
 <a name="get_water_frac"></a>
 <h4>get_water_frac</h4>
-<pre>flag = &lt;B&gt; <b>get_water_frac</b> &lt;/B&gt; ( blon, blat, water_frac )</pre>
+<pre> 
+<b>get_water_frac</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -341,7 +350,9 @@
 <li>
 <a name="get_water_mask"></a>
 <h4>get_water_mask</h4>
-<pre>flag = &lt;B&gt; <b>get_water_mask</b> &lt;/B&gt; ( blon, blat, water_mask )</pre>
+<pre> 
+<b>get_water_mask</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -384,7 +395,9 @@
 </li>
 </ol>
 <!-- END PUBLIC ROUTINES -->
-<a name="NAMELIST"></a>
+<a name="PUBLIC%20TYPES"></a>
+<!-- BEGIN PUBLIC TYPES -->
+<!-- END PUBLIC TYPES --><a name="NAMELIST"></a>
 <!-- BEGIN NAMELIST -->
 <hr>
 <h4>NAMELIST</h4>
@@ -392,6 +405,7 @@
 <b>&amp;topography_nml</b>
 <br>
 <br>
+<div>
 <dl>
 <dt>
 <tt>topog_file</tt>
@@ -407,11 +421,12 @@
 </dl>
 </dl>
 </div>
+</div>
 <br>
 <!-- END NAMELIST -->
-<a name="DIAGNOSTIC FIELDS"></a>
+<a name="DIAGNOSTIC%20FIELDS"></a>
 <!-- BEGIN DIAGNOSTIC FIELDS -->
-<!-- END DIAGNOSTIC FIELDS --><a name="DATA SETS"></a>
+<!-- END DIAGNOSTIC FIELDS --><a name="DATA%20SETS"></a>
 <!-- BEGIN DATA SETS -->
 <hr>
 <h4>DATA SETS</h4>
@@ -441,7 +456,9 @@
 <br>
 </div>
 <!-- END DATA SETS -->
-<a name="ERROR MESSAGES"></a>
+<a name="PUBLIC%20CODE"></a>
+<!-- BEGIN PUBLIC CODE -->
+<!-- END PUBLIC CODE --><a name="ERROR%20MESSAGES"></a>
 <!-- BEGIN ERROR MESSAGES -->
 <hr>
 <h4>ERROR MESSAGES</h4>
@@ -474,7 +491,7 @@
       </div>
 <br>
 <!-- END REFERENCES -->
-<a name="COMPILER SPECIFICS"></a>
+<a name="COMPILER%20SPECIFICS"></a>
 <hr>
 <h4>COMPILER SPECIFICS</h4>
 <!-- BEGIN COMPILER SPECIFICS -->
@@ -483,7 +500,7 @@
       </div>
 <br>
 <!-- END COMPILER SPECIFICS -->
-<a name="PRECOMPILER OPTIONS"></a>
+<a name="PRECOMPILER%20OPTIONS"></a>
 <hr>
 <h4>PRECOMPILER OPTIONS</h4>
 <!-- BEGIN PRECOMPILER OPTIONS -->
@@ -492,7 +509,7 @@
       </div>
 <br>
 <!-- END PRECOMPILER OPTIONS -->
-<a name="LOADER OPTIONS"></a>
+<a name="LOADER%20OPTIONS"></a>
 <hr>
 <h4>LOADER OPTIONS</h4>
 <!-- BEGIN LOADER -->
@@ -500,7 +517,7 @@
 <br>
 </div>
 <!-- END LOADER OPTIONS -->
-<a name="TEST PROGRAM"></a>
+<a name="TEST%20PROGRAM"></a>
 <hr>
 <h4>TEST PROGRAM</h4>
 <!-- BEGIN TEST PROGRAM -->
@@ -596,7 +613,7 @@
 </div>
 <br>
 <!-- END TEST PROGRAM -->
-<a name="KNOWN BUGS"></a>
+<a name="KNOWN%20BUGS"></a>
 <hr>
 <h4>KNOWN BUGS</h4>
 <!-- BEGIN KNOWN BUGS -->
@@ -614,7 +631,7 @@
 </div>
 <br>
 <!-- END NOTES -->
-<a name="FUTURE PLANS"></a>
+<a name="FUTURE%20PLANS"></a>
 <hr>
 <h4>FUTURE PLANS</h4>
 <!-- BEGIN FUTURE PLANS -->

@@ -40,7 +40,7 @@ use time_interp_external_mod, only:time_interp_external_init, time_interp_extern
      init_external_field, get_external_field_size
 use fms_io_mod, only: field_size, read_data, write_data,fms_io_init,nullify_domain,return_domain, &
      set_domain
-use fms_mod, only: open_namelist_file, close_file, check_nml_error, write_version_number, file_exist
+use fms_mod, only: write_version_number, file_exist, field_exist
 use axis_utils_mod, only: get_axis_bounds
 use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, NULL_DOMAIN2D,operator(.NE.),operator(.EQ.)
 use time_manager_mod, only: time_type
@@ -48,8 +48,8 @@ use time_manager_mod, only: time_type
 implicit none
 private
 
-character(len=128) :: version = '$Id: data_override.F90,v 10.0 2003/10/24 22:01:27 fms Exp $'
-character(len=128) :: tagname = '$Name: jakarta $'
+character(len=128) :: version = '$Id: data_override.F90,v 11.0 2004/09/28 19:58:43 fms Exp $'
+character(len=128) :: tagname = '$Name: khartoum $'
 
 type data_type
    character(len=3) :: gridname
@@ -89,9 +89,6 @@ type(override_type), dimension(max_array), save :: override_array ! to store pro
 type(override_type), save :: default_array
 logical :: atm_on, ocn_on, lnd_on, ice_on
 
-logical :: is_new_grid = .FALSE.
-namelist /data_override_nml/ is_new_grid
-           
 interface data_override
      module procedure data_override_2d
      module procedure data_override_3d
@@ -140,29 +137,16 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
 
 !  if(module_is_initialized) return
 
-  atm_on = .false.; ocn_on=.false.; lnd_on=.false.; ice_on=.false.
-  if (PRESENT(Atm_domain_in))   atm_on = .true.
-  if (PRESENT(Ocean_domain_in)) ocn_on = .true.
-  if (PRESENT(Land_domain_in))  lnd_on = .true.
-  if (PRESENT(Ice_domain_in))   ice_on = .true.
+  atm_on = PRESENT(Atm_domain_in)
+  ocn_on = PRESENT(Ocean_domain_in)
+  lnd_on = PRESENT(Land_domain_in)
+  ice_on = PRESENT(Ice_domain_in)
    
   if(.not. module_is_initialized) then
     radian_to_deg = 180./PI
     deg_to_radian = PI/180.
 
     call write_version_number (version, tagname)
-    if ( file_exist('input.nml')) then
-      ioun = open_namelist_file()
-      ierr=1
-      do while (ierr /= 0)
-        read (ioun, nml=data_override_nml, iostat=io_status, end=10)
-        ierr = check_nml_error(io_status, 'data_override_nml')
-      enddo
-10    call close_file (ioun)
-    endif
-    write (stdout(),'(/)')
-    write (stdout(),data_override_nml)  
-    write (stdlog(),data_override_nml)
 
     domain2 = NULL_DOMAIN2D     ! See comment above
     call return_domain(domain2) ! See comment above
@@ -292,12 +276,12 @@ subroutine data_override_2d(gridname,fieldname,data_2D,time,override,region1,reg
   logical, intent(out), optional :: override ! true if the field has been overriden succesfully
   real, intent(in), optional :: region1(4),region2(4) !lat and lon of region where override is done
   type(time_type), intent(in) :: time !  model time
-  real, dimension(:,:), intent(out) :: data_2D !data returned by this call
+  real, dimension(:,:), intent(inout) :: data_2D !data returned by this call
 !  real, dimension(size(data_2D,1),size(data_2D,2),1) :: data_3D
   real, dimension(:,:,:), allocatable ::  data_3D
 
   allocate(data_3D(size(data_2D,1),size(data_2D,2),1))
-  data_3D(:,:,1) = data_2D
+  data_3D(:,:,1) = data_2D 
   if(present(override) .and. PRESENT(region1).and. present(region2)) then
      call data_override_3d(gridname,fieldname,data_3D,time,override,region1,region2)
   else if (PRESENT(region1).and. present(region2)) then
@@ -577,6 +561,8 @@ subroutine get_global_grid()
   real(r8_kind), dimension(:,:,:), allocatable :: lon_vert_glo, lat_vert_glo !of OCN grid vertices
   real(r8_kind), dimension(:),   allocatable :: lon_atm, lat_atm ! lon and lat of ATM grid
   real(r8_kind), dimension(:),   allocatable :: lon_lnd, lat_lnd ! lon and lat of LND grid
+  logical :: is_new_grid
+
 
 ! Test if grid_file is already opened
   inquire (file=trim(grid_file), opened=file_open)
@@ -585,6 +571,15 @@ subroutine get_global_grid()
 !1 get global lon and lat of ocean grid vertices
 
   if (ocn_on .or. ice_on) then
+    is_new_grid = .FALSE.
+    if(field_exist(grid_file, 'x_T')) then
+       is_new_grid = .true.
+    else if(field_exist(grid_file, 'geolon_t')) then
+       is_new_grid = .FALSE.
+    else
+       call mpp_error(FATAL,'data_override: both x_T and geolon_t is not in the grid file '//trim(grid_file) )
+    endif
+ 
     if(is_new_grid) then
       call field_size(grid_file, 'x_T', siz)
       nlon_out = siz(1); nlat_out = siz(2)
@@ -751,7 +746,7 @@ function get_index(number, array)
 !Find index i of array such that array(i) is closest to number
 ! array must be monotonically increasing
 
-  n = size(array)
+  n = size(array(:))
   do i = 2, n
      if(array(i) < array(i-1)) call mpp_error(FATAL,'ERROR:data_override: get_index') 
   enddo

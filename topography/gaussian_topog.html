@@ -15,25 +15,25 @@
         </STYLE>
 </head>
 <body>
-<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC INTERFACE">PUBLIC INTERFACE </a>~
-          <a href="#PUBLIC DATA">PUBLIC DATA </a>~
-          <a href="#PUBLIC ROUTINES">PUBLIC ROUTINES </a>~
+<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC%20INTERFACE">PUBLIC INTERFACE </a>~
+          <a href="#PUBLIC%20DATA">PUBLIC DATA </a>~
+          <a href="#PUBLIC%20ROUTINES">PUBLIC ROUTINES </a>~
           <a href="#NAMELIST">NAMELIST </a>~
-          <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
-          <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
+          <a href="#DIAGNOSTIC%20FIELDS">DIAGNOSTIC FIELDS </a>~
+          <a href="#ERROR%20MESSAGES">ERROR MESSAGES </a>~
           <a href="#REFERENCES">REFERENCES </a>~ 
           <a href="#NOTES">NOTES</a></font>
 <hr>
-<h2>module gaussian_topog_mod</h2>
+<h2>Module gaussian_topog_mod</h2>
 <a name="HEADER"></a>
 <!-- BEGIN HEADER -->
 <div>
-<b>Contact:</b>&nbsp;<a href="mailto:Bruce.Wyman@noaa.gov">   Bruce Wyman </a>
+<b>Contact:&nbsp;</b><a href="mailto:Bruce.Wyman@noaa.gov">   Bruce Wyman </a>
 <br>
-<b>Reviewers:</b>&nbsp;<br>
-<b>Change History: </b>&nbsp;<a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/">WebCVS Log</a>
+<b>Reviewers:&nbsp;</b>
 <br>
-<b>Last Modified:</b>&nbsp;2002/03/22 01:42:43<br>
+<b>Change History:&nbsp;</b><a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/topography">WebCVS Log</a>
+<br>
 <br>
 </div>
 <!-- END HEADER -->
@@ -52,7 +52,7 @@
    and ridge-width parameters. </div>
 <br>
 <!-- END DESCRIPTION -->
-<a name="OTHER MODULES USED"></a>
+<a name="OTHER%20MODULES%20USED"></a>
 <hr>
 <h4>OTHER MODULES USED</h4>
 <!-- BEGIN OTHER MODULES USED -->
@@ -61,11 +61,10 @@
 </div>
 <!-- END OTHER MODULES USED -->
 <!-- BEGIN PUBLIC INTERFACE -->
-<a name="PUBLIC INTERFACE"></a>
+<a name="PUBLIC%20INTERFACE"></a>
 <hr>
 <h4>PUBLIC INTERFACE</h4>
 <div>
-<pre>use gaussian_topog_mod [, only:  gaussian_topog_init,<br>                                 get_gaussian_topog ]</pre>
 <dl>
 <dt>
 <a href="#gaussian_topog_init">gaussian_topog_init</a>:</dt>
@@ -79,7 +78,7 @@
 </div>
 <br>
 <!-- END PUBLIC INTERFACE -->
-<a name="PUBLIC DATA"></a>
+<a name="PUBLIC%20DATA"></a>
 <hr>
 <h4>PUBLIC DATA</h4>
 <!-- BEGIN PUBLIC DATA -->
@@ -87,7 +86,7 @@
 <br>
 </div>
 <!-- END PUBLIC DATA -->
-<a name="PUBLIC ROUTINES"></a>
+<a name="PUBLIC%20ROUTINES"></a>
 <hr>
 <h4>PUBLIC ROUTINES</h4>
 <!-- BEGIN PUBLIC ROUTINES -->
@@ -95,7 +94,9 @@
 <li>
 <a name="gaussian_topog_init"></a>
 <h4>gaussian_topog_init</h4>
-<pre>&lt;B&gt;call <b>gaussian_topog_init</b> &lt;/B&gt; ( lon, lat, zsurf )</pre>
+<pre> 
+<b>gaussian_topog_init</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -137,7 +138,9 @@
 <li>
 <a name="get_gaussian_topog"></a>
 <h4>get_gaussian_topog</h4>
-<pre>zsurf = &lt;B&gt; <b>get_gaussian_topog</b> &lt;/B&gt; ( lon, lat, height [, olond, olatd, wlond, wlatd, rlond, rlatd ] )</pre>
+<pre> 
+<b>get_gaussian_topog</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -197,7 +200,9 @@
 </li>
 </ol>
 <!-- END PUBLIC ROUTINES -->
-<a name="NAMELIST"></a>
+<a name="PUBLIC%20TYPES"></a>
+<!-- BEGIN PUBLIC TYPES -->
+<!-- END PUBLIC TYPES --><a name="NAMELIST"></a>
 <!-- BEGIN NAMELIST -->
 <hr>
 <h4>NAMELIST</h4>
@@ -205,6 +210,7 @@
 <b>&amp;gaussian_topog_nml</b>
 <br>
 <br>
+<div>
 <dl>
 <dt>
 <tt>height</tt>
@@ -234,8 +240,7 @@
 <dt>
 <tt>NOTE</tt>
 </dt>
-<dl>   The variables in this namelist are only used when routine
-   &lt;TT&gt;gaussian_topog_init&lt;/TT&gt; is called.  The namelist variables
+<dl>   The variables in this namelist are only used when routine <tt>gaussian_topog_init</tt>   is called.  The namelist variables
    are dimensioned (by 10), so that multiple mountains can be generated.
    <br>
 <br>
@@ -244,11 +249,12 @@
 </dl>
 </dl>
 </div>
+</div>
 <br>
 <!-- END NAMELIST -->
-<a name="DIAGNOSTIC FIELDS"></a>
+<a name="DIAGNOSTIC%20FIELDS"></a>
 <!-- BEGIN DIAGNOSTIC FIELDS -->
-<!-- END DIAGNOSTIC FIELDS --><a name="DATA SETS"></a>
+<!-- END DIAGNOSTIC FIELDS --><a name="DATA%20SETS"></a>
 <!-- BEGIN DATA SETS -->
 <hr>
 <h4>DATA SETS</h4>
@@ -256,7 +262,9 @@
 <br>
 </div>
 <!-- END DATA SETS -->
-<a name="ERROR MESSAGES"></a>
+<a name="PUBLIC%20CODE"></a>
+<!-- BEGIN PUBLIC CODE -->
+<!-- END PUBLIC CODE --><a name="ERROR%20MESSAGES"></a>
 <!-- BEGIN ERROR MESSAGES -->
 <hr>
 <h4>ERROR MESSAGES</h4>
@@ -283,7 +291,7 @@
       </div>
 <br>
 <!-- END REFERENCES -->
-<a name="COMPILER SPECIFICS"></a>
+<a name="COMPILER%20SPECIFICS"></a>
 <hr>
 <h4>COMPILER SPECIFICS</h4>
 <!-- BEGIN COMPILER SPECIFICS -->
@@ -292,7 +300,7 @@
       </div>
 <br>
 <!-- END COMPILER SPECIFICS -->
-<a name="PRECOMPILER OPTIONS"></a>
+<a name="PRECOMPILER%20OPTIONS"></a>
 <hr>
 <h4>PRECOMPILER OPTIONS</h4>
 <!-- BEGIN PRECOMPILER OPTIONS -->
@@ -301,7 +309,7 @@
       </div>
 <br>
 <!-- END PRECOMPILER OPTIONS -->
-<a name="LOADER OPTIONS"></a>
+<a name="LOADER%20OPTIONS"></a>
 <hr>
 <h4>LOADER OPTIONS</h4>
 <!-- BEGIN LOADER -->
@@ -309,7 +317,7 @@
 <br>
 </div>
 <!-- END LOADER OPTIONS -->
-<a name="TEST PROGRAM"></a>
+<a name="TEST%20PROGRAM"></a>
 <hr>
 <h4>TEST PROGRAM</h4>
 <!-- BEGIN TEST PROGRAM -->
@@ -317,7 +325,7 @@
 </div>
 <br>
 <!-- END TEST PROGRAM -->
-<a name="KNOWN BUGS"></a>
+<a name="KNOWN%20BUGS"></a>
 <hr>
 <h4>KNOWN BUGS</h4>
 <!-- BEGIN KNOWN BUGS -->
@@ -358,10 +366,10 @@
               |    |             |
               |&lt;--&gt;|&lt;-----------&gt;|
               |wlon|    rlon     |
-               wlat     rlat</pre>   See the <a href="topography.html#TEST PROGRAM">topography </a>module documentation for a test program. </div>
+               wlat     rlat</pre>   See the <a href="topography.html#TEST%20PROGRAM">topography </a>module documentation for a test program. </div>
 <br>
 <!-- END NOTES -->
-<a name="FUTURE PLANS"></a>
+<a name="FUTURE%20PLANS"></a>
 <hr>
 <h4>FUTURE PLANS</h4>
 <!-- BEGIN FUTURE PLANS -->

@@ -32,8 +32,9 @@ use   horiz_interp_mod, only: horiz_interp
 use            fms_mod, only: file_exist, check_nml_error,               &
                               open_namelist_file, close_file, stdlog,    &
                               mpp_pe, mpp_root_pe, write_version_number, &
-                              open_ieee32_file, error_mesg, FATAL
-
+                              open_ieee32_file, error_mesg, FATAL, NOTE, &
+                              mpp_error
+use         fms_io_mod, only: read_data
 implicit none
 private
 
@@ -54,7 +55,6 @@ public :: topography_init,                 &
 
    character(len=128) :: topog_file = 'DATA/navy_topography.data', &
                          water_file = 'DATA/navy_pctwater.data'
-
    namelist /topography_nml/ topog_file, water_file
 ! </NAMELIST>
 
@@ -92,8 +92,8 @@ public :: topography_init,                 &
 
 !-----------------------------------------------------------------------
 
- character(len=128) :: version = '$Id: topography.F90,v 10.0 2003/10/24 22:01:41 fms Exp $'
- character(len=128) :: tagname = '$Name: jakarta $'
+ character(len=128) :: version = '$Id: topography.F90,v 11.0 2004/09/28 20:06:35 fms Exp $'
+ character(len=128) :: tagname = '$Name: khartoum $'
 
  logical :: module_is_initialized = .FALSE.
 
@@ -109,7 +109,6 @@ public :: topography_init,                 &
 
      call write_version_number (version,tagname)
      call read_namelist
-
      module_is_initialized = .TRUE.
 
    end subroutine topography_init
@@ -160,7 +159,7 @@ public :: topography_init,                 &
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( any(shape(zmean) /= (/size(blon)-1,size(blat)-1/)) ) &
+   if ( any(shape(zmean(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
         call error_mesg('get_topog_mean','shape(zmean) is not&
             & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
@@ -219,7 +218,7 @@ public :: topography_init,                 &
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( any(shape(stdev) /= (/size(blon)-1,size(blat)-1/)) ) &
+   if ( any(shape(stdev(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
        call error_mesg('get_topog_stdev','shape(stdev) is not&
             & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
@@ -274,7 +273,7 @@ public :: topography_init,                 &
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( any(shape(ocean_frac) /= (/size(blon)-1,size(blat)-1/)) ) &
+   if ( any(shape(ocean_frac(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
         call error_mesg('get_ocean_frac','shape(ocean_frac) is not&
                  & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
@@ -386,7 +385,7 @@ public :: topography_init,                 &
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( any(shape(water_frac) /= (/size(blon)-1,size(blat)-1/)) ) &
+   if ( any(shape(water_frac(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
         call error_mesg('get_water_frac','shape(water_frac) is not&
                  & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
@@ -464,13 +463,28 @@ public :: topography_init,                 &
  function open_topog_file ( filename )
  character(len=*), intent(in) :: filename
  logical :: open_topog_file
+ real    :: r_ipts, r_jpts
+ integer :: namelen
 
-  if ( file_exist(filename) ) then
-       unit = open_ieee32_file (trim(filename), 'read')
-       read (unit) ipts, jpts
-       open_topog_file = .true.
+ namelen = len(trim(filename))
+  if ( file_exist(filename) .AND. filename(namelen-2:namelen) == '.nc') then
+     if (mpp_pe() == mpp_root_pe()) call mpp_error ('topography_mod', &
+            'Reading NetCDF formatted input data file: '//filename, NOTE)
+     call read_data(filename, 'ipts', r_ipts, no_domain=.true.)
+     call read_data(filename, 'jpts', r_jpts, no_domain=.true.)
+     ipts = nint(r_ipts)
+     jpts = nint(r_jpts)
+     open_topog_file = .true.
   else
-       open_topog_file = .false.
+     if ( file_exist(filename) ) then
+        if (mpp_pe() == mpp_root_pe()) call mpp_error ('topography_mod', &
+             'Reading native formatted input data file: '//filename, NOTE)
+        unit = open_ieee32_file (trim(filename), 'read')
+        read (unit) ipts, jpts
+        open_topog_file = .true.
+     else
+        open_topog_file = .false.
+     endif
   endif
 
  end function open_topog_file
@@ -485,12 +499,21 @@ public :: topography_init,                 &
  real :: xdat(ipts+1), ydat(jpts+1)
  real :: zdat(ipts,jpts)
  real :: zout2(size(zout,1),size(zout,2))
+ integer :: namelen
+
+ namelen = len(trim(topog_file))
 
 ! note: ipts,jpts,unit are global
 
+  if ( file_exist(topog_file) .AND. topog_file(namelen-2:namelen)=='.nc') then
+     call read_data(topog_file, 'xdat', xdat, no_domain=.true.)
+     call read_data(topog_file, 'ydat', ydat, no_domain=.true.)
+     call read_data(topog_file, 'zdat', zdat, no_domain=.true.)
+  else
     read (unit) xdat, ydat    ! read lon/lat edges in radians
     read (unit) zdat          ! read land surface height in meters
     call close_file (unit)
+ endif
 
     call horiz_interp ( zdat, xdat, ydat, blon, blat, zout )
 
@@ -518,13 +541,20 @@ public :: topography_init,                 &
  logical, intent(in), optional :: do_ocean
 
  real :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)
+ integer :: namelen
+
+ namelen = len(trim(water_file))
 
 ! note: ipts,jpts,unit are global
-
+   if( file_exist(trim(water_file)) .AND. water_file(namelen-2:namelen)=='.nc') then
+      call read_data(water_file, 'xdat', xdat, no_domain=.true.)
+      call read_data(water_file, 'ydat', ydat, no_domain=.true.)
+      call read_data(water_file, 'zdat', zdat, no_domain=.true.)
+   else
     read (unit) xdat, ydat    ! read lon/lat edges in radians
     read (unit) zdat          ! read fractional water
     call close_file (unit)
-
+ endif
 ! only use designated ocean points
     if (present(do_ocean)) then
         if (do_ocean) call determine_ocean_points (zdat)

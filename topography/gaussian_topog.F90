@@ -71,8 +71,8 @@ public :: gaussian_topog_init, get_gaussian_topog
 
 !-----------------------------------------------------------------------
 
-character(len=128) :: version = '$Id: gaussian_topog.F90,v 10.0 2003/10/24 22:01:41 fms Exp $'
-character(len=128) :: tagname = '$Name: jakarta $'
+character(len=128) :: version = '$Id: gaussian_topog.F90,v 11.0 2004/09/28 20:06:31 fms Exp $'
+character(len=128) :: tagname = '$Name: khartoum $'
 
 logical :: do_nml = .true.
 logical :: module_is_initialized = .FALSE.
@@ -121,7 +121,7 @@ integer :: n
      call write_version_number( version, tagname )
   endif
 
-  if(any(shape(zsurf) /= (/size(lon),size(lat)/))) then
+  if(any(shape(zsurf) /= (/size(lon(:)),size(lat(:))/))) then
     call error_mesg ('get_gaussian_topog in topography_mod', &
      'shape(zsurf) is not equal to (/size(lon),size(lat)/)', FATAL)
   endif
@@ -197,7 +197,7 @@ function get_gaussian_topog ( lon, lat, height,                          &
 real, intent(in)  :: lon(:), lat(:)
 real, intent(in)  :: height
 real, intent(in), optional :: olond, olatd, wlond, wlatd, rlond, rlatd
-real :: zsurf(size(lon),size(lat))
+real :: zsurf(size(lon,1),size(lat,1))
 
 integer :: i, j
 real    :: olon, olat, wlon, wlat, rlon, rlat
@@ -223,10 +223,10 @@ real    :: tpi, dtr, dx, dy, xx, yy
   rlat =  0.    ;  if (present(rlatd)) rlat=rlatd*dtr
 
 ! compute gaussian-shaped mountain
-    do j=1,size(lat)
+    do j=1,size(lat(:))
       dy = abs(lat(j) - olat)   ! dist from y origin
       yy = max(0., dy-rlat)/wlat
-      do i=1,size(lon)
+      do i=1,size(lon(:))
         dx = abs(lon(i) - olon) ! dist from x origin
         dx = min(dx, abs(dx-tpi))  ! To ensure that: -pi <= dx <= pi
         xx = max(0., dx-rlon)/wlon

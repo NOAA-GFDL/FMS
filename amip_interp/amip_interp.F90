@@ -69,9 +69,11 @@ use  horiz_interp_mod, only: horiz_interp_init, horiz_interp,  &
 use           fms_mod, only: file_exist, error_mesg, write_version_number,  &
                              NOTE, WARNING, FATAL, stdlog, check_nml_error, &
                              open_namelist_file, open_ieee32_file,          &
-                             mpp_pe, close_file, lowercase
-
-use    constants_mod, only: tfreeze, pi
+                             mpp_pe, close_file, lowercase, mpp_root_pe,    &
+                             NOTE, mpp_error
+use        fms_io_mod, only: read_data
+use     constants_mod, only: TFREEZE, pi
+use      platform_mod, only: R4_KIND, I2_KIND
 
 implicit none
 private
@@ -88,8 +90,8 @@ public amip_interp_init, get_amip_sst, get_amip_ice,  &
 
 !  ---- version number -----
 
-character(len=128) :: version = '$Id: amip_interp.F90,v 10.0 2003/10/24 22:01:25 fms Exp $'
-character(len=128) :: tagname = '$Name: jakarta $'
+character(len=128) :: version = '$Id: amip_interp.F90,v 11.0 2004/09/28 19:58:23 fms Exp $'
+character(len=128) :: tagname = '$Name: khartoum $'
 
 !-----------------------------------------------------------------------
 !------ private defined data type --------
@@ -163,12 +165,6 @@ end interface
 !     of mask must equal (size(blon)-1, size(blon)-1).
 !   </NOTE>
 
-!   <ERROR MSG="obsolete namelist option USE_AMIP1 should be replaced" STATUS="FATAL">
-!     Use namelist variable DATA_SET instead of USE_AMIP1.
-!   </ERROR>
-!   <ERROR MSG="obsolete namelist option USE_NO_CLIMO should be replaced by option DATE_OUT_OF_RANGE - check documentation " STATUS="FATAL">
-!     Use namelist variable DATE_OUT_OF_RANGE instead of USE_NO_CLIMO.
-!   </ERROR>
 !   <ERROR MSG="the value of the namelist parameter DATA_SET being used is not allowed" STATUS="FATAL">
 !     Check the value of namelist variable DATA_SET.
 !   </ERROR>
@@ -223,8 +219,8 @@ end type
    type (date_type) :: Curr_date = date_type( -99, -99, -99 )
    type (date_type) :: Date_end  = date_type( -99, -99, -99 )
 
-   real            :: tice_crit_k
-   integer(kind=2) ::  ice_crit
+   real             :: tice_crit_k
+   integer(I2_KIND) ::  ice_crit
 
    logical :: do_init_once = .true.
 
@@ -261,12 +257,6 @@ end type
 !   </DATA>
 !   <DATA NAME="verbose" TYPE="integer" DEFAULT="verbose = 0">
 !     Controls printed output, 0 <= verbose <= 3
-!   </DATA>
-!   <DATA NAME="use_no_climo" TYPE="logical">
-!     Flag to prevent monthly or annual mean climatologies from being used.
-!   </DATA>
-!   <DATA NAME="use_amip1" TYPE="logical">
-!     Flag to select the sst data set:  amip1 or reynolds-oi.
 !   </DATA>
 
 !---- additional parameters for controlling zonal prescribed sst ----
@@ -305,15 +295,13 @@ end type
                                            !      'amip2'
                                            !      'reynolds_eof'
                                            !      'reynolds_oi'
-					   !      'hurrell'
+                                           !      'hurrell'
 
  character(len=16) :: date_out_of_range = 'fail'  !  use 'fail'
                                                   !      'initclimo'
                                                   !      'climo' 
 
  real    :: tice_crit    = -1.80       !  in degC or degK
- logical :: use_no_climo = .true.      !  obsolete option
- logical :: use_amip1    = .true.      !  obsolete option
  integer :: verbose      = 0           !  0 <= verbose <= 3
 
 !parameters for prescribed zonal sst option
@@ -330,7 +318,7 @@ end type
 !global temperature perturbation used for sensitivity experiments
  real :: sst_pert = 0.
 
- namelist /amip_interp_nml/ tice_crit, use_no_climo, use_amip1,  &
+ namelist /amip_interp_nml/ tice_crit, &
                             data_set, date_out_of_range,         &
                             use_zonal, teq, tdif, tann, tlag,    &
                             amip_date, sst_pert, verbose
@@ -596,146 +584,7 @@ endif
 
    type (amip_interp_type) :: Interp
 
-   integer :: unit,io,ierr
-
-!-----------------------------------------------------------------------
-!----- initialization done once ------
-
- if (do_init_once) then
-
-!   ---- read namelist ----
-
-    if ( file_exist('input.nml')) then
-       unit = open_namelist_file( )
-       ierr=1; do while (ierr /= 0)
-       read  (unit, nml=amip_interp_nml, iostat=io, end=10)
-       ierr = check_nml_error(io,'amip_interp_nml')
-       enddo
-  10   call close_file (unit)
-    endif
-
-!  ----- write namelist/version info -----
-    call write_version_number (version, tagname)
-
-    unit = stdlog ( )
-    if (mpp_pe() == 0) then
-        write (unit,nml=amip_interp_nml)
-        write (unit,11)
-    endif
-    call close_file (unit)
-
-!   print error message if default value of use_amip1 has changed
-
-    if (.not.use_amip1) then
-       call error_mesg ('amip_interp_mod',  &
-                'obsolete namelist option USE_AMIP1 should be replaced &
-                 &by option DATA_SET - check documentation', FATAL)
-    endif
-
-!   also for use_no_climo
-
-    if (.not.use_no_climo) then
-       call error_mesg ('amip_interp_mod',  &
-            'obsolete namelist option USE_NO_CLIMO should be replaced &
-            &by option DATE_OUT_OF_RANGE - check documentation', FATAL)
-    endif
-
-!   ---- freezing point of sea water in deg K ---
-
-    tice_crit_k = tice_crit
-    if ( tice_crit_k < 200. ) tice_crit_k = tice_crit_k + tfreeze
-    ice_crit = nint((tice_crit_k-tfreeze)*100.)
-
-!   ---- set up file dependent variable ----
-!   ----   global file name   ----
-!   ----   grid box edges     ----
-!   ---- initialize zero size grid if not pe 0 ------
-
-    if (lowercase(trim(data_set)) == 'amip1') then
-        file_name_sst = 'INPUT/' // 'amip1_sst.data'
-        file_name_ice = 'INPUT/' // 'amip1_sst.data'
-        mobs = 180;  nobs = 91
-        call set_sst_grid_edges_amip1
-        if (mpp_pe() == 0) &
-        call error_mesg ('amip_interp_init', 'using AMIP 1 sst', NOTE)
-        Date_end = date_type( 1989, 1, 0 )
-    else if (lowercase(trim(data_set)) == 'amip2') then
-        file_name_sst = 'INPUT/' // 'amip2_sst.data'
-        file_name_ice = 'INPUT/' // 'amip2_ice.data'
-        mobs = 360;  nobs = 180
-        call set_sst_grid_edges_oi
-!       --- specfied min for amip2 ---
-        tice_crit_k = 271.38
-        if (mpp_pe() == 0) &
-        call error_mesg ('amip_interp_init', 'using AMIP 2 sst', NOTE)
-        Date_end = date_type( 1996, 3, 0 )
-    else if (lowercase(trim(data_set)) == 'hurrell') then
-        file_name_sst = 'INPUT/' // 'hurrell_sst.data'
-        file_name_ice = 'INPUT/' // 'hurrell_ice.data'
-        mobs = 360;  nobs = 180
-        call set_sst_grid_edges_oi
-!       --- specfied min for hurrell ---
-        tice_crit_k = 271.38
-        if (mpp_pe() == 0) &
-        call error_mesg ('amip_interp_init', 'using HURRELL sst', NOTE)
-        Date_end = date_type( 2001, 12, 0 )
-    else if (lowercase(trim(data_set)) == 'reynolds_eof') then
-        file_name_sst = 'INPUT/' // 'reynolds_sst.data'
-        file_name_ice = 'INPUT/' // 'reynolds_sst.data'
-        mobs = 180;  nobs = 90
-        call set_sst_grid_edges_oi
-        if (mpp_pe() == 0) &
-        call error_mesg ('amip_interp_init',  &
-             'using NCEP Reynolds Historical Reconstructed SST', NOTE)
-        Date_end = date_type( 1998, 12, 0 )
-    else if (lowercase(trim(data_set)) == 'reynolds_oi') then
-        file_name_sst = 'INPUT/' // 'reyoi_sst.data'
-        file_name_ice = 'INPUT/' // 'reyoi_sst.data'
-        mobs = 360;  nobs = 180
-        call set_sst_grid_edges_oi
-        if (mpp_pe() == 0) &
-        call error_mesg ('amip_interp_init', 'using Reynolds OI SST', &
-                                                                NOTE)
-        Date_end = date_type( 1999, 1, 0 )
-    else
-        call error_mesg ('amip_interp_init', 'the value of the &
-        &namelist parameter DATA_SET being used is not allowed', FATAL)
-    endif
-
-    if (verbose > 1 .and. mpp_pe() == 0) &
-              print *, 'ice_crit,tice_crit_k=',ice_crit,tice_crit_k
-
-
-!  --- check existence of sst data file ??? ---
-
-    if (.not.file_exist(trim(file_name_sst)) .or. &
-        .not.file_exist(trim(file_name_ice))) then
-      call error_mesg ('amip_interp_init',  &
-                       'requested input data set does not exist', FATAL)
-    endif
-
-    do_init_once = .false.
-
- 11 format (/,'namelist option USE_AMIP1 is no longer supported', &
-           /,'use option DATA_SET instead')
-
- endif
-
-!-----------------------------------------------------------------------
-!  --- optional arguments ? -----
-
-   Interp % use_climo  = .false.
-   if (present(use_climo)) Interp % use_climo  = use_climo
-   Interp % use_annual = .false.
-   if (present(use_annual)) Interp % use_annual  = use_annual
-
-   if ( date_out_of_range == 'fail' .and. Interp%use_climo ) &
-             call error_mesg ('amip_interp_init',  &
-                              'use_climo mismatch', FATAL)
-
-   if ( date_out_of_range == 'fail' .and. Interp%use_annual ) &
-             call error_mesg ('amip_interp_init', &
-                              'use_annual(climo) mismatch', FATAL)
+   Interp = initialize (mask , use_climo, use_annual, interp_method)
 
 !-----------------------------------------------------------------------
 !   ---- initialization of horizontal interpolation ----
@@ -743,14 +592,8 @@ endif
     call horiz_interp_init ( Interp%Hintrp, lon_bnd, lat_bnd, &
                              lon, lat, interp_method= interp_method )
 
-
-    Interp % Date1 = date_type( -99, -99, -99 )
-    Interp % Date2 = date_type( -99, -99, -99 )
-
-
-    allocate ( Interp % data1 (size(lon)-1,size(lat)-1), &
-               Interp % data2 (size(lon)-1,size(lat)-1)  )
-
+    allocate ( Interp % data1 (size(lon(:))-1,size(lat(:))-1), &
+               Interp % data2 (size(lon(:))-1,size(lat(:))-1)  )
 
    end function amip_interp_init_1d
 ! </FUNCTION>
@@ -775,6 +618,29 @@ endif
 
    type (amip_interp_type) :: Interp
 
+   Interp = initialize (mask , use_climo, use_annual, interp_method)
+
+!-----------------------------------------------------------------------
+!   ---- initialization of horizontal interpolation ----
+
+    call horiz_interp_init ( Interp%Hintrp, lon_bnd, lat_bnd, &
+                             lon, lat, interp_method = interp_method)
+
+    allocate ( Interp % data1 (size(lon,1),size(lat,2)), &
+               Interp % data2 (size(lon,1),size(lat,2))) 
+
+   end function amip_interp_init_2d
+! </FUNCTION>
+
+!#######################################################################
+ function initialize (mask , use_climo, use_annual, interp_method) result (Interp)
+
+ logical, intent(in), dimension(:,:) :: mask
+ character(len=*), intent(in), optional       :: interp_method
+ logical, intent(in), optional       :: use_climo, use_annual
+
+   type (amip_interp_type) :: Interp
+
    integer :: unit,io,ierr
 
 !-----------------------------------------------------------------------
@@ -785,7 +651,7 @@ endif
 !   ---- read namelist ----
 
     if ( file_exist('input.nml')) then
-       unit = open_namelist_file ( )
+       unit = open_namelist_file( )
        ierr=1; do while (ierr /= 0)
        read  (unit, nml=amip_interp_nml, iostat=io, end=10)
        ierr = check_nml_error(io,'amip_interp_nml')
@@ -794,35 +660,19 @@ endif
     endif
 
 !  ----- write namelist/version info -----
-    call write_version_number(version,tagname)
+    call write_version_number (version, tagname)
+
     unit = stdlog ( )
     if (mpp_pe() == 0) then
         write (unit,nml=amip_interp_nml)
-        write (unit,11)
     endif
     call close_file (unit)
-
-!   print error message if default value of use_amip1 has changed
-
-    if (.not.use_amip1) then
-       call error_mesg ('amip_interp_mod',  &
-                'obsolete namelist option USE_AMIP1 should be replaced &
-                 &by option DATA_SET - check documentation', FATAL)
-    endif
-
-!   also for use_no_climo
-
-    if (.not.use_no_climo) then
-       call error_mesg ('amip_interp_mod',  &
-            'obsolete namelist option USE_NO_CLIMO should be replaced &
-            &by option DATE_OUT_OF_RANGE - check documentation', FATAL)
-    endif
 
 !   ---- freezing point of sea water in deg K ---
 
     tice_crit_k = tice_crit
-    if ( tice_crit_k < 200. ) tice_crit_k = tice_crit_k + tfreeze
-    ice_crit = nint((tice_crit_k-tfreeze)*100.)
+    if ( tice_crit_k < 200. ) tice_crit_k = tice_crit_k + TFREEZE
+    ice_crit = nint((tice_crit_k-TFREEZE)*100.)
 
 !   ---- set up file dependent variable ----
 !   ----   global file name   ----
@@ -886,16 +736,16 @@ endif
 
 !  --- check existence of sst data file ??? ---
 
-    if (.not.file_exist(trim(file_name_sst)) .or. &
-        .not.file_exist(trim(file_name_ice))) then
-      call error_mesg ('amip_interp_init',  &
-                       'requested input data set does not exist', FATAL)
+    if (.not.file_exist(trim(file_name_sst)) .and. .not.file_exist(trim(file_name_sst)//'.nc')) then
+      call error_mesg ('amip_interp_init', &
+            'Neither '//trim(file_name_sst)//' or '//trim(file_name_sst)//'.nc exists', FATAL)
+    endif
+    if (.not.file_exist(trim(file_name_ice)) .and. .not.file_exist(trim(file_name_ice)//'.nc')) then
+      call error_mesg ('amip_interp_init', &
+            'Neither '//trim(file_name_ice)//' or '//trim(file_name_ice)//'.nc exists', FATAL)
     endif
 
     do_init_once = .false.
-
- 11 format (/,'namelist option USE_AMIP1 is no longer supported', &
-           /,'use option DATA_SET instead')
 
  endif
 
@@ -915,24 +765,10 @@ endif
              call error_mesg ('amip_interp_init', &
                               'use_annual(climo) mismatch', FATAL)
 
-!-----------------------------------------------------------------------
-!   ---- initialization of horizontal interpolation ----
+   Interp % Date1 = date_type( -99, -99, -99 )
+   Interp % Date2 = date_type( -99, -99, -99 )
 
-    call horiz_interp_init ( Interp%Hintrp, lon_bnd, lat_bnd, &
-                             lon, lat, interp_method = interp_method)
-
-
-    Interp % Date1 = date_type( -99, -99, -99 )
-    Interp % Date2 = date_type( -99, -99, -99 )
-
-
-    allocate ( Interp % data1 (size(lon,1),size(lat,2)), &
-               Interp % data2 (size(lon,1),size(lat,2))) 
-
-
-   end function amip_interp_init_2d
-! </FUNCTION>
-
+   end function initialize
 !#######################################################################
 
 ! <SUBROUTINE NAME="amip_interp_end">
@@ -1094,7 +930,7 @@ endif
 
 ! ---- check size of argument(s) ----
 
-      if (size(blon) /= mobs+1 .or. size(blat) /= nobs+1)   &
+      if (size(blon(:)) /= mobs+1 .or. size(blat(:)) /= nobs+1)   &
       call error_mesg ('get_sst_grid_boundary in amip_interp_mod',  &
                        'invalid argument dimensions', FATAL)
 
@@ -1115,99 +951,168 @@ endif
 
    subroutine read_record (type, Date, Adate, dat)
 
-   character(len=*), intent(in)  :: type
-   type (date_type), intent(in)  :: Date
-   type (date_type), intent(inout) :: Adate
-   real,             intent(out) :: dat(mobs,nobs)
+     character(len=*), intent(in)  :: type
+     type (date_type), intent(in)  :: Date
+     type (date_type), intent(inout) :: Adate
+     real,             intent(out) :: dat(mobs,nobs)
 
-   real(kind=4) :: dat4(mobs,nobs)
-   integer(2) :: idat (mobs,nobs)
-   integer :: yr, mo, dy, ierr
-   character(len=38) :: mesg
+     real   (R4_KIND) :: dat4(mobs,nobs)
+     integer(I2_KIND) :: idat(mobs,nobs)
+     integer :: nrecords, yr, mo, dy, ierr, k
+     integer, dimension(:), allocatable :: ryr, rmo, rdy
+     character(len=38)   :: mesg
+     character(len=maxc) :: ncfilename, ncfieldname
 
-!  ---- rewind condition (if unit is open) ----
+    !---- set file and field name for NETCDF data sets ----
 
-    if (unit /= -1 .and. Curr_date % year == 0 .and.   &
-         date % month <= Curr_date % month ) then
-             if (verbose > 1 .and. mpp_pe() == 0)  &
-                             print *, ' rewinding unit = ', unit
-             rewind unit
-    endif
+        ncfieldname = 'sst'
+     if(type(1:3) == 'sst') then
+        ncfilename = trim(file_name_sst)//'.nc'
+     else if(type(1:3) == 'ice') then
+        ncfilename = trim(file_name_ice)//'.nc'
+        if (lowercase(trim(data_set)) == 'amip2' .or. &
+            lowercase(trim(data_set)) == 'hurrell') ncfieldname = 'ice'
+     endif
 
-    if (unit == -1) then
-       if (type(1:3) == 'sst') then
-          unit = open_ieee32_file (file_name_sst, 'read')
-       else if (type(1:3) == 'ice') then
-          unit = open_ieee32_file (file_name_ice, 'read')
-       endif
-    endif
-    dy = 0
+    !---- make sure IEEE format file is open ----
 
-    if (verbose > 2 .and. mpp_pe() == 0)  &
-                    print *, 'looking for date = ', Date
-    do
-      if (lowercase(trim(data_set)) == 'amip2' .or. lowercase(trim(data_set)) == 'hurrell') then
-         read (unit, end=10)  yr, mo,     dat4
-         dat=dat4
-      else
-         read (unit, end=10)  yr, mo, dy, idat
-!new     read (unit, end=10)  yr, mo, dy
-      endif
-      Adate = date_type( yr, mo, dy )
-      Curr_date = Adate
-    if (verbose > 2 .and. mpp_pe() == 0)  &
-                    print *, '....... checking   ', Adate
+     if ( (.NOT. file_exist(ncfilename))  ) then
 
-!     --- found date ---
-      if (Date == Adate)                    exit
+       ! rewind condition (if unit is open)
+        if (unit /= -1 .and. Curr_date % year == 0 .and.   &
+             date % month <= Curr_date % month ) then
+           if (verbose > 1 .and. mpp_pe() == 0)  &
+                print *, ' rewinding unit = ', unit
+           rewind unit
+        endif
 
-!     --- otherwise use monthly climo ---
-      if (yr == 0 .and. Date % month == mo) exit
+        if (unit == -1) then
+           if (type(1:3) == 'sst') then
+              unit = open_ieee32_file (file_name_sst, 'read')
+           else if (type(1:3) == 'ice') then
+              unit = open_ieee32_file (file_name_ice, 'read')
+           endif
+        endif
 
-!     --- skip this data record ---
-!new  if (lowercase(trim(data_set)) /= 'amip2') read (unit)
-    enddo
+     endif
 
-!     --- read data ---
-!new  if (lowercase(trim(data_set)) /= 'amip2') read (unit) idat
+     dy = 0 ! only processing monthly data
 
-!   --- check if climo used when not wanted ---
+     if (verbose > 2 .and. mpp_pe() == 0)  &
+          print *, 'looking for date = ', Date
 
-    if (yr == 0 .or. mo == 0) then
+    !---- check dates in NETCDF file -----
+
+     ! This code can handle amip1, reynolds, or reyoi type SST data files in netCDF format
+     if (file_exist(ncfilename)) then
+        if (mpp_pe() == mpp_root_pe()) call mpp_error ('amip_interp_mod', &
+             'Reading NetCDF formatted input data file: '//trim(ncfilename), NOTE)
+        call read_data (ncfilename, 'nrecords', nrecords, no_domain=.true.)
+        if (nrecords < 1) call mpp_error('amip_interp_mod', &
+                           'Invalid number of SST records in SST datafile: '//trim(ncfilename), FATAL)
+        allocate(ryr(nrecords), rmo(nrecords), rdy(nrecords))
+        call read_data(ncfilename, 'yr', ryr, no_domain=.true.)
+        call read_data(ncfilename, 'mo', rmo, no_domain=.true.)
+        call read_data(ncfilename, 'dy', rdy, no_domain=.true.)
+        ierr = 1
+        do k = 1, nrecords
+          yr = ryr(k);  mo = rmo(k)
+          Adate = date_type( yr, mo, 0)
+          Curr_date = Adate
+          if (verbose > 2 .and. mpp_pe() == 0)  &
+                print *, '....... checking   ', Adate
+          if (Date == Adate) ierr = 0 
+          if (yr == 0 .and. mo == Date%month) ierr = 0
+          if (ierr == 0) exit
+        enddo
+        if (ierr .ne. 0) call mpp_error('amip_interp_mod', &
+                         'Model time is out of range not in SST data: '//trim(ncfilename), FATAL)
+        deallocate(ryr, rmo, rdy)
+       !PRINT *, 'New SST data: ', k, yr, mo, dy, Date%year, Date%month, Date%day, ryr(1), rmo(1)
+
+    !---- check dates in IEEE file -----
+
+     else
+        if (mpp_pe() == mpp_root_pe()) call mpp_error ('amip_interp_mod', &
+             'Reading native formatted input data file: '//trim(data_set), NOTE)
+        k = 0
+        do
+           k = k + 1
+           if (lowercase(trim(data_set)) == 'amip2' .or. lowercase(trim(data_set)) == 'hurrell') then
+              read (unit, end=10)  yr, mo,     dat4
+              dat=dat4
+           else
+              read (unit, end=10)  yr, mo, dy, idat
+           endif
+           !new     read (unit, end=10)  yr, mo, dy
+           Adate = date_type( yr, mo, dy )
+           Curr_date = Adate
+           if (verbose > 2 .and. mpp_pe() == 0)  &
+                print *, '....... checking   ', Adate
+           
+           !     --- found date ---
+           if (Date == Adate)                    exit
+           if (Date%month == mo .and. Date%day == dy .and. Date%year == yr ) exit
+           !     --- otherwise use monthly climo ---
+           if (yr == 0 .and. Date % month == mo) exit
+           
+           !     --- skip this data record ---
+           !new  if (lowercase(trim(data_set)) /= 'amip2') read (unit)
+        enddo
+        
+        !     --- read data ---
+        !new  if (lowercase(trim(data_set)) /= 'amip2') read (unit) idat
+        
+        !   --- check if climo used when not wanted ---
+        
+     endif ! if(file_exist(ncfilename))
+     
+   !---- check if climatological data should be used ----
+
+     if (yr == 0 .or. mo == 0) then
         ierr = 0
         if (date_out_of_range == 'fail' )               ierr = 1
         if (date_out_of_range == 'initclimo' .and.  &
-                                    Date > Date_end )   ierr = 1
+             Date > Date_end )   ierr = 1
         if (ierr /= 0) call error_mesg &
-               ('read_record in amip_interp_mod', &
-                'climo data read when NO climo data requested', FATAL)
-    endif
+             ('read_record in amip_interp_mod', &
+             'climo data read when NO climo data requested', FATAL)
+     endif
 
-!     --- create (real) ice mask ---
+   !---- read NETCDF data ----
 
-      if (type(1:3) == 'ice') then
-          if (lowercase(trim(data_set)) /= 'amip2' .and. lowercase(trim(data_set)) /= 'hurrell') then
-              where ( idat <= ice_crit )
-                 dat = 1.
-              elsewhere
-                 dat = 0.
-              endwhere
-          else
-              dat = dat*0.01
-          endif
-      else if (type(1:3) == 'sst') then
-!         --- unpack sst ---
-          if (lowercase(trim(data_set)) /= 'amip2' .and. lowercase(trim(data_set)) /= 'hurrell') &
-              dat = float(idat)*0.01 + tfreeze
-      endif
+     if (file_exist(ncfilename)) then
+        call read_data(ncfilename, ncfieldname, dat, timelevel=k, no_domain=.true.)
+        idat =  nint(dat*100.) ! reconstruct packed data for reproducibity
+     endif
+
+   !---- unpacking of data ----
+
+     if (type(1:3) == 'ice') then
+        !---- create fractional [0,1] ice mask
+        if (lowercase(trim(data_set)) /= 'amip2' .and. lowercase(trim(data_set)) /= 'hurrell') then
+               where ( idat <= ice_crit )
+                   dat = 1.
+               elsewhere
+                   dat = 0.
+               endwhere
+        else
+           dat = dat*0.01
+        endif
+     else if (type(1:3) == 'sst') then
+        !---- unpack sst ----
+        if (lowercase(trim(data_set)) /= 'amip2' .and. lowercase(trim(data_set)) /= 'hurrell') then
+               dat = real(idat)*0.01 + TFREEZE
+        endif
+     endif
 
 
-      return
+     return
 
-  10  write (mesg, 20) unit
-      call error_mesg ('read_record in amip_interp_mod', mesg, FATAL)
+10   write (mesg, 20) unit
+     call error_mesg ('read_record in amip_interp_mod', mesg, FATAL)
 
-  20  format ('end of file reading unit ',i2,' (sst data)')
+20   format ('end of file reading unit ',i2,' (sst data)')
 
    end subroutine read_record
 

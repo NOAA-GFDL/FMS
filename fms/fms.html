@@ -66,7 +66,7 @@
 <h4>OTHER MODULES USED</h4>
 <!-- BEGIN OTHER MODULES USED -->
 <div>
-<pre>        mpp_mod<br>mpp_domains_mod<br>     mpp_io_mod<br>     fms_io_mod<br>   memutils_mod</pre>
+<pre>        mpp_mod<br>mpp_domains_mod<br>     mpp_io_mod<br>     fms_io_mod<br>   memutils_mod<br>  constants_mod</pre>
 </div>
 <!-- END OTHER MODULES USED -->
 <!-- BEGIN PUBLIC INTERFACE -->
@@ -83,6 +83,9 @@
 <dt>
 <a href="#fms_end">fms_end</a>:</dt>
 <dd>   Calls the termination routines for all modules in the MPP package. </dd>
+<dt>
+<a href="#file_exist">file_exist</a>:</dt>
+<dd>   check if a given field name exists in a given file name. </dd>
 <dt>
 <a href="#file_exist">file_exist</a>:</dt>
 <dd>   Checks the existence of a given file name. </dd>
@@ -154,6 +157,53 @@
    for the mpp, mpp_domains, and mpp_io modules. If this routine is called
    more than once it will return silently. There are no arguments. </dd>
 <br>
+<br>
+</dl>
+</li>
+<li>
+<a name="file_exist"></a>
+<h4>file_exist</h4>
+<pre> 
+<b>file_exist</b> 
+</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   check if a given field name exists in a given file name. 
+   If the field_name string has zero length or the
+   first character is blank return a false result.
+   if the file file_name don't exist, return a false result. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>file_name&nbsp;&nbsp;&nbsp;</tt></td><td>   A file name (or path name) that is checked for existence. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>field_name&nbsp;&nbsp;&nbsp;</tt></td><td>   A field name that is checked for existence. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+<dt>
+<b>OUTPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>   This function returns a logical result.  If field exists in the 
+   file file_name, the result is true, otherwise false is returned.
+   If the length of character string "field_name" is zero or the first
+   character is blank, then the returned value will be false.
+   if the file file_name don't exist, return a false result. <br>&nbsp;&nbsp;&nbsp;<span class="type">[logical]</span></td>
+</tr>
+</table>
+</dd>
 <br>
 </dl>
 </li>

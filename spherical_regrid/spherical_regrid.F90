@@ -152,10 +152,10 @@ real, dimension(:,:), pointer :: x_src_out, y_src_out
 
 integer :: nx_src,ny_src,nx_dest,ny_dest,i,j,len
 
-nx_src = size(x_src)
-ny_src = size(y_src)
-nx_dest = size(x_dest)
-ny_dest = size(y_dest)
+nx_src = size(x_src(:))
+ny_src = size(y_src(:))
+nx_dest = size(x_dest(:))
+ny_dest = size(y_dest(:))
 
 allocate(x_dest_out(nx_dest,ny_dest))
 allocate(y_dest_out(nx_dest,ny_dest))
@@ -202,8 +202,8 @@ real, dimension(:,:), pointer :: x_src_out, y_src_out
 
 integer :: nx_src,ny_src,nx_dest, ny_dest, i,j,len
 
-nx_src = size(x_src)
-ny_src = size(y_src)
+nx_src = size(x_src(:))
+ny_src = size(y_src(:))
 nx_dest = size(x_dest,1)
 ny_dest = size(x_dest,2)
 
@@ -244,8 +244,8 @@ integer :: nx_dest,ny_dest, nx_src, ny_src,i,j, len
 
 nx_src = size(x_src,1)
 ny_src = size(x_src,2)
-nx_dest = size(x_dest)
-ny_dest = size(y_dest)
+nx_dest = size(x_dest(:))
+ny_dest = size(y_dest(:))
 
 allocate(x_dest_out(nx_dest,ny_dest))
 allocate(y_dest_out(nx_dest,ny_dest))

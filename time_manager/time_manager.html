@@ -28,7 +28,7 @@
 <a name="HEADER"></a>
 <!-- BEGIN HEADER -->
 <div>
-<b>Contact:&nbsp;</b><a href="mailto:fMike.Spelman@noaa.gov">   fms </a>
+<b>Contact:&nbsp;</b><a href="mailto:fms@gfdl.noaa.gov">   fms </a>
 <br>
 <b>Reviewers:&nbsp;</b>
 <br>
@@ -136,6 +136,12 @@
 <a href="#time_real_divide">time_real_divide</a>:</dt>
 <dd>   Returns the double precision quotient of two times. </dd>
 <dt>
+<a href="#time_type_to_real">time_type_to_real</a>:</dt>
+<dd>   Converts time to seconds and returns it as a real number </dd>
+<dt>
+<a href="#real_to_time_type">real_to_time_type</a>:</dt>
+<dd>   Converts a real number of seconds to a time_type variable </dd>
+<dt>
 <a href="#time_scalar_divide">time_scalar_divide</a>:</dt>
 <dd>   Returns the largest time, t, for which n * t &lt;= time. </dd>
 <dt>
@@ -157,6 +163,10 @@
 <a href="#get_date">get_date</a>:</dt>
 <dd>   Given a time_interval, returns the corresponding date under
    the selected calendar. </dd>
+<dt>
+<a href="#get_cal_time">get_cal_time</a>:</dt>
+<dd>   Given a time_interval as a real number, returns the corresponding
+   time under the selected calendar as a time_type variable. </dd>
 <dt>
 <a href="#set_date">set_date</a>:</dt>
 <dd>   Given an input date in year, month, days, etc., creates a
@@ -190,10 +200,6 @@
 <a href="#month_name">month_name</a>:</dt>
 <dd>   Returns a character string containing the name of the
    month corresponding to month number n. </dd>
-<dt>
-<a href="#get_cal_time">get_cal_time</a>:</dt>
-<dd>   Returns time given a base date, calendar type,
-   and a time increment to add to the base date. </dd>
 <dt>
 <a href="#time_manager_init">time_manager_init</a>:</dt>
 <dd>   Write the version information to the log file. </dd>
@@ -865,6 +871,56 @@
 </dl>
 </li>
 <li>
+<a name="time_type_to_real"></a>
+<h4>time_type_to_real</h4>
+<pre> 
+<b>time_type_to_real</b> (time)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Converts time to seconds and returns it as a real number </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>time&nbsp;&nbsp;&nbsp;</tt></td><td>   A time interval. <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type, dimension]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="real_to_time_type"></a>
+<h4>real_to_time_type</h4>
+<pre> 
+<b>real_to_time_type</b> (x)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Converts a real number of seconds to a time_type variable </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>x&nbsp;&nbsp;&nbsp;</tt></td><td>   A real number of seconds <br>&nbsp;&nbsp;&nbsp;<span class="type">[real, dimension]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
 <a name="time_scalar_divide"></a>
 <h4>time_scalar_divide</h4>
 <pre> 
@@ -1145,6 +1201,105 @@
    non-associative nature of the addition. All the input increments
    must be positive. </dd>
 <br>
+<br>
+</dl>
+</li>
+<li>
+<a name="get_cal_time"></a>
+<h4>get_cal_time</h4>
+<pre> 
+<b>get_cal_time</b> (time_increment, units, calendar)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Given a time_interval as a real number, returns the corresponding
+   time under the selected calendar as a time_type variable. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>time_increment&nbsp;&nbsp;&nbsp;</tt></td><td>   A time interval.<br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>units&nbsp;&nbsp;&nbsp;</tt></td><td>   Examples of acceptable values of units:
+   <br>
+<br>
+   'days since 1980-01-01 00:00:00',
+   'hours since 1980-1-1 0:0:0',
+   'minutes since 0001-4-12'
+   <br>
+<br>
+   The first word in the string must be
+   'years', 'months', 'days', 'hours', 'minutes' or 'seconds'.
+   The second word must be 'since'
+   <br>
+<br>
+   year number must occupy 4 spaces.
+   Number of months, days, hours, minutes, seconds may occupy 1 or 2 spaces
+   year, month and day must be separated by a '-'
+   hour, minute, second must be separated by a ':'
+   hour, minute, second are optional. If not present then zero is assumed.
+   <br>
+<br>
+   Because months are not equal increments of time, and, for julian calendar,
+   neither are years, the 'years since' and 'month since' cases deserve
+   further explaination. 
+   <br>
+<br>
+   When 'years since' is used:
+   The year number is increased by floor(time_increment)   to obtain a time T1.
+   The year number is increased by floor(time_increment)+1 to obtain a time T2.
+   The time returned is T1 + (time_increment-floor(time_increment))*(T2-T1).
+   <br>
+<br>
+   When 'months since' is used:
+   The month number is increased by floor(time_increment). If it falls outside
+   to range 1 to 12 then it is adjusted along with the year number to convert
+   to a valid date. The number of days in the month of this date is used to
+   compute the time interval of the fraction.
+   That is:
+   The month number is increased by floor(time_increment) to obtain a time T1.
+   delt = the number of days in the month in which T1 falls.
+   The time returned is T1 + ((time_increment-floor(time_increment))*delt.
+   Two of the consequences of this scheme should be kept in mind.
+   -- The time since should not be from the 29'th to 31'st of a month,
+   since an invalid date is likely to result, triggering an error stop.
+   -- When time since is from the begining of a month, the fraction of a month
+   will never advance into the month after that which results from only
+   the whole number.
+   <br>
+<br>
+   When NO_CALENDAR is in effect, units attribute must specify a starting
+   day and second, with day number appearing first
+   <br>
+<br>
+   Example: 'days since 100 0' Indicates 100 days 0 seconds
+   <br>
+<br> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>calendar&nbsp;&nbsp;&nbsp;</tt></td><td>   When present, then it will be checked against the calendar in use
+   by the time manager. If it does not match the calendar in use then
+   the program will terminate with an error message.
+   When not present, no such check is done.
+   <br>
+<br>
+   Acceptable values of calendar are:
+   noleap
+   365_day
+   360_day
+   julian
+   thirty_day_months
+   no_calendar <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
+</tr>
+</table>
+</dd>
 <br>
 </dl>
 </li>
@@ -1583,52 +1738,6 @@
 <td valign="top" align="left"><tt>unit&nbsp;&nbsp;&nbsp;</tt></td><td>   Unit number for printed output. The default unit is stdout. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 </table>
-</dd>
-<br>
-</dl>
-</li>
-<li>
-<a name="get_cal_time"></a>
-<h4>get_cal_time</h4>
-<pre> 
-<b>get_cal_time</b> (time_increment,units,calendar)</pre>
-<dl>
-<dt>
-<b>DESCRIPTION</b>
-</dt>
-<dd>  This function returns time, as time_type, given a character string
-   specifying a base date and a real number as a time increment to add
-   to the base date.</dd>
-<br>
-<br>
-<dt>
-<b>INPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>time_increment&nbsp;&nbsp;&nbsp;</tt></td><td>   Time increment. <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>units&nbsp;&nbsp;&nbsp;</tt></td><td>   Character string that specifies the base time or date, and specifies the units of time_increment.
-           e.g., 'days since 1980-01-01 00:00:00' specifies that the base time is the begining of the year 1980, and that time_increment is in days.
-           Valid time increment units are 'days', 'hours', 'minutes', and 'seconds'. The base time year must be 4 digits, the base time month and day
-           must be 1 or 2 digits. The base time hour:minute:second is optional and when present, must be 1 or 2 digits each.<br><br>
-	   When time_manager is using no_calendar, units must specify a base time as days and seconds, with days appearing first. e.g.: 'days since 100 0'
-	   <br>&nbsp;&nbsp;&nbsp;<span class="type">[character (len=*)]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>calendar&nbsp;&nbsp;&nbsp;</tt></td><td>   Used only to check that calendar type in use by the time_manager
-            is as expected. Valid values of this argument are: 'noleap', 'julian', 'no_calendar', 'unspecified'
-	    When calendar='unspecified', no check is done.<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
-</tr>
-</table>
-</dd>
-<dt>
-<b>NOTES</b>
-</dt>
-<dd>  get_cal_time is intended for use by the data_override module. It facilitates the use of netcdf character attributes
-  to locate the override data in time.
 </dd>
 <br>
 </dl>
