@@ -15,12 +15,12 @@
         </STYLE>
 </head>
 <body>
-<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC INTERFACE">PUBLIC INTERFACE </a>~
-          <a href="#PUBLIC DATA">PUBLIC DATA </a>~
-          <a href="#PUBLIC ROUTINES">PUBLIC ROUTINES </a>~
+<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC%20INTERFACE">PUBLIC INTERFACE </a>~
+          <a href="#PUBLIC%20DATA">PUBLIC DATA </a>~
+          <a href="#PUBLIC%20ROUTINES">PUBLIC ROUTINES </a>~
           <a href="#NAMELIST">NAMELIST </a>~
-          <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
-          <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
+          <a href="#DIAGNOSTIC%20FIELDS">DIAGNOSTIC FIELDS </a>~
+          <a href="#ERROR%20MESSAGES">ERROR MESSAGES </a>~
           <a href="#REFERENCES">REFERENCES </a>~ 
           <a href="#NOTES">NOTES</a></font>
 <hr>
@@ -28,11 +28,11 @@
 <a name="HEADER"></a>
 <!-- BEGIN HEADER -->
 <div>
-<b>Contact:&nbsp;</b><a href="mailto:mw@gfdl.noaa.gov">   Michael Winton </a>
+<b>Contact:&nbsp;</b><a href="mailto:Michael.Winton@noaa.gov">   Michael Winton </a>
 <br>
 <b>Reviewers:&nbsp;</b>
 <br>
-<b>Change History:&nbsp;</b><a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi">WebCVS Log home</a>
+<b>Change History:&nbsp;</b><a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/exchange">WebCVS Log</a>
 <br>
 <br>
 </div>
@@ -73,7 +73,7 @@
    that time; new ones must be allocated and assigned with the <tt>put_to_xgrid</tt>   call. </div>
 <br>
 <!-- END DESCRIPTION -->
-<a name="OTHER MODULES USED"></a>
+<a name="OTHER%20MODULES%20USED"></a>
 <hr>
 <h4>OTHER MODULES USED</h4>
 <!-- BEGIN OTHER MODULES USED -->
@@ -82,7 +82,7 @@
 </div>
 <!-- END OTHER MODULES USED -->
 <!-- BEGIN PUBLIC INTERFACE -->
-<a name="PUBLIC INTERFACE"></a>
+<a name="PUBLIC%20INTERFACE"></a>
 <hr>
 <h4>PUBLIC INTERFACE</h4>
 <div>
@@ -116,7 +116,7 @@
 </div>
 <br>
 <!-- END PUBLIC INTERFACE -->
-<a name="PUBLIC DATA"></a>
+<a name="PUBLIC%20DATA"></a>
 <hr>
 <h4>PUBLIC DATA</h4>
 <!-- BEGIN PUBLIC DATA -->
@@ -132,7 +132,7 @@
 <br>
 </div>
 <!-- END PUBLIC DATA -->
-<a name="PUBLIC ROUTINES"></a>
+<a name="PUBLIC%20ROUTINES"></a>
 <hr>
 <h4>PUBLIC ROUTINES</h4>
 <!-- BEGIN PUBLIC ROUTINES -->
@@ -141,7 +141,7 @@
 <a name="put_to_xgrid"></a>
 <h4>put_to_xgrid</h4>
 <pre>
-<b>call put_to_xgrid </b>(d, grid_id, x, xmap, remapping_order)</pre>
+<b>call put_to_xgrid </b>(d, grid_id, x, xmap, remap_order)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -165,8 +165,9 @@
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[ character(len=3)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>remapping_order&nbsp;&nbsp;&nbsp;</tt></td><td>   default value is 1 (linear interpolation). =2 use second order
-   interpolation. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer,optional]</span></td>
+<td valign="top" align="left"><tt>remap_method&nbsp;&nbsp;&nbsp;</tt></td><td>   exchange grid interpolation method. It has four possible values: 
+   FIRST_ORDER (=1), SECOND_ORDER(=2), SECOND_ORDER_MERID(=3) and
+   SECOND_ORDER_ZONAL(=4). Default value is FIRST_ORDER. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer,optional]</span></td>
 </tr>
 </table>
 </dd>
@@ -253,7 +254,7 @@
 <a name="conservation_check"></a>
 <h4>conservation_check</h4>
 <pre>
-<b>call conservation_check </b>(d, grid_id, xmap,remapping_order)</pre>
+<b>call conservation_check </b>(d, grid_id, xmap,remap_order)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -280,8 +281,8 @@
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=3)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>remapping_order&nbsp;&nbsp;&nbsp;</tt></td><td>   default value is 1 (linear interpolation). =2 use second order
-   interpolation. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer,optional]</span></td>
+<td valign="top" align="left"><tt>remap_method&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer,optional]</span></td>
 </tr>
 </table>
 </dd>
@@ -324,6 +325,19 @@
 <dd>   Initialization routine for the xgrid module. It reads the xgrid_nml,  
    writes the version information and xgrid_nml to the log file. </dd>
 <br>
+<br>
+<dt>
+<b>OUTPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>remap_method&nbsp;&nbsp;&nbsp;</tt></td><td>   exchange grid interpolation method. It has four possible values: 
+   FIRST_ORDER (=1), SECOND_ORDER(=2), SECOND_ORDER_MERID(=3) and
+   SECOND_ORDER_ZONAL(=4) <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+</table>
+</dd>
 <br>
 </dl>
 </li>
@@ -497,7 +511,7 @@
 </li>
 </ol>
 <!-- END PUBLIC ROUTINES -->
-<a name="PUBLIC TYPES"></a>
+<a name="PUBLIC%20TYPES"></a>
 <!-- BEGIN PUBLIC TYPES -->
 <!-- END PUBLIC TYPES --><a name="NAMELIST"></a>
 <!-- BEGIN NAMELIST -->
@@ -517,20 +531,20 @@
 <span class="type">[logical, default: .false.]</span>
 </dl>
 <dt>
-<tt>use_higher_order</tt>
+<tt>interp_method</tt>
 </dt>
-<dl>   set to .ture. to use second order remapping scheme, also need to set
-   remap_order of flux_exchange_nml to 2. <br>
-<span class="type">[logical, default: .false.]</span>
+<dl>   exchange grid interpolation method. It has four options: 
+   "first_order", "second_order", "second_order_merid", "second_order_zonal". <br>
+<span class="type">[character(len=64), default:  'first_order' ]</span>
 </dl>
 </dl>
 </div>
 </div>
 <br>
 <!-- END NAMELIST -->
-<a name="DIAGNOSTIC FIELDS"></a>
+<a name="DIAGNOSTIC%20FIELDS"></a>
 <!-- BEGIN DIAGNOSTIC FIELDS -->
-<!-- END DIAGNOSTIC FIELDS --><a name="DATA SETS"></a>
+<!-- END DIAGNOSTIC FIELDS --><a name="DATA%20SETS"></a>
 <!-- BEGIN DATA SETS -->
 <hr>
 <h4>DATA SETS</h4>
@@ -552,9 +566,9 @@
 <br>
 </div>
 <!-- END DATA SETS -->
-<a name="PUBLIC CODE"></a>
+<a name="PUBLIC%20CODE"></a>
 <!-- BEGIN PUBLIC CODE -->
-<!-- END PUBLIC CODE --><a name="ERROR MESSAGES"></a>
+<!-- END PUBLIC CODE --><a name="ERROR%20MESSAGES"></a>
 <!-- BEGIN ERROR MESSAGES -->
 <hr>
 <h4>ERROR MESSAGES</h4>
@@ -575,7 +589,7 @@
 </div>
 <br>
 <!-- END REFERENCES -->
-<a name="COMPILER SPECIFICS"></a>
+<a name="COMPILER%20SPECIFICS"></a>
 <hr>
 <h4>COMPILER SPECIFICS</h4>
 <!-- BEGIN COMPILER SPECIFICS -->
@@ -584,7 +598,7 @@
       </div>
 <br>
 <!-- END COMPILER SPECIFICS -->
-<a name="PRECOMPILER OPTIONS"></a>
+<a name="PRECOMPILER%20OPTIONS"></a>
 <hr>
 <h4>PRECOMPILER OPTIONS</h4>
 <!-- BEGIN PRECOMPILER OPTIONS -->
@@ -593,7 +607,7 @@
       </div>
 <br>
 <!-- END PRECOMPILER OPTIONS -->
-<a name="LOADER OPTIONS"></a>
+<a name="LOADER%20OPTIONS"></a>
 <hr>
 <h4>LOADER OPTIONS</h4>
 <!-- BEGIN LOADER -->
@@ -601,7 +615,7 @@
 <br>
 </div>
 <!-- END LOADER OPTIONS -->
-<a name="TEST PROGRAM"></a>
+<a name="TEST%20PROGRAM"></a>
 <hr>
 <h4>TEST PROGRAM</h4>
 <!-- BEGIN TEST PROGRAM -->
@@ -609,7 +623,7 @@
 </div>
 <br>
 <!-- END TEST PROGRAM -->
-<a name="KNOWN BUGS"></a>
+<a name="KNOWN%20BUGS"></a>
 <hr>
 <h4>KNOWN BUGS</h4>
 <!-- BEGIN KNOWN BUGS -->
@@ -626,7 +640,7 @@
 </div>
 <br>
 <!-- END NOTES -->
-<a name="FUTURE PLANS"></a>
+<a name="FUTURE%20PLANS"></a>
 <hr>
 <h4>FUTURE PLANS</h4>
 <!-- BEGIN FUTURE PLANS -->

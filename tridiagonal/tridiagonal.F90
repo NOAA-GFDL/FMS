@@ -1,9 +1,9 @@
 module tridiagonal_mod
 
-! <CONTACT EMAIL="ih@gfdl.noaa.gov">
+! <CONTACT EMAIL="Isaac.Held@noaa.gov">
 !    Isaac Held 
 ! </CONTACT>
-! <CONTACT EMAIL="bw@gfdl.noaa.gov">
+! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
 !    Bruce Wyman
 ! </CONTACT>
 

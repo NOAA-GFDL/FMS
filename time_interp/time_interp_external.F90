@@ -2,7 +2,7 @@
 
 module time_interp_external_mod
 !
-!<CONTACT EMAIL="mjh@gfdl.noaa.gov">M.J. Harrison</CONTACT>
+!<CONTACT EMAIL="Matthew.Harrison@noaa.gov">M.J. Harrison</CONTACT>
 !
 !<REVIEWER EMAIL="hsimmons@iarc.uaf.edu">Harper Simmons</REVIEWER>
 !
@@ -28,7 +28,7 @@ module time_interp_external_mod
 ! </DATA>
 !</NAMELIST>
 
-  use mpp_mod, only : mpp_error,FATAL,mpp_pe, stdout, stdlog
+  use mpp_mod, only : mpp_error,FATAL,mpp_pe, stdout, stdlog, NOTE
   use mpp_io_mod, only : mpp_open, mpp_get_atts, mpp_get_info, MPP_NETCDF, MPP_MULTI, MPP_SINGLE,&
        mpp_get_times, MPP_RDONLY, MPP_ASCII, default_axis,axistype,fieldtype,atttype, &
        mpp_get_axes, mpp_get_fields, mpp_read, default_field, mpp_close, &
@@ -38,7 +38,8 @@ module time_interp_external_mod
                             set_time, get_time, operator( > )
   use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, mpp_get_data_domain, mpp_get_global_domain, NULL_DOMAIN2D
   use time_interp_mod, only : time_interp
-  use udunits_mod, only : get_cal_time, convert_units 
+!mjh  use udunits_mod, only : get_cal_time, convert_units
+  use time_manager_mod, only : get_cal_time
   use axis_utils_mod, only : get_axis_cart, get_axis_modulo
   use fms_mod, only : lowercase
   use platform_mod, only: r8_kind
@@ -46,8 +47,8 @@ module time_interp_external_mod
 
   implicit none
 
-  character(len=128), private :: version='CVS $Id: time_interp_external.F90,v 1.3 2003/04/09 21:19:01 fms Exp $'
-  character(len=128), private :: tagname='Tag $Name: inchon $'
+  character(len=128), private :: version='CVS $Id: time_interp_external.F90,v 10.0 2003/10/24 22:01:40 fms Exp $'
+  character(len=128), private :: tagname='Tag $Name: jakarta $'
 
   integer, parameter, private :: max_fields = 100, modulo_year= 0001,max_files= 100
   integer, parameter, private :: LINEAR_TIME_INTERP = 1 ! not used currently
@@ -67,15 +68,15 @@ module time_interp_external_mod
      integer :: siz(4), ndim
      type(domain2d) :: domain
      type(axistype) :: axes(4)
-     type(time_type), dimension(:), pointer :: time ! midpoint of time interval
-     type(time_type), dimension(:), pointer :: start_time, end_time
+     type(time_type), dimension(:), pointer :: time =>NULL() ! midpoint of time interval
+     type(time_type), dimension(:), pointer :: start_time =>NULL(), end_time =>NULL()
      type(fieldtype) :: field ! mpp_io type
-     type(time_type), dimension(:), pointer :: period 
+     type(time_type), dimension(:), pointer :: period =>NULL() 
      logical :: modulo_time ! denote climatological time axis
-     real, dimension(:,:,:,:), pointer :: data ! defined over data domain or global domain
-     integer, dimension(:), pointer :: ibuf
-     real, dimension(:,:), pointer :: buf2d
-     real, dimension(:,:,:), pointer :: buf3d
+     real, dimension(:,:,:,:), pointer :: data =>NULL() ! defined over data domain or global domain
+     integer, dimension(:), pointer :: ibuf  =>NULL()
+     real, dimension(:,:), pointer :: buf2d  =>NULL()
+     real, dimension(:,:,:), pointer :: buf3d  =>NULL()
      integer :: nbuf
      logical :: domain_present
      real(DOUBLE_KIND) :: slope, intercept
@@ -92,7 +93,7 @@ module time_interp_external_mod
      module procedure time_interp_external_3d
   end interface
 
-  type(ext_fieldtype), private :: field(max_fields)
+  type(ext_fieldtype), save, private :: field(max_fields)
   type(filetype), private :: opened_files(max_files)
   
   contains
@@ -235,13 +236,12 @@ module time_interp_external_mod
       real(KIND=r8_kind), dimension(:), allocatable :: tstamp, tstart, tend, tavg
       character(len=1) :: cart
       character(len=128) :: units, fld_units
-      character(len=128) :: name, msg
+      character(len=128) :: name, msg, calendar_type
       integer :: siz(4), siz_in(4), gxsize, gysize,gxsize_max, gysize_max
       type(time_type) :: tdiff
       integer :: yr, mon, day, hr, minu, sec
       integer :: yr2, mon2, day2, hr2, min2, sec2
       integer :: len, natts, nfile, nfields_orig
-      
       if (.not. module_initialized) call mpp_error(FATAL,'Must call time_interp_external_init first')
 
       form=MPP_NETCDF
@@ -252,8 +252,16 @@ module time_interp_external_mod
       verb=.false.
       if (PRESENT(verbose)) verb=verbose
       units = 'same'
-      if (PRESENT(desired_units)) units = desired_units
-! Need to check if filename has been opened or not
+      if (PRESENT(desired_units)) then
+          units = desired_units
+          call mpp_error(FATAL,'==> Unit conversion via time_interp_external &
+               &has been temporarily deprecated.  Previous versions of&
+               &this module used udunits_mod to perform unit conversion.&
+               &  Udunits_mod is in the process of being replaced since &
+               &there were portability issues associated with this code.&
+               & Please remove the desired_units argument from calls to &
+               &this routine.')
+      endif
       nfile = 0
       if(num_files > 0) then 
          do i=1,num_files
@@ -267,7 +275,7 @@ module time_interp_external_mod
          call mpp_open(unit,trim(file),MPP_RDONLY,form,threading=thread,&
            fileset=fset)
          num_files = num_files + 1
-         if(num_files >max_files) call mpp_error(FATAL,'Too many files opened in time_interp_ext')
+         if(num_files >max_files) call mpp_error(FATAL,'Too many files opened in time_interp_external')
          opened_files(num_files)%filename = trim(file)
          opened_files(num_files)%unit = unit
       else
@@ -275,7 +283,7 @@ module time_interp_external_mod
       endif
 
       call mpp_get_info(unit,ndim,nvar,natt,ntime)
-      
+
       if (ntime < 1) then
           write(msg,'(a15,a,a58)') 'external field ',trim(fieldname),&
            ' does not have an associated record dimension (REQUIRED) '
@@ -306,7 +314,7 @@ module time_interp_external_mod
          call mpp_get_atts(flds(i),name=name,units=fld_units,ndim=ndim,siz=siz_in)
          call mpp_get_tavg_info(unit,flds(i),flds,tstamp,tstart,tend,tavg)
          
-         if (lowercase(trim(name)) == lowercase(trim(fieldname))) then
+         if (trim(lowercase(name)) == trim(lowercase(fieldname))) then
              if (verb) write(stdout(),*) 'found field ',trim(fieldname), ' in file !!'
              num_fields = num_fields + 1
              init_external_field = num_fields
@@ -332,7 +340,11 @@ module time_interp_external_mod
                 cart = 'N'
                 call get_axis_cart(fld_axes(j), cart)
                 call mpp_get_atts(fld_axes(j),len=len)
-                if (cart == 'N') call mpp_error(FATAL,'couldnt recognize axis atts in time_interp_external')
+                if (cart == 'N') then
+                   write(msg,'(a,"/",a)')  trim(file),trim(fieldname)
+                   call mpp_error(FATAL,'file/field '//trim(msg)// &
+                        ' couldnt recognize axis atts in time_interp_external')
+                endif
                 select case (cart)
                 case ('X')
                     if (j.eq.2) transpose_xy = .true.
@@ -348,7 +360,10 @@ module time_interp_external_mod
                     endif
                     field(num_fields)%axes(1) = fld_axes(j)
                     field(num_fields)%siz(1) = dxsize
-                    if (len /= gxsize) call mpp_error(FATAL,'x dim doesnt match model')
+                    if (len /= gxsize) then
+                       write(msg,'(a,"/",a)')  trim(file),trim(fieldname)
+                       call mpp_error(FATAL,'time_interp_ext, file/field '//trim(msg)//' x dim doesnt match model')
+                    endif
                 case ('Y')
                     field(num_fields)%axes(2) = fld_axes(j)
                     if (.not.PRESENT(domain) .and. .not.PRESENT(override)) then
@@ -362,7 +377,10 @@ module time_interp_external_mod
                        if (PRESENT(axis_sizes)) axis_sizes(2) = len
                     endif
                     field(num_fields)%siz(2) = dysize
-                    if (len /= gysize) call mpp_error(FATAL,'y dim doesnt match model')                        
+                    if (len /= gysize) then
+                       write(msg,'(a,"/",a)')  trim(file),trim(fieldname)
+                       call mpp_error(FATAL,'time_interp_ext, file/field '//trim(msg)//' y dim doesnt match model')
+                    endif
                 case ('Z')
                     field(num_fields)%axes(3) = fld_axes(j)
                     field(num_fields)%siz(3) = siz_in(3)
@@ -390,16 +408,16 @@ module time_interp_external_mod
                 field(num_fields)%nbuf = min(siz(4),2)                 
                 allocate(field(num_fields)%data(isdata:iedata,jsdata:jedata,siz(3),siz(4)))
              else
-                if (num_io_buffers .le. 1) call mpp_error(FATAL,'num_io_buffers should be at least 2')
+                if (num_io_buffers .le. 1) call mpp_error(FATAL,'time_interp_ext:num_io_buffers should be at least 2')
                 field(num_fields)%nbuf = min(num_io_buffers,siz(4))
                 allocate(field(num_fields)%data(isdata:iedata,jsdata:jedata,siz(3),field(num_fields)%nbuf))
              endif
              slope=1.0;intercept=0.0
-             if (units /= 'same') call convert_units(trim(field(num_fields)%units),trim(units),slope,intercept)
-             if (verb.and.units /= 'same') then
-                 write(stdout(),*) 'attempting to convert data to units = ',trim(units)
-                 write(stdout(),'(a,f8.3,a,f8.3)') 'factor = ',slope,' offset= ',intercept
-             endif
+!             if (units /= 'same') call convert_units(trim(field(num_fields)%units),trim(units),slope,intercept)
+!             if (verb.and.units /= 'same') then
+!                 write(stdout(),*) 'attempting to convert data to units = ',trim(units)
+!                 write(stdout(),'(a,f8.3,a,f8.3)') 'factor = ',slope,' offset= ',intercept
+!             endif
              field(num_fields)%slope = slope
              field(num_fields)%intercept = intercept
              allocate(field(num_fields)%ibuf(field(num_fields)%nbuf))
@@ -446,69 +464,79 @@ module time_interp_external_mod
              allocate(field(num_fields)%start_time(ntime))
              allocate(field(num_fields)%end_time(ntime))
 
-             call mpp_get_atts(time_axis,units=units)
+             call mpp_get_atts(time_axis,units=units,calendar=calendar_type)
              do j=1,ntime
-                call get_cal_time(tstamp(j),trim(units),yr,mon,day,hr,minu,sec)
-                field(num_fields)%time(j) = set_date(yr,mon,day,hr,minu,sec)                
-                call get_cal_time(tstart(j),trim(units),yr,mon,day,hr,minu,sec)
-                field(num_fields)%start_time(j) = set_date(yr,mon,day,hr,minu,sec)
-                call get_cal_time(tend(j),trim(units),yr,mon,day,hr,minu,sec)
-                field(num_fields)%end_time(j) = set_date(yr,mon,day,hr,minu,sec)
+!                call get_cal_time(tstamp(j),trim(units),yr,mon,day,hr,minu,sec)
+!                field(num_fields)%time(j) = set_date(yr,mon,day,hr,minu,sec)
+
+                field(num_fields)%time(j) = get_cal_time(tstamp(j),trim(units),trim(calendar_type))
+                
+!                call get_cal_time(tstart(j),trim(units),yr,mon,day,hr,minu,sec)
+!                field(num_fields)%start_time(j) = set_date(yr,mon,day,hr,minu,sec)
+
+                field(num_fields)%start_time(j) = get_cal_time(tstart(j),trim(units),trim(calendar_type))
+                
+!                call get_cal_time(tend(j),trim(units),yr,mon,day,hr,minu,sec)
+!                field(num_fields)%end_time(j) = set_date(yr,mon,day,hr,minu,sec)
+
+                field(num_fields)%end_time(j) = get_cal_time(tend(j),trim(units),trim(calendar_type))
              enddo
              
              if (field(num_fields)%modulo_time) then
                  call set_time_modulo(field(num_fields)%Time)
                  call set_time_modulo(field(num_fields)%start_time)
                  call set_time_modulo(field(num_fields)%end_time)
-             endif
-             
-             
-             do j= 1, ntime
-                field(num_fields)%period(j) = field(num_fields)%end_time(j)-field(num_fields)%start_time(j)
-                if (field(num_fields)%period(j) > set_time(0,0)) then
-                    call get_time(field(num_fields)%period(j), sec, day)
-                    sec = sec/2+mod(day,2)*43200
-                    day = day/2
-                    field(num_fields)%time(j) = field(num_fields)%start_time(j)+&
-                         set_time(sec,day)
-                else
-                    if (j > 1 .and. j < ntime) then
-                        tdiff = field(num_fields)%time(j+1) -  field(num_fields)%time(j-1)
-                        call get_time(tdiff, sec, day)
-                        sec = sec/2+mod(day,2)*43200
-                        day = day/2
-                        field(num_fields)%period(j) = set_time(sec,day)
-                        sec = sec/2+mod(day,2)*43200
-                        day = day/2
-                        field(num_fields)%start_time(j) = field(num_fields)%time(j) - set_time(sec,day)
-                        field(num_fields)%end_time(j) = field(num_fields)%time(j) + set_time(sec,day)
-                    elseif ( j == 1) then
-                        tdiff = field(num_fields)%time(2) -  field(num_fields)%time(1)
-                        call get_time(tdiff, sec, day)
-                        field(num_fields)%period(j) = set_time(sec,day)
-                        sec = sec/2+mod(day,2)*43200
-                        day = day/2
-                        field(num_fields)%start_time(j) = field(num_fields)%time(j) - set_time(sec,day)
-                        field(num_fields)%end_time(j) = field(num_fields)%time(j) + set_time(sec,day)
-                    else
-                        tdiff = field(num_fields)%time(ntime) -  field(num_fields)%time(ntime-1)
-                        call get_time(tdiff, sec, day)
-                        field(num_fields)%period(j) = set_time(sec,day)
-                        sec = sec/2+mod(day,2)*43200
-                        day = day/2
-                        field(num_fields)%start_time(j) = field(num_fields)%time(j) - set_time(sec,day)
-                        field(num_fields)%end_time(j) = field(num_fields)%time(j) + set_time(sec,day)
-                    endif
-                endif
-             enddo
-             
+             endif 
+                          
+             if(ntime==1) then
+                 call mpp_error(NOTE, 'time_interp_external_mod: file '//trim(file)//' only has one time level')
+             else
+                do j= 1, ntime
+                   field(num_fields)%period(j) = field(num_fields)%end_time(j)-field(num_fields)%start_time(j)
+                   if (field(num_fields)%period(j) > set_time(0,0)) then
+                       call get_time(field(num_fields)%period(j), sec, day)
+                       sec = sec/2+mod(day,2)*43200
+                       day = day/2
+                       field(num_fields)%time(j) = field(num_fields)%start_time(j)+&
+                           set_time(sec,day)
+                   else
+                       if (j > 1 .and. j < ntime) then
+                           tdiff = field(num_fields)%time(j+1) -  field(num_fields)%time(j-1)
+                           call get_time(tdiff, sec, day)
+                           sec = sec/2+mod(day,2)*43200
+                           day = day/2
+                           field(num_fields)%period(j) = set_time(sec,day)
+                           sec = sec/2+mod(day,2)*43200
+                           day = day/2
+                           field(num_fields)%start_time(j) = field(num_fields)%time(j) - set_time(sec,day)
+                           field(num_fields)%end_time(j) = field(num_fields)%time(j) + set_time(sec,day)
+                       elseif ( j == 1) then
+                           tdiff = field(num_fields)%time(2) -  field(num_fields)%time(1)
+                           call get_time(tdiff, sec, day)
+                           field(num_fields)%period(j) = set_time(sec,day)
+                           sec = sec/2+mod(day,2)*43200
+                           day = day/2
+                           field(num_fields)%start_time(j) = field(num_fields)%time(j) - set_time(sec,day)
+                           field(num_fields)%end_time(j) = field(num_fields)%time(j) + set_time(sec,day)
+                       else
+                           tdiff = field(num_fields)%time(ntime) -  field(num_fields)%time(ntime-1)
+                           call get_time(tdiff, sec, day)
+                           field(num_fields)%period(j) = set_time(sec,day)
+                           sec = sec/2+mod(day,2)*43200
+                           day = day/2
+                           field(num_fields)%start_time(j) = field(num_fields)%time(j) - set_time(sec,day)
+                           field(num_fields)%end_time(j) = field(num_fields)%time(j) + set_time(sec,day)
+                       endif
+                   endif
+                enddo
+             endif       
+
              do j=1,ntime-1
                 if (field(num_fields)%time(j) >= field(num_fields)%time(j+1)) &
                      call mpp_error(FATAL,'times not monotonically increasing')
              enddo
              
              field(num_fields)%modulo_time = get_axis_modulo(time_axis)
-             
              
              if (verb) then
                  if (field(num_fields)%modulo_time) write(stdout(),*) 'data are being treated as modulo in time'
@@ -628,11 +656,11 @@ module time_interp_external_mod
       if (PRESENT(verbose)) verb=verbose
       
       if (nx.ne.field(index)%siz(1).or.ny.ne.field(index)%siz(2).or.nz.ne.field(index)%siz(3)) &
-           call mpp_error(FATAL,'array size mismatch in time_interp_external')
+           call mpp_error(FATAL,'field '//trim(field(index)%name)//' array size mismatch in time_interp_external')
 
-      if (index > num_fields) call mpp_error(FATAL,'index exceeds available datasets')
-
-      
+      if (index > num_fields) call mpp_error(FATAL,'time_interp_ext, field:'//trim(field(index)%name)//&
+           'index exceeds available datasets')
+     
       isc=field(index)%isc;iec=field(index)%iec
       jsc=field(index)%jsc;jec=field(index)%jec
 
@@ -714,7 +742,7 @@ module time_interp_external_mod
                              field(index)%buf3d(isc:iec,jsc:jec,:)*field(index)%slope + field(index)%intercept
                      endif
                   case default
-                     call mpp_error(FATAL,'invalid array rank')
+                     call mpp_error(FATAL,'field '//trim(field(index)%name)//'invalid array rank')
                   end select
                endif
                field(index)%ibuf(field(index)%nbuf) = t1
@@ -741,7 +769,7 @@ module time_interp_external_mod
                      field(index)%data(isc:iec,jsc:jec,:,field(index)%nbuf) = &
                           field(index)%buf3d(isc:iec,jsc:jec,:)*field(index)%slope + field(index)%intercept
                   case default
-                     call mpp_error(FATAL,'invalid array rank')
+                     call mpp_error(FATAL,'field '//trim(field(index)%name)//'invalid array rank')
                   end select
                else
                   select case(field(index)%ndim)
@@ -768,7 +796,7 @@ module time_interp_external_mod
                              field(index)%buf3d(isc:iec,jsc:jec,:)*field(index)%slope + field(index)%intercept
                      endif
                   case default
-                     call mpp_error(FATAL,'invalid array rank')
+                     call mpp_error(FATAL,'field '//trim(field(index)%name)//'invalid array rank')
                   end select
                endif
                field(index)%ibuf(field(index)%nbuf) = t2

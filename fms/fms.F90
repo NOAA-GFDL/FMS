@@ -1,7 +1,7 @@
 
 module fms_mod
 
-! <CONTACT EMAIL="bw@gfdl.noaa.gov">
+! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
 !   Bruce Wyman
 ! </CONTACT>
 
@@ -120,7 +120,8 @@ use          mpp_mod, only:  mpp_error, NOTE, WARNING, FATAL,    &
                              CLOCK_INFRA, mpp_clock_set_grain,   &
                              mpp_set_stack_size,                 &
                              stdin, stdout, stderr, stdlog,      &
-                             mpp_error_state
+                             mpp_error_state, lowercase,         &
+                             uppercase
 
 use  mpp_domains_mod, only:  domain2D, mpp_define_domains, &
                              mpp_update_domains, GLOBAL_DATA_DOMAIN, &
@@ -137,8 +138,10 @@ use       mpp_io_mod, only:  mpp_io_init, mpp_open, mpp_close,         &
 
 use fms_io_mod, only : read_data, write_data, fms_io_init, fms_io_exit, field_size, &
                        open_namelist_file, open_restart_file, open_ieee32_file, close_file, &
-                       set_domain, get_domain_decomp, nullify_domain
+                       set_domain, get_domain_decomp, nullify_domain, &
+                       open_file, open_direct_file
 
+use memutils_mod, only: print_memuse_stats, memutils_init
 implicit none
 private
 
@@ -147,7 +150,8 @@ public :: fms_init, fms_end
 
 ! routines for opening/closing specific types of file
 public :: open_namelist_file, open_restart_file, &
-          open_ieee32_file, close_file
+          open_ieee32_file, close_file, &
+          open_file, open_direct_file
 
 ! routines for reading/writing distributed data
 public :: set_domain, read_data, write_data
@@ -158,7 +162,7 @@ public :: file_exist, check_nml_error,      &
           write_version_number, error_mesg
 
 ! miscellaneous utilities (non i/o)
-public :: lowercase, uppercase,                &
+public :: lowercase, uppercase, string,        &
           string_array_index, monotonic_array
 
 ! public mpp interfaces
@@ -172,6 +176,10 @@ public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
 public :: CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, &
           CLOCK_MODULE_DRIVER, CLOCK_MODULE,   &
           CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
+!Balaji
+!this is published by fms and applied to any initialized clocks
+!of course you can go and set the flag to SYNC or DETAILED by hand
+integer, public :: clock_flag_default
 
 ! temporary interface (to be removed before next release)
 public :: mpp_clock_init
@@ -181,11 +189,12 @@ public :: mpp_clock_init
 !------ adjustable severity level for warnings ------
 
   logical           :: read_all_pe   = .true.
-  character(len=16) :: clock_grain = 'NONE'
+  character(len=16) :: clock_grain = 'NONE', clock_flags='NONE'
   character(len=8)  :: warning_level = 'warning'
   character(len=64) :: iospec_ieee32 = '-N ieee_32'
   integer           :: stack_size = 0
   integer           :: domains_stack_size = 0
+  logical, public   :: print_memory_usage = .FALSE.
 
 !------ namelist interface -------
 
@@ -198,6 +207,16 @@ public :: mpp_clock_init
 !     module: mpp_clock_id, mpp_clock_begin, and mpp_clock_end.
 !     The fms module makes these routines public.
 !     A list of timed code sections will be printed to STDOUT.
+!     See the <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp.html">MPP</LINK>
+!     module for more details.
+!   </DATA>
+!   <DATA NAME="clock_flags"  TYPE="character"  DEFAULT="'NONE'">
+!     Possible values are 'NONE', 'SYNC', or 'DETAILED'.
+!     SYNC will give accurate information on load balance of the clocked
+!     portion of code.
+!     DETAILED also turns on detailed message-passing performance diagnosis.
+!     Both SYNC and DETAILED will  work correctly on innermost clock nest
+!     and distort outer clocks, and possibly the overall code time.
 !     See the <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp.html">MPP</LINK>
 !     module for more details.
 !   </DATA>
@@ -225,12 +244,23 @@ public :: mpp_clock_init
 !     domains_stack_size = 0 (default) then the default size set by
 !     mpp_domains_mod is used. 
 !   </DATA>
+!   <DATA NAME="print_memory_usage"  TYPE="logical"  DEFAULT=".FALSE.">
+!     If set to .TRUE., memory usage statistics will be printed at various
+!     points in the code. It is used to study memory usage, e.g to detect
+!     memory leaks.
+!   </DATA>
 ! </NAMELIST>
 
-  namelist /fms_nml/  read_all_pe, clock_grain,     &
+  namelist /fms_nml/  read_all_pe, clock_grain, clock_flags,    &
                       warning_level, iospec_ieee32, &
-                      stack_size, domains_stack_size
+                      stack_size, domains_stack_size, &
+                      print_memory_usage
 
+  !--- public interface ---
+  interface string
+     module procedure string_from_integer
+     module procedure string_from_real
+  end interface 
 
 !   ---- private data for check_nml_error ----
 
@@ -241,8 +271,8 @@ public :: mpp_clock_init
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: fms.F90,v 1.3 2003/04/09 21:16:41 fms Exp $'
-  character(len=128) :: tagname = '$Name: inchon $'
+  character(len=128) :: version = '$Id: fms.F90,v 10.0 2003/10/24 22:01:30 fms Exp $'
+  character(len=128) :: tagname = '$Name: jakarta $'
 
   logical :: module_is_initialized = .FALSE.
 
@@ -315,37 +345,51 @@ subroutine fms_init ( )
 
 !---- set severity level for warnings ----
 
-    if ( lowercase(trim(warning_level)) == 'fatal' ) then
-            call mpp_set_warn_level ( FATAL )
-    else if ( lowercase(trim(warning_level)) == 'warning' ) then
-            call mpp_set_warn_level ( WARNING )
-    else
-            call error_mesg ( 'fms_init',  &
-            'invalid entry for namelist variable warning_level', FATAL )
-    endif
+    select case( trim(lowercase(warning_level)) )
+    case( 'fatal' )  
+        call mpp_set_warn_level ( FATAL )
+    case( 'warning' )
+        call mpp_set_warn_level ( WARNING )
+    case default
+        call error_mesg ( 'fms_init',  &
+             'invalid entry for namelist variable warning_level', FATAL )
+    end select
 
 !--- set granularity for timing code sections ---
 
-    if (uppercase(trim(clock_grain)) == 'NONE') then
-       call mpp_clock_set_grain (0)
-    else if (uppercase(trim(clock_grain)) == 'COMPONENT') then
-       call mpp_clock_set_grain (CLOCK_COMPONENT)
-    else if (uppercase(trim(clock_grain)) == 'SUBCOMPONENT') then
-       call mpp_clock_set_grain (CLOCK_SUBCOMPONENT)
-    else if (uppercase(trim(clock_grain)) == 'MODULE_DRIVER') then
-       call mpp_clock_set_grain (CLOCK_MODULE_DRIVER)
-    else if (uppercase(trim(clock_grain)) == 'MODULE') then
-       call mpp_clock_set_grain (CLOCK_MODULE)
-    else if (uppercase(trim(clock_grain)) == 'ROUTINE') then
-       call mpp_clock_set_grain (CLOCK_ROUTINE)
-    else if (uppercase(trim(clock_grain)) == 'LOOP') then
-       call mpp_clock_set_grain (CLOCK_LOOP)
-    else if (uppercase(trim(clock_grain)) == 'INFRA') then
-       call mpp_clock_set_grain (CLOCK_INFRA)
-    else
+    select case( trim(uppercase(clock_grain)) )
+    case( 'NONE' )
+        call mpp_clock_set_grain (0)
+    case( 'COMPONENT' )
+        call mpp_clock_set_grain (CLOCK_COMPONENT)
+    case( 'SUBCOMPONENT' )
+        call mpp_clock_set_grain (CLOCK_SUBCOMPONENT)
+    case( 'MODULE_DRIVER' )
+        call mpp_clock_set_grain (CLOCK_MODULE_DRIVER)
+    case( 'MODULE' )
+        call mpp_clock_set_grain (CLOCK_MODULE)
+    case( 'ROUTINE' )
+        call mpp_clock_set_grain (CLOCK_ROUTINE)
+    case( 'LOOP' )
+        call mpp_clock_set_grain (CLOCK_LOOP)
+    case( 'INFRA' )
+        call mpp_clock_set_grain (CLOCK_INFRA)
+    case default
+        call error_mesg ( 'fms_init',  &
+             'invalid entry for namelist variable clock_grain', FATAL )
+    end select
+!Balaji
+    select case( trim(uppercase(clock_flags)) )
+    case( 'NONE' )
+       clock_flag_default = 0
+    case( 'SYNC' )
+       clock_flag_default = MPP_CLOCK_SYNC
+    case( 'DETAILED' )
+       clock_flag_default = MPP_CLOCK_DETAILED
+    case default
        call error_mesg ( 'fms_init',  &
-            'invalid entry for namelist variable clock_grain', FATAL )
-    endif
+            'invalid entry for namelist variable clock_flags', FATAL )
+   end select
 
 !--- write version info and namelist to logfile ---
 
@@ -355,6 +399,8 @@ subroutine fms_init ( )
       write (stdlog(),*) 'nml_error_codes=', nml_error_codes(1:num_nml_error_codes)
     endif
 
+    call memutils_init( print_memory_usage )
+    call print_memuse_stats('fms_init')
 
 end subroutine fms_init
 ! </SUBROUTINE>
@@ -382,7 +428,8 @@ end subroutine fms_init
 subroutine fms_end ( )
 
     if (.not.module_is_initialized) return  ! return silently
-    call fms_io_exit
+!    call fms_io_exit !now called from coupler_end
+    call mpp_io_exit
     call mpp_domains_exit
     call mpp_exit
     module_is_initialized =.FALSE.
@@ -702,90 +749,6 @@ end subroutine nml_error_init
  end subroutine write_version_number
 ! </SUBROUTINE>
 
-
-
-
-!#######################################################################
-!  functions for changing the case of character strings
-!#######################################################################
-
-
-! <FUNCTION NAME="lowercase">
-
-!   <OVERVIEW>
-!     Convert character strings to all lower case.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Converts a character string to all lower case letters. The characters "A-Z"
-!      are converted to "a-z", all other characters are left unchanged.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     string = lowercase ( cs )
-!   </TEMPLATE>
-
-!   <IN NAME="cs"  TYPE="character(len=*), scalar" >
-!     Character string that may contain upper case letters.
-!   </IN>
-!   <OUT NAME="string"  TYPE="character(len=len(cs)), scalar" >
-!     Character string that contains all lower case letters. The
-!     length of this string must be the same as the input string.
-!   </OUT>
-
-!   change to all lower case
-
- function lowercase (cs) 
- character(len=*), intent(in) :: cs
- character(len=len(cs))       :: lowercase 
- character :: ca(len(cs)) 
-
- integer, parameter :: co=iachar('a')-iachar('A') ! case offset
-    
-    ca = transfer(cs,"x",len(cs)) 
-    where (ca >= "A" .and. ca <= "Z") ca = achar(iachar(ca)+co) 
-    lowercase = transfer(ca,cs) 
-    
- end function lowercase 
-! </FUNCTION>
-
-!#######################################################################
-
-
-! <FUNCTION NAME="uppercase">
-
-!   <OVERVIEW>
-!     Convert character strings to all upper case.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Converts a character string to all upper case letters. The characters "a-z"
-!      are converted to "A-Z", all other characters are left unchanged. 
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     string = uppercase ( cs )
-!   </TEMPLATE>
-
-!   <IN NAME="cs"  TYPE="character(len=*), scalar" >
-!     Character string that may contain lower case letters.
-!   </IN>
-!   <OUT NAME="string"  TYPE="character(len=len(cs)), scalar" >
-!     Character string that contains all upper case letters. The
-!             length of this string must be the same as the input string.
-!   </OUT>
-!   change to all upper case
-
- function uppercase (cs) 
- character(len=*), intent(in) :: cs
- character(len=len(cs))       :: uppercase 
- character :: ca(len(cs)) 
-
- integer, parameter :: co=iachar('A')-iachar('a') ! case offset
-    
-    ca = transfer(cs,"x",len(cs)) 
-    where (ca >= "a" .and. ca <= "z") ca = achar(iachar(ca)+co) 
-    uppercase = transfer(ca,cs) 
-    
- end function uppercase 
-! </FUNCTION>
-
 !#######################################################################
 
 
@@ -922,6 +885,29 @@ integer :: i
 
 end function monotonic_array
 ! </FUNCTION>
+
+  !#######################################################################
+
+  function string_from_integer(n)
+    integer, intent(in) :: n
+    character(len=16) :: string_from_integer
+
+    write(string_from_integer,*) n
+
+    return
+
+  end function string_from_integer
+
+  !#######################################################################
+  function string_from_real(a)
+    real, intent(in) :: a
+    character(len=32) :: string_from_real
+
+    write(string_from_real,*) a
+
+    return
+
+  end function string_from_real
 
 !#######################################################################
 !##### temporary interface for backward compatibility ######

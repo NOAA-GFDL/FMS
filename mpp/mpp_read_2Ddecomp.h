@@ -58,7 +58,8 @@
 ! read field on pe 0 and pass to all pes
               if( pe.EQ.0 ) call read_record( unit, field, len, gdata, tindex )
 ! broadcasting global array, this can be expensive!          
-              call mpp_transmit( gdata, len, ALL_PES, gdata, len, 0 )
+              call mpp_transmit( put_data=gdata(1), plen=len, to_pe=ALL_PES, &
+                                 get_data=gdata(1), glen=len, from_pe=0 )
               ioff = is; joff = js
               if( data_has_halos )then
                   ioff = isd; joff = jsd

@@ -1,7 +1,7 @@
 
 module constants_mod
 
-! <CONTACT EMAIL="bw@gfdl.noaa.gov">
+! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
 !   Bruce Wyman
 ! </CONTACT>
 
@@ -24,8 +24,8 @@ use fms_mod, only: write_version_number
 implicit none
 private
 
-character(len=128) :: version='$Id: constants.F90,v 1.4 2003/04/09 21:15:47 fms Exp $'
-character(len=128) :: tagname='$Name: inchon $'
+character(len=128) :: version='$Id: constants.F90,v 10.0 2003/10/24 22:01:26 fms Exp $'
+character(len=128) :: tagname='$Name: jakarta $'
 logical :: do_log = .true.
 logical :: module_is_initialized = .FALSE.
 !dummy variable to use in HUGE initializations

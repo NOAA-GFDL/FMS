@@ -84,7 +84,7 @@ integer :: num_axis_in_file = 0
 integer                :: axis_in_file   (max_axis_num)
 logical                :: time_axis_flag (max_axis_num)
 logical                :: edge_axis_flag (max_axis_num)
-type(axistype)         :: Axis_types     (max_axis_num)
+type(axistype),save    :: Axis_types     (max_axis_num)
 
 !-----------------------------------------------------------------------
 
@@ -100,9 +100,9 @@ end type
 logical :: module_is_initialized = .FALSE.
 
 character(len=128), private :: version= &
-  '$Id: diag_output.F90,v 1.4 2003/04/09 21:16:14 fms Exp $'
+  '$Id: diag_output.F90,v 10.0 2003/10/24 22:01:27 fms Exp $'
 character(len=128), private :: tagname= &
-  '$Name: inchon $'
+  '$Name: jakarta $'
 
 contains
 
@@ -413,7 +413,7 @@ function write_field_meta_data ( file_unit, name, axes, units,      &
  integer, optional, intent(in)  :: pack
  character(len=*), optional, intent(in)  :: avg_name
 
- type(diag_fieldtype)          :: Field
+ type(diag_fieldtype)     :: Field  ! RESULT
 
 !-----------------------------------------------------------------------
 !

@@ -38,12 +38,12 @@
 !             PE.  For the make_exchange_reproduce option, a special side 1 get
 !             is used.  This get communicates individual exchange cells.  The
 !             cells are summed in the order they appear in the grid spec. file.
-!                                    Michael Winton (mw@gfdl.noaa.gov) Oct 2001
+!                                    Michael Winton (Michael.Winton@noaa.gov) Oct 2001
 !
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 module xgrid_mod
 
-! <CONTACT EMAIL="mw@gfdl.noaa.gov">
+! <CONTACT EMAIL="Michael.Winton@noaa.gov">
 !   Michael Winton
 ! </CONTACT>
 
@@ -103,11 +103,12 @@ use       fms_mod,   only: file_exist, open_namelist_file, check_nml_error,  &
                            error_mesg, close_file, FATAL, stdlog,            &
                            write_version_number 
 use mpp_mod,         only: mpp_npes, mpp_pe, mpp_root_pe, mpp_send, mpp_recv, &
-                           mpp_sync_self
+                           mpp_sync_self, stdout
 use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_compute_domains, &
                            Domain2d, mpp_global_sum, mpp_update_domains,    &
-                           mpp_copy_domains, mpp_get_data_domain
-use mpp_io_mod,      only: mpp_open, MPP_MULTI, MPP_OVERWR
+                           mpp_copy_domains, mpp_get_data_domain, XUPDATE,  &
+                           YUPDATE
+use mpp_io_mod,      only: mpp_open, MPP_MULTI, MPP_SINGLE, MPP_OVERWR
 use constants_mod,   only: PI
 
 
@@ -118,19 +119,25 @@ private
 public xmap_type, setup_xmap, set_frac_area, put_to_xgrid, get_from_xgrid, &
        xgrid_count, some, conservation_check, xgrid_init
 
+!--- paramters that determine the remapping method
+integer, parameter :: FIRST_ORDER        = 1
+integer, parameter :: SECOND_ORDER       = 2
+integer, parameter :: SECOND_ORDER_MERID = 3
+integer, parameter :: SECOND_ORDER_ZONAL = 4
+
 ! <NAMELIST NAME="xgrid_nml">
 !   <DATA NAME="make_exchange_reproduce" TYPE="logical"  DEFAULT=".false.">
 !     Set to .true. to make <TT>xgrid_mod</TT> reproduce answers on different
 !     numbers of PEs.  This option has a considerable performance impact.
 !   </DATA>
-!   <DATA NAME="use_higher_order" TYPE="logical"  DEFAULT=".false.">
-!     set to .ture. to use second order remapping scheme, also need to set
-!     remap_order of flux_exchange_nml to 2. 
+!   <DATA NAME="interp_method" TYPE="character(len=64)"  DEFAULT=" 'first_order' ">
+!     exchange grid interpolation method. It has four options: 
+!     "first_order", "second_order", "second_order_merid", "second_order_zonal".
 !   </DATA>
 logical :: make_exchange_reproduce = .false. ! exactly same on different # PEs
-logical :: use_higher_order = .false.
-logical :: debug = .false.
-namelist /xgrid_nml/ make_exchange_reproduce, use_higher_order, debug
+character(len=64) :: interp_method = 'first_order'
+
+namelist /xgrid_nml/ make_exchange_reproduce, interp_method
 ! </NAMELIST>
 logical :: init = .true.
 
@@ -144,15 +151,16 @@ logical :: init = .true.
 !     Scatters data from model grid onto exchange grid.
 !   </DESCRIPTION>
 !   <TEMPLATE>
-!     call put_to_xgrid(d, grid_id, x, xmap, remapping_order)
+!     call put_to_xgrid(d, grid_id, x, xmap, remap_order)
 !   </TEMPLATE>
 !   <IN NAME="d"  TYPE="real"  > </IN>
 !   <IN NAME="grid_id"  TYPE=" character(len=3)"  > </IN>
 !   <INOUT NAME="x"  TYPE="real"  > </INOUT>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
-!   <IN NAME="remapping_order" TYPE="integer,optional">
-!     default value is 1 (linear interpolation). =2 use second order
-!     interpolation.
+!   <IN NAME="remap_method" TYPE="integer,optional">
+!     exchange grid interpolation method. It has four possible values: 
+!     FIRST_ORDER (=1), SECOND_ORDER(=2), SECOND_ORDER_MERID(=3) and
+!     SECOND_ORDER_ZONAL(=4). Default value is FIRST_ORDER.
 !   </IN>
 interface put_to_xgrid
   module procedure put_side1_to_xgrid
@@ -193,15 +201,13 @@ end interface
 !     Conservation_check must be called by all PEs to work properly.
 !   </DESCRIPTION>
 !   <TEMPLATE>
-!     call conservation_check(d, grid_id, xmap,remapping_order)
+!     call conservation_check(d, grid_id, xmap,remap_order)
 !   </TEMPLATE>
 !   <IN NAME="d"  TYPE="real" DIM="(:,:)" > </IN>
 !   <IN NAME="grid_id"  TYPE="character(len=3)"  > </IN>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 !   <OUT NAME="" TYPE="real" DIM="3">The global sum of a variable.</OUT>
-!   <IN NAME="remapping_order" TYPE="integer,optional">
-!     default value is 1 (linear interpolation). =2 use second order
-!     interpolation.
+!   <IN NAME="remap_method" TYPE="integer,optional">
 !   </IN>
 interface conservation_check
   module procedure conservation_check_side1
@@ -217,23 +223,26 @@ type xcell_type
 end type xcell_type
 
 type grid_type
-  character(len=3)                :: id           ! grid identifier
-  integer, pointer, dimension(:)  :: is, ie       ! domain - i-range (pe index)
-  integer, pointer, dimension(:)  :: js, je       ! domain - j-range (pe index)
-  integer, pointer                :: is_me, ie_me ! my domain - i-range
-  integer, pointer                :: js_me, je_me ! my domain - j-range
-  integer                         :: im, jm, km   ! global domain range
-  real, pointer, dimension(:,:)   :: lon, lat     ! center of global grids
-  real, pointer, dimension(:,:,:) :: frac_area    ! partition fractions
-  real, pointer, dimension(:,:)   :: area         ! cell area
-  real, pointer, dimension(:,:)   :: area_inv     ! 1 / area for normalization
-  integer                         :: first, last  ! xgrid index range
-  integer                         :: size         ! # xcell patterns
-  type(xcell_type), pointer, dimension(:) :: x    ! xcell patterns
-  integer                         :: size_repro   ! # side 1 patterns for repro
-  type(xcell_type), pointer, dimension(:) :: x_repro ! side 1 patterns for repro
-  type(Domain2d) :: domain                        ! used for conservation checks
-  type(Domain2d) :: domain_with_halo              ! used for getting data halo
+  character(len=3)                :: id                               ! grid identifier
+  integer, pointer, dimension(:)  :: is =>NULL(), ie =>NULL()         ! domain - i-range (pe index)
+  integer, pointer, dimension(:)  :: js =>NULL(), je =>NULL()         ! domain - j-range (pe index)
+  integer, pointer                :: is_me =>NULL(),  ie_me =>NULL()  ! my domain - i-range
+  integer, pointer                :: js_me =>NULL(),  je_me =>NULL()  ! my domain - j-range
+  integer                         :: isd_me, ied_me                   ! my data domain - i-range
+  integer                         :: jsd_me, jed_me                   ! my data domain - j-range
+
+  integer                         :: im , jm , km                     ! global domain range
+  real, pointer, dimension(:)     :: lon =>NULL(), lat =>NULL()       ! center of global grids
+  real, pointer, dimension(:,:,:) :: frac_area =>NULL()               ! partition fractions
+  real, pointer, dimension(:,:)   :: area =>NULL()                    ! cell area
+  real, pointer, dimension(:,:)   :: area_inv =>NULL()                ! 1 / area for normalization
+  integer                         :: first, last                      ! xgrid index range
+  integer                         :: size                             ! # xcell patterns
+  type(xcell_type), pointer, dimension(:) :: x =>NULL()               ! xcell patterns
+  integer                         :: size_repro                       ! # side 1 patterns for repro
+  type(xcell_type), pointer, dimension(:) :: x_repro =>NULL()         ! side 1 patterns for repro
+  type(Domain2d) :: domain                                            ! used for conservation checks
+  type(Domain2d) :: domain_with_halo                                  ! used for second order remapping
 end type grid_type
 
 type x1_type
@@ -252,29 +261,31 @@ type xmap_type
   integer :: size            ! # of exchange grid cells with area > 0 on this pe
 
   integer :: me, npes, root_pe
-  logical, pointer, dimension(:) :: your1my2 ! true if side 1 domain on
-                                             ! indexed pe overlaps side 2
-                                             ! domain on this pe
-  logical, pointer, dimension(:) :: your2my1 ! true if a side 2 domain on
-                                             ! indexed pe overlaps side 1
-                                             ! domain on this pe
+  logical, pointer, dimension(:) :: your1my2  =>NULL()! true if side 1 domain on
+                                                      ! indexed pe overlaps side 2
+                                                      ! domain on this pe
+  logical, pointer, dimension(:) :: your2my1 =>NULL() ! true if a side 2 domain on
+                                                      ! indexed pe overlaps side 1
+                                                      ! domain on this pe
 
-  type (grid_type), pointer, dimension(:) :: grids ! 1st grid is side 1;
-                                                   ! rest on side 2
+  type (grid_type), pointer, dimension(:) :: grids =>NULL() ! 1st grid is side 1;
+                                                            ! rest on side 2
   !
   ! Description of the individual exchange grid cells (index is cell #)
   !
-  type(x1_type), pointer, dimension(:) :: x1 ! side 1 info
-  type(x2_type), pointer, dimension(:) :: x2 ! side 2 info
+  type(x1_type), pointer, dimension(:) :: x1 =>NULL() ! side 1 info
+  type(x2_type), pointer, dimension(:) :: x2 =>NULL() ! side 2 info
 
-  real, pointer, dimension(:) :: send_buffer ! for non-blocking sends
-  integer, pointer, dimension(:) :: send_count_repro, recv_count_repro
+  real, pointer, dimension(:) :: send_buffer =>NULL() ! for non-blocking sends
+  real, pointer, dimension(:) :: recv_buffer =>NULL() ! for non-blocking recv
+  integer, pointer, dimension(:) :: send_count_repro =>NULL(), recv_count_repro  =>NULL()
 end type xmap_type
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: xgrid.f90,v 1.4 2003/04/09 21:16:19 fms Exp $'
- character(len=128) :: tagname = '$Name: inchon $'
+ character(len=128) :: version = '$Id: xgrid.f90,v 10.0 2003/10/24 22:01:28 fms Exp $'
+ character(len=128) :: tagname = '$Name: jakarta $'
 
+ real, parameter                              :: EPS = 1.0e-10
  logical :: module_is_initialized = .FALSE.
 
 contains
@@ -301,8 +312,13 @@ end function in_box
 !   <TEMPLATE>
 !     call xgrid_init ( )
 !   </TEMPLATE>
-
-subroutine xgrid_init 
+!   <OUT NAME="remap_method" TYPE="integer">
+!     exchange grid interpolation method. It has four possible values: 
+!     FIRST_ORDER (=1), SECOND_ORDER(=2), SECOND_ORDER_MERID(=3) and
+!     SECOND_ORDER_ZONAL(=4)
+!   </OUT>
+subroutine xgrid_init(remap_method) 
+  integer, intent(out) :: remap_method
 
   integer :: unit, ierr, io
 
@@ -327,6 +343,21 @@ subroutine xgrid_init
   if ( mpp_pe() == mpp_root_pe() ) write (unit,nml=xgrid_nml)
   call close_file (unit)
 
+!--------- check interp_method has suitable value
+
+  select case(trim(interp_method))
+  case('first_order')
+     remap_method = FIRST_ORDER
+  case('second_order')
+     remap_method = SECOND_ORDER
+  case('second_order_merid')
+     remap_method = SECOND_ORDER_MERID
+  case('second_order_zonal')
+     remap_method = SECOND_ORDER_ZONAL
+  case default
+     call error_mesg('xgrid_mod', ' nml interp_method = ' //trim(interp_method)// &
+      ' is not a valid namelist option', FATAL)
+  end select
   
 end subroutine xgrid_init
 ! </SUBROUTINE>
@@ -343,7 +374,7 @@ integer, intent(in), optional :: id_di, id_dj
 
   integer, dimension(n_areas) :: i1, j1, i2, j2 ! xgrid quintuples
   real,    dimension(n_areas) :: area, di, dj     ! from grid file
-  type (grid_type), pointer   :: grid1
+  type (grid_type), pointer, save   :: grid1 =>NULL()
   integer, dimension(0:xmap%npes-1) :: is_2, ie_2, js_2, je_2 ! side 2 decomp.
   integer :: start(4), nread(4), rcode, l, ll, ll_repro, p
 
@@ -430,78 +461,54 @@ end subroutine load_xgrid
 !#######################################################################
 !
 ! get_grid - read the center point of the grid from grid_spec.nc.
+!          - only the grid at the side 1 is needed, so we only read 
+!          - atm and land grid
 !
 !
 
 subroutine get_grid(grid, grid_id, ncid)
-type(grid_type), intent(inout) :: grid
-integer,         intent(in)    :: ncid
-character(len=3), intent(in)   :: grid_id
+  type(grid_type), intent(inout) :: grid
+  integer,         intent(in)    :: ncid
+  character(len=3), intent(in)   :: grid_id
 
-   integer :: rcode, start(4), nread(4), id_lon, id_lat, i, j
-   real, dimension(grid%im) :: lonb
-   real, dimension(grid%jm) :: latb
-   real, dimension(grid%im,grid%jm) :: lon, lat
-   real ::  d2r
+  integer :: rcode, start(4), nread(4), id_lon, id_lat, i, j
+  real, dimension(grid%im) :: lonb
+  real, dimension(grid%jm) :: latb
+  real ::  d2r
 
-   d2r = PI/180.0
+  d2r = PI/180.0
 
-   start = 1; nread = 1  
+  start = 1; nread = 1  
 
-   if(grid_id == 'ATM') then
-      nread(1) =  grid%im     
-      rcode = nf_inq_varid(ncid,'xta',id_lon)
-      if (rcode/=0) call error_mesg('xgrid_mod', 'cannot find grid file field xta', FATAL)
-      rcode = nf_get_vara_double(ncid, id_lon, start, nread,lonb)
+  if(grid_id == 'ATM') then
+     nread(1) =  grid%im     
+     rcode = nf_inq_varid(ncid,'xta',id_lon)
+     if (rcode/=0) call error_mesg('xgrid_mod', 'cannot find grid file field xta', FATAL)
+     rcode = nf_get_vara_double(ncid, id_lon, start, nread,lonb)
 
-      rcode = nf_inq_varid(ncid,'yta',id_lat)
-      if (rcode/=0) call error_mesg('xgrid_mod', 'cannot find grid file field yta', FATAL)
-      nread(1) =  grid%jm
-      rcode = nf_get_vara_double(ncid, id_lat, start, nread,latb)
+     rcode = nf_inq_varid(ncid,'yta',id_lat)
+     if (rcode/=0) call error_mesg('xgrid_mod', 'cannot find grid file field yta', FATAL)
+     nread(1) =  grid%jm
+     rcode = nf_get_vara_double(ncid, id_lat, start, nread,latb)
+  else if(grid_id == 'LND') then
+     nread(1) =  grid%im     
+     rcode = nf_inq_varid(ncid,'xtl',id_lon)
+     if (rcode/=0) call error_mesg('xgrid_mod', 'cannot find grid file field xtl', FATAL)
+     rcode = nf_get_vara_double(ncid, id_lon, start, nread,lonb)
 
-      do j= 1, grid%jm
-         grid%lon(:,j) = lonb * d2r
-      enddo
-      do i=1, grid%im
-         grid%lat(i,:) = latb * d2r
-      enddo
+     nread(1) =  grid%jm
+     rcode = nf_inq_varid(ncid,'ytl',id_lat)
+     if (rcode/=0) call error_mesg('xgrid_mod', 'cannot find grid file field ytl', FATAL)
+     rcode = nf_get_vara_double(ncid, id_lat, start, nread,latb)
+  endif
 
-   else if(grid_id == 'LND') then
-      nread(1) =  grid%im     
-      rcode = nf_inq_varid(ncid,'xtl',id_lon)
-      if (rcode/=0) call error_mesg('xgrid_mod', 'cannot find grid file field xtl', FATAL)
-      rcode = nf_get_vara_double(ncid, id_lon, start, nread,lonb)
+     !--- second order remapping suppose second order
+  if(grid_id == 'LND' .or. grid_id == 'ATM') then
+      grid%lon   = lonb * d2r
+      grid%lat   = latb * d2r
+  endif
 
-      nread(1) =  grid%jm
-      rcode = nf_inq_varid(ncid,'ytl',id_lat)
-      if (rcode/=0) call error_mesg('xgrid_mod', 'cannot find grid file field ytl', FATAL)
-      rcode = nf_get_vara_double(ncid, id_lat, start, nread,latb)
-
-      do j= 1, grid%jm
-         grid%lon(:,j) = lonb * d2r
-      enddo
-
-      do i=1, grid%im
-         grid%lat(i,:) = latb * d2r
-      enddo
-
-   else if(grid_id == 'OCN') then
-
-      nread(1) =  grid%im;  nread(2) =  grid%jm      
-      rcode = nf_inq_varid(ncid,'geolon_t',id_lon)      
-      if (rcode/=0) call error_mesg('xgrid_mod', 'cannot find grid file field geolon_t', FATAL)
-      rcode = nf_get_vara_double(ncid, id_lon, start, nread,lon)
-      grid%lon = lon * d2r
-
-      rcode = nf_inq_varid(ncid,'geolat_t',id_lat) 
-      if (rcode/=0) call error_mesg('xgrid_mod', 'cannot find grid file field geolat_t', FATAL)
-      rcode = nf_get_vara_double(ncid, id_lat, start, nread,lat)
-      grid%lat = lat * d2r
-   else
-      call error_mesg('xgrid_mod','setup_xmap: could not find grid id', FATAL)
-   endif
-
-return
+  return
 
 end subroutine get_grid
   
@@ -528,21 +535,24 @@ end subroutine get_grid
 !   <IN NAME="grid_file" TYPE="character(len=*)" > </IN>
 !   <OUT NAME="xmap" TYPE="xmap_type"  > </OUT>
 
-subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file)
-type (xmap_type),                          intent(out) :: xmap
-character(len=3), dimension(:),            intent(in ) :: grid_ids
-type(Domain2d), dimension(size(grid_ids)), intent(in ) :: grid_domains
-character(len=*)                         , intent(in ) :: grid_file
+subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file )
+  type (xmap_type),                          intent(inout) :: xmap
+  character(len=3), dimension(:),            intent(in ) :: grid_ids
+  type(Domain2d), dimension(size(grid_ids)), intent(in ) :: grid_domains
+  character(len=*)                         , intent(in ) :: grid_file
 
-  integer :: g, l, ll, p, n_areas, send_size
+  integer :: g, l, ll, p, n_areas, send_size, recv_size
   integer :: ncid, i1_id, j1_id, i2_id, j2_id, area_id, di_id, dj_id
   integer :: dims(4), rcode
   integer :: unit
-  type (grid_type), pointer :: grid, grid1
+  type (grid_type), pointer, save :: grid =>NULL(), grid1 =>NULL()
   real, dimension(3) :: xxx
   real, dimension(:,:), allocatable :: check_data
   real, dimension(:,:,:), allocatable :: check_data_3D
   integer :: i, j
+  logical :: use_higher_order = .false.
+
+  if(interp_method .ne. 'first_order')  use_higher_order = .true.
 
   xmap%me   = mpp_pe  ()
   xmap%npes = mpp_npes()
@@ -558,156 +568,171 @@ character(len=*)                         , intent(in ) :: grid_file
   if (rcode/=0) call error_mesg ('xgrid_mod', 'cannot open grid file', FATAL)
 
   do g=1,size(grid_ids)
-    grid => xmap%grids(g)
-    if (g==1) grid1 => xmap%grids(g)
-    grid%id     = grid_ids    (g)
-    grid%domain = grid_domains(g)
-    call mpp_copy_domains(grid%domain, grid%domain_with_halo, xhalo = 1, yhalo =1)
+     grid => xmap%grids(g)
+     if (g==1) grid1 => xmap%grids(g)
+     grid%id     = grid_ids    (g)
+     grid%domain = grid_domains(g)
+     call mpp_copy_domains(grid%domain, grid%domain_with_halo, xhalo = 1, yhalo =1)
+     call mpp_get_data_domain(grid%domain_with_halo, grid%isd_me, grid%ied_me, grid%jsd_me, grid%jed_me)
 
-    allocate ( grid%is(0:xmap%npes-1), grid%ie(0:xmap%npes-1) )
-    allocate ( grid%js(0:xmap%npes-1), grid%je(0:xmap%npes-1) )
-    call mpp_get_compute_domains(grid%domain, xbegin=grid%is, xend=grid%ie, &
-                                              ybegin=grid%js, yend=grid%je  )
-    grid%is_me => grid%is(xmap%me-xmap%root_pe); grid%ie_me => grid%ie(xmap%me-xmap%root_pe)
-    grid%js_me => grid%js(xmap%me-xmap%root_pe); grid%je_me => grid%je(xmap%me-xmap%root_pe)
-    grid%im = maxval(grid%ie)
-    grid%jm = maxval(grid%je)
-    grid%km = 1
+     allocate ( grid%is(0:xmap%npes-1), grid%ie(0:xmap%npes-1) )
+     allocate ( grid%js(0:xmap%npes-1), grid%je(0:xmap%npes-1) )
+     call mpp_get_compute_domains(grid%domain, xbegin=grid%is, xend=grid%ie, &
+          ybegin=grid%js, yend=grid%je  )
 
-    allocate( grid%area    (grid%is_me:grid%ie_me, grid%js_me:grid%je_me) )
-    allocate( grid%area_inv(grid%is_me:grid%ie_me, grid%js_me:grid%je_me) )
-    grid%area       = 0.0
-    grid%size       = 0
-    grid%size_repro = 0
-    if (g>1) then
-      allocate( grid%frac_area(grid%is_me:grid%ie_me, grid%js_me:grid%je_me, &
-                                                      grid%km              ) )
-      grid%frac_area = 1.0
+     grid%is_me => grid%is(xmap%me-xmap%root_pe); grid%ie_me => grid%ie(xmap%me-xmap%root_pe)
+     grid%js_me => grid%js(xmap%me-xmap%root_pe); grid%je_me => grid%je(xmap%me-xmap%root_pe)
+     grid%im = maxval(grid%ie)
+     grid%jm = maxval(grid%je)
+     grid%km = 1
 
-      rcode = nf_inq_varid(ncid, &
-                         'I_'//grid_ids(1)//'_'//grid_ids(1)//'x'//grid_ids(g),&
-                         i1_id)
-      if (rcode/=0) &
-        call error_mesg('xgrid_mod', 'cannot find grid file field', FATAL)
-      rcode = nf_inq_varid(ncid, &
-                         'J_'//grid_ids(1)//'_'//grid_ids(1)//'x'//grid_ids(g),&
-                         j1_id)
-      if (rcode/=0) &
-        call error_mesg('xgrid_mod', 'cannot find grid file field', FATAL)
-      rcode = nf_inq_varid(ncid, &
-                         'I_'//grid_ids(g)//'_'//grid_ids(1)//'x'//grid_ids(g),&
-                         i2_id)
-      if (rcode/=0) &
-        call error_mesg('xgrid_mod', 'cannot find grid file field', FATAL)
-      rcode = nf_inq_varid(ncid, &
-                         'J_'//grid_ids(g)//'_'//grid_ids(1)//'x'//grid_ids(g),&
-                         j2_id)
-      if (rcode/=0) &
-        call error_mesg('xgrid_mod', 'cannot find grid file field', FATAL)
+     allocate( grid%area    (grid%is_me:grid%ie_me, grid%js_me:grid%je_me) )
+     allocate( grid%area_inv(grid%is_me:grid%ie_me, grid%js_me:grid%je_me) )
+     grid%area       = 0.0
+     grid%size       = 0
+     grid%size_repro = 0
+     if (g>1) then
+        allocate( grid%frac_area(grid%is_me:grid%ie_me, grid%js_me:grid%je_me, &
+             grid%km              ) )
+        grid%frac_area = 1.0
 
-      rcode = nf_inq_varid(ncid, 'AREA_'//grid_ids(1)//'x'//grid_ids(g), area_id)
-      if (rcode/=0) &
-        call error_mesg('xgrid_mod', 'cannot find grid file field', FATAL)
-      if(use_higher_order) then
-         rcode = nf_inq_varid(ncid, 'DI_'//grid_ids(1)//'x'//grid_ids(g), di_id)
-         if (rcode/=0) &
-           call error_mesg('xgrid_mod', 'cannot find grid file field DI1_'//grid_ids(1)//'x'//grid_ids(g), FATAL)
+        rcode = nf_inq_varid(ncid, &
+             'I_'//grid_ids(1)//'_'//grid_ids(1)//'x'//grid_ids(g),&
+             i1_id)
+        if (rcode/=0) &
+             call error_mesg('xgrid_mod', 'cannot find grid file field', FATAL)
+        rcode = nf_inq_varid(ncid, &
+             'J_'//grid_ids(1)//'_'//grid_ids(1)//'x'//grid_ids(g),&
+             j1_id)
+        if (rcode/=0) &
+             call error_mesg('xgrid_mod', 'cannot find grid file field', FATAL)
+        rcode = nf_inq_varid(ncid, &
+             'I_'//grid_ids(g)//'_'//grid_ids(1)//'x'//grid_ids(g),&
+             i2_id)
+        if (rcode/=0) &
+             call error_mesg('xgrid_mod', 'cannot find grid file field', FATAL)
+        rcode = nf_inq_varid(ncid, &
+             'J_'//grid_ids(g)//'_'//grid_ids(1)//'x'//grid_ids(g),&
+             j2_id)
+        if (rcode/=0) &
+             call error_mesg('xgrid_mod', 'cannot find grid file field', FATAL)
 
-         rcode = nf_inq_varid(ncid, 'DJ_'//grid_ids(1)//'x'//grid_ids(g), dj_id)
-         if (rcode/=0) &
-           call error_mesg('xgrid_mod', 'cannot find grid file field DJ1'//grid_ids(1)//'x'//grid_ids(g), FATAL)
-      endif
-      rcode = nf_inq_vardimid(ncid, area_id, dims)
-      rcode = nf_inq_dimlen(ncid, dims(1), n_areas)
+        rcode = nf_inq_varid(ncid, 'AREA_'//grid_ids(1)//'x'//grid_ids(g), area_id)
+        if (rcode/=0) &
+             call error_mesg('xgrid_mod', 'cannot find grid file field', FATAL)
+        if(use_higher_order) then
+           rcode = nf_inq_varid(ncid, 'DI_'//grid_ids(1)//'x'//grid_ids(g), di_id)
+           if (rcode/=0) &
+                call error_mesg('xgrid_mod', 'cannot find grid file field DI1_'//grid_ids(1)//'x'//grid_ids(g), FATAL)
 
-      ! load exchange cells, sum grid cell areas, set your1my2/your2my1
-      if(use_higher_order) then
-         call load_xgrid (xmap, grid, grid%domain, ncid, i1_id, j1_id, i2_id, j2_id, &
-                       area_id, n_areas, di_id, dj_id)
-      else 
-         call load_xgrid (xmap, grid, grid%domain, ncid, i1_id, j1_id, i2_id, j2_id, &
-                       area_id, n_areas )
-      endif
-    end if
+           rcode = nf_inq_varid(ncid, 'DJ_'//grid_ids(1)//'x'//grid_ids(g), dj_id)
+           if (rcode/=0) &
+                call error_mesg('xgrid_mod', 'cannot find grid file field DJ1'//grid_ids(1)//'x'//grid_ids(g), FATAL)
+        endif
+        rcode = nf_inq_vardimid(ncid, area_id, dims)
+        rcode = nf_inq_dimlen(ncid, dims(1), n_areas)
 
-      ! get the center point of the grid box
+        ! load exchange cells, sum grid cell areas, set your1my2/your2my1
+        if(use_higher_order) then
+           call load_xgrid (xmap, grid, grid%domain, ncid, i1_id, j1_id, i2_id, j2_id, &
+                area_id, n_areas, di_id, dj_id)
+        else 
+           call load_xgrid (xmap, grid, grid%domain, ncid, i1_id, j1_id, i2_id, j2_id, &
+                area_id, n_areas )
+        endif
+     end if
 
-      allocate(grid%lon(grid%im,grid%jm), grid%lat(grid%im,grid%jm))
-      call get_grid(grid, grid_ids(g), ncid)
+     ! get the center point of the grid box
+     allocate(grid%lon(grid%im), grid%lat(grid%jm))
+     call get_grid(grid, grid_ids(g), ncid)
 
   end do
   rcode = nf_close(ncid)
 
   grid1%area_inv = 0.0;
   where (grid1%area>0.0)
-    grid1%area_inv = 1.0/grid1%area
+     grid1%area_inv = 1.0/grid1%area
   end where
 
   xmap%your1my2(xmap%me-xmap%root_pe) = .false. ! this is not necessarily true but keeps
   xmap%your2my1(xmap%me-xmap%root_pe) = .false. ! a PE from communicating with itself
 
   send_size = grid1%im*grid1%jm
+  recv_size = maxval((grid1%ie-grid1%is+1)*(grid1%je-grid1%js+1) )
   if (make_exchange_reproduce) then
-    allocate( xmap%send_count_repro(0:xmap%npes-1) )
-    allocate( xmap%recv_count_repro(0:xmap%npes-1) )
-    xmap%send_count_repro = 0
-    xmap%recv_count_repro = 0
-    do g=2,size(xmap%grids)
-      do p=0,xmap%npes-1
-        xmap%send_count_repro(p) = xmap%send_count_repro(p) &
-                                  +count(xmap%grids(g)%x      (:)%pe==p+xmap%root_pe)
-        xmap%recv_count_repro(p) = xmap%recv_count_repro(p) &
-                                  +count(xmap%grids(g)%x_repro(:)%pe==p+xmap%root_pe)
-      end do
-    end do
-    send_size = max(send_size, sum(xmap%send_count_repro))
+     allocate( xmap%send_count_repro(0:xmap%npes-1) )
+     allocate( xmap%recv_count_repro(0:xmap%npes-1) )
+     xmap%send_count_repro = 0
+     xmap%recv_count_repro = 0
+     do g=2,size(xmap%grids)
+        do p=0,xmap%npes-1
+           xmap%send_count_repro(p) = xmap%send_count_repro(p) &
+                +count(xmap%grids(g)%x      (:)%pe==p+xmap%root_pe)
+           xmap%recv_count_repro(p) = xmap%recv_count_repro(p) &
+                +count(xmap%grids(g)%x_repro(:)%pe==p+xmap%root_pe)
+        end do
+     end do
+     send_size = max(send_size, sum(xmap%send_count_repro))
   end if
   allocate (xmap%send_buffer(send_size))
+  allocate (xmap%recv_buffer(recv_size))
 
-  call mpp_open( unit, 'xgrid.out', action= MPP_OVERWR,threading= MPP_MULTI )  
+  call mpp_open( unit, 'xgrid.out', action=MPP_OVERWR, threading=MPP_MULTI, &
+       fileset=MPP_SINGLE, nohdrs=.TRUE. )  
 
   write( unit,* )xmap%grids(:)%id, ' GRID: PE ', xmap%me, ' #XCELLS=', &
-           xmap%grids(2:size(xmap%grids))%size, ' #COMM. PARTNERS=', &
-           count(xmap%your1my2), '/', count(xmap%your2my1), &
-           pack((/(p+xmap%root_pe,p=0,xmap%npes-1)/), xmap%your1my2),  &
-           '/', pack((/(p+xmap%root_pe,p=0,xmap%npes-1)/), xmap%your2my1)
+       xmap%grids(2:size(xmap%grids))%size, ' #COMM. PARTNERS=', &
+       count(xmap%your1my2), '/', count(xmap%your2my1), &
+       pack((/(p+xmap%root_pe,p=0,xmap%npes-1)/), xmap%your1my2),  &
+       '/', pack((/(p+xmap%root_pe,p=0,xmap%npes-1)/), xmap%your2my1)
 
   allocate( xmap%x1(1:sum(xmap%grids(2:size(xmap%grids))%size)) )
   allocate( xmap%x2(1:sum(xmap%grids(2:size(xmap%grids))%size)) )
 
   call regen(xmap)
 
-  if ( debug ) then
-     xxx = conservation_check(grid1%area*0+1.0, grid1%id, xmap)
-     if (xmap%me==xmap%root_pe)write( *,* )"Checked data is array of constant 1"
-     if (xmap%me==xmap%root_pe)write( *,* )grid1%id,'(',xmap%grids(:)%id,')=', xxx 
+  xxx = conservation_check(grid1%area*0+1.0, grid1%id, xmap)
+  write(stdout(),* )"Checked data is array of constant 1"
+  write(stdout(),* )grid1%id,'(',xmap%grids(:)%id,')=', xxx 
 
+  do g=2,size(xmap%grids)
+     xxx = conservation_check(xmap%grids(g)%frac_area*0+1.0, xmap%grids(g)%id, xmap )
+     write( stdout(),* )xmap%grids(g)%id,'(',xmap%grids(:)%id,')=', xxx 
+  enddo
+  ! create an random number 2d array
+  if(grid1%id == "ATM") then
+     allocate(check_data(size(grid1%area,1), size(grid1%area,2)))
+     call random_number(check_data)
+
+     !--- second order along both zonal and meridinal direction
+     xxx = conservation_check(check_data, grid1%id, xmap,  remap_method = SECOND_ORDER)
+     write( stdout(),* ) &
+          "Checked data is array of random number between 0 and 1 using zonal and meridinal second order remapping "
+     write( stdout(),* )grid1%id,'(',xmap%grids(:)%id,')=', xxx 
+
+     !--- second order along both zonal direction
+     xxx = conservation_check(check_data, grid1%id, xmap,  remap_method = SECOND_ORDER_ZONAL)
+     write( stdout(),* ) &
+          "Checked data is array of random number between 0 and 1 using zonal second order remapping "
+     write( stdout(),* )grid1%id,'(',xmap%grids(:)%id,')=', xxx 
+
+     !--- second order along both meridinal direction
+     xxx = conservation_check(check_data, grid1%id, xmap,  remap_method = SECOND_ORDER_MERID)
+     write( stdout(),* ) &
+          "Checked data is array of random number between 0 and 1 using meridinal second order remapping "
+     write( stdout(),* )grid1%id,'(',xmap%grids(:)%id,')=', xxx 
+
+     deallocate(check_data)
      do g=2,size(xmap%grids)
-       xxx = conservation_check(xmap%grids(g)%frac_area*0+1.0, xmap%grids(g)%id, &
-                                                                           xmap )
-       if (xmap%me==xmap%root_pe) &
-         write( *,* )xmap%grids(g)%id,'(',xmap%grids(:)%id,')=', xxx 
+        allocate(check_data_3d(size(xmap%grids(g)%frac_area,1),size(xmap%grids(g)%frac_area,2), &
+             size(xmap%grids(g)%frac_area,3) )) 
+        call random_number(check_data_3d)
+        xxx = conservation_check(check_data_3d, xmap%grids(g)%id, xmap,  remap_method = SECOND_ORDER )
+        write( stdout(),* )xmap%grids(g)%id,'(',xmap%grids(:)%id,')=', xxx
+        deallocate( check_data_3d)
      end do
-
-   ! create an random number 2d array
-     if(grid1%id == "ATM") then
-        allocate(check_data(size(grid1%area,1), size(grid1%area,2)))
-        call random_number(check_data)
-        xxx = conservation_check(check_data, grid1%id, xmap,  remapping_order =2)
-        deallocate(check_data)
-        if (xmap%me==xmap%root_pe)write( *,* )"Checked data is array of random number between 0 and 1"
-        if (xmap%me==xmap%root_pe)write( *,* )grid1%id,'(',xmap%grids(:)%id,')=', xxx  
-
-        do g=2,size(xmap%grids)
-          allocate(check_data_3d(size(xmap%grids(g)%frac_area,1),size(xmap%grids(g)%frac_area,2), &
-                                size(xmap%grids(g)%frac_area,3) )) 
-          call random_number(check_data_3d)
-          xxx = conservation_check(check_data_3d, xmap%grids(g)%id, xmap,  remapping_order =2 )
-          if (xmap%me==xmap%root_pe) write( *,* )xmap%grids(g)%id,'(',xmap%grids(:)%id,')=', xxx
-          deallocate( check_data_3d)
-        end do
-    endif
   endif
+
   call close_file (unit)
 
 end subroutine setup_xmap
@@ -782,7 +807,7 @@ character(len=3),       intent(in   ) :: grid_id
 type (xmap_type),       intent(inout) :: xmap
 
   integer :: g
-  type(grid_type), pointer :: grid
+  type(grid_type), pointer, save :: grid =>NULL()
 
   if (grid_id==xmap%grids(1)%id) call error_mesg ('xgrid_mod',  &
                                    'set_frac_area called on side 1 grid', FATAL)
@@ -837,26 +862,26 @@ end function xgrid_count
 !   <IN NAME="grid_id"  TYPE=" character(len=3)"  > </IN>
 !   <INOUT NAME="x"  TYPE="real" DIM="(:)" > </INOUT>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
-!   <IN NAME="remapping_order" TYPE="integer,optional"></IN>
+!   <IN NAME="remap_method" TYPE="integer,optional"></IN>
 
-subroutine put_side1_to_xgrid(d, grid_id, x, xmap, remapping_order)
-real, dimension(:,:), intent(in   ) :: d
-character(len=3),     intent(in   ) :: grid_id
-real, dimension(:),   intent(inout) :: x
-type (xmap_type),     intent(inout) :: xmap
-integer, intent(in), optional       :: remapping_order
+subroutine put_side1_to_xgrid(d, grid_id, x, xmap, remap_method)
+real, dimension(:,:), intent(in   )    :: d
+character(len=3),     intent(in   )    :: grid_id
+real, dimension(:),   intent(inout)    :: x
+type (xmap_type),     intent(inout)    :: xmap
+integer, intent(in), optional          :: remap_method
 
-  integer :: g
-  integer :: order 
+  integer :: g, method
 
-  order = 1
-  if(present(remapping_order)) order = remapping_order
-
-  if ((order .ne. 1) .and. (order .ne. 2)) &
-    call error_mesg ('xgrid_mod', 'xgrid only support first and second order interpolation', FATAL) 
+  method = FIRST_ORDER      ! default
+  if(present(remap_method)) method = remap_method
 
   if (grid_id==xmap%grids(1)%id) then
-       call put_1_to_xgrid(d, x, xmap, order)
+       if(method == FIRST_ORDER) then
+          call put_1_to_xgrid_order_1(d, x, xmap)
+       else 
+          call put_1_to_xgrid_order_2(d, x, xmap, method )
+       endif
     return;
   end if
 
@@ -1029,11 +1054,9 @@ real, dimension(:    ), intent(inout) :: x
 type (xmap_type),       intent(in   ) :: xmap
 
   integer                 :: k, l
-  type (x2_type), pointer :: c
 
   do l=grid%first,grid%last
-    c => xmap%x2(l)
-    x(l) = d(c%i,c%j,c%k)
+    x(l) = d(xmap%x2(l)%i,xmap%x2(l)%j,xmap%x2(l)%k)
   end do
 end subroutine put_2_to_xgrid
 
@@ -1047,12 +1070,11 @@ real, dimension(:),     intent(in   ) :: x
 type (xmap_type),       intent(in   ) :: xmap
 
   integer                 :: l, k
-  type (x2_type), pointer :: c
 
   d = 0.0
   do l=grid%first,grid%last
-    c => xmap%x2(l)
-    d(c%i,c%j,c%k) = d(c%i,c%j,c%k) + c%area*x(l)
+    d(xmap%x2(l)%i,xmap%x2(l)%j,xmap%x2(l)%k) = &
+            d(xmap%x2(l)%i,xmap%x2(l)%j,xmap%x2(l)%k) + xmap%x2(l)%area*x(l)
   end do
   !
   !  normalize with side 2 grid cell areas
@@ -1077,26 +1099,20 @@ real, dimension(im,jm) :: get_side_1
 !    l = l + 1
 !    get_side_1(i,j) = buf(l)
 !  end do; end do
-  call mpp_recv( get_side_1, im*jm, pe )
+  ! Force use of "scalar", integer pointer mpp interface.
+  call mpp_recv( get_side_1(1,1), glen=im*jm, from_pe=pe )
 end function get_side_1
 
 !#######################################################################
 
-subroutine put_1_to_xgrid(d, x, xmap, remapping_order)
+subroutine put_1_to_xgrid_order_1(d, x, xmap)
 real, dimension(:,:), intent(in   ) :: d
 real, dimension(:  ), intent(inout) :: x
 type (xmap_type),     intent(inout) :: xmap
-integer,              intent(in   ) :: remapping_order
 
   integer :: i, is, ie, im, j, js, je, jm, p, l
-  type (x1_type), pointer :: c
   real, dimension(xmap%grids(1)%im,xmap%grids(1)%jm) :: dg
-  type (grid_type), pointer :: grid1
-
-  if(remapping_order .eq. 2) then
-     call put_1_to_xgrid_order_2(d, x, xmap)
-     return
-  endif
+  type (grid_type), pointer, save :: grid1 =>NULL()
 
   grid1 => xmap%grids(1)
   is = grid1%is_me; ie = grid1%ie_me;
@@ -1112,7 +1128,8 @@ integer,              intent(in   ) :: remapping_order
   end do; end do;
   do p=0,xmap%npes-1
     if (xmap%your2my1(p)) then
-      call mpp_send(xmap%send_buffer, im*jm, p+xmap%root_pe);
+      ! Force use of "scalar", integer pointer mpp interface.
+      call mpp_send(xmap%send_buffer(1), plen=im*jm, to_pe=p+xmap%root_pe);
     end if
   end do
   do p=0,xmap%npes-1
@@ -1123,87 +1140,134 @@ integer,              intent(in   ) :: remapping_order
     end if
   end do
   do l=1,xmap%size
-    c    => xmap%x1(l)
-    x(l) =  dg(c%i,c%j)
+    x(l) =  dg(xmap%x1(l)%i,xmap%x1(l)%j)
   end do
 
 !  call mpp_sync_self
-end subroutine put_1_to_xgrid
+end subroutine put_1_to_xgrid_order_1
 
 !#######################################################################
 
 
-subroutine put_1_to_xgrid_order_2(d, x, xmap)
-real, dimension(:,:), intent(in   ) :: d
-real, dimension(:  ), intent(inout) :: x
-type (xmap_type),     intent(inout) :: xmap
+subroutine put_1_to_xgrid_order_2(d, x, xmap, remap_method)
+  real, dimension(:,:), intent(in   ) :: d
+  real, dimension(:  ), intent(inout) :: x
+  type (xmap_type),     intent(inout) :: xmap
+  integer,              intent(in)    :: remap_method
 
   integer :: i, is, ie, im, j, js, je, jm, p, l, isd, ied, jsd, jed
-  type (x1_type), pointer :: c
   real, dimension(xmap%grids(1)%im,xmap%grids(1)%jm) :: dg
-  real, dimension(xmap%grids(1)%im,xmap%grids(1)%jm,2) :: grad_d
-  real, dimension(:,:), allocatable :: d_halo  ! store the data with halo
-  type (grid_type), pointer :: grid1
-  real           :: dlon, dlat
+  real, dimension(xmap%grids(1)%im,xmap%grids(1)%jm) :: grad_x, grad_y
+  real, dimension(xmap%grids(1)%isd_me:xmap%grids(1)%ied_me,xmap%grids(1)%jsd_me:xmap%grids(1)%jed_me) :: tmp
+  type (grid_type), pointer, save :: grid1 =>NULL()
+  integer        :: num_block, send_size, recv_size
 
   grid1 => xmap%grids(1)
-  is = grid1%is_me; ie = grid1%ie_me
-  js = grid1%js_me; je = grid1%je_me
+  is = grid1%is_me;   ie = grid1%ie_me
+  js = grid1%js_me;   je = grid1%je_me
+  isd = grid1%isd_me; ied = grid1%ied_me
+  jsd = grid1%jsd_me; jed = grid1%jed_me
+  im = ie-is+1;       jm = je-js+1
   dg(is:ie,js:je) = d
 
-! first get the halo of data
-  call mpp_get_compute_domain( grid1%domain_with_halo, is,  ie,  js,  je  )
-  call mpp_get_data_domain   ( grid1%domain_with_halo, isd, ied, jsd, jed )
-  allocate( d_halo(isd:ied,jsd:jed))
-  d_halo = 0.0
-  d_halo(is:ie,js:je) = d(:,:)
-  call mpp_update_domains(d_halo,grid1%domain_with_halo)      
-  grad_d(is:ie,js:je,:) = grad(d_halo, grid1, xmap,xmap%me-xmap%root_pe)
+  ! first get the halo of data
+  tmp(is:ie,js:je) = d(:,:)
 
-  im = ie-is+1; jm = je-js+1
-  l = 0
+  if (remap_method == SECOND_ORDER_ZONAL) then
+     call mpp_update_domains(tmp,grid1%domain_with_halo, flags=XUPDATE)
+  else if ( remap_method == SECOND_ORDER_MERID ) then
+     call mpp_update_domains(tmp,grid1%domain_with_halo, flags=YUPDATE)
+  else
+     call mpp_update_domains(tmp,grid1%domain_with_halo)
+  endif
+
+  num_block = 1
+  if( remap_method .ne. SECOND_ORDER_ZONAL ) then   ! second_order_merid or second_order
+     grad_y(is:ie,js:je) = grad_merid(tmp, grid1%lat, is, ie, js, je,isd, ied, jsd, jed)
+     num_block = num_block + 1
+  endif
+
+  if (remap_method .ne. SECOND_ORDER_MERID) then ! second_order_zonal or second_order
+     grad_x(is:ie,js:je) = grad_zonal(tmp, grid1%lon, grid1%lat, is, ie, js, je, isd, ied, jsd, jed)
+     num_block = num_block + 1
+  endif
+
   call mpp_sync_self()          !Balaji
 
-! if size of send_buffer is not enough, need to reallocate send_buffer
-    if(size(xmap%send_buffer) .lt. size(d_halo)) then
-       deallocate(xmap%send_buffer)
-       allocate(xmap%send_buffer(size(d_halo)))
-     endif
+  send_size = num_block*im*jm
+  ! if size of send_buffer is not enough, need to reallocate send_buffer
+  if(size(xmap%send_buffer) .lt. send_size) then
+     deallocate(xmap%send_buffer)
+     allocate(xmap%send_buffer(send_size))
+  endif
 
-    do j=js-1,je+1; do i=is-1,ie+1
-      l = l + 1
-      xmap%send_buffer(l) =  d_halo(i,j)
-    end do; end do
+  l = 0
+  do j=js,je; do i=is,ie
+     l = l + 1
+     xmap%send_buffer(l) =  tmp(i,j)
+  end do; end do
 
-    do p=0,xmap%npes-1
-      if (xmap%your2my1(p)) then
-        call mpp_send(xmap%send_buffer, (im+2)*(jm+2), p+xmap%root_pe);
-      end if
-    end do
+  if(remap_method .ne. SECOND_ORDER_ZONAL) then
+     do j=js,je; do i=is,ie
+        l = l + 1
+        xmap%send_buffer(l) = grad_y(i,j)
+     end do; end do
+  endif
+
+  if (remap_method .ne. SECOND_ORDER_MERID) then
+     do j=js,je; do i=is,ie
+        l = l + 1
+        xmap%send_buffer(l) = grad_x(i,j)
+     end do; end do
+  endif
 
   do p=0,xmap%npes-1
-    if (xmap%your1my2(p)) then
-      is = grid1%is(p); ie = grid1%ie(p)
-      js = grid1%js(p); je = grid1%je(p)
-      isd = is-1; ied = ie + 1
-      jsd = js-1; jed = je + 1
-      if(allocated(d_halo)) deallocate(d_halo)
-      allocate(d_halo(isd:ied,jsd:jed))
-      d_halo(isd:ied,jsd:jed) = get_side_1(p+xmap%root_pe,ie-is+3,je-js+3)
-      dg(is:ie,js:je) = d_halo(is:ie,js:je)
-      grad_d(is:ie,js:je,:) = grad(d_halo, grid1, xmap,p)
-    end if
+     if (xmap%your2my1(p)) then
+        ! Force use of "scalar", integer pointer mpp interface.
+        call mpp_send(xmap%send_buffer(1), plen=send_size, to_pe=p+xmap%root_pe);
+     end if
+  end do
+
+  do p=0,xmap%npes-1
+     if (xmap%your1my2(p)) then
+        is = grid1%is(p);  ie = grid1%ie(p)
+        js = grid1%js(p);  je = grid1%je(p)
+        recv_size = num_block*(ie-is+1)*(je-js+1)
+        if(size(xmap%recv_buffer) .lt. recv_size) then
+           deallocate(xmap%recv_buffer)
+           allocate(xmap%recv_buffer(recv_size))
+        endif
+        call mpp_recv(xmap%recv_buffer(1), glen = recv_size, from_pe = p+xmap%root_pe)
+        l = 0
+        do j = js,je; do i=is,ie
+           l = l + 1
+           dg(i,j) = xmap%recv_buffer(l)
+        enddo; enddo
+        if(remap_method .ne. SECOND_ORDER_ZONAL) then
+           do j = js,je; do i=is,ie
+              l = l + 1
+              grad_y(i,j) = xmap%recv_buffer(l)
+           enddo; enddo
+        endif
+
+        if (remap_method .ne. SECOND_ORDER_MERID) then
+           do j = js,je; do i=is,ie
+              l = l + 1
+              grad_x(i,j) = xmap%recv_buffer(l)
+           enddo; enddo
+        endif
+     end if
   end do
 
   do l=1,xmap%size
-    c    => xmap%x1(l)
-    x(l) =  dg(c%i,c%j)
-    x(l) = x(l) + grad_d(c%i,c%j,1)*c%di + grad_d(c%i,c%j,2)*c%dj
+     x(l) =  dg(xmap%x1(l)%i,xmap%x1(l)%j)
+     if(remap_method .ne. SECOND_ORDER_ZONAL) then
+        x(l) = x(l) + grad_y(xmap%x1(l)%i,xmap%x1(l)%j ) *xmap%x1(l)%dj
+     endif
+     if (remap_method .ne. SECOND_ORDER_MERID) then
+        x(l) = x(l) + grad_x(xmap%x1(l)%i,xmap%x1(l)%j ) *xmap%x1(l)%di
+     endif
   end do
-
-
-! free the memory of the local data
-  deallocate (d_halo)
 
 end subroutine put_1_to_xgrid_order_2
 
@@ -1216,17 +1280,15 @@ type (xmap_type),     intent(inout) :: xmap
 
   real, dimension(xmap%grids(1)%im,xmap%grids(1)%jm), target :: dg
   integer :: i, is, ie, im, j, js, je, jm, l, le, p
-  real             , pointer :: dgp
-  type (x1_type)   , pointer :: c
-  type (grid_type) , pointer :: grid1
+  real             , pointer, save :: dgp =>NULL()
+  type (grid_type) , pointer, save :: grid1 =>NULL()
 
   grid1 => xmap%grids(1)
 
   dg = 0.0;
   do l=1,xmap%size
-    c   => xmap%x1(l)
-    dgp => dg(c%i,c%j)
-    dgp =  dgp + c%area*x(l)
+    dgp => dg(xmap%x1(l)%i,xmap%x1(l)%j)
+    dgp =  dgp + xmap%x1(l)%area*x(l)
   end do
 
   le = 0;
@@ -1240,7 +1302,8 @@ type (xmap_type),     intent(inout) :: xmap
         le = le + 1
         xmap%send_buffer(le) = dg(i,j)
       end do; end do;
-      call mpp_send(xmap%send_buffer(l:le), le-l+1, p+xmap%root_pe);
+      ! Force use of "scalar", integer pointer mpp interface.
+      call mpp_send(xmap%send_buffer(l), plen=le-l+1, to_pe=p+xmap%root_pe);
     end if
   end do
   d = dg(grid1%is_me:grid1%ie_me,grid1%js_me:grid1%je_me);
@@ -1269,7 +1332,7 @@ real, dimension(:  ), intent(in ) :: x
   integer, dimension(:), allocatable :: pe_psum
   integer :: l1, l2, l3, g, i, j, k, p
   integer, dimension(0:xmap%npes-1) :: pl
-  type (grid_type), pointer :: grid
+  type (grid_type), pointer, save :: grid =>NULL()
 
   allocate ( x_psum  (sum(xmap%send_count_repro)) )
   allocate ( pe_psum (sum(xmap%send_count_repro)) )
@@ -1297,7 +1360,8 @@ real, dimension(:  ), intent(in ) :: x
     l2 = l2 + xmap%send_count_repro(p)
     if (xmap%send_count_repro(p)>0) then ! can send to myself
       xmap%send_buffer(l1:l2) = pack(x_psum, pe_psum==p+xmap%root_pe)
-      call mpp_send(xmap%send_buffer(l1:l2), l2-l1+1, p+xmap%root_pe);
+      ! Force use of "scalar", integer pointer mpp interface.
+      call mpp_send(xmap%send_buffer(l1), plen=l2-l1+1, to_pe=p+xmap%root_pe);
     end if
   end do
   deallocate ( x_psum, pe_psum)
@@ -1307,7 +1371,8 @@ real, dimension(:  ), intent(in ) :: x
     l1 = l2 + 1
     l2 = l2 + xmap%recv_count_repro(p)
     if (xmap%recv_count_repro(p)>0) then ! can receive from myself
-      call mpp_recv(x_psum(l1:l2), l2-l1+1, p+xmap%root_pe);
+      ! Force use of "scalar", integer pointer mpp interface.
+      call mpp_recv(x_psum(l1), glen=l2-l1+1, from_pe=p+xmap%root_pe);
       pl(p) = l1
     end if
   end do
@@ -1337,32 +1402,29 @@ end subroutine get_1_from_xgrid_repro
 !   <IN NAME="grid_id"  TYPE="character(len=3)"  > </IN>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 !   <OUT NAME="conservation_check_side1" TYPE="real" DIM="dimension(3)" > </OUT>
-!   <IN NAME="remapping_order" TYPE="integer,optional"></IN>
+!   <IN NAME="remap_method" TYPE="integer,optional"></IN>
 ! conservation_check - returns three numbers which are the global sum of a
 ! variable (1) on its home model grid, (2) after interpolation to the other
 ! side grid(s), and (3) after re_interpolation back onto its home side grid(s).
 !
-function conservation_check_side1(d, grid_id, xmap,remapping_order) ! this one for 1->2->1
-real, dimension(:,:), intent(in   ) :: d
-character(len=3),     intent(in   ) :: grid_id
-type (xmap_type),     intent(inout) :: xmap
-real, dimension(3)                  :: conservation_check_side1
-integer,              intent(in), optional :: remapping_order
+function conservation_check_side1(d, grid_id, xmap,remap_method) ! this one for 1->2->1
+real, dimension(:,:),    intent(in   ) :: d
+character(len=3),        intent(in   ) :: grid_id
+type (xmap_type),        intent(inout) :: xmap
+real, dimension(3)                     :: conservation_check_side1
+integer, intent(in), optional :: remap_method
 
   real                       :: gsum
   real, dimension(xmap%size) :: x_over, x_back
   real, dimension(size(d,1),size(d,2)) :: d1
   real, dimension(:,:,:), allocatable  :: d2
   integer                              :: g
-  type (grid_type), pointer            :: grid1, grid2
-  integer                              :: order
+  type (grid_type), pointer, save      :: grid1 =>NULL(), grid2 =>NULL()
 
-  order = 1
-  if(present(remapping_order)) order = remapping_order
   grid1 => xmap%grids(1)
   conservation_check_side1(1) = mpp_global_sum(grid1%domain, grid1%area*d)
   conservation_check_side1(2) = 0.0
-  call put_to_xgrid (d, grid1%id, x_over, xmap, remapping_order = order)    ! put from side 1
+  call put_to_xgrid (d, grid1%id, x_over, xmap, remap_method)    ! put from side 1
   do g=2,size(xmap%grids)
     grid2 => xmap%grids(g)
     allocate (d2 (grid2%is_me:grid2%ie_me, grid2%js_me:grid2%je_me,  grid2%km) )
@@ -1389,23 +1451,20 @@ end function conservation_check_side1
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 !   <OUT NAME="conservation_check_side2" TYPE="real" DIM="dimension(3)" > </OUT>
 
-function conservation_check_side2(d, grid_id, xmap,remapping_order) ! this one for 2->1->2
-real, dimension(:,:,:), intent(in   ) :: d
-character(len=3),       intent(in   ) :: grid_id
-type (xmap_type),       intent(inout) :: xmap
-real, dimension(3)                    :: conservation_check_side2
-integer,              intent(in), optional :: remapping_order
+function conservation_check_side2(d, grid_id, xmap,remap_method) ! this one for 2->1->2
+real, dimension(:,:,:), intent(in   )  :: d
+character(len=3),       intent(in   )  :: grid_id
+type (xmap_type),       intent(inout)  :: xmap
+real, dimension(3)                     :: conservation_check_side2
+integer, intent(in), optional :: remap_method
 
   real                       :: gsum
   real, dimension(xmap%size) :: x_over, x_back
   real, dimension(:,:  ), allocatable :: d1
   real, dimension(:,:,:), allocatable :: d2
   integer                             :: g
-  type (grid_type), pointer           :: grid1, grid2
-  integer                              :: order
+  type (grid_type), pointer, save     :: grid1 =>NULL(), grid2 =>NULL()
 
-  order = 1
-  if(present(remapping_order)) order = remapping_order
   grid1 => xmap%grids(1)
   do g = 2,size(xmap%grids)
     grid2 => xmap%grids(g)
@@ -1421,7 +1480,7 @@ integer,              intent(in), optional :: remapping_order
   allocate ( d1(size(grid1%area,1),size(grid1%area,2)) )
   call get_from_xgrid(d1, grid1%id, x_over, xmap)  ! get onto side 1
   conservation_check_side2(2) = mpp_global_sum(grid1%domain, grid1%area*d1)
-  call put_to_xgrid(d1,  grid1%id, x_back, xmap,remapping_order = order)   ! put from side 1
+  call put_to_xgrid(d1,  grid1%id, x_back, xmap,remap_method)   ! put from side 1
   deallocate ( d1 )
 
   conservation_check_side2(3) = 0.0;
@@ -1441,111 +1500,77 @@ end function conservation_check_side2
 
 !#######################################################################
 
-! This function is used to calculate the gradient of a given data.
+! This function is used to calculate the gradient along zonal direction.
 ! Maybe need to setup a limit for the gradient. 
 
-function grad(d, grid, xmap,p) 
+function grad_zonal(d, lon, lat, is, ie, js, je, isd, ied, jsd, jed) 
 
-type(grid_type),      intent(in) :: grid   
-real, dimension(:,:), intent(in) :: d
-type(xmap_type),      intent(in) :: xmap
-integer, intent(in)              :: p
+  real, dimension(isd:ied,jsd:jed), intent(in) :: d
+  real, dimension(:),               intent(in) :: lon
+  real, dimension(:),               intent(in) :: lat
+  integer,                          intent(in) :: is, ie, js, je 
+  integer,                          intent(in) :: isd, ied, jsd, jed
+  real, dimension(is:ie,js:je)                 :: grad_zonal
+  real                                         :: dx, costheta
+  integer                                      :: i, j, ip1, im1
 
-real, dimension(grid%is(p):grid%ie(p),grid%js(p):grid%je(p),2) :: grad
-real, dimension(:,:), allocatable :: d_local, di, dj
-integer :: im, jm, i, j, k, is, ie, js, je
-real    :: dx1, dx2, dy1, dy2, costheta
-real    :: EPS = 1.0e-10
-real    :: data(4), lon(4), lat(4)
-integer ::  ilon(4), jlat(4)
+  !  calculate the gradient of the data on each grid
+  do i = is, ie
+     if(i == 1) then
+        ip1 = i+1; im1 = i
+     else if(i==size(lon) ) then
+        ip1 = i; im1 = i-1
+     else
+        ip1 = i+1; im1 = i-1
+     endif
+     dx = lon(ip1) - lon(im1)
+     if(abs(dx).lt.EPS )  call error_mesg('xgrids_mod', 'Improper grid size in lontitude', FATAL)
+     if(dx .gt. PI)  dx = dx - 2.0* PI
+     if(dx .lt. -PI) dx = dx + 2.0* PI
+     do j = js, je
+        costheta = cos(lat(j))
+        if(abs(costheta) .lt. EPS) call error_mesg('xgrids_mod', 'Improper latitude grid', FATAL)
+        grad_zonal(i,j) = (d(ip1,j)-d(im1,j))/(dx*costheta)
+     enddo
+  enddo
 
-   is = grid%is(p); ie = grid%ie(p)
-   js = grid%js(p); je = grid%je(p)
+  return
 
-   im = ie - is + 1
-   jm = je - js + 1
+end function grad_zonal
 
-   if(im /= size(d,1)-2 .or. jm /= size(d,2)-2) call error_mesg('xgrids_mod', 'The size of data is not &
-                                                   &consistent with the sie of model grid', FATAL) 
-   allocate(d_local(is-1:ie+1,js-1:je+1), di(is:ie,js:je), dj(is:ie,js:je))
-   d_local(is-1:ie+1,js-1:je+1) = d
+!#######################################################################
 
-!  calculate the gradient of the data on each grid
-   do i = is, ie
-   do j = js, je
-      costheta = cos(grid%lat(i,j))
-      if(abs(costheta) .lt. EPS)  &
-            call error_mesg('xgrids_mod', 'Impropere latitude grid', FATAL)
+! This function is used to calculate the gradient along meridinal direction.
+! Maybe need to setup a limit for the gradient. 
 
-      if(i == grid%im) then
-         if(j == 1) then
-            ilon(1) = i-1; ilon(2) = i;   ilon(3) = i;   ilon(4) = i-1
-            jlat(1) = j;   jlat(2) = j;   jlat(3) = j+1; jlat(4) = j+1
-         else if( j == grid%jm) then
-            ilon(1) = i-1; ilon(2) = i;   ilon(3) = i;   ilon(4) = i-1
-            jlat(1) = j-1; jlat(2) = j-1; jlat(3) = j;   jlat(4) = j    
-         else
-            ilon(1) = i-1; ilon(2) = i;   ilon(3) = i;   ilon(4) = i-1
-            jlat(1) = j-1; jlat(2) = j-1; jlat(3) = j+1; jlat(4) = j+1
-         endif
-      else if(i==1) then
-         if(j == 1) then
-            ilon(1) = i;   ilon(2) = i+1; ilon(3) = i+1; ilon(4) = i
-            jlat(1) = j;   jlat(2) = j;   jlat(3) = j+1; jlat(4) = j+1
-         else if( j == grid%jm) then
-            ilon(1) = i;   ilon(2) = i+1; ilon(3) = i+1; ilon(4) = i
-            jlat(1) = j-1; jlat(2) = j-1; jlat(3) = j;   jlat(4) = j    
-         else
-            ilon(1) = i;   ilon(2) = i+1; ilon(3) = i+1; ilon(4) = i
-            jlat(1) = j-1; jlat(2) = j-1; jlat(3) = j+1; jlat(4) = j+1
-         endif
-      else 
-         if(j == 1) then
-            ilon(1) = i-1; ilon(2) = i+1; ilon(3) = i+1; ilon(4) = i-1
-            jlat(1) = j;   jlat(2) = j;   jlat(3) = j+1; jlat(4) = j+1
-         else if( j == grid%jm) then
-            ilon(1) = i-1; ilon(2) = i+1; ilon(3) = i+1; ilon(4) = i-1
-            jlat(1) = j-1; jlat(2) = j-1; jlat(3) = j;   jlat(4) = j    
-         else
-            ilon(1) = i-1; ilon(2) = i+1; ilon(3) = i+1; ilon(4) = i-1
-            jlat(1) = j-1; jlat(2) = j-1; jlat(3) = j+1; jlat(4) = j+1
-         endif
-      endif
-         do k = 1, 4
-            lon(k) = grid%lon(ilon(k),jlat(k))
-            lat(k) = grid%lat(ilon(k),jlat(k))            
-            data(k)= d_local(ilon(k),jlat(k)) 
-         enddo
-         dx1 = lon(2) - lon(1)
-         dx2 = lon(3) - lon(4)
-         dy1 = lat(4) - lat(1)
-         dy2 = lat(3) - lat(2)
+function grad_merid(d, lat, is, ie, js, je, isd, ied, jsd, jed) 
+  real, dimension(isd:ied,jsd:jed), intent(in) :: d
+  real, dimension(:),               intent(in) :: lat
+  integer,                          intent(in) :: is, ie, js, je 
+  integer,                          intent(in) :: isd, ied, jsd, jed
+  real, dimension(is:ie,js:je)                 :: grad_merid
+  real                                         :: dy
+  integer                                      :: i, j, jp1, jm1
 
-         if(abs(dx1).lt.EPS .or. abs(dx2) .lt. EPS)  &
-            call error_mesg('xgrids_mod', 'Improper grid size in lontitude', FATAL)
-         if(dx1 .gt. PI) dx1 = dx1 - 2.0* PI
-         if(dx1 .lt. -PI) dx1 = dx1 + 2.0* PI
-         if(dx2 .gt. PI) dx2 = dx2 - 2.0* PI
-         if(dx2 .lt. -PI) dx2 = dx2 + 2.0* PI
-         di(i,j) = ((data(2)-data(1))/dx1 + (data(3) -data(4))/dx2)/(2.0*costheta)
+  !  calculate the gradient of the data on each grid
+  do j = js, je
+     if(j == 1) then
+        jp1 = j+1; jm1 = j
+     else if(j == size(lat) ) then
+        jp1 = j;   jm1 = j-1
+     else
+        jp1 = j+1; jm1 = j-1
+     endif
+     dy = lat(jp1) - lat(jm1)
+     if(abs(dy).lt.EPS) call error_mesg('xgrids_mod', 'Improper grid size in latitude', FATAL)
 
-         if(abs(dy1).lt.EPS .or. abs(dy2).lt.EPS )  &
-            call error_mesg('xgrids_mod', 'Improper grid size in latitude', FATAL)
-         dj(i,j) = ((data(4)-data(1))/dy1 + (data(3) -data(2))/dy2)/2.0
+     do i = is, ie
+        grad_merid(i,j) = (d(i,jp1) - d(i,jm1))/dy
+     enddo
+  enddo
 
-   enddo
-   enddo
-
-   grad(:,:,1) = di
-   grad(:,:,2) = dj
-
-   deallocate(d_local)
-   deallocate(di, dj)
-
-   return
-
-end function grad
-
+  return
+end function grad_merid
 
 !#######################################################################
 

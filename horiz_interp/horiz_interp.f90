@@ -1,5 +1,5 @@
 module horiz_interp_mod
-! <CONTACT EMAIL="bw@gfdl.noaa.gov">
+! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
 !   Bruce Wyman
 ! </CONTACT>
 
@@ -190,17 +190,17 @@ use constants_mod, only: pi
 !<PUBLICTYPE >
  type horiz_interp_type
    private
-   real,    dimension(:,:), pointer   :: faci, facj  !weights for conservative scheme
-   integer, dimension(:,:), pointer   :: ilon, jlat  !indices for conservative scheme
-   real,    dimension(:,:), pointer   :: area_src    !area of the source grid
-   real,    dimension(:,:), pointer   :: area_dst    !area of the destination grid
-   real,    dimension(:,:,:), pointer :: wti,wtj     !weights for bilinear interpolation 
-   integer, dimension(:,:,:), pointer :: i_lon, j_lat!indices for bilinear interpolation 
-                                                     !and spherical regrid
-   real,    dimension(:,:,:), pointer :: src_dist    !distance between destination grid and 
-                                                     !neighbor source grid.
-   logical, dimension(:,:), pointer   :: found_neighbors    !indicate whether destination grid 
-                                                            !has some source grid around it.
+   real,    dimension(:,:), pointer   :: faci =>NULL(), facj =>NULL()   !weights for conservative scheme
+   integer, dimension(:,:), pointer   :: ilon =>NULL(), jlat =>NULL()   !indices for conservative scheme
+   real,    dimension(:,:), pointer   :: area_src =>NULL()              !area of the source grid
+   real,    dimension(:,:), pointer   :: area_dst =>NULL()              !area of the destination grid
+   real,    dimension(:,:,:), pointer :: wti =>NULL(),wtj =>NULL()      !weights for bilinear interpolation 
+   integer, dimension(:,:,:), pointer :: i_lon =>NULL(), j_lat =>NULL() !indices for bilinear interpolation 
+                                                                        !and spherical regrid
+   real,    dimension(:,:,:), pointer :: src_dist =>NULL()              !distance between destination grid and 
+                                                                        !neighbor source grid.
+   logical, dimension(:,:), pointer   :: found_neighbors =>NULL()       !indicate whether destination grid 
+                                                                        !has some source grid around it.
    real                               :: max_src_dist
    integer                            :: nlon_src, nlat_src !size of source grid
    integer                            :: nlon_dst, nlat_dst !size of destination grid
@@ -215,8 +215,8 @@ use constants_mod, only: pi
  integer, parameter :: num_nbrs_default = 4
  real, parameter :: epsln=1.e-10, large=1.e20
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: horiz_interp.f90,v 1.6 2003/04/09 21:17:09 fms Exp $'
- character(len=128) :: tagname = '$Name: inchon $'
+ character(len=128) :: version = '$Id: horiz_interp.f90,v 10.0 2003/10/24 22:01:32 fms Exp $'
+ character(len=128) :: tagname = '$Name: jakarta $'
  logical :: do_vers = .true.
  logical :: module_is_initialized = .FALSE.
  integer :: num_iters = 4
@@ -243,7 +243,7 @@ contains
 !</PUBLICROUTINE>
 
 !-----------------------------------------------------------------------
- type(horiz_interp_type), intent(out)          :: Interp
+ type(horiz_interp_type), intent(inout)        :: Interp
  real, intent(in),  dimension(:)               :: lon_in , lat_in
  real, intent(in),  dimension(:)               :: lon_out, lat_out
  integer, intent(in),                 optional :: verbose
@@ -336,7 +336,7 @@ contains
  subroutine horiz_interp_init_1d_src (Interp, lon_in, lat_in, lon_out, lat_out,   &
                                       verbose, interp_method, num_nbrs, max_dist, src_modulo )
 
- type(horiz_interp_type), intent(out)          :: Interp
+ type(horiz_interp_type), intent(inout)        :: Interp
  real, intent(in),  dimension(:)               :: lon_in , lat_in
  real, intent(in),  dimension(:,:)             :: lon_out, lat_out
  integer, intent(in),                 optional :: verbose
@@ -400,7 +400,7 @@ contains
 
  subroutine horiz_interp_init_2d (Interp, lon_in, lat_in, lon_out, lat_out,   &
                                   verbose, interp_method, num_nbrs, max_dist, src_modulo )
- type(horiz_interp_type), intent(out)       :: Interp
+ type(horiz_interp_type), intent(inout)     :: Interp
  real, intent(in),  dimension(:,:)          :: lon_in , lat_in
  real, intent(in),  dimension(:,:)          :: lon_out, lat_out
  integer, intent(in),              optional :: verbose
@@ -436,7 +436,7 @@ contains
 !#######################################################################
  subroutine horiz_interp_init_1d_dst (Interp, lon_in, lat_in, lon_out, lat_out,   &
                                       verbose, interp_method, num_nbrs, max_dist, src_modulo )
- type(horiz_interp_type), intent(out)       :: Interp
+ type(horiz_interp_type), intent(inout)     :: Interp
  real, intent(in),  dimension(:,:)          :: lon_in , lat_in
  real, intent(in),  dimension(:)            :: lon_out, lat_out
  integer, intent(in),              optional :: verbose
@@ -485,7 +485,7 @@ contains
  subroutine horiz_interp_init_cons ( Interp, lon_in, lat_in,   &
                                      lon_out, lat_out, verbose)
 
- type(horiz_interp_type), intent(out) :: Interp
+ type(horiz_interp_type), intent(inout) :: Interp
  real, intent(in),  dimension(:)      :: lon_in , lat_in
  real, intent(in),  dimension(:,:)    :: lon_out, lat_out
  integer, intent(in),     optional    :: verbose
@@ -494,7 +494,7 @@ contains
    real, dimension(size(lat_out,1),size(lat_out,2)) :: sph
    real, dimension(size(lat_in))    :: slat_in
    real, dimension(size(lon_in,1)-1) :: dlon_in
-   real, dimension(size(lon_in,1)-1) :: dsph_in
+   real, dimension(size(lat_in,1)-1) :: dsph_in
    real, dimension(size(lon_out,1))  :: dlon_out
    real, dimension(size(lat_out,1))  :: dsph_out
    real    :: blon, fac, hpi, tpi, eps
@@ -682,7 +682,7 @@ contains
                                      verbose, src_modulo )
 
 !-----------------------------------------------------------------------
- type(horiz_interp_type), intent(out) :: Interp
+ type(horiz_interp_type), intent(inout) :: Interp
       real, intent(in),  dimension(:)   :: lon_in , lat_in
       real, intent(in),  dimension(:,:) :: lon_out, lat_out
    integer, intent(in),                   optional :: verbose
@@ -851,7 +851,7 @@ contains
 
  subroutine horiz_interp_init_sphe(Interp, lon_in,lat_in,lon_out,lat_out, &
                                    num_nbrs, max_dist, src_modulo)
- type(horiz_interp_type), intent(out) :: Interp
+ type(horiz_interp_type), intent(inout) :: Interp
  real, intent(in), dimension(:,:) :: lon_in, lat_in, lon_out, lat_out
  integer, intent(in), optional   :: num_nbrs
  real, optional :: max_dist
@@ -1755,13 +1755,14 @@ contains
    call mpp_sync_self()   
    if(pe == root_pe) then
       do p = 1, npes - 1
-         call mpp_recv(buffer_real,5,root_pe+p)
+      ! Force use of "scalar", integer pointer mpp interface
+         call mpp_recv(buffer_real(1),glen=5,from_pe=root_pe+p)
          asum = asum + buffer_real(1)
          dsum = dsum + buffer_real(2)
          wsum = wsum + buffer_real(3)
          low  = min(low, buffer_real(4))
          high = max(high, buffer_real(5))
-         call mpp_recv(buffer_int,1,root_pe+p)
+         call mpp_recv(buffer_int(1),glen=1,from_pe=root_pe+p)
          miss = miss + buffer_int(1)
       enddo
    else
@@ -1770,9 +1771,10 @@ contains
       buffer_real(3) = wsum
       buffer_real(4) = low
       buffer_real(5) = high
-      call mpp_send(buffer_real,5,root_pe)
+      ! Force use of "scalar", integer pointer mpp interface
+      call mpp_send(buffer_real(1),plen=5,to_pe=root_pe)
       buffer_int(1) = miss
-      call mpp_send(buffer_int,1,root_pe)
+      call mpp_send(buffer_int(1),plen=1,to_pe=root_pe)
    endif
  end subroutine stats_type1
 !#######################################################################
@@ -1814,11 +1816,12 @@ contains
    npts = size(dat) - miss
    if(pe == root_pe) then
       do p = 1, npes - 1  ! root_pe receive data from other pe
-         call mpp_recv(buffer_real,3, p+root_pe)
+      ! Force use of "scalar", integer pointer mpp interface
+         call mpp_recv(buffer_real(1),glen=3, from_pe=p+root_pe)
          dsum = dsum + buffer_real(1)
          low  = min(low, buffer_real(2))
          high = max(high, buffer_real(3))
-         call mpp_recv(buffer_int, 2, p+root_pe)
+         call mpp_recv(buffer_int(1), glen=2, from_pe=p+root_pe)
          miss = miss + buffer_int(1)
          npts = npts + buffer_int(2)
       enddo         
@@ -1831,10 +1834,11 @@ contains
       buffer_real(1) = dsum
       buffer_real(2) = low
       buffer_real(3) = high
-      call mpp_send(buffer_real,3,root_pe)
+      ! Force use of "scalar", integer pointer mpp interface
+      call mpp_send(buffer_real(1),plen=3,to_pe=root_pe)
       buffer_int(1) = miss
       buffer_int(2) = npts
-      call mpp_send(buffer_int, 2, root_pe)
+      call mpp_send(buffer_int(1), plen=2, to_pe=root_pe)
     endif
 
     return

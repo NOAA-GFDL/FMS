@@ -1,7 +1,7 @@
 
 module gaussian_topog_mod
 
-! <CONTACT EMAIL="bw@gfdl.noaa.gov">
+! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
 !   Bruce Wyman
 ! </CONTACT>
 
@@ -71,8 +71,8 @@ public :: gaussian_topog_init, get_gaussian_topog
 
 !-----------------------------------------------------------------------
 
-character(len=128) :: version = '$Id: gaussian_topog.F90,v 1.3 2003/04/09 21:19:15 fms Exp $'
-character(len=128) :: tagname = '$Name: inchon $'
+character(len=128) :: version = '$Id: gaussian_topog.F90,v 10.0 2003/10/24 22:01:41 fms Exp $'
+character(len=128) :: tagname = '$Name: jakarta $'
 
 logical :: do_nml = .true.
 logical :: module_is_initialized = .FALSE.

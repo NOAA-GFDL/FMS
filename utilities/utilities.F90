@@ -46,12 +46,13 @@ logical :: do_init = .true.
  contains
 !#######################################################################
 
- function open_file ( file, form, action, access, threading, recl ) &
+ function open_file ( file, form, action, access, threading, recl, iostat ) &
              result ( unit )
 
  character(len=*), intent(in) :: file 
  character(len=*), intent(in), optional :: form, action, access, threading
  integer         , intent(in), optional :: recl 
+ integer         ,intent(out), optional :: iostat 
  integer  :: unit 
 
  character(len=32) :: form_local, action_local, access_local, thread_local
@@ -163,7 +164,7 @@ logical :: do_init = .true.
     if ( .not.do_ieee32 ) then
        call mpp_open ( unit, file, form=mpp_format, action=mpp_action, &
                        access=mpp_access, threading=mpp_thread,        &
-                       nohdrs=no_headers, recl=recl )
+                       nohdrs=no_headers, recl=recl, iostat=iostat )
     else
      ! special open for ieee32 file
      ! fms_mod has iospec value

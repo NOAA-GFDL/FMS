@@ -48,23 +48,23 @@
               call mpp_update_domains( data, domain )
 !all non-0 PEs have passed their data to PE 0 and may now exit
               if( pe.NE.0 )return
-              call write_record( unit, field, size(data), data, tstamp )
+              call write_record( unit, field, size(data(:,:,:)), data, tstamp )
           else
 !put field onto global domain
               allocate( gdata(isg:ieg,jsg:jeg,size(data,3)) )
               call mpp_global_field( domain, data, gdata )
 !all non-0 PEs have passed their data to PE 0 and may now exit
               if( pe.NE.0 )return
-              call write_record( unit, field, size(gdata), gdata, tstamp )
+              call write_record( unit, field, size(gdata(:,:,:)), gdata, tstamp )
           end if
       else if( data_has_halos )then
 !store compute domain as contiguous data and pass to write_record
           allocate( cdata(is:ie,js:je,size(data,3)) )
           cdata(:,:,:) = data(is-isd+1:ie-isd+1,js-jsd+1:je-jsd+1,:)
-          call write_record( unit, field, size(cdata), cdata, tstamp, domain )
+          call write_record( unit, field, size(cdata(:,:,:)), cdata, tstamp, domain )
       else
 !data is already contiguous
-          call write_record( unit, field, size(data), data, tstamp, domain )
+          call write_record( unit, field, size(data(:,:,:)), data, tstamp, domain )
       end if
 
       return

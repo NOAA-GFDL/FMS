@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
 !                 Communication for message-passing codes
 !
-! AUTHOR: V. Balaji (vb@gfdl.gov)
+! AUTHOR: V. Balaji (V.Balaji@noaa.gov)
 !         SGI/GFDL Princeton University
 !
 ! This program is free software; you can redistribute it and/or modify
@@ -43,9 +43,9 @@ module mpp_mod
 !when offending compiler bug is fixed
 !a generalized communication package for use with shmem and MPI
 !will add: co_array_fortran, MPI2
-!Balaji (vb@gfdl.gov) 11 May 1998
+!Balaji (V.Balaji@noaa.gov) 11 May 1998
 
-! <CONTACT EMAIL="vb@gfdl.noaa.gov">
+! <CONTACT EMAIL="V.Balaji@noaa.gov">
 !   V. Balaji
 ! </CONTACT>
 
@@ -181,9 +181,9 @@ module mpp_mod
   implicit none
   private
   character(len=128), private :: version= &
-       '$Id: mpp.F90,v 6.6 2003/04/09 21:17:34 fms Exp $'
+       '$Id: mpp.F90,v 10.0 2003/10/24 22:01:34 fms Exp $'
   character(len=128), private :: tagname= &
-       '$Name: inchon $'
+       '$Name: jakarta $'
 
 !various lengths (see shpalloc) are estimated in "words" which are 32bit on SGI, 64bit on Cray
 !these are also the expected sizeof of args to MPI/shmem libraries
@@ -271,7 +271,7 @@ module mpp_mod
 !peset hold communicators as SHMEM-compatible triads (start, log2(stride), num)
   type, private :: communicator
      character(len=32) :: name
-     integer, pointer :: list(:)
+     integer, pointer :: list(:) =>NULL()
      integer :: count
 #ifdef use_libSMA
      integer :: start, log2stride
@@ -280,7 +280,7 @@ module mpp_mod
 #endif
   end type
   integer, parameter :: PESET_MAX=32 !should be .LE. max num of MPI communicators
-  type(communicator) :: peset(0:PESET_MAX) !0 is a dummy used to hold single-PE "self" communicator
+  type(communicator),save :: peset(0:PESET_MAX) !0 is a dummy used to hold single-PE "self" communicator
   integer :: peset_num=0, current_peset_num=0
   integer :: world_peset_num !the world communicator
 
@@ -342,9 +342,9 @@ module mpp_mod
      integer :: peset_num
      logical :: sync_on_begin, detailed
      integer :: grain
-     type(event), pointer :: events(:) !if needed, allocate to MAX_EVENT_TYPES
+     type(event), pointer :: events(:) =>NULL() !if needed, allocate to MAX_EVENT_TYPES
   end type
-  type(clock) :: clocks(MAX_CLOCKS)
+  type(clock),save :: clocks(MAX_CLOCKS)
 
   integer,parameter :: MAX_BINS=20
   TYPE :: Clock_Data_Summary
@@ -979,6 +979,7 @@ module mpp_mod
   public :: mpp_transmit, mpp_send, mpp_recv, mpp_broadcast
   public :: stdin, stdout, stderr, stdlog
   public :: mpp_declare_pelist, mpp_get_current_pelist, mpp_set_current_pelist
+  public :: lowercase, uppercase
 #ifdef use_shmalloc
   public :: mpp_malloc
 #endif
@@ -1188,12 +1189,12 @@ module mpp_mod
     end function stderr
 
     function stdlog()
-      integer :: stdlog
+      integer :: stdlog,istat
       logical :: opened
       if( pe.EQ.root_pe )then
           inquire( file=trim(configfile), opened=opened )
           if( opened )then
-              call FLUSH(log_unit)
+              call FLUSH(log_unit,istat)
           else
               log_unit=get_unit()
               open( unit=log_unit, status='OLD', file=trim(configfile), position='APPEND', err=10 )
@@ -1222,7 +1223,7 @@ module mpp_mod
 ! </SUBROUTINE>
     subroutine mpp_exit()
 !to be called at the end of a run
-      integer :: i, j, k, n, nmax
+      integer :: i, j, k, n, nmax,istat
       real :: t, tmin, tmax, tavg, tstd
       real :: m, mmin, mmax, mavg, mstd
       real :: t_total
@@ -1241,7 +1242,7 @@ module mpp_mod
                    write( stdout(),'(a)' )'   ... see mpp_clock.out.#### for details on individual PEs.'
               write( stdout(),'(/32x,a)' ) '          tmin          tmax          tavg          tstd  tfrac grain pemin pemax'
           end if
-          call FLUSH( stdout() )
+          call FLUSH( stdout(),istat )
           call mpp_sync()
           do i = 1,clock_num
              if( .NOT.ANY(peset(clocks(i)%peset_num)%list(:).EQ.pe) )cycle
@@ -1252,16 +1253,18 @@ module mpp_mod
              tmax = t; call mpp_max(tmax)
              tavg = t; call mpp_sum(tavg); tavg = tavg/mpp_npes()
              tstd = (t-tavg)**2; call mpp_sum(tstd); tstd = sqrt( tstd/mpp_npes() )
-             if( pe.EQ.root_pe )write( stdout(),'(a32,4f14.6,f7.3,3i6)' ) &
-                  clocks(i)%name, tmin, tmax, tavg, tstd, tavg/t_total, &
-                  clocks(i)%grain, minval(peset(clocks(i)%peset_num)%list), &
-                                   maxval(peset(clocks(i)%peset_num)%list)
+             if( pe.EQ.root_pe )then
+               write( stdout(),'(a32,4f14.6,f7.3,3i6)' ) &
+               clocks(i)%name, tmin, tmax, tavg, tstd, tavg/t_total, &
+               clocks(i)%grain, minval(peset(clocks(i)%peset_num)%list), &
+                                maxval(peset(clocks(i)%peset_num)%list)
+             endif
           end do
           if( ANY(clocks(1:clock_num)%detailed) .AND. pe.EQ.root_pe )write( stdout(),'(/32x,a)' ) &
                '       tmin       tmax       tavg       tstd       mmin       mmax       mavg       mstd  mavg/tavg'
           do i = 1,clock_num
 !messages: bytelengths and times
-	     if( .NOT.clocks(i)%detailed )cycle
+             if( .NOT.clocks(i)%detailed )cycle
              do j = 1,MAX_EVENT_TYPES
                 n = clocks(i)%events(j)%calls; nmax = n
                 call mpp_max(nmax)
@@ -1279,9 +1282,11 @@ module mpp_mod
                     tmax = t; call mpp_max(tmax)
                     tavg = t; call mpp_sum(tavg); tavg = tavg/mpp_npes()
                     tstd = (t-tavg)**2; call mpp_sum(tstd); tstd = sqrt( tstd/mpp_npes() )
-                    if( pe.EQ.root_pe )write( stdout(),'(a32,4f11.3,5es11.3)' ) &
-                         trim(clocks(i)%name)//' '//trim(clocks(i)%events(j)%name), &
-                         tmin, tmax, tavg, tstd, mmin, mmax, mavg, mstd, mavg/tavg
+                    if( pe.EQ.root_pe )then
+                       write( stdout(),'(a32,4f11.3,5es11.3)' ) &
+                       trim(clocks(i)%name)//' '//trim(clocks(i)%events(j)%name), &
+                       tmin, tmax, tavg, tstd, mmin, mmax, mavg, mstd, mavg/tavg
+                    endif
                 end if
              end do
           end do
@@ -1344,7 +1349,7 @@ module mpp_mod
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_NPES: You must first call mpp_init.' )
 !      mpp_npes = npes
-      mpp_npes = size(peset(current_peset_num)%list)
+      mpp_npes = size(peset(current_peset_num)%list(:)) ! mipspro v7.4 workaround
       return
     end function mpp_npes
 
@@ -1361,7 +1366,7 @@ module mpp_mod
       logical :: opened
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_SET_ROOT_PE: You must first call mpp_init.' )
-      if( .NOT.(ANY(num.EQ.peset(current_peset_num)%list)) ) &
+      if( .NOT.(ANY(num.EQ.peset(current_peset_num)%list(:))) ) &
            call mpp_error( FATAL, 'MPP_SET_ROOT_PE: you cannot set a root PE outside the current pelist.' )
 !actions to take if root_pe has changed:
 ! open log_unit on new root_pe, close it on old root_pe and point its log_unit to stdout.
@@ -1472,7 +1477,7 @@ module mpp_mod
       else
           current_peset_num = world_peset_num
       end if
-      call mpp_set_root_pe( MINVAL(peset(current_peset_num)%list) )
+      call mpp_set_root_pe( MINVAL(peset(current_peset_num)%list(:)) )
       call mpp_sync()           !this is called to make sure everyone in the current pelist is here.
 !      npes = mpp_npes()
       return
@@ -1484,7 +1489,7 @@ module mpp_mod
       integer, intent(out) :: pelist(:)
       character(len=*), intent(out), optional :: name
 
-      if( size(pelist).NE.size(peset(current_peset_num)%list) ) &
+      if( size(pelist(:)).NE.size(peset(current_peset_num)%list(:)) ) &
            call mpp_error( FATAL, 'MPP_GET_CURRENT_PELIST: size(pelist) is wrong.' )
       pelist(:) = peset(current_peset_num)%list(:)
       if( PRESENT(name) )name = peset(current_peset_num)%name
@@ -1506,7 +1511,7 @@ module mpp_mod
       if( .NOT.PRESENT(pelist) )then !set it to current_peset_num
           get_peset = current_peset_num; return
       end if
-      if( size(pelist).EQ.1 .AND. npes.GT.1 )then    !collective ops on single PEs should return
+      if( size(pelist(:)).EQ.1 .AND. npes.GT.1 )then    !collective ops on single PEs should return
           get_peset = 0; return
       end if
 !make a sorted list
@@ -1516,7 +1521,7 @@ module mpp_mod
 !find if this array matches any existing peset
       do i = 1,peset_num
          if( debug )write( stderr(),'(a,3i4)' )'pe, i, peset_num=', pe, i, peset_num
-         if( size(sorted).EQ.size(peset(i)%list) )then
+         if( size(sorted(:)).EQ.size(peset(i)%list(:)) )then
              if( ALL(sorted.EQ.peset(i)%list) )then
                  deallocate(sorted)
                  get_peset = i; return
@@ -1528,12 +1533,12 @@ module mpp_mod
       if( peset_num.GE.PESET_MAX )call mpp_error( FATAL, 'GET_PESET: number of PE sets exceeds PESET_MAX.' )
       i = peset_num             !shorthand
 !create list
-      allocate( peset(i)%list(size(sorted)) )
+      allocate( peset(i)%list(size(sorted(:))) )
       peset(i)%list(:) = sorted(:)
-      peset(i)%count = size(sorted)
+      peset(i)%count = size(sorted(:))
 #ifdef use_libSMA
       peset(i)%start = sorted(1)
-      if( size(sorted).GT.1 )then
+      if( size(sorted(:)).GT.1 )then
           stride = sorted(2)-sorted(1)
           if( ANY(sorted(2:n)-sorted(1:n-1).NE.stride) ) &
                call mpp_error( WARNING, 'GET_PESET: pelist must have constant stride.' )
@@ -1543,7 +1548,7 @@ module mpp_mod
           peset(i)%log2stride = 0
       end if
 #elif use_libMPI
-      call MPI_GROUP_INCL( peset(current_peset_num)%group, size(sorted), sorted, peset(i)%group, error )
+      call MPI_GROUP_INCL( peset(current_peset_num)%group, size(sorted(:)), sorted, peset(i)%group, error )
       call MPI_COMM_CREATE( peset(current_peset_num)%id, peset(i)%group, peset(i)%id, error )
 #endif
       deallocate(sorted)
@@ -1557,7 +1562,7 @@ module mpp_mod
           integer :: a_sort
           integer, intent(in) :: a(:)
           integer :: b, i
-          if( size(a).EQ.1 .OR. ALL(a.EQ.a(1)) )then
+          if( size(a(:)).EQ.1 .OR. ALL(a.EQ.a(1)) )then
               allocate( sorted(n) )
               sorted(n) = a(1)
               a_sort = n
@@ -1565,7 +1570,7 @@ module mpp_mod
           end if
           b = minval(a)
           n = n + 1
-          i = ascend_sort( pack(a,mask=a.NE.b) )
+          i = ascend_sort( pack(a(:),mask=a(:).NE.b) )
           a_sort = i - 1
           sorted(i-1) = b
           return
@@ -2401,6 +2406,7 @@ module mpp_mod
 
 #define MPP_REDUCE_ mpp_max_real8
 #define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_BYTELEN_ 8
 #define SHMEM_REDUCE_ SHMEM_REAL8_MAX_TO_ALL
 #define MPI_TYPE_ MPI_REAL8
 #define MPI_REDUCE_ MPI_MAX
@@ -2409,6 +2415,7 @@ module mpp_mod
 #ifndef no_4byte_reals
 #define MPP_REDUCE_ mpp_max_real4
 #define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_BYTELEN_ 4
 #define SHMEM_REDUCE_ SHMEM_REAL4_MAX_TO_ALL
 #define MPI_TYPE_ MPI_REAL4
 #define MPI_REDUCE_ MPI_MAX
@@ -2418,6 +2425,7 @@ module mpp_mod
 #ifndef no_8byte_integers   
 #define MPP_REDUCE_ mpp_max_int8
 #define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_BYTELEN_ 8
 #define SHMEM_REDUCE_ SHMEM_INT8_MAX_TO_ALL
 #define MPI_TYPE_ MPI_INTEGER8
 #define MPI_REDUCE_ MPI_MAX
@@ -2426,6 +2434,7 @@ module mpp_mod
 
 #define MPP_REDUCE_ mpp_max_int4
 #define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_BYTELEN_ 4
 #define SHMEM_REDUCE_ SHMEM_INT4_MAX_TO_ALL
 #define MPI_TYPE_ MPI_INTEGER4
 #define MPI_REDUCE_ MPI_MAX
@@ -2433,6 +2442,7 @@ module mpp_mod
 
 #define MPP_REDUCE_ mpp_min_real8
 #define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_BYTELEN_ 8
 #define SHMEM_REDUCE_ SHMEM_REAL8_MIN_TO_ALL
 #define MPI_TYPE_ MPI_REAL8
 #define MPI_REDUCE_ MPI_MIN
@@ -2441,6 +2451,7 @@ module mpp_mod
 #ifndef no_4byte_reals
 #define MPP_REDUCE_ mpp_min_real4
 #define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_BYTELEN_ 4
 #define SHMEM_REDUCE_ SHMEM_REAL4_MIN_TO_ALL
 #define MPI_TYPE_ MPI_REAL4
 #define MPI_REDUCE_ MPI_MIN
@@ -2450,6 +2461,7 @@ module mpp_mod
 #ifndef no_8byte_integers   
 #define MPP_REDUCE_ mpp_min_int8
 #define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_BYTELEN_ 8
 #define SHMEM_REDUCE_ SHMEM_INT8_MIN_TO_ALL
 #define MPI_TYPE_ MPI_INTEGER8
 #define MPI_REDUCE_ MPI_MIN
@@ -2458,6 +2470,7 @@ module mpp_mod
 
 #define MPP_REDUCE_ mpp_min_int4
 #define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_BYTELEN_ 4
 #define SHMEM_REDUCE_ SHMEM_INT4_MIN_TO_ALL
 #define MPI_TYPE_ MPI_INTEGER4
 #define MPI_REDUCE_ MPI_MIN
@@ -2670,6 +2683,7 @@ module mpp_mod
       character(len=*), intent(in), optional :: errormsg
       character(len=256) :: text
       logical :: opened
+      integer :: istat
       
       if( .NOT.module_is_initialized )call ABORT()
 
@@ -2684,7 +2698,7 @@ module mpp_mod
           text = 'WARNING: non-existent errortype (must be NOTE|WARNING|FATAL)'
       end select
 
-      if( npes.GT.1 )write( text,'(a,i5)' )trim(text)//' from PE', pe	!this is the mpp part
+      if( npes.GT.1 )write( text,'(a,i5)' )trim(text)//' from PE', pe   !this is the mpp part
       if( PRESENT(errormsg) )text = trim(text)//': '//trim(errormsg)
 
       select case( errortype )
@@ -2693,7 +2707,7 @@ module mpp_mod
       case default
           write( stderr(),'(/a/)' )trim(text)
           if( errortype.EQ.FATAL .OR. warnings_are_fatal )then
-              call FLUSH(stdout())
+              call FLUSH(stdout(),istat)
 #ifdef sgi_mipspro
               call TRACE_BACK_STACK_AND_PRINT()
 #endif
@@ -2703,7 +2717,7 @@ module mpp_mod
               call MPI_ABORT( MPI_COMM_WORLD, 1, error )
 #endif
 #endif
-              call ABORT()	!automatically calls traceback on Cray systems
+              call ABORT()  !automatically calls traceback on Cray systems
           end if
       end select
 
@@ -2877,6 +2891,85 @@ module mpp_mod
 
       return
     end subroutine mpp_set_stack_size
+
+!#######################################################################
+!  functions for changing the case of character strings
+!#######################################################################
+! <FUNCTION NAME="uppercase">
+
+!   <OVERVIEW>
+!     Convert character strings to all upper case.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Converts a character string to all upper case letters. The characters "a-z"
+!      are converted to "A-Z", all other characters are left unchanged. 
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     string = uppercase ( cs )
+!   </TEMPLATE>
+
+!   <IN NAME="cs"  TYPE="character(len=*), scalar" >
+!     Character string that may contain lower case letters.
+!   </IN>
+!   <OUT NAME="string"  TYPE="character(len=len(cs)), scalar" >
+!     Character string that contains all upper case letters. The
+!             length of this string must be the same as the input string.
+!   </OUT>
+
+  function uppercase (cs) 
+    character(len=*), intent(in) :: cs
+    character(len=len(cs)),target       :: uppercase 
+    integer                      :: k,tlen
+    character, pointer :: ca
+    integer, parameter :: co=iachar('A')-iachar('a') ! case offset
+    !The transfer function truncates the string with xlf90_r
+    tlen = len_trim(cs)
+    uppercase = cs(1:tlen)
+    do k=1, tlen
+       ca => uppercase(k:k)
+       if(ca >= "a" .and. ca <= "z") ca = achar(ichar(ca)+co)
+    enddo
+  end function uppercase
+! </FUNCTION>
+
+!#######################################################################
+! <FUNCTION NAME="lowercase">
+
+!   <OVERVIEW>
+!     Convert character strings to all lower case.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Converts a character string to all lower case letters. The characters "A-Z"
+!      are converted to "a-z", all other characters are left unchanged.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     string = lowercase ( cs )
+!   </TEMPLATE>
+
+!   <IN NAME="cs"  TYPE="character(len=*), scalar" >
+!     Character string that may contain upper case letters.
+!   </IN>
+!   <OUT NAME="string"  TYPE="character(len=len(cs)), scalar" >
+!     Character string that contains all lower case letters. The
+!     length of this string must be the same as the input string.
+!   </OUT>
+
+  function lowercase (cs) 
+    character(len=*), intent(in) :: cs
+    character(len=len(cs)),target       :: lowercase 
+    integer, parameter :: co=iachar('a')-iachar('A') ! case offset
+    integer                        :: k,tlen
+    character, pointer :: ca
+!  The transfer function truncates the string with xlf90_r
+    tlen = len_trim(cs)
+    lowercase = cs(1:tlen)
+    do k=1, tlen
+       ca => lowercase(k:k)
+       if(ca >= "A" .and. ca <= "Z") ca = achar(ichar(ca)+co)
+    enddo
+  end function lowercase
+! </FUNCTION>
+
 
 #ifndef no_8byte_integers
 #define MPP_CHKSUM_INT_ mpp_chksum_i8_1d
@@ -3073,7 +3166,7 @@ module mpp_mod
     integer, parameter :: n=1048576
     real, allocatable, dimension(:) :: a, b, c
     integer :: tick, tick0, ticks_per_sec, id
-    integer :: i, j, k, l, m
+    integer :: i, j, k, l, m,istat
     real :: dt
 
     call mpp_init()
@@ -3105,7 +3198,8 @@ module mpp_mod
        call mpp_sync()
        call SYSTEM_CLOCK(tick0)
        do i = 1,npes
-          call mpp_transmit( a, l, modulo(pe+npes-i,npes), b, l, modulo(pe+i,npes) )
+          call mpp_transmit( put_data=a, plen=l, to_pe=modulo(pe+npes-i,npes), &
+                             get_data=b, glen=l, from_pe=modulo(pe+i,npes) )
 !          call mpp_sync_self( (/modulo(pe+npes-i,npes)/) )
        end do
        call mpp_sync()
@@ -3166,7 +3260,7 @@ module mpp_mod
 
 !pelist check
     call mpp_sync()
-    call flush(stdout())
+    call flush(stdout(),istat)
     if( npes.GE.2 )then
         if( pe.EQ.root )print *, 'Test of pelists: bcast, sum and max using PEs 0...npes-2 (excluding last PE)'
         call mpp_declare_pelist( (/(i,i=0,npes-2)/) )
@@ -3193,7 +3287,8 @@ module mpp_mod
     if( modulo(n,npes).EQ.0 )then  !only set up for even division
         if( pe.EQ.root )call random_number(a)
         call mpp_sync()
-        call mpp_transmit( a, n, ALL_PES, a, n, root )
+        call mpp_transmit( put_data=a, plen=n, to_pe=ALL_PES, &
+                           get_data=a, glen=n, from_pe=root )
         m= n/npes
         allocate( c(m) )
         c = a(pe*m+1:pe*m+m)

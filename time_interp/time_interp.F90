@@ -1,7 +1,7 @@
 
 module time_interp_mod
 
-! <CONTACT EMAIL="bw@gfdl.noaa.gov">
+! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
 !   Bruce Wyman
 ! </CONTACT>
 
@@ -141,8 +141,8 @@ integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
    integer :: yrmod, momod, dymod
    logical :: mod_leapyear
 
-   character(len=128) :: version='$Id: time_interp.F90,v 1.4 2003/04/09 21:19:06 fms Exp $'
-   character(len=128) :: tagname='$Name: inchon $'
+   character(len=128) :: version='$Id: time_interp.F90,v 10.0 2003/10/24 22:01:40 fms Exp $'
+   character(len=128) :: tagname='$Name: jakarta $'
 
    logical :: module_is_initialized=.FALSE.
 

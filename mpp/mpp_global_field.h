@@ -94,7 +94,9 @@
              lpos = mod(domain%x%pos+nd-n,nd)
              rpos = mod(domain%x%pos   +n,nd)
              nwords = domain%x%list(rpos)%compute%size * domain%x%list(rpos)%compute%size * size(local,3)
-             call mpp_transmit( clocal, size(clocal), domain%x%list(lpos)%pe, cremote, nwords, domain%x%list(rpos)%pe )
+           ! Force use of scalar, integer ptr interface
+             call mpp_transmit( put_data=clocal(1), plen=size(clocal), to_pe=domain%x%list(lpos)%pe, &
+                                get_data=cremote(1), glen=nwords, from_pe=domain%x%list(rpos)%pe )
              m = 0
              do k = 1,size(global,3)
                 do j = domain%y%compute%begin,domain%y%compute%end
@@ -112,7 +114,9 @@
              lpos = mod(domain%y%pos+nd-n,nd)
              rpos = mod(domain%y%pos   +n,nd)
              nwords = domain%y%list(rpos)%compute%size * domain%y%list(rpos)%compute%size * size(local,3)
-             call mpp_transmit( clocal, size(clocal), domain%y%list(lpos)%pe, cremote, nwords, domain%y%list(rpos)%pe )
+           ! Force use of scalar, integer pointer interface
+             call mpp_transmit( put_data=clocal(1), plen=size(clocal), to_pe=domain%y%list(lpos)%pe, &
+                                get_data=cremote(1), glen=nwords, from_pe=domain%y%list(rpos)%pe )
              m = 0
              do k = 1,size(global,3)
                 do j = domain%y%list(rpos)%compute%begin,domain%y%list(rpos)%compute%end
@@ -128,12 +132,12 @@
           nd = size(domain%list)
           do n = 1,nd-1
              lpos = mod(domain%pos+nd-n,nd)
-             call mpp_send( clocal, size(clocal), domain%list(lpos)%pe )
+             call mpp_send( clocal(1), plen=size(clocal), to_pe=domain%list(lpos)%pe )
           end do
           do n = 1,nd-1
              rpos = mod(domain%pos   +n,nd)
              nwords = domain%list(rpos)%x%compute%size * domain%list(rpos)%y%compute%size * size(local,3)
-             call mpp_recv( cremote, nwords, domain%list(rpos)%pe )
+             call mpp_recv( cremote(1), glen=nwords, from_pe=domain%list(rpos)%pe )
              m = 0
              do k = 1,size(global,3)
                 do j = domain%list(rpos)%y%compute%begin,domain%list(rpos)%y%compute%end
@@ -215,7 +219,9 @@
          lpos = mod(domain%pos+n-i,n)
          rpos = mod(domain%pos  +i,n)
          nwords = domain%list(rpos)%compute%size * size(local,2)
-         call mpp_transmit( clocal, size(clocal), domain%list(lpos)%pe, cremote, nwords, domain%list(rpos)%pe )
+       ! Force use of scalar, integer pointer interface
+         call mpp_transmit( put_data=clocal(1), plen=size(clocal), to_pe=domain%list(lpos)%pe, &
+                            get_data=cremote(1), glen=nwords, from_pe=domain%list(rpos)%pe )
          global(domain%list(rpos)%compute%begin:domain%list(rpos)%compute%end,:) = &
               RESHAPE( cremote(1:nwords), (/domain%list(rpos)%compute%size,size(local,2)/) )
       end do

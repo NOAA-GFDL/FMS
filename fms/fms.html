@@ -28,7 +28,7 @@
 <a name="HEADER"></a>
 <!-- BEGIN HEADER -->
 <div>
-<b>Contact:&nbsp;</b><a href="mailto:bw@gfdl.noaa.gov">   Bruce Wyman </a>
+<b>Contact:&nbsp;</b><a href="mailto:Bruce.Wyman@noaa.gov">   Bruce Wyman </a>
 <br>
 <b>Reviewers:&nbsp;</b>
 <br>
@@ -66,7 +66,7 @@
 <h4>OTHER MODULES USED</h4>
 <!-- BEGIN OTHER MODULES USED -->
 <div>
-<pre>        mpp_mod<br>mpp_domains_mod<br>     mpp_io_mod<br>     fms_io_mod</pre>
+<pre>        mpp_mod<br>mpp_domains_mod<br>     mpp_io_mod<br>     fms_io_mod<br>   memutils_mod</pre>
 </div>
 <!-- END OTHER MODULES USED -->
 <!-- BEGIN PUBLIC INTERFACE -->
@@ -98,12 +98,6 @@
 <a href="#write_version_number">write_version_number</a>:</dt>
 <dd>   Prints to the log file (or a specified unit) the (cvs) version id string and
    (cvs) tag name. </dd>
-<dt>
-<a href="#lowercase">lowercase</a>:</dt>
-<dd>   Convert character strings to all lower case. </dd>
-<dt>
-<a href="#uppercase">uppercase</a>:</dt>
-<dd>   Convert character strings to all upper case. </dd>
 <dt>
 <a href="#string_array_index">string_array_index</a>:</dt>
 <dd>   match the input character string to a string
@@ -358,80 +352,6 @@
 </dl>
 </li>
 <li>
-<a name="lowercase"></a>
-<h4>lowercase</h4>
-<pre>string = <b>lowercase</b> ( cs )</pre>
-<dl>
-<dt>
-<b>DESCRIPTION</b>
-</dt>
-<dd>   Converts a character string to all lower case letters. The characters "A-Z"
-   are converted to "a-z", all other characters are left unchanged. </dd>
-<br>
-<br>
-<dt>
-<b>INPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>cs&nbsp;&nbsp;&nbsp;</tt></td><td>   Character string that may contain upper case letters. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*), scalar]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-<dt>
-<b>OUTPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>string&nbsp;&nbsp;&nbsp;</tt></td><td>   Character string that contains all lower case letters. The
-   length of this string must be the same as the input string. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=len(cs)), scalar]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-</dl>
-</li>
-<li>
-<a name="uppercase"></a>
-<h4>uppercase</h4>
-<pre>string = <b>uppercase</b> ( cs )</pre>
-<dl>
-<dt>
-<b>DESCRIPTION</b>
-</dt>
-<dd>   Converts a character string to all upper case letters. The characters "a-z"
-   are converted to "A-Z", all other characters are left unchanged. </dd>
-<br>
-<br>
-<dt>
-<b>INPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>cs&nbsp;&nbsp;&nbsp;</tt></td><td>   Character string that may contain lower case letters. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*), scalar]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-<dt>
-<b>OUTPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>string&nbsp;&nbsp;&nbsp;</tt></td><td>   Character string that contains all upper case letters. The
-   length of this string must be the same as the input string. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=len(cs)), scalar]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-</dl>
-</li>
-<li>
 <a name="string_array_index"></a>
 <h4>string_array_index</h4>
 <pre> 
@@ -559,6 +479,18 @@
 <span class="type">[character, default: 'NONE']</span>
 </dl>
 <dt>
+<tt>clock_flags</tt>
+</dt>
+<dl>   Possible values are 'NONE', 'SYNC', or 'DETAILED'.
+   SYNC will give accurate information on load balance of the clocked
+   portion of code.
+   DETAILED also turns on detailed message-passing performance diagnosis.
+   Both SYNC and DETAILED will  work correctly on innermost clock nest
+   and distort outer clocks, and possibly the overall code time.
+   See the <a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp.html">MPP</a>   module for more details. <br>
+<span class="type">[character, default: 'NONE']</span>
+</dl>
+<dt>
 <tt>read_all_pe</tt>
 </dt>
 <dl>   Read global data on all processors extracting local part needed (TRUE) or
@@ -596,6 +528,14 @@
    domains_stack_size = 0 (default) then the default size set by
    mpp_domains_mod is used. <br>
 <span class="type">[integer, default: 0]</span>
+</dl>
+<dt>
+<tt>print_memory_usage</tt>
+</dt>
+<dl>   If set to .TRUE., memory usage statistics will be printed at various
+   points in the code. It is used to study memory usage, e.g to detect
+   memory leaks. <br>
+<span class="type">[logical, default: .FALSE.]</span>
 </dl>
 </dl>
 </div>
@@ -654,6 +594,14 @@
 <dd>   There was an error message reading the namelist specified. Carefully 
    examine all namelist variables for
    misspellings of type mismatches (e.g., integer vs. real). </dd>
+<dt>
+<b>FATAL error during execution of module fms_mod</b>
+</dt>
+<dd>
+<span class="errmsg">unexpected EOF</span>
+</dd>
+<dd>   An unexpected end-of-file was encountered in a read_data call.
+   You may want to use the optional end argument to detect the EOF. </dd>
 </dl>
 <br>
 </div>

@@ -33,8 +33,8 @@ private
 !----------- ****** VERSION NUMBER ******* ---------------------------
 
 
-character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 1.2 2003/04/09 21:15:42 fms Exp $'
-character(len=128)  :: tag     =  '$Name: inchon $'
+character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 10.0 2003/10/24 22:01:26 fms Exp $'
+character(len=128)  :: tag     =  '$Name: jakarta $'
 
 
 

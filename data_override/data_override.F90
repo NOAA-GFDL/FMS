@@ -1,14 +1,14 @@
 module data_override_mod
 !
-! <CONTACT EMAIL="gtn@gfdl.noaa.gov">
+! <CONTACT EMAIL="Giang.Nong@noaa.gov">
 ! G.T. Nong
 ! </CONTACT>
 !
-! <CONTACT EMAIL="mjh@gfdl.noaa.gov">
+! <CONTACT EMAIL="Matthew.Harrison@noaa.gov">
 !  M.J. Harrison 
 ! </CONTACT>
 !
-! <CONTACT EMAIL="mw@gfdl.noaa.gov">
+! <CONTACT EMAIL="Michael.Winton@noaa.gov">
 ! M. Winton
 ! </CONTACT>
 
@@ -40,12 +40,16 @@ use time_interp_external_mod, only:time_interp_external_init, time_interp_extern
      init_external_field, get_external_field_size
 use fms_io_mod, only: field_size, read_data, write_data,fms_io_init,nullify_domain,return_domain, &
      set_domain
+use fms_mod, only: open_namelist_file, close_file, check_nml_error, write_version_number, file_exist
 use axis_utils_mod, only: get_axis_bounds
 use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, NULL_DOMAIN2D,operator(.NE.),operator(.EQ.)
 use time_manager_mod, only: time_type
 
 implicit none
 private
+
+character(len=128) :: version = '$Id: data_override.F90,v 10.0 2003/10/24 22:01:27 fms Exp $'
+character(len=128) :: tagname = '$Name: jakarta $'
 
 type data_type
    character(len=3) :: gridname
@@ -71,9 +75,9 @@ end type override_type
  integer :: table_size ! actual size of data table
  integer, parameter :: ANNUAL=1, MONTHLY=2, DAILY=3, HOURLY=4, UNDEF=-1
  real :: deg_to_radian, radian_to_deg 
- logical:: data_override_initialized = .FALSE.
+ logical:: module_is_initialized = .FALSE.
 
-type(domain2D) :: ocn_domain,atm_domain,lnd_domain, ice_domain 
+type(domain2D),save :: ocn_domain,atm_domain,lnd_domain, ice_domain 
 real(r8_kind), dimension(:,:), allocatable :: glo_lat_ocn, glo_lon_ocn, glo_lat_atm, &
      glo_lon_atm, glo_lat_lnd, glo_lon_lnd
 real, dimension(:,:), target, allocatable :: lon_local_ocn, lat_local_ocn,lon_local_atm,&
@@ -81,9 +85,12 @@ real, dimension(:,:), target, allocatable :: lon_local_ocn, lat_local_ocn,lon_lo
 integer:: num_fields = 0 ! number of fields in override_array already processed
 type(data_type), dimension(max_table) :: data_table ! user-provided data table
 type(data_type) :: default_table
-type(override_type), dimension(max_array) :: override_array ! to store processed fields
-type(override_type) :: default_array
+type(override_type), dimension(max_array), save :: override_array ! to store processed fields
+type(override_type), save :: default_array
 logical :: atm_on, ocn_on, lnd_on, ice_on
+
+logical :: is_new_grid = .FALSE.
+namelist /data_override_nml/ is_new_grid
            
 interface data_override
      module procedure data_override_2d
@@ -122,15 +129,16 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
 !
 ! </NOTE>
   integer :: is,ie,js,je
-  integer :: i, iunit, io_status, ntable
+  integer :: i, iunit, io_status, ntable, ierr, ioun
   character(len=256) :: record
   type(data_type) :: data_entry
-  type (domain2d) :: domain2
+  type (domain2d) :: domain2 ! It should not be necessary to save and restore the
+                             ! the current_domain of fms_io_mod because it should
+                             ! not have a current_domain. domain should be a required
+                             ! argument of read_data and write_data rather than an
+                             ! optional argument.
 
-!  if(data_override_initialized) return
-
-  radian_to_deg = 180./PI
-  deg_to_radian = PI/180.
+!  if(module_is_initialized) return
 
   atm_on = .false.; ocn_on=.false.; lnd_on=.false.; ice_on=.false.
   if (PRESENT(Atm_domain_in))   atm_on = .true.
@@ -138,16 +146,32 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
   if (PRESENT(Land_domain_in))  lnd_on = .true.
   if (PRESENT(Ice_domain_in))   ice_on = .true.
    
-  domain2 = NULL_DOMAIN2D
-  call return_domain(domain2)
-  call fms_io_init
-  call nullify_domain
-!    get global lat and lon of all three model grids
-  call get_global_grid()
-  if (domain2 .NE. NULL_DOMAIN2D) call set_domain(domain2)
+  if(.not. module_is_initialized) then
+    radian_to_deg = 180./PI
+    deg_to_radian = PI/180.
 
-!1 Get domain of component models
-  if(.not. data_override_initialized) then
+    call write_version_number (version, tagname)
+    if ( file_exist('input.nml')) then
+      ioun = open_namelist_file()
+      ierr=1
+      do while (ierr /= 0)
+        read (ioun, nml=data_override_nml, iostat=io_status, end=10)
+        ierr = check_nml_error(io_status, 'data_override_nml')
+      enddo
+10    call close_file (ioun)
+    endif
+    write (stdout(),'(/)')
+    write (stdout(),data_override_nml)  
+    write (stdlog(),data_override_nml)
+
+    domain2 = NULL_DOMAIN2D     ! See comment above
+    call return_domain(domain2) ! See comment above
+    call fms_io_init
+    call nullify_domain
+!    get global lat and lon of all three model grids
+    call get_global_grid()
+    if (domain2 .NE. NULL_DOMAIN2D) call set_domain(domain2) ! See comment above
+
     atm_domain = NULL_DOMAIN2D
     ocn_domain = NULL_DOMAIN2D
     lnd_domain = NULL_DOMAIN2D
@@ -228,7 +252,7 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
       lat_local_ice(is:ie,js:je) = glo_lat_ocn(is:ie,js:je)
   endif    
 
-  data_override_initialized = .TRUE.
+  module_is_initialized = .TRUE.
  
 end subroutine data_override_init
 ! </SUBROUTINE>
@@ -236,7 +260,7 @@ end subroutine data_override_init
 subroutine get_domain(gridname, domain, comp_domain)
 ! Given a gridname, this routine returns the working domain associated with this gridname
   character(len=3), intent(in) :: gridname
-  type(domain2D), intent(out) :: domain
+  type(domain2D), intent(inout) :: domain
   integer, intent(out), optional :: comp_domain(4) ! istart,iend,jstart,jend for compute domain
 
   domain = NULL_DOMAIN2D
@@ -336,7 +360,8 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
   integer :: axis_sizes(4)
   type(horiz_interp_type) :: id_horz_interp   !index for horizontal interp 
   real, dimension(:),allocatable :: lon_in, lat_in !of the input (source) grid
-  real, dimension(:,:), pointer :: lon_local, lat_local !of output (target) grid cells
+  real, dimension(:,:), pointer :: lon_local =>NULL(), &
+                                   lat_local =>NULL() !of output (target) grid cells
 
   type(axistype) :: axis_centers(4), axis_bounds(4)
   logical :: bilinear_interp = .true. 
@@ -348,7 +373,7 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
   integer, dimension(4) :: comp_domain = 0  ! istart,iend,jstart,jend for compute domain
   integer, dimension(4) :: reg1 = -1         ! istart,iend,jstart,jend for region1
   integer, dimension(4) :: reg2 = -1         ! istart,iend,jstart,jend for region2
-  if(.not.data_override_initialized) &
+  if(.not.module_is_initialized) &
        call mpp_error(FATAL,'Error: need to call data_override_init first')
 
 !1  Look  for the data file in data_table 
@@ -549,7 +574,7 @@ subroutine get_global_grid()
   integer :: i, j, siz(4)
   integer :: nlon_out, nlat_out ! size of global lon and lat
   logical :: file_open
-  real(r8_kind), dimension(:,:), allocatable :: lon_vert_glo, lat_vert_glo !of OCN grid vertices
+  real(r8_kind), dimension(:,:,:), allocatable :: lon_vert_glo, lat_vert_glo !of OCN grid vertices
   real(r8_kind), dimension(:),   allocatable :: lon_atm, lat_atm ! lon and lat of ATM grid
   real(r8_kind), dimension(:),   allocatable :: lon_lnd, lat_lnd ! lon and lat of LND grid
 
@@ -560,12 +585,30 @@ subroutine get_global_grid()
 !1 get global lon and lat of ocean grid vertices
 
   if (ocn_on .or. ice_on) then
+    if(is_new_grid) then
+      call field_size(grid_file, 'x_T', siz)
+      nlon_out = siz(1); nlat_out = siz(2)
+      allocate(lon_vert_glo(nlon_out,nlat_out,4), lat_vert_glo(nlon_out,nlat_out,4) )
+      call read_data(trim(grid_file), 'x_vert_T', lon_vert_glo)
+      call read_data(trim(grid_file), 'y_vert_T', lat_vert_glo)
+      
+!2 Global lon and lat of ocean grid cell centers are determined from adjacent vertices
+      if(.not. (allocated(glo_lat_ocn) .or. allocated(glo_lon_ocn))) &
+      allocate(glo_lat_ocn(nlon_out, nlat_out), glo_lon_ocn(nlon_out,nlat_out))
+      glo_lon_ocn(:,:) = (lon_vert_glo(:,:,1) + lon_vert_glo(:,:,2) + lon_vert_glo(:,:,3) + lon_vert_glo(:,:,4))*0.25
+      glo_lat_ocn(:,:) = (lat_vert_glo(:,:,1) + lat_vert_glo(:,:,2) + lat_vert_glo(:,:,3) + lat_vert_glo(:,:,4))*0.25
+      deallocate(lon_vert_glo)
+      deallocate(lat_vert_glo)
+! convert from degree to radian
+      glo_lon_ocn = glo_lon_ocn * deg_to_radian
+      glo_lat_ocn = glo_lat_ocn * deg_to_radian
+    else      
       call field_size(grid_file, 'geolon_vert_t', siz)
-      allocate(lon_vert_glo(siz(1),siz(2)))
+      allocate(lon_vert_glo(siz(1),siz(2),1))
       call read_data(trim(grid_file), 'geolon_vert_t', lon_vert_glo)
       
       call field_size(grid_file, 'geolat_vert_t', siz)
-      allocate(lat_vert_glo(siz(1),siz(2)))
+      allocate(lat_vert_glo(siz(1),siz(2),1))
       call read_data(trim(grid_file), 'geolat_vert_t', lat_vert_glo)
 
 !2 Global lon and lat of ocean grid cell centers are determined from adjacent vertices
@@ -575,8 +618,8 @@ subroutine get_global_grid()
            glo_lon_ocn(nlon_out - 1,nlat_out - 1))
       do i = 1, nlon_out - 1
          do j = 1, nlat_out - 1
-            glo_lon_ocn(i,j) = (lon_vert_glo(i,j) + lon_vert_glo(i+1,j))/2.
-            glo_lat_ocn(i,j) = (lat_vert_glo(i,j) + lat_vert_glo(i,j+1))/2.
+            glo_lon_ocn(i,j) = (lon_vert_glo(i,j,1) + lon_vert_glo(i+1,j,1))/2.
+            glo_lat_ocn(i,j) = (lat_vert_glo(i,j,1) + lat_vert_glo(i,j+1,1))/2.
          enddo
       enddo
       deallocate(lon_vert_glo)
@@ -584,7 +627,7 @@ subroutine get_global_grid()
 ! convert from degree to radian
       glo_lon_ocn = glo_lon_ocn * deg_to_radian
       glo_lat_ocn = glo_lat_ocn * deg_to_radian
-
+    endif
   endif
 !3 Get global lon and lat of ATM grid
 

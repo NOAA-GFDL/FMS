@@ -2,7 +2,7 @@
 module amip_interp_mod
 
 
-! <CONTACT EMAIL="bw@gfdl.noaa.gov">
+! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
 !   Bruce Wyman
 ! </CONTACT>
 
@@ -88,8 +88,8 @@ public amip_interp_init, get_amip_sst, get_amip_ice,  &
 
 !  ---- version number -----
 
-character(len=128) :: version = '$Id: amip_interp.F90,v 1.6 2003/04/09 21:15:25 fms Exp $'
-character(len=128) :: tagname = '$Name: inchon $'
+character(len=128) :: version = '$Id: amip_interp.F90,v 10.0 2003/10/24 22:01:25 fms Exp $'
+character(len=128) :: tagname = '$Name: jakarta $'
 
 !-----------------------------------------------------------------------
 !------ private defined data type --------
@@ -202,7 +202,8 @@ end interface
 type amip_interp_type
    private
    type (horiz_interp_type) :: Hintrp
-   real, pointer            ::    data1(:,:), data2(:,:)
+   real, pointer            ::    data1(:,:) =>NULL(), &
+                                  data2(:,:) =>NULL()
    type (date_type)         ::    Date1,       Date2
    logical                  :: use_climo, use_annual
 end type
@@ -1116,9 +1117,10 @@ endif
 
    character(len=*), intent(in)  :: type
    type (date_type), intent(in)  :: Date
-   type (date_type), intent(out) :: Adate
+   type (date_type), intent(inout) :: Adate
    real,             intent(out) :: dat(mobs,nobs)
 
+   real(kind=4) :: dat4(mobs,nobs)
    integer(2) :: idat (mobs,nobs)
    integer :: yr, mo, dy, ierr
    character(len=38) :: mesg
@@ -1145,7 +1147,8 @@ endif
                     print *, 'looking for date = ', Date
     do
       if (lowercase(trim(data_set)) == 'amip2' .or. lowercase(trim(data_set)) == 'hurrell') then
-         read (unit, end=10)  yr, mo,      dat
+         read (unit, end=10)  yr, mo,     dat4
+         dat=dat4
       else
          read (unit, end=10)  yr, mo, dy, idat
 !new     read (unit, end=10)  yr, mo, dy

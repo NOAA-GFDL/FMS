@@ -1,10 +1,10 @@
 module spherical_regrid_mod
 !
-!<CONTACT EMAIL="mjh@gfdl.noaa.gov">
+!<CONTACT EMAIL="Matthew.Harrison@noaa.gov">
 !M.J. Harrison
 !</CONTACT>
 !
-!<REVIEWER EMAIL="a1g@gfdl.noaa.gov">
+!<REVIEWER EMAIL="Anand.Gnanadesikan@noaa.gov">
 !Anand Gnandasekian
 !</REVIEWER>
 !

@@ -1,8 +1,8 @@
 module axis_utils_mod
   !
-  !<CONTACT EMAIL="mjh@gfdl.noaa.gov">M.J. Harrison</CONTACT>
+  !<CONTACT EMAIL="Matthew.Harrison@noaa.gov">M.J. Harrison</CONTACT>
   !
-  !<REVIEWER EMAIL="bw@gfdl.noaa.gov">Bruce Wyman</REVIEWER>
+  !<REVIEWER EMAIL="Bruce.Wyman@noaa.gov">Bruce Wyman</REVIEWER>
   !
 
   !</OVERVIEW>
@@ -39,8 +39,8 @@ module axis_utils_mod
   integer, parameter :: maxatts = 100
   real, parameter    :: epsln= 1.e-10
   real, parameter    :: fp5 = 0.5, f360 = 360.0
-  character(len=256) :: version = '$Id: axis_utils.F90,v 1.3 2003/04/09 21:15:30 fms Exp $'
-  character(len=256) :: tagname = '$Name: inchon $'   
+  character(len=256) :: version = '$Id: axis_utils.F90,v 10.0 2003/10/24 22:01:26 fms Exp $'
+  character(len=256) :: tagname = '$Name: jakarta $'   
 
   interface interp_1d
      module procedure interp_1d_1d
@@ -124,7 +124,7 @@ contains
   subroutine get_axis_bounds(axis,axis_bound,axes)
 
     type(axistype), intent(in) :: axis
-    type(axistype), intent(out) :: axis_bound
+    type(axistype), intent(inout) :: axis_bound
     type(axistype), intent(in), dimension(:) :: axes
 
     type(atttype), dimension(:), allocatable :: att
@@ -483,8 +483,12 @@ contains
           w = (grid_2(i)-grid_1(n))/(grid_1(n+1)-grid_1(n))
           data2(i) = (1.-w)*data1(n) + w*data1(n+1)
        else
-          w = (grid_2(i)-grid_1(n-1))/(grid_1(n)-grid_1(n-1))
-          data2(i) = (1.-w)*data1(n-1) + w*data1(n)        
+          if(n==1) then
+             data2(i) = data1(n)
+          else
+             w = (grid_2(i)-grid_1(n-1))/(grid_1(n)-grid_1(n-1))
+             data2(i) = (1.-w)*data1(n-1) + w*data1(n)   
+          endif     
        endif
     enddo
 

@@ -1,13 +1,13 @@
 module tracer_manager_mod
-! <CONTACT EMAIL="wfc@gfdl.noaa.gov">
+! <CONTACT EMAIL="William.Cooke@noaa.gov">
 !   William Cooke
 ! </CONTACT>
 
-! <REVIEWER EMAIL="mjh@gfdl.noaa.gov">
+! <REVIEWER EMAIL="Matthew.Harrison@noaa.gov">
 !   Matt Harrison
 ! </REVIEWER>
 
-! <REVIEWER EMAIL="bw@gfdl.noaa.gov">
+! <REVIEWER EMAIL="Bruce.Wyman@noaa.gov">
 !   Bruce Wyman
 ! </REVIEWER>
 
@@ -54,6 +54,7 @@ use        mpp_io_mod, only : mpp_open,           &
                               MPP_RDONLY
 use           fms_mod, only : lowercase,          &
                               write_version_number
+
 use field_manager_mod, only : field_manager_init, &
                               get_field_info,     &
                               get_field_methods,  &
@@ -64,14 +65,26 @@ use field_manager_mod, only : field_manager_init, &
                               NUM_MODELS,         &
                               method_type,        &
                               default_method,     &
-                              parse
+                              parse,              &
+                              fm_new_list,        &
+                              fm_copy_list,       &
+                              fm_change_list,     &
+                              fm_modify_name,     &
+                              fm_change_root,     &
+                              fm_dump_list,       &
+                              fm_query_method,    &
+                              fm_find_methods,    &
+                              fm_get_length,      &
+                              fm_new_value,       &
+                              fm_exists
 
 implicit none
 private
 
 !-----------------------------------------------------------------------
 
-public  tracer_manager_end,        &
+public  tracer_manager_init,       &
+        tracer_manager_end,        &
         check_if_prognostic,       &
         assign_tracer_field,       &
         add_members_to_family,     &
@@ -93,7 +106,8 @@ public  tracer_manager_end,        &
         tracer_requires_init,      &
         have_initialized_tracer,   &
         query_tracer_init,         &
-        NO_TRACER
+        NO_TRACER,                 &
+        MAX_TRACER_FIELDS
 
 !-----------------------------------------------------------------------
 
@@ -107,9 +121,8 @@ integer :: total_tracers(NUM_MODELS), prog_tracers(NUM_MODELS), diag_tracers(NUM
 type, private ::  tracer_type
    character(len=32)        :: tracer_name, tracer_units
    character(len=128)       :: tracer_longname, tracer_family
-   integer                  :: num_methods, model
-   type(method_type)        :: methods(MAX_TRACER_METHOD)
-   logical                  :: is_prognostic, is_family, is_combined
+   integer                  :: num_methods, model, instances
+   logical                  :: is_prognostic, is_family, is_combined, instances_set
    real, pointer, dimension(:,:,:,:) :: field_tlevels => NULL()
    real, pointer, dimension(:,:,:) :: field => NULL(), field_tendency => NULL(), weight => NULL()
    logical                  :: needs_init
@@ -120,10 +133,17 @@ type, private ::  tracer_name_type
    character (len=128)   :: tracer_longname, tracer_family
 end type tracer_name_type
 
-type(tracer_type)  :: tracers(MAX_TRACER_FIELDS)
 
-character(len=128) :: version = '$Id: tracer_manager.F90,v 1.3 2003/04/09 21:19:24 fms Exp $'
-character(len=128) :: tagname = '$Name: inchon $'
+type, private :: inst_type
+   character (len=128)   :: name
+   integer               :: instances
+end type inst_type
+
+type(tracer_type), save  :: tracers(MAX_TRACER_FIELDS)
+type(inst_type)  , save  :: instantiations(MAX_TRACER_FIELDS)
+
+character(len=128) :: version = '$Id: tracer_manager.F90,v 10.0 2003/10/24 22:01:41 fms Exp $'
+character(len=128) :: tagname = '$Name: jakarta $'
 logical            :: module_is_initialized = .false.
 
 logical            :: verbose_local
@@ -195,14 +215,20 @@ subroutine register_tracers(model, num_tracers,num_prog,num_diag,num_family)
 integer,  intent(in) :: model ! model being used
 integer, intent(out) :: num_tracers, num_prog, num_diag, num_family
 character(len=1024)  :: record
-character(len=80)    :: warnmesg
+character(len=256)    :: warnmesg
 
 character(len=32) :: model_name, name_type, type, name
 character(len=128) :: units, longname, family
-integer :: iunit,n,m, ntf, mod, num_tracer_methods, nfields, swop
+integer :: iunit,n,n1, m, ntf, mod, num_tracer_methods, nfields, swop
 integer :: j, log_unit, num_in_family, num_methods, ns, num_tracer_comp_model
 logical :: flag,is_family_member(MAX_TRACER_FIELDS), flag_type
-type(method_type), dimension(20) :: methods
+type(method_type), dimension(MAX_TRACER_METHOD) :: methods
+integer :: instances, siz_inst,i
+character(len = 32) :: digit,suffnam
+
+character(len=128) :: list_name , control
+integer            :: index_list_name
+logical :: fm_success
 
 num_tracers = 0; num_prog = 0; num_diag = 0; num_family = 0
 
@@ -231,6 +257,7 @@ num_tracer_comp_model = 0
 
 do n=1,nfields
    call get_field_info(n,type,name,mod,num_methods)
+
    if (mod == model .and. type == 'tracer') then
       if (get_tracer_index(model, name) == NO_TRACER) then      
          num_tracer_fields = num_tracer_fields + 1
@@ -245,6 +272,7 @@ do n=1,nfields
          tracers(num_tracer_fields)%tracer_units   = 'none'
          tracers(num_tracer_fields)%tracer_longname = tracers(num_tracer_fields)%tracer_name
          tracers(num_tracer_fields)%tracer_family   = 'orphan'
+         tracers(num_tracer_fields)%instances_set   = .FALSE.
          num_tracer_methods     = 0
          methods = default_method ! initialize methods array
          call get_field_methods(n,methods)
@@ -256,9 +284,14 @@ do n=1,nfields
                tracers(num_tracer_fields)%tracer_longname = methods(j)%method_name
             case ('family')
                tracers(num_tracer_fields)%tracer_family = methods(j)%method_name
+            case ('instances')
+!               tracers(num_tracer_fields)%instances = methods(j)%method_name
+               siz_inst = parse(methods(j)%method_name,"",instances)
+               tracers(num_tracer_fields)%instances = instances
+               tracers(num_tracer_fields)%instances_set   = .TRUE.
             case default
                num_tracer_methods = num_tracer_methods+1
-               tracers(num_tracer_fields)%methods(num_tracer_methods) = methods(j)
+!               tracers(num_tracer_fields)%methods(num_tracer_methods) = methods(j)
             end select
          enddo
          tracers(num_tracer_fields)%num_methods = num_tracer_methods
@@ -280,11 +313,90 @@ do n=1,nfields
    endif
 enddo
 
+! Now cycle through the tracers and add additional instances of the tracers.
+
+ntf = num_tracer_fields
+do n = 1, ntf !{
+!   call get_field_info(n,type,name,mod,num_methods)
+
+  if ( model == tracers(n)%model .and. tracers(n)%instances_set ) then !{ We have multiple instances of this tracer
+
+    if ( ntf + tracers(n)%instances > MAX_TRACER_FIELDS ) then
+      write(warnmesg, '("register_tracer : Number of tracers will exceed MAX_TRACER_FIELDS with &
+                       &multiple (",I3," instances) setup of tracer ",A)') tracers(n)%instances,tracers(n)%tracer_name
+      call mpp_error(FATAL, warnmesg)
+    endif                        
+
+    do i = 2, tracers(n)%instances !{
+      num_tracer_fields = num_tracer_fields + 1
+      num_tracer_comp_model = num_tracer_comp_model + 1
+      TRACER_ARRAY(model,num_tracer_comp_model)  = num_tracer_fields
+      ! Copy the original tracer type to the multiple instances.
+      tracers(num_tracer_fields) = tracers(n)
+      if ( query_method ('instances', model,model_tracer_number(model,n),name, control)) then !{
+          
+        if (i .lt. 10) then  !{
+           write (suffnam,'(''suffix'',i1)') i
+           siz_inst = parse(control, suffnam,digit)
+           if (siz_inst == 0 ) then
+             write (digit,'(''_'',i1)') i
+           else
+             digit = "_"//trim(digit)
+           endif  
+        elseif (i .lt. 100) then  !}{
+           write (suffnam,'(''suffix'',i2)') i
+           siz_inst = parse(control, suffnam,digit)
+           if (siz_inst == 0 ) then
+             write (digit,'(''_'',i2)') i
+           else
+             digit = "_"//trim(digit)
+           endif
+        else  !}{
+          call mpp_error(FATAL, 'register_tracer : MULTIPLE_TRACER_SET_UP exceeds 100 for '//tracers(n)%tracer_name )
+        endif  !}
+
+        select case(model)
+          case (MODEL_ATMOS)
+            list_name = "/atmos_mod/tracer/"//trim(tracers(num_tracer_fields)%tracer_name)
+          case (MODEL_OCEAN)
+            list_name = "/ocean_mod/tracer/"//trim(tracers(num_tracer_fields)%tracer_name)
+          case (MODEL_ICE  )
+            list_name = "/ice_mod/tracer/"//trim(tracers(num_tracer_fields)%tracer_name)
+          case (MODEL_LAND )
+            list_name = "/land_mod/tracer/"//trim(tracers(num_tracer_fields)%tracer_name)
+          case default
+            list_name = "/default/tracer/"//trim(tracers(num_tracer_fields)%tracer_name)
+        end select
+
+        if (mpp_pe() == mpp_root_pe() ) write (*,*) "Creating list name = ",trim(list_name)//trim(digit)
+
+        index_list_name = fm_copy_list(trim(list_name),digit, create = .true.)
+        tracers(num_tracer_fields)%tracer_name = trim(tracers(num_tracer_fields)%tracer_name)//trim(digit)
+      endif !}
+         
+      if (tracers(num_tracer_fields)%is_prognostic) then !{
+         num_prog = num_prog+1
+      else !}{
+         num_diag = num_diag+1
+      endif !}
+    enddo !}
+    ! Multiple instances of tracers were found so need to rename the original tracer.
+    digit = "_1" 
+    siz_inst = parse(control, "suffix1",digit)
+    if (siz_inst > 0 ) then !{
+      digit = "_"//trim(digit)
+    endif !}
+    fm_success = fm_modify_name(trim(list_name), trim(tracers(n)%tracer_name)//trim(digit))
+    tracers(n)%tracer_name = trim(tracers(n)%tracer_name)//trim(digit)
+  endif !}
+enddo !}
+
 !Now recycle through the tracers and get the family names
 
 ntf = num_tracer_fields
 do n=1,ntf
-   if (tracers(n)%tracer_family /= 'orphan') then
+
+  if ( model == tracers(n)%model .and. tracers(n)%tracer_family /= 'orphan') then
       call find_family_members(tracers(n)%model,tracers(n)%tracer_family,is_family_member)
       num_in_family = 0
       do m=1,ntf
@@ -306,7 +418,7 @@ do n=1,ntf
          num_tracer_comp_model = num_tracer_comp_model + 1
          TRACER_ARRAY(model,num_tracer_comp_model)  = num_tracer_fields
             num_family = num_family+1
-!   <ERROR MSG="MAX_TRACER_FIELDS needs to be increased" STATUS="FATL">
+!   <ERROR MSG="MAX_TRACER_FIELDS needs to be increased" STATUS="FATAL">
 !     The number of tracer fields has exceeded the maximum allowed. 
 !     The parameter MAX_TRACER_FIELDS needs to be increased.
 !   </ERROR>
@@ -321,14 +433,116 @@ do n=1,ntf
             tracers(num_tracer_fields)%tracer_family = 'orphan'
             num_methods = tracers(n)%num_methods
             tracers(num_tracer_fields)%num_methods = num_methods
-            do ns=1,num_methods
-               tracers(num_tracer_fields)%methods(ns) = tracers(n)%methods(ns)
-            end do
             call check_family_parameters(model,tracers(n)%tracer_name) ! make sure family parameters are same for tracers within family
          endif
       endif
    endif
 enddo
+
+
+! Find any field entries with the instances keyword.
+do n=1,nfields
+   call get_field_info(n,type,name,mod,num_methods)
+
+   if ( mod == model .and. type == 'instances' ) then
+      call get_field_methods(n,methods)
+      do j=1,num_methods
+
+         m = get_tracer_index(mod,methods(j)%method_type)
+         if (m .eq. NO_TRACER) then 
+           call mpp_error(FATAL,'register_tracers : The instances keyword was found for undefined tracer '&
+           //trim(methods(j)%method_type))
+         else
+           if ( tracers(m)%instances_set ) &
+              call mpp_error(FATAL,'register_tracers : The instances keyword was found for '&
+              //trim(methods(j)%method_type)//' but has previously been defined in the tracer entry')
+           siz_inst = parse(methods(j)%method_name,"",instances)
+           tracers(m)%instances = instances
+           call mpp_error(NOTE,'register_tracers : '//trim(instantiations(j)%name)// &
+                               ' will have '//trim(methods(j)%method_name)//' instances')
+         endif
+         if ( ntf + instances > MAX_TRACER_FIELDS ) then
+           write(warnmesg, '("register_tracer : Number of tracers will exceed MAX_TRACER_FIELDS with &
+                       &multiple (",I3," instances) setup of tracer ",A)') tracers(m)%instances,tracers(m)%tracer_name
+           call mpp_error(FATAL, warnmesg)
+         endif                        
+! We have found a valid tracer that has more than one instantiation.
+! We need to modify that tracer name to tracer_1 and add extra tracers for the extra instantiations.
+         if (instances .eq. 1) then
+           siz_inst = parse(methods(j)%method_control, 'suffix1',digit)
+           if (siz_inst == 0 ) then
+             digit = '_1'
+           else
+             digit = "_"//trim(digit)
+           endif  
+         endif
+         do i = 2, instances
+           num_tracer_fields = num_tracer_fields + 1
+           num_tracer_comp_model = num_tracer_comp_model + 1
+           TRACER_ARRAY(model,num_tracer_comp_model)  = num_tracer_fields
+           tracers(num_tracer_fields)                =  tracers(m)
+           
+           
+           
+           if (i .lt. 10) then  !{
+             write (suffnam,'(''suffix'',i1)') i
+             siz_inst = parse(methods(j)%method_control, suffnam,digit)
+             if (siz_inst == 0 ) then
+               write (digit,'(''_'',i1)') i
+             else
+               digit = "_"//trim(digit)
+             endif  
+          elseif (i .lt. 100) then  !}{
+             write (suffnam,'(''suffix'',i2)') i
+             siz_inst = parse(methods(j)%method_control, suffnam,digit)
+             if (siz_inst == 0 ) then
+               write (digit,'(''_'',i2)') i
+             else
+               digit = "_"//trim(digit)
+             endif
+          else  !}{
+            call mpp_error(FATAL, 'register_tracer : MULTIPLE_TRACER_SET_UP exceeds 100 for '&
+                                  //tracers(num_tracer_fields)%tracer_name )
+          endif  !}
+
+          select case(model)
+            case (MODEL_ATMOS)
+              list_name = "/atmos_mod/tracer/"//trim(tracers(num_tracer_fields)%tracer_name)
+            case (MODEL_OCEAN)
+              list_name = "/ocean_mod/tracer/"//trim(tracers(num_tracer_fields)%tracer_name)
+            case (MODEL_ICE  )
+              list_name = "/ice_mod/tracer/"//trim(tracers(num_tracer_fields)%tracer_name)
+            case (MODEL_LAND )
+              list_name = "/land_mod/tracer/"//trim(tracers(num_tracer_fields)%tracer_name)
+            case default
+              list_name = "/default/tracer/"//trim(tracers(num_tracer_fields)%tracer_name)
+          end select
+
+          if (mpp_pe() == mpp_root_pe() ) write (*,*) "Creating list name = ",trim(list_name)
+
+          index_list_name = fm_copy_list(trim(list_name),digit, create = .true.)
+
+          tracers(num_tracer_fields)%tracer_name    =  trim(tracers(num_tracer_fields)%tracer_name)//digit
+          if (tracers(num_tracer_fields)%is_prognostic) then
+            num_prog = num_prog+1
+          else
+            num_diag = num_diag+1
+          endif
+        enddo
+!Now rename the original tracer to tracer_1 (or if suffix1 present to tracer_'value_of_suffix1')
+        siz_inst = parse(methods(j)%method_control, 'suffix1',digit)
+        if (siz_inst == 0 ) then
+          digit = '_1'
+        else
+          digit = "_"//trim(digit)
+        endif  
+        fm_success = fm_modify_name(trim(list_name), trim(tracers(m)%tracer_name)//trim(digit))
+        tracers(m)%tracer_name    =  trim(tracers(m)%tracer_name)//trim(digit)
+      enddo
+   endif
+enddo
+
+
 
 num_tracers = num_prog + num_diag + num_family
 ! Make the number of tracers available publicly.
@@ -362,7 +576,6 @@ enddo
 
 log_unit = stdlog()
 if ( mpp_pe() == mpp_root_pe() ) then
-!   write (log_unit,'(/,80("="),/(a))') trim(version), trim(tagname)
     select case (model)
       case (MODEL_ATMOS)
          model_name = "atmospheric"
@@ -383,6 +596,23 @@ endif
 
 end subroutine register_tracers
 !</SUBROUTINE>
+
+
+function model_tracer_number(model,n)
+integer, intent(in) :: model, n
+integer model_tracer_number
+
+integer :: i
+
+model_tracer_number = NO_TRACER
+
+do i = 1, MAX_TRACER_FIELDS
+  if ( TRACER_ARRAY(model,i) == n ) &
+     model_tracer_number = i
+
+enddo
+
+end function model_tracer_number
 
 ! <SUBROUTINE NAME="tracer_requires_init">
 !   <OVERVIEW>
@@ -539,12 +769,11 @@ end subroutine get_number_tracers
 !     the tracer manager.
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!     If several models are being used or redundant
-! tracers have been written to the tracer_table, then the indices in
-! the component model and the tracer manager may not have a one to one
-! correspondence. Therefore the component model needs to know what index
-! to pass to calls to tracer_manager routines in order that the correct
-! tracer information be accessed.
+!     If several models are being used or redundant tracers have been written to
+! the tracer_table, then the indices in the component model and the tracer
+! manager may not have a one to one correspondence. Therefore the component
+! model needs to know what index to pass to calls to tracer_manager routines in
+! order that the correct tracer information be accessed.
 !   </DESCRIPTION>
 !   <TEMPLATE>
 !     call get_tracer_indices(model, ind, prog_ind, diag_ind, fam_ind)
@@ -590,7 +819,7 @@ j = TRACER_ARRAY(model,i)
    if ( model == tracers(j)%model) then
       if (PRESENT(ind)) then
          n=n+1
-!   <ERROR MSG="index array size too small in get_tracer_indices" STATUS="Fatal">
+!   <ERROR MSG="index array size too small in get_tracer_indices" STATUS="FATAL">
 !     The global index array is too small and cannot contain all the tracer numbers.
 !   </ERROR>
          if (n > size(ind)) call mpp_error(FATAL,'get_tracer_indices : index array size too small in get_tracer_indices')
@@ -682,7 +911,7 @@ if (PRESENT(indices)) then
 else
     do i=1, num_tracer_fields
        if (lowercase(trim(name)) == trim(tracers(TRACER_ARRAY(model,i))%tracer_name)) then
-           get_tracer_index = i
+           get_tracer_index = TRACER_ARRAY(model,i)
            exit
        endif
     enddo
@@ -854,17 +1083,6 @@ if (associated(tracers(i)%field_tlevels)) then
 else
    write(log_unit,*) 'Tracer tlevels       : not associated'
 endif
-
-
-
-do j=1,tracers(i)%num_methods
-   write(log_unit, '(a,i4,a,a)') ' Method ',j,' type     : ',trim(tracers(i)%methods(j)%method_type)
-   write(log_unit, '(a,i4,a,a)') ' Method ',j,' name     : ',trim(tracers(i)%methods(j)%method_name)
-   write(log_unit, '(a,i4,a,a)') ' Method ',j,' control  : ', trim(tracers(i)%methods(j)%method_control)
-enddo
-
-
-
 
 
 write(log_unit, *)'----------------------------------------------------'
@@ -1056,6 +1274,10 @@ subroutine get_tracer_names(model,n,name,longname, units)
 integer,          intent(in)  :: model, n
 character (len=*),intent(out) :: name
 character (len=*), intent(out), optional :: longname, units
+
+if ( n == NO_TRACER ) then
+    call mpp_error(NOTE,'get_tracer_names : Trying to get names for a non-existent tracer ')
+endif  
 
 !Convert local model index to tracer_manager index
 if (TRACER_ARRAY(model,n) < 1 .or. TRACER_ARRAY(model,n) > num_tracer_fields) &
@@ -1522,7 +1744,7 @@ end subroutine split_family_into_members
 
 !   </DESCRIPTION>
 !   <TEMPLATE>
-!     call set_tracer_profile(model, n, surf_value, multiplier)
+!     call set_tracer_profile(model, n, tracer)
 !   </TEMPLATE>
 
 !   <IN NAME="model" TYPE="integer">
@@ -1535,15 +1757,13 @@ end subroutine split_family_into_members
 !     The initialized tracer array.
 !   </INOUT>
 subroutine set_tracer_profile(model, n, tracer)
-!surf_value, multiplier)
 
 integer,  intent(in)  :: model, n
    real, intent(inout), dimension(:,:,:) :: tracer
-!real,     intent(out) :: surf_value, multiplier
-real :: surf_value, multiplier
 
+real    :: surf_value, multiplier
 integer :: numlevels, k, m
-real :: top_value, bottom_value
+real    :: top_value, bottom_value
 character(len=80) :: scheme, control,profile_type, name
 integer :: flag
 
@@ -1571,9 +1791,9 @@ if ( query_method ( 'profile_type',model,n,scheme,control)) then
   if(lowercase(trim(scheme(1:7))).eq.'profile') then
     profile_type                   = 'Profile'
     flag=parse(control,'surface_value',surf_value)
-    if(mpp_pe() == mpp_root_pe()) write(*,*) 'surf ',surf_value, control,flag
     if (surf_value .eq. 0.0) &
-      call mpp_error(FATAL,'set_tracer_profile : Cannot have a zero surface value for an exponential profile')
+      call mpp_error(FATAL,'set_tracer_profile : Cannot have a zero surface value for an exponential profile. Tracer '&
+                           //tracers(TRACER_ARRAY(model,n))%tracer_name//" "//control//" "//scheme)
     select case (tracers(TRACER_ARRAY(model,n))%model)
       case (MODEL_ATMOS)
         flag=parse(control,'top_value',top_value)
@@ -1593,6 +1813,7 @@ if ( query_method ( 'profile_type',model,n,scheme,control)) then
 !  C = C0 exp ( -multiplier* level_number)
 !  => multiplier = exp [ ln(Ctop/Csurf)/number_of_levels]
 !
+numlevels = size(tracer,3) -1
     if (associated(tracers(TRACER_ARRAY(model,n))%field)) numlevels = size(tracers(TRACER_ARRAY(model,n))%field,3) -1
     if (associated(tracers(TRACER_ARRAY(model,n))%field_tlevels)) numlevels = size(tracers(TRACER_ARRAY(model,n))%field_tlevels,3)-1
     select case (tracers(TRACER_ARRAY(model,n))%model)
@@ -1712,20 +1933,37 @@ character(len=*), intent(out)           :: name
 character(len=*), intent(out), optional :: control
 logical                                 :: query_method
 
-integer :: m, n1
-
+integer :: m, n1, nmethods
+character(len=256) :: list_name, control_tr
 !Convert the local model tracer number to the tracer_manager version.
 
+if ( n == NO_TRACER ) then
+    call mpp_error(NOTE,'query_method : Trying to query method for a non-existent tracer ')
+    call mpp_error(FATAL,'query_method : Query method is : '//method_type )
+    
+endif  
 name=" "
 query_method = .false.
 n1 = TRACER_ARRAY(model,n)
-do m = 1,tracers(n1)%num_methods
-   if (tracers(n1)%methods(m)%method_type .eq. lowercase(method_type) ) then
-      name         = tracers(n1)%methods(m)%method_name
-      if (PRESENT(control)) control = tracers(n1)%methods(m)%method_control
-      query_method = .true.
-   endif
-enddo
+
+select case(model)
+ case (MODEL_ATMOS)
+  list_name = "/atmos_mod/tracer/"//trim(tracers(n1)%tracer_name)//"/"//trim(method_type)
+ case (MODEL_OCEAN)
+  list_name = "/ocean_mod/tracer/"//trim(tracers(n1)%tracer_name)//"/"//trim(method_type)
+ case (MODEL_ICE  )
+  list_name = "/ice_mod/tracer/"//trim(tracers(n1)%tracer_name)//"/"//trim(method_type)
+ case (MODEL_LAND )
+  list_name = "/land_mod/tracer/"//trim(tracers(n1)%tracer_name)//"/"//trim(method_type)
+ case default
+  list_name = "/default/tracer/"//trim(tracers(n1)%tracer_name)//"/"//trim(method_type)
+end select
+
+  name = ''
+  control_tr = ''
+  query_method = fm_query_method(list_name, name, control_tr)
+
+if ( present(control)) control = trim(control_tr)
 
 end function query_method
 !</FUNCTION>
@@ -1800,14 +2038,122 @@ integer, intent(in)                    :: model
 character(len=*), intent(in)           :: name
 character(len=*), intent(in), optional :: longname, units
 
-integer :: n
+integer :: n, index
+logical :: success
+character(len=128) :: list_name
+
 
 n = get_tracer_index(model,name)
 
+if ( n .ne. NO_TRACER ) then
     tracers(TRACER_ARRAY(model,n))%tracer_units   = units
     tracers(TRACER_ARRAY(model,n))%tracer_longname = longname
+  select case(model)
+    case(MODEL_ATMOS) 
+      list_name = "/atmos_mod/tracer/"//trim(name)
+    case(MODEL_OCEAN) 
+      list_name = "/ocean_mod/tracer/"//trim(name)
+    case(MODEL_LAND) 
+      list_name = "/land_mod/tracer/"//trim(name)
+    case(MODEL_ICE) 
+      list_name = "/ice_mod/tracer/"//trim(name)
+    case DEFAULT 
+      list_name = "/"//trim(name)
+  end select      
+
+! Method_type is a list, method_name is a name of a parameter and method_control has the value.
+!    list_name = trim(list_name)//"/longname"
+  if ( fm_exists(list_name)) then
+    success = fm_change_list(list_name)
+    if ( present(longname) .and. longname .ne. "" ) then
+      index = fm_new_value('longname',longname)
+    endif
+    if ( present(units) .and. units .ne. "" ) then
+      index = fm_new_value('units',units)
+    endif
+  endif  
+
+    
+else
+    call mpp_error(NOTE,'set_tracer_atts : Trying to set longname and/or units for non-existent tracer : '//trim(name))
+endif
 
 end subroutine set_tracer_atts
+!</SUBROUTINE>
+
+
+!<SUBROUTINE NAME="set_tracer_method">
+!   <OVERVIEW> 
+!      A subroutine to allow the user to set some tracer specific methods.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      A subroutine to allow the user to set methods for a specific tracer. 
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call set_tracer_method(model, name, method_type, method_name, method_control)
+!   </TEMPLATE>
+
+!   <IN NAME="model" TYPE="integer">
+!     A parameter representing the component model in use.
+!   </IN>
+!   <IN NAME="name" TYPE="character">
+!     Tracer name.
+!   </IN>
+!   <IN NAME="method_type" TYPE="character">
+!     The type of the method to be set.
+!   </IN>
+!   <IN NAME="method_name" TYPE="character">
+!     The name of the method to be set.
+!   </IN>
+!   <IN NAME="method_control" TYPE="character">
+!     The control parameters of the method to be set.
+!   </IN>
+     
+subroutine set_tracer_method(model, name, method_type, method_name, method_control)
+
+
+integer, intent(in)                    :: model
+character(len=*), intent(in)           :: name
+character(len=*), intent(in)           :: method_type
+character(len=*), intent(in)           :: method_name
+character(len=*), intent(in)           :: method_control
+
+integer :: n, num_method, index
+logical :: success
+character(len=128) :: list_name
+
+n = get_tracer_index(model,name)
+
+if ( n .ne. NO_TRACER ) then
+  tracers(n)%num_methods = tracers(n)%num_methods + 1
+  num_method = tracers(n)%num_methods
+
+  select case(model)
+    case(MODEL_ATMOS)
+      list_name = "/atmos_mod/tracer/"//trim(name)
+    case(MODEL_OCEAN)
+      list_name = "/ocean_mod/tracer/"//trim(name)
+    case(MODEL_LAND)
+      list_name = "/land_mod/tracer/"//trim(name)
+    case(MODEL_ICE)
+      list_name = "/ice_mod/tracer/"//trim(name)
+    case DEFAULT
+      list_name = "/"//trim(name)
+  end select      
+
+  if ( method_control .ne. "" ) then
+! Method_type is a list, method_name is a name of a parameter and method_control has the value.
+    list_name = trim(list_name)//"/"//trim(method_type)
+    if ( fm_exists(list_name)) then
+      success = fm_change_list(list_name)
+      index = fm_new_value(method_type,method_control)
+    endif
+  else
+    call mpp_error(NOTE,'set_tracer_method : Trying to set a method for non-existent tracer : '//trim(name))
+  endif
+endif
+
+end subroutine set_tracer_method
 !</SUBROUTINE>
 
 end module tracer_manager_mod
@@ -1816,7 +2162,14 @@ end module tracer_manager_mod
 
 program test
 
-use field_manager_mod, only : MODEL_ATMOS, MODEL_OCEAN, field_manager_init
+use field_manager_mod, only : MODEL_ATMOS, &
+                              MODEL_OCEAN, &
+                              field_manager_init, &
+                              fm_dump_list, &
+                              fm_exists, &
+                              fm_new_value, &
+                              fm_get_value, &
+                              fm_change_list
 use tracer_manager_mod
 use mpp_mod, only : mpp_npes, mpp_pe, mpp_root_pe, FATAL, mpp_error, mpp_exit
 use mpp_domains_mod, only : domain2d, mpp_define_domains, cyclic_global_domain, &
@@ -1828,7 +2181,7 @@ use time_manager_mod
 
 implicit none
 
-integer, parameter :: nx = 100, ny = 100, nz = 10, ntsteps = 10, delt = 1, two_delt = 2*delt
+integer, parameter :: nx = 100, ny = 100, nz = 10, ntsteps = 20, delt = 1, two_delt = 2*delt
 real, parameter :: advect_speed = .23
 integer :: num_tracer_prog_atmos, num_tracer_diag_atmos, num_tracer_fam_atmos, num_tracers_atmos
 integer :: num_tracer_prog_ocean, num_tracer_diag_ocean, num_tracer_fam_ocean, num_tracers_ocean
@@ -1844,7 +2197,7 @@ real, allocatable, dimension(:,:,:,:) :: atmos_vel, ocean_vel
 
 real ::  missing_value = -1.e10
 real, dimension(max(nx,ny,nz)) :: data
-logical :: result, flag
+logical :: result, flag, success
 
 type(time_type) :: model_time
 type(domain2d) :: domain ! just using a single domain type for all tracers here since
@@ -1855,10 +2208,11 @@ type(domain2d) :: domain ! just using a single domain type for all tracers here 
                          ! a domain2d component (this seems unworkable because diag_axis_init would
                          ! need different calls for different domains ...)
    
-character(len=128) :: name, longname, units, scheme_name, control, family_name
-integer :: halo, ndivs, isc, iec, jsc, jec, isd, ied, jsd, jed, tau, taum1, taup1, tmp, n, m, order, mm
-integer :: co2_index, color_index, temp_index,k,nfields
-real :: surf_value,multiplier
+character(len=128) :: name, longname, units, scheme_name, control, family_name, list_name
+integer :: halo, ndivs, isc, iec, jsc, jec, isd, ied, jsd, jed, tau, taum1, taup1, tmp, n, m, mm
+integer, dimension(MAX_TRACER_FIELDS) :: atmos_order, ocean_order
+integer :: co2_index, color_index, temp_index,k,nfields, index
+real :: surf_value,multiplier, param
 
 call mpp_io_init
 call set_calendar_type(JULIAN)
@@ -1868,16 +2222,39 @@ taum1=1
 tau=2
 taup1=3
 
-model_time = set_date(1980,1,1,0,0,0)
+model_time = set_date(1982,1,1,0,0,0)
 
+!Register the tracers for the atmospheric model.
 call register_tracers(MODEL_ATMOS, num_tracers_atmos, num_tracer_prog_atmos, num_tracer_diag_atmos, &
                      num_tracer_fam_atmos)
 
+! Silly exmaple of how to use get_number_tracers. 
+! As the ocean tracers have not been registered by the tracer manager these will all be zero.
+call get_number_tracers(MODEL_OCEAN, num_tracers_ocean, num_tracer_prog_ocean, num_tracer_diag_ocean, &
+                     num_tracer_fam_ocean)
+write(*,*) "The number of tracers in the ocean BEFORE THE CALL TO register_tracers are ", &
+            num_tracers_ocean, num_tracer_prog_ocean, num_tracer_diag_ocean, num_tracer_fam_ocean                     
+
+!Register the tracers for the oceanic model.
 call register_tracers(MODEL_OCEAN, num_tracers_ocean, num_tracer_prog_ocean, num_tracer_diag_ocean, &
                      num_tracer_fam_ocean)
 
+! The ocean tracers have now been registered by the tracer manager so these will be non-zero if there
+! are ocean tracers in the field table.
+write(*,*) "The number of tracers in the ocean AFTER THE CALL TO register_tracers are ", &
+            num_tracers_ocean, num_tracer_prog_ocean, num_tracer_diag_ocean, num_tracer_fam_ocean                     
 
-call set_tracer_atts(MODEL_ATMOS,"rh","relative_humidity","percent")
+write(*,*) 'Using fm_dump_list("/",.true.) to provide full listing of fields'
+result = fm_dump_list("/",.true.)
+
+!Set the longname and units for the relative humidity tracer
+
+write(*,*) 'Changing longname and units of the radon_contr tracer to "control_radon" and "g/g" '
+write(*,*) 'Using call set_tracer_atts(MODEL_ATMOS,"radon_contr","control_radon","g/g")'
+call set_tracer_atts(MODEL_ATMOS,"radon_contr","control_radon","g/g")
+
+write(*,*) 'Using fm_dump_list("/atmos_mod/tracer/radon_contr",.true.) to provide listing of radon_contr field'
+result = fm_dump_list("/atmos_mod/tracer/radon_contr",.true.)
 
 do i=1,max(nx,ny,nz)
    data(i) = float(i)
@@ -1886,17 +2263,191 @@ enddo
 ndivs = mpp_npes()
 
 
+! Allocate space for the various tracers
+call alloc_tracers
+
+! atmos initialization
+
+do m=1,num_tracer_prog_atmos
+
+! Find the name, longname and units of a tracer given a model and index.
+   call get_tracer_names(MODEL_ATMOS, atmos_prog_ind(m), name, longname, units)
+! Provide a flag that the tracer requires initialization.
+   call tracer_requires_init(MODEL_ATMOS, name)
+! Now query to see whether the tracer has been initialized.
+! A .true. response means the tracer requires initialization.
+! In this example we have not initialized the tracer yet.
+write(*,*) 'Using query_tracer_init(MODEL_ATMOS, '//trim(name)//') to find out if tracer needs initialization'
+
+   if ( query_tracer_init(MODEL_ATMOS, name) ) then
+     write(*,*) 'Tracer '//trim(name)//' needs initialization'
+! Set a gaussian peak for each tracer as an initial condition.
+     call init_tracer(atmos_tracers(isc:iec,jsc:jec,:,m,tau),float(m), domain)
+! Now tell the tracer manager that the tracer has been initialized.
+     call have_initialized_tracer(MODEL_ATMOS, name)
+! Query again. The answer here should always be false as the routine above will
+! have told the tracer_manager that it has been initialized.
+     if ( query_tracer_init(MODEL_ATMOS, name) ) &
+       write(*,*) 'Tracer '//trim(name)//' STILL needs initialization'
+   endif
+
+! If a 'profile_type' method is defined in the field table then use it here.
+   if(query_method ( 'profile_type',MODEL_ATMOS,atmos_prog_ind(m),longname,units)) then
+      call set_tracer_profile(MODEL_ATMOS,atmos_prog_ind(m),atmos_tracers(:,:,:,m,tau))
+   endif
+
+! Special case for radon
+!   if ( name == 'radon' ) call radon_init( atmos_tracers(:,:,:,m,tau) )
+
+   call mpp_update_domains(atmos_tracers(:,:,:,m,tau), domain)
+!Set the previous (tau - 1) timestep value equal to the present timestep value 
+   atmos_tracers(:,:,:,m,taum1) = atmos_tracers(:,:,:,m,tau)
+enddo
+
+do m=1,num_tracer_diag_atmos
+! Set a gaussian peak for each tracer as an initial condition.
+   call init_tracer(atmos_diag_tracers(isc:iec,jsc:jec,:,m),float(m), domain)
+! If a 'profile_type' method is defined in the field table then use it here.
+   if(query_method ( 'profile_type',MODEL_ATMOS,atmos_diag_ind(m),longname,units)) then
+      call set_tracer_profile(MODEL_ATMOS,atmos_diag_ind(m),atmos_diag_tracers(:,:,:,m))
+   endif
+   call mpp_update_domains(atmos_diag_tracers(:,:,:,m), domain)
+enddo
+
+
+
+
+! Ocean initialization
+do m=1,num_tracer_prog_ocean
+  call get_tracer_names(MODEL_OCEAN,ocean_prog_ind(m),name)
+  list_name = "/ocean_mod/tracer/"//trim(name)
+  select case(name)
+    case( 'age_exp1')
+      if ( fm_exists(list_name)) then
+        success = fm_change_list(list_name)
+        success =  fm_get_value(trim(list_name)//'/nlat',param)
+        write(*,*) 'Changing nlat limits from ',param,' to 45.0 for ',list_name
+        index = fm_new_value('nlat',45.0 )
+        success =  fm_get_value(trim(list_name)//'/slat',param)
+        write(*,*) 'Changing slat limits from ',param,' to -45.0 for ',list_name
+        index = fm_new_value('slat',-45.0)
+      endif  
+     
+    case( 'age_conv')
+      write(*,*) 'Changing latitude limits for ',list_name
+      if ( fm_exists(list_name)) then
+        success = fm_change_list(list_name)
+        write(*,*) "Using index = fm_new_value('nlat',30.0) to change value of nlat (still real)"
+        index = fm_new_value('nlat',30.0)
+
+! slat was originally real, but it can be changed to integer by using an integer argument AND the optional append = .true. argument 
+        write(*,*) "Using index = fm_new_value('slat',-30, append = .true.) to change value of slat (now integer)"
+        index = fm_new_value('slat',-30, append = .true.)
+      endif  
+     
+    case( 'age_5')
+!If the age_5 tracer exists then change the scale_in factor
+      if ( fm_exists(list_name)) then
+        success = fm_change_list(list_name)
+        write(*,*) 'Changing scale_in factor for ',list_name
+        index = fm_new_value('scale_in',0.5)
+      endif  
+
+    case( 'biotic1')
+! If the biotic1 tracer exists, we will add a parameter for po4 uptake
+      if ( fm_exists(list_name)) then
+        success = fm_change_list(list_name)
+        write(*,*) 'Adding a parameter to the list for ',list_name
+        index = fm_new_value('po4_uptake',1e-5, create=.true., append = .true.)
+      endif  
+
+    case default
+    
+  end select
+  
+enddo
+
+success = fm_dump_list('/ocean_mod/tracer', .true.)
+
+! atmos time loop
+
+!atmos_tendency = 0.0
+
+do n=1,ntsteps
+!write(*,*) 'Step ',n
+   do m=1,num_tracer_prog_atmos
+
+!This next line is more for convenience to check by name which tracer it is you are about to advect 
+     call get_tracer_names(MODEL_ATMOS,atmos_prog_ind(m),name)
+     call lateral_advection(atmos_order(m), atmos_tendency,tracer_now = atmos_tracers(:,:,:,m,tau),&
+          vel_now = atmos_vel)
+!          vel_now = atmos_vel(:,:,:,:))
+     atmos_tracers(isc:iec,jsc:jec,:,m,taup1) = atmos_tracers(isc:iec,jsc:jec,:,m,taum1) - &
+          atmos_tendency(isc:iec,jsc:jec,:)*two_delt
+     call mpp_update_domains(atmos_tracers(:,:,:,m,taup1), domain)
+     if (atmos_prog_tracer_diagnostic_id(m) > 0) result =  send_data(atmos_prog_tracer_diagnostic_id(m),&
+                                   atmos_tracers(isc:iec,jsc:jec,:,m,tau),model_time)
+   enddo
+   do m=1,num_tracer_diag_atmos
+      if (m.eq.color_index .and. temp_index .ne. NO_TRACER) &
+         call calculate_color(atmos_tracers(:,:,:,temp_index,tau),atmos_diag_tracers(:,:,:,m))
+      if (atmos_diag_tracer_diagnostic_id(m) > 0) &
+           result = send_data(atmos_diag_tracer_diagnostic_id(m),&
+          atmos_diag_tracers(isc:iec,jsc:jec,:,m),model_time)
+   enddo
+
+   do m=1,num_tracer_prog_ocean
+
+   enddo
+
+   tmp=taup1
+   taup1=taum1
+   taum1 = tau
+   tau = tmp
+   if (n.eq. ntsteps) call diag_manager_end(model_time)
+   model_time = model_time + set_time(delt,0)      
+
+enddo
+
+
+call mpp_io_exit
+call mpp_exit
+
+
+contains 
+
+
+subroutine alloc_tracers
+
 if (num_tracer_prog_atmos > 0) then
+! Allocate space for the atmospheric prognostic tracers
    allocate(atmos_prog_ind(num_tracer_prog_atmos))
    allocate(atmos_prog_tracer_diagnostic_id(num_tracer_prog_atmos))
+! Get an array of indices for the atmospheric prognostic (prog_ind) tracers
    call get_tracer_indices(MODEL_ATMOS,prog_ind=atmos_prog_ind)
+
+! Using the indices array retrieved above find the tracer index for co2 and temp
    co2_index = get_tracer_index(MODEL_ATMOS,'co2',atmos_prog_ind)
    temp_index = get_tracer_index(MODEL_ATMOS,'temp',atmos_prog_ind)
-   if (co2_index /= -1 .and. mpp_pe() == mpp_root_pe()) write(*,'(a)') 'co2 exists in tracer table '
+   
+! NO_TRACER is returned if co2 does not exist so check versus NO_TRACER to test whether it exists.
+   if (co2_index /= NO_TRACER .and. mpp_pe() == mpp_root_pe()) write(*,'(a)') 'co2 exists in tracer table '
+
    halo=1 ! default halo size for 2nd order advection
    do n=1,num_tracer_prog_atmos
-      flag =  query_method ('advection_scheme_horiz',MODEL_ATMOS,atmos_prog_ind(n),name)
-      if (trim(name) == '4th_order') halo = 2
+     atmos_order(n)=2! Default advection scheme
+     flag = query_method ('advection_scheme_horiz',MODEL_ATMOS,atmos_prog_ind(n),scheme_name,control)
+     if(flag) then ! There is an advection scheme in the table so use that instead.
+       select case (trim(scheme_name))
+         case ('2nd_order') 
+           atmos_order(n) = 2
+         case ('4th_order')
+           atmos_order(n) = 4
+           halo = 2
+         case default
+           call mpp_error(FATAL,'invalid tracer advection scheme')
+       end select
+     endif
    enddo
    call mpp_define_domains( (/1,nx,1,ny/), (/1,ndivs/), domain, xflags = CYCLIC_GLOBAL_DOMAIN, &
                             yflags = CYCLIC_GLOBAL_DOMAIN, xhalo = halo, yhalo = halo)
@@ -1918,13 +2469,34 @@ if (num_tracer_prog_atmos > 0) then
    enddo
 endif
 
+! Allocate space for the oceanic prognostic tracers
 if (num_tracer_prog_ocean > 0) then
    allocate(ocean_prog_ind(num_tracer_prog_ocean))
 !   allocate(ocean_prog_tracer_diagnostic_id(num_tracer_prog_ocean))
    call get_tracer_indices(MODEL_OCEAN,prog_ind=ocean_prog_ind)
+
+   halo=1 ! default halo size for 2nd order advection
+   do n=1,num_tracer_prog_atmos
+     ocean_order(n)=2! Default advection scheme
+     flag = query_method ('horizontal-advection-scheme',MODEL_OCEAN,ocean_prog_ind(n),scheme_name,control)
+     if(flag) then ! There is an advection scheme in the table so use that instead.
+       select case (trim(scheme_name))
+         case ('2nd_order') 
+           ocean_order(n) = 2
+         case ('4th_order')
+           ocean_order(n) = 4
+         case ('quicker') ! Have it be 4th order for simplicity.
+           ocean_order(n) = 4
+           halo = 2
+         case default
+           call mpp_error(FATAL,'invalid tracer advection scheme')
+       end select
+     endif
+   enddo
 endif
 
 if (num_tracer_diag_atmos > 0) then
+! Allocate space for the atmospheric diagnostic tracers
    allocate(atmos_diag_ind(num_tracer_diag_atmos))
    allocate(atmos_diag_tracer_diagnostic_id(num_tracer_diag_atmos))
    allocate(atmos_diag_tracers(isd:ied,jsd:jed,nz,num_tracer_diag_atmos))
@@ -1937,124 +2509,8 @@ if (num_tracer_diag_atmos > 0) then
    enddo
 endif
 
-if (num_tracer_fam_atmos > 0) then
-   allocate(atmos_fam_ind(num_tracer_fam_atmos))
-   allocate(atmos_fam_tracers(isd:ied,jsd:jed,nz,num_tracer_fam_atmos,1:3))
-   call get_tracer_indices(MODEL_ATMOS,fam_ind=atmos_fam_ind)
-   do i=1,num_tracer_fam_atmos
-      call assign_tracer_field(MODEL_ATMOS, atmos_fam_ind(i), data_tlevels=atmos_fam_tracers(:,:,:,i,:))
-   enddo
-endif
 
-! atmos initialization
-
-do m=1,num_tracer_prog_atmos
-   call init_tracer(atmos_tracers(isc:iec,jsc:jec,:,m,tau),float(m), domain)
-if(query_method ( 'profile_type',MODEL_ATMOS,atmos_prog_ind(m),longname,units)) then
-       call get_tracer_names(MODEL_ATMOS,atmos_prog_ind(m),name,longname,units)
-       call set_tracer_profile(MODEL_ATMOS,atmos_prog_ind(m),surf_value,multiplier)
-if (mpp_pe()==mpp_root_pe()) write(*,'(2E12.4,i)') surf_value,multiplier,m
-       atmos_tracers(:,:,:,m,tau) = surf_value
-
-!  select case (size(atmos_tracers,5))
-!  case (0)
-! The atmosphere has k=1 at the top and k=kmax at the surface
-       do k = size(atmos_tracers,3)-1,1,-1
-         atmos_tracers(:,:,k,m,tau) = atmos_tracers(:,:,k+1,m,tau)*multiplier
-       enddo
-!  case (1)
-!! The ocean has k=1 at the surface and k=kmax at the bottom
-!       do k = 2,size(atmos_tracers,3)
-!         atmos_tracers(:,:,k,m,tau) = atmos_tracers(:,:,k-1,m,tau)*multiplier
-!       enddo
-!  case default
-!  end select
-endif
-!   atmos_tracers(isc:iec,jsc:jec,:,m,tau) = 1.0
-   call mpp_update_domains(atmos_tracers(:,:,:,m,tau), domain)
-   atmos_tracers(:,:,:,m,taum1) = atmos_tracers(:,:,:,m,tau)
-enddo
-
-
-! atmos time loop
-
-!atmos_tendency = 0.0
-
-do n=1,ntsteps
-! combine family members
-   do m=1,num_tracer_fam_atmos
-! update pointers for family tracers
-      call get_tracer_names(MODEL_ATMOS, atmos_fam_ind(m),name)
-      call add_members_to_family(MODEL_ATMOS,name,cur=tau,prev=taum1,next=taup1)
-      order = 2 ! Default advection scheme
-      flag = query_method ('advection_scheme_horiz',MODEL_ATMOS,atmos_fam_ind(m),scheme_name)
-      if(flag) then ! There is an advection scheme in the table so use that instead.
-      select case (trim(scheme_name))
-         case ('2nd_order') 
-            order = 2
-         case ('4th_order')
-            order = 4
-         case default
-            call mpp_error(FATAL,'invalid tracer advection scheme')
-      end select
-      endif
-      call lateral_advection(order, atmos_tendency(:,:,:),tracer_now = atmos_fam_tracers(:,:,:,m,tau),&
-                              vel_now = atmos_vel(:,:,:,:))
-      atmos_fam_tracers(isc:iec,jsc:jec,:,m,taup1) = atmos_fam_tracers(isc:iec,jsc:jec,:,m,taum1) - &
-                                             atmos_tendency(isc:iec,jsc:jec,:)*two_delt
-      call mpp_update_domains(atmos_fam_tracers(:,:,:,m,taup1), domain)      
-      call split_family_into_members(MODEL_ATMOS,name,cur=tau,prev=taum1,next=taup1)
-      do mm = 1, num_tracer_prog_atmos
-         call get_family_name(MODEL_ATMOS,atmos_prog_ind(mm),family_name)
-         if (trim(name) == trim(family_name) .and. atmos_prog_tracer_diagnostic_id(mm) > 0) &
-              result =  send_data(atmos_prog_tracer_diagnostic_id(mm),&
-                                 atmos_tracers(isc:iec,jsc:jec,:,mm,tau),model_time)
-      enddo
-   enddo
-   do m=1,num_tracer_prog_atmos
-      call get_family_name(MODEL_ATMOS,atmos_prog_ind(m),family_name)
-      if (family_name == 'orphan') then ! this is an orphan tracer so advect without splitting
-         order=2! Default advection scheme
-         flag = query_method ('advection_scheme_horiz',MODEL_ATMOS,atmos_prog_ind(m),scheme_name,control)
-         if(flag) then ! There is an advection scheme in the table so use that instead.
-         select case (trim(scheme_name))
-         case ('2nd_order') 
-            order = 2
-         case ('4th_order')
-            order = 4
-         case default
-            call mpp_error(FATAL,'invalid tracer advection scheme')
-         end select
-         endif
-         call lateral_advection(order, atmos_tendency(:,:,:),tracer_now = atmos_tracers(:,:,:,m,tau),&
-              vel_now = atmos_vel(:,:,:,:))
-         atmos_tracers(isc:iec,jsc:jec,:,m,taup1) = atmos_tracers(isc:iec,jsc:jec,:,m,taum1) - &
-              atmos_tendency(isc:iec,jsc:jec,:)*two_delt
-         call mpp_update_domains(atmos_tracers(:,:,:,m,taup1), domain)
-         if (atmos_prog_tracer_diagnostic_id(m) > 0) result =  send_data(atmos_prog_tracer_diagnostic_id(m),&
-                                       atmos_tracers(isc:iec,jsc:jec,:,m,tau),model_time)
-      endif
-   enddo
-   do m=1,num_tracer_diag_atmos
-      if (m.eq.color_index) call calculate_color(atmos_tracers(:,:,:,temp_index,tau),atmos_diag_tracers(:,:,:,m))
-      if (atmos_diag_tracer_diagnostic_id(m) > 0) &
-           result = send_data(atmos_diag_tracer_diagnostic_id(m),&
-          atmos_diag_tracers(isc:iec,jsc:jec,:,m),model_time)
-   enddo
-   tmp=taup1
-   taup1=taum1
-   taum1 = tau
-   tau = tmp
-   if (n.eq. ntsteps) call diag_manager_end(model_time)
-   model_time = model_time + set_time(delt,0)      
-enddo
-
-
-call mpp_io_exit
-call mpp_exit
-
-
-contains 
+end subroutine alloc_tracers
 
   subroutine lateral_advection(order, tendency, tracer_now, vel_now, tracer_prev, vel_prev, tracer_next, vel_next)
 

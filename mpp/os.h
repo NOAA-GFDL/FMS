@@ -24,7 +24,7 @@
 !if you find a compiler that doesn't, #undef this inside a suitable #ifdef
 #define use_CRI_pointers
 
-#if defined __SX || defined __SXdbl4 || __IFC
+#if defined __SX || defined __SXdbl4 
 ! NEC-SX and Intel fortran compiler have limited Cray pointer support
 !for NEC, user must include the cpp flag -D__SX by hand, not automatic.
 !The intel compiler automatically sets __IFC.

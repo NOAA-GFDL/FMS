@@ -1,5 +1,5 @@
 module memutils_mod
-!Author: Balaji (vb@gfdl.gov)
+!Author: Balaji (V.Balaji@noaa.gov)
 !Various operations for memory management
 !these currently include efficient methods for memory-to-memory copy
 !including strided data and arbitrary gather-scatter vectors
@@ -23,20 +23,22 @@ module memutils_mod
   end interface
 
   public :: get_l1_cache_line, get_l2_cache_line, memcpy, memutils_init
+  public :: print_memuse_stats
 #ifdef _CRAY
   public :: hplen
 #endif
 #ifdef _CRAYT90
   public :: stklen
 #endif
-  
+  logical, private :: print_memory_usage=.FALSE.
   contains
 
-    subroutine memutils_init()
+    subroutine memutils_init(print_flag)
 !initialize memutils module
 !currently sets default cache characteristics
 !(will provide overrides later)
 !also sets pe to my_pe on t3e
+      logical, optional :: print_flag
 #ifdef _CRAYT3E
 !all sizes in bytes
       l1_cache_line_size = 32
@@ -57,6 +59,7 @@ module memutils_mod
 #ifdef _CRAYT3E
       pe = SHMEM_MY_PE()
 #endif
+      if( PRESENT(print_flag) )print_memory_usage = print_flag
       memutils_initialized = .TRUE.
       return
     end subroutine memutils_init
@@ -256,5 +259,32 @@ module memutils_mod
     i = LOC(a)
     get_l2_cache_line = mod(i,l2_cache_size/l2_associativity)/l2_cache_line_size
   end function get_l2_cache_line
+
+  subroutine print_memuse_stats( text, unit, always )
+    use mpp_mod, only: mpp_pe, mpp_root_pe, mpp_npes, mpp_min, mpp_max, mpp_sum, stderr
+    character(len=*), intent(in) :: text
+    integer, intent(in), optional :: unit
+    logical, intent(in), optional :: always
+    real :: m, mmin, mmax, mavg, mstd
+    integer :: mu
+!memuse is an external function: works on SGI
+!use #ifdef to generate equivalent on other platforms.
+    integer :: memuse !default integer OK?
+
+    if( PRESENT(always) )then
+        if( .NOT.always )return
+    else
+        if( .NOT.print_memory_usage )return
+    end if
+    mu = stderr(); if( PRESENT(unit) )mu = unit
+    m = memuse()*1e-3
+    mmin = m; call mpp_min(mmin)
+    mmax = m; call mpp_max(mmax)
+    mavg = m; call mpp_sum(mavg); mavg = mavg/mpp_npes()
+    mstd = (m-mavg)**2; call mpp_sum(mstd); mstd = sqrt( mstd/mpp_npes() )
+    if( mpp_pe().EQ.mpp_root_pe() )write( mu,'(a32,4es11.3)' ) &
+         'Memuse(MB) at '//trim(text)//'=', mmin, mmax, mstd, mavg
+    return
+  end subroutine print_memuse_stats
 
 end module memutils_mod

@@ -115,7 +115,7 @@
           call mpp_error( FATAL, 'MPP_TRANSMIT: you cannot transmit to ANY_PE using MPI.' )
 #endif
 
-      else if( to_pe.NE.NULL_PE )then	!no other valid cases except NULL_PE
+      else if( to_pe.NE.NULL_PE )then  !no other valid cases except NULL_PE
           call mpp_error( FATAL, 'MPP_TRANSMIT: invalid to_pe.' )
       end if
 
@@ -221,10 +221,12 @@
       return
     end subroutine MPP_TRANSMIT_
 
-    subroutine MPP_TRANSMIT_SCALAR_( put_data, to_pe, get_data, from_pe )
+    subroutine MPP_TRANSMIT_SCALAR_( put_data, to_pe, get_data, from_pe, plen, glen)
       integer, intent(in) :: to_pe, from_pe
       MPP_TYPE_, intent(in)  :: put_data
       MPP_TYPE_, intent(out) :: get_data
+      integer, optional, intent(in) :: plen, glen
+      integer                       :: put_len, get_len
       MPP_TYPE_ :: put_data1D(1), get_data1D(1)
 #ifdef use_CRI_pointers
       pointer( ptrp, put_data1D )
@@ -232,7 +234,9 @@
 
       ptrp = LOC(put_data)
       ptrg = LOC(get_data)
-      call MPP_TRANSMIT_ ( put_data1D, 1, to_pe, get_data1D, 1, from_pe )
+      put_len=1; if(PRESENT(plen))put_len=plen
+      get_len=1; if(PRESENT(glen))get_len=glen
+      call MPP_TRANSMIT_ ( put_data1D, put_len, to_pe, get_data1D, get_len, from_pe )
 #else
       put_data1D(1) = put_data
       call MPP_TRANSMIT_ ( put_data1D, 1, to_pe, get_data1D, 1, from_pe )
@@ -342,32 +346,38 @@
       call mpp_transmit( put_data, put_len, to_pe, dummy, 1, NULL_PE )
     end subroutine MPP_SEND_
 
-    subroutine MPP_RECV_SCALAR_( get_data, from_pe )
+    subroutine MPP_RECV_SCALAR_( get_data, from_pe, glen )
 !a mpp_transmit with null arguments on the put side
       integer, intent(in) :: from_pe
       MPP_TYPE_, intent(out) :: get_data
+      integer, optional, intent(in) :: glen
+      integer                       :: get_len
       MPP_TYPE_ :: get_data1D(1)
       MPP_TYPE_ :: dummy(1)
 #ifdef use_CRI_pointers
       pointer( ptr, get_data1D )
       ptr = LOC(get_data)
-      call mpp_transmit( dummy, 1, NULL_PE, get_data1D, 1, from_pe )
+      get_len=1; if(PRESENT(glen))get_len=glen
+      call mpp_transmit( dummy, 1, NULL_PE, get_data1D, get_len, from_pe )
 #else
       call mpp_transmit( dummy, 1, NULL_PE, get_data1D, 1, from_pe )
       get_data = get_data1D(1)
 #endif
     end subroutine MPP_RECV_SCALAR_
 
-    subroutine MPP_SEND_SCALAR_( put_data, to_pe )
+    subroutine MPP_SEND_SCALAR_( put_data, to_pe, plen)
 !a mpp_transmit with null arguments on the get side
       integer, intent(in) :: to_pe
       MPP_TYPE_, intent(in) :: put_data
+      integer, optional, intent(in) :: plen
+      integer                       :: put_len
       MPP_TYPE_ :: put_data1D(1)
       MPP_TYPE_ :: dummy(1)
 #ifdef use_CRI_pointers
       pointer( ptr, put_data1D )
       ptr = LOC(put_data)
-      call mpp_transmit( put_data1D, 1, to_pe, dummy, 1, NULL_PE )
+      put_len=1; if(PRESENT(plen))put_len=plen
+      call mpp_transmit( put_data1D, put_len, to_pe, dummy, 1, NULL_PE )
 #else
       put_data1D(1) = put_data
       call mpp_transmit( put_data1D, 1, to_pe, dummy, 1, NULL_PE )

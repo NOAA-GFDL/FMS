@@ -1,7 +1,7 @@
 
 module topography_mod
 
-! <CONTACT EMAIL="bw@gfdl.noaa.gov">
+! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
 !   Bruce Wyman
 ! </CONTACT>
 
@@ -92,8 +92,8 @@ public :: topography_init,                 &
 
 !-----------------------------------------------------------------------
 
- character(len=128) :: version = '$Id: topography.F90,v 1.6 2003/04/09 21:19:19 fms Exp $'
- character(len=128) :: tagname = '$Name: inchon $'
+ character(len=128) :: version = '$Id: topography.F90,v 10.0 2003/10/24 22:01:41 fms Exp $'
+ character(len=128) :: tagname = '$Name: jakarta $'
 
  logical :: module_is_initialized = .FALSE.
 
@@ -332,7 +332,7 @@ public :: topography_init,                 &
  if ( get_ocean_frac(blon, blat, ocean_frac) ) then
    where (ocean_frac > 0.50)
      ocean_mask = .true.
-   else where
+   elsewhere
      ocean_mask = .false.
    end where
    get_ocean_mask = .true.
@@ -444,7 +444,7 @@ public :: topography_init,                 &
  if ( get_water_frac(blon, blat, water_frac) ) then
    where (water_frac > 0.50)
      water_mask = .true.
-   else where
+   elsewhere
      water_mask = .false.
    end where
    get_water_mask = .true.

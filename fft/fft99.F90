@@ -2,6 +2,7 @@
 module fft99_mod
 
 use constants_mod, only: pi
+use mpp_mod,       only: mpp_error, FATAL
 
 implicit none
 private
@@ -726,8 +727,7 @@ contains
       i = ifax(1)
       if (ifax(i+1) .gt. 5 .or. n .le. 4) ifax(1) = -99
       if (ifax(1) .le. 0 ) then 
-        write(6,*) ' set99 -- invalid n'
-        stop'set99'
+        call mpp_error(FATAL,'fft99_mod: in routine set99 -- invalid n')
       endif
       call fftrig (trigs, n, mode)
 

@@ -1,7 +1,7 @@
 
 module fft_mod
 
-! <CONTACT EMAIL="bw@gfdl.noaa.gov">
+! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
 !   Bruce Wyman
 ! </CONTACT>
 
@@ -181,8 +181,8 @@ integer :: leng, leng1, leng2, lenc    ! related to transform size
 logical :: module_is_initialized=.false.
 
 !  cvs version and tag name
-character(len=128) :: version = '$Id: fft.F90,v 1.4 2003/04/09 21:16:27 fms Exp $'
-character(len=128) :: tagname = '$Name: inchon $'
+character(len=128) :: version = '$Id: fft.F90,v 10.0 2003/10/24 22:01:29 fms Exp $'
+character(len=128) :: tagname = '$Name: jakarta $'
 
 !-----------------------------------------------------------------------
 !

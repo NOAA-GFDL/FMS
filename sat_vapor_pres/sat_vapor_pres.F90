@@ -27,7 +27,7 @@ module sat_vapor_pres_mod
 !
 !-----------------------------------------------------------------------
 
-! <CONTACT EMAIL="bw@gfdl.noaa.gov">
+! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
 !   Bruce Wyman
 ! </CONTACT>
 
@@ -176,8 +176,8 @@ private
 !-----------------------------------------------------------------------
 !  cvs version and tag name
 
-character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 1.7 2003/04/09 21:18:52 fms Exp $'
-character(len=128) :: tagname = '$Name: inchon $'
+character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 10.0 2003/10/24 22:01:39 fms Exp $'
+character(len=128) :: tagname = '$Name: jakarta $'
 
 !-----------------------------------------------------------------------
 !  parameters for table size and resolution

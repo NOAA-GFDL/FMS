@@ -272,7 +272,7 @@
                  call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS: mpp_domains_stack overflow, call mpp_domains_set_stack_size(' &
                       //trim(text)//') from all PEs.' )
              end if
-             call mpp_send( buffer(buffer_pos+1:buffer_pos+msgsize), msgsize, to_pe )
+             call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
              buffer_pos = pos
          end if
          call mpp_clock_end(send_clock)
@@ -364,7 +364,7 @@
                  call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS: mpp_domains_stack overflow, call mpp_domains_set_stack_size(' &
                       //trim(text)//') from all PEs.' )
              end if
-             call mpp_recv( buffer(buffer_pos+1:buffer_pos+msgsize), msgsize, from_pe )
+             call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe )
              buffer_pos = buffer_pos + msgsize
          end if
          call mpp_clock_end(recv_clock)
@@ -726,7 +726,7 @@
                 end do
              end do
              if( debug )write( stderr(),* )'PE', pe, ' to PE ', to_pe, 'is,ie,js,je=', is, ie, js, je
-             call mpp_send( buffer(buffer_pos+1:buffer_pos+msgsize), msgsize, to_pe )
+             call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
              buffer_pos = pos
          end if
       end do
@@ -748,7 +748,7 @@
                       //trim(text)//') from all PEs.' )
              end if
              if( debug )write( stderr(),* )'PE', pe, ' from PE ', from_pe, 'is,ie,js,je=', is, ie, js, je
-             call mpp_recv( buffer(buffer_pos+1:buffer_pos+msgsize), msgsize, from_pe )
+             call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe )
              pos = buffer_pos
              do k = 1,ke
                 do j = js-domain_out%y%data%begin+1,je-domain_out%y%data%begin+1
@@ -928,7 +928,7 @@
                             buffer(n  ) = fieldy(is,j,k)
                          end do
                       end do
-                      call mpp_send( buffer(buffer_pos+1:buffer_pos+n), n, domain%x%list(pos)%pe )
+                      call mpp_send( buffer(buffer_pos+1), plen=n, to_pe=domain%x%list(pos)%pe )
                       buffer_pos = buffer_pos + n
                   case(CGRID_NE)
                       do k = 1,ke
@@ -937,7 +937,7 @@
                             buffer(n) = fieldx(is,j,k)
                          end do
                       end do
-                      call mpp_send( buffer(buffer_pos+1:buffer_pos+n), n, domain%x%list(pos)%pe )
+                      call mpp_send( buffer(buffer_pos+1), plen=n, to_pe=domain%x%list(pos)%pe )
                       buffer_pos = buffer_pos + n
                   end select
 !receive data at x%data%end
@@ -968,7 +968,7 @@
                              end do
                           end do
                           n = n*2
-                          call mpp_recv( buffer(buffer_pos+1:buffer_pos+n), n, domain%x%list(pos)%pe )
+                          call mpp_recv( buffer(buffer_pos+1), glen=n, from_pe=domain%x%list(pos)%pe )
                           i = domain%x%data%end
                           n = buffer_pos
                           do k = 1,ke
@@ -987,7 +987,7 @@
                                 end do
                              end do
                           end do
-                          call mpp_recv( buffer(buffer_pos+1:buffer_pos+n), n, domain%x%list(pos)%pe )
+                          call mpp_recv( buffer(buffer_pos+1), glen=n, from_pe=domain%x%list(pos)%pe )
                           i = domain%x%data%end
                           n = buffer_pos
                           do k = 1,ke
@@ -1028,7 +1028,8 @@
                             buffer(n)   = fieldy(i,j,k)
                          end do
                       end do
-                      call mpp_send( buffer(buffer_pos+1:n), n-buffer_pos, domain%x%list(size(domain%x%list)-domain%x%pos-1)%pe )
+                      call mpp_send( buffer(buffer_pos+1), plen=n-buffer_pos, &
+                                     to_pe=domain%x%list(size(domain%x%list)-domain%x%pos-1)%pe )
                       buffer_pos = n
                   case(CGRID_NE)
                       do k = 1,ke
@@ -1037,7 +1038,8 @@
                             buffer(n) = fieldy(i,j,k)
                          end do
                       end do
-                      call mpp_send( buffer(buffer_pos+1:n), n-buffer_pos, domain%x%list(size(domain%x%list)-domain%x%pos-1)%pe )
+                      call mpp_send( buffer(buffer_pos+1), plen=n-buffer_pos, &
+                                     to_pe=domain%x%list(size(domain%x%list)-domain%x%pos-1)%pe )
                       buffer_pos = n
                   end select
               end if
@@ -1047,7 +1049,7 @@
                   select case(grid_offset_type)
                   case(BGRID_NE)
                       n = (ie-is+1)*ke*2
-                      call mpp_recv( buffer(buffer_pos+1:buffer_pos+n), n, domain%x%list(size(domain%x%list)-domain%x%pos-1)%pe )
+                      call mpp_recv( buffer(buffer_pos+1), glen=n, from_pe=domain%x%list(size(domain%x%list)-domain%x%pos-1)%pe )
                       n = buffer_pos
 !get all values except at x%data%end
                       do k = 1,ke
@@ -1067,13 +1069,13 @@
                              buffer(n-1) = fieldx(i,j,k)
                              buffer(n  ) = fieldy(i,j,k)
                           end do
-                          call mpp_send( buffer(buffer_pos+1:n), n-buffer_pos, domain%x%list(pos)%pe )
+                          call mpp_send( buffer(buffer_pos+1), plen=n-buffer_pos, to_pe=domain%x%list(pos)%pe )
                           buffer_pos = n
                       end if
                       pos = domain%x%pos + 1
                       if( pos.LT.size(domain%x%list) )then
                           n = ke*2
-                          call mpp_recv( buffer(buffer_pos+1:buffer_pos+n), n, domain%x%list(pos)%pe )
+                          call mpp_recv( buffer(buffer_pos+1), glen=n, from_pe=domain%x%list(pos)%pe )
                           n = buffer_pos
                           i = domain%x%data%end
                           do k = 1,ke
@@ -1084,7 +1086,7 @@
                       end if
                   case(CGRID_NE)
                       n = (ie-is+1)*ke
-                      call mpp_recv( buffer(buffer_pos+1:buffer_pos+n), n, domain%x%list(size(domain%x%list)-domain%x%pos-1)%pe )
+                      call mpp_recv( buffer(buffer_pos+1), glen=n, from_pe=domain%x%list(size(domain%x%list)-domain%x%pos-1)%pe )
                       n = buffer_pos
                       do k = 1,ke
                          do i = ie,is,-1

@@ -1,6 +1,6 @@
 module time_manager_mod
 
-! <CONTACT EMAIL="fms@gfdl.noaa.gov">
+! <CONTACT EMAIL="fMike.Spelman@noaa.gov">
 !   fms
 ! </CONTACT>
 
@@ -40,7 +40,7 @@ module time_manager_mod
 !    contains two PRIVATE variables: seconds and days.
 ! </DATA>
 
-use fms_mod, only: error_mesg, FATAL, write_version_number, stdout
+use fms_mod, only: error_mesg, FATAL, write_version_number, stdout, lowercase
 
 implicit none
 private
@@ -80,6 +80,8 @@ public days_in_year,   days_in_year_thirty,        days_in_year_julian, &
                        days_in_year_gregorian,     days_in_year_no_leap
 public month_name
 
+public get_cal_time
+
 ! Subroutines for printing version number and time type
 public :: time_manager_init, print_time, print_date
 
@@ -89,7 +91,13 @@ public :: time_manager_init, print_time, print_date
 integer, parameter :: THIRTY_DAY_MONTHS = 1,      JULIAN = 2, &
                       GREGORIAN = 3,              NOLEAP = 4, &
                       NO_CALENDAR = 0
-integer, private :: calendar_type = NO_CALENDAR, max_type = 4
+integer, private :: calendar_type = NO_CALENDAR
+integer, parameter :: max_type = 4
+
+character(len=24), private, dimension(0:max_type) :: valid_calendar_types= &
+      (/'NO_CALENDAR             ','THIRTY_DAY_MONTHS       ', &
+        'JULIAN                  ','GREGORIAN               ', &
+        'NOLEAP                  '/)
 
 ! Define number of days per month
 integer, private :: days_per_month(12) = (/31,28,31,30,31,30,31,31,30,31,30,31/)
@@ -119,8 +127,8 @@ interface operator (//);  module procedure time_real_divide; end interface
 
 !======================================================================
 
-character(len=128) :: version='$Id: time_manager.f90,v 1.4 2003/04/09 21:19:10 fms Exp $'
-character(len=128) :: tagname='$Id: time_manager.f90,v 1.4 2003/04/09 21:19:10 fms Exp $'
+character(len=128) :: version='$Id: time_manager.f90,v 10.0 2003/10/24 22:01:40 fms Exp $'
+character(len=128) :: tagname='$Id: time_manager.f90,v 10.0 2003/10/24 22:01:40 fms Exp $'
 logical :: do_init = .true.
 
 !======================================================================
@@ -1134,6 +1142,141 @@ end subroutine get_date
 ! </SUBROUTINE>
 !------------------------------------------------------------------------
 
+! Examples of acceptable units for function get_cal_time:
+
+! days since 1980-01-01 00:00:00
+! hours since 1980-1-1 0:0:0
+! minutes since 0001-4-12
+
+! days, hours, minutes, seconds are acceptable; years and months are not
+! year number must occupy 4 spaces.
+! months, days, hours, minutes, seconds may occupy 1 or 2 spaces
+! year, month and day must be separated by a '-'
+! hour, minute, second must be separated by a ':'
+! hour, minute, second are optional. If not present then zero is assumed.
+
+! When NO_CALENDAR is in effect, units attribute must specify a starting
+! day and second, with day number appearing first
+
+! Example: "days since 100 0" Indicates 100 days 0 seconds
+
+function get_cal_time(time_increment, units, calendar)
+real, intent(in) :: time_increment
+character(len=*), intent(in) :: units
+character(len=*), intent(in) :: calendar
+type(time_type) :: get_cal_time
+integer :: year, month, day, hour, minute, second
+integer :: i1, i2, i3, i4, i5, i6, increment_seconds, increment_days
+logical :: correct_form
+character(len=32) :: substring, calendar_att
+character(len=4) :: formt='(i )'
+type(time_type) :: base_time, new_time
+
+calendar_att = lowercase(trim(cut0(calendar)))
+if(calendar_att /= 'unspecified') then
+  correct_form = (trim(calendar_att)) == 'noleap'     .or. (trim(calendar_att)) == '365_day' .or. &
+                 (trim(calendar_att)) == '360_day'    .or. (trim(calendar_att)) == 'julian'  .or. &
+                 (trim(calendar_att)) == 'no_calendar'.or. (trim(calendar_att)) == 'thirty_day_months'
+
+  if(.not.correct_form) then
+    call error_mesg('get_cal_time','"'//trim(calendar_att)//'"'// &
+     ' is not an acceptable calendar attribute. acceptable calendars are: noleap, 365_day, 360_day, julian, no_calendar',FATAL)
+  endif
+
+  correct_form = (trim(calendar_att) == 'noleap'            .and. calendar_type == NOLEAP)            .or. &
+                 (trim(calendar_att) == '365_day'           .and. calendar_type == NOLEAP)            .or. &
+                 (trim(calendar_att) == '360_day'           .and. calendar_type == THIRTY_DAY_MONTHS) .or. &
+                 (trim(calendar_att) == 'thirty_day_months' .and. calendar_type == THIRTY_DAY_MONTHS) .or. &
+                 (trim(calendar_att) == 'julian'            .and. calendar_type == JULIAN)            .or. &
+                 (trim(calendar_att) == 'no_calendar'       .and. calendar_type == NO_CALENDAR)
+  if(.not.correct_form) then
+    call error_mesg('get_cal_time','calendar not consistent with calendar type in use by time_manager.'// &
+          ' calendar='//trim(calendar_att)//'. Type in use by time_manager='//valid_calendar_types(calendar_type),FATAL)
+  endif
+endif
+
+! index(string, substring[,back])
+! Returns the starting position of substring as a substring of string,
+! or zero if it does not occur as a substring. Default value of back is
+! .false. If back is .false., the starting position of the first such
+! substring is returned. If back is .true., the starting position of the 
+! last such substring is returned.
+! Returns zero if substring is not a substring of string (regardless of value of back)
+
+if(calendar_type == NO_CALENDAR) then
+  if(index(units,'-') /= 0 .or. index(units,':') /= 0) then
+    call error_mesg('get_cal_time','Form of units attribute of time is incorrect.'// &
+        ' A date is not valid when time_manager is in NO_CALENDAR mode.'// &
+        ' units='//trim(units),FATAL)
+  endif
+  i1 = index(units,'since') + 4
+  substring = adjustl(units(i1+1:len_trim(units)))
+  i2 = index(trim(substring),' ')
+  if(i2 == 0) then
+    call error_mesg('get_cal_time','Form of units attribute of time is incorrect.'// &
+        ' It must include days and seconds when time_manager is in NO_CALENDAR mode.'// &
+        ' units='//trim(units),FATAL)
+  endif
+  write(formt(3:3),'(i1)') i2-1
+  read(substring(1:i2-1),formt) day ! formt could be replaced with '(i)', but '(i)' is an extension to the Fortran standard.
+  write(formt(3:3),'(i1)') len_trim(substring)-i2
+  read(substring(i2+1:len_trim(substring)),formt) second
+  base_time = set_time(second, day)
+else
+  i1 = index(units,'-')
+  i2 = index(units,'-',back=.true.)
+  i3 = index(units,':')
+  i4 = index(units,':',back=.true.)
+  i5 = len_trim(cut0(units))
+  i6  = index(units,'.',back=.true.)
+  if(i6==i4+2 .or. i6==i4+3)i5=i6-1  ! if frac sec present, truncate
+  correct_form = (i2-i1 == 2 .or. i2-i1 == 3) ! month number must occupy 1 or 2 spaces
+  correct_form = correct_form .and. (i5 == i2+1 .or. i5 == i2+2 .or. i5 == i4+1 .or. i5 == i4+2) ! end of string must be either day number or seconds
+  correct_form = correct_form .and. (i3 == 0 .or. (i4-i3 == 2 .or. i4-i3 == 3)) ! if minute number exists, it must occupy 1 or 2 spaces
+  if(.not.correct_form) then
+    call error_mesg('get_cal_time','Form of units attribute of time is incorrect. units='//trim(units),FATAL)
+  endif
+  read(units(i1-4:i1-1),'(i4)') year
+  write(formt(3:3),'(i1)') i2-i1-1
+  read(units(i1+1:i2-1),formt) month
+  i6 = min(i2+2,i5)
+  read(units(i2+1:i6),'(i2)') day
+  if(i3 == 0) then
+    hour = 0
+    minute = 0
+    second = 0
+  else
+    read(units(i3-2:i3-1),'(i2)') hour
+    write(formt(3:3),'(i1)') i4-i3-1
+    read(units(i3+1:i4-1),formt) minute
+    write(formt(3:3),'(i1)') i5-i4
+    read(units(i4+1:i5  ),formt) second
+  endif
+  base_time = set_date(year, month, day, hour, minute, second)
+endif
+
+if(lowercase(units(1:10)) == 'days since') then
+  increment_days = floor(time_increment)
+  increment_seconds = 86400*(time_increment - increment_days) 
+else if(lowercase(units(1:11)) == 'hours since') then
+  increment_days = floor(time_increment/24)
+  increment_seconds = 86400*(time_increment/24 - increment_days)
+else if(lowercase(units(1:13)) == 'minutes since') then
+  increment_days = floor(time_increment/1440)
+  increment_seconds = 86400*(time_increment/1440 - increment_days)
+else if(lowercase(units(1:13)) == 'seconds since') then
+  increment_days = floor(time_increment/86400)
+  increment_seconds = 86400*(time_increment/86400 - increment_days)
+else
+  call error_mesg('get_cal_time','"'//trim(units)//'"'//' is not an acceptable units attribute of time.'// &
+    ' It must begin with: "days since", "hours since", "minutes since", or "seconds since"',FATAL)
+endif
+
+get_cal_time = base_time + set_time(increment_seconds, increment_days)
+
+end function get_cal_time
+!------------------------------------------------------------------------
+
 subroutine get_date_gregorian(time, year, month, day, hour, minute, second)
 
 ! Computes date corresponding to time for gregorian calendar
@@ -1222,6 +1365,18 @@ second = t - 60 * minute
 
 end subroutine get_date_gregorian
 
+!------------------------------------------------------------------------
+function cut0(string)
+character(len=256) :: cut0
+character(len=*), intent(in) :: string
+integer :: i
+
+cut0 = string
+i = index(string,achar(0))
+if(i > 0) cut0(i:i) = ' '
+
+return
+end function cut0
 !------------------------------------------------------------------------
 
 subroutine get_date_julian(time, year, month, day, hour, minute, second)

@@ -1,4 +1,4 @@
-#ifdef __sgi
+#if defined(__sgi) || defined(__aix) || defined(__IFC)
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -8,7 +8,11 @@
 #define RUSAGE_SELF      0         /* calling process */
 #define RUSAGE_CHILDREN  -1        /* terminated child processes */
 
+#ifdef __aix
+int memuse(void)
+#else
 int memuse_(void)
+#endif
 {
  struct rusage my_rusage;
  int iret;

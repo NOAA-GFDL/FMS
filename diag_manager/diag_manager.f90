@@ -1,7 +1,10 @@
 module diag_manager_mod
 
-! <CONTACT EMAIL="mh@gfdl.noaa.gov">
+! <CONTACT EMAIL="Matthew.Harrison@noaa.gov">
 !   Matt Harrison
+! </CONTACT>
+! <CONTACT EMAIL="Giang.Nong@noaa.gov">
+!   Giang Nong
 ! </CONTACT>
 
 ! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
@@ -14,14 +17,36 @@ module diag_manager_mod
 ! <DESCRIPTION>
 !   <TT>diag_manager_mod</TT> provides a convenient set of interfaces for
 !   writing data to disk.  It is built upon the parallel I/O interface
-!   <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp_io.html"><TT>mpp_io</TT></LINK>.  A single
-!   group of calls to the <TT>diag_manager_mod</TT> interfaces provides data to disk
+!   <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp_io.html">mpp_io</LINK>.
+!   A single group of calls to the <TT>diag_manager_mod</TT> interfaces provides data to disk
 !   at any number of sampling and/or averaging intervals specified at run-time.
-!   Run-time specification of diagnostics are input through the diagnostics table,
-!   which is described in the
-!   <LINK SRC="diag_table_tk.html">diag_table_tk</LINK> documentation.
+!   Run-time specification of diagnostics are input through the diagnostics table.
+!<BR/>
+!
+!
+! <B> Usage</B> of <TT> diag_manager</TT> includes the following steps:<BR/>
+! 1. Create diag_table as described in 
+!   <LINK SRC="diag_table_tk.html">diag_table_tk</LINK> documentation.<BR/>
+! 2. Call <TT>diag_manager_init</TT> to initialize diag_manager_mod <BR/>
+! 3. Call <TT> register_diag_field</TT> to register the field to be outputted. <BR/>
+!    <B> NOTE</B> ALL fields in diag_table should be registered BEFORE the first send_data call
+! 4. Call <TT>send_data</TT> to send data to output fields <BR/>
+! 5. Call <TT>diag_manager_end</TT> to exit diag_manager <BR/>
 !   
-!   <B>Features of <TT>diag_manager_mod</TT> include:</B>
+!
+! <B> New Features </B> of <TT> diag_manager_mod </TT>: <BR/>
+! 1. Ability to output scalars (see <TT>send_data </TT>and <TT> register_diag_field</TT>)<BR/>
+! 2. Ability to output time average of fields that have time dependent mask. <BR/>
+! 3. Give optional warning if <TT>register_diag_field </TT>fails due to misspelled module name
+!    or field name. <BR/>
+! 4. Give warning if a field in diag_table is never registered by the end of the program. <BR/>
+! 5. Check for duplicate lines in diag_table<BR/>
+! 6. diag_table can contain fields that are NOT written to any files. The file name in diag_table
+!    of these fields is <TT> null</TT> <BR/>
+! 7. By default, a field is output in its global grid, it is now possible to output a field in 
+!    a region specified by user, see send_data for more details <BR/>
+!
+!   <B>Features of <TT>diag_manager_mod</TT> </B>include: <BR/>
 !   Simple, minimal API.<BR/>
 !   Run-time choice of diagnostics.<BR/>
 !   Self-describing files: comprehensive header information
@@ -42,28 +67,26 @@ module diag_manager_mod
 !   library. The program is free and is covered by the <LINK
 !   SRC="ftp://ftp.gfdl.gov/perm/hnv/mpp/LICENSE">GPL license</LINK>.
 ! </DESCRIPTION>
+
 use time_manager_mod, only: get_time, set_time, get_date, set_date,    &
                             increment_date, operator(-), operator(>=), &
                             operator(>), operator(<), operator(==),    &
                             time_type, increment_time, month_name,     &
                             get_calendar_type, NO_CALENDAR
-
 use       mpp_io_mod, only: mpp_open, MPP_RDONLY
-
 use          fms_mod, only: error_mesg, FATAL, WARNING, NOTE,          &
                             close_file, stdlog, write_version_number,  &
                             file_exist, mpp_pe, open_namelist_file, &
-                            check_nml_error
-
-use mpp_mod, only : mpp_get_current_pelist, mpp_npes
-
-use    diag_axis_mod, only: diag_axis_init, get_axis_length
-
-use  diag_output_mod, only: diag_output_init, write_axis_meta_data,  &
-                            write_field_meta_data, done_meta_data, &
-                            diag_field_out, diag_output_end,       &
+                            check_nml_error, lowercase
+use mpp_mod, only         : mpp_get_current_pelist, mpp_npes, mpp_sync, mpp_pe, mpp_root_pe,stdout
+use diag_axis_mod, only   : diag_axis_init, get_axis_length, get_diag_axis, get_domain1d, get_domain2d, &
+     get_axis_global_length, diag_subaxes_init,get_diag_axis_cart, get_diag_axis_data
+use  diag_output_mod, only: diag_output_init, write_axis_meta_data, &
+                            write_field_meta_data, done_meta_data,  &
+                            diag_field_out, diag_output_end,        &
                             diag_flush, diag_fieldtype
-
+use mpp_domains_mod, only : domain1d, domain2d, mpp_get_compute_domain, null_domain1d,&
+     null_domain2d, operator(/=), mpp_modify_domain, mpp_get_domain_components
 implicit none
 private
 
@@ -74,105 +97,141 @@ public :: DIAG_ALL,DIAG_OCEAN,DIAG_OTHER
 
 ! Specify storage limits for fixed size tables used for pointers, etc.
 integer, parameter :: max_fields_per_file = 150
-integer, parameter :: max_out_per_in_field = 10
-integer, parameter :: max_files = 10
-integer ::            num_files = 0
+integer, parameter :: max_out_per_in_field = 10 !max number of output_fields per input_field
+integer, parameter :: max_files = 21
+integer            :: num_files = 0
 integer, parameter :: max_input_fields = 300
-integer ::            num_input_fields = 0
+integer            :: num_input_fields = 0
 integer, parameter :: max_output_fields = 300
-integer ::            num_output_fields = 0
-
+integer            :: num_output_fields = 0
 integer, parameter :: DIAG_OTHER = 0
 integer, parameter :: DIAG_OCEAN = 1
 integer, parameter :: DIAG_ALL   = 2
+real               :: EMPTY = 0.0
+integer            :: null_axis_id
 
 ! Global data for all files
-type (time_type) :: base_time
-integer :: base_year, base_month, base_day, base_hour, base_minute, base_second
-character(len = 256) :: global_descriptor
+type (time_type)    :: base_time
+integer             :: base_year, base_month, base_day, base_hour, base_minute, base_second
+character(len = 256):: global_descriptor
+
+type diag_grid
+   real    :: start(3), end(3) ! coordinates (lat,lon,depth) of local domain to output   
+   integer :: l_start_indx(3), l_end_indx(3) ! start and end indices at each LOCAL PE
+   integer :: subaxes(3) ! id returned from diag_subaxes_init of 3 subaxes
+end type diag_grid
 
 type file_type
-   character(len=128) :: name
-   integer :: output_freq
-   integer :: output_units
-   integer :: format
-   integer :: time_units
-   character(len=128) :: long_name
-   integer :: fields(max_fields_per_file)
-   integer :: num_fields
-   integer :: file_unit
-   integer :: time_axis_id
-   type (time_type) :: last_flush
-   type(diag_fieldtype) :: f_avg_start, f_avg_end, f_avg_nitems
+   character(len=128)  :: name
+   integer             :: output_freq
+   integer             :: output_units
+   integer             :: format
+   integer             :: time_units
+   character(len=128)  :: long_name
+   integer             :: fields(max_fields_per_file)
+   integer             :: num_fields
+   integer             :: file_unit
+   integer             :: time_axis_id
+   type (time_type)    :: last_flush
+   type(diag_fieldtype):: f_avg_start, f_avg_end, f_avg_nitems
+   logical             :: local ! true if fields are outputted in a region instead of global
 end type file_type
 
 type input_field_type
    character(len=128) :: module_name, field_name, long_name, units
-   integer :: axes(3)
-   integer :: num_axes
-   logical :: missing_value_present, range_present
-   real :: missing_value, range(2)
-   integer :: output_fields(max_out_per_in_field)
-   integer :: num_output_fields
-   integer :: size(3), total_elements
-   logical :: static, register
+   integer            :: axes(3), num_axes 
+   logical            :: missing_value_present, range_present
+   real               :: missing_value, range(2)
+   integer            :: output_fields(max_out_per_in_field)
+   integer            :: num_output_fields, size(3) 
+   logical            :: static, register, mask_variant, local
 end type input_field_type
 
 type output_field_type
-   integer :: input_field
-   integer :: output_file
-   character(len=128) :: output_name
-   logical :: time_average
-   integer :: pack
-   real, pointer :: buffer(:, :, :)
-   type(time_type) :: last_output, next_output, next_next_output
-   integer :: total_elements, num_elements
-   logical :: static
-!   type(diag_fieldtype), pointer :: f_type
-   type(diag_fieldtype) :: f_type
-   integer :: axes(3), num_axes
+   integer             :: input_field, output_file
+   character(len=128)  :: output_name
+   logical             :: time_average, static
+   integer             :: pack
+   real, pointer       :: buffer(:, :, :)=>null()
+   real, pointer       :: counter(:, :, :)=>null()
+   type(time_type)     :: last_output, next_output, next_next_output
+   real                :: count_0d
+   type(diag_fieldtype):: f_type
+   integer             :: axes(3), num_axes, num_elements, total_elements
+   type(diag_grid)     :: output_grid
+   logical             :: local_output, need_compute
 end type output_field_type
 
+! local_output: true if this field is written out on a region, not global
+! need_compute: true if this PE is involved in writing the field
 
-type (file_type) :: files(max_files)
+type coord_type  ! define the region for outputting a field
+   real :: xbegin
+   real :: xend
+   real :: ybegin
+   real :: yend
+   real :: zbegin
+   real :: zend
+end type coord_type
+
+type (file_type), save :: files(max_files)
 type (input_field_type) :: input_fields(max_input_fields)
-type (output_field_type) :: output_fields(max_output_fields)
+type (output_field_type), save :: output_fields(max_output_fields)
 
-logical :: first_send_data_call = .true.
-logical :: module_is_initialized = .false.
-
-integer, parameter :: EVERY_TIME =  0
-integer, parameter :: END_OF_RUN = -1
-
-integer, parameter :: DIAG_SECONDS = 1, DIAG_MINUTES = 2, DIAG_HOURS = 3
-integer, parameter :: DIAG_DAYS = 4, DIAG_MONTHS = 5, DIAG_YEARS = 6
-character (len=10) :: time_unit_list(6) = (/'seconds   ', 'minutes   ', &
+logical             :: first_send_data_call = .true.
+logical             :: first_send_data_local = .true.
+logical             :: module_is_initialized = .false.
+integer, parameter  :: EVERY_TIME =  0
+integer, parameter  :: END_OF_RUN = -1
+integer, parameter  :: DIAG_SECONDS = 1, DIAG_MINUTES = 2, DIAG_HOURS = 3
+integer, parameter  :: DIAG_DAYS = 4, DIAG_MONTHS = 5, DIAG_YEARS = 6
+character (len=10)  :: time_unit_list(6) = (/'seconds   ', 'minutes   ', &
    'hours     ', 'days      ', 'months    ', 'years     '/)
-
 character (len = 7) :: avg_name = 'average'
-
-character(len=32) :: pelist_name
-
+character(len=32)   :: pelist_name
 
 ! version number of this module
-character(len=128) :: version = '$Id: diag_manager.f90,v 1.7 2003/04/09 21:16:09 fms Exp $'
-character(len=128) :: tagname = '$Name: inchon $'  
+character(len=128) :: version = '$Id: diag_manager.f90,v 10.0 2003/10/24 22:01:27 fms Exp $'
+character(len=128) :: tagname = '$Name: jakarta $'  
 
 
 ! <INTERFACE NAME="send_data">
-
+! <TEMPLATE>
+!send_data(diag_field_id, field, time, is_in, js_in, ks_in, &
+!             mask, rmask, weight)
+!</TEMPLATE>
 !   <OVERVIEW>
 !     Send data over to output fields. 
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!     send_data is overloaded for 1 to 3-d arrays.
-!     diag_field_id corresponds to the id returned from a previous call to
-!     register_diag_field.  The field array is restricted to the computational
-!     range of the array. Optional argument is_in can be used to update
-!     sub-arrays of the entire field.  Additionally, an optional logical or real
-!     mask can be used to apply missing values to the array.  For the real
-!     mask, the mask is applied if the mask value is less than 0.5.  The
-!     weight array is currently not implemented.
+! send_data is overloaded for fields having zero dimension (scalars) to 3 dimension.
+! diag_field_id corresponds to the id returned from a previous call to
+! register_diag_field.  The field array is restricted to the computational
+! range of the array. Optional argument is_in can be used to update
+! sub-arrays of the entire field.  Additionally, an optional logical or real
+! mask can be used to apply missing values to the array.<BR/>
+! If a field is declared to be mask_variant in <TT> register_diag_field</TT> logical mask 
+! should be mandatory.<BR/>
+!
+! For the real  mask, the mask is applied if the mask value is less than 0.5.  The
+! weight array is currently not implemented.
+!
+! By default, a field will be written out entirely in its global grid. Users can also specify
+! region in which the field will be outputted. The region is specified in diag-table just before
+! the end of output_field replacing "none". For example:<BR/>
+! by default:<BR/>
+! "ocean_mod","Vorticity","vorticity","file1","all",.false.,"none",2 <BR/>
+! for regional output:<BR/>
+! "ocean_mod","Vorticity","vorticity_local","file2","all",.false.,"0.5 53.5 -89.5 -28.5 1 1",2<BR/>
+! the format of region is "xbegin xend ybegin yend zbegin zend". If it is a 2D field use (1 1)
+! for (zbegin zend) as in the example above. The units used for region are the actual units used in 
+! grid_spec.nc (for example lat, lon, meter). Fatal error will occur if region's boundaries
+! are not found in grid_spec.nc<BR/>
+! <BR/>
+! Special note when using regional output: result files containing regional outputs should be 
+! different from files containing global (default) output. It is FATAL error to have one file
+! containing both regional and global results. For maximum flexibility and independence from
+! PE counts one file should contain just one region
 !   </DESCRIPTION>
 !   <IN NAME="diag_field_id" TYPE="integer"  > </IN>
 !   <IN NAME="field" TYPE="real" DIM="(:,:,:)" > </IN>
@@ -184,11 +243,13 @@ interface send_data
    module procedure send_data_2d
    module procedure send_data_3d
 end interface
+
+interface register_diag_field
+   module procedure register_diag_field_scalar
+   module procedure register_diag_field_array
+end interface
 ! </INTERFACE>
-
-
 ! <INTERFACE NAME="send_tile_averaged_data">
-
 !   <OVERVIEW>
 !     Send tile-averaged data over to output fields. 
 !   </OVERVIEW>
@@ -214,19 +275,39 @@ end interface
 contains
 
 !-------------------------------------------------------------------------
+function register_diag_field_scalar(module_name, field_name, init_time, &
+   long_name, units, missing_value, range)
+
+! Indicates the calling modules intent to supply data for this field.
+integer                                ::  register_diag_field_scalar
+character(len=*), intent(in)           :: module_name, field_name
+type(time_type), intent(in)            :: init_time
+character(len=*), optional, intent(in) :: long_name, units
+real, optional, intent(in)             :: missing_value, range(2)
+ 
+register_diag_field_scalar = register_diag_field_array(module_name, field_name,&
+   (/null_axis_id/), init_time,long_name, units, missing_value, range)
+
+end function register_diag_field_scalar
 
 ! <FUNCTION NAME="register_diag_field">
 
-!   <OVERVIEW>
+!<OVERVIEW>
 !     Register Diagnostic Field.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Return field index for subsequent calls to <LINK SRC="#send_data"> send_data </LINK>
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     register_diag_field(module_name, field_name, axes, init_time, &
-!     long_name, units, missing_value, range)
-!   </TEMPLATE>
+!</OVERVIEW>
+!<DESCRIPTION>
+!     Return field index for subsequent calls to <LINK SRC="#send_data"> send_data </LINK> <BR/>
+!<TT> axes</TT> are axis ID returned from <TT>diag_axis_init</TT>, <TT>axes</TT>  are required
+! for fields of 1-3 dimension and NOT required for scalars. <BR/>
+! optional <TT> mask_variant</TT> is for fields that have a time-dependent mask. If <TT>mask_variant</TT> is
+! true then <TT>mask</TT> must be present in argument list of <TT>send_data</TT> <BR/>
+! When optional <TT> verbose</TT> is true a warning will be given if <TT> register_diag_field</TT>
+! fails due to misspelled field name or module name. The default <TT> verbose</TT> is false.
+!</DESCRIPTION>
+!<TEMPLATE>
+!     register_diag_field(module_name,field_name,axes,init_time, &
+!     long_name,units,missing_value,range,mask_variant,verbose)
+!</TEMPLATE>
 
 !   <IN NAME="module_name" TYPE="character(len=*)"> </IN>
 !   <IN NAME="field_name" TYPE="character(len=*)"> </IN>
@@ -236,55 +317,79 @@ contains
 !   <IN NAME="units" TYPE="character(len=*)"> </IN>
 !   <IN NAME="missing_value" TYPE="real"> </IN>
 !   <IN NAME="range" TYPE="real" DIM="(2)"> </IN>
+!   <IN NAME="mask_variant" TYPE="logical"> </IN> 
+!   <IN NAME="verbose" TYPE="logical"> </IN>
 
-function register_diag_field(module_name, field_name, axes, init_time, &
-   long_name, units, missing_value, range)
+function register_diag_field_array(module_name, field_name, axes, init_time, &
+   long_name, units, missing_value, range, mask_variant,verbose)
 
 ! Indicates the calling modules intent to supply data for this field.
 
-integer ::  register_diag_field
-character(len=*), intent(in) :: module_name, field_name
-integer, intent(in) :: axes(:)
-type(time_type), intent(in) :: init_time
+integer                                :: register_diag_field_array
+character(len=*), intent(in)           :: module_name, field_name
+integer, intent(in)                    :: axes(:)
+type(time_type), intent(in)            :: init_time
 character(len=*), optional, intent(in) :: long_name, units
-real, optional, intent(in) :: missing_value, range(2)
-
-integer :: field, num_axes, i_size, j_size, k_size, j, ind, file_num, freq
-integer :: total_elements, output_units
-
+real, optional, intent(in)             :: missing_value, range(2)
+logical, optional, intent(in)          :: mask_variant, verbose
+integer                                :: field, num_axes, i_size, j_size, k_size, j, ind, file_num, freq
+integer                                :: output_units
+logical                                :: mask_variant1, verbose1
+character(len=128)                     :: msg
+mask_variant1 = .false.
+if(present(mask_variant)) mask_variant1 = mask_variant
+verbose1= .false.
+if(present(verbose)) verbose1 = verbose
 ! Call register static, then set static back to false
-register_diag_field = register_static_field(module_name, field_name, axes, &
-   long_name, units, missing_value, range)
 
-if(register_diag_field >0) then
-   input_fields(register_diag_field)%static = .false.
+register_diag_field_array = register_static_field(module_name, field_name, axes, &
+   long_name, units, missing_value, range, mask_variant1, dynamic =.true.)
 
-   field = register_diag_field
+if(verbose1.and.register_diag_field_array<0 ) &
+     call error_mesg ('register_diag_field', &
+     'module/output_field '//trim(module_name)//'/'//&
+     &trim(field_name)//' NOT found in diag_table', WARNING) 
 
+if(.not. first_send_data_call) call  error_mesg ('register_diag_field', &
+     'module/output_field '//trim(module_name)//'/'//&
+     &trim(field_name)//' registered AFTER first send_data call, TOO LATE', WARNING)  
+if(register_diag_field_array >0) then
+   input_fields(register_diag_field_array)%static = .false.
 
+   field = register_diag_field_array
 ! Need set output fields to not static, too
 ! Need to loop through all output_fields associated and allocate their buffers
 ! Would have to consider horizontal operations at this point
-!   num_output_fields = input_fields(field)%num_output_fields
    do j = 1, input_fields(field)%num_output_fields
-!! do j = 1, num_output_fields
       ind = input_fields(field)%output_fields(j)
       output_fields(ind)%static = .false.
 ! Set up times in output_fields
       output_fields(ind)%last_output = init_time
 ! Get output frequency from for the appropriate output file
       file_num = output_fields(ind)%output_file
+      if(file_num == max_files) cycle
+      if(output_fields(ind)%local_output ) then
+         if(output_fields(ind)%need_compute) then         
+            files(file_num)%local = .true.
+         endif
+         call mpp_sync()
+      endif
       freq = files(file_num)%output_freq
       output_units = files(file_num)%output_units
       output_fields(ind)%next_output = &
          diag_time_inc(init_time, freq, output_units)
       output_fields(ind)%next_next_output = &
          diag_time_inc(output_fields(ind)%next_output, freq, output_units)
+      if(verbose1 .and. mpp_pe() == mpp_root_pe() .and. output_fields(ind)%local_output ) then
+         write(msg,'(" lon(",F5.1,", ",F5.1,"), lat(",F5.1,", ",F5.1,")")')output_fields(ind)%output_grid%start(1),&
+            output_fields(ind)%output_grid%end(1),output_fields(ind)%output_grid%start(2),&
+            output_fields(ind)%output_grid%end(2)
+         write(stdout(),* ) 'module/output_field '//trim(module_name)//'/'//trim(field_name)// &
+              &' will be outputtted in region:'//trim(msg)
+      endif
    end do
-
 endif
-
-end function register_diag_field
+end function register_diag_field_array
 ! </FUNCTION>
 
 !-------------------------------------------------------------------------
@@ -310,20 +415,28 @@ end function register_diag_field
 !   <IN NAME="range" TYPE="real" DIM="(2)"> </IN>
 
 function register_static_field(module_name, field_name, axes, &
-   long_name, units, missing_value, range, require)
+   long_name, units, missing_value, range, mask_variant, require, dynamic)
 
-integer register_static_field
-character(len=*), intent(in) :: module_name, field_name
-integer, intent(in) :: axes(:)
+integer                                :: register_static_field
+character(len=*), intent(in)           :: module_name, field_name
+integer, intent(in)                    :: axes(:)
 character(len=*), optional, intent(in) :: long_name, units
-real, optional, intent(in) :: missing_value, range(2)
-logical, optional, intent(in) :: require  ! require static field to be in every file
-                                          ! e.g. 2-d axes
-integer :: field, num_axes, j, out_num, file_num, freq, siz(3)
-character(len=128) :: error_string
+real, optional, intent(in)             :: missing_value, range(2)
+logical, optional, intent(in)          :: mask_variant
+logical, optional, intent(in)          :: require  ! require static field to be in every file, e.g. 2-d axes
+logical, optional, intent(in)          :: dynamic
+integer                                :: field, num_axes, j, out_num, file_num, freq, siz(3), local_siz(3), k
+character(len=128)                     :: error_string
+logical                                :: mask_variant1, dynamic1
+integer                                :: local_start(3), local_end(3) ! indices of local domain of global axes
+character(len=128)                     :: msg
 
-if (.not.module_is_initialized) call error_mesg ('diag_manager_mod',  &
-                       'module has not been initialized', FATAL)
+mask_variant1 = .false.
+if(present(mask_variant)) mask_variant1 = mask_variant
+dynamic1 = .false.
+if(present(dynamic)) dynamic1 = dynamic
+if (.not.module_is_initialized) call error_mesg ('register_static_field',  &
+                       'diag_manager has NOT been initialized', FATAL)
 
 register_static_field = find_input_field(module_name, field_name)
 
@@ -345,11 +458,18 @@ if(register_static_field < 0) return
 
 ! Store information for this input field into input field table
 field = register_static_field
-
 ! Set static to true, if called by register_diag_field this is flipped to false
 input_fields(field)%static = .true.
+! check if the field is registered twice
+if (input_fields(field)%register .and. mpp_pe() == mpp_root_pe() ) then
+    call error_mesg ('register_diag_field', &
+    'module/output_field '//trim(module_name)//'/'//&
+    &trim(field_name)//' ALREADY registered, should not register twice', FATAL)
+endif
 ! Set flag that this field was registered
 input_fields(field)%register = .true.
+! set flag for mask: does it change with time?
+input_fields(field)%mask_variant = mask_variant1
 
 ! Store the axis info
 num_axes = size(axes)
@@ -385,7 +505,8 @@ endif
 ! Next need to compute the size of the domain for this set of axes
 ! Comes from axis handler; assume result is i_size, j_size, k_size
 ! for three-d problem
-siz = 1
+siz = 1; local_siz = 1
+local_start = 1;  local_end= 1
 do j = 1, num_axes
    siz(j) = get_axis_length(axes(j))
 end do
@@ -394,36 +515,256 @@ end do
 do j = 1, 3
    input_fields(field)%size(j) = siz(j)
 end do
-input_fields(field)%total_elements = siz(1) * siz(2) * siz(3)
-
-! Do not allow zero size variable through ?
-if (input_fields(field)%total_elements <= 0) then
-     write (error_string,11) trim(field_name)
-  11 format ('field ',a,' has zero size')
-     call error_mesg ('register_static_field in diag_manager_mod', &
-                      trim(error_string), WARNING)
-endif
 
 ! Need to loop through all output_fields associated and allocate their buffers
 ! Would have to consider horizontal operations at this point
-!num_output_fields = input_fields(field)%num_output_fields
 do j = 1, input_fields(field)%num_output_fields
-!do j = 1, num_output_fields
    out_num = input_fields(field)%output_fields(j)
-   allocate(output_fields(out_num)%buffer(siz(1), siz(2), siz(3)))
-   output_fields(out_num)%buffer = 0.0
-   output_fields(out_num)%total_elements = input_fields(field)%total_elements
-   output_fields(out_num)%num_elements = 0
+!  if local_output (size of output_fields does NOT equal size of input_fields)
+   if(output_fields(out_num)%local_output) then
+      if(size(axes).le.1) &
+           call error_mesg ('Register_diag_field', 'axes of '//trim(field_name)// &
+           ' must >=2 for local output', FATAL)
+      call get_subfield_size(axes,out_num)
+      if(output_fields(out_num)%need_compute) then
+         do k = 1,num_axes
+            local_start(k) = output_fields(out_num)%output_grid%l_start_indx(k)
+            local_end(k) = output_fields(out_num)%output_grid%l_end_indx(k)
+            local_siz(k) = local_end(k) - local_start(k) +1                         
+         enddo
+         allocate(output_fields(out_num)%buffer(local_siz(1), local_siz(2), local_siz(3)))
+         output_fields(out_num)%total_elements = local_siz(1)*local_siz(2)*local_siz(3)
+      endif
+      call mpp_sync()     
+   else ! the field is outputted globally
+! size of output_fields equal size of input_fields 
+      allocate(output_fields(out_num)%buffer(siz(1), siz(2), siz(3)))
+      output_fields(out_num)%total_elements = siz(1)*siz(2)*siz(3)
+   endif
+   output_fields(out_num)%buffer = EMPTY
 ! Reset to false in register_field if this is not static
    output_fields(out_num)%static = .true.
-! For now, axes are copied straight across to output fields
-   output_fields(out_num)%axes = input_fields(field)%axes
+! check if time average is true for static field
+   if(.not.dynamic1 .and. output_fields(out_num)%time_average) then      
+      write(msg,'(a,"/",a)')trim(module_name), trim(field_name)
+      if(mpp_pe() .eq. mpp_root_pe()) &
+           call  error_mesg ('register_static_field', 'module/field '//trim(msg)//' is STATIC, can NOT time average',WARNING)
+      output_fields(out_num)%time_average = .false.
+   endif
+! Axes are copied from input_fields if outputted globally or from subaxes if outputted locally
+   if(.not.output_fields(out_num)%local_output) then 
+      output_fields(out_num)%axes = input_fields(field)%axes
+   else      
+      output_fields(out_num)%axes = output_fields(out_num)%output_grid%subaxes
+   endif
+! assume that the number of axes of output_fields = that of input_fields
    output_fields(out_num)%num_axes = input_fields(field)%num_axes
 end do
 
+if (input_fields(field)%mask_variant) then
+   do j = 1, input_fields(field)%num_output_fields
+      out_num = input_fields(field)%output_fields(j)
+      if(output_fields(out_num)%time_average) then
+         allocate(output_fields(out_num)%counter(siz(1), siz(2), siz(3)))
+         output_fields(out_num)%counter = 0.0
+      endif
+   enddo
+endif
 
 end function register_static_field
 ! </FUNCTION>
+subroutine get_subfield_size(axes,outnum)
+! Get size, start and end indices for output_fields(outnum), fill in
+! output_fields(outnum)%output_grid%(start_indx, end_indx)
+
+integer, intent(in) :: axes(:) ! axes of the input_field
+integer, intent(in) :: outnum  ! position in array output_fields
+real, allocatable   :: global_lat(:), global_lon(:), global_depth(:)
+integer             :: global_axis_size
+integer             :: i,xbegin,xend,ybegin,yend,xbegin_l,xend_l,ybegin_l,yend_l 
+character(len=1)    :: cart
+type(domain2d)      :: Domain2, Domain2_new
+type(domain1d)      :: Domain1,Domain1x,Domain1y,Domain1x_new,Domain1y_new
+real                :: start(3), end(3) ! start and end coordinates in 3 axes
+integer             :: gstart_indx(3), gend_indx(3) ! global start and end indices of output domain in 3 axes 
+real, allocatable   :: subaxis_x(:), subaxis_y(:), subaxis_z(:) !containing local coordinates in x,y,z axes
+
+!initilization for local output
+start = -1.e10; end=-1.e10 ! initially out of (lat/lon/depth) range
+gstart_indx = -1; gend_indx=-1
+
+! get axis data (lat, lon, depth) and indices
+   start= output_fields(outnum)%output_grid%start
+   end = output_fields(outnum)%output_grid%end
+
+do i = 1,size(axes)   
+   global_axis_size = get_axis_global_length(axes(i))
+   call get_diag_axis_cart(axes(i), cart)
+   select case(cart)
+   case ('X')
+      if(i.ne.1) &
+           call error_mesg ('diag_manager, get subfield size', 'wrong order of axes, X should come first',FATAL)
+      allocate(global_lon(global_axis_size))
+      call get_diag_axis_data(axes(i),global_lon)
+      gstart_indx(i) = get_index(start(i),global_lon)
+      gend_indx(i) = get_index(end(i),global_lon)
+      allocate(subaxis_x(gstart_indx(i):gend_indx(i)))
+      subaxis_x=global_lon(gstart_indx(i):gend_indx(i))   
+   case ('Y')
+      if(i.ne.2) &
+           call error_mesg ('diag_manager, get subfield size', 'wrong order of axes, Y should come second',FATAL)
+      allocate(global_lat(global_axis_size))
+      call get_diag_axis_data(axes(i),global_lat)
+      gstart_indx(i) = get_index(start(i),global_lat)
+      gend_indx(i) = get_index(end(i),global_lat)
+      allocate(subaxis_y(gstart_indx(i):gend_indx(i)))
+      subaxis_y=global_lat(gstart_indx(i):gend_indx(i))
+   case ('Z')
+      allocate(global_depth(global_axis_size))
+      call get_diag_axis_data(axes(i),global_depth)
+      gstart_indx(i) = get_index(start(i),global_depth)
+      gend_indx(i) = get_index(end(i),global_depth)
+      allocate(subaxis_z(gstart_indx(i):gend_indx(i)))
+      subaxis_z=global_depth(gstart_indx(i):gend_indx(i))
+      output_fields(outnum)%output_grid%subaxes(i) = &
+           diag_subaxes_init(axes(i),subaxis_z, gstart_indx(i),gend_indx(i))
+      deallocate(subaxis_z,global_depth)
+   case default
+       call error_mesg ('diag_manager, get_subfield_size', 'Wrong axis_cart', FATAL)
+   end select
+enddo
+do i = 1,size(axes)
+   if(gstart_indx(i)== -1 .or. gend_indx(i)== -1) &
+        call error_mesg ('diag_manager, get_subfield_size', 'can not find gstart_indx/gend_indx for ' &
+        //trim(output_fields(outnum)%output_name), FATAL)  
+enddo
+if(size(axes)>2 .and. (gstart_indx(3)== -1 .or. gend_indx(3) ==-1)) &
+     call error_mesg('diag_manager, get_subfield_size', 'can not find local depth in Z axis',FATAL)
+
+! get domain and compute_domain(xbegin,xend,ybegin,yend)
+xbegin=-1; xend=-1
+ybegin=-1; yend=-1
+
+Domain2 = get_domain2d(axes)
+if(Domain2 /= NULL_DOMAIN2D) then
+   call mpp_get_compute_domain(Domain2,xbegin,xend,ybegin,yend)
+   call mpp_get_domain_components(Domain2, Domain1x, Domain1y)
+else
+   do i = 1, MIN(size(axes),2)    
+      Domain1 = get_domain1d(axes(i))
+      if(Domain1 /= NULL_DOMAIN1D) then
+         call get_diag_axis_cart(axes(i),cart)
+         select case(cart)
+         case ('X')
+            Domain1x = get_domain1d(axes(i))
+            call mpp_get_compute_domain(Domain1x,xbegin,xend)   
+         case ('Y')
+            Domain1y = get_domain1d(axes(i))
+            call mpp_get_compute_domain(Domain1y,ybegin,yend)
+         case default ! do nothing here
+         end select
+      else
+         call error_mesg ('diag_manager, get_subfield_size', 'NO domain available', FATAL)
+      endif
+   enddo
+endif      
+if(xbegin== -1 .or. xend==-1 .or. ybegin==-1 .or. yend==-1) &
+   call error_mesg ('diag_manager, get_subfield_size', 'wrong compute domain indices',FATAL)  
+
+! get the area containing BOTH compute domain AND local output area
+if(gstart_indx(1)> xend .or. xbegin > gend_indx(1)) then
+   output_fields(outnum)%output_grid%l_start_indx(1) = -1
+   output_fields(outnum)%output_grid%l_end_indx(1) = -1
+   output_fields(outnum)%need_compute = .false. ! not involved
+elseif (gstart_indx(2)> yend .or. ybegin > gend_indx(2)) then
+   output_fields(outnum)%output_grid%l_start_indx(2) = -1
+   output_fields(outnum)%output_grid%l_end_indx(2) = -1
+   output_fields(outnum)%need_compute = .false. ! not involved
+else
+   output_fields(outnum)%output_grid%l_start_indx(1) = MAX(xbegin, gstart_indx(1))
+   output_fields(outnum)%output_grid%l_start_indx(2) = MAX(ybegin, gstart_indx(2))
+   output_fields(outnum)%output_grid%l_end_indx(1) = MIN(xend, gend_indx(1))
+   output_fields(outnum)%output_grid%l_end_indx(2) = MIN(yend, gend_indx(2))
+   output_fields(outnum)%need_compute = .true.  ! involved in local output
+endif
+
+if(output_fields(outnum)%need_compute) then
+! need to modify domain1d and domain2d for subaxes
+   xbegin_l = output_fields(outnum)%output_grid%l_start_indx(1)
+   xend_l = output_fields(outnum)%output_grid%l_end_indx(1)
+   ybegin_l = output_fields(outnum)%output_grid%l_start_indx(2)
+   yend_l = output_fields(outnum)%output_grid%l_end_indx(2)
+   call mpp_modify_domain(Domain1x,Domain1x_new, xbegin_l,xend_l,gstart_indx(1),gend_indx(1))
+   call mpp_modify_domain(Domain1y,Domain1y_new, ybegin_l,yend_l,gstart_indx(2),gend_indx(2))
+   call mpp_modify_domain(Domain2_new, Domain1x_new, Domain1y_new)
+   output_fields(outnum)%output_grid%subaxes(1) = &
+        diag_subaxes_init(axes(1),subaxis_x, gstart_indx(1),gend_indx(1),Domain1x_new,Domain2_new)
+   output_fields(outnum)%output_grid%subaxes(2) = &
+        diag_subaxes_init(axes(2),subaxis_y, gstart_indx(2),gend_indx(2),Domain1y_new,Domain2_new)
+   if(output_fields(outnum)%output_grid%subaxes(1) == -1 .or. output_fields(outnum)%output_grid%subaxes(2) == -1)&
+        call error_mesg ('diag_manager, get_subfield_size', 'wrong subaxis id', FATAL) 
+! local start index should start from 1
+   output_fields(outnum)%output_grid%l_start_indx(1) = MAX(xbegin, gstart_indx(1)) - xbegin + 1   
+   output_fields(outnum)%output_grid%l_start_indx(2) = MAX(ybegin, gstart_indx(2)) - ybegin + 1
+   output_fields(outnum)%output_grid%l_end_indx(1) = MIN(xend, gend_indx(1)) - xbegin + 1 
+   output_fields(outnum)%output_grid%l_end_indx(2) = MIN(yend, gend_indx(2)) - ybegin + 1
+   if(size(axes)>2) then
+      output_fields(outnum)%output_grid%l_start_indx(3) = gstart_indx(3)
+      output_fields(outnum)%output_grid%l_end_indx(3) = gend_indx(3)
+   else
+      output_fields(outnum)%output_grid%l_start_indx(3) = 1
+      output_fields(outnum)%output_grid%l_end_indx(3) = 1
+   endif
+endif
+deallocate(subaxis_x, global_lon)
+deallocate(subaxis_y, global_lat)
+
+end subroutine get_subfield_size 
+
+function get_index(number, array)
+  real, intent(in) :: number
+  real, intent(in), dimension(:) :: array
+  integer get_index, i, n
+  logical :: found
+! Find index i of array such that array(i) is closest to number
+! array must be  monotonouslly ordered
+
+  n = size(array)
+! check if array is monotonous
+  do i = 2, n-1
+     if((array(i-1)<array(i) .and. array(i)>array(i+1)).or.(array(i-1)>array(i) .and. array(i)<array(i+1))) &
+          call error_mesg('diag_manager', 'get_index, array NOT monotonously ordered',FATAL) 
+  enddo
+  get_index = -1
+  found = .false.
+! search in increasing array 
+  do i = 1, n-1                
+     if ((array(i)<=number) .and. (array(i+1)>= number)) then
+        if(number - array(i) <= array(i+1) - number) then
+           get_index = i
+           found=.true.
+        else
+           get_index = i+1
+           found=.true.
+        endif
+        exit
+     endif     
+  enddo 
+! if not found, search in decreasing array
+  if(.not.found) then
+      do i = 1, n-1
+         if ((array(i)>=number) .and. (array(i+1)<= number)) then
+            if(array(i)-number <= number-array(i+1)) then
+               get_index = i              
+            else
+               get_index = i+1               
+            endif
+            exit
+         endif
+      enddo
+   endif
+  end function get_index
+
 
 !-------------------------------------------------------------------------
 ! <FUNCTION NAME="send_data_0d" INTERFACE="send_data">
@@ -432,35 +773,17 @@ end function register_static_field
 !   <IN NAME="time" TYPE="time_type"  > </IN>
 ! </FUNCTION>
 
-function send_data_0d(diag_field_id, field, time, mask, rmask, weight)
-
-logical :: send_data_0d
-integer, intent(in) :: diag_field_id
-real, intent(in) :: field
+function send_data_0d(diag_field_id, field, time)
+    
+logical                      :: send_data_0d
+integer, intent(in)          :: diag_field_id
+real, intent(in)             :: field
 type (time_type), intent(in) :: time
-logical, optional :: mask
-real, optional :: rmask, weight
-
-real :: field_out(1, 1, 1)
-real :: weight_out(1, 1, 1)
-logical :: mask_out(1, 1, 1)
-
+real                         :: field_out(1, 1, 1)
 
 ! First copy the data to a three d array with last element 1
 field_out(1, 1, 1) = field
-
-! Default values for mask and weight
-mask_out = .true.
-weight = 1.0
-
-if(present(mask)) mask_out(1, 1, 1) = mask
-if(present(rmask)) then
-    if (rmask < 0.5) mask_out(1, 1, 1) = .false.
-endif
-if(present(weight)) weight_out(1, 1, 1) = weight
-
-send_data_0d = send_data_3d(diag_field_id, field_out, time, 1, 1, 1, mask_out, weight_out)
-
+send_data_0d = send_data_3d(diag_field_id, field_out, time)
 end function send_data_0d
 
 !-------------------------------------------------------------------------
@@ -472,17 +795,16 @@ end function send_data_0d
 
 function send_data_1d(diag_field_id, field, time, is_in, mask, rmask, weight)
 
-logical :: send_data_1d
-integer, intent(in) :: diag_field_id
-real, intent(in) :: field(:)
+logical                      :: send_data_1d
+integer, intent(in)          :: diag_field_id
+real, intent(in)             :: field(:)
 type (time_type), intent(in) :: time
-integer, optional :: is_in
-logical, optional :: mask(:)
-real, optional :: rmask(:), weight(:)
-
-real :: field_out(size(field), 1, 1)
-real :: weight_out(size(field), 1, 1)
-logical :: mask_out(size(field), 1, 1)
+integer, optional            :: is_in
+logical, optional            :: mask(:)
+real, optional               :: rmask(:), weight(:)
+real                         :: field_out(size(field), 1, 1)
+real                         :: weight_out(size(field), 1, 1)
+logical                      :: mask_out(size(field), 1, 1)
 
 
 ! First copy the data to a three d array with last element 1
@@ -495,9 +817,11 @@ weight_out = 1.0
 if(present(mask)) mask_out(:, 1, 1) = mask
 if(present(rmask)) where (rmask < 0.5) mask_out(:, 1, 1) = .false.
 if(present(weight)) weight_out(:, 1, 1) = weight
-
-send_data_1d = send_data_3d(diag_field_id, field_out, time, is_in, 1, 1, mask_out, weight_out)
-
+if(present(mask) .or. present(rmask)) then
+   send_data_1d = send_data_3d(diag_field_id, field_out, time, is_in, 1, 1, mask_out, weight_out)
+else
+   send_data_1d = send_data_3d(diag_field_id, field_out, time, is_in, 1, 1)
+endif
 end function send_data_1d
 
 
@@ -511,17 +835,16 @@ end function send_data_1d
 function send_data_2d(diag_field_id, field, time, is_in, js_in, &
     mask, rmask, weight)
 
-logical :: send_data_2d
-integer, intent(in) :: diag_field_id
-real, intent(in) :: field(:, :)
+logical                      :: send_data_2d
+integer, intent(in)          :: diag_field_id
+real, intent(in)             :: field(:, :)
 type (time_type), intent(in) :: time
-integer, optional :: is_in, js_in
-logical, optional :: mask(:, :)
-real, optional :: rmask(:, :), weight(:, :)
-
-real :: field_out(size(field, 1), size(field, 2), 1)
-real :: weight_out(size(field, 1), size(field, 2), 1)
-logical :: mask_out(size(field, 1), size(field, 2), 1)
+integer, optional            :: is_in, js_in
+logical, optional            :: mask(:, :)
+real, optional               :: rmask(:, :), weight(:, :)
+real                         :: field_out(size(field, 1), size(field, 2), 1)
+real                         :: weight_out(size(field, 1), size(field, 2), 1)
+logical                      :: mask_out(size(field, 1), size(field, 2), 1)
 
 
 ! First copy the data to a three d array with last element 1
@@ -535,7 +858,11 @@ if(present(mask)) mask_out(:, :, 1) = mask
 if(present(rmask)) where (rmask < 0.5) mask_out(:, :, 1) = .false.
 if(present(weight)) weight_out(:, :, 1) = weight
 
-send_data_2d = send_data_3d(diag_field_id, field_out, time, is_in, js_in, 1, mask_out, weight_out)
+if(present(mask) .or. present(rmask)) then
+   send_data_2d = send_data_3d(diag_field_id, field_out, time, is_in, js_in, 1, mask_out, weight_out)
+else
+   send_data_2d = send_data_3d(diag_field_id, field_out, time, is_in, js_in, 1)
+endif
 
 end function send_data_2d
 
@@ -549,23 +876,25 @@ end function send_data_2d
 function send_data_3d(diag_field_id, field, time, is_in, js_in, ks_in, &
              mask, rmask, weight)
 
-logical :: send_data_3d
-integer, intent(in) :: diag_field_id
-real, intent(in) :: field(:, :, :)
+logical                      :: send_data_3d
+integer, intent(in)          :: diag_field_id
+real, intent(in)             :: field(:, :, :)
 type (time_type), intent(in) :: time
-integer, optional :: is_in, js_in, ks_in
-logical, optional :: mask(:, :, :)
-real, optional :: rmask(:, :, :)
-real, optional :: weight(:, :, :)
+integer, optional            :: is_in, js_in, ks_in
+logical, target, optional    :: mask(:, :, :)
+real, target, optional       :: rmask(:, :, :)
+real, optional               :: weight(:, :, :) ! not implemented at this time
+real                         :: num
+logical                      :: average, need_compute, local_output
+integer                      :: i, out_num, file_num, n1, n2, n3
+integer                      :: freq, units, is, js, ks, kount
+character(len=128)           :: error_string
+integer                      :: local_start(3), local_end(3) ! start and end indices on 3 axes
+logical, pointer             :: mask_local(:,:,:)
+real, pointer                :: rmask_local(:,:,:)
+integer                      :: number_of_outputs
 
-logical :: average
-integer :: i, out_num, file_num, num_elements, total_elements, num, n1, n2, n3
-integer :: sub_size, freq, units, is, js, ks, kount
-character(len=128) :: error_string
-
-if (.not.module_is_initialized) call error_mesg ('send_data in diag_manager_mod', &
-                              'module has not been initialized', FATAL)
-
+if (.not.module_is_initialized) call error_mesg ('send_data_3d',' diag_manager NOT initialized', FATAL)
 ! If is, js, or ks not present default them to 1
 is = 1
 if(present(is_in)) is = is_in
@@ -574,9 +903,6 @@ if(present(js_in)) js = js_in
 ks = 1
 if(present(ks_in)) ks = ks_in
 
-! Whole bunch of things must be done on first call
-! DO NEED TO DO THIS ONLY ON FIRST NON-STATIC FIELD
-! Originally, distinguished static fields here; don't need to?
 if(first_send_data_call .and. .not. input_fields(diag_field_id)%static) then
    call output_setup()
    first_send_data_call = .false.
@@ -585,8 +911,7 @@ if(first_send_data_call .and. .not. input_fields(diag_field_id)%static) then
       files(i)%last_flush = time
    end do
 endif
-
-! If diag_field_id is < 0 it means that this field is unused, return
+! If diag_field_id is < 0 it means that this field is not registered, simply return
 if(diag_field_id < 0) then
    send_data_3d = .false.
    return
@@ -594,26 +919,52 @@ else
    send_data_3d = .true.
 endif
 
-
-! IF NON-STATIC FIELD COMES THROUGH AFTER OUTPUT_SETUP NEED TO WRITE IT?
-! COULD ALSO WRITE STATIC FIELDS AT END FOR NOW???
+if(input_fields(diag_field_id)%local) then
+! need to increase number_of_outputs by 1 for mpp_sync() in case of local output
+   number_of_outputs = input_fields(diag_field_id)%num_output_fields + 1
+   if(first_send_data_local) then
+      call output_setup(.true.)
+      first_send_data_local = .false.
+   endif
+else
+   number_of_outputs = input_fields(diag_field_id)%num_output_fields
+endif
 
 ! Loop through each output field that depends on this input field
-do i = 1, input_fields(diag_field_id)%num_output_fields
-
+do i = 1, number_of_outputs
+   if(i == input_fields(diag_field_id)%num_output_fields + 1) then
+      call mpp_sync()
+      exit
+   endif
 ! Get index to an output field
    out_num = input_fields(diag_field_id)%output_fields(i)
 
+! is this field outputted on a local domain only?
+   local_output = output_fields(out_num)%local_output
+! if local_output, does the current PE take part in send_data?
+   need_compute = output_fields(out_num)%need_compute
+! skip all PEs not participating in outputting this field
+   if(local_output .and. (.not. need_compute)) cycle
 ! Get index to output file for this field
    file_num = output_fields(out_num)%output_file
-
-! Output frequency for this file is
+   if(file_num == max_files) cycle
+! Output frequency and units for this file is
    freq = files(file_num)%output_freq
    units = files(file_num)%output_units
-
 ! Is this output field being time averaged?
    average = output_fields(out_num)%time_average
-
+   
+   if(need_compute) then        
+      local_start = output_fields(out_num)%output_grid%l_start_indx
+      local_end = output_fields(out_num)%output_grid%l_end_indx
+      if(present(mask)) then
+         mask_local => mask(local_start(1):local_end(1),local_start(2):local_end(2),local_start(3):local_end(3))
+      endif
+      if(present(rmask)) then
+         rmask_local => rmask(local_start(1):local_end(1),local_start(2):local_end(2),local_start(3):local_end(3))
+      endif
+   endif
+   
 ! Initialize output time for fields output every time step
 ! this will guarantee that first time here field will not be written
    if (freq == EVERY_TIME) then
@@ -622,122 +973,225 @@ do i = 1, input_fields(diag_field_id)%num_output_fields
    endif
 
 ! Is it time to output for this field; CAREFUL ABOUT > vs >= HERE
-!  if(time > output_fields(out_num)%next_output .and. &
-!     .not.output_fields(out_num)%static) then
-   if( .not.output_fields(out_num)%static .and. freq /= END_OF_RUN .and. &
+   if(.not.output_fields(out_num)%static .and. freq /= END_OF_RUN .and. &
         time > output_fields(out_num)%next_output ) then
 ! A non-static field that has skipped a time level is an error
-!del  if(time >= output_fields(out_num)%next_next_output .and. .not. &
-!del     output_fields(out_num)%static) then
       if(time >  output_fields(out_num)%next_next_output .and. freq > 0) then
-         call error_mesg('send_data', &
-            'Attempt to output time level without input data in interval', WARNING)
+         if(mpp_pe() .eq. mpp_root_pe()) &
+              call error_mesg('warning1, diag_manager', &
+              'skip one time level in output data', WARNING)
       end if
-! Static fields need to have a dummy time here
-!     if (output_fields(out_num)%static) then
-!        output_fields(out_num)%next_output = base_time
-!        output_fields(out_num)%last_output = base_time
-!     end if
-
-! Check to see that total number of elements stored is a multiple of the
-! size of the grid; if not, die
-! There are clever ways to do checksums on elements here which should
-! be considered.
-      num_elements = output_fields(out_num)%num_elements
-! error if no data is in the buffer
-      if ( num_elements == 0 ) then
-         write (error_string,'(a,"/",a)')  &
-                trim(input_fields(diag_field_id)%module_name), &
-                trim(output_fields(out_num)%output_name)
-         call error_mesg ('send_data in diag_manager_mod', &
-                      'module/output_field '//trim(error_string)//&
-                    &', attempt to write buffer with no data', FATAL)
-      endif
-
-      total_elements = output_fields(out_num)%total_elements
-      if(num_elements / total_elements * total_elements /= num_elements) then
-         call error_mesg('send_data', &
-            'Attempt to write incompletely filled output buffer', WARNING)
-      endif
-
 ! If average get size: Average intervals are last_output, next_output
       if(average) then
-         num = num_elements / total_elements
-!!       if (mpp_pe() == 0) write(*, *) 'number of elements in average is ', num
-         if (input_fields(diag_field_id)%missing_value_present) then
-            where (output_fields(out_num)%buffer /=            &
-                    input_fields(diag_field_id)%missing_value) &
-            output_fields(out_num)%buffer = output_fields(out_num)%buffer / num
+         if (input_fields(diag_field_id)%mask_variant) then
+            if (any(output_fields(out_num)%counter>0.)) then
+               where(output_fields(out_num)%counter>0.) &
+                    output_fields(out_num)%buffer = output_fields(out_num)%buffer/output_fields(out_num)%counter 
+            else
+               if(any(output_fields(out_num)%buffer /= input_fields(diag_field_id)%missing_value)) then
+                  write (error_string,'(a,"/",a)')  &
+                       trim(input_fields(diag_field_id)%module_name), &
+                       trim(output_fields(out_num)%output_name)
+                  call error_mesg ('error2 diag_manager_mod', &
+                       'module/output_field '//trim(error_string)//&
+                       &', write EMPTY buffer', FATAL) 
+               endif
+            endif
          else
-            output_fields(out_num)%buffer = output_fields(out_num)%buffer / num
+            num = output_fields(out_num)%count_0d
+            if(output_fields(out_num)%total_elements > size(field)) then
+               num = real(output_fields(out_num)%num_elements/output_fields(out_num)%total_elements)
+               if(local_output) then
+                  write (error_string,'(a,"/",a)')  &
+                       trim(input_fields(diag_field_id)%module_name), &
+                       trim(output_fields(out_num)%output_name)
+                  call error_mesg ('diag_manager_mod, send_data', &
+                       'module/output_field '//trim(error_string)//&
+                       &', does NOT work with regional output', FATAL)
+               endif
+            endif
+            if (num>0.) then
+               if (input_fields(diag_field_id)%missing_value_present) then
+                  where (output_fields(out_num)%buffer /= input_fields(diag_field_id)%missing_value) &
+                       output_fields(out_num)%buffer = output_fields(out_num)%buffer/num
+               else
+                  output_fields(out_num)%buffer = output_fields(out_num)%buffer/num
+               endif
+            else
+               if(any(output_fields(out_num)%buffer /= input_fields(diag_field_id)%missing_value)) then
+                  write (error_string,'(a,"/",a)')  &
+                       trim(input_fields(diag_field_id)%module_name), &
+                       trim(output_fields(out_num)%output_name)
+                  call error_mesg ('error3 diag_manager_mod', &
+                       'module/output_field '//trim(error_string)//&
+                       &', write EMPTY buffer', FATAL)
+               endif
+            endif
          endif
-      endif
-
+      endif !average
 ! Output field
-         call diag_data_out(file_num, out_num, &
-            output_fields(out_num)%buffer, output_fields(out_num)%next_output)
-
+      call diag_data_out(file_num, out_num, &
+           output_fields(out_num)%buffer, output_fields(out_num)%next_output)
+      
 ! Take care of cleaning up the time counters and the storeage size
       output_fields(out_num)%last_output = output_fields(out_num)%next_output
-    if (freq == EVERY_TIME) then
-      output_fields(out_num)%next_output = time
-    else
-      output_fields(out_num)%next_output = output_fields(out_num)%next_next_output
-      output_fields(out_num)%next_next_output = &
-         diag_time_inc(output_fields(out_num)%next_next_output, freq, units)
-    endif
+      if (freq == EVERY_TIME) then
+         output_fields(out_num)%next_output = time
+      else
+         output_fields(out_num)%next_output = output_fields(out_num)%next_next_output
+         output_fields(out_num)%next_next_output = &
+              diag_time_inc(output_fields(out_num)%next_next_output, freq, units)
+      endif
+      output_fields(out_num)%count_0d = 0.0
+      output_fields(out_num)%buffer = EMPTY
       output_fields(out_num)%num_elements = 0
-      output_fields(out_num)%buffer = 0.0
+      if(input_fields(diag_field_id)%mask_variant .and. average) output_fields(out_num)%counter = 0.0
+   end if  !time > output_fields(out_num)%next_output
 
-   end if
-
-! Finished output of previously buffered data, now deal with buffering new data
-! Get number of elements and extent for this subdomain
-   n1 = size(field, 1); n2 = size(field, 2); n3 = size(field, 3)
-   sub_size = n1 * n2 * n3
-
+! Finished output of previously buffered data, now deal with buffering new data   
+   n1 = size(field, 1); n2 = size(field, 2); n3 = size(field, 3) ! need the size of buffer,not field
 ! Take care of submitted field data
    if(average) then
-       if (present(mask)) then
-           where (mask) &
-                
-                output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) = &
-                output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) + &
-                field
-       else
-           output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) = &
-                output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) + &
-                field
-       endif
-   else
-       output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) = field    
-   endif
-
-! Increment number of sub_field elements seen
-   output_fields(out_num)%num_elements = &
-      output_fields(out_num)%num_elements + sub_size
-
-! If mask is present, check to see if a missing value is defined
-   if ((present(mask).or.present(rmask)) .and. &
-      .not. input_fields(diag_field_id)%missing_value_present) then
-      kount = 0
-      if (present( mask)) kount = kount + count(.not.mask)
-      if (present(rmask)) kount = kount + count(rmask < 0.5)
-      if (kount > 0) call error_mesg('send_data in diag_manager_mod', &
-           'Mask will be ignored since missing values were not specified', &
-            NOTE)
-   end if
-
-! If mask (or rmask) and missing value present, then insert missing value
+      if (input_fields(diag_field_id)%mask_variant) then
+         if(need_compute) then
+            write (error_string,'(a,"/",a)')  &
+                 trim(input_fields(diag_field_id)%module_name), &
+                 trim(output_fields(out_num)%output_name)   
+            call error_mesg ('error4 diag_manager_mod', &
+                 'module/output_field '//trim(error_string)//&
+                 &', local output NOT supported with mask_variant', FATAL)
+         endif
+         if (present(mask)) then
+            if (input_fields(diag_field_id)%missing_value_present) then            
+               where (mask)                  
+                  output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) = &
+                       output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) + field
+                  output_fields(out_num)%counter = output_fields(out_num)%counter +1.                                      
+               elsewhere
+                  output_fields(out_num)%buffer(is:is+n1-1, js:js+n2-1, ks:ks+n3-1) = &
+                       input_fields(diag_field_id)%missing_value
+               endwhere
+            else
+               write (error_string,'(a,"/",a)')  &
+                    trim(input_fields(diag_field_id)%module_name), &
+                    trim(output_fields(out_num)%output_name)
+               call error_mesg ('error5 diag_manager_mod', &
+                    'module/output_field '//trim(error_string)//&
+                    &', variable mask but no missing value defined', FATAL)
+            endif
+         else
+            write (error_string,'(a,"/",a)')  &
+                 trim(input_fields(diag_field_id)%module_name), &
+                 trim(output_fields(out_num)%output_name)
+            call error_mesg ('error6 diag_manager_mod', &
+                 'module/output_field '//trim(error_string)//&
+                 &', variable mask but no mask given', FATAL)
+         endif         
+      else ! mask_variant=false
+         if (present(mask)) then
+            if (input_fields(diag_field_id)%missing_value_present) then
+               if(need_compute) then
+                  where(mask_local)
+                     output_fields(out_num)%buffer = output_fields(out_num)%buffer + &
+                          field(local_start(1):local_end(1),local_start(2):local_end(2),local_start(3):local_end(3))
+                  elsewhere
+                     output_fields(out_num)%buffer = input_fields(diag_field_id)%missing_value
+                  endwhere
+               else   
+                  where(mask)                                           
+                     output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) = &
+                          output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) + field                  
+                  elsewhere                  
+                     output_fields(out_num)%buffer(is:is+n1-1, js:js+n2-1, ks:ks+n3-1) = &
+                          input_fields(diag_field_id)%missing_value                    
+                  endwhere
+               endif
+               if(need_compute) then
+                  if(any(mask_local)) output_fields(out_num)%count_0d=output_fields(out_num)%count_0d + 1.
+               else
+                  if(any(mask)) output_fields(out_num)%count_0d=output_fields(out_num)%count_0d + 1.
+               endif               
+            else ! missing value NOT present
+               if(.not.all(mask) .and. mpp_pe() .eq. mpp_root_pe()) &
+                    call error_mesg('warning2 send_data_3d', &
+                    'Mask will be ignored since missing values were not specified',WARNING)
+               if(need_compute) then
+                  output_fields(out_num)%buffer = output_fields(out_num)%buffer + &
+                       field(local_start(1):local_end(1),local_start(2):local_end(2),local_start(3):local_end(3))
+               else                          
+                  output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) = &
+                       output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) + field   
+               endif
+               output_fields(out_num)%count_0d = output_fields(out_num)%count_0d +1.
+            endif
+         else ! mask NOT present
+            if (input_fields(diag_field_id)%missing_value_present) then
+               if(need_compute) then                  
+                  where(field /= input_fields(diag_field_id)%missing_value)                  
+                     output_fields(out_num)%buffer = output_fields(out_num)%buffer + &
+                          field(local_start(1):local_end(1),local_start(2):local_end(2),local_start(3):local_end(3))
+                  elsewhere
+                     output_fields(out_num)%buffer = input_fields(diag_field_id)%missing_value
+                  endwhere
+               else
+                  where(field /= input_fields(diag_field_id)%missing_value)
+                     output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) = &
+                          output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) + field                  
+                  elsewhere                   
+                     output_fields(out_num)%buffer(is:is+n1-1, js:js+n2-1, ks:ks+n3-1) = &
+                          input_fields(diag_field_id)%missing_value                  
+                  endwhere
+               endif
+               if(any(field /= input_fields(diag_field_id)%missing_value)) &
+                    output_fields(out_num)%count_0d = output_fields(out_num)%count_0d + 1 
+            else
+               if(need_compute) then
+                  output_fields(out_num)%buffer = output_fields(out_num)%buffer + &
+                       field(local_start(1):local_end(1),local_start(2):local_end(2),local_start(3):local_end(3))
+               else 
+                  output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) = &
+                       output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) + field
+               endif
+               output_fields(out_num)%count_0d = output_fields(out_num)%count_0d +1.
+            endif
+         endif
+      endif
+      output_fields(out_num)%num_elements = output_fields(out_num)%num_elements + n1*n2*n3
+   else  ! ( not average)
+      if(need_compute) then
+         output_fields(out_num)%buffer =  &
+              field(local_start(1):local_end(1),local_start(2):local_end(2),local_start(3):local_end(3))
+      else
+         output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) = field
+      endif
+               
       if (present(mask) .and. input_fields(diag_field_id)%missing_value_present) then
-          where (.not.mask) output_fields(out_num)%buffer(is:is+n1-1, js:js+n2-1, ks:ks+n3-1) = &
-                             input_fields(diag_field_id)%missing_value
+         if(need_compute) then
+            where(.not. mask_local)
+               output_fields(out_num)%buffer = input_fields(diag_field_id)%missing_value
+            endwhere
+         else
+            where (.not. mask)             
+               output_fields(out_num)%buffer(is:is+n1-1, js:js+n2-1, ks:ks+n3-1) = &
+                    input_fields(diag_field_id)%missing_value           
+            endwhere
+         endif
       endif
-      if (present(rmask) .and. input_fields(diag_field_id)%missing_value_present) then
-          where (rmask < 0.5) output_fields(out_num)%buffer(is:is+n1-1, js:js+n2-1, ks:ks+n3-1) = &
-                               input_fields(diag_field_id)%missing_value
+   endif !average
+ 
+! If rmask and missing value present, then insert missing value     
+   if (present(rmask) .and. input_fields(diag_field_id)%missing_value_present) then
+      if(need_compute) then
+         where (rmask_local < 0.5)
+            output_fields(out_num)%buffer = input_fields(diag_field_id)%missing_value
+         endwhere
+      else
+         where (rmask < 0.5)         
+            output_fields(out_num)%buffer(is:is+n1-1, js:js+n2-1, ks:ks+n3-1) = &
+                 input_fields(diag_field_id)%missing_value        
+         endwhere
       endif
-
+   endif
 end do
 
 end function send_data_3d
@@ -852,7 +1306,8 @@ end subroutine average_tiles
 !     Exit Diagnostics Manager.
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!     Flushes diagnostic buffers where necessary. Close diagnostics files.
+!     Flushes diagnostic buffers where necessary. Close diagnostics files.<BR/>
+! A warning will be issued here if a field in diag_table is not registered
 !   </DESCRIPTION>
 !   <TEMPLATE>
 !     call diag_manager_end (time)
@@ -865,80 +1320,82 @@ subroutine diag_manager_end (time)
 
 type(time_type), intent(in) :: time
 
-integer :: i, file_num, freq, num_elements, total_elements, num, j, input_num
-integer :: out_num
-logical :: average
+integer            :: i, file_num, freq, j, input_num
+integer            :: out_num
+logical            :: average, local_output, need_compute
 character(len=128) :: message
+real               :: num, num1, num2
 
 if(.not.module_is_initialized) return
 
 do i = 1, num_output_fields
 
+! is this field outputted on a local domain only?
+   local_output = output_fields(i)%local_output
+! if local_output, does the current PE take part in send_data?
+   need_compute = output_fields(i)%need_compute
+! skip all PEs not participating in outputting this field
+   if(local_output .and. (.not. need_compute)) cycle
+
 ! only output non-static fields here
    input_num = output_fields(i)%input_field
    if (input_fields(input_num)%static) cycle
-
 ! skip fields that were not registered
    if (.not.input_fields(input_num)%register) cycle
 
 ! Get index to output file for this field
    file_num = output_fields(i)%output_file
-
+   if(file_num == max_files) cycle
 ! Output frequency for this file is
    freq = files(file_num)%output_freq
 
 ! Is it time to output for this field; CAREFUL ABOUT >= vs > HERE
 ! For end should be >= because no more data is coming 
-!  if(time >= output_fields(i)%next_output) then
-! Assume buffer is full for every time step output?
    if(time >= output_fields(i)%next_output .or. freq == END_OF_RUN) then
-
       if(time >= output_fields(i)%next_next_output .and. freq > 0) then
          write (message,'(a,"/",a)') trim(input_fields(input_num)%module_name), &
-                                     trim(output_fields(i)%output_name)
-         call error_mesg('diag_manager_end', 'module/output_field ' //  &
-                        &trim(message)//', attempt to output time level &
-                        &without input data in interval', WARNING)
+              trim(output_fields(i)%output_name)
+         if(mpp_pe() .eq. mpp_root_pe()) & 
+              call error_mesg('warning4 diag_manager_end', 'module/output_field ' //  &
+              &trim(message)//', skip one time level, maybe send_data never called', WARNING)
       end if
-
-! Check to see that total number of elements stored is a multiple of the
-! size of the grid; if not, die
-      num_elements = output_fields(i)%num_elements
-! error if no data is in the buffer
-      if ( num_elements == 0 ) then
-         write (message,'(a,"/",a)')  &
-                trim(input_fields(input_num)%module_name), &
-                trim(output_fields(i)%output_name)
-         call error_mesg ('diag_manager_end in diag_manager_mod', &
-                      'module/output_field '//trim(message)//&
-                    &', attempt to write buffer with no data', FATAL)
-      endif
-
-      total_elements = output_fields(i)%total_elements
-      if(num_elements / total_elements * total_elements /= num_elements) then
-         call error_mesg('diag_manager_end', &
-            'Attempt to write incompletely filled output buffer', WARNING)
-      endif
 
 ! If average, get size: Need time average intervals here
       if(output_fields(i)%time_average) then
-         num = num_elements / total_elements
-         if (input_fields(input_num)%missing_value_present) then
-            where (output_fields(i)%buffer /=        &
-                    input_fields(input_num)%missing_value) &
-            output_fields(i)%buffer = output_fields(i)%buffer / num
+         if (input_fields(input_num)%mask_variant) then
+            if (any(output_fields(i)%counter>0.)) then
+               where(output_fields(i)%counter>0.) &
+                    output_fields(i)%buffer = output_fields(i)%buffer/output_fields(i)%counter 
+            else
+               if(any(output_fields(i)%buffer /= input_fields(input_num)%missing_value)) then
+                  write (message,'(a,"/",a)')  &
+                       trim(input_fields(input_num)%module_name), &
+                       trim(output_fields(i)%output_name)
+                  call error_mesg ('error7 diag_manager_mod', &
+                       'module/output_field '//trim(message)//&
+                       &', write EMPTY buffer', FATAL) 
+               endif
+            endif
          else
-            output_fields(i)%buffer = output_fields(i)%buffer / num
+            
+            num1 = output_fields(i)%count_0d
+            num2 = real(output_fields(i)%num_elements/output_fields(i)%total_elements)
+            num = MIN(num1,num2)
+            if (num>0.) then
+               if (input_fields(input_num)%missing_value_present) then
+                  where (output_fields(i)%buffer /= input_fields(input_num)%missing_value) &
+                       output_fields(i)%buffer = output_fields(i)%buffer/num
+               else
+                  output_fields(i)%buffer = output_fields(i)%buffer/num
+               endif           
+            endif
          endif
       endif
-
 ! Output field
       if (freq == END_OF_RUN) output_fields(i)%next_output = time
       call diag_data_out(file_num, i, &
-            output_fields(i)%buffer, output_fields(i)%next_output)
-
-   end if
- 
+            output_fields(i)%buffer, output_fields(i)%next_output, .true.)
+   end if 
 end do
 
 ! If there are no non-static fields then need to setup output data
@@ -951,31 +1408,16 @@ endif
 do i = 1, num_files
 ! Loop to look for static fields
    do j = 1, files(i)%num_fields
-!bug  input_num = output_fields(j)%input_field
-!bug  if(input_fields(input_num)%static) &
-!bug     call diag_data_out(i, j, output_fields(j)%buffer, time)
       out_num = files(i)%fields(j)
       input_num = output_fields(out_num)%input_field
 
 ! skip fields that were not registered
       if (.not.input_fields(input_num)%register) cycle
-
 ! only output static fields here
       if (.not.output_fields(out_num)%static) cycle
 
-! error if no data is in the buffer
-      if ( output_fields(out_num)%num_elements == 0 ) then
-         write (message,'(a,"/",a)')  &
-                trim(input_fields(input_num)%module_name), &
-                trim(output_fields(out_num)%output_name)
-         call error_mesg ('diag_manager_end in diag_manager_mod', &
-                      'module/output_field '//trim(message)//&
-                    &', attempt to write buffer with no data', FATAL)
-      endif
-
-      call diag_data_out(i, out_num, output_fields(out_num)%buffer, time)
-   end do
-
+      call diag_data_out(i, out_num, output_fields(out_num)%buffer, time, .true.)
+   end do   
 ! Close up this file   
    call diag_output_end(files(i)%file_unit)
 end do
@@ -990,12 +1432,12 @@ end subroutine diag_manager_end
 subroutine init_file(name, output_freq, output_units, format, time_units, long_name)
 
 character(len=*), intent(in) :: name, long_name
-integer, intent(in) :: output_freq, output_units, format, time_units
+integer, intent(in)          :: output_freq, output_units, format, time_units
 
 ! Get a number for this file
 num_files = num_files + 1
-if(num_files > max_files) then
-   call error_mesg('init_file', 'max_files for diagnostics exceeded', FATAL)
+if(num_files >= max_files) then
+   call error_mesg('diag_manager, init_file', ' max_files exceeded, incease max_files', FATAL)
 endif
 
 files(num_files)%name = trim(name)
@@ -1005,6 +1447,7 @@ files(num_files)%format = format
 files(num_files)%time_units = time_units
 files(num_files)%long_name = trim(long_name)
 files(num_files)%num_fields = 0
+files(num_files)%local = .false.
 ! This value should be updated with first call to send_data for non-static field
 files(num_files)%last_flush = set_time(0, 0)
 
@@ -1020,7 +1463,7 @@ character(len=*), intent(in) :: module_name, field_name
 if(find_input_field(module_name, field_name) < 0) then
    num_input_fields = num_input_fields + 1
    if(num_input_fields > max_input_fields) then
-      call error_mesg('init_input_field', 'max_input_fields exceeded', FATAL)
+      call error_mesg('diag_manager,init_input_field', 'max_input_fields exceeded, increase max_input_fields', FATAL)
    end if
 else
 ! If this is already initialized don't need to do anything
@@ -1030,42 +1473,43 @@ end if
 input_fields(num_input_fields)%module_name = trim(module_name)
 input_fields(num_input_fields)%field_name = trim(field_name)
 input_fields(num_input_fields)%num_output_fields = 0
-
 ! Set flag that this field has not been registered
 input_fields(num_input_fields)%register = .false.
-
+input_fields(num_input_fields)%local = .false.
 end subroutine init_input_field
 
 !---------------------------------------------------------------------------
 
 subroutine init_output_field(module_name, field_name, output_name, output_file,&
-   time_average, pack)
+   time_average, pack, local_coord)
 
-character(len=*), intent(in) :: module_name, field_name, output_name, output_file
-logical, intent(in) :: time_average
-integer, intent(in) :: pack
-
-integer :: out_num, in_num, file_num, num_fields
+character(len=*), intent(in)           :: module_name, field_name, output_name, output_file
+logical, intent(in)                    :: time_average
+integer, intent(in)                    :: pack
+type(coord_type), intent(in), optional :: local_coord
+integer                                :: out_num, in_num, file_num, num_fields, i
+character(len=128)                     :: error_msg
 
 ! Get a number for this output field
 num_output_fields = num_output_fields + 1
 if(num_output_fields > max_output_fields) then
-   call error_mesg('init_output_field', 'max_output_fields exceeded', FATAL)
+   call error_mesg('diag_manager,init_output_field', 'max_output_fields exceeded, increase max_output_fields', FATAL)
 endif
 out_num = num_output_fields
 
 ! First, find the index to the associated input field
 in_num = find_input_field(module_name, field_name)
 if(in_num < 0) then
-   call error_mesg('init_output_field', &
-      'module_name / field_name pair not registered as an input field', FATAL)
+   write (error_msg,'(a,"/",a)') trim(module_name),trim(field_name)
+   call error_mesg('diag_manager,init_output_field', &
+      'module_name/field_name '//trim(error_msg)//' NOT registered', FATAL)
 endif
 
 ! Add this output field into the list for this input field
 input_fields(in_num)%num_output_fields = &
    input_fields(in_num)%num_output_fields + 1
 if(input_fields(in_num)%num_output_fields > max_out_per_in_field) then
-   call error_mesg('init_output_field', 'max_out_per_in_field exceeded', FATAL)
+   call error_mesg('diag_manager,init_output_field', 'max_out_per_in_field exceeded, increase max_out_per_in_field', FATAL)
 endif
 input_fields(in_num)%output_fields(input_fields(in_num)%num_output_fields) &
    = out_num
@@ -1073,18 +1517,20 @@ input_fields(in_num)%output_fields(input_fields(in_num)%num_output_fields) &
 ! Also put pointer to input field in this output field
 output_fields(out_num)%input_field = in_num
 
-
-
 ! Next, find the number for the corresponding file
-file_num = find_file(output_file)
-if(file_num < 0) then
-   call error_mesg('init_output_field', 'file has not been registered', FATAL)
-end if
+if(trim(output_file).eq.'null') then
+   file_num = max_files
+else
+   file_num = find_file(output_file)
+   if(file_num < 0) then
+      call error_mesg('diag_manager,init_output_field', 'file '//trim(output_file)//' is NOT found in diag_table', FATAL)
+   end if
+endif
 
 ! Insert this field into list for this file
 files(file_num)%num_fields = files(file_num)%num_fields + 1
 if(files(file_num)%num_fields > max_fields_per_file) then
-   call error_mesg('init_output_field', 'max_fields_per_file exceeded', FATAL)
+   call error_mesg('diag_manager,init_output_field', 'max_fields_per_file exceeded, increase max_fields_per_file ', FATAL)
 endif
 num_fields = files(file_num)%num_fields
 files(file_num)%fields(num_fields) = out_num
@@ -1095,6 +1541,8 @@ output_fields(out_num)%output_file = file_num
 ! Enter the other data for this output field
 output_fields(out_num)%output_name = trim(output_name)
 output_fields(out_num)%pack = pack
+output_fields(out_num)%num_elements = 0
+output_fields(out_num)%total_elements = 0
 
 ! cannot time average fields output every time
 if (files(file_num)%output_freq == EVERY_TIME) then
@@ -1103,7 +1551,27 @@ else
   output_fields(out_num)%time_average = time_average
 endif
 
-
+! need to initialize grid_type = -1(start, end, l_start_indx,l_end_indx etc...)
+if(present(local_coord)) then
+   input_fields(in_num)%local = .true.
+   output_fields(out_num)%output_grid%start(1) = local_coord%xbegin
+   output_fields(out_num)%output_grid%start(2) = local_coord%ybegin
+   output_fields(out_num)%output_grid%start(3) = local_coord%zbegin
+   output_fields(out_num)%output_grid%end(1) = local_coord%xend
+   output_fields(out_num)%output_grid%end(2) = local_coord%yend
+   output_fields(out_num)%output_grid%end(3) = local_coord%zend
+   do i = 1,3
+      output_fields(out_num)%output_grid%l_start_indx(i) = -1
+      output_fields(out_num)%output_grid%l_end_indx(i) = -1
+      output_fields(out_num)%output_grid%subaxes(i) = -1
+   enddo
+   output_fields(out_num)%local_output = .true.
+   output_fields(out_num)%need_compute = .false.
+else
+   output_fields(out_num)%local_output = .false.
+   output_fields(out_num)%need_compute = .false.
+endif
+      
 end subroutine init_output_field
 
 !-------------------------------------------------------------------------
@@ -1126,18 +1594,18 @@ integer                       :: diag_subset_output
 
 type tableB_type
    character(len=128) :: module_name,field_name,output_name,name
-   character(len=50) :: time_sampling
-   logical :: time_avg
-   character(len=50) :: other_ops
-   integer :: pack
+   character(len=50)  :: time_sampling
+   logical            :: time_avg
+   character(len=50)  :: spatial_ops
+   integer            :: pack
 end type tableB_type
 
 type tableA_type
    character(len=128) :: name
-   integer :: output_freq
-   character(len=10) :: output_freq_units
-   integer :: format
-   character(len=10) :: time_units
+   integer            :: output_freq
+   character(len=10)  :: output_freq_units
+   integer            :: format
+   character(len=10)  :: time_units
    character(len=128) :: long_name
 end type tableA_type
 
@@ -1146,15 +1614,14 @@ character(len=9)   :: amonth
 
 integer :: iunit,n,m,num_fields,time_units, output_freq_units, nfiles,nfields
 integer :: j, log_unit, name_len, nrecs, ierr, io_status
-
 integer, allocatable, dimension(:) :: pelist
-
 logical :: append_pelist_name = .false.
 
 namelist /diag_manager_nml/ append_pelist_name
 
 type(tableB_type) :: textB
 type(tableA_type) :: textA
+type(coord_type) :: local_coord !local coordinates used in local output
 
 !  If the module was already initialized do nothing
 if (module_is_initialized) return
@@ -1221,9 +1688,9 @@ do while (nfiles <= max_files)
       if(textA%output_freq_units == time_unit_list(j)) output_freq_units = j
    end do
    if(time_units == 0) &
-        call error_mesg('diag_manager_init','invalid time units',FATAL)
+        call error_mesg('diag_manager_init','invalid time units, check time unit in diag_table',FATAL)
    if(output_freq_units == 0) & 
-        call error_mesg('diag_manager_init','invalid output frequency units',FATAL)
+        call error_mesg('diag_manager_init','invalid output frequency units, check diag table',FATAL)
    ! remove trailing .nc extension from file name 
    name_len = len_trim(textA%name)
    if (textA%name(name_len-2:name_len) == '.nc') then
@@ -1239,7 +1706,7 @@ do while (nfiles <= max_files)
         textA%format, time_units,textA%long_name)
 85 continue
 enddo
-call error_mesg('diag_manager_init','too many files in table', FATAL)
+call error_mesg('diag_manager_init','too many files in diag_table, increase max_files', FATAL)
 86 continue
 
 
@@ -1256,6 +1723,7 @@ do while (nfields <= max_output_fields)
    if (textB%pack .gt. 8 .or. textB%pack .lt. 1) cycle
    if( diag_subset_output==DIAG_OTHER .AND. verify( 'ocean',lcase(textB%name) )==0 )cycle
    if( diag_subset_output==DIAG_OCEAN .AND. verify( 'ocean',lcase(textB%name) )/=0 )cycle
+   if(textB%spatial_ops /= 'none') read(textB%spatial_ops,*,end=93,err=93)local_coord
    nfields=nfields+1
    !   assign values to field_types
    call init_input_field(textB%module_name,textB%field_name)
@@ -1269,44 +1737,39 @@ do while (nfields <= max_output_fields)
    if (append_pelist_name) then
        textB%name(name_len+1:) = trim(pelist_name)
    endif
-  
-   call init_output_field(textB%module_name,textB%field_name,textB%output_name,&
-        textB%name,textB%time_avg,textB%pack)
+   if(trim(textB%spatial_ops) == 'none') then
+      call init_output_field(textB%module_name,textB%field_name,textB%output_name,&
+           textB%name,textB%time_avg,textB%pack)
+   else
+      call init_output_field(textB%module_name,textB%field_name,textB%output_name,&
+           textB%name,textB%time_avg,textB%pack, local_coord)
+   endif
 93 continue
 enddo
-call error_mesg('diag_manager_init','too many fields in table', FATAL)
+call error_mesg('diag_manager_init','too many fields in table, increase max_output_fields', FATAL)
 94 continue
-
-
-
-
-!if (nfields .lt. 1) call error_mesg('diag_manager_init','error reading field records',FATAL)
-
 call close_file(iunit)
 
+! check duplicate output_fields in the diag_table
+call check_duplicate_output_fields
+
 ! version number to logfile
-  call write_version_number (version, tagname)
+call write_version_number (version, tagname)
 
-  log_unit = stdlog()
-  if ( mpp_pe() == 0 ) then
-       write (log_unit,95) base_year, trim(amonth), base_day, &
-                           base_hour, base_minute, base_second
-  endif
-  call close_file (log_unit)
+log_unit = stdlog()
+if ( mpp_pe() == 0 ) then
+   write (log_unit,95) base_year, trim(amonth), base_day, &
+        base_hour, base_minute, base_second
+endif
+call close_file (log_unit)
 95 format ('base date used = ',i4,1x,a,2i3,2(':',i2.2),' gmt')
-
-
 module_is_initialized = .true.
-
+! create axis_id for scalars here
+null_axis_id= diag_axis_init( 'scalar_axis', (/0./), 'none', 'X', 'none')
 return
 
 99 continue
-
 call error_mesg('diag_manager_init','error reading table',FATAL)
-
-! AT THIS POINT NEED TO PUT IN THE GLOBAL BASE DATE AND DESCRIPTOR TOO
-
-
 end subroutine diag_manager_init
 ! </SUBROUTINE>
 
@@ -1352,43 +1815,79 @@ end function find_input_field
 
 !-------------------------------------------------------------------------
 
-subroutine output_setup()
+subroutine output_setup(local1)
 
 ! WARNING: Assumes that all data structures are fully initialized
 
-integer i, j, field_num, n_fields, axes(4), input_field_num, num_axes
-character(len=128) time_units, avg
-logical :: file_time_avg
-integer :: time_axis_id(1)
+integer                       ::i, j, field_num, n_fields, axes(4), input_field_num, num_axes, k
+character(len=128)            ::time_units, avg, error_string, filename
+logical                       :: file_time_avg, local
+integer                       :: time_axis_id(1)
+logical, intent(in), optional :: local1
+character(len=7)              :: prefix
 
-
+local = .false.
+if(present(local1)) local = local1
 ! Set up for output, focused on netcdf
 
 ! First, get a file_unit and a time axis identifier for each file
-do i = 1, num_files
+outer:do i = 1, num_files
+   if(.not.local) then
+      do j = 1, files(i)%num_fields
+         field_num = files(i)%fields(j)
+         if(output_fields(field_num)%local_output)cycle outer
+      enddo
+! it's unlikely that a file starts with word "rregion", need to check anyway.
+      if (len(files(i)%name) >=7) then
+         prefix = files(i)%name(1:7)
+         if(lowercase(prefix) == 'rregion') &
+              call error_mesg ('diag_manager output_setup', 'file name should not start with' &
+              //' word "rregion"', WARNING)
+      endif
+   else      
+      if(.not.files(i)%local) cycle outer     
+   endif   
    file_time_avg = .false.
-
 ! Skip this file if no fields are to be output
    if (files(i)%num_fields == 0) cycle
-
 ! Here is where time_units string must be set up; time since base date
-!  write(*, *) 'file ', i, trim(global_descriptor)
-!  write(*, *) 'file ', i, 'time units label is '
    write(time_units, 11) trim(time_unit_list(files(i)%time_units)), base_year, &
       base_month, base_day, base_hour, base_minute, base_second
-!  write(*, *) time_units
  11 format(a, ' since ', i4.4, '-', i2.2, '-', i2.2, ' ', i2.2, ':', i2.2, ':', i2.2) 
-   call diag_output_init(files(i)%name, files(i)%format, global_descriptor, &
+   if(files(i)%local) then      
+! prefix "rregion" to all local files for post processing, the prefix will be removed in postprocessing
+         filename = 'rregion'//trim(files(i)%name)
+   else
+      filename = trim(files(i)%name)
+   endif
+   call diag_output_init(filename, files(i)%format, global_descriptor, &
       files(i)%long_name, time_units, files(i)%file_unit, files(i)%time_axis_id)
 
 ! Loop through all fields with this file to output axes
    do j = 1, files(i)%num_fields
       field_num = files(i)%fields(j)
       input_field_num = output_fields(field_num)%input_field
-      if (.not.input_fields(input_field_num)%register) cycle
+      if (.not.input_fields(input_field_num)%register) then
+         write (error_string,'(a,"/",a)')  &
+              trim(input_fields(input_field_num)%module_name), &
+              trim(input_fields(input_field_num)%field_name)
+         if(mpp_pe() .eq. mpp_root_pe()) &
+              call error_mesg ('diag_manager output_setup', &
+              'module/field_name '//trim(error_string)//&
+              &' NOT registered, ALL fields should be registered BEFORE the first send_data', WARNING)  
+         cycle
+      endif
 ! Put the time axis in the axis field
       num_axes = output_fields(field_num)%num_axes
       axes(1:num_axes) = output_fields(field_num)%axes(1:num_axes)
+! make sure that axis_id are not -1
+      do k = 1,num_axes
+         if(axes(k)<0) then
+            write(error_string,'(a)') output_fields(field_num)%output_name
+            call error_mesg ('diag_manager output_setup','output_name '//trim(error_string)// &
+                 ' has axis_id = -1', FATAL)
+         endif
+      enddo
       axes(num_axes + 1) = files(i)%time_axis_id
       call write_axis_meta_data(files(i)%file_unit, axes(1:num_axes + 1))
    end do
@@ -1449,7 +1948,7 @@ do i = 1, num_files
 ! Let lower levels know that all meta data has been sent
    call done_meta_data(files(i)%file_unit)
 
-end do
+end do outer
 
 ! ALSO NEED TO SEND DATA FOR ANY STATIC FIELD THAT HAS ALREADY BEEN WRITTEN
 
@@ -1457,28 +1956,20 @@ end subroutine output_setup
 
 !-------------------------------------------------------------------------
 
-subroutine diag_data_out(file, field, dat, time)
+subroutine diag_data_out(file, field, dat, time, final_call_in)
 
 integer, intent(in) :: file, field
 real, intent(inout) :: dat(:, :, :)
 type(time_type), intent(in) :: time
+logical, optional, intent(in) :: final_call_in
+logical :: final_call
 integer :: i, num
 real :: dif, time_data(1, 1, 1), dt_time(1, 1, 1), start_dif
 
-! Check to see if this field was registered (may not need this here)
-num = output_fields(field)%input_field
-if (.not.input_fields(num)%register) then
-  if (mpp_pe() == 0) then
-    call error_mesg ('diag_data_out in diag_manager_mod', &
-                     'module '//trim(input_fields(num)%module_name)//&
-                    &', field '//trim(input_fields(num)%field_name)//&
-                    &' not registered', NOTE)
-  endif
-  return
-endif
+final_call = .false.
+if(present(final_call_in)) final_call = final_call_in
 
 dif = get_date_dif(time, base_time, files(file)%time_units)
-
 call diag_field_out(files(file)%file_unit,output_fields(field)%f_type, dat, dif)
 
 ! *** inserted this line because start_dif < 0 for static fields ***
@@ -1487,9 +1978,7 @@ if (output_fields(field)%static) return
 start_dif = get_date_dif(output_fields(field)%last_output, base_time, &
    files(file)%time_units)
 
-! Need to write average axes out; only do this when first averaged axis for
-! this file is written for now. Might want to reconsider when to do this???
-! Is this field the first averaged one in its file?
+! Need to write average axes out;
 do i = 1, files(file)%num_fields
    num = files(file)%fields(i)
    if(output_fields(num)%time_average .and. .not.output_fields(num)%static .and. &
@@ -1502,9 +1991,6 @@ do i = 1, files(file)%num_fields
          time_data(1, 1, 1) = dif
          call diag_field_out(files(file)%file_unit, files(file)%f_avg_end, &
             time_data, dif)
-! Compute the number of items in this averaging period
-!        dt_time(1, 1, 1) = output_fields(field)%num_elements / &
-!           output_fields(field)%total_elements
 ! Compute the length of the average
          dt_time(1, 1, 1) = dif - start_dif
          call diag_field_out(files(file)%file_unit, files(file)%f_avg_nitems, &
@@ -1514,10 +2000,17 @@ do i = 1, files(file)%num_fields
    end if
 end do
 
-! If write time is greater than last_flush for this file, flush it
-10 if(time > files(file)%last_flush) then
-   call diag_flush(files(file)%file_unit)
-   files(file)%last_flush = time
+! If write time is greater (equal for the last call) than last_flush for this file, flush it
+10 if(final_call) then
+   if(time >= files(file)%last_flush) then
+      call diag_flush(files(file)%file_unit)
+      files(file)%last_flush = time
+   endif
+else
+   if(time > files(file)%last_flush) then
+      call diag_flush(files(file)%file_unit)
+      files(file)%last_flush = time
+   endif
 endif
 
 end subroutine diag_data_out
@@ -1558,6 +2051,26 @@ else
 end if
 
 end function get_date_dif
+
+! ---------------------------------------------------------------------------
+subroutine check_duplicate_output_fields()
+! pair(output_name and output_file) should be unique in output_fields
+integer :: i, j, tmp_file
+character(len=128) :: tmp_name
+! Do the checking when more than 1 output_fileds present
+if(num_output_fields <= 1) return 
+do i = 1, num_output_fields-1
+   tmp_name = trim(output_fields(i)%output_name)
+   tmp_file =  output_fields(i)%output_file
+   do j = i+1, num_output_fields
+      if((tmp_name == trim(output_fields(j)%output_name)).and. &
+           (tmp_file == output_fields(j)%output_file)) &
+           call error_mesg (' ERROR in diag_table', &           
+           &' output_field '//tmp_name//' duplicated', FATAL)
+   enddo
+enddo
+end subroutine check_duplicate_output_fields
+
 
 !-------------------------------------------------------------------------
 
@@ -1608,8 +2121,8 @@ write(*, *) 'missing value and range present ', &
 write(*, *) 'missing value and range ', input_fields(i)%missing_value, &
    input_fields(i)%range(1), input_fields(i)%range(2)
 write(*, *) 'sizes and total ', input_fields(i)%size(1), &
-   input_fields(i)%size(2), input_fields(i)%size(3), &
-   input_fields(i)%total_elements
+   input_fields(i)%size(2), input_fields(i)%size(3)
+!   input_fields(i)%total_elements
 write(*, *) 'static ', input_fields(i)%static
 write(*, *) 'num_output_fields ', input_fields(i)%num_output_fields
 do j = 1, input_fields(i)%num_output_fields
@@ -1633,8 +2146,8 @@ write(*, *) 'input field and output file ', output_fields(i)%input_field, &
 write(*, *) 'output name ', trim(output_fields(i)%output_name)
 write(*, *) 'time average ', output_fields(i)%time_average
 write(*, *) 'pack ', output_fields(i)%pack
-write(*, *) 'total_elements and num_elements ', &
-   output_fields(i)%total_elements, output_fields(i)%num_elements
+!write(*, *) 'total_elements and num_elements ', &
+!   output_fields(i)%total_elements, output_fields(i)%num_elements
 write(*, *) 'static ', output_fields(i)%static
 write(*, *) 'num_axes ', output_fields(i)%num_axes
 write(*, *) 'axes ', output_fields(i)%axes

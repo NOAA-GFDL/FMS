@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
 !   Domain decomposition and domain update for message-passing codes
 !
-! AUTHOR: V. Balaji (vb@gfdl.gov)
+! AUTHOR: V. Balaji (V.Balaji@noaa.gov)
 !         SGI/GFDL Princeton University
 !
 ! This program is free software; you can redistribute it and/or modify
@@ -25,7 +25,7 @@
 #define use_shmalloc
 #endif
 
-! <CONTACT EMAIL="vb@gfdl.noaa.gov">
+! <CONTACT EMAIL="V.Balaji@noaa.gov">
 !   V. Balaji
 ! </CONTACT>
 
@@ -113,14 +113,14 @@
 
 module mpp_domains_mod
 !a generalized domain decomposition package for use with mpp_mod
-!Balaji (vb@gfdl.gov) 15 March 1999
+!Balaji (V.Balaji@noaa.gov) 15 March 1999
   use mpp_mod
   implicit none
   private
   character(len=128), private :: version= &
-       '$Id: mpp_domains.F90,v 6.5 2003/04/09 21:17:28 fms Exp $'
+       '$Id: mpp_domains.F90,v 10.0 2003/10/24 22:01:33 fms Exp $'
   character(len=128), private :: tagname= &
-       '$Name: inchon $'
+       '$Name: jakarta $'
   character(len=128), private :: version_update_domains2D, version_global_reduce, version_global_sum, version_global_field
 
 !parameters used to define domains: these are passed to the flags argument of mpp_define_domains
@@ -156,7 +156,7 @@ module mpp_domains_mod
      private
      type(domain_axis_spec) :: compute, data, global
      logical :: cyclic
-     type(domain1D), pointer :: list(:)
+     type(domain1D), pointer :: list(:) =>NULL()
      integer :: pe              !PE to which this domain is assigned
      integer :: pos             !position of this PE within link list, i.e domain%list(pos)%pe = pe
   end type domain1D
@@ -171,7 +171,7 @@ module mpp_domains_mod
      private
      type(domain1D) :: x
      type(domain1D) :: y
-     type(domain2D), pointer :: list(:)
+     type(domain2D), pointer :: list(:) =>NULL()
      integer :: pe              !PE to which this domain is assigned
      integer :: pos             !position of this PE within link list, i.e domain%list(pos)%pe = pe
      integer :: fold, gridtype
@@ -187,8 +187,8 @@ module mpp_domains_mod
                         send_w_off, send_nw_off, send_n_off, send_ne_off
      logical :: remote_off_domains_initialized
   end type domain2D
-  type(domain1D), public :: NULL_DOMAIN1D
-  type(domain2D), public :: NULL_DOMAIN2D
+  type(domain1D), save, public :: NULL_DOMAIN1D
+  type(domain2D), save, public :: NULL_DOMAIN2D
 
   integer, private :: pe
 
@@ -216,15 +216,69 @@ module mpp_domains_mod
 
 !public interfaces
 
-! this interface can add halo to a no-halo domain and copy everything else.
+! <INTERFACE NAME="mpp_copy_domains">
+!   <OVERVIEW>
+!     Duplicate a domain but with different halo size.
+!   </OVERVIEW>
+!   <TEMPLATE>
+!     call mpp_copy_domains(domain_in, domain_out, halo)
+!   </TEMPLATE>
+!   <TEMPLATE>
+!     call mpp_copy_domains(domain_in, domain_out, xhalo, yhalo)
+!   </TEMPLATE>
+!   <IN NAME="domain_in">
+!     The source domain.
+!   </IN>
+!   <IN NAME="halo">
+!     Halo size of the returned 1D doamin. Default value is 0
+!   </IN>
+!   <IN NAME="xhalo,yhalo">
+!     Halo size of the returned 2D doamin. Default value is 0
+!   </IN>
+!   <INOUT NAME="domain_out">
+!     The returned domain.
+!   </INOUT>
+
+! </INTERFACE>  
 
   interface mpp_copy_domains
      module procedure mpp_copy_domains1D
      module procedure mpp_copy_domains2D
   end interface
 
-! this interface can do parallel checking between two ensembles which run 
-! on different set pes at the same time.
+! <INTERFACE NAME="mpp_check_field">
+!   <OVERVIEW>
+!     Parallel checking between two ensembles which run 
+!     on different set pes at the same time.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     There are two forms for the <TT>mpp_check_field</TT> call. The 2D
+!     version is generally to be used and 3D version is  built by repeated calls to the
+!     2D version.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call mpp_check_field(field_in, pelist1, pelist2, domain, mesg, &
+!                                w_halo, s_halo, e_halo, n_halo, force_abort  )
+!   </TEMPLATE>
+!   <IN NAME="field_in" >
+!     Field to be checked
+!   </IN>
+!   <IN NAME="pelist1, pelist2">
+!     Pelist of the two ensembles to be compared
+!   </IN>
+!   <IN NAME="domain">
+!     Domain of current pe
+!   </IN>
+!   <IN NAME="mesg" >
+!     Message to be printed out
+!   </IN>
+!   <IN NAME="w_halo, s_halo, e_halo, n_halo">
+!     Halo size to be checked. Default value is 0.
+!   </IN>
+!   <IN NAME="force_abort">
+!     When true, abort program when any difference found. Default value is false.
+!   </IN>
+! </INTERFACE>
 
   interface mpp_check_field
      module procedure mpp_check_field_2D
@@ -1031,12 +1085,15 @@ module mpp_domains_mod
      module procedure mpp_get_layout1D
      module procedure mpp_get_layout2D
   end interface
-
+  interface mpp_modify_domain
+     module procedure mpp_modify_domain1D
+     module procedure mpp_modify_domain2D
+  end interface
   public :: mpp_broadcast_domain, mpp_define_layout, mpp_define_domains, mpp_domains_init, mpp_domains_set_stack_size, &
             mpp_domains_exit, mpp_get_compute_domain, mpp_get_compute_domains, mpp_get_data_domain, mpp_get_global_domain, &
             mpp_get_domain_components, mpp_get_layout, mpp_get_pelist, mpp_redistribute, mpp_update_domains, &
             mpp_global_field, mpp_global_max, mpp_global_min, mpp_global_sum, operator(.EQ.), operator(.NE.), &
-            mpp_copy_domains, mpp_check_field
+            mpp_copy_domains, mpp_check_field, mpp_modify_domain
 
   contains
 
@@ -1230,6 +1287,11 @@ module mpp_domains_mod
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+! <SUBROUTINE NAME="mpp_copy_domains1D" INTERFACE="mpp_copy_domains">
+!   <IN NAME="domain_in" TYPE="type(domain1D)" > </IN>
+!   <IN NAME="halo" TYPE="integer,optional" > </IN>
+!   <INOUT NAME="domain_out" TYPE="type(domain1D)" > </INOUT>
+! </SUBROUTINE>
     subroutine mpp_copy_domains1D(domain_in, domain_out, halo)
 ! ARGUMENTS
 ! domain_in is the input domain
@@ -1237,7 +1299,7 @@ module mpp_domains_mod
 ! halo (optional) defines halo width (currently the same on both sides)
 
       type(domain1D), intent(in)    :: domain_in
-      type(domain1D), intent(out)   :: domain_out
+      type(domain1D), intent(inout) :: domain_out
       integer, intent(in), optional :: halo
 
       integer, dimension(:), allocatable :: pelist, extent
@@ -1275,7 +1337,11 @@ module mpp_domains_mod
 
 
 !----------------------------------------------------------------------------------
-
+! <SUBROUTINE NAME="mpp_copy_domains2D" INTERFACE="mpp_copy_domains">
+!   <IN NAME="domain_in" TYPE="type(domain2D)" > </IN>
+!   <IN NAME="xhalo,yhalo" TYPE="integer,optional" > </IN>
+!   <INOUT NAME="domain_out" TYPE="type(domain2D)" > </INOUT>
+! </SUBROUTINE>
 
     subroutine mpp_copy_domains2D(domain_in, domain_out, xhalo, yhalo)
 ! ARGUMENTS
@@ -1284,7 +1350,7 @@ module mpp_domains_mod
 ! xhalo, yhalo (optional) defines halo width. 
 
       type(domain2D), intent(in)    :: domain_in
-      type(domain2D), intent(out)   :: domain_out
+      type(domain2D), intent(inout) :: domain_out
       integer, intent(in), optional :: xhalo, yhalo
 
       integer, dimension(:), allocatable :: pelist, xextent, yextent, xbegin, xend, &
@@ -1360,6 +1426,35 @@ module mpp_domains_mod
                                yhalo = yhalosz, xextent = xextent, yextent = yextent)
 
     end subroutine mpp_copy_domains2D
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                                                                             !
+!              MPP_MODIFY_DOMAIN: modify extent of domain                     !
+!                                                                             !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+subroutine mpp_modify_domain1D(domain_in,domain_out,cbegin,cend,gbegin,gend)
+! this routine modifies the extents (compute and global) of 1D domain
+  type(domain1D), intent(in) :: domain_in
+  type(domain1D), intent(out) :: domain_out
+  integer, intent(in) :: cbegin, cend ! extent of compute_domain
+  integer, intent(in) :: gbegin, gend ! extent of global domain
+
+  call mpp_copy_domains(domain_in, domain_out)
+  domain_out%compute%begin = cbegin
+  domain_out%compute%end = cend
+  domain_out%compute%size = cend-cbegin + 1
+  domain_out%global%begin = gbegin
+  domain_out%global%end = gend
+  domain_out%global%size = gend-gbegin + 1
+end subroutine mpp_modify_domain1D
+
+subroutine mpp_modify_domain2D(domain_out, domain1Dx, domain1Dy)
+  type(domain1D), intent(in) :: domain1Dx, domain1Dy  
+  type(domain2D), intent(out) :: domain_out
+
+  domain_out = NULL_DOMAIN2D  
+  domain_out%x = domain1Dx
+  domain_out%y = domain1Dy
+end subroutine mpp_modify_domain2D
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1367,6 +1462,14 @@ module mpp_domains_mod
 !              MPP_CHECK_FIELD: Check parallel                                !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! <SUBROUTINE NAME="mpp_check_field_3D" INTERFACE="mpp_check_field">
+!   <IN NAME="field_in" TYPE="real, dimension(:,:,:)" > </IN>
+!   <IN NAME="pelist1, pelist2" TYPE="integer, dimension(:)" > </IN>
+!   <IN NAME="domain" TYPE="type(domain2d)" > </IN>
+!   <IN NAME="mesg" TYPE="character(len=*)" > </IN>
+!   <IN NAME="w_halo, s_halo, e_halo, n_halo" TYPE="integer, optional" > </IN>
+!   <IN NAME="force_abort" TYPE="logical,optional" > </IN>
+! </SUBROUTINE>
 
   subroutine mpp_check_field_3D(field_in, pelist1, pelist2, domain, mesg, &
                                  w_halo, s_halo, e_halo, n_halo, force_abort  )
@@ -1381,7 +1484,7 @@ module mpp_domains_mod
                                                ! if differences found
   integer, intent(in), optional     :: w_halo,  s_halo, e_halo, n_halo 
                                        ! halo size for west, south, east and north
-  logical, intent(in), optional     :: force_abort   ! when, call mpp_error if any difference 
+  logical, intent(in), optional     :: force_abort   ! when true, call mpp_error if any difference 
                                                     ! found. default value is false.
 
     integer :: k
@@ -1398,7 +1501,9 @@ module mpp_domains_mod
 
 
 !#####################################################################################
-
+! <SUBROUTINE NAME="mpp_check_field_2D" INTERFACE="mpp_check_field">
+!   <IN NAME="field_in" TYPE="real, dimension(:,:)" > </IN>
+! </SUBROUTINE>
   subroutine mpp_check_field_2d(field_in, pelist1, pelist2, domain, mesg, &
                                  w_halo, s_halo, e_halo, n_halo,force_abort  )
 !  This routine is used to do parallel checking for 2d data between n and m pe. The comparison is 
@@ -1418,10 +1523,13 @@ module mpp_domains_mod
      if(size(pelist2) == 1) then
         call mpp_check_field_2d_type1(field_in, pelist1, pelist2, domain, mesg, &
                                       w_halo, s_halo, e_halo, n_halo, force_abort )
-     else if(size(pelist2) .gt. 1) then
+     else if(size(pelist1) == 1) then
+        call mpp_check_field_2d_type1(field_in, pelist2, pelist1, domain, mesg, &
+                                      w_halo, s_halo, e_halo, n_halo, force_abort )
+     else if(size(pelist1) .gt. 1 .and. size(pelist2) .gt. 1) then
         call mpp_check_field_2d_type2(field_in, pelist1, pelist2, domain, mesg, force_abort )
      else
-        call mpp_error(FATAL, 'MPP_CHECK_FIELD_2D: mpsize of pelist2 should be greater than 0')
+        call mpp_error(FATAL, 'mpp_check_field: size of both pelists should be greater than 0')
      endif
 
   end subroutine mpp_check_field_2D
@@ -1446,15 +1554,16 @@ module mpp_domains_mod
                                                     ! found. default value is false.
 ! some local data
 
-  integer                :: pe,root_pe,npes, p
-  integer                :: hwest, hsouth, heast, hnorth
-  integer                :: i,j,im,jm,l,is,ie,js,je, isd, ied, jsd, jed
+  integer                :: pe,npes, p
+  integer                :: hwest, hsouth, heast, hnorth, isg, ieg, jsg, jeg, xhalo, yhalo
+  integer                :: i,j,im,jm,l,is,ie,js,je,isc,iec,jsc,jec,isd,ied,jsd,jed
   real,dimension(:,:), allocatable :: field1,field2  
   real,dimension(:),   allocatable :: send_buffer
   integer, dimension(4)  ::  ibounds
-  logical                :: check_success = .TRUE.
-  logical                :: error_exit    = .FALSE.
-                                              
+  logical                :: check_success,  error_exit    
+
+  check_success = .TRUE.
+  error_exit    = .FALSE.                                             
   if(present(force_abort)) error_exit = force_abort
   hwest  = 0; if(present(w_halo)) hwest  = w_halo
   heast  = 0; if(present(e_halo)) heast  = e_halo
@@ -1462,55 +1571,76 @@ module mpp_domains_mod
   hnorth = 0; if(present(n_halo)) hnorth = n_halo
 
   pe = mpp_pe ()
-  root_pe = mpp_root_pe()
   npes = mpp_npes()
   
-  call mpp_get_compute_domain(domain, is, ie, js, je)
+  call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
+  call mpp_get_data_domain(domain, isd, ied, jsd, jed)
+  call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)
+  xhalo = isc - isd
+  yhalo = jsc - jsd
+  !--- need to checked halo size should not be bigger than x_halo or y_halo
+  if(hwest .gt. xhalo .or. heast .gt. xhalo .or. hsouth .gt. yhalo .or. hnorth .gt. yhalo) &
+     call mpp_error(FATAL,'mpp_check_field: '//trim(mesg)//': The halo size is not correct')
 
+  is = isc - hwest; ie = iec + heast; js = jsc - hsouth; je = jec + hnorth
+  allocate(field2(is:ie,js:je))
 
-  isd = is - hwest; ied = ie + heast; jsd = js - hsouth; jed = je + hnorth
-
-! check if the size of field_in is compatible with the bounds range 
-  if((size(field_in,1) .ne. ied-isd+1) .or. (size(field_in,2) .ne. jed-jsd+1)) &
-      call mpp_error(FATAL,'MPP_CHECK_FIELD_2D_TYPE1: the size of the input field is not correct') 
-
-  allocate(field2(isd:ied,jsd:jed))
-  field2(isd:ied,jsd:jed) = field_in(:,:)
+  ! check if the field_in is on compute domain or data domain
+  if((size(field_in,1) .eq. iec-isc+1) .and. (size(field_in,2) .eq. jec-jsc+1)) then
+     !if field_in on compute domain, you can not check halo points
+     if( hwest .ne. 0 .or. heast .ne. 0 .or. hsouth .ne. 0 .or. hnorth .ne. 0 ) &
+         call mpp_error(FATAL,'mpp_check_field: '//trim(mesg)//': field is on compute domain, can not check halo')
+     field2(:,:) = field_in(:,:)
+  else if((size(field_in,1) .eq. ied-isd+1) .and. (size(field_in,2) .eq. jed-jsd+1)) then
+     field2(is:ie,js:je) = field_in(is-isd+1:ie-isd+1,js-jsd+1:je-jsd+1)
+  else if((size(field_in,1) .eq. ieg-isg+1) .and. (size(field_in,2) .eq. jeg-jsg+1)) then
+     if( hwest .ne. 0 .or. heast .ne. 0 .or. hsouth .ne. 0 .or. hnorth .ne. 0 ) &
+         call mpp_error(FATAL,'mpp_check_field: '//trim(mesg)//': field is on compute domain, can not check halo')
+     field2(is:ie,js:je) = field_in(1:ie-is+1,1:je-js+1)
+  else if((size(field_in,1) .eq. ieg-isg+1+2*xhalo) .and. (size(field_in,2) .eq. jeg-jsg+1+2*yhalo)) then
+     field2(is:ie,js:je) = field_in(is-isd+1:ie-isd+1,js-jsd+1:je-jsd+1)
+  else 
+     print*, 'on pe ', pe, 'domain: ', isc, iec, jsc, jec, isd, ied, jsd, jed, 'size of field: ', size(field_in,1), size(field_in,2) 
+     call mpp_error(FATAL,'mpp_check_field: '//trim(mesg)//':field is not on compute, data or global domain')
+  endif
 
   call mpp_sync_self()
 
   if(any(pelist1 == pe)) then  ! send data to root pe
 
-     im = ied-isd+1; jm=jed-jsd+1
+     im = ie-is+1; jm=je-js+1
      allocate(send_buffer(im*jm))
      
-     ibounds(1) = isd; ibounds(2) = ied; ibounds(3) = jsd; ibounds(4) = jed
+     ibounds(1) = is; ibounds(2) = ie; ibounds(3) = js; ibounds(4) = je
      l = 0
-     do i = isd,ied
-     do j = jsd,jed
+     do i = is,ie
+     do j = js,je
         l = l+1
         send_buffer(l) = field2(i,j)
      enddo
      enddo
 !  send the check bounds and data to the root pe
-     call mpp_send(ibounds, 4, pelist2(1))
-     call mpp_send(send_buffer,im*jm,pelist2(1))
+     ! Force use of "scalar", integer pointer mpp interface
+     call mpp_send(ibounds(1), plen=4, to_pe=pelist2(1))
+     call mpp_send(send_buffer(1),plen=im*jm, to_pe=pelist2(1))
      deallocate(send_buffer)
 
    else if(pelist2(1) == pe) then        ! receive data and compare 
      do p = pelist1(1), pelist1(size(pelist1)) 
-        call mpp_recv(ibounds, 4, p)
-        isd = ibounds(1); ied = ibounds(2); jsd=ibounds(3); jed=ibounds(4)
-        im = ied-isd+1; jm=jed-jsd+1
+     ! Force use of "scalar", integer pointer mpp interface
+        call mpp_recv(ibounds(1), glen=4,from_pe=p)
+        is = ibounds(1); ie = ibounds(2); js=ibounds(3); je=ibounds(4)
+        im = ie-is+1; jm=je-js+1
         if(allocated(field1)) deallocate(field1)
         if(allocated(send_buffer)) deallocate(send_buffer)
-        allocate(field1(isd:ied,jsd:jed),send_buffer(im*jm))
-        call mpp_recv(send_buffer,im*jm,p)
+        allocate(field1(is:ie,js:je),send_buffer(im*jm))
+     ! Force use of "scalar", integer pointer mpp interface
+        call mpp_recv(send_buffer(1),glen=im*jm,from_pe=p)
         l = 0
 
 !  compare here, the comparison criteria can be changed according to need
-        do i = isd,ied
-        do j = jsd,jed
+        do i = is,ie
+        do j = js,je
            l = l+1
            field1(i,j) = send_buffer(l)
            if(field1(i,j) .ne. field2(i,j)) then
@@ -1525,8 +1655,7 @@ module mpp_domains_mod
       enddo
 
       if(check_success) then
-         print*, trim(mesg)//": ", 'The comparison between 1 pe and ', npes-1, ' pes is ok'
-!              write(stdout(), *) 'The comparison between 1 pe and ' , npes-1, ' pes is ok'
+         print*, trim(mesg)//": ", 'comparison between 1 pe and ', npes-1, ' pes is ok'
       endif
   ! release memery
       deallocate(field1, send_buffer)
@@ -1552,12 +1681,13 @@ module mpp_domains_mod
   logical, intent(in), optional     :: force_abort   ! when, call mpp_error if any difference 
                                                     ! found. default value is false.
 ! some local variables
-  logical                :: check_success = .TRUE.
-  logical                :: error_exit    = .FALSE.
+  logical                :: check_success, error_exit 
   real, dimension(:,:), allocatable :: field1, field2
-  integer :: i, j, pe, npes, isd,ied,jsd,jed, is , ie, js, je
+  integer :: i, j, pe, npes, isd,ied,jsd,jed, isc, iec, jsc, jec, is, ie, js, je
   type(domain2d) :: domain1, domain2
 
+    check_success = .TRUE.
+    error_exit    = .FALSE.
     if(present(force_abort)) error_exit = force_abort
     pe = mpp_pe()
     npes = mpp_npes()
@@ -1571,7 +1701,7 @@ module mpp_domains_mod
        call mpp_get_compute_domain(domain2, is, ie, js, je)
        allocate(field1(isd:ied, jsd:jed),field2(isd:ied, jsd:jed))
       if((size(field_in,1) .ne. ied-isd+1) .or. (size(field_in,2) .ne. jed-jsd+1)) &
-         call mpp_error(FATAL,'MPP_CHECK_FIELD_2D_TYPE2: the size of the input field is not correct') 
+         call mpp_error(FATAL,'mpp_check_field: input field is not on the data domain') 
       field2(isd:ied, jsd:jed) = field_in(:,:)
     endif 
 
@@ -1593,8 +1723,8 @@ module mpp_domains_mod
         enddo
         enddo
         if(check_success) &
-             print*, trim(mesg)//": ", 'the check between ', size(pelist1), ' pe and ', &
-                   size(pelist2), ' pe on', pe, ' pe is ok'
+             print*, trim(mesg)//": ", 'comparison between ', size(pelist1), ' pes and ', &
+                   size(pelist2), ' pe on', pe, ' pes is ok'
     endif 
 
     if(any(pelist2 == pe))    deallocate(field1, field2)
@@ -1978,7 +2108,9 @@ module mpp_domains_mod
       do i = 0,n-1
          m = mod(pos+i,n)
          domain%list(m)%pe = pes(m)
-         call mpp_transmit( domain_info_buf(1:8), 8, pes(mod(pos+n-i,n)), domain_info_buf(9:16), 8, pes(m) )
+         ! Force use of "scalar", integer pointer mpp interface
+         call mpp_transmit( put_data=domain_info_buf(1), plen=8, to_pe=pes(mod(pos+n-i,n)), &
+                            get_data=domain_info_buf(9), glen=8, from_pe=pes(m) )
          domain%list(m)%x%compute%begin = domain_info_buf(9)
          domain%list(m)%x%compute%end   = domain_info_buf(10)
          domain%list(m)%y%compute%begin = domain_info_buf(11)
@@ -2095,8 +2227,8 @@ module mpp_domains_mod
 !to_pe's eastern halo
          is = domain%list(m)%x%compute%end+1; ie = domain%list(m)%x%data%end
          js = domain%list(m)%y%compute%begin; je = domain%list(m)%y%compute%end
-         if( is.GT.ieg )then
-             if( domain%x%cyclic )then !try cyclic offset
+         if( ie.GT.ieg )then
+             if( domain%x%cyclic .AND. iec.LT.is )then !try cyclic offset
                  is = is-ioff; ie = ie-ioff
              else if( BTEST(domain%fold,EAST) )then
                  i=is; is = 2*ieg-ie+1; ie = 2*ieg-i+1
@@ -2130,8 +2262,8 @@ module mpp_domains_mod
 !to_pe's SE halo
          is = domain%list(m)%x%compute%end+1; ie = domain%list(m)%x%data%end
          js = domain%list(m)%y%data%begin; je = domain%list(m)%y%compute%begin-1
-         if( is.GT.ieg )then
-             if( domain%x%cyclic )then !try cyclic offset
+         if( ie.GT.ieg )then
+             if( domain%x%cyclic .AND. iec.LT.is )then !try cyclic offset
                  is = is-ioff; ie = ie-ioff
              else if( BTEST(domain%fold,EAST) )then
                  i=is; is = 2*ieg-ie+1; ie = 2*ieg-i+1
@@ -2141,8 +2273,8 @@ module mpp_domains_mod
                  end if
              end if
          end if
-         if( jsg.GT.je )then
-             if( domain%y%cyclic )then !try cyclic offset
+         if( jsg.GT.js )then
+             if( domain%y%cyclic .AND. je.LT.jsc )then !try cyclic offset
                  js = js+joff; je = je+joff
              else if( BTEST(domain%fold,SOUTH) )then
                  i=is; is = isg+ieg-ie; ie = isg+ieg-i
@@ -2176,8 +2308,8 @@ module mpp_domains_mod
 !to_pe's southern halo
          is = domain%list(m)%x%compute%begin; ie = domain%list(m)%x%compute%end
          js = domain%list(m)%y%data%begin; je = domain%list(m)%y%compute%begin-1
-         if( jsg.GT.je )then
-             if( domain%y%cyclic )then !try cyclic offset
+         if( jsg.GT.js )then
+             if( domain%y%cyclic .AND. je.LT.jsc )then !try cyclic offset
                  js = js+joff; je = je+joff
              else if( BTEST(domain%fold,SOUTH) )then
                  i=is; is = isg+ieg-ie; ie = isg+ieg-i
@@ -2211,8 +2343,8 @@ module mpp_domains_mod
 !to_pe's SW halo
          is = domain%list(m)%x%data%begin; ie = domain%list(m)%x%compute%begin-1
          js = domain%list(m)%y%data%begin; je = domain%list(m)%y%compute%begin-1
-         if( isg.GT.ie )then
-             if( domain%x%cyclic )then !try cyclic offset
+         if( isg.GT.is )then
+             if( domain%x%cyclic .AND. ie.LT.isc )then !try cyclic offset
                  is = is+ioff; ie = ie+ioff
              else if( BTEST(domain%fold,WEST) )then
                  i=is; is = 2*isg-ie-1; ie = 2*isg-i-1
@@ -2222,8 +2354,8 @@ module mpp_domains_mod
                  end if
              end if
          end if
-         if( jsg.GT.je )then
-             if( domain%y%cyclic )then !try cyclic offset
+         if( jsg.GT.js )then
+             if( domain%y%cyclic .AND. je.LT.jsc )then !try cyclic offset
                  js = js+joff; je = je+joff
              else if( BTEST(domain%fold,SOUTH) )then
                  i=is; is = isg+ieg-ie; ie = isg+ieg-i
@@ -2257,8 +2389,8 @@ module mpp_domains_mod
 !to_pe's western halo
          is = domain%list(m)%x%data%begin; ie = domain%list(m)%x%compute%begin-1
          js = domain%list(m)%y%compute%begin; je = domain%list(m)%y%compute%end
-         if( isg.GT.ie )then
-             if( domain%x%cyclic )then !try cyclic offset
+         if( isg.GT.is )then
+             if( domain%x%cyclic .AND. ie.LT.isc )then !try cyclic offset
                  is = is+ioff; ie = ie+ioff
              else if( BTEST(domain%fold,WEST) )then
                  i=is; is = 2*isg-ie-1; ie = 2*isg-i-1
@@ -2292,8 +2424,8 @@ module mpp_domains_mod
 !to_pe's NW halo
          is = domain%list(m)%x%data%begin; ie = domain%list(m)%x%compute%begin-1
          js = domain%list(m)%y%compute%end+1; je = domain%list(m)%y%data%end
-         if( isg.GT.ie )then
-             if( domain%x%cyclic )then !try cyclic offset
+         if( isg.GT.is )then
+             if( domain%x%cyclic .AND. ie.LT.isc )then !try cyclic offset
                  is = is+ioff; ie = ie+ioff
              else if( BTEST(domain%fold,WEST) )then
                  i=is; is = 2*isg-ie-1; ie = 2*isg-i-1
@@ -2303,8 +2435,8 @@ module mpp_domains_mod
                  end if
              end if
          end if
-         if( js.GT.jeg )then
-             if( domain%y%cyclic )then !try cyclic offset
+         if( je.GT.jeg )then
+             if( domain%y%cyclic .AND. jec.LT.js )then !try cyclic offset
                  js = js-joff; je = je-joff
              else if( BTEST(domain%fold,NORTH) )then
                  i=is; is = isg+ieg-ie; ie = isg+ieg-i
@@ -2338,8 +2470,8 @@ module mpp_domains_mod
 !to_pe's northern halo
          is = domain%list(m)%x%compute%begin; ie = domain%list(m)%x%compute%end
          js = domain%list(m)%y%compute%end+1; je = domain%list(m)%y%data%end
-         if( js.GT.jeg )then
-             if( domain%y%cyclic )then !try cyclic offset
+         if( je.GT.jeg )then
+             if( domain%y%cyclic .AND. jec.LT.js )then !try cyclic offset
                  js = js-joff; je = je-joff
              else if( BTEST(domain%fold,NORTH) )then
                  i=is; is = isg+ieg-ie; ie = isg+ieg-i
@@ -2373,16 +2505,16 @@ module mpp_domains_mod
 !to_pe's NE halo
          is = domain%list(m)%x%compute%end+1; ie = domain%list(m)%x%data%end
          js = domain%list(m)%y%compute%end+1; je = domain%list(m)%y%data%end
-         if( is.GT.ieg )then
-             if( domain%x%cyclic )then !try cyclic offset
+         if( ie.GT.ieg )then
+             if( domain%x%cyclic .AND. iec.LT.is )then !try cyclic offset
                  is = is-ioff; ie = ie-ioff
              else if( BTEST(domain%fold,EAST) )then
                  i=is; is = 2*ieg-ie+1; ie = 2*ieg-i+1
                  j=js; js = jsg+jeg-je; je = jsg+jeg-j
              end if
          end if
-         if( js.GT.jeg )then
-             if( domain%y%cyclic )then !try cyclic offset
+         if( je.GT.jeg )then
+             if( domain%y%cyclic .AND. jec.LT.js )then !try cyclic offset
                  js = js-joff; je = je-joff
              else if( BTEST(domain%fold,NORTH) )then
                  i=is; is = isg+ieg-ie; ie = isg+ieg-i
@@ -2424,8 +2556,8 @@ module mpp_domains_mod
          jsd = domain%y%compute%begin; jed = domain%y%compute%end
          is=isc; ie=iec; js=jsc; je=jec
          domain%list(m)%recv_e%folded = .FALSE.
-         if( isd.GT.ieg )then
-             if( domain%x%cyclic )then !try cyclic offset
+         if( ied.GT.ieg )then
+             if( domain%x%cyclic .AND. ie.LT.isd )then !try cyclic offset
                  is = is+ioff; ie = ie+ioff
              else if( BTEST(domain%fold,EAST) )then
                  domain%list(m)%recv_e%folded = .TRUE.
@@ -2462,8 +2594,8 @@ module mpp_domains_mod
          jsd = domain%y%data%begin; jed = domain%y%compute%begin-1
          is=isc; ie=iec; js=jsc; je=jec
          domain%list(m)%recv_se%folded = .FALSE.
-         if( jed.LT.jsg )then
-             if( domain%y%cyclic )then !try cyclic offset
+         if( jsd.LT.jsg )then
+             if( domain%y%cyclic .AND. js.GT.jed )then !try cyclic offset
                  js = js-joff; je = je-joff
              else if( BTEST(domain%fold,SOUTH) )then
                  i=is; is = isg+ieg-ie; ie = isg+ieg-i
@@ -2474,8 +2606,8 @@ module mpp_domains_mod
                  end if
              end if
          end if
-         if( isd.GT.ieg )then
-             if( domain%x%cyclic )then !try cyclic offset
+         if( ied.GT.ieg )then
+             if( domain%x%cyclic .AND. ie.LT.isd )then !try cyclic offset
                  is = is+ioff; ie = ie+ioff
              else if( BTEST(domain%fold,EAST) )then
                  i=is; is = 2*ieg-ie+1; ie = 2*ieg-i+1
@@ -2512,8 +2644,8 @@ module mpp_domains_mod
          jsd = domain%y%data%begin; jed = domain%y%compute%begin-1
          is=isc; ie=iec; js=jsc; je=jec
          domain%list(m)%recv_s%folded = .FALSE.
-         if( jed.LT.jsg )then
-             if( domain%y%cyclic )then !try cyclic offset
+         if( jsd.LT.jsg )then
+             if( domain%y%cyclic .AND. js.GT.jed )then !try cyclic offset
                  js = js-joff; je = je-joff
              else if( BTEST(domain%fold,SOUTH) )then
                  i=is; is = isg+ieg-ie; ie = isg+ieg-i
@@ -2551,8 +2683,8 @@ module mpp_domains_mod
          jsd = domain%y%data%begin; jed = domain%y%compute%begin-1
          is=isc; ie=iec; js=jsc; je=jec
          domain%list(m)%recv_sw%folded = .FALSE.
-         if( jed.LT.jsg )then
-             if( domain%y%cyclic )then !try cyclic offset
+         if( jsd.LT.jsg )then
+             if( domain%y%cyclic .AND. js.GT.jed )then !try cyclic offset
                  js = js-joff; je = je-joff
              else if( BTEST(domain%fold,SOUTH) )then
                  i=is; is = isg+ieg-ie; ie = isg+ieg-i
@@ -2563,8 +2695,8 @@ module mpp_domains_mod
                  end if
              end if
          end if
-         if( ied.LT.isg )then
-             if( domain%x%cyclic )then !try cyclic offset
+         if( isd.LT.isg )then
+             if( domain%x%cyclic .AND. is.GT.ied )then !try cyclic offset
                  is = is-ioff; ie = ie-ioff
              else if( BTEST(domain%fold,WEST) )then
                  i=is; is = 2*isg-ie-1; ie = 2*isg-i-1
@@ -2601,8 +2733,8 @@ module mpp_domains_mod
          jsd = domain%y%compute%begin; jed = domain%y%compute%end
          is=isc; ie=iec; js=jsc; je=jec
          domain%list(m)%recv_w%folded = .FALSE.
-         if( ied.LT.isg )then
-             if( domain%x%cyclic )then !try cyclic offset
+         if( isd.LT.isg )then
+             if( domain%x%cyclic .AND. is.GT.ied )then !try cyclic offset
                  is = is-ioff; ie = ie-ioff
              else if( BTEST(domain%fold,WEST) )then
                  i=is; is = 2*isg-ie-1; ie = 2*isg-i-1
@@ -2639,8 +2771,8 @@ module mpp_domains_mod
          jsd = domain%y%compute%end+1; jed = domain%y%data%end
          is=isc; ie=iec; js=jsc; je=jec
          domain%list(m)%recv_nw%folded = .FALSE.
-         if( jsd.GT.jeg )then
-             if( domain%y%cyclic )then !try cyclic offset
+         if( jed.GT.jeg )then
+             if( domain%y%cyclic .AND. je.LT.jsd )then !try cyclic offset
                  js = js+joff; je = je+joff
              else if( BTEST(domain%fold,NORTH) )then
                  i=is; is = isg+ieg-ie; ie = isg+ieg-i
@@ -2651,8 +2783,8 @@ module mpp_domains_mod
                  end if
              end if
          end if
-         if( ied.LT.isg )then
-             if( domain%x%cyclic )then !try cyclic offset
+         if( isd.LT.isg )then
+             if( domain%x%cyclic .AND. is.GT.ied )then !try cyclic offset
                  is = is-ioff; ie = ie-ioff
              else if( BTEST(domain%fold,WEST) )then
                  i=is; is = 2*isg-ie-1; ie = 2*isg-i-1
@@ -2689,8 +2821,8 @@ module mpp_domains_mod
          jsd = domain%y%compute%end+1; jed = domain%y%data%end
          is=isc; ie=iec; js=jsc; je=jec
          domain%list(m)%recv_n%folded = .FALSE.
-         if( jsd.GT.jeg )then
-             if( domain%y%cyclic )then !try cyclic offset
+         if( jed.GT.jeg )then
+             if( domain%y%cyclic .AND. je.LT.jsd )then !try cyclic offset
                  js = js+joff; je = je+joff
              else if( BTEST(domain%fold,NORTH) )then
                  i=is; is = isg+ieg-ie; ie = isg+ieg-i
@@ -2727,8 +2859,8 @@ module mpp_domains_mod
          jsd = domain%y%compute%end+1; jed = domain%y%data%end
          is=isc; ie=iec; js=jsc; je=jec
          domain%list(m)%recv_ne%folded = .FALSE.
-         if( jsd.GT.jeg )then
-             if( domain%y%cyclic )then !try cyclic offset
+         if( jed.GT.jeg )then
+             if( domain%y%cyclic .AND. je.LT.jsd )then !try cyclic offset
                  js = js+joff; je = je+joff
              else if( BTEST(domain%fold,NORTH) )then
                  i=is; is = isg+ieg-ie; ie = isg+ieg-i
@@ -2739,8 +2871,8 @@ module mpp_domains_mod
                  end if
              end if
          end if
-         if( isd.GT.ieg )then
-             if( domain%x%cyclic )then !try cyclic offset
+         if( ied.GT.ieg )then
+             if( domain%x%cyclic .AND. ie.LT.isd )then !try cyclic offset
                  is = is+ioff; ie = ie+ioff
              else if( BTEST(domain%fold,EAST) )then
                  i=is; is = 2*ieg-ie+1; ie = 2*ieg-i+1
@@ -2895,7 +3027,7 @@ module mpp_domains_mod
 ! </SUBROUTINE>
     subroutine mpp_get_domain_components( domain, x, y )
       type(domain2D), intent(in) :: domain
-      type(domain1D), intent(out), optional :: x, y
+      type(domain1D), intent(inout), optional :: x, y
       if( PRESENT(x) )x = domain%x
       if( PRESENT(y) )y = domain%y
       return
@@ -3827,7 +3959,7 @@ contains
     group1 = .FALSE. ; group2 = .FALSE.
     if(any(pelist1==pe)) group1 = .TRUE.
     if(any(pelist2==pe)) group2 = .TRUE.
-    mesg = 'find error'
+    mesg = 'parallel checking'
 
   if(group1) then
      call mpp_set_current_pelist(pelist1)
@@ -3838,6 +3970,9 @@ contains
   endif
      call mpp_define_domains( (/1,nx,1,ny/), layout, domain,&
                                    xhalo=xhalo, yhalo=yhalo)
+
+     call mpp_set_current_pelist()
+
      call mpp_get_compute_domain(domain, is, ie, js, je)
      call mpp_get_data_domain(domain, isd, ied, jsd, jed)
      allocate(lfield(is:ie,js:je),field(isd:ied,jsd:jed))
@@ -3862,11 +3997,9 @@ contains
      call mpp_update_domains(field,domain) 
      call mpp_update_domains(field3d,domain)
 
-    call mpp_set_current_pelist()
-
-    call mpp_check_field(field, pelist1, pelist2,domain, mesg, w_halo = xhalo, &
+    call mpp_check_field(field, pelist1, pelist2,domain, '2D '//mesg, w_halo = xhalo, &
                             s_halo = yhalo, e_halo = xhalo, n_halo = yhalo)        
-    call mpp_check_field(field3d, pelist1, pelist2,domain, mesg, w_halo = xhalo, &
+    call mpp_check_field(field3d, pelist1, pelist2,domain, '3D '//mesg, w_halo = xhalo, &
                             s_halo = yhalo, e_halo = xhalo, n_halo = yhalo)
 
   end subroutine test_parallel

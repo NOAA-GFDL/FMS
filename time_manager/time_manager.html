@@ -28,7 +28,7 @@
 <a name="HEADER"></a>
 <!-- BEGIN HEADER -->
 <div>
-<b>Contact:&nbsp;</b><a href="mailto:fms@gfdl.noaa.gov">   fms </a>
+<b>Contact:&nbsp;</b><a href="mailto:fMike.Spelman@noaa.gov">   fms </a>
 <br>
 <b>Reviewers:&nbsp;</b>
 <br>
@@ -190,6 +190,10 @@
 <a href="#month_name">month_name</a>:</dt>
 <dd>   Returns a character string containing the name of the
    month corresponding to month number n. </dd>
+<dt>
+<a href="#get_cal_time">get_cal_time</a>:</dt>
+<dd>   Returns time given a base date, calendar type,
+   and a time increment to add to the base date. </dd>
 <dt>
 <a href="#time_manager_init">time_manager_init</a>:</dt>
 <dd>   Write the version information to the log file. </dd>
@@ -1579,6 +1583,52 @@
 <td valign="top" align="left"><tt>unit&nbsp;&nbsp;&nbsp;</tt></td><td>   Unit number for printed output. The default unit is stdout. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 </table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="get_cal_time"></a>
+<h4>get_cal_time</h4>
+<pre> 
+<b>get_cal_time</b> (time_increment,units,calendar)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>  This function returns time, as time_type, given a character string
+   specifying a base date and a real number as a time increment to add
+   to the base date.</dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>time_increment&nbsp;&nbsp;&nbsp;</tt></td><td>   Time increment. <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>units&nbsp;&nbsp;&nbsp;</tt></td><td>   Character string that specifies the base time or date, and specifies the units of time_increment.
+           e.g., 'days since 1980-01-01 00:00:00' specifies that the base time is the begining of the year 1980, and that time_increment is in days.
+           Valid time increment units are 'days', 'hours', 'minutes', and 'seconds'. The base time year must be 4 digits, the base time month and day
+           must be 1 or 2 digits. The base time hour:minute:second is optional and when present, must be 1 or 2 digits each.<br><br>
+	   When time_manager is using no_calendar, units must specify a base time as days and seconds, with days appearing first. e.g.: 'days since 100 0'
+	   <br>&nbsp;&nbsp;&nbsp;<span class="type">[character (len=*)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>calendar&nbsp;&nbsp;&nbsp;</tt></td><td>   Used only to check that calendar type in use by the time_manager
+            is as expected. Valid values of this argument are: 'noleap', 'julian', 'no_calendar', 'unspecified'
+	    When calendar='unspecified', no check is done.<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+</tr>
+</table>
+</dd>
+<dt>
+<b>NOTES</b>
+</dt>
+<dd>  get_cal_time is intended for use by the data_override module. It facilitates the use of netcdf character attributes
+  to locate the override data in time.
 </dd>
 <br>
 </dl>
