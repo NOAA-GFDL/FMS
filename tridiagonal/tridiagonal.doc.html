@@ -1,0 +1,204 @@
+<HTML>
+<TITLE>module tridiagonal</TITLE>
+<BODY BGCOLOR="#AABBCC" TEXT="#332211" >
+
+<DIV ALIGN="CENTER"> <FONT SIZE=1>
+<A HREF="#INTERFACE">PUBLIC INTERFACE</A> / 
+<A HREF="#ROUTINES">ROUTINES</A> / 
+<A HREF="#CHANGES">CHANGES</A> / 
+<A HREF="#ERRORS">ERRORS</A> / 
+<A HREF="#REFERENCES">REFERENCES</A> / 
+<A HREF="#NOTES">NOTES</A> 
+</FONT>
+<P><I>Last updated on <!--#exec cmd="echo $LAST_MODIFIED" -->.</I>
+<BR><BR></DIV><HR>
+
+
+<H2>Module Tridiagonal</H2>
+<A NAME="HEADER">
+<PRE>
+     Version: v2.0
+     Date:    October 5, 1999
+     Contact: Isaac Held or Bruce Wyman
+</PRE>
+</A><!-- END HEADER -->
+<!--------------------------------------------------------------------->
+<A NAME="OVERVIEW">
+<HR>
+<H4>OVERVIEW</H4>
+<!-- BEGIN OVERVIEW -->
+<PRE>
+
+    Solves the tridiagonal system of equations.
+
+</PRE>
+</A><!-- END OVERVIEW -->
+<!--------------------------------------------------------------------->
+<A NAME="DESCRIPTION">
+<!-- BEGIN DESCRIPTION -->
+<PRE>
+
+    The following schematic represents the the system of equations solved,
+    where X is the solution.
+
+    | B(1)  A(1)   0     0                .......            0    |  |X(1)|   |D(1)| 
+    | C(2)  B(2)  A(2)   0                .......            0    |  |X(2)|   |D(2)|
+    |  0    C(3)  B(3)  A(3)  0           .......            0    |  | .. |   | .. |
+    |  ..........................................                 |  | .. | = | .. |
+    |  ..........................................                 |  | .. |   | .. |
+    |                                  C(N-2) B(N-2) A(N-2)  0    |  | .. |   | .. |
+    |                                    0    C(N-1) B(N-1) A(N-1)|  | .. |   | .. |
+    |                                    0      0    C(N)   B(N)  |  |X(N)|   |D(N)|
+
+</PRE>
+</A><!-- END DESCRIPTION -->
+<!--------------------------------------------------------------------->
+<A NAME="MODULES_USED">
+<HR>
+<H4>OTHER MODULES USED</H4>
+<!-- BEGIN MODULES_USED -->
+<PRE>
+
+     None.
+
+</PRE>
+</A><!-- END MODULES_USED -->
+<!--------------------------------------------------------------------->
+<A NAME="INTERFACE">
+<HR>
+<H4>PUBLIC INTERFACE</H4>
+<!-- BEGIN INTERFACE -->
+<PRE>
+
+   use tridiagonal_mod [, only: tri_invert, close_tridiagonal ]
+
+      tri_invert:        Sets up and solves the tridiagonal 
+                         system of equations.
+
+      close_tridiagonal: Releases memory used by the solver.
+
+</PRE>
+</A><!-- END INTERFACE -->
+<!--------------------------------------------------------------------->
+<A NAME="ROUTINES">
+<HR>
+<H4>PUBLIC ROUTINES</H4>
+<!-- BEGIN ROUTINES -->
+<PRE>
+
+call tri_invert ( X, D, A, B, C )
+
+  Input
+
+      D    The right-hand side term, see the schematic above.
+             [real, dimension(:,:,:)]
+
+  Output
+
+      X    The solution to the tridiagonal system of equations.
+             [real, dimension(:,:,:)]
+
+  Optional Input/Output
+
+      A,B,C  The left-hand-side terms (matrix), see the schematic above.
+             If A is not present, it is assumed that the matrix (A,B.C)
+             has not been changed since the last call to tri_invert.
+                [real, dimension(:,:,:)]
+
+  Notes:
+
+      For simplicity, A and C are assumed to be dimensioned the same size 
+      as B, D, and X, although any input values for A(N) and C(1) are ignored.
+      There are no checks to make sure the sizes agree.
+
+      The value of A(N) is modified on output, and B and C are unchanged.
+
+--------------------------------------------------------------
+
+call close_tridiagonal
+
+   There are no arguments to this routine.
+
+</PRE>
+</A><!-- END ROUTINES -->
+<!--------------------------------------------------------------------->
+<A NAME="CHANGES">
+<HR>
+<H4>CHANGE HISTORY</H4>
+<!-- BEGIN CHANGES -->
+<PRE>
+
+     No recent changes.
+
+</PRE>
+</A><!-- END CHANGES -->
+<!--------------------------------------------------------------------->
+<A NAME="ERRORS">
+<HR>
+<H4>ERROR MESSAGES</H4>
+<!-- BEGIN ERRORS -->
+<PRE>
+
+     None.
+
+</PRE>
+</A><!-- END ERRORS -->
+<!--------------------------------------------------------------------->
+<A NAME="REFERENCES">
+<HR>
+<H4>REFERENCES</H4>
+<!-- BEGIN REFERENCES -->
+<PRE>
+
+     None.
+
+</PRE>
+</A><!-- END REFERENCES -->
+<!--------------------------------------------------------------------->
+<A NAME="BUGS">
+<HR>
+<H4>KNOWN BUGS</H4>
+<!-- BEGIN BUGS -->
+<PRE>
+
+   * Optional arguments A,B,C have no intent declaration,
+     so the default intent is inout. The value of A(N) is modified
+     on output, and B and C are unchanged.
+
+</PRE>
+</A><!-- END BUGS -->
+<!--------------------------------------------------------------------->
+<A NAME="NOTES">
+<HR>
+<H4>NOTES</H4>
+<!-- BEGIN NOTES -->
+<PRE>
+
+  The following private allocatable arrays save the relevant information
+  if one recalls tri_invert without changing (A,B,C):
+
+        allocate ( e  (size(x,1), size(x,2), size(x,3)) )
+        allocate ( g  (size(x,1), size(x,2), size(x,3)) )
+        allocate ( cc (size(x,1), size(x,2), size(x,3)) )
+        allocate ( bb (size(x,1), size(x,2)) )
+
+  This storage is deallocated when close_tridiagonal is called.
+
+</PRE>
+</A><!-- END NOTES -->
+<!--------------------------------------------------------------------->
+<A NAME="PLANS">
+<HR>
+<H4>FUTURE PLANS</H4>
+<!-- BEGIN PLANS -->
+<PRE>
+
+     Maybe a cleaner version?
+
+</PRE>
+</A><!-- END PLANS -->
+<!--------------------------------------------------------------------->
+
+<HR>
+</BODY>
+</HTML>

@@ -1,0 +1,195 @@
+<HTML>
+<TITLE>module sat_vapor_pres</TITLE>
+<BODY BGCOLOR="#AABBCC" TEXT="#332211" >
+
+<DIV ALIGN="CENTER"> <FONT SIZE=1>
+<A HREF="#INTERFACE">PUBLIC INTERFACE</A> / 
+<A HREF="#ROUTINES">ROUTINES</A> / 
+<A HREF="#CHANGES">CHANGES</A> / 
+<A HREF="#ERRORS">ERRORS</A> / 
+<A HREF="#NOTES">NOTES</A> 
+</FONT>
+<P><I>Last updated on <!--#exec cmd="echo $LAST_MODIFIED" -->.</I>
+<BR><BR></DIV><HR>
+
+
+<H2>Module Sat_vapor_pres</H2>
+<A NAME="HEADER">
+<PRE>
+     Version: v2.0
+     Date:    October 5, 1999
+     Contact: Bruce Wyman
+</PRE>
+</A><!-- END HEADER -->
+<!--------------------------------------------------------------------->
+<A NAME="OVERVIEW">
+<HR>
+<H4>OVERVIEW</H4>
+<!-- BEGIN OVERVIEW -->
+<PRE>
+
+     Routines for calculating the saturation vapor pressure and
+     it's derivative w.r.t. temperature in MKS units.
+
+</PRE>
+</A><!-- END OVERVIEW -->
+<!--------------------------------------------------------------------->
+<A NAME="DESCRIPTION">
+<!-- BEGIN DESCRIPTION -->
+<PRE>
+   Contains routines for calculating the saturation vapor pressure
+   from a lookup table constructed using the Smithsonian tables.
+   The values of saturation vapor pressure (at one-tenth of a degree
+   increments of temperature) are computed over ice from -153C to -20C,
+   over water from 0C to 102C, and a blended value (over water and ice)
+   from -20C to 0C.
+
+</PRE>
+</A><!-- END DESCRIPTION -->
+<!--------------------------------------------------------------------->
+<A NAME="MODULES_USED">
+<HR>
+<H4>OTHER MODULES USED</H4>
+<!-- BEGIN MODULES_USED -->
+<PRE>
+
+    constants_mod
+
+</PRE>
+</A><!-- END MODULES_USED -->
+<!--------------------------------------------------------------------->
+<A NAME="INTERFACE">
+<HR>
+<H4>PUBLIC INTERFACE</H4>
+<!-- BEGIN INTERFACE -->
+<PRE>
+
+use sat_vapor_pres_mod [, only:  escomp, descomp, tcheck ]
+
+  escomp:   For the given temperatures, returns the saturation vapor
+            pressures.
+
+  descomp:  For the given temperatures, returns the derivative of
+            saturation vapor pressure with respect to temperature.
+
+  tcheck:   For the given temperatures, returns the number temperatures
+            that are outside of the lookup table's range.
+
+</PRE>
+</A><!-- END INTERFACE -->
+<!--------------------------------------------------------------------->
+<A NAME="ROUTINES">
+<HR>
+<H4>PUBLIC ROUTINES</H4>
+<!-- BEGIN ROUTINES -->
+<PRE>
+
+call escomp  ( temp, esat )
+call descomp ( temp, desat )
+call tcheck  ( temp, nbad )
+
+  Input
+
+     temp    Temperature in degrees Kelvin. May be a scalar, 1d, 2d,
+             or 3d array.  [real]
+
+  Output
+
+     esat    Saturation vapor pressure in pascals. Must have the same
+             order and size as temp.  [real]
+
+     desat   Derivative of saturation vapor pressure w.r.t. temperature.
+             Must have the same order and size as temp.  [real]
+
+     nbad    Number of input "temp" values that are outside the range
+             of the saturation vapor pressure lookup table.
+                [integer, scalar]
+
+</PRE>
+</A><!-- END ROUTINES -->
+<!--------------------------------------------------------------------->
+<A NAME="CHANGES">
+<HR>
+<H4>CHANGE HISTORY</H4>
+<!-- BEGIN CHANGES -->
+<PRE>
+
+<b>changes for v2.0</b> (10/5/99)
+
+    Code was cleaned up. 
+    Should reproduce answers with previous versions.
+
+</PRE>
+</A><!-- END CHANGES -->
+<!--------------------------------------------------------------------->
+<A NAME="ERRORS">
+<HR>
+<H4>ERROR MESSAGES</H4>
+<!-- BEGIN ERRORS -->
+<PRE>
+
+    None.
+
+</PRE>
+</A><!-- END ERRORS -->
+<!--------------------------------------------------------------------->
+<A NAME="BUGS">
+<HR>
+<H4>KNOWN BUGS</H4>
+<!-- BEGIN BUGS -->
+<PRE>
+
+    No error checking is done to make sure that the size of the
+    input and output fields match.
+
+</PRE>
+</A><!-- END BUGS -->
+<!--------------------------------------------------------------------->
+<A NAME="NOTES">
+<HR>
+<H4>NOTES</H4>
+<!-- BEGIN NOTES -->
+<PRE>
+
+CONSTRUCTION OF THE ES TABLE
+
+    This table is constructed from es equations from the
+    Smithsonian tables.  The es input is computed from values
+    (in one-tenth of a degree increments) of es over ice
+    from -153C to 0C and values of es over water from 0C to 102C.
+    The output table contains these data interleaved with their
+    derivatives with respect to temperature except between -20C
+    and 0C where blended (over water and over ice) es values and
+    derivatives are caluculated.
+
+    Note: All es computation is done in microbars and not
+          millibars and then converted to the appropriate
+          units when put into the es table.
+
+
+INTERNAL (PRIVATE) PARAMETER
+
+    units   A constant that adjusts the units of the saturation vapor
+            pressure lookup table.
+              * If UNITS = 0.10 then MKS units (default)
+              * If UNITS = 1.00 then CGS units
+            [real, default: UNITS = 0.10]
+
+</PRE>
+</A><!-- END NOTES -->
+<!--------------------------------------------------------------------->
+<A NAME="PLANS">
+<HR>
+<H4>FUTURE PLANS</H4>
+<!-- BEGIN PLANS -->
+<PRE>
+
+    None.
+
+</PRE>
+</A><!-- END PLANS -->
+<!--------------------------------------------------------------------->
+
+<HR>
+</BODY>
+</HTML>

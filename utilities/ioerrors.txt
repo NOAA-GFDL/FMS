@@ -1,0 +1,62 @@
+
+ When a variable name in the namelist file does not exist in the code's variable name list for the corresponding namelist.
+ (This could occur as a result of a misspelling by a user of the code)
+
+ On the t90:  Value of iostat returned is 1324
+
+ On the sgi:  Value of iostat returned is 146
+
+--------------------------------------------------------------------------------------------------------------------------
+
+ When a variable's value in the namelist file does not match the type or rank as specified in the code.
+
+ The tables below show values returned for various combinations of missmatch of type or rank.
+ (value returned is zero for no error)
+ Note that sometimes the value returned is zero even when there is an error.
+
+
+
+
+                        |type of namelist variable which code is trying to read |
+      On the t90        |                           |                           |
+                        |       S C A L A R         |        A R R A Y          |
+                        |                           |                           |
+                        |integer | real   |character|integer | real   |character|
+ -----------------------+--------+--------+---------+--------+--------+---------|
+            S           |        |        |         |        |        |         |
+            C   integer |no error|     0  |   1307  |     0  |     0  |   1307  |
+ type of    A  ---------+--------+--------+---------+--------+--------+---------|
+ variable   L   real    |  1307  |no error|   1307  |  1307  |     0  |   1307  |
+  as it     A  ---------+--------+--------+---------+--------+--------+---------|
+ appears    R  character|     0  |     0  |no error |     0  |     0  |      0  |
+ in the    -------------+--------+--------+---------+--------+--------+---------|
+ namelist   A   integer |  1323  |  1323  |   1316  |no error|     0  |   1316  |
+ input      R  ---------+--------+--------+---------+--------+--------+---------|
+ file       R   real    |  1307  |  1323  |   1316  |  1307  |no error|   1316  |
+            A  ---------+--------+--------+---------+--------+--------+---------|
+            Y  character|  1323  |  1323  |   1323  |     0  |     0  |no error |
+ -----------------------+--------+--------+---------+--------+--------+---------|
+
+
+
+                        |type of namelist variable which code is trying to read |
+      On the sgi        |                           |                           |
+                        |       S C A L A R         |        A R R A Y          |
+                        |                           |                           |
+                        |integer | real   |character|integer | real   |character|
+ -----------------------+--------+--------+---------+--------+--------+---------|
+            S           |        |        |         |        |        |         |
+            C   integer |no error|     0  |    136  |     0  |     0  |    136  |
+ type of    A  ---------+--------+--------+---------+--------+--------+---------|
+ variable   L   real    |   140  |no error|    136  |   140  |     0  |    136  |
+  as it     A  ---------+--------+--------+---------+--------+--------+---------|
+ appears    R  character|     0  |     0  |no error |     0  |     0  |      0  |
+ in the    -------------+--------+--------+---------+--------+--------+---------|
+ namelist   A   integer |   185  |   185  |    185  |no error|     0  |    136  |
+ input      R  ---------+--------+--------+---------+--------+--------+---------|
+ file       R   real    |   185  |   185  |    185  |   140  |no error|    136  |
+            A  ---------+--------+--------+---------+--------+--------+---------|
+            Y  character|   185  |   185  |    185  |     0  |     0  |no error |
+ -----------------------+--------+--------+---------+--------+--------+---------|
+
+

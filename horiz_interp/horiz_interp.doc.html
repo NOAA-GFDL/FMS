@@ -1,0 +1,345 @@
+<HTML>
+<TITLE>module horiz_interp</TITLE>
+<BODY BGCOLOR="#AABBCC" TEXT="#332211" >
+
+<DIV ALIGN="CENTER"> <FONT SIZE=1>
+<A HREF="#INTERFACE">PUBLIC INTERFACE</A> / 
+<A HREF="#ROUTINES">ROUTINES</A> / 
+<A HREF="#CHANGES">CHANGES</A> / 
+<A HREF="#ERRORS">ERRORS</A> / 
+<A HREF="#NOTES">NOTES</A> 
+</FONT>
+<P><I>Last updated on <!--#exec cmd="echo $LAST_MODIFIED" -->.</I>
+<BR><BR></DIV><HR>
+
+
+<H2>module horiz_interp</H2>
+<A NAME="HEADER">
+<PRE>
+     Version: v2.1
+     Date:    January 24, 2000
+     Contact: Bruce Wyman
+</PRE>
+</A><!-- END HEADER -->
+<!--------------------------------------------------------------------->
+<A NAME="OVERVIEW">
+<HR>
+<H4>OVERVIEW</H4>
+<!-- BEGIN OVERVIEW -->
+<PRE>
+
+     Performs horizontal interpolation from a global uniformly-spaced
+     rectangular grid to a latitude/longitude grid.
+
+</PRE>
+</A><!-- END OVERVIEW -->
+<!--------------------------------------------------------------------->
+<A NAME="DESCRIPTION">
+<!-- BEGIN DESCRIPTION -->
+<PRE>
+     The input grid must be a global uniformly-spaced latitude/longitude
+     grid. There is an optional mask field for missing input data.
+     The output grid must be a rectangular latitude/longitude grid.
+     An optional output mask field may be used in conjunction with
+     the input mask to show where output data exists.
+
+     The interpolation algorithm uses an area weighing scheme that
+     conserves the global integral of the input field. If the input and
+     output fields both completely cover the sphere, then the global
+     integrals of both fields should be within the round-off of the
+     computer.
+
+</PRE>
+</A><!-- END DESCRIPTION -->
+<!--------------------------------------------------------------------->
+<A NAME="MODULES_USED">
+<HR>
+<H4>OTHER MODULES USED</H4>
+<!-- BEGIN MODULES_USED -->
+<PRE>
+
+     utilities_mod
+
+</PRE>
+</A><!-- END MODULES_USED -->
+<!--------------------------------------------------------------------->
+<A NAME="INTERFACE">
+<HR>
+<H4>PUBLIC INTERFACE</H4>
+<!-- BEGIN INTERFACE -->
+<PRE>
+
+  use horiz_interp_mod [, only: horiz_interp_type,
+                                horiz_interp_init,
+                                horiz_interp,
+                                horiz_interp_end ]
+
+     horiz_interp_type:  Derived-type variable returned by the call 
+                         to the initialization interface (horiz_interp_init).
+                         This variable contains pre-computed interpolation
+                         indices and factors that can improve the performance
+                         of multiple interpolations.
+
+     horiz_interp_init:  Initializes a derived-type variable that contains
+                         pre-computed interpolation indices and factors for
+                         improving performance of multiple interpolations.
+
+     horiz_interp:  Subroutine for performing the horizontal interpolation
+                    between two grids. There is no initialization routine
+                    necessary.
+
+     horiz_interp_end: Optional routine for releasing the space used
+                       by the variable of derived-type horiz_interp_type.
+
+<PRE>
+</A><!-- END INTERFACE -->
+<!--------------------------------------------------------------------->
+<A NAME="ROUTINES">
+<HR>
+<H4>PUBLIC ROUTINES</H4>
+<!-- BEGIN ROUTINES -->
+<PRE>
+
+<b>call horiz_interp_init</b> ( Interp, blon_in, blat_in,
+                         blon_out, blat_out, verbose )
+
+  Input
+  -----
+
+     blon_in   contiguous longitude boundaries for input data grid boxes,
+                  real, dimension( size(data_in,1)+1 )
+     blat_in   contiguous latitudes boundaries for input data grid boxes,
+                  real, dimension( size(data_in,2)+1 )
+
+     blon_out  longitude boundaries for output data grid boxes,
+                  real, dimension( size(data_out,1), 2 )
+     blat_out  latitude boundaries for output data at grid boxes,
+                  real, dimension( size(data_out,2), 2 )
+
+     ~~ OR ~~
+
+     blon_out  contiguous longitude boundaries for output data grid boxes,
+                  real, dimension( size(data_out,1)+1 )
+     blat_out  contiguous latitudes boundaries for output data grid boxes,
+                  real, dimension( size(data_out,2)+1 )
+
+  Input/Output
+  ------------
+     Interp     derived-type variable
+
+  Optional
+  --------
+     verbose   flag for the amount of print output (integer scalar)
+                 =0 no output; =1 min,max,means; =2 still more
+
+
+
+---------------------------------------------------------------------
+
+<b>call horiz_interp</b> ( Interp, data_in, data_out,
+                    verbose, mask_in, mask_out  )
+
+<b>call horiz_interp</b> ( data_in, blon_in, blat_in,
+                    blon_out, blat_out, data_out,
+                    verbose, mask_in, mask_out  )
+
+  Input
+  -----
+     Interp    derived-type variable returned by previous call to
+                 horiz_interp_init
+
+     data_in   (global) input data stored from south to north
+                 [real, dimension(:,:)]
+
+     blon_in   contiguous longitude boundaries for input data grid boxes,
+                  real, dimension( size(data_in,1)+1 )
+     blat_in   contiguous latitudes boundaries for input data grid boxes,
+                  real, dimension( size(data_in,2)+1 )
+
+     blon_out  longitude boundaries for output data grid boxes,
+                  real, dimension( size(data_out,1), 2 )
+     blat_out  latitude boundaries for output data at grid boxes,
+                  real, dimension( size(data_out,2), 2 )
+
+     ~~ OR ~~
+
+     blon_out  contiguous longitude boundaries for output data grid boxes,
+                  real, dimension( size(data_out,1)+1 )
+     blat_out  contiguous latitudes boundaries for output data grid boxes,
+                  real, dimension( size(data_out,2)+1 )
+
+  Output
+  ------
+     data_out   output data [real, dimension(:,:)]
+
+  Optional
+  --------
+     verbose   flag for the amount of print output (integer scalar)
+                 =0 no output; =1 min,max,means; =2 still more
+
+     mask_in   input mask;  =0.0 for data points that should not
+               be used or have no data; has the same size as data_in
+     mask_out  output mask that specifies whether data was computed
+
+---------------------------------------------------------------------
+
+<b>call horiz_interp</b> ( data_in, wb, sb, dx, dy,
+                    blon_out, blat_out, data_out,
+                    verbose, mask_in, mask_out    )
+
+  Input
+
+     data_in     Global input data stored from west to east (first dimension),
+                 south to north (second dimension).
+                    [real, dimension(:,:)]
+
+     wb          Longitude (in radians) that corresponds to western-most
+                 boundary of grid box i=1 in array data_in.  [real]
+
+     sb          Latitude (in radians) that corresponds to southern-most
+                 boundary of grid box j=1 in array data_in.  [real]
+
+     dx          Grid spacing (in radians) for the longitude axis (first
+                 dimension) for the input data.  [real]
+
+     dy          Grid spacing (in radians) for the latitude axis (second
+                 dimension) for the input data.  [real]
+
+     blon_out    contiguous longitude boundaries for output data grid boxes,
+                  real, dimension( size(data_out,1)+1 )
+
+     blat_out    contiguous latitudes boundaries for output data grid boxes,
+                  real, dimension( size(data_out,2)+1 )
+
+  Output
+
+     data_out    The output data on a rectangular longitude/latitude grid.
+                    [real, dimension(:,:)]
+
+  Optional Input
+
+     verbose     Flag for the amount of print output.  [integer]
+                    verbose = 0, no output
+                            = 1, min,max,means
+                            = 2, still more
+
+     mask_in     Input mask, must be the same size as the input data.
+                 Set mask_in=0.0 for data points that should not be used
+                 or have no data.  [real, dimension(:,:)]
+
+  Optional Output
+
+     mask_out    Output mask, must be the same size as the output data.
+                 Specifies whether data was computed.
+                       [real, dimension(:,:)]
+
+---------------------------------------------------------------------
+
+<b>call horiz_interp_end</b> ( Interp )
+
+  Input/Output
+  ------------
+     Interp    derived-type variable returned by previous call to
+               horiz_interp_init
+
+</PRE>
+</A><!-- END ROUTINES -->
+<!--------------------------------------------------------------------->
+<A NAME="CHANGES">
+<HR>
+<H4>CHANGE HISTORY</H4>
+<!-- BEGIN CHANGES -->
+<PRE>
+
+<b>changes for v2.1</b> (1/24/2000)
+
+     Major changes include:
+
+        1) Optional initialization call to pre-compute terms and
+           improve performance for multiple interpolations.
+        2) Output grid may be specified as separate non-continuous cells.
+        3) Overloaded interfaces with backward compatibility for previous
+           version.
+        4) Answers are within machine roundoff of previous version.
+
+<b>changes for v2.0</b> (10/4/1999)
+
+     MPP version created. Minor changes for open_file, error_mesg,
+     and Fortran write statements. Answers should reproduce the
+     previous version.
+
+</PRE>
+</A><!-- END CHANGES -->
+<!--------------------------------------------------------------------->
+<A NAME="ERRORS">
+<HR>
+<H4>ERROR MESSAGES</H4>
+<!-- BEGIN ERRORS -->
+<PRE>
+
+<b>FATAL ERROR in horiz_interp_mod</b>
+
+    <b>no latitude index found: n,ph= .... </b>
+        An output latitude did not fall between adjacent input latitudes.
+        Check your input and output latitudes or increase the tolerence
+        (see developer notes).
+
+    <b>no longitude index found</b>
+        An output longitude did not fall between adjacent input longitudes.
+        Check your input and output longitudes or increase the tolerence
+        (see notes).
+
+<b>FATAL ERROR in horiz_interp</b>
+
+    <b>no input data</b>
+        The input mask argument has specified that all data is missing.
+
+</PRE>
+</A><!-- END ERRORS -->
+<!--------------------------------------------------------------------->
+<A NAME="BUGS">
+<HR>
+<H4>KNOWN BUGS</H4>
+<!-- BEGIN BUGS -->
+<PRE>
+
+     The verbose option for printing out min, max, and mean does so
+     for the data local to each processor (instead on for the entire
+     global field).
+
+</PRE>
+</A><!-- END BUGS -->
+<!--------------------------------------------------------------------->
+<A NAME="NOTES">
+<HR>
+<H4>NOTES</H4>
+<!-- BEGIN NOTES -->
+<PRE>
+
+  1) Has not been checked with grids that do not cover the sphere.
+
+  2) Has not been checked with the optional mask arguments.
+
+  3) If a latitude or longitude index cannot be found the tolerance
+     used for making this determination may need to be increased.
+     This can be done by increasing the value of module variable 
+     num_iters (default 4).
+
+</PRE>
+</A><!-- END NOTES -->
+<!--------------------------------------------------------------------->
+<A NAME="PLANS">
+<HR>
+<H4>FUTURE PLANS</H4>
+<!-- BEGIN PLANS -->
+<PRE>
+
+   None.
+
+</PRE>
+</A><!-- END PLANS -->
+<!--------------------------------------------------------------------->
+
+<HR>
+</BODY>
+</HTML>

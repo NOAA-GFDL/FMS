@@ -1,0 +1,180 @@
+<HTML>
+<TITLE>Modular Physics: driver for tracer calculations</TITLE>
+<BODY BGCOLOR="#AABBCC" TEXT="#332211" >
+<!--BASE TARGET = "display_frame">
+
+<H2>tracer_driver/v0.1</H2>
+
+<HR>
+
+<H4>Driver for tracer calculations</H4>
+
+<P>This module computes the source and sink terms for various tracers
+   and handles the interaction bewteen tracers.
+   Currently, only Radon (Rn222) source and sink terms can be computed.
+<BR><BR>
+
+<HR>
+
+<H4>Other modules used:</H4>
+<UL><LI> Utilities_Mod </UL>
+
+<HR>
+<!#####################################################################>
+
+<H4>Public interface routines</H4>
+
+<TABLE>
+<TR><TH>Call Tracer_Driver <TD>(Lon,Lat,Land,Phalf,R,Rdt,Kbot)
+</TABLE>
+
+<TABLE>
+<TR VALIGN="TOP" ALIGN="LEFT"><TH>Input
+    <TH>Lon,Lat    <TD>Longitude (Lon) and latitude (Lat) in radians
+                   <BR><I>[real, dimension(nlon,nlat)]</I>
+<TR VALIGN="TOP" ALIGN="LEFT"><TH>
+    <TH>Land       <TD>land-sea mask; Land = T for land points
+                   <BR><I>[logical, dimension(nlon,nlat)]</I>
+<TR VALIGN="TOP" ALIGN="LEFT"><TH>
+    <TH>Phalf      <TD>pressure in pascals at half model levels
+                   <BR><I>[real, dimension(nlon,nlat,nlev+1)]</I>
+<TR VALIGN="TOP" ALIGN="LEFT"><TH>
+    <TH>R          <TD>multiple tracer fields at full model levels
+                   <BR><I>[real, dimension(nlon,nlat,nlev,ntrace)]</I>
+<TR VALIGN="TOP" ALIGN="LEFT"><TH>Input/Output
+    <TH>Rdt        <TD>tendencies for multiple tracer fields (at
+                       full model levels)
+                   <BR><I>[real, dimension(nlon,nlat,nlev,ntrace)]</I>
+<TR VALIGN="TOP" ALIGN="LEFT"><TH>Input<BR>(Optional)
+    <TH>Kbot       <TD>index of the model level immediately above
+                       the ground (for the eta coordinate)
+                   <BR><I>[integer, dimension(nlon,nlat)]</I>
+</TABLE>
+
+<HR>
+<!#####################################################################>
+
+<TABLE>
+<TR><TH>Call Tracer_Driver_Init <TD>(G,R,Mask)</TABLE>
+
+<TABLE>
+<TR VALIGN="TOP" ALIGN="LEFT"><TH>Input
+   <TH>G    <TD> gravitational constant (in m/s2)
+            <BR><I>[real]</I>
+<TR VALIGN="TOP" ALIGN="LEFT"><TH>Input/Output
+   <TH>R    <TD> multiple tracer fields for the entire grid (at full
+                 model levels)
+            <BR><I>[real, dimension(nlon,nlat,nlev,ntrace)]</I>
+<TR VALIGN="TOP" ALIGN="LEFT"><TH>Input<BR>(Optional)
+   <TH>Mask <TD> optional mask (0. or 1.) that designates which grid points
+                 are above (Mask=1.) or below (=Mask0.) the ground
+            <BR><I>[real, dimension(nlon,nlat,nlev)]</I>
+</TABLE>
+
+<B>Notes:</B>
+<UL><LI> The maximum number of tracers is 20. (controlled by internal 
+         parameter MxNum)
+    <LI> The program will terminate is namelist variable <I>nRadon</I> is set 
+         greater than the number of input tracers <I>ntrace</I>.
+    <LI> The program will terminate if tracers are to be processed (i.e.,
+         nRadon > 0) and NO tracers are passed in Tracer_Driver_Init
+         (the size of ntrace = 0).
+    <LI> Radon is initially set to 0.001 everywhere, unless Mask is 
+         supplied then Radon = 0.0 where Mask = 0.0.
+</UL>
+
+<HR>
+
+<TABLE>
+<TR><TH>Call Tracer_Driver_End</TABLE>
+
+<P><I>There are no argumants to this routine.</I><BR><BR>
+
+<HR>
+
+<H4>Namelist</H4>
+
+<!--#exec cmd="cat namelist.html"-->
+
+<HR>
+
+<H4>Restart Data</H4>
+
+ <P>Resart data set <I>tracer_driver.res</I> is read/written with the 
+    following format:
+
+ <P>Foreach tracer (currently only Radon) one record will be
+    read/written:
+
+ <P>Field,Index
+
+ <P>Field is a character string that is specific to each tracer in
+    the tracer_driver module.  Index is the index number for that
+    tracer. The format is "a16,i2".  
+    NO actual tracer fields are written to this file. The
+    dynamical part of the model should handle reading and writing
+    tracers.
+
+ <P>A user should not have to know the details of this file.  For
+    most situations the user can let the tracer_driver write and then
+    read the file.
+
+ <BR><BR>
+
+<HR>
+
+<H4>Radon source/sink calculation</H4>
+
+<PRE>
+Source:
+------
+  Rn222 flux is 3.69E-21 kg/M*M/sec over land for latitudes lt 60N
+   Between 60N and 70N the source  = source * .5
+
+  molecular wt. of air is 28.9644 gm/mole
+  molecular wt. of Radon is 222 gm/mole
+  scaling facter to get reasonable mixing ratio is 1.E+21
+
+  source = 3.69E-21 * G * 28.9644 * 1.E+21/(Pwt * 222.) or
+
+  source = G * .4814353 / Pwt
+
+  must initialize all Rn to .001
+
+      L60=60.*DTR; L70=70.*DTR; L300=300.*DTR; L336=336.*DTR
+
+      Radon_Flux = 3.69E-21 * Grav * 28.9644 * 1.E+21 / 222.
+      Source = 0.0
+      MaskEQ = Land .and. Lat > -L60 .and. Lat < L60
+      MaskNH = Land .and. Lat >= L60 .and. Lat < L70
+
+      If (Present(Kbot)) Then
+          Do j=1,JD
+          Do i=1,ID
+             kb=Kbot(i,j)
+             If (MaskEQ(i,j)) Source(i,j,kb)=Radon_Flux/Pwt(i,j,kb)
+             If (MaskNH(i,j)) Source(i,j,kb)=0.5*Radon_Flux/Pwt(i,j,kb)
+          EndDo
+          EndDo
+      Else
+          Where (MaskEQ) Source(:,:,KD)=Radon_Flux/Pwt(:,:,KD)
+          Where (MaskNH) Source(:,:,KD)=0.5*Radon_Flux/Pwt(:,:,KD)
+          Where (MaskNH .and. Lon > L300 .and. Lon < L336)  &
+               Source(:,:,KD)=0.0
+      EndIf
+
+Sink:
+----
+  Rn222 has a half-life time of 3.83days 
+   (corresponds to an e-folding time of 5.52 days)
+
+  Sink = 1./(86400.*5.52) = 2.09675E-6
+
+  Should the sink be applied at all points or only where
+  Radon is positive?  Note that if Radon is negative, the
+  "sink" will be positive. Applying the sink at all points
+  should conserve the global mean sink???
+</PRE>
+
+<HR>
+</BODY></HTML>

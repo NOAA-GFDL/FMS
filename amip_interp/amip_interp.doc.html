@@ -1,0 +1,484 @@
+<HTML>
+<TITLE>module amip_interp</TITLE>
+<BODY BGCOLOR="#AABBCC" TEXT="#332211" >
+
+<DIV ALIGN="CENTER"> <FONT SIZE=1>
+<A HREF="#INTERFACE">PUBLIC INTERFACE</A> / 
+<A HREF="#DATA_TYPES">DATA</A> / 
+<A HREF="#ROUTINES">ROUTINES</A> / 
+<A HREF="#NAMELIST">NAMELIST</A> / 
+<A HREF="#CHANGES">CHANGES</A> / 
+<A HREF="#ERRORS">ERRORS</A> / 
+<A HREF="#REFERENCES">REFERENCES</A> / 
+<A HREF="#NOTES">NOTES</A> 
+</FONT>
+<P><I>Last updated on <!--#exec cmd="echo $LAST_MODIFIED" -->.</I>
+<BR><BR></DIV><HR>
+
+
+<H2>module amip_interp</H2>
+<A NAME="HEADER">
+<PRE>
+     Version: v2.2
+     Date:    April 28, 2000
+     Contact: Bruce Wyman
+</PRE>
+</A><!-- END HEADER -->
+<!--------------------------------------------------------------------->
+<A NAME="OVERVIEW">
+<HR>
+<H4>OVERVIEW</H4>
+<!-- BEGIN OVERVIEW -->
+<PRE>
+
+     Provides observed SST and ice mask data sets that have been
+     interpolated onto your model's grid.
+
+</PRE>
+</A><!-- END OVERVIEW -->
+<!--------------------------------------------------------------------->
+<A NAME="DESCRIPTION">
+<!-- BEGIN DESCRIPTION -->
+<PRE>
+
+     Two possible data sets are available:
+
+     1)  <A HREF="http://www-pcmdi.llnl.gov/amip">AMIP 1</A>      from Jan 1979 to Jan 1989
+     2)  <A HREF="amip_interp.rey_oi.text">Reynolds OI</A> from Nov 1981 to Jan 1999
+
+     All original data are observed monthly means. This module
+     interpolates linearly in time between pairs of monthly means.
+     Horizontal interpolation is done using the exchange grid module.
+
+     When a requested date falls outside the range of dates available
+     a namelist option allows for use of the climatological monthly
+     mean values (AMIP, 1979-1988; Reynolds, 1982-1998).
+
+</PRE>
+</A><!-- END DESCRIPTION -->
+<!--------------------------------------------------------------------->
+<A NAME="MODULES_USED">
+<HR>
+<H4>OTHER MODULES USED</H4>
+<!-- BEGIN MODULES_USED -->
+<PRE>
+
+     time_interp_mod
+    time_manager_mod
+    horiz_interp_mod
+       utilities_mod
+       constants_mod
+
+</PRE>
+</A><!-- END MODULES_USED -->
+<!--------------------------------------------------------------------->
+<A NAME="INTERFACE">
+<HR>
+<H4>PUBLIC INTERFACE</H4>
+<!-- BEGIN INTERFACE -->
+<PRE>
+
+use amip_interp_mod [, only:  amip_interp_type,
+                              amip_interp_init,
+                              amip_interp_end,
+                              get_amip_sst, 
+                              get_amip_ice, 
+                              get_sst_grid_size,
+                              get_sst_grid_boundary ]
+
+  <A HREF="#DATA_TYPES">amip_interp_type</A>
+         A variable of this defined data type is returned when function
+         amip_interp_init is called.  This variable is needed when
+         calling get_amip_sst and get_amip_ice.
+                       
+  <A HREF="#amip_interp_init">amip_interp_init</A>
+         Function that initializes data needed for the horizontal
+         interpolation between the sst grid and model grid. The 
+         returned variable of type amip_interp_type is needed when
+         calling get_amip_sst and get_amip_ice.
+
+  <A HREF="#amip_interp_end">amip_interp_end</A>
+         Call this routine for all amip_interp_type variables created by
+         amip_interp_init.
+
+  <A HREF="#get_amip_sst">get_amip_sst</A>
+         Returns SST on the model grid for a requested time.
+
+  <A HREF="#get_amip_ice">get_amip_ice</A>
+         Returns an ice mask on the model grid for a requested time.
+
+  <A HREF="#get_sst_grid_size">get_sst_grid_size</A>
+         Returns the size (i.e., number of longitude and latitude
+         points) of the observed data grid.
+
+  <A HREF="#get_sst_grid_boundary">get_sst_grid_boundary</A>
+         Returns the grid box boundaries of the observed data grid.
+
+NOTES:
+
+  1) An optional namelist interface called <b>amip_interp_nml</b> may be
+     read from file <b>input.nml</b>.
+
+  2) The observed SST data sets must be located in directory INPUT.
+     <A HREF="#DATA_SETS">See below for details.</A>
+
+</PRE>
+</A><!-- END INTERFACE -->
+<!--------------------------------------------------------------------->
+<A NAME="DATA_TYPES">
+<HR>
+<H4>PUBLIC DATA</H4>
+<!-- BEGIN DATA_TYPES -->
+<PRE>
+
+<b>type amip_interp_type</b>
+
+  All variables in this data type are PRIVATE. It contains information
+  needed by the interpolation module (exchange_mod) and buffers data.
+
+</PRE>
+</A><!-- END DATA_TYPES -->
+<!--------------------------------------------------------------------->
+<A NAME="ROUTINES">
+<HR>
+<H4>PUBLIC ROUTINES</H4>
+<!-- BEGIN ROUTINES -->
+<PRE>
+<A NAME="amip_interp_init">
+
+Interp = amip_interp_init ( blon, blat, mask, use_climo, use_annual )
+
+Input
+
+  blon   longitude in radians of the model's grid box edges
+            [real, dimension(:)]
+
+  blat   latitude in radians of the model's grid box edges
+            [real, dimension(:)]
+
+  mask   A mask for the model grid.
+            [logical, dimension(:,:)]
+
+Input (Optional)
+
+  use_climo   Flag the specifies that monthly mean climatological
+              values will be used.
+                [logical; default, use_climo = .false.]
+
+  use_annual  Flag the specifies that the annual mean climatological
+              will be used.  If both use_annual = use_climo = true,
+              then use_annual = true will be used.
+                [logical; default, use_annual = .false.]
+
+Returned value
+
+  Interp    A defined data type variable needed when calling
+            get_amip_sst and get_amip_ice.
+                [amip_interp_type]
+
+NOTES:
+
+  1) This function may be called to initialize multiple variables
+     of type amip_interp_type.  However, there currently is no
+     call to release the storage used by this variable.
+
+  2) The size of input augment mask must be a function of the size
+     of input augments blon and blat. The first and second dimensions
+     of mask must equal (size(blon)-1, size(blon)-1).
+
+--------------------------------------------------------------------
+<A NAME="amip_interp_end">
+
+call amip_interp_end (Interp)
+
+Input/Output
+
+  Interp    A defined data type variable initialized by amip_interp_init
+            and used when calling get_amip_sst and get_amip_ice.
+                [amip_interp_type]
+
+--------------------------------------------------------------------
+<A NAME="get_amip_sst">
+
+call get_amip_sst (Time, Interp, sst)
+
+Input
+
+  Time    The requested time for the output sea surface temperature field.
+             [time_type] 
+
+Input/Output
+
+  Interp  A defined data type variable initialized by amip_interp_init.
+             [amip_interp_type]
+
+Output
+
+  sst     The sea surface temperatures at <b>Time</b> on the model grid.
+          The size of sst is the same as argument mask in amip_interp_init.
+             [real, dimension(:,:)]
+
+--------------------------------------------------------------------
+<A NAME="get_amip_ice">
+
+call get_amip_ice (Time, Interp, ice)
+
+Input
+
+  Time    The requested time for the output sea surface temperature field.
+             [time_type]  
+
+Input/Output                                                
+
+  Interp  A defined data type variable initialized by amip_interp_init.
+             [amip_interp_type]
+
+Output
+
+  ice     A real ice/no ice mask at <b>Time</b> on the model grid.
+          The value of ice is continuous from 0.0 (no ice) to 1.0 (ice).
+          The size of ice is the same as argument mask in amip_interp_init.
+             [real, dimension(:,:)]
+
+--------------------------------------------------------------------
+<A NAME="get_sst_grid_size">
+
+call get_sst_grid_size (nlon, nlat)
+
+Output
+
+  nlon  The number of longitude points (first dimension) in the
+        observed data grid.  For AMIP 1 nlon = 180, and the Reynolds
+        nlon = 360.    [integer]
+
+  nlat  The number of latitude points (second dimension) in the
+        observed data grid.  For AMIP 1 nlon = 91, and the Reynolds
+        nlon = 180.    [integer]
+
+--------------------------------------------------------------------
+<A NAME="get_sst_grid_boundary">
+
+call get_sst_grid_boundary (blon, blat, mask)
+
+Output
+
+  blon  The grid box edges (in radians) for longitude points of the
+        observed data grid. The size of this argument must be nlon+1.
+          [real, dimension(:)]
+
+  blat  The grid box edges (in radians) for latitude points of the
+        observed data grid. The size of this argument must be nlat+1.
+          [real, dimension(:)]
+
+</PRE>
+</A><!-- END ROUTINES -->
+<!--------------------------------------------------------------------->
+<A NAME="NAMELIST">
+<HR>
+<H4>NAMELIST</H4>
+<!-- BEGIN NAMELIST -->
+<PRE>
+
+<b>&amip_interp_nml</b>
+
+  tice_crit    = Freezing point of sea water in degC or degK.
+                   [real, default: tice_crit = -1.80]
+
+  use_no_climo = Flag to allow monthly or annual mean climatologies to be used.
+                 When data is requested that does not lie in the available
+                 time range climatological data can be returned if 
+                 use_no_climo = .false.
+                   [logical, default: use_no_climo = .true.]
+
+  use_amip1    = Flag to select the sst data set:  amip1 or Reynolds-oi
+                   [logical, default: use_amip1 = .true.]
+
+  verbose      = Controls printed output, 0 <= verbose <= 3
+                   [integer, default: verbose = 0]
+
+  use_zonal    = Flag to select zonal idealized sst (and ice) data
+                   [logical, default: use_zonal = .false.]
+
+---- additional parameters for controlling zonal prescribed sst ----
+---- these parameters only have an effect when use_zonal=.true. ----
+
+  teq  = sst at the equator [default: teq=305.]
+  tdif = equator to pole sst difference [default: tdif=50.]
+  tann = amplitude of annual cycle [default: tann=20.]
+  tlag = offset for time of year (for annual cycle) [default: tlag=0.875]
+
+</PRE>
+</A><!-- END NAMELIST -->
+<!--------------------------------------------------------------------->
+<A NAME="DATA_SETS">
+<HR>
+<H4>DATA SETS</H4>
+<!-- BEGIN DATA_SETS -->
+<PRE>
+
+   AMIP 1 and/or Reynolds OI data sets that have been "specially-formatted"
+   are required by this module.  They are read from files INPUT/amip1_sst.data
+   and INPUT/reyoi_sst.data, respectively.  The data set format is 32-bit IEEE.
+   However, the data is packed into 16-bit integers.  On 64-bit machines
+   data conversion is necessary.
+
+   On Cray machines use:
+
+       assign -F f77,cache:48:1 -N ieee f:INPUT/amip1_sst.data
+       assign -F f77,cache:48:1 -N ieee f:INPUT/reyoi_sst.data
+
+   The data is located in a cpio file:
+
+       /archive/bw/module_data/sst_data.cpio
+       cpio -ic < sst_data.cpio
+
+   A script can be used to copy and set up all data sets needed by the
+   the Flexible Modeling System:
+
+       /t90/bw/modules_blue/scripts/get_module_data.csh
+
+       for help menu:  get_module_data.csh -h 
+
+</PRE>
+</A><!-- END DATA_SETS -->
+<!--------------------------------------------------------------------->
+<A NAME="CHANGES">
+<HR>
+<H4>CHANGE HISTORY</H4>
+<!-- BEGIN CHANGES -->
+<PRE>
+
+<b>changes for v1.1</b>
+
+  * option for either AMIP 1 or Reynolds OI SSTs.
+  * AMIP 1 data has been reformatted
+  * namelist input has been added
+  * several routine names have changed but their function has not:
+       get_amip_grid_size      changed to  get_sst_grid_size
+       get_amip_grid_boundary  changed to  get_sst_grid_boundary
+
+<b>changes for v2.1</b>  (11/23/1999)
+
+    Removed optional additional grid feature.
+    New version should be (nearly) identical to the pre-blue version.
+
+<b>changes for v2.2</b>  (4/28/2000)
+
+    Interpolation is done using horiz_interp_mod (instead on exchange_mod).
+
+
+</PRE>
+</A><!-- END CHANGES -->
+<!--------------------------------------------------------------------->
+<A NAME="ERRORS">
+<HR>
+<H4>ERROR MESSAGES</H4>
+<!-- BEGIN ERRORS -->
+<PRE>
+
+<b>FATAL ERRORS in amip_interp_init</b>
+
+   <b>requested input data set does not exist</b>
+      The data set INPUT/amip1_sst.data or INPUT/reyoi_sst.data does
+      not exist. See the section on DATA SETS to properly set the
+      data up.
+
+   <b>use_climo mismatch</b>
+      The namelist variable use_no_climo = true and the amip_interp_init
+      argument use_climo = true.
+
+   <b>use_annual(climo) mismatch</b>
+      The namelist variable use_no_climo = true and the amip_interp_init
+      argument use_annual = true.
+
+<b>FATAL ERRORS in get_sst_grid_size</b>
+
+   <b>have not called amip_interp_init</b>
+      Must call amip_interp_init before get_sst_grid_size.
+
+<b>FATAL ERRORS in get_sst_grid_boundary</b>
+
+   <b>have not called amip_interp_init</b>
+      Must call amip_interp_init before get_sst_grid_boundary.
+
+   <b>invalid argument dimensions</b>
+      The size of the output argument arrays do not agree with
+      the size of the observed data. See the documentation for
+      interfaces get_sst_grid_size and get_sst_grid_boundary.
+
+<b>FATAL ERRORS in get_sst_record</b>
+
+   <b>climo data read when NO climo data requested</b>
+      Data for the requested date could not be found and climatological
+      data was read, however the namelist variable use_no_climo = true.
+      If use_no_climo = true is correct, then your integration may
+      be beyond (or before) your intended integration period.
+      Check the valid dates for the data set you are using.
+
+   <b>end of file reading unit ##</b>
+      The end of the data set was reached before finding the
+      requested date.  CHECK WITH THE DEVELOPER.
+
+<b>NON-FATAL NOTES in amip_interp_init</b>
+
+   <b>using AMIP 1 sst</b>
+      Written when namelist variable use_amip1 = true.
+
+   <b>using Reynolds OI sst</b>
+      Written when namelist variable use_amip1 = false.
+
+</PRE>
+</A><!-- END ERRORS -->
+<!--------------------------------------------------------------------->
+<A NAME="REFERENCES">
+<HR>
+<H4>REFERENCES</H4>
+<!-- BEGIN REFERENCES -->
+<PRE>
+
+     None.
+
+</PRE>
+</A><!-- END REFERENCES -->
+<!--------------------------------------------------------------------->
+<A NAME="BUGS">
+<HR>
+<H4>KNOWN BUGS</H4>
+<!-- BEGIN BUGS -->
+<PRE>
+
+     There are no known bugs at this time.
+
+</PRE>
+</A><!-- END BUGS -->
+<!--------------------------------------------------------------------->
+<A NAME="NOTES">
+<HR>
+<H4>NOTES</H4>
+<!-- BEGIN NOTES -->
+<PRE>
+
+     None.
+
+</PRE>
+</A><!-- END NOTES -->
+<!--------------------------------------------------------------------->
+<A NAME="PLANS">
+<HR>
+<H4>FUTURE PLANS</H4>
+<!-- BEGIN PLANS -->
+<PRE>
+
+     * Add AMIP 2 data set
+
+     * Modify time interpolation algorithm to conserve monthly means.
+
+     * Other data sets (or extend current data sets) ?
+
+</PRE>
+</A><!-- END PLANS -->
+<!--------------------------------------------------------------------->
+
+<HR>
+</BODY>
+</HTML>

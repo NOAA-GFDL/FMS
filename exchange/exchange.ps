@@ -1,0 +1,5415 @@
+%!PS-Adobe-3.0
+%%BoundingBox: (atend)
+%%Pages: (atend)
+%%PageOrder: (atend)
+%%DocumentFonts: (atend)
+%%Creator: Frame 5.1
+%%DocumentData: Clean7Bit
+%%EndComments
+%%BeginProlog
+%-
+%- Frame ps_prolog 5.0, for use with Frame 5.0 products
+%- This ps_prolog file is Copyright (c) 1986-1996 Adobe Systems, Incoporated.
+%- All rights reserved.  This ps_prolog file may be freely copied and 
+%- distributed in conjunction with documents created using FrameMaker, 
+%- FrameMaker/SGML FrameReader and FrameViewer as long as this 
+%- copyright notice is preserved.
+%-
+%- FrameMaker users specify the proper paper size for each print job in the
+%- "Print" dialog's "Printer Paper Size" "Width" and "Height~ fields.  If the
+%- printer that the PS file is sent to does not support the requested paper
+%- size, or if there is no paper tray of the proper size currently installed, 
+%- then the job will not be printed.  The following flag, if set to true, will
+%- cause the job to print on the default paper in such cases.
+/FMAllowPaperSizeMismatch            false def
+%-
+%- Frame products normally print colors as their true color on a color printer
+%- or as shades of gray, based on luminance, on a black-and white printer. The
+%- following flag, if set to true, forces all non-white colors to print as pure
+%- black. This has no effect on bitmap images.
+/FMPrintAllColorsAsBlack             false def
+%-
+%- Frame products can either set their own line screens or use a printer's 
+%- default settings. Three flags below control this separately for no 
+%- separations, spot separations and process separations. If a flag
+%- is true, then the default printer settings will not be changed. If it is
+%- false, Frame products will use their own settings from a table based on
+%- the printer's resolution.
+/FMUseDefaultNoSeparationScreen      true  def
+/FMUseDefaultSpotSeparationScreen    true  def
+/FMUseDefaultProcessSeparationScreen false def
+%-
+%- For any given PostScript printer resolution, Frame products have two sets of 
+%- screen angles and frequencies for printing process separations, which are 
+%- recomended by Adobe. The following variable chooses the higher frequencies
+%- when set to true or the lower frequencies when set to false. This is only
+%- effective if the appropriate FMUseDefault...SeparationScreen flag is false.
+/FMUseHighFrequencyScreens true def
+%-
+%- The following is a set of predefined optimal frequencies and angles for various
+%- common dpi settings. This is taken from "Advances in Color Separation Using
+%- PostScript Software Technology," from Adobe Systems (3/13/89 P.N. LPS 0043)
+%- and corrolated with information which is in various PPD (4.0) files.
+%-
+%- The "dpiranges" figure is the minimum dots per inch device resolution which
+%- can support this setting. The "low" and "high" values are controlled by the
+%- setting of the FMUseHighFrequencyScreens flag above. The "TDot" flags control
+%- the use of the "Yellow Triple Dot" feature whereby the frequency id divided by
+%- three, but the dot function is "trippled" giving a block of 3x3 dots per cell.
+%-
+%- PatFreq is a compromise pattern frequency for ps Level 2 printers which is close
+%- to the ideal WYSIWYG pattern frequency of 9 repetitions/inch but does not beat
+%- (too badly) against the screen frequencies of any separations for that DPI.
+% This is computed by taking dpi/9 as the ideal pixels per repetition, and then
+% computing a tiling size in printer pixels for each of the four separations as 
+% (dpi/screenFreq)*(cos(screenAngle)+sin(screenAngle)) Actually, this is the same 
+% for Cyan and Magenta). Then, we take a "nice" LCM of the tile sizes close to
+% the desired pattern tile where the beat factor is not more than 2 or 3.
+%
+/dpiranges   [  2540    2400    1693     1270    1200     635      600      0      ] def
+/CMLowFreqs  [ 100.402  94.8683 89.2289 100.402  94.8683  66.9349  63.2456 47.4342 ] def
+/YLowFreqs   [  95.25   90.0    84.65    95.25   90.0     70.5556  66.6667 50.0    ] def
+/KLowFreqs   [  89.8026 84.8528 79.8088  89.8026 84.8528  74.8355  70.7107 53.033  ] def
+/CLowAngles  [  71.5651 71.5651 71.5651 71.5651  71.5651  71.5651  71.5651 71.5651 ] def
+/MLowAngles  [  18.4349 18.4349 18.4349 18.4349  18.4349  18.4349  18.4349 18.4349 ] def
+/YLowTDot    [  true    true    false    true    true     false    false   false   ] def
+
+/CMHighFreqs [ 133.87  126.491 133.843  108.503 102.523  100.402   94.8683 63.2456 ] def
+/YHighFreqs  [ 127.0   120.0   126.975  115.455 109.091   95.25    90.0    60.0    ] def
+/KHighFreqs  [ 119.737 113.137 119.713  128.289 121.218   89.8026  84.8528 63.6395 ] def
+/CHighAngles [  71.5651 71.5651 71.5651  70.0169 70.0169  71.5651  71.5651 71.5651 ] def
+/MHighAngles [  18.4349 18.4349 18.4349  19.9831 19.9831  18.4349  18.4349 18.4349 ] def
+/YHighTDot   [  false   false   true     false   false    true     true    false   ] def
+
+/PatFreq     [	10.5833 10.0     9.4055  10.5833 10.0	  10.5833  10.0	   9.375   ] def
+%-
+%- PostScript Level 2 printers contain an "Accurate Screens" feature which can
+%- improve process separation rendering at the expense of compute time. This 
+%- flag is ignored by PostScript Level 1 printers.
+/FMUseAcccurateScreens true def
+%-
+%- The following PostScript procedure defines the spot function that Frame
+%- products will use for process separations. You may un-comment-out one of
+%- the alternative functions below, or use your own.
+%-
+%- Dot function
+/FMSpotFunction {abs exch abs 2 copy add 1 gt 
+		{1 sub dup mul exch 1 sub dup mul add 1 sub }
+		{dup mul exch dup mul add 1 exch sub }ifelse } def
+%-
+%- Line function
+%- /FMSpotFunction { pop } def
+%-
+%- Elipse function
+%- /FMSpotFunction { dup 5 mul 8 div mul exch dup mul exch add 
+%-		sqrt 1 exch sub } def
+%-
+%-
+
+/FMversion (5.0) def % matches PS_VERSION in fmprintdriver
+
+% PostScript Level 1 = true, 2 = false
+/fMLevel1 /languagelevel where {pop languagelevel} {1} ifelse 2 lt def
+
+% Set up Color vs. Black-and-White
+/FMPColor
+	fMLevel1 {
+		false
+		/colorimage where {pop pop true} if
+	} {
+%		statusdict /processcolors known {
+%			statusdict /processcolors get exec
+%		} {1} ifelse
+%		1 gt
+		true
+	} ifelse
+def
+
+/FrameDict 400 dict def % should check this value each time changes made
+
+%
+% For NeWS we add a fake errordict, so we can psh files
+%
+systemdict /errordict known not {/errordict 10 dict def
+		errordict /rangecheck {stop} put} if
+
+%- The readline in PS 23.0 doesn't recognize cr's as nl's on AppleTalk
+FrameDict /tmprangecheck errordict /rangecheck get put % save old rangecheck
+errordict /rangecheck {FrameDict /bug true put} put % will flag bug found
+FrameDict /bug false put % flag bug not found
+mark % since we're not sure what will happen next
+%- Some PS machines read past the CR, so keep the following 3 lines together!
+currentfile 5 string readline
+00
+0000000000
+cleartomark % junk from readline and rangecheck
+errordict /rangecheck FrameDict /tmprangecheck get put % restore rangecheck
+FrameDict /bug get { % redefine readline if last one got a rangecheck
+	/readline {
+		/gstring exch def
+		/gfile exch def
+		/gindex 0 def
+		{
+			gfile read pop % get a char
+			dup 10 eq {exit} if % exit if LF
+			dup 13 eq {exit} if % exit if CR
+			gstring exch gindex exch put % store it away
+			/gindex gindex 1 add def % bump index
+		} loop
+		pop % eol character
+		gstring 0 gindex getinterval true % simulate real readline
+		} bind def
+	} if
+
+% outer-world defs
+
+/FMshowpage /showpage load def
+/FMquit /quit load def
+
+/FMFAILURE { % enter with two error strings on the stack
+	dup = flush % send a copy of the message to the console
+	FMshowpage % msg on a page by itself, so it can't be, say, black on black
+	/Helvetica findfont 12 scalefont setfont
+	72 200 moveto show
+	72 220 moveto show
+	FMshowpage % we might be in the middle of some EPS, where "showpage"
+	FMquit % and "quit" are redefined
+	} def % only used once at most, so no bind
+
+/FMVERSION {
+	FMversion ne {
+		(Adobe Frame product version does not match ps_prolog!  Check installation;)
+		(also check ~/fminit and ./fminit for old versions) FMFAILURE
+		} if
+	} def % only used at startup, so no bind
+
+/FMBADEPSF { % Call with bad operator name on stack (as a string)
+	(Adobe's PostScript Language Reference Manual, 2nd Edition, section H.2.4)
+	(says your EPS file is not valid, as it calls X              )
+	dup dup (X) search pop exch pop exch pop length % parmstr errstr errstr indx
+	5 -1 roll % errstr errstr index parmstr
+	putinterval % errstr
+	FMFAILURE
+	} def
+
+% standard concatprocs routine
+/fmConcatProcs
+	{
+	/proc2 exch cvlit def/proc1 exch cvlit def/newproc proc1 length proc2 length add array def
+	newproc 0 proc1 putinterval newproc proc1 length proc2 putinterval newproc cvx
+}def
+
+% Put all local variables here in alphabetical order.
+FrameDict begin [
+	/ALDsave
+	/FMdicttop
+	/FMoptop
+	/FMpointsize
+	/FMsaveobject
+	/b
+	/bitmapsave
+	/blut
+	/bpside
+	/bs
+	/bstring
+	/bwidth
+	/c
+	/cf
+	/cs
+	/cynu
+	/depth
+	/edown
+	/fh
+	/fillvals
+	/fw
+	/fx
+	/fy
+	/g
+	/gfile
+	/gindex
+	/grnt
+	/gryt
+	/gstring
+	/height
+	/hh
+	/i
+	/im
+	/indx
+	/is
+	/k
+	/kk
+	/landscape
+	/lb
+	/len
+	/llx
+	/lly
+	/m
+	/magu
+	/manualfeed
+	/n
+	/offbits
+	/onbits
+	/organgle
+	/orgbangle
+	/orgbfreq
+	/orgbproc
+	/orgbxfer
+	/orgfreq
+	/orggangle
+	/orggfreq
+	/orggproc
+	/orggxfer
+	/orgmatrix
+	/orgproc
+	/orgrangle
+	/orgrfreq
+	/orgrproc
+	/orgrxfer
+	/orgxfer
+	/pagesave
+	/paperheight
+	/papersizedict
+	/paperwidth
+	/pos
+	/pwid
+	/r
+	/rad
+	/redt
+	/sl
+	/str
+	/tran
+	/u
+	/urx
+	/ury
+	/val
+	/width
+	/width
+	/ws
+	/ww
+	/x
+	/x1
+	/x2
+	/xindex
+	/xpoint
+	/xscale
+	/xx
+	/y
+	/y1
+	/y2
+	/yelu
+	/yindex
+	/ypoint
+	/yscale
+	/yy
+] { 0 def } forall
+
+% Start of PDF/Acrobat support
+
+% Bind def
+/FmBD {bind def} bind def
+
+systemdict /pdfmark known {
+	/fMAcrobat true def
+
+	% FmPD is a conditional PDFMark
+	/FmPD /pdfmark load def
+	
+	% FmPT is a show text operator which only show up when distiller is active
+	/FmPT /show load def
+	
+	% FmPD2 and FmPA are Acrobat 2.0-specific
+	currentdistillerparams /CoreDistVersion get 2000 ge {
+	
+		% FmPD2 is like FmPD but for Acrobat 2.0-specific PDF
+		/FmPD2 /pdfmark load def
+		
+		% x y/name FmPA
+		% 	is equivalent to
+		% [/Dest/name/View[/FitH x y FmDC exch pop]/DEST FmPD
+		% It is a shortcut for pagragraph Uinique ID designators whic occurr commonly.
+		/FmPA { mark exch /Dest exch 5 3 roll 
+				/View [ /XYZ null 6 -2 roll FmDC exch pop null] /DEST FmPD 
+		}FmBD
+	} {
+		% These are No-Ops for Distiller 1.0
+		/FmPD2 /cleartomark load def
+		/FmPA {pop pop pop}FmBD
+	} ifelse
+} {
+	% these are the No-Ops for regular PostScript
+	/fMAcrobat false def
+	/FmPD /cleartomark load def
+	/FmPD2 /cleartomark load def
+	/FmPT /pop load def
+	/FmPA {pop pop pop}FmBD
+} ifelse
+
+% This convert a set of X Y coordinates from the current user space to the default
+% PostScript coordinates needed by some pdfmark variants. We also convert to 
+% integer because the distiller doesn't always like floats!
+/FmDC {
+	transform fMDefaultMatrix itransform cvi exch cvi exch
+}FmBD
+
+% This converts four numbers into a bounding box making sure the first two are maller than the last two
+/FmBx {
+	dup 3 index lt {3 1 roll exch} if 
+	1 index 4 index lt {4 -1 roll 3 1 roll exch 4 1 roll} if
+}FmBD
+
+% End of PDF/Acrobat support
+
+%
+% Color separation code
+%
+
+% Constants.
+
+/FMnone 0 def
+/FMcyan 1 def
+/FMmagenta 2 def
+/FMyellow 3 def
+/FMblack 4 def
+/FMcustom 5 def
+
+/fMNegative false def % we are inverting the page
+
+% Variables.
+
+/FrameSepIs FMnone def % separation we are printing
+% If FrameSepIs is FMcustom, this is the custom color
+/FrameSepBlack 0 def
+/FrameSepYellow 0 def
+/FrameSepMagenta 0 def
+/FrameSepCyan 0 def
+/FrameSepRed 1 def
+/FrameSepGreen 1 def
+/FrameSepBlue 1 def
+/FrameCurGray 1 def
+/FrameCurPat null def
+
+/FrameCurColors [ 0 0 0 1 0 0 0 ] def % c m y k r g b
+
+% Utility routines
+
+/FrameColorEpsilon .001 def	% epsilon by which values can differ and sill be equal
+/eqepsilon {		% v1 v2 eqeps bool
+	sub dup 0 lt {neg} if
+	FrameColorEpsilon le
+} bind def
+
+% are the cmyk and cmykrgb arrays on the stack the same color?
+/FrameCmpColorsCMYK { % [ c1 m1 y1 k1 ] [ c2 m2 y2 k2 r2 g2 b2] -> bool
+	2 copy 0 get exch 0 get eqepsilon {
+		2 copy 1 get exch 1 get eqepsilon {
+			2 copy 2 get exch 2 get eqepsilon {
+				3 get exch 3 get eqepsilon
+			} {pop pop false} ifelse
+		}{pop pop false} ifelse
+	} {pop pop false} ifelse
+} bind def
+% are the rgb and cmykrgb arrays on the stack the same color?
+/FrameCmpColorsRGB { % [ r1 g1 b1 ] [ c2 m2 y2 k2 r2 g2 b2] -> bool
+	2 copy 4 get exch 0 get eqepsilon {
+		2 copy 5 get exch 1 get eqepsilon {
+			6 get exch 2 get eqepsilon
+		}{pop pop false} ifelse
+	} {pop pop false} ifelse
+} bind def
+
+% convert r g b to c m y k
+/RGBtoCMYK { % r g b
+	1 exch sub % r g y
+	3 1 roll % y r g
+	1 exch sub % y r m
+	3 1 roll % m y r
+	1 exch sub % m y c
+	3 1 roll % c m y
+	3 copy % c m y c m y
+	2 copy % c m y c m y m y
+	le { pop } { exch pop } ifelse % c m y c min(m,y)
+	2 copy % c m y c min(m,y) c min(m,y)
+	le { pop } { exch pop } ifelse % c m y min(c, min(m,y))
+	dup dup dup % c m y k k k k
+	6 1 roll % c k m y k k k
+	4 1 roll % c k m k y k k
+	7 1 roll % k c k m k y k
+	sub % k c k m k y
+	6 1 roll % y k c k m k
+	sub % y k c k m
+	5 1 roll % m y k c k
+	sub % m y k c
+	4 1 roll % c m y k 
+} bind def
+/CMYKtoRGB { % c m y k CMYKtoRGB r g b
+	dup dup 4 -1 roll add 						  % c m k k y+k
+	5 1 roll 3 -1 roll add 						  % y+k c k m+k
+	4 1 roll add 								  % m+k y+k c+k
+	1 exch sub dup 0 lt {pop 0} if 3 1 roll 	  % r m+k y+k
+	1 exch sub dup 0 lt {pop 0} if exch 	      % r b m+k
+	1 exch sub dup 0 lt {pop 0} if exch	  		  % r g b
+} bind def
+
+% Public routines
+
+
+% Happens at the top of each page that is a separation
+/FrameSepInit {
+	1.0 RealSetgray
+} bind def
+% Tell the separation code that this separation is for a custom color
+/FrameSetSepColor { % c m y k r g b
+	/FrameSepBlue exch def
+	/FrameSepGreen exch def
+	/FrameSepRed exch def
+	/FrameSepBlack exch def
+	/FrameSepYellow exch def
+	/FrameSepMagenta exch def
+	/FrameSepCyan exch def
+	/FrameSepIs FMcustom def
+	setCurrentScreen	
+} bind def
+% Tell the separation code that this separation is Cyan
+/FrameSetCyan {
+	/FrameSepBlue 1.0 def
+	/FrameSepGreen 1.0 def
+	/FrameSepRed 0.0 def
+	/FrameSepBlack 0.0 def
+	/FrameSepYellow 0.0 def
+	/FrameSepMagenta 0.0 def
+	/FrameSepCyan 1.0 def
+	/FrameSepIs FMcyan def
+	setCurrentScreen	
+} bind def
+ 
+% Tell the separation code that this separation is Magenta
+/FrameSetMagenta {
+	/FrameSepBlue 1.0 def
+	/FrameSepGreen 0.0 def
+	/FrameSepRed 1.0 def
+	/FrameSepBlack 0.0 def
+	/FrameSepYellow 0.0 def
+	/FrameSepMagenta 1.0 def
+	/FrameSepCyan 0.0 def
+	/FrameSepIs FMmagenta def
+	setCurrentScreen
+} bind def
+ 
+% Tell the separation code that this separation is Yellow
+/FrameSetYellow {
+	/FrameSepBlue 0.0 def
+	/FrameSepGreen 1.0 def
+	/FrameSepRed 1.0 def
+	/FrameSepBlack 0.0 def
+	/FrameSepYellow 1.0 def
+	/FrameSepMagenta 0.0 def
+	/FrameSepCyan 0.0 def
+	/FrameSepIs FMyellow def
+	setCurrentScreen
+} bind def
+ 
+% Tell the separation code that this separation is Black
+/FrameSetBlack {
+	/FrameSepBlue 0.0 def
+	/FrameSepGreen 0.0 def
+	/FrameSepRed 0.0 def
+	/FrameSepBlack 1.0 def
+	/FrameSepYellow 0.0 def
+	/FrameSepMagenta 0.0 def
+	/FrameSepCyan 0.0 def
+	/FrameSepIs FMblack def
+	setCurrentScreen
+} bind def
+ 
+% Tell the separation code we are not doing a separation
+/FrameNoSep { %
+	/FrameSepIs FMnone def
+	setCurrentScreen
+} bind def
+
+% Initialize the separation code with all the custom colors we are
+% separating (not process colors)
+/FrameSetSepColors { % list of arrays of [c m y k r g b] count 
+	FrameDict begin
+	[ exch 1 add 1 roll ]
+	/FrameSepColors  % array of arrays of colors we are separating
+	exch def end
+	} bind def
+
+% is this color array in the array of custom color separations?
+/FrameColorInSepListCMYK { % [ c m y k ] -> bool
+	FrameSepColors {  % color elem-of-array
+       		exch dup 3 -1 roll % color color elem
+       		FrameCmpColorsCMYK % color bool
+       		{ pop true exit } if
+    	} forall % exits with either [color] or true
+	dup true ne {pop false} if
+	} bind def
+/FrameColorInSepListRGB { % [ r g b ] -> bool
+	FrameSepColors {  % color elem-of-array
+       		exch dup 3 -1 roll % color color elem
+       		FrameCmpColorsRGB % color bool
+       		{ pop true exit } if
+    	} forall % exits with either [color] or true
+	dup true ne {pop false} if
+	} bind def
+
+% Level 1 color operators saved and redefined
+/RealSetgray /setgray load def
+/RealSetrgbcolor /setrgbcolor load def
+/RealSethsbcolor /sethsbcolor load def
+end 
+
+% Setgray patch
+/setgray { % num
+	FrameDict begin
+	FrameSepIs FMnone eq
+		{ RealSetgray } 
+		{ % go to white unless the current sep color is black
+		FrameSepIs FMblack eq 
+			{ RealSetgray } 
+			{ FrameSepIs FMcustom eq 
+			  FrameSepRed 0 eq and
+			  FrameSepGreen 0 eq and
+			  FrameSepBlue 0 eq and {
+			  	RealSetgray
+			  } {
+				1 RealSetgray pop 
+			  } ifelse
+			} ifelse
+		} ifelse
+	end
+} bind def
+/setrgbcolor { % r g b
+	FrameDict begin
+	FrameSepIs FMnone eq
+	{  RealSetrgbcolor }
+	{
+		3 copy [ 4 1 roll ] % r g b [ r g b ]
+		FrameColorInSepListRGB
+		{
+				FrameSepBlue eq exch 
+			 	FrameSepGreen eq and exch 
+			 	FrameSepRed eq and
+			 	{ 0 } { 1 } ifelse
+		}
+		{
+			FMPColor {
+				RealSetrgbcolor
+				currentcmykcolor
+			} {
+				RGBtoCMYK
+			} ifelse
+			FrameSepIs FMblack eq
+			{1.0 exch sub 4 1 roll pop pop pop} {
+			FrameSepIs FMyellow eq
+			{pop 1.0 exch sub 3 1 roll pop pop} {
+			FrameSepIs FMmagenta eq
+			{pop pop 1.0 exch sub exch pop } {
+			FrameSepIs FMcyan eq
+			{pop pop pop 1.0 exch sub } 
+			{pop pop pop pop 1} ifelse } ifelse } ifelse } ifelse 
+		} ifelse
+		RealSetgray
+	} 
+	ifelse
+	end
+} bind def
+/sethsbcolor {
+	FrameDict begin
+	FrameSepIs FMnone eq 
+	{ RealSethsbcolor } 
+	{
+		RealSethsbcolor % safe since we will overwrite the color state
+		currentrgbcolor  % r g b - Let PostsCript to the conversion.
+		setrgbcolor % call our version
+	} 
+	ifelse
+	end
+} bind def
+FrameDict begin
+
+/setcmykcolor where {
+	pop /RealSetcmykcolor /setcmykcolor load def
+} {
+	/RealSetcmykcolor {
+		4 1 roll
+		3 { 3 index add 0 max 1 min 1 exch sub 3 1 roll} repeat 
+		RealSetrgbcolor pop
+	} bind def
+} ifelse
+userdict /setcmykcolor { % c m y k
+		FrameDict begin
+		FrameSepIs FMnone eq
+		{ RealSetcmykcolor } 
+		{
+			4 copy [ 5 1 roll ]
+			FrameColorInSepListCMYK
+			{
+				FrameSepBlack eq exch 
+				FrameSepYellow eq and exch 
+				FrameSepMagenta eq and exch 
+				FrameSepCyan eq and 
+				{ 0 } { 1 } ifelse
+			}
+			{
+				FrameSepIs FMblack eq
+				{1.0 exch sub 4 1 roll pop pop pop} {
+				FrameSepIs FMyellow eq
+				{pop 1.0 exch sub 3 1 roll pop pop} {
+				FrameSepIs FMmagenta eq
+				{pop pop 1.0 exch sub exch pop } {
+				FrameSepIs FMcyan eq
+				{pop pop pop 1.0 exch sub } 
+				{pop pop pop pop 1} ifelse } ifelse } ifelse } ifelse 
+			} ifelse
+			RealSetgray
+		}
+		ifelse
+		end
+	} bind put
+
+% Set up a prototype pattern for PostScript Level 2
+fMLevel1 { 
+	% set up screen functions for the patterns in PS level 1
+	% each entry contains an angle, spot function, flipped spot function,
+	% gray level and frequency multiplier.
+	/patScreenDict 7 dict dup begin
+		<0f1e3c78f0e1c387> [ 45  { pop } {exch pop} 		.5   2 sqrt] FmBD
+		<0f87c3e1f0783c1e> [ 135 { pop } {exch pop}			.5   2 sqrt] FmBD
+		<cccccccccccccccc> [ 0   { pop } dup				.5   2	   ] FmBD
+		<ffff0000ffff0000> [ 90  { pop } dup				.5   2	   ] FmBD
+		<8142241818244281> [ 45  { 2 copy lt {exch} if pop}	dup .75  2 sqrt] FmBD
+		<03060c183060c081> [ 45  { pop } {exch pop}			.875 2 sqrt] FmBD
+		<8040201008040201> [ 135 { pop } {exch pop}			.875 2 sqrt] FmBD
+	end def
+} { % prototype level 2 pattern dictionary
+	% define some PostScript procedures for known jaggy patterns.
+	/patProcDict 5 dict dup begin
+		<0f1e3c78f0e1c387> { 3 setlinewidth -1 -1 moveto 9 9 lineto stroke 
+											4 -4 moveto 12 4 lineto stroke
+											-4 4 moveto 4 12 lineto stroke} bind def
+		<0f87c3e1f0783c1e> { 3 setlinewidth -1 9 moveto 9 -1 lineto stroke 
+											-4 4 moveto 4 -4 lineto stroke
+											4 12 moveto 12 4 lineto stroke} bind def
+		<8142241818244281> { 1 setlinewidth -1 9 moveto 9 -1 lineto stroke
+											-1 -1 moveto 9 9 lineto stroke } bind def
+		<03060c183060c081> { 1 setlinewidth -1 -1 moveto 9 9 lineto stroke 
+											4 -4 moveto 12 4 lineto stroke
+											-4 4 moveto 4 12 lineto stroke} bind def
+		<8040201008040201> { 1 setlinewidth -1 9 moveto 9 -1 lineto stroke 
+											-4 4 moveto 4 -4 lineto stroke
+											4 12 moveto 12 4 lineto stroke} bind def
+	end def
+	/patDict 15 dict dup begin
+		/PatternType 1 def		% Always 1 for PS Level 2
+		/PaintType 2 def		% Uncolored pattern
+		/TilingType 3 def		% constant spacing and faster tiling
+		/BBox [ 0 0 8 8 ] def 	% bounding box
+		/XStep 8 def			% X offset
+		/YStep 8 def			% Y offset
+		/PaintProc {
+			begin
+			patProcDict bstring known {
+				patProcDict bstring get exec
+			} {
+				8 8 true [1 0 0 -1 0 8] bstring imagemask
+			} ifelse
+			end
+		} bind def
+	end def
+} ifelse
+
+%combineColor puts together the current gray value (which could also be
+%a fraction of on bits for a fill pattern and the current color and calls
+%the appropriate function
+%
+/combineColor {
+    FrameSepIs FMnone eq
+	{
+		graymode fMLevel1 or not {
+			% Level 2 pattern
+			[/Pattern [/DeviceCMYK]] setcolorspace
+			FrameCurColors 0 4 getinterval aload pop FrameCurPat setcolor
+		} {
+			FrameCurColors 3 get 1.0 ge {
+				FrameCurGray RealSetgray
+			} {
+				fMAcrobat not FMPColor graymode and and {
+					0 1 3 { 
+						FrameCurColors exch get
+						1 FrameCurGray sub mul
+					} for
+					RealSetcmykcolor
+				} {
+					4 1 6 {
+						FrameCurColors exch get
+						graymode {
+							1 exch sub 1 FrameCurGray sub mul 1 exch sub
+						} {
+							1.0 lt {FrameCurGray} {1} ifelse
+						} ifelse
+					} for
+					RealSetrgbcolor
+				} ifelse
+			} ifelse
+		} ifelse
+	} { % separation case
+		FrameCurColors 0 4 getinterval aload
+		FrameColorInSepListCMYK {
+			FrameSepBlack eq exch 
+			FrameSepYellow eq and exch 
+			FrameSepMagenta eq and exch 
+			FrameSepCyan eq and
+			FrameSepIs FMcustom eq and
+			{ FrameCurGray } { 1 } ifelse
+		} {
+			FrameSepIs FMblack eq
+			{FrameCurGray 1.0 exch sub mul 1.0 exch sub 4 1 roll pop pop pop} {
+			FrameSepIs FMyellow eq
+			{pop FrameCurGray 1.0 exch sub mul 1.0 exch sub 3 1 roll pop pop} {
+			FrameSepIs FMmagenta eq
+			{pop pop FrameCurGray 1.0 exch sub mul 1.0 exch sub exch pop } {
+			FrameSepIs FMcyan eq
+			{pop pop pop FrameCurGray 1.0 exch sub mul 1.0 exch sub } 
+			{pop pop pop pop 1} ifelse } ifelse } ifelse } ifelse 
+		} ifelse
+		graymode fMLevel1 or not {
+			% Level 2 pattern
+			[/Pattern [/DeviceGray]] setcolorspace
+			FrameCurPat setcolor
+		} { 
+			graymode not fMLevel1 and {
+				% Level 1 patterns are either all there or not there at all
+				dup 1 lt {pop FrameCurGray} if
+			} if
+			RealSetgray
+		} ifelse
+	} ifelse
+} bind def
+
+/savematrix {
+	orgmatrix currentmatrix pop
+	} bind def
+/restorematrix {
+	orgmatrix setmatrix
+	} bind def
+/fMDefaultMatrix matrix defaultmatrix def
+/fMatrix2 matrix def
+/dpi    72 0 fMDefaultMatrix dtransform
+    dup mul exch   dup mul add   sqrt def
+	
+% freq and sangle are used for ps Level 1 pattern building.
+/freq dpi dup 72 div round dup 0 eq {pop 1} if 8 mul div def
+/sangle 1 0 fMDefaultMatrix dtransform exch atan def
+	sangle fMatrix2 rotate 
+	fMDefaultMatrix fMatrix2 concatmatrix 
+	dup 0 get /sflipx exch def
+	    3 get /sflipy exch def
+
+%
+% screen index depending on dpi
+%	- screenIndex smallint
+/screenIndex {
+	0 1 dpiranges length 1 sub { dup dpiranges exch get 1 sub dpi le {exit} {pop} ifelse } for
+} bind def
+
+%
+% These routines get the standard Adobe frequencies, angles, and spot functions
+% depending on the DPI
+%
+% - getCyanScreen freq angle spotfunction
+/getCyanScreen {
+	FMUseHighFrequencyScreens { CHighAngles CMHighFreqs} {CLowAngles CMLowFreqs} ifelse
+		screenIndex dup 3 1 roll get 3 1 roll get /FMSpotFunction load
+} bind def
+
+%
+% - getMagentaScreen freq angle spotFunction
+/getMagentaScreen {
+	FMUseHighFrequencyScreens { MHighAngles CMHighFreqs } {MLowAngles CMLowFreqs} ifelse
+		screenIndex dup 3 1 roll get 3 1 roll get /FMSpotFunction load
+} bind def
+
+%
+% - getYellowScreen freq angle spotFunction
+% note that some of these use a "tripple dot" function at 1/3 the frequency
+/getYellowScreen {
+	FMUseHighFrequencyScreens { YHighTDot YHighFreqs} { YLowTDot YLowFreqs } ifelse
+		screenIndex dup 3 1 roll get 3 1 roll get { 3 div
+			{2 { 1 add 2 div 3 mul dup floor sub 2 mul 1 sub exch} repeat
+			FMSpotFunction } } {/FMSpotFunction load } ifelse
+			0.0 exch
+} bind def
+
+%
+% - getBlackScreen freq angle spotFunction
+/getBlackScreen  {
+	FMUseHighFrequencyScreens { KHighFreqs } { KLowFreqs } ifelse
+		screenIndex get 45.0 /FMSpotFunction load 
+} bind def
+
+%
+% - getSpotScreen freq angle spotFunction
+/getSpotScreen {
+	getBlackScreen
+} bind def
+
+%
+% - getCompositeScreen freq angle spotFunction
+/getCompositeScreen {
+	getBlackScreen
+} bind def
+
+% FmSetScreen sets the screen for either PostScript Level 1 or Level 2 and optionally
+% sets the accuratescreens flag in the latter case
+% freq angle spotfunction FMSetScreen -
+/FMSetScreen 
+	fMLevel1 { /setscreen load 
+	}{ {
+		8 dict begin
+		/HalftoneType 1 def
+		/SpotFunction exch def
+		/Angle exch def
+		/Frequency exch def
+		/AccurateScreens FMUseAcccurateScreens def
+		currentdict end sethalftone
+	} bind } ifelse
+def
+
+% This sets the default screen as was set at the beginning of the job
+% - setDefaultScreen -
+/setDefaultScreen {
+	FMPColor {
+		orgrxfer cvx orggxfer cvx orgbxfer cvx orgxfer cvx setcolortransfer
+	}
+	{
+		orgxfer cvx settransfer
+	} ifelse
+	orgfreq organgle orgproc cvx setscreen
+} bind def
+
+% This sets the current screen depending on FrameSepIs
+% - setCurrentScreen -
+/setCurrentScreen {
+	FrameSepIs FMnone eq {
+		FMUseDefaultNoSeparationScreen {
+			setDefaultScreen
+		} {
+			getCompositeScreen FMSetScreen
+		} ifelse
+	} {
+		FrameSepIs FMcustom eq {
+			FMUseDefaultSpotSeparationScreen {
+				setDefaultScreen
+			} {
+				getSpotScreen FMSetScreen
+			} ifelse
+		} {
+			FMUseDefaultProcessSeparationScreen {
+				setDefaultScreen
+			} {
+				FrameSepIs FMcyan eq {
+					getCyanScreen FMSetScreen
+				} {
+					FrameSepIs FMmagenta eq {
+						getMagentaScreen FMSetScreen
+					} {
+						FrameSepIs FMyellow eq {
+							getYellowScreen FMSetScreen
+						} {
+							getBlackScreen FMSetScreen
+						} ifelse
+					} ifelse
+				} ifelse
+			} ifelse
+		} ifelse
+	} ifelse 
+} bind def
+
+
+end
+
+% End of Color separation code
+%
+	
+/FMDOCUMENT { % xscale yscale edown negative paperwidth paperheight manfeed numcopies numfonts
+	array /FMfonts exch def % Why isn't this in FrameDict???
+	/#copies exch def
+	FrameDict begin
+	0 ne /manualfeed exch def
+	/paperheight exch def
+	/paperwidth exch def
+	0 ne /fMNegative exch def % invert page
+	0 ne /edown exch def % flip page along y axis
+	/yscale exch def
+	/xscale exch def
+
+	fMLevel1 {
+		manualfeed {setmanualfeed} if
+		/FMdicttop countdictstack 1 add def % some PS's leave junk on dict ...
+		/FMoptop count def % ...or on operand stack...
+		setpapername % This stuff may alter the transfer/screen/angle
+		manualfeed {true} {papersize} ifelse % true->more work to do
+		{manualpapersize} {false} ifelse % true->more work to do
+		{desperatepapersize} {false} ifelse % true->failed completely
+		{papersizefailure} if
+		count -1 FMoptop {pop pop} for
+		countdictstack -1 FMdicttop {pop end} for %...if tray not installed
+		}
+		{2 dict
+		 dup /PageSize [paperwidth paperheight] put
+		 manualfeed {dup /ManualFeed manualfeed put} if
+		 {setpagedevice} stopped {papersizefailure} if
+		}
+	ifelse % fMLevel1
+	
+	FMPColor {
+		currentcolorscreen
+			cvlit /orgproc exch def
+				  /organgle exch def 
+				  /orgfreq exch def
+			cvlit /orgbproc exch def
+				  /orgbangle exch def 
+				  /orgbfreq exch def
+			cvlit /orggproc exch def
+				  /orggangle exch def 
+				  /orggfreq exch def
+			cvlit /orgrproc exch def
+				  /orgrangle exch def 
+				  /orgrfreq exch def
+
+			currentcolortransfer 
+			fMNegative {
+				1 1 4 { 
+					pop { 1 exch sub } fmConcatProcs 4 1 roll
+				} for
+				4 copy
+				setcolortransfer
+			} if
+			cvlit /orgxfer exch def
+			cvlit /orgbxfer exch def
+			cvlit /orggxfer exch def
+			cvlit /orgrxfer exch def
+	} {
+		currentscreen 
+			cvlit /orgproc exch def
+				  /organgle exch def 
+				  /orgfreq exch def
+				  
+		currenttransfer 
+		fMNegative {
+			{ 1 exch sub } fmConcatProcs
+			dup settransfer
+		} if 
+		cvlit /orgxfer exch def
+	} ifelse
+
+	end % FrameDict
+} def % only used at startup, so no bind
+
+/FMBEGINPAGE { % pagewidth pageheight landscape color-arrays count
+	FrameDict begin % for the whole page...
+	/pagesave save def
+	3.86 setmiterlimit
+	/landscape exch 0 ne def
+	landscape { % check for landscape
+		90 rotate 0 exch dup /pwid exch def neg translate pop 
+	}{
+		pop /pwid exch def
+	} ifelse
+	edown { [-1 0 0 1 pwid 0] concat } if
+% paint the whole page in "white".  If the page is inverted, then
+% this will actually paint our black background
+	0 0 moveto paperwidth 0 lineto paperwidth paperheight lineto 
+	0 paperheight lineto 0 0 lineto 1 setgray fill
+	xscale yscale scale
+	/orgmatrix matrix def
+	gsave % for CLIP
+} def % only used infrequently, so no bind
+
+/FMENDPAGE {
+	grestore % for CLIP
+	pagesave restore
+	end % FrameDict
+	showpage
+	} def % only used infrequently, so no bind
+
+/FMFONTDEFINE { % fontindex nonstd_encoding fontname -- 
+	FrameDict begin
+	findfont % fontindex nonstd_encoding font
+	ReEncode % fontindex font'
+	1 index exch % fontindex fontindex font'
+	definefont % fontindex font"
+	FMfonts 3 1 roll %  FMfonts fontindex font"
+	put
+	end % FrameDict
+	} def % only used infrequently, so no bind
+
+/FMFILLS {
+	FrameDict begin dup
+	array /fillvals exch def
+	dict /patCache exch def
+	end % framedict
+	} def % Only called once, so no bind
+
+/FMFILL {
+	FrameDict begin
+	 fillvals 3 1 roll put
+	end % FrameDict
+	} def % only used infrequently, so no bind
+
+% Set things to a known, quiescent state, for when we switch to another writer
+/FMNORMALIZEGRAPHICS { 
+	newpath
+	1 setlinewidth
+	0 setlinecap
+	0 0 0 sethsbcolor
+	0 setgray % Not FMsetgray; only called outside of our environment!
+	} bind def
+
+/FMBEGINEPSF { % <theta> llx lly urx ury fw fh fx fy
+	end % FrameDict
+	/FMEPSF save def % in userdict
+	/showpage {} def % this def is in userdict
+%- See Adobe's "PostScript Language Reference Manual, 2nd Edition", page 714.
+%- "...the following operators MUST NOT be used in an EPS file:" (emphasis ours)
+	/banddevice {(banddevice) FMBADEPSF} def
+	/clear {(clear) FMBADEPSF} def
+	/cleardictstack {(cleardictstack) FMBADEPSF} def % FMBADEPSF knows this is the longest!
+	/copypage {(copypage) FMBADEPSF} def
+	/erasepage {(erasepage) FMBADEPSF} def
+	/exitserver {(exitserver) FMBADEPSF} def
+	/framedevice {(framedevice) FMBADEPSF} def
+	/grestoreall {(grestoreall) FMBADEPSF} def
+	/initclip {(initclip) FMBADEPSF} def
+	/initgraphics {(initgraphics) FMBADEPSF} def
+%	/initmatrix {(initmatrix) FMBADEPSF} def	% Aldus Freehand 4.0 epsf uses this harmlessly <Gus 4/26/95>
+	/quit {(quit) FMBADEPSF} def
+	/renderbands {(renderbands) FMBADEPSF} def
+	/setglobal {(setglobal) FMBADEPSF} def
+	/setpagedevice {(setpagedevice) FMBADEPSF} def
+	/setshared {(setshared) FMBADEPSF} def
+	/startjob {(startjob) FMBADEPSF} def
+	/lettertray {(lettertray) FMBADEPSF} def
+	/letter {(letter) FMBADEPSF} def
+	/lettersmall {(lettersmall) FMBADEPSF} def
+	/11x17tray {(11x17tray) FMBADEPSF} def
+	/11x17 {(11x17) FMBADEPSF} def
+	/ledgertray {(ledgertray) FMBADEPSF} def
+	/ledger {(ledger) FMBADEPSF} def
+	/legaltray {(legaltray) FMBADEPSF} def
+	/legal {(legal) FMBADEPSF} def
+	/statementtray {(statementtray) FMBADEPSF} def
+	/statement {(statement) FMBADEPSF} def
+	/executivetray {(executivetray) FMBADEPSF} def
+	/executive {(executive) FMBADEPSF} def
+	/a3tray {(a3tray) FMBADEPSF} def
+	/a3 {(a3) FMBADEPSF} def
+	/a4tray {(a4tray) FMBADEPSF} def
+	/a4 {(a4) FMBADEPSF} def
+	/a4small {(a4small) FMBADEPSF} def
+	/b4tray {(b4tray) FMBADEPSF} def
+	/b4 {(b4) FMBADEPSF} def
+	/b5tray {(b5tray) FMBADEPSF} def
+	/b5 {(b5) FMBADEPSF} def
+	FMNORMALIZEGRAPHICS % in case we're in a strange state
+	[/fy /fx /fh /fw /ury /urx /lly /llx] {exch def} forall % neat trick
+	fx fw 2 div add fy fh 2 div add  translate
+	rotate
+	fw 2 div neg fh 2 div neg translate
+	fw urx llx sub div fh ury lly sub div scale % then scale
+	llx neg lly neg translate % then compensate for LL offset 
+	/FMdicttop countdictstack 1 add def % high-water mark of dict stack
+	/FMoptop count def % tricky! "/FMoptop" on stack
+	} bind def
+
+/FMENDEPSF {
+	count -1 FMoptop {pop pop} for % clear EPS junk from operand stack
+	countdictstack -1 FMdicttop {pop end} for % ditto for dict stack
+	FMEPSF restore
+	FrameDict begin % for the whole page...
+	} bind def
+
+FrameDict begin % put most defs here
+
+/setmanualfeed {
+%%BeginFeature *ManualFeed True
+	 statusdict /manualfeed true put
+%%EndFeature
+	} bind def
+
+/max {2 copy lt {exch} if pop} bind def
+/min {2 copy gt {exch} if pop} bind def
+/inch {72 mul} def
+
+/pagedimen { % name width height
+	paperheight sub abs 16 lt exch % 16pt is an arbitrary slop amount
+	paperwidth sub abs 16 lt and
+	{/papername exch def} {pop} ifelse
+	} bind def
+
+/setpapername { % Already set up: paperwidth paperheight and manualfeed
+	/papersizedict 14 dict def % one for /papername, one for /unknown
+	papersizedict begin
+	/papername /unknown def % in case no match
+		/Letter 8.5 inch 11.0 inch pagedimen
+		/LetterSmall 7.68 inch 10.16 inch pagedimen
+		/Tabloid 11.0 inch 17.0 inch pagedimen
+		/Ledger 17.0 inch 11.0 inch pagedimen
+		/Legal 8.5 inch 14.0 inch pagedimen
+		/Statement 5.5 inch 8.5 inch pagedimen
+		/Executive 7.5 inch 10.0 inch pagedimen
+		/A3 11.69 inch 16.5 inch pagedimen
+		/A4 8.26 inch 11.69 inch pagedimen
+		/A4Small 7.47 inch 10.85 inch pagedimen
+		/B4 10.125 inch 14.33 inch pagedimen
+		/B5 7.16 inch 10.125 inch pagedimen
+	end
+	} bind def
+
+/papersize {
+	papersizedict begin
+		/Letter {lettertray letter} def
+		/LetterSmall {lettertray lettersmall} def
+		/Tabloid {11x17tray 11x17} def
+		/Ledger {ledgertray ledger} def
+		/Legal {legaltray legal} def
+		/Statement {statementtray statement} def
+		/Executive {executivetray executive} def
+		/A3 {a3tray a3} def
+		/A4 {a4tray a4} def
+		/A4Small {a4tray a4small} def
+		/B4 {b4tray b4} def
+		/B5 {b5tray b5} def
+		/unknown {unknown} def
+	papersizedict dup papername known {papername} {/unknown} ifelse get
+	end
+	statusdict begin stopped end % return true if more work to do
+	} bind def
+
+/manualpapersize {
+	papersizedict begin
+		/Letter {letter} def
+		/LetterSmall {lettersmall} def
+		/Tabloid {11x17} def
+		/Ledger {ledger} def
+		/Legal {legal} def
+		/Statement {statement} def
+		/Executive {executive} def
+		/A3 {a3} def
+		/A4 {a4} def
+		/A4Small {a4small} def
+		/B4 {b4} def
+		/B5 {b5} def
+		/unknown {unknown} def
+	papersizedict dup papername known {papername} {/unknown} ifelse get
+	end
+	stopped % return true if more work to do
+	} bind def
+
+/desperatepapersize {
+	statusdict /setpageparams known
+		{
+		paperwidth paperheight 0 1 
+		statusdict begin
+		{setpageparams} stopped % return true iff failed
+		end
+		} {true} ifelse % return true iff failed
+	} bind def
+
+/papersizefailure {
+	FMAllowPaperSizeMismatch not
+		{
+(The requested paper size is not available in any currently-installed tray)
+(Edit the PS file to "FMAllowPaperSizeMismatch true" to use default tray)
+		 FMFAILURE } if
+	} def
+
+%
+% Font re-encoding to include diacritics
+% 
+/DiacriticEncoding [
+
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /space /exclam /quotedbl
+/numbersign /dollar /percent /ampersand /quotesingle /parenleft
+/parenright /asterisk /plus /comma /hyphen /period /slash /zero /one
+/two /three /four /five /six /seven /eight /nine /colon /semicolon
+/less /equal /greater /question /at /A /B /C /D /E /F /G /H /I /J /K
+/L /M /N /O /P /Q /R /S /T /U /V /W /X /Y /Z /bracketleft /backslash
+/bracketright /asciicircum /underscore /grave /a /b /c /d /e /f /g /h
+/i /j /k /l /m /n /o /p /q /r /s /t /u /v /w /x /y /z /braceleft /bar
+/braceright /asciitilde /.notdef /Adieresis /Aring /Ccedilla /Eacute
+/Ntilde /Odieresis /Udieresis /aacute /agrave /acircumflex /adieresis
+/atilde /aring /ccedilla /eacute /egrave /ecircumflex /edieresis
+/iacute /igrave /icircumflex /idieresis /ntilde /oacute /ograve
+/ocircumflex /odieresis /otilde /uacute /ugrave /ucircumflex
+/udieresis /dagger /.notdef /cent /sterling /section /bullet
+/paragraph /germandbls /registered /copyright /trademark /acute
+/dieresis /.notdef /AE /Oslash /.notdef /.notdef /.notdef /.notdef
+/yen /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/ordfeminine /ordmasculine /.notdef /ae /oslash /questiondown
+/exclamdown /logicalnot /.notdef /florin /.notdef /.notdef
+/guillemotleft /guillemotright /ellipsis /.notdef /Agrave /Atilde
+/Otilde /OE /oe /endash /emdash /quotedblleft /quotedblright
+/quoteleft /quoteright /.notdef /.notdef /ydieresis /Ydieresis
+/fraction /currency /guilsinglleft /guilsinglright /fi /fl /daggerdbl
+/periodcentered /quotesinglbase /quotedblbase /perthousand
+/Acircumflex /Ecircumflex /Aacute /Edieresis /Egrave /Iacute
+/Icircumflex /Idieresis /Igrave /Oacute /Ocircumflex /.notdef /Ograve
+/Uacute /Ucircumflex /Ugrave /dotlessi /circumflex /tilde /macron
+/breve /dotaccent /ring /cedilla /hungarumlaut /ogonek /caron
+
+] def
+
+/ReEncode { % nonstd_encoding font -- reencodedfont
+	dup % nonstd_encoding font font
+	length % nonstd_encoding font dictlength
+	dict begin % nonstd_encoding font % currentdict = newdict
+	{% forall % forall is over font to be copied
+	1 index /FID ne % skip FID
+		{def} % defs go into newfontdict which is currentdict
+		{pop pop} ifelse % copy all keys including /Encoding
+	} forall % nonstd_encoding
+	0 eq {/Encoding DiacriticEncoding def} if % --
+	currentdict % push a copy of the copied font dict onto operand stack
+	end % font' % before popping it off dictionary stack
+	} bind def
+
+FMPColor 
+	% setup procs for color printing
+	{
+
+	/BEGINBITMAPCOLOR { % iw, ih, width, height, theta, x y 
+		BITMAPCOLOR} def
+	/BEGINBITMAPCOLORc { % iw, ih, width, height, theta, x y 
+		BITMAPCOLORc} def
+	/BEGINBITMAPTRUECOLOR { 
+		BITMAPTRUECOLOR } def
+	/BEGINBITMAPTRUECOLORc { 
+		BITMAPTRUECOLORc } def
+	/BEGINBITMAPCMYK { 
+		BITMAPCMYK } def
+	/BEGINBITMAPCMYKc { 
+		BITMAPCMYKc } def
+	}
+	% setup procs for B&W printing
+	{
+	/BEGINBITMAPCOLOR { % iw, ih, width, height, theta, x y 
+		BITMAPGRAY} def
+	/BEGINBITMAPCOLORc { % iw, ih, width, height, theta, x y 
+		BITMAPGRAYc} def
+	/BEGINBITMAPTRUECOLOR { 
+		BITMAPTRUEGRAY } def
+	/BEGINBITMAPTRUECOLORc { 
+		BITMAPTRUEGRAYc } def
+	/BEGINBITMAPCMYK { 
+		BITMAPCMYKGRAY } def
+	/BEGINBITMAPCMYKc { 
+		BITMAPCMYKGRAYc } def
+	}
+ifelse
+
+/K { % c m y k r g b SEPARATION
+	FMPrintAllColorsAsBlack {
+		dup 1 eq 2 index 1 eq and 3 index 1 eq and not
+			{7 {pop} repeat 0 0 0 1 0 0 0} if
+	} if 
+	FrameCurColors astore 
+	pop combineColor
+} bind def
+%
+% graymode is true if we are just doing gray fills, this way do not keep calling
+% setscreen. I don't know what the cost is on calling setscreen with defaults, but
+% this is easy to keep track of, and we know for sure we aren't wasting cycles.
+% if graymode is false and fMLevel1 is false, then we are using Level 2 patterns.
+%
+/graymode true def
+
+% used by level 1 patterns
+% defaultflip matrixentry fmGetFlit -> eith -1 or 1
+fMLevel1 {
+	/fmGetFlip {
+		fMatrix2 exch get mul 0 lt { -1 } { 1 } ifelse
+	} FmBD
+} if
+
+/setPatternMode {
+	fMLevel1 {
+		2 index patScreenDict exch known {
+			pop pop
+			patScreenDict exch get aload pop % angle spot fspot gray mult
+			freq 								% freq
+			mul									% times multiplier
+			5 2 roll							% angle spot fspot gray mult freq -> gray freq angle spot fspot
+			fMatrix2 currentmatrix 1 get 0 ne {
+				3 -1 roll 90 add 3 1 roll 		% landscape
+				sflipx 1 fmGetFlip sflipy 2 fmGetFlip neg mul
+			} {  								% portrait     
+				sflipx 0 fmGetFlip sflipy 3 fmGetFlip mul 
+			} ifelse
+			0 lt {exch pop} {pop} ifelse 		% take regular or flipped spot function
+			fMNegative { 
+				{neg} fmConcatProcs 			% invert spot function
+			} if
+			bind
+			% we need to bypass any screen filter and go directly to systemdict
+			% to avoid problems with Kodak Precision calibration software
+			% <Gus 9/13/93>
+			systemdict /setscreen get exec		% leave graylevel on stack
+			/FrameCurGray exch def
+		} {
+			/bwidth  exch def
+			/bpside  exch def
+			/bstring exch def
+			/onbits 0 def  /offbits 0 def
+			freq sangle landscape {90 add} if 
+				{/ypoint exch def
+				 /xpoint exch def
+				 /xindex xpoint 1 add 2 div bpside mul cvi def
+				 /yindex ypoint 1 add 2 div bpside mul cvi def
+				 bstring yindex bwidth mul xindex 8 idiv add get
+				 1 7 xindex 8 mod sub bitshift and 0 ne fMNegative {not} if
+				 {/onbits  onbits  1 add def 1}
+				 {/offbits offbits 1 add def 0}
+				 ifelse
+				}
+				setscreen
+			offbits offbits onbits add div fMNegative {1.0 exch sub} if
+			/FrameCurGray exch def
+		} ifelse
+	} { % Level 2 version
+		pop pop
+		dup patCache exch known {
+			patCache exch get
+		} { % not in cache
+			dup
+			patDict /bstring 3 -1 roll put
+			patDict 
+			9 PatFreq screenIndex get div dup matrix scale
+%			9 orgfreq 
+%				organgle sin abs organgle cos abs add div
+%				dup 16 div round dup 0 le {pop 1} if  % Unix pattern size
+%			    dup  9 div round dup 0 le {pop 1} if  % Mac larger (WYSIWYG) size
+%					div div dup matrix scale % This gives Unix pattern size.
+			makepattern
+			dup 
+			patCache 4 -1 roll 3 -1 roll put
+		} ifelse
+		/FrameCurGray 0 def
+		/FrameCurPat exch def
+	} ifelse
+	/graymode false def
+	combineColor
+} bind def
+
+/setGrayScaleMode {
+	graymode not {
+		/graymode true def
+		fMLevel1 {
+			setCurrentScreen
+		} if
+	} if
+	/FrameCurGray exch def
+	combineColor
+} bind def
+
+/normalize {
+	transform round exch round exch itransform
+	} bind def
+
+/dnormalize {
+	dtransform round exch round exch idtransform
+	} bind def
+
+/lnormalize { % line widths are always odd so that arrow heads work
+	0 dtransform exch cvi 2 idiv 2 mul 1 add exch idtransform pop
+	} bind def
+
+/H { % THICK
+	lnormalize setlinewidth
+	} bind def
+
+/Z {
+	setlinecap
+	} bind def
+	
+% This is used to fill or stroke white behind a Level 2 pattern
+/PFill {
+	graymode fMLevel1 or not {
+		gsave 1 setgray eofill grestore
+	} if
+} bind def
+/PStroke {
+	graymode fMLevel1 or not {
+		gsave 1 setgray stroke grestore
+	} if
+	stroke
+} bind def
+
+/X { % TEXTURE
+	fillvals exch get
+	dup type /stringtype eq
+	{8 1 setPatternMode} % Silly to pass parameters here
+	{setGrayScaleMode}
+	ifelse
+	} bind def
+
+/V { % FILL
+	PFill gsave eofill grestore
+	} bind def
+
+/Vclip {
+	clip
+	} bind def
+
+/Vstrk {
+	currentlinewidth exch setlinewidth PStroke setlinewidth
+	} bind def
+
+/N { % PEN
+	PStroke
+	} bind def
+
+/Nclip {
+	strokepath clip newpath
+	} bind def
+
+/Nstrk {
+	currentlinewidth exch setlinewidth PStroke setlinewidth
+	} bind def
+
+/M {newpath moveto} bind def
+/E {lineto} bind def
+/D {curveto} bind def
+/O {closepath} bind def
+
+/L { % POLYLINE
+ 	/n exch def
+	newpath
+	normalize
+	moveto 
+	2 1 n {pop normalize lineto} for
+	} bind def
+
+/Y { % POLYGON !!!
+	L % POLYLINE
+	closepath
+	} bind def
+
+/R { % RECT x1 y1 x2 y2
+	/y2 exch def
+	/x2 exch def
+	/y1 exch def
+	/x1 exch def
+	x1 y1
+	x2 y1
+	x2 y2
+	x1 y2
+	4 Y % POLYGON
+	} bind def
+
+/rarc % Leaves all sorts of junk on the operand stack for caller to clear off
+	{rad % arcto might fail if we're scaled way down
+	 arcto
+	} bind def
+
+/RR { % ROUNDRECT x1 y1 x2 y2 r
+	/rad exch def
+	normalize
+	/y2 exch def
+	/x2 exch def
+	normalize
+	/y1 exch def
+	/x1 exch def
+	mark
+	newpath
+	{
+	x1 y1 rad add moveto
+	x1 y2 x2 y2 rarc
+	x2 y2 x2 y1 rarc
+	x2 y1 x1 y1 rarc
+	x1 y1 x1 y2 rarc
+	closepath
+	} stopped {x1 y1 x2 y2 R} if % in case rarc failed for degenerate arcs
+	cleartomark
+	} bind def
+
+/RRR { % ROUNDRECT ROTATED xs ys x1 y1 x2 y2 x3 y3 x4 y4 r
+	/rad exch def
+	normalize /y4 exch def /x4 exch def
+	normalize /y3 exch def /x3 exch def
+	normalize /y2 exch def /x2 exch def
+	normalize /y1 exch def /x1 exch def
+	newpath
+	normalize moveto % eats xs ys
+	mark
+	{
+	x2 y2 x3 y3 rarc
+	x3 y3 x4 y4 rarc
+	x4 y4 x1 y1 rarc
+	x1 y1 x2 y2 rarc
+	closepath
+	} stopped
+	 {x1 y1 x2 y2 x3 y3 x4 y4 newpath moveto lineto lineto lineto closepath} if
+	cleartomark
+	} bind def
+
+/C { % CLIP
+	grestore
+	gsave
+	R % RECT
+	clip
+	setCurrentScreen
+} bind def
+
+/CP { % CLIPPOLY p1x p1y p2x p2y ... n 
+	grestore
+	gsave
+	Y % POLYGON
+	clip
+	setCurrentScreen
+} bind def
+
+/F { % FONT
+	FMfonts exch get
+	FMpointsize scalefont
+	setfont
+	} bind def
+
+/Q { % POINTSIZE (& font)
+	/FMpointsize exch def
+	F % could be slightly optimized here
+	} bind def
+
+/T { % TEXT <string> <x> <y>
+	moveto show
+	} bind def
+
+% Callers of RF (rotate/flip) must gsave (or save) first; (g)restore when done
+/RF { % <flip> <theta>
+	rotate
+	0 ne {-1 1 scale} if
+	} bind def
+
+/TF { % TEXTFLIPROTATE <string> <flip> <theta> <x> <y>
+	gsave
+	moveto 
+	RF
+	show
+	grestore
+	} bind def
+
+/P { % PADTEXT <pad> <string> <x> <y>
+	moveto
+	0 32 3 2 roll widthshow
+	} bind def
+
+/PF { % PADTEXTFLIPROTATE <pad> <string> <flip> <theta> <x> <y>
+	gsave
+	moveto 
+	RF
+	0 32 3 2 roll widthshow
+	grestore
+	} bind def
+
+/S { % SPREADTEXT <spread> <string> <x> <y>
+	moveto
+	0 exch ashow
+	} bind def
+
+/SF { % SPREADTEXTFLIPROTATE <spread> <string> <flip> <theta> <x> <y>
+	gsave
+	moveto
+	RF
+	0 exch ashow
+	grestore
+	} bind def
+
+/B { % PADSPREADTEXT <pad> <spread> <string> <x> <y>
+	moveto
+	0 32 4 2 roll 0 exch awidthshow
+	} bind def
+
+/BF { % PADSPREADTEXTFLIPROTATE <pad> <spread> <string> <flip> <theta> <x> <y>
+	gsave
+	moveto
+	RF
+	0 32 4 2 roll 0 exch awidthshow
+	grestore
+	} bind def
+
+/G { % ARCFILL theta1 theta2 width height x y
+	gsave
+	newpath
+	normalize translate 0.0 0.0 moveto % eats x y
+	dnormalize scale % eats width height
+	0.0 0.0 1.0 5 3 roll arc % eats theta1 theta2
+	closepath 
+	PFill fill
+	grestore
+	} bind def
+
+/Gstrk {
+	savematrix
+    newpath
+    2 index 2 div add exch 3 index 2 div sub exch % theta1 theta2 width height x y
+    normalize 2 index 2 div sub exch 3 index 2 div add exch % theta1 theta2 width height x y
+    translate
+    scale % eats width height
+    0.0 0.0 1.0 5 3 roll arc % eats theta1 theta2
+    restorematrix
+    currentlinewidth exch setlinewidth PStroke setlinewidth
+    } bind def
+
+/Gclip { % ARCFILL theta1 theta2 width height x y swid
+	newpath
+	savematrix
+	normalize translate 0.0 0.0 moveto % eats x y
+	dnormalize scale % eats width height
+	0.0 0.0 1.0 5 3 roll arc % eats theta1 theta2
+	closepath 
+	clip newpath
+	restorematrix
+	} bind def
+
+/GG { % ARCFILL ROTATED theta1 theta2 width height angle x y
+	gsave
+	newpath
+	normalize translate 0.0 0.0 moveto % eats x y
+	rotate % eats angle
+	dnormalize scale % eats width height
+	0.0 0.0 1.0 5 3 roll arc % eats theta1 theta2
+	closepath
+	PFill
+	fill
+	grestore
+	} bind def
+
+/GGclip { % ARCFILL ROTATED theta1 theta2 width height angle x y
+	savematrix
+	newpath
+    normalize translate 0.0 0.0 moveto % eats x y
+    rotate % eats angle
+    dnormalize scale % eats width height
+    0.0 0.0 1.0 5 3 roll arc % eats theta1 theta2
+    closepath
+	clip newpath
+	restorematrix
+	} bind def
+
+/GGstrk { % ARCFILL ROTATED swid theta1 theta2 width height angle x y
+	savematrix
+    newpath
+    normalize translate 0.0 0.0 moveto % eats x y
+    rotate % eats angle
+    dnormalize scale % eats width height
+    0.0 0.0 1.0 5 3 roll arc % eats theta1 theta2
+    closepath 
+	restorematrix
+    currentlinewidth exch setlinewidth PStroke setlinewidth
+	} bind def
+
+/A { % ARCPEN theta1 theta2 width height x y
+	gsave
+	savematrix
+	newpath
+	2 index 2 div add exch 3 index 2 div sub exch % theta1 theta2 width height x y
+	normalize 2 index 2 div sub exch 3 index 2 div add exch % theta1 theta2 width height x y
+	translate 
+	scale % eats width height
+	0.0 0.0 1.0 5 3 roll arc % eats theta1 theta2
+	restorematrix
+	PStroke
+	grestore
+	} bind def
+
+/Aclip {
+	newpath
+	savematrix
+	normalize translate 0.0 0.0 moveto % eats x y
+	dnormalize scale % eats width height
+	0.0 0.0 1.0 5 3 roll arc % eats theta1 theta2
+	closepath 
+	strokepath clip newpath
+	restorematrix
+} bind def
+
+/Astrk {
+	Gstrk
+} bind def
+
+/AA { % ARCPEN ROTATED theta1 theta2 width height angle x y
+	gsave
+	savematrix
+	newpath
+	% theta1 theta2 width height angle x y
+	3 index 2 div add exch 4 index 2 div sub exch 
+	% theta1 theta2 width height angle x y
+	normalize 3 index 2 div sub exch 4 index 2 div add exch
+	translate % eats x y
+	rotate % eats angle
+	scale % eats width height
+	0.0 0.0 1.0 5 3 roll arc % eats theta1 theta2
+	restorematrix
+	PStroke
+	grestore
+	} bind def
+
+/AAclip {
+	savematrix
+	newpath
+    normalize translate 0.0 0.0 moveto % eats x y
+    rotate % eats angle
+    dnormalize scale % eats width height
+    0.0 0.0 1.0 5 3 roll arc % eats theta1 theta2
+    closepath
+	strokepath clip newpath
+	restorematrix
+} bind def
+
+/AAstrk {
+	GGstrk
+} bind def
+
+/BEGINPRINTCODE { % -x -y width height
+	/FMdicttop countdictstack 1 add def % high-water mark of dict stack
+	/FMoptop count 7 sub def % tricky! 7 params on stack, plus "/FMoptop"
+	/FMsaveobject save def
+	userdict begin % insulate user from FrameDict; not in /FMdicttop count
+	/showpage {} def % this def is in userdict
+	FMNORMALIZEGRAPHICS % in case we're in a strange state
+	3 index neg 3 index neg translate
+	} bind def
+
+/ENDPRINTCODE {
+	count -1 FMoptop {pop pop} for % clear user junk from operand stack
+	countdictstack -1 FMdicttop {pop end} for % ditto for dict stack
+	FMsaveobject restore % this is now safe, unless user very malicious
+	} bind def
+
+/gn { % get a number in a funny encoding scheme
+	0 % result on stack
+	{	46 mul % shift old digits
+		cf read pop % get next character
+		32 sub % zero is the space character
+		dup 46 lt {exit} if % quit if we're the last digit
+		46 sub add % add in this digit and loop around for next
+		} loop
+	add % result on stack
+	} bind def
+
+/cfs { % create a string of length "sl" filled with "val"s
+	/str sl string def % create string as "str"
+	0 1 sl 1 sub {str exch val put} for % fill array
+	str def % define real array name, too; name is on stack from caller
+	} bind def
+
+/ic [ % "case" stmt list of procedures that the image commands should call
+	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0223
+	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0223
+	0
+	{0 hx} {1 hx} {2 hx} {3 hx} {4 hx} {5 hx} {6 hx} {7 hx} {8 hx} {9 hx}
+	{10 hx} {11 hx} {12 hx} {13 hx} {14 hx} {15 hx} {16 hx} {17 hx} {18 hx}
+	{19 hx} {gn hx} {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12}
+	{13} {14} {15} {16} {17} {18} {19} {gn} {0 wh} {1 wh} {2 wh} {3 wh}
+	{4 wh} {5 wh} {6 wh} {7 wh} {8 wh} {9 wh} {10 wh} {11 wh} {12 wh}
+	{13 wh} {14 wh} {gn wh} {0 bl} {1 bl} {2 bl} {3 bl} {4 bl} {5 bl} {6 bl}
+	{7 bl} {8 bl} {9 bl} {10 bl} {11 bl} {12 bl} {13 bl} {14 bl} {gn bl}
+	{0 fl} {1 fl} {2 fl} {3 fl} {4 fl} {5 fl} {6 fl} {7 fl} {8 fl} {9 fl}
+	{10 fl} {11 fl} {12 fl} {13 fl} {14 fl} {gn fl}
+	] def
+
+/ms { % make all the strings
+	/sl exch def % remember length of currently existing strings
+	/val 255 def % that's white
+	/ws cfs % make "ws" a string filled with white
+	/im cfs % and "im" is a complete image scanline
+	/val 0 def % that's black
+	/bs cfs % make "bs" a string filled with black
+	/cs cfs % here's where we'll put complete command lines
+	} bind def
+
+400 ms % make strings that will be plenty long for most applications
+
+/ip { % image procedure; reads and executes commands to make scanlines
+	is % leave image string and...
+	0 % ...image position on stack all through this procedure
+	cf cs readline pop % get a string of commands
+	{	ic exch get exec % execute next command
+		add % all commands leave a length on the stack; update pos
+		} forall % step through all commands
+	pop % get rid of image position pointer
+	% image string left on stack, so it's returned to image primitive
+	} bind def
+/rip { % this is similar to ip above, except for 24 bit images
+	   % this takes an extra argument, the width of the image
+	  % do red
+	  bis ris copy pop % copy blue to red
+      is
+      0
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+	  pop pop % remove is and position from stack
+	  ris gis copy pop % copy red to green
+	  dup is exch % position of green is width bytes into is
+	  % do green
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+	  pop pop
+	  gis bis copy pop % copy green to blue
+	  dup add is exch % position of blue is 2*width bytes into is
+	  % do blue
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+      pop 
+      
+      } bind def
+
+/rip4 { % this is similar to ip above, except for 32 bit images
+	   % this takes an extra argument, the width of the image
+	  % do cyan
+	  kis cis copy pop % copy black to cyan
+      is
+      0
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+	  pop pop % remove is and position from stack
+	  cis mis copy pop % copy cyan to magenta
+	  dup is exch % position of magenta is width bytes into is
+	  % do magenta
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+	  pop pop
+	  mis yis copy pop % copy magenta to yellow
+	  dup dup add is exch % position of yellow is 2*width bytes into is
+	  % do yellow
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+	  pop pop
+	  yis kis copy pop % copy yellow to black
+	  3 mul is exch % position of black is 3*width bytes into is
+	  % do black
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+      pop 
+      
+      } bind def
+
+
+/wh { % fill a number of bytes with "white"
+	/len exch def % number of bytes to fill
+	/pos exch def % position to put them at
+	ws 0 len getinterval im pos len getinterval copy pop
+	pos len % remember where we got to
+	} bind def
+
+/bl { % fill a number of bytes with "black"
+	/len exch def % number of bytes to fill
+	/pos exch def % position to put them at
+	bs 0 len getinterval im pos len getinterval copy pop
+	pos len % remember where we got to
+	} bind def
+
+/s1 1 string def
+
+/fl { % fill a number of bytes with a specific hex value
+	/len exch def % number of bytes to fill
+	/pos exch def % position to put them at
+	/val cf s1 readhexstring pop 0 get def
+	pos 1 pos len add 1 sub {im exch val put} for
+	pos len % remember where we got to
+	} bind def
+
+/hx { % read hex bytes directly; on entry, stack has <str> <pos> <len>
+	3 copy getinterval % stack has <str> <pos> <len> <substr>
+	cf exch readhexstring pop pop % stack back to <str> <pos> <len>
+	} bind def
+
+/wbytes { % width depth -> wb      find width in bytes  given 1, 2, 8 or 24 or 32
+      dup dup
+      8 gt { pop 8 idiv mul }
+      { 8 eq {pop} {1 eq {7 add 8 idiv} {3 add 4 idiv} ifelse} ifelse } ifelse
+	} bind def
+/BEGINBITMAPBWc { % iw, ih, width, height, theta, x y 
+	1 {} COMMONBITMAPc
+	} bind def
+/BEGINBITMAPGRAYc { % iw, ih, width, height, theta, x y 
+	8 {} COMMONBITMAPc
+	} bind def
+/BEGINBITMAP2BITc { % iw, ih, width, height, theta, x y 
+	2 {} COMMONBITMAPc
+	} bind def
+%
+% Common routine for imaging compressed images
+%
+/COMMONBITMAPc { % iw, ih, width, height, theta, x y depth proc
+		 % (x,y) is the lower left corner of the image
+	/cvtProc exch def
+	/depth exch def
+	gsave
+	% rotate about center of image
+	3 index 2 div add exch	% iw ih width height theta y+(height/2) x
+	4 index 2 div add exch	% iw ih width height theta x+(width/2) y+(height/2)
+	translate		% iw ih width height theta
+	rotate			% iw ih width height
+	1 index 2 div neg	% iw ih width height -(width/2)
+	1 index 2 div neg	% iw ih width height -(width/2) -(height/2)
+	translate		% iw ih width height
+	scale			% iw ih
+	/height exch def /width exch def
+	/lb width depth wbytes def % so "lb" has width in bytes
+	sl lb lt {lb ms} if % maybe make bigger strings
+	/bitmapsave save def % LW+ has a buggy memory leak!
+	cvtProc                % run the desired proc after save has occurred
+	/is im 0 lb getinterval def % image substring
+	ws 0 lb getinterval is copy pop % whiten it
+	/cf currentfile def % evaluate "currentfile" only once
+	width height depth [width 0 0 height neg 0 height] % top to bottom
+	{ip} image % zap!
+	bitmapsave restore % avoid occasional disaster on the LW+
+	grestore
+	} bind def
+/BEGINBITMAPBW { % iw, ih, width, height, theta, x y 
+	1 {} COMMONBITMAP
+	} bind def
+/BEGINBITMAPGRAY { % iw, ih, width, height, theta, x y 
+	8 {} COMMONBITMAP
+	} bind def
+/BEGINBITMAP2BIT { % iw, ih, width, height, theta, x y 
+	2 {} COMMONBITMAP
+	} bind def
+%
+% Common routine for uncompressed images
+%
+/COMMONBITMAP { % iw, ih, width, height, theta, x y depth proc
+	/cvtProc exch def
+	/depth exch def
+	gsave
+	% rotate about center of image
+	3 index 2 div add exch	% iw ih width height theta y+(height/2) x
+	4 index 2 div add exch	% iw ih width height theta x+(width/2) y+(height/2)
+	translate		% iw ih width height theta
+	rotate			% iw ih width height
+	1 index 2 div neg	% iw ih width height -(width/2)
+	1 index 2 div neg	% iw ih width height -(width/2) -(height/2)
+	translate		% iw ih width height
+	scale			% iw ih
+	/height exch def /width exch def
+	/bitmapsave save def % LW+ has a buggy memory leak!
+	cvtProc              % run the desired proc after save has occurred
+	/is width depth wbytes string def
+	/cf currentfile def % evaluate "currentfile" only once
+	width height depth [width 0 0 height neg 0 height] % top to bottom
+	{cf is readhexstring pop} image
+	bitmapsave restore % avoid occasional disaster on the LW+
+	grestore
+	} bind def
+
+%
+% All this hairy color setup stuff gus wrote on the mac, I just copied and
+% changed the variable names to be humanly readable.
+
+/ngrayt 256 array def
+/nredt 256 array def
+/nbluet 256 array def
+/ngreent 256 array def
+
+fMLevel1 {
+/colorsetup {
+	currentcolortransfer
+	/gryt exch def
+	/blut exch def
+	/grnt exch def
+	/redt exch def
+	0 1 255 {
+		/indx exch def
+		/cynu 1 red indx get 255 div sub def
+		/magu 1 green indx get 255 div sub def
+		/yelu 1 blue indx get 255 div sub def
+		/kk cynu magu min yelu min def
+% The HP PaintJet XL300 ignores the gray transfer curve but still sets its
+% default black generation and undercolor removal functions as if it is
+% used. This causes black colors not to work. Bug#56844 <Gus 2/22/93>
+% - We go back to the old (correct?) way of doing this since this code
+% is now bypassed for PS Level 2 printers in favor of colorSetup2 which
+% uses PS Level 2 indexed color, which is much cleaner. <Gus 3/3/93>
+		/u kk currentundercolorremoval exec def
+%-		/u 0 def
+		nredt indx 1 0 cynu u sub max sub redt exec put
+		ngreent indx 1 0 magu u sub max sub grnt exec put
+		nbluet indx 1 0 yelu u sub max sub blut exec put
+		ngrayt indx 1 kk currentblackgeneration exec sub gryt exec put
+	} for
+	{255 mul cvi nredt exch get}
+	{255 mul cvi ngreent exch get}
+	{255 mul cvi nbluet exch get}
+	{255 mul cvi ngrayt exch get}
+	setcolortransfer
+	{pop 0} setundercolorremoval
+	{} setblackgeneration
+	} bind def
+}
+{
+% Here, we set up indexed color for imaging on PS Level 2 without mucking around
+% with the transfer functions.
+
+/colorSetup2 {
+	[ /Indexed /DeviceRGB 255 
+		{dup red exch get 255 div 
+		 exch dup green exch get 255 div 
+		 exch blue exch get 255 div}
+	] setcolorspace
+} bind def
+} ifelse
+
+%
+% Setup a transfer function to convert psuedo color values into grayscale
+% values based on the color lookup tables.
+%
+/fakecolorsetup {
+	/tran 256 string def
+	0 1 255 {/indx exch def 
+		tran indx
+		red indx get 77 mul
+		green indx get 151 mul
+		blue indx get 28 mul
+		add add 256 idiv put} for
+	currenttransfer
+	{255 mul cvi tran exch get 255.0 div}
+	exch fmConcatProcs settransfer
+} bind def
+%
+% image a color image
+%
+/BITMAPCOLOR { % iw, ih, width, height, theta, x y 
+	/depth 8 def
+	gsave
+	% rotate about center of image
+	3 index 2 div add exch	% iw ih width height theta y+(height/2) x
+	4 index 2 div add exch	% iw ih width height theta x+(width/2) y+(height/2)
+	translate		% iw ih width height theta
+	rotate			% iw ih width height
+	1 index 2 div neg	% iw ih width height -(width/2)
+	1 index 2 div neg	% iw ih width height -(width/2) -(height/2)
+	translate		% iw ih width height
+	scale			% iw ih
+	/height exch def /width exch def
+	/bitmapsave save def
+	fMLevel1 {	
+		colorsetup
+		/is width depth wbytes string def
+		/cf currentfile def % evaluate "currentfile" only once
+		width height depth [width 0 0 height neg 0 height] % top to bottom
+		{cf is readhexstring pop} {is} {is} true 3 colorimage 
+	} {
+		colorSetup2
+		/is width depth wbytes string def
+		/cf currentfile def % evaluate "currentfile" only once
+		7 dict dup begin
+			/ImageType 1 def
+			/Width width def
+			/Height height def
+			/ImageMatrix [width 0 0 height neg 0 height] def
+			/DataSource {cf is readhexstring pop} bind def
+			/BitsPerComponent depth def
+			/Decode [0 255] def
+		end image	
+	} ifelse
+	bitmapsave restore 
+	grestore
+	} bind def
+%
+% Compressed color image rendering
+%
+/BITMAPCOLORc { % iw, ih, width, height, theta, x y 
+	/depth 8 def
+	gsave
+	% rotate about center of image
+	3 index 2 div add exch	% iw ih width height theta y+(height/2) x
+	4 index 2 div add exch	% iw ih width height theta x+(width/2) y+(height/2)
+	translate		% iw ih width height theta
+	rotate			% iw ih width height
+	1 index 2 div neg	% iw ih width height -(width/2)
+	1 index 2 div neg	% iw ih width height -(width/2) -(height/2)
+	translate		% iw ih width height
+	scale			% iw ih
+	/height exch def /width exch def
+	/lb width depth wbytes def % so "lb" has width in bytes
+	sl lb lt {lb ms} if % maybe make bigger strings
+	/bitmapsave save def 
+	fMLevel1 {	
+		colorsetup
+		/is im 0 lb getinterval def % image substring
+		ws 0 lb getinterval is copy pop % whiten it
+		/cf currentfile def % evaluate "currentfile" only once
+		width height depth [width 0 0 height neg 0 height] % top to bottom
+		{ip} {is} {is} true 3 colorimage
+	} {
+		colorSetup2
+		/is im 0 lb getinterval def % image substring
+		ws 0 lb getinterval is copy pop % whiten it
+		/cf currentfile def % evaluate "currentfile" only once
+		7 dict dup begin
+			/ImageType 1 def
+			/Width width def
+			/Height height def
+			/ImageMatrix [width 0 0 height neg 0 height] def
+			/DataSource {ip} bind def
+			/BitsPerComponent depth def
+			/Decode [0 255] def
+		end image	
+	} ifelse
+	bitmapsave restore 
+	grestore
+	} bind def
+/BITMAPTRUECOLORc { 
+	/depth 24 def
+        gsave
+ 	% rotate about center of image
+	3 index 2 div add exch	% iw ih width height theta y+(height/2) x
+	4 index 2 div add exch	% iw ih width height theta x+(width/2) y+(height/2)
+	translate		% iw ih width height theta
+	rotate			% iw ih width height
+	1 index 2 div neg	% iw ih width height -(width/2)
+	1 index 2 div neg	% iw ih width height -(width/2) -(height/2)
+	translate		% iw ih width height
+	scale			% iw ih
+	/height exch def /width exch def
+	/lb width depth wbytes def % so "lb" has width in bytes
+	sl lb lt {lb ms} if % maybe make bigger strings
+	/bitmapsave save def 
+        
+	/is im 0 lb getinterval def	% Whole scanline
+	/ris im 0 width getinterval def	% red part of im
+	/gis im width width getinterval def	% green part of im
+	/bis im width 2 mul width getinterval def % blue part of im
+        
+	ws 0 lb getinterval is copy pop 
+	/cf currentfile def 
+	width height 8 [width 0 0 height neg 0 height] 
+	{width rip pop ris} {gis} {bis} true 3 colorimage
+	bitmapsave restore 
+	grestore
+	} bind def
+/BITMAPCMYKc { 
+	/depth 32 def
+        gsave
+ 	% rotate about center of image
+	3 index 2 div add exch	% iw ih width height theta y+(height/2) x
+	4 index 2 div add exch	% iw ih width height theta x+(width/2) y+(height/2)
+	translate		% iw ih width height theta
+	rotate			% iw ih width height
+	1 index 2 div neg	% iw ih width height -(width/2)
+	1 index 2 div neg	% iw ih width height -(width/2) -(height/2)
+	translate		% iw ih width height
+	scale			% iw ih
+	/height exch def /width exch def
+	/lb width depth wbytes def % so "lb" has width in bytes
+	sl lb lt {lb ms} if % maybe make bigger strings
+	/bitmapsave save def 
+        
+	/is im 0 lb getinterval def	% Whole scanline
+	/cis im 0 width getinterval def	% cyan part of im
+	/mis im width width getinterval def	% magenta part of im
+	/yis im width 2 mul width getinterval def % yellow part of im
+	/kis im width 3 mul width getinterval def % black part of im
+        
+	ws 0 lb getinterval is copy pop 
+	/cf currentfile def 
+	width height 8 [width 0 0 height neg 0 height] 
+	{width rip4 pop cis} {mis} {yis} {kis} true 4 colorimage
+	bitmapsave restore 
+	grestore
+	} bind def
+/BITMAPTRUECOLOR { 
+        gsave
+		% rotate about center of image
+		3 index 2 div add exch	% iw ih width height theta y+(height/2) x
+		4 index 2 div add exch	% iw ih width height theta x+(width/2) y+(height/2)
+		translate		% iw ih width height theta
+		rotate			% iw ih width height
+		1 index 2 div neg	% iw ih width height -(width/2)
+		1 index 2 div neg	% iw ih width height -(width/2) -(height/2)
+		translate		% iw ih width height
+		scale			% iw ih
+		/height exch def /width exch def
+        /bitmapsave save def 
+        /is width string def
+        /gis width string def
+        /bis width string def
+        /cf currentfile def 
+        width height 8 [width 0 0 height neg 0 height] 
+        { cf is readhexstring pop } 
+        { cf gis readhexstring pop } 
+        { cf bis readhexstring pop } 
+        true 3 colorimage 
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPCMYK { 
+        gsave
+		% rotate about center of image
+		3 index 2 div add exch	% iw ih width height theta y+(height/2) x
+		4 index 2 div add exch	% iw ih width height theta x+(width/2) y+(height/2)
+		translate		% iw ih width height theta
+		rotate			% iw ih width height
+		1 index 2 div neg	% iw ih width height -(width/2)
+		1 index 2 div neg	% iw ih width height -(width/2) -(height/2)
+		translate		% iw ih width height
+		scale			% iw ih
+		/height exch def /width exch def
+        /bitmapsave save def 
+        /is width string def
+        /mis width string def
+        /yis width string def
+        /kis width string def
+        /cf currentfile def 
+        width height 8 [width 0 0 height neg 0 height] 
+        { cf is readhexstring pop } 
+        { cf mis readhexstring pop } 
+        { cf yis readhexstring pop } 
+        { cf kis readhexstring pop } 
+        true 4 colorimage 
+        bitmapsave restore 
+        grestore
+        } bind def
+%
+% image a color image to a b&width device
+%
+/BITMAPTRUEGRAYc { 
+	/depth 24 def
+        gsave
+	% rotate about center of image
+	3 index 2 div add exch	% iw ih width height theta y+(height/2) x
+	4 index 2 div add exch	% iw ih width height theta x+(width/2) y+(height/2)
+	translate		% iw ih width height theta
+	rotate			% iw ih width height
+	1 index 2 div neg	% iw ih width height -(width/2)
+	1 index 2 div neg	% iw ih width height -(width/2) -(height/2)
+	translate		% iw ih width height
+	scale			% iw ih
+	/height exch def /width exch def
+	/lb width depth wbytes def % so "lb" has width in bytes
+	sl lb lt {lb ms} if % maybe make bigger strings
+        /bitmapsave save def 
+        
+	/is im 0 lb getinterval def	% Whole scanline
+	/ris im 0 width getinterval def	% red part of im
+	/gis im width width getinterval def	% green part of im
+	/bis im width 2 mul width getinterval def % blue part of im
+        ws 0 lb getinterval is copy pop 
+        /cf currentfile def 
+        width height 8 [width 0 0 height neg 0 height] 
+        {width rip pop ris gis bis width gray} image
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPCMYKGRAYc { 
+	/depth 32 def
+        gsave
+	% rotate about center of image
+	3 index 2 div add exch	% iw ih width height theta y+(height/2) x
+	4 index 2 div add exch	% iw ih width height theta x+(width/2) y+(height/2)
+	translate		% iw ih width height theta
+	rotate			% iw ih width height
+	1 index 2 div neg	% iw ih width height -(width/2)
+	1 index 2 div neg	% iw ih width height -(width/2) -(height/2)
+	translate		% iw ih width height
+	scale			% iw ih
+	/height exch def /width exch def
+	/lb width depth wbytes def % so "lb" has width in bytes
+	sl lb lt {lb ms} if % maybe make bigger strings
+        /bitmapsave save def 
+        
+	/is im 0 lb getinterval def	% Whole scanline
+	/cis im 0 width getinterval def	% cyan part of im
+	/mis im width width getinterval def	% magenta part of im
+	/yis im width 2 mul width getinterval def % yellow part of im
+	/kis im width 3 mul width getinterval def % black part of im
+        ws 0 lb getinterval is copy pop 
+        /cf currentfile def 
+        width height 8 [width 0 0 height neg 0 height] 
+        {width rip pop cis mis yis kis width cgray} image
+        bitmapsave restore 
+        grestore
+        } bind def
+/cgray { % c m y k width
+        /ww exch def
+        /k exch def
+        /y exch def
+        /m exch def
+        /c exch def
+        0 1 ww 1 sub { /i exch def c i get m i get y i get k i get CMYKtoRGB
+				.144 mul 3 1 roll .587 mul 3 1 roll .299 mul add add
+				c i 3 -1 roll floor cvi put } for
+        c
+ 		} bind def
+/gray { % r g b width
+        /ww exch def
+        /b exch def
+        /g exch def
+        /r exch def
+        0 1 ww 1 sub { /i exch def r i get .299 mul g i get .587 mul
+			b i get .114 mul add add r i 3 -1 roll floor cvi put } for
+        r
+        } bind def
+/BITMAPTRUEGRAY { 
+        gsave
+		% rotate about center of image
+		3 index 2 div add exch	% iw ih width height theta y+(height/2) x
+		4 index 2 div add exch	% iw ih width height theta x+(width/2) y+(height/2)
+		translate		% iw ih width height theta
+		rotate			% iw ih width height
+		1 index 2 div neg	% iw ih width height -(width/2)
+		1 index 2 div neg	% iw ih width height -(width/2) -(height/2)
+		translate		% iw ih width height
+		scale			% iw ih
+		/height exch def /width exch def
+        /bitmapsave save def 
+        /is width string def
+        /gis width string def
+        /bis width string def
+        /cf currentfile def 
+        width height 8 [width 0 0 height neg 0 height] 
+        { cf is readhexstring pop 
+          cf gis readhexstring pop 
+          cf bis readhexstring pop width gray}  image
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPCMYKGRAY { 
+        gsave
+		% rotate about center of image
+		3 index 2 div add exch	% iw ih width height theta y+(height/2) x
+		4 index 2 div add exch	% iw ih width height theta x+(width/2) y+(height/2)
+		translate		% iw ih width height theta
+		rotate			% iw ih width height
+		1 index 2 div neg	% iw ih width height -(width/2)
+		1 index 2 div neg	% iw ih width height -(width/2) -(height/2)
+		translate		% iw ih width height
+		scale			% iw ih
+		/height exch def /width exch def
+        /bitmapsave save def 
+        /is width string def
+        /yis width string def
+        /mis width string def
+        /kis width string def
+        /cf currentfile def 
+        width height 8 [width 0 0 height neg 0 height] 
+        { cf is readhexstring pop 
+          cf mis readhexstring pop 
+          cf yis readhexstring pop 
+          cf kis readhexstring pop width cgray}  image
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPGRAY { % iw, ih, width, height, theta, x y 
+	8 {fakecolorsetup} COMMONBITMAP
+	} bind def
+/BITMAPGRAYc { % iw, ih, width, height, theta, x y 
+	8 {fakecolorsetup} COMMONBITMAPc
+	} bind def
+/ENDBITMAP {
+	} bind def
+end % of FrameDict definitions
+
+% OPI stuff
+	/ALDmatrix matrix def ALDmatrix currentmatrix pop
+/StartALD {
+	/ALDsave save def
+	 savematrix
+	 ALDmatrix setmatrix
+	} bind def
+/InALD {
+	 restorematrix
+	} bind def
+/DoneALD {
+	 ALDsave restore
+	} bind def
+
+% Dashed lines stuff
+/I { setdash } bind def
+/J { [] 0 setdash } bind def
+
+%%EndProlog
+%%BeginSetup
+(5.0) FMVERSION
+1 1 0 0 612 792 0 1 4 FMDOCUMENT
+0 0 /Times-Roman FMFONTDEFINE
+1 0 /Times-Bold FMFONTDEFINE
+2 0 /Times-Italic FMFONTDEFINE
+32 FMFILLS
+0 0 FMFILL
+1 0.1 FMFILL
+2 0.3 FMFILL
+3 0.5 FMFILL
+4 0.7 FMFILL
+5 0.9 FMFILL
+6 0.97 FMFILL
+7 1 FMFILL
+8 <0f1e3c78f0e1c387> FMFILL
+9 <0f87c3e1f0783c1e> FMFILL
+10 <cccccccccccccccc> FMFILL
+11 <ffff0000ffff0000> FMFILL
+12 <8142241818244281> FMFILL
+13 <03060c183060c081> FMFILL
+14 <8040201008040201> FMFILL
+16 1 FMFILL
+17 0.9 FMFILL
+18 0.7 FMFILL
+19 0.5 FMFILL
+20 0.3 FMFILL
+21 0.1 FMFILL
+22 0.03 FMFILL
+23 0 FMFILL
+24 <f0e1c3870f1e3c78> FMFILL
+25 <f0783c1e0f87c3e1> FMFILL
+26 <3333333333333333> FMFILL
+27 <0000ffff0000ffff> FMFILL
+28 <7ebddbe7e7dbbd7e> FMFILL
+29 <fcf9f3e7cf9f3f7e> FMFILL
+30 <7fbfdfeff7fbfdfe> FMFILL
+%%EndSetup
+%%Page: "8" 1
+%%BeginPaperSize: Letter
+%%EndPaperSize
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+J
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 12 Q
+0 X
+0 0 0 1 0 0 0 K
+-0.17 (Fig. 3: Example of e) 72 194 P
+-0.17 (xchange grid partitioning due to tw) 169.49 194 P
+-0.17 (o separate partitioned component models.) 337.52 194 P
+(\050This may ne) 72 180 T
+(v) 135.02 180 T
+(er come up?\051) 140.84 180 T
+72 204 504 708 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 70 210 542 723 432 513 72 199.5 FMBEGINEPSF
+%%BeginDocument: /net/jla/coupler/exchange/fig2.eps
+%!PS-Adobe-2.0 EPSF-1.2
+%%Title: /net/jla/coupler/fig2.ps
+%%Creator: Ghostscript ps2epsi from fig2.ps
+%%CreationDate: 8:11 AM October 27, 1997
+%%For:jla jla
+%%Pages: 1
+%%DocumentFonts: Times-Bold
+%%BoundingBox: 70 210 542 723
+save
+countdictstack
+mark
+newpath
+/showpage {} def
+%%EndProlog
+%%Page 1 1
+%%BeginResource ShowcaseResource
+1 setlinejoin
+/M  { moveto } bind def /S { show  } bind def
+/R { rmoveto } bind def /L { lineto } bind def
+/B { newpath 0 0 M 0 1 L 1 1 L 1 0 L closepath } bind def
+/CS { closepath stroke } bind def
+/S {
+    /fixwidth exch def
+    dup length /nchars exch def
+    dup stringwidth pop
+    fixwidth exch sub nchars div
+    exch 0 exch ashow
+} def
+/bwproc {
+	rgbproc
+	dup length 3 idiv string 0 3 0
+	5 -1 roll {
+	add 2 1 roll 1 sub dup 0 eq
+	{ pop 3 idiv 3 -1 roll dup 4 -1 roll dup
+	  3 1 roll 5 -1 roll put 1 add 3 0 }
+	{ 2 1 roll } ifelse
+	} forall
+	pop pop pop
+} def
+systemdict /colorimage known not {
+	/colorimage {
+		pop
+		pop
+		/rgbproc exch def
+		{ bwproc } image
+	} def
+} if
+1 1 scale
+0 setlinewidth
+/drawtri {
+/y3 exch def
+/x3 exch def
+/y2 exch def
+/x2 exch def
+/y1 exch def
+/x1 exch def
+0 setgray
+newpath
+x1 y1 moveto
+x2 y2 lineto
+x3 y3 lineto
+closepath
+stroke
+} bind def
+/filltri {
+/y3 exch def
+/x3 exch def
+/y2 exch def
+/x2 exch def
+/y1 exch def
+/x1 exch def
+newpath
+x1 y1 moveto
+x2 y2 lineto
+x3 y3 lineto
+closepath
+fill
+} bind def
+/cliptri {
+/y3 exch def
+/x3 exch def
+/y2 exch def
+/x2 exch def
+/y1 exch def
+/x1 exch def
+0 setgray
+newpath
+x1 y1 moveto
+x2 y2 lineto
+x3 y3 lineto
+closepath
+clip
+} bind def
+/imgscanrgb {
+gsave
+translate
+/scandy exch def
+/scandx exch def
+/istr scandx 3 mul string def
+scandx scandy scale
+scandx scandy 8
+[scandx 0 0 scandy neg 0 scandy]
+{currentfile istr readhexstring pop}
+false 3
+colorimage
+grestore
+} bind def
+/imgscanbw {
+gsave
+translate
+/scandy exch def
+/scandx exch def
+/istr scandx string def
+scandx scandy scale
+scandx scandy 8
+[scandx 0 0 scandy neg 0 scandy]
+{currentfile istr readhexstring pop}
+image
+grestore
+} bind def
+/showcaseisoencoding [
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/space /exclam /quotedbl /numbersign
+/dollar /percent /ampersand /quoteright
+/parenleft /parenright /asterisk /plus
+/comma /minus /period /slash
+/zero /one /two /three /four /five /six /seven
+/eight /nine /colon /semicolon
+/less /equal /greater /question
+/at /A /B /C /D /E /F /G
+/H /I /J /K /L /M /N /O
+/P /Q /R /S /T /U /V /W
+/X /Y /Z /bracketleft
+/backslash /bracketright /asciicircum /underscore
+/quoteleft /a /b /c /d /e /f /g
+/h /i /j /k /l /m /n /o
+/p /q /r /s /t /u /v /w
+/x /y /z /braceleft
+/bar /braceright /asciitilde /guilsinglright
+/fraction /florin /quotesingle /quotedblleft
+/guilsinglleft /fi /fl /endash
+/dagger /daggerdbl /bullet /quotesinglbase
+/quotedblbase /quotedblright /ellipsis /trademark
+/dotlessi /grave /acute /circumflex
+/tilde /macron /breve /dotaccent
+/dieresis /perthousand /ring /cedilla
+/Ydieresis /hungarumlaut /ogonek /caron
+/emdash /exclamdown /cent /sterling
+/currency /yen /brokenbar /section
+/dieresis /copyright /ordfeminine /guillemotleft
+/logicalnot /hyphen /registered /macron
+/degree /plusminus /twosuperior /threesuperior
+/acute /mu /paragraph /periodcentered
+/cedilla /onesuperior /ordmasculine /guillemotright
+/onequarter /onehalf /threequarters /questiondown
+/Agrave /Aacute /Acircumflex /Atilde
+/Adieresis /Aring /AE /Ccedilla
+/Egrave /Eacute /Ecircumflex /Edieresis
+/Igrave /Iacute /Icircumflex /Idieresis
+/Eth /Ntilde /Ograve /Oacute
+/Ocircumflex /Otilde /Odieresis /multiply
+/Oslash /Ugrave /Uacute /Ucircumflex
+/Udieresis /Yacute /Thorn /germandbls
+/agrave /aacute /acircumflex /atilde
+/adieresis /aring /ae /ccedilla
+/egrave /eacute /ecircumflex /edieresis
+/igrave /iacute /icircumflex /idieresis
+/eth /ntilde /ograve /oacute
+/ocircumflex /otilde /odieresis /divide
+/oslash /ugrave /uacute /ucircumflex
+/udieresis /yacute /thorn /ydieresis ] def
+/showcasedingbatencoding [
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /a1 /a2 /a202 /a3 /a4 /a5 /a119 /a118 /a117
+/a11 /a12 /a13 /a14 /a15 /a16 /a105 /a17 /a18 /a19
+/a20 /a21 /a22 /a23 /a24 /a25 /a26 /a27 /a28 /a6 /a7
+/a8 /a9 /a10 /a29
+/a30 /a31 /a32 /a33 /a34 /a35 /a36 /a37 /a38 /a39
+/a40 /a41 /a42 /a43 /a44 /a45 /a46 /a47 /a48 /a49
+/a50 /a51 /a52 /a53 /a54 /a55 /a56 /a57 /a58 /a59
+/a60 /a61 /a62 /a63 /a64 /a65 /a66 /a67 /a68 /a69
+/a70 /a71 /a72 /a73 /a74 /a203 /a75 /a204 /a76 /a77 /a78
+/a79 /a81 /a82 /a83 /a84 /a97 /a98 /a99 /a100 /.notdef
+/a205 /a85 /a206 /a86 /a87 /a88 /a89 /a90 /a91 /a92 /a93
+/a94 /a95 /a96
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /a101 /a102 /a103 /a104 /a106 /a107 /a108
+/a112 /a111 /a110 /a109
+/a120 /a121 /a122 /a123 /a124 /a125 /a126 /a127 /a128 /a129
+/a130 /a131 /a132 /a133 /a134 /a135 /a136 /a137 /a138 /a139
+/a140 /a141 /a142 /a143 /a144 /a145 /a146 /a147 /a148 /a149
+/a150 /a151 /a152 /a153 /a154 /a155 /a156 /a157 /a158 /a159
+/a160 /a161 /a163 /a164 /a196 /a165 /a192 /a166 /a167 /a168
+/a169 /a170 /a171 /a172 /a173 /a162 /a174 /a175 /a176 /a177
+/a178 /a179 /a193 /a180 /a199 /a181 /a200 /a182 /.notdef
+/a201 /a183 /a184 /a197 /a185 /a194 /a198 /a186 /a195 /a187
+/a188 /a189 /a190 /a191 /.notdef
+] def
+/Times-Bold findfont
+dup length dict begin
+  {1 index /FID ne {def} {pop pop} ifelse} forall
+  /Encoding showcaseisoencoding def
+  currentdict
+end
+/Times-Bold-SHOWISO exch definefont pop
+/newfont 10 dict def
+newfont begin
+
+ /FontType 3 def
+ /FontMatrix [1 0 0 1 0 0] def
+ /FontBBox [0 0 1 1] def
+ /Encoding 256 array def
+ 0 1 255 {Encoding exch /.notdef put} for
+
+ /CharProcs 1 dict def
+ CharProcs begin
+ /.notdef {} def
+
+end
+
+ /BuildChar {
+  1 0
+  0 0 1 1
+  setcachedevice
+  exch begin
+  Encoding exch get
+  CharProcs exch get
+  end
+  exec
+ } def
+end
+/PatternFont newfont definefont pop
+
+gsave
+newpath clippath pathbbox
+/URy exch def
+/URx exch def
+/LLy exch def
+/LLx exch def
+/Width  URx LLx sub def
+/Height URy LLy sub def
+/saveit save def
+gsave
+gsave
+matrix currentmatrix
+[216 0 0 -216 72 720] concat
+B
+setmatrix
+1 0 0 setrgbcolor
+3.000000 setlinewidth
+gsave stroke grestore
+grestore
+gsave
+1 0 0 setrgbcolor
+3.000000 setlinewidth
+[4] 0 setdash
+newpath
+144 720 M
+144 504 L
+stroke
+grestore
+gsave
+1 0 0 setrgbcolor
+3.000000 setlinewidth
+[4] 0 setdash
+newpath
+216 720 M
+216 504 L
+stroke
+grestore
+gsave
+matrix currentmatrix
+[216 0 0 -216 324 720] concat
+B
+setmatrix
+0 0 1 setrgbcolor
+3.000000 setlinewidth
+gsave stroke grestore
+grestore
+gsave
+0 0 1 setrgbcolor
+3.000000 setlinewidth
+[4] 0 setdash
+newpath
+324 612 M
+540 612 L
+stroke
+grestore
+gsave
+matrix currentmatrix
+[216 0 0 -216 72 432] concat
+B
+setmatrix
+1 0 0 setrgbcolor
+3.000000 setlinewidth
+gsave stroke grestore
+grestore
+gsave
+1 0 0 setrgbcolor
+3.000000 setlinewidth
+[4] 0 setdash
+newpath
+144 432 M
+144 216 L
+stroke
+grestore
+gsave
+1 0 0 setrgbcolor
+3.000000 setlinewidth
+[4] 0 setdash
+newpath
+216 432 M
+216 216 L
+stroke
+grestore
+gsave
+matrix currentmatrix
+[216 0 0 -216 76.5 427.5] concat
+B
+setmatrix
+0 0 1 setrgbcolor
+3.000000 setlinewidth
+gsave stroke grestore
+grestore
+gsave
+0 0 1 setrgbcolor
+3.000000 setlinewidth
+[4] 0 setdash
+newpath
+76.5 319.5 M
+292.5 319.5 L
+stroke
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 99 603.57] concat
+newpath
+0 0 M 0 18 L 11 18 L 11 0 L
+closepath setmatrix
+1 0 0 setrgbcolor
+grestore
+newpath
+96 600.57 M 96 624.57 L 113 624.57 L 113 600.57 L
+closepath clip newpath
+1 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 99 603.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+1 0 0 setrgbcolor
+0 3.42857 M (a) 9 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 164 601.57] concat
+newpath
+0 0 M 0 18 L 12.008 18 L 12.008 0 L
+closepath setmatrix
+1 0 0 setrgbcolor
+grestore
+newpath
+161 598.57 M 161 622.57 L 179.008 622.57 L 179.008 598.57 L
+closepath clip newpath
+1 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 164 601.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+1 0 0 setrgbcolor
+0 3.42857 M (b) 10.008 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 238 602.57] concat
+newpath
+0 0 M 0 18 L 9.992 18 L 9.992 0 L
+closepath setmatrix
+1 0 0 setrgbcolor
+grestore
+newpath
+235 599.57 M 235 623.57 L 250.992 623.57 L 250.992 599.57 L
+closepath clip newpath
+1 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 238 602.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+1 0 0 setrgbcolor
+0 3.42857 M (c) 7.992 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 413 657.57] concat
+newpath
+0 0 M 0 18 L 11 18 L 11 0 L
+closepath setmatrix
+1 0 0 setrgbcolor
+grestore
+newpath
+410 654.57 M 410 678.57 L 427 678.57 L 427 654.57 L
+closepath clip newpath
+0 0 1 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 413 657.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 1 setrgbcolor
+0 3.42857 M (1) 9 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 419 541.57] concat
+newpath
+0 0 M 0 18 L 11 18 L 11 0 L
+closepath setmatrix
+1 0 0 setrgbcolor
+grestore
+newpath
+416 538.57 M 416 562.57 L 433 562.57 L 433 538.57 L
+closepath clip newpath
+0 0 1 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 419 541.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 1 setrgbcolor
+0 3.42857 M (2) 9 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 91 359.57] concat
+newpath
+0 0 M 0 18 L 20 18 L 20 0 L
+closepath setmatrix
+1 0 0 setrgbcolor
+grestore
+newpath
+88 356.57 M 88 380.57 L 114 380.57 L 114 356.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 91 359.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (1a) 18 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 167 360.57] concat
+newpath
+0 0 M 0 18 L 21.008 18 L 21.008 0 L
+closepath setmatrix
+1 0 0 setrgbcolor
+grestore
+newpath
+164 357.57 M 164 381.57 L 191.008 381.57 L 191.008 357.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 167 360.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (1b) 19.008 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 238 361.57] concat
+newpath
+0 0 M 0 18 L 18.992 18 L 18.992 0 L
+closepath setmatrix
+1 0 0 setrgbcolor
+grestore
+newpath
+235 358.57 M 235 382.57 L 259.992 382.57 L 259.992 358.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 238 361.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (1c) 16.992 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 101 257.57] concat
+newpath
+0 0 M 0 18 L 20 18 L 20 0 L
+closepath setmatrix
+1 0 0 setrgbcolor
+grestore
+newpath
+98 254.57 M 98 278.57 L 124 278.57 L 124 254.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 101 257.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (2a) 18 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 166 259.57] concat
+newpath
+0 0 M 0 18 L 21.008 18 L 21.008 0 L
+closepath setmatrix
+1 0 0 setrgbcolor
+grestore
+newpath
+163 256.57 M 163 280.57 L 190.008 280.57 L 190.008 256.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 166 259.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (2b) 19.008 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 241 259.57] concat
+newpath
+0 0 M 0 18 L 18.992 18 L 18.992 0 L
+closepath setmatrix
+1 0 0 setrgbcolor
+grestore
+newpath
+238 256.57 M 238 280.57 L 262.992 280.57 L 262.992 256.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 241 259.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (2c) 16.992 S
+setmatrix
+grestore
+grestore
+showpage
+saveit restore
+grestore
+%%Trailer
+cleartomark
+countdictstack exch sub { end } repeat
+restore
+%%EOF
+
+%%EndDocument
+FMENDEPSF
+0 0 612 792 C
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "8" 1
+%%Page: "7" 2
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(Fig. 1:Sections of tw) 72 191 T
+(o component model grids and their o) 171.89 191 T
+(v) 348.36 191 T
+(erlap to form an e) 354.18 191 T
+(xchange grid.) 439.31 191 T
+72 202 504 706 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 71 72 363 721 210.24 467.27 182.88 220.36 FMBEGINEPSF
+%%BeginDocument: /net/jla/coupler/exchange/fig1.eps
+%!PS-Adobe-2.0 EPSF-1.2
+%%Title: /net/jla/coupler/fig1.ps
+%%Creator: Ghostscript ps2epsi from fig1.ps
+%%CreationDate: 8:11 AM October 27, 1997
+%%For:jla jla
+%%Pages: 1
+%%DocumentFonts: Times-Bold
+%%BoundingBox: 71 72 363 721
+save
+countdictstack
+mark
+newpath
+/showpage {} def
+%%EndProlog
+%%Page 1 1
+%%BeginResource ShowcaseResource
+1 setlinejoin
+/M  { moveto } bind def /S { show  } bind def
+/R { rmoveto } bind def /L { lineto } bind def
+/B { newpath 0 0 M 0 1 L 1 1 L 1 0 L closepath } bind def
+/CS { closepath stroke } bind def
+/S {
+    /fixwidth exch def
+    dup length /nchars exch def
+    dup stringwidth pop
+    fixwidth exch sub nchars div
+    exch 0 exch ashow
+} def
+/bwproc {
+	rgbproc
+	dup length 3 idiv string 0 3 0
+	5 -1 roll {
+	add 2 1 roll 1 sub dup 0 eq
+	{ pop 3 idiv 3 -1 roll dup 4 -1 roll dup
+	  3 1 roll 5 -1 roll put 1 add 3 0 }
+	{ 2 1 roll } ifelse
+	} forall
+	pop pop pop
+} def
+systemdict /colorimage known not {
+	/colorimage {
+		pop
+		pop
+		/rgbproc exch def
+		{ bwproc } image
+	} def
+} if
+1 1 scale
+0 setlinewidth
+/drawtri {
+/y3 exch def
+/x3 exch def
+/y2 exch def
+/x2 exch def
+/y1 exch def
+/x1 exch def
+0 setgray
+newpath
+x1 y1 moveto
+x2 y2 lineto
+x3 y3 lineto
+closepath
+stroke
+} bind def
+/filltri {
+/y3 exch def
+/x3 exch def
+/y2 exch def
+/x2 exch def
+/y1 exch def
+/x1 exch def
+newpath
+x1 y1 moveto
+x2 y2 lineto
+x3 y3 lineto
+closepath
+fill
+} bind def
+/cliptri {
+/y3 exch def
+/x3 exch def
+/y2 exch def
+/x2 exch def
+/y1 exch def
+/x1 exch def
+0 setgray
+newpath
+x1 y1 moveto
+x2 y2 lineto
+x3 y3 lineto
+closepath
+clip
+} bind def
+/imgscanrgb {
+gsave
+translate
+/scandy exch def
+/scandx exch def
+/istr scandx 3 mul string def
+scandx scandy scale
+scandx scandy 8
+[scandx 0 0 scandy neg 0 scandy]
+{currentfile istr readhexstring pop}
+false 3
+colorimage
+grestore
+} bind def
+/imgscanbw {
+gsave
+translate
+/scandy exch def
+/scandx exch def
+/istr scandx string def
+scandx scandy scale
+scandx scandy 8
+[scandx 0 0 scandy neg 0 scandy]
+{currentfile istr readhexstring pop}
+image
+grestore
+} bind def
+/showcaseisoencoding [
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/space /exclam /quotedbl /numbersign
+/dollar /percent /ampersand /quoteright
+/parenleft /parenright /asterisk /plus
+/comma /minus /period /slash
+/zero /one /two /three /four /five /six /seven
+/eight /nine /colon /semicolon
+/less /equal /greater /question
+/at /A /B /C /D /E /F /G
+/H /I /J /K /L /M /N /O
+/P /Q /R /S /T /U /V /W
+/X /Y /Z /bracketleft
+/backslash /bracketright /asciicircum /underscore
+/quoteleft /a /b /c /d /e /f /g
+/h /i /j /k /l /m /n /o
+/p /q /r /s /t /u /v /w
+/x /y /z /braceleft
+/bar /braceright /asciitilde /guilsinglright
+/fraction /florin /quotesingle /quotedblleft
+/guilsinglleft /fi /fl /endash
+/dagger /daggerdbl /bullet /quotesinglbase
+/quotedblbase /quotedblright /ellipsis /trademark
+/dotlessi /grave /acute /circumflex
+/tilde /macron /breve /dotaccent
+/dieresis /perthousand /ring /cedilla
+/Ydieresis /hungarumlaut /ogonek /caron
+/emdash /exclamdown /cent /sterling
+/currency /yen /brokenbar /section
+/dieresis /copyright /ordfeminine /guillemotleft
+/logicalnot /hyphen /registered /macron
+/degree /plusminus /twosuperior /threesuperior
+/acute /mu /paragraph /periodcentered
+/cedilla /onesuperior /ordmasculine /guillemotright
+/onequarter /onehalf /threequarters /questiondown
+/Agrave /Aacute /Acircumflex /Atilde
+/Adieresis /Aring /AE /Ccedilla
+/Egrave /Eacute /Ecircumflex /Edieresis
+/Igrave /Iacute /Icircumflex /Idieresis
+/Eth /Ntilde /Ograve /Oacute
+/Ocircumflex /Otilde /Odieresis /multiply
+/Oslash /Ugrave /Uacute /Ucircumflex
+/Udieresis /Yacute /Thorn /germandbls
+/agrave /aacute /acircumflex /atilde
+/adieresis /aring /ae /ccedilla
+/egrave /eacute /ecircumflex /edieresis
+/igrave /iacute /icircumflex /idieresis
+/eth /ntilde /ograve /oacute
+/ocircumflex /otilde /odieresis /divide
+/oslash /ugrave /uacute /ucircumflex
+/udieresis /yacute /thorn /ydieresis ] def
+/showcasedingbatencoding [
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef
+/.notdef /a1 /a2 /a202 /a3 /a4 /a5 /a119 /a118 /a117
+/a11 /a12 /a13 /a14 /a15 /a16 /a105 /a17 /a18 /a19
+/a20 /a21 /a22 /a23 /a24 /a25 /a26 /a27 /a28 /a6 /a7
+/a8 /a9 /a10 /a29
+/a30 /a31 /a32 /a33 /a34 /a35 /a36 /a37 /a38 /a39
+/a40 /a41 /a42 /a43 /a44 /a45 /a46 /a47 /a48 /a49
+/a50 /a51 /a52 /a53 /a54 /a55 /a56 /a57 /a58 /a59
+/a60 /a61 /a62 /a63 /a64 /a65 /a66 /a67 /a68 /a69
+/a70 /a71 /a72 /a73 /a74 /a203 /a75 /a204 /a76 /a77 /a78
+/a79 /a81 /a82 /a83 /a84 /a97 /a98 /a99 /a100 /.notdef
+/a205 /a85 /a206 /a86 /a87 /a88 /a89 /a90 /a91 /a92 /a93
+/a94 /a95 /a96
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /a101 /a102 /a103 /a104 /a106 /a107 /a108
+/a112 /a111 /a110 /a109
+/a120 /a121 /a122 /a123 /a124 /a125 /a126 /a127 /a128 /a129
+/a130 /a131 /a132 /a133 /a134 /a135 /a136 /a137 /a138 /a139
+/a140 /a141 /a142 /a143 /a144 /a145 /a146 /a147 /a148 /a149
+/a150 /a151 /a152 /a153 /a154 /a155 /a156 /a157 /a158 /a159
+/a160 /a161 /a163 /a164 /a196 /a165 /a192 /a166 /a167 /a168
+/a169 /a170 /a171 /a172 /a173 /a162 /a174 /a175 /a176 /a177
+/a178 /a179 /a193 /a180 /a199 /a181 /a200 /a182 /.notdef
+/a201 /a183 /a184 /a197 /a185 /a194 /a198 /a186 /a195 /a187
+/a188 /a189 /a190 /a191 /.notdef
+] def
+/Times-Bold findfont
+dup length dict begin
+  {1 index /FID ne {def} {pop pop} ifelse} forall
+  /Encoding showcaseisoencoding def
+  currentdict
+end
+/Times-Bold-SHOWISO exch definefont pop
+/newfont 10 dict def
+newfont begin
+
+ /FontType 3 def
+ /FontMatrix [1 0 0 1 0 0] def
+ /FontBBox [0 0 1 1] def
+ /Encoding 256 array def
+ 0 1 255 {Encoding exch /.notdef put} for
+
+ /CharProcs 1 dict def
+ CharProcs begin
+ /.notdef {} def
+
+end
+
+ /BuildChar {
+  1 0
+  0 0 1 1
+  setcachedevice
+  exch begin
+  Encoding exch get
+  CharProcs exch get
+  end
+  exec
+ } def
+end
+/PatternFont newfont definefont pop
+
+gsave
+newpath clippath pathbbox
+/URy exch def
+/URx exch def
+/LLy exch def
+/LLx exch def
+/Width  URx LLx sub def
+/Height URy LLy sub def
+/saveit save def
+gsave
+gsave
+1 0 0 setrgbcolor
+grestore
+gsave
+1 0 0 setrgbcolor
+3.000000 setlinewidth
+newpath
+72 684 M
+360 684 L
+stroke
+grestore
+gsave
+1 0 0 setrgbcolor
+3.000000 setlinewidth
+newpath
+72 612 M
+360 612 L
+stroke
+grestore
+gsave
+1 0 0 setrgbcolor
+3.000000 setlinewidth
+newpath
+72 540 M
+360 540 L
+stroke
+grestore
+gsave
+1 0 0 setrgbcolor
+3.000000 setlinewidth
+newpath
+108 720 M
+108 504 L
+stroke
+grestore
+gsave
+1 0 0 setrgbcolor
+3.000000 setlinewidth
+newpath
+216 720 M
+216 504 L
+stroke
+grestore
+gsave
+1 0 0 setrgbcolor
+3.000000 setlinewidth
+newpath
+324 720 M
+324 504 L
+stroke
+grestore
+gsave
+1 0 0 setrgbcolor
+3.000000 setlinewidth
+newpath
+72 252 M
+360 252 L
+stroke
+grestore
+gsave
+1 0 0 setrgbcolor
+3.000000 setlinewidth
+newpath
+72 180 M
+360 180 L
+stroke
+grestore
+gsave
+1 0 0 setrgbcolor
+3.000000 setlinewidth
+newpath
+72 108 M
+360 108 L
+stroke
+grestore
+gsave
+1 0 0 setrgbcolor
+3.000000 setlinewidth
+newpath
+108 288 M
+108 72 L
+stroke
+grestore
+gsave
+1 0 0 setrgbcolor
+3.000000 setlinewidth
+newpath
+216 288 M
+216 72 L
+stroke
+grestore
+gsave
+1 0 0 setrgbcolor
+3.000000 setlinewidth
+newpath
+324 288 M
+324 72 L
+stroke
+grestore
+gsave
+0 0 1 setrgbcolor
+3.000000 setlinewidth
+newpath
+72 432 M
+360 432 L
+stroke
+grestore
+gsave
+0 0 1 setrgbcolor
+3.000000 setlinewidth
+newpath
+72 360 M
+360 360 L
+stroke
+grestore
+gsave
+0 0 1 setrgbcolor
+3.000000 setlinewidth
+newpath
+108 486 M
+108 306 L
+stroke
+grestore
+gsave
+0 0 1 setrgbcolor
+3.000000 setlinewidth
+newpath
+180 486 M
+180 306 L
+stroke
+grestore
+gsave
+0 0 1 setrgbcolor
+3.000000 setlinewidth
+newpath
+252 486 M
+252 306 L
+stroke
+grestore
+gsave
+0 0 1 setrgbcolor
+3.000000 setlinewidth
+newpath
+324 486 M
+324 306 L
+stroke
+grestore
+gsave
+0 0 1 setrgbcolor
+3.000000 setlinewidth
+newpath
+74.5 216 M
+362.5 216 L
+stroke
+grestore
+gsave
+0 0 1 setrgbcolor
+3.000000 setlinewidth
+newpath
+74.5 144 M
+362.5 144 L
+stroke
+grestore
+gsave
+0 0 1 setrgbcolor
+3.000000 setlinewidth
+newpath
+110.5 270 M
+110.5 90 L
+stroke
+grestore
+gsave
+0 0 1 setrgbcolor
+3.000000 setlinewidth
+newpath
+182.5 270 M
+182.5 90 L
+stroke
+grestore
+gsave
+0 0 1 setrgbcolor
+3.000000 setlinewidth
+newpath
+254.5 270 M
+254.5 90 L
+stroke
+grestore
+gsave
+0 0 1 setrgbcolor
+3.000000 setlinewidth
+newpath
+326.5 270 M
+326.5 90 L
+stroke
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 76 698.57] concat
+newpath
+0 0 M 0 18 L 11 18 L 11 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+73 695.57 M 73 719.57 L 90 719.57 L 90 695.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 76 698.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+1 0 0 setrgbcolor
+0 3.42857 M (a) 9 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 150 696.57] concat
+newpath
+0 0 M 0 18 L 12.008 18 L 12.008 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+147 693.57 M 147 717.57 L 165.008 717.57 L 165.008 693.57 L
+closepath clip newpath
+1 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 150 696.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+1 0 0 setrgbcolor
+0 3.42857 M (b) 10.008 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 257 695.57] concat
+newpath
+0 0 M 0 18 L 9.992 18 L 9.992 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+254 692.57 M 254 716.57 L 269.992 716.57 L 269.992 692.57 L
+closepath clip newpath
+1 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 257 695.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+1 0 0 setrgbcolor
+0 3.42857 M (c) 7.992 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 336 697.57] concat
+newpath
+0 0 M 0 18 L 12.008 18 L 12.008 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+333 694.57 M 333 718.57 L 351.008 718.57 L 351.008 694.57 L
+closepath clip newpath
+1 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 336 697.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+1 0 0 setrgbcolor
+0 3.42857 M (d) 10.008 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 79 636.57] concat
+newpath
+0 0 M 0 18 L 9.992 18 L 9.992 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+76 633.57 M 76 657.57 L 91.992 657.57 L 91.992 633.57 L
+closepath clip newpath
+1 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 79 636.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+1 0 0 setrgbcolor
+0 3.42857 M (e) 7.992 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 151 637.57] concat
+newpath
+0 0 M 0 18 L 7.994 18 L 7.994 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+148 634.57 M 148 658.57 L 161.994 658.57 L 161.994 634.57 L
+closepath clip newpath
+1 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 151 637.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+1 0 0 setrgbcolor
+0 3.42857 M (f) 5.994 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 263 636.57] concat
+newpath
+0 0 M 0 18 L 11 18 L 11 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+260 633.57 M 260 657.57 L 277 657.57 L 277 633.57 L
+closepath clip newpath
+1 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 263 636.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+1 0 0 setrgbcolor
+0 3.42857 M (g) 9 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 337 635.57] concat
+newpath
+0 0 M 0 18 L 12.008 18 L 12.008 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+334 632.57 M 334 656.57 L 352.008 656.57 L 352.008 632.57 L
+closepath clip newpath
+1 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 337 635.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+1 0 0 setrgbcolor
+0 3.42857 M (h) 10.008 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 76 562.57] concat
+newpath
+0 0 M 0 18 L 7.004 18 L 7.004 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+73 559.57 M 73 583.57 L 86.004 583.57 L 86.004 559.57 L
+closepath clip newpath
+1 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 76 562.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+1 0 0 setrgbcolor
+0 3.42857 M (i) 5.004 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 151 566.57] concat
+newpath
+0 0 M 0 18 L 7.994 18 L 7.994 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+148 563.57 M 148 587.57 L 161.994 587.57 L 161.994 563.57 L
+closepath clip newpath
+1 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 151 566.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+1 0 0 setrgbcolor
+0 3.42857 M (j) 5.994 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 268 564.57] concat
+newpath
+0 0 M 0 18 L 12.008 18 L 12.008 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+265 561.57 M 265 585.57 L 283.008 585.57 L 283.008 561.57 L
+closepath clip newpath
+1 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 268 564.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+1 0 0 setrgbcolor
+0 3.42857 M (k) 10.008 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 342 563.57] concat
+newpath
+0 0 M 0 18 L 7.004 18 L 7.004 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+339 560.57 M 339 584.57 L 352.004 584.57 L 352.004 560.57 L
+closepath clip newpath
+1 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 342 563.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+1 0 0 setrgbcolor
+0 3.42857 M (l) 5.004 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 76 514.57] concat
+newpath
+0 0 M 0 18 L 16.994 18 L 16.994 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+73 511.57 M 73 535.57 L 95.994 535.57 L 95.994 511.57 L
+closepath clip newpath
+1 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 76 514.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+1 0 0 setrgbcolor
+0 3.42857 M (m) 14.994 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 151 513.57] concat
+newpath
+0 0 M 0 18 L 12.008 18 L 12.008 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+148 510.57 M 148 534.57 L 166.008 534.57 L 166.008 510.57 L
+closepath clip newpath
+1 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 151 513.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+1 0 0 setrgbcolor
+0 3.42857 M (n) 10.008 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 272 511.57] concat
+newpath
+0 0 M 0 18 L 11 18 L 11 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+269 508.57 M 269 532.57 L 286 532.57 L 286 508.57 L
+closepath clip newpath
+1 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 272 511.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+1 0 0 setrgbcolor
+0 3.42857 M (o) 9 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 341 508.57] concat
+newpath
+0 0 M 0 18 L 12.008 18 L 12.008 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+338 505.57 M 338 529.57 L 356.008 529.57 L 356.008 505.57 L
+closepath clip newpath
+1 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 341 508.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+1 0 0 setrgbcolor
+0 3.42857 M (p) 10.008 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 75 450.57] concat
+newpath
+0 0 M 0 18 L 7.004 18 L 7.004 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+72 447.57 M 72 471.57 L 85.004 471.57 L 85.004 447.57 L
+closepath clip newpath
+1 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 75 450.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 1 setrgbcolor
+0 3.42857 M (i) 5.004 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 135 452.57] concat
+newpath
+0 0 M 0 18 L 12.008 18 L 12.008 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+132 449.57 M 132 473.57 L 150.008 473.57 L 150.008 449.57 L
+closepath clip newpath
+0 0 1 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 135 452.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 1 setrgbcolor
+0 3.42857 M (ii) 10.008 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 196 449.57] concat
+newpath
+0 0 M 0 18 L 17.012 18 L 17.012 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+193 446.57 M 193 470.57 L 216.012 470.57 L 216.012 446.57 L
+closepath clip newpath
+0 0 1 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 196 449.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 1 setrgbcolor
+0 3.42857 M (iii) 15.012 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 270 450.57] concat
+newpath
+0 0 M 0 18 L 16.004 18 L 16.004 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+267 447.57 M 267 471.57 L 289.004 471.57 L 289.004 447.57 L
+closepath clip newpath
+0 0 1 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 270 450.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 1 setrgbcolor
+0 3.42857 M (iv) 14.004 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 342 450.57] concat
+newpath
+0 0 M 0 18 L 11 18 L 11 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+339 447.57 M 339 471.57 L 356 471.57 L 356 447.57 L
+closepath clip newpath
+0 0 1 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 342 450.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 1 setrgbcolor
+0 3.42857 M (v) 9 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 71 383.57] concat
+newpath
+0 0 M 0 18 L 16.004 18 L 16.004 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+68 380.57 M 68 404.57 L 90.004 404.57 L 90.004 380.57 L
+closepath clip newpath
+0 0 1 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 71 383.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 1 setrgbcolor
+0 3.42857 M (vi) 14.004 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 129 383.57] concat
+newpath
+0 0 M 0 18 L 21.008 18 L 21.008 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+126 380.57 M 126 404.57 L 153.008 404.57 L 153.008 380.57 L
+closepath clip newpath
+0 0 1 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 129 383.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 1 setrgbcolor
+0 3.42857 M (vii) 19.008 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 193 380.57] concat
+newpath
+0 0 M 0 18 L 26.012 18 L 26.012 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+190 377.57 M 190 401.57 L 222.012 401.57 L 222.012 377.57 L
+closepath clip newpath
+0 0 1 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 193 380.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 1 setrgbcolor
+0 3.42857 M (viii) 24.012 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 270 379.57] concat
+newpath
+0 0 M 0 18 L 16.004 18 L 16.004 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+267 376.57 M 267 400.57 L 289.004 400.57 L 289.004 376.57 L
+closepath clip newpath
+0 0 1 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 270 379.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 1 setrgbcolor
+0 3.42857 M (ix) 14.004 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 342 387.57] concat
+newpath
+0 0 M 0 18 L 11 18 L 11 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+339 384.57 M 339 408.57 L 356 408.57 L 356 384.57 L
+closepath clip newpath
+0 0 1 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 342 387.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 1 setrgbcolor
+0 3.42857 M (x) 9 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 77 320.57] concat
+newpath
+0 0 M 0 18 L 16.004 18 L 16.004 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+74 317.57 M 74 341.57 L 96.004 341.57 L 96.004 317.57 L
+closepath clip newpath
+0 0 1 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 77 320.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 1 setrgbcolor
+0 3.42857 M (xi) 14.004 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 132 316.57] concat
+newpath
+0 0 M 0 18 L 21.008 18 L 21.008 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+129 313.57 M 129 337.57 L 156.008 337.57 L 156.008 313.57 L
+closepath clip newpath
+0 0 1 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 132 316.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 1 setrgbcolor
+0 3.42857 M (xii) 19.008 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 199 316.57] concat
+newpath
+0 0 M 0 18 L 26.012 18 L 26.012 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+196 313.57 M 196 337.57 L 228.012 337.57 L 228.012 313.57 L
+closepath clip newpath
+0 0 1 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 199 316.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 1 setrgbcolor
+0 3.42857 M (xiii) 24.012 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 273 317.57] concat
+newpath
+0 0 M 0 18 L 25.004 18 L 25.004 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+270 314.57 M 270 338.57 L 301.004 338.57 L 301.004 314.57 L
+closepath clip newpath
+0 0 1 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 273 317.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 1 setrgbcolor
+0 3.42857 M (xiv) 23.004 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 335 322.57] concat
+newpath
+0 0 M 0 18 L 20 18 L 20 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+332 319.57 M 332 343.57 L 358 343.57 L 358 319.57 L
+closepath clip newpath
+0 0 1 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 335 322.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 1 setrgbcolor
+0 3.42857 M (xv) 18 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 137 222.57] concat
+newpath
+0 0 M 0 18 L 11 18 L 11 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+134 219.57 M 134 243.57 L 151 243.57 L 151 219.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 137 222.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (1) 9 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 191 225.57] concat
+newpath
+0 0 M 0 18 L 11 18 L 11 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+188 222.57 M 188 246.57 L 205 246.57 L 205 222.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 191 225.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (2) 9 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 225 224.57] concat
+newpath
+0 0 M 0 18 L 11 18 L 11 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+222 221.57 M 222 245.57 L 239 245.57 L 239 221.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 225 224.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (3) 9 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 276 227.57] concat
+newpath
+0 0 M 0 18 L 11 18 L 11 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+273 224.57 M 273 248.57 L 290 248.57 L 290 224.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 276 227.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (4) 9 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 135 189.57] concat
+newpath
+0 0 M 0 18 L 11 18 L 11 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+132 186.57 M 132 210.57 L 149 210.57 L 149 186.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 135 189.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (5) 9 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 194 188.57] concat
+newpath
+0 0 M 0 18 L 11 18 L 11 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+191 185.57 M 191 209.57 L 208 209.57 L 208 185.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 194 188.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (6) 9 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 227 187.57] concat
+newpath
+0 0 M 0 18 L 11 18 L 11 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+224 184.57 M 224 208.57 L 241 208.57 L 241 184.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 227 187.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (7) 9 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 277 189.57] concat
+newpath
+0 0 M 0 18 L 11 18 L 11 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+274 186.57 M 274 210.57 L 291 210.57 L 291 186.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 277 189.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (8) 9 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 136 152.57] concat
+newpath
+0 0 M 0 18 L 11 18 L 11 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+133 149.57 M 133 173.57 L 150 173.57 L 150 149.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 136 152.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (9) 9 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 188 152.57] concat
+newpath
+0 0 M 0 18 L 20 18 L 20 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+185 149.57 M 185 173.57 L 211 173.57 L 211 149.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 188 152.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (10) 18 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 224 155.57] concat
+newpath
+0 0 M 0 18 L 20 18 L 20 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+221 152.57 M 221 176.57 L 247 176.57 L 247 152.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 224 155.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (11) 18 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 273 152.57] concat
+newpath
+0 0 M 0 18 L 20 18 L 20 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+270 149.57 M 270 173.57 L 296 173.57 L 296 149.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 273 152.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (12) 18 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 133 118.57] concat
+newpath
+0 0 M 0 18 L 20 18 L 20 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+130 115.57 M 130 139.57 L 156 139.57 L 156 115.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 133 118.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (13) 18 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 189 117.57] concat
+newpath
+0 0 M 0 18 L 20 18 L 20 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+186 114.57 M 186 138.57 L 212 138.57 L 212 114.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 189 117.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (14) 18 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 223 117.57] concat
+newpath
+0 0 M 0 18 L 20 18 L 20 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+220 114.57 M 220 138.57 L 246 138.57 L 246 114.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 223 117.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (15) 18 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 274 119.57] concat
+newpath
+0 0 M 0 18 L 20 18 L 20 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+271 116.57 M 271 140.57 L 297 140.57 L 297 116.57 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 274 119.57] concat
+/Times-Bold-SHOWISO findfont 18 scalefont setfont
+0 0 0 setrgbcolor
+0 3.42857 M (16) 18 S
+setmatrix
+grestore
+gsave
+gsave
+matrix currentmatrix
+[1 0 0 1 18 774] concat
+newpath
+0 0 M 0 9 L 0 9 L 0 0 L
+closepath setmatrix
+0 0 1 setrgbcolor
+grestore
+newpath
+15 771 M 15 786 L 21 786 L 21 771 L
+closepath clip newpath
+0 0 0 setrgbcolor
+matrix currentmatrix
+[1 0 0 1 18 774] concat
+setmatrix
+grestore
+grestore
+showpage
+saveit restore
+grestore
+%%Trailer
+cleartomark
+countdictstack exch sub { end } repeat
+restore
+%%EOF
+
+%%EndDocument
+FMENDEPSF
+0 0 612 792 C
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "7" 2
+%%Page: "6" 3
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(single \336le can be used to output all e) 72 712 T
+(xchange and boundary map data. An e) 247.14 712 T
+(xchange grid must be) 431.24 712 T
+(output \050input\051 before \050after\051 its corresponding boundary maps.) 72 698 T
+(1. write_e) 72 670 T
+(xchange_grid_map\050m, chan\051) 119.81 670 T
+(type\050e) 72 642 T
+(xchange_grid_map_type\051, intent\050in\051 :: m) 101.81 642 T
+(inte) 72 628 T
+(ger) 89.82 628 T
+(, intent\050in\051 :: chan) 104.66 628 T
+(Outputs the information in e) 72 600 T
+(xchange_grid m to a \336le open on channel chan.) 207.82 600 T
+(2. read_e) 72 572 T
+(xchange_grid_map\050m, chan\051) 115.8 572 T
+(type\050e) 72 544 T
+(xchange_grid_map_type\051, intent\050in\051 :: m) 101.81 544 T
+(inte) 72 530 T
+(ger) 89.82 530 T
+(, intent\050in\051 :: chan) 104.66 530 T
+(Inputs information output by write_e) 72 502 T
+(xchange_grid_map from \336le open on channel chan.) 249.14 502 T
+(3. write_boundary_map\050m, chan\051) 72 474 T
+(type\050boundary_map_type\051, intent\050in\051 :: m) 72 446 T
+(inte) 72 432 T
+(ger) 89.82 432 T
+(, intent\050in\051 :: chan) 104.66 432 T
+(Outputs the information in boundary_map m to a \336le open on channel chan.) 72 404 T
+(4. read_boundary_map\050m, e) 72 376 T
+(x_map, nlon, nlat, npart, chan\051) 207.12 376 T
+(type\050boundary_map_type\051 :: m) 72 348 T
+(type\050e) 72 334 T
+(xchange_grid_map_type\051, intent\050in\051 :: e) 101.81 334 T
+(x_map) 292.93 334 T
+(inte) 72 320 T
+(ger) 89.82 320 T
+(, intent\050in\051 :: nlon, nlat, npart, chan) 104.66 320 T
+(Reads information from a boundary_map output using write_boundary_map from \336le open on) 72 292 T
+(channel chan. In order to set up the appropriate links and storage, this call also requires the size) 72 278 T
+-0.35 (and number of partiontions of the component model \050nlon, nlat, and npart\051, and the corresponding) 72 264 P
+(e) 72 250 T
+(xchange_map, e) 77.15 250 T
+(x_map, read in by a call to read_e) 154.94 250 T
+(xchange_map.) 317.39 250 T
+1 14 Q
+(VI. Example:) 72 220.67 T
+(VII. Figur) 72 155.67 T
+(es) 133.19 155.67 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "6" 3
+%%Page: "5" 4
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 12 Q
+0 X
+0 0 0 1 0 0 0 K
+-0.03 (for an) 72 712 P
+-0.03 (y component model grid cells that should NO) 100.11 712 P
+-0.03 (T participate in the de\336nition of the e) 318.43 712 P
+-0.03 (xchange) 497.04 712 P
+(grid. The number of partitions in each component model is in) 72 698 T
+2 F
+(num_part1) 369.97 698 T
+0 F
+( and) 422.64 698 T
+2 F
+(num_part2) 445.97 698 T
+0 F
+(. The) 498.64 698 T
+-0.04 (boundary map) 72 684 P
+2 F
+-0.04 (bd_map) 146.87 684 P
+0 F
+-0.04 ( for the component model that is on side 1 of the e) 185.53 684 P
+-0.04 (xchange grid must also) 426.17 684 P
+(be included. Normally) 72 670 T
+(,) 178.87 670 T
+2 F
+(lon_lat_size) 184.87 670 T
+0 F
+( should be called for each pair of o) 242.88 670 T
+(v) 409.32 670 T
+(erlapping grids immedi-) 415.14 670 T
+(ately after calls to) 72 656 T
+2 F
+(init_boundary_map) 160.64 656 T
+0 F
+(.) 255.31 656 T
+(3. lon_lat_map\050blon1, blat1, blon2, blat2, mask1, mask2, num_part1, num_part2, bd_map,) 72 628 T
+(bd_map2\051) 72 614 T
+(real, intent\050in\051 :: blon1\050:\051, blat1\050:\051, blon2\050:\051, blat2\050:\051) 72 586 T
+(logical, intent\050in\051 :: mask1\050:, :\051, mask2\050:, :\051) 72 572 T
+(inte) 72 558 T
+(ger) 89.82 558 T
+(, intent\050in\051 :: num_part1, num_part2) 104.66 558 T
+(type\050boundary_map_type\051, intent\050inout\051 :: bd_map, bd_map2) 72 544 T
+-0.22 (Sets up the e) 72 516 P
+-0.22 (xchange map and boundary maps, for tw) 132.15 516 P
+-0.22 (o re) 326.31 516 P
+-0.22 (gular longitude latitude grids. The \336rst 8) 344.23 516 P
+(ar) 72 502 T
+(guments are the same as in) 81.11 502 T
+1 F
+(lon_lat_size) 213.08 502 T
+0 F
+(. Ho) 273.08 502 T
+(we) 293.45 502 T
+(v) 307.14 502 T
+(er) 312.96 502 T
+(,) 321.8 502 T
+1 F
+(lon_lat_map) 327.8 502 T
+0 F
+( assumes that the boundary) 391.81 502 T
+(maps and the e) 72 488 T
+(xchange map ha) 143.47 488 T
+(v) 221.21 488 T
+(e been properly initialized and proceeds to compute the pointers) 227.03 488 T
+-0.4 (in the boundary maps to the e) 72 474 P
+-0.4 (xchange map. The areas of the e) 211.41 474 P
+-0.4 (xchange grid cells are computed and) 363.78 474 P
+(stored in the e) 72 460 T
+(xchange map. This subroutine should be called for each pair of component models) 139.48 460 T
+(to be coupled immediately after all calls to) 72 446 T
+2 F
+(lon_lat_size) 279.97 446 T
+0 F
+( ha) 337.98 446 T
+(v) 352.07 446 T
+(e been completed.) 357.89 446 T
+(4. complete_side1_boundary_map\050bd_map\051) 72 418 T
+(type \050boundary_map_type\051, intent\050inout\051 :: bd_map) 72 390 T
+-0.2 (Rearranges storage which has been set up in a temporary mapping array by) 72 362 P
+2 F
+-0.2 (lon_lat_map) 432.94 362 P
+0 F
+-0.2 ( and uses) 493.61 362 P
+-0.3 (it to create a usable e) 72 348 P
+-0.3 (xchange map. Calls should be made separately for each side 1 boundary map) 171.29 348 P
+(in turn immediately after all calls to) 72 334 T
+2 F
+(lon_lat_map) 246.98 334 T
+0 F
+(are completed.) 310.66 334 T
+(5. complete_side2_boundary_map\050bd_map, num_x, num_y) 72 306 T
+(, num_parts\051) 357.86 306 T
+(type \050boundary_map_type\051, intent\050inout\051 :: bd_map) 72 278 T
+(inte) 72 264 T
+(ger) 89.82 264 T
+(, intent\050in\051 :: num_x, num_y) 104.66 264 T
+(, num_parts) 239.89 264 T
+-0.23 (Does \336nal optimization of the data structures for side 2 boundary maps. Should be called for each) 72 236 P
+(side 2 boundary map in turn immediately after all calls to) 72 222 T
+2 F
+(complete_side1_boundary_map) 350.3 222 T
+0 F
+(.) 503.62 222 T
+(VI. Interf) 72 180 T
+(aces for output and input of initialized e) 117.19 180 T
+(xchange grid structures) 308.65 180 T
+(NO) 72 166 T
+(T IMPLEMENTED A) 88.85 166 T
+(T THIS POINT) 195.5 166 T
+(Since it can be e) 72 138 T
+(xpensi) 150.47 138 T
+(v) 181.5 138 T
+(e to initialize the e) 187.32 138 T
+(xchange grid for a gi) 275.8 138 T
+(v) 375.47 138 T
+(en coupled model con\336guration,) 381.29 138 T
+(it may be desirable to output the map data structures and input them directly into continuing) 72 124 T
+(model inte) 72 110 T
+(grations. Interf) 122.82 110 T
+(aces are pro) 194.02 110 T
+(vided to input and output both e) 251.14 110 T
+(xchange_grid_map_types) 404.29 110 T
+-0.16 (and boundary_map_types. The routines to input these maps also allocate the required storage and) 72 96 P
+(initialize all pointers internal to the structures so that the input e) 72 82 T
+(xchange grid is ready to use. A) 378.13 82 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "5" 4
+%%Page: "4" 5
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(type\050boundary_map_type\051, intent\050inout\051 :: bd_map) 72 698 T
+(real, intent\050in\051 :: frac_area\050:, :, :\051) 72 684 T
+(Sets the fractional area corresponding to each partition of each cell of a component model with) 72 656 T
+-0.29 (boundary map) 72 642 P
+2 F
+-0.29 (bd_map) 143.4 642 P
+0 F
+-0.29 (. The \336rst tw) 182.07 642 P
+-0.29 (o dimensions of) 242.41 642 P
+2 F
+-0.29 (fr) 321.2 642 P
+-0.29 (ac_ar) 329.02 642 P
+-0.29 (ea) 356.58 642 P
+0 F
+-0.29 ( correspond to the tw) 367.9 642 P
+-0.29 (o space dimen-) 467.93 642 P
+(sions of the component model grid and the third dimension corresponds to the number of parti-) 72 628 T
+(tions.) 72 614 T
+(5. function get_e) 72 586 T
+(xchange_grid_size\050bd_map\051) 152.81 586 T
+(inte) 72 558 T
+(ger :: get_e) 89.82 558 T
+(xchange_grid_size) 143.63 558 T
+(type\050boundary_map_type\051, intent\050in\051 :: bd_map) 72 544 T
+-0.04 (Returns the size of the entire e) 72 516 P
+-0.04 (xchange grid with which) 217.54 516 P
+2 F
+-0.04 (bd_map) 339.36 516 P
+0 F
+-0.04 ( is associated. If one had a model) 378.02 516 P
+-0.41 (with atmosphere, land, and sea ice component models, the result of this call w) 72 502 P
+-0.41 (ould be the same for) 441.1 502 P
+(an) 72 488 T
+(y of the three boundary maps.) 83.15 488 T
+1 14 Q
+(V) 72 444.67 T
+(. Interfaces f) 80.08 444.67 T
+(or initializing data structur) 154.75 444.67 T
+(es) 317.45 444.67 T
+0 12 Q
+(1. init_boundary_map\050bd_map, side, map\051) 72 415 T
+(type\050boundary_map_type\051, intent\050inout\051 :: bd_map) 72 387 T
+(inte) 72 373 T
+(ger) 89.82 373 T
+(, intent\050in\051 :: side) 104.66 373 T
+(type\050e) 72 359 T
+(xchange_grid_map_type\051, intent\050inout\051 :: map) 101.81 359 T
+-0.22 (Initializes some \337ags in) 72 331 P
+2 F
+-0.22 (bd_map) 187.78 331 P
+0 F
+-0.22 ( and in the associated e) 226.44 331 P
+-0.22 (xchange grid) 336.14 331 P
+2 F
+-0.22 (map) 401.01 331 P
+0 F
+-0.22 (. This must be called for) 421.67 331 P
+(all boundary maps associated with a gi) 72 317 T
+(v) 257.68 317 T
+(en e) 263.5 317 T
+(xchange map before an) 282.97 317 T
+(y other calls are made. Each) 394.42 317 T
+(e) 72 303 T
+(xchange grid has tw) 77.15 303 T
+(o sides \050see description abo) 173.34 303 T
+(v) 305.14 303 T
+(e\051. The side ar) 310.96 303 T
+(gument must ha) 379.38 303 T
+(v) 455.81 303 T
+(e v) 461.63 303 T
+(alue 1 or 2) 475.66 303 T
+(and speci\336es which side of the e) 72 289 T
+(xchange grid this component model is on. Side 1 component) 227.12 289 T
+(models are guaranteed to require no of) 72 275 T
+(f-processor communication when putting v) 256.98 275 T
+(alues onto the) 463.32 275 T
+(e) 72 261 T
+(xchange grid.) 77.15 261 T
+(2. lon_lat_size\050blon1, blat1, blon2, blat2, mask1, mask2, num_part1, num_part2, bd_map\051) 72 233 T
+(real, intent\050in\051 :: blon1\050:\051, blat1\050:\051, blon2\050:\051, blat2\050:\051) 72 205 T
+(logical, intent\050in\051 :: mask1\050:, :\051, mask2\050:, :\051) 72 191 T
+(inte) 72 177 T
+(ger) 89.82 177 T
+(, intent\050in\051 :: num_part1, num_part2) 104.66 177 T
+(type \050boundary_map_type\051, intent\050inout\051 :: bd_map) 72 163 T
+-0.01 (Used to determine the size of e) 72 135 P
+-0.01 (xchange grids and boundary maps for tw) 220.42 135 P
+-0.01 (o models with re) 416.22 135 P
+-0.01 (gular lat-) 496.35 135 P
+-0.16 (itude longitude grids. The longitudinal boundaries of the grid cells are in) 72 121 P
+2 F
+-0.16 (blon1) 421.78 121 P
+0 F
+-0.16 ( and) 449.12 121 P
+2 F
+-0.16 (blon2) 472.14 121 P
+0 F
+-0.16 ( and the) 499.47 121 P
+(latitudinal boundaries are in) 72 107 T
+2 F
+(blat1) 209.32 107 T
+0 F
+( and) 233.99 107 T
+2 F
+(blat2) 257.32 107 T
+0 F
+(. The latitudes are e) 281.99 107 T
+(xpected to be monotonically) 376.12 107 T
+-0.32 (increasing and the longitudes are e) 72 93 P
+-0.32 (xpected to be monotonically increasing and in the range from 0) 236.53 93 P
+(to 4Pi \050this is probably wrong, v) 72 79 T
+(erify\051. The tw) 226.82 79 T
+(o masks are tw) 293.02 79 T
+(o dimensional arrays that are f) 364.55 79 T
+(alse) 510.06 79 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "4" 5
+%%Page: "3" 6
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(nent model cell. The three dimensional array ind\050:, :, :\051 points to the starting inde) 72 712 T
+(x in the indirect) 460.12 712 T
+(storeage for a gi) 72 698 T
+(v) 149.34 698 T
+(en component model grid cell while num_tar) 155.16 698 T
+(gets\050:, :, :\051 stores ho) 370.92 698 T
+(w man) 465.95 698 T
+(y) 498.1 698 T
+(e) 72 684 T
+(xchange grid cells are associated with this component model cell. The indirect arrays pe\050:\051, and) 77.15 684 T
+(num\050:\051 that are inde) 72 670 T
+(x) 166.8 670 T
+(ed by ind contain the pe number and inde) 172.62 670 T
+(x number on that pe of the corre-) 371.08 670 T
+(sponding e) 72 656 T
+(xchange grid cell. \050NEED A PICTURE???\051) 124.15 656 T
+(The second data structure is the) 72 628 T
+1 F
+(exchange_grid_map_type) 226.63 628 T
+0 F
+(. This structure k) 357.96 628 T
+(eeps track of infor-) 439.16 628 T
+(mation about each e) 72 614 T
+(xchange grid cell including, the cell\325) 168.13 614 T
+(s area, the identity of the tw) 343.44 614 T
+(o boundary) 476.96 614 T
+(grids that are associated with this cell \050the model_id, the x, y) 72 600 T
+(, and partition number of the corre-) 362.86 600 T
+-0.41 (sponding component model cell, and the pe number on which it resides\051, and the fractional area of) 72 586 P
+-0.41 (the partitions associated with this cell if one or both of the associated component models are using) 72 572 P
+(partitioning. In addition, this type maintains a set of indirect access arrays that serv) 72 558 T
+(e as an inter-) 470.1 558 T
+(mediate mapping from boundary maps to e) 72 544 T
+(xchange grid cells.) 278.46 544 T
+1 14 Q
+(IV) 72 500.67 T
+(. Interfaces f) 85.52 500.67 T
+(or data exchange) 160.2 500.67 T
+0 12 Q
+(1.) 72 471 T
+1 F
+(put_exchange_grid) 84 471 T
+0 F
+(\050model_data, bd_map, e) 182 471 T
+(x_data, a) 297.8 471 T
+(v) 340.88 471 T
+(ail\051) 346.58 471 T
+(real, intent\050in\051 :: model_data\050:, :\051 or model_data\050:, :, :\051) 72 443 T
+(real, intent\050inout\051 :: e) 72 429 T
+(x_data\050:\051) 173.81 429 T
+(type\050boundary_map_type\051, intent\050in\051 :: bd_map) 72 415 T
+(logical, optional, intent\050inout\051 :: a) 72 401 T
+(v) 233.76 401 T
+(ail\050:\051) 239.46 401 T
+(Gi) 72 373 T
+(v) 83.7 373 T
+(en data on the component model\325) 89.52 373 T
+(s grid,) 249.17 373 T
+2 F
+(model_data) 282.17 373 T
+0 F
+(, and an array for holding data on the) 338.83 373 T
+(e) 72 359 T
+(xchange grid,) 77.15 359 T
+2 F
+(e) 145.46 359 T
+(x_data) 150.55 359 T
+0 F
+(, with the corresponding boundary map,) 183.22 359 T
+2 F
+(bd_map) 377.86 359 T
+0 F
+(, this interf) 416.52 359 T
+(ace copies the) 468.73 359 T
+(v) 72 345 T
+(alue from each component grid cell to all the corresponding e) 77.7 345 T
+(xchange grid cells. The \336rst tw) 372.79 345 T
+(o) 521.32 345 T
+(dimensions of) 72 331 T
+2 F
+(grid) 142.67 331 T
+0 F
+( correspond to the tw) 162.67 331 T
+(o space dimensions of the component model grid. The) 263.87 331 T
+-0.32 (third dimension, if present, corresponds to the number of partitions. F) 72 317 P
+-0.32 (or each entry of) 402.89 317 P
+2 F
+-0.32 (e) 480.23 317 P
+-0.32 (x_grid) 485.32 317 P
+0 F
+-0.32 ( that) 516.65 317 P
+(recei) 72 303 T
+(v) 95.02 303 T
+(es data and has a non-zero area \050areas could be zero if the fractional areas of a partition are) 100.84 303 T
+(currently set to 0\051, the corresponding entry in the logical array) 72 289 T
+2 F
+(avail) 373.27 289 T
+0 F
+( is set to true. All other ele-) 397.27 289 T
+(ments of) 72 275 T
+2 F
+(avail) 116.66 275 T
+0 F
+( are unchanged so that it can be used to accumulate results for a series of) 140.66 275 T
+2 F
+(put_e) 72 261 T
+(xc) 98.42 261 T
+(hang) 108.9 261 T
+(e_grid) 132.78 261 T
+0 F
+( calls.) 164.11 261 T
+(2. get_e) 72 233 T
+(xchange_grid_mean\050e) 109.81 233 T
+(x_data, model_data, bd_map\051) 216.26 233 T
+(real, intent\050inout\051 :: model_data\050:, :\051 or model_data\050:, :, :\051) 72 205 T
+(real, intent\050in\051 :: e) 72 191 T
+(x_data\050:\051) 158.47 191 T
+(type\050boundary_map_type\051, intent\050in\051 :: bd_map) 72 177 T
+(Gi) 72 149 T
+(v) 83.7 149 T
+(en dat on the e) 89.52 149 T
+(xchange grid,) 159.32 149 T
+2 F
+(e) 227.64 149 T
+(x_data) 232.73 149 T
+0 F
+(, computes the mean v) 265.39 149 T
+(alue of the data on all e) 372.74 149 T
+(xchange) 484.54 149 T
+(grid cells associated with each component grid cell and stores the mean in) 72 135 T
+2 F
+(model_data) 430.27 135 T
+0 F
+(. The \336rst) 486.94 135 T
+(tw) 72 121 T
+(o dimensions of) 83.88 121 T
+2 F
+(model_data) 163.55 121 T
+0 F
+( correspond to the tw) 220.21 121 T
+(o space dimensions of the component model) 321.41 121 T
+(grid. The third dimension, if present, corresponds to the number of partitions.) 72 107 T
+(3. set_frac_area\050frac_area, bd_map\051) 72 79 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "3" 6
+%%Page: "2" 7
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(size of 3x2 units, while the second grid has a spacing of 2x2 b) 72 712 T
+(ut with an of) 369.72 712 T
+(fset of 1 from the \336rst) 430.42 712 T
+(grid in the v) 72 698 T
+(ertical direction. Ov) 130.15 698 T
+(erlaying the tw) 226.28 698 T
+(o grids results in the e) 298.15 698 T
+(xchange grid in the lo) 403.63 698 T
+(wer) 507.98 698 T
+(panel of Fig. 1. Each grid cell from component model 1 \050red grid\051 is associated with e) 72 684 T
+(xactly 4) 483.76 684 T
+-0.26 (e) 72 670 P
+-0.26 (xchange grid cells; for instance, grid cell f of model 1 is associated with e) 77.15 670 P
+-0.26 (xchange grid cells 1, 2,) 426.97 670 P
+-0.25 (5, and 6. The number of e) 72 656 P
+-0.25 (xchange cells associated with each cell of model 2 \050blue grid\051 is either 2) 194.28 656 P
+-0.2 (or 4; for instance, grid cell vii is associated with e) 72 642 P
+-0.2 (xchange grid cells 5 and 9 while cell viii is asso-) 308.74 642 P
+(ciated with e) 72 628 T
+(xchange grid cells 6, 7, 10, and 11.) 133.14 628 T
+(The mechanism for e) 72 600 T
+(xchange between component models can be understood through ph) 173.46 600 T
+(ysically) 496.01 600 T
+-0.08 (based e) 72 586 P
+-0.08 (xamples. Suppose that an ocean model has SSTs on its grid and these SSTs are needed on) 107.39 586 P
+(an atmosphere grid. Subroutine) 72 572 T
+1 F
+(put_exchange_grid) 225.65 572 T
+0 F
+( is called to place the appropriate v) 323.65 572 T
+(alue of) 490.98 572 T
+(SST onto each of the e) 72 558 T
+(xchange grid cells. This simply copies the v) 180.8 558 T
+(alue of SST from each ocean) 391.15 558 T
+-0.46 (grid cell to all the corresponding e) 72 544 P
+-0.46 (xchange grid cells. The atmosphere model could then access the) 233.69 544 P
+-0.5 (e) 72 530 P
+-0.5 (xchange grid using) 77.15 530 P
+1 F
+-0.5 (get_exchange_grid) 169.97 530 P
+0 F
+-0.5 (. This interf) 265.96 530 P
+-0.5 (ace computes an area weighted a) 321.17 530 P
+-0.5 (v) 476.04 530 P
+-0.5 (erage of the) 481.86 530 P
+(v) 72 516 T
+(alue of the SST on the e) 77.7 516 T
+(xchange grid for each of the atmosphere grid cells.) 192.84 516 T
+(A complication arises with component models that partition their grid cells into ph) 72 488 T
+(ysically dif) 468.59 488 T
+(fer-) 521.95 488 T
+(ent sub-domains. An e) 72 474 T
+(xample is a sea ice model that represents a certain fraction of a grid cell as) 179.81 474 T
+(ice-co) 72 460 T
+(v) 101.14 460 T
+(ered while the rest of the cell is ice free. Another e) 106.96 460 T
+(xample is a land surf) 349.37 460 T
+(ace model that) 449.23 460 T
+(di) 72 446 T
+(vides a grid cell into v) 81.04 446 T
+(arious sub-domains each representing a dif) 187.73 446 T
+(ferent v) 393.05 446 T
+(e) 429.85 446 T
+(getation or soil type.) 435 446 T
+(The e) 72 432 T
+(xchange tools mak) 98.81 432 T
+(e allo) 188.68 432 T
+(w) 214.7 432 T
+(ance for this by allo) 223.25 432 T
+(wing component models to sub-di) 318.26 432 T
+(vide their) 481.3 432 T
+(grid cells into an arbitrary number of sub-domains, referred to as partitions. Fig. 2 \050renumber\051) 72 418 T
+(sho) 72 404 T
+(ws an e) 88.37 404 T
+(xample of ho) 124.18 404 T
+(w partitions are supported. Each indi) 187.2 404 T
+(vidual e) 363.54 404 T
+(xchange grid cell computed) 401.69 404 T
+-0.47 (from the component model grids can be further partitioned. If, for e) 72 390 P
+-0.47 (xample, one component model) 390.9 390 P
+(has three partitions, and the component model to which it is coupled has tw) 72 376 T
+(o partitions, each) 433.85 376 T
+(e) 72 362 T
+(xchange grid cell is further partitioned into 6 pieces as in Fig. 2. The interf) 77.15 362 T
+(aces to the e) 434.98 362 T
+(xchange) 493.78 362 T
+(tools are prepared to support this by pro) 72 348 T
+(viding interf) 263.46 348 T
+(aces for either tw) 323 348 T
+(o-dimensional component) 405.85 348 T
+(model grids, or three dimensions where the third dimension represents the number of partitions.) 72 334 T
+-0.24 (Note that the number of partitions is \336x) 72 320 P
+-0.24 (ed for all time and for all grid cells in a component model,) 259.81 320 P
+(ho) 72 306 T
+(we) 83.7 306 T
+(v) 97.39 306 T
+(er) 103.21 306 T
+(, the fraction of each component grid cell that is part of a gi) 112.06 306 T
+(v) 397.03 306 T
+(en partition can be changed) 402.85 306 T
+(dynamically and can v) 72 292 T
+(ary from component grid cell to component grid cell.) 180.01 292 T
+1 14 Q
+(III. Ov) 72 248.67 T
+(er) 113.09 248.67 T
+(view of data structur) 125.38 248.67 T
+(es) 249.94 248.67 T
+0 12 Q
+(The e) 72 219 T
+(xchange grid is implemented through tw) 98.81 219 T
+(o primary de\336ned types whose internal details are) 293 219 T
+(pri) 72 205 T
+(v) 85.03 205 T
+(ate to the e) 90.73 205 T
+(xchange tool module. Ho) 142.87 205 T
+(we) 263.89 205 T
+(v) 277.58 205 T
+(er) 283.4 205 T
+(, understanding a little about ho) 292.25 205 T
+(w these types w) 443.94 205 T
+(ork) 520.14 205 T
+(may clarify ho) 72 191 T
+(w the e) 141.68 191 T
+(xchange tools w) 176.16 191 T
+(ork.) 254.03 191 T
+(The \336rst data structure is a) 72 163 T
+1 F
+(boundary_map_type) 202.64 163 T
+0 F
+(. A boundary_map_type has an associated side) 309.32 163 T
+(\050think of this as saying whether the component model associated with this boundary_map is on) 72 149 T
+-0.23 (the top or bottom of this e) 72 135 P
+-0.23 (xchange grid\051 and contains a unique inte) 195.11 135 P
+-0.23 (ger ID associated with the com-) 388.18 135 P
+(ponent model. It kno) 72 121 T
+(ws the number of x and y cells in the component model in the current imple-) 171.7 121 T
+(mentation and the number of partitions as well as the total number of e) 72 107 T
+(xchange gird cells) 411.44 107 T
+(associated with this component model. The boundary_map also implements an indirect set of) 72 93 T
+(inte) 72 79 T
+(ger implemented pointers that identify the e) 89.82 79 T
+(xchange grid cells corresponding to each compo-) 299.62 79 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "2" 7
+%%Page: "1" 8
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+1 14 Q
+0 X
+0 0 0 1 0 0 0 K
+(Softwar) 138.56 710.67 T
+(e T) 185.74 710.67 T
+(ools f) 203.51 710.67 T
+(or Exchange of Data in Coupled Models) 234.66 710.67 T
+(on MPPs) 278.97 693.67 T
+(V) 272.87 676.67 T
+(ersion 0.1) 281.58 676.67 T
+(14 A) 258.71 659.67 T
+(ugust, 1999) 285.62 659.67 T
+0 12 Q
+(Comments to Jef) 238.66 644 T
+(f Anderson) 319.69 644 T
+1 14 Q
+(I. Intr) 72 600.67 T
+(oduction) 108.3 600.67 T
+0 12 Q
+(Exchanging data between models of dif) 72 571 T
+(ferent components \050component models\051 of the earth\325) 262 571 T
+(s cli-) 513.95 571 T
+(mate system is crucial to inte) 72 557 T
+(gration of climate and coupled prediction models. A coupled model) 211.48 557 T
+(may be composed of a number of component models \050atmosphere, ocean, land, sea ice\051 each) 72 543 T
+-0.26 (requiring the e) 72 529 P
+-0.26 (xchange of information on its o) 141.28 529 P
+-0.26 (wn unique grid. The tools documented here pro) 290.65 529 P
+-0.26 (vide) 516.6 529 P
+(one frame) 72 515 T
+(w) 120.01 515 T
+(ork for e) 128.56 515 T
+(xchanging information between models in which the ability to absolutely) 169.69 515 T
+(conserv) 72 501 T
+(e certain quantities when e) 109.14 501 T
+(xchanging between dif) 236.93 501 T
+(ferent models is considered to be of par-) 345.94 501 T
+(amount importance. Essentially) 72 487 T
+(, the tools just pro) 222.88 487 T
+(vide a particular kind of interpolation between) 309.04 487 T
+(grids \050this approach must be used all o) 72 473 T
+(v) 256.8 473 T
+(er the place and must ha) 262.62 473 T
+(v) 378.68 473 T
+(e a name\051. The tools here ha) 384.5 473 T
+(v) 519.89 473 T
+(e) 525.71 473 T
+(been designed in an attempt to hide all unnecessary details of this interpolation from component) 72 459 T
+(models while still allo) 72 445 T
+(wing a po) 178.04 445 T
+(werful, \337e) 225.07 445 T
+(xible, and ef) 274.21 445 T
+(\336cient frame) 333.56 445 T
+(w) 394.25 445 T
+(ork for e) 402.79 445 T
+(xchanging data.) 443.93 445 T
+(This v) 72 417 T
+(ersion of softw) 102.16 417 T
+(are is implemented using the MPP libraries of Balaji and is designed to run) 174.02 417 T
+-0.25 (on a v) 72 403 P
+-0.25 (ariety of parallel architectures; it will also run \050perhaps inef) 100.54 403 P
+-0.25 (\336ciently in this implementation\051) 383.64 403 P
+(on single processors architectures.) 72 389 T
+1 14 Q
+(II. Ov) 72 345.67 T
+(er) 107.64 345.67 T
+(view of interfaces) 119.94 345.67 T
+0 12 Q
+-0.03 (These tools are designed to help component models of a coupled model e) 72 316 P
+-0.03 (xchange data. The inter-) 423.45 316 P
+(f) 72 302 T
+(aces for data e) 75.88 302 T
+(xchange described in section III are general enough that the) 144.66 302 T
+(y could support cou-) 430.73 302 T
+-0.13 (pled models with arbitrary grids. Ho) 72 288 P
+-0.13 (we) 245.68 288 P
+-0.13 (v) 259.37 288 P
+-0.13 (er) 265.19 288 P
+-0.13 (, the interf) 274.04 288 P
+-0.13 (aces for initializing data structures in section) 323.3 288 P
+(IV are much more limited in that the) 72 274 T
+(y only allo) 247.46 274 T
+(w for certain classes of latitude longitude grids.) 298.5 274 T
+(These interf) 72 260 T
+(aces could be e) 129.53 260 T
+(xtended, if necessary) 202.32 260 T
+(, to allo) 302.51 260 T
+(w the use of more general grids. Compo-) 338.54 260 T
+(nent models making use of the tools w) 72 246 T
+(ould not require an) 256.87 246 T
+(y changes in order to use more general) 347.68 246 T
+(grids.) 72 232 T
+(The tools here are based on the notion of an e) 72 204 T
+(xchange grid; a method for perfectly conserving) 290.44 204 T
+(\050aside from computational round-of) 72 190 T
+(f error\051 interpolation. Assume that one is interested in) 243.34 190 T
+(e) 72 176 T
+(xchanging information between tw) 77.15 176 T
+(o dif) 244.67 176 T
+(ferent component models and that each component) 266.7 176 T
+(model partitions its domain into a set of grid cells. One can then o) 72 162 T
+(v) 388.46 162 T
+(erlay the tw) 394.28 162 T
+(o models grids) 450.82 162 T
+(\050think about dra) 72 148 T
+(wing the grids on transparencies and o) 148.48 148 T
+(v) 332.93 148 T
+(erlaying the transparencies\051. The result) 338.75 148 T
+-0.36 (will be a further partitioning of the intersection of the domains of the tw) 72 134 P
+-0.36 (o models into a number of) 412.83 134 P
+(cells. This further partitioning is referred to as an e) 72 120 T
+(xchange grid and the indi) 315.77 120 T
+(vidual re) 437.45 120 T
+(gions as) 479.59 120 T
+(e) 72 106 T
+(xchange grid cells. Each e) 77.15 106 T
+(xchange grid cell corresponds to e) 202.6 106 T
+(xactly one grid cell of each of the) 366.71 106 T
+(tw) 72 92 T
+(o component models, while each component model grid cell corresponds to one or more) 83.88 92 T
+(e) 72 78 T
+(xchange grid cells. Fig. 1 sho) 77.15 78 T
+(ws an e) 217.84 78 T
+(xample for tw) 253.64 78 T
+(o rectangular grids. The \336rst grid has a grid) 320.84 78 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "1" 8
+%%Trailer
+%%BoundingBox: 0 0 612 792
+%%PageOrder: Descend
+%%Pages: 8
+%%DocumentFonts: Times-Roman
+%%+ Times-Bold
+%%+ Times-Italic
+%%EOF
