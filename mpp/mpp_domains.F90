@@ -71,7 +71,7 @@ module mpp_domains_mod
   use mpp_mod
   implicit none
   private
-  character(len=256), private :: version='$Id: mpp_domains.F90,v 5.3 2000/05/30 19:46:56 vb Exp $'
+  character(len=256), private :: version='$Id: mpp_domains.F90,v 5.4 2000/07/28 20:17:18 fms Exp $'
 
 #ifdef SGICRAY
 !see intro_io(3F): to see why these values are used rather than 5,6,0
@@ -131,8 +131,8 @@ module mpp_domains_mod
   complex, allocatable :: put_c8(:), get_c8(:)
 #endif
 
-  integer, private :: tick
-  logical, private :: verbose=.FALSE.
+  integer, private :: tk
+  logical, private :: verbose=.FALSE., debug=.FALSE.
   logical, private :: mpp_domains_initialized=.FALSE.
 
 !public interfaces
@@ -189,7 +189,10 @@ module mpp_domains_mod
       mpp_domains_initialized = .TRUE.
       if( pe.EQ.0 )write( stdout,'(/a)' )'MPP_DOMAINS module '//trim(version)
 
-      if( PRESENT(flags) )verbose = flags.EQ.MPP_VERBOSE
+      if( PRESENT(flags) )then
+          debug   = flags.EQ.MPP_DEBUG
+          verbose = flags.EQ.MPP_VERBOSE .OR. debug
+      end if
 
       if( PRESENT(halosize) )then
           call mpp_set_halo_size(halosize)
@@ -677,7 +680,7 @@ module mpp_domains_mod
              get_domain => NULL_DOMAIN1D
          end if
          call get_halos_1D( domain, put_domain, get_domain, -1, put_pe, get_pe, isp, iep, isg, ieg )
-         call buffer_and_transmit
+         if( put_pe.NE.NULL_PE .OR. get_pe.NE.NULL_PE )call buffer_and_transmit
          if( isg.EQ.domain%data%start_index )get_domain => NULL_DOMAIN1D
          if( put_domain.EQ.domain )put_domain => NULL_DOMAIN1D
       end do
@@ -696,7 +699,7 @@ module mpp_domains_mod
              get_domain => NULL_DOMAIN1D
          end if
          call get_halos_1D( domain, put_domain, get_domain, +1, put_pe, get_pe, isp, iep, isg, ieg )
-         call buffer_and_transmit
+         if( put_pe.NE.NULL_PE .OR. get_pe.NE.NULL_PE )call buffer_and_transmit
          if( ieg.EQ.domain%data%end_index )get_domain => NULL_DOMAIN1D
          if( put_domain.EQ.domain )put_domain => NULL_DOMAIN1D
       end do
@@ -720,10 +723,10 @@ module mpp_domains_mod
           ptr$get = LOC(shared_heap(max_halo_size+1))
 #endif
 
-          if( verbose )then
-              call SYSTEM_CLOCK(tick)
+          if( debug )then
+              call SYSTEM_CLOCK(tk)
               write( stdout,'(a,i18,a,i5,a,2i2,4i4)' ) &
-                   'T=',tick, ' PE=',pe, ' BUFFER_AND_TRANSMIT: ', put_pe, get_pe, isp, iep, isg, ieg
+                   'T=',tk, ' PE=',pe, ' BUFFER_AND_TRANSMIT: ', put_pe, get_pe, isp, iep, isg, ieg
           end if
           if( put_pe.NE.NULL_PE )then  !put is to be done: buffer input
               put_len = (iep-isp+1)*size(field,2)
@@ -732,16 +735,7 @@ module mpp_domains_mod
                   call mpp_error( FATAL, 'BUFFER_AND_TRANSMIT: halosize too small: you require at least '//text//'.' )
               end if
               call mpp_sync_self()  !check if put_r8 is still in use
-              do k = 1,size(field,2)
-                 offset = (iep-isp+1)*(k-1) - isp + 1
-#ifdef _CRAYT3E
-                 call SHMEM_GET( put_r8(isp+offset), field(isp,k), iep-isp+1, pe )
-#else
-                 do i = isp,iep
-                    put_r8(i+offset) = field(i,k)
-                 end do
-#endif
-              end do
+              put_r8(1:put_len) = RESHAPE( field(isp:iep,:), (/put_len/) )
           else
               put_len = 1
           end if
@@ -753,16 +747,7 @@ module mpp_domains_mod
                   write( text,'(i8)' )get_len
                   call mpp_error( FATAL, 'BUFFER_AND_TRANSMIT: halosize too small: you require at least '//text//'.' )
               end if
-              do k = 1,size(field,2)
-                 offset = (ieg-isg+1)*(k-1) - isg + 1
-#ifdef _CRAYT3E
-                 call SHMEM_GET( field(isg,k), get_r8(isg+offset), ieg-isg+1, pe )
-#else
-                 do i = isg,ieg
-                    field(i,k) = get_r8(i+offset)
-                 end do
-#endif
-              end do
+              field(isg:ieg,:) = RESHAPE( get_r8(1:get_len), (/ieg-isg+1,size(field,2)/) )
           end if
 
           return
@@ -789,7 +774,7 @@ module mpp_domains_mod
 
       isc = domain%x%compute%start_index; iec = domain%x%compute%end_index
       jsc = domain%y%compute%start_index; jec = domain%y%compute%end_index
-      call mpp_sync()
+!      call mpp_sync()
       if( BTEST(flags,0) )then  !WUPDATE: update western halo
           put_domain => domain; get_domain => domain
           do while( put_domain.NE.NULL_DOMAIN2D .OR. get_domain.NE.NULL_DOMAIN2D )
@@ -810,13 +795,13 @@ module mpp_domains_mod
                  get_domain => NULL_DOMAIN2D
              end if
              call get_halos_1D( domain%x, put_domain%x, get_domain%x, -1, put_pe, get_pe, isp, iep, isg, ieg )
-             call buffer_and_transmit
+             if( put_pe.NE.NULL_PE .OR. get_pe.NE.NULL_PE )call buffer_and_transmit
              if( isg.EQ.domain%x%data%start_index )get_domain => NULL_DOMAIN2D
              if( put_domain.EQ.domain )put_domain => NULL_DOMAIN2D
           end do
           isc = domain%x%data%start_index !reset compute domain left edge so that Y update will do corners
       end if
-      call mpp_sync()
+!      call mpp_sync()
       if( BTEST(flags,1) )then  !EUPDATE: update eastern halo
           put_domain => domain; get_domain => domain
           do while( put_domain.NE.NULL_DOMAIN2D .OR. get_domain.NE.NULL_DOMAIN2D )
@@ -837,13 +822,13 @@ module mpp_domains_mod
                  get_domain => NULL_DOMAIN2D
              end if
              call get_halos_1D( domain%x, put_domain%x, get_domain%x, +1, put_pe, get_pe, isp, iep, isg, ieg )
-             call buffer_and_transmit
+             if( put_pe.NE.NULL_PE .OR. get_pe.NE.NULL_PE )call buffer_and_transmit
              if( ieg.EQ.domain%x%data%end_index )get_domain => NULL_DOMAIN2D
              if( put_domain.EQ.domain )put_domain => NULL_DOMAIN2D
           end do
           iec = domain%x%data%end_index !reset compute domain right edge so that Y update will do corners
       end if
-      call mpp_sync()
+!      call mpp_sync()
       if( BTEST(flags,2) )then  !SUPDATE: update southern halo
           put_domain => domain; get_domain => domain
           do while( put_domain.NE.NULL_DOMAIN2D .OR. get_domain.NE.NULL_DOMAIN2D )
@@ -864,12 +849,12 @@ module mpp_domains_mod
                  get_domain => NULL_DOMAIN2D
              end if
              call get_halos_1D( domain%y, put_domain%y, get_domain%y, -1, put_pe, get_pe, jsp, jep, jsg, jeg )
-             call buffer_and_transmit
+             if( put_pe.NE.NULL_PE .OR. get_pe.NE.NULL_PE )call buffer_and_transmit
              if( jsg.EQ.domain%y%data%start_index )get_domain => NULL_DOMAIN2D
              if( put_domain.EQ.domain )put_domain => NULL_DOMAIN2D
           end do
       end if
-      call mpp_sync()
+!      call mpp_sync()
       if( BTEST(flags,3) )then  !NUPDATE: update northern halo
           put_domain => domain; get_domain => domain
           do while( put_domain.NE.NULL_DOMAIN2D .OR. get_domain.NE.NULL_DOMAIN2D )
@@ -890,7 +875,7 @@ module mpp_domains_mod
                  get_domain => NULL_DOMAIN2D
              end if
              call get_halos_1D( domain%y, put_domain%y, get_domain%y, +1, put_pe, get_pe, jsp, jep, jsg, jeg )
-             call buffer_and_transmit
+             if( put_pe.NE.NULL_PE .OR. get_pe.NE.NULL_PE )call buffer_and_transmit
              if( jeg.EQ.domain%y%data%end_index )get_domain => NULL_DOMAIN2D
              if( put_domain.EQ.domain )put_domain => NULL_DOMAIN2D
           end do
@@ -906,7 +891,7 @@ module mpp_domains_mod
 !isg, ieg, jsg, jeg: limits of get domain
 !put_pe, get_pe: pe of put and get domains
           integer :: i, j, k
-          integer :: offset, put_len, get_len
+          integer :: put_len, get_len
           character(len=8) :: text
 #ifdef use_shmalloc
           real, dimension(max_halo_size) :: put_r8, get_r8
@@ -916,10 +901,10 @@ module mpp_domains_mod
           ptr$get = LOC(shared_heap(max_halo_size+1))
 #endif
 
-          if( verbose )then
-              call SYSTEM_CLOCK(tick)
+          if( debug )then
+              call SYSTEM_CLOCK(tk)
               write( stdout,'(a,i18,a,i5,a,2i2,8i4)' ) &
-                   'T=',tick, ' PE=',pe, ' BUFFER_AND_TRANSMIT: ', put_pe, get_pe, isp, iep, jsp, jep, isg, ieg, jsg, jeg
+                   'T=',tk, ' PE=',pe, ' BUFFER_AND_TRANSMIT: ', put_pe, get_pe, isp, iep, jsp, jep, isg, ieg, jsg, jeg
           end if
           if( put_pe.NE.NULL_PE )then  !put is to be done: buffer input
               put_len = (iep-isp+1)*(jep-jsp+1)*size(field,3)
@@ -928,18 +913,7 @@ module mpp_domains_mod
                   call mpp_error( FATAL, 'BUFFER_AND_TRANSMIT: halosize too small: you require at least '//text//'.' )
               end if
               call mpp_sync_self()  !check if put_r8 is still in use
-              do k = 1,size(field,3)
-                 do j = jsp,jep
-                    offset = (iep-isp+1)*( (jep-jsp+1)*(k-1) + j - jsp ) - isp + 1
-#ifdef _CRAYT3E
-                    call SHMEM_GET( put_r8(isp+offset), field(isp,j,k), iep-isp+1, pe )
-#else
-                    do i = isp,iep
-                       put_r8(i+offset) = field(i,j,k)
-                    end do
-#endif
-                 end do
-              end do
+              put_r8(1:put_len) = RESHAPE( field(isp:iep,jsp:jep,:), (/put_len/) )
           else
               put_len = 1
           end if
@@ -951,18 +925,7 @@ module mpp_domains_mod
                   write( text,'(i8)' )get_len
                   call mpp_error( FATAL, 'BUFFER_AND_TRANSMIT: halosize too small: you require at least '//text//'.' )
               end if
-              do k = 1,size(field,3)
-                 do j = jsg,jeg
-                    offset = (ieg-isg+1)*( (jeg-jsg+1)*(k-1) + j - jsg ) - isg + 1
-#ifdef _CRAYT3E
-                    call SHMEM_GET( field(isg,j,k), get_r8(isg+offset), ieg-isg+1, pe )
-#else
-                    do i = isg,ieg
-                       field(i,j,k) = get_r8(i+offset)
-                    end do
-#endif
-                 end do
-              end do
+              field(isg:ieg,jsg:jeg,:) = RESHAPE( get_r8(1:get_len), (/ieg-isg+1,jeg-jsg+1,size(field,3)/) )
           end if
 
           return
@@ -1010,7 +973,7 @@ module mpp_domains_mod
                  get_domain => NULL_DOMAIN2D
              end if
              call get_halos_1D( domain%x, put_domain%x, get_domain%x, -1, put_pe, get_pe, isp, iep, isg, ieg )
-             call buffer_and_transmit
+             if( put_pe.NE.NULL_PE .OR. get_pe.NE.NULL_PE )call buffer_and_transmit
              if( isg.EQ.domain%x%data%start_index )get_domain => NULL_DOMAIN2D
              if( put_domain.EQ.domain )put_domain => NULL_DOMAIN2D
           end do
@@ -1037,7 +1000,7 @@ module mpp_domains_mod
                  get_domain => NULL_DOMAIN2D
              end if
              call get_halos_1D( domain%x, put_domain%x, get_domain%x, +1, put_pe, get_pe, isp, iep, isg, ieg )
-             call buffer_and_transmit
+             if( put_pe.NE.NULL_PE .OR. get_pe.NE.NULL_PE )call buffer_and_transmit
              if( ieg.EQ.domain%x%data%end_index )get_domain => NULL_DOMAIN2D
              if( put_domain.EQ.domain )put_domain => NULL_DOMAIN2D
           end do
@@ -1064,7 +1027,7 @@ module mpp_domains_mod
                  get_domain => NULL_DOMAIN2D
              end if
              call get_halos_1D( domain%y, put_domain%y, get_domain%y, -1, put_pe, get_pe, jsp, jep, jsg, jeg )
-             call buffer_and_transmit
+             if( put_pe.NE.NULL_PE .OR. get_pe.NE.NULL_PE )call buffer_and_transmit
              if( jsg.EQ.domain%y%data%start_index )get_domain => NULL_DOMAIN2D
              if( put_domain.EQ.domain )put_domain => NULL_DOMAIN2D
           end do
@@ -1090,7 +1053,7 @@ module mpp_domains_mod
                  get_domain => NULL_DOMAIN2D
              end if
              call get_halos_1D( domain%y, put_domain%y, get_domain%y, +1, put_pe, get_pe, jsp, jep, jsg, jeg )
-             call buffer_and_transmit
+             if( put_pe.NE.NULL_PE .OR. get_pe.NE.NULL_PE )call buffer_and_transmit
              if( jeg.EQ.domain%y%data%end_index )get_domain => NULL_DOMAIN2D
              if( put_domain.EQ.domain )put_domain => NULL_DOMAIN2D
           end do
@@ -1116,10 +1079,10 @@ module mpp_domains_mod
           ptr$get = LOC(shared_heap(2*max_halo_size+1))
 #endif
 
-          if( verbose )then
-              call SYSTEM_CLOCK(tick)
+          if( debug )then
+              call SYSTEM_CLOCK(tk)
               write( stdout,'(a,i18,a,i5,a,2i2,8i4)' ) &
-                   'T=',tick, ' PE=',pe, ' BUFFER_AND_TRANSMIT: ', put_pe, get_pe, isp, iep, jsp, jep, isg, ieg, jsg, jeg
+                   'T=',tk, ' PE=',pe, ' BUFFER_AND_TRANSMIT: ', put_pe, get_pe, isp, iep, jsp, jep, isg, ieg, jsg, jeg
           end if
           if( put_pe.NE.NULL_PE )then  !put is to be done: buffer input
               put_len = (iep-isp+1)*(jep-jsp+1)*size(field,3)
@@ -1128,18 +1091,7 @@ module mpp_domains_mod
                   call mpp_error( FATAL, 'BUFFER_AND_TRANSMIT: halosize too small: you require at least '//text//'.' )
               end if
               call mpp_sync_self()  !check if put_c8 is still in use
-              do k = 1,size(field,3)
-                 do j = jsp,jep
-                    offset = (iep-isp+1)*( (jep-jsp+1)*(k-1) + j - jsp ) - isp + 1
-#ifdef _CRAYT3E
-                    call SHMEM_GET( put_c8(isp+offset), field(isp,j,k), 2*(iep-isp+1), pe )
-#else
-                    do i = isp,iep
-                       put_c8(i+offset) = field(i,j,k)
-                    end do
-#endif
-                 end do
-              end do
+              put_c8(1:put_len) = RESHAPE( field(isp:iep,jsp:jep,:), (/put_len/) )
           else
               put_len = 1
           end if
@@ -1151,18 +1103,7 @@ module mpp_domains_mod
                   write( text,'(i8)' )get_len
                   call mpp_error( FATAL, 'BUFFER_AND_TRANSMIT: halosize too small: you require at least '//text//'.' )
               end if
-              do k = 1,size(field,3)
-                 do j = jsg,jeg
-                    offset = (ieg-isg+1)*( (jeg-jsg+1)*(k-1) + j - jsg ) - isg + 1
-#ifdef _CRAYT3E
-                    call SHMEM_GET( field(isg,j,k), get_c8(isg+offset), 2*(ieg-isg+1), pe )
-#else
-                    do i = isg,ieg
-                       field(i,j,k) = get_c8(i+offset)
-                    end do
-#endif
-                 end do
-              end do
+              field(isg:ieg,jsg:jeg,:) = RESHAPE( get_c8(1:get_len), (/ieg-isg+1,jeg-jsg+1,size(field,3)/) )
           end if
 
           return
@@ -1548,3 +1489,133 @@ module mpp_domains_mod
     end subroutine mpp_get_global2D_i8_2d
       
   end module mpp_domains_mod
+
+#ifdef test_mpp_domains
+  program mpp_domains_test
+    use mpp_mod
+    use mpp_domains_mod
+    use chksum_mod
+    use memutils_mod
+    implicit none
+    integer :: pe, npes
+    type(domain2D), allocatable, target :: domains(:)
+    type(domain2D), pointer :: domain
+    integer :: nx=128, ny=128, nz=40, halo=2
+    real, dimension(:,:,:), allocatable :: local, global
+    integer, pointer :: is, ie, js, je, isd, ied, jsd, jed
+    integer :: tk, tk0, tks_per_sec
+    integer :: i,j,k
+    real :: t
+    namelist / mpp_domains_nml / nx, ny, nz, halo
+
+    call mpp_domains_init()
+    call memutils_init()
+    pe = mpp_pe()
+    npes = mpp_npes()
+    call SYSTEM_CLOCK( count_rate=tks_per_sec )
+    allocate( domains(0:npes-1) )
+    domain => domains(pe)
+    is  => domain%x%compute%start_index
+    ie  => domain%x%compute%end_index
+    js  => domain%y%compute%start_index
+    je  => domain%y%compute%end_index
+    isd => domain%x%data%start_index
+    ied => domain%x%data%end_index
+    jsd => domain%y%data%start_index
+    jed => domain%y%data%end_index
+
+    read(1,mpp_domains_nml)
+    call mpp_define_domains( (/1,nx,1,ny/), domains, xhalo=halo, yhalo=halo )
+    if( pe.EQ.0 )then
+        print '(a,5i4)', 'ndomains, nx, ny, nz, halo=', size(domains), nx, ny, nz, halo
+        print '(a)', 'DOMAIN DECOMPOSITION:'
+        print *, ' pe,  is,  ie,  js,  je,  isd,  ied,  jsd,  jed'
+        do i = 0,size(domains)-1
+           print '(i4,4i5,4i6)', i, &
+                domains(i)%x%compute%start_index, &
+                domains(i)%x%compute%end_index,   &
+                domains(i)%y%compute%start_index, &
+                domains(i)%y%compute%end_index,   &
+                domains(i)%x%data%start_index, &
+                domains(i)%x%data%end_index,   &
+                domains(i)%y%data%start_index, &
+                domains(i)%y%data%end_index
+        end do
+    end if
+       
+    allocate( global(1-halo:nx+halo,1-halo:ny+halo,nz) )
+    allocate( local(isd:ied,jsd:jed,nz) )
+
+!fill in global array: with k.iiijjj
+    global = 0.
+    do k = 1,nz
+       do j = 1,ny
+          do i = 1,nx
+             global(i,j,k) = k + i*1e-3 + j*1e-6
+          end do
+       end do
+    end do
+!fill in local array
+    local = 0.
+    local(is:ie,js:je,:) = global(is:ie,js:je,:)
+!fill in halos
+    call mpp_update_domains( local, domain )
+!compare checksums between global and local arrays
+    call compare_checksums( local, global(isd:ied,jsd:jed,:), 'Halo update' )
+
+!test cyclic boundary conditions
+    call mpp_define_domains( (/1,nx,1,ny/), domains, xhalo=halo, yhalo=halo, &
+         xflags=CYCLIC_GLOBAL_DOMAIN, yflags=CYCLIC_GLOBAL_DOMAIN )
+!fill in cyclic global array
+    global(1-halo:0,    1:ny,:) = global(nx-halo+1:nx,1:ny,:)
+    global(nx+1:nx+halo,1:ny,:) = global(1:halo,      1:ny,:)
+    global(1-halo:nx+halo,    1-halo:0,:) = global(1-halo:nx+halo,ny-halo+1:ny,:)
+    global(1-halo:nx+halo,ny+1:ny+halo,:) = global(1-halo:nx+halo,1:halo,      :)
+!fill in local array
+    local = 0.
+    local(is:ie,js:je,:) = global(is:ie,js:je,:)
+!fill in halos
+    call mpp_update_domains( local, domain )
+!compare checksums between global and local arrays
+    call compare_checksums( local, global(isd:ied,jsd:jed,:), 'Cyclic halo update' )
+
+!timing tests
+    if( pe.EQ.0 )print '(a)', 'TIMING TESTS:'
+    call mpp_define_domains( (/1,nx,1,ny/), domains, xhalo=halo, yhalo=halo, &
+         xflags=CYCLIC_GLOBAL_DOMAIN, yflags=CYCLIC_GLOBAL_DOMAIN )
+    if( ALLOCATED(local) )deallocate(local)
+    allocate( local(isd:ied,jsd:jed,nz) )
+!fill in local array
+    local = 0.
+    local(is:ie,js:je,:) = global(is:ie,js:je,:)
+!fill in halos
+    call mpp_sync()          !this ensures you time only the update_domains call
+    call SYSTEM_CLOCK(tk0)
+    call mpp_update_domains( local, domain )
+    call SYSTEM_CLOCK(tk)
+    t = float(tk-tk0)/tks_per_sec
+!compare checksums between global and local arrays
+    call compare_checksums( local, global(isd:ied,jsd:jed,:), 'Timed cyclic halo update' )
+!words transferred
+    j = ( (ied-isd+1)*(jed-jsd+1) - (ie-is+1)*(je-js+1) )*nz
+    call mpp_max(j)
+    if( pe.EQ.0 )print '(a,i4,i8,es12.4,f10.3)', 'Halo width, words, time(s), bandwidth (MB/s)=', halo, j, t, j*8e-6/t
+
+    call mpp_domains_exit()
+    call mpp_exit()
+
+    contains
+      subroutine compare_checksums( a, b, string )
+        real, intent(in), dimension(:,:,:) :: a, b
+        character(len=*), intent(in) :: string
+        integer :: i, j
+        i = chksum(a)
+        j = chksum(b)
+        if( i.EQ.j )then
+            if( pe.EQ.0 )call mpp_error( NOTE,  trim(string)//': chksums are correct.' )
+        else
+            call mpp_error( FATAL, trim(string)//': chksums are not OK.' )
+        end if
+      end subroutine compare_checksums
+  end program mpp_domains_test
+#endif

@@ -4,8 +4,7 @@ module tracer_driver_mod
 !-----------------------------------------------------------------------
 
 use utilities_mod, only:  file_exist, open_file, error_mesg,  &
-                          FATAL, WARNING, NOTE, get_my_pe,    &
-                          print_version_number, close_file
+                          FATAL, WARNING, NOTE, get_my_pe, close_file
 use constants_mod, only:  grav
 
 implicit none
@@ -29,7 +28,8 @@ logical :: do_init=.true.
 integer :: numtrace
 !-----------------------------------------------------------------------
 !---- version number -----
-   character(len=4), parameter :: vers_num = 'v2.1'
+character(len=128) :: version = '$Id: tracer_driver.F90,v 1.2 2000/08/04 20:05:56 fms Exp $'
+character(len=128) :: tag = '$Name: bombay $'
 !-----------------------------------------------------------------------
       integer, parameter :: max_tracers = 30
       character(len=16) :: field(max_tracers)
@@ -206,8 +206,10 @@ integer  i,j,kb,id,jd,kd
 !---- write namelist ------------------
 
       unit = open_file ('logfile.out', action='append')
-      call print_version_number (unit, 'tracer_driver', vers_num)
-      if ( get_my_pe() == 0 ) write (unit,nml=tracer_driver_nml)
+      if ( get_my_pe() == 0 ) then
+           write (unit,'(/,80("="),/(a))') trim(version), trim(tag)
+           write (unit,nml=tracer_driver_nml)
+      endif
       call close_file (unit)
 
 !----- read restart file ----------
@@ -227,8 +229,8 @@ integer  i,j,kb,id,jd,kd
 
 !---- dummy checks --------
 
-      if (nradon == 0) call error_mesg ('tracer_driver_init',  &
-                       'radon tracer number not set.', NOTE)
+!!!   if (nradon == 0 .and. get_my_pe() == 0) call error_mesg &
+!!!        ('tracer_driver_init', 'radon tracer number not set.', NOTE)
 
       if (nradon > max_tracers) call error_mesg ('tracer_driver_init', &
                          'radon tracer number too large.', FATAL)
@@ -239,8 +241,8 @@ integer  i,j,kb,id,jd,kd
       if (ntest  > 0) numtrace = numtrace + size(r,4)-ntest+1
 
       if (numtrace == 0) then
-          call error_mesg ('tracer_driver_init',  &
-                           'no tracers have been initialized.', NOTE)
+!!!       if (get_my_pe() == 0) call error_mesg ('tracer_driver_init', &
+!!!                           'no tracers have been initialized.', NOTE)
           do_init = .false.
           return
       else
@@ -258,8 +260,8 @@ integer  i,j,kb,id,jd,kd
             else
                 r(:,:,:,nradon) = 0.001
             endif
-                call error_mesg ('tracer_driver_init',  &
-                                 'radon was initialized.', NOTE)
+                if (get_my_pe() == 0) call error_mesg &
+                  ('tracer_driver_init', 'radon was initialized.', NOTE)
          endif
       endif
 

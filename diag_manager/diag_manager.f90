@@ -7,7 +7,6 @@ use time_manager_mod, only: get_time, set_time, get_date, set_date,    &
                             get_calendar_type, NO_CALENDAR
 use    utilities_mod, only: error_mesg, FATAL, WARNING, NOTE, &
                             open_file, close_file,            &
-                            print_version_number,             &
                             file_exist, get_my_pe
 use    diag_axis_mod, only: diag_axis_init, get_axis_length
 use  diag_output_mod, only: file_time_init, write_axis_meta_data,  &
@@ -98,7 +97,8 @@ character (len=10) :: time_unit_list(6) = (/'seconds   ', 'minutes   ', &
 character (len = 7) :: avg_name = 'average'
 
 ! version number of this module
-  character(len=5) :: vers_num = 'v2.0b'
+  character(len=128) :: version = '$Id: diag_manager.f90,v 1.2 2000/08/07 20:53:54 fms Exp $'
+  character(len=128) :: tag = '$Name: bombay $'  
 
 
 interface send_data
@@ -378,7 +378,7 @@ real, optional :: weight(:, :, :)
 
 logical :: average
 integer :: i, out_num, file_num, num_elements, total_elements, num, n1, n2, n3
-integer :: sub_size, freq, units, is, js, ks
+integer :: sub_size, freq, units, is, js, ks, kount
 character(len=128) :: error_string
 
 if (not_initialized) call error_mesg ('send_data in diag_manager_mod', &
@@ -530,7 +530,10 @@ do i = 1, input_fields(diag_field_id)%num_output_fields
 ! If mask is present, check to see if a missing value is defined
    if ((present(mask).or.present(rmask)) .and. &
       .not. input_fields(diag_field_id)%missing_value_present) then
-      call error_mesg('send_data', &
+      kount = 0
+      if (present( mask)) kount = kount + count(.not.mask)
+      if (present(rmask)) kount = kount + count(rmask < 0.5)
+      if (kount > 0) call error_mesg('send_data in diag_manager_mod', &
            'Mask will be ignored since missing values were not specified', &
             NOTE)
    end if
@@ -754,6 +757,8 @@ input_fields(in_num)%output_fields(input_fields(in_num)%num_output_fields) &
 ! Also put pointer to input field in this output field
 output_fields(out_num)%input_field = in_num
 
+
+
 ! Next, find the number for the corresponding file
 file_num = find_file(output_file)
 if(file_num < 0) then
@@ -810,7 +815,7 @@ character(len=256) :: record
 character(len=9)   :: amonth
 
 integer :: iunit,n,m,num_fields,time_units, output_freq_units, nfiles,nfields
-integer :: j, log_unit
+integer :: j, log_unit, name_len
 
 type(tableB_type) :: textB
 type(tableA_type) :: textA
@@ -862,6 +867,11 @@ do n=1,nfiles
       call error_mesg('diag_manager_init','invalid time units',FATAL)
    if(output_freq_units == 0) & 
       call error_mesg('diag_manager_init','invalid output frequency units',FATAL)
+   
+! remove trailing .nc extension from file name
+   
+   name_len = len_trim(textA%name)
+   if (textA%name(name_len-2:name_len) == '.nc') textA%name = textA%name(1:name_len-3)
 
 ! assign values to file_types
   call init_file(textA%name,textA%output_freq, output_freq_units, &
@@ -885,6 +895,12 @@ do n=1,nfields
 
   call init_input_field(textB%module_name,textB%field_name)
 
+!   remove trailing .nc extension
+
+  name_len= len_trim(textB%name)
+  if (textB%name(name_len-2:name_len) == '.nc') &
+      textB%name = textB%name(1:name_len-3)
+  
   call init_output_field(textB%module_name,textB%field_name,textB%output_name,&
            textB%name,textB%time_avg,textB%pack)
 
@@ -895,9 +911,11 @@ call close_file(iunit)
 ! version number to logfile
 
   log_unit = open_file ('logfile.out', action='append')
-  call print_version_number (log_unit, 'diag_manager', vers_num)
-  if ( get_my_pe() == 0 ) write (log_unit,15) base_year, trim(amonth), &
-                          base_day, base_hour, base_minute, base_second
+  if ( get_my_pe() == 0 ) then
+       write (log_unit,'(/,80("="),/(a))') trim(version), trim(tag)
+       write (log_unit,15) base_year, trim(amonth), base_day, &
+                           base_hour, base_minute, base_second
+  endif
   call close_file (log_unit)
 15 format ('base date used = ',i4,1x,a,2i3,2(':',i2.2),' gmt')
 
@@ -946,7 +964,8 @@ integer :: i
 find_input_field = -1
 do i = 1, num_input_fields
    if(trim(input_fields(i)%module_name) == trim(module_name) .and. &
-      trim(input_fields(i)%field_name) == trim(field_name)) then
+      lcase(trim(input_fields(i)%field_name)) == &
+      lcase(trim(field_name))) then 
       find_input_field = i
       return
    endif
@@ -1351,4 +1370,21 @@ end function diag_time_inc
 
 !-------------------------------------------------------------------------
 
+ function lcase (cs) 
+!
+    integer, parameter :: co=iachar('a')-iachar('A') ! case offset
+    
+    character(len=*), intent(in) :: cs ! character string 
+    character(len=len(cs)) :: lcase 
+    character :: ca(len(cs)) ! character array
+    
+    ca=transfer(cs,"x",len(cs)) 
+    where (ca >= "A" .and. ca <= "Z") ca=achar(iachar(ca)+co) 
+    lcase=transfer(ca,cs) 
+    return
+    
+ end function lcase 
+
+!-------------------------------------------------------------------------
+ 
 end module diag_manager_mod

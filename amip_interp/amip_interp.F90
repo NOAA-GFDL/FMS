@@ -14,7 +14,6 @@ use  horiz_interp_mod, only: horiz_interp_init, horiz_interp,  &
 use    utilities_mod, only: file_exist, error_mesg,      &
                             NOTE, WARNING, FATAL,        &
                             check_nml_error, open_file,  &
-                            print_version_number,        &
                             get_my_pe, close_file
 
 use    constants_mod, only: tfreeze
@@ -34,7 +33,8 @@ public amip_interp_init, get_amip_sst, get_amip_ice,  &
 
 !  ---- version number -----
 
-   character(len=4), parameter :: vers_num = 'v2.2'
+character(len=128) :: version = '$Id: amip_interp.F90,v 1.2 2000/08/04 19:53:49 fms Exp $'
+character(len=128) :: tag = '$Name: bombay $'
 
 !-----------------------------------------------------------------------
 !------ private defined data type --------
@@ -329,8 +329,10 @@ endif
 !  ----- write namelist/version info -----
 
     unit = open_file ('logfile.out', action='append')
-    call print_version_number (unit, 'amip_interp', vers_num)
-    if (get_my_pe() == 0) write (unit,nml=amip_interp_nml)
+    if (get_my_pe() == 0) then
+        write (unit,'(/,80("="),/(a))') trim(version), trim(tag)
+        write (unit,nml=amip_interp_nml)
+    endif
     call close_file (unit)
 
 !   ---- freezing point of sea water in deg K ---
@@ -347,11 +349,13 @@ endif
         file_name = 'INPUT/' // 'amip1_sst.data'
         mobs = 180;  nobs = 91
         call set_sst_grid_edges_amip1
+        if (get_my_pe() == 0) &
         call error_mesg ('amip_interp_init', 'using AMIP 1 sst', NOTE)
     else
         file_name = 'INPUT/' // 'reyoi_sst.data'
         mobs = 360;  nobs = 180
         call set_sst_grid_edges_oi
+        if (get_my_pe() == 0) &
         call error_mesg ('amip_interp_init', 'using Reynolds OI sst', &
                                                                 NOTE)
     endif

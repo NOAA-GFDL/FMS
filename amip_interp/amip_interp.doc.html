@@ -12,16 +12,16 @@
 <A HREF="#REFERENCES">REFERENCES</A> / 
 <A HREF="#NOTES">NOTES</A> 
 </FONT>
-<P><I>Last updated on <!--#exec cmd="echo $LAST_MODIFIED" -->.</I>
 <BR><BR></DIV><HR>
 
 
 <H2>module amip_interp</H2>
 <A NAME="HEADER">
 <PRE>
-     Version: v2.2
-     Date:    April 28, 2000
-     Contact: Bruce Wyman
+     <B>Contact:</B>   Bruce Wyman
+     <B>Reviewers:</B>
+
+     <B><A HREF=".doc.log#amip_interp.f90">Tags/Status</A></B>
 </PRE>
 </A><!-- END HEADER -->
 <!--------------------------------------------------------------------->
@@ -86,32 +86,32 @@ use amip_interp_mod [, only:  amip_interp_type,
                               get_sst_grid_size,
                               get_sst_grid_boundary ]
 
-  <A HREF="#DATA_TYPES">amip_interp_type</A>
+  <A HREF="amip_interp.doc.html#DATA_TYPES">amip_interp_type</A>
          A variable of this defined data type is returned when function
          amip_interp_init is called.  This variable is needed when
          calling get_amip_sst and get_amip_ice.
                        
-  <A HREF="#amip_interp_init">amip_interp_init</A>
+  <A HREF="amip_interp.doc.html#amip_interp_init">amip_interp_init</A>
          Function that initializes data needed for the horizontal
          interpolation between the sst grid and model grid. The 
          returned variable of type amip_interp_type is needed when
          calling get_amip_sst and get_amip_ice.
 
-  <A HREF="#amip_interp_end">amip_interp_end</A>
+  <A HREF="amip_interp.doc.html#amip_interp_end">amip_interp_end</A>
          Call this routine for all amip_interp_type variables created by
          amip_interp_init.
 
-  <A HREF="#get_amip_sst">get_amip_sst</A>
+  <A HREF="amip_interp.doc.html#get_amip_sst">get_amip_sst</A>
          Returns SST on the model grid for a requested time.
 
-  <A HREF="#get_amip_ice">get_amip_ice</A>
+  <A HREF="amip_interp.doc.html#get_amip_ice">get_amip_ice</A>
          Returns an ice mask on the model grid for a requested time.
 
-  <A HREF="#get_sst_grid_size">get_sst_grid_size</A>
+  <A HREF="amip_interp.doc.html#get_sst_grid_size">get_sst_grid_size</A>
          Returns the size (i.e., number of longitude and latitude
          points) of the observed data grid.
 
-  <A HREF="#get_sst_grid_boundary">get_sst_grid_boundary</A>
+  <A HREF="amip_interp.doc.html#get_sst_grid_boundary">get_sst_grid_boundary</A>
          Returns the grid box boundaries of the observed data grid.
 
 NOTES:
@@ -120,7 +120,7 @@ NOTES:
      read from file <b>input.nml</b>.
 
   2) The observed SST data sets must be located in directory INPUT.
-     <A HREF="#DATA_SETS">See below for details.</A>
+     <A HREF="amip_interp.doc.html#DATA_SETS">See below for details.</A>
 
 </PRE>
 </A><!-- END INTERFACE -->
@@ -347,8 +347,12 @@ Output
 <H4>CHANGE HISTORY</H4>
 <!-- BEGIN CHANGES -->
 <PRE>
+<B><A HREF=".doc.log#cloud_rad.f90">CVS Revision history</A></B>
 
-<b>changes for v1.1</b>
+
+<B>Changes prior to CVS version control</B>
+
+<b>changes</b>
 
   * option for either AMIP 1 or Reynolds OI SSTs.
   * AMIP 1 data has been reformatted
@@ -357,12 +361,12 @@ Output
        get_amip_grid_size      changed to  get_sst_grid_size
        get_amip_grid_boundary  changed to  get_sst_grid_boundary
 
-<b>changes for v2.1</b>  (11/23/1999)
+<b>changes</b>  (11/23/1999)
 
     Removed optional additional grid feature.
     New version should be (nearly) identical to the pre-blue version.
 
-<b>changes for v2.2</b>  (4/28/2000)
+<b>changes</b>  (4/28/2000)
 
     Interpolation is done using horiz_interp_mod (instead on exchange_mod).
 

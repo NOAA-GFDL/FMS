@@ -1,9 +1,8 @@
 <HTML>
 <TITLE>Modular Physics: driver for tracer calculations</TITLE>
 <BODY BGCOLOR="#AABBCC" TEXT="#332211" >
-<!--BASE TARGET = "display_frame">
 
-<H2>tracer_driver/v0.1</H2>
+<H2>tracer_driver</H2>
 
 <HR>
 
@@ -94,7 +93,12 @@
 
 <H4>Namelist</H4>
 
-<!--#exec cmd="cat namelist.html"-->
+namelist /tracer_driver_nml/ nradon, ntest
+
+integer :: nradon=0  ! tracer number for radon
+integer :: ntest =0  ! starting tracer number for test tracers
+                     ! test tracers are indexed from ntest to size(r,4)
+
 
 <HR>
 

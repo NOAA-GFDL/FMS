@@ -57,7 +57,7 @@ module mpp_io_mod
   use mpp_domains_mod
   implicit none
   private
-  character(len=256), private :: version='$Id: mpp_io.F90,v 5.4 2000/05/30 19:55:12 vb Exp $' !RCS ID
+  character(len=256), private :: version='$Id: mpp_io.F90,v 5.5 2000/07/28 20:17:19 fms Exp $' !RCS ID
 
 #ifdef SGICRAY
 !see intro_io(3F): to see why these values are used rather than 5,6,0
@@ -125,7 +125,7 @@ module mpp_io_mod
 !null unit: returned by PEs not participating in IO after a collective call
   integer, parameter, private :: NULLUNIT=-1
   real, parameter, private :: NULLTIME=-1.
-  logical, private :: verbose=.FALSE., mpp_io_initialized=.FALSE.
+  logical, private :: verbose=.FALSE., debug=.FALSE., mpp_io_initialized=.FALSE.
 
   interface mpp_write_meta
      module procedure mpp_write_meta
@@ -177,7 +177,10 @@ module mpp_io_mod
 
       maxunits = 64
       if( PRESENT(maxunit) )maxunits = maxunit
-      if( PRESENT(flags) )verbose = flags.EQ.MPP_VERBOSE
+      if( PRESENT(flags) )then
+          debug   = flags.EQ.MPP_DEBUG
+          verbose = flags.EQ.MPP_VERBOSE .OR. debug
+      end if
 !initialize default_field
       default_field%name = 'noname'
       default_field%units = 'nounits'
@@ -1452,7 +1455,7 @@ module mpp_io_mod
                   end if
               end if
           end if
-          if( verbose )print '(a,2i3,12i4)', 'WRITE_RECORD: PE, unit, start, axsiz=', pe, unit, start, axsiz
+          if( debug )print '(a,2i3,12i4)', 'WRITE_RECORD: PE, unit, start, axsiz=', pe, unit, start, axsiz
 #ifdef use_netCDF
 !write time information if new time
           if( newtime )then
@@ -1500,7 +1503,7 @@ module mpp_io_mod
 #else
                   write( unit, rec=mpp_file(unit)%record )field%id, subdomain, time_level, time, data
 #endif
-                  if( verbose )print '(a,i3,a,i3)', 'MPP_WRITE: PE=', pe, ' wrote record ', mpp_file(unit)%record
+                  if( debug )print '(a,i3,a,i3)', 'MPP_WRITE: PE=', pe, ' wrote record ', mpp_file(unit)%record
               end if
           end if
       end if

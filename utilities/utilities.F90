@@ -146,7 +146,8 @@ end interface
 
 !  ---- version number -----
 
-  character(len=4), parameter :: vers_num = 'v2.3'
+  character(len=128) :: version = '$Id: utilities.F90,v 1.2 2000/08/04 20:07:58 fms Exp $'
+  character(len=128) :: tag = '$Name: bombay $'
 
   logical :: do_init = .true.
 
@@ -1116,8 +1117,8 @@ subroutine utilities_init
 !--- open logfile (at beginning) and write version info ---
 
     unit = open_file ('logfile.out', action='write')
-    call print_version_number (unit, 'utilities', vers_num)
     if ( get_my_pe() == 0 ) then
+         write (unit,'(/,80("="),/(a))') trim(version), trim(tag)
          write (unit, nml=utilities_nml)
          write (unit,*) 'nml_error_codes=',  &
                          nml_error_codes(1:num_nml_error_codes)

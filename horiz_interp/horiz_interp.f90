@@ -4,7 +4,7 @@ module horiz_interp_mod
 !-----------------------------------------------------------------------
 
  use utilities_mod, only:  open_file, print_version_number,  &
-                           error_mesg, FATAL, get_my_pe
+                           error_mesg, FATAL, get_my_pe, close_file
 
  implicit none
  private
@@ -34,7 +34,8 @@ end interface
  end type
 
 !-----------------------------------------------------------------------
- character(len=4) :: vers_num = 'v2.0'
+ character(len=128) :: version = '$Id: horiz_interp.f90,v 1.2 2000/08/04 20:02:00 fms Exp $'
+ character(len=128) :: tag = '$Name: bombay $'
  logical :: do_vers = .true.
  integer :: num_iters = 4
 !-----------------------------------------------------------------------
@@ -368,8 +369,9 @@ contains
 
    if (do_vers) then
        unit = open_file ('logfile.out', action='append')
-       call print_version_number (unit, 'horiz_interp', vers_num)
-       close (unit)
+       if (get_my_pe() == 0) &
+       write (unit,'(/,80("="),/(a))') trim(version), trim(tag)
+       call close_file (unit)
        do_vers = .false.
    endif
 

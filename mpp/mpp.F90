@@ -115,7 +115,7 @@ module mpp_mod
 #endif
   implicit none
   private
-  character(len=256), private :: version='$Id: mpp.F90,v 5.6 2000/03/01 15:57:19 vb Exp $'
+  character(len=256), private :: version='$Id: mpp.F90,v 5.7 2000/07/28 20:17:17 fms Exp $'
 
 #ifdef SGICRAY
 !see intro_io(3F): to see why these values are used rather than 5,6,0
@@ -128,8 +128,8 @@ module mpp_mod
   integer, private :: error
 
 !initialization flags
-  integer, parameter, public :: MPP_VERBOSE=1
-  logical, private :: verbose=.FALSE.
+  integer, parameter, public :: MPP_VERBOSE=1, MPP_DEBUG=2
+  logical, private :: verbose=.FALSE., debug=.FALSE.
 
 !flags to transmit routines
   integer, parameter, public :: ALL_PES=-1, ANY_PE=-2, NULL_PE=-3
@@ -310,7 +310,10 @@ module mpp_mod
 #endif
       mpp_initialized = .TRUE.
 
-      if( PRESENT(flags) )verbose = flags.EQ.MPP_VERBOSE
+      if( PRESENT(flags) )then
+          debug   = flags.EQ.MPP_DEBUG
+          verbose = flags.EQ.MPP_VERBOSE .OR. debug
+      end if
 !messages
       if( verbose )call mpp_error( NOTE, 'MPP_INIT: initializing MPP module...' )
       if( pe.EQ.0 )then
@@ -318,7 +321,7 @@ module mpp_mod
           write( stdout,* )'NPES=', npes
 #ifdef use_libSMA
           write( stdout,* )'Using SMA (shmem) library for message passing...'
-          if( verbose )write( stdout,* )'MPP_INIT: WORDS_PER_REAL=', WORDS_PER_REAL
+          if( debug )write( stdout,* )'MPP_INIT: WORDS_PER_REAL=', WORDS_PER_REAL
 #endif
 #ifdef use_libMPI
           write( stdout,* )'Using MPI library for message passing...'
@@ -425,7 +428,7 @@ module mpp_mod
       if( .NOT.mpp_initialized )call mpp_error( FATAL, 'MPP_TRANSMIT: You must first call mpp_init.' )
       if( put_pe.EQ.NULL_PE .AND. get_pe.EQ.NULL_PE )return
       
-      if( verbose )then
+      if( debug )then
           call SYSTEM_CLOCK(tick)
           write( stdout,'(a,i18,a,i5,a,2i5,2i8)' )&
                'T=',tick, ' PE=',pe, ' MPP_TRANSMIT begin: put_pe, get_pe, put_len, get_len=', put_pe, get_pe, put_len, get_len
@@ -589,7 +592,7 @@ module mpp_mod
           call mpp_error( FATAL, 'MPP_TRANSMIT: invalid get_pe.' )
       end if
 
-      if( verbose )then
+      if( debug )then
           call SYSTEM_CLOCK(tick)
           write( stdout,'(a,i18,a,i5,a,2i5,2i8)' )&
                'T=',tick, ' PE=',pe, ' MPP_TRANSMIT end: put_pe, get_pe, put_len, get_len=', put_pe, get_pe, put_len, get_len
@@ -1041,7 +1044,7 @@ module mpp_mod
 #endif
       if( verbose )call mpp_error( NOTE, 'MPP_SUM: using binary tree summation...' )
       lognpes = int( log(float(npes))/log(2.) - epsilon(1.) ) + 1
-      if( verbose )then
+      if( debug )then
           call SYSTEM_CLOCK(tick)
           write( stdout,'(a,i18,a,i5,a,i5)' )'T=',tick, ' PE=', pe, ' MPP_SUM: lognpes=', lognpes
       end if
@@ -1049,13 +1052,13 @@ module mpp_mod
       do level = 0,lognpes-1    !level on tree
          pedist = 2**level      !distance to sum over
          vpes = vpes + mod(vpes,pedist)
-         if( verbose )then
+         if( debug )then
              call SYSTEM_CLOCK(tick)
              write( stdout,'(a,i18,a,i5,a,3i5)' )'T=',tick, ' PE=', pe, ' MPP_SUM: level, pedist, vpes=', level, pedist, vpes
          end if
          b(1:length) = a(1:length)                  !initialize b for each level of the tree
          call mpp_sync()
-         if( verbose )then
+         if( debug )then
              call SYSTEM_CLOCK(tick)
              write( stdout,'(a,i18,a,i5,a,2i5)' )&
                   'T=',tick, ' PE=', pe, ' MPP_SUM: pedist, mod(pe,pedist*2)=', pedist, mod(pe,pedist*2)
@@ -1063,7 +1066,7 @@ module mpp_mod
          if( mod(pe,pedist*2).GE.pedist )then
              call mpp_transmit( b, length, pe-pedist, c, length, pe-pedist )
              a(1:length) = c(1:length) + b(1:length)          !if c came from the left,  sum on the left
-             if( verbose )then
+             if( debug )then
                  call SYSTEM_CLOCK(tick)
                  write( stdout,'(a,i18,a,i5,a,i5,3es23.15)' )&
                       'T=',tick, ' PE=', pe, ' MPP_SUM: Lsum: remote_pe=', pe-pedist, b(1), c(1), a(1)
@@ -1071,7 +1074,7 @@ module mpp_mod
          else if( pe+pedist.LT.npes )then
              call mpp_transmit( b, length, pe+pedist, c, length, pe+pedist )
              a(1:length) = a(1:length) + c(1:length)          !if c came from the right, sum on the right
-             if( verbose )then
+             if( debug )then
                  call SYSTEM_CLOCK(tick)
                  write( stdout,'(a,i18,a,i5,a,i5,3es23.15)' )&
                       'T=',tick, ' PE=', pe, ' MPP_SUM: Rsum: remote_pe=', pe+pedist, b(1), c(1), a(1)
@@ -1086,7 +1089,7 @@ module mpp_mod
 #endif
              call mpp_transmit( b, length, ANY_PE, c, length, vpe )
              a(1:length) = a(1:length) + c(1:length)          !if c came from the right, sum on the right
-             if( verbose )then
+             if( debug )then
                  call SYSTEM_CLOCK(tick)
                  write( stdout,'(a,i18,a,i5,a,i5,3es23.15)' )&
                       'T=',tick, ' PE=', pe, ' MPP_SUM: Vsum: remote_pe=', pe+pedist/2, b(1), c(1), a(1)
@@ -1095,7 +1098,7 @@ module mpp_mod
 !still need to figure out put pattern for non-power-of-2 NPES
 !         if( pe+pedist/2.LT.vpes .AND. pe+pedist.GT.vpes )then
 !             call mpp_transmit( b, c, size(b), pe-pedist/2, NULL_PE )
-!             if( verbose )&
+!             if( debug )&
 !                  write( stdout,* )'MPP_SUM: Vsum: pe, remote_pe=', pe, pe-pedist/2
 !         end if
       end do
@@ -1301,7 +1304,9 @@ module mpp_mod
       if( npes.GT.1 )write( text,'(a,i5)' )trim(text)//' from PE', pe	!this is the mpp part
       if( PRESENT(errormsg) )text = trim(text)//': '//trim(errormsg)
 
-      if( errortype.NE.NOTE )then
+      if( errortype.EQ.NOTE )then
+          write( stdout,'(/a/)' )trim(text)
+      else
           write( stderr,'(/a/)' )trim(text)
           if( errortype.EQ.FATAL .OR. warnings_are_fatal )then
 #ifdef sgi_mipspro
@@ -1353,7 +1358,7 @@ module mpp_mod
       len = newlen
       call SHMEM_BARRIER_ALL()
 
-      if( verbose )then
+      if( debug )then
           call SYSTEM_CLOCK(tick)
           write( stdout,'(a,i18,a,i5,a,2i8,i16)' )'T=', tick, ' PE=', pe, ' MPP_MALLOC: len, newlen, ptr=', len, newlen, ptr
       end if
@@ -1594,7 +1599,7 @@ module mpp_mod
       pointer( ptr$get, get_r8 )
       ptr$put = LOC(put_data)
       ptr$get = LOC(get_data)
-      if( verbose )call mpp_error( NOTE, 'MPP_TRANSMIT_REAL8_SCALAR: calling mpp_transmit_real8...' )
+      if( debug )call mpp_error( NOTE, 'MPP_TRANSMIT_REAL8_SCALAR: calling mpp_transmit_real8...' )
       call mpp_transmit_real8( put_r8, put_len, put_pe, get_r8, get_len, get_pe )
 #else
       call mpp_error( FATAL, 'MPP_TRANSMIT_REAL8_SCALAR: currently requires CRI pointers.' )
@@ -1614,7 +1619,7 @@ module mpp_mod
       pointer( ptr$get, get_r8 )
       ptr$put = LOC(put_data)
       ptr$get = LOC(get_data)
-      if( verbose )call mpp_error( NOTE, 'MPP_TRANSMIT_CMPLX8: calling mpp_transmit_real8...' )
+      if( debug )call mpp_error( NOTE, 'MPP_TRANSMIT_CMPLX8: calling mpp_transmit_real8...' )
       call mpp_transmit_real8( put_r8, put_len*2, put_pe, get_r8, get_len*2, get_pe )
 #else
       call mpp_error( FATAL, 'MPP_TRANSMIT_CMPLX8: currently requires CRI pointers.' )
@@ -1634,7 +1639,7 @@ module mpp_mod
       pointer( ptr$get, get_r8 )
       ptr$put = LOC(put_data)
       ptr$get = LOC(get_data)
-      if( verbose )call mpp_error( NOTE, 'MPP_TRANSMIT_CMPLX8_SCALAR: calling mpp_transmit_real8...' )
+      if( debug )call mpp_error( NOTE, 'MPP_TRANSMIT_CMPLX8_SCALAR: calling mpp_transmit_real8...' )
       call mpp_transmit_real8( put_r8, put_len*2, put_pe, get_r8, get_len*2, get_pe )
 #else
       call mpp_error( FATAL, 'MPP_TRANSMIT_CMPLX8_SCALAR: currently requires CRI pointers.' )
@@ -1654,7 +1659,7 @@ module mpp_mod
       pointer( ptr$get, get_r8 )
       ptr$put = LOC(put_data)
       ptr$get = LOC(get_data)
-      if( verbose )call mpp_error( NOTE, 'MPP_TRANSMIT_INT8: calling mpp_transmit_real8...' )
+      if( debug )call mpp_error( NOTE, 'MPP_TRANSMIT_INT8: calling mpp_transmit_real8...' )
       call mpp_transmit_real8( put_r8, put_len, put_pe, get_r8, get_len, get_pe )
 #else
       call mpp_error( FATAL, 'MPP_TRANSMIT_INT8: currently requires CRI pointers.' )
@@ -1674,7 +1679,7 @@ module mpp_mod
       pointer( ptr$get, get_r8 )
       ptr$put = LOC(put_data)
       ptr$get = LOC(get_data)
-      if( verbose )call mpp_error( NOTE, 'MPP_TRANSMIT_INT8_SCALAR: calling mpp_transmit_real8...' )
+      if( debug )call mpp_error( NOTE, 'MPP_TRANSMIT_INT8_SCALAR: calling mpp_transmit_real8...' )
       call mpp_transmit_real8( put_r8, put_len, put_pe, get_r8, get_len, get_pe )
 #else
       call mpp_error( FATAL, 'MPP_TRANSMIT_INT8_SCALAR: currently requires CRI pointers.' )
@@ -1691,7 +1696,7 @@ module mpp_mod
 #ifdef use_CRI_pointers
       pointer( ptr, b )
       ptr = loc(a)
-      if( verbose )call mpp_error( NOTE, 'MPP_SUM_CMPLX8: calling mpp_sum_real8...' )
+      if( debug )call mpp_error( NOTE, 'MPP_SUM_CMPLX8: calling mpp_sum_real8...' )
       call mpp_sum_real8( b, length*2, pelist )
 #else
       call mpp_error( FATAL, 'MPP_SUM_CMPLX8: currently requires CRI pointers.' )
@@ -1708,7 +1713,7 @@ module mpp_mod
 #ifdef use_CRI_pointers
       pointer( ptr, b )
       ptr = loc(a)
-      if( verbose )call mpp_error( NOTE, 'MPP_SUM_REAL8_SCALAR: calling mpp_sum_real8...' )
+      if( debug )call mpp_error( NOTE, 'MPP_SUM_REAL8_SCALAR: calling mpp_sum_real8...' )
       call mpp_sum_real8( b, length, pelist )
 #else
       call mpp_error( FATAL, 'MPP_SUM_REAL8_SCALAR: currently requires CRI pointers.' )
@@ -1725,7 +1730,7 @@ module mpp_mod
 #ifdef use_CRI_pointers
       pointer( ptr, b )
       ptr = loc(a)
-      if( verbose )call mpp_error( NOTE, 'MPP_SUM_CMPLX8_SCALAR: calling mpp_sum_real8...' )
+      if( debug )call mpp_error( NOTE, 'MPP_SUM_CMPLX8_SCALAR: calling mpp_sum_real8...' )
       call mpp_sum_real8( b, length*2, pelist )
 #else
       call mpp_error( FATAL, 'MPP_SUM_CMPLX8_SCALAR: currently requires CRI pointers.' )
