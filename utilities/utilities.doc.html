@@ -118,6 +118,14 @@ use utilities_mod [, only: utilities_init, utilities_end,
    check_system_clock  Outputs the elapsed real-time since the last
                        call to set_system_clock (or utilities_init).
 
+   lowercase           Convert character strings to all lower case
+
+   uppercase           Convert character strings to all upper case
+
+   mpp_clock_init      Sets up a identifier for performance timing
+                         (similar to mpp_clock_id)
+
+
    check_sum           Returns a global (from all PEs) integer check sum.
 
 
@@ -133,6 +141,10 @@ use utilities_mod [, only: utilities_init, utilities_end,
    mpp_min             Find minimum. (mpp_min)
    mpp_max             Find maximum. (mpp_max)
 
+   check_sum           Performs integer check sums (mpp_chksum)
+
+   mpp_clock_begin     Initiates performance timing (mpp_clock_begin)
+   mpp_clock_end       Terminates performance timing (mpp_clock_end)
 
 
 </PRE>
@@ -402,14 +414,51 @@ There are no arguments.
 
 ---------------------------------------------------------------------
 
-<b>check_sum</b> ( data )
+string = <b>lowercase</b> ( cs )
 
-   Input
+   INPUT
 
-      data  Global (distributed) data.
-               [real, dimension(:,:) or dimension(:,:,:)]
+      cs   character string [character(len=*)]
 
-<b>NOTE:</b>  You must call set_domain before calling check_sum.
+   RETURNS
+
+      string   Character string that contain only lower case.
+               The characters "A-Z" are converted to "a-z".
+
+---------------------------------------------------------------------
+
+string = <b>uppercase</b> ( cs )
+
+   INPUT
+
+      cs   character string [character(len=*)]
+
+   RETURNS
+
+      string   Character string that contain only upper case.
+               The characters "a-z" are converted to "A-Z".
+
+---------------------------------------------------------------------
+
+id = <b>mpp_clock_init</b> ( module, routine, level )
+
+   INPUT
+
+      module    Module name to be timed. [character]
+
+      routine   Routine name and label for section of code to be timed.
+                   [character]
+
+      level     Level of timing.  When this level equals "timing_level"
+                defined by namelist &utilities_nml a non-zero identification
+                integer will be returned. 
+                   [integer]
+
+   RETURNS
+
+      id        The identification index returned by mpp_clocks_id.
+                A zero value is returned (turning clocks off) when input
+                argument level does not equal namelist variable timing_level.
 
 </PRE>
 </A><!-- END ROUTINES -->
@@ -422,8 +471,14 @@ There are no arguments.
 
 <b>&utilities_nml</b>
 
-  time_all_pe           Print out a timing number on all processors (TRUE)
-                        of just on PE0 (FALSE).
+  timing_level          Level/degree of detailed performance timing.
+                        If timing_level = 0 then no timing is done.
+                        The timing information will be saved to a separate
+                        file for each processor.
+
+  time_all_pe           Print out a simple timing numbers for all 
+                        processors (TRUE) or just for PE0 (FALSE).
+                        This is different from "timing_level".
                            [logical, default: time_all_pe=.false.]
 
   read_all_pe           Read global data on all processors extracting local
@@ -445,6 +500,27 @@ There are no arguments.
                         This option was provided for reducing memory in
                         very high resolution runs.
                            [logical, default: one_level_restarts=.false.]
+
+   stack_size          The size in words of the MPP user stack.
+                       If stack_size > 0, the following MPP routine is called:
+                       call mpp_set_stack_size (stack_size).
+                       If stack_size = 0 (default) then the default size set
+                       by mpp_mod is used.
+                           [integer, default: stack_size = 0]
+
+   domains_stack_size  The size in words of the MPP_DOMAINS user stack.
+                       If domains_stack_size > 0, the following
+                       MPP_DOMAINS routine is called:
+                       call mpp_domains_set_stack_size (domains_stack_size).
+                       If domains_stack_size = 0 (default) then the default
+                       size set by mpp_domains_mod is used.
+                           [integer, default: domains_stack_size = 0]
+
+NOTE:
+
+    If the MPP or MPP_DOMAINS stack size is exceeded the program will
+    terminate after printing the required size.
+
 
 </PRE>
 </A><!-- END NAMELIST -->
@@ -544,7 +620,7 @@ There are no arguments.
 <!-- BEGIN PLANS -->
 <PRE>
 
-   Replace check_sum routine with version in mpp_mod.
+   None.
 
 </PRE>
 </A><!-- END PLANS -->

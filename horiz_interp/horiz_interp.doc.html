@@ -49,6 +49,9 @@
      integrals of both fields should be within the round-off of the
      computer.
 
+     For this algorithm to correctly work the output grid must lie
+     within the input grid. Longitudes must be within +/- 2 pi.
+
 </PRE>
 </A><!-- END DESCRIPTION -->
 <!--------------------------------------------------------------------->
@@ -172,14 +175,25 @@
   ------
      data_out   output data [real, dimension(:,:)]
 
-  Optional
-  --------
-     verbose   flag for the amount of print output (integer scalar)
-                 =0 no output; =1 min,max,means; =2 still more
+  Optional Input
+  --------------
 
-     mask_in   input mask;  =0.0 for data points that should not
-               be used or have no data; has the same size as data_in
-     mask_out  output mask that specifies whether data was computed
+     verbose     Flag for the amount of print output.  [integer]
+                    verbose = 0, no output
+                            = 1, min,max,means
+                            = 2, still more
+
+     mask_in     Input mask, must be the same size as the input data.
+                 Set mask_in=0.0 for data points that should not be used
+                 or have missing data.  [real, dimension(:,:)]
+
+  Optional Output
+  ---------------
+
+     mask_out    Output mask, must be the same size as the output data.
+                 Returns the fractional area of the output grid box that
+                 contains valid input data.
+                       [real, dimension(:,:)]
 
 ---------------------------------------------------------------------
 
@@ -225,12 +239,13 @@
 
      mask_in     Input mask, must be the same size as the input data.
                  Set mask_in=0.0 for data points that should not be used
-                 or have no data.  [real, dimension(:,:)]
+                 or have missing data.  [real, dimension(:,:)]
 
   Optional Output
 
      mask_out    Output mask, must be the same size as the output data.
-                 Specifies whether data was computed.
+                 Returns the fractional area of the output grid box that
+                 contains valid input data.
                        [real, dimension(:,:)]
 
 ---------------------------------------------------------------------
@@ -283,7 +298,7 @@
 
 <b>FATAL ERROR in horiz_interp_mod</b>
 
-    <b>no latitude index found: n,ph= .... </b>
+    <b>no latitude index found: n,sph= .... </b>
         An output latitude did not fall between adjacent input latitudes.
         Check your input and output latitudes or increase the tolerence
         (see developer notes).

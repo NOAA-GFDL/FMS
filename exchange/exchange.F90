@@ -52,7 +52,7 @@ namelist /exchange_nml/ make_exchange_reproduce
 !--- version number and tag name ----
 
 character(len=128) :: version = '$Id: exchange.F90,v 1.3 2000/08/04 20:01:01 fms Exp $'
-character(len=128) :: tag = '$Name: calgary $'
+character(len=128) :: tag = '$Name: damascus $'
 
 
 !==========================================================================

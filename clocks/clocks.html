@@ -1,0 +1,307 @@
+<!doctype html public "-//ietf//dtd html//en">
+<html>
+
+<head>
+<meta name="description" content="">
+<meta name="keywords" content="">
+<link rel="stylesheet" href="balaji.css">
+
+<title>clocks_mod: a code timing module for f90</title>
+</head>
+
+<body>
+
+<!-- title using blockquote stylespec -->
+<blockquote>
+<div align="center">
+<h1>clocks_mod</h1><br>
+<h3>a code timing module for f90</h3>
+</div><hr>
+<tt>clocks_mod</tt> is a set of simple calls for timing f90
+code and code sections.<hr>
+</blockquote>
+
+<p>
+<br><a href="#introduction">Introduction to <tt>clocks_mod</tt>.</a>
+<br><a href="#using">Using <tt>clocks_mod</tt>.</a>
+<br><a href="#source">Acquiring <tt>clocks_mod</tt> source.</a>
+<br><a href="#linking">Linking with <tt>clocks_mod</tt>.</a>
+<br><a href="#portability">Portability issues.</a>
+<p>The <tt>clocks_mod</tt> API:<br>
+<dl COMPACT>
+<dt><a href="#clocks_exit">clocks_exit</a>: <dd>Exit <tt>clocks_mod</tt>.
+<dt><a href="#clocks_init">clocks_init</a>: <dd>Initialize <tt>clocks_mod</tt>.
+<dt><a href="#get_clock">get_clock</a>: <dd>Retrieve information from a
+cumulative clock.
+<dt><a href="#clock_id">clock_id</a>: <dd>Return an ID to a new or existing
+cumulative clock.
+<dt><a href="#tick">tick</a>: <dd>Return time on system clock.
+</dl>
+<hr>
+<ol>
+<p><a name="introduction"><li><h4>Introduction</h4>
+
+<p>In parallel environments, the key timing information is the
+wallclock ("real") time, not the CPU time, of a run. F90 provides the
+<tt>system_clock(3F)</tt> intrinsic to retrieve timing
+information from the system realtime clock.
+
+<p><tt>clocks_mod</tt> uses the F90
+<tt>system_clock(3F)</tt> intrinsic to measure time. The main
+call is to the function <tt>tick()</tt>. Clocks can be set up
+to provide direct timing of a section of code, or for cumulative
+timing of code sections within loops.
+
+<p>The overhead of calls to the system clock is typically measured in
+microseconds. However, the resolution of the clock may be higher or
+lower than this overhead. The resolution is printed when the module is
+initialized. A test program is supplied with the module which, among
+other things, measures the calling overhead.
+
+<p><a name="using"><li><h4>Using <tt>clocks_mod</tt></h4>
+
+<p>In the simplest method of calling, just designate sections of a main
+program with calls to <tt>tick()</tt>. <tt>tick()</tt>
+by default measures time since the last call to
+<tt>tick()</tt> (or to <tt>clocks_init()</tt>).
+
+<p><pre>
+program main
+call clocks_init()
+!code section 1
+...
+i = tick( 'code section 1' )
+!code section 2
+...
+i = tick( 'code section 2' )
+!code section 3
+...
+i = tick( 'code section 3' )
+end
+</pre>
+
+<p>This will return timing information for the three regions of the
+main program.
+
+<p>If, however, a subroutine in one of the code sections itself
+contained calls to <tt>tick()</tt>, this would produce
+erroneous information (since "the last call to <tt>tick()</tt>"
+might refer to a call elsewhere). In this case, we set the reference
+tick using the <tt>since</tt> argument to
+<tt>tick()</tt>:
+
+<p><pre>
+program main
+call clocks_init()
+i = tick()
+!code section 1
+...
+i = tick( 'code section 1', since=i )
+!code section 2
+...
+i = tick( 'code section 2', since=i )
+!code section 3
+...
+i = tick( 'code section 3', since=i )
+end
+</pre>
+
+A third way to use <tt>clocks_mod</tt> is to produce cumulative
+times of code sections within loops. Here we first call
+<tt>clock_id</tt> to set up a clock with an
+<tt>id</tt>, and accumulate times to this ID.
+
+<p><pre>
+program main
+call clocks_init()
+id1 = clock_id( 'Code section 1' )
+id2 = clock_id( 'Code section 2' )
+id3 = clock_id( 'Code section 3' )
+do j = 1,10000
+   i = tick()
+!code section 1
+...
+   i = tick( id=id1, since=i )
+!code section 2
+...
+   i = tick( id=id2, since=i )
+!code section 3
+...
+   i = tick( id=id3, since=i )
+end do
+call clocks_exit()
+end
+</pre>
+
+<p>The call to <tt>clocks_exit</tt> above prints the timings
+for the code sections.
+
+<p><li><h4>clocks_mod call syntax</h4>
+
+<p>The public interfaces to <tt>clocks_mod</tt> are described here in
+alphabetical order:
+
+<ol type="a">
+
+<p><a name="clocks_exit"><li><h4>clocks_exit</h4>
+
+<pre>
+    subroutine clocks_exit(flag)
+!print all cumulative clocks
+!if flag is set, only print if flag=0
+!for instance, flag could be set to pe number by the calling program
+!to have only PE 0 print clocks
+      integer, intent(in), optional :: flag
+</pre>
+
+<p>This prints the values of all cumulative
+clocks. <tt>flag</tt> may be used, for example, in a parallel
+run, to have only one of the PEs print times.
+
+<p><a name="clocks_init"><li><h4>clocks_init</h4>
+
+<pre>
+    subroutine clocks_init(flag)
+!initialize clocks module
+!if flag is set, only print if flag=0
+!for instance, flag could be set to pe number by the calling program
+!to have only PE 0 in a parallel run print info
+      integer, intent(in), optional :: flag
+</pre>
+
+<p>Called to initialize the <tt>clocks_mod</tt> package. Some
+information is printed regarding the version of this module and the
+resolution of the system clock. <tt>flag</tt> may be used, for
+example, in a parallel run, to have only one of the PEs print this
+information.
+
+<p><a name="get_clock"><li><h4>get_clock</h4>
+
+<pre>
+subroutine get_clock( id, ticks, calls, total_time, time_per_call )
+  integer, intent(in) :: id
+  integer, intent(out), optional :: ticks, calls
+  real, intent(out), optional :: total_time, time_per_call
+</pre>
+
+<p>This is used to return information stored on the clock whose ID is
+<tt>id</tt>. The subroutine returns any or all of the
+information held in the following: <tt>ticks</tt>, for the
+total accumulated clock ticks for this ID; <tt>calls</tt>,
+the number of intervals measured with this clock (i.e, the number of
+times <tt>tick()</tt> was called with this ID);
+<tt>total_time</tt>, the total time in seconds on this clock;
+and <tt>time_per_call</tt>, the time per measured interval on
+this clock (<tt>total_time/calls</tt>).
+
+This routine is used if you wish to retrieve this information in a
+variable. Otherwise, <tt>clocks_exit()</tt> may be used to
+print this information at termination.
+
+<p><a name="clock_id"><li><h4>clock_id</h4>
+
+<pre>
+    function clock_id(name)
+!return an ID for a new clock
+      integer :: clock_id
+      character(len=*), intent(in) :: name
+</pre>
+
+<p>This is used to return an ID to a clock that may be used for timing
+a code section. Currently up to 256 (an arbitrarily chosen setting for
+the internal parameter <tt>max_clocks</tt>) clocks can be set.
+The cumulative times can be printed at the end of the run by a call to
+<a href="#clocks_exit"><tt>clocks_exit()</tt></a>. The name can
+be a new or existing clock.
+
+<p><i>Note that <tt>name</tt> is restricted to 24
+characters</i>. If you enter a longer name, it is silently and
+gracefully truncated. This can be problematic if you inadvertently
+give different clocks names that differ only beyond the 24th
+character. These will look to the clocks module as the same clock.
+
+<p><a name="tick"><li><h4>tick</h4>
+
+<pre>
+function tick( string, id, name, since )
+  integer :: tick
+  character(len=*), intent(in), optional :: string
+  integer, intent(in), optional :: id, since
+  character(len=*), intent(in), optional :: name
+</pre>
+
+<p><tt>tick</tt> returns the current tick of the system clock.
+
+<p>If <tt>string</tt> is present, it prints the time elapsed
+since the reference tick.
+
+<p>Otherwise if <tt>id</tt> is present, the time elapsed since
+the reference tick is accumulated to the clock <tt>id</tt>.
+
+<p>Otherwise if <tt>name</tt> is present, the time elapsed
+since the reference tick is accumulated to the clock whose name is
+<tt>name</tt>. There is slightly larger overhead for this
+option, to resolve the name to an ID. It is recommended to use
+<tt>id=</tt>, especially for small sections.
+
+<p>The reference tick is either the value of the system clock at the
+last call to <tt>tick()</tt> (or
+<tt>clocks_init()</tt>), or else as given by the optional
+<tt>since</tt> argument.
+
+</ol>
+   
+<p><a name="source"><li><h4>Acquiring clocks_mod source</h4>
+
+<p>GFDL users can copy the file
+<tt>/net/vb/public/utils/clocks.F90</tt>. External users can
+download the source <a
+href="ftp://ftp.gfdl.noaa.gov/pub/vb/utils/clocks.F90">here</a>. The
+current public version number is 2.2.
+
+<p><a name="linking"><li><h4>Compiling and linking to clocks_mod</h4>
+
+<p>Any module or program unit using <tt>clocks_mod</tt> must
+contain the line
+
+<pre>
+use clocks_mod
+</pre>
+
+<p>The source file for <tt>clocks_mod</tt> is <a
+href="ftp://ftp.gfdl.noaa.gov/pub/vb/utils/clocks.F90"><tt>clocks.F90</tt></a>.
+
+<p>Compiling with the cpp flag <tt>test_clocks</tt> turned on:
+
+<p><pre>
+f90 -Dtest_clocks clocks.F90
+</pre>
+
+<p>will produce a program that will exercise certain portions of the
+<tt>clocks_mod</tt> module.
+
+<p><a name="portability"><li><h4>Portability issues</h4>
+
+<tt>clocks_mod</tt> is fully f90 standard-compliant. There are
+no portability issues.
+
+<p><a name="Changes"></a><li><h4>Changes</h4>
+
+The <a href="changes_clocks.html">RCS log</a> for
+<tt>clocks.F90</tt> contains a comprehensive list of changes. In the
+unlikely event that you should wish to check out a retro version,
+please get in touch with me, <a href="myaddr.html">Balaji</a>.
+</ol>
+
+<!-- footer using address stylespec -->
+<br><hr>
+<address>
+<small>Author: <a href="myaddr.html">V. Balaji</a>
+<br>Document last modified <!--#exec cmd="echo $LAST_MODIFIED" --></small>
+</address>
+</body>
+
+<!-- store access stats -->
+<!--#exec cmd="touch stats; chmod 666 stats" -->
+<!--#exec cmd="echo $DOCUMENT_NAME $REMOTE_IDENT@$REMOTE_HOST $HTTP_REFERER $DATE_LOCAL >> stats" -->
+</html>

@@ -1,0 +1,487 @@
+<html>
+<head>
+<title>mpp_domains_mod: a domain decomposition programming interface
+for f90</title>
+</head>
+<body>
+<center><h1>mpp_domains_mod</h1>
+<h3> a domain decomposition programming interface for f90</h3>
+</center>
+<blockquote>
+<hr>
+<b><tt>mpp_domains_mod</tt></b> is a set of simple calls for domain
+decomposition and domain updates on rectilinear grids. It requires the
+module <a href="mpp.html"><b><tt>mpp_mod</tt></b></a>, upon which it is built.
+<hr>
+</blockquote>
+
+<p>
+<br><a href="#introduction">Introduction to <b><tt>mpp_domains_mod</tt></b>.</a>
+<br><a href="#domains">Domain specification in <b><tt>mpp_domains_mod</tt></b>.</a>
+<br><a href="#source">Acquiring <b><tt>mpp_domains_mod</tt></b> source.</a>
+<br><a href="#linking">Linking with <b><tt>mpp_domains_mod</tt></b>.</a>
+<br><a href="#portability">Portability issues.</a>
+<p>The <b><tt>mpp_domains_mod</tt></b> API:<br>
+<dl COMPACT>
+<dt><a href="#mpp_define_domains">mpp_define_domains</a>: <dd>Set up a
+domain decomposition.
+<dt><a href="#mpp_domains_exit">mpp_domains_exit</a>: <dd>Exit
+<b><tt>mpp_domains_mod</tt></b>.
+<dt><a href="#mpp_domains_init">mpp_domains_init</a>: <dd>Initialize
+<b><tt>mpp_domains_mod</tt></b>.
+<dt><a href="#mpp_get_global">mpp_get_global</a>: <dd>Fill in a global
+array from domain-decomposed arrays.
+<dt><a href="#mpp_set_halo_size">mpp_set_halo_size</a>: <dd>Define
+buffer area used by <b><tt>mpp_update_domains</tt></b>.
+<dt><a href="#mpp_update_domains">mpp_update_domains</a>: <dd>Halo
+updates, data transposes.
+<dt><a href="#operators">Operators on domaintypes</a>:
+<dd>Equality/inequality operators for domaintypes.
+</dl>
+<hr>
+<ol>
+
+<p><a name="introduction"><li><h4>Introduction</h4>
+
+<p>Scalable implementations of finite-difference codes are generally
+based on decomposing the model domain into subdomains that are
+distributed among processors. These domains will then be obliged to
+exchange data at their boundaries if data dependencies are merely
+nearest-neighbour, or may need to acquire information from the global
+domain if there are extended data dependencies, as in the spectral
+transform. The domain decomposition is a key operation in the
+development of parallel codes.
+
+<p><b><tt>mpp_domains_mod</tt></b> provides a domain decomposition and domain
+update API for <i>rectilinear</i> grids, built on top of the <a
+href="./mpp.html"><b><tt>mpp_mod</tt></b></a> API for message passing. Features
+of <b><tt>mpp_domains_mod</tt></b> include:
+
+<ul>
+<li> Simple, minimal API, with free access to underlying API for
+  more complicated stuff.
+<li> Design toward typical use in climate/weather CFD codes.
+</ul>
+
+<p><a name="domains"><li><h4>Domains</h4>
+
+I have assumed that domain decomposition will mainly be in 2
+horizontal dimensions, which will in general be the two
+fastest-varying indices. 1D decomposition is treated as a special case
+of 2D decomposition, and can be along either of the first two indices.
+
+We define <i>domain</i> as the grid associated with a <i>task</i>.
+We define the <i>compute domain</i> as the set of gridpoints that are
+computed by a task, and the <i>data domain</i> as the set of points
+that are required by the task for the calculation. There can in
+general be more than 1 task per PE, though often
+the number of domains is the same as the processor count. We define
+the <i>global domain</i> as the global computational domain of the
+entire mode (i.e, the same as the computational domain if run on a
+single processor).
+
+2D domains are defined using a derived type <b><tt>domain2D</tt></b>,
+constructed as follows (see comments in code for more details):
+
+<pre>
+  type, public :: domain_axis_spec
+     sequence
+     integer :: start_index, end_index, size, max_size
+     logical :: is_global
+  end type domain_axis_spec
+  type, public :: domain1D
+     sequence
+     type(domain_axis_spec) :: compute, data, global
+     integer :: ndomains
+     integer :: pe
+     integer, pointer :: pelist(:), sizelist(:)
+     integer :: pos
+     integer :: lhalo, rhalo
+     type(domain1D), pointer :: prev, next
+  end type domain1D
+!domaintypes of higher rank can be constructed from type domain1D
+  type, public :: domain2D
+     sequence
+     type(domain1D) :: x
+     type(domain1D) :: y
+     integer :: pe
+     integer :: whalo, ehalo, shalo, nhalo
+     type(domain2D), pointer :: west, east, south, north
+  end type domain2D
+</pre>
+
+The <b><tt>domain2D</tt></b> type contains all the necessary information to
+define the global, compute and data domains of each task, as well as the PE
+associated with the task. The PEs from which remote data may be
+acquired to update the data domain are also contained in a linked list
+of neighbours.
+
+<p><li><h4>mpp_domains_mod call syntax</h4>
+
+<p>The public interfaces to <b><tt>mpp_domains_mod</tt></b> are
+described here in alphabetical order:
+
+<ol type="a">
+
+<p><a name="mpp_define_domains"><li><h4>mpp_define_domains</h4>
+
+<p>There are two forms for the <b><tt>mpp_define_domains</tt></b> call. The 2D
+version is generally to be used but is built by repeated calls to the
+1D version, also provided.
+
+<p>The 1D version is as follows:
+ 
+<pre>
+    subroutine mpp_define_domains( global_indices, domain, pelist, flags, halo, extent )
+!routine to divide global array indices among domains, and assign domains to PEs
+!domain are an array of type(domain1D) of required size
+!ARGUMENTS:
+!      global_indices(2)=(isg,ieg) gives the extent of global domain
+!      domain are an array of type(domain1D) of required size
+!      (optional) pelist list of PEs to which domains are to be assigned
+!      flags define whether compute and data domains are global (undecomposed)
+!        and whether global domain has periodic boundaries
+!      (optional) halo defines halo width (currently the same on both sides)
+!      (optional) array extent defines width of each domain
+!        (used for non-uniform domain decomp, for e.g load-balancing)
+!  By default we assume decomposition of compute and data domains,
+!  non-periodic boundaries, no halo, as close to uniform extents
+!  as the input parameters permit
+      integer, dimension(2), intent(in) :: global_indices !(/ isg, ieg /)
+      type(domain1D), dimension(0:), intent(out), target :: domain
+      integer, dimension(0:), intent(in), optional :: pelist
+      integer, intent(in), optional :: flags, halo
+      integer, dimension(0:), intent(in), optional :: extent
+</pre>
+
+<p><b><tt>flags</tt></b> is used to define whether the compute domain is
+global in extent, whether the data domain is global in extent, and
+whether the global domain is cyclic. This is done by passing the
+parameters <b><tt>GLOBAL_COMPUTE_DOMAIN</tt></b>,
+<b><tt>GLOBAL_DATA_DOMAIN</tt></b>, and <b><tt>CYCLIC_GLOBAL_DOMAIN</tt></b> in
+<b><tt>flags</tt></b>. For example:
+
+<pre>
+call mpp_define_domains( (/1,100/), domain(0:9), &
+     flags=GLOBAL_DATA_DOMAIN+CYCLIC_GLOBAL_DOMAIN, halo=2 )
+</pre>
+
+<p>defines 10 compute domains spanning the range [1,100] of the global
+domain. The compute domains
+are non-overlapping blocks of 10. All the data domains are global, and
+with a halo of 2 span the range [-1:102]. And
+since the global domain has been declared to be cyclic,
+<b><tt>domain(9)%next => domain(0)</tt></b> and <b><tt>domain(0)%prev =>
+domain(9)</tt></b>.
+
+A field is allocated on the data domain, and computations proceed on
+the compute domain. A call to <a
+href="#mpp_update_domains"><b><tt>mpp_update_domains</tt></b></a> would fill in
+the values in the halo region:
+
+<pre>
+isd = domain(pe)%data%start_index !-1
+ied = domain(pe)%data%start_index !102
+is = domain(pe)%compute%start_index !1  on domain(0), 11 on domain(1)...
+ie = domain(pe)%compute%end_index   !10 on domain(0), 20 on domain(1)...
+allocate( a(isd:ied) )
+do i = is,ie
+   a(i) = &lt;perform computations&gt;
+end do
+call mpp_update_domains( a, domain(pe) )
+</pre>
+
+<p>The call to <b><tt>mpp_update_domains</tt></b> fills in the regions outside
+the compute domain. Since the global domain is cyclic, the values at
+<b><tt>i=(-1,0)</tt></b> are the same as at <b><tt>i=(99,100)</tt></b>; and
+<b><tt>i=(101,102)</tt></b> are the same as <b><tt>i=(1,2)</tt></b>.
+
+<pre>
+    subroutine mpp_define_domains( global_indices, domain, pelist, &
+                   xflags, yflags, xhalo, yhalo, xextent, yextent, &
+                                     domain_layout, pe_layout )
+!define 2D data and computational domain
+!on global rectilinear cartesian domain (isg:ieg,jsg:jeg)
+!and assign them to PEs
+      integer, dimension(4), intent(in) :: global_indices !(/isg,ieg,jsg,jeg/)
+      type(domain2D), dimension(0:), intent(out), target :: domain
+      integer, dimension(0:), intent(in), optional :: pelist
+      integer, intent(in), optional :: xflags, yflags, xhalo, yhalo
+      integer, dimension(:), intent(in), optional :: xextent, yextent
+      integer, dimension(2), intent(in), optional :: domain_layout, pe_layout
+</pre>
+
+<p>This is a 2D version of the above, and should generally be used in
+codes, including 1D-decomposed ones, if there is a possibility of
+future evolution toward 2D decomposition. The arguments are similar to
+the 1D case, except that now we have optional arguments
+<b><tt>flags</tt></b>, <b><tt>halo</tt></b> and <b><tt>extent</tt></b>
+along two axes.
+
+<p>By default, <b><tt>mpp_define_domains</tt></b> will attempt to
+divide the 2D index space into domains that maintain the aspect ratio
+of the original. If this cannot be done, the algorithm favours domains
+that are longer in <b><tt>x</tt></b> than <b><tt>y</tt></b>, a
+preference that could improve vector performance. If the domain
+decomposition is found unsatisfactory, the user can apply a chosen
+decomposition through <b><tt>domain_layout</tt></b> and
+<b><tt>pe_layout</tt></b>.
+
+<p>Examples:
+
+<pre>
+call mpp_define_domains( (/1,100,1,100/), domain(1:4), xhalo=1 )
+</pre>
+
+<p>will create the following domain layout:
+<p><table border>
+<tr> <td></td> <th>domain(1)</th> <th>domain(2)</th>
+<th>domain(3)</th>  <th>domain(4)</th> </tr>
+<tr> <th>Compute domain</th> <td>1,50,1,50</td> <td>51,100,1,50</td>
+<td>1,50,51,100</td>  <td>51,100,51,100</td> </tr>
+<tr> <th>Data domain</th> <td>0,51,1,50</td> <td>50,101,1,50</td>
+<td>0,51,51,100</td>  <td>50,101,51,100</td> </tr>
+</table>
+
+<p>Again, we allocate arrays on the data domain, perform computations
+on the compute domain, and call <b><tt>mpp_update_domains</tt></b> to update
+the halo region.
+
+<p>If we wished to perfom a 1D decomposition along <b><tt>Y</tt></b>
+on the same global domain, we could use:
+
+<p><pre>
+call mpp_define_domains( (/1,100,1,100/), domain(1:4), &
+      xflags=GLOBAL_COMPUTE_DOMAIN, xhalo=1 )
+</pre>
+
+<p>This will create the following domain layout:
+<p><table border>
+<tr> <td></td> <th>domain(1)</th> <th>domain(2)</th>
+<th>domain(3)</th>  <th>domain(4)</th> </tr>
+<tr> <th>Compute domain</th> <td>1,100,1,25</td> <td>1,100,26,50</td>
+<td>1,100,51,75</td>  <td>1,100,76,100</td> </tr>
+<tr> <th>Data domain</th> <td>0,101,1,25</td> <td>0,101,26,50</td>
+<td>0,101,51,75</td>  <td>0,101,76,100</td> </tr>
+</table>
+
+<p><a name="mpp_domains_exit"><li><h4>mpp_domains_exit</h4>
+
+<pre>
+    subroutine mpp_domains_exit
+</pre>
+
+<p>Serves no particular purpose, but is provided should you require to
+re-initialize <b><tt>mpp_domains_mod</tt></b>, for some odd reason.
+
+<p><a name="mpp_domains_init"><li><h4>mpp_domains_init</h4>
+
+<pre>
+    subroutine mpp_domains_init(flags,halosize)
+      integer, optional, intent(in) :: flags, halosize
+</pre>
+
+<p>Called to initialize the <b><tt>mpp_domains_mod</tt></b> package.
+
+<p><b><tt>flags</tt></b> can be set to <b><tt>MPP_VERBOSE</tt></b> to have
+<b><tt>mpp_domains_mod</tt></b> keep you informed of what it's up to.
+
+<p><b><tt>mpp_domains_init</tt></b> will call
+<b><tt>mpp_init</tt></b>, to make sure <a
+href="mpp.html"><b><tt>mpp_mod</tt></b></a> is initialized. (Repeated
+calls to <b><tt>mpp_init</tt></b> do no harm, so don't worry if you
+already called it).
+
+<p>The <b><tt>halosize</tt></b> argument sets the size (in 8-byte
+words) of a buffer area required by <a
+href="mpp_domains.html#mpp_update_domains">
+<b><tt>mpp_update_domains</tt></b></a>.  This performs the same
+function as calling <a href="mpp_domains.html#mpp_set_halo_size">
+<b><tt>mpp_set_halo_size</tt></b></a>.
+
+<p><a name="mpp_get_global"><li><h4>mpp_get_global</h4>
+
+<pre>
+    subroutine mpp_get_global( domain, local_field, global_field )
+!given a 3D array defined on the data domain <domain>,
+! constructs a global field
+!USE WITH CARE! a global 3D array could occupy a lot of memory!
+     type(domain2D), intent(in) :: domain
+     real, intent(in)  :: &
+      local_field(domain%x%data%start_index:,domain%y%data%start_index:,:)
+     real, intent(out) :: &
+      global_field(domain%x%global%start_index:,domain%y%global%start_index:,:)
+</pre>
+
+<p><b><tt>mpp_get_global</tt></b> is used to get an entire
+domain-decomposed array on each PE. <b><tt>local_field</tt></b> can be
+a 2D or 3D real or integer array dimensioned to the data domain
+<b><tt>domain</tt></b>. <b><tt>global_field</tt></b> can be a 2D or 3D
+real or integer array dimensioned to the <i>global</i> domain
+<b><tt>domain</tt></b>. All PEs must call
+<b><tt>mpp_get_global</tt></b>, and each will have a complete global
+field at the end. Please note that a global 3D array could occupy a
+lot of memory.
+
+<p><a name="mpp_set_halo_size"><li><h4>mpp_set_halo_size</h4>
+
+<pre>
+    subroutine mpp_set_halo_size(max_halo_size)
+      integer, intent(in) :: max_halo_size
+</pre>
+
+<p>The <b><tt>halosize</tt></b> argument sets the size (in 8-byte
+words) of a buffer area required by <a
+href="mpp_domains.html#mpp_update_domains">
+<b><tt>mpp_update_domains</tt></b></a>.  This must be set to the
+maximum volume expected for a halo region.
+
+<p><a name="mpp_update_domains"><li><h4>mpp_update_domains</h4>
+
+<pre>
+    subroutine mpp_update_domains( field, domain, flags )
+!updates data domain of 3D field whose computational domains have been computed
+      type(domain2D), intent(in), target :: domain
+      real, dimension(domain%x%data%start_index:,domain%y%data%start_index:,:), intent(inout) :: field
+      integer, intent(in), optional :: flags
+</pre>
+
+<p>The example given shows <b><tt>field</tt></b> to be a real rank-3
+array, but it can also be <b><tt>complex(kind=8)</tt></b> or
+<b><tt>integer(kind=8)</tt></b>, and can have rank 2 or
+4. <b><tt>domain</tt></b> can be <b><tt>type(domain1D)</tt></b> or
+<b><tt>type(domain2D)</tt></b>. If it is
+<b><tt>type(domain1D)</tt></b>, <b><tt>field</tt></b> is assumed to be
+distributed along the first axis. If it is
+<b><tt>type(domain2D)</tt></b>, <b><tt>field</tt></b> is assumed to
+distributed along the first two axes, as shown here.
+
+<p><b><tt>flags</tt></b> is used when <b><tt>domain</tt></b> is
+<b><tt>type(domain2D)</tt></b>. For 2D domain updates, if there are
+halos present along both <b><tt>x</tt></b> and <b><tt>y</tt></b>, we
+can choose to update one only, by specifying <b><tt>flags=XUPDATE
+</tt></b>or <b><tt>flags=YUPDATE</tt></b>. In addition, one-sided
+updates can be performed by setting <b><tt>flags</tt></b> to any
+combination of <b><tt>WUPDATE</tt></b>, <b><tt>EUPDATE</tt></b>,
+<b><tt>SUPDATE</tt></b> and <b><tt>NUPDATE</tt></b>, to update the
+west, east, north and south halos respectively. Any combination of
+halos may be used by adding the requisite flags, e.g:
+<b><tt>flags=XUPDATE+SUPDATE</tt></b> or
+<b><tt>flags=EUPDATE+WUPDATE+SUPDATE</tt></b> will update the east,
+west and south halos.
+
+<p>If a call to <b><tt>mpp_update_domains</tt></b> involves at least one E-W
+halo and one N-S halo, the corners involved will also be updated, i.e,
+in the example above, the SE and SW corners will be updated.
+
+<p>If <b><tt>flags</tt></b> is not supplied, that is
+equivalent to <b><tt>flags=XUPDATE+YUPDATE</tt></b>.
+
+<p>A second type of operation that can be performed by
+<b><tt>mpp_update_domains</tt></b> is the <i>data transpose</i>. This is
+typically used in a data domain that is global in 2D. Before the call
+each processor contains "correct" data in a global strip oriented
+along X or Y. Upon exit from the routine it will contain data in a
+strip along the other axis. To illustrate, consider a domain
+decomposition where the global domain runs from <b><tt>(1:I,1:J)</tt></b> and
+the compute domain runs from <b><tt>(is:ie,js:je)</tt></b>. In the first
+case, we assume each processor contains useful data in the region
+<b><tt>(is:ie,1:J)</tt></b> (a vertical strip). We transpose the data across
+processors by calling:
+
+<p><pre>
+    type(domain2D), dimension(0:npes-1) :: domain
+    call mpp_define_domains( (/1,I,1,J/), domain, &
+         xflags=GLOBAL_DATA_DOMAIN, yflags=GLOBAL_DATA_DOMAIN )
+    allocate( data(I,J) )
+
+    data(is:ie,1:J) = ... !this strip contains useful data
+!after the update call, data(1:I,js:je) will contain useful data
+    call mpp_update_domains( data, domain, XUPDATE+TRANSPOSE )
+</pre>
+
+The reverse operation (from horizontal to vertical strip) is similarly
+performed:
+
+<p><pre>
+    data(1:I,js:je) = ... !this strip contains useful data
+!after the update call, data(is:ie,1:J) will contain useful data
+    call mpp_update_domains( data, domain, YUPDATE+TRANSPOSE )
+</pre>
+
+<p><b><tt>mpp_update_domains</tt></b> internally buffers the date
+being sent and received into single messages for efficiency. A tunable
+internal buffer area in memory is provided for this purpose by
+<b><tt>mpp_domains_mod</tt></b>. The size of this buffer area can be
+set by the user by calling <a
+href="mpp_domains.html#mpp_set_halo_size">
+<b><tt>mpp_set_halo_size</tt></b></a>.
+
+<p><a name="operators"><li><h4>Operators on domaintypes</h4>
+
+<p>The module provides public operators to check for
+equality/inequality of domaintypes, e.g:
+
+<p><pre>
+type(domain1D) :: a, b
+type(domain2D) :: c, d
+...
+if( a.NE.b )then
+    ...
+end if
+if( c==d )then
+    ...
+end if
+</pre>
+
+<p>Domains are considered equal if the start and end indices of each
+of their component global, data and compute domains are equal.
+
+</ol>
+
+<p><a name="source"><li><h4>Acquiring mpp_domains_mod source</h4>
+
+<p>GFDL users can copy the file
+<b><tt>/net/vb/public/mpp/mpp_domains.F90</tt></b>. External users can
+download the source <a
+href="ftp://ftp.gfdl.gov/pub/vb/mpp/mpp_domains.F90">here</a>. The
+current public version number is 5.1.
+
+<p><a name="linking"><li><h4>Compiling and linking to mpp_domains_mod</h4>
+
+<p>Any module or program unit using <b><tt>mpp_domains_mod</tt></b>
+must contain the line
+
+<pre>
+   use mpp_domains_mod
+</pre>
+
+<p><b><tt>mpp_domains_mod</tt></b> <b><tt>use</tt></b>s <a
+href="mpp.html"><b><tt>mpp_mod</tt></b></a>, and therefore is subject to the <a
+href="mpp.html#linking">compiling and linking requirements of that module.</a>
+
+<p><a name="portability"><li><h4>Portability issues</h4>
+
+<b><tt>mpp_domains_mod</tt></b> uses standard f90, and has no special
+requirements. There are some <a href="os.html">OS-dependent
+pre-processor directives</a> that you might need to modify on
+non-SGI/Cray systems and compilers. The <a
+href="mpp.html#portability">portability of <b><tt>mpp_mod</tt></b></a>
+obviously is a constraint, since this module is built on top of
+it. Contact me, <a href="myaddr.html">Balaji</a>, SGI/GFDL, with
+questions.
+
+<p><a name="Changes"></a><li><h4>Changes</h4>
+
+The <a href="changes_mpp_domains.html">RCS log</a> for
+<b><tt>mpp_domains.F90</tt></b> contains a comprehensive list of
+changes. In the unlikely event that you should wish to check out a
+retro version, please get in touch with me, <a
+href="myaddr.html">Balaji</a>.
+</ol>
+
+<p><hr><small>Document last modified
+   <!--#exec cmd="echo $LAST_MODIFIED" --></small>
+   <!--#exec cmd="echo $DOCUMENT_NAME $REMOTE_HOST $DATE_LOCAL >> stats" -->
+</body>
+</html>

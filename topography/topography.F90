@@ -62,7 +62,7 @@ public simple_mountain, compute_real_topog, compute_stdev
 !-----------------------------------------------------------------------
 
 character(len=128) :: version = '$Id: topography.F90,v 1.1 2000/09/11 11:18:00 fms Exp $'
-character(len=128) :: tag = '$Name: calgary $'
+character(len=128) :: tag = '$Name: damascus $'
 
 !-----------------------------------------------------------------------
 

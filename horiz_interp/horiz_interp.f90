@@ -3,8 +3,8 @@ module horiz_interp_mod
 
 !-----------------------------------------------------------------------
 
- use utilities_mod, only:  open_file, print_version_number,  &
-                           error_mesg, FATAL, get_my_pe, close_file
+ use utilities_mod, only:  open_file, error_mesg, FATAL, &
+                           get_my_pe, close_file
 
  implicit none
  private
@@ -19,6 +19,7 @@ module horiz_interp_mod
     module procedure horiz_interp_1
     module procedure horiz_interp_2
     module procedure horiz_interp_old
+    module procedure horiz_interp_0_3d
  end interface
 
  interface horiz_interp_init
@@ -34,8 +35,8 @@ end interface
  end type
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: horiz_interp.f90,v 1.2 2000/08/04 20:02:00 fms Exp $'
- character(len=128) :: tag = '$Name: calgary $'
+ character(len=128) :: version = '$Id: horiz_interp.f90,v 1.3 2001/03/06 19:03:31 fms Exp $'
+ character(len=128) :: tag = '$Name: damascus $'
  logical :: do_vers = .true.
  integer :: num_iters = 4
 !-----------------------------------------------------------------------
@@ -154,7 +155,7 @@ contains
 
       real :: cph, dsum, wsum, avg_in, min_in, max_in,   &
               avg_out, min_out, max_out, blon, eps,    &
-              dwtsum, wtsum, hpie, tpie, dtr, dsph, fs, fe
+              dwtsum, wtsum, arsum, hpie, tpie, dtr, dsph, fs, fe
 
       character(len=64) :: mesg
 
@@ -203,6 +204,7 @@ contains
       npass = 1
       dwtsum = 0.
        wtsum = 0.
+       arsum = 0.
 
       if ( ie < is ) then
           ie = nlon_in
@@ -219,15 +221,21 @@ contains
              fe = Interp%faci(m,2)
          endif
 
-         call data_sum ( data_in(is:ie,js:je), area_in(is:ie,js:je), &
-                         fs, fe, Interp%facj(n,1),Interp%facj(n,2),  &
-                         dwtsum, wtsum                               )
+         if (present(mask_in)) then
+            call data_sum ( data_in(is:ie,js:je), area_in(is:ie,js:je), &
+                            fs, fe, Interp%facj(n,1),Interp%facj(n,2),  &
+                            dwtsum, wtsum, arsum, mask_in(is:ie,js:je)  )
+         else
+            call data_sum ( data_in(is:ie,js:je), area_in(is:ie,js:je), &
+                            fs, fe, Interp%facj(n,1),Interp%facj(n,2),  &
+                            dwtsum, wtsum, arsum                        )
+         endif
 
       enddo
 
       if (wtsum > eps) then
          data_out(m,n) = dwtsum/wtsum
-         if (present(mask_out)) mask_out(m,n) = 1.0
+         if (present(mask_out)) mask_out(m,n) = wtsum/arsum
       else
          data_out(m,n) = 0.
          if (present(mask_out)) mask_out(m,n) = 0.0
@@ -343,7 +351,8 @@ contains
       real, intent(in),  dimension(:,:) :: blon_out, blat_out
    integer, intent(in),                   optional :: verbose
 !-----------------------------------------------------------------------
-      real, dimension(size(blat_out,1),size(blat_out,2)) :: ph
+      real, dimension(size(blat_out,1),size(blat_out,2)) :: sph
+      real, dimension(size(blat_in)) :: slat_in
 
 !-----------------------------------------------------------------------
 
@@ -385,8 +394,12 @@ contains
 !-----------------------------------------------------------------------
 !  --- set-up for area of input grid boxes ---
 
+   do j = 1, nlat_in+1
+       slat_in(j) = sin(blat_in(j))
+   enddo
+
    do j = 1, nlat_in
-       Interp % dsph_in(j) = abs(sin(blat_in(j+1))-sin(blat_in(j)))
+       Interp % dsph_in(j) = abs(slat_in(j+1)-slat_in(j))
    enddo
 
    do i = 1,nlon_in
@@ -413,11 +426,11 @@ contains
 
  do n = 1, nlat_out
     if (blat_out(n,1) < blat_out(n,2)) then
-       ph(n,1) = blat_out(n,1)
-       ph(n,2) = blat_out(n,2)
+       sph(n,1) = sin(blat_out(n,1))
+       sph(n,2) = sin(blat_out(n,2))
     else
-       ph(n,1) = blat_out(n,2)
-       ph(n,2) = blat_out(n,1)
+       sph(n,1) = sin(blat_out(n,2))
+       sph(n,2) = sin(blat_out(n,1))
     endif
  enddo
 
@@ -427,10 +440,10 @@ contains
      eps = 0.0
  do iter=1,num_iters
  do j = 1, nlat_in
-    if ( (blat_in(j)-ph(n,n2)) <= eps .and.  &
-         (ph(n,n2)-blat_in(j+1)) <= eps ) then
+    if ( (slat_in(j)-sph(n,n2)) <= eps .and.  &
+         (sph(n,n2)-slat_in(j+1)) <= eps ) then
          Interp%jlat(n,n2) = j
-         fac = (ph(n,n2)-blat_in(j))/(blat_in(j+1)-blat_in(j))
+         fac = (sph(n,n2)-slat_in(j))/(slat_in(j+1)-slat_in(j))
          if (n2 == 1) Interp%facj(n,n2) = 1.0 - fac
          if (n2 == 2) Interp%facj(n,n2) = fac
          exit
@@ -438,11 +451,11 @@ contains
  enddo
      if ( Interp%jlat(n,n2) /= 0 ) exit
 !    --- set tolerance for multiple passes ---
-     eps  = epsilon(blon)*real(10**iter)
+     eps  = epsilon(sph)*real(10**iter)
  enddo
      if ( Interp%jlat(n,n2) == 0 ) then
-          write (mesg,888) n,ph(n,n2)
-      888 format (': n,ph=',i3,f14.7,40x)
+          write (mesg,888) n,sph(n,n2)
+      888 format (': n,sph=',i3,f14.7,40x)
           call error_mesg ('horiz_interp_mod',  &
                    'no latitude index found'//trim(mesg), FATAL)
      endif
@@ -500,14 +513,16 @@ contains
 !#######################################################################
 
  subroutine data_sum ( data, area, facis, facie, facjs, facje,  &
-                       dwtsum, wtsum )
+                       dwtsum, wtsum, arsum, mask )
 
 !-----------------------------------------------------------------------
    real, intent(in), dimension(:,:) :: data, area
    real, intent(in)                 :: facis, facie, facjs, facje
-   real, intent(inout)              :: dwtsum, wtsum
+   real, intent(inout)              :: dwtsum, wtsum, arsum
+   real, intent(in), optional       :: mask(:,:)
 !-----------------------------------------------------------------------
    real, dimension(size(area,1),size(area,2)) :: wt
+   real    :: asum
    integer :: id, jd
 !-----------------------------------------------------------------------
 
@@ -519,8 +534,17 @@ contains
    wt(:, 1)=wt(:, 1)*facjs
    wt(:,jd)=wt(:,jd)*facje
 
-   dwtsum = dwtsum + sum(wt*data)
-    wtsum =  wtsum + sum(wt)
+    asum = sum(wt)
+   arsum = arsum + asum
+
+   if (present(mask)) then
+      wt = wt * mask
+      dwtsum = dwtsum + sum(wt*data)
+       wtsum =  wtsum + sum(wt)
+   else
+      dwtsum = dwtsum + sum(wt*data)
+       wtsum =  wtsum + asum
+   endif
 
 !-----------------------------------------------------------------------
 
@@ -665,6 +689,32 @@ contains
 !-----------------------------------------------------------------------
 
  end subroutine horiz_interp_end
+
+!#######################################################################
+
+ subroutine horiz_interp_0_3d ( Interp, data_in, data_out, &
+                                verbose, mask_in, mask_out )
+
+!-----------------------------------------------------------------------
+!   overload of interface horiz_interp_0
+!-----------------------------------------------------------------------
+   type (horiz_interp_type), intent(in) :: Interp
+      real, intent(in),  dimension(:,:,:) :: data_in
+      real, intent(out), dimension(:,:,:) :: data_out
+   integer, intent(in),                     optional :: verbose
+      real, intent(in),   dimension(:,:,:), optional :: mask_in
+      real, intent(out),  dimension(:,:,:), optional :: mask_out
+!-----------------------------------------------------------------------
+   integer :: n
+
+   do n = 1, size(data_in,3)
+     call horiz_interp_0 ( Interp, data_in(:,:,n), data_out(:,:,n), &
+                           verbose, mask_in(:,:,n), mask_out(:,:,n) )
+   enddo
+
+!-----------------------------------------------------------------------
+
+ end subroutine horiz_interp_0_3d
 
 !#######################################################################
 

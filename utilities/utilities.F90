@@ -50,6 +50,13 @@ module utilities_mod
 !
 !    utilities_end       Calls mpp_io_exit and check_system_clock.
 !
+!    lowercase           Convert character strings to all lower case
+!
+!    uppercase           Convert character strings to all upper case
+!
+!    mpp_clock_init      Sets up a identifier for performance timing
+!                          (similar to mpp_clock_id)
+!
 !-----------------------------------------------------------------------
 !  ---- Routines with exact functionality to mpp_mod routines ----
 !
@@ -63,6 +70,11 @@ module utilities_mod
 !    mpp_min             Find minimum. (mpp_min)
 !    mpp_max             Find maximum. (mpp_max)
 !
+!    check_sum           Performs integer check sums (mpp_chksum)
+!
+!    mpp_clock_begin     Initiates performance timing (mpp_clock_begin)
+!    mpp_clock_end       Terminates performance timing (mpp_clock_end)
+!
 !-----------------------------------------------------------------------
 
 use          mpp_mod, only:  mpp_error, NOTE, WARNING, FATAL, &
@@ -71,11 +83,16 @@ use          mpp_mod, only:  mpp_error, NOTE, WARNING, FATAL, &
                              mpp_sum, mpp_min, mpp_max,       &
                              get_my_pe => mpp_pe,             &
                              get_num_pes => mpp_npes,         &
-                             sync_all_pes => mpp_sync
+                             sync_all_pes => mpp_sync,        &
+                             check_sum => mpp_chksum,         &
+                             mpp_clock_begin, mpp_clock_end,  &
+                             mpp_clock_id, mpp_exit,          &
+                             mpp_set_stack_size
 
 use  mpp_domains_mod, only:  domain2D, mpp_define_domains, &
                              mpp_update_domains, GLOBAL_DATA_DOMAIN, &
-                             mpp_get_global
+                             mpp_get_global, mpp_domains_exit,       &
+                             mpp_domains_set_stack_size
 
 use       mpp_io_mod, only:  mpp_io_init, mpp_open, mpp_close,         &
                        MPP_ASCII, MPP_NATIVE, MPP_IEEE32, MPP_NETCDF,  &
@@ -93,7 +110,9 @@ public :: file_exist, open_file, read_data, write_data,  &
           get_my_pe, get_num_pes, sync_all_pes,          &
           mpp_sum, mpp_min, mpp_max,                     &
           utilities_init, utilities_end, close_file,     &
-          set_system_clock, check_system_clock, check_sum
+          set_system_clock, check_system_clock, check_sum, &
+          mpp_clock_begin, mpp_clock_end, mpp_clock_init,  &
+          lowercase, uppercase
 
 !   ---- private data for check_nml_error ----
 
@@ -114,21 +133,22 @@ interface write_data
   module procedure write_cdata_2d,write_cdata_3d,write_cdata_4d
 end interface
 
-interface check_sum
-  module procedure check_sum_2d, check_sum_3d
-end interface
-
 !------ namelist interface -------
 !------ adjustable severity level for warnings ------
 
   logical           :: time_all_pe   = .false.
+  integer           :: timing_level  = 0
   logical           :: read_all_pe   = .true.
   character(len=8)  :: warning_level = 'fatal'
   character(len=64) :: iospec_ieee32 = '-F f77,cachea:48:1'
   logical           :: one_level_restarts = .false.
+  integer           :: stack_size = 0
+  integer           :: domains_stack_size = 0
 
-  namelist /utilities_nml/  time_all_pe, read_all_pe, warning_level, &
-                            iospec_ieee32, one_level_restarts
+  namelist /utilities_nml/  timing_level, read_all_pe, warning_level, &
+                            iospec_ieee32, one_level_restarts,        &
+                            stack_size, domains_stack_size,           &
+                            time_all_pe
 
 
 !------ private data, pointer to current 2d domain ------
@@ -146,8 +166,8 @@ end interface
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: utilities.F90,v 1.3 2000/11/22 14:41:38 fms Exp $'
-  character(len=128) :: tag = '$Name: calgary $'
+  character(len=128) :: version = '$Id: utilities.F90,v 1.4 2001/03/06 21:05:30 fms Exp $'
+  character(len=128) :: tag = '$Name: damascus $'
 
   logical :: do_init = .true.
 
@@ -1061,6 +1081,11 @@ real    :: seconds
 
  if ( .not. time_all_pe .and. get_my_pe() /= 0 ) return
 
+!if ( get_my_pe() == 0 ) then
+!     call error_mesg ('utilities_mod',  &
+!                      'routine check_system_clock is obsolete', NOTE)
+!endif
+
  call system_clock (count)
 
  clocks  = count - count_init
@@ -1095,6 +1120,25 @@ end subroutine check_system_clock
 
 !#######################################################################
 
+ function mpp_clock_init ( module, routine, level ) result (id)
+ character(len=*), intent(in) :: module, routine
+ integer,          intent(in) :: level
+ integer                      :: id
+ character(len=128) :: label
+
+    if ( do_init ) call utilities_init ( )
+
+    if ( level == timing_level ) then
+        label = trim(routine) // '_in_' // uppercase(trim(module))
+        id = mpp_clock_id (trim(label(1:24)))
+    else
+        id = 0
+    endif
+
+ end function mpp_clock_init
+
+!#######################################################################
+
 subroutine utilities_init
 
   integer :: unit, ierr, io
@@ -1118,6 +1162,11 @@ subroutine utilities_init
        enddo
  10    call close_file (unit)
     endif
+
+!---- define mpp stack sizes if non-zero -----
+
+    if (        stack_size > 0) call         mpp_set_stack_size (        stack_size)
+    if (domains_stack_size > 0) call mpp_domains_set_stack_size (domains_stack_size)
 
 !---- define size of third dimension in arrays used when 
 !---- reading/writing restarts
@@ -1169,6 +1218,8 @@ end subroutine utilities_init
 subroutine utilities_end
 
     call mpp_io_exit
+    call mpp_domains_exit
+    call mpp_exit
     call check_system_clock ('END OF RUN')
 
 end subroutine utilities_end
@@ -1193,36 +1244,40 @@ subroutine close_file (unit, status)
 end subroutine close_file
 
 !#######################################################################
-!    Routines for computing reproducible global summations.
-!    Computed for current domain (i.e., from last call set_domain).
+!  functions for changing the case of character strings
 !#######################################################################
 
-function check_sum_2d ( data ) result ( chksum )
+!   change to all lower case
 
-  real, intent(in) :: data (isd:,jsd:)
-  real :: chksum
+ function lowercase (cs) 
+ character(len=*), intent(in) :: cs
+ character(len=len(cs))       :: lowercase 
+ character :: ca(len(cs)) 
 
-  real, dimension(isg:ieg,jsg:jeg) :: gdata
-
-  call mpp_get_global ( Domain, data, gdata )
-
-  chksum = sum (gdata)
-
-end function check_sum_2d
+ integer, parameter :: co=iachar('a')-iachar('A') ! case offset
+    
+    ca = transfer(cs,"x",len(cs)) 
+    where (ca >= "A" .and. ca <= "Z") ca = achar(iachar(ca)+co) 
+    lowercase = transfer(ca,cs) 
+    
+ end function lowercase 
 
 !#######################################################################
 
-function check_sum_3d ( data ) result ( chksum )
+!   change to all upper case
 
-  real, intent(in) :: data (:,:,:)
-  real :: chksum
+ function uppercase (cs) 
+ character(len=*), intent(in) :: cs
+ character(len=len(cs))       :: uppercase 
+ character :: ca(len(cs)) 
 
-  real, dimension(size(data,1),size(data,2)) :: data2
-
-  data2 = sum( data, 3 )
-  chksum = check_sum_2d ( data2 )
-
-end function check_sum_3d
+ integer, parameter :: co=iachar('A')-iachar('a') ! case offset
+    
+    ca = transfer(cs,"x",len(cs)) 
+    where (ca >= "a" .and. ca <= "z") ca = achar(iachar(ca)+co) 
+    uppercase = transfer(ca,cs) 
+    
+ end function uppercase 
 
 !#######################################################################
 

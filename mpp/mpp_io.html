@@ -1,0 +1,639 @@
+<html>
+<head>
+<title>mpp_io_mod: a parallel I/O programming interface for f90</title>
+<center><h1>mpp_io_mod</h1>
+<h3> a parallel I/O programming interface for f90</h3>
+</center>
+
+<blockquote>
+<hr>
+<b><tt>mpp_io_mod</tt></b> is a set of simple calls for parallel I/O on
+distributed systems. It is geared toward the writing of data in netCDF
+format. It requires the modules <a
+href="./mpp_domains.html"><b><tt>mpp_domains_mod</tt></b></a> and <a
+href="./mpp.html"><b><tt>mpp_mod</tt></b></a>, upon which it is built.
+<hr>
+</blockquote>
+
+<p>
+<br><a href="#introduction">Introduction to <b><tt>mpp_io_mod</tt></b>.</a>
+<br><a href="#modes">I/O modes in <b><tt>mpp_io_mod</tt></b>.</a>
+<br><a href="#metadata">Metadata in <b><tt>mpp_io_mod</tt></b>.</a>
+<br><a href="#source">Acquiring <b><tt>mpp_io_mod</tt></b> source.</a>
+<br><a href="#linking">Linking with <b><tt>mpp_io_mod</tt></b>.</a>
+<br><a href="#portability">Portability issues.</a>
+<p>The <b><tt>mpp_io_mod</tt></b> API:<br>
+<dl COMPACT>
+<dt><a href="#mpp_close">mpp_close</a>: <dd>Close an open file.
+<dt><a href="#mpp_flush">mpp_flush</a>: <dd>Flush I/O buffers to disk.
+<dt><a href="#mpp_get_ncid">mpp_get_ncid</a>: <dd>Get netCDF ID of an
+open file.
+<dt><a href="#mpp_io_exit">mpp_io_exit</a>: <dd>Exit
+<b><tt>mpp_io_mod</tt></b>.
+<dt><a href="#mpp_io_init">mpp_io_init</a>: <dd>Initialize
+<b><tt>mpp_io_mod</tt></b>.
+<dt><a href="#mpp_open">mpp_open</a>: <dd>Open a file for parallel I/O.
+<dt><a href="#mpp_write">mpp_write</a>: <dd>Write to an open file.
+<dt><a href="#mpp_write_meta">mpp_write_meta</a>: <dd>Write metadata
+about file contents to an open file.
+</dl>
+<hr>
+</head>
+<body>
+<ol>
+
+<p><a name="introduction"></a><li><h4>Introduction</h4>
+
+<p>In massively parallel environments, an often difficult problem is
+the reading and writing of data to files on disk. MPI-IO and MPI-2 IO
+are moving toward providing this capability, but are currently not
+widely implemented. Further, it is a rather abstruse
+API. <b><tt>mpp_io_mod</tt></b> is an attempt at a simple API encompassing a
+certain variety of the I/O tasks that will be required. It does not
+attempt to be an all-encompassing standard such as MPI, however, it
+can be implemented in MPI if so desired. It is equally simple to add
+parallel I/O capability to <b><tt>mpp_io_mod</tt></b> based on vendor-specific
+APIs while providing a layer of insulation for user codes.
+
+<p>The <b><tt>mpp_io_mod</tt></b> parallel I/O API built on top of the <a
+href="mpp_domains.html"><b><tt>mpp_domains_mod</tt></b></a> and <a
+href="mpp.html"><b><tt>mpp_mod</tt></b></a> API for domain decomposition and
+message passing. Features of <b><tt>mpp_io_mod</tt></b> include:
+
+<ul>
+<li> Simple, minimal API, with free access to underlying API for more
+complicated stuff.
+
+<li> Self-describing files: comprehensive header information
+(metadata) in the file itself.
+
+<li> Strong focus on performance of parallel write: the climate models
+for which it is designed typically read a minimal amount of data
+(typically at the beginning of the run); but on the other hand, tend
+to write copious amounts of data during the run.
+
+<li> Integrated netCDF capability: <a
+href="http://www.unidata.ucar.edu/packages/netcdf/">netCDF</a> is a
+data format widely used in the climate/eather modeling
+community. netCDF is considered the principal medium of data storage
+for <b><tt>mpp_io_mod</tt></b>. But I provide a raw unformatted
+fortran I/O capability in case netCDF is not an option, either due to
+unavailability, inappropriateness, or poor performance.
+
+<li> May require off-line post-processing: a tool for this purpose,
+<b><tt>mppnccombine</tt></b>, is available. GFDL users may use
+<b><tt>~hnv/pub/mppnccombine</tt></b>. Outside users may obtain the
+source <a
+href="ftp://ftp.gfdl.gov/pub/hnv/mpp/mppnccombine-1.0.c">here</a>.  It
+can be compiled on any C compiler and linked with the netCDF
+library. The program is free and is covered by the <a
+href="ftp://ftp.gfdl.gov/pub/hnv/mpp/LICENSE">GPL license</a>.
+</ul>
+
+<p><a name="modes"></a><li><h4>I/O modes in <b><tt>mpp_io_mod</tt></b>.</h4>
+
+<p>The I/O activity critical to performance in the models for which
+<b><tt>mpp_io_mod</tt></b> is designed is typically the writing of large
+datasets on a model grid volume produced at intervals during
+a run. Consider a 3D grid volume, where model arrays are stored as
+<b><tt>(i,j,k)</tt></b>. The domain decomposition is typically along
+<b><tt>i</tt></b> or <b><tt>j</tt></b>: thus to store data to disk as a global
+volume, the distributed chunks of data have to be seen as
+non-contiguous. If we attempt to have all PEs write this data into a
+single file, performance can be seriously compromised because of the
+data reordering that will be required. Possible options are to have
+one PE acquire all the data and write it out, or to have all the PEs
+write independent files, which are recombined offline. These three
+modes of operation are described in the <b><tt>mpp_io_mod</tt></b> terminology
+in terms of two parameters, <i>threading</i> and <i>fileset</i>,
+as follows:
+
+<p><dl COMPACT>
+<dt> <i>Single-threaded I/O:</i> <dd>a single PE acquires all the data
+and writes it out.
+<dt> <i>Multi-threaded, single-fileset I/O:</i> <dd>many PEs write to a
+single file.
+<dt> <i>Multi-threaded, multi-fileset I/O:</i> <dd>many PEs write to
+independent files.
+</dl>
+
+<p>The middle option is the most difficult to achieve performance. The
+choice of one of these modes is made when a file is opened for I/O, in
+<a href="#mpp_open"><b><tt>mpp_open</tt></b></a>.
+
+<p><a name="metadata"></a><li><h4>Metadata in <b><tt>mpp_io_mod</tt></b>.</h4>
+
+A requirement of the design of <b><tt>mpp_io_mod</tt></b> is that the file must
+be entirely self-describing: comprehensive header information
+describing its contents is present in the header of every file. The
+header information follows the model of netCDF. Variables in the file
+are divided into <i>axes</i> and <i>fields</i>. An axis describes a
+co-ordinate variable, e.g <b><tt>x,y,z,t</tt></b>. A field consists of data in
+the space described by the axes. An axis is described in
+<b><tt>mpp_io_mod</tt></b> using the defined type <b><tt>axistype</tt></b>:
+
+<p><pre>
+  type, public :: axistype
+     sequence
+     character(len=128) :: name
+     character(len=128) :: units
+     character(len=256) :: longname
+     character(len=8) :: cartesian
+     integer :: sense           !+/-1, depth or height?
+     type(domain1D), pointer :: domain
+     real, dimension(:), pointer :: data
+     integer :: id, did
+  end type axistype
+</pre>
+
+<p>A field is described using the type <b><tt>fieldtype</tt></b>:
+
+<p><pre>
+  type, public :: fieldtype
+     sequence
+     character(len=128) :: name
+     character(len=128) :: units
+     character(len=256) :: longname
+     real :: min, max, missing, fill, scale, add
+     integer :: pack
+     type(axistype), dimension(:), pointer :: axes
+     integer, dimension(:), pointer :: size
+     integer :: time_axis_index
+     integer :: id
+  end type fieldtype
+</pre>
+
+<p><a name="packing"></a>This default set of attributes corresponds
+closely to various conventions established for netCDF files. The
+<b><tt>pack</tt></b> attribute of a field defines whether or not a
+field is to be packed on output. Allowed values of
+<b><tt>pack</tt></b> are 1,2,4 and 8. The value of
+<b><tt>pack</tt></b> is the number of variables written into 8
+bytes. In typical use, we write 4-byte reals to netCDF output; thus
+the default value of <b><tt>pack</tt></b> is 2. For
+<b><tt>pack</tt></b> = 4 or 8, packing uses a simple-minded linear
+scaling scheme using the <b><tt>scale</tt></b> and <b><tt>add</tt></b>
+attributes. There is thus likely to be a significant loss of dynamic
+range with packing. When a field is declared to be packed, the
+<b><tt>missing</tt></b> and <b><tt>fill</tt></b> attributes, if
+supplied, are packed also.
+
+<p>A set of <i>attributes</i> for each variable is also written. The
+variable definitions and attribute information is written by calling
+<a href="#mpp_write_meta"><b><tt>mpp_write_meta</tt></b></a>. A typical calling
+sequence might be:
+
+<p><pre>
+...
+  type(domain2D), dimension(:), allocatable, target :: domain
+  type(fieldtype) :: field
+  type(axistype) :: x, y, z, t
+...
+  call mpp_define_domains( (/1,nx,1,ny/), domain )
+  allocate( a(domain(pe)%x%data%start_index:domain(pe)%x%data%end_index, &
+              domain(pe)%y%data%start_index:domain(pe)%y%data%end_index,nz) )
+...
+  call mpp_write_meta( unit, x, 'X', 'km', 'X distance', &
+       domain=domain(pe)%x, data=(/(float(i),i=1,nx)/) )
+  call mpp_write_meta( unit, y, 'Y', 'km', 'Y distance', &
+       domain=domain(pe)%y, data=(/(float(i),i=1,ny)/) )
+  call mpp_write_meta( unit, z, 'Z', 'km', 'Z distance', &
+       data=(/(float(i),i=1,nz)/) )
+  call mpp_write_meta( unit, t, 'Time', 'second', 'Time' )
+
+  call mpp_write_meta( unit, field, (/x,y,z,t/), 'a', '(m/s)', AAA', &
+       missing=-1e36 )
+...
+  call mpp_write( unit, x )
+  call mpp_write( unit, y )
+  call mpp_write( unit, z )
+...
+</pre>
+
+<p>In this example, <b><tt>x</tt></b> and <b><tt>y</tt></b> have been
+declared as distributed axes, since a domain decomposition has been
+associated. <b><tt>z</tt></b> and <b><tt>t</tt></b> are undistributed
+axes. <b><tt>t</tt></b> is known to be a <i>record</i> axis (netCDF
+terminology) since we do not allocate the <b><tt>data</tt></b> element
+of the <b><tt>axistype</tt></b>. <i>Only one record axis may be
+associated with a file.</i> The call to <a
+href="#mpp_write_meta"><b><tt>mpp_write_meta</tt></b></a> initializes
+the axes, and associates a unique variable ID with each axis. The call
+to <b><tt>mpp_write_meta</tt></b> with argument <b><tt>field</tt></b>
+declared <b><tt>field</tt></b> to be a 4D variable that is a function
+of <b><tt>(x,y,z,t)</tt></b>, and a unique variable ID is associated
+with it. A 3D field will be written at each call to
+<b><tt>mpp_write(field)</tt></b>.
+
+<p>The data to any variable, including axes, is written by
+<b><tt>mpp_write</tt></b>. 
+
+<p>Any additional attributes of variables can be added through
+subsequent <b><tt>mpp_write_meta</tt></b> calls, using the variable ID as a
+handle. <i>Global</i> attributes, associated with the dataset as a
+whole, can also be written thus. See the <a
+href="#mpp_write_meta"><b><tt>mpp_write_meta</tt></b></a> call syntax below
+for further details.
+
+<p>You cannot interleave calls to <b><tt>mpp_write</tt></b> and
+<b><tt>mpp_write_meta</tt></b>: the first call to
+<b><tt>mpp_write</tt></b> implies that metadata specification is
+complete.
+
+<p><li><h4>mpp_io_mod call syntax</h4>
+
+<p>The public interfaces to <b><tt>mpp_io_mod</tt></b> are described here in
+alphabetical order:
+
+<ol type="a">
+
+<p><a name="mpp_close"></a><li><h4>mpp_close</h4>
+
+<pre>
+    subroutine mpp_close(unit)
+      integer, intent(in) :: unit
+</pre>
+
+<p>Closes the open file on <b><tt>unit</tt></b>. Clears the
+<b><tt>type(filetype)</tt></b> object <b><tt>mpp_file(unit)</tt></b> making it
+available for reuse.
+
+<p><a name="mpp_flush"></a><li><h4>mpp_flush</h4>
+
+<pre>
+    subroutine mpp_flush(unit)
+      integer, intent(in) :: unit
+</pre>
+
+<p>Flushes the open file on <b><tt>unit</tt></b> to disk. Any outstanding
+asynchronous writes will be completed. Any buffer layers between the
+user and the disk (e.g the FFIO layer on SGI/Cray systems) will be
+flushed. Calling <b><tt>mpp_flush</tt></b> on a unit opened with the
+<b><tt>MPP_RDONLY</tt></b> attribute is likely to lead to erroneous behaviour.
+
+<p><a name="mpp_get_ncid"></a><li><h4>mpp_get_ncid</h4>
+
+<pre>
+    function mpp_get_ncid(unit)
+      integer :: mpp_get_ncid
+      integer, intent(in) :: unit
+</pre>
+
+<p>This returns the <b><tt>ncid</tt></b> associated with the open file on
+<b><tt>unit</tt></b>. It is used in the instance that the user desires to
+perform netCDF calls upon the file that are not provided by the
+<b><tt>mpp_io_mod</tt></b> API itself.
+
+<p><a name="mpp_io_exit"></a><li><h4>mpp_io_exit</h4>
+
+<pre>
+    subroutine mpp_io_exit()
+</pre>
+
+<p>It is recommended, though not at present required, that you call this
+near the end of a run. This will close all open files that were opened
+with <a href="#mpp_open"><b><tt>mpp_open</tt></b></a>. Files opened otherwise
+are not affected.
+
+<p><a name="mpp_io_init"></a><li><h4>mpp_io_init</h4>
+
+<pre>
+    subroutine mpp_io_init()
+</pre>
+
+<p>Called to initialize the <b><tt>mpp_io_mod</tt></b> package. Sets the range
+of valid fortran units and initializes the <b><tt>mpp_file</tt></b> array of
+<b><tt>type(filetype)</tt></b>.
+
+<b><tt>mpp_io_init</tt></b> will call <b><tt>mpp_init</tt></b> and
+<b><tt>mpp_domains_init</tt></b>, to make sure its parent modules have been
+initialized. (Repeated calls to the <b><tt>init</tt></b> routines do no harm,
+so don't worry if you already called it).
+
+<p><a name="mpp_open"></a><li><h4>mpp_open</h4>
+
+<p><pre>
+    
+mpp_open( unit, file, action, form, access, threading, fileset, &
+         iospec, nohdrs, recl, pelist )
+  integer, intent(out) :: unit
+  character(len=*), intent(in) :: file
+  integer, intent(in), optional :: action, form, access, threading, fileset, recl
+  character(len=*), intent(in), optional :: iospec
+  logical, intent(in), optional :: nohdrs
+  integer, optional, intent(in) :: pelist(:)
+
+!  unit is intent(OUT): always _returned_by_ mpp_open()
+!  file is the filename: REQUIRED
+!    we append .nc to filename if it is a netCDF file
+!    we append .&lt;pppp&gt; to filename if fileset is private (pppp is PE number)
+!  iospec is a system hint for I/O organization, e.g assign(1) on SGI/Cray systems.
+!  if nohdrs is .TRUE. headers are not written on non-netCDF writes.
+!  nohdrs has no effect when action=MPP_RDONLY|MPP_APPEND or when form=MPP_NETCDF
+! FLAGS:
+!    action is one of MPP_RDONLY, MPP_APPEND, MPP_WRONLY or MPP_OVERWR
+!    form is one of MPP_ASCII:  formatted read/write
+!                   MPP_NATIVE: unformatted read/write with no conversion
+!                   MPP_IEEE32: unformatted read/write with conversion to IEEE32
+!                   MPP_NETCDF: unformatted read/write with conversion to netCDF
+!    access is one of MPP_SEQUENTIAL or MPP_DIRECT (ignored for netCDF)
+!      RECL argument is REQUIRED for direct access IO
+!    threading is one of MPP_SINGLE or MPP_MULTI
+!      single-threaded IO in a multi-PE run is done by PE0
+!    fileset is one of MPP_MULTI and MPP_SINGLE
+!      fileset is only used for multi-threaded I/O
+!      if all I/O PEs in &lt;pelist&gt; use a single fileset, they write to the same file
+!      if all I/O PEs in &lt;pelist&gt; use a multi  fileset, they each write an independent file
+!  recl is the record length in bytes
+!  pelist is the list of I/O PEs (currently ALL)
+</pre>
+
+<p>The integer parameters to be passed as flags (<b><tt>MPP_RDONLY</tt></b>,
+etc) are all made available by use association. The <b><tt>unit</tt></b>
+returned by <b><tt>mpp_open</tt></b> is guaranteed unique. For non-netCDF I/O
+it is a valid fortran unit number and fortran I/O can be directly called
+on the file.
+
+<b><tt>MPP_WRONLY</tt></b> will guarantee that existing files named
+<b><tt>file</tt></b> will not be clobbered. <b><tt>MPP_OVERWR</tt></b>
+allows overwriting of files.
+
+<p>Files opened read-only by many processors will give each processor
+an independent pointer into the file, i.e:
+
+<p><pre>
+   namelist / nml / ...
+...
+   call mpp_open( unit, 'input.nml', action=MPP_RDONLY )
+   read(unit,nml)
+</pre>
+
+<p>will result in each PE independently reading the same namelist.
+
+<p>Metadata identifying the file and the version of
+<b><tt>mpp_io_mod</tt></b> are written to a file that is opened
+<b><tt>MPP_WRONLY</tt></b> or <b><tt>MPP_OVERWR</tt></b>. If this is a
+multi-file set, and an additional global attribute
+<b><tt>NumFilesInSet</tt></b> is written to be used by post-processing
+software.
+
+<p>If <b><tt>nohdrs=.TRUE.</tt></b> all calls to write attributes will
+return successfully <i>without</i> performing any writes to the
+file. The default is <b><tt>.FALSE.</tt></b>.
+
+<p>For netCDF files, headers are always written even if
+<b><tt>nohdrs=.TRUE.</tt></b>
+
+<p>The string <b><tt>iospec</tt></b> is passed to the OS to
+characterize the I/O to be performed on the file opened on
+<b><tt>unit</tt></b>. This is typically used for I/O optimization. For
+example, the FFIO layer on SGI/Cray systems can be used for
+controlling synchronicity of reads and writes, buffering of data
+between user space and disk for I/O optimization, striping across
+multiple disk partitions, automatic data conversion and the like
+(<b><tt>man intro_ffio</tt></b>). All these actions are controlled through
+the <b><tt>assign</tt></b> command. For example, to specify asynchronous
+caching of data going to a file open on <b><tt>unit</tt></b>, one would do:
+
+<p><pre>
+   call mpp_open( unit, ... iospec='-F cachea' )
+</pre>
+
+<p>on an SGI/Cray system, which would pass the supplied
+<b><tt>iospec</tt></b> to the <b><tt>assign(3F)</tt></b> system call.
+
+<p>Currently <b><tt>iospec </tt></b>performs no action on non-SGI/Cray
+systems. The interface is still provided, however: users are cordially
+invited to add the requisite system calls for other systems.
+
+<p><a name="mpp_write"></a><li><h4>mpp_write</h4>
+
+<p> <b><tt>mpp_write</tt></b> is used to write data to the file on an I/O unit
+using the file parameters supplied by <a
+href="#mpp_open"><b><tt>mpp_open</tt></b></a>. Axis and field definitions must
+have previously been written to the file using <a
+href="#mpp_write_meta"><b><tt>mpp_write_meta</tt></b></a>.  There are three
+forms of <b><tt>mpp_write</tt></b>, one to write axis data, one to write
+distributed field data, and one to write non-distributed field
+data. <i>Distributed</i> data refer to arrays whose two
+fastest-varying indices are domain-decomposed. Distributed data must
+be 2D or 3D (in space). Non-distributed data can be 0-3D.
+
+<p>The <b><tt>data</tt></b> argument for distributed data is expected by
+<b><tt>mpp_write</tt></b> to contain data specified on the <i>data</i> domain,
+and will write the data belonging to the <i>compute</i> domain,
+fetching or sending data as required by the parallel I/O <a
+href="#modes">mode</a> specified in the <b><tt>mpp_open</tt></b> call. This
+is consistent with our definition of <a
+href="http:mpp_domains.html#domains">domains</a>, where all arrays are
+expected to be dimensioned on the data domain, and all operations
+performed on the compute domain.
+
+<p><pre>
+ mpp_write( unit, axis )
+    integer, intent(in) :: unit
+    type(axistype), intent(in) :: axis
+
+ mpp_write( unit, field, data, tstamp )
+    integer, intent(in) :: unit
+    type(fieldtype), intent(in) :: field
+    real, optional :: tstamp
+
+ mpp_write( unit, field, domain, data, tstamp )
+    integer, intent(in) :: unit
+    type(fieldtype), intent(in) :: field
+    type(domain2D), intent(in) :: domain
+    real, optional :: tstamp
+</pre>
+
+<p><b><tt>tstamp</tt></b> is an optional argument. It is to
+be omitted if the field was defined not to be a function of time.
+Results are unpredictable if the argument is supplied for a time-
+independent field, or omitted for a time-dependent field. Repeated
+writes of a time-independent field are also not recommended. One
+time level of one field is written per call.
+
+<p>The type of write performed by <b><tt>mpp_write</tt></b> depends on the file
+characteristics on the I/O unit specified at the <a
+href="#mpp_open"><b><tt>mpp_open</tt></b></a> call. Specifically, the format of
+the output data (e.g netCDF or IEEE), the <b><tt>threading</tt></b> and
+<b><tt>fileset</tt></b> flags, etc., can be changed there, and require no
+changes to the <b><tt>mpp_write</tt></b> calls.
+
+<p>Packing is currently not implemented for non-netCDF files, and the
+<b><tt>pack</tt></b> attribute is ignored. On netCDF files,
+<b><tt>NF_DOUBLE</tt></b>s (8-byte IEEE floating point numbers) are
+written for <b><tt>pack</tt></b>=1 and <b><tt>NF_FLOAT</tt></b>s for
+<b><tt>pack</tt></b>=2. (<b><tt>pack</tt></b>=2 gives the customary
+and default behaviour). We write <b><tt>NF_SHORT</tt></b>s (2-byte
+integers) for <b><tt>pack=4</tt></b>, or <b><tt>NF_BYTE</tt></b>s
+(1-byte integers) for <b><tt>pack=8</tt></b>. Integer scaling is done
+using the <b><tt>scale</tt></b> and <b><tt>add</tt></b> attributes at
+<b><tt>pack</tt></b>=4 or 8, satisfying the relation
+
+<p><pre>
+   data = packed_data*scale + add
+</pre>
+
+<b><tt>NOTE: mpp_write</tt></b> does not check to see if the scaled
+data in fact fits into the dynamic range implied by the specified
+packing. It is incumbent on the user to supply correct scaling
+attributes.
+
+<p>You cannot interleave calls to <b><tt>mpp_write</tt></b> and
+<b><tt>mpp_write_meta</tt></b>: the first call to
+<b><tt>mpp_write</tt></b> implies that metadata specification is
+complete.
+
+<p><a name="mpp_write_meta"></a><li><h4>mpp_write_meta</h4>
+
+<p>This routine is used to write the <a href="#metadata">metadata</a>
+describing the contents of a file being written. Each file can contain
+any number of fields, which are functions of 0-3 space axes and 0-1
+time axes. (Only one time axis can be defined per file). The basic
+metadata defined <a href="#metadata">above</a> for <b><tt>axistype</tt></b>
+and <b><tt>fieldtype</tt></b> are written in the first two forms of the call
+shown below. These calls will associate a unique variable ID with each
+variable (axis or field). These can be used to attach any other real,
+integer or character attribute to a variable. The last form is used to
+define a <i>global</i> real, integer or character attribute that
+applies to the dataset as a whole.
+
+<p><pre>
+!    subroutine mpp_write_meta( unit, axis, name, units, longname, &
+!      cartesian, sense, domain, data )
+!load the values in an axistype (still need to call mpp_write)
+!write metadata attributes for axis
+!      integer, intent(in) :: unit
+!      type(axistype), intent(out) :: axis
+!      character(len=128), intent(in) :: name
+!      character(len=128), intent(in) :: units
+!      character(len=256), intent(in) :: longname
+!      character(len=8), intent(in), optional :: cartesian
+!      integer, intent(in), optional :: sense
+!      type(domain1D), intent(in), optional, target :: domain
+!      real, dimension(:), intent(in), optional :: data
+!
+!    This form defines a time or space axis. Metadata corresponding to the type
+!    above are written to the file on &lt;unit&gt;. A unique ID for subsequen
+!    references to this axis is returned in axis%id. If the &lt;domain&gt;
+!    element is present, this is recognized as a distributed data axis
+!    and domain decomposition information is also written if required (the
+!    domain decomposition info is required for multi-fileset multi-threaded
+!    I/O). If the &lt;data&gt; element is allocated, it is considered to be a space
+!    axis, otherwise it is a time axis with an unlimited dimension. Only one
+!    time axis is allowed per file.
+!
+!    subroutine mpp_write_meta( unit, field, axes, name, units, longname, min, max, missing, fill, scale, add, pack )
+!define field: must have already called mpp_write_meta(axis) for each axis
+!      integer, intent(in) :: unit
+!      type(fieldtype), intent(out) :: field
+!      type(axistype), dimension(:), intent(in) :: axes
+!      character(len=128), intent(in) :: name
+!      character(len=128), intent(in) :: units
+!      character(len=256), intent(in) :: longname
+!      real, intent(in), optional :: min, max, missing, fill, scale, add
+!      integer, intent(in), optional :: pack
+!
+!    This form defines a field. Metadata corresponding to the type
+!    above are written to the file on &lt;unit&gt;. A unique ID for subsequen
+!    references to this field is returned in field%id. At least one axis
+!    must be associated, 0D variables are not considered. mpp_write_meta
+!    must previously have been called on all axes associated with this
+!    field.
+!
+!  mpp_write_meta( unit, id, name, rval=rval, pack=pack )
+!  mpp_write_meta( unit, id, name, ival=ival )
+!  mpp_write_meta( unit, id, name, cval=cval )
+!      integer, intent(in) :: unit, id
+!      character(len=*), intent(in) :: name
+!      real, dimension(:), intent(in), optional :: rval
+!      integer, dimension(:), intent(in), optional :: ival
+!      character(len=*), intent(in), optional :: cval
+!      integer, intent(in), optional :: pack
+!
+!    This form defines metadata associated with a previously defined
+!    axis or field, identified to mpp_write_meta by its unique ID &lt;id&gt;.
+!    The attribute is named &lt;name&gt; and can take on a real, integer
+!    or character value. &lt;rval&gt; and &lt;ival&gt; can be scalar or 1D arrays.
+!    This need not be called for attributes already contained in
+!    the type.
+!
+!  mpp_write_meta( unit, name, rval=rval, pack=pack )
+!  mpp_write_meta( unit, name, ival=ival )
+!  mpp_write_meta( unit, name, cval=cval )
+!      integer, intent(in) :: unit
+!      character(len=*), intent(in) :: name
+!      real, dimension(:), intent(in), optional :: rval
+!      integer, dimension(:), intent(in), optional :: ival
+!      character(len=*), intent(in), optional :: cval
+!      integer, intent(in), optional :: pack
+!
+!    This form defines global metadata associated with the file as a
+!    whole. The attribute is named &lt;name&gt; and can take on a real, integer
+!    or character value. &lt;rval&gt; and &lt;ival&gt; can be scalar or 1D arrays.
+</pre>
+
+<p>Note that <b><tt>mpp_write_meta</tt></b> is expecting axis data on the
+<i>global</i> domain even if it is a domain-decomposed axis.
+
+<p>You cannot interleave calls to <b><tt>mpp_write</tt></b> and
+<b><tt>mpp_write_meta</tt></b>: the first call to
+<b><tt>mpp_write</tt></b> implies that metadata specification is
+complete.
+
+</ol>
+
+<p><a name="source"></a><li><h4>Acquiring mpp_io_mod source</h4>
+
+<p>GFDL users can copy the file
+<b><tt>/net/vb/public/mpp/mpp_io.F90</tt></b>. External users can download
+the source <a
+href="ftp://ftp.gfdl.gov/pub/vb/mpp/mpp_io.F90">here</a>. Current
+public revision is 5.3.
+
+<p><a name="linking"></a><li><h4>Compiling and linking to mpp_io_mod</h4>
+
+<p>Any module or program unit using <b><tt>mpp_io_mod</tt></b> must
+contain the line
+
+<pre>
+   use mpp_io_mod
+</pre>
+
+<p>If netCDF output is desired, the cpp flag <b><tt>-Duse_netCDF</tt></b>
+must be turned on. The loader step requires an explicit link to the
+netCDF library (typically something like <b><tt>-L/usr/local/lib
+-lnetcdf</tt></b>, depending on the path to the netCDF library).
+<a href="http://www.unidata.ucar.edu/packages/netcdf/guidef">netCDF
+release 3 for fortran</a> is required.
+
+<p>Please also consider the compiling and linking requirements of <a
+href="mpp_domains.html#linking"><b><tt>mpp_domains_mod</tt></b></a>
+and <a href="mpp.html#linking"><b><tt>mpp_mod</tt></b></a>, which are
+<b><tt>use</tt></b>d by this module.
+
+<p><a name="portability"></a><li><h4>Portability issues</h4>
+
+<b><tt>mpp_io_mod</tt></b> uses standard f90. On SGI/Cray systems, certain I/O
+characteristics are specified using <b><tt>assign(3F)</tt></b>. On other
+systems, the user may have to provide similar capability if required.
+
+<p>There are some <a href="os.html">OS-dependent
+pre-processor directives</a> that you might need to modify on
+non-SGI/Cray systems and compilers.
+
+<p><a name="Changes"></a><li><h4>Changes</h4>
+
+The <a href="changes_mpp_io.html">RCS log</a> for
+<b><tt>mpp_io.F90</tt></b> contains a comprehensive list of changes. In the
+unlikely event that you should wish to check out a retro version,
+please get in touch with me, <a href="myaddr.html">Balaji</a>.
+
+</ol>
+
+<p><hr><small>Document last modified
+   <!--#exec cmd="echo $LAST_MODIFIED" --></small>
+   <!--#exec cmd="echo $DOCUMENT_NAME $REMOTE_HOST $DATE_LOCAL >> stats" -->
+</body>
+</html>
