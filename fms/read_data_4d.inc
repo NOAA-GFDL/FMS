@@ -1,8 +1,8 @@
 
-   if (do_init) call fms_init ( )
+   if (.not.module_is_initialized) call fms_io_init ( )
 
-   if (.not.associated(Domain)) call error_mesg &
-        ('read_data in fms_mod', 'set_domain not called', FATAL)
+   if (.not.associated(Current_domain)) call mpp_error &
+        (FATAL,'set_domain not called')
 
        if (present(end)) end = .false. 
 
@@ -10,8 +10,9 @@
        if (.not.read_all_pe) then
          ! did not read on all PEs need to broadcast data
            len = size(gdata,1)*size(gdata,2)*size(gdata,3)*size(gdata,4)
-           call mpp_transmit ( gdata(isg,jsg,1,1), len, ALL_PES, &
-                               gdata(isg,jsg,1,1), len, 0        )       
+!           call mpp_transmit ( gdata, len, ALL_PES, &
+!                               gdata, len, 0        )       
+           call mpp_broadcast ( gdata, len, mpp_root_pe() )
        endif   
      ! return data for compute domain
        data(is:ie,js:je,:,:) = gdata(is:ie,js:je,:,:)

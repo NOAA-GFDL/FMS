@@ -3,15 +3,15 @@
       type(fieldtype), intent(in) :: field
       type(domain2D), intent(inout) :: domain
       MPP_TYPE_, intent(inout) :: data(:,:)
-      real, intent(in), optional :: tstamp
+      real(DOUBLE_KIND), intent(in), optional :: tstamp
       MPP_TYPE_ :: data3D(size(data,1),size(data,2),1)
 #ifdef use_CRI_pointers
       pointer( ptr, data3D )
       ptr = LOC(data)
-      call mpp_write( unit, field, domain, data3D, tstamp )
 #else
-      call mpp_error( FATAL, 'MPP_WRITE_2DDECOMP_2D_: requires Cray pointers.' )
+      data3D = RESHAPE( data, SHAPE(data3D) )
 #endif
+      call mpp_write( unit, field, domain, data3D, tstamp )
       return
     end subroutine MPP_WRITE_2DDECOMP_2D_
 
@@ -21,7 +21,7 @@
       type(fieldtype), intent(in) :: field
       type(domain2D), intent(inout) :: domain !must have intent(out) as well because active domain might be reset
       MPP_TYPE_, intent(inout) :: data(:,:,:)
-      real, intent(in), optional :: tstamp
+      real(DOUBLE_KIND), intent(in), optional :: tstamp
 !cdata is used to store compute domain as contiguous data
 !gdata is used to globalize data for multi-PE single-threaded I/O
       MPP_TYPE_, allocatable, dimension(:,:,:) :: cdata, gdata
@@ -29,7 +29,7 @@
       logical :: data_has_halos, halos_are_global, x_is_global, y_is_global
       integer :: is, ie, js, je, isd, ied, jsd, jed, isg, ieg, jsg, jeg
 
-      if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
 
       call mpp_get_compute_domain( domain, is,  ie,  js,  je  )

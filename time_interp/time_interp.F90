@@ -6,7 +6,7 @@ module time_interp_mod
 use time_manager_mod, only: time_type, get_date, set_date, set_time, &
                             days_in_year, days_in_month, leap_year,  &
                             operator(+), operator(-), operator(>),   &
-                            operator(<), operator(//), operator(/),  &
+                            operator(<), operator( // ), operator( / ),  &
                             operator(>=), operator(<=)
 
 use          fms_mod, only: write_version_number, &
@@ -17,7 +17,7 @@ private
 
 !-----------------------------------------------------------------------
 
-public :: time_interp, fraction_of_year
+public :: time_interp_init, time_interp, fraction_of_year
 
 interface time_interp
     module procedure time_interp_frac,  time_interp_year, &
@@ -40,11 +40,23 @@ integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
    integer :: yrmod, momod, dymod
    logical :: mod_leapyear
 
-   character(len=128) :: version='$Id: time_interp.F90,v 1.2 2002/02/22 19:10:04 fms Exp $'
-   character(len=128) :: tagname='$Name: galway $'
-   logical :: do_log = .true.
+   character(len=128) :: version='$Id: time_interp.F90,v 1.3 2002/07/16 22:57:06 fms Exp $'
+   character(len=128) :: tagname='$Name: havana $'
+
+   logical :: module_is_initialized=.FALSE.
 
 contains
+
+
+ subroutine time_interp_init()
+
+   if ( module_is_initialized ) return
+
+   call write_version_number( version, tagname )
+
+   module_is_initialized = .TRUE.
+
+ end subroutine time_interp_init
 
 !#######################################################################
 !  returns the fractional time into the current year
@@ -57,7 +69,8 @@ contains
    integer         :: year, month, day, hour, minute, second
    type(time_type) :: Year_beg, Year_end
 
-     if (do_log) call print_log
+
+   if ( .not. module_is_initialized ) call time_interp_init
 
 !  ---- compute fractional time of year -----
 
@@ -93,7 +106,8 @@ contains
    integer :: year, month, day, hour, minute, second
    type (time_type) :: Mid_year, Mid_year1, Mid_year2
 
-      if (do_log) call print_log
+
+   if ( .not. module_is_initialized ) call time_interp_init()
 
       call get_date (Time, year, month, day, hour, minute, second)
 
@@ -128,7 +142,7 @@ contains
    integer :: year, month, day, hour, minute, second,  &
               mid_month, cur_month, mid1, mid2
 
-      if (do_log) call print_log
+   if ( .not. module_is_initialized ) call time_interp_init()
 
       call get_date (Time, year, month, day, hour, minute, second)
 
@@ -170,7 +184,7 @@ contains
 
    integer :: year, month, day, hour, minute, second, sday
 
-      if (do_log) call print_log
+   if ( .not. module_is_initialized ) call time_interp_init()
 
       call get_date (Time, year, month, day, hour, minute, second)
 
@@ -378,15 +392,6 @@ character(len=*), intent(in) :: string
 ! stop 111
 
 end subroutine error_handler
-
-!#######################################################################
-
- subroutine print_log
-
-  call write_version_number (version,tagname)
-  do_log = .false.
-
- end subroutine print_log
 
 !#######################################################################
 

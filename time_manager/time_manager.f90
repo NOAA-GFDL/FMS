@@ -36,7 +36,7 @@ public set_time, increment_time, decrement_time, get_time, interval_alarm
 public repeat_alarm
 
 ! List of available calendar types
-public    THIRTY_DAY_MONTHS,    JULIAN,    GREGORIAN,  NO_LEAP,   NO_CALENDAR
+public    THIRTY_DAY_MONTHS,    JULIAN,    GREGORIAN,  NOLEAP,   NO_CALENDAR
 
 ! Subroutines and functions involving relations between time and calendar
 public set_calendar_type, get_calendar_type
@@ -65,7 +65,7 @@ public :: time_manager_init, print_time, print_date
 
 ! Global data to define calendar type
 integer, parameter :: THIRTY_DAY_MONTHS = 1,      JULIAN = 2, &
-                      GREGORIAN = 3,              NO_LEAP = 4, &
+                      GREGORIAN = 3,              NOLEAP = 4, &
                       NO_CALENDAR = 0
 integer, private :: calendar_type = NO_CALENDAR, max_type = 4
 
@@ -97,8 +97,8 @@ interface operator (//);  module procedure time_real_divide; end interface
 
 !======================================================================
 
-character(len=128) :: version='$Id: time_manager.f90,v 1.2 2002/01/14 21:20:43 fms Exp $'
-character(len=128) :: tagname='$Id: time_manager.f90,v 1.2 2002/01/14 21:20:43 fms Exp $'
+character(len=128) :: version='$Id: time_manager.f90,v 1.3 2002/07/16 22:57:09 fms Exp $'
+character(len=128) :: tagname='$Id: time_manager.f90,v 1.3 2002/07/16 22:57:09 fms Exp $'
 logical :: do_init = .true.
 
 !======================================================================
@@ -586,7 +586,7 @@ case(GREGORIAN)
    call get_date_gregorian(time, year, month, day, hour, minute, second)
 case(JULIAN)
    call get_date_julian(time, year, month, day, hour, minute, second)
-case(NO_LEAP)
+case(NOLEAP)
    call get_date_no_leap(time, year, month, day, hour, minute, second)
 case default
    call error_handler('Invalid calendar type in get_date')
@@ -766,7 +766,7 @@ end subroutine get_date_thirty
 
 subroutine get_date_no_leap(time, year, month, day, hour, minute, second)
 
-! Base date for no_leap calendar is year 1.
+! Base date for NOLEAP calendar is year 1.
 
 implicit none
 
@@ -824,7 +824,7 @@ case(GREGORIAN)
    set_date = set_date_gregorian(year, month, day, ohours, ominutes, oseconds)
 case(JULIAN)
    set_date = set_date_julian(year, month, day, ohours, ominutes, oseconds)
-case(NO_LEAP)
+case(NOLEAP)
    set_date = set_date_no_leap(year, month, day, ohours, ominutes, oseconds)
 case default
    call error_handler('Invalid calendar type in set_date')
@@ -1023,7 +1023,7 @@ case(GREGORIAN)
    increment_date = increment_gregorian(time, oyears, omonths, odays, ohours, ominutes, oseconds)
 case(JULIAN)
    increment_date = increment_julian(time, oyears, omonths, odays, ohours, ominutes, oseconds)
-case(NO_LEAP)
+case(NOLEAP)
    increment_date = increment_no_leap(time, oyears, omonths, odays, ohours, ominutes, oseconds)
 case default
    call error_handler('Invalid calendar type in increment_date')
@@ -1256,7 +1256,7 @@ case(GREGORIAN)
    decrement_date = decrement_gregorian(time, oyears, omonths, odays, ohours, ominutes, oseconds)
 case(JULIAN)
    decrement_date = decrement_julian(time, oyears, omonths, odays, ohours, ominutes, oseconds)
-case(NO_LEAP)
+case(NOLEAP)
    decrement_date = decrement_no_leap(time, oyears, omonths, odays, ohours, ominutes, oseconds)
 case default
    call error_handler('Invalid calendar type in decrement_date')
@@ -1485,7 +1485,7 @@ case(GREGORIAN)
    days_in_month = days_in_month_gregorian(time)
 case(JULIAN)
    days_in_month = days_in_month_julian(time)
-case(NO_LEAP)
+case(NOLEAP)
    days_in_month = days_in_month_no_leap(time)
 case default
    call error_handler('Invalid calendar type in days_in_month')
@@ -1576,7 +1576,7 @@ case(GREGORIAN)
    leap_year = leap_year_gregorian(time)
 case(JULIAN)
    leap_year = leap_year_julian(time)
-case(NO_LEAP)
+case(NOLEAP)
    leap_year = leap_year_no_leap(time)
 case default
    call error_handler('Invalid calendar type in leap_year')
@@ -1667,7 +1667,7 @@ case(GREGORIAN)
    length_of_year = length_of_year_gregorian()
 case(JULIAN)
    length_of_year = length_of_year_julian()
-case(NO_LEAP)
+case(NOLEAP)
    length_of_year = length_of_year_no_leap()
 case default
    call error_handler('Invalid calendar type in length_of_year')
@@ -1748,7 +1748,7 @@ case(GREGORIAN)
    days_in_year = days_in_year_gregorian(time)
 case(JULIAN)
    days_in_year = days_in_year_julian(time)
-case(NO_LEAP)
+case(NOLEAP)
    days_in_year = days_in_year_no_leap(time)
 case default
    call error_handler('Invalid calendar type in days_in_year')

@@ -18,21 +18,21 @@ use    diag_axis_mod, only: diag_axis_init, get_diag_axis,           &
                             get_domain1d, get_domain2d
 
 use time_manager_mod, only: get_calendar_type, THIRTY_DAY_MONTHS, &
-                            JULIAN, GREGORIAN, NO_LEAP
+                            JULIAN, GREGORIAN, NOLEAP
 
-use    utilities_mod, only: error_mesg, get_my_pe
+use          fms_mod, only: error_mesg, mpp_pe, write_version_number
 
 implicit none
 private
 
-public :: file_time_init, write_axis_meta_data, write_field_meta_data, &
+public :: diag_output_init, write_axis_meta_data, write_field_meta_data, &
           done_meta_data, diag_field_out, diag_output_end, diag_flush, &
           diag_fieldtype, NETCDF
 
 !-----------------------------------------------------------------------
 !------------------------- interfaces ----------------------------------
 !
-!   file_time_init:   initializes output file and time axis
+!   diag_output_init:   initializes output file and time axis
 !
 !   write_axis_meta_data:  writes meta data for axes
 !                           called for each field in a file
@@ -59,7 +59,7 @@ public :: file_time_init, write_axis_meta_data, write_field_meta_data, &
 !
 !------------------------ data -----------------------------------------
 !
-!   NETCDF:    valid format types, needed in "file_time_init"
+!   NETCDF:    valid format types, needed in "diag_output_init"
 !
 !-----------------------------------------------------------------------
 
@@ -84,8 +84,6 @@ logical                :: time_axis_flag (max_axis_num)
 logical                :: edge_axis_flag (max_axis_num)
 type(axistype)         :: Axis_types     (max_axis_num)
 
-logical :: do_init = .true.
-
 !-----------------------------------------------------------------------
 
 type diag_fieldtype
@@ -97,11 +95,18 @@ end type
 
 !-----------------------------------------------------------------------
 
+logical :: module_is_initialized = .FALSE.
+
+character(len=128), private :: version= &
+  '$Id: diag_output.F90,v 1.3 2002/07/16 22:55:07 fms Exp $'
+character(len=128), private :: tagname= &
+  '$Name: havana $'
+
 contains
 
 !#######################################################################
 
-subroutine file_time_init ( file_name, format, file_title,  &
+subroutine diag_output_init ( file_name, format, file_title,  &
                             time_name, time_units,          &
                             file_unit, time_id )
 
@@ -136,10 +141,11 @@ subroutine file_time_init ( file_name, format, file_title,  &
 !-----------------------------------------------------------------------
 !---- initialize mpp_io ----
 
-   if ( do_init ) then
+   if ( .not.module_is_initialized ) then
         call mpp_io_init ()
-        do_init = .false.
+        module_is_initialized = .TRUE.
    endif
+   call write_version_number( version, tagname )
 
 !---- register time axis (use file_name as axis set_name) ----
 
@@ -154,7 +160,7 @@ subroutine file_time_init ( file_name, format, file_title,  &
          threading = MPP_MULTI
          fileset   = MPP_MULTI
      case default
-         call error_mesg ('file_time_init', 'invalid format', FATAL)
+         call error_mesg ('diag_output_init', 'invalid format', FATAL)
    end select
 
 !---- open output file (return file_unit id) -----
@@ -171,7 +177,7 @@ subroutine file_time_init ( file_name, format, file_title,  &
 
 !-----------------------------------------------------------------------
 
-end subroutine file_time_init
+end subroutine diag_output_init
 
 !#######################################################################
 
@@ -274,6 +280,8 @@ subroutine write_axis_meta_data ( file_unit, axes )
  endif
 
 !---- write additional attribute (calendar_type) for time axis ----
+!---- NOTE: calendar attribute is compliant with CF convention 
+!---- http://www.cgd.ucar.edu/cms/eaton/netcdf/CF-current.htm#cal
 
    if ( axis_cart_name == 'T' ) then
       time_axis_flag (num_axis_in_file) = .true.
@@ -283,15 +291,23 @@ subroutine write_axis_meta_data ( file_unit, axes )
          case (THIRTY_DAY_MONTHS)
             call mpp_write_meta ( file_unit, id_time_axis, &
                                  'calendar_type', cval='THIRTY_DAY_MONTHS')
+            call mpp_write_meta ( file_unit, id_time_axis, &
+                                 'calendar', cval='360')
          case (JULIAN)
             call mpp_write_meta ( file_unit, id_time_axis, &
                                  'calendar_type', cval='JULIAN')
+            call mpp_write_meta ( file_unit, id_time_axis, &
+                                 'calendar', cval='JULIAN')
          case (GREGORIAN)
             call mpp_write_meta ( file_unit, id_time_axis, &
                                  'calendar_type', cval='GREGORIAN')
-         case (NO_LEAP)
             call mpp_write_meta ( file_unit, id_time_axis, &
-                                 'calendar_type', cval='NO_LEAP')
+                                 'calendar', cval='GREGORIAN')
+         case (NOLEAP)
+            call mpp_write_meta ( file_unit, id_time_axis, &
+                                 'calendar_type', cval='NOLEAP')
+            call mpp_write_meta ( file_unit, id_time_axis, &
+                                 'calendar', cval='NOLEAP')
       end select
    else
       time_axis_flag (num_axis_in_file) = .false.
@@ -598,11 +614,11 @@ real                , intent(inout) :: data(:,:,:)
 real,      optional , intent(in)    :: time
 
 !---- replace original missing value with (un)packed missing value ----
-!print *, 'PE,name,miss_pack_present=',get_my_pe(), &
+!print *, 'PE,name,miss_pack_present=',mpp_pe(), &
 !  trim(Field%Field%name),Field%miss_pack_present
 
    if ( Field%miss_pack_present ) then
-!print *, 'PE,name,miss,miss_pack',get_my_pe(), &
+!print *, 'PE,name,miss,miss_pack',mpp_pe(), &
 !  trim(Field%Field%name),Field%miss,Field%miss_pack
         where ( data == Field%miss ) data = Field%miss_pack
    endif
@@ -633,7 +649,11 @@ subroutine diag_output_end (file_unit)
 
 integer        , intent(in) :: file_unit
 
+if (.not. module_is_initialized ) return
+
 call mpp_close (file_unit)
+
+module_is_initialized = .FALSE.
 
 end subroutine diag_output_end
 

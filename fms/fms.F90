@@ -102,6 +102,10 @@ use       mpp_io_mod, only:  mpp_io_init, mpp_open, mpp_close,         &
                        MPP_SEQUENTIAL, MPP_DIRECT,                     &
                        MPP_SINGLE, MPP_MULTI, MPP_DELETE, mpp_io_exit
 
+use fms_io_mod, only : read_data, write_data, fms_io_init, fms_io_exit, field_size, &
+                       open_namelist_file, open_restart_file, open_ieee32_file, close_file, &
+                       set_domain, get_domain_decomp, nullify_domain
+
 implicit none
 private
 
@@ -114,7 +118,7 @@ public :: open_namelist_file, open_restart_file, &
 
 ! routines for reading/writing distributed data
 public :: set_domain, read_data, write_data
-public :: get_domain_decomp
+public :: get_domain_decomp, field_size, nullify_domain
 
 ! miscellaneous i/o routines
 public :: file_exist, check_nml_error,      &
@@ -134,20 +138,6 @@ public :: mpp_error, NOTE, WARNING, FATAL, &
 public :: mpp_clock_begin, mpp_clock_end
 public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
            
-
-! overloaded distributed data i/o routines
-
-interface read_data
-  module procedure read_data_2d, read_ldata_2d, read_idata_2d
-  module procedure read_data_3d, read_data_4d
-  module procedure read_cdata_2d,read_cdata_3d,read_cdata_4d
-end interface
-
-interface write_data
-  module procedure write_data_2d, write_ldata_2d, write_idata_2d
-  module procedure write_data_3d, write_data_4d
-  module procedure write_cdata_2d,write_cdata_3d,write_cdata_4d
-end interface
 
 !------ namelist interface -------
 !------ adjustable severity level for warnings ------
@@ -171,21 +161,12 @@ end interface
    private  nml_error_init
 
 
-!------ private data, pointer to current 2d domain ------
-
-  type(domain2D), pointer :: Domain
-
-  integer :: is,ie,js,je      ! compute domain
-  integer :: isd,ied,jsd,jed  ! data domain
-  integer :: isg,ieg,jsg,jeg  ! global domain
-
-
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: fms.F90,v 1.1 2002/01/14 18:22:47 fms Exp $'
-  character(len=128) :: tag = '$Name: galway $'
+  character(len=128) :: version = '$Id: fms.F90,v 1.2 2002/07/16 22:55:28 fms Exp $'
+  character(len=128) :: tagname = '$Name: havana $'
 
-  logical :: do_init = .true.
+  logical :: module_is_initialized = .FALSE.
 
 
 contains
@@ -198,14 +179,13 @@ subroutine fms_init ( )
 
  integer :: unit, ierr, io
 
-    if (.not.do_init) return    ! return silently if already called
-    do_init = .false.
-
+    if (module_is_initialized) return    ! return silently if already called
+    module_is_initialized = .true.
 !---- initialize mpp routines ----
 
     call mpp_init
     call mpp_domains_init
-    call mpp_io_init
+    call fms_io_init
 
 !---- read namelist input ----
 
@@ -238,15 +218,12 @@ subroutine fms_init ( )
 
 !--- write version info and namelist to logfile ---
 
-    call write_version_number (version, tag)
+    call write_version_number (version, tagname)
     if (mpp_pe() == mpp_root_pe()) then
       write (stdlog(), nml=fms_nml)
       write (stdlog(),*) 'nml_error_codes=', nml_error_codes(1:num_nml_error_codes)
     endif
 
-!---- initialize module domain2d pointer ----
-
-    nullify (Domain)
 
 end subroutine fms_init
 
@@ -256,11 +233,11 @@ end subroutine fms_init
 
 subroutine fms_end ( )
 
-    if (do_init) return  ! return silently
-    call mpp_io_exit
+    if (.not.module_is_initialized) return  ! return silently
+    call fms_io_exit
     call mpp_domains_exit
     call mpp_exit
-    do_init = .true.
+    module_is_initialized =.FALSE.
 
 end subroutine fms_end
 
@@ -294,7 +271,7 @@ end subroutine fms_end
 !      message   message written to output   (character string)
 !      level     set to NOTE, MESSAGE, or FATAL (integer)
 
-    if (do_init) call fms_init ( )
+    if (.not.module_is_initialized) call fms_init ( )
     call mpp_error ( routine, message, level )
 
  end subroutine error_mesg
@@ -311,7 +288,7 @@ end subroutine fms_end
   integer   error_code, i
   character(len=128) :: err_str
 
-   if (do_init) call fms_init ( )
+   if (.not.module_is_initialized) call fms_init ( )
 
    error_code = iostat
 
@@ -325,6 +302,12 @@ end subroutine fms_end
        write (err_str,*) 'while reading namelist ',  &
                          trim(nml_name), ', iostat = ',error_code
        call error_mesg ('check_nml_error in fms_mod', err_str, FATAL)
+       call error_mesg ('check_nml_error in fms_mod', err_str, FATAL)
+       call mpp_sync() ! In principal, this sync should not be necessary
+                       ! as mpp_error's call to MPI_ABORT and ABORT should
+                       ! kill all associated processes. Still...
+   else
+       call mpp_sync()
    endif
 
 end function check_nml_error
@@ -382,22 +365,22 @@ end subroutine nml_error_init
 !#######################################################################
 ! prints module version number to the log file of specified unit number
 
- subroutine write_version_number (version, tagname, unit)
+ subroutine write_version_number (version, tag, unit)
 
 !   in:  version = string that contains routine name and version number
 !
 !   optional in:
-!        tagname = cvs tag name that code was checked out with
+!        tag = cvs tag name that code was checked out with
 !        unit    = alternate unit number to direct output  
 !                  (default: unit=stdlog)
 
    character(len=*), intent(in) :: version
-   character(len=*), intent(in), optional :: tagname 
+   character(len=*), intent(in), optional :: tag 
    integer,          intent(in), optional :: unit 
 
    integer :: logunit 
 
-   if (do_init) call fms_init ( )
+   if (.not.module_is_initialized) call fms_init ( )
 
      logunit = stdlog()
      if (present(unit)) then
@@ -407,500 +390,17 @@ end subroutine nml_error_init
          if ( mpp_pe() /= mpp_root_pe() ) return
      endif   
 
-     if (present(tagname)) then
-         write (logunit,'(/,80("="),/(a))') trim(version), trim(tagname)
+     if (present(tag)) then
+         write (logunit,'(/,80("="),/(a))') trim(version), trim(tag)
      else    
          write (logunit,'(/,80("="),/(a))') trim(version)
      endif   
 
  end subroutine write_version_number
 
-!#######################################################################
-!#######################################################################
-!
-! routines for opening specific types of files:
-!
-!                       form        action 
-! open_namelist_file  MPP_ASCII   MPP_RDONLY  
-! open restart_file   MPP_NATIVE
-! open_ieee32_file    MPP_IEEE32
-!
-! all have: access=MPP_SEQUENTIAL, threading=MPP_SINGLE, nohdrs=.true.
-! use the close_file interface to close these files
-!
-! if other types of files need to be opened the mpp_open and
-! mpp_close routines in the mpp_io_mod should be used
-!
-!#######################################################################
-! opens single namelist file for reading only by all PEs
-! the default file opened is called "input.nml"
 
- function open_namelist_file (file) result (unit)
- character(len=*), intent(in), optional :: file
- integer :: unit
 
-   if (do_init) call fms_init ( )
 
-   if (present(file)) then
-       call mpp_open ( unit, file, form=MPP_ASCII, action=MPP_RDONLY, &
-                       access=MPP_SEQUENTIAL, threading=MPP_SINGLE )
-   else
-       call mpp_open ( unit, 'input.nml', form=MPP_ASCII, action=MPP_RDONLY, &
-                       access=MPP_SEQUENTIAL, threading=MPP_SINGLE )
-   endif
-
- end function open_namelist_file
-
-!#######################################################################
-! opens single restart file for reading by all PEs or
-! writing by root PE only
-! the file has native format and no mpp header records
-
- function open_restart_file (file, action) result (unit)
- character(len=*), intent(in) :: file, action
- integer :: unit
-
- integer :: mpp_action
-
-   if (do_init) call fms_init ( )
-
-!   --- action (read,write) ---
-
-    select case (lowercase(trim(action)))
-       case ('read')
-           mpp_action = MPP_RDONLY
-       case ('write')
-           mpp_action = MPP_OVERWR
-       case default
-           call error_mesg ('open_restart_file in fms_mod', &
-                            'invalid option for argument action', FATAL)
-    end select
-
-    call mpp_open ( unit, file, form=MPP_NATIVE, action=mpp_action, &
-            access=MPP_SEQUENTIAL, threading=MPP_SINGLE, nohdrs=.true. )
-
- end function open_restart_file
-
-!#######################################################################
-! opens single 32-bit ieee file for reading by all PEs or 
-! writing by root PE only (writing is not recommended)
-! the file has no mpp header records
-
- function open_ieee32_file (file, action) result (unit)
- character(len=*), intent(in) :: file, action
- integer :: unit
-
- integer :: mpp_action
-
-   if (do_init) call fms_init ( )
-
-!   --- action (read,write) ---
-
-    select case (lowercase(trim(action)))
-       case ('read')
-           mpp_action = MPP_RDONLY
-       case ('write')
-           mpp_action = MPP_OVERWR
-       case default
-           call error_mesg ('open_ieee32_file in fms_mod', &
-                            'invalid option for argument action', FATAL)
-    end select
-
-    if (iospec_ieee32(1:1) == ' ') then
-       call mpp_open ( unit, file, form=MPP_IEEE32, action=mpp_action, &
-                       access=MPP_SEQUENTIAL, threading=MPP_SINGLE,    &
-                       nohdrs=.true. )
-    else
-       call mpp_open ( unit, file, form=MPP_IEEE32, action=mpp_action, &
-                       access=MPP_SEQUENTIAL, threading=MPP_SINGLE,    &
-                       nohdrs=.true., iospec=iospec_ieee32 )
-    endif
-
- end function open_ieee32_file
-
-!#######################################################################
-
- subroutine close_file (unit, status)
-   integer,          intent(in)           :: unit
-   character(len=*), intent(in), optional :: status
-
-   if (do_init) call fms_init ( )
-
-   if (unit == stdlog()) return
-
-   if (present(status)) then
-       if (lowercase(trim(status)) == 'delete') then
-           call mpp_close (unit, action=MPP_DELETE)
-       else
-           call error_mesg ('close_file in fms_mod', &
-                            'invalid value for status', FATAL)
-       endif
-   else
-           call mpp_close (unit)
-   endif
-   
- end subroutine close_file
-
-!#######################################################################
-!#######################################################################
-! set_domain is called to save the domain2d data type prior to
-! calling the distributed data I/O routines, read_data and write_data
-
- subroutine set_domain (Domain2)
-
-   type(domain2D), intent(in), target :: Domain2
-
-   if (do_init) call fms_init ( )
-
-!  --- set_domain must be called before a read_data or write_data ---
-
-   if (associated(Domain)) nullify (Domain)
-   Domain => Domain2
-
-!  --- module indexing to shorten read/write routines ---
-
-   call mpp_get_compute_domain (Domain,is ,ie ,js ,je )
-   call mpp_get_data_domain    (Domain,isd,ied,jsd,jed)
-   call mpp_get_global_domain  (Domain,isg,ieg,jsg,jeg)
-
-!-----------------------------------------------------------------------
-
- end subroutine set_domain
-
-!#######################################################################
-! this will be a private routine with the next release
-! users should get the domain decomposition from the domain2d data type
-
- subroutine get_domain_decomp ( x, y )
-
-  integer, intent(out), dimension(4) :: x, y
-
-  if (mpp_pe() == mpp_root_pe())  call error_mesg ('fms_mod', &
-                        'subroutine get_domain_decomp will be &
-                         &removed with the next release', NOTE)
-  x = (/ isg, ieg, is, ie /)
-  y = (/ jsg, jeg, js, je /)
-
- end subroutine get_domain_decomp
-
-!#######################################################################
-!#######################################################################
-!   --------- routines for reading distributed data ---------
-! before calling these routines the domain decompostion must be set
-! by calling "set_domain" with the appropriate domain2d data type
-!
-! reading can be done either by all PEs (default) or by only the root PE
-! this is controlled by namelist variable "read_all_pe".
-!#######################################################################
-
- subroutine read_data_2d ( unit, data, end )
-
-   integer, intent(in)                        :: unit
-   real,    intent(out), dimension(isd:,jsd:) :: data
-   logical, intent(out), optional             :: end
-
-   real, dimension(isg:ieg,jsg:jeg) :: gdata
-   integer :: len
-
-!------------------------------
-include "read_data_2d.inc"
-!------------------------------
-
- end subroutine read_data_2d
-
-!#######################################################################
-
- subroutine read_ldata_2d ( unit, data, end )
-
-   integer, intent(in)                        :: unit
-   logical, intent(out), dimension(isd:,jsd:) :: data
-   logical, intent(out), optional             :: end
-
-   logical, dimension(isg:ieg,jsg:jeg) :: gdata
-   integer :: len
-
-!------------------------------
-include "read_data_2d.inc"
-!------------------------------
-
- end subroutine read_ldata_2d
-
-!#######################################################################
-
- subroutine read_idata_2d ( unit, data, end )
-
-   integer, intent(in)                        :: unit
-   integer, intent(out), dimension(isd:,jsd:) :: data
-   logical, intent(out), optional             :: end
-
-   integer, dimension(isg:ieg,jsg:jeg) :: gdata
-   integer :: len
-
-!------------------------------
-include "read_data_2d.inc"
-!------------------------------
-
- end subroutine read_idata_2d
-
-!#######################################################################
-
- subroutine read_cdata_2d ( unit, data, end )
-
-   integer, intent(in)                        :: unit
-   complex,    intent(out), dimension(isd:,jsd:) :: data
-   logical, intent(out), optional             :: end
-
-   complex, dimension(isg:ieg,jsg:jeg) :: gdata
-   integer :: len
-
-!------------------------------
- include "read_data_2d.inc"
-!------------------------------
-
- end subroutine read_cdata_2d
-
-!#######################################################################
-
- subroutine read_data_3d ( unit, data, end )
-
-   integer, intent(in)                          :: unit
-   real,    intent(out), dimension(isd:,jsd:,:) :: data
-   logical, intent(out), optional               :: end
-
-   real, dimension(isg:ieg,jsg:jeg,size(data,3)) :: gdata
-   integer :: len
-
-!------------------------------
- include "read_data_3d.inc"
-!------------------------------
-
- end subroutine read_data_3d
-
-!#######################################################################
-
- subroutine read_cdata_3d ( unit, data, end )
-
-   integer, intent(in)                          :: unit
-   complex, intent(out), dimension(isd:,jsd:,:) :: data
-   logical, intent(out), optional               :: end
-
-   complex, dimension(isg:ieg,jsg:jeg,size(data,3)) :: gdata
-   integer :: len
-
-!------------------------------
- include "read_data_3d.inc"
-!------------------------------
-
- end subroutine read_cdata_3d
-
-!#######################################################################
-
- subroutine read_data_4d ( unit, data, end )
-
-   integer, intent(in)                            :: unit
-   real,    intent(out), dimension(isd:,jsd:,:,:) :: data
-   logical, intent(out), optional                 :: end
-
-   real, dimension(isg:ieg,jsg:jeg,size(data,3),size(data,4)) :: gdata
-   integer :: len
-
-! WARNING: memory usage with this routine could be costly
-!------------------------------
- include "read_data_4d.inc"
-!------------------------------
-
- end subroutine read_data_4d
-
-!#######################################################################
-
- subroutine read_cdata_4d ( unit, data, end )
-
-   integer, intent(in)                            :: unit
-   complex, intent(out), dimension(isd:,jsd:,:,:) :: data
-   logical, intent(out), optional                 :: end
-
-   complex, dimension(isg:ieg,jsg:jeg,size(data,3),size(data,4)) :: gdata
-   integer :: len
-
-! WARNING: memory usage with this routine could be costly
-!------------------------------
- include "read_data_4d.inc"
-!------------------------------
-
- end subroutine read_cdata_4d
-
-!#######################################################################
-!     -------- routines for writing distributed data --------
-! before calling these routines the domain decompostion must be set
-! by calling "set_domain" with the appropriate domain2d data type
-!#######################################################################
-
- subroutine write_data_2d ( unit, data )
-
-   integer, intent(in)                       :: unit
-   real,    intent(in), dimension(isd:,jsd:) :: data
-
-   real, dimension(isg:ieg,jsg:jeg) :: gdata
-
-!--------------------------
- include "write_data.inc"
-!--------------------------
-
- end subroutine write_data_2d
-
-!#######################################################################
-
- subroutine write_ldata_2d ( unit, data )
-
-   integer, intent(in)                       :: unit
-   logical, intent(in), dimension(isd:,jsd:) :: data
-
-   logical, dimension(isg:ieg,jsg:jeg) :: gdata
-
-!--------------------------
- include "write_data.inc"
-!--------------------------
-
- end subroutine write_ldata_2d
-
-!#######################################################################
-
- subroutine write_idata_2d ( unit, data )
-
-   integer, intent(in)                       :: unit
-   integer, intent(in), dimension(isd:,jsd:) :: data
-
-   integer, dimension(isg:ieg,jsg:jeg) :: gdata
-
-!--------------------------
- include "write_data.inc"
-!--------------------------
-
-end subroutine write_idata_2d
-
-!#######################################################################
-
- subroutine write_cdata_2d ( unit, data )
-
-   integer, intent(in)                       :: unit
-   complex, intent(in), dimension(isd:,jsd:) :: data
-
-   complex, dimension(isg:ieg,jsg:jeg) :: gdata
-
-!--------------------------
- include "write_data.inc"
-!--------------------------
-
- end subroutine write_cdata_2d
-
-!#######################################################################
-
- subroutine write_data_3d ( unit, data )
-
-   integer, intent(in) :: unit
-   real,    intent(in), dimension(isd:,jsd:,:) :: data
-
-   real, dimension(isg:ieg,jsg:jeg,size(data,3)) :: gdata
-
-!--------------------------
- include "write_data.inc"
-!--------------------------
-
- end subroutine write_data_3d
-
-!#######################################################################
-
- subroutine write_cdata_3d ( unit, data )
-
-   integer, intent(in) :: unit
-   complex, intent(in), dimension(isd:,jsd:,:) :: data
-
-   complex, dimension(isg:ieg,jsg:jeg,size(data,3)) :: gdata
-
-!--------------------------
- include "write_data.inc"
-!--------------------------
-
- end subroutine write_cdata_3d
-
-!#######################################################################
-
- subroutine write_data_4d ( unit, data )
-
-   integer, intent(in) :: unit
-   real,    intent(in), dimension(isd:,jsd:,:,:) :: data
-
-   real, dimension(isg:ieg,jsg:jeg,size(data,3),size(data,4)) :: gdata
-   integer :: n
-
-!--------------------------
-
-   if (.not.associated(Domain)) call error_mesg &
-        ('write_data in fms_mod', 'set_domain not called', FATAL)
-
- ! get the global data and write only on root pe
- ! do this one field at a time to save memory
-   do n = 1, size(data,4)
-    call mpp_global_field ( Domain, data(:,:,:,n), gdata(:,:,:,n) )
-   enddo
-   if ( mpp_pe() == mpp_root_pe() ) write (unit) gdata
-
-!--------------------------
-
- end subroutine write_data_4d
-
-!#######################################################################
-
- subroutine write_cdata_4d ( unit, data )
-
-   integer, intent(in) :: unit
-   complex,    intent(in), dimension(isd:,jsd:,:,:) :: data
-
-   complex, dimension(isg:ieg,jsg:jeg,size(data,3),size(data,4)) :: gdata
-   integer :: n
-
-!--------------------------
-
-   if (.not.associated(Domain)) call error_mesg &
-        ('write_data in fms_mod', 'set_domain not called', FATAL)
-
- ! get the global data and write only on root pe
- ! do this one field at a time to save memory
-   do n = 1, size(data,4)
-    call mpp_global_field ( Domain, data(:,:,:,n), gdata(:,:,:,n) )
-   enddo
-   if ( mpp_pe() == mpp_root_pe() ) write (unit) gdata
-
-!--------------------------
-
- end subroutine write_cdata_4d
-
-!#######################################################################
-! private routines (read_eof,do_read)
-! this routine is called when an EOF is found while
-! reading a distributed data file using read_data
-
- subroutine read_eof (end)
-   logical, intent(out), optional :: end
-
-   if (present(end))then
-       end = .true.
-   else
-       call error_mesg ('fms_mod', 'unexpected EOF', FATAL)
-   endif
-
- end subroutine read_eof
-
-!#######################################################################
-! determines if current pe should read data
-! checks namelist variable read_all_pe
-
- function do_read ( )
- logical :: do_read
-
-       do_read = mpp_pe() == mpp_root_pe() .or. read_all_pe
-
- end function do_read
 
 !#######################################################################
 !#######################################################################
@@ -916,7 +416,7 @@ end subroutine write_idata_2d
  integer, optional, intent(in) :: flags
  integer                       :: id
 
-    if (do_init) call fms_init ( )
+    if (.not.module_is_initialized) call fms_init ( )
 
   ! only register this clock when "timing_level"
   ! is .GE. then this clock's (timing) level

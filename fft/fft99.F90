@@ -1,6 +1,8 @@
 
 module fft99_mod
 
+use constants_mod, only: pi
+
 implicit none
 private
 
@@ -804,10 +806,9 @@ contains
     real,    intent(out) :: trigs(:)
     integer, intent(in)  :: n, mode
 
-    real    :: pi, del, angle
+    real    :: del, angle
     integer :: imode, nn, nh, i, L, la
 
-      pi=2.0*asin(1.0)
       imode=iabs(mode)
       nn=n
       if (imode.gt.1.and.imode.lt.6) nn=n/2

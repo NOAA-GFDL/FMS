@@ -66,8 +66,8 @@ private
 !-----------------------------------------------------------------------
 !  cvs version and tag name
 
-character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 1.5 2002/02/22 19:10:01 fms Exp $'
-character(len=128) :: tag = '$Name: galway $'
+character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 1.6 2002/07/16 22:56:58 fms Exp $'
+character(len=128) :: tagname = '$Name: havana $'
 
 !-----------------------------------------------------------------------
 !  parameters for table size and resolution
@@ -85,7 +85,7 @@ character(len=128) :: tag = '$Name: galway $'
  real ::  DTABLE(nsize)    !  first derivative of es
  real :: D2TABLE(nsize)    ! second derivative of es
 
- logical :: do_init = .true.
+ logical :: module_is_initialized = .FALSE.
 
 !-----------------------------------------------------------------------
 
@@ -102,7 +102,7 @@ contains
  integer :: ind
 !-----------------------------------------------
 
-   if (do_init) call sat_vapor_pres_init
+   if (.not.module_is_initialized) call sat_vapor_pres_init
 
    tmp = temp-tmin
    ind = int(dtinv*(tmp+teps))
@@ -127,7 +127,7 @@ contains
  integer :: ind, i, n
 !-----------------------------------------------
 
-   if (do_init) call sat_vapor_pres_init
+   if (.not.module_is_initialized) call sat_vapor_pres_init
 
    n = 0
    do i = 1, size(temp,1)
@@ -156,7 +156,7 @@ contains
  integer :: ind, i, j, n
 !-----------------------------------------------
 
-   if (do_init) call sat_vapor_pres_init
+   if (.not.module_is_initialized) call sat_vapor_pres_init
 
    n = 0
    do j = 1, size(temp,2)
@@ -187,7 +187,7 @@ contains
  integer :: ind, i, j, k, n
 !-----------------------------------------------
 
-   if (do_init) call sat_vapor_pres_init
+   if (.not.module_is_initialized) call sat_vapor_pres_init
 
    n = 0
    do k = 1, size(temp,3)
@@ -222,7 +222,7 @@ contains
  integer :: ind
 !-----------------------------------------------
 
-   if (do_init) call sat_vapor_pres_init
+   if (.not.module_is_initialized) call sat_vapor_pres_init
 
    tmp = temp-tmin
    ind = int(dtinv*(tmp+teps))
@@ -246,7 +246,7 @@ contains
  integer :: ind, i, n
 !-----------------------------------------------
 
-   if (do_init) call sat_vapor_pres_init
+   if (.not.module_is_initialized) call sat_vapor_pres_init
 
    n = 0
    do i = 1, size(temp,1)
@@ -274,7 +274,7 @@ contains
  integer :: ind, i, j, n
 !-----------------------------------------------
    
-   if (do_init) call sat_vapor_pres_init
+   if (.not.module_is_initialized) call sat_vapor_pres_init
    
    n = 0
    do j = 1, size(temp,2)
@@ -304,7 +304,7 @@ contains
  integer :: ind, i, j, k, n
 !-----------------------------------------------
 
-   if (do_init) call sat_vapor_pres_init
+   if (.not.module_is_initialized) call sat_vapor_pres_init
 
    n = 0
    do k = 1, size(temp,3)
@@ -353,10 +353,10 @@ contains
   real, parameter :: tfact = 1./(2.*tinrc)
 
 ! return silently if this routine has already been called
-      if (.not.do_init) return
+      if (module_is_initialized) return
 
 ! write version number to log file
-      call write_version_number (version, tag)
+      call write_version_number (version, tagname)
 
 ! global variables
       tmin = real(tcmin)+TFREEZE   ! minimum valid temp in table
@@ -389,7 +389,7 @@ contains
          D2TABLE(1)     = 0.50*dtinv*(DTABLE(2)    -DTABLE(1))
          D2TABLE(nsize) = 0.50*dtinv*(DTABLE(nsize)-DTABLE(nsize-1))
 
-    do_init = .false.
+    module_is_initialized = .true.
 
  end subroutine sat_vapor_pres_init
 

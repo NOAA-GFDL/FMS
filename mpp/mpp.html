@@ -26,7 +26,7 @@
      <b>Contact:</b> &nbsp;  V. Balaji <br>
      <b>Reviewers:</b>&nbsp; <br>
      <b>Change History:&nbsp; </b><a HREF="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp.F90">WebCVS Log</a> <br>
-     <b>Last Modified:</b>&nbsp; $Date: 2002/02/22 19:14:37 $
+     <b>Last Modified:</b>&nbsp; $Date: 2002/07/16 22:56:22 $
 </div><br>
 
 <!-- END HEADER -->
@@ -172,6 +172,12 @@ broadcasts.
 <dt><a href="#mpp_chksum"><tt>mpp_chksum</tt></a>: <dd>Parallel
 checksums.
 
+<dt><a href="#mpp_clock"><tt>mpp_clock_set_level</tt></a>: <dd>Set the
+level of granularity of timing measurements.
+
+<dt><a href="#mpp_clock"><tt>mpp_clock_init</tt></a>: <dd>Initialize a
+clock ID below a predefined level of granularity.
+
 <dt><a href="#mpp_clock"><tt>mpp_clock_begin</tt></a>: <dd>Begin
 timing a code section.
 
@@ -269,23 +275,25 @@ subroutine mpp_broadcast( data, length, from_pe, pelist )
    integer, intent(in), optional :: pelist(:)
 </pre>
 
-	 <p>The <tt>mpp_broadcast</tt> call has been added because the original
-	 syntax (using <tt>ALL_PES</tt> in <tt>mpp_transmit</tt>) did not
-	 support a broadcast across a pelist.</p>
+<p>The <tt>mpp_broadcast</tt> call has been added because the original
+syntax (using <tt>ALL_PES</tt> in <tt>mpp_transmit</tt>) did not
+support a broadcast across a pelist.</p>
 
-	 <p><tt>MPP_TYPE_</tt> corresponds to any 4-byte and 8-byte variant of
-	 <tt>integer, real, complex, logical</tt> variables, of rank 0 or 1. A
-	 contiguous block from a multi-dimensional array may be passed by its
-	 starting address and its length, as in <tt>f77</tt>.</p>
+<p><tt>MPP_TYPE_</tt> corresponds to any 4-byte and 8-byte
+variant of <tt>integer, real, complex, logical</tt>
+variables, of rank 0 to 5. If the argument is a scalar, the
+<tt>length</tt> argument must be omitted.</p>
 
-	 <p>Global broadcasts through the <tt>ALL_PES</tt> argument to <a
-	 href="#mpp_transmit"><tt>mpp_transmit</tt></a> are still provided for
-	 backward-compatibility.</p>
+<p>Global broadcasts through the <tt>ALL_PES</tt> argument to <a
+href="#mpp_transmit"><tt>mpp_transmit</tt></a> are still provided for
+backward-compatibility.</p>
 
-	 <p>If <tt>pelist</tt> is omitted, the context is assumed to be the
-	 current pelist. <tt>from_pe</tt> must belong to the current
-	 pelist. This call implies synchronization across the PEs in
- <tt>pelist</tt>, or the current pelist if <tt>pelist</tt> is absent.</p>
+<p>If <tt>pelist</tt> is omitted, the context is assumed to be the
+current pelist. <tt>from_pe</tt> must belong to the current
+pelist. This call implies synchronization across the PEs in
+<tt>pelist</tt>, or the current pelist if <tt>pelist</tt> is
+absent.</p>
+
 </li>
 <li><a name="mpp_chksum"></a><h4>mpp_chksum</h4>
 <pre>
@@ -295,23 +303,24 @@ function mpp_chksum( var, pelist )
   integer, optional :: pelist(:)
 </pre>
 
-      <p><tt>mpp_chksum</tt> is a parallel checksum routine that returns an
-      identical answer for the same array irrespective of how it has been
-      partitioned across processors. <tt>LONG_KIND</tt>is the <tt>KIND</tt>
-      parameter corresponding to long integers (see discussion on 
-      OS-dependent preprocessor directives) defined in
-      the header file <tt>os.h</tt>. <tt>MPP_TYPE_</tt> corresponds to any
-      4-byte and 8-byte variant of <tt>integer, real, complex, logical</tt>
-      variables, of rank 0 to 5.</p>
+<p><tt>mpp_chksum</tt> is a parallel checksum routine that returns an
+identical answer for the same array irrespective of how it has been
+partitioned across processors. <tt>LONG_KIND</tt>is the <tt>KIND</tt>
+parameter corresponding to long integers (see discussion on 
+OS-dependent preprocessor directives) defined in
+the header file <tt>os.h</tt>. <tt>MPP_TYPE_</tt> corresponds to any
+4-byte and 8-byte variant of <tt>integer, real, complex, logical</tt>
+variables, of rank 0 to 5.</p>
 
-      <p>Integer checksums on FP data use the F90 <tt>TRANSFER()</tt>
-      intrinsic.</p>
+<p>Integer checksums on FP data use the F90 <tt>TRANSFER()</tt>
+intrinsic.</p>
 
-      <p>The <a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/chksum/chksum.html">serial checksum module</a> is superseded
-      by this function, and is no longer being actively maintained. This
-      provides identical results on a single-processor job, and to perform
-      serial checksums on a single processor of a parallel job, you only
-      need to use the optional <tt>pelist</tt> argument.</p>
+<p>The <a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/chksum/chksum.html">serial checksum module</a> is superseded
+by this function, and is no longer being actively maintained. This
+provides identical results on a single-processor job, and to perform
+serial checksums on a single processor of a parallel job, you only
+need to use the optional <tt>pelist</tt> argument.</p>
+
 <pre>
 use mpp_mod
 integer :: pe, chksum
@@ -334,13 +343,17 @@ current pelist. This call implies synchronization across the PEs in
 <li><a name="mpp_clock"></a><h4>mpp_clock</h4>
 
 <pre>
-function mpp_clock_id( name, flags )
+function mpp_clock_id( name, flags, grain )
   integer :: mpp_clock_id
   character(len=*), intent(in) :: name
   integer, intent(in), optional :: flags
+
 subroutine mpp_clock_begin(id)
 subroutine mpp_clock_end(id)
   integer, intent(in) :: id
+
+subroutine mpp_clock_set_grain( grain )
+  integer, intent(in) :: grain
 </pre>
 
      <p>These three calls may be used to time parallel code sections, and
@@ -403,6 +416,29 @@ non-portable fortran interface made available by
 <tt>nsclock.c</tt>. This approach will eventually be extended to other
 platforms.</p>
 
+<div class="new">
+<p>New behaviour added at the Havana release allows the user to embed
+profiling calls at varying levels of granularity all over the code,
+and for any particular run, set a threshold of granularity so that
+finer-grained clocks become dormant.
+
+<p>The threshold granularity is held in the private module variable
+<tt>clock_grain</tt>. This value may be modified by the call
+<tt>mpp_clock_set_grain</tt>, and affect clocks initiated by
+subsequent calls to <tt>mpp_clock_id</tt>. The value of
+<tt>clock_grain</tt> is set to an arbitrarily large number initially.
+
+Clocks initialized by <tt>mpp_clock_id</tt> can set a new optional
+argument <tt>grain</tt> setting their granularity level. Clocks check
+this level against the current value of <tt>clock_grain</tt>, and are
+only triggered if they are <i>at or below ("coarser than")</i> the
+threshold. Finer-grained clocks are dormant for that run.
+
+<p>Note that subsequent changes to <tt>clock_grain</tt> do not
+change the status of already initiated clocks, and that if the
+optional <tt>grain</tt> argument is absent, the clock is always
+triggered. This guarantees backward compatibility.
+</div>
 </li>
 <li><a name="mpp_declare_pelist"></a><h4>mpp_declare_pelist</h4>
 <pre>
@@ -704,23 +740,23 @@ subroutine mpp_sum( a, length, pelist )
 !result is also automatically broadcast to all PEs
   integer, intent(in) :: length
   integer, intent(in), dimension(:), optional :: pelist
-  MPP_TYPE_, intent(inout) :: a
+  MPP_TYPE_, intent(inout) :: a(*)
 </pre>
 
-	<p><tt>MPP_TYPE_</tt> corresponds to any 4-byte and 8-byte variant of
-	<tt>integer, real, complex</tt> variables, of rank 0 or 1. A
-	contiguous block from a multi-dimensional array may be passed by its
-	starting address and its length, as in <tt>f77</tt>.</p>
+<p><tt>MPP_TYPE_</tt> corresponds to any 4-byte and 8-byte
+variant of <tt>integer, real, complex</tt> variables, of rank
+0 to 5. If the argument is a scalar, the <tt>length</tt>
+argument must be omitted.
 
-	<p> Library reduction operators are not required or guaranteed to be
-	bit-reproducible. In any case, changing the processor count changes
-	the data layout, and thus very likely the order of operations. For
-	bit-reproducible sums of distributed arrays, consider using the
-	<tt>mpp_global_sum</tt> routine provided by the <a
-	href="mpp_domains.html"><tt>mpp_domains</tt></a> module.</p>
+<p> Library reduction operators are not required or guaranteed to be
+bit-reproducible. In any case, changing the processor count changes
+the data layout, and thus very likely the order of operations. For
+bit-reproducible sums of distributed arrays, consider using the
+<tt>mpp_global_sum</tt> routine provided by the <a
+href="mpp_domains.html"><tt>mpp_domains</tt></a> module.</p>
 
-	<p>The <tt>bit_reproducible</tt> flag provided in earlier versions of
-	this routine has been removed.</p>
+<p>The <tt>bit_reproducible</tt> flag provided in earlier versions of
+this routine has been removed.</p>
 
 	
 <p>If <tt>pelist</tt> is omitted, the context is assumed to be the
@@ -773,21 +809,23 @@ subroutine mpp_sync_self( pelist )
 <pre>
 subroutine mpp_transmit( put_data, put_len, put_pe, get_data, get_len, get_pe )
    integer, intent(in) :: put_len, put_pe, get_len, get_pe
-   MPP_TYPE_, intent(in),  dimension(put_len) :: put_data
-   MPP_TYPE_, intent(out), dimension(get_len) :: get_data
+   MPP_TYPE_, intent(in),  :: put_data(*)
+   MPP_TYPE_, intent(out), :: get_data(*)
 </pre>
 
 <p><tt>MPP_TYPE_</tt> corresponds to any 4-byte and 8-byte variant of
-<tt>integer, real, complex, logical</tt> variables, of rank 0 or 1. A
-contiguous block from a multi-dimensional array may be passed by its
-starting address and its length, as in <tt>f77</tt>.</p>
+<tt>integer, real, complex, logical</tt> variables, of rank 0 to 5. If
+the argument <tt>put_data</tt> and <tt>get_data</tt> are scalars, the
+corresponding length arguments <tt>put_len</tt> and <tt>get_len</tt>
+argument must be omitted. <tt>put_data</tt> and <tt>get_data</tt> must
+have the same rank.</p>
 	    
 <p><tt>mpp_transmit</tt> is currently implemented as asynchronous
-outward transmission and synchronous inward transmission. This follows
-the behaviour of <tt>shmem_put</tt> and <tt>shmem_get</tt>. In MPI, it
-is implemented as <tt>mpi_isend</tt> and <tt>mpi_recv</tt>. For most
-applications, transmissions occur in pairs, and are here accomplished
-in a single call.</p>
+(non-blocking) outward transmission and synchronous (blocking) inward
+transmission. This follows the behaviour of <tt>shmem_put</tt> and
+<tt>shmem_get</tt>. In MPI, it is implemented as <tt>mpi_isend</tt>
+and <tt>mpi_recv</tt>. For most applications, transmissions occur in
+pairs, and are here accomplished in a single call.</p>
 
 <p>The special PE designations <tt>NULL_PE</tt>,
 <tt>ANY_PE</tt> and <tt>ALL_PES</tt> are provided by use
@@ -1029,9 +1067,14 @@ to the GFDL CVS repository will soon be made available.</p>
 <h4>KNOWN BUGS</h4>
 <!-- BEGIN BUGS -->
 <div>
-
-     None.
-
+<p>The <tt>SYSTEM_CLOCK</tt> intrinsic has a limited range before the
+clock rolls over. The maximum time interval that may be measured
+before rollover depends on the default integer precision, and is
+<tt>COUNT_MAX/COUNT_RATE</tt> seconds. Timing a code section longer
+than this interval will give incorrect results. The <tt>mpp</tt>
+entry in the logfile reports the rollover time interval. Note that
+this is a limitation, or "feature" of the <tt>f90 SYSTEM_CLOCK</tt>
+intrinsic.
 </div><br>
 <!-- END BUGS -->
 <!-------------------------------------------------------------------->

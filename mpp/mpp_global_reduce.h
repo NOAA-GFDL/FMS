@@ -15,7 +15,13 @@
         MPP_GLOBAL_REDUCE_2D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D )
     end if
 #else
-    call mpp_error( FATAL, 'MPP_GLOBAL_REDUCE_2D_: requires Cray pointers.' )
+    field3D = RESHAPE( field, SHAPE(field3D) )
+    if( PRESENT(locus) )then
+        MPP_GLOBAL_REDUCE_2D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D )
+        locus = locus3D(1:2)
+    else
+        MPP_GLOBAL_REDUCE_2D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D )
+    end if
 #endif
     return
   end function MPP_GLOBAL_REDUCE_2D_
@@ -28,7 +34,7 @@
     MPP_TYPE_ :: local
     integer :: here, ioff, joff
 
-    if( .NOT.mpp_domains_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_REDUCE: You must first call mpp_domains_init.' )
+    if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_REDUCE: You must first call mpp_domains_init.' )
     if( size(field,1).EQ.domain%x%compute%size .AND. size(field,2).EQ.domain%y%compute%size )then
 !field is on compute domain
         ioff = domain%x%compute%begin
@@ -49,7 +55,7 @@
 !find locus of the global max/min
     if( PRESENT(locus) )then
 !which PE is it on? min of all the PEs that have it
-        here = npes+1
+        here = mpp_npes()+1
         if( MPP_GLOBAL_REDUCE_3D_.EQ.local )here = pe
         call mpp_min( here, domain%list(:)%pe )
 !find the locus here
@@ -74,7 +80,7 @@
     if( PRESENT(locus) )then
         MPP_GLOBAL_REDUCE_4D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D )
         locus(1:2) = locus3D(1:2)
-        locus(3) = mod(locus3D(3),size(field,3))
+        locus(3) = modulo(locus3D(3),size(field,3))
         locus(4) = (locus3D(3)-locus(3))/size(field,3) + 1
         if( locus(3).EQ.0 )then
             locus(3) = size(field,3)
@@ -84,7 +90,19 @@
         MPP_GLOBAL_REDUCE_4D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D )
     end if
 #else
-    call mpp_error( FATAL, 'MPP_GLOBAL_REDUCE_4D_: requires Cray pointers.' )
+    field3D = RESHAPE( field, SHAPE(field3D) )
+    if( PRESENT(locus) )then
+        MPP_GLOBAL_REDUCE_4D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D )
+        locus(1:2) = locus3D(1:2)
+        locus(3) = modulo(locus3D(3),size(field,3))
+        locus(4) = (locus3D(3)-locus(3))/size(field,3) + 1
+        if( locus(3).EQ.0 )then
+            locus(3) = size(field,3)
+            locus(4) = locus(4) - 1
+        end if
+    else
+        MPP_GLOBAL_REDUCE_4D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D )
+    end if
 #endif
     return
   end function MPP_GLOBAL_REDUCE_4D_
@@ -102,8 +120,8 @@
     if( PRESENT(locus) )then
         MPP_GLOBAL_REDUCE_5D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D )
         locus(1:2) = locus3D(1:2)
-        locus(3) = mod(locus3D(3),size(field,3))
-        locus(4) = mod(locus3D(3),size(field,3)*size(field,4))
+        locus(3) = modulo(locus3D(3),size(field,3))
+        locus(4) = modulo(locus3D(3),size(field,3)*size(field,4))
         locus(5) = (locus3D(3)-locus(4))/size(field,3)/size(field,4) + 1
         if( locus(3).EQ.0 )then
             locus(3) = size(field,3)
@@ -113,7 +131,20 @@
         MPP_GLOBAL_REDUCE_5D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D )
     end if
 #else
-    call mpp_error( FATAL, 'MPP_GLOBAL_REDUCE_5D_: requires Cray pointers.' )
+    field3D = RESHAPE( field, SHAPE(field3D) )
+    if( PRESENT(locus) )then
+        MPP_GLOBAL_REDUCE_5D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D )
+        locus(1:2) = locus3D(1:2)
+        locus(3) = modulo(locus3D(3),size(field,3))
+        locus(4) = modulo(locus3D(3),size(field,3)*size(field,4))
+        locus(5) = (locus3D(3)-locus(4))/size(field,3)/size(field,4) + 1
+        if( locus(3).EQ.0 )then
+            locus(3) = size(field,3)
+            locus(4) = locus(4) - 1
+        end if
+    else
+        MPP_GLOBAL_REDUCE_5D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D )
+    end if
 #endif
     return
   end function MPP_GLOBAL_REDUCE_5D_

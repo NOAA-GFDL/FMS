@@ -2,7 +2,7 @@
 #define use_ftn_ieee_defs
 #endif
 
-module fpe
+module fpe_mod
 !module to provide an uniform interface to individual (non-standard)
 !libraries for controlling floating-point exception handling.
 
@@ -27,6 +27,9 @@ module fpe
 !This currently works on SGI systems only using the FTN_IEEE_DEFINITIONS
 !compiler extension module. The module is also available on Cray systems
 !but is not required there, as interrupts are enabled by default.
+
+  use fms_mod, only: write_version_number
+
 #ifdef use_ftn_ieee_defs
   use FTN_IEEE_DEFINITIONS
 #endif
@@ -36,9 +39,26 @@ module fpe
   integer, parameter, public :: FP_DIVIDE_BY_ZERO=1, FP_OPERAND_IS_NAN=2, &
                                 FP_OVERFLOW=4, FP_UNDERFLOW=8
 
-  public :: fpe_trap, fpe_disable, fpe_enable
+  public :: fpe_init, fpe_trap, fpe_disable, fpe_enable
+
+  logical :: module_is_initialized = .FALSE.
+
+  character(len=128), private :: version= &
+       '$Id: fpe.F90,v 2.3 2002/07/16 22:55:47 fms Exp $'
+  character(len=128), private :: tagname= &
+       '$Name: havana $'
 
   contains
+
+    subroutine fpe_init ()
+
+      if ( module_is_initialized ) return
+
+      call write_version_number( version, tagname )
+
+      module_is_initialized = .TRUE.
+
+    end subroutine fpe_init
 
     function fpe_trap(flag)
 !traps exceptions contained in the optional argument flag
@@ -46,6 +66,8 @@ module fpe
       integer, intent(in), optional :: flag
       integer :: f
       logical :: status(0:3)
+
+      if (.not.module_is_initialized ) call fpe_init ()
 
       f = FP_DIVIDE_BY_ZERO + FP_OPERAND_IS_NAN + FP_OVERFLOW + FP_UNDERFLOW
       if( PRESENT(flag) )f = flag
@@ -77,6 +99,8 @@ module fpe
       integer, intent(in), optional :: flag
       integer :: f
 
+      if (.not.module_is_initialized ) call fpe_init ()
+
       f = FP_DIVIDE_BY_ZERO + FP_OPERAND_IS_NAN + FP_OVERFLOW + FP_UNDERFLOW
       if( PRESENT(flag) )f = flag
 #ifdef use_ftn_ieee_defs
@@ -92,6 +116,8 @@ module fpe
       integer, intent(in), optional :: flag
       integer :: f
 
+      if (.not.module_is_initialized ) call fpe_init ()
+
       f = FP_DIVIDE_BY_ZERO + FP_OPERAND_IS_NAN + FP_OVERFLOW + FP_UNDERFLOW
       if( PRESENT(flag) )f = flag
 #ifdef use_ftn_ieee_defs
@@ -102,11 +128,11 @@ module fpe
 #endif
       return
     end subroutine fpe_enable
-end module fpe
+end module fpe_mod
 
 #ifdef test_fpe
 program fpetest
-  use fpe
+  use fpe_mod
   implicit none
 
   real :: a, b
@@ -128,3 +154,4 @@ program fpetest
   
 end program fpetest
 #endif
+

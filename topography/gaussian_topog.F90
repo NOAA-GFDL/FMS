@@ -7,6 +7,8 @@ use  fms_mod, only: file_exist, open_namelist_file,  &
                     mpp_pe, mpp_root_pe,             &
                     error_mesg, FATAL
 
+use constants_mod, only: pi
+
 implicit none
 private
 
@@ -40,11 +42,11 @@ public :: gaussian_topog_init, get_gaussian_topog
 
 !-----------------------------------------------------------------------
 
-character(len=128) :: version = '$Id: gaussian_topog.F90,v 1.1 2002/01/14 21:17:51 fms Exp $'
-character(len=128) :: tag = '$Name: galway $'
+character(len=128) :: version = '$Id: gaussian_topog.F90,v 1.2 2002/07/16 22:57:15 fms Exp $'
+character(len=128) :: tagname = '$Name: havana $'
 
-logical :: do_log = .true.
 logical :: do_nml = .true.
+logical :: module_is_initialized = .FALSE.
 
 !-----------------------------------------------------------------------
 
@@ -62,6 +64,10 @@ real, intent(out) :: zsurf(:,:)
 
 integer :: n
 
+  if (.not.module_is_initialized) then
+     call write_version_number( version, tagname )
+  endif
+
   if(any(shape(zsurf) /= (/size(lon),size(lat)/))) then
     call error_mesg ('get_gaussian_topog in topography_mod', &
      'shape(zsurf) is not equal to (/size(lon),size(lat)/)', FATAL)
@@ -76,7 +82,7 @@ integer :: n
     zsurf = zsurf + get_gaussian_topog ( lon, lat, height(n), &
                 olon(n), olat(n), wlon(n), wlat(n), rlon(n), rlat(n))
   enddo
-                    
+ module_is_initialized = .TRUE.                    
 
 end subroutine gaussian_topog_init
 
@@ -110,7 +116,7 @@ real    :: tpi, dtr, dx, dy, xx, yy
        return
   endif
 
-  tpi = 4.*acos(0.)    ! 2*pi
+  tpi = 2.0*pi
   dtr = tpi/360.
 
 ! defaults and convert degrees to radians (dtr)
@@ -155,23 +161,11 @@ subroutine read_namelist
 
 !  write version and namelist to log file
 
-   call write_log
    if (mpp_pe() == mpp_root_pe()) write (stdlog(), nml=gaussian_topog_nml)
 
    do_nml = .false.
 
 end subroutine read_namelist
-
-!#######################################################################
-! writes the version and tag name to log file
-
-subroutine write_log
-
-  if (.not.do_log) return
-  call write_version_number (version,tag)
-  do_log = .false.
-
-end subroutine write_log
 
 !#######################################################################
 

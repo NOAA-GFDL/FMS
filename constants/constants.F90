@@ -12,10 +12,10 @@ use fms_mod, only: write_version_number
 implicit none
 private
 
-character(len=128) :: version='$Id: constants.F90,v 1.2 2002/01/14 20:55:50 fms Exp $'
-character(len=128) :: tag='$Name: galway $'
+character(len=128) :: version='$Id: constants.F90,v 1.3 2002/07/16 22:54:42 fms Exp $'
+character(len=128) :: tagname='$Name: havana $'
 logical :: do_log = .true.
-
+logical :: module_is_initialized = .FALSE.
 !-----------------------------------------------------------------------
 !------------ physical constants ---------------
 
@@ -25,7 +25,6 @@ real, public, parameter :: GRAV   = 9.80         !  acceleration due to gravity 
 real, public, parameter :: RDGAS  = 287.04       !  gas constant for dry air (J/Kg/deg)
 real, public, parameter :: KAPPA  = 2./7.        !  RDGAS / CP
 real, public, parameter :: cp     = RDGAS/KAPPA  !  spec heat cap of dry air (J/kg/deg)
-real, public, parameter :: P00    = 1000.e2      !  reference pressure (Pascals)
 
 !------------ water vapor constants ---------------
 
@@ -40,8 +39,10 @@ real, public, parameter :: TFREEZE = 273.16      !  temp where fresh water freez
 
 real, public, parameter :: STEFAN  =  5.6734e-8  !  Stefan-Boltzmann constant (W/m2/deg4)
 real, public, parameter :: VONKARM =  0.40       !  Von Karman constant
-
+real, public, parameter :: PI      =  3.14159265358979323846 ! is it enough?
 !-----------------------------------------------------------------------
+
+public constants_init
 
 contains
 
@@ -50,8 +51,11 @@ contains
 
 subroutine constants_init
 
+  if (module_is_initialized) return
+  module_is_initialized = .TRUE.
+
   if (.not.do_log) return
-  call write_version_number (version,tag)
+  call write_version_number (version,tagname)
   do_log = .false.
 
 end subroutine constants_init

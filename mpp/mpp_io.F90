@@ -27,9 +27,9 @@ module mpp_io_mod
   private
 
   character(len=128), private :: version= &
-       '$Id: mpp_io.F90,v 6.5 2002/02/22 19:09:27 fms Exp $'
-  character(len=128), private :: name= &
-       '$Name: galway $'
+       '$Id: mpp_io.F90,v 6.6 2002/07/16 22:56:26 fms Exp $'
+  character(len=128), private :: tagname= &
+       '$Name: havana $'
 
   integer, private :: pe, npes
 
@@ -116,7 +116,7 @@ module mpp_io_mod
 !null unit: returned by PEs not participating in IO after a collective call
   integer, parameter, private :: NULLUNIT=-1
   real(DOUBLE_KIND), parameter, private :: NULLTIME=-1.
-  logical, private :: verbose=.FALSE., debug=.FALSE., mpp_io_initialized=.FALSE.
+  logical, private :: verbose=.FALSE., debug=.FALSE., module_is_initialized=.FALSE.
 
   real(DOUBLE_KIND), private, allocatable :: mpp_io_stack(:)
   integer, private :: mpp_io_stack_size=0, mpp_io_stack_hwm=0
@@ -177,7 +177,7 @@ module mpp_io_mod
   public :: mpp_close, mpp_flush, mpp_get_iospec, mpp_get_id, mpp_get_ncid, mpp_get_unit_range, mpp_io_init, mpp_io_exit, &
             mpp_open, mpp_set_unit_range, mpp_write, mpp_write_meta, mpp_read, mpp_get_info, mpp_get_atts, &
             mpp_get_fields, mpp_get_times, mpp_get_axes, mpp_copy_meta, mpp_get_recdimid, mpp_get_axis_data, mpp_modify_meta, &
-            mpp_io_set_stack_size
+            mpp_io_set_stack_size, mpp_get_field_index
 
   private :: read_record, mpp_read_meta, lowercase
 
@@ -196,7 +196,7 @@ module mpp_io_mod
       integer, intent(in), optional :: flags, maxunit
 !initialize IO package: initialize mpp_file array, set valid range of units for fortran IO
 
-      if( mpp_io_initialized )return
+      if( module_is_initialized )return
       call mpp_init(flags)           !if mpp_init has been called, this call will merely return
       pe = mpp_pe()
       npes = mpp_npes()
@@ -265,7 +265,11 @@ module mpp_io_mod
       mpp_file(NULLUNIT)%threading = MPP_SINGLE
       mpp_file(NULLUNIT)%opened = .TRUE.
       mpp_file(NULLUNIT)%initialized = .TRUE.
-
+!declare the stdunits to be open
+      mpp_file(stdin ())%opened = .TRUE.
+      mpp_file(stdout())%opened = .TRUE.
+      mpp_file(stderr())%opened = .TRUE.
+      mpp_file(stdlog())%opened = .TRUE.
 !set range of allowed fortran unit numbers: could be compiler-dependent (should not overlap stdin/out/err)
       call mpp_set_unit_range( 7, maxunits )
 
@@ -284,15 +288,19 @@ module mpp_io_mod
 
       call mpp_io_set_stack_size(131072) ! default initial value
       call mpp_sync()
-      mpp_io_initialized = .TRUE.
+      module_is_initialized = .TRUE.
       return
     end subroutine mpp_io_init
 
     subroutine mpp_io_exit()
       integer :: unit
 
-      if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_IO_EXIT: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_IO_EXIT: must first call mpp_io_init.' )
 !close all open fortran units
+      do unit = unit_begin,unit_end
+         if( mpp_file(unit)%opened )call FLUSH(unit)
+      end do
+      call mpp_sync()
       do unit = unit_begin,unit_end
          if( mpp_file(unit)%opened )close(unit)
       end do
@@ -310,7 +318,7 @@ module mpp_io_mod
 !          write( stdout,* )'MPP_IO_STACK high water mark=', mpp_io_stack_hwm
       end if
       deallocate(mpp_file)
-      mpp_io_initialized = .FALSE.
+      module_is_initialized = .FALSE.
       return
     end subroutine mpp_io_exit
 
@@ -389,7 +397,7 @@ module mpp_io_mod
       character(len=64) :: filespec
       type(axistype) :: unlim    !used by netCDF with mpp_append
 
-      if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_OPEN: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_OPEN: must first call mpp_io_init.' )
 !set flags
       action_flag = MPP_WRONLY        !default
       if( PRESENT(action) )action_flag = action
@@ -602,7 +610,7 @@ module mpp_io_mod
       character(len=8) :: status
       logical :: collect
 
-      if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_CLOSE: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_CLOSE: must first call mpp_io_init.' )
       if( unit.EQ.NULLUNIT )return !nothing was actually opened on this unit
 
 !action on close
@@ -774,7 +782,7 @@ module mpp_io_mod
       character(len=*), intent(in), optional :: cval
       integer, intent(in), optional :: pack
 
-      if( .NOT.mpp_io_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
       if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
       if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.mpp_root_pe() )return
@@ -826,7 +834,7 @@ module mpp_io_mod
       character(len=*), intent(in), optional :: cval
       integer, intent(in), optional :: pack
 
-      if( .NOT.mpp_io_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
       if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
       if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.mpp_root_pe() )return
@@ -878,7 +886,7 @@ module mpp_io_mod
       real, intent(in), optional :: data(:)
       integer :: is, ie, isg, ieg
 
-      if( .NOT.mpp_io_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
       if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
       if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.mpp_root_pe() )return
@@ -991,7 +999,7 @@ module mpp_io_mod
       real :: a, b
       integer :: i
 
-      if( .NOT.mpp_io_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
       if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
       if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.mpp_root_pe() )return
@@ -1314,7 +1322,7 @@ module mpp_io_mod
       type(fieldtype) :: field
       integer :: is, ie
 
-      if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
       if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
       if( mpp_file(unit)%fileset  .EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
@@ -1355,7 +1363,7 @@ module mpp_io_mod
       integer, intent(in) :: unit, nwords
       type(fieldtype), intent(in) :: field
       real, intent(in) :: data(nwords)
-      real, intent(in), optional :: time_in
+      real(DOUBLE_KIND), intent(in), optional :: time_in
       type(domain2D), intent(in), optional :: domain
       integer, dimension(size(field%axes)) :: start, axsiz
       real :: time
@@ -1363,12 +1371,10 @@ module mpp_io_mod
       logical :: newtime
       integer :: subdomain(4)
       integer :: packed_data(nwords)
-#ifdef __sgi
-      real(FLOAT_KIND) :: data_r4(nwords)
-#endif
       integer :: i, is, ie, js, je, isg, ieg, jsg, jeg, isizc, jsizc, isizg, jsizg
 
 #ifdef use_CRI_pointers
+      real(FLOAT_KIND) :: data_r4(nwords)
       pointer( ptr1, data_r4)
       pointer( ptr2, packed_data)
 
@@ -1378,7 +1384,7 @@ module mpp_io_mod
       ptr2 = LOC(mpp_io_stack(nwords+1))
 #endif
 
-      if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
       if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
       if( mpp_file(unit)%fileset  .EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
@@ -1550,7 +1556,7 @@ module mpp_io_mod
       type(atttype), intent(in) :: gatt
       integer :: len
 
-      if( .NOT.mpp_io_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
       if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
       if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.mpp_root_pe() )return
@@ -1590,7 +1596,7 @@ module mpp_io_mod
       character(len=512) :: text
       integer :: i, len, is, ie, isg, ieg
 
-      if( .NOT.mpp_io_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
       if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
       if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.mpp_root_pe() )return
@@ -1682,7 +1688,7 @@ module mpp_io_mod
       real :: a, b
       integer :: i
 
-      if( .NOT.mpp_io_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
       if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
       if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.mpp_root_pe() )return
@@ -1840,13 +1846,13 @@ module mpp_io_mod
       integer :: subdomain(4), tlevel
 
       integer(SHORT_KIND) :: i2vals(nwords)
-#ifdef __sgi      
+!#ifdef __sgi      
       integer(INT_KIND) :: ivals(nwords)
       real(FLOAT_KIND) :: rvals(nwords)
-#else      
-      integer :: ivals(nwords)
-      real :: rvals(nwords)      
-#endif      
+!#else      
+!      integer :: ivals(nwords)
+!      real :: rvals(nwords)      
+!#endif      
 
       real(DOUBLE_KIND) :: r8vals(nwords)
 
@@ -1872,7 +1878,7 @@ module mpp_io_mod
       endif
       
 #ifdef use_netCDF
-      if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'READ_RECORD: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'READ_RECORD: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'READ_RECORD: invalid unit number.' )
       if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
       if( mpp_file(unit)%fileset.EQ.MPP_MULTI )call mpp_error( FATAL, 'READ_RECORD: multiple filesets not supported for MPP_READ' )
@@ -2024,13 +2030,13 @@ module mpp_io_mod
       logical :: isdim
 
       integer(SHORT_KIND) :: i2vals(MAX_DIMVALS)
-#ifdef __sgi
+!#ifdef __sgi
       integer(INT_KIND) :: ivals(MAX_DIMVALS)
       real(FLOAT_KIND)  :: rvals(MAX_DIMVALS)
-#else      
-      integer :: ivals(MAX_DIMVALS)
-      real    :: rvals(MAX_DIMVALS)      
-#endif      
+!#else      
+!      integer :: ivals(MAX_DIMVALS)
+!      real    :: rvals(MAX_DIMVALS)      
+!#endif      
       real(DOUBLE_KIND) :: r8vals(MAX_DIMVALS)
 
 #ifdef use_netCDF      
@@ -2241,6 +2247,7 @@ module mpp_io_mod
                     if( verbose  .and. pe == 0 ) &
                          print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
                  case (NF_DOUBLE)
+                    allocate(Axis(dimid)%Att(j)%fatt(len))
                     error=NF_GET_ATT_DOUBLE(ncid,i,trim(attname),r8vals);call netcdf_err(error)
                     Axis(dimid)%Att(j)%fatt(1:len)=r8vals(1:len)
                     if( verbose  .and. pe == 0 ) &
@@ -2403,7 +2410,7 @@ module mpp_io_mod
       integer, intent(out) :: ndim, nvar, natt, ntime
 
 
-      if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_GET_INFO: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_INFO: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_INFO: invalid unit number.' )
 
       ndim = mpp_file(unit)%ndim
@@ -2423,11 +2430,11 @@ module mpp_io_mod
 !  global_atts is an attribute type which is allocated from the
 !  calling routine
 
-      integer, intent(in) :: unit
-      type(atttype) :: global_atts(:)
+      integer,       intent(in)    :: unit
+      type(atttype), intent(inout) :: global_atts(:)
       integer :: natt,i
 
-      if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_GET_INFO: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_INFO: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_INFO: invalid unit number.' )
 
       if (size(global_atts).lt.mpp_file(unit)%natt) &
@@ -2519,12 +2526,12 @@ module mpp_io_mod
 !  global_atts is an attribute type which is allocated from the
 !  calling routine
 ! 
-      integer, intent(in) :: unit
-      type(fieldtype) :: variables(:)
+      integer,         intent(in)    :: unit
+      type(fieldtype), intent(inout) :: variables(:)
 
       integer :: nvar,i
 
-      if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_GET_FIELDS: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_FIELDS: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_FIELDS: invalid unit number.' )
 
       if (size(variables).ne.mpp_file(unit)%nvar) &
@@ -2552,7 +2559,7 @@ module mpp_io_mod
       logical :: save
       integer :: ndim,i, nvar, j, num_dims, k
 
-      if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_GET_AXES: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_AXES: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_AXES: invalid unit number.' )
 
       if (size(axes).ne.mpp_file(unit)%ndim) &
@@ -2578,11 +2585,11 @@ module mpp_io_mod
 !  copy time information from file and convert to time_type
 ! 
       integer, intent(in) :: unit
-      real :: time_values(:)
+      real(DOUBLE_KIND), intent(inout) :: time_values(:)
 
       integer :: ntime,i
 
-      if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_GET_TIMES: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_TIMES: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_TIMES: invalid unit number.' )
 
       if (size(time_values).ne.mpp_file(unit)%time_level) &
@@ -2598,6 +2605,44 @@ module mpp_io_mod
 
       return
    end subroutine mpp_get_times
+
+   function mpp_get_field_index(fields,fieldname)
+
+     type(fieldtype), dimension(:) :: fields
+     character(len=*) :: fieldname
+     integer :: mpp_get_field_index
+
+     integer :: n
+
+     mpp_get_field_index = -1
+
+     do n=1,size(fields)
+        if (lowercase(fields(n)%name) == lowercase(fieldname)) then
+           mpp_get_field_index = n
+           exit
+        endif
+     enddo
+
+     return
+   end function mpp_get_field_index
+
+   function mpp_get_field_size(field)
+
+     type(fieldtype) :: field
+     integer :: mpp_get_field_size(4)
+
+     integer :: n
+
+     mpp_get_field_size = -1
+
+     mpp_get_field_size(1) = field%size(1)
+     mpp_get_field_size(2) = field%size(2)
+     mpp_get_field_size(3) = field%size(3)
+     mpp_get_field_size(4) = field%size(4)
+
+     return
+   end function mpp_get_field_size
+
 
    subroutine mpp_get_axis_data( axis, data )
 
@@ -2623,7 +2668,7 @@ module mpp_io_mod
       integer  :: mpp_get_recdimid
 
 
-      if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_GET_RECDIMID: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_RECDIMID: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_RECDIMID: invalid unit number.' )
 
       mpp_get_recdimid = mpp_file(unit)%recdimid
@@ -2641,7 +2686,7 @@ module mpp_io_mod
 !flush the output on a unit, syncing with disk
       integer, intent(in) :: unit
 
-      if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_FLUSH: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_FLUSH: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_FLUSH: invalid unit number.' )
       if( .NOT.mpp_file(unit)%initialized )call mpp_error( FATAL, 'MPP_FLUSH: cannot flush a file during writing of metadata.' )
       if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
@@ -2660,7 +2705,7 @@ module mpp_io_mod
       integer, intent(in) :: unit
       character(len=*), intent(out) :: iospec
 
-      if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_GET_IOSPEC: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_IOSPEC: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_IOSPEC: invalid unit number.' )
 #ifdef SGICRAY
 !currently will write to stdout: don't know how to trap and return as string to iospec
@@ -2759,7 +2804,7 @@ module mpp_io_mod
       type(fieldtype), intent(inout) :: field
       character(len=*), intent(in), optional :: name, units, longname
       real, intent(in), optional :: min, max, missing
-      type(axistype), dimension(:), optional :: axes
+      type(axistype), dimension(:), intent(inout), optional :: axes
 
       if (PRESENT(name)) field%name = trim(name)
       if (PRESENT(units)) field%units = trim(units)
@@ -2808,7 +2853,7 @@ program mpp_io_test
   integer :: pe, npes
   type(domain2D) :: domain
   integer :: nx=128, ny=128, nz=40, nt=2, halo=2, stackmax=32768, stackmaxd=32768
-  real(DOUBLE_KIND), dimension(:,:,:), allocatable :: data, gdata, rdata
+  real, dimension(:,:,:), allocatable :: data, gdata, rdata
   integer :: is, ie, js, je, isd, ied, jsd, jed
   integer :: tk, tk0, tks_per_sec
   integer :: i,j,k, unit=7, layout(2)
@@ -2820,6 +2865,7 @@ program mpp_io_test
   type(fieldtype), allocatable :: vars(:)
   type(axistype), allocatable :: axes(:)
   real(DOUBLE_KIND), allocatable :: tstamp(:)
+  real(DOUBLE_KIND) :: time
   type(axistype) :: x, y, z, t
   type(fieldtype) :: f
   type(domain1D) :: xdom, ydom
@@ -2868,7 +2914,7 @@ program mpp_io_test
          end do
       end do
   end if
-  call mpp_broadcast( gdata(1,1,1), size(gdata), mpp_root_pe() )
+  call mpp_broadcast( gdata, size(gdata), mpp_root_pe() )
 
 !define domain decomposition
   call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
@@ -2896,7 +2942,8 @@ program mpp_io_test
       call mpp_write( unit, y )
       call mpp_write( unit, z )
       do i = 0,nt-1
-         call mpp_write( unit, f, domain, data, i*10. )
+         time = i*10.
+         call mpp_write( unit, f, domain, data, time )
       end do
       call mpp_close(unit)
   end if
@@ -2913,7 +2960,8 @@ program mpp_io_test
   call mpp_write( unit, y )
   call mpp_write( unit, z )
   do i = 0,nt-1
-     call mpp_write( unit, f, domain, data, i*10. )
+     time = i*10.
+     call mpp_write( unit, f, domain, data, time )
   end do
   call mpp_close(unit)
   
@@ -2929,7 +2977,8 @@ program mpp_io_test
   call mpp_write( unit, y )
   call mpp_write( unit, z )
   do i = 0,nt-1
-     call mpp_write( unit, f, domain, data, i*10. )
+     time = i*10.
+     call mpp_write( unit, f, domain, data, time )
   end do
   call mpp_close(unit)
 
@@ -2957,121 +3006,9 @@ program mpp_io_test
   if( pe.EQ.mpp_root_pe() )print '(a,2z18)', 'checksum=', rchk, chk
   if( rchk.NE.chk )call mpp_error( FATAL, 'Checksum error on multi-threaded netCDF read.' )
 
-!netCDF multi-threaded write
-!  if( pe.EQ.mpp_root_pe() )print *, 'netCDF multi-threaded write'
-!  call mpp_open( unit, trim(file)//'m', action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_SINGLE )
-!  call mpp_write_meta( unit, x, 'X', 'km', 'X distance', domain=xdom, data=(/(i-1.,i=1,nx)/) )
-!  call mpp_write_meta( unit, y, 'Y', 'km', 'Y distance', domain=ydom, data=(/(i-1.,i=1,ny)/) )
-!  call mpp_write_meta( unit, z, 'Z', 'km', 'Z distance',              data=(/(i-1.,i=1,nz)/) )
-!  call mpp_write_meta( unit, t, 'T', 'sec', 'Time' )
-!  call mpp_write_meta( unit, f, (/x,y,z,t/), 'Data', 'metres', 'Random data' )
-!  call mpp_write( unit, x )
-!  call mpp_write( unit, y )
-!  call mpp_write( unit, z )
-!  do i = 0,nt-1
-!     call mpp_write( unit, f, domain, data,  i*10. )
-!  end do
-!  call mpp_close(unit)
-!  do i=1,nvar
-!     if (vars(i)%name.EQ.'vort') then
-!! allocate 2-D array for variable vort and read local data
-!! from time level 1 of dataset
-!         allocate(vort(is:ie,js:je))
-!         call mpp_read(unit, vars(i),domain,vort,1)
-!     endif
-!
-!     if (vars(i)%name.EQ.'div') then
-!! allocate 3-D array for variable div and read local data
-!! from time level 2 of dataset
-!         allocate(div(is:ie,js:je,nz))
-!         call mpp_read(unit, vars(i),domain,div,2)
-!     endif
-!
-!     if (vars(i)%name.EQ.'average_T1') then
-!! read 0-D variable AVERAGE_T1 from time level 4 of dataset
-!         call mpp_read(unit, vars(i), avg_t1,4)
-!     endif
-!
-!  enddo
-!
-!  call mpp_sync()
-!  call mpp_update_domains(vort,domain)
-!  call mpp_update_domains(div,domain)
-!
-!  print *, 'PE= ', pe, 'MINVAL VORT= ', minval(vort)
-!  print *, 'PE= ', pe, 'MAXVAL VORT= ', maxval(vort)
-!
-!
-!  print *, 'PE= ', pe, 'MINVAL DIV= ', minval(div)
-!  print *, 'PE= ', pe, 'MAXVAL DIV= ', maxval(div)
-!
-!  print *, 'PE= ', pe, 'AVG_T1= ', avg_t1
-!
-!  call mpp_close(unit)
-!
-!  file = 'test_out'
-!  call mpp_open(unit,file,MPP_OVERWR,MPP_NETCDF,threading=MPP_MULTI,&
-!       fileset=MPP_MULTI)
-!
-!!
-!! write global atts
-!!  
-!  do i=1,natt
-!     call mpp_copy_meta(unit,atts(i))
-!  enddo
-!!
-!! write axis metadata
-!!
-!  do i=1,ndim
-!     select case(axes(i)%cartesian)
-!        case ('X')  
-!           call mpp_copy_meta(unit,axes(i),domain%x)
-!        case ('Y')  
-!           call mpp_copy_meta(unit,axes(i),domain%y)
-!        case default
-!           call mpp_copy_meta(unit,axes(i))
-!     end select
-!  enddo
-!!
-!! write variable metadata
-!!
-!  do i=1,nvar
-!     call mpp_copy_meta(unit,vars(i))
-!  enddo
-!!
-!! write axis data
-!
-!  do i=1,ndim
-!    if (ASSOCIATED(axes(i)%data)) then 
-!       call mpp_write(unit,axes(i))
-!    endif
-!  enddo
-!
-!!
-!! write variable data 
-!!
-!  do i=1,nvar
-!
-!     if (vars(i)%name.EQ.'vort') then
-!         call mpp_write(unit,vars(i),domain,vort,tstamp(1))
-!     endif
-!
-!     if (vars(i)%name.EQ.'div') then
-!         call mpp_write(unit,vars(i),domain,div,tstamp(1))
-!     endif
-!
-!     if (vars(i)%name.EQ.'average_T1') then
-!         call mpp_write(unit,vars(i),avg_t1,tstamp(1))
-!     endif
-!
-!  enddo
-!
-!  call mpp_close(unit)
-!
   call mpp_io_exit()
   call mpp_domains_exit()
   call mpp_exit()
-
 
 end program mpp_io_test
 

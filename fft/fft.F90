@@ -32,7 +32,7 @@ private
 
 !----------------- interfaces --------------------
 
-public :: fft_init, fft_exit, fft_grid_to_fourier, fft_fourier_to_grid
+public :: fft_init, fft_end, fft_grid_to_fourier, fft_fourier_to_grid
 
 interface fft_grid_to_fourier
   module procedure fft_grid_to_fourier_float_2d, fft_grid_to_fourier_double_2d, &
@@ -53,13 +53,14 @@ real(R4_KIND), allocatable, dimension(:) :: table4
 real         , allocatable, dimension(:) :: table99
 integer      , allocatable, dimension(:) :: ifax
 
-logical :: do_init=.true.
 logical :: do_log =.true.
 integer :: leng, leng1, leng2, lenc    ! related to transform size
 
+logical :: module_is_initialized=.false.
+
 !  cvs version and tag name
-character(len=128) :: version = '$Id: fft.F90,v 1.2 2002/01/14 21:04:19 fms Exp $'
-character(len=128) :: tag = '$Name: galway $'
+character(len=128) :: version = '$Id: fft.F90,v 1.3 2002/07/16 22:55:18 fms Exp $'
+character(len=128) :: tagname = '$Name: havana $'
 
 !-----------------------------------------------------------------------
 !
@@ -138,8 +139,9 @@ contains
 
 !-----------------------------------------------------------------------
 
-      if (do_init) call error_handler ('fft_grid_to_fourier',  &
-                                       'fft_init must be called.')
+      if (.not.module_is_initialized) &
+        call error_handler ('fft_grid_to_fourier',  &
+                            'fft_init must be called.')
 
 !-----------------------------------------------------------------------
 
@@ -249,8 +251,9 @@ contains
 
 !-----------------------------------------------------------------------
 
-      if (do_init) call error_handler ('fft_grid_to_fourier',  &
-                                       'fft_init must be called.')
+   if (.not.module_is_initialized) &
+      call error_handler ('fft_grid_to_fourier',  &
+                          'fft_init must be called.')
 
 !-----------------------------------------------------------------------
 
@@ -367,8 +370,9 @@ contains
 
 !-----------------------------------------------------------------------
 
-      if (do_init) call error_handler ('fft_grid_to_fourier',  &
-                                       'fft_init must be called.')
+      if (.not.module_is_initialized) &
+        call error_handler ('fft_grid_to_fourier',  &
+                            'fft_init must be called.')
 
 !-----------------------------------------------------------------------
 
@@ -474,8 +478,9 @@ contains
 
 !-----------------------------------------------------------------------
 
-      if (do_init) call error_handler ('fft_grid_to_fourier',  &
-                                       'fft_init must be called.')
+      if (.not.module_is_initialized) &
+        call error_handler ('fft_grid_to_fourier',  &
+                            'fft_init must be called.')
 
 !-----------------------------------------------------------------------
 
@@ -643,12 +648,12 @@ contains
 !-----------------------------------------------------------------------
 !   --- fourier transform initialization ----
 
-      if (.not.do_init) &
+      if (module_is_initialized) &
       call error_handler ('fft_init', 'attempted to reinitialize fft')
 
 !  write version and tag name to log file
    if (do_log) then
-      call write_version_number (version, tag)
+      call write_version_number (version, tagname)
       do_log = .false.
    endif
 
@@ -692,7 +697,7 @@ contains
 #  endif
 #endif
 
-      do_init = .false.
+      module_is_initialized = .true.
 
 !-----------------------------------------------------------------------
 
@@ -700,7 +705,7 @@ contains
 
 !#######################################################################
 
- subroutine fft_exit
+ subroutine fft_end
 
 !-----------------------------------------------------------------------
 !
@@ -709,8 +714,9 @@ contains
 !-----------------------------------------------------------------------
 !   --- fourier transform un-initialization ----
 
-      if (do_init) call error_handler ('fft_exit', &
-           'attempt to un-initialize fft that has not been initialized')
+      if (.not.module_is_initialized) &
+        call error_handler ('fft_end', &
+          'attempt to un-initialize fft that has not been initialized')
 
       leng = 0; leng1 = 0; leng2 = 0; lenc = 0
 
@@ -718,11 +724,11 @@ contains
       if (allocated(table8))  deallocate (table8)
       if (allocated(table99)) deallocate (table99)
 
-      do_init = .true.
+      module_is_initialized = .false.
 
 !-----------------------------------------------------------------------
 
- end subroutine fft_exit
+ end subroutine fft_end
 
 !#######################################################################
 ! wrapper for handling errors
@@ -772,7 +778,7 @@ integer :: ntrans(2) = (/ 60, 90 /)
     enddo
     enddo
 
-    call fft_exit
+    call fft_end
     deallocate (ain,aout,four)
   enddo
 

@@ -23,7 +23,7 @@
      <b>Contact:</b> &nbsp;   Bruce Wyman <br>
      <b>Reviewers:</b> &nbsp; <br>
      <b>Change History: &nbsp; </b><a HREF="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/constants/constants.f90">WebCVS Log</a> <br>
-     <b>Last Modified:</b> &nbsp; $Date: 2002/02/22 19:13:58 $
+     <b>Last Modified:</b> &nbsp; $Date: 2002/07/16 22:54:45 $
 </div><br>
 
 <!-- END HEADER -->
@@ -64,9 +64,9 @@
 <div>
 <pre>
 <b>use constants_mod</b> [, only: constants_init,
-                           RADIUS, OMEGA, GRAV, RDGAS, KAPPA, CP, P00,
+                           RADIUS, OMEGA, GRAV, RDGAS, KAPPA, CP, 
                            RVGAS, DENS_H2O, HLV, HLF, HLS, TFREEZE,
-                           STEFAN, VONKARM ]
+                           STEFAN, VONKARM, PI ]
 </pre>
 <p>  See the description of public data below.</p>
 </div>
@@ -88,7 +88,6 @@
 <TR><TD> RDGAS   <TD> 287.04       <TD> J/kg/deg  <TD> gas constant for dry air
 <TR><TD> KAPPA   <TD> 2./7.        <TD> ---       <TD> RDGAS / CP
 <TR><TD> CP      <TD> RDGAS/KAPPA  <TD> J/kg/deg  <TD> specific heat capacity of dry air at constant pressure
-<TR><TD> P00     <TD> 1000.e2      <TD> Pascals   <TD> reference pressure
 </TABLE>
 
 <BR>
@@ -111,6 +110,7 @@
 <TR><TH> Name     <TH> Value        <TH> Units     <TH> Description
 <TR><TD> STEFAN   <TD> 5.6734e-8    <TD> W/m2/deg4 <TD> Stefan-Boltzmann constant
 <TR><TD> VONKARM  <TD> 0.40         <TD>   ---     <TD> Von Karman constant
+<TR><TD> PI       <TD> 3.14159265358979323846 <TD> --- <TD> ratio of circle circumference to diameter
 </TABLE>
 </div>
 <br><br>

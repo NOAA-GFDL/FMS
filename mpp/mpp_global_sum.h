@@ -36,7 +36,7 @@
 !this is not bitwise-exact across different PE counts
         MPP_GLOBAL_SUM_ = sum( field(domain%x%compute%begin+ioff:domain%x%compute%end+ioff, &
                                      domain%y%compute%begin+joff:domain%y%compute%end+joff MPP_EXTRA_INDICES_) )
-        call mpp_sum( MPP_GLOBAL_SUM_, 1, domain%list(:)%pe )
+        call mpp_sum( MPP_GLOBAL_SUM_, domain%list(:)%pe )
     end if
 
     return

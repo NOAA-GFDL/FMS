@@ -43,19 +43,21 @@
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 module xgrid_mod
 
-use utilities_mod,   only: file_exist, open_file, check_nml_error, error_mesg, &
-                           close_file, FATAL
+use       fms_mod,   only: file_exist, open_namelist_file, check_nml_error,  &
+                           error_mesg, close_file, FATAL, stdlog,            &
+                           write_version_number 
 use mpp_mod,         only: mpp_npes, mpp_pe, mpp_root_pe, mpp_send, mpp_recv, &
                            mpp_sync_self
 use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_compute_domains, &
                            Domain2d, mpp_global_sum
+use mpp_io_mod,      only: mpp_open, MPP_MULTI, MPP_OVERWR
 
 implicit none
 include 'netcdf.inc'
 private
 
 public xmap_type, setup_xmap, set_frac_area, put_to_xgrid, get_from_xgrid, &
-       xgrid_count, some, conservation_check
+       xgrid_count, some, conservation_check, xgrid_init
 
 logical :: make_exchange_reproduce = .false. ! exactly same on different # PEs
 namelist /xgrid_nml/ make_exchange_reproduce
@@ -134,7 +136,15 @@ type xmap_type
   integer, pointer, dimension(:) :: send_count_repro, recv_count_repro
 end type xmap_type
 
+!-----------------------------------------------------------------------
+ character(len=128) :: version = '$Id: xgrid.f90,v 1.3 2002/07/16 22:55:10 fms Exp $'
+ character(len=128) :: tagname = '$Name: havana $'
+
+ logical :: module_is_initialized = .FALSE.
+
 contains
+
+!#######################################################################
 
 logical function in_box(i, j, is, ie, js, je)
 integer :: i, j, is, ie, js, je
@@ -142,11 +152,43 @@ integer :: i, j, is, ie, js, je
   in_box = (i>=is) .and. (i<=ie) .and. (j>=js) .and. (j<=je)
 end function in_box
 
+!#######################################################################
+
+subroutine xgrid_init 
+
+  integer :: unit, ierr, io
+
+  if (module_is_initialized) return
+  module_is_initialized = .TRUE.
+
+  if ( file_exist( 'input.nml' ) ) then
+      unit = open_namelist_file ( )
+      ierr = 1
+      do while ( ierr /= 0 )
+        read ( unit,  nml = xgrid_nml, iostat = io, end = 10 )
+        ierr = check_nml_error ( io, 'xgrid_nml' )
+      enddo
+  10 continue
+      call close_file ( unit )
+  endif
+
+!--------- write version number and namelist ------------------
+  call write_version_number (version, tagname)
+
+  unit = stdlog ( )
+  if ( mpp_pe() == mpp_root_pe() ) write (unit,nml=xgrid_nml)
+  call close_file (unit)
+
+  
+end subroutine xgrid_init
+
+!#######################################################################
+
 subroutine load_xgrid (xmap, grid, domain, ncid, id_i1, id_j1, id_i2, id_j2, &
                                                            id_area, n_areas  )
-type(xmap_type) :: xmap
-type(grid_type) :: grid
-type(Domain2d)  :: domain
+type(xmap_type), intent(inout)  :: xmap
+type(grid_type), intent(inout)  :: grid
+type(Domain2d), intent(inout)   :: domain
 integer, intent(in) :: ncid, id_i1, id_j1, id_i2, id_j2, id_area, n_areas
 
   integer, dimension(n_areas) :: i1, j1, i2, j2 ! xgrid quintuples
@@ -225,39 +267,25 @@ integer, intent(in) :: ncid, id_i1, id_j1, id_i2, id_j2, id_area, n_areas
   grid%area_inv = 0.0;
   where (grid%area>0.0) grid%area_inv = 1.0/grid%area
 end subroutine load_xgrid
+
+!#######################################################################
 !
 ! setup_xmap - sets up exchange grid connectivity using grid specification file
 !              and processor domain decomposition.  initializes xmap.
 !
+
 subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file)
-type (xmap_type),                          intent(  out) :: xmap
-character(len=3), dimension(:),            intent(in   ) :: grid_ids
-type(Domain2d), dimension(size(grid_ids)), intent(in   ) :: grid_domains
-character(len=*)                                         :: grid_file
+type (xmap_type),                          intent(out) :: xmap
+character(len=3), dimension(:),            intent(in ) :: grid_ids
+type(Domain2d), dimension(size(grid_ids)), intent(in ) :: grid_domains
+character(len=*)                         , intent(in ) :: grid_file
 
   integer :: g, l, ll, p, n_areas, send_size
   integer :: ncid, i1_id, j1_id, i2_id, j2_id, area_id
   integer :: dims(4), rcode
-  integer :: unit, ierr, io
+  integer :: unit
   type (grid_type), pointer :: grid, grid1
   real, dimension(3) :: xxx
-
-  if (init) then
-    init = .false.
-    if ( file_exist( 'input.nml' ) ) then
-      unit = open_file ( file = 'input.nml', action='read' )
-      ierr = 1
-      do while ( ierr /= 0 )
-        read ( unit,  nml = xgrid_nml, iostat = io, end = 10 )
-        ierr = check_nml_error ( io, 'xgrid_nml' )
-      enddo
-   10 continue
-      call close_file ( unit )
-    endif
-    unit = open_file ('logfile.out', action='append')
-    if ( mpp_pe() == mpp_root_pe() ) write (unit,nml=xgrid_nml)
-    call close_file (unit)
-  end if
 
   xmap%me   = mpp_pe  ()
   xmap%npes = mpp_npes()
@@ -356,7 +384,8 @@ character(len=*)                                         :: grid_file
   end if
   allocate (xmap%send_buffer(send_size))
 
-  unit = open_file( 'xgrid.out', action='write', threading='multi' )
+  call mpp_open( unit, 'xgrid.out', action= MPP_OVERWR,threading= MPP_MULTI )  
+
   write( unit,* )xmap%grids(:)%id, ' GRID: PE ', xmap%me, ' #XCELLS=', &
            xmap%grids(2:size(xmap%grids))%size, ' #COMM. PARTNERS=', &
            count(xmap%your1my2), '/', count(xmap%your2my1), &
@@ -379,8 +408,11 @@ character(len=*)                                         :: grid_file
   call close_file (unit)
 end subroutine setup_xmap
 
+!#######################################################################
+
+
 subroutine regen(xmap)
-type (xmap_type) :: xmap
+type (xmap_type), intent(inout) :: xmap
 
   integer :: g, l, i, j, k, max_size
 
@@ -418,6 +450,8 @@ type (xmap_type) :: xmap
     xmap%grids(g)%last = xmap%size
   end do
 end subroutine regen
+
+!#######################################################################
 !
 ! set_frac_area - changes sub-grid partion areas and/or number.
 !
@@ -449,6 +483,8 @@ type (xmap_type),       intent(inout) :: xmap
   call error_mesg ('xgrid_mod', 'set_frac_area: could not find grid id', FATAL)
 
 end subroutine  set_frac_area
+
+!#######################################################################
 !
 ! xgrid_count - returns current size of exchange grid variables.
 !
@@ -457,6 +493,8 @@ type (xmap_type), intent(inout) :: xmap
 
   xgrid_count = xmap%size
 end function xgrid_count
+
+!#######################################################################
 
 subroutine put_side1_to_xgrid(d, grid_id, x, xmap)
 real, dimension(:,:), intent(in   ) :: d
@@ -481,6 +519,8 @@ type (xmap_type),     intent(inout) :: xmap
 
 end subroutine put_side1_to_xgrid
 
+!#######################################################################
+
 subroutine put_side2_to_xgrid(d, grid_id, x, xmap)
 real, dimension(:,:,:), intent(in   ) :: d
 character(len=3),       intent(in   ) :: grid_id
@@ -504,11 +544,13 @@ type (xmap_type),       intent(inout) :: xmap
 
 end subroutine put_side2_to_xgrid
 
+!#######################################################################
+
 subroutine get_side1_from_xgrid(d, grid_id, x, xmap)
 real, dimension(:,:), intent(  out) :: d
 character(len=3),     intent(in   ) :: grid_id
 real, dimension(:),   intent(in   ) :: x
-type (xmap_type),     intent(in   ) :: xmap
+type (xmap_type),     intent(inout) :: xmap
 
   integer :: g
 
@@ -530,6 +572,8 @@ type (xmap_type),     intent(in   ) :: xmap
   call error_mesg ('xgrid_mod', 'get_from_xgrid: could not find grid id', FATAL)
 
 end subroutine get_side1_from_xgrid
+
+!#######################################################################
 
 subroutine get_side2_from_xgrid(d, grid_id, x, xmap)
 real, dimension(:,:,:), intent(  out) :: d
@@ -553,6 +597,8 @@ type (xmap_type),       intent(in   ) :: xmap
   call error_mesg ('xgrid_mod', 'get_from_xgrid: could not find grid id', FATAL)
 
 end subroutine get_side2_from_xgrid
+
+!#######################################################################
 !
 ! some - returns logical associating exchange grid cells with given side 2 grid
 !
@@ -583,6 +629,8 @@ logical, dimension(xmap%size)          :: some
 
 end function some
 
+!#######################################################################
+
 subroutine put_2_to_xgrid(d, grid, x, xmap)
 type (grid_type),                                intent(in) :: grid
 real, dimension(grid%is_me:grid%ie_me, &
@@ -598,6 +646,8 @@ type (xmap_type),       intent(in   ) :: xmap
     x(l) = d(c%i,c%j,c%k)
   end do
 end subroutine put_2_to_xgrid
+
+!#######################################################################
 
 subroutine get_2_from_xgrid(d, grid, x, xmap)
 type (grid_type),                                intent(in ) :: grid
@@ -622,6 +672,8 @@ type (xmap_type),       intent(in   ) :: xmap
   end do
 end subroutine get_2_from_xgrid
 
+!#######################################################################
+
 function get_side_1(pe, im, jm)
 integer, intent(in)    :: pe, im, jm
 real, dimension(im,jm) :: get_side_1
@@ -635,13 +687,15 @@ real, dimension(im,jm) :: get_side_1
 !    l = l + 1
 !    get_side_1(i,j) = buf(l)
 !  end do; end do
-  call mpp_recv( get_side_1(1,1), im*jm, pe )
+  call mpp_recv( get_side_1, im*jm, pe )
 end function get_side_1
+
+!#######################################################################
 
 subroutine put_1_to_xgrid(d, x, xmap)
 real, dimension(:,:), intent(in   ) :: d
 real, dimension(:  ), intent(inout) :: x
-type (xmap_type)                    :: xmap
+type (xmap_type),     intent(inout) :: xmap
 
   integer :: i, is, ie, im, j, js, je, jm, p, l
   type (x1_type), pointer :: c
@@ -680,10 +734,12 @@ type (xmap_type)                    :: xmap
 !  call mpp_sync_self
 end subroutine put_1_to_xgrid
 
+!#######################################################################
+
 subroutine get_1_from_xgrid(d, x, xmap)
-real, dimension(:,:), intent(out) :: d
-real, dimension(:  ), intent(in ) :: x
-type (xmap_type)                  :: xmap
+real, dimension(:,:), intent(out)   :: d
+real, dimension(:  ), intent(in )   :: x
+type (xmap_type),     intent(inout) :: xmap
 
   real, dimension(xmap%grids(1)%im,xmap%grids(1)%jm), target :: dg
   integer :: i, is, ie, im, j, js, je, jm, l, le, p
@@ -728,8 +784,10 @@ type (xmap_type)                  :: xmap
 !  call mpp_sync_self
 end subroutine get_1_from_xgrid
 
+!#######################################################################
+
 subroutine get_1_from_xgrid_repro(d, x, xmap)
-type (xmap_type)                  :: xmap
+type (xmap_type), intent(inout)                  :: xmap
 real, dimension(xmap%grids(1)%is_me:xmap%grids(1)%ie_me, &
                 xmap%grids(1)%js_me:xmap%grids(1)%je_me), intent(out) :: d
 real, dimension(:  ), intent(in ) :: x
@@ -798,6 +856,8 @@ real, dimension(:  ), intent(in ) :: x
 
 !  call mpp_sync_self
 end subroutine get_1_from_xgrid_repro
+
+!#######################################################################
 !
 ! conservation_check - returns three numbers which are the global sum of a
 ! variable (1) on its home model grid, (2) after interpolation to the other
@@ -832,6 +892,8 @@ real, dimension(3)                  :: conservation_check_side1
   call get_from_xgrid(d1, grid1%id, x_back, xmap)  ! get onto side 1
   conservation_check_side1(3) = mpp_global_sum(grid1%domain, grid1%area*d1)
 end function conservation_check_side1
+
+!#######################################################################
 !
 ! conservation_check - returns three numbers which are the global sum of a
 ! variable (1) on its home model grid, (2) after interpolation to the other
@@ -881,5 +943,8 @@ real, dimension(3)                    :: conservation_check_side2
   end do
   
 end function conservation_check_side2
+
+!#######################################################################
+
 
 end module xgrid_mod

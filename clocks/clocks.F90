@@ -32,13 +32,17 @@ module clocks_mod
   use mpp_mod, only: stdlog, stdout, stderr
   use mpp_mod, only: WARNING, FATAL
 
+  use platform_mod, only: i8_kind
+
+  use fms_mod, only: write_version_number
+
   implicit none
   private
   integer, private :: ticks_per_sec, max_ticks, ref_tick, start_tick, end_tick
   real, private :: tick_rate
   integer, private, parameter :: MAX_CLOCKS=256
   integer, private :: clock_num=0
-  logical, private :: clocks_initialized=.FALSE., verbose=.FALSE.
+  logical, private :: module_is_initialized=.FALSE., verbose=.FALSE.
   integer, parameter, public :: CLOCKS_VERBOSE=1
   character(len=128), private :: errortxt
 !clocks are stored in this internal type
@@ -52,7 +56,9 @@ module clocks_mod
   public :: clocks_init, clocks_exit, get_clock, clock_id, tick
 
   character(len=128), private :: &
-   version='$Id: clocks.F90,v 2.3 2002/02/22 19:08:34 fms Exp $'
+   version='$Id: clocks.F90,v 2.4 2002/07/16 22:54:36 fms Exp $'
+  character(len=128), private :: &
+   tagname='$Name: havana $'
 
   contains
 
@@ -60,7 +66,7 @@ module clocks_mod
     subroutine system_clock_sgi( count, count_rate, count_max )
 !mimics F90 SYSTEM_CLOCK intrinsic
       integer, intent(out), optional :: count, count_rate, count_max
-      integer(kind=8) :: sgi_tick, sgi_ticks_per_sec, sgi_max_tick
+      integer(kind=i8_kind) :: sgi_tick, sgi_ticks_per_sec, sgi_max_tick
       if( PRESENT(count) )then
           count = sgi_tick()
       end if
@@ -80,8 +86,8 @@ module clocks_mod
       integer, intent(in), optional :: flags
       integer :: i
 
-      if( clocks_initialized )return
-      clocks_initialized = .TRUE.
+      if( module_is_initialized )return
+      module_is_initialized = .TRUE.
 
       if( PRESENT(flags) )then
           verbose = flags.EQ.CLOCKS_VERBOSE
@@ -91,11 +97,11 @@ module clocks_mod
 !initialize clocks and reference tick
       call SYSTEM_CLOCK( start_tick, ticks_per_sec, max_ticks )
       tick_rate = 1./ticks_per_sec
+      call write_version_number( version, tagname )
       if( mpp_pe().EQ.mpp_root_pe() )then
 !write version
-          write( stdlog(), '(/a)' )'CLOCKS module '//trim(version)
-          write( stdlog(), '(a,es12.4,a,i10,a)' ) &
-               'Realtime clock resolution=', tick_rate, ' sec (', ticks_per_sec, ' ticks/sec)'
+         write( stdlog(), '(a,es12.4,a,i10,a)' ) &
+              'Realtime clock resolution=', tick_rate, ' sec (', ticks_per_sec, ' ticks/sec)'
       end if
 !default clock name is Clock001, etc
       do i = 1,MAX_CLOCKS
@@ -114,7 +120,7 @@ module clocks_mod
       integer :: clock_id
       character(len=*), intent(in) :: name
 
-      if( .NOT.clocks_initialized ) &
+      if( .NOT.module_is_initialized ) &
            call mpp_error( FATAL, 'CLOCKS: must first call clocks_init().' )
       clock_id = 1
       do while( trim(name).NE.trim(clocks(clock_id)%name) )
@@ -139,7 +145,7 @@ module clocks_mod
       integer, intent(in), optional :: id, since
       integer :: current_tick, cid
 
-      if( .NOT.clocks_initialized ) &
+      if( .NOT.module_is_initialized ) &
            call mpp_error( FATAL, 'CLOCKS: must first call clocks_init().' )
 !take time first, so that this routine's overhead isn't included
       call SYSTEM_CLOCK(current_tick)
@@ -184,7 +190,7 @@ module clocks_mod
       integer, intent(out), optional :: ticks, calls
       real, intent(out), optional :: total_time, time_per_call
 
-      if( .NOT.clocks_initialized ) &
+      if( .NOT.module_is_initialized ) &
            call mpp_error( FATAL, 'CLOCKS: must first call clocks_init().' )
       if( 0.LT.id .AND. id.LE.MAX_CLOCKS )then
           if( PRESENT(ticks) )ticks = clocks(id)%ticks
@@ -205,7 +211,7 @@ module clocks_mod
       real :: t, tmax, tmin, tavg, tstd, tavg_call
       real :: t_total
 
-      if( .NOT.clocks_initialized )call mpp_error( FATAL, 'CLOCKS: must first call clocks_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'CLOCKS: must first call clocks_init.' )
 
       call mpp_sync()
       end_tick = tick( id=id_cumul_clock, since=start_tick )
@@ -219,8 +225,8 @@ module clocks_mod
          end if
          tmax = t; call mpp_max(tmax)
          tmin = t; call mpp_min(tmin)
-         tavg = t;           call mpp_sum(tavg,1); tavg = tavg/mpp_npes()
-         tstd = (t-tavg)**2; call mpp_sum(tstd,1); tstd = sqrt(tstd/mpp_npes())
+         tavg = t;           call mpp_sum(tavg); tavg = tavg/mpp_npes()
+         tstd = (t-tavg)**2; call mpp_sum(tstd); tstd = sqrt(tstd/mpp_npes())
          if( i.EQ.1 )t_total = tavg
          if( mpp_pe().EQ.mpp_root_pe() )then
              write( stdout(),'(a32,i8,5f14.6,f7.3)' ) &

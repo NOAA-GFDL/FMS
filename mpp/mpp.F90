@@ -33,10 +33,6 @@
 #define use_shmalloc
 #endif
 
-#ifdef __sgi
-#define SYSTEM_CLOCK system_clock_sgi
-#endif
-
 module mpp_mod
 !string BWA is used to tag lines that are bug workarounds and will disappear
 !when offending compiler bug is fixed
@@ -54,9 +50,9 @@ module mpp_mod
   implicit none
   private
   character(len=128), private :: version= &
-       '$Id: mpp.F90,v 6.4 2002/02/22 19:09:16 fms Exp $'
-  character(len=128), private :: name= &
-       '$Name: galway $'
+       '$Id: mpp.F90,v 6.5 2002/07/16 22:56:06 fms Exp $'
+  character(len=128), private :: tagname= &
+       '$Name: havana $'
 
 !various lengths (see shpalloc) are estimated in "words" which are 32bit on SGI, 64bit on Cray
 !these are also the expected sizeof of args to MPI/shmem libraries
@@ -69,14 +65,17 @@ module mpp_mod
 
 #ifdef SGICRAY
 !see intro_io(3F): to see why these values are used rather than 5,6,0
-  integer, private :: in_unit=100, out_unit=101, err_unit=102, log_unit=103
+  integer, private :: in_unit=100, out_unit=101, err_unit=102
 #else
-  integer, private :: in_unit=5, out_unit=6, err_unit=0, log_unit=1
+  integer, private :: in_unit=5, out_unit=6, err_unit=0
 #endif
-  logical, private :: mpp_initialized=.FALSE.
+  integer :: log_unit, etc_unit
+  logical, private :: module_is_initialized=.FALSE.
   integer, private :: pe=0, node=0, npes=1, root_pe=0
   integer, private :: error
   integer, parameter, private :: MAXPES=2048 !used for dimensioning stuff that might be indexed by pe
+  character(len=32) :: configfile='logfile.out'
+  character(len=32) :: etcfile='._mpp.nonrootpe.stdout'
 
 !initialization flags
   integer, parameter, public :: MPP_VERBOSE=1, MPP_DEBUG=2
@@ -140,6 +139,7 @@ module mpp_mod
 
 !peset hold communicators as SHMEM-compatible triads (start, log2(stride), num)
   type, private :: communicator
+     character(len=32) :: name
      integer, pointer :: list(:)
      integer :: count
 #ifdef use_libSMA
@@ -150,8 +150,7 @@ module mpp_mod
   end type
   integer, parameter :: PESET_MAX=32 !should be .LE. max num of MPI communicators
   type(communicator) :: peset(0:PESET_MAX) !0 is a dummy used to hold single-PE "self" communicator
-  integer :: peset_num=0, current_peset_num=0, peset_work_array_ptr=0
-  integer, target :: peset_work_array(MAXPES*PESET_MAX) !used to hold peset%list pointers
+  integer :: peset_num=0, current_peset_num=0
   integer :: world_peset_num !the world communicator
 
 !performance profiling
@@ -165,6 +164,14 @@ module mpp_mod
 !  call mpp_clock_end(id)
 !  mpp_exit will print out the results.
 #ifdef __sgi
+#define SYSTEM_CLOCK system_clock_sgi
+#endif
+
+#ifdef use_libMPI
+#define SYSTEM_CLOCK system_clock_mpi
+#endif
+
+#if defined(__sgi) || defined(use_libMPI)
   integer(LONG_KIND), private :: tick, ticks_per_sec, max_ticks, start_tick, end_tick, tick0=0
 #else
   integer, private :: tick, ticks_per_sec, max_ticks, start_tick, end_tick, tick0=0
@@ -175,6 +182,7 @@ module mpp_mod
   integer, private, parameter :: EVENT_ALLREDUCE=1, EVENT_BROADCAST=2, EVENT_RECV=3, EVENT_SEND=4, EVENT_WAIT=5
   integer, private :: clock_num=0, current_clock=0
   integer, private :: clock0    !measures total runtime from mpp_init to mpp_exit
+  integer, private :: clock_grain=HUGE(1)
 !the event contains information for each type of event (e.g SHMEM_PUT)
   type, private :: event
      character(len=16)  :: name
@@ -185,7 +193,13 @@ module mpp_mod
   integer, parameter, public :: MPP_CLOCK_SYNC=1, MPP_CLOCK_DETAILED=2
   type, private :: clock
      character(len=32) :: name
-     integer(LONG_KIND) :: tick, total_ticks
+#if defined(__sgi) || defined(use_libMPI)
+     integer(LONG_KIND) :: tick
+#else
+     integer :: tick
+#endif
+     integer(LONG_KIND) :: total_ticks
+     integer :: peset_num
      logical :: sync_on_begin, detailed
      type(event), pointer :: events(:) !if needed, allocate to MAX_EVENT_TYPES
   end type
@@ -229,98 +243,250 @@ module mpp_mod
 #ifndef no_8byte_integers
      module procedure mpp_sum_int8
      module procedure mpp_sum_int8_scalar
+     module procedure mpp_sum_int8_2d
+     module procedure mpp_sum_int8_3d
+     module procedure mpp_sum_int8_4d
+     module procedure mpp_sum_int8_5d
 #endif
      module procedure mpp_sum_real8
      module procedure mpp_sum_real8_scalar
+     module procedure mpp_sum_real8_2d
+     module procedure mpp_sum_real8_3d
+     module procedure mpp_sum_real8_4d
+     module procedure mpp_sum_real8_5d
      module procedure mpp_sum_cmplx8
      module procedure mpp_sum_cmplx8_scalar
+     module procedure mpp_sum_cmplx8_2d
+     module procedure mpp_sum_cmplx8_3d
+     module procedure mpp_sum_cmplx8_4d
+     module procedure mpp_sum_cmplx8_5d
      module procedure mpp_sum_int4
      module procedure mpp_sum_int4_scalar
+     module procedure mpp_sum_int4_2d
+     module procedure mpp_sum_int4_3d
+     module procedure mpp_sum_int4_4d
+     module procedure mpp_sum_int4_5d
      module procedure mpp_sum_real4
      module procedure mpp_sum_real4_scalar
+     module procedure mpp_sum_real4_2d
+     module procedure mpp_sum_real4_3d
+     module procedure mpp_sum_real4_4d
+     module procedure mpp_sum_real4_5d
      module procedure mpp_sum_cmplx4
      module procedure mpp_sum_cmplx4_scalar
+     module procedure mpp_sum_cmplx4_2d
+     module procedure mpp_sum_cmplx4_3d
+     module procedure mpp_sum_cmplx4_4d
+     module procedure mpp_sum_cmplx4_5d
   end interface
   interface mpp_transmit
      module procedure mpp_transmit_real8
      module procedure mpp_transmit_real8_scalar
+     module procedure mpp_transmit_real8_2d
+     module procedure mpp_transmit_real8_3d
+     module procedure mpp_transmit_real8_4d
+     module procedure mpp_transmit_real8_5d
      module procedure mpp_transmit_cmplx8
      module procedure mpp_transmit_cmplx8_scalar
+     module procedure mpp_transmit_cmplx8_2d
+     module procedure mpp_transmit_cmplx8_3d
+     module procedure mpp_transmit_cmplx8_4d
+     module procedure mpp_transmit_cmplx8_5d
 #ifndef no_8byte_integers
      module procedure mpp_transmit_int8
      module procedure mpp_transmit_int8_scalar
+     module procedure mpp_transmit_int8_2d
+     module procedure mpp_transmit_int8_3d
+     module procedure mpp_transmit_int8_4d
+     module procedure mpp_transmit_int8_5d
      module procedure mpp_transmit_logical8
      module procedure mpp_transmit_logical8_scalar
+     module procedure mpp_transmit_logical8_2d
+     module procedure mpp_transmit_logical8_3d
+     module procedure mpp_transmit_logical8_4d
+     module procedure mpp_transmit_logical8_5d
 #endif
      module procedure mpp_transmit_real4
      module procedure mpp_transmit_real4_scalar
+     module procedure mpp_transmit_real4_2d
+     module procedure mpp_transmit_real4_3d
+     module procedure mpp_transmit_real4_4d
+     module procedure mpp_transmit_real4_5d
      module procedure mpp_transmit_cmplx4
      module procedure mpp_transmit_cmplx4_scalar
+     module procedure mpp_transmit_cmplx4_2d
+     module procedure mpp_transmit_cmplx4_3d
+     module procedure mpp_transmit_cmplx4_4d
+     module procedure mpp_transmit_cmplx4_5d
      module procedure mpp_transmit_int4
      module procedure mpp_transmit_int4_scalar
+     module procedure mpp_transmit_int4_2d
+     module procedure mpp_transmit_int4_3d
+     module procedure mpp_transmit_int4_4d
+     module procedure mpp_transmit_int4_5d
      module procedure mpp_transmit_logical4
      module procedure mpp_transmit_logical4_scalar
+     module procedure mpp_transmit_logical4_2d
+     module procedure mpp_transmit_logical4_3d
+     module procedure mpp_transmit_logical4_4d
+     module procedure mpp_transmit_logical4_5d
   end interface
   interface mpp_recv
      module procedure mpp_recv_real8
      module procedure mpp_recv_real8_scalar
+     module procedure mpp_recv_real8_2d
+     module procedure mpp_recv_real8_3d
+     module procedure mpp_recv_real8_4d
+     module procedure mpp_recv_real8_5d
      module procedure mpp_recv_cmplx8
      module procedure mpp_recv_cmplx8_scalar
+     module procedure mpp_recv_cmplx8_2d
+     module procedure mpp_recv_cmplx8_3d
+     module procedure mpp_recv_cmplx8_4d
+     module procedure mpp_recv_cmplx8_5d
 #ifndef no_8byte_integers
      module procedure mpp_recv_int8
      module procedure mpp_recv_int8_scalar
+     module procedure mpp_recv_int8_2d
+     module procedure mpp_recv_int8_3d
+     module procedure mpp_recv_int8_4d
+     module procedure mpp_recv_int8_5d
      module procedure mpp_recv_logical8
      module procedure mpp_recv_logical8_scalar
+     module procedure mpp_recv_logical8_2d
+     module procedure mpp_recv_logical8_3d
+     module procedure mpp_recv_logical8_4d
+     module procedure mpp_recv_logical8_5d
 #endif
      module procedure mpp_recv_real4
      module procedure mpp_recv_real4_scalar
+     module procedure mpp_recv_real4_2d
+     module procedure mpp_recv_real4_3d
+     module procedure mpp_recv_real4_4d
+     module procedure mpp_recv_real4_5d
      module procedure mpp_recv_cmplx4
      module procedure mpp_recv_cmplx4_scalar
+     module procedure mpp_recv_cmplx4_2d
+     module procedure mpp_recv_cmplx4_3d
+     module procedure mpp_recv_cmplx4_4d
+     module procedure mpp_recv_cmplx4_5d
      module procedure mpp_recv_int4
      module procedure mpp_recv_int4_scalar
+     module procedure mpp_recv_int4_2d
+     module procedure mpp_recv_int4_3d
+     module procedure mpp_recv_int4_4d
+     module procedure mpp_recv_int4_5d
      module procedure mpp_recv_logical4
      module procedure mpp_recv_logical4_scalar
+     module procedure mpp_recv_logical4_2d
+     module procedure mpp_recv_logical4_3d
+     module procedure mpp_recv_logical4_4d
+     module procedure mpp_recv_logical4_5d
   end interface
   interface mpp_send
      module procedure mpp_send_real8
      module procedure mpp_send_real8_scalar
+     module procedure mpp_send_real8_2d
+     module procedure mpp_send_real8_3d
+     module procedure mpp_send_real8_4d
+     module procedure mpp_send_real8_5d
      module procedure mpp_send_cmplx8
      module procedure mpp_send_cmplx8_scalar
+     module procedure mpp_send_cmplx8_2d
+     module procedure mpp_send_cmplx8_3d
+     module procedure mpp_send_cmplx8_4d
+     module procedure mpp_send_cmplx8_5d
 #ifndef no_8byte_integers
      module procedure mpp_send_int8
      module procedure mpp_send_int8_scalar
+     module procedure mpp_send_int8_2d
+     module procedure mpp_send_int8_3d
+     module procedure mpp_send_int8_4d
+     module procedure mpp_send_int8_5d
      module procedure mpp_send_logical8
      module procedure mpp_send_logical8_scalar
+     module procedure mpp_send_logical8_2d
+     module procedure mpp_send_logical8_3d
+     module procedure mpp_send_logical8_4d
+     module procedure mpp_send_logical8_5d
 #endif
      module procedure mpp_send_real4
      module procedure mpp_send_real4_scalar
+     module procedure mpp_send_real4_2d
+     module procedure mpp_send_real4_3d
+     module procedure mpp_send_real4_4d
+     module procedure mpp_send_real4_5d
      module procedure mpp_send_cmplx4
      module procedure mpp_send_cmplx4_scalar
+     module procedure mpp_send_cmplx4_2d
+     module procedure mpp_send_cmplx4_3d
+     module procedure mpp_send_cmplx4_4d
+     module procedure mpp_send_cmplx4_5d
      module procedure mpp_send_int4
      module procedure mpp_send_int4_scalar
+     module procedure mpp_send_int4_2d
+     module procedure mpp_send_int4_3d
+     module procedure mpp_send_int4_4d
+     module procedure mpp_send_int4_5d
      module procedure mpp_send_logical4
      module procedure mpp_send_logical4_scalar
+     module procedure mpp_send_logical4_2d
+     module procedure mpp_send_logical4_3d
+     module procedure mpp_send_logical4_4d
+     module procedure mpp_send_logical4_5d
   end interface
 
   interface mpp_broadcast
      module procedure mpp_broadcast_real8
      module procedure mpp_broadcast_real8_scalar
+     module procedure mpp_broadcast_real8_2d
+     module procedure mpp_broadcast_real8_3d
+     module procedure mpp_broadcast_real8_4d
+     module procedure mpp_broadcast_real8_5d
      module procedure mpp_broadcast_cmplx8
      module procedure mpp_broadcast_cmplx8_scalar
+     module procedure mpp_broadcast_cmplx8_2d
+     module procedure mpp_broadcast_cmplx8_3d
+     module procedure mpp_broadcast_cmplx8_4d
+     module procedure mpp_broadcast_cmplx8_5d
 #ifndef no_8byte_integers
      module procedure mpp_broadcast_int8
      module procedure mpp_broadcast_int8_scalar
+     module procedure mpp_broadcast_int8_2d
+     module procedure mpp_broadcast_int8_3d
+     module procedure mpp_broadcast_int8_4d
+     module procedure mpp_broadcast_int8_5d
      module procedure mpp_broadcast_logical8
      module procedure mpp_broadcast_logical8_scalar
+     module procedure mpp_broadcast_logical8_2d
+     module procedure mpp_broadcast_logical8_3d
+     module procedure mpp_broadcast_logical8_4d
+     module procedure mpp_broadcast_logical8_5d
 #endif
      module procedure mpp_broadcast_real4
      module procedure mpp_broadcast_real4_scalar
+     module procedure mpp_broadcast_real4_2d
+     module procedure mpp_broadcast_real4_3d
+     module procedure mpp_broadcast_real4_4d
+     module procedure mpp_broadcast_real4_5d
      module procedure mpp_broadcast_cmplx4
      module procedure mpp_broadcast_cmplx4_scalar
+     module procedure mpp_broadcast_cmplx4_2d
+     module procedure mpp_broadcast_cmplx4_3d
+     module procedure mpp_broadcast_cmplx4_4d
+     module procedure mpp_broadcast_cmplx4_5d
      module procedure mpp_broadcast_int4
      module procedure mpp_broadcast_int4_scalar
+     module procedure mpp_broadcast_int4_2d
+     module procedure mpp_broadcast_int4_3d
+     module procedure mpp_broadcast_int4_4d
+     module procedure mpp_broadcast_int4_5d
      module procedure mpp_broadcast_logical4
      module procedure mpp_broadcast_logical4_scalar
+     module procedure mpp_broadcast_logical4_2d
+     module procedure mpp_broadcast_logical4_3d
+     module procedure mpp_broadcast_logical4_4d
+     module procedure mpp_broadcast_logical4_5d
   end interface
 
   interface mpp_chksum
@@ -374,10 +540,15 @@ module mpp_mod
      module procedure shmem_int8_wait_local
   end interface
 #endif
-  public :: mpp_broadcast, mpp_chksum, mpp_clock_begin, mpp_clock_end, mpp_clock_id, mpp_declare_pelist, mpp_error, &
-            mpp_error_state, mpp_exit, mpp_init, mpp_max, mpp_min, mpp_node, mpp_npes, mpp_pe, mpp_recv, mpp_root_pe, mpp_send, &
-            mpp_set_root_pe, mpp_set_warn_level, mpp_sum, mpp_set_stack_size, mpp_sync, mpp_sync_self, mpp_transmit
+  public :: mpp_chksum, mpp_max, mpp_min, mpp_sum
+  public :: mpp_exit, mpp_init
+  public :: mpp_pe, mpp_node, mpp_npes, mpp_root_pe, mpp_set_root_pe, mpp_set_stack_size
+  public :: mpp_clock_begin, mpp_clock_end, mpp_clock_id, mpp_clock_set_grain
+  public :: mpp_error, mpp_error_state, mpp_set_warn_level
+  public :: mpp_sync, mpp_sync_self
+  public :: mpp_transmit, mpp_send, mpp_recv, mpp_broadcast
   public :: stdin, stdout, stderr, stdlog
+  public :: mpp_declare_pelist, mpp_get_current_pelist, mpp_set_current_pelist
 #ifdef use_shmalloc
   public :: mpp_malloc
 #endif
@@ -390,8 +561,10 @@ module mpp_mod
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    subroutine mpp_init( flags, in, out, err, log )
-      integer, optional, intent(in) :: flags, in, out, err, log
+    subroutine mpp_init( flags )
+      integer, optional, intent(in) :: flags
+!    subroutine mpp_init( flags, in, out, err, log )
+!      integer, optional, intent(in) :: flags, in, out, err, log
       integer :: my_pe, num_pes, len
       integer :: i
       logical :: opened
@@ -399,7 +572,7 @@ module mpp_mod
       intrinsic my_pe
 #endif
 
-      if( mpp_initialized )return
+      if( module_is_initialized )return
 
 #ifdef use_libSMA
       call START_PES(0)         !the argument 0 means extract from environment variable NPES on PVP/SGI, from mpprun -n on t3e
@@ -414,7 +587,7 @@ module mpp_mod
       allocate( request(0:npes-1) )
       request(:) = MPI_REQUEST_NULL
 #endif
-      mpp_initialized = .TRUE.
+      module_is_initialized = .TRUE.
 
 !PEsets: make defaults illegal
       peset(:)%count = -1
@@ -427,6 +600,8 @@ module mpp_mod
 #endif
 !0=single-PE, initialized so that count returns 1
       peset(0)%count = 1
+      allocate( peset(0)%list(1) )
+      peset(0)%list = pe
 #ifdef use_libMPI
       current_peset_num = 0
       peset(0)%id = MPI_COMM_WORLD
@@ -443,51 +618,6 @@ module mpp_mod
       if( PRESENT(flags) )then
           debug   = flags.EQ.MPP_DEBUG
           verbose = flags.EQ.MPP_VERBOSE .OR. debug
-      end if
-!logunit: log messages are written to logfile.out by default
-!if optional argument logunit=stdout, write messages to stdout instead.
-!if specifying non-defaults, you must specify units not yet in use.
-      if( PRESENT(in) )then
-          inquire( unit=in, opened=opened )
-          if( opened )call mpp_error( FATAL, 'MPP_INIT: unable to open stdin.' )
-          in_unit=in
-      end if
-      if( PRESENT(out) )then
-          inquire( unit=out, opened=opened )
-          if( opened )call mpp_error( FATAL, 'MPP_INIT: unable to open stdout.' )
-          out_unit=out
-      end if
-      if( PRESENT(err) )then
-          inquire( unit=err, opened=opened )
-          if( opened )call mpp_error( FATAL, 'MPP_INIT: unable to open stderr.' )
-          err_unit=err
-      end if
-      if( PRESENT(log) )then
-          inquire( unit=log, opened=opened )
-          if( opened .AND. log.NE.out_unit )call mpp_error( FATAL, 'MPP_INIT: unable to open stdlog.' )
-          log_unit=log
-      end if
-!log_unit can be written to only from root_pe, all others write to stdout
-      if( pe.EQ.root_pe .AND. log_unit.NE.out_unit )then
-          inquire( unit=log_unit, opened=opened )
-          if( opened )call mpp_error( FATAL, 'MPP_INIT: specified unit for stdlog already in use.' )
-          open( unit=log_unit, status='REPLACE', file='logfile.out' )
-      end if
-!messages
-      if( verbose )call mpp_error( NOTE, 'MPP_INIT: initializing MPP module...' )
-      if( pe.EQ.root_pe )then
-          write( stdlog(),'(/a)' )'MPP module '//trim(version)
-          write( stdlog(),'(a,i4)' )'MPP started with NPES=', npes
-#ifdef use_libSMA
-          write( stdlog(),'(a)' )'Using SMA (shmem) library for message passing...'
-#endif
-#ifdef use_libMPI
-          write( stdlog(),'(a)' )'Using MPI library for message passing...'
-#endif
-          write( stdlog(), '(a,es12.4,a,i10,a)' ) &
-               'Realtime clock resolution=', tick_rate, ' sec (', ticks_per_sec, ' ticks/sec)'
-          write( stdlog(), '(a,es12.4,a,i20,a)' ) &
-               'Clock rolls over after ', max_ticks*tick_rate, ' sec (', max_ticks, ' ticks)'
       end if
 
 #ifdef use_libSMA
@@ -510,6 +640,64 @@ module mpp_mod
       remote_data_loc(0:npes-1) = MPP_WAIT
       call mpp_set_stack_size(32768) !default initial value
 #endif
+!logunit: log messages are written to configfile.out by default
+      etc_unit=get_unit()
+!      write( etcfile,'(a,i4.4)' )trim(etcfile)//'.', pe
+      if( pe.EQ.root_pe )open( unit=etc_unit, file=trim(etcfile), status='REPLACE' )
+      call mpp_sync()                         
+      if( pe.NE.root_pe )open( unit=etc_unit, file=trim(etcfile), status='OLD' )
+!if optional argument logunit=stdout, write messages to stdout instead.
+!if specifying non-defaults, you must specify units not yet in use.
+!      if( PRESENT(in) )then
+!          inquire( unit=in, opened=opened )
+!          if( opened )call mpp_error( FATAL, 'MPP_INIT: unable to open stdin.' )
+!          in_unit=in
+!      end if
+!      if( PRESENT(out) )then
+!          inquire( unit=out, opened=opened )
+!          if( opened )call mpp_error( FATAL, 'MPP_INIT: unable to open stdout.' )
+!          out_unit=out
+!      end if
+!      if( PRESENT(err) )then
+!          inquire( unit=err, opened=opened )
+!          if( opened )call mpp_error( FATAL, 'MPP_INIT: unable to open stderr.' )
+!          err_unit=err
+!      end if
+!      log_unit=get_unit()
+!      if( PRESENT(log) )then
+!          inquire( unit=log, opened=opened )
+!          if( opened .AND. log.NE.out_unit )call mpp_error( FATAL, 'MPP_INIT: unable to open stdlog.' )
+!          log_unit=log
+!      end if
+!!log_unit can be written to only from root_pe, all others write to stdout
+!      if( log_unit.NE.out_unit )then
+!          inquire( unit=log_unit, opened=opened )
+!          if( opened )call mpp_error( FATAL, 'MPP_INIT: specified unit for stdlog already in use.' )
+!          if( pe.EQ.root_pe )open( unit=log_unit, file=trim(configfile), status='REPLACE' )
+!          call mpp_sync()
+!          if( pe.NE.root_pe )open( unit=log_unit, file=trim(configfile), status='OLD' )
+!      end if
+      if( pe.EQ.root_pe )then
+          log_unit = get_unit()
+          open( unit=log_unit, file=trim(configfile), status='REPLACE' )
+          close(log_unit)
+      end if
+!messages
+      if( verbose )call mpp_error( NOTE, 'MPP_INIT: initializing MPP module...' )
+      if( pe.EQ.root_pe )then
+          write( stdlog(),'(/a)' )'MPP module '//trim(version)//trim(tagname)
+          write( stdlog(),'(a,i4)' )'MPP started with NPES=', npes
+#ifdef use_libSMA
+          write( stdlog(),'(a)' )'Using SMA (shmem) library for message passing...'
+#endif
+#ifdef use_libMPI
+          write( stdlog(),'(a)' )'Using MPI library for message passing...'
+#endif
+          write( stdlog(), '(a,es12.4,a,i10,a)' ) &
+               'Realtime clock resolution=', tick_rate, ' sec (', ticks_per_sec, ' ticks/sec)'
+          write( stdlog(), '(a,es12.4,a,i20,a)' ) &
+               'Clock rolls over after ', max_ticks*tick_rate, ' sec (', max_ticks, ' ticks)'
+      end if
       call mpp_clock_begin(clock0)
 
       return
@@ -524,6 +712,7 @@ module mpp_mod
     function stdout()
       integer :: stdout
       stdout = out_unit
+      if( pe.NE.root_pe )stdout = etc_unit
       return
     end function stdout
 
@@ -535,12 +724,21 @@ module mpp_mod
 
     function stdlog()
       integer :: stdlog
+      logical :: opened
       if( pe.EQ.root_pe )then
+          inquire( file=trim(configfile), opened=opened )
+          if( opened )then
+              call FLUSH(log_unit)
+          else
+              log_unit=get_unit()
+              open( unit=log_unit, status='OLD', file=trim(configfile), position='APPEND', err=10 )
+          end if
           stdlog = log_unit
       else
-          stdlog = out_unit
+          stdlog = etc_unit
       end if
       return
+   10 call mpp_error( FATAL, 'STDLOG: unable to open '//trim(configfile)//'.' )
     end function stdlog
 
     subroutine mpp_exit()
@@ -550,7 +748,7 @@ module mpp_mod
       real :: m, mmin, mmax, mavg, mstd
       real :: t_total
 
-      if( .NOT.mpp_initialized )return
+      if( .NOT.module_is_initialized )return
       call mpp_clock_end(clock0)
       t_total = clocks(clock0)%total_ticks*tick_rate
       if( clock_num.GT.0 )then
@@ -558,18 +756,21 @@ module mpp_mod
               call sum_clock_data; call dump_clock_summary
           end if
           if( pe.EQ.root_pe )then
-              write( stdout(),'(/a)' ) 'Tabulating mpp_clock statistics across PEs...'
+              write( stdout(),'(/a,i4,a)' ) 'Tabulating mpp_clock statistics across ', npes, ' PEs...'
               if( ANY(clocks(1:clock_num)%detailed) ) &
                    write( stdout(),'(a)' )'   ... see mpp_clock.out.#### for details on individual PEs.'
               write( stdout(),'(/32x,a)' ) '          tmin          tmax          tavg          tstd  tfrac'
           end if
           do i = 1,clock_num
+             call mpp_set_current_pelist() !implied global barrier
+             current_peset_num = clocks(i)%peset_num
+             if( .NOT.ANY(peset(current_peset_num)%list(:).EQ.pe) )cycle
 !times between mpp_clock ticks
              t = clocks(i)%total_ticks*tick_rate
              tmin = t; call mpp_min(tmin)
              tmax = t; call mpp_max(tmax)
-             tavg = t; call mpp_sum(tavg,1); tavg = tavg/mpp_npes()
-             tstd = (t-tavg)**2; call mpp_sum(tstd,1); tstd = sqrt( tstd/mpp_npes() )
+             tavg = t; call mpp_sum(tavg); tavg = tavg/mpp_npes()
+             tstd = (t-tavg)**2; call mpp_sum(tstd); tstd = sqrt( tstd/mpp_npes() )
              if( pe.EQ.root_pe )write( stdout(),'(a32,4f14.6,f7.3)' ) &
                   clocks(i)%name, tmin, tmax, tavg, tstd, tavg/t_total
           end do
@@ -587,14 +788,14 @@ module mpp_mod
                     if( n.GT.0 )m = sum(clocks(i)%events(j)%bytes(1:n))
                     mmin = m; call mpp_min(mmin)
                     mmax = m; call mpp_max(mmax)
-                    mavg = m; call mpp_sum(mavg,1); mavg = mavg/mpp_npes()
-                    mstd = (m-mavg)**2; call mpp_sum(mstd,1); mstd = sqrt( mstd/mpp_npes() )
+                    mavg = m; call mpp_sum(mavg); mavg = mavg/mpp_npes()
+                    mstd = (m-mavg)**2; call mpp_sum(mstd); mstd = sqrt( mstd/mpp_npes() )
                     t = 0
                     if( n.GT.0 )t = sum(clocks(i)%events(j)%ticks(1:n))*tick_rate
                     tmin = t; call mpp_min(tmin)
                     tmax = t; call mpp_max(tmax)
-                    tavg = t; call mpp_sum(tavg,1); tavg = tavg/mpp_npes()
-                    tstd = (t-tavg)**2; call mpp_sum(tstd,1); tstd = sqrt( tstd/mpp_npes() )
+                    tavg = t; call mpp_sum(tavg); tavg = tavg/mpp_npes()
+                    tstd = (t-tavg)**2; call mpp_sum(tstd); tstd = sqrt( tstd/mpp_npes() )
                     if( pe.EQ.root_pe )write( stdout(),'(a32,4f11.3,5es11.3)' ) &
                          trim(clocks(i)%name)//' '//trim(clocks(i)%events(j)%name), &
                          tmin, tmax, tavg, tstd, mmin, mmax, mavg, mstd, mavg/tavg
@@ -616,7 +817,7 @@ module mpp_mod
     function mpp_pe()
       integer :: mpp_pe
 
-      if( .NOT.mpp_initialized )call mpp_error( FATAL, 'MPP_PE: You must first call mpp_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_PE: You must first call mpp_init.' )
       mpp_pe = pe
       return
     end function mpp_pe
@@ -624,7 +825,7 @@ module mpp_mod
     function mpp_node()
       integer :: mpp_node
 
-      if( .NOT.mpp_initialized )call mpp_error( FATAL, 'MPP_NODE: You must first call mpp_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_NODE: You must first call mpp_init.' )
       mpp_node = node
       return
     end function mpp_node
@@ -632,7 +833,7 @@ module mpp_mod
     function mpp_npes()
       integer :: mpp_npes
 
-      if( .NOT.mpp_initialized )call mpp_error( FATAL, 'MPP_NPES: You must first call mpp_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_NPES: You must first call mpp_init.' )
 !      mpp_npes = npes
       mpp_npes = size(peset(current_peset_num)%list)
       return
@@ -641,7 +842,7 @@ module mpp_mod
     function mpp_root_pe()
       integer :: mpp_root_pe
 
-      if( .NOT.mpp_initialized )call mpp_error( FATAL, 'MPP_ROOT_PE: You must first call mpp_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_ROOT_PE: You must first call mpp_init.' )
       mpp_root_pe = root_pe
       return
     end function mpp_root_pe
@@ -650,32 +851,32 @@ module mpp_mod
       integer, intent(in) :: num
       logical :: opened
 
-      if( .NOT.mpp_initialized )call mpp_error( FATAL, 'MPP_SET_ROOT_PE: You must first call mpp_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_SET_ROOT_PE: You must first call mpp_init.' )
       if( .NOT.(ANY(num.EQ.peset(current_peset_num)%list)) ) &
            call mpp_error( FATAL, 'MPP_SET_ROOT_PE: you cannot set a root PE outside the current pelist.' )
 !actions to take if root_pe has changed:
 ! open log_unit on new root_pe, close it on old root_pe and point its log_unit to stdout.
-      if( num.NE.root_pe )then  !root_pe has changed
-          if( pe.EQ.num )then
-!on the new root_pe
-              if( log_unit.NE.out_unit )then
-                  inquire( unit=log_unit, opened=opened )
-                  if( .NOT.opened )open( unit=log_unit, status='OLD', file='logfile.out', position='APPEND' )
-              end if
-          else if( pe.EQ.root_pe )then
-!on the old root_pe
-              if( log_unit.NE.out_unit )then
-                  inquire( unit=log_unit, opened=opened )
-                  if( opened )close(log_unit)
-                  log_unit = out_unit
-              end if
-          end if
-      end if
+!      if( num.NE.root_pe )then  !root_pe has changed
+!          if( pe.EQ.num )then
+!!on the new root_pe
+!              if( log_unit.NE.out_unit )then
+!                  inquire( unit=log_unit, opened=opened )
+!                  if( .NOT.opened )open( unit=log_unit, status='OLD', file=trim(configfile), position='APPEND' )
+!              end if
+!          else if( pe.EQ.root_pe )then
+!!on the old root_pe
+!              if( log_unit.NE.out_unit )then
+!                  inquire( unit=log_unit, opened=opened )
+!                  if( opened )close(log_unit)
+!                  log_unit = out_unit
+!              end if
+!          end if
+!      end if
       root_pe = num
       return
     end subroutine mpp_set_root_pe
 
-    subroutine mpp_declare_pelist( pelist )
+    subroutine mpp_declare_pelist( pelist, name )
 !this call is written specifically to accommodate a brain-dead MPI restriction
 !that requires a parent communicator to create a child communicator:
 !in other words: a pelist cannot go off and declare a communicator, but every PE
@@ -686,10 +887,13 @@ module mpp_mod
 !you may as well call it. It must be placed in a context where all PEs call it.
 !Subsequent calls that use the pelist should be called PEs in the pelist only.
       integer, intent(in) :: pelist(:)
+      character(len=*), optional :: name
       integer :: i
 
-      if( .NOT.mpp_initialized )call mpp_error( FATAL, 'MPP_DECLARE_PELIST: You must first call mpp_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_DECLARE_PELIST: You must first call mpp_init.' )
       i = get_peset(pelist)
+      write( peset(i)%name,'(a,i2.2)' ) 'PElist', i !default name
+      if( PRESENT(name) )peset(i)%name = name
       return
     end subroutine mpp_declare_pelist
 
@@ -704,17 +908,32 @@ module mpp_mod
       integer, intent(in), optional :: pelist(:)
       integer :: i
 
-      if( .NOT.mpp_initialized )call mpp_error( FATAL, 'MPP_SET_CURRENT_PELIST: You must first call mpp_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_SET_CURRENT_PELIST: You must first call mpp_init.' )
       if( PRESENT(pelist) )then
           if( .NOT.ANY(pe.EQ.pelist) )call mpp_error( FATAL, 'MPP_SET_CURRENT_PELIST: pe must be in pelist.' )
           current_peset_num = get_peset(pelist)
       else
           current_peset_num = world_peset_num
       end if
-      call mpp_set_root_pe(peset(current_peset_num)%list(1))
+      call mpp_set_root_pe( MINVAL(peset(current_peset_num)%list) )
       call mpp_sync()           !this is called to make sure everyone in the current pelist is here.
+!      npes = mpp_npes()
       return
     end subroutine mpp_set_current_pelist
+
+    subroutine mpp_get_current_pelist( pelist, name )
+!this is created for use by mpp_define_domains within a pelist
+!will be published but not publicized
+      integer, intent(out) :: pelist(:)
+      character(len=*), intent(out), optional :: name
+
+      if( size(pelist).NE.size(peset(current_peset_num)%list) ) &
+           call mpp_error( FATAL, 'MPP_GET_CURRENT_PELIST: size(pelist) is wrong.' )
+      pelist(:) = peset(current_peset_num)%list(:)
+      if( PRESENT(name) )name = peset(current_peset_num)%name
+
+      return
+    end subroutine mpp_get_current_pelist
 
     function get_peset(pelist)
       integer :: get_peset
@@ -742,6 +961,7 @@ module mpp_mod
          if( debug )write( stderr(),'(a,3i4)' )'pe, i, peset_num=', pe, i, peset_num
          if( size(sorted).EQ.size(peset(i)%list) )then
              if( ALL(sorted.EQ.peset(i)%list) )then
+                 deallocate(sorted)
                  get_peset = i; return
              end if
          end if
@@ -751,8 +971,7 @@ module mpp_mod
       if( peset_num.GE.PESET_MAX )call mpp_error( FATAL, 'GET_PESET: number of PE sets exceeds PESET_MAX.' )
       i = peset_num             !shorthand
 !create list
-      peset(i)%list => peset_work_array(peset_work_array_ptr+1:peset_work_array_ptr+size(sorted))
-      peset_work_array_ptr = peset_work_array_ptr + size(sorted)
+      allocate( peset(i)%list(size(sorted)) )
       peset(i)%list(:) = sorted(:)
       peset(i)%count = size(sorted)
 #ifdef use_libSMA
@@ -777,20 +996,20 @@ module mpp_mod
 
       contains
         
-        recursive function ascend_sort(a)
-          integer :: ascend_sort
+        recursive function ascend_sort(a) result(a_sort)
+          integer :: a_sort
           integer, intent(in) :: a(:)
           integer :: b, i
           if( size(a).EQ.1 .OR. ALL(a.EQ.a(1)) )then
               allocate( sorted(n) )
               sorted(n) = a(1)
-              ascend_sort = n
+              a_sort = n
               return
           end if
           b = minval(a)
           n = n + 1
           i = ascend_sort( pack(a,mask=a.NE.b) )
-          ascend_sort = i - 1
+          a_sort = i - 1
           sorted(i-1) = b
           return
         end function ascend_sort
@@ -802,14 +1021,36 @@ module mpp_mod
 !                        PERFORMANCE PROFILING CALLS                          !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    function mpp_clock_id( name, flags )
+    subroutine mpp_clock_set_grain( grain )
+      integer, intent(in) :: grain
+!set the granularity of times: only clocks whose grain is lower than
+!clock_grain are triggered, finer-grained clocks are dormant.
+!clock_grain is initialized to HUGE(1), so all clocks are triggered if
+!this is never called.   
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_CLOCK_SET_GRAIN: You must first call mpp_init.' )
+
+      clock_grain = grain
+      return
+    end subroutine mpp_clock_set_grain
+
+    function mpp_clock_id( name, flags, grain )
 !return an ID for a new or existing clock
       integer :: mpp_clock_id
       character(len=*), intent(in) :: name
-      integer, intent(in), optional :: flags
+      integer, intent(in), optional :: flags, grain
       integer :: i
 
-      if( .NOT.mpp_initialized )call mpp_error( FATAL, 'MPP_CLOCK_ID: You must first call mpp_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_CLOCK_ID: You must first call mpp_init.' )
+!if grain is present, the clock is only triggered if it
+!is low ("coarse") enough: compared to clock_grain
+!finer-grained clocks are dormant.
+!if grain is absent, clock is triggered.
+      if( PRESENT(grain) )then
+          if( grain.GT.clock_grain )then
+              mpp_clock_id = 0
+              return
+          end if
+      end if
       mpp_clock_id = 1
       if( clock_num.EQ.0 )then  !first
 !         allocate( clocks(MAX_CLOCKS) )
@@ -835,10 +1076,13 @@ module mpp_mod
     subroutine mpp_clock_begin(id)
       integer, intent(in) :: id
 
-      if( .NOT.mpp_initialized )call mpp_error( FATAL, 'MPP_CLOCK_BEGIN: You must first call mpp_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_CLOCK_BEGIN: You must first call mpp_init.' )
       if( id.EQ.0 )return
       if( id.LT.0 .OR. id.GT.clock_num )call mpp_error( FATAL, 'MPP_CLOCK_BEGIN: invalid id.' )
 
+      if( clocks(id)%peset_num.EQ.0 )clocks(id)%peset_num = current_peset_num
+      if( clocks(id)%peset_num.NE.current_peset_num ) &
+           call mpp_error( FATAL, 'MPP_CLOCK_BEGIN: cannot change pelist context of a clock.' )
       if( clocks(id)%sync_on_begin )then
 !do an untimed sync at the beginning of the clock
 !this puts all PEs in the current pelist on par, so that measurements begin together
@@ -855,10 +1099,12 @@ module mpp_mod
       integer, intent(in), optional :: id
       integer(LONG_KIND) :: delta
 
-      if( .NOT.mpp_initialized )call mpp_error( FATAL, 'MPP_CLOCK_END: You must first call mpp_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_CLOCK_END: You must first call mpp_init.' )
       if( id.EQ.0 )return
       if( id.LT.0 .OR. id.GT.clock_num )call mpp_error( FATAL, 'MPP_CLOCK_BEGIN: invalid id.' )
       call SYSTEM_CLOCK(end_tick)
+      if( clocks(id)%peset_num.NE.current_peset_num ) &
+           call mpp_error( FATAL, 'MPP_CLOCK_END: cannot change pelist context of a clock.' )
       delta = end_tick - clocks(id)%tick
       if( delta.LT.0 )then
           write( stderr(),* )'pe, id, start_tick, end_tick, delta, max_ticks=', pe, id, clocks(id)%tick, end_tick, delta, max_ticks
@@ -1028,7 +1274,8 @@ module mpp_mod
 1004  format(a,i8,a,f9.2,a)
 1005  format(a,f9.2,a)
     return
-    contains
+  end subroutine dump_clock_summary
+
       integer function get_unit()
         implicit none
 
@@ -1049,9 +1296,6 @@ module mpp_mod
 
         return
       end function get_unit
-
-  end subroutine dump_clock_summary
-
 
   subroutine sum_clock_data()
     implicit none
@@ -1131,7 +1375,6 @@ module mpp_mod
 
   end subroutine sum_clock_data
 
-
   subroutine clock_init(id,name,flags)
     integer, intent(in) :: id
     character(len=*), intent(in) :: name
@@ -1143,6 +1386,7 @@ module mpp_mod
     clocks(id)%total_ticks = 0
     clocks(id)%sync_on_begin = .FALSE.
     clocks(id)%detailed      = .FALSE.
+    clocks(id)%peset_num = 0
     if( PRESENT(flags) )then
         if( BTEST(flags,0) )clocks(id)%sync_on_begin = .TRUE.
         if( BTEST(flags,1) )clocks(id)%detailed      = .TRUE.
@@ -1207,6 +1451,25 @@ module mpp_mod
     end subroutine system_clock_sgi
 #endif
 
+#ifdef use_libMPI
+    subroutine system_clock_mpi( count, count_rate, count_max )
+!mimics F90 SYSTEM_CLOCK intrinsic
+      integer(LONG_KIND), intent(out), optional :: count, count_rate, count_max
+!count must return a number between 0 and count_max
+      integer(LONG_KIND), parameter :: maxtick=HUGE(count_max)
+      if( PRESENT(count) )then
+          count = MPI_WTime()/MPI_WTick()
+      end if
+      if( PRESENT(count_rate) )then
+          count_rate = MPI_Wtick()**(-1)
+      end if
+      if( PRESENT(count_max) )then
+          count_max = maxtick-1
+      end if
+      return
+    end subroutine system_clock_mpi
+#endif
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
 !                BASIC MESSAGE PASSING ROUTINE: mpp_transmit                  !
@@ -1215,12 +1478,28 @@ module mpp_mod
 
 #define MPP_TRANSMIT_ mpp_transmit_real8
 #define MPP_TRANSMIT_SCALAR_ mpp_transmit_real8_scalar
+#define MPP_TRANSMIT_2D_ mpp_transmit_real8_2d
+#define MPP_TRANSMIT_3D_ mpp_transmit_real8_3d
+#define MPP_TRANSMIT_4D_ mpp_transmit_real8_4d
+#define MPP_TRANSMIT_5D_ mpp_transmit_real8_5d
 #define MPP_RECV_ mpp_recv_real8
 #define MPP_RECV_SCALAR_ mpp_recv_real8_scalar
+#define MPP_RECV_2D_ mpp_recv_real8_2d
+#define MPP_RECV_3D_ mpp_recv_real8_3d
+#define MPP_RECV_4D_ mpp_recv_real8_4d
+#define MPP_RECV_5D_ mpp_recv_real8_5d
 #define MPP_SEND_ mpp_send_real8
 #define MPP_SEND_SCALAR_ mpp_send_real8_scalar
+#define MPP_SEND_2D_ mpp_send_real8_2d
+#define MPP_SEND_3D_ mpp_send_real8_3d
+#define MPP_SEND_4D_ mpp_send_real8_4d
+#define MPP_SEND_5D_ mpp_send_real8_5d
 #define MPP_BROADCAST_ mpp_broadcast_real8
 #define MPP_BROADCAST_SCALAR_ mpp_broadcast_real8_scalar
+#define MPP_BROADCAST_2D_ mpp_broadcast_real8_2d
+#define MPP_BROADCAST_3D_ mpp_broadcast_real8_3d
+#define MPP_BROADCAST_4D_ mpp_broadcast_real8_4d
+#define MPP_BROADCAST_5D_ mpp_broadcast_real8_5d
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_REAL8
@@ -1230,12 +1509,28 @@ module mpp_mod
 
 #define MPP_TRANSMIT_ mpp_transmit_real4
 #define MPP_TRANSMIT_SCALAR_ mpp_transmit_real4_scalar
+#define MPP_TRANSMIT_2D_ mpp_transmit_real4_2d
+#define MPP_TRANSMIT_3D_ mpp_transmit_real4_3d
+#define MPP_TRANSMIT_4D_ mpp_transmit_real4_4d
+#define MPP_TRANSMIT_5D_ mpp_transmit_real4_5d
 #define MPP_RECV_ mpp_recv_real4
 #define MPP_RECV_SCALAR_ mpp_recv_real4_scalar
+#define MPP_RECV_2D_ mpp_recv_real4_2d
+#define MPP_RECV_3D_ mpp_recv_real4_3d
+#define MPP_RECV_4D_ mpp_recv_real4_4d
+#define MPP_RECV_5D_ mpp_recv_real4_5d
 #define MPP_SEND_ mpp_send_real4
 #define MPP_SEND_SCALAR_ mpp_send_real4_scalar
+#define MPP_SEND_2D_ mpp_send_real4_2d
+#define MPP_SEND_3D_ mpp_send_real4_3d
+#define MPP_SEND_4D_ mpp_send_real4_4d
+#define MPP_SEND_5D_ mpp_send_real4_5d
 #define MPP_BROADCAST_ mpp_broadcast_real4
 #define MPP_BROADCAST_SCALAR_ mpp_broadcast_real4_scalar
+#define MPP_BROADCAST_2D_ mpp_broadcast_real4_2d
+#define MPP_BROADCAST_3D_ mpp_broadcast_real4_3d
+#define MPP_BROADCAST_4D_ mpp_broadcast_real4_4d
+#define MPP_BROADCAST_5D_ mpp_broadcast_real4_5d
 #define MPP_TYPE_ real(FLOAT_KIND)
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_REAL4
@@ -1245,12 +1540,28 @@ module mpp_mod
 
 #define MPP_TRANSMIT_ mpp_transmit_cmplx8
 #define MPP_TRANSMIT_SCALAR_ mpp_transmit_cmplx8_scalar
+#define MPP_TRANSMIT_2D_ mpp_transmit_cmplx8_2d
+#define MPP_TRANSMIT_3D_ mpp_transmit_cmplx8_3d
+#define MPP_TRANSMIT_4D_ mpp_transmit_cmplx8_4d
+#define MPP_TRANSMIT_5D_ mpp_transmit_cmplx8_5d
 #define MPP_RECV_ mpp_recv_cmplx8
 #define MPP_RECV_SCALAR_ mpp_recv_cmplx8_scalar
+#define MPP_RECV_2D_ mpp_recv_cmplx8_2d
+#define MPP_RECV_3D_ mpp_recv_cmplx8_3d
+#define MPP_RECV_4D_ mpp_recv_cmplx8_4d
+#define MPP_RECV_5D_ mpp_recv_cmplx8_5d
 #define MPP_SEND_ mpp_send_cmplx8
 #define MPP_SEND_SCALAR_ mpp_send_cmplx8_scalar
+#define MPP_SEND_2D_ mpp_send_cmplx8_2d
+#define MPP_SEND_3D_ mpp_send_cmplx8_3d
+#define MPP_SEND_4D_ mpp_send_cmplx8_4d
+#define MPP_SEND_5D_ mpp_send_cmplx8_5d
 #define MPP_BROADCAST_ mpp_broadcast_cmplx8
 #define MPP_BROADCAST_SCALAR_ mpp_broadcast_cmplx8_scalar
+#define MPP_BROADCAST_2D_ mpp_broadcast_cmplx8_2d
+#define MPP_BROADCAST_3D_ mpp_broadcast_cmplx8_3d
+#define MPP_BROADCAST_4D_ mpp_broadcast_cmplx8_4d
+#define MPP_BROADCAST_5D_ mpp_broadcast_cmplx8_5d
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #define MPP_TYPE_BYTELEN_ 16
 #define MPI_TYPE_ MPI_DOUBLE_COMPLEX
@@ -1260,12 +1571,28 @@ module mpp_mod
 
 #define MPP_TRANSMIT_ mpp_transmit_cmplx4
 #define MPP_TRANSMIT_SCALAR_ mpp_transmit_cmplx4_scalar
+#define MPP_TRANSMIT_2D_ mpp_transmit_cmplx4_2d
+#define MPP_TRANSMIT_3D_ mpp_transmit_cmplx4_3d
+#define MPP_TRANSMIT_4D_ mpp_transmit_cmplx4_4d
+#define MPP_TRANSMIT_5D_ mpp_transmit_cmplx4_5d
 #define MPP_RECV_ mpp_recv_cmplx4
 #define MPP_RECV_SCALAR_ mpp_recv_cmplx4_scalar
+#define MPP_RECV_2D_ mpp_recv_cmplx4_2d
+#define MPP_RECV_3D_ mpp_recv_cmplx4_3d
+#define MPP_RECV_4D_ mpp_recv_cmplx4_4d
+#define MPP_RECV_5D_ mpp_recv_cmplx4_5d
 #define MPP_SEND_ mpp_send_cmplx4
 #define MPP_SEND_SCALAR_ mpp_send_cmplx4_scalar
+#define MPP_SEND_2D_ mpp_send_cmplx4_2d
+#define MPP_SEND_3D_ mpp_send_cmplx4_3d
+#define MPP_SEND_4D_ mpp_send_cmplx4_4d
+#define MPP_SEND_5D_ mpp_send_cmplx4_5d
 #define MPP_BROADCAST_ mpp_broadcast_cmplx4
 #define MPP_BROADCAST_SCALAR_ mpp_broadcast_cmplx4_scalar
+#define MPP_BROADCAST_2D_ mpp_broadcast_cmplx4_2d
+#define MPP_BROADCAST_3D_ mpp_broadcast_cmplx4_3d
+#define MPP_BROADCAST_4D_ mpp_broadcast_cmplx4_4d
+#define MPP_BROADCAST_5D_ mpp_broadcast_cmplx4_5d
 #define MPP_TYPE_ complex(FLOAT_KIND)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_COMPLEX
@@ -1276,12 +1603,28 @@ module mpp_mod
 #ifndef no_8byte_integers
 #define MPP_TRANSMIT_ mpp_transmit_int8
 #define MPP_TRANSMIT_SCALAR_ mpp_transmit_int8_scalar
+#define MPP_TRANSMIT_2D_ mpp_transmit_int8_2d
+#define MPP_TRANSMIT_3D_ mpp_transmit_int8_3d
+#define MPP_TRANSMIT_4D_ mpp_transmit_int8_4d
+#define MPP_TRANSMIT_5D_ mpp_transmit_int8_5d
 #define MPP_RECV_ mpp_recv_int8
 #define MPP_RECV_SCALAR_ mpp_recv_int8_scalar
+#define MPP_RECV_2D_ mpp_recv_int8_2d
+#define MPP_RECV_3D_ mpp_recv_int8_3d
+#define MPP_RECV_4D_ mpp_recv_int8_4d
+#define MPP_RECV_5D_ mpp_recv_int8_5d
 #define MPP_SEND_ mpp_send_int8
 #define MPP_SEND_SCALAR_ mpp_send_int8_scalar
+#define MPP_SEND_2D_ mpp_send_int8_2d
+#define MPP_SEND_3D_ mpp_send_int8_3d
+#define MPP_SEND_4D_ mpp_send_int8_4d
+#define MPP_SEND_5D_ mpp_send_int8_5d
 #define MPP_BROADCAST_ mpp_broadcast_int8
 #define MPP_BROADCAST_SCALAR_ mpp_broadcast_int8_scalar
+#define MPP_BROADCAST_2D_ mpp_broadcast_int8_2d
+#define MPP_BROADCAST_3D_ mpp_broadcast_int8_3d
+#define MPP_BROADCAST_4D_ mpp_broadcast_int8_4d
+#define MPP_BROADCAST_5D_ mpp_broadcast_int8_5d
 #define MPP_TYPE_ integer(LONG_KIND)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_INTEGER8
@@ -1292,12 +1635,28 @@ module mpp_mod
 
 #define MPP_TRANSMIT_ mpp_transmit_int4
 #define MPP_TRANSMIT_SCALAR_ mpp_transmit_int4_scalar
+#define MPP_TRANSMIT_2D_ mpp_transmit_int4_2d
+#define MPP_TRANSMIT_3D_ mpp_transmit_int4_3d
+#define MPP_TRANSMIT_4D_ mpp_transmit_int4_4d
+#define MPP_TRANSMIT_5D_ mpp_transmit_int4_5d
 #define MPP_RECV_ mpp_recv_int4
 #define MPP_RECV_SCALAR_ mpp_recv_int4_scalar
+#define MPP_RECV_2D_ mpp_recv_int4_2d
+#define MPP_RECV_3D_ mpp_recv_int4_3d
+#define MPP_RECV_4D_ mpp_recv_int4_4d
+#define MPP_RECV_5D_ mpp_recv_int4_5d
 #define MPP_SEND_ mpp_send_int4
 #define MPP_SEND_SCALAR_ mpp_send_int4_scalar
+#define MPP_SEND_2D_ mpp_send_int4_2d
+#define MPP_SEND_3D_ mpp_send_int4_3d
+#define MPP_SEND_4D_ mpp_send_int4_4d
+#define MPP_SEND_5D_ mpp_send_int4_5d
 #define MPP_BROADCAST_ mpp_broadcast_int4
 #define MPP_BROADCAST_SCALAR_ mpp_broadcast_int4_scalar
+#define MPP_BROADCAST_2D_ mpp_broadcast_int4_2d
+#define MPP_BROADCAST_3D_ mpp_broadcast_int4_3d
+#define MPP_BROADCAST_4D_ mpp_broadcast_int4_4d
+#define MPP_BROADCAST_5D_ mpp_broadcast_int4_5d
 #define MPP_TYPE_ integer(INT_KIND)
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_INTEGER4
@@ -1308,12 +1667,28 @@ module mpp_mod
 #ifndef no_8byte_integers
 #define MPP_TRANSMIT_ mpp_transmit_logical8
 #define MPP_TRANSMIT_SCALAR_ mpp_transmit_logical8_scalar
+#define MPP_TRANSMIT_2D_ mpp_transmit_logical8_2d
+#define MPP_TRANSMIT_3D_ mpp_transmit_logical8_3d
+#define MPP_TRANSMIT_4D_ mpp_transmit_logical8_4d
+#define MPP_TRANSMIT_5D_ mpp_transmit_logical8_5d
 #define MPP_RECV_ mpp_recv_logical8
 #define MPP_RECV_SCALAR_ mpp_recv_logical8_scalar
+#define MPP_RECV_2D_ mpp_recv_logical8_2d
+#define MPP_RECV_3D_ mpp_recv_logical8_3d
+#define MPP_RECV_4D_ mpp_recv_logical8_4d
+#define MPP_RECV_5D_ mpp_recv_logical8_5d
 #define MPP_SEND_ mpp_send_logical8
 #define MPP_SEND_SCALAR_ mpp_send_logical8_scalar
+#define MPP_SEND_2D_ mpp_send_logical8_2d
+#define MPP_SEND_3D_ mpp_send_logical8_3d
+#define MPP_SEND_4D_ mpp_send_logical8_4d
+#define MPP_SEND_5D_ mpp_send_logical8_5d
 #define MPP_BROADCAST_ mpp_broadcast_logical8
 #define MPP_BROADCAST_SCALAR_ mpp_broadcast_logical8_scalar
+#define MPP_BROADCAST_2D_ mpp_broadcast_logical8_2d
+#define MPP_BROADCAST_3D_ mpp_broadcast_logical8_3d
+#define MPP_BROADCAST_4D_ mpp_broadcast_logical8_4d
+#define MPP_BROADCAST_5D_ mpp_broadcast_logical8_5d
 #define MPP_TYPE_ logical(LONG_KIND)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_INTEGER8
@@ -1324,12 +1699,28 @@ module mpp_mod
 
 #define MPP_TRANSMIT_ mpp_transmit_logical4
 #define MPP_TRANSMIT_SCALAR_ mpp_transmit_logical4_scalar
+#define MPP_TRANSMIT_2D_ mpp_transmit_logical4_2d
+#define MPP_TRANSMIT_3D_ mpp_transmit_logical4_3d
+#define MPP_TRANSMIT_4D_ mpp_transmit_logical4_4d
+#define MPP_TRANSMIT_5D_ mpp_transmit_logical4_5d
 #define MPP_RECV_ mpp_recv_logical4
 #define MPP_RECV_SCALAR_ mpp_recv_logical4_scalar
+#define MPP_RECV_2D_ mpp_recv_logical4_2d
+#define MPP_RECV_3D_ mpp_recv_logical4_3d
+#define MPP_RECV_4D_ mpp_recv_logical4_4d
+#define MPP_RECV_5D_ mpp_recv_logical4_5d
 #define MPP_SEND_ mpp_send_logical4
 #define MPP_SEND_SCALAR_ mpp_send_logical4_scalar
+#define MPP_SEND_2D_ mpp_send_logical4_2d
+#define MPP_SEND_3D_ mpp_send_logical4_3d
+#define MPP_SEND_4D_ mpp_send_logical4_4d
+#define MPP_SEND_5D_ mpp_send_logical4_5d
 #define MPP_BROADCAST_ mpp_broadcast_logical4
 #define MPP_BROADCAST_SCALAR_ mpp_broadcast_logical4_scalar
+#define MPP_BROADCAST_2D_ mpp_broadcast_logical4_2d
+#define MPP_BROADCAST_3D_ mpp_broadcast_logical4_3d
+#define MPP_BROADCAST_4D_ mpp_broadcast_logical4_4d
+#define MPP_BROADCAST_5D_ mpp_broadcast_logical4_5d
 #define MPP_TYPE_ logical(INT_KIND)
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_INTEGER4
@@ -1405,6 +1796,10 @@ module mpp_mod
 
 #define MPP_SUM_ mpp_sum_real8
 #define MPP_SUM_SCALAR_ mpp_sum_real8_scalar
+#define MPP_SUM_2D_ mpp_sum_real8_2d
+#define MPP_SUM_3D_ mpp_sum_real8_3d
+#define MPP_SUM_4D_ mpp_sum_real8_4d
+#define MPP_SUM_5D_ mpp_sum_real8_5d
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #define SHMEM_SUM_ SHMEM_REAL8_SUM_TO_ALL
 #define MPI_TYPE_ MPI_REAL8
@@ -1413,6 +1808,10 @@ module mpp_mod
 
 #define MPP_SUM_ mpp_sum_real4
 #define MPP_SUM_SCALAR_ mpp_sum_real4_scalar
+#define MPP_SUM_2D_ mpp_sum_real4_2d
+#define MPP_SUM_3D_ mpp_sum_real4_3d
+#define MPP_SUM_4D_ mpp_sum_real4_4d
+#define MPP_SUM_5D_ mpp_sum_real4_5d
 #define MPP_TYPE_ real(FLOAT_KIND)
 #define SHMEM_SUM_ SHMEM_REAL4_SUM_TO_ALL
 #define MPI_TYPE_ MPI_REAL4
@@ -1421,6 +1820,10 @@ module mpp_mod
 
 #define MPP_SUM_ mpp_sum_cmplx8
 #define MPP_SUM_SCALAR_ mpp_sum_cmplx8_scalar
+#define MPP_SUM_2D_ mpp_sum_cmplx8_2d
+#define MPP_SUM_3D_ mpp_sum_cmplx8_3d
+#define MPP_SUM_4D_ mpp_sum_cmplx8_4d
+#define MPP_SUM_5D_ mpp_sum_cmplx8_5d
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #define SHMEM_SUM_ SHMEM_COMP8_SUM_TO_ALL
 #define MPI_TYPE_ MPI_DOUBLE_COMPLEX
@@ -1429,6 +1832,10 @@ module mpp_mod
 
 #define MPP_SUM_ mpp_sum_cmplx4
 #define MPP_SUM_SCALAR_ mpp_sum_cmplx4_scalar
+#define MPP_SUM_2D_ mpp_sum_cmplx4_2d
+#define MPP_SUM_3D_ mpp_sum_cmplx4_3d
+#define MPP_SUM_4D_ mpp_sum_cmplx4_4d
+#define MPP_SUM_5D_ mpp_sum_cmplx4_5d
 #define MPP_TYPE_ complex(FLOAT_KIND)
 #define SHMEM_SUM_ SHMEM_COMP4_SUM_TO_ALL
 #define MPI_TYPE_ MPI_COMPLEX
@@ -1438,6 +1845,10 @@ module mpp_mod
 #ifndef no_8byte_integers
 #define MPP_SUM_ mpp_sum_int8
 #define MPP_SUM_SCALAR_ mpp_sum_int8_scalar
+#define MPP_SUM_2D_ mpp_sum_int8_2d
+#define MPP_SUM_3D_ mpp_sum_int8_3d
+#define MPP_SUM_4D_ mpp_sum_int8_4d
+#define MPP_SUM_5D_ mpp_sum_int8_5d
 #define MPP_TYPE_ integer(LONG_KIND)
 #define SHMEM_SUM_ SHMEM_INT8_SUM_TO_ALL
 #define MPI_TYPE_ MPI_INTEGER8
@@ -1447,6 +1858,10 @@ module mpp_mod
 
 #define MPP_SUM_ mpp_sum_int4
 #define MPP_SUM_SCALAR_ mpp_sum_int4_scalar
+#define MPP_SUM_2D_ mpp_sum_int4_2d
+#define MPP_SUM_3D_ mpp_sum_int4_3d
+#define MPP_SUM_4D_ mpp_sum_int4_4d
+#define MPP_SUM_5D_ mpp_sum_int4_5d
 #define MPP_TYPE_ integer(INT_KIND)
 #define SHMEM_SUM_ SHMEM_INT4_SUM_TO_ALL
 #define MPI_TYPE_ MPI_INTEGER4
@@ -1538,22 +1953,32 @@ module mpp_mod
 
     subroutine mpp_error_basic( errortype, errormsg )
 !a very basic error handler
+!uses ABORT and FLUSH calls, may need to use cpp to rename
       integer, intent(in) :: errortype
       character(len=*), intent(in), optional :: errormsg
       character(len=128) :: text
       logical :: opened
       
-      if( .NOT.mpp_initialized )call abort()
-      if( errortype.EQ.NOTE    )text = 'NOTE'	!just FYI
-      if( errortype.EQ.WARNING )text = 'WARNING'	!probable error
-      if( errortype.EQ.FATAL   )text = 'FATAL'	!fatal error
+      if( .NOT.module_is_initialized )call ABORT()
+
+      select case( errortype )
+      case(NOTE)
+          text = 'NOTE'         !just FYI
+      case(WARNING)
+          text = 'WARNING'      !probable error
+      case(FATAL)
+          text = 'FATAL'        !fatal error
+      case default
+          text = 'WARNING: non-existent errortype (must be NOTE|WARNING|FATAL)'
+      end select
 
       if( npes.GT.1 )write( text,'(a,i5)' )trim(text)//' from PE', pe	!this is the mpp part
       if( PRESENT(errormsg) )text = trim(text)//': '//trim(errormsg)
 
-      if( errortype.EQ.NOTE )then
+      select case( errortype )
+      case(NOTE)
           write( stdout(),'(a)' )trim(text)
-      else
+      case default
           write( stderr(),'(/a/)' )trim(text)
           if( errortype.EQ.FATAL .OR. warnings_are_fatal )then
               call FLUSH(stdout())
@@ -1561,11 +1986,15 @@ module mpp_mod
               call TRACE_BACK_STACK_AND_PRINT()
 #endif
 #ifdef use_libMPI
+#ifndef sgi_mipspro
+!the call to MPI_ABORT is not trapped by TotalView on sgi
               call MPI_ABORT( MPI_COMM_WORLD, 1, error )
+#endif
 #endif
               call ABORT()	!automatically calls traceback on Cray systems
           end if
-      end if
+      end select
+
       error_state = errortype
       return
     end subroutine mpp_error_basic
@@ -1616,7 +2045,7 @@ module mpp_mod
       pointer( ptr, dummy )
 !      integer(LONG_KIND) :: error_8
 
-      if( .NOT.mpp_initialized )call mpp_error( FATAL, 'MPP_MALLOC: You must first call mpp_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_MALLOC: You must first call mpp_init.' )
 !use existing allocation if it is enough
       if( newlen.LE.len )return
 
@@ -1895,7 +2324,7 @@ module mpp_mod
        call mpp_sync()
        call SYSTEM_CLOCK(tick0)
        do i = 1,npes
-          call shmem_put8( b, a, l, modulo(pe+1,npes) )
+          call shmem_real_put( b, a, l, modulo(pe+1,npes) )
        end do
        call mpp_sync()
        call SYSTEM_CLOCK(tick)
@@ -1906,7 +2335,7 @@ module mpp_mod
        call mpp_sync()
        call SYSTEM_CLOCK(tick0)
        do i = 1,npes
-          call shmem_get8( b, a, l, modulo(pe+1,npes) )
+          call shmem_real_get( b, a, l, modulo(pe+1,npes) )
        end do
        call SYSTEM_CLOCK(tick)
        dt = real(tick-tick0)/(npes*ticks_per_sec)

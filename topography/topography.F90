@@ -12,7 +12,8 @@ use            fms_mod, only: file_exist, check_nml_error,               &
 implicit none
 private
 
-public :: get_topog_mean, get_topog_stdev, &
+public :: topography_init,                 &
+          get_topog_mean, get_topog_stdev, &
           get_ocean_frac, get_ocean_mask,  &
           get_water_frac, get_water_mask,  &
           gaussian_topog_init, get_gaussian_topog
@@ -35,14 +36,27 @@ public :: get_topog_mean, get_topog_stdev, &
 
 !-----------------------------------------------------------------------
 
- character(len=128) :: version = '$Id: topography.F90,v 1.4 2002/01/14 21:18:37 fms Exp $'
- character(len=128) :: tag = '$Name: galway $'
+ character(len=128) :: version = '$Id: topography.F90,v 1.5 2002/07/16 22:57:21 fms Exp $'
+ character(len=128) :: tagname = '$Name: havana $'
 
- logical :: do_nml = .true.
+ logical :: module_is_initialized = .FALSE.
 
 !-----------------------------------------------------------------------
 
  contains
+
+!#######################################################################
+
+   subroutine topography_init ()
+
+     if ( module_is_initialized ) return
+
+     call write_version_number (version,tagname)
+     call read_namelist
+
+     module_is_initialized = .TRUE.
+
+   end subroutine topography_init
 
 !#######################################################################
 
@@ -56,7 +70,7 @@ public :: get_topog_mean, get_topog_stdev, &
 !  zmean      = mean surface height (meters)
 
 !-----------------------------------------------------------------------
-   if (do_nml) call read_namelist
+   if (.not. module_is_initialized) call topography_init()
 
    if ( any(shape(zmean) /= (/size(blon)-1,size(blat)-1/)) ) &
         call error_mesg('get_topog_mean','shape(zmean) is not&
@@ -88,7 +102,7 @@ public :: get_topog_mean, get_topog_stdev, &
 
    real :: zsurf (size(stdev,1),size(stdev,2))
 !-----------------------------------------------------------------------
-   if (do_nml) call read_namelist
+   if (.not. module_is_initialized) call topography_init()
 
    if ( any(shape(stdev) /= (/size(blon)-1,size(blat)-1/)) ) &
        call error_mesg('get_topog_stdev','shape(stdev) is not&
@@ -115,7 +129,7 @@ public :: get_topog_mean, get_topog_stdev, &
  logical :: get_ocean_frac
 
 !-----------------------------------------------------------------------
-   if (do_nml) call read_namelist
+   if (.not. module_is_initialized) call topography_init()
 
    if ( any(shape(ocean_frac) /= (/size(blon)-1,size(blat)-1/)) ) &
         call error_mesg('get_ocean_frac','shape(ocean_frac) is not&
@@ -142,7 +156,7 @@ public :: get_topog_mean, get_topog_stdev, &
 
  real, dimension(size(ocean_mask,1),size(ocean_mask,2)) :: ocean_frac
 !-----------------------------------------------------------------------
- if (do_nml) call read_namelist
+   if (.not. module_is_initialized) call topography_init()
 
  if ( get_ocean_frac(blon, blat, ocean_frac) ) then
    where (ocean_frac > 0.50)
@@ -169,7 +183,7 @@ public :: get_topog_mean, get_topog_stdev, &
  logical :: get_water_frac
 
 !-----------------------------------------------------------------------
-   if (do_nml) call read_namelist
+   if (.not. module_is_initialized) call topography_init()
 
    if ( any(shape(water_frac) /= (/size(blon)-1,size(blat)-1/)) ) &
         call error_mesg('get_water_frac','shape(water_frac) is not&
@@ -196,7 +210,7 @@ public :: get_topog_mean, get_topog_stdev, &
 
  real, dimension(size(water_mask,1),size(water_mask,2)) :: water_frac
 !-----------------------------------------------------------------------
- if (do_nml) call read_namelist
+   if (.not. module_is_initialized) call topography_init()
 
  if ( get_water_frac(blon, blat, water_frac) ) then
    where (water_frac > 0.50)
@@ -352,9 +366,7 @@ public :: get_topog_mean, get_topog_stdev, &
 subroutine read_namelist
 
    integer :: unit, ierr, io
-   real    :: hpi, dtr, ght
-
-   if (.not.do_nml) return
+   real    :: dtr, ght
 
 !  read namelist
 
@@ -369,10 +381,7 @@ subroutine read_namelist
 
 !  write version and namelist to log file
 
-   call write_version_number (version,tag)
    if (mpp_pe() == mpp_root_pe()) write (stdlog(), nml=topography_nml)
-
-   do_nml = .false.
 
 end subroutine read_namelist
 

@@ -27,7 +27,7 @@
      <b>Contact:</b>   fms <br>
      <b>Reviewers:</b> <br>
      <b>Change History: </b><a HREF="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/time_manager/time_manager.f90">WebCVS Log</a> <br>
-     <b>Last Modified:</b> $Date: 2002/02/22 19:14:50 $
+     <b>Last Modified:</b> $Date: 2002/07/16 22:57:12 $
 </div><br>
 
 <!-- END HEADER -->
@@ -199,7 +199,7 @@ fms_mod
      <dt><a href="#leap_year">leap_year</a>:
      <dd> Returns true if the year corresponding to the date for the default 
           calendar is a leap year. Returns false for <tt>THIRTY_DAY_MONTHS</tt> and 
-          <tt>NO_LEAP</tt>. 
+          <tt>NOLEAP</tt>. 
 
      <dt><a href="#length_of_year">length_of_year</a>:
      <dd> Returns the mean length of the year in the default calendar setting.
@@ -393,7 +393,7 @@ OUTPUT
 
 NOTES          
    At present, four integer constants are defined for setting 
-   the calendar type: THIRTY_DAY_MONTHS, JULIAN, NO_LEAP, and 
+   the calendar type: THIRTY_DAY_MONTHS, JULIAN, NOLEAP, and 
    GREGORIAN. However, GREGORIAN CALENDAR is not completely 
    implemented. Selection of this type will result in illegal 
    type error.
@@ -409,7 +409,7 @@ DESCRIPTION
 
 NOTES
    Users should test this returned value using the predefined 
-   calendar type parameters: THIRTY_DAY_MONTHS, JULIAN, NO_LEAP, 
+   calendar type parameters: THIRTY_DAY_MONTHS, JULIAN, NOLEAP, 
    GREGORIAN, and NO_CALENDAR. NO_CALENDAR is the default value of 
    the calendar type.
 </pre>
@@ -532,7 +532,7 @@ INPUT
 RETURNS
    True if the year corresponding to the date for the default 
    calendar is a leap year. False for THIRTY_DAY_MONTHS and 
-   NO_LEAP and otherwise.<span class="type"> [logical]</span>
+   NOLEAP and otherwise.<span class="type"> [logical]</span>
 </pre>
 </li>
 <li><a name="length_of_year"></a><h4>length_of_year</h4>
@@ -744,7 +744,7 @@ program time_main2
 !Set calendar type
 !    call set_calendar_type(THIRTY_DAY_MONTHS)
      call set_calendar_type(JULIAN)
-!    call set_calendar_type(NO_LEAP)
+!    call set_calendar_type(NOLEAP)
 
 ! Set timestep
      dt = set_time(1100, 0)

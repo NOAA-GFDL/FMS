@@ -7,10 +7,12 @@
 #ifdef use_CRI_pointers
       pointer( ptr, field3D )
       ptr = LOC(field)
-#else
-      call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS_2D_: requires Cray pointers.' )
-#endif
       call mpp_update_domains( field3D, domain, flags )
+#else
+      field3D = RESHAPE( field, SHAPE(field3D) )
+      call mpp_update_domains( field3D, domain, flags )
+      field = RESHAPE( field3D, SHAPE(field) )
+#endif
       return
     end subroutine MPP_UPDATE_DOMAINS_2D_
 
@@ -23,10 +25,12 @@
 #ifdef use_CRI_pointers
       pointer( ptr, field3D )
       ptr = LOC(field)
-#else
-      call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS_2D_: requires Cray pointers.' )
-#endif
       call mpp_update_domains( field3D, domain, flags )
+#else
+      field3D = RESHAPE( field, SHAPE(field3D) )
+      call mpp_update_domains( field3D, domain, flags )
+      field = RESHAPE( field3D, SHAPE(field) )
+#endif
       return
     end subroutine MPP_UPDATE_DOMAINS_4D_
 
@@ -39,10 +43,12 @@
 #ifdef use_CRI_pointers
       pointer( ptr, field3D )
       ptr = LOC(field)
-#else
-      call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS_2D_: requires Cray pointers.' )
-#endif
       call mpp_update_domains( field3D, domain, flags )
+#else
+      field3D = RESHAPE( field, SHAPE(field3D) )
+      call mpp_update_domains( field3D, domain, flags )
+      field = RESHAPE( field3D, SHAPE(field) )
+#endif
       return
     end subroutine MPP_UPDATE_DOMAINS_5D_
 
@@ -266,7 +272,7 @@
                  call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS: mpp_domains_stack overflow, call mpp_domains_set_stack_size(' &
                       //trim(text)//') from all PEs.' )
              end if
-             call mpp_send( buffer(buffer_pos+1), msgsize, to_pe )
+             call mpp_send( buffer(buffer_pos+1:buffer_pos+msgsize), msgsize, to_pe )
              buffer_pos = pos
          end if
          call mpp_clock_end(send_clock)
@@ -358,7 +364,7 @@
                  call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS: mpp_domains_stack overflow, call mpp_domains_set_stack_size(' &
                       //trim(text)//') from all PEs.' )
              end if
-             call mpp_recv( buffer(buffer_pos+1), msgsize, from_pe )
+             call mpp_recv( buffer(buffer_pos+1:buffer_pos+msgsize), msgsize, from_pe )
              buffer_pos = buffer_pos + msgsize
          end if
          call mpp_clock_end(recv_clock)
@@ -634,15 +640,19 @@
       ptr_out = LOC(field_out)
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out )
 #else
-      call mpp_error( FATAL, 'Requires Cray pointers.' )
+      field3D_in = RESHAPE( field_in, SHAPE(field3D_in) )
+      call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out )
+      field_out = RESHAPE( field3D_out, SHAPE(field_out) )
 #endif
       return
     end subroutine MPP_REDISTRIBUTE_2D_
 
     subroutine MPP_REDISTRIBUTE_3D_( domain_in, field_in, domain_out, field_out )
       type(domain2D), intent(in) :: domain_in, domain_out
-      MPP_TYPE_, intent(in)  :: field_in ( domain_in%x%data%begin:, domain_in%y%data%begin:,:)
-      MPP_TYPE_, intent(out) :: field_out(domain_out%x%data%begin:,domain_out%y%data%begin:,:)
+!      MPP_TYPE_, intent(in)  :: field_in ( domain_in%x%data%begin:, domain_in%y%data%begin:,:)
+!      MPP_TYPE_, intent(out) :: field_out(domain_out%x%data%begin:,domain_out%y%data%begin:,:)
+      MPP_TYPE_, intent(in)  :: field_in (:,:,:)
+      MPP_TYPE_, intent(out) :: field_out(:,:,:)
       integer :: is, ie, js, je, ke, isc, iec, jsc, jec
       integer :: i, j, k
       integer :: list, m, n, pos, msgsize
@@ -655,14 +665,34 @@
       integer :: buffer_pos, wordlen
       character(len=8) :: text
 
-      ke = size(field_in,3)
-      if( ke.NE.size(field_out,3) )call mpp_error( FATAL, 'MPP_REDISTRIBUTE: mismatch between field_in and field_out.' )
-      if( UBOUND(field_in,1).NE.domain_in%x%data%end .OR. &
-          UBOUND(field_in,2).NE.domain_in%y%data%end ) &
-          call mpp_error( FATAL, 'MPP_REDISTRIBUTE: field_in must be on data domain of domain_in.' )
-      if( UBOUND(field_out,1).NE.domain_out%x%data%end .OR. &
-          UBOUND(field_out,2).NE.domain_out%y%data%end ) &
-          call mpp_error( FATAL, 'MPP_REDISTRIBUTE: field_out must be on data domain of domain_out.' )
+!      ke = size(field_in,3)
+!      if( ke.NE.size(field_out,3) )call mpp_error( FATAL, 'MPP_REDISTRIBUTE: mismatch between field_in and field_out.' )
+!      if( UBOUND(field_in,1).NE.domain_in%x%data%end .OR. &
+!          UBOUND(field_in,2).NE.domain_in%y%data%end ) &
+!          call mpp_error( FATAL, 'MPP_REDISTRIBUTE: field_in must be on data domain of domain_in.' )
+!      if( UBOUND(field_out,1).NE.domain_out%x%data%end .OR. &
+!          UBOUND(field_out,2).NE.domain_out%y%data%end ) &
+!          call mpp_error( FATAL, 'MPP_REDISTRIBUTE: field_out must be on data domain of domain_out.' )
+
+!fix ke
+      ke = 0
+      if( domain_in%pe.NE.NULL_PE )ke = size(field_in,3)
+      if( domain_out%pe.NE.NULL_PE )then
+          if( ke.NE.0 .AND. ke.NE.size(field_out,3) ) &
+               call mpp_error( FATAL, 'MPP_REDISTRIBUTE: mismatch between field_in and field_out.' )
+          ke = size(field_out,3)
+      end if
+      if( ke.EQ.0 )call mpp_error( FATAL, 'MPP_REDISTRIBUTE: either domain_in or domain_out must be native.' )
+!check sizes
+      if( domain_in%pe.NE.NULL_PE )then
+          if( size(field_in,1).NE.domain_in%x%data%size .OR. size(field_in,2).NE.domain_in%y%data%size ) &
+               call mpp_error( FATAL, 'MPP_REDISTRIBUTE: field_in must be on data domain of domain_in.' )
+      end if
+      if( domain_out%pe.NE.NULL_PE )then
+          if( size(field_out,1).NE.domain_out%x%data%size .OR. size(field_out,2).NE.domain_out%y%data%size ) &
+               call mpp_error( FATAL, 'MPP_REDISTRIBUTE: field_out must be on data domain of domain_out.' )
+      end if
+
       buffer_pos = 0
 #ifdef use_CRI_pointers
       ptr = LOC(mpp_domains_stack)
@@ -672,7 +702,7 @@
       call mpp_get_compute_domain( domain_in, isc, iec, jsc, jec )
       n = size(domain_out%list)
       do list = 0,n-1
-         m = mod( domain_out%pos+list, n )
+         m = mod( domain_out%pos+list+n, n )
          to_pe = domain_out%list(m)%pe
          call mpp_get_compute_domain( domain_out%list(m), is, ie, js, je )
          is = max(is,isc); ie = min(ie,iec)
@@ -687,14 +717,15 @@
              end if
              pos = buffer_pos
              do k = 1,ke
-                do j = js,je
-                   do i = is,ie
+                do j = js-domain_in%y%data%begin+1,je-domain_in%y%data%begin+1
+                   do i = is-domain_in%x%data%begin+1,ie-domain_in%x%data%begin+1
                       pos = pos+1
                       buffer(pos) = field_in(i,j,k)
                    end do
                 end do
              end do
-             call mpp_send( buffer(buffer_pos+1), msgsize, to_pe )
+             if( debug )write( stderr(),* )'PE', pe, ' to PE ', to_pe, 'is,ie,js,je=', is, ie, js, je
+             call mpp_send( buffer(buffer_pos+1:buffer_pos+msgsize), msgsize, to_pe )
              buffer_pos = pos
          end if
       end do
@@ -715,11 +746,12 @@
                  call mpp_error( FATAL, 'MPP_REDISTRIBUTE: mpp_domains_stack overflow, call mpp_domains_set_stack_size(' &
                       //trim(text)//') from all PEs.' )
              end if
-             call mpp_recv( buffer(buffer_pos+1), msgsize, from_pe )
+             if( debug )write( stderr(),* )'PE', pe, ' from PE ', from_pe, 'is,ie,js,je=', is, ie, js, je
+             call mpp_recv( buffer(buffer_pos+1:buffer_pos+msgsize), msgsize, from_pe )
              pos = buffer_pos
              do k = 1,ke
-                do j = js,je
-                   do i = is,ie
+                do j = js-domain_out%y%data%begin+1,je-domain_out%y%data%begin+1
+                   do i = is-domain_out%x%data%begin+1,ie-domain_out%x%data%begin+1
                       pos = pos+1
                       field_out(i,j,k) = buffer(pos)
                    end do
@@ -729,7 +761,8 @@
          end if
       end do
 
-      call mpp_sync_self( domain_out%list(:)%pe )
+!      call mpp_sync_self( domain_in%list(:)%pe )
+      call mpp_sync_self()
       return
     end subroutine MPP_REDISTRIBUTE_3D_
 
@@ -746,7 +779,9 @@
       ptr_out = LOC(field_out)
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out )
 #else
-      call mpp_error( FATAL, 'Requires Cray pointers.' )
+      field3D_in = RESHAPE( field_in, SHAPE(field3D_in) )
+      call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out )
+      field_out = RESHAPE( field3D_out, SHAPE(field_out) )
 #endif
       return
     end subroutine MPP_REDISTRIBUTE_4D_
@@ -764,7 +799,9 @@
       ptr_out = LOC(field_out)
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out )
 #else
-      call mpp_error( FATAL, 'Requires Cray pointers.' )
+      field3D_in = RESHAPE( field_in, SHAPE(field3D_in) )
+      call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out )
+      field_out = RESHAPE( field3D_out, SHAPE(field_out) )
 #endif
       return
     end subroutine MPP_REDISTRIBUTE_5D_
@@ -783,10 +820,14 @@
       pointer( ptry, field3Dy )
       ptrx = LOC(fieldx)
       ptry = LOC(fieldy)
-#else
-      call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS: requires Cray pointers.' )
-#endif
       call mpp_update_domains( field3Dx, field3Dy, domain, flags, gridtype )
+#else
+      field3Dx = RESHAPE( fieldx, SHAPE(field3Dx) )
+      field3Dy = RESHAPE( fieldy, SHAPE(field3Dy) )
+      call mpp_update_domains( field3Dx, field3Dy, domain, flags, gridtype )
+      fieldx = RESHAPE( field3Dx, SHAPE(fieldx) )
+      fieldy = RESHAPE( field3Dy, SHAPE(fieldy) )
+#endif
       return
     end subroutine MPP_UPDATE_DOMAINS_2D_V_
 
@@ -797,10 +838,12 @@
       integer, intent(in), optional :: flags, gridtype
       integer :: update_flags
       integer :: i,j,k,n, is, ie, js, je, ke, pos
-      integer :: isg, ieg, jsg, jeg, ioff, joff
+      integer :: ioff, joff
       MPP_TYPE_ :: buffer(size(mpp_domains_stack))
 #ifdef use_CRI_pointers
       pointer( ptr, buffer )
+      MPP_TYPE_ :: field(size(fieldx,1),size(fieldx,2),2*size(fieldx,3))
+      pointer( ptrf, field )
 #endif
       integer :: buffer_pos, msgsize, wordlen
       character(len=8) :: text
@@ -812,14 +855,35 @@
               gridtype.NE.BGRID_NE .AND. gridtype.NE.BGRID_SW .AND. &
               gridtype.NE.CGRID_NE .AND. gridtype.NE.CGRID_SW ) &
                call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS: gridtype must be one of AGRID|BGRID_NE|BGRID_SW|CGRID_NE|CGRID_SW.' )
+!grid_offset_type used by update domains to determine shifts.
           grid_offset_type = gridtype
           call compute_overlaps(domain)
           if( grid_offset_type.NE.domain%gridtype ) &
                call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS: gridtype cannot be changed during run.' )
       end if
-!grid_offset_type used by update domains to determine shifts.
+!need to add code for EWS boundaries
+      if( BTEST(domain%fold,WEST) .AND. BTEST(update_flags,WEST) ) &
+           call mpp_error( FATAL, 'velocity stencil not yet active for WEST fold, contact author.' )
+      if( BTEST(domain%fold,EAST) .AND. BTEST(update_flags,EAST) ) &
+           call mpp_error( FATAL, 'velocity stencil not yet active for EAST fold, contact author.' )
+      if( BTEST(domain%fold,SOUTH) .AND. BTEST(update_flags,SOUTH) ) &
+           call mpp_error( FATAL, 'velocity stencil not yet active for SOUTH fold, contact author.' )
+
+#ifdef use_CRI_pointers
+!optimization for BGRID when fieldx and fieldy are contiguous
+      ptrf = LOC(fieldx)
+      if( LOC(field(1,1,size(fieldx,3)+1)).EQ.LOC(fieldy) .AND. &
+           ( domain%gridtype.EQ.BGRID_NE .OR. domain%gridtype.EQ.BGRID_SW ) )then
+          call mpp_update_domains( field, domain, flags )
+      else
+          call mpp_update_domains( fieldx, domain, flags )
+          call mpp_update_domains( fieldy, domain, flags )
+      end if
+#else
       call mpp_update_domains( fieldx, domain, flags )
       call mpp_update_domains( fieldy, domain, flags )
+#endif
+
 #ifdef use_CRI_pointers
       ptr = LOC(mpp_domains_stack)
 #endif
@@ -829,63 +893,59 @@
       update_flags = XUPDATE+YUPDATE   !default
       if( PRESENT(flags) )update_flags = flags
       ke = size(fieldx,3)
-      call mpp_get_global_domain( domain, is, ie, js, je, xsize=ioff, ysize=joff )
-!if vector data was moved over a northern boundary fold, then flip sign at the fold
-!need to add code for EWS boundaries
+      call mpp_get_global_domain( domain, xsize=ioff, ysize=joff )
+!northern boundary fold
       if( BTEST(domain%fold,NORTH) .AND. BTEST(update_flags,NORTH) )then
-          js = max(domain%y%global%end+1,domain%y%compute%end+1)
+          js = domain%y%global%end + 1
           je = domain%y%data%end
           if( je.GE.js )then
-!for BGRID_NE, we need to move all data leftward by 1 point (vertical shift already done by mpp_update_domains)
-              if( grid_offset_type.EQ.BGRID_NE )then
-                  pos = domain%x%pos - 1 !the one on your right
-                  if( pos.GE.0 )then
-                      is = domain%x%list(pos)%data%end+1; ie=is
-                  else if( domain%x%cyclic )then
-                      pos = pos + size(domain%x%list)
-                      is = domain%x%list(pos)%data%end+1 - ioff; ie=is
-                  else
-                      is=1; ie=0
+!on offset grids, we need to move data leftward by one point
+              pos = domain%x%pos - 1 !the one on your left
+              if( pos.GE.0 )then
+                  is = domain%x%list(pos)%data%end+1; ie=is
+              else if( domain%x%cyclic )then
+                  pos = pos + size(domain%x%list)
+                  is = domain%x%list(pos)%data%end+1 - ioff; ie=is
+              else
+                  is=1; ie=0
+              end if
+              n = buffer_pos
+              if( ie.EQ.is )then
+                  msgsize = (je-js+1)*ke*2 !only half this on CGRID actually
+                  mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize)*wordlen )
+                  if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
+                      write( text,'(i8)' )mpp_domains_stack_hwm
+                      call mpp_error( FATAL, 'MPP_UPDATE: mpp_domains_stack overflow, call mpp_domains_set_stack_size(' &
+                           //trim(text)//') from all PEs.' )
                   end if
-                  n = buffer_pos
-                  if( ie.GE.is .AND. je.GE.js )then
-                      msgsize = (je-js+1)*ke
-                      mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize)*wordlen )
-                      if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
-                          write( text,'(i8)' )mpp_domains_stack_hwm
-                          call mpp_error( FATAL, 'MPP_UPDATE: mpp_domains_stack overflow, call mpp_domains_set_stack_size(' &
-                               //trim(text)//') from all PEs.' )
-                      end if
+                  select case(grid_offset_type)
+                  case(BGRID_NE)
                       do k = 1,ke
                          do j = js,je
-                            do i = is,ie
-                               n = n + 2
-                               buffer(n-1) = fieldx(i,j,k)
-                               buffer(n  ) = fieldy(i,j,k)
-                            end do
+                            n = n + 2
+                            buffer(n-1) = fieldx(is,j,k)
+                            buffer(n  ) = fieldy(is,j,k)
                          end do
                       end do
-                      call mpp_send( buffer(buffer_pos+1), n, domain%x%list(pos)%pe )
+                      call mpp_send( buffer(buffer_pos+1:buffer_pos+n), n, domain%x%list(pos)%pe )
                       buffer_pos = buffer_pos + n
-                  end if
-!shift and flip the sign in your own halo
-                  is = domain%x%data%begin
-                  ie = domain%x%data%end-1
-                  do k = 1,ke
-                     do j = js,je
-                        do i = is,ie
-                           fieldx(i,j,k) = -fieldx(i+1,j,k)
-                           fieldy(i,j,k) = -fieldy(i+1,j,k)
-                        end do
-                     end do
-                  end do
+                  case(CGRID_NE)
+                      do k = 1,ke
+                         do j = js,je
+                            n = n + 1
+                            buffer(n) = fieldx(is,j,k)
+                         end do
+                      end do
+                      call mpp_send( buffer(buffer_pos+1:buffer_pos+n), n, domain%x%list(pos)%pe )
+                      buffer_pos = buffer_pos + n
+                  end select
 !receive data at x%data%end
-                  pos = domain%x%pos + 1
+                  pos = domain%x%pos + 1 !the one on your right
                   if( pos.LT.size(domain%x%list) )then
-                      n = (je-js+1)*ke*2
+                      n = (je-js+1)*ke
                   else if( domain%x%cyclic )then
                       pos = pos - size(domain%x%list)
-                      n = (je-js+1)*ke*2
+                      n = (je-js+1)*ke
                   else
                       n = 0
                   end if
@@ -896,35 +956,234 @@
                           call mpp_error( FATAL, 'MPP_UPDATE: mpp_domains_stack overflow, call mpp_domains_set_stack_size(' &
                                //trim(text)//') from all PEs.' )
                       end if
-                      call mpp_recv( buffer(buffer_pos+1), n, domain%x%list(pos)%pe )
-                      i = domain%x%data%end
-                      n = buffer_pos
+                      select case(grid_offset_type)
+                      case(BGRID_NE)
+                          do k = 1,ke
+                             do j = js,je
+                                do i = domain%x%data%begin,domain%x%data%end-1
+                                   fieldx(i,j,k) = fieldx(i+1,j,k)
+                                   fieldy(i,j,k) = fieldy(i+1,j,k)
+                                end do
+                             end do
+                          end do
+                          n = n*2
+                          call mpp_recv( buffer(buffer_pos+1:buffer_pos+n), n, domain%x%list(pos)%pe )
+                          i = domain%x%data%end
+                          n = buffer_pos
+                          do k = 1,ke
+                             do j = js,je
+                                n = n + 2
+                                fieldx(i,j,k) = buffer(n-1)
+                                fieldy(i,j,k) = buffer(n  )
+                             end do
+                          end do
+                      case(CGRID_NE)
+                          do k = 1,ke
+                             do j = js,je
+                                do i = domain%x%data%begin,domain%x%data%end-1
+                                   fieldx(i,j,k) = fieldx(i+1,j,k)
+                                   fieldy(i,j,k) = fieldy(i+1,j,k)
+                                end do
+                             end do
+                          end do
+                          call mpp_recv( buffer(buffer_pos+1:buffer_pos+n), n, domain%x%list(pos)%pe )
+                          i = domain%x%data%end
+                          n = buffer_pos
+                          do k = 1,ke
+                             do j = js,je
+                                n = n + 1
+                                fieldx(i,j,k) = buffer(n)
+                             end do
+                          end do
+                      end select
+                  end if
+              end if
+!flip the sign
+              is = domain%x%data%begin
+              ie = domain%x%data%end
+              do k = 1,ke
+                 do j = js,je
+                    do i = is,ie
+                       fieldx(i,j,k) = -fieldx(i,j,k)
+                       fieldy(i,j,k) = -fieldy(i,j,k)
+                    end do
+                 end do
+              end do
+          end if
+!eliminate redundant vector data at fold
+          j = domain%y%global%end
+          if( domain%y%data%begin.LE.j .AND. j.LE.domain%y%data%end )then !fold is within domain
+!ship left-half data to right half: on BGRID_NE the x%data%end point is not in mirror domain and must be done separately.
+              if( domain%x%pos.LT.(size(domain%x%list)+1)/2 )then
+                  is = domain%x%data%begin
+                  ie = min(domain%x%data%end,(domain%x%global%begin+domain%x%global%end)/2)
+                  n = buffer_pos
+                  select case(grid_offset_type)
+                  case(BGRID_NE)
                       do k = 1,ke
-                         do j = js,je
+                         do i = is,ie-1
+                            n = n + 2
+                            buffer(n-1) = fieldx(i,j,k)
+                            buffer(n)   = fieldy(i,j,k)
+                         end do
+                      end do
+                      call mpp_send( buffer(buffer_pos+1:n), n-buffer_pos, domain%x%list(size(domain%x%list)-domain%x%pos-1)%pe )
+                      buffer_pos = n
+                  case(CGRID_NE)
+                      do k = 1,ke
+                         do i = is,ie
+                            n = n + 1
+                            buffer(n) = fieldy(i,j,k)
+                         end do
+                      end do
+                      call mpp_send( buffer(buffer_pos+1:n), n-buffer_pos, domain%x%list(size(domain%x%list)-domain%x%pos-1)%pe )
+                      buffer_pos = n
+                  end select
+              end if
+              if( domain%x%pos.GE.size(domain%x%list)/2 )then
+                  is = max(domain%x%data%begin,(domain%x%global%begin+domain%x%global%end)/2+1)
+                  ie = domain%x%data%end
+                  select case(grid_offset_type)
+                  case(BGRID_NE)
+                      n = (ie-is+1)*ke*2
+                      call mpp_recv( buffer(buffer_pos+1:buffer_pos+n), n, domain%x%list(size(domain%x%list)-domain%x%pos-1)%pe )
+                      n = buffer_pos
+!get all values except at x%data%end
+                      do k = 1,ke
+                         do i = ie-1,is,-1
                             n = n + 2
                             fieldx(i,j,k) = -buffer(n-1)
-                            fieldy(i,j,k) = -buffer(n  )
+                            fieldy(i,j,k) = -buffer(n)
+                         end do
+                      end do
+!now get the value at domain%x%data%end
+                      pos = domain%x%pos - 1
+                      if( pos.GE.size(domain%x%list)/2 )then
+                          i = domain%x%list(pos)%data%end
+                          buffer_pos = n
+                          do k = 1,ke
+                             n = n + 2
+                             buffer(n-1) = fieldx(i,j,k)
+                             buffer(n  ) = fieldy(i,j,k)
+                          end do
+                          call mpp_send( buffer(buffer_pos+1:n), n-buffer_pos, domain%x%list(pos)%pe )
+                          buffer_pos = n
+                      end if
+                      pos = domain%x%pos + 1
+                      if( pos.LT.size(domain%x%list) )then
+                          n = ke*2
+                          call mpp_recv( buffer(buffer_pos+1:buffer_pos+n), n, domain%x%list(pos)%pe )
+                          n = buffer_pos
+                          i = domain%x%data%end
+                          do k = 1,ke
+                             n = n + 2
+                             fieldx(i,j,k) = buffer(n-1)
+                             fieldy(i,j,k) = buffer(n  )
+                          end do
+                      end if
+                  case(CGRID_NE)
+                      n = (ie-is+1)*ke
+                      call mpp_recv( buffer(buffer_pos+1:buffer_pos+n), n, domain%x%list(size(domain%x%list)-domain%x%pos-1)%pe )
+                      n = buffer_pos
+                      do k = 1,ke
+                         do i = ie,is,-1
+                            n = n + 1
+                            fieldy(i,j,k) = -buffer(n)
+                         end do
+                      end do
+                  end select
+              end if
+!poles set to 0: BGRID only
+              if( grid_offset_type.EQ.BGRID_NE )then
+                  do i = domain%x%global%begin-1,domain%x%global%end,(domain%x%global%begin+domain%x%global%end)/2
+                     if( domain%x%data%begin.LE.i .AND. i.LE.domain%x%data%end )then
+                         do k = 1,ke
+                            fieldx(i,j,k) = 0.
+                            fieldy(i,j,k) = 0.
+                         end do
+                     end if
+                  end do
+              end if
+!these last three code blocks correct an error where the data in your halo coming from other half may have the wrong sign
+!off west edge
+              select case(grid_offset_type)
+              case(BGRID_NE)
+                  is = domain%x%global%begin - 1
+                  if( is.GT.domain%x%data%begin )then
+                      if( 2*is-domain%x%data%begin.GT.domain%x%data%end ) &
+                           call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS_V: BGRID_NE west edge ubound error.' )
+                      do k = 1,ke
+                         do i = domain%x%data%begin,is-1
+                            fieldx(i,j,k) = fieldx(2*is-i,j,k)
+                            fieldy(i,j,k) = fieldy(2*is-i,j,k)
                          end do
                       end do
                   end if
-              else
-!flip the sign
-                  is = domain%x%data%begin
-                  ie = domain%x%data%end
-                  do k = 1,ke
-                     do j = js,je
-                        do i = is,ie
-                           fieldx(i,j,k) = -fieldx(i,j,k)
-                           fieldy(i,j,k) = -fieldy(i,j,k)
-                        end do
-                     end do
-                  end do
+              case(CGRID_NE)
+                  is = domain%x%global%begin
+                  if( is.GT.domain%x%data%begin )then
+                      if( 2*is-domain%x%data%begin-1.GT.domain%x%data%end ) &
+                           call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS_V: CGRID_NE west edge ubound error.' )
+                      do k = 1,ke
+                         do i = domain%x%data%begin,is-1
+                            fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
+                         end do
+                      end do
+                  end if
+              end select
+!right of midpoint
+              is = (domain%x%global%begin+domain%x%global%end)/2
+              if( domain%x%compute%begin.LE.is .AND. is.LT.domain%x%data%end )then
+                  select case(grid_offset_type)
+                  case(BGRID_NE)
+                      ie = domain%x%data%end
+                      if( 2*is-ie.LT.domain%x%data%begin )ie = ie - 1
+                      if( 2*is-ie.LT.domain%x%data%begin ) &
+                           call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS_V: BGRID_NE midpoint lbound error.' )
+                      do k = 1,ke
+                         do i = is+1,ie
+                            fieldx(i,j,k) = -fieldx(2*is-i,j,k)
+                            fieldy(i,j,k) = -fieldy(2*is-i,j,k)
+                         end do
+                      end do
+                  case(CGRID_NE)
+                      if( 2*is-domain%x%data%end+1.LT.domain%x%data%begin ) &
+                           call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS_V: CGRID_NE midpoint lbound error.' )
+                     do k = 1,ke
+                         do i = is+1,domain%x%data%end
+                            fieldy(i,j,k) = -fieldy(2*is-i+1,j,k)
+                         end do
+                      end do
+                  end select
+              end if
+!off east edge
+              is = domain%x%global%end
+              if( is.LT.domain%x%data%end )then
+                  select case(grid_offset_type)
+                  case(BGRID_NE)
+                      if( 2*is-domain%x%data%end.LT.domain%x%data%begin ) &
+                           call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS_V: BGRID_NE east edge lbound error.' )
+                      do k = 1,ke
+                         do i = is+1,domain%x%data%end
+                            fieldx(i,j,k) = fieldx(2*is-i,j,k)
+                            fieldy(i,j,k) = fieldy(2*is-i,j,k)
+                         end do
+                      end do
+                  case(CGRID_NE)
+                      if( 2*is-domain%x%data%end+1.LT.domain%x%data%begin ) &
+                           call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS_V: CGRID_NE east edge lbound error.' )
+                      do k = 1,ke
+                         do i = is+1,domain%x%data%end
+                            fieldy(i,j,k) = fieldy(2*is-i+1,j,k)
+                         end do
+                      end do
+                  end select
               end if
           end if
       end if
 
       grid_offset_type = AGRID  !reset
-      call mpp_sync_self( domain%list(:)%pe )
+      call mpp_sync_self()
       return
     end subroutine MPP_UPDATE_DOMAINS_3D_V_
 
@@ -940,10 +1199,14 @@
       pointer( ptry, field3Dy )
       ptrx = LOC(fieldx)
       ptry = LOC(fieldy)
-#else
-      call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS: requires Cray pointers.' )
-#endif
       call mpp_update_domains( field3Dx, field3Dy, domain, flags, gridtype )
+#else
+      field3Dx = RESHAPE( fieldx, SHAPE(field3Dx) )
+      field3Dy = RESHAPE( fieldy, SHAPE(field3Dy) )
+      call mpp_update_domains( field3Dx, field3Dy, domain, flags, gridtype )
+      fieldx = RESHAPE( field3Dx, SHAPE(fieldx) )
+      fieldy = RESHAPE( field3Dy, SHAPE(fieldy) )
+#endif
       return
     end subroutine MPP_UPDATE_DOMAINS_4D_V_
 
@@ -959,10 +1222,14 @@
       pointer( ptry, field3Dy )
       ptrx = LOC(fieldx)
       ptry = LOC(fieldy)
-#else
-      call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS: requires Cray pointers.' )
-#endif
       call mpp_update_domains( field3Dx, field3Dy, domain, flags, gridtype )
+#else
+      field3Dx = RESHAPE( fieldx, SHAPE(field3Dx) )
+      field3Dy = RESHAPE( fieldy, SHAPE(field3Dy) )
+      call mpp_update_domains( field3Dx, field3Dy, domain, flags, gridtype )
+      fieldx = RESHAPE( field3Dx, SHAPE(fieldx) )
+      fieldy = RESHAPE( field3Dy, SHAPE(fieldy) )
+#endif
       return
     end subroutine MPP_UPDATE_DOMAINS_5D_V_
 #endif VECTOR_FIELD_

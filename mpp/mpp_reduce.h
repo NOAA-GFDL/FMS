@@ -14,7 +14,7 @@
 #ifdef use_libMPI
       MPP_TYPE_ :: work
 #endif
-      if( .NOT.mpp_initialized )call mpp_error( FATAL, 'MPP_REDUCE: You must first call mpp_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_REDUCE: You must first call mpp_init.' )
       n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
 
       if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)

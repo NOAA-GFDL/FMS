@@ -12,7 +12,9 @@
       gptr = LOC(global)
       call mpp_global_field( domain, local3D, global3D, flags )
 #else
-      call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: currentlyrequires Cray pointers.' )
+      local3D = RESHAPE( local, SHAPE(local3D) )
+      call mpp_global_field( domain, local3D, global3D, flags )
+      global = RESHAPE( global3D, SHAPE(global) )
 #endif
     end subroutine MPP_GLOBAL_FIELD_2D_
 
@@ -37,7 +39,7 @@
       ptr_remote = LOC(mpp_domains_stack(size(clocal)+1))
 #endif
 
-      if( .NOT.mpp_domains_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: must first call mpp_domains_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: must first call mpp_domains_init.' )
       xonly = .FALSE.
       yonly = .FALSE.
       if( PRESENT(flags) )then
@@ -139,7 +141,8 @@
                 end do
              end do
           end do
-          call mpp_sync_self(domain%list(:)%pe)
+!          call mpp_sync_self(domain%list(:)%pe)
+          call mpp_sync_self()
       end if
           
       return
@@ -159,7 +162,9 @@
       gptr = LOC(global)
       call mpp_global_field( domain, local3D, global3D, flags )
 #else
-      call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: currently requires Cray pointers.' )
+      local3D = RESHAPE( local, SHAPE(local3D) )
+      call mpp_global_field( domain, local3D, global3D, flags )
+      global = RESHAPE( global3D, SHAPE(global) )
 #endif
     end subroutine MPP_GLOBAL_FIELD_4D_
 
@@ -177,7 +182,9 @@
       gptr = LOC(global)
       call mpp_global_field( domain, local3D, global3D, flags )
 #else
-      call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: currently requires Cray pointers.' )
+      local3D = RESHAPE( local, SHAPE(local3D) )
+      call mpp_global_field( domain, local3D, global3D, flags )
+      global = RESHAPE( global3D, SHAPE(global) )
 #endif
     end subroutine MPP_GLOBAL_FIELD_5D_
 
@@ -188,7 +195,7 @@
       integer :: i, n, nwords, lpos, rpos
       MPP_TYPE_, allocatable, dimension(:) :: clocal, cremote
 
-      if( .NOT.mpp_domains_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: must first call mpp_domains_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: must first call mpp_domains_init.' )
 
       if( size(local,1).NE.domain%data%size   .OR. size(global,1).NE.domain%global%size .OR. &
           size(local,2).NE.size(global,2) ) &

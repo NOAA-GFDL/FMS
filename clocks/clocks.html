@@ -26,7 +26,7 @@
      <b>Contact:</b>&nbsp;   V. Balaji <br>
      <b>Reviewers:</b>&nbsp; <br>
      <b>Change History:&nbsp; </b><a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/clocks/clocks.F90">WebCVS Log</a> <br>
-     <b>Last Modified:</b>&nbsp; $Date: 2002/02/22 19:13:54 $
+     <b>Last Modified:</b>&nbsp; $Date: 2002/07/16 22:54:39 $
 </div><br>
 
 <!-- END HEADER -->
@@ -285,6 +285,22 @@ External users can download the source <a
 href="ftp://ftp.gfdl.noaa.gov/pub/vb/utils/clocks.F90">here</a>.
 </div><br>
 <!-- END ACQUIRING SOURCE -->
+<!-------------------------------------------------------------------->
+<a name="KNOWN BUGS"></a>
+<hr>
+<h4>KNOWN BUGS</h4>
+<!-- BEGIN KNOWN BUGS -->
+<div>
+<p>The <tt>SYSTEM_CLOCK</tt> intrinsic has a limited range before the
+clock rolls over. The maximum time interval that may be measured
+before rollover depends on the default integer precision, and is
+<tt>COUNT_MAX/COUNT_RATE</tt> seconds. Timing a code section longer
+than this interval will give incorrect results. The <tt>clocks</tt>
+entry in the logfile reports the rollover time interval. Note that
+this is a limitation, or "feature" of the <tt>f90 SYSTEM_CLOCK</tt>
+intrinsic.
+</div><br>
+<!-- END KNOWN BUGS -->
 <!-------------------------------------------------------------------->
 <a name="NOTES"></a>
 <hr>

@@ -68,7 +68,7 @@
      time_interp_mod
     time_manager_mod
     horiz_interp_mod
-       utilities_mod
+             fms_mod
        constants_mod
 
 </PRE>
@@ -149,6 +149,13 @@ NOTES:
 <A NAME="amip_interp_init">
 
 Interp = amip_interp_init ( blon, blat, mask, use_climo, use_annual )
+         one-dimension blon, blat are edges (in radians) for output data grid
+         boxes and the conservative scheme is used when interpolate
+         data between grids.
+Interp = amip_interp_init ( lon, lat, mask, use_climo, use_annual )
+         two-dimension when lon, lat are center of  geographical grid box and the
+         bilinear interpolation is used when interpolate data
+         between grids.
 
 Input
 
@@ -157,6 +164,12 @@ Input
 
   blat   latitude in radians of the model's grid box edges
             [real, dimension(:)]
+
+  lon    longitude in radians of the model's geographical grid box center.
+            [real, dimension(:,:)]
+
+  lon    latitude in radians of the model's geographical grid box center.
+            [real, dimension(:,:)]
 
   mask   A mask for the model grid.
             [logical, dimension(:,:)]

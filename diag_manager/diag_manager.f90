@@ -6,13 +6,15 @@ use time_manager_mod, only: get_time, set_time, get_date, set_date,    &
                             time_type, increment_time, month_name,     &
                             get_calendar_type, NO_CALENDAR
 
-use    utilities_mod, only: error_mesg, FATAL, WARNING, NOTE, &
-                            open_file, close_file,            &
-                            file_exist, get_my_pe
+use       mpp_io_mod, only: mpp_open, MPP_RDONLY
+
+use          fms_mod, only: error_mesg, FATAL, WARNING, NOTE,          &
+                            close_file, stdlog, write_version_number,  &
+                            file_exist, mpp_pe                         
 
 use    diag_axis_mod, only: diag_axis_init, get_axis_length
 
-use  diag_output_mod, only: file_time_init, write_axis_meta_data,  &
+use  diag_output_mod, only: diag_output_init, write_axis_meta_data,  &
                             write_field_meta_data, done_meta_data, &
                             diag_field_out, diag_output_end,       &
                             diag_flush, diag_fieldtype
@@ -87,7 +89,7 @@ type (input_field_type) :: input_fields(max_input_fields)
 type (output_field_type) :: output_fields(max_output_fields)
 
 logical :: first_send_data_call = .true.
-logical :: not_initialized = .true.
+logical :: module_is_initialized = .false.
 
 integer, parameter :: EVERY_TIME =  0
 integer, parameter :: END_OF_RUN = -1
@@ -100,8 +102,8 @@ character (len=10) :: time_unit_list(6) = (/'seconds   ', 'minutes   ', &
 character (len = 7) :: avg_name = 'average'
 
 ! version number of this module
-  character(len=128) :: version = '$Id: diag_manager.f90,v 1.5 2002/01/15 18:32:03 fms Exp $'
-  character(len=128) :: tag = '$Name: galway $'  
+  character(len=128) :: version = '$Id: diag_manager.f90,v 1.6 2002/07/16 22:55:01 fms Exp $'
+  character(len=128) :: tagname = '$Name: havana $'  
 
 
 interface send_data
@@ -179,7 +181,7 @@ logical, optional, intent(in) :: require  ! require static field to be in every 
 integer :: field, num_axes, j, out_num, file_num, freq, siz(3)
 character(len=128) :: error_string
 
-if (not_initialized) call error_mesg ('diag_manager_mod',  &
+if (.not.module_is_initialized) call error_mesg ('diag_manager_mod',  &
                        'module has not been initialized', FATAL)
 
 register_static_field = find_input_field(module_name, field_name)
@@ -399,7 +401,7 @@ integer :: i, out_num, file_num, num_elements, total_elements, num, n1, n2, n3
 integer :: sub_size, freq, units, is, js, ks, kount
 character(len=128) :: error_string
 
-if (not_initialized) call error_mesg ('send_data in diag_manager_mod', &
+if (.not.module_is_initialized) call error_mesg ('send_data in diag_manager_mod', &
                               'module has not been initialized', FATAL)
 
 ! If is, js, or ks not present default them to 1
@@ -499,7 +501,7 @@ do i = 1, input_fields(diag_field_id)%num_output_fields
 ! If average get size: Average intervals are last_output, next_output
       if(average) then
          num = num_elements / total_elements
-!!       if (get_my_pe() == 0) write(*, *) 'number of elements in average is ', num
+!!       if (mpp_pe() == 0) write(*, *) 'number of elements in average is ', num
          if (input_fields(diag_field_id)%missing_value_present) then
             where (output_fields(out_num)%buffer /=            &
                     input_fields(diag_field_id)%missing_value) &
@@ -582,6 +584,8 @@ integer :: i, file_num, freq, num_elements, total_elements, num, j, input_num
 integer :: out_num
 logical :: average
 character(len=128) :: message
+
+if(.not.module_is_initialized) return
 
 do i = 1, num_output_fields
 
@@ -690,6 +694,8 @@ do i = 1, num_files
 ! Close up this file   
    call diag_output_end(files(i)%file_unit)
 end do
+
+module_is_initialized = .FALSE.
 
 end subroutine diag_manager_end
 
@@ -845,12 +851,12 @@ type(tableB_type) :: textB
 type(tableA_type) :: textA
 
 !  If the module was already initialized do nothing
-if (.not.not_initialized) return
+if (module_is_initialized) return
 
 if (.not.file_exist('diag_table') ) &
 call error_mesg('diag_manager_init','file diag_table nonexistent',FATAL)
 
-iunit = open_file ('diag_table', form='ascii', action='read')
+call mpp_open(iunit, 'diag_table', action=MPP_RDONLY)
 
 ! Read in the global file labeling string
 read(iunit, *, end = 99, err=99) global_descriptor
@@ -937,10 +943,10 @@ call error_mesg('diag_manager_init','too many fields in table', FATAL)
 call close_file(iunit)
 
 ! version number to logfile
+  call write_version_number (version, tagname)
 
-  log_unit = open_file ('logfile.out', action='append')
-  if ( get_my_pe() == 0 ) then
-       write (log_unit,'(/,80("="),/(a))') trim(version), trim(tag)
+  log_unit = stdlog()
+  if ( mpp_pe() == 0 ) then
        write (log_unit,95) base_year, trim(amonth), base_day, &
                            base_hour, base_minute, base_second
   endif
@@ -948,7 +954,7 @@ call close_file(iunit)
 95 format ('base date used = ',i4,1x,a,2i3,2(':',i2.2),' gmt')
 
 
-not_initialized = .false.
+module_is_initialized = .true.
 
 return
 
@@ -966,7 +972,7 @@ end subroutine diag_manager_init
 function find_file(name)
 
 integer :: find_file
-character(len=128), intent(in) :: name
+character(len=*), intent(in) :: name
 
 integer :: i
 
@@ -1029,7 +1035,7 @@ do i = 1, num_files
       base_month, base_day, base_hour, base_minute, base_second
 !  write(*, *) time_units
  11 format(a, ' since ', i4.4, '-', i2.2, '-', i2.2, ' ', i2.2, ':', i2.2, ':', i2.2) 
-   call file_time_init(files(i)%name, files(i)%format, global_descriptor, &
+   call diag_output_init(files(i)%name, files(i)%format, global_descriptor, &
       files(i)%long_name, time_units, files(i)%file_unit, files(i)%time_axis_id)
 
 ! Loop through all fields with this file to output axes
@@ -1119,7 +1125,7 @@ real :: dif, time_data(1, 1, 1), dt_time(1, 1, 1), start_dif
 ! Check to see if this field was registered (may not need this here)
 num = output_fields(field)%input_field
 if (.not.input_fields(num)%register) then
-  if (get_my_pe() == 0) then
+  if (mpp_pe() == 0) then
     call error_mesg ('diag_data_out in diag_manager_mod', &
                      'module '//trim(input_fields(num)%module_name)//&
                     &', field '//trim(input_fields(num)%field_name)//&
@@ -1371,7 +1377,7 @@ end function diag_time_inc
  function get_base_time ()
  type(time_type) :: get_base_time
 
-   if (not_initialized) call error_mesg (  &
+   if (.not.module_is_initialized) call error_mesg (  &
                         'get_base_time in diag_manager_mod', &
                         'module has not been initialized', FATAL)
 
@@ -1384,7 +1390,7 @@ end function diag_time_inc
  subroutine get_base_date (year, month, day, hour, minute, second)
    integer, intent(out) :: year, month, day, hour, minute, second
 
-   if (not_initialized) call error_mesg (  &
+   if (.not.module_is_initialized) call error_mesg (  &
                         'get_base_date in diag_manager_mod', &
                         'module has not been initialized', FATAL)
 

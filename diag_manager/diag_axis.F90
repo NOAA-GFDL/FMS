@@ -6,7 +6,7 @@ module diag_axis_mod
 use mpp_domains_mod, only: domain1d, domain2d, mpp_get_compute_domain, &
                            mpp_get_domain_components, null_domain1d, &
                            null_domain2d, operator(/=)
-use   utilities_mod, only: error_mesg
+use         fms_mod, only: error_mesg, write_version_number
 
 implicit none
 private
@@ -64,6 +64,12 @@ integer, parameter :: FATAL = 2
 
  type (diag_axis_type), dimension(max_axes) :: Axes
 
+ logical :: module_is_initialized = .FALSE.
+
+ character(len=128) :: &
+   version='$Id: diag_axis.F90,v 1.3 2002/07/16 22:54:47 fms Exp $'
+ character(len=128) :: &
+   tagname='$Name: havana $'
 
 contains
 
@@ -101,6 +107,9 @@ integer ::  index, ierr, axlen
 
 integer ::  i, set
 
+ if ( .not.module_is_initialized ) then
+      call write_version_number( version, tagname )
+ endif
 
 !---- is there an axis set? ----
 
@@ -233,6 +242,8 @@ endif
    endif
  endif
 
+ module_is_initialized = .TRUE.
+
 !-----------------------------------------------------------------------
 
 end function diag_axis_init
@@ -257,7 +268,7 @@ end function diag_axis_init
 
  character(len=*), intent(out) :: name, units, long_name, cart_name
  integer, intent(in) :: id
- type(domain1d) :: Domain
+ type(domain1d), intent(out) :: Domain
  integer, intent(out) :: direction, edges
  real, intent(out) :: data(:)
 

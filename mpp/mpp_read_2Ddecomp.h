@@ -8,10 +8,10 @@
 #ifdef use_CRI_pointers
       pointer( ptr, data3D )
       ptr = LOC(data)
-      call mpp_read( unit, field, domain, data3D, tindex )
 #else
-      call mpp_error( FATAL, 'MPP_WRITE_2DDECOMP: requires Cray pointers.' )
+      data3D = RESHAPE( data, SHAPE(data3D) )
 #endif
+      call mpp_read( unit, field, domain, data3D, tindex )
       return
     end subroutine MPP_READ_2DDECOMP_2D_
 
@@ -32,7 +32,7 @@
       if (.NOT. present(tindex) .AND. mpp_file(unit)%time_level .ne. -1) &
       call mpp_error(FATAL, 'MPP_READ: need to specify a time level for data with time axis')
 
-      if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_READ: must first call mpp_io_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_READ: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_READ: invalid unit number.' )
 
       call mpp_get_compute_domain( domain, is,  ie,  js,  je  )

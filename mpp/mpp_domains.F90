@@ -32,9 +32,9 @@ module mpp_domains_mod
   implicit none
   private
   character(len=128), private :: version= &
-       '$Id: mpp_domains.F90,v 6.3 2002/02/22 19:09:12 fms Exp $'
-  character(len=128), private :: name= &
-       '$Name: galway $'
+       '$Id: mpp_domains.F90,v 6.4 2002/07/16 22:55:59 fms Exp $'
+  character(len=128), private :: tagname= &
+       '$Name: havana $'
   character(len=128), private :: version_update_domains2D, version_global_reduce, version_global_sum, version_global_field
 
 !parameters used to define domains: these are passed to the flags argument of mpp_define_domains
@@ -104,11 +104,11 @@ module mpp_domains_mod
   type(domain1D), public :: NULL_DOMAIN1D
   type(domain2D), public :: NULL_DOMAIN2D
 
-  integer, private :: pe, npes
+  integer, private :: pe
 
   integer, private :: tk
   logical, private :: verbose=.FALSE., debug=.FALSE., domain_clocks_on=.FALSE.
-  logical, private :: mpp_domains_initialized=.FALSE.
+  logical, private :: module_is_initialized=.FALSE.
   integer, parameter, public :: MPP_DOMAIN_TIME=MPP_DEBUG+1
   integer :: send_clock=0, recv_clock=0, unpk_clock=0, wait_clock=0, pack_clock=0, pack_loop_clock=0
 
@@ -129,6 +129,14 @@ module mpp_domains_mod
 #endif
 
 !public interfaces
+
+! this interface can add halo to a no-halo domain and copy everything else.
+
+  interface mpp_copy_domains
+     module procedure mpp_copy_domains1D
+     module procedure mpp_copy_domains2D
+  end interface
+
   interface mpp_define_domains
      module procedure mpp_define_domains1D
      module procedure mpp_define_domains2D
@@ -414,10 +422,11 @@ module mpp_domains_mod
      module procedure mpp_get_layout2D
   end interface
 
-  public :: mpp_define_layout, mpp_define_domains, mpp_domains_init, mpp_domains_set_stack_size, mpp_domains_exit,&
-            mpp_get_compute_domain, mpp_get_compute_domains, mpp_get_data_domain, mpp_get_global_domain, &
+  public :: mpp_broadcast_domain, mpp_define_layout, mpp_define_domains, mpp_domains_init, mpp_domains_set_stack_size, &
+            mpp_domains_exit, mpp_get_compute_domain, mpp_get_compute_domains, mpp_get_data_domain, mpp_get_global_domain, &
             mpp_get_domain_components, mpp_get_layout, mpp_get_pelist, mpp_redistribute, mpp_update_domains, &
-            mpp_global_field, mpp_global_max, mpp_global_min, mpp_global_sum, operator(.EQ.), operator(.NE.)
+            mpp_global_field, mpp_global_max, mpp_global_min, mpp_global_sum, operator(.EQ.), operator(.NE.), &
+            mpp_copy_domains
 
   contains
 
@@ -432,13 +441,13 @@ module mpp_domains_mod
       integer, intent(in), optional :: flags
       integer :: l=0
 
-      if( mpp_domains_initialized )return
+      if( module_is_initialized )return
       call mpp_init(flags)           !this is a no-op if already initialized
       pe = mpp_pe()
-      npes = mpp_npes()
-      mpp_domains_initialized = .TRUE.
+      module_is_initialized = .TRUE.
       if( pe.EQ.mpp_root_pe() )then
-          write( stdlog(),'(/a)' )'MPP_DOMAINS module '//trim(version)
+          write( stdlog(),'(/a)' )'MPP_DOMAINS module '//trim(version) &
+               //trim(tagname)
 !          write( stdlog(),'(a)' )trim(version_update_domains2D)
       end if
 
@@ -457,10 +466,10 @@ module mpp_domains_mod
       NULL_DOMAIN1D%global%begin  = -1; NULL_DOMAIN1D%global%end  = -1; NULL_DOMAIN1D%global%size = 0
       NULL_DOMAIN1D%data%begin    = -1; NULL_DOMAIN1D%data%end    = -1; NULL_DOMAIN1D%data%size = 0
       NULL_DOMAIN1D%compute%begin = -1; NULL_DOMAIN1D%compute%end = -1; NULL_DOMAIN1D%compute%size = 0
-      NULL_DOMAIN1D%pe = NULL_PE
+      NULL_DOMAIN1D%pe = ANY_PE
       NULL_DOMAIN2D%x = NULL_DOMAIN1D
       NULL_DOMAIN2D%y = NULL_DOMAIN1D
-      NULL_DOMAIN2D%pe = NULL_PE
+      NULL_DOMAIN2D%pe = ANY_PE
 
       if( domain_clocks_on )then
           pack_clock = mpp_clock_id( 'Halo pack' )
@@ -494,10 +503,10 @@ module mpp_domains_mod
 
     subroutine mpp_domains_exit()
 !currently does not have much to do, but provides the possibility of re-initialization
-      if( .NOT.mpp_domains_initialized )return
+      if( .NOT.module_is_initialized )return
       call mpp_max(mpp_domains_stack_hwm)
       if( pe.EQ.mpp_root_pe() )write( stdout(),* )'MPP_DOMAINS_STACK high water mark=', mpp_domains_stack_hwm
-      mpp_domains_initialized = .FALSE.
+      module_is_initialized = .FALSE.
       return
     end subroutine mpp_domains_exit
 
@@ -511,13 +520,17 @@ module mpp_domains_mod
       logical :: mpp_domain1D_eq
       type(domain1D), intent(in) :: a, b
 
-      mpp_domain1D_eq = .FALSE.
-      if( a%compute%begin.EQ.b%compute%begin .AND. &
-          a%compute%end  .EQ.b%compute%end   .AND. &
-          a%data%begin   .EQ.b%data%begin    .AND. &
-          a%data%end     .EQ.b%data%end      .AND. & 
-          a%global%begin .EQ.b%global%begin  .AND. &
-          a%global%end   .EQ.b%global%end )mpp_domain1D_eq = .TRUE.
+      mpp_domain1D_eq = ( a%compute%begin.EQ.b%compute%begin .AND. &
+                          a%compute%end  .EQ.b%compute%end   .AND. &
+                          a%data%begin   .EQ.b%data%begin    .AND. &
+                          a%data%end     .EQ.b%data%end      .AND. & 
+                          a%global%begin .EQ.b%global%begin  .AND. &
+                          a%global%end   .EQ.b%global%end    )
+!compare pelists
+!      if( mpp_domain1D_eq )mpp_domain1D_eq = ASSOCIATED(a%list) .AND. ASSOCIATED(b%list)
+!      if( mpp_domain1D_eq )mpp_domain1D_eq = size(a%list).EQ.size(b%list)
+!      if( mpp_domain1D_eq )mpp_domain1D_eq = ALL(a%list%pe.EQ.b%list%pe)
+      
       return
     end function mpp_domain1D_eq
 
@@ -534,6 +547,11 @@ module mpp_domains_mod
       type(domain2D), intent(in) :: a, b
 
       mpp_domain2D_eq = a%x.EQ.b%x .AND. a%y.EQ.b%y
+      if( mpp_domain2D_eq .AND. ((a%pe.EQ.ANY_PE).OR.(b%pe.EQ.ANY_PE)) )return !NULL_DOMAIN2D
+!compare pelists
+      if( mpp_domain2D_eq )mpp_domain2D_eq = ASSOCIATED(a%list) .AND. ASSOCIATED(b%list)
+      if( mpp_domain2D_eq )mpp_domain2D_eq = size(a%list).EQ.size(b%list)
+      if( mpp_domain2D_eq )mpp_domain2D_eq = ALL(a%list%pe.EQ.b%list%pe)
       return
     end function mpp_domain2D_eq
 
@@ -544,6 +562,135 @@ module mpp_domains_mod
       mpp_domain2D_ne = .NOT. ( a.EQ.b )
       return
     end function mpp_domain2D_ne
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                                                                             !
+!              MPP_COPY_DOMAINS: Copy domain and add halo                     !
+!                                                                             !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    subroutine mpp_copy_domains1D(domain_in, domain_out, halo)
+! ARGUMENTS
+! domain_in is the input domain
+! domain_out is the returned domain
+! halo (optional) defines halo width (currently the same on both sides)
+
+      type(domain1D), intent(in)    :: domain_in
+      type(domain1D), intent(out)   :: domain_out
+      integer, intent(in), optional :: halo
+
+      integer, dimension(:), allocatable :: pelist, extent
+      integer :: ndivs, global_indices(2) !(/ isg, ieg /)
+      integer :: isg, ieg, halosz
+
+      
+! get the global indices of the input domain
+      call mpp_get_global_domain(domain_in, isg, ieg )
+      global_indices(1) = isg;       global_indices(2) = ieg
+
+! get the number of divisions of domain
+      call mpp_get_layout(domain_in, ndivs)
+
+      allocate(pelist(0:ndivs-1),extent(0:ndivs-1))
+
+! get the pe list of the input domain
+      call mpp_get_pelist( domain_in, pelist)
+
+! get the halo
+      halosz = 0
+      if(present(halo)) halosz = halo
+
+! get the extent
+      call mpp_get_compute_domains(Domain_in, size = extent(0:ndivs-1))      
+
+      call mpp_define_domains( global_indices, ndivs, domain_out, pelist = pelist, &
+                                 halo = halosz, extent = extent )
+
+    end subroutine mpp_copy_domains1D
+
+
+!----------------------------------------------------------------------------------
+
+
+    subroutine mpp_copy_domains2D(domain_in, domain_out, xhalo, yhalo)
+! ARGUMENTS
+! domain_in is the input domain
+! domain_out is the returned domain
+! xhalo, yhalo (optional) defines halo width. 
+
+      type(domain2D), intent(in)    :: domain_in
+      type(domain2D), intent(out)   :: domain_out
+      integer, intent(in), optional :: xhalo, yhalo
+
+      integer, dimension(:), allocatable :: pelist, xextent, yextent, xbegin, xend, &
+                                            xsize, ybegin, yend, ysize
+      integer :: ndivx, ndivy, ndivs, npes, global_indices(4), layout(2)
+      integer :: isg, ieg, jsg, jeg, xhalosz, yhalosz, i, j, m, n, pe
+      
+! get the global indices of the input domain
+      call mpp_get_global_domain(domain_in, isg, ieg, jsg, jeg )
+      global_indices(1) = isg;       global_indices(2) = ieg
+      global_indices(3) = jsg;       global_indices(4) = jeg
+
+! get the number of divisions of domain
+      call mpp_get_layout(domain_in, layout)
+      ndivx = layout(1); ndivy = layout(2)
+      ndivs = ndivx * ndivy
+      npes = mpp_npes()
+
+      if( ndivs.NE.npes )call mpp_error( 'mpp_domains_mod', &
+                 'mpp_copy_domains: number of PEs is not consistent with the layout', FATAL )
+      allocate(pelist(0:npes-1), xsize(0:npes-1), ysize(0:npes-1), &
+               xbegin(0:npes-1), xend(0:npes-1),                   &
+               ybegin(0:npes-1), yend(0:npes-1),                   &
+               xextent(0:ndivx), yextent(0:ndivy))
+
+! get the pe list of the input domain
+      call mpp_get_pelist2D( domain_in, pelist)
+
+! get the halo
+      xhalosz = 0; yhalosz = 0
+      if(present(xhalo)) xhalosz = xhalo
+      if(present(yhalo)) yhalosz = yhalo
+
+! get the extent
+      call mpp_get_compute_domains(Domain_in, xbegin, xend, xsize, &
+                                          ybegin, yend, ysize  )
+            
+!  compute the exact x-axis decomposition
+      i = isg
+      m = 0
+      xextent = 0
+      do pe = 0, npes-1
+        if ( xbegin(pe) == i ) then
+          m = m+1
+          xextent (m) = xsize (pe)
+          i = i + xsize(pe)
+          if ( m == size(xextent) .or. i > ieg ) exit
+        endif
+      enddo
+
+!  compute the exact y-axis decomposition
+      j = jsg 
+      n = 0   
+      yextent = 0
+      do pe = 0, npes-1
+        if ( ybegin(pe) == j ) then
+          n = n+1 
+          yextent (n) = ysize (pe)
+          j = j + ysize(pe)
+          if ( n == size(yextent) .or. j > jeg ) exit
+        endif   
+      enddo   
+
+      call mpp_define_domains( global_indices, layout, domain_out, pelist = pelist, &
+                               xhalo = xhalosz, yhalo = yhalosz, xextent = xextent, & 
+                               yextent = yextent)
+
+    end subroutine mpp_copy_domains2D
+
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -587,7 +734,7 @@ module mpp_domains_mod
       even(n) = (mod(n,2).EQ.0)
       odd (n) = (mod(n,2).EQ.1)
       
-      if( .NOT.mpp_domains_initialized )call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS1D: You must first call mpp_domains_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS1D: You must first call mpp_domains_init.' )
 !get global indices
       isg = global_indices(1)
       ieg = global_indices(2)
@@ -601,8 +748,8 @@ module mpp_domains_mod
           allocate( pes(0:size(pelist)-1) )
           pes(:) = pelist(:)
       else
-          allocate( pes(0:npes-1) )
-          pes(:) = (/ (i,i=0,npes-1) /)
+          allocate( pes(0:mpp_npes()-1) )
+          pes(:) = (/ (i,i=0,mpp_npes()-1) /)
       end if
 
 !get number of real domains: 1 mask domain per PE in pes
@@ -779,7 +926,7 @@ module mpp_domains_mod
       integer, intent(in), optional :: xflags, yflags, xhalo, yhalo
       integer, intent(in), optional :: xextent(0:), yextent(0:)
       logical, intent(in), optional :: maskmap(0:,0:)
-      character(len=*), optional :: name
+      character(len=*), intent(in), optional :: name
       integer :: i, j, m, n
       integer :: ipos, jpos, pos
       integer :: ndivx, ndivy, isg, ieg, jsg, jeg, isd, ied, jsd, jed
@@ -788,7 +935,7 @@ module mpp_domains_mod
       integer, allocatable :: pes(:), pearray(:,:)
       character(len=8) :: text
 
-      if( .NOT.mpp_domains_initialized )call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS2D: You must first call mpp_domains_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS2D: You must first call mpp_domains_init.' )
       ndivx = layout(1); ndivy = layout(2)
       isg = global_indices(1); ieg = global_indices(2); jsg = global_indices(3); jeg = global_indices(4)
 
@@ -796,8 +943,9 @@ module mpp_domains_mod
           allocate( pes(0:size(pelist)-1) )
           pes = pelist
       else
-          allocate( pes(0:npes-1) )
-          pes = (/ (i,i=0,npes-1) /)
+          allocate( pes(0:mpp_npes()-1) )
+          call mpp_get_current_pelist(pes)
+!          pes = (/ (i,i=0,mpp_npes()-1) /)
       end if
 
       allocate( mask(0:ndivx-1,0:ndivy-1) )
@@ -818,7 +966,7 @@ module mpp_domains_mod
 !place on PE array; need flag to assign them to j first and then i
       allocate( pearray(0:ndivx-1,0:ndivy-1) )
       pearray(:,:) = NULL_PE
-      ipos = -1; jpos = -1; pos = -1
+      ipos = NULL_PE; jpos = NULL_PE; pos = NULL_PE
       n = 0
       do j = 0,ndivy-1
          do i = 0,ndivx-1
@@ -833,7 +981,7 @@ module mpp_domains_mod
             end if
          end do
       end do
-      if( ipos.EQ.-1 .OR. jpos.EQ.-1 .or. pos.EQ.-1 ) &
+      if( ipos.EQ.NULL_PE .OR. jpos.EQ.NULL_PE .or. pos.EQ.NULL_PE ) &
            call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS2D: pelist must include this PE.' )
       if( debug )write( stderr(), * )'pe, ipos, jpos=', pe, ipos, jpos, ' pearray(:,jpos)=', pearray(:,jpos), &
                                                                         ' pearray(ipos,:)=', pearray(ipos,:)
@@ -846,6 +994,7 @@ module mpp_domains_mod
       if( domain%x%list(domain%x%pos)%pe.NE.domain%y%list(domain%y%pos)%pe ) &
            call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS2D: domain%x%list(ipos)%pe.NE.domain%y%list(jpos)%pe.' ) 
       domain%pos = pos
+      domain%pe  = pe
 
 !set up fold
       domain%fold = 0
@@ -860,6 +1009,8 @@ module mpp_domains_mod
           
       if( BTEST(domain%fold,SOUTH) .OR. BTEST(domain%fold,NORTH) )then
           if( domain%y%cyclic )call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: an axis cannot be both folded and cyclic.' )
+          if( modulo(domain%x%global%size,2).NE.0 ) &
+               call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: number of points in X must be even when there is a fold in Y.' )
 !check if folded domain boundaries line up in X: compute domains lining up is a sufficient condition for symmetry
           n = ndivx - 1
           do i = 0,n/2
@@ -869,6 +1020,8 @@ module mpp_domains_mod
       end if
       if( BTEST(domain%fold,WEST) .OR. BTEST(domain%fold,EAST) )then
           if( domain%x%cyclic )call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: an axis cannot be both folded and cyclic.' )
+          if( modulo(domain%y%global%size,2).NE.0 ) &
+               call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: number of points in Y must be even when there is a fold in X.' )
 !check if folded domain boundaries line up in Y: compute domains lining up is a sufficient condition for symmetry
           n = ndivy - 1
           do i = 0,n/2
@@ -891,7 +1044,7 @@ module mpp_domains_mod
       do i = 0,n-1
          m = mod(pos+i,n)
          domain%list(m)%pe = pes(m)
-         call mpp_transmit( domain_info_buf(1), 8, pes(mod(pos+n-i,n)), domain_info_buf(9), 8, pes(m) )
+         call mpp_transmit( domain_info_buf(1:8), 8, pes(mod(pos+n-i,n)), domain_info_buf(9:16), 8, pes(m) )
          domain%list(m)%x%compute%begin = domain_info_buf(9)
          domain%list(m)%x%compute%end   = domain_info_buf(10)
          domain%list(m)%y%compute%begin = domain_info_buf(11)
@@ -916,6 +1069,66 @@ module mpp_domains_mod
           
       return
     end subroutine mpp_define_domains2D
+
+    subroutine mpp_broadcast_domain( domain )
+!broadcast domain (useful only outside the context of its own pelist)
+      type(domain2D), intent(inout) :: domain
+      integer, allocatable :: pes(:)
+      logical :: native         !true if I'm on the pelist of this domain
+      integer :: listsize, listpos
+      integer :: n
+      integer, dimension(5) :: msg, info         !pe and compute domain of each item in list
+
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN: You must first call mpp_domains_init.' )
+
+!get the current pelist
+      allocate( pes(0:mpp_npes()-1) )
+      call mpp_get_current_pelist(pes)
+
+!am I part of this domain?
+      native = ASSOCIATED(domain%list)
+
+!set local list size
+      if( native )then
+          listsize = size(domain%list)
+      else
+          listsize = 0
+      end if
+      call mpp_max(listsize)
+
+      if( .NOT.native )then
+!initialize domain%list and set null values in message
+          allocate( domain%list(0:listsize-1) )
+          domain%pe = NULL_PE
+          domain%pos = -1
+          domain%x%compute%begin =  HUGE(1)
+          domain%x%compute%end   = -HUGE(1)
+          domain%y%compute%begin =  HUGE(1)
+          domain%y%compute%end   = -HUGE(1)
+      end if
+!initialize values in info
+      info(1) = domain%pe
+      call mpp_get_compute_domain( domain, info(2), info(3), info(4), info(5) )
+
+!broadcast your info across current pelist and unpack if needed
+      listpos = 0
+      do n = 0,mpp_npes()-1
+         msg = info
+         if( pe.EQ.pes(n) .AND. debug )write( stderr(),* )'PE ', pe, 'broadcasting msg ', msg
+         call mpp_broadcast( msg, 5, pes(n) )
+!no need to unpack message if native
+!no need to unpack message from non-native PE
+         if( .NOT.native .AND. msg(1).NE.NULL_PE )then
+             domain%list(listpos)%pe = msg(1)
+             domain%list(listpos)%x%compute%begin = msg(2)
+             domain%list(listpos)%x%compute%end   = msg(3)
+             domain%list(listpos)%y%compute%begin = msg(4)
+             domain%list(listpos)%y%compute%end   = msg(5)
+             listpos = listpos + 1
+             if( debug )write( stderr(),* )'PE ', pe, 'received domain from PE ', msg(1), 'is,ie,js,je=', msg(2:5)
+         end if
+      end do
+    end subroutine mpp_broadcast_domain
 
     subroutine compute_overlaps( domain )
 !computes remote domain overlaps
@@ -1730,7 +1943,7 @@ module mpp_domains_mod
       type(domain1D), intent(in) :: domain
       integer, intent(out), optional, dimension(:) :: begin, end, size 
 
-      if( .NOT.mpp_domains_initialized ) &
+      if( .NOT.module_is_initialized ) &
            call mpp_error( FATAL, 'MPP_GET_COMPUTE_DOMAINS: must first call mpp_domains_init.' )
 !we use shape instead of size for error checks because size is used as an argument
       if( PRESENT(begin) )then
@@ -1755,7 +1968,7 @@ module mpp_domains_mod
       type(domain2D), intent(in) :: domain
       integer, intent(out), optional, dimension(:) :: xbegin, xend, xsize, ybegin, yend, ysize
 
-      if( .NOT.mpp_domains_initialized ) &
+      if( .NOT.module_is_initialized ) &
            call mpp_error( FATAL, 'MPP_GET_COMPUTE_DOMAINS: must first call mpp_domains_init.' )
 
       if( PRESENT(xbegin) )then
@@ -1797,7 +2010,7 @@ module mpp_domains_mod
       integer, intent(out), optional :: pos
       integer :: ndivs
 
-      if( .NOT.mpp_domains_initialized ) &
+      if( .NOT.module_is_initialized ) &
            call mpp_error( FATAL, 'MPP_GET_PELIST: must first call mpp_domains_init.' )
       ndivs = size(domain%list)
       
@@ -1814,7 +2027,7 @@ module mpp_domains_mod
       integer, intent(out) :: pelist(:)
       integer, intent(out), optional :: pos
 
-      if( .NOT.mpp_domains_initialized ) &
+      if( .NOT.module_is_initialized ) &
            call mpp_error( FATAL, 'MPP_GET_PELIST: must first call mpp_domains_init.' )
       if( size(pelist).NE.size(domain%list) ) &
            call mpp_error( FATAL, 'MPP_GET_PELIST: pelist array size does not match domain.' )
@@ -1828,7 +2041,7 @@ module mpp_domains_mod
       type(domain1D), intent(in) :: domain
       integer, intent(out) :: layout
       
-      if( .NOT.mpp_domains_initialized ) &
+      if( .NOT.module_is_initialized ) &
            call mpp_error( FATAL, 'MPP_GET_LAYOUT: must first call mpp_domains_init.' )
 
       layout = size(domain%list)
@@ -1839,7 +2052,7 @@ module mpp_domains_mod
       type(domain2D), intent(in) :: domain
       integer, intent(out) :: layout(2)
       
-      if( .NOT.mpp_domains_initialized ) &
+      if( .NOT.module_is_initialized ) &
            call mpp_error( FATAL, 'MPP_GET_LAYOUT: must first call mpp_domains_init.' )
 
       layout(1) = size(domain%x%list)
@@ -2313,19 +2526,18 @@ program mpp_domains_test
   use mpp_domains_mod
   implicit none
   integer :: pe, npes
-  type(domain2D) :: domain
   integer :: nx=128, ny=128, nz=40, halo=2, stackmax=32768
-  real(DOUBLE_KIND), dimension(:,:,:), allocatable :: local, localy, global, gglobal
-  integer :: is, ie, js, je, isd, ied, jsd, jed
-  integer :: tk, tk0, tks_per_sec
-  integer :: i,j,k, unit=7, layout(2)
-  integer :: id
-  real :: t
-  real :: lsum, gsum
+  real, dimension(:,:,:), allocatable :: global, gcheck
+  integer :: unit=7
   logical :: debug=.FALSE., opened
   namelist / mpp_domains_nml / nx, ny, nz, halo, stackmax, debug
+  integer :: i, j, k
+  integer :: layout(2)
+  integer :: is, ie, js, je, isd, ied, jsd, jed
+  integer :: id
 
   call mpp_init()
+
   call mpp_set_warn_level(FATAL)
 !possibly open a file called mpp_domains.nml
   do
@@ -2342,7 +2554,6 @@ program mpp_domains_test
   pe = mpp_pe()
   npes = mpp_npes()
 
-  call SYSTEM_CLOCK( count_rate=tks_per_sec )
   if( debug )then
       call mpp_domains_init(MPP_DEBUG)
   else
@@ -2350,23 +2561,12 @@ program mpp_domains_test
   end if
   call mpp_domains_set_stack_size(stackmax)
 
-  if( pe.EQ.mpp_root_pe() )then
-      print '(a,5i4)', 'npes, nx, ny, nz, halo=', npes, nx, ny, nz, halo
-      print *, 'Using NEW domaintypes and calls...'
-  end if
-
-  call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
-  call mpp_define_domains( (/1,nx,1,ny/), layout, domain, xhalo=halo, yhalo=halo, name='Simple halo update' )
-  call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
-  call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+  if( pe.EQ.mpp_root_pe() )print '(a,5i4)', 'npes, nx, ny, nz, halo=', npes, nx, ny, nz, halo
 
   allocate( global(1-halo:nx+halo,1-halo:ny+halo,nz) )
-  allocate( gglobal(nx,ny,nz) )
-  allocate( local(isd:ied,jsd:jed,nz) )
-  allocate( localy(isd:ied,jsd:jed,nz) )
+  allocate( gcheck(nx,ny,nz) )
 
 !fill in global array: with k.iiijjj
-  global = 0.
   do k = 1,nz
      do j = 1,ny
         do i = 1,nx
@@ -2374,144 +2574,246 @@ program mpp_domains_test
         end do
      end do
   end do
-!fill in local array
-  local = 0.
-  local(is:ie,js:je,:) = global(is:ie,js:je,:)
 
-!fill in gglobal array
-  id = mpp_clock_id( 'Global field', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-  call mpp_clock_begin(id)
-  call mpp_global_field( domain, local, gglobal )
-  call mpp_clock_end  (id)
-!compare checksums between global and local arrays
-  call compare_checksums( global(1:nx,1:ny,:), gglobal, 'mpp_global_field' )
+  call test_halo_update( 'Simple' ) !includes global field, global sum tests
+  call test_halo_update( 'Cyclic' )
+  call test_halo_update( 'Folded' ) !includes vector field test
 
-!fill in halos
-  id = mpp_clock_id( 'Halo update', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-  call mpp_clock_begin(id)
-  call mpp_update_domains( local, domain )
-  call mpp_clock_end  (id)
-!compare checksums between global and local arrays
-  call compare_checksums( local, global(isd:ied,jsd:jed,:), 'Halo update' )
-
-!test cyclic boundary conditions
-  call mpp_define_domains( (/1,nx,1,ny/), layout, domain, xhalo=halo, yhalo=halo, &
-       xflags=CYCLIC_GLOBAL_DOMAIN, yflags=CYCLIC_GLOBAL_DOMAIN, name='Cyclic halo update' )
-  call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
-  call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
-!fill in cyclic global array
-  global(1-halo:0,    1:ny,:) = global(nx-halo+1:nx,1:ny,:)
-  global(nx+1:nx+halo,1:ny,:) = global(1:halo,      1:ny,:)
-  global(1-halo:nx+halo,    1-halo:0,:) = global(1-halo:nx+halo,ny-halo+1:ny,:)
-  global(1-halo:nx+halo,ny+1:ny+halo,:) = global(1-halo:nx+halo,1:halo,      :)
-!fill in local array
-  local = 0.
-  local(is:ie,js:je,:) = global(is:ie,js:je,:)
-!fill in halos
-  id = mpp_clock_id( 'Cyclic halo update', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-  call mpp_clock_begin(id)
-  call mpp_update_domains( local, domain )
-  call mpp_clock_end  (id)
-!compare checksums between global and local arrays
-  call compare_checksums( local, global(isd:ied,jsd:jed,:), 'Cyclic halo update' )
-
-!test folded boundary conditions
-  call mpp_define_domains( (/1,nx,1,ny/), layout, domain, xhalo=halo, yhalo=halo, &
-       xflags=CYCLIC_GLOBAL_DOMAIN, yflags=FOLD_NORTH_EDGE, name='Folded halo update' )
-  call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
-  call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
-!fill in folded north edge, cyclic east and west edge
-  global(1-halo:0,    1:ny,:) = global(nx-halo+1:nx,1:ny,:)
-  global(nx+1:nx+halo,1:ny,:) = global(1:halo,      1:ny,:)
-  global(1-halo:nx+halo,ny+1:ny+halo,:) = global(nx+halo:1-halo:-1,ny:ny-halo+1:-1,:)
-  global(1-halo:nx+halo,1-halo:0,:) = 0
-!fill in local array
-  local = 0.
-  local(is:ie,js:je,:) = global(is:ie,js:je,:)
-!fill in halos
-  id = mpp_clock_id( 'Folded halo update', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-  call mpp_clock_begin(id)
-  call mpp_update_domains( local, domain )
-  call mpp_clock_end  (id)
-!compare checksums between global and local arrays
-  call compare_checksums( local(isd:ied,jsd:jed,:), global(isd:ied,jsd:jed,:), 'Folded halo update' )
-!fill in local array
-  local = 0.
-  local(is:ie,js:je,:) = global(is:ie,js:je,:)
-!fill in halos: partial update
-  id = mpp_clock_id( 'Folded halo N+E update', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-  call mpp_clock_begin(id)
-  call mpp_update_domains( local, domain, NUPDATE+EUPDATE )
-  call mpp_clock_end  (id)
-!compare checksums between global and local arrays
-  call compare_checksums( local(is:ied,js:jed,:), global(is:ied,js:jed,:), 'Folded halo N+E update' )
-!folded, with sign flip at fold (vector component)
-!fill in folded north edge, cyclic east and west edge
-  global(1-halo:0,    1:ny,:) = global(nx-halo+1:nx,1:ny,:)
-  global(nx+1:nx+halo,1:ny,:) = global(1:halo,      1:ny,:)
-  global(1-halo:nx+halo-1,ny+1:ny+halo,:) = -global(nx+halo-1:1-halo:-1,ny-1:ny-halo:-1,:)
-  global(nx+halo,ny+1:ny+halo,:) = -global(nx-halo,ny-1:ny-halo:-1,:)
-  global(1-halo:nx+halo,1-halo:0,:) = 0
-!fill in local array
-  local = 0.
-  local(is:ie,js:je,:) = global(is:ie,js:je,:)
-  localy = local
-!fill in halos
-  id = mpp_clock_id( 'Folded halo update, vector field', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-  call mpp_clock_begin(id)
-  call mpp_update_domains( local, localy, domain, gridtype=BGRID_NE )
-  call mpp_clock_end  (id)
-!compare checksums between global and local arrays
-  call compare_checksums( local(isd:ied,jsd:jed,:), global(isd:ied,jsd:jed,:), 'Folded halo update, vector field' )
-
-!timing tests
-  if( pe.EQ.mpp_root_pe() )print '(a)', 'TIMING TESTS:'
-  call mpp_define_domains( (/1,nx,1,ny/), layout, domain, xhalo=halo, yhalo=halo, &
-       xflags=CYCLIC_GLOBAL_DOMAIN, yflags=CYCLIC_GLOBAL_DOMAIN, name='Timing' )
-  call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
-  call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
-!fill in cyclic global array
-  global(1-halo:0,    1:ny,:) = global(nx-halo+1:nx,1:ny,:)
-  global(nx+1:nx+halo,1:ny,:) = global(1:halo,      1:ny,:)
-  global(1-halo:nx+halo,    1-halo:0,:) = global(1-halo:nx+halo,ny-halo+1:ny,:)
-  global(1-halo:nx+halo,ny+1:ny+halo,:) = global(1-halo:nx+halo,1:halo,      :)
-!fill in local array
-  local = 0.
-  local(is:ie,js:je,:) = global(is:ie,js:je,:)
-!fill in halos
-  call mpp_sync()          !this ensures you time only the update_domains call
-  call SYSTEM_CLOCK(tk0)
-  call mpp_update_domains( local, domain )
-  call SYSTEM_CLOCK(tk)
-  t = float(tk-tk0)/tks_per_sec
-!compare checksums between global and local arrays
-  call compare_checksums( local, global(isd:ied,jsd:jed,:), 'Timed cyclic halo update' )
-!words transferred
-  j = ( (ied-isd+1)*(jed-jsd+1) - (ie-is+1)*(je-js+1) )*nz
-  call mpp_max(j)
-  if( pe.EQ.mpp_root_pe() ) &
-       print '(a,i4,i8,es12.4,f10.3)', 'Halo width, words, time (sec), bandwidth (MB/sec)=', halo, j, t, j*8e-6/t
-!test and time mpp_global_sum
-  gsum = sum( global(1:nx,1:ny,:) )
-  call mpp_sync()          !this ensures you time only the update_domains call
-  call SYSTEM_CLOCK(tk0)
-  lsum = mpp_global_sum( domain, local )
-  call SYSTEM_CLOCK(tk)
-  t = float(tk-tk0)/tks_per_sec
-  if( pe.EQ.mpp_root_pe() )print '(a,2es15.8,a,es12.4)', 'Fast sum=', lsum, gsum, ' Time (sec)=', t
-  call mpp_sync()          !this ensures you time only the update_domains call
-  call SYSTEM_CLOCK(tk0)
-  lsum = mpp_global_sum( domain, local, BITWISE_EXACT_SUM )
-  call SYSTEM_CLOCK(tk)
-  t = float(tk-tk0)/tks_per_sec
-  if( pe.EQ.mpp_root_pe() )print '(a,2es15.8,a,es12.4)', 'Bitwise-exact sum=', lsum, gsum, ' Time (sec)=', t
-
+  call test_redistribute( 'Complete pelist' )
+  call test_redistribute( 'Overlap  pelist' )
+  call test_redistribute( 'Disjoint pelist' )
+  
   call mpp_domains_exit()
   call mpp_exit()
 
 contains
+
+  subroutine test_redistribute( type )
+!test redistribute between two domains
+    character(len=*), intent(in) :: type
+    type(domain2D) :: domainx, domainy
+    real, allocatable, dimension(:,:,:) :: x, y
+    integer, allocatable :: pelist(:)
+    integer :: pemax
+
+    pemax = npes/2              !the partial pelist will run from 0...pemax
+
+!select pelists
+    select case(type)
+    case( 'Complete pelist' )
+!both pelists run from 0...npes-1
+        allocate( pelist(0:npes-1) )
+        pelist = (/ (i,i=0,npes-1) /)
+        call mpp_declare_pelist( pelist )
+    case( 'Overlap  pelist' )
+!one pelist from 0...pemax, other from 0...npes-1
+        allocate( pelist(0:pemax) )
+        pelist = (/ (i,i=0,pemax) /)
+        call mpp_declare_pelist( pelist )
+    case( 'Disjoint pelist' )
+!one pelist from 0...pemax, other from pemax+1...npes-1
+        if( pemax+1.GE.npes )return
+        allocate( pelist(0:pemax) )
+        pelist = (/ (i,i=0,pemax) /)
+        call mpp_declare_pelist( pelist )
+        call mpp_declare_pelist( (/ (i,i=pemax+1,npes-1) /))
+    case default
+        call mpp_error( FATAL, 'TEST_REDISTRIBUTE: no such test: '//type )
+    end select
+
+!set up x and y arrays
+    select case(type)
+    case( 'Complete pelist' )
+!set up x array
+        call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
+        call mpp_define_domains( (/1,nx,1,ny/), layout, domainx, name=type )
+        call mpp_get_compute_domain( domainx, is,  ie,  js,  je  )
+        call mpp_get_data_domain   ( domainx, isd, ied, jsd, jed )
+        allocate( x(isd:ied,jsd:jed,nz) )
+        x = 0.
+        x(is:ie,js:je,:) = global(is:ie,js:je,:)
+!set up y array
+        call mpp_define_domains( (/1,nx,1,ny/), (/npes,1/), domainy, name=type )
+        call mpp_get_compute_domain( domainy, is,  ie,  js,  je  )
+        call mpp_get_data_domain   ( domainy, isd, ied, jsd, jed )
+        allocate( y(isd:ied,jsd:jed,nz) )
+        y = 0.
+    case( 'Overlap  pelist' )
+!one pelist from 0...pemax, other from 0...npes-1
+!set up x array
+        call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
+        call mpp_define_domains( (/1,nx,1,ny/), layout, domainx, name=type )
+        call mpp_get_compute_domain( domainx, is,  ie,  js,  je  )
+        call mpp_get_data_domain   ( domainx, isd, ied, jsd, jed )
+        allocate( x(isd:ied,jsd:jed,nz) )
+        x = 0.
+        x(is:ie,js:je,:) = global(is:ie,js:je,:)
+!set up y array
+        if( ANY(pelist.EQ.pe) )then
+            call mpp_set_current_pelist(pelist)
+            call mpp_define_layout( (/1,nx,1,ny/), mpp_npes(), layout )
+            call mpp_define_domains( (/1,nx,1,ny/), layout, domainy, name=type )
+            call mpp_get_compute_domain( domainy, is,  ie,  js,  je  )
+            call mpp_get_data_domain   ( domainy, isd, ied, jsd, jed )
+            allocate( y(isd:ied,jsd:jed,nz) )
+            y = 0.
+        end if
+    case( 'Disjoint pelist' )
+!one pelist from 0...pemax, other from pemax+1...npes-1
+
+!set up y array
+        if( ANY(pelist.EQ.pe) )then
+            call mpp_set_current_pelist(pelist)
+            call mpp_define_layout( (/1,nx,1,ny/), mpp_npes(), layout )
+            call mpp_define_domains( (/1,nx,1,ny/), layout, domainy, name=type )
+            call mpp_get_compute_domain( domainy, is,  ie,  js,  je  )
+            call mpp_get_data_domain   ( domainy, isd, ied, jsd, jed )
+            allocate( y(isd:ied,jsd:jed,nz) )
+            y = 0.
+        else
+!set up x array
+            call mpp_set_current_pelist( (/ (i,i=pemax+1,npes-1) /) )
+            call mpp_define_layout( (/1,nx,1,ny/), mpp_npes(), layout )
+            call mpp_define_domains( (/1,nx,1,ny/), layout, domainx, name=type )
+            call mpp_get_compute_domain( domainx, is,  ie,  js,  je  )
+            call mpp_get_data_domain   ( domainx, isd, ied, jsd, jed )
+            allocate( x(isd:ied,jsd:jed,nz) )
+            x = 0.
+            x(is:ie,js:je,:) = global(is:ie,js:je,:)
+         end if
+    end select
+
+!go global and redistribute
+    call mpp_set_current_pelist()
+    call mpp_broadcast_domain(domainx)
+    call mpp_broadcast_domain(domainy)
+
+    id = mpp_clock_id( type, flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+    call mpp_clock_begin(id)
+    call mpp_redistribute( domainx, x, domainy, y )
+    call mpp_clock_end  (id)
+
+!check answers on pelist
+    if( ANY(pelist.EQ.pe) )then
+        call mpp_set_current_pelist(pelist)
+        call mpp_global_field( domainy, y, gcheck )
+        call compare_checksums( global(1:nx,1:ny,:), gcheck, type )
+    end if
+
+    call mpp_set_current_pelist()
+    call mpp_sync()
+
+    return
+  end subroutine test_redistribute
+
+  subroutine test_halo_update( type )
+    character(len=*), intent(in) :: type
+    real, allocatable, dimension(:,:,:) :: x, y
+    type(domain2D) :: domain
+    real :: lsum, gsum
+    
+    call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
+    select case(type)
+    case( 'Simple' )
+        call mpp_define_domains( (/1,nx,1,ny/), layout, domain, xhalo=halo, yhalo=halo, name=type )
+        global(1-halo:0,    :,:) = 0
+        global(nx+1:nx+halo,:,:) = 0
+        global(:,    1-halo:0,:) = 0
+        global(:,ny+1:ny+halo,:) = 0
+    case( 'Cyclic' )
+        call mpp_define_domains( (/1,nx,1,ny/), layout, domain, xhalo=halo, yhalo=halo, &
+             xflags=CYCLIC_GLOBAL_DOMAIN, yflags=CYCLIC_GLOBAL_DOMAIN, name=type )
+        global(1-halo:0,    1:ny,:) = global(nx-halo+1:nx,1:ny,:)
+        global(nx+1:nx+halo,1:ny,:) = global(1:halo,      1:ny,:)
+        global(1-halo:nx+halo,    1-halo:0,:) = global(1-halo:nx+halo,ny-halo+1:ny,:)
+        global(1-halo:nx+halo,ny+1:ny+halo,:) = global(1-halo:nx+halo,1:halo,      :)
+    case( 'Folded' )
+        call mpp_define_domains( (/1,nx,1,ny/), layout, domain, xhalo=halo, yhalo=halo, &
+             xflags=CYCLIC_GLOBAL_DOMAIN, yflags=FOLD_NORTH_EDGE, name=type )
+        global(1-halo:0,    1:ny,:) = global(nx-halo+1:nx,1:ny,:)
+        global(nx+1:nx+halo,1:ny,:) = global(1:halo,      1:ny,:)
+        global(1-halo:nx+halo,ny+1:ny+halo,:) = global(nx+halo:1-halo:-1,ny:ny-halo+1:-1,:)
+        global(1-halo:nx+halo,1-halo:0,:) = 0
+    case default
+        call mpp_error( FATAL, 'TEST_MPP_DOMAINS: no such test: '//type )
+    end select
+
+!set up x array
+    call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
+    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+    allocate( x(isd:ied,jsd:jed,nz) )
+    x = 0.
+    x(is:ie,js:je,:) = global(is:ie,js:je,:)
+
+!partial update
+    id = mpp_clock_id( type//' partial', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+    call mpp_clock_begin(id)
+    call mpp_update_domains( x, domain, NUPDATE+EUPDATE )
+    call mpp_clock_end  (id)
+    call compare_checksums( x(is:ied,js:jed,:), global(is:ied,js:jed,:), type//' partial' )
+
+!full update
+    id = mpp_clock_id( type, flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+    call mpp_clock_begin(id)
+    call mpp_update_domains( x, domain )
+    call mpp_clock_end  (id)
+    call compare_checksums( x, global(isd:ied,jsd:jed,:), type )
+
+    select case(type)           !extra tests
+    case( 'Simple' )
+
+!test mpp_global_field
+        id = mpp_clock_id( type//' global field', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+        call mpp_clock_begin(id)
+        call mpp_global_field( domain, x, gcheck )
+        call mpp_clock_end  (id)
+!compare checksums between global and x arrays
+        call compare_checksums( global(1:nx,1:ny,:), gcheck, 'mpp_global_field' )
+
+!test mpp_global_sum
+        gsum = sum( global(1:nx,1:ny,:) )
+        id = mpp_clock_id( type//' sum', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+        call mpp_clock_begin(id)
+        lsum = mpp_global_sum( domain, x )
+        call mpp_clock_end  (id)
+        if( pe.EQ.mpp_root_pe() )print '(a,2es15.8,a,es12.4)', 'Fast sum=', lsum, gsum
+!test exact mpp_global_sum
+        id = mpp_clock_id( type//' exact sum', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+        call mpp_clock_begin(id)
+        lsum = mpp_global_sum( domain, x, BITWISE_EXACT_SUM )
+        call mpp_clock_end  (id)
+        if( pe.EQ.mpp_root_pe() )print '(a,2es15.8,a,es12.4)', 'Bitwise-exact sum=', lsum, gsum
+    case( 'Folded' )!test vector update: folded, with sign flip at fold
+!fill in folded north edge, cyclic east and west edge
+        global(1-halo:0,    1:ny,:) = global(nx-halo+1:nx,1:ny,:)
+        global(nx+1:nx+halo,1:ny,:) = global(1:halo,      1:ny,:)
+        global(1-halo:nx+halo-1,ny+1:ny+halo,:) = -global(nx+halo-1:1-halo:-1,ny-1:ny-halo:-1,:)
+        global(nx+halo,ny+1:ny+halo,:) = -global(nx-halo,ny-1:ny-halo:-1,:)
+        global(1-halo:nx+halo,1-halo:0,:) = 0
+
+        x = 0.
+        x(is:ie,js:je,:) = global(is:ie,js:je,:)
+!set up y array
+        allocate( y(isd:ied,jsd:jed,nz) )
+        y = x
+        id = mpp_clock_id( type//' vector', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+        call mpp_clock_begin(id)
+        call mpp_update_domains( x, y, domain, gridtype=BGRID_NE )
+        call mpp_clock_end  (id)
+!redundant points must be equal and opposite
+        global(nx/2,ny,:) = 0.  !pole points must have 0 velocity
+        global(nx  ,ny,:) = 0.  !pole points must have 0 velocity
+        global(nx/2+1:nx-1, ny,:) = -global(nx/2-1:1:-1, ny,:)
+        global(1-halo:0,    ny,:) = -global(nx-halo+1:nx,ny,:)
+        global(nx+1:nx+halo,ny,:) = -global(1:halo,      ny,:)
+        call compare_checksums( x, global(isd:ied,jsd:jed,:), type//' X' )
+        call compare_checksums( y, global(isd:ied,jsd:jed,:), type//' Y' )
+    end select
+    return
+  end subroutine test_halo_update
+
   subroutine compare_checksums( a, b, string )
-    real(DOUBLE_KIND), intent(in), dimension(:,:,:) :: a, b
+    real, intent(in), dimension(:,:,:) :: a, b
     character(len=*), intent(in) :: string
     integer :: i, j
 
@@ -2519,7 +2821,7 @@ contains
     i = mpp_chksum( a, (/pe/) )
     j = mpp_chksum( b, (/pe/) )
     if( i.EQ.j )then
-        if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, trim(string)//': chksums are correct.' )
+        if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )
     else
         call mpp_error( FATAL, trim(string)//': chksums are not OK.' )
     end if

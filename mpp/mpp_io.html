@@ -26,7 +26,7 @@
      <b>Contact:</b>&nbsp;   V. Balaji <br>
      <b>Reviewers:</b>&nbsp; <br>
      <b>Change History:&nbsp; </b><a HREF="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp_io.F90">WebCVS Log</a> <br>
-     <b>Last Modified:</b>&nbsp; $Date: 2002/02/22 19:14:40 $
+     <b>Last Modified:</b>&nbsp; $Date: 2002/07/16 22:56:32 $
 </div><br>
 
 <!-- END HEADER -->
@@ -218,17 +218,20 @@ sequence for writing data might be:</p>
 <pre>
 ...
   type(domain2D), dimension(:), allocatable, target :: domain
+  type(domain1D) :: domainx, domainy
   type(fieldtype) :: field
   type(axistype) :: x, y, z, t
+  integer :: is, ie, js, je
 ...
   call mpp_define_domains( (/1,nx,1,ny/), domain )
-  allocate( a(domain(pe)%x%data%start_index:domain(pe)%x%data%end_index, &
-              domain(pe)%y%data%start_index:domain(pe)%y%data%end_index,nz) )
+  call mpp_get_data_domain( domain, is, ie, js, je )
+  call mpp_get_domain_components( domain, domainx, domainy )
+  allocate( a(is:ie,js:je,nz) )
 ...
   call mpp_write_meta( unit, x, 'X', 'km', 'X distance', &
-       domain=domain(pe)%x, data=(/(float(i),i=1,nx)/) )
+       domain=domainx, data=(/(float(i),i=1,nx)/) )
   call mpp_write_meta( unit, y, 'Y', 'km', 'Y distance', &
-       domain=domain(pe)%y, data=(/(float(i),i=1,ny)/) )
+       domain=domainy, data=(/(float(i),i=1,ny)/) )
   call mpp_write_meta( unit, z, 'Z', 'km', 'Z distance', &
        data=(/(float(i),i=1,nz)/) )
   call mpp_write_meta( unit, t, 'Time', 'second', 'Time' )

@@ -27,7 +27,7 @@
      <b>Contact:</b> &nbsp;  Bruce Wyman <br>
      <b>Reviewers:</b>&nbsp; <br>
      <b>Change History:&nbsp; </b><a HREF="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/horiz_interp/horiz_interp.f90">WebCVS Log</a> <br>
-     <b>Last Modified:</b>&nbsp; $Date: 2002/02/22 19:14:25 $
+     <b>Last Modified:</b>&nbsp; $Date: 2002/07/16 22:55:53 $
 </div><br>
 
 <!-- END HEADER -->
@@ -67,6 +67,7 @@
 <!-- BEGIN OTHER MODULES USED -->
 <div><pre>
 fms_mod
+constants_mod
 </pre></div>
 <!-- END OTHER MODULES USED -->
 <!-------------------------------------------------------------------->
@@ -116,7 +117,9 @@ fms_mod
                                          dsph_in, dsph_out
        real,    dimension(:,:), pointer :: faci, facj
        integer, dimension(:,:), pointer :: ilon, jlat
-
+       real,    dimension(:,:,:), pointer :: wti,wtj    
+       integer, dimension(:,:,:), pointer :: i_lon, j_lat
+       integer                            :: interp_method
 </pre>
 <!-- END DATA_TYPES -->
 <!-------------------------------------------------------------------->
@@ -128,7 +131,7 @@ fms_mod
 <li><a name="horiz_interp_init"></a><h4>horiz_interp_init</h4>
 <pre>
 <b>call horiz_interp_init</b> ( Interp, blon_in, blat_in,
-                      blon_out, blat_out, verbose )
+                      blon_out, blat_out, verbose, bilinear_interp )
 
 DESCRIPTION
    Allocates space and initializes a derived-type variable
@@ -150,18 +153,24 @@ INPUT
               must be N+1 edge values.
                <span class="type"> [real, dimension(:)]</span>
 
-   blon_out   The longitude edges (in radians) for output data grid boxes.
+   lon_out    when using conservative scheme,
+              The longitude edges (in radians) for output data grid boxes.
               The edge values may be stored as adjacent values or as pairs
               for each grid box. The pairs do not have to be adjacent.
               If there are MLON grid boxes in the output grid, then blon_out
               is dimensioned by MLON+1 or (MLON,2).
+              when using bilinear interpolation,
+              The geographical longitude (in radians) for output data grid boxes.
                <span class="type"> [real, dimension(:) or dimension(:,2)]</span>
 
-   blat_out   The latitude edges (in radians) for output data grid boxes.
+   lat_out    when using conservative scheme,
+              The latitude edges (in radians) for output data grid boxes.
               The edge values may be stored as adjacent values or as pairs
               for each grid box. The pairs do not have to be adjacent.
               If there are NLAT grid boxes in the output grid, then blat_out
               is dimensioned by NLAT+1 or (NLAT,2).
+              when using bilinear interpolation,
+              The geographical latitude (in radians) for output data grid boxes.
                <span class="type"> [real, dimension(:) or dimension(:,2)]</span>
 
 INPUT/OUTPUT
@@ -178,6 +187,12 @@ OPTIONAL INPUT
                        = 1, min,max,means
                        = 2, still more
                 <span class="type"> [integer, scalar]</span>
+
+bilinear_interp flag for the interplation method. Default value .false.
+                indicates using conservative scheme, .true. indicates 
+                using bilinear interpolation
+                <span class="type"> [logical, scalar]</span>
+
 </pre>
 </li>
 <li><a name="horiz_interp"></a><h4>horiz_interp</h4>
@@ -388,10 +403,15 @@ INPUT/OUTPUT
          edges specified. If you are using the initialization interface make 
          sure you have the correct grid size.<br><br></dd>
 
-<dd>  <span class="errmsg">  dimension 2 of blon_out and/or blat_out must be 2</span></dd>
+<dd>  <span class="errmsg">  when using conservative scheme, dimension 2 of blon_out and/or blat_out must be 2</span></dd>
       <dd> Input arguments for the output grid edges are not dimensioned 
-        correctly.  The second dimension of blon_out and blat_out must be 2;
+        correctly.  The second dimension of blon_out and blat_out must
+          be 2 for conservative scheme;
         i.e., blon_out(nlon,2), blat_out(nlat,2).<br><br></dd>
+
+<dd>  <span class="errmsg">when using bilinear interplation, the output grids should be geographical grids</span></dd>          <dd> Input arguments for the output grid edges are not dimensioned 
+        correctly. The output grid should be geographical grid for
+          bilinear interpolation.    
 
 <dd>  <span class="errmsg">  no latitude index found: n,sph= .... </span></dd>
       <dd> An output latitude did not fall between adjacent input latitudes.

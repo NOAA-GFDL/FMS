@@ -27,7 +27,7 @@
      <b>Contact:</b>&nbsp;   Michael Winton <br>
      <b>Reviewers:</b>&nbsp; <br>
      <b>Change History:</b>&nbsp;<a HREF="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/time_manager/time_manager.f90">WebCVS Log</a> <br>
-     <b>Last Modified:</b>&nbsp; $Date: 2002/02/22 19:14:11 $
+     <b>Last Modified:</b>&nbsp; $Date: 2002/07/16 22:55:13 $
 </div><br>
 
 <!-- END HEADER -->
@@ -91,10 +91,12 @@ mpp_domains_mod
 <!-- BEGIN INTERFACE -->
 <div>
 <pre>
-<b>use xgrid_mod</b>, only : xmap_type, setup_xmap, set_frac_area, xgrid_count,
-                 put_to_xgrid, get_from_xgrid, some, conservation_check
+<b>use xgrid_mod</b>, only : xgrid_init, xmap_type, setup_xmap, set_frac_area, xgrid_count,
+                 put_to_xgrid, get_from_xgrid, some, conservation_check,
 </pre>
 <dl>
+<dt><a href="#xgrid_init"><tt>xgrid_init</tt></a>:
+<dd>Initialize the xgrid_mod. 
 <dt><a href="#setup_xmap"><tt>setup_xmap</tt></a>:
 <dd>Sets up exchange grid connectivity using grid specification file and
 processor domain decomposition.
@@ -134,53 +136,154 @@ The fields of xmap_type are all private.
 <h4>PUBLIC ROUTINES</h4>
 <!-- BEGIN ROUTINES -->
 <ol type="a">
+<li><a name="xgrid_init"><h4>xgrid_init</h4></a>
+<pre>
+    <b>call xgrid_init ( )</b> 
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd>  Initialization routine for the xgrid module. It reads the
+     xgrid_nml,  writes the version information and xgrid_nml to the
+        log file.
+</dl><br>
+</li>        
 <li><a name="setup_xmap"><h4>setup_xmap</h4></a>
 <pre>
-  xmap            <span class="type"> type(xmap_type)</span>
+    <b>call setup_xmap(xmap, grid_ids, grid_domains, grid_file)</b> 
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd> Sets up exchange grid connectivity using grid specification file and
+processor domain decomposition.
+</dl><br>
+<b>Input</b>    
+<pre>
   grid_ids        <span class="type"> character(len=3), dimension(:)</span>
   grid_domains    <span class="type"> type(Domain2d)  , dimension(:)</span>
   grid_file       <span class="type"> character(len=*)</span>
 </pre>
+<b>Output</b>
+<pre>
+  xmap            <span class="type"> type(xmap_type)</span>
+</pre>    
 </li>
 <li><a name="set_frac_area"><h4>set_frac_area</h4></a>
 <pre>
+    <b>call set_frac_area(f, grid_id, xmap)</b>
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd> Changes sub-grid partion areas and/or number.
+</dl><br>
+<b>Input</b>        
+<pre>
   f               <span class="type"> real, dimension(:,:,:)</span>
   grid_id         <span class="type"> character(len=3)</span>
-  xmap            <span class="type"> type(xmap_type)</span>
 </pre>
+<b>Input/output</b>
+<pre>
+  xmap            <span class="type"> type(xmap_type)</span>
+</pre>        
 </li>
 <li><a name="xgrid_count"><h4>xgrid_count</h4></a>
 <pre>
+    <b>xgrid_count(xmap)</b> 
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd> Returns current size of exchange grid variables.  
+</dl><br>
+<b>Input</b>        
+<pre>
   xmap            <span class="type"> type(xmap_type)</span>
+</pre>
+<b> Returns</b>
+<pre>    
+    current size of exchange grid variables.  <span class="type">[integer]</span>
 </pre>
 </li>
 <li><a name="put_to_xgrid"><h4>put_to_xgrid</h4></a>
 <pre>
+    <b>call put_to_xgrid(d, grid_id, x, xmap)</b>
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd>Scatters data from model grid onto exchange grid.
+</dl><br>
+<b>Input</b>         
+<pre>
   d               <span class="type"> real, dimension(:,:) or dimension(:,:,:)</span>
   grid_id         <span class="type"> character(len=3)</span>
+</pre>
+<b>Input/output</b>
+<pre>    
   x               <span class="type"> real            , dimension(:)</span>
   xmap            <span class="type"> type(xmap_type)</span>
 </pre>
 </li>
 <li><a name="get_from_xgrid"><h4>get_from_xgrid</h4></a>
 <pre>
-  d               <span class="type"> real, dimension(:,:) or dimension(:,:,:)</span>
+    <b>call get_from_xgrid(d, grid_id, x, xmap)</b> 
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd>Sums data from exchange grid to model grid.
+</dl><br>
+<b>Input</b>         
+<pre>
   grid_id         <span class="type"> character(len=3)</span>
   x               <span class="type"> real            , dimension(:)</span>
-  xmap            <span class="type"> type(xmap_type)</span>
 </pre>
+<b>Output</b>
+<pre>    
+   d               <span class="type"> real, dimension(:,:) or dimension(:,:,:)</span>   
+</pre>
+<b>Input/output</b>
+<pre>
+  xmap            <span class="type"> type(xmap_type)</span>
+</pre>    
 </li>
 <li><a name="some"><h4>some</h4></a>
 <pre>
+    <b>some(xmap, grid_id)</b> 
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd> Returns logical associating exchange grid cells with given side 2
+        grid.
+</dl><br>        
+<b>Input</b>        
+<pre>
   grid_id         <span class="type"> character(len=3)</span>
   xmap            <span class="type"> type(xmap_type)</span>
+</pre>    
+<b>Returns</b>
+<pre>
+    logical associating exchange grid cells with given side 2 grid. <span class="type"> [logical]</span>
 </pre>
 </li>
 <li><a name="conservation_check"><h4>conservation_check</h4></a>
 <pre>
+    <b>conservation_check(d, grid_id, xmap)</b>
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd> Returns three numbers which are the global sum of a variable (1) on its home model grid, (2) after interpolation to the other side grid(s), and (3) after re_interpolation back onto its
+        home side grid(s). Conservation_check must be called by all
+        PEs to work properly.
+</dl><br>        
+<b>Input</b>        
+<pre>
   d               <span class="type"> real, dimension(:,:) or dimension(:,:,:)</span>
   grid_id         <span class="type"> character(len=3)</span>
+</pre>
+<b>Input/output</b>
+<pre>    
   xmap            <span class="type"> type(xmap_type)</span>
+</pre>
+<b>Returns</b>
+<pre>
+The global sum of a variable. <span class="type">[real, dimension(3)]</span>
 </pre>
 </li>
 </ol>
