@@ -67,9 +67,9 @@ integer, parameter :: FATAL = 2
  logical :: module_is_initialized = .FALSE.
 
  character(len=128) :: &
-   version='$Id: diag_axis.F90,v 1.3 2002/07/16 22:54:47 fms Exp $'
+   version='$Id: diag_axis.F90,v 1.4 2003/04/09 21:16:04 fms Exp $'
  character(len=128) :: &
-   tagname='$Name: havana $'
+   tagname='$Name: inchon $'
 
 contains
 

@@ -1,6 +1,36 @@
 
 module fms_mod
 
+! <CONTACT EMAIL="bw@gfdl.noaa.gov">
+!   Bruce Wyman
+! </CONTACT>
+
+! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
+
+! <OVERVIEW>
+!   The fms module provides routines that are commonly used
+!   by most FMS modules.
+! </OVERVIEW>
+
+! <DESCRIPTION>
+!   Here is a summary of the functions performed by routines
+!     in the fms module.
+!
+!   1. Output module version numbers to a common (<TT>log</TT>) file
+!     using a common format.<BR/>
+!   2. Open specific types of files common to many FMS modules.
+!     These include namelist files, restart files, and 32-bit IEEE
+!     data files. There also is a matching interface to close the files.
+!     If other file types are needed the <TT>mpp_open</TT> and <TT>mpp_close</TT>
+!     interfaces in module <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp_io.html">mpp_io</LINK> must be used.<BR/>
+!    3. Read and write distributed data to simple native unformatted files.
+!     This type of file (called a restart file) is used to checkpoint
+!     model integrations for a subsequent restart of the run.<BR/>
+!    4. For convenience there are several routines published from
+!     the <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp.html">mpp</LINK> module. These are routines for getting processor
+!     numbers, commonly used I/O unit numbers, error handling, and timing sections of code.
+! </DESCRIPTION>
+
 !-----------------------------------------------------------------------
 !
 !         A collection of commonly used routines.
@@ -60,9 +90,6 @@ module fms_mod
 !  string_array_index  Match the input character string to a string
 !                      in an array/list of character strings.
 !
-!  mpp_clock_init      Sets up a identifier for performance timing
-!                        (similar to mpp_clock_id)
-!
 !-----------------------------------------------------------------------
 !---- published routines from mpp_mod ----
 !
@@ -72,8 +99,10 @@ module fms_mod
 !   stdin, stdout, stderr, stdlog
 !   mpp_chksum
 !
-!   mpp_clock_begin , mpp_clock_end
+!   mpp_clock_id, mpp_clock_begin , mpp_clock_end
 !   MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
+!   CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, CLOCK_MODULE_DRIVER, 
+!   CLOCK_MODULE, CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
 !
 !-----------------------------------------------------------------------
 
@@ -85,6 +114,10 @@ use          mpp_mod, only:  mpp_error, NOTE, WARNING, FATAL,    &
                              mpp_clock_begin, mpp_clock_end,     &
                              mpp_clock_id, mpp_init, mpp_exit,   &
                              MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED, &
+                             CLOCK_COMPONENT, CLOCK_SUBCOMPONENT,&
+                             CLOCK_MODULE_DRIVER, CLOCK_MODULE,  &
+                             CLOCK_ROUTINE, CLOCK_LOOP,          &
+                             CLOCK_INFRA, mpp_clock_set_grain,   &
                              mpp_set_stack_size,                 &
                              stdin, stdout, stderr, stdlog,      &
                              mpp_error_state
@@ -126,8 +159,7 @@ public :: file_exist, check_nml_error,      &
 
 ! miscellaneous utilities (non i/o)
 public :: lowercase, uppercase,                &
-          string_array_index, monotonic_array, &
-          mpp_clock_init
+          string_array_index, monotonic_array
 
 ! public mpp interfaces
 public :: mpp_error, NOTE, WARNING, FATAL, &
@@ -135,21 +167,67 @@ public :: mpp_error, NOTE, WARNING, FATAL, &
           mpp_pe, mpp_npes, mpp_root_pe,   &
           stdin, stdout, stderr, stdlog,   &
           mpp_chksum
-public :: mpp_clock_begin, mpp_clock_end
+public :: mpp_clock_id, mpp_clock_begin, mpp_clock_end
 public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
+public :: CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, &
+          CLOCK_MODULE_DRIVER, CLOCK_MODULE,   &
+          CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
+
+! temporary interface (to be removed before next release)
+public :: mpp_clock_init
            
 
 !------ namelist interface -------
 !------ adjustable severity level for warnings ------
 
-  integer           :: timing_level  = 0
   logical           :: read_all_pe   = .true.
+  character(len=16) :: clock_grain = 'NONE'
   character(len=8)  :: warning_level = 'warning'
   character(len=64) :: iospec_ieee32 = '-N ieee_32'
   integer           :: stack_size = 0
   integer           :: domains_stack_size = 0
 
-  namelist /fms_nml/  timing_level, read_all_pe,    &
+!------ namelist interface -------
+
+! <NAMELIST NAME="fms_nml">
+!   <DATA NAME="clock_grain"  TYPE="character"  DEFAULT="'NONE'">
+!     The level of clock granularity used for performance timing sections
+!     of code. Possible values in order of increasing detail are:
+!     'NONE', 'COMPONENT', 'SUBCOMPONENT', 'MODULE_DRIVER', 'MODULE', 'ROUTINE',
+!     'LOOP', and 'INFRA'.  Code sections are defined using routines in MPP 
+!     module: mpp_clock_id, mpp_clock_begin, and mpp_clock_end.
+!     The fms module makes these routines public.
+!     A list of timed code sections will be printed to STDOUT.
+!     See the <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp.html">MPP</LINK>
+!     module for more details.
+!   </DATA>
+!   <DATA NAME="read_all_pe"  TYPE="logical"  DEFAULT="true">
+!     Read global data on all processors extracting local part needed (TRUE) or
+!     read global data on PE0 and broadcast to all PEs (FALSE).
+!   </DATA>
+!   <DATA NAME="warning_level"  TYPE="character"  DEFAULT="'warning'">
+!     Sets the termination condition for the WARNING flag to interfaces
+!     error_mesg/mpp_error. set warning_level = 'fatal' (program crashes for
+!     warning messages) or 'warning' (prints warning message and continues).
+!   </DATA>
+!   <DATA NAME="iospec_ieee32"  TYPE="character"  DEFAULT="'-N ieee_32'">
+!     iospec flag used with the open_ieee32_file interface.
+!   </DATA>
+!   <DATA NAME="stack_size"  TYPE="integer"  DEFAULT="0">
+!     The size in words of the MPP user stack. If stack_size > 0, the following
+!     MPP routine is called: call mpp_set_stack_size (stack_size). If stack_size
+!     = 0 (default) then the default size set by mpp_mod is used.
+!   </DATA>
+!   <DATA NAME="domains_stack_size" TYPE="integer"  DEFAULT="0">
+!     The size in words of the MPP_DOMAINS user stack. If
+!     domains_stack_size > 0, the following MPP_DOMAINS routine is called:
+!     call mpp_domains_set_stack_size (domains_stack_size). If
+!     domains_stack_size = 0 (default) then the default size set by
+!     mpp_domains_mod is used. 
+!   </DATA>
+! </NAMELIST>
+
+  namelist /fms_nml/  read_all_pe, clock_grain,     &
                       warning_level, iospec_ieee32, &
                       stack_size, domains_stack_size
 
@@ -163,8 +241,8 @@ public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: fms.F90,v 1.2 2002/07/16 22:55:28 fms Exp $'
-  character(len=128) :: tagname = '$Name: havana $'
+  character(len=128) :: version = '$Id: fms.F90,v 1.3 2003/04/09 21:16:41 fms Exp $'
+  character(len=128) :: tagname = '$Name: inchon $'
 
   logical :: module_is_initialized = .FALSE.
 
@@ -172,12 +250,42 @@ public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
 contains
 
 !#######################################################################
+
+! <SUBROUTINE NAME="fms_init">
+
+!   <OVERVIEW>
+!     Initializes the FMS module and also calls the initialization routines for all
+!     modules in the MPP package. Will be called automatically if the user does
+!     not call it. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Initialization routine for the fms module. It also calls initialization routines
+!      for the mpp, mpp_domains, and mpp_io modules. Although this routine
+!      will be called automatically by other fms_mod routines, users should
+!      explicitly call fms_init. If this routine is called more than once it will
+!      return silently. There are no arguments.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call fms_init ( )
+!   </TEMPLATE>
+
+
+!   <ERROR MSG="invalid entry for namelist variable warning_level" STATUS="FATAL">
+!     The namelist variable warning_level must be either 'fatal' or 'warning'
+!     (case-insensitive). 
+!   </ERROR>
+!   <ERROR MSG="invalid entry for namelist variable clock_grain" STATUS="FATAL">
+!     The namelist variable clock_grain must be one of the following values:
+!     'NONE', 'COMPONENT', 'SUBCOMPONENT', 'MODULE_DRIVER', 'MODULE', 'ROUTINE',
+!     'LOOP', or 'INFRA' (case-insensitive). 
+!   </ERROR>
+
 ! initializes the fms module/package
 ! also calls mpp initialization routines and reads fms namelist
 
 subroutine fms_init ( )
 
- integer :: unit, ierr, io
+ integer :: unit, ierr, io, timing_grain
 
     if (module_is_initialized) return    ! return silently if already called
     module_is_initialized = .true.
@@ -216,6 +324,29 @@ subroutine fms_init ( )
             'invalid entry for namelist variable warning_level', FATAL )
     endif
 
+!--- set granularity for timing code sections ---
+
+    if (uppercase(trim(clock_grain)) == 'NONE') then
+       call mpp_clock_set_grain (0)
+    else if (uppercase(trim(clock_grain)) == 'COMPONENT') then
+       call mpp_clock_set_grain (CLOCK_COMPONENT)
+    else if (uppercase(trim(clock_grain)) == 'SUBCOMPONENT') then
+       call mpp_clock_set_grain (CLOCK_SUBCOMPONENT)
+    else if (uppercase(trim(clock_grain)) == 'MODULE_DRIVER') then
+       call mpp_clock_set_grain (CLOCK_MODULE_DRIVER)
+    else if (uppercase(trim(clock_grain)) == 'MODULE') then
+       call mpp_clock_set_grain (CLOCK_MODULE)
+    else if (uppercase(trim(clock_grain)) == 'ROUTINE') then
+       call mpp_clock_set_grain (CLOCK_ROUTINE)
+    else if (uppercase(trim(clock_grain)) == 'LOOP') then
+       call mpp_clock_set_grain (CLOCK_LOOP)
+    else if (uppercase(trim(clock_grain)) == 'INFRA') then
+       call mpp_clock_set_grain (CLOCK_INFRA)
+    else
+       call error_mesg ( 'fms_init',  &
+            'invalid entry for namelist variable clock_grain', FATAL )
+    endif
+
 !--- write version info and namelist to logfile ---
 
     call write_version_number (version, tagname)
@@ -226,8 +357,25 @@ subroutine fms_init ( )
 
 
 end subroutine fms_init
+! </SUBROUTINE>
 
 !#######################################################################
+
+
+! <SUBROUTINE NAME="fms_end">
+
+!   <OVERVIEW>
+!     Calls the termination routines for all modules in the MPP package.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Termination routine for the fms module. It also calls destructor routines
+!      for the mpp, mpp_domains, and mpp_io modules. If this routine is called
+!      more than once it will return silently. There are no arguments. 
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call fms_end ( )
+!   </TEMPLATE>
+
 ! terminates the fms module/package
 ! also calls mpp destructor routines
 
@@ -240,11 +388,41 @@ subroutine fms_end ( )
     module_is_initialized =.FALSE.
 
 end subroutine fms_end
+! </SUBROUTINE>
 
 !#######################################################################
 ! check the existence of the given file name
 ! if the file_name string has zero length or the
 ! first character is blank return a false result
+! <FUNCTION NAME="file_exist">
+
+!   <OVERVIEW>
+!     Checks the existence of a given file name.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Checks the existence of the given file name.
+!     If the file_name string has zero length or the
+!     first character is blank return a false result.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     file_exist ( file_name )
+!   </TEMPLATE>
+
+!   <IN NAME="file_name"  TYPE="character" >
+!     A file name (or path name) that is checked for existence.
+!   </IN>
+!   <OUT NAME=""  TYPE="logical" >
+!     This function returns a logical result.  If file_name exists the result 
+!     is true, otherwise false is returned.
+!     If the length of character string "file_name" is zero or the first
+!     character is blank, then the returned value will be false.
+!     When reading a file, this function is often used in conjunction with
+!     routine open_file.
+!   </OUT>
+!   <ERROR MSG="set_domain not called" STATUS="FATAL">
+!     Before calling write_data you must first call set_domain with domain2d data 
+!     type associated with the distributed data you are writing.
+!   </ERROR>
 
  function file_exist (file_name)
   character(len=*), intent(in) :: file_name
@@ -257,8 +435,45 @@ end subroutine fms_end
    inquire (file=trim(file_name), exist=file_exist)
 
  end function file_exist
+! </FUNCTION>
 
 !#######################################################################
+! <SUBROUTINE NAME="error_mesg">
+
+!   <OVERVIEW>
+!     Print notes, warnings and error messages; terminates program for warning 
+!     and error messages. (use error levels NOTE,WARNING,FATAL, see example below)
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Print notes, warnings and error messages; and terminates the program for 
+!     error messages. This routine is a wrapper around mpp_error, and is provided 
+!     for backward compatibility. This module also publishes mpp_error,
+!      <B>users should try to use the mpp_error interface</B>. 
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call error_mesg ( routine, message, level )
+!   </TEMPLATE>
+
+!   <IN NAME="routine"  TYPE="character" >
+!     Routine name where the warning or error has occurred.
+!   </IN>
+!   <IN NAME="message"  TYPE="character" >
+!     Warning or error message to be printed.
+!   </IN>
+!   <IN NAME="level"  TYPE="integer" >
+!     Level of severity; set to NOTE, WARNING, or FATAL Termination always occurs 
+!     for FATAL, never for NOTE, and is settable for WARNING (see namelist).
+!   </IN>
+!   <NOTE>
+!
+!     Examples:
+!     <PRE>
+!        use fms_mod, only: error_mesg, FATAL, NOTE
+
+!        call error_mesg ('fms_mod', 'initialization not called', FATAL)
+!        call error_mesg ('fms_mod', 'fms_mod message', NOTE)
+!     </PRE>
+!   </NOTE>
 ! wrapper for the mpp error handler
 ! users should try to use the mpp_error interface
 
@@ -275,8 +490,70 @@ end subroutine fms_end
     call mpp_error ( routine, message, level )
 
  end subroutine error_mesg
+! </SUBROUTINE>
 
 !#######################################################################
+! <FUNCTION NAME="check_nml_error">
+
+!   <OVERVIEW>
+!     Checks the iostat argument that is returned after reading a namelist 
+!     and determines if the error code is valid. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     The FMS allows multiple namelist records to reside in the same file. 
+!     Use this interface to check the iostat argument that is returned after 
+!     reading a record from the namelist file. If an invalid iostat value 
+!     is detected this routine will produce a fatal error. See the NOTE below.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     check_nml_error ( iostat, nml_name )
+!   </TEMPLATE>
+
+!   <IN NAME="iostat"  TYPE="integer" >
+!     The iostat value returned when reading a namelist record.
+!   </IN>
+!   <IN NAME="nml_name"  TYPE="character" >
+!     The name of the namelist. This name will be printed if an error is 
+!     encountered, otherwise the name is not used.
+!   </IN>
+!   <OUT NAME=""  TYPE="integer" >
+!     This function returns the input iostat value (integer) if it is an 
+!     allowable error code. If the iostat error code is not
+!     allowable, an error message is printed and the program terminated.
+!   </OUT>
+!   <NOTE>
+!     Some compilers will return non-zero iostat values when reading through 
+!     files with multiple namelist. This routine
+!     will try skip these errors and only terminate for true namelist errors.
+!
+!     Examples
+!
+!       The following example checks if a file exists, reads a namelist input 
+!       from that file, and checks for errors in that
+!       namelist. When the correct namelist is read and it has no errors the 
+!       routine check_nml_error will return zero and the while loop will exit. 
+!       This code segment should be used to read namelist files. 
+!       <PRE>
+!          integer :: unit, ierr, io
+!
+!          if ( file_exist('input.nml') ) then
+!              unit = open_namelist_file ( )
+!              ierr=1
+!              do while (ierr /= 0)
+!                read  (unit, nml=moist_processes_nml, iostat=io, end=10)
+!                ierr = check_nml_error(io,'moist_processes_nml')
+!              enddo
+!        10    call close_file (unit)
+!          endif
+!       </PRE>
+!   </NOTE>
+
+!   <ERROR MSG="while reading namelist ...., iostat = ####" STATUS="FATAL">
+!     There was an error message reading the namelist specified. Carefully 
+!     examine all namelist variables for
+!     misspellings of type mismatches (e.g., integer vs. real).
+!   </ERROR>
+
 ! used to check the iostat argument that is
 ! returned after reading a namelist
 ! see the online documentation for how this routine might be used
@@ -311,6 +588,7 @@ end subroutine fms_end
    endif
 
 end function check_nml_error
+! </FUNCTION>
 
 !-----------------------------------------------------------------------
 !   private routine for initializing allowable error codes
@@ -363,6 +641,31 @@ subroutine nml_error_init
 end subroutine nml_error_init
 
 !#######################################################################
+! <SUBROUTINE NAME="write_version_number">
+
+!   <OVERVIEW>
+!     Prints to the log file (or a specified unit) the (cvs) version id string and
+!     (cvs) tag name.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Prints to the log file (stdlog) or a specified unit the (cvs) version id string
+!      and (cvs) tag name.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!    call write_version_number ( version [, tag, unit] )
+!   </TEMPLATE>
+
+!   <IN NAME="version" TYPE="character(len=*)">
+!    string that contains routine name and version number.
+!   </IN>
+!   <IN NAME="tag" TYPE="character(len=*)">
+!    The tag/name string, this is usually the Name string
+!    returned by CVS when checking out the code.
+!   </IN>
+!   <IN NAME="unit" TYPE="integer">
+!    The Fortran unit number of an open formatted file. If this unit number 
+!    is not supplied the log file unit number is used (stdlog). 
+!   </IN>
 ! prints module version number to the log file of specified unit number
 
  subroutine write_version_number (version, tag, unit)
@@ -397,42 +700,36 @@ end subroutine nml_error_init
      endif   
 
  end subroutine write_version_number
+! </SUBROUTINE>
 
 
 
-
-
-!#######################################################################
-!#######################################################################
-! routines for timing sections of code
-!       mpp_clock_init (wrapper for mpp_clock_id)
-!       mpp_clock_begin
-!       mpp_clock_end
-!#######################################################################
-
- function mpp_clock_init ( name, level, flags ) result (id)
- character(len=*),  intent(in) :: name
- integer,           intent(in) :: level
- integer, optional, intent(in) :: flags
- integer                       :: id
-
-    if (.not.module_is_initialized) call fms_init ( )
-
-  ! only register this clock when "timing_level"
-  ! is .GE. then this clock's (timing) level
-  ! otherwise return a zero id
-
-    if ( level <= timing_level ) then
-        id = mpp_clock_id (name, flags)
-    else
-        id = 0
-    endif
-
- end function mpp_clock_init
 
 !#######################################################################
 !  functions for changing the case of character strings
 !#######################################################################
+
+
+! <FUNCTION NAME="lowercase">
+
+!   <OVERVIEW>
+!     Convert character strings to all lower case.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Converts a character string to all lower case letters. The characters "A-Z"
+!      are converted to "a-z", all other characters are left unchanged.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     string = lowercase ( cs )
+!   </TEMPLATE>
+
+!   <IN NAME="cs"  TYPE="character(len=*), scalar" >
+!     Character string that may contain upper case letters.
+!   </IN>
+!   <OUT NAME="string"  TYPE="character(len=len(cs)), scalar" >
+!     Character string that contains all lower case letters. The
+!     length of this string must be the same as the input string.
+!   </OUT>
 
 !   change to all lower case
 
@@ -448,9 +745,31 @@ end subroutine nml_error_init
     lowercase = transfer(ca,cs) 
     
  end function lowercase 
+! </FUNCTION>
 
 !#######################################################################
 
+
+! <FUNCTION NAME="uppercase">
+
+!   <OVERVIEW>
+!     Convert character strings to all upper case.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Converts a character string to all upper case letters. The characters "a-z"
+!      are converted to "A-Z", all other characters are left unchanged. 
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     string = uppercase ( cs )
+!   </TEMPLATE>
+
+!   <IN NAME="cs"  TYPE="character(len=*), scalar" >
+!     Character string that may contain lower case letters.
+!   </IN>
+!   <OUT NAME="string"  TYPE="character(len=len(cs)), scalar" >
+!     Character string that contains all upper case letters. The
+!             length of this string must be the same as the input string.
+!   </OUT>
 !   change to all upper case
 
  function uppercase (cs) 
@@ -465,9 +784,50 @@ end subroutine nml_error_init
     uppercase = transfer(ca,cs) 
     
  end function uppercase 
+! </FUNCTION>
 
 !#######################################################################
 
+
+! <FUNCTION NAME="string_array_index">
+
+!   <OVERVIEW>
+!     match the input character string to a string
+!     in an array/list of character strings
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Tries to find a match for a character string in a list of character strings.
+!      The match is case sensitive and disregards blank characters to the right of
+!      the string. 
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!      string_array_index ( string, string_array [, index] )
+!   </TEMPLATE>
+
+!   <IN NAME="string"  TYPE="character(len=*), scalar" >
+!     Character string of arbitrary length.
+!   </IN>
+!   <IN NAME="string_array"  TYPE="character(len=*)" DIM="(:)">
+!     Array/list of character strings.
+!   </IN>
+!   <OUT NAME="index"  TYPE="integer" >
+!     The index of string_array where the first match was found. If
+!            no match was found then index = 0.
+!   </OUT>
+!   <OUT NAME="string_array_index"  TYPE="logical" >
+!     If an exact match was found then TRUE is returned, otherwise FALSE is returned.
+!   </OUT>
+!   <NOTE>
+!     Examples
+!      <PRE>
+!       string = "def"
+!       string_array = (/ "abcd", "def ", "fghi" /)
+
+!       string_array_index ( string, string_array, index )
+
+!       Returns: TRUE, index = 2
+!      </PRE>
+!   </NOTE>
 ! match the input character string to a string
 ! in an array/list of character strings
 
@@ -493,9 +853,38 @@ integer :: i
   enddo
 
 end function string_array_index
+! </FUNCTION>
 
 !#######################################################################
 
+! <FUNCTION NAME="monotonic_array">
+
+!   <OVERVIEW>
+!     Determines if a real input array has monotonically increasing or
+!     decreasing values.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Determines if the real input array has monotonically increasing or
+!     decreasing values.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     monotonic_array ( array [, direction] )
+!   </TEMPLATE>
+
+!   <IN NAME="array"  TYPE="real" DIM="(:)">
+!     An array of real values. If the size(array) < 2 this function
+!     assumes the array is not monotonic, no fatal error will occur.
+!   </IN>
+!   <OUT NAME="direction"  TYPE="integer" >
+!     If the input array is:
+!                >> monotonic (small to large) then direction = +1.
+!                >> monotonic (large to small) then direction = -1.
+!                >> not monotonic then direction = 0. 
+!   </OUT>
+!   <OUT NAME="monotonic_array"  TYPE="logical" >
+!     If the input array of real values either increases or decreases monotonically
+!      then TRUE is returned, otherwise FALSE is returned. 
+!   </OUT>
 ! determines if the real input array has
 ! monotonically increasing or decreasing values
 
@@ -532,8 +921,84 @@ integer :: i
   endif
 
 end function monotonic_array
+! </FUNCTION>
 
+!#######################################################################
+!##### temporary interface for backward compatibility ######
+!               remove before next release 
+ function mpp_clock_init ( name, level, flags ) result (id)
+ character(len=*),  intent(in) :: name 
+ integer,           intent(in) :: level
+ integer, optional, intent(in) :: flags
+ integer                       :: id
+   id = 0
+   if (mpp_pe() == mpp_root_pe()) call error_mesg ( 'fms_init',  &
+   'interface mpp_clock_init no longer valid: name='//trim(name), NOTE)
+ end function mpp_clock_init
 !#######################################################################
 
 end module fms_mod
+! <INFO>
+!   <BUG>              
+!     Namelist error checking may not work correctly with some compilers.
+!
+!     Users should beware when mixing Fortran reads and read_data calls. If a
+!     Fortran read follows read_data and namelist variable read_all_pe = FALSE
+!     (not the default), then the code will fail. It is safest if Fortran reads 
+!     precede calls to read_data.
+!   </BUG>
+!   <ERROR MSG="unexpected EOF" STATUS="FATAL">
+!     An unexpected end-of-file was encountered in a read_data call.
+!     You may want to use the optional end argument to detect the EOF. 
+!   </ERROR>
+!   <NOTE>
+!     1) If the <B>MPP</B> or <B>MPP_DOMAINS</B> stack size is exceeded the
+!     program will terminate after printing the required size. 
+!   
+!     2) When running on a very small number of processors or for high
+!     resolution models the default domains_stack_size will
+!     probably be insufficient. 
+!
+!     3) The following performance routines in the <B>MPP</B> module are published by this module.
+!<PRE>
+!        mpp_clock_id, mpp_clock_begin, mpp_clock_end
+!</PRE>
+!        and associated parameters that are published:
+!<PRE>
+!        MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED, CLOCK_COMPONENT, CLOCK_SUBCOMPONENT,
+!        CLOCK_MODULE_DRIVER, CLOCK_MODULE, CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
+!</PRE>
+!
+!     4) Here is an example of how to time a section of code.<BR/>
+!<PRE>
+!          use fms_mod, only: mpp_clock_id, mpp_clock_begin, &
+!                             mpp_clock_end. MPP_CLOCK_SYNC, &
+!                             CLOCK_MODULE_DRIVER
+!          integer :: id_mycode
+!
+!          id_mycode = mpp_clock_id ('mycode loop', flags=MPP_CLOCK_SYNC, grain=CLOCK_MODULE_DRIVER)
+!          call mpp_clock_begin (id_mycode)
+!                        :
+!                        :
+!           ~~ this code will be timed ~~ 
+!                        :
+!                        :
+!          call mpp_clock_end (id_mycode)
+! </PRE>
+!        Note: <TT>CLOCK_MODULE_DRIVER</TT> can be replaced with
+!        CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, CLOCK_MODULE_DRIVER, CLOCK_MODULE, CLOCK_ROUTINE,
+!        CLOCK_LOOP, or CLOCK_INFRA.
+!        
+!   </NOTE>
+!   <FUTURE>           
+!     NetCDF facilities for reading and writing restart files and (IEEE32) 
+!       data files.
+!    </FUTURE>
+!    <FUTURE>
+!     May possible split the FMS module into two modules. 
+!
+!      i.general utilities (FMS_MOD) <BR/>
+!     ii.I/O utilities (FMS_IO_MOD) 
+!    </FUTURE>
+! </INFO>
 

@@ -21,6 +21,11 @@
 
 !these are used to determine hardware/OS/compiler
 #include <os.h>
+#ifdef __aix
+#define FLUSH FLUSH_
+#define flush flush_
+#endif
+
 
 !only one of SMA or MPI can be used
 !(though mixing calls is allowed, this module will not)
@@ -39,6 +44,132 @@ module mpp_mod
 !a generalized communication package for use with shmem and MPI
 !will add: co_array_fortran, MPI2
 !Balaji (vb@gfdl.gov) 11 May 1998
+
+! <CONTACT EMAIL="vb@gfdl.noaa.gov">
+!   V. Balaji
+! </CONTACT>
+
+! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
+! <RCSLOG SRC="http://www.gfdl.noaa.gov/~vb/changes_mpp.html"/>
+
+! <OVERVIEW>
+!   <TT>mpp_mod</TT>, is a set of simple calls to provide a uniform interface
+!   to different message-passing libraries. It currently can be
+!   implemented either in the SGI/Cray native SHMEM library or in the MPI
+!   standard. Other libraries (e.g MPI-2, Co-Array Fortran) can be
+!   incorporated as the need arises.
+! </OVERVIEW>
+
+! <DESCRIPTION>
+!   The data transfer between a processor and its own memory is based
+!   on <TT>load</TT> and <TT>store</TT> operations upon
+!   memory. Shared-memory systems (including distributed shared memory
+!   systems) have a single address space and any processor can acquire any
+!   data within the memory by <TT>load</TT> and
+!   <TT>store</TT>. The situation is different for distributed
+!   parallel systems. Specialized MPP systems such as the T3E can simulate
+!   shared-memory by direct data acquisition from remote memory. But if
+!   the parallel code is distributed across a cluster, or across the Net,
+!   messages must be sent and received using the protocols for
+!   long-distance communication, such as TCP/IP. This requires a
+!   ``handshaking'' between nodes of the distributed system. One can think
+!   of the two different methods as involving <TT>put</TT>s or
+!   <TT>get</TT>s (e.g the SHMEM library), or in the case of
+!   negotiated communication (e.g MPI), <TT>send</TT>s and
+!   <TT>recv</TT>s.
+!   
+!   The difference between SHMEM and MPI is that SHMEM uses one-sided
+!   communication, which can have very low-latency high-bandwidth
+!   implementations on tightly coupled systems. MPI is a standard
+!   developed for distributed computing across loosely-coupled systems,
+!   and therefore incurs a software penalty for negotiating the
+!   communication. It is however an open industry standard whereas SHMEM
+!   is a proprietary interface. Besides, the <TT>put</TT>s or
+!   <TT>get</TT>s on which it is based cannot currently be implemented in
+!   a cluster environment (there are recent announcements from Compaq that
+!   occasion hope).
+!   
+!   The message-passing requirements of climate and weather codes can be
+!   reduced to a fairly simple minimal set, which is easily implemented in
+!   any message-passing API. <TT>mpp_mod</TT> provides this API.
+!
+!    Features of <TT>mpp_mod</TT> include:
+!   
+!    1) Simple, minimal API, with free access to underlying API for
+!       more complicated stuff.<BR/>
+!    2) Design toward typical use in climate/weather CFD codes.<BR/>
+!    3) Performance to be not significantly lower than any native API.
+!   
+!   This module is used to develop higher-level calls for <LINK 
+!   SRC="mpp_domains.html">domain decomposition</LINK> and <LINK
+!   SRC="mpp_io.html">parallel I/O</LINK>.
+!   
+!   Parallel computing is initially daunting, but it soon becomes
+!   second nature, much the way many of us can now write vector code
+!   without much effort. The key insight required while reading and
+!   writing parallel code is in arriving at a mental grasp of several
+!   independent parallel execution streams through the same code (the SPMD
+!   model). Each variable you examine may have different values for each
+!   stream, the processor ID being an obvious example. Subroutines and
+!   function calls are particularly subtle, since it is not always obvious
+!   from looking at a call what synchronization between execution streams
+!   it implies. An example of erroneous code would be a global barrier
+!   call (see <LINK SRC="#mpp_sync"><TT>mpp_sync</TT></LINK> below) placed
+!   within a code block that not all PEs will execute, e.g:
+!   
+!   <PRE>
+!   if( pe.EQ.0 )call mpp_sync()
+!   </PRE>
+!   
+!   Here only PE 0 reaches the barrier, where it will wait
+!   indefinitely. While this is a particularly egregious example to
+!   illustrate the coding flaw, more subtle versions of the same are
+!   among the most common errors in parallel code.
+!   
+!   It is therefore important to be conscious of the context of a
+!   subroutine or function call, and the implied synchronization. There
+!   are certain calls here (e.g <TT>mpp_declare_pelist, mpp_init,
+!   mpp_malloc, mpp_set_stack_size</TT>) which must be called by all
+!   PEs. There are others which must be called by a subset of PEs (here
+!   called a <TT>pelist</TT>) which must be called by all the PEs in the
+!   <TT>pelist</TT> (e.g <TT>mpp_max, mpp_sum, mpp_sync</TT>). Still
+!   others imply no synchronization at all. I will make every effort to
+!   highlight the context of each call in the MPP modules, so that the
+!   implicit synchronization is spelt out.  
+!   
+!   For performance it is necessary to keep synchronization as limited
+!   as the algorithm being implemented will allow. For instance, a single
+!   message between two PEs should only imply synchronization across the
+!   PEs in question. A <I>global</I> synchronization (or <I>barrier</I>)
+!   is likely to be slow, and is best avoided. But codes first
+!   parallelized on a Cray T3E tend to have many global syncs, as very
+!   fast barriers were implemented there in hardware.
+!   
+!   Another reason to use pelists is to run a single program in MPMD
+!   mode, where different PE subsets work on different portions of the
+!   code. A typical example is to assign an ocean model and atmosphere
+!   model to different PE subsets, and couple them concurrently instead of
+!   running them serially. The MPP module provides the notion of a
+!   <I>current pelist</I>, which is set when a group of PEs branch off
+!   into a subset. Subsequent calls that omit the <TT>pelist</TT> optional
+!   argument (seen below in many of the individual calls) assume that the
+!   implied synchronization is across the current pelist. The calls
+!   <TT>mpp_root_pe</TT> and <TT>mpp_npes</TT> also return the values
+!   appropriate to the current pelist. The <TT>mpp_set_current_pelist</TT>
+!   call is provided to set the current pelist.
+
+! </DESCRIPTION>
+! <PUBLIC>
+!  F90 is a strictly-typed language, and the syntax pass of the
+!  compiler requires matching of type, kind and rank (TKR). Most calls
+!  listed here use a generic type, shown here as <TT>MPP_TYPE_</TT>. This
+!  is resolved in the pre-processor stage to any of a variety of
+!  types. In general the MPP operations work on 4-byte and 8-byte
+!  variants of <TT>integer, real, complex, logical</TT> variables, of
+!  rank 0 to 5, leading to 48 specific module procedures under the same
+!  generic interface. Any of the variables below shown as
+!  <TT>MPP_TYPE_</TT> is treated in this way.
+! </PUBLIC>
 #ifdef sgi_mipspro
 #ifdef use_libSMA
   use shmem_interface
@@ -50,9 +181,9 @@ module mpp_mod
   implicit none
   private
   character(len=128), private :: version= &
-       '$Id: mpp.F90,v 6.5 2002/07/16 22:56:06 fms Exp $'
+       '$Id: mpp.F90,v 6.6 2003/04/09 21:17:34 fms Exp $'
   character(len=128), private :: tagname= &
-       '$Name: havana $'
+       '$Name: inchon $'
 
 !various lengths (see shpalloc) are estimated in "words" which are 32bit on SGI, 64bit on Cray
 !these are also the expected sizeof of args to MPI/shmem libraries
@@ -182,15 +313,24 @@ module mpp_mod
   integer, private, parameter :: EVENT_ALLREDUCE=1, EVENT_BROADCAST=2, EVENT_RECV=3, EVENT_SEND=4, EVENT_WAIT=5
   integer, private :: clock_num=0, current_clock=0
   integer, private :: clock0    !measures total runtime from mpp_init to mpp_exit
-  integer, private :: clock_grain=HUGE(1)
 !the event contains information for each type of event (e.g SHMEM_PUT)
   type, private :: event
-     character(len=16)  :: name
-     integer(LONG_KIND) :: ticks(MAX_EVENTS), bytes(MAX_EVENTS)
-     integer            :: calls
+     character(len=16) :: name
+     integer(LONG_KIND), dimension(MAX_EVENTS) :: ticks, bytes
+     integer :: calls
   end type event
 !a clock contains an array of event profiles for a region
   integer, parameter, public :: MPP_CLOCK_SYNC=1, MPP_CLOCK_DETAILED=2
+!predefined clock granularities, but you can use any integer
+!using CLOCK_LOOP and above may distort coarser-grain measurements
+  integer, parameter, public :: CLOCK_COMPONENT=1 !component level, e.g model, exchange
+  integer, parameter, public :: CLOCK_SUBCOMPONENT=11 !top level within a model component, e.g dynamics, physics
+  integer, parameter, public :: CLOCK_MODULE_DRIVER=21 !module driver level, e.g adriver that calls multiple related physics routines
+  integer, parameter, public :: CLOCK_MODULE=31 !module level, e.g main subroutine of a physics module
+  integer, parameter, public :: CLOCK_ROUTINE=41 !level of individual subroutine or function
+  integer, parameter, public :: CLOCK_LOOP=51 !loops or blocks within a routine
+  integer, parameter, public :: CLOCK_INFRA=61 !infrastructure level, e.g halo update
+  integer, private :: clock_grain=CLOCK_LOOP-1
   type, private :: clock
      character(len=32) :: name
 #if defined(__sgi) || defined(use_libMPI)
@@ -201,6 +341,7 @@ module mpp_mod
      integer(LONG_KIND) :: total_ticks
      integer :: peset_num
      logical :: sync_on_begin, detailed
+     integer :: grain
      type(event), pointer :: events(:) !if needed, allocate to MAX_EVENT_TYPES
   end type
   type(clock) :: clocks(MAX_CLOCKS)
@@ -223,12 +364,34 @@ module mpp_mod
   type(Summary_Struct) :: clock_summary(MAX_CLOCKS)
   
 !public interfaces
+! <INTERFACE NAME="mpp_max">
+!  <OVERVIEW>
+!    Reduction operations.
+!  </OVERVIEW>
+!  <DESCRIPTION>
+!    Find the max of scalar a the PEs in pelist
+!    result is also automatically broadcast to all PEs
+!  </DESCRIPTION>
+!  <TEMPLATE>
+!    call  mpp_max( a, pelist )
+!  </TEMPLATE>
+!  <IN NAME="a">
+!    <TT>real</TT> or <TT>integer</TT>, of 4-byte of 8-byte kind.
+!  </IN>
+!  <IN NAME="pelist">
+!    If <TT>pelist</TT> is omitted, the context is assumed to be the
+!    current pelist. This call implies synchronization across the PEs in
+!    <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
+!  </IN>
+! </INTERFACE>
   interface mpp_max
      module procedure mpp_max_real8
 #ifndef no_8byte_integers
      module procedure mpp_max_int8
 #endif
+#ifndef no_4byte_reals
      module procedure mpp_max_real4
+#endif
      module procedure mpp_max_int4
   end interface
   interface mpp_min
@@ -236,9 +399,44 @@ module mpp_mod
 #ifndef no_8byte_integers
      module procedure mpp_min_int8
 #endif
+#ifndef no_4byte_reals
      module procedure mpp_min_real4
+#endif
      module procedure mpp_min_int4
   end interface
+
+! <INTERFACE NAME="mpp_sum">
+!  <OVERVIEW>
+!    Reduction operation.
+!  </OVERVIEW>
+!  <DESCRIPTION>
+!    <TT>MPP_TYPE_</TT> corresponds to any 4-byte and 8-byte variant of
+!    <TT>integer, real, complex</TT> variables, of rank 0 or 1. A
+!    contiguous block from a multi-dimensional array may be passed by its
+!    starting address and its length, as in <TT>f77</TT>.
+!
+!    Library reduction operators are not required or guaranteed to be
+!    bit-reproducible. In any case, changing the processor count changes
+!    the data layout, and thus very likely the order of operations. For
+!    bit-reproducible sums of distributed arrays, consider using the
+!    <TT>mpp_global_sum</TT> routine provided by the <LINK
+!    SRC="mpp_domains.html"><TT>mpp_domains</TT></LINK> module.
+!
+!    The <TT>bit_reproducible</TT> flag provided in earlier versions of
+!    this routine has been removed.
+!
+!
+!    If <TT>pelist</TT> is omitted, the context is assumed to be the
+!    current pelist. This call implies synchronization across the PEs in
+!    <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
+!  </DESCRIPTION>
+!  <TEMPLATE>
+!    call mpp_sum( a, length, pelist )
+!  </TEMPLATE>
+!  <IN NAME="length"></IN>
+!  <IN NAME="pelist"></IN>
+!  <INOUT NAME="a"></INOUT>
+! </INTERFACE>
   interface mpp_sum
 #ifndef no_8byte_integers
      module procedure mpp_sum_int8
@@ -266,6 +464,7 @@ module mpp_mod
      module procedure mpp_sum_int4_3d
      module procedure mpp_sum_int4_4d
      module procedure mpp_sum_int4_5d
+#ifndef no_4byte_reals
      module procedure mpp_sum_real4
      module procedure mpp_sum_real4_scalar
      module procedure mpp_sum_real4_2d
@@ -278,7 +477,81 @@ module mpp_mod
      module procedure mpp_sum_cmplx4_3d
      module procedure mpp_sum_cmplx4_4d
      module procedure mpp_sum_cmplx4_5d
+#endif
   end interface
+
+! <INTERFACE NAME="mpp_transmit">
+!  <OVERVIEW>
+!    Basic message-passing call.
+!  </OVERVIEW>
+!  <DESCRIPTION>
+!    <TT>MPP_TYPE_</TT> corresponds to any 4-byte and 8-byte variant of
+!    <TT>integer, real, complex, logical</TT> variables, of rank 0 or 1. A
+!    contiguous block from a multi-dimensional array may be passed by its
+!    starting address and its length, as in <TT>f77</TT>.
+!    
+!    <TT>mpp_transmit</TT> is currently implemented as asynchronous
+!    outward transmission and synchronous inward transmission. This follows
+!    the behaviour of <TT>shmem_put</TT> and <TT>shmem_get</TT>. In MPI, it
+!    is implemented as <TT>mpi_isend</TT> and <TT>mpi_recv</TT>. For most
+!    applications, transmissions occur in pairs, and are here accomplished
+!    in a single call.
+!    
+!    The special PE designations <TT>NULL_PE</TT>,
+!    <TT>ANY_PE</TT> and <TT>ALL_PES</TT> are provided by use
+!    association.
+!    
+!    <TT>NULL_PE</TT>: is used to disable one of the pair of
+!    transmissions.<BR/>
+!    <TT>ANY_PE</TT>: is used for unspecific remote
+!    destination. (Please note that <TT>put_pe=ANY_PE</TT> has no meaning
+!    in the MPI context, though it is available in the SHMEM invocation. If
+!    portability is a concern, it is best avoided).<BR/>
+!    <TT>ALL_PES</TT>: is used for broadcast operations.
+!    
+!    It is recommended that <LINK
+!    SRC="#mpp_broadcast"><TT>mpp_broadcast</TT></LINK> be used for
+!    broadcasts.
+!    
+!    The following example illustrates the use of
+!    <TT>NULL_PE</TT> and <TT>ALL_PES</TT>:
+!    
+!    <PRE>
+!    real, dimension(n) :: a
+!    if( pe.EQ.0 )then
+!        do p = 1,npes-1
+!           call mpp_transmit( a, n, p, a, n, NULL_PE )
+!        end do
+!    else
+!        call mpp_transmit( a, n, NULL_PE, a, n, 0 )
+!    end if
+!    
+!    call mpp_transmit( a, n, ALL_PES, a, n, 0 )
+!    </PRE>
+!    
+!    The do loop and the broadcast operation above are equivalent.
+!    
+!    Two overloaded calls <TT>mpp_send</TT> and
+!     <TT>mpp_recv</TT> have also been
+!    provided. <TT>mpp_send</TT> calls <TT>mpp_transmit</TT>
+!    with <TT>get_pe=NULL_PE</TT>. <TT>mpp_recv</TT> calls
+!    <TT>mpp_transmit</TT> with <TT>put_pe=NULL_PE</TT>. Thus
+!    the do loop above could be written more succinctly:
+!    
+!    <PRE>
+!    if( pe.EQ.0 )then
+!        do p = 1,npes-1
+!           call mpp_send( a, n, p )
+!        end do
+!    else
+!        call mpp_recv( a, n, 0 )
+!    end if
+!    </PRE>
+!  </DESCRIPTION>
+!  <TEMPLATE>
+!    call mpp_transmit( put_data, put_len, put_pe, get_data, get_len, get_pe )
+!  </TEMPLATE>
+! </INTERFACE>
   interface mpp_transmit
      module procedure mpp_transmit_real8
      module procedure mpp_transmit_real8_scalar
@@ -306,6 +579,7 @@ module mpp_mod
      module procedure mpp_transmit_logical8_4d
      module procedure mpp_transmit_logical8_5d
 #endif
+#ifndef no_4byte_reals
      module procedure mpp_transmit_real4
      module procedure mpp_transmit_real4_scalar
      module procedure mpp_transmit_real4_2d
@@ -318,6 +592,7 @@ module mpp_mod
      module procedure mpp_transmit_cmplx4_3d
      module procedure mpp_transmit_cmplx4_4d
      module procedure mpp_transmit_cmplx4_5d
+#endif
      module procedure mpp_transmit_int4
      module procedure mpp_transmit_int4_scalar
      module procedure mpp_transmit_int4_2d
@@ -358,6 +633,7 @@ module mpp_mod
      module procedure mpp_recv_logical8_4d
      module procedure mpp_recv_logical8_5d
 #endif
+#ifndef no_4byte_reals
      module procedure mpp_recv_real4
      module procedure mpp_recv_real4_scalar
      module procedure mpp_recv_real4_2d
@@ -370,6 +646,7 @@ module mpp_mod
      module procedure mpp_recv_cmplx4_3d
      module procedure mpp_recv_cmplx4_4d
      module procedure mpp_recv_cmplx4_5d
+#endif
      module procedure mpp_recv_int4
      module procedure mpp_recv_int4_scalar
      module procedure mpp_recv_int4_2d
@@ -410,6 +687,7 @@ module mpp_mod
      module procedure mpp_send_logical8_4d
      module procedure mpp_send_logical8_5d
 #endif
+#ifndef no_4byte_reals
      module procedure mpp_send_real4
      module procedure mpp_send_real4_scalar
      module procedure mpp_send_real4_2d
@@ -422,6 +700,7 @@ module mpp_mod
      module procedure mpp_send_cmplx4_3d
      module procedure mpp_send_cmplx4_4d
      module procedure mpp_send_cmplx4_5d
+#endif
      module procedure mpp_send_int4
      module procedure mpp_send_int4_scalar
      module procedure mpp_send_int4_2d
@@ -436,6 +715,39 @@ module mpp_mod
      module procedure mpp_send_logical4_5d
   end interface
 
+
+! <INTERFACE NAME="mpp_broadcast">
+
+!   <OVERVIEW>
+!     Parallel broadcasts.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     The <TT>mpp_broadcast</TT> call has been added because the original
+!     syntax (using <TT>ALL_PES</TT> in <TT>mpp_transmit</TT>) did not
+!     support a broadcast across a pelist.
+!
+!     <TT>MPP_TYPE_</TT> corresponds to any 4-byte and 8-byte variant of
+!     <TT>integer, real, complex, logical</TT> variables, of rank 0 or 1. A
+!     contiguous block from a multi-dimensional array may be passed by its
+!     starting address and its length, as in <TT>f77</TT>.
+!
+!     Global broadcasts through the <TT>ALL_PES</TT> argument to <LINK
+!     SRC="#mpp_transmit"><TT>mpp_transmit</TT></LINK> are still provided for
+!     backward-compatibility.
+!
+!     If <TT>pelist</TT> is omitted, the context is assumed to be the
+!     current pelist. <TT>from_pe</TT> must belong to the current
+!     pelist. This call implies synchronization across the PEs in
+!     <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call mpp_broadcast( data, length, from_pe, pelist )
+!   </TEMPLATE>
+!   <IN NAME="length"> </IN>
+!   <IN NAME="from_pe"> </IN>
+!   <IN NAME="pelist"> </IN>
+!   <INOUT NAME="data(*)"> </INOUT>
+! </INTERFACE>
   interface mpp_broadcast
      module procedure mpp_broadcast_real8
      module procedure mpp_broadcast_real8_scalar
@@ -463,6 +775,7 @@ module mpp_mod
      module procedure mpp_broadcast_logical8_4d
      module procedure mpp_broadcast_logical8_5d
 #endif
+#ifndef no_4byte_reals
      module procedure mpp_broadcast_real4
      module procedure mpp_broadcast_real4_scalar
      module procedure mpp_broadcast_real4_2d
@@ -475,6 +788,7 @@ module mpp_mod
      module procedure mpp_broadcast_cmplx4_3d
      module procedure mpp_broadcast_cmplx4_4d
      module procedure mpp_broadcast_cmplx4_5d
+#endif
      module procedure mpp_broadcast_int4
      module procedure mpp_broadcast_int4_scalar
      module procedure mpp_broadcast_int4_2d
@@ -489,6 +803,53 @@ module mpp_mod
      module procedure mpp_broadcast_logical4_5d
   end interface
 
+! <INTERFACE NAME="mpp_chksum">
+
+!   <OVERVIEW>
+!     Parallel checksums.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     <TT>mpp_chksum</TT> is a parallel checksum routine that returns an
+!     identical answer for the same array irrespective of how it has been
+!     partitioned across processors. <TT>LONG_KIND</TT>is the <TT>KIND</TT>
+!     parameter corresponding to long integers (see discussion on
+!     OS-dependent preprocessor directives) defined in
+!     the header file <TT>os.h</TT>. <TT>MPP_TYPE_</TT> corresponds to any
+!     4-byte and 8-byte variant of <TT>integer, real, complex, logical</TT>
+!     variables, of rank 0 to 5.
+!
+!     Integer checksums on FP data use the F90 <TT>TRANSFER()</TT>
+!     intrinsic.
+!
+!     The <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/chksum/chksum.html">serial checksum module</LINK> is superseded
+!     by this function, and is no longer being actively maintained. This
+!     provides identical results on a single-processor job, and to perform
+!     serial checksums on a single processor of a parallel job, you only
+!     need to use the optional <TT>pelist</TT> argument.
+!     <PRE>
+!     use mpp_mod
+!     integer :: pe, chksum
+!     real :: a(:)
+!     pe = mpp_pe()
+!     chksum = mpp_chksum( a, (/pe/) )
+!     </PRE>
+!
+!     The additional functionality of <TT>mpp_chksum</TT> over
+!     serial checksums is to compute the checksum across the PEs in
+!     <TT>pelist</TT>. The answer is guaranteed to be the same for
+!     the same distributed array irrespective of how it has been
+!     partitioned.
+!
+!     If <TT>pelist</TT> is omitted, the context is assumed to be the
+!     current pelist. This call implies synchronization across the PEs in
+!     <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     mpp_chksum( var, pelist )
+!   </TEMPLATE>
+!   <IN NAME="pelist" TYPE="integer" DIM="(:)"> </IN>
+!   <IN NAME="var" TYPE="MPP_TYPE_"> </IN>
+! </INTERFACE>
   interface mpp_chksum
 #ifndef no_8byte_integers
      module procedure mpp_chksum_i8_1d
@@ -512,6 +873,7 @@ module mpp_mod
      module procedure mpp_chksum_c8_3d
      module procedure mpp_chksum_c8_4d
      module procedure mpp_chksum_c8_5d
+#ifndef no_4byte_reals
      module procedure mpp_chksum_r4_0d
      module procedure mpp_chksum_r4_1d
      module procedure mpp_chksum_r4_2d
@@ -524,8 +886,76 @@ module mpp_mod
      module procedure mpp_chksum_c4_3d
      module procedure mpp_chksum_c4_4d
      module procedure mpp_chksum_c4_5d
+#endif
   end interface
 
+! <INTERFACE NAME="mpp_error">
+!  <OVERVIEW>
+!    Error handler.
+!  </OVERVIEW>
+!  <DESCRIPTION>
+!    It is strongly recommended that all error exits pass through
+!    <TT>mpp_error</TT> to assure the program fails cleanly. An individual
+!    PE encountering a <TT>STOP</TT> statement, for instance, can cause the
+!    program to hang. The use of the <TT>STOP</TT> statement is strongly
+!    discouraged.
+!    
+!    Calling mpp_error with no arguments produces an immediate error
+!    exit, i.e:
+!    <PRE>
+!    call mpp_error
+!    call mpp_error(FATAL)
+!    </PRE>
+!    are equivalent.
+!    
+!    The argument order
+!    <PRE>
+!    call mpp_error( routine, errormsg, errortype )
+!    </PRE>
+!    is also provided to support legacy code. In this version of the
+!    call, none of the arguments may be omitted.
+!    
+!    The behaviour of <TT>mpp_error</TT> for a <TT>WARNING</TT> can be
+!    controlled with an additional call <TT>mpp_set_warn_level</TT>.
+!    <PRE>
+!    call mpp_set_warn_level(ERROR)
+!    </PRE>
+!    causes <TT>mpp_error</TT> to treat <TT>WARNING</TT>
+!    exactly like <TT>FATAL</TT>.
+!    <PRE>
+!    call mpp_set_warn_level(WARNING)
+!    </PRE>
+!    resets to the default behaviour described above.
+!    
+!    <TT>mpp_error</TT> also has an internal error state which
+!    maintains knowledge of whether a warning has been issued. This can be
+!    used at startup in a subroutine that checks if the model has been
+!    properly configured. You can generate a series of warnings using
+!    <TT>mpp_error</TT>, and then check at the end if any warnings has been
+!    issued using the function <TT>mpp_error_state()</TT>. If the value of
+!    this is <TT>WARNING</TT>, at least one warning has been issued, and
+!    the user can take appropriate action:
+!    
+!    <PRE>
+!    if( ... )call mpp_error( WARNING, '...' )
+!    if( ... )call mpp_error( WARNING, '...' )
+!    if( ... )call mpp_error( WARNING, '...' )
+!    ...
+!    if( mpp_error_state().EQ.WARNING )call mpp_error( FATAL, '...' )
+!    </PRE>
+!  </DESCRIPTION>
+!  <TEMPLATE>
+!    call mpp_error( errortype, routine, errormsg )
+!  </TEMPLATE>
+!  <IN NAME="errortype">
+!    One of <TT>NOTE</TT>, <TT>WARNING</TT> or <TT>FATAL</TT> 
+!    (these definitions are acquired by use association).
+!    <TT>NOTE</TT> writes <TT>errormsg</TT> to <TT>STDOUT</TT>. 
+!    <TT>WARNING</TT> writes <TT>errormsg</TT> to <TT>STDERR</TT>.
+!    <TT>FATAL</TT> writes <TT>errormsg</TT> to <TT>STDERR</TT>,
+!    and induces a clean error exit with a call stack traceback.
+!  </IN>
+! </INTERFACE>
   interface mpp_error
      module procedure mpp_error_basic
      module procedure mpp_error_mesg
@@ -561,6 +991,27 @@ module mpp_mod
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+! <SUBROUTINE NAME="mpp_init">
+!  <OVERVIEW>
+!   Initialize <TT>mpp_mod</TT>.
+!  </OVERVIEW>
+!  <DESCRIPTION>
+!   Called to initialize the <TT>mpp_mod</TT> package. It is recommended
+!   that this call be the first executed line in your program. It sets the
+!   number of PEs assigned to this run (acquired from the command line, or
+!   through the environment variable <TT>NPES</TT>), and associates an ID
+!   number to each PE. These can be accessed by calling <LINK
+!   SRC="#mpp_npes"><TT>mpp_npes</TT></LINK> and <LINK
+!   SRC="#mpp_pe"><TT>mpp_pe</TT></LINK>.
+!  </DESCRIPTION>
+!  <TEMPLATE>
+!   call mpp_init( flags )
+!  </TEMPLATE>
+!  <IN NAME="flags" TYPE="integer">
+!   <TT>flags</TT> can be set to <TT>MPP_VERBOSE</TT> to
+!   have <TT>mpp_mod</TT> keep you informed of what it's up to.
+!  </IN>
+! </SUBROUTINE>
     subroutine mpp_init( flags )
       integer, optional, intent(in) :: flags
 !    subroutine mpp_init( flags, in, out, err, log )
@@ -703,6 +1154,20 @@ module mpp_mod
       return
     end subroutine mpp_init
 
+! <FUNCTION NAME="stdin">
+!  <OVERVIEW>
+!    Standard fortran unit numbers.
+!  </OVERVIEW>
+!  <DESCRIPTION>
+!    This function, as well as stdout(), stderr(), stdlog(), returns the current 
+!    standard fortran unit numbers for
+!    input, output, error messages and log messages. Log messages, by
+!    convention, are written to the file <TT>logfile.out</TT>.
+!  </DESCRIPTION>
+!  <TEMPLATE>
+!   stdin()
+!  </TEMPLATE>
+! </FUNCTION>
     function stdin()
       integer :: stdin
       stdin = in_unit
@@ -741,6 +1206,20 @@ module mpp_mod
    10 call mpp_error( FATAL, 'STDLOG: unable to open '//trim(configfile)//'.' )
     end function stdlog
 
+! <SUBROUTINE NAME="mpp_exit">
+!  <OVERVIEW>
+!   Exit <TT>mpp_mod</TT>.
+!  </OVERVIEW>
+!  <DESCRIPTION>
+!   Called at the end of the run, or to re-initialize <TT>mpp_mod</TT>,
+!   should you require that for some odd reason.
+!
+!   This call implies synchronization across all PEs.
+!  </DESCRIPTION>
+!  <TEMPLATE>
+!   call mpp_exit()
+!  </TEMPLATE>
+! </SUBROUTINE>
     subroutine mpp_exit()
 !to be called at the end of a run
       integer :: i, j, k, n, nmax
@@ -749,6 +1228,7 @@ module mpp_mod
       real :: t_total
 
       if( .NOT.module_is_initialized )return
+      call mpp_set_current_pelist()
       call mpp_clock_end(clock0)
       t_total = clocks(clock0)%total_ticks*tick_rate
       if( clock_num.GT.0 )then
@@ -759,20 +1239,23 @@ module mpp_mod
               write( stdout(),'(/a,i4,a)' ) 'Tabulating mpp_clock statistics across ', npes, ' PEs...'
               if( ANY(clocks(1:clock_num)%detailed) ) &
                    write( stdout(),'(a)' )'   ... see mpp_clock.out.#### for details on individual PEs.'
-              write( stdout(),'(/32x,a)' ) '          tmin          tmax          tavg          tstd  tfrac'
+              write( stdout(),'(/32x,a)' ) '          tmin          tmax          tavg          tstd  tfrac grain pemin pemax'
           end if
+          call FLUSH( stdout() )
+          call mpp_sync()
           do i = 1,clock_num
-             call mpp_set_current_pelist() !implied global barrier
-             current_peset_num = clocks(i)%peset_num
-             if( .NOT.ANY(peset(current_peset_num)%list(:).EQ.pe) )cycle
+             if( .NOT.ANY(peset(clocks(i)%peset_num)%list(:).EQ.pe) )cycle
+             call mpp_set_current_pelist( peset(clocks(i)%peset_num)%list )
 !times between mpp_clock ticks
              t = clocks(i)%total_ticks*tick_rate
              tmin = t; call mpp_min(tmin)
              tmax = t; call mpp_max(tmax)
              tavg = t; call mpp_sum(tavg); tavg = tavg/mpp_npes()
              tstd = (t-tavg)**2; call mpp_sum(tstd); tstd = sqrt( tstd/mpp_npes() )
-             if( pe.EQ.root_pe )write( stdout(),'(a32,4f14.6,f7.3)' ) &
-                  clocks(i)%name, tmin, tmax, tavg, tstd, tavg/t_total
+             if( pe.EQ.root_pe )write( stdout(),'(a32,4f14.6,f7.3,3i6)' ) &
+                  clocks(i)%name, tmin, tmax, tavg, tstd, tavg/t_total, &
+                  clocks(i)%grain, minval(peset(clocks(i)%peset_num)%list), &
+                                   maxval(peset(clocks(i)%peset_num)%list)
           end do
           if( ANY(clocks(1:clock_num)%detailed) .AND. pe.EQ.root_pe )write( stdout(),'(/32x,a)' ) &
                '       tmin       tmax       tavg       tstd       mmin       mmax       mavg       mstd  mavg/tavg'
@@ -814,6 +1297,20 @@ module mpp_mod
       return
     end subroutine mpp_exit
 
+! <FUNCTION NAME="mpp_pe">
+!  <OVERVIEW>
+!    Returns processor ID.
+!  </OVERVIEW>
+!  <DESCRIPTION>
+!    This returns the unique ID associated with a PE. This number runs
+!    between 0 and <TT>npes-1</TT>, where <TT>npes</TT> is the total
+!    processor count, returned by <TT>mpp_npes</TT>. For a uniprocessor
+!    application this will always return 0.
+!  </DESCRIPTION>
+!  <TEMPLATE>
+!    mpp_pe()
+!  </TEMPLATE>
+! </FUNCTION>
     function mpp_pe()
       integer :: mpp_pe
 
@@ -830,6 +1327,18 @@ module mpp_mod
       return
     end function mpp_node
 
+! <FUNCTION NAME="mpp_npes">
+!  <OVERVIEW>
+!    Returns processor count for current pelist.
+!  </OVERVIEW>
+!  <DESCRIPTION>
+!    This returns the number of PEs in the current pelist. For a
+!    uniprocessor application, this will always return 1.
+!  </DESCRIPTION>
+!  <TEMPLATE>
+!    mpp_npes()
+!  </TEMPLATE>
+! </FUNCTION>
     function mpp_npes()
       integer :: mpp_npes
 
@@ -876,6 +1385,31 @@ module mpp_mod
       return
     end subroutine mpp_set_root_pe
 
+! <SUBROUTINE NAME="mpp_declare_pelist">
+!  <OVERVIEW>
+!    Declare a pelist.
+!  </OVERVIEW>
+!  <DESCRIPTION>
+!    This call is written specifically to accommodate a MPI restriction
+!    that requires a parent communicator to create a child communicator, In
+!    other words: a pelist cannot go off and declare a communicator, but
+!    every PE in the parent, including those not in pelist(:), must get
+!    together for the <TT>MPI_COMM_CREATE</TT> call. The parent is
+!    typically <TT>MPI_COMM_WORLD</TT>, though it could also be a subset
+!    that includes all PEs in <TT>pelist</TT>.
+!  
+!    The restriction does not apply to SMA but to have uniform code, you
+!    may as well call it.
+!  
+!    This call implies synchronization across the PEs in the current
+!    pelist, of which <TT>pelist</TT> is a subset.
+!  </DESCRIPTION>
+!  <TEMPLATE>
+!   call mpp_declare_pelist( pelist,name )
+!  </TEMPLATE>
+!  <IN NAME="pelist" DIM="(:)" TYPE="integer"></IN>
+! </SUBROUTINE>
+
     subroutine mpp_declare_pelist( pelist, name )
 !this call is written specifically to accommodate a brain-dead MPI restriction
 !that requires a parent communicator to create a child communicator:
@@ -896,6 +1430,29 @@ module mpp_mod
       if( PRESENT(name) )peset(i)%name = name
       return
     end subroutine mpp_declare_pelist
+
+! <SUBROUTINE NAME="mpp_set_current_pelist">
+!  <OVERVIEW>
+!    Set context pelist.
+!  </OVERVIEW>
+!  <DESCRIPTION>
+!    This call sets the value of the current pelist, which is the
+!    context for all subsequent "global" calls where the optional
+!    <TT>pelist</TT> argument is omitted. All the PEs that are to be in the
+!    current pelist must call it.
+!  
+!    In MPI, this call may hang unless <TT>pelist</TT> has been previous
+!    declared using <LINK
+!    SRC="#mpp_declare_pelist"><TT>mpp_declare_pelist</TT></LINK>.
+!  
+!    If the argument <TT>pelist</TT> is absent, the current pelist is
+!    set to the "world" pelist, of all PEs in the job.
+!  </DESCRIPTION>
+!  <TEMPLATE>
+!    call mpp_set_current_pelist( pelist )
+!  </TEMPLATE>
+!  <IN NAME="pliest" TYPE="integer"></IN>
+! </SUBROUTINE>
 
     subroutine mpp_set_current_pelist( pelist )
 !Once we branch off into a PE subset, we want subsequent "global" calls to
@@ -1021,12 +1578,116 @@ module mpp_mod
 !                        PERFORMANCE PROFILING CALLS                          !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! <SUBROUTINE NAME="mpp_clock_set_grain">
+!  <OVERVIEW>
+!    Set the level of granularity of timing measurements.   
+!  </OVERVIEW>
+!  <DESCRIPTION>
+!    This routine and three other routines, mpp_clock_id, mpp_clock_begin(id),
+!    and mpp_clock_end(id) may be used to time parallel code sections, and
+!    extract parallel statistics. Clocks are identified by names, which
+!    should be unique in the first 32 characters. The <TT>mpp_clock_id</TT>
+!    call initializes a clock of a given name and returns an integer
+!    <TT>id</TT>. This <TT>id</TT> can be used by subsequent
+!    <TT>mpp_clock_begin</TT> and <TT>mpp_clock_end</TT> calls set around a
+!    code section to be timed. Example:
+!    <PRE>
+!    integer :: id
+!    id = mpp_clock_id( 'Atmosphere' )
+!    call mpp_clock_begin(id)
+!    call atmos_model()
+!    call mpp_clock_end()
+!    </PRE>  
+!     Two flags may be used to alter the behaviour of
+!     <TT>mpp_clock</TT>. If the flag <TT>MPP_CLOCK_SYNC</TT> is turned on
+!     by <TT>mpp_clock_id</TT>, the clock calls <TT>mpp_sync</TT> across all
+!     the PEs in the current pelist at the top of the timed code section,
+!     but allows each PE to complete the code section (and reach
+!     <TT>mpp_clock_end</TT>) at different times. This allows us to measure
+!     load imbalance for a given code section. Statistics are written to
+!     <TT>stdout</TT> by <TT>mpp_exit</TT>.
+!     
+!     The flag <TT>MPP_CLOCK_DETAILED</TT> may be turned on by
+!     <TT>mpp_clock_id</TT> to get detailed communication
+!     profiles. Communication events of the types <TT>SEND, RECV, BROADCAST,
+!     REDUCE</TT> and <TT>WAIT</TT> are separately measured for data volume
+!     and time. Statistics are written to <TT>stdout</TT> by
+!     <TT>mpp_exit</TT>, and individual PE info is also written to the file
+!     <TT>mpp_clock.out.####</TT> where <TT>####</TT> is the PE id given by
+!     <TT>mpp_pe</TT>.
+!     
+!     The flags <TT>MPP_CLOCK_SYNC</TT> and <TT>MPP_CLOCK_DETAILED</TT> are
+!     integer parameters available by use association, and may be summed to
+!     turn them both on.
+!     
+!     While the nesting of clocks is allowed, please note that turning on
+!     the non-optional flags on inner clocks has certain subtle issues.
+!     Turning on <TT>MPP_CLOCK_SYNC</TT> on an inner
+!     clock may distort outer clock measurements of load imbalance. Turning
+!     on <TT>MPP_CLOCK_DETAILED</TT> will stop detailed measurements on its
+!     outer clock, since only one detailed clock may be active at one time.
+!     Also, detailed clocks only time a certain number of events per clock
+!     (currently 40000) to conserve memory. If this array overflows, a
+!     warning message is printed, and subsequent events for this clock are
+!     not timed.
+!     
+!     Timings are done using the <TT>f90</TT> standard
+!     <TT>SYSTEM_CLOCK</TT> intrinsic.
+!     
+!     The resolution of SYSTEM_CLOCK is often too coarse for use except
+!     across large swaths of code. On SGI systems this is transparently
+!     overloaded with a higher resolution clock made available in a
+!     non-portable fortran interface made available by
+!     <TT>nsclock.c</TT>. This approach will eventually be extended to other
+!     platforms.
+!     
+!     New behaviour added at the Havana release allows the user to embed
+!     profiling calls at varying levels of granularity all over the code,
+!     and for any particular run, set a threshold of granularity so that
+!     finer-grained clocks become dormant.
+!     
+!     The threshold granularity is held in the private module variable
+!     <TT>clock_grain</TT>. This value may be modified by the call
+!     <TT>mpp_clock_set_grain</TT>, and affect clocks initiated by
+!     subsequent calls to <TT>mpp_clock_id</TT>. The value of
+!     <TT>clock_grain</TT> is set to an arbitrarily large number initially.
+!     
+!     Clocks initialized by <TT>mpp_clock_id</TT> can set a new optional
+!     argument <TT>grain</TT> setting their granularity level. Clocks check
+!     this level against the current value of <TT>clock_grain</TT>, and are
+!     only triggered if they are <I>at or below ("coarser than")</I> the
+!     threshold. Finer-grained clocks are dormant for that run.
+!
+!The following grain levels are pre-defined:
+!
+!<pre>
+!!predefined clock granularities, but you can use any integer
+!!using CLOCK_LOOP and above may distort coarser-grain measurements
+!  integer, parameter, public :: CLOCK_COMPONENT=1 !component level, e.g model, exchange
+!  integer, parameter, public :: CLOCK_SUBCOMPONENT=11 !top level within a model component, e.g dynamics, physics
+!  integer, parameter, public :: CLOCK_MODULE=21 !module level, e.g main subroutine of a physics module
+!  integer, parameter, public :: CLOCK_ROUTINE=31 !level of individual subroutine or function
+!  integer, parameter, public :: CLOCK_LOOP=41 !loops or blocks within a routine
+!  integer, parameter, public :: CLOCK_INFRA=51 !infrastructure level, e.g halo update
+!</pre>
+!     
+!     Note that subsequent changes to <TT>clock_grain</TT> do not
+!     change the status of already initiated clocks, and that if the
+!     optional <TT>grain</TT> argument is absent, the clock is always
+!     triggered. This guarantees backward compatibility.
+!  </DESCRIPTION>
+!  <TEMPLATE>
+!     call mpp_clock_set_grain( grain )
+!  </TEMPLATE>
+!  <IN NAME="grain" TYPE="integer"></IN>
+! </SUBROUTINE>
+
     subroutine mpp_clock_set_grain( grain )
       integer, intent(in) :: grain
 !set the granularity of times: only clocks whose grain is lower than
 !clock_grain are triggered, finer-grained clocks are dormant.
-!clock_grain is initialized to HUGE(1), so all clocks are triggered if
-!this is never called.   
+!clock_grain is initialized to CLOCK_LOOP, so all clocks above the loop level
+!are triggered if this is never called.   
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_CLOCK_SET_GRAIN: You must first call mpp_init.' )
 
       clock_grain = grain
@@ -1064,7 +1725,7 @@ module mpp_mod
                      call mpp_error( WARNING, 'MPP_CLOCK_ID: too many clock requests, this one is ignored.' )
                  else               !new clock: initialize
                      clock_num = mpp_clock_id
-                     call clock_init(mpp_clock_id,name,flags)
+                     call clock_init(mpp_clock_id,name,flags,grain)
                      exit FIND_CLOCK
                  end if
              end if
@@ -1080,7 +1741,7 @@ module mpp_mod
       if( id.EQ.0 )return
       if( id.LT.0 .OR. id.GT.clock_num )call mpp_error( FATAL, 'MPP_CLOCK_BEGIN: invalid id.' )
 
-      if( clocks(id)%peset_num.EQ.0 )clocks(id)%peset_num = current_peset_num
+!      if( clocks(id)%peset_num.EQ.0 )clocks(id)%peset_num = current_peset_num
       if( clocks(id)%peset_num.NE.current_peset_num ) &
            call mpp_error( FATAL, 'MPP_CLOCK_BEGIN: cannot change pelist context of a clock.' )
       if( clocks(id)%sync_on_begin )then
@@ -1375,10 +2036,10 @@ module mpp_mod
 
   end subroutine sum_clock_data
 
-  subroutine clock_init(id,name,flags)
+  subroutine clock_init( id, name, flags, grain )
     integer, intent(in) :: id
     character(len=*), intent(in) :: name
-    integer, intent(in), optional :: flags
+    integer, intent(in), optional :: flags, grain
     integer :: i
 
     clocks(id)%name = name
@@ -1386,11 +2047,13 @@ module mpp_mod
     clocks(id)%total_ticks = 0
     clocks(id)%sync_on_begin = .FALSE.
     clocks(id)%detailed      = .FALSE.
-    clocks(id)%peset_num = 0
+    clocks(id)%peset_num = current_peset_num
     if( PRESENT(flags) )then
         if( BTEST(flags,0) )clocks(id)%sync_on_begin = .TRUE.
         if( BTEST(flags,1) )clocks(id)%detailed      = .TRUE.
     end if
+    clocks(id)%grain = 0
+    if( PRESENT(grain) )clocks(id)%grain = grain
     if( clocks(id)%detailed )then
         allocate( clocks(id)%events(MAX_EVENT_TYPES) )
         clocks(id)%events(EVENT_ALLREDUCE)%name = 'ALLREDUCE'
@@ -1507,37 +2170,6 @@ module mpp_mod
 #define SHMEM_GET_ SHMEM_GET8
 #include <mpp_transmit.h>
 
-#define MPP_TRANSMIT_ mpp_transmit_real4
-#define MPP_TRANSMIT_SCALAR_ mpp_transmit_real4_scalar
-#define MPP_TRANSMIT_2D_ mpp_transmit_real4_2d
-#define MPP_TRANSMIT_3D_ mpp_transmit_real4_3d
-#define MPP_TRANSMIT_4D_ mpp_transmit_real4_4d
-#define MPP_TRANSMIT_5D_ mpp_transmit_real4_5d
-#define MPP_RECV_ mpp_recv_real4
-#define MPP_RECV_SCALAR_ mpp_recv_real4_scalar
-#define MPP_RECV_2D_ mpp_recv_real4_2d
-#define MPP_RECV_3D_ mpp_recv_real4_3d
-#define MPP_RECV_4D_ mpp_recv_real4_4d
-#define MPP_RECV_5D_ mpp_recv_real4_5d
-#define MPP_SEND_ mpp_send_real4
-#define MPP_SEND_SCALAR_ mpp_send_real4_scalar
-#define MPP_SEND_2D_ mpp_send_real4_2d
-#define MPP_SEND_3D_ mpp_send_real4_3d
-#define MPP_SEND_4D_ mpp_send_real4_4d
-#define MPP_SEND_5D_ mpp_send_real4_5d
-#define MPP_BROADCAST_ mpp_broadcast_real4
-#define MPP_BROADCAST_SCALAR_ mpp_broadcast_real4_scalar
-#define MPP_BROADCAST_2D_ mpp_broadcast_real4_2d
-#define MPP_BROADCAST_3D_ mpp_broadcast_real4_3d
-#define MPP_BROADCAST_4D_ mpp_broadcast_real4_4d
-#define MPP_BROADCAST_5D_ mpp_broadcast_real4_5d
-#define MPP_TYPE_ real(FLOAT_KIND)
-#define MPP_TYPE_BYTELEN_ 4
-#define MPI_TYPE_ MPI_REAL4
-#define SHMEM_BROADCAST_ SHMEM_BROADCAST4
-#define SHMEM_GET_ SHMEM_GET4
-#include <mpp_transmit.h>
-
 #define MPP_TRANSMIT_ mpp_transmit_cmplx8
 #define MPP_TRANSMIT_SCALAR_ mpp_transmit_cmplx8_scalar
 #define MPP_TRANSMIT_2D_ mpp_transmit_cmplx8_2d
@@ -1567,6 +2199,38 @@ module mpp_mod
 #define MPI_TYPE_ MPI_DOUBLE_COMPLEX
 #define SHMEM_BROADCAST_ SHMEM_BROADCAST8
 #define SHMEM_GET_ SHMEM_GET128
+#include <mpp_transmit.h>
+
+#ifndef no_4byte_reals
+#define MPP_TRANSMIT_ mpp_transmit_real4
+#define MPP_TRANSMIT_SCALAR_ mpp_transmit_real4_scalar
+#define MPP_TRANSMIT_2D_ mpp_transmit_real4_2d
+#define MPP_TRANSMIT_3D_ mpp_transmit_real4_3d
+#define MPP_TRANSMIT_4D_ mpp_transmit_real4_4d
+#define MPP_TRANSMIT_5D_ mpp_transmit_real4_5d
+#define MPP_RECV_ mpp_recv_real4
+#define MPP_RECV_SCALAR_ mpp_recv_real4_scalar
+#define MPP_RECV_2D_ mpp_recv_real4_2d
+#define MPP_RECV_3D_ mpp_recv_real4_3d
+#define MPP_RECV_4D_ mpp_recv_real4_4d
+#define MPP_RECV_5D_ mpp_recv_real4_5d
+#define MPP_SEND_ mpp_send_real4
+#define MPP_SEND_SCALAR_ mpp_send_real4_scalar
+#define MPP_SEND_2D_ mpp_send_real4_2d
+#define MPP_SEND_3D_ mpp_send_real4_3d
+#define MPP_SEND_4D_ mpp_send_real4_4d
+#define MPP_SEND_5D_ mpp_send_real4_5d
+#define MPP_BROADCAST_ mpp_broadcast_real4
+#define MPP_BROADCAST_SCALAR_ mpp_broadcast_real4_scalar
+#define MPP_BROADCAST_2D_ mpp_broadcast_real4_2d
+#define MPP_BROADCAST_3D_ mpp_broadcast_real4_3d
+#define MPP_BROADCAST_4D_ mpp_broadcast_real4_4d
+#define MPP_BROADCAST_5D_ mpp_broadcast_real4_5d
+#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_BYTELEN_ 4
+#define MPI_TYPE_ MPI_REAL4
+#define SHMEM_BROADCAST_ SHMEM_BROADCAST4
+#define SHMEM_GET_ SHMEM_GET4
 #include <mpp_transmit.h>
 
 #define MPP_TRANSMIT_ mpp_transmit_cmplx4
@@ -1599,6 +2263,7 @@ module mpp_mod
 #define SHMEM_BROADCAST_ SHMEM_BROADCAST4
 #define SHMEM_GET_ SHMEM_GET64
 #include <mpp_transmit.h>
+#endif
 
 #ifndef no_8byte_integers
 #define MPP_TRANSMIT_ mpp_transmit_int8
@@ -1741,12 +2406,14 @@ module mpp_mod
 #define MPI_REDUCE_ MPI_MAX
 #include <mpp_reduce.h>
 
+#ifndef no_4byte_reals
 #define MPP_REDUCE_ mpp_max_real4
 #define MPP_TYPE_ real(FLOAT_KIND)
 #define SHMEM_REDUCE_ SHMEM_REAL4_MAX_TO_ALL
 #define MPI_TYPE_ MPI_REAL4
 #define MPI_REDUCE_ MPI_MAX
 #include <mpp_reduce.h>
+#endif
 
 #ifndef no_8byte_integers   
 #define MPP_REDUCE_ mpp_max_int8
@@ -1771,12 +2438,14 @@ module mpp_mod
 #define MPI_REDUCE_ MPI_MIN
 #include <mpp_reduce.h>
 
+#ifndef no_4byte_reals
 #define MPP_REDUCE_ mpp_min_real4
 #define MPP_TYPE_ real(FLOAT_KIND)
 #define SHMEM_REDUCE_ SHMEM_REAL4_MIN_TO_ALL
 #define MPI_TYPE_ MPI_REAL4
 #define MPI_REDUCE_ MPI_MIN
 #include <mpp_reduce.h>
+#endif
 
 #ifndef no_8byte_integers   
 #define MPP_REDUCE_ mpp_min_int8
@@ -1806,18 +2475,6 @@ module mpp_mod
 #define MPP_TYPE_BYTELEN_ 8
 #include <mpp_sum.h>
 
-#define MPP_SUM_ mpp_sum_real4
-#define MPP_SUM_SCALAR_ mpp_sum_real4_scalar
-#define MPP_SUM_2D_ mpp_sum_real4_2d
-#define MPP_SUM_3D_ mpp_sum_real4_3d
-#define MPP_SUM_4D_ mpp_sum_real4_4d
-#define MPP_SUM_5D_ mpp_sum_real4_5d
-#define MPP_TYPE_ real(FLOAT_KIND)
-#define SHMEM_SUM_ SHMEM_REAL4_SUM_TO_ALL
-#define MPI_TYPE_ MPI_REAL4
-#define MPP_TYPE_BYTELEN_ 4
-#include <mpp_sum.h>
-
 #define MPP_SUM_ mpp_sum_cmplx8
 #define MPP_SUM_SCALAR_ mpp_sum_cmplx8_scalar
 #define MPP_SUM_2D_ mpp_sum_cmplx8_2d
@@ -1828,6 +2485,19 @@ module mpp_mod
 #define SHMEM_SUM_ SHMEM_COMP8_SUM_TO_ALL
 #define MPI_TYPE_ MPI_DOUBLE_COMPLEX
 #define MPP_TYPE_BYTELEN_ 16
+#include <mpp_sum.h>
+
+#ifndef no_4byte_reals
+#define MPP_SUM_ mpp_sum_real4
+#define MPP_SUM_SCALAR_ mpp_sum_real4_scalar
+#define MPP_SUM_2D_ mpp_sum_real4_2d
+#define MPP_SUM_3D_ mpp_sum_real4_3d
+#define MPP_SUM_4D_ mpp_sum_real4_4d
+#define MPP_SUM_5D_ mpp_sum_real4_5d
+#define MPP_TYPE_ real(FLOAT_KIND)
+#define SHMEM_SUM_ SHMEM_REAL4_SUM_TO_ALL
+#define MPI_TYPE_ MPI_REAL4
+#define MPP_TYPE_BYTELEN_ 4
 #include <mpp_sum.h>
 
 #define MPP_SUM_ mpp_sum_cmplx4
@@ -1841,6 +2511,7 @@ module mpp_mod
 #define MPI_TYPE_ MPI_COMPLEX
 #define MPP_TYPE_BYTELEN_ 8
 #include <mpp_sum.h>
+#endif
 
 #ifndef no_8byte_integers
 #define MPP_SUM_ mpp_sum_int8
@@ -1874,6 +2545,29 @@ module mpp_mod
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+! <SUBROUTINE NAME="mpp_sync">
+!  <OVERVIEW>
+!    Global synchronization.
+!  </OVERVIEW>
+!  <DESCRIPTION>
+!    Synchronizes PEs at this point in the execution. If
+!   <TT>pelist</TT> is omitted all PEs are synchronized. This can
+!   be expensive on many systems, and should be avoided if possible. Under
+!   MPI, we do not call <TT>MPI_BARRIER</TT>, as you might
+!   expect. This is because this call can be prohibitively slow on many
+!   systems. Instead, we perform the same operation as
+!   <TT>mpp_sync_self</TT>, i.e all participating PEs wait for
+!   completion of all their outstanding non-blocking operations.
+! 
+!   If <TT>pelist</TT> is omitted, the context is assumed to be the
+!   current pelist. This call implies synchronization across the PEs in
+!   <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
+!  </DESCRIPTION>
+!  <TEMPLATE>
+!   call mpp_sync( pelist )
+!  </TEMPLATE>
+!  <IN NAME="pelist" TYPE="integer" DIM="(:)"></IN>
+! </SUBROUTINE>
     subroutine mpp_sync( pelist )
 !synchronize PEs in list
       integer, intent(in), optional :: pelist(:)
@@ -1899,6 +2593,24 @@ module mpp_mod
       return
     end subroutine mpp_sync
 
+! <SUBROUTINE NAME="mpp_sync_self">
+!  <OVERVIEW>
+!    Local synchronization.
+!  </OVERVIEW>
+!  <DESCRIPTION>
+!   <TT>mpp_transmit</TT> is implemented as asynchronous
+!   <TT>put/send</TT> and synchronous
+!   <TT>get/recv</TT>. <TT>mpp_sync_self</TT> guarantees that outstanding
+!   asynchronous operations from the calling PE are complete. If
+!   <TT>pelist</TT> is supplied, <TT>mpp_sync_self</TT> checks only for
+!   outstanding puts to the PEs in <TT>pelist</TT>.
+!
+!   If <TT>pelist</TT> is omitted, the context is assumed to be the
+!   current pelist. This call implies synchronization across the PEs in
+!   <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
+!  </DESCRIPTION>
+!  <IN NAME="pelist" TYPE="integer" DIM="(:)"></IN>
+! </SUBROUTINE>
     subroutine mpp_sync_self( pelist )
 !this is to check if current PE's outstanding puts are complete
 !but we can't use shmem_fence because we are actually waiting for
@@ -1956,7 +2668,7 @@ module mpp_mod
 !uses ABORT and FLUSH calls, may need to use cpp to rename
       integer, intent(in) :: errortype
       character(len=*), intent(in), optional :: errormsg
-      character(len=128) :: text
+      character(len=256) :: text
       logical :: opened
       
       if( .NOT.module_is_initialized )call ABORT()
@@ -2030,6 +2742,49 @@ module mpp_mod
     end function mpp_error_state
 
 #ifdef use_shmalloc
+! <SUBROUTINE NAME="mpp_malloc">
+!  <OVERVIEW>
+!    Symmetric memory allocation.
+!  </OVERVIEW>
+!  <DESCRIPTION>
+!    This routine is used on SGI systems when <TT>mpp_mod</TT> is
+!    invoked in the SHMEM library. It ensures that dynamically allocated
+!    memory can be used with <TT>shmem_get</TT> and
+!    <TT>shmem_put</TT>. This is called <I>symmetric
+!    allocation</I> and is described in the
+!    <TT>intro_shmem</TT> man page. <TT>ptr</TT> is a <I>Cray
+!    pointer</I> (see the section on <LINK
+!    SRC="#PORTABILITY">portability</LINK>).  The operation can be expensive
+!    (since it requires a global barrier). We therefore attempt to re-use
+!    existing allocation whenever possible. Therefore <TT>len</TT>
+!    and <TT>ptr</TT> must have the <TT>SAVE</TT> attribute
+!    in the calling routine, and retain the information about the last call
+!    to <TT>mpp_malloc</TT>. Additional memory is symmetrically
+!    allocated if and only if <TT>newlen</TT> exceeds
+!    <TT>len</TT>.
+!
+!    This is never required on Cray PVP or MPP systems. While the T3E
+!    manpages do talk about symmetric allocation, <TT>mpp_mod</TT>
+!    is coded to remove this restriction.
+!
+!    It is never required if <TT>mpp_mod</TT> is invoked in MPI.
+!
+!   This call implies synchronization across all PEs.
+!  </DESCRIPTION>
+!  <TEMPLATE>
+!   call mpp_malloc( ptr, newlen, len )
+!  </TEMPLATE>
+!  <IN NAME="ptr">
+!     a cray pointer, points to a dummy argument in this routine.
+!  </IN>
+!  <IN NAME="newlen" TYPE="integer">
+!     the required allocation length for the pointer ptr
+!  </IN>
+!  <IN NAME="len" TYPE="integer">
+!     the current allocation (0 if unallocated).
+!  </IN>
+! </SUBROUTINE>
+
     subroutine mpp_malloc( ptr, newlen, len )
 !routine to perform symmetric allocation:
 !this is required on the t3e/O2k for variables that will be non-local arguments
@@ -2067,6 +2822,43 @@ module mpp_mod
     end subroutine mpp_malloc
 #endif use_shmalloc
 
+! <SUBROUTINE NAME="mpp_set_stack_size">
+!  <OVERVIEW>
+!    Allocate module internal workspace.
+!  </OVERVIEW>
+!  <DESCRIPTION>
+!    <TT>mpp_mod</TT> maintains a private internal array called
+!    <TT>mpp_stack</TT> for private workspace. This call sets the length,
+!    in words, of this array. 
+!
+!    The <TT>mpp_init</TT> call sets this
+!    workspace length to a default of 32768, and this call may be used if a
+!    longer workspace is needed.
+!    
+!    This call implies synchronization across all PEs.
+!    
+!    This workspace is symmetrically allocated, as required for
+!    efficient communication on SGI and Cray MPP systems. Since symmetric
+!    allocation must be performed by <I>all</I> PEs in a job, this call
+!    must also be called by all PEs, using the same value of
+!    <TT>n</TT>. Calling <TT>mpp_set_stack_size</TT> from a subset of PEs,
+!    or with unequal argument <TT>n</TT>, may cause the program to hang.
+!    
+!    If any MPP call using <TT>mpp_stack</TT> overflows the declared
+!    stack array, the program will abort with a message specifying the
+!    stack length that is required. Many users wonder why, if the required
+!    stack length can be computed, it cannot also be specified at that
+!    point. This cannot be automated because there is no way for the
+!    program to know if all PEs are present at that call, and with equal
+!    values of <TT>n</TT>. The program must be rerun by the user with the
+!    correct argument to <TT>mpp_set_stack_size</TT>, called at an
+!    appropriate point in the code where all PEs are known to be present.
+!  </DESCRIPTION>
+!  <TEMPLATE>
+!    call mpp_set_stack_size(n)
+!  </TEMPLATE>
+!  <IN NAME="n" TYPE="integer"></IN>
+! </SUBROUTINE>
     subroutine mpp_set_stack_size(n)
 !set the mpp_stack variable to be at least n LONG words long
       integer, intent(in) :: n
@@ -2198,6 +2990,7 @@ module mpp_mod
 #define MPP_RANK_ (:,:,:,:,:)
 #include <mpp_chksum.h>
 
+#ifndef no_4byte_reals
 !CAUTION: the r4 versions of these may produce
 !unpredictable results: I'm not sure what the result
 !of the TRANSFER() to integer(8) is from an odd number of real(4)s?
@@ -2261,6 +3054,7 @@ module mpp_mod
 #define MPP_TYPE_ complex(FLOAT_KIND)
 #define MPP_RANK_ (:,:,:,:,:)
 #include <mpp_chksum.h>
+#endif
 
   end module mpp_mod
 
@@ -2381,12 +3175,19 @@ module mpp_mod
         if( pe.NE.npes-1 )call mpp_broadcast( a, n, npes-2, (/(i,i=0,npes-2)/) )
         print *, 'bcast(npes-1) from 0 to npes-2=', pe, a(1)
         a = real(pe+1)
-        if( pe.NE.npes-1 )call mpp_sum( a, n, (/(i,i=0,npes-2)/) )
+        if( pe.NE.npes-1 )then
+            call mpp_set_current_pelist( (/(i,i=0,npes-2)/) )
+            id = mpp_clock_id( 'Partial mpp_sum' )
+            call mpp_clock_begin(id)
+            call mpp_sum( a, n, (/(i,i=0,npes-2)/) )
+            call mpp_clock_end  (id)
+        end if
         if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a(1)
         a = real(pe+1)
         if( pe.NE.npes-1 )call mpp_max( a(1), (/(i,i=0,npes-2)/) )
         if( pe.EQ.root )print *, 'max(pe+1) from 0 to npes-2=', a(1)
     end if
+    call mpp_set_current_pelist()
 #ifdef use_CRI_pointers
 !test mpp_chksum
     if( modulo(n,npes).EQ.0 )then  !only set up for even division
@@ -2409,3 +3210,105 @@ module mpp_mod
     call mpp_exit()
   end program test
 #endif test_mpp
+
+! <INFO>
+
+!  <COMPILER NAME="">     
+!    Any module or program unit using <TT>mpp_mod</TT> must contain the line
+    
+!    <PRE>
+!    use mpp_mod
+!    </PRE>
+    
+!    The source file for <TT>mpp_mod</TT> is <LINK
+!    SRC="ftp://ftp.gfdl.gov/pub/vb/mpp/mpp.F90"><TT>mpp.F90</TT></LINK>.
+!    Activate the preprocessor flag <TT>-Duse_libSMA</TT> to invoke
+!    the SHMEM library, or <TT>-Duse_libMPI</TT> to invoke the MPI
+!    library. Global translation of preprocessor macros is required. This
+!    required the activation of the <TT>-F</TT> flag on Cray systems
+!    and the <TT>-ftpp -macro_expand</TT> flags on SGI systems. On
+!    non-SGI/Cray systems, please consult the f90 manpage for the
+!    equivalent flag.
+!    
+!    On Cray PVP systems, <I>all</I> routines in a message-passing
+!    program must be compiled with <TT>-a taskcommon</TT>.
+!    
+!    On SGI systems, it is required to use 4-byte integers and 8-byte
+!    reals, and the 64-bit ABI (<TT>-i4 -r8 -64 -mips4</TT>). It is also
+!    required on SGI systems to link the following libraries explicitly:
+!    one of <TT>-lmpi</TT> and <TT>-lsma</TT>, depending on
+!    whether you wish to use the SHMEM or MPI implementations; and
+!    <TT>-lexc</TT>). On Cray systems, all the required flags are
+!    default.
+!    
+!    On SGI, use MIPSPro f90 7.3.1.2 or higher.
+!    
+!    On Cray, use cf90 3.0.0.0 or higher.
+!    
+!    On either, use the message-passing toolkit MPT 1.2 or higher.
+!    
+!    The declaration <TT>MPI_INTEGER8</TT> for 8-byte integers
+!    was provided by <TT>mpp_mod</TT> because it was absent in early
+!    releases of the Message Passing Toolkit. It has since been included
+!    there, and the declaration in <TT>mpp_mod</TT> commented
+!    out. This declaration may need to be reinstated if you get a compiler
+!    error from this (i.e you are using a superseded version of the MPT).
+!    
+!    By turning on the cpp flag <TT>-Dtest_mpp</TT> and compiling
+!    <TT>mpp_mod</TT> by itself, you may create a test program to
+!    exercise certain aspects of <TT>mpp_mod</TT>, e.g
+!    
+!    <PRE>
+!    f90 -F -Duse_libSMA -Dtest_mpp mpp.F90
+!    mpprun -n4 a.out
+!    </PRE>
+!    
+!    runs a 4-PE test on a t3e.
+!  </COMPILER>
+!  <PRECOMP FLAG="">      
+!    While the SHMEM library is currently available only on SGI/Cray
+!    systems, <TT>mpp_mod</TT> can be used on any other system with
+!    a standard-compliant f90 compiler and MPI library. SHMEM is now
+!    becoming available on other systems as well.
+!    
+!    There are some <LINK SRC="os.html">OS-dependent
+!    pre-processor directives</LINK> that you might need to modify on
+!    non-SGI/Cray systems and compilers.
+!    
+!    On SGI systems, the <TT>f90</TT> standard <TT>SYSTEM_CLOCK</TT>
+!    intrinsic is overloaded with a non-portable fortran interface to a
+!    higher-precision clock. This is distributed with the MPP package as
+!    <TT>nsclock.c</TT>. This approach will eventually be extended to other
+!    platforms, since the resolution of the default clock is often too
+!    coarse for our needs.
+!  </PRECOMP> 
+!  <LOADER FLAG="">       
+!    The <TT>mpp</TT> source consists of the main source file
+!   <TT>mpp.F90</TT> and also requires the following include files:
+!
+!   <TT>mpp/shmem.fh</TT> (when compiled with <TT>-Duse_libSMA</TT>)<BR/>
+!   <TT>mpif.h</TT> (when compiled with <TT>-Duse_libMPI</TT>)<BR/>
+!   <TT>os.h</TT><BR/>
+!   <TT>mpp_transmit.h</TT><BR/>
+!   <TT>mpp_reduce.h</TT><BR/>
+!   <TT>mpp_sum.h</TT><BR/>
+!   <TT>mpp_chksum.h</TT><BR/>
+!   <TT>mpp_chksum_int.h</TT>
+!
+!   GFDL users can check it out of the main CVS repository as part of
+!   the <TT>mpp</TT> CVS module. The current public tag is <TT>fez</TT>.
+!   External users can download the latest <TT>mpp</TT> package <LINK
+!   SRC="ftp://ftp.gfdl.gov/pub/vb/mpp/mpp.tar.Z">here</LINK>. Public access
+!   to the GFDL CVS repository will soon be made available.
+!  </LOADER>
+!  <BUG>
+!   The <TT>SYSTEM_CLOCK</TT> intrinsic has a limited range before the
+!   clock rolls over. The maximum time interval that may be measured
+!   before rollover depends on the default integer precision, and is
+!   <TT>COUNT_MAX/COUNT_RATE</TT> seconds. Timing a code section longer
+!   than this interval will give incorrect results. The <TT>mpp</TT>
+!   entry in the logfile reports the rollover time interval. Note that
+!   this is a limitation, or "feature" of the <TT>f90 SYSTEM_CLOCK</TT>
+!   intrinsic.
+!  </BUG>
+! </INFO>

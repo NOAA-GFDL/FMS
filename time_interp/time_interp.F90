@@ -1,6 +1,28 @@
 
 module time_interp_mod
 
+! <CONTACT EMAIL="bw@gfdl.noaa.gov">
+!   Bruce Wyman
+! </CONTACT>
+
+! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
+
+! <OVERVIEW>
+!   Computes a weight and dates/indices for linearly interpolating between two dates.
+! </OVERVIEW>
+
+! <DESCRIPTION>
+!     A time type is converted into two consecutive dates plus
+!     a fraction representing the distance between the dates.
+!     This information can be used to interpolate between the dates.
+!     The dates may be expressed as years, months, or days or
+!     as indices in an array.
+! </DESCRIPTION>
+
+! <PUBLIC>
+!   Description summarizing public interface.
+! </PUBLIC>
+
 !-----------------------------------------------------------------------
 
 use time_manager_mod, only: time_type, get_date, set_date, set_time, &
@@ -19,11 +41,90 @@ private
 
 public :: time_interp_init, time_interp, fraction_of_year
 
+! <INTERFACE NAME="time_interp">
+
+!   <OVERVIEW>
+!      Returns a weight and dates or indices for interpolating between two dates. The
+!      interface fraction_of_year is provided for backward compatibility with the
+!      previous version. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Returns the fractional amount (between 0,1) that the input
+!      Time is into the current year. The interface fraction_of_year
+!      has the same functionality and is only provided for backward
+!      compatibility with the version. 
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!      call time_interp( Time, weight )
+!   </TEMPLATE>
+!   <TEMPLATE>
+!      call time_interp( Time, weight, year1, year2 )
+!   </TEMPLATE>
+!   <TEMPLATE>
+!      call time_interp( Time, weight, year1, year2, month1, month2 )
+!   </TEMPLATE>
+!   <TEMPLATE>
+!      call time_interp( Time, weight, year1, year2, month1, month2, day1, day2 )
+!   </TEMPLATE>
+!   <TEMPLATE>
+!      call time_interp( Time, weightTime, Timelist, weight, index1, index2 [, modtime] )
+!   </TEMPLATE>
+!   <IN NAME="Time">
+!      The time at which the the weight is computed.
+!   </IN>
+!   <IN NAME="Timelist">
+!   </IN>
+!   <IN NAME="modtime">
+!   </IN>
+!   <OUT NAME="weight">
+!     The fractional amount (between 0,1) into the year as given by argument Time.
+!   </OUT>
+!   <OUT NAME="year1"> </OUT>
+!   <OUT NAME="year2"> </OUT>
+!   <OUT NAME="month1"> </OUT>
+!   <OUT NAME="month2"> </OUT>
+!   <OUT NAME="day1"> </OUT>
+!   <OUT NAME="day2"> </OUT>
+!   <OUT NAME="index1"> </OUT>
+!   <OUT NAME="index2"> </OUT>
+!   <ERROR MSG="input time list not ascending order" STATUS="ERROR">
+!     The list of input time types must have ascending dates.
+!   </ERROR>
+!   <ERROR MSG="modulo months must have same length" STATUS="ERROR">
+!     The length of the current month for input Time and Time_list
+!     must be the same when using the modulo month option. The
+!     modulo month option is available but not supported. 
+!   </ERROR>
+!   <ERROR MSG="invalid value for argument modtime" STATUS="ERROR">
+!     The optional argument modtime must have a value set by one
+!     of the public parameters: NONE, YEAR, MONTH, DAY. The
+!     MONTH and DAY options are available but not supported. 
+!   </ERROR>
+!   <ERROR MSG="period of list exceeds modulo period" STATUS="ERROR">
+!     The difference between the last and first values in the input
+!     Time list/array exceeds the length of the modulo period.
+!   </ERROR>
+!   <ERROR MSG="time before range of list or time after range of list" STATUS="ERROR">
+!     The difference between the last and first values in the input
+!     These errors occur when you are not using a modulo axis and
+!     the input Time occurs before the first value in the Time
+!     list/array or after the last value in the Time list/array. 
+!   </ERROR>
+!   <NOTE>
+!     Examples: 
+!     <PRE>
+!       Time: Jan 01 00z    weight = 0.0 
+!       Time: Jul 01        weight ~ 0.5 
+!       Time: Dec 31 23z    weight ~ 1.0
+!     </PRE>
+!   </NOTE>
+
 interface time_interp
     module procedure time_interp_frac,  time_interp_year, &
                      time_interp_month, time_interp_day,  &
                      time_interp_list
 end interface
+! </INTERFACE>
 
 integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
 
@@ -40,8 +141,8 @@ integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
    integer :: yrmod, momod, dymod
    logical :: mod_leapyear
 
-   character(len=128) :: version='$Id: time_interp.F90,v 1.3 2002/07/16 22:57:06 fms Exp $'
-   character(len=128) :: tagname='$Name: havana $'
+   character(len=128) :: version='$Id: time_interp.F90,v 1.4 2003/04/09 21:19:06 fms Exp $'
+   character(len=128) :: tagname='$Name: inchon $'
 
    logical :: module_is_initialized=.FALSE.
 
@@ -59,6 +160,11 @@ contains
  end subroutine time_interp_init
 
 !#######################################################################
+
+! <SUBROUTINE NAME="time_interp_frac" INTERFACE="time_interp">
+!   <IN NAME="Time" TYPE="time_type" > </IN>
+!   <OUT NAME="weight" TYPE="real"> </OUT>
+! </SUBROUTINE>
 !  returns the fractional time into the current year
 
  subroutine time_interp_frac ( Time, weight )
@@ -84,7 +190,11 @@ contains
  end subroutine time_interp_frac
 
 !#######################################################################
-!  wrapper for backward compatibility
+! <SUBROUTINE NAME="fraction_of_year">
+! <OVERVIEW>
+!  Wrapper for backward compatibility
+! </OVERVIEW>
+! </SUBROUTINE>
 
  function fraction_of_year (Time)
  type(time_type), intent(in)  :: Time
@@ -95,6 +205,12 @@ contains
  end function fraction_of_year
 
 !#######################################################################
+! <SUBROUTINE NAME="time_interp_year" INTERFACE="time_interp">
+!   <IN NAME="Time" TYPE="time_type" > </IN>
+!   <OUT NAME="weight" TYPE="real"> </OUT>
+!   <OUT NAME="year1" TYPE="integer"> </OUT>
+!   <OUT NAME="year2" TYPE="integer"> </OUT>
+! </SUBROUTINE>
 !  returns fractional time between mid points of consecutive years
 
  subroutine time_interp_year ( Time, weight, year1, year2 )
@@ -131,6 +247,14 @@ contains
  end subroutine time_interp_year
 
 !#######################################################################
+! <SUBROUTINE NAME="time_interp_month" INTERFACE="time_interp">
+!   <IN NAME="Time" TYPE="time_type" > </IN>
+!   <OUT NAME="weight" TYPE="real"> </OUT>
+!   <OUT NAME="year1" TYPE="integer"> </OUT>
+!   <OUT NAME="year2" TYPE="integer"> </OUT>
+!   <OUT NAME="month1" TYPE="integer"> </OUT>
+!   <OUT NAME="month2" TYPE="integer"> </OUT>
+! </SUBROUTINE>
 !  returns fractional time between mid points of consecutive months
 
  subroutine time_interp_month ( Time, weight, year1, year2, month1, month2 )
@@ -174,6 +298,16 @@ contains
  end subroutine time_interp_month
 
 !#######################################################################
+! <SUBROUTINE NAME="time_interp_day" INTERFACE="time_interp">
+!   <IN NAME="Time" TYPE="time_type" > </IN>
+!   <OUT NAME="weight" TYPE="real"> </OUT>
+!   <OUT NAME="year1" TYPE="integer"> </OUT>
+!   <OUT NAME="year2" TYPE="integer"> </OUT>
+!   <OUT NAME="month1" TYPE="integer"> </OUT>
+!   <OUT NAME="month2" TYPE="integer"> </OUT>
+!   <OUT NAME="day1" TYPE="integer"> </OUT>
+!   <OUT NAME="day2" TYPE="integer"> </OUT>
+! </SUBROUTINE>
 !  returns fractional time between mid points of consecutive days
 
  subroutine time_interp_day ( Time, weight, year1, year2, month1, month2, day1, day2 )
@@ -222,6 +356,14 @@ contains
  end subroutine time_interp_day
 
 !#######################################################################
+! <SUBROUTINE NAME="time_interp_list" INTERFACE="time_interp">
+!   <IN NAME="Time" TYPE="time_type" > </IN>
+!   <IN NAME="Timelist" TYPE="time_type" DIM="(:)"> </IN>
+!   <OUT NAME="weight" TYPE="real"> </OUT>
+!   <OUT NAME="index1" TYPE="real"> </OUT>
+!   <OUT NAME="index2" TYPE="real"> </OUT>
+!   <IN NAME="modtime" TYPE="integer" > </IN>
+! </SUBROUTINE>
 
 subroutine time_interp_list ( Time, Timelist, weight, index1, index2, modtime )
 type(time_type)  , intent(in)  :: Time, Timelist(:)
@@ -397,3 +539,42 @@ end subroutine error_handler
 
 end module time_interp_mod
 
+! <INFO>
+
+!   <ERROR MSG="input time list not ascending order" STATUS="">
+!     The list of input time types must have ascending dates.
+!   </ERROR> *
+!   <ERROR MSG="modulo months must have same length" STATUS="">
+!     The length of the current month for input Time and Time_list
+!     must be the same when using the modulo month option.
+!     The modulo month option is available but not supported.
+!   </ERROR> *
+!   <ERROR MSG="invalid value for argument modtime" STATUS="">
+!     The optional argument modtime must have a value set by one
+!     of the public parameters: NONE, YEAR, MONTH, DAY.
+!     The MONTH and DAY options are available but not supported.
+!   </ERROR> *
+!   <ERROR MSG="period of list exceeds modulo period" STATUS="">
+!     The difference between the last and first values in the
+!     input Time list/array exceeds the length of the modulo period.
+!   </ERROR> *
+!   <ERROR MSG="time before range of list or time after range of list" STATUS="">
+!     These errors occur when you are not using a modulo axis and the
+!     input Time occurs before the first value in the Time list/array
+!     or after the last value in the Time list/array.
+!   </ERROR> *
+!   <NOTE>
+!   For all routines in this module the calendar type in module
+!   time_manager must be set.
+!   </NOTE>
+!   <NOTE>
+!     The following private parameters are set by this module:
+! <PRE>
+!           seconds per minute = 60
+!           minutes per hour   = 60
+!           hours   per day    = 24
+!           months  per year   = 12
+! </PRE>
+!   </NOTE>
+
+! </INFO>

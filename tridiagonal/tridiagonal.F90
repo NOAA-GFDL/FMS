@@ -1,26 +1,39 @@
 module tridiagonal_mod
 
-!solves the tridiagonal system 
+! <CONTACT EMAIL="ih@gfdl.noaa.gov">
+!    Isaac Held 
+! </CONTACT>
+! <CONTACT EMAIL="bw@gfdl.noaa.gov">
+!    Bruce Wyman
+! </CONTACT>
 
-     ! B(1)  A(1)   0     0                .......            0    !  !X(1)!   !D(1)! 
-     ! C(2)  B(2)  A(2)   0                .......            0    !  !X(2)!   !D(2)!
-     !  0    C(3)  B(3)  A(3)  0           .......            0    !  ! .. !   ! .. !
-     !  ..........................................                 !  ! .. ! = ! .. !
-     !  ..........................................                 !  ! .. !   ! .. !
-     !                                  C(N-2) B(N-2) A(N-2)  0    !  ! .. !   ! .. !
-     !                                    0    C(N-1) B(N-1) A(N-1)!  ! .. !   ! .. !
-     !                                    0      0    C(N)   B(N)  !  !X(N)!   !D(N)!
+! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
 
-!  X is the solution.  
-!
+! <OVERVIEW>
+!   Solves the tridiagonal system of equations.
+! </OVERVIEW>
+! <DESCRIPTION>
+!     The following schematic represents the system of equations solved,
+!     where X is the solution.
+! <PRE> 
+!     | B(1)  A(1)   0     0                .......            0    |  |X(1)|   |D(1)|
+!     | C(2)  B(2)  A(2)   0                .......            0    |  |X(2)|   |D(2)|
+!     |  0    C(3)  B(3)  A(3)  0           .......            0    |  | .. |   | .. |
+!     |  ..........................................                 |  | .. | = | .. |
+!     |  ..........................................                 |  | .. |   | .. |
+!     |                                  C(N-2) B(N-2) A(N-2)  0    |  | .. |   | .. |
+!     |                                    0    C(N-1) B(N-1) A(N-1)|  | .. |   | .. |
+!     |                                    0      0    C(N)   B(N)  |  |X(N)|   |D(N)|
+! 
+! </PRE>
 !  To solve this system 
-!
+! <PRE>
 !   call tri_invert(X,D,A,B,C)
 !
 !       real, intent(out), dimension(:,:,:) :: X
 !       real, intent(in),  dimension(:,:,:) :: D
 !       real, optional,    dimension(:,:,:) :: A,B,C
-!
+! </PRE>
 ! For simplicity (?), A and C are assumed to be dimensioned the same size 
 ! as B, D, and X, although any input values for A(N) and C(1) are ignored.
 ! (some checks are needed here)
@@ -29,11 +42,14 @@ module tridiagonal_mod
 ! since the last call to tri_invert.
 !
 ! To release memory, 
-!
+! <PRE>
 !    call close_tridiagonal
-
+! </PRE>
 ! The following module variables are used to retain the relevant information
 ! if one recalls tri_invert without changing (A,B,C)
+
+
+! </DESCRIPTION>
 
 !--------------------------------------------------------------------------
 real,    private, allocatable, dimension(:,:,:) :: e,g,cc
@@ -44,6 +60,39 @@ logical, private :: init_tridiagonal = .false.
 contains
 
 !--------------------------------------------------------------------------
+
+! <SUBROUTINE NAME="tri_invert">
+
+!   <OVERVIEW>
+!     Sets up and solves the tridiagonal system of equations.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Sets up and solves the tridiagonal system of equations.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call tri_invert ( x,d,a,b,c)
+!   </TEMPLATE>
+
+!   <IN NAME="d" TYPE="real" DIM="(:,:,:)">
+!     The right-hand side term, see the schematic above.
+!   </IN>
+!   <OUT NAME="x" TYPE="real" DIM="(:,:,:)">
+!     The solution to the tridiagonal system of equations.
+!   </OUT>
+!   <INOUT NAME="a,b,c" TYPE="real" DIM="(:,:,:)">
+!     The left-hand-side terms (matrix), see the schematic above.
+!             If A is not present, it is assumed that the matrix (A,B.C)
+!             has not been changed since the last call to tri_invert.
+!   </INOUT>
+
+!   <NOTE>
+!      For simplicity, A and C are assumed to be dimensioned the same size
+!      as B, D, and X, although any input values for A(N) and C(1) are ignored.
+!      There are no checks to make sure the sizes agree.
+!   </NOTE>
+!   <NOTE>
+!      The value of A(N) is modified on output, and B and C are unchanged.
+!   </NOTE>
 
 subroutine tri_invert(x,d,a,b,c)
 
@@ -94,8 +143,26 @@ end do
 
 return
 end subroutine tri_invert
+! </SUBROUTINE>
 
 !-----------------------------------------------------------------
+
+! <SUBROUTINE NAME="close_tridiagonal">
+
+!   <OVERVIEW>
+!     Releases memory used by the solver.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Releases memory used by the solver.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call close_tridiagonal
+!   </TEMPLATE>
+
+!   <NOTE>
+!     There are no arguments to this routine.
+!   </NOTE>
+
 subroutine close_tridiagonal
 
 implicit none
@@ -107,6 +174,7 @@ deallocate(cc)
 
 return
 end subroutine close_tridiagonal
+! </SUBROUTINE>
 
 !----------------------------------------------------------------
 
@@ -114,3 +182,26 @@ end subroutine close_tridiagonal
 
 end module tridiagonal_mod
 
+! <INFO>
+
+!   <BUG>
+!     Optional arguments A,B,C have no intent declaration,
+!     so the default intent is inout. The value of A(N) is modified
+!     on output, and B and C are unchanged.                  
+!   </BUG>
+!   <NOTE>
+!       The following private allocatable arrays save the relevant information
+!  if one recalls tri_invert without changing (A,B,C):
+!  <PRE>
+!        allocate ( e  (size(x,1), size(x,2), size(x,3)) )
+!        allocate ( g  (size(x,1), size(x,2), size(x,3)) )
+!        allocate ( cc (size(x,1), size(x,2), size(x,3)) )
+!        allocate ( bb (size(x,1), size(x,2)) )
+! </PRE>
+!  This storage is deallocated when close_tridiagonal is called.
+!   </NOTE>
+!   <FUTURE>
+!     Maybe a cleaner version?
+!   </FUTURE>
+
+! </INFO>

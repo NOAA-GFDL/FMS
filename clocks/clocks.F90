@@ -27,6 +27,53 @@
 !#endif
 
 module clocks_mod
+! <CONTACT EMAIL="vb@gfdl.noaa.gov">
+!       V. Balaji
+! </CONTACT>
+! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
+
+! <OVERVIEW>
+!    <TT>clocks_mod</TT> is a set of simple calls for timing f90
+!    code and code sections.
+! </OVERVIEW>
+! <DESCRIPTION>
+!    In parallel environments, the key timing information is the
+!    wallclock ("real") time, not the CPU time, of a run. F90 provides the
+!    <TT>system_clock(3F)</TT> intrinsic to retrieve timing
+!    information from the system realtime clock.
+!
+!    <TT>clocks_mod</TT> uses the F90
+!    <TT>system_clock(3F)</TT> intrinsic to measure time. The main
+!    call is to the function <TT>tick()</TT>. Clocks can be set up
+!    to provide direct timing of a section of code, or for cumulative
+!    timing of code sections within loops.
+!
+!    The overhead of calls to the system clock is typically measured in
+!    microseconds. However, the resolution of the clock may be higher or
+!    lower than this overhead. The resolution is printed when the module is
+!    initialized. A test program is supplied with the module which, among
+!    other things, measures the calling overhead.
+!
+!    On SGI systems <TT>SYSTEM_CLOCK</TT> is transparently
+!    overloaded with a higher resolution clock made available in a
+!    non-portable fortran interface made available by
+!    <TT>nsclock.c</TT>. This approach will eventually be extended to other
+!    platforms.
+!
+!    This module has now been extended to work in parallel environments,
+!    using the <LINK SRC="http://www.gfdl.gov/~vb/mpp.html"><TT>mpp</TT>
+!    package</LINK>.  In a parallel environment, the clocks are synchronized
+!    across all the PEs in the current pelist at the top of the timed code
+!    section, but allows each PE to complete the code section at different
+!    times. This allows us to measure load imbalance for a given code
+!    section. Statistics are written to <TT>stdout</TT> by
+!    <TT>clocks_exit</TT>.
+!
+!    While the nesting of clocks is allowed, please note that
+!    synchronization on an inner clock may distort outer clock measurements
+!    of load imbalance.
+! </DESCRIPTION>
+
   use mpp_mod, only: mpp_init, mpp_pe, mpp_npes, mpp_root_pe, mpp_error, mpp_sync
   use mpp_mod, only: mpp_max, mpp_min, mpp_sum
   use mpp_mod, only: stdlog, stdout, stderr
@@ -56,9 +103,9 @@ module clocks_mod
   public :: clocks_init, clocks_exit, get_clock, clock_id, tick
 
   character(len=128), private :: &
-   version='$Id: clocks.F90,v 2.4 2002/07/16 22:54:36 fms Exp $'
+   version='$Id: clocks.F90,v 2.5 2003/04/09 21:15:38 fms Exp $'
   character(len=128), private :: &
-   tagname='$Name: havana $'
+   tagname='$Name: inchon $'
 
   contains
 
@@ -80,8 +127,29 @@ module clocks_mod
     end subroutine system_clock_sgi
 #endif
 
+! <SUBROUTINE NAME="clocks_init">
+
+!   <OVERVIEW>
+!     Initialize clocks module.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Called to initialize the <TT>clocks_mod</TT> package. Some
+!     information is printed regarding the version of this module and the
+!     resolution of the system clock. <TT>flag</TT> may be used, for
+!     example, in a parallel run, to have only one of the PEs print this
+!     information.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call clocks_init(flag)
+!   </TEMPLATE>
+
+!   <IN NAME="flag" TYPE="integer">
+!     if flag is set, only print if flag=0
+!     for instance, flag could be set to pe number by the calling program
+!     to have only PE 0 in a parallel run print info
+!   </IN>
+
     subroutine clocks_init(flags)
-!initialize clocks module
 !flag is used to set verbose flag, currently unused
       integer, intent(in), optional :: flags
       integer :: i
@@ -114,9 +182,31 @@ module clocks_mod
 
       return
     end subroutine clocks_init
+! </SUBROUTINE>
+
+! <FUNCTION NAME="clock_id">
+
+!   <OVERVIEW>
+!     Return an ID to a new or existing cumulative clock. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     This is used to return an ID to a clock that may be used for timing a
+!     code section. Currently up to 256 (an arbitrarily chosen setting for the
+!     internal parameter <TT>max_clocks</TT>) clocks can be set. The cumulative
+!     times can be printed at the end of the run by a call to
+!     <LINK SRC="#clocks_exit"><TT>clocks_exit().</TT></LINK> The name can be a 
+!     new or existing clock.
+!     <I>Note that <TT>name</TT> is restricted to 24 characters</I>. If you 
+!     enter a longer
+!     name, it is silently and gracefully truncated. This can be problematic if
+!     you inadvertently give different clocks names that differ only beyond the
+!     24th character. These will look to the clocks module as the same clock.
+!   </DESCRIPTION>
+!   <TEMPLATE> clock_id(name) </TEMPLATE>
+
+!   <IN NAME="name" TYPE="character(len=*)"> </IN>
 
     function clock_id(name)
-!return an ID for a new or existing clock
       integer :: clock_id
       character(len=*), intent(in) :: name
 
@@ -137,6 +227,35 @@ module clocks_mod
          clock_id = clock_id + 1
       end do
     end function clock_id
+! </FUNCTION>
+
+! <FUNCTION NAME="tick">
+
+!   <OVERVIEW>
+!     Return time on system clock. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     <TT>tick</TT> returns the current tick of the system clock.
+!     If <TT>string</TT> is present, it prints the time elapsed since the 
+!     reference tick.<BR/>
+!     Otherwise if <TT>id</TT> is present, the time elapsed since the reference tick is
+!     accumulated to the clock <TT>id</TT>.<BR/>
+!     Otherwise if <TT>name</TT> is present, the time elapsed since the reference tick
+!     is accumulated to the clock whose name is <TT>name</TT>. There is slightly
+!     larger overhead for this option, to resolve the name to an ID. It is
+!     recommended to use <TT>id=</TT>, especially for small sections.<BR/>
+!     The reference tick is either the value of the system clock at the last call
+!     to <TT>tick()</TT> (or <TT>clocks_init()</TT>), or else as given by the optional
+!     <TT>since</TT> argument.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     tick( string, id, name, since )
+!   </TEMPLATE>
+
+!   <IN NAME="string" TYPE="character(len=*)"></IN>
+!   <IN NAME="name" TYPE="character(len=*)"></IN>
+!   <IN NAME="id" TYPE="integer"></IN>
+!   <IN NAME="since" TYPE="integer"></IN>
 
     function tick( string, id, name, since )
       integer :: tick
@@ -184,6 +303,35 @@ module clocks_mod
 
       return
     end function tick
+! </FUNCTION>
+
+! <SUBROUTINE NAME="get_clock">
+
+!   <OVERVIEW>
+!     Retrieve information from a cumulative clock.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     This is used to return information stored on the clock whose ID is
+!     <TT>id</TT>. The subroutine returns any or all of the
+!     information held in the following: <TT>ticks</TT>, for the
+!     total accumulated clock ticks for this ID; <TT>calls</TT>,
+!     the number of intervals measured with this clock (i.e, the number of
+!     times <TT>tick()</TT> was called with this ID);
+!     <TT>total_time</TT>, the total time in seconds on this clock;
+!     and <TT>time_per_call</TT>, the time per measured interval on
+!     this clock (<TT>total_time/calls</TT>). This routine is used if you wish to retrieve this information in a
+!     variable. Otherwise, <TT>clocks_exit()</TT> may be used to
+!     print this information at termination.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call get_clock( id, ticks, calls, total_time, time_per_call)
+!   </TEMPLATE>
+
+!   <IN NAME="id" TYPE="integer"> </IN>
+!   <OUT NAME="ticks" TYPE="integer"></OUT>
+!   <OUT NAME="calls" TYPE="integer"></OUT>
+!   <OUT NAME="total_time" TYPE="real"></OUT>
+!   <OUT NAME="time_per_call" TYPE="real"></OUT>
 
     subroutine get_clock( id, ticks, calls, total_time, time_per_call )
       integer, intent(in) :: id
@@ -204,9 +352,22 @@ module clocks_mod
 
       return
     end subroutine get_clock
+! </SUBROUTINE>
 
     subroutine clocks_exit()
-!print all clocks
+
+! <SUBROUTINE NAME="clocks_exit">
+
+!   <OVERVIEW>
+!     Exit clocks_mod.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     This prints the values of all cumulative clocks. In a parallel
+!     environment, statistics across PEs are also printed.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call clocks_exit()
+!   </TEMPLATE>
       integer :: i
       real :: t, tmax, tmin, tavg, tstd, tavg_call
       real :: t_total
@@ -237,6 +398,7 @@ module clocks_mod
 
       return
     end subroutine clocks_exit
+! </SUBROUTINE>
 
 end module clocks_mod
 
@@ -277,3 +439,137 @@ program test
   call mpp_exit
 end program test
 #endif
+
+! <INFO>
+
+!   <COMPILER NAME="COMPILING AND LINKING SOURCE">
+!    Any module or program unit using <TT>clocks_mod</TT> must contain the line
+!
+!    <PRE>use clocks_mod</PRE>
+!
+!
+!   The parallel version of this module requires the <LINK
+!   SRC="http://www.gfdl.gov/~vb/mpp.html"><TT>mpp</TT> package</LINK>.
+!
+!   Compiling with the cpp flag <TT>test_clocks</TT> turned on:
+!
+!    <PRE>f90 -Dtest_clocks clocks.F90</PRE>
+!
+!   will produce a program that will exercise certain portions of the
+!   <TT>clocks_mod</TT> module.
+!   </COMPILER>
+!   <PRECOMP FLAG="PORTABILITY">      
+!     <TT>clocks_mod</TT> is fully f90 standard-compliant. There are
+!     no portability issues.
+!
+!     On SGI systems, the <TT>f90</TT> standard <TT>SYSTEM_CLOCK</TT>
+!     intrinsic is overloaded with a non-portable fortran interface to a
+!     higher-precision clock. This is distributed with the MPP package as
+!     <TT>nsclock.c</TT>. This approach will eventually be extended to other
+!     platforms, since the resolution of the default clock is often too
+!     coarse for our needs.
+!   </PRECOMP>
+!   <LOADER FLAG="">
+!       ACQUIRING SOURCE<\BR>
+!
+!       GFDL users can check it out of the main CVS repository as the
+!       <TT>clocks</TT> CVS module. The current public tag is <TT>fez</TT>.
+!       External users can download the source <LINK
+!       SRC="ftp://ftp.gfdl.noaa.gov/pub/vb/utils/clocks.F90">here</LINK>.
+!   </LOADER>
+!   <TESTPROGRAM NAME="">  test </TESTPROGRAM>
+!   <BUG>
+!     The <TT>SYSTEM_CLOCK</TT> intrinsic has a limited range before the
+!     clock rolls over. The maximum time interval that may be measured
+!     before rollover depends on the default integer precision, and is
+!     <TT>COUNT_MAX/COUNT_RATE</TT> seconds. Timing a code section longer
+!     than this interval will give incorrect results. The <TT>clocks</TT>
+!     entry in the logfile reports the rollover time interval. Note that
+!     this is a limitation, or "feature" of the <TT>f90 SYSTEM_CLOCK</TT>
+!     intrinsic.
+!   </BUG>
+!   <NOTE>
+!
+!     <LINK SRC="clocks.F90">Using <TT>clocks_mod</TT></LINK>
+!
+!   
+!     In the simplest method of calling, just designate sections of a main
+!     program with calls to <TT>tick()</TT>. <TT>tick()</TT>
+!     by default measures time since the last call to
+!     <TT>tick()</TT> (or to <TT>clocks_init()</TT>).
+!
+!     <PRE>
+!     program main
+!     call clocks_init()
+!     !code section 1
+!     ...
+!     i = tick( 'code section 1' )
+!     !code section 2
+!     ...
+!     i = tick( 'code section 2' )
+!     !code section 3
+!     ...
+!     i = tick( 'code section 3' )
+!     end
+!     </PRE>
+!
+!     This will return timing information for the three regions of the
+!     main program.
+!
+!     If, however, a subroutine in one of the code sections itself
+!     contained calls to <TT>tick()</TT>, this would produce
+!     erroneous information (since "the last call to <TT>tick()</TT>"
+!     might refer to a call elsewhere). In this case, we set the reference
+!     tick using the <TT>since</TT> argument to
+!     <TT>tick()</TT>:
+!
+!     <PRE>
+!     program main
+!     call clocks_init()
+!     i = tick()
+!     !code section 1
+!     ...
+!     i = tick( 'code section 1', since=i )
+!     !code section 2
+!     ...
+!     i = tick( 'code section 2', since=i )
+!     !code section 3
+!     ...
+!     i = tick( 'code section 3', since=i )
+!     end
+!     </PRE>
+!
+!     A third way to use <TT>clocks_mod</TT> is to produce cumulative
+!     times of code sections within loops. Here we first call
+!     <TT>clock_id</TT> to set up a clock with an
+!     <TT>id</TT>, and accumulate times to this ID.
+!
+!     <PRE>
+!     program main
+!     call clocks_init()
+!     id1 = clock_id( 'Code section 1' )
+!     id2 = clock_id( 'Code section 2' )
+!     id3 = clock_id( 'Code section 3' )
+!     do j = 1,10000
+!        i = tick()
+!     !code section 1
+!     ...
+!        i = tick( id=id1, since=i )
+!     !code section 2
+!     ...
+!        i = tick( id=id2, since=i )
+!     !code section 3
+!     ...
+!        i = tick( id=id3, since=i )
+!     end do
+!     call clocks_exit()
+!     end
+!     </PRE>
+!
+!     The call to <TT>clocks_exit</TT> above prints the timings
+!     for the code sections.
+
+!   </NOTE>
+
+! </INFO>
+

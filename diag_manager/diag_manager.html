@@ -1,424 +1,488 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-    <title>module diag_manager_mod</title>
-    <link rel="stylesheet" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" type="text/css">
-    <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP">
+<META http-equiv="Content-Type" content="text/html; charset=EUC-JP">
+<title>Module diag_manager_mod</title>
+<link type="text/css" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" rel="stylesheet">
+<STYLE TYPE="text/css">
+          .fixed {
+            font-size:medium;
+            font-family:monospace;
+            border-style:none;
+            border-width:0.1em;
+            padding:0.1em;
+            color:#663366;
+          }
+        </STYLE>
 </head>
 <body>
-
-<div class="header"> <font size=1>
-<a href="#PUBLIC INTERFACE">PUBLIC INTERFACE</a> ~
-<a href="#PUBLIC DATA">PUBLIC DATA</a> ~
-<a href="#PUBLIC ROUTINES">PUBLIC ROUTINES</a> ~
-<a href="#NAMELIST">NAMELIST</a> ~
-<a href="#ACQUIRING SOURCE">ACQUIRING SOURCE</a> ~
-<a href="#COMPILING AND LINKING SOURCE">COMPILING AND LINKING SOURCE</a> ~
-<a href="#PORTABILITY">PORTABILITY</a> ~
-<a href="#NOTES">NOTES</a>
-</font></div><hr>
-
+<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC INTERFACE">PUBLIC INTERFACE </a>~
+          <a href="#PUBLIC DATA">PUBLIC DATA </a>~
+          <a href="#PUBLIC ROUTINES">PUBLIC ROUTINES </a>~
+          <a href="#NAMELIST">NAMELIST </a>~
+          <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
+          <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
+          <a href="#REFERENCES">REFERENCES </a>~ 
+          <a href="#NOTES">NOTES</a></font>
+<hr>
 <h2>module diag_manager_mod</h2>
 <a name="HEADER"></a>
 <!-- BEGIN HEADER -->
 <div>
-     <b>Contact:</b> &nbsp;  Matt Harrison  <br>
-     <b>Reviewers:</b> &nbsp    <br>
-     <b>Change History: &nbsp<a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/diag_manager/diag_manager.f90">WebCVS Log</a></b>     <br>
-     <b>Last Modified:</b>&nbsp $Date: 2002/07/16 22:55:04 $
-</div><br>
-
+<b>Contact:</b>&nbsp;<a href="mailto:mh@gfdl.noaa.gov">   Matt Harrison </a>
+<br>
+<b>Reviewers:</b>&nbsp;<br>
+<b>Change History: </b>&nbsp;<a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/">WebCVS Log</a>
+<br>
+<b>Last Modified:</b>&nbsp;2002/03/22 00:08:55<br>
+<br>
+</div>
 <!-- END HEADER -->
-<!-------------------------------------------------------------------->
 <a name="OVERVIEW"></a>
 <hr>
 <h4>OVERVIEW</h4>
 <!-- BEGIN OVERVIEW -->
-<div>
-<p><tt>diag_manager_mod</tt> is a set of simple calls for parallel diagnostics on
-distributed systems. It is geared toward the writing of data in netCDF format.</p>
-</div>
+<p class="text">   &lt;TT&gt;diag_manager_mod&lt;/TT&gt; is a set of simple calls for parallel diagnostics on
+   distributed systems. It is geared toward the writing of data in netCDF format. </p>
 <!-- END OVERVIEW -->
-<!-------------------------------------------------------------------->
 <a name="DESCRIPTION"></a>
 <!-- BEGIN DESCRIPTION -->
-<div>
-<p><tt>diag_manager_mod</tt> provides a convenient set of interfaces for
-writing data to disk.  It is built upon the parallel I/O interface
-<a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp_io.html"><tt>mpp_io</tt></a>.  A single
-group of calls to the <tt>diag_manager_mod</tt> interfaces provides data to disk 
-at any number of sampling and/or averaging intervals specified at run-time.
-Run-time specification of diagnostics are input through the diagnostics table,
-which is described in the
-<a href="diag_table_tk.html">diag_table_tk</a> documentation.</p>
-
-<b>Features of <tt>diag_manager_mod</tt> include:</b>
-<br><br>
-<ul>
-<li> Simple, minimal API.</li>
-
-<li> Run-time choice of diagnostics.</li>
-
-<li> Self-describing files: comprehensive header information
-(metadata) in the file itself.</li>
-
-<li> Strong parallel write performance.</li>
-
-<li> Integrated netCDF capability: <a
-href="http://www.unidata.ucar.edu/packages/netcdf/">netCDF</a> is a
-data format widely used in the climate/weather modeling
-community. netCDF is considered the principal medium of data storage
-for <tt>diag_manager_mod</tt>. Raw unformatted
-fortran I/O capability is also available.</li>
-
-<li> Requires off-line post-processing: a tool for this purpose,
-<tt>mppnccombine</tt>, is available. GFDL users may use
-<tt>~hnv/pub/mppnccombine</tt>. Outside users may obtain the
-source <a
-href="ftp://ftp.gfdl.gov/perm/hnv/mpp/mppnccombine.c">here</a>.  It
-can be compiled on any C compiler and linked with the netCDF
-library. The program is free and is covered by the <a
-href="ftp://ftp.gfdl.gov/perm/hnv/mpp/LICENSE">GPL license</a>.</li>
-</ul>
-
-</div><br>
+<div>   &lt;TT&gt;diag_manager_mod&lt;/TT&gt; provides a convenient set of interfaces for
+   writing data to disk.  It is built upon the parallel I/O interface <a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp_io.html">&lt;TT&gt;mpp_io&lt;/TT&gt;</a>.  A single
+   group of calls to the &lt;TT&gt;diag_manager_mod&lt;/TT&gt; interfaces provides data to disk
+   at any number of sampling and/or averaging intervals specified at run-time.
+   Run-time specification of diagnostics are input through the diagnostics table,
+   which is described in the <a href="diag_table_tk.html">diag_table_tk</a>   documentation.
+   <br>
+<br>
+   &lt;B&gt;Features of &lt;TT&gt;diag_manager_mod&lt;/TT&gt; include:&lt;/B&gt;
+   Simple, minimal API.<br>   Run-time choice of diagnostics.<br>   Self-describing files: comprehensive header information
+   (metadata) in the file itself.<br>   Strong parallel write performance.<br>   Integrated netCDF capability: <a href="http://www.unidata.ucar.edu/packages/netcdf/">netCDF</a>   is a
+   data format widely used in the climate/weather modeling
+   community. netCDF is considered the principal medium of data storage
+   for &lt;TT&gt;diag_manager_mod&lt;/TT&gt;. Raw unformatted
+   fortran I/O capability is also available.<br>   Requires off-line post-processing: a tool for this purpose,
+   &lt;TT&gt;mppnccombine&lt;/TT&gt;, is available. GFDL users may use
+   &lt;TT&gt;~hnv/pub/mppnccombine&lt;/TT&gt;. Outside users may obtain the
+   source <a href="ftp://ftp.gfdl.gov/perm/hnv/mpp/mppnccombine.c">here</a>.  It
+   can be compiled on any C compiler and linked with the netCDF
+   library. The program is free and is covered by the <a href="ftp://ftp.gfdl.gov/perm/hnv/mpp/LICENSE">GPL license</a>. </div>
+<br>
 <!-- END DESCRIPTION -->
-<!-------------------------------------------------------------------->
 <a name="OTHER MODULES USED"></a>
 <hr>
 <h4>OTHER MODULES USED</h4>
 <!-- BEGIN OTHER MODULES USED -->
 <div>
-<pre>
-   diag_axis_mod
- diag_output_mod
-time_manager_mod
-         fms_mod
- mpp_domains_mod 
-      mpp_io_mod
-</pre>
+<pre>time_manager_mod<br>      mpp_io_mod<br>         fms_mod<br>   diag_axis_mod<br> diag_output_mod</pre>
 </div>
 <!-- END OTHER MODULES USED -->
-<!-------------------------------------------------------------------->
+<!-- BEGIN PUBLIC INTERFACE -->
 <a name="PUBLIC INTERFACE"></a>
 <hr>
 <h4>PUBLIC INTERFACE</h4>
-<!-- BEGIN INTERFACE -->
 <div>
-<pre>
-use <b>diag_manager_mod</b> [, only: diag_manager_init,
-                               diag_manager_end,
-                                 diag_axis_init,
-                            register_diag_field,
-                          register_static_field,
-                                  get_base_time,
-                                  get_base_date,
-                                      send_data, 
-                                      need_data]
-
-</pre>
+<pre>use diag_manager_mod [, only:  send_data,<br>                               register_diag_field,<br>                               register_static_field,<br>                               diag_manager_end,<br>                               diag_manager_init,<br>                               get_base_time,<br>                               get_base_date,<br>                               need_data ]</pre>
 <dl>
-<dt><a href="#diag_manager_init">diag_manager_init:</a> <dd>Initialize Diagnostics Manager.
-<dt><a href="#diag_axis_init">diag_axis_init:</a> <dd>Register Axis.
-<dt><a href="#register_diag_field">register_diag_field:</a> <dd>Register Diagnostic Field.
-<dt><a href="#register_static_field">register_static_field:</a> <dd>Register Static Field.
-<dt><a href="#diag_manager_end">diag_manager_end:</a> <dd>Exit Diagnostics Manager.
-<dt><a href="#get_base_time">get_base_time:</a> <dd>Return base time for diagnostics.
-<dt><a href="#get_base_date">get_base_date:</a> <dd>Return base date for diagnostics.
-<dt><a href="#send_data">send_data:</a> <dd>Send data over to output fields.
-<dt><a href="#need_data">need_data:</a> <dd>Determine whether data is needed for the current model time step. 
-<br><br></dl>
+<dt>
+<a href="#send_data">send_data</a>:</dt>
+<dd>   Send data over to output fields. </dd>
+<dt>
+<a href="#register_diag_field">register_diag_field</a>:</dt>
+<dd>   Register Diagnostic Field. </dd>
+<dt>
+<a href="#register_static_field">register_static_field</a>:</dt>
+<dd>   Register Static Field. </dd>
+<dt>
+<a href="#diag_manager_end">diag_manager_end</a>:</dt>
+<dd>   Exit Diagnostics Manager. </dd>
+<dt>
+<a href="#diag_manager_init">diag_manager_init</a>:</dt>
+<dd>   Initialize Diagnostics Manager. </dd>
+<dt>
+<a href="#get_base_time">get_base_time</a>:</dt>
+<dd>   Return base time for diagnostics. </dd>
+<dt>
+<a href="#get_base_date">get_base_date</a>:</dt>
+<dd>   Return base date for diagnostics. </dd>
+<dt>
+<a href="#need_data">need_data</a>:</dt>
+<dd>   Determine whether data is needed for the current model time step. </dd>
+</dl>
 </div>
-<!-- END INTERFACE -->
-<!-------------------------------------------------------------------->
+<br>
+<!-- END PUBLIC INTERFACE -->
 <a name="PUBLIC DATA"></a>
 <hr>
 <h4>PUBLIC DATA</h4>
-<!-- BEGIN DATA_TYPES -->
-<div>
-
-     None.
-
-</div><br>
-<!-- END DATA_TYPES -->
-<!-------------------------------------------------------------------->
+<!-- BEGIN PUBLIC DATA -->
+<div>None.<br>
+<br>
+</div>
+<!-- END PUBLIC DATA -->
 <a name="PUBLIC ROUTINES"></a>
 <hr>
 <h4>PUBLIC ROUTINES</h4>
-<!-- BEGIN ROUTINES -->
-
-<p>The public interfaces to <tt>diag_manager_mod</tt> are described here:</p>
+<!-- BEGIN PUBLIC ROUTINES -->
 <ol type="a">
-<li><a name="diag_manager_init"></a><h4>diag_manager_init</h4>
+<li>
+<a name="send_data"></a>
+<h4>send_data</h4>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   send_data is overloaded for 1 to 3-d arrays.
+   diag_field_id corresponds to the id returned from a previous call to
+   register_diag_field.  The field array is restricted to the computational
+   range of the array. Optional argument is_in can be used to update
+   sub-arrays of the entire field.  Additionally, an optional logical or real
+   mask can be used to apply missing values to the array.  For the real
+   mask, the mask is applied if the mask value is less than 0.5.  The
+   weight array is currently not implemented. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>diag_field_id&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>field&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[real, dimension(:)]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[real, dimension(:,:)]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[real, dimension(:,:,:)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>time&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="register_diag_field"></a>
+<h4>register_diag_field</h4>
+<pre> 
+<b>register_diag_field</b> (module_name, field_name, axes, init_time, &amp; long_name, units, missing_value, range)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Return field index for subsequent calls to <a href="#send_data">   send_data </a> 
+</dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>module_name&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>field_name&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>axes&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(:)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>init_time&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>long_name&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>units&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>missing_value&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>range&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[real, dimension(2)]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="register_static_field"></a>
+<h4>register_static_field</h4>
+<pre> 
+<b>register_static_field</b> (module_name, field_name, axes, &amp; long_name, units, missing_value, range, require)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Return field index for subsequent call to send_data. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>module_name&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>field_name&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>axes&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(:)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>long_name&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>units&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>missing_value&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>range&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[real, dimension(2)]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="diag_manager_end"></a>
+<h4>diag_manager_end</h4>
 <pre>
-subroutine diag_manager_init()
-</pre>
-<p>Open and read <tt>diag_table</tt>. Select fields and files for diagnostic output.</p>
+<b>call diag_manager_end </b>(time)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Flushes diagnostic buffers where necessary. Close diagnostics files. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>TIME&nbsp;&nbsp;&nbsp;</tt></td><td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
 </li>
-<li><a name="diag_manager_end"></a><h4>diag_manager_end</h4>
+<li>
+<a name="diag_manager_init"></a>
+<h4>diag_manager_init</h4>
 <pre>
-subroutine diag_manager_end()
-</pre>
-<p>Flushes diagnostic buffers where necessary.  Close diagnostics files.</p>
+<b>call diag_manager_init </b>()</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Open and read diag_table. Select fields and files for diagnostic output. </dd>
+<br>
+<br>
+</dl>
 </li>
-<li><a name="diag_axis_init"></a><h4>diag_axis_init</h4>
-<p><pre>
-function diag_axis_init( name, data, units, cart_name, long_name, &
-                          direction, set_name, edges, Domain, Domain2) &
-                  result (index)
-! increment axis counter and fill in axes
-
-!-----------------------------------------------------------------------
-!  name                = short name for axis
-!  data                = array of coordinate values for this axis
-!  units               = units for axis
-!  cart_name           = cartesian axis ("x",'y','z','t')
-!  direction(optional) = if +1, data are in a up   direction
-!                      = if -1, data are in a down direction
-!                      = if  0, neither up or down (default)
-!  long_name(optional) = long name for axis (default: name)
-!  edges    (optional) = axis id for the previously defined "edges axis"
-!-----------------------------------------------------------------------
-
-character(len=*), intent(in) :: name
-real            , intent(in) :: data(:)
-character(len=*), intent(in) :: units
-character(len=*), intent(in) :: cart_name
-
-character(len=*), intent(in), optional :: long_name, set_name
-integer         , intent(in), optional :: direction, edges
-type(domain1d)  , intent(in), optional :: Domain
-type(domain2d)  , intent(in), optional :: Domain2
-</pre>
-
-<p>Return axis index for subsequent reference in <a
-href="#register_diag_field"> register_diag_field </a> or <a
-href="#register_static_field"> register_static_field </a>.
-</p>
-</li>
-<li><a name="register_diag_field"></a><h4>register_diag_field</h4>
-
+<li>
+<a name="get_base_time"></a>
+<h4>get_base_time</h4>
 <pre>
-function register_diag_field(module_name, field_name, axes, init_time, &
-   long_name, units, missing_value, range)
-
-! Indicates the calling modules intent to supply data for this field.
-
-integer ::  register_diag_field
-character(len=*), intent(in) :: module_name, field_name
-integer, intent(in) :: axes(:)
-type(time_type), intent(in) :: init_time
-character(len=*), optional, intent(in) :: long_name, units
-real, optional, intent(in) :: missing_value, range(2)
-</pre>
-
-<p>Return field index for subsequent calls to <a href="#send_data"> send_data </a>.</p>
+<b>call get_base_time </b>()</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Return base time for diagnostics (note: base time must be &gt;= model time). </dd>
+<br>
+<br>
+</dl>
 </li>
-<li><a name="register_static_field"></a><h4>register_static_field</h4>
-
-<p><pre>
-function register_static_field(module_name, field_name, axes, &
-   long_name, units, missing_value, range, require)
-
-integer register_static_field
-character(len=*), intent(in) :: module_name, field_name
-integer, intent(in) :: axes(:)
-character(len=*), optional, intent(in) :: long_name, units
-real, optional, intent(in) :: missing_value, range(2)
-logical, optional, intent(in) :: require  ! require static field
-                                          ! e.g. 2-d axes
-</pre>
-
-<p>Return field index for subsequent call to <a href="#send_data"> send_data </a>.</p>
-</li>
-<li><a name="get_base_time"></a><h4>get_base_time</h4>
-
-<p><pre>
- function get_base_time ()
- type(time_type) :: get_base_time
-</pre>
-
-<p> Return base time for diagnostics (note: base time must be >= model time).</p>
-</li>
-<li><a name="get_base_data"></a><h4>get_base_date</h4>
-
+<li>
+<a name="get_base_date"></a>
+<h4>get_base_date</h4>
 <pre>
- subroutine get_base_date (year, month, day, hour, minute, second)
-   integer, intent(out) :: year, month, day, hour, minute, second
-</pre>
-
-<p> Return date information for diagnostic reference time</p>
+<b>call get_base_date </b>(year, month, day, hour, minute, second)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Return date information for diagnostic reference time. </dd>
+<br>
+<br>
+</dl>
 </li>
-<li><a name="send_data"></a><h4>send_data</h4>
-<p><tt>send_data</tt> is overloaded for 1 to 3-d arrays.<br>
-The 1-d version is:
-<pre>
-function send_data(diag_field_id, field, time, is_in,
-               mask, rmask, weight)
-logical :: send_data
-integer, intent(in) :: diag_field_id ! id from previous call to register_diag_field&nbsp;
-real, intent(in) :: field(:)
-type (time_type), intent(in) :: time
-integer, optional :: is_in ! start index for array (computational indices)
-logical, optional :: mask(:)
-real, optional :: rmask(:) ! 1 or 0
-real, optional :: weight(:) ! not implemented yet</pre>
-<p><i>diag_field_id </i>corresponds to the id returned from a previous call
-to <a href="#register_diag_field">register_diag_field</a>.&nbsp; The <i>field
-</i>array is restricted to the computational range of the array. Optional
-argument <i>is_in</i> can be used to update sub-arrays of the entire field.&nbsp;
-Additionally, an optional logical or real mask can be used to apply missing
-values to the array.&nbsp; For the real mask, the mask is applied if the
-mask value is less than 0.5.&nbsp; The weight array is currently not implemented.</p></li>
-
-<li><a name="need_data"></a><h4>need_data</h4>
-
-<pre>
-function need_data(diag_field_id,next_model_time)
-!
-! next_model_time = current model time + model time_step
-!
-type (time_type), intent(in) :: next_model_time
-integer, intent(in) :: diag_field_id
-</pre>
-
-<p> Determine whether data is needed for the current model time step.
-Since diagnostic data are buffered, the "next" model time is passed
-instead of the current model time.  This call can be used to minimize
-overhead for complicated diagnostics.</p>
+<li>
+<a name="need_data"></a>
+<h4>need_data</h4>
+<pre> 
+<b>need_data</b> (diag_field_id,next_model_time)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Determine whether data is needed for the current model time step.
+   Since diagnostic data are buffered, the "next" model time is passed
+   instead of the current model time. This call can be used to minimize
+   overhead for complicated diagnostics. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>inext_model_time&nbsp;&nbsp;&nbsp;</tt></td><td>   next_model_time = current model time + model time_step <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>diag_field_id&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
 </li>
 </ol>
-<!-- END ROUTINES -->
-<!-------------------------------------------------------------------->
+<!-- END PUBLIC ROUTINES -->
 <a name="NAMELIST"></a>
-<hr>
-<h4>NAMELIST</h4>
 <!-- BEGIN NAMELIST -->
-<div>
-
-     None.
-
-</div><br>
-<!-- END NAMELIST -->
-<!-------------------------------------------------------------------->
-<a name="DIAGNOSTIC FIELDS"></a>
-<hr>
-<h4>DIAGNOSTIC FIELDS</h4>
-<!-- BEGIN DIAGNOSTICS -->
-<div>
-
-     None.
-
-</div><br>
-<!-- END DIAGNOSTICS -->
-<!-------------------------------------------------------------------->
-<a name="DATA SETS"></a>
+<!-- END NAMELIST --><a name="DIAGNOSTIC FIELDS"></a>
+<!-- BEGIN DIAGNOSTIC FIELDS -->
+<!-- END DIAGNOSTIC FIELDS --><a name="DATA SETS"></a>
+<!-- BEGIN DATA SETS -->
 <hr>
 <h4>DATA SETS</h4>
-<!-- BEGIN DATA_SETS -->
-<div>
-
-     None.
-
-</div><br>
-<!-- END DATA_SETS -->
-<!-------------------------------------------------------------------->
+<div>None.<br>
+<br>
+</div>
+<!-- END DATA SETS -->
 <a name="ERROR MESSAGES"></a>
+<!-- BEGIN ERROR MESSAGES -->
 <hr>
 <h4>ERROR MESSAGES</h4>
-<!-- BEGIN ERRORS -->
-<div>
-
-     None.
-
-</div><br>
-<!-- END ERRORS -->
-<!-------------------------------------------------------------------->
+<div>None.<br>
+<br>
+</div>
+<!-- END ERROR MESSAGES -->
 <a name="REFERENCES"></a>
 <hr>
 <h4>REFERENCES</h4>
 <!-- BEGIN REFERENCES -->
 <div>
-
-     None.
-
-</div><br>
+        None.
+      </div>
+<br>
 <!-- END REFERENCES -->
-<!-------------------------------------------------------------------->
-<a name="COMPILING AND LINKING SOURCE"></a>
+<a name="COMPILER SPECIFICS"></a>
 <hr>
-<h4>COMPILING AND LINKING SOURCE</h4>
-<!-- BEGIN COMPILING AND LINKING SOURCE -->
+<h4>COMPILER SPECIFICS</h4>
+<!-- BEGIN COMPILER SPECIFICS -->
 <div>
-Any module or program unit using <tt>diag_manager_mod</tt> must
-contain the line
-
-<pre>
-use diag_manager_mod
-</pre>
-
-If netCDF output is desired, the cpp flag <tt>-Duse_netCDF</tt>
-must be turned on. The loader step requires an explicit link to the
-netCDF library (typically something like <tt>-L/usr/local/lib
--lnetcdf</tt>, depending on the path to the netCDF library).
-<a href="http://www.unidata.ucar.edu/packages/netcdf/guidef">netCDF
-release 3 for fortran</a> is required.<br><br>
+<dl>
+<dt>COMPILING AND LINKING SOURCE</dt>
+<dd>   Any module or program unit using &lt;TT&gt;diag_manager_mod&lt;/TT&gt; must contain the line <pre>   use diag_manager_mod</pre>   If netCDF output is desired, the cpp flag &lt;TT&gt;-Duse_netCDF&lt;/TT&gt;
+   must be turned on. The loader step requires an explicit link to the
+   netCDF library (typically something like &lt;TT&gt;-L/usr/local/lib
+   -lnetcdf&lt;/TT&gt;, depending on the path to the netCDF library). <a href="http://www.unidata.ucar.edu/packages/netcdf/guidef">netCDF
+   release 3 for fortran</a>   is required. </dd>
+</dl>
 </div>
-<!-- END COMPILING AND LINKING SOURCE -->
-<!-------------------------------------------------------------------->
-<a name="PORTABILITY"></a>
+<br>
+<!-- END COMPILER SPECIFICS -->
+<a name="PRECOMPILER OPTIONS"></a>
 <hr>
-<h4>PORTABILITY</h4>
-<!-- BEGIN PORTABILITY -->
+<h4>PRECOMPILER OPTIONS</h4>
+<!-- BEGIN PRECOMPILER OPTIONS -->
 <div>
-<tt>diag_manager_mod</tt> uses standard f90.<br><br>
+<dl>
+<dt>PORTABILITY</dt>
+<dd>   &lt;TT&gt;diag_manager_mod&lt;/TT&gt; uses standard f90. </dd>
+</dl>
 </div>
-<!-- END PORTABILITY -->
-<!-------------------------------------------------------------------->
-<a name="ACQUIRING SOURCE"></a>
+<br>
+<!-- END PRECOMPILER OPTIONS -->
+<a name="LOADER OPTIONS"></a>
 <hr>
-<h4>ACQUIRING SOURCE</h4>
-<!-- BEGIN ACQUIRING SOURCE -->
+<h4>LOADER OPTIONS</h4>
+<!-- BEGIN LOADER -->
 <div>
-<p>GFDL users can checkout diag_manager_mod using the cvs command
-<tt>setenv CVSROOT '/home/fms/cvs';cvs co diag_manager</tt>.
-</div><br>
-<!-- END ACQUIRING SOURCE -->
-<!-------------------------------------------------------------------->
-<a name="BUGS"></a>
+<p>   GFDL users can checkout diag_manager_mod using the cvs command
+   &lt;TT&gt;setenv CVSROOT '/home/fms/cvs';cvs co diag_manager&lt;/TT&gt;. </p>
+<pre>        ACQUIRING SOURCE</pre>
+</div>
+<!-- END LOADER OPTIONS -->
+<a name="TEST PROGRAM"></a>
+<hr>
+<h4>TEST PROGRAM</h4>
+<!-- BEGIN TEST PROGRAM -->
+<div>None.<br>
+</div>
+<br>
+<!-- END TEST PROGRAM -->
+<a name="KNOWN BUGS"></a>
 <hr>
 <h4>KNOWN BUGS</h4>
-<!-- BEGIN BUGS -->
+<!-- BEGIN KNOWN BUGS -->
 <div>
-
-     None.
-
-</div><br>
-<!-- END BUGS -->
-<!-------------------------------------------------------------------->
+        None.
+      </div>
+<br>
+<!-- END KNOWN BUGS -->
 <a name="NOTES"></a>
 <hr>
 <h4>NOTES</h4>
 <!-- BEGIN NOTES -->
-<div>
-
-     None.
-
-</div><br>
+<div>None.<br>
+</div>
+<br>
 <!-- END NOTES -->
-<!-------------------------------------------------------------------->
-<a name="PLANS"></a>
+<a name="FUTURE PLANS"></a>
 <hr>
 <h4>FUTURE PLANS</h4>
-<!-- BEGIN PLANS -->
+<!-- BEGIN FUTURE PLANS -->
 <div>
-
-     None.
-
-</div><br>
-<!-- END PLANS -->
-<!-------------------------------------------------------------------->
-
+        None.
+      </div>
+<br>
+<!-- END FUTURE PLANS -->
 <hr>
+<div align="right">
+<font size="-1"><a href="#TOP">top</a></font>
+</div>
 </body>
 </html>

@@ -8,10 +8,12 @@
 #ifdef use_CRI_pointers
       pointer( ptr, data3D )
       ptr = LOC(data)
+      call mpp_read( unit, field, domain, data3D, tindex )
 #else
       data3D = RESHAPE( data, SHAPE(data3D) )
-#endif
       call mpp_read( unit, field, domain, data3D, tindex )
+      data   = RESHAPE( data3D, SHAPE(data) )
+#endif
       return
     end subroutine MPP_READ_2DDECOMP_2D_
 

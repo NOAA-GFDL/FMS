@@ -1,6 +1,31 @@
 
 module topography_mod
 
+! <CONTACT EMAIL="bw@gfdl.noaa.gov">
+!   Bruce Wyman
+! </CONTACT>
+
+! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
+
+! <OVERVIEW>
+!   Routines for creating land surface topography fields and land-water masks
+!   for latitude-longitude grids.
+! </OVERVIEW>
+
+! <DESCRIPTION>
+!   This module generates realistic mountains and land-water masks
+!   on a specified latitude-longitude grid by interpolating from the
+!   1/6 degree Navy mean topography and percent water data sets.
+!   The fields that can be generated are mean and standard deviation
+!   of topography within the specified grid boxes; and land-ocean (or
+!   water) mask and land-ocean (or water) fractional area.
+!
+!   The interpolation scheme conserves the area-weighted average
+!   of the input data by using module horiz_interp.
+!
+!   The interfaces get_gaussian_topog and gaussian_topog_init are documented in <LINK SRC="gaussian_topog.html">gaussian_topog_mod</LINK>.
+! </DESCRIPTION>
+
 use gaussian_topog_mod, only: gaussian_topog_init, get_gaussian_topog
 use   horiz_interp_mod, only: horiz_interp
 
@@ -19,16 +44,47 @@ public :: topography_init,                 &
           gaussian_topog_init, get_gaussian_topog
 
 !-----------------------------------------------------------------------
-!----- namelist ------
+! <NAMELIST NAME="topography_nml">
+!   <DATA NAME="topog_file" TYPE="character" DEFAULT="DATA/navy_topography.data">
+!       Name of topography file.
+!   </DATA>
+!   <DATA NAME="water_file" TYPE="character" DEFAULT="DATA/navy_pctwater.data">
+!       Name of percent water file.
+!   </DATA>
 
    character(len=128) :: topog_file = 'DATA/navy_topography.data', &
                          water_file = 'DATA/navy_pctwater.data'
 
    namelist /topography_nml/ topog_file, water_file
+! </NAMELIST>
 
 !-----------------------------------------------------------------------
 ! --- resolution of the topography data set ---
-
+! <DATASET NAME="">
+!   This module uses the 1/6 degree U.S. Navy mean topography
+!   and percent water data sets.
+!
+!   These data sets have been re-formatted to separate 32-bit IEEE files.
+!   The names of these files is specified by the <LINK SRC="#NAMELIST">namelist</LINK> input.
+!
+!The format for both files is as follows:
+! <PRE>
+!     record = 1    nlon, nlat
+!     record = 2    blon, blat
+!     record = 3    data
+! </PRE>
+!where:
+! <PRE>
+!     nlon, nlat = The number of longitude and latitude points
+!                  in the horizontal grid.  For the 1/6 degree
+!                  data sets this is 2160 x 1080. [integer]
+!     blon, blat = The longitude and latitude grid box boundaries in degrees.
+!                     [real :: blon(nlon+1), blat(nlat+1)]
+!
+!     data       = The topography or percent water data.
+!                    [real :: data(nlon,nlat)]
+! </PRE>
+! </DATASET>
   integer :: unit
   integer :: ipts, jpts
   integer, parameter :: COMPUTE_STDEV = 123  ! use this flag to
@@ -36,8 +92,8 @@ public :: topography_init,                 &
 
 !-----------------------------------------------------------------------
 
- character(len=128) :: version = '$Id: topography.F90,v 1.5 2002/07/16 22:57:21 fms Exp $'
- character(len=128) :: tagname = '$Name: havana $'
+ character(len=128) :: version = '$Id: topography.F90,v 1.6 2003/04/09 21:19:19 fms Exp $'
+ character(len=128) :: tagname = '$Name: inchon $'
 
  logical :: module_is_initialized = .FALSE.
 
@@ -60,14 +116,46 @@ public :: topography_init,                 &
 
 !#######################################################################
 
+! <FUNCTION NAME="get_topog_mean">
+
+!   <OVERVIEW>
+!     Returns a "realistic" mean surface height field. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Returns realistic mountains on a latitude-longtude grid.
+!     The returned field is the mean topography for the given grid boxes.
+!     Computed using a conserving area-weighted interpolation.
+!     The current input data set is the 1/6 degree Navy mean topography.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     flag = <B>get_topog_mean</B> ( blon, blat, zmean )
+!   </TEMPLATE>
+
+!   <IN NAME="blon" TYPE="real" DIM="(:)">
+!     The longitude (in radians) at grid box boundaries.
+!   </IN>
+!   <IN NAME="blat" TYPE="real" DIM="(:)">
+!     The latitude (in radians) at grid box boundaries.
+!   </IN>
+!   <OUT NAME="zmean" UNIT=" meter" TYPE="real" DIM="(:,:)">
+!     The mean surface height (meters).
+!     The size of this field must be size(blon)-1 by size(blat)-1.
+!   </OUT>
+!   <OUT NAME="get_topog_mean" TYPE="logical">
+!     A logical value of TRUE is returned if the surface height field
+!     was successfully created. A value of FALSE may be returned if the
+!     input topography data set was not readable.
+!   </OUT>
+
+!   <ERROR MSG="shape(zmean) is not equal to (/size(blon)-1,size(blat)-1/))" STATUS="FATAL">
+!     Check the input grid size and output field size.
+!   </ERROR>
+
  function get_topog_mean (blon, blat, zmean)
 
    real, intent(in),  dimension(:)   :: blon, blat
    real, intent(out), dimension(:,:) :: zmean
    logical :: get_topog_mean
-
-!  blon, blat = longitude and latitude in radians for grid box edges
-!  zmean      = mean surface height (meters)
 
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
@@ -86,19 +174,46 @@ public :: topography_init,                 &
 !-----------------------------------------------------------------------
 
  end function get_topog_mean
+! </FUNCTION>
 
 !#######################################################################
-! returns standard deviation of "higher resolution" input data
-! within the requested grid boxes
+
+! <FUNCTION NAME="get_topog_stdev">
+
+!   <OVERVIEW>
+!     Returns a standard deviation of higher resolution topography with 
+!     the given model grid boxes. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Returns the standard deviation of the "finer" input topography data set,
+!     currently the Navy 1/6 degree mean topography data, within the
+!     boundaries of the given input grid.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     flag = <B>get_topog_stdev</B> ( blon, blat, stdev )
+!   </TEMPLATE>
+!   <IN NAME="blon" TYPE="real" DIM="(:)">
+!     The longitude (in radians) at grid box boundaries.
+!   </IN>
+!   <IN NAME="blat" TYPE="real" DIM="(:)">
+!     The latitude (in radians) at grid box boundaries.
+!   </IN>
+!   <OUT NAME="stdev" UNITS="meter" TYPE="real" DIM="(:,:)">
+!     The standard deviation of surface height (in meters) within
+!     given input model grid boxes.
+!     The size of this field must be size(blon)-1 by size(blat)-1.
+!   </OUT>
+!   <OUT NAME="get_topog_stdev" TYPE="logical">
+!     A logical value of TRUE is returned if the output field was
+!     successfully created. A value of FALSE may be returned if the
+!     input topography data set was not readable.
+!   </OUT>
 
  function get_topog_stdev (blon, blat, stdev)
 
    real, intent(in),  dimension(:)   :: blon, blat
    real, intent(out), dimension(:,:) :: stdev
    logical :: get_topog_stdev
-
-!  blon, blat = longitude and latitude in radians for grid box edges
-!  stdev      = standard deviation of surface height (meters)
 
    real :: zsurf (size(stdev,1),size(stdev,2))
 !-----------------------------------------------------------------------
@@ -118,9 +233,37 @@ public :: topography_init,                 &
 !-----------------------------------------------------------------------
 
  end function get_topog_stdev
+! </FUNCTION>
 
 !#######################################################################
-! returns fractional area covered by ocean
+
+! <FUNCTION NAME="get_ocean_frac">
+
+!   <OVERVIEW>
+!      Returns fractional area covered by ocean in a grid box.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Returns fractional area covered by ocean in the given model grid boxes.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     flag = <B>get_ocean_frac</B> ( blon, blat, ocean_frac )
+!   </TEMPLATE>
+
+!   <IN NAME="blon" UNITS="radians" TYPE="real" DIM="(:)">
+!     The longitude (in radians) at grid box boundaries.
+!   </IN>
+!   <IN NAME="blat" UNITS="radians" TYPE="real" DIM="(:)">
+!     The latitude (in radians) at grid box boundaries.
+!   </IN>
+!   <OUT NAME="ocean_frac" TYPE="real" DIM="(:,:)">
+!     The fractional amount (0 to 1) of ocean in a grid box.
+!     The size of this field must be size(blon)-1 by size(blat)-1.
+!   </OUT>
+!   <OUT NAME="get_ocean_frac" TYPE="logical">
+!     A logical value of TRUE is returned if the output field
+!     was successfully created. A value of FALSE may be returned
+!     if the Navy 1/6 degree percent water data set was not readable.
+!   </OUT>
 
  function get_ocean_frac (blon, blat, ocean_frac)
 
@@ -145,8 +288,36 @@ public :: topography_init,                 &
 !-----------------------------------------------------------------------
 
  end function get_ocean_frac
+! </FUNCTION>
 
 !#######################################################################
+! <FUNCTION NAME="get_ocean_mask">
+
+!   <OVERVIEW>
+!     Returns a land-ocean mask in a grid box.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Returns a land-ocean mask in the given model grid boxes.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     flag = <B>get_ocean_mask</B> ( blon, blat, ocean_mask )
+!   </TEMPLATE>
+
+!   <IN NAME="blon" UNITS="radians" TYPE="real" DIM="(:)">
+!     The longitude (in radians) at grid box boundaries.
+!   </IN>
+!   <IN NAME="blat" UNITS="radians" TYPE="real" DIM="(:)">
+!     The latitude (in radians) at grid box boundaries.
+!   </IN>
+!   <OUT NAME="ocean_frac" TYPE="real" DIM="(:,:)">
+!     The fractional amount (0 to 1) of ocean in a grid box.
+!     The size of this field must be size(blon)-1 by size(blat)-1.
+!   </OUT>
+!   <OUT NAME="get_ocean_mask" TYPE="logical">
+!     A logical value of TRUE is returned if the output field
+!     was successfully created. A value of FALSE may be returned
+!     if the Navy 1/6 degree percent water data set was not readable.
+!   </OUT>
 
  function get_ocean_mask (blon, blat, ocean_mask)
 
@@ -172,9 +343,39 @@ public :: topography_init,                 &
 !-----------------------------------------------------------------------
 
  end function get_ocean_mask
+! </FUNCTION>
 
 !#######################################################################
-! returns fractional area covered by water
+! <FUNCTION NAME="get_water_frac">
+
+!   <OVERVIEW>
+!     Returns fractional area covered by water.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Returns the percent of water in a grid box.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     flag = <B>get_water_frac</B> ( blon, blat, water_frac )
+!   </TEMPLATE>
+
+!   <IN NAME="blon" UNITS="radians" TYPE="real" DIM="(:)">
+!     The longitude (in radians) at grid box boundaries.
+!   </IN>
+!   <IN NAME="blat" UNITS="radians" TYPE="real" DIM="(:)">
+!     The latitude (in radians) at grid box boundaries.
+!   </IN>
+!   <OUT NAME="water_frac" TYPE="real" DIM="(:,:)">
+!     The fractional amount (0 to 1) of water in a grid box.
+!     The size of this field must be size(blon)-1 by size(blat)-1.
+!   </OUT>
+!   <OUT NAME="get_water_frac" TYPE="logical">
+!     A logical value of TRUE is returned if the output field
+!     was successfully created. A value of FALSE may be returned
+!     if the Navy 1/6 degree percent water data set was not readable.
+!   </OUT>
+!   <ERROR MSG="shape(water_frac) is not equal to (/size(blon)-1,size(blat)-1/))" STATUS="FATAL">
+!      Check the input grid size and output field size.
+!   </ERROR>
 
  function get_water_frac (blon, blat, water_frac)
 
@@ -199,8 +400,36 @@ public :: topography_init,                 &
 !-----------------------------------------------------------------------
 
  end function get_water_frac
+! </FUNCTION>
 
 !#######################################################################
+! <FUNCTION NAME="get_water_mask">
+
+!   <OVERVIEW>
+!     Returns a land-water mask in a grid box.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Returns a land-water mask in the given model grid boxes.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     flag = <B>get_water_mask</B> ( blon, blat, water_mask )
+!   </TEMPLATE>
+
+!   <IN NAME="blon" UNITS="radians" TYPE="real" DIM="(:)">
+!     The longitude (in radians) at grid box boundaries.
+!   </IN>
+!   <IN NAME="blat" UNITS="radians" TYPE="real" DIM="(:)">
+!     The latitude (in radians) at grid box boundaries.
+!   </IN>
+!   <OUT NAME="water_mask" TYPE="real" DIM="(:,:)">
+!     A binary mask for water (true) or land (false).
+!     The size of this field must be size(blon)-1 by size(blat)-1.
+!   </OUT>
+!   <OUT NAME="get_water_mask" TYPE="logical">
+!     A logical value of TRUE is returned if the output field
+!     was successfully created. A value of FALSE may be returned
+!     if the Navy 1/6 degree percent water data set was not readable.
+!   </OUT>
 
  function get_water_mask (blon, blat, water_mask)
 
@@ -226,6 +455,7 @@ public :: topography_init,                 &
 !-----------------------------------------------------------------------
 
  end function get_water_mask
+! </FUNCTION>
 
 !#######################################################################
 !##################   private interfaces below here   ##################
@@ -388,3 +618,103 @@ end subroutine read_namelist
 !#######################################################################
 
 end module topography_mod
+
+! <INFO>
+
+!   <TESTPROGRAM NAME="">  
+!  
+!  To run this program you will need the topography and percent water
+!  data sets and use the following namelist (in file input.nml).
+!  
+!   &amp;gaussian_topog_nml
+!     height = 5000., 3000., 3000., 3000.,
+!     olon   =   90.,  255.,  285.,    0.,
+!     olat   =   45.,   45.,  -15.,  -90.,
+!     wlon   =   15.,   10.,    5.,  180.,
+!     wlat   =   15.,   25.,   25.,   20., /
+!  
+!  program test
+!  
+!  ! test program for topography and gaussian_topog modules
+!  <PRE>  
+!  use topography_mod
+!  implicit none
+!  
+!  integer, parameter :: nlon=24, nlat=18
+!  real :: x(nlon), y(nlat), xb(nlon+1), yb(nlat+1), z(nlon,nlat)
+!  real :: hpi, rtd
+!  integer :: i,j
+!  logical :: a
+!  
+!  ! gaussian mountain parameters
+!  real, parameter :: ht=4000.
+!  real, parameter :: x0=90., y0=45. ! origin in degrees
+!  real, parameter :: xw=15., yw=15. ! half-width in degees
+!  real, parameter :: xr=30., yr= 0. ! ridge-width in degrees
+!  
+!  ! create lat/lon grid in radians
+!    hpi = acos(0.0)
+!    rtd = 90./hpi ! rad to deg
+!    do i=1,nlon
+!      xb(i) = 4.*hpi*real(i-1)/real(nlon)
+!    enddo
+!      xb(nlon+1) = xb(1)+4.*hpi
+!      yb(1) = -hpi
+!    do j=2,nlat
+!      yb(j) = yb(j-1) + 2.*hpi/real(nlat)
+!    enddo
+!      yb(nlat+1) = hpi
+!  ! mid-point of grid boxes
+!    x(1:nlon) = 0.5*(xb(1:nlon)+xb(2:nlon+1))
+!    y(1:nlat) = 0.5*(yb(1:nlat)+yb(2:nlat+1))
+!  ! test topography_mod routines
+!    a = get_topog_mean(xb,yb,z)
+!    call printz ('get_topog_mean')
+!  
+!    a = get_water_frac(xb,yb,z)
+!    z = z*100. ! in percent
+!    call printz ('get_water_frac')
+!  
+!    a = get_ocean_frac(xb,yb,z)
+!    z = z*100. ! in percent
+!    call printz ('get_ocean_frac')
+!  
+!  ! test gaussian_topog_mod routines
+!    a = .true.
+!    z = get_gaussian_topog(x,y,ht,x0,y0,xw,yw,xr,yr)
+!    call printz ('get_gaussian_topog')
+!  
+!    call gaussian_topog_init (x,y,z)
+!    call printz ('gaussian_topog_init')
+!  
+!  contains
+!  
+!  ! simple printout of topog/water array
+!    subroutine printz (lab)
+!    character(len=*), intent(in) :: lab
+!     if (a) then
+!        print '(/a)', trim(lab)
+!     else
+!        print '(/a)', 'no data available: '//trim(lab)
+!        return
+!     endif
+!      ! print full grid
+!        print '(3x,25i5)', (nint(x(i)*rtd),i=1,nlon)
+!      do j=nlat,1,-1
+!        print '(i3,25i5)', nint(y(j)*rtd), (nint(z(i,j)),i=1,nlon)
+!      enddo
+!    end subroutine printz
+!  
+!  end program test
+!   </PRE>
+!   </TESTPROGRAM>
+
+!   <BUG>                  
+!      Water mask produces some possible erroneous water points along
+!      the coast of Antarctic (at about 90W).
+!   </BUG>
+
+!   <FUTURE>Use of netcdf data sets. </FUTURE>
+!   <FUTURE>Incorporate other topography and ocean data sets. </FUTURE>
+! 
+! </INFO>

@@ -27,6 +27,36 @@ module sat_vapor_pres_mod
 !
 !-----------------------------------------------------------------------
 
+! <CONTACT EMAIL="bw@gfdl.noaa.gov">
+!   Bruce Wyman
+! </CONTACT>
+
+! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
+
+! <OVERVIEW>
+!   Routines for determining the saturation vapor pressure (<TT>ES</TT>) 
+!   and the derivative of <TT>ES</TT> with respect to temperature.
+! </OVERVIEW>
+
+! <DESCRIPTION>
+!   This module contains routines for determining the saturation vapor
+!   pressure (<TT>ES</TT>) from lookup tables constructed using equations given
+!   in the Smithsonian tables.  The <TT>ES</TT> lookup tables are valid between
+!   -160C and +100C (approx 113K to 373K).
+
+!   The values of <TT>ES</TT> are computed over ice from -160C to -20C,
+!   over water from 0C to 100C, and a blended value (over water and ice)
+!   from -20C to 0C.
+
+!   This version was written for non-vector machines.
+!   See the <LINK SRC="#NOTES">notes</LINK> section for details on vectorization.
+
+! </DESCRIPTION>
+
+! <PUBLIC>
+!   Description summarizing public interface.
+! </PUBLIC>
+
  use  constants_mod, only:  TFREEZE
  use        fms_mod, only:  write_version_number,   &
                             error_mesg, FATAL
@@ -40,6 +70,38 @@ private
                            ! use lookup_es, lookup_des instead
 
 !-----------------------------------------------------------------------
+ 
+! <INTERFACE NAME="lookup_es">
+
+!   <OVERVIEW>
+!     For the given temperatures, returns the saturation vapor pressures.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     For the given temperatures these routines return the
+!     saturation vapor pressure (esat). The return values are derived from
+!     lookup tables (see notes below).
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call lookup_es( temp, esat )
+!   </TEMPLATE>
+!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(scalar),(:),(:,:),(:,:,:)">
+!     Temperature in degrees Kelvin.
+!   </IN>
+!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(scalar),(:),(:,:),(:,:,:)">
+!     Saturation vapor pressure in pascals.
+!             May be a scalar, 1d, 2d, or 3d array.
+!             Must have the same order and size as temp.
+!   </OUT>
+!   <ERROR MSG="table overflow, nbad=##" STATUS="FATAL">
+!     Temperature(s) provided to the saturation vapor pressure lookup
+!          are outside the valid range of the lookup table (-160 to 100 deg C).
+!          This may be due to a numerical instability in the model.
+!          Information should have been printed to standard output to help
+!          determine where the instability may have occurred.
+!          If the lookup table needs a larger temperature range,
+!          then parameters in the module header must be modified.
+!   </ERROR> *
+
  interface lookup_es
    module procedure lookup_es_0d, lookup_es_1d, lookup_es_2d, lookup_es_3d
  end interface
@@ -47,18 +109,66 @@ private
  interface escomp
    module procedure lookup_es_0d, lookup_es_1d, lookup_es_2d, lookup_es_3d
  end interface
+! </INTERFACE>
 !-----------------------------------------------------------------------
+! <INTERFACE NAME="lookup_des">
+
+!   <OVERVIEW>
+!     For the given temperatures, returns the derivative of saturation vapor pressure
+!     with respect to temperature.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     For the given temperatures these routines return the derivative of esat w.r.t.
+!     temperature (desat). The return values are derived from
+!     lookup tables (see notes below).
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call lookup_des( temp, desat )
+!   </TEMPLATE>
+!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(scalar),(:),(:,:),(:,:,:)">
+!     Temperature in degrees Kelvin.
+!   </IN>
+!   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(scalar),(:),(:,:),(:,:,:)">
+!     Derivative of saturation vapor pressure w.r.t. temperature
+!                 in pascals/degree. May be a scalar, 1d, 2d, or 3d array.
+!                 Must have the same order and size as temp.
+!   </OUT>
+
  interface lookup_des
    module procedure lookup_des_0d, lookup_des_1d, lookup_des_2d, lookup_des_3d
  end interface
+! </INTERFACE>
 ! for backward compatibility (to be removed soon)
  interface descomp
    module procedure lookup_des_0d, lookup_des_1d, lookup_des_2d, lookup_des_3d
  end interface
 !-----------------------------------------------------------------------
+! <INTERFACE NAME="compute_es">
+
+!   <OVERVIEW>
+!     For the given temperatures, computes the saturation vapor pressures. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Computes saturation vapor pressure for the given temperature using
+!     the equations given in the Smithsonian Meteorological Tables.
+!     Between -20C and 0C a blended value over ice and water is returned.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     es = compute_es ( temp )
+!   </TEMPLATE>
+!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(scalar),(:),(:,:),(:,:,:)">
+!     Temperature in degrees Kelvin.
+!   </IN>
+!   <OUT NAME="es" UNITS="pascal" TYPE="real" DIM="(scalar),(:),(:,:),(:,:,:)">
+!     Saturation vapor pressure in pascals.
+!             May be a scalar, 1d, 2d, or 3d array.
+!             Must have the same order and size as temp.
+!   </OUT>
+
  interface compute_es
    module procedure compute_es_0d, compute_es_1d, compute_es_2d, compute_es_3d
  end interface
+! </INTERFACE>
 !-----------------------------------------------------------------------
  interface temp_check
    module procedure temp_check_0d, temp_check_1d, temp_check_2d, temp_check_3d
@@ -66,8 +176,8 @@ private
 !-----------------------------------------------------------------------
 !  cvs version and tag name
 
-character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 1.6 2002/07/16 22:56:58 fms Exp $'
-character(len=128) :: tagname = '$Name: havana $'
+character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 1.7 2003/04/09 21:18:52 fms Exp $'
+character(len=128) :: tagname = '$Name: inchon $'
 
 !-----------------------------------------------------------------------
 !  parameters for table size and resolution
@@ -93,6 +203,10 @@ contains
 
 !#######################################################################
 
+! <SUBROUTINE NAME="lookup_es_0d" INTERFACE="lookup_es">
+!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(scalar)"></IN>
+!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(scalar)"></OUT>
+! </SUBROUTINE>
  subroutine lookup_es_0d ( temp, esat )
 
  real, intent(in)  :: temp
@@ -118,6 +232,10 @@ contains
 
 !#######################################################################
 
+! <SUBROUTINE NAME="lookup_es_1d" INTERFACE="lookup_es">
+!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:)"></IN>
+!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:)"></OUT>
+! </SUBROUTINE>
  subroutine lookup_es_1d ( temp, esat )
 
  real, intent(in)  :: temp(:)
@@ -147,6 +265,10 @@ contains
 
 !#######################################################################
 
+! <SUBROUTINE NAME="lookup_es_2d" INTERFACE="lookup_es">
+!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:)"></IN>
+!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:,:)"></OUT>
+! </SUBROUTINE>
  subroutine lookup_es_2d ( temp, esat )
 
  real, intent(in)  :: temp(:,:)
@@ -178,6 +300,10 @@ contains
 
 !#######################################################################
 
+! <SUBROUTINE NAME="lookup_es_3d" INTERFACE="lookup_es">
+!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:,:)"></IN>
+!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:,:,:)"></OUT>
+! </SUBROUTINE>
  subroutine lookup_es_3d ( temp, esat )
 
  real, intent(in)  :: temp(:,:,:)
@@ -213,6 +339,10 @@ contains
 !  routines for computing derivative of es
 !#######################################################################
 
+! <SUBROUTINE NAME="lookup_des_0d" INTERFACE="lookup_des">
+!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(scalar)"></IN>
+!   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(scalar)"></OUT>
+! </SUBROUTINE>
  subroutine lookup_des_0d ( temp, desat )
 
  real, intent(in)  :: temp
@@ -237,6 +367,10 @@ contains
 
 !#######################################################################
 
+! <SUBROUTINE NAME="lookup_des_1d" INTERFACE="lookup_des">
+!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:)"></IN>
+!   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(:)"></OUT>
+! </SUBROUTINE>
  subroutine lookup_des_1d ( temp, desat )
 
  real, intent(in)  :: temp (:)
@@ -265,6 +399,10 @@ contains
 
 !#######################################################################
 
+! <SUBROUTINE NAME="lookup_des_2d" INTERFACE="lookup_des">
+!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:)"></IN>
+!   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(:,:)"></OUT>
+! </SUBROUTINE>
  subroutine lookup_des_2d ( temp, desat )
 
  real, intent(in)  :: temp (:,:)
@@ -294,7 +432,10 @@ contains
  end subroutine lookup_des_2d
 
 !#######################################################################
-
+! <SUBROUTINE NAME="lookup_des_3d" INTERFACE="lookup_des">
+!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:,:)"></IN>
+!   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(:,:,:)"></OUT>
+! </SUBROUTINE>
  subroutine lookup_des_3d ( temp, desat )
 
  real, intent(in)  :: temp (:,:,:)
@@ -328,6 +469,23 @@ contains
 !#######################################################################
 !#######################################################################
 
+! <SUBROUTINE NAME="sat_vapor_pres_init">
+
+!   <OVERVIEW>
+!     Initializes the lookup tables for saturation vapor pressure. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Initializes the lookup tables for saturation vapor pressure.
+!     This routine will be called automatically the first time
+!     <B>lookup_es</B> or <B>lookup_des</B> is called,
+!     the user does not need to call this routine.
+!     There are no arguments.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call sat_vapor_pres_init
+!   </TEMPLATE>
+
+! </SUBROUTINE>
  subroutine sat_vapor_pres_init
 
 !  =================================================================
@@ -408,6 +566,10 @@ contains
 !   Reference:  Smithsonian meteorological tables, page 350.
 !-------------------------------------------------------------------
 
+! <FUNCTION NAME="compute_es_1d" INTERFACE="compute_es">
+!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:)"></IN>
+!   <OUT NAME="es" UNITS="pascal" TYPE="real" DIM="(:)"></OUT>
+! </FUNCTION>
  function compute_es_1d (tem) result (es)
  real, intent(in) :: tem(:)
  real :: es(size(tem))
@@ -461,8 +623,11 @@ contains
  end function compute_es_1d
 
 !--------------------------------------------------------
-! overloaded functions (may noy be efficient)
 
+! <FUNCTION NAME="compute_es_0d" INTERFACE="compute_es">
+!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(scalar)"></IN>
+!   <OUT NAME="es" UNITS="pascal" TYPE="real" DIM="(scalar)"></OUT>
+! </FUNCTION>
  function compute_es_0d (tem) result (es)
  real, intent(in) :: tem
  real :: es
@@ -476,6 +641,10 @@ contains
 
 !--------------------------
 
+! <FUNCTION NAME="compute_es_2d" INTERFACE="compute_es">
+!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:)"></IN>
+!   <OUT NAME="es" UNITS="pascal" TYPE="real" DIM="(:,:)"></OUT>
+! </FUNCTION>
  function compute_es_2d (tem) result (es)
  real, intent(in) :: tem(:,:)
  real, dimension(size(tem,1),size(tem,2)) :: es
@@ -488,7 +657,10 @@ contains
  end function compute_es_2d
 
 !--------------------------
-
+! <FUNCTION NAME="compute_es_3d" INTERFACE="compute_es">
+!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:,:)"></IN>
+!   <OUT NAME="es" UNITS="pascal" TYPE="real" DIM="(:,:,:)"></OUT>
+! </FUNCTION>
  function compute_es_3d (tem) result (es)
  real, intent(in) :: tem(:,:,:)
  real, dimension(size(tem,1),size(tem,2),size(tem,3)) :: es
@@ -599,3 +771,110 @@ contains
 
 end module sat_vapor_pres_mod
 
+! <INFO>
+
+!   <REFERENCE>            
+!     Smithsonian Meteorological Tables Page 350.
+!   </REFERENCE>
+
+!   <BUG>                  
+!     No error checking is done to make sure that the size of the
+!     input and output fields match.
+!   </BUG>
+
+!   <NOTE>
+!     1. <B>Vectorization</B><BR/>
+!        To create a vector version the lookup routines need to be modified.
+!    The local variables: tmp, del, ind, should be changed to arrays
+!    with the same size and order as input array temp.
+!
+!     2. <B>Construction of the <TT>ES</TT> tables</B><BR/>
+!         The tables are constructed using the saturation vapor pressure (<TT>ES</TT>)
+!    equations in the Smithsonian tables. The tables are valid between
+!    -160C to +100C with increments at 1/10 degree. Between -160C and -20C
+!    values of <TT>ES</TT> over ice are used, between 0C and 100C values of<TT> ES</TT>
+!    over water are used, between -20C and 0C blended values of <TT>ES</TT>
+!    (over water and over ice) are used.
+!
+!    There are three tables constructed: <TT>ES</TT>, first derivative 
+!       (<TT>ES'</TT>), and
+!    second derivative (<TT>ES</TT>'').  The ES table is constructed directly from
+!    the equations in the Smithsonian tables. The <TT>ES</TT>' table is constructed
+!    by bracketing temperature values at +/- 0.01 degrees. The <TT>ES</TT>'' table
+!    is estimated by using centered differencing of the <TT>ES</TT>' table.
+!
+!     3. <B>Determination of <TT>es</TT> and <TT>es'</TT> from lookup tables</B><BR/>
+!         Values of the saturation vapor pressure (<TT>es</TT>) and the 
+!    derivative (<TT>es'</TT>) are determined at temperature (T) from the lookup 
+!    tables (<TT>ES</TT>, <TT>ES'</TT>, <TT>ES''</TT>)
+!    using the following formula.
+!<PRE>
+!    es (T) = ES(t) + ES'(t) * dt + 0.5 * ES''(t) * dt**2
+!    es'(T) = ES'(t) + ES''(t) * dt
+!
+!    where     t = lookup table temperature closest to T
+!             dt = T - t
+!</PRE>
+!
+!     4. Internal (private) parameters<BR/>
+!       These parameters can be modified to increase/decrease the size/range
+!    of the lookup tables.
+!<PRE>
+!!    tcmin   The minimum temperature (in deg C) in the lookup tables.
+!!              [integer, default: tcmin = -160]
+!!
+!!    tcmax   The maximum temperature (in deg C) in the lookup tables.
+!!              [integer, default: tcmin = +100]
+!!</PRE>
+!!   </NOTE>
+!
+!!   <TESTPROGRAM NAME="test_sat_vapor_pres">
+!<PRE>
+!use sat_vapor_pres_mod
+!implicit none
+!
+!integer, parameter :: ipts=500, jpts=100, kpts=50, nloop=1
+!real, dimension(ipts,jpts,kpts) :: t,es,esn,des,desn
+!integer :: n
+!
+!! generate temperatures between 120K and 340K
+!  call random_number (t)
+!  t = 130. + t * 200.
+!
+!! initialize the tables (optional)
+!  call sat_vapor_pres_init
+!
+!! compute actual es and "almost" actual des
+!   es = compute_es  (t)
+!  des = compute_des (t)
+!
+!do n = 1, nloop
+!! es and des
+!  call lookup_es  (t, esn)
+!  call lookup_des (t,desn)
+!enddo
+!
+!! terminate, print deviation from actual
+!  print *, 'size=',ipts,jpts,kpts,nloop
+!  print *, 'err es  = ', sum((esn-es)**2)
+!  print *, 'err des = ', sum((desn-des)**2)
+!
+!contains
+!
+!!----------------------------------
+!! routine to estimate derivative
+!
+! function compute_des (tem) result (des)
+! real, intent(in) :: tem(:,:,:)
+! real, dimension(size(tem,1),size(tem,2),size(tem,3)) :: des,esp,esm
+! real, parameter :: tdel = .01
+!    esp = compute_es (tem+tdel)
+!    esm = compute_es (tem-tdel)
+!    des = (esp-esm)/(2*tdel)
+! end function compute_des
+!!----------------------------------
+!
+!end program test_sat_vapor_pres
+!</PRE>
+!   </TESTPROGRAM>
+! </INFO>

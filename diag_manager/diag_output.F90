@@ -22,6 +22,8 @@ use time_manager_mod, only: get_calendar_type, THIRTY_DAY_MONTHS, &
 
 use          fms_mod, only: error_mesg, mpp_pe, write_version_number
 
+use platform_mod, only: r8_kind
+
 implicit none
 private
 
@@ -98,9 +100,9 @@ end type
 logical :: module_is_initialized = .FALSE.
 
 character(len=128), private :: version= &
-  '$Id: diag_output.F90,v 1.3 2002/07/16 22:55:07 fms Exp $'
+  '$Id: diag_output.F90,v 1.4 2003/04/09 21:16:14 fms Exp $'
 character(len=128), private :: tagname= &
-  '$Name: havana $'
+  '$Name: inchon $'
 
 contains
 
@@ -135,7 +137,7 @@ subroutine diag_output_init ( file_name, format, file_title,  &
 !
 !-----------------------------------------------------------------------
 
- real, dimension(1) :: tdata
+ real(KIND=r8_kind), dimension(1) :: tdata
  integer :: form, threading, fileset
 
 !-----------------------------------------------------------------------
@@ -611,7 +613,7 @@ subroutine diag_field_out ( file_unit, Field, data, time )
 integer             , intent(in)    :: file_unit
 type(diag_fieldtype), intent(inout)    :: Field
 real                , intent(inout) :: data(:,:,:)
-real,      optional , intent(in)    :: time
+real(KIND=r8_kind), optional , intent(in)    :: time
 
 !---- replace original missing value with (un)packed missing value ----
 !print *, 'PE,name,miss_pack_present=',mpp_pe(), &

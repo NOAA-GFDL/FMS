@@ -1,27 +1,49 @@
 module time_manager_mod
 
+! <CONTACT EMAIL="fms@gfdl.noaa.gov">
+!   fms
+! </CONTACT>
+
+! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
+
+! <OVERVIEW>
+!   A software package that provides a set of simple interfaces for
+!   modelers to perform computations related to time and dates.
+! </OVERVIEW>
+
+! <DESCRIPTION>
+!    The module defines a type that can be used to represent discrete
+!    times (accurate to one second) and to map these times into dates
+!    using a variety of calendars. A time is mapped to a date by
+!    representing the time with respect to an arbitrary base date (refer
+!    to <B>NOTES</B> section for the <LINK SRC="#base date">base date</LINK> setting).
+!
+!    The time_manager provides a single defined type, time_type, which is
+!    used to store time and date quantities. A time_type is a positive
+!    definite quantity that represents an interval of time. It can be
+!    most easily thought of as representing the number of seconds in some
+!    time interval. A time interval can be mapped to a date under a given
+!    calendar definition by using it to represent the time that has passed
+!    since some base date. A number of interfaces are provided to operate
+!    on time_type variables and their associated calendars. Time intervals
+!    can be as large as n days where n is the largest number represented by
+!    the default integer type on a compiler. This is typically considerably
+!    greater than 10 million years (assuming 32 bit integer representation)
+!    which is likely to be adequate for most applications. The description
+!    of the interfaces is separated into two sections. The first deals with
+!    operations on time intervals while the second deals with operations
+!    that convert time intervals to dates for a given calendar.
+! </DESCRIPTION>
+
+! <DATA NAME="time_type" TYPE="derived type">
+!    Derived-type data variable used to store time and date quantities. It
+!    contains two PRIVATE variables: seconds and days.
+! </DATA>
+
 use fms_mod, only: error_mesg, FATAL, write_version_number, stdout
 
 implicit none
 private
-
-!====================================================================
-! The time_manager provides a single defined type, time_type, which is 
-! used to store time and date quantities. A time_type is a positive 
-! definite quantity that represents an interval of time. It can be most 
-! easily thought of as representing the number of seconds in some time 
-! interval. A time interval can be mapped to a date under a given calendar 
-! definition by using it to represent the time that has passed since some 
-! base date. A number of interfaces are provided to operate on time_type 
-! variables and their associated calendars. Time intervals can be as large 
-! as n days where n is the largest number represented by the default integer 
-! type on a compiler. This is typically considerably greater than 10 million 
-! years which is likely to be adequate for most applications. The 
-! description of the interfaces is separated into two sections. The first 
-! deals with operations on time intervals while the second deals with 
-! operations that convert time intervals to dates for a given calendar.
-!
-!====================================================================
 
 ! Module defines a single type
 public time_type
@@ -97,8 +119,8 @@ interface operator (//);  module procedure time_real_divide; end interface
 
 !======================================================================
 
-character(len=128) :: version='$Id: time_manager.f90,v 1.3 2002/07/16 22:57:09 fms Exp $'
-character(len=128) :: tagname='$Id: time_manager.f90,v 1.3 2002/07/16 22:57:09 fms Exp $'
+character(len=128) :: version='$Id: time_manager.f90,v 1.4 2003/04/09 21:19:10 fms Exp $'
+character(len=128) :: tagname='$Id: time_manager.f90,v 1.4 2003/04/09 21:19:10 fms Exp $'
 logical :: do_init = .true.
 
 !======================================================================
@@ -108,6 +130,29 @@ contains
 ! First define all operations on time intervals independent of calendar
 
 !=========================================================================
+! <FUNCTION NAME="set_time">
+
+!   <OVERVIEW>
+!     Given some number of seconds and days, returns the
+!     corresponding time_type.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Given some number of seconds and days, returns the
+!     corresponding time_type.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     set_time(seconds, days)
+!   </TEMPLATE>
+
+!   <IN NAME="seconds" UNITS="" TYPE="integer" DIM="(scalar)">
+!     A number of seconds (can be greater than 86400),  must be positive.
+!   </IN>
+!   <IN NAME="days" UNITS="" TYPE="integer" DIM="(scalar)">
+!     A number of days, must be positive.
+!   </IN>
+!   <OUT NAME="" UNITS="" TYPE="" DIM="" DEFAULT="">
+!     A time interval corresponding to this number of days and seconds.
+!   </OUT>
 
 function set_time(seconds, days)
 
@@ -135,8 +180,30 @@ if(seconds / (60*60*24)  >= huge(days_in) - days_in) &
 set_time%days = days_in + seconds / (60*60*24)
 
 end function set_time
+! </FUNCTION>
 
 !---------------------------------------------------------------------------
+! <SUBROUTINE NAME="get_time">
+
+!   <OVERVIEW>
+!     Given a time interval, returns the corresponding seconds and days.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Given a time interval, returns the corresponding seconds and days.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     get_time(time, seconds, days)
+!   </TEMPLATE>
+
+!   <IN NAME="time" TYPE="time_type">
+!     A time interval. 
+!   </IN>
+!   <OUT NAME="seconds" UNITS="" TYPE="integer" DIM="(scalar)">
+!     A number of seconds (&lt; 86400).
+!   </OUT>
+!   <OUT NAME="days" UNITS="" TYPE="integer" DIM="(scalar)">
+!     A number of days, must be positive.
+!   </OUT>
 
 subroutine get_time(time, seconds, days)
 
@@ -158,8 +225,36 @@ else
 endif
 
 end subroutine get_time
+! </SUBROUTINE>
 
 !-------------------------------------------------------------------------
+! <FUNCTION NAME="increment_time">
+
+!   <OVERVIEW>
+!      Given a time and an increment of days and seconds, returns
+!      a time that adds this increment to an input time.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Given a time and an increment of days and seconds, returns
+!      a time that adds this increment to an input time.
+!      Increments a time by seconds and days; increments cannot be negative.     
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     increment_time(time, seconds, days)
+!   </TEMPLATE>
+
+!   <IN NAME="time" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <IN NAME="seconds" UNITS="" TYPE="integer" DIM="(scalar)">
+!     Increment of seconds (can be greater than 86400);  must be positive.
+!   </IN>
+!   <IN NAME="days" UNITS="" TYPE="integer" DIM="(scalar)">
+!     Increment of days;  must be positive.
+!   </IN>
+!   <OUT NAME="" UNITS="" TYPE="" DIM="" DEFAULT="">
+!     A time that adds this increment to the input time.
+!   </OUT>
 
 function increment_time(time, seconds, days)
 
@@ -187,8 +282,35 @@ if(seconds >= huge(seconds) - time%seconds) &
 increment_time = set_time(time%seconds + seconds, time%days + days_in)
 
 end function increment_time
+! </FUNCTION>
 
 !--------------------------------------------------------------------------
+! <FUNCTION NAME="decrement_time">
+
+!   <OVERVIEW>
+!      Given a time and a decrement of days and seconds, returns
+!      a time that subtracts this decrement from an input time. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Decrements a time by seconds and days; decrements cannot be negative.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     Decrement_time(time, seconds, days)
+!   </TEMPLATE>
+
+!   <IN NAME="time" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <IN NAME="seconds" UNITS="" TYPE="integer" DIM="(scalar)">
+!     Decrement of seconds (can be greater than 86400);  must be positive.
+!   </IN>    
+!   <IN NAME="days" UNITS="" TYPE="integer" DIM="(scalar)">
+!     Decrement of days;  must be positive.
+!   </IN>
+!   <OUT NAME="" UNITS="" TYPE="" DIM="" DEFAULT="">
+!      A time that subtracts this decrement from an input time. If
+!      the result is negative, it is considered a fatal error.
+!   </OUT>
 
 function decrement_time(time, seconds, days)
 
@@ -224,8 +346,30 @@ decrement_time%seconds = cseconds
 decrement_time%days = cdays
 
 end function decrement_time
+! </FUNCTION>
 
 !--------------------------------------------------------------------------
+! <FUNCTION NAME="time_gt">
+
+!   <OVERVIEW>
+!      Returns true if time1 > time2.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Returns true if time1 > time2.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     time_gt(time1, time2)
+!   </TEMPLATE>
+
+!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <OUT NAME="" UNITS="" TYPE="logical" DIM="" DEFAULT="">
+!       Returns true if time1 > time2
+!   </OUT>
 
 function time_gt(time1, time2)
 
@@ -240,8 +384,30 @@ time_gt = (time1%days > time2%days)
 if(time1%days == time2%days) time_gt = (time1%seconds > time2%seconds)
 
 end function time_gt
+! </FUNCTION>
 
 !--------------------------------------------------------------------------
+! <FUNCTION NAME="time_ge">
+
+!   <OVERVIEW>
+!      Returns true if time1 >= time2.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Returns true if time1 >= time2.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     time_ge(time1, time2)
+!   </TEMPLATE>
+
+!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <OUT NAME="" UNITS="" TYPE="logical" DIM="" DEFAULT="">
+!       Returns true if time1 >= time2
+!   </OUT>
 
 function time_ge(time1, time2)
 
@@ -255,8 +421,30 @@ type(time_type), intent(in) :: time1, time2
 time_ge = (time_gt(time1, time2) .or. time_eq(time1, time2))
 
 end function time_ge
+! </FUNCTION>
 
 !--------------------------------------------------------------------------
+! <FUNCTION NAME="time_lt">
+
+!   <OVERVIEW>
+!      Returns true if time1 < time2.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Returns true if time1 < time2.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     time_lt(time1, time2)
+!   </TEMPLATE>
+
+!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <OUT NAME="" UNITS="" TYPE="logical" DIM="" DEFAULT="">
+!       Returns true if time1 < time2
+!   </OUT>
 
 function time_lt(time1, time2)
 
@@ -271,8 +459,30 @@ time_lt = (time1%days < time2%days)
 if(time1%days == time2%days) time_lt = (time1%seconds < time2%seconds)
 
 end function time_lt
+! </FUNCTION>
 
 !--------------------------------------------------------------------------
+! <FUNCTION NAME="time_le">
+
+!   <OVERVIEW>
+!      Returns true if time1 <= time2.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Returns true if time1 <= time2.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     time_le(time1, time2)
+!   </TEMPLATE>
+
+!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <OUT NAME="" UNITS="" TYPE="logical" DIM="" DEFAULT="">
+!       Returns true if time1 <= time2
+!   </OUT>
 
 function time_le(time1, time2)
 
@@ -286,8 +496,30 @@ type(time_type), intent(in) :: time1, time2
 time_le = (time_lt(time1, time2) .or. time_eq(time1, time2))
 
 end function time_le
+! </FUNCTION>
 
 !--------------------------------------------------------------------------
+! <FUNCTION NAME="time_eq">
+
+!   <OVERVIEW>
+!      Returns true if time1 == time2.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Returns true if time1 == time2.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     time_eq(time1, time2)
+!   </TEMPLATE>
+
+!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <OUT NAME="" UNITS="" TYPE="logical" DIM="" DEFAULT="">
+!       Returns true if time1 == time2
+!   </OUT>
 
 function time_eq(time1, time2)
 
@@ -301,8 +533,30 @@ type(time_type), intent(in) :: time1, time2
 time_eq = (time1%seconds == time2%seconds .and. time1%days == time2%days)
 
 end function time_eq
+! </FUNCTION>
 
 !--------------------------------------------------------------------------
+! <FUNCTION NAME="time_ne">
+
+!   <OVERVIEW>
+!      Returns true if time1 /= time2.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Returns true if time1 /= time2.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     time_ne(time1, time2)
+!   </TEMPLATE>
+
+!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <OUT NAME="" UNITS="" TYPE="logical" DIM="" DEFAULT="">
+!       Returns true if time1 /= time2
+!   </OUT>
 
 function time_ne(time1, time2)
 
@@ -316,8 +570,30 @@ type(time_type), intent(in) :: time1, time2
 time_ne = (.not. time_eq(time1, time2))
 
 end function time_ne
+! </FUNCTION>
 
 !-------------------------------------------------------------------------
+! <FUNCTION NAME="time_plus">
+
+!   <OVERVIEW>
+!       Returns sum of two time_types.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!       Returns sum of two time_types.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     time_plus(time1, time2)
+!   </TEMPLATE>
+
+!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <OUT NAME="" UNITS="" TYPE="time_type" DIM="" DEFAULT="">
+!       Returns sum of two time_types.
+!   </OUT>
 
 function time_plus(time1, time2)
 
@@ -331,8 +607,31 @@ type(time_type), intent(in) :: time1, time2
 time_plus = increment_time(time1, time2%seconds, time2%days)
 
 end function time_plus
+! </FUNCTION>
 
 !-------------------------------------------------------------------------
+! <FUNCTION NAME="time_minus">
+
+!   <OVERVIEW>
+!       Returns difference of two time_types.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!       Returns difference of two time_types. WARNING: a time type is positive 
+!       so by definition time1 - time2  is the same as time2 - time1.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     time_minus(time1, time2)
+!   </TEMPLATE>
+
+!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <OUT NAME="" UNITS="" TYPE="time_type" DIM="" DEFAULT="">
+!       Returns difference of two time_types.
+!   </OUT>
 
 function time_minus(time1, time2)
 
@@ -351,8 +650,30 @@ else
 endif
 
 end function time_minus
+! </FUNCTION>
 
 !--------------------------------------------------------------------------
+! <FUNCTION NAME="time_scalar_mult">
+
+!   <OVERVIEW>
+!       Returns time multiplied by integer factor n.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!       Returns time multiplied by integer factor n.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     time_scalar_mult(time, n)
+!   </TEMPLATE>
+
+!   <IN NAME="time" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <IN NAME="n" UNITS="" TYPE="integer" DIM="">
+!      A time interval.
+!   </IN>
+!   <OUT NAME="" UNITS="" TYPE="time_type" DIM="" DEFAULT="">
+!       Returns time multiplied by integer factor n.
+!   </OUT>
 
 function time_scalar_mult(time, n)
 
@@ -384,8 +705,26 @@ seconds = sec_prod - dble(days) * dble(24. * 60. * 60.)
 time_scalar_mult = set_time(seconds, time%days * n + days)
 
 end function time_scalar_mult
+! </FUNCTION>
 
 !-------------------------------------------------------------------------
+! <FUNCTION NAME="scalar_time_mult">
+
+!   <OVERVIEW>
+!       Returns time multiplied by integer factor n.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!       Returns time multiplied by integer factor n.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     scalar_time_mult(n, time)
+!   </TEMPLATE>
+
+!   <IN NAME="time" UNITS="" TYPE="time_type" DIM="">A time interval.</IN>
+!   <IN NAME="n" UNITS="" TYPE="integer" DIM=""> An integer. </IN>
+!   <OUT NAME="" UNITS="" TYPE="time_type" DIM="" DEFAULT="">
+!       Returns time multiplied by integer factor n.
+!   </OUT>
 
 function scalar_time_mult(n, time)
 
@@ -400,8 +739,30 @@ integer, intent(in) :: n
 scalar_time_mult = time_scalar_mult(time, n)
 
 end function scalar_time_mult
+! </FUNCTION>
 
 !-------------------------------------------------------------------------
+! <FUNCTION NAME="time_divide">
+
+!   <OVERVIEW>
+!       Returns the largest integer, n, for which time1 >= time2 * n.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!       Returns the largest integer, n, for which time1 >= time2 * n.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     time_divide(time1, time2)
+!   </TEMPLATE>
+
+!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <OUT NAME="" UNITS="" TYPE="integer" DIM="" DEFAULT="">
+!       Returns the largest integer, n, for which time1 >= time2 * n.
+!   </OUT>
 
 function time_divide(time1, time2)
 
@@ -425,8 +786,30 @@ if(time_divide * time2 > time1 .or. (time_divide + 1) * time2 <= time1) &
    call error_handler('time_divide quotient error :: notify developer')
 
 end function time_divide
+! </FUNCTION>
 
 !-------------------------------------------------------------------------
+! <FUNCTION NAME="time_real_divide">
+
+!   <OVERVIEW>
+!       Returns the double precision quotient of two times.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!       Returns the double precision quotient of two times.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     time_real_divide(time1, time2)
+!   </TEMPLATE>
+
+!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <OUT NAME="" UNITS="" TYPE="integer" DIM="double precision" DEFAULT="">
+!       Returns the double precision quotient of two times
+!   </OUT>
 
 function time_real_divide(time1, time2)
 
@@ -445,8 +828,30 @@ d2 = time2%days * dble(60. * 60. * 24.) + dble(time2%seconds)
 time_real_divide = d1 / d2
 
 end function time_real_divide
+! </FUNCTION>
 
 !-------------------------------------------------------------------------
+! <FUNCTION NAME="time_scalar_divide">
+
+!   <OVERVIEW>
+!       Returns the largest time, t, for which n * t <= time.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!       Returns the largest time, t, for which n * t <= time.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     time_scalar_divide(time, n)
+!   </TEMPLATE>
+
+!   <IN NAME="time" UNITS="" TYPE="time_type" DIM="">
+!      A time interval.
+!   </IN>
+!   <IN NAME="n" UNITS="" TYPE="integer" DIM="">
+!      An integer factor.
+!   </IN>
+!   <OUT NAME="" UNITS="" TYPE="integer" DIM="double precision" DEFAULT="">
+!       Returns the largest time, t, for which n * t <= time.
+!   </OUT>
 
 function time_scalar_divide(time, n)
 
@@ -476,8 +881,43 @@ if(prod1 > time .or. prod2 <= time) &
    call error_handler('time_scalar_divide quotient error :: notify developer')
 
 end function time_scalar_divide
+! </FUNCTION>
 
 !-------------------------------------------------------------------------
+! <FUNCTION NAME="interval_alarm">
+
+!   <OVERVIEW>
+!     Given a time, and a time interval, this function returns true
+!     if this is the closest time step to the alarm time. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      This is a specialized operation that is frequently performed in models.
+!      Given a time, and a time interval, this function is true if this is the
+!      closest time step to the alarm time. The actual computation is:
+! 
+!             if((alarm_time - time) &#60;&#61; (time_interval / 2))
+! 
+!      If the function is true, the alarm time is incremented by the
+!      alarm_interval; WARNING, this is a featured side effect. Otherwise, the
+!      function is false and there are no other effects. CAUTION: if the
+!      alarm_interval is smaller than the time_interval, the alarm may fail to
+!      return true ever again.  Watch
+!      for problems if the new alarm time is less than time + time_interval
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!      interval_alarm(time, time_interval, alarm, alarm_interval)
+!   </TEMPLATE>
+
+!   <IN NAME="time" TYPE="time_type"> Current time.  </IN>
+!   <IN NAME="time_interval" TYPE="time_type"> A time interval.  </IN>
+!   <IN NAME="alarm_interval" TYPE="time_type"> A time interval. </IN>
+!   <OUT NAME="interval_alarm" TYPE="logical">
+!     Returns either True or false.
+!   </OUT>
+!   <INOUT NAME="alarm" TYPE="time_type">
+!     An alarm time, which is incremented by the alarm_interval
+!                   if the function is true.
+!   </INOUT>
 
 function interval_alarm(time, time_interval, alarm, alarm_interval)
 
@@ -502,8 +942,37 @@ else
 end if
 
 end function interval_alarm
+! </FUNCTION>
 
 !--------------------------------------------------------------------------
+! <FUNCTION NAME="repeat_alarm">
+
+!   <OVERVIEW>
+!      Repeat_alarm supports an alarm that goes off with
+!      alarm_frequency and lasts for alarm_length. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Repeat_alarm supports an alarm that goes off with alarm_frequency and
+!      lasts for alarm_length.  If the nearest occurence of an alarm time
+!      is less than half an alarm_length from the input time, repeat_alarm
+!      is true.  For instance, if the alarm_frequency is 1 day, and the 
+!      alarm_length is 2 hours, then repeat_alarm is true from time 2300 on 
+!      day n to time 0100 on day n + 1 for all n.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!      repeat_alarm(time, alarm_frequency, alarm_length)
+!   </TEMPLATE>
+
+!   <IN NAME="time" TYPE="time_type"> Current time.  </IN>
+!   <IN NAME="alarm_frequency" TYPE="time_type">
+!     A time interval for alarm_frequency.
+!   </IN>
+!   <IN NAME="alarm_length" TYPE="time_type">
+!     A time interval for alarm_length.
+!   </IN>
+!   <OUT NAME="repeat_alarm" TYPE="logical">
+!     Returns either True or false.
+!   </OUT>
 
 function repeat_alarm(time, alarm_frequency, alarm_length)
 
@@ -529,12 +998,42 @@ else
 endif
 
 end function repeat_alarm
+! </FUNCTION>
 
 !--------------------------------------------------------------------------
 
 !=========================================================================
 ! CALENDAR OPERATIONS BEGIN HERE
 !=========================================================================
+
+! <SUBROUTINE NAME="set_calendar_type">
+
+!   <OVERVIEW>
+!     Sets the default calendar type for mapping time intervals to dates.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     A constant number for setting the calendar type.
+!   </DESCRIPTION>
+!   <TEMPLATE> set_calendar_type(type) </TEMPLATE>
+
+!   <IN NAME="type" TYPE="integer" DIM="" DEFAULT="">
+!     A constant number for setting the calendar type.
+!   </IN>
+!   <OUT NAME="calendar_type" TYPE="integer">
+!     A constant number for default calendar type.
+!   </OUT>
+
+!   <NOTE>
+!     At present, four integer constants are defined for setting
+!     the calendar type: THIRTY_DAY_MONTHS, JULIAN, NOLEAP, and
+!     GREGORIAN. However, the GREGORIAN calendar is not completely
+!     implemented. Selection of this type will result in illegal
+!     type error.  The udunits library only supports
+!     the JULIAN/GREGORIAN calendar types.  For more details on the
+!     calendar used by udunits, see the "HANDLING TIME" section of the
+!     fortran man page linked from the udunits home page,
+!     <LINK SRC="http://www.unidata.ucar.edu/packages/udunits">http://www.unidata.ucar.edu/packages/udunits</LINK>.
+!   </NOTE>
 
 subroutine set_calendar_type(type)
 
@@ -552,8 +1051,22 @@ if(type == GREGORIAN) &
    call error_handler('set_calendar_type :: GREGORIAN CALENDAR not implemented')
 
 end subroutine set_calendar_type
+! </SUBROUTINE>
 
 !------------------------------------------------------------------------
+! <FUNCTION NAME="get_calendar_type">
+
+!   <OVERVIEW>
+!      Returns the value of the default calendar type for mapping
+!      from time to date.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     There are no arguments in this function. It returns the value of
+!     the default calendar type for mapping from time to date.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     get_calendar_type()
+!   </TEMPLATE>
 
 function get_calendar_type()
 
@@ -566,10 +1079,36 @@ integer :: get_calendar_type
 get_calendar_type = calendar_type
 
 end function get_calendar_type
+! </FUNCTION>
 
 !========================================================================
 ! START OF get_date BLOCK
+! <SUBROUTINE NAME="get_date">
 
+!   <OVERVIEW>
+!      Given a time_interval, returns the corresponding date under
+!      the selected calendar. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Given a time_interval, returns the corresponding date under
+!      the selected calendar.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     get_date(time, year, month, day, hour, minute, second)
+!   </TEMPLATE>
+!   <IN NAME="time" TYPE="time_type"> A time interval.</IN>
+!   <OUT NAME="day" TYPE="integer"></OUT>
+!   <OUT NAME="month" TYPE="integer"></OUT>
+!   <OUT NAME="year" TYPE="integer"></OUT>
+!   <OUT NAME="second" TYPE="integer"></OUT>
+!   <OUT NAME="minute" TYPE="integer"></OUT>
+!   <OUT NAME="hour" TYPE="integer"></OUT>
+!   <NOTE>
+!     For all but the thirty_day_months calendar, increments to months
+!     and years must be made separately from other units because of the
+!     non-associative nature of the addition. All the input increments
+!     must be positive.
+!   </NOTE>
 subroutine get_date(time, year, month, day, hour, minute, second)
 
 ! Given a time, computes the corresponding date given the selected calendar
@@ -592,7 +1131,7 @@ case default
    call error_handler('Invalid calendar type in get_date')
 end select
 end subroutine get_date
-
+! </SUBROUTINE>
 !------------------------------------------------------------------------
 
 subroutine get_date_gregorian(time, year, month, day, hour, minute, second)
@@ -797,6 +1336,30 @@ end subroutine get_date_no_leap
 ! END OF get_date BLOCK
 !========================================================================
 ! START OF set_date BLOCK
+! <FUNCTION NAME="set_date">
+
+!   <OVERVIEW>
+!      Given an input date in year, month, days, etc., creates a
+!      time_type that represents this time interval from the
+!      internally defined base date.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Given a date, computes the corresponding time given the selected
+!      date time mapping algorithm. Note that it is possible to specify
+!      any number of illegal dates; these should be checked for and generate
+!      errors as appropriate.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!      set_date(year, month, day, hours, minutes, seconds)
+!   </TEMPLATE>
+!   <IN NAME="time" TYPE="time_type"> A time interval.</IN>
+!   <IN NAME="day" TYPE="integer"></IN>
+!   <IN NAME="month" TYPE="integer"></IN>
+!   <IN NAME="year" TYPE="integer"></IN>
+!   <IN NAME="second" TYPE="integer"></IN>
+!   <IN NAME="minute" TYPE="integer"></IN>
+!   <IN NAME="hour" TYPE="integer"></IN>
+!   <OUT NAME="set_date" TYPE="time_type"> A time interval.</OUT>
 
 function set_date(year, month, day, hours, minutes, seconds)
 
@@ -830,6 +1393,7 @@ case default
    call error_handler('Invalid calendar type in set_date')
 end select
 end function set_date
+! </FUNCTION>
 
 !------------------------------------------------------------------------
 
@@ -992,6 +1556,32 @@ end function set_date_no_leap
 ! END OF set_date BLOCK
 !=========================================================================
 ! START OF increment_date BLOCK
+! <FUNCTION NAME="increment_date">
+
+!   <OVERVIEW>
+!      Increments the date represented by a time interval and the
+!      default calendar type by a number of seconds, etc. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Given a time and some date increment, computes a new time.  Depending
+!      on the mapping algorithm from date to time, it may be possible to specify
+!      undefined increments (i.e. if one increments by 68 days and 3 months in
+!      a Julian calendar, it matters which order these operations are done and
+!      we don't want to deal with stuff like that, make it an error).
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!      increment_date(time, years, months, days, hours, minutes, seconds)
+!   </TEMPLATE>
+!   <IN NAME="time" TYPE="time_type"> A time interval.</IN>
+!   <IN NAME="day" TYPE="integer">An increment of days.</IN>
+!   <IN NAME="month" TYPE="integer">An increment of months.</IN>
+!   <IN NAME="year" TYPE="integer">An increment of years.</IN>
+!   <IN NAME="second" TYPE="integer">An increment of seconds.</IN>
+!   <IN NAME="minute" TYPE="integer">An increment of minutes.</IN>
+!   <IN NAME="hour" TYPE="integer">An increment of hours.</IN>
+!   <OUT NAME="increment_date" TYPE="time_type"> A new time based on the input 
+!         time interval and the default calendar type.
+!   </OUT>
 
 function increment_date(time, years, months, days, hours, minutes, seconds)
 
@@ -1029,6 +1619,7 @@ case default
    call error_handler('Invalid calendar type in increment_date')
 end select
 end function increment_date
+! </FUNCTION>
 
 !-------------------------------------------------------------------------
 
@@ -1225,6 +1816,39 @@ end function increment_no_leap
 ! END OF increment_date BLOCK
 !=========================================================================
 ! START OF decrement_date BLOCK
+! <FUNCTION NAME="decrement_date">
+
+!   <OVERVIEW>
+!      Decrements the date represented by a time interval and the
+!      default calendar type by a number of seconds, etc. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Given a time and some date decrement, computes a new time.  Depending
+!      on the mapping algorithm from date to time, it may be possible to specify
+!      undefined decrements (i.e. if one decrements by 68 days and 3 months in
+!      a Julian calendar, it matters which order these operations are done and
+!      we don't want to deal with stuff like that, make it an error).
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!      decrement_date(time, years, months, days, hours, minutes, seconds)
+!   </TEMPLATE>
+!   <IN NAME="time" TYPE="time_type"> A time interval.</IN>
+!   <IN NAME="day" TYPE="integer">A decrement of days.</IN>
+!   <IN NAME="month" TYPE="integer">A deincrement of months.</IN>
+!   <IN NAME="year" TYPE="integer">A deincrement of years.</IN>
+!   <IN NAME="second" TYPE="integer">A deincrement of seconds.</IN>
+!   <IN NAME="minute" TYPE="integer">A deincrement of minutes.</IN>
+!   <IN NAME="hour" TYPE="integer">A deincrement of hours.</IN>
+!   <OUT NAME="decrement_date" TYPE="time_type"> A new time based on the input 
+!         time interval and the default calendar type.
+!   </OUT>
+!   <NOTE>
+!     For all but the thirty_day_months calendar, decrements to months
+!     and years must be made separately from other units because of the
+!     non-associative nature of addition. All the input decrements must
+!     be positive. If the result is a negative time (i.e. date before the
+!     base date) it is considered a fatal error.
+!   </NOTE>
 
 function decrement_date(time, years, months, days, hours, minutes, seconds)
 
@@ -1263,6 +1887,7 @@ case default
 end select
 
 end function decrement_date
+! </FUNCTION>
 
 !-------------------------------------------------------------------------
 
@@ -1467,6 +2092,23 @@ end function decrement_no_leap
 ! END OF decrement_date BLOCK
 !=========================================================================
 ! START days_in_month BLOCK
+! <FUNCTION NAME="days_in_month">
+
+!   <OVERVIEW>
+!       Given a time interval, gives the number of days in the
+!       month corresponding to the default calendar.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!       Given a time, computes the corresponding date given the selected
+!       date time mapping algorithm.
+!   </DESCRIPTION>
+!   <TEMPLATE> days_in_month(time) </TEMPLATE>
+
+!   <IN NAME="time" UNITS="" TYPE="time_type" DIM="">A time interval.</IN>
+!   <OUT NAME="days_in_month" UNITS="" TYPE="integer" DIM="" DEFAULT="">
+!       The number of days in the month given the selected time
+!       mapping algorithm.
+!   </OUT>
 
 function days_in_month(time)
 
@@ -1491,6 +2133,7 @@ case default
    call error_handler('Invalid calendar type in days_in_month')
 end select
 end function days_in_month
+! </FUNCTION>
 
 !--------------------------------------------------------------------------
 
@@ -1559,6 +2202,26 @@ end function days_in_month_no_leap
 ! END OF days_in_month BLOCK
 !==========================================================================
 ! START OF leap_year BLOCK
+! <FUNCTION NAME="leap_year">
+
+!   <OVERVIEW>
+!      Returns true if the year corresponding to the date for the
+!      default calendar is a leap year. Returns false for
+!      THIRTY_DAY_MONTHS and NOLEAP.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Is this date in a leap year for default calendar? Returns true if the 
+!      year corresponding to the date for the default calendar is a leap year. 
+!      Returns false for THIRTY_DAY_MONTHS and NOLEAP.
+!   </DESCRIPTION>
+!   <TEMPLATE> leap_year(time) </TEMPLATE>
+
+!   <IN NAME="time" UNITS="" TYPE="time_type" DIM="">A time interval.</IN>
+!   <OUT NAME="leap_year" UNITS="" TYPE="calendar_type" DIM="" DEFAULT="">
+!       True if the year corresponding to the date for the default
+!       calendar is a leap year. False for THIRTY_DAY_MONTHS and
+!       NOLEAP and otherwise.
+!   </OUT>
 
 function leap_year(time)
 
@@ -1582,6 +2245,7 @@ case default
    call error_handler('Invalid calendar type in leap_year')
 end select
 end function leap_year
+! </FUNCTION>
 
 !--------------------------------------------------------------------------
 
@@ -1649,8 +2313,16 @@ end function leap_year_no_leap
 !END OF leap_year BLOCK
 !==========================================================================
 ! START OF length_of_year BLOCK
+! <FUNCTION NAME="length_of_year">
 
-!--------------------------------------------------------------------------
+!   <OVERVIEW>
+!      Returns the mean length of the year in the default calendar setting. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      There are no arguments in this function. It returns the mean
+!      length of the year in the default calendar setting.
+!   </DESCRIPTION>
+!   <TEMPLATE> length_of_year() </TEMPLATE>
 
 function length_of_year()
 
@@ -1673,6 +2345,7 @@ case default
    call error_handler('Invalid calendar type in length_of_year')
 end select
 end function length_of_year
+! </FUNCTION>
 
 !--------------------------------------------------------------------------
 
@@ -1730,7 +2403,22 @@ end function length_of_year_no_leap
 !==========================================================================
 
 ! START OF days_in_year BLOCK
-!--------------------------------------------------------------------------
+! <FUNCTION NAME="days_in_year">
+
+!   <OVERVIEW>
+!      Returns the number of days in the calendar year corresponding to
+!      the date represented by time for the default calendar.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Returns the number of days in the calendar year corresponding to
+!      the date represented by time for the default calendar.
+!   </DESCRIPTION>
+!   <TEMPLATE> days_in_year() </TEMPLATE>
+!   <IN NAME="time" TYPE="time_type">A time interval.</IN>
+!   <OUT>
+!      The number of days in this year for the default calendar type.
+!   </OUT>
+
 
 function days_in_year(time)
 
@@ -1754,6 +2442,7 @@ case default
    call error_handler('Invalid calendar type in days_in_year')
 end select
 end function days_in_year
+! </FUNCTION>
 
 !--------------------------------------------------------------------------
 
@@ -1817,6 +2506,23 @@ end function days_in_year_no_leap
 ! END OF days_in_year BLOCK
 
 !==========================================================================
+! <FUNCTION NAME="month_name">
+
+!   <OVERVIEW>
+!      Returns a character string containing the name of the
+!      month corresponding to month number n. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Returns a character string containing the name of the
+!      month corresponding to month number n. Definition is the
+!      same for all calendar types. 
+!   </DESCRIPTION>
+!   <TEMPLATE> month_name(n) </TEMPLATE>
+!   <IN NAME="n" TYPE="integer">Month number.</IN>
+!   <OUT NAME="month_name" TYPE="character">
+!      The character string associated with a month. For now all
+!      calendars have 12 months and will return standard names.
+!   </OUT>
 
 function month_name(n)
 
@@ -1834,6 +2540,7 @@ if(n < 1 .or. n > 12) call error_handler('Illegal month index')
 month_name = months(n)
 
 end function month_name
+! </FUNCTION>
 
 !==========================================================================
 
@@ -1852,6 +2559,16 @@ character (*), intent(in) :: s
 end subroutine error_handler
 
 !------------------------------------------------------------------------
+! <SUBROUTINE NAME="time_manager_init">
+
+!   <OVERVIEW>
+!      Write the version information to the log file.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Initialization routine. This routine does not have to be called, all 
+!      it does is write the version information to the log file.
+!   </DESCRIPTION>
+!   <TEMPLATE>time_manager_init()</TEMPLATE>
 
 subroutine time_manager_init ( )
 
@@ -1865,9 +2582,26 @@ subroutine time_manager_init ( )
   do_init = .false.
 
 end subroutine time_manager_init
+! </SUBROUTINE>
 
 !------------------------------------------------------------------------
+! <SUBROUTINE NAME="print_time">
 
+!   <OVERVIEW>
+!      Prints the given time_type argument as a time (using days and seconds).
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Prints the given time_type argument either as a time (using days and
+!      seconds). NOTE: there is no check for PE number.
+!   </DESCRIPTION>
+!   <TEMPLATE>print_time (time,str,unit)</TEMPLATE>
+!   <IN NAME="time" TYPE="time_type"> Time that will be printed. </IN>
+!   <IN NAME="str" TYPE="character (len=*)" DEFAULT="TIME: or DATE:"> 
+!      Character string that precedes the printed time or date.
+!   </IN>
+!   <IN NAME="unit" TYPE="integer">
+!      Unit number for printed output. The default unit is stdout.
+!   </IN>
 subroutine print_time (time,str,unit)
 type(time_type)  , intent(in) :: time
 character (len=*), intent(in), optional :: str
@@ -1897,8 +2631,27 @@ character(len=13) :: fmt
   endif
 
 end subroutine print_time
+! </SUBROUTINE>
 
 !------------------------------------------------------------------------
+! <SUBROUTINE NAME="print_date">
+
+!   <OVERVIEW>
+!      prints the time to standard output (or optional unit) as a date.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      Prints the given time_type argument as a date (using year,month,day,
+!      hour,minutes and seconds). NOTE: there is no check for PE number.
+!   </DESCRIPTION>
+!   <TEMPLATE> print_date (time,str,unit)
+!   </TEMPLATE>
+!   <IN NAME="time" TYPE="time_type"> Time that will be printed. </IN>
+!   <IN NAME="str" TYPE="character (len=*)" DEFAULT="TIME: or DATE:"> 
+!      Character string that precedes the printed time or date.
+!   </IN>
+!   <IN NAME="unit" TYPE="integer">
+!      Unit number for printed output. The default unit is stdout.
+!   </IN>
 
 subroutine print_date (time,str,unit)
 type(time_type)  , intent(in) :: time
@@ -1923,7 +2676,123 @@ character(len=9) :: mon
 10 format (a,i4,1x,a3,4(a1,i2.2))
 
 end subroutine print_date
+! </SUBROUTINE>
 
 !------------------------------------------------------------------------
 
 end module time_manager_mod
+
+! <INFO>
+
+!   <TESTPROGRAM NAME="time_main2">  
+!    <PRE>
+!        use time_manager_mod
+!        implicit none
+!        type(time_type) :: dt, init_date, astro_base_date, time, final_date
+!        type(time_type) :: next_rad_time, mid_date
+!        type(time_type) :: repeat_alarm_freq, repeat_alarm_length
+!        integer :: num_steps, i, days, months, years, seconds, minutes, hours
+!        integer :: months2, length
+!        real :: astro_days
+!   
+!   !Set calendar type
+!   !    call set_calendar_type(THIRTY_DAY_MONTHS)
+!        call set_calendar_type(JULIAN)
+!   !    call set_calendar_type(NOLEAP)
+!   
+!   ! Set timestep
+!        dt = set_time(1100, 0)
+!   
+!   ! Set initial date
+!        init_date = set_date(1992, 1, 1)
+!   
+!   ! Set date for astronomy delta calculation
+!        astro_base_date = set_date(1970, 1, 1, 12, 0, 0)
+!   
+!   ! Copy initial time to model current time
+!        time = init_date
+!   
+!   ! Determine how many steps to do to run one year
+!        final_date = increment_date(init_date, years = 1)
+!        num_steps = (final_date - init_date) / dt
+!        write(*, *) 'Number of steps is' , num_steps
+!   
+!   ! Want to compute radiation at initial step, then every two hours
+!        next_rad_time = time + set_time(7200, 0)
+!   
+!   ! Test repeat alarm
+!        repeat_alarm_freq = set_time(0, 1)
+!        repeat_alarm_length = set_time(7200, 0)
+!   
+!   ! Loop through a year
+!        do i = 1, num_steps
+!   
+!   ! Increment time
+!        time = time + dt
+!   
+!   ! Test repeat alarm
+!        if(repeat_alarm(time, repeat_alarm_freq, repeat_alarm_length)) &
+!        write(*, *) 'REPEAT ALARM IS TRUE'
+!   
+!   ! Should radiation be computed? Three possible tests.
+!   ! First test assumes exact interval; just ask if times are equal
+!   !     if(time == next_rad_time) then
+!   ! Second test computes rad on last time step that is <= radiation time
+!   !     if((next_rad_time - time) < dt .and. time < next_rad) then
+!   ! Third test computes rad on time step closest to radiation time
+!         if(interval_alarm(time, dt, next_rad_time, set_time(7200, 0))) then
+!           call get_date(time, years, months, days, hours, minutes, seconds)
+!           write(*, *) days, month_name(months), years, hours, minutes, seconds
+!   
+!   ! Need to compute real number of days between current time and astro_base
+!           call get_time(time - astro_base_date, seconds, days)
+!           astro_days = days + seconds / 86400.
+!   !       write(*, *) 'astro offset ', astro_days
+!        end if
+!   
+!   ! Can compute daily, monthly, yearly, hourly, etc. diagnostics as for rad
+!   
+!   ! Example: do diagnostics on last time step of this month
+!        call get_date(time + dt, years, months2, days, hours, minutes, seconds)
+!        call get_date(time, years, months, days, hours, minutes, seconds)
+!        if(months /= months2) then
+!           write(*, *) 'last timestep of month'
+!           write(*, *) days, months, years, hours, minutes, seconds
+!        endif
+!   
+!   ! Example: mid-month diagnostics; inefficient to make things clear
+!        length = days_in_month(time)
+!        call get_date(time, years, months, days, hours, minutes, seconds)
+!        mid_date = set_date(years, months, 1) + set_time(0, length) / 2
+!   
+!        if(time < mid_date .and. (mid_date - time) < dt) then
+!           write(*, *) 'mid-month time'
+!           write(*, *) days, months, years, hours, minutes, seconds
+!        endif
+!   
+!        end do
+!   
+!    </PRE>
+!   end program time_main2
+
+!   </TESTPROGRAM>
+!   <NOTE>
+!     The Gregorian calendar type is not completely implemented, and currently
+!     no effort is put on it since it doesn't differ from Julian in use between
+!     1901 and 2099.
+!   </NOTE>
+!   <NOTE>
+!     The <a name="base date">base date</a> is implicitly defined so users don't 
+!     need to be concerned with it. For the curious, the base date is defined as 
+!     0 seconds, 0 minutes, 0 hours, day 1, month 1, year 1 for the Julian and 
+!     thirty_day_months calendars, and 1 January, 1900, 0 seconds, 0 minutes, 
+!     0 hour for the Gregorian calendar.
+!   </NOTE>
+!   <NOTE>
+!     Please note that a time is a positive definite quantity.
+!   </NOTE>
+!   <NOTE>
+!     See the <LINK SRC="TEST PROGRAM">Test Program </LINK> for a simple program 
+!     that shows some of the capabilities of the time manager.
+!   </NOTE>
+! </INFO>

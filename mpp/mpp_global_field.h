@@ -128,9 +128,12 @@
           nd = size(domain%list)
           do n = 1,nd-1
              lpos = mod(domain%pos+nd-n,nd)
+             call mpp_send( clocal, size(clocal), domain%list(lpos)%pe )
+          end do
+          do n = 1,nd-1
              rpos = mod(domain%pos   +n,nd)
              nwords = domain%list(rpos)%x%compute%size * domain%list(rpos)%y%compute%size * size(local,3)
-             call mpp_transmit( clocal, size(clocal), domain%list(lpos)%pe, cremote, nwords, domain%list(rpos)%pe )
+             call mpp_recv( cremote, nwords, domain%list(rpos)%pe )
              m = 0
              do k = 1,size(global,3)
                 do j = domain%list(rpos)%y%compute%begin,domain%list(rpos)%y%compute%end

@@ -113,8 +113,8 @@ private
 !   Ice model.
 ! </DATA>
 
-character(len=128) :: version = '$Id: field_manager.F90,v 1.2 2002/07/16 22:55:20 fms Exp $'
-character(len=128) :: tagname = '$Name: havana $'
+character(len=128) :: version = '$Id: field_manager.F90,v 1.3 2003/04/09 21:16:32 fms Exp $'
+character(len=128) :: tagname = '$Name: inchon $'
 
 integer, private :: num_fields = 0
 integer, parameter, public :: NUM_MODELS = 5
@@ -327,18 +327,40 @@ do while (.TRUE.)
                icount = icount + 1
             endif
          enddo     
-         if (icount == 6 ) then
-         read(record,*,end=99,err=99) text_method
-            fields(num_fields)%methods(m)%method_type = lowercase(trim(text_method%method_type))
-            fields(num_fields)%methods(m)%method_name = lowercase(trim(text_method%method_name))
-            fields(num_fields)%methods(m)%method_control = lowercase(trim(text_method%method_control))
-         else
+!     <ERROR MSG="Too many fields in tracer entry." STATUS="FATAL">
+!       There are more that 3 fields in the tracer entry. This is probably due
+!       to separating the parameters entry into multiple strings. 
+!       The entry should look like <BR/>       
+!       "Type","Name","Control1=XXX,Control2=YYY" <BR/>
+!        and not like<BR/>
+!       "Type","Name","Control1=XXX","Control2=YYY"
+!     </ERROR>
+      if (icount > 6 ) call mpp_error(FATAL,'field_manager_init :: Too many fields in tracer entry.'//trim(record))
+
+         select case (icount)
+           case (6)
+             read(record,*,end=99,err=99) text_method
+             fields(num_fields)%methods(m)%method_type = lowercase(trim(text_method%method_type))
+             fields(num_fields)%methods(m)%method_name = lowercase(trim(text_method%method_name))
+             fields(num_fields)%methods(m)%method_control = lowercase(trim(text_method%method_control))
+           case(4)
 ! If there is no control string then the last string can be omitted and there are only 4 '"' in the record.
-            read(record,*,end=99,err=99) text_method_short
-            fields(num_fields)%methods(m)%method_type = lowercase(trim(text_method_short%method_type))
-            fields(num_fields)%methods(m)%method_name = lowercase(trim(text_method_short%method_name))
-            fields(num_fields)%methods(m)%method_control = " "
-         endif 
+             read(record,*,end=99,err=99) text_method_short
+             fields(num_fields)%methods(m)%method_type = lowercase(trim(text_method_short%method_type))
+             fields(num_fields)%methods(m)%method_name = lowercase(trim(text_method_short%method_name))
+             fields(num_fields)%methods(m)%method_control = " "
+           case(2)
+! If there is only the method_type string then the last 2 strings need to be blank and there are only 2 '"' in the record.
+             read(record,*,end=99,err=99) text_method_short
+             fields(num_fields)%methods(m)%method_type = lowercase(trim(text_method_short%method_type))
+             fields(num_fields)%methods(m)%method_name = " "
+             fields(num_fields)%methods(m)%method_control = " "
+           case default
+!     <ERROR MSG="Unterminated field in tracer entry." STATUS="FATAL">
+!       There is an unterminated or unquoted string in the field table entry.
+             call mpp_error(FATAL,'field_manager_init :: Unterminated field in tracer entry.'//trim(record))
+         end select    
+             
          fields(num_fields)%num_methods = fields(num_fields)%num_methods + 1
 !     <ERROR MSG="Maximum number of methods for field exceeded" STATUS="FATAL">
 !       Maximum number of methods allowed for entries in the field table has been exceeded.

@@ -1,332 +1,428 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-  <title>module fpe_mod: f90 interface for floating-point exceptions</title>
-  <link rel="stylesheet" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" type="text/css">
-  <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP">
+<META http-equiv="Content-Type" content="text/html; charset=EUC-JP">
+<title>Module fpe_mod</title>
+<link type="text/css" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" rel="stylesheet">
+<STYLE TYPE="text/css">
+          .fixed {
+            font-size:medium;
+            font-family:monospace;
+            border-style:none;
+            border-width:0.1em;
+            padding:0.1em;
+            color:#663366;
+          }
+        </STYLE>
 </head>
 <body>
-
-<div class="header"> <font size=1>
-<a href="#PUBLIC INTERFACE">PUBLIC INTERFACE</a> ~
-<a href="#PUBLIC DATA">PUBLIC DATA</a> ~
-<a href="#PUBLIC ROUTINES">PUBLIC ROUTINES</a> ~
-<a href="#NAMELIST">NAMELIST</a> ~
-<a href="#ACQUIRING SOURCE">ACQUIRING SOURCE</a> ~
-<a href="#COMPILING AND LINKING SOURCE">COMPILING AND LINKING SOURCE</a> ~
-<a href="#PORTABILITY">PORTABILITY</a> ~
-<a href="#NOTES">NOTES</a>
-</font></div><hr>
-
-
+<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC INTERFACE">PUBLIC INTERFACE </a>~
+          <a href="#PUBLIC DATA">PUBLIC DATA </a>~
+          <a href="#PUBLIC ROUTINES">PUBLIC ROUTINES </a>~
+          <a href="#NAMELIST">NAMELIST </a>~
+          <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
+          <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
+          <a href="#REFERENCES">REFERENCES </a>~ 
+          <a href="#NOTES">NOTES</a></font>
+<hr>
 <h2>module fpe_mod</h2>
 <a name="HEADER"></a>
 <!-- BEGIN HEADER -->
 <div>
-     <b>Contact:</b> &nbsp;  V. Balaji <br>
-     <b>Reviewers:</b> &nbsp;          <br>
-     <b>Change History:&nbsp; </b><a HREF="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/fpe/fpe.F90">WebCVS Log</a> <br>
-     <b>Last Modified:</b>&nbsp; $Date: 2002/02/22 19:14:22 $
-</div><br>
-
+<b>Contact:</b>&nbsp;<a href="mailto:vb@gfdl.noaa.gov">   V. Balaji </a>
+<br>
+<b>Reviewers:</b>&nbsp;<br>
+<b>Change History: </b>&nbsp;<a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/">WebCVS Log</a>
+<br>
+<b>Last Modified:</b>&nbsp;2002/03/22 00:20:29<br>
+<br>
+</div>
 <!-- END HEADER -->
-<!-------------------------------------------------------------------->
 <a name="OVERVIEW"></a>
 <hr>
 <h4>OVERVIEW</h4>
 <!-- BEGIN OVERVIEW -->
-<div>
-The module <tt>fpe</tt> provides a set of simple calls for controlling
-code behaviour under floating-point exceptions.
-</div>
+<p class="text">   The module &lt;TT&gt;fpe&lt;/TT&gt; provides a set of simple calls for controlling
+   code behaviour under floating-point exceptions. </p>
 <!-- END OVERVIEW -->
-<!-------------------------------------------------------------------->
 <a name="DESCRIPTION"></a>
 <!-- BEGIN DESCRIPTION -->
-<div>
-<p>Numbers on digital computers are represented as a series of bits,
-and thus intrinsically only deal with integers. A <i>number model</i>
-for "real" numbers is generally used to provide a representation of
-non-integers. Since only a finite number of bits is used, this
-representation does not actually map onto the real number set, but a
-finite set of those numbers admitting a terminating representation
-(i.e excluding irrational numbers and non-terminating fractions). This
-number model is now almost universally based on <i>floating-point (FP)
-numbers</i>, using a mantissa and an exponent. The IEEE has
-specified a standard FP number model, which is used on most, but not
-all, modern computers.
-When FP computations produce numbers that cannot be represented in the
-number model, an <i>exception</i> is said to have occurred. Exceptions
-fall into several classes, of which the most common include:</p>
-
-<dl COMPACT>
-<dt><b>Inexact result</b>: <dd>FP result has no exact representation
-and must be rounded. This occurs extremely frequently: in fact the
-probability that an FP calculation has an exact result is in theory
-vanishingly small.
-<dt><b>Overflow</b>: <dd>Absolute value of FP result is larger than
-the largest FP number representable. The F90 intrinsic <tt>HUGE()</tt>
-returns this value.
-<dt><b>Underflow</b>: <dd>Absolute value of FP result is smaller than
-the smallest FP number representable. The F90 intrinsic
-<tt>TINY()</tt> returns this value.
-<dt><b>Divide by zero</b>: <dd>FP division has a 0 in the denominator.
-<dt><b>Invalid operand</b>: <dd>FP operation is attempting to treat a
-series of bits that is not a valid FP number. Invalid FP numbers are
-generally called <i>NaN</i>s (not-a-number). This exception class may
-also cover other invalid operands, such as a negative argument to a FP
-square-root operation.
-</dl>
-
-<p>Computing units maintain a word in memory in order to track the
-occurrence of exceptions. Each bit in this word signals the occurrence
-of a different class of exceptions, such as those listed above. This
-word must be tested to know if an exception has occurred. The result
-of this test can be used to control subsequent program behaviour.
-Principally, we might wish to interrupt the program if certain classes
-of exceptions occur, though other more refined consequences may also
-be imagined.</p>
-
-<p>There is a computational burden associated with testing for
-exceptions, and also one with continuing the execution of a program
-after the computation has gone away. This module provides a standard
-interface to a simple range of behaviour under exceptions. This
-includes enabling and disabling interrupts for certain classes of
-exceptions, and a trap function that merely signals to the user that
-an exception has occurred.</p>
-</div>
+<div>   Numbers on digital computers are represented as a series of bits,
+   and thus intrinsically only deal with integers. A &lt;I&gt;number model&lt;/I&gt;
+   for "real" numbers is generally used to provide a representation of
+   non-integers. Since only a finite number of bits is used, this
+   representation does not actually map onto the real number set, but a
+   finite set of those numbers admitting a terminating representation
+   (i.e excluding irrational numbers and non-terminating fractions). This
+   number model is now almost universally based on &lt;I&gt;floating-point (FP)
+   numbers&lt;/I&gt;, using a mantissa and an exponent. The IEEE has
+   specified a standard FP number model, which is used on most, but not
+   all, modern computers.
+   When FP computations produce numbers that cannot be represented in the
+   number model, an &lt;I&gt;exception&lt;/I&gt; is said to have occurred. Exceptions
+   fall into several classes, of which the most common include:
+   <br>
+<br>
+   &lt;B&gt;Inexact result&lt;/B&gt;: FP result has no exact representation
+   and must be rounded. This occurs extremely frequently: in fact the
+   probability that an FP calculation has an exact result is in theory
+   vanishingly small.<br>   &lt;B&gt;Overflow&lt;/B&gt;: Absolute value of FP result is larger than
+   the largest FP number representable. The F90 intrinsic &lt;TT&gt;HUGE()&lt;/TT&gt;
+   returns this value.<br>   &lt;B&gt;Underflow&lt;/B&gt;: Absolute value of FP result is smaller than
+   the smallest FP number representable. The F90 intrinsic
+   &lt;TT&gt;TINY()&lt;/TT&gt; returns this value.<br>   &lt;B&gt;Divide by zero&lt;/B&gt;: FP division has a 0 in the denominator.<br>   &lt;B&gt;Invalid operand&lt;/B&gt;: FP operation is attempting to treat a
+   series of bits that is not a valid FP number. Invalid FP numbers are
+   generally called &lt;I&gt;NaN&lt;/I&gt;s (not-a-number). This exception class may
+   also cover other invalid operands, such as a negative argument to a FP
+   square-root operation.
+   <br>
+<br>
+   Computing units maintain a word in memory in order to track the
+   occurrence of exceptions. Each bit in this word signals the occurrence
+   of a different class of exceptions, such as those listed above. This
+   word must be tested to know if an exception has occurred. The result
+   of this test can be used to control subsequent program behaviour.
+   Principally, we might wish to interrupt the program if certain classes
+   of exceptions occur, though other more refined consequences may also
+   be imagined.
+   <br>
+<br>
+   There is a computational burden associated with testing for
+   exceptions, and also one with continuing the execution of a program
+   after the computation has gone away. This module provides a standard
+   interface to a simple range of behaviour under exceptions. This
+   includes enabling and disabling interrupts for certain classes of
+   exceptions, and a trap function that merely signals to the user that
+   an exception has occurred. </div>
+<br>
 <!-- END DESCRIPTION -->
-<!-------------------------------------------------------------------->
 <a name="OTHER MODULES USED"></a>
 <hr>
 <h4>OTHER MODULES USED</h4>
 <!-- BEGIN OTHER MODULES USED -->
-<div><pre>
-FTN_IEEE_DEFINITIONS
-</pre></div>
+<div>
+<pre>             fms_mod<br>FTN_IEEE_DEFINITIONS</pre>
+</div>
 <!-- END OTHER MODULES USED -->
-<!-------------------------------------------------------------------->
+<!-- BEGIN PUBLIC INTERFACE -->
 <a name="PUBLIC INTERFACE"></a>
 <hr>
 <h4>PUBLIC INTERFACE</h4>
-<!-- BEGIN INTERFACE -->
-<div>
-<p>The the <tt>fpe</tt> module API:<br></p>
-<dl COMPACT>
-<dt><a href="#fpe_enable"><tt>fpe_enable</tt></a>: <dd>Enable interrupts for
-classes of exceptions.
-<dt><a href="#fpe_disable"><tt>fpe_disable</tt></a>: <dd>Disable interrupts for
-classes of exceptions.
-<dt><a href="#fpe_trap"><tt>fpe_trap</tt></a>: <dd>Set trap for
-classes of exceptions.
+<div>   The public interfaces to the &lt;TT&gt;fpe&lt;/TT&gt; module are described here
+   in alphabetical order. The &lt;TT&gt;fpe&lt;/TT&gt; module defines four classes of
+   exceptions: &lt;TT&gt;FP_DIVIDE_BY_ZERO, FP_OPERAND_IS_NAN, FP_OVERFLOW,
+   FP_UNDERFLOW&lt;/TT&gt;, which are public integer parameters use-associated
+   from the module. The argument &lt;TT&gt;flag&lt;/TT&gt; to any of the routines
+   below can be a sum of any of these. An absent &lt;TT&gt;flag&lt;/TT&gt; argument
+   is equivalent to all of the exceptions, i.e equivalent to
+   &lt;TT&gt;flag=FP_DIVIDE_BY_ZERO+FP_OPERAND_IS_NAN+FP_OVERFLOW+FP_UNDERFLOW&lt;/TT&gt;. <pre>use fpe_mod [, only:  fpe_trap,<br>                      fpe_disable,<br>                      fpe_enable ]</pre>
+<dl>
+<dt>
+<a href="#fpe_trap">fpe_trap</a>:</dt>
+<dd>   Set trap for classes of exceptions. </dd>
+<dt>
+<a href="#fpe_disable">fpe_disable</a>:</dt>
+<dd>   Disable interrupts for classes of exceptions. </dd>
+<dt>
+<a href="#fpe_enable">fpe_enable</a>:</dt>
+<dd>   Enable interrupts for classes of exceptions. </dd>
 </dl>
-</div><br>
-<!-- END INTERFACE -->
-<!-------------------------------------------------------------------->
+</div>
+<br>
+<!-- END PUBLIC INTERFACE -->
 <a name="PUBLIC DATA"></a>
 <hr>
 <h4>PUBLIC DATA</h4>
-<!-- BEGIN DATA_TYPES -->
-<div>
-
-     None.
-
-</div><br>
-<!-- END DATA_TYPES -->
-<!-------------------------------------------------------------------->
+<!-- BEGIN PUBLIC DATA -->
+<div>None.<br>
+<br>
+</div>
+<!-- END PUBLIC DATA -->
 <a name="PUBLIC ROUTINES"></a>
 <hr>
 <h4>PUBLIC ROUTINES</h4>
-<!-- BEGIN ROUTINES -->
-<div>
-<p>The public interfaces to the <tt>fpe</tt> module are described here
-in alphabetical order. The <tt>fpe</tt> module defines four classes of
-exceptions: <tt>FP_DIVIDE_BY_ZERO, FP_OPERAND_IS_NAN, FP_OVERFLOW,
-FP_UNDERFLOW</tt>, which are public integer parameters use-associated
-from the module. The argument <tt>flag</tt> to any of the routines
-below can be a sum of any of these. An absent <tt>flag</tt> argument
-is equivalent to all of the exceptions, i.e equivalent to
-<tt>flag=FP_DIVIDE_BY_ZERO+FP_OPERAND_IS_NAN+FP_OVERFLOW+FP_UNDERFLOW</tt>.</p>
-</div>
+<!-- BEGIN PUBLIC ROUTINES -->
 <ol type="a">
-
-<li><a name="fpe_disable"></a><h4>fpe_disable</h4>
-
-<pre>
-subroutine fpe_disable(flag)
-  integer, intent(in), optional :: flag
-</pre>
-
-<p>Causes the program to continue execution even if one of the exceptions
-in <tt>flag</tt> has occurred, until a subsequent call to <tt>fpe_enable</tt>.</p>
+<li>
+<a name="fpe_trap"></a>
+<h4>fpe_trap</h4>
+<pre>logical function <b>fpe_trap</b> (flag)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Traps exceptions contained in the optional argument flag. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>flag&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+<dt>
+<b>OUTPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>   Returns &lt;TT&gt;.TRUE.&lt;/TT&gt; if any of the exceptions
+   in &lt;TT&gt;flag&lt;/TT&gt; has occurred. This may be an alternative to the
+   computational burden of &lt;TT&gt;fpe_enable&lt;/TT&gt;, since the user retains
+   control of when to test for exceptions. </td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
 </li>
-<li><a name="fpe_enable"></a><h4>fpe_enable</h4>
-
+<li>
+<a name="fpe_disable"></a>
+<h4>fpe_disable</h4>
 <pre>
-subroutine fpe_enable(flag)
-  integer, intent(in), optional :: flag
-</pre>
-
-<p>Causes the program to abort if any of the exceptions in <tt>flag</tt>
-occurs. This involves frequent exception testing and may slow down
-the program.</p>
+<b>call fpe_disable </b>(flag)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Causes the program to continue execution even if one of the exceptions
+   in flag has occurred, until a subsequent call to fpe_enable. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>flag&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
 </li>
-<li><a name="fpe_trap"></a><h4>fpe_trap</h4>
-
+<li>
+<a name="fpe_enable"></a>
+<h4>fpe_enable</h4>
 <pre>
-logical function fpe_trap(flag)
-  integer, intent(in), optional :: flag
-</pre>
-
-<p>returns <tt>.TRUE.</tt> if any of the exceptions
-in <tt>flag</tt> has occurred. This may be an alternative to the
-computational burden of <tt>fpe_enable</tt>, since the user retains
-control of when to test for exceptions.</p>
+<b>call fpe_enable </b>(flag)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Causes the program to abort if any of the exceptions in flag occurs.
+   This involves frequent exception testing and may slow down the program. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>flag&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
 </li>
 </ol>
-<!-- END ROUTINES -->
-<!-------------------------------------------------------------------->
+<!-- END PUBLIC ROUTINES -->
 <a name="NAMELIST"></a>
-<hr>
-<h4>NAMELIST</h4>
 <!-- BEGIN NAMELIST -->
-<div>
-
-None.
- 
-</div><br>
-<!-- END NAMELIST -->
-<!-------------------------------------------------------------------->
-<a name="COMPILING AND LINKING SOURCE"></a>
+<!-- END NAMELIST --><a name="DIAGNOSTIC FIELDS"></a>
+<!-- BEGIN DIAGNOSTIC FIELDS -->
+<!-- END DIAGNOSTIC FIELDS --><a name="DATA SETS"></a>
+<!-- BEGIN DATA SETS -->
 <hr>
-<h4>COMPILING AND LINKING SOURCE</h4>
-<!-- BEGIN COMPILING AND LINKING SOURCE -->
-<div>
-<p>Any module or program unit using the <tt>fpe</tt> module must
-contain the line </p>
-
-<pre>
-use fpe
-</pre>
-
-<p>The source file for the <tt>fpe</tt> module is <a
-href="ftp://ftp.gfdl.noaa.gov/pub/vb/utils/fpe.F90"><tt>fpe.F90</tt></a>.</p>
-
-<p>Compiling with the cpp flag <tt>test_fpe</tt> turned on:</p>
-
-<p><pre>
-f90 -Dtest_fpe fpe.F90
-</pre>
-
-<p>will produce a program that will exercise certain portions of the
-the <tt>fpe</tt>  module.</p>
+<h4>DATA SETS</h4>
+<div>None.<br>
+<br>
 </div>
-<!-- END COMPILING AND LINKING SOURCE -->
-<!-------------------------------------------------------------------->
-<a name="PORTABILITY"></a>
+<!-- END DATA SETS -->
+<a name="ERROR MESSAGES"></a>
+<!-- BEGIN ERROR MESSAGES -->
 <hr>
-<h4>PORTABILITY</h4>
-<!-- BEGIN PORTABILITY -->
-<div>
-<p>The <tt>fpe</tt> module was written specifically for the SGIs using
-the MIPSpro f90 compiler. They use the non-standard
-<tt>FTN_IEEE_DEFINITIONS</tt> module that comes with this compiler and
-provides exception handling functionality following the IEEE FP number
-model.</p>
-
-<p>This will shortly be extended to various compilers on the Linux
-platform. The module is deemed unnecessary on Crays, on which GFDL
-seems to have got by quite satisfactorily for many years without this
-degree of user control.</p>
-
-<p>Tim Yeager (ty@gfdl.noaa.gov) has written an
-excellent introduction to FPE behaviour for GFDL users, including
-various run-time and compile-time options for controlling this
-behaviour. Slides from his recent talk on the subject, and associated
-files, are available in <tt>/home/ty/doc/trap.talk</tt>.</p>
+<h4>ERROR MESSAGES</h4>
+<div>None.<br>
+<br>
 </div>
-<!-- END PORTABILITY -->
-<!-------------------------------------------------------------------->
-<a name="ACQUIRING SOURCE"></a>
+<!-- END ERROR MESSAGES -->
+<a name="REFERENCES"></a>
 <hr>
-<h4>ACQUIRING SOURCE</h4>
-<!-- BEGIN ACQUIRING SOURCE -->
+<h4>REFERENCES</h4>
+<!-- BEGIN REFERENCES -->
 <div>
-<p>GFDL users can copy the file
-<tt>/net/vb/public/utils/fpe.F90</tt>. External users can
-download the source <a
-href="ftp://ftp.gfdl.noaa.gov/pub/vb/utils/fpe.F90">here</a>. The
-current public version number is 2.2.
-</div><br>
-<!-- END ACQUIRING SOURCE -->
-<!-------------------------------------------------------------------->
+        None.
+      </div>
+<br>
+<!-- END REFERENCES -->
+<a name="COMPILER SPECIFICS"></a>
+<hr>
+<h4>COMPILER SPECIFICS</h4>
+<!-- BEGIN COMPILER SPECIFICS -->
+<div>
+<dl>
+<dt></dt>
+<dd>   &lt;h4&gt;COMPILING AND LINKING SOURCE&lt;/h4&gt;
+   Any module or program unit using the &lt;TT&gt;fpe&lt;/TT&gt; module must
+   contain the line 
+   <br>
+<br> 
+<pre>     use fpe</pre>   The source file for the &lt;TT&gt;fpe&lt;/TT&gt; module is <a href="ftp://ftp.gfdl.noaa.gov/pub/vb/utils/fpe.F90">fpe.F90</a>.
+   <br>
+<br>
+   Compiling with the cpp flag &lt;TT&gt;test_fpe&lt;/TT&gt; turned on:
+   <br>
+<br> 
+<pre>     f90 -Dtest_fpe fpe.F90</pre>   will produce a program that will exercise certain portions of the
+   the &lt;TT&gt;fpe&lt;/TT&gt;  module. </dd>
+</dl>
+</div>
+<br>
+<!-- END COMPILER SPECIFICS -->
+<a name="PRECOMPILER OPTIONS"></a>
+<hr>
+<h4>PRECOMPILER OPTIONS</h4>
+<!-- BEGIN PRECOMPILER OPTIONS -->
+<div>
+<dl>
+<dt></dt>
+<dd>   The &lt;TT&gt;fpe&lt;/TT&gt; module was written specifically for the SGIs using
+   the MIPSpro f90 compiler. They use the non-standard
+   &lt;TT&gt;FTN_IEEE_DEFINITIONS&lt;/TT&gt; module that comes with this compiler and
+   provides exception handling functionality following the IEEE FP number
+   model.
+   <br>
+<br>
+   This will shortly be extended to various compilers on the Linux
+   platform. The module is deemed unnecessary on Crays, on which GFDL
+   seems to have got by quite satisfactorily for many years without this
+   degree of user control.
+   <br>
+<br>
+   Tim Yeager (ty@gfdl.noaa.gov) has written an
+   excellent introduction to FPE behaviour for GFDL users, including
+   various run-time and compile-time options for controlling this
+   behaviour. Slides from his recent talk on the subject, and associated
+   files, are available in &lt;TT&gt;/home/ty/doc/trap.talk&lt;/TT&gt;. </dd>
+</dl>
+</div>
+<br>
+<!-- END PRECOMPILER OPTIONS -->
+<a name="LOADER OPTIONS"></a>
+<hr>
+<h4>LOADER OPTIONS</h4>
+<!-- BEGIN LOADER -->
+<div>
+<p>   GFDL users can copy the file &lt;TT&gt;/net/vb/public/utils/fpe.F90&lt;/TT&gt;. 
+   External users can download the source . The current 
+   public version number is 2.2. </p>
+<pre>        
+</pre>
+</div>
+<!-- END LOADER OPTIONS -->
+<a name="TEST PROGRAM"></a>
+<hr>
+<h4>TEST PROGRAM</h4>
+<!-- BEGIN TEST PROGRAM -->
+<div>
+<dl>
+<dt></dt>
+<dd>   text </dd>
+</dl>
+</div>
+<br>
+<!-- END TEST PROGRAM -->
+<a name="KNOWN BUGS"></a>
+<hr>
+<h4>KNOWN BUGS</h4>
+<!-- BEGIN KNOWN BUGS -->
+<div>
+        None.
+      </div>
+<br>
+<!-- END KNOWN BUGS -->
 <a name="NOTES"></a>
 <hr>
 <h4>NOTES</h4>
 <!-- BEGIN NOTES -->
-<div>
-<a name="using"></a><h4>Using the <tt>fpe</tt> module</h4>
-
-<p>The <tt>fpe</tt> module defines four classes of exceptions:
-<tt>FP_DIVIDE_BY_ZERO, FP_OPERAND_IS_NAN, FP_OVERFLOW,
-FP_UNDERFLOW</tt>. These are <tt>integer</tt>s and may be summed to
-designate multiple classes.</p>
-
-<p>The calls <tt>fpe_enable</tt> and <tt>fpe_disable</tt> may be used
-to turn on FP error interrupts for different code
-sections. <tt>fpe_trap</tt> returns <tt>.TRUE.</tt> if an exception
-has occurred. Consider the test program:</p>
-
-<pre>
-program fpetest
-  use fpe
-  implicit none
-
-  real :: a, b
-
-  a = 1.
-  b = 1.
-  print *
-  print *, 'Divide by zero with interrupts disabled...'
-  call fpe_disable(FP_DIVIDE_BY_ZERO)
-  print *, 'fpe_trap(FP_DIVIDE_BY_ZERO)=', fpe_trap(FP_DIVIDE_BY_ZERO)
-  print *, 'divide by zero=', a/(a-b)
-  print *, 'fpe_trap(FP_DIVIDE_BY_ZERO)=', fpe_trap(FP_DIVIDE_BY_ZERO)
-
-  print *
-  print *, 'Divide by zero with interrupts enabled...'
-  print *, 'The next line should be an abort message:'
-  call fpe_enable(FP_DIVIDE_BY_ZERO)
-  print *, 'divide by zero=', a/(a-b)
-
-end program fpetest
-</pre>
-
-<p>This produces (on SGIs) the output:</p>
-
-<pre class="output">
- Divide by zero with interrupts disabled...
- fpe_trap(FP_DIVIDE_BY_ZERO)= F
- divide by zero= Infinity
- fpe_trap(FP_DIVIDE_BY_ZERO)= T
-
- Divide by zero with interrupts enabled...
- The next line should be an abort message:
- Floating Exception
- Abort
-</pre>
-
-<p>This example provides a comprehensive test case for the FPE module.</p>
-
-<p>In the first computation of <tt>1./(1.-1.)</tt>, FPE interrupts
-have been disabled.
-Before the computation the <tt>FP_DIVIDE_BY_ZERO</tt> exception is
-shown as not having occurred. Subsequently this exception bit has been
-set to <tt>.TRUE.</tt> In the second instance, FPE interrupts have
-been enabled, and cause the program to abort.</p>
-</div>
+<div>   The &lt;TT&gt;fpe&lt;/TT&gt; module defines four classes of exceptions:
+   &lt;TT&gt;FP_DIVIDE_BY_ZERO, FP_OPERAND_IS_NAN, FP_OVERFLOW,
+   FP_UNDERFLOW&lt;/TT&gt;. These are &lt;TT&gt;integer&lt;/TT&gt;s and may be summed to
+   designate multiple classes.
+   <br>
+<br>
+   The calls &lt;TT&gt;fpe_enable&lt;/TT&gt; and &lt;TT&gt;fpe_disable&lt;/TT&gt; may be used
+   to turn on FP error interrupts for different code
+   sections. &lt;TT&gt;fpe_trap&lt;/TT&gt; returns &lt;TT&gt;.TRUE.&lt;/TT&gt; if an exception
+   has occurred. Consider the test program:
+   <br>
+<br> 
+<pre>  program fpetest
+    use fpe
+    implicit none
+  
+    real :: a, b
+  
+    a = 1.
+    b = 1.
+    print *
+    print *, 'Divide by zero with interrupts disabled...'
+    call fpe_disable(FP_DIVIDE_BY_ZERO)
+    print *, 'fpe_trap(FP_DIVIDE_BY_ZERO)=', fpe_trap(FP_DIVIDE_BY_ZERO)
+    print *, 'divide by zero=', a/(a-b)
+    print *, 'fpe_trap(FP_DIVIDE_BY_ZERO)=', fpe_trap(FP_DIVIDE_BY_ZERO)
+  
+    print *
+    print *, 'Divide by zero with interrupts enabled...'
+    print *, 'The next line should be an abort message:'
+    call fpe_enable(FP_DIVIDE_BY_ZERO)
+    print *, 'divide by zero=', a/(a-b)
+  
+  end program fpetest</pre>   This produces (on SGIs) the output:
+   <br>
+<br> 
+<pre>   Divide by zero with interrupts disabled...
+   fpe_trap(FP_DIVIDE_BY_ZERO)= F
+   divide by zero= Infinity
+   fpe_trap(FP_DIVIDE_BY_ZERO)= T
+  
+   Divide by zero with interrupts enabled...
+   The next line should be an abort message:
+   Floating Exception
+   Abort</pre>   This example provides a comprehensive test case for the FPE module.
+   <br>
+<br>
+   In the first computation of &lt;TT&gt;1./(1.-1.)&lt;/TT&gt;, FPE interrupts
+   have been disabled.
+   Before the computation the &lt;TT&gt;FP_DIVIDE_BY_ZERO&lt;/TT&gt; exception is
+   shown as not having occurred. Subsequently this exception bit has been
+   set to &lt;TT&gt;.TRUE.&lt;/TT&gt; In the second instance, FPE interrupts have
+   been enabled, and cause the program to abort. </div>
+<br>
 <!-- END NOTES -->
-<!-------------------------------------------------------------------->
+<a name="FUTURE PLANS"></a>
 <hr>
+<h4>FUTURE PLANS</h4>
+<!-- BEGIN FUTURE PLANS -->
+<div>
+        None.
+      </div>
+<br>
+<!-- END FUTURE PLANS -->
+<hr>
+<div align="right">
+<font size="-1"><a href="#TOP">top</a></font>
+</div>
 </body>
 </html>

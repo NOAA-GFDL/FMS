@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <time.h>
+#ifndef __aix
+#ifdef __sgi
 long delta_t=0;			// clock resolution in nanoseconds
 
-#ifdef __sgi
 long sgi_ticks_per_sec_() {	// returns inverse clock resolution (1/sec)
   struct timespec t;
   clock_getres( CLOCK_SGI_CYCLE, &t );
@@ -33,4 +34,5 @@ void main() {
   printf( "ticks per second=%i\n", CLOCKS_PER_SEC );
 #endif
 }
+#endif
 #endif

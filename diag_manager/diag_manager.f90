@@ -1,5 +1,47 @@
 module diag_manager_mod
 
+! <CONTACT EMAIL="mh@gfdl.noaa.gov">
+!   Matt Harrison
+! </CONTACT>
+
+! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
+
+! <OVERVIEW>
+!   <TT>diag_manager_mod</TT> is a set of simple calls for parallel diagnostics on
+!   distributed systems. It is geared toward the writing of data in netCDF format.
+! </OVERVIEW>
+
+! <DESCRIPTION>
+!   <TT>diag_manager_mod</TT> provides a convenient set of interfaces for
+!   writing data to disk.  It is built upon the parallel I/O interface
+!   <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp_io.html"><TT>mpp_io</TT></LINK>.  A single
+!   group of calls to the <TT>diag_manager_mod</TT> interfaces provides data to disk
+!   at any number of sampling and/or averaging intervals specified at run-time.
+!   Run-time specification of diagnostics are input through the diagnostics table,
+!   which is described in the
+!   <LINK SRC="diag_table_tk.html">diag_table_tk</LINK> documentation.
+!   
+!   <B>Features of <TT>diag_manager_mod</TT> include:</B>
+!   Simple, minimal API.<BR/>
+!   Run-time choice of diagnostics.<BR/>
+!   Self-describing files: comprehensive header information
+!   (metadata) in the file itself.<BR/>
+!   Strong parallel write performance.<BR/>
+!   Integrated netCDF capability: <LINK
+!   SRC="http://www.unidata.ucar.edu/packages/netcdf/">netCDF</LINK> is a
+!   data format widely used in the climate/weather modeling
+!   community. netCDF is considered the principal medium of data storage
+!   for <TT>diag_manager_mod</TT>. Raw unformatted
+!   fortran I/O capability is also available.<BR/>
+!   Requires off-line post-processing: a tool for this purpose,
+!   <TT>mppnccombine</TT>, is available. GFDL users may use
+!   <TT>~hnv/pub/mppnccombine</TT>. Outside users may obtain the
+!   source <LINK
+!   SRC="ftp://ftp.gfdl.gov/perm/hnv/mpp/mppnccombine.c">here</LINK>.  It
+!   can be compiled on any C compiler and linked with the netCDF
+!   library. The program is free and is covered by the <LINK
+!   SRC="ftp://ftp.gfdl.gov/perm/hnv/mpp/LICENSE">GPL license</LINK>.
+! </DESCRIPTION>
 use time_manager_mod, only: get_time, set_time, get_date, set_date,    &
                             increment_date, operator(-), operator(>=), &
                             operator(>), operator(<), operator(==),    &
@@ -10,7 +52,10 @@ use       mpp_io_mod, only: mpp_open, MPP_RDONLY
 
 use          fms_mod, only: error_mesg, FATAL, WARNING, NOTE,          &
                             close_file, stdlog, write_version_number,  &
-                            file_exist, mpp_pe                         
+                            file_exist, mpp_pe, open_namelist_file, &
+                            check_nml_error
+
+use mpp_mod, only : mpp_get_current_pelist, mpp_npes
 
 use    diag_axis_mod, only: diag_axis_init, get_axis_length
 
@@ -22,19 +67,24 @@ use  diag_output_mod, only: diag_output_init, write_axis_meta_data,  &
 implicit none
 private
 
-public  diag_manager_init, send_data, diag_manager_end,  &
+public  diag_manager_init, send_data, send_tile_averaged_data, diag_manager_end,  &
         register_diag_field, register_static_field, &
-        diag_axis_init, get_base_time, get_base_date, need_data
+        diag_axis_init, get_base_time, get_base_date, need_data, average_tiles
+public :: DIAG_ALL,DIAG_OCEAN,DIAG_OTHER
 
 ! Specify storage limits for fixed size tables used for pointers, etc.
 integer, parameter :: max_fields_per_file = 150
 integer, parameter :: max_out_per_in_field = 10
 integer, parameter :: max_files = 10
 integer ::            num_files = 0
-integer, parameter :: max_input_fields = 200
+integer, parameter :: max_input_fields = 300
 integer ::            num_input_fields = 0
-integer, parameter :: max_output_fields = 200
+integer, parameter :: max_output_fields = 300
 integer ::            num_output_fields = 0
+
+integer, parameter :: DIAG_OTHER = 0
+integer, parameter :: DIAG_OCEAN = 1
+integer, parameter :: DIAG_ALL   = 2
 
 ! Global data for all files
 type (time_type) :: base_time
@@ -101,10 +151,32 @@ character (len=10) :: time_unit_list(6) = (/'seconds   ', 'minutes   ', &
 
 character (len = 7) :: avg_name = 'average'
 
-! version number of this module
-  character(len=128) :: version = '$Id: diag_manager.f90,v 1.6 2002/07/16 22:55:01 fms Exp $'
-  character(len=128) :: tagname = '$Name: havana $'  
+character(len=32) :: pelist_name
 
+
+! version number of this module
+character(len=128) :: version = '$Id: diag_manager.f90,v 1.7 2003/04/09 21:16:09 fms Exp $'
+character(len=128) :: tagname = '$Name: inchon $'  
+
+
+! <INTERFACE NAME="send_data">
+
+!   <OVERVIEW>
+!     Send data over to output fields. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     send_data is overloaded for 1 to 3-d arrays.
+!     diag_field_id corresponds to the id returned from a previous call to
+!     register_diag_field.  The field array is restricted to the computational
+!     range of the array. Optional argument is_in can be used to update
+!     sub-arrays of the entire field.  Additionally, an optional logical or real
+!     mask can be used to apply missing values to the array.  For the real
+!     mask, the mask is applied if the mask value is less than 0.5.  The
+!     weight array is currently not implemented.
+!   </DESCRIPTION>
+!   <IN NAME="diag_field_id" TYPE="integer"  > </IN>
+!   <IN NAME="field" TYPE="real" DIM="(:,:,:)" > </IN>
+!   <IN NAME="time" TYPE="time_type"  > </IN>
 
 interface send_data
    module procedure send_data_0d
@@ -112,10 +184,58 @@ interface send_data
    module procedure send_data_2d
    module procedure send_data_3d
 end interface
+! </INTERFACE>
+
+
+! <INTERFACE NAME="send_tile_averaged_data">
+
+!   <OVERVIEW>
+!     Send tile-averaged data over to output fields. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     send_tile_averaged_data is overloaded for 3-d and 4-d arrays. 
+!     diag_field_id corresponds to the id returned by previous call to 
+!     register_diag_field. Logical mask can be used to mask out undefined
+!     and/or unused values. Note that the dimension of output field is
+!     smaller by one than the dimension of the data, since averaging over
+!     tiles (3d dimension) is performed.
+!   </DESCRIPTION>
+!   <IN NAME="diag_field_id" TYPE="integer" >                </IN>
+!   <IN NAME="field" TYPE="real" DIM="(:,:,:)" >  </IN>
+!   <IN NAME="area" TYPE="real" DIM="(:,:,:)" >  </IN>
+!   <IN NAME="time" TYPE="time_type" DIM="(:,:,:)" >  </IN>
+!   <IN NAME="mask" TYPE="logical" DIM="(:,:,:)" >  </IN>
+interface send_tile_averaged_data
+   module procedure send_tile_averaged_data2d
+   module procedure send_tile_averaged_data3d
+end interface
+!</INTERFACE>
 
 contains
 
 !-------------------------------------------------------------------------
+
+! <FUNCTION NAME="register_diag_field">
+
+!   <OVERVIEW>
+!     Register Diagnostic Field.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Return field index for subsequent calls to <LINK SRC="#send_data"> send_data </LINK>
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     register_diag_field(module_name, field_name, axes, init_time, &
+!     long_name, units, missing_value, range)
+!   </TEMPLATE>
+
+!   <IN NAME="module_name" TYPE="character(len=*)"> </IN>
+!   <IN NAME="field_name" TYPE="character(len=*)"> </IN>
+!   <IN NAME="axes" TYPE="integer" DIM="(:)"> </IN>
+!   <IN NAME="init_time" TYPE="time_type"> </IN>
+!   <IN NAME="long_name" TYPE="character(len=*)"> </IN>
+!   <IN NAME="units" TYPE="character(len=*)"> </IN>
+!   <IN NAME="missing_value" TYPE="real"> </IN>
+!   <IN NAME="range" TYPE="real" DIM="(2)"> </IN>
 
 function register_diag_field(module_name, field_name, axes, init_time, &
    long_name, units, missing_value, range)
@@ -165,8 +285,29 @@ if(register_diag_field >0) then
 endif
 
 end function register_diag_field
+! </FUNCTION>
 
 !-------------------------------------------------------------------------
+! <FUNCTION NAME="register_static_field">
+
+!   <OVERVIEW>
+!     Register Static Field.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Return field index for subsequent call to send_data.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     register_static_field(module_name, field_name, axes, &
+!     long_name, units, missing_value, range, require)
+!   </TEMPLATE>
+
+!   <IN NAME="module_name" TYPE="character(len=*)"> </IN>
+!   <IN NAME="field_name" TYPE="character(len=*)"> </IN>
+!   <IN NAME="axes" TYPE="integer" DIM="(:)"> </IN>
+!   <IN NAME="long_name" TYPE="character(len=*)"> </IN>
+!   <IN NAME="units" TYPE="character(len=*)"> </IN>
+!   <IN NAME="missing_value" TYPE="real"> </IN>
+!   <IN NAME="range" TYPE="real" DIM="(2)"> </IN>
 
 function register_static_field(module_name, field_name, axes, &
    long_name, units, missing_value, range, require)
@@ -282,8 +423,14 @@ end do
 
 
 end function register_static_field
+! </FUNCTION>
 
 !-------------------------------------------------------------------------
+! <FUNCTION NAME="send_data_0d" INTERFACE="send_data">
+!   <IN NAME="diag_field_id" TYPE="integer"  > </IN>
+!   <IN NAME="field" TYPE="real"  > </IN>
+!   <IN NAME="time" TYPE="time_type"  > </IN>
+! </FUNCTION>
 
 function send_data_0d(diag_field_id, field, time, mask, rmask, weight)
 
@@ -317,6 +464,11 @@ send_data_0d = send_data_3d(diag_field_id, field_out, time, 1, 1, 1, mask_out, w
 end function send_data_0d
 
 !-------------------------------------------------------------------------
+! <FUNCTION NAME="send_data_1d" INTERFACE="send_data">
+!   <IN NAME="diag_field_id" TYPE="integer"  > </IN>
+!   <IN NAME="field" TYPE="real" DIM="(:)" > </IN>
+!   <IN NAME="time" TYPE="time_type"  > </IN>
+! </FUNCTION>
 
 function send_data_1d(diag_field_id, field, time, is_in, mask, rmask, weight)
 
@@ -350,6 +502,11 @@ end function send_data_1d
 
 
 !-------------------------------------------------------------------------
+! <FUNCTION NAME="send_data_2d" INTERFACE="send_data">
+!   <IN NAME="diag_field_id" TYPE="integer"  > </IN>
+!   <IN NAME="field" TYPE="real" DIM="(:,:)" > </IN>
+!   <IN NAME="time" TYPE="time_type"  > </IN>
+! </FUNCTION>
 
 function send_data_2d(diag_field_id, field, time, is_in, js_in, &
     mask, rmask, weight)
@@ -383,6 +540,11 @@ send_data_2d = send_data_3d(diag_field_id, field_out, time, is_in, js_in, 1, mas
 end function send_data_2d
 
 !-------------------------------------------------------------------------
+! <FUNCTION NAME="send_data_3d" INTERFACE="send_data">
+!   <IN NAME="diag_field_id" TYPE="integer"  > </IN>
+!   <IN NAME="field" TYPE="real" DIM="(:,:,:)" > </IN>
+!   <IN NAME="time" TYPE="time_type"  > </IN>
+! </FUNCTION>
 
 function send_data_3d(diag_field_id, field, time, is_in, js_in, ks_in, &
              mask, rmask, weight)
@@ -536,11 +698,19 @@ do i = 1, input_fields(diag_field_id)%num_output_fields
 
 ! Take care of submitted field data
    if(average) then
-      output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) = &
-         output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) + &
-         field
+       if (present(mask)) then
+           where (mask) &
+                
+                output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) = &
+                output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) + &
+                field
+       else
+           output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) = &
+                output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) + &
+                field
+       endif
    else
-       output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) = field
+       output_fields(out_num)%buffer(is:is+n1-1,js: js+n2-1, ks:ks+n3-1) = field    
    endif
 
 ! Increment number of sub_field elements seen
@@ -572,7 +742,122 @@ end do
 
 end function send_data_3d
 
+
 !-------------------------------------------------------------------------
+! <FUNCTION NAME="send_tile_averaged_data_2d" INTERFACE="send_tile_averaged_data">
+!   <IN NAME="diag_field_id" TYPE="integer" >               </IN>
+!   <IN NAME="field"         TYPE="real"      DIM="(:,:,:)">  </IN>
+!   <IN NAME="area"          TYPE="real"      DIM="(:,:,:)">  </IN>
+!   <IN NAME="time"          TYPE="time_type" DIM="(:,:,:)">  </IN>
+!   <IN NAME="mask"          TYPE="logical"   DIM="(:,:,:)">  </IN>
+! </FUNCTION>
+
+function send_tile_averaged_data2d ( id, field, area, time, mask )
+
+  ! --- return value ---------------------------------------------------------
+  logical                      :: send_tile_averaged_data2d
+  ! --- arguments ------------------------------------------------------------
+  integer, intent(in)          :: id             ! id od the diagnostic field 
+  real,    intent(in)          :: field(:,:,:)   ! field to average and send
+  real,    intent(in)          :: area (:,:,:)   ! area of tiles (== averaging 
+                                                 ! weights), arbitrary units
+  type(time_type), intent(in)  :: time           ! current time
+  logical, intent(in),optional :: mask (:,:,:)   ! land mask
+
+  ! --- local vars -----------------------------------------------------------
+  real  :: out(size(field,1), size(field,2))
+
+  call average_tiles( field, area, mask, out )
+  send_tile_averaged_data2d = send_data( id, out, time, mask=ANY(mask,DIM=3) )
+end function send_tile_averaged_data2d
+
+
+!-------------------------------------------------------------------------
+! <FUNCTION NAME="send_tile_averaged_data3d" INTERFACE="send_tile_averaged_data">
+!   <IN NAME="diag_field_id" TYPE="integer">                </IN>
+!   <IN NAME="field"         TYPE="real"      DIM="(:,:,:,:)">  </IN>
+!   <IN NAME="area"          TYPE="real"      DIM="(:,:,:)">  </IN>
+!   <IN NAME="time"          TYPE="time_type" DIM="(:,:,:)">  </IN>
+!   <IN NAME="mask"          TYPE="logical"   DIM="(:,:,:)">  </IN>
+! </FUNCTION>
+
+function send_tile_averaged_data3d( id, field, area, time, mask )
+
+  ! --- return value ---------------------------------------------------------
+  logical                      :: send_tile_averaged_data3d
+  ! --- arguments ------------------------------------------------------------
+  integer, intent(in)          :: id              ! id of the diagnostic field
+  real,    intent(in)          :: field(:,:,:,:)  ! (lon, lat, tile, lev) field 
+                                                  ! to average and send
+  real,    intent(in)          :: area (:,:,:)    ! (lon, lat, tile) tile areas 
+                                                  ! ( == averaging weights), 
+                                                  ! arbitrary units
+  type(time_type), intent(in)  :: time            ! current time
+  logical, intent(in),optional :: mask (:,:,:)    ! (lon, lat, tile) land mask
+
+  ! --- local vars -----------------------------------------------------------
+  real    :: out(size(field,1), size(field,2), size(field,4))
+  logical :: mask3(size(field,1), size(field,2), size(field,4))
+  integer :: it
+
+  do it=1,size(field,4)
+     call average_tiles( field(:,:,:,it), area, mask, out(:,:,it) )
+  enddo
+
+  mask3(:,:,1) = ANY(mask,DIM=3)
+  do it = 2, size(field,4)
+     mask3(:,:,it) = mask3(:,:,1)
+  enddo
+
+  send_tile_averaged_data3d = send_data( id, out, time, mask=mask3 )
+end function send_tile_averaged_data3d
+
+
+
+! ============================================================================
+subroutine average_tiles ( x, area, mask, out )
+! ============================================================================
+! average 2-dimensional field over tiles
+  ! --- arguments ------------------------------------------------------------
+  real,    intent(in)  :: x   (:,:,:) ! (lon, lat, tile) field to average
+  real,    intent(in)  :: area(:,:,:) ! (lon, lat, tile) fractional area
+  logical, intent(in)  :: mask(:,:,:) ! (lon, lat, tile) land mask
+  real,    intent(out) :: out (:,:)   ! (lon, lat)       result of averaging
+
+  ! --- local vars -----------------------------------------------------------------
+  integer  :: it                      ! iterator over tile number
+  real     :: s(size(x,1),size(x,2))  ! area accumulator
+
+  s(:,:)   = 0.0
+  out(:,:) = 0.0
+
+  do it = 1,size(area,3)
+     where (mask(:,:,it)) 
+        out(:,:) = out(:,:) + x(:,:,it)*area(:,:,it)
+        s(:,:)   = s(:,:) + area(:,:,it)
+     endwhere
+  enddo
+
+  where( s(:,:) > 0 ) &
+       out(:,:) = out(:,:)/s(:,:)
+
+end subroutine average_tiles
+
+
+
+!-------------------------------------------------------------------------
+! <SUBROUTINE NAME="diag_manager_end">
+
+!   <OVERVIEW>
+!     Exit Diagnostics Manager.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Flushes diagnostic buffers where necessary. Close diagnostics files.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call diag_manager_end (time)
+!   </TEMPLATE>
+!   <IN NAME="TIME" TYPE="time_type"></IN>
 
 subroutine diag_manager_end (time)
 
@@ -698,6 +983,7 @@ end do
 module_is_initialized = .FALSE.
 
 end subroutine diag_manager_end
+! </SUBROUTINE>
 
 !-------------------------------------------------------------------------
 
@@ -822,7 +1108,21 @@ end subroutine init_output_field
 
 !-------------------------------------------------------------------------
 
-subroutine diag_manager_init()
+! <SUBROUTINE NAME="diag_manager_init">
+
+!   <OVERVIEW>
+!     Initialize Diagnostics Manager.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Open and read diag_table. Select fields and files for diagnostic output.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call diag_manager_init()
+!   </TEMPLATE>
+
+subroutine diag_manager_init(diag_model_subset)
+integer, optional, intent(IN) :: diag_model_subset
+integer                       :: diag_subset_output
 
 type tableB_type
    character(len=128) :: module_name,field_name,output_name,name
@@ -845,7 +1145,13 @@ character(len=256) :: record
 character(len=9)   :: amonth
 
 integer :: iunit,n,m,num_fields,time_units, output_freq_units, nfiles,nfields
-integer :: j, log_unit, name_len, nrecs
+integer :: j, log_unit, name_len, nrecs, ierr, io_status
+
+integer, allocatable, dimension(:) :: pelist
+
+logical :: append_pelist_name = .false.
+
+namelist /diag_manager_nml/ append_pelist_name
 
 type(tableB_type) :: textB
 type(tableA_type) :: textA
@@ -853,6 +1159,21 @@ type(tableA_type) :: textA
 !  If the module was already initialized do nothing
 if (module_is_initialized) return
 
+diag_subset_output = DIAG_ALL
+if (PRESENT(diag_model_subset))then
+  if(diag_model_subset>=DIAG_OTHER .AND. diag_model_subset<=DIAG_ALL) then
+    diag_subset_output = diag_model_subset
+  else
+    call error_mesg('diag_manager_init','file diag_table nonexistent',FATAL)
+  endif
+endif
+
+iunit = open_namelist_file()
+read  (iunit, diag_manager_nml,iostat=io_status)
+write (stdlog(), diag_manager_nml)
+!ierr = check_nml_error(io_status,'diag_manager_nml')
+call close_file (iunit)
+    
 if (.not.file_exist('diag_table') ) &
 call error_mesg('diag_manager_init','file diag_table nonexistent',FATAL)
 
@@ -878,6 +1199,9 @@ else
    amonth = 'day'
 end if
 
+allocate(pelist(mpp_npes()))
+call mpp_get_current_pelist(pelist, pelist_name)
+
 nrecs=0
 nfiles=0
 do while (nfiles <= max_files)
@@ -887,6 +1211,8 @@ do while (nfiles <= max_files)
    read(record,*,err=85,end=85) textA
    ! test file format to make sure its OK
    if (textA%format .gt. 2 .or. textA%format .lt. 1) cycle
+   if( diag_subset_output==DIAG_OTHER .AND. verify( 'ocean',lcase(textA%name) )==0 )cycle
+   if( diag_subset_output==DIAG_OCEAN .AND. verify( 'ocean',lcase(textA%name) )/=0 )cycle
    nfiles=nfiles+1
    time_units = 0
    output_freq_units = 0
@@ -900,7 +1226,14 @@ do while (nfiles <= max_files)
         call error_mesg('diag_manager_init','invalid output frequency units',FATAL)
    ! remove trailing .nc extension from file name 
    name_len = len_trim(textA%name)
-   if (textA%name(name_len-2:name_len) == '.nc') textA%name = textA%name(1:name_len-3)
+   if (textA%name(name_len-2:name_len) == '.nc') then
+       textA%name = textA%name(1:name_len-3)
+       name_len = name_len - 3
+   endif
+   ! add optional suffix based on pelist name
+   if (append_pelist_name) then
+      textA%name(name_len+1:) = trim(pelist_name)
+   endif   
    ! assign values to file_types
    call init_file(textA%name,textA%output_freq, output_freq_units, &
         textA%format, time_units,textA%long_name)
@@ -921,13 +1254,22 @@ do while (nfields <= max_output_fields)
    if (record(1:1) == '#') cycle
    read(record,*,end=93,err=93) textB
    if (textB%pack .gt. 8 .or. textB%pack .lt. 1) cycle
+   if( diag_subset_output==DIAG_OTHER .AND. verify( 'ocean',lcase(textB%name) )==0 )cycle
+   if( diag_subset_output==DIAG_OCEAN .AND. verify( 'ocean',lcase(textB%name) )/=0 )cycle
    nfields=nfields+1
    !   assign values to field_types
    call init_input_field(textB%module_name,textB%field_name)
    !   remove trailing .nc extension
    name_len= len_trim(textB%name)
-   if (textB%name(name_len-2:name_len) == '.nc') &
-        textB%name = textB%name(1:name_len-3)
+   if (textB%name(name_len-2:name_len) == '.nc') then
+       textB%name = textB%name(1:name_len-3)
+       name_len = name_len-3
+   endif
+   ! add optional suffix based on pelist name
+   if (append_pelist_name) then
+       textB%name(name_len+1:) = trim(pelist_name)
+   endif
+  
    call init_output_field(textB%module_name,textB%field_name,textB%output_name,&
         textB%name,textB%time_avg,textB%pack)
 93 continue
@@ -966,6 +1308,7 @@ call error_mesg('diag_manager_init','error reading table',FATAL)
 
 
 end subroutine diag_manager_init
+! </SUBROUTINE>
 
 !-------------------------------------------------------------------------
 
@@ -1374,6 +1717,18 @@ end function diag_time_inc
 
 !-------------------------------------------------------------------------
 
+! <FUNCTION NAME="get_base_time">
+
+!   <OVERVIEW>
+!     Return base time for diagnostics. 
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Return base time for diagnostics (note: base time must be >= model time).
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call get_base_time ()
+!   </TEMPLATE>
+
  function get_base_time ()
  type(time_type) :: get_base_time
 
@@ -1384,8 +1739,21 @@ end function diag_time_inc
    get_base_time = base_time
 
  end function get_base_time
+! </FUNCTION>
 
 !-------------------------------------------------------------------------
+
+! <SUBROUTINE NAME="get_base_date">
+
+!   <OVERVIEW>
+!     Return base date for diagnostics.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Return date information for diagnostic reference time.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call get_base_date (year, month, day, hour, minute, second)
+!   </TEMPLATE>
 
  subroutine get_base_date (year, month, day, hour, minute, second)
    integer, intent(out) :: year, month, day, hour, minute, second
@@ -1402,6 +1770,7 @@ end function diag_time_inc
    second = base_second
 
  end subroutine get_base_date
+! </SUBROUTINE>
 
 !-------------------------------------------------------------------------
 
@@ -1421,6 +1790,26 @@ end function diag_time_inc
  end function lcase 
 
 !-------------------------------------------------------------------------
+
+! <FUNCTION NAME="need_data">
+
+!   <OVERVIEW>
+!     Determine whether data is needed for the current model time step.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Determine whether data is needed for the current model time step.
+!     Since diagnostic data are buffered, the "next" model time is passed
+!     instead of the current model time. This call can be used to minimize
+!     overhead for complicated diagnostics.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     need_data(diag_field_id,next_model_time)
+!   </TEMPLATE>
+
+!   <IN NAME="inext_model_time" TYPE="time_type"  >
+!     next_model_time = current model time + model time_step
+!   </IN>
+!   <IN NAME="diag_field_id" TYPE="integer"  > </IN>
 
 function need_data(diag_field_id,next_model_time)
 !
@@ -1453,7 +1842,34 @@ enddo
 return
 
 end function need_data
+! </FUNCTION>
 
 !-------------------------------------------------------------------------
  
 end module diag_manager_mod
+
+! <INFO>
+
+!   <COMPILER NAME="COMPILING AND LINKING SOURCE">
+!     Any module or program unit using <TT>diag_manager_mod</TT> must contain the line
+
+!   <PRE>
+!   use diag_manager_mod
+!   </PRE>
+
+!   If netCDF output is desired, the cpp flag <TT>-Duse_netCDF</TT>
+!   must be turned on. The loader step requires an explicit link to the
+!   netCDF library (typically something like <TT>-L/usr/local/lib
+!   -lnetcdf</TT>, depending on the path to the netCDF library).
+!   <LINK SRC="http://www.unidata.ucar.edu/packages/netcdf/guidef">netCDF
+!   release 3 for fortran</LINK> is required.
+!   </COMPILER>
+!   <PRECOMP FLAG="PORTABILITY"> 
+!     <TT>diag_manager_mod</TT> uses standard f90.
+!   </PRECOMP>
+!   <LOADER FLAG="ACQUIRING SOURCE">
+!     GFDL users can checkout diag_manager_mod using the cvs command
+!     <TT>setenv CVSROOT '/home/fms/cvs';cvs co diag_manager</TT>.  
+!   </LOADER>
+
+! </INFO>

@@ -64,6 +64,7 @@
 #ifdef use_CRI_pointers
       pointer( ptr, a1D )
       ptr = LOC(a)
+      call mpp_sum( a1D, length, pelist )
 #else
       a1D = TRANSFER( a, a1D, length ) !faster than RESHAPE? length is probably redundant
 !      a1D = RESHAPE( a, SHAPE(a1D) )
@@ -81,6 +82,7 @@
 #ifdef use_CRI_pointers
       pointer( ptr, a1D )
       ptr = LOC(a)
+      call mpp_sum( a1D, length, pelist )
 #else
       a1D = TRANSFER( a, a1D, length ) !faster than RESHAPE? length is probably redundant
 !      a1D = RESHAPE( a, SHAPE(a1D) )
@@ -98,6 +100,7 @@
 #ifdef use_CRI_pointers
       pointer( ptr, a1D )
       ptr = LOC(a)
+      call mpp_sum( a1D, length, pelist )
 #else
       a1D = TRANSFER( a, a1D, length ) !faster than RESHAPE? length is probably redundant
 !      a1D = RESHAPE( a, SHAPE(a1D) )
@@ -115,6 +118,7 @@
 #ifdef use_CRI_pointers
       pointer( ptr, a1D )
       ptr = LOC(a)
+      call mpp_sum( a1D, length, pelist )
 #else
       a1D = TRANSFER( a, a1D, length ) !faster than RESHAPE? length is probably redundant
 !      a1D = RESHAPE( a, SHAPE(a1D) )

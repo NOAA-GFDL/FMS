@@ -62,13 +62,15 @@ real, parameter :: max_dist_default = 0.17  ! radians
 real, parameter :: epsln=1.e-10, pi=3.14159265358979323846, large=1.e20, pih=pi/2.,pi2=pi*2.
 real, parameter :: deg2rad=pi/180.
 integer, public :: num_neighbors, map_dest_size, map_src_size, map_dest_xsize, map_dest_ysize, map_src_xsize, map_src_ysize
-integer, dimension(:,:), allocatable :: map_src_add
+integer, dimension(:,:), allocatable, public :: map_src_add
 logical, dimension(:), allocatable :: lmask_src, lmask_dest
 real, dimension(:,:), allocatable :: map_src_dist
-real, dimension(:,:), allocatable :: map_src_wgt
+real, dimension(:,:), allocatable, public :: map_src_wgt
 real :: max_src_dist = max_dist_default
 logical :: spherical_regrid_initialized = .false., radial_src_search = .true., src_is_modulo = .true.
 
+real, dimension(:), allocatable :: dest_1d
+real, dimension(:), allocatable ::  src_1d
 
 public spherical_regrid_init, regrid, spherical_distance, spherical_regrid_exit
 
@@ -102,8 +104,6 @@ real, dimension(:,:), pointer :: src
 
 integer :: n1,n2, i, j
 
-real, dimension(:), allocatable :: dest_1d
-real, dimension(:), allocatable ::  src_1d
 
 n1 = size(dest,1)*size(dest,2)
 n2 = size(src,1)*size(src,2)
@@ -111,8 +111,8 @@ n2 = size(src,1)*size(src,2)
 if (n1 /= map_dest_size .or. n2 /= map_src_size) call mpp_error(FATAL,'=> incorrect array size in call to remap')
 
 
-allocate(dest_1d(map_dest_size))
-allocate(src_1d(map_src_size))
+if (.NOT. allocated(dest_1d)) allocate(dest_1d(map_dest_size))
+if (.NOT. allocated(src_1d)) allocate(src_1d(map_src_size))
 
 src_1d = reshape(src,(/map_src_size/))
 dest_1d=0.0
@@ -129,8 +129,6 @@ do i=1,map_dest_size
 enddo
 
 dest = reshape(dest_1d,(/map_dest_xsize,map_dest_ysize/))
-
-deallocate(dest_1d,src_1d)
 
 return
 
@@ -319,7 +317,7 @@ real :: min_theta_dest, max_theta_dest, min_phi_dest, max_phi_dest
 real :: min_theta_src, max_theta_src, min_phi_src, max_phi_src
 logical :: continue_search, found_neighbors, continue_radial_search, result, debug
 real :: d, sum, dtheta, dphi,nearest,res
-integer :: step, i_nearest, len
+integer :: step, i_nearest, len, step_size
 
 map_dest_xsize=size(x_dest,1);map_dest_ysize=size(x_dest,2)
 map_src_xsize=size(x_src,1);map_src_ysize=size(x_src,2)
@@ -379,8 +377,8 @@ map_src_add = 0
 map_src_dist = large
 map_src_wgt = 0.0
 
-min_theta_dest=pi;max_theta_dest=-pi;min_phi_dest=pi;max_phi_dest=-pi
-min_theta_src=pi;max_theta_src=-pi;min_phi_src=pi;max_phi_src=-pi
+min_theta_dest=pi2;max_theta_dest=0.;min_phi_dest=pi;max_phi_dest=-pi
+min_theta_src=pi2;max_theta_src=0.;min_phi_src=pi;max_phi_src=-pi
 
 where(theta_dest<0.0)  theta_dest = theta_dest+pi2
 where(theta_dest>pi2)  theta_dest = theta_dest-pi2
@@ -415,11 +413,11 @@ do j=1,map_dest_size
    found_neighbors=.false.
    continue_search=.true.
    step = 1
-   do while (continue_search)
-      nearest = 1.e3
-      continue_search = .true.
+   step_size = 100
+   nearest = 1.e3
+   do while (continue_search .and. step_size > 0)
       do while (step <= map_src_size .and. continue_search)
-! count land points as nearest neighbors
+         ! count land points as nearest neighbors
          d = spherical_distance(theta_dest(j),phi_dest(j),theta_src(step),phi_src(step))
          if (d <= max_src_dist) then
             found_neighbors = update_dest_neighbors(j,step,d)
@@ -509,9 +507,11 @@ do j=1,map_dest_size
                continue_search = .false. ! stop looking
             endif
          endif
-         step=step+1
+         step=step+step_size
       enddo ! search loop
-   enddo 
+      step = 1
+      step_size = step_size/2
+   enddo
 
    if (.not.found_neighbors) then ! no neighbors found 
       lmask_dest(j) = .false.
@@ -593,6 +593,9 @@ cross(2) = r1(3)*r2(1)-r1(1)*r2(3)
 cross(3) = r1(1)*r2(2)-r1(2)*r2(1)
 
 s = sqrt(cross(1)**2.+cross(2)**2.+cross(3)**2.)
+
+s = min(s,1.0-epsln)
+
 dot = r1(1)*r2(1) + r1(2)*r2(2) + r1(3)*r2(3)
 
 if (dot > 0) then
@@ -671,7 +674,7 @@ integer :: i
 do  
    print *, 'type positions x1,y1,x2,y2'
    read(5,*,end=99,err=99) x1,y1,x2,y2
-   x1=x1*deg2rad;x2=x2*deg2rad;y1=y1*deg2rad;y2=y2*deg2rad
+!   x1=x1*deg2rad;x2=x2*deg2rad;y1=y1*deg2rad;y2=y2*deg2rad
    print *, 'x1,y1= ',x1,y1
    print *, 'x2,y2= ',x2,y2
    print *, spherical_distance(x1,y1,x2,y2)

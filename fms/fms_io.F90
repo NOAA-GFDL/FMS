@@ -1,5 +1,37 @@
 module fms_io_mod
 
+!
+!
+! <CONTACT EMAIL="gtn@gfdl.noaa.gov">
+! G.T. Nong
+! </CONTACT>
+
+! <CONTACT EMAIL="mjh@gfdl.noaa.gov">
+! M.J. Harrison 
+! </CONTACT>
+!
+! <REVIEWER EMAIL="mjh@gfdl.noaa.gov">
+! M.J. Harrison 
+! </REVIEWER>
+
+! <REVIEWER EMAIL="bw@gfdl.noaa.gov">
+! B. Wyman
+! </REVIEWER>
+
+!<DESCRIPTION>
+! This module is for writing and reading restart data in NetCDF format.
+! fms_io_init must be called before the first write_data/read_data call
+! For writing, fms_io_exit must be called after ALL write calls have
+! been made. Typically, fms_io_init and fms_io_exit are placed in the
+! main (driver) program while read_data and write_data can be called where needed.
+! Presently, two combinations of threading and fileset are supported, users can choose
+! one line of the following:
+! <PRE>
+!threading_read='multi', fileset_read='single', threading_write='multi', fileset_write='multi' (default)
+!threading_read='multi', fileset_read='single', threading_write='single', fileset_write='single'
+! </PRE>
+!</DESCRIPTION>
+
   use mpp_io_mod, only : mpp_open, mpp_close, mpp_io_init, mpp_io_exit, &
                          MPP_NETCDF, MPP_ASCII, MPP_MULTI, MPP_SINGLE, &
                          mpp_read, mpp_write, mpp_write_meta, &
@@ -7,7 +39,8 @@ module fms_io_mod
                          MPP_OVERWR, fieldtype, axistype, atttype, &
                          MPP_RDONLY, MPP_NATIVE, MPP_DELETE, &
                          default_field, default_axis, default_att, &
-                         mpp_get_fields, MPP_SEQUENTIAL, MPP_DIRECT
+                         mpp_get_fields, MPP_SEQUENTIAL, MPP_DIRECT, mpp_get_axes, &
+                         mpp_get_axis_data
   use mpp_domains_mod, only : domain2d, domain1d, mpp_get_domain_components, &
                               mpp_get_compute_domain, mpp_get_data_domain, &
                               mpp_get_global_domain, NULL_DOMAIN1D, &
@@ -15,13 +48,13 @@ module fms_io_mod
                              
   use mpp_mod, only : mpp_error, FATAL, NOTE, mpp_pe, mpp_root_pe, mpp_npes, &
                       stdlog, stdout, mpp_broadcast, ALL_PES, &
-                      mpp_chksum
+                      mpp_chksum, mpp_sync, mpp_get_current_pelist, mpp_npes
   implicit none
   private
 
   integer, parameter, private :: max_files=50
-  integer, parameter, private :: max_fields=50
-  integer, parameter, private :: max_axes=20
+  integer, parameter, private :: max_fields=100
+  integer, parameter, private :: max_axes=50
   integer, parameter, private :: max_atts=20
 
   type buff_type
@@ -43,6 +76,7 @@ module fms_io_mod
      type(axistype),  dimension(max_axes) :: axes   ! spatial axes
      type(atttype),  dimension(max_atts) :: atts
      type(domain2D) :: domain(max_fields)
+     logical :: is_dimvar(max_fields)
   end type file_type
 
   interface read_data
@@ -76,6 +110,10 @@ module fms_io_mod
 
   logical, private :: module_is_initialized = .FALSE.
   logical, private :: read_all_pe = .TRUE.
+
+  integer, allocatable, dimension(:) :: pelist
+  character(len=32) :: pelist_name
+  
   character(len=64) :: iospec_ieee32 = '-N ieee_32'
   
   !------ private data, pointer to current 2d domain ------
@@ -94,18 +132,25 @@ module fms_io_mod
 
   public :: read_data, write_data, fms_io_init, fms_io_exit, field_size
   public :: open_namelist_file, open_restart_file, open_ieee32_file, close_file 
-  public :: set_domain, nullify_domain, get_domain_decomp
+  public :: set_domain, nullify_domain, get_domain_decomp, return_domain
 
   private :: lookup_field_w, lookup_axis, unique_axes
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: fms_io.F90,v 1.2 2002/07/16 22:55:32 fms Exp $'
-  character(len=128) :: tagname = '$Name: havana $'
+  character(len=128) :: version = '$Id: fms_io.F90,v 1.3 2003/04/09 21:16:47 fms Exp $'
+  character(len=128) :: tagname = '$Name: inchon $'
 
 contains
 
+! <SUBROUTINE NAME="fms_io_init">
+!   <DESCRIPTION>
+! Assign default values for default_file
+!   </DESCRIPTION>
+!   <TEMPLATE>
+! call fms_io_init()
+!   </TEMPLATE>
   subroutine fms_io_init()
-    ! assign default values for default_file
+    
     IMPLICIT NONE
 
     integer  :: i,j, unit, io_status
@@ -124,7 +169,7 @@ contains
     read(unit,fms_io_nml,iostat=io_status)
     write(stdlog(), fms_io_nml)
     if (io_status > 0) then
-       call mpp_error(FATAL,'=>Error reading input.nml')
+       call mpp_error(FATAL,'=>fms_io: Error reading input.nml')
     endif
     call mpp_close (unit)
 
@@ -136,7 +181,7 @@ contains
     case ('single')
        fset_r = MPP_SINGLE
     case default
-       call mpp_error(FATAL,'invalid fileset option')
+       call mpp_error(FATAL,'fms_io: invalid fileset option')
     end select
 
     select case (threading_read) 
@@ -145,7 +190,7 @@ contains
     case ('single')
        thread_r = MPP_SINGLE
     case default
-       call mpp_error(FATAL,'invalid threading option')
+       call mpp_error(FATAL,'fms_io: invalid threading option')
     end select
 
     ! take namelist options if present
@@ -156,7 +201,7 @@ contains
     case ('single')
        fset_w = MPP_SINGLE
     case default
-       call mpp_error(FATAL,'invalid fileset option')
+       call mpp_error(FATAL,'fms_io: invalid fileset option')
     end select
 
     select case (threading_write) 
@@ -165,7 +210,7 @@ contains
     case ('single')
        thread_w = MPP_SINGLE
     case default
-       call mpp_error(FATAL,'invalid threading option')
+       call mpp_error(FATAL,'fms_io: invalid threading option')
     end select
 
     select case(format)
@@ -189,6 +234,7 @@ contains
     default_file%fields(:) = default_field
     default_file%axes(:) = default_axis
     default_file%atts(:) = default_att      
+    default_file%is_dimvar(:) = .false.
 
     do i=1, max_files
        files_write(i) = default_file
@@ -199,16 +245,26 @@ contains
 
     nullify (Current_domain)
 
+
     module_is_initialized = .TRUE.
     write (stdlog(),'(/,80("="),/(a))') trim(version), trim(tagname)
 
   end subroutine fms_io_init
+! </SUBROUTINE>
+! <SUBROUTINE NAME="fms_io_exit">
+
+
+!   <DESCRIPTION>
+! This routine is called after all fields have been written to temporary files
+! The result NETCDF files are created here.
+
+!   </DESCRIPTION>
+!   <TEMPLATE>
+! call fms_io_exit
+!   </TEMPLATE>
 
   subroutine fms_io_exit()
-    ! <OVERVIEW>
-    ! This routine is called after all fields have been written to temporary files
-    ! The netcdf files are created here
-    ! </OVERVIEW>
+    use platform_mod, only: r8_kind
     IMPLICIT NONE
     integer, parameter :: max_axis_size=10000
     integer :: i,j,k,unit,unit2,index_field
@@ -219,7 +275,7 @@ contains
     integer :: num_x_axes, num_y_axes, num_z_axes
     type(domain1d) :: domain_x(max_fields), domain_y(max_fields), x_domains(max_axes), y_domains(max_axes)
     real, dimension(max_axis_size) :: axisdata
-    real :: tlev
+    real(r8_kind) :: tlev
 
     character (len=128) :: axisname,filename, fieldname,temp_name
 
@@ -230,14 +286,14 @@ contains
        axisdata(i) = i
     enddo
 
-    ! each field has an associated domain type (may be undefined).
-    ! each file only needs to write unique axes (i.e. if 2 fields share an identical axis, then only write the axis once)
-    ! unique axes are defined by the global size and domain decomposition (i.e. can support identical axis sizes with
-    ! different domain decomposition)
+! each field has an associated domain type (may be undefined).
+! each file only needs to write unique axes (i.e. if 2 fields share an identical axis, then only write the axis once)
+! unique axes are defined by the global size and domain decomposition (i.e. can support identical axis sizes with
+! different domain decomposition)
 
     do i = 1, num_files_w
 
-       ! determine maximum number of time levels for this file
+! determine maximum number of time levels for this file
        files_write(i)%max_ntime = 0
        do j=1,files_write(i)%nvar
           files_write(i)%max_ntime = max(files_write(i)%max_ntime,files_write(i)%siz(j,4))
@@ -437,20 +493,40 @@ contains
     num_files_r = 0
 
   end subroutine fms_io_exit
+! </SUBROUTINE>
 
-  subroutine write_data_3d_new(filename, fieldname, data, domain)
-    !<OVERVIEW>
+! <SUBROUTINE NAME="write_data">
+    !<DESCRIPTION>
     ! This subroutine performs writing "fieldname" to file "filename". All values of "fieldname" 
     ! will be written to a temporary file. The final NETCDF file will be created only at a later step
     ! when the user calls fms_io_exit. Therefore, make sure that fms_io_exit is called after all
     ! fields have been written by this subroutine.
-    !</OVERVIEW>
+    !</DESCRIPTION>
+!   <TEMPLATE>
+! call write_data(filename, fieldname, data, domain)
+!   </TEMPLATE>
 
+  subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_name)
     IMPLICIT NONE
+!   <IN NAME="filename" TYPE="character" DIM="(*)">
+!    File name
+!   </IN>
+!   <IN NAME="fieldname" TYPE="character" DIM="(*)">
+!    Field  name
+!   </IN>
+!   <IN NAME="data"  TYPE="real">
+!   array containing data of fieldname
+!   </IN>
+!   <IN NAME="domain"  TYPE="domain, optional">
+!   domain of fieldname
+!   </IN>
+
     character(len=*), intent(in) :: filename, fieldname 
     real, dimension(:,:,:), intent(in) :: data
     type(domain2d), intent(in), optional :: domain
     real, dimension(:,:,:), pointer ::global_data
+    logical, intent(in), optional :: append_pelist_name    
+
 
     character(len=128) :: name, temp_name, axisname, old_name,units,longname,field_name
     ! temp_name: name of the temporary file
@@ -468,16 +544,27 @@ contains
     logical :: data_is_global(max_fields),data_is_local,data_is_compute
     logical :: new_variable= .true.
     logical :: file_open = .false.
-
+    character(len=256) :: fname
+    
     type(fieldtype) :: newfield
     type(axistype), dimension(:), allocatable :: var_axes !axes of one variable
 
     ! Initialize files to default values
-    if(.not.module_is_initialized) call mpp_error(FATAL,'need to initialize fms_io first')
+    if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io: need to initialize fms_io first')
 
     data_is_global=.true.;data_is_local=.false.;data_is_compute=.false.
 
+    fname = trim(filename)
 
+    if (PRESENT(append_pelist_name)) then
+        if (append_pelist_name) then
+            allocate(pelist(mpp_npes()))        
+            call mpp_get_current_pelist(pelist,pelist_name)
+            fname = trim(filename)//trim(pelist_name)
+            deallocate(pelist)
+        endif
+    endif
+    
     ! Check if filename has been open  or not
 
     if(num_files_w == 0) then
@@ -486,7 +573,7 @@ contains
        file_open=.false.
        do i=1,num_files_w
           nfile = i
-          if (trim(files_write(i)%filename) == trim(filename)) then
+          if (trim(files_write(i)%filename) == trim(fname)) then
              file_open = .true. !file already open
              exit
           endif
@@ -498,7 +585,7 @@ contains
        ! record the file name in array files_write
        num_files_w=num_files_w + 1
        nfile = num_files_w           
-       files_write(nfile)%filename = trim(filename)         
+       files_write(nfile)%filename = trim(fname)         
 
 
     endif
@@ -511,11 +598,12 @@ contains
 
     if(new_variable) then
        ! open temporary file for writing data only, each field is written to a separate file
-       temp_name = trim(filename)//'_'//trim(fieldname)//'_tmp'
+       temp_name = trim(fname)//'_'//trim(fieldname)//'_tmp'
        call mpp_open(unit2,temp_name,form=MPP_NATIVE,nohdrs=.true.,threading=MPP_MULTI,&
             fileset=MPP_MULTI, action=MPP_OVERWR)          
 
        files_write(nfile)%nvar = files_write(nfile)%nvar +1
+       if(files_write(nfile)%nvar>max_fields) call  mpp_error(FATAL,'fms_io: max_fields too small')
        index_field = files_write(nfile)%nvar
        files_write(nfile)%fieldname(index_field) = fieldname
        files_write(nfile)%siz(index_field,1) = size(data,1)
@@ -574,41 +662,42 @@ contains
     endif
 
   end subroutine write_data_3d_new
-  ! ...
+! </SUBROUTINE>  
 
-  subroutine write_data_2d_new(filename, fieldname, data, domain)
+  subroutine write_data_2d_new(filename, fieldname, data, domain,append_pelist_name)
 
     IMPLICIT NONE
     character(len=*), intent(in) :: filename, fieldname 
     real, dimension(:,:), intent(in) :: data
     real, dimension(size(data,1),size(data,2),1) :: data_3d
     type(domain2d), intent(in), optional :: domain
+    logical, intent(in), optional :: append_pelist_name
 
     ! Initialize files to default values
     if(.not.module_is_initialized) call mpp_error(FATAL,'need to initialize fms_io first')
 
     data_3d(:,:,1) = data(:,:)
 
-    call write_data_3d_new(filename, fieldname, data_3d, domain)
+    call write_data_3d_new(filename, fieldname, data_3d, domain,append_pelist_name)
 
   end subroutine write_data_2d_new
 
   ! ........................................................
 
-  subroutine write_data_1d_new(filename, fieldname, data)
+  subroutine write_data_1d_new(filename, fieldname, data,append_pelist_name)
 
     IMPLICIT NONE
     character(len=*), intent(in) :: filename, fieldname 
     real, dimension(:), intent(in) :: data
     real, dimension(size(data),1,1) :: data_3d
-
+    logical, intent(in), optional :: append_pelist_name
 
     ! Initialize files to default values
     if(.not.module_is_initialized) call mpp_error(FATAL,'need to initialize fms_io first')
 
     data_3d(:,1,1) = data(:)
 
-    call write_data_3d_new(filename, fieldname, data_3d)
+    call write_data_3d_new(filename, fieldname, data_3d,append_pelist_name=append_pelist_name)
 
   end subroutine write_data_1d_new
   ! ..............
@@ -618,7 +707,8 @@ contains
 
   function lookup_field_w(nfile,fieldname)
     IMPLICIT NONE
-    ! Given fieldname, this function returns the field position in the model's fields list
+
+! Given fieldname, this function returns the field position in the model's fields list
 
     integer, intent(in) :: nfile
     character(len=*), intent(in) :: fieldname
@@ -640,6 +730,7 @@ contains
   end function lookup_field_w
 
   function lookup_axis(axis_sizes,siz,domains,dom)
+
     ! Given axis size (global), this function returns the axis id  
 
     IMPLICIT NONE
@@ -664,25 +755,57 @@ contains
           endif
        endif
     enddo
-    if (lookup_axis == -1) call mpp_error(FATAL,'error in lookup_axis')               
+    if (lookup_axis == -1) call mpp_error(FATAL,'fms_io: error in lookup_axis')               
   end function lookup_axis
 
-  subroutine field_size(filename, fieldname, siz)
-    ! Given filename and fieldname, this subroutine returns the size of field
+! <SUBROUTINE NAME="field_size">
+!<DESCRIPTION>
+! Given filename and fieldname, this subroutine returns the size of field
+!</DESCRIPTION>
+!   <TEMPLATE>
+! call field_size(filename, fieldname, siz) 
+!   </TEMPLATE>
+!   <IN NAME="filename" TYPE="character" DIM="(*)">
+!    File name
+!   </IN>
+!   <IN NAME="fieldname" TYPE="character" DIM="(*)">
+!    Field  name
+!   </IN>
+!   <OUT NAME="siz" TYPE="integer" DIM="(*)">
+!   </OUT>
+  subroutine field_size(filename, fieldname, siz, append_pelist_name)
+
     character(len=*), intent(in) :: filename, fieldname
     integer, intent(inout) :: siz(:)
+    logical, intent(in), optional :: append_pelist_name
+    
     character(len=128) :: name
-    integer :: i, nfile, unit, ndim, nvar, natt, ntime, siz_in(4)
+    character(len=1) :: cart
+    integer :: i, nfile, unit, ndim, nvar, natt, ntime, siz_in(4), j, len
+    integer :: memuse 
     logical :: file_opened, found
-
+    character(len=256) :: fname
+    
     type(fieldtype) :: fields(max_fields)
+    type(axistype) :: axes(max_fields)
     if (size(siz) < 4) call mpp_error(FATAL,'size array must be >=4 in get_field_size')
 
-    ! Need to check if filename has been opened or not
+! Need to check if filename has been opened or not
+
+    fname = trim(filename)
+    if (PRESENT(append_pelist_name)) then
+        if (append_pelist_name) then
+            allocate(pelist(mpp_npes()))
+            call mpp_get_current_pelist(pelist,pelist_name)
+            fname = trim(filename)//trim(pelist_name)
+            deallocate(pelist)
+        endif
+    endif
+        
     nfile = 0
     file_opened=.false.
     do i=1,num_files_r
-       if (trim(files_read(i)%filename) == trim(filename))  then
+       if (trim(files_read(i)%filename) == trim(fname))  then
           nfile = i
           file_opened = .true.
           exit ! file is already opened
@@ -696,19 +819,50 @@ contains
     siz=-1
 
     if (.not. file_opened) then
-       call mpp_open(unit,trim(filename),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_MULTI, &
-            fileset=MPP_SINGLE)
-       call mpp_get_info(unit,ndim,nvar,natt,ntime)
-       call mpp_get_fields(unit,fields(1:nvar))
-       do i=1, nvar
-          call mpp_get_atts(fields(i),name=name,siz=siz_in)
-          if (trim(name) == trim(fieldname)) then
-             siz(1:4)=siz_in(1:4)
-             found = .true.
-             exit
-          endif
-       enddo
-       call mpp_close(unit)
+!       write(stdout(),*) 'memory usage before calling mpp_open = ', memuse()
+        call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_SINGLE, &
+             fileset=MPP_SINGLE)
+        call mpp_get_info(unit,ndim,nvar,natt,ntime)
+        if (nvar > max_fields) call mpp_error(FATAL,'FMS_IO: max_fields too small')
+        call mpp_get_fields(unit,fields(1:nvar))
+        do i=1, nvar
+           call mpp_get_atts(fields(i),name=name)
+           if (lowercase(trim(name)) == lowercase(trim(fieldname))) then
+               call mpp_get_atts(fields(i),ndim=ndim)
+               call mpp_get_atts(fields(i),axes=axes(1:ndim))
+               call mpp_get_atts(fields(i),siz=siz_in)
+               siz = siz_in
+               siz(4) = ntime
+               do j = 1, ndim
+                  call mpp_get_atts(axes(j),len=len)
+                  call get_axis_cart(axes(j),cart)
+                  select case (cart)
+                  case ('X')
+                      siz(1) = len
+                  case('Y')
+                      siz(2) = len
+                  case('Z')
+                      siz(3) = len
+                  case('T')
+                      siz(4) = len
+                  end select
+               enddo
+               found = .true.
+               exit	
+           endif
+        enddo
+        if(.not. found) then
+            call mpp_get_axes(unit,axes(1:ndim))
+            do i=1, ndim
+               call mpp_get_atts(axes(i),name=name, len= siz_in(1))
+               if (lowercase(trim(name)) == lowercase(trim(fieldname))) then
+                   siz(1)= siz_in(1)
+                   found = .true.
+                   exit
+               endif
+            enddo
+        endif
+        call mpp_close(unit)
     else
        do i=1, files_read(nfile)%nvar
           if (trim(fieldname) == trim(files_read(nfile)%fieldname(i))) then
@@ -721,29 +875,87 @@ contains
           call mpp_get_info(files_read(nfile)%unit,ndim,nvar,natt,ntime)
           call mpp_get_fields(files_read(nfile)%unit,fields(1:nvar))
           do i=1, nvar
-             call mpp_get_atts(fields(i),name=name,siz=siz_in)
+             call mpp_get_atts(fields(i),name=name)
              if (trim(name) == trim(fieldname)) then
-                siz(1:4) = siz_in(1:4)
+               call mpp_get_atts(fields(i),ndim=ndim)
+               call mpp_get_atts(fields(i),axes=axes(1:ndim))
+               call mpp_get_atts(fields(i),siz=siz_in)
+               siz = siz_in
+               siz(4) = ntime
+               do j = 1, ndim
+                  call mpp_get_atts(axes(j),len=len)
+                  call get_axis_cart(axes(j),cart)
+                  select case (cart)
+                  case ('X')
+                    siz(1) = len
+                  case('Y')
+                    siz(2) = len
+                  case('Z')
+                    siz(3) = len
+                  case('T')
+                    siz(4) = len
+                  end select
+	        enddo                 
                 found=.true.
                 exit
              endif
           enddo
        endif
-    endif
-!    if (.not. found) call mpp_error(FATAL,'field not found in file')
+       if(.not. found) then         
+          do i=1, files_read(nfile)%ndim
+            call mpp_get_atts(files_read(nfile)%axes(i),name=name, len= siz_in(1))
+            if (lowercase(trim(name)) == lowercase(trim(fieldname))) then
+               siz(1)= siz_in(1)
+               found = .true.
+               exit
+            endif
+          enddo
+      endif
 
+    endif
+    if (.not. found .and. mpp_pe() == mpp_root_pe()) &
+         call mpp_error(FATAL, 'fms_io: field '//trim(fieldname)// ' NOT found in file '//trim(filename))
+    call mpp_sync()
     return
   end subroutine field_size
+! </SUBROUTINE>
 
 
-  subroutine read_data_3d_new(filename,fieldname,data,domain, timelevel)
+! <SUBROUTINE NAME="read_data">
+!<DESCRIPTION>
+! This routine performs reading "fieldname" stored in "filename". The data values of fieldname
+! will be stored in "data" at the end of this routine. For fieldname with multiple timelevel
+! just repeat the routine with explicit timelevel in each call.
+!</DESCRIPTION>
+!   <TEMPLATE>
+! call read_data(filename,fieldname,data,domain,timelevel)
+!   </TEMPLATE>
+!   <IN NAME="filename" TYPE="character" DIM="(*)">
+!    File name
+!   </IN>
+!   <IN NAME="fieldname" TYPE="character" DIM="(*)">
+!    Field  name
+!   </IN>
+!   <IN NAME="domain"  TYPE="domain, optional">
+!   domain of fieldname
+!   </IN>
+!   <IN NAME="timelevel" TYPE="integer, optional">
+!     time level of fieldname
+!   </IN>
+!   <OUT NAME="data"  TYPE="real">
+!   array containing data of fieldname
+!   </OUT>
+  subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_pelist_name)
     IMPLICIT NONE
     character(len=*), intent(in) :: filename, fieldname
     real, dimension(:,:,:), intent(out) :: data ! 3 dimensional data    
     type(domain2d), intent(in), optional :: domain
     integer, intent(in) , optional :: timelevel
+    logical, intent(in), optional :: append_pelist_name
+    
 
     character(len=128) :: name
+    character(len=256) :: fname
     integer :: unit, siz_in(4), siz(4), i, j, k
     integer :: nfile  ! index of the opened file in array files
     integer :: ndim, nvar, natt, ntime,var_dim, tlev=1
@@ -753,8 +965,8 @@ contains
     integer :: isglobal, ieglobal, jsglobal, jeglobal, gxsize, gysize,gxsize_max, &
          gysize_max
     logical :: data_is_global,data_is_local,data_is_compute
-    logical ::  file_opened 
-
+    logical ::  file_opened, found
+    integer :: index_axis
 
     ! Initialize files to default values
     if(.not.module_is_initialized) call mpp_error(FATAL,'need to initialize fms_io first')
@@ -766,7 +978,19 @@ contains
        tlev = timelevel
     else
        tlev = 1
+   endif
+
+
+   fname = trim(filename)   
+   if (PRESENT(append_pelist_name)) then
+       if (append_pelist_name) then
+            allocate(pelist(mpp_npes()))        
+            call mpp_get_current_pelist(pelist,pelist_name)
+            fname = trim(filename)//trim(pelist_name)
+            deallocate(pelist)
+        endif
     endif
+    
     if (PRESENT(domain)) then
        call mpp_get_compute_domain(domain,iscomp,iecomp,jscomp,jecomp,cxsize, & 
             cxsize_max,cysize,cysize_max)
@@ -795,7 +1019,7 @@ contains
     endif
 
     if (data_is_global .and. fset_r == MPP_MULTI) &
-         call mpp_error(FATAL,'cant do global read on multi fileset ')
+         call mpp_error(FATAL,'fms_io: cant do global read on multi fileset ')
 
     ! Need to check if filename has been opened or not
     nfile = 0
@@ -804,7 +1028,7 @@ contains
     else
        file_opened=.false.
        do i=1,num_files_r
-          if (files_read(i)%filename == trim(filename))  then
+          if (files_read(i)%filename == trim(fname))  then
              nfile = i
              file_opened = .true.
              exit ! file is already opened
@@ -813,13 +1037,13 @@ contains
     endif
     if (.not. file_opened) then !Need to open the file now     
        if (fset_r == MPP_MULTI .and. thread_r == MPP_SINGLE) then
-          call mpp_error(FATAL,'single-threaded reads from multi fileset not allowed')
+          call mpp_error(FATAL,'fms_io: single-threaded reads from multi fileset not allowed')
        endif
-       call mpp_open(unit,trim(filename),form=form,action=MPP_RDONLY,threading=thread_r, &
+       call mpp_open(unit,trim(fname),form=form,action=MPP_RDONLY,threading=thread_r, &
             fileset=fset_r)
        ! Increase num_files_r and set file_type 
        num_files_r=num_files_r + 1
-       files_read(num_files_r)%filename = trim(filename)
+       files_read(num_files_r)%filename = trim(fname)
        nfile = num_files_r
        files_read(nfile)%unit = unit
     else
@@ -834,10 +1058,14 @@ contains
             files_read(nfile)%nvar, files_read(nfile)%natt,files_read(nfile)%max_ntime)
        if(files_read(nfile)%max_ntime < 1)  files_read(nfile)%max_ntime = 1
        nvar = files_read(nfile)%nvar  
+       ndim = files_read(nfile)%ndim
        if (nvar > max_fields) call mpp_error(FATAL,'FMS_IO: max_fields too small')
        call mpp_get_fields(unit,files_read(nfile)%fields(1:nvar))     
+       call mpp_get_axes(unit,files_read(nfile)%axes(1:ndim))
        siz_in = 1
        index_field = -1
+       found = .false.
+       files_read(nfile)%is_dimvar(:) = .false.
        do i=1,files_read(nfile)%nvar
           call mpp_get_atts(files_read(nfile)%fields(i),name=name,ndim=var_dim,siz=siz_in)
           if(var_dim .lt.3) then
@@ -845,28 +1073,61 @@ contains
                 siz_in(j)=1
              enddo
           endif
-          if (trim(name) == trim(fieldname)) then ! found the variable
+          if (lowercase(trim(name)) == lowercase(trim(fieldname))) then ! found the variable
              index_field = i
              files_read(nfile)%fieldname(i) = fieldname
              files_read(nfile)%siz(i,:)  = siz_in
              files_read(nfile)%gsiz(i,:) = siz_in
              if (fset_r == MPP_SINGLE) then
                 if (siz_in(1) /= gxsize .or. siz_in(2) /= gysize .or. siz_in(3) /= &
-                     size(data,3)) call mpp_error(FATAL,'MPP_single:external field size mismatch')
+                     size(data,3)) call mpp_error(FATAL,'fms_io: MPP_single:external field size mismatch')
              else if (fset_r == MPP_MULTI) then
                 if (siz_in(1) /= dxsize .or. siz_in(2) /= dysize & 
                      .or. siz_in(3) /= size(data,3)) &
-                     call mpp_error(FATAL,'MPP_multi: external field size mismatch')
+                     call mpp_error(FATAL,'fms_io: MPP_multi: external field size mismatch')
              endif
+             found = .true.
              exit  !jump out of i loop
           endif
        enddo
-       if(index_field <1) call mpp_error(FATAL, 'variable not found in read_data')
+       if(.not. found) then
+          if (nvar+ndim > max_fields) call mpp_error(FATAL,'FMS_IO: max_fields too small')
+          do i=1,files_read(nfile)%ndim
+            call mpp_get_atts(files_read(nfile)%axes(i),name=name, len= siz_in(1)) 
+            if (lowercase(trim(name)) == lowercase(trim(fieldname))) then
+             index_field = i+nvar
+             files_read(nfile)%is_dimvar(index_field) = .true.
+             files_read(nfile)%fieldname(index_field) = fieldname
+             files_read(nfile)%siz(index_field,:)  = siz_in
+             files_read(nfile)%gsiz(index_field,:) = siz_in
+             if (fset_r == MPP_SINGLE) then
+                if (siz_in(1) /= gxsize) &
+                     call mpp_error(FATAL,'fms_io: MPP_single:external field size mismatch')
+!             else if (fset_r == MPP_MULTI) then
+!                if (siz_in(1) /= dxsize .or. siz_in(2) /= dysize & 
+!                     .or. siz_in(3) /= size(data,3)) &
+!                     call mpp_error(FATAL,'MPP_multi: external field size mismatch')
+             endif
+               siz(1)= siz_in(1)
+               found = .true.
+             exit
+          endif
+       enddo
+       endif
+
+       if(index_field <1) call mpp_error(FATAL, 'fms_io: field '//trim(fieldname)// ' NOT found in file '//trim(filename))
        if ( tlev < 1 .or. files_read(nfile)%max_ntime < tlev)    &
-            call mpp_error(FATAL,'invalid time indices')
+            call mpp_error(FATAL,'fms_io: invalid time indices')
        if (data_is_global) then
-          call mpp_read(unit,files_read(nfile)%fields(index_field),data(:,:,:),tlev)
+          if (files_read(nfile)%is_dimvar(index_field)) then
+             index_axis = index_field - files_read(nfile)%nvar 
+             call mpp_get_axis_data( files_read(nfile)%axes(index_axis),data(:,1,1))
+          else
+             call mpp_read(unit,files_read(nfile)%fields(index_field),data(:,:,:),tlev)
+          endif
        else 
+          if (files_read(nfile)%is_dimvar(index_field)) call mpp_error(FATAL,'fms_io: domain is present &
+              & but the variable is a dimension variable.  Remove domain flag for this var')
           if (PRESENT(domain)) then
              call mpp_read(unit,files_read(nfile)%fields(index_field),domain,data,tlev)
           else
@@ -878,40 +1139,47 @@ contains
     return
   end subroutine read_data_3d_new
   !.... 
-
-  subroutine read_data_2d_new(filename,fieldname,data,domain,timelevel)
+! </SUBROUTINE>
+  subroutine read_data_2d_new(filename,fieldname,data,domain,timelevel,&
+       append_pelist_name)
     IMPLICIT NONE
     character(len=*), intent(in) :: filename, fieldname
     real, dimension(:,:), intent(out) :: data     !2 dimensional data 
     real, dimension(size(data,1),size(data,2),1) :: data_3d
     type(domain2d), intent(in), optional :: domain
     integer, intent(in) , optional :: timelevel
+    logical, intent(in), optional :: append_pelist_name
 
     data_3d = 0.0
 
-    call read_data_3d_new(filename,fieldname,data_3d,domain,timelevel) 
+    call read_data_3d_new(filename,fieldname,data_3d,domain,timelevel,&
+         append_pelist_name=append_pelist_name)
 
     data(:,:) = data_3d(:,:,1)
 
   end subroutine read_data_2d_new
 
-  subroutine read_data_1d_new(filename,fieldname,data,domain,timelevel)
+  subroutine read_data_1d_new(filename,fieldname,data,domain,timelevel,&
+       append_pelist_name)
     IMPLICIT NONE
     character(len=*), intent(in) :: filename, fieldname
     real, dimension(:), intent(out) :: data     !1 dimensional data 
     real, dimension(size(data),1,1) :: data_3d
     type(domain2d), intent(in), optional :: domain
     integer, intent(in) , optional :: timelevel
+    logical, intent(in), optional :: append_pelist_name
 
     data_3d = 0.0
 
-    call read_data_3d_new(filename,fieldname,data_3d,domain,timelevel)
+    call read_data_3d_new(filename,fieldname,data_3d,domain,timelevel,&
+         append_pelist_name=append_pelist_name)
 
     data(:) = data_3d(:,1,1)
 
   end subroutine read_data_1d_new
 
-  subroutine read_data_scalar_new(filename,fieldname,data,domain,timelevel)
+  subroutine read_data_scalar_new(filename,fieldname,data,domain,timelevel,&
+       append_pelist_name)
     IMPLICIT NONE
     ! this subroutine is for reading a single number
     character(len=*), intent(in) :: filename, fieldname
@@ -919,10 +1187,12 @@ contains
     real, dimension(1,1,1) :: data_3d
     type(domain2d), intent(in), optional :: domain
     integer, intent(in) , optional :: timelevel
+    logical, intent(in), optional :: append_pelist_name
 
     data_3d = 0.0
 
-    call read_data_3d_new(filename,fieldname,data_3d,domain,timelevel) 
+    call read_data_3d_new(filename,fieldname,data_3d,domain,timelevel,&
+         append_pelist_name=append_pelist_name)
 
     data = data_3d(1,1,1)
 
@@ -1300,9 +1570,13 @@ contains
 ! mpp_close routines in the mpp_io_mod should be used
 !
 !#######################################################################
-! opens single namelist file for reading only by all PEs
-! the default file opened is called "input.nml"
 
+
+! <FUNCTION NAME="open_namelist_file">
+!   <DESCRIPTION>
+! Opens single namelist file for reading only by all PEs
+! the default file opened is called "input.nml".
+!   </DESCRIPTION>
   function open_namelist_file (file) result (unit)
     character(len=*), intent(in), optional :: file
     integer :: unit
@@ -1318,11 +1592,14 @@ contains
     endif
 
   end function open_namelist_file
+! </FUNCTION>
 
-  !#######################################################################
-  ! opens single restart file for reading by all PEs or
-  ! writing by root PE only
-  ! the file has native format and no mpp header records
+! <FUNCTION NAME="open_restart_file">
+!   <DESCRIPTION> 
+! Opens single restart file for reading by all PEs or
+! writing by root PE only
+! the file has native format and no mpp header records.
+!   </DESCRIPTION>
 
   function open_restart_file (file, action) result (unit)
     character(len=*), intent(in) :: file, action
@@ -1347,12 +1624,14 @@ contains
          access=MPP_SEQUENTIAL, threading=MPP_SINGLE, nohdrs=.true. )
 
   end function open_restart_file
+! </FUNCTION>
 
-  !#######################################################################
-  ! opens single 32-bit ieee file for reading by all PEs or 
-  ! writing by root PE only (writing is not recommended)
-  ! the file has no mpp header records
-
+! <FUNCTION NAME=" open_ieee32_file">
+!   <DESCRIPTION>  
+! Opens single 32-bit ieee file for reading by all PEs or 
+! writing by root PE only (writing is not recommended)
+! the file has no mpp header records.
+!   </DESCRIPTION>
   function open_ieee32_file (file, action) result (unit)
     character(len=*), intent(in) :: file, action
     integer :: unit
@@ -1383,9 +1662,14 @@ contains
     endif
 
   end function open_ieee32_file
+! </FUNCTION>
 
-  !#######################################################################
-
+!#######################################################################
+! <FUNCTION NAME=" close_file">
+!   <DESCRIPTION>
+!  Closes files that are opened by: open_namelist_file, open restart_file,
+! and open_ieee32_file. Users should use mpp_close for other cases.
+!   </DESCRIPTION>
   subroutine close_file (unit, status)
     integer,          intent(in)           :: unit
     character(len=*), intent(in), optional :: status
@@ -1405,12 +1689,16 @@ contains
     endif
 
   end subroutine close_file
+! </FUNCTION>
 
-  !#######################################################################
-  !#######################################################################
-  ! set_domain is called to save the domain2d data type prior to
-  ! calling the distributed data I/O routines, read_data and write_data
+!#######################################################################
+  
 
+! <SUBROUTINE NAME="set_domain">
+!   <DESCRIPTION>
+! set_domain is called to save the domain2d data type prior to
+! calling the distributed data I/O routines, read_data and write_data.
+!   </DESCRIPTION>
   subroutine set_domain (Domain2)
 
     type(domain2D), intent(in), target :: Domain2
@@ -1431,10 +1719,13 @@ contains
     !-----------------------------------------------------------------------
 
   end subroutine set_domain
+! </SUBROUTINE>
 
+! <SUBROUTINE NAME="nullify_domain">
   subroutine nullify_domain ()
-
-
+!   <DESCRIPTION>
+! Use to nulify domain that has been assigned by set_domain.
+!   </DESCRIPTION>
     if (.NOT.module_is_initialized) call fms_io_init ( )
 
     !  --- set_domain must be called before a read_data or write_data ---
@@ -1446,11 +1737,29 @@ contains
     isg=0;ieg=0;jsg=0;jeg=0
 
   end subroutine nullify_domain
+! </SUBROUTINE>
+
+  subroutine return_domain(domain2)
+    type(domain2D), intent(out) :: domain2
+
+    if (associated(Current_domain)) then
+       domain2 = Current_domain
+    else
+       domain2 = NULL_DOMAIN2D       
+    endif
+  end subroutine return_domain
+
 
   !#######################################################################
   ! this will be a private routine with the next release
   ! users should get the domain decomposition from the domain2d data type
 
+!#######################################################################
+! <SUBROUTINE NAME="get_domain_decomp">
+!   <DESCRIPTION>
+! This will be a private routine with the next release.
+! Users should get the domain decomposition from the domain2d data type.
+!   </DESCRIPTION>
   subroutine get_domain_decomp ( x, y )
 
     integer, intent(out), dimension(4) :: x, y
@@ -1463,6 +1772,12 @@ contains
 
   end subroutine get_domain_decomp
 
+! </SUBROUTINE>
+! <FUNCTION NAME="lowercase">
+!   <DESCRIPTION>
+! Turn a string from uppercase to lowercase, do nothing if the
+! string is already in lowercase.
+!   </DESCRIPTION>
  function lowercase (cs) 
  character(len=*), intent(in) :: cs
  character(len=len(cs))       :: lowercase 
@@ -1475,7 +1790,76 @@ contains
     lowercase = transfer(ca,cs) 
     
  end function lowercase 
+! </FUNCTION>
+  subroutine get_axis_cart(axis, cart)      
 
+    type(axistype), intent(in) :: axis
+    character(len=1), intent(out) :: cart
+    character(len=1) :: axis_cart
+    character(len=16), dimension(2) :: lon_names, lat_names
+    character(len=16), dimension(3) :: z_names
+    character(len=16), dimension(2) :: t_names
+    character(len=16), dimension(2) :: lon_units, lat_units
+    character(len=8) , dimension(4) :: z_units
+    character(len=3) , dimension(4) :: t_units
+    character(len=32) :: name
+    integer :: i,j
+
+    lon_names = (/'lon','x  '/)
+    lat_names = (/'lat','y  '/)
+    z_names = (/'depth ','height','z     '/)
+    t_names = (/'time','t   '/)
+    lon_units = (/'degrees_e   ', 'degrees_east'/)
+    lat_units = (/'degrees_n    ', 'degrees_north'/)
+    z_units = (/'cm ','m  ','pa ','hpa'/)
+    t_units = (/'sec', 'min','hou','day'/)
+
+    call mpp_get_atts(axis,cartesian=axis_cart)
+    cart = 'N'
+
+    if (axis_cart == 'x' ) cart = 'X'
+    if (axis_cart == 'y' ) cart = 'Y'
+    if (axis_cart == 'z' ) cart = 'Z'
+    if (axis_cart == 't' ) cart = 'T'
+
+    if (cart /= 'X' .and. cart /= 'Y' .and. cart /= 'Z' .and. cart /= 'T') then
+       call mpp_get_atts(axis,name=name)
+       name = lowercase(name)
+       do i=1,size(lon_names)
+          if (lowercase(name(1:3)) == trim(lon_names(i))) cart = 'X'
+       enddo
+       do i=1,size(lat_names)
+          if (name(1:3) == trim(lat_names(i))) cart = 'Y'
+       enddo
+       do i=1,size(z_names)
+          if (name == trim(z_names(i))) cart = 'Z'
+       enddo
+       do i=1,size(t_names)
+          if (name(1:3) == t_names(i)) cart = 'T'
+       enddo
+    end if
+
+    if (cart /= 'X' .and. cart /= 'Y' .and. cart /= 'Z' .and. cart /= 'T') then
+       call mpp_get_atts(axis,units=name)
+       name = lowercase(name)
+       do i=1,size(lon_units)
+          if (trim(name) == trim(lon_units(i))) cart = 'X'
+       enddo
+       do i=1,size(lat_units)
+          if (trim(name) == trim(lat_units(i))) cart = 'Y'
+       enddo
+       do i=1,size(z_units)
+          if (trim(name) == trim(z_units(i))) cart = 'Z'
+       enddo
+       do i=1,size(t_units)
+          if (name(1:3) == trim(t_units(i))) cart = 'T'
+       enddo
+    end if
+
+    return
+
+  end subroutine get_axis_cart
+  
 end module fms_io_mod
 
 

@@ -89,13 +89,18 @@ public  tracer_manager_end,        &
         set_tracer_profile,        &
         register_tracers,          &
         set_tracer_atts,           &
-        get_number_tracers
+        get_number_tracers,        &
+        tracer_requires_init,      &
+        have_initialized_tracer,   &
+        query_tracer_init,         &
+        NO_TRACER
 
 !-----------------------------------------------------------------------
 
 integer            :: num_tracer_fields = 0
-integer, parameter :: MAX_TRACER_FIELDS = 30
+integer, parameter :: MAX_TRACER_FIELDS = 100
 integer, parameter :: MAX_TRACER_METHOD = 20
+integer, parameter :: NO_TRACER         = -1
 
 integer :: total_tracers(NUM_MODELS), prog_tracers(NUM_MODELS), diag_tracers(NUM_MODELS), family_tracers(NUM_MODELS)
 
@@ -105,8 +110,9 @@ type, private ::  tracer_type
    integer                  :: num_methods, model
    type(method_type)        :: methods(MAX_TRACER_METHOD)
    logical                  :: is_prognostic, is_family, is_combined
-   real, pointer, dimension(:,:,:,:) :: field_tlevels
-   real, pointer, dimension(:,:,:) :: field, field_tendency, weight
+   real, pointer, dimension(:,:,:,:) :: field_tlevels => NULL()
+   real, pointer, dimension(:,:,:) :: field => NULL(), field_tendency => NULL(), weight => NULL()
+   logical                  :: needs_init
 end type tracer_type
 
 type, private ::  tracer_name_type
@@ -116,8 +122,8 @@ end type tracer_name_type
 
 type(tracer_type)  :: tracers(MAX_TRACER_FIELDS)
 
-character(len=128) :: version = '$Id: tracer_manager.F90,v 1.2 2002/07/16 22:57:24 fms Exp $'
-character(len=128) :: tagname = '$Name: havana $'
+character(len=128) :: version = '$Id: tracer_manager.F90,v 1.3 2003/04/09 21:19:24 fms Exp $'
+character(len=128) :: tagname = '$Name: inchon $'
 logical            :: module_is_initialized = .false.
 
 logical            :: verbose_local
@@ -226,7 +232,7 @@ num_tracer_comp_model = 0
 do n=1,nfields
    call get_field_info(n,type,name,mod,num_methods)
    if (mod == model .and. type == 'tracer') then
-      if (get_tracer_index(model, name) < 0) then      
+      if (get_tracer_index(model, name) == NO_TRACER) then      
          num_tracer_fields = num_tracer_fields + 1
          num_tracer_comp_model = num_tracer_comp_model + 1
          TRACER_ARRAY(model,num_tracer_comp_model)  = num_tracer_fields
@@ -256,7 +262,8 @@ do n=1,nfields
             end select
          enddo
          tracers(num_tracer_fields)%num_methods = num_tracer_methods
-         flag_type = query_method ('tracer_type',model,num_tracer_fields,name_type)
+         tracers(num_tracer_fields)%needs_init = .false.
+         flag_type = query_method ('tracer_type',model,num_tracer_comp_model,name_type)
          if (flag_type .and. name_type == 'diagnostic') then
             tracers(num_tracer_fields)%is_prognostic = .false.
          else   
@@ -348,22 +355,133 @@ enddo
 
 
 do n=1, num_tracer_fields
-   if(mpp_pe()==mpp_root_pe()) call print_tracer_info(n)
+   if(mpp_pe()==mpp_root_pe() .and. TRACER_ARRAY(model,n)> 0 ) &
+      call print_tracer_info(TRACER_ARRAY(model,n))
 enddo
 
 
 log_unit = stdlog()
 if ( mpp_pe() == mpp_root_pe() ) then
 !   write (log_unit,'(/,80("="),/(a))') trim(version), trim(tagname)
-   write (log_unit,15) num_tracers
+    select case (model)
+      case (MODEL_ATMOS)
+         model_name = "atmospheric"
+      case (MODEL_OCEAN)
+         model_name = "oceanic"
+      case (MODEL_ICE)
+         model_name = "ice"
+      case (MODEL_LAND)
+         model_name = "land"
+      case default
+    end select
+
+   write (log_unit,15) trim(model_name),total_tracers(model)
 endif
 
-15 format ('Number of tracers in tracer table = ',i4)
+15 format ('Number of tracers in field table for ',A,' model = ',i4)
 
 
 end subroutine register_tracers
 !</SUBROUTINE>
 
+! <SUBROUTINE NAME="tracer_requires_init">
+!   <OVERVIEW>
+!      A routine to be called to alert the user that the tracer field requires 
+!   initialization.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     This routine sets a flag within the tracer_type which can be queried by
+!     the user in the user tracer initialization scheme to see if initialization 
+!     of the tracer field is necessary. The flag is set true if a restart file
+!     for the tracer is not found.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call tracer_requires_init(model, name)
+!   </TEMPLATE>
+
+!   <IN NAME="model" TYPE="integer">
+!     A parameter to identify which model is being used.
+!   </IN>
+!   <IN NAME="name" TYPE="character">
+!    The name of the tracer within the component model that requires initializing.
+!   </IN>
+subroutine tracer_requires_init(model, name)
+integer, intent(in)             :: model
+character (len = *), intent(in) :: name 
+
+integer :: tr_init
+
+tr_init = get_tracer_index(model, name)
+tracers(tr_init)%needs_init = .true.
+
+end subroutine tracer_requires_init
+!</SUBROUTINE>
+
+
+! <SUBROUTINE NAME="have_initialized_tracer">
+!   <OVERVIEW>
+!      A routine to show that the user has initialized the tracer.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     This routine sets a flag within the tracer_type to show that the user has
+!     initialized the tracer field.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call have_initialized_tracer(model, name)
+!   </TEMPLATE>
+
+!   <IN NAME="model" TYPE="integer">
+!     A parameter to identify which model is being used.
+!   </IN>
+!   <IN NAME="name" TYPE="character">
+!    The name of the tracer within the component model that requires initializing.
+!   </IN>
+subroutine have_initialized_tracer(model, name)
+integer, intent(in)             :: model
+character (len = *), intent(in) :: name 
+
+integer :: tr_init
+
+tr_init = get_tracer_index(model, name)
+tracers(tr_init)%needs_init = .false.
+
+end subroutine have_initialized_tracer
+!</SUBROUTINE>
+
+! <FUNCTION NAME="query_tracer_init">
+!   <OVERVIEW>
+!      A function to be called to alert the user that the tracer field requires 
+!   initialization.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     A function to query the initializtion status of a tracer.
+!     The return value is true if the tracer requires initialization 
+!     i.e. a restart file for the tracer is not found.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     if (query_tracer_init(model, name) ) then
+!        tracer initialization code
+!     endif
+!   </TEMPLATE>
+
+!   <IN NAME="model" TYPE="integer">
+!     A parameter to identify which model is being used.
+!   </IN>
+!   <IN NAME="name" TYPE="character">
+!    The name of the tracer within the component model that requires initializing.
+!   </IN>
+function query_tracer_init(model, name)
+integer, intent(in)             :: model
+character (len = *), intent(in) :: name 
+logical                         :: query_tracer_init
+
+integer :: tr_init
+
+tr_init = get_tracer_index(model, name)
+query_tracer_init = tracers(tr_init)%needs_init
+
+end function query_tracer_init
+!</FUNCTION>
 
 ! <SUBROUTINE NAME="get_number_tracers">
 !   <OVERVIEW>
@@ -456,13 +574,20 @@ subroutine get_tracer_indices(model, ind, prog_ind, diag_ind, fam_ind)
 integer, intent(in) :: model
 integer, intent(out), dimension(:), optional :: ind, prog_ind, diag_ind, fam_ind
 
-integer :: i, nf, np, nd, n
+integer :: i, j, nf, np, nd, n
 
 nf=0;nd=0;np=0;n=0
 
+! Initialize arrays with dummy values
+if (PRESENT(ind))      ind      = NO_TRACER
+if (PRESENT(prog_ind)) prog_ind = NO_TRACER
+if (PRESENT(diag_ind)) diag_ind = NO_TRACER
+if (PRESENT(fam_ind))  fam_ind  = NO_TRACER
+
 do i = 1, MAX_TRACER_FIELDS
- if (TRACER_ARRAY(model,i) .gt. 0) then
-   if ( model == tracers(i)%model) then
+j = TRACER_ARRAY(model,i)
+ if ( j .gt. 0) then
+   if ( model == tracers(j)%model) then
       if (PRESENT(ind)) then
          n=n+1
 !   <ERROR MSG="index array size too small in get_tracer_indices" STATUS="Fatal">
@@ -472,7 +597,7 @@ do i = 1, MAX_TRACER_FIELDS
          ind(n) = i
       endif
 
-      if (tracers(i)%is_family.and.PRESENT(fam_ind)) then
+      if (tracers(j)%is_family.and.PRESENT(fam_ind)) then
          nf=nf+1
 !   <ERROR MSG="family array size too small in get_tracer_indices" STATUS="FATAL">
 !     The family index array is too small and cannot contain all the tracer numbers.
@@ -482,14 +607,14 @@ do i = 1, MAX_TRACER_FIELDS
          cycle
       endif
 
-      if (tracers(i)%is_prognostic.and.PRESENT(prog_ind)) then
+      if (tracers(j)%is_prognostic.and.PRESENT(prog_ind)) then
          np=np+1
 !   <ERROR MSG="prognostic array size too small in get_tracer_indices" STATUS="FATAL">
 !     The prognostic index array is too small and cannot contain all the tracer numbers.
 !   </ERROR>
          if (np > size(prog_ind)) call mpp_error(FATAL,'get_tracer_indices : prognostic array size too small in get_tracer_indices')
          prog_ind(np) = i
-      else if (.not.tracers(i)%is_prognostic .and. .not. tracers(i)%is_family &
+      else if (.not.tracers(j)%is_prognostic .and. .not. tracers(j)%is_family &
              .and.PRESENT(diag_ind)) then
          nd = nd+1
 !   <ERROR MSG="diagnostic array size too small in get_tracer_indices" STATUS="FATAL">
@@ -545,7 +670,7 @@ integer :: get_tracer_index
 
 integer :: i
 
-get_tracer_index = -1
+get_tracer_index = NO_TRACER
 
 if (PRESENT(indices)) then
     do i = 1, size(indices)
@@ -570,7 +695,7 @@ if (present(verbose)) verbose_local=verbose
 
 if (verbose_local) then
 ! <ERROR MSG="tracer with this name not found: X" STATUS="NOTE">
-  if (get_tracer_index == -1 ) call mpp_error(NOTE,'get_tracer_index : tracer with this name not found: '//trim(name))
+  if (get_tracer_index == NO_TRACER ) call mpp_error(NOTE,'get_tracer_index : tracer with this name not found: '//trim(name))
 ! </ERROR>
 endif
    
@@ -780,12 +905,6 @@ real, pointer        :: data(:,:,:)
 
 integer :: n
 
-!   <ERROR MSG="invalid index" STATUS="FATAL">
-!     The index that has been passed to this routine is invalid.
-!          Check the index that is being passed corresponds to a valid
-!          tracer name.
-!   </ERROR>
-if (tracer_index < 1 .or. tracer_index > num_tracer_fields) call mpp_error(FATAL,'get_tracer_field : invalid index ')
 !Convert local model index to tracer_manager index
 !   <ERROR MSG="invalid index" STATUS="FATAL">
 !     The index that has been passed to this routine is invalid.
@@ -834,12 +953,6 @@ real, pointer        :: data(:,:,:,:)
 
 integer :: n
 
-!   <ERROR MSG="invalid index" STATUS="FATAL">
-!     The index that has been passed to this routine is invalid.
-!          Check the index that is being passed corresponds to a valid
-!          tracer name.
-!   </ERROR>
-if (tracer_index < 1 .or. tracer_index > num_tracer_fields) call mpp_error(FATAL,'get_tracer_tlevels : invalid index')
 !Convert local model index to tracer_manager index
 !   <ERROR MSG="invalid index" STATUS="FATAL">
 !     The index that has been passed to this routine is invalid.
@@ -889,12 +1002,6 @@ real, pointer        :: data(:,:,:)
 
 integer :: n
 
-!   <ERROR MSG="invalid index" STATUS="FATAL">
-!     The index that has been passed to this routine is invalid.
-!          Check the index that is being passed corresponds to a valid
-!          tracer name.
-!   </ERROR>
-if (tracer_index < 1 .or. tracer_index > num_tracer_fields) call mpp_error(FATAL,'get_tracer_tendency : invalid index')
 !Convert local model index to tracer_manager index
 !   <ERROR MSG="invalid index" STATUS="FATAL">
 !     The index that has been passed to this routine is invalid.
@@ -950,7 +1057,6 @@ integer,          intent(in)  :: model, n
 character (len=*),intent(out) :: name
 character (len=*), intent(out), optional :: longname, units
 
-if (n < 1 .or. n > num_tracer_fields) call mpp_error(FATAL,'get_tracer_names : invalid local tracer index for '//trim(name))
 !Convert local model index to tracer_manager index
 if (TRACER_ARRAY(model,n) < 1 .or. TRACER_ARRAY(model,n) > num_tracer_fields) &
     call mpp_error(FATAL,'get_tracer_names : invalid tracer index for '//trim(name))
@@ -990,7 +1096,6 @@ subroutine get_family_name(model,n,name)
 integer,          intent(in)  :: model, n
 character (len=*),intent(out) :: name
 
-if (n < 1 .or. n > num_tracer_fields) call mpp_error(FATAL,'get_family_name : invalid tracer index')
 !Convert local model index to tracer_manager index
 name=tracers(TRACER_ARRAY(model,n))%tracer_family
 
@@ -1028,7 +1133,6 @@ function check_if_prognostic(model, n)
 integer, intent(in) :: model, n
 logical             :: check_if_prognostic
 
-if (n < 1 .or. n > num_tracer_fields) call mpp_error(FATAL,'check_if_prognostic : invalid tracer index')
 !Convert local model index to tracer_manager index
 
 check_if_prognostic = tracers(TRACER_ARRAY(model,n))%is_prognostic
@@ -1427,21 +1531,20 @@ end subroutine split_family_into_members
 !   <IN NAME="n" TYPE="integer">
 !     Tracer number.
 !   </IN>
-!   <OUT NAME="surf_value" TYPE="real">
-!     The surface value that will be initialized for the tracer
-!   </OUT>
-!   <OUT NAME="multiplier" TYPE="real">
-!     The vertical multiplier for the tracer
-!                   Level(k-1) = multiplier * Level(k)
-!   </OUT>
-subroutine set_tracer_profile(model, n, surf_value, multiplier)
+!   <INOUT NAME="tracer_array" TYPE="real">
+!     The initialized tracer array.
+!   </INOUT>
+subroutine set_tracer_profile(model, n, tracer)
+!surf_value, multiplier)
 
 integer,  intent(in)  :: model, n
-real,     intent(out) :: surf_value, multiplier
+   real, intent(inout), dimension(:,:,:) :: tracer
+!real,     intent(out) :: surf_value, multiplier
+real :: surf_value, multiplier
 
-integer :: numlevels,m
+integer :: numlevels, k, m
 real :: top_value, bottom_value
-character(len=80) :: scheme, control,profile_type
+character(len=80) :: scheme, control,profile_type, name
 integer :: flag
 
 !default values
@@ -1451,6 +1554,8 @@ top_value  = surf_value
 bottom_value = surf_value
 multiplier = 1.0
 
+tracer = surf_value
+
 if ( query_method ( 'profile_type',model,n,scheme,control)) then
 !Change the tracer_number to the tracer_manager version
 
@@ -1458,6 +1563,9 @@ if ( query_method ( 'profile_type',model,n,scheme,control)) then
     profile_type                   = 'Fixed'
     flag =parse(control,'surface_value',surf_value)
     multiplier = 1.0
+    tracer = surf_value
+    call get_tracer_names(model, n, name)
+    call have_initialized_tracer(model, name)
   endif
 
   if(lowercase(trim(scheme(1:7))).eq.'profile') then
@@ -1490,8 +1598,20 @@ if ( query_method ( 'profile_type',model,n,scheme,control)) then
     select case (tracers(TRACER_ARRAY(model,n))%model)
       case (MODEL_ATMOS)
         multiplier = exp( log (top_value/surf_value) /numlevels)
+        tracer(:,:,1) = surf_value
+        do k = 2, size(tracer,3)
+          tracer(:,:,k) = tracer(:,:,k-1) * multiplier
+        enddo
+        call get_tracer_names(model, n, name)
+        call have_initialized_tracer(model, name)
       case (MODEL_OCEAN)
         multiplier = exp( log (bottom_value/surf_value) /numlevels)
+        tracer(:,:,size(tracer,3)) = surf_value
+        do k = size(tracer,3) - 1, 1, -1
+          tracer(:,:,k) = tracer(:,:,k+1) * multiplier
+        enddo
+        call get_tracer_names(model, n, name)
+        call have_initialized_tracer(model, name)
       case default
     end select
   endif !scheme.eq.profile
@@ -1674,9 +1794,6 @@ end function query_combined
 !   <OUT NAME="units" TYPE="character, optional">
 !     A string describing the units of the tracer for output to NetCDF files
 !   </OUT>
-!   <OUT NAME="set_tracer_atts" TYPE="character, optional">
-!     A flag to show that 
-!   </OUT>
 subroutine set_tracer_atts(model, name, longname, units)
 
 integer, intent(in)                    :: model
@@ -1756,6 +1873,9 @@ model_time = set_date(1980,1,1,0,0,0)
 call register_tracers(MODEL_ATMOS, num_tracers_atmos, num_tracer_prog_atmos, num_tracer_diag_atmos, &
                      num_tracer_fam_atmos)
 
+call register_tracers(MODEL_OCEAN, num_tracers_ocean, num_tracer_prog_ocean, num_tracer_diag_ocean, &
+                     num_tracer_fam_ocean)
+
 
 call set_tracer_atts(MODEL_ATMOS,"rh","relative_humidity","percent")
 
@@ -1796,6 +1916,12 @@ if (num_tracer_prog_atmos > 0) then
                                 trim(longname), trim(units), missing_value)      
       call assign_tracer_field(MODEL_ATMOS, atmos_prog_ind(i), data_tlevels=atmos_tracers(:,:,:,i,:))
    enddo
+endif
+
+if (num_tracer_prog_ocean > 0) then
+   allocate(ocean_prog_ind(num_tracer_prog_ocean))
+!   allocate(ocean_prog_tracer_diagnostic_id(num_tracer_prog_ocean))
+   call get_tracer_indices(MODEL_OCEAN,prog_ind=ocean_prog_ind)
 endif
 
 if (num_tracer_diag_atmos > 0) then

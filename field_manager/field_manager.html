@@ -28,15 +28,13 @@
 <a name="HEADER"></a>
 <!-- BEGIN HEADER -->
 <div>
-<b>Contact:</b>&nbsp;<a href="mailto:wfc@gfdl.noaa.gov">
-   William Cooke</a>,&nbsp;
-    <a href="mailto:mh2@gfdl.noaa.gov">
-   Matthew Harrison</a>
+<b>Contact:&nbsp;</b><a href="mailto:wfc@gfdl.noaa.gov">   William Cooke </a>,&nbsp;
+    <a href="mailto:mh2@gfdl.noaa.gov">   Matthew Harrison </a>
 <br>
-<b>Reviewers:</b>&nbsp;<br>
-<b>Change History: </b>&nbsp;<a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/field_manager/field_manager.F90">WebCVS Log</a>
+<b>Reviewers:&nbsp;</b>
 <br>
-<b>Last Modified:</b>&nbsp;2002/06/19 15:32:14<br>
+<b>Change History:&nbsp;</b><a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi">WebCVS Log home</a>
+<br>
 <br>
 </div>
 <!-- END HEADER -->
@@ -44,17 +42,15 @@
 <hr>
 <h4>OVERVIEW</h4>
 <!-- BEGIN OVERVIEW -->
-<p class="text">
-   The field manager reads entries from a field table and stores this information along with the type 
+<p class="text">   The field manager reads entries from a field table and stores this information along with the type 
    of field it belongs to. This allows the component models to query the field manager to see if 
    non-default methods of operation are desired. In essence the field table is a powerful type of namelist.
    Default values can be provided for all the fields through a namelist, individual fields can be modified 
-   through the field table however.</p>
+   through the field table however. </p>
 <!-- END OVERVIEW -->
 <a name="DESCRIPTION"></a>
 <!-- BEGIN DESCRIPTION -->
-<div>
-   The field table consists of entries in the following format.
+<div>   The field table consists of entries in the following format.
    <br>
 <br>
    The first line of an entry should consist of three quoted strings.
@@ -94,12 +90,11 @@
    Comments can be inserted in the field table by having a # as the first character in the line.
    <br>
 <br>
-   An example of a field table entry could be<pre>"tracer","atmos_mod","sphum"/
+   An example of a field table entry could be <pre>"tracer","atmos_mod","sphum"/
 "tracer","atmos_mod","sf6"
 "longname","sulf_hex"
 "advection_scheme_horiz","2nd_order"
-"Profile_type","Fixed","surface_value = 0.0E+00"/</pre>
-   In this example we have two field entries. 
+"Profile_type","Fixed","surface_value = 0.0E+00"/</pre>   In this example we have two field entries. 
    <br>
 <br>
    The first is a simple declaration of a tracer called "sphum". 
@@ -109,18 +104,8 @@
    initiating the long name of the tracer to be "sulf_hex", changing the horizontal advection scheme 
    to be second order, and initiating the tracer with a profile with fixed values, in this example all zero.
    <br>
-<br>
-   This method_type is a way to allow a component module to alter the parameters it needs for various tracers.
-   In essence this is a way to modify a namelist. A namelist can supply default parameters for all tracers. This 
-   method will allow the user to modify these default parameters for an individual tracer. An example could be that 
-   the user wishes to use second order advection on a tracer and also use fourth order advection on a second tracer 
-   within the same model run. The default advection could be second order and the field table would then indicate 
-   that the second tracer requires fourth order advection. This would be parsed by the advection routine.
-   <br>
-<br>
-   This method_type is the same as method_type except that the method_control string is not present.
-   This is used when you wish to change to a scheme within a module but do not need to pass 
-   parameters.</div>
+<br> 
+</div>
 <br>
 <!-- END DESCRIPTION -->
 <a name="OTHER MODULES USED"></a>
@@ -140,33 +125,26 @@
 <dl>
 <dt>
 <a href="#field_manager_init">field_manager_init</a>:</dt>
-<dd>
-   Routine to initialize the field manager.</dd>
+<dd>   Routine to initialize the field manager. </dd>
 <dt>
 <a href="#field_manager_end">field_manager_end</a>:</dt>
-<dd>
-   Destructor for field manager.</dd>
+<dd>   Destructor for field manager. </dd>
 <dt>
 <a href="#find_field_index">find_field_index</a>:</dt>
-<dd>
-   Function to return the index of the field.</dd>
+<dd>   Function to return the index of the field. </dd>
 <dt>
 <a href="#get_field_info">get_field_info</a>:</dt>
-<dd>
-   This routine allows access to field information given an index.</dd>
+<dd>   This routine allows access to field information given an index. </dd>
 <dt>
 <a href="#get_field_method">get_field_method</a>:</dt>
-<dd>
-   A routine to get a specified method.</dd>
+<dd>   A routine to get a specified method. </dd>
 <dt>
 <a href="#get_field_methods">get_field_methods</a>:</dt>
-<dd>
-   A routine to obtain all the methods associated with a field.</dd>
+<dd>   A routine to obtain all the methods associated with a field. </dd>
 <dt>
 <a href="#parse">parse</a>:</dt>
-<dd>
-   A function to parse an integer or an array of integers, 
-   a real or an array of reals, a string or an array of strings.</dd>
+<dd>   A function to parse an integer or an array of integers, 
+   a real or an array of reals, a string or an array of strings. </dd>
 </dl>
 </div>
 <br>
@@ -181,51 +159,22 @@
 <th> Name  </th><th> Type  </th><th> Value  </th><th> Units  </th><th> Description  </th>
 </tr>
 <tr>
-<td> NUM_MODELS  </td><td> integer, parameter  </td><td> 5  </td><td> ---  </td><td> 
-   Number of models.  </td>
+<td> NUM_MODELS  </td><td> integer, parameter  </td><td> 5  </td><td> ---  </td><td>    Number of models.   </td>
 </tr>
 <tr>
-<td> module_is_initialized  </td><td> logical  </td><td> .false.  </td><td> ---  </td><td> 
-   Field manager is initialized.  </td>
+<td> module_is_initialized  </td><td> logical  </td><td> .false.  </td><td> ---  </td><td>    Field manager is initialized.   </td>
 </tr>
 <tr>
-<td> MODEL_ATMOS  </td><td> integer, parameter  </td><td> 1  </td><td> ---  </td><td> 
-   Atmospheric model.  </td>
+<td> MODEL_ATMOS  </td><td> integer, parameter  </td><td> 1  </td><td> ---  </td><td>    Atmospheric model.   </td>
 </tr>
 <tr>
-<td> MODEL_OCEAN  </td><td> integer, parameter  </td><td> 2  </td><td> ---  </td><td> 
-   Ocean model.  </td>
+<td> MODEL_OCEAN  </td><td> integer, parameter  </td><td> 2  </td><td> ---  </td><td>    Ocean model.   </td>
 </tr>
 <tr>
-<td> MODEL_LAND  </td><td> integer, parameter  </td><td> 3  </td><td> ---  </td><td> 
-   Land model.  </td>
+<td> MODEL_LAND  </td><td> integer, parameter  </td><td> 3  </td><td> ---  </td><td>    Land model.   </td>
 </tr>
 <tr>
-<td> MODEL_ICE  </td><td> integer, parameter  </td><td> 4  </td><td> ---  </td><td> 
-   Ice model.  </td>
-</tr>
-<tr>
-<td> method_type :: method_type  </td><td> character, dimension(128)  </td><td> ---  </td><td> ---  </td><td> 
-   This string represents a tag that a module using this method can key on.
-   Typically this should contain some reference to the module that is calling it.  </td>
-</tr>
-<tr>
-<td> method_type :: method_name  </td><td> character, dimension(128)  </td><td> ---  </td><td> ---  </td><td> 
-   This is the name of a method which the module can parse and use to assign 
-   different default values to a field method.  </td>
-</tr>
-<tr>
-<td> method_type :: method_control  </td><td> character, dimension(256)  </td><td> ---  </td><td> ---  </td><td> 
-   This is the string containing parameters that the module can use as values 
-   for a field method. These should override default values within the module.  </td>
-</tr>
-<tr>
-<td> method_type_short :: method_type  </td><td> character, dimension(128)  </td><td> ---  </td><td> ---  </td><td> 
-   see method_type :: method_type above.  </td>
-</tr>
-<tr>
-<td> method_type_short :: method_name  </td><td> character, dimension(128)  </td><td> ---  </td><td> ---  </td><td> 
-   see method_type :: method_name above.  </td>
+<td> MODEL_ICE  </td><td> integer, parameter  </td><td> 4  </td><td> ---  </td><td>    Ice model.   </td>
 </tr>
 </table>
 <br>
@@ -245,12 +194,11 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>
-   This routine reads from a file containing formatted strings. 
+<dd>   This routine reads from a file containing formatted strings. 
    These formatted strings contain information on which schemes are needed within
    various modules. The field manager does not initialize any of those schemes 
    however. It simply holds the information and is queried by the appropriate 
-   module.</dd>
+   module. </dd>
 <br>
 <br>
 <dt>
@@ -259,7 +207,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>table_name&nbsp;&nbsp;&nbsp;</tt></td><td>The name of the field table. The default name is field_table.<br>&nbsp;&nbsp;&nbsp;<span class="type">[character, optional, dimension(len=128)]</span></td>
+<td valign="top" align="left"><tt>table_name&nbsp;&nbsp;&nbsp;</tt></td><td>   The name of the field table. The default name is field_table. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character, optional, dimension(len=128)]</span></td>
 </tr>
 </table>
 </dd>
@@ -270,7 +218,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>nfields&nbsp;&nbsp;&nbsp;</tt></td><td>The number of fields.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>nfields&nbsp;&nbsp;&nbsp;</tt></td><td>   The number of fields. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 </table>
 </dd>
@@ -287,9 +235,8 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>
-   This subroutine writes to the logfile that the user is exiting field_manager and 
-   changes the initialized flag to false.</dd>
+<dd>   This subroutine writes to the logfile that the user is exiting field_manager and 
+   changes the initialized flag to false. </dd>
 <br>
 <br>
 </dl>
@@ -302,10 +249,9 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>
-   This function when passed a model number and a field name will 
+<dd>   This function when passed a model number and a field name will 
    return the index of the field within the field manager. This index 
-   can be used to access other information from the field manager.</dd>
+   can be used to access other information from the field manager. </dd>
 <br>
 <br>
 <dt>
@@ -314,7 +260,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>model&nbsp;&nbsp;&nbsp;</tt></td><td>The number indicating which model is used.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>model&nbsp;&nbsp;&nbsp;</tt></td><td>   The number indicating which model is used. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 </table>
 </dd>
@@ -330,10 +276,9 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>
-   When passed an index, this routine will return the type of field, 
+<dd>   When passed an index, this routine will return the type of field, 
    the name of the field, the model which the field is associated and 
-   the number of methods associated with the field.</dd>
+   the number of methods associated with the field. </dd>
 <br>
 <br>
 <dt>
@@ -342,7 +287,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>n&nbsp;&nbsp;&nbsp;</tt></td><td>The field index.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>n&nbsp;&nbsp;&nbsp;</tt></td><td>   The field index. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 </table>
 </dd>
@@ -353,16 +298,16 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>fld_type&nbsp;&nbsp;&nbsp;</tt></td><td>The field type.<br>&nbsp;&nbsp;&nbsp;<span class="type">[character, dimension(*)]</span></td>
+<td valign="top" align="left"><tt>fld_type&nbsp;&nbsp;&nbsp;</tt></td><td>   The field type. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character, dimension(*)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>fld_name&nbsp;&nbsp;&nbsp;</tt></td><td>The name of the field.<br>&nbsp;&nbsp;&nbsp;<span class="type">[character, dimension(*)]</span></td>
+<td valign="top" align="left"><tt>fld_name&nbsp;&nbsp;&nbsp;</tt></td><td>   The name of the field. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character, dimension(*)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>model&nbsp;&nbsp;&nbsp;</tt></td><td>The number indicating which model is used.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>model&nbsp;&nbsp;&nbsp;</tt></td><td>   The number indicating which model is used. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>num_methods&nbsp;&nbsp;&nbsp;</tt></td><td>The number of methods.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>num_methods&nbsp;&nbsp;&nbsp;</tt></td><td>   The number of methods. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 </table>
 </dd>
@@ -378,9 +323,8 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>
-   This routine, when passed a field index and a method index will 
-   return the method text associated with the field(n) method(m).</dd>
+<dd>   This routine, when passed a field index and a method index will 
+   return the method text associated with the field(n) method(m). </dd>
 <br>
 <br>
 <dt>
@@ -389,10 +333,10 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>n&nbsp;&nbsp;&nbsp;</tt></td><td>The field index.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>n&nbsp;&nbsp;&nbsp;</tt></td><td>   The field index. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>m&nbsp;&nbsp;&nbsp;</tt></td><td>The method index.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>m&nbsp;&nbsp;&nbsp;</tt></td><td>   The method index. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 </table>
 </dd>
@@ -408,9 +352,8 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>
-   When passed a field index, this routine will return the text 
-   associated with all the methods attached to the field.</dd>
+<dd>   When passed a field index, this routine will return the text 
+   associated with all the methods attached to the field. </dd>
 <br>
 <br>
 <dt>
@@ -419,7 +362,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>n&nbsp;&nbsp;&nbsp;</tt></td><td>The field index.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>n&nbsp;&nbsp;&nbsp;</tt></td><td>   The field index. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 </table>
 </dd>
@@ -434,13 +377,12 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>
-   Parse is an integer function that decodes values from a text string.
+<dd>   Parse is an integer function that decodes values from a text string.
    The text string has the form: "label=list" where "label" is an
    arbitrary user defined label describing the values being decoded,
    and "list" is a list of one or more values separated by commas.
    The values may be integer, real, or character.
-   Parse returns the number of values decoded.</dd>
+   Parse returns the number of values decoded. </dd>
 <br>
 <br>
 <dt>
@@ -449,10 +391,10 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>text&nbsp;&nbsp;&nbsp;</tt></td><td>The text string from which the values will be parsed.<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+<td valign="top" align="left"><tt>text&nbsp;&nbsp;&nbsp;</tt></td><td>   The text string from which the values will be parsed. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>label&nbsp;&nbsp;&nbsp;</tt></td><td>A label which describes the values being decoded.<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+<td valign="top" align="left"><tt>label&nbsp;&nbsp;&nbsp;</tt></td><td>   A label which describes the values being decoded. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
 </tr>
 </table>
 </dd>
@@ -463,12 +405,12 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>value&nbsp;&nbsp;&nbsp;</tt></td><td>The value or values that have been decoded.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, real, character(len=*)]</span></td>
+<td valign="top" align="left"><tt>value&nbsp;&nbsp;&nbsp;</tt></td><td>   The value or values that have been decoded. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, real, character(len=*)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>parse&nbsp;&nbsp;&nbsp;</tt></td><td>The number of values that have been decoded. This allows 
-           a user to define a large array and fill it partially with 
-           values from a list. This should be the size of the value array.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>parse&nbsp;&nbsp;&nbsp;</tt></td><td>   The number of values that have been decoded. This allows 
+   a user to define a large array and fill it partially with 
+   values from a list. This should be the size of the value array. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 </table>
 </dd>
@@ -501,84 +443,83 @@
 <dd>
 <span class="errmsg">No field table available, so no fields are being registered.</span>
 </dd>
-<dd>
-   The field table does not exist.</dd>
+<dd>   The field table does not exist. </dd>
 <dt>
 <b>FATAL in field_manager_init</b>
 </dt>
 <dd>
 <span class="errmsg">max fields exceeded</span>
 </dd>
+<dd>   Maximum number of fields for this module has been exceeded. </dd>
+<dt>
+<b>FATAL in field_manager_init</b>
+</dt>
 <dd>
-   Maximum number of fields for this module has been exceeded.</dd>
+<span class="errmsg">Too many fields in tracer entry.</span>
+</dd>
+<dd>   There are more that 3 fields in the tracer entry. This is probably due
+   to separating the parameters entry into multiple strings. 
+   The entry should look like <br>   "Type","Name","Control1=XXX,Control2=YYY" <br>   and not like<br>   "Type","Name","Control1=XXX","Control2=YYY" </dd>
 <dt>
 <b>FATAL in field_manager_init</b>
 </dt>
 <dd>
 <span class="errmsg">Maximum number of methods for field exceeded</span>
 </dd>
-<dd>
-   Maximum number of methods allowed for entries in the field table has been exceeded.</dd>
+<dd>   Maximum number of methods allowed for entries in the field table has been exceeded. </dd>
 <dt>
 <b>NOTE in field_manager_init</b>
 </dt>
 <dd>
 <span class="errmsg">field with identical name and model name duplicate found, skipping</span>
 </dd>
-<dd>
-   The name of the field and the model name are identical. Skipping that field.</dd>
+<dd>   The name of the field and the model name are identical. Skipping that field. </dd>
 <dt>
 <b>FATAL in field_manager_init</b>
 </dt>
 <dd>
 <span class="errmsg">error reading field table</span>
 </dd>
-<dd>
-   There is an error in reading the field table.</dd>
+<dd>   There is an error in reading the field table. </dd>
 <dt>
 <b>FATAL in get_field_info</b>
 </dt>
 <dd>
 <span class="errmsg">invalid field index</span>
 </dd>
-<dd>
-   The field index is invalid because it is less than 1 or greater than the 
-   number of fields.</dd>
+<dd>   The field index is invalid because it is less than 1 or greater than the 
+   number of fields. </dd>
 <dt>
 <b>FATAL in get_field_method</b>
 </dt>
 <dd>
 <span class="errmsg">invalid field index</span>
 </dd>
-<dd>
-   The field index is invalid because it is less than 1 or greater than the 
-   number of fields.</dd>
+<dd>   The field index is invalid because it is less than 1 or greater than the 
+   number of fields. </dd>
 <dt>
 <b>FATAL in get_field_method</b>
 </dt>
 <dd>
 <span class="errmsg">invalid method index</span>
 </dd>
-<dd>
-   The method index is invalid because it is less than 1 or greater than 
-   the number of methods.</dd>
+<dd>   The method index is invalid because it is less than 1 or greater than 
+   the number of methods. </dd>
 <dt>
 <b>FATAL in get_field_methods</b>
 </dt>
 <dd>
 <span class="errmsg">invalid field index</span>
 </dd>
-<dd>
-   The field index is invalid because it is less than 1 or greater than the 
-   number of fields.</dd>
+<dd>   The field index is invalid because it is less than 1 or greater than the 
+   number of fields. </dd>
 <dt>
 <b>FATAL in get_field_methods</b>
 </dt>
 <dd>
 <span class="errmsg">method array too small</span>
 </dd>
-<dd>
-   The method array is smaller than the number of methods.</dd>
+<dd>   The method array is smaller than the number of methods. </dd>
 </dl>
 <br>
 </div>

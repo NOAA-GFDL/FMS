@@ -253,7 +253,7 @@
       ptrg = LOC(get_data)
       call mpp_transmit( put_data1D, put_len, to_pe, get_data1D, get_len, from_pe )
 #else
-      if( to_pe.NE.NULL_PE )put_data1D = TRANSFER( put_data, put_data1D, length ) !faster than RESHAPE? length is probably redundant
+      if( to_pe.NE.NULL_PE )put_data1D = TRANSFER( put_data, put_data1D, get_len ) !faster than RESHAPE? get_len is probably redundant
 !      if( to_pe.NE.NULL_PE )put_data1D = RESHAPE( put_data, SHAPE(put_data1D) )
       call mpp_transmit( put_data1D, put_len, to_pe, get_data1D, get_len, from_pe )
       if( from_pe.NE.NULL_PE )get_data = RESHAPE( get_data1D, SHAPE(get_data) )
@@ -273,7 +273,7 @@
       ptrg = LOC(get_data)
       call mpp_transmit( put_data1D, put_len, to_pe, get_data1D, get_len, from_pe )
 #else
-      if( to_pe.NE.NULL_PE )put_data1D = TRANSFER( put_data, put_data1D, length ) !faster than RESHAPE? length is probably redundant
+      if( to_pe.NE.NULL_PE )put_data1D = TRANSFER( put_data, put_data1D, get_len ) !faster than RESHAPE? get_len is probably redundant
 !      if( to_pe.NE.NULL_PE )put_data1D = RESHAPE( put_data, SHAPE(put_data1D) )
       call mpp_transmit( put_data1D, put_len, to_pe, get_data1D, get_len, from_pe )
       if( from_pe.NE.NULL_PE )get_data = RESHAPE( get_data1D, SHAPE(get_data) )
@@ -293,7 +293,7 @@
       ptrg = LOC(get_data)
       call mpp_transmit( put_data1D, put_len, to_pe, get_data1D, get_len, from_pe )
 #else
-      if( to_pe.NE.NULL_PE )put_data1D = TRANSFER( put_data, put_data1D, length ) !faster than RESHAPE? length is probably redundant
+      if( to_pe.NE.NULL_PE )put_data1D = TRANSFER( put_data, put_data1D, get_len ) !faster than RESHAPE? get_len is probably redundant
 !      if( to_pe.NE.NULL_PE )put_data1D = RESHAPE( put_data, SHAPE(put_data1D) )
       call mpp_transmit( put_data1D, put_len, to_pe, get_data1D, get_len, from_pe )
       if( from_pe.NE.NULL_PE )get_data = RESHAPE( get_data1D, SHAPE(get_data) )
@@ -313,7 +313,7 @@
       ptrg = LOC(get_data)
       call mpp_transmit( put_data1D, put_len, to_pe, get_data1D, get_len, from_pe )
 #else
-      if( to_pe.NE.NULL_PE )put_data1D = TRANSFER( put_data, put_data1D, length ) !faster than RESHAPE? length is probably redundant
+      if( to_pe.NE.NULL_PE )put_data1D = TRANSFER( put_data, put_data1D, get_len ) !faster than RESHAPE? get_len is probably redundant
 !      if( to_pe.NE.NULL_PE )put_data1D = RESHAPE( put_data, SHAPE(put_data1D) )
       call mpp_transmit( put_data1D, put_len, to_pe, get_data1D, get_len, from_pe )
       if( from_pe.NE.NULL_PE )get_data = RESHAPE( get_data1D, SHAPE(get_data) )
@@ -461,6 +461,9 @@
       integer :: words
       character(len=8) :: text
 #endif
+#ifdef use_libMPI
+      integer :: i, from_rank
+#endif
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_BROADCAST: You must first call mpp_init.' )
       n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
@@ -501,7 +504,14 @@
       end if
 #endif
 #ifdef use_libMPI
-      if( mpp_npes().GT.1 )call MPI_BCAST( data, length, MPI_TYPE_, from_pe, peset(n)%id, error )
+ ! find the rank of from_pe in the pelist.     
+      do i = 1, mpp_npes()
+         if(peset(n)%list(i) == from_pe) then
+             from_rank = i - 1
+             exit
+         endif
+      enddo
+      if( mpp_npes().GT.1 )call MPI_BCAST( data, length, MPI_TYPE_, from_rank, peset(n)%id, error )
 #endif
       if( current_clock.NE.0 )call increment_current_clock( EVENT_BROADCAST, length*MPP_TYPE_BYTELEN_ )
       return

@@ -622,7 +622,8 @@
       end do
 
       call mpp_clock_begin(wait_clock)
-      call mpp_sync_self( domain%list(:)%pe )
+!      call mpp_sync_self( domain%list(:)%pe )
+      call mpp_sync_self( )
       call mpp_clock_end(wait_clock)
       return
     end subroutine MPP_UPDATE_DOMAINS_3D_

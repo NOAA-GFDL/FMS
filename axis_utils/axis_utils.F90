@@ -39,8 +39,8 @@ module axis_utils_mod
   integer, parameter :: maxatts = 100
   real, parameter    :: epsln= 1.e-10
   real, parameter    :: fp5 = 0.5, f360 = 360.0
-  character(len=256) :: version = '$Id: axis_utils.F90,v 1.2 2002/07/16 22:54:33 fms Exp $'
-  character(len=256) :: tagname = '$Name: havana $'   
+  character(len=256) :: version = '$Id: axis_utils.F90,v 1.3 2003/04/09 21:15:30 fms Exp $'
+  character(len=256) :: tagname = '$Name: inchon $'   
 
   interface interp_1d
      module procedure interp_1d_1d
@@ -77,10 +77,10 @@ contains
     call mpp_get_atts(axis,cartesian=axis_cart)
     cart = 'N'
 
-    if (axis_cart == 'x' ) cart = 'X'
-    if (axis_cart == 'y' ) cart = 'Y'
-    if (axis_cart == 'z' ) cart = 'Z'
-    if (axis_cart == 't' ) cart = 'T'
+    if ( lowercase(axis_cart) == 'x' ) cart = 'X'
+    if ( lowercase(axis_cart) == 'y' ) cart = 'Y'
+    if ( lowercase(axis_cart) == 'z' ) cart = 'Z'
+    if ( lowercase(axis_cart) == 't' ) cart = 'T'
 
     if (cart /= 'X' .and. cart /= 'Y' .and. cart /= 'Z' .and. cart /= 'T') then
        call mpp_get_atts(axis,name=name)
@@ -363,15 +363,16 @@ contains
        endif
     enddo
     if (value < array(1) .or. value > array(ia)) then
-       if (value < array(1))  frac_index = 1.
-       if (value > array(ia)) frac_index = float(ia)
+!       if (value < array(1))  frac_index = 1.
+!       if (value > array(ia)) frac_index = float(ia)
+        frac_index = -1.0
     else
        i=1
        keep_going = .true.
        do while (i <= ia .and. keep_going)
           i = i+1
           if (value <= array(i)) then
-             frac_index = float(ia) + (value-array(i-1))/(array(i)-array(i-1)) 
+             frac_index = float(i-1) + (value-array(i-1))/(array(i)-array(i-1)) 
              keep_going = .false.
           endif
        enddo
