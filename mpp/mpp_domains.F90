@@ -34,7 +34,7 @@ module mpp_domains_mod
   character(len=128), private :: version= &
        '$Id: mpp_domains.F90,v 6.0 2001/03/06 20:26:45 fms Exp $'
   character(len=128), private :: name= &
-       '$Name: damascus $'
+       '$Name: eugene $'
 
 #ifdef SGICRAY
 !see intro_io(3F): to see why these values are used rather than 5,6,0

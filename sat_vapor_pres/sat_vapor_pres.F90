@@ -32,6 +32,7 @@ module sat_vapor_pres_mod
 !-----------------------------------------------------------------------
 
 use  constants_mod, only:  tfreeze
+use  utilities_mod, only:  get_my_pe
 
 implicit none
 private
@@ -41,7 +42,8 @@ public :: escomp, descomp, tcheck
 !-----------------------------------------------------------------------
 
 Interface escomp
-  module procedure escomp_0d, escomp_1d, escomp_2d, escomp_3d
+  module procedure escomp_0d, escomp_1d, escomp_2d, escomp_3d, &
+		   escomp_2d_flag
 end Interface
 
 !-----------------------------------------------------------------------
@@ -53,12 +55,15 @@ end Interface
 !-----------------------------------------------------------------------
 
 Interface tcheck
-  module procedure tcheck_0d, tcheck_1d, tcheck_2d, tcheck_3d
+  module procedure tcheck_0d, tcheck_1d, tcheck_2d, tcheck_3d, &
+		   tcheck_0d_reset, tcheck_1d_reset, tcheck_2d_reset, &
+		   tcheck_3d_reset
 end Interface
 
 !-----------------------------------------------------------------------
 
-real, parameter :: Tmin=-153.16+tfreeze, Tmax=102.00+tfreeze
+!real, parameter :: Tmin=-153.16+tfreeze, Tmax=102.00+tfreeze
+real, parameter :: Tmin=-153.15+tfreeze, Tmax=102.00+tfreeze
 
 !-----------------------------------------------------------------------
 
@@ -175,6 +180,42 @@ integer  i,j
 !-----------------------------------------------------------------------
 
 end subroutine escomp_2d
+
+!#######################################################################
+
+subroutine escomp_2d_flag (temp, esat, flag)
+
+!------------------- public interface arrays ---------------------------
+real, intent(IN),    dimension(:,:) :: temp
+logical, intent(in), dimension(:,:) :: flag
+real, intent(OUT),   dimension(:,:) :: esat
+
+!------------------- private local storage -----------------------------
+   real, dimension(size(temp,1),size(temp,2)) ::  work
+integer, dimension(size(temp,1),size(temp,2)) :: iwork
+integer  i,j
+!-----------------------------------------------------------------------
+    integer :: ind
+    real    :: dt,es
+    es(ind,dt)=ETABL(ind)+dt*ETABL(ind+1)
+!-----------------------------------------------------------------------
+
+      If (.not.ESSET_DONE) call ESSET
+
+      do j=1,size(temp,2)
+        do i=1,size(temp,1)
+	  if (.not. flag(i,j)) then
+            iwork(i,j) = 10.*(temp(i,j)+tx05)
+            work(i,j) = temp(i,j)+tx00-0.10*Float(iwork(i,j))
+            iwork(i,j) = 2*iwork(i,j)+1
+            esat(i,j) = es(iwork(i,j),work(i,j))
+          endif
+        enddo
+      enddo
+
+!-----------------------------------------------------------------------
+
+end subroutine escomp_2d_flag
 
 !#######################################################################
 
@@ -534,6 +575,121 @@ integer  i,j,k
 !-----------------------------------------------------------------------
 
 end subroutine tcheck_3d
+
+!#######################################################################
+
+subroutine tcheck_0d_reset (T,nbad, deltat)
+
+!-----------------------------------------------------------------------
+real, intent(INOUT)  :: T
+real, intent(in)     :: deltat
+integer, intent(OUT) :: nbad
+!-----------------------------------------------------------------------
+          If (T <= Tmin )  then
+            nbad=1
+            print *, 'bad temp pe,temp', get_my_pe(), T, Tmin+deltat
+            T = Tmin + deltat
+          else If (T >= Tmax)  then
+            nbad=1
+            print *, 'bad temp pe,temp', get_my_pe(), T, Tmax-deltat
+            T = Tmax - deltat
+          endif
+!-----------------------------------------------------------------------
+
+end subroutine tcheck_0d_reset
+
+!#######################################################################
+
+subroutine tcheck_1d_reset (T,nbad, deltat)
+
+!-----------------------------------------------------------------------
+real, intent(INOUT), dimension(:) :: T
+real, intent(in)     :: deltat
+integer, intent(OUT)              :: nbad
+!-----------------------------------------------------------------------
+integer  i
+!-----------------------------------------------------------------------
+      nbad=0
+      do i=1,size(T,1)
+	If (T(i) <= Tmin ) then
+	  nbad=nbad+1
+          print *, 'bad temp pe,i,temp', get_my_pe(), &
+                                         i, T(i), Tmin+deltat
+	  T(i) = Tmin + deltat 
+	else If (T(i) >= Tmax) then
+	  nbad=nbad+1
+          print *, 'bad temp pe,i,temp', get_my_pe(), &
+                                         i, T(i), Tmax-deltat
+	  T(i) = Tmax - deltat
+	endif
+      enddo
+!-----------------------------------------------------------------------
+
+end subroutine tcheck_1d_reset
+
+!#######################################################################
+
+subroutine tcheck_2d_reset (T,nbad, deltat)
+
+!-----------------------------------------------------------------------
+real, intent(INOUT), dimension(:,:) :: T
+real, intent(in)     :: deltat
+integer, intent(OUT)                :: nbad
+!-----------------------------------------------------------------------
+integer  i,j
+!-----------------------------------------------------------------------
+      nbad=0
+      do j=1,size(T,2)
+      do i=1,size(T,1)
+         If (T(i,j) <= Tmin ) then
+           nbad=nbad+1
+           print *, 'bad temp pe,i,j,temp', get_my_pe(), &
+                                            i,j, T(i,j), Tmin+deltat
+           T(i,j) = Tmin + deltat
+         else If ( T(i,j) >= Tmax) then
+           nbad=nbad+1
+           print *, 'bad temp pe,i,j,temp', get_my_pe(), &
+                                            i,j, T(i,j), Tmax-deltat
+           T(i,j) = Tmax - deltat
+         endif
+      enddo
+      enddo
+!-----------------------------------------------------------------------
+
+end subroutine tcheck_2d_reset
+
+!#######################################################################
+
+subroutine tcheck_3d_reset (T,nbad, deltat)
+
+!-----------------------------------------------------------------------
+real, intent(in)     :: deltat
+real, intent(INOUT), dimension(:,:,:) :: T
+integer, intent(OUT)                  :: nbad
+!-----------------------------------------------------------------------
+integer  i,j,k
+!-----------------------------------------------------------------------
+      nbad=0
+      do k=1,size(T,3)
+      do j=1,size(T,2)
+      do i=1,size(T,1)
+        If (T(i,j,k) <= Tmin)  then
+          nbad=nbad+1
+          print *, 'bad temp pe,i,j,k,temp', get_my_pe(), &
+                                        i,j,k, T(i,j,k), Tmin+deltat
+          T(i,j,k) = Tmin + deltat
+        else If ( T(i,j,k) >= Tmax) then
+          nbad=nbad+1
+          print *, 'bad temp pe,i,j,k,temp', get_my_pe(), &
+                                        i,j,k, T(i,j,k), Tmax-deltat
+          T(i,j,k) = Tmax - deltat
+        endif
+      enddo
+      enddo
+      enddo
+!-----------------------------------------------------------------------
+
+end subroutine tcheck_3d_reset
 
 !#######################################################################
 !#######################################################################

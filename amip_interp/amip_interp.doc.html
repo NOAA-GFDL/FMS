@@ -41,18 +41,20 @@
 <!-- BEGIN DESCRIPTION -->
 <PRE>
 
-     Two possible data sets are available:
+     Three possible data sets are available:
 
-     1)  <A HREF="http://www-pcmdi.llnl.gov/amip">AMIP 1</A>      from Jan 1979 to Jan 1989
-     2)  <A HREF="amip_interp.rey_oi.text">Reynolds OI</A> from Nov 1981 to Jan 1999
+     1)  <A HREF="http://www-pcmdi.llnl.gov/amip">AMIP 1</A>        from Jan 1979 to Jan 1989 (2 deg x 2 deg)
+     2)  <A HREF="amip_interp.rey_oi.txt">Reynolds OI</A>   from Nov 1981 to Jan 1999 (1 deg x 1 deg)
+     3)  <A HREF="ftp://podaac.jpl.nasa.gov/pub/sea_surface_temperature/reynolds/rsst/doc/rsst.html">Reynolds EOF</A>  from Jan 1950 to Dec 1998 (2 deg x 2 deg)
 
      All original data are observed monthly means. This module
      interpolates linearly in time between pairs of monthly means.
-     Horizontal interpolation is done using the exchange grid module.
+     Horizontal interpolation is done using the horiz_interp module.
 
      When a requested date falls outside the range of dates available
      a namelist option allows for use of the climatological monthly
-     mean values (AMIP, 1979-1988; Reynolds, 1982-1998).
+     mean values which are computed from all of the data in a particular
+     data set.
 
 </PRE>
 </A><!-- END DESCRIPTION -->
@@ -281,22 +283,39 @@ Output
 
 <b>&amip_interp_nml</b>
 
-  tice_crit    = Freezing point of sea water in degC or degK.
+  data_set   =  Name/type of SST data that will be used.
+                [character(len=24), default: data_set = 'amip1']
+
+                Possible values (case-insensitive) are: 
+                           amip1
+                           reynolds_eof
+                           reynolds_oi
+                See the <A HREF="amip_interp.doc.html#DATA_SETS">data set section</A> for more on these data.
+
+  date_out_of_range  =  Controls the use of climatological monthly mean data when
+                        the requested date falls outside the range of the data set.
+                        [character(len=16), default: date_out_of_range = 'fail']
+
+                        Possible values are:
+                          fail      - program will fail if requested date is prior
+                                      to or after the data set period
+                          initclimo - program uses climatological requested data is
+                                      prior to data set period and will fail if
+                                      requested date is after data set period.
+                          climo     - program uses climatological data anytime
+
+  tice_crit  =  Freezing point of sea water in degC or degK.
                    [real, default: tice_crit = -1.80]
 
-  use_no_climo = Flag to allow monthly or annual mean climatologies to be used.
-                 When data is requested that does not lie in the available
-                 time range climatological data can be returned if 
-                 use_no_climo = .false.
-                   [logical, default: use_no_climo = .true.]
-
-  use_amip1    = Flag to select the sst data set:  amip1 or Reynolds-oi
-                   [logical, default: use_amip1 = .true.]
-
-  verbose      = Controls printed output, 0 <= verbose <= 3
+  verbose    =  Controls printed output, 0 <= verbose <= 3
                    [integer, default: verbose = 0]
 
-  use_zonal    = Flag to select zonal idealized sst (and ice) data
+  amip_date  =  Single calendar date in integer "(year,month,day)" format that is used only if set with year>0, month>0, day>0. 
+		If used, model calendar date is replaced by this date, but model time of day is still used to determine ice/sst.
+		Used for repeating-single-day experiments.
+		   [integer(3), default: (/-1,-1,-1/)]
+
+  use_zonal  =  Flag to select zonal idealized sst (and ice) data
                    [logical, default: use_zonal = .false.]
 
 ---- additional parameters for controlling zonal prescribed sst ----
@@ -316,28 +335,31 @@ Output
 <!-- BEGIN DATA_SETS -->
 <PRE>
 
-   AMIP 1 and/or Reynolds OI data sets that have been "specially-formatted"
-   are required by this module.  They are read from files INPUT/amip1_sst.data
-   and INPUT/reyoi_sst.data, respectively.  The data set format is 32-bit IEEE.
-   However, the data is packed into 16-bit integers.  On 64-bit machines
-   data conversion is necessary.
+   Valid data sets are:
 
-   On Cray machines use:
+     1)  <A HREF="http://www-pcmdi.llnl.gov/amip">AMIP 1</A>
+             from Jan 1979 to Jan 1989 (2 deg x 2 deg)
+     2)  <A HREF="amip_interp.rey_oi.txt">Reynolds OI</A>
+             from Nov 1981 to Jan 1999 (1 deg x 1 deg)
+             The analysis uses in situ and satellite SST's plus
+             SST's simulated by sea-ice cover.
+     3)  <A HREF="ftp://podaac.jpl.nasa.gov/pub/sea_surface_temperature/reynolds/rsst/doc/rsst.html">Reynolds EOF</A>
+             from Jan 1950 to Dec 1998 (2 deg x 2 deg)
+             <b>NCEP Reynolds Historical Reconstructed Sea Surface Temperature</b>
+             The analysis uses both in-situ SSTs and satellite derived SSTs
+             from the NOAA Advanced Very High Resolution Radiometer.
+             In-situ data is used from 1950 to 1981, while both AVHRR derived
+             satellite SSTs and in-situ data are used from 1981 to the
+             end of 1998. 
+   
+   The data set used by this module have been reformatted as 32-bit IEEE.
+   The data values are packed into 16-bit integers.
 
-       assign -F f77,cache:48:1 -N ieee f:INPUT/amip1_sst.data
-       assign -F f77,cache:48:1 -N ieee f:INPUT/reyoi_sst.data
+   The data sets are read from the following files:
 
-   The data is located in a cpio file:
-
-       /archive/bw/module_data/sst_data.cpio
-       cpio -ic < sst_data.cpio
-
-   A script can be used to copy and set up all data sets needed by the
-   the Flexible Modeling System:
-
-       /t90/bw/modules_blue/scripts/get_module_data.csh
-
-       for help menu:  get_module_data.csh -h 
+         amip1           INPUT/amip1_sst.data
+         reynolds_io     INPUT/reyoi_sst.data
+         reynolds_eof    INPUT/reynolds_sst.data
 
 </PRE>
 </A><!-- END DATA_SETS -->
@@ -382,18 +404,30 @@ Output
 
 <b>FATAL ERRORS in amip_interp_init</b>
 
+   <b>obsolete namelist option USE_AMIP1 should be replaced by option DATA_SET - check documentation</b>
+      Use namelist variable DATA_SET instead of USE_AMIP1.
+
+   <b>obsolete namelist option USE_NO_CLIMO should be replaced by option DATE_OUT_OF_RANGE - check documentation</b>
+      Use namelist variable DATE_OUT_OF_RANGE instead of USE_NO_CLIMO.
+
+   <b>the value of the namelist parameter DATA_SET being used is not allowed</b>
+      Check the value of namelist variable DATA_SET.
+
    <b>requested input data set does not exist</b>
-      The data set INPUT/amip1_sst.data or INPUT/reyoi_sst.data does
-      not exist. See the section on DATA SETS to properly set the
-      data up.
+      The data set requested is valid but the data does not exist in
+      the INPUT subdirectory. You may have requested amip2 data which
+      has not been officially set up.
+      See the section on DATA SETS to properly set the data up.
 
    <b>use_climo mismatch</b>
-      The namelist variable use_no_climo = true and the amip_interp_init
-      argument use_climo = true.
+      The namelist variable date_out_of_range = 'fail' and
+      the amip_interp_init argument use_climo = true.
+      This combination is not allowed.
 
    <b>use_annual(climo) mismatch</b>
-      The namelist variable use_no_climo = true and the amip_interp_init
-      argument use_annual = true.
+      The namelist variable date_out_of_range = 'fail' and
+      the amip_interp_init argument use_annual = true.
+      This combination is not allowed.
 
 <b>FATAL ERRORS in get_sst_grid_size</b>
 
@@ -410,26 +444,19 @@ Output
       the size of the observed data. See the documentation for
       interfaces get_sst_grid_size and get_sst_grid_boundary.
 
-<b>FATAL ERRORS in get_sst_record</b>
+<b>FATAL ERRORS in read_record</b>
 
    <b>climo data read when NO climo data requested</b>
       Data for the requested date could not be found and climatological
-      data was read, however the namelist variable use_no_climo = true.
-      If use_no_climo = true is correct, then your integration may
-      be beyond (or before) your intended integration period.
-      Check the valid dates for the data set you are using.
+      data was read, however the namelist variable date_out_of_range will
+      not allow the use of climatological data. Your integration may
+      be before or after the valid dates of the data set you are using.
+      If this is your intended purpose you can modify namelist
+      variable date_out_of_range, see the <A HREF="amip_interp.doc.html#NAMELIST">namelist documentation</A>.
 
    <b>end of file reading unit ##</b>
       The end of the data set was reached before finding the
       requested date.  CHECK WITH THE DEVELOPER.
-
-<b>NON-FATAL NOTES in amip_interp_init</b>
-
-   <b>using AMIP 1 sst</b>
-      Written when namelist variable use_amip1 = true.
-
-   <b>using Reynolds OI sst</b>
-      Written when namelist variable use_amip1 = false.
 
 </PRE>
 </A><!-- END ERRORS -->
@@ -474,8 +501,6 @@ Output
 <PRE>
 
      * Add AMIP 2 data set
-
-     * Modify time interpolation algorithm to conserve monthly means.
 
      * Other data sets (or extend current data sets) ?
 

@@ -50,9 +50,9 @@ module mpp_mod
   implicit none
   private
   character(len=128), private :: version= &
-       '$Id: mpp.F90,v 6.0 2001/03/06 20:26:41 fms Exp $'
+       '$Id: mpp.F90,v 6.1 2001/07/05 17:13:33 fms Exp $'
   character(len=128), private :: name= &
-       '$Name: damascus $'
+       '$Name: eugene $'
 
 !various lengths (see shpalloc) are estimated in "words" which are 32bit on SGI, 64bit on Cray
 !these are also the expected sizeof of args to MPI/shmem libraries
@@ -84,6 +84,7 @@ module mpp_mod
 !errortype flags
   integer, parameter, public :: NOTE=0, WARNING=1, FATAL=2
   logical, private :: warnings_are_fatal = .FALSE.
+  integer, private :: error_state=0
 
 !timing
 !since these are mainly timers associated with communication
@@ -325,7 +326,7 @@ module mpp_mod
 #endif
   public :: mpp_chksum, mpp_clock_begin, mpp_clock_end, mpp_clock_id, mpp_error, mpp_exit, mpp_init, mpp_max, mpp_min, &
             mpp_node, mpp_npes, mpp_pe, mpp_recv, mpp_root_pe, mpp_send, mpp_set_root_pe, mpp_set_warn_level, mpp_sum, &
-            mpp_set_stack_size, mpp_sync, mpp_sync_self, mpp_transmit
+            mpp_set_stack_size, mpp_sync, mpp_sync_self, mpp_transmit, mpp_error_state
 #ifdef use_shmalloc
   public :: mpp_malloc
 #endif
@@ -1173,9 +1174,13 @@ module mpp_mod
 #ifdef sgi_mipspro
               call TRACE_BACK_STACK_AND_PRINT()
 #endif
+#ifdef use_libMPI
+              call MPI_ABORT( MPI_COMM_WORLD, 1, error )
+#endif
               call ABORT()	!automatically calls traceback on Cray systems
           end if
       end if
+      error_state = errortype
       return
     end subroutine mpp_error
 
@@ -1191,6 +1196,12 @@ module mpp_mod
       end if
       return
     end subroutine mpp_set_warn_level
+
+    function mpp_error_state()
+      integer :: mpp_error_state
+      mpp_error_state = error_state
+      return
+    end function mpp_error_state
 
 #ifdef use_shmalloc
     subroutine mpp_malloc( ptr, newlen, len )

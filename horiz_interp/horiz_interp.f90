@@ -36,7 +36,7 @@ end interface
 
 !-----------------------------------------------------------------------
  character(len=128) :: version = '$Id: horiz_interp.f90,v 1.3 2001/03/06 19:03:31 fms Exp $'
- character(len=128) :: tag = '$Name: damascus $'
+ character(len=128) :: tag = '$Name: eugene $'
  logical :: do_vers = .true.
  integer :: num_iters = 4
 !-----------------------------------------------------------------------

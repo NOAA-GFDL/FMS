@@ -153,6 +153,28 @@ exactly like <b><tt>FATAL</tt></b>.
 
 <p>resets to the default behaviour described above.
 
+<p><a name="mpp_error_state"><li><h4>mpp_error_state</h4>
+
+<pre>
+    function mpp_error_state()
+      integer :: mpp_error_state
+</pre>
+
+<p><tt>mpp_error</tt> maintains an internal state of the last
+error. This is principally useful in generate a series of warnings
+from an error checking routine, and deciding to trigger a fatal error
+at the end:
+
+<p><pre>
+!series of warnings
+  if( ... )call mpp_error( WARNING, ... )
+  if( ... )call mpp_error( WARNING, ... )
+  if( ... )call mpp_error( WARNING, ... )
+...
+  if( mpp_error_state.EQ.WARNING ) &
+       call mpp_error( FATAL, 'Check previous warning messages.' )
+</pre>
+
 <p><a name="mpp_exit"><li><h4>mpp_exit</h4>
 
 <pre>

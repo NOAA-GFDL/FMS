@@ -11,7 +11,7 @@ use    constants_mod, only: grav
 implicit none
 private
 
-public simple_mountain, compute_real_topog, compute_stdev
+public :: simple_mountain, compute_real_topog, compute_stdev, compute_ocean_mask
 
 !-----------------------------------------------------------------------
 !----- namelist ------
@@ -61,8 +61,8 @@ public simple_mountain, compute_real_topog, compute_stdev
 
 !-----------------------------------------------------------------------
 
-character(len=128) :: version = '$Id: topography.F90,v 1.1 2000/09/11 11:18:00 fms Exp $'
-character(len=128) :: tag = '$Name: damascus $'
+character(len=128) :: version = '$Id: topography.F90,v 1.2 2001/07/05 17:02:33 fms Exp $'
+character(len=128) :: tag = '$Name: eugene $'
 
 !-----------------------------------------------------------------------
 
@@ -132,7 +132,7 @@ end subroutine simple_mountain
       hpi = acos(0.0)
       del = 2.*hpi/real(jpts)
       call horiz_interp ( zdata, 0.0, -hpi, del, del, blon, blat, surf_geo )
-      surf_geo = surf_geo*.01*grav
+      surf_geo = surf_geo*grav
 
       compute_real_topog = .true.
    else
@@ -143,6 +143,41 @@ end subroutine simple_mountain
 
  end function compute_real_topog
 
+!#######################################################################
+
+function compute_ocean_mask(blon, blat, ocean_mask)
+
+real   , intent(in),  dimension(:)   :: blon, blat
+logical, intent(out), dimension(:,:) :: ocean_mask
+logical :: compute_ocean_mask
+
+real :: wdata(ipts,jpts), hpi, del
+real, dimension(size(ocean_mask,1),size(ocean_mask,2)) :: wdata_interpolated
+!-----------------------------------------------------------------------
+
+if ( read_pctwater_file(wdata) ) then
+
+  if ( any(shape(ocean_mask) /= (/size(blon)-1,size(blat)-1/)) ) then
+    call error_mesg('compute_ocean_mask','shape(ocean_mask) is not&
+      & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
+  endif
+
+  hpi = acos(0.0)
+  del = 2.*hpi/real(jpts)
+  call horiz_interp ( wdata, 0.0, -hpi, del, del, blon, blat, wdata_interpolated )
+  where (wdata_interpolated > 50.)
+    ocean_mask = .true.
+  else where
+    ocean_mask = .false.
+  end where
+
+  compute_ocean_mask = .true.
+else
+  compute_ocean_mask = .false.
+endif
+
+return
+end function compute_ocean_mask
 !#######################################################################
 
  function compute_stdev (blon, blat, stdev)
@@ -163,12 +198,8 @@ end subroutine simple_mountain
       hpi = acos(0.0)
       del = 2.*hpi/real(jpts)
       call horiz_interp ( zdata, 0.0, -hpi, del, del, blon, blat, zsurf )
-      zsurf = .01*zsurf
-
       zdata = zdata * zdata
       call horiz_interp ( zdata, 0.0, -hpi, del, del, blon, blat, stdev )
-      stdev = .0001*stdev
-
       stdev = stdev - zsurf*zsurf
       where (stdev > 0.0)
          stdev = sqrt ( stdev )
@@ -199,14 +230,36 @@ end subroutine simple_mountain
    if ( file_exist('INPUT/hires_navy_topography.data') ) then
        unit = open_file ('INPUT/hires_navy_topography.data', &
                          action='read', form='ieee32')
-!      --- read and convert topog from cm to m, and to geop ht ---
+!      --- read and convert topog from cm to m ---
        read (unit) zdata
+       zdata = zdata*0.01
        call close_file (unit)
        read_topog_file = .true.
    endif
 
  end function read_topog_file
 
+!#######################################################################
+
+function read_pctwater_file (wdata)
+
+real, intent(out) :: wdata(ipts,jpts)
+logical           :: read_pctwater_file
+integer           :: unit
+
+read_pctwater_file = .false.
+
+!  ------- reads percent water data ------
+
+if ( file_exist('INPUT/pctwater.data') ) then
+  unit = open_file ('INPUT/pctwater.data', action='read', form='ieee32')
+  read (unit) wdata
+  call close_file (unit)
+  read_pctwater_file = .true.
+endif
+
+return
+end function read_pctwater_file
 !#######################################################################
 
 subroutine read_namelist

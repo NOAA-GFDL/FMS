@@ -166,8 +166,8 @@ end interface
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: utilities.F90,v 1.4 2001/03/06 21:05:30 fms Exp $'
-  character(len=128) :: tag = '$Name: damascus $'
+  character(len=128) :: version = '$Id: utilities.F90,v 1.6 2001/07/05 17:40:11 fms Exp $'
+  character(len=128) :: tag = '$Name: eugene $'
 
   logical :: do_init = .true.
 
@@ -264,8 +264,8 @@ subroutine nml_error_init
   10  format ('    ', &
              /' &a_nml  a=1.  /',    &
              /'#------------------', &
-             /' &b_nml  e=5.,  &end')
-!bug         /' &b_nml  a=5., b=0, c=.false., d=''test'',  &end')
+             /' &b_nml  a=5., b=0, c=.false., d=''test'',  &end')
+!!!!!!!!!!   /' &b_nml  e=5.,  &end')
       call close_file (unit)
 
 !     ---- read namelist files and save error codes ----
@@ -1089,6 +1089,7 @@ real    :: seconds
  call system_clock (count)
 
  clocks  = count - count_init
+ if (clocks < 0) clocks = clocks + count_max
  seconds = real(clocks)/real(count_rate)
 
 ! --- formatting ---

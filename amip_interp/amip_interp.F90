@@ -6,7 +6,7 @@ module amip_interp_mod
 use  time_interp_mod, only: time_interp, fraction_of_year
 
 use time_manager_mod, only: time_type, operator(+), operator(>), &
-                            get_date, set_time
+                             get_date, set_time, set_date
 
 use  horiz_interp_mod, only: horiz_interp_init, horiz_interp,  &
                              horiz_interp_end, horiz_interp_type
@@ -14,7 +14,7 @@ use  horiz_interp_mod, only: horiz_interp_init, horiz_interp,  &
 use    utilities_mod, only: file_exist, error_mesg,      &
                             NOTE, WARNING, FATAL,        &
                             check_nml_error, open_file,  &
-                            get_my_pe, close_file
+                            get_my_pe, close_file, lowercase
 
 use    constants_mod, only: tfreeze
 
@@ -22,7 +22,7 @@ implicit none
 private
 
 !-----------------------------------------------------------------------
-!----------------- public interfaces -----------------------------------
+!----------------- Public interfaces -----------------------------------
 
 public amip_interp_init, get_amip_sst, get_amip_ice,  &
        get_sst_grid_boundary, get_sst_grid_size, amip_interp_end,  &
@@ -33,8 +33,8 @@ public amip_interp_init, get_amip_sst, get_amip_ice,  &
 
 !  ---- version number -----
 
-character(len=128) :: version = '$Id: amip_interp.F90,v 1.2 2000/08/04 19:53:49 fms Exp $'
-character(len=128) :: tag = '$Name: damascus $'
+character(len=128) :: version = '$Id: amip_interp.F90,v 1.3 2001/07/05 17:39:57 fms Exp $'
+character(len=128) :: tag = '$Name: eugene $'
 
 !-----------------------------------------------------------------------
 !------ private defined data type --------
@@ -50,6 +50,10 @@ end interface
 
 interface operator (/=)
    module procedure date_not_equals
+end interface
+
+interface operator (>)
+   module procedure date_gt
 end interface
 
 !-----------------------------------------------------------------------
@@ -68,17 +72,18 @@ end type
 
    integer :: mobs, nobs
    real, allocatable :: lon_bnd(:), lat_bnd(:)
-   logical, allocatable :: mask_sst(:,:)
 
 !  ---- global unit & date ----
 
    integer, parameter :: maxc = 128
    integer :: unit
-   character(len=maxc) :: file_name
+   character(len=maxc) :: file_name_sst, file_name_ice
 
    type (date_type) :: Curr_date = date_type( -99, -99, -99 )
+   type (date_type) :: Date_end  = date_type( -99, -99, -99 )
 
-   real    :: tice_crit_k
+   real            :: tice_crit_k
+   integer(kind=2) ::  ice_crit
 
    logical :: do_init_once = .true.
 
@@ -99,6 +104,14 @@ end type
 !  tann = amplitude of annual cycle
 !  tlag = offset for time of year (for annual cycle)
 
+ character(len=24) :: data_set = 'amip1'   !  use 'amip1'
+                                           !      'amip2'
+                                           !      'reynolds_eof'
+                                           !      'reynolds_oi'
+
+ character(len=16) :: date_out_of_range = 'fail'  !  use 'fail'
+                                                  !      'initclimo'
+                                                  !      'climo' 
 
  real    :: tice_crit    = -1.80       !  in degC or degK
  logical :: use_no_climo = .true.
@@ -112,8 +125,13 @@ end type
  real :: tlag = 0.875
 
 
+!amip date for repeating single day (rsd) option
+ integer :: amip_date(3)=(/-1,-1,-1/)
+
  namelist /amip_interp_nml/ tice_crit, use_no_climo, use_amip1,  &
-                            use_zonal, verbose, teq, tdif, tann, tlag
+                            data_set, date_out_of_range,         &
+                            use_zonal, verbose, teq, tdif, tann, tlag, amip_date
+
 
 !-----------------------------------------------------------------------
 
@@ -133,11 +151,25 @@ subroutine get_amip_sst (Time, Interp, sst)
     real    :: fmonth
     type (date_type) :: Date1, Date2, Udate1, Udate2
 
+    type(time_type) :: Amip_Time
+    integer :: tod(3),dum
+
+
 !-----------------------------------------------------------------------
 !----- compute zonally symetric sst ---------------
 
+
+
+    if (all(amip_date>0)) then
+       call get_date(Time,dum,dum,dum,tod(1),tod(2),tod(3))
+       Amip_Time = set_date(amip_date(1),amip_date(2),amip_date(3),tod(1),tod(2),tod(3))
+    else
+       Amip_Time = Time
+    endif
+       
+       
 if (use_zonal) then
-   call zonal_sst (Time, sice, temp)
+   call zonal_sst (Amip_Time, sice, temp)
    call horiz_interp ( Interp%Hintrp, temp, sst )
 else
 
@@ -145,9 +177,7 @@ else
 !---------- get new observed sea surface temperature -------------------
 
 ! ---- time interpolation for months -----
-
-   call time_interp (Time, fmonth, year1, year2, month1, month2)
-   
+   call time_interp (Amip_Time, fmonth, year1, year2, month1, month2)
 ! ---- force climatology ----
    if (Interp % use_climo) then
        year1=0; year2=0
@@ -161,6 +191,7 @@ else
    Date1 = date_type( year1, month1, 0 )
    Date2 = date_type( year2, month2, 0 )
 
+!  -- rewind file --
    unit = -1
 !-----------------------------------------------------------------------
 
@@ -170,8 +201,9 @@ else
             Interp % Date1 = Interp % Date2
             Interp % data1 = Interp % data2
         else
-            call get_sst_record (Date1, Udate1, sice, temp)
+            call read_record ('sst', Date1, Udate1, temp)
             call horiz_interp ( Interp%Hintrp, temp, Interp%data1 )
+            call clip_data ('sst', Interp%data1)
             Interp % Date1 = Date1
         endif
     endif
@@ -180,8 +212,9 @@ else
 
     if (Date2 /= Interp % Date2) then
 
-        call get_sst_record (Date2, Udate2, sice, temp)
+        call read_record ('sst', Date2, Udate2, temp)
         call horiz_interp ( Interp%Hintrp, temp, Interp%data2 )
+        call clip_data ('sst', Interp%data2)
         Interp % Date2 = Date2
 
     endif
@@ -191,7 +224,7 @@ else
       if (unit /= -1) then
          call close_file (unit)
          if (verbose > 0 .and. get_my_pe() == 0)         &
-                               call print_dates (Time,   &
+                               call print_dates (Amip_Time,   &
                                 Interp % Date1, Udate1,  &
                                 Interp % Date2, Udate2, fmonth)
       endif
@@ -222,11 +255,28 @@ subroutine get_amip_ice (Time, Interp, ice)
     real    :: fmonth
     type (date_type) :: Date1, Date2, Udate1, Udate2
 
+    type(time_type) :: Amip_Time
+    integer :: tod(3),dum
+
 !-----------------------------------------------------------------------
 !----- compute zonally symetric sst ---------------
 
+
+    if (any(amip_date>0)) then
+
+       call get_date(Time,dum,dum,dum,tod(1),tod(2),tod(3))
+
+       Amip_Time = set_date(amip_date(1),amip_date(2),amip_date(3),tod(1),tod(2),tod(3))
+
+    else
+
+       Amip_Time = Time
+       
+    endif
+       
+
 if (use_zonal) then
-   call zonal_sst (Time, sice, temp)
+   call zonal_sst (Amip_Time, sice, temp)
    call horiz_interp ( Interp%Hintrp, sice, ice )
 else
 
@@ -235,7 +285,7 @@ else
 
 ! ---- time interpolation for months -----
 
-   call time_interp (Time, fmonth, year1, year2, month1, month2)
+   call time_interp (Amip_Time, fmonth, year1, year2, month1, month2)
    
 ! ---- force climatology ----
    if (Interp % use_climo) then
@@ -259,8 +309,9 @@ else
             Interp % Date1 = Interp % Date2
             Interp % data1 = Interp % data2
         else
-            call get_sst_record (Date1, Udate1, sice, temp)
+            call read_record ('ice', Date1, Udate1, sice)
             call horiz_interp ( Interp%Hintrp, sice, Interp%data1 )
+            call clip_data ('ice', Interp%data1)
             Interp % Date1 = Date1
         endif
     endif
@@ -269,8 +320,9 @@ else
 
     if (Date2 /= Interp % Date2) then
 
-        call get_sst_record (Date2, Udate2, sice, temp)
+        call read_record ('ice', Date2, Udate2, sice)
         call horiz_interp ( Interp%Hintrp, sice, Interp%data2 )
+        call clip_data ('ice', Interp%data2)
         Interp % Date2 = Date2
 
     endif
@@ -280,7 +332,7 @@ else
       if (unit /= -1) then
          call close_file (unit)
          if (verbose > 0 .and. get_my_pe() == 0)         &
-                               call print_dates (Time,   &
+                               call print_dates (Amip_Time,   &
                                 Interp % Date1, Udate1,  &
                                 Interp % Date2, Udate2, fmonth)
       endif
@@ -332,43 +384,94 @@ endif
     if (get_my_pe() == 0) then
         write (unit,'(/,80("="),/(a))') trim(version), trim(tag)
         write (unit,nml=amip_interp_nml)
+        write (unit,11)
     endif
     call close_file (unit)
+
+!   print error message if default value of use_amip1 has changed
+
+    if (.not.use_amip1) then
+       call error_mesg ('amip_interp_mod',  &
+                'obsolete namelist option USE_AMIP1 should be replaced &
+                 &by option DATA_SET - check documentation', FATAL)
+    endif
+
+!   also for use_no_climo
+
+    if (.not.use_no_climo) then
+       call error_mesg ('amip_interp_mod',  &
+            'obsolete namelist option USE_NO_CLIMO should be replaced &
+            &by option DATE_OUT_OF_RANGE - check documentation', FATAL)
+    endif
 
 !   ---- freezing point of sea water in deg K ---
 
     tice_crit_k = tice_crit
     if ( tice_crit_k < 200. ) tice_crit_k = tice_crit_k + tfreeze
+    ice_crit = nint((tice_crit_k-tfreeze)*100.)
 
 !   ---- set up file dependent variable ----
 !   ----   global file name   ----
 !   ----   grid box edges     ----
 !   ---- initialize zero size grid if not pe 0 ------
 
-    if (use_amip1) then
-        file_name = 'INPUT/' // 'amip1_sst.data'
+    if (lowercase(trim(data_set)) == 'amip1') then
+        file_name_sst = 'INPUT/' // 'amip1_sst.data'
+        file_name_ice = 'INPUT/' // 'amip1_sst.data'
         mobs = 180;  nobs = 91
         call set_sst_grid_edges_amip1
         if (get_my_pe() == 0) &
         call error_mesg ('amip_interp_init', 'using AMIP 1 sst', NOTE)
-    else
-        file_name = 'INPUT/' // 'reyoi_sst.data'
+        Date_end = date_type( 1989, 1, 0 )
+    else if (lowercase(trim(data_set)) == 'amip2') then
+        file_name_sst = 'INPUT/' // 'amip2_sst.data'
+        file_name_ice = 'INPUT/' // 'amip2_ice.data'
+        mobs = 360;  nobs = 180
+        call set_sst_grid_edges_oi
+!       --- specfied min for amip2 ---
+        tice_crit_k = 271.38
+        if (get_my_pe() == 0) &
+        call error_mesg ('amip_interp_init', 'using AMIP 2 sst', NOTE)
+        Date_end = date_type( 1996, 3, 0 )
+    else if (lowercase(trim(data_set)) == 'reynolds_eof') then
+        file_name_sst = 'INPUT/' // 'reynolds_sst.data'
+        file_name_ice = 'INPUT/' // 'reynolds_sst.data'
+        mobs = 180;  nobs = 90
+        call set_sst_grid_edges_oi
+        if (get_my_pe() == 0) &
+        call error_mesg ('amip_interp_init',  &
+             'using NCEP Reynolds Historical Reconstructed SST', NOTE)
+        Date_end = date_type( 1998, 12, 0 )
+    else if (lowercase(trim(data_set)) == 'reynolds_oi') then
+        file_name_sst = 'INPUT/' // 'reyoi_sst.data'
+        file_name_ice = 'INPUT/' // 'reyoi_sst.data'
         mobs = 360;  nobs = 180
         call set_sst_grid_edges_oi
         if (get_my_pe() == 0) &
-        call error_mesg ('amip_interp_init', 'using Reynolds OI sst', &
+        call error_mesg ('amip_interp_init', 'using Reynolds OI SST', &
                                                                 NOTE)
+        Date_end = date_type( 1999, 1, 0 )
+    else
+        call error_mesg ('amip_interp_init', 'the value of the &
+        &namelist parameter DATA_SET being used is not allowed', FATAL)
     endif
+
+    if (verbose > 1 .and. get_my_pe() == 0) &
+              print *, 'ice_crit,tice_crit_k=',ice_crit,tice_crit_k
 
 
 !  --- check existence of sst data file ??? ---
 
-    if (.not.file_exist(trim(file_name))) then
+    if (.not.file_exist(trim(file_name_sst)) .or. &
+        .not.file_exist(trim(file_name_ice))) then
       call error_mesg ('amip_interp_init',  &
                        'requested input data set does not exist', FATAL)
     endif
 
     do_init_once = .false.
+
+ 11 format (/,'namelist option USE_AMIP1 is no longer supported', &
+           /,'use option DATA_SET instead')
 
  endif
 
@@ -380,11 +483,13 @@ endif
    Interp % use_annual = .false.
    if (present(use_annual)) Interp % use_annual  = use_annual
 
-   if ( use_no_climo .and. Interp%use_climo )  call error_mesg &
-                ('amip_interp_init', 'use_climo mismatch', FATAL)
+   if ( date_out_of_range == 'fail' .and. Interp%use_climo ) &
+             call error_mesg ('amip_interp_init',  &
+                              'use_climo mismatch', FATAL)
 
-   if ( use_no_climo .and. Interp%use_annual )  call error_mesg &
-          ('amip_interp_init', 'use_annual(climo) mismatch', FATAL)
+   if ( date_out_of_range == 'fail' .and. Interp%use_annual ) &
+             call error_mesg ('amip_interp_init', &
+                              'use_annual(climo) mismatch', FATAL)
 
 !-----------------------------------------------------------------------
 !   ---- initialization of horizontal interpolation ----
@@ -509,14 +614,15 @@ endif
 
 !#######################################################################
 
-   subroutine get_sst_record (Date, Adate, ice, sst)
+   subroutine read_record (type, Date, Adate, dat)
 
+   character(len=*), intent(in)  :: type
    type (date_type), intent(in)  :: Date
    type (date_type), intent(out) :: Adate
-   real,             intent(out) :: ice(mobs,nobs), sst(mobs,nobs)
+   real,             intent(out) :: dat(mobs,nobs)
 
-   integer(2) :: isst (mobs,nobs)
-   integer :: yr, mo, dy
+   integer(2) :: idat (mobs,nobs)
+   integer :: yr, mo, dy, ierr
    character(len=38) :: mesg
 
 !  ---- rewind condition (if unit is open) ----
@@ -524,16 +630,26 @@ endif
     if (unit /= -1 .and. Curr_date % year == 0 .and.   &
          date % month <= Curr_date % month ) then
              if (verbose > 1 .and. get_my_pe() == 0)  &
-                             print *, ' rewinding ', trim(file_name)
+                             print *, ' rewinding unit = ', unit
              rewind unit
     endif
 
-    unit = open_file (file_name, form='ieee32', action='read')
+    if (type(1:3) == 'sst') then
+       unit = open_file (file_name_sst, form='ieee32', action='read')
+    else if (type(1:3) == 'ice') then
+       unit = open_file (file_name_ice, form='ieee32', action='read')
+    endif
+    dy = 0
 
     if (verbose > 2 .and. get_my_pe() == 0)  &
                     print *, 'looking for date = ', Date
     do
-      read (unit, end=10)  yr, mo, dy, isst
+      if (lowercase(trim(data_set)) == 'amip2') then
+         read (unit, end=10)  yr, mo,      dat
+      else
+         read (unit, end=10)  yr, mo, dy, idat
+!new     read (unit, end=10)  yr, mo, dy
+      endif
       Adate = date_type( yr, mo, dy )
       Curr_date = Adate
     if (verbose > 2 .and. get_my_pe() == 0)  &
@@ -544,43 +660,68 @@ endif
 
 !     --- otherwise use monthly climo ---
       if (yr == 0 .and. Date % month == mo) exit
+
+!     --- skip this data record ---
+!new  if (lowercase(trim(data_set)) /= 'amip2') read (unit)
     enddo
 
-!     --- check if climo used when not wanted ---
+!     --- read data ---
+!new  if (lowercase(trim(data_set)) /= 'amip2') read (unit) idat
 
-      if ( use_no_climo ) then
-          if (yr == 0 .or. mo == 0) call error_mesg   &
-                ('get_sst_record in amip_interp_mod', &
-                 'climo data read when NO climo data requested', FATAL)
-      endif
+!   --- check if climo used when not wanted ---
+
+    if (yr == 0 .or. mo == 0) then
+        ierr = 0
+        if (date_out_of_range == 'fail' )               ierr = 1
+        if (date_out_of_range == 'initclimo' .and.  &
+                                    Date > Date_end )   ierr = 1
+        if (ierr /= 0) call error_mesg &
+               ('read_record in amip_interp_mod', &
+                'climo data read when NO climo data requested', FATAL)
+    endif
 
 !     --- create (real) ice mask ---
 
-      where ( isst == -200 )
-         ice = 1.0
-      elsewhere
-         ice = 0.0
-      endwhere
+      if (type(1:3) == 'ice') then
+          if (lowercase(trim(data_set)) /= 'amip2') then
+              where ( idat <= ice_crit )
+                 dat = 1.
+              elsewhere
+                 dat = 0.
+              endwhere
+          else
+              dat = dat*0.01
+          endif
+      else if (type(1:3) == 'sst') then
+!         --- unpack sst ---
+          if (lowercase(trim(data_set)) /= 'amip2') &
+              dat = float(idat)*0.01 + tfreeze
+      endif
 
-!     --- unpack sst ---
-
-      sst = float(isst)*0.01 + tfreeze
-
-!     --- set ice mask for sst < critical ----
-
-      where ( sst <= tice_crit ) 
-         ice = 1.0
-         sst = tice_crit
-      endwhere
 
       return
 
   10  write (mesg, 20) unit
-      call error_mesg ('get_sst_record in amip_interp_mod', mesg, FATAL)
-                       
+      call error_mesg ('read_record in amip_interp_mod', mesg, FATAL)
+
   20  format ('end of file reading unit ',i2,' (sst data)')
 
-   end subroutine get_sst_record
+   end subroutine read_record
+
+!#######################################################################
+
+   subroutine clip_data (type, dat)
+
+   character(len=*), intent(in)    :: type
+   real,             intent(inout) :: dat(:,:)
+
+   if (type(1:3) == 'ice') then
+       dat = min(max(dat,0.0),1.0)
+   else if (type(1:3) == 'sst') then
+       dat = max(tice_crit_k,dat)
+   endif
+
+   end subroutine clip_data
 
 !#######################################################################
 
@@ -613,6 +754,28 @@ logical :: answer
    endif
 
 end function date_not_equals
+
+!#######################################################################
+
+function date_gt (Left, Right) result (answer)
+type (date_type), intent(in) :: Left, Right
+logical :: answer
+integer :: i, dif(3)
+
+   dif(1) = Left%year  - Right%year
+   dif(2) = Left%month - Right%month
+   dif(3) = Left%day   - Right%day
+   answer = .false.
+   do i = 1, 3
+     if (dif(i) == 0) cycle
+     if (dif(i)  < 0) exit
+     if (dif(i)  > 0) then
+         answer = .true.
+         exit
+     endif
+   enddo
+
+end function date_gt
 
 !#######################################################################
 
@@ -677,9 +840,9 @@ subroutine zonal_sst (Time, ice, sst)
 
     enddo
 
-    where ( sst < tice_crit )
+    where ( sst < tice_crit_k )
        ice = 1.0
-       sst = tice_crit
+       sst = tice_crit_k
     elsewhere
        ice  = 0.0
     endwhere

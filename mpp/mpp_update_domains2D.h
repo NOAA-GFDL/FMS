@@ -150,7 +150,7 @@
 !isp, iep, jsp, jep: limits of put domain
 !isg, ieg, jsg, jeg: limits of get domain
 !to, from: pe of put and get domains
-          integer :: i, j, k
+          integer :: i, j, k, n
           integer :: put_len, get_len
           character(len=8) :: text
           MPP_TYPE_ :: work(size(field))
@@ -169,7 +169,16 @@
           if( to.NE.NULL_PE )then  !put is to be done: buffer input
               put_len = (iep-isp+1)*(jep-jsp+1)*size(field,3)
               call mpp_sync_self()  !check if put_r8 is still in use
-              work(1:put_len) = TRANSFER( field(isp:iep,jsp:jep,:), work )
+!              work(1:put_len) = TRANSFER( field(isp:iep,jsp:jep,:), work )
+              n = 0
+              do k = 1,size(field,3)
+                 do j = jsp,jep
+                    do i = isp,iep
+                       n = n + 1
+                       work(n) = field(i,j,k)
+                    end do
+                 end do
+              end do
           else
               put_len = 1
           end if
@@ -184,8 +193,17 @@
           
           call mpp_transmit( work(1), put_len, to, work(put_len+1), get_len, from )
           if( from.NE.NULL_PE )then  !get was done: unbuffer output
-              field(isg:ieg,jsg:jeg,:) = &
-                   RESHAPE( work(put_len+1:put_len+get_len), (/ieg-isg+1,jeg-jsg+1,size(field,3)/) )
+!              field(isg:ieg,jsg:jeg,:) = &
+!                   RESHAPE( work(put_len+1:put_len+get_len), (/ieg-isg+1,jeg-jsg+1,size(field,3)/) )
+              n = put_len
+              do k = 1,size(field,3)
+                 do j = jsg,jeg
+                    do i =isg,ieg
+                       n = n + 1
+                       field(i,j,k) = work(n)
+                    end do
+                 end do
+              end do
           end if
 
           return

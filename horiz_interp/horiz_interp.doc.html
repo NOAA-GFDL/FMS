@@ -109,21 +109,21 @@
   Input
   -----
 
-     blon_in   contiguous longitude boundaries for input data grid boxes,
+     blon_in   contiguous longitude boundaries (in radians) for input data grid boxes,
                   real, dimension( size(data_in,1)+1 )
-     blat_in   contiguous latitudes boundaries for input data grid boxes,
+     blat_in   contiguous latitudes boundaries (in radians) for input data grid boxes,
                   real, dimension( size(data_in,2)+1 )
 
-     blon_out  longitude boundaries for output data grid boxes,
+     blon_out  longitude boundaries (in radians) for output data grid boxes,
                   real, dimension( size(data_out,1), 2 )
-     blat_out  latitude boundaries for output data at grid boxes,
+     blat_out  latitude boundaries (in radians) for output data at grid boxes,
                   real, dimension( size(data_out,2), 2 )
 
      ~~ OR ~~
 
-     blon_out  contiguous longitude boundaries for output data grid boxes,
+     blon_out  contiguous longitude boundaries (in radians) for output data grid boxes,
                   real, dimension( size(data_out,1)+1 )
-     blat_out  contiguous latitudes boundaries for output data grid boxes,
+     blat_out  contiguous latitudes boundaries (in radians) for output data grid boxes,
                   real, dimension( size(data_out,2)+1 )
 
   Input/Output
@@ -154,21 +154,21 @@
      data_in   (global) input data stored from south to north
                  [real, dimension(:,:)]
 
-     blon_in   contiguous longitude boundaries for input data grid boxes,
+     blon_in   contiguous longitude boundaries (in radians) for input data grid boxes,
                   real, dimension( size(data_in,1)+1 )
-     blat_in   contiguous latitudes boundaries for input data grid boxes,
+     blat_in   contiguous latitudes boundaries (in radians) for input data grid boxes,
                   real, dimension( size(data_in,2)+1 )
 
-     blon_out  longitude boundaries for output data grid boxes,
+     blon_out  longitude boundaries (in radians) for output data grid boxes,
                   real, dimension( size(data_out,1), 2 )
-     blat_out  latitude boundaries for output data at grid boxes,
+     blat_out  latitude boundaries (in radians) for output data at grid boxes,
                   real, dimension( size(data_out,2), 2 )
 
      ~~ OR ~~
 
-     blon_out  contiguous longitude boundaries for output data grid boxes,
+     blon_out  contiguous longitude boundaries (in radians) for output data grid boxes,
                   real, dimension( size(data_out,1)+1 )
-     blat_out  contiguous latitudes boundaries for output data grid boxes,
+     blat_out  contiguous latitudes boundaries (in radians) for output data grid boxes,
                   real, dimension( size(data_out,2)+1 )
 
   Output
@@ -219,10 +219,10 @@
      dy          Grid spacing (in radians) for the latitude axis (second
                  dimension) for the input data.  [real]
 
-     blon_out    contiguous longitude boundaries for output data grid boxes,
+     blon_out    contiguous longitude boundaries (in radians) for output data grid boxes,
                   real, dimension( size(data_out,1)+1 )
 
-     blat_out    contiguous latitudes boundaries for output data grid boxes,
+     blat_out    contiguous latitudes boundaries (in radians) for output data grid boxes,
                   real, dimension( size(data_out,2)+1 )
 
   Output
@@ -300,12 +300,13 @@
 
     <b>no latitude index found: n,sph= .... </b>
         An output latitude did not fall between adjacent input latitudes.
-        Check your input and output latitudes or increase the tolerence
-        (see developer notes).
+        Check your input and output latitudes (make sure you are passing
+        latitudes in radians) or increase the tolerence (see developer notes).
 
     <b>no longitude index found</b>
         An output longitude did not fall between adjacent input longitudes.
-        Check your input and output longitudes or increase the tolerence
+        Check your input and output longitudes (make sure you are passing
+        longitudes in radians) or increase the tolerence
         (see notes).
 
 <b>FATAL ERROR in horiz_interp</b>

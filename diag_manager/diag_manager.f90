@@ -5,10 +5,13 @@ use time_manager_mod, only: get_time, set_time, get_date, set_date,    &
                             operator(>), operator(<), operator(==),    &
                             time_type, increment_time, month_name,     &
                             get_calendar_type, NO_CALENDAR
+
 use    utilities_mod, only: error_mesg, FATAL, WARNING, NOTE, &
                             open_file, close_file,            &
                             file_exist, get_my_pe
+
 use    diag_axis_mod, only: diag_axis_init, get_axis_length
+
 use  diag_output_mod, only: file_time_init, write_axis_meta_data,  &
                             write_field_meta_data, done_meta_data, &
                             diag_field_out, diag_output_end,       &
@@ -19,7 +22,7 @@ private
 
 public  diag_manager_init, send_data, diag_manager_end,  &
         register_diag_field, register_static_field, &
-        diag_axis_init, get_base_time, get_base_date
+        diag_axis_init, get_base_time, get_base_date, need_data
 
 ! Specify storage limits for fixed size tables used for pointers, etc.
 integer, parameter :: max_fields_per_file = 150
@@ -97,8 +100,8 @@ character (len=10) :: time_unit_list(6) = (/'seconds   ', 'minutes   ', &
 character (len = 7) :: avg_name = 'average'
 
 ! version number of this module
-  character(len=128) :: version = '$Id: diag_manager.f90,v 1.2 2000/08/07 20:53:54 fms Exp $'
-  character(len=128) :: tag = '$Name: damascus $'  
+  character(len=128) :: version = '$Id: diag_manager.f90,v 1.4 2001/07/05 17:54:52 fms Exp $'
+  character(len=128) :: tag = '$Name: eugene $'  
 
 
 interface send_data
@@ -164,14 +167,15 @@ end function register_diag_field
 !-------------------------------------------------------------------------
 
 function register_static_field(module_name, field_name, axes, &
-   long_name, units, missing_value, range)
+   long_name, units, missing_value, range, require)
 
 integer register_static_field
 character(len=*), intent(in) :: module_name, field_name
 integer, intent(in) :: axes(:)
 character(len=*), optional, intent(in) :: long_name, units
 real, optional, intent(in) :: missing_value, range(2)
-
+logical, optional, intent(in) :: require  ! require static field to be in every file
+                                          ! e.g. 2-d axes
 integer :: field, num_axes, j, out_num, file_num, freq, siz(3)
 character(len=128) :: error_string
 
@@ -179,6 +183,20 @@ if (not_initialized) call error_mesg ('diag_manager_mod',  &
                        'module has not been initialized', FATAL)
 
 register_static_field = find_input_field(module_name, field_name)
+
+if (PRESENT(require)) then
+   if (require) then
+      call init_input_field(module_name, field_name)
+      register_static_field = find_input_field(module_name, field_name)
+      do j=1, num_files
+! need to think about what to do if the axes are not present, e.g. file only
+! contains data slices
+         call init_output_field(module_name, field_name,field_name, &
+                               files(j)%name,.false.,2)
+      enddo
+   endif
+endif
+
 ! Negative index returned if this field is not used in table
 if(register_static_field < 0) return
 
@@ -634,6 +652,12 @@ do i = 1, num_output_fields
  
 end do
 
+! If there are no non-static fields then need to setup output data
+if(first_send_data_call) then
+   call output_setup()
+   first_send_data_call = .false.
+endif
+
 ! Output static fields and signal end of output for each file
 do i = 1, num_files
 ! Loop to look for static fields
@@ -815,7 +839,7 @@ character(len=256) :: record
 character(len=9)   :: amonth
 
 integer :: iunit,n,m,num_fields,time_units, output_freq_units, nfiles,nfields
-integer :: j, log_unit, name_len
+integer :: j, log_unit, name_len, nrecs
 
 type(tableB_type) :: textB
 type(tableA_type) :: textA
@@ -848,15 +872,16 @@ else
    amonth = 'day'
 end if
 
-read(iunit,'(i4)',err=99) nfiles
-
-if (nfiles >= max_files ) call error_mesg('diag_manager_init'&
-,'too many files',FATAL)
-
-do n=1,nfiles
-
-  read(iunit,*,end=99,err=99) textA
-
+nrecs=0
+nfiles=0
+do while (nfiles <= max_files)
+   read(iunit,'(a)',end=86,err=85) record
+   nrecs=nrecs+1
+   if (record(1:1) == '#') cycle
+   read(record,*,err=85,end=85) textA
+   ! test file format to make sure its OK
+   if (textA%format .gt. 2 .or. textA%format .lt. 1) cycle
+   nfiles=nfiles+1
    time_units = 0
    output_freq_units = 0
    do j = 1, size(time_unit_list)
@@ -864,48 +889,51 @@ do n=1,nfiles
       if(textA%output_freq_units == time_unit_list(j)) output_freq_units = j
    end do
    if(time_units == 0) &
-      call error_mesg('diag_manager_init','invalid time units',FATAL)
+        call error_mesg('diag_manager_init','invalid time units',FATAL)
    if(output_freq_units == 0) & 
-      call error_mesg('diag_manager_init','invalid output frequency units',FATAL)
-   
-! remove trailing .nc extension from file name
-   
+        call error_mesg('diag_manager_init','invalid output frequency units',FATAL)
+   ! remove trailing .nc extension from file name 
    name_len = len_trim(textA%name)
    if (textA%name(name_len-2:name_len) == '.nc') textA%name = textA%name(1:name_len-3)
-
-! assign values to file_types
-  call init_file(textA%name,textA%output_freq, output_freq_units, &
-    textA%format, time_units,textA%long_name)
-
+   ! assign values to file_types
+   call init_file(textA%name,textA%output_freq, output_freq_units, &
+        textA%format, time_units,textA%long_name)
+85 continue
 enddo
-
-read(iunit,'(i4)',err=99) nfields
-
-do n=1,nfields
-  
-! read(iunit,*,end=99,err=99) textB
-
-  read(iunit,'(a)',end=99,err=99) record
-! Check for comment character
-  if (record(1:1) == '#') cycle
-  read(record,*,end=99,err=99) textB
+call error_mesg('diag_manager_init','too many files in table', FATAL)
+86 continue
 
 
-!   assign values to file_types
 
-  call init_input_field(textB%module_name,textB%field_name)
+rewind(iunit)
+!if (nfiles .lt. 1) call error_mesg('diag_manager_init','error reading file records',FATAL)
 
-!   remove trailing .nc extension
-
-  name_len= len_trim(textB%name)
-  if (textB%name(name_len-2:name_len) == '.nc') &
-      textB%name = textB%name(1:name_len-3)
-  
-  call init_output_field(textB%module_name,textB%field_name,textB%output_name,&
-           textB%name,textB%time_avg,textB%pack)
-
+nfields=0;nrecs=0
+do while (nfields <= max_output_fields)
+   read(iunit,'(a)',end=94,err=93) record
+   nrecs=nrecs+1
+   if (record(1:1) == '#') cycle
+   read(record,*,end=93,err=93) textB
+   if (textB%pack .gt. 8 .or. textB%pack .lt. 1) cycle
+   nfields=nfields+1
+   !   assign values to field_types
+   call init_input_field(textB%module_name,textB%field_name)
+   !   remove trailing .nc extension
+   name_len= len_trim(textB%name)
+   if (textB%name(name_len-2:name_len) == '.nc') &
+        textB%name = textB%name(1:name_len-3)
+   call init_output_field(textB%module_name,textB%field_name,textB%output_name,&
+        textB%name,textB%time_avg,textB%pack)
+93 continue
 enddo
-  
+call error_mesg('diag_manager_init','too many fields in table', FATAL)
+94 continue
+
+
+
+
+!if (nfields .lt. 1) call error_mesg('diag_manager_init','error reading field records',FATAL)
+
 call close_file(iunit)
 
 ! version number to logfile
@@ -913,11 +941,11 @@ call close_file(iunit)
   log_unit = open_file ('logfile.out', action='append')
   if ( get_my_pe() == 0 ) then
        write (log_unit,'(/,80("="),/(a))') trim(version), trim(tag)
-       write (log_unit,15) base_year, trim(amonth), base_day, &
+       write (log_unit,95) base_year, trim(amonth), base_day, &
                            base_hour, base_minute, base_second
   endif
   call close_file (log_unit)
-15 format ('base date used = ',i4,1x,a,2i3,2(':',i2.2),' gmt')
+95 format ('base date used = ',i4,1x,a,2i3,2(':',i2.2),' gmt')
 
 
 not_initialized = .false.
@@ -1115,7 +1143,8 @@ start_dif = get_date_dif(output_fields(field)%last_output, base_time, &
 ! Is this field the first averaged one in its file?
 do i = 1, files(file)%num_fields
    num = files(file)%fields(i)
-   if(output_fields(num)%time_average .and. .not.output_fields(num)%static) then
+   if(output_fields(num)%time_average .and. .not.output_fields(num)%static .and. &
+      input_fields(output_fields(num)%input_field)%register) then
       if(num == field) then
 ! Output the axes if this is first time-averaged field
          time_data(1, 1, 1) = start_dif
@@ -1384,6 +1413,40 @@ end function diag_time_inc
     return
     
  end function lcase 
+
+!-------------------------------------------------------------------------
+
+function need_data(diag_field_id,next_model_time)
+!
+! next_model_time = current model time + model time_step
+!
+type (time_type), intent(in) :: next_model_time
+integer, intent(in) :: diag_field_id
+logical :: need_data
+integer :: i, out_num
+ 
+! loop through output fields
+
+need_data=.false.
+
+! If diag_field_id is < 0 it means that this field is unused, return
+if (diag_field_id < 0 ) return
+
+do i= 1,input_fields(diag_field_id)%num_output_fields
+! Get index to an output field
+   out_num = input_fields(diag_field_id)%output_fields(i)
+   if (.not.output_fields(out_num)%static) then
+      if (next_model_time > output_fields(out_num)%next_output) need_data=.true.
+! Is this output field being time averaged?
+! assume average data based on every timestep
+! needs to be changed when different forms of averaging are implemented 
+      if (output_fields(out_num)%time_average) need_data=.true. 
+   endif
+enddo
+
+return
+
+end function need_data
 
 !-------------------------------------------------------------------------
  

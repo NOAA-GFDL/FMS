@@ -21,15 +21,15 @@ integer :: nradon=0  ! tracer number for radon
 integer :: ntest =0  ! starting tracer number for test tracers
                      ! test tracers are indexed from ntest to size(r,4)
 
-namelist /tracer_driver_nml/ nradon, ntest
+namelist /tracer_driver_nml/ nradon
 
 logical :: do_init=.true.
 
 integer :: numtrace
 !-----------------------------------------------------------------------
 !---- version number -----
-character(len=128) :: version = '$Id: tracer_driver.F90,v 1.2 2000/08/04 20:05:56 fms Exp $'
-character(len=128) :: tag = '$Name: damascus $'
+character(len=128) :: version = '$Id: tracer_driver.F90,v 1.3 2001/04/13 15:24:34 fms Exp $'
+character(len=128) :: tag = '$Name: eugene $'
 !-----------------------------------------------------------------------
       integer, parameter :: max_tracers = 30
       character(len=16) :: field(max_tracers)
@@ -74,17 +74,6 @@ integer :: k, kd, nt, ntr
          call radon_sourcesink (lon,lat,land,pwt,r(:,:,:,nradon),rtnd)
       endif
       rdt(:,:,:,nradon)=rdt(:,:,:,nradon)+rtnd(:,:,:)
-   endif
-
-!-------- compute tendencies for the remaining test tracers ------------
-
-   if (ntest > 0) then
-     do ntr = ntest, nt
-       do k=1,kd
-         rtnd(:,:,k) = 0.005*float(ntr)*float(k)*1.0E-09
-       end do
-       rdt(:,:,:,ntr) = rdt(:,:,:,ntr) + rtnd(:,:,:)
-     end do
    endif
 
 !-----------------------------------------------------------------------
@@ -190,7 +179,7 @@ integer  i,j,kb,id,jd,kd
       real, intent(inout), dimension(:,:,:,:) :: r
       real, intent(in),    dimension(:,:,:), optional :: mask
 !-----------------------------------------------------------------------
-      integer  unit,io,index
+      integer  log_unit,unit,io,index
       character(len=16) ::  fld
 
 !---- read namelist ----
@@ -205,48 +194,40 @@ integer  i,j,kb,id,jd,kd
 
 !---- write namelist ------------------
 
-      unit = open_file ('logfile.out', action='append')
+      log_unit = open_file ('logfile.out', action='append')
       if ( get_my_pe() == 0 ) then
-           write (unit,'(/,80("="),/(a))') trim(version), trim(tag)
-           write (unit,nml=tracer_driver_nml)
+           write (log_unit,'(/,80("="),/(a))') trim(version), trim(tag)
+           write (log_unit,nml=tracer_driver_nml)
       endif
-      call close_file (unit)
 
 !----- read restart file ----------
 
       field = '                '
 
-!     ---- SKIP FOR THIS VERSION ----
-!     if (file_exist('INPUT/tracer_driver.res')) then
-!        unit = open_file ('INPUT/tracer_driver.res', action='read')
-!        do
-!           read (unit,200,end=20) fld,index
-!           if (index <= max_tracers) field(index) = fld
-!        enddo
-!200     format (a16,i3)
-! 20     continue
-!     endif
+      if (file_exist('INPUT/tracer_driver.res')) then
+         unit = open_file ('INPUT/tracer_driver.res', action='read')
+         do
+            read (unit,200,end=20) fld,index
+            if (index <= max_tracers) field(index) = fld
+         enddo
+ 200     format (a16,i3)
+  20     call close_file (unit)
+      endif
 
 !---- dummy checks --------
-
-!!!   if (nradon == 0 .and. get_my_pe() == 0) call error_mesg &
-!!!        ('tracer_driver_init', 'radon tracer number not set.', NOTE)
 
       if (nradon > max_tracers) call error_mesg ('tracer_driver_init', &
                          'radon tracer number too large.', FATAL)
 
 !----- count number of tracers ------
+
       numtrace = 0
       if (nradon > 0) numtrace = numtrace + 1
-      if (ntest  > 0) numtrace = numtrace + size(r,4)-ntest+1
 
       if (numtrace == 0) then
-!!!       if (get_my_pe() == 0) call error_mesg ('tracer_driver_init', &
-!!!                           'no tracers have been initialized.', NOTE)
           do_init = .false.
-          return
+          go to 99   !return
       else
-
           if (size(r,4) == 0) call error_mesg ('tracer_driver_init',  &
                                'number of tracers equals zero.', FATAL)
       endif
@@ -254,18 +235,20 @@ integer  i,j,kb,id,jd,kd
 !----- set initial value of radon ------------
 
       if (nradon > 0 ) then
-         if (field(nradon)(1:5) /= 'radon') then
+         if (trim(field(nradon)) /= 'radon') then
             if (present(mask)) then
                 r(:,:,:,nradon) = 0.001*mask(:,:,:)
             else
                 r(:,:,:,nradon) = 0.001
             endif
-                if (get_my_pe() == 0) call error_mesg &
-                  ('tracer_driver_init', 'radon was initialized.', NOTE)
+            field(nradon) = 'radon'
+            if (get_my_pe() == 0) write (log_unit,30) nradon
+  30        format ('radon was initialized as tracer number ',i2)
          endif
       endif
 
 
+  99  call close_file (log_unit)
       do_init = .false.
 
 !-----------------------------------------------------------------------
@@ -280,20 +263,19 @@ integer  i,j,kb,id,jd,kd
    integer :: unit
    integer :: n
 
-      if (numtrace == 0) return
-!     if (numtrace >= 0) return
+      if (numtrace    == 0) return
+      if (get_my_pe() /= 0) return
 
 !---------- open file and write restart file ---------------------------
 !---------- file defines which tracers are used ------------------------
 
-!     ---- SKIP FOR THIS VERSION ----
-!     unit = open_file ('RESTART/tracer_driver.res', action='write')
-!     do n = 1, numtrace 
-!       write (unit,100) field(n), n
-!     enddo
-!     call close_file (unit)
+      unit = open_file ('RESTART/tracer_driver.res', action='write')
+      do n = 1, numtrace 
+        write (unit,100) field(n), n
+      enddo
+      call close_file (unit)
 
-!100  format (a16,i3)
+ 100  format (a16,i3)
 
 !-----------------------------------------------------------------------
 
