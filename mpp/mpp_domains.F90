@@ -34,7 +34,7 @@
 #endif
 
 !compilers that support Cray pointers
-#if defined(SGICRAY) || defined(__alpha)
+#if defined(SGICRAY) || defined(__alpha) || defined(__sun) || defined(__linux)
 #define use_CRI_pointers
 #endif
 
@@ -53,9 +53,18 @@
 #endif
 
 #ifdef sgi_generic
-!this is for the Edinburgh n32/o32 compiler, which won't accept 8-byte ints
-!at any price
+!this is for the Edinburgh n32/o32 compiler, which won't accept 8-byte ints at any price
+#define no_8byte_integers
 #define LONG_KIND 4
+#endif
+
+!parallel machine types
+#if defined(_CRAY) && !defined(_CRAYT3E) && !defined(_CRAYT3D)
+#define CRAYPVP
+#endif
+
+#if defined(_CRAYT3E) || defined(_CRAYT3D) || defined(sgi_mipspro)
+#define SGICRAY_MPP
 #endif
 
 !if using shmem calls on Origin, you may need to use shmalloc
@@ -71,7 +80,7 @@ module mpp_domains_mod
   use mpp_mod
   implicit none
   private
-  character(len=256), private :: version='$Id: mpp_domains.F90,v 5.4 2000/07/28 20:17:18 fms Exp $'
+  character(len=256), private :: version='$Id: mpp_domains.F90,v 5.5 2000/11/22 14:41:29 fms Exp $'
 
 #ifdef SGICRAY
 !see intro_io(3F): to see why these values are used rather than 5,6,0
@@ -129,6 +138,7 @@ module mpp_domains_mod
 #else
   real, allocatable :: put_r8(:), get_r8(:)
   complex, allocatable :: put_c8(:), get_c8(:)
+  integer, allocatable :: put_i4(:), get_i4(:)
 #endif
 
   integer, private :: tk
@@ -144,26 +154,38 @@ module mpp_domains_mod
      module procedure mpp_update_domain2D_c8_2d
      module procedure mpp_update_domain2D_c8_3d
      module procedure mpp_update_domain2D_c8_4d
-     module procedure mpp_update_domain2D_i8_2d
-     module procedure mpp_update_domain2D_i8_3d
-     module procedure mpp_update_domain2D_i8_4d
      module procedure mpp_update_domain2D_r8_2d
      module procedure mpp_update_domain2D_r8_3d
      module procedure mpp_update_domain2D_r8_4d
-     module procedure mpp_update_domain1D_i8_1d
-     module procedure mpp_update_domain1D_i8_2d
-     module procedure mpp_update_domain1D_i8_3d
      module procedure mpp_update_domain1D_r8_1d
      module procedure mpp_update_domain1D_r8_2d
      module procedure mpp_update_domain1D_r8_3d
+#ifndef no_8byte_integers
+     module procedure mpp_update_domain2D_i8_2d
+     module procedure mpp_update_domain2D_i8_3d
+     module procedure mpp_update_domain2D_i8_4d
+     module procedure mpp_update_domain1D_i8_1d
+     module procedure mpp_update_domain1D_i8_2d
+     module procedure mpp_update_domain1D_i8_3d
+#endif
+     module procedure mpp_update_domain2D_i4_2d
+     module procedure mpp_update_domain2D_i4_3d
+     module procedure mpp_update_domain2D_i4_4d
+     module procedure mpp_update_domain1D_i4_1d
+     module procedure mpp_update_domain1D_i4_2d
+     module procedure mpp_update_domain1D_i4_3d
   end interface
   interface mpp_get_global
      module procedure mpp_get_global2d_r8_3d
      module procedure mpp_get_global2d_r8_2d
-     module procedure mpp_get_global2d_i8_3d
-     module procedure mpp_get_global2d_i8_2d
      module procedure mpp_get_global2d_c8_3d
      module procedure mpp_get_global2d_c8_2d
+#ifndef no_8byte_integers
+     module procedure mpp_get_global2d_i8_3d
+     module procedure mpp_get_global2d_i8_2d
+#endif
+     module procedure mpp_get_global2d_i4_3d
+     module procedure mpp_get_global2d_i4_2d
   end interface
   interface operator(.EQ.)
      module procedure mpp_domain1D_eq
@@ -222,11 +244,15 @@ module mpp_domains_mod
       call mpp_malloc( ptr_heap, 4*max_halo_size, len_heap ) !must hold 2 complex arrays of size max_halo_size
 #else
       if( ALLOCATED(put_r8) )then
+          deallocate(put_i4)
+          deallocate(get_i4)
           deallocate(put_r8)
           deallocate(get_r8)
           deallocate(put_c8)
           deallocate(get_c8)
       end if
+      allocate( put_i4(max_halo_size) )
+      allocate( get_i4(max_halo_size) )
       allocate( put_r8(max_halo_size) )
       allocate( get_r8(max_halo_size) )
       allocate( put_c8(max_halo_size) )
@@ -578,7 +604,8 @@ module mpp_domains_mod
       type(domain2D), intent(in) :: domain
       real(DOUBLE_KIND), intent(in)  ::  local_field(domain%x%data%start_index:,domain%y%data%start_index:,:)
       real(DOUBLE_KIND), intent(out) :: global_field(domain%x%global%start_index:,domain%y%global%start_index:,:)
-      type(domain2D), allocatable :: global_domain(:)
+!      type(domain2D), allocatable, target :: global_domain(:)
+      integer :: i
 
       if( .NOT.mpp_domains_initialized )call mpp_error( FATAL, 'MPP_GET_GLOBAL2D_R8_3D: You must first call mpp_domains_init.' )
       if( size(local_field,1).NE.domain%x%data%size .OR. &
@@ -588,30 +615,46 @@ module mpp_domains_mod
           size(global_field,3).NE.size(local_field,3) ) &
            call mpp_error( FATAL, 'MPP_GET_GLOBAL2D_R8_3D: argument mismatch, check domain and array sizes.' )
 !copy compute domain from local to global array
+      global_field = 0.
       global_field(domain%x%compute%start_index:domain%x%compute%end_index, &
                    domain%y%compute%start_index:domain%y%compute%end_index,:) = &
        local_field(domain%x%compute%start_index:domain%x%compute%end_index, &
                    domain%y%compute%start_index:domain%y%compute%end_index,:)
       if( npes.EQ.1 )return
 
-!update global domain
-      call mpp_set_halo_size(domain%x%global%max_size*domain%y%compute%max_size*size(local_field,3))
-      if( domain%x%data%is_global .AND. domain%y%data%is_global )then
-          call mpp_update_domains( global_field, domain )
-      else
-!construct global domains
-          allocate( global_domain(0:domain%x%ndomains*domain%y%ndomains-1) )
-          call mpp_define_domains( (/domain%x%global%start_index,domain%x%global%end_index,   &
-                                     domain%y%global%start_index,domain%y%global%end_index/), &
-                                     global_domain, xflags=GLOBAL_DATA_DOMAIN, yflags=GLOBAL_DATA_DOMAIN, &
-                                     domain_layout=(/domain%x%ndomains,domain%y%ndomains/),     &
-                                     pe_layout=(/size(domain%x%pelist),size(domain%y%pelist)/), &
-                                     xextent=domain%x%sizelist, yextent=domain%y%sizelist )
-          call mpp_update_domains( global_field, global_domain(pe) )
-      end if
+      call mpp_sum( global_field(domain%x%global%start_index,domain%y%global%start_index,1), size(global_field) )
 
       return
     end subroutine mpp_get_global2D_r8_3d
+
+    subroutine mpp_get_global2D_i8_3d( domain, local_field, global_field )
+!given a 3D array defined on the data domain <domain>, constructs a global field
+!USE WITH CARE! a global 3D array could occupy a lot of memory!
+      type(domain2D), intent(in) :: domain
+      integer(LONG_KIND), intent(in)  ::  local_field(domain%x%data%start_index:,domain%y%data%start_index:,:)
+      integer(LONG_KIND), intent(out) :: global_field(domain%x%global%start_index:,domain%y%global%start_index:,:)
+!      type(domain2D), allocatable, target :: global_domain(:)
+      integer :: i
+
+      if( .NOT.mpp_domains_initialized )call mpp_error( FATAL, 'MPP_GET_GLOBAL2D_I8_3D: You must first call mpp_domains_init.' )
+      if( size(local_field,1).NE.domain%x%data%size .OR. &
+          size(local_field,2).NE.domain%y%data%size .OR. &
+          size(global_field,1).NE.domain%x%global%size .OR. &
+          size(global_field,2).NE.domain%y%global%size .OR. &
+          size(global_field,3).NE.size(local_field,3) ) &
+           call mpp_error( FATAL, 'MPP_GET_GLOBAL2D_I8_3D: argument mismatch, check domain and array sizes.' )
+!copy compute domain from local to global array
+      global_field = 0
+      global_field(domain%x%compute%start_index:domain%x%compute%end_index, &
+                   domain%y%compute%start_index:domain%y%compute%end_index,:) = &
+       local_field(domain%x%compute%start_index:domain%x%compute%end_index, &
+                   domain%y%compute%start_index:domain%y%compute%end_index,:)
+      if( npes.EQ.1 )return
+
+      call mpp_sum( global_field(domain%x%global%start_index,domain%y%global%start_index,1), size(global_field) )
+
+      return
+    end subroutine mpp_get_global2D_i8_3d
 
     subroutine mpp_get_global2D_c8_3d( domain, local_field, global_field )
 !given a 3D array defined on the data domain <domain>, constructs a global field
@@ -619,7 +662,8 @@ module mpp_domains_mod
       type(domain2D), intent(in) :: domain
       complex(DOUBLE_KIND), intent(in)  ::  local_field(domain%x%data%start_index:,domain%y%data%start_index:,:)
       complex(DOUBLE_KIND), intent(out) :: global_field(domain%x%global%start_index:,domain%y%global%start_index:,:)
-      type(domain2D), allocatable :: global_domain(:)
+!      type(domain2D), allocatable, target :: global_domain(:)
+      integer :: i
 
       if( .NOT.mpp_domains_initialized )call mpp_error( FATAL, 'MPP_GET_GLOBAL2D_C8_3D: You must first call mpp_domains_init.' )
       if( size(local_field,1).NE.domain%x%data%size .OR. &
@@ -629,30 +673,46 @@ module mpp_domains_mod
           size(global_field,3).NE.size(local_field,3) ) &
            call mpp_error( FATAL, 'MPP_GET_GLOBAL2D_C8_3D: argument mismatch, check domain and array sizes.' )
 !copy compute domain from local to global array
+      global_field = cmplx(0.,0.)
       global_field(domain%x%compute%start_index:domain%x%compute%end_index, &
                    domain%y%compute%start_index:domain%y%compute%end_index,:) = &
        local_field(domain%x%compute%start_index:domain%x%compute%end_index, &
                    domain%y%compute%start_index:domain%y%compute%end_index,:)
       if( npes.EQ.1 )return
 
-!update global domain
-      call mpp_set_halo_size(domain%x%global%max_size*domain%y%compute%max_size*size(local_field,3))
-      if( domain%x%data%is_global .AND. domain%y%data%is_global )then
-          call mpp_update_domains( global_field, domain )
-      else
-!construct global domains
-          allocate( global_domain(0:domain%x%ndomains*domain%y%ndomains-1) )
-          call mpp_define_domains( (/domain%x%global%start_index,domain%x%global%end_index,   &
-                                     domain%y%global%start_index,domain%y%global%end_index/), &
-                                     global_domain, xflags=GLOBAL_DATA_DOMAIN, yflags=GLOBAL_DATA_DOMAIN, &
-                                     domain_layout=(/domain%x%ndomains,domain%y%ndomains/),     &
-                                     pe_layout=(/size(domain%x%pelist),size(domain%y%pelist)/), &
-                                     xextent=domain%x%sizelist, yextent=domain%y%sizelist )
-          call mpp_update_domains( global_field, global_domain(pe) )
-      end if
+      call mpp_sum( global_field(domain%x%global%start_index,domain%y%global%start_index,1), size(global_field) )
 
       return
     end subroutine mpp_get_global2D_c8_3d
+
+    subroutine mpp_get_global2D_i4_3d( domain, local_field, global_field )
+!given a 3D array defined on the data domain <domain>, constructs a global field
+!USE WITH CARE! a global 3D array could occupy a lot of memory!
+      type(domain2D), intent(in) :: domain
+      integer(INT_KIND), intent(in)  ::  local_field(domain%x%data%start_index:,domain%y%data%start_index:,:)
+      integer(INT_KIND), intent(out) :: global_field(domain%x%global%start_index:,domain%y%global%start_index:,:)
+!      type(domain2D), allocatable, target :: global_domain(:)
+      integer :: i
+
+      if( .NOT.mpp_domains_initialized )call mpp_error( FATAL, 'MPP_GET_GLOBAL2D_I4_3D: You must first call mpp_domains_init.' )
+      if( size(local_field,1).NE.domain%x%data%size .OR. &
+          size(local_field,2).NE.domain%y%data%size .OR. &
+          size(global_field,1).NE.domain%x%global%size .OR. &
+          size(global_field,2).NE.domain%y%global%size .OR. &
+          size(global_field,3).NE.size(local_field,3) ) &
+           call mpp_error( FATAL, 'MPP_GET_GLOBAL2D_I4_3D: argument mismatch, check domain and array sizes.' )
+!copy compute domain from local to global array
+      global_field = 0
+      global_field(domain%x%compute%start_index:domain%x%compute%end_index, &
+                   domain%y%compute%start_index:domain%y%compute%end_index,:) = &
+       local_field(domain%x%compute%start_index:domain%x%compute%end_index, &
+                   domain%y%compute%start_index:domain%y%compute%end_index,:)
+      if( npes.EQ.1 )return
+
+      call mpp_sum( global_field(domain%x%global%start_index,domain%y%global%start_index,1), size(global_field) )
+
+      return
+    end subroutine mpp_get_global2D_i4_3d
 
     subroutine mpp_update_domain1D_r8_2d( field, domain )
 !updates data domain of 2D field whose computational domains have been computed
@@ -753,6 +813,106 @@ module mpp_domains_mod
           return
         end subroutine buffer_and_transmit
     end subroutine mpp_update_domain1D_r8_2d
+
+    subroutine mpp_update_domain1D_i4_2d( field, domain )
+!updates data domain of 2D field whose computational domains have been computed
+      type(domain1D), intent(in), target :: domain
+      integer(INT_KIND), intent(inout) :: field(domain%data%start_index:,:)
+
+      type(domain1D), pointer :: put_domain, get_domain
+!limits of computation, remote put and get domains
+      integer :: isc, iec,  isp, iep,  isg, ieg,  put_pe, get_pe
+
+      if( .NOT.mpp_domains_initialized )call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS: You must first call mpp_domains_init.' )
+
+      isc = domain%compute%start_index; iec = domain%compute%end_index
+!update left ("prev") boundary
+      put_domain => domain; get_domain => domain
+      do while( put_domain.NE.NULL_DOMAIN1D .OR. get_domain.NE.NULL_DOMAIN1D )
+         if( ASSOCIATED(put_domain%next) )then
+             put_domain => put_domain%next
+         else
+             put_domain => NULL_DOMAIN1D
+         end if
+         if( ASSOCIATED(get_domain%prev) )then
+             get_domain => get_domain%prev
+         else
+             get_domain => NULL_DOMAIN1D
+         end if
+         call get_halos_1D( domain, put_domain, get_domain, -1, put_pe, get_pe, isp, iep, isg, ieg )
+         if( put_pe.NE.NULL_PE .OR. get_pe.NE.NULL_PE )call buffer_and_transmit
+         if( isg.EQ.domain%data%start_index )get_domain => NULL_DOMAIN1D
+         if( put_domain.EQ.domain )put_domain => NULL_DOMAIN1D
+      end do
+!      call mpp_sync()
+!update right ("next") boundary
+      put_domain => domain; get_domain => domain
+      do while( put_domain.NE.NULL_DOMAIN1D .OR. get_domain.NE.NULL_DOMAIN1D )
+         if( ASSOCIATED(put_domain%prev) )then
+             put_domain => put_domain%prev
+         else
+             put_domain => NULL_DOMAIN1D
+         end if
+         if( ASSOCIATED(get_domain%next) )then
+             get_domain => get_domain%next
+         else
+             get_domain => NULL_DOMAIN1D
+         end if
+         call get_halos_1D( domain, put_domain, get_domain, +1, put_pe, get_pe, isp, iep, isg, ieg )
+         if( put_pe.NE.NULL_PE .OR. get_pe.NE.NULL_PE )call buffer_and_transmit
+         if( ieg.EQ.domain%data%end_index )get_domain => NULL_DOMAIN1D
+         if( put_domain.EQ.domain )put_domain => NULL_DOMAIN1D
+      end do
+      call mpp_sync()
+
+      return
+
+      contains
+        subroutine buffer_and_transmit
+!buffer the halo region and send
+!isp, iep, jsp, jep: limits of put domain
+!put_pe, get_pe: pe of put and get domains
+          integer :: i, k
+          integer :: offset, put_len, get_len
+          character(len=8) :: text
+#ifdef use_shmalloc
+          integer(INT_KIND), dimension(max_halo_size) :: put_i4, get_i4
+          pointer( ptr$put, put_i4 )
+          pointer( ptr$get, get_i4 )
+          ptr$put = LOC(shared_heap(              1))
+          ptr$get = LOC(shared_heap(max_halo_size+1))
+#endif
+
+          if( debug )then
+              call SYSTEM_CLOCK(tk)
+              write( stdout,'(a,i18,a,i5,a,2i2,4i4)' ) &
+                   'T=',tk, ' PE=',pe, ' BUFFER_AND_TRANSMIT: ', put_pe, get_pe, isp, iep, isg, ieg
+          end if
+          if( put_pe.NE.NULL_PE )then  !put is to be done: buffer input
+              put_len = (iep-isp+1)*size(field,2)
+              if( put_len.GT.max_halo_size )then
+                  write( text,'(i8)' )put_len
+                  call mpp_error( FATAL, 'BUFFER_AND_TRANSMIT: halosize too small: you require at least '//text//'.' )
+              end if
+              call mpp_sync_self()  !check if put_i4 is still in use
+              put_i4(1:put_len) = RESHAPE( field(isp:iep,:), (/put_len/) )
+          else
+              put_len = 1
+          end if
+          get_len = (ieg-isg+1)*size(field,2)
+          if( get_pe.EQ.NULL_PE )get_len = 1
+          call mpp_transmit( put_i4, put_len, put_pe, get_i4, get_len, get_pe )
+          if( get_pe.NE.NULL_PE )then  !get was done: unbuffer output
+              if( get_len.GT.max_halo_size )then
+                  write( text,'(i8)' )get_len
+                  call mpp_error( FATAL, 'BUFFER_AND_TRANSMIT: halosize too small: you require at least '//text//'.' )
+              end if
+              field(isg:ieg,:) = RESHAPE( get_i4(1:get_len), (/ieg-isg+1,size(field,2)/) )
+          end if
+
+          return
+        end subroutine buffer_and_transmit
+    end subroutine mpp_update_domain1D_i4_2d
 
     subroutine mpp_update_domain2D_r8_3d( field, domain, flags_in )
 !updates data domain of 3D field whose computational domains have been computed
@@ -1110,6 +1270,184 @@ module mpp_domains_mod
         end subroutine buffer_and_transmit
     end subroutine mpp_update_domain2D_c8_3d
 
+    subroutine mpp_update_domain2D_i4_3d( field, domain, flags_in )
+!updates data domain of 3D field whose computational domains have been computed
+      type(domain2D), intent(in), target :: domain
+      integer(INT_KIND), intent(inout) :: field(domain%x%data%start_index:,domain%y%data%start_index:,:)
+      integer, intent(in), optional :: flags_in
+      integer :: flags
+
+      type(domain2D), pointer :: put_domain, get_domain
+!limits of computation, remote put and get domains
+      integer :: isc, iec, jsc, jec,  isp, iep, jsp, jep,  isg, ieg, jsg, jeg,  put_pe, get_pe
+
+      if( .NOT.mpp_domains_initialized )call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS: You must first call mpp_domains_init.' )
+
+      flags = XUPDATE+YUPDATE   !default
+      if( PRESENT(flags_in) )flags = flags_in
+      if( flags.EQ.TRANSPOSE ) &
+           call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS: if TRANSPOSE is set, an update direction must be set also.' )
+
+      isc = domain%x%compute%start_index; iec = domain%x%compute%end_index
+      jsc = domain%y%compute%start_index; jec = domain%y%compute%end_index
+!      call mpp_sync()
+      if( BTEST(flags,0) )then  !WUPDATE: update western halo
+          put_domain => domain; get_domain => domain
+          do while( put_domain.NE.NULL_DOMAIN2D .OR. get_domain.NE.NULL_DOMAIN2D )
+             if( ASSOCIATED(put_domain%east) )then
+                 put_domain => put_domain%east
+                 if( BTEST(flags,4) )then
+                     jsp = put_domain%y%compute%start_index; jep = put_domain%y%compute%end_index
+                 else
+                     jsp = jsc; jep = jec
+                 end if
+             else
+                 put_domain => NULL_DOMAIN2D
+             end if
+             if( ASSOCIATED(get_domain%west) )then
+                 get_domain => get_domain%west
+                 jsg = jsc; jeg = jec
+             else
+                 get_domain => NULL_DOMAIN2D
+             end if
+             call get_halos_1D( domain%x, put_domain%x, get_domain%x, -1, put_pe, get_pe, isp, iep, isg, ieg )
+             if( put_pe.NE.NULL_PE .OR. get_pe.NE.NULL_PE )call buffer_and_transmit
+             if( isg.EQ.domain%x%data%start_index )get_domain => NULL_DOMAIN2D
+             if( put_domain.EQ.domain )put_domain => NULL_DOMAIN2D
+          end do
+          isc = domain%x%data%start_index !reset compute domain left edge so that Y update will do corners
+      end if
+!      call mpp_sync()
+      if( BTEST(flags,1) )then  !EUPDATE: update eastern halo
+          put_domain => domain; get_domain => domain
+          do while( put_domain.NE.NULL_DOMAIN2D .OR. get_domain.NE.NULL_DOMAIN2D )
+             if( ASSOCIATED(put_domain%west) )then
+                 put_domain => put_domain%west
+                 if( BTEST(flags,4) )then
+                     jsp = put_domain%y%compute%start_index; jep = put_domain%y%compute%end_index
+                 else
+                     jsp = jsc; jep = jec
+                 end if
+             else
+                 put_domain => NULL_DOMAIN2D
+             end if
+             if( ASSOCIATED(get_domain%east) )then
+                 get_domain => get_domain%east
+                 jsg = jsc; jeg = jec
+             else
+                 get_domain => NULL_DOMAIN2D
+             end if
+             call get_halos_1D( domain%x, put_domain%x, get_domain%x, +1, put_pe, get_pe, isp, iep, isg, ieg )
+             if( put_pe.NE.NULL_PE .OR. get_pe.NE.NULL_PE )call buffer_and_transmit
+             if( ieg.EQ.domain%x%data%end_index )get_domain => NULL_DOMAIN2D
+             if( put_domain.EQ.domain )put_domain => NULL_DOMAIN2D
+          end do
+          iec = domain%x%data%end_index !reset compute domain right edge so that Y update will do corners
+      end if
+!      call mpp_sync()
+      if( BTEST(flags,2) )then  !SUPDATE: update southern halo
+          put_domain => domain; get_domain => domain
+          do while( put_domain.NE.NULL_DOMAIN2D .OR. get_domain.NE.NULL_DOMAIN2D )
+             if( ASSOCIATED(put_domain%north) )then
+                 put_domain => put_domain%north
+                 if( BTEST(flags,4) )then
+                     isp = put_domain%x%compute%start_index; iep = put_domain%x%compute%end_index
+                 else
+                     isp = isc; iep = iec
+                 end if
+             else
+                 put_domain => NULL_DOMAIN2D
+             end if
+             if( ASSOCIATED(get_domain%south) )then
+                 get_domain => get_domain%south
+                 isg = isc; ieg = iec
+             else
+                 get_domain => NULL_DOMAIN2D
+             end if
+             call get_halos_1D( domain%y, put_domain%y, get_domain%y, -1, put_pe, get_pe, jsp, jep, jsg, jeg )
+             if( put_pe.NE.NULL_PE .OR. get_pe.NE.NULL_PE )call buffer_and_transmit
+             if( jsg.EQ.domain%y%data%start_index )get_domain => NULL_DOMAIN2D
+             if( put_domain.EQ.domain )put_domain => NULL_DOMAIN2D
+          end do
+      end if
+!      call mpp_sync()
+      if( BTEST(flags,3) )then  !NUPDATE: update northern halo
+          put_domain => domain; get_domain => domain
+          do while( put_domain.NE.NULL_DOMAIN2D .OR. get_domain.NE.NULL_DOMAIN2D )
+             if( ASSOCIATED(put_domain%south) )then
+                 put_domain => put_domain%south
+                 if( BTEST(flags,4) )then
+                     isp = put_domain%x%compute%start_index; iep = put_domain%x%compute%end_index
+                 else
+                     isp = isc; iep = iec
+                 end if
+             else
+                 put_domain => NULL_DOMAIN2D
+             end if
+             if( ASSOCIATED(get_domain%north) )then
+                 get_domain => get_domain%north
+                 isg = isc; ieg = iec
+             else
+                 get_domain => NULL_DOMAIN2D
+             end if
+             call get_halos_1D( domain%y, put_domain%y, get_domain%y, +1, put_pe, get_pe, jsp, jep, jsg, jeg )
+             if( put_pe.NE.NULL_PE .OR. get_pe.NE.NULL_PE )call buffer_and_transmit
+             if( jeg.EQ.domain%y%data%end_index )get_domain => NULL_DOMAIN2D
+             if( put_domain.EQ.domain )put_domain => NULL_DOMAIN2D
+          end do
+      end if
+      call mpp_sync()
+
+      return
+
+      contains
+        subroutine buffer_and_transmit
+!buffer the halo region and send
+!isp, iep, jsp, jep: limits of put domain
+!isg, ieg, jsg, jeg: limits of get domain
+!put_pe, get_pe: pe of put and get domains
+          integer :: i, j, k
+          integer :: put_len, get_len
+          character(len=8) :: text
+#ifdef use_shmalloc
+          real, dimension(max_halo_size) :: put_i4, get_i4
+          pointer( ptr$put, put_i4 )
+          pointer( ptr$get, get_i4 )
+          ptr$put = LOC(shared_heap(              1))
+          ptr$get = LOC(shared_heap(max_halo_size+1))
+#endif
+
+          if( debug )then
+              call SYSTEM_CLOCK(tk)
+              write( stdout,'(a,i18,a,i5,a,2i2,8i4)' ) &
+                   'T=',tk, ' PE=',pe, ' BUFFER_AND_TRANSMIT: ', put_pe, get_pe, isp, iep, jsp, jep, isg, ieg, jsg, jeg
+          end if
+          if( put_pe.NE.NULL_PE )then  !put is to be done: buffer input
+              put_len = (iep-isp+1)*(jep-jsp+1)*size(field,3)
+              if( put_len.GT.max_halo_size )then
+                  write( text,'(i8)' )put_len
+                  call mpp_error( FATAL, 'BUFFER_AND_TRANSMIT: halosize too small: you require at least '//text//'.' )
+              end if
+              call mpp_sync_self()  !check if put_i4 is still in use
+              put_i4(1:put_len) = RESHAPE( field(isp:iep,jsp:jep,:), (/put_len/) )
+          else
+              put_len = 1
+          end if
+          get_len = (ieg-isg+1)*(jeg-jsg+1)*size(field,3)
+          if( get_pe.EQ.NULL_PE )get_len = 1
+          call mpp_transmit( put_i4, put_len, put_pe, get_i4, get_len, get_pe )
+          if( get_pe.NE.NULL_PE )then  !get was done: unbuffer output
+              if( get_len.GT.max_halo_size )then
+                  write( text,'(i8)' )get_len
+                  call mpp_error( FATAL, 'BUFFER_AND_TRANSMIT: halosize too small: you require at least '//text//'.' )
+              end if
+              field(isg:ieg,jsg:jeg,:) = RESHAPE( get_i4(1:get_len), (/ieg-isg+1,jeg-jsg+1,size(field,3)/) )
+          end if
+
+          return
+        end subroutine buffer_and_transmit
+    end subroutine mpp_update_domain2D_i4_3d
+
     subroutine get_halos_1D( domain, put_domain, get_domain, sense, put_pe, get_pe, put_start, put_end, get_start, get_end )
 !compute halo zones from given domain1D types
 !sense=-1 for left halo, +1 for right halo
@@ -1268,6 +1606,59 @@ module mpp_domains_mod
       return
     end subroutine mpp_update_domain2D_r8_4d
 
+    subroutine mpp_update_domain2D_i4_2d( field, domain, flags )
+!updates data domain of 2D field whose computational domains have been computed
+!converts to 3D and calls 3D version
+      type(domain2D), intent(in), target :: domain
+      integer(INT_KIND), intent(inout) :: field(:,:)
+      integer, intent(in), optional :: flags
+      integer(INT_KIND) :: field3D(size(field,1),size(field,2),1)
+
+      if( .NOT.mpp_domains_initialized )call mpp_error( FATAL, 'You must first call mpp_domains_init.' )
+      field3D(:,:,1) = field(:,:)
+      call mpp_update_domain2D_i4_3d( field3D, domain, flags )
+      field(:,:) = field3D(:,:,1)
+      return
+    end subroutine mpp_update_domain2D_i4_2d
+
+    subroutine mpp_update_domain2D_i4_4d( field, domain, flags )
+!updates data domain of 4D field whose computational domains have been computed
+!converts to 3D and calls 3D version
+!NOTE: assumes whole field is being passed!
+      type(domain2D), intent(in), target :: domain
+      integer(INT_KIND), intent(inout) :: field(:,:,:,:)
+      integer, intent(in), optional :: flags
+      integer(INT_KIND) :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4))
+      integer :: i, j, k
+#ifdef use_CRI_pointers
+      pointer( ptr, field3D )
+#endif
+
+      if( .NOT.mpp_domains_initialized )call mpp_error( FATAL, 'You must first call mpp_domains_init.' )
+
+#ifdef use_CRI_pointers
+      ptr = LOC(field)
+      call mpp_update_domain2D_i4_3d( field3D, domain, flags )
+#else !use_CRI_pointers
+      i = 0
+      do k = 1,size(field,4)
+         do j = 1,size(field,3)
+            i = i + 1
+            field3D(:,:,i) = field(:,:,j,k)
+         end do
+      end do
+      call mpp_update_domain2D_i4_3d( field3D, domain, flags )
+      i = 0
+      do k = 1,size(field,4)
+         do j = 1,size(field,3)
+            i = i + 1
+            field(:,:,j,k) = field3D(:,:,i)
+         end do
+      end do
+#endif use_CRI_pointers
+      return
+    end subroutine mpp_update_domain2D_i4_4d
+
     subroutine mpp_update_domain2D_c8_2d( field, domain, flags )
 !updates data domain of 2D field whose computational domains have been computed
 !converts to 3D and calls 3D version
@@ -1421,6 +1812,33 @@ module mpp_domains_mod
 #endif
     end subroutine mpp_update_domain1D_r8_3d
 
+    subroutine mpp_update_domain1D_i4_1d( field, domain )
+      type(domain1D), intent(in), target :: domain
+      integer(INT_KIND), intent(inout) :: field(:)
+      integer(INT_KIND) :: field_i4(size(field,1),1)
+#ifdef use_CRI_pointers
+      pointer( ptr, field_i4 )
+      ptr = LOC(field)
+      call mpp_update_domains( field_i4, domain )
+#else
+      call mpp_error( FATAL, 'MPP_UPDATE_DOMAIN1D_I4_1D: currently requires CRI pointers.' )
+#endif
+      return
+    end subroutine mpp_update_domain1D_i4_1d
+
+    subroutine mpp_update_domain1D_i4_3d( field, domain )
+      type(domain1D), intent(in), target :: domain
+      integer(INT_KIND), intent(inout) :: field(:,:,:)
+      integer(INT_KIND) :: field_i4(size(field,1),size(field,2)*size(field,3))
+#ifdef use_CRI_pointers
+      pointer( ptr, field_i4 )
+      ptr = LOC(field)
+      call mpp_update_domains( field_i4, domain )
+#else
+      call mpp_error( FATAL, 'MPP_UPDATE_DOMAIN1D_I4_3D: currently requires CRI pointers.' )
+#endif
+    end subroutine mpp_update_domain1D_i4_3d
+
     subroutine mpp_update_domain1D_i8_3d( field, domain )
       type(domain1D), intent(in), target :: domain
       integer(LONG_KIND), intent(inout) :: field(:,:,:)
@@ -1445,6 +1863,18 @@ module mpp_domains_mod
       global_field(:,:) = global_3d(:,:,1)
       return
     end subroutine mpp_get_global2D_r8_2d
+              
+    subroutine mpp_get_global2D_i4_2d( domain, local_field, global_field )
+      type(domain2D), intent(in) :: domain
+      integer(INT_KIND), intent(in)  ::  local_field(:,:)
+      integer(INT_KIND), intent(out) :: global_field(:,:)
+      integer(INT_KIND) ::  local_3d(size( local_field,1),size( local_field,2),1)
+      integer(INT_KIND) :: global_3d(size(global_field,1),size(global_field,2),1)
+      local_3d(:,:,1) = local_field(:,:)
+      call mpp_get_global( domain,  local_3d, global_3d )
+      global_field(:,:) = global_3d(:,:,1)
+      return
+    end subroutine mpp_get_global2D_i4_2d
 
     subroutine mpp_get_global2D_c8_2d( domain, local_field, global_field )
       type(domain2D), intent(in) :: domain
@@ -1457,24 +1887,6 @@ module mpp_domains_mod
       global_field(:,:) = global_3d(:,:,1)
       return
     end subroutine mpp_get_global2D_c8_2d
-
-    subroutine mpp_get_global2D_i8_3d( domain, local_field, global_field )
-      type(domain2D), intent(in) :: domain
-      integer(LONG_KIND), intent(in)  ::  local_field(:,:,:)
-      integer(LONG_KIND), intent(out) :: global_field(:,:,:)
-      real(DOUBLE_KIND) ::  local_r8(size( local_field,1),size( local_field,2),size( local_field,3))
-      real(DOUBLE_KIND) :: global_r8(size(global_field,1),size(global_field,2),size(global_field,3))
-#ifdef use_CRI_pointers
-      pointer(  local_ptr,  local_r8 )
-      pointer( global_ptr, global_r8 )
-       local_ptr = LOC( local_field)
-      global_ptr = LOC(global_field)
-      call mpp_get_global( domain, local_r8, global_r8 )
-#else
-      call mpp_error( FATAL, 'MPP_GET_GLOBAL2D_I8_3D: currently requires the use of CRI pointers.' )
-#endif
-      return
-    end subroutine mpp_get_global2D_i8_3d
       
     subroutine mpp_get_global2D_i8_2d( domain, local_field, global_field )
       type(domain2D), intent(in) :: domain
@@ -1494,14 +1906,12 @@ module mpp_domains_mod
   program mpp_domains_test
     use mpp_mod
     use mpp_domains_mod
-    use chksum_mod
-    use memutils_mod
     implicit none
     integer :: pe, npes
     type(domain2D), allocatable, target :: domains(:)
     type(domain2D), pointer :: domain
     integer :: nx=128, ny=128, nz=40, halo=2
-    real, dimension(:,:,:), allocatable :: local, global
+    integer(INT_KIND), dimension(:,:,:), allocatable :: local, global, gglobal
     integer, pointer :: is, ie, js, je, isd, ied, jsd, jed
     integer :: tk, tk0, tks_per_sec
     integer :: i,j,k
@@ -1509,7 +1919,6 @@ module mpp_domains_mod
     namelist / mpp_domains_nml / nx, ny, nz, halo
 
     call mpp_domains_init()
-    call memutils_init()
     pe = mpp_pe()
     npes = mpp_npes()
     call SYSTEM_CLOCK( count_rate=tks_per_sec )
@@ -1544,6 +1953,7 @@ module mpp_domains_mod
     end if
        
     allocate( global(1-halo:nx+halo,1-halo:ny+halo,nz) )
+    allocate( gglobal(nx,ny,nz) )
     allocate( local(isd:ied,jsd:jed,nz) )
 
 !fill in global array: with k.iiijjj
@@ -1562,6 +1972,11 @@ module mpp_domains_mod
     call mpp_update_domains( local, domain )
 !compare checksums between global and local arrays
     call compare_checksums( local, global(isd:ied,jsd:jed,:), 'Halo update' )
+
+!fill in gglobal array
+    call mpp_get_global( domain, local, gglobal )
+!compare checksums between global and local arrays
+    call compare_checksums( global(1:nx,1:ny,:), gglobal, 'MPP_GET_GLOBAL' )
 
 !test cyclic boundary conditions
     call mpp_define_domains( (/1,nx,1,ny/), domains, xhalo=halo, yhalo=halo, &
@@ -1606,13 +2021,13 @@ module mpp_domains_mod
 
     contains
       subroutine compare_checksums( a, b, string )
-        real, intent(in), dimension(:,:,:) :: a, b
+        integer(INT_KIND), intent(in), dimension(:,:,:) :: a, b
         character(len=*), intent(in) :: string
         integer :: i, j
-        i = chksum(a)
-        j = chksum(b)
+        i = mpp_chksum( a, (/pe/) )
+        j = mpp_chksum( b, (/pe/) )
         if( i.EQ.j )then
-            if( pe.EQ.0 )call mpp_error( NOTE,  trim(string)//': chksums are correct.' )
+            if( pe.EQ.0 )call mpp_error( NOTE, trim(string)//': chksums are correct.' )
         else
             call mpp_error( FATAL, trim(string)//': chksums are not OK.' )
         end if

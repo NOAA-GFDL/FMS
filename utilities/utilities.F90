@@ -146,8 +146,8 @@ end interface
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: utilities.F90,v 1.2 2000/08/04 20:07:58 fms Exp $'
-  character(len=128) :: tag = '$Name: bombay $'
+  character(len=128) :: version = '$Id: utilities.F90,v 1.3 2000/11/22 14:41:38 fms Exp $'
+  character(len=128) :: tag = '$Name: calgary $'
 
   logical :: do_init = .true.
 
@@ -524,7 +524,11 @@ subroutine read_data_2d ( unit, data, end )
        data(is:ie,js:je) = gdata(is:ie,js:je)
        return
 
-   10  if (present(end)) end = .true.
+   10  if (present(end))then
+           end = .true.
+       else
+           call error_mesg ('utilities_mod', 'unexpected EOF', FATAL)
+       endif
 
 !-----------------------------------------------------------------------
 
@@ -551,7 +555,11 @@ subroutine read_ldata_2d ( unit, data, end )
        data(is:ie,js:je) = gdata(is:ie,js:je)
        return
 
-   10  if (present(end)) end = .true.
+   10  if (present(end))then
+           end = .true.
+       else
+           call error_mesg ('utilities_mod', 'unexpected EOF', FATAL)
+       endif
 
 !-----------------------------------------------------------------------
 
@@ -587,7 +595,11 @@ subroutine read_idata_2d ( unit, data, end )
        data(is:ie,js:je) = gdata(is:ie,js:je)
        return
 
-   10  if (present(end)) end = .true.
+   10  if (present(end))then
+           end = .true.
+       else
+           call error_mesg ('utilities_mod', 'unexpected EOF', FATAL)
+       endif
 
 !-----------------------------------------------------------------------
 
@@ -623,7 +635,11 @@ subroutine read_cdata_2d ( unit, data, end )
        data(is:ie,js:je) = gdata(is:ie,js:je)
        return
 
-   10  if (present(end)) end = .true.
+   10  if (present(end))then
+           end = .true.
+       else
+           call error_mesg ('utilities_mod', 'unexpected EOF', FATAL)
+       endif
 
 !-----------------------------------------------------------------------
 
@@ -666,8 +682,13 @@ subroutine read_data_3d ( unit, data, end )
        data(is:ie,js:je,m1:m2) = gdata(is:ie,js:je,:)
 
        end do
+       return
 
-   10  if (present(end)) end = .true.
+   10  if (present(end))then
+           end = .true.
+       else
+           call error_mesg ('utilities_mod', 'unexpected EOF', FATAL)
+       endif
 
 !-----------------------------------------------------------------------
 
@@ -710,8 +731,13 @@ subroutine read_cdata_3d ( unit, data, end )
        data(is:ie,js:je,m1:m2) = gdata(is:ie,js:je,:)
 
        end do
+       return
 
-   10  if (present(end)) end = .true.
+   10  if (present(end))then
+           end = .true.
+       else
+           call error_mesg ('utilities_mod', 'unexpected EOF', FATAL)
+       endif
 
 !-----------------------------------------------------------------------
 
@@ -746,8 +772,13 @@ subroutine read_data_4d ( unit, data, end )
                                gdata(isg,jsg,1,1), len, 0        )
        endif
        data(is:ie,js:je,:,:) = gdata(is:ie,js:je,:,:)
+       return
 
-   10  if (present(end)) end = .true.
+   10  if (present(end))then
+           end = .true.
+       else
+           call error_mesg ('utilities_mod', 'unexpected EOF', FATAL)
+       endif
 
 !-----------------------------------------------------------------------
 
@@ -782,8 +813,13 @@ subroutine read_cdata_4d ( unit, data, end )
                                gdata(isg,jsg,1,1), len, 0        )
        endif
        data(is:ie,js:je,:,:) = gdata(is:ie,js:je,:,:)
+       return
 
-   10  if (present(end)) end = .true.
+   10  if (present(end))then
+           end = .true.
+       else
+           call error_mesg ('utilities_mod', 'unexpected EOF', FATAL)
+       endif
 
 !-----------------------------------------------------------------------
 
