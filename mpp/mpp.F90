@@ -50,9 +50,9 @@ module mpp_mod
   implicit none
   private
   character(len=128), private :: version= &
-       '$Id: mpp.F90,v 6.1 2001/07/05 17:13:33 fms Exp $'
+       '$Id: mpp.F90,v 6.3 2001/10/25 17:54:25 fms Exp $'
   character(len=128), private :: name= &
-       '$Name: eugene $'
+       '$Name: fez $'
 
 !various lengths (see shpalloc) are estimated in "words" which are 32bit on SGI, 64bit on Cray
 !these are also the expected sizeof of args to MPI/shmem libraries
@@ -62,7 +62,6 @@ module mpp_mod
 #ifdef sgi_mipspro
   integer(INT_KIND), private :: word(1)
 #endif
-  integer, parameter :: word_kind=KIND(word)
 
 #ifdef SGICRAY
 !see intro_io(3F): to see why these values are used rather than 5,6,0
@@ -85,11 +84,6 @@ module mpp_mod
   integer, parameter, public :: NOTE=0, WARNING=1, FATAL=2
   logical, private :: warnings_are_fatal = .FALSE.
   integer, private :: error_state=0
-
-!timing
-!since these are mainly timers associated with communication
-!we only do real times, not CPU times
-  integer, private :: tick, ticks_per_sec
 
   integer(LONG_KIND), parameter, private :: MPP_WAIT=-1, MPP_READY=-2
 #ifdef use_libSMA
@@ -121,7 +115,8 @@ module mpp_mod
 #endif
 !tag is never used, but must be initialized to non-negative integer
   integer, private :: tag=1, stat(MPI_STATUS_SIZE), group_all
-  integer, private, allocatable :: request(:)
+!  integer, private, allocatable :: request(:)
+  integer, public, allocatable :: request(:)
 #ifdef _CRAYT3E
 !BWA: mpif.h on t3e currently does not contain MPI_INTEGER8 datatype
 !(O2k and t90 do)
@@ -138,7 +133,16 @@ module mpp_mod
 #else
   real(DOUBLE_KIND), private, allocatable :: mpp_stack(:)
 #endif
-  integer, private :: mpp_stack_size=0
+  integer, private :: mpp_stack_size=0, mpp_stack_hwm=0
+
+!peset hold communicators as SHMEM-compatible triads (start, log2(stride), num)
+  integer, parameter :: peset_max=32 !should be less than max num of MPI communicators
+  type, private :: communicator
+     integer :: start, log2stride, count
+     integer :: id    !MPI communicator id for this PE set
+  end type
+  type(communicator) :: peset(peset_max)
+  integer :: peset_num=0
 
 !performance profiling
 !  This profiles every type of MPI/SHMEM call within
@@ -150,7 +154,7 @@ module mpp_mod
 !  ...
 !  call mpp_clock_end(id)
 !  mpp_exit will print out the results.
-  integer, private :: ticks_per_sec, max_ticks, start_tick, end_tick
+  integer, private :: tick, ticks_per_sec, max_ticks, start_tick, end_tick
   real, private :: tick_rate
   integer, private, parameter :: MAX_CLOCKS=10, MAX_EVENTS=6, MAX_EVENT_CNT=40000
   integer, private, parameter :: EVENT_ALLREDUCE=1, EVENT_BROADCAST=2, EVENT_RECV=3, EVENT_REDUCE=4, EVENT_SEND=5, EVENT_WAIT=6
@@ -279,6 +283,27 @@ module mpp_mod
      module procedure mpp_send_logical4_scalar
   end interface
 
+  interface mpp_broadcast
+     module procedure mpp_broadcast_real8
+     module procedure mpp_broadcast_real8_scalar
+     module procedure mpp_broadcast_cmplx8
+     module procedure mpp_broadcast_cmplx8_scalar
+#ifndef no_8byte_integers
+     module procedure mpp_broadcast_int8
+     module procedure mpp_broadcast_int8_scalar
+     module procedure mpp_broadcast_logical8
+     module procedure mpp_broadcast_logical8_scalar
+#endif
+     module procedure mpp_broadcast_real4
+     module procedure mpp_broadcast_real4_scalar
+     module procedure mpp_broadcast_cmplx4
+     module procedure mpp_broadcast_cmplx4_scalar
+     module procedure mpp_broadcast_int4
+     module procedure mpp_broadcast_int4_scalar
+     module procedure mpp_broadcast_logical4
+     module procedure mpp_broadcast_logical4_scalar
+  end interface
+
   interface mpp_chksum
 #ifndef no_8byte_integers
      module procedure mpp_chksum_i8_1d
@@ -324,9 +349,9 @@ module mpp_mod
      module procedure shmem_int8_wait_local
   end interface
 #endif
-  public :: mpp_chksum, mpp_clock_begin, mpp_clock_end, mpp_clock_id, mpp_error, mpp_exit, mpp_init, mpp_max, mpp_min, &
-            mpp_node, mpp_npes, mpp_pe, mpp_recv, mpp_root_pe, mpp_send, mpp_set_root_pe, mpp_set_warn_level, mpp_sum, &
-            mpp_set_stack_size, mpp_sync, mpp_sync_self, mpp_transmit, mpp_error_state
+  public :: mpp_broadcast, mpp_chksum, mpp_clock_begin, mpp_clock_end, mpp_clock_id, mpp_declare_pelist, mpp_error, &
+            mpp_error_state, mpp_exit, mpp_init, mpp_max, mpp_min, mpp_node, mpp_npes, mpp_pe, mpp_recv, mpp_root_pe, mpp_send, &
+            mpp_set_root_pe, mpp_set_warn_level, mpp_sum, mpp_set_stack_size, mpp_sync, mpp_sync_self, mpp_transmit
 #ifdef use_shmalloc
   public :: mpp_malloc
 #endif
@@ -362,9 +387,17 @@ module mpp_mod
       allocate( request(0:npes-1) )
       request(:) = MPI_REQUEST_NULL
 #endif
+      peset_num = 1
+      peset(1)%start = 0
+      peset(1)%log2stride = 0
+      peset(1)%count = npes
+#ifdef use_libMPI
+      peset(1)%id = MPI_COMM_WORLD
+#endif
+
       mpp_initialized = .TRUE.
 !initialize clocks
-      call system_clock( count_rate=ticks_per_sec, count_max=max_ticks )
+      call SYSTEM_CLOCK( count_rate=ticks_per_sec, count_max=max_ticks )
       tick_rate = 1./ticks_per_sec
 
       if( PRESENT(flags) )then
@@ -418,6 +451,11 @@ module mpp_mod
 
       if( .NOT.mpp_initialized )call mpp_error( FATAL, 'MPP_EXIT: You must first call mpp_init.' )
       call mpp_sync()
+      call mpp_max(mpp_stack_hwm)
+      if( pe.EQ.root_pe )then
+          write( stdout,'(/a)' )'Exiting MPP module...'
+          write( stdout,* )'MPP_STACK high water mark=', mpp_stack_hwm
+      end if
       if( clock_num.GT.0 )then
           call sum_clock_data()
           call dump_clock_summary()
@@ -459,32 +497,65 @@ module mpp_mod
       return
     end subroutine mpp_set_root_pe
 
-    subroutine make_pe_set(pelist,peset)
-!makes a PE set out of a PE list (list length must be .GE.2)
-!a PE list is an ordered list of PEs
-!a PE set is a triad (start,log2stride,size) for SHMEM, an a communicator for MPI (other two elements are unused)
-!if stride is non-uniform or not a power of 2, SHMEM version will return error
-      integer, intent(in) :: pelist(0:)
-      integer, intent(out) :: peset(3)
-      integer :: group
-#ifdef use_libSMA
-      integer :: i, n, stride
-      n = size(pelist)
-      peset(1) = pelist(0)
-      stride = pelist(1)-pelist(0)
-      if( ANY(pelist(2:n-1)-pelist(1:n-2).NE.stride) ) &
-           call mpp_error( FATAL, 'MAKE_PE_SET: pelist must have constant stride for SHMEM.' )
-      peset(2) = log(float(stride))/log(2.)
-      if( 2**peset(2).NE.stride )call mpp_error( FATAL, 'MAKE_PE_SET: pelist must have power-of-2 stride for SHMEM.' )
-      peset(3) = n
-#endif
-#ifdef use_libMPI
-      call MPI_GROUP_INCL( group_all, size(pelist), pelist, group, error )
-      call MPI_COMM_CREATE( MPI_COMM_WORLD, group, peset(1), error )
-#endif
+    subroutine mpp_declare_pelist( pelist )
+!this call is written specifically to accommodate a brain-dead MPI restriction
+!that requires a parent communicator to create a child communicator:
+!in other words: a pelist cannot go off and declare a communicator, but every PE
+!in the parent, including those not in pelist(:), must get together for the
+!MPI_COMM_CREATE call. The parent is typically MPI_COMM_WORLD, though it could also
+!be a subset that includes all PEs in pelist. It is currently restricted here to
+!MPI_COMM_WORLD. The restriction does not apply to SMA but to have uniform code,
+!you may as well call it. It must be placed in a context where all PEs call it.
+!Subsequent calls that use the pelist should be called PEs in the pelist only.
+      integer, intent(in) :: pelist(:)
+      integer :: i
+      i = get_peset(pelist)
 
       return
-    end subroutine make_pe_set
+    end subroutine mpp_declare_pelist
+
+    function get_peset(pelist)
+      integer :: get_peset
+!makes a PE set out of a PE list
+!a PE list is an ordered list of PEs
+!a PE set is a triad (start,log2stride,size) for SHMEM, an a communicator for MPI
+!if stride is non-uniform or not a power of 2, will return error (not required for MPI but enforced for uniformity)
+      integer, intent(in) :: pelist(:)
+      integer :: group
+      integer :: i, n, start, stride, log2stride
+      n = size(pelist)
+      start = pelist(1)
+      if( n.EQ.1 )then
+          stride = 0
+      else
+          stride = pelist(2)-pelist(1)
+          if( ANY(pelist(2:n)-pelist(1:n-1).NE.stride) ) &
+               call mpp_error( FATAL, 'GET_PESET: pelist must have constant stride.' )
+          log2stride = nint( log(float(stride))/log(2.) )
+          if( 2**log2stride.NE.stride )call mpp_error( FATAL, 'GET_PESET: pelist must have power-of-2 stride.' )
+      end if
+      do i = 1,peset_num
+         if( debug )write( stderr,'(a,3i4)' )'pe, i, peset_num=', pe, i, peset_num
+         if( start.EQ.peset(i)%start .AND. log2stride.EQ.peset(i)%log2stride .AND. n.EQ.peset(i)%count )then
+             get_peset = i
+             return
+         end if
+      end do
+      i = peset_num + 1         !probably so at the end of the loop, but maybe not guaranteed by the standard
+      if( i.GT.peset_max )call mpp_error( FATAL, 'GET_PESET: number of PE sets exceeds peset_max.' )
+      peset_num = i
+      peset(i)%start = start
+      peset(i)%log2stride = log2stride
+      peset(i)%count = n
+#ifdef use_libMPI
+      call MPI_GROUP_INCL( group_all, size(pelist), pelist, group, error )
+      call MPI_COMM_CREATE( MPI_COMM_WORLD, group, peset(i)%id, error )
+#endif
+      get_peset = i
+      if( debug )write( stderr,'(a,4i4,i12)' )'pe, i, start, log2stride, count, id=', pe, i, start, log2stride, n, peset(i)%id
+
+      return
+    end function get_peset
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -836,6 +907,8 @@ module mpp_mod
 #define MPP_RECV_SCALAR_ mpp_recv_real8_scalar
 #define MPP_SEND_ mpp_send_real8
 #define MPP_SEND_SCALAR_ mpp_send_real8_scalar
+#define MPP_BROADCAST_ mpp_broadcast_real8
+#define MPP_BROADCAST_SCALAR_ mpp_broadcast_real8_scalar
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_REAL8
@@ -849,6 +922,8 @@ module mpp_mod
 #define MPP_RECV_SCALAR_ mpp_recv_real4_scalar
 #define MPP_SEND_ mpp_send_real4
 #define MPP_SEND_SCALAR_ mpp_send_real4_scalar
+#define MPP_BROADCAST_ mpp_broadcast_real4
+#define MPP_BROADCAST_SCALAR_ mpp_broadcast_real4_scalar
 #define MPP_TYPE_ real(FLOAT_KIND)
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_REAL4
@@ -862,6 +937,8 @@ module mpp_mod
 #define MPP_RECV_SCALAR_ mpp_recv_cmplx8_scalar
 #define MPP_SEND_ mpp_send_cmplx8
 #define MPP_SEND_SCALAR_ mpp_send_cmplx8_scalar
+#define MPP_BROADCAST_ mpp_broadcast_cmplx8
+#define MPP_BROADCAST_SCALAR_ mpp_broadcast_cmplx8_scalar
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #define MPP_TYPE_BYTELEN_ 16
 #define MPI_TYPE_ MPI_DOUBLE_COMPLEX
@@ -875,6 +952,8 @@ module mpp_mod
 #define MPP_RECV_SCALAR_ mpp_recv_cmplx4_scalar
 #define MPP_SEND_ mpp_send_cmplx4
 #define MPP_SEND_SCALAR_ mpp_send_cmplx4_scalar
+#define MPP_BROADCAST_ mpp_broadcast_cmplx4
+#define MPP_BROADCAST_SCALAR_ mpp_broadcast_cmplx4_scalar
 #define MPP_TYPE_ complex(FLOAT_KIND)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_COMPLEX
@@ -889,6 +968,8 @@ module mpp_mod
 #define MPP_RECV_SCALAR_ mpp_recv_int8_scalar
 #define MPP_SEND_ mpp_send_int8
 #define MPP_SEND_SCALAR_ mpp_send_int8_scalar
+#define MPP_BROADCAST_ mpp_broadcast_int8
+#define MPP_BROADCAST_SCALAR_ mpp_broadcast_int8_scalar
 #define MPP_TYPE_ integer(LONG_KIND)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_INTEGER8
@@ -903,6 +984,8 @@ module mpp_mod
 #define MPP_RECV_SCALAR_ mpp_recv_int4_scalar
 #define MPP_SEND_ mpp_send_int4
 #define MPP_SEND_SCALAR_ mpp_send_int4_scalar
+#define MPP_BROADCAST_ mpp_broadcast_int4
+#define MPP_BROADCAST_SCALAR_ mpp_broadcast_int4_scalar
 #define MPP_TYPE_ integer(INT_KIND)
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_INTEGER4
@@ -917,6 +1000,8 @@ module mpp_mod
 #define MPP_RECV_SCALAR_ mpp_recv_logical8_scalar
 #define MPP_SEND_ mpp_send_logical8
 #define MPP_SEND_SCALAR_ mpp_send_logical8_scalar
+#define MPP_BROADCAST_ mpp_broadcast_logical8
+#define MPP_BROADCAST_SCALAR_ mpp_broadcast_logical8_scalar
 #define MPP_TYPE_ logical(LONG_KIND)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_INTEGER8
@@ -931,6 +1016,8 @@ module mpp_mod
 #define MPP_RECV_SCALAR_ mpp_recv_logical4_scalar
 #define MPP_SEND_ mpp_send_logical4
 #define MPP_SEND_SCALAR_ mpp_send_logical4_scalar
+#define MPP_BROADCAST_ mpp_broadcast_logical4
+#define MPP_BROADCAST_SCALAR_ mpp_broadcast_logical4_scalar
 #define MPP_TYPE_ logical(INT_KIND)
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_INTEGER4
@@ -1063,17 +1150,17 @@ module mpp_mod
     subroutine mpp_sync( pelist )
 !synchronize PEs in list
       integer, intent(in), optional :: pelist(:)
-      integer :: peset(3)
+      integer :: n
 
       call mpp_sync_self(pelist)
       if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
       if( PRESENT(pelist) )then
-          call make_pe_set(pelist,peset)
+          n = get_peset(pelist)
 #ifdef use_libSMA
-          call SHMEM_BARRIER( peset(1), peset(2), peset(3), sync )
+          call SHMEM_BARRIER( peset(n)%start, peset(n)%log2stride, peset(n)%count, sync )
 #endif
 #ifdef use_libMPI
-          call MPI_BARRIER( peset(1), error )
+          call MPI_BARRIER( peset(n)%id, error )
 #endif
       else
 #ifdef use_libSMA
@@ -1445,7 +1532,8 @@ module mpp_mod
     use shmem_interface
 #endif
     use mpp_mod
-    integer :: pe, npes
+    implicit none
+    integer :: pe, npes, root
 #ifdef SGICRAY
 !see intro_io(3F): to see why these values are used rather than 5,6,0
     integer, parameter :: stdin=100, stdout=101, stderr=102
@@ -1455,20 +1543,23 @@ module mpp_mod
     integer, parameter :: n=1048576
     real, allocatable, dimension(:) :: a, b, c
     integer :: tick, tick0, ticks_per_sec, id
+    integer :: i, j, k, l, m
+    real :: dt
 
     call mpp_init()
     call mpp_set_stack_size(3145746)
     pe = mpp_pe()
     npes = mpp_npes()
+    root = mpp_root_pe()
 
-    call system_clock( count_rate=ticks_per_sec )
+    call SYSTEM_CLOCK( count_rate=ticks_per_sec )
     allocate( a(n), b(n) )
     id = mpp_clock_id( 'Random number' )
     call mpp_clock_begin(id)
     call random_number(a)
     call mpp_clock_end  (id)
 !time transmit, compare against shmem_put and get
-    if( pe.EQ.mpp_root_pe() )then
+    if( pe.EQ.root )then
         print *, 'Time mpp_transmit for various lengths...'
 #ifdef SGICRAY
         print *, 'For comparison, times for shmem_get and shmem_put are also provided.'
@@ -1480,58 +1571,54 @@ module mpp_mod
     do while( l.GT.0 )
 !mpp_transmit
        call mpp_sync()
-       call system_clock(tick0)
-       do nn = 1,npes
-          call mpp_transmit( a, l, mod(pe+npes-nn,npes), b, l, mod(pe+nn,npes) )
-!          call mpp_sync_self( (/mod(pe+npes-nn,npes)/) )
+       call SYSTEM_CLOCK(tick0)
+       do i = 1,npes
+          call mpp_transmit( a, l, mod(pe+npes-i,npes), b, l, mod(pe+i,npes) )
+!          call mpp_sync_self( (/mod(pe+npes-i,npes)/) )
        end do
        call mpp_sync()
-       call system_clock(tick)
+       call SYSTEM_CLOCK(tick)
        dt = float(tick-tick0)/(npes*ticks_per_sec)
-       if( pe.EQ.mpp_root_pe() )write( stdout,'(/a,i8,f13.6,f8.2)' )'MPP_TRANSMIT length, time, bw(Mb/s)=', l, dt, l*8e-6/dt
+       if( pe.EQ.root )write( stdout,'(/a,i8,f13.6,f8.2)' )'MPP_TRANSMIT length, time, bw(Mb/s)=', l, dt, l*8e-6/dt
 #ifdef SGICRAY
 !shmem_put
        call mpp_sync()
-       call system_clock(tick0)
-       do nn = 1,npes
+       call SYSTEM_CLOCK(tick0)
+       do i = 1,npes
           call shmem_put8( b, a, l, mod(pe+1,npes) )
        end do
        call mpp_sync()
-       call system_clock(tick)
+       call SYSTEM_CLOCK(tick)
        dt = float(tick-tick0)/(npes*ticks_per_sec)
-       if( pe.EQ.mpp_root_pe() )write( stdout,'( a,i8,f13.6,f8.2)' )'SHMEM_PUT    length, time, bw(Mb/s)=', l, dt, l*8e-6/dt
+       if( pe.EQ.root )write( stdout,'( a,i8,f13.6,f8.2)' )'SHMEM_PUT    length, time, bw(Mb/s)=', l, dt, l*8e-6/dt
 !shmem_get
        call mpp_sync()
-       call system_clock(tick0)
-       do nn = 1,npes
+       call SYSTEM_CLOCK(tick0)
+       do i = 1,npes
           call shmem_get8( b, a, l, mod(pe+1,npes) )
        end do
-       call system_clock(tick)
+       call SYSTEM_CLOCK(tick)
        dt = float(tick-tick0)/(npes*ticks_per_sec)
-       if( pe.EQ.mpp_root_pe() )write( stdout,'( a,i8,f13.6,f8.2)' )'SHMEM_GET    length, time, bw(Mb/s)=', l, dt, l*8e-6/dt
+       if( pe.EQ.root )write( stdout,'( a,i8,f13.6,f8.2)' )'SHMEM_GET    length, time, bw(Mb/s)=', l, dt, l*8e-6/dt
 #endif
        l = l/2
     end do
 
 !test mpp_sum
-    if( pe.EQ.mpp_root_pe() )then
-        print *
-        print *, 'Time mpp_sum...'
-#ifdef bit_reproducible
-        print *, 'The bit reproducibility flag for mpp_sum is turned on...'
-#endif
+    if( pe.EQ.root )then
+        print '(/a)', 'Time mpp_sum...'
     end if
     a = float(pe+1)
     call mpp_sync()
-    call system_clock(tick0)
+    call SYSTEM_CLOCK(tick0)
     call mpp_sum(a,n)
-    call system_clock(tick)
+    call SYSTEM_CLOCK(tick)
     dt = float(tick-tick0)/ticks_per_sec
-    if( pe.EQ.mpp_root_pe() )write( stdout,'(a,2i4,f9.1,i8,f13.6,f8.2/)' ) &
+    if( pe.EQ.root )write( stdout,'(a,2i4,f9.1,i8,f13.6,f8.2/)' ) &
          'mpp_sum: pe, npes, sum(pe+1), length, time, bw(Mb/s)=', pe, npes, a(1), n, dt, n*8e-6/dt
 
 !test mpp_max
-    if( pe.EQ.mpp_root_pe() )then
+    if( pe.EQ.root )then
         print *
         print *, 'Test mpp_max...'
     end if
@@ -1540,17 +1627,33 @@ module mpp_mod
     call mpp_max( a(1) )
     print *, 'pe, max(pe+1)=', pe, a(1)
 
+!pelist check
+    call mpp_sync()
+    call flush(101)
+    if( npes.GE.2 )then
+        if( pe.EQ.root )print *, 'Test of pelists: bcast, sum and max using PEs 0...npes-2 (excluding last PE)'
+        call mpp_declare_pelist( (/(i,i=0,npes-2)/) )
+        a = float(pe+1)
+        if( pe.NE.npes-1 )call mpp_broadcast( a, n, npes-2, (/(i,i=0,npes-2)/) )
+        print *, 'bcast(npes-1) from 0 to npes-2=', pe, a(1)
+        a = float(pe+1)
+        if( pe.NE.npes-1 )call mpp_sum( a, n, (/(i,i=0,npes-2)/) )
+        if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a(1)
+        a = float(pe+1)
+        if( pe.NE.npes-1 )call mpp_max( a(1), (/(i,i=0,npes-2)/) )
+        if( pe.EQ.root )print *, 'max(pe+1) from 0 to npes-2=', a(1)
+    end if
 #ifdef use_CRI_pointers
 !test mpp_chksum
     if( mod(n,npes).EQ.0 )then  !only set up for even division
-        if( pe.EQ.mpp_root_pe() )call random_number(a)
+        if( pe.EQ.root )call random_number(a)
         call mpp_sync()
-        call mpp_transmit( a, n, ALL_PES, a, n, mpp_root_pe() )
+        call mpp_transmit( a, n, ALL_PES, a, n, root )
         m= n/npes
         allocate( c(m) )
         c = a(pe*m+1:pe*m+m)
 
-        if( pe.EQ.mpp_root_pe() )then
+        if( pe.EQ.root )then
             print *
             print *, 'Test mpp_chksum...'
             print *, 'This test shows that a whole array and a distributed array give identical checksums.'

@@ -27,6 +27,7 @@ public set_frac_area
 ! Additional public interfaces available for initializing and setting up grids
 public init_boundary_map, lon_lat_size, lon_lat_map
 public complete_side1_boundary_map, complete_side2_boundary_map
+public setup_sfc_xmap, setup_runoff_xmap
 
 ! NO WRITING FACILITIES AVAILABLE FOR MPP AT THIS POINT, so no restarts
 ! Public interfaces for writing out and reading in maps
@@ -51,8 +52,8 @@ namelist /exchange_nml/ make_exchange_reproduce
 
 !--- version number and tag name ----
 
-character(len=128) :: version = '$Id: exchange.F90,v 1.3 2000/08/04 20:01:01 fms Exp $'
-character(len=128) :: tag = '$Name: eugene $'
+character(len=128) :: version = '$Id: exchange.F90,v 1.4 2001/10/25 17:53:38 fms Exp $'
+character(len=128) :: tag = '$Name: fez $'
 
 
 !==========================================================================
@@ -213,6 +214,152 @@ if(read_namelist) then
 endif
 
 end subroutine init_boundary_map
+
+!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!
+!                                                                              !
+! setup_xmaps - set up atmosphere/ocean and atmosphere/land exchange map with  !
+!               previously computed cell intersections as defined by the       !
+!               quintuples, (area, i1, j1, i2, j2) - Mike Winton 4/01          !
+!                                                                              !
+!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!
+subroutine setup_sfc_xmap(bmapA, bmapO, bmapL, npartO, npartL, ocean_area,        &
+                          i1_ocean, j1_ocean, i2_ocean, j2_ocean, n_ocean,        &
+                          land_area, i1_land , j1_land , i2_land, j2_land, n_land,&
+                          peO, peL                                                )
+type (boundary_map_type),             intent(inout) :: bmapA , bmapO, bmapL
+integer,                              intent(in   ) :: npartO, npartL
+real,    dimension(:               ), intent(in   ) :: ocean_area
+integer, dimension(size(ocean_area)), intent(in   ) :: i1_ocean, j1_ocean
+integer, dimension(size(ocean_area)), intent(in   ) :: i2_ocean, j2_ocean
+integer,                              intent(in   ) :: n_ocean
+real,    dimension(:               ), intent(in   ) :: land_area
+integer, dimension(size(land_area) ), intent(in   ) :: i1_land, j1_land
+integer, dimension(size(land_area) ), intent(in   ) :: i2_land, j2_land
+integer,                              intent(in   ) :: n_land
+integer, optional, dimension(size(ocean_area)), intent(in) :: peO
+integer, optional, dimension(size( land_area)), intent(in) :: peL
+
+  type (exchange_map_type), pointer :: map
+  integer :: k, l, ll, this_pe, that_pe
+
+  ! If this is first lon_lat_size call need to set up mpp buffers
+  if(first_lon_lat_size) then
+     first_lon_lat_size = .false.
+     allocate(buffer(0:mpp_npes()-1))
+  endif
+
+  this_pe = mpp_pe();
+
+  map => bmapA%ex ! should I check other bmap%ex's equal this ?
+  map%max_size = n_ocean*npartO+n_land*npartL
+  call init_exchange_map(map)
+  map%size = map%max_size
+
+  ll = 1 ! ll ranges from 1 to map%max_size
+  do l=1,n_ocean
+
+    that_pe = this_pe; if (present(peO)) that_pe = peO(l)
+
+    do k = 1,npartO
+      map%total_area(ll   ) = ocean_area(l)
+      map%      area(ll   ) = ocean_area(l)
+      map%frac_area (ll, :) = 1.0
+      map%bd_map_id (ll, 1) = bmapA%id
+      map%bd_map_id (ll, 2) = bmapO%id
+      map%x         (ll, 1) = i1_ocean(l)
+      map%x         (ll, 2) = i2_ocean(l)
+      map%y         (ll, 1) = j1_ocean(l)
+      map%y         (ll, 2) = j2_ocean(l)
+      map%part      (ll, 1) = 1
+      map%part      (ll, 2) = k
+      map%pe        (ll, 1) = this_pe
+      map%pe        (ll, 2) = that_pe
+
+      ll = ll+1
+    end do
+  end do
+
+  do l=1,n_land
+
+    that_pe = this_pe; if (present(peL)) that_pe = peL(l)
+
+    do k = 1,npartL
+      map%total_area(ll   ) = land_area(l)
+      map%      area(ll   ) = land_area(l)
+      map%frac_area (ll, :) = 1.0
+      map%bd_map_id (ll, 1) = bmapA%id
+      map%bd_map_id (ll, 2) = bmapL%id
+      map%x         (ll, 1) = i1_land(l)
+      map%x         (ll, 2) = i2_land(l)
+      map%y         (ll, 1) = j1_land(l)
+      map%y         (ll, 2) = j2_land(l)
+      map%part      (ll, 1) = 1
+      map%part      (ll, 2) = k
+      map%pe        (ll, 1) = this_pe
+      map%pe        (ll, 2) = that_pe
+
+      ll = ll+1
+    end do
+  end do
+
+  ! Make sure that the side 1 boundary map has storage initialized
+  bmapA%total_target_cells = map%max_size
+  if(.not. bmapA%allocated) call allocate_boundary_map(bmapA)
+
+end subroutine setup_sfc_xmap
+
+subroutine setup_runoff_xmap (bmapL, bmapO, ocean_area,                            &
+                              i1_ocean, j1_ocean, i2_ocean, j2_ocean, n_ocean, peO )
+type (boundary_map_type),             intent(inout) :: bmapL , bmapO
+real,    dimension(:               ), intent(in   ) :: ocean_area
+integer, dimension(size(ocean_area)), intent(in   ) :: i1_ocean, j1_ocean
+integer, dimension(size(ocean_area)), intent(in   ) :: i2_ocean, j2_ocean
+integer,                              intent(in   ) :: n_ocean
+integer, optional, dimension(size(ocean_area)), intent(in) :: peO
+
+  type (exchange_map_type), pointer :: map
+  integer :: k, l, ll, this_pe, that_pe
+
+  ! If this is first lon_lat_size call need to set up mpp buffers
+  if(first_lon_lat_size) then
+     first_lon_lat_size = .false.
+     allocate(buffer(0:mpp_npes()-1))
+  endif
+
+  this_pe = mpp_pe()
+
+  map => bmapL%ex ! should I check other bmap%ex's equal this ?
+  map%max_size = n_ocean
+  call init_exchange_map(map)
+  map%size = map%max_size
+
+  ll = 1 ! ll ranges from 1 to map%max_size
+  do l=1,n_ocean
+
+    that_pe = this_pe; if (present(peO)) that_pe = peO(l)
+
+    map%total_area(ll   ) = ocean_area(l)
+    map%      area(ll   ) = ocean_area(l)
+    map%frac_area (ll, :) = 1.0
+    map%bd_map_id (ll, 1) = bmapL%id
+    map%bd_map_id (ll, 2) = bmapO%id
+    map%x         (ll, 1) = i1_ocean(l)
+    map%x         (ll, 2) = i2_ocean(l)
+    map%y         (ll, 1) = j1_ocean(l)
+    map%y         (ll, 2) = j2_ocean(l)
+    map%part      (ll, 1) = 1
+    map%part      (ll, 2) = 1
+    map%pe        (ll, 1) = this_pe
+    map%pe        (ll, 2) = that_pe
+
+    ll = ll+1
+  end do
+
+  ! Make sure that the side 1 boundary map has storage initialized
+  bmapL%total_target_cells = map%max_size
+  if(.not. bmapL%allocated) call allocate_boundary_map(bmapL)
+ 
+end subroutine setup_runoff_xmap
 
 !===========================================================================
 

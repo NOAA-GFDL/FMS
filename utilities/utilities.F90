@@ -22,8 +22,9 @@ module utilities_mod
 !
 !    close_file       Closes the given unit number for i/o.
 !
-!    print_version_number    Prints out a routine name and
-!                            version number to a specified unit
+!    write_version_number    Prints out a specified unit the given
+!                            routine name, (cvs) version number, and 
+!                            (cvs) tag name.
 !
 !    set_domain          Sets a pointer for a private utilities_mod
 !                        domain2d data type. This domain2d type is
@@ -83,6 +84,7 @@ use          mpp_mod, only:  mpp_error, NOTE, WARNING, FATAL, &
                              mpp_sum, mpp_min, mpp_max,       &
                              get_my_pe => mpp_pe,             &
                              get_num_pes => mpp_npes,         &
+                             get_root_pe => mpp_root_pe,      &
                              sync_all_pes => mpp_sync,        &
                              check_sum => mpp_chksum,         &
                              mpp_clock_begin, mpp_clock_end,  &
@@ -91,8 +93,10 @@ use          mpp_mod, only:  mpp_error, NOTE, WARNING, FATAL, &
 
 use  mpp_domains_mod, only:  domain2D, mpp_define_domains, &
                              mpp_update_domains, GLOBAL_DATA_DOMAIN, &
-                             mpp_get_global, mpp_domains_exit,       &
-                             mpp_domains_set_stack_size
+                             mpp_global_field, mpp_domains_exit,     &
+                             mpp_domains_set_stack_size, &
+                             mpp_get_compute_domain, mpp_get_global_domain, &
+                             mpp_get_data_domain
 
 use       mpp_io_mod, only:  mpp_io_init, mpp_open, mpp_close,         &
                        MPP_ASCII, MPP_NATIVE, MPP_IEEE32, MPP_NETCDF,  &
@@ -105,14 +109,15 @@ private
 
 public :: file_exist, open_file, read_data, write_data,  &
           set_domain, get_domain_decomp,                 &
-          check_nml_error, print_version_number,         &
+          check_nml_error, write_version_number,         &
           error_mesg, NOTE, WARNING, FATAL,              &
           get_my_pe, get_num_pes, sync_all_pes,          &
-          mpp_sum, mpp_min, mpp_max,                     &
+          get_root_pe, mpp_sum, mpp_min, mpp_max,        &
           utilities_init, utilities_end, close_file,     &
           set_system_clock, check_system_clock, check_sum, &
           mpp_clock_begin, mpp_clock_end, mpp_clock_init,  &
           lowercase, uppercase
+public :: print_version_number ! to be removed
 
 !   ---- private data for check_nml_error ----
 
@@ -136,19 +141,16 @@ end interface
 !------ namelist interface -------
 !------ adjustable severity level for warnings ------
 
-  logical           :: time_all_pe   = .false.
   integer           :: timing_level  = 0
   logical           :: read_all_pe   = .true.
   character(len=8)  :: warning_level = 'fatal'
   character(len=64) :: iospec_ieee32 = '-F f77,cachea:48:1'
-  logical           :: one_level_restarts = .false.
   integer           :: stack_size = 0
   integer           :: domains_stack_size = 0
 
   namelist /utilities_nml/  timing_level, read_all_pe, warning_level, &
-                            iospec_ieee32, one_level_restarts,        &
-                            stack_size, domains_stack_size,           &
-                            time_all_pe
+                            iospec_ieee32,                            &
+                            stack_size, domains_stack_size
 
 
 !------ private data, pointer to current 2d domain ------
@@ -159,15 +161,13 @@ end interface
 
 !------ private data for system clock routines ------
 
-  integer :: count_init, count_rate, count_max
+  integer :: count_prev, count_rate, count_max
 
-
-  integer :: mxdim3  ! maximum number of levels written/read per record
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: utilities.F90,v 1.6 2001/07/05 17:40:11 fms Exp $'
-  character(len=128) :: tag = '$Name: eugene $'
+  character(len=128) :: version = '$Id: utilities.F90,v 1.7 2001/09/04 17:56:41 fms Exp $'
+  character(len=128) :: tag = '$Name: fez $'
 
   logical :: do_init = .true.
 
@@ -232,7 +232,7 @@ function check_nml_error (iostat, nml_name) result (error_code)
 
 !  ------ fatal namelist error -------
 !  ------ only on pe0 ----------------
-   if (get_my_pe() == 0) then
+   if (get_my_pe() == get_root_pe()) then
        write (err_str,*) 'while reading namelist ',  &
                          trim(nml_name), ', iostat = ',error_code
        call error_mesg ('check_nml_error', err_str, FATAL)
@@ -265,7 +265,6 @@ subroutine nml_error_init
              /' &a_nml  a=1.  /',    &
              /'#------------------', &
              /' &b_nml  a=5., b=0, c=.false., d=''test'',  &end')
-!!!!!!!!!!   /' &b_nml  e=5.,  &end')
       call close_file (unit)
 
 !     ---- read namelist files and save error codes ----
@@ -279,7 +278,7 @@ subroutine nml_error_init
   20  call close_file (unit, status='delete')
 
       num_nml_error_codes = ir
-!del  if (get_my_pe() == 0) &
+!del  if (get_my_pe() == get_root_pe()) &
 !del  print *, 'PE,nml_error_codes=',get_my_pe(), nml_error_codes(1:ir)
       do_nml_error_init = .false.
 
@@ -436,7 +435,7 @@ end subroutine nml_error_init
 
 !#######################################################################
 
-   subroutine print_version_number (unit, routine, version)
+   subroutine write_version_number (unit, version, tagname)
 
 ! *** prints routine name and version number to a log file ***
 !
@@ -445,31 +444,17 @@ end subroutine nml_error_init
 !         version = version name or number (character, max len = 8)
 
    integer,          intent(in) :: unit
-   character(len=*), intent(in) :: routine, version
+   character(len=*), intent(in) :: version, tagname
 
-   integer           :: n
-   character(len=20) :: name
-   character(len=8)  :: vers
-
-     if ( get_my_pe() /= 0 ) return
-
-     n = min(len(routine),20); name = adjustl(routine(1:n))
-     n = min(len(version), 8); vers = adjustl(version(1:n))
+     if ( get_my_pe() /= get_root_pe() ) return
 
      if (unit > 0) then
-         write (unit,10) name, vers
+         write (unit,'(/,80("="),/(a))') trim(version), trim(tagname)
      else
-         write (*,10) name, vers
+         write (*,'(/,80("="),/(a))') trim(version), trim(tagname)
      endif
 
-  10 format (/,66('-'),  &
-             /,10x, 'ROUTINE = ',a20, '  VERSION = ', a8, &
-             /,66('-'))
-
-! 10 format (/,1x, 12('>'), 1x, 'ROUTINE = ',a20, '  VERSION = ', a8, &
-!              1x, 12('<'),/)
-
-   end subroutine print_version_number
+   end subroutine write_version_number
 
 !#######################################################################
 
@@ -484,20 +469,9 @@ subroutine set_domain (Domain2)
 
 !  --- module indexing to shorten read/write routines ---
 
-   is = Domain%X%Compute%start_index
-   ie = Domain%X%Compute%end_index
-   js = Domain%Y%Compute%start_index
-   je = Domain%Y%Compute%end_index
-
-   isd = Domain%X%Data%start_index
-   ied = Domain%X%Data%end_index
-   jsd = Domain%Y%Data%start_index
-   jed = Domain%Y%Data%end_index
-
-   isg = Domain%X%Global%start_index
-   ieg = Domain%X%Global%end_index
-   jsg = Domain%Y%Global%start_index
-   jeg = Domain%Y%Global%end_index
+   call mpp_get_compute_domain (Domain,is ,ie ,js ,je )
+   call mpp_get_data_domain    (Domain,isd,ied,jsd,jed)
+   call mpp_get_global_domain  (Domain,isg,ieg,jsg,jeg)
 
 !-----------------------------------------------------------------------
 
@@ -533,7 +507,7 @@ subroutine read_data_2d ( unit, data, end )
 
        if (present(end)) end = .false.
 
-       do_read = get_my_pe() == 0 .or. read_all_pe
+       do_read = get_my_pe() == get_root_pe() .or. read_all_pe
 
        if (do_read) read (unit,end=10) gdata
        if (.not.read_all_pe) then
@@ -604,7 +578,7 @@ subroutine read_idata_2d ( unit, data, end )
 
        if (present(end)) end = .false.
 
-       do_read = get_my_pe() == 0 .or. read_all_pe
+       do_read = get_my_pe() == get_root_pe() .or. read_all_pe
 
        if (do_read) read (unit,end=10) gdata
        if (.not.read_all_pe) then
@@ -644,7 +618,7 @@ subroutine read_cdata_2d ( unit, data, end )
 
        if (present(end)) end = .false.
 
-       do_read = get_my_pe() == 0 .or. read_all_pe
+       do_read = get_my_pe() == get_root_pe() .or. read_all_pe
 
        if (do_read) read (unit,end=10) gdata
        if (.not.read_all_pe) then
@@ -673,8 +647,7 @@ subroutine read_data_3d ( unit, data, end )
    real,    intent(out), dimension(isd:,jsd:,:) :: data
    logical, intent(out), optional               :: end
 
-   real, dimension(isg:ieg,jsg:jeg,min(size(data,3), mxdim3)) :: gdata
-   integer :: m, m1, m2, msize
+   real, dimension(isg:ieg,jsg:jeg,size(data,3)) :: gdata
    logical :: do_read
    integer :: len
 
@@ -685,23 +658,16 @@ subroutine read_data_3d ( unit, data, end )
 
        if (present(end)) end = .false.
 
-       do_read = get_my_pe() == 0 .or. read_all_pe
+       do_read = get_my_pe() == get_root_pe() .or. read_all_pe
 
-       msize = min(size(data,3), mxdim3)
-       m2 = 0
-
-       do m=1,size(data,3)/msize
-	 m1 = m2 + 1
-	 m2 = m2 + msize
        if (do_read) read (unit,end=10) gdata
        if (.not.read_all_pe) then
            len = size(gdata,1)*size(gdata,2)*size(gdata,3)
            call mpp_transmit ( gdata(isg,jsg,1), len, ALL_PES, &
                                gdata(isg,jsg,1), len, 0        )
        endif
-       data(is:ie,js:je,m1:m2) = gdata(is:ie,js:je,:)
+       data(is:ie,js:je,:) = gdata(is:ie,js:je,:)
 
-       end do
        return
 
    10  if (present(end))then
@@ -719,11 +685,10 @@ end subroutine read_data_3d
 subroutine read_cdata_3d ( unit, data, end )
 
    integer, intent(in)                          :: unit
-   complex,    intent(out), dimension(isd:,jsd:,:) :: data
+   complex, intent(out), dimension(isd:,jsd:,:) :: data
    logical, intent(out), optional               :: end
 
-   complex, dimension(isg:ieg,jsg:jeg,min(size(data,3),mxdim3)) :: gdata
-   integer :: m, m1, m2, msize
+   complex, dimension(isg:ieg,jsg:jeg,size(data,3)) :: gdata
    logical :: do_read
    integer :: len
 
@@ -734,23 +699,16 @@ subroutine read_cdata_3d ( unit, data, end )
 
        if (present(end)) end = .false.
 
-       do_read = get_my_pe() == 0 .or. read_all_pe
+       do_read = get_my_pe() == get_root_pe() .or. read_all_pe
 
-       msize = min(size(data,3), mxdim3)
-       m2 = 0
-
-       do m=1,size(data,3)/msize
-	 m1 = m2 + 1
-	 m2 = m2 + msize
        if (do_read) read (unit,end=10) gdata
        if (.not.read_all_pe) then
            len = size(gdata,1)*size(gdata,2)*size(gdata,3)
            call mpp_transmit ( gdata(isg,jsg,1), len, ALL_PES, &
                                gdata(isg,jsg,1), len, 0        )
        endif
-       data(is:ie,js:je,m1:m2) = gdata(is:ie,js:je,:)
+       data(is:ie,js:je,:) = gdata(is:ie,js:je,:)
 
-       end do
        return
 
    10  if (present(end))then
@@ -783,7 +741,7 @@ subroutine read_data_4d ( unit, data, end )
 
        if (present(end)) end = .false.
 
-       do_read = get_my_pe() == 0 .or. read_all_pe
+       do_read = get_my_pe() == get_root_pe() .or. read_all_pe
 
        if (do_read) read (unit,end=10) gdata
        if (.not.read_all_pe) then
@@ -809,7 +767,7 @@ end subroutine read_data_4d
 subroutine read_cdata_4d ( unit, data, end )
 
    integer, intent(in)                            :: unit
-   complex,    intent(out), dimension(isd:,jsd:,:,:) :: data
+   complex, intent(out), dimension(isd:,jsd:,:,:) :: data
    logical, intent(out), optional                 :: end
 
    complex, dimension(isg:ieg,jsg:jeg,size(data,3),size(data,4)) :: gdata
@@ -824,7 +782,7 @@ subroutine read_cdata_4d ( unit, data, end )
 
        if (present(end)) end = .false.
 
-       do_read = get_my_pe() == 0 .or. read_all_pe
+       do_read = get_my_pe() == get_root_pe() .or. read_all_pe
 
        if (do_read) read (unit,end=10) gdata
        if (.not.read_all_pe) then
@@ -859,9 +817,9 @@ subroutine write_data_2d ( unit, data )
 
 !---- put field onto global domain ----
 
-   call mpp_get_global ( Domain, data, gdata )
+   call mpp_global_field ( Domain, data, gdata )
 
-   if ( get_my_pe() == 0 ) write (unit) gdata
+   if ( get_my_pe() == get_root_pe() ) write (unit) gdata
 
 !-----------------------------------------------------------------------
 
@@ -890,13 +848,13 @@ subroutine write_ldata_2d ( unit, data )
 
 !---- put field onto global domain ----
 
-   call mpp_get_global ( Domain, rdata, gdata )
+   call mpp_global_field ( Domain, rdata, gdata )
 
 !---- switch back to logical ----
 
    ldata = ( gdata > 0.99 )
 
-   if ( get_my_pe() == 0 ) write (unit) ldata
+   if ( get_my_pe() == get_root_pe() ) write (unit) ldata
 
 !-----------------------------------------------------------------------
 
@@ -916,9 +874,9 @@ subroutine write_idata_2d ( unit, data )
 
 !---- put field onto global domain ----
 
-   call mpp_get_global ( Domain, data, gdata )
+   call mpp_global_field ( Domain, data, gdata )
 
-   if ( get_my_pe() == 0 ) write (unit) gdata
+   if ( get_my_pe() == get_root_pe() ) write (unit) gdata
 
 !-----------------------------------------------------------------------
 
@@ -938,9 +896,9 @@ subroutine write_cdata_2d ( unit, data )
 
 !---- put field onto global domain ----
 
-   call mpp_get_global ( Domain, data, gdata )
+   call mpp_global_field ( Domain, data, gdata )
 
-   if ( get_my_pe() == 0 ) write (unit) gdata
+   if ( get_my_pe() == get_root_pe() ) write (unit) gdata
 
 !-----------------------------------------------------------------------
 
@@ -953,25 +911,16 @@ subroutine write_data_3d ( unit, data )
    integer, intent(in) :: unit
    real,    intent(in), dimension(isd:,jsd:,:) :: data
 
-   real, dimension(isg:ieg,jsg:jeg, min(size(data,3), mxdim3)) :: gdata
-   integer   ::  m, m1, m2, msize
+   real, dimension(isg:ieg,jsg:jeg,size(data,3)) :: gdata
 
    if (.not.associated(Domain)) call error_mesg &
         ('write_data in utilities_mod', 'set_domain not called', FATAL)
 
-   msize = min (size(data,3), mxdim3)
-   m2 = 0
+    !---- get entire global field ----
 
-   do m = 1, size(data,3)/msize
-     m1 = m2 + 1
-     m2 = m2 + msize
+     call mpp_global_field ( Domain, data(isd:ied,jsd:jed,:), gdata )
 
-!---- put field onto global domain ----
-
-     call mpp_get_global ( Domain, data(:,:,m1:m2), gdata )
-
-     if ( get_my_pe() == 0 ) write (unit) gdata
-   end do
+     if ( get_my_pe() == get_root_pe() ) write (unit) gdata
 
 !-----------------------------------------------------------------------
 
@@ -982,26 +931,18 @@ end subroutine write_data_3d
 subroutine write_cdata_3d ( unit, data )
 
    integer, intent(in) :: unit
-   complex,    intent(in), dimension(isd:,jsd:,:) :: data
+   complex, intent(in), dimension(isd:,jsd:,:) :: data
 
-   complex, dimension(isg:ieg,jsg:jeg,min(size(data,3), mxdim3)) :: gdata
-   integer   ::  m, m1, m2, msize
+   complex, dimension(isg:ieg,jsg:jeg,size(data,3)) :: gdata
 
    if (.not.associated(Domain)) call error_mesg &
         ('write_data in utilities_mod', 'set_domain not called', FATAL)
 
-   msize = min (size(data,3), mxdim3)
-   m2 = 0
+    !---- get entire global field ----
 
-   do m = 1, size(data,3)/msize
-     m1 = m2 + 1
-     m2 = m2 + msize
-!---- put field onto global domain ----
+     call mpp_global_field ( Domain, data(:,:,:), gdata )
 
-     call mpp_get_global ( Domain, data(:,:,m1:m2), gdata )
-
-     if ( get_my_pe() == 0 ) write (unit) gdata
-   end do
+     if ( get_my_pe() == get_root_pe() ) write (unit) gdata
 
 !-----------------------------------------------------------------------
 
@@ -1020,13 +961,14 @@ subroutine write_data_4d ( unit, data )
    if (.not.associated(Domain)) call error_mesg &
         ('write_data in utilities_mod', 'set_domain not called', FATAL)
 
-!---- put field onto global domain ----
+  !---- get entire global field ----
+  !    (do this one field at a time to save memory)
 
    do n = 1, size(data,4)
-    call mpp_get_global ( Domain, data(:,:,:,n), gdata(:,:,:,n) )
+    call mpp_global_field ( Domain, data(:,:,:,n), gdata(:,:,:,n) )
    enddo
 
-   if ( get_my_pe() == 0 ) write (unit) gdata
+   if ( get_my_pe() == get_root_pe() ) write (unit) gdata
 
 !-----------------------------------------------------------------------
 
@@ -1045,13 +987,14 @@ subroutine write_cdata_4d ( unit, data )
    if (.not.associated(Domain)) call error_mesg &
         ('write_data in utilities_mod', 'set_domain not called', FATAL)
 
-!---- put field onto global domain ----
+  !---- get entire global field ----
+  !    (do this one field at a time to save memory)
 
    do n = 1, size(data,4)
-    call mpp_get_global ( Domain, data(:,:,:,n), gdata(:,:,:,n) )
+    call mpp_global_field ( Domain, data(:,:,:,n), gdata(:,:,:,n) )
    enddo
 
-   if ( get_my_pe() == 0 ) write (unit) gdata
+   if ( get_my_pe() == get_root_pe() ) write (unit) gdata
 
 !-----------------------------------------------------------------------
 
@@ -1061,7 +1004,7 @@ end subroutine write_cdata_4d
 
 subroutine set_system_clock
 
- call system_clock (count_init, count_rate, count_max)
+ call system_clock (count_prev, count_rate, count_max)
 
 end subroutine set_system_clock
 
@@ -1079,16 +1022,14 @@ character(len=51) :: fmt
 integer :: nd, nc, np, count, clocks
 real    :: seconds
 
- if ( .not. time_all_pe .and. get_my_pe() /= 0 ) return
+! only check/print elapsed time on PE 0
 
-!if ( get_my_pe() == 0 ) then
-!     call error_mesg ('utilities_mod',  &
-!                      'routine check_system_clock is obsolete', NOTE)
-!endif
+ if ( get_my_pe() /= get_root_pe() ) return
 
  call system_clock (count)
 
- clocks  = count - count_init
+! compute elapsed time since previous count
+ clocks  = count - count_prev
  if (clocks < 0) clocks = clocks + count_max
  seconds = real(clocks)/real(count_rate)
 
@@ -1111,7 +1052,7 @@ real    :: seconds
 
 ! --- reset clock ---
 
-   call system_clock (count_init)
+   call system_clock (count_prev)
 
 10 format('(a,'': pe='',i',i1,',4x,''seconds='',f12.',i1,',4x,''clocks='',i',i2,')')
 11 format('(''pe='',i',i1,',4x,''seconds='',f12.',i1,',4x,''clocks='',i',i2,')')
@@ -1169,16 +1110,6 @@ subroutine utilities_init
     if (        stack_size > 0) call         mpp_set_stack_size (        stack_size)
     if (domains_stack_size > 0) call mpp_domains_set_stack_size (domains_stack_size)
 
-!---- define size of third dimension in arrays used when 
-!---- reading/writing restarts
-
-    if (one_level_restarts) then
-       mxdim3 = 1
-    else 
-       mxdim3 = 1000000       ! arbitrary, larger than any real dimen
-    endif
-
-
 !---- initialize namelist error codes if necessary ----
 
     if (do_nml_error_init) call nml_error_init
@@ -1203,8 +1134,8 @@ subroutine utilities_init
 !--- open logfile (at beginning) and write version info ---
 
     unit = open_file ('logfile.out', action='write')
-    if ( get_my_pe() == 0 ) then
-         write (unit,'(/,80("="),/(a))') trim(version), trim(tag)
+    if ( get_my_pe() == get_root_pe() ) then
+         call write_version_number (unit, version, tag)
          write (unit, nml=utilities_nml)
          write (unit,*) 'nml_error_codes=',  &
                          nml_error_codes(1:num_nml_error_codes)
@@ -1280,6 +1211,10 @@ end subroutine close_file
     
  end function uppercase 
 
+!#######################################################################
+!  dummy routine
+subroutine print_version_number
+end subroutine print_version_number
 !#######################################################################
 
 end module utilities_mod

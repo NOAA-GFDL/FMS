@@ -21,7 +21,7 @@
       MPP_TYPE_, intent(in)  :: put_data(*)
       MPP_TYPE_, intent(out) :: get_data(*)
 #ifdef use_libSMA
-      integer :: np
+      integer :: i, np
       integer(LONG_KIND) :: data_loc
 !pointer to remote data
       MPP_TYPE_ :: remote_data(get_len)
@@ -61,6 +61,10 @@
 #ifdef use_libMPI
 !use non-blocking sends
           if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
+          if( request(to_pe).NE.MPI_REQUEST_NULL )then !only one message from pe->to_pe in queue 
+!              if( debug )write( stderr,* )'PE waiting ', pe, to_pe
+              call MPI_WAIT( request(to_pe), stat, error )
+          end if
           call MPI_ISEND( put_data, put_len, MPI_TYPE_, to_pe, tag, MPI_COMM_WORLD, request(to_pe), error )
           if( current_clock.NE.0 )call increment_current_clock( EVENT_SEND, put_len*MPP_TYPE_BYTELEN_ )
 #endif
@@ -68,31 +72,6 @@
       else if( to_pe.EQ.ALL_PES )then !this is a broadcast from from_pe
           if( from_pe.LT.0 .OR. from_pe.GE.npes )call mpp_error( FATAL, 'MPP_TRANSMIT: broadcasting from invalid PE.' )
           if( put_len.GT.get_len )call mpp_error( FATAL, 'MPP_TRANSMIT: size mismatch between put_data and get_data.' )
-#ifdef use_libSMA
-          ptr = LOC(mpp_stack)
-          words = size(broadcast_data)*size(transfer(broadcast_data(1),word))
-          if( words.GT.mpp_stack_size )then
-              write( text, '(i8)' )words
-              call mpp_error( FATAL, 'MPP_TRANSMIT user stack overflow: call mpp_set_stack_size('//text//') from all PEs.' )
-          end if
-          if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
-          if( npes.GT.1 )then
-              broadcast_data(1:get_len) = put_data(1:get_len)
-              call mpp_sync()
-#ifdef _CRAYT90
-              call SHMEM_UDCFLUSH !invalidate data cache
-#endif
-              call SHMEM_BROADCAST_( broadcast_data, broadcast_data, get_len, from_pe, 0,0,npes, sync )
-              call mpp_sync()
-              get_data(1:get_len) = broadcast_data(1:get_len)
-          end if
-          if( current_clock.NE.0 )call increment_current_clock( EVENT_BROADCAST, get_len*MPP_TYPE_BYTELEN_ )
-#endif
-!SHMEM_BROADCAST does not broadcast to itself:
-! need copy if get_data and put_data are not the same.
-!contrariwise MPI_BCAST only copies itself:
-! need copy prior to calling MPI_BCAST.
-!thus this copy operation is placed inbetween.
           if( pe.EQ.from_pe )then
 #ifdef use_CRI_pointers
 !dir$ IVDEP
@@ -100,13 +79,7 @@
 #endif
                    get_data(1:put_len) = put_data(1:put_len)
           end if
-#ifdef use_libMPI
-          if( npes.GT.1 )then
-             if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
-             call MPI_BCAST( get_data, put_len, MPI_TYPE_, from_pe, MPI_COMM_WORLD, error )
-             if( current_clock.NE.0 )call increment_current_clock( EVENT_BROADCAST, put_len*MPP_TYPE_BYTELEN_ )
-          endif
-#endif
+          call mpp_broadcast( get_data, get_len, from_pe )
           return
 
       else if( to_pe.EQ.ANY_PE )then !we don't have a destination to do puts to, so only do gets
@@ -139,15 +112,22 @@
           if( current_clock.NE.0 )call increment_current_clock(EVENT_WAIT)
           ptr_remote_data = remote_data_loc(from_pe)
           remote_data_loc(from_pe) = MPP_WAIT !reset
-          call SHMEM_PUT8( status(pe), MPP_READY, 1, from_pe ) !tell from_pe we have retrieved the location
+!          call SHMEM_PUT8( status(pe), MPP_READY, 1, from_pe ) !tell from_pe we have retrieved the location
           if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
 #if defined(CRAYPVP) || defined(sgi_mipspro)
 !since we have the pointer to remote data, just retrieve it with a simple copy
+          if( LOC(get_data).NE.LOC(remote_data) )then
 !dir$ IVDEP
-          if( LOC(get_data).NE.LOC(remote_data) )get_data(1:get_len) = remote_data(1:get_len)
+              do i = 1,get_len
+                 get_data(i) = remote_data(i)
+              end do
+          else
+              call mpp_error(FATAL)
+          end if
 #else
           call SHMEM_GET_( get_data, remote_data, get_len, from_pe )
 #endif
+          call SHMEM_PUT8( status(pe), MPP_READY, 1, from_pe ) !tell from_pe we have retrieved the location
           if( current_clock.NE.0 )call increment_current_clock( EVENT_RECV, get_len*MPP_TYPE_BYTELEN_ )
 #elif  use_libMPI
 !receive from from_pe
@@ -275,3 +255,74 @@
 #endif
     end subroutine MPP_SEND_SCALAR_
     
+    subroutine MPP_BROADCAST_( data, length, from_pe, pelist )
+!this call was originally bundled in with mpp_transmit, but that doesn't allow
+!broadcast to a subset of PEs. This version will, and mpp_transmit will remain
+!backward compatible.
+      MPP_TYPE_, intent(inout) :: data(*)
+      integer, intent(in) :: length, from_pe
+      integer, intent(in), optional :: pelist(:)
+      integer :: n
+#ifdef use_libSMA
+      integer :: np
+      integer(LONG_KIND) :: data_loc
+!pointer to remote data
+      MPP_TYPE_ :: bdata(length)
+      pointer( ptr, bdata )
+      integer :: words
+      character(len=8) :: text
+#endif
+
+      if( .NOT.mpp_initialized )call mpp_error( FATAL, 'MPP_BROADCAST: You must first call mpp_init.' )
+      
+      if( debug )then
+          call SYSTEM_CLOCK(tick)
+          write( stdout,'(a,i18,a,i5,a,2i5,2i8)' )&
+               'T=',tick, ' PE=',pe, ' MPP_BROADCAST begin: from_pe, length=', from_pe, length
+      end if
+
+      if( from_pe.LT.0 .OR. from_pe.GE.npes )call mpp_error( FATAL, 'MPP_BROADCAST: broadcasting from invalid PE.' )
+      n = 1                     !default (world) PEset number
+      if( PRESENT(pelist) )n = get_peset(pelist)
+      if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
+#ifdef use_libSMA
+      ptr = LOC(mpp_stack)
+      words = size(bdata)*size(transfer(bdata(1),word))
+      if( words.GT.mpp_stack_size )then
+          write( text, '(i8)' )words
+          call mpp_error( FATAL, 'MPP_BROADCAST user stack overflow: call mpp_set_stack_size('//text//') from all PEs.' )
+      end if
+      mpp_stack_hwm = max( words, mpp_stack_hwm )
+      if( npes.GT.1 )then
+          bdata(1:length) = data(1:length)
+          call mpp_sync(pelist) !eliminate?
+#ifdef _CRAYT90
+          call SHMEM_UDCFLUSH !invalidate data cache
+#endif
+          call SHMEM_BROADCAST_( bdata, bdata, length, from_pe, peset(n)%start, peset(n)%log2stride, peset(n)%count, sync )
+          call mpp_sync(pelist) !eliminate?
+          data(1:length) = bdata(1:length)
+      end if
+#endif
+#ifdef use_libMPI
+      if( npes.GT.1 )call MPI_BCAST( data, length, MPI_TYPE_, from_pe, peset(n)%id, error )
+#endif
+      if( current_clock.NE.0 )call increment_current_clock( EVENT_BROADCAST, length*MPP_TYPE_BYTELEN_ )
+      return
+    end subroutine MPP_BROADCAST_
+
+    subroutine MPP_BROADCAST_SCALAR_( data, length, from_pe, pelist )
+      MPP_TYPE_, intent(inout) :: data
+      integer, intent(in) :: length, from_pe
+      integer, intent(in), optional :: pelist(:)
+      MPP_TYPE_ :: data1D(length)
+#ifdef use_CRI_pointers
+      pointer( ptr, data1D )
+
+      ptr = LOC(data)
+#else
+      call mpp_error( FATAL, 'MPP_BROADCAST_SCALAR_ requires Cray pointers.' )
+#endif
+      call MPP_BROADCAST_( data1D, length, from_pe, pelist )
+      return
+    end subroutine MPP_BROADCAST_SCALAR_

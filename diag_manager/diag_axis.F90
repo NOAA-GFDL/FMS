@@ -3,7 +3,9 @@ module diag_axis_mod
 
 !-----------------------------------------------------------------------
 
-use mpp_domains_mod, only: domain1d, domain2d
+use mpp_domains_mod, only: domain1d, domain2d, mpp_get_compute_domain, &
+                           mpp_get_domain_components, null_domain1d, &
+                           null_domain2d, operator(/=)
 use   utilities_mod, only: error_mesg
 
 implicit none
@@ -35,8 +37,8 @@ integer, parameter :: FATAL = 2
       character(len=1)     :: cart_name
       real, pointer        :: data(:)
       integer              :: length, direction, edges, set
-      type(domain1d), pointer :: Domain
-      type(domain2d), pointer :: Domain2
+      type(domain1d) :: Domain
+      type(domain2d) :: Domain2
  end type diag_axis_type
 
 !-----------------------------------------------------------------------
@@ -92,10 +94,10 @@ character(len=*), intent(in) :: cart_name
 
 character(len=*), intent(in), optional :: long_name, set_name
 integer         , intent(in), optional :: direction, edges
-type(domain1d)  , intent(in), target, optional :: Domain
-type(domain2d)  , intent(in), target, optional :: Domain2
-
-integer ::  index, ierr
+type(domain1d)  , intent(in), optional :: Domain
+type(domain2d)  , intent(in), optional :: Domain2
+type(domain1d) :: domain_x, domain_y
+integer ::  index, ierr, axlen
 
 integer ::  i, set
 
@@ -133,14 +135,32 @@ integer ::  i, set
                                                'too many axes', FATAL)
  index = num_def_axes
 
+
+
+!---- check and then save cart_name name ----
+
+ if (cart_name == 'x' .or.cart_name == 'X' ) then
+      Axes(index)%cart_name = 'X'
+ else if (cart_name == 'y' .or.cart_name == 'Y' ) then
+      Axes(index)%cart_name = 'Y'
+ else if (cart_name == 'z' .or.cart_name == 'Z' ) then
+      Axes(index)%cart_name = 'Z'
+ else if (cart_name == 't' .or.cart_name == 'T' ) then
+      Axes(index)%cart_name = 'T'
+ else
+      call error_mesg('axis_mod', 'Invalid cart_name name.', FATAL)
+ endif
+
 !---- allocate storage for coordinate values of axis ----
- allocate ( Axes(index)%data(size(data)) )
+ axlen = size(data)
+ if ( Axes(index)%cart_name == 'T' ) axlen = 0
+ allocate ( Axes(index)%data(1:axlen) )
 
  Axes(index)%name   = name
- Axes(index)%data   = data
+ Axes(index)%data   = data(1:axlen)
  Axes(index)%units  = units
 
- Axes(index)%length = size(data)
+ Axes(index)%length = axlen
  Axes(index)%set    = set
 
 
@@ -179,20 +199,23 @@ endif
 !---- domain2d type ----
 
  if ( present(Domain2) ) then
-    Axes(index)%Domain2 => Domain2
-    if ( Axes(index)%cart_name == 'X' ) Axes(index)%Domain => Domain2%X
-    if ( Axes(index)%cart_name == 'Y' ) Axes(index)%Domain => Domain2%Y
+    Axes(index)%Domain2 = Domain2
+    call mpp_get_domain_components(Domain2, domain_x, domain_y)
+    if ( Axes(index)%cart_name == 'X' ) Axes(index)%Domain = domain_x
+    if ( Axes(index)%cart_name == 'Y' ) Axes(index)%Domain = domain_y
  else
-    nullify (Axes(index)%Domain2)
- endif
-
+    Axes(index)%Domain2 = null_domain2d 
 !---- domain1d type ----
 
- if ( present(Domain) .and. .not. present(Domain2) ) then
-    Axes(index)%Domain => Domain
- else
-    if ( .not. present(Domain2) ) nullify (Axes(index)%Domain)
+    if ( present(Domain)) then
+       Axes(index)%Domain = Domain
+    else
+       Axes(index)%Domain = null_domain1d
+    endif
  endif
+
+
+
 
 
 !---- have axis edges been defined ? ----
@@ -234,7 +257,7 @@ end function diag_axis_init
 
  character(len=*), intent(out) :: name, units, long_name, cart_name
  integer, intent(in) :: id
- type(domain1d),   pointer :: Domain
+ type(domain1d) :: Domain
  integer, intent(out) :: direction, edges
  real, intent(out) :: data(:)
 
@@ -247,7 +270,7 @@ end function diag_axis_init
  cart_name = Axes(id)%cart_name
  direction = Axes(id)%direction
  edges     = Axes(id)%edges
- Domain    => Axes(id)%Domain
+ Domain    = Axes(id)%Domain
 
  if (Axes(id)%length > size(data)) call error_mesg ('diag_axis_mod', &
                                      'array data is too small', FATAL)
@@ -262,10 +285,9 @@ end function diag_axis_init
  function get_axis_length (id) result (length)
    integer, intent(in) :: id
    integer             :: length
-
-    if ( associated(Axes(id)%Domain) ) then
-        length = Axes(id)%Domain%Compute%end_index - &
-                 Axes(id)%Domain%Compute%start_index + 1
+   
+    if ( Axes(id)%Domain /= null_domain1d ) then
+        call mpp_get_compute_domain(Axes(id)%Domain,size=length)
     else
         length = Axes(id) % length
     endif
@@ -286,9 +308,14 @@ end function diag_axis_init
 
  function get_domain1d (id) result (Domain1)
    integer, intent(in) :: id
-   type(domain1d), pointer :: Domain1
+   type(domain1d) :: Domain1
 
-   Domain1 => Axes(id)%Domain
+   
+   if (Axes(id)%Domain .NE. NULL_DOMAIN1D) then
+      Domain1 = Axes(id)%Domain
+   else
+      Domain1 = NULL_DOMAIN1D
+   endif
 
  end function get_domain1d
 
@@ -296,16 +323,16 @@ end function diag_axis_init
 
  function get_domain2d (ids) result (Domain2)
    integer, intent(in) :: ids(:)
-   type(domain2d), pointer :: Domain2
+   type(domain2d) :: Domain2
 
    integer :: i, id, flag
 
 
-   nullify (Domain2)
-
    if ( size(ids) < 1 .or. size(ids) > 4 ) call error_mesg  &
                           ('get_domain2d in diag_axis_mod', &
                            'input argument has incorrect size', FATAL)
+
+   Domain2 = null_domain2d
 
    flag = 0
    do i = 1, size(ids)
@@ -316,8 +343,10 @@ end function diag_axis_init
 
 !     --- both x/y axes found ---
       if ( flag == 2 ) then
-           Domain2 => Axes(id)%Domain2
-           exit
+         if (Axes(id)%Domain2 .NE. NULL_DOMAIN2D) then
+            Domain2 = Axes(id)%Domain2
+         endif
+         exit
       endif
 
    enddo

@@ -62,7 +62,7 @@ public :: simple_mountain, compute_real_topog, compute_stdev, compute_ocean_mask
 !-----------------------------------------------------------------------
 
 character(len=128) :: version = '$Id: topography.F90,v 1.2 2001/07/05 17:02:33 fms Exp $'
-character(len=128) :: tag = '$Name: eugene $'
+character(len=128) :: tag = '$Name: fez $'
 
 !-----------------------------------------------------------------------
 

@@ -1,7 +1,7 @@
     subroutine MPP_WRITE_1DDECOMP_1D_( unit, field, domain, data, tstamp )
       integer, intent(in) :: unit
       type(fieldtype), intent(in) :: field
-      type(domain1D), intent(in) :: domain
+      type(domain1D), intent(inout) :: domain
       MPP_TYPE_, intent(inout) :: data(:)
       real, intent(in), optional :: tstamp
 #ifdef use_CRI_pointers
@@ -19,44 +19,48 @@
 !mpp_write writes <data> which has the domain decomposition <domain>
       integer, intent(in) :: unit
       type(fieldtype), intent(in) :: field
-      type(domain1D), intent(in) :: domain
-      MPP_TYPE_, intent(inout) :: data(domain%data%start_index:,:)
+      type(domain1D), intent(inout) :: domain !must have intent(out) as well because active domain might be reset
+      MPP_TYPE_, intent(inout) :: data(:,:)
       real, intent(in), optional :: tstamp
-!cdata is used to store compute domain as contiguous data
+!cdata is used to store compute domain as contiguous data (NEW: receives either on compute or data domain)
 !gdata for global single-threaded I/O
       MPP_TYPE_, allocatable, dimension(:,:) :: cdata, gdata
-      type(domain2D) :: write_domain(1)
+      integer :: is, ie, isd, ied, isg, ieg
+      logical :: data_has_halo, halo_is_global
 
       if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
 
+      call mpp_get_compute_domain( domain, is,  ie  )
+      call mpp_get_data_domain   ( domain, isd, ied, is_global=halo_is_global )
+      call mpp_get_global_domain ( domain, isg, ieg )
+      data_has_halo = size(data,1).NE.ie-is+1
+      if( data_has_halo .AND. size(data,1).NE.ied-isd+1 ) &
+           call mpp_error( FATAL, 'MPP_WRITE: data must be either on compute domain or data domain.' )
       if( npes.GT.1 .AND. mpp_file(unit)%threading.EQ.MPP_SINGLE )then
-          if( domain%data%is_global )then
+          if( halo_is_global )then
               call mpp_update_domains( data, domain )
 !all non-0 PEs have passed their data to PE 0 and may now exit
               if( pe.NE.0 )return
               call write_record( unit, field, size(data), data, tstamp )
           else
 !put field onto global domain
-              allocate( gdata(domain%global%start_index:domain%global%end_index,size(data,2)) )
-              gdata = 0.
-              gdata(domain%compute%start_index:domain%compute%end_index,:) = &
-               data(domain%compute%start_index:domain%compute%end_index,:)
-              call mpp_sum( gdata(domain%compute%start_index,1), size(gdata), domain%pelist )
+              allocate( gdata(isg:ieg,size(data,2)) )
+              call mpp_global_field( domain, data, gdata )
 !all non-0 PEs have passed their data to PE 0 and may now exit
               if( pe.NE.0 )return
               call write_record( unit, field, size(gdata), gdata, tstamp )
           end if
-      else
+      else if( data_has_halo )then
 !store compute domain as contiguous data and pass to write_record
-          allocate( cdata(domain%compute%size,size(data,2)) )
-          cdata(:,:) = data(domain%compute%start_index:domain%compute%end_index,:)
-!write_domain is a fake 2D domain for passing to write_record
-!its x axis is <domain>
-!its y axis is the global undistributed second axis
-          write_domain(1)%x = domain
-          call mpp_define_domains( (/1,size(data,2)/), write_domain%y, flags=GLOBAL_COMPUTE_DOMAIN )
-          call write_record( unit, field, size(cdata), cdata, tstamp, write_domain(1) )
+          allocate( cdata(is:ie,size(data,2)) )
+          cdata(:,:) = data(is-isd+1:ie-isd+1,:)
+!problem here? no domain1D version of write_record
+!          call write_record( unit, field, size(cdata), cdata, tstamp, domain )
+          call mpp_error( FATAL, 'MPP_WRITE: no domain1D version of write_record available.' )
+      else
+!data is already contiguous
+          call write_record( unit, field, size(data), data, tstamp )
       end if
 
       return
@@ -65,7 +69,7 @@
     subroutine MPP_WRITE_1DDECOMP_3D_( unit, field, domain, data, tstamp )
       integer, intent(in) :: unit
       type(fieldtype), intent(in) :: field
-      type(domain1D), intent(in) :: domain
+      type(domain1D), intent(inout) :: domain
       MPP_TYPE_, intent(inout) :: data(:,:,:)
       real, intent(in), optional :: tstamp
 #ifdef use_CRI_pointers
@@ -82,7 +86,7 @@
     subroutine MPP_WRITE_1DDECOMP_4D_( unit, field, domain, data, tstamp )
       integer, intent(in) :: unit
       type(fieldtype), intent(in) :: field
-      type(domain1D), intent(in) :: domain
+      type(domain1D), intent(inout) :: domain
       MPP_TYPE_, intent(inout) :: data(:,:,:,:)
       real, intent(in), optional :: tstamp
 #ifdef use_CRI_pointers
@@ -99,7 +103,7 @@
     subroutine MPP_WRITE_1DDECOMP_5D_( unit, field, domain, data, tstamp )
       integer, intent(in) :: unit
       type(fieldtype), intent(in) :: field
-      type(domain1D), intent(in) :: domain
+      type(domain1D), intent(inout) :: domain
       MPP_TYPE_, intent(inout) :: data(:,:,:,:,:)
       real, intent(in), optional :: tstamp
 #ifdef use_CRI_pointers

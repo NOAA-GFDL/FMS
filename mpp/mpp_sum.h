@@ -5,7 +5,7 @@
       integer, intent(in) :: length
       integer, intent(in), optional :: pelist(:)
       MPP_TYPE_, intent(inout) :: a(*)
-      integer :: peset(3)
+      integer :: n
 #ifdef use_libSMA
 !first <length> words are array, rest are pWrk
       MPP_TYPE_ :: work(length+length/2+1+SHMEM_REDUCE_MIN_WRKDATA_SIZE)
@@ -23,18 +23,8 @@
           if( size(pelist).EQ.1 )return
       end if
 
-      if( PRESENT(pelist) )then
-          call make_pe_set(pelist,peset)
-      else
-#ifdef use_libSMA
-          peset(1) = 0
-          peset(2) = 0
-          peset(3) = npes
-#endif
-#ifdef use_libMPI
-          peset(1) = MPI_COMM_WORLD
-#endif
-      end if
+      n = 1                     !default (world) PEset number
+      if( PRESENT(pelist) )n = get_peset(pelist)
       if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
 #ifdef use_libSMA
 !allocate space from the stack for pwrk and b
@@ -44,13 +34,15 @@
           write( text, '(i8)' )words
           call mpp_error( FATAL, 'MPP_SUM user stack overflow: call mpp_set_stack_size('//text//') from all PEs.' )
       end if
+      mpp_stack_hwm = max( words, mpp_stack_hwm )
       work(1:length) = a(1:length)
-      call SHMEM_BARRIER_ALL()
-      call SHMEM_SUM_( work, work, length, peset(1), peset(2), peset(3), work(length+1), sync )
+      call mpp_sync(pelist)
+      call SHMEM_SUM_( work, work, length, peset(n)%start, peset(n)%log2stride, peset(n)%count, work(length+1), sync )
 #endif use_libSMA
 #ifdef use_libMPI
       if( verbose )call mpp_error( NOTE, 'MPP_SUM: using MPI_ALLREDUCE...' )
-      call MPI_ALLREDUCE( a, work, length, MPI_TYPE_, MPI_SUM, peset(1), error )
+      if( debug )write( stderr,* )'pe, n, peset(n)%id=', pe, n, peset(n)%id
+      call MPI_ALLREDUCE( a, work, length, MPI_TYPE_, MPI_SUM, peset(n)%id, error )
 #endif
       a(1:length) = work(1:length)
       if( current_clock.NE.0 )call increment_current_clock( EVENT_ALLREDUCE, length*MPP_TYPE_BYTELEN_ )

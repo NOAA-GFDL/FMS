@@ -1,14 +1,119 @@
-  function MPP_GLOBAL_REDUCE_3D_( domain, field, position )
-    MPP_TYPE_: MPP_GLOBAL_REDUCE_
+  function MPP_GLOBAL_REDUCE_2D_( domain, field, locus )
+    MPP_TYPE_ :: MPP_GLOBAL_REDUCE_2D_
     type(domain2D), intent(in) :: domain
-    integer, dimension(3), intent(out) :: position
-    MPP_TYPE_, intent(in)  ::  field(domain%x%data%begin:,domain%y%data%begin:,:)
-
-    if( size(field,1).NE.domain%x%data%size .OR. size(field,2).NE.domain%y%data%size ) &
-         call mpp_error( FATAL, 'MPP_GLOBAL_REDUCE: incoming array does not match domain.' )
-
-    call mpp_global_field( domain, field2D, global2D, flags )
-    MPP_GLOBAL_REDUCE_ = reduce(global2D)
-
+    MPP_TYPE_, intent(in) :: field(:,:)
+    integer, intent(out), optional :: locus(2)
+    MPP_TYPE_ :: field3D(size(field,1),size(field,2),1)
+    integer :: locus3D(3)
+#ifdef use_CRI_pointers
+    pointer( ptr, field3D )
+    ptr = LOC(field)
+    if( PRESENT(locus) )then
+        MPP_GLOBAL_REDUCE_2D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D )
+        locus = locus3D(1:2)
+    else
+        MPP_GLOBAL_REDUCE_2D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D )
+    end if
+#else
+    call mpp_error( FATAL, 'MPP_GLOBAL_REDUCE_2D_: requires Cray pointers.' )
+#endif
     return
-  end function MPP_GLOBAL_REDUCE_
+  end function MPP_GLOBAL_REDUCE_2D_
+
+  function MPP_GLOBAL_REDUCE_3D_( domain, field, locus )
+    MPP_TYPE_ :: MPP_GLOBAL_REDUCE_3D_
+    type(domain2D), intent(in) :: domain
+    MPP_TYPE_, intent(in) :: field(0:,0:,:)
+    integer, intent(out), optional :: locus(3)
+    MPP_TYPE_ :: local
+    integer :: here, ioff, joff
+
+    if( .NOT.mpp_domains_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_REDUCE: You must first call mpp_domains_init.' )
+    if( size(field,1).EQ.domain%x%compute%size .AND. size(field,2).EQ.domain%y%compute%size )then
+!field is on compute domain
+        ioff = domain%x%compute%begin
+        joff = domain%y%compute%begin
+    else if( size(field,1).EQ.domain%x%data%size .AND. size(field,2).EQ.domain%y%data%size )then
+!field is on data domain
+        ioff = domain%x%data%begin
+        joff = domain%y%data%begin
+    else
+        call mpp_error( FATAL, 'MPP_GLOBAL_REDUCE_: incoming field array must match either compute domain or data domain.' )
+    end if
+
+!get your local max/min
+    local = REDUCE_VAL_(field)
+!find the global
+    MPP_GLOBAL_REDUCE_3D_ = local
+    call MPP_REDUCE_( MPP_GLOBAL_REDUCE_3D_, domain%list(:)%pe )
+!find locus of the global max/min
+    if( PRESENT(locus) )then
+!which PE is it on? min of all the PEs that have it
+        here = npes+1
+        if( MPP_GLOBAL_REDUCE_3D_.EQ.local )here = pe
+        call mpp_min( here, domain%list(:)%pe )
+!find the locus here
+        if( pe.EQ.here )locus = REDUCE_LOC_(field)
+        locus(1) = locus(1) + ioff
+        locus(2) = locus(2) + joff
+        call mpp_broadcast( locus, 3, here, domain%list(:)%pe )
+    end if
+    return
+  end function MPP_GLOBAL_REDUCE_3D_
+
+  function MPP_GLOBAL_REDUCE_4D_( domain, field, locus )
+    MPP_TYPE_ :: MPP_GLOBAL_REDUCE_4D_
+    type(domain2D), intent(in) :: domain
+    MPP_TYPE_, intent(in) :: field(:,:,:,:)
+    integer, intent(out), optional :: locus(4)
+    MPP_TYPE_ :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4))
+    integer :: locus3D(3)
+#ifdef use_CRI_pointers
+    pointer( ptr, field3D )
+    ptr = LOC(field)
+    if( PRESENT(locus) )then
+        MPP_GLOBAL_REDUCE_4D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D )
+        locus(1:2) = locus3D(1:2)
+        locus(3) = mod(locus3D(3),size(field,3))
+        locus(4) = (locus3D(3)-locus(3))/size(field,3) + 1
+        if( locus(3).EQ.0 )then
+            locus(3) = size(field,3)
+            locus(4) = locus(4) - 1
+        end if
+    else
+        MPP_GLOBAL_REDUCE_4D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D )
+    end if
+#else
+    call mpp_error( FATAL, 'MPP_GLOBAL_REDUCE_4D_: requires Cray pointers.' )
+#endif
+    return
+  end function MPP_GLOBAL_REDUCE_4D_
+
+  function MPP_GLOBAL_REDUCE_5D_( domain, field, locus )
+    MPP_TYPE_ :: MPP_GLOBAL_REDUCE_5D_
+    type(domain2D), intent(in) :: domain
+    MPP_TYPE_, intent(in) :: field(:,:,:,:,:)
+    integer, intent(out), optional :: locus(5)
+    MPP_TYPE_ :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4)*size(field,5))
+    integer :: locus3D(3)
+#ifdef use_CRI_pointers
+    pointer( ptr, field3D )
+    ptr = LOC(field)
+    if( PRESENT(locus) )then
+        MPP_GLOBAL_REDUCE_5D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D )
+        locus(1:2) = locus3D(1:2)
+        locus(3) = mod(locus3D(3),size(field,3))
+        locus(4) = mod(locus3D(3),size(field,3)*size(field,4))
+        locus(5) = (locus3D(3)-locus(4))/size(field,3)/size(field,4) + 1
+        if( locus(3).EQ.0 )then
+            locus(3) = size(field,3)
+            locus(4) = locus(4) - 1
+        end if
+    else
+        MPP_GLOBAL_REDUCE_5D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D )
+    end if
+#else
+    call mpp_error( FATAL, 'MPP_GLOBAL_REDUCE_5D_: requires Cray pointers.' )
+#endif
+    return
+  end function MPP_GLOBAL_REDUCE_5D_

@@ -27,9 +27,9 @@ module mpp_io_mod
   private
 
   character(len=128), private :: version= &
-       '$Id: mpp_io.F90,v 6.1 2001/07/05 17:55:43 fms Exp $'
+       '$Id: mpp_io.F90,v 6.4 2001/10/25 17:55:32 fms Exp $'
   character(len=128), private :: name= &
-       '$Name: eugene $'
+       '$Name: fez $'
 
 #ifdef SGICRAY
 !see intro_io(3F): to see why these values are used rather than 5,6,0
@@ -40,18 +40,29 @@ module mpp_io_mod
   integer, private :: pe, npes
 
   type, public :: axistype
+     private
      character(len=128) :: name
      character(len=128) :: units
      character(len=256) :: longname
      character(len=8) :: cartesian
      integer :: sense, len           !+/-1, depth or height?
-     type(domain1D), pointer :: domain !if pointer is associated, it is a distributed data axis
+     type(domain1D) :: domain !if pointer is associated, it is a distributed data axis
      real, pointer :: data(:)   !axis values (not used if time axis)
      integer :: id, did, type, natt         !id is the "variable ID", did is the "dimension ID": netCDF requires 2 IDs for axes
      type(atttype), pointer :: Att(:)
   end type axistype
 
+  type, public :: atttype
+     private
+     integer :: type, len
+     character(len=128) :: name
+     character(len=256)  :: catt
+! just use type conversion for integers
+     real, pointer :: fatt(:)
+  end type atttype
+
   type, public :: fieldtype
+     private
      character(len=128) :: name
      character(len=128) :: units
      character(len=256) :: longname
@@ -66,7 +77,7 @@ module mpp_io_mod
      type(atttype), pointer :: Att(:)
   end type fieldtype
 
-  type, public :: filetype
+  type, private :: filetype
      character(len=256) :: name
      integer :: action, format, access, threading, fileset, record, ncid
      logical :: opened, initialized, nohdrs
@@ -82,25 +93,16 @@ module mpp_io_mod
 
 ! additional elements of filetype for mpp_read (ignored for mpp_write)
      integer :: ndim, nvar, natt  ! number of dimensions, non-dimension variables and global attributes
-     type( fieldtype), pointer ::    Var(:)
-     type(   atttype), pointer ::    Att(:)
 ! redundant axis types stored here and in associated fieldtype
 ! some axes are not used by any fields, i.e. "edges"
-     type(   axistype), pointer ::    Axis(:)
+     type(axistype), pointer  :: axis(:)
+     type(fieldtype), pointer :: var(:)
+     type(atttype), pointer   :: att(:)
   end type filetype
 
-  type, public :: atttype
-     sequence
-     integer :: type, len
-     character(len=128) :: name
-     character(len=256)  :: catt
-! just use type conversion for integers
-     real, pointer :: fatt(:)
-  end type atttype
-
+  type(axistype), public  :: default_axis !provided to users with default components
   type(fieldtype), public :: default_field !provided to users with default components
-  type(axistype), public :: default_axis !provided to users with default components
-  type(atttype), public :: default_att !provided to users with default components
+  type(atttype), public   :: default_att !provided to users with default components
 !action on open
   integer, parameter, public :: MPP_WRONLY=100, MPP_RDONLY=101, MPP_APPEND=102, MPP_OVERWR=103
 !format
@@ -111,9 +113,7 @@ module mpp_io_mod
   integer, parameter, public :: MPP_SINGLE=400, MPP_MULTI=401
 !action on close
   integer, parameter, public :: MPP_DELETE=501, MPP_COLLECT=502
-!attribute format types
-  integer, parameter, public :: MPP_CHAR=2, MPP_FLOAT=3
- 
+
   type(filetype), private, allocatable :: mpp_file(:)
   integer, private :: records_per_pe
   integer, private :: maxunits, unit_begin, unit_end
@@ -172,11 +172,26 @@ module mpp_io_mod
      module procedure mpp_read_0D
   end interface
 
+  interface mpp_get_id
+     module procedure mpp_get_axis_id
+     module procedure mpp_get_field_id
+  end interface
 
+  interface mpp_get_atts
+     module procedure mpp_get_global_atts
+     module procedure mpp_get_field_atts
+     module procedure mpp_get_axis_atts
+  end interface
 
-  public :: mpp_close, mpp_flush, mpp_get_iospec, mpp_get_ncid, mpp_get_unit_range, mpp_io_init, mpp_io_exit, mpp_open, &
-            mpp_set_unit_range, mpp_write, mpp_write_meta, mpp_read, mpp_get_info, mpp_get_atts, &
-            mpp_get_fields, mpp_get_times, mpp_get_axes, mpp_copy_meta, mpp_get_recdimid
+  interface mpp_modify_meta
+!     module procedure mpp_modify_att_meta
+     module procedure mpp_modify_field_meta
+     module procedure mpp_modify_axis_meta
+  end interface
+
+  public :: mpp_close, mpp_flush, mpp_get_iospec, mpp_get_id, mpp_get_ncid, mpp_get_unit_range, mpp_io_init, mpp_io_exit, &
+            mpp_open, mpp_set_unit_range, mpp_write, mpp_write_meta, mpp_read, mpp_get_info, mpp_get_atts, &
+            mpp_get_fields, mpp_get_times, mpp_get_axes, mpp_copy_meta, mpp_get_recdimid, mpp_get_axis_data, mpp_modify_meta
 
   private :: read_record, mpp_read_meta
 
@@ -361,8 +376,7 @@ module mpp_io_mod
       integer, intent(in), optional :: pelist(:) !default ALL
 
       character(len=16) :: act, acc, for, pos
-      integer :: &
-           action_flag, form_flag, access_flag, threading_flag, fileset_flag
+      integer :: action_flag, form_flag, access_flag, threading_flag, fileset_flag
       logical :: exists
       character(len=64) :: filespec
       type(axistype) :: unlim    !used by netCDF with mpp_append
@@ -507,7 +521,7 @@ module mpp_io_mod
               end if
               if( verbose )print '(a,i3,i16,i4)', 'MPP_OPEN: append to existing netCDF file: pe, ncid, time_axis_id=',&
                    pe, mpp_file(unit)%ncid, mpp_file(unit)%id
-	  else if (action_flag.EQ.MPP_RDONLY) then
+	  else if( action_flag.EQ.MPP_RDONLY )then
 	      error = NF_OPEN( trim(mpp_file(unit)%name), NF_NOWRITE, mpp_file(unit)%ncid ); call netcdf_err(error)
 	      if( verbose )print '(a,i3,i16,i4)', 'MPP_OPEN: opening existing netCDF file: pe, ncid, time_axis_id=',&
                    pe, mpp_file(unit)%ncid, mpp_file(unit)%id
@@ -638,7 +652,7 @@ module mpp_io_mod
 !     character(len=128) :: units                                            !
 !     character(len=256) :: longname                                         !
 !     integer :: sense           !+/-1, depth or height?                     !
-!     type(domain1D), pointer :: domain                                      !
+!     type(domain1D) :: domain                                      !
 !     real, pointer :: data(:) !axis values (not used if time axis)          !
 !     integer :: id                                                          !
 !  end type axistype                                                         !
@@ -702,7 +716,7 @@ module mpp_io_mod
 !     character(len=*), intent(in) :: name, units, longname                  !
 !     character(len=*), intent(in), optional :: cartesian                    !
 !     integer, intent(in), optional :: sense                                 !
-!     type(domain1D), intent(in), optional, target :: domain                 !
+!     type(domain1D), intent(in), optional :: domain                 !
 !     real, intent(in), optional :: data(:)                                  !
 !                                                                            !
 !    This form defines a time or space axis. Metadata corresponding to the   !
@@ -848,9 +862,9 @@ module mpp_io_mod
       character(len=*), intent(in) :: name, units, longname
       character(len=*), intent(in), optional :: cartesian
       integer, intent(in), optional :: sense
-      type(domain1D), intent(in), optional, target :: domain
+      type(domain1D), intent(in), optional :: domain
       real, intent(in), optional :: data(:)
-
+      integer :: is, ie, isg, ieg
 
       if( .NOT.mpp_io_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
@@ -861,20 +875,28 @@ module mpp_io_mod
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
 
 !pre-existing pointers need to be nullified
-      if( ASSOCIATED(axis%domain) )NULLIFY(axis%domain)
-      if( ASSOCIATED(axis%data)   )NULLIFY(axis%data)
+      if( ASSOCIATED(axis%data) )NULLIFY(axis%data)
 !load axistype
       axis%name     = name
       axis%units    = units
       axis%longname = longname
       if( PRESENT(cartesian) )axis%cartesian = cartesian
       if( PRESENT(sense)     )axis%sense     = sense
-      if( PRESENT(domain)    )axis%domain => domain
+      if( PRESENT(domain)    )then
+          axis%domain = domain
+          call mpp_get_global_domain( domain, isg, ieg )
+          call mpp_get_compute_domain( domain, is, ie )
+      else
+          axis%domain = NULL_DOMAIN1D
+          if( PRESENT(data) )then
+             isg=1; ieg=size(data); is=isg; ie=ieg
+          endif
+      end if
       if( PRESENT(data) )then
           if( PRESENT(domain) )then
-              if( size(data).NE.domain%global%size ) &
+              if( size(data).NE.ieg-isg+1 ) &
                    call mpp_error( FATAL, 'MPP_WRITE_META_AXIS: size(data).NE.domain%global%size.' )
-              allocate( axis%data(domain%global%start_index:domain%global%end_index) )
+              allocate( axis%data(isg:ieg) )
           else
               allocate( axis%data(size(data)) )
           end if
@@ -886,8 +908,8 @@ module mpp_io_mod
 #ifdef use_netCDF
 !write axis def
           if( ASSOCIATED(axis%data) )then !space axis
-              if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. ASSOCIATED(axis%domain) )then
-                  error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, axis%domain%compute%size, axis%did )
+              if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
+                  error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, ie-is+1,         axis%did )
               else
                   error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, size(axis%data), axis%did )
               end if
@@ -910,8 +932,8 @@ module mpp_io_mod
           call write_attribute( unit, trim(text), cval=axis%name )
           write( text, '(a,i4,a)' )'AXIS ', axis%id, ' size'
           if( ASSOCIATED(axis%data) )then !space axis
-              if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. ASSOCIATED(axis%domain) )then
-                  call write_attribute( unit, trim(text), ival=(/axis%domain%compute%size/) )
+              if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
+                  call write_attribute( unit, trim(text), ival=(/ie-is+1/) )
               else
                   call write_attribute( unit, trim(text), ival=(/size(axis%data)/) )
               end if
@@ -934,10 +956,8 @@ module mpp_io_mod
           end if
 !silently ignore values of sense other than +/-1.
       end if
-      if( mpp_file(unit)%threading.EQ.MPP_MULTI .AND. mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. ASSOCIATED(axis%domain) )then
-          call mpp_write_meta( unit, axis%id, 'domain_decomposition',                 &
-               ival=(/ axis%domain%global%start_index,  axis%domain%global%end_index, &
-                       axis%domain%compute%start_index, axis%domain%compute%end_index /) )
+      if( mpp_file(unit)%threading.EQ.MPP_MULTI .AND. mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
+          call mpp_write_meta( unit, axis%id, 'domain_decomposition', ival=(/isg,ieg,is,ie/) )
       end if
       if( verbose )print '(a,2i3,x,a,2i3)', 'MPP_WRITE_META: Wrote axis metadata, pe, unit, axis%name, axis%id, axis%did=', &
            pe, unit, trim(axis%name), axis%id, axis%did 
@@ -1167,7 +1187,6 @@ module mpp_io_mod
       else
           call mpp_error( FATAL, 'WRITE_ATTRIBUTE_NETCDF: one of rval, ival, cval must be present.' )
       end if
-
 #endif use_netCDF 
       return
     end subroutine write_attribute_netcdf
@@ -1277,6 +1296,7 @@ module mpp_io_mod
       integer, intent(in) :: unit
       type(axistype), intent(in) :: axis
       type(fieldtype) :: field
+      integer :: is, ie
 
       if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
@@ -1288,16 +1308,16 @@ module mpp_io_mod
       field%axes(1) = axis
       allocate( field%size(1) )
       field%id = axis%id
-      if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. ASSOCIATED(axis%domain) )then
-          field%size(1) = axis%domain%compute%size
-          call write_record( unit, field, axis%domain%compute%size, axis%data(axis%domain%compute%start_index:) )
+      if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
+          call mpp_get_compute_domain( axis%domain, is, ie )
+          field%size(1) = ie-is+1
+          call write_record( unit, field, field%size(1), axis%data(is:) )
       else
           field%size(1) = size(axis%data)
-          call write_record( unit, field, size(axis%data),          axis%data )
+          call write_record( unit, field, field%size(1), axis%data )
       end if
       return
     end subroutine mpp_write_axis
-
 
     subroutine write_record( unit, field, nwords, data, time_in, domain )
 !routine that is finally called by all mpp_write routines to perform the write
@@ -1330,7 +1350,7 @@ module mpp_io_mod
 #ifdef __sgi
       real(FLOAT_KIND) :: data_r4(nwords)
 #endif
-      integer :: i
+      integer :: i, is, ie, js, je, isg, ieg, jsg, jeg, isizc, jsizc, isizg, jsizg
 
       if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
@@ -1397,19 +1417,21 @@ module mpp_io_mod
              if( i.EQ.field%time_axis_index )start(i) = mpp_file(unit)%time_level
           end do
           if( PRESENT(domain) )then
-              axsiz(1) = domain%x%compute%size
-              axsiz(2) = domain%y%compute%size
+              call mpp_get_compute_domain( domain, is,  ie,  js,  je,  xsize=isizc, ysize=jsizc )
+              call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg, xsize=isizg, ysize=jsizg )
+              axsiz(1) = isizc
+              axsiz(2) = jsizc
               if( npes.GT.1 .AND. mpp_file(unit)%fileset.EQ.MPP_SINGLE )then
-                  start(1) = domain%x%compute%start_index - domain%x%global%start_index + 1
-                  start(2) = domain%y%compute%start_index - domain%y%global%start_index + 1
+                  start(1) = is - isg + 1
+                  start(2) = js - jsg + 1
               else
-                  if( domain%x%compute%size.NE.domain%x%compute%end_index-domain%x%compute%start_index+1 )then
-                      start(1) = domain%x%compute%start_index - domain%x%global%start_index + 1
-                      axsiz(1) = domain%x%compute%end_index - domain%x%compute%start_index + 1
+                  if( isizc.NE.ie-is+1 )then
+                      start(1) = is - isg + 1
+                      axsiz(1) = ie - is + 1
                   end if
-                  if( domain%y%compute%size.NE.domain%y%compute%end_index-domain%y%compute%start_index+1 )then
-                      start(2) = domain%y%compute%start_index - domain%y%global%start_index + 1
-                      axsiz(2) = domain%y%compute%end_index - domain%y%compute%start_index + 1
+                  if( jsizc.NE.je-js+1 )then
+                      start(2) = js - jsg + 1
+                      axsiz(2) = je - js + 1
                   end if
               end if
           end if
@@ -1430,8 +1452,7 @@ module mpp_io_mod
       else                      !non-netCDF
 !subdomain contains (/is,ie,js,je/)
           if( PRESENT(domain) )then
-              subdomain = (/ domain%x%compute%start_index, domain%x%compute%end_index, &
-                             domain%y%compute%start_index, domain%y%compute%end_index /)
+              subdomain(:) = (/ is, ie, js, je /)
           else
               subdomain(:) = -1    ! -1 means use global value from axis metadata
           end if
@@ -1478,10 +1499,10 @@ module mpp_io_mod
 
       return
     end subroutine write_record
-    
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
-!                               MPP_COPY_META                               !
+!                          MPP_COPY_META                               !
 !                                                                      !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     subroutine mpp_copy_meta_global( unit, gatt )
@@ -1503,14 +1524,14 @@ module mpp_io_mod
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
 #ifdef use_netCDF
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
-         if (gatt%type .eq. NF_CHAR) then
+         if( gatt%type.EQ.NF_CHAR )then
             len = gatt%len
             call write_attribute_netcdf( unit, NF_GLOBAL, gatt%name, cval=gatt%catt(1:len) )
          else
             call write_attribute_netcdf( unit, NF_GLOBAL, gatt%name, rval=gatt%fatt )
          endif
       else
-         if (gatt%type .eq. NF_CHAR) then
+         if( gatt%type.EQ.NF_CHAR )then
             len=gatt%len
             call write_attribute( unit, 'GLOBAL '//trim(gatt%name), cval=gatt%catt(1:len) )
          else
@@ -1518,7 +1539,7 @@ module mpp_io_mod
          endif
      end if
 #else
-     call mpp_error(FATAL,'MPP_READ currently requires use_netCDF option')
+     call mpp_error( FATAL, 'MPP_READ currently requires use_netCDF option' )
 #endif
       return
     end subroutine mpp_copy_meta_global
@@ -1530,8 +1551,9 @@ module mpp_io_mod
 
       integer, intent(in) :: unit
       type(axistype), intent(inout) :: axis
-      type(domain1D), intent(in), optional, target :: domain
-      integer :: i,len
+      type(domain1D), intent(in), optional :: domain
+      character(len=512) :: text
+      integer :: i, len, is, ie, isg, ieg
 
       if( .NOT.mpp_io_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
@@ -1542,8 +1564,11 @@ module mpp_io_mod
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
 
 ! redefine domain if present
-
-      if( PRESENT(domain)    )axis%domain => domain
+      if( PRESENT(domain) )then
+          axis%domain = domain
+      else
+          axis%domain = NULL_DOMAIN1D
+      end if
 
 #ifdef use_netCDF      
 !write metadata
@@ -1551,8 +1576,10 @@ module mpp_io_mod
 
 !write axis def
           if( ASSOCIATED(axis%data) )then !space axis
-              if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. ASSOCIATED(axis%domain) )then
-                  error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, axis%domain%compute%size, axis%did )
+              if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
+                  call mpp_get_compute_domain( axis%domain, is, ie )
+                  call mpp_get_global_domain( axis%domain, isg, ieg )
+                  error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, ie-is+1, axis%did )
               else
                   error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, size(axis%data),          axis%did )
               end if
@@ -1573,8 +1600,8 @@ module mpp_io_mod
           call write_attribute( unit, trim(text), cval=axis%name )
           write( text, '(a,i4,a)' )'AXIS ', axis%id, ' size'
           if( ASSOCIATED(axis%data) )then !space axis
-              if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. ASSOCIATED(axis%domain) )then
-                  call write_attribute( unit, trim(text), ival=(/axis%domain%compute%size/) )
+              if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
+                  call write_attribute( unit, trim(text), ival=(/ie-is+1/) )
               else
                   call write_attribute( unit, trim(text), ival=(/size(axis%data)/) )
               end if
@@ -1588,8 +1615,8 @@ module mpp_io_mod
 !write axis attributes
 
       do i=1,axis%natt
-         if (axis%Att(i)%name .ne. default_att%name) then
-            if (axis%Att(i)%type .eq. NF_CHAR) then
+         if( axis%Att(i)%name.NE.default_att%name )then
+            if( axis%Att(i)%type.EQ.NF_CHAR )then
                len = axis%Att(i)%len
                call mpp_write_meta( unit, axis%id, axis%Att(i)%name, cval=axis%Att(i)%catt(1:len) )
             else
@@ -1598,20 +1625,18 @@ module mpp_io_mod
          endif
       enddo
 
-      if( mpp_file(unit)%threading.EQ.MPP_MULTI .AND. mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. ASSOCIATED(axis%domain) )then
-          call mpp_write_meta( unit, axis%id, 'domain_decomposition',                 &
-               ival=(/ axis%domain%global%start_index,  axis%domain%global%end_index, &
-                       axis%domain%compute%start_index, axis%domain%compute%end_index /) )
+      if( mpp_file(unit)%threading.EQ.MPP_MULTI .AND. mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
+          call mpp_write_meta( unit, axis%id, 'domain_decomposition', ival=(/isg,ieg,is,ie/) )
       end if
       if( verbose )print '(a,2i3,x,a,2i3)', 'MPP_WRITE_META: Wrote axis metadata, pe, unit, axis%name, axis%id, axis%did=', &
            pe, unit, trim(axis%name), axis%id, axis%did 
 #else
-      call mpp_error(FATAL,'MPP_READ currently requires use_netCDF option')
+      call mpp_error( FATAL, 'MPP_READ currently requires use_netCDF option' )
 #endif      
       return
     end subroutine mpp_copy_meta_axis    
 
-    subroutine mpp_copy_meta_field( unit, field, axes)
+    subroutine mpp_copy_meta_field( unit, field, axes )
 !useful for copying field metadata from a previous call to mpp_read_meta
 !define field: must have already called mpp_write_meta(axis) for each axis
       integer, intent(in) :: unit
@@ -1676,7 +1701,7 @@ module mpp_io_mod
       else
           varnum = varnum + 1
           field%id = varnum
-          if( field%pack .ne. default_field%pack ) &
+          if( field%pack.NE.default_field%pack ) &
            call mpp_error( WARNING, 'MPP_WRITE_META: Packing is currently available only on netCDF files.' )
 !write field def
           write( text, '(a,i4,a)' )'FIELD ', field%id, ' name'
@@ -1688,7 +1713,7 @@ module mpp_io_mod
       call mpp_write_meta( unit, field%id, 'long_name', cval=field%longname )
       call mpp_write_meta( unit, field%id, 'units',     cval=field%units    )
 !all real attributes must be written as packed
-      if( (field%min .ne. default_field%min) .AND. (field%max .ne. default_field%max) )then
+      if( (field%min.NE.default_field%min) .AND. (field%max.NE.default_field%max) )then
           if( field%pack.EQ.1 .OR. field%pack.EQ.2 )then
               call mpp_write_meta( unit, field%id, 'valid_range', rval=(/field%min,field%max/), pack=field%pack )
           else
@@ -1696,14 +1721,14 @@ module mpp_io_mod
               b = nint((field%max-field%add)/field%scale)
               call mpp_write_meta( unit, field%id, 'valid_range', rval=(/a,  b  /), pack=field%pack )
           end if
-      else if( field%min .ne. default_field%min )then
+      else if( field%min.NE.default_field%min )then
           if( field%pack.EQ.1 .OR. field%pack.EQ.2 )then
               call mpp_write_meta( unit, field%id, 'valid_min', rval=field%min, pack=field%pack )
           else
               a = nint((field%min-field%add)/field%scale)
               call mpp_write_meta( unit, field%id, 'valid_min', rval=a, pack=field%pack )
           end if
-      else if( field%max .ne. default_field%max )then
+      else if( field%max.NE.default_field%max )then
           if( field%pack.EQ.1 .OR. field%pack.EQ.2 )then
               call mpp_write_meta( unit, field%id, 'valid_max', rval=field%max, pack=field%pack )
           else
@@ -1711,7 +1736,7 @@ module mpp_io_mod
               call mpp_write_meta( unit, field%id, 'valid_max', rval=a, pack=field%pack )
           end if
       end if
-      if( field%missing .ne. default_field%missing )then
+      if( field%missing.NE.default_field%missing )then
           if( field%pack.EQ.1 .OR. field%pack.EQ.2 )then
               call mpp_write_meta( unit, field%id, 'missing_value', rval=field%missing, pack=field%pack )
           else
@@ -1719,7 +1744,7 @@ module mpp_io_mod
               call mpp_write_meta( unit, field%id, 'missing_value', rval=a, pack=field%pack )
           end if
       end if
-      if( field%fill .ne. default_field%fill )then
+      if( field%fill.NE.default_field%fill )then
           if( field%pack.EQ.1 .OR. field%pack.EQ.2 )then
               call mpp_write_meta( unit, field%id, '_FillValue', rval=field%missing, pack=field%pack )
           else
@@ -1729,8 +1754,8 @@ module mpp_io_mod
       end if
       if( field%pack.NE.1 .AND. field%pack.NE.2 )then
           call mpp_write_meta( unit, field%id, 'packing', ival=field%pack )
-          if( field%scale .ne. default_field%scale )call mpp_write_meta( unit, field%id, 'scale_factor',  rval=field%scale )
-          if( field%add .ne. default_field%add   )call mpp_write_meta( unit, field%id, 'add_offset',    rval=field%add   )
+          if( field%scale.NE.default_field%scale )call mpp_write_meta( unit, field%id, 'scale_factor',  rval=field%scale )
+          if( field%add.NE.default_field%add   )call mpp_write_meta( unit, field%id, 'add_offset',    rval=field%add   )
       end if
       if( verbose )print '(a,2i3,x,a,i3)', 'MPP_WRITE_META: Wrote field metadata: pe, unit, field%name, field%id=', &
            pe, unit, trim(field%name), field%id 
@@ -1751,7 +1776,7 @@ module mpp_io_mod
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #include <mpp_read_2Ddecomp.h>
 
-   subroutine read_record( unit, field, nwords, data, time_level, domain )
+    subroutine read_record( unit, field, nwords, data, time_level, domain )
 !routine that is finally called by all mpp_read routines to perform the read
 !a non-netCDF record contains:
 !      field ID
@@ -1789,7 +1814,8 @@ module mpp_io_mod
 #endif      
 
       real(kind=8) :: r8vals(nwords)
-      integer :: i, error
+
+      integer :: i, error, is, ie, js, je, isg, ieg, jsg, jeg
 
       if (.not.PRESENT(time_level)) then
           tlevel = 0
@@ -1801,7 +1827,7 @@ module mpp_io_mod
       if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'READ_RECORD: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'READ_RECORD: invalid unit number.' )
       if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.0 )return
-!      if( mpp_file(unit)%fileset.EQ.MPP_MULTI )call mpp_error(FATAL,'READ_RECORD: multiple filesets not supported for MPP_READ')
+      if( mpp_file(unit)%fileset.EQ.MPP_MULTI )call mpp_error( FATAL, 'READ_RECORD: multiple filesets not supported for MPP_READ' )
 
       if( .NOT.mpp_file(unit)%initialized ) call mpp_error( FATAL, 'MPP_READ: must first call mpp_read_meta.' )
 
@@ -1839,33 +1865,31 @@ module mpp_io_mod
              if( field%axes(i)%did.EQ.field%time_axis_index )start(i) = tlevel
           end do
           if( PRESENT(domain) )then
-              axsiz(1) = domain%x%compute%size
-              axsiz(2) = domain%y%compute%size
+              call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
+              call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg )
+              axsiz(1) = ie-is+1
+              axsiz(2) = je-js+1
               if( npes.GT.1 .AND. mpp_file(unit)%fileset.EQ.MPP_SINGLE )then
-                  start(1) = domain%x%compute%start_index - domain%x%global%start_index + 1
-                  start(2) = domain%y%compute%start_index - domain%y%global%start_index + 1
+                  start(1) = is - isg + 1
+                  start(2) = js - jsg + 1
               else
-                  if( domain%x%compute%end_index-domain%x%compute%start_index+1.NE.domain%x%compute%size )then
-                      start(1) = domain%x%compute%start_index - domain%x%global%start_index + 1
-                      axsiz(1) = domain%x%compute%end_index - domain%x%compute%start_index + 1
+                  if( ie-is+1.NE.ie-is+1 )then
+                      start(1) = is - isg + 1
+                      axsiz(1) = ie - is + 1
                   end if
-                  if( domain%y%compute%end_index-domain%y%compute%start_index+1.NE.domain%y%compute%size )then
-                      start(2) = domain%y%compute%start_index - domain%y%global%start_index + 1
-                      axsiz(2) = domain%y%compute%end_index - domain%y%compute%start_index + 1
+                  if( je-js+1.NE.je-js+1 )then
+                      start(2) = js - jsg + 1
+                      axsiz(2) = je - js + 1
                   end if
               end if
           end if
 
-          if( verbose.or.debug) print '(a,2i3,12i4)', &
-          'READ_RECORD: PE, unit, start, axsiz=',pe, unit, start, axsiz
-
-          if( verbose.or.debug) print '(a,2i3,1x,i6)', &
-          'READ_RECORD: PE, unit, nwords=',pe, unit, nwords
+          if( verbose )print '(a,2i3,i6,12i4)', 'READ_RECORD: PE, unit, nwords, start, axsiz=', pe, unit, nwords, start, axsiz
 
           select case (field%type)
              case(NF_BYTE)
 ! use type conversion 
-                call mpp_error(FATAL,'MPP_READ: does not support NF_BYTE packing')
+                call mpp_error( FATAL, 'MPP_READ: does not support NF_BYTE packing' )
              case(NF_SHORT)
                 error = NF_GET_VARA_INT2(mpp_file(unit)%ncid, field%id,start,axsiz,i2vals);call netcdf_err(error)
                  data(:)=i2vals(:)*field%scale + field%add
@@ -1879,15 +1903,15 @@ module mpp_io_mod
                 error = NF_GET_VARA_DOUBLE(mpp_file(unit)%ncid, field%id,start,axsiz,r8vals);call netcdf_err(error)
                 data(:)=r8vals(:)
              case default
-                call mpp_error(FATAL,'MPP_READ: invalid pack value')
+                call mpp_error( FATAL, 'MPP_READ: invalid pack value' )
           end select
       else                      !non-netCDF
 !subdomain contains (/is,ie,js,je/)
-          call mpp_error(FATAL,'Currently dont support non-NetCDF mpp read')
+          call mpp_error( FATAL, 'Currently dont support non-NetCDF mpp read' )
 
       end if
 #else
-      call mpp_error(FATAL,'MPP_READ currently requires use_netCDF option')
+      call mpp_error( FATAL, 'MPP_READ currently requires use_netCDF option' )
 #endif      
       return
     end subroutine read_record
@@ -1963,7 +1987,7 @@ module mpp_io_mod
 
 #ifdef use_netCDF      
 
-      if (mpp_file(unit)%format == MPP_NETCDF) then
+      if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
         ncid = mpp_file(unit)%ncid
         error = NF_INQ(ncid,ndim, nvar_total,&
                       natt, recdim);call netcdf_err(error)
@@ -1977,13 +2001,13 @@ module mpp_io_mod
 ! if no recdim exists, recdimid = -1
 ! variable id of unlimdim and length
 !
-        if (recdim .ne. -1) then 
+        if( recdim.NE.-1 )then 
            error = NF_INQ_DIM( ncid, recdim, unlimname, mpp_file(unit)%time_level );call netcdf_err(error)
            error = NF_INQ_VARID( ncid, unlimname, mpp_file(unit)%id ); call netcdf_err(error)
         else
-           mpp_file(unit)%time_level = 0 ! set to zero so mpp_get_info returns ntime=0 if no time axis present
+           mpp_file(unit)%time_level = -1 ! set to zero so mpp_get_info returns ntime=0 if no time axis present
         endif
-        
+
         allocate(mpp_file(unit)%Att(natt))
         allocate(Axis(ndim))
         allocate(dimids(ndim))
@@ -2033,23 +2057,23 @@ module mpp_io_mod
               case (NF_SHORT)
                  allocate(mpp_file(unit)%Att(i)%fatt(len))
                  error=NF_GET_ATT_INT2(ncid,NF_GLOBAL,name,i2vals);call netcdf_err(error)
-                 if (verbose) print *, 'GLOBAL ATT ',trim(name),' ',i2vals(1:len)
+                 if( verbose )print *, 'GLOBAL ATT ',trim(name),' ',i2vals(1:len)
                  mpp_file(unit)%Att(i)%fatt(1:len)=i2vals(1:len)
               case (NF_INT)
                  allocate(mpp_file(unit)%Att(i)%fatt(len))
                  error=NF_GET_ATT_INT(ncid,NF_GLOBAL,name,ivals);call netcdf_err(error)
-                 if (verbose) print *, 'GLOBAL ATT ',trim(name),' ',ivals(1:len)
+                 if( verbose )print *, 'GLOBAL ATT ',trim(name),' ',ivals(1:len)
                  mpp_file(unit)%Att(i)%fatt(1:len)=ivals(1:len)
               case (NF_FLOAT)
                  allocate(mpp_file(unit)%Att(i)%fatt(len))
                  error=NF_GET_ATT_REAL(ncid,NF_GLOBAL,name,rvals);call netcdf_err(error)
                  mpp_file(unit)%Att(i)%fatt(1:len)=rvals(1:len)
-                 if (verbose) print *, 'GLOBAL ATT ',trim(name),' ',mpp_file(unit)%Att(i)%fatt(1:len)
+                 if( verbose )print *, 'GLOBAL ATT ',trim(name),' ',mpp_file(unit)%Att(i)%fatt(1:len)
               case (NF_DOUBLE)
                  allocate(mpp_file(unit)%Att(i)%fatt(len))
                  error=NF_GET_ATT_DOUBLE(ncid,NF_GLOBAL,name,r8vals);call netcdf_err(error)
                  mpp_file(unit)%Att(i)%fatt(1:len)=r8vals(1:len)
-                 if (verbose) print *, 'GLOBAL ATT ',trim(name),' ',mpp_file(unit)%Att(i)%fatt(1:len)
+                 if( verbose )print *, 'GLOBAL ATT ',trim(name),' ',mpp_file(unit)%Att(i)%fatt(1:len)
            end select
 
         enddo
@@ -2069,17 +2093,17 @@ module mpp_io_mod
            error=NF_INQ_VAR(ncid,i,name,type,nvdims,dimids,nvatts);call netcdf_err(error)
            isdim=.false.
            do j=1,ndim
-              if (trim(name) == trim(Axis(j)%name)) isdim=.true.
+              if( trim(name).EQ.trim(Axis(j)%name) )isdim=.true.
            enddo
 
-           if (isdim) then
+           if( isdim )then
               error=NF_INQ_DIMID(ncid,name,dimid);call netcdf_err(error)
               Axis(dimid)%type = type
               Axis(dimid)%did = dimid
               Axis(dimid)%id = i
               Axis(dimid)%natt = nvatts
               ! get axis values
-              if (i .ne. mpp_file(unit)%id) then   ! non-record dims
+              if( i.NE.mpp_file(unit)%id )then   ! non-record dims
                  select case (type)
                  case (NF_FLOAT)
                     len=Axis(dimid)%len
@@ -2092,7 +2116,7 @@ module mpp_io_mod
                     error = NF_GET_VAR_DOUBLE(ncid,i,r8vals);call netcdf_err(error)
                     Axis(dimid)%data(1:len) = r8vals(1:len)
                  case default
-                    call mpp_error(FATAL,'Invalid data type for dimension')
+                    call mpp_error( FATAL, 'Invalid data type for dimension' )
                  end select
              else
                  len = mpp_file(unit)%time_level
@@ -2105,11 +2129,11 @@ module mpp_io_mod
                     error = NF_GET_VAR_DOUBLE(ncid,i,r8vals);call netcdf_err(error)
                     mpp_file(unit)%time_values(1:len) = r8vals(1:len)
                  case default
-                    call mpp_error(FATAL,'Invalid data type for dimension')
+                    call mpp_error( FATAL, 'Invalid data type for dimension' )
                  end select
               endif
               ! assign dimension atts
-              if (nvatts > 0) allocate(Axis(dimid)%Att(nvatts))
+              if( nvatts.GT.0 )allocate(Axis(dimid)%Att(nvatts))
 
               do j=1,nvatts
                  Axis(dimid)%Att(j) = default_att
@@ -2127,31 +2151,30 @@ module mpp_io_mod
                  case (NF_CHAR)
                     if (len.gt.512) call mpp_error(FATAL,'DIM ATT too long') 
                     error=NF_GET_ATT_TEXT(ncid,i,trim(attname),Axis(dimid)%Att(j)%catt);call netcdf_err(error)
-                    if (verbose) print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%catt(1:len)
+                    if( verbose )print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%catt(1:len)
                     ! store integers in float arrays
                     ! assume dimension data not packed 
                  case (NF_SHORT)
                     allocate(Axis(dimid)%Att(j)%fatt(len))
                     error=NF_GET_ATT_INT2(ncid,i,trim(attname),i2vals);call netcdf_err(error)
                     Axis(dimid)%Att(j)%fatt(1:len)=i2vals(1:len)
-                    if (verbose) print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
+                    if( verbose )print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
                  case (NF_INT)
                     allocate(Axis(dimid)%Att(j)%fatt(len))
                     error=NF_GET_ATT_INT(ncid,i,trim(attname),ivals);call netcdf_err(error)
                     Axis(dimid)%Att(j)%fatt(1:len)=ivals(1:len)
-                    if (verbose) print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
+                    if( verbose )print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
                  case (NF_FLOAT)
                     allocate(Axis(dimid)%Att(j)%fatt(len))
                     error=NF_GET_ATT_REAL(ncid,i,trim(attname),rvals);call netcdf_err(error)
                     Axis(dimid)%Att(j)%fatt(1:len)=rvals(1:len)
-                    if (verbose) print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
+                    if( verbose )print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
                  case (NF_DOUBLE)
-                    allocate(Axis(dimid)%Att(j)%fatt(len))
                     error=NF_GET_ATT_DOUBLE(ncid,i,trim(attname),r8vals);call netcdf_err(error)
                     Axis(dimid)%Att(j)%fatt(1:len)=r8vals(1:len)
-                    if (verbose) print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
+                    if( verbose )print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
                  case default
-                    call mpp_error(FATAL,'Invalid data type for dimension at')                      
+                    call mpp_error( FATAL, 'Invalid data type for dimension at' )                      
                  end select
                  ! assign pre-defined axis attributes
                  select case(trim(attname))
@@ -2163,9 +2186,9 @@ module mpp_io_mod
                     Axis(dimid)%cartesian=Axis(dimid)%Att(j)%catt(1:len)
                  case('positive') 
                     attval = Axis(dimid)%Att(j)%catt(1:len)
-                    if (attval.eq.'down') then
+                    if( attval.eq.'down' )then
                        Axis(dimid)%sense=-1
-                    else if (attval.eq.'up') then
+                    else if( attval.eq.'up' )then
                        Axis(dimid)%sense=1
                     endif
                  end select
@@ -2184,12 +2207,12 @@ module mpp_io_mod
 !          
            isdim=.false.
            do j=1,ndim
-              if (trim(name) == trim(Axis(j)%name)) isdim=.true.
+              if( trim(name).EQ.trim(Axis(j)%name) )isdim=.true.
            enddo
            
-           if (.not.isdim) then
+           if( .not.isdim )then
 ! for non-dimension variables
-              nv=nv+1;if (nv > mpp_file(unit)%nvar) call mpp_error(FATAL,'variable index exceeds number of defined variables')
+              nv=nv+1; if( nv.GT.mpp_file(unit)%nvar )call mpp_error( FATAL, 'variable index exceeds number of defined variables' )
               mpp_file(unit)%Var(nv)%type = type
               mpp_file(unit)%Var(nv)%id = i
               mpp_file(unit)%Var(nv)%name = name
@@ -2203,7 +2226,7 @@ module mpp_io_mod
                 case(NF_DOUBLE)
                    mpp_file(unit)%Var(nv)%pack = 1
                 case default
-                   call mpp_error(FATAL,'Invalid variable type in NetCDF file')
+                   call mpp_error( FATAL, 'Invalid variable type in NetCDF file' )
              end select
 ! assign dimension ids
               mpp_file(unit)%Var(nv)%ndim = nvdims
@@ -2214,7 +2237,7 @@ module mpp_io_mod
               allocate(mpp_file(unit)%Var(nv)%size(nvdims))
 
               do j=1,nvdims
-                 if (dimids(j).eq.mpp_file(unit)%recdimid) then
+                 if( dimids(j).eq.mpp_file(unit)%recdimid )then
                     mpp_file(unit)%Var(nv)%time_axis_index = dimids(j)
                     mpp_file(unit)%Var(nv)%size(j)=1    ! dimid length set to 1 here for consistency w/ mpp_write 
                  else
@@ -2222,7 +2245,7 @@ module mpp_io_mod
                  endif
               enddo
 ! assign variable atts
-              if (nvatts > 0) allocate(mpp_file(unit)%Var(nv)%Att(nvatts))
+              if( nvatts.GT.0 )allocate(mpp_file(unit)%Var(nv)%Att(nvatts))
 
               do j=1,nvatts
                  mpp_file(unit)%Var(nv)%Att(j) = default_att
@@ -2245,24 +2268,24 @@ module mpp_io_mod
                      allocate(mpp_file(unit)%Var(nv)%Att(j)%fatt(len))
                      error=NF_GET_ATT_INT2(ncid,i,trim(attname),i2vals);call netcdf_err(error)
                      mpp_file(unit)%Var(nv)%Att(j)%fatt(1:len)= i2vals(1:len)
-                     if (verbose) print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
+                     if( verbose )print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
                    case (NF_INT)
                      allocate(mpp_file(unit)%Var(nv)%Att(j)%fatt(len))
                      error=NF_GET_ATT_INT(ncid,i,trim(attname),ivals);call netcdf_err(error)
                      mpp_file(unit)%Var(nv)%Att(j)%fatt(1:len)=ivals(1:len)
-                     if (verbose) print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
+                     if( verbose )print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
                    case (NF_FLOAT)
                      allocate(mpp_file(unit)%Var(nv)%Att(j)%fatt(len))
                      error=NF_GET_ATT_REAL(ncid,i,trim(attname),rvals);call netcdf_err(error)
                      mpp_file(unit)%Var(nv)%Att(j)%fatt(1:len)=rvals(1:len)
-                     if (verbose) print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
+                     if( verbose )print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
                    case (NF_DOUBLE)
                      allocate(mpp_file(unit)%Var(nv)%Att(j)%fatt(len))
                      error=NF_GET_ATT_DOUBLE(ncid,i,trim(attname),r8vals);call netcdf_err(error)
                      mpp_file(unit)%Var(nv)%Att(j)%fatt(1:len)=r8vals(1:len)
-                     if (verbose) print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
+                     if( verbose )print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
                    case default
-                        call mpp_error(FATAL,'Invalid data type for variable att')
+                        call mpp_error( FATAL, 'Invalid data type for variable att' )
                  end select
 ! assign pre-defined field attributes
                  select case (trim(attname))
@@ -2284,21 +2307,21 @@ module mpp_io_mod
            endif
         enddo   ! end variable loop
       else
-        call mpp_error(FATAL, 'MPP READ CURRENTLY DOES NOT SUPPORT NON-NETCDF') 
+        call mpp_error( FATAL,  'MPP READ CURRENTLY DOES NOT SUPPORT NON-NETCDF' ) 
       endif
 
       mpp_file(unit)%initialized = .TRUE.
 #else
-      call mpp_error(FATAL,'MPP_READ currently requires use_netCDF option')
+      call mpp_error( FATAL, 'MPP_READ currently requires use_netCDF option' )
 #endif      
       return
     end subroutine mpp_read_meta
 
 
-    subroutine mpp_get_info(unit,ndim,nvar,natt,ntime)
+    subroutine mpp_get_info( unit, ndim, nvar, natt, ntime )
 
       integer, intent(in) :: unit
-      integer, intent(out) :: ndim,nvar,natt,ntime
+      integer, intent(out) :: ndim, nvar, natt, ntime
 
 
       if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_GET_INFO: must first call mpp_io_init.' )
@@ -2314,7 +2337,7 @@ module mpp_io_mod
     end subroutine mpp_get_info
 
      
-    subroutine mpp_get_atts(unit,global_atts)
+    subroutine mpp_get_global_atts( unit, global_atts )
 !
 !  copy global file attributes for use by user
 !
@@ -2323,25 +2346,95 @@ module mpp_io_mod
 
       integer, intent(in) :: unit
       type(atttype) :: global_atts(:)
-
       integer :: natt,i
 
       if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_GET_INFO: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_INFO: invalid unit number.' )
 
-      if (size(global_atts).ne.mpp_file(unit)%natt) &
+      if (size(global_atts).lt.mpp_file(unit)%natt) &
       call mpp_error(FATAL, 'MPP_GET_ATTS: atttype not dimensioned properly in calling routine')
 
       natt = mpp_file(unit)%natt
+      global_atts = default_att
 
       do i=1,natt
          global_atts(i) = mpp_file(unit)%Att(i)
       enddo
 
       return
-   end subroutine mpp_get_atts
+   end subroutine mpp_get_global_atts
 
-    subroutine mpp_get_fields(unit,variables)
+   subroutine mpp_get_field_atts( field, name, units, longname, min, max, missing, ndim, siz, axes, atts )
+
+     type(fieldtype), intent(in) :: field
+     character(len=*), intent(out) , optional :: name, units
+     character(len=*), intent(out), optional :: longname
+     real,intent(out), optional :: min,max,missing
+     integer, intent(out), optional :: ndim
+     integer, intent(out), dimension(:), optional :: siz
+
+     type(atttype), intent(out), optional, dimension(:) :: atts
+     type(axistype), intent(out), optional, dimension(:) :: axes
+
+     integer :: n,m
+
+     if (PRESENT(name)) name = field%name
+     if (PRESENT(units)) units = field%units
+     if (PRESENT(longname)) longname = field%longname
+     if (PRESENT(min)) min = field%min
+     if (PRESENT(max)) max = field%max
+     if (PRESENT(missing)) missing = field%missing
+     if (PRESENT(ndim)) ndim = field%ndim
+     if (PRESENT(atts)) then
+        atts = default_att
+        n = size(atts);m=size(field%Att)
+        if (n.LT.m) call mpp_error(FATAL,'attribute array not large enough in mpp_get_field_atts')
+        atts(1:m) = field%Att(1:m)
+     end if
+     if (PRESENT(axes)) then
+        axes = default_axis
+        n = size(axes);m=field%ndim
+        if (n.LT.m) call mpp_error(FATAL,'axis array not large enough in mpp_get_field_atts')
+        axes(1:m) = field%axes(1:m)
+     end if
+     if (PRESENT(siz)) then
+        siz = -1
+        n = size(siz);m=field%ndim
+        if (n.LT.m) call mpp_error(FATAL,'size array not large enough in mpp_get_field_atts')
+        siz(1:m) = field%size(1:m)
+     end if     
+     return
+   end subroutine mpp_get_field_atts
+
+   subroutine mpp_get_axis_atts( axis, name, units, longname, cartesian, sense, len, natts, atts )
+
+     type(axistype), intent(in) :: axis
+     character(len=*), intent(out) , optional :: name, units
+     character(len=*), intent(out), optional :: longname, cartesian
+     integer,intent(out), optional :: sense, len , natts
+     type(atttype), intent(out), optional, dimension(:) :: atts
+
+     integer :: n,m 
+
+     if (PRESENT(name)) name = axis%name
+     if (PRESENT(units)) units = axis%units
+     if (PRESENT(longname)) longname = axis%longname
+     if (PRESENT(cartesian)) cartesian = axis%cartesian
+     if (PRESENT(sense)) sense = axis%sense
+     if (PRESENT(len)) len = axis%len
+     if (PRESENT(atts)) then
+        atts = default_att
+        n = size(atts);m=size(axis%Att)
+        if (n.LT.m) call mpp_error(FATAL,'attribute array not large enough in mpp_get_field_atts')
+        atts(1:m) = axis%Att(1:m)
+     end if
+     if (PRESENT(natts)) natts = size(axis%Att)
+     
+     return
+   end subroutine mpp_get_axis_atts
+
+
+    subroutine mpp_get_fields( unit, variables )
 !
 !  copy variable information from file (excluding data)
 !  global_atts is an attribute type which is allocated from the
@@ -2367,7 +2460,7 @@ module mpp_io_mod
       return
    end subroutine mpp_get_fields
 
-    subroutine mpp_get_axes(unit,axes,time_axis)
+    subroutine mpp_get_axes( unit, axes, time_axis )
 !
 !  copy variable information from file (excluding data)
 !  global_atts is an attribute type which is allocated from the
@@ -2386,6 +2479,7 @@ module mpp_io_mod
       if (size(axes).ne.mpp_file(unit)%ndim) &
       call mpp_error(FATAL, 'MPP_GET_AXES: axistype not dimensioned properly in calling routine')
 
+      
       if (PRESENT(time_axis)) time_axis = default_axis
       ndim = mpp_file(unit)%ndim
       do i=1,ndim
@@ -2400,7 +2494,7 @@ module mpp_io_mod
       return
    end subroutine mpp_get_axes
 
-   subroutine mpp_get_times(unit,time_values)
+   subroutine mpp_get_times( unit, time_values )
 !
 !  copy time information from file and convert to time_type
 ! 
@@ -2426,11 +2520,26 @@ module mpp_io_mod
       return
    end subroutine mpp_get_times
 
+   subroutine mpp_get_axis_data( axis, data )
+
+     type(axistype), intent(in) :: axis
+     real, dimension(:), intent(out) :: data
+
+
+     if (size(data).lt.axis%len) call mpp_error(FATAL,'MPP_GET_AXIS_DATA: data array not large enough')
+     if (.NOT.ASSOCIATED(axis%data)) then
+        call mpp_error(WARNING,'MPP_GET_AXIS_DATA: use mpp_get_times for record dims')
+        data = 0.
+     else
+        data(1:axis%len) = axis%data
+     endif
+
+     return
+   end subroutine mpp_get_axis_data
+
 
    function mpp_get_recdimid(unit)
 !
-!  copy time information from file and convert to time_type
-! 
       integer, intent(in) :: unit
       integer  :: mpp_get_recdimid
 
@@ -2442,7 +2551,6 @@ module mpp_io_mod
 
       return
    end function mpp_get_recdimid
-
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -2484,7 +2592,7 @@ module mpp_io_mod
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
-!         netCDF-specific routines: mpp_get_ncid, netcdf_error         !
+!         netCDF-specific routines: mpp_get_id, netcdf_error         !
 !                                                                      !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -2495,6 +2603,20 @@ module mpp_io_mod
       mpp_get_ncid = mpp_file(unit)%ncid
       return
     end function mpp_get_ncid
+
+    function mpp_get_axis_id(axis)
+      integer mpp_get_axis_id
+      type(axistype), intent(in) :: axis
+      mpp_get_axis_id = axis%id
+      return
+    end function mpp_get_axis_id
+
+    function mpp_get_field_id(field)
+      integer mpp_get_field_id
+      type(fieldtype), intent(in) :: field
+      mpp_get_field_id = field%id
+      return
+    end function mpp_get_field_id
 
     subroutine netcdf_err(err)
       integer, intent(in) :: err
@@ -2533,15 +2655,57 @@ module mpp_io_mod
       return
     end subroutine mpp_set_unit_range
 
+    subroutine mpp_modify_axis_meta( axis, name, units, longname, cartesian, data )
+
+      type(axistype), intent(inout) :: axis
+      character(len=*), intent(in), optional :: name, units, longname, cartesian
+      real, dimension(:), intent(in), optional :: data
+
+      if (PRESENT(name)) axis%name = trim(name)
+      if (PRESENT(units)) axis%units = trim(units)
+      if (PRESENT(longname)) axis%longname = trim(longname)
+      if (PRESENT(cartesian)) axis%cartesian = trim(cartesian)
+      if (PRESENT(data)) then
+         axis%len = size(data)
+         deallocate(axis%data)
+         allocate(axis%data(axis%len))
+         axis%data = data
+      endif
+         
+      return
+    end subroutine mpp_modify_axis_meta
+
+    subroutine mpp_modify_field_meta( field, name, units, longname, min, max, missing, axes )
+
+      type(fieldtype), intent(inout) :: field
+      character(len=*), intent(in), optional :: name, units, longname
+      real, intent(in), optional :: min, max, missing
+      type(axistype), dimension(:), optional :: axes
+
+      if (PRESENT(name)) field%name = trim(name)
+      if (PRESENT(units)) field%units = trim(units)
+      if (PRESENT(longname)) field%longname = trim(longname)
+      if (PRESENT(min)) field%min = min
+      if (PRESENT(max)) field%max = max
+      if (PRESENT(missing)) field%missing = missing
+!      if (PRESENT(axes)) then
+!         axis%len = size(data)
+!         deallocate(axis%data)
+!         allocate(axis%data(axis%len))
+!         axis%data = data
+!      endif
+         
+      return
+    end subroutine mpp_modify_field_meta
+     
 end module mpp_io_mod
 
 #ifdef test_mpp_io
 program mpp_io_test
 
-  use  mpp_io_mod
-  use  mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_update_domains,&
-       CYCLIC_GLOBAL_DOMAIN, GLOBAL_COMPUTE_DOMAIN
-  use  mpp_mod
+  use mpp_mod
+  use mpp_domains_mod
+  use mpp_io_mod
 
   implicit none
 
@@ -2549,228 +2713,279 @@ program mpp_io_test
 #include <netcdf.inc>
 #endif
 
-  integer, parameter :: nx=18, ny=10, nz=10, nt = 10
-  integer, parameter :: threading = MPP_SINGLE, fileset = MPP_SINGLE
-  integer :: domain_flags, is, ie, js, je, unit, i, j
-  integer :: ndim,nvar,natt,ntime, len, nx_in, ny_in, nz_in
-  character(len=60) :: file = 'test'
-  type(atttype), allocatable :: global_atts(:)
-  type(fieldtype)  :: field_out
-  type(fieldtype), allocatable  :: fields(:)  
-  type(axistype), allocatable :: axes(:), axes_out(:)
-  type(axistype) :: time_axis
-  real, allocatable, dimension(:,:,:) :: vort_out
-  real, allocatable, dimension(:,:,:,:) :: vort_in  
-  real :: avg_t1
-  real, allocatable, dimension(:) :: tstamp, lon, lat, height
-  integer :: pe
+  integer :: pe, npes, root
+  type(domain2D) :: domain
+  integer :: nx=128, ny=128, nz=40, nt=2, halo=2, stackmax=32768
+  real(DOUBLE_KIND), dimension(:,:,:), allocatable :: data, gdata, rdata
+  integer :: is, ie, js, je, isd, ied, jsd, jed
+  integer :: tk, tk0, tks_per_sec
+  integer :: i,j,k, unit=7, layout(2)
+  logical :: debug=.FALSE., opened
+  character(len=64) :: file='test', iospec='-F cachea', varname
+  namelist / mpp_io_nml / nx, ny, nz, nt, halo, stackmax, debug, file, iospec
+  integer :: ndim, nvar, natt, ntime
+  type(atttype), allocatable :: atts(:)
+  type(fieldtype), allocatable :: vars(:)
+  type(axistype), allocatable :: axes(:)
+  real(DOUBLE_KIND), allocatable :: tstamp(:)
+  type(axistype) :: x, y, z, t
+  type(fieldtype) :: f
+  type(domain1D) :: xdom, ydom
+#ifdef SGICRAY
+!see intro_io(3F): to see why these values are used rather than 5,6,0
+  integer, parameter :: stdin=100, stdout=101, stderr=102
+#else               
+  integer, parameter :: stdin=5, stdout=6, stderr=0
+#endif
 
-!-------- mpp domain2d types ---------
-
-  type(domain2d), target, allocatable :: Domains(:)
-  type(domain2d), pointer             :: Domain
-
-
-  call mpp_io_init()
+  call mpp_init()
   pe = mpp_pe()
-  allocate ( Domains(0:mpp_npes()-1) )
+  npes = mpp_npes()
+  root = mpp_root_pe()
 
-  call mpp_define_domains ( (/1,nx,1,ny/), Domains, xhalo= 1, yhalo = 1)
+!possibly open a file called mpp_io.nml
+  do
+     inquire( unit=unit, opened=opened )
+     if( .NOT.opened )exit
+     unit = unit + 1
+     if( unit.EQ.100 )call mpp_error( FATAL, 'Unable to locate unit number.' )
+  end do
+  open( unit=unit, status='OLD', file='mpp_io.nml', err=10 )
+  read( unit,mpp_io_nml )
+  close(unit)
+10 continue
 
-  Domain => Domains(pe)
-  
-!-----------------------------------------------------------------------
-  
-  is = Domain % X % Data % start_index
-  ie = Domain % X % Data % end_index
-  js = Domain % Y % Data % start_index
-  je = Domain % Y % Data % end_index
+  call SYSTEM_CLOCK( count_rate=tks_per_sec )
+  if( debug )then
+      call mpp_io_init(MPP_DEBUG)
+  else
+      call mpp_io_init()
+  end if
+  call mpp_domains_set_stack_size(stackmax)
 
-  print *, 'PE,is,ie,js,je=',pe,is,ie,js,je
+  if( pe.EQ.root )then
+      print '(a,6i4)', 'npes, nx, ny, nz, nt, halo=', npes, nx, ny, nz, nt, halo
+      print *, 'Using NEW domaintypes and calls...'
+  end if
+!define global data array
+  allocate( gdata(nx,ny,nz) )
+  if( pe.EQ.root )then
+!      call random_number(gdata) )
+!fill in global array: with k.iiijjj
+      gdata = 0.
+      do k = 1,nz
+         do j = 1,ny
+            do i = 1,nx
+               gdata(i,j,k) = k + i*1e-3 + j*1e-6
+            end do
+         end do
+      end do
+  end if
+  call mpp_broadcast( gdata(1,1,1), size(gdata), root )
 
-!-----------------------------------------------------------------------
-! define axes
+!define domain decomposition
+  call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
+  call mpp_define_domains( (/1,nx,1,ny/), layout, domain, xhalo=halo, yhalo=halo )
+  call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
+  call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+  call mpp_get_domain_components( domain, xdom, ydom )
+  allocate( data(isd:ied,jsd:jed,nz) )
+  data(is:ie,js:je,:) = gdata(is:ie,js:je,:)
 
-  allocate(lon(nx))
-  do i=1,nx
-     lon(i)=(i-1)*1.0
-  enddo
-  allocate(lat(ny))  
-  do i=1,ny
-     lat(i)=(i-1)*1.0-90.
-  enddo
-  allocate(height(nz))
-  do i=1,nz
-     height(i)=(i-1)*10.
-  enddo
-  
+!tests
+  write( file,'(a,i3.3)' )trim(file), npes
 
-!
-! open a file for writing
-! 
-  call mpp_open(unit,file,MPP_OVERWR,MPP_NETCDF,threading=threading,&
-       fileset=fileset)
-  call mpp_write_meta(unit,'title',cval='MPP_IO test file')
-  allocate(axes_out(4))
-  call mpp_write_meta(unit,axes_out(1),'lon','degrees_E','longitude','X',1,domain%x,lon)
-  call mpp_write_meta(unit,axes_out(2),'lat','degrees_N','latitude','Y',1,domain%y,lat)
-  call mpp_write_meta(unit,axes_out(3),'level','mb','height','Z',1,data=height)
-  call mpp_write_meta(unit,axes_out(4),'time','days since 1900-01-01 00:00:00','time','T',1)
-  call mpp_write_meta(unit,field_out,axes_out,'vort','1/sec','vorticity',pack=2)
-  call mpp_write(unit,axes_out(1))
-  call mpp_write(unit,axes_out(2))
-  call mpp_write(unit,axes_out(3))
+!sequential write: single-threaded formatted: only if small
+  if( nx*ny*nz*nt.LT.1000 )then
+      if( pe.EQ.root )print *, 'sequential write: single-threaded formatted'
+!here the only test is a successful write: please look at test.txt for verification.
+      call mpp_open( unit, trim(file)//'s.txt', action=MPP_OVERWR, form=MPP_ASCII, threading=MPP_SINGLE )
+      call mpp_write_meta( unit, x, 'X', 'km', 'X distance', domain=xdom, data=(/(i-1.,i=1,nx)/) )
+      call mpp_write_meta( unit, y, 'Y', 'km', 'Y distance', domain=ydom, data=(/(i-1.,i=1,ny)/) )
+      call mpp_write_meta( unit, z, 'Z', 'km', 'Z distance',              data=(/(i-1.,i=1,nz)/) )
+      call mpp_write_meta( unit, t, 'T', 'sec', 'Time' )
+      call mpp_write_meta( unit, f, (/x,y,z,t/), 'Data', 'metres', 'Random data' )
+      call mpp_write( unit, x )
+      call mpp_write( unit, y )
+      call mpp_write( unit, z )
+      do i = 0,nt-1
+         call mpp_write( unit, f, domain, data,  i*10. )
+      end do
+      call mpp_close(unit)
+  end if
 
-!
-! allocate local array
-!  
-  allocate(vort_out(is:ie,js:je,1:nz))
-
-  do i=1,nt
-     call create_data(i,1.0,vort_out,nx, ny, is, js)
-     call mpp_write(unit,field_out,domain,vort_out,float(i))
-  enddo
-
+!netCDF distributed write
+  if( pe.EQ.root )print *, 'netCDF distributed write'
+  call mpp_open( unit, trim(file)//'d', action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI )
+  call mpp_write_meta( unit, x, 'X', 'km', 'X distance', domain=xdom, data=(/(i-1.,i=1,nx)/) )
+  call mpp_write_meta( unit, y, 'Y', 'km', 'Y distance', domain=ydom, data=(/(i-1.,i=1,ny)/) )
+  call mpp_write_meta( unit, z, 'Z', 'km', 'Z distance',              data=(/(i-1.,i=1,nz)/) )
+  call mpp_write_meta( unit, t, 'T', 'sec', 'Time' )
+  call mpp_write_meta( unit, f, (/x,y,z,t/), 'Data', 'metres', 'Random data' )
+  call mpp_write( unit, x )
+  call mpp_write( unit, y )
+  call mpp_write( unit, z )
+  do i = 0,nt-1
+     call mpp_write( unit, f, domain, data,  i*10. )
+  end do
   call mpp_close(unit)
-!
-! now try to open the file and read back what you've just written
-!
-  call mpp_open(unit,file,MPP_RDONLY,MPP_NETCDF,threading=threading,&
-       fileset=threading)
-
-  call mpp_get_info(unit,ndim,nvar,natt,ntime)
-  if (ntime .NE. nt) call mpp_error(FATAL,'mismatch in record dim length for mpp_io_test')
-  if (ndim .NE. 4) call mpp_error(FATAL,'mismatch in num dims for mpp_io_test')
-  if (nvar .NE. 1) call mpp_error(FATAL,'mismatch in num vars for mpp_io_test')
-  allocate(global_atts(natt))
-  call mpp_get_atts(unit,global_atts)
-  allocate(axes(ndim))
-  call mpp_get_axes(unit,axes,time_axis)
-  allocate(fields(nvar))
-  call mpp_get_fields(unit,fields)
-  allocate(tstamp(ntime))
-  call mpp_get_times(unit,tstamp)
-
-  do i=1,ndim
-     if (axes(i)%name == 'lon') nx_in = axes(i)%len
-     if (axes(i)%name == 'lat') ny_in = axes(i)%len     
-     if (axes(i)%name == 'height') nz_in = axes(i)%len     
-  enddo
-
-!  if (nx_in .NE. ie-is+1) call mpp_error(FATAL,'mismatch in x dim size for mpp_io_test')
-!  if (ny_in .NE. je-js+1) call mpp_error(FATAL,'mismatch in y dim size for mpp_io_test')
-!  if (nz_in .NE. nz) call mpp_error(FATAL,'mismatch in z dim size for mpp_io_test')
-
-  do i=1,nvar
-     if (fields(i)%name == 'vort') then
-! allocate 2-D array for variable vort and read local data
-         allocate(vort_in(is:ie,js:je,1:nz,ntime))
-         do j=1,ntime
-           call mpp_read(unit, fields(i),domain,vort_in(:,:,:,j),j)
-         enddo
-     endif
-
-  enddo
-
-  call mpp_close(unit)
-!
-! now write the data to a file using mpp_copy calls
-!  
-  file = 'test_out'
-  call mpp_open(unit,file,MPP_OVERWR,MPP_NETCDF,threading=threading,&
-       fileset=fileset)
-
-!
-! write global atts
-!  
-  do i=1,natt
-     if (global_atts(i)%type == MPP_FLOAT) &
-       call mpp_write_meta(unit,global_atts(i)%name,rval=global_atts(i)%fatt)
-     if (global_atts(i)%type == MPP_CHAR) then
-       len = global_atts(i)%len
-       call mpp_write_meta(unit,global_atts(i)%name,cval=global_atts(i)%catt(1:len))
-     endif
-  enddo
-!
-! write axis
-!
-  do i=1,ndim
-     select case(axes(i)%cartesian)
-        case ('X')  
-           call mpp_copy_meta(unit,axes(i),domain%x)
-        case ('Y')  
-           call mpp_copy_meta(unit,axes(i),domain%y)
-        case default
-           call mpp_copy_meta(unit,axes(i))
-     end select
-  enddo
-!
-! write variable metadata
-!
-  do i=1,nvar
-     call mpp_copy_meta(unit,fields(i),axes)
-  enddo
-!
-! write axis data
-
-  do i=1,ndim
-    if (ASSOCIATED(axes(i)%data)) then 
-       call mpp_write(unit,axes(i))
-    endif
-  enddo
-
-!
-! write variable data 
-!
-  do i=1,nvar
-
-     if (fields(i)%name == 'vort') then
-         do j=1,ntime
-            call mpp_write(unit,fields(i),domain,vort_in(:,:,:,j),tstamp(j))
-         enddo
-     endif
-
-  enddo
-
+  
+!netCDF single-threaded write
+  if( pe.EQ.root )print *, 'netCDF single-threaded write'
+  call mpp_open( unit, trim(file)//'s', action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE )
+  call mpp_write_meta( unit, x, 'X', 'km', 'X distance', domain=xdom, data=(/(i-1.,i=1,nx)/) )
+  call mpp_write_meta( unit, y, 'Y', 'km', 'Y distance', domain=ydom, data=(/(i-1.,i=1,ny)/) )
+  call mpp_write_meta( unit, z, 'Z', 'km', 'Z distance',              data=(/(i-1.,i=1,nz)/) )
+  call mpp_write_meta( unit, t, 'T', 'sec', 'Time' )
+  call mpp_write_meta( unit, f, (/x,y,z,t/), 'Data', 'metres', 'Random data', pack=1 )
+  call mpp_write( unit, x )
+  call mpp_write( unit, y )
+  call mpp_write( unit, z )
+  do i = 0,nt-1
+     call mpp_write( unit, f, domain, data,  i*10. )
+  end do
   call mpp_close(unit)
 
+!netCDF multi-threaded read
+  if( pe.EQ.root )print *, 'netCDF multi-threaded read'
+  call mpp_sync()               !wait for previous write to complete
+  call mpp_open( unit, trim(file)//'s', action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_SINGLE )
+  call mpp_get_info( unit, ndim, nvar, natt, ntime )
+  allocate( atts(natt) )
+  allocate( axes(ndim) )
+  allocate( vars(nvar) )
+  allocate( tstamp(ntime) )
+  call mpp_get_atts ( unit, atts(:) )
+  call mpp_get_axes ( unit, axes(:) )
+  call mpp_get_fields ( unit, vars(:) )
+  call mpp_get_times( unit, tstamp(:) )
+
+  call mpp_get_atts(vars(1),name=varname)
+
+  if( varname.NE.'Data' )call mpp_error( FATAL, 'File being read is not the expected one.' )
+  allocate( rdata(is:ie,js:je,nz) )
+  call mpp_read( unit, vars(1), domain, rdata, 1 )
+  i = mpp_chksum(rdata(is:ie,js:je,:))
+  j = mpp_chksum( data(is:ie,js:je,:))
+  if( pe.EQ.root )print '(a,2z18)', 'checksum=', i, j
+  if( i.NE.j )call mpp_error( FATAL, 'Checksum error on multi-threaded netCDF read.' )
+
+!netCDF multi-threaded write
+!  if( pe.EQ.root )print *, 'netCDF multi-threaded write'
+!  call mpp_open( unit, trim(file)//'m', action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_SINGLE )
+!  call mpp_write_meta( unit, x, 'X', 'km', 'X distance', domain=xdom, data=(/(i-1.,i=1,nx)/) )
+!  call mpp_write_meta( unit, y, 'Y', 'km', 'Y distance', domain=ydom, data=(/(i-1.,i=1,ny)/) )
+!  call mpp_write_meta( unit, z, 'Z', 'km', 'Z distance',              data=(/(i-1.,i=1,nz)/) )
+!  call mpp_write_meta( unit, t, 'T', 'sec', 'Time' )
+!  call mpp_write_meta( unit, f, (/x,y,z,t/), 'Data', 'metres', 'Random data' )
+!  call mpp_write( unit, x )
+!  call mpp_write( unit, y )
+!  call mpp_write( unit, z )
+!  do i = 0,nt-1
+!     call mpp_write( unit, f, domain, data,  i*10. )
+!  end do
+!  call mpp_close(unit)
+!  do i=1,nvar
+!     if (vars(i)%name.EQ.'vort') then
+!! allocate 2-D array for variable vort and read local data
+!! from time level 1 of dataset
+!         allocate(vort(is:ie,js:je))
+!         call mpp_read(unit, vars(i),domain,vort,1)
+!     endif
+!
+!     if (vars(i)%name.EQ.'div') then
+!! allocate 3-D array for variable div and read local data
+!! from time level 2 of dataset
+!         allocate(div(is:ie,js:je,nz))
+!         call mpp_read(unit, vars(i),domain,div,2)
+!     endif
+!
+!     if (vars(i)%name.EQ.'average_T1') then
+!! read 0-D variable AVERAGE_T1 from time level 4 of dataset
+!         call mpp_read(unit, vars(i), avg_t1,4)
+!     endif
+!
+!  enddo
+!
+!  call mpp_sync()
+!  call mpp_update_domains(vort,domain)
+!  call mpp_update_domains(div,domain)
+!
+!  print *, 'PE= ', pe, 'MINVAL VORT= ', minval(vort)
+!  print *, 'PE= ', pe, 'MAXVAL VORT= ', maxval(vort)
+!
+!
+!  print *, 'PE= ', pe, 'MINVAL DIV= ', minval(div)
+!  print *, 'PE= ', pe, 'MAXVAL DIV= ', maxval(div)
+!
+!  print *, 'PE= ', pe, 'AVG_T1= ', avg_t1
+!
+!  call mpp_close(unit)
+!
+!  file = 'test_out'
+!  call mpp_open(unit,file,MPP_OVERWR,MPP_NETCDF,threading=MPP_MULTI,&
+!       fileset=MPP_MULTI)
+!
+!!
+!! write global atts
+!!  
+!  do i=1,natt
+!     call mpp_copy_meta(unit,atts(i))
+!  enddo
+!!
+!! write axis metadata
+!!
+!  do i=1,ndim
+!     select case(axes(i)%cartesian)
+!        case ('X')  
+!           call mpp_copy_meta(unit,axes(i),domain%x)
+!        case ('Y')  
+!           call mpp_copy_meta(unit,axes(i),domain%y)
+!        case default
+!           call mpp_copy_meta(unit,axes(i))
+!     end select
+!  enddo
+!!
+!! write variable metadata
+!!
+!  do i=1,nvar
+!     call mpp_copy_meta(unit,vars(i))
+!  enddo
+!!
+!! write axis data
+!
+!  do i=1,ndim
+!    if (ASSOCIATED(axes(i)%data)) then 
+!       call mpp_write(unit,axes(i))
+!    endif
+!  enddo
+!
+!!
+!! write variable data 
+!!
+!  do i=1,nvar
+!
+!     if (vars(i)%name.EQ.'vort') then
+!         call mpp_write(unit,vars(i),domain,vort,tstamp(1))
+!     endif
+!
+!     if (vars(i)%name.EQ.'div') then
+!         call mpp_write(unit,vars(i),domain,div,tstamp(1))
+!     endif
+!
+!     if (vars(i)%name.EQ.'average_T1') then
+!         call mpp_write(unit,vars(i),avg_t1,tstamp(1))
+!     endif
+!
+!  enddo
+!
+!  call mpp_close(unit)
+!
+  call mpp_io_exit()
+  call mpp_domains_exit()
   call mpp_exit()
 
 
-contains
-subroutine create_data ( Time, const, data, nx, ny, is, js )
-! used to generate data for mpp_io test
-  integer,         intent(in)  :: Time
-  real,            intent(in)  :: const
-  real,            intent(out) :: data(is:,js:,:)
-  integer,         intent(in)  :: nx, ny, is, js
-
-  integer :: i, j, k, ie, je, nz, sec, day
-  real    :: tpi, x, y, z, t
-  real    :: tscale = 1.00
-
-  tpi = 4.*acos(0.0)
-
-  ie = is + size(data,1) - 1
-  je = js + size(data,2) - 1
-  nz =      size(data,3)
-
-  t = float(Time) * tscale
-
-    do k = 1, nz
-         z = float(k)/float(nz)
-    do j = js, je
-         y = float(j)/float(ny)
-    do i = is, ie
-         x = float(i-1)/float(nx-1) * tpi
-         data(i,j,k) = const * y * z * sin ( x + t )
-    enddo
-    enddo
-    enddo
-
-end subroutine create_data
-
 end program mpp_io_test
-
 
 #endif

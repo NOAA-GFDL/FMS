@@ -29,7 +29,7 @@ integer :: numtrace
 !-----------------------------------------------------------------------
 !---- version number -----
 character(len=128) :: version = '$Id: tracer_driver.F90,v 1.3 2001/04/13 15:24:34 fms Exp $'
-character(len=128) :: tag = '$Name: eugene $'
+character(len=128) :: tag = '$Name: fez $'
 !-----------------------------------------------------------------------
       integer, parameter :: max_tracers = 30
       character(len=16) :: field(max_tracers)

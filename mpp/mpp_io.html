@@ -5,8 +5,7 @@
 <head>
 <meta name="description" content="">
 <meta name="keywords" content="">
-<meta http-equiv="Content-Style-Type" content="text/css">
-<link rel="stylesheet" href="balaji.css">
+<link rel="stylesheet" href="http://www.gfdl.noaa.gov/~fms/style/balaji.css">
 
 <title>mpp_io_mod: a parallel I/O programming interface for f90</title>
 </head>
@@ -39,11 +38,11 @@ href="./mpp.html"><tt>mpp_mod</tt></a>, upon which it is built.
 <dt><a href="#mpp_flush">mpp_flush</a>: <dd>Flush I/O buffers to disk.
 <dt><a href="#mpp_get_atts">mpp_get_atts</a>: <dd>Get file
 global metdata
-<dt><a href="#mpp_get_axes">mpp_get_axes</a>: <dd>Get file
-axis metadata and non-record dimension data
+<dt><a href="#mpp_get_info">mpp_get_info</a>: <dd>Get some
+genral information about a file
 <dt><a href="#mpp_get_times">mpp_get_times</a>: <dd>Get file
 time data
-<dt><a href="#mpp_get_fields">mpp_get_fields</a>: <dd>Get file
+<dt><a href="#mpp_get_vars">mpp_get_vars</a>: <dd>Get file
 variable metadata
 <dt><a href="#mpp_get_ncid">mpp_get_ncid</a>: <dd>Get netCDF ID of an
 open file.
@@ -53,6 +52,7 @@ open file.
 <tt>mpp_io_mod</tt>.
 <dt><a href="#mpp_open">mpp_open</a>: <dd>Open a file for parallel I/O.
 <dt><a href="#mpp_read">mpp_read</a>: <dd>Read from an open file.
+<dt><a href="#mpp_read_meta">mpp_read_meta</a>: <dd>Read metadata
 <dt><a href="#mpp_write">mpp_write</a>: <dd>Write to an open file.
 <dt><a href="#mpp_write_meta">mpp_write_meta</a>: <dd>Write metadata
 </dl>
@@ -217,8 +217,8 @@ range with packing. When a field is declared to be packed, the
 supplied, are packed also.
 
 <p>A set of <i>attributes</i> for each variable is also available. The
-variable definitions and attribute information is written by calling
-<a href="#mpp_write_meta"><tt>mpp_write_meta</tt></a>. A typical calling
+variable definitions and attribute information is written/read by calling
+<a href="#mpp_write_meta"><tt>mpp_write_meta</tt></a> or <a href="#mpp_read_meta"><tt>mpp_read_meta</tt></a>. A typical calling
 sequence for writing data might be:
 
 <p><pre>
@@ -285,18 +285,15 @@ complete.
   integer :: unit, natt, nvar, ntime
   type(domain2D), dimension(:), allocatable, target :: domain
   type(fieldtype), allocatable, dimension(:) :: fields
-  type(axistype), allocatable, dimension(:) :: axes
-  type(axistype) :: time_axis
   type(atttype), allocatable, dimension(:) :: global_atts
   real, allocatable, dimension(:) :: times
 ...
   call mpp_define_domains( (/1,nx,1,ny/), domain )
 
-  call mpp_get_info(unit, ndim, nvar, natt, ntime)
+  call mpp_read_meta(unit)
+  call mpp_get_info(unit,natt,nvar,ntime)
   allocate(global_atts(natt))
   call mpp_get_atts(unit,global_atts)
-  allocate(axes(ndim))
-  call mpp_get_axes(unit, axes, time_axis)
   allocate(fields(nvar))
   call mpp_get_vars(unit, fields)
   allocate(times(ntime))
@@ -312,21 +309,23 @@ complete.
 </pre>
 
 <p>In this example, the data are distributed as in the previous
-example. The call to <tt>mpp_get_info</tt> returns the number of
-dimensions (<tt>ndim</tt>), variables (<tt>nvar</tt>), global
-attributes (<tt>natt</tt>) and time levels (<tt>ntime</tt>) associated
-with the file identified by a unique ID (<tt>unit</tt>).
-<tt>mpp_get_atts</tt> returns all global attributes for the file in
-the derived type <tt>atttype(natt)</tt>.  <tt>mpp_get_fields</tt>
-returns field types (<tt>fieldtype(nvar)</tt>).  <tt>mpp_get_axes</tt>
-returns the axis metadata and non-record dimension data. A separate call to
-<tt>mpp_get_times</tt> is required to access record dimension data.
-Subsequent calls to <tt>mpp_read</tt> return the field data arrays
-corresponding to the fieldtype.  The <tt>domain</tt> type is an
-optional argument.  If <tt>domain</tt> is omitted, the incoming field
+example. The call to <a
+href="#mpp_read_meta"><tt>mpp_read_meta</tt></a> initializes
+all of the metadata associated with the file, including global
+attributes, variable attributes and non-record dimension data. The
+call to <tt>mpp_get_info</tt> returns the number of global
+attributes (<tt>natt</tt>), variables (<tt>nvar</tt>) and
+time levels (<tt>ntime</tt>) associated with the file
+identified by a unique ID (<tt>unit</tt>).
+<tt>mpp_get_atts</tt> returns all global attributes for
+the file in the derived type <tt>atttype(natt)</tt>.
+<tt>mpp_get_vars</tt> returns variable types
+(<tt>fieldtype(nvar)</tt>).  Since the record dimension data are not allocated for calls to <a href="#mpp_write"><tt>mpp_write</tt></a>, a separate call to  <tt>mpp_get_times</tt> is required to access record dimension data.  Subsequent calls to
+<tt>mpp_read</tt> return the field data arrays corresponding to
+the fieldtype.  The <tt>domain</tt> type is an optional
+argument.  If <tt>domain</tt> is omitted, the incoming field
 array should be dimensioned for the global domain, otherwise, the
-field data is assigned to the computational domain of a local
-array.</p>
+field data is assigned to the computational domain of a local array.</p>
 
 <p><i>Multi-fileset</i> reads are not supported with <tt>mpp_read</tt>.</p>
 
@@ -372,18 +371,6 @@ subroutine mpp_get_atts( unit, global_atts)
                                                           ! must be dim >= natt
 </pre>
 
-<p><a name="mpp_get_axes"></a><li><h4>mpp_get_axes</h4>
-
-<p><pre>
-subroutine mpp_get_axes( unit, axes, time_axis)
-  integer, intent(in) :: unit
-  type(axistype), dimension(:), intent(out) :: axes ! dim >= ndim
-  type(axistype), intent(out), optional :: time_axis
-</pre>
-
-<p>Return axis type metadata and data for non-record dimension.  Time
-axis metadata can be stored in time_axis argument as well.
-  
 <p><a name="mpp_get_info"></a><li><h4>mpp_get_info</h4>
 
 <p><pre>
@@ -402,12 +389,12 @@ subroutine mpp_get_times( unit, times)
   real(DOUBLE_KIND), intent(out), dimension(:) :: times  ! must be dim >= ntime
 </pre>
 
-<p><a name="mpp_get_fields"></a><li><h4>mpp_get_fields</h4>
+<p><a name="mpp_get_vars"></a><li><h4>mpp_get_vars</h4>
 
 <p><pre>
-subroutine mpp_get_fields( unit, fields)
+subroutine mpp_get_vars( unit, variables)
   integer, intent(in) :: unit
-  type(fieldtype), intent(out), dimension(:) :: fields    ! 0-4D fields
+  type(fieldtype), intent(out), dimension(:) :: variables ! 0-4D fields
                                                           ! must be dim >= nvar
 </pre>
 
@@ -597,6 +584,27 @@ calls. (<tt>fileset</tt> = MPP_MULTI is not supported by
 <p>Packed variables are unpacked using the <tt>scale</tt> and
 <tt>add</tt> attributes.
 
+<p><tt>mpp_read_meta</tt> must be called prior to calling <tt>mpp_read</tt>.
+
+<p><a name="mpp_read_meta"></a><li><h4>mpp_read_meta</h4>
+
+<p>This routine is used to read the <a href="#metadata">metadata</a>
+describing the contents of a file. Each file can contain any number of
+fields, which are functions of 0-3 space axes and 0-1 time axes. (Only
+one time axis can be defined per file). The basic metadata defined <a
+href="#metadata">above</a> for <tt>axistype</tt> and
+<tt>fieldtype</tt> are stored in <tt>mpp_io_mod</tt> and
+can be accessed outside of <tt>mpp_io_mod</tt> using calls to
+<tt>mpp_get_info</tt>, <tt>mpp_get_atts</tt>,
+<tt>mpp_get_vars</tt> and
+<tt>mpp_get_times</tt>.
+
+<p><pre>
+subroutine mpp_read_meta( unit)
+</pre>
+
+<p><tt>mpp_read_meta</tt> must be called prior to 
+<tt>mpp_read</tt>.
 
 <p><a name="mpp_write"></a><li><h4>mpp_write</h4>
 
@@ -836,5 +844,5 @@ Author: <a href="myaddr.html">V. Balaji</a>
 
 <!-- store access stats -->
 <!--#exec cmd="touch stats; chmod 666 stats" -->
-<!--#exec cmd="echo $DOCUMENT_NAME $REMOTE_HOST $HTTP_REFERER $DATE_LOCAL >> stats" -->
+<!--#exec cmd="echo $DOCUMENT_NAME $REMOTE_HOST $DATE_LOCAL >> stats" -->
 </html>

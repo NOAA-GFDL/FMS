@@ -101,7 +101,7 @@ character (len = 7) :: avg_name = 'average'
 
 ! version number of this module
   character(len=128) :: version = '$Id: diag_manager.f90,v 1.4 2001/07/05 17:54:52 fms Exp $'
-  character(len=128) :: tag = '$Name: eugene $'  
+  character(len=128) :: tag = '$Name: fez $'  
 
 
 interface send_data

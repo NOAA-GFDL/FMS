@@ -5,7 +5,7 @@
 <head>
 <meta name="description" content="">
 <meta name="keywords" content="">
-<link rel="stylesheet" href="balaji.css">
+<link rel="stylesheet" href="http://www.gfdl.noaa.gov/~fms/style/balaji.css">
 
 <title>diag_manager_mod: a parallel diagnostic interface for f90</title>
 </head>
@@ -207,7 +207,7 @@ character(len=*), intent(in) :: module_name, field_name
 integer, intent(in) :: axes(:)
 character(len=*), optional, intent(in) :: long_name, units
 real, optional, intent(in) :: missing_value, range(2)
-logical, optional, intent(in) :: require  ! require static field to be in every file
+logical, optional, intent(in) :: require  ! require static field 
                                           ! e.g. 2-d axes
 </pre>
 

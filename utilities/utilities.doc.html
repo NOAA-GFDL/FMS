@@ -71,6 +71,7 @@ use utilities_mod [, only: utilities_init, utilities_end,
                            read_data, write_data,
                            check_nml_error, print_version_number,
                            get_my_pe, get_num_pes, sync_all_pes,
+                           get_root_pe,
                            set_domain, get_domain_decomp,
                            mpp_sum, mpp_min, mpp_max,
                            set_system_clock, check_system_clock
@@ -101,7 +102,7 @@ use utilities_mod [, only: utilities_init, utilities_end,
                     and determines if the error code is valid, if not
                     the program is terminated.
 
-   print_version_number    Prints out a routine name and version number
+   write_version_number    Prints out the version/id string and tag name
                            to a specified unit (presumably a log file).
 
    set_domain          Sets a pointer for a private utilities_mod
@@ -132,6 +133,8 @@ use utilities_mod [, only: utilities_init, utilities_end,
    <b>--- Routines with exact functionality to mpp_mod routines ----</b>
 
    get_my_pe           Returns the pe number. (mpp_pe)
+
+   get_root_pe         Returns the root pe number. (mpp_root_pe)
 
    get_num_pes         Returns the total number pe's. (mpp_npes)
 
@@ -300,7 +303,7 @@ unit = <b>open_file</b> ( file, form, action, access, threading, recl )
 
 ---------------------------------------------------------------------
 
-<b>call print_version_number</b> ( unit, routine, version )
+<b>call write_version_number</b> ( unit, version, tagname )
 
    Input
 
@@ -308,10 +311,12 @@ unit = <b>open_file</b> ( file, form, action, access, threading, recl )
                  This file is usually a log file.
                     [integer]
 
-      routine    The routine name to be printed.
+      tagname    The tag/name string usually returned by CVS
+                 when checking out the code.
                     [character]
 
-      version    The version number (or name) of the routine.
+      version    The version/id string usually returned by CVS
+                 when checking out code.
                     [character]
 
 ---------------------------------------------------------------------
@@ -476,11 +481,6 @@ id = <b>mpp_clock_init</b> ( module, routine, level )
                         The timing information will be saved to a separate
                         file for each processor.
 
-  time_all_pe           Print out a simple timing numbers for all 
-                        processors (TRUE) or just for PE0 (FALSE).
-                        This is different from "timing_level".
-                           [logical, default: time_all_pe=.false.]
-
   read_all_pe           Read global data on all processors extracting local
                         part needed (TRUE) or read global data on PE0 and
                         broadcast to all PEs (FALSE).
@@ -494,12 +494,6 @@ id = <b>mpp_clock_init</b> ( module, routine, level )
 
   iospec_ieee32         iospec flag for all IEEE32 (32 bit) files.
                            [character, default: iospec_ieee32='-F f77,cachea:48:1']
-
-  one_level_restarts    Should restart files be read and written one level at
-                        a time (TRUE) versus as three-dimensional fields (FALSE).
-                        This option was provided for reducing memory in
-                        very high resolution runs.
-                           [logical, default: one_level_restarts=.false.]
 
    stack_size          The size in words of the MPP user stack.
                        If stack_size > 0, the following MPP routine is called:
@@ -584,7 +578,7 @@ NOTE:
 <!-- BEGIN BUGS -->
 <PRE>
 
-   Namelist error checking does not work.
+   Namelist error checking may not work correctly with some compilers.
 
    Users should beware when mixing straight reads and read_data calls.
    If straight reads follow read_data calls and namelist variable
@@ -611,6 +605,9 @@ NOTE:
    if (get_my_pe() == 0) &
         write (unit,'(/,80("="),/(a))') trim(version), trim(tag)
 
+   This output format may now done with the routine
+   <B>write_version_number</B>.
+
 </PRE>
 </A><!-- END NOTES -->
 <!--------------------------------------------------------------------->
@@ -620,7 +617,9 @@ NOTE:
 <!-- BEGIN PLANS -->
 <PRE>
 
-   None.
+   1) The name of this module will be changed to fms_utilities.f90
+      (or something like that).
+   2) MPP routines will be usable through this module.
 
 </PRE>
 </A><!-- END PLANS -->

@@ -1,36 +1,50 @@
+<!-- using my HTML template template.html
+     paths to http://www.gfdl.noaa.gov/~fms/style/balaji.css and myaddr.html may need to be tweaked
+     if we are not in my top-level public HTML directory -->
+
+<!doctype html public "-//ietf//dtd html//en">
 <html>
+
 <head>
+<meta name="description" content="">
+<meta name="keywords" content="">
+<link rel="stylesheet" href="http://www.gfdl.noaa.gov/~fms/style/balaji.css">
+
 <title>mpp_mod: a message-passing programming interface for f90</title>
 </head>
+
 <body>
-<center><h1>mpp_mod</h1>
-<h3> a message-passing programming interface for f90</h3>
-</center>
-<blockquote>
+
+<!-- title using title stylespec -->
+<div class="title">
+<h1>mpp_mod</h1>
+<h2>a message-passing programming interface for f90</h2>
 <hr>
-<b><tt>mpp_mod</tt></b> is a set of simple calls to provide a uniform interface
+<tt>mpp_mod</tt> is a set of simple calls to provide a uniform interface
 to different message-passing libraries. It currently can be
 implemented either in the SGI/Cray native SHMEM library or in the MPI
 standard. Other libraries (e.g MPI-2, Co-Array Fortran) can be
 incorporated as the need arises.
 <hr>
-</blockquote>
+</div>
 
 <p>
-<br><a href="#introduction">Introduction to <b><tt>mpp_mod</tt></b>.</a>
-<br><a href="#source">Acquiring <b><tt>mpp_mod</tt></b> source.</a>
-<br><a href="#linking">Linking with <b><tt>mpp_mod</tt></b>.</a>
+<br><a href="#introduction">Introduction to <tt>mpp_mod</tt>.</a>
+<br><a href="#source">Acquiring <tt>mpp_mod</tt> source.</a>
+<br><a href="#linking">Linking with <tt>mpp_mod</tt>.</a>
 <br><a href="#portability">Portability issues.</a>
-<p>The <b><tt>mpp_mod</tt></b> API:<br>
-<dl COMPACT>
+<p>The <tt>mpp_mod</tt> API:<br>
+<dl>
 <dt><a href="#mpp_chksum">mpp_chksum</a>: <dd>Parallel checksums.
 <dt><a href="#mpp_error">mpp_error</a>: <dd>Error handler.
-<dt><a href="#mpp_exit">mpp_exit</a>: <dd>Exit <b><tt>mpp_mod</tt></b>.
-<dt><a href="#mpp_init">mpp_init</a>: <dd>Initialize <b><tt>mpp_mod</tt></b>.
+<dt><a href="#mpp_exit">mpp_exit</a>: <dd>Exit <tt>mpp_mod</tt>.
+<dt><a href="#mpp_init">mpp_init</a>: <dd>Initialize <tt>mpp_mod</tt>.
 <dt><a href="#mpp_malloc">mpp_malloc</a>: <dd>Symmetric memory allocation.
 <dt><a href="#mpp_max">mpp_max, mpp_min</a>: <dd>Reduction operations.
 <dt><a href="#mpp_npes">mpp_npes</a>: <dd>Returns processor count.
 <dt><a href="#mpp_pe">mpp_pe</a>: <dd>Returns processor ID.
+<dt><a href="#mpp_set_stack_size">mpp_set_stack_size</a>: <dd>Allocate
+module internal workspace.
 <dt><a href="#mpp_sum">mpp_sum</a>: <dd>Reduction operation.
 <dt><a href="#mpp_sync">mpp_sync</a>: <dd>Global synchronization.
 <dt><a href="#mpp_sync_self">mpp_sync_self</a>: <dd>Local synchronization.
@@ -42,21 +56,21 @@ call.
 <p><a name="introduction"><li><h4>Introduction</h4>
 
 <p>The data transfer between a processor and its own memory is based
-on <b><tt>load</tt></b> and <b><tt>store</tt></b> operations upon
+on <tt>load</tt> and <tt>store</tt> operations upon
 memory. Shared-memory systems (including distributed shared memory
 systems) have a single address space and any processor can acquire any
-data within the memory by <b><tt>load</tt></b> and
-<b><tt>store</tt></b>. The situation is different for distributed
+data within the memory by <tt>load</tt> and
+<tt>store</tt>. The situation is different for distributed
 parallel systems. Specialized MPP systems such as the T3E can simulate
 shared-memory by direct data acquisition from remote memory. But if
 the parallel code is distributed across a cluster, or across the Net,
 messages must be sent and received using the protocols for
 long-distance communication, such as TCP/IP. This requires a
 ``handshaking'' between nodes of the distributed system. One can think
-of the two different methods as involving <b><tt>put</tt></b>s or
-<b><tt>get</tt></b>s (e.g the SHMEM library), or in the case of
-negotiated communication (e.g MPI), <b><tt>send</tt></b>s and
-<b><tt>recv</tt></b>s.
+of the two different methods as involving <tt>put</tt>s or
+<tt>get</tt>s (e.g the SHMEM library), or in the case of
+negotiated communication (e.g MPI), <tt>send</tt>s and
+<tt>recv</tt>s.
 
 <p>The difference between SHMEM and MPI is that SHMEM uses one-sided
 communication, which can have very low-latency high-bandwidth
@@ -64,207 +78,280 @@ implementations on tightly coupled systems. MPI is a standard
 developed for distributed computing across loosely-coupled systems,
 and therefore incurs a software penalty for negotiating the
 communication. It is however an open industry standard whereas SHMEM
-is a proprietary interface. Besides, the <b><tt>put</tt></b>s or
-<b><tt>get</tt></b>s on which it is based cannot currently be implemented in
+is a proprietary interface. Besides, the <tt>put</tt>s or
+<tt>get</tt>s on which it is based cannot currently be implemented in
 a cluster environment (there are recent announcements from Compaq that
 occasion hope).
 
 <p>The message-passing requirements of climate and weather codes can be
 reduced to a fairly simple minimal set, which is easily implemented in
-any message-passing API. <b><tt>mpp_mod</tt></b> provides this API. Features of
-<b><tt>mpp_mod</tt></b> include:
+any message-passing API. <tt>mpp_mod</tt> provides this API. Features of
+<tt>mpp_mod</tt> include:
 
-<ul>
+<p><ul>
 <li> Simple, minimal API, with free access to underlying API for
   more complicated stuff.
 <li> Design toward typical use in climate/weather CFD codes.
 <li> Performance to be not significantly lower than any native API.
 </ul>
 
+<p>This module is used to develop higher-level calls for <a
+href="mpp_domains.html">domain decomposition</a> and <a
+href="mpp_io.html">parallel I/O</a>.
+
+<div class="highlight">
+
+<p>Parallel computing is initially daunting, but it soon becomes
+second nature, much the way many of us can now write vector code
+without much effort. The key insight required while reading and
+writing parallel code is in arriving at a mental grasp of several
+independent parallel execution streams through the same code (the SPMD
+model). Each variable you examine may have different values for each
+stream, the processor ID being an obvious example. Subroutines and
+function calls are particularly subtle, since it is not always obvious
+from looking at a call what synchronization between execution streams
+it implies. An example of erroneous code would be a global barrier
+call (see <a href="#mpp_sync"><tt>mpp_sync</tt></a> below) placed
+within a code block that not all PEs will execute, e.g:
+
+<p><pre>
+if( pe.EQ.0 )call mpp_sync()
+</pre>
+
+<p>Here only PE 0 reaches the barrier, where it will wait
+indefinitely. While this is a particularly egregious example to
+illustrate the coding flaw, more subtle versions of the same are
+among the most common errors in parallel code.
+
+<p>It is therefore important to be conscious of the context of a
+subroutine or function call, and the implied synchronization. There
+are certain calls here (e.g <tt>mpp_declare_pelist, mpp_init,
+mpp_malloc, mpp_set_stack_size</tt>) which must be called by all
+PEs. There are others which must be called by a subset of PEs (here
+called a <tt>pelist</tt>) which must be called by all the PEs in the
+<tt>pelist</tt> (e.g <tt>mpp_max, mpp_sum, mpp_sync</tt>). Still
+others imply no synchronization at all. I will make every effort to
+highlight the context of each call in the MPP modules, so that the
+implicit synchronization is spelt out.
+
+Discuss different kinds of sync: pt2pt, global, etc.
+</div>
+
+<div class="new">
+<p>This module has recently undergone considerable revision. In
+particular, we now make heavy use of pre-processor directives to
+provide functionality for 4-byte and 8-byte variants of <tt>integer,
+real, complex, logical</tt> variables, of rank 0 to 5. Changes to this
+module pertinent to the latest major revision (6.0) are highlighted as
+shown here. (If this paragraph is not highlighted, your browser may
+have disabled the use of stylesheets).
+</div>
+
 <p><li><h4>mpp_mod call syntax</h4>
 
-<p>The public interfaces to <b><tt>mpp_mod</tt></b> are described here in
+<div class="new">
+<p>F90 is a strictly-typed language, and the syntax pass of the
+compiler requires matching of type, kind and rank (TKR). Most calls
+listed here use a generic type, shown here as <tt>MPP_TYPE_</tt>. This
+is resolved in the pre-processor stage to any of a variety of
+types. In general the MPP operations work on 4-byte and 8-byte
+variants of <tt>integer, real, complex, logical</tt> variables, of
+rank 0 to 5, leading to 48 specific module procedures under the same
+generic interface. Any of the variables below shown as
+<tt>MPP_TYPE_</tt> is treated in this way.
+</div>
+
+<p>The public interfaces to <tt>mpp_mod</tt> are described here in
 alphabetical order:
 
 <ol type="a">
 
 <p><a name="mpp_chksum"><li><h4>mpp_chksum</h4>
 <pre>
-    function mpp_chksum( var, pelist )
-      integer(LONG_KIND) :: mpp_chksum
-      integer(LONG_KIND), intent(in) :: var(:)
-      integer, optional :: pelist(:)
+function mpp_chksum( var, pelist )
+  integer(LONG_KIND) :: mpp_chksum
+  MPP_TYPE_, intent(in) :: var
+  integer, optional :: pelist(:)
 </pre>
 
-<p><b><tt>mpp_chksum</tt></b> is a parallel checksum routine that
-returns an identical answer for the same array irrespective of how it
-has been partitioned across processors. <b><tt>var</tt></b> is shown
-above to be a 1D integer array, but <b><tt>mpp_chksum</tt></b> will
-accept integer, real or complex scalars and arrays of rank up to 4.
+<p><tt>mpp_chksum</tt> is a parallel checksum routine that returns an
+identical answer for the same array irrespective of how it has been
+partitioned across processors. <tt>LONG_KIND</tt>is the <tt>KIND</tt>
+parameter corresponding to long integers (see discussion on <a
+href="os.html">OS-dependent preprocessor directives</a>) defined in
+the header file <tt>os.h</tt>. <tt>MPP_TYPE_</tt> corresponds to any
+4-byte and 8-byte variant of <tt>integer, real, complex, logical</tt>
+variables, of rank 0 to 5.
 
-<p>It uses <i>Cray pointers</i> to perform integer checksums on
-floating point data. For details on this, and on checksums in general,
-please see the documentation for the <a href="chksum.html">serial
-checksum module</a>.
+<div class="new">
+<p>Integer checksums on FP data use the F90 <tt>TRANSFER()</tt>
+intrinsic.
+</div>
 
-<p>The additional functionality of <b><tt>mpp_chksum</tt></b> over
+<p>The <a href="chksum.html">serial checksum module</a> is superseded
+by this function, and is no longer being actively maintained. This
+provides identical results on a single-processor job, and to perform
+serial checksums on a single processor of a parallel job, you only
+need to use the optional <tt>pelist</tt> argument.
+<pre>
+use mpp_mod
+integer :: pe, chksum
+real :: a(:)
+pe = mpp_pe()
+chksum = mpp_chksum( a, (/pe/) )
+</pre>
+
+<p>The additional functionality of <tt>mpp_chksum</tt> over
 serial checksums is to compute the checksum across the PEs in
-<b><tt>pelist</tt></b>. The answer is guaranteed to be the same for
+<tt>pelist</tt>. The answer is guaranteed to be the same for
 the same distributed array irrespective of how it has been
-partitioned. <b><tt>pelist</tt></b> may be omitted if the array is
+partitioned. <tt>pelist</tt> may be omitted if the array is
 partitioned across all PEs.
+
+<div>
+<p>This call implies synchronization across the PEs in
+<tt>pelist</tt>, or all PEs is <tt>pelist is absent.</tt>
+</div>
 
 <p><a name="mpp_error"><li><h4>mpp_error</h4>
 <pre>
-    subroutine mpp_error( errortype, errormsg )
+subroutine mpp_error( errortype, errormsg )
 !a very basic error handler
-      integer, intent(in) :: errortype
-      character(len=*), intent(in), optional :: errormsg
+   integer, intent(in) :: errortype
+   character(len=*), intent(in), optional :: errormsg
 </pre>
 
-<p><b><tt>errortype</tt></b> is one of <b><tt>NOTE</tt></b>,
-<b><tt>WARNING</tt></b> or <b><tt>FATAL</tt></b> (these definitions
-are acquired by use association). <b><tt>NOTE</tt></b> writes
-<b><tt>errormsg</tt></b> to
-<b><tt>STDOUT</tt></b>. <b><tt>WARNING</tt></b> writes
-<b><tt>errormsg</tt></b> to
-<b><tt>STDERR</tt></b>. <b><tt>FATAL</tt></b> writes
-<b><tt>errormsg</tt></b> to <b><tt>STDERR</tt></b>, and induces a
-clean error exit with a call stack traceback. It is strongly
-recommended that all error exits pass through
-<b><tt>mpp_error</tt></b> to assure the program fails cleanly. An
-individual PE encountering a <b><tt>STOP</tt></b> statement, for
-instance, can cause the program to hang.
+<p><tt>errortype</tt> is one of <tt>NOTE</tt>,
+<tt>WARNING</tt> or <tt>FATAL</tt> (these definitions
+are acquired by use association).
 
-<p>The behaviour of <b><tt>mpp_error</tt></b> for a
-<b><tt>WARNING</tt></b> can be controlled with an additional call
-<b><tt>mpp_set_warn_level</tt></b>.
+<p><dl>
+<dt><tt>NOTE</tt><dd> writes <tt>errormsg</tt> to <tt>STDOUT</tt>.
+<dt><tt>WARNING</tt><dd> writes <tt>errormsg</tt> to <tt>STDERR</tt>.
+<dt><tt>FATAL</tt><dd> writes <tt>errormsg</tt> to <tt>STDERR</tt>,
+and induces a clean error exit with a call stack traceback.
+</dl>
+
+<p>It is strongly recommended that all error exits pass through
+<tt>mpp_error</tt> to assure the program fails cleanly. An individual
+PE encountering a <tt>STOP</tt> statement, for instance, can cause the
+program to hang. The use of the <tt>STOP</tt> statement is strongly
+discouraged.
+
+<p>The behaviour of <tt>mpp_error</tt> for a <tt>WARNING</tt> can be
+controlled with an additional call <tt>mpp_set_warn_level</tt>.
 
 <p><pre>
-    call mpp_set_warn_level(ERROR)
+call mpp_set_warn_level(ERROR)
 </pre>
 
-<p>causes <b><tt>mpp_error</tt></b> to treat <b><tt>WARNING</tt></b>
-exactly like <b><tt>FATAL</tt></b>.
+<p>causes <tt>mpp_error</tt> to treat <tt>WARNING</tt>
+exactly like <tt>FATAL</tt>.
 
 <p><pre>
-    call mpp_set_warn_level(WARNING)
+call mpp_set_warn_level(WARNING)
 </pre>
 
 <p>resets to the default behaviour described above.
 
-<p><a name="mpp_error_state"><li><h4>mpp_error_state</h4>
-
-<pre>
-    function mpp_error_state()
-      integer :: mpp_error_state
-</pre>
-
-<p><tt>mpp_error</tt> maintains an internal state of the last
-error. This is principally useful in generate a series of warnings
-from an error checking routine, and deciding to trigger a fatal error
-at the end:
-
-<p><pre>
-!series of warnings
-  if( ... )call mpp_error( WARNING, ... )
-  if( ... )call mpp_error( WARNING, ... )
-  if( ... )call mpp_error( WARNING, ... )
-...
-  if( mpp_error_state.EQ.WARNING ) &
-       call mpp_error( FATAL, 'Check previous warning messages.' )
-</pre>
-
 <p><a name="mpp_exit"><li><h4>mpp_exit</h4>
 
 <pre>
-    subroutine mpp_exit
+subroutine mpp_exit
 </pre>
 
-<p>Called at the end of the run, or to re-initialize <b><tt>mpp_mod</tt></b>,
+<p>Called at the end of the run, or to re-initialize <tt>mpp_mod</tt>,
 should you require that for some odd reason.
 
 <p><a name="mpp_init"><li><h4>mpp_init</h4>
 
 <pre>
-    subroutine mpp_init(flags)
-      integer, optional, intent(in) :: flags
+subroutine mpp_init(flags)
+  integer, optional, intent(in) :: flags
 </pre>
 
-<p>Called to initialize the <b><tt>mpp_mod</tt></b> package. It is recommended
+<p>Called to initialize the <tt>mpp_mod</tt> package. It is recommended
 that this call be the first executed line in your program. It sets the
 number of PEs assigned to this run (acquired from the command line, or
-through the environment variable <b><tt>NPES</tt></b>), and associates an ID
+through the environment variable <tt>NPES</tt>), and associates an ID
 number to each PE. These can be accessed by calling <a
-href="#mpp_npes"><b><tt>mpp_npes</tt></b></a> and <a
-href="#mpp_pe"><b><tt>mpp_pe</tt></b></a>.
+href="#mpp_npes"><tt>mpp_npes</tt></a> and <a
+href="#mpp_pe"><tt>mpp_pe</tt></a>.
 
-<p><b><tt>flags</tt></b> can be set to <b><tt>MPP_VERBOSE</tt></b> to
-have <b><tt>mpp_mod</tt></b> keep you informed of what it's up to.
+<p><tt>flags</tt> can be set to <tt>MPP_VERBOSE</tt> to
+have <tt>mpp_mod</tt> keep you informed of what it's up to.
+
+<div>
+<p>This call implies synchronization across all PEs.</tt>
+</div>
 
 <p><a name="mpp_malloc"><li><h4>mpp_malloc</h4>
 
 <pre>
-    subroutine mpp_malloc( ptr, newlen, len )
+subroutine mpp_malloc( ptr, newlen, len )
 !routine to perform symmetric allocation:
 !this is required on the SGI for variables that will be
 ! non-local arguments to a shmem call (see man intro_shmem(3F)).
 !newlen is the required allocation length for the pointer ptr
 !   len is the current allocation (0 if unallocated)
-      integer, intent(in) :: newlen
-      integer, intent(inout) :: len
+  integer, intent(in) :: newlen
+  integer, intent(inout) :: len
 </pre>
 
-<p>This routine is used on SGI systems when <b><tt>mpp_mod</tt></b> is
+<p>This routine is used on SGI systems when <tt>mpp_mod</tt> is
 invoked in the SHMEM library. It ensures that dynamically allocated
-memory can be used with <b><tt>shmem_get</tt></b> and
-<b><tt>shmem_put</tt></b>. This is called <i>symmetric
+memory can be used with <tt>shmem_get</tt> and
+<tt>shmem_put</tt>. This is called <i>symmetric
 allocation</i> and is described in the
-<b><tt>intro_shmem</tt></b> man page. <b><tt>ptr</tt></b> is a <i>Cray
+<tt>intro_shmem</tt> man page. <tt>ptr</tt> is a <i>Cray
 pointer</i> (see the section on <a
 href="#portability">portability</a>).  The operation can be expensive
 (since it requires a global barrier). We therefore attempt to re-use
-existing allocation whenever possible. Therefore <b><tt>len</tt></b>
-and <b><tt>ptr</tt></b> must have the <b><tt>SAVE</tt></b> attribute
+existing allocation whenever possible. Therefore <tt>len</tt>
+and <tt>ptr</tt> must have the <tt>SAVE</tt> attribute
 in the calling routine, and retain the information about the last call
-to <b><tt>mpp_malloc</tt></b>. Additional memory is symmetrically
-allocated if and only if <b><tt>newlen</tt></b> exceeds
-<b><tt>len</tt></b>.
+to <tt>mpp_malloc</tt>. Additional memory is symmetrically
+allocated if and only if <tt>newlen</tt> exceeds
+<tt>len</tt>.
 
 <p>This is never required on Cray PVP or MPP systems. While the T3E
-manpages do talk about symmetric allocation, <b><tt>mpp_mod</tt></b>
+manpages do talk about symmetric allocation, <tt>mpp_mod</tt>
 is coded to remove this restriction.
 
-<p>It is never required if <b><tt>mpp_mod</tt></b> is invoked in MPI.
+<p>It is never required if <tt>mpp_mod</tt> is invoked in MPI.
+
+<div>
+<p>This call implies synchronization across all PEs.</tt>
+</div>
 
 <p><a name="mpp_max"><li><h4>mpp_max</h4>
 
 <pre>
-    subroutine mpp_max( a, pelist )
+subroutine mpp_max( a, pelist )
 !find the max of scalar a the PEs in pelist
 !result is also automatically broadcast to all PEs
-      real(kind=8), intent(inout) :: a
-      integer, intent(in), dimension(0:), optional :: pelist
+   MPP_TYPE_, intent(inout) :: a
+   integer, intent(in), dimension(0:), optional :: pelist
 
-    subroutine mpp_min( a, pelist )
+subroutine mpp_min( a, pelist )
 !find the min of scalar a the PEs in pelist
 !result is also automatically broadcast to all PEs
-      real(kind=8), intent(inout) :: a
-      integer, intent(in), dimension(0:), optional :: pelist
+   MPP_TYPE_, intent(inout) :: a
+   integer, intent(in), dimension(0:), optional :: pelist
 </pre>
 
-<p>Works also when <b><tt>a</tt></b> is declared
-<b><tt>integer(kind=8)</tt></b>. If <b><tt>pelist</tt></b> is omitted,
-finds the maximum or minimum across all PEs. Other reduction
-operations (e.g <b><tt>mpp_min</tt></b>) will be provided if there is
-demand, and could easily be provided by the user by duplicating this
-code.
+<p><tt>a</tt> can be <tt>real</tt> or <tt>integer</tt>.
+
+<div>
+<p>This call implies synchronization across the PEs in
+<tt>pelist</tt>, or all PEs is <tt>pelist is absent.</tt>
+</div>
 
 <p><a name="mpp_npes"><li><h4>mpp_npes</h4>
 
 <pre>
-    function mpp_npes()
-      integer :: mpp_npes
+function mpp_npes()
+  integer :: mpp_npes
 </pre>
 
 <p>This returns the number of PEs participating in this
@@ -273,213 +360,249 @@ application. For a uniprocessor application, this will return 1.
 <p><a name="mpp_pe"><li><h4>mpp_pe</h4>
 
 <pre>
-    function mpp_pe()
-      integer :: mpp_pe
+function mpp_pe()
+  integer :: mpp_pe
 </pre>
 
 <p>This returns the unique ID associated with a PE. This number runs
-between 0 and <b><tt>npes-1</tt></b>, where <b><tt>npes</tt></b> is the total
-processor count, returned by <b><tt>mpp_npes</tt></b>. For a uniprocessor
+between 0 and <tt>npes-1</tt>, where <tt>npes</tt> is the total
+processor count, returned by <tt>mpp_npes</tt>. For a uniprocessor
 application this will return 0.
+
+<p><a name="mpp_set_stack_size"><li><h4>mpp_set_stack_size</h4>
+
+<p><pre>
+subroutine mpp_set_stack_size(n)
+  integer, intent(in) :: n
+</pre>
+
+<div class="new">
+
+<p><tt>mpp_mod</tt> maintains a private internal array called
+<tt>mpp_stack</tt> for private workspace. This call sets the length,
+in words, of this array. <p>The <tt>mpp_init</tt> call sets this
+workspace length to a default of 32768, and this call may be used if a
+longer workspace is needed.
+
+<p>This workspace is symmetrically allocated, as required for
+efficient communication on SGI and Cray MPP systems. Since symmetric
+allocation must be performed by <i>all</i> PEs in a job, this call
+must also be called by all PEs, using the same value of
+<tt>n</tt>. Calling <tt>mpp_set_stack_size</tt> from a subset of PEs,
+or with unequal argument <tt>n</tt>, may cause the program to hang.
+
+<div>
+<p>This call implies synchronization across all PEs.</tt>
+
+<p>If any MPP call using <tt>mpp_stack</tt> overflows the declared
+stack array, the program will abort with a message specifying the
+stack length that is required. Many users wonder why, if the required
+stack length can be computed, it cannot also be specified at that
+point. This cannot be automated because there is no way for the
+program to know if all PEs are present at that call, and with equal
+values of <tt>n</tt>. The program must be rerun by the user with the
+correct argument to <tt>mpp_set_stack_size</tt>, called at an
+appropriate point in the code where all PEs are known to be present.
+</div>
+</div>
 
 <p><a name="mpp_sum"><li><h4>mpp_sum</h4>
 <pre>
-    subroutine mpp_sum( a, length, pelist )
+subroutine mpp_sum( a, length, pelist )
 !sums array a over the PEs in pelist (all PEs if this argument is omitted)
 !result is also automatically broadcast to all PEs
-      integer, intent(in) :: length
-      integer, intent(in), dimension(:), optional :: pelist
-      real(kind=8), dimension(length), intent(inout) :: a
+  integer, intent(in) :: length
+  integer, intent(in), dimension(:), optional :: pelist
+  MPP_TYPE_, intent(inout) :: a
 </pre>
 
-<p>Works also when <b><tt>a</tt></b> is <b><tt>integer(kind=8)</tt></b> or
-<b><tt>complex(kind=8)</tt></b>. Since this is an f77-style pass-by-address,
-the array <b><tt>a</tt></b> can be of any rank. To pass the f90 conformance
-check for rank other than one, simply pass the starting location, e.g
+<div class="new">
 
-<pre>
-real, dimension(nx,ny,nz) :: a
-...
-call mpp_sum( a(1,1,1), nx*ny*nz )
-</pre>
+<p><tt>MPP_TYPE_</tt> corresponds to any 4-byte and 8-byte variant of
+<tt>integer, real, complex, logical</tt> variables, of rank 0 to 5.
 
+<p>
 Library reduction operators are not required or guaranteed to be
-bit-reproducible. If bit-reproducibility of sums is required, compile
-mpp.F90 with the preprocessor flag
-<b><tt>-Dbit_reproducible</tt></b>. This will invoke a binary-tree
-algorithm that scales as <b><tt>log(p)</tt></b> that guarantees
-bit-reproducibility.
+bit-reproducible. In any case, changing the processor count changes
+the data layout, and thus very likely the order of operations. For
+bit-reproducible sums of distributed arrays, consider using the
+<tt>mpp_global_sum</tt> routine provided by the <a
+href="mpp_domains.html"><tt>mpp_domains</tt></a> module.
+
+<p>The <tt>bit_reproducible</tt> flag provided in earlier versions of
+this routine have been removed.
+</div>
+
+<div>
+<p>This call implies synchronization across the PEs in
+<tt>pelist</tt>, or all PEs is <tt>pelist is absent.</tt>
+</div>
 
 <p><a name="mpp_sync"><li><h4>mpp_sync</h4>
 
 <pre>
-    subroutine mpp_sync( pelist )
+subroutine mpp_sync( pelist )
 !synchronize PEs in list
-      integer, dimension(:), intent(in), optional :: pelist
+  integer, dimension(:), intent(in), optional :: pelist
 </pre>
 
 <p>Synchronizes PEs at this point in the execution. If
-<b><tt>pelist</tt></b> is omitted all PEs are synchronized. This can
+<tt>pelist</tt> is omitted all PEs are synchronized. This can
 be expensive on many systems, and should be avoided if possible. Under
-MPI, we do not call <b><tt>MPI_BARRIER</tt></b>, as you might
+MPI, we do not call <tt>MPI_BARRIER</tt>, as you might
 expect. This is because this call can be prohibitively slow on many
 systems. Instead, we perform the same operation as
-<b><tt>mpp_sync_self</tt></b>, i.e all participating PEs wait for
+<tt>mpp_sync_self</tt>, i.e all participating PEs wait for
 completion of all their outstanding non-blocking operations.
+
+<div>
+<p>This call implies synchronization across the PEs in
+<tt>pelist</tt>, or all PEs is <tt>pelist is absent.</tt>
+</div>
 
 <p><a name="mpp_sync_self"><li><h4>mpp_sync_self</h4>
 
 <pre>
-    subroutine mpp_sync_self( remote_pe )
-      integer, intent(in), optional :: remote_pe
+subroutine mpp_sync_self( pelist )
+  integer, intent(in), optional :: pelist(:)
 </pre>
 
-<p><b><tt>mpp_transmit</tt></b> is implemented as asynchronous
-<b><tt>put/send</tt></b> and synchronous
-<b><tt>get/recv</tt></b>. <b><tt>mpp_sync_self</tt></b> guarantees
+<p><tt>mpp_transmit</tt> is implemented as asynchronous
+<tt>put/send</tt> and synchronous
+<tt>get/recv</tt>. <tt>mpp_sync_self</tt> guarantees
 that outstanding asynchronous operations from the calling PE are
-complete. If <b><tt>remote_pe</tt></b> is supplied,
-<b><tt>mpp_sync_self</tt></b> checks only for outstanding puts to that
-PE.
+complete. If <tt>pelist</tt> is supplied,
+<tt>mpp_sync_self</tt> checks only for outstanding puts to the PEs in
+<tt>pelist</tt>.
+
+<div>
+<p>This call implies synchronization across the PEs in
+<tt>pelist</tt>, or all PEs is <tt>pelist is absent.</tt>
+</div>
 
 <p><a name="mpp_transmit"><li><h4>mpp_transmit</h4>
 
 <pre>
-    subroutine mpp_transmit( put_data, put_len, put_pe, get_data, get_len, get_pe )
-!a message-passing routine intended to be reminiscent equally of both MPI and SHMEM
-
-!put_data and get_data are contiguous real*8 arrays
-
-!at each call, your put_data array is put to   put_pe's get_data
-!              your get_data array is got from get_pe's put_data
-!i.e we assume that typically (e.g updating halo regions) each PE
-! performs a put _and_ a get
-
-!special PE designations:
-!      NULL_PE: to disable a put or a get (e.g at boundaries)
-!      ANY_PE:  if remote PE for the put or get is to be unspecific
-!      ALL_PES: broadcast and collect operations (collect not yet implemented)
-
-!ideally we would not pass length, but this f77-style call performs better
-! (arrays passed by address, not descriptor)
-!further, this permits <length> contiguous words from an array of any rank
-!to be passed (avoiding f90 rank conformance check)
-
-!caller is responsible for completion checks before and after
-
-!there are overloaded functions below for datatypes other than real*8
-! they fold into this call
-
-      integer, intent(in) :: put_len, put_pe, get_len, get_pe
-      real(kind=8), intent(in),  dimension(put_len) :: put_data
-      real(kind=8), intent(out), dimension(get_len) :: get_data
+subroutine mpp_transmit( put_data, put_len, put_pe, get_data, get_len, get_pe )
+   integer, intent(in) :: put_len, put_pe, get_len, get_pe
+   MPP_TYPE_, intent(in),  dimension(put_len) :: put_data
+   MPP_TYPE_, intent(out), dimension(get_len) :: get_data
 </pre>
 
-<p><b><tt>get_data</tt></b> and <b><tt>put_data</tt></b> can also be declared <b><tt>integer(kind=8)</tt></b> or
-<b><tt>complex(kind=8)</tt></b>.
+<div class="new">
+<p><tt>get_data</tt> and <tt>put_data</tt> can be declared as any
+4-byte and 8-byte variant of <tt>integer, real, complex, logical</tt>
+variables, of rank 0 to 5.
+</div>
 
-<p><b><tt>mpp_transmit</tt></b> is implemented as asynchronous outward
+<p><tt>mpp_transmit</tt> is implemented as asynchronous outward
 transmission and synchronous inward transmission. This follows the
-behaviour of <b><tt>shmem_put</tt></b> and <b><tt>shmem_get</tt></b>. In MPI, it is
-implemented as <b><tt>mpi_isend</tt></b> and <b><tt>mpi_recv</tt></b>. For most
+behaviour of <tt>shmem_put</tt> and <tt>shmem_get</tt>. In MPI, it is
+implemented as <tt>mpi_isend</tt> and <tt>mpi_recv</tt>. For most
 applications, transmissions occur in pairs, and are here accomplished
 in a single call.
 
-The special PE designations <b><tt>NULL_PE</tt></b>,
-<b><tt>ANY_PE</tt></b> and <b><tt>ALL_PES</tt></b> are provided by use
-association. <b><tt>NULL_PE</tt></b> is used to disable one of the
-pair of transmissions. <b><tt>ANY_PE</tt></b> is used for unspecific
-remote destination. (Please note that <b><tt>put_pe=ANY_PE</tt></b>
-has no meaning in the MPI context, though it is available in the SHMEM
-invocation. If portability is a concern, it is best
-avoided). <b><tt>ALL_PES</tt></b> is used for broadcast
-operations. The following example illustrates the use of
-<b><tt>NULL_PE</tt></b> and <b><tt>ALL_PES</tt></b>:
+The special PE designations <tt>NULL_PE</tt>,
+<tt>ANY_PE</tt> and <tt>ALL_PES</tt> are provided by use
+association.
+
+<p><dl>
+<dt><tt>NULL_PE</tt><dd> is used to disable one of the pair of
+transmissions.
+<dt><tt>ANY_PE</tt><dd> is used for unspecific remote
+destination. (Please note that <tt>put_pe=ANY_PE</tt> has no meaning
+in the MPI context, though it is available in the SHMEM invocation. If
+portability is a concern, it is best avoided).
+<dt><tt>ALL_PES</tt><dd> is used for broadcast operations.
+</dl>
+
+<p>The following example illustrates the use of
+<tt>NULL_PE</tt> and <tt>ALL_PES</tt>:
 
 <pre>
 real, dimension(n) :: a
-   if( pe.EQ.0 )then
-       do p = 1,npes-1
-          call mpp_transmit( a, n, p, a, n, NULL_PE )
-       end do
-   else
-       call mpp_transmit( a, n, NULL_PE, a, n, 0 )
-   end if
+if( pe.EQ.0 )then
+    do p = 1,npes-1
+       call mpp_transmit( a, n, p, a, n, NULL_PE )
+    end do
+else
+    call mpp_transmit( a, n, NULL_PE, a, n, 0 )
+end if
 
 call mpp_transmit( a, n, ALL_PES, a, n, 0 )
 </pre>
 
 <p>The do loop and the broadcast operation above are equivalent.
 
-<p>Two overloaded calls <b><tt>mpp_send</tt></b> and
-<b><tt>mpp_recv</tt></b> have also been
-provided. <b><tt>mpp_send</tt></b> calls <b><tt>mpp_transmit</tt></b>
-with <b><tt>get_pe=NULL_PE</tt></b>. <b><tt>mpp_recv</tt></b> calls
-<b><tt>mpp_transmit</tt></b> with <b><tt>put_pe=NULL_PE</tt></b>. Thus
+<p>Two overloaded calls <tt>mpp_send</tt> and
+<tt>mpp_recv</tt> have also been
+provided. <tt>mpp_send</tt> calls <tt>mpp_transmit</tt>
+with <tt>get_pe=NULL_PE</tt>. <tt>mpp_recv</tt> calls
+<tt>mpp_transmit</tt> with <tt>put_pe=NULL_PE</tt>. Thus
 the do loop above could be written more succinctly:
 
 <pre>
-   if( pe.EQ.0 )then
-       do p = 1,npes-1
-          call mpp_send( a, n, p )
-       end do
-   else
-       call mpp_recv( a, n, 0 )
-   end if
+if( pe.EQ.0 )then
+    do p = 1,npes-1
+       call mpp_send( a, n, p )
+    end do
+else
+    call mpp_recv( a, n, 0 )
+end if
 </pre>
 </ol>
    
 <p><a name="source"><li><h4>Acquiring mpp_mod source</h4>
 
 <p>GFDL users can copy the file
-<b><tt>/net/vb/public/mpp/mpp.F90</tt></b>. External users can download the
+<tt>/net/vb/public/mpp/mpp.F90</tt>. External users can download the
 source <a href="ftp://ftp.gfdl.gov/pub/vb/mpp/mpp.F90">here</a>. The
-current public version number is 5.5.
+current public version number is 6.0.
 
 <p><a name="linking"><li><h4>Compiling and linking to mpp_mod</h4>
 
-<p>Any module or program unit using <b><tt>mpp_mod</tt></b> must contain the
+<p>Any module or program unit using <tt>mpp_mod</tt> must contain the
 line
 
 <pre>
-   use mpp_mod
+use mpp_mod
 </pre>
 
-<p>The source file for <b><tt>mpp_mod</tt></b> is <a
-href="ftp://ftp.gfdl.gov/pub/vb/mpp/mpp.F90"><b><tt>mpp.F90</tt></b></a>.
-Activate the preprocessor flag <b><tt>-Duse_libSMA</tt></b> to invoke
-the SHMEM library, or <b><tt>-Duse_libMPI</tt></b> to invoke the MPI
+<p>The source file for <tt>mpp_mod</tt> is <a
+href="ftp://ftp.gfdl.gov/pub/vb/mpp/mpp.F90"><tt>mpp.F90</tt></a>.
+Activate the preprocessor flag <tt>-Duse_libSMA</tt> to invoke
+the SHMEM library, or <tt>-Duse_libMPI</tt> to invoke the MPI
 library. Global translation of preprocessor macros is required. This
-required the activation of the <b><tt>-F</tt></b> flag on Cray systems
-and the <b><tt>-ftpp -macro_expand</tt></b> flags on SGI systems. On
+required the activation of the <tt>-F</tt> flag on Cray systems
+and the <tt>-ftpp -macro_expand</tt> flags on SGI systems. On
 non-SGI/Cray systems, please consult the f90 manpage for the
 equivalent flag.
 
 <p>On Cray PVP systems, <i>all</i> routines in a message-passing
-program must be compiled with <b><tt>-a taskcommon</tt></b>.
+program must be compiled with <tt>-a taskcommon</tt>.
 
 <p>On SGI systems, it is required to use 4-byte integers and 8-byte
-reals, and the 64-bit ABI (<b><tt>-i4 -r8 -64 -mips4</tt></b>). It is also
+reals, and the 64-bit ABI (<tt>-i4 -r8 -64 -mips4</tt>). It is also
 required on SGI systems to link the following libraries explicitly:
-one of <b><tt>-lmpi</tt></b> and <b><tt>-lsma</tt></b>, depending on
+one of <tt>-lmpi</tt> and <tt>-lsma</tt>, depending on
 whether you wish to use the SHMEM or MPI implementations; and
-<b><tt>-lexc</tt></b>). On Cray systems, all the required flags are
+<tt>-lexc</tt>). On Cray systems, all the required flags are
 default.
 
 <p>On SGI, use MIPSPro 7.2.1 f90 or higher.
 <p>On Cray, use cf90 3.0.0.0 or higher.
 <p>On either, use the message-passing toolkit MPT 1.2 or higher.
 
-<p>The declaration <b><tt>MPI_INTEGER8</tt></b> for 8-byte integers
-was provided by <b><tt>mpp_mod</tt></b> because it was absent in early
+<p>The declaration <tt>MPI_INTEGER8</tt> for 8-byte integers
+was provided by <tt>mpp_mod</tt> because it was absent in early
 releases of the Message Passing Toolkit. It has since been included
-there, and the declaration in <b><tt>mpp_mod</tt></b> commented
+there, and the declaration in <tt>mpp_mod</tt> commented
 out. This declaration may need to be reinstated if you get a compiler
 error from this (i.e you are using a superseded version of the MPT).
 
-<p>By turning on the cpp flag <b><tt>-Dtest_mpp</tt></b> and compiling
-<b><tt>mpp_mod</tt></b> by itself, you may create a test program to
-exercise certain aspects of <b><tt>mpp_mod</tt></b>, e.g
+<p>By turning on the cpp flag <tt>-Dtest_mpp</tt> and compiling
+<tt>mpp_mod</tt> by itself, you may create a test program to
+exercise certain aspects of <tt>mpp_mod</tt>, e.g
 
 <p><pre>
 f90 -F -Duse_libSMA -Dtest_mpp mpp.F90
@@ -488,10 +611,10 @@ mpprun -n4 a.out
 
 <p>runs a 4-PE test on a t3e.
 
-<p><a name="portability"><li><h4>Portability issues</h4>
+<p><a name="portability"><li><h4>Portability</h4>
 
 While the SHMEM library is currently available only on SGI/Cray
-systems, <b><tt>mpp_mod</tt></b> can be used on any other system with
+systems, <tt>mpp_mod</tt> can be used on any other system with
 a standard-compliant f90 compiler and MPI library. SHMEM is now
 becoming available on other systems as well.
 
@@ -502,13 +625,20 @@ non-SGI/Cray systems and compilers.
 <p><a name="Changes"></a><li><h4>Changes</h4>
 
 The <a href="changes_mpp.html">RCS log</a> for
-<b><tt>mpp.F90</tt></b> contains a comprehensive list of changes. In the
+<tt>mpp.F90</tt> contains a comprehensive list of changes. In the
 unlikely event that you should wish to check out a retro version,
 please get in touch with me, <a href="myaddr.html">Balaji</a>.
 </ol>
 
-<p><hr><small>Document last modified
-   <!--#exec cmd="echo $LAST_MODIFIED" --></small>
-   <!--#exec cmd="echo $DOCUMENT_NAME $REMOTE_HOST $DATE_LOCAL >> stats" -->
+<!-- footer using address stylespec -->
+<br><hr>
+<address>
+Author: <a href="myaddr.html">V. Balaji</a>
+<br>Document last modified <!--#exec cmd="echo $LAST_MODIFIED" --></small>
+</address>
 </body>
+
+<!-- store access stats -->
+<!--#exec cmd="touch stats; chmod 666 stats" -->
+<!--#exec cmd="echo $DOCUMENT_NAME $REMOTE_HOST $DATE_LOCAL >> stats" -->
 </html>

@@ -10,7 +10,7 @@
       ptr = LOC(data)
       call mpp_read( unit, field, domain, data3D, tindex )
 #else
-      call mpp_error( FATAL, 'MPP_WRITE_2DDECOMP_2D_: requires Cray pointers.' )
+      call mpp_error( FATAL, 'MPP_WRITE_2DDECOMP: requires Cray pointers.' )
 #endif
       return
     end subroutine MPP_READ_2DDECOMP_2D_
@@ -20,11 +20,14 @@
       integer, intent(in) :: unit
       type(fieldtype), intent(in) :: field
       type(domain2D), intent(in) :: domain
-      MPP_TYPE_, intent(inout) :: data(domain%x%data%start_index:,domain%y%data%start_index:,:)
+      MPP_TYPE_, intent(inout) :: data(:,:,:)
       integer, intent(in), optional :: tindex
       MPP_TYPE_, allocatable :: cdata(:,:,:)
       MPP_TYPE_, allocatable :: gdata(:)
       integer :: len, lenx,leny,lenz,i,j,k,n
+!NEW: data may be on compute OR data domain
+      logical :: data_has_halos, halos_are_global, x_is_global, y_is_global
+      integer :: is, ie, js, je, isd, ied, jsd, jed, isg, ieg, jsg, jeg, ioff, joff
 
       if (.NOT. present(tindex) .AND. mpp_file(unit)%time_level .ne. -1) &
       call mpp_error(FATAL, 'MPP_READ: need to specify a time level for data with time axis')
@@ -32,37 +35,53 @@
       if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_READ: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_READ: invalid unit number.' )
 
-      if( npes.GT.1 .AND. mpp_file(unit)%threading.EQ.MPP_SINGLE )then
-          lenx=(domain%x%global%end_index-domain%x%global%start_index+1)
-          leny=(domain%y%global%end_index-domain%y%global%start_index+1)
-          lenz=size(data,3)
-          len=lenx*leny*lenz
-          allocate( gdata(len))          
-! read field on pe 0 and pass to all pes
-          if( pe.EQ.0 ) call read_record( unit, field, len, gdata, tindex )
-! broadcasting global array, this can be expensive!          
-          call mpp_transmit( gdata, len, ALL_PES, gdata, len,0)
-!          
-          do k=1,size(data,3)
-             do j=domain%y%compute%start_index,domain%y%compute%end_index
-                do i=domain%x%compute%start_index,domain%x%compute%end_index
-                    n=(i-domain%x%global%start_index +1)+&
-                      (j-domain%y%global%start_index)*lenx+&
-                      (k-1)*lenx*leny
-                    data(i,j,k)=gdata(n)
-                enddo
-             enddo
-          enddo
+      call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
+      call mpp_get_data_domain   ( domain, isd, ied, jsd, jed, x_is_global=x_is_global, y_is_global=y_is_global )
+      call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg )
+      if( size(data,1).EQ.ie-is+1 .AND. size(data,2).EQ.je-js+1 )then
+          data_has_halos = .FALSE.
+      else if( size(data,1).EQ.ied-isd+1 .AND. size(data,2).EQ.jed-jsd+1 )then
+          data_has_halos = .TRUE.
       else
+          call mpp_error( FATAL, 'MPP_READ: data must be either on compute domain or data domain.' )
+      end if
+      halos_are_global = x_is_global .AND. y_is_global
+      if( npes.GT.1 .AND. mpp_file(unit)%threading.EQ.MPP_SINGLE )then
+          if( halos_are_global )then !you can read directly into data array
+              if( pe.EQ.0 )call read_record( unit, field, size(data), data, tindex )
+          else
+              lenz=size(data,3)
+              len=lenx*leny*lenz
+              allocate(gdata(len))          
+! read field on pe 0 and pass to all pes
+              if( pe.EQ.0 ) call read_record( unit, field, len, gdata, tindex )
+! broadcasting global array, this can be expensive!          
+              call mpp_transmit( gdata, len, ALL_PES, gdata, len, 0 )
+              ioff = is; joff = js
+              if( data_has_halos )then
+                  ioff = isd; joff = jsd
+              end if
+              do k=1,size(data,3)
+                 do j=js,je
+                    do i=is,ie
+                       n=(i-isg+1) + (j-jsg)*lenx + (k-1)*lenx*leny
+                       data(i-ioff+1,j-joff+1,k)=gdata(n)
+                    enddo
+                 enddo
+              enddo
+              deallocate(gdata)
+          end if
+      else if( data_has_halos )then
 ! for uniprocessor or multithreaded read
 ! read compute domain as contiguous data
 
-          allocate( cdata(domain%x%compute%size,domain%y%compute%size,size(data,3)) )
+          allocate( cdata(is:ie,js:je,size(data,3)) )
           call read_record(unit,field,size(cdata),cdata,tindex,domain)
 
-          data(domain%x%compute%start_index:domain%x%compute%end_index,&
-               domain%y%compute%start_index:domain%y%compute%end_index,:)&
-               =cdata(:,:,:) 
+          data(is-isd+1:ie-isd+1,js-jsd+1:je-jsd+1,:) = cdata(:,:,:)
+          deallocate(cdata)
+      else
+          call read_record(unit,field,size(data),data,tindex,domain)
       end if
 
       return
@@ -80,7 +99,7 @@
       ptr = LOC(data)
       call mpp_read( unit, field, domain, data3D, tindex )
 #else
-      call mpp_error( FATAL, 'MPP_WRITE_2DDECOMP_2D_: requires Cray pointers.' )
+      call mpp_error( FATAL, 'MPP_WRITE_2DDECOMP: requires Cray pointers.' )
 #endif
       return
     end subroutine MPP_READ_2DDECOMP_4D_
@@ -97,7 +116,7 @@
       ptr = LOC(data)
       call mpp_read( unit, field, domain, data3D, tindex )
 #else
-      call mpp_error( FATAL, 'MPP_WRITE_2DDECOMP_2D_: requires Cray pointers.' )
+      call mpp_error( FATAL, 'MPP_WRITE_2DDECOMP: requires Cray pointers.' )
 #endif
       return
     end subroutine MPP_READ_2DDECOMP_5D_

@@ -5,12 +5,14 @@ module diag_output_mod
 
 use       mpp_io_mod, only: axistype, fieldtype, mpp_io_init,     &
                             mpp_open,  mpp_write_meta, mpp_write, &
-                            mpp_flush, mpp_close,                 &
+                            mpp_flush, mpp_close, mpp_get_id,     &
                             MPP_APPEND, MPP_WRONLY, MPP_OVERWR,   &
                             MPP_NETCDF, MPP_MULTI
 
-use  mpp_domains_mod, only: domain1d, domain2d
-
+use  mpp_domains_mod, only: domain1d, domain2d, mpp_define_domains, mpp_get_pelist,&
+                            mpp_get_global_domain, mpp_get_compute_domains, &
+                            null_domain1d, null_domain2d, operator(/=), mpp_get_layout
+use mpp_mod, only : mpp_npes, mpp_pe
 use    diag_axis_mod, only: diag_axis_init, get_diag_axis,           &
                             get_axis_length, get_axis_global_length, &
                             get_domain1d, get_domain2d
@@ -88,7 +90,7 @@ logical :: do_init = .true.
 
 type diag_fieldtype
    type(fieldtype)         :: Field
-   type(domain2d), pointer :: Domain
+   type(domain2d)          :: Domain
    real                    :: miss, miss_pack
    logical                 :: miss_present, miss_pack_present
 end type
@@ -128,7 +130,7 @@ subroutine file_time_init ( file_name, format, file_title,  &
 !
 !-----------------------------------------------------------------------
 
- real, dimension(0) :: tdata
+ real, dimension(1) :: tdata
  integer :: form, threading, fileset
 
 !-----------------------------------------------------------------------
@@ -185,16 +187,19 @@ subroutine write_axis_meta_data ( file_unit, axes )
 !
 !-----------------------------------------------------------------------
 
- type(domain1d), pointer :: Domain
+ type(domain1d)          :: Domain
+ type(domain1d)          :: Edge_Domain
 
    character(len=mxch)  :: axis_name, axis_units
    character(len=mxchl) :: axis_long_name
    character(len=1)     :: axis_cart_name
    integer              :: axis_direction, axis_edges
    real, allocatable    :: axis_data(:)
+   integer, allocatable    :: axis_extent(:), pelist(:)
 
-   integer :: calendar, id_axis
+   integer :: calendar, id_axis, id_time_axis
    integer :: i, index, num, length, edges_index
+   integer :: gbegin, gend, gsize, ndivs
    logical :: use_range
 
 !-----------------------------------------------------------------------
@@ -242,7 +247,7 @@ subroutine write_axis_meta_data ( file_unit, axes )
                         axis_direction, axis_edges, Domain, &
                         axis_data )
 
- if ( associated (Domain) ) then
+ if ( Domain .ne. null_domain1d ) then
    if (length > 0) then
       call mpp_write_meta ( file_unit, Axis_types(num_axis_in_file),  &
                             axis_name,      axis_units,       &
@@ -272,23 +277,20 @@ subroutine write_axis_meta_data ( file_unit, axes )
 
    if ( axis_cart_name == 'T' ) then
       time_axis_flag (num_axis_in_file) = .true.
+      id_time_axis = mpp_get_id( Axis_types(num_axis_in_file) )
       calendar = get_calendar_type ( )
       select case (calendar)
          case (THIRTY_DAY_MONTHS)
-            call mpp_write_meta ( file_unit,  &
-                                  Axis_types(num_axis_in_file)%id, &
+            call mpp_write_meta ( file_unit, id_time_axis, &
                                  'calendar_type', cval='THIRTY_DAY_MONTHS')
          case (JULIAN)
-            call mpp_write_meta ( file_unit,  &
-                                  Axis_types(num_axis_in_file)%id, &
+            call mpp_write_meta ( file_unit, id_time_axis, &
                                  'calendar_type', cval='JULIAN')
          case (GREGORIAN)
-            call mpp_write_meta ( file_unit,  &
-                                  Axis_types(num_axis_in_file)%id, &
+            call mpp_write_meta ( file_unit, id_time_axis, &
                                  'calendar_type', cval='GREGORIAN')
          case (NO_LEAP)
-            call mpp_write_meta ( file_unit,  &
-                                  Axis_types(num_axis_in_file)%id, &
+            call mpp_write_meta ( file_unit, id_time_axis, &
                                  'calendar_type', cval='NO_LEAP')
       end select
    else
@@ -320,7 +322,7 @@ subroutine write_axis_meta_data ( file_unit, axes )
 
 !  ---- write edges attribute to original axis ----
 
-   call mpp_write_meta ( file_unit, Axis_types(num_axis_in_file)%id, &
+   call mpp_write_meta ( file_unit, mpp_get_id(Axis_types(num_axis_in_file)), &
                          'edges', cval=axis_name )
 
 !  ---- add edges index to axis list ----
@@ -333,23 +335,40 @@ subroutine write_axis_meta_data ( file_unit, axes )
 
 !  ---- write edges axis to file ----
 
- if ( associated (Domain) ) then
-
-   call modify_domain_index ( Domain, +1 )
-
-   call mpp_write_meta ( file_unit, Axis_types(num_axis_in_file),  &
+ if ( Domain /= null_domain1d ) then
+! assume domain decomposition is irregular and loop through all prev and next
+! domain pointers extracting domain extents.  Assume all pes are used in
+! decomposition
+   call mpp_get_global_domain(Domain,begin=gbegin,end=gend,size=gsize)
+   call mpp_get_layout(Domain, ndivs)
+   if (ndivs .EQ. 1) then
+      call mpp_write_meta ( file_unit, Axis_types(num_axis_in_file),  &
                          axis_name,      axis_units,       &
                          axis_long_name, axis_cart_name,   &
-                         axis_direction, Domain,  data=axis_data )
-
-   call modify_domain_index ( Domain, -1 )
-
+                         axis_direction,  data=axis_data )
+   else
+      if (ALLOCATED(axis_extent)) deallocate(axis_extent)
+      allocate(axis_extent(0:ndivs-1))
+      call mpp_get_compute_domains(Domain,size=axis_extent(0:ndivs-1))
+      gend=gend+1
+      axis_extent(ndivs-1)= axis_extent(ndivs-1)+1
+      if (ALLOCATED(pelist)) deallocate(pelist)      
+      allocate(pelist(0:ndivs-1))
+      call mpp_get_pelist(Domain,pelist)
+      call mpp_define_domains((/gbegin,gend/),ndivs,Edge_Domain,&
+                           pelist=pelist(0:ndivs-1), &
+                           extent=axis_extent(0:ndivs-1))
+      call mpp_write_meta ( file_unit, Axis_types(num_axis_in_file),  &
+                         axis_name,      axis_units,       &
+                         axis_long_name, axis_cart_name,   &
+                         axis_direction, Edge_Domain,  data=axis_data )
+    endif
  else
 
    call mpp_write_meta ( file_unit, Axis_types(num_axis_in_file),  &
                          axis_name,      axis_units,       &
                          axis_long_name, axis_cart_name,   &
-                         axis_direction, Domain,  data=axis_data )
+                         axis_direction, data=axis_data )
 
  endif
 
@@ -530,7 +549,7 @@ function write_field_meta_data ( file_unit, name, axes, units,      &
 
    if ( present(avg_name) ) then
       if ( avg_name(1:1) /= ' ' ) then
-          call mpp_write_meta ( file_unit, Field%Field%id,       &
+          call mpp_write_meta ( file_unit, mpp_get_id(Field%Field),       &
                                 'time_avg_info',                 &
                                 cval=trim(avg_name) // '_T1,' // &
                                      trim(avg_name) // '_T2,' // &
@@ -540,7 +559,8 @@ function write_field_meta_data ( file_unit, name, axes, units,      &
 
 !---- get axis domain ----
 
-   Field%Domain => get_domain2d ( axes )
+
+   Field%Domain = get_domain2d ( axes )
 
 !-----------------------------------------------------------------------
 
@@ -551,22 +571,17 @@ end function write_field_meta_data
 subroutine done_meta_data (file_unit)
 
   integer,  intent(in)  :: file_unit
-
-  integer :: i
+  
+  type(domain1d)  :: Domain
+  type(domain1d)  :: Edge_Domain
+  integer, allocatable    :: axis_extent(:)
+  integer :: i, gbegin, gend, gsize
 
 !---- write data for all non-time axes ----
 
    do i = 1, num_axis_in_file
        if (time_axis_flag(i)) cycle
-
-       if (edge_axis_flag(i)) &
-       call modify_domain_index ( Axis_types(i)%Domain, +1 )
-
        call mpp_write ( file_unit, Axis_types(i) )
-
-       if (edge_axis_flag(i)) &
-       call modify_domain_index ( Axis_types(i)%Domain, -1 )
-
    enddo
 
    num_axis_in_file = 0
@@ -578,7 +593,7 @@ end subroutine done_meta_data
 subroutine diag_field_out ( file_unit, Field, data, time )
 
 integer             , intent(in)    :: file_unit
-type(diag_fieldtype), intent(in)    :: Field
+type(diag_fieldtype), intent(inout)    :: Field
 real                , intent(inout) :: data(:,:,:)
 real,      optional , intent(in)    :: time
 
@@ -594,7 +609,7 @@ real,      optional , intent(in)    :: time
 
 !---- output data ----
 
-  if ( associated(Field%Domain) ) then
+  if ( Field%Domain /= null_domain2d ) then
       call mpp_write (file_unit, Field%Field, Field%Domain, data, time)
   else
       call mpp_write (file_unit, Field%Field, data, time)
@@ -646,21 +661,22 @@ end function get_axis_index
 
 !#######################################################################
 
-subroutine modify_domain_index ( Domain, add )
-
-  type(domain1d), pointer :: Domain
-  integer, intent(in) :: add
-
-   if (.not.associated(Domain)) return
-
-   if ( Domain%Compute%end_index == Domain%Global%end_index ) then
-        Domain%Compute%end_index = Domain%Compute%end_index + add
-        Domain%Compute%size      = Domain%Compute%size      + add
-   endif
-        Domain%Global %end_index = Domain%Global %end_index + add
-        Domain%Global %size      = Domain%Global %size      + add
-
-end subroutine modify_domain_index
+!subroutine modify_domain_index ( Domain, add )
+!
+!  type(domain1d), pointer :: Domain
+!  integer, intent(in) :: add
+!
+!   if (.not.associated(Domain)) return
+!
+!   if ( Domain%Compute%end_index == Domain%Global%end_index ) then
+!        Domain%Compute%end_index = Domain%Compute%end_index + add
+!        Domain%Compute%size      = Domain%Compute%size      + add
+!   endif
+!
+!        Domain%Global %end_index = Domain%Global %end_index + add
+!        Domain%Global %size      = Domain%Global %size      + add
+!
+!end subroutine modify_domain_index
 
 !#######################################################################
 

@@ -1,8 +1,8 @@
-    subroutine MPP_UPDATE_DOMAINS_2D_( field, domain, flags )
+    subroutine MPP_UPDATE_DOMAINS_2D_( field, domain, flags, type )
 !updates data domain of 2D field whose computational domains have been computed
       MPP_TYPE_, intent(inout) :: field(:,:)
-      type(domain2D), intent(in), target :: domain
-      integer, intent(in), optional :: flags
+      type(domain2D), intent(inout), target :: domain
+      integer, intent(in), optional :: flags, type
       MPP_TYPE_ :: field3D(size(field,1),size(field,2),1)
 #ifdef use_CRI_pointers
       pointer( ptr, field3D )
@@ -10,211 +10,370 @@
 #else
       call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS_2D_: requires Cray pointers.' )
 #endif
-      call MPP_UPDATE_DOMAINS_3D_( field3D, domain, flags )
+      call mpp_update_domains( field3D, domain, flags, type )
       return
     end subroutine MPP_UPDATE_DOMAINS_2D_
 
-    subroutine MPP_UPDATE_DOMAINS_3D_( field, domain, flags_in )
+    subroutine MPP_UPDATE_DOMAINS_3D_( field, domain, flags_in, type )
 !updates data domain of 3D field whose computational domains have been computed
-      type(domain2D), intent(in), target :: domain
-      MPP_TYPE_, intent(inout) :: field(domain%x%data%start_index:,domain%y%data%start_index:,:)
-      integer, intent(in), optional :: flags_in
-      integer :: flags
+      type(domain2D), intent(inout), target :: domain
+      MPP_TYPE_, intent(inout) :: field(domain%x%data%begin:,domain%y%data%begin:,:)
+      integer, intent(in), optional :: flags_in, type
 
-      type(domain2D), pointer :: put_domain, get_domain
-!limits of computation, remote put and get domains
-      integer :: isc, iec, jsc, jec,  isp, iep, jsp, jep,  isg, ieg, jsg, jeg,  to, from
+      integer :: is, ie, js, je, i, j, k, l, flags
+      integer :: bufpos, lastpos, nwords
+      logical :: mustput, mustget, vectorcomp
+      character(len=8) :: text
+      MPP_TYPE_ :: work(size(field)*2)
+      integer :: words_per_long, mpp_domains_stack_pos
+#ifdef use_CRI_pointers
+      pointer( ptr, work )
+      ptr = LOC(mpp_domains_stack)
+#else
+      equivalence( work, mpp_domains_stack )
+#endif
 
       if( .NOT.mpp_domains_initialized )call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS: You must first call mpp_domains_init.' )
 
-      flags = XUPDATE+YUPDATE   !default
+      flags=XUPDATE+YUPDATE
       if( PRESENT(flags_in) )flags = flags_in
-      if( flags.EQ.TRANSPOSE ) &
-           call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS: if TRANSPOSE is set, an update direction must be set also.' )
+      vectorcomp = .FALSE.
+      if( PRESENT(type) )then
+          if( type.NE.VECTOR_COMPONENT ) &
+               call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS: the only value of type currently allowed is VECTOR_COMPONENT.' )
+#ifdef MPP_TYPE_IS_LOGICAL_
+          call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS: a logical variable cannot have a VECTOR_COMPONENT type.' )
+#endif
+          vectorcomp = .TRUE.
+      end if
 
-      isc = domain%x%compute%start_index; iec = domain%x%compute%end_index
-      jsc = domain%y%compute%start_index; jec = domain%y%compute%end_index
-!      call mpp_sync()
-      if( BTEST(flags,0) )then  !WUPDATE: update western halo
-          put_domain => domain; get_domain => domain
-          do while( put_domain.NE.NULL_DOMAIN2D .OR. get_domain.NE.NULL_DOMAIN2D )
-             if( ASSOCIATED(put_domain%east) )then
-                 put_domain => put_domain%east
-                 if( BTEST(flags,4) )then
-                     jsp = put_domain%y%compute%start_index; jep = put_domain%y%compute%end_index
+      words_per_long = size(transfer(work(1),mpp_domains_stack))
+!if update domains is being called, assume active domain is reduced to compute domain
+      call mpp_get_compute_domain( domain, is, ie, js, je )
+      call mpp_set_active_domain ( domain, is, ie, js, je )
+
+!put south and north halos
+      bufpos = 0
+      mpp_domains_stack_pos = 0
+      do l = 0,size(domain%y%list)-1
+         lastpos = bufpos
+         mustput = .FALSE.
+         if( BTEST(flags,2) .AND. domain%y%list(l)%mustputf )then 
+             mustput = .TRUE.
+             nwords = domain%x%active%size * domain%y%list(l)%putf%size * size(field,3)
+             mpp_domains_stack_pos = (bufpos+nwords)*words_per_long
+             if( mpp_domains_stack_pos.GT.mpp_domains_stack_size )then
+                 write( text, '(i8)' )mpp_domains_stack_pos
+                 call mpp_error( FATAL, &
+                      'MPP_UPDATE_DOMAINS user stack overflow: call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+             end if
+             mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, mpp_domains_stack_pos )
+             do k = 1,size(field,3)
+                do j = domain%y%list(l)%putf%begin,domain%y%list(l)%putf%end
+                   do i = domain%x%active%begin,domain%x%active%end
+                      bufpos = bufpos + 1
+                      work(bufpos) = field(i,j,k)
+                   end do
+                end do
+             end do
+         end if
+         if( BTEST(flags,3) .AND. domain%y%list(l)%mustputb )then
+             mustput = .TRUE.
+             nwords = domain%x%active%size * domain%y%list(l)%putb%size * size(field,3)
+             mpp_domains_stack_pos = (bufpos+nwords)*words_per_long
+             if( mpp_domains_stack_pos.GT.mpp_domains_stack_size )then
+                 write( text, '(i8)' )mpp_domains_stack_pos
+                 call mpp_error( FATAL, &
+                      'MPP_UPDATE_DOMAINS user stack overflow: call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+             end if
+             mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, mpp_domains_stack_pos )
+             do k = 1,size(field,3)
+                do j = domain%y%list(l)%putb%begin,domain%y%list(l)%putb%end
+                   do i = domain%x%active%begin,domain%x%active%end
+                      bufpos = bufpos + 1
+                      work(bufpos) = field(i,j,k)
+                   end do
+                end do
+             end do
+         end if
+         if( mustput )then
+             if( debug )write( stderr, '(a,3i4,i8)' )'YSEND from, to, l, length=', pe, domain%y%list(l)%pe, l, bufpos-lastpos
+             call mpp_send( work(lastpos+1), bufpos-lastpos, domain%y%list(l)%pe )
+         end if
+      end do
+!get south and north halos
+      do l = 0,size(domain%y%list)-1
+         lastpos = bufpos
+         mustget = .FALSE.
+         if( BTEST(flags,2) .AND. domain%y%list(l)%mustgetb )then
+             mustget = .TRUE.
+             nwords = domain%x%active%size * domain%y%list(l)%getb%size * size(field,3)
+             mpp_domains_stack_pos = (bufpos+nwords)*words_per_long
+             if( mpp_domains_stack_pos.GT.mpp_domains_stack_size )then
+                 write( text, '(i8)' )mpp_domains_stack_pos
+                 call mpp_error( FATAL, &
+                      'MPP_UPDATE_DOMAINS user stack overflow: call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+             end if
+             mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, mpp_domains_stack_pos )
+             bufpos = bufpos+nwords
+             call mpp_set_active_domain( domain, ybegin=domain%y%data%begin )
+         end if
+         if( BTEST(flags,3) .AND. domain%y%list(l)%mustgetf )then
+             mustget = .TRUE.
+             nwords = domain%x%active%size * domain%y%list(l)%getf%size * size(field,3)
+             mpp_domains_stack_pos = (bufpos+nwords)*words_per_long
+             if( mpp_domains_stack_pos.GT.mpp_domains_stack_size )then
+                 write( text, '(i8)' )mpp_domains_stack_pos
+                 call mpp_error( FATAL, &
+                      'MPP_UPDATE_DOMAINS user stack overflow: call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+             end if
+             mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, mpp_domains_stack_pos )
+             bufpos = bufpos+nwords
+             call mpp_set_active_domain( domain, yend=domain%y%data%end )
+         end if
+         if( mustget )then
+             if( debug )write( stderr, '(a,3i4,i8)' )'YRECV to, from, l, length=', pe, domain%y%list(l)%pe, l, bufpos-lastpos
+             call mpp_recv( work(lastpos+1), bufpos-lastpos, domain%y%list(l)%pe )
+             bufpos = lastpos
+             if( BTEST(flags,2) .AND. domain%y%list(l)%mustgetb )then
+                 if( domain%y%list(l)%folded )then
+                     if( vectorcomp )then
+                         do k = 1,size(field,3)
+                            do j = domain%y%list(l)%getb%end,domain%y%list(l)%getb%begin,-1
+                               do i = domain%x%active%end,domain%x%active%begin,-1
+                                  bufpos = bufpos + 1
+#ifndef MPP_TYPE_IS_LOGICAL_
+                                  field(i,j,k) = -work(bufpos)
+#endif
+                               end do
+                            end do
+                         end do
+                     else
+                         do k = 1,size(field,3)
+                            do j = domain%y%list(l)%getb%end,domain%y%list(l)%getb%begin,-1
+                               do i = domain%x%active%end,domain%x%active%begin,-1
+                                  bufpos = bufpos + 1
+                                  field(i,j,k) =  work(bufpos)
+                               end do
+                            end do
+                         end do
+                     end if
                  else
-                     jsp = jsc; jep = jec
+                     do k = 1,size(field,3)
+                        do j = domain%y%list(l)%getb%begin,domain%y%list(l)%getb%end
+                           do i = domain%x%active%begin,domain%x%active%end
+                              bufpos = bufpos + 1
+                              field(i,j,k) = work(bufpos)
+                           end do
+                        end do
+                     end do
                  end if
-             else
-                 put_domain => NULL_DOMAIN2D
+                 call mpp_set_active_domain( domain, ybegin=domain%y%list(l)%getb%begin )
              end if
-             if( ASSOCIATED(get_domain%west) )then
-                 get_domain => get_domain%west
-                 jsg = jsc; jeg = jec
-             else
-                 get_domain => NULL_DOMAIN2D
-             end if
-             call get_halos_1D( domain%x, put_domain%x, get_domain%x, -1, to, from, isp, iep, isg, ieg )
-             if( to.NE.NULL_PE .OR. from.NE.NULL_PE )call buffer_and_transmit
-             if( isg.EQ.domain%x%data%start_index )get_domain => NULL_DOMAIN2D
-             if( put_domain.EQ.domain )put_domain => NULL_DOMAIN2D
-          end do
-          isc = domain%x%data%start_index !reset compute domain left edge so that Y update will do corners
-      end if
-!      call mpp_sync()
-      if( BTEST(flags,1) )then  !EUPDATE: update eastern halo
-          put_domain => domain; get_domain => domain
-          do while( put_domain.NE.NULL_DOMAIN2D .OR. get_domain.NE.NULL_DOMAIN2D )
-             if( ASSOCIATED(put_domain%west) )then
-                 put_domain => put_domain%west
-                 if( BTEST(flags,4) )then
-                     jsp = put_domain%y%compute%start_index; jep = put_domain%y%compute%end_index
+             if( BTEST(flags,3) .AND. domain%y%list(l)%mustgetf )then
+                 if( domain%y%list(l)%folded )then
+                     if( vectorcomp )then
+                         do k = 1,size(field,3)
+                            do j = domain%y%list(l)%getf%end,domain%y%list(l)%getf%begin,-1
+                               do i = domain%x%active%end,domain%x%active%begin,-1
+                                  bufpos = bufpos + 1
+#ifndef MPP_TYPE_IS_LOGICAL_
+                                  field(i,j,k) = -work(bufpos)
+#endif
+                               end do
+                            end do
+                         end do
+                     else
+                         do k = 1,size(field,3)
+                            do j = domain%y%list(l)%getf%end,domain%y%list(l)%getf%begin,-1
+                               do i = domain%x%active%end,domain%x%active%begin,-1
+                                  bufpos = bufpos + 1
+                                  field(i,j,k) =  work(bufpos)
+                               end do
+                            end do
+                         end do
+                     end if
                  else
-                     jsp = jsc; jep = jec
+                     do k = 1,size(field,3)
+                        do j = domain%y%list(l)%getf%begin,domain%y%list(l)%getf%end
+                           do i = domain%x%active%begin,domain%x%active%end
+                              bufpos = bufpos + 1
+                              field(i,j,k) = work(bufpos)
+                           end do
+                        end do
+                     end do
                  end if
-             else
-                 put_domain => NULL_DOMAIN2D
+                 call mpp_set_active_domain( domain, yend=domain%y%list(l)%getf%end )
              end if
-             if( ASSOCIATED(get_domain%east) )then
-                 get_domain => get_domain%east
-                 jsg = jsc; jeg = jec
-             else
-                 get_domain => NULL_DOMAIN2D
+         end if
+      end do
+      call mpp_sync_self( domain%y%list(:)%pe )
+
+!put west and east halos
+      bufpos = 0
+      mpp_domains_stack_pos = 0
+      do l = 0,size(domain%x%list)-1
+         mustput = .FALSE.
+         lastpos = bufpos       !end of last send message buffer
+         if( BTEST(flags,0) .AND. domain%x%list(l)%mustputf )then
+             mustput = .TRUE.
+             nwords = domain%x%list(l)%putf%size * domain%y%active%size * size(field,3)
+             mpp_domains_stack_pos = (bufpos+nwords)*words_per_long
+             if( mpp_domains_stack_pos.GT.mpp_domains_stack_size )then
+                 write( text, '(i8)' )mpp_domains_stack_pos
+                 call mpp_error( FATAL, &
+                      'MPP_UPDATE_DOMAINS user stack overflow: call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
              end if
-             call get_halos_1D( domain%x, put_domain%x, get_domain%x, +1, to, from, isp, iep, isg, ieg )
-             if( to.NE.NULL_PE .OR. from.NE.NULL_PE )call buffer_and_transmit
-             if( ieg.EQ.domain%x%data%end_index )get_domain => NULL_DOMAIN2D
-             if( put_domain.EQ.domain )put_domain => NULL_DOMAIN2D
-          end do
-          iec = domain%x%data%end_index !reset compute domain right edge so that Y update will do corners
-      end if
-!      call mpp_sync()
-      if( BTEST(flags,2) )then  !SUPDATE: update southern halo
-          put_domain => domain; get_domain => domain
-          do while( put_domain.NE.NULL_DOMAIN2D .OR. get_domain.NE.NULL_DOMAIN2D )
-             if( ASSOCIATED(put_domain%north) )then
-                 put_domain => put_domain%north
-                 if( BTEST(flags,4) )then
-                     isp = put_domain%x%compute%start_index; iep = put_domain%x%compute%end_index
+             mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, mpp_domains_stack_pos )
+             do k = 1,size(field,3)
+                do j = domain%y%active%begin,domain%y%active%end
+                   do i = domain%x%list(l)%putf%begin,domain%x%list(l)%putf%end
+                      bufpos = bufpos + 1
+                      work(bufpos) = field(i,j,k)
+                   end do
+                end do
+             end do
+         end if
+         if( BTEST(flags,1) .AND. domain%x%list(l)%mustputb )then
+             mustput = .TRUE.
+             nwords = domain%x%list(l)%putb%size * domain%y%active%size * size(field,3)
+             mpp_domains_stack_pos = (bufpos+nwords)*words_per_long
+             if( mpp_domains_stack_pos.GT.mpp_domains_stack_size )then
+                 write( text, '(i8)' )mpp_domains_stack_pos
+                 call mpp_error( FATAL, &
+                      'MPP_UPDATE_DOMAINS user stack overflow: call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+             end if
+             mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, mpp_domains_stack_pos )
+             do k = 1,size(field,3)
+                do j = domain%y%active%begin,domain%y%active%end
+                   do i = domain%x%list(l)%putb%begin,domain%x%list(l)%putb%end
+                      bufpos = bufpos + 1
+                      work(bufpos) = field(i,j,k)
+                   end do
+                end do
+             end do
+         end if
+         if( mustput )then
+             if( debug )write( stderr, '(a,3i4,i8)' )'XSEND from, to, l, length=', pe, domain%x%list(l)%pe, l, bufpos-lastpos
+             call mpp_send( work(lastpos+1), bufpos-lastpos, domain%x%list(l)%pe )
+         end if
+      end do
+!get west and east halos
+      do l = 0,size(domain%x%list)-1
+         lastpos = bufpos
+         mustget = .FALSE.
+         if( BTEST(flags,0) .AND. domain%x%list(l)%mustgetb )then
+             mustget = .TRUE.
+             nwords = domain%x%list(l)%getb%size * domain%y%active%size * size(field,3)
+             mpp_domains_stack_pos = (bufpos+nwords)*words_per_long
+             if( mpp_domains_stack_pos.GT.mpp_domains_stack_size )then
+                 write( text, '(i8)' )mpp_domains_stack_pos
+                 call mpp_error( FATAL, &
+                      'MPP_UPDATE_DOMAINS user stack overflow: call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+             end if
+             mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, mpp_domains_stack_pos )
+             bufpos = bufpos+nwords
+             call mpp_set_active_domain( domain, xbegin=domain%x%data%begin )
+         end if
+         if( BTEST(flags,1) .AND. domain%x%list(l)%mustgetf )then
+             mustget = .TRUE.
+             nwords = domain%x%list(l)%getf%size * domain%y%active%size * size(field,3)
+             mpp_domains_stack_pos = (bufpos+nwords)*words_per_long
+             if( mpp_domains_stack_pos.GT.mpp_domains_stack_size )then
+                 write( text, '(i8)' )mpp_domains_stack_pos
+                 call mpp_error( FATAL, &
+                      'MPP_UPDATE_DOMAINS user stack overflow: call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+             end if
+             mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, mpp_domains_stack_pos )
+             bufpos = bufpos+nwords
+             call mpp_set_active_domain( domain, xend=domain%x%data%end )
+         end if
+         if( mustget )then
+             if( debug )write( stderr, '(a,3i4,i8)' )'XRECV to, from, l, length=', pe, domain%x%list(l)%pe, l, bufpos-lastpos
+             call mpp_recv( work(lastpos+1), bufpos-lastpos, domain%x%list(l)%pe )
+             bufpos = lastpos
+             if( BTEST(flags,0) .AND. domain%x%list(l)%mustgetb )then
+                 if( domain%x%list(l)%folded )then
+                     if( vectorcomp )then
+                         do k = 1,size(field,3)
+                            do j = domain%y%active%end,domain%y%active%begin,-1
+                               do i = domain%x%list(l)%getb%end,domain%x%list(l)%getb%begin-1
+                                  bufpos = bufpos + 1
+#ifndef MPP_TYPE_IS_LOGICAL_
+                                  field(i,j,k) = -work(bufpos)
+#endif
+                               end do
+                            end do
+                         end do
+                     else
+                         do k = 1,size(field,3)
+                            do j = domain%y%active%end,domain%y%active%begin,-1
+                               do i = domain%x%list(l)%getb%end,domain%x%list(l)%getb%begin-1
+                                  bufpos = bufpos + 1
+                                  field(i,j,k) =  work(bufpos)
+                               end do
+                            end do
+                         end do
+                     end if
                  else
-                     isp = isc; iep = iec
+                     do k = 1,size(field,3)
+                        do j = domain%y%active%begin,domain%y%active%end
+                           do i = domain%x%list(l)%getb%begin,domain%x%list(l)%getb%end
+                              bufpos = bufpos + 1
+                              field(i,j,k) = work(bufpos)
+                           end do
+                        end do
+                     end do
                  end if
-             else
-                 put_domain => NULL_DOMAIN2D
+                 call mpp_set_active_domain( domain, xbegin=domain%x%list(l)%getb%begin )
              end if
-             if( ASSOCIATED(get_domain%south) )then
-                 get_domain => get_domain%south
-                 isg = isc; ieg = iec
-             else
-                 get_domain => NULL_DOMAIN2D
-             end if
-             call get_halos_1D( domain%y, put_domain%y, get_domain%y, -1, to, from, jsp, jep, jsg, jeg )
-             if( to.NE.NULL_PE .OR. from.NE.NULL_PE )call buffer_and_transmit
-             if( jsg.EQ.domain%y%data%start_index )get_domain => NULL_DOMAIN2D
-             if( put_domain.EQ.domain )put_domain => NULL_DOMAIN2D
-          end do
-      end if
-!      call mpp_sync()
-      if( BTEST(flags,3) )then  !NUPDATE: update northern halo
-          put_domain => domain; get_domain => domain
-          do while( put_domain.NE.NULL_DOMAIN2D .OR. get_domain.NE.NULL_DOMAIN2D )
-             if( ASSOCIATED(put_domain%south) )then
-                 put_domain => put_domain%south
-                 if( BTEST(flags,4) )then
-                     isp = put_domain%x%compute%start_index; iep = put_domain%x%compute%end_index
+             if( BTEST(flags,1) .AND. domain%x%list(l)%mustgetf )then
+                 if( domain%x%list(l)%folded )then
+                     if( vectorcomp )then
+                         do k = 1,size(field,3)
+                            do j = domain%y%active%end,domain%y%active%begin,-1
+                               do i = domain%x%list(l)%getf%end,domain%x%list(l)%getf%begin-1
+                                  bufpos = bufpos + 1
+#ifndef MPP_TYPE_IS_LOGICAL_
+                                  field(i,j,k) = -work(bufpos)
+#endif
+                               end do
+                            end do
+                         end do
+                     else
+                         do k = 1,size(field,3)
+                            do j = domain%y%active%end,domain%y%active%begin,-1
+                               do i = domain%x%list(l)%getf%end,domain%x%list(l)%getf%begin-1
+                                  bufpos = bufpos + 1
+                                  field(i,j,k) =  work(bufpos)
+                               end do
+                            end do
+                         end do
+                     end if
                  else
-                     isp = isc; iep = iec
+                     do k = 1,size(field,3)
+                        do j = domain%y%active%begin,domain%y%active%end
+                           do i = domain%x%list(l)%getf%begin,domain%x%list(l)%getf%end
+                              bufpos = bufpos + 1
+                              field(i,j,k) = work(bufpos)
+                           end do
+                        end do
+                     end do
                  end if
-             else
-                 put_domain => NULL_DOMAIN2D
+                 call mpp_set_active_domain( domain, xend=domain%x%list(l)%getf%end )
              end if
-             if( ASSOCIATED(get_domain%north) )then
-                 get_domain => get_domain%north
-                 isg = isc; ieg = iec
-             else
-                 get_domain => NULL_DOMAIN2D
-             end if
-             call get_halos_1D( domain%y, put_domain%y, get_domain%y, +1, to, from, jsp, jep, jsg, jeg )
-             if( to.NE.NULL_PE .OR. from.NE.NULL_PE )call buffer_and_transmit
-             if( jeg.EQ.domain%y%data%end_index )get_domain => NULL_DOMAIN2D
-             if( put_domain.EQ.domain )put_domain => NULL_DOMAIN2D
-          end do
-      end if
-      call mpp_sync()
+         end if
+      end do
+      call mpp_sync_self( domain%x%list(:)%pe )
 
       return
-
-      contains
-        subroutine buffer_and_transmit
-!buffer the halo region and send
-!isp, iep, jsp, jep: limits of put domain
-!isg, ieg, jsg, jeg: limits of get domain
-!to, from: pe of put and get domains
-          integer :: i, j, k, n
-          integer :: put_len, get_len
-          character(len=8) :: text
-          MPP_TYPE_ :: work(size(field))
-#ifdef use_CRI_pointers
-          pointer( ptr, work )
-          ptr = LOC(mpp_domains_stack)
-#else
-          equivalence( work, mpp_domains_stack )
-#endif
-
-          if( debug )then
-              call SYSTEM_CLOCK(tk)
-              write( stdout,'(a,i18,a,i5,a,2i2,8i4)' ) &
-                   'T=',tk, ' PE=',pe, ' BUFFER_AND_TRANSMIT: ', to, from, isp, iep, jsp, jep, isg, ieg, jsg, jeg
-          end if
-          if( to.NE.NULL_PE )then  !put is to be done: buffer input
-              put_len = (iep-isp+1)*(jep-jsp+1)*size(field,3)
-              call mpp_sync_self()  !check if put_r8 is still in use
-!              work(1:put_len) = TRANSFER( field(isp:iep,jsp:jep,:), work )
-              n = 0
-              do k = 1,size(field,3)
-                 do j = jsp,jep
-                    do i = isp,iep
-                       n = n + 1
-                       work(n) = field(i,j,k)
-                    end do
-                 end do
-              end do
-          else
-              put_len = 1
-          end if
-          get_len = (ieg-isg+1)*(jeg-jsg+1)*size(field,3)
-          if( from.EQ.NULL_PE )get_len = 1
-          i = (put_len+get_len)*size(transfer(work(1),mpp_domains_stack))
-          if( i.GT.mpp_domains_stack_size )then
-              write( text,'(i8)' )i
-              call mpp_error( FATAL, 'BUFFER_AND_TRANSMIT user stack overflow: call mpp_domains_set_stack_size('//text// &
-                   ') from all PEs.' )
-          end if
-          
-          call mpp_transmit( work(1), put_len, to, work(put_len+1), get_len, from )
-          if( from.NE.NULL_PE )then  !get was done: unbuffer output
-!              field(isg:ieg,jsg:jeg,:) = &
-!                   RESHAPE( work(put_len+1:put_len+get_len), (/ieg-isg+1,jeg-jsg+1,size(field,3)/) )
-              n = put_len
-              do k = 1,size(field,3)
-                 do j = jsg,jeg
-                    do i =isg,ieg
-                       n = n + 1
-                       field(i,j,k) = work(n)
-                    end do
-                 end do
-              end do
-          end if
-
-          return
-        end subroutine buffer_and_transmit
     end subroutine MPP_UPDATE_DOMAINS_3D_
 
-    subroutine MPP_UPDATE_DOMAINS_4D_( field, domain, flags )
+    subroutine MPP_UPDATE_DOMAINS_4D_( field, domain, flags, type )
 !updates data domain of 4D field whose computational domains have been computed
       MPP_TYPE_, intent(inout) :: field(:,:,:,:)
-      type(domain2D), intent(in), target :: domain
-      integer, intent(in), optional :: flags
+      type(domain2D), intent(inout), target :: domain
+      integer, intent(in), optional :: flags, type
       MPP_TYPE_ :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4))
 #ifdef use_CRI_pointers
       pointer( ptr, field3D )
@@ -222,15 +381,15 @@
 #else
       call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS_2D_: requires Cray pointers.' )
 #endif
-      call MPP_UPDATE_DOMAINS_3D_( field3D, domain, flags )
+      call mpp_update_domains( field3D, domain, flags, type )
       return
     end subroutine MPP_UPDATE_DOMAINS_4D_
 
-    subroutine MPP_UPDATE_DOMAINS_5D_( field, domain, flags )
+    subroutine MPP_UPDATE_DOMAINS_5D_( field, domain, flags, type )
 !updates data domain of 5D field whose computational domains have been computed
       MPP_TYPE_, intent(inout) :: field(:,:,:,:,:)
-      type(domain2D), intent(in), target :: domain
-      integer, intent(in), optional :: flags
+      type(domain2D), intent(inout), target :: domain
+      integer, intent(in), optional :: flags, type
       MPP_TYPE_ :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4)*size(field,5))
 #ifdef use_CRI_pointers
       pointer( ptr, field3D )
@@ -238,6 +397,6 @@
 #else
       call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS_2D_: requires Cray pointers.' )
 #endif
-      call MPP_UPDATE_DOMAINS_3D_( field3D, domain, flags )
+      call mpp_update_domains( field3D, domain, flags, type )
       return
     end subroutine MPP_UPDATE_DOMAINS_5D_
