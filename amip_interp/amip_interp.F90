@@ -33,8 +33,8 @@ public amip_interp_init, get_amip_sst, get_amip_ice,  &
 
 !  ---- version number -----
 
-character(len=128) :: version = '$Id: amip_interp.F90,v 1.3 2001/07/05 17:39:57 fms Exp $'
-character(len=128) :: tag = '$Name: fez $'
+character(len=128) :: version = '$Id: amip_interp.F90,v 1.4 2002/02/22 19:08:28 fms Exp $'
+character(len=128) :: tag = '$Name: galway $'
 
 !-----------------------------------------------------------------------
 !------ private defined data type --------
@@ -114,11 +114,12 @@ end type
                                                   !      'climo' 
 
  real    :: tice_crit    = -1.80       !  in degC or degK
- logical :: use_no_climo = .true.
- logical :: use_amip1    = .true.
- logical :: use_zonal    = .false.
+ logical :: use_no_climo = .true.      !  obsolete option
+ logical :: use_amip1    = .true.      !  obsolete option
  integer :: verbose      = 0           !  0 <= verbose <= 3
 
+!parameters for prescribed zonal sst option
+ logical :: use_zonal    = .false.
  real :: teq  = 305.
  real :: tdif = 50.
  real :: tann = 20.
@@ -128,9 +129,13 @@ end type
 !amip date for repeating single day (rsd) option
  integer :: amip_date(3)=(/-1,-1,-1/)
 
+!global temperature perturbation used for sensitivity experiments
+ real :: sst_pert = 0.
+
  namelist /amip_interp_nml/ tice_crit, use_no_climo, use_amip1,  &
                             data_set, date_out_of_range,         &
-                            use_zonal, verbose, teq, tdif, tann, tlag, amip_date
+                            use_zonal, teq, tdif, tann, tlag,    &
+                            amip_date, sst_pert, verbose
 
 
 !-----------------------------------------------------------------------
@@ -191,7 +196,7 @@ else
    Date1 = date_type( year1, month1, 0 )
    Date2 = date_type( year2, month2, 0 )
 
-!  -- rewind file --
+!  -- open/rewind file --
    unit = -1
 !-----------------------------------------------------------------------
 
@@ -236,6 +241,13 @@ else
    sst = Interp % data1 + fmonth * (Interp % data2 - Interp % data1)
 
 endif
+
+! add on non-zero sea surface temperature perturbation (namelist option)
+! this perturbation may be useful in accessing model sensitivities
+
+   if ( abs(sst_pert) > 0.0001 ) then
+      sst = sst + sst_pert
+   endif
 
 !-----------------------------------------------------------------------
 
@@ -634,10 +646,12 @@ endif
              rewind unit
     endif
 
-    if (type(1:3) == 'sst') then
-       unit = open_file (file_name_sst, form='ieee32', action='read')
-    else if (type(1:3) == 'ice') then
-       unit = open_file (file_name_ice, form='ieee32', action='read')
+    if (unit == -1) then
+       if (type(1:3) == 'sst') then
+          unit = open_file (file_name_sst, form='ieee32', action='read')
+       else if (type(1:3) == 'ice') then
+          unit = open_file (file_name_ice, form='ieee32', action='read')
+       endif
     endif
     dy = 0
 

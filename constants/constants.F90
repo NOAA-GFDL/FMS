@@ -1,35 +1,60 @@
 
 module constants_mod
 
-!-----------------------------------------------------------------------
+!-----------------------------------------------------
+!
+!  Defines useful constants for Earth in mks units.
+!
+!-----------------------------------------------------
 
+use fms_mod, only: write_version_number
+
+implicit none
+private
+
+character(len=128) :: version='$Id: constants.F90,v 1.2 2002/01/14 20:55:50 fms Exp $'
+character(len=128) :: tag='$Name: galway $'
+logical :: do_log = .true.
+
+!-----------------------------------------------------------------------
 !------------ physical constants ---------------
 
-real, public, parameter :: radius = 6376.e3
-real, public, parameter :: omega  = 7.292e-5
-real, public, parameter :: grav   = 9.80
-real, public, parameter :: rdgas  = 287.04
-real, public, parameter :: kappa  = 2./7.
-real, public, parameter :: cp     = rdgas/kappa
-real, public, parameter :: p00    = 1000.e2
+real, public, parameter :: RADIUS = 6376.e3      !  radius of the earth (meters)
+real, public, parameter :: OMEGA  = 7.292e-5     !  rotation rate of planet (1/sec)
+real, public, parameter :: GRAV   = 9.80         !  acceleration due to gravity (m/s2)
+real, public, parameter :: RDGAS  = 287.04       !  gas constant for dry air (J/Kg/deg)
+real, public, parameter :: KAPPA  = 2./7.        !  RDGAS / CP
+real, public, parameter :: cp     = RDGAS/KAPPA  !  spec heat cap of dry air (J/kg/deg)
+real, public, parameter :: P00    = 1000.e2      !  reference pressure (Pascals)
 
 !------------ water vapor constants ---------------
 
-real, public, parameter :: rvgas = 461.50
-real, public, parameter :: dens_h2o = 1000.
-real, public, parameter :: hlv = 2.500e6
-real, public, parameter :: hlf = 3.34e5
-real, public, parameter :: hls = 2.834e6
-real, public, parameter :: tfreeze = 273.16
+real, public, parameter :: RVGAS = 461.50        !  gas constant for water vapor (J/Kg/deg)
+real, public, parameter :: DENS_H2O = 1000.      !  density of liquid water (Kg/m3)
+real, public, parameter :: HLV = 2.500e6         !  latent heat of evaporation (J/Kg)
+real, public, parameter :: HLF = 3.34e5          !  latent heat of fusion (J/Kg)
+real, public, parameter :: HLS = 2.834e6         !  latent heat of sublimation (J/Kg)
+real, public, parameter :: TFREEZE = 273.16      !  temp where fresh water freezes (deg K)
 
 !------------ miscellaneous constants ---------------
 
-real, public, parameter :: stefan  =  5.6734e-8
-real, public, parameter :: vonkarm =  0.40
+real, public, parameter :: STEFAN  =  5.6734e-8  !  Stefan-Boltzmann constant (W/m2/deg4)
+real, public, parameter :: VONKARM =  0.40       !  Von Karman constant
 
-!! real, private, parameter :: mv = 18.016, md = 28.966
-!! real, public, parameter :: d622  = rdgas/rvgas
-!! real, public, parameter :: d378  = 1.0-d622, d608 = d378/d622
+!-----------------------------------------------------------------------
+
+contains
+
+! optional initialization routine
+! only purpose is to write version to log file
+
+subroutine constants_init
+
+  if (.not.do_log) return
+  call write_version_number (version,tag)
+  do_log = .false.
+
+end subroutine constants_init
 
 !-----------------------------------------------------------------------
 

@@ -15,13 +15,7 @@
       MPP_TYPE_ :: work
 #endif
       if( .NOT.mpp_initialized )call mpp_error( FATAL, 'MPP_REDUCE: You must first call mpp_init.' )
-      if( npes.EQ.1 )return
-
-      n = 1                     !default (world) PEset number
-      if( PRESENT(pelist) )then
-          if( size(pelist).EQ.1 )return
-          n = get_peset(pelist)
-      end if
+      n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
 
       if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
 #ifdef use_libSMA

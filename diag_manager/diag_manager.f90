@@ -29,7 +29,7 @@ integer, parameter :: max_fields_per_file = 150
 integer, parameter :: max_out_per_in_field = 10
 integer, parameter :: max_files = 10
 integer ::            num_files = 0
-integer, parameter :: max_input_fields = 150
+integer, parameter :: max_input_fields = 200
 integer ::            num_input_fields = 0
 integer, parameter :: max_output_fields = 200
 integer ::            num_output_fields = 0
@@ -100,8 +100,8 @@ character (len=10) :: time_unit_list(6) = (/'seconds   ', 'minutes   ', &
 character (len = 7) :: avg_name = 'average'
 
 ! version number of this module
-  character(len=128) :: version = '$Id: diag_manager.f90,v 1.4 2001/07/05 17:54:52 fms Exp $'
-  character(len=128) :: tag = '$Name: fez $'  
+  character(len=128) :: version = '$Id: diag_manager.f90,v 1.5 2002/01/15 18:32:03 fms Exp $'
+  character(len=128) :: tag = '$Name: galway $'  
 
 
 interface send_data

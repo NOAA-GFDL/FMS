@@ -14,44 +14,44 @@ module sat_vapor_pres_mod
 !                               usage
 !                               -----
 !
-!                       call tcheck  (temp,nbad)
+!                       call lookup_es  (temp,es)
 !
-!                       call escomp  (temp,es)
+!                       call lookup_des (temp,des)
 !
-!                       call descomp (temp,des)
-!
-!    aruments
-!    --------
+!    arguments
+!    ---------
 !      temp    intent in       temperature in degrees kelvin
-!      es      intent out      saturation vapor pressure
+!      es      intent out      saturation vapor pressure in Pascals
 !      des     intent out      derivative of saturation vapor pressure
-!                              with respect to temperature
-!      nbad    intent out      number of temperatures that are outside
-!                              the range of the lookup table
+!                              with respect to temperature (Pascals/degree)
 !
 !-----------------------------------------------------------------------
 
- use  constants_mod, only:  tfreeze
- use  utilities_mod, only:  open_file, close_file,  &
-                            get_my_pe, get_root_pe, &
-                            write_version_number,   &
+ use  constants_mod, only:  TFREEZE
+ use        fms_mod, only:  write_version_number,   &
                             error_mesg, FATAL
 
 implicit none
 private
 
-!public :: lookup_es, lookup_des, sat_vapor_pres_init
- public :: escomp, descomp, sat_vapor_pres_init
+ public :: lookup_es, lookup_des, sat_vapor_pres_init
  public :: compute_es
+ public :: escomp, descomp ! for backward compatibility
+                           ! use lookup_es, lookup_des instead
 
 !-----------------------------------------------------------------------
-!interface lookup_es
+ interface lookup_es
+   module procedure lookup_es_0d, lookup_es_1d, lookup_es_2d, lookup_es_3d
+ end interface
+! for backward compatibility (to be removed soon)
  interface escomp
    module procedure lookup_es_0d, lookup_es_1d, lookup_es_2d, lookup_es_3d
-   module procedure lookup_es_2d_mask
  end interface
 !-----------------------------------------------------------------------
-!interface lookup_des
+ interface lookup_des
+   module procedure lookup_des_0d, lookup_des_1d, lookup_des_2d, lookup_des_3d
+ end interface
+! for backward compatibility (to be removed soon)
  interface descomp
    module procedure lookup_des_0d, lookup_des_1d, lookup_des_2d, lookup_des_3d
  end interface
@@ -64,15 +64,10 @@ private
    module procedure temp_check_0d, temp_check_1d, temp_check_2d, temp_check_3d
  end interface
 !-----------------------------------------------------------------------
-public :: tcheck
-interface tcheck
-  module procedure tcheck_0d, tcheck_1d, tcheck_2d, tcheck_3d
-end interface
-!-----------------------------------------------------------------------
 !  cvs version and tag name
 
-character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 1.3 2001/10/25 17:56:39 fms Exp $'
-character(len=128) :: tag = '$Name: fez $'
+character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 1.5 2002/02/22 19:10:01 fms Exp $'
+character(len=128) :: tag = '$Name: galway $'
 
 !-----------------------------------------------------------------------
 !  parameters for table size and resolution
@@ -253,6 +248,7 @@ contains
 
    if (do_init) call sat_vapor_pres_init
 
+   n = 0
    do i = 1, size(temp,1)
      tmp = temp(i)-tmin
      ind = int(dtinv*(tmp+teps))
@@ -280,6 +276,7 @@ contains
    
    if (do_init) call sat_vapor_pres_init
    
+   n = 0
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
      tmp = temp(i,j)-tmin
@@ -349,22 +346,21 @@ contains
 !  =================================================================
 
  real    :: tem(3), es(3), hdtinv
- integer :: i, n, unit
+ integer :: i, n
 
 ! increment used to generate derivative table
   real, parameter :: tinrc = .01           
   real, parameter :: tfact = 1./(2.*tinrc)
 
-! write version number
-      unit = open_file ('logfile.out', action='append')
-      if (get_my_pe() == get_root_pe()) then
-         call write_version_number (unit, version, tag)
-      endif
-      call close_file (unit)
+! return silently if this routine has already been called
+      if (.not.do_init) return
+
+! write version number to log file
+      call write_version_number (version, tag)
 
 ! global variables
-      tmin = real(tcmin)+tfreeze   ! minimum valid temp in table
-      tmax = real(tcmax)+tfreeze   ! maximum valid temp in table
+      tmin = real(tcmin)+TFREEZE   ! minimum valid temp in table
+      tmax = real(tcmax)+TFREEZE   ! maximum valid temp in table
       dtinv = real(esres)
       dtres = 1./dtinv
       teps = 1./real(2*esres)
@@ -416,8 +412,8 @@ contains
  real, intent(in) :: tem(:)
  real :: es(size(tem))
 
- real, parameter :: TBASW = tfreeze+100.
- real, parameter :: TBASI = tfreeze
+ real, parameter :: TBASW = TFREEZE+100.
+ real, parameter :: TBASI = TFREEZE
  real, parameter :: ESBASW = 101324.60
  real, parameter :: ESBASI =    610.71
 
@@ -598,99 +594,6 @@ contains
    call error_handler (nbad)
 
  end subroutine temp_check_3d
-
-!#######################################################################
-!#######################################################################
-! OBSOLETE routines to check for values outside the table lookup
-!#######################################################################
-
-subroutine tcheck_0d (t,nbad)
-
-!-----------------------------------------------------------------------
-   real, intent(in)  :: t
-integer, intent(out) :: nbad
-!-----------------------------------------------------------------------
-   if (do_init) call sat_vapor_pres_init
-   if (t <= tmin .or. t >= tmax) nbad=1
-!-----------------------------------------------------------------------
-
-end subroutine tcheck_0d
-
-!#######################################################################
-
-subroutine tcheck_1d (t,nbad)
-
-!-----------------------------------------------------------------------
-   real, intent(in), dimension(:) :: t
-integer, intent(out)              :: nbad
-!-----------------------------------------------------------------------
-integer  i
-!-----------------------------------------------------------------------
-   if (do_init) call sat_vapor_pres_init
-   nbad=0
-   do i=1,size(t,1)
-     if (t(i) <= tmin .or. t(i) >= tmax) nbad=nbad+1
-   enddo
-!-----------------------------------------------------------------------
-
-end subroutine tcheck_1d
-
-!#######################################################################
-
-subroutine tcheck_2d (t,nbad)
-
-!-----------------------------------------------------------------------
-   real, intent(in), dimension(:,:) :: t
-integer, intent(out)                :: nbad
-!-----------------------------------------------------------------------
-integer  i,j
-!-----------------------------------------------------------------------
-   if (do_init) call sat_vapor_pres_init
-   nbad=0
-   do j=1,size(t,2)
-   do i=1,size(t,1)
-      if (t(i,j) <= tmin .or. t(i,j) >= tmax) nbad=nbad+1
-   enddo
-   enddo
-!-----------------------------------------------------------------------
-
-end subroutine tcheck_2d
-
-!#######################################################################
-
-subroutine tcheck_3d (t,nbad,reset)
-
-!-----------------------------------------------------------------------
-   real, intent(in), dimension(:,:,:) :: t
-integer, intent(out)                  :: nbad
-real, intent(in),optional :: reset
-!-----------------------------------------------------------------------
-integer  i,j,k
-!-----------------------------------------------------------------------
-   if (do_init) call sat_vapor_pres_init
-   nbad=0
-   do k=1,size(t,3)
-   do j=1,size(t,2)
-   do i=1,size(t,1)
-       if (t(i,j,k) <= tmin .or. t(i,j,k) >= tmax) nbad=nbad+1
-   enddo
-   enddo
-   enddo
-!-----------------------------------------------------------------------
-
-end subroutine tcheck_3d
-
-!#######################################################################
-
- subroutine lookup_es_2d_mask ( temp, esat, mask )
-
- real, intent(in)  :: temp(:,:)
- real, intent(out) :: esat(:,:)
- logical, intent(in) :: mask(:,:)
-  
-    call lookup_es_2d ( temp, esat )
-
- end subroutine lookup_es_2d_mask
 
 !#######################################################################
 

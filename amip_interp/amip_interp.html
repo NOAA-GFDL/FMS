@@ -307,13 +307,21 @@ Output
   tice_crit  =  Freezing point of sea water in degC or degK.
                    [real, default: tice_crit = -1.80]
 
-  verbose    =  Controls printed output, 0 <= verbose <= 3
+  verbose    =  Controls printed output, 0 &gt;= verbose &gt;= 3
                    [integer, default: verbose = 0]
 
-  amip_date  =  Single calendar date in integer "(year,month,day)" format that is used only if set with year>0, month>0, day>0. 
-		If used, model calendar date is replaced by this date, but model time of day is still used to determine ice/sst.
-		Used for repeating-single-day experiments.
-		   [integer(3), default: (/-1,-1,-1/)]
+  amip_date  =  Single calendar date in integer "(year,month,day)" format
+                that is used only if set with year&gt;0, month&gt;0, day&gt;0. 
+                If used, model calendar date is replaced by this date, 
+                but model time of day is still used to determine ice/sst.
+                Used for repeating-single-day experiments.
+                   [integer(3), default: (/-1,-1,-1/)]
+
+  sst_pert   =  Temperature perturbation in degrees Kelvin added onto the SST.
+                The perturbation is globally-uniform (even near sea-ice).
+                It is only used when abs(sst_pert) &gt; 1.e-4.  SST perturbation runs
+                may be useful in accessing model sensitivities.
+                   [real, default: sst_pert=0.]
 
   use_zonal  =  Flag to select zonal idealized sst (and ice) data
                    [logical, default: use_zonal = .false.]

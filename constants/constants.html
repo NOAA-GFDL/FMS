@@ -1,0 +1,188 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>module constants</title>
+<link rel="stylesheet" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" type="text/css">
+<meta http-equiv="Content-Type" content="text/html; charset=EUC-JP">
+</head>
+<body>
+
+<div class="header"> <font size=1>
+<a href="#PUBLIC INTERFACE">PUBLIC INTERFACE</a> ~
+<a href="#PUBLIC DATA">PUBLIC DATA</a> ~
+<a href="#PUBLIC ROUTINES">PUBLIC ROUTINES</a> ~
+<a href="#NOTES">FUTURE PLANS</a>
+</font>
+</div><hr>
+
+
+<h2>module constants</h2>
+<a name="HEADER"></a>
+<!-- BEGIN HEADER -->
+<div>
+     <b>Contact:</b> &nbsp;   Bruce Wyman <br>
+     <b>Reviewers:</b> &nbsp; <br>
+     <b>Change History: &nbsp; </b><a HREF="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/constants/constants.f90">WebCVS Log</a> <br>
+     <b>Last Modified:</b> &nbsp; $Date: 2002/02/22 19:13:58 $
+</div><br>
+
+<!-- END HEADER -->
+<!-------------------------------------------------------------------->
+<a name="OVERVIEW"></a>
+<hr>
+<h4>OVERVIEW</h4>
+<!-- BEGIN OVERVIEW -->
+<div>
+
+    <p> Defines useful constants for Earth in mks units.</p>
+</div>
+<!-- END OVERVIEW -->
+<!-------------------------------------------------------------------->
+<a name="DESCRIPTION"></a>
+<!-- BEGIN DESCRIPTION -->
+<div>
+<p>     Constants are defined as real parameters.They are accessed through 
+        the "use" statement. While the local name of constant may be changed,
+        their values can not be redefined.
+</p>
+</div>
+<!-- END DESCRIPTION -->
+<!-------------------------------------------------------------------->
+<a name="OTHER MODULES USED"></a>
+<hr>
+<h4>OTHER MODULES USED</h4>
+<!-- BEGIN OTHER MODULES USED -->
+<pre>
+     fms_mod
+</pre>
+<!-- END OTHER MODULES USED -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC INTERFACE"></a>
+<hr>
+<h4>PUBLIC INTERFACE</h4>
+<!-- BEGIN INTERFACE -->
+<div>
+<pre>
+<b>use constants_mod</b> [, only: constants_init,
+                           RADIUS, OMEGA, GRAV, RDGAS, KAPPA, CP, P00,
+                           RVGAS, DENS_H2O, HLV, HLF, HLS, TFREEZE,
+                           STEFAN, VONKARM ]
+</pre>
+<p>  See the description of public data below.</p>
+</div>
+<!-- END INTERFACE -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC DATA"></a>
+<hr>
+<h4>PUBLIC DATA</h4>
+<!-- BEGIN PUBLIC DATA -->
+<div>
+
+<h4>The following public variable names may be used:</h4>
+<TABLE BORDER=2 CELLPADDING=2 cellspacing="2" align="center">
+<CAPTION>PHYSICAL CONSTANTS</CAPTION>
+<TR><TH> Name    <TH> Value        <TH> Units     <TH> Description
+<TR><TD> RADIUS  <TD> 6376.e3      <TD> meters    <TD> radius of the earth
+<TR><TD> OMEGA   <TD> 7.292e-5     <TD> 1/sec     <TD> rotation rate of the planet (earth)
+<TR><TD> GRAV    <TD> 9.80         <TD> m/s2      <TD> acceleration due to gravity
+<TR><TD> RDGAS   <TD> 287.04       <TD> J/kg/deg  <TD> gas constant for dry air
+<TR><TD> KAPPA   <TD> 2./7.        <TD> ---       <TD> RDGAS / CP
+<TR><TD> CP      <TD> RDGAS/KAPPA  <TD> J/kg/deg  <TD> specific heat capacity of dry air at constant pressure
+<TR><TD> P00     <TD> 1000.e2      <TD> Pascals   <TD> reference pressure
+</TABLE>
+
+<BR>
+
+<TABLE BORDER=2 CELLPADDING=2 cellspacing="2" align="center">
+<CAPTION>WATER VAPOR CONSTANTS</CAPTION>
+<TR><TH> Name     <TH> Value        <TH> Units     <TH> Description
+<TR><TD> RVGAS    <TD> 461.50       <TD> J/kg/deg  <TD> gas constant for water vapor
+<TR><TD> DENS_H2O <TD> 1000.        <TD> kg/m3     <TD> density of liquid water
+<TR><TD> HLV      <TD> 2.500e6      <TD> J/kg      <TD> latent heat of evaporation
+<TR><TD> HLF      <TD> 3.34e5       <TD> J/kg      <TD> latent heat of fusion
+<TR><TD> HLS      <TD> 2.834e6      <TD> J/kg      <TD> latent heat of sublimation
+<TR><TD> TFREEZE  <TD> 273.16       <TD> degK      <TD> temperature at which fresh water freezes
+</TABLE>
+
+<BR>
+
+<TABLE BORDER=2 CELLPADDING=2 align="center">
+<CAPTION>MISCELLANEOUS CONSTANTS</CAPTION>
+<TR><TH> Name     <TH> Value        <TH> Units     <TH> Description
+<TR><TD> STEFAN   <TD> 5.6734e-8    <TD> W/m2/deg4 <TD> Stefan-Boltzmann constant
+<TR><TD> VONKARM  <TD> 0.40         <TD>   ---     <TD> Von Karman constant
+</TABLE>
+</div>
+<br><br>
+<div>
+<b>NOTES ON USAGE:</b>
+<ol>
+<li>All constants have been declared as type REAL, PARAMETER.<br><br>
+</li>
+<li>The value a constant can not be changed in a users program.
+    New constants can be defined in terms of values from the
+    constants module using a parameter statement.<br><br>
+</li>
+<li>The name given to a particular constant may be changed.<br><br>
+</li>
+<li>Constants can be used on the right side on an assignment statement
+   (their value can not be reassigned).  <br><br>
+</li>
+</ol>
+<b>EXAMPLES:</b>
+<pre>
+     use constants_mod, only:  TFREEZE, grav_new =&gt; GRAV
+     real, parameter :: grav_inv = 1.0 / grav_new
+     tempc(:,:,:) = tempk(:,:,:) - TFREEZE
+     geopotential(:,:) = height(:,:) * grav_new
+</pre>
+</div>
+<!-- END DATA_TYPES -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC ROUTINES"></a>
+<hr>
+<h4>PUBLIC ROUTINES</h4>
+<!-- BEGIN ROUTINES -->
+<div>
+<PRE>
+<b>call constants_init</b>
+</pre>
+<dl>
+<dt>DESCRIPTION</dt>
+   <dd>The only purpose of this routine is to write the version and
+   tag name information to the log file.  This routine does not
+   have to be called.  If it is called more than once or called
+   from other than the root PE it will return silently.
+   There are no arguments.</dd>
+</dl></div>
+<!-- END ROUTINES -->
+<!-------------------------------------------------------------------->
+<a name="NOTES"></a>
+<hr>
+<h4>NOTES</h4>
+<!-- BEGIN NOTES -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END NOTES -->
+<!-------------------------------------------------------------------->
+<a name="FUTURE PLANS"></a>
+<hr>
+<h4>FUTURE PLANS</h4>
+<!-- BEGIN PLANS -->
+<div>
+<ol>
+
+ <li> Renaming of constants.</li>
+
+ <li> Additional constants.</li>
+
+</ol></div>
+<!-- END PLANS -->
+<!-------------------------------------------------------------------->
+
+<hr>
+</body>
+</html>

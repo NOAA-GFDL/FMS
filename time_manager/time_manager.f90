@@ -1,6 +1,6 @@
 module time_manager_mod
 
-use utilities_mod, only: error_mesg, FATAL
+use fms_mod, only: error_mesg, FATAL, write_version_number, stdout
 
 implicit none
 private
@@ -27,9 +27,9 @@ private
 public time_type
 
 ! Operators defined on time_type
-public operator( + ),  operator( - ),   operator( * ),   operator( / ),  &
-       operator( > ),  operator( >= ),  operator( == ),  operator( /= ), &
-       operator( < ),  operator( <= ),  operator( // )
+public operator(+),  operator(-),   operator(*),   operator(/),  &
+       operator(>),  operator(>=),  operator(==),  operator(/=), &
+       operator(<),  operator(<=),  operator(//)
 
 ! Subroutines and functions operating on time_type
 public set_time, increment_time, decrement_time, get_time, interval_alarm
@@ -57,6 +57,9 @@ public length_of_year, length_of_year_thirty,      length_of_year_julian, &
 public days_in_year,   days_in_year_thirty,        days_in_year_julian, &
                        days_in_year_gregorian,     days_in_year_no_leap
 public month_name
+
+! Subroutines for printing version number and time type
+public :: time_manager_init, print_time, print_date
 
 !====================================================================
 
@@ -94,6 +97,12 @@ interface operator (//);  module procedure time_real_divide; end interface
 
 !======================================================================
 
+character(len=128) :: version='$Id: time_manager.f90,v 1.2 2002/01/14 21:20:43 fms Exp $'
+character(len=128) :: tagname='$Id: time_manager.f90,v 1.2 2002/01/14 21:20:43 fms Exp $'
+logical :: do_init = .true.
+
+!======================================================================
+
 contains
 
 ! First define all operations on time intervals independent of calendar
@@ -108,18 +117,22 @@ function set_time(seconds, days)
 implicit none
 
 type(time_type) :: set_time
-integer, intent(in) :: seconds, days
+integer, intent(in) :: seconds
+integer, intent(in), optional :: days
+integer :: days_in
+
+days_in = 0;  if (present(days)) days_in = days
 
 ! Negative time offset is illegal
-if(seconds < 0 .or. days < 0) call error_handler('Negative input in set_time')
+if(seconds < 0 .or. days_in < 0) call error_handler('Negative input in set_time')
 
 ! Make sure seconds greater than a day are fixed up
 set_time%seconds = seconds - seconds / (60*60*24) * (60*60*24)
 
 ! Check for overflow on days before doing operation
-if(seconds / (60*60*24)  >= huge(days) - days) &
+if(seconds / (60*60*24)  >= huge(days_in) - days_in) &
    call error_handler('Integer overflow in days in set_time')
-set_time%days = days + seconds / (60*60*24)
+set_time%days = days_in + seconds / (60*60*24)
 
 end function set_time
 
@@ -131,11 +144,18 @@ subroutine get_time(time, seconds, days)
 
 implicit none
 
-integer, intent(out) :: seconds, days
 type(time_type), intent(in) :: time
+integer, intent(out) :: seconds
+integer, intent(out), optional :: days
 
 seconds = time%seconds
-days = time%days
+if (present(days)) then
+  days = time%days
+else
+  if (time%days > (huge(seconds) - seconds)/(60*60*24)) &
+  call error_handler('Integer overflow in seconds in get_time use days')
+  seconds = seconds + time%days * (60*60*24)
+endif
 
 end subroutine get_time
 
@@ -148,19 +168,23 @@ implicit none
 
 type(time_type) :: increment_time
 type(time_type), intent(in) :: time
-integer, intent(in) :: seconds, days
+integer, intent(in) :: seconds
+integer, intent(in), optional :: days
+integer :: days_in
+
+days_in = 0;  if (present(days)) days_in = days
 
 ! Increment must be positive definite
-if(seconds < 0 .or. days < 0) &
+if(seconds < 0 .or. days_in < 0) &
    call error_handler('Negative increment in increment_time')
 
 ! Watch for immediate overflow on days or seconds
-if(days >= huge(days) - time%days) &
+if(days_in >= huge(days_in) - time%days) &
    call error_handler('Integer overflow in days in increment_time')
 if(seconds >= huge(seconds) - time%seconds) &
    call error_handler('Integer overflow in seconds in increment_time')
 
-increment_time = set_time(time%seconds + seconds, time%days + days)
+increment_time = set_time(time%seconds + seconds, time%days + days_in)
 
 end function increment_time
 
@@ -174,15 +198,18 @@ implicit none
 
 type(time_type) :: decrement_time
 type(time_type), intent(in) :: time
-integer, intent(in) :: seconds, days
+integer, intent(in) :: seconds
+integer, intent(in), optional :: days
 integer :: cseconds, cdays
 
+cdays = 0;  if (present(days)) cdays = days
+
 ! Decrement must be positive definite
-if(seconds < 0 .or. days < 0) &
+if(seconds < 0 .or. cdays < 0) &
    call error_handler('Negative decrement in decrement_time')
 
 cseconds = time%seconds - seconds
-cdays = time%days - days
+cdays = time%days - cdays
 
 ! Borrow if needed
 if(cseconds < 0) then
@@ -1820,9 +1847,82 @@ character (*), intent(in) :: s
 !write(*, *) 'ERROR: In time_manager.f90: ', s
 !stop
 
-    call error_mesg ('time_manager', s, FATAL)
+   call error_mesg ('time_manager', s, FATAL)
 
 end subroutine error_handler
+
+!------------------------------------------------------------------------
+
+subroutine time_manager_init ( )
+
+! initialization routine
+! this routine does not have to be called, all it does is write
+! the version information to the log file
+
+  if (.not.do_init) return  ! silent return if already called
+
+  call write_version_number (version, tagname)
+  do_init = .false.
+
+end subroutine time_manager_init
+
+!------------------------------------------------------------------------
+
+subroutine print_time (time,str,unit)
+type(time_type)  , intent(in) :: time
+character (len=*), intent(in), optional :: str
+integer          , intent(in), optional :: unit
+integer :: s,d, ns,nd, unit_in
+character(len=13) :: fmt
+
+! prints the time to standard output (or optional unit) as days and seconds
+! NOTE: there is no check for PE number
+
+  unit_in = stdout()
+  if (present(unit)) unit_in = unit
+
+  call get_time (time,s,d)
+
+! format output
+! get number of digits for days and seconds strings
+   nd = int(log10(real(max(1,d))))+1
+   ns = int(log10(real(max(1,s))))+1
+   write (fmt,10) nd, ns
+10 format ('(a,i',i2.2,',a,i',i2.2,')')
+
+  if (present(str)) then
+     write (unit_in,fmt) trim(str)//' day=', d, ', sec=', s
+  else
+     write (unit_in,fmt)       'TIME: day=', d, ', sec=', s
+  endif
+
+end subroutine print_time
+
+!------------------------------------------------------------------------
+
+subroutine print_date (time,str,unit)
+type(time_type)  , intent(in) :: time
+character (len=*), intent(in), optional :: str
+integer          , intent(in), optional :: unit
+integer :: y,mo,d,h,m,s, unit_in
+character(len=9) :: mon
+
+! prints the time to standard output (or optional unit) as a date
+! NOTE: there is no check for PE number
+
+  unit_in = stdout()
+  if (present(unit)) unit_in = unit
+
+  call get_date (time,y,mo,d,h,m,s)
+  mon = month_name(mo)
+  if (present(str)) then
+     write (unit_in,10) trim(str)//' ', y,mon(1:3),' ',d,' ',h,':',m,':',s
+  else
+     write (unit_in,10)       'DATE: ', y,mon(1:3),' ',d,' ',h,':',m,':',s
+  endif
+10 format (a,i4,1x,a3,4(a1,i2.2))
+
+end subroutine print_date
 
 !------------------------------------------------------------------------
 

@@ -1,0 +1,354 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+   <title>module time_interp</title>
+   <link rel="stylesheet" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" type="text/css">
+   <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP">
+</head>
+<body>
+
+<div class="header"> <font size=1>
+<a href="#PUBLIC INTERFACE">PUBLIC INTERFACE</a> ~
+<a href="#PUBLIC DATA">PUBLIC DATA</a> ~
+<a href="#PUBLIC ROUTINES">PUBLIC ROUTINES</a> ~
+<a href="#NAMELIST">NAMELIST</a> ~
+<a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS</a> ~
+<a href="#ERROR MESSAGES">ERROR MESSAGES</a> ~
+<a href="#REFERENCES">REFERENCES</a> ~
+<a href="#NOTES">NOTES</a>
+</font>
+</div><hr>
+
+
+<h2>module time_interp</h2>
+<a name="HEADER"></a>
+<!-- BEGIN HEADER -->
+<div>
+     <b>Contact:</b> &nbsp;  Bruce Wyman   <br>
+     <b>Reviewers:</b>&nbsp;  <br>
+     <b>Change History:&nbsp; </b><a HREF="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/time_interp/time_interp.f90">WebCVS Log</a> <br>
+     <b>Last Modified:</b>&nbsp; $Date: 2002/02/22 19:14:48 $
+</div><br>
+
+<!-- END HEADER -->
+<!-------------------------------------------------------------------->
+<a name="OVERVIEW"></a>
+<hr>
+<h4>OVERVIEW</h4>
+<!-- BEGIN OVERVIEW -->
+<div>
+<p>Computes a weight and dates/indices for linearly interpolating between two dates.</p>
+</div>
+<!-- END OVERVIEW -->
+<!-------------------------------------------------------------------->
+<a name="DESCRIPTION"></a>
+<!-- BEGIN DESCRIPTION -->
+<div>
+<p>A time type is converted into two consecutive dates plus
+     a fraction representing the distance between the dates.
+     This information can be used to interpolate between the dates.
+     The dates may be expressed as years, months, or days or
+     as indices in an array.</p>
+</div>
+<!-- END DESCRIPTION -->
+<!-------------------------------------------------------------------->
+<a name="OTHER MODULES USED"></a>
+<hr>
+<h4>OTHER MODULES USED</h4>
+<!-- BEGIN OTHER MODULES USED -->
+<div><PRE>
+time_manager_mod
+         fms_mod
+</PRE></div>
+<!-- END OTHER MODULES USED -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC INTERFACE"></a>
+<hr>
+<h4>PUBLIC INTERFACE</h4>
+<!-- BEGIN INTERFACE -->
+<div>
+<pre>
+<b>use time_interp_mod</b> [, only:  time_interp, 
+                              fraction_of_year ]
+
+</pre>
+<dl>
+<dt>   <a href="#time_interp">time_interp</a>:
+      <dd>Returns a weight and dates or indices for interpolating between
+                      two dates. The interface <tt>fraction_of_year</tt> is provided
+       for backward compatibility with the previous version.
+<br><br>
+<dt>NOTE</dt>
+    <dd>For all routines in this module the calendar type in
+    module time_manager must be set.</dd>
+</dl>
+
+</div><br>
+<!-- END INTERFACE -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC DATA"></a>
+<hr>
+<h4>PUBLIC DATA</h4>
+<!-- BEGIN DATA_TYPES -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END DATA_TYPES -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC ROUTINES"></a>
+<hr>
+<h4>PUBLIC ROUTINES</h4>
+<!-- BEGIN ROUTINES -->
+
+<div>
+<p>The interface <a name="time_interp"></a><tt>time_interp</tt> may have several forms:</p>
+</div>
+
+<ol  type="a">
+<li><b>call time_interp</b> ( Time, weight )
+<pre>
+weight = fraction_of_year ( Time )
+
+DESCRIPTION
+    Returns the fractional amount (between 0,1) that the input
+    Time is into the current year. The interface fraction_of_year
+    has the same functionality and is only provided for backward
+    compatibility with the version.
+
+INPUT
+   Time    The time at which the the weight is computed.
+             <span class="type"> [time_type]</span>
+OUTPUT
+   weight  The fractional amount (between 0,1) into the year as 
+           given by argument Time.
+             <span class="type"> [real]</span>
+
+EXAMPLES
+   Time: Jan 01 00z    weight = 0.0
+   Time: Jul 01        weight ~ 0.5
+   Time: Dec 31 23z    weight ~ 1.0
+</pre>
+</li>
+
+<li><b>call time_interp</b> ( Time, weight, year1, year2 )<br>
+<b>call time_interp</b> ( Time, weight, year1, year2, month1, month2 )<br>
+<b>call time_interp</b> ( Time, weight, year1, year2, month1, month2, day1, day2 )
+<pre>
+DESCRIPTION
+    For the given time this form of the interface returns the
+    fractional time between the mid point of two years, two months,
+    or two days.
+
+INPUT
+
+   Time    The time at which the interpolation variables are computed.
+             <span class="type"> [time_type]</span>
+
+OUTPUT
+   weight   The fractional amount (between 0,1) of input argument Time
+            between date1 and date2 (see notes below).
+             <span class="type"> [real]</span>
+
+   year1, month1, day1   The year, month, and day of the earlier date.
+                          <span class="type"> [integer]</span>
+
+   year2, month2, day2   The year, month, and day of the later date.
+                          <span class="type"> [integer]</span>
+
+NOTES:
+
+  1) There are three variations of this interface.
+     The dates must be expressed in the same manner; either as
+     years, year and months, or years and months and days.
+
+  2) To interpolate from quantities q1 and q2 at date1 and date2, respectively,
+     use the following:
+
+            q = q1 + weight * ( q2 - q1 )
+</pre>
+</li>
+<li><b>call time_interp</b> ( Time, Timelist, weight, index1, index2 [, modtime] )
+<pre>
+DESCRIPTION
+   Given a time type and list/array of time types this form of the
+   interface finds the interval (given by consecutive indices) in the list
+   where the input Time is located.
+
+INPUT
+   Time      The time at which the interpolation variables are computed.
+              <span class="type"> [type(time_type)]</span>
+
+   Timelist  A list of time types with ascending dates.
+              <span class="type"> [type(time_type), dimension(:)]</span>
+
+OUTPUT
+   weight    The fractional amount (between 0,1) of where input Time
+             lies between index1 and index2 in array Timelist.
+              <span class="type"> [real]</span>
+
+   index1    Consecutive indices in array Timelist. The input argument Time
+   index2    lies between dates Timelist(index1) and Timelist(index2).
+              <span class="type"> [integer]</span>
+
+OPTIONAL INPUT
+   modtime   Specifies that a modular time axis is to be used.
+             The value must be one of the public parameters:
+             <span class="red">NONE, YEAR, MONTH, DAY; </span>only NONE and YEAR are supported.
+              <span class="type"> [integer, default: NONE]</span>
+</pre>
+</li>
+</ol>
+<!-- END ROUTINES -->
+<!-------------------------------------------------------------------->
+<a name="NAMELIST"></a>
+<hr>
+<h4>NAMELIST</h4>
+<!-- BEGIN NAMELIST -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END NAMELIST -->
+<!-------------------------------------------------------------------->
+<a name="DIAGNOSTIC FIELDS"></a>
+<hr>
+<h4>DIAGNOSTIC FIELDS</h4>
+<!-- BEGIN DIAGNOSTICS -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END DIAGNOSTICS -->
+<!-------------------------------------------------------------------->
+<a name="DATA SETS"></a>
+<hr>
+<h4>DATA SETS</h4>
+<!-- BEGIN DATA_SETS -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END DATA_SETS -->
+<!-------------------------------------------------------------------->
+<a name="ERROR MESSAGES"></a>
+<hr>
+<h4>ERROR MESSAGES</h4>
+<!-- BEGIN ERRORS -->
+<div>
+<dl>
+<dt><b>input time list not ascending order</b>
+    <dd>The list of input time types must have ascending dates.
+<br><br>
+<dt><b>modulo months must have same length</b>
+    <dd>The length of the current month for input Time and Time_list
+    must be the same when using the modulo month option.
+    The modulo month option is available but not supported.
+<br><br>
+<dt><b>invalid value for argument modtime</b>
+    <dd>The optional argument modtime must have a value set by one
+    of the public parameters: NONE, YEAR, MONTH, DAY.
+    The MONTH and DAY options are available but not supported.
+<br><br>
+<dt><b>period of list exceeds modulo period</b>
+    <dd>The difference between the last and first values in the
+    input Time list/array exceeds the length of the modulo period.
+<br><br>
+<dt><b>time before range of list</b>
+<dt><b>time after range of list</b>
+    <dd>These errors occur when you are not using a modulo axis and the
+    input Time occurs before the first value in the Time list/array
+    or after the last value in the Time list/array.
+</dl>
+</div><br>
+<!-- END ERRORS -->
+<!-------------------------------------------------------------------->
+<a name="REFERENCES"></a>
+<hr>
+<h4>REFERENCES</h4>
+<!-- BEGIN REFERENCES -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END REFERENCES -->
+<!-------------------------------------------------------------------->
+<a name="COMPILER SPECIFICS"></a>
+<hr>
+<h4>COMPILER SPECIFICS</h4>
+<!-- BEGIN COMPILER -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END COMPILER -->
+<!-------------------------------------------------------------------->
+<a name="PRECOMPILER OPTIONS"></a>
+<hr>
+<h4>PRECOMPILER OPTIONS</h4>
+<!-- BEGIN PRECOMPILER -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END PRECOMPILER -->
+<!-------------------------------------------------------------------->
+<a name="LOADER OPTIONS"></a>
+<hr>
+<h4>LOADER OPTIONS</h4>
+<!-- BEGIN LOADER -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END LOADER -->
+<!-------------------------------------------------------------------->
+<a name="KNOWN BUGS"></a>
+<hr>
+<h4>KNOWN BUGS</h4>
+<!-- BEGIN BUGS -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END BUGS -->
+<!-------------------------------------------------------------------->
+<a name="NOTES"></a>
+<hr>
+<h4>NOTES</h4>
+<!-- BEGIN NOTES -->
+<div>
+     The following private parameters are set by this module:
+</div>
+<pre>
+          seconds per minute = 60
+          minutes per hour   = 60
+          hours   per day    = 24
+          months  per year   = 12
+</pre>
+<!-- END NOTES -->
+<!-------------------------------------------------------------------->
+<a name="FUTURE PLANS"></a>
+<hr>
+<h4>FUTURE PLANS</h4>
+<!-- BEGIN PLANS -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END PLANS -->
+<!-------------------------------------------------------------------->
+
+<hr>
+</body>
+</html>

@@ -32,80 +32,85 @@ module mpp_domains_mod
   implicit none
   private
   character(len=128), private :: version= &
-       '$Id: mpp_domains.F90,v 6.2 2001/10/25 17:55:11 fms Exp $'
+       '$Id: mpp_domains.F90,v 6.3 2002/02/22 19:09:12 fms Exp $'
   character(len=128), private :: name= &
-       '$Name: fez $'
+       '$Name: galway $'
+  character(len=128), private :: version_update_domains2D, version_global_reduce, version_global_sum, version_global_field
 
-#ifdef SGICRAY
-!see intro_io(3F): to see why these values are used rather than 5,6,0
-  integer, parameter, private :: stdin=100, stdout=101, stderr=102
-#else
-  integer, parameter, private :: stdin=5,   stdout=6,   stderr=0
-#endif
-  integer, private :: pe, npes, root
+!parameters used to define domains: these are passed to the flags argument of mpp_define_domains
+!  if data domain is to have global extent, set GLOBAL_DATA_DOMAIN
+!  if global domain has periodic boundaries, set CYCLIC_GLOBAL_DOMAIN
+!  sum flags together if more than one of the above conditions is to be met.
+  integer, parameter, private :: GLOBAL=0, CYCLIC=1
+  integer, parameter, private :: WEST=2, EAST=3, SOUTH=4, NORTH=5
+  integer, parameter, private :: SEND=1, RECV=2
+  integer, parameter, public :: GLOBAL_DATA_DOMAIN=2**GLOBAL, CYCLIC_GLOBAL_DOMAIN=2**CYCLIC
+!gridtypes
+  integer, parameter, private :: AGRID=0, BGRID=1, CGRID=2
+  integer, parameter, public :: BGRID_NE=BGRID+2**NORTH+2**EAST
+  integer, parameter, public :: BGRID_SW=BGRID+2**SOUTH+2**WEST
+  integer, parameter, public :: CGRID_NE=CGRID+2**NORTH+2**EAST
+  integer, parameter, public :: CGRID_SW=CGRID+2**SOUTH+2**WEST
+  integer, private :: grid_offset_type=AGRID
+!folds
+  integer, parameter, public :: FOLD_WEST_EDGE = 2**WEST, FOLD_EAST_EDGE = 2**EAST
+  integer, parameter, public :: FOLD_SOUTH_EDGE=2**SOUTH, FOLD_NORTH_EDGE=2**NORTH
+!update
+  integer, parameter, public :: WUPDATE=2**WEST, EUPDATE=2**EAST, SUPDATE=2**SOUTH, NUPDATE=2**NORTH
+  integer, parameter, public :: XUPDATE=WUPDATE+EUPDATE, YUPDATE=SUPDATE+NUPDATE
+!used by mpp_global_sum
+  integer, parameter, public :: BITWISE_EXACT_SUM=1
 
   type, public :: domain_axis_spec        !type used to specify index limits along an axis of a domain
-#ifndef MPP_DOMAINS_PRE_FEZ
      private
-#endif
      integer :: begin, end, size, max_size      !start, end of domain axis, size, max size in set
      logical :: is_global       !TRUE if domain axis extent covers global domain
-#ifdef MPP_DOMAINS_PRE_FEZ
-!next two items for backward compatibility
-     integer :: start_index, end_index
-#endif
   end type domain_axis_spec
   type, public :: domain1D
-#ifndef MPP_DOMAINS_PRE_FEZ
      private
-#endif
-     type(domain_axis_spec) :: compute, data, global, active, putb, getb, putf, getf
-     logical :: mustputb, mustgetb, mustputf, mustgetf, folded
+     type(domain_axis_spec) :: compute, data, global
+     logical :: cyclic
      type(domain1D), pointer :: list(:)
      integer :: pe              !PE to which this domain is assigned
      integer :: pos             !position of this PE within link list, i.e domain%list(pos)%pe = pe
-     integer, pointer :: pemap(:)
-#ifdef MPP_DOMAINS_PRE_FEZ
-!next two items for backward compatibility
-     integer :: ndomains        !number of domains over which data has been distributed
-     integer, pointer :: pelist(:), sizelist(:)
-#endif
   end type domain1D
 !domaintypes of higher rank can be constructed from type domain1D
 !typically we only need 1 and 2D, but could need higher (e.g 3D LES)
 !some elements are repeated below if they are needed once per domain, not once per axis
+  type, private :: rectangle
+     integer :: is, ie, js, je
+     logical :: overlap, folded
+  end type rectangle
   type, public :: domain2D
-#ifndef MPP_DOMAINS_PRE_FEZ
      private
-#endif
      type(domain1D) :: x
      type(domain1D) :: y
      type(domain2D), pointer :: list(:)
      integer :: pe              !PE to which this domain is assigned
      integer :: pos             !position of this PE within link list, i.e domain%list(pos)%pe = pe
-!     integer, pointer :: pemap(:,:)
+     integer :: fold, gridtype
+     logical :: overlap
+     type(rectangle) :: recv_e, recv_se, recv_s, recv_sw, &
+                        recv_w, recv_nw, recv_n, recv_ne
+     type(rectangle) :: send_e, send_se, send_s, send_sw, &
+                        send_w, send_nw, send_n, send_ne
+     logical :: remote_domains_initialized
+     type(rectangle) :: recv_e_off, recv_se_off, recv_s_off, recv_sw_off, &
+                        recv_w_off, recv_nw_off, recv_n_off, recv_ne_off
+     type(rectangle) :: send_e_off, send_se_off, send_s_off, send_sw_off, &
+                        send_w_off, send_nw_off, send_n_off, send_ne_off
+     logical :: remote_off_domains_initialized
   end type domain2D
   type(domain1D), public :: NULL_DOMAIN1D
   type(domain2D), public :: NULL_DOMAIN2D
 
-!parameters used to define domains: these are passed to the flags argument of mpp_define_domains
-!  if compute domain is to have global extent, set GLOBAL_COMPUTE_DOMAIN
-!  if data domain is to have global extent, set GLOBAL_DATA_DOMAIN
-!  if global domain has periodic boundaries, set CYCLIC_GLOBAL_DOMAIN
-!  sum flags together if more than one of the above conditions is to be met.
-  integer, parameter, public :: GLOBAL_COMPUTE_DOMAIN=1, GLOBAL_DATA_DOMAIN=2, CYCLIC_GLOBAL_DOMAIN=4
-!the next 3 pairs must use the same values
-  integer, parameter, public :: FOLD_WEST_EDGE =8, FOLD_EAST_EDGE =16
-  integer, parameter, public :: FOLD_SOUTH_EDGE=8, FOLD_NORTH_EDGE=16
-  integer, parameter, public :: FOLD_LOWER_EDGE=8, FOLD_UPPER_EDGE=16
-  integer, parameter, public :: WUPDATE=1, EUPDATE=2, SUPDATE=4, NUPDATE=8, TRANSPOSE=16
-  integer, parameter, public :: XUPDATE=WUPDATE+EUPDATE, YUPDATE=SUPDATE+NUPDATE
-  integer, parameter, public :: VECTOR_COMPONENT=1
-  integer, parameter, public :: BITWISE_EXACT_SUM=1
+  integer, private :: pe, npes
 
   integer, private :: tk
-  logical, private :: verbose=.FALSE., debug=.FALSE.
+  logical, private :: verbose=.FALSE., debug=.FALSE., domain_clocks_on=.FALSE.
   logical, private :: mpp_domains_initialized=.FALSE.
+  integer, parameter, public :: MPP_DOMAIN_TIME=MPP_DEBUG+1
+  integer :: send_clock=0, recv_clock=0, unpk_clock=0, wait_clock=0, pack_clock=0, pack_loop_clock=0
 
 !stack for internal buffers
 !allocated differently if use_shmalloc
@@ -118,14 +123,13 @@ module mpp_domains_mod
   integer, private :: mpp_domains_stack_size=0, mpp_domains_stack_hwm=0
 
 !used by mpp_define_domains2D_new to transmit data
-  integer, allocatable, dimension(:) :: local_dom, remote_dom
+  integer :: domain_info_buf(16)
+#ifdef use_shmalloc
+  pointer( ptr_info, domain_info_buf )
+#endif
 
 !public interfaces
   interface mpp_define_domains
-#ifdef MPP_DOMAINS_PRE_FEZ
-     module procedure mpp_define_domains1D_old
-     module procedure mpp_define_domains2D_old
-#endif
      module procedure mpp_define_domains1D
      module procedure mpp_define_domains2D
   end interface
@@ -135,6 +139,10 @@ module mpp_domains_mod
      module procedure mpp_update_domain2D_r8_3d
      module procedure mpp_update_domain2D_r8_4d
      module procedure mpp_update_domain2D_r8_5d
+     module procedure mpp_update_domain2D_r8_2dv
+     module procedure mpp_update_domain2D_r8_3dv
+     module procedure mpp_update_domain2D_r8_4dv
+     module procedure mpp_update_domain2D_r8_5dv
      module procedure mpp_update_domain2D_c8_2d
      module procedure mpp_update_domain2D_c8_3d
      module procedure mpp_update_domain2D_c8_4d
@@ -165,41 +173,82 @@ module mpp_domains_mod
      module procedure mpp_update_domain2D_l4_3d
      module procedure mpp_update_domain2D_l4_4d
      module procedure mpp_update_domain2D_l4_5d
+     module procedure mpp_update_domain2D_r4_2dv
+     module procedure mpp_update_domain2D_r4_3dv
+     module procedure mpp_update_domain2D_r4_4dv
+     module procedure mpp_update_domain2D_r4_5dv
 
-     module procedure mpp_update_domain1D_r8_2d
-     module procedure mpp_update_domain1D_r8_3d
-     module procedure mpp_update_domain1D_r8_4d
-     module procedure mpp_update_domain1D_r8_5d
-     module procedure mpp_update_domain1D_c8_2d
-     module procedure mpp_update_domain1D_c8_3d
-     module procedure mpp_update_domain1D_c8_4d
-     module procedure mpp_update_domain1D_c8_5d
+!     module procedure mpp_update_domain1D_r8_2d
+!     module procedure mpp_update_domain1D_r8_3d
+!     module procedure mpp_update_domain1D_r8_4d
+!     module procedure mpp_update_domain1D_r8_5d
+!     module procedure mpp_update_domain1D_c8_2d
+!     module procedure mpp_update_domain1D_c8_3d
+!     module procedure mpp_update_domain1D_c8_4d
+!     module procedure mpp_update_domain1D_c8_5d
+!#ifndef no_8byte_integers
+!     module procedure mpp_update_domain1D_i8_2d
+!     module procedure mpp_update_domain1D_i8_3d
+!     module procedure mpp_update_domain1D_i8_4d
+!     module procedure mpp_update_domain1D_i8_5d
+!     module procedure mpp_update_domain1D_l8_2d
+!     module procedure mpp_update_domain1D_l8_3d
+!     module procedure mpp_update_domain1D_l8_4d
+!     module procedure mpp_update_domain1D_l8_5d
+!#endif
+!     module procedure mpp_update_domain1D_r4_2d
+!     module procedure mpp_update_domain1D_r4_3d
+!     module procedure mpp_update_domain1D_r4_4d
+!     module procedure mpp_update_domain1D_r4_5d
+!     module procedure mpp_update_domain1D_c4_2d
+!     module procedure mpp_update_domain1D_c4_3d
+!     module procedure mpp_update_domain1D_c4_4d
+!     module procedure mpp_update_domain1D_c4_5d
+!     module procedure mpp_update_domain1D_i4_2d
+!     module procedure mpp_update_domain1D_i4_3d
+!     module procedure mpp_update_domain1D_i4_4d
+!     module procedure mpp_update_domain1D_i4_5d
+!     module procedure mpp_update_domain1D_l4_2d
+!     module procedure mpp_update_domain1D_l4_3d
+!     module procedure mpp_update_domain1D_l4_4d
+!     module procedure mpp_update_domain1D_l4_5d
+  end interface
+
+  interface mpp_redistribute
+     module procedure mpp_redistribute_r8_2D
+     module procedure mpp_redistribute_r8_3D
+     module procedure mpp_redistribute_r8_4D
+     module procedure mpp_redistribute_r8_5D
+     module procedure mpp_redistribute_c8_2D
+     module procedure mpp_redistribute_c8_3D
+     module procedure mpp_redistribute_c8_4D
+     module procedure mpp_redistribute_c8_5D
 #ifndef no_8byte_integers
-     module procedure mpp_update_domain1D_i8_2d
-     module procedure mpp_update_domain1D_i8_3d
-     module procedure mpp_update_domain1D_i8_4d
-     module procedure mpp_update_domain1D_i8_5d
-     module procedure mpp_update_domain1D_l8_2d
-     module procedure mpp_update_domain1D_l8_3d
-     module procedure mpp_update_domain1D_l8_4d
-     module procedure mpp_update_domain1D_l8_5d
+     module procedure mpp_redistribute_i8_2D
+     module procedure mpp_redistribute_i8_3D
+     module procedure mpp_redistribute_i8_4D
+     module procedure mpp_redistribute_i8_5D
+     module procedure mpp_redistribute_l8_2D
+     module procedure mpp_redistribute_l8_3D
+     module procedure mpp_redistribute_l8_4D
+     module procedure mpp_redistribute_l8_5D
 #endif
-     module procedure mpp_update_domain1D_r4_2d
-     module procedure mpp_update_domain1D_r4_3d
-     module procedure mpp_update_domain1D_r4_4d
-     module procedure mpp_update_domain1D_r4_5d
-     module procedure mpp_update_domain1D_c4_2d
-     module procedure mpp_update_domain1D_c4_3d
-     module procedure mpp_update_domain1D_c4_4d
-     module procedure mpp_update_domain1D_c4_5d
-     module procedure mpp_update_domain1D_i4_2d
-     module procedure mpp_update_domain1D_i4_3d
-     module procedure mpp_update_domain1D_i4_4d
-     module procedure mpp_update_domain1D_i4_5d
-     module procedure mpp_update_domain1D_l4_2d
-     module procedure mpp_update_domain1D_l4_3d
-     module procedure mpp_update_domain1D_l4_4d
-     module procedure mpp_update_domain1D_l4_5d
+     module procedure mpp_redistribute_r4_2D
+     module procedure mpp_redistribute_r4_3D
+     module procedure mpp_redistribute_r4_4D
+     module procedure mpp_redistribute_r4_5D
+     module procedure mpp_redistribute_c4_2D
+     module procedure mpp_redistribute_c4_3D
+     module procedure mpp_redistribute_c4_4D
+     module procedure mpp_redistribute_c4_5D
+     module procedure mpp_redistribute_i4_2D
+     module procedure mpp_redistribute_i4_3D
+     module procedure mpp_redistribute_i4_4D
+     module procedure mpp_redistribute_i4_5D
+     module procedure mpp_redistribute_l4_2D
+     module procedure mpp_redistribute_l4_3D
+     module procedure mpp_redistribute_l4_4D
+     module procedure mpp_redistribute_l4_5D
   end interface
 
   interface mpp_global_field
@@ -351,16 +400,6 @@ module mpp_domains_mod
      module procedure mpp_get_global_domain2D
   end interface
 
-  interface mpp_get_active_domain
-     module procedure mpp_get_active_domain1D
-     module procedure mpp_get_active_domain2D
-  end interface
-
-  interface mpp_set_active_domain
-     module procedure mpp_set_active_domain1D
-     module procedure mpp_set_active_domain2D
-  end interface
-
   interface mpp_define_layout
      module procedure mpp_define_layout2D
   end interface
@@ -376,8 +415,8 @@ module mpp_domains_mod
   end interface
 
   public :: mpp_define_layout, mpp_define_domains, mpp_domains_init, mpp_domains_set_stack_size, mpp_domains_exit,&
-            mpp_get_active_domain, mpp_get_compute_domain, mpp_get_compute_domains, mpp_get_data_domain, mpp_get_global_domain, &
-            mpp_get_domain_components, mpp_get_layout, mpp_get_pelist, mpp_set_active_domain, mpp_update_domains, &
+            mpp_get_compute_domain, mpp_get_compute_domains, mpp_get_data_domain, mpp_get_global_domain, &
+            mpp_get_domain_components, mpp_get_layout, mpp_get_pelist, mpp_redistribute, mpp_update_domains, &
             mpp_global_field, mpp_global_max, mpp_global_min, mpp_global_sum, operator(.EQ.), operator(.NE.)
 
   contains
@@ -391,21 +430,28 @@ module mpp_domains_mod
     subroutine mpp_domains_init(flags)
 !initialize domain decomp package
       integer, intent(in), optional :: flags
+      integer :: l=0
 
       if( mpp_domains_initialized )return
       call mpp_init(flags)           !this is a no-op if already initialized
       pe = mpp_pe()
       npes = mpp_npes()
-      root = mpp_root_pe()
       mpp_domains_initialized = .TRUE.
-      if( pe.EQ.root )write( stdout,'(/a)' )'MPP_DOMAINS module '//trim(version)
+      if( pe.EQ.mpp_root_pe() )then
+          write( stdlog(),'(/a)' )'MPP_DOMAINS module '//trim(version)
+!          write( stdlog(),'(a)' )trim(version_update_domains2D)
+      end if
 
       if( PRESENT(flags) )then
           debug   = flags.EQ.MPP_DEBUG
           verbose = flags.EQ.MPP_VERBOSE .OR. debug
+          domain_clocks_on = flags.EQ.MPP_DOMAIN_TIME
       end if
 
       call mpp_domains_set_stack_size(32768) !default, pretty arbitrary
+#ifdef use_shmalloc
+      call mpp_malloc( ptr_info, 16, l )
+#endif
 
 !NULL_DOMAIN is a domaintype that can be used to initialize to undef
       NULL_DOMAIN1D%global%begin  = -1; NULL_DOMAIN1D%global%end  = -1; NULL_DOMAIN1D%global%size = 0
@@ -415,13 +461,15 @@ module mpp_domains_mod
       NULL_DOMAIN2D%x = NULL_DOMAIN1D
       NULL_DOMAIN2D%y = NULL_DOMAIN1D
       NULL_DOMAIN2D%pe = NULL_PE
-#ifdef MPP_DOMAINS_PRE_FEZ
-!backward-compatibility
-      NULL_DOMAIN1D%global%start_index  = -1; NULL_DOMAIN1D%global%end_index  = -1
-      NULL_DOMAIN1D%data%start_index    = -1; NULL_DOMAIN1D%data%end_index    = -1
-      NULL_DOMAIN1D%compute%start_index = -1; NULL_DOMAIN1D%compute%end_index = -1
-#endif
-      
+
+      if( domain_clocks_on )then
+          pack_clock = mpp_clock_id( 'Halo pack' )
+          pack_loop_clock = mpp_clock_id( 'Halo pack loop' )
+          send_clock = mpp_clock_id( 'Halo send' )
+          recv_clock = mpp_clock_id( 'Halo recv' )
+          unpk_clock = mpp_clock_id( 'Halo unpk' )
+          wait_clock = mpp_clock_id( 'Halo wait' )
+      end if
       return
     end subroutine mpp_domains_init
 
@@ -429,29 +477,26 @@ module mpp_domains_mod
 !set the mpp_domains_stack variable to be at least n LONG words long
       integer, intent(in) :: n
       character(len=8) :: text
+
+      if( n.LE.mpp_domains_stack_size )return
 #ifdef use_shmalloc
       call mpp_malloc( ptr_stack, n, mpp_domains_stack_size )
 #else
-      if( n.GT.mpp_domains_stack_size .AND. allocated(mpp_domains_stack) )deallocate(mpp_domains_stack)
-      if( .NOT.allocated(mpp_domains_stack) )then
-          allocate( mpp_domains_stack(n) )
-          mpp_domains_stack_size = n
-      end if
+      if( allocated(mpp_domains_stack) )deallocate(mpp_domains_stack)
+      allocate( mpp_domains_stack(n) )
+      mpp_domains_stack_size = n
 #endif
       write( text,'(i8)' )n
-      if( pe.EQ.root )call mpp_error( NOTE, 'MPP_DOMAINS_SET_STACK_SIZE: stack size set to '//text//'.' )
+      if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, 'MPP_DOMAINS_SET_STACK_SIZE: stack size set to '//text//'.' )
 
       return
     end subroutine mpp_domains_set_stack_size
 
     subroutine mpp_domains_exit()
 !currently does not have much to do, but provides the possibility of re-initialization
-      if( .NOT.mpp_domains_initialized )call mpp_error( FATAL, 'MPP_DOMAINS_EXIT: You must first call mpp_domains_init.' )
+      if( .NOT.mpp_domains_initialized )return
       call mpp_max(mpp_domains_stack_hwm)
-      if( pe.EQ.root )then
-          write( stdout,'(/a)' )'Exiting MPP_DOMAINS module...'
-          write( stdout,* )'MPP_DOMAINS_STACK high water mark=', mpp_domains_stack_hwm
-      end if
+      if( pe.EQ.mpp_root_pe() )write( stdout(),* )'MPP_DOMAINS_STACK high water mark=', mpp_domains_stack_hwm
       mpp_domains_initialized = .FALSE.
       return
     end subroutine mpp_domains_exit
@@ -529,12 +574,18 @@ module mpp_domains_mod
       integer, intent(in), optional :: extent(0:)
       logical, intent(in), optional :: maskmap(0:)
 
-      logical :: compute_domain_is_global, data_domain_is_global, global_domain_is_cyclic
-      logical :: upper_edge_is_folded, lower_edge_is_folded
+      logical :: compute_domain_is_global, data_domain_is_global
       integer :: ndiv, n, isg, ieg, is, ie, i, off, pos, hs, he
       integer, allocatable :: pes(:)
       logical, allocatable :: mask(:)
       integer :: halosz
+!used by symmetry algorithm
+      integer :: imax, ndmax, ndmirror
+      logical :: symmetrize
+!statement functions
+      logical :: even, odd
+      even(n) = (mod(n,2).EQ.0)
+      odd (n) = (mod(n,2).EQ.1)
       
       if( .NOT.mpp_domains_initialized )call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS1D: You must first call mpp_domains_init.' )
 !get global indices
@@ -544,7 +595,7 @@ module mpp_domains_mod
 !get the list of PEs on which to assign domains; if pelist is absent use 0..npes-1
       if( PRESENT(pelist) )then
           if( .NOT.any(pelist.EQ.pe) )then
-              write( stderr,* )'pe=', pe, ' pelist=', pelist
+              write( stderr(),* )'pe=', pe, ' pelist=', pelist
               call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS1D: pe must be in pelist.' )
           end if
           allocate( pes(0:size(pelist)-1) )
@@ -571,37 +622,21 @@ module mpp_domains_mod
 !get halosize
       halosz = 0
       if( PRESENT(halo) )halosz = halo
+
 !get flags
       compute_domain_is_global = .FALSE.
       data_domain_is_global    = .FALSE.
-      global_domain_is_cyclic  = .FALSE.
-      upper_edge_is_folded = .FALSE.
-      lower_edge_is_folded = .FALSE.
+      domain%cyclic = .FALSE.
       if( PRESENT(flags) )then
 !NEW: obsolete flag global_compute_domain, since ndivs is non-optional and you cannot have global compute and ndivs.NE.1 
           compute_domain_is_global = ndivs.EQ.1
 !if compute domain is global, data domain must also be
-          data_domain_is_global    = BTEST(flags,1) .OR. compute_domain_is_global
-          global_domain_is_cyclic  = BTEST(flags,2)
-          if( global_domain_is_cyclic .AND. ( BTEST(flags,3) .OR. BTEST(flags,4) ) ) &
-               call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS1D: An axis cannot be both cyclic and folded.' )
-          lower_edge_is_folded = BTEST(flags,3) .AND. halosz.NE.0
-          upper_edge_is_folded = BTEST(flags,4) .AND. halosz.NE.0
+          data_domain_is_global    = BTEST(flags,GLOBAL) .OR. compute_domain_is_global
+          domain%cyclic  = BTEST(flags,CYCLIC) .AND. halosz.NE.0
       end if
 
 !set up links list
-      if( ASSOCIATED(domain%list) )NULLIFY(domain%list)
-      if( lower_edge_is_folded .OR. upper_edge_is_folded )then
-          domain%folded = .TRUE.
-!folded domains requires twice as many links
-!masks and PEs for domains over the fold will be assigned by the calling routine (usually mpp_define_domains2D)
-          allocate( domain%list(0:2*ndivs-1) )
-          domain%list(ndivs:2*ndivs-1)%folded = .TRUE.
-      else
-          domain%folded = .FALSE.
-          allocate( domain%list(0:  ndivs-1) )
-      end if
-      domain%list(0:ndivs-1)%folded = .FALSE.
+      allocate( domain%list(0:ndivs-1) )
 
 !set global domain
       domain%list(:)%global%begin     = isg
@@ -611,38 +646,74 @@ module mpp_domains_mod
       domain%list(:)%global%is_global = .TRUE. !always
 
 !get compute domain
-!      nullify(domain%pemap)
-!      allocate( domain%pemap(isg:ieg) )
-!      domain%pemap(isg:ieg) = NULL_PE
       if( compute_domain_is_global )then
           domain%list(:)%compute%begin = isg
           domain%list(:)%compute%end   = ieg
           domain%list(:)%compute%is_global = .TRUE.
           domain%list(:)%pe = pes(:)
           domain%pos = 0
-!          domain%pemap(isg:ieg) = pes(0)
       else
           domain%list(:)%compute%is_global = .FALSE.
           is = isg
           n = 0
           do ndiv=0,ndivs-1
              if( PRESENT(extent) )then
-                 if( extent(ndiv).LE.0 )call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: extents must be positive definite.' )
                  ie = is + extent(ndiv) - 1
                  if( ndiv.EQ.ndivs-1 .AND. ie.NE.ieg ) &
                       call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: extent array limits do not match global domain.' )
              else
-                 ie = is + CEILING( float(ieg-is+1)/(ndivs-ndiv) ) - 1
+!modified for mirror-symmetry
+!original line
+!                 ie = is + CEILING( float(ieg-is+1)/(ndivs-ndiv) ) - 1
+
+!problem of dividing nx points into n domains maintaining symmetry
+!i.e nx=18 n=4 4554 and 5445 are solutions but 4455 is not.
+!this will always work for nx even n even or odd
+!this will always work for nx odd, n odd
+!this will never  work for nx odd, n even: for this case we supersede the mirror calculation
+!                 symmetrize = .NOT. ( mod(ndivs,2).EQ.0 .AND. mod(ieg-isg+1,2).EQ.1 )
+!nx even n odd fails if n>nx/2
+                 symmetrize = ( even(ndivs) .AND. even(ieg-isg+1) ) .OR. &
+                              (  odd(ndivs) .AND.  odd(ieg-isg+1) ) .OR. &
+                              (  odd(ndivs) .AND. even(ieg-isg+1) .AND. ndivs.LT.(ieg-isg+1)/2 )
+
+!mirror domains are stored in the list and retrieved if required.
+                 if( ndiv.EQ.0 )then
+!initialize max points and max domains
+                     imax = ieg
+                     ndmax = ndivs
+                 end if
+!do bottom half of decomposition, going over the midpoint for odd ndivs
+                 if( ndiv.LT.(ndivs-1)/2+1 )then
+!domain is sized by dividing remaining points by remaining domains
+                     ie = is + CEILING( REAL(imax-is+1)/(ndmax-ndiv) ) - 1
+                     ndmirror = (ndivs-1) - ndiv !mirror domain
+                     if( ndmirror.GT.ndiv .AND. symmetrize )then !only for domains over the midpoint
+!mirror extents, the max(,) is to eliminate overlaps
+                         domain%list(ndmirror)%compute%begin = max( isg+ieg-ie, ie+1 )
+                         domain%list(ndmirror)%compute%end   = max( isg+ieg-is, ie+1 )
+                         imax = domain%list(ndmirror)%compute%begin - 1
+                         ndmax = ndmax - 1
+                     end if
+                 else
+                     if( symmetrize )then
+!do top half of decomposition by retrieving saved values
+                         is = domain%list(ndiv)%compute%begin
+                         ie = domain%list(ndiv)%compute%end
+                     else
+                         ie = is + CEILING( REAL(imax-is+1)/(ndmax-ndiv) ) - 1
+                     end if
+                 end if
              end if
+             if( ie.LT.is )call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: domain extents must be positive definite.' )
              domain%list(ndiv)%compute%begin = is
              domain%list(ndiv)%compute%end   = ie
-             if( lower_edge_is_folded .OR. upper_edge_is_folded )then
-                 domain%list(2*ndivs-1-ndiv)%compute%begin = is
-                 domain%list(2*ndivs-1-ndiv)%compute%end   = ie
-             end if
+             if( ndiv.GT.0 .AND. is.NE.domain%list(ndiv-1)%compute%end+1 ) &
+                  call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: domain extents do not span space completely.' )
+             if( ndiv.EQ.ndivs-1 .AND. domain%list(ndiv)%compute%end.NE.ieg ) &
+                  call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: domain extents do not span space completely.' )
              if( mask(ndiv) )then
                  domain%list(ndiv)%pe = pes(n)
-!                 domain%pemap(is:ie) = pes(n)
                  if( pe.EQ.pes(n) )domain%pos = ndiv
                  n = n + 1
              end if
@@ -656,10 +727,12 @@ module mpp_domains_mod
 !data domain is at least equal to compute domain
       domain%list(:)%data%begin = domain%list(:)%compute%begin
       domain%list(:)%data%end   = domain%list(:)%compute%end
+      domain%list(:)%data%is_global = .FALSE.
 !apply global flags
       if( data_domain_is_global )then
           domain%list(:)%data%begin  = isg
           domain%list(:)%data%end    = ieg
+          domain%list(:)%data%is_global = .TRUE.
       end if
 !apply margins
       domain%list(:)%data%begin = domain%list(:)%data%begin - halosz
@@ -673,134 +746,9 @@ module mpp_domains_mod
       domain%compute%max_size = MAXVAL( domain%list(:)%compute%size )
       domain%data%max_size    = MAXVAL( domain%list(:)%data%size )
       domain%global%max_size  = domain%global%size
-      domain%active = domain%data !active domain is initialized to data domain
 
-!create list of put and get domains
-      domain%list(:)%mustputb = .FALSE.
-      domain%list(:)%mustgetb = .FALSE.
-      domain%list(:)%mustputf = .FALSE.
-      domain%list(:)%mustgetf = .FALSE.
-      if( halosz.NE.0 )then
-!overlaps with your own domain (only for cyclic domains)
-          pos = domain%pos
-          if( global_domain_is_cyclic )then
-              off = ieg-isg+1 !use this offset for repositioning
-!putb: repositioned domain upper halo must lie in my compute domain
-              domain%list(pos)%mustputb = if_overlap( domain%compute%end+1-off, domain%data%end-off, &
-                                                      domain%compute%begin, domain%compute%end, &
-                                                      domain%list(pos)%putb%begin, domain%list(pos)%putb%end )
-!getb: my lower halo must lie in repositioned domain compute domain
-              domain%list(pos)%mustgetb = if_overlap( domain%data%begin, domain%compute%begin-1, &
-                                                      domain%compute%begin-off, domain%compute%end-off, &
-                                                      domain%list(pos)%getb%begin, domain%list(pos)%getb%end )
-!putf: repositioned domain lower halo must lie in my compute domain
-              domain%list(pos)%mustputf = if_overlap( domain%data%begin+off, domain%compute%begin-1+off, &
-                                                      domain%compute%begin, domain%compute%end, &
-                                                      domain%list(pos)%putf%begin, domain%list(pos)%putf%end )
-!getf: my upper halo must lie in domain compute domain
-              domain%list(pos)%mustgetf = if_overlap( domain%compute%end+1, domain%data%end, &
-                                                      domain%compute%begin+off, domain%compute%end+off, &
-                                                      domain%list(pos)%getf%begin, domain%list(pos)%getf%end )
-          end if
-
-!overlaps with other domains (if any)
-          do ndiv = 1,size(domain%list)-1
-             pos = domain%pos-ndiv
-             if( pos.GE.0 )then
-!putb: domain%list(pos) upper halo must lie in my compute domain
-                 domain%list(pos)%mustputb = if_overlap( domain%list(pos)%compute%end+1, domain%list(pos)%data%end, &
-                                                         domain%compute%begin, domain%compute%end, &
-                                                         domain%list(pos)%putb%begin, domain%list(pos)%putb%end ) .AND. mask(pos)
-!getb: my lower halo must lie in domain%list(pos) compute domain
-                 domain%list(pos)%mustgetb = if_overlap( domain%data%begin, domain%compute%begin-1, &
-                                                         domain%list(pos)%compute%begin, domain%list(pos)%compute%end, &
-                                                         domain%list(pos)%getb%begin, domain%list(pos)%getb%end ) .AND. mask(pos)
-             else if( global_domain_is_cyclic )then
-                 pos = pos + ndivs
-                 off = ieg-isg+1 !use this offset for repositioning
-!putb: repositioned domain%list(pos) upper halo must lie in my compute domain
-                 domain%list(pos)%mustputb = if_overlap( domain%list(pos)%compute%end+1-off, domain%list(pos)%data%end-off, &
-                                                         domain%compute%begin, domain%compute%end, &
-                                                         domain%list(pos)%putb%begin, domain%list(pos)%putb%end ) .AND. mask(pos)
-!getb: my lower halo must lie in repositioned domain%list(pos) compute domain
-                 domain%list(pos)%mustgetb = if_overlap( domain%data%begin, domain%compute%begin-1, &
-                                                         domain%list(pos)%compute%begin-off, domain%list(pos)%compute%end-off, &
-                                                         domain%list(pos)%getb%begin, domain%list(pos)%getb%end ) .AND. mask(pos)
-             else if( lower_edge_is_folded )then
-!use putf rather than putb!
-                 pos = pos + 2*ndivs
-!putf: repositioned and reversed domain%list(pos) LOWER halo must lie in my compute domain
-                 off = 2*isg - 1
-                 domain%list(pos)%mustputf = if_overlap( off-domain%list(pos)%compute%begin-1, off-domain%list(pos)%data%begin, &
-                                                         domain%compute%begin, domain%compute%end, &
-                                                         domain%list(pos)%putf%begin, domain%list(pos)%putf%end )
-!getb: my lower halo must lie in repositioned and reversed domain%list(pos) compute domain
-                 domain%list(pos)%mustgetb = if_overlap( domain%data%begin, domain%compute%begin-1, &
-                                                         off-domain%list(pos)%compute%end, off-domain%list(pos)%compute%begin, &
-                                                         domain%list(pos)%getb%begin, domain%list(pos)%getb%end )
-             end if
-
-             pos = domain%pos+ndiv
-             if( pos.LT.ndivs )then
-!putf: domain%list(pos) lower halo must lie in my compute domain
-                 domain%list(pos)%mustputf = if_overlap( domain%list(pos)%data%begin, domain%list(pos)%compute%begin-1, &
-                                                         domain%compute%begin, domain%compute%end, &
-                                                         domain%list(pos)%putf%begin, domain%list(pos)%putf%end ) .AND. mask(pos)
-!getf: my upper halo must lie in domain%list(pos) compute domain
-                 domain%list(pos)%mustgetf = if_overlap( domain%compute%end+1, domain%data%end, &
-                                                         domain%list(pos)%compute%begin, domain%list(pos)%compute%end, &
-                                                         domain%list(pos)%getf%begin, domain%list(pos)%getf%end ) .AND. mask(pos)
-             else if( global_domain_is_cyclic )then
-                 pos = pos - ndivs
-                 off = ieg-isg+1
-!putf: repositioned domain%list(pos) lower halo must lie in my compute domain
-                 domain%list(pos)%mustputf = if_overlap( domain%list(pos)%data%begin+off, domain%list(pos)%compute%begin-1+off, &
-                                                         domain%compute%begin, domain%compute%end, &
-                                                         domain%list(pos)%putf%begin, domain%list(pos)%putf%end ) .AND. mask(pos)
-!getf: my upper halo must lie in domain%list(pos) compute domain
-                 domain%list(pos)%mustgetf = if_overlap( domain%compute%end+1, domain%data%end, &
-                                                         domain%list(pos)%compute%begin+off, domain%list(pos)%compute%end+off, &
-                                                         domain%list(pos)%getf%begin, domain%list(pos)%getf%end ) .AND. mask(pos)
-             else if( upper_edge_is_folded )then
-!use putb rather than putf!
-                 off = 2*ieg + 1
-!putb: repositioned and reversed domain%list(pos) UPPER halo must lie in my compute domain
-                 domain%list(pos)%mustputb = if_overlap( off-domain%list(pos)%data%end, off-domain%list(pos)%compute%end+1, &
-                                                         domain%compute%begin, domain%compute%end, &
-                                                         domain%list(pos)%putb%begin, domain%list(pos)%putb%end )
-!getf: my upper halo must lie in repositioned and reversed domain%list(pos) compute domain
-                 domain%list(pos)%mustgetf = if_overlap( domain%compute%end+1, domain%data%end, &
-                                                         off-domain%list(pos)%compute%end, off-domain%list(pos)%compute%begin, &
-                                                         domain%list(pos)%getf%begin, domain%list(pos)%getf%end )
-             end if
-          end do
-          domain%list(:)%putb%size = domain%list(:)%putb%end - domain%list(:)%putb%begin + 1
-          domain%list(:)%getb%size = domain%list(:)%getb%end - domain%list(:)%getb%begin + 1
-          domain%list(:)%putf%size = domain%list(:)%putf%end - domain%list(:)%putf%begin + 1
-          domain%list(:)%getf%size = domain%list(:)%getf%end - domain%list(:)%getf%begin + 1
-      end if
 !PV786667: the deallocate stmts can be removed when fixed (7.3.1.3m)
       deallocate( pes, mask )
-#ifdef MPP_DOMAINS_PRE_FEZ
-!backward compatibility
-      domain%compute%start_index = domain%compute%begin
-      domain%compute%end_index = domain%compute%end
-      domain%data%start_index = domain%data%begin
-      domain%data%end_index = domain%data%end
-      domain%global%start_index = domain%global%begin
-      domain%global%end_index = domain%global%end
-      domain%list(:)%compute%start_index = domain%list(:)%compute%begin
-      domain%list(:)%compute%end_index = domain%list(:)%compute%end
-      domain%list(:)%data%start_index = domain%list(:)%data%begin
-      domain%list(:)%data%end_index = domain%list(:)%data%end
-      domain%list(:)%global%start_index = domain%list(:)%global%begin
-      domain%list(:)%global%end_index = domain%list(:)%global%end
-      domain%ndomains = ndivs
-      allocate( domain%sizelist(ndivs) )
-      allocate( domain%pelist(ndivs) )
-      domain%sizelist(:) = domain%list(0:ndivs-1)%compute%size
-      domain%pelist(:) = domain%list(0:ndivs-1)%pe
-#endif
       return
 
       contains
@@ -813,7 +761,7 @@ module mpp_domains_mod
           integer, intent(out) :: os, oe
           os = max(hs,cs)
           oe = min(he,ce)
-          if( debug )write( stderr,'(a,7i4)' ) &
+          if( debug )write( stderr(),'(a,7i4)' ) &
                'MPP_DEFINE_DOMAINS1D: pe, hs, he, cs, ce, os, oe=', pe, hs, he, cs, ce, os, oe
           if_overlap = oe.GE.os
           return
@@ -832,7 +780,10 @@ module mpp_domains_mod
       integer, intent(in), optional :: xextent(0:), yextent(0:)
       logical, intent(in), optional :: maskmap(0:,0:)
       character(len=*), optional :: name
-      integer :: i, j, n, ipos, jpos, pos, remote_pos, ndivx, ndivy, isg, ieg, jsg, jeg
+      integer :: i, j, m, n
+      integer :: ipos, jpos, pos
+      integer :: ndivx, ndivy, isg, ieg, jsg, jeg, isd, ied, jsd, jed
+      
       logical, allocatable :: mask(:,:)
       integer, allocatable :: pes(:), pearray(:,:)
       character(len=8) :: text
@@ -884,9 +835,9 @@ module mpp_domains_mod
       end do
       if( ipos.EQ.-1 .OR. jpos.EQ.-1 .or. pos.EQ.-1 ) &
            call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS2D: pelist must include this PE.' )
-      if( debug )write( stderr, * )'pe, ipos, jpos=', pe, ipos, jpos, ' pearray(:,jpos)=', pearray(:,jpos), &
-                                                                      ' pearray(ipos,:)=', pearray(ipos,:)
-
+      if( debug )write( stderr(), * )'pe, ipos, jpos=', pe, ipos, jpos, ' pearray(:,jpos)=', pearray(:,jpos), &
+                                                                        ' pearray(ipos,:)=', pearray(ipos,:)
+      
 !do domain decomposition using 1D versions in X and Y
       call mpp_define_domains( global_indices(1:2), ndivx, domain%x, &
            pack(pearray(:,jpos),mask(:,jpos)), xflags, xhalo, xextent, mask(:,jpos) )
@@ -896,80 +847,779 @@ module mpp_domains_mod
            call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS2D: domain%x%list(ipos)%pe.NE.domain%y%list(jpos)%pe.' ) 
       domain%pos = pos
 
-      if( size(domain%y%list).EQ.2*ndivy )then ! there is a fold in Y
+!set up fold
+      domain%fold = 0
+      if( PRESENT(xflags) )then
+          if( BTEST(xflags,WEST) )domain%fold = domain%fold + FOLD_WEST_EDGE
+          if( BTEST(xflags,EAST) )domain%fold = domain%fold + FOLD_EAST_EDGE
+      end if
+      if( PRESENT(yflags) )then
+          if( BTEST(yflags,SOUTH) )domain%fold = domain%fold + FOLD_SOUTH_EDGE
+          if( BTEST(yflags,NORTH) )domain%fold = domain%fold + FOLD_NORTH_EDGE
+      end if
+          
+      if( BTEST(domain%fold,SOUTH) .OR. BTEST(domain%fold,NORTH) )then
+          if( domain%y%cyclic )call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: an axis cannot be both folded and cyclic.' )
 !check if folded domain boundaries line up in X: compute domains lining up is a sufficient condition for symmetry
           n = ndivx - 1
           do i = 0,n/2
              if( domain%x%list(i)%compute%size.NE.domain%x%list(n-i)%compute%size ) &
                   call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: Folded domain boundaries must line up (mirror-symmetric extents).' )
           end do
-          domain%y%list(ndivy:2*ndivy-1)%pe = pearray(n-ipos,ndivy-1:0:-1)
       end if
-      if( size(domain%x%list).EQ.2*ndivx )then ! there is a fold in X
+      if( BTEST(domain%fold,WEST) .OR. BTEST(domain%fold,EAST) )then
+          if( domain%x%cyclic )call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: an axis cannot be both folded and cyclic.' )
 !check if folded domain boundaries line up in Y: compute domains lining up is a sufficient condition for symmetry
           n = ndivy - 1
           do i = 0,n/2
              if( domain%y%list(i)%compute%size.NE.domain%y%list(n-i)%compute%size ) &
                   call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: Folded domain boundaries must line up (mirror-symmetric extents).' )
           end do
-          domain%x%list(ndivx:2*ndivx-1)%pe = pearray(ndivx-1:0:-1,n-jpos)
       end if
 
-      if( .NOT.allocated(local_dom) )allocate( local_dom(8) )
-      if( .NOT.allocated(remote_dom) )allocate( remote_dom(8) )
-      call mpp_get_compute_domain( domain, local_dom(1), local_dom(2), local_dom(3), local_dom(4) )
-      call mpp_get_data_domain   ( domain, local_dom(5), local_dom(6), local_dom(7), local_dom(8) )
-      if( debug )write( stderr,'(a,9i4)' )'pe, domain=', pe, local_dom
-      n = size(pes)
-      if( ASSOCIATED(domain%list) )NULLIFY(domain%list)
-      allocate( domain%list(0:n-1) ) !this is only used for storage of remote compute and data domain info
-      if( pe.EQ.root .AND. PRESENT(name) )then
-          write( stdout, '(/a,i3,a,i3)' )trim(name)//' domain decomposition: ', ndivx, ' X', ndivy
-          write( stdout, '(3x,a)' )'pe,   is,  ie,  js,  je,    isd, ied, jsd, jed'
+!set up domain%list
+      if( debug )write( stderr(),'(a,9i4)' )'pe, domain=', pe, domain_info_buf(1:8)
+      if( pe.EQ.mpp_root_pe() .AND. PRESENT(name) )then
+          write( stdlog(), '(/a,i3,a,i3)' )trim(name)//' domain decomposition: ', ndivx, ' X', ndivy
+          write( stdlog(), '(3x,a)' )'pe,   is,  ie,  js,  je,    isd, ied, jsd, jed'
       end if
       call mpp_sync()
-!      if( ASSOCIATED(domain%pemap) )NULLIFY(domain%pemap)
-!      ALLOCATE( domain%pemap(isg:ieg,jsg:jeg) )
-!      domain%pemap(:,:) = NULL_PE
+      call mpp_get_compute_domain( domain, domain_info_buf(1), domain_info_buf(2), domain_info_buf(3), domain_info_buf(4) )
+      call mpp_get_data_domain   ( domain, domain_info_buf(5), domain_info_buf(6), domain_info_buf(7), domain_info_buf(8) )
+      n = size(pes)
+      allocate( domain%list(0:n-1) ) !this is only used for storage of remote compute and data domain info
       do i = 0,n-1
-         remote_pos = mod(pos+i,n)
-         domain%list(remote_pos)%pe = pes(remote_pos)
-         call mpp_transmit( local_dom, 8, pes(mod(pos+n-i,n)), remote_dom, 8, pes(remote_pos) )
-         domain%list(remote_pos)%x%compute%begin = remote_dom(1)
-         domain%list(remote_pos)%x%compute%end   = remote_dom(2)
-         domain%list(remote_pos)%y%compute%begin = remote_dom(3)
-         domain%list(remote_pos)%y%compute%end   = remote_dom(4)
-         domain%list(remote_pos)%x%data%begin    = remote_dom(5)
-         domain%list(remote_pos)%x%data%end      = remote_dom(6)
-         domain%list(remote_pos)%y%data%begin    = remote_dom(7)
-         domain%list(remote_pos)%y%data%end      = remote_dom(8)
-!         domain%pemap(remote_dom(1):remote_dom(2),remote_dom(3):remote_dom(4)) = pes(remote_pos)
-         if( pe.EQ.root .AND. PRESENT(name) )write( stdout, '(2x,i3,x,4i5,3x,4i5)' )pes(remote_pos), remote_dom
+         m = mod(pos+i,n)
+         domain%list(m)%pe = pes(m)
+         call mpp_transmit( domain_info_buf(1), 8, pes(mod(pos+n-i,n)), domain_info_buf(9), 8, pes(m) )
+         domain%list(m)%x%compute%begin = domain_info_buf(9)
+         domain%list(m)%x%compute%end   = domain_info_buf(10)
+         domain%list(m)%y%compute%begin = domain_info_buf(11)
+         domain%list(m)%y%compute%end   = domain_info_buf(12)
+         domain%list(m)%x%data%begin = domain_info_buf(13)
+         domain%list(m)%x%data%end   = domain_info_buf(14)
+         domain%list(m)%y%data%begin = domain_info_buf(15)
+         domain%list(m)%y%data%end   = domain_info_buf(16)
+         if( pe.EQ.mpp_root_pe() .AND. PRESENT(name) )write( stdlog(), '(2x,i3,x,4i5,3x,4i5)' )pes(m), domain_info_buf(9:)
       end do
       call mpp_sync_self(pes)
       domain%list(:)%x%compute%size = domain%list(:)%x%compute%end - domain%list(:)%x%compute%begin + 1
       domain%list(:)%y%compute%size = domain%list(:)%y%compute%end - domain%list(:)%y%compute%begin + 1
       domain%list(:)%x%data%size = domain%list(:)%x%data%end - domain%list(:)%x%data%begin + 1
       domain%list(:)%y%data%size = domain%list(:)%y%data%end - domain%list(:)%y%data%begin + 1
+
+      domain%remote_domains_initialized = .FALSE.
+      domain%remote_off_domains_initialized = .FALSE.
+      call compute_overlaps(domain)
 !PV786667: the deallocate stmts can be removed when fixed (7.3.1.3m)
       deallocate( pes, mask, pearray )
-#ifdef MPP_DOMAINS_PRE_FEZ
-      domain%list(:)%x%compute%start_index = domain%list(:)%x%compute%begin
-      domain%list(:)%x%compute%end_index = domain%list(:)%x%compute%end
-      domain%list(:)%y%compute%start_index = domain%list(:)%y%compute%begin
-      domain%list(:)%y%compute%end_index = domain%list(:)%y%compute%end
-      domain%list(:)%x%global%start_index = domain%list(:)%x%global%begin
-      domain%list(:)%x%global%end_index = domain%list(:)%x%global%end
-      domain%list(:)%y%global%start_index = domain%list(:)%y%global%begin
-      domain%list(:)%y%global%end_index = domain%list(:)%y%global%end
-      domain%list(:)%x%data%start_index = domain%list(:)%x%data%begin
-      domain%list(:)%x%data%end_index = domain%list(:)%x%data%end
-      domain%list(:)%y%data%start_index = domain%list(:)%y%data%begin
-      domain%list(:)%y%data%end_index = domain%list(:)%y%data%end
-#endif
           
       return
     end subroutine mpp_define_domains2D
+
+    subroutine compute_overlaps( domain )
+!computes remote domain overlaps
+!assumes only one in each direction
+      type(domain2D), intent(inout) :: domain
+      integer :: i, j, k, m, n
+      integer :: is, ie, js, je, isc, iec, jsc, jec, isd, ied, jsd, jed, isg, ieg, jsg, jeg, ioff, joff
+      integer :: list
+
+      if( grid_offset_type.EQ.AGRID .AND. domain%remote_domains_initialized     )return
+      if( grid_offset_type.NE.AGRID .AND. domain%remote_off_domains_initialized )return
+      domain%gridtype = grid_offset_type
+      n = size(domain%list)
+!send
+      call mpp_get_compute_domain( domain, isc, iec, jsc, jec )
+      call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg, xsize=ioff, ysize=joff ) !cyclic offsets
+      domain%list(:)%overlap = .FALSE.
+      do list = 0,n-1
+         m = mod( domain%pos+list, n )
+!to_pe's eastern halo
+         is = domain%list(m)%x%compute%end+1; ie = domain%list(m)%x%data%end
+         js = domain%list(m)%y%compute%begin; je = domain%list(m)%y%compute%end
+         if( is.GT.ieg )then
+             if( domain%x%cyclic )then !try cyclic offset
+                 is = is-ioff; ie = ie-ioff
+             else if( BTEST(domain%fold,EAST) )then
+                 i=is; is = 2*ieg-ie+1; ie = 2*ieg-i+1
+                 j=js; js = jsg+jeg-je; je = jsg+jeg-j
+                 if( BTEST(grid_offset_type,EAST) )then
+                     is = is - 1; ie = ie - 1
+                 end if
+             end if
+         end if
+         is = max(is,isc); ie = min(ie,iec)
+         js = max(js,jsc); je = min(je,jec)
+         if( ie.GE.is .AND. je.GE.js )then
+             domain%list(m)%overlap = .TRUE.
+             if( grid_offset_type.NE.AGRID )then
+                 domain%list(m)%send_w_off%overlap = .TRUE.
+                 domain%list(m)%send_w_off%is = is
+                 domain%list(m)%send_w_off%ie = ie
+                 domain%list(m)%send_w_off%js = js
+                 domain%list(m)%send_w_off%je = je
+             else
+                 domain%list(m)%send_w%overlap = .TRUE.
+                 domain%list(m)%send_w%is = is
+                 domain%list(m)%send_w%ie = ie
+                 domain%list(m)%send_w%js = js
+                 domain%list(m)%send_w%je = je
+             end if
+         else
+             domain%list(m)%send_w%overlap = .FALSE.
+             domain%list(m)%send_w_off%overlap = .FALSE.
+         end if
+!to_pe's SE halo
+         is = domain%list(m)%x%compute%end+1; ie = domain%list(m)%x%data%end
+         js = domain%list(m)%y%data%begin; je = domain%list(m)%y%compute%begin-1
+         if( is.GT.ieg )then
+             if( domain%x%cyclic )then !try cyclic offset
+                 is = is-ioff; ie = ie-ioff
+             else if( BTEST(domain%fold,EAST) )then
+                 i=is; is = 2*ieg-ie+1; ie = 2*ieg-i+1
+                 j=js; js = jsg+jeg-je; je = jsg+jeg-j
+                 if( BTEST(grid_offset_type,EAST) )then
+                     is = is - 1; ie = ie - 1
+                 end if
+             end if
+         end if
+         if( jsg.GT.je )then
+             if( domain%y%cyclic )then !try cyclic offset
+                 js = js+joff; je = je+joff
+             else if( BTEST(domain%fold,SOUTH) )then
+                 i=is; is = isg+ieg-ie; ie = isg+ieg-i
+                 j=js; js = 2*jsg-je-1; je = 2*jsg-j-1
+                 if( BTEST(grid_offset_type,SOUTH) )then
+                     js = js + 1; je = je + 1
+                 end if
+             end if
+         end if
+         is = max(is,isc); ie = min(ie,iec)
+         js = max(js,jsc); je = min(je,jec)
+         if( ie.GE.is .AND. je.GE.js )then
+             domain%list(m)%overlap = .TRUE.
+             if( grid_offset_type.NE.AGRID )then
+                 domain%list(m)%send_nw_off%overlap = .TRUE.
+                 domain%list(m)%send_nw_off%is = is
+                 domain%list(m)%send_nw_off%ie = ie
+                 domain%list(m)%send_nw_off%js = js
+                 domain%list(m)%send_nw_off%je = je
+             else
+                 domain%list(m)%send_nw%overlap = .TRUE.
+                 domain%list(m)%send_nw%is = is
+                 domain%list(m)%send_nw%ie = ie
+                 domain%list(m)%send_nw%js = js
+                 domain%list(m)%send_nw%je = je
+             end if
+         else
+             domain%list(m)%send_nw%overlap = .FALSE.
+             domain%list(m)%send_nw_off%overlap = .FALSE.
+         end if
+!to_pe's southern halo
+         is = domain%list(m)%x%compute%begin; ie = domain%list(m)%x%compute%end
+         js = domain%list(m)%y%data%begin; je = domain%list(m)%y%compute%begin-1
+         if( jsg.GT.je )then
+             if( domain%y%cyclic )then !try cyclic offset
+                 js = js+joff; je = je+joff
+             else if( BTEST(domain%fold,SOUTH) )then
+                 i=is; is = isg+ieg-ie; ie = isg+ieg-i
+                 j=js; js = 2*jsg-je-1; je = 2*jsg-j-1
+                 if( BTEST(grid_offset_type,SOUTH) )then
+                     js = js + 1; je = je + 1
+                 end if
+             end if
+         end if
+         is = max(is,isc); ie = min(ie,iec)
+         js = max(js,jsc); je = min(je,jec)
+         if( ie.GE.is .AND. je.GE.js )then
+             domain%list(m)%overlap = .TRUE.
+             if( grid_offset_type.NE.AGRID )then
+                 domain%list(m)%send_n_off%overlap = .TRUE.
+                 domain%list(m)%send_n_off%is = is
+                 domain%list(m)%send_n_off%ie = ie
+                 domain%list(m)%send_n_off%js = js
+                 domain%list(m)%send_n_off%je = je
+             else
+                 domain%list(m)%send_n%overlap = .TRUE.
+                 domain%list(m)%send_n%is = is
+                 domain%list(m)%send_n%ie = ie
+                 domain%list(m)%send_n%js = js
+                 domain%list(m)%send_n%je = je
+             end if
+         else
+             domain%list(m)%send_n%overlap = .FALSE.
+             domain%list(m)%send_n_off%overlap = .FALSE.
+         end if
+!to_pe's SW halo
+         is = domain%list(m)%x%data%begin; ie = domain%list(m)%x%compute%begin-1
+         js = domain%list(m)%y%data%begin; je = domain%list(m)%y%compute%begin-1
+         if( isg.GT.ie )then
+             if( domain%x%cyclic )then !try cyclic offset
+                 is = is+ioff; ie = ie+ioff
+             else if( BTEST(domain%fold,WEST) )then
+                 i=is; is = 2*isg-ie-1; ie = 2*isg-i-1
+                 j=js; js = jsg+jeg-je; je = jsg+jeg-j
+                 if( BTEST(grid_offset_type,WEST) )then
+                     is = is + 1; ie = ie + 1
+                 end if
+             end if
+         end if
+         if( jsg.GT.je )then
+             if( domain%y%cyclic )then !try cyclic offset
+                 js = js+joff; je = je+joff
+             else if( BTEST(domain%fold,SOUTH) )then
+                 i=is; is = isg+ieg-ie; ie = isg+ieg-i
+                 j=js; js = 2*jsg-je-1; je = 2*jsg-j-1
+                 if( BTEST(grid_offset_type,SOUTH) )then
+                     js = js + 1; je = je + 1
+                 end if
+             end if
+         end if
+         is = max(is,isc); ie = min(ie,iec)
+         js = max(js,jsc); je = min(je,jec)
+         if( ie.GE.is .AND. je.GE.js )then
+             domain%list(m)%overlap = .TRUE.
+             if( grid_offset_type.NE.AGRID )then
+                 domain%list(m)%send_ne_off%overlap = .TRUE.
+                 domain%list(m)%send_ne_off%is = is
+                 domain%list(m)%send_ne_off%ie = ie
+                 domain%list(m)%send_ne_off%js = js
+                 domain%list(m)%send_ne_off%je = je
+             else
+                 domain%list(m)%send_ne%overlap = .TRUE.
+                 domain%list(m)%send_ne%is = is
+                 domain%list(m)%send_ne%ie = ie
+                 domain%list(m)%send_ne%js = js
+                 domain%list(m)%send_ne%je = je
+             end if
+         else
+             domain%list(m)%send_ne%overlap = .FALSE.
+             domain%list(m)%send_ne_off%overlap = .FALSE.
+         end if
+!to_pe's western halo
+         is = domain%list(m)%x%data%begin; ie = domain%list(m)%x%compute%begin-1
+         js = domain%list(m)%y%compute%begin; je = domain%list(m)%y%compute%end
+         if( isg.GT.ie )then
+             if( domain%x%cyclic )then !try cyclic offset
+                 is = is+ioff; ie = ie+ioff
+             else if( BTEST(domain%fold,WEST) )then
+                 i=is; is = 2*isg-ie-1; ie = 2*isg-i-1
+                 j=js; js = jsg+jeg-je; je = jsg+jeg-j
+                 if( BTEST(grid_offset_type,WEST) )then
+                     is = is + 1; ie = ie + 1
+                 end if
+             end if
+         end if
+         is = max(is,isc); ie = min(ie,iec)
+         js = max(js,jsc); je = min(je,jec)
+         if( ie.GE.is .AND. je.GE.js )then
+             domain%list(m)%overlap = .TRUE.
+             if( grid_offset_type.NE.AGRID )then
+                 domain%list(m)%send_e_off%overlap = .TRUE.
+                 domain%list(m)%send_e_off%is = is
+                 domain%list(m)%send_e_off%ie = ie
+                 domain%list(m)%send_e_off%js = js
+                 domain%list(m)%send_e_off%je = je
+             else
+                 domain%list(m)%send_e%overlap = .TRUE.
+                 domain%list(m)%send_e%is = is
+                 domain%list(m)%send_e%ie = ie
+                 domain%list(m)%send_e%js = js
+                 domain%list(m)%send_e%je = je
+             end if
+         else
+             domain%list(m)%send_e%overlap = .FALSE.
+             domain%list(m)%send_e_off%overlap = .FALSE.
+         end if
+!to_pe's NW halo
+         is = domain%list(m)%x%data%begin; ie = domain%list(m)%x%compute%begin-1
+         js = domain%list(m)%y%compute%end+1; je = domain%list(m)%y%data%end
+         if( isg.GT.ie )then
+             if( domain%x%cyclic )then !try cyclic offset
+                 is = is+ioff; ie = ie+ioff
+             else if( BTEST(domain%fold,WEST) )then
+                 i=is; is = 2*isg-ie-1; ie = 2*isg-i-1
+                 j=js; js = jsg+jeg-je; je = jsg+jeg-j
+                 if( BTEST(grid_offset_type,WEST) )then
+                     is = is + 1; ie = ie + 1
+                 end if
+             end if
+         end if
+         if( js.GT.jeg )then
+             if( domain%y%cyclic )then !try cyclic offset
+                 js = js-joff; je = je-joff
+             else if( BTEST(domain%fold,NORTH) )then
+                 i=is; is = isg+ieg-ie; ie = isg+ieg-i
+                 j=js; js = 2*jeg-je+1; je = 2*jeg-j+1
+                 if( BTEST(grid_offset_type,NORTH) )then
+                     js = js - 1; je = je - 1
+                 end if
+             end if
+         end if
+         is = max(is,isc); ie = min(ie,iec)
+         js = max(js,jsc); je = min(je,jec)
+         if( ie.GE.is .AND. je.GE.js )then
+             domain%list(m)%overlap = .TRUE.
+             if( grid_offset_type.NE.AGRID )then
+                 domain%list(m)%send_se_off%overlap = .TRUE.
+                 domain%list(m)%send_se_off%is = is
+                 domain%list(m)%send_se_off%ie = ie
+                 domain%list(m)%send_se_off%js = js
+                 domain%list(m)%send_se_off%je = je
+             else
+                 domain%list(m)%send_se%overlap = .TRUE.
+                 domain%list(m)%send_se%is = is
+                 domain%list(m)%send_se%ie = ie
+                 domain%list(m)%send_se%js = js
+                 domain%list(m)%send_se%je = je
+             end if
+         else
+             domain%list(m)%send_se%overlap = .FALSE.
+             domain%list(m)%send_se_off%overlap = .FALSE.
+         end if
+!to_pe's northern halo
+         is = domain%list(m)%x%compute%begin; ie = domain%list(m)%x%compute%end
+         js = domain%list(m)%y%compute%end+1; je = domain%list(m)%y%data%end
+         if( js.GT.jeg )then
+             if( domain%y%cyclic )then !try cyclic offset
+                 js = js-joff; je = je-joff
+             else if( BTEST(domain%fold,NORTH) )then
+                 i=is; is = isg+ieg-ie; ie = isg+ieg-i
+                 j=js; js = 2*jeg-je+1; je = 2*jeg-j+1
+                 if( BTEST(grid_offset_type,NORTH) )then
+                     js = js - 1; je = je - 1
+                 end if
+             end if
+         end if
+         is = max(is,isc); ie = min(ie,iec)
+         js = max(js,jsc); je = min(je,jec)
+         if( ie.GE.is .AND. je.GE.js )then
+             domain%list(m)%overlap = .TRUE.
+             if( grid_offset_type.NE.AGRID )then
+                 domain%list(m)%send_s_off%overlap = .TRUE.
+                 domain%list(m)%send_s_off%is = is
+                 domain%list(m)%send_s_off%ie = ie
+                 domain%list(m)%send_s_off%js = js
+                 domain%list(m)%send_s_off%je = je
+             else
+                 domain%list(m)%send_s%overlap = .TRUE.
+                 domain%list(m)%send_s%is = is
+                 domain%list(m)%send_s%ie = ie
+                 domain%list(m)%send_s%js = js
+                 domain%list(m)%send_s%je = je
+             end if
+         else
+             domain%list(m)%send_s%overlap = .FALSE.
+             domain%list(m)%send_s_off%overlap = .FALSE.
+         end if
+!to_pe's NE halo
+         is = domain%list(m)%x%compute%end+1; ie = domain%list(m)%x%data%end
+         js = domain%list(m)%y%compute%end+1; je = domain%list(m)%y%data%end
+         if( is.GT.ieg )then
+             if( domain%x%cyclic )then !try cyclic offset
+                 is = is-ioff; ie = ie-ioff
+             else if( BTEST(domain%fold,EAST) )then
+                 i=is; is = 2*ieg-ie+1; ie = 2*ieg-i+1
+                 j=js; js = jsg+jeg-je; je = jsg+jeg-j
+             end if
+         end if
+         if( js.GT.jeg )then
+             if( domain%y%cyclic )then !try cyclic offset
+                 js = js-joff; je = je-joff
+             else if( BTEST(domain%fold,NORTH) )then
+                 i=is; is = isg+ieg-ie; ie = isg+ieg-i
+                 j=js; js = 2*jeg-je+1; je = 2*jeg-j+1
+                 if( BTEST(grid_offset_type,NORTH) )then
+                     js = js - 1; je = je - 1
+                 end if
+             end if
+         end if
+         is = max(is,isc); ie = min(ie,iec)
+         js = max(js,jsc); je = min(je,jec)
+         if( ie.GE.is .AND. je.GE.js )then
+             domain%list(m)%overlap = .TRUE.
+             if( grid_offset_type.NE.AGRID )then
+                 domain%list(m)%send_sw_off%overlap = .TRUE.
+                 domain%list(m)%send_sw_off%is = is
+                 domain%list(m)%send_sw_off%ie = ie
+                 domain%list(m)%send_sw_off%js = js
+                 domain%list(m)%send_sw_off%je = je
+             else
+                 domain%list(m)%send_sw%overlap = .TRUE.
+                 domain%list(m)%send_sw%is = is
+                 domain%list(m)%send_sw%ie = ie
+                 domain%list(m)%send_sw%js = js
+                 domain%list(m)%send_sw%je = je
+             end if
+         else
+             domain%list(m)%send_sw%overlap = .FALSE.
+             domain%list(m)%send_sw_off%overlap = .FALSE.
+         end if
+      end do
+             
+!recv
+      do list = 0,n-1
+         m = mod( domain%pos+n-list, n )
+         call mpp_get_compute_domain( domain%list(m), isc, iec, jsc, jec )
+!recv_e
+         isd = domain%x%compute%end+1; ied = domain%x%data%end
+         jsd = domain%y%compute%begin; jed = domain%y%compute%end
+         is=isc; ie=iec; js=jsc; je=jec
+         domain%list(m)%recv_e%folded = .FALSE.
+         if( isd.GT.ieg )then
+             if( domain%x%cyclic )then !try cyclic offset
+                 is = is+ioff; ie = ie+ioff
+             else if( BTEST(domain%fold,EAST) )then
+                 domain%list(m)%recv_e%folded = .TRUE.
+                 i=is; is = 2*ieg-ie+1; ie = 2*ieg-i+1
+                 j=js; js = jsg+jeg-je; je = jsg+jeg-j
+                 if( BTEST(grid_offset_type,EAST) )then
+                     is = is - 1; ie = ie - 1
+                 end if
+             end if
+         end if
+         is = max(isd,is); ie = min(ied,ie)
+         js = max(jsd,js); je = min(jed,je)
+         if( ie.GE.is .AND. je.GE.js )then
+             domain%list(m)%overlap = .TRUE.
+             if( grid_offset_type.NE.AGRID )then
+                 domain%list(m)%recv_e_off%overlap = .TRUE.
+                 domain%list(m)%recv_e_off%is = is
+                 domain%list(m)%recv_e_off%ie = ie
+                 domain%list(m)%recv_e_off%js = js
+                 domain%list(m)%recv_e_off%je = je
+             else
+                 domain%list(m)%recv_e%overlap = .TRUE.
+                 domain%list(m)%recv_e%is = is
+                 domain%list(m)%recv_e%ie = ie
+                 domain%list(m)%recv_e%js = js
+                 domain%list(m)%recv_e%je = je
+             endif
+         else
+             domain%list(m)%recv_e%overlap = .FALSE.
+             domain%list(m)%recv_e_off%overlap = .FALSE.
+         end if
+!recv_se
+         isd = domain%x%compute%end+1; ied = domain%x%data%end
+         jsd = domain%y%data%begin; jed = domain%y%compute%begin-1
+         is=isc; ie=iec; js=jsc; je=jec
+         domain%list(m)%recv_se%folded = .FALSE.
+         if( jed.LT.jsg )then
+             if( domain%y%cyclic )then !try cyclic offset
+                 js = js-joff; je = je-joff
+             else if( BTEST(domain%fold,SOUTH) )then
+                 i=is; is = isg+ieg-ie; ie = isg+ieg-i
+                 j=js; js = 2*jsg-je-1; je = 2*jsg-j-1
+                 domain%list(m)%recv_se%folded = .TRUE.
+                 if( BTEST(grid_offset_type,SOUTH) )then
+                     js = js + 1; je = je + 1
+                 end if
+             end if
+         end if
+         if( isd.GT.ieg )then
+             if( domain%x%cyclic )then !try cyclic offset
+                 is = is+ioff; ie = ie+ioff
+             else if( BTEST(domain%fold,EAST) )then
+                 i=is; is = 2*ieg-ie+1; ie = 2*ieg-i+1
+                 j=js; js = jsg+jeg-je; je = jsg+jeg-j
+                 domain%list(m)%recv_se%folded = .TRUE.
+                 if( BTEST(grid_offset_type,EAST) )then
+                     is = is - 1; ie = ie - 1
+                 end if
+             end if
+         end if
+         is = max(isd,is); ie = min(ied,ie)
+         js = max(jsd,js); je = min(jed,je)
+         if( ie.GE.is .AND. je.GE.js )then
+             domain%list(m)%overlap = .TRUE.
+             if( grid_offset_type.NE.AGRID )then
+                 domain%list(m)%recv_se_off%overlap = .TRUE.
+                 domain%list(m)%recv_se_off%is = is
+                 domain%list(m)%recv_se_off%ie = ie
+                 domain%list(m)%recv_se_off%js = js
+                 domain%list(m)%recv_se_off%je = je
+             else
+                 domain%list(m)%recv_se%overlap = .TRUE.
+                 domain%list(m)%recv_se%is = is
+                 domain%list(m)%recv_se%ie = ie
+                 domain%list(m)%recv_se%js = js
+                 domain%list(m)%recv_se%je = je
+             endif
+         else
+             domain%list(m)%recv_se%overlap = .FALSE.
+             domain%list(m)%recv_se_off%overlap = .FALSE.
+         end if
+!recv_s
+         isd = domain%x%compute%begin; ied = domain%x%compute%end
+         jsd = domain%y%data%begin; jed = domain%y%compute%begin-1
+         is=isc; ie=iec; js=jsc; je=jec
+         domain%list(m)%recv_s%folded = .FALSE.
+         if( jed.LT.jsg )then
+             if( domain%y%cyclic )then !try cyclic offset
+                 js = js-joff; je = je-joff
+             else if( BTEST(domain%fold,SOUTH) )then
+                 i=is; is = isg+ieg-ie; ie = isg+ieg-i
+                 j=js; js = 2*jsg-je-1; je = 2*jsg-j-1
+                 domain%list(m)%recv_s%folded = .TRUE.
+                 if( BTEST(grid_offset_type,SOUTH) )then
+                     js = js + 1; je = je + 1
+                 end if
+             end if
+         end if
+         is = max(isd,is); ie = min(ied,ie)
+         js = max(jsd,js); je = min(jed,je)
+         if( ie.GE.is .AND. je.GE.js )then
+             domain%list(m)%overlap = .TRUE.
+             if( grid_offset_type.NE.AGRID )then
+                 domain%list(m)%recv_s_off%overlap = .TRUE.
+                 domain%list(m)%recv_s_off%is = is
+                 domain%list(m)%recv_s_off%ie = ie
+                 domain%list(m)%recv_s_off%js = js
+                 domain%list(m)%recv_s_off%je = je
+             else
+                 domain%list(m)%recv_s%overlap = .TRUE.
+                 domain%list(m)%recv_s%is = is
+                 domain%list(m)%recv_s%ie = ie
+                 domain%list(m)%recv_s%js = js
+                 domain%list(m)%recv_s%je = je
+             endif
+         else
+             domain%list(m)%recv_s%overlap = .FALSE.
+             domain%list(m)%recv_s_off%overlap = .FALSE.
+
+         end if
+!recv_sw
+         isd = domain%x%data%begin; ied = domain%x%compute%begin-1
+         jsd = domain%y%data%begin; jed = domain%y%compute%begin-1
+         is=isc; ie=iec; js=jsc; je=jec
+         domain%list(m)%recv_sw%folded = .FALSE.
+         if( jed.LT.jsg )then
+             if( domain%y%cyclic )then !try cyclic offset
+                 js = js-joff; je = je-joff
+             else if( BTEST(domain%fold,SOUTH) )then
+                 i=is; is = isg+ieg-ie; ie = isg+ieg-i
+                 j=js; js = 2*jsg-je-1; je = 2*jsg-j-1
+                 domain%list(m)%recv_sw%folded = .TRUE.
+                 if( BTEST(grid_offset_type,SOUTH) )then
+                     js = js + 1; je = je + 1
+                 end if
+             end if
+         end if
+         if( ied.LT.isg )then
+             if( domain%x%cyclic )then !try cyclic offset
+                 is = is-ioff; ie = ie-ioff
+             else if( BTEST(domain%fold,WEST) )then
+                 i=is; is = 2*isg-ie-1; ie = 2*isg-i-1
+                 j=js; js = jsg+jeg-je; je = jsg+jeg-j
+                 domain%list(m)%recv_sw%folded = .TRUE.
+                 if( BTEST(grid_offset_type,WEST) )then
+                     is = is + 1; ie = ie + 1
+                 end if
+             end if
+         end if
+         is = max(isd,is); ie = min(ied,ie)
+         js = max(jsd,js); je = min(jed,je)
+         if( ie.GE.is .AND. je.GE.js )then
+             domain%list(m)%overlap = .TRUE.
+             if( grid_offset_type.NE.AGRID )then
+                 domain%list(m)%recv_sw_off%overlap = .TRUE.
+                 domain%list(m)%recv_sw_off%is = is
+                 domain%list(m)%recv_sw_off%ie = ie
+                 domain%list(m)%recv_sw_off%js = js
+                 domain%list(m)%recv_sw_off%je = je
+             else
+                 domain%list(m)%recv_sw%overlap = .TRUE.
+                 domain%list(m)%recv_sw%is = is
+                 domain%list(m)%recv_sw%ie = ie
+                 domain%list(m)%recv_sw%js = js
+                 domain%list(m)%recv_sw%je = je
+             endif
+         else
+             domain%list(m)%recv_sw%overlap = .FALSE.
+             domain%list(m)%recv_sw_off%overlap = .FALSE.
+         end if
+!recv_w
+         isd = domain%x%data%begin; ied = domain%x%compute%begin-1
+         jsd = domain%y%compute%begin; jed = domain%y%compute%end
+         is=isc; ie=iec; js=jsc; je=jec
+         domain%list(m)%recv_w%folded = .FALSE.
+         if( ied.LT.isg )then
+             if( domain%x%cyclic )then !try cyclic offset
+                 is = is-ioff; ie = ie-ioff
+             else if( BTEST(domain%fold,WEST) )then
+                 i=is; is = 2*isg-ie-1; ie = 2*isg-i-1
+                 j=js; js = jsg+jeg-je; je = jsg+jeg-j
+                 domain%list(m)%recv_w%folded = .TRUE.
+                 if( BTEST(grid_offset_type,WEST) )then
+                     is = is + 1; ie = ie + 1
+                 end if
+             end if
+         end if
+         is = max(isd,is); ie = min(ied,ie)
+         js = max(jsd,js); je = min(jed,je)
+         if( ie.GE.is .AND. je.GE.js )then
+             domain%list(m)%overlap = .TRUE.
+             if( grid_offset_type.NE.AGRID )then
+                 domain%list(m)%recv_w_off%overlap = .TRUE.
+                 domain%list(m)%recv_w_off%is = is
+                 domain%list(m)%recv_w_off%ie = ie
+                 domain%list(m)%recv_w_off%js = js
+                 domain%list(m)%recv_w_off%je = je
+             else
+                 domain%list(m)%recv_w%overlap = .TRUE.
+                 domain%list(m)%recv_w%is = is
+                 domain%list(m)%recv_w%ie = ie
+                 domain%list(m)%recv_w%js = js
+                 domain%list(m)%recv_w%je = je
+             endif
+         else
+             domain%list(m)%recv_w%overlap = .FALSE.
+             domain%list(m)%recv_w_off%overlap = .FALSE.
+         end if
+!recv_nw
+         isd = domain%x%data%begin; ied = domain%x%compute%begin-1
+         jsd = domain%y%compute%end+1; jed = domain%y%data%end
+         is=isc; ie=iec; js=jsc; je=jec
+         domain%list(m)%recv_nw%folded = .FALSE.
+         if( jsd.GT.jeg )then
+             if( domain%y%cyclic )then !try cyclic offset
+                 js = js+joff; je = je+joff
+             else if( BTEST(domain%fold,NORTH) )then
+                 i=is; is = isg+ieg-ie; ie = isg+ieg-i
+                 j=js; js = 2*jeg-je+1; je = 2*jeg-j+1
+                 domain%list(m)%recv_nw%folded = .TRUE.
+                 if( BTEST(grid_offset_type,NORTH) )then
+                     js = js - 1; je = je - 1
+                 end if
+             end if
+         end if
+         if( ied.LT.isg )then
+             if( domain%x%cyclic )then !try cyclic offset
+                 is = is-ioff; ie = ie-ioff
+             else if( BTEST(domain%fold,WEST) )then
+                 i=is; is = 2*isg-ie-1; ie = 2*isg-i-1
+                 j=js; js = jsg+jeg-je; je = jsg+jeg-j
+                 domain%list(m)%recv_nw%folded = .TRUE.
+                 if( BTEST(grid_offset_type,WEST) )then
+                     is = is + 1; ie = ie + 1
+                 end if
+             end if
+         end if
+         is = max(isd,is); ie = min(ied,ie)
+         js = max(jsd,js); je = min(jed,je)
+         if( ie.GE.is .AND. je.GE.js )then
+             domain%list(m)%overlap = .TRUE.
+             if( grid_offset_type.NE.AGRID )then
+                 domain%list(m)%recv_nw_off%overlap = .TRUE.
+                 domain%list(m)%recv_nw_off%is = is
+                 domain%list(m)%recv_nw_off%ie = ie
+                 domain%list(m)%recv_nw_off%js = js
+                 domain%list(m)%recv_nw_off%je = je
+             else
+                 domain%list(m)%recv_nw%overlap = .TRUE.
+                 domain%list(m)%recv_nw%is = is
+                 domain%list(m)%recv_nw%ie = ie
+                 domain%list(m)%recv_nw%js = js
+                 domain%list(m)%recv_nw%je = je
+             endif
+         else
+             domain%list(m)%recv_nw%overlap = .FALSE.
+             domain%list(m)%recv_nw_off%overlap = .FALSE.
+         end if
+!recv_n
+         isd = domain%x%compute%begin; ied = domain%x%compute%end
+         jsd = domain%y%compute%end+1; jed = domain%y%data%end
+         is=isc; ie=iec; js=jsc; je=jec
+         domain%list(m)%recv_n%folded = .FALSE.
+         if( jsd.GT.jeg )then
+             if( domain%y%cyclic )then !try cyclic offset
+                 js = js+joff; je = je+joff
+             else if( BTEST(domain%fold,NORTH) )then
+                 i=is; is = isg+ieg-ie; ie = isg+ieg-i
+                 j=js; js = 2*jeg-je+1; je = 2*jeg-j+1
+                 domain%list(m)%recv_n%folded = .TRUE.
+                 if( BTEST(grid_offset_type,NORTH) )then
+                     js = js - 1; je = je - 1
+                 end if
+             end if
+         end if
+         is = max(isd,is); ie = min(ied,ie)
+         js = max(jsd,js); je = min(jed,je)
+         if( ie.GE.is .AND. je.GE.js )then
+             domain%list(m)%overlap = .TRUE.
+             if( grid_offset_type.NE.AGRID )then
+                 domain%list(m)%recv_n_off%overlap = .TRUE.
+                 domain%list(m)%recv_n_off%is = is
+                 domain%list(m)%recv_n_off%ie = ie
+                 domain%list(m)%recv_n_off%js = js
+                 domain%list(m)%recv_n_off%je = je
+             else
+                 domain%list(m)%recv_n%overlap = .TRUE.
+                 domain%list(m)%recv_n%is = is
+                 domain%list(m)%recv_n%ie = ie
+                 domain%list(m)%recv_n%js = js
+                 domain%list(m)%recv_n%je = je
+             end if
+         else
+             domain%list(m)%recv_n%overlap = .FALSE.
+             domain%list(m)%recv_n_off%overlap = .FALSE.
+         end if
+!recv_ne
+         isd = domain%x%compute%end+1; ied = domain%x%data%end
+         jsd = domain%y%compute%end+1; jed = domain%y%data%end
+         is=isc; ie=iec; js=jsc; je=jec
+         domain%list(m)%recv_ne%folded = .FALSE.
+         if( jsd.GT.jeg )then
+             if( domain%y%cyclic )then !try cyclic offset
+                 js = js+joff; je = je+joff
+             else if( BTEST(domain%fold,NORTH) )then
+                 i=is; is = isg+ieg-ie; ie = isg+ieg-i
+                 j=js; js = 2*jeg-je+1; je = 2*jeg-j+1
+                 domain%list(m)%recv_ne%folded = .TRUE.
+                 if( BTEST(grid_offset_type,NORTH) )then
+                     js = js - 1; je = je - 1
+                 end if
+             end if
+         end if
+         if( isd.GT.ieg )then
+             if( domain%x%cyclic )then !try cyclic offset
+                 is = is+ioff; ie = ie+ioff
+             else if( BTEST(domain%fold,EAST) )then
+                 i=is; is = 2*ieg-ie+1; ie = 2*ieg-i+1
+                 j=js; js = jsg+jeg-je; je = jsg+jeg-j
+                 domain%list(m)%recv_ne%folded = .TRUE.
+                 if( BTEST(grid_offset_type,EAST) )then
+                     is = is - 1; ie = ie - 1
+                 end if
+             end if
+         end if
+         is = max(isd,is); ie = min(ied,ie)
+         js = max(jsd,js); je = min(jed,je)
+         if( ie.GE.is .AND. je.GE.js )then
+             domain%list(m)%overlap = .TRUE.
+             if( grid_offset_type.NE.AGRID )then
+                 domain%list(m)%recv_ne_off%overlap = .TRUE.
+                 domain%list(m)%recv_ne_off%is = is
+                 domain%list(m)%recv_ne_off%ie = ie
+                 domain%list(m)%recv_ne_off%js = js
+                 domain%list(m)%recv_ne_off%je = je
+             else
+                 domain%list(m)%recv_ne%overlap = .TRUE.
+                 domain%list(m)%recv_ne%is = is
+                 domain%list(m)%recv_ne%ie = ie
+                 domain%list(m)%recv_ne%js = js
+                 domain%list(m)%recv_ne%je = je
+             end if
+         else
+             domain%list(m)%recv_ne%overlap = .FALSE.
+             domain%list(m)%recv_ne_off%overlap = .FALSE.
+         end if
+      end do
+      if( grid_offset_type.EQ.AGRID )domain%remote_domains_initialized = .TRUE.
+      if( grid_offset_type.NE.AGRID )domain%remote_off_domains_initialized = .TRUE.
+      return
+    end subroutine compute_overlaps
 
     subroutine mpp_define_layout2D( global_indices, ndivs, layout )
       integer, intent(in) :: global_indices(4) !(/ isg, ieg, jsg, jeg /)
@@ -1040,39 +1690,6 @@ module mpp_domains_mod
       return
     end subroutine mpp_get_global_domain1D
 
-    subroutine mpp_get_active_domain1D( domain, begin, end, size, max_size )
-      type(domain1D), intent(in) :: domain
-      integer, intent(out), optional :: begin, end, size, max_size
-
-      if( PRESENT(begin)    )begin    = domain%active%begin
-      if( PRESENT(end)      )end      = domain%active%end
-      if( PRESENT(size)     )size     = domain%active%size
-      if( PRESENT(max_size) )max_size = domain%active%max_size
-      return
-    end subroutine mpp_get_active_domain1D
-
-    subroutine mpp_set_active_domain1D( domain, begin, end )
-      type(domain1D), intent(inout) :: domain
-      integer, intent(in), optional :: begin, end
-
-      if( PRESENT(begin) )then
-          if( begin.GT.domain%compute%begin ) &
-               call mpp_error( FATAL, 'MPP_SET_ACTIVE_DOMAIN1D: active domain must contain compute domain.' )
-          if( begin.LT.domain%data%begin ) &
-               call mpp_error( FATAL, 'MPP_SET_ACTIVE_DOMAIN1D: active domain must lie within data domain.' )
-          domain%active%begin = begin
-      end if
-      if( PRESENT(end) )then
-          if( end.LT.domain%compute%end ) &
-               call mpp_error( FATAL, 'MPP_SET_ACTIVE_DOMAIN1D: active domain must contain compute domain.' )
-          if( end.GT.domain%data%end ) &
-               call mpp_error( FATAL, 'MPP_SET_ACTIVE_DOMAIN1D: active domain must lie within data domain.' )
-          domain%active%end   = end
-      end if
-      domain%active%size = domain%active%end - domain%active%begin + 1
-      return
-    end subroutine mpp_set_active_domain1D
-
     subroutine mpp_get_compute_domain2D( domain, xbegin, xend, ybegin, yend, xsize, xmax_size, ysize, ymax_size, &
          x_is_global, y_is_global )
       type(domain2D), intent(in) :: domain
@@ -1100,22 +1717,6 @@ module mpp_domains_mod
       call mpp_get_global_domain( domain%y, ybegin, yend, ysize, ymax_size )
       return
     end subroutine mpp_get_global_domain2D
-
-    subroutine mpp_get_active_domain2D( domain, xbegin, xend, ybegin, yend, xsize, xmax_size, ysize, ymax_size )
-      type(domain2D), intent(in) :: domain
-      integer, intent(out), optional :: xbegin, xend, ybegin, yend, xsize, xmax_size, ysize, ymax_size
-      call mpp_get_active_domain( domain%x, xbegin, xend, xsize, xmax_size )
-      call mpp_get_active_domain( domain%y, ybegin, yend, ysize, ymax_size )
-      return
-    end subroutine mpp_get_active_domain2D
-
-    subroutine mpp_set_active_domain2D( domain, xbegin, xend, ybegin, yend )
-      type(domain2D), intent(inout) :: domain
-      integer, intent(in), optional :: xbegin, xend, ybegin, yend
-      call mpp_set_active_domain( domain%x, xbegin, xend )
-      call mpp_set_active_domain( domain%y, ybegin, yend )
-      return
-    end subroutine mpp_set_active_domain2D
 
     subroutine mpp_get_domain_components( domain, x, y )
       type(domain2D), intent(in) :: domain
@@ -1199,7 +1800,7 @@ module mpp_domains_mod
       if( .NOT.mpp_domains_initialized ) &
            call mpp_error( FATAL, 'MPP_GET_PELIST: must first call mpp_domains_init.' )
       ndivs = size(domain%list)
-      if( domain%folded )ndivs = ndivs/2
+      
       if( size(pelist).NE.ndivs ) &
            call mpp_error( FATAL, 'MPP_GET_PELIST: pelist array size does not match domain.' )
 
@@ -1252,129 +1853,169 @@ module mpp_domains_mod
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+#define VECTOR_FIELD_
+#define MPP_TYPE_ real(DOUBLE_KIND)
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_r8_2D
 #define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_r8_3D
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_r8_4D
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_r8_5D
-#define MPP_TYPE_ real(DOUBLE_KIND)
-#undef MPP_TYPE_IS_LOGICAL_
+#ifdef  VECTOR_FIELD_
+#define MPP_UPDATE_DOMAINS_2D_V_ mpp_update_domain2D_r8_2Dv
+#define MPP_UPDATE_DOMAINS_3D_V_ mpp_update_domain2D_r8_3Dv
+#define MPP_UPDATE_DOMAINS_4D_V_ mpp_update_domain2D_r8_4Dv
+#define MPP_UPDATE_DOMAINS_5D_V_ mpp_update_domain2D_r8_5Dv
+#endif
+#define MPP_REDISTRIBUTE_2D_ mpp_redistribute_r8_2D
+#define MPP_REDISTRIBUTE_3D_ mpp_redistribute_r8_3D
+#define MPP_REDISTRIBUTE_4D_ mpp_redistribute_r8_4D
+#define MPP_REDISTRIBUTE_5D_ mpp_redistribute_r8_5D
 #include <mpp_update_domains2D.h>
+#undef  VECTOR_FIELD_
 
+#define MPP_TYPE_ complex(DOUBLE_KIND)
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_c8_2D
 #define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_c8_3D
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_c8_4D
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_c8_5D
-#define MPP_TYPE_ complex(DOUBLE_KIND)
-#undef MPP_TYPE_IS_LOGICAL_
+#define MPP_REDISTRIBUTE_2D_ mpp_redistribute_c8_2D
+#define MPP_REDISTRIBUTE_3D_ mpp_redistribute_c8_3D
+#define MPP_REDISTRIBUTE_4D_ mpp_redistribute_c8_4D
+#define MPP_REDISTRIBUTE_5D_ mpp_redistribute_c8_5D
 #include <mpp_update_domains2D.h>
 
 #ifndef no_8byte_integers
+#define MPP_TYPE_ integer(LONG_KIND)
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_i8_2D
 #define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_i8_3D
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_i8_4D
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_i8_5D
-#define MPP_TYPE_ integer(LONG_KIND)
-#undef MPP_TYPE_IS_LOGICAL_
+#define MPP_REDISTRIBUTE_2D_ mpp_redistribute_i8_2D
+#define MPP_REDISTRIBUTE_3D_ mpp_redistribute_i8_3D
+#define MPP_REDISTRIBUTE_4D_ mpp_redistribute_i8_4D
+#define MPP_REDISTRIBUTE_5D_ mpp_redistribute_i8_5D
 #include <mpp_update_domains2D.h>
 
+#define MPP_TYPE_ logical(LONG_KIND)
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_l8_2D
 #define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_l8_3D
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_l8_4D
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_l8_5D
-#define MPP_TYPE_ logical(LONG_KIND)
-#define MPP_TYPE_IS_LOGICAL_
+#define MPP_REDISTRIBUTE_2D_ mpp_redistribute_l8_2D
+#define MPP_REDISTRIBUTE_3D_ mpp_redistribute_l8_3D
+#define MPP_REDISTRIBUTE_4D_ mpp_redistribute_l8_4D
+#define MPP_REDISTRIBUTE_5D_ mpp_redistribute_l8_5D
 #include <mpp_update_domains2D.h>
 #endif
 
+#define VECTOR_FIELD_
+#define MPP_TYPE_ real(FLOAT_KIND)
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_r4_2D
 #define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_r4_3D
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_r4_4D
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_r4_5D
-#define MPP_TYPE_ real(FLOAT_KIND)
-#undef MPP_TYPE_IS_LOGICAL_
+#ifdef  VECTOR_FIELD_
+#define MPP_UPDATE_DOMAINS_2D_V_ mpp_update_domain2D_r4_2Dv
+#define MPP_UPDATE_DOMAINS_3D_V_ mpp_update_domain2D_r4_3Dv
+#define MPP_UPDATE_DOMAINS_4D_V_ mpp_update_domain2D_r4_4Dv
+#define MPP_UPDATE_DOMAINS_5D_V_ mpp_update_domain2D_r4_5Dv
+#endif
+#define MPP_REDISTRIBUTE_2D_ mpp_redistribute_r4_2D
+#define MPP_REDISTRIBUTE_3D_ mpp_redistribute_r4_3D
+#define MPP_REDISTRIBUTE_4D_ mpp_redistribute_r4_4D
+#define MPP_REDISTRIBUTE_5D_ mpp_redistribute_r4_5D
 #include <mpp_update_domains2D.h>
+#undef  VECTOR_FIELD_
 
+#define MPP_TYPE_ complex(FLOAT_KIND)
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_c4_2D
 #define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_c4_3D
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_c4_4D
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_c4_5D
-#define MPP_TYPE_ complex(FLOAT_KIND)
-#undef MPP_TYPE_IS_LOGICAL_
+#define MPP_REDISTRIBUTE_2D_ mpp_redistribute_c4_2D
+#define MPP_REDISTRIBUTE_3D_ mpp_redistribute_c4_3D
+#define MPP_REDISTRIBUTE_4D_ mpp_redistribute_c4_4D
+#define MPP_REDISTRIBUTE_5D_ mpp_redistribute_c4_5D
 #include <mpp_update_domains2D.h>
 
+#define MPP_TYPE_ integer(INT_KIND)
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_i4_2D
 #define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_i4_3D
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_i4_4D
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_i4_5D
-#define MPP_TYPE_ integer(INT_KIND)
-#undef MPP_TYPE_IS_LOGICAL_
+#define MPP_REDISTRIBUTE_2D_ mpp_redistribute_i4_2D
+#define MPP_REDISTRIBUTE_3D_ mpp_redistribute_i4_3D
+#define MPP_REDISTRIBUTE_4D_ mpp_redistribute_i4_4D
+#define MPP_REDISTRIBUTE_5D_ mpp_redistribute_i4_5D
 #include <mpp_update_domains2D.h>
 
+#define MPP_TYPE_ logical(INT_KIND)
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_l4_2D
 #define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_l4_3D
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_l4_4D
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_l4_5D
-#define MPP_TYPE_ logical(INT_KIND)
-#define MPP_TYPE_IS_LOGICAL_
+#define MPP_REDISTRIBUTE_2D_ mpp_redistribute_l4_2D
+#define MPP_REDISTRIBUTE_3D_ mpp_redistribute_l4_3D
+#define MPP_REDISTRIBUTE_4D_ mpp_redistribute_l4_4D
+#define MPP_REDISTRIBUTE_5D_ mpp_redistribute_l4_5D
 #include <mpp_update_domains2D.h>
 
-#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain1D_r8_2D
-#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain1D_r8_3D
-#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain1D_r8_4D
-#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain1D_r8_5D
-#define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_update_domains1D.h>
-
-#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain1D_c8_2D
-#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain1D_c8_3D
-#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain1D_c8_4D
-#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain1D_c8_5D
-#define MPP_TYPE_ complex(DOUBLE_KIND)
-#include <mpp_update_domains1D.h>
-
-#ifndef no_8byte_integers
-#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain1D_i8_2D
-#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain1D_i8_3D
-#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain1D_i8_4D
-#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain1D_i8_5D
-#define MPP_TYPE_ integer(LONG_KIND)
-#include <mpp_update_domains1D.h>
-
-#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain1D_l8_2D
-#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain1D_l8_3D
-#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain1D_l8_4D
-#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain1D_l8_5D
-#define MPP_TYPE_ logical(LONG_KIND)
-#include <mpp_update_domains1D.h>
-#endif
-
-#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain1D_r4_2D
-#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain1D_r4_3D
-#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain1D_r4_4D
-#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain1D_r4_5D
-#define MPP_TYPE_ real(FLOAT_KIND)
-#include <mpp_update_domains1D.h>
-
-#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain1D_c4_2D
-#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain1D_c4_3D
-#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain1D_c4_4D
-#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain1D_c4_5D
-#define MPP_TYPE_ complex(FLOAT_KIND)
-#include <mpp_update_domains1D.h>
-
-#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain1D_i4_2D
-#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain1D_i4_3D
-#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain1D_i4_4D
-#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain1D_i4_5D
-#define MPP_TYPE_ integer(INT_KIND)
-#include <mpp_update_domains1D.h>
-
-#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain1D_l4_2D
-#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain1D_l4_3D
-#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain1D_l4_4D
-#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain1D_l4_5D
-#define MPP_TYPE_ logical(INT_KIND)
-#include <mpp_update_domains1D.h>
+!#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain1D_r8_2D
+!#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain1D_r8_3D
+!#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain1D_r8_4D
+!#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain1D_r8_5D
+!#define MPP_TYPE_ real(DOUBLE_KIND)
+!#include <mpp_update_domains1D.h>
+!
+!#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain1D_c8_2D
+!#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain1D_c8_3D
+!#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain1D_c8_4D
+!#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain1D_c8_5D
+!#define MPP_TYPE_ complex(DOUBLE_KIND)
+!#include <mpp_update_domains1D.h>
+!
+!#ifndef no_8byte_integers
+!#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain1D_i8_2D
+!#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain1D_i8_3D
+!#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain1D_i8_4D
+!#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain1D_i8_5D
+!#define MPP_TYPE_ integer(LONG_KIND)
+!#include <mpp_update_domains1D.h>
+!
+!#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain1D_l8_2D
+!#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain1D_l8_3D
+!#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain1D_l8_4D
+!#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain1D_l8_5D
+!#define MPP_TYPE_ logical(LONG_KIND)
+!#include <mpp_update_domains1D.h>
+!#endif
+!
+!#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain1D_r4_2D
+!#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain1D_r4_3D
+!#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain1D_r4_4D
+!#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain1D_r4_5D
+!#define MPP_TYPE_ real(FLOAT_KIND)
+!#include <mpp_update_domains1D.h>
+!
+!#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain1D_c4_2D
+!#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain1D_c4_3D
+!#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain1D_c4_4D
+!#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain1D_c4_5D
+!#define MPP_TYPE_ complex(FLOAT_KIND)
+!#include <mpp_update_domains1D.h>
+!
+!#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain1D_i4_2D
+!#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain1D_i4_3D
+!#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain1D_i4_4D
+!#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain1D_i4_5D
+!#define MPP_TYPE_ integer(INT_KIND)
+!#include <mpp_update_domains1D.h>
+!
+!#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain1D_l4_2D
+!#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain1D_l4_3D
+!#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain1D_l4_4D
+!#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain1D_l4_5D
+!#define MPP_TYPE_ logical(INT_KIND)
+!#include <mpp_update_domains1D.h>
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -1664,76 +2305,6 @@ module mpp_domains_mod
 #define MPP_TYPE_ logical(INT_KIND)
 #include <mpp_global_field.h>
 
-#ifdef MPP_DOMAINS_PRE_FEZ
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!                                                                             !
-!      OLD ROUTINES DUE TO BE RETIRED WITH EUGENE RELEASE OF FMS              !
-!                                                                             !
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    subroutine mpp_define_domains1D_old( global_indices, domains, pelist, flags, halo, extent )
-!routine to divide global array indices among domains, and assign domains to PEs
-!domain are an array of type(domain1D) of required size
-!ARGUMENTS:
-!      global_indices(2)=(isg,ieg) gives the extent of global domain
-!      domain are an array of type(domain1D) of required size
-!      (optional) pelist list of PEs to which domains are to be assigned (default 0...npes-1)
-!      flags define whether compute and data domains are global (undecomposed) and whether global domain has periodic boundaries
-!      (optional) halo defines halo width (currently the same on both sides)
-!      (optional) array extent defines width of each domain (used for non-uniform domain decomp, for e.g load-balancing)
-!  By default we assume decomposition of compute and data domains, non-periodic boundaries, no halo, as close to uniform extents
-!  as the input parameters permit
-      integer, intent(in) :: global_indices(2) !(/ isg, ieg /)
-      type(domain1D), intent(out), target :: domains(:)
-      integer, intent(in), optional :: pelist(:)
-      integer, intent(in), optional :: flags, halo
-      integer, intent(in), optional :: extent(:)
-
-      type(domain1D) :: domain
-
-      call mpp_define_domains( global_indices, size(domains), domain, pelist, flags, halo, extent )
-      domains(:) = domain%list(:)
-
-      return
-    end subroutine mpp_define_domains1D_old
-
-    subroutine mpp_define_domains2D_old( global_indices, domains, pelist, xflags, yflags, xhalo, yhalo, xextent, yextent, &
-                                     domain_layout, pe_layout )
-!define 2D data and computational domain on global rectilinear cartesian domain (isg:ieg,jsg:jeg) and assign them to PEs
-      integer, intent(in) :: global_indices(4) !(/ isg, ieg, jsg, jeg /)
-      type(domain2D), intent(out), target :: domains(0:)
-      integer, intent(in), optional :: pelist(:)
-      integer, intent(in), optional :: xflags, yflags, xhalo, yhalo
-      integer, intent(in), optional :: xextent(:), yextent(:)
-      integer, intent(in), optional :: domain_layout(2), pe_layout(2)
-
-      type(domain2D) :: domain
-      integer :: layout(2)
-      if( PRESENT(pe_layout) )then
-          layout = pe_layout
-      else
-          call mpp_define_layout( global_indices, size(domains), layout )
-      end if
-
-      call mpp_define_domains( global_indices, layout, domain, pelist, &
-                                               xflags, yflags, xhalo, yhalo, xextent, yextent )
-      domains(:) = domain%list(:)
-!call again to fill in all the values at domain%pos
-      call mpp_define_domains( global_indices, layout, domains(domain%pos), pelist, &
-                                               xflags, yflags, xhalo, yhalo, xextent, yextent )
-
-      return
-    end subroutine mpp_define_domains2D_old
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!                                                                             !
-!              MPP_GET_GLOBAL: get global field from domain field             !
-!                                                                             !
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-#define mpp_get_global mpp_global_field
-#define MPP_GET_GLOBAL mpp_global_field
-#endif MPP_DOMAINS_PRE_FEZ
 end module mpp_domains_mod
 
 #ifdef test_mpp_domains
@@ -1741,19 +2312,21 @@ program mpp_domains_test
   use mpp_mod
   use mpp_domains_mod
   implicit none
-  integer :: pe, npes, root
+  integer :: pe, npes
   type(domain2D) :: domain
   integer :: nx=128, ny=128, nz=40, halo=2, stackmax=32768
-  real(DOUBLE_KIND), dimension(:,:,:), allocatable :: local, global, gglobal
+  real(DOUBLE_KIND), dimension(:,:,:), allocatable :: local, localy, global, gglobal
   integer :: is, ie, js, je, isd, ied, jsd, jed
   integer :: tk, tk0, tks_per_sec
   integer :: i,j,k, unit=7, layout(2)
+  integer :: id
   real :: t
   real :: lsum, gsum
   logical :: debug=.FALSE., opened
   namelist / mpp_domains_nml / nx, ny, nz, halo, stackmax, debug
 
   call mpp_init()
+  call mpp_set_warn_level(FATAL)
 !possibly open a file called mpp_domains.nml
   do
      inquire( unit=unit, opened=opened )
@@ -1768,17 +2341,16 @@ program mpp_domains_test
 
   pe = mpp_pe()
   npes = mpp_npes()
-  root = mpp_root_pe()
 
   call SYSTEM_CLOCK( count_rate=tks_per_sec )
   if( debug )then
       call mpp_domains_init(MPP_DEBUG)
   else
-      call mpp_domains_init()
+      call mpp_domains_init(MPP_DOMAIN_TIME)
   end if
   call mpp_domains_set_stack_size(stackmax)
 
-  if( pe.EQ.root )then
+  if( pe.EQ.mpp_root_pe() )then
       print '(a,5i4)', 'npes, nx, ny, nz, halo=', npes, nx, ny, nz, halo
       print *, 'Using NEW domaintypes and calls...'
   end if
@@ -1791,6 +2363,7 @@ program mpp_domains_test
   allocate( global(1-halo:nx+halo,1-halo:ny+halo,nz) )
   allocate( gglobal(nx,ny,nz) )
   allocate( local(isd:ied,jsd:jed,nz) )
+  allocate( localy(isd:ied,jsd:jed,nz) )
 
 !fill in global array: with k.iiijjj
   global = 0.
@@ -1804,53 +2377,22 @@ program mpp_domains_test
 !fill in local array
   local = 0.
   local(is:ie,js:je,:) = global(is:ie,js:je,:)
-!fill in halos
-  call mpp_update_domains( local, domain )
-!compare checksums between global and local arrays
-  call compare_checksums( local, global(isd:ied,jsd:jed,:), 'Halo update' )
 
 !fill in gglobal array
+  id = mpp_clock_id( 'Global field', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+  call mpp_clock_begin(id)
   call mpp_global_field( domain, local, gglobal )
+  call mpp_clock_end  (id)
 !compare checksums between global and local arrays
   call compare_checksums( global(1:nx,1:ny,:), gglobal, 'mpp_global_field' )
 
-!test folded boundary conditions
-  call mpp_define_domains( (/1,nx,1,ny/), layout, domain, xhalo=halo, yhalo=halo, &
-       xflags=CYCLIC_GLOBAL_DOMAIN, yflags=FOLD_NORTH_EDGE, name='Folded halo update' )
-  call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
-  call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
-!fill in folded north edge, cyclic east and west edge
-  global(1-halo:0,    1:ny,:) = global(nx-halo+1:nx,1:ny,:)
-  global(nx+1:nx+halo,1:ny,:) = global(1:halo,      1:ny,:)
-  global(1-halo:nx+halo,ny+1:ny+halo,:) = global(nx+halo:1-halo:-1,ny:ny-halo+1:-1,:)
-  global(1-halo:nx+halo,1-halo:0,:) = 0
-!fill in local array
-  local = 0.
-  local(is:ie,js:je,:) = global(is:ie,js:je,:)
 !fill in halos
+  id = mpp_clock_id( 'Halo update', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+  call mpp_clock_begin(id)
   call mpp_update_domains( local, domain )
+  call mpp_clock_end  (id)
 !compare checksums between global and local arrays
-  call compare_checksums( local(isd:ied,jsd:jed,:), global(isd:ied,jsd:jed,:), 'Folded halo update' )
-!fill in local array
-  local = 0.
-  local(is:ie,js:je,:) = global(is:ie,js:je,:)
-!fill in halos: partial update
-  call mpp_update_domains( local, domain, NUPDATE+EUPDATE )
-!compare checksums between global and local arrays
-  call compare_checksums( local(is:ied,js:jed,:), global(is:ied,js:jed,:), 'Folded halo N+E update' )
-!folded, with sign flip at fold (vector component)
-!fill in folded north edge, cyclic east and west edge
-  global(1-halo:0,    1:ny,:) = global(nx-halo+1:nx,1:ny,:)
-  global(nx+1:nx+halo,1:ny,:) = global(1:halo,      1:ny,:)
-  global(1-halo:nx+halo,ny+1:ny+halo,:) = -global(nx+halo:1-halo:-1,ny:ny-halo+1:-1,:)
-  global(1-halo:nx+halo,1-halo:0,:) = 0
-!fill in local array
-  local = 0.
-  local(is:ie,js:je,:) = global(is:ie,js:je,:)
-!fill in halos
-  call mpp_update_domains( local, domain, type=VECTOR_COMPONENT )
-!compare checksums between global and local arrays
-  call compare_checksums( local(isd:ied,jsd:jed,:), global(isd:ied,jsd:jed,:), 'Folded halo update, vector field' )
+  call compare_checksums( local, global(isd:ied,jsd:jed,:), 'Halo update' )
 
 !test cyclic boundary conditions
   call mpp_define_domains( (/1,nx,1,ny/), layout, domain, xhalo=halo, yhalo=halo, &
@@ -1866,16 +2408,73 @@ program mpp_domains_test
   local = 0.
   local(is:ie,js:je,:) = global(is:ie,js:je,:)
 !fill in halos
+  id = mpp_clock_id( 'Cyclic halo update', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+  call mpp_clock_begin(id)
   call mpp_update_domains( local, domain )
+  call mpp_clock_end  (id)
 !compare checksums between global and local arrays
   call compare_checksums( local, global(isd:ied,jsd:jed,:), 'Cyclic halo update' )
 
+!test folded boundary conditions
+  call mpp_define_domains( (/1,nx,1,ny/), layout, domain, xhalo=halo, yhalo=halo, &
+       xflags=CYCLIC_GLOBAL_DOMAIN, yflags=FOLD_NORTH_EDGE, name='Folded halo update' )
+  call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
+  call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+!fill in folded north edge, cyclic east and west edge
+  global(1-halo:0,    1:ny,:) = global(nx-halo+1:nx,1:ny,:)
+  global(nx+1:nx+halo,1:ny,:) = global(1:halo,      1:ny,:)
+  global(1-halo:nx+halo,ny+1:ny+halo,:) = global(nx+halo:1-halo:-1,ny:ny-halo+1:-1,:)
+  global(1-halo:nx+halo,1-halo:0,:) = 0
+!fill in local array
+  local = 0.
+  local(is:ie,js:je,:) = global(is:ie,js:je,:)
+!fill in halos
+  id = mpp_clock_id( 'Folded halo update', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+  call mpp_clock_begin(id)
+  call mpp_update_domains( local, domain )
+  call mpp_clock_end  (id)
+!compare checksums between global and local arrays
+  call compare_checksums( local(isd:ied,jsd:jed,:), global(isd:ied,jsd:jed,:), 'Folded halo update' )
+!fill in local array
+  local = 0.
+  local(is:ie,js:je,:) = global(is:ie,js:je,:)
+!fill in halos: partial update
+  id = mpp_clock_id( 'Folded halo N+E update', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+  call mpp_clock_begin(id)
+  call mpp_update_domains( local, domain, NUPDATE+EUPDATE )
+  call mpp_clock_end  (id)
+!compare checksums between global and local arrays
+  call compare_checksums( local(is:ied,js:jed,:), global(is:ied,js:jed,:), 'Folded halo N+E update' )
+!folded, with sign flip at fold (vector component)
+!fill in folded north edge, cyclic east and west edge
+  global(1-halo:0,    1:ny,:) = global(nx-halo+1:nx,1:ny,:)
+  global(nx+1:nx+halo,1:ny,:) = global(1:halo,      1:ny,:)
+  global(1-halo:nx+halo-1,ny+1:ny+halo,:) = -global(nx+halo-1:1-halo:-1,ny-1:ny-halo:-1,:)
+  global(nx+halo,ny+1:ny+halo,:) = -global(nx-halo,ny-1:ny-halo:-1,:)
+  global(1-halo:nx+halo,1-halo:0,:) = 0
+!fill in local array
+  local = 0.
+  local(is:ie,js:je,:) = global(is:ie,js:je,:)
+  localy = local
+!fill in halos
+  id = mpp_clock_id( 'Folded halo update, vector field', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+  call mpp_clock_begin(id)
+  call mpp_update_domains( local, localy, domain, gridtype=BGRID_NE )
+  call mpp_clock_end  (id)
+!compare checksums between global and local arrays
+  call compare_checksums( local(isd:ied,jsd:jed,:), global(isd:ied,jsd:jed,:), 'Folded halo update, vector field' )
+
 !timing tests
-  if( pe.EQ.root )print '(a)', 'TIMING TESTS:'
+  if( pe.EQ.mpp_root_pe() )print '(a)', 'TIMING TESTS:'
   call mpp_define_domains( (/1,nx,1,ny/), layout, domain, xhalo=halo, yhalo=halo, &
        xflags=CYCLIC_GLOBAL_DOMAIN, yflags=CYCLIC_GLOBAL_DOMAIN, name='Timing' )
   call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
   call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+!fill in cyclic global array
+  global(1-halo:0,    1:ny,:) = global(nx-halo+1:nx,1:ny,:)
+  global(nx+1:nx+halo,1:ny,:) = global(1:halo,      1:ny,:)
+  global(1-halo:nx+halo,    1-halo:0,:) = global(1-halo:nx+halo,ny-halo+1:ny,:)
+  global(1-halo:nx+halo,ny+1:ny+halo,:) = global(1-halo:nx+halo,1:halo,      :)
 !fill in local array
   local = 0.
   local(is:ie,js:je,:) = global(is:ie,js:je,:)
@@ -1890,7 +2489,7 @@ program mpp_domains_test
 !words transferred
   j = ( (ied-isd+1)*(jed-jsd+1) - (ie-is+1)*(je-js+1) )*nz
   call mpp_max(j)
-  if( pe.EQ.root ) &
+  if( pe.EQ.mpp_root_pe() ) &
        print '(a,i4,i8,es12.4,f10.3)', 'Halo width, words, time (sec), bandwidth (MB/sec)=', halo, j, t, j*8e-6/t
 !test and time mpp_global_sum
   gsum = sum( global(1:nx,1:ny,:) )
@@ -1899,13 +2498,13 @@ program mpp_domains_test
   lsum = mpp_global_sum( domain, local )
   call SYSTEM_CLOCK(tk)
   t = float(tk-tk0)/tks_per_sec
-  if( pe.EQ.root )print '(a,2es15.8,a,es12.4)', 'Fast sum=', lsum, gsum, ' Time (sec)=', t
+  if( pe.EQ.mpp_root_pe() )print '(a,2es15.8,a,es12.4)', 'Fast sum=', lsum, gsum, ' Time (sec)=', t
   call mpp_sync()          !this ensures you time only the update_domains call
   call SYSTEM_CLOCK(tk0)
   lsum = mpp_global_sum( domain, local, BITWISE_EXACT_SUM )
   call SYSTEM_CLOCK(tk)
   t = float(tk-tk0)/tks_per_sec
-  if( pe.EQ.root )print '(a,2es15.8,a,es12.4)', 'Bitwise-exact sum=', lsum, gsum, ' Time (sec)=', t
+  if( pe.EQ.mpp_root_pe() )print '(a,2es15.8,a,es12.4)', 'Bitwise-exact sum=', lsum, gsum, ' Time (sec)=', t
 
   call mpp_domains_exit()
   call mpp_exit()
@@ -1920,7 +2519,7 @@ contains
     i = mpp_chksum( a, (/pe/) )
     j = mpp_chksum( b, (/pe/) )
     if( i.EQ.j )then
-        if( pe.EQ.root )call mpp_error( NOTE, trim(string)//': chksums are correct.' )
+        if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, trim(string)//': chksums are correct.' )
     else
         call mpp_error( FATAL, trim(string)//': chksums are not OK.' )
     end if

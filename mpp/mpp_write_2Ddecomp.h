@@ -69,37 +69,3 @@
 
       return
     end subroutine MPP_WRITE_2DDECOMP_3D_
-
-    subroutine MPP_WRITE_2DDECOMP_4D_( unit, field, domain, data, tstamp )
-      integer, intent(in) :: unit
-      type(fieldtype), intent(in) :: field
-      type(domain2D), intent(inout) :: domain
-      MPP_TYPE_, intent(inout) :: data(:,:,:,:)
-      real, intent(in), optional :: tstamp
-      MPP_TYPE_ :: data3D(size(data,1),size(data,2),size(data,3)*size(data,4))
-#ifdef use_CRI_pointers
-      pointer( ptr, data3D )
-      ptr = LOC(data)
-      call mpp_write( unit, field, domain, data3D, tstamp )
-#else
-      call mpp_error( FATAL, 'MPP_WRITE_2DDECOMP_2D_: requires Cray pointers.' )
-#endif
-      return
-    end subroutine MPP_WRITE_2DDECOMP_4D_
-
-    subroutine MPP_WRITE_2DDECOMP_5D_( unit, field, domain, data, tstamp )
-      integer, intent(in) :: unit
-      type(fieldtype), intent(in) :: field
-      type(domain2D), intent(inout) :: domain
-      MPP_TYPE_, intent(inout) :: data(:,:,:,:,:)
-      real, intent(in), optional :: tstamp
-      MPP_TYPE_ :: data3D(size(data,1),size(data,2),size(data,3)*size(data,4)*size(data,5))
-#ifdef use_CRI_pointers
-      pointer( ptr, data3D )
-      ptr = LOC(data)
-      call mpp_write( unit, field, domain, data3D, tstamp )
-#else
-      call mpp_error( FATAL, 'MPP_WRITE_2DDECOMP_2D_: requires Cray pointers.' )
-#endif
-      return
-    end subroutine MPP_WRITE_2DDECOMP_5D_

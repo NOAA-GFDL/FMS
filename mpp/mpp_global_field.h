@@ -24,8 +24,18 @@
       MPP_TYPE_, intent(out) :: global(domain%x%global%begin:,domain%y%global%begin:,:)
       integer, intent(in), optional :: flags
       integer :: i, j, k, m, n, nd, nwords, lpos, rpos, ioff, joff
-      MPP_TYPE_, allocatable, dimension(:) :: clocal, cremote
       logical :: xonly, yonly
+      MPP_TYPE_ :: clocal (domain%x%compute%size*    domain%y%compute%size*    size(local,3))
+      MPP_TYPE_ :: cremote(domain%x%compute%max_size*domain%y%compute%max_size*size(local,3))
+      integer :: words_per_long, stackuse
+      character(len=8) :: text
+#ifdef use_CRI_pointers
+      pointer( ptr_local,  clocal  )
+      pointer( ptr_remote, cremote )
+
+      ptr_local  = LOC(mpp_domains_stack)
+      ptr_remote = LOC(mpp_domains_stack(size(clocal)+1))
+#endif
 
       if( .NOT.mpp_domains_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: must first call mpp_domains_init.' )
       xonly = .FALSE.
@@ -36,6 +46,18 @@
           if( .NOT.xonly .AND. .NOT.yonly )call mpp_error( WARNING, 'MPP_GLOBAL_FIELD: you must have flags=XUPDATE or YUPDATE.' )
       end if
 
+#ifdef use_CRI_pointers
+      words_per_long = size(transfer(local(1,1,1),mpp_domains_stack))
+      stackuse = (size(clocal)+size(cremote))*words_per_long
+      if( stackuse.GT.mpp_domains_stack_size )then
+          write( text, '(i8)' )stackuse
+          call mpp_error( FATAL, &
+               'MPP_UPDATE_DOMAINS user stack overflow: call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+      end if
+      ptr_local  = LOC(mpp_domains_stack)
+      ptr_remote = LOC( mpp_domains_stack((size(clocal)+1)*words_per_long) )
+      mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, stackuse )
+#endif
       if( size(global,1).NE.domain%x%global%size .OR. size(global,2).NE.domain%y%global%size .OR. &
           size(local,3).NE.size(global,3) ) &
            call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: incoming arrays do not match domain.' )
@@ -51,8 +73,6 @@
         call mpp_error( FATAL, 'MPP_GLOBAL_FIELD_: incoming field array must match either compute domain or data domain.' )
     end if
 
-      allocate( clocal (domain%x%compute%size*    domain%y%compute%size*    size(local,3)) )
-      allocate( cremote(domain%x%compute%max_size*domain%y%compute%max_size*size(local,3)) )
 ! make contiguous array from compute domain
       m = 0
       do k = 1,size(local,3)
@@ -121,8 +141,6 @@
           end do
           call mpp_sync_self(domain%list(:)%pe)
       end if
-!PV786667: the deallocate stmts can be removed when fixed (7.3.1.3m)
-      deallocate( clocal, cremote )
           
       return
     end subroutine MPP_GLOBAL_FIELD_3D_

@@ -1,0 +1,412 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+   <title>module sat_vapor_pres</title>
+   <link rel="stylesheet" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" type="text/css">
+   <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP">
+</head>
+<body>
+
+<div class="header"> <font size=1>
+<a href="#PUBLIC INTERFACE">PUBLIC INTERFACE</a> ~
+<a href="#PUBLIC DATA">PUBLIC DATA</a> ~
+<a href="#PUBLIC ROUTINES">PUBLIC ROUTINES</a> ~
+<a href="#NAMELIST">NAMELIST</a> ~
+<a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS</a> ~
+<a href="#ERROR MESSAGES">ERROR MESSAGES</a> ~
+<a href="#REFERENCES">REFERENCES</a> ~
+<a href="#NOTES">NOTES</a>
+</font>
+</div><hr>
+
+
+<h2>module sat_vapor_pres</h2>
+<a name="HEADER"></a>
+<!-- BEGIN HEADER -->
+<div>
+     <b>Contact:</b> &nbsp; Bruce Wyman  <br>
+     <b>Reviewers:</b>&nbsp;   <br>
+     <b>Change History:&nbsp; </b><a HREF="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/sat_vapor_pres/sat_vapor_pres.f90">WebCVS Log</a>   <br>
+     <b>Last Modified:</b>&nbsp; $Date: 2002/02/22 19:14:45 $
+</div><br>
+
+<!-- END HEADER -->
+<!-------------------------------------------------------------------->
+<a name="OVERVIEW"></a>
+<hr>
+<h4>OVERVIEW</h4>
+<!-- BEGIN OVERVIEW -->
+<div>
+
+Routines for determining the saturation vapor pressure (<tt>ES</tt>) and
+the derivative of <tt>ES</tt> with respect to temperature.
+</div>
+<!-- END OVERVIEW -->
+<!-------------------------------------------------------------------->
+<a name="DESCRIPTION"></a>
+<!-- BEGIN DESCRIPTION -->
+<div>
+<p>This module contains routines for determining the saturation vapor
+pressure (<tt>ES</tt>) from lookup tables constructed using equations given
+in the Smithsonian tables.  The <tt>ES</tt> lookup tables are valid between
+-160C and +100C (approx 113K to 373K).</p>
+
+<p>The values of <tt>ES</tt> are computed over ice from -160C to -20C,
+over water from 0C to 100C, and a blended value (over water and ice)
+from -20C to 0C.</p>
+
+<p>This version was written for non-vector machines.
+See the <a href="#NOTES">notes</a> section for details on vectorization.</p>
+
+</div>
+<!-- END DESCRIPTION -->
+<!-------------------------------------------------------------------->
+<a name="OTHER MODULES USED"></a>
+<hr>
+<h4>OTHER MODULES USED</h4>
+<!-- BEGIN OTHER MODULES USED -->
+<div><pre>
+      fms_mod
+constants_mod
+</pre></div>
+<!-- END OTHER MODULES USED -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC INTERFACE"></a>
+<hr>
+<h4>PUBLIC INTERFACE</h4>
+<!-- BEGIN INTERFACE -->
+<div>
+<pre>
+<b>use sat_vapor_pres_mod</b> [, only: lookup_es,
+                                lookup_des,
+                                compute_es,
+                                sat_vapor_pres_init ]
+</pre>
+<dl>
+ <dt>    <a href="#lookup_es">lookup_es:</a>
+        <dd>For the given temperatures, returns the saturation vapor pressures.
+
+ <dt>    <a href="#lookup_es">lookup_des:</a>
+        <dd>For the given temperatures, returns the derivative of
+          saturation vapor pressure with respect to temperature.
+
+<dt>     <a href="#compute_es">compute_es:</a>
+        <dd>For the given temperatures, computes the saturation vapor pressures.
+
+<dt>     <a href="#sat_vapor_pres_init">sat_vapor_pres_init:</a>
+        <dd>Initializes the lookup tables for saturation vapor pressure.
+</dl>
+</div><br>
+<!-- END INTERFACE -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC DATA"></a>
+<hr>
+<h4>PUBLIC DATA</h4>
+<!-- BEGIN DATA_TYPES -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END DATA_TYPES -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC ROUTINES"></a>
+<hr>
+<h4>PUBLIC ROUTINES</h4>
+<!-- BEGIN ROUTINES -->
+<ol type="a">
+<li><a name="lookup_es"></a><h4>lookup_es &#38; lookup_des</h4>
+<PRE>
+<b>call lookup_es</b>  ( temp, esat )
+<b>call lookup_des</b> ( temp, desat )
+
+DESCRIPTION
+   For the given temperatures these routines return the
+   saturation vapor pressure (esat) or the derivative of esat w.r.t.
+   temperature (desat). The return values are derived from
+   lookup tables (see notes below).
+
+INPUT
+   temp      Temperature in degrees Kelvin.
+             May be a scalar, 1d, 2d, or 3d array. <span class="type">[real]</span>
+
+OUTPUT
+   esat      Saturation vapor pressure in pascals.
+             May be a scalar, 1d, 2d, or 3d array.
+             Must have the same order and size as temp. <span class="type">[real]</span>
+
+   desat     Derivative of saturation vapor pressure w.r.t. temperature
+             in pascals/degree. May be a scalar, 1d, 2d, or 3d array.
+             Must have the same order and size as temp. <span class="type">[real]</span>
+</PRE>
+</li>
+
+<li><a name="compute_es"></a><h4>compute_es</h4>
+<PRE>
+esat = <b>compute_es</b> ( temp )
+
+DESCRIPTION
+   Computes saturation vapor pressure for the given temperature using
+   the equations given in the Smithsonian Meteorological Tables.
+   Between -20C and 0C a blended value over ice and water is returned.
+
+INPUT
+   temp      Temperature in degrees Kelvin.
+             May be a scalar, 1d, 2d, or 3d array. <span class="type">[real]</span>
+
+RETURNS
+   esat      Saturation vapor pressure in pascals.
+             May be a scalar, 1d, 2d, or 3d array.
+             Must have the same order and size as temp. <span class="type">[real]</span>
+</PRE>
+</li>
+<li><a name="sat_vapor_pres_init"></a><h4>sat_vapor_pres_init</h4>
+
+<PRE>
+<b>call sat_vapor_pres_init</b>
+
+DESCRIPTION
+   Initializes the lookup tables for saturation vapor pressure.
+   This routine will be called automatically the first time
+   <b>lookup_es</b> or <b>lookup_des</b> is called,
+   the user does not need to call this routine.
+   There are no arguments.
+</PRE>
+</li>
+</ol>
+<!-- END ROUTINES -->
+<!-------------------------------------------------------------------->
+<a name="NAMELIST"></a>
+<hr>
+<h4>NAMELIST</h4>
+<!-- BEGIN NAMELIST -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END NAMELIST -->
+<!-------------------------------------------------------------------->
+<a name="DIAGNOSTIC FIELDS"></a>
+<hr>
+<h4>DIAGNOSTIC FIELDS</h4>
+<!-- BEGIN DIAGNOSTICS -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END DIAGNOSTICS -->
+<!-------------------------------------------------------------------->
+<a name="DATA SETS"></a>
+<hr>
+<h4>DATA SETS</h4>
+<!-- BEGIN DATA_SETS -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END DATA_SETS -->
+<!-------------------------------------------------------------------->
+<a name="ERROR MESSAGES"></a>
+<hr>
+<h4>ERROR MESSAGES</h4>
+<!-- BEGIN ERRORS -->
+<div>
+<dl>
+<dt><b>FATAL errors in sat_vapor_pres_mod</b></dt>
+
+   <dd><span class="errmsg">table overflow, nbad=##</span></dd>
+   <dd>Temperature(s) provided to the saturation vapor pressure lookup
+          are outside the valid range of the lookup table (-160 to 100 deg C).
+          This may be due to a numerical instability in the model.
+          Information should have been printed to standard output to help
+          determine where the instability may have occurred.
+          If the lookup table needs a larger temperature range,
+          then parameters in the module header must be modified.</dd>
+</dl>
+</div>
+<!-- END ERRORS -->
+<!-------------------------------------------------------------------->
+<a name="REFERENCES"></a>
+<hr>
+<h4>REFERENCES</h4>
+<!-- BEGIN REFERENCES -->
+<div>
+
+     Smithsonian Meteorological Tables Page 350.
+
+</div><br>
+<!-- END REFERENCES -->
+<!-------------------------------------------------------------------->
+<a name="COMPILER SPECIFICS"></a>
+<hr>
+<h4>COMPILER SPECIFICS</h4>
+<!-- BEGIN COMPILER -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END COMPILER -->
+<!-------------------------------------------------------------------->
+<a name="PRECOMPILER OPTIONS"></a>
+<hr>
+<h4>PRECOMPILER OPTIONS</h4>
+<!-- BEGIN PRECOMPILER -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END PRECOMPILER -->
+<!-------------------------------------------------------------------->
+<a name="LOADER OPTIONS"></a>
+<hr>
+<h4>LOADER OPTIONS</h4>
+<!-- BEGIN LOADER -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END LOADER -->
+<!-------------------------------------------------------------------->
+<a name="KNOWN BUGS"></a>
+<hr>
+<h4>KNOWN BUGS</h4>
+<!-- BEGIN BUGS -->
+<div>
+
+     No error checking is done to make sure that the size of the
+    input and output fields match.
+
+</div><br>
+<!-- END BUGS -->
+<!-------------------------------------------------------------------->
+<a name="NOTES"></a>
+<hr>
+<h4>NOTES</h4>
+<!-- BEGIN NOTES -->
+<ol>
+<li>Vectorization
+
+    <p>To create a vector version the lookup routines need to be modified.
+    The local variables: tmp, del, ind, should be changed to arrays
+    with the same size and order as input array temp.</p>
+</li>
+
+<li>Construction of the <tt>ES</tt> tables
+
+   <p> The tables are constructed using the saturation vapor pressure (<tt>ES</tt>)
+    equations in the Smithsonian tables. The tables are valid between
+    -160C to +100C with increments at 1/10 degree. Between -160C and -20C
+    values of <tt>ES</tt> over ice are used, between 0C and 100C values of<tt> ES</tt>
+    over water are used, between -20C and 0C blended values of <tt>ES</tt>
+    (over water and over ice) are used.</p>
+
+    <p>There are three tables constructed: <tt>ES</tt>, first derivative (<tt>ES'</tt>), and
+    second derivative (<tt>ES</tt>'').  The ES table is constructed directly from
+    the equations in the Smithsonian tables. The <tt>ES</tt>' table is constructed
+    by bracketing temperature values at +/- 0.01 degrees. The <tt>ES</tt>'' table
+    is estimated by using centered differencing of the <tt>ES</tt>' table.</p>
+</li>
+<li>Determination of <tt>es</tt> and <tt>es'</tt> from lookup tables
+
+   <p> Values of the saturation vapor pressure (<tt>es</tt>) and the derivative (<tt>es'</tt>)
+    are determined at temperature (T) from the lookup tables (<tt>ES</tt>, <tt>ES'</tt>, <tt>ES''</tt>)
+    using the following formula.</p>
+<pre>
+    es (T) = ES(t) + ES'(t) * dt + 0.5 * ES''(t) * dt**2
+    es'(T) = ES'(t) + ES''(t) * dt
+
+    where     t = lookup table temperature closest to T
+             dt = T - t
+</pre>
+</li>
+<li>Internal (private) parameters
+
+  <p>These parameters can be modified to increase/decrease the size/range
+    of the lookup tables.</p>
+<pre>
+    tcmin   The minimum temperature (in deg C) in the lookup tables.
+              [integer, default: tcmin = -160]
+
+    tcmax   The maximum temperature (in deg C) in the lookup tables.
+              [integer, default: tcmin = +100]
+</pre>
+</li>
+</ol>
+<!-- END NOTES -->
+<!-------------------------------------------------------------------->
+<a name="FUTURE PLANS"></a>
+<hr>
+<h4>FUTURE PLANS</h4>
+<!-- BEGIN PLANS -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END PLANS -->
+<!-------------------------------------------------------------------->
+<a name="TEST PROGRAM"></a>
+<hr>
+<h4>TEST PROGRAM</h4>
+<!-- BEGIN TEST PROGRAM -->
+<div>
+<pre>
+program test_sat_vapor_pres
+use sat_vapor_pres_mod
+implicit none
+
+integer, parameter :: ipts=500, jpts=100, kpts=50, nloop=1
+real, dimension(ipts,jpts,kpts) :: t,es,esn,des,desn
+integer :: n
+
+! generate temperatures between 120K and 340K
+  call random_number (t)
+  t = 130. + t * 200.
+
+! initialize the tables (optional)
+  call sat_vapor_pres_init
+
+! compute actual es and "almost" actual des
+   es = compute_es  (t)
+  des = compute_des (t)
+
+do n = 1, nloop
+! es and des
+  call lookup_es  (t, esn)
+  call lookup_des (t,desn)
+enddo
+
+! terminate, print deviation from actual
+  print *, 'size=',ipts,jpts,kpts,nloop
+  print *, 'err es  = ', sum((esn-es)**2)
+  print *, 'err des = ', sum((desn-des)**2)
+
+contains
+
+!----------------------------------
+! routine to estimate derivative
+
+ function compute_des (tem) result (des)
+ real, intent(in) :: tem(:,:,:)
+ real, dimension(size(tem,1),size(tem,2),size(tem,3)) :: des,esp,esm
+ real, parameter :: tdel = .01
+    esp = compute_es (tem+tdel)
+    esm = compute_es (tem-tdel)
+    des = (esp-esm)/(2*tdel)
+ end function compute_des
+!----------------------------------
+
+end program test_sat_vapor_pres
+</pre>
+</div>
+<!-- END TEST PROGRAM -->
+<!-------------------------------------------------------------------->
+<hr>
+</body>
+</html>

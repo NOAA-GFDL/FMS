@@ -1,0 +1,328 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+   <title>module xgrid_mod</title>
+   <link rel="stylesheet" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" type="text/css">
+   <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP">
+</head>
+<body>
+
+<div class="header"> <font size=1>
+<a href="#PUBLIC INTERFACE">PUBLIC INTERFACE</a> ~
+<a href="#PUBLIC DATA">PUBLIC DATA</a> ~
+<a href="#PUBLIC ROUTINES">PUBLIC ROUTINES</a> ~
+<a href="#NAMELIST">NAMELIST</a> ~
+<a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS</a> ~
+<a href="#ERROR MESSAGES">ERROR MESSAGES</a> ~
+<a href="#REFERENCES">REFERENCES</a> ~
+<a href="#NOTES">NOTES</a>
+</font>
+</div><hr>
+
+
+<h2>module xgrid_mod</h2>
+<a name="HEADER"></a>
+<!-- BEGIN HEADER -->
+<div>
+     <b>Contact:</b>&nbsp;   Michael Winton <br>
+     <b>Reviewers:</b>&nbsp; <br>
+     <b>Change History:</b>&nbsp;<a HREF="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/time_manager/time_manager.f90">WebCVS Log</a> <br>
+     <b>Last Modified:</b>&nbsp; $Date: 2002/02/22 19:14:11 $
+</div><br>
+
+<!-- END HEADER -->
+<!-------------------------------------------------------------------->
+<a name="OVERVIEW"></a>
+<hr>
+<h4>OVERVIEW</h4>
+<!-- BEGIN OVERVIEW -->
+<div>
+    <p> <tt>xgrid_mod</tt> implements exchange grids for coupled models running on
+     multiple processors.  An exchange grid is formed from the union of
+     the bounding lines of the two (logically rectangular) participating
+     grids.  The exchange grid is therefore the coarsest grid that is a
+     refinement of both participating grids.  Exchange grids are used for
+     two purposes by coupled models:  (1) conservative interpolation of fields
+     between models uses the exchange grid cell areas as weights and
+     (2) the surface flux calculation takes place on the exchange grid thereby
+     using the finest scale data available.  <tt>xgrid_mod</tt> uses a NetCDF grid
+     specification file containing the grid cell overlaps in combination with
+     the <a href="ftp://ftp.gfdl.gov/pub/vb/mpp/mpp_domains.F90"><tt>mpp_domains</tt></a> domain decomposition information to determine the grid
+     and processor connectivities.</p>
+
+</div>
+<!-- END OVERVIEW -->
+<!-------------------------------------------------------------------->
+<a name="DESCRIPTION"></a>
+<!-- BEGIN DESCRIPTION -->
+<div>
+    <p> <tt>xgrid_mod</tt> is initialized with a list of model identifiers (three characters
+     each), a list of <tt>mpp_domains</tt> domain data structures, and a grid specification
+     file name.  The first element in the lists refers to the "side one" grid.
+     The remaining elements are on "side two".  Thus, there may only be a single
+     side one grid and it is further restricted to have no partitions (sub-grid
+     areal divisions).  In standard usage, the atmosphere model is on side one
+     and the land and sea ice models are on side two.  <tt>xgrid_mod</tt> performs
+     interprocessor communication on the side one grid.  Exchange grid variables
+     contain no data for zero sized partitions.  The size and format of exchange
+     grid variables change every time the partition sizes or number of partitions
+     are modified with a <tt>set_frac_area</tt> call on a participating side two grid.
+     Existing exchange grid variables cannot be properly interpreted after
+     that time; new ones must be allocated and assigned with the <tt>put_to_xgrid</tt>
+     call.</p>
+
+</div>
+<!-- END DESCRIPTION -->
+<!-------------------------------------------------------------------->
+<a name="OTHER MODULES USED"></a>
+<hr>
+<h4>OTHER MODULES USED</h4>
+<!-- BEGIN OTHER MODULES USED -->
+<div><pre>
+        mpp_mod
+mpp_domains_mod
+        fms_mod
+</pre></div>
+<!-- END OTHER MODULES USED -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC INTERFACE"></a>
+<hr>
+<h4>PUBLIC INTERFACE</h4>
+<!-- BEGIN INTERFACE -->
+<div>
+<pre>
+<b>use xgrid_mod</b>, only : xmap_type, setup_xmap, set_frac_area, xgrid_count,
+                 put_to_xgrid, get_from_xgrid, some, conservation_check
+</pre>
+<dl>
+<dt><a href="#setup_xmap"><tt>setup_xmap</tt></a>:
+<dd>Sets up exchange grid connectivity using grid specification file and
+processor domain decomposition.
+<dt><a href="#set_frac_area"><tt>set_frac_area</tt></a>:
+<dd>Changes sub-grid portion areas and/or number.
+<dt><a href="#xgrid_count"><tt>xgrid_count</tt></a>:
+<dd>Returns current size of exchange grid variables.
+<dt><a href="#put_to_xgrid"><tt>put_to_xgrid</tt></a>:
+<dd>Scatters data from model grid onto exchange grid.
+<dt><a href="#get_from_xgrid"><tt>get_from_xgrid</tt></a>:
+<dd>Sums data from exchange grid to model grid.
+<dt><a href="#xmap_type"><tt>xmap_type</tt></a>:
+<dd>Contains the information needed to implement exchange grid (private).
+<dt><a href="#some"><tt>some</tt></a>:
+<dd>Returns logical associating exchange grid cells with given side two grid.
+<dt><a href="#conservation_check"><tt>conservation_check</tt></a>:
+<dd>Returns three numbers which are the global sum of a variable (1) on its
+home model grid, (2) after interpolation to the other side grid(s), and (3)
+after re_interpolation back onto its home side grid(s). <tt> Conservation_check</tt>
+must be called by all PEs to work properly.
+</dl>
+</div><br>
+<!-- END INTERFACE -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC DATA"></a>
+<hr>
+<h4>PUBLIC DATA</h4>
+<!-- BEGIN DATA_TYPES -->
+<div>
+<a name="xmap_type"><h4>xmap_type</h4></a>
+The fields of xmap_type are all private.
+</div><br>
+<!-- END DATA_TYPES -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC ROUTINES"></a>
+<hr>
+<h4>PUBLIC ROUTINES</h4>
+<!-- BEGIN ROUTINES -->
+<ol type="a">
+<li><a name="setup_xmap"><h4>setup_xmap</h4></a>
+<pre>
+  xmap            <span class="type"> type(xmap_type)</span>
+  grid_ids        <span class="type"> character(len=3), dimension(:)</span>
+  grid_domains    <span class="type"> type(Domain2d)  , dimension(:)</span>
+  grid_file       <span class="type"> character(len=*)</span>
+</pre>
+</li>
+<li><a name="set_frac_area"><h4>set_frac_area</h4></a>
+<pre>
+  f               <span class="type"> real, dimension(:,:,:)</span>
+  grid_id         <span class="type"> character(len=3)</span>
+  xmap            <span class="type"> type(xmap_type)</span>
+</pre>
+</li>
+<li><a name="xgrid_count"><h4>xgrid_count</h4></a>
+<pre>
+  xmap            <span class="type"> type(xmap_type)</span>
+</pre>
+</li>
+<li><a name="put_to_xgrid"><h4>put_to_xgrid</h4></a>
+<pre>
+  d               <span class="type"> real, dimension(:,:) or dimension(:,:,:)</span>
+  grid_id         <span class="type"> character(len=3)</span>
+  x               <span class="type"> real            , dimension(:)</span>
+  xmap            <span class="type"> type(xmap_type)</span>
+</pre>
+</li>
+<li><a name="get_from_xgrid"><h4>get_from_xgrid</h4></a>
+<pre>
+  d               <span class="type"> real, dimension(:,:) or dimension(:,:,:)</span>
+  grid_id         <span class="type"> character(len=3)</span>
+  x               <span class="type"> real            , dimension(:)</span>
+  xmap            <span class="type"> type(xmap_type)</span>
+</pre>
+</li>
+<li><a name="some"><h4>some</h4></a>
+<pre>
+  grid_id         <span class="type"> character(len=3)</span>
+  xmap            <span class="type"> type(xmap_type)</span>
+</pre>
+</li>
+<li><a name="conservation_check"><h4>conservation_check</h4></a>
+<pre>
+  d               <span class="type"> real, dimension(:,:) or dimension(:,:,:)</span>
+  grid_id         <span class="type"> character(len=3)</span>
+  xmap            <span class="type"> type(xmap_type)</span>
+</pre>
+</li>
+</ol>
+<!-- END ROUTINES -->
+<!-------------------------------------------------------------------->
+<a name="NAMELIST"></a>
+<hr>
+<h4>NAMELIST</h4>
+<!-- BEGIN NAMELIST -->
+<div>
+<a name="xgrid_nml"><b>&#38;xgrid_nml</b></a><br><br>
+<dl>
+<dt><tt>make_exchange_reproduce</tt>
+<dd> Set to .true. to make <tt>xgrid_mod</tt> reproduce answers on different 
+numbers of PEs.  This option has a considerable performance impact. 
+Default=.false. <span class="type"><small>[logical]</small></span>
+</dl>
+</div><br>
+<!-- END NAMELIST -->
+<!-------------------------------------------------------------------->
+<a name="DIAGNOSTIC FIELDS"></a>
+<hr>
+<h4>DIAGNOSTIC FIELDS</h4>
+<!-- BEGIN DIAGNOSTICS -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END DIAGNOSTICS -->
+<!-------------------------------------------------------------------->
+<a name="DATA SETS"></a>
+<hr>
+<h4>DATA SETS</h4>
+<!-- BEGIN DATA_SETS -->
+<div>
+
+    <p><tt>xgrid_mod</tt> reads a NetCDF grid specification file to determine the
+     grid and processor connectivities.  The exchange grids are defined
+     by a sequence of quintuples:  the <tt>i/j</tt> indices of the intersecting
+     cells of the two participating grids and their areal overlap.
+     The names of the five fields are generated automatically from the
+     three character ids of the participating grids.  For example, if
+     the side one grid id is "ATM" and the side two grid id is "OCN",
+     <tt>xgrid_mod</tt> expects to find the following five fields in the grid
+     specification file:  <tt>I_ATM_ATMxOCN, J_ATM_ATMxOCN, I_OCN_ATMxOCN,
+     J_OCN_ATMxOCN, and AREA_ATMxOCN</tt>.  These fields may be generated
+     by the <tt>make_xgrids</tt> utility.</p>
+
+</div>
+<!-- END DATA_SETS -->
+<!-------------------------------------------------------------------->
+<a name="ERROR MESSAGES"></a>
+<hr>
+<h4>ERROR MESSAGES</h4>
+<!-- BEGIN ERRORS -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END ERRORS -->
+<!-------------------------------------------------------------------->
+<a name="REFERENCES"></a>
+<hr>
+<h4>REFERENCES</h4>
+<!-- BEGIN REFERENCES -->
+<div>
+<ol>
+<li>  A <a href="http://www.gfdl.noaa.gov/~mw/docs/grid_coupling.html"> guide </a>to grid coupling in FMS.</li>
+<li> A simple xgrid <a href="http://www.gfdl.gov/~mw/docs/xgrid_example.f90.txt"> example. </a> </li>
+</ol>
+</div></br>
+<!-- END REFERENCES -->
+<!-------------------------------------------------------------------->
+<a name="COMPILER SPECIFICS"></a>
+<hr>
+<h4>COMPILER SPECIFICS</h4>
+<!-- BEGIN COMPILER -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END COMPILER -->
+<!-------------------------------------------------------------------->
+<a name="PRECOMPILER OPTIONS"></a>
+<hr>
+<h4>PRECOMPILER OPTIONS</h4>
+<!-- BEGIN PRECOMPILER -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END PRECOMPILER -->
+<!-------------------------------------------------------------------->
+<a name="LOADER OPTIONS"></a>
+<hr>
+<h4>LOADER OPTIONS</h4>
+<!-- BEGIN LOADER -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END LOADER -->
+<!-------------------------------------------------------------------->
+<a name="KNOWN BUGS"></a>
+<hr>
+<h4>KNOWN BUGS</h4>
+<!-- BEGIN BUGS -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END BUGS -->
+<!-------------------------------------------------------------------->
+<a name="NOTES"></a>
+<hr>
+<h4>NOTES</h4>
+<!-- BEGIN NOTES -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END NOTES -->
+<!-------------------------------------------------------------------->
+<a name="FUTURE PLANS"></a>
+<hr>
+<h4>FUTURE PLANS</h4>
+<!-- BEGIN PLANS -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END PLANS -->
+<!-------------------------------------------------------------------->
+
+<hr>
+</body>
+</html>

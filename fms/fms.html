@@ -1,0 +1,1109 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>module fms_mod</title>
+  <link rel="stylesheet" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" type="text/css">
+</head>
+<body>
+
+<font size=1 class="header">
+<a href="#PUBLIC INTERFACE">PUBLIC INTERFACE</a> ~
+<a href="#PUBLIC DATA">PUBLIC DATA</a> ~
+<a href="#PUBLIC ROUTINES">PUBLIC ROUTINES</a> ~
+<a href="#NAMELIST">NAMELIST</a> ~
+<a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS</a> ~
+<a href="#ERROR MESSAGES">ERROR MESSAGES</a> ~
+<a href="#REFERENCES">REFERENCES</a> ~
+<a href="#NOTES">NOTES</a>
+</font>
+<hr>
+
+
+<h2>module fms_mod</h2>
+<a name="HEADER"></a>
+<!-- BEGIN HEADER -->
+<div>
+     <b>Contact:</b> &nbsp;  Bruce Wyman <br>
+     <b>Reviewers:</b>&nbsp; <br>
+     <b>Change History:&nbsp; </b><a HREF="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/fms/fms.f90">WebCVS Log</a> <br>
+     <b>Last Modified:</b>&nbsp; $Date: 2002/02/22 19:14:18 $
+</div><br>
+
+<!-- END HEADER -->
+<!-- ------------------------------------------------------------------>
+<a name="OVERVIEW"></a>
+<hr>
+<h4>OVERVIEW</h4>
+<!-- BEGIN OVERVIEW -->
+<div>
+
+     The fms module provides routines that are commonly used
+     by most FMS modules.
+     
+</div><br>
+<!-- END OVERVIEW -->
+<!-- ------------------------------------------------------------------>
+<a name="<b>Description</b>"></a>
+<!-- BEGIN <b>Description</b> -->
+
+<div>
+     Here is a summary of the functions performed by routines 
+     in the fms module.</div><br>
+<div class="list"><ol>
+<li> Output module version numbers to a common (<tt>log</tt>) file
+     using a common format.<br></li>
+
+<li> Open specific types of files common to many FMS modules.
+     These include namelist files, restart files, and 32-bit IEEE
+     data files. There also is a matching interface to close the files.
+     If other file types are needed thee <tt>mpp_open</tt></a> and <tt>mpp_close</tt>
+     interfaces in module <a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp_io.html"><tt>mpp_io</tt></a> must be used.</li>
+     
+<li> Read and write distributed data to simple native unformatted files.
+     This type of file (called a restart file) is used to checkpoint
+     model integrations for a subsequent restart of the run.</li>
+
+<li> Time sections of code (using a wrapper for <a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp.html"><tt>mpp_mod</tt>)</a>.</li>
+
+<li> For convenience there are several routines published from
+     the <a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp.html"><tt>mpp</tt></a> module. These are routines for getting processor
+     numbers, commonly used I/O unit numbers, and error handling.</li>
+
+</ol></div><br>
+<!-- END <b>Description</b> -->
+<!-- ------------------------------------------------------------------>
+<a name="OTHER MODULES USED"></a>
+<hr>
+<h4>OTHER MODULES USED</h4>
+<!-- BEGIN OTHER MODULES USED -->
+<div><pre>
+
+        mpp_mod
+mpp_domains_mod
+     mpp_io_mod
+
+</pre></div>
+<!-- END OTHER MODULES USED -->
+<!-- ------------------------------------------------------------------>
+<a name="PUBLIC INTERFACE"></a>
+<hr>
+<h4>PUBLIC INTERFACE</h4>
+<!-- BEGIN PUBLIC INTERFACE -->
+<pre>
+
+   <b>use fms_mod</b> [, only: fms_init, fms_end,
+                        error_mesg, NOTE, WARNING, FATAL,
+                        file_exist, open_namelist_file,
+                        open_restart_file, open_ieee32_file,
+                        close_file, read_data, write_data,
+                        check_nml_error, write_version_number,
+                        set_domain, lowercase, uppercase,
+                        string_array_index, monotonic_array,
+                        mpp_clock_init, mpp_chksum,
+                        mpp_error, mpp_error_state,
+                        mpp_pe, mpp_npes, mpp_root_pe,
+                        stdin, stdout, stderr, stdlog,
+                        mpp_clock_begin, mpp_clock_end,
+                        MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED ]
+</pre>
+<div><dl>
+  <dt><a href="#fms_init">fms_init</a>:
+  <dd>  Initializes the FMS module and also calls the initialization
+        routines for all modules in the <tt>MPP</tt> package.
+        Will be called automatically if the user does not call it.
+
+   <dt><a href="#fms_end">fms_end</a>:
+   <dd> Calls the termination routines for all modules
+        in the <tt>MPP</tt> package.
+
+   <dt><a href="#file_exist">file_exist</a>:
+   <dd> Checks the existence of a given file name.
+
+   <dt><a href="#check_nml_error">check_nml_error</a>:
+   <dd> Checks the iostat argument that is returned after
+        reading a namelist and determines if the error
+        code is valid.
+
+   <dt><a href="#write_version_number">write_version_number</a>:
+   <dd> Prints to the log file (or a specified unit)
+        the (cvs) version id string and (cvs) tag name.
+
+   <dt><a href="#error_mesg">error_mesg</a>:
+   <dd> Print notes, warnings and error messages;
+        terminates program for warning and error messages.
+        (use error levels NOTE,WARNING,FATAL, see example below)
+
+   <dt><a href="#open_namelist_file">open_namelist_file</a>:
+   <dd> Opens namelist file for reading only.
+
+   <dt><a href="#open_restart_file">open_restart_file</a>:
+   <dd> Opens a file that will be used for reading or writing
+        single threaded restart files with native unformatted data.
+
+   <dt><a href="#open_ieee32_file">open_ieee32_file</a>:
+   <dd> Opens a file that will be used for reading or writing
+        single threaded unformatted 32-bit IEEE data.
+
+   <dt><a href="#close_file">close_file</a>:
+   <dd> Closes a file that was opened using open_namelist_file,
+        open_restart_file, or open_ieee32_file.
+
+   <dt><a href="#set_domain">set_domain</a>:
+   <dd> Call this routine to internally store in fms_mod the
+        domain2d data type prior to calling the distributed
+        data I/O routines read_data and write_data.
+
+   <dt><a href="#read_data">read_data</a>:
+   <dd> Reads distributed data from a single threaded file.
+
+   <dt><a href="#write_data">write_data</a>:
+   <dd> Writes distributed data to a single threaded file.
+
+   <dt><a href="#mpp_clock_init">mpp_clock_init</a>:
+   <dd> Returns an identifier for performance timing a section
+        of code (similar to mpp_clock_id).
+
+   <dt><a href="#lowercase">lowercase</a>:
+   <dd> Convert character strings to all lower case.
+
+   <dt><a href="#uppercase">uppercase</a>:
+   <dd> Convert character strings to all upper case.
+
+   <dt><a href="#string_array_index">string_array_index</a>:
+   <dd> Tries to find a match for a character string in
+        a list of character strings.
+
+   <dt><a href="#monotonic_array">monotonic_array</a>:
+   <dd> Determines if a real input array has monotonically
+        increasing or decreasing values.
+</dl></div><br>
+
+<div><b>Routines published from <tt>mpp_mod</tt></b>
+(for usage check the documentation for <a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp.html"><tt>mpp_mod</tt>)</a></div>
+<pre>
+   mpp_error, NOTE, WARNING, FATAL
+   mpp_error_state
+   mpp_pe, mpp_npes, mpp_root_pe
+   stdin, stdout, stderr, stdlog
+   mpp_chksum
+
+   mpp_clock_begin, mpp_clock_end
+   MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
+</pre>
+<!-- END INTERFACE -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC DATA"></a>
+<hr>
+<h4>PUBLIC DATA</h4>
+<!-- BEGIN DATA_TYPES -->
+<div>
+     None
+<br><br></div>
+<!-- END DATA_TYPES -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC ROUTINES"></a>
+<hr>
+<h4>PUBLIC ROUTINES</h4>
+<!-- BEGIN PUBLIC ROUTINES -->
+<ol type="a">
+<li><a name="file_exist"></a><h4>file_exist</h4>
+<pre>
+<b>file_exist</b> ( file_name )
+</pre>
+<dl>
+<dt><b>Description</b>
+  <dd> Checks the existence of the given file name.
+<br><br>
+<dt><b>Input</b>
+  <dd> <tt>file_name</tt>&nbsp;&nbsp;&nbsp;  A file name (or path name) that is checked for existence.  <small><span class="type">[character]</span></small>
+<br><br>
+<dt><b>Returns</b>
+  <dd> This function returns a logical result.  If file_name exists the result is true, otherwise false is returned.
+   If the length of character string "file_name" is zero or the first
+   character is blank, then the returned value will be false.
+   When reading a file, this function is often used in conjunction with
+   routine open_file.
+</dl><br>
+</li>
+<!------------------------>
+<li><a name="error_mesg"></a><h4>error_mesg</h4>
+<pre>
+<b>call error_mesg</b> ( routine, message, level )
+</pre>
+<dl>
+<dt><b>Description</b></dt>
+  <dd> Print notes, warnings and error messages; and terminates
+   the program for error messages. This routine is a wrapper 
+   around mpp_error, and is provided for backward compatibility.
+   This module also publishes mpp_error, <b>users should try to use
+   the mpp_error interface.</b></dd>
+</dl>
+<br>
+<b>Input</b>
+<div>
+<table border="0">
+<tr>
+ <td valign="top">  <tt>routine</tt> </td> 
+ <td> Routine name where the warning or error has occurred.
+               <small><span class="type">[character]</span></small></td>
+</tr>
+<tr>
+<td>  <tt> message </tt> </td>
+<td> Warning or error message to be printed.
+               <small><span class="type">[character]</span></small></td>
+</tr>
+ <tr>
+<td> <tt> level</tt> </td>
+<td>    Level of severity; <b>set to NOTE, WARNING, or FATAL</b>
+             Termination always occurs for FATAL, never for NOTE,
+             and is settable for WARNING (see namelist).
+               <small><span class="type">[integer]</span></small></td>
+</tr>
+</table>
+</div>
+<b>Example</b> <pre>
+    use fms_mod, only: error_mesg, FATAL, NOTE
+
+    call error_mesg ('fms_mod', 'initialization not called', FATAL)
+    call error_mesg ('fms_mod', 'fms_mod message', NOTE)
+</pre>
+</li>
+<!------------------------>
+<li><a name="check_nml_error"></a><h4>check_nml_error</h4>
+<pre>
+<b>check_nml_error</b> ( iostat, nml_name )
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd>   The FMS allows multiple namelist records to reside in the same file.
+   Use this interface to check the iostat argument that is returned
+   after reading a record from the namelist file. If an invalid iostat
+   value is detected this routine will produce a fatal error.
+   See the NOTE below.
+</dl>
+<br>
+<b>Input</b>
+<div>
+<table border="0">
+<tr>
+<td valign="top">  <tt> iostat</tt></td>
+<td>    The iostat value returned when reading a namelist record.
+               <small><span class="type">[integer]</span></small></td>
+</tr>
+<tr>
+<td valign="top">  <tt> nml_name</tt></td>
+<td>  The name of the namelist. This name will be printed if an
+             error is encountered, otherwise the name is not used.
+               <small><span class="type">[character]</span></small></td>
+</tr>
+</table>
+</div>
+<dl>
+<dt><b>Returns</b>
+<dd>   This function returns the input iostat value (integer) if it is an
+   allowable error code.  If the iostat error code is not allowable,
+   an error message is printed and the program terminated.
+<br><br>
+<dt><b>Note</b>
+<dd>   Some compilers will return non-zero iostat values when reading
+   through files with multiple namelist. This routine will try
+   skip these errors and only terminate for true namelist errors.
+<br><br>
+<dt><b>Example</b>
+<dd>   The following example checks if a file exists, reads a namelist input
+   from that file, and checks for errors in that namelist.
+   When the correct namelist is read and it has no errors the routine
+   check_nml_error will return zero and the while loop will exit.
+   This code segment should be used to read namelist files.
+</dl>
+<pre>
+      integer :: unit, ierr, io
+
+      if ( file_exist('input.nml') ) then
+          unit = open_namelist_file ( )
+          ierr=1
+          do while (ierr /= 0)
+            read  (unit, nml=moist_processes_nml, iostat=io, end=10)
+            ierr = check_nml_error(io,'moist_processes_nml')
+          enddo
+    10    call close_file (unit)
+      endif
+</pre>
+</li>
+<li><a name="open_namelist_file"></a><h4>open_namelist_file</h4>
+<pre>
+unit = <b>open_namelist_file</b> ( file )
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd>   Opens an ascii formatted namelist file for reading only.
+   The file may be read by all processors.</dd>
+</dl>
+<br>
+<dt><b>Optional</b> <b>Input</b>
+<div>
+<table>
+<tr>
+   <td valign="top"><tt>file  </tt></td>
+   <td> A file name (or path name).  The default name is "input.nml".
+               <small><span class="type">[character]</span></small></td>
+</tr>
+</table>
+</div>
+<br>
+<dl>
+<dt><b>Returns</b>
+   <dd>This function opens the requested file and returns a Fortran unit
+   number (integer). If the file is already open, the Fortran open
+   in mpp_open will fail. Users should use the <a href="#file_exist">file_exist</a>
+   function before trying to open the file.
+<br><br>
+<dt><b>Note</b>
+<dd>   Before opening use <a href="#file_exist">file_exist</a> to check if the file exists and use
+   <a href="#close_file">close_file</a> to close the unit.
+<br><br>
+<dt><b>Example</b>
+</dl>
+
+<pre>
+   if ( file_exist (`your_file') ) then
+        unit = open_namelist_file ( file='your_file' )
+   endif
+</pre>
+</li>
+<li><a name="open_restart_file"></a><h4>open_restart_file</h4>
+<pre>
+unit = <b>open_restart_file</b> ( file, action )
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd>   Opens a single threaded, native unformatted file for reading or
+   writing model restart files.  The file has no mpp header records.
+   The file may be read by all processors but only written to by
+   the root PE.
+<br><br>
+<dt><b>Input</b>
+ <dd>  <tt>file</tt> &nbsp;&nbsp;&nbsp;     A file name (or path name).
+               <small><span class="type">[character]</span></small>
+
+ <dd>  <tt>action</tt> &nbsp;&nbsp;&nbsp;   I/O action to be performed, use "read" or "write".
+               <small><span class="type">[character]</span></small>
+<br><br>
+<dt><b>Returns</b>
+<dd>   This function opens the requested file and returns a Fortran unit
+   number (integer). If the file is already open, the Fortran open
+   in mpp_open will fail.
+</dl>
+<br>
+<b>Notes</b>
+<ol>
+<li>   Before opening a file for reading use <a href="#file_exist">file_exist</a> to check if the file exists
+   and use <a href="#close_file">close_file</a> to close the unit.
+<li>   This interface should be used in conjunction with routines
+   <a href="#set_domain">set_domain</a>, <a href="#read_data">read_data</a>, and <a href="#write_data">write_data</a>. See the examples for
+   <a href="#read_data">read_data</a> and <a href="#write_data">write_data</a>.</dd>
+</ol><br>
+<b>Example</b>
+<pre>
+   unit = open_restart_file ('RESTART/my_module.res', 'write')
+</pre>
+</li>
+<li><a name="open_ieee32_file"></a><h4>open_ieee32_file</h4>
+<pre>
+unit = <b>open_ieee32_file</b> ( file, action )
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd>   Opens a single threaded, 32-bit IEEE, unformatted file for reading
+   or writing (data) files. The file has no mpp header records.
+   The file may be read by all processors but only written to by
+   the root PE.
+<br><br>
+<dt><b>Input</b>
+ <dd><tt>  file</tt>&nbsp;&nbsp;&nbsp;      A file name (or path name).
+               <small><span class="type">[character]</span></small>
+
+ <dd><tt>  action</tt>&nbsp;&nbsp;&nbsp;I/O action to be performed, use "read" or "write".
+               <small><span class="type">[character]</span></small>
+<br><br>
+<dt><b>Returns</b>
+<dd>   This function opens the requested file and returns a Fortran unit
+   number (integer). If the file is already open, the Fortran open
+   in mpp_open will fail.
+</dl>
+<br>
+<b>Notes</b>
+<ol>
+<li>   Before opening a file for reading use <a href="#file_exist">file_exist</a> to check if the file exists
+   and use <a href="#close_file">close_file</a> to close the unit.
+</li>
+<li>   The namelist variable "iospec_ieee32" is used with this interface.
+   Check the documentation for module MPP_IO for more details on "iospec".
+</li>
+</ol><br>
+<li><a name="write_version_number"></a><h4>write_version_number</h4>
+<pre>
+<b>call write_version_number</b> ( version, tagname [, unit ] )
+</pre>
+<dl>
+<dt><b>Description</b></dt>
+<dd>   Prints to the log file (stdlog) or a specified unit the 
+   (cvs) version id string and (cvs) tag name.  <br><br></dd>
+</dl>
+<b>Input</b>
+<div> <table border="0">
+<tr>
+    <td valign="top">  <tt>version</tt></td>
+    <td> The module name and version number, this is usually the <tt>ID</tt> 
+         string returned by CVS when checking 
+         out code. <small><span class="type">[character, scalar]</span></small></td>
+<tr>
+</table></div>
+<br>
+<b>Optional Input</b>
+<div> <table border="0">
+<tr>
+     <td valign="top"> <tt>tagname</tt></td>
+     <td> The tag/name string, this is usually 
+           the <tt>Name </tt> string returned by CVS when checking out the code.
+                <small><span class="type">[character, scalar]</span></small></td>
+</tr>
+<tr>
+     <td valign="top"><tt>unit</tt></td>
+     <td> The Fortran unit number of an open formatted file.
+              If this unit number is not supplied the log file unit
+              number is used (stdlog).
+                <small><span class="type">[integer, scalar]</span></small></td>
+</tr>
+</table></div><br>
+</li>
+<li><a name="set_domain"></a><h4>set_domain</h4>
+<pre>
+<b>call set_domain</b> ( Domain2 )
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd>   Call this routine to internally store in fms_mod the
+   domain2d data type prior to calling the distributed
+   data I/O routines read_data and write_data.
+</dl><br>
+<b>Input</b>
+<div>
+<table border="0">
+<tr>
+ <td valign="top">  <tt>Domain2</tt> </td>
+ <td> Domain decomposition information. This data type is initialized
+              using the MPP_DOMAINS module.
+                <small><span class="type">[type(domain2d)]</span></small></td>
+</tr>
+</table>
+</div>
+<dl>
+<dt><b>Note</b>
+<dd>   This interface must be called prior to calling interfaces
+   read_data or write_data. See the examples for
+   <a href="#read_data">read_data</a> and <a href="#write_data">write_data</a>.
+</dl>
+<br>
+</li>
+<li><a name="get_domain_decomp"></a><h4>get_domain_decomp</h4>
+<pre>
+<b>call get_domain_decomp</b> ( x, y )
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd>   Obsolete interface.  Users should get domain decomposition
+    from the domain2d data type.
+</dl>
+<br>
+<b>Input</b>
+<div>
+<table border="0">
+<tr>
+ <td valign="top">  <tt>  x, y </tt></td>
+<td>   Arrays containing the current (since the last call to
+           set_domain) global and local start and end indices,
+           for the x- and y-axis, respectively.  The array values are
+           (/ global_start, global_end, local_start, local_end /).
+              <small><span class="type">[integer, dimension(4)]</span></small></td>
+</tr>
+</table>
+</div><br>
+</li>
+<li><a name="read_data"></a><h4>read_data</h4>
+<pre>
+<b>call read_data</b> ( unit, data [,end] )
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd>   Reads distributed data from a single (threaded) file either 
+   on all processors (the default) or by only the root PE.
+   This is option controlled by <a href="#NAMELIST">namelist variable read_all_pe</a>.
+</dl>
+<br>
+<b>Input</b>
+<div>  
+<table border="0">                           <tr>  
+ <td valign="top">  <tt>  unit </tt></td>
+ <td> The Fortran unit number of an open unformatted file.
+             This value is returned by a previous call to open_file.
+                <small><span class="type">[integer]</span></small></td>
+</tr></table></div>
+
+<b>Output</b>
+<div>
+<table border="0">                           <tr>  
+ <td valign="top">  <tt> data   </tt></td>
+<td>     Distributed data to be read. The data must be on the
+     data domain associated with the last <a href="#set_domain">set_domain</a> call.
+     The following data formats are allowed:</td>
+</tr></table>
+<pre class="type">
+                      [real   , dimension(:,:)    ]
+                      [logical, dimension(:,:)    ]
+                      [integer, dimension(:,:)    ]
+                      [complex, dimension(:,:)    ]
+                      [real   , dimension(:,:,:)  ]
+                      [complex, dimension(:,:,:)  ]
+                      [real   , dimension(:,:,:,:)]
+                      [complex, dimension(:,:,:,:)]
+</pre>
+</div>
+<b>Optional output</b>
+<div>
+<table border="0">
+<tr>  
+ <td valign="top">  <tt>end   </tt></td>
+   <td>      Flag to indicate whether an end-of-file was encountered while reading
+             the requested file.  This flag does not handle end-of-record errors.
+             If this flag IS NOT present an EOF will produce an IO error.
+             If this flag IS present an EOF will return TRUE, otherwise 
+             FALSE is returned.
+                <small><span class="type">[logical]</span></small></td>
+</tr></table>
+</div><br>
+<b>Notes</b>
+<ol>
+<li>    You must call set_domain before calling read_data.
+
+<li>    Regardless of whether all PEs or only the root PE reads the data
+    you should always call read_data from all processors.
+</ol><br>
+<b>Example</b>
+<pre>
+    call set_domain ( my_domain2d )
+    unit = open_restart_file ('RESTART/my_module.res', 'read')
+    read (unit) ires, jres   ! read non-distributed data first
+    call read_data (unit,data2d)  ! read distributed data
+    call close_file (unit)
+</pre>
+</li>
+<li><a name="write_data"></a><h4>write_data</h4>
+<pre>
+<b>call write_data</b> ( unit, data, end )
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd>   Writes distributed data to a single (threaded) file.
+   The global field is retrieved and the root PE is the
+   only processor to write the file.
+</dl><br>
+<b>Input</b>
+<div>
+<table border="0">                           <tr>                                                                                   <td valign="top">  <tt>unit  </tt></td>
+<td> The Fortran unit number of an open unformatted file.
+             This value is returned by a previous call to open_file.
+                [integer]
+</tr>
+<tr>
+<td>   <tt>data</tt></td>
+<td>      Distributed data to be written. The data must be on the
+             data domain associated with the last <a href="#set_domain">set_domain</a> call.
+             The following data formats are allowed:</td></tr></table>
+<pre class="type">
+                       [real   , dimension(:,:)    ]
+                       [real   , dimension(:,:)    ]
+                       [logical, dimension(:,:)    ]
+                       [integer, dimension(:,:)    ]
+                       [complex, dimension(:,:)    ]
+                       [real   , dimension(:,:,:)  ]
+                       [complex, dimension(:,:,:)  ]
+                       [real   , dimension(:,:,:,:)]
+                       [complex, dimension(:,:,:,:)]
+</pre></div>
+<b>Notes</b>
+<ol>
+<li>    You must call set_domain before calling write_data.</li>
+<li>    You should always call write_data on all processors
+    so that the global field can be retrieved.</li>
+<li>    If non-distributed needs to be written to the file, then
+    only the root PE should do this.</li>
+</ol><br>
+<b>Example</b>
+<pre>
+    unit = open_restart_file ('RESTART/my_module.res', 'write')
+
+    if (mpp_pe() == mpp_root_pe()) &amp; ! write non-distributed data first
+    read (unit) ires, jres           ! only on the root PE
+
+    call set_domain ( my_domain2d )
+    call read_data (unit,data2d_grid1)   ! write distributed data
+
+    call set_domain ( another_domain2d ) ! reset for another decompositon
+    call read_data (unit,data2d_grid2)   ! write distributed data
+
+    call close_file (unit)
+</pre>
+</li>
+<li><a name="fms_init"></a><h4>fms_init</h4>
+<pre>
+<b>call fms_init</b> ( )
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd>   Initialization routine for the fms module.
+   It also calls initialization routines for the mpp, mpp_domains,
+   and mpp_io modules. Although this routine will be called automatically
+   by other fms_mod routines, <b>users should explicitly call fms_init.</b>
+   If this routine is called more than once it will return silently.
+   There are no arguments.
+</dl><br>
+</li>
+<li><a name="fms_end"></a><h4>fms_end</h4>
+<pre>
+<b>call fms_end</b> ( )
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd>   Termination routine for the fms module.
+   It also calls destructor routines for the mpp, mpp_domains, and
+   mpp_io modules. If this routine is called more than once it will
+   return silently.  There are no arguments.
+</dl><br>
+</li>
+<li><a name="lowercase"></a><h4>lowercase</h4>
+<pre>
+string = <b>lowercase</b> ( cs )
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd>   Converts a character string to all lower case letters.
+   The characters "A-Z" are converted to "a-z", 
+   all other characters are left unchanged.
+</dl>
+    <b>Input</b>
+<div>
+<table border="0">
+<tr>
+ <td valign="top">  <tt>cs  </tt></td>
+<td> Character string that may contain upper case letters.
+              <small><span class="type">[character(len=*), scalar]</span></small></td>
+</tr> </table></div>
+<b>Returns</b>
+<div>
+<table border="0">
+<tr valign="top">
+<td><tt>string  </tt></td>
+<td>   Character string that contains all lower case letters.
+            The length of this string must be the same as the input string.
+              <small><span class="type">[character(len=len(cs)), scalar]</span></small></td>
+</tr></table> </div><br>
+</li>
+<li><a name="uppercase"></a><h4>uppercase</h4>
+<pre>
+string = <b>uppercase</b> ( cs )
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd>   Converts a character string to all upper case letters.
+   The characters "a-z" are converted to "A-Z", 
+   all other characters are left unchanged.
+</dl>
+<b>Input</b>
+<div>
+<table border="0">
+<tr>
+ <td valign="top">  <tt>cs  </tt></td>
+<td> Character string that may contain lower case letters.
+              <small><span class="type">[character(len=*), scalar]</span></small>
+</tr> </table></div>
+<b>Returns</b>
+<div>
+<table border="0">
+<tr valign="top">
+<td><tt>string  </tt></td>
+<td>   Character string that contains all upper case letters.
+            The length of this string must be the same as the input string.
+              <small><span class="type">[character(len=len(cs)), scalar]</span></small>
+</tr></table> </div><br>
+</li>
+<li><a name="string_array_index"></a><h4>string_array_index</h4>
+<pre>
+<b>string_array_index</b> ( string, string_array [, index] )
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd>   Tries to find a match for a character string in a list
+   of character strings. The match is case sensitive and
+   disregards blank characters to the right of the string.
+</dl>   
+<b>Input</b>
+<div>
+<table border="0">
+<tr valign="top">
+<td>  <tt>string  </tt></td>
+<td>      Character string of arbitrary length.
+                   <small><span class="type">[character(len=*), scalar]</span></small></td>
+</tr>
+<tr valign="top">
+<td><tt>   string_array</tt></td>
+<td>  Array/list of character strings.
+                   <small><span class="type">[character(len=*), dimension(:)]</span></small></td>
+</tr></table></div>
+<b>Optional output</b>
+<div>
+<table border="0">
+<tr>
+ <td valign="top">  <tt>index   </tt></td>
+<td> The index of string_array where the first match was found.
+                 If no match was found then index = 0.</td>
+</tr></table></div>
+<dl>
+<dt><b>Returns</b>
+<dd>   If an exact match was found then TRUE is returned,
+   otherwise FALSE is returned.
+      <small><span class="type">[logical]</span></small>
+</dl>
+<b>Example</b>
+<pre>
+   string = "def"
+   string_array = (/ "abcd", "def ", "fghi" /)
+
+   string_array_index ( string, string_array, index )
+
+   Returns: TRUE, index = 2
+</pre>
+</li>
+<li><a name="monotonic_array"></a><h4>monotonic_array</h4>
+<pre>
+<b>monotonic_array</b> ( array [, direction] )
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd>   Determines if the real input array has monotonically
+   increasing or decreasing values.
+</dl>   
+<b>Input</b>
+<div>
+<table border="0">
+<tr>
+ <td valign="top">  <tt> array </tt></td>
+<td>      An array of real values. If the size(array) &lt; 2
+               this function assumes the array is not monotonic,
+               no fatal error will occur.
+                 <small><span class="type">[real, dimension(:)]</span></small>
+</tr></table></div>
+<b>Optional output</b>
+<div>
+<table border="0">
+<tr>
+    <td valign="top" rowspan="4">  <tt>direction  </tt></td>
+    <td >  If the input array is:</td>
+</tr>
+<tr>
+    <td> &#62;&#62; monotonic (small to large) then direction = +1.</td>
+</tr>
+<tr>
+    <td>      &#62;&#62; monotonic (large to small) then direction = -1.</td>
+</tr>
+<tr>
+    <td>      &#62;&#62; not monotonic then direction = 0.
+                   <small><span class="type">[integer]</span></small></td>
+</tr></table></div>
+<dl>
+<dt><b>Returns</b>
+<dd>   If the input array of real values either increases or decreases
+   monotonically then TRUE is returned, otherwise FALSE is returned.
+      <small><span class="type">[logical]</span></small>
+</dl><br>
+</li>
+<li><a name="mpp_clock_init"></a><h4>mpp_clock_init</h4>
+<pre>
+id = <b>mpp_clock_init</b> ( name, level [, flags] )
+</pre>
+<dl>
+<dt><b>Description</b>
+<dd>   Returns an identifier for performance timing sections of code.
+   Should be used in conjunction with mpp_clock_begin and mpp_clock_end.
+   For more details see the documentation for the MPP module and
+   look at the example below.
+</dl>
+<b>Input</b>
+<div>
+<table border="0">
+<tr>
+ <td valign="top">  <tt> name </tt></td>
+ <td>     A unique name string given to the code segment to be timed.
+             The length should not exceed 32 characters.
+               <small><span class="type">[character]</span></small></td>
+</tr>
+<tr>
+ <td valign="top"> <tt> level </tt></td>
+ <td>   Level of timing.  When level &gt; timing_level, which is
+        set by namelist <a href="#NAMELIST">&#38;fms_nml</a>, an identifier of zero is returned.
+        This will turn off performance timing for the code section.
+               <small><span class="type">[integer]</span></small></td>
+</tr></table></div>
+<b>Optional input</b>
+<div>
+<table border="0">
+<tr>
+ <td valign="top">  <tt> flags </tt></td>
+<td>    Use the flags published via the mpp_mod to control
+             whether synchronization or extra detail is desired.
+             (flags = MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED)
+               <small><span class="type">[integer, no default]</span></small></td>
+</tr></table></div>
+<b>Returns</b>
+<div>
+<table border="0">
+<tr>
+ <td valign="top">  <tt> id </tt></td>
+ <td>       The identification index returned by mpp_clocks_id.
+             A zero value is returned (turning clocks off) when input
+             argument level &gt; namelist variable timing_level.</td>
+</tr></table></div>
+<b>Notes</b>
+<ol>
+<li>   The MPP_CLOCK_SYNC flag should be used whenever possible. This flag
+   causes mpp_sync to be called at the begin of a code segment, resulting
+   in more accurate performance timings. <b>Do not use the MPP_CLOCK_SYNC
+   flag for code sections that may not be called on all processors.</b></li>
+
+<li>There is some amount of coordination required throughout an entire
+   program for consistency of the "timing levels". As a guideline the
+   following levels may be used, with higher levels added as desired
+   to specific component models.</li>
+</ol><br>
+<table align="center" border="0">
+<tr>
+ <td align="center" width="103">  level </td> 
+ <td>    example code section</td>
+</tr>
+<tr >
+  <td align="center" width="103">           1  </td> 
+  <td>        main program</td>
+</tr>
+<tr >
+  <td align="center" width="103">           2  </td> 
+  <td>        components models</td>
+</tr>
+<tr>
+  <td align="center" width="103">           3   </td> 
+  <td >       atmosphere dynamics or physics</td>
+</tr></table><br>
+<dl>
+<dt><b>Example</b>
+<dd>   The mpp_clock_init interface should be used in conjunction with
+   the mmp_mod interfaces mpp_clock_begin and mpp_clock_end.
+   For example:
+</dl>
+<pre>
+      use fms_mod, only: mpp_clock_init, mpp_clock_begin, &amp;
+                         mpp_clock_end. MPP_CLOCK_SYNC
+      integer :: id_mycode
+      integer :: timing_level = 5
+
+      id_mycode = mpp_clock_init ('mycode loop', timing_level, &amp;
+                                  flags=MPP_CLOCK_SYNC)
+      call mpp_clock_begin (id_mycode)
+                    :
+                    :
+       ~~ this code will be timed ~~ 
+                    :
+                    :
+      call mpp_clock_end (id_mycode)
+
+</pre>
+</li>
+</ol>
+<!-- END ROUTINES -->
+<!-------------------------------------------------------------------->
+<a name="NAMELIST"></a>
+<hr>
+<h4>NAMELIST</h4>
+<!-- BEGIN NAMELIST -->
+<div>
+<p><b>&#38;fms_nml</b></p>
+<dl>
+<dt>  timing_level <dd>         The level of performance timing.
+                        If calls to the performance timing routines have been inserted
+                        into the code then code sections with a level &lt;= timing_level 
+                        will be timed. The resulting output will be printed to STDOUT.
+                        See the MPP module or <a href="#mpp_clock_init">mpp_clock_init</a> for more details.
+                         <small> <span class="type">[integer, default: timing_level = 0]</span></small>
+
+<dt>  read_all_pe <dd>          Read global data on all processors extracting local
+                        part needed (TRUE) or read global data on PE0 and
+                        broadcast to all PEs (FALSE).
+                         <small> <span class="type">[logical, default: read_all_pe=.true.]</span></small>
+
+<dt>  warning_level <dd>        Sets the termination condition for the WARNING flag
+                        to interfaces error_mesg/mpp_error.
+                        set warning_level = 'fatal' (program crashes for warning messages)
+                                       or 'warning' (prints warning message and continues).
+                          <small> <span class="type">[character, default: warning_level='warning']</span></small>
+
+<dt>  iospec_ieee32 <dd>        iospec flag used with the <a href="#open_ieee32_file">open_ieee32_file</a> interface.
+                          <small> <span class="type">[character, default: iospec_ieee32='-F f77,cachea:48:1']</span></small>
+
+<dt>  stack_size  <dd>         The size in words of the MPP user stack.
+                       If stack_size &gt; 0, the following MPP routine is called:
+                       call mpp_set_stack_size (stack_size).
+                       If stack_size = 0 (default) then the default size set
+                       by mpp_mod is used.
+                        <small> <span class="type">[integer, default: stack_size = 0]</span></small>
+
+<dt>  domains_stack_size <dd>  The size in words of the MPP_DOMAINS user stack.
+                       If domains_stack_size &gt; 0, the following
+                       MPP_DOMAINS routine is called:
+                       call mpp_domains_set_stack_size (domains_stack_size).
+                       If domains_stack_size = 0 (default) then the default
+                       size set by mpp_domains_mod is used.
+                        <small> <span class="type">[integer, default: domains_stack_size = 0]</span></small>
+
+</dl>
+<b>Notes</b>
+<ol>
+<li>  If the <tt>MPP</tt> or <tt>MPP_DOMAINS</tt> stack size is exceeded the program will
+   terminate after printing the required size.
+<li>  When running on a very small number of processors or for high resolution
+   models the default <tt>domains_stack_size</tt> will probably be insufficient.
+</ol>
+</div>
+<!-- END NAMELIST -->
+<!-------------------------------------------------------------------->
+<a name="DIAGNOSTIC FIELDS"></a>
+<hr>
+<h4>DIAGNOSTIC FIELDS</h4>
+<!-- BEGIN DIAGNOSTICS -->
+<div>None.</div><br>
+<!-- END DIAGNOSTICS -->
+<!-------------------------------------------------------------------->
+<a name="DATA SETS"></a>
+<hr>
+<h4>DATA SETS</h4>
+<!-- BEGIN DATA_SETS -->
+<div>None.</div><br>
+<!-- END DATA_SETS -->
+<!-------------------------------------------------------------------->
+<a name="ERROR MESSAGES"></a>
+<hr>
+<h4>ERROR MESSAGES</h4>
+<!-- BEGIN ERROR MESSAGES -->
+<div>
+<dl>
+<dt><b>FATAL: check_nml_error in fms_mod</b></dt>
+  <dd>  <span class="errmsg">while reading namelist ...., iostat = #### </span></dd>
+  <dd>  There was an error message reading the namelist specified.
+          Carefully examine all namelist variables for misspellings
+          of type mismatches (e.g., integer vs. real). <br><br></dd>
+<dt><b>FATAL: read_data in fms_mod</b></dt>
+  <dd>  <span class="errmsg">set_domain not called </span></dd>
+  <dd> Before calling read_data you must first call set_domain with
+       domain2d data type associated with the distributed data you are reading. <br><br></dd>
+<dt><b>FATAL: write_data in fms_mod</b></dt>
+   <dd> <span class="errmsg">set_domain not called </span></dd>
+   <dd> Before calling write_data you must first call set_domain with
+         domain2d data type associated with the distributed data you are writing. <br><br></dd>
+<dt><b>FATAL: fms_init</b></dt>
+   <dd>  <span class="errmsg">invalid entry for namelist variable warning_level </span></dd>
+   <dd>  The namelist variable warning_level must be either
+         'fatal' or 'warning' (case-insensitive). <br><br></dd>
+<dt><b>FATAL: open_restart_file in fms_mod</b></dt>
+   <dd> <span class="errmsg">invalid option for argument action </span></dd>
+   <dd> The argument action must be either 'read' or 'write'. <br><br></dd>
+<dt><b>FATAL: open_ieee32_file in fms_mod</b></dt>
+   <dd>   <span class="errmsg">invalid option for argument action </span></dd>
+   <dd>   The argument action must be either 'read' or 'write'. <br><br></dd>
+<dt><b>FATAL: close_file in fms_mod</b></dt>
+   <dd>  <span class="errmsg">invalid value for status </span></dd>
+   <dd>  The optional argument status may only
+         use the value "delete" (case-insensitive). <br><br></dd>
+<dt><b>FATAL: fms_mod</b></dt>
+  <dd>   <span class="errmsg">unexpected EOF </span></dd>
+  <dd>   An unexpected end-of-file was encountered in a read_data call.
+         You may want to use the optional end argument to detect the EOF. </dd>
+</dl>
+</div>
+<!-- END ERROR MESSAGES -->
+<!-------------------------------------------------------------------->
+<a name="REFERENCES"></a>
+<hr>
+<h4>REFERENCES</h4>
+<!-- BEGIN REFERENCES -->
+<div>None.</div><br>
+<!-- END REFERENCES -->
+<!-------------------------------------------------------------------->
+<a name="COMPILER SPECIFICS"></a>
+<hr>
+<h4>COMPILER SPECIFICS</h4>
+<!-- BEGIN COMPILER -->
+<div>None.</div><br>
+<!-- END COMPILER -->
+<!-------------------------------------------------------------------->
+<a name="PRECOMPILER OPTIONS"></a>
+<hr>
+<h4>PRECOMPILER OPTIONS</h4>
+<!-- BEGIN PRECOMPILER -->
+<div>None.</div><br>
+<!-- END PRECOMPILER -->
+<!-------------------------------------------------------------------->
+<a name="LOADER OPTIONS"></a>
+<hr>
+<h4>LOADER OPTIONS</h4>
+<!-- BEGIN LOADER -->
+<div>None.</div><br>
+<!-- END LOADER -->
+<!-------------------------------------------------------------------->
+<a name="KNOWN BUGS"></a>
+<hr>
+<h4>KNOWN BUGS</h4>
+<!-- BEGIN KNOWN BUGS -->
+<div>
+   <p>Namelist error checking may not work correctly with some compilers.</p>
+
+   <p>Users should beware when mixing Fortran reads and read_data calls.
+   If a Fortran read follows read_data and namelist variable
+   read_all_pe = FALSE (not the default), then the code will fail.
+   It is safest if Fortran reads precede calls to read_data.</p>
+</div>
+<!-- END KNOWN BUGS -->
+<!-------------------------------------------------------------------->
+<a name="NOTES"></a>
+<hr>
+<h4>NOTES</h4>
+<!-- BEGIN NOTES -->
+<div>None.  </div><br>
+<!-- END NOTES -->
+<!-------------------------------------------------------------------->
+<a name="FUTURE PLANS"></a>
+<hr>
+<h4>FUTURE PLANS</h4>
+<!-- BEGIN FUTURE PLANS -->
+<ol>
+<li> NetCDF facilities for reading and writing restart files
+      and (IEEE32) data files.
+
+<li> May possible split the FMS module into two modules.
+       <ol type="i">
+       <li>general utilities (<tt>FMS_MOD</tt>) 
+       <li>I/O utilities     (<tt>FMS_IO_MOD</tt>)
+       </ol>
+</ol>
+<!-- END FUTURE PLANS -->
+<!-------------------------------------------------------------------->
+
+<hr>
+</body>
+</html>

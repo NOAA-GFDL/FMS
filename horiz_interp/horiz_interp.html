@@ -1,0 +1,553 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>module horiz_interp</title>
+  <link rel="stylesheet" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" type="text/css">
+  <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP">
+</head>
+<body>
+
+<div class="header"> <font size=1>
+<a href="#PUBLIC INTERFACE">PUBLIC INTERFACE</a> ~
+<a href="#PUBLIC DATA">PUBLIC DATA</a> ~
+<a href="#PUBLIC ROUTINES">PUBLIC ROUTINES</a> ~
+<a href="#NAMELIST">NAMELIST</a> ~
+<a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS</a> ~
+<a href="#ERROR MESSAGES">ERROR MESSAGES</a> ~
+<a href="#REFERENCES">REFERENCES</a> ~
+<a href="#NOTES">NOTES</a>
+</font>
+</div><hr>
+
+
+<h2>module horiz_interp</h2>
+<a name="HEADER"></a>
+<!-- BEGIN HEADER -->
+<div>
+     <b>Contact:</b> &nbsp;  Bruce Wyman <br>
+     <b>Reviewers:</b>&nbsp; <br>
+     <b>Change History:&nbsp; </b><a HREF="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/horiz_interp/horiz_interp.f90">WebCVS Log</a> <br>
+     <b>Last Modified:</b>&nbsp; $Date: 2002/02/22 19:14:25 $
+</div><br>
+
+<!-- END HEADER -->
+<!-------------------------------------------------------------------->
+<a name="OVERVIEW"></a>
+<hr>
+<h4>OVERVIEW</h4>
+<!-- BEGIN OVERVIEW -->
+<div>
+<p> Performs spatial interpolation between rectangular 
+     latitude/longitude grids. </p>
+</div>
+<!-- END OVERVIEW -->
+<!-------------------------------------------------------------------->
+<a name="DESCRIPTION"></a>
+<!-- BEGIN DESCRIPTION -->
+<div>
+
+    <p> The interpolation algorithm uses a scheme that conserves the
+     area-weighed integral of the input field. The domain of the
+     output field must lie within the domain of the input field.
+     Latitudes must be range between -&#960;/2,+&#960;/2, and longitudes of
+     the input and output grids must be within +/-2&#960; of each other.
+     If the input and output fields both completely cover the sphere,
+     then the global integrals of both fields will be the same to
+     within machine precision.</p>
+
+     <p>There is an optional mask field for missing input data.
+     An optional output mask field may be used in conjunction with
+     the input mask to show where output data exists.</p>
+</div>
+<!-- END DESCRIPTION -->
+<!-------------------------------------------------------------------->
+<a name="OTHER MODULES USED"></a>
+<hr>
+<h4>OTHER MODULES USED</h4>
+<!-- BEGIN OTHER MODULES USED -->
+<div><pre>
+fms_mod
+</pre></div>
+<!-- END OTHER MODULES USED -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC INTERFACE"></a>
+<hr>
+<h4>PUBLIC INTERFACE</h4>
+<!-- BEGIN INTERFACE -->
+<div>
+<pre>
+<b>use horiz_interp_mod</b> [, only: horiz_interp_type,
+                              horiz_interp_init,
+                              horiz_interp,
+                              horiz_interp_end ]
+</pre>
+<dl>
+<dt> <a href="#horiz_interp_type">horiz_interp_type:</a>  
+        <dd> A derived-type variable that contains interpolation indices
+       and weights. It is allocated and initialized by calling
+       horiz_interp_init, and it is deallocated by calling
+       horiz_interp_end. The use of this type is recommended
+       for performance when computing multiple interpolations between
+       the same grids. The contents of this data type are private.</dd>
+
+<dt> <a href="#horiz_interp_init">horiz_interp_init:</a>
+        <dd>Allocates space and initializes a derived-type variable
+       that contains pre-computed interpolation indices and weights.</dd>
+
+<dt> <a href="#horiz_interp">horiz_interp:</a>  
+        <dd>Subroutine for performing the horizontal interpolation
+                    between two grids.</dd>
+
+<dt> <a href="#horiz_interp_end">horiz_interp_end:</a> 
+        <dd>Deallocates memory used by "horiz_interp_type" variables.
+       Must be called before reinitializing with horiz_interp_init.</dd>
+</dl></div><br>
+<!-- END INTERFACE -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC DATA"></a>
+<hr>
+<h4>PUBLIC DATA</h4>
+<!-- BEGIN DATA_TYPES -->
+<a name="horiz_interp_type"></a> 
+<pre>
+   type <b>horiz_interp_type</b>
+
+       real,    dimension(:), pointer :: dlon_in, dlon_out, &
+                                         dsph_in, dsph_out
+       real,    dimension(:,:), pointer :: faci, facj
+       integer, dimension(:,:), pointer :: ilon, jlat
+
+</pre>
+<!-- END DATA_TYPES -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC ROUTINES"></a>
+<hr>
+<h4>PUBLIC ROUTINES</h4>
+<!-- BEGIN ROUTINES -->
+<ol type="a">
+<li><a name="horiz_interp_init"></a><h4>horiz_interp_init</h4>
+<pre>
+<b>call horiz_interp_init</b> ( Interp, blon_in, blat_in,
+                      blon_out, blat_out, verbose )
+
+DESCRIPTION
+   Allocates space and initializes a derived-type variable
+   that contains pre-computed interpolation indices and weights
+   for improved performance of multiple interpolations between
+   the same grids. This routine does not need to be called if you 
+   are doing a single grid-to-grid interpolation.
+
+INPUT
+   blon_in    The longitude edges (in radians) for input data grid boxes.
+              The values are for adjacent grid boxes and must increase in
+              value. If there are M longitude grid boxes there must be
+              M+1 edge values.
+               <span class="type"> [real, dimension(:)]</span>
+
+   blat_in    The latitude edges (in radians) for input data grid boxes.
+              The values are for adjacent grid boxes and may increase or
+              decrease in value. If there are N latitude grid boxes there
+              must be N+1 edge values.
+               <span class="type"> [real, dimension(:)]</span>
+
+   blon_out   The longitude edges (in radians) for output data grid boxes.
+              The edge values may be stored as adjacent values or as pairs
+              for each grid box. The pairs do not have to be adjacent.
+              If there are MLON grid boxes in the output grid, then blon_out
+              is dimensioned by MLON+1 or (MLON,2).
+               <span class="type"> [real, dimension(:) or dimension(:,2)]</span>
+
+   blat_out   The latitude edges (in radians) for output data grid boxes.
+              The edge values may be stored as adjacent values or as pairs
+              for each grid box. The pairs do not have to be adjacent.
+              If there are NLAT grid boxes in the output grid, then blat_out
+              is dimensioned by NLAT+1 or (NLAT,2).
+               <span class="type"> [real, dimension(:) or dimension(:,2)]</span>
+
+INPUT/OUTPUT
+   Interp      A derived-type variable containing indices and weights
+               used for subsequent interpolations. To reinitialize this
+               variable for a different grid-to-grid interpolation you must
+               first use the "horiz_interp_end" interface.
+                <span class="type"> [type(horiz_interp_type)]</span>
+
+
+OPTIONAL INPUT
+   verbose     Integer flag that controls the amount of printed output.
+               verbose = 0, no output
+                       = 1, min,max,means
+                       = 2, still more
+                <span class="type"> [integer, scalar]</span>
+</pre>
+</li>
+<li><a name="horiz_interp"></a><h4>horiz_interp</h4>
+<pre>
+<b>call horiz_interp</b> ( Interp, data_in, data_out,        &lt;--- Form A
+                    verbose, mask_in, mask_out  )
+
+<b>call horiz_interp</b> ( data_in, blon_in, blat_in,        &lt;--- Form B
+                    blon_out, blat_out, data_out,    
+                    verbose, mask_in, mask_out  )
+
+DESCRIPTION
+   Subroutine for performing the horizontal interpolation between
+   two grids. There are two forms of this interface.
+   Form A requires first calling horiz_interp_init, while Form B
+   requires no initialization.
+
+INPUT
+   Interp      Derived-type variable containing indices and weights.
+               Returned by a previous call to horiz_interp_init.
+                <span class="type"> [type(horiz_interp_type)]</span>
+
+   data_in     Input data; the first two dimensions must correspond to the
+               grid defined by grid box edges: blon_in and blat_in.
+               Form A of the interface will also accept a 3d array for computing
+               multiple interpolations. The rank of data_in and data_out
+               must be the same.
+                <span class="type"> [real, dimension(:,:) or dimension(:,:,:)]</span>
+
+   blon_in     The longitude edges (in radians) for input data grid boxes.
+               The values are for adjacent grid boxes and must increase in
+               value. If there are M longitude grid boxes there must be
+               M+1 edge values.
+                <span class="type"> [real, dimension(:)]</span>
+
+   blat_in     The latitude edges (in radians) for input data grid boxes.
+               The values are for adjacent grid boxes and may increase or
+               decrease in value. If there are N latitude grid boxes there
+               must be N+1 edge values.
+                <span class="type"> [real, dimension(:)]</span>
+
+   blon_out    The longitude edges (in radians) for output data grid boxes.
+               The edge values may be stored as adjacent values or as pairs
+               for each grid box. The pairs do not have to be adjacent.
+               If there are MLON grid boxes in the output grid, then blon_out
+               is dimensioned by MLON+1 or (MLON,2).
+                <span class="type"> [real, dimension(:) or dimension(:,2)]</span>
+
+   blat_out    The latitude edges (in radians) for output data grid boxes.
+               The edge values may be stored as adjacent values or as pairs
+               for each grid box. The pairs do not have to be adjacent.
+               If there are NLAT grid boxes in the output grid, then blat_out
+               is dimensioned by NLAT+1 or (NLAT,2).
+                <span class="type"> [real, dimension(:) or dimension(:,2)]</span>
+
+OUTPUT
+   data_out    Output data; the first two dimensions must correspond to the
+               grid defined by grid box edges: blon_out and blat_out.
+               Form A of the interface will also accept a 3d array for computing
+               multiple interpolations. The rank of data_in and data_out
+               must be the same.
+                <span class="type"> [real, dimension(:,:) or dimension(:,:,:)]</span>
+
+OPTIONAL INPUT
+   verbose     Integer flag that controls the amount of printed output.
+               verbose = 0, no output
+                       = 1, min,max,means
+                       = 2, still more
+                <span class="type"> [integer, scalar]</span>
+
+   mask_in     Input mask, must be the same size as the input data.
+               The real value of mask_in must be in the range (0.,1.).
+               Set mask_in=0.0 for data points that should not be used
+               or have missing data.
+                <span class="type"> [real, dimension(:,:)]</span>
+
+OPTIONAL OUTPUT
+   mask_out    Output mask, must be the same size as the output data.
+               Returns the fractional area of the output grid box that
+               contains valid input data.
+                <span class="type"> [real, dimension(:,:)]</span>
+
+<b>call horiz_interp</b> ( data_in, wb, sb, dx, dy,
+                  blon_out, blat_out, data_out,
+                  verbose, mask_in, mask_out    )
+DESCRIPTION
+   This is an older version of the horiz_interp interface that
+   assumes the input grid has uniform spacing.
+   There is no initialization routine necessary.
+
+INPUT
+   data_in     Global input data stored from west to east (first dimension),
+               south to north (second dimension).
+                <span class="type"> [real, dimension(:,:)]</span>
+
+   wb          Longitude (in radians) that corresponds to western-most
+               boundary of grid box i=1 in array data_in.
+                <span class="type"> [real]</span>
+
+   sb          Latitude (in radians) that corresponds to southern-most
+               boundary of grid box j=1 in array data_in.
+                <span class="type"> [real]</span>
+
+   dx          Grid spacing (in radians) for the longitude axis (first
+               dimension) of the input data.
+                <span class="type"> [real]</span>
+
+   dy          Grid spacing (in radians) for the latitude axis (second
+               dimension) of the input data.
+                <span class="type"> [real]</span>
+
+   blon_out    The longitude edges (in radians) for output data grid boxes.
+               The values are for adjacent grid boxes and must increase in
+               value. If there are MLON grid boxes there must be MLON+1
+               edge values.
+                <span class="type"> [real, dimension(:)]</span>
+
+   blat_out    The latitude edges (in radians) for output data grid boxes.
+               The values are for adjacent grid boxes and may increase or
+               decrease in value. If there are NLAT grid boxes there must
+               be NLAT+1 edge values.
+                <span class="type"> [real, dimension(:)]</span>
+
+OUTPUT
+   data_out    Output data on the output grid defined by grid box
+               edges: blon_out and blat_out.
+                <span class="type"> [real, dimension(:,:)]</span>
+
+OPTIONAL INPUT
+   verbose     Integer flag that controls the amount of printed output.
+               verbose = 0, no output
+                       = 1, min,max,means
+                       = 2, still more
+                <span class="type"> [integer, scalar]</span>
+
+   mask_in     Input mask, must be the same size as the input data.
+               The real value of mask_in must be in the range (0.,1.).
+               Set mask_in=0.0 for data points that should not be used
+               or have missing data.
+                <span class="type"> [real, dimension(:,:)]</span>
+
+OPTIONAL OUTPUT
+   mask_out    Output mask, must be the same size as the output data.
+               Returns the fractional area of the output grid box that
+               contains valid input data.
+                <span class="type"> [real, dimension(:,:)]</span>
+</pre>
+</li>
+<li><a name="horiz_interp_end"></a><h4>horiz_interp_end</h4>
+<pre>
+<b>call horiz_interp_end</b> ( Interp )
+DESCRIPTION
+   Deallocates memory used by "horiz_interp_type" variables.
+   Must be called before reinitializing with horiz_interp_init.
+
+INPUT/OUTPUT
+   Interp     A derived-type variable returned by previous call
+              to horiz_interp_init. The input variable must have
+              allocated arrays. The returned variable will contain
+              deallocated arrays.
+</pre>
+</li>
+</ol>
+<!-- END ROUTINES -->
+<!-------------------------------------------------------------------->
+<a name="NAMELIST"></a>
+<hr>
+<h4>NAMELIST</h4>
+<!-- BEGIN NAMELIST -->
+<div>
+     None.
+</div><br>
+<!-- END NAMELIST -->
+<!-------------------------------------------------------------------->
+<a name="DIAGNOSTIC FIELDS"></a>
+<hr>
+<h4>DIAGNOSTIC FIELDS</h4>
+<!-- BEGIN DIAGNOSTICS -->
+<div>
+     None.
+</div><br>
+<!-- END DIAGNOSTICS -->
+<!-------------------------------------------------------------------->
+<a name="DATA SETS"></a>
+<hr>
+<h4>DATA SETS</h4>
+<!-- BEGIN DATA_SETS -->
+<div>
+     None.
+</div><br>
+<!-- END DATA_SETS -->
+<!-------------------------------------------------------------------->
+<a name="ERROR MESSAGES"></a>
+<hr>
+<h4>ERROR MESSAGES</h4>
+<!-- BEGIN ERRORS -->
+<div>
+<dl>
+<dt><b>FATAL errors in horiz_interp_mod</b></dt>
+<dd> <span class="errmsg">   size of input array incorrect</span></dd>
+     <dd>The input data array does not match the size of the input grid edges 
+        specified. If you are using the initialization interface make sure 
+        you have the correct
+        grid size.<br><br></dd>
+
+<dd>  <span class="errmsg">  size of output array incorrect</span></dd>
+      <dd> The output data array does not match the size of the input grid 
+         edges specified. If you are using the initialization interface make 
+         sure you have the correct grid size.<br><br></dd>
+
+<dd>  <span class="errmsg">  dimension 2 of blon_out and/or blat_out must be 2</span></dd>
+      <dd> Input arguments for the output grid edges are not dimensioned 
+        correctly.  The second dimension of blon_out and blat_out must be 2;
+        i.e., blon_out(nlon,2), blat_out(nlat,2).<br><br></dd>
+
+<dd>  <span class="errmsg">  no latitude index found: n,sph= .... </span></dd>
+      <dd> An output latitude did not fall between adjacent input latitudes.
+        Check your input and output latitude grid edges (make sure you are 
+        passing latitudes in radians) or increase the tolerance (see developer 
+        notes).<br><br></dd>
+
+<dd>  <span class="errmsg">  no longitude index found</span></dd>
+      <dd> An output longitude did not fall between adjacent input longitudes.
+        Check your input and output longitude grid edges (make sure you are 
+        passing longitudes in radians) or increase the tolerance (see notes).<br><br></dd>
+
+<dd>  <span class="errmsg">  input mask not between 0,1</span></dd>
+      <dd> The input mask argument is a real value that must be in the range: 
+         0 &#60;&#61; mask &#60;&#61; 1 (with a tolerance of .0001).<br><br></dd>
+</dl>
+</div>
+
+<!-- END ERRORS -->
+<!-------------------------------------------------------------------->
+<a name="REFERENCES"></a>
+<hr>
+<h4>REFERENCES</h4>
+<!-- BEGIN REFERENCES -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END REFERENCES -->
+<!-------------------------------------------------------------------->
+<a name="COMPILER SPECIFICS"></a>
+<hr>
+<h4>COMPILER SPECIFICS</h4>
+<!-- BEGIN COMPILER -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END COMPILER -->
+<!-------------------------------------------------------------------->
+<a name="PRECOMPILER OPTIONS"></a>
+<hr>
+<h4>PRECOMPILER OPTIONS</h4>
+<!-- BEGIN PRECOMPILER -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END PRECOMPILER -->
+<!-------------------------------------------------------------------->
+<a name="LOADER OPTIONS"></a>
+<hr>
+<h4>LOADER OPTIONS</h4>
+<!-- BEGIN LOADER -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END LOADER -->
+<!-------------------------------------------------------------------->
+<a name="KNOWN BUGS"></a>
+<hr>
+<h4>KNOWN BUGS</h4>
+<!-- BEGIN BUGS -->
+<div>
+
+     The verbose option for printing out min, max, and mean does so
+     for the data local to each processor (instead on for the entire
+     global field).
+
+</div><br>
+<!-- END BUGS -->
+<!-------------------------------------------------------------------->
+<a name="NOTES"></a>
+<hr>
+<h4>NOTES</h4>
+<!-- BEGIN NOTES -->
+<ol>
+
+ <li>  Has not been checked with grids that do not cover the sphere.</li>
+
+  <li> Has not been checked with the optional mask arguments.</li>
+
+  <li> If a latitude or longitude index cannot be found the tolerance
+     used for making this determination may need to be increased.
+     This can be done by increasing the value of module variable
+     num_iters (default 4).</li>
+
+</ol><br>
+<!-- END NOTES -->
+<!-------------------------------------------------------------------->
+<a name="FUTURE PLANS"></a>
+<hr>
+<h4>FUTURE PLANS</h4>
+<!-- BEGIN PLANS -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END PLANS -->
+<!-------------------------------------------------------------------->
+<a name="TEST PROGRAM"></a>
+<hr>
+<h4>TEST PROGRAM</h4>
+<!-- BEGIN TEST PROGRAM -->
+<pre>
+program test
+use horiz_interp_mod
+implicit none
+integer, parameter :: nxi=177, nyi=91, nxo=133, nyo=77 ! resolution
+real :: zi(nxi,nyi), zo(nxo,nyo)                       ! data
+real :: xi(nxi+1), yi(nyi+1), xo(nxo+1), yo(nyo+1)     ! grid edges
+real :: pi, tpi, hpi, dx, dy
+
+! constants
+  hpi = acos(0.0)
+   pi = hpi*2.0
+  tpi = hpi*4.0
+
+! grid setup: west to east, south to north
+  dx = tpi/real(nxi); call setaxis (0.,dx,xi);   xi(nxi+1) = xi(1)+tpi
+  dx = tpi/real(nxo); call setaxis (0.,dx,xo);   xo(nxo+1) = xo(1)+tpi
+  dy =  pi/real(nyi); call setaxis (-hpi,dy,yi); yi(nyi+1) = hpi
+  dy =  pi/real(nyo); call setaxis (-hpi,dy,yo); yo(nyo+1) = hpi
+
+! random data on the input grid
+  call random_number (zi)
+
+! interpolate (flipping y-axis)
+  call horiz_interp (zi(:,1:nyi:+1), xi, yi(1:nyi+1:+1), xo, yo(1:nyo+1:+1), zo, verbose=2)
+  call horiz_interp (zi(:,nyi:1:-1), xi, yi(nyi+1:1:-1), xo, yo(1:nyo+1:+1), zo, verbose=2)
+  call horiz_interp (zi(:,nyi:1:-1), xi, yi(nyi+1:1:-1), xo, yo(nyo+1:1:-1), zo, verbose=2)
+  call horiz_interp (zi(:,1:nyi:+1), xi, yi(1:nyi+1:+1), xo, yo(nyo+1:1:-1), zo, verbose=2)
+
+contains
+
+! set up a sequence of numbers
+  subroutine setaxis (xo,dx,x)
+  real, intent(in)  :: xo, dx
+  real, intent(out) :: x(:)
+  integer :: i
+    x(1) = xo
+    do i=2,size(x)
+      x(i) = x(i-1)+dx
+    enddo
+  end subroutine setaxis
+
+end program test
+</pre>
+<!-- END TEST PROGRAM -->
+<!-- ------------------------------------------------------------------>
+<hr>
+</body>
+</html>

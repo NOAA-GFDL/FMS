@@ -1,0 +1,837 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+   <title>module time_manager_mod</title>
+   <link rel="stylesheet" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" type="text/css">
+   <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP">
+</head>
+<body>
+
+<div class="header"> <font size=1>
+<a href="#PUBLIC INTERFACE">PUBLIC INTERFACE</a> ~
+<a href="#PUBLIC DATA">PUBLIC DATA</a> ~
+<a href="#PUBLIC ROUTINES">PUBLIC ROUTINES</a> ~
+<a href="#NAMELIST">NAMELIST</a> ~
+<a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS</a> ~
+<a href="#ERROR MESSAGES">ERROR MESSAGES</a> ~
+<a href="#REFERENCES">REFERENCES</a> ~
+<a href="#NOTES">NOTES</a>
+</font>
+</div><hr>
+
+
+<h2>module time_manager_mod</h2>
+<a name="HEADER"></a>
+<!-- BEGIN HEADER -->
+<div>
+     <b>Contact:</b>   fms <br>
+     <b>Reviewers:</b> <br>
+     <b>Change History: </b><a HREF="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/time_manager/time_manager.f90">WebCVS Log</a> <br>
+     <b>Last Modified:</b> $Date: 2002/02/22 19:14:50 $
+</div><br>
+
+<!-- END HEADER -->
+<!-------------------------------------------------------------------->
+<a name="OVERVIEW"></a>
+<hr>
+<h4>OVERVIEW</h4>
+<!-- BEGIN OVERVIEW -->
+<div>
+
+     A software package that provides a set of simple interfaces for 
+     modelers to perform computations related to time and dates.
+
+</div>
+<!-- END OVERVIEW -->
+<!-------------------------------------------------------------------->
+<a name="DESCRIPTION"></a>
+<!-- BEGIN DESCRIPTION -->
+<div>
+
+   <p>  The module defines a type that can be used to represent discrete 
+     times (accurate to one second) and to map these times into dates 
+     using a variety of calendars. A time is mapped to a date by 
+     representing the time with respect to an arbitrary base date (refer 
+     to <b>NOTES</b> section for the <a href="#base date">base date</a> setting).</p>
+
+    
+  <p>The time_manager provides a single defined type, time_type, which is 
+     used to store time and date quantities. A time_type is a positive 
+     definite quantity that represents an interval of time. It can be
+     most easily thought of as representing the number of seconds in some 
+     time interval. A time interval can be mapped to a date under a given 
+     calendar definition by using it to represent the time that has passed 
+     since some base date. A number of interfaces are provided to operate 
+     on time_type variables and their associated calendars. Time intervals 
+     can be as large as n days where n is the largest number represented by 
+     the default integer type on a compiler. This is typically considerably 
+     greater than 10 million years (assuming 32 bit integer representation) 
+     which is likely to be adequate for most applications. The description 
+     of the interfaces is separated into two sections. The first deals with 
+     operations on time intervals while the second deals with operations 
+     that convert time intervals to dates for a given calendar.</p>
+</div>
+<!-- END DESCRIPTION -->
+<!-------------------------------------------------------------------->
+<a name="OTHER MODULES USED"></a>
+<hr>
+<h4>OTHER MODULES USED</h4>
+<!-- BEGIN OTHER MODULES USED -->
+<div><pre>
+fms_mod
+</pre></div>
+<!-- END OTHER MODULES USED -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC INTERFACE"></a>
+<hr>
+<h4>PUBLIC INTERFACE</h4>
+<!-- BEGIN INTERFACE -->
+<div>
+<pre>
+<b>use time_manager_mod</b> [,only: time_type,  operator( + ),   operator( - ),   
+                              operator( * ),  operator( / ),   operator( &#62; ),  
+                              operator( &#62;&#61; ), operator( == ),  operator( /= ), 
+                              operator( &#60; ),  operator( &#60;&#61; ),  operator( // ),
+                              set_time, increment_time, decrement_time, 
+                              get_time, interval_alarm, repeat_alarm,
+                              set_calendar_type, get_calendar_type,
+                              set_date, get_date,
+                              increment_date, decrement_date,
+                              days_in_month,  days_in_year,
+                              leap_year, length_of_year, month_name,
+                              time_manager_init, print_time, print_date ]
+
+
+</pre>
+<dl>
+     <dt><a href="#PUBLIC DATA">time_type</a>:
+     <dd> A single defined type used to store time and date quantities.
+
+     <dt><a href="#operator functions">operator(+)</a>:
+     <dd> time3 = time1 + time2.  Sum of two time intervals.
+
+     <dt><a href="#operator functions">operator(-)</a>:
+     <dd> time3 = time1 - time2.  Difference of two time intervals. WARNING: 
+          This returns a positive definite time interval; so time1-time2 is 
+          the same as time2-time1. 
+
+     <dt><a href="#operator functions">operator(*)</a>:
+     <dd> time2 = n * time1.  Product of time interval with integer.
+
+     <dt><a href="#operator functions">operator(/)</a>:
+     <dd> time2 = time1 / n.  Integer scalar divide.<br>
+          n = time2 / time1.  Gives largest integer n for which n * time1 < time2.
+
+     <dt><a href="#operator functions">operator(//)</a>:
+     <dd> d = time2 // time1. Gives double precision result of dividing time2
+          by time1.
+
+     <dt><a href="#operator functions">operator(>)</a>:
+     <dd> Returns true if time1 &#62; time2.
+           
+     <dt><a href="#operator functions">operator(>=)</a>:
+     <dd> Returns true if time1 &#62;&#61; time2.
+
+     <dt><a href="#operator functions">operator(&#60;)</a>:
+     <dd> Returns true if time1 &#60; time2.
+
+     <dt><a href="#operator functions">operator(&#60;&#61;)</a>:
+     <dd> Returns true if time1 &#60;&#61; time2.
+
+     <dt><a href="#operator functions">operator(==)</a>:
+     <dd> Returns true if time1 == time2.
+          
+     <dt><a href="#operator functions">operator(/=)</a>:
+     <dd> Returns true if time1 /= time2.
+
+     <dt><a href="#set_time">set_time</a>:
+     <dd> Given some number of seconds and days, returns the corresponding 
+          time_type. 
+    
+     <dt><a href="#get_time">get_time</a>:
+     <dd> Given a time interval, returns the corresponding seconds and days.
+
+     <dt><a href="#increment_time">increment_time</a>:
+     <dd> Given a time and an increment of days and seconds, returns a time 
+          that adds this increment to an input time.
+
+     <dt><a href="#decrement_time">decrement_time</a>:
+     <dd> Given a time and a decrement of days and seconds, returns a time that 
+          subtracts this decrement from an input time.
+
+     <dt><a href="#interval_alarm">interval_alarm</a>:
+     <dd> Given a time, and a time interval, this function returns true if 
+          this is the closest time step to the alarm time. 
+
+     <dt><a href="#repeat_alarm">repeat_alarm</a>:
+     <dd> Repeat_alarm supports an alarm that goes off with alarm_frequency and
+          lasts for alarm_length.  
+
+     <dt><a href="#set_calendar_type">set_calendar_type</a>:
+      <dd>Sets the default calendar type for mapping time intervals to dates. 
+
+     <dt><a href="#get_calendar_type">get_calendar_type</a>:
+     <dd> Returns the value of the default calendar type for mapping from time 
+          to date.
+
+     <dt><a href="#set_date">set_date</a>:
+     <dd> Given an input date in year, month, days, etc., creates a time_type 
+          that represents this time interval from the internally defined base 
+          date.
+
+     <dt><a href="#get_date">get_date</a>:
+     <dd> Given a time_interval, returns the corresponding date under the 
+          default calendar. 
+
+     <dt><a href="#increment_date">increment_date</a>:
+
+     <dd> Increments the date represented by a time interval and the default
+          calendar type by a number of seconds, etc. 
+
+     <dt><a href="#decrement_date">decrement_date</a>:
+     <dd> Decrements the date represented by a time interval and the default 
+          calendar type by a number of seconds, etc.
+      
+     <dt><a href="#days_in_month">days_in_month</a>:
+     <dd> Given a time interval, gives the number of days in the month 
+          corresponding to the default calendar. 
+
+     <dt><a href="#leap_year">leap_year</a>:
+     <dd> Returns true if the year corresponding to the date for the default 
+          calendar is a leap year. Returns false for <tt>THIRTY_DAY_MONTHS</tt> and 
+          <tt>NO_LEAP</tt>. 
+
+     <dt><a href="#length_of_year">length_of_year</a>:
+     <dd> Returns the mean length of the year in the default calendar setting.
+
+     <dt><a href="#days_in_year">days_in_year</a>:
+     <dd> Returns the number of days in the calendar year corresponding to 
+          the date represented by time for the default calendar. 
+
+     <dt><a href="#month_name">month_name</a>:
+     <dd> Returns a character string containing the name of the month 
+          corresponding to month number n. Definition is the same for all 
+          calendar types.
+     <dt><a href="#time_manager_init">time_manager_init</a>:
+     <dd> Writes the version information to the log file.
+     <dt><a href="#print_time">print_time</a>:
+     <dd> Prints the given time_type argument as a time (using days and
+   seconds).
+     <dt><a href="#print_date">print_date</a>:
+     <dd> Prints the given time_type argument as a date (using year,month,day,hour,minutes and seconds).
+</dl>
+</div><br>
+<!-- END INTERFACE -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC DATA"></a>
+<hr>
+<h4>PUBLIC DATA</h4>
+<!-- BEGIN DATA_TYPES -->
+<div>
+<pre>
+
+type <b>time_type</b>
+  
+    Derived-type data variable used to store time and date quantities. It 
+    contains two PRIVATE variables:
+
+      seconds     The number of seconds that the current integration will
+                  be run for.  <span class="type"> [integer]</span>
+      days        The number of days that the current integration will
+                  be run for.  <span class="type"> [integer]</span>
+</pre>
+</div>
+<!-- END DATA_TYPES -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC ROUTINES"></a>
+<hr>
+<h4>PUBLIC ROUTINES</h4>
+<!-- BEGIN ROUTINES -->
+<ol type="a">
+<li><a name="operator functions"></a><h4>operator functions</h4>
+<pre>
+<b>time_plus</b>(time1, time2)
+<b>time_minus</b>(time1, time2)
+<b>time_scalar_mult</b>(time1, n)
+<b>scalar_time_mult</b>(n, time1)
+<b>time_scalar_divide</b>(time1, n)
+<b>time_divide</b>(time1, time2)
+<b>time_real_divide</b>(time1, time2)
+<b>time_gt</b>(time1, time2)
+<b>time_ge</b>(time1, time2)
+<b>time_lt</b>(time1, time2)
+<b>time_le</b>(time1, time2)
+<b>time_eq</b>(time1, time2)
+<b>time_ne</b>(time1, time2)
+
+DESCRIPTION
+   These are the functions defined for the various operators to operate on
+   time_type. 
+
+INPUT
+   time1      A time_type variable. <span class="type">[time_type]</span>
+   time2      A time_type variable. <span class="type">[time_type]</span>
+   n          An integer factor.    <span class="type">[integer]</span>
+
+</pre>
+</li>
+<li><a name="set_time"></a><h4>set_time</h4>
+<pre>
+<b>set_time</b>(seconds, days)
+
+INPUT
+   seconds   A number of seconds (can be greater than 86400),  must be 
+             positive. <span class="type">[integer]</span>
+
+OPTIONAL INPUT
+   days      A number of days, must be positive. <span class="type">[integer]</span>
+
+RETURNS      
+   A time interval corresponding to this number of days and seconds.
+                 <span class="type">[time_type]</span>
+</pre>
+</li>
+<li><a name="get_time"></a><h4>get_time</h4>
+<pre>
+call <b>get_time</b>(time, seconds, days)
+ 
+INPUT
+   time      A time interval. <span class="type">[time_type]</span>
+ 
+OUTPUT
+   seconds   A number of seconds (&lt; 86400). <span class="type">[integer]</span>
+
+OPTIONAL OUTPUT
+   days      A number of days.<span class="type"> [integer]</span>
+</pre>
+</li>
+<li><a name="increment_time"></a><h4>increment_time</h4>
+<pre>
+<b>increment_time</b>(time, seconds, days)
+
+INPUT
+   time      A time interval.<span class="type"> [time_type]</span>
+   seconds   Increment of seconds (can be greater than 86400);  must be 
+             positive.<span class="type"> [integer]</span>
+
+OPTIONAL INPUT
+   days      Increment of days;  must be positive.<span class="type"> [integer]</span>
+
+RETURNS    
+   A time that adds this increment to the input time.<span class="type"> [time_type]</span>
+</pre>
+</li>
+<li><a name="decrement_time"></a><h4>decrememt_time</h4>
+<pre>
+<b>decrement_time</b>(time, seconds, days)
+
+INPUT
+   time      A time interval.<span class="type"> [time_type]</span>
+   seconds   Decrement of seconds (can be greater than 86400);  must be
+             positive.<span class="type"> [integer]</span>
+
+OPTIONAL INPUT
+   days      Decrement of days;  must be positive.<span class="type"> [integer]</span>
+
+RETURNS      
+   A time that subtracts this decrement from an input time. If 
+   the result is negative, it is considered a fatal error.
+            <span class="type"> [time_type]</span>
+</pre>
+</li>
+<li><a name="interval_alarm"></a><h4>interval_alarm</h4>
+<pre>
+<b>interval_alarm</b>(time, time_interval, alarm, alarm_interval)
+
+DESCRIPTION
+   This is a specialized operation that is frequently performed in models. 
+   Given a time, and a time interval, this function is true if this is the 
+   closest time step to the alarm time. The actual computation is:
+
+            if((alarm_time - time) &#60;&#61; (time_interval / 2))
+
+   If the function is true, the alarm time is incremented by the 
+   alarm_interval; WARNING, this is a featured side effect. Otherwise, the 
+   function is false and there are no other effects. CAUTION: if the 
+   alarm_interval is smaller than the time_interval, the alarm may fail to
+   return true ever again.<span class="type"> [logical]</span>
+
+INPUT
+   time            Current time.<span class="type"> [time_type]</span>
+   time_interval   A time interval.<span class="type"> [time_type]</span>
+   alarm_interval  A time interval.<span class="type"> [time_type]</span>
+
+INPUT/OUTPUT
+   alarm           An alarm time, which is incremented by the alarm_interval 
+                   if the function is true.<span class="type"> [time_type]</span>
+</pre>
+</li>
+<li><a name="repeat_alarm"></a><h4>repeat_alarm</h4>
+<pre>
+<b>repeat_alarm</b>(time, alarm_frequency, alarm_length)
+
+INPUT
+   time             Current time.<span class="type"> [time_type]</span>
+   alarm_frequency  A time interval for alarm_frequency.<span class="type"> [time_type]</span>
+   alarm_length     A time interval for alarm_length.<span class="type"> [time_type]</span>
+
+RETURNS
+   True if the nearest occurrence of an alarm time is less than half an 
+   alarm_length from the input time. <span class="type"> [logical]</span>
+</pre>
+</li>
+<!--- Interfaces convert time intervals to dates -->
+<li><a name="set_calendar_type"></a><h4>set_calendar_type</h4>
+<pre>
+<b>set_calendar_type</b>(type)
+      
+INPUT
+   type           A constant number for setting the calendar type.<span class="type"> [integer]</span>
+
+OUTPUT 
+   calendar_type  A constant number for default calendar type.<span class="type"> [integer]</span>
+
+NOTES          
+   At present, four integer constants are defined for setting 
+   the calendar type: THIRTY_DAY_MONTHS, JULIAN, NO_LEAP, and 
+   GREGORIAN. However, GREGORIAN CALENDAR is not completely 
+   implemented. Selection of this type will result in illegal 
+   type error.
+</pre>
+</li>
+<li><a name="get_calendar_type"></a><h4>get_calendar_type</h4>
+<pre>
+<b>get_calendar_type</b>()
+ 
+DESCRIPTION
+   There are no arguments in this function. It returns the value of 
+   the default calendar type.<span class="type"> [integer]</span>
+
+NOTES
+   Users should test this returned value using the predefined 
+   calendar type parameters: THIRTY_DAY_MONTHS, JULIAN, NO_LEAP, 
+   GREGORIAN, and NO_CALENDAR. NO_CALENDAR is the default value of 
+   the calendar type.
+</pre>
+</li>
+<li><a name="set_date"></a><h4>set_date</h4>
+<pre>
+<b>set_date</b>(year, month, day, hours, minutes, seconds)
+
+INPUT
+
+   day      <span class="type"> [integer]</span>
+   month    <span class="type"> [integer]</span>
+   year     <span class="type"> [integer]</span>
+
+OPTIONAL INPUT
+
+   seconds  <span class="type"> [integer]</span>
+   minutes  <span class="type"> [integer]</span>
+   hours    <span class="type"> [integer]</span>
+
+RETURNS
+
+   The corresponding time interval from the internally defined base 
+   date given the selected date time mapping algorithm.<span class="type"> [time_type]</span>
+
+NOTES
+   Optional arguments that are not present are set to 0. Negative 
+   time intervals are not supported, so one cannot represent dates 
+   before the base dates. Illegal dates result in an error.
+</pre>
+</li>
+<li><a name="get_date"></a><h4>get_date</h4>
+<pre>
+call <b>get_date</b>(time, year, month, day, hour, minute, second)
+ 
+INPUT
+   time     A time interval.<span class="type"> [time_type]</span>
+
+OUTPUT
+   day      <span class="type"> [integer]</span>
+   month    <span class="type"> [integer]</span>
+   year     <span class="type"> [integer]</span>
+   seconds  <span class="type"> [integer]</span>
+   minutes  <span class="type"> [integer]</span>
+   hours    <span class="type"> [integer]</span>
+</pre>
+</li>
+<li><a name="increment_date"></a><h4>increment_date</h4>
+<pre>
+<b>increment_date</b>(time, years, months, days, hours, minutes, seconds)
+
+INPUT
+   time      A time interval.<span class="type"> [time_type]</span>
+
+OPTIONAL INPUT
+   day       An increment of years.<span class="type"> [integer]</span>
+   month     An increment of months.<span class="type"> [integer]</span>
+   year      An increment of days.<span class="type"> [integer]</span>
+   seconds   An increment of seconds.<span class="type"> [integer]</span>
+   minutes   An increment of minutes.<span class="type"> [integer]</span>
+   hours     An increment of hours.<span class="type"> [integer]</span>
+
+RETURNS
+   A new time based on the input time interval and the default 
+   calendar type. <span class="type">[time_type]</span>
+
+NOTES
+   For all but the thirty_day_months calendar, increments to months
+   and years must be made separately from other units because of the
+   non-associative nature of the addition. All the input increments 
+   must be positive.
+</pre>
+</li>
+<li><a name="decrement_date"></a><h4>decrement_date</h4>
+<pre>
+<b>decrement_date</b>(time, years, months, days, hours, minutes, seconds)
+
+INPUT
+   time      A time interval.<span class="type"> [time_type]</span>
+
+OPTIONAL INPUT
+   day       A decrement of years. <span class="type">[integer]</span>
+   month     A decrement of months.<span class="type"> [integer]</span>
+   year      A decrement of days.<span class="type"> [integer]</span>
+   seconds   A decrement of seconds.<span class="type"> [integer]</span>
+   minutes   A decrement of minutes.<span class="type"> [integer]</span>
+   hours     A decrement of hours.<span class="type"> [integer]</span>
+
+RETURNS
+   A new time based on the input time interval and the default
+   calendar type.<span class="type"> [time_type]</span>
+
+NOTES
+   For all but the thirty_day_months calendar, decrements to months 
+   and years must be made separately from other units because of the 
+   non-associative nature of addition. All the input decrements must 
+   be positive. If the result is a negative time (i.e. date before the 
+   base date) it is considered a fatal error.
+</pre>
+</li>
+<li><a name="days_in_month"></a><h4>days_in_month</h4>
+<pre>
+<b>days_in_month</b>(time)
+
+INPUT
+   time      A time interval.<span class="type"> [time_type]</span>
+
+RETURNS
+   The number of days in the month given the selected time 
+   mapping algorithm. <span class="type">[integer]</span>
+</pre>
+</li>
+<li><a name="leap_year"></a><h4>leap_year</h4>
+<pre>
+<b>leap_year</b>(time)
+
+INPUT
+   time      A time interval.<span class="type"> [time_type]</span>
+
+RETURNS
+   True if the year corresponding to the date for the default 
+   calendar is a leap year. False for THIRTY_DAY_MONTHS and 
+   NO_LEAP and otherwise.<span class="type"> [logical]</span>
+</pre>
+</li>
+<li><a name="length_of_year"></a><h4>length_of_year</h4>
+<pre>
+<b>length_of_year</b>()
+
+DESCRIPTION
+   There are no arguments in this function. It returns the mean 
+   length of the year in the default calendar setting.<span class="type"> [time_type]</span>
+</pre>
+</li>
+<li><a name="days_in_year"></a><h4>days_in_year</h4>
+<pre>
+<b>days_in_year</b>(time)
+
+INPUT
+   time      A time interval.<span class="type"> [time_type]</span>
+
+RETURNS
+   The number of days in the default calendar year.<span class="type"> [integer]</span>
+</pre>
+</li>
+<li><a name="month_name"></a><h4>month_name</h4>
+<pre>
+<b>month_name</b>(n)
+
+INPUT
+   n         Month number. <span class="type"> [integer]</span>
+
+RETURNS
+   The character string associated with a month. For now all 
+   calendars have 12 months and will return standard names. 
+  <span class="type"> [character]</span>
+</pre>
+</li>
+<li><a name="time_manager_init"></a><h4>time_manager_init</h4>
+<pre>
+call <b>time_manager_init</b>()
+
+DESCRIPTION
+   There are no arguments in this routine and it does not  have to be 
+   called. All it does is to write the version information to the log file.
+   There are no arguments.
+</pre>
+</li>
+<li><a name="print_time"></a><h4>print_time & print_date</h4>
+<pre>
+call <b>print_time</b> (time, str, unit)
+call <b>print_date</b> (time, str, unit)
+
+DESCRIPTION
+   Prints the given time_type argument either as a time (using days and
+   seconds) or as a date (using year,month,day,hour,minutes and seconds).
+
+INPUT
+   time  Time that will be printed.<span class="type"> [time_type]</span>
+
+OPTIONAL INPUT
+   str   Character string that precedes the printed time or date.
+         The default string is "TIME:" or "DATE:".
+               <span class="type"> [character]</span>
+
+   unit  Unit number for printed output. The default unit is stdout.
+                <span class="type"> [integer]</span>
+NOTE
+   Users may want to check the processor number before calling
+   print_time or print_date. These routines will try to print
+   on all processors.
+</pre>
+</li>
+</ol>
+<!-- END ROUTINES -->
+<!-------------------------------------------------------------------->
+<a name="NAMELIST"></a>
+<hr>
+<h4>NAMELIST</h4>
+<!-- BEGIN NAMELIST -->
+<div>
+
+     None
+
+</div><br>
+<!-- END NAMELIST -->
+<!-------------------------------------------------------------------->
+<a name="DIAGNOSTIC FIELDS"></a>
+<hr>
+<h4>DIAGNOSTIC FIELDS</h4>
+<!-- BEGIN DIAGNOSTICS -->
+<div>
+
+    None.
+
+</div><br>
+<!-- END DIAGNOSTICS -->
+<!-------------------------------------------------------------------->
+<a name="DATA SETS"></a>
+<hr>
+<h4>DATA SETS</h4>
+<!-- BEGIN DATA_SETS -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END DATA_SETS -->
+<!-------------------------------------------------------------------->
+<a name="ERROR MESSAGES"></a>
+<hr>
+<h4>ERROR MESSAGES</h4>
+<!-- BEGIN ERRORS -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END ERRORS -->
+<!-------------------------------------------------------------------->
+<a name="REFERENCES"></a>
+<hr>
+<h4>REFERENCES</h4>
+<!-- BEGIN REFERENCES -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END REFERENCES -->
+<!-------------------------------------------------------------------->
+<a name="COMPILER"></a>
+<hr>
+<h4>COMPILER SPECIFICS</h4>
+<!-- BEGIN COMPILER -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END COMPILER -->
+<!-------------------------------------------------------------------->
+<a name="PRECOMPILER"></a>
+<hr>
+<h4>PRECOMPILER OPTIONS</h4>
+<!-- BEGIN PRECOMPILER -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END PRECOMPILER -->
+<!-------------------------------------------------------------------->
+<a name="LOADER"></a>
+<hr>
+<h4>LOADER OPTIONS</h4>
+<!-- BEGIN LOADER -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END LOADER -->
+<!-------------------------------------------------------------------->
+<a name="BUGS"></a>
+<hr>
+<h4>KNOWN BUGS</h4>
+<!-- BEGIN BUGS -->
+<div>
+
+     None.
+
+</div><br>
+<!-- END BUGS -->
+<!-------------------------------------------------------------------->
+<a name="NOTES"></a>
+<hr>
+<h4>NOTES</h4>
+<!-- BEGIN NOTES -->
+<div>
+<p>The Gregorian calendar type is not completely implemented, and currently 
+no effort is put on it since it doesn't differ from Julian in use between 
+1901 and 2099.</p>
+
+<p>The <a name="base date">base date</a> is implicitly defined so users don't need to be concerned 
+with it. For the curious, the base date is defined as 0 seconds, 0 minutes, 
+0 hours, day 1, month 1, year 1 for the Julian and thirty_day_months 
+calendars, and 1 January, 1900, 0 seconds, 0 minutes, 0 hour for the 
+Gregorian calendar. </p>
+
+<p>WARNING: Please note that a time is a positive definite quantity.</p>
+
+
+<p>  Examples for using the module </p>
+
+
+<p> The following is a simple program that shows some of the capabilities of the 
+ time manager.</p>
+<a name="TEST PROGRAM"><b>Test Program</b></a>
+<pre>
+program time_main2
+
+     use time_manager_mod
+     implicit none
+     type(time_type) :: dt, init_date, astro_base_date, time, final_date
+     type(time_type) :: next_rad_time, mid_date
+     type(time_type) :: repeat_alarm_freq, repeat_alarm_length
+     integer :: num_steps, i, days, months, years, seconds, minutes, hours
+     integer :: months2, length
+     real :: astro_days
+
+!Set calendar type
+!    call set_calendar_type(THIRTY_DAY_MONTHS)
+     call set_calendar_type(JULIAN)
+!    call set_calendar_type(NO_LEAP)
+
+! Set timestep
+     dt = set_time(1100, 0)
+
+! Set initial date
+     init_date = set_date(1992, 1, 1)
+
+! Set date for astronomy delta calculation
+     astro_base_date = set_date(1970, 1, 1, 12, 0, 0)
+
+! Copy initial time to model current time
+     time = init_date
+
+! Determine how many steps to do to run one year
+     final_date = increment_date(init_date, years = 1)
+     num_steps = (final_date - init_date) / dt
+     write(*, *) 'Number of steps is' , num_steps
+
+! Want to compute radiation at initial step, then every two hours
+     next_rad_time = time + set_time(7200, 0)
+
+! Test repeat alarm
+     repeat_alarm_freq = set_time(0, 1)
+     repeat_alarm_length = set_time(7200, 0)
+
+! Loop through a year
+     do i = 1, num_steps
+
+! Increment time
+     time = time + dt
+
+! Test repeat alarm
+     if(repeat_alarm(time, repeat_alarm_freq, repeat_alarm_length)) &
+     write(*, *) 'REPEAT ALARM IS TRUE'
+
+! Should radiation be computed? Three possible tests.
+! First test assumes exact interval; just ask if times are equal
+!     if(time == next_rad_time) then
+! Second test computes rad on last time step that is <= radiation time
+!     if((next_rad_time - time) < dt .and. time < next_rad) then
+! Third test computes rad on time step closest to radiation time
+      if(interval_alarm(time, dt, next_rad_time, set_time(7200, 0))) then
+        call get_date(time, years, months, days, hours, minutes, seconds)
+        write(*, *) days, month_name(months), years, hours, minutes, seconds
+
+! Need to compute real number of days between current time and astro_base
+        call get_time(time - astro_base_date, seconds, days)
+        astro_days = days + seconds / 86400.
+!       write(*, *) 'astro offset ', astro_days
+     end if
+
+! Can compute daily, monthly, yearly, hourly, etc. diagnostics as for rad
+
+! Example: do diagnostics on last time step of this month
+     call get_date(time + dt, years, months2, days, hours, minutes, seconds)
+     call get_date(time, years, months, days, hours, minutes, seconds)
+     if(months /= months2) then
+        write(*, *) 'last timestep of month'
+        write(*, *) days, months, years, hours, minutes, seconds
+     endif
+
+! Example: mid-month diagnostics; inefficient to make things clear
+     length = days_in_month(time)
+     call get_date(time, years, months, days, hours, minutes, seconds)
+     mid_date = set_date(years, months, 1) + set_time(0, length) / 2
+
+     if(time < mid_date .and. (mid_date - time) < dt) then
+        write(*, *) 'mid-month time'
+        write(*, *) days, months, years, hours, minutes, seconds
+     endif
+
+     end do
+
+end program time_main2
+</pre>
+</div>
+<!-- END NOTES -->
+<!-------------------------------------------------------------------->
+<a name="PLANS"></a>
+<hr>
+<h4>FUTURE PLANS</h4>
+<!-- BEGIN PLANS -->
+<div>
+     None.
+</div><br>
+<!-- END PLANS -->
+<!-------------------------------------------------------------------->
+<hr>
+</body>
+</html>

@@ -17,14 +17,8 @@
 #endif
 
       if( .NOT.mpp_initialized )call mpp_error( FATAL, 'MPP_SUM: You must first call mpp_init.' )
-      if( npes.EQ.1 )return
+      n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
 
-      if( PRESENT(pelist) )then
-          if( size(pelist).EQ.1 )return
-      end if
-
-      n = 1                     !default (world) PEset number
-      if( PRESENT(pelist) )n = get_peset(pelist)
       if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
 #ifdef use_libSMA
 !allocate space from the stack for pwrk and b
@@ -41,7 +35,7 @@
 #endif use_libSMA
 #ifdef use_libMPI
       if( verbose )call mpp_error( NOTE, 'MPP_SUM: using MPI_ALLREDUCE...' )
-      if( debug )write( stderr,* )'pe, n, peset(n)%id=', pe, n, peset(n)%id
+      if( debug )write( stderr(),* )'pe, n, peset(n)%id=', pe, n, peset(n)%id
       call MPI_ALLREDUCE( a, work, length, MPI_TYPE_, MPI_SUM, peset(n)%id, error )
 #endif
       a(1:length) = work(1:length)

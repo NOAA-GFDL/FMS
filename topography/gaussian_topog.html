@@ -1,0 +1,287 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>module gaussian_topog</title>
+  <link rel="stylesheet" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" type="text/css">
+  <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP">
+</head>
+<body>
+<font size=1 class="header">
+<a href="#PUBLIC INTERFACE">PUBLIC INTERFACE </a>~
+<a href="#PUBLIC DATA">PUBLIC DATA </a>~
+<a href="#PUBLIC ROUTINES">PUBLIC ROUTINES </a>~
+<a href="#NAMELIST">NAMELIST </a>~
+<a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
+<a href="#NOTES">NOTES </a>
+</font><hr>
+
+
+<h2>module gaussian_topog</h2>
+<a name="HEADER"></a>
+<!-- BEGIN HEADER -->
+<div>
+     <b>Contact:</b> &nbsp;  Bruce Wyman <br>
+     <b>Reviewers:</b>&nbsp; <br>
+     <b>Change History:&nbsp; </b><a HREF="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/topography/gaussian_topog.f90">WebCVS Log</a> <br>
+     <b>Last Modified:</b>&nbsp; $Date: 2002/02/22 19:14:53 $
+</div><br>
+<!-- END HEADER -->
+<!-------------------------------------------------------------------->
+<a name="OVERVIEW"></a>
+<hr>
+<h4>OVERVIEW</h4>
+<!-- BEGIN OVERVIEW -->
+<div>
+Routines for creating Gaussian-shaped land surface topography
+for latitude-longitude grids.
+</div>
+<!-- END OVERVIEW -->
+<!-------------------------------------------------------------------->
+<a name="DESCRIPTION"></a>
+<!-- BEGIN DESCRIPTION -->
+<div>
+<p>Interfaces generate simple Gaussian-shaped mountains from
+     parameters specified by either argument list or namelist input.
+     The mountain shapes are controlled by the height, half-width,
+     and ridge-width parameters.</p>
+</div>
+<!-- END DESCRIPTION -->
+<!-------------------------------------------------------------------->
+<a name="OTHER MODULES USED"></a>
+<hr>
+<h4>OTHER MODULES USED</h4>
+<!-- BEGIN OTHER MODULES USED -->
+<pre>
+    fms_mod
+</pre>
+<!-- END OTHER MODULES USED -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC INTERFACE"></a>
+<hr>
+<h4>PUBLIC INTERFACE</h4>
+<!-- BEGIN PUBLIC INTERFACE -->
+<div>
+<pre>
+
+<b>use gaussian_topog_mod</b> [, only: get_gaussian_topog,
+                                gaussian_topog_init ]
+</pre>
+<dl>
+<dt><a href="#get_gaussian_topog">get_gaussian_topog:</a></dt>
+     <dd> Returns a simple surface height field that consists
+        of a single Gaussian-shaped mountain.</dd>
+<dt><a href="#gaussian_topog_init">gaussian_topog_init:</a></dt>
+     <dd> Returns a surface height field that consists
+        of the sum of one or more Gaussian-shaped mountains.</dd>
+</dl>
+</div><br>
+<!-- END INTERFACE -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC DATA"></a>
+<hr>
+<h4>PUBLIC DATA</h4>
+<!-- BEGIN DATA_TYPES -->
+<div>
+     None
+</div><br>
+<!-- END DATA_TYPES -->
+<!-------------------------------------------------------------------->
+<a name="PUBLIC ROUTINES"></a>
+<hr>
+<h4>PUBLIC ROUTINES</h4>
+<!-- BEGIN PUBLIC ROUTINES -->
+<ol type="a">
+<li><a name="get_gaussian_topog"></a><h4>get_gaussian_topog</h4>
+<pre>
+zsurf = <b>get_gaussian_topog</b> ( lon, lat, height
+                           [, olond, olatd, wlond, wlatd, rlond, rlatd ] )
+
+DESCRIPTION
+    Returns a single Gaussian-shaped mountain.
+    The height, position, width, and elongation of the mountain
+    is controlled by optional arguments.
+
+INPUT
+    lon       The mean grid box longitude in radians.
+               <span class="type">[real, dimension(:)]</span>
+
+    lat       The mean grid box latitude in radians.
+               <span class="type">[real, dimension(:)]</span>
+
+    height    Maximum surface height in meters.
+               <span class="type">[real]</span>
+
+OPTIONAL INPUT
+    olond, olatd    Position/origin of mountain in degrees longitude and latitude.
+                    This is the location of the maximum height.
+                     <span class="type">[real, default: olond=90., olatd=45.]</span>
+
+    wlond, wlatd    Gaussian half-width of mountain in degrees longitude and latitude.
+                     <span class="type">[real, default: wlond=wlatd=15.]</span>
+
+    rlond, rlatd    Ridge half-width of mountain in degrees longitude and latitude.
+                    This is the elongation of the maximum height.
+                     <span class="type">[real, default: rlond=rlatd=0.]</span>
+
+RETURNS
+    zsurf     The surface height (in meters).
+              The size of the returned field is size(lon) by size(lat).
+               <span class="type">[real, dimension(:,:)]</span>
+
+NOTE
+    Mountains do not wrap around the poles.
+</pre>
+</li>
+<li><a name="gaussian_topog_init"></a><h4>gaussian_topog_init</h4>
+
+<pre>
+<b>call gaussian_topog_init</b> ( lon, lat, zsurf )
+
+DESCRIPTION
+    Returns a land surface topography that consists of a "set" of
+    simple Gaussian-shaped mountains.  The height, position,
+    width, and elongation of the mountains can be controlled
+    by variables in namelist <a href="#NAMELIST">&#38;gaussian_topog_nml</a>.
+
+INPUT
+    lon       The mean grid box longitude in radians.
+               <span class="type">[real, dimension(:)]</span>
+
+    lat       The mean grid box latitude in radians.
+               <span class="type">[real, dimension(:)]</span>
+
+OUTPUT
+    zsurf     The surface height (in meters).
+              The size of this field must be size(lon) by size(lat).
+               <span class="type">[real, dimension(:,:)]</span>
+</pre>
+</li>
+</ol>
+<!-- END PUBLIC ROUTINES -->
+<!-------------------------------------------------------------------->
+<a name="NAMELIST"></a>
+<hr>
+<h4>NAMELIST</h4>
+<!-- BEGIN NAMELIST -->
+<div>
+<b>&#38;gaussian_topog_nml</b>
+<br><br>
+<dl>
+<dt><tt>height</tt></dt>
+    <dd>Height in meters of the Gaussian mountains.
+                    <span class="type"><font size=2>[real, dimension(mxmtns), default: height = 0.]</FONT></span></dd>
+<dt><tt>olon, olat</tt></dt>
+    <dd>The longitude and latitude of mountain origins (in degrees).
+                    <span class="type"><font size=2>[real, dimension(mxmtns), default: olon=olat=0.]</FONT></span></dd>
+<dt><tt>wlon, wlat</tt></dt>
+    <dd>The longitude and latitude half-width of
+                  mountain tails (in degrees).
+                    <span class="type"><font size=2>[real, dimension(mxmtns), default: wlon=wlat=0.]</FONT></span></dd>
+<dt><tt>rlon, rlat</tt></dt>
+    <dd>The longitude and latitude half-width of
+                  mountain ridges (in degrees).  For a
+                  "standard" Gaussian mountain set rlon=rlat=0.
+                    <span class="type"><font size=2>[real, dimension(mxmtns), default: rlon=rlat=0.]</FONT></span><br><br></dd>
+<dt>Notes</dt>
+    <dd>The variables in this namelist are only used when routine
+   <tt>gaussian_topog_init</tt> is called.  The namelist variables 
+   are dimensioned (by 10), so that multiple mountains can be generated.<br><br></dd>
+   <dd>Internal parameter mxmtns = 10.<br>
+    By default no mountains are generated.</dd>
+</dl>
+</div><br>
+<!-- END NAMELIST -->
+<!-------------------------------------------------------------------->
+<a name="DIAGNOSTIC FIELDS"></a>
+<hr>
+<h4>DIAGNOSTIC FIELDS</h4>
+<!-- BEGIN DIAGNOSTICS -->
+<div>None.</div><br>
+<!-- END DIAGNOSTICS -->
+<!-------------------------------------------------------------------->
+<a name="DATA SETS"></a>
+<hr>
+<h4>DATA SETS</h4>
+<!-- BEGIN DATA_SETS -->
+<div>
+None.
+</div><br>
+<!-- END DATA_SETS -->
+<!-------------------------------------------------------------------->
+<a name="ERROR MESSAGES"></a>
+<hr>
+<h4>ERROR MESSAGES</h4>
+<!-- BEGIN ERROR MESSAGES -->
+<div>
+<dl>
+<dt><b>FATAL errors in get_gaussian_topog</b></dt>
+    <dd><span class="errmsg">shape(zsurf) is not equal to (/size(lon),size(lat)/)</span><br>
+        Check the input grid size and output field size.
+        The input grid is defined at the midpoint of grid boxes.</dd>
+</dl>
+</div><br>
+<!-- END ERROR MESSAGES -->
+<!-------------------------------------------------------------------->
+<a name="KNOWN BUGS"></a>
+<hr>
+<h4>KNOWN BUGS</h4>
+<!-- BEGIN KNOWN BUGS -->
+<div>
+
+None.
+</div><br>
+<!-- END KNOWN BUGS -->
+<!-------------------------------------------------------------------->
+<a name="NOTES"></a>
+<hr>
+<h4>NOTES</h4>
+<!-- BEGIN NOTES -->
+<div>
+<PRE>
+NAMELIST FOR GENERATING GAUSSIAN MOUNTAINS
+
+  * multiple mountains can be generated
+  * the final mountains are the sum of all
+
+       height = height in meters
+       olon, olat = longitude,latitude origin              (degrees)
+       rlon, rlat = longitude,latitude half-width of ridge (degrees)
+       wlon, wlat = longitude,latitude half-width of tail  (degrees)
+
+       Note: For the standard gaussian mountain
+             set rlon = rlat = 0 .
+
+
+
+       height -->   ___________________________
+                   /                           \
+                  /              |              \
+    gaussian     /               |               \
+      sides --> /                |                \
+               /               olon                \
+         _____/                olat                 \______
+
+              |    |             |
+              |<-->|<----------->|
+              |wlon|    rlon     |
+               wlat     rlat
+
+
+</PRE>
+
+<p>See the <a href="topography.html#TEST PROGRAM">topography </a>module documentation for a test program.</p>
+</div>
+<!-- END NOTES -->
+<!-------------------------------------------------------------------->
+<a name="FUTURE PLANS"></a>
+<hr>
+<h4>FUTURE PLANS</h4>
+<!-- BEGIN FUTURE PLANS -->
+<div>
+None.
+</div><br>
+<!-- END FUTURE PLANS -->
+<!-------------------------------------------------------------------->
+<hr>
+</body>
+</html>

@@ -27,16 +27,10 @@ module mpp_io_mod
   private
 
   character(len=128), private :: version= &
-       '$Id: mpp_io.F90,v 6.4 2001/10/25 17:55:32 fms Exp $'
+       '$Id: mpp_io.F90,v 6.5 2002/02/22 19:09:27 fms Exp $'
   character(len=128), private :: name= &
-       '$Name: fez $'
+       '$Name: galway $'
 
-#ifdef SGICRAY
-!see intro_io(3F): to see why these values are used rather than 5,6,0
-  integer, parameter, private :: stdin=100, stdout=101, stderr=102
-#else
-  integer, parameter, private :: stdin=5, stdout=6, stderr=0
-#endif
   integer, private :: pe, npes
 
   type, public :: axistype
@@ -53,10 +47,9 @@ module mpp_io_mod
   end type axistype
 
   type, public :: atttype
-     private
      integer :: type, len
      character(len=128) :: name
-     character(len=256)  :: catt
+     character(len=256) :: catt
 ! just use type conversion for integers
      real, pointer :: fatt(:)
   end type atttype
@@ -82,14 +75,14 @@ module mpp_io_mod
      integer :: action, format, access, threading, fileset, record, ncid
      logical :: opened, initialized, nohdrs
      integer :: time_level
-     real :: time
+     real(DOUBLE_KIND) :: time
      integer :: id             !variable ID of time axis associated with file (only one time axis per file)
      integer :: recdimid             !dim ID of time axis associated with file (only one time axis per file)
 !
 ! time axis values are stored here instead of axis%data since mpp_write
 ! assumes these values are not time values. Not used in mpp_write
 !
-     real, dimension(:), pointer :: time_values
+     real(DOUBLE_KIND), pointer :: time_values(:)
 
 ! additional elements of filetype for mpp_read (ignored for mpp_write)
      integer :: ndim, nvar, natt  ! number of dimensions, non-dimension variables and global attributes
@@ -122,11 +115,14 @@ module mpp_io_mod
   character(len=256) :: text
 !null unit: returned by PEs not participating in IO after a collective call
   integer, parameter, private :: NULLUNIT=-1
-  real, parameter, private :: NULLTIME=-1.
+  real(DOUBLE_KIND), parameter, private :: NULLTIME=-1.
   logical, private :: verbose=.FALSE., debug=.FALSE., mpp_io_initialized=.FALSE.
 
+  real(DOUBLE_KIND), private, allocatable :: mpp_io_stack(:)
+  integer, private :: mpp_io_stack_size=0, mpp_io_stack_hwm=0
+  
   interface mpp_write_meta
-     module procedure mpp_write_meta
+     module procedure mpp_write_meta_var
      module procedure mpp_write_meta_scalar_r
      module procedure mpp_write_meta_scalar_i
      module procedure mpp_write_meta_axis
@@ -143,33 +139,22 @@ module mpp_io_mod
   end interface
      
   interface mpp_write
-     module procedure mpp_write_2ddecomp_r8_2d
-     module procedure mpp_write_2ddecomp_r8_3d
-     module procedure mpp_write_2ddecomp_r8_4d
-     module procedure mpp_write_2ddecomp_r8_5d
-     module procedure mpp_write_1ddecomp_r8_1d
-     module procedure mpp_write_1ddecomp_r8_2d
-     module procedure mpp_write_1ddecomp_r8_3d
-     module procedure mpp_write_1ddecomp_r8_4d
-     module procedure mpp_write_1ddecomp_r8_5d
-     module procedure mpp_write_r8_0D
-     module procedure mpp_write_r8_1D
-     module procedure mpp_write_r8_2D
-     module procedure mpp_write_r8_3D
-     module procedure mpp_write_r8_4D
-     module procedure mpp_write_r8_5D
+     module procedure mpp_write_2ddecomp_r2d
+     module procedure mpp_write_2ddecomp_r3d
+     module procedure mpp_write_r0D
+     module procedure mpp_write_r1D
+     module procedure mpp_write_r2D
+     module procedure mpp_write_r3D
      module procedure mpp_write_axis
   end interface
 
   interface mpp_read
-     module procedure mpp_read_2ddecomp_r8_2d
-     module procedure mpp_read_2ddecomp_r8_3d
-     module procedure mpp_read_2ddecomp_r8_4d
-     module procedure mpp_read_2ddecomp_r8_5d
-     module procedure mpp_read_3D
-     module procedure mpp_read_2D
-     module procedure mpp_read_1D
-     module procedure mpp_read_0D
+     module procedure mpp_read_2ddecomp_r2d
+     module procedure mpp_read_2ddecomp_r3d
+     module procedure mpp_read_r0D
+     module procedure mpp_read_r1D
+     module procedure mpp_read_r2D
+     module procedure mpp_read_r3D
   end interface
 
   interface mpp_get_id
@@ -191,9 +176,10 @@ module mpp_io_mod
 
   public :: mpp_close, mpp_flush, mpp_get_iospec, mpp_get_id, mpp_get_ncid, mpp_get_unit_range, mpp_io_init, mpp_io_exit, &
             mpp_open, mpp_set_unit_range, mpp_write, mpp_write_meta, mpp_read, mpp_get_info, mpp_get_atts, &
-            mpp_get_fields, mpp_get_times, mpp_get_axes, mpp_copy_meta, mpp_get_recdimid, mpp_get_axis_data, mpp_modify_meta
+            mpp_get_fields, mpp_get_times, mpp_get_axes, mpp_copy_meta, mpp_get_recdimid, mpp_get_axis_data, mpp_modify_meta, &
+            mpp_io_set_stack_size
 
-  private :: read_record, mpp_read_meta
+  private :: read_record, mpp_read_meta, lowercase
 
 #ifdef use_netCDF
 #include <netcdf.inc>
@@ -211,7 +197,6 @@ module mpp_io_mod
 !initialize IO package: initialize mpp_file array, set valid range of units for fortran IO
 
       if( mpp_io_initialized )return
-      if( KIND(0.).NE.DOUBLE_KIND )call mpp_error( FATAL, 'MPP_IO: default reals must be 8-byte: recompile.' )
       call mpp_init(flags)           !if mpp_init has been called, this call will merely return
       pe = mpp_pe()
       npes = mpp_npes()
@@ -284,11 +269,11 @@ module mpp_io_mod
 !set range of allowed fortran unit numbers: could be compiler-dependent (should not overlap stdin/out/err)
       call mpp_set_unit_range( 7, maxunits )
 
-      if( pe.EQ.0 )then
-          write( stdout,'(/a)' )'MPP_IO module '//trim(version)
+      if( pe.EQ.mpp_root_pe() )then
+          write( stdlog(),'(/a)' )'MPP_IO module '//trim(version)
 #ifdef use_netCDF
           text = NF_INQ_LIBVERS()
-          write( stdout,* )'Using netCDF library version '//trim(text)
+          write( stdlog(),'(a)' )'Using netCDF library version '//trim(text)
 #endif
       endif
 
@@ -297,6 +282,7 @@ module mpp_io_mod
       call ASSIGN( 'assign -P thread p:%', error )
 #endif
 
+      call mpp_io_set_stack_size(131072) ! default initial value
       call mpp_sync()
       mpp_io_initialized = .TRUE.
       return
@@ -317,10 +303,32 @@ module mpp_io_mod
       end do
 #endif
 
+      call mpp_max(mpp_io_stack_hwm)
+      
+      if( pe.EQ.mpp_root_pe() )then
+!          write( stdout,'(/a)' )'Exiting MPP_IO module...'
+!          write( stdout,* )'MPP_IO_STACK high water mark=', mpp_io_stack_hwm
+      end if
       deallocate(mpp_file)
       mpp_io_initialized = .FALSE.
       return
     end subroutine mpp_io_exit
+
+    subroutine mpp_io_set_stack_size(n)
+!set the mpp_io_stack variable to be at least n LONG words long
+      integer, intent(in) :: n
+      character(len=8) :: text
+
+      if( n.GT.mpp_io_stack_size .AND. allocated(mpp_io_stack) )deallocate(mpp_io_stack)
+      if( .NOT.allocated(mpp_io_stack) )then
+          allocate( mpp_io_stack(n) )
+          mpp_io_stack_size = n
+          write( text,'(i8)' )n	
+          if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, 'MPP_IO_SET_STACK_SIZE: stack size set to '//text//'.' )	
+      end if
+
+      return
+    end subroutine mpp_io_set_stack_size
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                            !
@@ -376,7 +384,7 @@ module mpp_io_mod
       integer, intent(in), optional :: pelist(:) !default ALL
 
       character(len=16) :: act, acc, for, pos
-      integer :: action_flag, form_flag, access_flag, threading_flag, fileset_flag
+      integer :: action_flag, form_flag, access_flag, threading_flag, fileset_flag, length
       logical :: exists
       character(len=64) :: filespec
       type(axistype) :: unlim    !used by netCDF with mpp_append
@@ -401,7 +409,7 @@ module mpp_io_mod
 
 !get a unit number
       if( threading_flag.EQ.MPP_SINGLE )then
-          if( pe.NE.0 .AND. action_flag.NE.MPP_RDONLY )then
+          if( pe.NE.mpp_root_pe() .AND. action_flag.NE.MPP_RDONLY )then
               unit = NULLUNIT           !PEs not participating in IO from this mpp_open() will return this value for unit
               return
           end if
@@ -421,7 +429,11 @@ module mpp_io_mod
 
 !get a filename
       text = file
-      if( form_flag.EQ.MPP_NETCDF )text = trim(file)//'.nc'
+      length = len(file)
+
+      if( form_flag.EQ.MPP_NETCDF.AND. file(length-2:length) /= '.nc' ) &
+         text = trim(file)//'.nc'
+         
       if( fileset_flag.EQ.MPP_MULTI )write( text,'(a,i4.4)' )trim(text)//'.', pe
       mpp_file(unit)%name = text
       if( verbose )print '(a,2i3,x,a,5i5)', 'MPP_OPEN: PE, unit, filename, action, format, access, threading, fileset=', &
@@ -462,8 +474,8 @@ module mpp_io_mod
       if( threading_flag.EQ.MPP_MULTI )then
 !fileset: MULTI or SINGLE (only for multi-threaded I/O
           if( fileset_flag.EQ.MPP_SINGLE )then
-              if( form_flag.EQ.MPP_NETCDF .AND. act .EQ. 'WRITE' ) &
-                   call mpp_error( FATAL, 'MPP_OPEN: we currently do not support single-file multi-threaded netCDF Output.' )
+              if( form_flag.EQ.MPP_NETCDF .AND. act.EQ.'WRITE' ) &
+                   call mpp_error( FATAL, 'MPP_OPEN: netCDF currently does not support single-file multi-threaded output.' )
 
 #ifdef _CRAYT3E
               call ASSIGN( 'assign -I -F global.privpos f:'//trim(mpp_file(unit)%name), error )
@@ -764,8 +776,8 @@ module mpp_io_mod
 
       if( .NOT.mpp_io_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.0 )return
-      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.0 )return
+      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
+      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.mpp_root_pe() )return
       if( mpp_file(unit)%action.NE.MPP_WRONLY )return !no writing metadata on APPEND
       if( mpp_file(unit)%initialized ) &
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
@@ -801,7 +813,7 @@ module mpp_io_mod
       return
     end subroutine mpp_write_meta_global_scalar_i
 
-    subroutine mpp_write_meta( unit, id, name, rval, ival, cval, pack )
+    subroutine mpp_write_meta_var( unit, id, name, rval, ival, cval, pack )
 !writes a metadata attribute for variable <id> to unit <unit>
 !attribute <name> can be an real, integer or character
 !one and only one of rval, ival, and cval should be present
@@ -816,8 +828,8 @@ module mpp_io_mod
 
       if( .NOT.mpp_io_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.0 )return
-      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.0 )return
+      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
+      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.mpp_root_pe() )return
       if( mpp_file(unit)%action.NE.MPP_WRONLY )return !no writing metadata on APPEND
       if( mpp_file(unit)%initialized ) &
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
@@ -830,7 +842,7 @@ module mpp_io_mod
       end if
 
       return
-    end subroutine mpp_write_meta
+    end subroutine mpp_write_meta_var
 
 !versions of above to support <rval> and <ival> as scalar (because of f90 strict rank matching)
     subroutine mpp_write_meta_scalar_r( unit, id, name, rval, pack )
@@ -868,8 +880,8 @@ module mpp_io_mod
 
       if( .NOT.mpp_io_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.0 )return
-      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.0 )return
+      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
+      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.mpp_root_pe() )return
       if( mpp_file(unit)%action.NE.MPP_WRONLY )return !no writing metadata on APPEND
       if( mpp_file(unit)%initialized ) &
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
@@ -907,6 +919,7 @@ module mpp_io_mod
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
 #ifdef use_netCDF
 !write axis def
+!space axes are always floats, time axis is always double
           if( ASSOCIATED(axis%data) )then !space axis
               if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
                   error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, ie-is+1,         axis%did )
@@ -980,8 +993,8 @@ module mpp_io_mod
 
       if( .NOT.mpp_io_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.0 )return
-      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.0 )return
+      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
+      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.mpp_root_pe() )return
       if( mpp_file(unit)%action.NE.MPP_WRONLY )return !no writing metadata on APPEND
       if( mpp_file(unit)%initialized ) &
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
@@ -1016,15 +1029,7 @@ module mpp_io_mod
       
 !pack is currently used only for netCDF
       field%pack = 2        !default write 32-bit floats
-      if( PRESENT(pack) )then
-          if( pack.NE.1 .AND. pack.NE.2 )then
-              if( pack.NE.4 .AND. pack.NE.8 ) &
-                   call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: only legal packing values are 1,2,4,8.' )
-              if( .NOT.PRESENT(scale) .OR. .NOT.PRESENT(add) ) &
-                   call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: scale and add must be supplied when pack=4 or 8.' )
-          end if
-          field%pack = pack
-      end if
+      if( PRESENT(pack) )field%pack = pack
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
 #ifdef use_netCDF
           allocate( axis_id(size(field%axes)) )
@@ -1032,15 +1037,22 @@ module mpp_io_mod
              axis_id(i) = field%axes(i)%did
           end do
 !write field def
-          if( field%pack.EQ.1 )then
-              error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_DOUBLE, size(field%axes), axis_id, field%id )
-          else if( field%pack.EQ.2 )then
-              error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_FLOAT,  size(field%axes), axis_id, field%id )
-          else if( field%pack.EQ.4 )then
-              error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_SHORT,  size(field%axes), axis_id, field%id )
-          else if( field%pack.EQ.8 )then
-              error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_BYTE,   size(field%axes), axis_id, field%id )
-          end if
+          select case (field%pack)
+              case(1)
+                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_DOUBLE, size(field%axes), axis_id, field%id )
+              case(2)
+                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_FLOAT,  size(field%axes), axis_id, field%id )
+              case(4)
+                  if( .NOT.PRESENT(scale) .OR. .NOT.PRESENT(add) ) &
+                       call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: scale and add must be supplied when pack=4.' )
+                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_SHORT,  size(field%axes), axis_id, field%id )
+              case(8)
+                  if( .NOT.PRESENT(scale) .OR. .NOT.PRESENT(add) ) &
+                       call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: scale and add must be supplied when pack=8.' )
+                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_BYTE,   size(field%axes), axis_id, field%id )
+              case default
+                  call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: only legal packing values are 1,2,4,8.' )
+          end select
           call netcdf_err(error)
 #endif
       else
@@ -1107,7 +1119,6 @@ module mpp_io_mod
       return
     end subroutine mpp_write_meta_field
 
-
     subroutine write_attribute( unit, name, rval, ival, cval, pack )
 !called to write metadata for non-netCDF I/O
       integer, intent(in) :: unit
@@ -1160,28 +1171,55 @@ module mpp_io_mod
 !pack is only meaningful for FP numbers
           if( PRESENT(pack) )then
               if( pack.EQ.1 )then
-                  error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_DOUBLE, size(rval), rval ); call netcdf_err(error)
+                  if( KIND(rval).EQ.DOUBLE_KIND )then
+                      error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_DOUBLE, size(rval), rval )
+                  else if( KIND(rval).EQ.FLOAT_KIND )then
+                      call mpp_error( WARNING, &
+                           'WRITE_ATTRIBUTE_NETCDF: attempting to write internal 32-bit real as external 64-bit.' )
+                      error = NF_PUT_ATT_REAL  ( mpp_file(unit)%ncid, id, name, NF_DOUBLE, size(rval), rval )
+                  end if
+                  call netcdf_err(error)
               else if( pack.EQ.2 )then
-                  error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_FLOAT,  size(rval), rval ); call netcdf_err(error)
+                  if( KIND(rval).EQ.DOUBLE_KIND )then
+                      error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_FLOAT,  size(rval), rval )
+                  else if( KIND(rval).EQ.FLOAT_KIND )then
+                      error = NF_PUT_ATT_REAL  ( mpp_file(unit)%ncid, id, name, NF_FLOAT,  size(rval), rval )
+                  end if
+                  call netcdf_err(error)
               else if( pack.EQ.4 )then
                   allocate( rval_i(size(rval)) )
                   rval_i = rval
-                  error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_SHORT,  size(rval_i), rval ); call netcdf_err(error)
+                  if( KIND(rval).EQ.DOUBLE_KIND )then
+                      error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_SHORT,  size(rval_i), rval )
+                  else if( KIND(rval).EQ.FLOAT_KIND )then
+                      error = NF_PUT_ATT_REAL  ( mpp_file(unit)%ncid, id, name, NF_SHORT,  size(rval_i), rval )
+                  end if
+                  call netcdf_err(error)
                   deallocate(rval_i)
               else if( pack.EQ.8 )then
                   allocate( rval_i(size(rval)) )
                   rval_i = rval
-                  error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_BYTE,   size(rval_i), rval ); call netcdf_err(error)
+                  if( KIND(rval).EQ.DOUBLE_KIND )then
+                      error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_BYTE,   size(rval_i), rval )
+                  else if( KIND(rval).EQ.FLOAT_KIND )then
+                      error = NF_PUT_ATT_REAL  ( mpp_file(unit)%ncid, id, name, NF_BYTE,   size(rval_i), rval )
+                  end if
+                  call netcdf_err(error)
                   deallocate(rval_i)
               else
                   call mpp_error( FATAL, 'WRITE_ATTRIBUTE_NETCDF: only legal packing values are 1,2,4,8.' )
               end if
           else
 !default is to write FLOATs (32-bit)
-              error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_FLOAT,  size(rval), rval ); call netcdf_err(error)
+              if( KIND(rval).EQ.DOUBLE_KIND )then
+                  error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_FLOAT,  size(rval), rval )
+              else if( KIND(rval).EQ.FLOAT_KIND )then
+                  error = NF_PUT_ATT_REAL  ( mpp_file(unit)%ncid, id, name, NF_FLOAT,  size(rval), rval )
+              end if
+              call netcdf_err(error)
           end if
       else if( PRESENT(ival) )then
-          error = NF_PUT_ATT_INT( mpp_file(unit)%ncid, id, name, NF_INT, size(ival), ival ); call netcdf_err(error)
+          error = NF_PUT_ATT_INT ( mpp_file(unit)%ncid, id, name, NF_INT, size(ival), ival ); call netcdf_err(error)
       else if( present(cval) )then
           error = NF_PUT_ATT_TEXT( mpp_file(unit)%ncid, id, name, len_trim(cval), cval ); call netcdf_err(error)
       else
@@ -1241,55 +1279,33 @@ module mpp_io_mod
 ! performs the actual write. This routine is private to this module.   !
 !                                                                      !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#define MPP_WRITE_2DDECOMP_2D_ mpp_write_2ddecomp_r8_2d
-#define MPP_WRITE_2DDECOMP_3D_ mpp_write_2ddecomp_r8_3d
-#define MPP_WRITE_2DDECOMP_4D_ mpp_write_2ddecomp_r8_4d
-#define MPP_WRITE_2DDECOMP_5D_ mpp_write_2ddecomp_r8_5d
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_WRITE_2DDECOMP_2D_ mpp_write_2ddecomp_r2d
+#define MPP_WRITE_2DDECOMP_3D_ mpp_write_2ddecomp_r3d
+#define MPP_TYPE_ real
 #include <mpp_write_2Ddecomp.h>
 
-#define MPP_WRITE_1DDECOMP_1D_ mpp_write_1ddecomp_r8_1d
-#define MPP_WRITE_1DDECOMP_2D_ mpp_write_1ddecomp_r8_2d
-#define MPP_WRITE_1DDECOMP_3D_ mpp_write_1ddecomp_r8_3d
-#define MPP_WRITE_1DDECOMP_4D_ mpp_write_1ddecomp_r8_4d
-#define MPP_WRITE_1DDECOMP_5D_ mpp_write_1ddecomp_r8_5d
-#define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_write_1Ddecomp.h>
-
-#define MPP_WRITE_ mpp_write_r8_0D
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_WRITE_ mpp_write_r0D
+#define MPP_TYPE_ real
 #define MPP_RANK_ !
 #define MPP_WRITE_RECORD_ call write_record( unit, field, 1, (/data/), tstamp )
 #include <mpp_write.h>
 
-#define MPP_WRITE_ mpp_write_r8_1D
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_WRITE_ mpp_write_r1D
+#define MPP_TYPE_ real
 #define MPP_WRITE_RECORD_ call write_record( unit, field, size(data), data, tstamp )
 #define MPP_RANK_ (:)
 #include <mpp_write.h>
 
-#define MPP_WRITE_ mpp_write_r8_2D
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_WRITE_ mpp_write_r2D
+#define MPP_TYPE_ real
 #define MPP_WRITE_RECORD_ call write_record( unit, field, size(data), data, tstamp )
 #define MPP_RANK_ (:,:)
 #include <mpp_write.h>
 
-#define MPP_WRITE_ mpp_write_r8_3D
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_WRITE_ mpp_write_r3D
+#define MPP_TYPE_ real
 #define MPP_WRITE_RECORD_ call write_record( unit, field, size(data), data, tstamp )
 #define MPP_RANK_ (:,:,:)
-#include <mpp_write.h>
-
-#define MPP_WRITE_ mpp_write_r8_4D
-#define MPP_TYPE_ real(DOUBLE_KIND)
-#define MPP_WRITE_RECORD_ call write_record( unit, field, size(data), data, tstamp )
-#define MPP_RANK_ (:,:,:,:)
-#include <mpp_write.h>
-
-#define MPP_WRITE_ mpp_write_r8_5D
-#define MPP_TYPE_ real(DOUBLE_KIND)
-#define MPP_WRITE_RECORD_ call write_record( unit, field, size(data), data, tstamp )
-#define MPP_RANK_ (:,:,:,:,:)
 #include <mpp_write.h>
 
     subroutine mpp_write_axis( unit, axis )
@@ -1300,8 +1316,8 @@ module mpp_io_mod
 
       if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.0 )return
-      if( mpp_file(unit)%fileset  .EQ.MPP_SINGLE .AND. pe.NE.0 )return
+      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
+      if( mpp_file(unit)%fileset  .EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
 !we convert axis to type(fieldtype) in order to call write_record
       field = default_field
       allocate( field%axes(1) )
@@ -1352,10 +1368,20 @@ module mpp_io_mod
 #endif
       integer :: i, is, ie, js, je, isg, ieg, jsg, jeg, isizc, jsizc, isizg, jsizg
 
+#ifdef use_CRI_pointers
+      pointer( ptr1, data_r4)
+      pointer( ptr2, packed_data)
+
+      if (mpp_io_stack_size < 2*nwords) call mpp_io_set_stack_size(2*nwords)
+
+      ptr1 = LOC(mpp_io_stack(1))
+      ptr2 = LOC(mpp_io_stack(nwords+1))
+#endif
+
       if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.0 )return
-      if( mpp_file(unit)%fileset  .EQ.MPP_SINGLE .AND. pe.NE.0 )return
+      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
+      if( mpp_file(unit)%fileset  .EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
 
       if( .NOT.mpp_file(unit)%initialized )then
 !this is the first call to mpp_write
@@ -1415,6 +1441,7 @@ module mpp_io_mod
           do i = 1,size(field%axes)
              axsiz(i) = field%size(i)
              if( i.EQ.field%time_axis_index )start(i) = mpp_file(unit)%time_level
+	     start(i) = max(start(i),1) 
           end do
           if( PRESENT(domain) )then
               call mpp_get_compute_domain( domain, is,  ie,  js,  je,  xsize=isizc, ysize=jsizc )
@@ -1439,15 +1466,23 @@ module mpp_io_mod
 #ifdef use_netCDF
 !write time information if new time
           if( newtime )then
-              error = NF_PUT_VAR1_DOUBLE( mpp_file(unit)%ncid, mpp_file(unit)%id, mpp_file(unit)%time_level, time )
-              call netcdf_err(error)
+              if( KIND(time).EQ.DOUBLE_KIND )then
+                  error = NF_PUT_VAR1_DOUBLE( mpp_file(unit)%ncid, mpp_file(unit)%id, mpp_file(unit)%time_level, time )
+              else if( KIND(time).EQ.FLOAT_KIND )then
+                  error = NF_PUT_VAR1_REAL  ( mpp_file(unit)%ncid, mpp_file(unit)%id, mpp_file(unit)%time_level, time )
+              end if
           end if
           if( field%pack.LE.2 )then
-              error = NF_PUT_VARA_DOUBLE( mpp_file(unit)%ncid, field%id, start, axsiz, data        ); call netcdf_err(error)
+              if( KIND(data).EQ.DOUBLE_KIND )then
+                  error = NF_PUT_VARA_DOUBLE( mpp_file(unit)%ncid, field%id, start, axsiz, data )
+              else if( KIND(data).EQ.FLOAT_KIND )then                                           
+                  error = NF_PUT_VARA_REAL  ( mpp_file(unit)%ncid, field%id, start, axsiz, data )
+              end if
           else              !convert to integer using scale and add: no error check on packed data representation
               packed_data = nint((data-field%add)/field%scale)
               error = NF_PUT_VARA_INT   ( mpp_file(unit)%ncid, field%id, start, axsiz, packed_data )
           end if
+          call netcdf_err(error)
 #endif
       else                      !non-netCDF
 !subdomain contains (/is,ie,js,je/)
@@ -1517,8 +1552,8 @@ module mpp_io_mod
 
       if( .NOT.mpp_io_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.0 )return
-      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.0 )return
+      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
+      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.mpp_root_pe() )return
       if( mpp_file(unit)%action.NE.MPP_WRONLY )return !no writing metadata on APPEND
       if( mpp_file(unit)%initialized ) &
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
@@ -1557,8 +1592,8 @@ module mpp_io_mod
 
       if( .NOT.mpp_io_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.0 )return
-      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.0 )return
+      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
+      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.mpp_root_pe() )return
       if( mpp_file(unit)%action.NE.MPP_WRONLY )return !no writing metadata on APPEND
       if( mpp_file(unit)%initialized ) &
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
@@ -1649,8 +1684,8 @@ module mpp_io_mod
 
       if( .NOT.mpp_io_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.0 )return
-      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.0 )return
+      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
+      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.mpp_root_pe() )return
       if( mpp_file(unit)%action.NE.MPP_WRONLY )return !no writing metadata on APPEND
       if( mpp_file(unit)%initialized ) &
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
@@ -1658,8 +1693,6 @@ module mpp_io_mod
        if( field%pack.NE.1 .AND. field%pack.NE.2 )then
             if( field%pack.NE.4 .AND. field%pack.NE.8 ) &
                call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: only legal packing values are 1,2,4,8.' )
-            if( (field%scale .eq. default_field%scale) .OR. (field%add .eq. default_field%add) ) &
-                   call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: scale and add must be supplied when pack=4 or 8.' )
       end if
 
       if (PRESENT(axes)) then
@@ -1691,11 +1724,15 @@ module mpp_io_mod
               case(2)
                   error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_FLOAT,  size(field%axes), axis_id, field%id )
               case(4)
+                  if( field%scale.EQ.default_field%scale .OR. field%add.EQ.default_field%add ) &
+                       call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: scale and add must be supplied when pack=4.' )
                   error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_SHORT,  size(field%axes), axis_id, field%id )
               case(8)
+                  if( field%scale.EQ.default_field%scale .OR. field%add.EQ.default_field%add ) &
+                       call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: scale and add must be supplied when pack=8.' )
                   error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_BYTE,   size(field%axes), axis_id, field%id )
               case default
-                  call netcdf_err(error)
+                  call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: only legal packing values are 1,2,4,8.' )
           end select
 #endif
       else
@@ -1769,11 +1806,9 @@ module mpp_io_mod
 !                                                                      !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#define MPP_READ_2DDECOMP_2D_ mpp_read_2ddecomp_r8_2d
-#define MPP_READ_2DDECOMP_3D_ mpp_read_2ddecomp_r8_3d
-#define MPP_READ_2DDECOMP_4D_ mpp_read_2ddecomp_r8_4d
-#define MPP_READ_2DDECOMP_5D_ mpp_read_2ddecomp_r8_5d
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_READ_2DDECOMP_2D_ mpp_read_2ddecomp_r2d
+#define MPP_READ_2DDECOMP_3D_ mpp_read_2ddecomp_r3d
+#define MPP_TYPE_ real
 #include <mpp_read_2Ddecomp.h>
 
     subroutine read_record( unit, field, nwords, data, time_level, domain )
@@ -1804,19 +1839,32 @@ module mpp_io_mod
       logical :: newtime
       integer :: subdomain(4), tlevel
 
-      integer(kind=2) :: i2vals(nwords)
+      integer(SHORT_KIND) :: i2vals(nwords)
 #ifdef __sgi      
-      integer(kind=4) :: ivals(nwords)
-      real(kind=4) :: rvals(nwords)
+      integer(INT_KIND) :: ivals(nwords)
+      real(FLOAT_KIND) :: rvals(nwords)
 #else      
       integer :: ivals(nwords)
       real :: rvals(nwords)      
 #endif      
 
-      real(kind=8) :: r8vals(nwords)
+      real(DOUBLE_KIND) :: r8vals(nwords)
 
       integer :: i, error, is, ie, js, je, isg, ieg, jsg, jeg
 
+#ifdef use_CRI_pointers
+      pointer( ptr1, i2vals )
+      pointer( ptr2, ivals )
+      pointer( ptr3, rvals )
+      pointer( ptr4, r8vals )
+
+      if (mpp_io_stack_size < 4*nwords) call mpp_io_set_stack_size(4*nwords)
+
+      ptr1 = LOC(mpp_io_stack(1))
+      ptr2 = LOC(mpp_io_stack(nwords+1))
+      ptr3 = LOC(mpp_io_stack(2*nwords+1))
+      ptr4 = LOC(mpp_io_stack(3*nwords+1))
+#endif
       if (.not.PRESENT(time_level)) then
           tlevel = 0
       else
@@ -1826,7 +1874,7 @@ module mpp_io_mod
 #ifdef use_netCDF
       if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'READ_RECORD: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'READ_RECORD: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.0 )return
+      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
       if( mpp_file(unit)%fileset.EQ.MPP_MULTI )call mpp_error( FATAL, 'READ_RECORD: multiple filesets not supported for MPP_READ' )
 
       if( .NOT.mpp_file(unit)%initialized ) call mpp_error( FATAL, 'MPP_READ: must first call mpp_read_meta.' )
@@ -1891,16 +1939,16 @@ module mpp_io_mod
 ! use type conversion 
                 call mpp_error( FATAL, 'MPP_READ: does not support NF_BYTE packing' )
              case(NF_SHORT)
-                error = NF_GET_VARA_INT2(mpp_file(unit)%ncid, field%id,start,axsiz,i2vals);call netcdf_err(error)
+                error = NF_GET_VARA_INT2  ( mpp_file(unit)%ncid, field%id, start, axsiz, i2vals ); call netcdf_err(error)
                  data(:)=i2vals(:)*field%scale + field%add
              case(NF_INT)
-                error = NF_GET_VARA_INT(mpp_file(unit)%ncid, field%id,start,axsiz,ivals);call netcdf_err(error)
+                error = NF_GET_VARA_INT   ( mpp_file(unit)%ncid, field%id, start, axsiz, ivals  ); call netcdf_err(error)
                 data(:)=ivals(:)
              case(NF_FLOAT)
-                error = NF_GET_VARA_REAL(mpp_file(unit)%ncid, field%id,start,axsiz,rvals);call netcdf_err(error)
+                error = NF_GET_VARA_REAL  ( mpp_file(unit)%ncid, field%id, start, axsiz, rvals  ); call netcdf_err(error)
                 data(:)=rvals(:)
              case(NF_DOUBLE)
-                error = NF_GET_VARA_DOUBLE(mpp_file(unit)%ncid, field%id,start,axsiz,r8vals);call netcdf_err(error)
+                error = NF_GET_VARA_DOUBLE( mpp_file(unit)%ncid, field%id, start, axsiz, r8vals ); call netcdf_err(error)
                 data(:)=r8vals(:)
              case default
                 call mpp_error( FATAL, 'MPP_READ: invalid pack value' )
@@ -1916,34 +1964,34 @@ module mpp_io_mod
       return
     end subroutine read_record
 
-    subroutine mpp_read_3D( unit, field, data, tindex)
+    subroutine mpp_read_r3D( unit, field, data, tindex)
       integer, intent(in) :: unit
       type(fieldtype), intent(in) :: field
       real, intent(inout) :: data(:,:,:)
       integer, intent(in), optional :: tindex
 
       call read_record( unit, field, size(data), data, tindex )
-    end subroutine mpp_read_3D
+    end subroutine mpp_read_r3D
 
-    subroutine mpp_read_2D( unit, field, data, tindex )
+    subroutine mpp_read_r2D( unit, field, data, tindex )
       integer, intent(in) :: unit
       type(fieldtype), intent(in) :: field
       real, intent(inout) :: data(:,:)
       integer, intent(in), optional :: tindex
 
       call read_record( unit, field, size(data), data, tindex )
-    end subroutine mpp_read_2D
+    end subroutine mpp_read_r2D
 
-    subroutine mpp_read_1D( unit, field, data, tindex )
+    subroutine mpp_read_r1D( unit, field, data, tindex )
       integer, intent(in) :: unit
       type(fieldtype), intent(in) :: field
       real, intent(inout) :: data(:)
       integer, intent(in), optional :: tindex
 
       call read_record( unit, field, size(data), data, tindex )
-    end subroutine mpp_read_1D
+    end subroutine mpp_read_r1D
 
-    subroutine mpp_read_0D( unit, field, data, tindex )
+    subroutine mpp_read_r0D( unit, field, data, tindex )
       integer, intent(in) :: unit
       type(fieldtype), intent(in) :: field
       real, intent(inout) :: data
@@ -1953,7 +2001,7 @@ module mpp_io_mod
       data_tmp(1)=data
       call read_record( unit, field, 1, data_tmp, tindex )
       data=data_tmp(1)
-    end subroutine mpp_read_0D
+    end subroutine mpp_read_r0D
 
     subroutine mpp_read_meta(unit)
 !
@@ -1964,7 +2012,7 @@ module mpp_io_mod
 !
 ! every PE is eligible to call mpp_read_meta
 !
-      integer, parameter :: MAX_DIMVALS = 2048
+      integer, parameter :: MAX_DIMVALS = 100000
       integer, intent(in) :: unit
 
       integer         :: ncid,ndim,nvar_total,natt,recdim,nv,nvar,len
@@ -1975,15 +2023,15 @@ module mpp_io_mod
       character(len=128) :: name, attname, unlimname, attval
       logical :: isdim
 
-      integer(kind=2), dimension(MAX_DIMVALS) :: i2vals
+      integer(SHORT_KIND) :: i2vals(MAX_DIMVALS)
 #ifdef __sgi
-      integer(kind=4), dimension(MAX_DIMVALS) :: ivals
-      real(kind=4),    dimension(MAX_DIMVALS) :: rvals
+      integer(INT_KIND) :: ivals(MAX_DIMVALS)
+      real(FLOAT_KIND)  :: rvals(MAX_DIMVALS)
 #else      
-      integer,         dimension(MAX_DIMVALS) :: ivals
-      real,            dimension(MAX_DIMVALS) :: rvals      
+      integer :: ivals(MAX_DIMVALS)
+      real    :: rvals(MAX_DIMVALS)      
 #endif      
-      real(kind=8),    dimension(MAX_DIMVALS) :: r8vals
+      real(DOUBLE_KIND) :: r8vals(MAX_DIMVALS)
 
 #ifdef use_netCDF      
 
@@ -1991,10 +2039,9 @@ module mpp_io_mod
         ncid = mpp_file(unit)%ncid
         error = NF_INQ(ncid,ndim, nvar_total,&
                       natt, recdim);call netcdf_err(error)
-        nvar = nvar_total-ndim
-        
+
+
         mpp_file(unit)%ndim = ndim
-        mpp_file(unit)%nvar = nvar
         mpp_file(unit)%natt = natt
         mpp_file(unit)%recdimid = recdim
 !
@@ -2011,15 +2058,12 @@ module mpp_io_mod
         allocate(mpp_file(unit)%Att(natt))
         allocate(Axis(ndim))
         allocate(dimids(ndim))
-        allocate(mpp_file(unit)%Var(nvar))          
         allocate(mpp_file(unit)%Axis(ndim))          
 
 !
 ! initialize fieldtype and axis type
 !
-        do i=1,nvar
-           mpp_file(unit)%Var(i) = default_field
-        enddo
+
 
         do i=1,ndim
            Axis(i) = default_axis
@@ -2045,35 +2089,37 @@ module mpp_io_mod
            select case (type)
               case (NF_CHAR)
                  if (len.gt.512) then
-		    call mpp_error(NOTE,'GLOBAL ATT too long') 
-                    len=512
+		    call mpp_error(NOTE,'GLOBAL ATT too long - not reading this metadata') 
+                    len=7
                     mpp_file(unit)%Att(i)%len=len
+                    mpp_file(unit)%Att(i)%catt = 'unknown'
+                 else
+                     error=NF_GET_ATT_TEXT(ncid,NF_GLOBAL,name,mpp_file(unit)%Att(i)%catt);call netcdf_err(error)
+                     if (verbose.and.pe == 0) print *, 'GLOBAL ATT ',trim(name),' ',mpp_file(unit)%Att(i)%catt(1:len)
                  endif
-                 error=NF_GET_ATT_TEXT(ncid,NF_GLOBAL,name,mpp_file(unit)%Att(i)%catt);call netcdf_err(error)
-                 if (verbose) print *, 'GLOBAL ATT ',trim(name),' ',mpp_file(unit)%Att(i)%catt(1:len)
 !
 ! store integers in float arrays
 !
               case (NF_SHORT)
                  allocate(mpp_file(unit)%Att(i)%fatt(len))
                  error=NF_GET_ATT_INT2(ncid,NF_GLOBAL,name,i2vals);call netcdf_err(error)
-                 if( verbose )print *, 'GLOBAL ATT ',trim(name),' ',i2vals(1:len)
+                 if( verbose .and. pe == 0 )print *, 'GLOBAL ATT ',trim(name),' ',i2vals(1:len)
                  mpp_file(unit)%Att(i)%fatt(1:len)=i2vals(1:len)
               case (NF_INT)
                  allocate(mpp_file(unit)%Att(i)%fatt(len))
                  error=NF_GET_ATT_INT(ncid,NF_GLOBAL,name,ivals);call netcdf_err(error)
-                 if( verbose )print *, 'GLOBAL ATT ',trim(name),' ',ivals(1:len)
+                 if( verbose .and. pe == 0 )print *, 'GLOBAL ATT ',trim(name),' ',ivals(1:len)
                  mpp_file(unit)%Att(i)%fatt(1:len)=ivals(1:len)
               case (NF_FLOAT)
                  allocate(mpp_file(unit)%Att(i)%fatt(len))
                  error=NF_GET_ATT_REAL(ncid,NF_GLOBAL,name,rvals);call netcdf_err(error)
                  mpp_file(unit)%Att(i)%fatt(1:len)=rvals(1:len)
-                 if( verbose )print *, 'GLOBAL ATT ',trim(name),' ',mpp_file(unit)%Att(i)%fatt(1:len)
+                 if( verbose .and. pe == 0)print *, 'GLOBAL ATT ',trim(name),' ',mpp_file(unit)%Att(i)%fatt(1:len)
               case (NF_DOUBLE)
                  allocate(mpp_file(unit)%Att(i)%fatt(len))
                  error=NF_GET_ATT_DOUBLE(ncid,NF_GLOBAL,name,r8vals);call netcdf_err(error)
                  mpp_file(unit)%Att(i)%fatt(1:len)=r8vals(1:len)
-                 if( verbose )print *, 'GLOBAL ATT ',trim(name),' ',mpp_file(unit)%Att(i)%fatt(1:len)
+                 if( verbose .and. pe == 0)print *, 'GLOBAL ATT ',trim(name),' ',mpp_file(unit)%Att(i)%fatt(1:len)
            end select
 
         enddo
@@ -2086,6 +2132,22 @@ module mpp_io_mod
            Axis(i)%len = len
         enddo
 
+        nvar=0
+        do i=1, nvar_total
+           error=NF_INQ_VAR(ncid,i,name,type,nvdims,dimids,nvatts);call netcdf_err(error)
+           isdim=.false.
+           do j=1,ndim
+              if( trim(lowercase(name)).EQ.trim(lowercase(Axis(j)%name)) )isdim=.true.
+           enddo
+           if (.not.isdim) nvar=nvar+1
+        enddo
+        mpp_file(unit)%nvar = nvar
+        allocate(mpp_file(unit)%Var(nvar))
+
+        do i=1,nvar
+           mpp_file(unit)%Var(i) = default_field
+        enddo
+        
 !
 ! assign dimension info
 !
@@ -2093,7 +2155,7 @@ module mpp_io_mod
            error=NF_INQ_VAR(ncid,i,name,type,nvdims,dimids,nvatts);call netcdf_err(error)
            isdim=.false.
            do j=1,ndim
-              if( trim(name).EQ.trim(Axis(j)%name) )isdim=.true.
+              if( trim(lowercase(name)).EQ.trim(lowercase(Axis(j)%name)) )isdim=.true.
            enddo
 
            if( isdim )then
@@ -2105,6 +2167,11 @@ module mpp_io_mod
               ! get axis values
               if( i.NE.mpp_file(unit)%id )then   ! non-record dims
                  select case (type)
+                 case (NF_INT)
+                    len=Axis(dimid)%len
+                    allocate(Axis(dimid)%data(len))
+                    error = NF_GET_VAR_INT(ncid,i,ivals);call netcdf_err(error)
+                    Axis(dimid)%data(1:len)=ivals(1:len)                     
                  case (NF_FLOAT)
                     len=Axis(dimid)%len
                     allocate(Axis(dimid)%data(len))
@@ -2151,28 +2218,33 @@ module mpp_io_mod
                  case (NF_CHAR)
                     if (len.gt.512) call mpp_error(FATAL,'DIM ATT too long') 
                     error=NF_GET_ATT_TEXT(ncid,i,trim(attname),Axis(dimid)%Att(j)%catt);call netcdf_err(error)
-                    if( verbose )print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%catt(1:len)
+                    if( verbose .and. pe == 0 ) &
+                         print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%catt(1:len)
                     ! store integers in float arrays
                     ! assume dimension data not packed 
                  case (NF_SHORT)
                     allocate(Axis(dimid)%Att(j)%fatt(len))
                     error=NF_GET_ATT_INT2(ncid,i,trim(attname),i2vals);call netcdf_err(error)
                     Axis(dimid)%Att(j)%fatt(1:len)=i2vals(1:len)
-                    if( verbose )print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
+                    if( verbose .and. pe == 0  ) &
+                         print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
                  case (NF_INT)
                     allocate(Axis(dimid)%Att(j)%fatt(len))
                     error=NF_GET_ATT_INT(ncid,i,trim(attname),ivals);call netcdf_err(error)
                     Axis(dimid)%Att(j)%fatt(1:len)=ivals(1:len)
-                    if( verbose )print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
+                    if( verbose .and. pe == 0  ) &
+                         print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
                  case (NF_FLOAT)
                     allocate(Axis(dimid)%Att(j)%fatt(len))
                     error=NF_GET_ATT_REAL(ncid,i,trim(attname),rvals);call netcdf_err(error)
                     Axis(dimid)%Att(j)%fatt(1:len)=rvals(1:len)
-                    if( verbose )print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
+                    if( verbose  .and. pe == 0 ) &
+                         print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
                  case (NF_DOUBLE)
                     error=NF_GET_ATT_DOUBLE(ncid,i,trim(attname),r8vals);call netcdf_err(error)
                     Axis(dimid)%Att(j)%fatt(1:len)=r8vals(1:len)
-                    if( verbose )print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
+                    if( verbose  .and. pe == 0 ) &
+                         print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
                  case default
                     call mpp_error( FATAL, 'Invalid data type for dimension at' )                      
                  end select
@@ -2207,9 +2279,9 @@ module mpp_io_mod
 !          
            isdim=.false.
            do j=1,ndim
-              if( trim(name).EQ.trim(Axis(j)%name) )isdim=.true.
+              if( trim(lowercase(name)).EQ.trim(lowercase(Axis(j)%name)) )isdim=.true.
            enddo
-           
+
            if( .not.isdim )then
 ! for non-dimension variables
               nv=nv+1; if( nv.GT.mpp_file(unit)%nvar )call mpp_error( FATAL, 'variable index exceeds number of defined variables' )
@@ -2219,13 +2291,15 @@ module mpp_io_mod
               mpp_file(unit)%Var(nv)%natt = nvatts
 ! determine packing attribute based on NetCDF variable type
              select case (type)
-                case(NF_SHORT)
-                   mpp_file(unit)%Var(nv)%pack = 4
-                case(NF_FLOAT)
-                   mpp_file(unit)%Var(nv)%pack = 2
-                case(NF_DOUBLE)
-                   mpp_file(unit)%Var(nv)%pack = 1
-                case default
+             case(NF_SHORT)
+                 mpp_file(unit)%Var(nv)%pack = 4
+             case(NF_FLOAT)
+                 mpp_file(unit)%Var(nv)%pack = 2
+             case(NF_DOUBLE)
+                 mpp_file(unit)%Var(nv)%pack = 1
+             case (NF_INT)
+                 mpp_file(unit)%Var(nv)%pack = 2
+             case default
                    call mpp_error( FATAL, 'Invalid variable type in NetCDF file' )
              end select
 ! assign dimension ids
@@ -2262,28 +2336,33 @@ module mpp_io_mod
                    case (NF_CHAR)
                      if (len.gt.512) call mpp_error(FATAL,'VAR ATT too long') 
                      error=NF_GET_ATT_TEXT(ncid,i,trim(attname),mpp_file(unit)%Var(nv)%Att(j)%catt(1:len));call netcdf_err(error)
-                     if (verbose) print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%catt(1:len)
+                     if (verbose .and. pe == 0 )&
+                           print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%catt(1:len)
 ! store integers as float internally
                    case (NF_SHORT)
                      allocate(mpp_file(unit)%Var(nv)%Att(j)%fatt(len))
                      error=NF_GET_ATT_INT2(ncid,i,trim(attname),i2vals);call netcdf_err(error)
                      mpp_file(unit)%Var(nv)%Att(j)%fatt(1:len)= i2vals(1:len)
-                     if( verbose )print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
+                     if( verbose  .and. pe == 0 )&
+                          print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
                    case (NF_INT)
                      allocate(mpp_file(unit)%Var(nv)%Att(j)%fatt(len))
                      error=NF_GET_ATT_INT(ncid,i,trim(attname),ivals);call netcdf_err(error)
                      mpp_file(unit)%Var(nv)%Att(j)%fatt(1:len)=ivals(1:len)
-                     if( verbose )print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
+                     if( verbose .and. pe == 0  )&
+                          print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
                    case (NF_FLOAT)
                      allocate(mpp_file(unit)%Var(nv)%Att(j)%fatt(len))
                      error=NF_GET_ATT_REAL(ncid,i,trim(attname),rvals);call netcdf_err(error)
                      mpp_file(unit)%Var(nv)%Att(j)%fatt(1:len)=rvals(1:len)
-                     if( verbose )print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
+                     if( verbose  .and. pe == 0 )&
+                          print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
                    case (NF_DOUBLE)
                      allocate(mpp_file(unit)%Var(nv)%Att(j)%fatt(len))
                      error=NF_GET_ATT_DOUBLE(ncid,i,trim(attname),r8vals);call netcdf_err(error)
                      mpp_file(unit)%Var(nv)%Att(j)%fatt(1:len)=r8vals(1:len)
-                     if( verbose )print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
+                     if( verbose .and. pe == 0  ) &
+                          print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
                    case default
                         call mpp_error( FATAL, 'Invalid data type for variable att' )
                  end select
@@ -2528,7 +2607,7 @@ module mpp_io_mod
 
      if (size(data).lt.axis%len) call mpp_error(FATAL,'MPP_GET_AXIS_DATA: data array not large enough')
      if (.NOT.ASSOCIATED(axis%data)) then
-        call mpp_error(WARNING,'MPP_GET_AXIS_DATA: use mpp_get_times for record dims')
+        call mpp_error(NOTE,'MPP_GET_AXIS_DATA: use mpp_get_times for record dims')
         data = 0.
      else
         data(1:axis%len) = axis%data
@@ -2565,7 +2644,7 @@ module mpp_io_mod
       if( .NOT.mpp_io_initialized )call mpp_error( FATAL, 'MPP_FLUSH: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_FLUSH: invalid unit number.' )
       if( .NOT.mpp_file(unit)%initialized )call mpp_error( FATAL, 'MPP_FLUSH: cannot flush a file during writing of metadata.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.0 )return
+      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
 
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
 #ifdef use_netCDF
@@ -2667,7 +2746,7 @@ module mpp_io_mod
       if (PRESENT(cartesian)) axis%cartesian = trim(cartesian)
       if (PRESENT(data)) then
          axis%len = size(data)
-         deallocate(axis%data)
+         if (ASSOCIATED(axis%data)) deallocate(axis%data)
          allocate(axis%data(axis%len))
          axis%data = data
       endif
@@ -2697,7 +2776,20 @@ module mpp_io_mod
          
       return
     end subroutine mpp_modify_field_meta
-     
+
+    function lowercase (cs) 
+      character(len=*), intent(in) :: cs
+      character(len=len(cs))       :: lowercase 
+      character :: ca(len(cs)) 
+      
+      integer, parameter :: co=iachar('a')-iachar('A') ! case offset
+      
+      ca = transfer(cs,"x",len(cs)) 
+      where (ca >= "A" .and. ca <= "Z") ca = achar(iachar(ca)+co) 
+          lowercase = transfer(ca,cs) 
+          
+    end function lowercase
+        
 end module mpp_io_mod
 
 #ifdef test_mpp_io
@@ -2713,16 +2805,16 @@ program mpp_io_test
 #include <netcdf.inc>
 #endif
 
-  integer :: pe, npes, root
+  integer :: pe, npes
   type(domain2D) :: domain
-  integer :: nx=128, ny=128, nz=40, nt=2, halo=2, stackmax=32768
+  integer :: nx=128, ny=128, nz=40, nt=2, halo=2, stackmax=32768, stackmaxd=32768
   real(DOUBLE_KIND), dimension(:,:,:), allocatable :: data, gdata, rdata
   integer :: is, ie, js, je, isd, ied, jsd, jed
   integer :: tk, tk0, tks_per_sec
   integer :: i,j,k, unit=7, layout(2)
   logical :: debug=.FALSE., opened
   character(len=64) :: file='test', iospec='-F cachea', varname
-  namelist / mpp_io_nml / nx, ny, nz, nt, halo, stackmax, debug, file, iospec
+  namelist / mpp_io_nml / nx, ny, nz, nt, halo, stackmax, stackmaxd, debug, file, iospec
   integer :: ndim, nvar, natt, ntime
   type(atttype), allocatable :: atts(:)
   type(fieldtype), allocatable :: vars(:)
@@ -2731,17 +2823,11 @@ program mpp_io_test
   type(axistype) :: x, y, z, t
   type(fieldtype) :: f
   type(domain1D) :: xdom, ydom
-#ifdef SGICRAY
-!see intro_io(3F): to see why these values are used rather than 5,6,0
-  integer, parameter :: stdin=100, stdout=101, stderr=102
-#else               
-  integer, parameter :: stdin=5, stdout=6, stderr=0
-#endif
+  integer(LONG_KIND) :: rchk, chk
 
   call mpp_init()
   pe = mpp_pe()
   npes = mpp_npes()
-  root = mpp_root_pe()
 
 !possibly open a file called mpp_io.nml
   do
@@ -2761,15 +2847,16 @@ program mpp_io_test
   else
       call mpp_io_init()
   end if
-  call mpp_domains_set_stack_size(stackmax)
+  call mpp_set_stack_size(stackmax)
+  call mpp_domains_set_stack_size(stackmaxd)
 
-  if( pe.EQ.root )then
+  if( pe.EQ.mpp_root_pe() )then
       print '(a,6i4)', 'npes, nx, ny, nz, nt, halo=', npes, nx, ny, nz, nt, halo
       print *, 'Using NEW domaintypes and calls...'
   end if
 !define global data array
   allocate( gdata(nx,ny,nz) )
-  if( pe.EQ.root )then
+  if( pe.EQ.mpp_root_pe() )then
 !      call random_number(gdata) )
 !fill in global array: with k.iiijjj
       gdata = 0.
@@ -2781,7 +2868,7 @@ program mpp_io_test
          end do
       end do
   end if
-  call mpp_broadcast( gdata(1,1,1), size(gdata), root )
+  call mpp_broadcast( gdata(1,1,1), size(gdata), mpp_root_pe() )
 
 !define domain decomposition
   call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
@@ -2797,7 +2884,7 @@ program mpp_io_test
 
 !sequential write: single-threaded formatted: only if small
   if( nx*ny*nz*nt.LT.1000 )then
-      if( pe.EQ.root )print *, 'sequential write: single-threaded formatted'
+      if( pe.EQ.mpp_root_pe() )print *, 'sequential write: single-threaded formatted'
 !here the only test is a successful write: please look at test.txt for verification.
       call mpp_open( unit, trim(file)//'s.txt', action=MPP_OVERWR, form=MPP_ASCII, threading=MPP_SINGLE )
       call mpp_write_meta( unit, x, 'X', 'km', 'X distance', domain=xdom, data=(/(i-1.,i=1,nx)/) )
@@ -2809,13 +2896,13 @@ program mpp_io_test
       call mpp_write( unit, y )
       call mpp_write( unit, z )
       do i = 0,nt-1
-         call mpp_write( unit, f, domain, data,  i*10. )
+         call mpp_write( unit, f, domain, data, i*10. )
       end do
       call mpp_close(unit)
   end if
 
 !netCDF distributed write
-  if( pe.EQ.root )print *, 'netCDF distributed write'
+  if( pe.EQ.mpp_root_pe() )print *, 'netCDF distributed write'
   call mpp_open( unit, trim(file)//'d', action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI )
   call mpp_write_meta( unit, x, 'X', 'km', 'X distance', domain=xdom, data=(/(i-1.,i=1,nx)/) )
   call mpp_write_meta( unit, y, 'Y', 'km', 'Y distance', domain=ydom, data=(/(i-1.,i=1,ny)/) )
@@ -2826,12 +2913,12 @@ program mpp_io_test
   call mpp_write( unit, y )
   call mpp_write( unit, z )
   do i = 0,nt-1
-     call mpp_write( unit, f, domain, data,  i*10. )
+     call mpp_write( unit, f, domain, data, i*10. )
   end do
   call mpp_close(unit)
   
 !netCDF single-threaded write
-  if( pe.EQ.root )print *, 'netCDF single-threaded write'
+  if( pe.EQ.mpp_root_pe() )print *, 'netCDF single-threaded write'
   call mpp_open( unit, trim(file)//'s', action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE )
   call mpp_write_meta( unit, x, 'X', 'km', 'X distance', domain=xdom, data=(/(i-1.,i=1,nx)/) )
   call mpp_write_meta( unit, y, 'Y', 'km', 'Y distance', domain=ydom, data=(/(i-1.,i=1,ny)/) )
@@ -2842,12 +2929,12 @@ program mpp_io_test
   call mpp_write( unit, y )
   call mpp_write( unit, z )
   do i = 0,nt-1
-     call mpp_write( unit, f, domain, data,  i*10. )
+     call mpp_write( unit, f, domain, data, i*10. )
   end do
   call mpp_close(unit)
 
 !netCDF multi-threaded read
-  if( pe.EQ.root )print *, 'netCDF multi-threaded read'
+  if( pe.EQ.mpp_root_pe() )print *, 'netCDF multi-threaded read'
   call mpp_sync()               !wait for previous write to complete
   call mpp_open( unit, trim(file)//'s', action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_SINGLE )
   call mpp_get_info( unit, ndim, nvar, natt, ntime )
@@ -2865,13 +2952,13 @@ program mpp_io_test
   if( varname.NE.'Data' )call mpp_error( FATAL, 'File being read is not the expected one.' )
   allocate( rdata(is:ie,js:je,nz) )
   call mpp_read( unit, vars(1), domain, rdata, 1 )
-  i = mpp_chksum(rdata(is:ie,js:je,:))
-  j = mpp_chksum( data(is:ie,js:je,:))
-  if( pe.EQ.root )print '(a,2z18)', 'checksum=', i, j
-  if( i.NE.j )call mpp_error( FATAL, 'Checksum error on multi-threaded netCDF read.' )
+  rchk = mpp_chksum(rdata(is:ie,js:je,:))
+  chk  = mpp_chksum( data(is:ie,js:je,:))
+  if( pe.EQ.mpp_root_pe() )print '(a,2z18)', 'checksum=', rchk, chk
+  if( rchk.NE.chk )call mpp_error( FATAL, 'Checksum error on multi-threaded netCDF read.' )
 
 !netCDF multi-threaded write
-!  if( pe.EQ.root )print *, 'netCDF multi-threaded write'
+!  if( pe.EQ.mpp_root_pe() )print *, 'netCDF multi-threaded write'
 !  call mpp_open( unit, trim(file)//'m', action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_SINGLE )
 !  call mpp_write_meta( unit, x, 'X', 'km', 'X distance', domain=xdom, data=(/(i-1.,i=1,nx)/) )
 !  call mpp_write_meta( unit, y, 'Y', 'km', 'Y distance', domain=ydom, data=(/(i-1.,i=1,ny)/) )
