@@ -41,8 +41,8 @@ module axis_utils_mod
   integer, parameter :: maxatts = 100
   real, parameter    :: epsln= 1.e-10
   real, parameter    :: fp5 = 0.5, f360 = 360.0
-  character(len=256) :: version = '$Id: axis_utils.F90,v 11.0 2004/09/28 19:58:28 fms Exp $'
-  character(len=256) :: tagname = '$Name: khartoum $'   
+  character(len=256) :: version = '$Id: axis_utils.F90,v 12.0 2005/04/14 17:55:05 fms Exp $'
+  character(len=256) :: tagname = '$Name: lima $'   
 
   interface interp_1d
      module procedure interp_1d_1d
@@ -499,40 +499,42 @@ contains
     endif
   end function nearest_index
 
-  subroutine interp_1d_1d(grid_1,grid_2,data1,data2)  
+  !#############################################################################
 
-    real, dimension(:), intent(in) :: grid_1, data1
-    real, dimension(:), intent(inout) :: grid_2, data2
+  subroutine interp_1d_linear(grid1,grid2,data1,data2)  
+
+    real, dimension(:),    intent(in) :: grid1, data1, grid2
+    real, dimension(:), intent(inout) :: data2
 
     integer :: n1, n2, i, n, ext
     real :: w
 
-    n1 = size(grid_1(:))
-    n2 = size(grid_2(:))
+    n1 = size(grid1(:))
+    n2 = size(grid2(:))
 
 
     do i=2,n1
-       if (grid_1(i) <= grid_1(i-1)) call mpp_error(FATAL, 'grid1 not monotonic')
+       if (grid1(i) <= grid1(i-1)) call mpp_error(FATAL, 'grid1 not monotonic')
     enddo
 
     do i=2,n2
-       if (grid_2(i) <= grid_2(i-1)) call mpp_error(FATAL, 'grid2 not monotonic')
+       if (grid2(i) <= grid2(i-1)) call mpp_error(FATAL, 'grid2 not monotonic')
     enddo
 
-    if (grid_1(1) > grid_2(1) ) call mpp_error(FATAL, 'grid2 lies outside grid1')
-    if (grid_1(n1) < grid_2(n2) ) call mpp_error(FATAL, 'grid2 lies outside grid1')
+    if (grid1(1) > grid2(1) ) call mpp_error(FATAL, 'grid2 lies outside grid1')
+    if (grid1(n1) < grid2(n2) ) call mpp_error(FATAL, 'grid2 lies outside grid1')
 
     do i=1,n2
-       n = nearest_index(grid_2(i),grid_1)
+       n = nearest_index(grid2(i),grid1)
 
-       if (grid_1(n) < grid_2(i)) then
-          w = (grid_2(i)-grid_1(n))/(grid_1(n+1)-grid_1(n))
+       if (grid1(n) < grid2(i)) then
+          w = (grid2(i)-grid1(n))/(grid1(n+1)-grid1(n))
           data2(i) = (1.-w)*data1(n) + w*data1(n+1)
        else
           if(n==1) then
              data2(i) = data1(n)
           else
-             w = (grid_2(i)-grid_1(n-1))/(grid_1(n)-grid_1(n-1))
+             w = (grid2(i)-grid1(n-1))/(grid1(n)-grid1(n-1))
              data2(i) = (1.-w)*data1(n-1) + w*data1(n)   
           endif     
        endif
@@ -541,59 +543,318 @@ contains
 
     return
 
+  end subroutine interp_1d_linear
+
+  !###################################################################
+  subroutine interp_1d_cubic_spline(grid1, grid2, data1, data2, yp1, ypn)  
+
+    real, dimension(:),    intent(in) :: grid1, grid2, data1
+    real, dimension(:), intent(inout) :: data2
+    real,                  intent(in) :: yp1, ypn
+
+    real, dimension(size(grid1))      :: y2, u
+    real                              :: sig, p, qn, un, h, a ,b
+    integer                           :: n, m, i, k, klo, khi
+
+    n = size(grid1(:))
+    m = size(grid2(:))    
+
+    do i=2,n
+       if (grid1(i) <= grid1(i-1)) call mpp_error(FATAL, 'grid1 not monotonic')
+    enddo
+
+    do i=2,m
+       if (grid2(i) <= grid2(i-1)) call mpp_error(FATAL, 'grid2 not monotonic')
+    enddo
+
+    if (grid1(1) > grid2(1) ) call mpp_error(FATAL, 'grid2 lies outside grid1')
+    if (grid1(n) < grid2(m) ) call mpp_error(FATAL, 'grid2 lies outside grid1')
+
+    if (yp1 >.99e30) then
+       y2(1)=0.
+       u(1)=0.
+    else
+       y2(1)=-0.5
+       u(1)=(3./(grid1(2)-grid1(1)))*((data1(2)-data1(1))/(grid1(2)-grid1(1))-yp1)
+    endif
+
+    do i=2,n-1
+       sig=(grid1(i)-grid1(i-1))/(grid1(i+1)-grid1(i-1))
+       p=sig*y2(i-1)+2.
+       y2(i)=(sig-1.)/p
+       u(i)=(6.*((data1(i+1)-data1(i))/(grid1(i+1)-grid1(i))-(data1(i)-data1(i-1)) &
+             /(grid1(i)-grid1(i-1)))/(grid1(i+1)-grid1(i-1))-sig*u(i-1))/p
+    enddo
+
+    if (ypn > .99e30) then
+       qn=0.
+       un=0.
+    else
+       qn=0.5
+       un=(3./(grid1(n)-grid1(n-1)))*(ypn-(data1(n)-data1(n-1))/(grid1(n)-grid1(n-1)))
+    endif
+
+    y2(n)=(un-qn*u(n-1))/(qn*y2(n-1)+1.)
+
+    do  k=n-1,1,-1
+       y2(k)=y2(k)*y2(k+1)+u(k)
+    enddo
+
+    do k = 1, m
+       n = nearest_index(grid2(k),grid1)
+       if (grid1(n) < grid2(k)) then
+          klo = n
+       else
+          if(n==1) then
+            klo = n
+          else 
+            klo = n -1
+          endif
+       endif
+       khi = klo+1
+       h   = grid1(khi)-grid1(klo)
+       a   = (grid1(khi) - grid2(k))/h
+       b   = (grid2(k) - grid1(klo))/h
+       data2(k) = a*data1(klo) + b*data1(khi)+ ((a**3-a)*y2(klo) + (b**3-b)*y2(khi))*(h**2)/6
+    enddo
+
+  end subroutine interp_1d_cubic_spline
+
+  !###################################################################
+
+  subroutine interp_1d_1d(grid1,grid2,data1,data2, method, yp1, yp2)  
+
+    real, dimension(:),      intent(in)    :: grid1, data1, grid2
+    real, dimension(:),      intent(inout) :: data2
+    character(len=*), optional, intent(in) :: method
+    real,             optional, intent(in) :: yp1, yp2
+
+    real              :: y1, y2
+    character(len=32) :: interp_method    
+    integer           :: k2, ks, ke
+
+    k2 = size(grid2(:))
+
+    interp_method = "linear"
+    if(present(method)) interp_method = method
+    y1 = 1.0e30
+    if(present(yp1)) y1 = yp1
+    y2 = 1.0e30
+    if(present(yp2)) y2 = yp2
+    call find_index(grid1, grid2(1), grid2(k2), ks, ke)
+    select case(trim(interp_method))
+    case("linear")
+       call interp_1d_linear(grid1(ks:ke),grid2,data1(ks:ke),data2)
+    case("cubic_spline")
+       call interp_1d_cubic_spline(grid1(ks:ke),grid2,data1(ks:ke),data2, y1, y2)
+    case default
+       call mpp_error(FATAL,"axis_utils: interp_method should be linear or cubic_spline")
+    end select
+
+    return
+
   end subroutine interp_1d_1d
 
-  subroutine interp_1d_2d(grid_1,grid_2,data1,data2)  
+  !###################################################################
 
-    real, dimension(:,:), intent(in) :: grid_1, data1
-    real, dimension(:,:), intent(inout) :: grid_2, data2
 
-    integer :: n1, n2, i, n
+  subroutine interp_1d_2d(grid1,grid2,data1,data2)  
+
+    real, dimension(:,:),    intent(in) :: grid1, data1, grid2
+    real, dimension(:,:), intent(inout) :: data2
+
+    integer :: n1, n2, i, n, k2, ks, ke
     real :: w
 
-    n1 = size(grid_1,1)
-    n2 = size(grid_2,1)
+    n1 = size(grid1,1)
+    n2 = size(grid2,1)
+    k2 = size(grid2,2)
 
     if (n1 /= n2) call mpp_error(FATAL,'grid size mismatch')
 
     do n=1,n1
-       call interp_1d_1d(grid_1(n,:),grid_2(n,:),data1(n,:),data2(n,:))
+       call find_index(grid1(n,:), grid2(n,1), grid2(n,k2), ks, ke)
+       call interp_1d_linear(grid1(n,ks:ke),grid2(n,:),data1(n,ks:ke),data2(n,:))
     enddo
-
-
 
     return
 
   end subroutine interp_1d_2d
 
-  subroutine interp_1d_3d(grid_1,grid_2,data1,data2)  
+  !###################################################################
 
-    real, dimension(:,:,:), intent(in) :: grid_1, data1
-    real, dimension(:,:,:), intent(inout) :: grid_2, data2
+  subroutine interp_1d_3d(grid1,grid2,data1,data2, method, yp1, yp2)  
 
-    integer :: n1, n2, m1, m2, i, n, m
-    real :: w
+    real, dimension(:,:,:),  intent(in)    :: grid1, data1, grid2
+    real, dimension(:,:,:),  intent(inout) :: data2
+    character(len=*), optional, intent(in) :: method
+    real,             optional, intent(in) :: yp1, yp2
 
-    n1 = size(grid_1,1)
-    n2 = size(grid_2,1)
-    m1 = size(grid_1,2)
-    m2 = size(grid_2,2)
+    integer           :: n1, n2, m1, m2, k2, i, n, m
+    real              :: w, y1, y2
+    character(len=32) :: interp_method
+    integer           :: ks, ke
+    n1 = size(grid1,1)
+    n2 = size(grid2,1)
+    m1 = size(grid1,2)
+    m2 = size(grid2,2)
+    k2 = size(grid2,3)
 
+    interp_method = "linear"
+    if(present(method)) interp_method = method
+    y1 = 1.0e30
+    if(present(yp1)) y1 = yp1
+    y2 = 1.0e30
+    if(present(yp2)) y2 = yp2
 
     if (n1 /= n2 .or. m1 /= m2) call mpp_error(FATAL,'grid size mismatch')
 
-    do m=1,m1
-       do n=1,n1
-          call interp_1d_1d(grid_1(n,m,:),grid_2(n,m,:),data1(n,m,:),data2(n,m,:))
+    select case(trim(interp_method))
+    case("linear")
+       do m=1,m1
+          do n=1,n1
+            call find_index(grid1(n,m,:), grid2(n,m,1), grid2(n,m,k2), ks, ke)
+             call interp_1d_linear(grid1(n,m,ks:ke),grid2(n,m,:),data1(n,m,ks:ke),data2(n,m,:))
+          enddo
        enddo
-    enddo
-
-
+    case("cubic_spline")
+       do m=1,m1
+          do n=1,n1
+            call find_index(grid1(n,m,:), grid2(n,m,1), grid2(n,m,k2), ks, ke)
+            call interp_1d_cubic_spline(grid1(n,m,ks:ke),grid2(n,m,:), data1(n,m,ks:ke),data2(n,m,:), y1, y2)
+          enddo
+       enddo
+    case default
+       call mpp_error(FATAL,"axis_utils: interp_method should be linear or cubic_spline")
+    end select
 
     return
 
   end subroutine interp_1d_3d
 
 
+  !#####################################################################
+  subroutine find_index(grid1, xs, xe, ks, ke)
+    real, dimension(:), intent(in) :: grid1
+    real,               intent(in) :: xs, xe
+    integer,           intent(out) :: ks, ke
+
+    integer :: k, nk
+
+    nk = size(grid1(:))
+
+    ks = 0; ke = 0
+    do k = 1, nk-1
+       if(grid1(k) <= xs .and. grid1(k+1) > xs ) then
+          ks = k
+          exit
+       endif
+    enddo
+    do k = nk, 2, -1
+       if(grid1(k) >= xe .and. grid1(k-1) < xe ) then
+          ke = k
+          exit
+       endif
+    enddo
+
+    if(ks == 0 ) call mpp_error(FATAL,' xs locate outside of grid1')
+    if(ke == 0 ) call mpp_error(FATAL,' xe locate outside of grid1')
+
+  end subroutine find_index
+
 end module axis_utils_mod
+
+#ifdef test_axis_utils
+
+program test
+
+use fms_mod,       only : fms_init, file_exist, open_namelist_file, check_nml_error
+use fms_mod,       only : close_file
+use mpp_mod,       only : mpp_error, FATAL, stdout
+use axis_utils_mod, only: interp_1d
+
+implicit none
+
+
+
+integer, parameter :: maxsize = 100
+
+integer :: n_src = 0
+integer :: n_dst = 0
+real, dimension(MAXSIZE) :: grid_src = 0 
+real, dimension(MAXSIZE) :: grid_dst = 0
+real, dimension(MAXSIZE) :: data_src = 0
+
+namelist / test_axis_utils_nml / n_src, n_dst, grid_src, grid_dst, data_src
+
+real, allocatable :: data_dst(:)
+integer           :: unit, ierr, io
+
+  call fms_init()
+
+  !--- default option of data
+  n_src = 31
+  n_dst = 40
+  grid_src(1:n_src) = (/ -63.6711465476916, -63.6711455476916, 166.564180735096, 401.25299580552, &
+                         641.056493022762, 886.219516665347, 1137.35352761133, 1394.4936854079,   &
+                         1657.17893448689, 1925.64572676068, 2200.13183483549, 2480.9124139255,   &
+                         2768.35396680912, 3062.86513953019, 3675.47369643284, 4325.10564183322,  &
+                         5020.19039479527, 5769.85432323481, 6584.25101514851, 7475.94655633703,  &
+                         8462.01951335773, 9568.28246037887, 10178.3869413515, 10834.1425668942,  &
+                         11543.5265942777, 12317.3907407535, 13170.4562394288, 14125.6466646843,  &
+                         15225.8720618086, 16554.7859690842, 19697.1334102613   /)
+  grid_dst(1:n_dst) = (/ 1002.9522552602, 1077.51144617887, 1163.37842788755, 1264.19848463606,  &
+                         1382.57557953916, 1521.56713587855, 1684.76300370633, 1876.37817787584, &
+                         2101.36166220498, 2365.52429149707, 2675.68881278444, 3039.86610206727, &
+                         3467.4620678435, 3969.52058529847, 4553.81573511231, 5159.54844211827,  &
+                         5765.28114912423, 6371.01385613019, 6976.74656313614, 7582.4792701421,  &
+                         8188.21197714806, 8793.94468415402, 9399.67739115997, 10005.4100981659, &
+                         10611.1428051719, 11216.8755121778, 11822.6082191838, 12428.3409261898, &
+                         13034.0736331957, 13639.8063402017, 14245.5390472076, 14851.2717542136, &
+                         15457.0044612196, 16062.7371682255, 16668.4698752315, 17274.2025822374, &
+                         17879.9352892434, 18485.6679962493, 19091.4007032553, 19697.1334102613 /)
+  data_src(1:n_src) = (/ 309.895999643929, 309.991081541887, 309.971074746584, 310.873654697145, &
+                         311.946530606618, 312.862249229647, 314.821236806913, 315.001269608758, &
+                         315.092410930288, 315.19010999336,  315.122964496815, 315.057882573487, &
+                         314.998796850493, 314.984586411292, 315.782246062002, 318.142544345795, &
+                         321.553905292867, 325.247730854554, 329.151282227113, 332.835673638378, &
+                         336.810414210932, 341.64530983048,  344.155248759994, 346.650476976385, &
+                         349.106430095269, 351.915323032738, 354.709396583792, 359.68904432446,  &
+                         371.054289820675, 395.098187506342, 446.150726850039 /)
+
+
+  !---reading namelist 
+  if(file_exist('input.nml')) then
+    unit =  open_namelist_file()
+       ierr=1
+    do while (ierr /= 0)
+          read  (unit, nml=test_axis_utils_nml, iostat=io, end=10)
+          ierr = check_nml_error(io,'test_axis_utils_nml')  ! also initializes nml error codes
+    enddo
+ 10    call close_file(unit)
+  endif
+
+  if(n_src >MAXSIZE) call mpp_error(FATAL, 'test_axis_utils: nml n_src is greater than MAXSIZE')
+  if(n_dst >MAXSIZE) call mpp_error(FATAL, 'test_axis_utils: nml n_dst is greater than MAXSIZE')
+
+  allocate(data_dst(n_dst) )
+
+
+
+  !--- write out data
+  write(stdout(),*)' the source grid is ', grid_src(1:n_src)
+  write(stdout(),*)' the destination grid is ', grid_dst(1:n_dst)
+  write(stdout(),*)' the source data is ', data_src(1:n_src)
+  call interp_1d(grid_src(1:n_src), grid_dst(1:n_dst), data_src(1:n_src), data_dst, "linear")
+  write(stdout(),*)' the destination data using linear interpolation is ', data_dst(1:n_dst)
+  call interp_1d(grid_src(1:n_src), grid_dst(1:n_dst), data_src(1:n_src), data_dst, "cubic_spline")
+  write(stdout(),*)' the destination data using cublic spline interpolation is ', data_dst(1:n_dst)
+
+end program test
+
+
+#endif test_axis_utils
+
+
+
 

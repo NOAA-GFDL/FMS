@@ -159,6 +159,9 @@ module mpp_mod
   use mpp_comm_mod,      only : mpp_chksum, mpp_max, mpp_min, mpp_sum, mpp_transmit
   use mpp_comm_mod,      only : mpp_send, mpp_recv, mpp_broadcast, mpp_malloc
   use mpp_comm_mod,      only : mpp_init, mpp_exit, mpp_set_stack_size
+#ifdef use_MPI_GSM
+  use mpp_comm_mod,      only : mpp_gsm_malloc, mpp_gsm_free
+#endif
 
   use mpp_util_mod,      only : stdin, stdout, stderr, stdlog, lowercase, uppercase
   use mpp_util_mod,      only : mpp_error, mpp_error_state, mpp_set_warn_level, mpp_sync
@@ -170,7 +173,7 @@ module mpp_mod
   character(len=128), public :: version= &
        '$Id mpp.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: khartoum $'
+       '$Name: lima $'
 
   !--- public paramters  -----------------------------------------------
   public :: MPP_VERBOSE, MPP_DEBUG, ALL_PES, ANY_PE, NULL_PE, NOTE, WARNING, FATAL
@@ -190,6 +193,9 @@ module mpp_mod
   !--- public interface from mpp_comm_mod ------------------------------
   public :: mpp_chksum, mpp_max, mpp_min, mpp_sum, mpp_transmit, mpp_send, mpp_recv
   public :: mpp_broadcast, mpp_malloc, mpp_init, mpp_exit
+#ifdef use_MPI_GSM
+  public :: mpp_gsm_malloc, mpp_gsm_free
+#endif
 
   end module mpp_mod
 
@@ -200,21 +206,31 @@ module mpp_mod
 #endif
 
 program test   !test various aspects of mpp_mod
-#include <os.h>
+#include <fms_platform.h>
 
 #ifdef sgi_mipspro
   use shmem_interface
 #endif
 
   use mpp_mod, only : mpp_init, mpp_exit, mpp_pe, mpp_npes, mpp_root_pe, stdout
-  use mpp_mod, only : mpp_clock_id, mpp_clock_begin, mpp_clock_end, mpp_sync
+  use mpp_mod, only : mpp_clock_id, mpp_clock_begin, mpp_clock_end, mpp_sync, mpp_malloc
   use mpp_mod, only : mpp_declare_pelist, mpp_set_current_pelist, mpp_set_stack_size
   use mpp_mod, only : mpp_broadcast, mpp_transmit, mpp_sum, mpp_max, mpp_chksum, ALL_PES
+#ifdef use_MPI_GSM
+  use mpp_mod, only : mpp_gsm_malloc, mpp_gsm_free
+#endif
 
   implicit none
 
   integer, parameter              :: n=1048576
   real, allocatable, dimension(:) :: a, b, c
+#ifdef use_MPI_GSM
+  real                            :: d(n)
+  pointer (locd, d)
+#else
+  real, allocatable, dimension(:) :: d
+  integer(LONG_KIND) :: locd
+#endif
   integer                         :: tick, tick0, ticks_per_sec, id
   integer                         :: pe, npes, root, i, j, k, l, m, n2, istat
   real                            :: dt
@@ -363,8 +379,45 @@ program test   !test various aspects of mpp_mod
 !    print *, 'chksum(a)=', mpp_chksum(a,(/pe/))
 !    print *, 'chksum(c)=', mpp_chksum(c)
   end if
+!test of pointer sharing
+#ifdef use_MPI_GSM
+      call mpp_gsm_malloc( locd, sizeof(d) )
+#else
+  if( pe.EQ.root )then
+      allocate( d(n) )
+      locd = LOC(d)
+  end if
+  call mpp_broadcast(locd,root)
+#endif
+  if( pe.EQ.root )then
+      call random_number(d)
+  end if
+  call mpp_sync()
+  call test_shared_pointers(locd,n)
+
+#ifdef use_MPI_GSM
+  call mpp_gsm_free( locd )
+#else
+  if( pe.EQ.root )then
+      deallocate( d )
+  end if
+#endif
 #endif
   call mpp_exit()
+
+contains
+
+  subroutine test_shared_pointers(locd,n)
+    integer(LONG_KIND), intent(in) :: locd
+    integer :: n
+    real :: dd(n)
+    pointer( p, dd )
+
+    p = locd
+    print *, 'TEST_SHARED_POINTERS: pe, locd=', pe, locd
+    print *, 'TEST_SHARED_POINTERS: pe, chksum(d)=', pe, mpp_chksum(dd,(/pe/))
+    return
+  end subroutine test_shared_pointers
 end program test
   
 #endif test_mpp

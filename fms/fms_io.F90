@@ -1,3 +1,5 @@
+#include <fms_platform.h>
+
 module fms_io_mod
 
 !
@@ -88,13 +90,13 @@ use mpp_mod, only : mpp_error, FATAL, NOTE, mpp_pe, mpp_root_pe, mpp_npes, &
 implicit none
 private
 
-integer, parameter, private :: max_files=40
+integer                     :: max_files_w, max_files_r    !  max_files will change as needed
 integer, parameter, private :: max_fields=150
 integer, parameter, private :: max_axes=40
 integer, parameter, private :: max_atts=20
 integer, parameter, private :: max_domains = 10
 type buff_type
-   real, dimension(:,:,:), pointer :: buffer =>NULL()
+   real, dimension(:,:,:), _ALLOCATABLE :: buffer _NULL
 end type buff_type
 
 type file_type
@@ -107,7 +109,7 @@ type file_type
    integer                                :: gsiz(max_fields,4) ! global X/Y/Z/T extent of fields
    integer                                :: unit_tmpfile(max_fields)
    character(len=128)                     :: fieldname(max_fields)
-   type(buff_type), dimension(:), pointer :: field_buffer =>NULL()
+   type(buff_type), dimension(:), _ALLOCATABLE :: field_buffer _NULL
    type(fieldtype), dimension(max_fields) :: fields
    type(axistype),  dimension(max_axes)   :: axes   ! spatial axes
    type(atttype),  dimension(max_atts)    :: atts
@@ -165,19 +167,19 @@ integer, private :: is,ie,js,je      ! compute domain
 integer, private :: isd,ied,jsd,jed  ! data domain
 integer, private :: isg,ieg,jsg,jeg  ! global domain
 
-type(file_type), dimension(max_files), private, save  :: files_read
-type(file_type), dimension(max_files), private, save  :: files_write
+type(file_type), dimension(:), allocatable            :: files_read
+type(file_type), dimension(:), allocatable            :: files_write
 type(file_type), save                                 :: default_file
 type(domain2d), dimension(max_domains), private, save :: array_domain
-public :: read_data, write_data, fms_io_init, fms_io_exit, field_size
-public :: open_namelist_file, open_restart_file, open_ieee32_file, close_file 
-public :: set_domain, nullify_domain, get_domain_decomp, return_domain
-public :: open_file, open_direct_file
-public :: get_restart_io_mode
+public  :: read_data, write_data, fms_io_init, fms_io_exit, field_size
+public  :: open_namelist_file, open_restart_file, open_ieee32_file, close_file 
+public  :: set_domain, nullify_domain, get_domain_decomp, return_domain
+public  :: open_file, open_direct_file
+public  :: get_restart_io_mode
 private :: lookup_field_w, lookup_axis, unique_axes
 
-character(len=128) :: version = '$Id: fms_io.F90,v 11.0 2004/09/28 19:59:27 fms Exp $'
-character(len=128) :: tagname = '$Name: khartoum $'
+character(len=128) :: version = '$Id: fms_io.F90,v 12.0 2005/04/14 17:56:29 fms Exp $'
+character(len=128) :: tagname = '$Name: lima $'
 
 contains
 
@@ -226,11 +228,12 @@ subroutine fms_io_init()
   logical :: file_exist
   namelist /fms_io_nml/ fms_netcdf_override, fms_netcdf_restart, &
        threading_read, fileset_read, threading_write, &
-       fileset_write, format, read_all_pe, iospec_ieee32
+       fileset_write, format, read_all_pe, iospec_ieee32,max_files_w,max_files_r
 
   call mpp_io_init()
   if (module_is_initialized) return
-
+! Initialize values of max_files_w and max_files_r  
+  max_files_w = 40; max_files_r = 40
   threading_read='multi';fileset_read='single';format='netcdf'
   threading_write='multi';fileset_write='multi'
 
@@ -303,11 +306,11 @@ subroutine fms_io_init()
   default_file%axes(:) = default_axis
   default_file%atts(:) = default_att      
   default_file%is_dimvar(:) = .false.
+! Initially allocate  files_write and files_read
+  allocate(files_write(max_files_w),files_read(max_files_r))
+  files_write(:) = default_file
+  files_read(:)  = default_file
 
-  do i=1, max_files
-     files_write(i) = default_file
-     files_read(i)  = default_file
-  enddo
   do i = 1, max_domains
      array_domain(i) = NULL_DOMAIN2D
   enddo
@@ -636,6 +639,7 @@ subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_nam
   integer :: gxsize, gysize
   logical :: file_open = .false., is_no_domain = .false.
   character(len=256) :: fname  
+  type(file_type), dimension(:), pointer  :: new_files_write
 
 ! Initialize files to default values
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(write_data_3d_new): need to call fms_io_init')  
@@ -672,6 +676,8 @@ subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_nam
   endif
 
   if (.not.file_open) then 
+     if(num_files_w == max_files_w) &  ! need to have bigger max_files_w
+          call mpp_error(FATAL,'fms_io write_data: max_files_w exceeded, increase it via fms_io_nml')    
 ! record the file name in array files_write
      num_files_w=num_files_w + 1
      nfile = num_files_w           
@@ -1134,7 +1140,7 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
   logical :: data_is_global
   logical :: file_opened, found, is_no_domain = .false.
   integer :: index_axis
-
+  type(file_type), dimension(:), pointer  :: new_files_read
 ! Initialize files to default values
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(read_data_3d_new):  module not initialized')  
   data_is_global=.false.
@@ -1210,6 +1216,8 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
      call mpp_open(unit,trim(fname),form=form,action=MPP_RDONLY,threading=thread_r, &
           fileset=fset_r)
 ! Increase num_files_r and set file_type 
+     if(num_files_r == max_files_r) &  ! need to have bigger max_files_r
+          call mpp_error(FATAL,'fms_io read_data: max_files_r exceeded, increase it via fms_io_nml')
      num_files_r=num_files_r + 1
      files_read(num_files_r)%filename = trim(fname)
      nfile = num_files_r

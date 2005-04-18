@@ -145,6 +145,7 @@ use fms_io_mod, only : read_data, write_data, fms_io_init, fms_io_exit, field_si
 use memutils_mod, only: print_memuse_stats, memutils_init
 use constants_mod, only: PI, RADIAN, constants_version=>version, constants_tagname=>tagname !Balaji: initialize here
 
+
 implicit none
 private
 
@@ -273,8 +274,8 @@ public :: mpp_clock_init
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: fms.F90,v 11.0 2004/09/28 19:59:22 fms Exp $'
-  character(len=128) :: tagname = '$Name: khartoum $'
+  character(len=128) :: version = '$Id: fms.F90,v 12.0 2005/04/14 17:56:21 fms Exp $'
+  character(len=128) :: tagname = '$Name: lima $'
 
   logical :: module_is_initialized = .FALSE.
 
@@ -315,15 +316,18 @@ contains
 ! initializes the fms module/package
 ! also calls mpp initialization routines and reads fms namelist
 
-subroutine fms_init ( )
-
+subroutine fms_init (localcomm )
+ integer, intent(in), optional :: localcomm
  integer :: unit, ierr, io, timing_grain
 
     if (module_is_initialized) return    ! return silently if already called
     module_is_initialized = .true.
 !---- initialize mpp routines ----
-
-    call mpp_init
+    if(present(localcomm)) then
+       call mpp_init(localcomm=localcomm)
+    else
+       call mpp_init()
+    endif
     call mpp_domains_init
     call fms_io_init
 

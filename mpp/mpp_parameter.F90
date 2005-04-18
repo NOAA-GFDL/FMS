@@ -1,5 +1,5 @@
 module mpp_parameter_mod
-#include <os.h>
+#include <fms_platform.h>
 
   implicit none
   private
@@ -7,7 +7,7 @@ module mpp_parameter_mod
   character(len=128), public :: version= &
        '$Id mpp_parameter.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: khartoum $'
+       '$Name: lima $'
 
   !--- public paramters which is used by mpp_mod and its components. 
   !--- All othere modules should import these parameters from mpp_mod. 
@@ -21,7 +21,7 @@ module mpp_parameter_mod
   !--- All othere modules should import these parameters from mpp_domains_mod. 
   public :: GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, BGRID_NE, BGRID_SW, CGRID_NE
   public :: CGRID_SW, FOLD_WEST_EDGE, FOLD_EAST_EDGE, FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE
-  public :: WUPDATE, EUPDATE, SUPDATE, NUPDATE, XUPDATE, YUPDATE, BITWISE_EXACT_SUM
+  public :: WUPDATE, EUPDATE, SUPDATE, NUPDATE, XUPDATE, YUPDATE, BITWISE_EXACT_SUM, NON_BITWISE_EXACT_SUM
   public :: MPP_DOMAIN_TIME, WEST, EAST, SOUTH, NORTH, SCALAR_BIT, SCALAR_PAIR
   public :: AGRID, GLOBAL, CYCLIC, DOMAIN_ID_BASE
   public :: MAX_DOMAIN_FIELDS
@@ -72,7 +72,8 @@ module mpp_parameter_mod
 ! combination with the flag parameter defined above to create a unique identifier for
 ! each Domain+flags combination. Therefore, the value of any flag must not exceed DOMAIN_ID_BASE.
 ! integer(LONG_KIND), parameter :: DOMAIN_ID_BASE=INT( 2**(4*LONG_KIND),KIND=LONG_KIND )
-  integer(LONG_KIND), parameter :: DOMAIN_ID_BASE=X'0000000100000000' ! Workaround for 64bit init problem
+  integer(LONG_KIND), parameter :: DOMAIN_ID_BASE=Z'0000000100000000' ! Workaround for 64bit init problem
+  integer, parameter :: NON_BITWISE_EXACT_SUM=0
   integer, parameter :: BITWISE_EXACT_SUM=1
   integer, parameter :: MPP_DOMAIN_TIME=MPP_DEBUG+1
   integer, parameter :: MAX_DOMAIN_FIELDS=100

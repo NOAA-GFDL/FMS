@@ -30,7 +30,8 @@ use time_manager_mod, only: time_type, get_date, set_date, set_time, &
                             time_type_to_real, real_to_time_type,    &
                             operator(+), operator(-), operator(>),   &
                             operator(<), operator( // ), operator( / ),  &
-                            operator(>=), operator(<=), operator( * )
+                            operator(>=), operator(<=), operator( * ), &
+                            operator(==)
 
 use          fms_mod, only: write_version_number, &
                             error_mesg, FATAL
@@ -159,8 +160,8 @@ integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
    integer :: yrmod, momod, dymod
    logical :: mod_leapyear
 
-   character(len=128) :: version='$Id: time_interp.F90,v 11.0 2004/09/28 20:06:12 fms Exp $'
-   character(len=128) :: tagname='$Name: khartoum $'
+   character(len=128) :: version='$Id: time_interp.F90,v 12.0 2005/04/14 18:01:42 fms Exp $'
+   character(len=128) :: tagname='$Name: lima $'
 
    logical :: module_is_initialized=.FALSE.
 
@@ -384,59 +385,122 @@ contains
 !   <OUT NAME="index2" TYPE="real"> </OUT>
 ! </SUBROUTINE>
 
-subroutine time_interp_modulo(Time, Time_beg, Time_end, Timelist, weight, index1, index2)
+subroutine time_interp_modulo(Time, Time_beg, Time_end, Timelist, weight, index1, index2, &
+                              correct_leap_year_inconsistency)
 type(time_type), intent(in)  :: Time, Time_beg, Time_end, Timelist(:)
 real           , intent(out) :: weight
 integer        , intent(out) :: index1, index2
+logical, intent(in), optional :: correct_leap_year_inconsistency
+  
+  type(time_type) :: Period, T
+  integer :: is, ie
+  integer :: ys,ms,ds,hs,mins,ss ! components of the starting date
+  integer :: ye,me,de,he,mine,se ! components of the ending date
+  integer :: yt,mt,dt,ht,mint,st ! components of the current date
+  integer :: dt1                 ! temporary value for day 
+  logical :: correct_lyr
 
-type(time_type) :: Period, Time_between
-integer :: nn, nlist
+  if ( .not. module_is_initialized ) call time_interp_init
+  
+  if (Time_beg>=Time_end) call error_handler('end of the time loop is not later than beginning')
+  
+  Period = Time_end-Time_beg ! period of the time axis
 
-nlist = size(Timelist(:))
-
-! Check that all values of Timelist are in ascending order.
-do nn=2,nlist
-  if (Timelist(nn) < Timelist(nn-1)) then
-    call error_mesg('time_interp_modulo','input time list not in ascending order',FATAL)
+  if(present(correct_leap_year_inconsistency)) then
+    correct_lyr = correct_leap_year_inconsistency
+  else
+    correct_lyr = .false.
   endif
-enddo
-
-! Check that all values of Timelist fall between Time_beg and Time_end.
-do nn=1,nlist
-  if(Timelist(nn) < Time_beg .or. Timelist(nn) > Time_end) then
-    call error_mesg('time_interp_modulo','input time list not all between Time_beg and Time_end',FATAL)
+  
+  ! bring the requested time inside the specified time period
+  T = Time
+  call get_date(Time_beg,ys,ms,ds,hs,mins,ss)
+  call get_date(Time_end,ye,me,de,he,mine,se)
+  
+  if(correct_lyr.and.ms==me.and.ds==de.and.hs==he.and.mins==mine.and.ss==se) then
+     ! whole number of years
+     call get_date(T,yt,mt,dt,ht,mint,st)
+     yt = ys+modulo(yt-ys,ye-ys)
+     dt1 = dt
+     if(mt==2.and.dt==29.and..not.leap_year(set_date(yt,1,1))) dt1=28
+     T = set_date(yt,mt,dt1,ht,mint,st)
+     if (T < Time_beg) then
+        ! the requested time is within the first year, 
+        ! but before the starting date. So we shift it to the
+        ! last year.
+        if(mt==2.and.dt==29.and..not.leap_year(set_date(ye,1,1))) dt=28
+        T = set_date(ye,mt,dt,ht,mint,st)
+     endif
+  else
+     do while ( T > Time_end )
+        T = T-Period
+     enddo
+     do while ( T < Time_beg )
+        T = T+Period
+     enddo
   endif
-enddo
-
-Period = Time_end - Time_beg
-
-! Must convert time_type variables to real for some operations because a negative value of
-! time results. The time manager_mod does not allow negative values of time_type variables.
-
-! floor yeilds the desired result when its argument is negative, int does not.
-nn = floor((time_type_to_real(Time) - time_type_to_real(Time_beg)) / time_type_to_real(Period))
-Time_between = real_to_time_type(time_type_to_real(Time) - time_type_to_real(Period) * nn)
-
-if(Time_between <= Timelist(1)) then
-  index1 = nlist
-  index2 = 1
-  weight = (Time_between + Period - Timelist(nlist)) // (Timelist(1) + Period - Timelist(nlist))
-else if(Time_between >= Timelist(nlist)) then
-  index1 = nlist
-  index2 = 1
-  weight = (Time_between - Timelist(nlist)) // (Timelist(1) + Period - Timelist(nlist))
-else
-  do nn=2,nlist
-    if(Time_between >= Timelist(nn-1) .and. Time_between <= Timelist(nn)) then
-      index1 = nn-1
-      index2 = nn
-      weight = (Time_between - Timelist(nn-1)) // (Timelist(nn) - Timelist(nn-1))
-      exit
-    endif
-  enddo
-endif
+  
+  ! find indices of the first and last records in the Timelist that are within 
+  ! the requested time period
+  call bisect(Timelist,Time_beg,index2=is)
+  call bisect(Timelist,Time_end,index1=ie)
+  if (Time_end<Timelist(1).or.Time_beg>Timelist(size(Timelist)).or.is>=ie) then
+     call error_handler('no time points within the specified time loop interval')
+  endif
+  
+  ! handle special cases:
+  if( T>Timelist(ie) ) then
+     ! time is after the end of the portion of the time list within the 
+     ! requested period
+     index1 = ie;   index2 = is
+     weight = (T-Timelist(ie))//(Period-(Timelist(ie)-Timelist(is)))
+  else if (T<Timelist(is)) then
+     ! time is before the beginning of the portion of the time list within
+     ! the requested period
+     index1 = ie;   index2 = is
+     weight = 1.0-((Timelist(is)-T)//(Period-(Timelist(ie)-Timelist(is))))
+  else
+     call time_interp_list(T,Timelist,weight,index1,index2,NONE)
+  endif
 
 end subroutine time_interp_modulo
+
+!#######################################################################
+! given an array of times in ascending order and a specific time returns
+! values of index1 and index2 such that the Timelist(index1)<=Time and
+! Time<=Timelist(index2), and index2=index1+1
+! index1=0, index2=1 or index=n, index2=n+1 are returned to indicate that 
+! the time is out of range
+subroutine bisect(Timelist,Time,index1,index2)
+  type(time_type)  , intent(in)  :: Timelist(:)
+  type(time_type)  , intent(in)  :: Time
+  integer, optional, intent(out) :: index1, index2
+
+  integer :: i,il,iu,n,i1,i2
+  
+  n = size(Timelist(:))
+  
+  if (Time==Timelist(1)) then
+     i1 = 1 ; i2 = 2
+  else if (Time==Timelist(n)) then
+     i1 = n-1 ; i2 = n
+  else
+     il = 0; iu=n+1
+     do while(iu-il > 1)
+        i = (iu+il)/2
+        if(set_modtime(Timelist(i))>Time) then
+           iu = i
+        else
+           il = i
+        endif
+     enddo
+     i1 = il ; i2 = il+1
+  endif
+
+  if(PRESENT(index1)) index1 = i1
+  if(PRESENT(index2)) index2 = i2
+end subroutine bisect
+
 
 !#######################################################################
 ! <SUBROUTINE NAME="time_interp_list" INTERFACE="time_interp">
@@ -457,14 +521,16 @@ integer, optional, intent(in)  :: modtime
 integer :: i, n, hr, mn, se
 type(time_type) :: T, T1, T2, Ts, Te, Td, Period, Time_mod
 
+  if ( .not. module_is_initialized ) call time_interp_init
+
   weight = 0.; index1 = 0; index2 = 0
   n = size(Timelist(:))
 
-! check list for ascending order
-  do i = 2, n
-     if (Timelist(i) > Timelist(i-1)) cycle
-     call error_handler ('input time list not ascending order')
-  enddo
+!!$! check list for ascending order
+!!$  do i = 2, n
+!!$     if (Timelist(i) > Timelist(i-1)) cycle
+!!$     call error_handler ('input time list is not in ascending order')
+!!$  enddo
 
 ! setup modular time axis?
   mtime = NONE
@@ -507,17 +573,8 @@ type(time_type) :: T, T1, T2, Ts, Te, Td, Period, Time_mod
 
 ! time falls between start and end list values
   if ( T >= Ts .and. T <= Te ) then
-     T1 = set_modtime(Timelist(1))
-     do i = 2, n
-       T2 = set_modtime(Timelist(i))
-       if ( T >= T1 .and. T <= T2 ) then
-          index1 = i-1
-          index2 = i
-          weight = (T-T1) // (T2-T1)
-          exit
-       endif
-       T1 = T2
-     enddo
+     call bisect(Timelist,T,index1,index2)
+     weight = (T-Timelist(index1)) // (Timelist(index2)-Timelist(index1))
 
 ! time falls before starting list value
   else if ( T < Ts ) then

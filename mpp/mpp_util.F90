@@ -1,5 +1,5 @@
 module mpp_util_mod
-#include <os.h>
+#include <fms_platform.h>
 
 #if defined(use_libSMA) && defined(sgi_mipspro)
   use shmem_interface
@@ -15,7 +15,7 @@ module mpp_util_mod
 
   use mpp_datatype_mod,  only : Summary_Struct
 
-  use mpp_data_mod,      only : pe, npes, root_pe, node, log_unit, etc_unit, configfile
+  use mpp_data_mod,      only : pe, npes, root_pe, log_unit, etc_unit, configfile
   use mpp_data_mod,      only : debug=>debug_mpp,  module_is_initialized=>mpp_is_initialized
   use mpp_data_mod,      only : error, peset, clocks, current_peset_num, peset_num
   use mpp_data_mod,      only : world_peset_num, clock_num, current_clock, tick_rate, tick0
@@ -30,7 +30,7 @@ module mpp_util_mod
   character(len=128), public :: version= &
        '$Id mpp_util.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: khartoum $'
+       '$Name: lima $'
 
 #if defined(use_libMPI) && !defined(sgi_mipspro)
 #include <mpif.h>   !sgi_mipspro gets this from 'use mpi'
@@ -42,7 +42,7 @@ module mpp_util_mod
   public :: mpp_get_current_pelist, mpp_clock_set_grain, clock_init, mpp_clock_id
   public :: mpp_clock_begin, mpp_clock_end, increment_current_clock, dump_clock_summary
   public :: sum_clock_data, get_peset, get_unit, mpp_error_state,  mpp_set_warn_level
-  public :: mpp_sync, mpp_sync_self, lowercase, uppercase
+  public :: mpp_sync, mpp_sync_self, lowercase, uppercase, mpp_init_logfile
 
   type(Summary_Struct) :: clock_summary(MAX_CLOCKS)
   logical              :: warnings_are_fatal = .FALSE.
@@ -205,22 +205,41 @@ contains
   function stdlog()
     integer :: stdlog,istat
     logical :: opened
+    character(len=9) :: this_pe
     if( pe.EQ.root_pe )then
-       inquire( file=trim(configfile), opened=opened )
+       write(this_pe,'(a,i4.4,a)') '.',pe,'.out'
+       inquire( file=trim(configfile)//this_pe, opened=opened )
        if( opened )then
           call FLUSH(log_unit,istat)
        else
           log_unit=get_unit()
-          open( unit=log_unit, status='OLD', file=trim(configfile), position='APPEND', err=10 )
+          open( unit=log_unit, status='UNKNOWN', file=trim(configfile)//this_pe, position='APPEND', err=10 )
        end if
        stdlog = log_unit
     else
        stdlog = etc_unit
     end if
     return
-10  call mpp_error( FATAL, 'STDLOG: unable to open '//trim(configfile)//'.' )
+10  call mpp_error( FATAL, 'STDLOG: unable to open '//trim(configfile)//this_pe//'.' )
   end function stdlog
 
+  !#####################################################################
+  subroutine mpp_init_logfile()
+  integer :: p
+  logical :: exist
+  character(len=9) :: this_pe
+  if( pe.EQ.root_pe )then
+     log_unit = get_unit()
+     do p=0,npes-1
+       write(this_pe,'(a,i4.4,a)') '.',p,'.out'
+       inquire( file=trim(configfile)//this_pe, exist=exist )
+       if(exist)then
+         open( unit=log_unit, file=trim(configfile)//this_pe, status='REPLACE' )
+         close(log_unit)
+       endif
+     end do
+  end if
+  end subroutine mpp_init_logfile
   !#####################################################################
   subroutine mpp_set_warn_level(flag)
     integer, intent(in) :: flag
@@ -267,10 +286,12 @@ contains
 
   !#####################################################################
   function mpp_node()
+!calls mld_id from threadloc.c on sgi, which returns the hardware node ID from /hw/nodenum/...
     integer :: mpp_node
+    integer :: mld_id
 
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_NODE: You must first call mpp_init.' )
-    mpp_node = node
+    mpp_node = mld_id()
     return
   end function mpp_node
 

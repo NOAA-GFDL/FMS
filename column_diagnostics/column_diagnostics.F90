@@ -34,7 +34,7 @@ private
 
 
 character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 11.0 2004/09/28 19:58:33 fms Exp $'
-character(len=128)  :: tag     =  '$Name: khartoum $'
+character(len=128)  :: tag     =  '$Name: lima $'
 
 
 

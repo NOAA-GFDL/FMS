@@ -26,6 +26,9 @@
       integer, intent(in) :: put_len, to_pe, get_len, from_pe
       MPP_TYPE_, intent(in)  :: put_data(*)
       MPP_TYPE_, intent(out) :: get_data(*)
+#include <mpp/shmem.fh>
+      external shmem_ptr
+
       integer :: i
       integer :: np
       integer(LONG_KIND) :: data_loc
@@ -57,7 +60,11 @@
           call SHMEM_INT8_WAIT( status(to_pe), MPP_WAIT )
           status(to_pe) = MPP_WAIT !prohibit puts to to_pe until it has retrieved this message
           if( current_clock.NE.0 )call increment_current_clock(EVENT_WAIT)
+#ifdef __ia64
+          data_loc = shmem_ptr(put_data,pe)
+#else
           data_loc = LOC(put_data)
+#endif
           if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
           call SHMEM_INTEGER_PUT( mpp_from_pe, pe, 1, to_pe )
           call SHMEM_PUT8( remote_data_loc(pe), data_loc, 1, to_pe )
@@ -104,7 +111,7 @@
           remote_data_loc(from_pe) = MPP_WAIT !reset
 !          call SHMEM_PUT8( status(pe), MPP_READY, 1, from_pe ) !tell from_pe we have retrieved the location
           if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
-#if defined(CRAYPVP) || defined(sgi_mipspro)
+#if defined(CRAYPVP) || defined(sgi_mipspro) || defined(__ia64)
 !since we have the pointer to remote data, just retrieve it with a simple copy
           if( LOC(get_data).NE.LOC(remote_data) )then
 !dir$ IVDEP
@@ -133,7 +140,7 @@
           ptr_remote_data = remote_data_loc(mpp_from_pe)
           remote_data_loc(mpp_from_pe) = MPP_WAIT !reset
           call SHMEM_PUT8( status(pe), MPP_READY, 1, mpp_from_pe ) !tell mpp_from_pe we have retrieved the location
-#if defined(CRAYPVP) || defined(sgi_mipspro)
+#if defined(CRAYPVP) || defined(sgi_mipspro) || defined(__ia64)
 !since we have the pointer to remote data, just retrieve it with a simple copy
           if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
           if( LOC(get_data).NE.LOC(remote_data) )then

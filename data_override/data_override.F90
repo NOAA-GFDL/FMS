@@ -48,8 +48,8 @@ use time_manager_mod, only: time_type
 implicit none
 private
 
-character(len=128) :: version = '$Id: data_override.F90,v 11.0 2004/09/28 19:58:43 fms Exp $'
-character(len=128) :: tagname = '$Name: khartoum $'
+character(len=128) :: version = '$Id: data_override.F90,v 12.0 2005/04/14 17:55:22 fms Exp $'
+character(len=128) :: tagname = '$Name: lima $'
 
 type data_type
    character(len=3) :: gridname
@@ -279,21 +279,34 @@ subroutine data_override_2d(gridname,fieldname,data_2D,time,override,region1,reg
   real, dimension(:,:), intent(inout) :: data_2D !data returned by this call
 !  real, dimension(size(data_2D,1),size(data_2D,2),1) :: data_3D
   real, dimension(:,:,:), allocatable ::  data_3D
+  integer       :: index1
+  integer       :: i
+
+!1  Look  for the data file in data_table 
+  if(PRESENT(override)) override = .false.
+  index1 = -1
+  do i = 1, table_size
+     if( trim(gridname) /= trim(data_table(i)%gridname)) cycle
+     if( trim(fieldname) /= trim(data_table(i)%fieldname_code)) cycle
+     index1 = i                               ! field found        
+     exit
+  enddo
+  if(index1 .eq. -1) return  ! NO override was performed
 
   allocate(data_3D(size(data_2D,1),size(data_2D,2),1))
-  data_3D(:,:,1) = data_2D 
+  data_3D(:,:,1) = data_2D
   if(present(override) .and. PRESENT(region1).and. present(region2)) then
-     call data_override_3d(gridname,fieldname,data_3D,time,override,region1,region2)
+     call data_override_3d(gridname,fieldname,data_3D,time,override,region1,region2,data_index=index1)
   else if (PRESENT(region1).and. present(region2)) then
-     call data_override_3d(gridname,fieldname,data_3D,time,region1=region1,region2=region2)
+     call data_override_3d(gridname,fieldname,data_3D,time,region1=region1,region2=region2,data_index=index1)
   else if(present(override) .and. PRESENT(region1)) then
-     call data_override_3d(gridname,fieldname,data_3D,time,override,region1)
+     call data_override_3d(gridname,fieldname,data_3D,time,override,region1,data_index=index1)
   else if(present(override)) then
-     call data_override_3d(gridname,fieldname,data_3D,time,override)
+     call data_override_3d(gridname,fieldname,data_3D,time,override,data_index=index1)
   else if (present(region1)) then
-     call data_override_3d(gridname,fieldname,data_3D,time,region1=region1)
+     call data_override_3d(gridname,fieldname,data_3D,time,region1=region1,data_index=index1)
   else
-     call data_override_3d(gridname,fieldname,data_3D,time)
+     call data_override_3d(gridname,fieldname,data_3D,time,data_index=index1)
   endif  
      
   data_2D(:,:) = data_3D(:,:,1)
@@ -325,7 +338,7 @@ end subroutine data_override_2d
 !   <OUT NAME="override" TYPE="logical">
 !    TRUE if the field is overriden, FALSE otherwise
 !   </OUT>
-subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,region2)
+subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,region2,data_index)
   character(len=3), intent(in) :: gridname ! model grid ID
   character(len=*), intent(in) :: fieldname_code ! field name as used in the model
   logical, intent(out), optional :: override ! true if the field has been overriden succesfully
@@ -333,6 +346,7 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
   real, intent(in), optional :: region1(4),region2(4) !lat and lon of regions where override is done
 !Note: region2 can not exist without region1. In other words, if only one region is specified, it
 ! should be region1
+  integer, intent(in), optional :: data_index
   real, dimension(:,:,:), intent(out) :: data1 !data returned by this call
   real, dimension(:,:,:), allocatable :: data !temporary array for data
   character(len=128) :: filename !file containing source data
@@ -362,14 +376,18 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
 
 !1  Look  for the data file in data_table 
   if(PRESENT(override)) override = .false.
-  index1 = -1
-  do i = 1, table_size
-     if( trim(gridname) /= trim(data_table(i)%gridname)) cycle
-     if( trim(fieldname_code) /= trim(data_table(i)%fieldname_code)) cycle
-     index1 = i                               ! field found        
-     exit
-  enddo
-  if(index1 .eq. -1) return  ! NO override was performed
+  if (present(data_index)) then
+    index1 = data_index
+  else
+    index1 = -1
+    do i = 1, table_size
+       if( trim(gridname) /= trim(data_table(i)%gridname)) cycle
+       if( trim(fieldname_code) /= trim(data_table(i)%fieldname_code)) cycle
+       index1 = i                               ! field found        
+       exit
+    enddo
+    if(index1 .eq. -1) return  ! NO override was performed
+  endif
  
   if(present(region2) .and. .not. present(region1)) &
        call mpp_error(FATAL,'data_override: region2 is specified without region1')
@@ -472,6 +490,7 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
   endif !if curr_position < 0
 
   allocate(data(comp_domain(1):comp_domain(2),comp_domain(3):comp_domain(4),size(data1,3)))
+  data = HUGE(1.0)
   ! Determine if  data in netCDF file is 2D or not  
   data_file_is_2D = .false.
   if((dims(3) == 1) .and. (size(data1,3)>1)) data_file_is_2D = .true. 

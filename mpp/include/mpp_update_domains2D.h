@@ -13,6 +13,7 @@
       ptr = LOC(field)
       call mpp_update_domains( field3D, domain, flags, complete, free, list_size, dc_handle )
 #else
+      integer, optional :: dc_handle  ! Not used when there are no Cray pointers
       field3D = RESHAPE( field, SHAPE(field3D) )
       call mpp_update_domains( field3D, domain, flags )
       field = RESHAPE( field3D, SHAPE(field) )
@@ -82,6 +83,7 @@
         call mpp_do_update( field, domain, flags )
       endif
 #else
+      integer, optional :: dc_handle  ! Not used when there are no Cray pointers
       call mpp_do_update( field, domain, flags )
 #endif
       return
@@ -102,6 +104,7 @@
       ptr = LOC(field)
       call mpp_update_domains( field3D, domain, flags, complete, free, list_size, dc_handle )
 #else
+      integer, optional :: dc_handle  ! Not used when there are no Cray pointers
       field3D = RESHAPE( field, SHAPE(field3D) )
       call mpp_update_domains( field3D, domain, flags )
       field = RESHAPE( field3D, SHAPE(field) )
@@ -124,6 +127,7 @@
       ptr = LOC(field)
       call mpp_update_domains( field3D, domain, flags, complete, free, list_size, dc_handle )
 #else
+      integer, optional :: dc_handle  ! Not used when there are no Cray pointers
       field3D = RESHAPE( field, SHAPE(field3D) )
       call mpp_update_domains( field3D, domain, flags )
       field = RESHAPE( field3D, SHAPE(field) )
@@ -147,6 +151,7 @@
       ptr_out = LOC(field_out)
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, dc_handle )
 #else
+      integer, optional :: dc_handle  ! Not used when there are no Cray pointers
       field3D_in = RESHAPE( field_in, SHAPE(field3D_in) )
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out )
       field_out = RESHAPE( field3D_out, SHAPE(field_out) )
@@ -241,6 +246,7 @@
         call mpp_do_redistribute( domain_in, field_in, domain_out, field_out )
       endif
 #else
+      integer, optional :: dc_handle  ! Not used when there are no Cray pointers
       call mpp_do_redistribute( domain_in, field_in, domain_out, field_out )
 #endif
     end subroutine MPP_REDISTRIBUTE_3D_
@@ -262,6 +268,7 @@
       ptr_out = LOC(field_out)
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, dc_handle )
 #else
+      integer, optional :: dc_handle  ! Not used when there are no Cray pointers
       field3D_in = RESHAPE( field_in, SHAPE(field3D_in) )
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out )
       field_out = RESHAPE( field3D_out, SHAPE(field_out) )
@@ -285,6 +292,7 @@
       ptr_out = LOC(field_out)
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, dc_handle )
 #else
+      integer, optional :: dc_handle  ! Not used when there are no Cray pointers
       field3D_in = RESHAPE( field_in, SHAPE(field3D_in) )
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out )
       field_out = RESHAPE( field3D_out, SHAPE(field_out) )
@@ -313,6 +321,7 @@
       ptry = LOC(fieldy)
       call mpp_update_domains( field3Dx, field3Dy, domain, flags, gridtype, complete, free, list_size, dc_handle )
 #else
+      integer, optional :: dc_handle  ! Not used when there are no Cray pointers
       field3Dx = RESHAPE( fieldx, SHAPE(field3Dx) )
       field3Dy = RESHAPE( fieldy, SHAPE(field3Dy) )
       call mpp_update_domains( field3Dx, field3Dy, domain, flags, gridtype )
@@ -380,6 +389,7 @@
         call mpp_do_update( fieldx, fieldy, domain, flags, gridtype )
       endif
 #else   
+      integer, optional :: dc_handle  ! Not used when there are no Cray pointers
       call mpp__do_update( fieldx, fieldy, domain, flags, gridtype )
 #endif
       return
@@ -403,6 +413,7 @@
       ptry = LOC(fieldy)
       call mpp_update_domains( field3Dx, field3Dy, domain, flags, gridtype, complete, free, list_size, dc_handle )
 #else
+      integer, optional :: dc_handle  ! Not used when there are no Cray pointers
       field3Dx = RESHAPE( fieldx, SHAPE(field3Dx) )
       field3Dy = RESHAPE( fieldy, SHAPE(field3Dy) )
       call mpp_update_domains( field3Dx, field3Dy, domain, flags, gridtype )
@@ -429,6 +440,7 @@
       ptry = LOC(fieldy)
       call mpp_update_domains( field3Dx, field3Dy, domain, flags, gridtype, complete, free, list_size, dc_handle )
 #else
+      integer, optional :: dc_handle  ! Not used when there are no Cray pointers
       field3Dx = RESHAPE( fieldx, SHAPE(field3Dx) )
       field3Dy = RESHAPE( fieldy, SHAPE(field3Dy) )
       call mpp_update_domains( field3Dx, field3Dy, domain, flags, gridtype )

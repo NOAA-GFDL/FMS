@@ -15,12 +15,12 @@
         </STYLE>
 </head>
 <body>
-<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC%20INTERFACE">PUBLIC INTERFACE </a>~
-          <a href="#PUBLIC%20DATA">PUBLIC DATA </a>~
-          <a href="#PUBLIC%20ROUTINES">PUBLIC ROUTINES </a>~
+<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC INTERFACE">PUBLIC INTERFACE </a>~
+          <a href="#PUBLIC DATA">PUBLIC DATA </a>~
+          <a href="#PUBLIC ROUTINES">PUBLIC ROUTINES </a>~
           <a href="#NAMELIST">NAMELIST </a>~
-          <a href="#DIAGNOSTIC%20FIELDS">DIAGNOSTIC FIELDS </a>~
-          <a href="#ERROR%20MESSAGES">ERROR MESSAGES </a>~
+          <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
+          <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
           <a href="#REFERENCES">REFERENCES </a>~ 
           <a href="#NOTES">NOTES</a></font>
 <hr>
@@ -76,7 +76,8 @@ file_out = RESTART/ocean_age.res.nc/</pre>   The field table consists of entries
 <br>
    The second quoted string will tell the field manager which model the 
    field is being applied to.
-   The supported types at present are <pre>      "atmos_mod" for the atmosphere model,
+   The supported types at present are <pre>      "coupler_mod" for the coupler,
+      "atmos_mod" for the atmosphere model,
       "ocean_mod" for the ocean model,
       "land_mod" for the land model, and,
       "ice_mod" for the ice model.</pre>   The third quoted string should be a unique name that can be used as a
@@ -170,7 +171,7 @@ file_out = RESTART/ocean_age.res.nc/</pre>   The field table consists of entries
 </div>
 <br>
 <!-- END DESCRIPTION -->
-<a name="OTHER%20MODULES%20USED"></a>
+<a name="OTHER MODULES USED"></a>
 <hr>
 <h4>OTHER MODULES USED</h4>
 <!-- BEGIN OTHER MODULES USED -->
@@ -179,7 +180,7 @@ file_out = RESTART/ocean_age.res.nc/</pre>   The field table consists of entries
 </div>
 <!-- END OTHER MODULES USED -->
 <!-- BEGIN PUBLIC INTERFACE -->
-<a name="PUBLIC%20INTERFACE"></a>
+<a name="PUBLIC INTERFACE"></a>
 <hr>
 <h4>PUBLIC INTERFACE</h4>
 <div>
@@ -279,7 +280,7 @@ file_out = RESTART/ocean_age.res.nc/</pre>   The field table consists of entries
 </div>
 <br>
 <!-- END PUBLIC INTERFACE -->
-<a name="PUBLIC%20DATA"></a>
+<a name="PUBLIC DATA"></a>
 <hr>
 <h4>PUBLIC DATA</h4>
 <!-- BEGIN PUBLIC DATA -->
@@ -319,13 +320,16 @@ file_out = RESTART/ocean_age.res.nc/</pre>   The field table consists of entries
 <td> MODEL_ICE  </td><td> integer, parameter  </td><td> 4  </td><td> ---  </td><td>    Ice model.   </td>
 </tr>
 <tr>
+<td> MODEL_COUPLER  </td><td> integer, parameter  </td><td> 6  </td><td> ---  </td><td>    Ice model.   </td>
+</tr>
+<tr>
 <td> MODEL_DEFAULT  </td><td> integer, parameter  </td><td> 5  </td><td> ---  </td><td>    Default model.   </td>
 </tr>
 </table>
 <br>
 </div>
 <!-- END PUBLIC DATA -->
-<a name="PUBLIC%20ROUTINES"></a>
+<a name="PUBLIC ROUTINES"></a>
 <hr>
 <h4>PUBLIC ROUTINES</h4>
 <!-- BEGIN PUBLIC ROUTINES -->
@@ -1389,7 +1393,7 @@ file_out = RESTART/ocean_age.res.nc/</pre>   The field table consists of entries
 </li>
 </ol>
 <!-- END PUBLIC ROUTINES -->
-<a name="PUBLIC%20TYPES"></a>
+<a name="PUBLIC TYPES"></a>
 <!-- BEGIN PUBLIC TYPES -->
 <hr>
 <h4>PUBLIC TYPES</h4>
@@ -1486,9 +1490,9 @@ file_out = RESTART/ocean_age.res.nc/</pre>   The field table consists of entries
 <!-- END PUBLIC TYPES -->
 <a name="NAMELIST"></a>
 <!-- BEGIN NAMELIST -->
-<!-- END NAMELIST --><a name="DIAGNOSTIC%20FIELDS"></a>
+<!-- END NAMELIST --><a name="DIAGNOSTIC FIELDS"></a>
 <!-- BEGIN DIAGNOSTIC FIELDS -->
-<!-- END DIAGNOSTIC FIELDS --><a name="DATA%20SETS"></a>
+<!-- END DIAGNOSTIC FIELDS --><a name="DATA SETS"></a>
 <!-- BEGIN DATA SETS -->
 <hr>
 <h4>DATA SETS</h4>
@@ -1496,9 +1500,9 @@ file_out = RESTART/ocean_age.res.nc/</pre>   The field table consists of entries
 <br>
 </div>
 <!-- END DATA SETS -->
-<a name="PUBLIC%20CODE"></a>
+<a name="PUBLIC CODE"></a>
 <!-- BEGIN PUBLIC CODE -->
-<!-- END PUBLIC CODE --><a name="ERROR%20MESSAGES"></a>
+<!-- END PUBLIC CODE --><a name="ERROR MESSAGES"></a>
 <!-- BEGIN ERROR MESSAGES -->
 <hr>
 <h4>ERROR MESSAGES</h4>

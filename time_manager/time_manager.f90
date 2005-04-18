@@ -40,8 +40,8 @@ module time_manager_mod
 !    contains two PRIVATE variables: seconds and days.
 ! </DATA>
 
-use fms_mod, only: error_mesg, FATAL, WARNING, write_version_number, stdout, lowercase, &
-                   mpp_pe, mpp_root_pe, stdlog, close_file, open_namelist_file, check_nml_error
+use fms_mod, only: error_mesg, FATAL, WARNING, write_version_number, stdout, stdlog, &
+                   mpp_pe, mpp_root_pe, close_file, open_namelist_file, check_nml_error
 
 implicit none
 private
@@ -81,7 +81,7 @@ public days_in_year,   days_in_year_thirty,        days_in_year_julian, &
                        days_in_year_gregorian,     days_in_year_no_leap
 public month_name
 
-public get_cal_time
+public valid_calendar_types
 
 ! Subroutines for printing version number and time type
 public :: time_manager_init, print_time, print_date
@@ -94,11 +94,6 @@ integer, parameter :: THIRTY_DAY_MONTHS = 1,      JULIAN = 2, &
                       NO_CALENDAR = 0
 integer, private :: calendar_type = NO_CALENDAR
 integer, parameter :: max_type = 4
-
-character(len=24), private, dimension(0:max_type) :: valid_calendar_types= &
-      (/'NO_CALENDAR             ','THIRTY_DAY_MONTHS       ', &
-        'JULIAN                  ','GREGORIAN               ', &
-        'NOLEAP                  '/)
 
 ! Define number of days per month
 integer, private :: days_per_month(12) = (/31,28,31,30,31,30,31,31,30,31,30,31/)
@@ -138,19 +133,15 @@ end interface
 
 !======================================================================
 
-character(len=128) :: version='$Id: time_manager.f90,v 11.0 2004/09/28 20:06:26 fms Exp $'
-character(len=128) :: tagname='$Name: khartoum $'
+character(len=128) :: version='$Id: time_manager.f90,v 12.0 2005/04/14 18:02:05 fms Exp $'
+character(len=128) :: tagname='$Name: lima $'
 logical :: module_is_initialized = .false.
 
 !======================================================================
 
 logical :: zero_year_warning = .true.
-logical :: no_calendar_conversion=.false. ! for backward compability
-                                          ! where true, assume that
-                                          ! calendar for external data
-                                          ! is identical to model 
-                                          ! calendar in get_cal_time
-namelist / time_manager_nml / zero_year_warning, no_calendar_conversion
+
+namelist / time_manager_nml / zero_year_warning
 
 !======================================================================
 contains
@@ -225,13 +216,15 @@ string_sifted_left = adjustl(string)
 i1 = index(trim(string_sifted_left),' ')
 if(i1 == 0) then
   call error_mesg('set_time_c','Form of character time stamp is incorrect.'// &
-  ' It must include days and seconds.'// &
+  ' When NO_CALENDAR is in effect, '// &
+  ' it must include days and seconds.'// &
   ' The character time stamp is: '//trim(string),FATAL)
 endif
 if(index(string,'-') /= 0 .or. index(string,':') /= 0) then
   call error_mesg('set_time_c','Form of character time stamp is incorrect.'// &
-  ' The character time stamp is: '//trim(string)//' It should consist of days'// &
-  ' and seconds separated by a blank. Note: use set_date if time stamp is in the form of a calendar date.',FATAL)
+  ' When NO_CALENDAR is in effect, it must consist of days and seconds separated by a blank.'// &
+  ' The time stamp is: '//trim(string)//  &
+  '   Note: use set_date if time stamp is a calendar date.',FATAL)
 endif
 write(formt(3:3),'(i1)') i1-1
 read(string_sifted_left(1:i1-1),formt) day
@@ -1250,249 +1243,6 @@ case default
 end select
 end subroutine get_date
 ! </SUBROUTINE>
-!------------------------------------------------------------------------
-
-! Examples of acceptable units for function get_cal_time:
-
-! days since 1980-01-01 00:00:00
-! hours since 1980-1-1 0:0:0
-! minutes since 0001-4-12
-
-! year number must occupy 4 spaces.
-! months, days, hours, minutes, seconds may occupy 1 or 2 spaces
-! year, month and day must be separated by a '-'
-! hour, minute, second must be separated by a ':'
-! hour, minute, second are optional. If not present then zero is assumed.
-
-! When NO_CALENDAR is in effect, units attribute must specify a starting
-! day and second, with day number appearing first
-
-! Example: "days since 100 0" Indicates 100 days 0 seconds
-!------------------------------------------------------------------------
-! <FUNCTION NAME="get_cal_time">
-!   <OVERVIEW>
-!      Given a time_interval as a real number, returns the corresponding
-!      time under the selected calendar as a time_type variable. 
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Given a time_interval as a real number, returns the corresponding
-!      time under the selected calendar as a time_type variable. 
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     get_cal_time(time_increment, units, calendar)
-!   </TEMPLATE>
-!   <IN NAME="time_increment" TYPE="real"> A time interval.</IN>
-!   <IN NAME="units" TYPE="character">
-!
-! Examples of acceptable values of units:
-!
-! 'days since 1980-01-01 00:00:00',
-! 'hours since 1980-1-1 0:0:0',
-! 'minutes since 0001-4-12'
-!
-! The first word in the string must be
-! 'years', 'months', 'days', 'hours', 'minutes' or 'seconds'.
-! The second word must be 'since'
-!
-! year number must occupy 4 spaces.
-! Number of months, days, hours, minutes, seconds may occupy 1 or 2 spaces
-! year, month and day must be separated by a '-'
-! hour, minute, second must be separated by a ':'
-! hour, minute, second are optional. If not present then zero is assumed.
-!
-! Because months are not equal increments of time, and, for julian calendar,
-! neither are years, the 'years since' and 'month since' cases deserve
-! further explaination. 
-!
-! When 'years since' is used:
-! The year number is increased by floor(time_increment)   to obtain a time T1.
-! The year number is increased by floor(time_increment)+1 to obtain a time T2.
-! The time returned is T1 + (time_increment-floor(time_increment))*(T2-T1).
-!
-! When 'months since' is used:
-! The month number is increased by floor(time_increment). If it falls outside
-! to range 1 to 12 then it is adjusted along with the year number to convert
-! to a valid date. The number of days in the month of this date is used to
-! compute the time interval of the fraction.
-! That is:
-! The month number is increased by floor(time_increment) to obtain a time T1.
-! delt = the number of days in the month in which T1 falls.
-! The time returned is T1 + ((time_increment-floor(time_increment))*delt.
-! Two of the consequences of this scheme should be kept in mind.
-! -- The time since should not be from the 29'th to 31'st of a month,
-!    since an invalid date is likely to result, triggering an error stop.
-! -- When time since is from the begining of a month, the fraction of a month
-!    will never advance into the month after that which results from only
-!    the whole number.
-!
-! When NO_CALENDAR is in effect, units attribute must specify a starting
-! day and second, with day number appearing first
-!
-! Example: 'days since 100 0' Indicates 100 days 0 seconds
-!
-!   </IN>
-!
-!   <IN NAME="calendar" TYPE="character">
-!
-! When present, then it will be checked against the calendar in use
-! by the time manager. If it does not match the calendar in use then
-! the program will terminate with an error message.
-! When not present, no such check is done.
-! 
-! Acceptable values of calendar are:
-! noleap
-! 365_day
-! 360_day
-! julian
-! thirty_day_months
-! no_calendar
-!   </IN>
-
-function get_cal_time(time_increment, units, calendar)
-real, intent(in) :: time_increment
-character(len=*), intent(in) :: units
-character(len=*), intent(in) :: calendar
-type(time_type) :: get_cal_time
-integer :: year, month, day, hour, minute, second
-integer :: i1, i2, i3, i4, i5, i6, increment_seconds, increment_days, increment_years, increment_months
-real    :: month_fraction
-integer :: curr_calendar, calendar_type2
-logical :: correct_form
-character(len=32) :: substring, calendar_att
-character(len=4) :: formt='(i )'
-type(time_type) :: base_time, base_time_plus_one_yr, base_time_plus_one_mo
-type(time_type) :: time_inc, base_time2
-real :: dt
-
-calendar_att = lowercase(trim(cut0(calendar)))
-if(calendar_att /= 'unspecified') then
-  correct_form = (trim(calendar_att)) == 'noleap'     .or. (trim(calendar_att)) == '365_day' .or. &
-                 (trim(calendar_att)) == '360_day'    .or. (trim(calendar_att)) == 'julian'  .or. &
-                 (trim(calendar_att)) == 'no_calendar'.or. (trim(calendar_att)) == 'thirty_day_months'
-
-  if(.not.correct_form) then
-    call error_mesg('get_cal_time','"'//trim(calendar_att)//'"'// &
-     ' is not an acceptable calendar attribute. acceptable calendars are: noleap, 365_day, 360_day, julian, no_calendar',FATAL)
-  endif
-
-!   correct_form = (trim(calendar_att) == 'noleap'            .and. calendar_type == NOLEAP)            .or. &
-!                  (trim(calendar_att) == '365_day'           .and. calendar_type == NOLEAP)            .or. &
-!                  (trim(calendar_att) == '360_day'           .and. calendar_type == THIRTY_DAY_MONTHS) .or. &
-!                  (trim(calendar_att) == 'thirty_day_months' .and. calendar_type == THIRTY_DAY_MONTHS) .or. &
-!                  (trim(calendar_att) == 'julian'            .and. calendar_type == JULIAN)            .or. &
-!                  (trim(calendar_att) == 'no_calendar'       .and. calendar_type == NO_CALENDAR)
-!   if(.not.correct_form) then
-!     call error_mesg('get_cal_time','calendar not consistent with calendar type in use by time_manager.'// &
-!           ' calendar='//trim(calendar_att)//'. Type in use by time_manager='//valid_calendar_types(calendar_type),FATAL)
-!   endif
-
-
-endif
-
-calendar_type2 = get_calendar_type()
-
-if (.not.no_calendar_conversion) then
-    select case (trim(calendar_att))
-    case ('noleap')
-        calendar_type2 = NOLEAP
-    case ('365_day')
-        calendar_type2 = NOLEAP
-    case ('360_day')
-        calendar_type2 = THIRTY_DAY_MONTHS
-    case ('thirty_day_months')
-        calendar_type2 = THIRTY_DAY_MONTHS
-    case ('julian')
-        calendar_type2 = JULIAN
-    case ('no_calendar')
-        calendar_type2 = NO_CALENDAR
-    case ('unspecified')
-        call error_mesg('get_cal_time','calendar attribute required.&
-             &  Check your dataset to make sure calendar attribute exists',FATAL)
-    case default
-        call error_mesg('get_cal_time','Invalid calendar attribute specified in call to get_cal_time',FATAL)
-    end select
-end if
-
-correct_form = lowercase(units(1:10)) == 'days since'    .or. &
-               lowercase(units(1:11)) == 'hours since'   .or. &
-               lowercase(units(1:13)) == 'minutes since' .or. &
-               lowercase(units(1:13)) == 'seconds since' .or. &
-               lowercase(units(1:11)) == 'years since'   .or. &
-               lowercase(units(1:12)) == 'months since'
-if(.not.correct_form) then
-  call error_mesg('get_cal_time','The units attribute of time must begin with a time unit then the word "since"',FATAL)
-endif
-
-! index(string, substring[,back])
-! Returns the starting position of substring as a substring of string,
-! or zero if it does not occur as a substring. Default value of back is
-! .false. If back is .false., the starting position of the first such
-! substring is returned. If back is .true., the starting position of the 
-! last such substring is returned.
-! Returns zero if substring is not a substring of string (regardless of value of back)
-
-i1 = index(units,'since') + 5
-if(calendar_type == NO_CALENDAR) then
-  base_time = set_time(units(i1:len_trim(units)))
-else
-  base_time = set_date(units(i1:len_trim(units)))
-endif
-
-if(lowercase(units(1:10)) == 'days since') then
-  increment_days = floor(time_increment)
-  increment_seconds = 86400*(time_increment - increment_days) 
-else if(lowercase(units(1:11)) == 'hours since') then
-  increment_days = floor(time_increment/24)
-  increment_seconds = 86400*(time_increment/24 - increment_days)
-else if(lowercase(units(1:13)) == 'minutes since') then
-  increment_days = floor(time_increment/1440)
-  increment_seconds = 86400*(time_increment/1440 - increment_days)
-else if(lowercase(units(1:13)) == 'seconds since') then
-  increment_days = floor(time_increment/86400)
-  increment_seconds = 86400*(time_increment/86400 - increment_days)
-else if(lowercase(units(1:11)) == 'years since') then
-! The time period between between (base_time + time_increment) and
-! (base_time + time_increment + 1 year) may be 360, 365, or 366 days.
-! This must be determined to handle time increments with year fractions.
-  call get_date(base_time, year,month,day,hour,minute,second)
-  base_time             = set_date(year+floor(time_increment)  ,month,day,hour,minute,second)
-  base_time_plus_one_yr = set_date(year+floor(time_increment)+1,month,day,hour,minute,second)
-  call get_time(base_time_plus_one_yr - base_time, second, day)
-  dt = (day*86400+second)*(time_increment-floor(time_increment))
-  increment_days = floor(dt/86400)
-  increment_seconds = dt - increment_days*86400
-else if(lowercase(units(1:12)) == 'months since') then
-  month_fraction = time_increment - floor(time_increment)
-  increment_years  = floor(time_increment/12)
-  increment_months = floor(time_increment) - 12*increment_years
-  call get_date(base_time, year,month,day,hour,minute,second)
-  base_time = set_date(year+increment_years,month+increment_months  ,day,hour,minute,second)
-  dt = 86400*days_in_month(base_time) * month_fraction
-  increment_days = floor(dt/86400)
-  increment_seconds = dt - increment_days*86400
-else
-  call error_mesg('get_cal_time','"'//trim(units)//'"'//' is not an acceptable units attribute of time.'// &
-    ' It must begin with: "years since", "months since", "days since", "hours since", "minutes since", or "seconds since"',FATAL)
-endif
-
-if (calendar_type2 /= calendar_type) then
-! if no calendar attribute is specified, assume the incoming time units
-! correspond to the Julian calendar
-    curr_calendar = get_calendar_type()
-    call get_date(base_time,year, month, day, hour, minute, second)
-    call set_calendar_type(calendar_type2)
-    base_time2  = set_date(year,month,day,hour,minute,second)
-    time_inc = set_time(increment_seconds, increment_days)
-    get_cal_time = time_plus(base_time2,time_inc)
-    call get_date(get_cal_time,year,month,day,hour,minute,second)
-    call set_calendar_type(curr_calendar)
-    get_cal_time = set_date(year,month,day,hour,minute,second)
-else
-    get_cal_time = base_time + set_time(increment_seconds, increment_days)
-endif
-
-end function get_cal_time
-! </FUNCTION>
 !------------------------------------------------------------------------
 
 subroutine get_date_gregorian(time, year, month, day, hour, minute, second)
@@ -3141,6 +2891,42 @@ character(len=9) :: mon
 end subroutine print_date
 ! </SUBROUTINE>
 
+!------------------------------------------------------------------------
+! <FUNCTION NAME="valid_calendar_types">
+
+!   <DESCRIPTION>
+!     Returns a character string that describes the
+!     calendar type corresponding to the input integer.
+!   </DESCRIPTION>
+!   <IN NAME="ncal" TYPE="integer">
+!     An integer corresponding to a valid calendar type.
+!   </IN>
+!   <OUT NAME="valid_calendar_types" TYPE="character(len=24)">
+!     A character string describing the calendar type.
+!   </OUT>
+
+function valid_calendar_types(ncal)
+integer, intent(in) :: ncal
+character(len=24) :: valid_calendar_types
+character(len=8)  :: chtmp
+
+if(ncal == NO_CALENDAR) then
+  valid_calendar_types = 'NO_CALENDAR             '
+else if(ncal == THIRTY_DAY_MONTHS) then
+  valid_calendar_types = 'THIRTY_DAY_MONTHS       '
+else if(ncal == JULIAN) then
+  valid_calendar_types = 'JULIAN                  '
+else if(ncal == GREGORIAN) then
+  valid_calendar_types = 'GREGORIAN               '
+else if(ncal == NOLEAP) then
+  valid_calendar_types = 'NOLEAP                  '
+else
+  write(chtmp,'(i8)') ncal
+  call error_mesg('valid_calendar_types',chtmp//' does not correspond '//&
+              'to any valid calendar type.',FATAL)
+endif
+end function valid_calendar_types
+! </FUNCTION>
 !------------------------------------------------------------------------
 
 end module time_manager_mod

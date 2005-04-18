@@ -1,3 +1,4 @@
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
 !       ROUTINES TO INITIALIZE/FINALIZE MPP MODULE: mpp_init, mpp_exit        !
@@ -5,17 +6,25 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !    subroutine mpp_init( flags, in, out, err, log )
   !      integer, optional, intent(in) :: flags, in, out, err, log
-subroutine mpp_init( flags )
+  subroutine mpp_init( flags, localcomm )
   integer, optional, intent(in) :: flags
+  integer, optional, intent(in) :: localcomm
   integer                       :: my_pe, num_pes, len, i
   logical                       :: opened
+  character(len=5) :: this_pe
 
   if( module_is_initialized )return
 
   call MPI_INITIALIZED( opened, error ) !in case called from another MPI package
-  if( .NOT.opened )call MPI_INIT(error)
-  call MPI_COMM_RANK( MPI_COMM_WORLD, pe,   error )
-  call MPI_COMM_SIZE( MPI_COMM_WORLD, npes, error )
+  if(opened .and. .NOT. PRESENT(localcomm)) call mpp_error( ERROR, 'MPP_INIT: communicator is required' )
+  if( .NOT.opened ) then
+    call MPI_INIT(error)
+    mpp_comm_private = MPI_COMM_WORLD
+  else
+    mpp_comm_private  = localcomm
+  endif
+  call MPI_COMM_RANK( mpp_comm_private, pe,   error )
+  call MPI_COMM_SIZE( mpp_comm_private, npes, error )
 
   allocate( request(0:npes-1) )
   request(:) = MPI_REQUEST_NULL
@@ -31,8 +40,8 @@ subroutine mpp_init( flags )
   allocate( peset(0)%list(1) )
   peset(0)%list = pe
   current_peset_num = 0
-  peset(0)%id = MPI_COMM_WORLD
-  call MPI_COMM_GROUP( MPI_COMM_WORLD, peset(0)%group, error )
+  peset(0)%id = mpp_comm_private
+  call MPI_COMM_GROUP( mpp_comm_private, peset(0)%group, error )
   world_peset_num = get_peset( (/(i,i=0,npes-1)/) )
   current_peset_num = world_peset_num !initialize current PEset to world
 
@@ -83,11 +92,9 @@ subroutine mpp_init( flags )
   !          call mpp_sync()
   !          if( pe.NE.root_pe )open( unit=log_unit, file=trim(configfile), status='OLD' )
   !      end if
-  if( pe.EQ.root_pe )then
-     log_unit = get_unit()
-     open( unit=log_unit, file=trim(configfile), status='REPLACE' )
-     close(log_unit)
-  end if
+
+  call mpp_init_logfile()
+
   !messages
   if( verbose )call mpp_error( NOTE, 'MPP_INIT: initializing MPP module...' )
   if( pe.EQ.root_pe )then
@@ -181,7 +188,9 @@ subroutine mpp_exit()
   call mpp_sync()
   call mpp_max(mpp_stack_hwm)
   if( pe.EQ.root_pe )write( stdout(),* )'MPP_STACK high water mark=', mpp_stack_hwm
-  call MPI_FINALIZE(error)
+  if(mpp_comm_private == MPI_COMM_WORLD ) call MPI_FINALIZE(error)
+
+
 
   return
 end subroutine mpp_exit
@@ -198,6 +207,42 @@ end subroutine mpp_exit
 
       return
     end subroutine mpp_malloc
+
+#ifdef use_MPI_GSM
+!#######################################################################
+ !--- routine to perform GSM allocations
+ !
+subroutine mpp_gsm_malloc( ptr, len )
+  use mpp_data_mod,      only : peset, current_peset_num
+  integer(KIND=MPI_ADDRESS_KIND), intent(in)    :: len
+  real                   :: dummy
+  integer                :: ierror
+  !argument ptr is a cray pointer, points to a dummy argument in this routine 
+  pointer( ptr, dummy )
+  include "mpi_gsmf.h"
+  if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GSM_MALLOC: You must first call mpp_init.' )
+
+  call gsm_alloc(len, GSM_SINGLERANK, 0, peset(current_peset_num)%id, ptr, ierror)
+  if (ierror .eq. -1) call mpp_error( FATAL, 'MPP_GSM_MALLOC: gsm_alloc failed.' )
+  return
+end subroutine mpp_gsm_malloc
+
+!#######################################################################
+ !--- routine to free GSM allocations
+ !
+subroutine mpp_gsm_free( ptr )
+  use mpp_data_mod,      only : peset, current_peset_num
+  real                   :: dummy
+  integer                :: ierror
+  !argument ptr is a cray pointer, points to a dummy argument in this routine 
+  pointer( ptr, dummy )
+  include "mpi_gsmf.h"
+
+  call gsm_free(dummy, peset(current_peset_num)%id, ierror)
+  if (ierror .eq. -1) call mpp_error( FATAL, 'MPP_GSM_FREE: gsm_free failed.' )
+  return
+end subroutine mpp_gsm_free
+#endif
 
 !#######################################################################
     !set the mpp_stack variable to be at least n LONG words long

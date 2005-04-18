@@ -1,5 +1,5 @@
 module mpp_io_connect_mod
-#include <os.h>
+#include <fms_platform.h>
 
 use mpp_mod, only           : mpp_pe, mpp_root_pe, mpp_npes, mpp_error, FATAL, WARNING
 use mpp_parameter_mod, only : MPP_WRONLY, MPP_ASCII, MPP_NETCDF, MPP_SEQUENTIAL, MPP_SINGLE, &
@@ -16,9 +16,9 @@ implicit none
 private
 
 character(len=128), public :: version= &
-     '$Id: mpp_io_connect.F90,v 11.0 2004/09/28 20:05:07 fms Exp $'
+     '$Id: mpp_io_connect.F90,v 12.0 2005/04/14 17:58:28 fms Exp $'
 character(len=128), public :: tagname= &
-     '$Name: khartoum $'
+     '$Name: lima $'
 
 public :: mpp_open, mpp_close
 

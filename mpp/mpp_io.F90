@@ -326,9 +326,9 @@ implicit none
 private
 
   character(len=128) :: version= &
-       '$Id: mpp_io.F90,v 11.0 2004/09/28 20:05:12 fms Exp $'
+       '$Id: mpp_io.F90,v 12.0 2005/04/14 17:58:20 fms Exp $'
   character(len=128) :: tagname= &
-       '$Name: khartoum $'
+       '$Name: lima $'
 
   !--- public parameters  -----------------------------------------------
   public :: MPP_WRONLY, MPP_RDONLY, MPP_APPEND, MPP_OVERWR, MPP_ASCII, MPP_IEEE32
@@ -363,7 +363,7 @@ end module mpp_io_mod
 
 #ifdef test_mpp_io
 program mpp_io_test
-#include <os.h>
+#include <fms_platform.h>
 
   use mpp_mod,         only : mpp_init, mpp_pe, mpp_npes, mpp_root_pe, mpp_error
   use mpp_mod,         only : FATAL, mpp_chksum, MPP_DEBUG, mpp_set_stack_size

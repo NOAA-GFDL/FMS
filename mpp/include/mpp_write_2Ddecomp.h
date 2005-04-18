@@ -40,6 +40,9 @@
       else if( size(data,1).EQ.ied-isd+1 .AND. size(data,2).EQ.jed-jsd+1 )then
           data_has_halos = .TRUE.
       else
+          write( stderr(),'(a,10i5)' )'MPP_WRITE_2DDECOMP fails on field '//trim(field%name)// &
+               ': is,ie,js,je, isd,ied,jsd,jed, size(data,1), size(data,2)=', &
+               is,ie,js,je, isd,ied,jsd,jed, size(data,1), size(data,2)
           call mpp_error( FATAL, 'MPP_WRITE: data must be either on compute domain or data domain.' )
       end if
       halos_are_global = x_is_global .AND. y_is_global

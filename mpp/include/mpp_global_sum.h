@@ -14,6 +14,10 @@
     integer(LONG_KIND), save :: f_addr
     type(domain2D), save :: domain_prev
 
+    integer :: global_flag
+
+    global_flag = NON_BITWISE_EXACT_SUM
+    if(present(flags)) global_flag = flags
 
     if( size(field,1).EQ.domain%x%compute%size .AND. size(field,2).EQ.domain%y%compute%size )then
 !field is on compute domain
@@ -26,9 +30,8 @@
     else
         call mpp_error( FATAL, 'MPP_GLOBAL_SUM_: incoming field array must match either compute domain or data domain.' )
     end if
-    if( PRESENT(flags) )then
-        if( flags.NE.BITWISE_EXACT_SUM )call mpp_error( FATAL, 'MPP_GLOBAL_SUM_: only valid flag is BITWISE_EXACT_SUM.' )
-!this is bitwise exact across different PE counts.
+    if( global_flag == BITWISE_EXACT_SUM )then
+        !this is bitwise exact across different PE counts.
 
         use_new=.false.; if(PRESENT(new))use_new=new
         if(use_new)then
@@ -58,7 +61,7 @@
         MPP_GLOBAL_SUM_ = sum(global2D)
         deallocate(global2D); if(allocated(field2Dold))deallocate(field2Dold)
     else
-!this is not bitwise-exact across different PE counts
+        !this is not bitwise-exact across different PE counts
         MPP_GLOBAL_SUM_ = sum( field(domain%x%compute%begin+ioff:domain%x%compute%end+ioff, &
                                      domain%y%compute%begin+joff:domain%y%compute%end+joff MPP_EXTRA_INDICES_) )
         call mpp_sum( MPP_GLOBAL_SUM_, domain%list(:)%pe )

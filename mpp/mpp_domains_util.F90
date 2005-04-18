@@ -1,6 +1,6 @@
 module mpp_domains_util_mod
 
-  use mpp_mod,           only : mpp_root_pe, mpp_malloc, mpp_error, FATAL, NOTE, ANY_PE
+  use mpp_mod,           only : mpp_root_pe, mpp_malloc, mpp_error, FATAL, NOTE, NULL_PE
   use mpp_parameter_mod, only : WEST, EAST, SOUTH, NORTH, AGRID
   use mpp_datatype_mod,  only : domain1D, domain2D
   use mpp_data_mod,      only : mpp_domains_stack, ptr_domains_stack, pe, mpp_domains_stack_size
@@ -12,7 +12,7 @@ module mpp_domains_util_mod
   character(len=128), public :: version= &
        '$Id mpp_domains_util.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: khartoum $'
+       '$Name: lima $'
 
   public :: mpp_domains_set_stack_size, mpp_get_compute_domain, mpp_get_compute_domains
   public :: mpp_get_data_domain, mpp_get_global_domain, mpp_get_domain_components
@@ -247,7 +247,7 @@ contains
     type(domain2D), intent(in) :: a, b
 
     mpp_domain2D_eq = a%x.EQ.b%x .AND. a%y.EQ.b%y
-    if( mpp_domain2D_eq .AND. ((a%pe.EQ.ANY_PE).OR.(b%pe.EQ.ANY_PE)) )return !NULL_DOMAIN2D
+    if( mpp_domain2D_eq .AND. ((a%pe.EQ.NULL_PE).OR.(b%pe.EQ.NULL_PE)) )return !NULL_DOMAIN2D
     !compare pelists
     if( mpp_domain2D_eq )mpp_domain2D_eq = ASSOCIATED(a%list) .AND. ASSOCIATED(b%list)
     if( mpp_domain2D_eq )mpp_domain2D_eq = size(a%list(:)).EQ.size(b%list(:))

@@ -5,8 +5,9 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !    subroutine mpp_init( flags, in, out, err, log )
   !      integer, optional, intent(in) :: flags, in, out, err, log
-subroutine mpp_init( flags )
+subroutine mpp_init( flags,localcomm )
   integer, optional, intent(in) :: flags
+  integer, optional, intent(in) :: localcomm ! dummy here, used only in MPI
   integer                       :: my_pe, num_pes, len, i
   logical                       :: opened
 
@@ -74,11 +75,9 @@ subroutine mpp_init( flags )
   !          call mpp_sync()
   !          if( pe.NE.root_pe )open( unit=log_unit, file=trim(configfile), status='OLD' )
   !      end if
-  if( pe.EQ.root_pe )then
-     log_unit = get_unit()
-     open( unit=log_unit, file=trim(configfile), status='REPLACE' )
-     close(log_unit)
-  end if
+
+  call mpp_init_logfile()
+
   !messages
   if( verbose )call mpp_error( NOTE, 'MPP_INIT: initializing MPP module...' )
   if( pe.EQ.root_pe )then

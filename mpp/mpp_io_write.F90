@@ -1,7 +1,7 @@
 module mpp_io_write_mod
-#include <os.h>
+#include <fms_platform.h>
 
-use mpp_mod,           only : mpp_error, FATAL, WARNING, mpp_root_pe
+use mpp_mod,           only : mpp_error, FATAL, WARNING, mpp_root_pe, stderr
 use mpp_domains_mod,   only : domain1D, domain2D, mpp_get_compute_domain, mpp_get_data_domain
 use mpp_domains_mod,   only : mpp_get_global_domain, mpp_update_domains, mpp_global_field
 use mpp_domains_mod,   only : mpp_domains_init, NULL_DOMAIN1D, operator(.NE.)
@@ -19,9 +19,9 @@ private
 
 
 character(len=128) :: version= &
-     '$Id: mpp_io_write.F90,v 11.0 2004/09/28 20:05:29 fms Exp $'
+     '$Id: mpp_io_write.F90,v 12.0 2005/04/14 17:58:44 fms Exp $'
 character(len=128) :: tagname= &
-     '$Name: khartoum $'
+     '$Name: lima $'
 
 public :: mpp_write, mpp_write_meta, mpp_copy_meta, mpp_modify_meta
 
@@ -275,6 +275,7 @@ contains
 !     character(len=128) :: name                                             !
 !     character(len=128) :: units                                            !
 !     character(len=256) :: longname                                         !
+!     character(len=128) :: standard_name  !CF standard name                 !
 !     real :: min, max, missing, fill, scale, add                            !
 !     type(axistype), pointer :: axis(:)                                     !
 !     integer :: id                                                          !
@@ -343,11 +344,11 @@ contains
 !    time axis is allowed per file.                                          !
 !                                                                            !
 !   subroutine mpp_write_meta_field( unit, field, axes, name, units, longname!
-!        min, max, missing, fill, scale, add, pack )                         !
+!       stanadard_name, min, max, missing, fill, scale, add, pack)           !
 !     integer, intent(in) :: unit                                            !
 !     type(fieldtype), intent(out) :: field                                  !
 !     type(axistype), intent(in) :: axes(:)                                  !
-!     character(len=*), intent(in) :: name, units, longname                  !
+!     character(len=*), intent(in) :: name, units, longname,standard_name    !
 !     real, intent(in), optional :: min, max, missing, fill, scale, add      !
 !     integer, intent(in), optional :: pack                                  !
 !                                                                            !
@@ -478,7 +479,7 @@ contains
       type(domain1D), intent(in), optional :: domain
       real, intent(in), optional :: data(:)
       integer :: is, ie, isg, ieg
-      
+      integer :: istat      
       if( .NOT.module_is_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
       if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
@@ -488,7 +489,9 @@ contains
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
            
 !pre-existing pointers need to be nullified
-      if( ASSOCIATED(axis%data) )NULLIFY(axis%data)
+      if( ASSOCIATED(axis%data) ) then
+         DEALLOCATE(axis%data, stat=istat)
+      endif
 !load axistype
       axis%name     = name
       axis%units    = units
@@ -583,7 +586,7 @@ contains
     end subroutine mpp_write_meta_axis
       
     subroutine mpp_write_meta_field( unit, field, axes, name, units, longname,&
-         min, max, missing, fill, scale, add, pack, time_method )
+         min, max, missing, fill, scale, add, pack, time_method,standard_name )
 !define field: must have already called mpp_write_meta(axis) for each axis
       integer, intent(in) :: unit
       type(fieldtype), intent(inout) :: field
@@ -592,10 +595,11 @@ contains
       real, intent(in), optional :: min, max, missing, fill, scale, add
       integer, intent(in), optional :: pack
       character(len=*), intent(in), optional :: time_method
+      character(len=*), intent(in), optional :: standard_name
 !this array is required because of f77 binding on netCDF interface
       integer, allocatable :: axis_id(:)
       real :: a, b
-      integer :: i
+      integer :: i, istat
       
       if( .NOT.module_is_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
@@ -606,7 +610,9 @@ contains
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
            
 !pre-existing pointers need to be nullified
-      if( ASSOCIATED(field%axes) )NULLIFY(field%axes)
+      if( ASSOCIATED(field%axes) ) then
+         DEALLOCATE(field%axes, stat=istat)
+      endif
 !fill in field metadata
       field%name = name
       field%units = units
@@ -633,6 +639,7 @@ contains
       if( PRESENT(fill) )field%fill = fill
       if( PRESENT(scale) )field%scale = scale
       if( PRESENT(add) )field%add = add
+      if( PRESENT(standard_name)) field%standard_name = standard_name
       
 !pack is currently used only for netCDF
       field%pack = 2        !default write 32-bit floats
@@ -724,6 +731,8 @@ contains
       if ( PRESENT(time_method) ) then
           call mpp_write_meta(unit,field%id, 'cell_methods',cval='time: '//trim(time_method))
       endif
+      if ( PRESENT(standard_name)) &
+           call mpp_write_meta(unit,field%id,'standard_name ', cval=field%standard_name) 
 
       if( verbose )print '(a,2i3,x,a,i3)', 'MPP_WRITE_META: Wrote field metadata: pe, unit, field%name, field%id=', &
            pe, unit, trim(field%name), field%id

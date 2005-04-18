@@ -143,8 +143,8 @@ end type inst_type
 type(tracer_type), save  :: tracers(MAX_TRACER_FIELDS)
 type(inst_type)  , save  :: instantiations(MAX_TRACER_FIELDS)
 
-character(len=128) :: version = '$Id: tracer_manager.F90,v 11.0 2004/09/28 20:06:40 fms Exp $'
-character(len=128) :: tagname = '$Name: khartoum $'
+character(len=128) :: version = '$Id: tracer_manager.F90,v 12.0 2005/04/14 18:02:28 fms Exp $'
+character(len=128) :: tagname = '$Name: lima $'
 logical            :: module_is_initialized = .false.
 
 logical            :: verbose_local
@@ -1985,6 +1985,7 @@ logical                                 :: query_method
 
 integer :: m, n1, nmethods
 character(len=256) :: list_name, control_tr
+character(len=20)  :: nindex
 !Convert the local model tracer number to the tracer_manager version.
 
 if ( n == NO_TRACER ) then
@@ -1992,6 +1993,14 @@ if ( n == NO_TRACER ) then
     call mpp_error(FATAL,'query_method : Query method is : '//method_type )
     
 endif  
+if (n < 1 .or. n > num_tracer_fields) then 
+   write(nindex, '(I20)') n
+   if (mpp_pe() .eq. mpp_root_pe()) &
+     call mpp_error(NOTE,'query_method : Invalid tracer index '//trim(nindex))
+   n1 = NO_TRACER
+   return
+endif
+
 name=" "
 query_method = .false.
 n1 = TRACER_ARRAY(model,n)

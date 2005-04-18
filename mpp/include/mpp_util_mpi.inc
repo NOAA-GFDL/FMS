@@ -39,9 +39,8 @@ subroutine mpp_error_basic( errortype, errormsg )
         call FLUSH(stdout(),istat)
 #ifdef sgi_mipspro
         call TRACE_BACK_STACK_AND_PRINT()
-        call MPI_ABORT( MPI_COMM_WORLD, 1, error )
 #endif
-        call ABORT() !automatically calls traceback on Cray systems
+        call MPI_ABORT( MPI_COMM_WORLD, 1, error )
      end if
   end select
 

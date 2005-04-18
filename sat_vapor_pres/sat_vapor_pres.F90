@@ -177,7 +177,7 @@ private
 !  cvs version and tag name
 
 character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 11.0 2004/09/28 20:05:59 fms Exp $'
-character(len=128) :: tagname = '$Name: khartoum $'
+character(len=128) :: tagname = '$Name: lima $'
 
 !-----------------------------------------------------------------------
 !  parameters for table size and resolution

@@ -15,12 +15,12 @@
         </STYLE>
 </head>
 <body>
-<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC%20INTERFACE">PUBLIC INTERFACE </a>~
-          <a href="#PUBLIC%20DATA">PUBLIC DATA </a>~
-          <a href="#PUBLIC%20ROUTINES">PUBLIC ROUTINES </a>~
+<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC INTERFACE">PUBLIC INTERFACE </a>~
+          <a href="#PUBLIC DATA">PUBLIC DATA </a>~
+          <a href="#PUBLIC ROUTINES">PUBLIC ROUTINES </a>~
           <a href="#NAMELIST">NAMELIST </a>~
-          <a href="#DIAGNOSTIC%20FIELDS">DIAGNOSTIC FIELDS </a>~
-          <a href="#ERROR%20MESSAGES">ERROR MESSAGES </a>~
+          <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
+          <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
           <a href="#REFERENCES">REFERENCES </a>~ 
           <a href="#NOTES">NOTES</a></font>
 <hr>
@@ -74,7 +74,7 @@ threading_read='multi', fileset_read='single', threading_write='single', fileset
 </div>
 <br>
 <!-- END DESCRIPTION -->
-<a name="OTHER%20MODULES%20USED"></a>
+<a name="OTHER MODULES USED"></a>
 <hr>
 <h4>OTHER MODULES USED</h4>
 <!-- BEGIN OTHER MODULES USED -->
@@ -83,7 +83,7 @@ threading_read='multi', fileset_read='single', threading_write='single', fileset
 </div>
 <!-- END OTHER MODULES USED -->
 <!-- BEGIN PUBLIC INTERFACE -->
-<a name="PUBLIC%20INTERFACE"></a>
+<a name="PUBLIC INTERFACE"></a>
 <hr>
 <h4>PUBLIC INTERFACE</h4>
 <div>
@@ -116,10 +116,10 @@ threading_read='multi', fileset_read='single', threading_write='single', fileset
 <a href="#open_direct_file">open_direct_file</a>:</dt>
 <dd></dd>
 <dt>
-<a href="#%20open_ieee32_file"> open_ieee32_file</a>:</dt>
+<a href="# open_ieee32_file"> open_ieee32_file</a>:</dt>
 <dd></dd>
 <dt>
-<a href="#%20close_file"> close_file</a>:</dt>
+<a href="# close_file"> close_file</a>:</dt>
 <dd></dd>
 <dt>
 <a href="#set_domain">set_domain</a>:</dt>
@@ -137,7 +137,7 @@ threading_read='multi', fileset_read='single', threading_write='single', fileset
 </div>
 <br>
 <!-- END PUBLIC INTERFACE -->
-<a name="PUBLIC%20DATA"></a>
+<a name="PUBLIC DATA"></a>
 <hr>
 <h4>PUBLIC DATA</h4>
 <!-- BEGIN PUBLIC DATA -->
@@ -145,7 +145,7 @@ threading_read='multi', fileset_read='single', threading_write='single', fileset
 <br>
 </div>
 <!-- END PUBLIC DATA -->
-<a name="PUBLIC%20ROUTINES"></a>
+<a name="PUBLIC ROUTINES"></a>
 <hr>
 <h4>PUBLIC ROUTINES</h4>
 <!-- BEGIN PUBLIC ROUTINES -->
@@ -292,6 +292,12 @@ threading_read='multi', fileset_read='single', threading_write='single', fileset
 <tr>
 <td valign="top" align="left"><tt>siz&nbsp;&nbsp;&nbsp;</tt></td><td>   siz must be a dimension(4) array to retrieve the size of the field <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(*)]</span></td>
 </tr>
+<tr>
+<td valign="top" align="left"><tt>field_found&nbsp;&nbsp;&nbsp;</tt></td><td>   if this flag is present, field_size will not abort if
+   called for a non-existent field.
+   Instead it will return T or F depending on
+   whether or not the field was found. <br>&nbsp;&nbsp;&nbsp;<span class="type">[logical, optional]</span></td>
+</tr>
 </table>
 </dd>
 <br>
@@ -433,7 +439,7 @@ threading_read='multi', fileset_read='single', threading_write='single', fileset
 </dl>
 </li>
 <li>
-<a name="%20open_ieee32_file"></a>
+<a name=" open_ieee32_file"></a>
 <h4> open_ieee32_file</h4>
 <dl>
 <dt>
@@ -472,7 +478,7 @@ threading_read='multi', fileset_read='single', threading_write='single', fileset
 </dl>
 </li>
 <li>
-<a name="%20close_file"></a>
+<a name=" close_file"></a>
 <h4> close_file</h4>
 <dl>
 <dt>
@@ -588,7 +594,7 @@ threading_read='multi', fileset_read='single', threading_write='single', fileset
 </li>
 </ol>
 <!-- END PUBLIC ROUTINES -->
-<a name="PUBLIC%20TYPES"></a>
+<a name="PUBLIC TYPES"></a>
 <!-- BEGIN PUBLIC TYPES -->
 <!-- END PUBLIC TYPES --><a name="NAMELIST"></a>
 <!-- BEGIN NAMELIST -->
@@ -645,9 +651,9 @@ threading_read='multi', fileset_read='single', threading_write='single', fileset
 </div>
 <br>
 <!-- END NAMELIST -->
-<a name="DIAGNOSTIC%20FIELDS"></a>
+<a name="DIAGNOSTIC FIELDS"></a>
 <!-- BEGIN DIAGNOSTIC FIELDS -->
-<!-- END DIAGNOSTIC FIELDS --><a name="DATA%20SETS"></a>
+<!-- END DIAGNOSTIC FIELDS --><a name="DATA SETS"></a>
 <!-- BEGIN DATA SETS -->
 <hr>
 <h4>DATA SETS</h4>
@@ -655,9 +661,9 @@ threading_read='multi', fileset_read='single', threading_write='single', fileset
 <br>
 </div>
 <!-- END DATA SETS -->
-<a name="PUBLIC%20CODE"></a>
+<a name="PUBLIC CODE"></a>
 <!-- BEGIN PUBLIC CODE -->
-<!-- END PUBLIC CODE --><a name="ERROR%20MESSAGES"></a>
+<!-- END PUBLIC CODE --><a name="ERROR MESSAGES"></a>
 <!-- BEGIN ERROR MESSAGES -->
 <hr>
 <h4>ERROR MESSAGES</h4>

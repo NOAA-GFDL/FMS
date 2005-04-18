@@ -1,5 +1,5 @@
 module mpp_io_util_mod
-#include <os.h>
+#include <fms_platform.h>
 
   use mpp_mod, only          : mpp_error, FATAL, NOTE, lowercase, mpp_root_pe
   use mpp_datatype_mod, only : atttype, axistype, fieldtype, validtype
@@ -15,9 +15,9 @@ module mpp_io_util_mod
 #include <netcdf.inc>
 
   character(len=128), public :: version= &
-       '$Id: mpp_io_util.F90,v 11.0 2004/09/28 20:05:25 fms Exp $'
+       '$Id: mpp_io_util.F90,v 12.0 2005/04/14 17:58:40 fms Exp $'
   character(len=128), public :: tagname= &
-       '$Name: khartoum $'
+       '$Name: lima $'
 
   public :: mpp_get_iospec, mpp_get_id, mpp_get_ncid, mpp_get_unit_range, mpp_set_unit_range, &
             mpp_get_info, mpp_get_atts, mpp_get_fields, mpp_get_times, mpp_get_axes,          &
@@ -85,14 +85,14 @@ contains
       return
 
     end subroutine mpp_get_info
-    
+
   !#####################################################################
 ! <SUBROUTINE NAME="mpp_get_global_atts" INTERFACE="mpp_get_atts">
 !  <IN NAME="unit" TYPE="integer"></IN>
 !  <IN NAME="global_atts" TYPE="atttype" DIM="(:)"></IN>
 ! </SUBROUTINE>
     subroutine mpp_get_global_atts( unit, global_atts )
-!   
+!
 !  copy global file attributes for use by user
 !
 !  global_atts is an attribute type which is allocated from the
@@ -101,26 +101,26 @@ contains
       integer,       intent(in)    :: unit
       type(atttype), intent(inout) :: global_atts(:)
       integer :: natt,i
-      
+
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_INFO: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_INFO: invalid unit number.' )
-      
+
       if (size(global_atts(:)).lt.mpp_file(unit)%natt) &
       call mpp_error(FATAL, 'MPP_GET_ATTS: atttype not dimensioned properly in calling routine')
-      
+
       natt = mpp_file(unit)%natt
       global_atts = default_att
-      
+
       do i=1,natt
          global_atts(i) = mpp_file(unit)%Att(i)
       enddo
-         
+
       return
    end subroutine mpp_get_global_atts
-      
+
   !#####################################################################
    subroutine mpp_get_field_atts( field, name, units, longname, min, max, missing, ndim, siz, axes, atts, valid )
-   
+
      type(fieldtype), intent(in) :: field
      character(len=*), intent(out) , optional :: name, units
      character(len=*), intent(out), optional :: longname
@@ -128,12 +128,12 @@ contains
      integer, intent(out), optional :: ndim
      integer, intent(out), dimension(:), optional :: siz
      type(validtype), intent(out), optional :: valid
-     
+
      type(atttype), intent(inout), optional, dimension(:) :: atts
      type(axistype), intent(inout), optional, dimension(:) :: axes
-     
+
      integer :: n,m
-     
+
      if (PRESENT(name)) name = field%name
      if (PRESENT(units)) units = field%units
      if (PRESENT(longname)) longname = field%longname
@@ -172,18 +172,18 @@ contains
 
      return
    end subroutine mpp_get_field_atts
-     
+
   !#####################################################################
    subroutine mpp_get_axis_atts( axis, name, units, longname, cartesian, calendar, sense, len, natts, atts )
-   
+
      type(axistype), intent(in) :: axis
      character(len=*), intent(out) , optional :: name, units
      character(len=*), intent(out), optional :: longname, cartesian,calendar
      integer,intent(out), optional :: sense, len , natts
      type(atttype), intent(inout), optional, dimension(:) :: atts
-     
+
      integer :: n,m
-     
+
      if (PRESENT(name)) name = axis%name
      if (PRESENT(units)) units = axis%units
      if (PRESENT(longname)) longname = axis%longname
@@ -200,41 +200,41 @@ contains
         end do
      end if
      if (PRESENT(natts)) natts = size(axis%Att(:))
-     
+
      return
    end subroutine mpp_get_axis_atts
-     
-   
+
+
   !#####################################################################
     subroutine mpp_get_fields( unit, variables )
-!   
+!
 !  copy variable information from file (excluding data)
 !  global_atts is an attribute type which is allocated from the
 !  calling routine
 !
       integer,         intent(in)    :: unit
       type(fieldtype), intent(inout) :: variables(:)
-      
+
       integer :: nvar,i
-      
+
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_FIELDS: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_FIELDS: invalid unit number.' )
-      
+
       if (size(variables(:)).ne.mpp_file(unit)%nvar) &
       call mpp_error(FATAL, 'MPP_GET_FIELDS: fieldtype not dimensioned properly in calling routine')
-      
+
       nvar = mpp_file(unit)%nvar
-      
+
       do i=1,nvar
          variables(i) = mpp_file(unit)%Var(i)
       enddo
-         
+
       return
    end subroutine mpp_get_fields
-      
+
   !#####################################################################
     subroutine mpp_get_axes( unit, axes, time_axis )
-!   
+!
 !  copy variable information from file (excluding data)
 !  global_atts is an attribute type which is allocated from the
 !  calling routine
@@ -245,28 +245,30 @@ contains
       character(len=128) :: name
       logical :: save
       integer :: ndim,i, nvar, j, num_dims, k
-      
+
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_AXES: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_AXES: invalid unit number.' )
-      
+
       if (size(axes(:)).ne.mpp_file(unit)%ndim) &
       call mpp_error(FATAL, 'MPP_GET_AXES: axistype not dimensioned properly in calling routine')
-      
-      
+
+
       if (PRESENT(time_axis)) time_axis = default_axis
       ndim = mpp_file(unit)%ndim
+
       do i=1,ndim
-        if (ASSOCIATED(mpp_file(unit)%Axis(i)%data)) then
-           axes(i)=mpp_file(unit)%Axis(i)
-       else
-           axes(i)=mpp_file(unit)%Axis(i)
-           if (PRESENT(time_axis)) time_axis = mpp_file(unit)%Axis(i)
-        endif
+         axes(i)=mpp_file(unit)%Axis(i)
+
+         if (PRESENT(time_axis) &
+             .AND. .NOT. ASSOCIATED(mpp_file(unit)%Axis(i)%data) &
+             .AND. mpp_file(unit)%Axis(i)%type /= -1) then
+            time_axis = mpp_file(unit)%Axis(i)
+         endif
       enddo
-        
+
       return
    end subroutine mpp_get_axes
-      
+
   !#####################################################################
 ! <SUBROUTINE NAME="mpp_get_times">
 !   <OVERVIEW>
@@ -283,30 +285,30 @@ contains
 ! </SUBROUTINE>
 
    subroutine mpp_get_times( unit, time_values )
-!  
+!
 !  copy time information from file and convert to time_type
 !
       integer, intent(in) :: unit
       real(DOUBLE_KIND), intent(inout) :: time_values(:)
-      
+
       integer :: ntime,i
-      
+
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_TIMES: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_TIMES: invalid unit number.' )
-      
+
 ! NF_INQ_DIM returns -1 for the length of a record dimension if
 ! it does not exist
-     
+
       if (mpp_file(unit)%time_level == -1) then
           time_values = 0.0
           return
       endif
-          
+
       if (size(time_values(:)).ne.mpp_file(unit)%time_level) &
       call mpp_error(FATAL, 'MPP_GET_TIMES: time_values not dimensioned properly in calling routine')
-      
+
       ntime = mpp_file(unit)%time_level
-      
+
       do i=1,ntime
          time_values(i) = mpp_file(unit)%time_values(i)
       enddo
@@ -316,72 +318,72 @@ contains
 
   !#####################################################################
    function mpp_get_field_index(fields,fieldname)
-   
+
      type(fieldtype), dimension(:) :: fields
      character(len=*) :: fieldname
      integer :: mpp_get_field_index
-     
+
      integer :: n
-     
+
      mpp_get_field_index = -1
-     
+
      do n=1,size(fields(:))
         if (lowercase(fields(n)%name) == lowercase(fieldname)) then
            mpp_get_field_index = n
            exit
         endif
-     enddo 
-        
+     enddo
+
      return
    end function mpp_get_field_index
-     
+
   !#####################################################################
    function mpp_get_axis_index(axes,axisname)
-   
+
      type(axistype), dimension(:) :: axes
      character(len=*) :: axisname
      integer :: mpp_get_axis_index
-     
+
      integer :: n
-     
+
      mpp_get_axis_index = -1
-     
+
      do n=1,size(axes(:))
         if (lowercase(axes(n)%name) == lowercase(axisname)) then
            mpp_get_axis_index = n
            exit
         endif
-     enddo 
-        
+     enddo
+
      return
    end function mpp_get_axis_index
-     
+
   !#####################################################################
    function mpp_get_field_size(field)
-   
+
      type(fieldtype) :: field
      integer :: mpp_get_field_size(4)
-     
+
      integer :: n
-     
+
      mpp_get_field_size = -1
-     
+
      mpp_get_field_size(1) = field%size(1)
      mpp_get_field_size(2) = field%size(2)
      mpp_get_field_size(3) = field%size(3)
      mpp_get_field_size(4) = field%size(4)
-     
+
      return
    end function mpp_get_field_size
-     
-   
+
+
   !#####################################################################
    subroutine mpp_get_axis_data( axis, data )
-   
+
      type(axistype), intent(in) :: axis
      real, dimension(:), intent(out) :: data
-     
-     
+
+
      if (size(data(:)).lt.axis%len) call mpp_error(FATAL,'MPP_GET_AXIS_DATA: data array not large enough')
      if (.NOT.ASSOCIATED(axis%data)) then
         call mpp_error(NOTE,'MPP_GET_AXIS_DATA: use mpp_get_times for record dims')
@@ -389,30 +391,30 @@ contains
      else
         data(1:axis%len) = axis%data
      endif
-        
+
      return
    end subroutine mpp_get_axis_data
-     
-   
+
+
   !#####################################################################
    function mpp_get_recdimid(unit)
-!  
+!
       integer, intent(in) :: unit
       integer  :: mpp_get_recdimid
-      
-      
+
+
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_RECDIMID: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_RECDIMID: invalid unit number.' )
-      
+
       mpp_get_recdimid = mpp_file(unit)%recdimid
-      
+
       return
    end function mpp_get_recdimid
 
     subroutine mpp_get_iospec( unit, iospec )
       integer, intent(in) :: unit
       character(len=*), intent(out) :: iospec
-      
+
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_IOSPEC: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_IOSPEC: invalid unit number.' )
 #ifdef SGICRAY
@@ -447,7 +449,7 @@ contains
       mpp_get_ncid = mpp_file(unit)%ncid
       return
     end function mpp_get_ncid
-      
+
   !#####################################################################
     function mpp_get_axis_id(axis)
       integer mpp_get_axis_id
@@ -455,7 +457,7 @@ contains
       mpp_get_axis_id = axis%id
       return
     end function mpp_get_axis_id
-      
+
   !#####################################################################
     function mpp_get_field_id(field)
       integer mpp_get_field_id
@@ -467,15 +469,15 @@ contains
   !#####################################################################
     subroutine mpp_get_unit_range( unit_begin_out, unit_end_out )
       integer, intent(out) ::      unit_begin_out, unit_end_out
-      
+
       unit_begin_out = unit_begin; unit_end_out = unit_end
       return
     end subroutine mpp_get_unit_range
-      
+
   !#####################################################################
     subroutine mpp_set_unit_range( unit_begin_in, unit_end_in )
       integer, intent(in) ::       unit_begin_in, unit_end_in
-      
+
       if( unit_begin_in.GT.unit_end_in )call mpp_error( FATAL, 'MPP_SET_UNIT_RANGE: unit_begin_in.GT.unit_end_in.' )
       if( unit_begin_in.LT.0           )call mpp_error( FATAL, 'MPP_SET_UNIT_RANGE: unit_begin_in.LT.0.' )
       if( unit_end_in  .GT.maxunits    )call mpp_error( FATAL, 'MPP_SET_UNIT_RANGE: unit_end_in.GT.maxunits.' )
@@ -496,20 +498,20 @@ contains
           write( text,'(i8)' )n
           if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, 'MPP_IO_SET_STACK_SIZE: stack size set to '//text//'.' )
       end if
-            
+
       return
     end subroutine mpp_io_set_stack_size
 
   !#####################################################################
-  ! based on presence/absence of attributes, defines valid range or missing 
+  ! based on presence/absence of attributes, defines valid range or missing
   ! value. For details, see section 8.1 of NetCDF User Guide
   subroutine mpp_get_valid(f,v)
      type(fieldtype),intent(in)  :: f ! field
      type(validtype),intent(out) :: v ! validator
-     
+
      integer :: irange,imin,imax,ifill,imissing,iscale
      integer :: valid_T, scale_T ! types of attributes
-     
+
      v%is_range = .true.
      v%min = -HUGE(v%min); v%max = HUGE(v%max)
      ! find indices of relevant attributes
@@ -527,8 +529,8 @@ contains
      if(iscale>0) scale_T = f%att(iscale)%type
      iscale = mpp_find_att(f%att,'add_offest')
      if(iscale>0) scale_T = max(scale_T,f%att(iscale)%type)
-     
-     
+
+
      ! examine possible range attributes
      valid_T = 0
      if (irange>0) then
@@ -546,7 +548,7 @@ contains
         endif
      else if (imissing > 0) then
         v%is_range = .false.
-        ! here we always scale, since missing_value is supposed to be in 
+        ! here we always scale, since missing_value is supposed to be in
         ! external representation
         v%min = f%att(imissing)%fatt(1)*f%scale + f%add
      else if (ifill>0) then
@@ -563,7 +565,7 @@ contains
                v%max = nearest(nearest(real(v%max,8),-1.0),-1.0)
             end select
             ! always do the scaling, as the _FillValue is in external
-            ! representation 
+            ! representation
             v%max = v%max*f%scale + f%add
         else
             ! if _FillValue is negative or zero, then it defines valid minimum
@@ -576,7 +578,7 @@ contains
             case (NF_DOUBLE)
                v%min = nearest(nearest(real(v%min,8),+1.0),+1.0)
             end select
-            ! always do the scaling, as the _FillValue is in external 
+            ! always do the scaling, as the _FillValue is in external
             ! representation
             v%min = v%min*f%scale + f%add
         endif
@@ -595,9 +597,9 @@ contains
           v%max = v%max*f%scale + f%add
        endif
     endif
-     
+
    end subroutine mpp_get_valid
-   
+
    !#####################################################################
    logical elemental function mpp_is_valid(x, v)
       real           , intent(in) :: x ! real value to be eaxmined

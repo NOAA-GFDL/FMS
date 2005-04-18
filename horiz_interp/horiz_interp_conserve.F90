@@ -32,7 +32,7 @@ module horiz_interp_conserve_mod
   integer :: pe, root_pe
   !-----------------------------------------------------------------------
   character(len=128) :: version = '$Id: horiz_interp_conserve.F90,v 11.0 2004/09/28 19:59:46 fms Exp $'
-  character(len=128) :: tagname = '$Name: khartoum $'
+  character(len=128) :: tagname = '$Name: lima $'
   logical            :: do_vers = .true.
 
 contains

@@ -104,9 +104,9 @@ end type
 logical                 :: module_is_initialized = .FALSE.
 
 character(len=128), private :: version= &
-  '$Id: diag_output.F90,v 11.0 2004/09/28 19:58:57 fms Exp $'
+  '$Id: diag_output.F90,v 12.0 2005/04/14 17:55:43 fms Exp $'
 character(len=128), private :: tagname= &
-  '$Name: khartoum $'
+  '$Name: lima $'
 
 contains
 
@@ -417,14 +417,15 @@ end subroutine write_axis_meta_data
 !#######################################################################
 
 function write_field_meta_data ( file_unit, name, axes, units,      &
-     long_name, range, pack, mval, avg_name, time_method )  &
+     long_name, range, pack, mval, avg_name, time_method,standard_name )  &
      result ( Field )
 
   integer         ,  intent(in)          :: file_unit, axes(:)
   character(len=*),  intent(in)          :: name, units, long_name
   real,    optional, intent(in)          :: range(2), mval
   integer, optional, intent(in)          :: pack
-  character(len=*), optional, intent(in) :: avg_name, time_method
+  character(len=*), optional, intent(in) :: avg_name, time_method,standard_name
+  character(len=128)                     :: standard_name2
   type(diag_fieldtype)                   :: Field
 
 !-----------------------------------------------------------------------
@@ -459,7 +460,8 @@ function write_field_meta_data ( file_unit, name, axes, units,      &
 
 !-----------------------------------------------------------------------
 !---- dummy checks ----
-
+  standard_name2 = 'none'
+  if(present(standard_name)) standard_name2 = standard_name
   num = size(axes(:))
   if ( num < 1 ) call error_mesg ( 'write_meta_data', &
        'number of axes < 1', FATAL)
@@ -540,14 +542,14 @@ function write_field_meta_data ( file_unit, name, axes, units,      &
              range(1), range(2),                &
              missing=Field%miss_pack,           &
              scale=scale, add=add, pack=ipack,   &
-             time_method=time_method   )
+             time_method=time_method,standard_name=standard_name2)
      else
         call mpp_write_meta ( file_unit, Field%Field,            &
              Axis_types(axis_indices(1:num)),   &
              name, units,  long_name,           &
              range(1), range(2),                &
              scale=scale, add=add, pack=ipack,   &
-             time_method=time_method   )
+             time_method=time_method,standard_name=standard_name2)
      endif
 
   else
@@ -556,13 +558,13 @@ function write_field_meta_data ( file_unit, name, axes, units,      &
              Axis_types(axis_indices(1:num)),   &
              name, units, long_name,            &
              missing=Field%miss_pack,           &
-             pack=ipack, time_method=time_method)
+             pack=ipack, time_method=time_method,standard_name=standard_name2)
      else
 
         call mpp_write_meta ( file_unit, Field%Field,            &
              Axis_types(axis_indices(1:num)),   &
              name, units, long_name,            &
-             pack=ipack, time_method=time_method)
+             pack=ipack, time_method=time_method,standard_name=standard_name2)
      endif
   endif
 

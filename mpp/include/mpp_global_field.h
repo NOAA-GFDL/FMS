@@ -14,6 +14,7 @@
       gptr = LOC(global)
       call mpp_global_field( domain, local3D, global3D, flags, new, dc_handle )
 #else
+      integer, optional :: dc_handle  ! not used when there are no cray pointers
       local3D = RESHAPE( local, SHAPE(local3D) )
       call mpp_global_field( domain, local3D, global3D, flags )
       global = RESHAPE( global3D, SHAPE(global) )
@@ -56,6 +57,7 @@
         call mpp_do_global_field( domain, local, global, flags )
       end if
 #else
+      integer, optional :: dc_handle  ! not used when there are no cray pointers
       call mpp_do_global_field( domain, local, global, flags )
 #endif
     end subroutine MPP_GLOBAL_FIELD_3D_
@@ -76,6 +78,7 @@
       gptr = LOC(global)
       call mpp_global_field( domain, local3D, global3D, flags, new, dc_handle )
 #else
+      integer, optional :: dc_handle  ! not used when there are no cray pointers
       local3D = RESHAPE( local, SHAPE(local3D) )
       call mpp_global_field( domain, local3D, global3D, flags )
       global = RESHAPE( global3D, SHAPE(global) )
@@ -98,6 +101,7 @@
       gptr = LOC(global)
       call mpp_global_field( domain, local3D, global3D, flags, new, dc_handle )
 #else
+      integer, optional :: dc_handle  ! not used when there are no cray pointers
       local3D = RESHAPE( local, SHAPE(local3D) )
       call mpp_global_field( domain, local3D, global3D, flags )
       global = RESHAPE( global3D, SHAPE(global) )

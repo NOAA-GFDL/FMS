@@ -78,16 +78,16 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_end
 !      When interp_method is "conservative" or "bilinear", lon_in should be 1D.
 !   </IN>
 !   <IN NAME="lon_out" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians" >
-!      Longitude (in radians) for source data grid. when lon_in is 1D, it is the longitude
+!      Longitude (in radians) for destination data grid. when lon_out is 1D, it is the longitude
 !      edges and its value are for adjacent grid boxes and must increase 
-!      in value. When lon_in is 2D, there are two cases: one is the longitude edges stored as
+!      in value. When lon_out is 2D, there are two cases: one is the longitude edges stored as
 !      pairs for each grid box (when interp_method is "conservative"), the other is the longitude
 !      of the center of each grid box (when interp_method is "bilinear"). 
 !   </IN>
 !   <IN NAME="lat_out" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians" >
-!      Latitude (in radians) for source data grid. when lat_in is 1D, it is the latitude
+!      Latitude (in radians) for destination data grid. when lat_out is 1D, it is the latitude
 !      edges and its value are for adjacent grid boxes and must increase 
-!      in value. When lat_in is 2D, there are two cases: one is the latitude edges stored as
+!      in value. When lat_out is 2D, there are two cases: one is the latitude edges stored as
 !      pairs for each grid box (when interp_method is "conservative"), the other is the latitude
 !      of the center of each grid box (when interp_method is "bilinear").
 !   </IN>
@@ -200,8 +200,8 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_end
  integer, parameter :: SPHERICA = 3
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: horiz_interp.f90,v 11.0 2004/09/28 19:59:51 fms Exp $'
- character(len=128) :: tagname = '$Name: khartoum $'
+ character(len=128) :: version = '$Id: horiz_interp.f90,v 12.0 2005/04/14 17:56:46 fms Exp $'
+ character(len=128) :: tagname = '$Name: lima $'
  logical            :: do_vers = .true.
  logical            :: module_is_initialized = .FALSE.
 !-----------------------------------------------------------------------
@@ -221,143 +221,146 @@ contains
 !  <OUT NAME="Interp" TYPE="type(horiz_interp_type)"></OUT>
 
 !<PUBLICROUTINE INTERFACE="horiz_interp_init">
- subroutine horiz_interp_init_1d (Interp, lon_in, lat_in, lon_out, lat_out,  &
-                                  verbose, interp_method, num_nbrs, max_dist, src_modulo, &
-                                  grid_at_center)
-!</PUBLICROUTINE>
+  subroutine horiz_interp_init_1d (Interp, lon_in, lat_in, lon_out, lat_out,  &
+       verbose, interp_method, num_nbrs, max_dist, src_modulo, &
+       grid_at_center)
+    !</PUBLICROUTINE>
 
-!-----------------------------------------------------------------------
- type(horiz_interp_type), intent(inout)        :: Interp
- real, intent(in),  dimension(:)               :: lon_in , lat_in
- real, intent(in),  dimension(:)               :: lon_out, lat_out
- integer, intent(in),                 optional :: verbose
- character(len=*), intent(in),        optional :: interp_method
- integer, intent(in),                 optional :: num_nbrs
- real,    intent(in),                 optional :: max_dist
- logical, intent(in),                 optional :: src_modulo
-  logical, intent(in),                optional :: grid_at_center
-!-----------------------------------------------------------------------
-   real, dimension(:,:), allocatable :: lon_src, lat_src, lon_dst, lat_dst
-   real, dimension(:),   allocatable :: lon_src_1d, lat_src_1d
-   integer                           :: i, j, nlon_in, nlat_in, nlon_out, nlat_out
-   logical                           :: center
-   character(len=40)                 :: method
-!-----------------------------------------------------------------------
-   module_is_initialized = .true.
-!  write version number and tag name
-   if (do_vers) then
-      call write_version_number (version, tagname)
-      do_vers = .false.
-   endif
+    !-----------------------------------------------------------------------
+    type(horiz_interp_type), intent(inout)        :: Interp
+    real, intent(in),  dimension(:)               :: lon_in , lat_in
+    real, intent(in),  dimension(:)               :: lon_out, lat_out
+    integer, intent(in),                 optional :: verbose
+    character(len=*), intent(in),        optional :: interp_method
+    integer, intent(in),                 optional :: num_nbrs
+    real,    intent(in),                 optional :: max_dist
+    logical, intent(in),                 optional :: src_modulo
+    logical, intent(in),                 optional :: grid_at_center
+    !-----------------------------------------------------------------------
+    real, dimension(:,:), allocatable :: lon_src, lat_src, lon_dst, lat_dst
+    real, dimension(:),   allocatable :: lon_src_1d, lat_src_1d
+    integer                           :: i, j, nlon_in, nlat_in, nlon_out, nlat_out
+    logical                           :: center
+    character(len=40)                 :: method
+    !-----------------------------------------------------------------------
+    module_is_initialized = .true.
+    !  write version number and tag name
+    if (do_vers) then
+       call write_version_number (version, tagname)
+       do_vers = .false.
+    endif
 
-   method = 'conservative'
-   if(present(interp_method)) method = interp_method
+    method = 'conservative'
+    if(present(interp_method)) method = interp_method
 
-   select case (trim(method))
-   case ("conservative")
-      Interp%interp_method = CONSERVE
-      nlon_out = size(lon_out(:))-1; nlat_out = size(lat_out(:))-1
-      allocate(lon_dst(nlon_out,2), lat_dst(nlat_out,2))
-      do i=1,nlon_out
-         lon_dst(i,1) = lon_out(i)
-         lon_dst(i,2) = lon_out(i+1)
-      enddo
-      do j=1,nlat_out
-         lat_dst(j,1) = lat_out(j)
-         lat_dst(j,2) = lat_out(j+1)
-      enddo
-      call horiz_interp_conserve_init ( Interp, lon_in, lat_in, lon_dst, lat_dst, &
-                                    verbose)
-      deallocate(lon_dst, lat_dst)
-   case ("bilinear")
-      Interp%interp_method = BILINEAR
-      center = .false.
-      if(present(grid_at_center) ) center = grid_at_center
-      if(center) then
-         nlon_out = size(lon_out(:)); nlat_out = size(lat_out(:))
-         allocate(lon_dst(nlon_out,nlat_out), lat_dst(nlon_out,nlat_out))
-         do i = 1, nlon_out
-            lon_dst(i,:) = lon_out(i)
-         enddo
-         do j = 1, nlat_out
-            lat_dst(:,j) = lat_out(j)
-         enddo
+    select case (trim(method))
+    case ("conservative")
+       Interp%interp_method = CONSERVE
+       nlon_out = size(lon_out(:))-1; nlat_out = size(lat_out(:))-1
+       allocate(lon_dst(nlon_out,2), lat_dst(nlat_out,2))
+       do i=1,nlon_out
+          lon_dst(i,1) = lon_out(i)
+          lon_dst(i,2) = lon_out(i+1)
+       enddo
+       do j=1,nlat_out
+          lat_dst(j,1) = lat_out(j)
+          lat_dst(j,2) = lat_out(j+1)
+       enddo
+       call horiz_interp_conserve_init ( Interp, lon_in, lat_in, lon_dst, lat_dst, &
+            verbose)
+       deallocate(lon_dst, lat_dst)
+    case ("bilinear")
+       Interp%interp_method = BILINEAR
+       center = .false.
+       if(present(grid_at_center) ) center = grid_at_center
+       if(center) then
+          nlon_out = size(lon_out(:)); nlat_out = size(lat_out(:))
+          allocate(lon_dst(nlon_out,nlat_out), lat_dst(nlon_out,nlat_out))
+          do i = 1, nlon_out
+             lon_dst(i,:) = lon_out(i)
+          enddo
+          do j = 1, nlat_out
+             lat_dst(:,j) = lat_out(j)
+          enddo
 
-         call horiz_interp_bilinear_init ( Interp, lon_in, lat_in, lon_dst, lat_dst, &
-                                     verbose, src_modulo)
-         deallocate(lon_dst, lat_dst)
-      else
-      nlon_in  = size(lon_in(:))-1;  nlat_in  = size(lat_in(:))-1
-      nlon_out = size(lon_out(:))-1; nlat_out = size(lat_out(:))-1
-      allocate(lon_src_1d(nlon_in), lat_src_1d(nlat_in))
-      allocate(lon_dst(nlon_out,nlat_out), lat_dst(nlon_out,nlat_out))
-      do i = 1, nlon_in
-         lon_src_1d(i) = (lon_in(i) + lon_in(i+1)) * 0.5
-      enddo
-      do j = 1, nlat_in
-         lat_src_1d(j) = (lat_in(j) + lat_in(j+1)) * 0.5
-      enddo
-      do i = 1, nlon_out
-         lon_dst(i,:) = (lon_out(i) + lon_out(i+1)) * 0.5
-      enddo
-      do j = 1, nlat_out
-         lat_dst(:,j) = (lat_out(j) + lat_out(j+1)) * 0.5
-      enddo
-      call horiz_interp_bilinear_init ( Interp, lon_src_1d, lat_src_1d, lon_dst, lat_dst, &
-                                    verbose, src_modulo)
-      deallocate(lon_src_1d, lat_src_1d, lon_dst, lat_dst)
-      endif
-   case ("spherical")
-      Interp%interp_method = SPHERICA
-      nlon_in  = size(lon_in(:));   nlat_in  = size(lat_in(:))
-      nlon_out  = size(lon_out(:)); nlat_out = size(lat_out(:))
-      allocate(lon_src(nlon_in,nlat_in), lat_src(nlon_in,nlat_in))
-      allocate(lon_dst(nlon_out,nlat_out), lat_dst(nlon_out,nlat_out))
-      do i = 1, nlon_in
-         lon_src(i,:) = lon_in(i)
-      enddo
-      do j = 1, nlat_in
-         lat_src(:,j) = lat_in(j)
-      enddo
-      do i = 1, nlon_out
-         lon_dst(i,:) = lon_out(i)
-      enddo
-      do j = 1, nlat_out
-         lat_dst(:,j) = lat_out(j)
-      enddo
-      call horiz_interp_spherical_init ( Interp, lon_src, lat_src, lon_dst, lat_dst, &
-                                    num_nbrs, max_dist, src_modulo)
-      deallocate(lon_src, lat_src, lon_dst, lat_dst)
-   case default
-      call mpp_error(FATAL,'horiz_interp_mod: interp_method should be conservative, bilinear, spherical')
-   end select
+          call horiz_interp_bilinear_init ( Interp, lon_in, lat_in, lon_dst, lat_dst, &
+               verbose, src_modulo)
+          deallocate(lon_dst, lat_dst)
+       else
+          nlon_in  = size(lon_in(:))-1;  nlat_in  = size(lat_in(:))-1
+          nlon_out = size(lon_out(:))-1; nlat_out = size(lat_out(:))-1
+          allocate(lon_src_1d(nlon_in), lat_src_1d(nlat_in))
+          allocate(lon_dst(nlon_out,nlat_out), lat_dst(nlon_out,nlat_out))
+          do i = 1, nlon_in
+             lon_src_1d(i) = (lon_in(i) + lon_in(i+1)) * 0.5
+          enddo
+          do j = 1, nlat_in
+             lat_src_1d(j) = (lat_in(j) + lat_in(j+1)) * 0.5
+          enddo
+          do i = 1, nlon_out
+             lon_dst(i,:) = (lon_out(i) + lon_out(i+1)) * 0.5
+          enddo
+          do j = 1, nlat_out
+             lat_dst(:,j) = (lat_out(j) + lat_out(j+1)) * 0.5
+          enddo
+          call horiz_interp_bilinear_init ( Interp, lon_src_1d, lat_src_1d, lon_dst, lat_dst, &
+               verbose, src_modulo)
+          deallocate(lon_src_1d, lat_src_1d, lon_dst, lat_dst)
+       endif
+    case ("spherical")
+       Interp%interp_method = SPHERICA
+       nlon_in  = size(lon_in(:));   nlat_in  = size(lat_in(:))
+       nlon_out  = size(lon_out(:)); nlat_out = size(lat_out(:))
+       allocate(lon_src(nlon_in,nlat_in), lat_src(nlon_in,nlat_in))
+       allocate(lon_dst(nlon_out,nlat_out), lat_dst(nlon_out,nlat_out))
+       do i = 1, nlon_in
+          lon_src(i,:) = lon_in(i)
+       enddo
+       do j = 1, nlat_in
+          lat_src(:,j) = lat_in(j)
+       enddo
+       do i = 1, nlon_out
+          lon_dst(i,:) = lon_out(i)
+       enddo
+       do j = 1, nlat_out
+          lat_dst(:,j) = lat_out(j)
+       enddo
+       call horiz_interp_spherical_init ( Interp, lon_src, lat_src, lon_dst, lat_dst, &
+            num_nbrs, max_dist, src_modulo)
+       deallocate(lon_src, lat_src, lon_dst, lat_dst)
+    case default
+       call mpp_error(FATAL,'horiz_interp_mod: interp_method should be conservative, bilinear, spherical')
+    end select
 
-!-----------------------------------------------------------------------
+    !-----------------------------------------------------------------------
 
- end subroutine horiz_interp_init_1d
+  end subroutine horiz_interp_init_1d
 !  </SUBROUTINE>
 
 !#######################################################################
 
  subroutine horiz_interp_init_1d_src (Interp, lon_in, lat_in, lon_out, lat_out,   &
-                                      verbose, interp_method, num_nbrs, max_dist, src_modulo )
+                                      verbose, interp_method, num_nbrs, max_dist, &
+                                      src_modulo, grid_at_center )
 
- type(horiz_interp_type), intent(inout)        :: Interp
- real, intent(in),  dimension(:)               :: lon_in , lat_in
- real, intent(in),  dimension(:,:)             :: lon_out, lat_out
- integer, intent(in),                 optional :: verbose
- character(len=*), intent(in),        optional :: interp_method
- integer, intent(in),                 optional :: num_nbrs  ! minimum number of neighbors
- real,    intent(in),                 optional :: max_dist
- logical, intent(in),                 optional :: src_modulo
+   type(horiz_interp_type), intent(inout)        :: Interp
+   real, intent(in),  dimension(:)               :: lon_in , lat_in
+   real, intent(in),  dimension(:,:)             :: lon_out, lat_out
+   integer, intent(in),                 optional :: verbose
+   character(len=*), intent(in),        optional :: interp_method
+   integer, intent(in),                 optional :: num_nbrs  ! minimum number of neighbors
+   real,    intent(in),                 optional :: max_dist
+   logical, intent(in),                 optional :: src_modulo
+   logical, intent(in),                 optional :: grid_at_center
 
    real, dimension(:,:), allocatable :: lon_src, lat_src
    real, dimension(:),   allocatable :: lon_src_1d, lat_src_1d
    integer                           :: i, j, nlon_in, nlat_in
    character(len=40)                 :: method
-!-----------------------------------------------------------------------
+   logical                           :: center
+   !-----------------------------------------------------------------------
    module_is_initialized = .true.
-!  write version number and tag name
+   !  write version number and tag name
    if (do_vers) then
       call write_version_number (version, tagname)
       do_vers = .false.
@@ -370,20 +373,27 @@ contains
    case ("conservative")
       Interp%interp_method = CONSERVE
       call horiz_interp_conserve_init ( Interp, lon_in, lat_in, lon_out, lat_out, &
-                                    verbose )
+           verbose )
    case ("bilinear")
       Interp%interp_method = BILINEAR
-      nlon_in  = size(lon_in(:))-1;  nlat_in  = size(lat_in(:))-1
-      allocate(lon_src_1d(nlon_in), lat_src_1d(nlat_in))
-      do i = 1, nlon_in
-         lon_src_1d(i) = (lon_in(i) + lon_in(i+1)) * 0.5
-      enddo
-      do j = 1, nlat_in
-         lat_src_1d(j) = (lat_in(j) + lat_in(j+1)) * 0.5
-      enddo
-      call horiz_interp_bilinear_init ( Interp, lon_src_1d, lat_src_1d, lon_out, lat_out, &
-                                    verbose, src_modulo )
-      deallocate(lon_src_1d,lat_src_1d)
+      center = .false.
+      if(present(grid_at_center) ) center = grid_at_center
+      if(center) then
+         call horiz_interp_bilinear_init ( Interp, lon_in, lat_in, lon_out, lat_out, &
+              verbose, src_modulo )
+      else
+         nlon_in  = size(lon_in(:))-1;  nlat_in  = size(lat_in(:))-1
+         allocate(lon_src_1d(nlon_in), lat_src_1d(nlat_in))
+         do i = 1, nlon_in
+            lon_src_1d(i) = (lon_in(i) + lon_in(i+1)) * 0.5
+         enddo
+         do j = 1, nlat_in
+            lat_src_1d(j) = (lat_in(j) + lat_in(j+1)) * 0.5
+         enddo
+         call horiz_interp_bilinear_init ( Interp, lon_src_1d, lat_src_1d, lon_out, lat_out, &
+              verbose, src_modulo )
+         deallocate(lon_src_1d,lat_src_1d)
+      endif
    case ("spherical")
       Interp%interp_method = SPHERICA
       nlon_in  = size(lon_in(:));  nlat_in  = size(lat_in(:))
@@ -395,13 +405,13 @@ contains
          lat_src(:,j) = lat_in(j)
       enddo
       call horiz_interp_spherical_init ( Interp, lon_src, lat_src, lon_out, lat_out, &
-                                    num_nbrs, max_dist, src_modulo)
+           num_nbrs, max_dist, src_modulo)
       deallocate(lon_src, lat_src)
    case default
       call mpp_error(FATAL,'interp_method should be conservative, bilinear, spherical')
    end select
 
-!-----------------------------------------------------------------------
+   !-----------------------------------------------------------------------
 
  end subroutine horiz_interp_init_1d_src
 
@@ -427,7 +437,7 @@ contains
       do_vers = .false.
    endif
 
-   method = 'conservative'
+   method = 'bilinear'
    if(present(interp_method)) method = interp_method
 
    select case (trim(method))
@@ -435,8 +445,12 @@ contains
       Interp%interp_method = SPHERICA
       call horiz_interp_spherical_init ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                     num_nbrs, max_dist, src_modulo )
+   case ("bilinear")
+      Interp%interp_method = BILINEAR
+      call horiz_interp_bilinear_init ( Interp, lon_in, lat_in, lon_out, lat_out, &
+                                        verbose, src_modulo )
    case default
-      call mpp_error(FATAL,'when source grid are 2d, interp_method should be spherical')
+      call mpp_error(FATAL,'when source grid are 2d, interp_method should be spherical or bilinear')
    end select     
 
 !-----------------------------------------------------------------------
@@ -445,50 +459,56 @@ contains
 
 !#######################################################################
  subroutine horiz_interp_init_1d_dst (Interp, lon_in, lat_in, lon_out, lat_out,   &
-                                      verbose, interp_method, num_nbrs, max_dist, src_modulo)
- type(horiz_interp_type), intent(inout)     :: Interp
- real, intent(in),  dimension(:,:)          :: lon_in , lat_in
- real, intent(in),  dimension(:)            :: lon_out, lat_out
- integer, intent(in),              optional :: verbose
- character(len=*), intent(in),     optional :: interp_method
- integer, intent(in),              optional :: num_nbrs
- real,    intent(in),              optional :: max_dist
- logical, intent(in),              optional :: src_modulo
+      verbose, interp_method, num_nbrs, max_dist, src_modulo)
+   type(horiz_interp_type), intent(inout)     :: Interp
+   real, intent(in),  dimension(:,:)          :: lon_in , lat_in
+   real, intent(in),  dimension(:)            :: lon_out, lat_out
+   integer, intent(in),              optional :: verbose
+   character(len=*), intent(in),     optional :: interp_method
+   integer, intent(in),              optional :: num_nbrs
+   real,    intent(in),              optional :: max_dist
+   logical, intent(in),              optional :: src_modulo
 
- character(len=40) :: method
-!-------------some local variables-----------------------------------------------
+   character(len=40) :: method
+   !-------------some local variables-----------------------------------------------
    integer                           :: i, j, nlon_out, nlat_out
    real, dimension(:,:), allocatable :: lon_dst, lat_dst
-!-----------------------------------------------------------------------
+   !-----------------------------------------------------------------------
    module_is_initialized = .true.   
-!  write version number and tag name
+   !  write version number and tag name
    if (do_vers) then
       call write_version_number (version, tagname)
       do_vers = .false.
    endif
 
-   method = 'conservative'
+   method = 'bilinear'
    if(present(interp_method)) method = interp_method
 
+   nlon_out = size(lon_out(:)); nlat_out = size(lat_out(:))
+   allocate(lon_dst(nlon_out,nlat_out), lat_dst(nlon_out,nlat_out))
+   do i = 1, nlon_out
+      lon_dst(i,:) = lon_out(i)
+   enddo
+   do j = 1, nlat_out
+      lat_dst(:,j) = lat_out(j)
+   enddo
+
    select case (trim(method))
+   case ("bilinear")
+      Interp%interp_method = BILINEAR
+      call horiz_interp_bilinear_init ( Interp, lon_in, lat_in, lon_dst, lat_dst, &
+           verbose, src_modulo )
    case ("spherical")
       Interp%interp_method = SPHERICA
-      nlon_out = size(lon_out(:)); nlat_out = size(lat_out(:))
-      allocate(lon_dst(nlon_out,nlat_out), lat_dst(nlon_out,nlat_out))
-      do i = 1, nlon_out
-         lon_dst(i,:) = lon_out(i)
-      enddo
-      do j = 1, nlat_out
-         lat_dst(:,j) = lat_out(j)
-      enddo
       call horiz_interp_spherical_init ( Interp, lon_in, lat_in, lon_dst, lat_dst, &
-                                    num_nbrs, max_dist, src_modulo)
-      deallocate(lon_dst,lat_dst)
+           num_nbrs, max_dist, src_modulo)
    case default
-      call mpp_error(FATAL,'when source grid are 2d, interp_method should be 3')
-   end select     
+      call mpp_error(FATAL,'when source grid are 2d, interp_method should be spherical or bilinear')
+   end select
 
-!-----------------------------------------------------------------------
+   deallocate(lon_dst,lat_dst)
+
+   !-----------------------------------------------------------------------
 
  end subroutine horiz_interp_init_1d_dst
 
@@ -589,7 +609,7 @@ contains
  subroutine horiz_interp_solo_1d ( data_in, lon_in, lat_in, lon_out, lat_out,    &
                                    data_out, verbose, mask_in, mask_out,         &
                                    interp_method, missing_value, missing_permit, &
-                                   num_nbrs, max_dist,src_modulo  )                                
+                                   num_nbrs, max_dist,src_modulo, grid_at_center  )              
 !</PUBLICROUTINE>
 !-----------------------------------------------------------------------
 !   interpolates from a rectangular grid to rectangular grid.
@@ -610,12 +630,13 @@ contains
    integer, intent(in),                   optional :: num_nbrs
       real, intent(in),                   optional :: max_dist
    logical, intent(in),                   optional :: src_modulo
+   logical, intent(in),                   optional :: grid_at_center
 !-----------------------------------------------------------------------
     type (horiz_interp_type) :: Interp
 !-----------------------------------------------------------------------
 
     call horiz_interp_init ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
-                             interp_method, num_nbrs, max_dist, src_modulo )
+                             interp_method, num_nbrs, max_dist, src_modulo, grid_at_center )
 
     call horiz_interp ( Interp, data_in, data_out, verbose,   &
                         mask_in, mask_out, missing_value, missing_permit )
@@ -630,7 +651,7 @@ contains
  subroutine horiz_interp_solo_1d_src ( data_in, lon_in, lat_in, lon_out, lat_out,    &
                                        data_out, verbose, mask_in, mask_out,         &
                                        interp_method, missing_value, missing_permit, &
-                                       num_nbrs, max_dist, src_modulo )
+                                       num_nbrs, max_dist, src_modulo, grid_at_center )
 !-----------------------------------------------------------------------
 !
 !   interpolates from a uniformly spaced grid to any output grid.
@@ -651,12 +672,13 @@ contains
    integer, intent(in),                   optional :: num_nbrs
       real, intent(in),                   optional :: max_dist
    logical, intent(in),                   optional :: src_modulo
+   logical, intent(in),                   optional :: grid_at_center
 !-----------------------------------------------------------------------
     type (horiz_interp_type) :: Interp
 !-----------------------------------------------------------------------
 
     call horiz_interp_init ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
-                             interp_method, num_nbrs, max_dist, src_modulo )
+                             interp_method, num_nbrs, max_dist, src_modulo, grid_at_center )
 
     call horiz_interp ( Interp, data_in, data_out, verbose,   &
                         mask_in, mask_out, missing_value, missing_permit )

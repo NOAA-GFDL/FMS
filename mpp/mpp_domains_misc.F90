@@ -1,5 +1,5 @@
 module mpp_domains_misc_mod
-#include <os.h>
+#include <fms_platform.h>
 use mpp_mod,              only : FATAL, ANY_PE, NULL_PE, MPP_DEBUG, MPP_VERBOSE
 use mpp_mod,              only : mpp_pe, mpp_npes, mpp_root_pe, stdlog, stdout, stderr
 use mpp_mod,              only : mpp_error, mpp_sync, mpp_sync_self, mpp_get_current_pelist
@@ -39,9 +39,9 @@ public :: mpp_redistribute, mpp_update_domains, mpp_check_field
 
 !--- version information
   character(len=128), private :: version= &
-       '$Id: mpp_domains_misc.F90,v 11.0 2004/09/28 20:04:49 fms Exp $'
+       '$Id: mpp_domains_misc.F90,v 12.0 2005/04/14 17:58:08 fms Exp $'
   character(len=128), private :: tagname= &
-       '$Name: khartoum $'
+       '$Name: lima $'
 
 !--- public interface
 
@@ -387,10 +387,10 @@ contains
       NULL_DOMAIN1D%global%begin  = -1; NULL_DOMAIN1D%global%end  = -1; NULL_DOMAIN1D%global%size = 0
       NULL_DOMAIN1D%data%begin    = -1; NULL_DOMAIN1D%data%end    = -1; NULL_DOMAIN1D%data%size = 0
       NULL_DOMAIN1D%compute%begin = -1; NULL_DOMAIN1D%compute%end = -1; NULL_DOMAIN1D%compute%size = 0
-      NULL_DOMAIN1D%pe = ANY_PE
+      NULL_DOMAIN1D%pe = NULL_PE
       NULL_DOMAIN2D%x = NULL_DOMAIN1D
       NULL_DOMAIN2D%y = NULL_DOMAIN1D
-      NULL_DOMAIN2D%pe = ANY_PE
+      NULL_DOMAIN2D%pe = NULL_PE
 
       if( domain_clocks_on )then
           pack_clock      = mpp_clock_id( 'Halo pack' )

@@ -6,8 +6,9 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !    subroutine mpp_init( flags, in, out, err, log )
   !      integer, optional, intent(in) :: flags, in, out, err, log
-subroutine mpp_init( flags )
+subroutine mpp_init( flags,localcomm )
   integer, optional, intent(in) :: flags
+  integer, optional, intent(in) :: localcomm ! dummy here, used only in MPI
   integer                       :: num_pes, len
   integer                       :: i
   logical                       :: opened
@@ -21,7 +22,6 @@ subroutine mpp_init( flags )
 
   call START_PES(0)         !the argument 0 means extract from environment variable NPES on PVP/SGI, from mpprun -n on t3e
   pe = my_pe()
-  node = pe                 !on an SMP this should return node ID rather than PE number.
   npes = num_pes()
 
   module_is_initialized = .TRUE.
@@ -98,11 +98,9 @@ subroutine mpp_init( flags )
   !          call mpp_sync()
   !          if( pe.NE.root_pe )open( unit=log_unit, file=trim(configfile), status='OLD' )
   !      end if
-  if( pe.EQ.root_pe )then
-     log_unit = get_unit()
-     open( unit=log_unit, file=trim(configfile), status='REPLACE' )
-     close(log_unit)
-  end if
+
+  call mpp_init_logfile()
+
   !messages
   if( verbose )call mpp_error( NOTE, 'MPP_INIT: initializing MPP module...' )
   if( pe.EQ.root_pe )then
@@ -629,7 +627,11 @@ end subroutine mpp_malloc
 !#######################################################################
 !these local versions are written for grouping into shmem_integer_wait
 subroutine shmem_int4_wait_local( ivar, cmp_value )
+#ifdef __ia64
+  !dir$ ATTRIBUTE FORCEINLINE shmem_int4_wait_local
+#else
   !dir$ INLINEALWAYS shmem_int4_wait_local
+#endif
   integer(INT_KIND), intent(in) :: cmp_value
   integer(INT_KIND), intent(inout) :: ivar
   call SHMEM_INT4_WAIT( ivar, cmp_value )
@@ -637,7 +639,11 @@ subroutine shmem_int4_wait_local( ivar, cmp_value )
 end subroutine shmem_int4_wait_local
 
 subroutine shmem_int8_wait_local( ivar, cmp_value )
-  !dir$ INLINEALWAYS shmem_int8_wait_local
+#ifdef __ia64
+  !dir$ ATTRIBUTE FORCEINLINE shmem_int4_wait_local
+#else
+  !dir$ INLINEALWAYS shmem_int4_wait_local
+#endif
   integer(LONG_KIND), intent(in) :: cmp_value
   integer(LONG_KIND), intent(inout) :: ivar
   call SHMEM_INT8_WAIT( ivar, cmp_value )

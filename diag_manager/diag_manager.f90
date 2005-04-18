@@ -56,9 +56,9 @@ module diag_manager_mod
 !    <TT>x</TT> is mandatory 1 digit number specifying the width of field used in writing the string<BR/>
 ! 10. New time axis for time averaged fields <BR/>
 !    users can use a namelist option to handle the time value written to time axis for time averaged fields.<BR/>
-!    If  <TT>mix_snapshot_average_fields=.true.</TT> then a time averaged file will be labeled at the end
-!    of the averaging period. e.g. January monthly average is labeled Feb01. Users can have both snapshot and
-!    averaged fields in one file. <BR/>
+!    If  <TT>mix_snapshot_average_fields=.true.</TT> then a time averaged file will have time values 
+!    corresponding to ending time_bound e.g. January monthly average is labeled Feb01. Users can have both 
+!    snapshot and averaged fields in one file. <BR/>
 !    If  <TT>mix_snapshot_average_fields=.false.</TT>
 !    The time value written to time axis for time averaged fields is the middle on the averaging time.
 !    For example, January monthly mean will be written at Jan.16 not Feb.01 as before. However, to use this 
@@ -91,8 +91,8 @@ use       mpp_io_mod, only: mpp_open, MPP_RDONLY, MPP_ASCII, mpp_close
 use          fms_mod, only: error_mesg, FATAL, WARNING, NOTE,          &
                             close_file, stdlog, write_version_number,  &
                             file_exist, mpp_pe, open_namelist_file, &
-                            check_nml_error, lowercase, stdout
-use mpp_mod, only         : mpp_get_current_pelist, mpp_npes, mpp_sync, mpp_root_pe,stdout     
+                            check_nml_error, lowercase, stdout, mpp_error
+use mpp_mod, only         : mpp_get_current_pelist, mpp_npes, mpp_sync, mpp_root_pe, stdout, mpp_sum    
 use diag_axis_mod, only   : diag_axis_init, get_axis_length, get_diag_axis, get_domain1d, get_domain2d, &
      get_axis_global_length, diag_subaxes_init,get_diag_axis_cart, get_diag_axis_data, max_axes
 use  diag_output_mod, only: diag_output_init, write_axis_meta_data, &
@@ -147,6 +147,7 @@ type file_type
    integer             :: fields(max_fields_per_file)
    integer             :: num_fields
    integer             :: file_unit
+   integer             :: bytes_written
    integer             :: time_axis_id, time_bounds_id
    type (time_type)    :: last_flush
    type(diag_fieldtype):: f_avg_start, f_avg_end, f_avg_nitems, f_bounds
@@ -158,7 +159,7 @@ type file_type
 end type file_type
 
 type input_field_type
-   character(len=128) :: module_name, field_name, long_name, units
+   character(len=128) :: module_name, field_name, long_name, units, standard_name
    integer            :: axes(3), num_axes 
    logical            :: missing_value_present, range_present
    real               :: missing_value, range(2)
@@ -205,6 +206,9 @@ logical             :: mix_snapshot_average_fields
 logical             :: first_send_data_call = .true.
 logical             :: first_send_data_local = .true.
 logical             :: module_is_initialized = .false.
+logical             :: do_diag_field_log = .false.
+logical             :: write_bytes_in_file = .false.
+integer             :: diag_log_unit
 integer, parameter  :: EVERY_TIME =  0
 integer, parameter  :: END_OF_RUN = -1
 integer, parameter  :: DIAG_SECONDS = 1, DIAG_MINUTES = 2, DIAG_HOURS = 3
@@ -215,8 +219,8 @@ character (len = 7) :: avg_name = 'average'
 character(len=32)   :: pelist_name
 
 ! version number of this module
-character(len=128)  :: version = '$Id: diag_manager.f90,v 11.0 2004/09/28 19:58:52 fms Exp $'
-character(len=128)  :: tagname = '$Name: khartoum $'  
+character(len=128)  :: version = '$Id: diag_manager.f90,v 12.0 2005/04/14 17:55:35 fms Exp $'
+character(len=128)  :: tagname = '$Name: lima $'  
 
 
 ! <INTERFACE NAME="send_data">
@@ -370,7 +374,7 @@ end function register_diag_field_scalar
 !   <IN NAME="verbose" TYPE="logical"> </IN>
 
 function register_diag_field_array(module_name, field_name, axes, init_time, &
-   long_name, units, missing_value, range, mask_variant,verbose)
+   long_name, units, missing_value, range, mask_variant,standard_name, verbose)
 
 ! Indicates the calling modules intent to supply data for this field.
 
@@ -378,7 +382,7 @@ integer                                :: register_diag_field_array
 character(len=*), intent(in)           :: module_name, field_name
 integer, intent(in)                    :: axes(:)
 type(time_type), intent(in)            :: init_time
-character(len=*), optional, intent(in) :: long_name, units
+character(len=*), optional, intent(in) :: long_name, units, standard_name
 real, optional, intent(in)             :: missing_value, range(2)
 logical, optional, intent(in)          :: mask_variant, verbose
 integer                                :: field, num_axes, i_size, j_size, k_size, j, ind, file_num, freq
@@ -406,7 +410,7 @@ if(register_diag_field_array >0) then
    input_fields(register_diag_field_array)%static = .false.
 
    field = register_diag_field_array
-
+   if(present(standard_name))input_fields(field)%standard_name = standard_name  
    do j = 1, input_fields(field)%num_output_fields
       ind = input_fields(field)%output_fields(j)
       output_fields(ind)%static = .false.
@@ -472,12 +476,12 @@ end function register_diag_field_array
 !   <IN NAME="range" TYPE="real" DIM="(2)"> </IN>
 
 function register_static_field(module_name, field_name, axes, &
-   long_name, units, missing_value, range, mask_variant, require, dynamic)
+   long_name, units, missing_value, range, mask_variant, require, standard_name,dynamic)
 
 integer                                :: register_static_field
 character(len=*), intent(in)           :: module_name, field_name
 integer, intent(in)                    :: axes(:)
-character(len=*), optional, intent(in) :: long_name, units
+character(len=*), optional, intent(in) :: long_name, units, standard_name
 real, optional, intent(in)             :: missing_value, range(2)
 logical, optional, intent(in)          :: mask_variant
 logical, optional, intent(in)          :: require  ! require static field to be in every file, e.g. 2-d axes
@@ -494,6 +498,12 @@ dynamic1 = .false.
 if(present(dynamic)) dynamic1 = dynamic
 if (.not.module_is_initialized) call error_mesg ('register_static_field',  &
                        'diag_manager has NOT been initialized', FATAL)
+
+if ( do_diag_field_log) then
+   call log_diag_field_info (module_name, field_name, axes, &
+        long_name, units, missing_value=missing_value, range=range, &
+        mask_variant=mask_variant1, require=require, dynamic=dynamic1)
+endif
 
 register_static_field = find_input_field(module_name, field_name)
 
@@ -538,6 +548,7 @@ if(present(long_name)) then
 else
    input_fields(field)%long_name = input_fields(field)%field_name
 endif
+if(present(standard_name))input_fields(field)%standard_name = standard_name 
 if(present(units)) then
    input_fields(field)%units = trim(units)
 else
@@ -653,6 +664,84 @@ endif
 
 end function register_static_field
 ! </FUNCTION>
+
+
+! <SUBROUTINE NAME="log_diag_field_info">
+!   <OVERVIEW>
+!     Writes brief diagnostic field info to the log file.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     If <TT>init_verbose</TT> namelist parameter is true, adds a line briefly 
+!     describing diagnostic field to the log file. Normally users should not call
+!     this subroutine directly, since it is called by register_static_field and register_diag_field
+!     if do_not_log is not set to true. It is used, however, in LM3 to avoid excessive
+!     log due to a number of fields registered for each of the tile types. LM3 code uses
+!     do_not_log parameter in the registration calls, and calls this subroutine to
+!     log field information under generic name.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call log_diag_field_info ( module_name, field_name, axes, long_name, units,
+!     missing_value, range, mask_variant, require, dynamic )
+!   </TEMPLATE>
+subroutine log_diag_field_info ( module_name, field_name, axes, long_name, units, &
+                                 missing_value, range, mask_variant, require, dynamic )
+character(len=*), intent(in)           :: module_name, field_name
+integer, intent(in)                    :: axes(:)
+character(len=*), optional, intent(in) :: long_name, units
+real   , optional, intent(in)          :: missing_value, range(2)
+logical, optional, intent(in)          :: mask_variant
+logical, optional, intent(in)          :: require  ! require static field to be in every file, e.g. 2-d axes
+logical, optional, intent(in)          :: dynamic
+
+! ---- local vars
+character(len=256) :: lmodule, lfield, lname, lunits
+character(len=64) :: lmissval, lmin, lmax
+character(len=8) :: numaxis, timeaxis
+character(len=1) :: sep = '|'
+
+if (.not.do_diag_field_log)    return
+if (mpp_pe().ne.mpp_root_pe()) return
+
+lmodule = trim(module_name)
+lfield = trim(field_name)
+lname  = ''; if(present(long_name)) lname  = trim(long_name)
+lunits = ''; if(present(units))     lunits = trim(units)
+
+write (numaxis,'(i1)') size(axes)
+
+if (present(missing_value)) then
+   write (lmissval,*) missing_value
+else
+   lmissval = ''
+endif
+
+if (present(range)) then
+   write (lmin,*) range(1)
+   write (lmax,*) range(2)
+else
+   lmin = ''
+   lmax = ''
+endif
+
+if (present(dynamic)) then
+   if (dynamic) then
+      timeaxis = 'T'
+   else
+      timeaxis = 'F'
+   endif
+else
+   timeaxis = ''
+endif
+
+!write (diag_log_unit,'(8(a,a),a)') &
+write (diag_log_unit,'(17a)') &
+             trim(lmodule),  sep, trim(lfield),  sep, trim(lname),    sep, &
+             trim(lunits),   sep, trim(numaxis), sep, trim(timeaxis), sep, &
+             trim(lmissval), sep, trim(lmin),    sep, trim(lmax)
+
+end subroutine log_diag_field_info
+! </SUBROUTINE>
+
 subroutine get_subfield_size(axes,outnum)
 ! Get size, start and end indices for output_fields(outnum), fill in
 ! output_fields(outnum)%output_grid%(start_indx, end_indx)
@@ -873,7 +962,7 @@ function send_data_0d(diag_field_id, field, time)
 logical                      :: send_data_0d
 integer, intent(in)          :: diag_field_id
 real, intent(in)             :: field
-type (time_type), intent(in) :: time
+type (time_type), intent(in), optional :: time
 real                         :: field_out(1, 1, 1)
 
 ! First copy the data to a three d array with last element 1
@@ -894,7 +983,7 @@ logical                      :: send_data_1d
 integer, intent(in)          :: diag_field_id
 real, intent(in)             :: field(:)
 real, intent(in), optional   :: weight
-type (time_type), intent(in) :: time
+type (time_type), intent(in), optional :: time
 integer, optional            :: is_in, ie_in
 logical, optional            :: mask(:)
 real, optional               :: rmask(:)
@@ -931,7 +1020,7 @@ logical                      :: send_data_2d
 integer, intent(in)          :: diag_field_id
 real, intent(in)             :: field(:, :)
 real, intent(in), optional   :: weight
-type (time_type), intent(in) :: time
+type (time_type), intent(in), optional :: time
 integer, optional            :: is_in, js_in, ie_in, je_in
 logical, optional            :: mask(:, :)
 real, optional               :: rmask(:, :)
@@ -969,7 +1058,7 @@ logical                      :: send_data_3d
 integer, intent(in)          :: diag_field_id
 real, intent(in)             :: field(:,:,:)
 real, intent(in), optional   :: weight
-type (time_type), intent(in) :: time
+type (time_type), intent(in), optional :: time
 integer, optional            :: is_in, js_in, ks_in,ie_in,je_in, ke_in 
 logical, optional            :: mask(:, :, :)
 real, optional               :: rmask(:, :, :)
@@ -1059,12 +1148,32 @@ do ii = 1, number_of_outputs
    
 ! Initialize output time for fields output every time step
    if (freq == EVERY_TIME) then
-     if (output_fields(out_num)%next_output == output_fields(out_num)%last_output) &
+     if (output_fields(out_num)%next_output == output_fields(out_num)%last_output) then
+       if(present(time)) then
          output_fields(out_num)%next_output = time
+       else
+         write (error_string,'(a,"/",a)')  &
+             trim(input_fields(diag_field_id)%module_name), &
+             trim(output_fields(out_num)%output_name)
+          call error_mesg('diag_manager send_data ', &
+             'module/output_field '//trim(error_string)//&
+             ', time must be present when output frequency = EVERY_TIME', FATAL)
+       endif
+     endif
    endif
+
+   if(.not.output_fields(out_num)%static .and. .not.present(time)) then
+         write (error_string,'(a,"/",a)')  &
+             trim(input_fields(diag_field_id)%module_name), &
+             trim(output_fields(out_num)%output_name)
+          call error_mesg('diag_manager send_data ', &
+             'module/output_field '//trim(error_string)//&
+             ', time must be present for nonstatic field', FATAL)
+   endif
+
 ! Is it time to output for this field; CAREFUL ABOUT > vs >= HERE
-   if(.not.output_fields(out_num)%static .and. freq /= END_OF_RUN .and. &
-        time > output_fields(out_num)%next_output ) then
+   if(.not.output_fields(out_num)%static .and. freq /= END_OF_RUN) then
+      if(time > output_fields(out_num)%next_output ) then
 ! A non-static field that has skipped a time level is an error
       if(time >  output_fields(out_num)%next_next_output .and. freq > 0) then
          if(mpp_pe() .eq. mpp_root_pe()) then 
@@ -1158,6 +1267,7 @@ do ii = 1, number_of_outputs
       endif      
       if(input_fields(diag_field_id)%mask_variant .and. average) output_fields(out_num)%counter = 0.0
    end if  !time > output_fields(out_num)%next_output
+   end if  !.not.output_fields(out_num)%static .and. freq /= END_OF_RUN
 ! Finished output of previously buffered data, now deal with buffering new data   
  
 ! Take care of submitted field data
@@ -1325,6 +1435,7 @@ do ii = 1, number_of_outputs
          where (field(f1:f2,f3:f4,ks:ke) > output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke)) &
               output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke) = field(f1:f2,f3:f4,ks:ke)
       endif
+      output_fields(out_num)%count_0d = 1
    else if (time_min) then
       if (present(mask)) then
          where(mask(f1:f2,f3:f4,ks:ke).and.field(f1:f2,f3:f4,ks:ke)<output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke)) &
@@ -1333,8 +1444,9 @@ do ii = 1, number_of_outputs
          where (field(f1:f2,f3:f4,ks:ke) < output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke)) &
               output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke) = field(f1:f2,f3:f4,ks:ke)
       endif
+      output_fields(out_num)%count_0d = 1
    else  ! ( not average)
-      
+      output_fields(out_num)%count_0d = 1
       if(need_compute) then
          do i = is, ie
             do j = js,je 
@@ -1517,6 +1629,10 @@ subroutine diag_manager_end (time)
 type(time_type), intent(in) :: time
 integer                     :: file
 
+if (do_diag_field_log) then
+   call mpp_close (diag_log_unit)
+endif
+
 do file = 1, num_files
       call closing_file(file, time)   
 end do
@@ -1552,7 +1668,8 @@ do j = 1, files(file)%num_fields
    if (input_fields(input_num)%static) cycle
    if (.not.input_fields(input_num)%register) cycle 
    freq = files(file)%output_freq
-   if(freq /= END_OF_RUN .and. files(file)%file_unit <0) cycle
+   if(freq /= END_OF_RUN .and. files(file)%file_unit <0 &
+        .and. output_fields(i)%num_elements == 0 .and. output_fields(i)%count_0d == 0 ) cycle
 ! Is it time to output for this field; CAREFUL ABOUT >= vs > HERE
 ! For end should be >= because no more data is coming 
    if(time >= output_fields(i)%next_output .or. freq == END_OF_RUN) then
@@ -1612,6 +1729,13 @@ do j = 1, files(file)%num_fields
 end do
 ! Now it's time to output static fields
 call  write_static(file)
+
+! Write out the number of bytes of data saved to this file
+if (write_bytes_in_file) then
+   call mpp_sum (files(file)%bytes_written)
+   write (stdout(), '(a,i12,a,a)') 'Diag_Manager: ',files(file)%bytes_written, &
+        ' bytes of data written to file ',trim(files(file)%name)
+endif
 end subroutine closing_file
 !---------------------------------------------------------------
 
@@ -1714,6 +1838,7 @@ input_fields(num_input_fields)%num_output_fields = 0
 ! Set flag that this field has not been registered
 input_fields(num_input_fields)%register = .false.
 input_fields(num_input_fields)%local = .false.
+input_fields(num_input_fields)%standard_name = 'none'
 end subroutine init_input_field
 
 !---------------------------------------------------------------------------
@@ -1938,7 +2063,7 @@ integer            :: yr, mo, dy, hr, mi, sc
 type(time_type)    :: start_time
 
 namelist /diag_manager_nml/ append_pelist_name, mix_snapshot_average_fields, init_verbose,iospec, &
-     max_output_fields, max_input_fields, max_axes
+     max_output_fields, max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file
 
 type(tableB_type)  :: textB
 type(tableA_type ) :: textA
@@ -1962,7 +2087,12 @@ write(stdlog(), diag_manager_nml)
 if (io_status > 0) then
    call error_mesg('diag_manager_init', 'Error reading diag_manager_nml',FATAL)
 endif
-call mpp_close (iunit)    
+call mpp_close (iunit)
+if(mix_snapshot_average_fields) then
+   if(mpp_pe() == mpp_root_pe()) call mpp_error(WARNING,'Namelist '// &
+        'mix_snapshot_average_fields = true will cause ERROR in time coordinates '// &
+        'of all time_averaged fields. Strongly recommend mix_snapshot_average_fields = false')
+endif
 allocate(output_fields(max_output_fields))
 allocate(input_fields(max_input_fields))
 if (.not.file_exist('diag_table') ) &
@@ -2138,6 +2268,13 @@ call close_file(iunit)
 if(init_verbose) write(stdout(), *)'************************************************************************'
 ! check duplicate output_fields in the diag_table
 call check_duplicate_output_fields
+!initialize files%bytes_written to zero
+files(:)%bytes_written = 0
+
+! open diag field log file
+if (do_diag_field_log) then
+   call mpp_open (diag_log_unit, 'diag_field_log.out', nohdrs=.TRUE.)
+endif
 
 ! version number to logfile
 call write_version_number (version, tagname)
@@ -2200,9 +2337,8 @@ subroutine opening_file(file, time)
   integer, intent(in)           :: file
   type(time_type), intent(in)   :: time  
   integer                       :: i, j, field_num, n_fields, axes(5), input_field_num, num_axes, k
-  character(len=128)            :: time_units, timeb_units, &
-       avg, error_string, filename
-  logical                       :: file_time_avg, file_time_minmax, time_ops
+  character(len=128)            :: time_units, timeb_units, avg, error_string, filename
+  logical                       :: time_ops
   integer                       :: time_axis_id(1), field_num1, time_bounds_id(1)
   character(len=7)              :: prefix
   character(len=128)            :: suffix, base_name
@@ -2222,8 +2358,6 @@ subroutine opening_file(file, time)
           //' word "rregion"', WARNING)
   endif
   
-  file_time_avg = .false.
-  file_time_minmax = .false.  
 ! Here is where time_units string must be set up; time since base date
   write(time_units, 11) trim(time_unit_list(files(i)%time_units)), base_year, &
        base_month, base_day, base_hour, base_minute, base_second
@@ -2241,14 +2375,22 @@ subroutine opening_file(file, time)
   else
      suffix = ' '
   endif 
+! Add CVS tag as prefix of filename  (currently not implemented)
+!  i1 = INDEX(tagname,':') + 2
+!  i2 = len_trim(tagname) - 2
+!  if(i2 <=i1)  call error_mesg ('diag_manager opening_file','error in CVS tagname index',FATAL)
+!  prefix2 = tagname(i1:i2)//'_'
+
   if(files(i)%local) then      
 ! prefix "rregion" to all local files for post processing, the prefix will be removed in postprocessing
      filename = 'rregion'//trim(base_name)//trim(suffix)
   else
+!     filename = trim(prefix2)//trim(base_name)//trim(suffix)
      filename = trim(base_name)//trim(suffix)
   endif
   call diag_output_init(filename, files(i)%format, global_descriptor, &
-       files(i)%long_name, time_units, files(i)%file_unit,iospec)  
+       files(i)%long_name, time_units, files(i)%file_unit,iospec) 
+  files(i)%bytes_written = 0 
 ! Does this file contain time_average fields?
   time_ops = .false.
   do j = 1, files(i)%num_fields
@@ -2323,12 +2465,9 @@ subroutine opening_file(file, time)
      endif
      if(output_fields(field_num)%time_average) then
         avg = avg_name
-        file_time_avg = .true.
      else if(output_fields(field_num)%time_max) then
-        file_time_minmax = .true.
         avg = avg_name
      else if(output_fields(field_num)%time_min) then
-        file_time_minmax = .true.
         avg = avg_name
      else
         avg = " "
@@ -2340,7 +2479,8 @@ subroutine opening_file(file, time)
              input_fields(input_field_num)%long_name, &
              input_fields(input_field_num)%range, output_fields(field_num)%pack,&
              input_fields(input_field_num)%missing_value, avg_name = avg,&
-             time_method=output_fields(field_num)%time_method)
+             time_method=output_fields(field_num)%time_method,&
+             standard_name = input_fields(input_field_num)%standard_name)
         
 ! NEED TO TAKE CARE OF TIME AVERAGING INFO TOO BOTH CASES
      else
@@ -2350,7 +2490,8 @@ subroutine opening_file(file, time)
              input_fields(input_field_num)%long_name, &
              input_fields(input_field_num)%range, output_fields(field_num)%pack,&
              avg_name = avg,&
-             time_method=output_fields(field_num)%time_method)
+             time_method=output_fields(field_num)%time_method, &
+             standard_name = input_fields(input_field_num)%standard_name)
      endif
   end do
 
@@ -2408,6 +2549,8 @@ dif = get_date_dif(time, base_time, files(file)%time_units)
 If(.not. static_write .or. files(file)%file_unit<0) call check_and_open(file, time, too_early)
 if(too_early) return  ! still too early to write data
 call diag_field_out(files(file)%file_unit,output_fields(field)%f_type, dat, dif)
+! record number of bytes written to this file
+files(file)%bytes_written = files(file)%bytes_written + (size(dat,1)*size(dat,2)*size(dat,3))*(8/output_fields(field)%pack)
 
 ! *** inserted this line because start_dif < 0 for static fields ***
 if (.not. output_fields(field)%static) then 

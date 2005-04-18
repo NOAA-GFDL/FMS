@@ -56,6 +56,7 @@ module field_manager_mod
 ! field is being applied to.
 ! The supported types at present are
 !<PRE>
+!      "coupler_mod" for the coupler,
 !      "atmos_mod" for the atmosphere model,
 !      "ocean_mod" for the ocean model,
 !      "land_mod" for the land model, and,
@@ -174,8 +175,8 @@ implicit none
 private
 
 
-character(len=128) :: version = '$Id: field_manager.F90,v 11.0 2004/09/28 19:59:12 fms Exp $'
-character(len=128) :: tagname = '$Name: khartoum $'
+character(len=128) :: version = '$Id: field_manager.F90,v 12.0 2005/04/14 17:56:10 fms Exp $'
+character(len=128) :: tagname = '$Name: lima $'
 logical            :: module_is_initialized  = .false.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -282,6 +283,10 @@ integer, parameter, public :: MODEL_LAND        = 3
 ! </DATA>
 integer, parameter, public :: MODEL_ICE         = 4
 ! <DATA NAME="MODEL_ICE" TYPE="integer, parameter" DEFAULT="4">
+!   Ice model.
+! </DATA>
+integer, parameter, public :: MODEL_COUPLER     = 6
+! <DATA NAME="MODEL_COUPLER" TYPE="integer, parameter" DEFAULT="6">
 !   Ice model.
 ! </DATA>
 integer, parameter, public :: MODEL_DEFAULT     = 5
@@ -702,6 +707,8 @@ do while (.TRUE.)
 
    fm_success = fm_change_list(list_name)  
    select case (text_names%mod_name)
+   case ('coupler_mod')
+      model = MODEL_COUPLER
    case ('atmos_mod')
       model = MODEL_ATMOS
    case ('ocean_mod')
@@ -739,6 +746,8 @@ do while (.TRUE.)
       m = 1
       do while (flag_method)
          read(iunit,'(a)',end=99,err=99) record
+! If the line is blank then fetch the next line.
+         if (LEN_TRIM(record) .le. 0) cycle
 ! If the last character in the line is / then this is the end of the field methods
          if ( record(LEN_TRIM(record):LEN_TRIM(record)) == list_sep) then
             flag_method = .FALSE.
@@ -747,8 +756,6 @@ do while (.TRUE.)
          endif
 ! If the first character in the line is # then it is treated as a comment
          if (record(1:1) == comment ) cycle
-! If the line is blank then fetch the next line.
-         if (LEN_TRIM(record) == 0) cycle
 
          icount = 0
          do l= 1, LEN_TRIM(record)
@@ -1664,6 +1671,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
                                                '(' // trim(sub_name) // '): '
 character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_name)    //  &
                                                '(' // trim(sub_name) // '): '
+integer                      :: ier
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -1712,10 +1720,10 @@ list_p%length = 0
 list_p%field_type = null_type
 list_p%max_index = 0
 list_p%array_dim = 0
-nullify(list_p%i_value)
-nullify(list_p%l_value)
-nullify(list_p%r_value)
-nullify(list_p%s_value)
+deallocate(list_p%i_value, stat=ier)
+deallocate(list_p%l_value, stat=ier)
+deallocate(list_p%r_value, stat=ier)
+deallocate(list_p%s_value, stat=ier)
 !
 !        If this is the first field in the parent, then set the pointer
 !        to it, otherwise, update the "next" pointer for the last list
@@ -3801,7 +3809,7 @@ character (len=fm_type_name_len)   :: field_type
 integer                            :: count
 integer                            :: error
 integer                            :: index
-integer                            :: n
+integer                            :: n, ier
 integer                            :: shortest
 logical                            :: found
 type (field_def), pointer, save    :: temp_p 
@@ -3860,7 +3868,7 @@ if (error .ne. 0) then !{
   nullify(return_p)
   return
 endif  !}
-nullify(return_p%names)
+deallocate(return_p%names, stat=ier)
 !
 !        return if any list is empty
 !
@@ -4295,7 +4303,7 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 logical                          :: create_t
-integer                          :: i
+integer                          :: i, ier
 integer                          :: index_t
 integer, pointer, dimension(:)   :: temp_i_value
 character(len=fm_path_name_len)  :: path
@@ -4450,7 +4458,7 @@ if (associated(temp_list_p)) then  !{
       do i = 1, temp_field_p%max_index  !{
         temp_i_value(i) = temp_field_p%i_value(i)
       enddo  !} i
-      nullify(temp_field_p%i_value)
+      deallocate(temp_field_p%i_value, stat=ier)
       temp_field_p%i_value => temp_i_value
       temp_field_p%max_index = index_t
     endif  !}
@@ -4526,7 +4534,7 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=fm_path_name_len)      :: path
 character(len=fm_field_name_len)     :: base
-integer                              :: i
+integer                              :: i, ier
 integer                              :: index_t
 logical                              :: create_t
 logical, dimension(:), pointer       :: temp_l_value 
@@ -4684,7 +4692,7 @@ if (associated(temp_list_p)) then  !{
       do i = 1, temp_field_p%max_index  !{
         temp_l_value(i) = temp_field_p%l_value(i)
       enddo  !} i
-      nullify(temp_field_p%l_value)
+      deallocate(temp_field_p%l_value, stat=ier)
       temp_field_p%l_value => temp_l_value
       temp_field_p%max_index = index_t
 
@@ -4762,7 +4770,7 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 logical                          :: create_t
-integer                          :: i
+integer                          :: i, ier
 integer                          :: index_t
 real, pointer, dimension(:)      :: temp_r_value
 character(len=fm_path_name_len)  :: path
@@ -4913,7 +4921,7 @@ if (associated(temp_list_p)) then  !{
       do i = 1, temp_field_p%max_index  !{
         temp_r_value(i) = temp_field_p%r_value(i)
       enddo  !} i
-      nullify(temp_field_p%r_value)
+      deallocate(temp_field_p%r_value, stat=ier)
       temp_field_p%r_value => temp_r_value
       temp_field_p%max_index = index_t
     endif  !}
@@ -4988,7 +4996,7 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 character(len=fm_string_len), dimension(:), pointer :: temp_s_value
 character(len=fm_path_name_len)                     :: path
 character(len=fm_field_name_len)                    :: base
-integer                                             :: i
+integer                                             :: i, ier
 integer                                             :: index_t
 logical                                             :: create_t
 type (field_def),                     save, pointer :: temp_list_p
@@ -5147,7 +5155,7 @@ if (associated(temp_list_p)) then  !{
       do i = 1, temp_field_p%max_index  !{
         temp_s_value(i) = temp_field_p%s_value(i)
       enddo  !} i
-      nullify(temp_field_p%s_value)
+      deallocate(temp_field_p%s_value, stat=ier)
       temp_field_p%s_value => temp_s_value
       temp_field_p%max_index = index_t
 
@@ -5501,6 +5509,7 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+integer :: ier
 !
 !        Initialize the root field
 !
@@ -5524,10 +5533,10 @@ if (.not. module_is_initialized) then  !{
   nullify(root%last_field)
   root%max_index = 0
   root%array_dim = 0
-  nullify(root%i_value)
-  nullify(root%l_value)
-  nullify(root%r_value)
-  nullify(root%s_value)
+  deallocate(root%i_value, stat=ier)
+  deallocate(root%l_value, stat=ier)
+  deallocate(root%r_value, stat=ier)
+  deallocate(root%s_value, stat=ier)
 
   nullify(root%next)
   nullify(root%prev)
@@ -5598,6 +5607,7 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+integer :: ier
 type (field_def), pointer, save :: dummy_p 
 !
 !        Check to see whether there is already a list with
@@ -5635,10 +5645,10 @@ endif  !}
 !
 list_p%length = 0
 list_p%field_type = list_type
-nullify(list_p%i_value)
-nullify(list_p%l_value)
-nullify(list_p%r_value)
-nullify(list_p%s_value)
+deallocate(list_p%i_value, stat=ier)
+deallocate(list_p%l_value, stat=ier)
+deallocate(list_p%r_value, stat=ier)
+deallocate(list_p%s_value, stat=ier)
 
 end function  make_list  !}
 ! </FUNCTION> NAME="make_list"
@@ -5826,7 +5836,7 @@ integer                         :: depthp1
 integer                         :: first
 integer                         :: i
 integer                         :: last
-character(len=24)               :: scratch
+character(len=64)               :: scratch
 type (field_def), pointer :: this_field_p 
 
 !

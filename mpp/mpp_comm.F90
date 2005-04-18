@@ -1,5 +1,5 @@
 module mpp_comm_mod
-#include <os.h>
+#include <fms_platform.h>
 
 #if defined(use_libSMA) && defined(sgi_mipspro)
   use shmem_interface
@@ -16,7 +16,7 @@ module mpp_comm_mod
   use mpp_parameter_mod, only : mpp_parameter_version=>version, mpp_parameter_tagname=>tagname
 
   use mpp_data_mod,      only : peset, clocks, module_is_initialized=>mpp_is_initialized
-  use mpp_data_mod,      only : error, pe, node, npes, root_pe, current_peset_num
+  use mpp_data_mod,      only : error, pe, npes, root_pe, current_peset_num
   use mpp_data_mod,      only : world_peset_num, clock_num, current_clock, start_tick
   use mpp_data_mod,      only : tick,tick0, ticks_per_sec, max_ticks, tick_rate
   use mpp_data_mod,      only : debug=>debug_mpp, request, etc_unit, log_unit, configfile
@@ -24,11 +24,12 @@ module mpp_comm_mod
   use mpp_data_mod,      only : mpp_from_pe, ptr_from, remote_data_loc, ptr_remote, etcfile
   use mpp_data_mod,      only : first_call_system_clock_mpi, mpi_tick_rate, mpi_count0
   use mpp_data_mod,      only : mpp_data_version=>version, mpp_data_tagname=>tagname
+  use mpp_data_mod,      only : mpp_comm_private
 
   use mpp_util_mod,      only : mpp_sync, mpp_error, mpp_npes, mpp_pe, stdlog, stdout, stderr
   use mpp_util_mod,      only : get_peset, get_unit, increment_current_clock, dump_clock_summary
   use mpp_util_mod,      only : sum_clock_data, mpp_clock_id, mpp_clock_begin, mpp_clock_end
-  use mpp_util_mod,      only : mpp_set_current_pelist
+  use mpp_util_mod,      only : mpp_set_current_pelist, mpp_init_logfile
   use mpp_util_mod,      only : mpp_util_version=>version, mpp_util_tagname=>tagname
 
   implicit none
@@ -58,17 +59,20 @@ module mpp_comm_mod
 #ifdef _CRAY
   integer(LONG_KIND) :: word(1)
 #endif
-#ifdef sgi_mipspro
+#if defined(sgi_mipspro) || defined(__ia64)
   integer(INT_KIND)  :: word(1)
 #endif
 
   character(len=128) :: version= &
-       '$Id: mpp_comm.F90,v 11.0 2004/09/28 20:04:23 fms Exp $'
+       '$Id: mpp_comm.F90,v 12.0 2005/04/14 17:57:40 fms Exp $'
   character(len=128) :: tagname= &
-       '$Name: khartoum $'
+       '$Name: lima $'
 
   public :: mpp_init, mpp_exit, mpp_min, mpp_max, mpp_sum, mpp_transmit, mpp_recv
   public :: mpp_send, mpp_broadcast, mpp_chksum, mpp_malloc, mpp_set_stack_size
+#ifdef use_MPI_GSM
+  public :: mpp_gsm_malloc, mpp_gsm_free
+#endif
 
 #ifdef use_libSMA
   !currently SMA contains no generic shmem_wait for different integer kinds:
@@ -668,7 +672,7 @@ module mpp_comm_mod
   !     partitioned across processors. <TT>LONG_KIND</TT>is the <TT>KIND</TT>
   !     parameter corresponding to long integers (see discussion on
   !     OS-dependent preprocessor directives) defined in
-  !     the header file <TT>os.h</TT>. <TT>MPP_TYPE_</TT> corresponds to any
+  !     the header file <TT>fms_platform.h</TT>. <TT>MPP_TYPE_</TT> corresponds to any
   !     4-byte and 8-byte variant of <TT>integer, real, complex, logical</TT>
   !     variables, of rank 0 to 5.
   !

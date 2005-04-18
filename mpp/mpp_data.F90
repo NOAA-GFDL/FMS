@@ -1,5 +1,5 @@
 module mpp_data_mod
-#include <os.h>
+#include <fms_platform.h>
 
 #if defined(use_libMPI) && defined(sgi_mipspro)
   use mpi
@@ -15,7 +15,7 @@ module mpp_data_mod
   character(len=128), public :: version= &
        '$Id mpp_data.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: khartoum $'
+       '$Name: lima $'
 
 #if defined(use_libSMA) || defined(use_libGSM)
 #include <mpp/shmem.fh>
@@ -30,7 +30,7 @@ module mpp_data_mod
 
   !--- public data  which is used by mpp_mod and its components. 
   !--- All othere modules should import these parameters from mpp_mod.  
-  public :: peset, clocks, mpp_is_initialized, error, node, root_pe, debug_mpp
+  public :: peset, clocks, mpp_is_initialized, error, root_pe, debug_mpp
   public :: configfile, etcfile, current_peset_num, peset_num, world_peset_num               
   public :: clock_num, previous_clock, current_clock, num_clock_ids
   public :: tick_rate, tick0, ticks_per_sec, max_ticks, mpi_tick_rate, mpi_count0
@@ -38,6 +38,7 @@ module mpp_data_mod
   public :: stat, request, mpp_stack, ptr_stack, status
   public :: ptr_status, sync, ptr_sync,  mpp_from_pe, ptr_from, remote_data_loc 
   public :: ptr_remote, in_unit, out_unit, err_unit, log_unit, etc_unit
+  public :: mpp_comm_private
 
   !--- public data which is used by mpp_domains_mod and its components. 
   !--- All othere modules should import these parameters from mpp_domains_mod. 
@@ -59,15 +60,16 @@ module mpp_data_mod
   !----------------------------------------------------------------------!
   type(communicator),save :: peset(0:PESET_MAX) !0 is a dummy used to hold single-PE "self" communicator
   integer(LONG_KIND)   :: tick, ticks_per_sec, max_ticks, start_tick, end_tick, tick0=0
+  integer              :: mpp_comm_private
   logical              :: first_call_system_clock_mpi=.TRUE.
   real(DOUBLE_KIND)    :: mpi_count0=0  ! use to prevent integer overflow
   real(DOUBLE_KIND)    :: mpi_tick_rate=0.d0  ! clock rate for mpi_wtick()
   logical              :: mpp_record_timing_data=.TRUE.
   type(clock),save     :: clocks(MAX_CLOCKS)
   logical              :: mpp_is_initialized=.FALSE.
-  integer              :: node=0, npes=1, root_pe=0
+  integer              :: npes=1, root_pe=0
   integer              :: log_unit, etc_unit
-  character(len=32)    :: configfile='logfile.out'
+  character(len=32)    :: configfile='logfile'
   integer              :: peset_num=0, current_peset_num=0
   integer              :: world_peset_num                  !the world communicator
   logical              :: debug_mpp=.FALSE.

@@ -15,12 +15,12 @@
         </STYLE>
 </head>
 <body>
-<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC%20INTERFACE">PUBLIC INTERFACE </a>~
-          <a href="#PUBLIC%20DATA">PUBLIC DATA </a>~
-          <a href="#PUBLIC%20ROUTINES">PUBLIC ROUTINES </a>~
+<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC INTERFACE">PUBLIC INTERFACE </a>~
+          <a href="#PUBLIC DATA">PUBLIC DATA </a>~
+          <a href="#PUBLIC ROUTINES">PUBLIC ROUTINES </a>~
           <a href="#NAMELIST">NAMELIST </a>~
-          <a href="#DIAGNOSTIC%20FIELDS">DIAGNOSTIC FIELDS </a>~
-          <a href="#ERROR%20MESSAGES">ERROR MESSAGES </a>~
+          <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
+          <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
           <a href="#REFERENCES">REFERENCES </a>~ 
           <a href="#NOTES">NOTES</a></font>
 <hr>
@@ -50,7 +50,7 @@
    times (accurate to one second) and to map these times into dates
    using a variety of calendars. A time is mapped to a date by
    representing the time with respect to an arbitrary base date (refer
-   to <b>NOTES</b>   section for the <a href="#base%20date">base date</a>   setting).
+   to <b>NOTES</b>   section for the <a href="#base date">base date</a>   setting).
    <br>
 <br>
    The time_manager provides a single defined type, time_type, which is
@@ -70,7 +70,7 @@
    that convert time intervals to dates for a given calendar. </div>
 <br>
 <!-- END DESCRIPTION -->
-<a name="OTHER%20MODULES%20USED"></a>
+<a name="OTHER MODULES USED"></a>
 <hr>
 <h4>OTHER MODULES USED</h4>
 <!-- BEGIN OTHER MODULES USED -->
@@ -79,7 +79,7 @@
 </div>
 <!-- END OTHER MODULES USED -->
 <!-- BEGIN PUBLIC INTERFACE -->
-<a name="PUBLIC%20INTERFACE"></a>
+<a name="PUBLIC INTERFACE"></a>
 <hr>
 <h4>PUBLIC INTERFACE</h4>
 <div>
@@ -164,10 +164,6 @@
 <dd>   Given a time_interval, returns the corresponding date under
    the selected calendar. </dd>
 <dt>
-<a href="#get_cal_time">get_cal_time</a>:</dt>
-<dd>   Given a time_interval as a real number, returns the corresponding
-   time under the selected calendar as a time_type variable. </dd>
-<dt>
 <a href="#set_date">set_date</a>:</dt>
 <dd>   Given an input date in year, month, days, etc., creates a
    time_type that represents this time interval from the
@@ -209,11 +205,14 @@
 <dt>
 <a href="#print_date">print_date</a>:</dt>
 <dd>   prints the time to standard output (or optional unit) as a date. </dd>
+<dt>
+<a href="#valid_calendar_types">valid_calendar_types</a>:</dt>
+<dd></dd>
 </dl>
 </div>
 <br>
 <!-- END PUBLIC INTERFACE -->
-<a name="PUBLIC%20DATA"></a>
+<a name="PUBLIC DATA"></a>
 <hr>
 <h4>PUBLIC DATA</h4>
 <!-- BEGIN PUBLIC DATA -->
@@ -230,7 +229,7 @@
 <br>
 </div>
 <!-- END PUBLIC DATA -->
-<a name="PUBLIC%20ROUTINES"></a>
+<a name="PUBLIC ROUTINES"></a>
 <hr>
 <h4>PUBLIC ROUTINES</h4>
 <!-- BEGIN PUBLIC ROUTINES -->
@@ -1205,105 +1204,6 @@
 </dl>
 </li>
 <li>
-<a name="get_cal_time"></a>
-<h4>get_cal_time</h4>
-<pre> 
-<b>get_cal_time</b> (time_increment, units, calendar)</pre>
-<dl>
-<dt>
-<b>DESCRIPTION</b>
-</dt>
-<dd>   Given a time_interval as a real number, returns the corresponding
-   time under the selected calendar as a time_type variable. </dd>
-<br>
-<br>
-<dt>
-<b>INPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>time_increment&nbsp;&nbsp;&nbsp;</tt></td><td>   A time interval.<br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>units&nbsp;&nbsp;&nbsp;</tt></td><td>   Examples of acceptable values of units:
-   <br>
-<br>
-   'days since 1980-01-01 00:00:00',
-   'hours since 1980-1-1 0:0:0',
-   'minutes since 0001-4-12'
-   <br>
-<br>
-   The first word in the string must be
-   'years', 'months', 'days', 'hours', 'minutes' or 'seconds'.
-   The second word must be 'since'
-   <br>
-<br>
-   year number must occupy 4 spaces.
-   Number of months, days, hours, minutes, seconds may occupy 1 or 2 spaces
-   year, month and day must be separated by a '-'
-   hour, minute, second must be separated by a ':'
-   hour, minute, second are optional. If not present then zero is assumed.
-   <br>
-<br>
-   Because months are not equal increments of time, and, for julian calendar,
-   neither are years, the 'years since' and 'month since' cases deserve
-   further explaination. 
-   <br>
-<br>
-   When 'years since' is used:
-   The year number is increased by floor(time_increment)   to obtain a time T1.
-   The year number is increased by floor(time_increment)+1 to obtain a time T2.
-   The time returned is T1 + (time_increment-floor(time_increment))*(T2-T1).
-   <br>
-<br>
-   When 'months since' is used:
-   The month number is increased by floor(time_increment). If it falls outside
-   to range 1 to 12 then it is adjusted along with the year number to convert
-   to a valid date. The number of days in the month of this date is used to
-   compute the time interval of the fraction.
-   That is:
-   The month number is increased by floor(time_increment) to obtain a time T1.
-   delt = the number of days in the month in which T1 falls.
-   The time returned is T1 + ((time_increment-floor(time_increment))*delt.
-   Two of the consequences of this scheme should be kept in mind.
-   -- The time since should not be from the 29'th to 31'st of a month,
-   since an invalid date is likely to result, triggering an error stop.
-   -- When time since is from the begining of a month, the fraction of a month
-   will never advance into the month after that which results from only
-   the whole number.
-   <br>
-<br>
-   When NO_CALENDAR is in effect, units attribute must specify a starting
-   day and second, with day number appearing first
-   <br>
-<br>
-   Example: 'days since 100 0' Indicates 100 days 0 seconds
-   <br>
-<br> 
-<br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>calendar&nbsp;&nbsp;&nbsp;</tt></td><td>   When present, then it will be checked against the calendar in use
-   by the time manager. If it does not match the calendar in use then
-   the program will terminate with an error message.
-   When not present, no such check is done.
-   <br>
-<br>
-   Acceptable values of calendar are:
-   noleap
-   365_day
-   360_day
-   julian
-   thirty_day_months
-   no_calendar <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-</dl>
-</li>
-<li>
 <a name="set_date"></a>
 <h4>set_date</h4>
 <pre> 
@@ -1742,15 +1642,50 @@
 <br>
 </dl>
 </li>
+<li>
+<a name="valid_calendar_types"></a>
+<h4>valid_calendar_types</h4>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Returns a character string that describes the
+   calendar type corresponding to the input integer. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>ncal&nbsp;&nbsp;&nbsp;</tt></td><td>   An integer corresponding to a valid calendar type. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+<dt>
+<b>OUTPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>valid_calendar_types&nbsp;&nbsp;&nbsp;</tt></td><td>   A character string describing the calendar type. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=24)]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
 </ol>
 <!-- END PUBLIC ROUTINES -->
-<a name="PUBLIC%20TYPES"></a>
+<a name="PUBLIC TYPES"></a>
 <!-- BEGIN PUBLIC TYPES -->
 <!-- END PUBLIC TYPES --><a name="NAMELIST"></a>
 <!-- BEGIN NAMELIST -->
-<!-- END NAMELIST --><a name="DIAGNOSTIC%20FIELDS"></a>
+<!-- END NAMELIST --><a name="DIAGNOSTIC FIELDS"></a>
 <!-- BEGIN DIAGNOSTIC FIELDS -->
-<!-- END DIAGNOSTIC FIELDS --><a name="DATA%20SETS"></a>
+<!-- END DIAGNOSTIC FIELDS --><a name="DATA SETS"></a>
 <!-- BEGIN DATA SETS -->
 <hr>
 <h4>DATA SETS</h4>
@@ -1758,9 +1693,9 @@
 <br>
 </div>
 <!-- END DATA SETS -->
-<a name="PUBLIC%20CODE"></a>
+<a name="PUBLIC CODE"></a>
 <!-- BEGIN PUBLIC CODE -->
-<!-- END PUBLIC CODE --><a name="ERROR%20MESSAGES"></a>
+<!-- END PUBLIC CODE --><a name="ERROR MESSAGES"></a>
 <!-- BEGIN ERROR MESSAGES -->
 <hr>
 <h4>ERROR MESSAGES</h4>
@@ -1777,7 +1712,7 @@
       </div>
 <br>
 <!-- END REFERENCES -->
-<a name="COMPILER%20SPECIFICS"></a>
+<a name="COMPILER SPECIFICS"></a>
 <hr>
 <h4>COMPILER SPECIFICS</h4>
 <!-- BEGIN COMPILER SPECIFICS -->
@@ -1786,7 +1721,7 @@
       </div>
 <br>
 <!-- END COMPILER SPECIFICS -->
-<a name="PRECOMPILER%20OPTIONS"></a>
+<a name="PRECOMPILER OPTIONS"></a>
 <hr>
 <h4>PRECOMPILER OPTIONS</h4>
 <!-- BEGIN PRECOMPILER OPTIONS -->
@@ -1795,7 +1730,7 @@
       </div>
 <br>
 <!-- END PRECOMPILER OPTIONS -->
-<a name="LOADER%20OPTIONS"></a>
+<a name="LOADER OPTIONS"></a>
 <hr>
 <h4>LOADER OPTIONS</h4>
 <!-- BEGIN LOADER -->
@@ -1803,7 +1738,7 @@
 <br>
 </div>
 <!-- END LOADER OPTIONS -->
-<a name="TEST%20PROGRAM"></a>
+<a name="TEST PROGRAM"></a>
 <hr>
 <h4>TEST PROGRAM</h4>
 <!-- BEGIN TEST PROGRAM -->
@@ -1900,7 +1835,7 @@ Set calendar type
 </div>
 <br>
 <!-- END TEST PROGRAM -->
-<a name="KNOWN%20BUGS"></a>
+<a name="KNOWN BUGS"></a>
 <hr>
 <h4>KNOWN BUGS</h4>
 <!-- BEGIN KNOWN BUGS -->
@@ -1922,11 +1857,11 @@ Set calendar type
    thirty_day_months calendars, and 1 January, 1900, 0 seconds, 0 minutes, 
    0 hour for the Gregorian calendar. <br>
 <br>   Please note that a time is a positive definite quantity. <br>
-<br>   See the <a href="TEST%20PROGRAM">Test Program </a>   for a simple program 
+<br>   See the <a href="TEST PROGRAM">Test Program </a>   for a simple program 
    that shows some of the capabilities of the time manager. </div>
 <br>
 <!-- END NOTES -->
-<a name="FUTURE%20PLANS"></a>
+<a name="FUTURE PLANS"></a>
 <hr>
 <h4>FUTURE PLANS</h4>
 <!-- BEGIN FUTURE PLANS -->

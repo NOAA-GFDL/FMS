@@ -1,4 +1,4 @@
-#include  <os.h>
+#include  <fms_platform.h>
 
 module time_interp_external_mod
 !
@@ -28,14 +28,15 @@ module time_interp_external_mod
 ! </DATA>
 !</NAMELIST>
 
-  use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe, stdout, stdlog
+  use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe, stdout, stdlog, NOTE
   use mpp_io_mod, only : mpp_open, mpp_get_atts, mpp_get_info, MPP_NETCDF, MPP_MULTI, MPP_SINGLE,&
        mpp_get_times, MPP_RDONLY, MPP_ASCII, default_axis,axistype,fieldtype,atttype, &
        mpp_get_axes, mpp_get_fields, mpp_read, default_field, mpp_close, &
        mpp_get_tavg_info, validtype, mpp_is_valid
   use time_manager_mod, only : time_type, get_date, set_date, operator ( >= ) , operator ( + ) , days_in_month, &
                             operator( - ), operator ( / ) , days_in_year, increment_time, &
-                            set_time, get_time, operator( > ), get_cal_time, get_calendar_type, NO_CALENDAR
+                            set_time, get_time, operator( > ), get_calendar_type, NO_CALENDAR
+  use get_cal_time_mod, only : get_cal_time
   use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, mpp_get_data_domain, &
        mpp_get_global_domain, NULL_DOMAIN2D
   use time_interp_mod, only : time_interp
@@ -47,8 +48,9 @@ module time_interp_external_mod
   implicit none
   private
 
-  character(len=128), private :: version='CVS $Id: time_interp_external.F90,v 11.0 2004/09/28 20:06:08 fms Exp $'
-  character(len=128), private :: tagname='Tag $Name: khartoum $'
+  character(len=128), private :: version= &
+   'CVS $Id: time_interp_external.F90,v 12.0 2005/04/14 18:01:52 fms Exp $'
+  character(len=128), private :: tagname='Tag $Name: lima $'
 
   integer, parameter, private :: max_fields = 1, modulo_year= 0001,max_files= 1
   integer, parameter, private :: LINEAR_TIME_INTERP = 1 ! not used currently
@@ -84,7 +86,7 @@ module time_interp_external_mod
      real(DOUBLE_KIND) :: slope, intercept
      integer :: isc,iec,jsc,jec
      type(time_type) :: modulo_time_beg, modulo_time_end
-     logical :: have_modulo_times
+     logical :: have_modulo_times, correct_leap_year_inconsistency
   end type ext_fieldtype
 
   type, private :: filetype
@@ -185,7 +187,7 @@ module time_interp_external_mod
 
 
     function init_external_field(file,fieldname,format,threading,domain,desired_units,&
-         verbose,axis_centers,axis_sizes,override)
+         verbose,axis_centers,axis_sizes,override,correct_leap_year_inconsistency)
       
       character(len=*), intent(in) :: file,fieldname
       integer, intent(in), optional :: format, threading
@@ -194,7 +196,7 @@ module time_interp_external_mod
       type(domain2d), intent(in), optional :: domain
       type(axistype), intent(inout), optional :: axis_centers(4)
       integer, intent(inout), optional :: axis_sizes(4)
-      logical, intent(in), optional :: override
+      logical, intent(in), optional :: override, correct_leap_year_inconsistency
 
       
       integer :: init_external_field
@@ -264,8 +266,7 @@ module time_interp_external_mod
           write(msg,'(a15,a,a58)') 'external field ',trim(fieldname),&
            ' does not have an associated record dimension (REQUIRED) '
           call mpp_error(FATAL,trim(msg))
-      endif
-      
+      endif       
       allocate(global_atts(natt))
       call mpp_get_atts(unit, global_atts)
       allocate(axes(ndim))
@@ -429,6 +430,12 @@ module time_interp_external_mod
             call set_time_modulo(field(num_fields)%start_time)
             call set_time_modulo(field(num_fields)%end_time)
          endif
+
+         if(present(correct_leap_year_inconsistency)) then
+           field(num_fields)%correct_leap_year_inconsistency = correct_leap_year_inconsistency
+         else
+           field(num_fields)%correct_leap_year_inconsistency = .false.
+         endif
              
          if(get_axis_modulo_times(time_axis, timebeg, timeend)) then
            if(get_calendar_type() == NO_CALENDAR) then
@@ -442,49 +449,55 @@ module time_interp_external_mod
          else
            field(num_fields)%have_modulo_times = .false.
          endif
-                          
-         do j= 1, ntime
-            field(num_fields)%period(j) = field(num_fields)%end_time(j)-field(num_fields)%start_time(j)
-            if (field(num_fields)%period(j) > set_time(0,0)) then
-               call get_time(field(num_fields)%period(j), sec, day)
-               sec = sec/2+mod(day,2)*43200
-               day = day/2
-               field(num_fields)%time(j) = field(num_fields)%start_time(j)+&
-                    set_time(sec,day)
-            else
-               if (j > 1 .and. j < ntime) then
-                  tdiff = field(num_fields)%time(j+1) -  field(num_fields)%time(j-1)
-                  call get_time(tdiff, sec, day)
+         if(ntime == 1) then
+            call mpp_error(NOTE, 'time_interp_external_mod: file '//trim(file)//'  has only one time level')
+         else                
+            do j= 1, ntime
+               field(num_fields)%period(j) = field(num_fields)%end_time(j)-field(num_fields)%start_time(j)
+               if (field(num_fields)%period(j) > set_time(0,0)) then
+                  call get_time(field(num_fields)%period(j), sec, day)
                   sec = sec/2+mod(day,2)*43200
                   day = day/2
-                  field(num_fields)%period(j) = set_time(sec,day)
-                  sec = sec/2+mod(day,2)*43200
-                  day = day/2
-                  field(num_fields)%start_time(j) = field(num_fields)%time(j) - set_time(sec,day)
-                  field(num_fields)%end_time(j) = field(num_fields)%time(j) + set_time(sec,day)
-               elseif ( j == 1) then
-                  tdiff = field(num_fields)%time(2) -  field(num_fields)%time(1)
-                  call get_time(tdiff, sec, day)
-                  field(num_fields)%period(j) = set_time(sec,day)
-                  sec = sec/2+mod(day,2)*43200
-                  day = day/2
-                  field(num_fields)%start_time(j) = field(num_fields)%time(j) - set_time(sec,day)
-                  field(num_fields)%end_time(j) = field(num_fields)%time(j) + set_time(sec,day)
+                  field(num_fields)%time(j) = field(num_fields)%start_time(j)+&
+                       set_time(sec,day)
                else
-                  tdiff = field(num_fields)%time(ntime) -  field(num_fields)%time(ntime-1)
-                  call get_time(tdiff, sec, day)
-                  field(num_fields)%period(j) = set_time(sec,day)
-                  sec = sec/2+mod(day,2)*43200
-                  day = day/2
-                  field(num_fields)%start_time(j) = field(num_fields)%time(j) - set_time(sec,day)
-                  field(num_fields)%end_time(j) = field(num_fields)%time(j) + set_time(sec,day)
+                  if (j > 1 .and. j < ntime) then
+                     tdiff = field(num_fields)%time(j+1) -  field(num_fields)%time(j-1)
+                     call get_time(tdiff, sec, day)
+                     sec = sec/2+mod(day,2)*43200
+                     day = day/2
+                     field(num_fields)%period(j) = set_time(sec,day)
+                     sec = sec/2+mod(day,2)*43200
+                     day = day/2
+                     field(num_fields)%start_time(j) = field(num_fields)%time(j) - set_time(sec,day)
+                     field(num_fields)%end_time(j) = field(num_fields)%time(j) + set_time(sec,day)
+                  elseif ( j == 1) then
+                     tdiff = field(num_fields)%time(2) -  field(num_fields)%time(1)
+                     call get_time(tdiff, sec, day)
+                     field(num_fields)%period(j) = set_time(sec,day)
+                     sec = sec/2+mod(day,2)*43200
+                     day = day/2
+                     field(num_fields)%start_time(j) = field(num_fields)%time(j) - set_time(sec,day)
+                     field(num_fields)%end_time(j) = field(num_fields)%time(j) + set_time(sec,day)
+                  else
+                     tdiff = field(num_fields)%time(ntime) -  field(num_fields)%time(ntime-1)
+                     call get_time(tdiff, sec, day)
+                     field(num_fields)%period(j) = set_time(sec,day)
+                     sec = sec/2+mod(day,2)*43200
+                     day = day/2
+                     field(num_fields)%start_time(j) = field(num_fields)%time(j) - set_time(sec,day)
+                     field(num_fields)%end_time(j) = field(num_fields)%time(j) + set_time(sec,day)
+                  endif
                endif
-            endif
-         enddo
+            enddo
+         endif
              
          do j=1,ntime-1
-            if (field(num_fields)%time(j) >= field(num_fields)%time(j+1)) &
-                 call mpp_error(FATAL,'times not monotonically increasing')
+            if (field(num_fields)%time(j) >= field(num_fields)%time(j+1)) then
+               write(msg,'(A,i)') "times not monotonically increasing. Filename: " &
+                    //TRIM(file)//"  field:  "//TRIM(fieldname)//" timeslice: ", j
+               call mpp_error(FATAL, TRIM(msg))
+            endif
          enddo
              
          field(num_fields)%modulo_time = get_axis_modulo(time_axis)
@@ -642,7 +655,8 @@ module time_interp_external_mod
               mask_out(isu:ieu,jsu:jeu,:) = field(index)%mask(isc:iec,jsc:jec,:,i1)
       else
         if(field(index)%have_modulo_times) then
-          call time_interp(time,field(index)%modulo_time_beg, field(index)%modulo_time_end, field(index)%time(:), w2, t1, t2)
+          call time_interp(time,field(index)%modulo_time_beg, field(index)%modulo_time_end, field(index)%time(:), &
+                          w2, t1, t2, field(index)%correct_leap_year_inconsistency)
         else
           if(field(index)%modulo_time) then
             mod_time=1
@@ -788,7 +802,7 @@ subroutine realloc_fields(n)
   integer, intent(in) :: n ! new size
 
   type(ext_fieldtype), pointer :: ptr(:)
-  integer :: i
+  integer :: i, ier
 
   if (associated(field)) then
      if (n <= size(field)) return ! do nothing if requested size no more then current
@@ -805,15 +819,15 @@ subroutine realloc_fields(n)
      ptr(i)%ndim=-1
      ptr(i)%domain = NULL_DOMAIN2D
      ptr(i)%axes(:) = default_axis
-     if (ASSOCIATED(ptr(i)%time))       NULLIFY(ptr(i)%time)
-     if (ASSOCIATED(ptr(i)%start_time)) NULLIFY(ptr(i)%start_time)
-     if (ASSOCIATED(ptr(i)%end_time))   NULLIFY(ptr(i)%end_time)
+     if (ASSOCIATED(ptr(i)%time))       DEALLOCATE(ptr(i)%time, stat=ier)
+     if (ASSOCIATED(ptr(i)%start_time)) DEALLOCATE(ptr(i)%start_time, stat=ier)
+     if (ASSOCIATED(ptr(i)%end_time))   DEALLOCATE(ptr(i)%end_time, stat=ier)
      ptr(i)%field = default_field
-     if (ASSOCIATED(ptr(i)%period)) NULLIFY(ptr(i)%period)
+     if (ASSOCIATED(ptr(i)%period)) DEALLOCATE(ptr(i)%period, stat=ier)
      ptr(i)%modulo_time=.false.
-     if (ASSOCIATED(ptr(i)%data)) NULLIFY(ptr(i)%data)
-     if (ASSOCIATED(ptr(i)%ibuf)) NULLIFY(ptr(i)%ibuf)
-     if (ASSOCIATED(ptr(i)%buf3d)) NULLIFY(ptr(i)%buf3d)
+     if (ASSOCIATED(ptr(i)%data)) DEALLOCATE(ptr(i)%data, stat=ier)
+     if (ASSOCIATED(ptr(i)%ibuf)) DEALLOCATE(ptr(i)%ibuf, stat=ier)
+     if (ASSOCIATED(ptr(i)%buf3d)) DEALLOCATE(ptr(i)%buf3d, stat=ier)
      ptr(i)%nbuf=-1
      ptr(i)%domain_present=.false.
      ptr(i)%slope=1.0

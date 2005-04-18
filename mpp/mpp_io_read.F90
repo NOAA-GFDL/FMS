@@ -1,5 +1,5 @@
 module mpp_io_read_mod
-#include <os.h>
+#include <fms_platform.h>
 
 use mpp_mod,           only : mpp_error, FATAL, NOTE, mpp_transmit, ALL_PES, lowercase, mpp_root_pe
 use mpp_domains_mod,   only : domain2D, mpp_get_data_domain, mpp_get_compute_domain, mpp_get_global_domain
@@ -16,9 +16,9 @@ private
 
 
 character(len=128) :: version= &
-     '$Id: mpp_io_read.F90,v 11.0 2004/09/28 20:05:21 fms Exp $'
+     '$Id: mpp_io_read.F90,v 12.0 2005/04/14 17:58:36 fms Exp $'
 character(len=128) :: tagname= &
-     '$Name: khartoum $'
+     '$Name: lima $'
 
 public :: mpp_read, mpp_read_meta, mpp_get_tavg_info
 

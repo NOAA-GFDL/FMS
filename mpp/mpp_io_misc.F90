@@ -1,5 +1,5 @@
 module mpp_io_misc_mod
-#include <os.h>
+#include <fms_platform.h>
 
 use mpp_mod,           only : mpp_init, stdin, stdout, stderr, stdlog, mpp_pe, mpp_npes, mpp_root_pe
 use mpp_mod,           only : mpp_error, FATAL, MPP_DEBUG, MPP_VERBOSE, mpp_sync, mpp_max
@@ -21,9 +21,9 @@ private
 public :: mpp_io_init, mpp_io_exit, netcdf_err, mpp_flush
 
   character(len=128), private :: version= &
-       '$Id: mpp_io_misc.F90,v 11.0 2004/09/28 20:05:16 fms Exp $'
+       '$Id: mpp_io_misc.F90,v 12.0 2005/04/14 17:58:32 fms Exp $'
   character(len=128), private :: tagname= &
-       '$Name: khartoum $'
+       '$Name: lima $'
 
 #ifdef use_netCDF
 #include <netcdf.inc>

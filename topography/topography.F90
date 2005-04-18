@@ -93,7 +93,7 @@ public :: topography_init,                 &
 !-----------------------------------------------------------------------
 
  character(len=128) :: version = '$Id: topography.F90,v 11.0 2004/09/28 20:06:35 fms Exp $'
- character(len=128) :: tagname = '$Name: khartoum $'
+ character(len=128) :: tagname = '$Name: lima $'
 
  logical :: module_is_initialized = .FALSE.
 

@@ -1,5 +1,4 @@
-
-
+! -*-f90-*-*
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!                                                                   !!
 !!                   GNU General Public License                      !!
@@ -81,13 +80,37 @@
 !by forbidding 4-byte reals, 4-byte cmplx is also forbidden
 #define no_4byte_reals
 !I think by redefining FLOAT_KIND to 8, I no longer need to redefine NF_*
-!but I'll leave these in for now.
+!but I will leave these in for now.
 #define FLOAT_KIND 8
 #define NF_GET_VAR_REAL nf_get_var_double
 #define NF_GET_VARA_REAL nf_get_vara_double
 #define NF_GET_ATT_REAL nf_get_att_double
 #endif
 
+#if defined(__INTEL_COMPILER) || defined(__IBMC__)
+#define _F95
+#define _F2000
+#endif
+
+#ifdef _F95
+!DEC$ MESSAGE:'Using PURE'
+#define _PURE PURE
+#else
+!DEC$ MESSAGE:'Not using PURE'
+#define _PURE 
+#endif
+
+#ifdef _F2000
+!DEC$ MESSAGE:'Converting pointers to allocatable components'
+#define _ALLOCATABLE ALLOCATABLE
+#define _NULL 
+#define _ALLOCATED ALLOCATED
+#else
+!DEC$ MESSAGE:'Using pointers'
+#define _ALLOCATABLE POINTER
+#define _NULL =>NULL()
+#define _ALLOCATED ASSOCIATED
+#endif
 
 
 

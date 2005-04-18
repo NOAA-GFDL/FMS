@@ -1,5 +1,5 @@
 module mpp_datatype_mod
-#include <os.h>
+#include <fms_platform.h>
 
   use mpp_parameter_mod, only : MAX_EVENTS, MAX_EVENT_TYPES, MAX_BINS, PESET_MAX, MAX_CLOCKS
 #ifdef use_CAF
@@ -12,7 +12,7 @@ module mpp_datatype_mod
   character(len=128), public :: version= &
        '$Id mpp_datatype.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: khartoum $'
+       '$Name: lima $'
 
   !--- public data type which is used by mpp_mod and its components. 
   !--- All othere modules should import these parameters from mpp_mod.  
@@ -165,23 +165,23 @@ module mpp_datatype_mod
      type(domain2D), pointer :: domain     =>NULL()
      type(domain2D), pointer :: domain_in  =>NULL()
      type(domain2D), pointer :: domain_out =>NULL()
-     integer, dimension(:,:), pointer :: sendis =>NULL()
-     integer, dimension(:,:), pointer :: sendie =>NULL()
-     integer, dimension(:,:), pointer :: sendjs =>NULL()
-     integer, dimension(:,:), pointer :: sendje =>NULL()
-     integer, dimension(:,:), pointer :: S_msize =>NULL()
-     logical, dimension(:,:), pointer :: do_thisS =>NULL()
-     logical, dimension(:), pointer :: S_do_buf =>NULL()
-     integer, dimension(:), pointer :: cto_pe  =>NULL()
-     integer, dimension(:), pointer :: Rcaf_idx  =>NULL()
-     integer, dimension(:,:), pointer :: recvis =>NULL()
-     integer, dimension(:,:), pointer :: recvie =>NULL()
-     integer, dimension(:,:), pointer :: recvjs =>NULL()
-     integer, dimension(:,:), pointer :: recvje =>NULL()
-     integer, dimension(:,:), pointer :: R_msize =>NULL()
-     logical, dimension(:,:,:), pointer :: do_thisR =>NULL()
-     logical, dimension(:), pointer :: R_do_buf =>NULL()
-     integer, dimension(:), pointer :: cfrom_pe  =>NULL()
+     integer, dimension(:,:), _ALLOCATABLE :: sendis _NULL
+     integer, dimension(:,:), _ALLOCATABLE :: sendie _NULL
+     integer, dimension(:,:), _ALLOCATABLE :: sendjs _NULL
+     integer, dimension(:,:), _ALLOCATABLE :: sendje _NULL
+     integer, dimension(:,:), _ALLOCATABLE :: S_msize _NULL
+     logical, dimension(:,:), _ALLOCATABLE :: do_thisS _NULL
+     logical, dimension(:), _ALLOCATABLE :: S_do_buf _NULL
+     integer, dimension(:), _ALLOCATABLE :: cto_pe  _NULL
+     integer, dimension(:), _ALLOCATABLE :: Rcaf_idx  _NULL
+     integer, dimension(:,:), _ALLOCATABLE :: recvis _NULL
+     integer, dimension(:,:), _ALLOCATABLE :: recvie _NULL
+     integer, dimension(:,:), _ALLOCATABLE :: recvjs _NULL
+     integer, dimension(:,:), _ALLOCATABLE :: recvje _NULL
+     integer, dimension(:,:), _ALLOCATABLE :: R_msize _NULL
+     logical, dimension(:,:,:), _ALLOCATABLE :: do_thisR _NULL
+     logical, dimension(:), _ALLOCATABLE :: R_do_buf _NULL
+     integer, dimension(:), _ALLOCATABLE :: cfrom_pe  _NULL
      integer :: Slist_size=0, Rlist_size=0
      integer :: isize=0, jsize=0, ke=0
      integer :: isize_in=0, jsize_in=0
@@ -189,18 +189,18 @@ module mpp_datatype_mod
      integer :: isize_max=0, jsize_max=0
      integer :: gf_ioff=0, gf_joff=0
   ! Remote data
-     integer, dimension(:)  , pointer :: isizeR =>NULL()
-     integer, dimension(:)  , pointer :: jsizeR =>NULL()
-     integer, dimension(:,:), pointer :: sendisR =>NULL()
-     integer, dimension(:,:), pointer :: sendjsR =>NULL()
-     integer(LONG_KIND), dimension(:), pointer :: rem_addr  =>NULL()
-     integer(LONG_KIND), dimension(:), pointer :: rem_addrx =>NULL()
-     integer(LONG_KIND), dimension(:), pointer :: rem_addry =>NULL()
-     integer(LONG_KIND), dimension(:,:), pointer :: rem_addrl  =>NULL()
-     integer(LONG_KIND), dimension(:,:), pointer :: rem_addrlx  =>NULL()
-     integer(LONG_KIND), dimension(:,:), pointer :: rem_addrly  =>NULL()
-     integer(LONG_KIND), dimension(:), pointer :: sync_start_list =>NULL()
-     integer(LONG_KIND), dimension(:), pointer :: sync_end_list =>NULL()
+     integer, dimension(:)  , _ALLOCATABLE :: isizeR _NULL
+     integer, dimension(:)  , _ALLOCATABLE :: jsizeR _NULL
+     integer, dimension(:,:), _ALLOCATABLE :: sendisR _NULL
+     integer, dimension(:,:), _ALLOCATABLE :: sendjsR _NULL
+     integer(LONG_KIND), dimension(:), _ALLOCATABLE :: rem_addr  _NULL
+     integer(LONG_KIND), dimension(:), _ALLOCATABLE :: rem_addrx _NULL
+     integer(LONG_KIND), dimension(:), _ALLOCATABLE :: rem_addry _NULL
+     integer(LONG_KIND), dimension(:,:), _ALLOCATABLE :: rem_addrl  _NULL
+     integer(LONG_KIND), dimension(:,:), _ALLOCATABLE :: rem_addrlx  _NULL
+     integer(LONG_KIND), dimension(:,:), _ALLOCATABLE :: rem_addrly  _NULL
+     integer(LONG_KIND), dimension(:), _ALLOCATABLE :: sync_start_list _NULL
+     integer(LONG_KIND), dimension(:), _ALLOCATABLE :: sync_end_list _NULL
      type(DomainCommunicator2D), pointer :: dch_x =>NULL()
   end type DomainCommunicator2D
 
@@ -208,6 +208,13 @@ module mpp_datatype_mod
   !-----------------------------------------------------------------------------
   !--- The following data types are used by mpp_io_mod and its components.
   !-----------------------------------------------------------------------------
+  type :: atttype
+     integer             :: type, len
+     character(len=128)  :: name
+     character(len=1280) :: catt
+     real, pointer       :: fatt(:) =>NULL() ! just use type conversion for integers
+  end type atttype
+
   type :: axistype
      character(len=128) :: name
      character(len=128) :: units
@@ -222,13 +229,6 @@ module mpp_datatype_mod
      type(atttype), pointer :: Att(:) =>NULL()
   end type axistype
 
-  type :: atttype
-     integer             :: type, len
-     character(len=128)  :: name
-     character(len=1280) :: catt
-     real, pointer       :: fatt(:) =>NULL() ! just use type conversion for integers
-  end type atttype
-
   type :: validtype
      logical :: is_range ! if true, then the data represent the valid range
      real    :: min,max  ! boundaries of the valid range or missing value
@@ -238,6 +238,7 @@ module mpp_datatype_mod
      character(len=128)      :: name
      character(len=128)      :: units
      character(len=256)      :: longname
+     character(len=128)      :: standard_name   ! CF standard name
      real                    :: min, max, missing, fill, scale, add
      integer                 :: pack
      type(axistype), pointer :: axes(:) =>NULL() !axes associated with field size, time_axis_index redundantly 

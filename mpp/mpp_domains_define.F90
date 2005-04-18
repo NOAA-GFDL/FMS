@@ -16,12 +16,12 @@ use mpp_domains_util_mod, only : mpp_get_compute_domains, mpp_get_compute_domain
   implicit none
   private
 
-#include <os.h>
+#include <fms_platform.h>
 
   character(len=128), public :: version= &
-       '$Id: mpp_domains_define.F90,v 11.0 2004/09/28 20:04:39 fms Exp $'
+       '$Id: mpp_domains_define.F90,v 12.0 2005/04/14 17:58:04 fms Exp $'
   character(len=128), public :: tagname= &
-       '$Name: khartoum $'
+       '$Name: lima $'
 
   public :: mpp_define_layout, mpp_define_domains, mpp_modify_domain
 
@@ -475,8 +475,10 @@ contains
           if( ie.LT.is )call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: domain extents must be positive definite.' )
           domain%list(ndiv)%compute%begin = is
           domain%list(ndiv)%compute%end   = ie
-          if( ndiv.GT.0 .AND. is.NE.domain%list(ndiv-1)%compute%end+1 ) &
+          if( ndiv.GT.0 ) then
+            if( is.NE.domain%list(ndiv-1)%compute%end+1 ) &
                call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: domain extents do not span space completely.' )
+          endif
           if( ndiv.EQ.ndivs-1 .AND. domain%list(ndiv)%compute%end.NE.ieg ) &
                call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: domain extents do not span space completely.' )
           if( mask(ndiv) )then

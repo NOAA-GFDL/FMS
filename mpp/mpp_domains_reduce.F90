@@ -1,10 +1,10 @@
 module mpp_domains_reduce_mod
-#include <os.h>
+#include <fms_platform.h>
 
 use mpp_mod,           only : mpp_error, FATAL, WARNING, mpp_npes, mpp_max, mpp_min, mpp_sum
 use mpp_mod,           only : mpp_broadcast, mpp_transmit, mpp_sync_self, mpp_sync, mpp_send, mpp_recv 
 use mpp_mod,           only : mpp_pe,mpp_root_pe,stdout,mpp_chksum
-use mpp_parameter_mod, only : BITWISE_EXACT_SUM, XUPDATE, YUPDATE
+use mpp_parameter_mod, only : NON_BITWISE_EXACT_SUM, BITWISE_EXACT_SUM, XUPDATE, YUPDATE
 use mpp_datatype_mod,  only : domain1D, domain2D, DomainCommunicator2D
 use mpp_data_mod,      only : module_is_initialized=>mpp_domains_is_initialized, pe, mpp_domains_stack
 use mpp_data_mod,      only : ptr_domains_stack, mpp_domains_stack_size, mpp_domains_stack_hwm, debug_gsm
@@ -16,9 +16,9 @@ private
   public :: mpp_global_field, mpp_global_max, mpp_global_min, mpp_global_sum
 
   character(len=128), public :: version= &
-       '$Id: mpp_domains_reduce.F90,v 11.0 2004/09/28 20:04:53 fms Exp $'
+       '$Id: mpp_domains_reduce.F90,v 12.0 2005/04/14 17:58:12 fms Exp $'
   character(len=128), public :: tagname= &
-       '$Name: khartoum $'
+       '$Name: lima $'
 
 
 ! <INTERFACE NAME="mpp_global_field">

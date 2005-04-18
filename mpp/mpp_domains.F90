@@ -113,7 +113,7 @@ module mpp_domains_mod
   use mpp_parameter_mod,      only : BGRID_SW, CGRID_NE, CGRID_SW, FOLD_WEST_EDGE
   use mpp_parameter_mod,      only : FOLD_EAST_EDGE, FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE
   use mpp_parameter_mod,      only : WUPDATE, EUPDATE, SUPDATE, NUPDATE, XUPDATE, YUPDATE
-  use mpp_parameter_mod,      only : BITWISE_EXACT_SUM, MPP_DOMAIN_TIME
+  use mpp_parameter_mod,      only : NON_BITWISE_EXACT_SUM, BITWISE_EXACT_SUM, MPP_DOMAIN_TIME
   use mpp_datatype_mod,       only : domain_axis_spec, domain1D, domain2D, DomainCommunicator2D
   use mpp_data_mod,           only : NULL_DOMAIN1D, NULL_DOMAIN2D
 
@@ -132,7 +132,8 @@ module mpp_domains_mod
   !--- public paramters imported from mpp_domains_parameter_mod
   public :: GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, BGRID_NE, BGRID_SW, CGRID_NE
   public :: CGRID_SW, FOLD_WEST_EDGE, FOLD_EAST_EDGE, FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE
-  public :: WUPDATE, EUPDATE, SUPDATE, NUPDATE, XUPDATE, YUPDATE, BITWISE_EXACT_SUM, MPP_DOMAIN_TIME
+  public :: WUPDATE, EUPDATE, SUPDATE, NUPDATE, XUPDATE, YUPDATE
+  public :: NON_BITWISE_EXACT_SUM, BITWISE_EXACT_SUM, MPP_DOMAIN_TIME
 
   !--- public data type imported from mpp_datatype_mod
   public :: domain_axis_spec, domain1D, domain2D, DomainCommunicator2D
@@ -157,19 +158,19 @@ module mpp_domains_mod
 
   !--- version information variables
   character(len=128), public :: version= &
-       '$Id: mpp_domains.F90,v 11.0 2004/09/28 20:04:44 fms Exp $'
+       '$Id: mpp_domains.F90,v 12.0 2005/04/14 17:57:52 fms Exp $'
   character(len=128), public :: tagname= &
-       '$Name: khartoum $'
+       '$Name: lima $'
 
 end module mpp_domains_mod
 
 #ifdef test_mpp_domains
 program mpp_domains_test
   use mpp_mod,         only : FATAL, MPP_DEBUG, NOTE, MPP_CLOCK_SYNC,MPP_CLOCK_DETAILED
-  use mpp_mod,         only : mpp_pe, mpp_npes, mpp_root_pe, mpp_error, mpp_set_warn_level
+  use mpp_mod,         only : mpp_pe, mpp_npes, mpp_node, mpp_root_pe, mpp_error, mpp_set_warn_level
   use mpp_mod,         only : mpp_declare_pelist, mpp_set_current_pelist, mpp_sync
   use mpp_mod,         only : mpp_clock_begin, mpp_clock_end, mpp_clock_id
-  use mpp_mod,         only : mpp_init, mpp_exit, mpp_chksum, stdout
+  use mpp_mod,         only : mpp_init, mpp_exit, mpp_chksum, stdout, stderr
   use mpp_domains_mod, only : GLOBAL_DATA_DOMAIN, BITWISE_EXACT_SUM, BGRID_NE, FOLD_NORTH_EDGE
   use mpp_domains_mod, only : MPP_DOMAIN_TIME, CYCLIC_GLOBAL_DOMAIN, NUPDATE,EUPDATE
   use mpp_domains_mod, only : domain1D, domain2D, DomainCommunicator2D
@@ -180,7 +181,7 @@ program mpp_domains_test
   use mpp_domains_mod, only : mpp_define_layout, mpp_define_domains, mpp_modify_domain
 
   implicit none
-#include <os.h>
+#include <fms_platform.h>
   integer :: pe, npes
   integer :: nx=128, ny=128, nz=40, halo=2, stackmax=4000000
   real, dimension(:,:,:), allocatable :: global, gcheck
@@ -235,39 +236,94 @@ program mpp_domains_test
      end do
   end do
      
-  if(.not. check_parallel) then
-     call test_modify_domain()
-     call test_halo_update( 'Simple' ) !includes global field, global sum tests
-     call test_halo_update( 'Cyclic' )
-     call test_halo_update( 'Folded' ) !includes vector field test
-     
-     call test_redistribute( 'Complete pelist' )
-     call test_redistribute( 'Overlap  pelist' )
-     call test_redistribute( 'Disjoint pelist' )
+  if( .not. check_parallel) then
+      call test_modify_domain()
+      call test_halo_update( 'Simple' ) !includes global field, global sum tests
+      call test_halo_update( 'Cyclic' )
+      call test_halo_update( 'Folded' ) !includes vector field test
+      
+      call test_redistribute( 'Complete pelist' )
+      call test_redistribute( 'Overlap  pelist' )
+      call test_redistribute( 'Disjoint pelist' )
   else
-     call test_parallel( )
+      call test_parallel( )
   endif
-     
+
+!Balaji adding openMP tests
+  call test_openmp()
+ 
   call mpp_domains_exit()
   call mpp_exit()
   
 contains
+  subroutine test_openmp()
+#ifdef _OPENMP
+    integer :: omp_get_num_thread, omp_get_max_threads, omp_get_thread_num
+    real, allocatable :: a(:,:,:)
+    type(domain2D) :: domain
+    integer :: layout(2)
+    integer :: i,j,k, jthr
+    integer :: thrnum, maxthr
+    integer(LONG_KIND) :: sum1, sum2
+    
+    call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
+    call mpp_define_domains( (/1,nx,1,ny/), layout, domain )
+    call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
+    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+    allocate( a(isd:ied,jsd:jed,nz) )
+    maxthr = omp_get_max_threads()
+    write( stdout(),'(a,4i4)' )'pe,js,je,maxthr=', pe, js, je, maxthr
+!    write( stderr(),'(a,2i4)' )'pe,mldid=', pe, mld_id()
+    if( mod(je-js+1,maxthr).NE.0 ) &
+         call mpp_error( FATAL, 'maxthr must divide domain (TEMPORARY).' )
+    jthr = (je-js+1)/maxthr
+!$OMP PARALLEL PRIVATE(i,j,k,thrnum)
+    thrnum = omp_get_thread_num()
+    write( stdout(),'(a,4i4)' )'pe,thrnum,js,je=', &
+         pe, thrnum, js+thrnum*jthr,js+(thrnum+1)*jthr-1
+    write( stdout(),'(a,3i4)' )'pe,thrnum,node=', pe, thrnum, mpp_node()
+!!$OMP DO
+    do k = 1,nz
+!when omp DO is commented out, user must compute j loop limits
+!with omp DO, let OMP figure it out
+       do j = js+thrnum*jthr,js+(thrnum+1)*jthr-1
+!       do j = js,je
+          do i = is,ie
+             a(i,j,k) = global(i,j,k)
+          end do
+       end do
+    end do
+!!$OMP END DO
+!$OMP END PARALLEL
+    sum1 = mpp_chksum( a(is:ie,js:je,:) )
+    sum2 = mpp_chksum( global(is:ie,js:je,:) )
+    if( sum1.EQ.sum2 )then
+        call mpp_error( NOTE, 'OMP parallel test OK.' )
+    else
+        if( mpp_pe().EQ.mpp_root_pe() )write( stderr(),'(a,2z18)' )'OMP checksums: ', sum1, sum2
+        call mpp_error( FATAL, 'OMP parallel test failed.' )
+    end if
+#endif
+    return
+  end subroutine test_openmp
 
   subroutine test_redistribute( type )
 !test redistribute between two domains
     character(len=*), intent(in) :: type
     type(domain2D) :: domainx, domainy
     type(DomainCommunicator2D), pointer, save :: dch =>NULL()
-    real, allocatable, dimension(:,:,:),save :: x, y
-    real, allocatable, dimension(:,:,:),save :: x2, y2
-    real, allocatable, dimension(:,:,:),save :: x3, y3
-    real, allocatable, dimension(:,:,:),save :: x4, y4
-    real, allocatable, dimension(:,:,:),save :: x5, y5
-    real, allocatable, dimension(:,:,:),save :: x6, y6
+    real, allocatable, dimension(:,:,:), save :: x, y
+    real, allocatable, dimension(:,:,:), save :: x2, y2
+    real, allocatable, dimension(:,:,:), save :: x3, y3
+    real, allocatable, dimension(:,:,:), save :: x4, y4
+    real, allocatable, dimension(:,:,:), save :: x5, y5
+    real, allocatable, dimension(:,:,:), save :: x6, y6
     integer, allocatable :: pelist(:)
     integer :: pemax
     
     pemax = npes/2              !the partial pelist will run from 0...pemax
+    domainx%list=>NULL() !otherwise it retains memory between calls
+    domainy%list=>NULL()
     
 !select pelists
     select case(type)
@@ -773,7 +829,7 @@ end program mpp_domains_test
 !     The <TT>mpp_domains</TT> source consists of the main source file
 !     <TT>mpp_domains.F90</TT> and also requires the following include files:
 !    <PRE>
-!     <TT>os.h</TT>
+!     <TT>fms_platform.h</TT>
 !     <TT>mpp_update_domains2D.h</TT>
 !     <TT>mpp_global_reduce.h</TT>
 !     <TT>mpp_global_sum.h</TT>

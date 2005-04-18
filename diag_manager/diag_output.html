@@ -1,7 +1,7 @@
 <html>
 <head>
 <META http-equiv="Content-Type" content="text/html; charset=EUC-JP">
-<title>Module axis_utils_mod</title>
+<title>Module diag_output_mod</title>
 <link type="text/css" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" rel="stylesheet">
 <STYLE TYPE="text/css">
           .fixed {
@@ -24,15 +24,15 @@
           <a href="#REFERENCES">REFERENCES </a>~ 
           <a href="#NOTES">NOTES</a></font>
 <hr>
-<h2>Module axis_utils_mod</h2>
+<h2>Module diag_output_mod</h2>
 <a name="HEADER"></a>
 <!-- BEGIN HEADER -->
 <div>
-<b>Contact:&nbsp;</b><a href="mailto:Matthew.Harrison@noaa.gov">M.J. Harrison</a>
+<b>Contact:&nbsp;</b><a href="mailto:Giang.Nong@noaa.gov">   Giang Nong </a>
 <br>
-<b>Reviewers:&nbsp;</b><a href="mailto:Bruce.Wyman@noaa.gov">Bruce Wyman</a>
+<b>Reviewers:&nbsp;</b>
 <br>
-<b>Change History:&nbsp;</b><a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/axis_utils">WebCVS Log</a>
+<b>Change History:&nbsp;</b><a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/diag_manager">WebCVS Log</a>
 <br>
 <br>
 </div>
@@ -41,22 +41,13 @@
 <hr>
 <h4>OVERVIEW</h4>
 <!-- BEGIN OVERVIEW -->
-<p class="text">   A set of utilities for manipulating axes and extracting axis
-   attributes </p>
+<p class="text"> 
+<tt>diag_output_mod</tt>   is an integral part of diag_manager_mod. Its function is
+   to write axis-meta-data, field-meta-data and, finally, field data </p>
 <!-- END OVERVIEW -->
 <a name="DESCRIPTION"></a>
 <!-- BEGIN DESCRIPTION -->
-<div>   subroutine get_axis_cart(axis,cart) : Returns X,Y,Z or T cartesian attribute
-   subroutine get_axis_bounds(axis,axis_bound,axes) : Return axis_bound either from an array of 
-   available axes, or defined based on axis mid-points
-   function get_axis_modulo : Returns true if axis has the modulo attribute
-   function get_axis_fold   : Returns is axis is folded at a boundary (non-standard meta-data)
-   function lon_in_range    : Returns lon_strt &lt;= longitude &lt;= lon_strt+360
-   subroutine tranlon       : Returns monotonic array of longitudes s.t., lon_strt &lt;= lon(:) &lt;= lon_strt+360.
-   subroutine nearest_index : Return index of nearest point along axis
-   <br>
-<br> 
-</div>
+<div></div>
 <br>
 <!-- END DESCRIPTION -->
 <a name="OTHER MODULES USED"></a>
@@ -64,7 +55,7 @@
 <h4>OTHER MODULES USED</h4>
 <!-- BEGIN OTHER MODULES USED -->
 <div>
-<pre>mpp_io_mod<br>   mpp_mod<br>   fms_mod</pre>
+<pre>      mpp_io_mod<br> mpp_domains_mod<br>         mpp_mod<br>   diag_axis_mod<br>time_manager_mod<br>         fms_mod<br>    platform_mod</pre>
 </div>
 <!-- END OTHER MODULES USED -->
 <!-- BEGIN PUBLIC INTERFACE -->

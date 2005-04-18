@@ -1,4 +1,4 @@
-#if defined(__sgi) || defined(__aix) || defined(__IFC) || defined(__SX)
+#if defined(__sgi) || defined(__aix) || defined(__IFC) || defined(__linux) || defined(__SX)
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

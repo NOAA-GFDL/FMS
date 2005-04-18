@@ -15,12 +15,12 @@
         </STYLE>
 </head>
 <body>
-<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC%20INTERFACE">PUBLIC INTERFACE </a>~
-          <a href="#PUBLIC%20DATA">PUBLIC DATA </a>~
-          <a href="#PUBLIC%20ROUTINES">PUBLIC ROUTINES </a>~
+<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC INTERFACE">PUBLIC INTERFACE </a>~
+          <a href="#PUBLIC DATA">PUBLIC DATA </a>~
+          <a href="#PUBLIC ROUTINES">PUBLIC ROUTINES </a>~
           <a href="#NAMELIST">NAMELIST </a>~
-          <a href="#DIAGNOSTIC%20FIELDS">DIAGNOSTIC FIELDS </a>~
-          <a href="#ERROR%20MESSAGES">ERROR MESSAGES </a>~
+          <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
+          <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
           <a href="#REFERENCES">REFERENCES </a>~ 
           <a href="#NOTES">NOTES</a></font>
 <hr>
@@ -63,7 +63,7 @@
    the input mask to show where output data exists. </div>
 <br>
 <!-- END DESCRIPTION -->
-<a name="OTHER%20MODULES%20USED"></a>
+<a name="OTHER MODULES USED"></a>
 <hr>
 <h4>OTHER MODULES USED</h4>
 <!-- BEGIN OTHER MODULES USED -->
@@ -72,7 +72,7 @@
 </div>
 <!-- END OTHER MODULES USED -->
 <!-- BEGIN PUBLIC INTERFACE -->
-<a name="PUBLIC%20INTERFACE"></a>
+<a name="PUBLIC INTERFACE"></a>
 <hr>
 <h4>PUBLIC INTERFACE</h4>
 <div>
@@ -92,7 +92,7 @@
 </div>
 <br>
 <!-- END PUBLIC INTERFACE -->
-<a name="PUBLIC%20DATA"></a>
+<a name="PUBLIC DATA"></a>
 <hr>
 <h4>PUBLIC DATA</h4>
 <!-- BEGIN PUBLIC DATA -->
@@ -100,7 +100,7 @@
 <br>
 </div>
 <!-- END PUBLIC DATA -->
-<a name="PUBLIC%20ROUTINES"></a>
+<a name="PUBLIC ROUTINES"></a>
 <hr>
 <h4>PUBLIC ROUTINES</h4>
 <!-- BEGIN PUBLIC ROUTINES -->
@@ -111,9 +111,9 @@
 <table cellspacing="0" CELLPADDING="2" BORDER="2">
 <tr>
 <td>
-<pre> subroutine horiz_interp_init (Interp, lon_in, lat_in, lon_out, lat_out,  &amp;
-                                  verbose, interp_method, num_nbrs, max_dist, src_modulo, &amp;
-                                  grid_at_center)</pre>
+<pre>  subroutine horiz_interp_init (Interp, lon_in, lat_in, lon_out, lat_out,  &amp;
+       verbose, interp_method, num_nbrs, max_dist, src_modulo, &amp;
+       grid_at_center)</pre>
 </td>
 </tr>
 </table>
@@ -148,16 +148,16 @@
    When interp_method is "conservative" or "bilinear", lon_in should be 1D. <br>&nbsp;&nbsp;&nbsp;<span class="type">[real, dimension(:),(:,:)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>lon_out&nbsp;&nbsp;&nbsp;</tt></td><td>   Longitude (in radians) for source data grid. when lon_in is 1D, it is the longitude
+<td valign="top" align="left"><tt>lon_out&nbsp;&nbsp;&nbsp;</tt></td><td>   Longitude (in radians) for destination data grid. when lon_out is 1D, it is the longitude
    edges and its value are for adjacent grid boxes and must increase 
-   in value. When lon_in is 2D, there are two cases: one is the longitude edges stored as
+   in value. When lon_out is 2D, there are two cases: one is the longitude edges stored as
    pairs for each grid box (when interp_method is "conservative"), the other is the longitude
    of the center of each grid box (when interp_method is "bilinear"). <br>&nbsp;&nbsp;&nbsp;<span class="type">[real, dimension(:),(:,:)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>lat_out&nbsp;&nbsp;&nbsp;</tt></td><td>   Latitude (in radians) for source data grid. when lat_in is 1D, it is the latitude
+<td valign="top" align="left"><tt>lat_out&nbsp;&nbsp;&nbsp;</tt></td><td>   Latitude (in radians) for destination data grid. when lat_out is 1D, it is the latitude
    edges and its value are for adjacent grid boxes and must increase 
-   in value. When lat_in is 2D, there are two cases: one is the latitude edges stored as
+   in value. When lat_out is 2D, there are two cases: one is the latitude edges stored as
    pairs for each grid box (when interp_method is "conservative"), the other is the latitude
    of the center of each grid box (when interp_method is "bilinear"). <br>&nbsp;&nbsp;&nbsp;<span class="type">[real, dimension(:),(:,:)]</span></td>
 </tr>
@@ -207,7 +207,7 @@
 <pre> subroutine horiz_interp ( data_in, lon_in, lat_in, lon_out, lat_out,    &amp;
                                    data_out, verbose, mask_in, mask_out,         &amp;
                                    interp_method, missing_value, missing_permit, &amp;
-                                   num_nbrs, max_dist,src_modulo  )</pre>
+                                   num_nbrs, max_dist,src_modulo, grid_at_center  )</pre>
 </td>
 </tr>
 </table>
@@ -309,13 +309,13 @@
 </li>
 </ol>
 <!-- END PUBLIC ROUTINES -->
-<a name="PUBLIC%20TYPES"></a>
+<a name="PUBLIC TYPES"></a>
 <!-- BEGIN PUBLIC TYPES -->
 <!-- END PUBLIC TYPES --><a name="NAMELIST"></a>
 <!-- BEGIN NAMELIST -->
-<!-- END NAMELIST --><a name="DIAGNOSTIC%20FIELDS"></a>
+<!-- END NAMELIST --><a name="DIAGNOSTIC FIELDS"></a>
 <!-- BEGIN DIAGNOSTIC FIELDS -->
-<!-- END DIAGNOSTIC FIELDS --><a name="DATA%20SETS"></a>
+<!-- END DIAGNOSTIC FIELDS --><a name="DATA SETS"></a>
 <!-- BEGIN DATA SETS -->
 <hr>
 <h4>DATA SETS</h4>
@@ -323,9 +323,9 @@
 <br>
 </div>
 <!-- END DATA SETS -->
-<a name="PUBLIC%20CODE"></a>
+<a name="PUBLIC CODE"></a>
 <!-- BEGIN PUBLIC CODE -->
-<!-- END PUBLIC CODE --><a name="ERROR%20MESSAGES"></a>
+<!-- END PUBLIC CODE --><a name="ERROR MESSAGES"></a>
 <!-- BEGIN ERROR MESSAGES -->
 <hr>
 <h4>ERROR MESSAGES</h4>
@@ -362,7 +362,7 @@
       </div>
 <br>
 <!-- END REFERENCES -->
-<a name="COMPILER%20SPECIFICS"></a>
+<a name="COMPILER SPECIFICS"></a>
 <hr>
 <h4>COMPILER SPECIFICS</h4>
 <!-- BEGIN COMPILER SPECIFICS -->
@@ -371,7 +371,7 @@
       </div>
 <br>
 <!-- END COMPILER SPECIFICS -->
-<a name="PRECOMPILER%20OPTIONS"></a>
+<a name="PRECOMPILER OPTIONS"></a>
 <hr>
 <h4>PRECOMPILER OPTIONS</h4>
 <!-- BEGIN PRECOMPILER OPTIONS -->
@@ -380,7 +380,7 @@
       </div>
 <br>
 <!-- END PRECOMPILER OPTIONS -->
-<a name="LOADER%20OPTIONS"></a>
+<a name="LOADER OPTIONS"></a>
 <hr>
 <h4>LOADER OPTIONS</h4>
 <!-- BEGIN LOADER -->
@@ -388,7 +388,7 @@
 <br>
 </div>
 <!-- END LOADER OPTIONS -->
-<a name="TEST%20PROGRAM"></a>
+<a name="TEST PROGRAM"></a>
 <hr>
 <h4>TEST PROGRAM</h4>
 <!-- BEGIN TEST PROGRAM -->
@@ -442,7 +442,7 @@
 </div>
 <br>
 <!-- END TEST PROGRAM -->
-<a name="KNOWN%20BUGS"></a>
+<a name="KNOWN BUGS"></a>
 <hr>
 <h4>KNOWN BUGS</h4>
 <!-- BEGIN KNOWN BUGS -->
@@ -467,7 +467,7 @@
    num_iters (default 4). </div>
 <br>
 <!-- END NOTES -->
-<a name="FUTURE%20PLANS"></a>
+<a name="FUTURE PLANS"></a>
 <hr>
 <h4>FUTURE PLANS</h4>
 <!-- BEGIN FUTURE PLANS -->

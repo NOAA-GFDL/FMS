@@ -1,6 +1,6 @@
 module platform_mod
 !platform-dependent settings
-#include <os.h>
+#include <fms_platform.h>
   public
   integer, parameter :: r8_kind=DOUBLE_KIND, r4_kind=FLOAT_KIND, &
                         c8_kind=DOUBLE_KIND, c4_kind=FLOAT_KIND, &

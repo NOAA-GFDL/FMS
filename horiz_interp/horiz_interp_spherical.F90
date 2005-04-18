@@ -39,7 +39,7 @@ module horiz_interp_spherical_mod
 
   !-----------------------------------------------------------------------
   character(len=128) :: version = '$Id: horiz_interp_spherical.F90,v 11.0 2004/09/28 19:59:57 fms Exp $'
-  character(len=128) :: tagname = '$Name: khartoum $'
+  character(len=128) :: tagname = '$Name: lima $'
   logical            :: do_vers = .true.
   logical            :: module_is_initialized = .FALSE.
 
