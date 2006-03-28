@@ -46,7 +46,41 @@
 <!-- END OVERVIEW -->
 <a name="DESCRIPTION"></a>
 <!-- BEGIN DESCRIPTION -->
-<div>   The module defines a type that can be used to represent discrete
+<div>   The changes between the lima revision and this revision are more
+   extensive that all those between antwerp and lima.
+   A brief description of these changes follows.
+   <br>
+<br>
+   1) Added option to set the smallest time increment to something less than one second.
+   This is controlled by calling the pubic subroutine set_ticks_per_second.
+   <br>
+<br>
+   2) Gregorian calendar fixed.
+   <br>
+<br>
+   3) Optional error flag added to calling arguments of public routines.
+   This allows the using routine to terminate the program. It is likely that more
+   diagnostic information is available from the user than from time_manager alone.
+   If the error flag is present then it is the responsibility of the using
+   routine to test it and add additional information to the error message.
+   <br>
+<br>
+   4) Removed the restriction that time increments be positive in routines that increment or decrement
+   time and date. The option to prohibit negative increments can be turned on via optional argument.
+   <br>
+<br>
+   5) subroutine set_date_c modified to handle strings that include only hours or only hours and minutes.
+   This complies with CF convensions.
+   <br>
+<br>
+   6) Made calendar specific routines private.
+   They are not used, and should not be used, by any using code.
+   <br>
+<br>
+   7) Error messages made more informative.
+   <br>
+<br>
+   The module defines a type that can be used to represent discrete
    times (accurate to one second) and to map these times into dates
    using a variety of calendars. A time is mapped to a date by
    representing the time with respect to an arbitrary base date (refer
@@ -67,7 +101,11 @@
    which is likely to be adequate for most applications. The description
    of the interfaces is separated into two sections. The first deals with
    operations on time intervals while the second deals with operations
-   that convert time intervals to dates for a given calendar. </div>
+   that convert time intervals to dates for a given calendar.
+   The smallest increment of time is referred to as a tick.
+   A tick cannot be larger than 1 second, which also is the default.
+   The number of ticks per second is set via pubic subroutine set_ticks_per_second.
+   For example, ticks_per_second = 1000  will set the tick to one millisecond. </div>
 <br>
 <!-- END DESCRIPTION -->
 <a name="OTHER MODULES USED"></a>
@@ -100,40 +138,40 @@
 <dd>   Given a time and a decrement of days and seconds, returns
    a time that subtracts this decrement from an input time. </dd>
 <dt>
-<a href="#time_gt">time_gt</a>:</dt>
+<a href="#time_gt  operator(>)">time_gt  operator(&gt;)</a>:</dt>
 <dd>   Returns true if time1 &gt; time2. </dd>
 <dt>
-<a href="#time_ge">time_ge</a>:</dt>
+<a href="#time_ge; operator(>=)">time_ge; operator(&gt;=)</a>:</dt>
 <dd>   Returns true if time1 &gt;= time2. </dd>
 <dt>
-<a href="#time_lt">time_lt</a>:</dt>
+<a href="#time_lt; operator(<)">time_lt; operator(&lt;)</a>:</dt>
 <dd>   Returns true if time1 &lt; time2. </dd>
 <dt>
-<a href="#time_le">time_le</a>:</dt>
+<a href="#time_le; operator(<=)">time_le; operator(&lt;=)</a>:</dt>
 <dd>   Returns true if time1 &lt;= time2. </dd>
 <dt>
-<a href="#time_eq">time_eq</a>:</dt>
+<a href="#time_eq; operator(==)">time_eq; operator(==)</a>:</dt>
 <dd>   Returns true if time1 == time2. </dd>
 <dt>
-<a href="#time_ne">time_ne</a>:</dt>
+<a href="#time_ne; operator(/=)">time_ne; operator(/=)</a>:</dt>
 <dd>   Returns true if time1 /= time2. </dd>
 <dt>
-<a href="#time_plus">time_plus</a>:</dt>
+<a href="#time_plus; operator(+)">time_plus; operator(+)</a>:</dt>
 <dd>   Returns sum of two time_types. </dd>
 <dt>
-<a href="#time_minus">time_minus</a>:</dt>
+<a href="#time_minus; operator(-)">time_minus; operator(-)</a>:</dt>
 <dd>   Returns difference of two time_types. </dd>
 <dt>
-<a href="#time_scalar_mult">time_scalar_mult</a>:</dt>
+<a href="#time_scalar_mult; operator(*)">time_scalar_mult; operator(*)</a>:</dt>
 <dd>   Returns time multiplied by integer factor n. </dd>
 <dt>
-<a href="#scalar_time_mult">scalar_time_mult</a>:</dt>
+<a href="#scalar_time_mult; operator(*)">scalar_time_mult; operator(*)</a>:</dt>
 <dd>   Returns time multiplied by integer factor n. </dd>
 <dt>
-<a href="#time_divide">time_divide</a>:</dt>
+<a href="#time_divide; operator(/)">time_divide; operator(/)</a>:</dt>
 <dd>   Returns the largest integer, n, for which time1 &gt;= time2 * n. </dd>
 <dt>
-<a href="#time_real_divide">time_real_divide</a>:</dt>
+<a href="#time_real_divide; operator(//)">time_real_divide; operator(//)</a>:</dt>
 <dd>   Returns the double precision quotient of two times. </dd>
 <dt>
 <a href="#time_type_to_real">time_type_to_real</a>:</dt>
@@ -142,7 +180,7 @@
 <a href="#real_to_time_type">real_to_time_type</a>:</dt>
 <dd>   Converts a real number of seconds to a time_type variable </dd>
 <dt>
-<a href="#time_scalar_divide">time_scalar_divide</a>:</dt>
+<a href="#time_scalar_divide; operator(/)">time_scalar_divide; operator(/)</a>:</dt>
 <dd>   Returns the largest time, t, for which n * t &lt;= time. </dd>
 <dt>
 <a href="#interval_alarm">interval_alarm</a>:</dt>
@@ -159,6 +197,12 @@
 <a href="#get_calendar_type">get_calendar_type</a>:</dt>
 <dd>   Returns the value of the default calendar type for mapping
    from time to date. </dd>
+<dt>
+<a href="#set_ticks_per_second">set_ticks_per_second</a>:</dt>
+<dd>   Sets the number of ticks per second. </dd>
+<dt>
+<a href="#get_ticks_per_second">get_ticks_per_second</a>:</dt>
+<dd>   Returns the number of ticks per second. </dd>
 <dt>
 <a href="#get_date">get_date</a>:</dt>
 <dd>   Given a time_interval, returns the corresponding date under
@@ -182,9 +226,8 @@
    month corresponding to the default calendar. </dd>
 <dt>
 <a href="#leap_year">leap_year</a>:</dt>
-<dd>   Returns true if the year corresponding to the date for the
-   default calendar is a leap year. Returns false for
-   THIRTY_DAY_MONTHS and NOLEAP. </dd>
+<dd>   Returns true if the year corresponding to the input time is
+   a leap year. Always returns false for THIRTY_DAY_MONTHS and NOLEAP. </dd>
 <dt>
 <a href="#length_of_year">length_of_year</a>:</dt>
 <dd>   Returns the mean length of the year in the default calendar setting. </dd>
@@ -198,16 +241,17 @@
    month corresponding to month number n. </dd>
 <dt>
 <a href="#time_manager_init">time_manager_init</a>:</dt>
-<dd>   Write the version information to the log file. </dd>
+<dd>   Writes the version information to the log file </dd>
 <dt>
 <a href="#print_time">print_time</a>:</dt>
-<dd>   Prints the given time_type argument as a time (using days and seconds). </dd>
+<dd>   Prints the given time_type argument as a time (using days, seconds and ticks) </dd>
 <dt>
 <a href="#print_date">print_date</a>:</dt>
 <dd>   prints the time to standard output (or optional unit) as a date. </dd>
 <dt>
 <a href="#valid_calendar_types">valid_calendar_types</a>:</dt>
-<dd></dd>
+<dd>   Returns a character string that describes the
+   calendar type corresponding to the input integer. </dd>
 </dl>
 </div>
 <br>
@@ -223,7 +267,7 @@
 </tr>
 <tr>
 <td> time_type  </td><td> derived type  </td><td> ---  </td><td> ---  </td><td>    Derived-type data variable used to store time and date quantities. It
-   contains two PRIVATE variables: seconds and days.   </td>
+   contains three PRIVATE variables: days, seconds and ticks.   </td>
 </tr>
 </table>
 <br>
@@ -237,14 +281,19 @@
 <li>
 <a name="set_time"></a>
 <h4>set_time</h4>
-<pre> 
-<b>set_time</b> (seconds, days)</pre>
+<pre>1. <b>set_time</b> (seconds, days, ticks, err_msg)</pre>
+<pre>2. <b>set_time</b> (time_string, err_msg, allow_rounding)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
 </dt>
 <dd>   Given some number of seconds and days, returns the
-   corresponding time_type. </dd>
+   corresponding time_type. set_time has two forms;
+   one accepts integer input, the other a character string.
+   For the first form, there are no restrictions on the range of the inputs,
+   except that the result must be positive time.
+   e.g. days=-1, seconds=86401 is acceptable.
+   For the second form, days and seconds must both be positive. </dd>
 <br>
 <br>
 <dt>
@@ -253,10 +302,23 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>seconds&nbsp;&nbsp;&nbsp;</tt></td><td>   A number of seconds (can be greater than 86400),  must be positive. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(scalar)]</span></td>
+<td valign="top" align="left"><tt>seconds&nbsp;&nbsp;&nbsp;</tt></td><td>   A number of seconds. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(scalar)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>days&nbsp;&nbsp;&nbsp;</tt></td><td>   A number of days, must be positive. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(scalar)]</span></td>
+<td valign="top" align="left"><tt>days&nbsp;&nbsp;&nbsp;</tt></td><td>   A number of days. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(scalar)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>ticks&nbsp;&nbsp;&nbsp;</tt></td><td>   A number of ticks. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional, dimension(scalar)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>time_string&nbsp;&nbsp;&nbsp;</tt></td><td>   Contains days and seconds separated by a single blank.
+   days must be integer, seconds may be integer or real.
+   Examples: '100 43200'  '100 43200.50' <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>allow_rounding&nbsp;&nbsp;&nbsp;</tt></td><td>   When .true., any fractions of a second will be rounded off to the nearest tick.
+   When .false., it is a fatal error if the second fraction cannot be exactly
+   represented by a number of ticks. <br>&nbsp;&nbsp;&nbsp;<span class="type">[logical, optional]</span></td>
 </tr>
 </table>
 </dd>
@@ -267,7 +329,15 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>   A time interval corresponding to this number of days and seconds. <br>&nbsp;&nbsp;&nbsp;<span class="type">[, dimension]</span></td>
+<td valign="top" align="left"><tt>err_msg&nbsp;&nbsp;&nbsp;</tt></td><td>   When present, and when non-blank, a fatal error condition as been detected.
+   The string itself is an error message.
+   It is recommended that, when err_msg is present in the call
+   to this routine, the next line of code should be something
+   similar to this:
+   if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL) <br>&nbsp;&nbsp;&nbsp;<span class="type">[character, optional, dimension(scalar)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>set_time&nbsp;&nbsp;&nbsp;</tt></td><td>   A time interval corresponding to this number of days and seconds. <br>&nbsp;&nbsp;&nbsp;<span class="type">[, dimension]</span></td>
 </tr>
 </table>
 </dd>
@@ -278,7 +348,7 @@
 <a name="get_time"></a>
 <h4>get_time</h4>
 <pre> 
-<b>get_time</b> (time, seconds, days)</pre>
+<b>get_time</b> (time, seconds, days, ticks, err_msg)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -303,10 +373,21 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>seconds&nbsp;&nbsp;&nbsp;</tt></td><td>   A number of seconds (&lt; 86400). <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(scalar)]</span></td>
+<td valign="top" align="left"><tt>seconds&nbsp;&nbsp;&nbsp;</tt></td><td>   A number of seconds. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(scalar)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>days&nbsp;&nbsp;&nbsp;</tt></td><td>   A number of days, must be positive. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(scalar)]</span></td>
+<td valign="top" align="left"><tt>days&nbsp;&nbsp;&nbsp;</tt></td><td>   A number of days. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(scalar)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>ticks&nbsp;&nbsp;&nbsp;</tt></td><td>   A number of ticks. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional, dimension(scalar)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>err_msg&nbsp;&nbsp;&nbsp;</tt></td><td>   When present, and when non-blank, a fatal error condition as been detected.
+   The string itself is an error message.
+   It is recommended that, when err_msg is present in the call
+   to this routine, the next line of code should be something
+   similar to this:
+   if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL) <br>&nbsp;&nbsp;&nbsp;<span class="type">[character, optional, dimension(scalar)]</span></td>
 </tr>
 </table>
 </dd>
@@ -317,14 +398,14 @@
 <a name="increment_time"></a>
 <h4>increment_time</h4>
 <pre> 
-<b>increment_time</b> (time, seconds, days)</pre>
+<b>increment_time</b> (time, seconds, days, ticks, err_msg, allow_neg_inc)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
 </dt>
 <dd>   Given a time and an increment of days and seconds, returns
    a time that adds this increment to an input time.
-   Increments a time by seconds and days; increments cannot be negative. </dd>
+   Increments a time by seconds and days. </dd>
 <br>
 <br>
 <dt>
@@ -333,13 +414,20 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>time&nbsp;&nbsp;&nbsp;</tt></td><td>   A time interval. <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type, dimension]</span></td>
+<td valign="top" align="left"><tt>time&nbsp;&nbsp;&nbsp;</tt></td><td>   A time interval. <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type, dimension(scalar)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>seconds&nbsp;&nbsp;&nbsp;</tt></td><td>   Increment of seconds (can be greater than 86400);  must be positive. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(scalar)]</span></td>
+<td valign="top" align="left"><tt>seconds&nbsp;&nbsp;&nbsp;</tt></td><td>   Increment of seconds. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(scalar)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>days&nbsp;&nbsp;&nbsp;</tt></td><td>   Increment of days;  must be positive. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(scalar)]</span></td>
+<td valign="top" align="left"><tt>days&nbsp;&nbsp;&nbsp;</tt></td><td>   Increment of days. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional, dimension(scalar)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>ticks&nbsp;&nbsp;&nbsp;</tt></td><td>   Increment of ticks. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional, dimension(scalar)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>allow_neg_inc&nbsp;&nbsp;&nbsp;</tt></td><td>   When .false., it is a fatal error if any of the input time increments are negative.
+   This mimics the behavior of lima and earlier revisions. <br>&nbsp;&nbsp;&nbsp;<span class="type">[logical, optional, dimension(scalar)]</span></td>
 </tr>
 </table>
 </dd>
@@ -350,7 +438,16 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>   A time that adds this increment to the input time. <br>&nbsp;&nbsp;&nbsp;<span class="type">[, dimension]</span></td>
+<td valign="top" align="left"><tt>increment_time&nbsp;&nbsp;&nbsp;</tt></td><td>   A time that adds this increment to the input time.
+   A negative result is a fatal error. <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type, dimension(scalar)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>err_msg&nbsp;&nbsp;&nbsp;</tt></td><td>   When present, and when non-blank, a fatal error condition as been detected.
+   The string itself is an error message.
+   It is recommended that, when err_msg is present in the call
+   to this routine, the next line of code should be something
+   similar to this:
+   if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL) <br>&nbsp;&nbsp;&nbsp;<span class="type">[character, optional, dimension(scalar)]</span></td>
 </tr>
 </table>
 </dd>
@@ -361,12 +458,12 @@
 <a name="decrement_time"></a>
 <h4>decrement_time</h4>
 <pre> 
-<b>decrement_time</b> (time, seconds, days)</pre>
+<b>decrement_time</b> (time, seconds, days, ticks, err_msg, allow_neg_inc)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   Decrements a time by seconds and days; decrements cannot be negative. </dd>
+<dd>   Decrements a time by seconds and days. </dd>
 <br>
 <br>
 <dt>
@@ -375,13 +472,20 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>time&nbsp;&nbsp;&nbsp;</tt></td><td>   A time interval. <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type, dimension]</span></td>
+<td valign="top" align="left"><tt>time&nbsp;&nbsp;&nbsp;</tt></td><td>   A time interval. <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type, dimension(scalar)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>seconds&nbsp;&nbsp;&nbsp;</tt></td><td>   Decrement of seconds (can be greater than 86400);  must be positive. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(scalar)]</span></td>
+<td valign="top" align="left"><tt>seconds&nbsp;&nbsp;&nbsp;</tt></td><td>   Decrement of seconds. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(scalar)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>days&nbsp;&nbsp;&nbsp;</tt></td><td>   Decrement of days;  must be positive. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(scalar)]</span></td>
+<td valign="top" align="left"><tt>days&nbsp;&nbsp;&nbsp;</tt></td><td>   Decrement of days. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional, dimension(scalar)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>ticks&nbsp;&nbsp;&nbsp;</tt></td><td>   Decrement of ticks. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional, dimension(scalar)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>allow_neg_inc&nbsp;&nbsp;&nbsp;</tt></td><td>   When .false., it is a fatal error if any of the input time increments are negative.
+   This mimics the behavior of lima and earlier revisions. <br>&nbsp;&nbsp;&nbsp;<span class="type">[logical, optional, dimension(scalar)]</span></td>
 </tr>
 </table>
 </dd>
@@ -392,8 +496,16 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>   A time that subtracts this decrement from an input time. If
-   the result is negative, it is considered a fatal error. <br>&nbsp;&nbsp;&nbsp;<span class="type">[, dimension]</span></td>
+<td valign="top" align="left"><tt>decrement_time&nbsp;&nbsp;&nbsp;</tt></td><td>   A time that subtracts this decrement from an input time.
+   A negative result is a fatal error. <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>err_msg&nbsp;&nbsp;&nbsp;</tt></td><td>   When present, and when non-blank, a fatal error condition as been detected.
+   The string itself is an error message.
+   It is recommended that, when err_msg is present in the call
+   to this routine, the next line of code should be something
+   similar to this:
+   if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL) <br>&nbsp;&nbsp;&nbsp;<span class="type">[character, optional, dimension(scalar)]</span></td>
 </tr>
 </table>
 </dd>
@@ -401,10 +513,11 @@
 </dl>
 </li>
 <li>
-<a name="time_gt"></a>
-<h4>time_gt</h4>
+<a name="time_gt  operator(>)"></a>
+<h4>time_gt  operator(&gt;)</h4>
 <pre> 
-<b>time_gt</b> (time1, time2)</pre>
+<b>time_gt  operator(&gt;)</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -440,10 +553,11 @@
 </dl>
 </li>
 <li>
-<a name="time_ge"></a>
-<h4>time_ge</h4>
+<a name="time_ge; operator(>=)"></a>
+<h4>time_ge; operator(&gt;=)</h4>
 <pre> 
-<b>time_ge</b> (time1, time2)</pre>
+<b>time_ge; operator(&gt;=)</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -479,10 +593,11 @@
 </dl>
 </li>
 <li>
-<a name="time_lt"></a>
-<h4>time_lt</h4>
+<a name="time_lt; operator(<)"></a>
+<h4>time_lt; operator(&lt;)</h4>
 <pre> 
-<b>time_lt</b> (time1, time2)</pre>
+<b>time_lt; operator(&lt;)</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -518,10 +633,11 @@
 </dl>
 </li>
 <li>
-<a name="time_le"></a>
-<h4>time_le</h4>
+<a name="time_le; operator(<=)"></a>
+<h4>time_le; operator(&lt;=)</h4>
 <pre> 
-<b>time_le</b> (time1, time2)</pre>
+<b>time_le; operator(&lt;=)</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -557,10 +673,11 @@
 </dl>
 </li>
 <li>
-<a name="time_eq"></a>
-<h4>time_eq</h4>
+<a name="time_eq; operator(==)"></a>
+<h4>time_eq; operator(==)</h4>
 <pre> 
-<b>time_eq</b> (time1, time2)</pre>
+<b>time_eq; operator(==)</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -596,10 +713,11 @@
 </dl>
 </li>
 <li>
-<a name="time_ne"></a>
-<h4>time_ne</h4>
+<a name="time_ne; operator(/=)"></a>
+<h4>time_ne; operator(/=)</h4>
 <pre> 
-<b>time_ne</b> (time1, time2)</pre>
+<b>time_ne; operator(/=)</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -635,10 +753,11 @@
 </dl>
 </li>
 <li>
-<a name="time_plus"></a>
-<h4>time_plus</h4>
+<a name="time_plus; operator(+)"></a>
+<h4>time_plus; operator(+)</h4>
 <pre> 
-<b>time_plus</b> (time1, time2)</pre>
+<b>time_plus; operator(+)</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -674,10 +793,14 @@
 </dl>
 </li>
 <li>
-<a name="time_minus"></a>
-<h4>time_minus</h4>
+<a name="time_minus; operator(-)"></a>
+<h4>time_minus; operator(-)</h4>
 <pre> 
-<b>time_minus</b> (time1, time2)</pre>
+<b>time_minus; operator(-)</b> 
+</pre>
+<pre> 
+<b>time_minus; operator(-)</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -714,10 +837,11 @@
 </dl>
 </li>
 <li>
-<a name="time_scalar_mult"></a>
-<h4>time_scalar_mult</h4>
+<a name="time_scalar_mult; operator(*)"></a>
+<h4>time_scalar_mult; operator(*)</h4>
 <pre> 
-<b>time_scalar_mult</b> (time, n)</pre>
+<b>time_scalar_mult; operator(*)</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -753,10 +877,11 @@
 </dl>
 </li>
 <li>
-<a name="scalar_time_mult"></a>
-<h4>scalar_time_mult</h4>
+<a name="scalar_time_mult; operator(*)"></a>
+<h4>scalar_time_mult; operator(*)</h4>
 <pre> 
-<b>scalar_time_mult</b> (n, time)</pre>
+<b>scalar_time_mult; operator(*)</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -792,10 +917,11 @@
 </dl>
 </li>
 <li>
-<a name="time_divide"></a>
-<h4>time_divide</h4>
+<a name="time_divide; operator(/)"></a>
+<h4>time_divide; operator(/)</h4>
 <pre> 
-<b>time_divide</b> (time1, time2)</pre>
+<b>time_divide; operator(/)</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -831,10 +957,11 @@
 </dl>
 </li>
 <li>
-<a name="time_real_divide"></a>
-<h4>time_real_divide</h4>
+<a name="time_real_divide; operator(//)"></a>
+<h4>time_real_divide; operator(//)</h4>
 <pre> 
-<b>time_real_divide</b> (time1, time2)</pre>
+<b>time_real_divide; operator(//)</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -898,7 +1025,7 @@
 <a name="real_to_time_type"></a>
 <h4>real_to_time_type</h4>
 <pre> 
-<b>real_to_time_type</b> (x)</pre>
+<b>real_to_time_type</b> (x, err_msg)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -917,13 +1044,34 @@
 </table>
 </dd>
 <br>
+<dt>
+<b>OUTPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>err_msg&nbsp;&nbsp;&nbsp;</tt></td><td>   When present, and when non-blank, a fatal error condition as been detected.
+   The string itself is an error message.
+   It is recommended that, when err_msg is present in the call
+   to this routine, the next line of code should be something
+   similar to this:
+   if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL) <br>&nbsp;&nbsp;&nbsp;<span class="type">[character, optional, dimension(scalar)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>real_to_time_type&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
+</tr>
+</table>
+</dd>
+<br>
 </dl>
 </li>
 <li>
-<a name="time_scalar_divide"></a>
-<h4>time_scalar_divide</h4>
+<a name="time_scalar_divide; operator(/)"></a>
+<h4>time_scalar_divide; operator(/)</h4>
 <pre> 
-<b>time_scalar_divide</b> (time, n)</pre>
+<b>time_scalar_divide; operator(/)</b> 
+</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -1076,7 +1224,7 @@
 <a name="set_calendar_type"></a>
 <h4>set_calendar_type</h4>
 <pre> 
-<b>set_calendar_type</b> (type)</pre>
+<b>set_calendar_type</b> (type, err_msg)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -1090,7 +1238,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>type&nbsp;&nbsp;&nbsp;</tt></td><td>   A constant number for setting the calendar type. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension]</span></td>
+<td valign="top" align="left"><tt>type&nbsp;&nbsp;&nbsp;</tt></td><td>   A constant number for setting the calendar type. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(scalar)]</span></td>
 </tr>
 </table>
 </dd>
@@ -1101,23 +1249,15 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>calendar_type&nbsp;&nbsp;&nbsp;</tt></td><td>   A constant number for default calendar type. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>err_msg&nbsp;&nbsp;&nbsp;</tt></td><td>   When present, and when non-blank, a fatal error condition as been detected.
+   The string itself is an error message.
+   It is recommended that, when err_msg is present in the call
+   to this routine, the next line of code should be something
+   similar to this:
+   if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL) <br>&nbsp;&nbsp;&nbsp;<span class="type">[character, optional, dimension(scalar)]</span></td>
 </tr>
 </table>
 </dd>
-<br>
-<dt>
-<b>NOTE</b>
-</dt>
-<dd>   At present, four integer constants are defined for setting
-   the calendar type: THIRTY_DAY_MONTHS, JULIAN, NOLEAP, and
-   GREGORIAN. However, the GREGORIAN calendar is not completely
-   implemented. Selection of this type will result in illegal
-   type error.  The udunits library only supports
-   the JULIAN/GREGORIAN calendar types.  For more details on the
-   calendar used by udunits, see the "HANDLING TIME" section of the
-   fortran man page linked from the udunits home page, <a href="http://www.unidata.ucar.edu/packages/udunits">http://www.unidata.ucar.edu/packages/udunits</a>. </dd>
-<br>
 <br>
 </dl>
 </li>
@@ -1137,10 +1277,49 @@
 </dl>
 </li>
 <li>
+<a name="set_ticks_per_second"></a>
+<h4>set_ticks_per_second</h4>
+<pre>
+<b>call set_ticks_per_second </b>(ticks_per_second)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Sets the number of ticks per second. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>type&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(scalar)]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="get_ticks_per_second"></a>
+<h4>get_ticks_per_second</h4>
+<pre>ticks_per_second = <b>get_ticks_per_second</b> ()</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Returns the number of ticks per second. </dd>
+<br>
+<br>
+</dl>
+</li>
+<li>
 <a name="get_date"></a>
 <h4>get_date</h4>
 <pre> 
-<b>get_date</b> (time, year, month, day, hour, minute, second)</pre>
+<b>get_date</b> (time, year, month, day, hour, minute, second, tick, err_msg)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -1166,7 +1345,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>day&nbsp;&nbsp;&nbsp;</tt></td><td>
+<td valign="top" align="left"><tt>year&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
@@ -1174,11 +1353,11 @@
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>year&nbsp;&nbsp;&nbsp;</tt></td><td>
+<td valign="top" align="left"><tt>day&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>second&nbsp;&nbsp;&nbsp;</tt></td><td>
+<td valign="top" align="left"><tt>hour&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
@@ -1186,28 +1365,31 @@
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>hour&nbsp;&nbsp;&nbsp;</tt></td><td>
+<td valign="top" align="left"><tt>second&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>tick&nbsp;&nbsp;&nbsp;</tt></td><td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>err_msg&nbsp;&nbsp;&nbsp;</tt></td><td>   When present, and when non-blank, a fatal error condition as been detected.
+   The string itself is an error message.
+   It is recommended that, when err_msg is present in the call
+   to this routine, the next line of code should be something
+   similar to this:
+   if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL) <br>&nbsp;&nbsp;&nbsp;<span class="type">[character, optional, dimension(scalar)]</span></td>
 </tr>
 </table>
 </dd>
-<br>
-<dt>
-<b>NOTE</b>
-</dt>
-<dd>   For all but the thirty_day_months calendar, increments to months
-   and years must be made separately from other units because of the
-   non-associative nature of the addition. All the input increments
-   must be positive. </dd>
-<br>
 <br>
 </dl>
 </li>
 <li>
 <a name="set_date"></a>
 <h4>set_date</h4>
-<pre> 
-<b>set_date</b> (year, month, day, hours, minutes, seconds)</pre>
+<pre>1. <b>set_date</b> (year, month, day, hours, minute, second, tick, err_msg)</pre>
+<pre>2. <b>set_date</b> _c(time_string, zero_year_warning, err_msg, allow_rounding) time_string is a character string containing a date formatted according to CF conventions. e.g. '1980-12-31 23:59:59.9'</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -1227,7 +1409,7 @@
 <td valign="top" align="left"><tt>time&nbsp;&nbsp;&nbsp;</tt></td><td>   A time interval.<br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>day&nbsp;&nbsp;&nbsp;</tt></td><td>
+<td valign="top" align="left"><tt>year&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
@@ -1235,11 +1417,11 @@
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>year&nbsp;&nbsp;&nbsp;</tt></td><td>
+<td valign="top" align="left"><tt>day&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>second&nbsp;&nbsp;&nbsp;</tt></td><td>
+<td valign="top" align="left"><tt>hour&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
@@ -1247,8 +1429,22 @@
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>hour&nbsp;&nbsp;&nbsp;</tt></td><td>
+<td valign="top" align="left"><tt>second&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>tick&nbsp;&nbsp;&nbsp;</tt></td><td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>zero_year_warning&nbsp;&nbsp;&nbsp;</tt></td><td>   If the year number is zero, it will be silently changed to one,
+   unless zero_year_warning=.true., in which case a WARNING message
+   will also be issued. <br>&nbsp;&nbsp;&nbsp;<span class="type">[logical]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>allow_rounding&nbsp;&nbsp;&nbsp;</tt></td><td>   When .true., any fractions of a second will be rounded off to the nearest tick.
+   When .false., it is a fatal error if the second fraction cannot be exactly
+   represented by a number of ticks. <br>&nbsp;&nbsp;&nbsp;<span class="type">[logical, optional]</span></td>
 </tr>
 </table>
 </dd>
@@ -1258,6 +1454,14 @@
 </dt>
 <dd>
 <table border="0">
+<tr>
+<td valign="top" align="left"><tt>err_msg&nbsp;&nbsp;&nbsp;</tt></td><td>   When present, and when non-blank, a fatal error condition as been detected.
+   The string itself is an error message.
+   It is recommended that, when err_msg is present in the call
+   to this routine, the next line of code should be something
+   similar to this:
+   if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL) <br>&nbsp;&nbsp;&nbsp;<span class="type">[character, optional, dimension(scalar)]</span></td>
+</tr>
 <tr>
 <td valign="top" align="left"><tt>set_date&nbsp;&nbsp;&nbsp;</tt></td><td>   A time interval.<br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
 </tr>
@@ -1270,7 +1474,7 @@
 <a name="increment_date"></a>
 <h4>increment_date</h4>
 <pre> 
-<b>increment_date</b> (time, years, months, days, hours, minutes, seconds)</pre>
+<b>increment_date</b> (time, years, months, days, hours, minutes, seconds, ticks, err_msg)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -1291,22 +1495,29 @@
 <td valign="top" align="left"><tt>time&nbsp;&nbsp;&nbsp;</tt></td><td>   A time interval.<br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>day&nbsp;&nbsp;&nbsp;</tt></td><td>An increment of days.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>years&nbsp;&nbsp;&nbsp;</tt></td><td>An increment of years.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>month&nbsp;&nbsp;&nbsp;</tt></td><td>An increment of months.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>months&nbsp;&nbsp;&nbsp;</tt></td><td>An increment of months.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>year&nbsp;&nbsp;&nbsp;</tt></td><td>An increment of years.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>days&nbsp;&nbsp;&nbsp;</tt></td><td>An increment of days.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>second&nbsp;&nbsp;&nbsp;</tt></td><td>An increment of seconds.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>hours&nbsp;&nbsp;&nbsp;</tt></td><td>An increment of hours.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>minute&nbsp;&nbsp;&nbsp;</tt></td><td>An increment of minutes.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>minutes&nbsp;&nbsp;&nbsp;</tt></td><td>An increment of minutes.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>hour&nbsp;&nbsp;&nbsp;</tt></td><td>An increment of hours.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>seconds&nbsp;&nbsp;&nbsp;</tt></td><td>An increment of seconds.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>ticks&nbsp;&nbsp;&nbsp;</tt></td><td>An increment of ticks.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>allow_neg_inc&nbsp;&nbsp;&nbsp;</tt></td><td>   When .false., it is a fatal error if any of the input time increments are negative.
+   This mimics the behavior of lima and earlier revisions. <br>&nbsp;&nbsp;&nbsp;<span class="type">[logical, optional, dimension(scalar)]</span></td>
 </tr>
 </table>
 </dd>
@@ -1317,11 +1528,29 @@
 <dd>
 <table border="0">
 <tr>
+<td valign="top" align="left"><tt>err_msg&nbsp;&nbsp;&nbsp;</tt></td><td>   When present, and when non-blank, a fatal error condition as been detected.
+   The string itself is an error message.
+   It is recommended that, when err_msg is present in the call
+   to this routine, the next line of code should be something
+   similar to this:
+   if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL) <br>&nbsp;&nbsp;&nbsp;<span class="type">[character, optional, dimension(scalar)]</span></td>
+</tr>
+<tr>
 <td valign="top" align="left"><tt>increment_date&nbsp;&nbsp;&nbsp;</tt></td><td>   A new time based on the input 
-   time interval and the default calendar type. <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
+   time interval and the calendar type. <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
 </tr>
 </table>
 </dd>
+<br>
+<dt>
+<b>NOTE</b>
+</dt>
+<dd>   For all but the thirty_day_months calendar, increments to months
+   and years must be made separately from other units because of the
+   non-associative nature of addition.
+   If the result is a negative time (i.e. date before the base date)
+   it is considered a fatal error. </dd>
+<br>
 <br>
 </dl>
 </li>
@@ -1329,7 +1558,7 @@
 <a name="decrement_date"></a>
 <h4>decrement_date</h4>
 <pre> 
-<b>decrement_date</b> (time, years, months, days, hours, minutes, seconds)</pre>
+<b>decrement_date</b> (time, years, months, days, hours, minutes, seconds, ticks, err_msg))</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -1350,22 +1579,29 @@
 <td valign="top" align="left"><tt>time&nbsp;&nbsp;&nbsp;</tt></td><td>   A time interval.<br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>day&nbsp;&nbsp;&nbsp;</tt></td><td>A decrement of days.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>years&nbsp;&nbsp;&nbsp;</tt></td><td>An decrement of years.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>month&nbsp;&nbsp;&nbsp;</tt></td><td>A deincrement of months.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>months&nbsp;&nbsp;&nbsp;</tt></td><td>An decrement of months.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>year&nbsp;&nbsp;&nbsp;</tt></td><td>A deincrement of years.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>days&nbsp;&nbsp;&nbsp;</tt></td><td>An decrement of days.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>second&nbsp;&nbsp;&nbsp;</tt></td><td>A deincrement of seconds.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>hours&nbsp;&nbsp;&nbsp;</tt></td><td>An decrement of hours.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>minute&nbsp;&nbsp;&nbsp;</tt></td><td>A deincrement of minutes.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>minutes&nbsp;&nbsp;&nbsp;</tt></td><td>An decrement of minutes.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>hour&nbsp;&nbsp;&nbsp;</tt></td><td>A deincrement of hours.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>seconds&nbsp;&nbsp;&nbsp;</tt></td><td>An decrement of seconds.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>ticks&nbsp;&nbsp;&nbsp;</tt></td><td>An decrement of ticks.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>allow_neg_inc&nbsp;&nbsp;&nbsp;</tt></td><td>   When .false., it is a fatal error if any of the input time increments are negative.
+   This mimics the behavior of lima and earlier revisions. <br>&nbsp;&nbsp;&nbsp;<span class="type">[logical, optional, dimension(scalar)]</span></td>
 </tr>
 </table>
 </dd>
@@ -1376,8 +1612,16 @@
 <dd>
 <table border="0">
 <tr>
+<td valign="top" align="left"><tt>err_msg&nbsp;&nbsp;&nbsp;</tt></td><td>   When present, and when non-blank, a fatal error condition as been detected.
+   The string itself is an error message.
+   It is recommended that, when err_msg is present in the call
+   to this routine, the next line of code should be something
+   similar to this:
+   if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL) <br>&nbsp;&nbsp;&nbsp;<span class="type">[character, optional, dimension(scalar)]</span></td>
+</tr>
+<tr>
 <td valign="top" align="left"><tt>decrement_date&nbsp;&nbsp;&nbsp;</tt></td><td>   A new time based on the input 
-   time interval and the default calendar type. <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
+   time interval and the calendar type. <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
 </tr>
 </table>
 </dd>
@@ -1387,9 +1631,9 @@
 </dt>
 <dd>   For all but the thirty_day_months calendar, decrements to months
    and years must be made separately from other units because of the
-   non-associative nature of addition. All the input decrements must
-   be positive. If the result is a negative time (i.e. date before the
-   base date) it is considered a fatal error. </dd>
+   non-associative nature of addition.
+   If the result is a negative time (i.e. date before the base date)
+   it is considered a fatal error. </dd>
 <br>
 <br>
 </dl>
@@ -1441,9 +1685,8 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   Is this date in a leap year for default calendar? Returns true if the 
-   year corresponding to the date for the default calendar is a leap year. 
-   Returns false for THIRTY_DAY_MONTHS and NOLEAP. </dd>
+<dd>   Returns true if the year corresponding to the input time is
+   a leap year. Always returns false for THIRTY_DAY_MONTHS and NOLEAP. </dd>
 <br>
 <br>
 <dt>
@@ -1463,9 +1706,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>leap_year&nbsp;&nbsp;&nbsp;</tt></td><td>   True if the year corresponding to the date for the default
-   calendar is a leap year. False for THIRTY_DAY_MONTHS and
-   NOLEAP and otherwise. <br>&nbsp;&nbsp;&nbsp;<span class="type">[calendar_type, dimension]</span></td>
+<td valign="top" align="left"><tt>leap_year&nbsp;&nbsp;&nbsp;</tt></td><td>   true if the year corresponding to the input time is a leap year. <br>&nbsp;&nbsp;&nbsp;<span class="type">[calendar_type, dimension]</span></td>
 </tr>
 </table>
 </dd>
@@ -1491,7 +1732,7 @@
 <a name="days_in_year"></a>
 <h4>days_in_year</h4>
 <pre> 
-<b>days_in_year</b> ()</pre>
+<b>days_in_year</b> (Time)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -1506,7 +1747,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>time&nbsp;&nbsp;&nbsp;</tt></td><td>A time interval.<br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
+<td valign="top" align="left"><tt>Time&nbsp;&nbsp;&nbsp;</tt></td><td>A time interval.<br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
 </tr>
 </table>
 </dd>
@@ -1555,8 +1796,9 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>month_name&nbsp;&nbsp;&nbsp;</tt></td><td>   The character string associated with a month. For now all
-   calendars have 12 months and will return standard names. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
+<td valign="top" align="left"><tt>month_name&nbsp;&nbsp;&nbsp;</tt></td><td>   The character string associated with a month.
+   All calendars have 12 months and return full
+   month names, not abreviations. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=9)]</span></td>
 </tr>
 </table>
 </dd>
@@ -1572,8 +1814,8 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   Initialization routine. This routine does not have to be called, all 
-   it does is write the version information to the log file. </dd>
+<dd>   Initialization routine.
+   Writes the version information to the log file </dd>
 <br>
 <br>
 </dl>
@@ -1587,8 +1829,8 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   Prints the given time_type argument either as a time (using days and
-   seconds). NOTE: there is no check for PE number. </dd>
+<dd>   Prints the given time_type argument as a time (using days, seconds and ticks)
+   NOTE: there is no check for PE number. </dd>
 <br>
 <br>
 <dt>
@@ -1619,8 +1861,8 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   Prints the given time_type argument as a date (using year,month,day,
-   hour,minutes and seconds). NOTE: there is no check for PE number. </dd>
+<dd>   Prints the given time_type argument as a date (using year, month, day,
+   hour, minutes, seconds and ticks). NOTE: there is no check for PE number. </dd>
 <br>
 <br>
 <dt>
@@ -1669,6 +1911,14 @@
 </dt>
 <dd>
 <table border="0">
+<tr>
+<td valign="top" align="left"><tt>err_msg&nbsp;&nbsp;&nbsp;</tt></td><td>   When present, and when non-blank, a fatal error condition as been detected.
+   The string itself is an error message.
+   It is recommended that, when err_msg is present in the call
+   to this routine, the next line of code should be something
+   similar to this:
+   if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL) <br>&nbsp;&nbsp;&nbsp;<span class="type">[character, optional, dimension(scalar)]</span></td>
+</tr>
 <tr>
 <td valign="top" align="left"><tt>valid_calendar_types&nbsp;&nbsp;&nbsp;</tt></td><td>   A character string describing the calendar type. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=24)]</span></td>
 </tr>
@@ -1848,14 +2098,9 @@ Set calendar type
 <hr>
 <h4>NOTES</h4>
 <!-- BEGIN NOTES -->
-<div>   The Gregorian calendar type is not completely implemented, and currently
-   no effort is put on it since it doesn't differ from Julian in use between
-   1901 and 2099. <br>
-<br>   The &lt;a name="base date"&gt;base date&lt;/a&gt; is implicitly defined so users don't 
+<div>   The &lt;a name="base date"&gt;base date&lt;/a&gt; is implicitly defined so users don't 
    need to be concerned with it. For the curious, the base date is defined as 
-   0 seconds, 0 minutes, 0 hours, day 1, month 1, year 1 for the Julian and 
-   thirty_day_months calendars, and 1 January, 1900, 0 seconds, 0 minutes, 
-   0 hour for the Gregorian calendar. <br>
+   0 seconds, 0 minutes, 0 hours, day 1, month 1, year 1 <br>
 <br>   Please note that a time is a positive definite quantity. <br>
 <br>   See the <a href="TEST PROGRAM">Test Program </a>   for a simple program 
    that shows some of the capabilities of the time manager. </div>

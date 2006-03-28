@@ -35,14 +35,20 @@
     integer, save :: l_locus(3)
     MPP_TYPE_, save :: g_val  ! need storage class w/ global address; not sure whether fn result has required class
     integer, save   :: here   ! need storage class w/ global address
-    integer :: ioff, joff
+    integer :: ioff, joff, ishift, jshift, isc, iec, jsc, jec
 
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_REDUCE: You must first call mpp_domains_init.' )
-    if( size(field,1).EQ.domain%x%compute%size .AND. size(field,2).EQ.domain%y%compute%size )then
+    !--- when domain is symmetry, there may be an extra point on x/y direction
+    call mpp_get_global_shift(domain, size(field,1), size(field,2), ishift, jshift )
+
+    isc = domain%x%compute%begin; iec = domain%x%compute%end
+    jsc = domain%y%compute%begin; jec = domain%y%compute%end
+
+    if( size(field,1).EQ.domain%x%compute%size+ishift .AND. size(field,2).EQ.domain%y%compute%size+jshift )then
 !field is on compute domain
-        ioff = domain%x%compute%begin
-        joff = domain%y%compute%begin
-    else if( size(field,1).EQ.domain%x%data%size .AND. size(field,2).EQ.domain%y%data%size )then
+        ioff = isc
+        joff = jsc
+    else if( size(field,1).EQ.domain%x%data%size+ishift .AND. size(field,2).EQ.domain%y%data%size+jshift )then
 !field is on data domain
         ioff = domain%x%data%begin
         joff = domain%y%data%begin
@@ -51,7 +57,7 @@
     end if
 
 !get your local max/min
-    local = REDUCE_VAL_(field)
+    local = REDUCE_VAL_(field(isc-ioff: iec-ioff+ishift, jsc-joff: jec-joff+jshift,:))
 !find the global
     g_val = local
     call MPP_REDUCE_( g_val, domain%list(:)%pe )
@@ -62,7 +68,7 @@
         if( g_val == local )here = pe
         call mpp_min( here, domain%list(:)%pe )
 !find the locus here
-        if( pe.EQ.here )l_locus = REDUCE_LOC_(field)
+        if( pe.EQ.here )l_locus = REDUCE_LOC_(field(isc-ioff: iec-ioff+ishift, jsc-joff: jec-joff+jshift,:))
         l_locus(1) = l_locus(1) + ioff
         l_locus(2) = l_locus(2) + joff
         call mpp_broadcast( l_locus, 3, here, domain%list(:)%pe )

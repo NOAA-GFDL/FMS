@@ -9,16 +9,14 @@
                              d_comm%domain_out%y%data%begin:d_comm%domain_out%y%data%end,d_comm%ke)
       pointer( ptr_field_out, field_out)
       type(domain2D), pointer :: domain_in, domain_out
-      integer :: i, j, k, l, m, n, l_size
-      integer :: is, ie, js, je, istat
+      integer :: i, j, k, l, n, l_size
+      integer :: is, ie, js, je
       integer :: ke
       integer :: list, pos, msgsize
       integer :: to_pe, from_pe
       MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
       pointer( ptr, buffer )
       integer :: buffer_pos, wordlen
-      character(len=8) :: text
-
 
 !fix ke
       l_size = size(f_out(:))  ! equal to size(f_in(:))

@@ -143,7 +143,7 @@ use fms_io_mod, only : read_data, write_data, fms_io_init, fms_io_exit, field_si
                        open_file, open_direct_file
 
 use memutils_mod, only: print_memuse_stats, memutils_init
-use constants_mod, only: PI, RADIAN, constants_version=>version, constants_tagname=>tagname !Balaji: initialize here
+use constants_mod, only: constants_version=>version, constants_tagname=>tagname !pjp: PI not computed
 
 
 implicit none
@@ -184,9 +184,6 @@ public :: CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, &
 !this is published by fms and applied to any initialized clocks
 !of course you can go and set the flag to SYNC or DETAILED by hand
 integer, public :: clock_flag_default
-
-! temporary interface (to be removed before next release)
-public :: mpp_clock_init
 
 !------ namelist interface -------
 !------ adjustable severity level for warnings ------
@@ -274,8 +271,8 @@ public :: mpp_clock_init
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: fms.F90,v 12.0 2005/04/14 17:56:21 fms Exp $'
-  character(len=128) :: tagname = '$Name: lima $'
+  character(len=128) :: version = '$Id: fms.F90,v 13.0 2006/03/28 21:39:10 fms Exp $'
+  character(len=128) :: tagname = '$Name: memphis $'
 
   logical :: module_is_initialized = .FALSE.
 
@@ -318,7 +315,7 @@ contains
 
 subroutine fms_init (localcomm )
  integer, intent(in), optional :: localcomm
- integer :: unit, ierr, io, timing_grain
+ integer :: unit, ierr, io
 
     if (module_is_initialized) return    ! return silently if already called
     module_is_initialized = .true.
@@ -409,8 +406,6 @@ subroutine fms_init (localcomm )
     call print_memuse_stats('fms_init')
 
     call write_version_number (constants_version,constants_tagname)
-    PI = 4.0*ATAN(1.0)
-    RADIAN = 180.0/PI
 
 end subroutine fms_init
 ! </SUBROUTINE>
@@ -500,7 +495,7 @@ end subroutine fms_end
 
     do i=1, nvar
        call mpp_get_atts(fields(i),name=name)
-       if(trim(name) == trim(field_name)) field_exist = .true.
+       if(lowercase(trim(name)) == lowercase(trim(field_name))) field_exist = .true.
     enddo
 
     deallocate(fields)
@@ -983,18 +978,6 @@ end function monotonic_array
 
   end function string_from_real
 
-!#######################################################################
-!##### temporary interface for backward compatibility ######
-!               remove before next release 
- function mpp_clock_init ( name, level, flags ) result (id)
- character(len=*),  intent(in) :: name 
- integer,           intent(in) :: level
- integer, optional, intent(in) :: flags
- integer                       :: id
-   id = 0
-   if (mpp_pe() == mpp_root_pe()) call error_mesg ( 'fms_init',  &
-   'interface mpp_clock_init no longer valid: name='//trim(name), NOTE)
- end function mpp_clock_init
 !#######################################################################
 
 end module fms_mod

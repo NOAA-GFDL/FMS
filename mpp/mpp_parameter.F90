@@ -7,7 +7,7 @@ module mpp_parameter_mod
   character(len=128), public :: version= &
        '$Id mpp_parameter.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: lima $'
+       '$Name: memphis $'
 
   !--- public paramters which is used by mpp_mod and its components. 
   !--- All othere modules should import these parameters from mpp_mod. 
@@ -23,8 +23,11 @@ module mpp_parameter_mod
   public :: CGRID_SW, FOLD_WEST_EDGE, FOLD_EAST_EDGE, FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE
   public :: WUPDATE, EUPDATE, SUPDATE, NUPDATE, XUPDATE, YUPDATE, BITWISE_EXACT_SUM, NON_BITWISE_EXACT_SUM
   public :: MPP_DOMAIN_TIME, WEST, EAST, SOUTH, NORTH, SCALAR_BIT, SCALAR_PAIR
-  public :: AGRID, GLOBAL, CYCLIC, DOMAIN_ID_BASE
+  public :: NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST
+  public :: AGRID, GLOBAL, CYCLIC, DOMAIN_ID_BASE, CENTER, CORNER
   public :: MAX_DOMAIN_FIELDS
+  public :: ZERO, NINETY, MINUS_NINETY, ONE_HUNDRED_EIGHTY
+  public :: REGULAR, CUBIC_GRID
 
   !--- public paramters which is used by mpp_domains_mod and its components. 
   !--- All othere modules should import these parameters from mpp_io_mod. 
@@ -56,7 +59,8 @@ module mpp_parameter_mod
 
   !--- The following paramters are used by mpp_domains_mod and its components.
   integer, parameter :: GLOBAL=0, CYCLIC=1
-  integer, parameter :: WEST=2, EAST=3, SOUTH=4, NORTH=5, SCALAR_BIT=6
+  integer, parameter :: WEST=2, EAST=3, SOUTH=4, NORTH=5, SCALAR_BIT=6, CENTER=7, CORNER=8
+  integer, parameter :: SOUTH_WEST=7, SOUTH_EAST=8, NORTH_WEST=9, NORTH_EAST=10
   integer, parameter :: SEND=1, RECV=2
   integer, parameter :: GLOBAL_DATA_DOMAIN=2**GLOBAL, CYCLIC_GLOBAL_DOMAIN=2**CYCLIC
   integer, parameter :: AGRID=0, BGRID=1, CGRID=2
@@ -68,6 +72,9 @@ module mpp_parameter_mod
   integer, parameter :: FOLD_SOUTH_EDGE=2**SOUTH, FOLD_NORTH_EDGE=2**NORTH
   integer, parameter :: WUPDATE=2**WEST, EUPDATE=2**EAST, SUPDATE=2**SOUTH, NUPDATE=2**NORTH
   integer, parameter :: XUPDATE=WUPDATE+EUPDATE, YUPDATE=SUPDATE+NUPDATE, SCALAR_PAIR=2**SCALAR_BIT
+  integer, parameter :: ZERO=0, NINETY=1, MINUS_NINETY=2, ONE_HUNDRED_EIGHTY=3
+  integer, parameter :: REGULAR=1, CUBIC_GRID=2
+
 ! DOMAIN_ID_BASE acts as a counter increment for domains as they are defined. It's used in
 ! combination with the flag parameter defined above to create a unique identifier for
 ! each Domain+flags combination. Therefore, the value of any flag must not exceed DOMAIN_ID_BASE.

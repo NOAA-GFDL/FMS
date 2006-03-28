@@ -31,7 +31,8 @@
 <b>Contact:&nbsp;</b><a href="mailto:William.Cooke@noaa.gov">   William Cooke </a>
 <br>
 <b>Reviewers:&nbsp;</b><a href="mailto:Matthew.Harrison@noaa.gov">   Matt Harrison </a>,&nbsp;
-    <a href="mailto:Bruce.Wyman@noaa.gov">   Bruce Wyman </a>
+    <a href="mailto:Bruce.Wyman@noaa.gov">   Bruce Wyman </a>,&nbsp;
+    <a href="mailto:Peter.Phillipps@noaa.gov">   Peter Phillipps </a>
 <br>
 <b>Change History:&nbsp;</b><a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/tracer_manager">WebCVS Log</a>
 <br>
@@ -85,21 +86,16 @@
 <dl>
 <dt>
 <a href="#tracer_manager_init">tracer_manager_init</a>:</dt>
-<dd>   Routine to initialize the tracer manager </dd>
+<dd>   It is not necessary to call this routine.
+   It is included only for backward compatability. </dd>
+<dt>
+<a href="#get_tracer_meta_data">get_tracer_meta_data</a>:</dt>
+<dd>   read tracer table and store tracer information associated with "model"
+   in "tracers" array. </dd>
 <dt>
 <a href="#register_tracers">register_tracers</a>:</dt>
-<dd>   A routine to register the tracers included in a component model. </dd>
-<dt>
-<a href="#tracer_requires_init">tracer_requires_init</a>:</dt>
-<dd>   A routine to be called to alert the user that the tracer field requires 
-   initialization. </dd>
-<dt>
-<a href="#have_initialized_tracer">have_initialized_tracer</a>:</dt>
-<dd>   A routine to show that the user has initialized the tracer. </dd>
-<dt>
-<a href="#query_tracer_init">query_tracer_init</a>:</dt>
-<dd>   A function to be called to alert the user that the tracer field requires 
-   initialization. </dd>
+<dd>   It is not necessary to call this routine.
+   It is included only for backward compatability. </dd>
 <dt>
 <a href="#get_number_tracers">get_number_tracers</a>:</dt>
 <dd>   A routine to return the number of tracers included in a component model. </dd>
@@ -111,51 +107,23 @@
 <a href="#get_tracer_index">get_tracer_index</a>:</dt>
 <dd>   Function which returns the number assigned to the tracer name. </dd>
 <dt>
-<a href="#assign_tracer_field">assign_tracer_field</a>:</dt>
-<dd>   Routine to point the appropriate field within the tracer_type to the 
-   appropriate field within the component model. </dd>
-<dt>
 <a href="#tracer_manager_end">tracer_manager_end</a>:</dt>
 <dd>   Routine to write to the log file that the tracer manager is ending. </dd>
-<dt>
-<a href="#get_tracer_field">get_tracer_field</a>:</dt>
-<dd>   A function to retrieve the present timestep data. </dd>
-<dt>
-<a href="#get_tracer_tlevels">get_tracer_tlevels</a>:</dt>
-<dd>   A function to retrieve the three time levels  data. </dd>
-<dt>
-<a href="#get_tracer_tendency">get_tracer_tendency</a>:</dt>
-<dd>   A function to retrieve the tendency data. </dd>
 <dt>
 <a href="#get_tracer_names">get_tracer_names</a>:</dt>
 <dd>   Routine to find the names associated with a tracer number. </dd>
 <dt>
-<a href="#get_family_name">get_family_name</a>:</dt>
-<dd>   Routine to return the family name for tracer n. </dd>
+<a href="#get_tracer_name">get_tracer_name</a>:</dt>
+<dd>   Routine to find the names associated with a tracer number. </dd>
 <dt>
 <a href="#check_if_prognostic">check_if_prognostic</a>:</dt>
 <dd>   Function to see if a tracer is prognostic or diagnostic. </dd>
-<dt>
-<a href="#find_family_members">find_family_members</a>:</dt>
-<dd>   Subroutine to find which tracers are members of family family_name. </dd>
-<dt>
-<a href="#add_members_to_family">add_members_to_family</a>:</dt>
-<dd>   Routine to sum up the members of a family of tracers so that they may
-   be advected and diffused as one tracer. </dd>
-<dt>
-<a href="#split_family_into_members">split_family_into_members</a>:</dt>
-<dd>   Subroutine that sets the present value of the member of a tracer 
-   family according to the fraction of the family that it was in the 
-   previous step. </dd>
 <dt>
 <a href="#set_tracer_profile">set_tracer_profile</a>:</dt>
 <dd>   Subroutine to set the tracer field to the wanted profile. </dd>
 <dt>
 <a href="#query_method">query_method</a>:</dt>
 <dd>   A function to query the "methods" associated with each tracer. </dd>
-<dt>
-<a href="#query_combined">query_combined</a>:</dt>
-<dd>   A function to query whether families of tracers have been combined already. </dd>
 <dt>
 <a href="#set_tracer_atts">set_tracer_atts</a>:</dt>
 <dd>   A subroutine to allow the user set the tracer longname and units from the 
@@ -197,17 +165,28 @@
 </dl>
 </li>
 <li>
-<a name="register_tracers"></a>
-<h4>register_tracers</h4>
-<pre>
-<b>call register_tracers </b>(model, num_tracers,num_prog,num_diag,num_family)</pre>
+<a name="get_tracer_meta_data"></a>
+<h4>get_tracer_meta_data</h4>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   This routine returns the total number of valid tracers, the number of
-   prognostic and diagnostic tracers and the number of families of
-   tracers. </dd>
+<dd></dd>
+<br>
+<br>
+</dl>
+</li>
+<li>
+<a name="register_tracers"></a>
+<h4>register_tracers</h4>
+<pre>
+<b>call register_tracers </b>(model, num_tracers,num_prog,num_diag)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   This routine returns the total number of valid tracers,
+   the number of prognostic and diagnostic tracers. </dd>
 <br>
 <br>
 <dt>
@@ -235,98 +214,6 @@
 <tr>
 <td valign="top" align="left"><tt>num_diag&nbsp;&nbsp;&nbsp;</tt></td><td>   The number of diagnostic tracers within the component model. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
-<tr>
-<td valign="top" align="left"><tt>num_family&nbsp;&nbsp;&nbsp;</tt></td><td>   The number of family tracers within the component model. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-</dl>
-</li>
-<li>
-<a name="tracer_requires_init"></a>
-<h4>tracer_requires_init</h4>
-<pre>
-<b>call tracer_requires_init </b>(model, name)</pre>
-<dl>
-<dt>
-<b>DESCRIPTION</b>
-</dt>
-<dd>   This routine sets a flag within the tracer_type which can be queried by
-   the user in the user tracer initialization scheme to see if initialization 
-   of the tracer field is necessary. The flag is set true if a restart file
-   for the tracer is not found. </dd>
-<br>
-<br>
-<dt>
-<b>INPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>model&nbsp;&nbsp;&nbsp;</tt></td><td>   A parameter to identify which model is being used. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>   The name of the tracer within the component model that requires initializing. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-</dl>
-</li>
-<li>
-<a name="have_initialized_tracer"></a>
-<h4>have_initialized_tracer</h4>
-<pre>
-<b>call have_initialized_tracer </b>(model, name)</pre>
-<dl>
-<dt>
-<b>DESCRIPTION</b>
-</dt>
-<dd>   This routine sets a flag within the tracer_type to show that the user has
-   initialized the tracer field. </dd>
-<br>
-<br>
-<dt>
-<b>INPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>model&nbsp;&nbsp;&nbsp;</tt></td><td>   A parameter to identify which model is being used. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>   The name of the tracer within the component model that requires initializing. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-</dl>
-</li>
-<li>
-<a name="query_tracer_init"></a>
-<h4>query_tracer_init</h4>
-<pre>if ( <b>query_tracer_init</b> (model, name) ) then tracer initialization code endif</pre>
-<dl>
-<dt>
-<b>DESCRIPTION</b>
-</dt>
-<dd>   A function to query the initializtion status of a tracer.
-   The return value is true if the tracer requires initialization 
-   i.e. a restart file for the tracer is not found. </dd>
-<br>
-<br>
-<dt>
-<b>INPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>model&nbsp;&nbsp;&nbsp;</tt></td><td>   A parameter to identify which model is being used. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>   The name of the tracer within the component model that requires initializing. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
-</tr>
 </table>
 </dd>
 <br>
@@ -336,14 +223,13 @@
 <a name="get_number_tracers"></a>
 <h4>get_number_tracers</h4>
 <pre>
-<b>call get_number_tracers </b>(model, num_tracers,num_prog,num_diag,num_family)</pre>
+<b>call get_number_tracers </b>(model, num_tracers,num_prog,num_diag)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   This routine returns the total number of valid tracers, the number of
-   prognostic and diagnostic tracers and the number of families of
-   tracers. </dd>
+<dd>   This routine returns the total number of valid tracers,
+   the number of prognostic and diagnostic tracers </dd>
 <br>
 <br>
 <dt>
@@ -371,9 +257,6 @@
 <tr>
 <td valign="top" align="left"><tt>num_diag&nbsp;&nbsp;&nbsp;</tt></td><td>   The number of diagnostic tracers within the component model. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional]</span></td>
 </tr>
-<tr>
-<td valign="top" align="left"><tt>num_family&nbsp;&nbsp;&nbsp;</tt></td><td>   The number of family tracers within the component model. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional]</span></td>
-</tr>
 </table>
 </dd>
 <br>
@@ -383,7 +266,7 @@
 <a name="get_tracer_indices"></a>
 <h4>get_tracer_indices</h4>
 <pre>
-<b>call get_tracer_indices </b>(model, ind, prog_ind, diag_ind, fam_ind)</pre>
+<b>call get_tracer_indices </b>(model, ind, prog_ind, diag_ind)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -423,10 +306,6 @@
 <td valign="top" align="left"><tt>diag_ind&nbsp;&nbsp;&nbsp;</tt></td><td>   An array containing the tracer manager defined indices for
    the diagnostic tracers within the component model. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional, dimension(:)]</span></td>
 </tr>
-<tr>
-<td valign="top" align="left"><tt>fam_ind&nbsp;&nbsp;&nbsp;</tt></td><td>   An array containing the tracer manager defined indices for
-   the family tracers within the component model. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional, dimension(:)]</span></td>
-</tr>
 </table>
 </dd>
 <br>
@@ -435,12 +314,13 @@
 <li>
 <a name="get_tracer_index"></a>
 <h4>get_tracer_index</h4>
-<pre>value= <b>get_tracer_index</b> (model, name, indices, verbose)</pre>
+<pre>integer: index = <b>get_tracer_index</b> (model, name, indices, verbose) logical: if ( get_tracer_index(model, name, index, indices, verbose) ) then</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   This is a function which returns the index, as implied within the component model. </dd>
+<dd>   This is a function which returns the index, as implied within the component model.
+   There are two overloaded interfaces: one of type integer, one logical. </dd>
 <br>
 <br>
 <dt>
@@ -455,8 +335,12 @@
 <td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>   The name of the tracer (as assigned in the field table). <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>indices&nbsp;&nbsp;&nbsp;</tt></td><td>   An array of the component model indices. This array can be found by 
-   calling get_tracer_indices. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional, dimension(:)]</span></td>
+<td valign="top" align="left"><tt>indices&nbsp;&nbsp;&nbsp;</tt></td><td>   An array indices.
+   When present, the returned index will limit the search for the tracer
+   to those tracers whos indices are amoung those in array "indices".
+   This would be useful when it is desired to limit the search to a subset
+   of the tracers. Such a subset might be the diagnostic or prognostic tracers.
+   (Note that subroutine get_tracer_indices returns these subsets) <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional, dimension(:)]</span></td>
 </tr>
 <tr>
 <td valign="top" align="left"><tt>verbose&nbsp;&nbsp;&nbsp;</tt></td><td>   A flag to allow the message saying that a tracer with this name has not 
@@ -471,54 +355,12 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>get_tracer_index&nbsp;&nbsp;&nbsp;</tt></td><td>   The index of the tracer named "name". 
-   If indices is passed then the result is the array index which 
-   corresponds to tracer named "name". <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-</dl>
-</li>
-<li>
-<a name="assign_tracer_field"></a>
-<h4>assign_tracer_field</h4>
-<pre>
-<b>call assign_tracer_field </b>(model,index, data, data_tlevels, tendency)</pre>
-<dl>
-<dt>
-<b>DESCRIPTION</b>
-</dt>
-<dd>   The generality provided here is that one can point the three
-   dimensional tracer field at either a two time level scheme [data and
-   tendency] or a three time level scheme [data_tlevels]. The tracer manager
-   points the appropriate tracer_type field at the data supplied from the 
-   component model. </dd>
-<br>
-<br>
-<dt>
-<b>INPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>model&nbsp;&nbsp;&nbsp;</tt></td><td>   A parameter representing the component model in use. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>index&nbsp;&nbsp;&nbsp;</tt></td><td>   The tracer number that you wish to assign a tracer
-   field for. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>data&nbsp;&nbsp;&nbsp;</tt></td><td>   The 3D field that is associated with the present time 
-   step in the component model. <br>&nbsp;&nbsp;&nbsp;<span class="type">[real, target, optional, dimension(:,:,:)]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>tendency&nbsp;&nbsp;&nbsp;</tt></td><td>   The 3D field that is associated with the tendency time
-   step in the component model. <br>&nbsp;&nbsp;&nbsp;<span class="type">[real, target, optional, dimension(:,:,:)]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>data_tlevels&nbsp;&nbsp;&nbsp;</tt></td><td>   The 4D field that is associated with the tracer field 
-   in the component model. <br>&nbsp;&nbsp;&nbsp;<span class="type">[real, target, optional, dimension(:,:,:,:)]</span></td>
+<td valign="top" align="left"><tt>get_tracer_index&nbsp;&nbsp;&nbsp;</tt></td><td>   integer function:
+   The index of the tracer named "name". 
+   If no tracer by that name exists then the returned value is NO_TRACER.
+   logical function:
+   If no tracer by that name exists then the returned value is .false.,
+   otherwise the returned value is .true. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 </table>
 </dd>
@@ -537,120 +379,6 @@
 </dt>
 <dd>   Routine to write to the log file that the tracer manager is ending. </dd>
 <br>
-<br>
-</dl>
-</li>
-<li>
-<a name="get_tracer_field"></a>
-<h4>get_tracer_field</h4>
-<pre>array= <b>get_tracer_field</b> (model, tracer_index)</pre>
-<dl>
-<dt>
-<b>DESCRIPTION</b>
-</dt>
-<dd>   Function to point to the 3D field associated with a tracer. </dd>
-<br>
-<br>
-<dt>
-<b>INPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>model&nbsp;&nbsp;&nbsp;</tt></td><td>   A parameter representing the component model in use. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>tracer_index&nbsp;&nbsp;&nbsp;</tt></td><td>   The tracer number within the component model. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-<dt>
-<b>OUTPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>data&nbsp;&nbsp;&nbsp;</tt></td><td>   The tracer field is returned in this array. <br>&nbsp;&nbsp;&nbsp;<span class="type">[real, pointer, dimension(:,:,:)]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-</dl>
-</li>
-<li>
-<a name="get_tracer_tlevels"></a>
-<h4>get_tracer_tlevels</h4>
-<pre>array= <b>get_tracer_tlevels</b> (model, tracer_index)</pre>
-<dl>
-<dt>
-<b>DESCRIPTION</b>
-</dt>
-<dd>   Function to point to the 4D field associated with a tracer. </dd>
-<br>
-<br>
-<dt>
-<b>INPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>model&nbsp;&nbsp;&nbsp;</tt></td><td>   A parameter representing the component model in use. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>tracer_index&nbsp;&nbsp;&nbsp;</tt></td><td>   The tracer number within the component model. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-<dt>
-<b>OUTPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>data&nbsp;&nbsp;&nbsp;</tt></td><td>   The tracer field is returned in this array. <br>&nbsp;&nbsp;&nbsp;<span class="type">[real, pointer, dimension(:,:,:,:)]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-</dl>
-</li>
-<li>
-<a name="get_tracer_tendency"></a>
-<h4>get_tracer_tendency</h4>
-<pre>array= <b>get_tracer_tendency</b> (model, tracer_index)</pre>
-<dl>
-<dt>
-<b>DESCRIPTION</b>
-</dt>
-<dd>   Function to point to the 3D field associated with a tracer. </dd>
-<br>
-<br>
-<dt>
-<b>INPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>model&nbsp;&nbsp;&nbsp;</tt></td><td>   A parameter representing the component model in use. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>tracer_index&nbsp;&nbsp;&nbsp;</tt></td><td>   The tracer number within the component model. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-<dt>
-<b>OUTPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>data&nbsp;&nbsp;&nbsp;</tt></td><td>   The tracer tendency field is returned in this array. <br>&nbsp;&nbsp;&nbsp;<span class="type">[real, pointer, dimension(:,:,:)]</span></td>
-</tr>
-</table>
-</dd>
 <br>
 </dl>
 </li>
@@ -701,16 +429,16 @@
 </dl>
 </li>
 <li>
-<a name="get_family_name"></a>
-<h4>get_family_name</h4>
-<pre>
-<b>call get_family_name </b>(model,n,name)</pre>
+<a name="get_tracer_name"></a>
+<h4>get_tracer_name</h4>
+<pre>if(.not. <b>get_tracer_name</b> (model,n,name,longname, units, err_msg)) call mpp_error(.....</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   You may wish to use this routine to retrieve the name of the family
-   that a tracer belongs to. </dd>
+<dd>   This routine can return the name, long name and units associated with a tracer.
+   The return value of get_tracer_name is .false. when a FATAL error condition is
+   detected, otherwise the return value is .true. </dd>
 <br>
 <br>
 <dt>
@@ -722,7 +450,7 @@
 <td valign="top" align="left"><tt>model&nbsp;&nbsp;&nbsp;</tt></td><td>   A parameter representing the component model in use. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>n&nbsp;&nbsp;&nbsp;</tt></td><td>   Tracer number that you want the family name for. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>n&nbsp;&nbsp;&nbsp;</tt></td><td>   Tracer number. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 </table>
 </dd>
@@ -733,7 +461,23 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>   The family name. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
+<td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>   Field name associated with tracer number. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>longname&nbsp;&nbsp;&nbsp;</tt></td><td>   The long name associated with tracer number. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character, optional]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>units&nbsp;&nbsp;&nbsp;</tt></td><td>   The units associated with tracer number. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character, optional]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>err_msg&nbsp;&nbsp;&nbsp;</tt></td><td>   When present:
+   If a FATAL error condition is detected then err_msg will contain an error message
+   and the return value of get_tracer_name will be .false.
+   If no FATAL error is detected err_msg will be filled with space characters and
+   and the return value of get_tracer_name will be .true.
+   When not present:
+   A FATAL error will result in termination inside get_tracer_name without returning.
+   If no FATAL error is detected the return value of get_tracer_name will be .true. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character, optional]</span></td>
 </tr>
 </table>
 </dd>
@@ -763,7 +507,7 @@
 <td valign="top" align="left"><tt>model&nbsp;&nbsp;&nbsp;</tt></td><td>   A parameter representing the component model in use. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>n&nbsp;&nbsp;&nbsp;</tt></td><td>   Tracer number that you want the family name for. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>n&nbsp;&nbsp;&nbsp;</tt></td><td>   Tracer number <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 </table>
 </dd>
@@ -779,165 +523,6 @@
 </tr>
 </table>
 </dd>
-<br>
-</dl>
-</li>
-<li>
-<a name="find_family_members"></a>
-<h4>find_family_members</h4>
-<pre>
-<b>call find_family_members </b>(model, family_name,is_family_member)</pre>
-<dl>
-<dt>
-<b>DESCRIPTION</b>
-</dt>
-<dd>   Subroutine to find which tracers are members of family family_name.
-   This will return a logical array where the array positions 
-   corresponding to the tracer numbers for family members are set .TRUE. </dd>
-<br>
-<br>
-<dt>
-<b>INPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>model&nbsp;&nbsp;&nbsp;</tt></td><td>   A parameter representing the component model in use. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>family_name&nbsp;&nbsp;&nbsp;</tt></td><td>   The family name of the members one is seeking. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-<dt>
-<b>OUTPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>is_family_member&nbsp;&nbsp;&nbsp;</tt></td><td>   A logical array where the tracer number is used as 
-   the index to signify which tracer is part of the family.
-   i.e. If tracers 1, 3, and 7 are part of the same family
-   then is_family_member(1), is_family_member(3), and 
-   is_family_member(7) are set TRUE. <br>&nbsp;&nbsp;&nbsp;<span class="type">[logical, dimension(:)]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-</dl>
-</li>
-<li>
-<a name="add_members_to_family"></a>
-<h4>add_members_to_family</h4>
-<pre>
-<b>call add_members_to_family </b>(model,family_name, cur, prev, next)</pre>
-<dl>
-<dt>
-<b>DESCRIPTION</b>
-</dt>
-<dd>   Routine to sum up the members of a family of tracers so that they may
-   be advected and diffused as one tracer. This should only be used in
-   conjunction with split_family_into_members and should be placed before
-   the advection scheme is called. </dd>
-<br>
-<br>
-<dt>
-<b>INPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>model&nbsp;&nbsp;&nbsp;</tt></td><td>   A parameter representing the component model in use. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>n&nbsp;&nbsp;&nbsp;</tt></td><td>   Tracer number. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>cur&nbsp;&nbsp;&nbsp;</tt></td><td>   Array index for the current time step. This is only of use 
-   with a three timestep model. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>prev&nbsp;&nbsp;&nbsp;</tt></td><td>   Array index for the previous time step. This is only of use 
-   with a three timestep model. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>next&nbsp;&nbsp;&nbsp;</tt></td><td>   Array index for the next time step. This is only of use 
-   with a three timestep model. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-<dt>
-<b>NOTE</b>
-</dt>
-<dd>   This should be used with extreme caution. 
-   Unless the family member distributions are similar to each other spatially, 
-   advection as one tracer and subsequent splitting will result in a different
-   result to advecting each tracer separately. The user should understand the 
-   possible repercussions of this before using it. </dd>
-<br>
-<br>
-</dl>
-</li>
-<li>
-<a name="split_family_into_members"></a>
-<h4>split_family_into_members</h4>
-<pre>
-<b>call split_family_into_members </b>(model,family_name,cur,prev,next)</pre>
-<dl>
-<dt>
-<b>DESCRIPTION</b>
-</dt>
-<dd>   Subroutine that sets the present value of the member of a tracer 
-   family according to the fraction of the family that it was in the 
-   previous step.
-   <br>
-<br>
-   This splits the transported family into the constituent members. This
-   should only be used in conjunction with <i>add_members_to_family</i>   and
-   should be placed after the advection scheme is called.
-   <br>
-<br> 
-</dd>
-<br>
-<br>
-<dt>
-<b>INPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>model&nbsp;&nbsp;&nbsp;</tt></td><td>   A parameter representing the component model in use. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>family_name&nbsp;&nbsp;&nbsp;</tt></td><td>   The name of the family of tracers that you would 
-   like to split up. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>cur&nbsp;&nbsp;&nbsp;</tt></td><td>   Array index for the current time step. This is only of use 
-   with a three timestep model. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>prev&nbsp;&nbsp;&nbsp;</tt></td><td>   Array index for the previous time step. This is only of use 
-   with a three timestep model. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>next&nbsp;&nbsp;&nbsp;</tt></td><td>   Array index for the next time step. This is only of use 
-   with a three timestep model. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-<dt>
-<b>NOTE</b>
-</dt>
-<dd>   This should be used with extreme caution. 
-   Unless the family member distributions are similar to each other spatially, 
-   advection as one tracer and subsequent splitting will result in a different
-   result to advecting each tracer separately. The user should understand the 
-   possible repercussions of this before using it. </dd>
-<br>
 <br>
 </dl>
 </li>
@@ -1034,7 +619,7 @@
 <td valign="top" align="left"><tt>model&nbsp;&nbsp;&nbsp;</tt></td><td>   A parameter representing the component model in use. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>n&nbsp;&nbsp;&nbsp;</tt></td><td>   Tracer number that you want the family name for. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>n&nbsp;&nbsp;&nbsp;</tt></td><td>   Tracer number <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 </table>
 </dd>
@@ -1082,46 +667,6 @@
 <br> 
 </dd>
 <br>
-<br>
-</dl>
-</li>
-<li>
-<a name="query_combined"></a>
-<h4>query_combined</h4>
-<pre>logical = <b>query_combined</b> (model, index)</pre>
-<dl>
-<dt>
-<b>DESCRIPTION</b>
-</dt>
-<dd>   A function to query whether families of tracers have been combined already.
-   This function should only be used in conjunction with add_members_to_family 
-   and split_family_into_members. </dd>
-<br>
-<br>
-<dt>
-<b>INPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>model&nbsp;&nbsp;&nbsp;</tt></td><td>   A parameter representing the component model in use. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>index&nbsp;&nbsp;&nbsp;</tt></td><td>   Tracer number. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-<dt>
-<b>OUTPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>query_combined&nbsp;&nbsp;&nbsp;</tt></td><td>   A flag to show whether the tracer family has been combined. <br>&nbsp;&nbsp;&nbsp;<span class="type">[logical]</span></td>
-</tr>
-</table>
-</dd>
 <br>
 </dl>
 </li>
@@ -1233,14 +778,14 @@
 <div>
 <dl>
 <dt>
-<b>FATAL in register_tracers</b>
+<b>FATAL in get_tracer_meta_data</b>
 </dt>
 <dd>
 <span class="errmsg">invalid model type</span>
 </dd>
 <dd>   The index for the model type is invalid. </dd>
 <dt>
-<b>NOTE in register_tracers</b>
+<b>NOTE in get_tracer_meta_data</b>
 </dt>
 <dd>
 <span class="errmsg">No tracers are available to be registered.</span>
@@ -1248,37 +793,12 @@
 <dd>   No tracers are available to be registered. This means that the field
    table does not exist or is empty. </dd>
 <dt>
-<b>FATAL in register_tracers</b>
+<b>FATAL in get_tracer_meta_data</b>
 </dt>
 <dd>
 <span class="errmsg">MAX_TRACER_FIELDS exceeded</span>
 </dd>
 <dd>   The maximum number of tracer fields has been exceeded. </dd>
-<dt>
-<b>NOTE in register_tracers</b>
-</dt>
-<dd>
-<span class="errmsg">There is only 1 tracer for tracer family X. Making an orphan.</span>
-</dd>
-<dd>   A tracer has been given a family name but that family has only this member. Therefore it should be an orphan. </dd>
-<dt>
-<b>FATAL in register_tracers</b>
-</dt>
-<dd>
-<span class="errmsg">MAX_TRACER_FIELDS needs to be increased</span>
-</dd>
-<dd>   The number of tracer fields has exceeded the maximum allowed. 
-   The parameter MAX_TRACER_FIELDS needs to be increased. </dd>
-<dt>
-<b>NOTE in register_tracers</b>
-</dt>
-<dd>
-<span class="errmsg">Families of tracers should be used with great caution.</span>
-</dd>
-<dd>   Families of tracers were originally implemented in order to allow the advection of 
-   a family as one tracer. Unless the spatial profile of the family members is
-   similar, there will be leakage of one tracer to it's siblings. Therefore one 
-   should be very careful when utilizing families of tracers. </dd>
 <dt>
 <b>FATAL in get_number_tracers</b>
 </dt>
@@ -1293,13 +813,6 @@
 <span class="errmsg">index array size too small in get_tracer_indices</span>
 </dd>
 <dd>   The global index array is too small and cannot contain all the tracer numbers. </dd>
-<dt>
-<b>FATAL in get_tracer_indices</b>
-</dt>
-<dd>
-<span class="errmsg">family array size too small in get_tracer_indices</span>
-</dd>
-<dd>   The family index array is too small and cannot contain all the tracer numbers. </dd>
 <dt>
 <b>FATAL in get_tracer_indices</b>
 </dt>
@@ -1322,72 +835,6 @@
 </dd>
 <dd> 
 </dd>
-<dt>
-<b>FATAL in assign_tracer_field</b>
-</dt>
-<dd>
-<span class="errmsg">invalid index</span>
-</dd>
-<dd>   The index that has been passed to this routine is invalid. </dd>
-<dt>
-<b>FATAL in assign_tracer_field</b>
-</dt>
-<dd>
-<span class="errmsg">At least one of data, data_tlevels or tendency must be passed in here.</span>
-</dd>
-<dd>   At least one of data, data_tlevels or tendency must be passed to assign_tracer_field
-   Otherwise there is not much point in calling this routine. </dd>
-<dt>
-<b>FATAL in get_tracer_field</b>
-</dt>
-<dd>
-<span class="errmsg">invalid index</span>
-</dd>
-<dd>   The index that has been passed to this routine is invalid.
-   Check the index that is being passed corresponds to a valid
-   tracer name. </dd>
-<dt>
-<b>FATAL in get_tracer_field</b>
-</dt>
-<dd>
-<span class="errmsg">tracer field array not allocated</span>
-</dd>
-<dd>   The tracer array has not been allocated. This means that a
-   call to assign_tracer_field is absent in the code. </dd>
-<dt>
-<b>FATAL in get_tracer_tlevels</b>
-</dt>
-<dd>
-<span class="errmsg">invalid index</span>
-</dd>
-<dd>   The index that has been passed to this routine is invalid.
-   Check the index that is being passed corresponds to a valid
-   tracer name. </dd>
-<dt>
-<b>FATAL in get_tracer_tlevels</b>
-</dt>
-<dd>
-<span class="errmsg">tracer field array not allocated</span>
-</dd>
-<dd>   The tracer array has not been allocated. This means that a
-   call to assign_tracer_field is absent in the code. </dd>
-<dt>
-<b>FATAL in get_tracer_tendency</b>
-</dt>
-<dd>
-<span class="errmsg">invalid index</span>
-</dd>
-<dd>   The index that has been passed to this routine is invalid.
-   Check the index that is being passed corresponds to a valid
-   tracer name. </dd>
-<dt>
-<b>FATAL in get_tracer_tendency</b>
-</dt>
-<dd>
-<span class="errmsg">tracer tendency field array not allocated</span>
-</dd>
-<dd>   The tracer array has not been allocated. This means that a
-   call to assign_tracer_field is absent in the code. </dd>
 </dl>
 <br>
 </div>

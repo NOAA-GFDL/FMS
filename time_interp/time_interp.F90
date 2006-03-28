@@ -31,10 +31,10 @@ use time_manager_mod, only: time_type, get_date, set_date, set_time, &
                             operator(+), operator(-), operator(>),   &
                             operator(<), operator( // ), operator( / ),  &
                             operator(>=), operator(<=), operator( * ), &
-                            operator(==)
+                            operator(==), print_date
 
 use          fms_mod, only: write_version_number, &
-                            error_mesg, FATAL
+                            error_mesg, FATAL, stdout
 
 implicit none
 private
@@ -51,28 +51,52 @@ public :: time_interp_init, time_interp, fraction_of_year
 !      previous version. 
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!      Returns the fractional amount (between 0,1) that the input
-!      Time is into the current year. The interface fraction_of_year
-!      has the same functionality and is only provided for backward
-!      compatibility with the version. 
+!      Returns weight by interpolating Time between Time1 and Time2.
+!      i.e. weight = (Time-Time1)/(Time2-Time1)
+!      Time1 and Time2 may be specified by any of several different ways,
+!      which is the reason for multiple interfaces.
+
+!      If Time1 and Time2 are the begining and end of the year in which
+!      Time falls, use first interface.
+
+!      If Time1 and Time2 fall on year boundaries, use second interface.
+
+!      If Time1 and Time2 fall on month boundaries, use third.
+
+!      If Time1 and Time2 fall on day boundaries, use fourth.
+
+!      If Time1 and Time2 are consecutive elements of an assending list, use fifth.
+!      The fifth also returns the indices of Timelist between which Time falls.
+
+!      The sixth interface is for cyclical data. Time_beg and Time_end specify the
+!      begining and end of a repeating period. In this case:
+!      weight = (Time_adjusted - Time1) / (Time2 - Time1)
+!      Where:
+!      Time1 = Timelist(index1)
+!      Time2 = Timelist(index2)
+!      Time_adjusted = Time - N*Period
+!      Period = Time_end-Time_beg
+!      N is between (Time-Time_end)/Period and (Time-Time_beg)/Period
+!      That is, N is the integer that results in Time_adjusted that is between Time_beg and Time_end.
+!      
 !   </DESCRIPTION>
 !   <TEMPLATE>
-!      call time_interp( Time, weight )
+!     1. call time_interp( Time, weight )
 !   </TEMPLATE>
 !   <TEMPLATE>
-!      call time_interp( Time, weight, year1, year2 )
+!     2. call time_interp( Time, weight, year1, year2 )
 !   </TEMPLATE>
 !   <TEMPLATE>
-!      call time_interp( Time, weight, year1, year2, month1, month2 )
+!     3. call time_interp( Time, weight, year1, year2, month1, month2 )
 !   </TEMPLATE>
 !   <TEMPLATE>
-!      call time_interp( Time, weight, year1, year2, month1, month2, day1, day2 )
+!     4. call time_interp( Time, weight, year1, year2, month1, month2, day1, day2 )
 !   </TEMPLATE>
 !   <TEMPLATE>
-!      call time_interp( Time, Timelist, weight, index1, index2 [, modtime] )
+!     5. call time_interp( Time, Timelist, weight, index1, index2 [, modtime] )
 !   </TEMPLATE>
 !   <TEMPLATE>
-!      call time_interp( Time, Time_beg, Time_end, Timelist, weight, index1, index2)
+!     6. call time_interp( Time, Time_beg, Time_end, Timelist, weight, index1, index2 [,correct_leap_year_inconsistency])
 !   </TEMPLATE>
 !   <IN NAME="Time">
 !      The time at which the the weight is computed.
@@ -94,6 +118,15 @@ public :: time_interp_init, time_interp, fraction_of_year
 !   </IN>
 !   <IN NAME="index2">
 !      Timelist(index2) = The smallest value of Timelist which is greater than mod(Time,Time_end-Time_beg)
+!   </IN>
+!   <IN NAME="correct_leap_year_inconsistency">
+!       Turns on a kluge for an inconsistency which may occur in a special case.
+!       When the modulo time period (i.e. Time_end - Time_beg) is a whole number of years
+!       and is not a multiple of 4, and the calendar in use has leap years, then it is
+!       likely that the interpolation will involve mapping a common year onto a leap year.
+!       In this case it is often desirable, but not absolutely necessary, to use data for
+!       Feb 28 of the leap year when it is mapped onto a common year.
+!       To turn this on, set correct_leap_year_inconsistency=.true.
 !   </IN>
 !   <OUT NAME="weight">
 !     weight = (mod(Time,Time_end-Time_beg) - Timelist(index1)) / (Timelist(index2) - Timelist(index1))
@@ -160,8 +193,8 @@ integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
    integer :: yrmod, momod, dymod
    logical :: mod_leapyear
 
-   character(len=128) :: version='$Id: time_interp.F90,v 12.0 2005/04/14 18:01:42 fms Exp $'
-   character(len=128) :: tagname='$Name: lima $'
+   character(len=128) :: version='$Id: time_interp.F90,v 13.0 2006/03/28 21:43:09 fms Exp $'
+   character(len=128) :: tagname='$Name: memphis $'
 
    logical :: module_is_initialized=.FALSE.
 
@@ -380,6 +413,14 @@ contains
 !   <IN NAME="Time_beg" TYPE="time_type"> </IN>
 !   <IN NAME="Time_end" TYPE="time_type"> </IN>
 !   <IN NAME="Timelist" TYPE="time_type" DIM="(:)"> </IN>
+!   <IN NAME="correct_leap_year_inconsistency" TYPE="logical, optional" DEFAULT=".false.">
+!       Turns on a kluge for an inconsistency which may occur in a special case.
+!       When the modulo time period (i.e. Time_end - Time_beg) is a whole number of years
+!       and is not a multiple of 4, and the calendar in use has leap years, then it is
+!       likely that the interpolation will involve mapping a common year onto a leap year.
+!       In this case it is often desirable, but not absolutely necessary, to use data for
+!       Feb 28 of the leap year when it is mapped onto a common year.
+!       To turn this on, set correct_leap_year_inconsistency=.true. </IN>
 !   <OUT NAME="weight" TYPE="real"> </OUT>
 !   <OUT NAME="index1" TYPE="real"> </OUT>
 !   <OUT NAME="index2" TYPE="real"> </OUT>
@@ -393,7 +434,7 @@ integer        , intent(out) :: index1, index2
 logical, intent(in), optional :: correct_leap_year_inconsistency
   
   type(time_type) :: Period, T
-  integer :: is, ie
+  integer :: is, ie,i1,i2
   integer :: ys,ms,ds,hs,mins,ss ! components of the starting date
   integer :: ye,me,de,he,mine,se ! components of the ending date
   integer :: yt,mt,dt,ht,mint,st ! components of the current date
@@ -402,7 +443,11 @@ logical, intent(in), optional :: correct_leap_year_inconsistency
 
   if ( .not. module_is_initialized ) call time_interp_init
   
-  if (Time_beg>=Time_end) call error_handler('end of the time loop is not later than beginning')
+  if (Time_beg>=Time_end) then
+     call print_date(Time_beg, 'Time_beg' )
+     call print_date(Time_end, 'Time_end' )
+     call error_handler("end of the specified time loop interval must be later than its beginning")
+  endif
   
   Period = Time_end-Time_beg ! period of the time axis
 
@@ -441,11 +486,41 @@ logical, intent(in), optional :: correct_leap_year_inconsistency
   endif
   
   ! find indices of the first and last records in the Timelist that are within 
-  ! the requested time period
-  call bisect(Timelist,Time_beg,index2=is)
-  call bisect(Timelist,Time_end,index1=ie)
-  if (Time_end<Timelist(1).or.Time_beg>Timelist(size(Timelist)).or.is>=ie) then
-     call error_handler('no time points within the specified time loop interval')
+  ! the requested time period.
+  if (Time_end<Timelist(1).or.Time_beg>Timelist(size(Timelist(:)))) then
+     call print_date(Time_beg,                   'Time_beg'    )
+     call print_date(Time_end,                   'Time_end'    )
+     call print_date(Timelist(1),                'Timelist(1)' )
+     call print_date(Timelist(size(Timelist(:))),'Timelist(n)' )
+     write(stdout(),*)'where n =',size(Timelist(:))
+     call error_handler('the entire time list is outside the specified time loop interval')
+  endif
+  
+  mtime=NONE ! set a global variable that is used in set_modtime, called from bisect
+  call bisect(Timelist,Time_beg,index1=i1,index2=i2)
+  if (i1 < 1) then
+     is = 1 ! Time_beg before lower boundary
+  else if (Time_beg == Timelist(i1)) then
+     is = i1 ! Time_beg right on the lower boundary
+  else
+     is = i2 ! Time_beg inside the interval (or on upper boubdary)
+  endif
+  call bisect(Timelist,Time_end,index1=i1,index2=i2)
+  if (i2 > size(Timelist(:))) then
+     ie = size(Timelist(:)) ! Time_end after the upper boundary 
+  else if (Time_end == Timelist(i2)) then
+     ie = i2 ! Time_end right on the upper boundary
+  else
+     ie = i1 ! Time_end inside the interval (or on lower boundary)
+  endif
+  if (is>=ie) then
+     call print_date(Time_beg,                   'Time_beg'    )
+     call print_date(Time_end,                   'Time_end'    )
+     call print_date(Timelist(1),                'Timelist(1)' )
+     call print_date(Timelist(size(Timelist(:))),'Timelist(n)' )
+     write(stdout(),*)'where n =',size(Timelist(:))
+     write(stdout(),*)'is =',is,'ie =',ie
+     call error_handler('error in calculation of time list bounds within the specified time loop interval')
   endif
   
   ! handle special cases:
@@ -518,19 +593,13 @@ real             , intent(out) :: weight
 integer          , intent(out) :: index1, index2
 integer, optional, intent(in)  :: modtime
 
-integer :: i, n, hr, mn, se
-type(time_type) :: T, T1, T2, Ts, Te, Td, Period, Time_mod
+integer :: n, hr, mn, se
+type(time_type) :: T, Ts, Te, Td, Period, Time_mod
 
   if ( .not. module_is_initialized ) call time_interp_init
 
   weight = 0.; index1 = 0; index2 = 0
   n = size(Timelist(:))
-
-!!$! check list for ascending order
-!!$  do i = 2, n
-!!$     if (Timelist(i) > Timelist(i-1)) cycle
-!!$     call error_handler ('input time list is not in ascending order')
-!!$  enddo
 
 ! setup modular time axis?
   mtime = NONE

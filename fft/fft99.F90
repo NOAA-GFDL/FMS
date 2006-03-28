@@ -559,7 +559,7 @@ contains
     integer, intent(in)    :: inc,jump,n,lot,isign
     integer, intent(inout) :: ifax(:)
     real,    intent(in)    :: trigs(:)
-    real,    intent(inout) :: a(*),work(*)
+    real,    intent(inout) :: a(*),work((n+1)*lot)
 
 !     dimension a(n),work(n),trigs(n),ifax(1)
 !
@@ -855,8 +855,8 @@ contains
 
     subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
     integer, intent(in)  :: inc1, inc2, inc3, inc4, lot, n, ifac, la
-    real,    intent(in)  :: a(n),b(n),trigs(n)
-    real,    intent(out) :: c(n),d(n)
+    real,    intent(in)  :: a(*),b(*),trigs(*)
+    real,    intent(out) :: c(*),d(*)
 !
 !     subroutine "vpassm" - multiple version of "vpassa"
 !     performs one pass through data

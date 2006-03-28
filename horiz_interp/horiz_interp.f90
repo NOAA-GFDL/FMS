@@ -1,3 +1,27 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!                                                                   !!
+!!                   GNU General Public License                      !!
+!!                                                                   !!
+!! This file is part of the Flexible Modeling System (FMS).          !!
+!!                                                                   !!
+!! FMS is free software; you can redistribute it and/or modify       !!
+!! it and are expected to follow the terms of the GNU General Public !!
+!! License as published by the Free Software Foundation.             !!
+!!                                                                   !!
+!! FMS is distributed in the hope that it will be useful,            !!
+!! but WITHOUT ANY WARRANTY; without even the implied warranty of    !!
+!! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the     !!
+!! GNU General Public License for more details.                      !!
+!!                                                                   !!
+!! You should have received a copy of the GNU General Public License !!
+!! along with FMS; if not, write to:                                 !!
+!!          Free Software Foundation, Inc.                           !!
+!!          59 Temple Place, Suite 330                               !!
+!!          Boston, MA  02111-1307  USA                              !!
+!! or see:                                                           !!
+!!          http://www.gnu.org/licenses/gpl.txt                      !!
+!!                                                                   !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 module horiz_interp_mod
 
 ! <CONTACT EMAIL="Zhi.Liang@noaa.gov"> Zhi Liang </CONTACT>
@@ -17,7 +41,8 @@ module horiz_interp_mod
 !     longitude/latitude grid, any one of following three schemes can be applied: 
 !     conservation scheme that conserves the area-weighed integral of the input field, 
 !     bilinear interpolation that use the surround four source grid to interpolate onto
-!     the destination grid, spherical regrid that use thes inverse of square distance
+!     the destination grid, bicubic interpolation, which does the same with higher
+!     order polynominals and spherical regrid that use thes inverse of square distance
 !     as weight. User can choose the interpolation method in the horiz_interp_init.
 !     The default method is conservative scheme. When the source grid is tripolar grid,
 !     only spherical regrid is allowed. When destination grid is tripolar, conservative 
@@ -41,7 +66,9 @@ use horiz_interp_conserve_mod,  only: horiz_interp_conserve_init,  horiz_interp_
 use horiz_interp_conserve_mod,  only: horiz_interp_conserve_end
 use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_init,  horiz_interp_bilinear
 use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_end
-use horiz_interp_spherical_mod, only: horiz_interp_spherical_init,  horiz_interp_spherical
+use horiz_interp_bicubic_mod,   only: horiz_interp_bicubic_init,   horiz_interp_bicubic
+use horiz_interp_bicubic_mod,   only: horiz_interp_bicubic_end
+use horiz_interp_spherical_mod, only: horiz_interp_spherical_init, horiz_interp_spherical
 use horiz_interp_spherical_mod, only: horiz_interp_spherical_end
 
  implicit none
@@ -103,6 +130,10 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_end
 !   </IN>
 !   <IN NAME = "src_modulo" >
 !      Indicate the source data grid is cyclic or not.
+!   </IN>
+!   <IN NAME = "grid_at_center" >
+!      Indicate the data is on the center of grid box or the edge of grid box. 
+!      When true, the data is on the center of grid box. default vaule is false.
 !   </IN>
 !   <OUT NAME="Interp" >
 !      A derived-type variable containing indices and weights used for subsequent 
@@ -198,10 +229,11 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_end
  integer, parameter :: CONSERVE = 1
  integer, parameter :: BILINEAR = 2
  integer, parameter :: SPHERICA = 3
+ integer, parameter :: BICUBIC  = 4
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: horiz_interp.f90,v 12.0 2005/04/14 17:56:46 fms Exp $'
- character(len=128) :: tagname = '$Name: lima $'
+ character(len=128) :: version = '$Id: horiz_interp.f90,v 13.0 2006/03/28 21:39:40 fms Exp $'
+ character(len=128) :: tagname = '$Name: memphis $'
  logical            :: do_vers = .true.
  logical            :: module_is_initialized = .FALSE.
 !-----------------------------------------------------------------------
@@ -238,7 +270,7 @@ contains
     logical, intent(in),                 optional :: grid_at_center
     !-----------------------------------------------------------------------
     real, dimension(:,:), allocatable :: lon_src, lat_src, lon_dst, lat_dst
-    real, dimension(:),   allocatable :: lon_src_1d, lat_src_1d
+    real, dimension(:),   allocatable :: lon_src_1d, lat_src_1d, lon_dst_1d, lat_dst_1d
     integer                           :: i, j, nlon_in, nlat_in, nlon_out, nlat_out
     logical                           :: center
     character(len=40)                 :: method
@@ -307,6 +339,35 @@ contains
                verbose, src_modulo)
           deallocate(lon_src_1d, lat_src_1d, lon_dst, lat_dst)
        endif
+    case ("bicubic")
+       Interp%interp_method = BICUBIC
+       center = .false.
+       if(present(grid_at_center) ) center = grid_at_center
+       !No need to expand to 2d, horiz_interp_bicubic_init does 1d-1d
+       if(center) then 
+          call horiz_interp_bicubic_init ( Interp, lon_in, lat_in, lon_out, lat_out, &
+            verbose, src_modulo)
+       else
+          nlon_in  = size(lon_in(:))-1;  nlat_in  = size(lat_in(:))-1
+          nlon_out = size(lon_out(:))-1; nlat_out = size(lat_out(:))-1
+          allocate(lon_src_1d(nlon_in), lat_src_1d(nlat_in))
+          allocate(lon_dst_1d(nlon_out), lat_dst_1d(nlat_out))
+          do i = 1, nlon_in
+             lon_src_1d(i) = (lon_in(i) + lon_in(i+1)) * 0.5
+          enddo
+          do j = 1, nlat_in
+             lat_src_1d(j) = (lat_in(j) + lat_in(j+1)) * 0.5
+          enddo
+          do i = 1, nlon_out
+             lon_dst_1d(i) = (lon_out(i) + lon_out(i+1)) * 0.5
+          enddo
+          do j = 1, nlat_out
+             lat_dst_1d(j) = (lat_out(j) + lat_out(j+1)) * 0.5
+          enddo
+          call horiz_interp_bicubic_init ( Interp, lon_src_1d, lat_src_1d, lon_dst_1d, lat_dst_1d, &
+               verbose, src_modulo)
+          deallocate(lon_src_1d, lat_src_1d, lon_dst_1d, lat_dst_1d)
+       endif
     case ("spherical")
        Interp%interp_method = SPHERICA
        nlon_in  = size(lon_in(:));   nlat_in  = size(lat_in(:))
@@ -329,7 +390,7 @@ contains
             num_nbrs, max_dist, src_modulo)
        deallocate(lon_src, lat_src, lon_dst, lat_dst)
     case default
-       call mpp_error(FATAL,'horiz_interp_mod: interp_method should be conservative, bilinear, spherical')
+       call mpp_error(FATAL,'horiz_interp_mod: interp_method should be conservative, bilinear, bicubic, spherical')
     end select
 
     !-----------------------------------------------------------------------
@@ -394,6 +455,26 @@ contains
               verbose, src_modulo )
          deallocate(lon_src_1d,lat_src_1d)
       endif
+   case ("bicubic")
+      Interp%interp_method = BICUBIC
+      center = .false.
+      if(present(grid_at_center) ) center = grid_at_center
+      if(center) then
+        call horiz_interp_bicubic_init ( Interp, lon_in, lat_in, lon_out, lat_out, &
+              verbose, src_modulo )
+      else
+         nlon_in  = size(lon_in(:))-1;  nlat_in  = size(lat_in(:))-1
+         allocate(lon_src_1d(nlon_in), lat_src_1d(nlat_in))
+         do i = 1, nlon_in
+            lon_src_1d(i) = (lon_in(i) + lon_in(i+1)) * 0.5
+         enddo
+         do j = 1, nlat_in
+            lat_src_1d(j) = (lat_in(j) + lat_in(j+1)) * 0.5
+         enddo
+           call horiz_interp_bicubic_init ( Interp, lon_src_1d, lat_src_1d, lon_out, lat_out, &
+              verbose, src_modulo )
+         deallocate(lon_src_1d,lat_src_1d)
+      endif
    case ("spherical")
       Interp%interp_method = SPHERICA
       nlon_in  = size(lon_in(:));  nlat_in  = size(lat_in(:))
@@ -408,7 +489,7 @@ contains
            num_nbrs, max_dist, src_modulo)
       deallocate(lon_src, lat_src)
    case default
-      call mpp_error(FATAL,'interp_method should be conservative, bilinear, spherical')
+      call mpp_error(FATAL,'interp_method should be conservative, bilinear, bicubic, spherical')
    end select
 
    !-----------------------------------------------------------------------
@@ -546,9 +627,14 @@ contains
    case(BILINEAR)
       call horiz_interp_bilinear(Interp,data_in, data_out, verbose, mask_in, mask_out, &
                              missing_value, missing_permit )
+   case(BICUBIC)
+      call horiz_interp_bicubic(Interp,data_in, data_out, verbose, mask_in, mask_out, &
+                             missing_value, missing_permit )
    case(SPHERICA)
       call horiz_interp_spherical(Interp,data_in, data_out, verbose, mask_in, mask_out, &
                              missing_value )
+   case default
+      call mpp_error(FATAL,'interp_method should be conservative, bilinear, bicubic, spherical')
    end select
 
    return
@@ -888,6 +974,8 @@ contains
       call horiz_interp_conserve_end(Interp )
    case (BILINEAR)
       call horiz_interp_bilinear_end(Interp )
+   case (BICUBIC)
+      call horiz_interp_bicubic_end(Interp )
    case (SPHERICA)
       call horiz_interp_spherical_end(Interp )
    end select

@@ -1,253 +1,6 @@
-module mpp_io_write_mod
-#include <fms_platform.h>
 
-use mpp_mod,           only : mpp_error, FATAL, WARNING, mpp_root_pe, stderr
-use mpp_domains_mod,   only : domain1D, domain2D, mpp_get_compute_domain, mpp_get_data_domain
-use mpp_domains_mod,   only : mpp_get_global_domain, mpp_update_domains, mpp_global_field
-use mpp_domains_mod,   only : mpp_domains_init, NULL_DOMAIN1D, operator(.NE.)
-use mpp_parameter_mod, only : MPP_WRONLY, MPP_NETCDF, MPP_SINGLE, MPP_DIRECT, MPP_ASCII
-use mpp_parameter_mod, only : MPP_SEQUENTIAL, MPP_IEEE32, MPP_MULTI, NULLTIME
-use mpp_datatype_mod,  only : axistype, fieldtype, atttype
-use mpp_data_mod,      only : mpp_file, module_is_initialized=>mpp_io_is_initialized, default_att
-use mpp_data_mod,      only : verbose=>verbose_mpp_io, debug=>debug_mpp_io, default_field, npes
-use mpp_data_mod,      only : mpp_io_stack, mpp_io_stack_size, text, varnum, records_per_pe, pe, error
-use mpp_io_util_mod,   only : mpp_io_set_stack_size, mpp_set_unit_range
-use mpp_io_misc_mod,   only : netcdf_err
-
-implicit none
-private
-
-
-character(len=128) :: version= &
-     '$Id: mpp_io_write.F90,v 12.0 2005/04/14 17:58:44 fms Exp $'
-character(len=128) :: tagname= &
-     '$Name: lima $'
-
-public :: mpp_write, mpp_write_meta, mpp_copy_meta, mpp_modify_meta
-
-! <INTERFACE NAME="mpp_write_meta">
-!   <OVERVIEW>
-!     Write metadata.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     This routine is used to write the <LINK SRC="#metadata">metadata</LINK>
-!     describing the contents of a file being written. Each file can contain
-!     any number of fields, which are functions of 0-3 space axes and 0-1
-!     time axes. (Only one time axis can be defined per file). The basic
-!     metadata defined <LINK SRC="#metadata">above</LINK> for <TT>axistype</TT>
-!     and <TT>fieldtype</TT> are written in the first two forms of the call
-!     shown below. These calls will associate a unique variable ID with each
-!     variable (axis or field). These can be used to attach any other real,
-!     integer or character attribute to a variable. The last form is used to
-!     define a <I>global</I> real, integer or character attribute that
-!     applies to the dataset as a whole.
-!   </DESCRIPTION>
-!  <TEMPLATE>
-!    call mpp_write_meta( unit, axis, name, units, longname,
-!      cartesian, sense, domain, data )
-!  </TEMPLATE>
-!  <NOTE>
-!    The first form defines a time or space axis. Metadata corresponding to the type
-!    above are written to the file on &lt;unit&gt;. A unique ID for subsequen
-!    references to this axis is returned in axis%id. If the &lt;domain&gt;
-!    element is present, this is recognized as a distributed data axis
-!    and domain decomposition information is also written if required (the
-!    domain decomposition info is required for multi-fileset multi-threaded
-!    I/O). If the &lt;data&gt; element is allocated, it is considered to be a
-!    space axis, otherwise it is a time axis with an unlimited dimension. Only
-!    one time axis is allowed per file.
-!  </NOTE>
-!  <TEMPLATE>
-!    call mpp_write_meta( unit, field, axes, name, units, longname,
-!                              min, max, missing, fill, scale, add, pack )
-!  </TEMPLATE>
-!  <NOTE>
-!    The second form defines a field. Metadata corresponding to the type
-!    above are written to the file on &lt;unit&gt;. A unique ID for subsequen
-!    references to this field is returned in field%id. At least one axis
-!    must be associated, 0D variables are not considered. mpp_write_meta
-!    must previously have been called on all axes associated with this
-!    field.
-!  </NOTE>
-!  <TEMPLATE>
-!    call mpp_write_meta( unit, id, name, rval=rval, pack=pack )
-!  </TEMPLATE>
-!  <TEMPLATE>
-!    call mpp_write_meta( unit, id, name, ival=ival )
-!  </TEMPLATE>
-!  <TEMPLATE>
-!    call mpp_write_meta( unit, id, name, cval=cval )
-!  </TEMPLATE>
-!  <NOTE>
-!    The third form (3 - 5) defines metadata associated with a previously defined
-!    axis or field, identified to mpp_write_meta by its unique ID &lt;id&gt;.
-!    The attribute is named &lt;name&gt; and can take on a real, integer
-!    or character value. &lt;rval&gt; and &lt;ival&gt; can be scalar or 1D arrays.
-!    This need not be called for attributes already contained in
-!    the type.
-!  </NOTE>
-!  <TEMPLATE>
-!    call mpp_write_meta( unit, name, rval=rval, pack=pack )
-!  </TEMPLATE>
-!  <TEMPLATE>
-!    call mpp_write_meta( unit, name, ival=ival )
-!  </TEMPLATE>
-!  <TEMPLATE>
-!    call mpp_write_meta( unit, name, cval=cval )
-!  </TEMPLATE>
-!  <NOTE>
-!    The last form (6 - 8) defines global metadata associated with the file as a
-!    whole. The attribute is named &lt;name&gt; and can take on a real, integer
-!    or character value. &lt;rval&gt; and &lt;ival&gt; can be scalar or 1D arrays.
-!  </NOTE>
-!  <IN NAME="unit"></IN>
-!  <OUT NAME="axis"></OUT>
-!  <IN NAME="name"></IN>
-!  <IN NAME="units"></IN>
-!  <IN NAME="longname"></IN>
-!  <IN NAME="cartesian"></IN>
-!  <IN NAME="sense"></IN>
-!  <IN NAME="domain"></IN>
-!  <IN NAME="data"></IN>
-!  <OUT NAME="field"></OUT>
-!  <IN NAME="min, max"></IN>
-!  <IN NAME="missing"></IN>
-!  <IN NAME="fill"></IN>
-!  <IN NAME="scale"></IN>
-!  <IN NAME="add"></IN>
-!  <IN NAME="pack"></IN>
-!  <IN NAME="id"></IN>
-!  <IN NAME="cval"></IN>
-!  <IN NAME="ival"></IN>
-!  <IN NAME="rval"></IN>
-! <NOTE>
-!    Note that <TT>mpp_write_meta</TT> is expecting axis data on the
-!    <I>global</I> domain even if it is a domain-decomposed axis.
-!
-!    You cannot interleave calls to <TT>mpp_write</TT> and
-!    <TT>mpp_write_meta</TT>: the first call to
-!    <TT>mpp_write</TT> implies that metadata specification is complete.
-! </NOTE>
-! </INTERFACE>
-  interface mpp_write_meta
-     module procedure mpp_write_meta_var
-     module procedure mpp_write_meta_scalar_r
-     module procedure mpp_write_meta_scalar_i
-     module procedure mpp_write_meta_axis
-     module procedure mpp_write_meta_field
-     module procedure mpp_write_meta_global
-     module procedure mpp_write_meta_global_scalar_r
-     module procedure mpp_write_meta_global_scalar_i
-  end interface
-     
-  interface mpp_copy_meta
-     module procedure mpp_copy_meta_axis
-     module procedure mpp_copy_meta_field
-     module procedure mpp_copy_meta_global
-  end interface
-
-  interface mpp_modify_meta
-!     module procedure mpp_modify_att_meta
-     module procedure mpp_modify_field_meta
-     module procedure mpp_modify_axis_meta
-  end interface
-
-! <INTERFACE NAME="mpp_write">
-!   <OVERVIEW>
-!     Write to an open file.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!    <TT>mpp_write</TT> is used to write data to the file on an I/O unit
-!    using the file parameters supplied by <LINK
-!    SRC="#mpp_open"><TT>mpp_open</TT></LINK>. Axis and field definitions must
-!    have previously been written to the file using <LINK
-!    SRC="#mpp_write_meta"><TT>mpp_write_meta</TT></LINK>.  There are three
-!    forms of <TT>mpp_write</TT>, one to write axis data, one to write
-!    distributed field data, and one to write non-distributed field
-!    data. <I>Distributed</I> data refer to arrays whose two
-!    fastest-varying indices are domain-decomposed. Distributed data must
-!    be 2D or 3D (in space). Non-distributed data can be 0-3D.
-!
-!    The <TT>data</TT> argument for distributed data is expected by
-!    <TT>mpp_write</TT> to contain data specified on the <I>data</I> domain,
-!    and will write the data belonging to the <I>compute</I> domain,
-!    fetching or sending data as required by the parallel I/O <LINK
-!    SRC="#modes">mode</LINK> specified in the <TT>mpp_open</TT> call. This
-!    is consistent with our definition of <LINK
-!    SRC="http:mpp_domains.html#domains">domains</LINK>, where all arrays are
-!    expected to be dimensioned on the data domain, and all operations
-!    performed on the compute domain.
-!
-!     The type of the <TT>data</TT> argument must be a <I>default
-!     real</I>, which can be 4 or 8 byte.
-!   </DESCRIPTION>
-!  <TEMPLATE>
-!    mpp_write( unit, axis )
-!  </TEMPLATE>
-!  <TEMPLATE>
-!    mpp_write( unit, field, data, tstamp )
-!  </TEMPLATE>
-!  <TEMPLATE>
-!    mpp_write( unit, field, domain, data, tstamp )
-!  </TEMPLATE>
-!  <IN NAME="tstamp">
-!    <TT>tstamp</TT> is an optional argument. It is to
-!    be omitted if the field was defined not to be a function of time.
-!    Results are unpredictable if the argument is supplied for a time-
-!    independent field, or omitted for a time-dependent field. Repeated
-!    writes of a time-independent field are also not recommended. One
-!    time level of one field is written per call. tstamp must be an 8-byte
-!    real, even if the default real type is 4-byte.
-!  </IN>
-!  <NOTE>
-!    The type of write performed by <TT>mpp_write</TT> depends on the file
-!    characteristics on the I/O unit specified at the <LINK
-!    SRC="#mpp_open"><TT>mpp_open</TT></LINK> call. Specifically, the format of
-!    the output data (e.g netCDF or IEEE), the <TT>threading</TT> and
-!    <TT>fileset</TT> flags, etc., can be changed there, and require no
-!    changes to the <TT>mpp_write</TT> calls.
-!
-!    Packing is currently not implemented for non-netCDF files, and the
-!    <TT>pack</TT> attribute is ignored. On netCDF files,
-!    <TT>NF_DOUBLE</TT>s (8-byte IEEE floating point numbers) are
-!    written for <TT>pack</TT>=1 and <TT>NF_FLOAT</TT>s for
-!    <TT>pack</TT>=2. (<TT>pack</TT>=2 gives the customary
-!    and default behaviour). We write <TT>NF_SHORT</TT>s (2-byte
-!    integers) for <TT>pack=4</TT>, or <TT>NF_BYTE</TT>s
-!    (1-byte integers) for <TT>pack=8</TT>. Integer scaling is done
-!    using the <TT>scale</TT> and <TT>add</TT> attributes at
-!    <TT>pack</TT>=4 or 8, satisfying the relation
-!
-!    <PRE>
-!    data = packed_data*scale + add
-!    </PRE>
-!
-!    <TT>NOTE: mpp_write</TT> does not check to see if the scaled
-!    data in fact fits into the dynamic range implied by the specified
-!    packing. It is incumbent on the user to supply correct scaling
-!    attributes.
-!
-!    You cannot interleave calls to <TT>mpp_write</TT> and
-!    <TT>mpp_write_meta</TT>: the first call to
-!    <TT>mpp_write</TT> implies that metadata specification is
-!    complete.
-! </NOTE>
-! </INTERFACE>
-  interface mpp_write
-     module procedure mpp_write_2ddecomp_r2d
-     module procedure mpp_write_2ddecomp_r3d
-     module procedure mpp_write_r0D
-     module procedure mpp_write_r1D
-     module procedure mpp_write_r2D
-     module procedure mpp_write_r3D
-     module procedure mpp_write_axis
-  end interface
-
-#ifdef use_netCDF
-#include <netcdf.inc>
-#endif
-
-contains
+! -*-f90-*-
+! $Id: mpp_io_write.inc,v 13.0 2006/03/28 21:41:25 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                            !
@@ -466,7 +219,7 @@ contains
       return
     end subroutine mpp_write_meta_scalar_i
       
-    subroutine mpp_write_meta_axis( unit, axis, name, units, longname, cartesian, sense, domain, data )
+    subroutine mpp_write_meta_axis( unit, axis, name, units, longname, cartesian, sense, domain, data)
 !load the values in an axistype (still need to call mpp_write)
 !write metadata attributes for axis
 !it is declared intent(inout) so you can nullify pointers in the incoming object if needed
@@ -496,6 +249,7 @@ contains
       axis%name     = name
       axis%units    = units
       axis%longname = longname
+      axis%shift    = 0
       if( PRESENT(cartesian) )axis%cartesian = cartesian
       if( PRESENT(sense)     )axis%sense     = sense
       if( PRESENT(domain)    )then
@@ -510,11 +264,20 @@ contains
       end if 
       if( PRESENT(data) )then
           if( PRESENT(domain) )then
-              if( size(data(:)).NE.ieg-isg+1 ) &
-                   call mpp_error( FATAL, 'MPP_WRITE_META_AXIS: size(data).NE.domain%global%size.' )
-              allocate( axis%data(isg:ieg) )
+             !--- size of data can be ieg-isg+1 or ieg-isg+2
+             if(size(data(:)) == ieg-isg+1 ) then
+                allocate( axis%data(isg:ieg) )
+             else if( size(data(:)) == ieg-isg+2 ) then
+                if(ie == ieg) ie = ie + 1
+                ieg = ieg + 1
+                axis%shift = 1
+                allocate( axis%data(isg:ieg) )
+             else
+                call mpp_error( FATAL, 'MPP_WRITE_META_AXIS: size(data) should be equal to ' &
+                     //'domain%global%size or domain%global%size+1.' )
+             endif
           else     
-              allocate( axis%data(size(data(:))) )
+             allocate( axis%data(size(data(:))) )
           end if
           axis%data = data
       end if
@@ -785,7 +548,6 @@ contains
       integer,          intent(in), optional :: ival(:)
       character(len=*), intent(in), optional :: cval
       integer, intent(in), optional :: pack
-      integer :: lenc
       integer, allocatable :: rval_i(:)
 #ifdef use_netCDF
       if( PRESENT(rval) )then
@@ -902,32 +664,51 @@ contains
 ! performs the actual write. This routine is private to this module.   !
 !                                                                      !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#undef MPP_WRITE_2DDECOMP_2D_
 #define MPP_WRITE_2DDECOMP_2D_ mpp_write_2ddecomp_r2d
+#undef MPP_WRITE_2DDECOMP_3D_
 #define MPP_WRITE_2DDECOMP_3D_ mpp_write_2ddecomp_r3d
+#undef MPP_TYPE_
 #define MPP_TYPE_ real
 #include <mpp_write_2Ddecomp.h>
 
+#undef MPP_WRITE_
 #define MPP_WRITE_ mpp_write_r0D
+#undef MPP_TYPE_
 #define MPP_TYPE_ real
+#undef MPP_RANK_
 #define MPP_RANK_ !
+#undef MPP_WRITE_RECORD_
 #define MPP_WRITE_RECORD_ call write_record( unit, field, 1, (/data/), tstamp )
 #include <mpp_write.h>
 
+#undef MPP_WRITE_
 #define MPP_WRITE_ mpp_write_r1D
+#undef MPP_TYPE_
 #define MPP_TYPE_ real
+#undef MPP_WRITE_RECORD_
 #define MPP_WRITE_RECORD_ call write_record( unit, field, size(data(:)), data, tstamp )
+#undef MPP_RANK_
 #define MPP_RANK_ (:)
 #include <mpp_write.h>
 
+#undef MPP_WRITE_
 #define MPP_WRITE_ mpp_write_r2D
+#undef MPP_TYPE_
 #define MPP_TYPE_ real
+#undef MPP_WRITE_RECORD_
 #define MPP_WRITE_RECORD_ call write_record( unit, field, size(data(:,:)), data, tstamp )
+#undef MPP_RANK_
 #define MPP_RANK_ (:,:)
 #include <mpp_write.h>
 
+#undef MPP_WRITE_
 #define MPP_WRITE_ mpp_write_r3D
+#undef MPP_TYPE_
 #define MPP_TYPE_ real
+#undef MPP_WRITE_RECORD_
 #define MPP_WRITE_RECORD_ call write_record( unit, field, size(data(:,:,:)), data, tstamp )
+#undef MPP_RANK_
 #define MPP_RANK_ (:,:,:)
 #include <mpp_write.h>
 
@@ -935,7 +716,7 @@ contains
       integer, intent(in) :: unit
       type(axistype), intent(in) :: axis
       type(fieldtype) :: field
-      integer :: is, ie
+      integer :: is, ie, isg, ieg
       
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
@@ -949,6 +730,8 @@ contains
       field%id = axis%id
       if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
           call mpp_get_compute_domain( axis%domain, is, ie )
+          call mpp_get_global_domain( axis%domain, isg, ieg )
+          if( ie == ieg) ie = ie + axis%shift
           field%size(1) = ie-is+1
           call write_record( unit, field, field%size(1), axis%data(is:) )
       else
@@ -1073,7 +856,7 @@ contains
               if( npes.GT.1 .AND. mpp_file(unit)%fileset.EQ.MPP_SINGLE )then
                   start(1) = is - isg + 1
                   start(2) = js - jsg + 1
-              else
+              else   ! the following don't make any sense.
                   if( isizc.NE.ie-is+1 )then
                       start(1) = is - isg + 1
                       axsiz(1) = ie - is + 1
@@ -1083,6 +866,8 @@ contains
                       axsiz(2) = je - js + 1
                   end if
               end if  
+              if(ie == ieg) axsiz(1) = axsiz(1) + field%axes(1)%shift
+              if(je == jeg) axsiz(2) = axsiz(2) + field%axes(2)%shift
           end if  
           if( debug )print '(a,2i3,12i4)', 'WRITE_RECORD: PE, unit, start, axsiz=', pe, unit, start, axsiz
 #ifdef use_netCDF
@@ -1107,9 +892,9 @@ contains
           call netcdf_err( error, mpp_file(unit), field=field )
 #endif    
       else                      !non-netCDF
-!subdomain contains (/is,ie,js,je/)
+!subdomain contains (/is,ie,js,je/)  
           if( PRESENT(domain) )then
-              subdomain(:) = (/ is, ie, js, je /)
+              subdomain(:) = (/ is, ie, js, je /)  ! ??? is, ie, js, je are never initialized.
           else
               subdomain(:) = -1    ! -1 means use global value from axis metadata
           end if
@@ -1236,6 +1021,8 @@ contains
               if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
                   call mpp_get_compute_domain( axis%domain, is, ie )
                   call mpp_get_global_domain( axis%domain, isg, ieg )
+                  if(ie == ieg) ie  = ie + axis%shift
+                  ieg = ieg + axis%shift
                   error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, ie-is+1, axis%did )
               else
                   error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, size(axis%data(:)),          axis%did )
@@ -1261,7 +1048,7 @@ contains
           write( text, '(a,i4,a)' )'AXIS ', axis%id, ' size'
           if( ASSOCIATED(axis%data) )then !space axis
               if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
-                  call write_attribute( unit, trim(text), ival=(/ie-is+1/) )
+                  call write_attribute( unit, trim(text), ival=(/ie-is+1/) ) ! ??? is, ie is not initialized 
               else
                   call write_attribute( unit, trim(text), ival=(/size(axis%data(:))/) )
               end if
@@ -1468,4 +1255,3 @@ contains
       return
     end subroutine mpp_modify_field_meta
 
-end module mpp_io_write_mod

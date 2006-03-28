@@ -37,8 +37,8 @@ module horiz_interp_bilinear_mod
   real, parameter :: epsln=1.e-10
 
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_bilinear.F90,v 12.0 2005/04/14 17:56:56 fms Exp $'
-  character(len=128) :: tagname = '$Name: lima $'
+  character(len=128) :: version = '$Id: horiz_interp_bilinear.F90,v 13.0 2006/03/28 21:39:32 fms Exp $'
+  character(len=128) :: tagname = '$Name: memphis $'
   logical            :: do_vers = .true.
 
 
@@ -53,11 +53,10 @@ contains
     real, intent(in),  dimension(:,:)      :: lon_out, lat_out
     integer, intent(in),          optional :: verbose
     logical, intent(in),          optional :: src_modulo
-    logical                                :: regular_grid
 
     logical :: src_is_modulo
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, n, m
-    integer :: i, j, ie, is, je, js, ln_err, lt_err, warns
+    integer :: ie, is, je, js, ln_err, lt_err, warns, unit
     real    :: wtw, wte, wts, wtn, lon, lat, tpi, hpi
     real    :: glt_min, glt_max, gln_min, gln_max, min_lon, max_lon
 
@@ -99,7 +98,7 @@ contains
             call mpp_error(FATAL,'horiz_interp_bilinear_mod: '// & 
             'The range of source grid longitude should be no larger than tpi')
 
-       if(lon_in(1) .lt. 0.0) then
+       if(lon_in(1) .lt. 0.0 .OR. lon_in(nlon_in) > tpi ) then
           min_lon = lon_in(1)
           max_lon = lon_in(nlon_in)
        endif
@@ -174,24 +173,26 @@ contains
        enddo
     enddo
 
+    unit = stdout()
+
     if (ln_err .eq. 1 .and. warns > 0) then
-       write (stdout(),'(/,(1x,a))')                                      &
+       write (unit,'(/,(1x,a))')                                      &
             '==> Warning: the geographic data set does not extend far   ', &
             '             enough east or west - a cyclic boundary       ', &
             '             condition was applied. check if appropriate   '
-       write (stdout(),'(/,(1x,a,2f8.4))')                                &
+       write (unit,'(/,(1x,a,2f8.4))')                                &
             '    data required between longitudes:', gln_min, gln_max,     &
             '      data set is between longitudes:', lon_in(1), lon_in(nlon_in)
        warns = warns - 1
     endif
 
     if (lt_err .eq. 1 .and. warns > 0) then
-       write (stdout(),'(/,(1x,a))')                                     &
+       write (unit,'(/,(1x,a))')                                     &
             '==> Warning: the geographic data set does not extend far   ',&
             '             enough north or south - extrapolation from    ',&
             '             the nearest data was applied. this may create ',&
             '             artificial gradients near a geographic pole   ' 
-       write (stdout(),'(/,(1x,a,2f8.4))')                             &
+       write (unit,'(/,(1x,a,2f8.4))')                             &
             '    data required between latitudes:', glt_min, glt_max,   &
             '      data set is between latitudes:', lat_in(1), lat_in(nlat_in)
     endif
@@ -255,8 +256,7 @@ contains
     real, intent(in),  dimension(:,:)      :: lon_out, lat_out
     integer, intent(in),          optional :: verbose
     logical, intent(in),          optional :: src_modulo
-    logical                                :: regular_grid
-    integer                                :: warns, i, j 
+    integer                                :: warns 
     logical                                :: src_is_modulo
     integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
     integer                                :: m, n, is, ie, js, je, num_solution
@@ -430,7 +430,7 @@ contains
     integer                                :: is, js, jstart, jend, istart, iend, npts
     integer, allocatable, dimension(:)     :: ilon, jlat
     real                                   :: lon_min, lon_max, lon, lat, tpi
-    logical                                :: found, check_side
+    logical                                :: found
     real                                   :: lon1, lat1, lon2, lat2, lon3, lat3, lon4, lat4
 
     tpi = 2.0*pi
@@ -550,24 +550,24 @@ contains
                    !--- right and left boundary -----------------------------------------------
                    istart = is - step
                    iend   = is + step
-                   check_side = .true.
                    if(src_modulo) then
                       if( istart < 1)       istart = istart + nlon_in
                       if( iend   > nlon_in) iend   = iend   - nlon_in
                    else 
-                      if(istart < 1 .or. iend   > nlon_in) check_side = .false.
+                      istart = max(istart,1)
+                      iend   = min(iend, nlon_in)
                    endif
-                   if(check_side) then
-                      do j = jstart+1, jend-1
+                   do l = -step, step
+                      j = js+l
+                         if( j < 1 .or. j > nlat_in) cycle
                          npts = npts+1
                          ilon(npts) = istart
                          jlat(npts) = j
                          npts = npts+1
                          ilon(npts) = iend
                          jlat(npts) = j
-                      enddo
-                   endif
-                endif
+                  end do
+                end if
 
                 !--- find the surrouding points             
                 do l = 1, npts
@@ -697,7 +697,7 @@ contains
     !-----------------------------------------------------------------------
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, n, m,         &
          is, ie, js, je, iverbose, max_missing, num_missing, &
-         miss_in, miss_out
+         miss_in, miss_out, unit
     real    :: dwtsum, wtsum, min_in, max_in, avg_in, &
          min_out, max_out, avg_out, wtw, wte, wts, wtn
     real    :: mask(size(data_in,1), size(data_in,2) )
@@ -801,11 +801,12 @@ contains
        call stats (data_out, min_out, max_out, avg_out, miss_out, missing_value, mask_out)
 
        !---- output statistics ----
-       write (stdout(),900)
-       write (stdout(),901)  min_in ,max_in, avg_in
-       if (present(mask_in))  write (stdout(),903)  miss_in
-       write (stdout(),902)  min_out,max_out,avg_out
-       if (present(mask_out)) write (stdout(),903)  miss_out
+       unit = stdout()
+       write (unit,900)
+       write (unit,901)  min_in ,max_in, avg_in
+       if (present(mask_in))  write (unit,903)  miss_in
+       write (unit,902)  min_out,max_out,avg_out
+       if (present(mask_out)) write (unit,903)  miss_out
 
 900    format (/,1x,10('-'),' output from horiz_interp ',10('-'))
 901    format ('  input:  min=',f16.9,'  max=',f16.9,'  avg=',f22.15)
@@ -874,17 +875,18 @@ contains
     !             closest to "value"
     !=======================================================================
     !
-    integer i, ii, ia
+    integer i, ia, unit
     logical keep_going
     !
     ia = size(array(:))
     do i=2,ia
        if (array(i) .lt. array(i-1)) then
-          write (stdout(),*) &
+          unit = stdout()
+          write (unit,*) &
                ' => Error: array must be monotonically increasing in "indp"' , &
                '           when searching for nearest element to value=',value
-          write (stdout(),*) '           array(i) < array(i-1) for i=',i 
-          write (stdout(),*) '           array(i) for i=1..ia follows:'
+          write (unit,*) '           array(i) < array(i-1) for i=',i 
+          write (unit,*) '           array(i) for i=1..ia follows:'
           call abort()
        endif
     enddo

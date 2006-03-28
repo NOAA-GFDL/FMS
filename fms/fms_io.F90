@@ -80,7 +80,7 @@ use mpp_io_mod, only : mpp_open, mpp_close, mpp_io_init, mpp_io_exit, &
      mpp_get_fields, MPP_SEQUENTIAL, MPP_DIRECT, mpp_get_axes, &
      mpp_get_axis_data
 use mpp_domains_mod, only : domain2d, domain1d, mpp_get_domain_components, &
-     mpp_get_compute_domain, mpp_get_data_domain, &
+     mpp_get_compute_domain, mpp_get_data_domain, mpp_get_global_shift, &
      mpp_get_global_domain, NULL_DOMAIN1D, &
      NULL_DOMAIN2D, mpp_global_field, operator( == )
   
@@ -107,6 +107,7 @@ type file_type
    integer                                :: siz(max_fields,4)  ! X/Y/Z/T extent of fields (data domain 
 !size for distributed writes;global size for reads)
    integer                                :: gsiz(max_fields,4) ! global X/Y/Z/T extent of fields
+   integer                                :: position(max_fields) ! data location. 
    integer                                :: unit_tmpfile(max_fields)
    character(len=128)                     :: fieldname(max_fields)
    type(buff_type), dimension(:), _ALLOCATABLE :: field_buffer _NULL
@@ -166,7 +167,7 @@ type(domain2D), pointer, private :: Current_domain =>NULL()
 integer, private :: is,ie,js,je      ! compute domain
 integer, private :: isd,ied,jsd,jed  ! data domain
 integer, private :: isg,ieg,jsg,jeg  ! global domain
-
+logical          :: read_data_bug
 type(file_type), dimension(:), allocatable            :: files_read
 type(file_type), dimension(:), allocatable            :: files_write
 type(file_type), save                                 :: default_file
@@ -178,8 +179,8 @@ public  :: open_file, open_direct_file
 public  :: get_restart_io_mode
 private :: lookup_field_w, lookup_axis, unique_axes
 
-character(len=128) :: version = '$Id: fms_io.F90,v 12.0 2005/04/14 17:56:29 fms Exp $'
-character(len=128) :: tagname = '$Name: lima $'
+character(len=128) :: version = '$Id: fms_io.F90,v 13.0 2006/03/28 21:39:14 fms Exp $'
+character(len=128) :: tagname = '$Name: memphis $'
 
 contains
 
@@ -224,11 +225,12 @@ subroutine fms_io_init()
     
   IMPLICIT NONE
     
-  integer  :: i,j, unit, io_status
-  logical :: file_exist
+  integer  :: i, unit, io_status
+
   namelist /fms_io_nml/ fms_netcdf_override, fms_netcdf_restart, &
        threading_read, fileset_read, threading_write, &
-       fileset_write, format, read_all_pe, iospec_ieee32,max_files_w,max_files_r
+       fileset_write, format, read_all_pe, iospec_ieee32,max_files_w,max_files_r, &
+       read_data_bug
 
   call mpp_io_init()
   if (module_is_initialized) return
@@ -236,7 +238,7 @@ subroutine fms_io_init()
   max_files_w = 40; max_files_r = 40
   threading_read='multi';fileset_read='single';format='netcdf'
   threading_write='multi';fileset_write='multi'
-
+  read_data_bug = .false.
   call mpp_open(unit, 'input.nml',form=MPP_ASCII,action=MPP_RDONLY)
   read(unit,fms_io_nml,iostat=io_status)
   write(stdlog(), fms_io_nml)
@@ -334,16 +336,16 @@ subroutine fms_io_exit()
   use platform_mod, only: r8_kind
   IMPLICIT NONE
   integer, parameter :: max_axis_size=10000
-  integer :: i,j,k,unit,unit2,index_field
+  integer :: i,j,k,unit,unit2
   integer :: num_axes, t_axis_id, x_axis_id, y_axis_id, z_axis_id
   integer, dimension(4) :: size_field, global_size ! x/y/z/t
-  integer :: siz_x_axes(max_axes), siz_y_axes(max_axes), siz_z_axes(max_axes), max_t_size
+  integer :: siz_x_axes(max_axes), siz_y_axes(max_axes), siz_z_axes(max_axes)
   integer :: x_axes(max_axes), y_axes(max_axes), z_axes(max_axes)
   integer :: num_x_axes, num_y_axes, num_z_axes
   type(domain1d) :: domain_x(max_fields), domain_y(max_fields), x_domains(max_axes), y_domains(max_axes)
   real, dimension(max_axis_size) :: axisdata
   real(r8_kind) :: tlev  
-  character (len=128) :: axisname,filename, fieldname,temp_name
+  character (len=128) :: axisname,filename,temp_name
   type(domain2D) :: domain
   integer :: domain_idx
   if( .NOT.module_is_initialized )return !make sure it's only called once per PE
@@ -636,10 +638,10 @@ subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_nam
   integer :: nfile  ! index of the currently open file in array files
   integer :: index_field ! position of the fieldname in the list of fields
   integer :: unit2 ! unit of temporary file
-  integer :: gxsize, gysize
+  integer :: gxsize, gysize, ishift, jshift, position
   logical :: file_open = .false., is_no_domain = .false.
   character(len=256) :: fname  
-  type(file_type), dimension(:), pointer  :: new_files_write
+
 
 ! Initialize files to default values
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(write_data_3d_new): need to call fms_io_init')  
@@ -735,10 +737,13 @@ subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_nam
      endif
 
      if (files_write(nfile)%domain_present(index_field)) then
+        call mpp_get_global_shift (array_domain(files_write(nfile)%domain_idx(index_field)), &
+                                   size(data,1), size(data,2), ishift, jshift, position = position)
         call mpp_get_global_domain(array_domain(files_write(nfile)%domain_idx(index_field)),xsize=gxsize,ysize=gysize)
-        files_write(nfile)%gsiz(index_field,1) = gxsize
-        files_write(nfile)%gsiz(index_field,2) = gysize
-        files_write(nfile)%gsiz(index_field,3) = size(data,3)
+        files_write(nfile)%gsiz(index_field,1)   = gxsize + ishift
+        files_write(nfile)%gsiz(index_field,2)   = gysize + jshift
+        files_write(nfile)%gsiz(index_field,3)   = size(data,3)
+        files_write(nfile)%position(index_field) = position
      else
         files_write(nfile)%gsiz(index_field,1) = size(data,1)
         files_write(nfile)%gsiz(index_field,2) = size(data,2)
@@ -753,7 +758,12 @@ subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_nam
   if(thread_w.eq.MPP_SINGLE .and. files_write(nfile)%domain_present(index_field) ) then
      gxsize = files_write(nfile)%gsiz(index_field,1)
      gysize = files_write(nfile)%gsiz(index_field,2)
+     position = files_write(nfile)%position(index_field)
      allocate (global_data(gxsize,gysize,size(data,3)))
+     !--- This temporary fix is to allow the mom4 test with some domain
+     !--- region masked-out to get value 0 at the masked region, instead 
+     !--- of some arbitrary value.
+     global_data = 0.0
      call mpp_global_field(array_domain(files_write(nfile)%domain_idx(index_field)),data,global_data)
      if(mpp_pe() == mpp_root_pe()) write(unit2) global_data
      deallocate(global_data)
@@ -856,8 +866,8 @@ function lookup_axis(axis_sizes,siz,domains,dom)
   type(domain1d), optional :: domains(:)
   type(domain1d), optional :: dom
   integer :: lookup_axis
-  integer :: i,j
-  character(len=128) :: name
+  integer :: j
+
 
   lookup_axis=-1
   do j=1,size(axis_sizes(:))
@@ -1130,17 +1140,18 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
   logical, intent(in), optional :: append_pelist_name, no_domain 
   character(len=128) :: name
   character(len=256) :: fname
-  integer :: unit, siz_in(4), siz(4), i, j, k
+  integer :: unit, siz_in(4), siz(4), i, j
   integer :: nfile  ! index of the opened file in array files
-  integer :: ndim, nvar, natt, ntime,var_dim, tlev=1
+  integer :: ndim, nvar, var_dim, tlev=1
   integer :: index_field ! position of the fieldname in the list of variables
-  integer :: iscomp, iecomp, jscomp, jecomp, cxsize, cysize,cxsize_max, cysize_max
-  integer :: isdata, iedata, jsdata, jedata, dxsize, dysize,dxsize_max, dysize_max
-  integer :: isglobal, ieglobal, jsglobal, jeglobal, gxsize, gysize,gxsize_max,gysize_max
+  integer :: cxsize, cysize
+  integer :: dxsize, dysize
+  integer :: gxsize, gysize
+  integer :: ishift, jshift
   logical :: data_is_global
   logical :: file_opened, found, is_no_domain = .false.
   integer :: index_axis
-  type(file_type), dimension(:), pointer  :: new_files_read
+
 ! Initialize files to default values
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(read_data_3d_new):  module not initialized')  
   data_is_global=.false.
@@ -1168,12 +1179,16 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
   endif
 
   if (PRESENT(domain) ) then
-     call mpp_get_compute_domain(domain,iscomp,iecomp,jscomp,jecomp,cxsize, & 
-          cxsize_max,cysize,cysize_max)
-     call mpp_get_data_domain(domain,isdata,iedata,jsdata,jedata,dxsize,dxsize_max,&
-          dysize,dysize_max)
-     call mpp_get_global_domain(domain,isglobal,ieglobal,jsglobal,jeglobal,gxsize, &
-          gxsize_max,gysize,gysize_max)
+     call mpp_get_compute_domain(domain, xsize = cxsize, ysize = cysize)
+     call mpp_get_data_domain   (domain, xsize = dxsize, ysize = dysize)
+     call mpp_get_global_domain (domain, xsize = gxsize, ysize = gysize)
+     call mpp_get_global_shift  (domain, size(data,1), size(data,2), ishift, jshift)
+     if (ishift .NE. 0) then
+        cxsize = cxsize+ishift; dxsize = dxsize+ishift; gxsize = gxsize+ishift
+     endif
+     if (jshift .NE. 0) then
+        cysize = cysize+jshift; dysize = dysize+jshift; gysize = gysize+jshift
+     endif
      if (gxsize == size(data,1) .and. gysize == size(data,2)) data_is_global = .true.
   else  if (ASSOCIATED(Current_domain)  .AND. .NOT. is_no_domain ) then
      gxsize=ieg-isg+1
@@ -1182,6 +1197,13 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
      dysize=jed-jsd+1
      cxsize=ie-is+1
      cysize=je-js+1
+     call mpp_get_global_shift  (Current_domain, size(data,1), size(data,2), ishift, jshift)
+     if (ishift .NE. 0) then
+        cxsize = cxsize+ishift; dxsize = dxsize+ishift; gxsize = gxsize+ishift
+     endif
+     if (jshift .NE. 0) then
+        cysize = cysize+jshift; dysize = dysize+jshift; gysize = gysize+jshift
+     endif
      if (gxsize == size(data,1) .and. gysize == size(data,2)) data_is_global = .true.
   else 
 
@@ -1427,110 +1449,120 @@ end function unique_axes
   !
   ! reading can be done either by all PEs (default) or by only the root PE
   ! this is controlled by namelist variable "read_all_pe".
+  
+  ! By default, array data is expected to be declared in data domain and no_halo
+  !is NOT needed, however IF data is decalared in COMPUTE domain then optional NO_HALO should be .true.
+
   !#######################################################################
 
-subroutine read_data_2d ( unit, data, end )
+subroutine read_data_2d ( unit, data, end)
 
   integer, intent(in)                        :: unit
   real,    intent(out), dimension(isd:,jsd:) :: data
   logical, intent(out), optional             :: end  
-  real, dimension(isg:ieg,jsg:jeg) :: gdata
-  integer :: len
+  real, dimension(isg:ieg,jsg:jeg)           :: gdata
+  integer                                    :: len
+  logical                                    :: no_halo
 
   include "read_data_2d.inc"  
 end subroutine read_data_2d
 
 !#######################################################################
 
-subroutine read_ldata_2d ( unit, data, end )
+subroutine read_ldata_2d ( unit, data, end)
 
   integer, intent(in)                        :: unit
   logical, intent(out), dimension(isd:,jsd:) :: data
   logical, intent(out), optional             :: end  
-  logical, dimension(isg:ieg,jsg:jeg) :: gdata
-  integer :: len
+  logical, dimension(isg:ieg,jsg:jeg)        :: gdata
+  integer                                    :: len
+  logical                                    :: no_halo
 
   include "read_data_2d.inc"
 end subroutine read_ldata_2d
 !#######################################################################
 
-subroutine read_idata_2d ( unit, data, end )
+subroutine read_idata_2d ( unit, data, end)
 
   integer, intent(in)                        :: unit
   integer, intent(out), dimension(isd:,jsd:) :: data
   logical, intent(out), optional             :: end
-  
-  integer, dimension(isg:ieg,jsg:jeg) :: gdata
-  integer :: len
+  integer, dimension(isg:ieg,jsg:jeg)        :: gdata
+  integer                                    :: len
+  logical                                    :: no_halo
 
-  include "read_data_2d.inc"  
+  include "read_data_2d.inc"
 end subroutine read_idata_2d
 
 !#######################################################################
 
-subroutine read_cdata_2d ( unit, data, end )
-
-  integer, intent(in)                        :: unit
+subroutine read_cdata_2d ( unit, data, end)
+  
+  integer, intent(in)                           :: unit
   complex,    intent(out), dimension(isd:,jsd:) :: data
-  logical, intent(out), optional             :: end
-  complex, dimension(isg:ieg,jsg:jeg) :: gdata
-  integer :: len
+  logical, intent(out), optional                :: end
+  complex, dimension(isg:ieg,jsg:jeg)           :: gdata
+  integer                                       :: len
+  logical                                       :: no_halo
 
   include "read_data_2d.inc"
 end subroutine read_cdata_2d
 
 !#######################################################################
 
-subroutine read_data_3d ( unit, data, end )
+subroutine read_data_3d ( unit, data, end)
 
-  integer, intent(in)                          :: unit
-  real,    intent(out), dimension(isd:,jsd:,:) :: data
-  logical, intent(out), optional               :: end  
+  integer, intent(in)                           :: unit
+  real,    intent(out), dimension(isd:,jsd:,:)  :: data
+  logical, intent(out), optional                :: end  
   real, dimension(isg:ieg,jsg:jeg,size(data,3)) :: gdata
-  integer :: len
+  integer                                       :: len
+  logical                                       :: no_halo
 
   include "read_data_3d.inc"
 end subroutine read_data_3d
 
 !#######################################################################
 
-subroutine read_cdata_3d ( unit, data, end )
+subroutine read_cdata_3d ( unit, data, end)
 
-  integer, intent(in)                          :: unit
-  complex, intent(out), dimension(isd:,jsd:,:) :: data
-  logical, intent(out), optional               :: end
+  integer, intent(in)                              :: unit
+  complex, intent(out), dimension(isd:,jsd:,:)     :: data
+  logical, intent(out), optional                   :: end
   complex, dimension(isg:ieg,jsg:jeg,size(data,3)) :: gdata
-  integer :: len
+  integer                                          :: len
+  logical                                          :: no_halo
 
   include "read_data_3d.inc"  
 end subroutine read_cdata_3d
 
 !#######################################################################
 
-subroutine read_data_4d ( unit, data, end )
+subroutine read_data_4d ( unit, data, end)
 
-  integer, intent(in)                            :: unit
-  real,    intent(out), dimension(isd:,jsd:,:,:) :: data
-  logical, intent(out), optional                 :: end
+  integer, intent(in)                                        :: unit
+  real,    intent(out), dimension(isd:,jsd:,:,:)             :: data
+  logical, intent(out), optional                             :: end
   real, dimension(isg:ieg,jsg:jeg,size(data,3),size(data,4)) :: gdata
-  integer :: len
-
+  integer                                                    :: len
+  logical                                                    :: no_halo
 ! WARNING: memory usage with this routine could be costly
- 
+   
   include "read_data_4d.inc"  
 end subroutine read_data_4d
 
 !#######################################################################
 
-subroutine read_cdata_4d ( unit, data, end )
+subroutine read_cdata_4d ( unit, data, end)
 
-  integer, intent(in)                            :: unit
-  complex, intent(out), dimension(isd:,jsd:,:,:) :: data
-  logical, intent(out), optional                 :: end
+  integer, intent(in)                                           :: unit
+  complex, intent(out), dimension(isd:,jsd:,:,:)                :: data
+  logical, intent(out), optional                                :: end
   complex, dimension(isg:ieg,jsg:jeg,size(data,3),size(data,4)) :: gdata
-  integer :: len
-
+  integer                                                       :: len
+  logical                                                       :: no_halo
 ! WARNING: memory usage with this routine could be costly
+ 
   include "read_data_4d.inc"
 end subroutine read_cdata_4d
 
@@ -1963,7 +1995,7 @@ subroutine get_axis_cart(axis, cart)
   character(len=8) , dimension(4) :: z_units
   character(len=3) , dimension(4) :: t_units
   character(len=32) :: name
-  integer :: i,j
+  integer :: i
 
   lon_names = (/'lon','x  '/)
   lat_names = (/'lat','y  '/)

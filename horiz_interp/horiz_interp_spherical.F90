@@ -19,7 +19,8 @@ module horiz_interp_spherical_mod
 
   use mpp_mod,               only : mpp_error, FATAL, WARNING, stdout
   use mpp_mod,               only : mpp_root_pe, mpp_pe
-  use fms_mod,               only : write_version_number
+  use fms_mod,               only : write_version_number, file_exist, close_file
+  use fms_mod,               only : check_nml_error, open_namelist_file
   use constants_mod,         only : pi
   use horiz_interp_type_mod, only : horiz_interp_type, stats
 
@@ -29,17 +30,36 @@ module horiz_interp_spherical_mod
 
   public :: horiz_interp_spherical_init, horiz_interp_spherical, horiz_interp_spherical_end
 
-  real,    parameter :: max_dist_default = 0.17  ! radians
+  integer, parameter :: max_neighbors = 400 
+  real,    parameter :: max_dist_default = 0.1  ! radians
   integer, parameter :: num_nbrs_default = 4
   real,    parameter :: large=1.e20
   real,    parameter :: epsln=1.e-10
 
   integer            :: pe, root_pe
-  logical            :: search_all = .false.
+
+
+  !--- namelist interface
+  !<NAMELIST NAME="horiz_interp_spherical_nml">
+  ! <DATA NAME="search_method" TYPE="character(len=32)">
+  !  indicate the searching method to find the nearest neighbor points. Its value
+  !  can be "radial_search" and "full_search", with default value "radial_search".
+  !  when search_method is "radial_search", the search may be not quite accurate for some cases.
+  !  Normally the search will be ok if you chose suitable max_dist.  
+  !  When search_method is "full_search", it will be always accurate, but will be slower
+  !  comparing to "radial_search". Normally these two search algorithm will produce same 
+  !  results other than order of operation. "radial_search" are recommended to use. 
+  !  The purpose to add "full_search" is in case you think you interpolation results is 
+  !  not right, you have other option to verify.
+  ! </DATA>
+  !</NAMELIST>
+
+  character(len=32) :: search_method = "radial_search" ! or "full_search"
+  namelist /horiz_interp_spherical_nml/ search_method
 
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_spherical.F90,v 11.0 2004/09/28 19:59:57 fms Exp $'
-  character(len=128) :: tagname = '$Name: lima $'
+  character(len=128) :: version = '$Id: horiz_interp_spherical.F90,v 13.0 2006/03/28 21:39:46 fms Exp $'
+  character(len=128) :: tagname = '$Name: memphis $'
   logical            :: do_vers = .true.
   logical            :: module_is_initialized = .FALSE.
 
@@ -107,15 +127,19 @@ contains
     logical,          intent(in), optional :: src_modulo
 
     !------local variables ---------------------------------------
-    integer, parameter :: max_neighbors = 400 
-    integer :: i, j, n, m, k
+    integer :: i, j, n, unit, ierr, io
     integer :: map_dst_xsize, map_dst_ysize, map_src_xsize, map_src_ysize
     integer :: map_src_size, num_neighbors
-    real    :: sum, max_src_dist
-    integer, dimension(:), allocatable     :: ilon, jlat
-    integer, dimension(:,:,:), allocatable :: map_src_add
-    integer, dimension(:,:),   allocatable :: num_found
-    real, dimension(:,:,:), allocatable    :: map_src_dist
+    real    :: max_src_dist, tpi, hpi 
+    logical :: src_is_modulo
+    real    :: min_theta_dst, max_theta_dst, min_phi_dst, max_phi_dst
+    real    :: min_theta_src, max_theta_src, min_phi_src, max_phi_src 
+    integer, dimension(:),        allocatable        :: ilon, jlat
+    integer, dimension(:,:,:),    allocatable        :: map_src_add
+    integer, dimension(:,:),      allocatable        :: num_found
+    real, dimension(:,:,:),       allocatable        :: map_src_dist
+    real, dimension(size(lon_out,1),size(lon_out,2)) :: theta_dst, phi_dst
+    real, dimension(size(lon_in,1)*size(lon_in,2))   :: theta_src, phi_src
 
     !--------------------------------------------------------------
 
@@ -127,17 +151,79 @@ contains
        do_vers = .false.
     endif
 
-    map_dst_xsize=size(lon_out,1);map_dst_ysize=size(lon_out,2)
-    map_src_xsize=size(lon_in,1);map_src_ysize=size(lon_in,2)
-    map_src_size = map_src_xsize*map_src_ysize
+    if (file_exist('input.nml')) then
+       unit = open_namelist_file ( )
+       ierr=1; do while (ierr /= 0)
+          read  (unit, nml=horiz_interp_spherical_nml, iostat=io, end=10)
+          ierr = check_nml_error(io,'horiz_interp_spherical_nml')  ! also initializes nml error codes
+       enddo
+ 10    call close_file (unit)
+    endif
+
+    tpi = 2.0*PI; hpi = 0.5*PI
 
     num_neighbors = num_nbrs_default
     if(present(num_nbrs)) num_neighbors = num_nbrs
+    if (num_neighbors <= 0) call mpp_error(FATAL,'horiz_interp_spherical_mod: num_neighbors must be > 0') 
 
     max_src_dist = max_dist_default
     if (PRESENT(max_dist)) max_src_dist = max_dist
     Interp%max_src_dist = max_src_dist
 
+    src_is_modulo = .true.
+    if (PRESENT(src_modulo)) src_is_modulo = src_modulo
+
+    !--- check the grid size comformable
+    map_dst_xsize=size(lon_out,1);map_dst_ysize=size(lon_out,2)
+    map_src_xsize=size(lon_in,1); map_src_ysize=size(lon_in,2)
+    map_src_size = map_src_xsize*map_src_ysize
+
+    if (map_dst_xsize /= size(lat_out,1) .or. map_dst_ysize /= size(lat_out,2)) &
+         call mpp_error(FATAL,'horiz_interp_spherical_mod: destination grids not conformable')
+    if (map_src_xsize /= size(lat_in,1) .or. map_src_ysize /= size(lat_in,2)) &
+         call mpp_error(FATAL,'horiz_interp_spherical_mod: source grids not conformable')
+
+    theta_src      = reshape(lon_in,(/map_src_size/))
+    phi_src        = reshape(lat_in,(/map_src_size/))
+    theta_dst(:,:) = lon_out(:,:)
+    phi_dst(:,:)   = lat_out(:,:)
+
+    min_theta_dst=tpi;max_theta_dst=0.0;min_phi_dst=pi;max_phi_dst=-pi
+    min_theta_src=tpi;max_theta_src=0.0;min_phi_src=pi;max_phi_src=-pi
+
+    where(theta_dst<0.0)  theta_dst = theta_dst+tpi
+    where(theta_dst>tpi)  theta_dst = theta_dst-tpi
+    where(theta_src<0.0)  theta_src = theta_src+tpi
+    where(theta_src>tpi)  theta_src = theta_src-tpi
+
+    where(phi_dst < -hpi) phi_dst = -hpi
+    where(phi_dst > hpi)  phi_dst =  hpi
+    where(phi_src < -hpi) phi_src = -hpi
+    where(phi_src > hpi)  phi_src =  hpi    
+
+    do j=1,map_dst_ysize
+       do i=1,map_dst_xsize
+          min_theta_dst = min(min_theta_dst,theta_dst(i,j))
+          max_theta_dst = max(max_theta_dst,theta_dst(i,j))
+          min_phi_dst = min(min_phi_dst,phi_dst(i,j))
+          max_phi_dst = max(max_phi_dst,phi_dst(i,j))
+       enddo
+    enddo
+
+    do i=1,map_src_size
+       min_theta_src = min(min_theta_src,theta_src(i))
+       max_theta_src = max(max_theta_src,theta_src(i))
+       min_phi_src = min(min_phi_src,phi_src(i))
+       max_phi_src = max(max_phi_src,phi_src(i))
+    enddo
+
+    if (min_phi_dst < min_phi_src) print *, '=> WARNING:  latitute of dest grid exceeds src'
+    if (max_phi_dst > max_phi_src) print *, '=> WARNING:  latitute of dest grid exceeds src'
+    ! when src is cyclic, no need to print out the following warning.
+    if(.not. src_is_modulo) then    
+       if (min_theta_dst < min_theta_src) print *, '=> WARNING : longitude of dest grid exceeds src'
+       if (max_theta_dst > max_theta_src) print *, '=> WARNING : longitude of dest grid exceeds src'
+    endif
     allocate(map_src_add(map_dst_xsize,map_dst_ysize,max_neighbors),    &
          map_src_dist(map_dst_xsize,map_dst_ysize,max_neighbors),   &
          num_found(map_dst_xsize,map_dst_ysize),                    &
@@ -155,13 +241,17 @@ contains
 
     !using radial_search to find the nearest points and corresponding distance.
 
-    if(search_all) then   ! normally full_search is false, set true to test the radial_search
-       call full_search(lon_in, lat_in, lon_out, lat_out,map_src_add, map_src_dist, &
-            num_found, num_nbrs, max_dist)
-    else
-       call radial_search(lon_in, lat_in, lon_out, lat_out,map_src_add, map_src_dist, &
-            num_found, num_nbrs,max_dist,src_modulo)    
-    endif
+    select case(trim(search_method))
+    case ("radial_search") ! will be efficient, but may be not so accurate for some cases
+       call radial_search(theta_src, phi_src, theta_dst, phi_dst, map_src_xsize, map_src_ysize, &
+            map_src_add, map_src_dist, num_found, num_neighbors,max_src_dist,src_is_modulo)    
+    case ("full_search")   ! always accurate, but less efficient.
+       call full_search(theta_src, phi_src, theta_dst, phi_dst, map_src_add, map_src_dist, &
+            num_found, num_neighbors,max_src_dist )
+    case default
+       call mpp_error(FATAL,"horiz_interp_spherical_init: nml search_method = "// &
+                  trim(search_method)//" is not a valid namelist option")
+    end select    
 
     do j=1,map_dst_ysize
        do i=1,map_dst_xsize
@@ -403,89 +493,29 @@ contains
   !#######################################################################
 
 
-  subroutine radial_search(x_src,y_src,x_dst,y_dst, map_src_add, map_src_dist, &
-       num_found, num_nbrs,max_dist,src_modulo)
-    real,    intent(in),    dimension(:,:) :: x_src, y_src
-    real,    intent(in),    dimension(:,:) :: x_dst, y_dst
+  subroutine radial_search(theta_src,phi_src,theta_dst,phi_dst, map_src_xsize, map_src_ysize, &
+       map_src_add, map_src_dist, num_found, num_neighbors,max_src_dist,src_is_modulo)
+    real,    intent(in),    dimension(:)   :: theta_src, phi_src
+    real,    intent(in),    dimension(:,:) :: theta_dst, phi_dst
+    integer, intent(in)                    :: map_src_xsize, map_src_ysize
     integer, intent(out), dimension(:,:,:) :: map_src_add
     real,    intent(out), dimension(:,:,:) :: map_src_dist
     integer, intent(inout), dimension(:,:) :: num_found
-    integer, intent(in),          optional :: num_nbrs
-    real,    intent(in),          optional :: max_dist
-    logical, intent(in),          optional :: src_modulo
+    integer, intent(in)                    :: num_neighbors
+    real,    intent(in)                    :: max_src_dist
+    logical, intent(in)                    :: src_is_modulo
 
     !---------- local variables ----------------------------------------
     integer, parameter :: max_nbrs = 50
-    real, dimension(size(x_src,1)*size(x_src,2)) :: theta_src,phi_src
-    real, dimension(size(x_dst,1),size(x_dst,2)) :: theta_dst, phi_dst
-    integer :: i, j, jj, i0, j0, n, l,i_left, j_left, i_right, j_right
-    integer :: map_dst_xsize, map_dst_ysize, map_src_xsize, map_src_ysize
-    integer :: i_left1, i_left2, i_right1, i_right2, num_neighbors
-    integer :: map_src_size, map_dst_size, step, step_size, bound, bound_start, bound_end
-    logical :: continue_search, result, continue_radial_search, src_is_modulo
-    real    :: d, res, max_src_dist, tpi, hpi 
-    real    :: min_theta_dst, max_theta_dst, min_phi_dst, max_phi_dst
-    real    :: min_theta_src, max_theta_src, min_phi_src, max_phi_src 
+    integer :: i, j, jj, i0, j0, n, l,i_left, i_right
+    integer :: map_dst_xsize, map_dst_ysize
+    integer :: i_left1, i_left2, i_right1, i_right2
+    integer :: map_src_size, step, step_size, bound, bound_start, bound_end
+    logical :: continue_search, result, continue_radial_search
+    real    :: d, res
     !------------------------------------------------------------------
-
-    num_neighbors = num_nbrs_default
-    if(present(num_nbrs)) num_neighbors = num_nbrs
-    if (num_neighbors <= 0) call mpp_error(FATAL,'horiz_interp_spherical_mod: num_neighbors must be > 0') 
-
-    max_src_dist = max_dist_default
-    if (PRESENT(max_dist)) max_src_dist = max_dist
-
-    src_is_modulo = .true.
-    if (PRESENT(src_modulo)) src_is_modulo = src_modulo
-
-    tpi = 2.0*PI; hpi = 0.5*PI
-
-    map_dst_xsize=size(x_dst,1);map_dst_ysize=size(x_dst,2)
-    map_src_xsize=size(x_src,1);map_src_ysize=size(x_src,2)
-    map_dst_size = map_dst_xsize*map_dst_ysize
+    map_dst_xsize=size(theta_dst,1);map_dst_ysize=size(theta_dst,2)
     map_src_size = map_src_xsize*map_src_ysize
-
-    if (map_dst_size /= size(y_dst,1)*size(y_dst,2) .or. map_src_size /= size(y_src,1)*size(y_src,2)) &
-         call mpp_error(FATAL,'horiz_interp_spherical_mod: grids not conformable')
-
-    theta_src      = reshape(x_src,(/map_src_size/))
-    phi_src        = reshape(y_src,(/map_src_size/))
-    theta_dst(:,:) = x_dst(:,:)
-    phi_dst(:,:)   = y_dst(:,:)
-
-    min_theta_dst=tpi;max_theta_dst=0.0;min_phi_dst=pi;max_phi_dst=-pi
-    min_theta_src=tpi;max_theta_src=0.0;min_phi_src=pi;max_phi_src=-pi
-
-    where(theta_dst<0.0)  theta_dst = theta_dst+tpi
-    where(theta_dst>tpi)  theta_dst = theta_dst-tpi
-    where(theta_src<0.0)  theta_src = theta_src+tpi
-    where(theta_src>tpi)  theta_src = theta_src-tpi
-
-    where(phi_dst < -hpi) phi_dst = -hpi
-    where(phi_dst > hpi)  phi_dst =  hpi
-    where(phi_src < -hpi) phi_src = -hpi
-    where(phi_src > hpi)  phi_src =  hpi    
-
-    do j=1,map_dst_ysize
-       do i=1,map_dst_xsize
-          min_theta_dst = min(min_theta_dst,theta_dst(i,j))
-          max_theta_dst = max(max_theta_dst,theta_dst(i,j))
-          min_phi_dst = min(min_phi_dst,phi_dst(i,j))
-          max_phi_dst = max(max_phi_dst,phi_dst(i,j))
-       enddo
-    enddo
-
-    do i=1,map_src_size
-       min_theta_src = min(min_theta_src,theta_src(i))
-       max_theta_src = max(max_theta_src,theta_src(i))
-       min_phi_src = min(min_phi_src,phi_src(i))
-       max_phi_src = max(max_phi_src,phi_src(i))
-    enddo
-
-    if (min_phi_dst < min_phi_src) print *, '=> WARNING:  latitute of dest grid exceeds src'
-    if (max_phi_dst > max_phi_src) print *, '=> WARNING:  latitute of dest grid exceeds src'
-    if (min_theta_dst < min_theta_src) print *, '=> WARNING : longitude of dest grid exceeds src'
-    if (max_theta_dst > max_theta_src) print *, '=> WARNING : longitude of dest grid exceeds src'
 
     do j=1,map_dst_ysize
        do i=1,map_dst_xsize
@@ -498,7 +528,7 @@ contains
                 d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(step),phi_src(step))
                 if (d <= max_src_dist) then
                    result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
-                        step,d,max_src_dist, num_found(i,j), num_neighbors )
+                        step,d, num_found(i,j), num_neighbors )
                    if (result) then
                       n = 0
                       i0 = mod(step,map_src_xsize)
@@ -532,10 +562,11 @@ contains
                             endif
 
                             d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
-                            result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
-                                 bound,d,max_src_dist, num_found(i,j), num_neighbors)
-
-                            if (result) continue_radial_search = .true.
+                            if(d<=max_src_dist) then
+                               result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                                    bound,d, num_found(i,j), num_neighbors)
+                               if (result) continue_radial_search = .true.
+                            endif
                          enddo
 
                          ! ***************************right boundary ******************************* 
@@ -560,10 +591,11 @@ contains
                             endif
 
                             d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
-                            result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
-                                 bound,d,max_src_dist, num_found(i,j), num_neighbors)
-
-                            if (result) continue_radial_search = .true.
+                            if(d<=max_src_dist) then
+                               result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                                    bound,d, num_found(i,j), num_neighbors)
+                               if (result) continue_radial_search = .true.
+                            endif
                          enddo
 
                          ! ************************* bottom boundary **********************************
@@ -590,10 +622,13 @@ contains
                          bound = bound_start
                          do while (bound <= bound_end)
                             d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
-                            result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
-                                 bound,d,max_src_dist, num_found(i,j), num_neighbors)
+                            if(d<=max_src_dist) then
+                               result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                                    bound,d, num_found(i,j), num_neighbors)
+                               if (result) continue_radial_search = .true.
+                            endif
                             bound = bound + 1
-                            if (result) continue_radial_search = .true.
+
                          enddo
 
                          if(i_left2 > 0 ) then
@@ -608,11 +643,12 @@ contains
                             bound = bound_start
                             do while (bound <= bound_end)
                                d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
-                               result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
-                                    bound,d,max_src_dist, num_found(i,j), num_neighbors)
+                               if(d<=max_src_dist) then
+                                  result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                                       bound,d, num_found(i,j), num_neighbors)
+                                  if (result) continue_radial_search = .true.
+                               endif
                                bound = bound + 1
-
-                               if (result) continue_radial_search = .true.
                             enddo
                          endif
 
@@ -629,10 +665,12 @@ contains
                          bound = bound_start
                          do while (bound <= bound_end)
                             d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
-                            result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
-                                 bound,d,max_src_dist, num_found(i,j), num_neighbors)
+                            if(d<=max_src_dist) then
+                               result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                                    bound,d, num_found(i,j), num_neighbors)
+                               if (result) continue_radial_search = .true.
+                            endif
                             bound = bound + 1
-                            if (result) continue_radial_search = .true.
                          enddo
 
                          if(i_left2 > 0) then
@@ -647,10 +685,12 @@ contains
                             bound = bound_start
                             do while (bound <= bound_end)
                                d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
-                               result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
-                                    bound,d,max_src_dist, num_found(i,j), num_neighbors)
+                               if(d<=max_src_dist) then
+                                  result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                                       bound,d, num_found(i,j), num_neighbors)
+                                  if (result) continue_radial_search = .true.
+                               endif
                                bound = bound + 1
-                               if (result) continue_radial_search = .true.
                             enddo
                          endif
 
@@ -673,70 +713,66 @@ contains
 
   !#####################################################################
 
-  function update_dest_neighbors(map_src_add, map_src_dist, src_add,d, max_src_dist, num_found, min_nbrs)
+  function update_dest_neighbors(map_src_add, map_src_dist, src_add,d, num_found, min_nbrs)
 
     integer, intent(inout), dimension(:) :: map_src_add
     real, intent(inout),    dimension(:) :: map_src_dist
     integer, intent(in)                  :: src_add
     real, intent(in)                     :: d
-    real, intent(in)                     :: max_src_dist
     integer, intent(inout)               :: num_found
     integer, intent(in)                  :: min_nbrs
 
     logical :: update_dest_neighbors, already_exist = .false.
 
-    integer :: n,m, max_neighbors
+    integer :: n,m
 
     update_dest_neighbors = .false.
-    max_neighbors = size(map_src_add) 
 
-    if (d .le. max_src_dist) then
-       n = 0
-       NLOOP : do while ( n .le. num_found )
-          n = n + 1
-          DIST_CHK : if (d .le. map_src_dist(n)) then
-             do m=n,num_found
-                if (src_add == map_src_add(m)) then
-                   already_exist = .true.
-                   exit NLOOP
-                endif
-             enddo
-             if(num_found < max_neighbors) then
-                num_found = num_found + 1
-             else
-                call mpp_error(FATAL,'update_dest_neighbors: '// &
-                     'number of neighbor points found is greated than maxium neighbor points' )
+    n = 0
+    NLOOP : do while ( n .le. num_found )
+       n = n + 1
+       DIST_CHK : if (d .le. map_src_dist(n)) then
+          do m=n,num_found
+             if (src_add == map_src_add(m)) then
+                already_exist = .true.
+                exit NLOOP
              endif
-             do m=num_found,n+1,-1
-                map_src_add(m) = map_src_add(m-1)
-                map_src_dist(m) = map_src_dist(m-1)
-             enddo
-             map_src_add(n) = src_add
-             map_src_dist(n) = d
-             update_dest_neighbors = .true.
-             if( num_found > min_nbrs ) then
-                if( map_src_dist(num_found) > map_src_dist(num_found-1) ) then
-                   num_found = num_found - 1
-                endif
-                if( map_src_dist(min_nbrs+1) > map_src_dist(min_nbrs) ) then
-                   num_found = min_nbrs
-                endif
-             endif
-             exit NLOOP ! n loop
-          endif DIST_CHK
-       end do NLOOP
-       if(already_exist) return
-
-       if( .not. update_dest_neighbors ) then
-          if( num_found < min_nbrs ) then
-             num_found               = num_found + 1
-             update_dest_neighbors   = .true.
-             map_src_add(num_found)  = src_add
-             map_src_dist(num_found) = d
+          enddo
+          if(num_found < max_neighbors) then
+             num_found = num_found + 1
+          else
+             call mpp_error(FATAL,'update_dest_neighbors: '// &
+                  'number of neighbor points found is greated than maxium neighbor points' )
           endif
-       endif
+          do m=num_found,n+1,-1
+             map_src_add(m) = map_src_add(m-1)
+             map_src_dist(m) = map_src_dist(m-1)
+          enddo
+          map_src_add(n) = src_add
+          map_src_dist(n) = d
+          update_dest_neighbors = .true.
+          if( num_found > min_nbrs ) then
+             if( map_src_dist(num_found) > map_src_dist(num_found-1) ) then
+                num_found = num_found - 1
+             endif
+             if( map_src_dist(min_nbrs+1) > map_src_dist(min_nbrs) ) then
+                num_found = min_nbrs
+             endif
+          endif
+          exit NLOOP ! n loop
+       endif DIST_CHK
+    end do NLOOP
+    if(already_exist) return
 
+    if( .not. update_dest_neighbors ) then
+       if( num_found < min_nbrs ) then
+          num_found               = num_found + 1
+          update_dest_neighbors   = .true.
+          map_src_add(num_found)  = src_add
+          map_src_dist(num_found) = d
+       endif
     endif
+
 
     return
 
@@ -809,56 +845,32 @@ contains
 
   !#######################################################################
 
-  subroutine full_search(x_src,y_src,x_dst,y_dst,map_src_add, map_src_dist,num_found, num_nbrs,max_dist)
-    real, intent(in), dimension(:,:)       :: x_src, y_src, x_dst, y_dst
+  subroutine full_search(theta_src,phi_src,theta_dst,phi_dst,map_src_add, map_src_dist,num_found, &
+                         num_neighbors,max_src_dist)
+    real,    intent(in),    dimension(:)   :: theta_src, phi_src
+    real,    intent(in),    dimension(:,:) :: theta_dst, phi_dst
     integer, intent(out), dimension(:,:,:) :: map_src_add
     real,    intent(out), dimension(:,:,:) :: map_src_dist
     integer, intent(out), dimension(:,:)   :: num_found
-    integer, intent(in),          optional :: num_nbrs
-    real, intent(in),             optional :: max_dist
+    integer, intent(in)                    :: num_neighbors
+    real, intent(in)                       :: max_src_dist
 
-    integer :: i,j,num_neighbors, map_src_size, step
-    integer :: map_dst_xsize,map_dst_ysize, map_src_xsize,map_src_ysize 
-    real    :: max_src_dist, tpi, hpi, d
+    integer :: i,j,map_src_size, step
+    integer :: map_dst_xsize,map_dst_ysize
+    real    :: d
     logical :: found
 
-    real, dimension(size(x_dst,1),size(x_dst,2)) :: theta_dst, phi_dst
-    real, dimension(size(x_src,1)*size(x_src,2)) :: theta_src, phi_src
-
-
-    tpi = 2.0*PI; hpi = 0.5*PI
-
-    map_dst_xsize=size(x_dst,1);map_dst_ysize=size(x_dst,2)
-    map_src_xsize=size(x_src,1);map_src_ysize=size(x_src,2)
-    map_src_size = map_src_xsize*map_src_ysize
-
-    num_neighbors = num_nbrs_default
-    if(present(num_nbrs)) num_neighbors = num_nbrs
-    if (num_neighbors <= 0) call mpp_error(FATAL,'horiz_interp_spherical: num_neighbors must be > 0') 
-
-    max_src_dist = max_dist_default
-    if (PRESENT(max_dist)) max_src_dist = max_dist
-
-    theta_dst = x_dst; phi_dst = y_dst
-    theta_src = reshape(x_src,(/map_src_size/))
-    phi_src   = reshape(y_src,(/map_src_size/))
-
-    where(theta_dst<0.0)  theta_dst = theta_dst+tpi
-    where(theta_dst>tpi)  theta_dst = theta_dst-tpi
-    where(theta_src<0.0)  theta_src = theta_src+tpi
-    where(theta_src>tpi)  theta_src = theta_src-tpi
-
-    where(phi_dst < -hpi) phi_dst = -hpi
-    where(phi_dst > hpi)  phi_dst =  hpi
-    where(phi_src < -hpi) phi_src = -hpi
-    where(phi_src > hpi)  phi_src =  hpi    
+    map_dst_xsize=size(theta_dst,1);map_dst_ysize=size(theta_dst,2)
+    map_src_size =size(theta_src(:))
 
     do j=1,map_dst_ysize
        do i=1,map_dst_xsize
           do step = 1, map_src_size
              d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(step),phi_src(step))
-             found = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
-                  step,d,max_src_dist, num_found(i,j), num_neighbors )
+             if( d <= max_src_dist) then
+                found = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                     step,d,num_found(i,j), num_neighbors )
+             endif
           enddo
        enddo
     enddo

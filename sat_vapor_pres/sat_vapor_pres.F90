@@ -60,6 +60,7 @@ module sat_vapor_pres_mod
  use  constants_mod, only:  TFREEZE
  use        fms_mod, only:  write_version_number,   &
                             error_mesg, FATAL
+! use sat_vapor_pres_inter_mod
 
 implicit none
 private
@@ -176,8 +177,8 @@ private
 !-----------------------------------------------------------------------
 !  cvs version and tag name
 
-character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 11.0 2004/09/28 20:05:59 fms Exp $'
-character(len=128) :: tagname = '$Name: lima $'
+character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 13.0 2006/03/28 21:42:50 fms Exp $'
+character(len=128) :: tagname = '$Name: memphis $'
 
 !-----------------------------------------------------------------------
 !  parameters for table size and resolution
@@ -504,7 +505,10 @@ contains
 !  =================================================================
 
  real    :: tem(3), es(3), hdtinv
+ real  :: esat_dum = 0.
+ real  :: temp_dum = 0. 
  integer :: i, n
+ character(len=128)   :: ermesg
 
 ! increment used to generate derivative table
   real, parameter :: tinrc = .01           
@@ -546,6 +550,13 @@ contains
     ! one-sided derivatives at boundaries
          D2TABLE(1)     = 0.50*dtinv*(DTABLE(2)    -DTABLE(1))
          D2TABLE(nsize) = 0.50*dtinv*(DTABLE(nsize)-DTABLE(nsize-1))
+
+    call sat_vapor_pres_hold_tables_k   &
+        (nsize, ermesg, table, dtable, d2table, temp_dum, esat_dum)     
+    if (trim(ermesg) /= ' ') then
+      call error_mesg ('sat_vapor_pres_init in sat_vapor_pres_mod', &
+                                                 ermesg, FATAL)
+    endif
 
     module_is_initialized = .true.
 

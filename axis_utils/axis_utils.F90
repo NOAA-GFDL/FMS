@@ -24,10 +24,12 @@ module axis_utils_mod
   !</DESCRIPTION>
   !
 
-  use mpp_io_mod, only: axistype, atttype, default_axis, default_att, &
-                        mpp_get_atts, mpp_get_axis_data, mpp_modify_meta
-  use mpp_mod, only : mpp_error, FATAL, stdout
-  use fms_mod, only : lowercase, string_array_index  
+  use mpp_io_mod, only: axistype, atttype, default_axis, default_att,         &
+                        mpp_get_atts, mpp_get_axis_data, mpp_modify_meta,     &
+                        mpp_get_att_name, mpp_get_att_type, mpp_get_att_char, &
+                        mpp_get_att_length
+  use mpp_mod,    only: mpp_error, FATAL, stdout
+  use fms_mod,    only: lowercase, string_array_index  
 
   implicit none
 
@@ -41,8 +43,8 @@ module axis_utils_mod
   integer, parameter :: maxatts = 100
   real, parameter    :: epsln= 1.e-10
   real, parameter    :: fp5 = 0.5, f360 = 360.0
-  character(len=256) :: version = '$Id: axis_utils.F90,v 12.0 2005/04/14 17:55:05 fms Exp $'
-  character(len=256) :: tagname = '$Name: lima $'   
+  character(len=256) :: version = '$Id: axis_utils.F90,v 13.0 2006/03/28 21:37:29 fms Exp $'
+  character(len=256) :: tagname = '$Name: memphis $'   
 
   interface interp_1d
      module procedure interp_1d_1d
@@ -143,10 +145,11 @@ contains
     call mpp_get_atts(axis,atts=att)
 
     do i=1,maxatts
-       if (att(i)%type == NF_CHAR) then
+       if (mpp_get_att_type(att(i)) == NF_CHAR) then
           !            if (str_contains(att(i)%name,'bounds') .or. str_contains(att(i)%name,'edge')) then
-          if (string_array_index('bounds',(/att(i)%name/)) .or. string_array_index('edge',(/att(i)%name/))) then             
-             bounds_name = att(i)%catt(1:att(i)%len)
+          if (string_array_index('bounds',(/mpp_get_att_name(att(i))/)) .or. &
+              string_array_index('edge',(/mpp_get_att_name(att(i))/))) then
+             bounds_name = mpp_get_att_char(att(i))
           endif
        endif
     enddo
@@ -200,7 +203,7 @@ contains
 
     get_axis_modulo=.false.
     do i = 1,natt
-       if (lowercase(trim(atts(i)%name)) == 'modulo') get_axis_modulo = .true.
+       if (lowercase(trim(mpp_get_att_name(atts(i)))) == 'modulo') get_axis_modulo = .true.
     enddo
 
     deallocate(atts)
@@ -225,18 +228,18 @@ contains
     found_tend = .false.
 
     do i = 1,natt
-      if(lowercase(trim(atts(i)%name)) == 'modulo_beg') then
-        if(atts(i)%len > len(tbeg)) then
+      if(lowercase(trim(mpp_get_att_name(atts(i)))) == 'modulo_beg') then
+        if(mpp_get_att_length(atts(i)) > len(tbeg)) then
           call mpp_error(FATAL,'error in get: len(tbeg) too small to hold attribute')
         endif
-        tbeg = trim(atts(i)%catt)
+        tbeg = trim(mpp_get_att_char(atts(i)))
         found_tbeg = .true.
       endif
-      if(lowercase(trim(atts(i)%name)) == 'modulo_end') then
-        if(atts(i)%len > len(tend)) then
+      if(lowercase(trim(mpp_get_att_name(atts(i)))) == 'modulo_end') then
+        if(mpp_get_att_length(atts(i)) > len(tend)) then
           call mpp_error(FATAL,'error in get: len(tend) too small to hold attribute')
         endif
-        tend = trim(atts(i)%catt)
+        tend = trim(mpp_get_att_char(atts(i)))
         found_tend = .true.
       endif
     enddo
@@ -266,7 +269,7 @@ contains
 
     get_axis_fold=.false.
     do i = 1,natt
-       if (atts(i)%catt == 'fold_top') get_axis_fold = .true.
+       if (mpp_get_att_char(atts(i)) == 'fold_top') get_axis_fold = .true.
     enddo
 
     deallocate(atts)
@@ -389,7 +392,7 @@ contains
     !
     !=======================================================================
 
-    integer :: ia, i, ii
+    integer :: ia, i, ii, unit
     real :: value, frac_index
     real, dimension(:) :: array
     logical keep_going
@@ -398,12 +401,13 @@ contains
 
     do i=2,ia
        if (array(i) < array(i-1)) then
-          write (stdout(),*) '=> Error: "frac_index" array must be monotonically increasing when searching for nearest value to ',&
+          unit = stdout() 
+          write (unit,*) '=> Error: "frac_index" array must be monotonically increasing when searching for nearest value to ',&
                               value
-          write (stdout(),*) '          array(i) < array(i-1) for i=',i 
-          write (stdout(),*) '          array(i) for i=1..ia follows:'
+          write (unit,*) '          array(i) < array(i-1) for i=',i 
+          write (unit,*) '          array(i) for i=1..ia follows:'
           do ii=1,ia
-             write (stdout(),*) 'i=',ii, ' array(i)=',array(ii)
+             write (unit,*) 'i=',ii, ' array(i)=',array(ii)
           enddo
           call mpp_error(FATAL,' "frac_index" array must be monotonically increasing.')
        endif
@@ -464,7 +468,7 @@ contains
     !
     !=======================================================================
 
-    integer :: nearest_index, ia, i, ii
+    integer :: nearest_index, ia, i, ii, unit
     real :: value
     real, dimension(:) :: array
     logical keep_going
@@ -473,11 +477,13 @@ contains
 
     do i=2,ia
        if (array(i) < array(i-1)) then
-          write (stdout(),*) '=> Error: "nearest_index" array must be monotonically increasing when searching for nearest value to ',value
-          write (stdout(),*) '          array(i) < array(i-1) for i=',i 
-          write (stdout(),*) '          array(i) for i=1..ia follows:'
+          unit = stdout()
+          write (unit,*) '=> Error: "nearest_index" array must be monotonically increasing &
+                         &when searching for nearest value to ',value
+          write (unit,*) '          array(i) < array(i-1) for i=',i 
+          write (unit,*) '          array(i) for i=1..ia follows:'
           do ii=1,ia
-             write (stdout(),*) 'i=',ii, ' array(i)=',array(ii)
+             write (unit,*) 'i=',ii, ' array(i)=',array(ii)
           enddo
           call mpp_error(FATAL,' "nearest_index" array must be monotonically increasing.')
        endif
@@ -842,13 +848,14 @@ integer           :: unit, ierr, io
 
 
   !--- write out data
-  write(stdout(),*)' the source grid is ', grid_src(1:n_src)
-  write(stdout(),*)' the destination grid is ', grid_dst(1:n_dst)
-  write(stdout(),*)' the source data is ', data_src(1:n_src)
+  unit = stdout()
+  write(unit,*)' the source grid is ', grid_src(1:n_src)
+  write(unit,*)' the destination grid is ', grid_dst(1:n_dst)
+  write(unit,*)' the source data is ', data_src(1:n_src)
   call interp_1d(grid_src(1:n_src), grid_dst(1:n_dst), data_src(1:n_src), data_dst, "linear")
-  write(stdout(),*)' the destination data using linear interpolation is ', data_dst(1:n_dst)
+  write(unit,*)' the destination data using linear interpolation is ', data_dst(1:n_dst)
   call interp_1d(grid_src(1:n_src), grid_dst(1:n_dst), data_src(1:n_src), data_dst, "cubic_spline")
-  write(stdout(),*)' the destination data using cublic spline interpolation is ', data_dst(1:n_dst)
+  write(unit,*)' the destination data using cublic spline interpolation is ', data_dst(1:n_dst)
 
 end program test
 

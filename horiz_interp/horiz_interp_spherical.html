@@ -247,7 +247,34 @@
 <!-- BEGIN PUBLIC TYPES -->
 <!-- END PUBLIC TYPES --><a name="NAMELIST"></a>
 <!-- BEGIN NAMELIST -->
-<!-- END NAMELIST --><a name="DIAGNOSTIC FIELDS"></a>
+<hr>
+<h4>NAMELIST</h4>
+<div>
+<b>&amp;horiz_interp_spherical_nml</b>
+<br>
+<br>
+<div>
+<dl>
+<dt>
+<tt>search_method</tt>
+</dt>
+<dl>   indicate the searching method to find the nearest neighbor points. Its value
+   can be "radial_search" and "full_search", with default value "radial_search".
+   when search_method is "radial_search", the search may be not quite accurate for some cases.
+   Normally the search will be ok if you chose suitable max_dist.  
+   When search_method is "full_search", it will be always accurate, but will be slower
+   comparing to "radial_search". Normally these two search algorithm will produce same 
+   results other than order of operation. "radial_search" are recommended to use. 
+   The purpose to add "full_search" is in case you think you interpolation results is 
+   not right, you have other option to verify. <br>
+<span class="type">[character(len=32)]</span>
+</dl>
+</dl>
+</div>
+</div>
+<br>
+<!-- END NAMELIST -->
+<a name="DIAGNOSTIC FIELDS"></a>
 <!-- BEGIN DIAGNOSTIC FIELDS -->
 <!-- END DIAGNOSTIC FIELDS --><a name="DATA SETS"></a>
 <!-- BEGIN DATA SETS -->

@@ -45,11 +45,7 @@
 <!-- END OVERVIEW -->
 <a name="DESCRIPTION"></a>
 <!-- BEGIN DESCRIPTION -->
-<div>   Constants are defined as real parameters, 
-   except for PI and RADIAN, which are calculated in constants_init to promote
-   consistency and accuracy among various compilers.
-   <br>
-<br>
+<div>   Constants are defined as real parameters.
    Constants are accessed through the "use" statement. </div>
 <br>
 <!-- END DESCRIPTION -->
@@ -113,6 +109,9 @@
 <td> RVGAS  </td><td> real  </td><td> 461.50  </td><td> J/kg/deg  </td><td>    gas constant for water vapor   </td>
 </tr>
 <tr>
+<td> CP_VAPOR  </td><td> real  </td><td> 4.0*RVGAS  </td><td> J/kg/deg  </td><td>    specific heat capacity of water vapor at constant pressure   </td>
+</tr>
+<tr>
 <td> DENS_H2O  </td><td> real  </td><td> 1000.  </td><td> kg/m^3  </td><td>    density of liquid water   </td>
 </tr>
 <tr>
@@ -152,9 +151,6 @@
 <td> PSTD_MKS  </td><td> real  </td><td> 101325.0  </td><td> Newtons/m^2  </td><td>    mean sea level pressure   </td>
 </tr>
 <tr>
-<td> REARTH  </td><td> real  </td><td> 6.356766E+08  </td><td> cm  </td><td>    radius of the earth   </td>
-</tr>
-<tr>
 <td> RADCON  </td><td> real  </td><td> ((1.0E+02*GRAV)/(1.0E+04*CP_AIR))*SECONDS_PER_DAY  </td><td> deg sec/(cm day)  </td><td>    factor used to convert flux divergence to heating rate in degrees per day   </td>
 </tr>
 <tr>
@@ -170,19 +166,22 @@
 <td> ALOGMIN  </td><td> real  </td><td> -50.0  </td><td> ---  </td><td>    minimum value allowed as argument to log function   </td>
 </tr>
 <tr>
-<td> FREZDK  </td><td> real  </td><td> 273.16  </td><td> deg K  </td><td>    melting point of water   </td>
-</tr>
-<tr>
 <td> STEFAN  </td><td> real  </td><td> 5.6734e-8  </td><td> W/m^2/deg^4  </td><td>    Stefan-Boltzmann constant   </td>
 </tr>
 <tr>
 <td> VONKARM  </td><td> real  </td><td> 0.40  </td><td> ---  </td><td>    Von Karman constant   </td>
 </tr>
 <tr>
-<td> PI  </td><td> real  </td><td> 4.0*ATAN(1.0)  </td><td> ---  </td><td>    ratio of circle circumference to diameter   </td>
+<td> PI  </td><td> real  </td><td> 3.14159265358979323846  </td><td> ---  </td><td>    ratio of circle circumference to diameter   </td>
 </tr>
 <tr>
-<td> RADIAN  </td><td> real  </td><td> 180.0/PI  </td><td> ---  </td><td>    degrees per radian   </td>
+<td> RAD_TO_DEG  </td><td> real  </td><td> 180.0/PI  </td><td> ---  </td><td>    degrees per radian   </td>
+</tr>
+<tr>
+<td> DEG_TO_RAD  </td><td> real  </td><td> PI/180.0  </td><td> ---  </td><td>    radians per degree   </td>
+</tr>
+<tr>
+<td> RADIAN  </td><td> real  </td><td> 180.0/PI  </td><td> ---  </td><td>    equal to RAD_TO_DEG. Named RADIAN for backward compatibility.   </td>
 </tr>
 <tr>
 <td> C2DBARS  </td><td> real  </td><td> 1.e-4  </td><td> dbars  </td><td>    converts rho*g*z (in mks) to dbars: 1dbar = 10^4 (kg/m^3)(m/s^2)m   </td>
@@ -296,10 +295,6 @@
 <br>
    Constants can be used on the right side on an assignment statement
    (their value can not be reassigned). 
-   <br>
-<br>
-   As PI is calculated, it cannot be a parameter variable.
-   Do not assign a new value to PI.  
    <br>
 <br> 
 <dl>

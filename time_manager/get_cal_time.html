@@ -87,7 +87,7 @@
 <a name="get_cal_time"></a>
 <h4>get_cal_time</h4>
 <pre> 
-<b>get_cal_time</b> (time_increment, units, calendar)</pre>
+<b>get_cal_time</b> (time_increment, units, calendar, permit_calendar_conversion)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -156,19 +156,10 @@
    day and second, with day number appearing first
    <br>
 <br>
-   Example: 'days since 100 0' Indicates 100 days 0 seconds
-   <br>
-<br> 
-<br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
+   Example: 'days since 100 0' Indicates 100 days 0 seconds <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>calendar&nbsp;&nbsp;&nbsp;</tt></td><td>   When allow_calendar_conversion=.false., then calendar must match the
-   calendar in use by the time manager. If it does not then the program
-   will terminate with an error message.
-   When allow_calendar_conversion=.true., no such check is done.
-   <br>
-<br>
-   Acceptable values of calendar are:
+<td valign="top" align="left"><tt>calendar&nbsp;&nbsp;&nbsp;</tt></td><td>   Acceptable values of calendar are:
    'noleap'
    '365_day'
    '360_day'
@@ -176,34 +167,13 @@
    'thirty_day_months'
    'no_calendar' <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
 </tr>
-</table>
-</dd>
-<br>
-</dl>
-</li>
-</ol>
-<!-- END PUBLIC ROUTINES -->
-<a name="PUBLIC TYPES"></a>
-<!-- BEGIN PUBLIC TYPES -->
-<!-- END PUBLIC TYPES --><a name="NAMELIST"></a>
-<!-- BEGIN NAMELIST -->
-<hr>
-<h4>NAMELIST</h4>
-<div>
-<b>&amp;get_cal_time_nml</b>
-<br>
-<br>
-<div>
-<dl>
-<dt>
-<tt>allow_calendar_conversion</tt>
-</dt>
-<dl>   It is sometimes desirable to allow the value of the intent(in) argument
+<tr>
+<td valign="top" align="left"><tt>permit_calendar_conversion&nbsp;&nbsp;&nbsp;</tt></td><td>   It is sometimes desirable to allow the value of the intent(in) argument
    "calendar" to be different than the calendar in use by time_manager_mod.
-   If this is not desirable, then the namelist variable "allow_calendar_conversion"
+   If this is not desirable, then the optional variable "permit_calendar_conversion"
    should be set to .false. so as to allow an error check.
    When calendar conversion is done, the time returned is the time in the
-   time_manager's calendar, but corresponds to the date computed using the input calendar. 
+   time_manager's calendar, but corresponds to the date computed using the input calendar.
    For example, suppose the time_manager is using the julian calendar and
    the values of the input arguments of get_cal_time are:
    time_increment = 59.0
@@ -229,7 +199,34 @@
    is thirty_day_months, then get_cal_time will try to convert Jan 31 to a time in
    the thirty_day_months calendar, resulting in a fatal error.
    Note: this option was originally coded to allow noleap calendar as input when
-   the julian calendar was in effect by the time_manager. <br>
+   the julian calendar was in effect by the time_manager. <br>&nbsp;&nbsp;&nbsp;<span class="type">[logical, optional]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+</ol>
+<!-- END PUBLIC ROUTINES -->
+<a name="PUBLIC TYPES"></a>
+<!-- BEGIN PUBLIC TYPES -->
+<!-- END PUBLIC TYPES --><a name="NAMELIST"></a>
+<!-- BEGIN NAMELIST -->
+<hr>
+<h4>NAMELIST</h4>
+<div>
+<b>&amp;get_cal_time_nml</b>
+<br>
+<br>
+<div>
+<dl>
+<dt>
+<tt>allow_calendar_conversion</tt>
+</dt>
+<dl>   This sets the default value of the optional argument named "permit_calendar_conversion" of get_cal_time.
+   This namelist is deprecated as of the memphis release.
+   If calendar conversion is not desired, then it is recommended that permit_calendar_conversion 
+   be present in the call to get_cal_time and that it be set to .false. <br>
 <span class="type">[logical, default: .true.]</span>
 </dl>
 </dl>

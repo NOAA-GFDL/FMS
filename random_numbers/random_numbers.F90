@@ -79,12 +79,18 @@ contains
     end do
   end subroutine getRandomNumber_2D
   ! ---------------------------------------------------------
-  ! Constructing a unique seed from grid cell index and model date/time
-  !   Once we have the GFDL stuff we'll add the year, month, day, hour, minute
+  ! Constructs a unique seed from grid cell index and model date/time
+  !   The perm is supplied we generate a different seed by 
+  !   circularly shifting the bits of the seed - this is useful 
+  !   if we want to create more than one seed for a given 
+  !   column and model date/time. 
+  !   Note that abs(perm) must be <= the number of bits used 
+  !   to represent the default integer (likely 32) 
   ! ---------------------------------------------------------
-  function constructSeed(i, j, time) result(seed)
-    integer,         intent( in)  :: i, j
-    type(time_type), intent( in) :: time
+  function constructSeed(i, j, time, perm) result(seed)
+    integer,           intent( in)  :: i, j
+    type(time_type),   intent( in) :: time
+    integer, optional, intent( in) :: perm
     integer, dimension(8) :: seed
     
     ! Local variables
@@ -93,6 +99,7 @@ contains
     
     call get_date(time, year, month, day, hour, minute, second)
     seed = (/ i, j, year, month, day, hour, minute, second /)
+    if(present(perm)) seed = ishftc(seed, perm)
   end function constructSeed
 end module random_numbers_mod
 

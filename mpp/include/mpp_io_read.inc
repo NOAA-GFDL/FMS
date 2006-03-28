@@ -1,97 +1,6 @@
-module mpp_io_read_mod
-#include <fms_platform.h>
 
-use mpp_mod,           only : mpp_error, FATAL, NOTE, mpp_transmit, ALL_PES, lowercase, mpp_root_pe
-use mpp_domains_mod,   only : domain2D, mpp_get_data_domain, mpp_get_compute_domain, mpp_get_global_domain
-use mpp_parameter_mod, only : MPP_SINGLE, MPP_NETCDF, MPP_MULTI
-use mpp_datatype_mod,  only : axistype, fieldtype
-use mpp_data_mod,      only : mpp_file, mpp_io_stack, mpp_io_stack_size, verbose=>verbose_mpp_io
-use mpp_data_mod,      only : module_is_initialized=>mpp_io_is_initialized, default_field
-use mpp_data_mod,      only : default_att, default_axis, pe, npes
-use mpp_io_util_mod,   only : mpp_io_set_stack_size
-use mpp_io_misc_mod,   only : netcdf_err
-
-implicit none
-private
-
-
-character(len=128) :: version= &
-     '$Id: mpp_io_read.F90,v 12.0 2005/04/14 17:58:36 fms Exp $'
-character(len=128) :: tagname= &
-     '$Name: lima $'
-
-public :: mpp_read, mpp_read_meta, mpp_get_tavg_info
-
-! <INTERFACE NAME="mpp_read">
-!   <OVERVIEW>
-!     Read from an open file.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      <TT>mpp_read</TT> is used to read data to the file on an I/O unit
-!      using the file parameters supplied by <LINK
-!      SRC="#mpp_open"><TT>mpp_open</TT></LINK>. There are two
-!      forms of <TT>mpp_read</TT>, one to read
-!      distributed field data, and one to read non-distributed field
-!      data. <I>Distributed</I> data refer to arrays whose two
-!      fastest-varying indices are domain-decomposed. Distributed data must
-!      be 2D or 3D (in space). Non-distributed data can be 0-3D.
-!
-!      The <TT>data</TT> argument for distributed data is expected by
-!      <TT>mpp_read</TT> to contain data specified on the <I>data</I> domain,
-!      and will read the data belonging to the <I>compute</I> domain,
-!      fetching data as required by the parallel I/O <LINK
-!      SRC="#modes">mode</LINK> specified in the <TT>mpp_open</TT> call. This
-!      is consistent with our definition of <LINK
-!      SRC="http:mpp_domains.html#domains">domains</LINK>, where all arrays are
-!      expected to be dimensioned on the data domain, and all operations
-!      performed on the compute domain.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call mpp_read( unit, field, data, time_index )
-!   </TEMPLATE>
-!   <TEMPLATE>
-!     call mpp_read( unit, field, domain, data, time_index )
-!   </TEMPLATE>
-!  <IN NAME="unit"></IN>
-!  <IN NAME="field"></IN>
-!  <INOUT NAME="data"></INOUT>
-!  <IN NAME="domain"></IN>
-!  <IN NAME="time_index">
-!     time_index is an optional argument. It is to be omitted if the
-!     field was defined not to be a function of time. Results are
-!     unpredictable if the argument is supplied for a time- independent
-!     field, or omitted for a time-dependent field.
-!  </IN>
-!  <NOTE>
-!     The type of read performed by <TT>mpp_read</TT> depends on
-!     the file characteristics on the I/O unit specified at the <LINK
-!     SRC="#mpp_open"><TT>mpp_open</TT></LINK> call. Specifically, the
-!     format of the input data (e.g netCDF or IEEE) and the
-!     <TT>threading</TT> flags, etc., can be changed there, and
-!     require no changes to the <TT>mpp_read</TT>
-!     calls. (<TT>fileset</TT> = MPP_MULTI is not supported by
-!     <TT>mpp_read</TT>; IEEE is currently not supported).
-!
-!     Packed variables are unpacked using the <TT>scale</TT> and
-!     <TT>add</TT> attributes.
-!
-!     <TT>mpp_read_meta</TT> must be called prior to calling <TT>mpp_read.</TT>
-!  </NOTE>
-! </INTERFACE>
-  interface mpp_read
-     module procedure mpp_read_2ddecomp_r2d
-     module procedure mpp_read_2ddecomp_r3d
-     module procedure mpp_read_r0D
-     module procedure mpp_read_r1D
-     module procedure mpp_read_r2D
-     module procedure mpp_read_r3D
-  end interface
-
-#ifdef use_netCDF
-#include <netcdf.inc>
-#endif
-
-contains
+! -*-f90-*-
+! $Id: mpp_io_read.inc,v 13.0 2006/03/28 21:41:21 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -99,12 +8,15 @@ contains
 !                                                                      !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+#undef MPP_READ_2DDECOMP_2D_
 #define MPP_READ_2DDECOMP_2D_ mpp_read_2ddecomp_r2d
+#undef MPP_READ_2DDECOMP_3D_
 #define MPP_READ_2DDECOMP_3D_ mpp_read_2ddecomp_r3d
+#undef MPP_TYPE_
 #define MPP_TYPE_ real
 #include <mpp_read_2Ddecomp.h>
 
-    subroutine read_record( unit, field, nwords, data, time_level, domain )
+    subroutine read_record( unit, field, nwords, data, time_level, domain, position )
 !routine that is finally called by all mpp_read routines to perform the read
 !a non-netCDF record contains:
 !      field ID
@@ -126,11 +38,10 @@ contains
       real, intent(inout) :: data(nwords)
       integer, intent(in), optional  :: time_level
       type(domain2D), intent(in), optional :: domain
+      integer, intent(in), optional        :: position
       integer, dimension(size(field%axes(:))) :: start, axsiz
-      real :: time
 
-      logical :: newtime
-      integer :: subdomain(4), tlevel
+      integer :: tlevel !,subdomain(4)
       
       integer(SHORT_KIND) :: i2vals(nwords)
 !#ifdef __sgi
@@ -208,12 +119,26 @@ contains
           if( PRESENT(domain) )then
               call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
               call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg )
+              ! when domain is symmetry, one extra point is needed for E, C, N-cell
+              if( mpp_domain_is_symmetry(domain) ) then
+                 if(present(position)) then
+                    select case (position)
+                    case (EAST)
+                       ie = ie + 1
+                    case (NORTH)
+                       je = je + 1
+                    case (CORNER)
+                       ie = ie + 1
+                       je = je + 1
+                    end select
+                 end if
+              end if
               axsiz(1) = ie-is+1
               axsiz(2) = je-js+1
               if( npes.GT.1 .AND. mpp_file(unit)%fileset.EQ.MPP_SINGLE )then
                   start(1) = is - isg + 1
                   start(2) = js - jsg + 1
-              else
+              else   !--- the following don't make sense.
                   if( ie-is+1.NE.ie-is+1 )then
                       start(1) = is - isg + 1
                       axsiz(1) = ie - is + 1 
@@ -234,19 +159,35 @@ contains
              case(NF_SHORT)
                 error = NF_GET_VARA_INT2  ( mpp_file(unit)%ncid, field%id, start, axsiz, i2vals )
                 call netcdf_err( error, mpp_file(unit), field=field )
-                data(:)=i2vals(:)*field%scale + field%add
+                if(field%scale == 1.0 .and. field%add == 0.0) then
+                   data(:)=i2vals(:)
+                else
+                   data(:)=i2vals(:)*field%scale + field%add
+                end if
              case(NF_INT)
                 error = NF_GET_VARA_INT   ( mpp_file(unit)%ncid, field%id, start, axsiz, ivals  )
                 call netcdf_err( error, mpp_file(unit), field=field )
-                data(:)=ivals(:)*field%scale + field%add
+                if(field%scale == 1.0 .and. field%add == 0.0) then
+                   data(:)=ivals(:)
+                else
+                   data(:)=ivals(:)*field%scale + field%add
+                end if
              case(NF_FLOAT)
                 error = NF_GET_VARA_REAL  ( mpp_file(unit)%ncid, field%id, start, axsiz, rvals  )
                 call netcdf_err( error, mpp_file(unit), field=field )
-                data(:)=rvals(:)*field%scale + field%add
+                if(field%scale == 1.0 .and. field%add == 0.0) then
+                   data(:)=rvals(:)
+                else
+                   data(:)=rvals(:)*field%scale + field%add
+                end if
              case(NF_DOUBLE)
                 error = NF_GET_VARA_DOUBLE( mpp_file(unit)%ncid, field%id, start, axsiz, r8vals )
                 call netcdf_err( error, mpp_file(unit), field=field )
-                data(:)=r8vals(:)*field%scale + field%add
+                if(field%scale == 1.0 .and. field%add == 0.0) then
+                   data(:)=r8vals(:)
+                else
+                   data(:)=r8vals(:)*field%scale + field%add
+                end if
              case default
                 call mpp_error( FATAL, 'MPP_READ: invalid pack value' )
           end select
@@ -852,5 +793,5 @@ contains
 !#######################################################################
 
 
-end module mpp_io_read_mod
+
 

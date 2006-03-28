@@ -31,8 +31,8 @@ module horiz_interp_conserve_mod
 
   integer :: pe, root_pe
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_conserve.F90,v 11.0 2004/09/28 19:59:46 fms Exp $'
-  character(len=128) :: tagname = '$Name: lima $'
+  character(len=128) :: version = '$Id: horiz_interp_conserve.F90,v 13.0 2006/03/28 21:39:36 fms Exp $'
+  character(len=128) :: tagname = '$Name: memphis $'
   logical            :: do_vers = .true.
 
 contains
@@ -95,7 +95,7 @@ contains
     real    :: blon, fac, hpi, tpi, eps
     integer :: num_iters = 4
     integer :: i, j, m, n, nlon_in, nlat_in, nlon_out, nlat_out,   &
-         np, iverbose, m2, n2, iter
+               iverbose, m2, n2, iter
     logical :: s2n
     character(len=64) :: mesg
     !-----------------------------------------------------------------------
@@ -333,13 +333,12 @@ contains
     real, intent(in),   dimension(:,:), optional :: mask_in
     real, intent(out),  dimension(:,:), optional :: mask_out
     !----------local variables----------------------------------------------------
-    integer :: i, j, m, n, nlon_in, nlat_in, nlon_out, nlat_out,   &
-         miss_in, miss_out, unit, is, ie, js, je,   &
-         np, npass, iverbose, m2, n2
-    real    :: cph, dsum, wsum, avg_in, min_in, max_in,   &
-         avg_out, min_out, max_out, blon, eps, asum,   &
-         dwtsum, wtsum, arsum, hpi, tpi, dsph, fis, fie, fjs, fje
-    character(len=64) :: mesg
+    integer :: m, n, nlon_in, nlat_in, nlon_out, nlat_out,   &
+         miss_in, miss_out, is, ie, js, je,   &
+         np, npass, iverbose
+    real    :: dsum, wsum, avg_in, min_in, max_in,   &
+         avg_out, min_out, max_out, eps, asum,   &
+         dwtsum, wtsum, arsum, fis, fie, fjs, fje
     !-----------------------------------------------------------------------
     iverbose = 0;  if (present(verbose)) iverbose = verbose
 
@@ -539,7 +538,7 @@ contains
 
     ! other pe send local min, max, avg to the root pe and 
     ! root pe receive these information
-    call mpp_sync_self()   
+
     if(pe == root_pe) then
        do p = 1, npes - 1
           ! Force use of "scalar", integer pointer mpp interface
@@ -563,6 +562,9 @@ contains
        buffer_int(1) = miss
        call mpp_send(buffer_int(1),plen=1,to_pe=root_pe)
     endif
+
+    call mpp_sync_self()   
+
   end subroutine stats
 
   !#######################################################################

@@ -49,8 +49,8 @@ module time_interp_external_mod
   private
 
   character(len=128), private :: version= &
-   'CVS $Id: time_interp_external.F90,v 12.0 2005/04/14 18:01:52 fms Exp $'
-  character(len=128), private :: tagname='Tag $Name: lima $'
+   'CVS $Id: time_interp_external.F90,v 13.0 2006/03/28 21:43:05 fms Exp $'
+  character(len=128), private :: tagname='Tag $Name: memphis $'
 
   integer, parameter, private :: max_fields = 1, modulo_year= 0001,max_files= 1
   integer, parameter, private :: LINEAR_TIME_INTERP = 1 ! not used currently
@@ -113,7 +113,7 @@ module time_interp_external_mod
 !
     subroutine time_interp_external_init()
 
-      integer :: ioun, io_status, i
+      integer :: ioun, io_status
 
       namelist /time_interp_external_nml/ num_io_buffers
 
@@ -187,7 +187,7 @@ module time_interp_external_mod
 
 
     function init_external_field(file,fieldname,format,threading,domain,desired_units,&
-         verbose,axis_centers,axis_sizes,override,correct_leap_year_inconsistency)
+         verbose,axis_centers,axis_sizes,override,correct_leap_year_inconsistency,permit_calendar_conversion)
       
       character(len=*), intent(in) :: file,fieldname
       integer, intent(in), optional :: format, threading
@@ -196,7 +196,7 @@ module time_interp_external_mod
       type(domain2d), intent(in), optional :: domain
       type(axistype), intent(inout), optional :: axis_centers(4)
       integer, intent(inout), optional :: axis_sizes(4)
-      logical, intent(in), optional :: override, correct_leap_year_inconsistency
+      logical, intent(in), optional :: override, correct_leap_year_inconsistency,permit_calendar_conversion
 
       
       integer :: init_external_field
@@ -204,7 +204,7 @@ module time_interp_external_mod
       type(fieldtype), dimension(:), allocatable :: flds
       type(axistype), dimension(:), allocatable :: axes, fld_axes
       type(axistype) :: time_axis
-      type(atttype), allocatable, dimension(:) :: global_atts, atts
+      type(atttype), allocatable, dimension(:) :: global_atts
       
       real(DOUBLE_KIND) :: slope, intercept
       integer :: form, thread, fset, unit,ndim,nvar,natt,ntime,i,j
@@ -218,8 +218,7 @@ module time_interp_external_mod
       integer :: siz(4), siz_in(4), gxsize, gysize,gxsize_max, gysize_max
       type(time_type) :: tdiff
       integer :: yr, mon, day, hr, minu, sec
-      integer :: yr2, mon2, day2, hr2, min2, sec2
-      integer :: len, natts, nfile, nfields_orig, nbuf
+      integer :: len, nfile, nfields_orig, nbuf
 
       if (.not. module_initialized) call mpp_error(FATAL,'Must call time_interp_external_init first')
 
@@ -420,9 +419,9 @@ module time_interp_external_mod
          
          call mpp_get_atts(time_axis,units=units,calendar=calendar_type)
          do j=1,ntime
-            field(num_fields)%time(j)       = get_cal_time(tstamp(j),trim(units),trim(calendar_type))
-            field(num_fields)%start_time(j) = get_cal_time(tstart(j),trim(units),trim(calendar_type))
-            field(num_fields)%end_time(j)   = get_cal_time(  tend(j),trim(units),trim(calendar_type))
+            field(num_fields)%time(j)       = get_cal_time(tstamp(j),trim(units),trim(calendar_type),permit_calendar_conversion)
+            field(num_fields)%start_time(j) = get_cal_time(tstart(j),trim(units),trim(calendar_type),permit_calendar_conversion)
+            field(num_fields)%end_time(j)   = get_cal_time(  tend(j),trim(units),trim(calendar_type),permit_calendar_conversion)
          enddo
              
          if (field(num_fields)%modulo_time) then
@@ -494,7 +493,7 @@ module time_interp_external_mod
              
          do j=1,ntime-1
             if (field(num_fields)%time(j) >= field(num_fields)%time(j+1)) then
-               write(msg,'(A,i)') "times not monotonically increasing. Filename: " &
+               write(msg,'(A,i20)') "times not monotonically increasing. Filename: " &
                     //TRIM(file)//"  field:  "//TRIM(fieldname)//" timeslice: ", j
                call mpp_error(FATAL, TRIM(msg))
             endif
@@ -520,10 +519,8 @@ module time_interp_external_mod
 
       enddo
     
-      if(verb) then
-         if (num_fields == nfields_orig) &
-              call mpp_error(WARNING,'external field "'//trim(fieldname)//'" not found in file "'//trim(file)//'"')
-      endif
+      if (num_fields == nfields_orig) &
+           call mpp_error(FATAL,'external field "'//trim(fieldname)//'" not found in file "'//trim(file)//'"')
 
 
       deallocate(global_atts)

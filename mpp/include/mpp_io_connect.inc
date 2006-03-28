@@ -1,32 +1,6 @@
-module mpp_io_connect_mod
-#include <fms_platform.h>
 
-use mpp_mod, only           : mpp_pe, mpp_root_pe, mpp_npes, mpp_error, FATAL, WARNING
-use mpp_parameter_mod, only : MPP_WRONLY, MPP_ASCII, MPP_NETCDF, MPP_SEQUENTIAL, MPP_SINGLE, &
-                              MPP_MULTI, MPP_RDONLY, MPP_COLLECT, MPP_DELETE, MPP_NATIVE,    &
-                              MPP_IEEE32, MPP_DIRECT, MPP_OVERWR, MPP_APPEND, NULLTIME, NULLUNIT
-use mpp_datatype_mod,  only : axistype
-use mpp_data_mod,      only : module_is_initialized=>mpp_io_is_initialized, mpp_file, records_per_pe, &
-                              text, maxunits, unit_begin, unit_end, verbose=>verbose_mpp_io, pe, npes, error
-use mpp_io_misc_mod,   only : netcdf_err
-use mpp_io_write_mod,  only : mpp_write_meta
-use mpp_io_read_mod,   only : mpp_read_meta
-
-implicit none
-private
-
-character(len=128), public :: version= &
-     '$Id: mpp_io_connect.F90,v 12.0 2005/04/14 17:58:28 fms Exp $'
-character(len=128), public :: tagname= &
-     '$Name: lima $'
-
-public :: mpp_open, mpp_close
-
-#ifdef use_netCDF
-#include <netcdf.inc>
-#endif
-
-contains
+! -*-f90-*-
+! $Id: mpp_io_connect.inc,v 13.0 2006/03/28 21:41:17 fms Exp $
 
 ! <SUBROUTINE NAME="mpp_open">
 
@@ -202,8 +176,7 @@ contains
       character(len=128) :: mesg
       integer :: action_flag, form_flag, access_flag, threading_flag, fileset_flag, length
       logical :: exists
-      character(len=64) :: filespec
-      integer :: memuse, ios
+      integer :: ios
       type(axistype) :: unlim    !used by netCDF with mpp_append
       
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_OPEN: must first call mpp_io_init.' )
@@ -320,7 +293,7 @@ contains
 #ifdef _CRAYT3E
       call ASSIGN( 'assign -I -P private f:'//trim(mpp_file(unit)%name), error )
 #endif
-#ifdef _CRAYX1 !#etd
+#ifdef _CRAYX1
       if (file(length-3:length) == '.nml') then
         call ASSIGN( 'assign -I -f77 f:'//trim(mpp_file(unit)%name), error )
 !       call ASSIGN( 'assign -I -F global f:'//trim(mpp_file(unit)%name), error )
@@ -331,7 +304,7 @@ contains
 !on Cray systems this is done through 'assign', see assign(1) and assign(3F)
 !on other systems this will be expanded as needed
 !no error checks here on whether the supplied iospec is valid
-#ifdef SGICRAY || _CRAYX1
+#if defined(SGICRAY) || defined(_CRAYX1)
           call ASSIGN( 'assign -I '//trim(iospec)//' f:'//trim(mpp_file(unit)%name), error )
           if( form_flag.EQ.MPP_NETCDF )then
 !for netCDF on SGI/Cray systems we pass it to the environment variable NETCDF_XFFIOSPEC
@@ -347,11 +320,21 @@ contains
       if( form_flag.EQ.MPP_NETCDF )then
 #ifdef use_netCDF
           if( action_flag.EQ.MPP_WRONLY )then
+#ifdef LARGE_FILE
+            error = NF_CREATE( trim(mpp_file(unit)%name), IOR(NF_64BIT_OFFSET,NF_NOCLOBBER), &
+                 mpp_file(unit)%ncid )
+#else
               error = NF_CREATE( trim(mpp_file(unit)%name), NF_NOCLOBBER, mpp_file(unit)%ncid )
+#endif
               call netcdf_err( error, mpp_file(unit) )
               if( verbose )print '(a,i3,i16)', 'MPP_OPEN: new netCDF file: pe, ncid=', pe, mpp_file(unit)%ncid
           else if( action_flag.EQ.MPP_OVERWR )then
+#ifdef LARGE_FILE
+            error = NF_CREATE( trim(mpp_file(unit)%name), IOR(NF_64BIT_OFFSET,NF_CLOBBER), &
+                 mpp_file(unit)%ncid )
+#else
               error = NF_CREATE( trim(mpp_file(unit)%name), NF_CLOBBER,   mpp_file(unit)%ncid )
+#endif
               call netcdf_err( error, mpp_file(unit) )
               action_flag = MPP_WRONLY !after setting clobber, there is no further distinction btwn MPP_WRONLY and MPP_OVERWR
               if( verbose )print '(a,i3,i16)', 'MPP_OPEN: overwrite netCDF file: pe, ncid=', pe, mpp_file(unit)%ncid
@@ -392,7 +375,7 @@ contains
               for = 'UNFORMATTED'
 !assign -N is currently unsupported on SGI
 #ifdef _CRAY  
-#ifndef _CRAYX1  !#etd
+#ifndef _CRAYX1  
               call ASSIGN( 'assign -I -N ieee_32 f:'//trim(mpp_file(unit)%name), error )
 #endif        
 #endif        
@@ -521,4 +504,3 @@ contains
       return
     end subroutine mpp_close
 
-end module mpp_io_connect_mod

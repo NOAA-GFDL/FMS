@@ -175,8 +175,8 @@ implicit none
 private
 
 
-character(len=128) :: version = '$Id: field_manager.F90,v 12.0 2005/04/14 17:56:10 fms Exp $'
-character(len=128) :: tagname = '$Name: lima $'
+character(len=128) :: version = '$Id: field_manager.F90,v 13.0 2006/03/28 21:38:59 fms Exp $'
+character(len=128) :: tagname = '$Name: memphis $'
 logical            :: module_is_initialized  = .false.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -263,7 +263,7 @@ integer, parameter, public :: fm_type_name_len  = 8
 ! </DATA>
 integer, parameter, public :: NUM_MODELS        = 5
 ! <DATA NAME="NUM_MODELS" TYPE="integer, parameter" DEFAULT="5">
-!   Number of models (ATMOS, OCEAN, LAND, ICE and DEFAULT).
+!   Number of models (ATMOS, OCEAN, LAND, ICE, COUPLER).
 ! </DATA>
 integer, parameter, public :: NO_FIELD          = -1
 ! <DATA NAME="NO_FIELD" TYPE="integer, parameter" DEFAULT="-1">
@@ -285,13 +285,14 @@ integer, parameter, public :: MODEL_ICE         = 4
 ! <DATA NAME="MODEL_ICE" TYPE="integer, parameter" DEFAULT="4">
 !   Ice model.
 ! </DATA>
-integer, parameter, public :: MODEL_COUPLER     = 6
-! <DATA NAME="MODEL_COUPLER" TYPE="integer, parameter" DEFAULT="6">
+integer, parameter, public :: MODEL_COUPLER     = 5
+! <DATA NAME="MODEL_COUPLER" TYPE="integer, parameter" DEFAULT="5">
 !   Ice model.
 ! </DATA>
-integer, parameter, public :: MODEL_DEFAULT     = 5
-! <DATA NAME="MODEL_DEFAULT" TYPE="integer, parameter" DEFAULT="5">
-!   Default model.
+character(len=11), parameter, public, dimension(NUM_MODELS) :: &
+   MODEL_NAMES=(/'atmospheric','oceanic    ','land       ','ice        ','coupler    '/)
+! <DATA NAME="MODEL_NAMES" TYPE="character(len=11), parameter">
+!   Model names, e.g. MODEL_NAMES(MODEL_OCEAN) is 'oceanic'
 ! </DATA>
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -549,7 +550,7 @@ subroutine field_manager_init(nfields, table_name)
 !   The number of fields.
 ! </OUT>
 
-integer,                      intent(out)          :: nfields
+integer,                      intent(out), optional :: nfields
 
 ! <IN NAME="table_name" TYPE="character, optional"
 !     DIM="(len=128)" DEFAULT="field_table">
@@ -602,7 +603,7 @@ type(method_type_very_short)     :: text_method_very_short
 
 
 if (module_is_initialized) then
-   nfields = num_fields
+   if(present(nfields)) nfields = num_fields
    return
 endif
 num_fields = 0
@@ -626,7 +627,7 @@ if (mpp_pe() == mpp_root_pe()) then
          'No field table ('//trim(tbl_name)//') available, so no fields are being registered.')
   endif
 endif
-nfields = 0
+if(present(nfields)) nfields = 0
 return
 endif
 
@@ -682,8 +683,8 @@ do while (.TRUE.)
              text_names%mod_name = lowercase(trim(record))
              text_names%fld_name = " "
 !             call mpp_error(FATAL,trim(error_header)//'Unterminated field in field_table header entry.'//trim(record))
-         end select    
 !     </ERROR>
+         end select    
 
 ! Create a list with Rick Slaters field manager code
 
@@ -718,7 +719,6 @@ do while (.TRUE.)
    case ('ice_mod')
       model = MODEL_ICE
    case default
-      model = MODEL_DEFAULT
 !   <ERROR MSG="The model name is unrecognised : model_name" STATUS="FATAL">
 !      The model name being supplied in the field entry is unrecognised.
 !      This should be the second string in the first line of the field entry.
@@ -738,6 +738,7 @@ do while (.TRUE.)
       fields(num_fields)%field_name  = lowercase(trim(text_names%fld_name))
       fields(num_fields)%field_type  = lowercase(trim(text_names%fld_type))
       fields(num_fields)%num_methods = 0
+      call check_for_name_duplication
 
 ! Check to see that the first line is not the only line
       if ( record(LEN_TRIM(record):LEN_TRIM(record)) == list_sep) cycle
@@ -818,8 +819,8 @@ do while (.TRUE.)
 !     <ERROR MSG="Unterminated field in field entry." STATUS="FATAL">
 !       There is an unterminated or unquoted string in the field table entry.
           call mpp_error(FATAL,trim(error_header)//'Unterminated field in field entry.'//trim(record))
-      end select
 !     </ERROR>
+      end select
 
 ! This section of code breaks the control string into separate strings. 
 ! The array control_array contains the following parameters.
@@ -838,12 +839,41 @@ do while (.TRUE.)
          if (control_str(l:l) == equal ) then
             icount = icount + 1
             control_array(icount,2) = l ! Middle of string
-         endif
-         if (control_str(l:l) == comma ) then
-            control_array(icount,3) = l-1   !End of previous string
-            control_array(icount+1,1) = l+1 !Start of next string
+         elseif (control_str(l:l) == comma ) then
+            if (icount .eq. 0) then
+
+!     <ERROR MSG="Unterminated field in field entry." STATUS="FATAL">
+!       Bad format for field entry (comma without equals sign)
+              call mpp_error(FATAL,trim(error_header) //                                &
+                   ' Bad format for field entry (comma without equals sign): ''' //     &
+                   trim(control_str) // '''')
+!     </ERROR>
+
+            elseif (icount .gt. MAX_FIELDS) then
+
+!     <ERROR MSG="Unterminated field in field entry." STATUS="FATAL">
+!       Too many fields in field entry
+              call mpp_error(FATAL,trim(error_header) //        &
+                   ' Too many fields in field entry: ''' //     &
+                   trim(control_str) // '''')
+!     </ERROR>
+
+            else
+
+              control_array(icount,3) = l-1   !End of previous string
+              control_array(min(MAX_FIELDS,icount+1),1) = l+1 !Start of next string
+
+            endif
          endif
       enddo     
+
+      ! Make sure that we point to the end of the string (minus any trailing comma)
+      ! for the last set of values. This fixes the case where the last set of values
+      ! is a comma separated list
+
+      if (control_str(ltrec:ltrec) .ne. comma) then
+        control_array(max(1,icount),3) = ltrec
+      endif
 
 
       if ( icount == 0 ) then
@@ -919,7 +949,7 @@ close(iunit)
 
 call write_version_number (version, tagname)
 
-nfields = num_fields
+if(present(nfields)) nfields = num_fields
 if (verb .gt. verb_level_warn) &
   fm_success= fm_dump_list("/", .true.)
   
@@ -937,6 +967,22 @@ call mpp_error(FATAL,trim(error_header)//' Error reading field table. Record = '
 
 end subroutine field_manager_init
 ! </SUBROUTINE>
+
+subroutine check_for_name_duplication
+integer :: i
+
+! Check that name is unique amoung fields of the same field_type and model.
+do i=1,num_fields-1
+  if ( fields(i)%field_type == fields(num_fields)%field_type .and. &
+       fields(i)%model      == fields(num_fields)%model      .and. &
+       fields(i)%field_name == fields(num_fields)%field_name ) then
+    call mpp_error(FATAL,'Error in field_manager_mod. Duplicate field name: Field type='//trim(fields(i)%field_type)// &
+        ',  Model='//trim(MODEL_NAMES(fields(i)%model))// &
+        ',  Duplicated name='//trim(fields(i)%field_name))
+  endif
+enddo
+
+end subroutine check_for_name_duplication
 
 !#######################################################################
 !#######################################################################

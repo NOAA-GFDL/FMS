@@ -94,7 +94,8 @@
    integer, dimension(:,:), pointer   :: ilon =&gt;NULL(), jlat =&gt;NULL()   !indices for conservative scheme
    real,    dimension(:,:), pointer   :: area_src =&gt;NULL()              !area of the source grid
    real,    dimension(:,:), pointer   :: area_dst =&gt;NULL()              !area of the destination grid
-   real,    dimension(:,:,:), pointer :: wti =&gt;NULL(),wtj =&gt;NULL()      !weights for bilinear interpolation 
+   real,    dimension(:,:,:), pointer :: wti =&gt;NULL(),wtj =&gt;NULL()      !weights for bilinear interpolation
+                                                                        !wti ist used for derivative "weights" in bicubic 
    integer, dimension(:,:,:), pointer :: i_lon =&gt;NULL(), j_lat =&gt;NULL() !indices for bilinear interpolation 
                                                                         !and spherical regrid
    real,    dimension(:,:,:), pointer :: src_dist =&gt;NULL()              !distance between destination grid and 
@@ -109,6 +110,10 @@
                                                             !=1, conservative scheme
                                                             !=2, bilinear interpolation
                                                             !=3, spherical regrid
+                                                            !=4, bicubic regrid
+   real,    dimension(:,:), pointer   :: rat_x =&gt;NULL(), rat_y =&gt;NULL() !the ratio of coordinates of the dest grid
+                                                                                ! (x_dest -x_src_r)/(x_src_l -x_src_r) and (y_dest -y_src_r)/(y_src_l -y_src_r)
+   real,    dimension(:), pointer     :: lon_in =&gt;NULL(),  lat_in =&gt;NULL()      !the coordinates of the source grid
  end type</pre>
 </td>
 </tr>

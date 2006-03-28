@@ -1,3 +1,7 @@
+
+! -*-f90-*-
+! $Id: mpp_comm_nocomm.inc,v 13.0 2006/03/28 21:40:10 fms Exp $
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
 !       ROUTINES TO INITIALIZE/FINALIZE MPP MODULE: mpp_init, mpp_exit        !
@@ -207,241 +211,457 @@ end subroutine mpp_exit
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+#undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_real8
+#undef MPP_TRANSMIT_SCALAR_
 #define MPP_TRANSMIT_SCALAR_ mpp_transmit_real8_scalar
+#undef MPP_TRANSMIT_2D_
 #define MPP_TRANSMIT_2D_ mpp_transmit_real8_2d
+#undef MPP_TRANSMIT_3D_
 #define MPP_TRANSMIT_3D_ mpp_transmit_real8_3d
+#undef MPP_TRANSMIT_4D_
 #define MPP_TRANSMIT_4D_ mpp_transmit_real8_4d
+#undef MPP_TRANSMIT_5D_
 #define MPP_TRANSMIT_5D_ mpp_transmit_real8_5d
+#undef MPP_RECV_
 #define MPP_RECV_ mpp_recv_real8
+#undef MPP_RECV_SCALAR_
 #define MPP_RECV_SCALAR_ mpp_recv_real8_scalar
+#undef MPP_RECV_2D_
 #define MPP_RECV_2D_ mpp_recv_real8_2d
+#undef MPP_RECV_3D_
 #define MPP_RECV_3D_ mpp_recv_real8_3d
+#undef MPP_RECV_4D_
 #define MPP_RECV_4D_ mpp_recv_real8_4d
+#undef MPP_RECV_5D_
 #define MPP_RECV_5D_ mpp_recv_real8_5d
+#undef MPP_SEND_
 #define MPP_SEND_ mpp_send_real8
+#undef MPP_SEND_SCALAR_
 #define MPP_SEND_SCALAR_ mpp_send_real8_scalar
+#undef MPP_SEND_2D_
 #define MPP_SEND_2D_ mpp_send_real8_2d
+#undef MPP_SEND_3D_
 #define MPP_SEND_3D_ mpp_send_real8_3d
+#undef MPP_SEND_4D_
 #define MPP_SEND_4D_ mpp_send_real8_4d
+#undef MPP_SEND_5D_
 #define MPP_SEND_5D_ mpp_send_real8_5d
+#undef MPP_BROADCAST_
 #define MPP_BROADCAST_ mpp_broadcast_real8
+#undef MPP_BROADCAST_SCALAR_
 #define MPP_BROADCAST_SCALAR_ mpp_broadcast_real8_scalar
+#undef MPP_BROADCAST_2D_
 #define MPP_BROADCAST_2D_ mpp_broadcast_real8_2d
+#undef MPP_BROADCAST_3D_
 #define MPP_BROADCAST_3D_ mpp_broadcast_real8_3d
+#undef MPP_BROADCAST_4D_
 #define MPP_BROADCAST_4D_ mpp_broadcast_real8_4d
+#undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_real8_5d
+#undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
 #include <mpp_transmit_nocomm.h>
 
+#undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_cmplx8
+#undef MPP_TRANSMIT_SCALAR_
 #define MPP_TRANSMIT_SCALAR_ mpp_transmit_cmplx8_scalar
+#undef MPP_TRANSMIT_2D_
 #define MPP_TRANSMIT_2D_ mpp_transmit_cmplx8_2d
+#undef MPP_TRANSMIT_3D_
 #define MPP_TRANSMIT_3D_ mpp_transmit_cmplx8_3d
+#undef MPP_TRANSMIT_4D_
 #define MPP_TRANSMIT_4D_ mpp_transmit_cmplx8_4d
+#undef MPP_TRANSMIT_5D_
 #define MPP_TRANSMIT_5D_ mpp_transmit_cmplx8_5d
+#undef MPP_RECV_
 #define MPP_RECV_ mpp_recv_cmplx8
+#undef MPP_RECV_SCALAR_
 #define MPP_RECV_SCALAR_ mpp_recv_cmplx8_scalar
+#undef MPP_RECV_2D_
 #define MPP_RECV_2D_ mpp_recv_cmplx8_2d
+#undef MPP_RECV_3D_
 #define MPP_RECV_3D_ mpp_recv_cmplx8_3d
+#undef MPP_RECV_4D_
 #define MPP_RECV_4D_ mpp_recv_cmplx8_4d
+#undef MPP_RECV_5D_
 #define MPP_RECV_5D_ mpp_recv_cmplx8_5d
+#undef MPP_SEND_
 #define MPP_SEND_ mpp_send_cmplx8
+#undef MPP_SEND_SCALAR_
 #define MPP_SEND_SCALAR_ mpp_send_cmplx8_scalar
+#undef MPP_SEND_2D_
 #define MPP_SEND_2D_ mpp_send_cmplx8_2d
+#undef MPP_SEND_3D_
 #define MPP_SEND_3D_ mpp_send_cmplx8_3d
+#undef MPP_SEND_4D_
 #define MPP_SEND_4D_ mpp_send_cmplx8_4d
+#undef MPP_SEND_5D_
 #define MPP_SEND_5D_ mpp_send_cmplx8_5d
+#undef MPP_BROADCAST_
 #define MPP_BROADCAST_ mpp_broadcast_cmplx8
+#undef MPP_BROADCAST_SCALAR_
 #define MPP_BROADCAST_SCALAR_ mpp_broadcast_cmplx8_scalar
+#undef MPP_BROADCAST_2D_
 #define MPP_BROADCAST_2D_ mpp_broadcast_cmplx8_2d
+#undef MPP_BROADCAST_3D_
 #define MPP_BROADCAST_3D_ mpp_broadcast_cmplx8_3d
+#undef MPP_BROADCAST_4D_
 #define MPP_BROADCAST_4D_ mpp_broadcast_cmplx8_4d
+#undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_cmplx8_5d
+#undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 16
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_DOUBLE_COMPLEX
 #include <mpp_transmit_nocomm.h>
 
 #ifndef no_4byte_reals
+#undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_real4
+#undef MPP_TRANSMIT_SCALAR_
 #define MPP_TRANSMIT_SCALAR_ mpp_transmit_real4_scalar
+#undef MPP_TRANSMIT_2D_
 #define MPP_TRANSMIT_2D_ mpp_transmit_real4_2d
+#undef MPP_TRANSMIT_3D_
 #define MPP_TRANSMIT_3D_ mpp_transmit_real4_3d
+#undef MPP_TRANSMIT_4D_
 #define MPP_TRANSMIT_4D_ mpp_transmit_real4_4d
+#undef MPP_TRANSMIT_5D_
 #define MPP_TRANSMIT_5D_ mpp_transmit_real4_5d
+#undef MPP_RECV_
 #define MPP_RECV_ mpp_recv_real4
+#undef MPP_RECV_SCALAR_
 #define MPP_RECV_SCALAR_ mpp_recv_real4_scalar
+#undef MPP_RECV_2D_
 #define MPP_RECV_2D_ mpp_recv_real4_2d
+#undef MPP_RECV_3D_
 #define MPP_RECV_3D_ mpp_recv_real4_3d
+#undef MPP_RECV_4D_
 #define MPP_RECV_4D_ mpp_recv_real4_4d
+#undef MPP_RECV_5D_
 #define MPP_RECV_5D_ mpp_recv_real4_5d
+#undef MPP_SEND_
 #define MPP_SEND_ mpp_send_real4
+#undef MPP_SEND_SCALAR_
 #define MPP_SEND_SCALAR_ mpp_send_real4_scalar
+#undef MPP_SEND_2D_
 #define MPP_SEND_2D_ mpp_send_real4_2d
+#undef MPP_SEND_3D_
 #define MPP_SEND_3D_ mpp_send_real4_3d
+#undef MPP_SEND_4D_
 #define MPP_SEND_4D_ mpp_send_real4_4d
+#undef MPP_SEND_5D_
 #define MPP_SEND_5D_ mpp_send_real4_5d
+#undef MPP_BROADCAST_
 #define MPP_BROADCAST_ mpp_broadcast_real4
+#undef MPP_BROADCAST_SCALAR_
 #define MPP_BROADCAST_SCALAR_ mpp_broadcast_real4_scalar
+#undef MPP_BROADCAST_2D_
 #define MPP_BROADCAST_2D_ mpp_broadcast_real4_2d
+#undef MPP_BROADCAST_3D_
 #define MPP_BROADCAST_3D_ mpp_broadcast_real4_3d
+#undef MPP_BROADCAST_4D_
 #define MPP_BROADCAST_4D_ mpp_broadcast_real4_4d
+#undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_real4_5d
+#undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
 #include <mpp_transmit_nocomm.h>
 
+#undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_cmplx4
+#undef MPP_TRANSMIT_SCALAR_
 #define MPP_TRANSMIT_SCALAR_ mpp_transmit_cmplx4_scalar
+#undef MPP_TRANSMIT_2D_
 #define MPP_TRANSMIT_2D_ mpp_transmit_cmplx4_2d
+#undef MPP_TRANSMIT_3D_
 #define MPP_TRANSMIT_3D_ mpp_transmit_cmplx4_3d
+#undef MPP_TRANSMIT_4D_
 #define MPP_TRANSMIT_4D_ mpp_transmit_cmplx4_4d
+#undef MPP_TRANSMIT_5D_
 #define MPP_TRANSMIT_5D_ mpp_transmit_cmplx4_5d
+#undef MPP_RECV_
 #define MPP_RECV_ mpp_recv_cmplx4
+#undef MPP_RECV_SCALAR_
 #define MPP_RECV_SCALAR_ mpp_recv_cmplx4_scalar
+#undef MPP_RECV_2D_
 #define MPP_RECV_2D_ mpp_recv_cmplx4_2d
+#undef MPP_RECV_3D_
 #define MPP_RECV_3D_ mpp_recv_cmplx4_3d
+#undef MPP_RECV_4D_
 #define MPP_RECV_4D_ mpp_recv_cmplx4_4d
+#undef MPP_RECV_5D_
 #define MPP_RECV_5D_ mpp_recv_cmplx4_5d
+#undef MPP_SEND_
 #define MPP_SEND_ mpp_send_cmplx4
+#undef MPP_SEND_SCALAR_
 #define MPP_SEND_SCALAR_ mpp_send_cmplx4_scalar
+#undef MPP_SEND_2D_
 #define MPP_SEND_2D_ mpp_send_cmplx4_2d
+#undef MPP_SEND_3D_
 #define MPP_SEND_3D_ mpp_send_cmplx4_3d
+#undef MPP_SEND_4D_
 #define MPP_SEND_4D_ mpp_send_cmplx4_4d
+#undef MPP_SEND_5D_
 #define MPP_SEND_5D_ mpp_send_cmplx4_5d
+#undef MPP_BROADCAST_
 #define MPP_BROADCAST_ mpp_broadcast_cmplx4
+#undef MPP_BROADCAST_SCALAR_
 #define MPP_BROADCAST_SCALAR_ mpp_broadcast_cmplx4_scalar
+#undef MPP_BROADCAST_2D_
 #define MPP_BROADCAST_2D_ mpp_broadcast_cmplx4_2d
+#undef MPP_BROADCAST_3D_
 #define MPP_BROADCAST_3D_ mpp_broadcast_cmplx4_3d
+#undef MPP_BROADCAST_4D_
 #define MPP_BROADCAST_4D_ mpp_broadcast_cmplx4_4d
+#undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_cmplx4_5d
+#undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_COMPLEX
 #include <mpp_transmit_nocomm.h>
 #endif 
 
 #ifndef no_8byte_integers
+#undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_int8
+#undef MPP_TRANSMIT_SCALAR_
 #define MPP_TRANSMIT_SCALAR_ mpp_transmit_int8_scalar
+#undef MPP_TRANSMIT_2D_
 #define MPP_TRANSMIT_2D_ mpp_transmit_int8_2d
+#undef MPP_TRANSMIT_3D_
 #define MPP_TRANSMIT_3D_ mpp_transmit_int8_3d
+#undef MPP_TRANSMIT_4D_
 #define MPP_TRANSMIT_4D_ mpp_transmit_int8_4d
+#undef MPP_TRANSMIT_5D_
 #define MPP_TRANSMIT_5D_ mpp_transmit_int8_5d
+#undef MPP_RECV_
 #define MPP_RECV_ mpp_recv_int8
+#undef MPP_RECV_SCALAR_
 #define MPP_RECV_SCALAR_ mpp_recv_int8_scalar
+#undef MPP_RECV_2D_
 #define MPP_RECV_2D_ mpp_recv_int8_2d
+#undef MPP_RECV_3D_
 #define MPP_RECV_3D_ mpp_recv_int8_3d
+#undef MPP_RECV_4D_
 #define MPP_RECV_4D_ mpp_recv_int8_4d
+#undef MPP_RECV_5D_
 #define MPP_RECV_5D_ mpp_recv_int8_5d
+#undef MPP_SEND_
 #define MPP_SEND_ mpp_send_int8
+#undef MPP_SEND_SCALAR_
 #define MPP_SEND_SCALAR_ mpp_send_int8_scalar
+#undef MPP_SEND_2D_
 #define MPP_SEND_2D_ mpp_send_int8_2d
+#undef MPP_SEND_3D_
 #define MPP_SEND_3D_ mpp_send_int8_3d
+#undef MPP_SEND_4D_
 #define MPP_SEND_4D_ mpp_send_int8_4d
+#undef MPP_SEND_5D_
 #define MPP_SEND_5D_ mpp_send_int8_5d
+#undef MPP_BROADCAST_
 #define MPP_BROADCAST_ mpp_broadcast_int8
+#undef MPP_BROADCAST_SCALAR_
 #define MPP_BROADCAST_SCALAR_ mpp_broadcast_int8_scalar
+#undef MPP_BROADCAST_2D_
 #define MPP_BROADCAST_2D_ mpp_broadcast_int8_2d
+#undef MPP_BROADCAST_3D_
 #define MPP_BROADCAST_3D_ mpp_broadcast_int8_3d
+#undef MPP_BROADCAST_4D_
 #define MPP_BROADCAST_4D_ mpp_broadcast_int8_4d
+#undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_int8_5d
+#undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER8
 #include <mpp_transmit_nocomm.h>
 #endif
 
+#undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_int4
+#undef MPP_TRANSMIT_SCALAR_
 #define MPP_TRANSMIT_SCALAR_ mpp_transmit_int4_scalar
+#undef MPP_TRANSMIT_2D_
 #define MPP_TRANSMIT_2D_ mpp_transmit_int4_2d
+#undef MPP_TRANSMIT_3D_
 #define MPP_TRANSMIT_3D_ mpp_transmit_int4_3d
+#undef MPP_TRANSMIT_4D_
 #define MPP_TRANSMIT_4D_ mpp_transmit_int4_4d
+#undef MPP_TRANSMIT_5D_
 #define MPP_TRANSMIT_5D_ mpp_transmit_int4_5d
+#undef MPP_RECV_
 #define MPP_RECV_ mpp_recv_int4
+#undef MPP_RECV_SCALAR_
 #define MPP_RECV_SCALAR_ mpp_recv_int4_scalar
+#undef MPP_RECV_2D_
 #define MPP_RECV_2D_ mpp_recv_int4_2d
+#undef MPP_RECV_3D_
 #define MPP_RECV_3D_ mpp_recv_int4_3d
+#undef MPP_RECV_4D_
 #define MPP_RECV_4D_ mpp_recv_int4_4d
+#undef MPP_RECV_5D_
 #define MPP_RECV_5D_ mpp_recv_int4_5d
+#undef MPP_SEND_
 #define MPP_SEND_ mpp_send_int4
+#undef MPP_SEND_SCALAR_
 #define MPP_SEND_SCALAR_ mpp_send_int4_scalar
+#undef MPP_SEND_2D_
 #define MPP_SEND_2D_ mpp_send_int4_2d
+#undef MPP_SEND_3D_
 #define MPP_SEND_3D_ mpp_send_int4_3d
+#undef MPP_SEND_4D_
 #define MPP_SEND_4D_ mpp_send_int4_4d
+#undef MPP_SEND_5D_
 #define MPP_SEND_5D_ mpp_send_int4_5d
+#undef MPP_BROADCAST_
 #define MPP_BROADCAST_ mpp_broadcast_int4
+#undef MPP_BROADCAST_SCALAR_
 #define MPP_BROADCAST_SCALAR_ mpp_broadcast_int4_scalar
+#undef MPP_BROADCAST_2D_
 #define MPP_BROADCAST_2D_ mpp_broadcast_int4_2d
+#undef MPP_BROADCAST_3D_
 #define MPP_BROADCAST_3D_ mpp_broadcast_int4_3d
+#undef MPP_BROADCAST_4D_
 #define MPP_BROADCAST_4D_ mpp_broadcast_int4_4d
+#undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_int4_5d
+#undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
 #include <mpp_transmit_nocomm.h>
 
 #ifndef no_8byte_integers
+#undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_logical8
+#undef MPP_TRANSMIT_SCALAR_
 #define MPP_TRANSMIT_SCALAR_ mpp_transmit_logical8_scalar
+#undef MPP_TRANSMIT_2D_
 #define MPP_TRANSMIT_2D_ mpp_transmit_logical8_2d
+#undef MPP_TRANSMIT_3D_
 #define MPP_TRANSMIT_3D_ mpp_transmit_logical8_3d
+#undef MPP_TRANSMIT_4D_
 #define MPP_TRANSMIT_4D_ mpp_transmit_logical8_4d
+#undef MPP_TRANSMIT_5D_
 #define MPP_TRANSMIT_5D_ mpp_transmit_logical8_5d
+#undef MPP_RECV_
 #define MPP_RECV_ mpp_recv_logical8
+#undef MPP_RECV_SCALAR_
 #define MPP_RECV_SCALAR_ mpp_recv_logical8_scalar
+#undef MPP_RECV_2D_
 #define MPP_RECV_2D_ mpp_recv_logical8_2d
+#undef MPP_RECV_3D_
 #define MPP_RECV_3D_ mpp_recv_logical8_3d
+#undef MPP_RECV_4D_
 #define MPP_RECV_4D_ mpp_recv_logical8_4d
+#undef MPP_RECV_5D_
 #define MPP_RECV_5D_ mpp_recv_logical8_5d
+#undef MPP_SEND_
 #define MPP_SEND_ mpp_send_logical8
+#undef MPP_SEND_SCALAR_
 #define MPP_SEND_SCALAR_ mpp_send_logical8_scalar
+#undef MPP_SEND_2D_
 #define MPP_SEND_2D_ mpp_send_logical8_2d
+#undef MPP_SEND_3D_
 #define MPP_SEND_3D_ mpp_send_logical8_3d
+#undef MPP_SEND_4D_
 #define MPP_SEND_4D_ mpp_send_logical8_4d
+#undef MPP_SEND_5D_
 #define MPP_SEND_5D_ mpp_send_logical8_5d
+#undef MPP_BROADCAST_
 #define MPP_BROADCAST_ mpp_broadcast_logical8
+#undef MPP_BROADCAST_SCALAR_
 #define MPP_BROADCAST_SCALAR_ mpp_broadcast_logical8_scalar
+#undef MPP_BROADCAST_2D_
 #define MPP_BROADCAST_2D_ mpp_broadcast_logical8_2d
+#undef MPP_BROADCAST_3D_
 #define MPP_BROADCAST_3D_ mpp_broadcast_logical8_3d
+#undef MPP_BROADCAST_4D_
 #define MPP_BROADCAST_4D_ mpp_broadcast_logical8_4d
+#undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_logical8_5d
+#undef MPP_TYPE_
 #define MPP_TYPE_ logical(LONG_KIND)
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER8
 #include <mpp_transmit_nocomm.h>
 #endif
 
+#undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_logical4
+#undef MPP_TRANSMIT_SCALAR_
 #define MPP_TRANSMIT_SCALAR_ mpp_transmit_logical4_scalar
+#undef MPP_TRANSMIT_2D_
 #define MPP_TRANSMIT_2D_ mpp_transmit_logical4_2d
+#undef MPP_TRANSMIT_3D_
 #define MPP_TRANSMIT_3D_ mpp_transmit_logical4_3d
+#undef MPP_TRANSMIT_4D_
 #define MPP_TRANSMIT_4D_ mpp_transmit_logical4_4d
+#undef MPP_TRANSMIT_5D_
 #define MPP_TRANSMIT_5D_ mpp_transmit_logical4_5d
+#undef MPP_RECV_
 #define MPP_RECV_ mpp_recv_logical4
+#undef MPP_RECV_SCALAR_
 #define MPP_RECV_SCALAR_ mpp_recv_logical4_scalar
+#undef MPP_RECV_2D_
 #define MPP_RECV_2D_ mpp_recv_logical4_2d
+#undef MPP_RECV_3D_
 #define MPP_RECV_3D_ mpp_recv_logical4_3d
+#undef MPP_RECV_4D_
 #define MPP_RECV_4D_ mpp_recv_logical4_4d
+#undef MPP_RECV_5D_
 #define MPP_RECV_5D_ mpp_recv_logical4_5d
+#undef MPP_SEND_
 #define MPP_SEND_ mpp_send_logical4
+#undef MPP_SEND_SCALAR_
 #define MPP_SEND_SCALAR_ mpp_send_logical4_scalar
+#undef MPP_SEND_2D_
 #define MPP_SEND_2D_ mpp_send_logical4_2d
+#undef MPP_SEND_3D_
 #define MPP_SEND_3D_ mpp_send_logical4_3d
+#undef MPP_SEND_4D_
 #define MPP_SEND_4D_ mpp_send_logical4_4d
+#undef MPP_SEND_5D_
 #define MPP_SEND_5D_ mpp_send_logical4_5d
+#undef MPP_BROADCAST_
 #define MPP_BROADCAST_ mpp_broadcast_logical4
+#undef MPP_BROADCAST_SCALAR_
 #define MPP_BROADCAST_SCALAR_ mpp_broadcast_logical4_scalar
+#undef MPP_BROADCAST_2D_
 #define MPP_BROADCAST_2D_ mpp_broadcast_logical4_2d
+#undef MPP_BROADCAST_3D_
 #define MPP_BROADCAST_3D_ mpp_broadcast_logical4_3d
+#undef MPP_BROADCAST_4D_
 #define MPP_BROADCAST_4D_ mpp_broadcast_logical4_4d
+#undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_logical4_5d
+#undef MPP_TYPE_
 #define MPP_TYPE_ logical(INT_KIND)
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
 #include <mpp_transmit_nocomm.h>
 
@@ -450,136 +670,230 @@ end subroutine mpp_exit
 !            GLOBAL REDUCTION ROUTINES: mpp_max, mpp_sum, mpp_min             !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_max_real8
+#undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
+#undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MAX
 #include <mpp_reduce_nocomm.h>
 
 #ifndef no_4byte_reals
+#undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_max_real4
+#undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
+#undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MAX
 #include <mpp_reduce_nocomm.h>
 #endif
 
 #ifndef no_8byte_integers
+#undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_max_int8
+#undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER8
+#undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MAX
 #include <mpp_reduce_nocomm.h>
 #endif
 
+#undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_max_int4
+#undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
+#undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MAX
 #include <mpp_reduce_nocomm.h>
 
+#undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_min_real8
+#undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
+#undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MIN
 #include <mpp_reduce_nocomm.h>
 
 #ifndef no_4byte_reals
+#undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_min_real4
+#undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
+#undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MIN
 #include <mpp_reduce_nocomm.h>
 #endif
 
 #ifndef no_8byte_integers
+#undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_min_int8
+#undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER8
+#undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MIN
 #include <mpp_reduce_nocomm.h>
 #endif       
              
+#undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_min_int4
+#undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
+#undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MIN
 #include <mpp_reduce_nocomm.h>
 
+#undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_real8
+#undef MPP_SUM_SCALAR_
 #define MPP_SUM_SCALAR_ mpp_sum_real8_scalar
+#undef MPP_SUM_2D_
 #define MPP_SUM_2D_ mpp_sum_real8_2d
+#undef MPP_SUM_3D_
 #define MPP_SUM_3D_ mpp_sum_real8_3d
+#undef MPP_SUM_4D_
 #define MPP_SUM_4D_ mpp_sum_real8_4d
+#undef MPP_SUM_5D_
 #define MPP_SUM_5D_ mpp_sum_real8_5d
+#undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #include <mpp_sum_nocomm.h>
 
+#undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_cmplx8
+#undef MPP_SUM_SCALAR_
 #define MPP_SUM_SCALAR_ mpp_sum_cmplx8_scalar
+#undef MPP_SUM_2D_
 #define MPP_SUM_2D_ mpp_sum_cmplx8_2d
+#undef MPP_SUM_3D_
 #define MPP_SUM_3D_ mpp_sum_cmplx8_3d
+#undef MPP_SUM_4D_
 #define MPP_SUM_4D_ mpp_sum_cmplx8_4d
+#undef MPP_SUM_5D_
 #define MPP_SUM_5D_ mpp_sum_cmplx8_5d
+#undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_DOUBLE_COMPLEX
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 16
 #include <mpp_sum_nocomm.h>
 
 #ifndef no_4byte_reals
+#undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_real4
+#undef MPP_SUM_SCALAR_
 #define MPP_SUM_SCALAR_ mpp_sum_real4_scalar
+#undef MPP_SUM_2D_
 #define MPP_SUM_2D_ mpp_sum_real4_2d
+#undef MPP_SUM_3D_
 #define MPP_SUM_3D_ mpp_sum_real4_3d
+#undef MPP_SUM_4D_
 #define MPP_SUM_4D_ mpp_sum_real4_4d
+#undef MPP_SUM_5D_
 #define MPP_SUM_5D_ mpp_sum_real4_5d
+#undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #include <mpp_sum_nocomm.h>
 
+#undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_cmplx4
+#undef MPP_SUM_SCALAR_
 #define MPP_SUM_SCALAR_ mpp_sum_cmplx4_scalar
+#undef MPP_SUM_2D_
 #define MPP_SUM_2D_ mpp_sum_cmplx4_2d
+#undef MPP_SUM_3D_
 #define MPP_SUM_3D_ mpp_sum_cmplx4_3d
+#undef MPP_SUM_4D_
 #define MPP_SUM_4D_ mpp_sum_cmplx4_4d
+#undef MPP_SUM_5D_
 #define MPP_SUM_5D_ mpp_sum_cmplx4_5d
+#undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_COMPLEX
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #include <mpp_sum_nocomm.h>
 #endif
 
 #ifndef no_8byte_integers
+#undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_int8
+#undef MPP_SUM_SCALAR_
 #define MPP_SUM_SCALAR_ mpp_sum_int8_scalar
+#undef MPP_SUM_2D_
 #define MPP_SUM_2D_ mpp_sum_int8_2d
+#undef MPP_SUM_3D_
 #define MPP_SUM_3D_ mpp_sum_int8_3d
+#undef MPP_SUM_4D_
 #define MPP_SUM_4D_ mpp_sum_int8_4d
+#undef MPP_SUM_5D_
 #define MPP_SUM_5D_ mpp_sum_int8_5d
+#undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER8
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #include <mpp_sum_nocomm.h>
 #endif
 
+#undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_int4
+#undef MPP_SUM_SCALAR_
 #define MPP_SUM_SCALAR_ mpp_sum_int4_scalar
+#undef MPP_SUM_2D_
 #define MPP_SUM_2D_ mpp_sum_int4_2d
+#undef MPP_SUM_3D_
 #define MPP_SUM_3D_ mpp_sum_int4_3d
+#undef MPP_SUM_4D_
 #define MPP_SUM_4D_ mpp_sum_int4_4d
+#undef MPP_SUM_5D_
 #define MPP_SUM_5D_ mpp_sum_int4_5d
+#undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
+#undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
+#undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #include <mpp_sum_nocomm.h>

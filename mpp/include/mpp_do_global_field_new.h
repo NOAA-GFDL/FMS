@@ -6,8 +6,8 @@
       MPP_TYPE_, intent(out) :: global(d_comm%domain%x%global%begin:,d_comm%domain%y%global%begin:,:)
       integer :: i, j, k, m, n, nd, nwords, msgsize
       integer :: is, ie, js, je
-      MPP_TYPE_ :: clocal (d_comm%domain%x%compute%size*    d_comm%domain%y%compute%size*    size(local,3))
-      MPP_TYPE_ :: cremote(d_comm%domain%x%compute%max_size*d_comm%domain%y%compute%max_size*size(local,3))
+      MPP_TYPE_ :: clocal ((d_comm%domain%x%compute%size+1)*    (d_comm%domain%y%compute%size+1)*    size(local,3))
+      MPP_TYPE_ :: cremote((d_comm%domain%x%compute%max_size+1)*(d_comm%domain%y%compute%max_size+1)*size(local,3))
       integer :: words_per_long, stackuse
       character(len=8) :: text
       pointer( ptr_local,  clocal  )
@@ -16,11 +16,24 @@
       ptr_local  = LOC(mpp_domains_stack)
       ptr_remote = LOC(mpp_domains_stack(size(clocal(:))+1))
 
+#ifdef use_CRI_pointers
+      words_per_long = size(transfer(local(1,1,1),mpp_domains_stack))
+      stackuse = (size(clocal(:))+size(cremote(:)))*words_per_long
+      if( stackuse.GT.mpp_domains_stack_size )then
+          write( text, '(i8)' )stackuse
+          call mpp_error( FATAL, &
+               'MPP_UPDATE_DOMAINS user stack overflow: call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+      end if
+      mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, stackuse )
+#endif
+
 ! make contiguous array from compute domain
       m = 0
+      is=d_comm%sendis(1,0); ie=d_comm%sendie(1,0)
+      js=d_comm%sendjs(1,0); je=d_comm%sendje(1,0)
       do k = 1,size(local,3)
-         do j = d_comm%domain%y%compute%begin,d_comm%domain%y%compute%end
-            do i = d_comm%domain%x%compute%begin,d_comm%domain%x%compute%end
+         do j = js, je
+            do i = is, ie
                m = m + 1
                clocal(m) = local(i+d_comm%gf_ioff,j+d_comm%gf_joff,k)
                global(i,j,k) = clocal(m) !always fill local domain directly

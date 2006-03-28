@@ -277,14 +277,66 @@ module memutils_mod
         if( .NOT.print_memory_usage )return
     end if
     mu = stderr(); if( PRESENT(unit) )mu = unit
+#ifdef __sgi
     m = memuse()*1e-3
+#else
+    call mem_dump(m)
+#endif 
     mmin = m; call mpp_min(mmin)
     mmax = m; call mpp_max(mmax)
     mavg = m; call mpp_sum(mavg); mavg = mavg/mpp_npes()
     mstd = (m-mavg)**2; call mpp_sum(mstd); mstd = sqrt( mstd/mpp_npes() )
-    if( mpp_pe().EQ.mpp_root_pe() )write( mu,'(a32,4es11.3)' ) &
+    if( mpp_pe().EQ.mpp_root_pe() )write( mu,'(a64,4es11.3)' ) &
          'Memuse(MB) at '//trim(text)//'=', mmin, mmax, mstd, mavg
+
     return
   end subroutine print_memuse_stats
+
+!#######################################################################
+
+subroutine mem_dump ( memuse )
+use mpp_mod,    only : stdout
+use mpp_io_mod, only : mpp_open, mpp_close, mpp_ascii, mpp_rdonly,     &
+                       mpp_sequential, mpp_single
+
+real, intent(out) :: memuse
+
+#ifdef __aix
+  print*,'mem_dump not implemented for AIX machines.'
+  print*,'See the Loadleveler log instead.'
+  return
+#endif
+
+! This routine returns the memory usage on Linux systems.
+! It does this by querying a system file (file_name below).
+! It is intended for use by print_memuse_stats above.
+
+character(len=32) :: file_name = '/proc/self/status'
+character(len=32) :: string
+integer :: mem_unit
+real    :: multiplier
+
+  memuse = 0.0
+  multiplier = 1.0
+
+  call mpp_open ( mem_unit, file_name,                                 &
+                      form=MPP_ASCII,        action=MPP_RDONLY,        &
+                      access=MPP_SEQUENTIAL, threading=MPP_SINGLE )
+  
+  do; read (mem_unit,'(a)', end=10) string
+    if ( INDEX ( string, 'VmRSS:' ) == 1 ) then
+      read (string(7:LEN_TRIM(string)-2),*) memuse
+      exit
+    endif
+  enddo
+  
+  if (TRIM(string(LEN_TRIM(string)-1:)) == "kB" ) &
+    multiplier = 1.0/1024. ! Convert from kB to MB
+
+10 call mpp_close ( mem_unit )
+   memuse = memuse * multiplier
+
+  return
+end subroutine mem_dump
 
 end module memutils_mod

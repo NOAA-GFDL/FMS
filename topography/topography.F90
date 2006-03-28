@@ -92,8 +92,8 @@ public :: topography_init,                 &
 
 !-----------------------------------------------------------------------
 
- character(len=128) :: version = '$Id: topography.F90,v 11.0 2004/09/28 20:06:35 fms Exp $'
- character(len=128) :: tagname = '$Name: lima $'
+ character(len=128) :: version = '$Id: topography.F90,v 13.0 2006/03/28 21:43:31 fms Exp $'
+ character(len=128) :: tagname = '$Name: memphis $'
 
  logical :: module_is_initialized = .FALSE.
 
@@ -641,7 +641,10 @@ subroutine read_namelist
 
 !  write version and namelist to log file
 
-   if (mpp_pe() == mpp_root_pe()) write (stdlog(), nml=topography_nml)
+   if (mpp_pe() == mpp_root_pe()) then
+     unit = stdlog()
+     write (unit, nml=topography_nml)
+   endif
 
 end subroutine read_namelist
 

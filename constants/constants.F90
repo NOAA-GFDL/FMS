@@ -12,18 +12,15 @@ module constants_mod
 ! </OVERVIEW>
 
 ! <DESCRIPTION>
-!   Constants are defined as real parameters, 
-!   except for PI and RADIAN, which are calculated in constants_init to promote
-!   consistency and accuracy among various compilers.
-!
+!   Constants are defined as real parameters.
 !   Constants are accessed through the "use" statement.
 ! </DESCRIPTION>
 
 implicit none
 private
 
-character(len=128) :: version='$Id: constants.F90,v 11.0 2004/09/28 19:58:38 fms Exp $'
-character(len=128) :: tagname='$Name: lima $'
+character(len=128) :: version='$Id: constants.F90,v 13.0 2006/03/28 21:37:37 fms Exp $'
+character(len=128) :: tagname='$Name: memphis $'
 !dummy variable to use in HUGE initializations
 real :: realnumber
 
@@ -74,6 +71,9 @@ real, public, parameter :: RHO_CP  = RHO0*CP_OCEAN
 ! <DATA NAME="RVGAS" UNITS="J/kg/deg" TYPE="real" DEFAULT="461.50">
 !   gas constant for water vapor
 ! </DATA>
+! <DATA NAME="CP_VAPOR" UNITS="J/kg/deg" TYPE="real" DEFAULT="4.0*RVGAS">
+!   specific heat capacity of water vapor at constant pressure
+! </DATA>
 ! <DATA NAME="DENS_H2O" UNITS="kg/m^3" TYPE="real" DEFAULT="1000.">
 !   density of liquid water
 ! </DATA>
@@ -91,10 +91,11 @@ real, public, parameter :: RHO_CP  = RHO0*CP_OCEAN
 ! </DATA>
 
 real, public, parameter :: RVGAS = 461.50 
+real, public, parameter :: CP_VAPOR = 4.0*RVGAS
 real, public, parameter :: DENS_H2O = 1000. 
 real, public, parameter :: HLV = 2.500e6   
 real, public, parameter :: HLF = 3.34e5   
-real, public, parameter :: HLS = 2.834e6 
+real, public, parameter :: HLS = HLV + HLF
 real, public, parameter :: TFREEZE = 273.16    
 
 !-------------- radiation constants -----------------
@@ -123,19 +124,16 @@ real, public, parameter :: TFREEZE = 273.16
 ! <DATA NAME="PSTD_MKS" UNITS="Newtons/m^2" TYPE="real" DEFAULT="101325.0">
 !  mean sea level pressure
 ! </DATA>
-! <DATA NAME="REARTH" UNITS="cm" TYPE="real" DEFAULT="6.356766E+08">
-!  radius of the earth
-! </DATA>
 
 real, public, parameter :: WTMAIR = 2.896440E+01
-real, public, parameter :: WTMH2O = 1.801534E+01
-real, public, parameter :: WTMO3       = 47.99820E+01
+real, public, parameter :: WTMH2O = WTMAIR*(RDGAS/RVGAS) !pjp OK to change value because not used yet.
+real, public, parameter :: WTMO3  = 47.99820E+01
 real, public, parameter :: DIFFAC = 1.660000E+00
 real, public, parameter :: SECONDS_PER_DAY  = 8.640000E+04
 real, public, parameter :: AVOGNO = 6.023000E+23
-real, public, parameter :: PSTD    = 1.013250E+06
+real, public, parameter :: PSTD   = 1.013250E+06
 real, public, parameter :: PSTD_MKS    = 101325.0
-real, public, parameter :: REARTH  = 6.356766E+08  
+!real, public, parameter :: REARTH  = 6.356766E+08 !pjp Not used anywhere. 
 
 ! <DATA NAME="RADCON" UNITS="deg sec/(cm day)" TYPE="real" DEFAULT="((1.0E+02*GRAV)/(1.0E+04*CP_AIR))*SECONDS_PER_DAY">
 !  factor used to convert flux divergence to heating rate in degrees per day
@@ -152,16 +150,12 @@ real, public, parameter :: REARTH  = 6.356766E+08
 ! <DATA NAME="ALOGMIN" TYPE="real" DEFAULT="-50.0">
 !  minimum value allowed as argument to log function
 ! </DATA>
-! <DATA NAME="FREZDK" UNITS="deg K" TYPE="real" DEFAULT="273.16">
-!   melting point of water
-! </DATA>
 
 real, public, parameter :: RADCON = ((1.0E+02*GRAV)/(1.0E+04*CP_AIR))*SECONDS_PER_DAY
 real, public, parameter :: RADCON_MKS  = (GRAV/CP_AIR)*SECONDS_PER_DAY
 real, public, parameter :: O2MIXRAT    = 2.0953E-01
 real, public, parameter :: RHOAIR      = 1.292269
 real, public, parameter :: ALOGMIN     = -50.0
-real, public, parameter :: FREZDK      = 273.16
 
 !------------ miscellaneous constants ---------------
 ! <DATA NAME="STEFAN" UNITS="W/m^2/deg^4" TYPE="real" DEFAULT="5.6734e-8">
@@ -170,11 +164,17 @@ real, public, parameter :: FREZDK      = 273.16
 ! <DATA NAME="VONKARM"  TYPE="real" DEFAULT="0.40">
 !   Von Karman constant
 ! </DATA>
-! <DATA NAME="PI" TYPE="real" DEFAULT="4.0*ATAN(1.0)">
+! <DATA NAME="PI" TYPE="real" DEFAULT="3.14159265358979323846">
 !    ratio of circle circumference to diameter
 ! </DATA>
-! <DATA NAME="RADIAN"  TYPE="real" DEFAULT="180.0/PI">
+! <DATA NAME="RAD_TO_DEG"  TYPE="real" DEFAULT="180.0/PI">
 !   degrees per radian
+! </DATA>
+! <DATA NAME="DEG_TO_RAD"  TYPE="real" DEFAULT="PI/180.0">
+!   radians per degree
+! </DATA>
+! <DATA NAME="RADIAN"  TYPE="real" DEFAULT="180.0/PI">
+!   equal to RAD_TO_DEG. Named RADIAN for backward compatability.
 ! </DATA>
 ! <DATA NAME="C2DBARS" UNITS="dbars" TYPE="real" DEFAULT="1.e-4">
 !   converts rho*g*z (in mks) to dbars: 1dbar = 10^4 (kg/m^3)(m/s^2)m
@@ -188,8 +188,10 @@ real, public, parameter :: FREZDK      = 273.16
 
 real, public, parameter :: STEFAN  = 5.6734e-8 
 real, public, parameter :: VONKARM = 0.40     
-real, public            :: PI      = HUGE(realnumber)
-real, public            :: RADIAN  = HUGE(realnumber)
+real, public, parameter :: PI      = 3.14159265358979323846
+real, public, parameter :: RAD_TO_DEG=180./PI
+real, public, parameter :: DEG_TO_RAD=PI/180.
+real, public, parameter :: RADIAN  = RAD_TO_DEG
 real, public, parameter :: C2DBARS = 1.e-4
 real, public, parameter :: KELVIN  = 273.15
 real, public, parameter :: EPSLN   = 1.0e-40
@@ -204,7 +206,7 @@ contains
 
 subroutine constants_init
 
-! dummy routine. Initialization of PI and RADIAN is done by fms_init.
+! dummy routine.
 
 end subroutine constants_init
 
@@ -230,8 +232,6 @@ end module constants_mod
 !    Constants can be used on the right side on an assignment statement
 !    (their value can not be reassigned). 
 !
-!    As PI is calculated, it cannot be a parameter variable.
-!    Do not assign a new value to PI.  
 !
 !<TESTPROGRAM NAME="EXAMPLE">
 !<PRE>

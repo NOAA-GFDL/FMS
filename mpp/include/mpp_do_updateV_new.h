@@ -1,30 +1,32 @@
-    subroutine MPP_DOMAINS_DO_UPDATE_3Dnew_V_(f_addrsx,f_addrsy,isize,jsize,ke,d_type,domain,flags,gridtype,dc_handle)
+    subroutine MPP_DOMAINS_DO_UPDATE_3Dnew_V_(f_addrsx,f_addrsy, d_comm,isize,jsize,ke, d_type,flags,gridtype)
 !updates data domain of 3D field whose computational domains have been computed
       integer(LONG_KIND), intent(in)         :: f_addrsx(:), f_addrsy(:)
-      integer,            intent(in)         :: isize, jsize, ke
+      type(DomainCommunicator2D),    pointer :: d_comm
+      integer,            intent(in)         :: isize(:), jsize(:), ke
       MPP_TYPE_, intent(in)                  :: d_type  ! creates unique interface
-      type(domain2D), intent(inout) :: domain
       integer, intent(in), optional :: flags, gridtype
-      type(DomainCommunicator2D),pointer,optional :: dc_handle
 
-      type(DomainCommunicator2D),pointer,save :: dch_x =>NULL(), d_comm =>NULL()
-      MPP_TYPE_ :: fieldx(domain%x%data%begin:domain%x%data%begin+isize-1,domain%y%data%begin:domain%y%data%begin+jsize-1,ke)
+      MPP_TYPE_ :: fieldx(d_comm%domain%x%data%begin:d_comm%domain%x%data%begin+isize(1)-1, &
+                          d_comm%domain%y%data%begin:d_comm%domain%y%data%begin+jsize(1)-1,ke)
       pointer(ptr_fieldx, fieldx)
-      MPP_TYPE_ :: fieldy(domain%x%data%begin:domain%x%data%begin+isize-1,domain%y%data%begin:domain%y%data%begin+jsize-1,ke)
+      MPP_TYPE_ :: fieldy(d_comm%domain%x%data%begin:d_comm%domain%x%data%begin+isize(2)-1, &
+                          d_comm%domain%y%data%begin:d_comm%domain%y%data%begin+jsize(2)-1,ke)
       pointer(ptr_fieldy, fieldy)
-      integer :: update_flags, gridtype_temp
-      integer :: l_size, i,j,k,l,n, is, ie, js, je, pos
-      integer :: ioff, joff
+      integer :: update_flags, grid_offset_type
+      integer :: l_size, l, i, j, k, is, ie, js, je, m, n, is2, ie2
+      integer :: pos, nlist, list, msgsize, nsend, nrecv
+      integer :: to_pe, from_pe
+      type(domain2d), pointer :: domain => NULL()
+      type(DomainCommunicator2D), pointer :: d_commy => NULL()
       MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
-      pointer( ptr, buffer )
-      integer :: buffer_pos, msgsize, wordlen
-      logical :: complete(size(f_addrsy(:)))
-      character(len=8) :: text
-
-
+      pointer(ptr,buffer )
+      integer :: buffer_pos
+      logical :: do_flip, do_flip2, flip_n, flip_w, flip_e
+ 
+!--- the following will be moved into mpp_update_domain vector version
 !for all gridtypes
       update_flags = XUPDATE+YUPDATE   !default
-      if( PRESENT(flags) ) then
+      if( PRESENT(flags) ) then 
           update_flags = flags
           ! The following test is so that SCALAR_PAIR can be used alone with the
           ! same default update pattern as without.
@@ -35,511 +37,890 @@
           end if 
       end if  
 
-!gridtype
       grid_offset_type = AGRID
-      if( PRESENT(gridtype) )then
-          if( gridtype.NE.AGRID .AND. &
-              gridtype.NE.BGRID_NE .AND. gridtype.NE.BGRID_SW .AND. &
-              gridtype.NE.CGRID_NE .AND. gridtype.NE.CGRID_SW ) &
-               call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS: gridtype must be one of AGRID|BGRID_NE|BGRID_SW|CGRID_NE|CGRID_SW.' )
-!grid_offset_type used by update domains to determine shifts.
-          grid_offset_type = gridtype
-          call compute_overlaps(domain)
-          if( grid_offset_type.NE.domain%gridtype ) &
-               call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS: gridtype cannot be changed during run.' )
-      end if   
-!need to add code for EWS boundaries
-      if( BTEST(domain%fold,WEST) .AND. BTEST(update_flags,WEST) ) &
-           call mpp_error( FATAL, 'velocity stencil not yet active for WEST fold, contact author.' )
-      if( BTEST(domain%fold,EAST) .AND. BTEST(update_flags,EAST) ) &
-           call mpp_error( FATAL, 'velocity stencil not yet active for EAST fold, contact author.' )
-      if( BTEST(domain%fold,SOUTH) .AND. BTEST(update_flags,SOUTH) ) &
-           call mpp_error( FATAL, 'velocity stencil not yet active for SOUTH fold, contact author.' )
+      if( PRESENT(gridtype) ) grid_offset_type = gridtype
 
+      buffer_pos = 0        !this initialization goes away if update_domains becomes non-blocking
       l_size = size(f_addrsx(:))
-      complete(1:l_size-1)=.false.; complete(l_size)=.true.
-      d_comm =>NULL(); if(PRESENT(dc_handle))d_comm =>dc_handle
-      if (domain%gridtype.EQ.CGRID_NE) then
-!On a CGRID, the x- and y-components are staggered differently.  Passing the
-!x-component as though it were at the tracer point allows this routine to
-!zonally shift it into place.
-        gridtype_temp = grid_offset_type ; grid_offset_type = AGRID
-!       dch_x =>NULL(); if(ASSOCIATED(d_comm%dch_x))dch_x =>d_comm%dch_x
-        dch_x =>NULL()
-        if(ASSOCIATED(d_comm))then
-           if(ASSOCIATED(d_comm%dch_x))dch_x =>d_comm%dch_x
-        endif
-        do l=1,l_size
-          ptr_fieldx = f_addrsx(l)
-          call mpp_update_domains( fieldx, domain, flags, complete=complete(l), dc_handle=dch_x )
-        end do
-        grid_offset_type = gridtype_temp
-        do l=1,l_size
-          ptr_fieldy = f_addrsy(l)
-          call mpp_update_domains( fieldy, domain, flags, complete=complete(l), dc_handle=d_comm )
-        end do
-        if(PRESENT(dc_handle))then
-          d_comm%dch_x =>dch_x
-          dc_handle =>d_comm 
-        endif
-      else
-        do l=1,l_size
-          ptr_fieldx = f_addrsx(l)
-          ptr_fieldy = f_addrsy(l)
-          call mpp_update_domains( fieldx, domain, flags, complete=.false. )
-          call mpp_update_domains( fieldy, domain, flags, complete=complete(l), dc_handle=dc_handle )
-        end do
-      endif
-
-!     do l=1,l_size
-!       ptr_fieldx = f_addrsx(l)
-!       ptr_fieldy = f_addrsy(l)
-!       write(stdout(),*) 'fieldx chksum=',mpp_chksum(fieldx)
-!       write(stdout(),*) 'fieldy chksum=',mpp_chksum(fieldy)
-!     end do
-
+      nlist = d_comm%Rlist_size
       ptr = LOC(mpp_domains_stack)
-      wordlen = size(TRANSFER(buffer(1),mpp_domains_stack))
-      buffer_pos = 0
-      call mpp_get_global_domain( domain, xsize=ioff, ysize=joff )
-!northern boundary fold
-      if( BTEST(domain%fold,NORTH) .AND. BTEST(update_flags,NORTH) )then
-          js = domain%y%global%end + 1
-          je = domain%y%data%end
-          if( je.GE.js )then
-!on offset grids, we need to move data leftward by one point
-              pos = domain%x%pos - 1 !the one on your left
-              if( pos.GE.0 )then
-                  is = domain%x%list(pos)%data%end+1; ie=is
-              else if( domain%x%cyclic )then
-                  pos = pos + size(domain%x%list(:))
-                  is = domain%x%list(pos)%data%end+1 - ioff; ie=is
-              else
-                  is=1; ie=0
-              end if
-              n = buffer_pos
-              if( ie.EQ.is )then
-                  msgsize = (je-js+1)*ke*2*l_size !only half this on CGRID actually
-                  mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize)*wordlen )
-                  if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
-                      write( text,'(i8)' )mpp_domains_stack_hwm
-                      call mpp_error( FATAL, 'MPP_UPDATE: mpp_domains_stack overflow, call mpp_domains_set_stack_size(' &
-                           //trim(text)//') from all PEs.' )
-                  end if   
-                  select case(grid_offset_type)
-                  case(BGRID_NE)
-                    do l=1,l_size
-                      ptr_fieldx = f_addrsx(l)
-                      ptr_fieldy = f_addrsy(l)   
-                      do k = 1,ke
-                         do j = js,je
-                            n = n + 2
-                            buffer(n-1) = fieldx(is,j,k)
-                            buffer(n  ) = fieldy(is,j,k)
-                         end do
-                      end do
-                    end do
-                    call mpp_send( buffer(buffer_pos+1), plen=n, to_pe=domain%x%list(pos)%pe )
-                    buffer_pos = buffer_pos + n
-                  case(CGRID_NE)
-                    ! When the halo to the east has not been filled, copy at the end of the compute domain, not
-                    ! the data domain.
-                    if (.not.BTEST(update_flags,EAST)) is = is - domain%x%data%end + domain%x%compute%end
-                    do l=1,l_size
-                      ptr_fieldx = f_addrsx(l)
-                      do k = 1,ke
-                         do j = js,je
-                            n = n + 1
-                            buffer(n) = fieldx(is,j,k)
-                         end do
-                      end do
-                    end do
-                    call mpp_send( buffer(buffer_pos+1), plen=n, to_pe=domain%x%list(pos)%pe )
-                    buffer_pos = buffer_pos + n
-                  end select
-!receive data at x%data%end
-                  pos = domain%x%pos + 1 !the one on your right
-                  if( pos.LT.size(domain%x%list(:)) )then
-                      n = (je-js+1)*ke
-                  else if( domain%x%cyclic )then
-                      pos = pos - size(domain%x%list(:))
-                      n = (je-js+1)*ke
-                  else
-                      n = 0
-                  end if
-                  n = n*l_size
-                  if( n.GT.0 )then
-                      mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+n)*wordlen*l_size )
-                      if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
-                          write( text,'(i8)' )mpp_domains_stack_hwm
-                          call mpp_error( FATAL, 'MPP_UPDATE: mpp_domains_stack overflow, call mpp_domains_set_stack_size(' &
-                               //trim(text)//') from all PEs.' )
-                      end if   
-                      select case(grid_offset_type)
-                      case(BGRID_NE)
-                        do l=1,l_size
-                          ptr_fieldx = f_addrsx(l)
-                          ptr_fieldy = f_addrsy(l)   
-                          do k = 1,ke
-                             do j = js,je
-                                do i = domain%x%data%begin,domain%x%data%end-1
-                                   fieldx(i,j,k) = fieldx(i+1,j,k)
-                                   fieldy(i,j,k) = fieldy(i+1,j,k)
-                                end do
-                             end do
-                          end do
-                        end do
-                        n = 2*n
-                        call mpp_recv( buffer(buffer_pos+1), glen=n, from_pe=domain%x%list(pos)%pe )
-                        i = domain%x%data%end
-                        n = buffer_pos
-                        do l=1,l_size
-                          ptr_fieldx = f_addrsx(l)
-                          ptr_fieldy = f_addrsy(l)   
-                          do k = 1,ke
-                             do j = js,je
-                                n = n + 2
-                                fieldx(i,j,k) = buffer(n-1)
-                                fieldy(i,j,k) = buffer(n  )
-                             end do
-                          end do
-                        end do
-                      case(CGRID_NE)
-                        do l=1,l_size
-                          ptr_fieldx = f_addrsx(l)
-                          ptr_fieldy = f_addrsy(l)   
-                          do k = 1,ke
-                             do j = js,je
-                                do i = domain%x%data%begin,domain%x%data%end-1
-                                   fieldx(i,j,k) = fieldx(i+1,j,k)
-!                                   fieldy(i,j,k) = fieldy(i+1,j,k)
-                                end do
-                             end do
-                          end do
-                        end do
-                        call mpp_recv( buffer(buffer_pos+1), glen=n, from_pe=domain%x%list(pos)%pe )
-                        i = domain%x%data%end
-! If the eastern halo has not been filled, it is the eastern end of the compute domain
-! that needs to have the value shifted into it.
-                        if (.not.BTEST(update_flags,EAST)) i = domain%x%compute%end
-                        n = buffer_pos
-                        do l=1,l_size
-                          ptr_fieldx = f_addrsx(l)
-                          do k = 1,ke
-                             do j = js,je
-                                n = n + 1
-                                fieldx(i,j,k) = buffer(n)
-                             end do
-                          end do
-                        end do
-                      end select
-                  end if  
-              end if  
 
-              if (.NOT.BTEST(update_flags,SCALAR_BIT)) then
-!flip the sign if this is a vector
-                is = domain%x%data%begin
-                ie = domain%x%data%end
-                do l=1,l_size
+      if( d_comm%staggered ) then
+         d_commy => d_comm%y_comm
+      else
+         d_commy => d_comm
+      end if
+
+      !--- send
+      do list = 0,nlist-1
+         if( .NOT.d_comm%S_do_buf(list) .AND. .NOT.d_commy%S_do_buf(list) )cycle
+         call mpp_clock_begin(pack_clock)
+         pos = buffer_pos
+         select case( grid_offset_type )
+         case(BGRID_NE, BGRID_SW, AGRID)
+            do l=1,l_size  ! loop over number of fields
+               ptr_fieldx = f_addrsx(l)
+               ptr_fieldy = f_addrsy(l)
+               do m=1,8
+                  if( d_comm%do_thisS(m,list) )then
+!                     call mpp_clock_begin(pack_loop_clock) ! z1l: not necessary, not unpack_loop_clock
+                     is = d_comm%send(m,list)%is; ie = d_comm%send(m,list)%ie
+                     js = d_comm%send(m,list)%js; je = d_comm%send(m,list)%je
+                     do k = 1,ke
+                        do j = js, je
+                           do i = is, ie
+                              pos = pos + 2
+                              buffer(pos-1) = fieldx(i,j,k)
+                              buffer(pos)   = fieldy(i,j,k)
+                           end do
+                        end do
+                     end do
+!                     call mpp_clock_end(pack_loop_clock)
+                  end if
+
+                  if( d_comm%do_thisS2(m,list) )then
+!                     call mpp_clock_begin(pack_loop_clock)
+                     nsend = d_comm%send(m,list)%n
+                     do n = 1, nsend
+                        i = d_comm%send(m,list)%i(n)
+                        j = d_comm%send(m,list)%j(n)
+                        do k = 1,ke
+                           pos = pos + 2
+                           buffer(pos-1) = fieldx(i,j,k)
+                           buffer(pos) = fieldy(i,j,k)
+                        end do
+                     end do
+!                     call mpp_clock_end(pack_loop_clock)
+                  end if
+
+               end do  ! do m=1,8
+            end do  ! do l=1,l_size
+         case(CGRID_NE, CGRID_SW)
+            do l=1,l_size  ! loop over number of fields
+               ptr_fieldx = f_addrsx(l)
+               ptr_fieldy = f_addrsy(l)
+               do m=1,8
+                  if( d_comm%do_thisS(m,list) )then
+!                     call mpp_clock_begin(pack_loop_clock)
+                     is = d_comm%send(m,list)%is; ie = d_comm%send(m,list)%ie
+                     js = d_comm%send(m,list)%js; je = d_comm%send(m,list)%je
+                     do k = 1,ke
+                        do j = js, je
+                           do i = is, ie
+                              pos = pos + 1
+                              buffer(pos) = fieldx(i,j,k)
+                           end do
+                        end do
+                     end do
+!                     call mpp_clock_end(pack_loop_clock)
+                  end if
+                  if( d_comm%do_thisS2(m,list) )then
+!                     call mpp_clock_begin(pack_loop_clock)
+                     nsend = d_comm%send(m,list)%n
+                     do n = 1, nsend
+                        i = d_comm%send(m,list)%i(n)
+                        j = d_comm%send(m,list)%j(n)
+                        do k = 1,ke
+                           pos = pos + 1
+                           buffer(pos) = fieldx(i,j,k)
+                        end do
+                     end do
+!                     call mpp_clock_end(pack_loop_clock)
+                  end if
+                  if( d_commy%do_thisS(m,list) )then
+!                     call mpp_clock_begin(pack_loop_clock)
+                     is = d_commy%send(m,list)%is; ie = d_commy%send(m,list)%ie
+                     js = d_commy%send(m,list)%js; je = d_commy%send(m,list)%je
+                     do k = 1,ke
+                        do j = js, je
+                           do i = is, ie
+                              pos = pos + 1
+                              buffer(pos) = fieldy(i,j,k)
+                           end do
+                        end do
+                     end do
+!                     call mpp_clock_end(pack_loop_clock)
+                  end if
+                  if( d_commy%do_thisS2(m,list) )then
+!                     call mpp_clock_begin(pack_loop_clock)
+                     nsend = d_commy%send(m,list)%n
+                     do n = 1, nsend
+                        i = d_commy%send(m,list)%i(n)
+                        j = d_commy%send(m,list)%j(n)
+                        do k = 1,ke
+                           pos = pos + 1
+                           buffer(pos) = fieldy(i,j,k)
+                        end do
+                     end do
+!                     call mpp_clock_end(pack_loop_clock)
+                  end if
+               end do  ! do m=1,8
+            end do  ! do l=1,l_size
+         end select
+         call mpp_clock_end(pack_clock)
+         call mpp_clock_begin(send_clock)
+         msgsize = pos - buffer_pos
+         if( msgsize.GT.0 )then
+            to_pe = d_comm%cto_pe(list)
+            call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
+            buffer_pos = pos
+         end if
+         call mpp_clock_end(send_clock)
+         !     write(stdout(),*) 'Update send checksum=',mpp_chksum(rbuffer(buffer_pos))
+      end do
+
+!recv
+      nlist = d_comm%Rlist_size
+      do list = 0,nlist-1
+         if( .NOT. d_comm%R_do_buf(list) .AND. .NOT. d_commy%R_do_buf(list) )cycle
+         call mpp_clock_begin(recv_clock)
+         from_pe = d_comm%cfrom_pe(list)
+         msgsize = 0
+         select case(grid_offset_type)
+         case(BGRID_NE, BGRID_SW, AGRID)
+            do m=1,8
+               msgsize = msgsize + d_comm%R_msize(m,list)
+            end do
+            msgsize = msgsize*2
+         case(CGRID_NE, CGRID_SW)
+            do m=1,8
+               msgsize = msgsize + d_comm%R_msize(m,list)
+               msgsize = msgsize + d_commy%R_msize(m,list)
+            end do
+         end select
+         msgsize = msgsize*l_size
+   
+         if( msgsize.GT.0 )then
+             call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe )
+             buffer_pos = buffer_pos + msgsize
+         end if
+         call mpp_clock_end(recv_clock)
+      end do
+
+!unpack recv
+!unpack halos in reverse order
+
+      do list = nlist-1,0,-1
+         if( .NOT.d_comm%R_do_buf(list) .AND. .NOT.d_commy%R_do_buf(list) )cycle
+         call mpp_clock_begin(unpk_clock)
+         pos = buffer_pos
+         select case ( grid_offset_type )
+         case(BGRID_NE, BGRID_SW, AGRID)
+            do l=l_size,1,-1  ! loop over number of fields
+               ptr_fieldx = f_addrsx(l)
+               ptr_fieldy = f_addrsy(l)
+
+               do m=8,1,-1
+                  if( d_comm%do_thisR2(m,list) )then
+                     nrecv = d_comm%recv(m,list)%n
+                     msgsize = nrecv*ke*2
+                     pos = buffer_pos - msgsize
+                     buffer_pos = pos
+                     do n = 1, nrecv
+                        i = d_comm%recv(m,list)%i(n)
+                        j = d_comm%recv(m,list)%j(n)
+                        do k = 1,ke
+                           pos = pos + 2
+                           fieldx(i,j,k) = buffer(pos-1)
+                           fieldy(i,j,k) = buffer(pos)
+                        end do
+                     end do
+                  end if
+
+                  if( d_comm%do_thisR(m,list) )then  ! direction
+                     is = d_comm%recv(m,list)%is; ie = d_comm%recv(m,list)%ie
+                     js = d_comm%recv(m,list)%js; je = d_comm%recv(m,list)%je 
+                     msgsize = (ie-is+1)*(je-js+1)*ke*2
+                     pos = buffer_pos - msgsize
+                     buffer_pos = pos
+                     select case ( d_comm%recv(m,list)%rotation )
+                     case ( ZERO )  
+                        do k = 1,ke
+                           do j = js, je
+                              do i = is, ie
+                                 pos = pos + 2
+                                 fieldx(i,j,k) = buffer(pos-1)
+                                 fieldy(i,j,k) = buffer(pos)
+                              end do
+                           end do
+                        end do
+                     case ( ONE_HUNDRED_EIGHTY )
+                        do k = 1,ke
+                           do j = je,js,-1
+                              do i = ie,is,-1
+                                 pos = pos + 2
+                                 fieldx(i,j,k) = buffer(pos-1)
+                                 fieldy(i,j,k) = buffer(pos)
+                              end do
+                           end do
+                        end do
+                     end select
+                  end if
+               end do  ! do m=8,1,-1
+            end do  ! do l=l_size,1,-1
+         case(CGRID_NE, CGRID_SW)
+            do l=l_size,1,-1  ! loop over number of fields
+               ptr_fieldx = f_addrsx(l)
+               ptr_fieldy = f_addrsy(l)
+
+               do m=8,1,-1
+                  if( d_commy%do_thisR2(m,list) )then  ! direction
+                     nrecv = d_commy%recv(m,list)%n
+                     msgsize = nrecv*ke
+                     pos = buffer_pos - msgsize
+                     buffer_pos = pos
+
+                     do n = 1, nrecv
+                        i = d_commy%recv(m,list)%i(n)
+                        j = d_commy%recv(m,list)%j(n)
+                        do k = 1,ke
+                           pos = pos + 1
+                           fieldy(i,j,k) = buffer(pos)
+                        end do
+                     end do
+                  end if
+
+                  if( d_commy%do_thisR(m,list) )then  ! direction
+                     is = d_commy%recv(m,list)%is; ie = d_commy%recv(m,list)%ie
+                     js = d_commy%recv(m,list)%js; je = d_commy%recv(m,list)%je 
+                     msgsize = (ie-is+1)*(je-js+1)*ke
+                     pos = buffer_pos - msgsize
+                     buffer_pos = pos
+                     select case ( d_commy%recv(m,list)%rotation )
+                     case ( ZERO )  
+                        do k = 1,ke
+                           do j = js, je
+                              do i = is, ie
+                                 pos = pos + 1
+                                 fieldy(i,j,k) = buffer(pos)
+                              end do
+                           end do
+                        end do
+                     case ( ONE_HUNDRED_EIGHTY )
+                        do k = 1,ke
+                           do j = je,js,-1
+                              do i = ie,is,-1
+                                 pos = pos + 1
+                                 fieldy(i,j,k) = buffer(pos)
+                              end do
+                           end do
+                        end do
+                     end select
+                  end if
+
+                  if( d_comm%do_thisR2(m,list) )then
+                     nrecv = d_comm%recv(m,list)%n
+                     msgsize = nrecv*ke
+                     pos = buffer_pos - msgsize
+                     buffer_pos = pos
+                     do n = 1, nrecv
+                        i = d_comm%recv(m,list)%i(n)
+                        j = d_comm%recv(m,list)%j(n)
+                        do k = 1,ke
+                           pos = pos + 1
+                           fieldx(i,j,k) = buffer(pos)
+                        end do
+                     end do
+                  end if
+
+                  if( d_comm%do_thisR(m,list) )then  ! direction
+                     is = d_comm%recv(m,list)%is; ie = d_comm%recv(m,list)%ie
+                     js = d_comm%recv(m,list)%js; je = d_comm%recv(m,list)%je 
+                     msgsize = (ie-is+1)*(je-js+1)*ke
+                     pos = buffer_pos - msgsize
+                     buffer_pos = pos
+                     select case ( d_comm%recv(m,list)%rotation )
+                     case ( ZERO )  
+                        do k = 1,ke
+                           do j = js, je
+                              do i = is, ie
+                                 pos = pos + 1
+                                 fieldx(i,j,k) = buffer(pos)
+                              end do
+                           end do
+                        end do
+                     case ( ONE_HUNDRED_EIGHTY )
+                        do k = 1,ke
+                           do j = je,js,-1
+                              do i = ie,is,-1
+                                 pos = pos + 1
+                                 fieldx(i,j,k) = buffer(pos)
+                              end do
+                           end do
+                        end do
+                     end select
+                  end if
+               end do  ! do m=8,1,-1
+            end do  ! do l=l_size,1,-1
+         end select
+         call mpp_clock_end(unpk_clock)
+!        write(stdout(),*) 'Update field checksum=',mpp_chksum(rfield)
+      end do
+
+      !------------------------------------------------------------------
+      !  For the multiple-tile masaic, need to communication between tiles.
+      !  Those overlapping regions are specified by rectangle. 
+      !  The reason this step need to be seperated from the previous step,
+      !  is because for cubic-grid, some points ( like at i=ieg+1 ), the overlapping
+      !  is both within tile and between tiles. 
+      !------------------------------------------------------------------
+
+      domain => d_comm%domain
+      !--- send
+      if ( domain%ncontacts > 0 ) then
+         do list = 0,nlist-1
+            if( .NOT.d_comm%S_do_buf3(list) .AND. .NOT.d_commy%S_do_buf3(list) )cycle
+            call mpp_clock_begin(pack_clock)
+            to_pe = d_comm%cto_pe(list)
+            pos = buffer_pos
+            do l=1,l_size  ! loop over number of fields
+               ptr_fieldx = f_addrsx(l)
+               ptr_fieldy = f_addrsy(l)
+               do m=1,8
+                  if( d_comm%do_thisS3(m,list) )then
+                     !                     call mpp_clock_begin(pack_loop_clock)
+                     is = d_comm%send(m,list)%is; ie = d_comm%send(m,list)%ie
+                     js = d_comm%send(m,list)%js; je = d_comm%send(m,list)%je
+                     if( d_commy%send(m,list)%rotation == ZERO .OR. grid_offset_type == BGRID_NE &
+                                                               .OR. grid_offset_type == BGRID_SW ) then
+                        do k = 1,ke
+                           do j = js, je
+                              do i = is, ie
+                                 pos = pos + 1
+                                 buffer(pos) = fieldx(i,j,k)
+                              end do
+                           end do
+                        end do
+                     else
+                        do k = 1,ke
+                           do j = js, je
+                              do i = is, ie
+                                 pos = pos + 1
+                                 buffer(pos) = fieldy(i,j,k)
+                              end do
+                           end do
+                        end do
+                     end if
+!                     call mpp_clock_end(pack_loop_clock)
+                  end if
+                  if( d_commy%do_thisS3(m,list) )then
+!                     call mpp_clock_begin(pack_loop_clock)
+                     is = d_commy%send(m,list)%is; ie = d_commy%send(m,list)%ie
+                     js = d_commy%send(m,list)%js; je = d_commy%send(m,list)%je
+                     if( d_commy%send(m,list)%rotation == ZERO .OR. grid_offset_type == BGRID_NE &
+                                                               .OR. grid_offset_type == BGRID_SW ) then
+                        do k = 1,ke
+                           do j = js, je
+                              do i = is, ie
+                                 pos = pos + 1
+                                 buffer(pos) = fieldy(i,j,k)
+                              end do
+                           end do
+                        end do
+                     else
+                        do k = 1,ke
+                           do j = js, je
+                              do i = is, ie
+                                 pos = pos + 1
+                                 buffer(pos) = fieldx(i,j,k)
+                              end do
+                           end do
+                        end do
+                     end if
+!                     call mpp_clock_end(pack_loop_clock)
+                  end if
+               end do  ! do m=1,8
+            end do  ! do l=1,l_size
+            call mpp_clock_end(pack_clock)
+            call mpp_clock_begin(send_clock)
+            msgsize = pos - buffer_pos
+            if( msgsize.GT.0 )then
+               call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
+               buffer_pos = pos
+            end if
+            call mpp_clock_end(send_clock)
+            !     write(stdout(),*) 'Update send checksum=',mpp_chksum(rbuffer(buffer_pos))
+         end do
+
+         !recv
+         nlist = d_comm%Rlist_size
+         do list = 0,nlist-1
+            if( .NOT. d_comm%R_do_buf3(list) .AND. .NOT. d_comm%R_do_buf3(list) )cycle
+            call mpp_clock_begin(recv_clock)
+            from_pe = d_comm%cfrom_pe(list)
+            msgsize = 0
+            do m=1,8
+               if( d_comm%do_thisR3(m,list) ) msgsize = msgsize + d_comm%R_msize2(m,list)
+               if( d_commy%do_thisR3(m,list) ) msgsize = msgsize + d_commy%R_msize2(m,list)
+            end do
+            msgsize = msgsize*l_size
+
+            if( msgsize.GT.0 )then
+               call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe )
+               buffer_pos = buffer_pos + msgsize
+            end if
+            call mpp_clock_end(recv_clock)
+         end do
+
+         !unpack recv
+         !unpack halos in reverse order
+
+         do list = nlist-1,0,-1
+            if( .NOT.d_comm%R_do_buf3(list) .AND. .NOT.d_commy%R_do_buf3(list) )cycle
+            call mpp_clock_begin(unpk_clock)
+            pos = buffer_pos
+
+            do l=l_size,1,-1  ! loop over number of fields
+               ptr_fieldx = f_addrsx(l)
+               ptr_fieldy = f_addrsy(l)
+
+               do m=8,1,-1
+                  if( d_commy%do_thisR3(m,list) )then  ! direction
+                     msgsize = d_commy%R_msize2(m,list)
+                     pos = buffer_pos - msgsize
+                     buffer_pos = pos
+                     is = d_commy%recv(m,list)%is; ie = d_commy%recv(m,list)%ie
+                     js = d_commy%recv(m,list)%js; je = d_commy%recv(m,list)%je
+                     select case ( d_commy%recv(m,list)%rotation )
+                     case ( ZERO )
+                        do k = 1,ke
+                           do j = js, je
+                              do i = is, ie
+                                 pos = pos + 1
+                                 fieldy(i,j,k) = buffer(pos)
+                              end do
+                           end do
+                        end do
+                     case ( MINUS_NINETY )
+                        do k = 1,ke
+                           do i = ie, is, -1
+                              do j = js, je
+                                 pos = pos + 1
+                                 fieldy(i,j,k) = buffer(pos)
+                              end do
+                           end do
+                        end do
+                     case ( NINETY )
+                        if( BTEST(update_flags,SCALAR_BIT) ) then
+                           do k = 1,ke
+                              do i = is, ie
+                                 do j = je, js, -1
+                                    pos = pos + 1
+                                    fieldy(i,j,k) = buffer(pos)
+                                 end do
+                              end do
+                           end do
+                        else 
+                           do k = 1,ke
+                              do i = is, ie
+                                 do j = je, js, -1
+                                    pos = pos + 1
+                                    fieldy(i,j,k) = -buffer(pos)
+                                 end do
+                              end do
+                           end do
+                        end if
+                     end select
+                  end if
+
+                  if( d_comm%do_thisR3(m,list) )then
+                     msgsize = d_comm%R_msize2(m,list)
+                     pos = buffer_pos - msgsize
+                     buffer_pos = pos
+                     is = d_comm%recv(m,list)%is; ie = d_comm%recv(m,list)%ie
+                     js = d_comm%recv(m,list)%js; je = d_comm%recv(m,list)%je
+                     select case ( d_comm%recv(m,list)%rotation )
+                     case ( ZERO )
+                        do k = 1,ke
+                           do j = js, je
+                              do i = is, ie
+                                 pos = pos + 1
+                                 fieldx(i,j,k) = buffer(pos)
+                              end do
+                           end do
+                        end do
+                     case ( MINUS_NINETY )
+                        if( BTEST(update_flags,SCALAR_BIT) ) then
+                           do k = 1,ke
+                              do i = ie, is, -1
+                                 do j = js, je
+                                    pos = pos + 1
+                                    fieldx(i,j,k) = buffer(pos)
+                                 end do
+                              end do
+                           end do
+                        else
+                           do k = 1,ke
+                              do i = ie, is, -1
+                                 do j = js, je
+                                    pos = pos + 1
+                                    fieldx(i,j,k) = -buffer(pos)
+                                 end do
+                              end do
+                           end do
+                        end if
+                     case ( NINETY )
+                        do k = 1,ke
+                           do i = is, ie
+                              do j = je, js, -1
+                                 pos = pos + 1
+                                 fieldx(i,j,k) = buffer(pos)
+                              end do
+                           end do
+                        end do
+                     end select
+                  end if
+               end do  ! do m=8,1,-1
+            end do  ! do l=l_size,1,-1
+
+            call mpp_clock_end(unpk_clock)
+            !        write(stdout(),*) 'Update field checksum=',mpp_chksum(rfield)
+         end do
+
+         !--- to make sure the value on the corner is consistent between tiles.
+         if( grid_offset_type == BGRID_NE ) then
+            do list = 0,nlist-1
+               if( .NOT.d_comm%S_do_buf4(list) )cycle
+               call mpp_clock_begin(pack_clock)
+               to_pe = d_comm%cto_pe(list)
+               pos = buffer_pos
+               do l=1,l_size  ! loop over number of fields
                   ptr_fieldx = f_addrsx(l)
-                  ptr_fieldy = f_addrsy(l)   
-                  do k = 1,ke
-                     do j = js,je
-                        do i = is,ie
-                           fieldx(i,j,k) = -fieldx(i,j,k)
-                           fieldy(i,j,k) = -fieldy(i,j,k)
+                  ptr_fieldy = f_addrsy(l)
+                  do m=1,8
+                     if( d_comm%do_thisS4(m,list) )then
+!                        call mpp_clock_begin(pack_loop_clock)
+                        i = d_comm%send(m,list)%i2; j = d_comm%send(m,list)%j2
+                        do k = 1,ke
+                           pos = pos + 2
+                           buffer(pos-1) = fieldx(i,j,k)
+                           buffer(pos)   = fieldy(i,j,k)
+                        end do
+!                        call mpp_clock_end(pack_loop_clock)
+                     end if
+                  end do  ! do m=1,8
+               end do  ! do l=1,l_size
+               call mpp_clock_end(pack_clock)
+               call mpp_clock_begin(send_clock)
+               msgsize = pos - buffer_pos
+               if( msgsize.GT.0 )then
+                  call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
+                  buffer_pos = pos
+               end if
+               call mpp_clock_end(send_clock)
+               !     write(stdout(),*) 'Update send checksum=',mpp_chksum(rbuffer(buffer_pos))
+            end do
+
+            !recv
+            nlist = d_comm%Rlist_size
+            do list = 0,nlist-1
+               if( .NOT. d_comm%R_do_buf4(list) )cycle
+               call mpp_clock_begin(recv_clock)
+               from_pe = d_comm%cfrom_pe(list)
+               msgsize = 0
+               do m=1,8
+                  if( d_comm%do_thisR4(m,list) ) msgsize = msgsize + 2*ke
+               end do
+               msgsize = msgsize*l_size
+
+               if( msgsize.GT.0 )then
+                  call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe )
+                  buffer_pos = buffer_pos + msgsize
+               end if
+               call mpp_clock_end(recv_clock)
+            end do
+
+            !unpack recv
+            !unpack halos in reverse order
+
+            do list = nlist-1,0,-1
+               if( .NOT.d_comm%R_do_buf4(list) )cycle
+               call mpp_clock_begin(unpk_clock)
+               pos = buffer_pos
+
+               do l=l_size,1,-1  ! loop over number of fields
+                  ptr_fieldx = f_addrsx(l)
+                  ptr_fieldy = f_addrsy(l)
+
+                  do m=8,1,-1
+                     if( d_commy%do_thisR4(m,list) )then  
+                        msgsize = 2*ke
+                        pos = buffer_pos - msgsize
+                        buffer_pos = pos
+                        i = d_commy%recv(m,list)%i2; j = d_commy%recv(m,list)%j2
+                        do k = 1,ke
+                           pos = pos + 2
+                           fieldx(i,j,k) = buffer(pos-1)
+                           fieldy(i,j,k) = buffer(pos)
+                        end do
+                     end if
+                  end do  ! do m=8,1,-1
+               end do  ! do l=l_size,1,-1
+
+               call mpp_clock_end(unpk_clock)
+               !        write(stdout(),*) 'Update field checksum=',mpp_chksum(rfield)
+            end do
+         end if
+      end if  ! end if ( ncontacts > 0 )
+
+     ! ---northern boundary fold
+      if( BTEST(domain%fold,NORTH) .AND. (.NOT.BTEST(update_flags,SCALAR_BIT)) )then
+         if( BTEST(update_flags,NORTH) ) then
+            js = domain%y%global%end + 1
+            je = domain%y%data%end
+            if( je.GE.js )then
+               is = domain%x%data%begin
+               ie = domain%x%data%end
+               select case(grid_offset_type)
+               case (AGRID) 
+                  do l=1,l_size
+                     ptr_fieldx = f_addrsx(l)
+                     ptr_fieldy = f_addrsy(l)   
+                     do k = 1,ke
+                        do j = js,je
+                           do i = is,ie
+                              fieldx(i,j,k) = -fieldx(i,j,k)
+                              fieldy(i,j,k) = -fieldy(i,j,k)
+                           end do
                         end do
                      end do
                   end do
-                end do
-              endif  ! if (.NOT.BTEST(update_flags,SCALAR_BIT))
-          end if 
-
-!         do l=1,l_size
-!           ptr_fieldx = f_addrsx(l)
-!           ptr_fieldy = f_addrsy(l)
-!           write(stdout(),*) 'fieldx chksum=',mpp_chksum(fieldx)
-!           write(stdout(),*) 'fieldy chksum=',mpp_chksum(fieldy)
-!         end do
-
-!eliminate redundant vector data at fold
-          j = domain%y%global%end
-          if( domain%y%data%begin.LE.j .AND. j.LE.domain%y%data%end )then !fold is within domain
-!ship left-half data to right half: on BGRID_NE the x%data%end point is not in mirror domain and must be done separately.
-              if( domain%x%pos.LT.(size(domain%x%list(:))+1)/2 )then
-                  is = domain%x%data%begin
-                  ie = min(domain%x%data%end,(domain%x%global%begin+domain%x%global%end)/2)
-                  n = buffer_pos
-                  select case(grid_offset_type)
-                  case(BGRID_NE)
-                    do l=1,l_size
-                      ptr_fieldx = f_addrsx(l)
-                      ptr_fieldy = f_addrsy(l)   
-                      do k = 1,ke
-                         do i = is,ie-1
-                            n = n + 2
-                            buffer(n-1) = fieldx(i,j,k)
-                            buffer(n)   = fieldy(i,j,k)
-                         end do
-                      end do
-                    end do
-                    call mpp_send( buffer(buffer_pos+1), plen=n-buffer_pos, &
-                                   to_pe=domain%x%list(size(domain%x%list(:))-domain%x%pos-1)%pe )
-                    buffer_pos = n 
-                  case(CGRID_NE)     
-                    do l=1,l_size
-                      ptr_fieldy = f_addrsy(l)   
-                      do k = 1,ke
-                         do i = is,ie
-                            n = n + 1
-                            buffer(n) = fieldy(i,j,k)
-                         end do
-                      end do
-                    end do
-                    call mpp_send( buffer(buffer_pos+1), plen=n-buffer_pos, &
-                                   to_pe=domain%x%list(size(domain%x%list(:))-domain%x%pos-1)%pe )
-                    buffer_pos = n 
-                  end select         
-              end if  
-              if( domain%x%pos.GE.size(domain%x%list(:))/2 )then
+               case (BGRID_NE) 
+                  if(domain%symmetry) then
+                     do l=1,l_size
+                        ptr_fieldx = f_addrsx(l)
+                        ptr_fieldy = f_addrsy(l)   
+                        do k = 1,ke
+                           do j = js+1,je+1
+                              do i = is,ie+1
+                                 fieldx(i,j,k) = -fieldx(i,j,k)
+                                 fieldy(i,j,k) = -fieldy(i,j,k)
+                              end do
+                           end do
+                        end do
+                     end do
+                  else
+                     do l=1,l_size
+                        ptr_fieldx = f_addrsx(l)
+                        ptr_fieldy = f_addrsy(l)   
+                        do k = 1,ke
+                           do j = js,je
+                              do i = is,ie
+                                 fieldx(i,j,k) = -fieldx(i,j,k)
+                                 fieldy(i,j,k) = -fieldy(i,j,k)
+                              end do
+                           end do
+                        end do
+                     end do
+                  end if
+               case (CGRID_NE)
+                  if(domain%symmetry) then
+                     do l=1,l_size
+                        ptr_fieldx = f_addrsx(l)
+                        ptr_fieldy = f_addrsy(l)   
+                        do k = 1,ke
+                           do j = js,je
+                              do i = is,ie+1
+                                 fieldx(i,j,k) = -fieldx(i,j,k)
+                              end do
+                           end do
+                           do j = js+1,je+1
+                              do i = is,ie
+                                 fieldy(i,j,k) = -fieldy(i,j,k)
+                              end do
+                           end do
+                        end do
+                     end do
+                  else
+                     do l=1,l_size
+                        ptr_fieldx = f_addrsx(l)
+                        ptr_fieldy = f_addrsy(l)   
+                        do k = 1,ke
+                           do j = js,je
+                              do i = is,ie
+                                 fieldx(i,j,k) = -fieldx(i,j,k)
+                                 fieldy(i,j,k) = -fieldy(i,j,k)
+                              end do
+                           end do
+                        end do
+                     end do
+                  endif
+               end select
+            endif
+         end if
+         !--- flip the sign at the folded north edge.
+         j = domain%y%global%end
+         if( domain%y%data%begin.LE.j .AND. j.LE.domain%y%data%end )then !fold is within domain
+            if ( domain%x%pos.GE.size(domain%x%list(:))/2 ) then
+               do_flip = .false.
+               flip_n = BTEST(update_flags,NORTH)
+               flip_e = BTEST(update_flags,EAST)
+               flip_w = BTEST(update_flags,WEST)
+               do_flip = flip_n .or. flip_w .or. flip_e
+               do_flip2 = .FALSE.
+               if( flip_n .AND. flip_e .AND. flip_w ) then
                   is = max(domain%x%data%begin,(domain%x%global%begin+domain%x%global%end)/2+1)
                   ie = domain%x%data%end
+               else if (  flip_n .AND. flip_e ) then
+                  is = max(domain%x%compute%begin,(domain%x%global%begin+domain%x%global%end)/2+1)
+                  ie = domain%x%data%end
+               else if (  flip_n .AND. flip_w ) then
+                  is = max(domain%x%data%begin,(domain%x%global%begin+domain%x%global%end)/2+1)
+                  ie = domain%x%compute%end
+               else if ( flip_n ) then
+                  is = max(domain%x%compute%begin,(domain%x%global%begin+domain%x%global%end)/2+1)
+                  ie = domain%x%compute%end                 
+               else if ( flip_w .AND. flip_e ) then  ! a little complicate
+                  is = max(domain%x%compute%end+1,(domain%x%global%begin+domain%x%global%end)/2+1)
+                  ie = domain%x%data%end
+                  do_flip2 = .TRUE.
+                  is2 = max(domain%x%data%begin,(domain%x%global%begin+domain%x%global%end)/2+1)
+                  ie2 = domain%x%compute%begin-1
+               else if ( flip_e ) then
+                  is = max(domain%x%compute%end+1,(domain%x%global%begin+domain%x%global%end)/2+1)
+                  ie = domain%x%data%end
+               else if ( flip_w ) then
+                  is = max(domain%x%data%begin,(domain%x%global%begin+domain%x%global%end)/2+1)
+                  ie = domain%x%compute%begin-1
+               end if                  
+               if( do_flip ) then
                   select case(grid_offset_type)
                   case(BGRID_NE)
-                    n = (ie-is+1)*ke*2*l_size
-                    call mpp_recv( buffer(buffer_pos+1), glen=n, from_pe=domain%x%list(size(domain%x%list(:))-domain%x%pos-1)%pe )
-                    n = buffer_pos
-!get all values except at x%data%end
-                    if (BTEST(update_flags,SCALAR_BIT)) then ! Do not change the signs if this is a pair of scalar fields.
-                      do l=1,l_size
-                        ptr_fieldx = f_addrsx(l)
-                        ptr_fieldy = f_addrsy(l)
-                        do k = 1,ke
-                           do i = ie-1,is,-1
-                              n = n + 2
-                              fieldx(i,j,k) = buffer(n-1)
-                              fieldy(i,j,k) = buffer(n)
-                           end do
-                        end do
-                      end do
-                    else
-                      do l=1,l_size
+                     if(domain%symmetry) then
+                        j = j + 1
+                        ie = ie + 1
+                     end if
+                     do l=1,l_size
                         ptr_fieldx = f_addrsx(l)
                         ptr_fieldy = f_addrsy(l)   
                         do k = 1,ke
-                           do i = ie-1,is,-1
-                              n = n + 2
-                              fieldx(i,j,k) = -buffer(n-1)
-                              fieldy(i,j,k) = -buffer(n)
+                           do i = is, ie
+                              fieldx(i,j,k) = -fieldx(i,j,k) 
+                              fieldy(i,j,k) = -fieldy(i,j,k) 
                            end do
                         end do
-                      end do
-                    endif
-!now get the value at domain%x%data%end
-                    pos = domain%x%pos - 1
-                    if( pos.GE.size(domain%x%list(:))/2 )then
-                        i = domain%x%list(pos)%data%end
-                        buffer_pos = n
-                        do l=1,l_size
-                          ptr_fieldx = f_addrsx(l)
-                          ptr_fieldy = f_addrsy(l)   
-                          do k = 1,ke
-                             n = n + 2
-                             buffer(n-1) = fieldx(i,j,k)
-                             buffer(n  ) = fieldy(i,j,k)
-                          end do
-                        end do
-                        call mpp_send( buffer(buffer_pos+1), plen=n-buffer_pos, to_pe=domain%x%list(pos)%pe )
-                        buffer_pos = n
-                    end if
-                    pos = domain%x%pos + 1
-                    if( pos.LT.size(domain%x%list(:)) )then
-                        n = ke*2*l_size
-                        call mpp_recv( buffer(buffer_pos+1), glen=n, from_pe=domain%x%list(pos)%pe )
-                        n = buffer_pos
-                        i = domain%x%data%end
-                        do l=1,l_size
-                          ptr_fieldx = f_addrsx(l)
-                          ptr_fieldy = f_addrsy(l)   
-                          do k = 1,ke
-                             n = n + 2
-                             fieldx(i,j,k) = buffer(n-1)
-                             fieldy(i,j,k) = buffer(n  )
-                          end do
-                        end do
-                    end if 
+                     end do
                   case(CGRID_NE)
-                    n = (ie-is+1)*ke*l_size
-                    call mpp_recv( buffer(buffer_pos+1), glen=n, from_pe=domain%x%list(size(domain%x%list(:))-domain%x%pos-1)%pe )
-                    n = buffer_pos
-                    if (BTEST(update_flags,SCALAR_BIT)) then ! Do not change the signs if this is a pair of scalar fields.
-                      do l=1,l_size
-                        ptr_fieldy = f_addrsy(l)
-                        do k = 1,ke
-                           do i = ie,is,-1
-                              n = n + 1
-                              fieldy(i,j,k) = buffer(n)
-                           end do
-                        end do
-                      end do
-                    else
-                      do l=1,l_size
+                     if(domain%symmetry) j = j+1
+                     do l=1,l_size
                         ptr_fieldy = f_addrsy(l)   
                         do k = 1,ke
-                           do i = ie,is,-1
-                              n = n + 1
-                              fieldy(i,j,k) = -buffer(n)
+                           do i = is, ie
+                              fieldy(i,j,k) = -fieldy(i,j,k) 
                            end do
                         end do
-                      end do
-                    endif
+                     end do
                   end select
-              end if  
-!poles set to 0: BGRID only
-              if( grid_offset_type.EQ.BGRID_NE.and. .not. BTEST(update_flags,SCALAR_BIT) )then
+                  if( do_flip2 ) then
+                     select case(grid_offset_type)
+                     case(BGRID_NE)
+                        if(domain%symmetry) then
+                           ie2 = ie2 + 1
+                        end if
+                        do l=1,l_size
+                           ptr_fieldx = f_addrsx(l)
+                           ptr_fieldy = f_addrsy(l)   
+                           do k = 1,ke
+                              do i = is2, ie2
+                                 fieldx(i,j,k) = -fieldx(i,j,k) 
+                                 fieldy(i,j,k) = -fieldy(i,j,k) 
+                              end do
+                           end do
+                        end do
+                     case(CGRID_NE)
+                        do l=1,l_size
+                           ptr_fieldy = f_addrsy(l)   
+                           do k = 1,ke
+                              do i = is2, ie2
+                                 fieldy(i,j,k) = -fieldy(i,j,k) 
+                              end do
+                           end do
+                        end do
+                     end select
+                  end if
+               end if
+            end if
+            !poles set to 0: BGRID only
+            if( grid_offset_type.EQ.BGRID_NE )then
+               if(domain%symmetry) then
+                  j = domain%y%global%end + 1
+                  do i = domain%x%global%begin,domain%x%global%end+1,(domain%x%global%begin+domain%x%global%end)/2
+                     if( domain%x%data%begin.LE.i .AND. i.LE.domain%x%data%end+1 )then
+                        do l=1,l_size
+                           ptr_fieldx = f_addrsx(l)
+                           ptr_fieldy = f_addrsy(l)   
+                           do k = 1,ke
+                              fieldx(i,j,k) = 0.
+                              fieldy(i,j,k) = 0.
+                           end do
+                        end do
+                     end if
+                  end do
+               else
                   do i = domain%x%global%begin-1,domain%x%global%end,(domain%x%global%begin+domain%x%global%end)/2
                      if( domain%x%data%begin.LE.i .AND. i.LE.domain%x%data%end )then
                         do l=1,l_size
-                          ptr_fieldx = f_addrsx(l)
-                          ptr_fieldy = f_addrsy(l)   
-                          do k = 1,ke
-                            fieldx(i,j,k) = 0.
-                            fieldy(i,j,k) = 0.
-                          end do
+                           ptr_fieldx = f_addrsx(l)
+                           ptr_fieldy = f_addrsy(l)   
+                           do k = 1,ke
+                              fieldx(i,j,k) = 0.
+                              fieldy(i,j,k) = 0.
+                           end do
                         end do
-                     end if 
-                  end do 
-              end if 
-!these last three code blocks correct an error where the data in your halo coming from other half may have the wrong sign
-!off west edge
-              select case(grid_offset_type)
-              case(BGRID_NE)
-                  is = domain%x%global%begin - 1
-                  if( is.GT.domain%x%data%begin )then
-                      if( 2*is-domain%x%data%begin.GT.domain%x%data%end ) &
-                           call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS_V: BGRID_NE west edge ubound error.' )
-                      do l=1,l_size
+                     end if
+                  end do
+               endif
+            end if
+
+            ! the last code code block correct an error where the data in your halo coming from 
+            ! other half may have the wrong sign
+
+            !right of midpoint, when update north and east direction.
+            if ( BTEST(update_flags,NORTH) .OR. BTEST(update_flags,EAST) ) then
+               j = domain%y%global%end 
+               is = (domain%x%global%begin+domain%x%global%end)/2
+
+               if( domain%x%compute%begin.LE.is .AND. is.LT.domain%x%data%end &
+                   .AND. domain%x%pos < size(domain%x%list(:))/2 )then
+                  ie = domain%x%data%end
+                  if(domain%symmetry) j = j+1
+                  select case(grid_offset_type)
+                  case(BGRID_NE)
+                     if(domain%symmetry) then
+                        is = is+2
+                        ie = ie+1
+                     else
+                        is = is + 1
+                     endif
+                     do l=1,l_size
                         ptr_fieldx = f_addrsx(l)
                         ptr_fieldy = f_addrsy(l)   
                         do k = 1,ke
-                          do i = domain%x%data%begin,is-1
-                            fieldx(i,j,k) = fieldx(2*is-i,j,k)
-                            fieldy(i,j,k) = fieldy(2*is-i,j,k)
-                          end do
+                           do i = is,ie
+                              fieldx(i,j,k) = -fieldx(i,j,k)
+                              fieldy(i,j,k) = -fieldy(i,j,k)
+                           end do
                         end do
-                      end do
-                  end if 
-              case(CGRID_NE)
-                  is = domain%x%global%begin
-                  if( is.GT.domain%x%data%begin )then
-                      if( 2*is-domain%x%data%begin-1.GT.domain%x%data%end ) &
-                           call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS_V: CGRID_NE west edge ubound error.' )
-                      do l=1,l_size
+                     end do
+                  case(CGRID_NE)
+                     do l=1,l_size
                         ptr_fieldy = f_addrsy(l)   
                         do k = 1,ke
-                          do i = domain%x%data%begin,is-1
-                            fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
-                          end do
-                        end do
-                      end do
-                  end if 
-              end select
-!right of midpoint
-              is = (domain%x%global%begin+domain%x%global%end)/2
-              if( domain%x%compute%begin.LE.is .AND. is.LT.domain%x%data%end )then
-                  select case(grid_offset_type)
-                  case(BGRID_NE)
-                      ie = domain%x%data%end
-                      if( 2*is-ie.LT.domain%x%data%begin )ie = ie - 1
-                      if( 2*is-ie.LT.domain%x%data%begin ) &
-                           call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS_V: BGRID_NE midpoint lbound error.' )
-                      if (BTEST(update_flags,SCALAR_BIT)) then
-                        do l=1,l_size
-                          ptr_fieldx = f_addrsx(l)
-                          ptr_fieldy = f_addrsy(l)
-                          do k = 1,ke
-                            do i = is+1,ie
-                              fieldx(i,j,k) = fieldx(2*is-i,j,k)
-                              fieldy(i,j,k) = fieldy(2*is-i,j,k)
-                            end do
-                          end do
-                        end do
-                      else
-                        do l=1,l_size
-                          ptr_fieldx = f_addrsx(l)
-                          ptr_fieldy = f_addrsy(l)   
-                          do k = 1,ke
-                            do i = is+1,ie
-                              fieldx(i,j,k) = -fieldx(2*is-i,j,k)
-                              fieldy(i,j,k) = -fieldy(2*is-i,j,k)
-                            end do
-                          end do
-                        end do
-                      endif
-                  case(CGRID_NE)
-                      if( 2*is-domain%x%data%end+1.LT.domain%x%data%begin ) &
-                           call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS_V: CGRID_NE midpoint lbound error.' )
-                      if (BTEST(update_flags,SCALAR_BIT)) then
-                        do l=1,l_size
-                          ptr_fieldy = f_addrsy(l)
-                          do k = 1,ke
-                            do i = is+1,domain%x%data%end
-                              fieldy(i,j,k) = fieldy(2*is-i+1,j,k)
-                            end do
-                          end do
-                        end do
-                      else
-                        do l=1,l_size
-                          ptr_fieldy = f_addrsy(l)   
-                          do k = 1,ke
-                            do i = is+1,domain%x%data%end
+                           do i = is+1,ie
                               fieldy(i,j,k) = -fieldy(2*is-i+1,j,k)
-                            end do
-                          end do
+                           end do
                         end do
-                      endif
+                     end do
                   end select
-              end if  
-!off east edge    
-              is = domain%x%global%end
-              if( is.LT.domain%x%data%end )then
-                  select case(grid_offset_type)
-                  case(BGRID_NE)
-                      if( 2*is-domain%x%data%end.LT.domain%x%data%begin ) &
-                           call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS_V: BGRID_NE east edge lbound error.' )
-                      do l=1,l_size
-                        ptr_fieldx = f_addrsx(l)
-                        ptr_fieldy = f_addrsy(l)   
-                        do k = 1,ke
-                          do i = is+1,domain%x%data%end
-                            fieldx(i,j,k) = fieldx(2*is-i,j,k)
-                            fieldy(i,j,k) = fieldy(2*is-i,j,k)
-                          end do
-                        end do
-                      end do
-                  case(CGRID_NE)
-                      if( 2*is-domain%x%data%end+1.LT.domain%x%data%begin ) &
-                           call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS_V: CGRID_NE east edge lbound error.' )
-                      do l=1,l_size
-                        ptr_fieldy = f_addrsy(l)   
-                        do k = 1,ke
-                          do i = is+1,domain%x%data%end
-                            fieldy(i,j,k) = fieldy(2*is-i+1,j,k)
-                          end do
-                        end do
-                      end do
-                  end select
-              end if  
-          end if  
-!         do l=1,l_size
-!           ptr_fieldx = f_addrsx(l)
-!           ptr_fieldy = f_addrsy(l)
-!           write(stdout(),*) 'fieldx chksum=',mpp_chksum(fieldx)
-!           write(stdout(),*) 'fieldy chksum=',mpp_chksum(fieldy)
-!         end do
-      end if  
-          
-      grid_offset_type = AGRID  !reset
-      call mpp_sync_self()
+               end if
+            end if
+         end if
+      end if
+
+      call mpp_clock_begin(wait_clock)
+      call mpp_sync_self( )
+      call mpp_clock_end(wait_clock)
+
       return
+
     end subroutine MPP_DOMAINS_DO_UPDATE_3Dnew_V_

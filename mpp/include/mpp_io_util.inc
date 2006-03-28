@@ -1,54 +1,7 @@
-module mpp_io_util_mod
-#include <fms_platform.h>
 
-  use mpp_mod, only          : mpp_error, FATAL, NOTE, lowercase, mpp_root_pe
-  use mpp_datatype_mod, only : atttype, axistype, fieldtype, validtype
-  use mpp_data_mod, only     : module_is_initialized=>mpp_io_is_initialized, mpp_file, default_axis,  &
-                               default_att, error, maxunits, unit_begin, unit_end, mpp_io_stack_size, &
-                               mpp_io_stack, pe
+! -*-f90-*-
+! $Id: mpp_io_util.inc,v 13.0 2006/03/28 21:41:23 fms Exp $
 
-
-
-  implicit none
-  private
-
-#include <netcdf.inc>
-
-  character(len=128), public :: version= &
-       '$Id: mpp_io_util.F90,v 12.0 2005/04/14 17:58:40 fms Exp $'
-  character(len=128), public :: tagname= &
-       '$Name: lima $'
-
-  public :: mpp_get_iospec, mpp_get_id, mpp_get_ncid, mpp_get_unit_range, mpp_set_unit_range, &
-            mpp_get_info, mpp_get_atts, mpp_get_fields, mpp_get_times, mpp_get_axes,          &
-            mpp_get_recdimid, mpp_get_axis_data, mpp_io_set_stack_size, mpp_get_field_index,  &
-            mpp_get_axis_index, mpp_is_valid
-
-  interface mpp_get_id
-     module procedure mpp_get_axis_id
-     module procedure mpp_get_field_id
-  end interface
-
-! <INTERFACE NAME="mpp_get_atts">
-!   <OVERVIEW>
-!     Get file global metdata.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Get file global metdata.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call mpp_get_atts( unit, global_atts)
-!   </TEMPLATE>
-!  <IN NAME="unit"></IN>
-!  <IN NAME="global_atts"></IN>
-! </INTERFACE>
-  interface mpp_get_atts
-     module procedure mpp_get_global_atts
-     module procedure mpp_get_field_atts
-     module procedure mpp_get_axis_atts
-  end interface
-
-contains
 
   !#####################################################################
 ! <SUBROUTINE NAME="mpp_get_info">
@@ -75,7 +28,8 @@ contains
 
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_INFO: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_INFO: invalid unit number.' )
+      if( .NOT.mpp_file(unit)%opened )&
+           call mpp_error(FATAL, 'MPP_GET_INFO: invalid unit number, file '//trim(mpp_file(unit)%name))
 
       ndim = mpp_file(unit)%ndim
       nvar = mpp_file(unit)%nvar
@@ -103,10 +57,12 @@ contains
       integer :: natt,i
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_INFO: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_INFO: invalid unit number.' )
+      if( .NOT.mpp_file(unit)%opened )&
+           call mpp_error( FATAL, 'MPP_GET_INFO: invalid unit number,file '//trim(mpp_file(unit)%name))
 
       if (size(global_atts(:)).lt.mpp_file(unit)%natt) &
-      call mpp_error(FATAL, 'MPP_GET_ATTS: atttype not dimensioned properly in calling routine')
+           call mpp_error(FATAL, 'MPP_GET_ATTS: atttype not dimensioned properly in calling routine, file '// &
+           trim(mpp_file(unit)%name))
 
       natt = mpp_file(unit)%natt
       global_atts = default_att
@@ -119,7 +75,7 @@ contains
    end subroutine mpp_get_global_atts
 
   !#####################################################################
-   subroutine mpp_get_field_atts( field, name, units, longname, min, max, missing, ndim, siz, axes, atts, valid )
+   subroutine mpp_get_field_atts(field, name, units, longname, min, max, missing, ndim, siz, axes, atts, valid)
 
      type(fieldtype), intent(in) :: field
      character(len=*), intent(out) , optional :: name, units
@@ -144,7 +100,9 @@ contains
      if (PRESENT(atts)) then
         atts = default_att
         n = size(atts(:));m=size(field%Att(:))
-        if (n.LT.m) call mpp_error(FATAL,'attribute array not large enough in mpp_get_field_atts')
+        if (n.LT.m)&
+             call mpp_error(FATAL,'attribute array not large enough in mpp_get_field_atts, field '//&
+             trim(field%name))
         do n=1,m
           atts(n) = field%Att(n)
         end do
@@ -152,7 +110,9 @@ contains
      if (PRESENT(axes)) then
         axes = default_axis
         n = size(axes(:));m=field%ndim
-        if (n.LT.m) call mpp_error(FATAL,'axis array not large enough in mpp_get_field_atts')
+        if (n.LT.m) &
+             call mpp_error(FATAL,'axis array not large enough in mpp_get_field_atts, field '//&
+             trim(field%name))
         do n=1,m
           axes(n) = field%axes(n)
         end do
@@ -160,7 +120,9 @@ contains
      if (PRESENT(siz)) then
         siz = -1
         n = size(siz(:));m=field%ndim
-        if (n.LT.m) call mpp_error(FATAL,'size array not large enough in mpp_get_field_atts')
+        if (n.LT.m) &
+             call mpp_error(FATAL,'size array not large enough in mpp_get_field_atts, field '//&
+             trim(field%name))
         do n=1,m
           siz(n) = field%size(n)
         end do
@@ -194,7 +156,9 @@ contains
      if (PRESENT(atts)) then
         atts = default_att
         n = size(atts(:));m=size(axis%Att(:))
-        if (n.LT.m) call mpp_error(FATAL,'attribute array not large enough in mpp_get_field_atts')
+        if (n.LT.m) &
+             call mpp_error(FATAL,'attribute array not large enough in mpp_get_field_atts, axis '//&
+             trim(axis%name))
         do n=1,m
           atts(n) = axis%Att(n)
         end do
@@ -221,7 +185,8 @@ contains
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_FIELDS: invalid unit number.' )
 
       if (size(variables(:)).ne.mpp_file(unit)%nvar) &
-      call mpp_error(FATAL, 'MPP_GET_FIELDS: fieldtype not dimensioned properly in calling routine')
+          call mpp_error(FATAL,'MPP_GET_FIELDS: fieldtype not dimensioned properly in calling routine, file '//&
+          trim(mpp_file(unit)%name))
 
       nvar = mpp_file(unit)%nvar
 
@@ -242,15 +207,15 @@ contains
       integer, intent(in) :: unit
       type(axistype), intent(inout) :: axes(:)
       type(axistype), intent(inout), optional :: time_axis
-      character(len=128) :: name
-      logical :: save
-      integer :: ndim,i, nvar, j, num_dims, k
+      integer :: ndim,i
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_AXES: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_AXES: invalid unit number.' )
+      if( .NOT.mpp_file(unit)%opened )&
+           call mpp_error( FATAL, 'MPP_GET_AXES: invalid unit number, file '//trim(mpp_file(unit)%name))
 
       if (size(axes(:)).ne.mpp_file(unit)%ndim) &
-      call mpp_error(FATAL, 'MPP_GET_AXES: axistype not dimensioned properly in calling routine')
+           call mpp_error(FATAL, 'MPP_GET_AXES: axistype not dimensioned properly in calling routine, file '//&
+           trim(mpp_file(unit)%name))
 
 
       if (PRESENT(time_axis)) time_axis = default_axis
@@ -294,7 +259,8 @@ contains
       integer :: ntime,i
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_TIMES: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_TIMES: invalid unit number.' )
+      if( .NOT.mpp_file(unit)%opened )&
+           call mpp_error(FATAL, 'MPP_GET_TIMES: invalid unit number, file '//trim(mpp_file(unit)%name))
 
 ! NF_INQ_DIM returns -1 for the length of a record dimension if
 ! it does not exist
@@ -305,7 +271,8 @@ contains
       endif
 
       if (size(time_values(:)).ne.mpp_file(unit)%time_level) &
-      call mpp_error(FATAL, 'MPP_GET_TIMES: time_values not dimensioned properly in calling routine')
+         call mpp_error(FATAL,'MPP_GET_TIMES: time_values not dimensioned properly in calling routine, file '//&
+         trim(mpp_file(unit)%name))
 
       ntime = mpp_file(unit)%time_level
 
@@ -364,8 +331,6 @@ contains
      type(fieldtype) :: field
      integer :: mpp_get_field_size(4)
 
-     integer :: n
-
      mpp_get_field_size = -1
 
      mpp_get_field_size(1) = field%size(1)
@@ -384,14 +349,15 @@ contains
      real, dimension(:), intent(out) :: data
 
 
-     if (size(data(:)).lt.axis%len) call mpp_error(FATAL,'MPP_GET_AXIS_DATA: data array not large enough')
+     if (size(data(:)).lt.axis%len)&
+          call mpp_error(FATAL,'MPP_GET_AXIS_DATA: data array not large enough, axis '//trim(axis%name))
      if (.NOT.ASSOCIATED(axis%data)) then
         call mpp_error(NOTE,'MPP_GET_AXIS_DATA: use mpp_get_times for record dims')
         data = 0.
      else
         data(1:axis%len) = axis%data
      endif
-
+ 
      return
    end subroutine mpp_get_axis_data
 
@@ -632,4 +598,106 @@ contains
    end function mpp_find_att
    !#####################################################################
 
-end module mpp_io_util_mod
+   ! return the name of an attribute.
+   function mpp_get_att_name(att)
+      type(atttype),    intent(in) :: att
+      character(len=len(att%name)) :: mpp_get_att_name
+     
+      mpp_get_att_name = att%name
+      return
+
+   end function mpp_get_att_name
+
+   !#####################################################################
+
+   ! return the type of an attribute.
+   function mpp_get_att_type(att)
+      type(atttype), intent(in) :: att
+      integer                   :: mpp_get_att_type
+     
+      mpp_get_att_type = att%type
+      return
+
+   end function mpp_get_att_type
+
+   !#####################################################################
+
+   ! return the length of an attribute.
+   function mpp_get_att_length(att)
+      type(atttype), intent(in) :: att
+      integer                   :: mpp_get_att_length
+     
+      mpp_get_att_length = att%len
+
+      return
+
+   end function mpp_get_att_length
+
+   !#####################################################################
+
+   ! return the char value of an attribute.
+   function mpp_get_att_char(att)
+      type(atttype), intent(in) :: att
+      character(len=att%len)    :: mpp_get_att_char
+     
+      mpp_get_att_char = att%catt
+      return
+
+   end function mpp_get_att_char
+
+   !#####################################################################
+
+   ! return the real array value of an attribute.
+   function mpp_get_att_real(att)
+      type(atttype), intent(in)          :: att
+      real, dimension(size(att%fatt(:))) :: mpp_get_att_real
+     
+      mpp_get_att_real = att%fatt
+      return
+
+   end function mpp_get_att_real
+
+  !#####################################################################
+
+   ! return the real array value of an attribute.
+   function mpp_get_att_real_scalar(att)
+      type(atttype), intent(in)          :: att
+      real                               :: mpp_get_att_real_scalar
+
+      mpp_get_att_real_scalar = att%fatt(1)
+      return
+
+   end function mpp_get_att_real_scalar
+
+   !#####################################################################
+   ! return the name of an field
+   function mpp_get_field_name(field)
+      type(fieldtype), intent(in) :: field
+      character(len=len(field%name)) :: mpp_get_field_name
+
+      mpp_get_field_name = field%name
+      return
+   end function mpp_get_field_name
+
+   !#####################################################################
+   ! return the  file name of corresponding unit
+   function mpp_get_file_name(unit)
+      integer,                  intent(in) :: unit
+      character(len=len(mpp_file(1)%name)) :: mpp_get_file_name      
+
+      mpp_get_file_name = mpp_file(unit)%name
+      return
+
+   end function mpp_get_file_name
+
+   !####################################################################
+   ! return if certain file with unit is opened or not
+   function mpp_file_is_opened(unit)
+      integer,  intent(in) :: unit
+      logical              :: mpp_file_is_opened      
+
+      mpp_file_is_opened = mpp_file(unit)%opened
+      return
+
+   end function mpp_file_is_opened
+

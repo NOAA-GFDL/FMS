@@ -53,7 +53,8 @@
    longitude/latitude grid, any one of following three schemes can be applied: 
    conservation scheme that conserves the area-weighed integral of the input field, 
    bilinear interpolation that use the surround four source grid to interpolate onto
-   the destination grid, spherical regrid that use thes inverse of square distance
+   the destination grid, bicubic interpolation, which does the same with higher
+   order polynominals and spherical regrid that use thes inverse of square distance
    as weight. User can choose the interpolation method in the horiz_interp_init.
    The default method is conservative scheme. When the source grid is tripolar grid,
    only spherical regrid is allowed. When destination grid is tripolar, conservative 
@@ -68,7 +69,7 @@
 <h4>OTHER MODULES USED</h4>
 <!-- BEGIN OTHER MODULES USED -->
 <div>
-<pre>                   fms_mod<br>                   mpp_mod<br>             constants_mod<br>     horiz_interp_type_mod<br> horiz_interp_conserve_mod<br> horiz_interp_bilinear_mod<br>horiz_interp_spherical_mod</pre>
+<pre>                   fms_mod<br>                   mpp_mod<br>             constants_mod<br>     horiz_interp_type_mod<br> horiz_interp_conserve_mod<br> horiz_interp_bilinear_mod<br>  horiz_interp_bicubic_mod<br>horiz_interp_spherical_mod</pre>
 </div>
 <!-- END OTHER MODULES USED -->
 <!-- BEGIN PUBLIC INTERFACE -->
@@ -173,6 +174,10 @@
 </tr>
 <tr>
 <td valign="top" align="left"><tt>src_modulo&nbsp;&nbsp;&nbsp;</tt></td><td>   Indicate the source data grid is cyclic or not. <br>&nbsp;&nbsp;&nbsp;<span class="type">[logical, optional]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>grid_at_center&nbsp;&nbsp;&nbsp;</tt></td><td>   Indicate the data is on the center of grid box or the edge of grid box. 
+   When true, the data is on the center of grid box. default vaule is false. </td>
 </tr>
 </table>
 </dd>

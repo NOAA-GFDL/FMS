@@ -181,8 +181,8 @@ integer :: leng, leng1, leng2, lenc    ! related to transform size
 logical :: module_is_initialized=.false.
 
 !  cvs version and tag name
-character(len=128) :: version = '$Id: fft.F90,v 10.0 2003/10/24 22:01:29 fms Exp $'
-character(len=128) :: tagname = '$Name: lima $'
+character(len=128) :: version = '$Id: fft.F90,v 13.0 2006/03/28 21:38:54 fms Exp $'
+character(len=128) :: tagname = '$Name: memphis $'
 
 !-----------------------------------------------------------------------
 !
@@ -261,8 +261,10 @@ contains
 #  endif   
 #endif   
 
+#if defined(SGICRAY) || defined(NAGFFT)
    real(R4_KIND) :: scale
-   integer :: j, k, num, len_grid, ifail
+#endif
+   integer :: j, k, num, len_grid
 
 !-----------------------------------------------------------------------
 
@@ -304,7 +306,6 @@ contains
       do j=1,size(grid,2)
          data(j,1:leng) = grid(1:leng,j)
       enddo
-!!!!! call c06fpe ( num, leng, data, 's', table4, work, ifail )
       scale = 1./sqrt(float(leng))
       data = data * scale
       fourier(1,:) = cmplx( data(:,1), 0. )
@@ -378,8 +379,10 @@ contains
 #  endif   
 #endif   
 
+#if defined(SGICRAY) || defined(NAGFFT)
    real(R4_KIND) :: scale
-   integer :: j, k, num, len_fourier, ifail
+#endif
+   integer :: j, k, num, len_fourier
 
 !-----------------------------------------------------------------------
 
@@ -426,9 +429,6 @@ contains
       do k=2,lenc-1
          data(:,leng-k+2) = aimag(fourier(k,:))
       enddo
-
-!!!!! call c06gqe ( num, leng, data, ifail )
-!!!!! call c06fqe ( num, leng, data, 's', table4, work, ifail )
 
   ! scale and transpose data
       scale = sqrt(real(leng))
@@ -501,8 +501,13 @@ contains
 #  endif   
 #endif   
 
+#if defined(SGICRAY) || defined(NAGFFT)
    real(R8_KIND) :: scale
-   integer :: j, k, num, len_grid, ifail
+#endif
+   integer :: j, k, num, len_grid
+#ifdef NAGFFT
+   integer :: ifail
+#endif
 
 !-----------------------------------------------------------------------
 
@@ -614,8 +619,13 @@ contains
 #  endif   
 #endif   
 
+#if defined(SGICRAY) || defined(NAGFFT)
    real(R8_KIND) :: scale
-   integer :: j, k, num, len_fourier, ifail
+#endif
+   integer :: j, k, num, len_fourier
+#ifdef NAGFFT
+   integer :: ifail
+#endif
 
 !-----------------------------------------------------------------------
 

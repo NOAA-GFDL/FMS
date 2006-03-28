@@ -1,334 +1,7 @@
-module mpp_domains_misc_mod
-#include <fms_platform.h>
-use mpp_mod,              only : FATAL, ANY_PE, NULL_PE, MPP_DEBUG, MPP_VERBOSE
-use mpp_mod,              only : mpp_pe, mpp_npes, mpp_root_pe, stdlog, stdout, stderr
-use mpp_mod,              only : mpp_error, mpp_sync, mpp_sync_self, mpp_get_current_pelist
-use mpp_mod,              only : mpp_clock_id, mpp_clock_end, mpp_clock_begin, mpp_malloc
-use mpp_mod,              only : mpp_init, mpp_max, mpp_send, mpp_recv, mpp_broadcast, mpp_chksum
-use mpp_mod,              only : mpp_version=>version, mpp_tagname=>tagname
 
-use mpp_parameter_mod,    only : MPP_DOMAIN_TIME, XUPDATE, YUPDATE, BGRID_NE, BGRID_SW
-use mpp_parameter_mod,    only : CGRID_NE, CGRID_SW, WEST, EAST, SOUTH, NORTH, SCALAR_BIT, AGRID
-use mpp_parameter_mod,    only : MAX_DOMAIN_FIELDS
-use mpp_datatype_mod,     only : domain1D, domain2D, DomainCommunicator2D
-use mpp_datatype_mod,     only : mpp_datatype_version=>version, mpp_datatype_tagname=>tagname
+! -*-f90-*-
+! $Id: mpp_domains_misc.inc,v 13.0 2006/03/28 21:40:38 fms Exp $
 
-use mpp_data_mod,         only : NULL_DOMAIN1D, NULL_DOMAIN2D, pe, debug=>debug_mpp_domains
-use mpp_data_mod,         only : grid_offset_type, mpp_domains_stack_size, mpp_domains_stack
-use mpp_data_mod,         only : PTR_DOMAINS_STACK, ptr_info, mpp_domains_stack_hwm
-use mpp_data_mod,         only : debug_gsm, verbose, module_is_initialized=>mpp_domains_is_initialized
-use mpp_domains_util_mod, only : compute_overlaps, mpp_get_data_domain, mpp_get_global_domain
-use mpp_domains_util_mod, only : mpp_get_compute_domain, mpp_domains_set_stack_size
-use mpp_domains_util_mod, only : mpp_domains_util_version=>version, mpp_domains_util_tagname=>tagname
-use mpp_domains_comm_mod, only : mpp_update_init_comm, mpp_update_free_comm
-use mpp_domains_comm_mod, only : mpp_redistribute_init_comm, mpp_redistribute_free_comm
-#ifdef use_CAF
-use mpp_domains_comm_mod, only : mpp_associate_caf_field
-#endif
-
-implicit none
-private
-
-public :: mpp_broadcast_domain, mpp_domains_init, mpp_domains_exit 
-public :: mpp_redistribute, mpp_update_domains, mpp_check_field
-
-!--- private variables 
-  logical :: domain_clocks_on=.FALSE.
-  integer :: send_clock=0, recv_clock=0, unpk_clock=0
-  integer :: wait_clock=0, pack_clock=0, pack_loop_clock=0
-
-!--- version information
-  character(len=128), private :: version= &
-       '$Id: mpp_domains_misc.F90,v 12.0 2005/04/14 17:58:08 fms Exp $'
-  character(len=128), private :: tagname= &
-       '$Name: lima $'
-
-!--- public interface
-
-! <INTERFACE NAME="mpp_update_domains">
-!  <OVERVIEW>
-!     Halo updates.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!    <TT>mpp_update_domains</TT> is used to perform a halo update of a
-!    domain-decomposed array on each PE. <TT>MPP_TYPE_</TT> can be of type
-!    <TT>complex</TT>, <TT>integer</TT>, <TT>logical</TT> or <TT>real</TT>;
-!    of 4-byte or 8-byte kind; of rank up to 5. The vector version (with
-!    two input data fields) is only present for <TT>real</TT> types.
-!    
-!    For 2D domain updates, if there are halos present along both
-!    <TT>x</TT> and <TT>y</TT>, we can choose to update one only, by
-!    specifying <TT>flags=XUPDATE</TT> or <TT>flags=YUPDATE</TT>. In
-!    addition, one-sided updates can be performed by setting <TT>flags</TT>
-!    to any combination of <TT>WUPDATE</TT>, <TT>EUPDATE</TT>,
-!    <TT>SUPDATE</TT> and <TT>NUPDATE</TT>, to update the west, east, north
-!    and south halos respectively. Any combination of halos may be used by
-!    adding the requisite flags, e.g: <TT>flags=XUPDATE+SUPDATE</TT> or
-!    <TT>flags=EUPDATE+WUPDATE+SUPDATE</TT> will update the east, west and
-!    south halos.
-!    
-!    If a call to <TT>mpp_update_domains</TT> involves at least one E-W
-!    halo and one N-S halo, the corners involved will also be updated, i.e,
-!    in the example above, the SE and SW corners will be updated.
-!    
-!    If <TT>flags</TT> is not supplied, that is
-!    equivalent to <TT>flags=XUPDATE+YUPDATE</TT>.
-!    
-!    The vector version is passed the <TT>x</TT> and <TT>y</TT>
-!    components of a vector field in tandem, and both are updated upon
-!    return. They are passed together to treat parity issues on various
-!    grids. For example, on a cubic sphere projection, the <TT>x</TT> and
-!    <TT>y</TT> components may be interchanged when passing from an
-!    equatorial cube face to a polar face. For grids with folds, vector
-!    components change sign on crossing the fold.  Paired scalar quantities
-!    can also be passed with the vector version if flags=SCALAR_PAIR, in which
-!    case components are appropriately interchanged, but signs are not.
-!    
-!    Special treatment at boundaries such as folds is also required for
-!    staggered grids. The following types of staggered grids are
-!    recognized:
-!    
-!    1) <TT>AGRID</TT>: values are at grid centers.<BR/>
-!    2) <TT>BGRID_NE</TT>: vector fields are at the NE vertex of a grid
-!    cell, i.e: the array elements <TT>u(i,j)</TT> and <TT>v(i,j)</TT> are
-!    actually at (i+&#189;,j+&#189;) with respect to the grid centers.<BR/>
-!    3) <TT>BGRID_SW</TT>: vector fields are at the SW vertex of a grid
-!    cell, i.e: the array elements <TT>u(i,j)</TT> and <TT>v(i,j)</TT> are
-!    actually at (i-&#189;,j-&#189;) with respect to the grid centers.<BR/>
-!    4) <TT>CGRID_NE</TT>: vector fields are at the N and E faces of a
-!    grid cell, i.e: the array elements <TT>u(i,j)</TT> and <TT>v(i,j)</TT>
-!    are actually at (i+&#189;,j) and (i,j+&#189;) with respect to the
-!    grid centers.<BR/>
-!    5) <TT>CGRID_SW</TT>: vector fields are at the S and W faces of a
-!    grid cell, i.e: the array elements <TT>u(i,j)</TT> and <TT>v(i,j)</TT>
-!    are actually at (i-&#189;,j) and (i,j-&#189;) with respect to the
-!    grid centers.
-!
-!    The gridtypes listed above are all available by use association as
-!    integer parameters. The scalar version of <TT>mpp_update_domains</TT>
-!    assumes that the values of a scalar field are always at <TT>AGRID</TT>
-!    locations, and no special boundary treatment is required. If vector
-!    fields are at staggered locations, the optional argument
-!    <TT>gridtype</TT> must be appropriately set for correct treatment at
-!    boundaries.
-!    
-!    It is safe to apply vector field updates to the appropriate arrays
-!    irrespective of the domain topology: if the topology requires no
-!    special treatment of vector fields, specifying <TT>gridtype</TT> will
-!    do no harm.
-!
-!    <TT>mpp_update_domains</TT> internally buffers the date being sent
-!    and received into single messages for efficiency. A turnable internal
-!    buffer area in memory is provided for this purpose by
-!    <TT>mpp_domains_mod</TT>. The size of this buffer area can be set by
-!    the user by calling <LINK SRC="mpp_domains.html#mpp_domains_set_stack_size">
-!    <TT>mpp_domains_set_stack_size</TT></LINK>.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!    call mpp_update_domains( field, domain, flags )
-!  </TEMPLATE>
-!  <TEMPLATE>
-!    call mpp_update_domains( fieldx, fieldy, domain, flags, gridtype )
-!  </TEMPLATE>
-! </INTERFACE>
-  interface mpp_update_domains
-     module procedure mpp_update_domain2D_r8_2d
-     module procedure mpp_update_domain2D_r8_3d
-     module procedure mpp_update_domain2D_r8_4d
-     module procedure mpp_update_domain2D_r8_5d
-     module procedure mpp_update_domain2D_r8_2dv
-     module procedure mpp_update_domain2D_r8_3dv
-     module procedure mpp_update_domain2D_r8_4dv
-     module procedure mpp_update_domain2D_r8_5dv
-     module procedure mpp_update_domain2D_c8_2d
-     module procedure mpp_update_domain2D_c8_3d
-     module procedure mpp_update_domain2D_c8_4d
-     module procedure mpp_update_domain2D_c8_5d
-#ifndef no_8byte_integers
-     module procedure mpp_update_domain2D_i8_2d
-     module procedure mpp_update_domain2D_i8_3d
-     module procedure mpp_update_domain2D_i8_4d
-     module procedure mpp_update_domain2D_i8_5d
-     module procedure mpp_update_domain2D_l8_2d
-     module procedure mpp_update_domain2D_l8_3d
-     module procedure mpp_update_domain2D_l8_4d
-     module procedure mpp_update_domain2D_l8_5d
-#endif
-#ifndef no_4byte_reals
-     module procedure mpp_update_domain2D_r4_2d
-     module procedure mpp_update_domain2D_r4_3d
-     module procedure mpp_update_domain2D_r4_4d
-     module procedure mpp_update_domain2D_r4_5d
-     module procedure mpp_update_domain2D_c4_2d
-     module procedure mpp_update_domain2D_c4_3d
-     module procedure mpp_update_domain2D_c4_4d
-     module procedure mpp_update_domain2D_c4_5d
-     module procedure mpp_update_domain2D_r4_2dv
-     module procedure mpp_update_domain2D_r4_3dv
-     module procedure mpp_update_domain2D_r4_4dv
-     module procedure mpp_update_domain2D_r4_5dv
-#endif
-     module procedure mpp_update_domain2D_i4_2d
-     module procedure mpp_update_domain2D_i4_3d
-     module procedure mpp_update_domain2D_i4_4d
-     module procedure mpp_update_domain2D_i4_5d
-     module procedure mpp_update_domain2D_l4_2d
-     module procedure mpp_update_domain2D_l4_3d
-     module procedure mpp_update_domain2D_l4_4d
-     module procedure mpp_update_domain2D_l4_5d
-  end interface
-
-
-  interface mpp_do_update
-     module procedure mpp_do_update_new_r8_3d
-     module procedure mpp_do_update_old_r8_3d
-     module procedure mpp_do_update_new_r8_3dv
-     module procedure mpp_do_update_old_r8_3dv
-     module procedure mpp_do_update_new_c8_3d
-     module procedure mpp_do_update_old_c8_3d
-#ifndef no_8byte_integers
-     module procedure mpp_do_update_new_i8_3d
-     module procedure mpp_do_update_old_i8_3d
-     module procedure mpp_do_update_new_l8_3d
-     module procedure mpp_do_update_old_l8_3d
-#endif
-#ifndef no_4byte_reals
-     module procedure mpp_do_update_new_r4_3d
-     module procedure mpp_do_update_old_r4_3d
-     module procedure mpp_do_update_new_r4_3dv
-     module procedure mpp_do_update_old_r4_3dv
-     module procedure mpp_do_update_new_c4_3d
-     module procedure mpp_do_update_old_c4_3d
-#endif
-     module procedure mpp_do_update_new_i4_3d
-     module procedure mpp_do_update_old_i4_3d
-     module procedure mpp_do_update_new_l4_3d
-     module procedure mpp_do_update_old_l4_3d
-  end interface
-
-! <INTERFACE NAME="mpp_redistribute">
-!  <OVERVIEW>
-!    Reorganization of distributed global arrays.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!    <TT>mpp_redistribute</TT> is used to reorganize a distributed
-!    array.  <TT>MPP_TYPE_</TT> can be of type <TT>integer</TT>,
-!    <TT>complex</TT>, or <TT>real</TT>; of 4-byte or 8-byte kind; of rank
-!    up to 5.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!    call mpp_redistribute( domain_in, field_in, domain_out, field_out )
-!  </TEMPLATE>
-!  <IN NAME="field_in" TYPE="MPP_TYPE_">
-!    <TT>field_in</TT> is dimensioned on the data domain of <TT>domain_in</TT>.
-!  </IN>
-!  <OUT NAME="field_out" TYPE="MPP_TYPE_">
-!    <TT>field_out</TT> on the data domain of <TT>domain_out</TT>.
-!  </OUT>
-! </INTERFACE>
-  interface mpp_redistribute
-     module procedure mpp_redistribute_r8_2D
-     module procedure mpp_redistribute_r8_3D
-     module procedure mpp_redistribute_r8_4D
-     module procedure mpp_redistribute_r8_5D
-     module procedure mpp_redistribute_c8_2D
-     module procedure mpp_redistribute_c8_3D
-     module procedure mpp_redistribute_c8_4D
-     module procedure mpp_redistribute_c8_5D
-#ifndef no_8byte_integers
-     module procedure mpp_redistribute_i8_2D
-     module procedure mpp_redistribute_i8_3D
-     module procedure mpp_redistribute_i8_4D
-     module procedure mpp_redistribute_i8_5D
-     module procedure mpp_redistribute_l8_2D
-     module procedure mpp_redistribute_l8_3D
-     module procedure mpp_redistribute_l8_4D
-     module procedure mpp_redistribute_l8_5D
-#endif
-#ifndef no_4byte_reals
-     module procedure mpp_redistribute_r4_2D
-     module procedure mpp_redistribute_r4_3D
-     module procedure mpp_redistribute_r4_4D
-     module procedure mpp_redistribute_r4_5D
-     module procedure mpp_redistribute_c4_2D
-     module procedure mpp_redistribute_c4_3D
-     module procedure mpp_redistribute_c4_4D
-     module procedure mpp_redistribute_c4_5D
-#endif
-     module procedure mpp_redistribute_i4_2D
-     module procedure mpp_redistribute_i4_3D
-     module procedure mpp_redistribute_i4_4D
-     module procedure mpp_redistribute_i4_5D
-     module procedure mpp_redistribute_l4_2D
-     module procedure mpp_redistribute_l4_3D
-     module procedure mpp_redistribute_l4_4D
-     module procedure mpp_redistribute_l4_5D
-  end interface
-
-  interface mpp_do_redistribute
-     module procedure mpp_do_redistribute_new_r8_3D
-     module procedure mpp_do_redistribute_old_r8_3D
-     module procedure mpp_do_redistribute_new_c8_3D
-     module procedure mpp_do_redistribute_old_c8_3D
-#ifndef no_8byte_integers
-     module procedure mpp_do_redistribute_new_i8_3D
-     module procedure mpp_do_redistribute_old_i8_3D
-     module procedure mpp_do_redistribute_new_l8_3D
-     module procedure mpp_do_redistribute_old_l8_3D
-#endif
-#ifndef no_4byte_reals
-     module procedure mpp_do_redistribute_new_r4_3D
-     module procedure mpp_do_redistribute_old_r4_3D
-     module procedure mpp_do_redistribute_new_c4_3D
-     module procedure mpp_do_redistribute_old_c4_3D
-#endif
-     module procedure mpp_do_redistribute_new_i4_3D
-     module procedure mpp_do_redistribute_old_i4_3D
-     module procedure mpp_do_redistribute_new_l4_3D
-     module procedure mpp_do_redistribute_old_l4_3D
-  end interface
-
-
-! <INTERFACE NAME="mpp_check_field">
-!   <OVERVIEW>
-!     Parallel checking between two ensembles which run
-!     on different set pes at the same time.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     There are two forms for the <TT>mpp_check_field</TT> call. The 2D
-!     version is generally to be used and 3D version is  built by repeated calls to the
-!     2D version.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call mpp_check_field(field_in, pelist1, pelist2, domain, mesg, &
-!                                w_halo, s_halo, e_halo, n_halo, force_abort  )
-!   </TEMPLATE>
-!   <IN NAME="field_in" >
-!     Field to be checked
-!   </IN>
-!   <IN NAME="pelist1, pelist2">
-!     Pelist of the two ensembles to be compared
-!   </IN>
-!   <IN NAME="domain">
-!     Domain of current pe
-!   </IN>
-!   <IN NAME="mesg" >
-!     Message to be printed out
-!   </IN>
-!   <IN NAME="w_halo, s_halo, e_halo, n_halo">
-!     Halo size to be checked. Default value is 0.
-!   </IN>
-!   <IN NAME="force_abort">
-!     When true, abort program when any difference found. Default value is false.
-!   </IN>
-! </INTERFACE>
-
-  interface mpp_check_field
-     module procedure mpp_check_field_2D
-     module procedure mpp_check_field_3D
-  end interface
-
-contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -363,14 +36,10 @@ contains
 
       if( module_is_initialized )return
       call mpp_init(flags)           !this is a no-op if already initialized
+      call mpp_pset_init             !this is a no-op if already initialized
       module_is_initialized = .TRUE.
-      if( pe.EQ.mpp_root_pe() )then
-          write( stdlog(),'(/a)' )'MPP_DOMAINS module '//trim(version)//trim(tagname)
-          write( stdlog(),'(/a)' )'MPP_DOMAINS module '//trim(mpp_version)//trim(mpp_tagname)
-          write( stdlog(),'(/a)' )'MPP_DOMAINS module '//trim(mpp_datatype_version)//trim(mpp_datatype_tagname)
-          write( stdlog(),'(/a)' )'MPP_DOMAINS module '//trim(mpp_domains_util_version)//trim(mpp_domains_util_tagname)
-!          write( stdlog(),'(a)' )trim(version_update_domains2D)
-      end if
+      pe = mpp_root_pe()
+      if( mpp_pe() .EQ.mpp_root_pe() ) write( stdlog(),'(/a)' )'MPP_DOMAINS module '//trim(version)//trim(tagname)
 
       if( PRESENT(flags) )then
           debug   = flags.EQ.MPP_DEBUG
@@ -381,7 +50,7 @@ contains
       call mpp_domains_set_stack_size(32768) !default, pretty arbitrary
 #ifdef use_libSMA
       call mpp_malloc( ptr_info, 16, l )
-#endif
+#endif 
 
 !NULL_DOMAIN is a domaintype that can be used to initialize to undef
       NULL_DOMAIN1D%global%begin  = -1; NULL_DOMAIN1D%global%end  = -1; NULL_DOMAIN1D%global%size = 0
@@ -390,7 +59,7 @@ contains
       NULL_DOMAIN1D%pe = NULL_PE
       NULL_DOMAIN2D%x = NULL_DOMAIN1D
       NULL_DOMAIN2D%y = NULL_DOMAIN1D
-      NULL_DOMAIN2D%pe = NULL_PE
+      NULL_DOMAIN2D%pe = NULL_PE 
 
       if( domain_clocks_on )then
           pack_clock      = mpp_clock_id( 'Halo pack' )
@@ -419,7 +88,7 @@ contains
     subroutine mpp_domains_exit()
       if( .NOT.module_is_initialized )return
       call mpp_max(mpp_domains_stack_hwm)
-      if( pe.EQ.mpp_root_pe() )write( stdout(),* )'MPP_DOMAINS_STACK high water mark=', mpp_domains_stack_hwm
+      if( mpp_pe().EQ.mpp_root_pe() )write( stdout(),* )'MPP_DOMAINS_STACK high water mark=', mpp_domains_stack_hwm
       module_is_initialized = .FALSE.
       return
     end subroutine mpp_domains_exit
@@ -439,7 +108,7 @@ contains
 ! </SUBROUTINE>
 
   subroutine mpp_check_field_3D(field_in, pelist1, pelist2, domain, mesg, &
-                                 w_halo, s_halo, e_halo, n_halo, force_abort  )
+                                 w_halo, s_halo, e_halo, n_halo, force_abort, position  )
 !  This routine is used to do parallel checking for 3d data between n and m pe. The comparison is
 !  is done on pelist2. When size of pelist2 is 1, we can check the halo; otherwise,
 !  halo can not be checked.
@@ -452,8 +121,10 @@ contains
   integer, intent(in), optional     :: w_halo,  s_halo, e_halo, n_halo
                                        ! halo size for west, south, east and north
   logical, intent(in), optional     :: force_abort   ! when true, call mpp_error if any difference
-                                                    ! found. default value is false.              
-
+                                                    ! found. default value is false.  
+  integer, intent(in), optional     :: position    ! when domain is symmetry, only value = CENTER is 
+                                                   ! implemented. 
+            
     integer :: k
     character(len=256) :: temp_mesg
 
@@ -461,7 +132,7 @@ contains
     do k = 1, size(field_in,3)
        write(temp_mesg, '(a, i3)') trim(mesg)//" at level " , k
        call mpp_check_field_2d(field_in(:,:,k), pelist1, pelist2, domain, temp_mesg, &
-                                 w_halo, s_halo, e_halo, n_halo, force_abort )
+                                 w_halo, s_halo, e_halo, n_halo, force_abort, position )
     enddo
     
   end subroutine mpp_check_field_3D
@@ -472,7 +143,7 @@ contains
 !   <IN NAME="field_in" TYPE="real, dimension(:,:)" > </IN>
 ! </SUBROUTINE>
   subroutine mpp_check_field_2d(field_in, pelist1, pelist2, domain, mesg, &
-                                 w_halo, s_halo, e_halo, n_halo,force_abort  )
+                                 w_halo, s_halo, e_halo, n_halo,force_abort, position  )
 !  This routine is used to do parallel checking for 2d data between n and m pe. The comparison is
 !  is done on pelist2. When size of pelist2 is 1, we can check the halo; otherwise,
 !  halo can not be checked.
@@ -486,7 +157,14 @@ contains
                                        ! halo size for west, south, east and north
   logical, intent(in), optional     :: force_abort   ! when, call mpp_error if any difference
                                                     ! found. default value is false.
-                                                    
+  integer, intent(in), optional     :: position    ! when domain is symmetry, only value = CENTER is 
+                                                   ! implemented. 
+
+     if(present(position)) then
+        if(position .NE. CENTER .AND. domain%symmetry) call mpp_error(FATAL,  &
+           'mpp_check_field: when domain is symmetry, only value CENTER is implemented, contact author')
+     endif
+
      if(size(pelist2(:)) == 1) then                 
         call mpp_check_field_2d_type1(field_in, pelist1, pelist2, domain, mesg, &
                                       w_halo, s_halo, e_halo, n_halo, force_abort )
@@ -650,7 +328,7 @@ contains
 ! some local variables                              
   logical                :: check_success, error_exit
   real, dimension(:,:), allocatable :: field1, field2
-  integer :: i, j, pe, npes, isd,ied,jsd,jed, isc, iec, jsc, jec, is, ie, js, je
+  integer :: i, j, pe, npes, isd,ied,jsd,jed, is, ie, js, je
   type(domain2d) :: domain1, domain2
   
     check_success = .TRUE.
@@ -754,7 +432,7 @@ contains
       listpos = 0
       do n = 0,mpp_npes()-1
          msg = info
-         if( pe.EQ.pes(n) .AND. debug )write( stderr(),* )'PE ', pe, 'broadcasting msg ', msg
+         if( mpp_pe().EQ.pes(n) .AND. debug )write( stderr(),* )'PE ', mpp_pe(), 'broadcasting msg ', msg
          call mpp_broadcast( msg, 5, pes(n) )
 !no need to unpack message if native
 !no need to unpack message from non-native PE
@@ -765,7 +443,7 @@ contains
              domain%list(listpos)%y%compute%begin = msg(4)
              domain%list(listpos)%y%compute%end   = msg(5)
              listpos = listpos + 1
-             if( debug )write( stderr(),* )'PE ', pe, 'received domain from PE ', msg(1), 'is,ie,js,je=', msg(2:5)
+             if( debug )write( stderr(),* )'PE ', mpp_pe(), 'received domain from PE ', msg(1), 'is,ie,js,je=', msg(2:5)
          end if
       end do 
     end subroutine mpp_broadcast_domain
@@ -776,121 +454,209 @@ contains
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+#undef VECTOR_FIELD_
 #define VECTOR_FIELD_
+#undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
+#undef MPP_UPDATE_DOMAINS_2D_
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_r8_2D
+#undef MPP_UPDATE_DOMAINS_3D_
 #define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_r8_3D
+#undef MPP_UPDATE_DOMAINS_4D_
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_r8_4D
+#undef MPP_UPDATE_DOMAINS_5D_
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_r8_5D
 #ifdef  VECTOR_FIELD_
+#undef MPP_UPDATE_DOMAINS_2D_V_
 #define MPP_UPDATE_DOMAINS_2D_V_ mpp_update_domain2D_r8_2Dv
+#undef MPP_UPDATE_DOMAINS_3D_V_
 #define MPP_UPDATE_DOMAINS_3D_V_ mpp_update_domain2D_r8_3Dv
+#undef MPP_UPDATE_DOMAINS_4D_V_
 #define MPP_UPDATE_DOMAINS_4D_V_ mpp_update_domain2D_r8_4Dv
+#undef MPP_UPDATE_DOMAINS_5D_V_
 #define MPP_UPDATE_DOMAINS_5D_V_ mpp_update_domain2D_r8_5Dv
 #endif
+#undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_r8_2D
+#undef MPP_REDISTRIBUTE_3D_
 #define MPP_REDISTRIBUTE_3D_ mpp_redistribute_r8_3D
+#undef MPP_REDISTRIBUTE_4D_
 #define MPP_REDISTRIBUTE_4D_ mpp_redistribute_r8_4D
+#undef MPP_REDISTRIBUTE_5D_
 #define MPP_REDISTRIBUTE_5D_ mpp_redistribute_r8_5D
 #include <mpp_update_domains2D.h>
 #undef  VECTOR_FIELD_
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
+#undef MPP_UPDATE_DOMAINS_2D_
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_c8_2D
+#undef MPP_UPDATE_DOMAINS_3D_
 #define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_c8_3D
+#undef MPP_UPDATE_DOMAINS_4D_
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_c8_4D
+#undef MPP_UPDATE_DOMAINS_5D_
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_c8_5D
+#undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_c8_2D
+#undef MPP_REDISTRIBUTE_3D_
 #define MPP_REDISTRIBUTE_3D_ mpp_redistribute_c8_3D
+#undef MPP_REDISTRIBUTE_4D_
 #define MPP_REDISTRIBUTE_4D_ mpp_redistribute_c8_4D
+#undef MPP_REDISTRIBUTE_5D_
 #define MPP_REDISTRIBUTE_5D_ mpp_redistribute_c8_5D
 #include <mpp_update_domains2D.h>
 
 #ifndef no_8byte_integers
+#undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
+#undef MPP_UPDATE_DOMAINS_2D_
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_i8_2D
+#undef MPP_UPDATE_DOMAINS_3D_
 #define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_i8_3D
+#undef MPP_UPDATE_DOMAINS_4D_
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_i8_4D
+#undef MPP_UPDATE_DOMAINS_5D_
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_i8_5D
+#undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_i8_2D
+#undef MPP_REDISTRIBUTE_3D_
 #define MPP_REDISTRIBUTE_3D_ mpp_redistribute_i8_3D
+#undef MPP_REDISTRIBUTE_4D_
 #define MPP_REDISTRIBUTE_4D_ mpp_redistribute_i8_4D
+#undef MPP_REDISTRIBUTE_5D_
 #define MPP_REDISTRIBUTE_5D_ mpp_redistribute_i8_5D
 #include <mpp_update_domains2D.h>
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ logical(LONG_KIND)
+#undef MPP_UPDATE_DOMAINS_2D_
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_l8_2D
+#undef MPP_UPDATE_DOMAINS_3D_
 #define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_l8_3D
+#undef MPP_UPDATE_DOMAINS_4D_
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_l8_4D
+#undef MPP_UPDATE_DOMAINS_5D_
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_l8_5D
+#undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_l8_2D
+#undef MPP_REDISTRIBUTE_3D_
 #define MPP_REDISTRIBUTE_3D_ mpp_redistribute_l8_3D
+#undef MPP_REDISTRIBUTE_4D_
 #define MPP_REDISTRIBUTE_4D_ mpp_redistribute_l8_4D
+#undef MPP_REDISTRIBUTE_5D_
 #define MPP_REDISTRIBUTE_5D_ mpp_redistribute_l8_5D
 #include <mpp_update_domains2D.h>
 #endif
 
 #ifndef no_4byte_reals
+#undef VECTOR_FIELD_
 #define VECTOR_FIELD_
+#undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
+#undef MPP_UPDATE_DOMAINS_2D_
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_r4_2D
+#undef MPP_UPDATE_DOMAINS_3D_
 #define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_r4_3D
+#undef MPP_UPDATE_DOMAINS_4D_
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_r4_4D
+#undef MPP_UPDATE_DOMAINS_5D_
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_r4_5D
 #ifdef  VECTOR_FIELD_
+#undef MPP_UPDATE_DOMAINS_2D_V_
 #define MPP_UPDATE_DOMAINS_2D_V_ mpp_update_domain2D_r4_2Dv
+#undef MPP_UPDATE_DOMAINS_3D_V_
 #define MPP_UPDATE_DOMAINS_3D_V_ mpp_update_domain2D_r4_3Dv
+#undef MPP_UPDATE_DOMAINS_4D_V_
 #define MPP_UPDATE_DOMAINS_4D_V_ mpp_update_domain2D_r4_4Dv
+#undef MPP_UPDATE_DOMAINS_5D_V_
 #define MPP_UPDATE_DOMAINS_5D_V_ mpp_update_domain2D_r4_5Dv
 #endif
+#undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_r4_2D
+#undef MPP_REDISTRIBUTE_3D_
 #define MPP_REDISTRIBUTE_3D_ mpp_redistribute_r4_3D
+#undef MPP_REDISTRIBUTE_4D_
 #define MPP_REDISTRIBUTE_4D_ mpp_redistribute_r4_4D
+#undef MPP_REDISTRIBUTE_5D_
 #define MPP_REDISTRIBUTE_5D_ mpp_redistribute_r4_5D
 #include <mpp_update_domains2D.h>
 #undef  VECTOR_FIELD_
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
+#undef MPP_UPDATE_DOMAINS_2D_
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_c4_2D
+#undef MPP_UPDATE_DOMAINS_3D_
 #define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_c4_3D
+#undef MPP_UPDATE_DOMAINS_4D_
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_c4_4D
+#undef MPP_UPDATE_DOMAINS_5D_
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_c4_5D
+#undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_c4_2D
+#undef MPP_REDISTRIBUTE_3D_
 #define MPP_REDISTRIBUTE_3D_ mpp_redistribute_c4_3D
+#undef MPP_REDISTRIBUTE_4D_
 #define MPP_REDISTRIBUTE_4D_ mpp_redistribute_c4_4D
+#undef MPP_REDISTRIBUTE_5D_
 #define MPP_REDISTRIBUTE_5D_ mpp_redistribute_c4_5D
 #include <mpp_update_domains2D.h>
 #endif
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
+#undef MPP_UPDATE_DOMAINS_2D_
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_i4_2D
+#undef MPP_UPDATE_DOMAINS_3D_
 #define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_i4_3D
+#undef MPP_UPDATE_DOMAINS_4D_
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_i4_4D
+#undef MPP_UPDATE_DOMAINS_5D_
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_i4_5D
+#undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_i4_2D
+#undef MPP_REDISTRIBUTE_3D_
 #define MPP_REDISTRIBUTE_3D_ mpp_redistribute_i4_3D
+#undef MPP_REDISTRIBUTE_4D_
 #define MPP_REDISTRIBUTE_4D_ mpp_redistribute_i4_4D
+#undef MPP_REDISTRIBUTE_5D_
 #define MPP_REDISTRIBUTE_5D_ mpp_redistribute_i4_5D
 #include <mpp_update_domains2D.h>
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ logical(INT_KIND)
+#undef MPP_UPDATE_DOMAINS_2D_
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_l4_2D
+#undef MPP_UPDATE_DOMAINS_3D_
 #define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_l4_3D
+#undef MPP_UPDATE_DOMAINS_4D_
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_l4_4D
+#undef MPP_UPDATE_DOMAINS_5D_
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_l4_5D
+#undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_l4_2D
+#undef MPP_REDISTRIBUTE_3D_
 #define MPP_REDISTRIBUTE_3D_ mpp_redistribute_l4_3D
+#undef MPP_REDISTRIBUTE_4D_
 #define MPP_REDISTRIBUTE_4D_ mpp_redistribute_l4_4D
+#undef MPP_REDISTRIBUTE_5D_
 #define MPP_REDISTRIBUTE_5D_ mpp_redistribute_l4_5D
 #include <mpp_update_domains2D.h>
 
 !*******************************************************
+#undef VECTOR_FIELD_
 #define VECTOR_FIELD_
+#undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
+#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
 #define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_r8_3d
+#undef MPP_DOMAINS_DO_UPDATE_3Dold_
 #define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_r8_3d
 #ifdef  VECTOR_FIELD_
+#undef MPP_DOMAINS_DO_UPDATE_3Dnew_V_
 #define MPP_DOMAINS_DO_UPDATE_3Dnew_V_ mpp_do_update_new_r8_3dv
+#undef MPP_DOMAINS_DO_UPDATE_3Dold_V_
 #define MPP_DOMAINS_DO_UPDATE_3Dold_V_ mpp_do_update_old_r8_3dv
 #endif
 #include <mpp_do_update_old.h>
@@ -899,6 +665,7 @@ contains
 #include <mpp_do_update_gsm.h>
 #include <mpp_do_updateV_gsm.h>
 #elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_r8_3d_type
 #include <mpp_do_update_caf.h>
 #include <mpp_do_updateV_caf.h>
@@ -909,13 +676,17 @@ contains
 
 #undef  VECTOR_FIELD_
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
+#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
 #define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_c8_3d
+#undef MPP_DOMAINS_DO_UPDATE_3Dold_
 #define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_c8_3d
 #include <mpp_do_update_old.h>
 #if defined(use_GSM)              
 #include <mpp_do_update_gsm.h>
 #elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_c8_3d_type
 #include <mpp_do_update_caf.h>
 #else
@@ -924,13 +695,17 @@ contains
 
 
 #ifndef no_8byte_integers
+#undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
+#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
 #define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_i8_3d
+#undef MPP_DOMAINS_DO_UPDATE_3Dold_
 #define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_i8_3d
 #include <mpp_do_update_old.h>
 #if defined(use_GSM)              
 #include <mpp_do_update_gsm.h>
 #elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_i8_3d_type
 #include <mpp_do_update_caf.h>
 #else
@@ -938,13 +713,17 @@ contains
 #endif
 
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ logical(LONG_KIND)
+#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
 #define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_l8_3d
+#undef MPP_DOMAINS_DO_UPDATE_3Dold_
 #define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_l8_3d
 #include <mpp_do_update_old.h>
 #if defined(use_GSM)              
 #include <mpp_do_update_gsm.h>
 #elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_l8_3d_type
 #include <mpp_do_update_caf.h>
 #else
@@ -954,12 +733,18 @@ contains
 #endif
 
 #ifndef no_4byte_reals
+#undef VECTOR_FIELD_
 #define VECTOR_FIELD_
+#undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
+#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
 #define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_r4_3d
+#undef MPP_DOMAINS_DO_UPDATE_3Dold_
 #define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_r4_3d
 #ifdef  VECTOR_FIELD_
+#undef MPP_DOMAINS_DO_UPDATE_3Dnew_V_
 #define MPP_DOMAINS_DO_UPDATE_3Dnew_V_ mpp_do_update_new_r4_3dv
+#undef MPP_DOMAINS_DO_UPDATE_3Dold_V_
 #define MPP_DOMAINS_DO_UPDATE_3Dold_V_ mpp_do_update_old_r4_3dv
 #endif
 #include <mpp_do_update_old.h>
@@ -968,6 +753,7 @@ contains
 #include <mpp_do_update_gsm.h>
 #include <mpp_do_updateV_gsm.h>
 #elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_r4_3d_type
 #include <mpp_do_update_caf.h>
 #include <mpp_do_updateV_caf.h>
@@ -978,13 +764,17 @@ contains
 
 #undef  VECTOR_FIELD_
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
+#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
 #define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_c4_3d
+#undef MPP_DOMAINS_DO_UPDATE_3Dold_
 #define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_c4_3d
 #include <mpp_do_update_old.h>
 #if defined(use_GSM)              
 #include <mpp_do_update_gsm.h>
 #elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_c4_3d_type
 #include <mpp_do_update_caf.h>
 #else
@@ -993,26 +783,34 @@ contains
 
 #endif
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
+#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
 #define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_i4_3d
+#undef MPP_DOMAINS_DO_UPDATE_3Dold_
 #define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_i4_3d
 #include <mpp_do_update_old.h>
 #if defined(use_GSM)              
 #include <mpp_do_update_gsm.h>
 #elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_i4_3d_type
 #include <mpp_do_update_caf.h>
 #else
 #include <mpp_do_update_new.h>
 #endif
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ logical(INT_KIND)
+#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
 #define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_l4_3d
+#undef MPP_DOMAINS_DO_UPDATE_3Dold_
 #define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_l4_3d
 #include <mpp_do_update_old.h>
 #if defined(use_GSM)              
 #include <mpp_do_update_gsm.h>
 #elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_l4_3d_type
 #include <mpp_do_update_caf.h>
 #else
@@ -1021,13 +819,17 @@ contains
 
 
 !********************************************************
+#undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
+#undef MPP_DO_REDISTRIBUTE_3Dnew_
 #define MPP_DO_REDISTRIBUTE_3Dnew_ mpp_do_redistribute_new_r8_3D
+#undef MPP_DO_REDISTRIBUTE_3Dold_
 #define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_r8_3D
 #include <mpp_do_redistribute_old.h>
 #if defined(use_GSM)
 #include <mpp_do_redistribute_gsm.h>
 #elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_r8_3d_type
 #include <mpp_do_redistribute_caf.h>
 #else
@@ -1035,13 +837,17 @@ contains
 #endif
 #undef  VECTOR_FIELD_
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
+#undef MPP_DO_REDISTRIBUTE_3Dnew_
 #define MPP_DO_REDISTRIBUTE_3Dnew_ mpp_do_redistribute_new_c8_3D
+#undef MPP_DO_REDISTRIBUTE_3Dold_
 #define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_c8_3D
 #include <mpp_do_redistribute_old.h>
 #if defined(use_GSM)
 #include <mpp_do_redistribute_gsm.h>
 #elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_c8_3d_type
 #include <mpp_do_redistribute_caf.h>
 #else
@@ -1051,13 +857,17 @@ contains
 
 #ifndef no_8byte_integers
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
+#undef MPP_DO_REDISTRIBUTE_3Dnew_
 #define MPP_DO_REDISTRIBUTE_3Dnew_ mpp_do_redistribute_new_i8_3D
+#undef MPP_DO_REDISTRIBUTE_3Dold_
 #define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_i8_3D
 #include <mpp_do_redistribute_old.h>
 #if defined(use_GSM)
 #include <mpp_do_redistribute_gsm.h>
 #elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_i8_3d_type
 #include <mpp_do_redistribute_caf.h>
 #else
@@ -1065,13 +875,17 @@ contains
 #endif
 
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ logical(LONG_KIND)
+#undef MPP_DO_REDISTRIBUTE_3Dnew_
 #define MPP_DO_REDISTRIBUTE_3Dnew_ mpp_do_redistribute_new_l8_3D
+#undef MPP_DO_REDISTRIBUTE_3Dold_
 #define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_l8_3D
 #include <mpp_do_redistribute_old.h>
 #if defined(use_GSM)
 #include <mpp_do_redistribute_gsm.h>
 #elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_l8_3d_type
 #include <mpp_do_redistribute_caf.h>
 #else
@@ -1082,13 +896,17 @@ contains
 
 #ifndef no_4byte_reals
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
+#undef MPP_DO_REDISTRIBUTE_3Dnew_
 #define MPP_DO_REDISTRIBUTE_3Dnew_ mpp_do_redistribute_new_r4_3D
+#undef MPP_DO_REDISTRIBUTE_3Dold_
 #define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_r4_3D
 #include <mpp_do_redistribute_old.h>
 #if defined(use_GSM)
 #include <mpp_do_redistribute_gsm.h>
 #elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_r4_3d_type
 #include <mpp_do_redistribute_caf.h>
 #else
@@ -1096,13 +914,17 @@ contains
 #endif
 #undef  VECTOR_FIELD_
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
+#undef MPP_DO_REDISTRIBUTE_3Dnew_
 #define MPP_DO_REDISTRIBUTE_3Dnew_ mpp_do_redistribute_new_c4_3D
+#undef MPP_DO_REDISTRIBUTE_3Dold_
 #define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_c4_3D
 #include <mpp_do_redistribute_old.h>
 #if defined(use_GSM)
 #include <mpp_do_redistribute_gsm.h>
 #elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_c4_3d_type
 #include <mpp_do_redistribute_caf.h>
 #else
@@ -1111,13 +933,17 @@ contains
 
 #endif
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
+#undef MPP_DO_REDISTRIBUTE_3Dnew_
 #define MPP_DO_REDISTRIBUTE_3Dnew_ mpp_do_redistribute_new_i4_3D
+#undef MPP_DO_REDISTRIBUTE_3Dold_
 #define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_i4_3D
 #include <mpp_do_redistribute_old.h>
 #if defined(use_GSM)
 #include <mpp_do_redistribute_gsm.h>
 #elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_i4_3d_type
 #include <mpp_do_redistribute_caf.h>
 #else
@@ -1125,17 +951,20 @@ contains
 #endif
 
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ logical(INT_KIND)
+#undef MPP_DO_REDISTRIBUTE_3Dnew_
 #define MPP_DO_REDISTRIBUTE_3Dnew_ mpp_do_redistribute_new_l4_3D
+#undef MPP_DO_REDISTRIBUTE_3Dold_
 #define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_l4_3D
 #include <mpp_do_redistribute_old.h>
 #if defined(use_GSM)
 #include <mpp_do_redistribute_gsm.h>
 #elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_l4_3d_type
 #include <mpp_do_redistribute_caf.h>
 #else
 #include <mpp_do_redistribute_new.h>
 #endif
 
-end module mpp_domains_misc_mod

@@ -33,8 +33,8 @@ private
 !----------- ****** VERSION NUMBER ******* ---------------------------
 
 
-character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 11.0 2004/09/28 19:58:33 fms Exp $'
-character(len=128)  :: tag     =  '$Name: lima $'
+character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 13.0 2006/03/28 21:37:34 fms Exp $'
+character(len=128)  :: tag     =  '$Name: memphis $'
 
 
 
@@ -66,9 +66,7 @@ namelist / column_diagnostics_nml /              &
 !------ private data ------
 
 
-real, dimension(:), allocatable :: latb_deg, lonb_deg
-logical    :: column_diagnostics_initialized = .false.
-real       :: dellat, dellon
+logical    :: module_is_initialized = .false.
 
 !-------------------------------------------------------------------
 !-------------------------------------------------------------------
@@ -81,11 +79,7 @@ real       :: dellat, dellon
 
 !####################################################################
 
-subroutine column_diagnostics_init (lonb_in, latb_in)
-
-!--------------------------------------------------------------------
-real, dimension(:), intent(in)   :: lonb_in, latb_in
-!--------------------------------------------------------------------
+subroutine column_diagnostics_init 
 
 !--------------------------------------------------------------------
 !    column_diagnostics_init is the constructor for 
@@ -109,7 +103,7 @@ real, dimension(:), intent(in)   :: lonb_in, latb_in
 !--------------------------------------------------------------------
 !    if routine has already been executed, return.
 !--------------------------------------------------------------------
-      if (column_diagnostics_initialized) return
+      if (module_is_initialized) return
 
 !---------------------------------------------------------------------
 !    verify that all modules used by this module have been initialized.
@@ -136,22 +130,11 @@ real, dimension(:), intent(in)   :: lonb_in, latb_in
 !---------------------------------------------------------------------
       call write_version_number (version, tag)
       if (mpp_pe() == mpp_root_pe())    &
-                    write (stdlog(), nml=column_diagnostics_nml)
+                    unit = stdlog()
+                    write (unit, nml=column_diagnostics_nml)
 
 !--------------------------------------------------------------------
-!    save the input lat and lon fields. define the delta of latitude
-!    and longitude.
-!--------------------------------------------------------------------
-      allocate ( latb_deg (size(latb_in(:))) )
-      allocate ( lonb_deg (size(lonb_in(:))) )
-      latb_deg = latb_in*RADIAN
-      lonb_deg = lonb_in*RADIAN
-      dellat = latb_in(2) - latb_in(1)
-      dellon = lonb_in(2) - lonb_in(1)
-
-
-!--------------------------------------------------------------------
-      column_diagnostics_initialized = .true.
+      module_is_initialized = .true.
 
 
 end subroutine column_diagnostics_init 
@@ -164,7 +147,8 @@ end subroutine column_diagnostics_init
 subroutine initialize_diagnostic_columns     &
                    (module, num_diag_pts_latlon, num_diag_pts_ij,  &
                     global_i , global_j , global_lat_latlon,   &
-                    global_lon_latlon,  do_column_diagnostics,  &
+                    global_lon_latlon, lonb_in, latb_in,  &
+                    do_column_diagnostics,  &
                     diag_lon, diag_lat, diag_i, diag_j, diag_units)
 
 !---------------------------------------------------------------------
@@ -180,6 +164,7 @@ integer,               intent(in)    :: num_diag_pts_latlon,  &
 integer, dimension(:), intent(in)    :: global_i, global_j   
 real   , dimension(:), intent(in)    :: global_lat_latlon,    &
                                         global_lon_latlon 
+real,    dimension(:), intent(in)    :: lonb_in, latb_in
 logical, dimension(:), intent(out)   :: do_column_diagnostics
 integer, dimension(:), intent(inout) :: diag_i, diag_j        
 real   , dimension(:), intent(out)   :: diag_lat, diag_lon
@@ -216,6 +201,9 @@ integer, dimension(:), intent(out)   :: diag_units
 !    local variables:
 
       real, dimension(size(diag_i,1)) :: global_lat, global_lon
+      real, dimension(size(latb_in(:))) :: latb_deg
+      real, dimension(size(lonb_in(:))) :: lonb_deg
+      real       :: dellat, dellon
 
       integer            ::  num_diag_pts
       integer            ::  i, j, nn
@@ -234,6 +222,17 @@ integer, dimension(:), intent(out)   :: diag_units
 !       filename        filename for output file for diagnostic column 
 !
 !---------------------------------------------------------------------
+
+      if (.not. module_is_initialized) call column_diagnostics_init
+
+!--------------------------------------------------------------------
+!    save the input lat and lon fields. define the delta of latitude
+!    and longitude.
+!--------------------------------------------------------------------
+      latb_deg = latb_in*RADIAN
+      lonb_deg = lonb_in*RADIAN
+      dellat = latb_in(2) - latb_in(1)
+      dellon = lonb_in(2) - lonb_in(1)
 
 !----------------------------------------------------------------------
 !    initialize column_diagnostics flag and diag unit numbers. define 
@@ -375,6 +374,8 @@ integer, dimension(:), intent(in)  :: diag_i, diag_j
 !       header         title for the output 
 !        
 !--------------------------------------------------------------------
+
+      if (.not. module_is_initialized) call column_diagnostics_init
 
 !--------------------------------------------------------------------
 !    convert the time type to a date and time for printing. convert 

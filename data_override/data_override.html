@@ -63,7 +63,7 @@
    the netCDF data file, factor then will be for unit conversion (=1 if no conversion required)
    <br>
 <br>
-   A field can be overriden globally (by default) or users can specify a region in which
+   A field can be overriden globally (by default) or users can specify one or two regions in which
    data_override will take place, field values outside the region will not be affected. </p>
 <!-- END OVERVIEW -->
 <a name="DESCRIPTION"></a>
@@ -185,6 +185,21 @@
 </tr>
 <tr>
 <td valign="top" align="left"><tt>time&nbsp;&nbsp;&nbsp;</tt></td><td>   model time <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>region1&nbsp;&nbsp;&nbsp;</tt></td><td>   Restricts override to a rectangular region in lat,lon space.
+   This may not be a rectangular region in i,j space when the model grid is tripolar.
+   region1=(/lat_start, lat_end, lon_start, lon_end/)
+   Clarification regarding longitude: lon_start may be greater than lon_end.
+   The region overriden will be from lat_start eastward to lat_end.
+   e.g. if lat_start,lat_end = 180.,0.0 then the western hemisphere will be overriden. <br>&nbsp;&nbsp;&nbsp;<span class="type">[real, dimension(4)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>region2&nbsp;&nbsp;&nbsp;</tt></td><td>   A second region to override. May be present only if region1 is also present. <br>&nbsp;&nbsp;&nbsp;<span class="type">[real, dimension(4)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>data_index&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 </table>
 </dd>

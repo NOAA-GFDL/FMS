@@ -1,33 +1,10 @@
-module mpp_domains_comm_mod
 
-  use mpp_mod,           only : mpp_root_pe, mpp_malloc, mpp_error, FATAL, WARNING, NOTE, ANY_PE, NULL_PE
-  use mpp_mod,           only : mpp_send, mpp_recv, mpp_sync_self, mpp_pe, mpp_npes, ALL_PES, mpp_transmit, mpp_max
-  use mpp_parameter_mod,    only : MPP_DOMAIN_TIME, XUPDATE, YUPDATE, BGRID_NE, BGRID_SW, SCALAR_BIT
-  use mpp_parameter_mod,    only : CGRID_NE, CGRID_SW, WEST, EAST, SOUTH, NORTH, AGRID, DOMAIN_ID_BASE
-
-
-  use mpp_datatype_mod,  only : domain1D, domain2D, DomainCommunicator2D
-  use mpp_data_mod,      only : mpp_domains_stack, ptr_domains_stack, pe, mpp_domains_stack_size, mpp_domains_stack_hwm
-  use mpp_data_mod,      only : debug_gsm,grid_offset_type, module_is_initialized=>mpp_domains_is_initialized
-
-  use mpp_domains_util_mod,  only : mpp_get_compute_domain, compute_overlaps
-
-  implicit none
-  private
+! -*-f90-*-
+! $Id: mpp_domains_comm.inc,v 13.0 2006/03/28 21:40:34 fms Exp $
 
 #ifdef use_GSM
 #include "mpp/shmem.fh"
 #endif
-#include <fms_platform.h>
-
-  public :: mpp_update_init_comm, mpp_update_free_comm
-  public :: mpp_redistribute_init_comm, mpp_redistribute_free_comm
-  public :: mpp_global_field_init_comm, mpp_global_field_free_comm
-#ifdef use_CAF
-  public :: mpp_associate_caf_field
-#endif
-
-
 
   ! <INTERFACE NAME="mpp_domains_init_comm">
   !  <OVERVIEW>
@@ -47,88 +24,27 @@ module mpp_domains_comm_mod
   !  <IN NAME="flags"></IN>
   ! </INTERFACE>
 
-#ifdef use_CAF
-  interface mpp_associate_caf_field
-!     module procedure associate_caf_field_r8_1d
-!     module procedure associate_caf_field_c8_1d
-!     module procedure associate_caf_field_i8_1d
-!     module procedure associate_caf_field_l8_1d
-!     module procedure associate_caf_field_r4_1d
-!     module procedure associate_caf_field_c4_1d
-!     module procedure associate_caf_field_i4_1d
-!     module procedure associate_caf_field_l4_1d
-     module procedure associate_caf_field_r8_3d
-     module procedure associate_caf_field_c8_3d
-     module procedure associate_caf_field_i8_3d
-     module procedure associate_caf_field_l8_3d
-     module procedure associate_caf_field_r4_3d
-     module procedure associate_caf_field_c4_3d
-     module procedure associate_caf_field_i4_3d
-     module procedure associate_caf_field_l4_3d
-  end interface
-#endif
-
-
-      integer, parameter :: MAX_ADDRS=512
-      integer(LONG_KIND),dimension(MAX_ADDRS),save :: addrs_sorted=-9999  ! list of sorted local addrs
-      integer,           dimension(MAX_ADDRS),save :: addrs_idx=-9999     ! idx of addr2 assoicated w/ d_comm
-      integer,           dimension(MAX_ADDRS),save :: a_salvage=-9999     ! freed idx list of addr
-      integer,                                save :: a_sort_len=0        ! len sorted memory list
-      integer,                                save :: n_addrs=0           ! num memory addresses used
-
-      integer, parameter :: ADDR2_BASE=Z'0000000000010000'
-      integer, parameter :: MAX_ADDRS2=128
-      integer(LONG_KIND),dimension(MAX_ADDRS2),save :: addrs2_sorted=-9999  ! list of sorted local addrs
-      integer,           dimension(MAX_ADDRS2),save :: addrs2_idx=-9999     ! idx of addr2 assoicated w/ d_comm
-      integer,           dimension(MAX_ADDRS2),save :: a2_salvage=-9999     ! freed indices of addr2
-      integer,                                 save :: a2_sort_len=0        ! len sorted memory list
-      integer,                                 save :: n_addrs2=0           ! num memory addresses used
-
-      integer, parameter :: MAX_DOM_IDS=128
-      integer(LONG_KIND),dimension(MAX_DOM_IDS),save :: ids_sorted=-9999 ! list of sorted domain identifiers
-      integer,           dimension(MAX_DOM_IDS),save :: ids_idx=-9999    ! idx of d_comm associated w/ sorted addr
-      integer,                                  save :: i_sort_len=0     ! len sorted domain ids list
-      integer,                                  save :: n_ids=0          ! num domain ids used (=i_sort_len; dom ids never removed)
-
-      integer, parameter :: MAX_FIELDS=1024
-      integer(LONG_KIND),        dimension(MAX_FIELDS),save           :: dcKey_sorted=-9999  ! list of sorted local addrs
-!     Not sure why static d_comm fails during deallocation of derived type members; allocatable works
-!     type(DomainCommunicator2D),dimension(MAX_FIELDS),save,target    :: d_comm              ! domain communicators
-      type(DomainCommunicator2D),dimension(:),allocatable,save,target :: d_comm              ! domain communicators
-      integer,                   dimension(MAX_FIELDS),save           :: d_comm_idx=-9999    ! idx of d_comm associated w/ sorted addr
-      integer,                   dimension(MAX_FIELDS),save           :: dc_salvage=-9999    ! freed indices of d_comm
-      integer,                                         save           :: dc_sort_len=0       ! len sorted comm keys (=num active communicators)
-      integer,                                         save           :: n_comm=0            ! num communicators used
-
-!     integer(LONG_KIND), parameter :: GT_BASE=2**8
-      integer(LONG_KIND), parameter :: GT_BASE=Z'0000000000000100'  ! Workaround for 64bit int init problem
-
-!     integer(LONG_KIND), parameter :: KE_BASE=2**48
-      integer(LONG_KIND), parameter :: KE_BASE=Z'0001000000000000'  ! Workaround for 64bit int init problem
-
-
-contains
-
-
-    function mpp_update_init_comm(domain,l_addr,isize,jsize,ksize,l_addr2,flags,gridtype) RESULT(d_comm)
+  !--- we may provide seperate interface for scalar and vector field.
+  function mpp_update_init_comm(domain,l_addr,isize,jsize,ksize,l_addr2,flags, position, gridtype) RESULT(d_comm)
       type(DomainCommunicator2D), pointer       :: d_comm
       type(domain2D),target,      intent(inout) :: domain  ! use of compute_overlaps requires intent(inout)
       integer(LONG_KIND),         intent(in)    :: l_addr(:)
-      integer,                    intent(in)    :: isize
-      integer,                    intent(in)    :: jsize
+      integer,                    intent(in)    :: isize(:)
+      integer,                    intent(in)    :: jsize(:)
       integer,                    intent(in)    :: ksize
       integer(LONG_KIND),optional,intent(in)    :: l_addr2(:)
       integer, optional,          intent(in)    :: flags
+      integer, optional,          intent(in)    :: position
       integer, optional,          intent(in)    :: gridtype
 
       integer(LONG_KIND) :: domain_id
-      integer :: m, n, list, buffer_pos
+      integer :: m, n, list, l
       integer :: update_flags
-      integer :: is, ie, js, je, ke, ioff, joff, list_size
-      integer :: i, lsize,rsize,msgsize,this_pe,my_pe,to_pe,from_pe
-      integer,           allocatable,dimension(:,:)   :: isL, jsL
-      logical :: recv_e, recv_se, recv_s, recv_sw, recv_w, recv_nw, recv_n, recv_ne
-      logical :: send_e, send_se, send_s, send_sw, send_w, send_nw, send_n, send_ne
+      integer :: is, ie, js, je, ioff, joff, list_size
+      integer :: i, lsize,rsize,msgsize,to_pe,from_pe
+      integer :: num_component, x_position, y_position
+      integer, allocatable :: isL(:,:), jsL(:,:)
+      logical :: recv(8), send(8)
       logical :: folded
       real,dimension(*) :: f, f2
       pointer(ptr,f);  pointer(ptr2,f2)
@@ -136,7 +52,8 @@ contains
       pointer(ptr_r,f_r);  pointer(ptr2_r,f2_r)
       logical :: use_shmem_ptr
       character(len=8) :: text
-
+      type(DomainCommunicator2D), pointer :: d_comm_local => NULL()
+      type(domain2d),             pointer :: Dom          => NULL()
 
       use_shmem_ptr=.false.   ! False for any but GSM
 #ifdef use_GSM
@@ -158,211 +75,182 @@ contains
           end if
       end if
 
-      if(PRESENT(gridtype))then
-      !gridtype
-        grid_offset_type = AGRID
-        if( PRESENT(gridtype) )then
-            if( gridtype.NE.AGRID .AND. &
-                gridtype.NE.BGRID_NE .AND. gridtype.NE.BGRID_SW .AND. &
-                gridtype.NE.CGRID_NE .AND. gridtype.NE.CGRID_SW ) &
-               call mpp_error( FATAL, 'MPP_UPDATE_DOMAINS: gridtype must be one of AGRID|BGRID_NE|BGRID_SW|CGRID_NE|CGRID_SW.' )
-      !grid_offset_type used by update domains to determine shifts.
-            grid_offset_type = gridtype
-            call compute_overlaps(domain)
-            if( grid_offset_type.NE.domain%gridtype ) &
-               call mpp_error( FATAL, 'MPP_UPDATE_INIT_COMM: gridtype cannot be changed during run.' )
-        end if
-      !need to add code for EWS boundaries
-        if( BTEST(domain%fold,WEST) .AND. BTEST(update_flags,WEST) ) &
-             call mpp_error( FATAL, 'velocity stencil not yet active for WEST fold, contact author.' )
-        if( BTEST(domain%fold,EAST) .AND. BTEST(update_flags,EAST) ) &
-             call mpp_error( FATAL, 'velocity stencil not yet active for EAST fold, contact author.' )
-        if( BTEST(domain%fold,SOUTH) .AND. BTEST(update_flags,SOUTH) ) &
-             call mpp_error( FATAL, 'velocity stencil not yet active for SOUTH fold, contact author.' )
-      endif
-
-      recv_w = BTEST(update_flags,WEST)
-      recv_e = BTEST(update_flags,EAST)
-      recv_s = BTEST(update_flags,SOUTH)
-      recv_n = BTEST(update_flags,NORTH)
-      recv_ne = recv_e .AND. recv_n
-      recv_se = recv_e .AND. recv_s
-      recv_sw = recv_w .AND. recv_s
-      recv_nw = recv_w .AND. recv_n
-      send_w = recv_e
-      send_e = recv_w
-      send_s = recv_n
-      send_n = recv_s
-      send_ne = send_e .AND. send_n
-      send_se = send_e .AND. send_s
-      send_sw = send_w .AND. send_s
-      send_nw = send_w .AND. send_n
-
-      if( recv_w .AND. BTEST(domain%fold,WEST)  .AND. BTEST(grid_offset_type,EAST)  ) &
-           call mpp_error( FATAL, 'Incompatible grid offset and fold.' )
-      if( recv_s .AND. BTEST(domain%fold,SOUTH) .AND. BTEST(grid_offset_type,NORTH) ) &
-           call mpp_error( FATAL, 'Incompatible grid offset and fold.' )
-      if( recv_e .AND. BTEST(domain%fold,EAST)  .AND. BTEST(grid_offset_type,WEST)  ) &
-           call mpp_error( FATAL, 'Incompatible grid offset and fold.' )
-      if( recv_n .AND. BTEST(domain%fold,NORTH) .AND. BTEST(grid_offset_type,SOUTH) ) &
-           call mpp_error( FATAL, 'Incompatible grid offset and fold.' )
-
     ! Create unique domain identifier
-      list_size = size(l_addr(:))
-      domain_id=set_domain_id(domain%id,ksize+list_size,update_flags,gridtype)
-      if(PRESENT(l_addr2))then
-        d_comm =>get_comm(domain_id,l_addr(1),l_addr2(1))
-      else
-        d_comm =>get_comm(domain_id,l_addr(1))
+    list_size = size(l_addr(:))
+    domain_id=set_domain_id(domain%id,ksize+list_size,update_flags, gridtype, position )
+
+    if(PRESENT(l_addr2))then
+       d_comm =>get_comm(domain_id,l_addr(1),l_addr2(1))
+    else
+       d_comm =>get_comm(domain_id,l_addr(1))
+    endif
+
+    if(d_comm%initialized)return   ! Found existing field/domain communicator
+
+    !--- position and gridtype can not be presented at the same time
+    if(PRESENT(position) .AND. PRESENT(gridtype)) then
+       call mpp_error( FATAL, 'mpp_update_comm_mod: position and gridtype can not both be presented')
+    else if (PRESENT(position)) then
+       x_position = position; y_position = position
+       !--- for cubic grid, can not use scalar version update_domain for data on E or N-cell
+       if( domain%topology_type == CUBIC_GRID .AND. ( position == EAST .OR. position == NORTH ) ) then
+          call mpp_error(FATAL, 'mpp_domains_comm_mod: for cubic grid, ' // &
+               'can not use scalar version update_domain for data on E or N-cell' )
+       end if
+    else if ( PRESENT(gridtype)) then
+       if( BTEST(update_flags,WEST) .AND. BTEST(domain%fold,WEST)  .AND. BTEST(gridtype,EAST)  ) &
+            call mpp_error( FATAL, 'Incompatible grid offset and fold.' )
+       if( BTEST(update_flags,SOUTH) .AND. BTEST(domain%fold,SOUTH) .AND. BTEST(gridtype,NORTH) ) &
+            call mpp_error( FATAL, 'Incompatible grid offset and fold.' )
+       if( BTEST(update_flags,EAST) .AND. BTEST(domain%fold,EAST)  .AND. BTEST(gridtype,WEST)  ) &
+            call mpp_error( FATAL, 'Incompatible grid offset and fold.' )
+       if( BTEST(update_flags,NORTH) .AND. BTEST(domain%fold,NORTH) .AND. BTEST(gridtype,SOUTH) ) &
+            call mpp_error( FATAL, 'Incompatible grid offset and fold.' )
+
+       !--- For cubic grid, velocity is not allowed on the CORNER.
+       if( domain%topology_type == CUBIC_GRID .AND. ( .NOT. BTEST(update_flags,SCALAR_BIT)) .AND. &
+            ( gridtype == BGRID_NE .OR. gridtype == BGRID_SW ) ) then
+          call mpp_error(FATAL,"mpp_update_comm_mod: velocity is not allowed on the C-cell for cubic grid")
+       end if
+
+       select case(gridtype)
+       case (AGRID)
+          x_position = CENTER; y_position = CENTER
+       case (BGRID_NE, BGRID_SW)  ! acutally not quite right for BGRID_SW, BGRID_SW is not well implemented.
+          x_position = CORNER; y_position = CORNER
+       case (CGRID_NE, CGRID_SW)  ! acutally not quite right for CGRID_SW, CGRID_SW is not well implemented.
+          x_position = EAST; y_position = NORTH
+       case default
+          call mpp_error( FATAL, 'mpp_update_comm_mod: gridtype must be one of ' //&
+               'AGRID|BGRID_NE|BGRID_SW|CGRID_NE|CGRID_SW.' )
+       end select
+    else
+       call mpp_error( FATAL, 'mpp_update_comm_mod: one of position and gridtype should be presented')
+    end if
+
+    recv(1) = BTEST(update_flags,EAST)
+    recv(3) = BTEST(update_flags,SOUTH)
+    recv(5) = BTEST(update_flags,WEST)
+    recv(7) = BTEST(update_flags,NORTH)
+    recv(2) = recv(1) .AND. recv(3)
+    recv(4) = recv(3) .AND. recv(5)
+    recv(6) = recv(5) .AND. recv(7)
+    recv(8) = recv(7) .AND. recv(1)
+    send    = recv
+
+    if(x_position == y_position) then
+      num_component = 1
+      d_comm%staggered = .FALSE.
+    else 
+         num_component = 2
+         d_comm%staggered = .TRUE.
       endif
 
-      if(d_comm%initialized)return   ! Found existing field/domain communicator
+      do n = 1, num_component
+         if( n == 1 ) then
+            d_comm_local => d_comm
+            d_comm_local%position = x_position
+         else
+            allocate(d_comm%y_comm)
+            d_comm_local => d_comm%y_comm
+            d_comm_local%position = y_position
+         endif
+       select case(d_comm_local%position)
+       case (CENTER)
+          Dom => domain%T
+       case (EAST)
+          Dom => domain%E
+       case (NORTH)
+          Dom => domain%N
+       case (CORNER)
+          Dom => domain%C
+       end select
 
-      d_comm%l_addr = l_addr(1)
-      d_comm%domain =>domain
-      d_comm%Slist_size = size(domain%list(:))
-      d_comm%isize = isize
-      d_comm%jsize = jsize
-      d_comm%ke = ksize; ke = ksize
+         d_comm_local%l_addr = l_addr(1)
+         d_comm_local%domain =>domain
+
+       d_comm_local%Slist_size = size(Dom%list(:))
+       d_comm_local%isize = isize(n)
+       d_comm_local%jsize = jsize(n)
+       d_comm_local%ke = ksize
 
 !send
-      lsize = d_comm%Slist_size-1
-      allocate(d_comm%sendis(8,0:lsize), d_comm%sendie(8,0:lsize), &
-               d_comm%sendjs(8,0:lsize), d_comm%sendje(8,0:lsize), &
-               d_comm%S_msize(8,0:lsize), d_comm%do_thisS(8,0:lsize), &
-               isL(8,0:lsize),jsL(8,0:lsize))
-      allocate(d_comm%cto_pe(0:lsize), d_comm%S_do_buf(0:lsize))
+         lsize = d_comm_local%Slist_size-1
+       allocate( d_comm_local%S_msize(8,0:lsize),   d_comm_local%S_msize2(8,0:lsize), &
+                 d_comm_local%do_thisS(8,0:lsize),  d_comm_local%S_do_buf(0:lsize),   &
+                 d_comm_local%do_thisS2(8,0:lsize),                                   &
+                 d_comm_local%do_thisS3(8,0:lsize), d_comm_local%S_do_buf3(0:lsize),  &
+                 d_comm_local%do_thisS4(8,0:lsize), d_comm_local%S_do_buf4(0:lsize),  &
+                 d_comm_local%send(8,0:lsize),      d_comm_local%recv(8,0:lsize),     &
+                 d_comm_local%cto_pe(0:lsize),      isL(8,0:lsize),jsL(8,0:lsize))
 #ifdef use_CAF
-      allocate(d_comm%Rcaf_idx(0:lsize))
-      d_comm%Rcaf_idx = 0
+         allocate(d_comm_local%Rcaf_idx(0:lsize))
+         d_comm_local%Rcaf_idx = 0
 #endif
       isL=0;jsL=0
-      d_comm%cto_pe=-1
-      d_comm%sendis=0; d_comm%sendie=0
-      d_comm%sendjs=0; d_comm%sendje=0;
-      d_comm%S_msize=0
-      d_comm%S_do_buf=.false.
-      d_comm%do_thisS=.false.
-
+         d_comm_local%cto_pe=-1
+         d_comm_local%S_msize=0
+         d_comm_local%S_do_buf=.false.
+         d_comm_local%do_thisS=.false.
+       d_comm_local%S_msize2=0
+       d_comm_local%do_thisS2=.false.
+       d_comm_local%S_do_buf3=.false.
+       d_comm_local%do_thisS3=.false.
+       d_comm_local%S_do_buf4=.false.
+       d_comm_local%do_thisS4=.false.
       ioff = domain%x%data%begin
       joff = domain%y%data%begin
 
       do list = 0,lsize
          m = mod( domain%pos+list, lsize+1 )
-         if( .NOT.domain%list(m)%overlap )cycle
-         d_comm%S_do_buf(list) = .true.
-         d_comm%cto_pe(list) = domain%list(m)%pe
-         to_pe = d_comm%cto_pe(list)
+          d_comm_local%cto_pe(list) = Dom%list(m)%pe
+          if( .NOT. ANY(Dom%list(m)%overlap) )cycle
+
+            to_pe = d_comm_local%cto_pe(list)
 #ifdef use_CAF
-         d_comm%Rcaf_idx(to_pe) = list   ! local CAF pe needs to know it's position in remote CAF list
+            d_comm_local%Rcaf_idx(to_pe) = list   ! local CAF pe needs to know it's position in remote CAF list
 #endif
-         if( send_w .AND. domain%list(m)%send_w%overlap )then
-             d_comm%do_thisS(1,list)=.true.
-             is = domain%list(m)%send_w%is; ie = domain%list(m)%send_w%ie
-             js = domain%list(m)%send_w%js; je = domain%list(m)%send_w%je
-             if( grid_offset_type.NE.AGRID )then
-                 is = domain%list(m)%send_w_off%is; ie = domain%list(m)%send_w_off%ie
-                 js = domain%list(m)%send_w_off%js; je = domain%list(m)%send_w_off%je
+            do l = 1, 8  ! loop over 8 direction
+             if(send(l)) then
+                if( Dom%list(m)%send(l)%overlap(1) ) then
+                  d_comm_local%do_thisS(l,list)=.true.
+                   is = Dom%list(m)%send(l)%is;       ie = Dom%list(m)%send(l)%ie
+                   js = Dom%list(m)%send(l)%js;       je = Dom%list(m)%send(l)%je
+                   d_comm_local%send(l,list)%is = is; d_comm_local%send(l,list)%ie = ie
+                   d_comm_local%send(l,list)%js = js; d_comm_local%send(l,list)%je = je
+                   d_comm_local%S_msize(l,list) = (ie-is+1)*(je-js+1)*ksize
+                   d_comm_local%send(l,list)%rotation = Dom%list(m)%send(l)%rotation 
+                end if
+                if( Dom%list(m)%send(l)%overlap(2) ) then
+                   d_comm_local%do_thisS2(l,list)=.true.
+                   d_comm_local%send(l,list)%n = Dom%list(m)%send(l)%n
+                   d_comm_local%send(l,list)%i => Dom%list(m)%send(l)%i
+                   d_comm_local%send(l,list)%j => Dom%list(m)%send(l)%j
+                   d_comm_local%S_msize(l,list) = d_comm_local%S_msize(l,list)+d_comm_local%send(l,list)%n*ksize 
+                end if
+                if( Dom%list(m)%send(l)%overlap(3) ) then
+                   is = Dom%list(m)%send(l)%is; ie = Dom%list(m)%send(l)%ie
+                   js = Dom%list(m)%send(l)%js; je = Dom%list(m)%send(l)%je
+                   d_comm_local%do_thisS3(l,list)=.true.
+                   d_comm_local%send(l,list)%is = is; d_comm_local%send(l,list)%ie = ie
+                   d_comm_local%send(l,list)%js = js; d_comm_local%send(l,list)%je = je
+                   d_comm_local%S_msize2(l,list) = (ie-is+1)*(je-js+1)*ksize
+                   d_comm_local%send(l,list)%rotation = Dom%list(m)%send(l)%rotation
+                   !               isL(l,list) = is-ioff+1; jsL(l,list) = js-joff+1
+                end if
+                if( Dom%list(m)%send(l)%overlap(4) ) then
+                   d_comm_local%do_thisS4(l,list)=.true.
+                   d_comm_local%send(l,list)%i2 = Dom%list(m)%send(l)%i2
+                   d_comm_local%send(l,list)%j2 = Dom%list(m)%send(l)%j2
+                end if
              end if
-             d_comm%sendis(1,list)=is; d_comm%sendie(1,list)=ie
-             d_comm%sendjs(1,list)=js; d_comm%sendje(1,list)=je
-             d_comm%S_msize(1,list) = (ie-is+1)*(je-js+1)*ke
-             isL(1,list) = is-ioff+1; jsL(1,list) = js-joff+1
-         end if
-         if( send_nw .AND. domain%list(m)%send_nw%overlap )then
-             d_comm%do_thisS(2,list)=.true.
-             is = domain%list(m)%send_nw%is; ie = domain%list(m)%send_nw%ie
-             js = domain%list(m)%send_nw%js; je = domain%list(m)%send_nw%je
-             if( grid_offset_type.NE.AGRID )then
-                 is = domain%list(m)%send_nw_off%is; ie = domain%list(m)%send_nw_off%ie
-                 js = domain%list(m)%send_nw_off%js; je = domain%list(m)%send_nw_off%je
-             end if
-             d_comm%sendis(2,list)=is; d_comm%sendie(2,list)=ie
-             d_comm%sendjs(2,list)=js; d_comm%sendje(2,list)=je
-             d_comm%S_msize(2,list) = (ie-is+1)*(je-js+1)*ke
-             isL(2,list) = is-ioff+1; jsL(2,list) = js-joff+1
-         end if
-         if( send_n .AND. domain%list(m)%send_n%overlap )then
-             d_comm%do_thisS(3,list)=.true.
-             is = domain%list(m)%send_n%is; ie = domain%list(m)%send_n%ie
-             js = domain%list(m)%send_n%js; je = domain%list(m)%send_n%je
-             if( grid_offset_type.NE.AGRID )then
-                 is = domain%list(m)%send_n_off%is; ie = domain%list(m)%send_n_off%ie
-                 js = domain%list(m)%send_n_off%js; je = domain%list(m)%send_n_off%je
-             end if
-             d_comm%sendis(3,list)=is; d_comm%sendie(3,list)=ie
-             d_comm%sendjs(3,list)=js; d_comm%sendje(3,list)=je
-             d_comm%S_msize(3,list) = (ie-is+1)*(je-js+1)*ke
-             isL(3,list) = is-ioff+1; jsL(3,list) = js-joff+1
-         end if
-         if( send_ne .AND. domain%list(m)%send_ne%overlap )then
-             d_comm%do_thisS(4,list)=.true.
-             is = domain%list(m)%send_ne%is; ie = domain%list(m)%send_ne%ie
-             js = domain%list(m)%send_ne%js; je = domain%list(m)%send_ne%je
-             if( grid_offset_type.NE.AGRID )then
-                 is = domain%list(m)%send_ne_off%is; ie = domain%list(m)%send_ne_off%ie
-                 js = domain%list(m)%send_ne_off%js; je = domain%list(m)%send_ne_off%je
-             end if
-             d_comm%sendis(4,list)=is; d_comm%sendie(4,list)=ie
-             d_comm%sendjs(4,list)=js; d_comm%sendje(4,list)=je
-             d_comm%S_msize(4,list) = (ie-is+1)*(je-js+1)*ke
-             isL(4,list) = is-ioff+1; jsL(4,list) = js-joff+1
-         end if
-         if( send_e .AND. domain%list(m)%send_e%overlap )then
-             d_comm%do_thisS(5,list)=.true.
-             is = domain%list(m)%send_e%is; ie = domain%list(m)%send_e%ie
-             js = domain%list(m)%send_e%js; je = domain%list(m)%send_e%je
-             if( grid_offset_type.NE.AGRID )then
-                 is = domain%list(m)%send_e_off%is; ie = domain%list(m)%send_e_off%ie
-                 js = domain%list(m)%send_e_off%js; je = domain%list(m)%send_e_off%je
-             end if
-             d_comm%sendis(5,list)=is; d_comm%sendie(5,list)=ie
-             d_comm%sendjs(5,list)=js; d_comm%sendje(5,list)=je
-             d_comm%S_msize(5,list) = (ie-is+1)*(je-js+1)*ke
-             isL(5,list) = is-ioff+1; jsL(5,list) = js-joff+1
-         end if
-         if( send_se .AND. domain%list(m)%send_se%overlap )then
-             d_comm%do_thisS(6,list)=.true.
-             is = domain%list(m)%send_se%is; ie = domain%list(m)%send_se%ie
-             js = domain%list(m)%send_se%js; je = domain%list(m)%send_se%je
-             if( grid_offset_type.NE.AGRID )then
-                 is = domain%list(m)%send_se_off%is; ie = domain%list(m)%send_se_off%ie
-                 js = domain%list(m)%send_se_off%js; je = domain%list(m)%send_se_off%je
-             end if
-             d_comm%sendis(6,list)=is; d_comm%sendie(6,list)=ie
-             d_comm%sendjs(6,list)=js; d_comm%sendje(6,list)=je
-             d_comm%S_msize(6,list) = (ie-is+1)*(je-js+1)*ke
-             isL(6,list) = is-ioff+1; jsL(6,list) = js-joff+1
-         end if
-         if( send_s .AND. domain%list(m)%send_s%overlap )then
-             d_comm%do_thisS(7,list)=.true.
-             is = domain%list(m)%send_s%is; ie = domain%list(m)%send_s%ie
-             js = domain%list(m)%send_s%js; je = domain%list(m)%send_s%je
-             if( grid_offset_type.NE.AGRID )then
-                 is = domain%list(m)%send_s_off%is; ie = domain%list(m)%send_s_off%ie
-                 js = domain%list(m)%send_s_off%js; je = domain%list(m)%send_s_off%je
-             end if
-             d_comm%sendis(7,list)=is; d_comm%sendie(7,list)=ie
-             d_comm%sendjs(7,list)=js; d_comm%sendje(7,list)=je
-             d_comm%S_msize(7,list) = (ie-is+1)*(je-js+1)*ke
-             isL(7,list) = is-ioff+1; jsL(7,list) = js-joff+1
-         end if
-         if( send_sw .AND. domain%list(m)%send_sw%overlap )then
-             d_comm%do_thisS(8,list)=.true.
-             is = domain%list(m)%send_sw%is; ie = domain%list(m)%send_sw%ie
-             js = domain%list(m)%send_sw%js; je = domain%list(m)%send_sw%je
-             if( grid_offset_type.NE.AGRID )then
-                 is = domain%list(m)%send_sw_off%is; ie = domain%list(m)%send_sw_off%ie
-                 js = domain%list(m)%send_sw_off%js; je = domain%list(m)%send_sw_off%je
-             end if
-             d_comm%sendis(8,list)=is; d_comm%sendie(8,list)=ie
-             d_comm%sendjs(8,list)=js; d_comm%sendje(8,list)=je
-             d_comm%S_msize(8,list) = (ie-is+1)*(je-js+1)*ke
-             isL(8,list) = is-ioff+1; jsL(8,list) = js-joff+1
-         end if
-         if(.not.ANY(d_comm%do_thisS(:,list)))d_comm%S_do_buf(list) = .false.
+            enddo
+          if(ANY(d_comm_local%do_thisS (:,list)))d_comm_local%S_do_buf (list) = .true.
+          if(ANY(d_comm_local%do_thisS2(:,list)))d_comm_local%S_do_buf (list) = .true.
+          if(ANY(d_comm_local%do_thisS3(:,list)))d_comm_local%S_do_buf3(list) = .true.
+          if(ANY(d_comm_local%do_thisS4(:,list)))d_comm_local%S_do_buf4(list) = .true.
 #ifdef use_GSM
-         if(d_comm%S_do_buf(list))then
+            if(d_comm_local%S_do_buf(list))then
            if(.not.use_shmem_ptr)then  ! address is from GLOBAL_ALLOC
              if(.not.PRESENT(l_addr2))then
                call mpp_send(l_addr(1), plen=list_size, to_pe=to_pe )
@@ -373,190 +261,144 @@ contains
            endif
            call mpp_send(isL(1,list), plen=8, to_pe=to_pe )
            call mpp_send(jsL(1,list), plen=8, to_pe=to_pe )
-           call mpp_send(isize, plen=1, to_pe=to_pe )
-           call mpp_send(jsize, plen=1, to_pe=to_pe )
+             call mpp_send(isize(n), plen=1, to_pe=to_pe )
+             call mpp_send(jsize(n), plen=1, to_pe=to_pe )
          endif
 #endif
       end do
 
       call mpp_sync_self()
 !recv
-      d_comm%Rlist_size = size(domain%list(:))
+       d_comm_local%Rlist_size = size(Dom%list(:))
 
-      rsize = d_comm%Rlist_size-1
-      allocate(d_comm%recvis(8,0:rsize), d_comm%recvie(8,0:rsize), &
-               d_comm%recvjs(8,0:rsize), d_comm%recvje(8,0:rsize), &
-               d_comm%R_msize(8,0:rsize), d_comm%do_thisR(2,8,0:rsize))
-      allocate(d_comm%cfrom_pe(0:rsize), d_comm%R_do_buf(0:rsize))
-      allocate(d_comm%isizeR(0:rsize), d_comm%jsizeR(0:rsize))
-      allocate(d_comm%sendisR(8,0:rsize), d_comm%sendjsR(8,0:rsize))
+         rsize = d_comm_local%Rlist_size-1
+       allocate(d_comm_local%R_msize(8,0:rsize),   d_comm_local%R_msize2(8,0:rsize), &
+                d_comm_local%do_thisR(8,0:rsize),  d_comm_local%R_do_buf(0:rsize),   &
+                d_comm_local%do_thisR2(8,0:rsize),                                   &
+                d_comm_local%do_thisR3(8,0:rsize), d_comm_local%R_do_buf3(0:rsize),  &
+                d_comm_local%do_thisR4(8,0:rsize), d_comm_local%R_do_buf4(0:rsize),  &
+                d_comm_local%isizeR(0:rsize),      d_comm_local%jsizeR(0:rsize),     &
+                d_comm_local%sendisR(8,0:rsize),   d_comm_local%sendjsR(8,0:rsize),  &
+                d_comm_local%cfrom_pe(0:rsize) )
 #ifdef use_GSM
       if(.not.PRESENT(l_addr2))then                                 
-        allocate(d_comm%rem_addrl(list_size,0:rsize))
-        d_comm%rem_addrl=-9999
+            allocate(d_comm_local%rem_addrl(list_size,0:rsize))
+            d_comm_local%rem_addrl=-9999
       else
-        allocate(d_comm%rem_addrlx(list_size,0:rsize),d_comm%rem_addrly(list_size,0:rsize))
-        d_comm%rem_addrlx=-9999; d_comm%rem_addrly=-9999
+            allocate(d_comm_local%rem_addrlx(list_size,0:rsize),d_comm_local%rem_addrly(list_size,0:rsize))
+            d_comm_local%rem_addrlx=-9999; d_comm_local%rem_addrly=-9999
       endif
 #endif
 
-      d_comm%cfrom_pe=-1
-      d_comm%recvis=0; d_comm%recvie=0
-      d_comm%recvjs=0; d_comm%recvje=0;
-      d_comm%R_msize=0
-      d_comm%R_do_buf=.false.
-      d_comm%do_thisR=.false.
-      d_comm%isizeR=0; d_comm%jsizeR=0
-      d_comm%sendisR=0; d_comm%sendjsR=0
+         d_comm_local%cfrom_pe=-1
+         d_comm_local%R_msize=0
+         d_comm_local%R_do_buf=.false.
+         d_comm_local%do_thisR=.false.
+       d_comm_local%do_thisR2 = .false.
+       d_comm_local%R_do_buf3 = .false.
+       d_comm_local%do_thisR3 = .false.
+       d_comm_local%R_do_buf4 = .false.
+       d_comm_local%do_thisR4 = .false.
+       d_comm_local%R_msize2=0
+         d_comm_local%isizeR=0; d_comm_local%jsizeR=0
+         d_comm_local%sendisR=0; d_comm_local%sendjsR=0
       do list = 0,rsize
-         m = mod( domain%pos+rsize+1-list, rsize+1 )
-         if( .NOT.domain%list(m)%overlap )cycle
-         d_comm%cfrom_pe(list) = domain%list(m)%pe
-         from_pe = d_comm%cfrom_pe(list)
-         d_comm%R_do_buf(list) = .true.
-         if( recv_e .AND. domain%list(m)%recv_e%overlap )then
-             d_comm%do_thisR(1,1,list)=.true.
-             is = domain%list(m)%recv_e%is; ie = domain%list(m)%recv_e%ie
-             js = domain%list(m)%recv_e%js; je = domain%list(m)%recv_e%je
-             if( grid_offset_type.NE.AGRID )then
-                 is = domain%list(m)%recv_e_off%is; ie = domain%list(m)%recv_e_off%ie
-                 js = domain%list(m)%recv_e_off%js; je = domain%list(m)%recv_e_off%je
+          m = mod( Dom%pos+rsize+1-list, rsize+1 )
+          d_comm_local%cfrom_pe(list) = Dom%list(m)%pe
+          if( .NOT. ANY(Dom%list(m)%overlap) )cycle
+          from_pe = d_comm_local%cfrom_pe(list)
+
+            do l = 1, 8  ! loop over 8 directions
+             if(recv(l)) then
+                if( Dom%list(m)%recv(l)%overlap(1) ) then
+                   d_comm_local%do_thisR(l,list)=.true.
+                   is = Dom%list(m)%recv(l)%is; ie = Dom%list(m)%recv(l)%ie
+                   js = Dom%list(m)%recv(l)%js; je = Dom%list(m)%recv(l)%je
+                   d_comm_local%recv(l,list)%is = is; d_comm_local%recv(l,list)%ie = ie
+                   d_comm_local%recv(l,list)%js = js; d_comm_local%recv(l,list)%je = je
+                   d_comm_local%R_msize(l,list) = (ie-is+1)*(je-js+1)*ksize
+                   d_comm_local%recv(l,list)%rotation = Dom%list(m)%recv(l)%rotation
+                end if
+                if( Dom%list(m)%recv(l)%overlap(2) ) then
+                   d_comm_local%do_thisR2(l,list)=.true.
+                   d_comm_local%recv(l,list)%n = Dom%list(m)%recv(l)%n
+                   d_comm_local%recv(l,list)%i => Dom%list(m)%recv(l)%i
+                   d_comm_local%recv(l,list)%j => Dom%list(m)%recv(l)%j
+                   d_comm_local%R_msize(l,list) = d_comm_local%R_msize(l,list)+d_comm_local%recv(l,list)%n*ksize
+                end if
+                if( Dom%list(m)%recv(l)%overlap(3) ) then
+                   is = Dom%list(m)%recv(l)%is; ie = Dom%list(m)%recv(l)%ie
+                   js = Dom%list(m)%recv(l)%js; je = Dom%list(m)%recv(l)%je
+                   d_comm_local%do_thisR3(l,list)=.true.
+                   d_comm_local%recv(l,list)%is = is; d_comm_local%recv(l,list)%ie = ie
+                   d_comm_local%recv(l,list)%js = js; d_comm_local%recv(l,list)%je = je
+                   d_comm_local%R_msize2(l,list) = (ie-is+1)*(je-js+1)*ksize
+                   d_comm_local%recv(l,list)%rotation = Dom%list(m)%recv(l)%rotation
+                end if
+                if( Dom%list(m)%recv(l)%overlap(4) ) then
+                   d_comm_local%do_thisR4(l,list)=.true.
+                   d_comm_local%recv(l,list)%i2 = Dom%list(m)%recv(l)%i2
+                   d_comm_local%recv(l,list)%j2 = Dom%list(m)%recv(l)%j2
+                end if
              end if
-             d_comm%recvis(1,list)=is; d_comm%recvie(1,list)=ie
-             d_comm%recvjs(1,list)=js; d_comm%recvje(1,list)=je
-             d_comm%R_msize(1,list) = (ie-is+1)*(je-js+1)*ke
-             if(domain%list(m)%recv_e%folded)d_comm%do_thisR(2,1,list)=.true.
-         end if
-         if( recv_se .AND. domain%list(m)%recv_se%overlap )then
-             d_comm%do_thisR(1,2,list)=.true.
-             is = domain%list(m)%recv_se%is; ie = domain%list(m)%recv_se%ie
-             js = domain%list(m)%recv_se%js; je = domain%list(m)%recv_se%je
-             if( grid_offset_type.NE.AGRID )then
-                 is = domain%list(m)%recv_se_off%is; ie = domain%list(m)%recv_se_off%ie
-                 js = domain%list(m)%recv_se_off%js; je = domain%list(m)%recv_se_off%je
-             end if
-             d_comm%recvis(2,list)=is; d_comm%recvie(2,list)=ie
-             d_comm%recvjs(2,list)=js; d_comm%recvje(2,list)=je
-             d_comm%R_msize(2,list) = (ie-is+1)*(je-js+1)*ke
-             if(domain%list(m)%recv_se%folded)d_comm%do_thisR(2,2,list)=.true.
-         end if
-         if( recv_s .AND. domain%list(m)%recv_s%overlap )then
-             d_comm%do_thisR(1,3,list)=.true.
-             is = domain%list(m)%recv_s%is; ie = domain%list(m)%recv_s%ie
-             js = domain%list(m)%recv_s%js; je = domain%list(m)%recv_s%je
-             if( grid_offset_type.NE.AGRID )then
-                 is = domain%list(m)%recv_s_off%is; ie = domain%list(m)%recv_s_off%ie
-                 js = domain%list(m)%recv_s_off%js; je = domain%list(m)%recv_s_off%je
-             end if
-             d_comm%recvis(3,list)=is; d_comm%recvie(3,list)=ie
-             d_comm%recvjs(3,list)=js; d_comm%recvje(3,list)=je
-             d_comm%R_msize(3,list) = (ie-is+1)*(je-js+1)*ke
-             if(domain%list(m)%recv_s%folded)d_comm%do_thisR(2,3,list)=.true.
-         end if
-         if( recv_sw .AND. domain%list(m)%recv_sw%overlap )then
-             d_comm%do_thisR(1,4,list)=.true.
-             is = domain%list(m)%recv_sw%is; ie = domain%list(m)%recv_sw%ie
-             js = domain%list(m)%recv_sw%js; je = domain%list(m)%recv_sw%je
-             if( grid_offset_type.NE.AGRID )then
-                 is = domain%list(m)%recv_sw_off%is; ie = domain%list(m)%recv_sw_off%ie
-                 js = domain%list(m)%recv_sw_off%js; je = domain%list(m)%recv_sw_off%je
-             end if
-             d_comm%recvis(4,list)=is; d_comm%recvie(4,list)=ie
-             d_comm%recvjs(4,list)=js; d_comm%recvje(4,list)=je
-             d_comm%R_msize(4,list) = (ie-is+1)*(je-js+1)*ke
-             if(domain%list(m)%recv_sw%folded)d_comm%do_thisR(2,4,list)=.true.
-         end if
-         if( recv_w .AND. domain%list(m)%recv_w%overlap )then
-             d_comm%do_thisR(1,5,list)=.true.
-             is = domain%list(m)%recv_w%is; ie = domain%list(m)%recv_w%ie
-             js = domain%list(m)%recv_w%js; je = domain%list(m)%recv_w%je
-             if( grid_offset_type.NE.AGRID )then
-                 is = domain%list(m)%recv_w_off%is; ie = domain%list(m)%recv_w_off%ie
-                 js = domain%list(m)%recv_w_off%js; je = domain%list(m)%recv_w_off%je
-             end if
-             d_comm%recvis(5,list)=is; d_comm%recvie(5,list)=ie
-             d_comm%recvjs(5,list)=js; d_comm%recvje(5,list)=je
-             d_comm%R_msize(5,list) = (ie-is+1)*(je-js+1)*ke
-             if(domain%list(m)%recv_w%folded)d_comm%do_thisR(2,5,list)=.true.
-         end if
-         if( recv_nw .AND. domain%list(m)%recv_nw%overlap )then
-             d_comm%do_thisR(1,6,list)=.true.
-             is = domain%list(m)%recv_nw%is; ie = domain%list(m)%recv_nw%ie
-             js = domain%list(m)%recv_nw%js; je = domain%list(m)%recv_nw%je
-             if( grid_offset_type.NE.AGRID )then
-                 is = domain%list(m)%recv_nw_off%is; ie = domain%list(m)%recv_nw_off%ie
-                 js = domain%list(m)%recv_nw_off%js; je = domain%list(m)%recv_nw_off%je
-             end if
-             d_comm%recvis(6,list)=is; d_comm%recvie(6,list)=ie
-             d_comm%recvjs(6,list)=js; d_comm%recvje(6,list)=je
-             d_comm%R_msize(6,list) = (ie-is+1)*(je-js+1)*ke
-             if(domain%list(m)%recv_nw%folded)d_comm%do_thisR(2,6,list)=.true.
-         end if
-         if( recv_n .AND. domain%list(m)%recv_n%overlap )then
-             d_comm%do_thisR(1,7,list)=.true.
-             is = domain%list(m)%recv_n%is; ie = domain%list(m)%recv_n%ie
-             js = domain%list(m)%recv_n%js; je = domain%list(m)%recv_n%je
-             if( grid_offset_type.NE.AGRID )then
-                 is = domain%list(m)%recv_n_off%is; ie = domain%list(m)%recv_n_off%ie
-                 js = domain%list(m)%recv_n_off%js; je = domain%list(m)%recv_n_off%je
-             end if
-             d_comm%recvis(7,list)=is; d_comm%recvie(7,list)=ie
-             d_comm%recvjs(7,list)=js; d_comm%recvje(7,list)=je
-             d_comm%R_msize(7,list) = (ie-is+1)*(je-js+1)*ke
-             if(domain%list(m)%recv_n%folded)d_comm%do_thisR(2,7,list)=.true.
-         end if
-         if( recv_ne .AND. domain%list(m)%recv_ne%overlap )then
-             d_comm%do_thisR(1,8,list)=.true.
-             is = domain%list(m)%recv_ne%is; ie = domain%list(m)%recv_ne%ie
-             js = domain%list(m)%recv_ne%js; je = domain%list(m)%recv_ne%je
-             if( grid_offset_type.NE.AGRID )then
-                 is = domain%list(m)%recv_ne_off%is; ie = domain%list(m)%recv_ne_off%ie
-                 js = domain%list(m)%recv_ne_off%js; je = domain%list(m)%recv_ne_off%je
-             end if
-             d_comm%recvis(8,list)=is; d_comm%recvie(8,list)=ie
-             d_comm%recvjs(8,list)=js; d_comm%recvje(8,list)=je
-             d_comm%R_msize(8,list) = (ie-is+1)*(je-js+1)*ke
-             if(domain%list(m)%recv_ne%folded)d_comm%do_thisR(2,8,list)=.true.
-         end if
-         if(.not.ANY(d_comm%do_thisR(1,:,list)))d_comm%R_do_buf(list) = .false.
+            enddo
+
+         if(ANY(d_comm_local%do_thisR (:,list)))d_comm_local%R_do_buf (list) = .true.
+         if(ANY(d_comm_local%do_thisR2(:,list)))d_comm_local%R_do_buf (list) = .true.
+         if(ANY(d_comm_local%do_thisR3(:,list)))d_comm_local%R_do_buf3(list) = .true.
+         if(ANY(d_comm_local%do_thisR4(:,list)))d_comm_local%R_do_buf4(list) = .true.
 #ifdef use_GSM
-         if(d_comm%R_do_buf(list))then
+            if(d_comm_local%R_do_buf(list))then
            if(.not.PRESENT(l_addr2))then
              if(use_shmem_ptr)then                          
                do i=1,list_size   
                  ptr = l_addr(i)
-                 d_comm%rem_addrl(i,list) = shmem_ptr(f,from_pe)
+                        d_comm_local%rem_addrl(i,list) = shmem_ptr(f,from_pe)
                end do
              else
-               call mpp_recv(d_comm%rem_addrl(1,list), glen=list_size, from_pe=from_pe )
+                     call mpp_recv(d_comm_local%rem_addrl(1,list), glen=list_size, from_pe=from_pe )
              endif
            else
              if(use_shmem_ptr)then
                do i=1,list_size
                  ptr  = l_addr(i)
                  ptr2 = l_addr2(i)
-                 d_comm%rem_addrlx(i,list) = shmem_ptr(f,from_pe)
-                 d_comm%rem_addrly(i,list) = shmem_ptr(f2,from_pe)
+                        d_comm_local%rem_addrlx(i,list) = shmem_ptr(f,from_pe)
+                        d_comm_local%rem_addrly(i,list) = shmem_ptr(f2,from_pe)
                end do
              else    
-               call mpp_recv(d_comm%rem_addrlx(1,list), glen=list_size, from_pe=from_pe )
-               call mpp_recv(d_comm%rem_addrly(1,list), glen=list_size, from_pe=from_pe )
+                     call mpp_recv(d_comm_local%rem_addrlx(1,list), glen=list_size, from_pe=from_pe )
+                     call mpp_recv(d_comm_local%rem_addrly(1,list), glen=list_size, from_pe=from_pe )
              endif
            endif
-           call mpp_recv(d_comm%sendisR(1,list), glen=8, from_pe=from_pe )
-           call mpp_recv(d_comm%sendjsR(1,list), glen=8, from_pe=from_pe )
-           call mpp_recv(d_comm%isizeR(list), glen=1, from_pe=from_pe )
-           call mpp_recv(d_comm%jsizeR(list), glen=1, from_pe=from_pe )
+               call mpp_recv(d_comm_local%sendisR(1,list), glen=8, from_pe=from_pe )
+               call mpp_recv(d_comm_local%sendjsR(1,list), glen=8, from_pe=from_pe )
+               call mpp_recv(d_comm_local%isizeR(list), glen=1, from_pe=from_pe )
+               call mpp_recv(d_comm_local%jsizeR(list), glen=1, from_pe=from_pe )
          endif
 #endif
       end do
 
-      d_comm%isize_max = isize; call mpp_max(d_comm%isize_max)
-      d_comm%jsize_max = jsize; call mpp_max(d_comm%jsize_max)
+      d_comm_local%isize_max = isize(n); call mpp_max(d_comm_local%isize_max)
+      d_comm_local%jsize_max = jsize(n); call mpp_max(d_comm_local%jsize_max)
 
-#if defined(use_libMPI) || defined(use_libSMA)
+      DEALLOCATE(isL,jsL)
+      d_comm_local%initialized = .true.
+      d_comm_local => NULL()
+   enddo
+
+!--- check the stack size
+#if (!defined(use_GSM)) && (!defined(use_CAF))
     ! Handles case where S_msize and/or R_msize are 0 size array
       msgsize = ( MAXVAL( (/0,sum(d_comm%S_msize(:,:))/) ) + MAXVAL( (/0,sum(d_comm%R_msize(:,:))/) ) ) * list_size
+      if( PRESENT(l_addr2) ) then
+         if( Associated(d_comm%y_comm) ) then
+            msgsize = msgsize + ( MAXVAL( (/0,sum(d_comm%y_comm%S_msize(:,:))/) ) + &
+                      MAXVAL( (/0,sum(d_comm%y_comm%R_msize(:,:))/) ) ) * list_size
+         else
+            msgsize = msgsize*2
+         end if
+      end if
       if(msgsize>0)then
          mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, msgsize )
          if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
@@ -566,10 +408,6 @@ contains
          end if
       end if
 #endif
-
-      DEALLOCATE(isL,jsL)
-
-      d_comm%initialized = .true.
 
     end function mpp_update_init_comm
 
@@ -589,10 +427,10 @@ contains
       integer,                    intent(in)    :: ksize_out 
 
       integer(LONG_KIND) :: domain_id
-      integer :: m, n, list
+      integer :: m, list
       integer :: is, ie, js, je, ke, ioff, joff, list_size
       integer :: isc, iec, jsc, jec
-      integer :: i, lsize,rsize,msgsize,this_pe,my_pe,to_pe,from_pe
+      integer :: i, lsize,rsize,msgsize,to_pe,from_pe
       integer,           allocatable,dimension(:) :: isL, jsL
       integer(LONG_KIND),allocatable,dimension(:,:) :: slist_addr
       real,dimension(*) :: f
@@ -776,7 +614,7 @@ contains
       d_comm%isize_max = isize_in; call mpp_max(d_comm%isize_max)
       d_comm%jsize_max = jsize_in; call mpp_max(d_comm%jsize_max)
 
-#if defined(use_libMPI) || defined(use_libSMA)
+#if (!defined(use_GSM)) && (!defined(use_CAF))
     ! Handles case where S_msize and/or R_msize are 0 size array
       msgsize = ( MAXVAL( (/0,sum(d_comm%S_msize(:,:))/) ) + MAXVAL( (/0,sum(d_comm%R_msize(:,:))/) ) ) * list_size
       if(msgsize>0)then
@@ -796,7 +634,8 @@ contains
     end function mpp_redistribute_init_comm
 
 
-    function mpp_global_field_init_comm(domain,l_addr,isize_g,jsize_g,isize_l,jsize_l,ksize,l_addr2,flags) RESULT(d_comm)
+    function mpp_global_field_init_comm(domain,l_addr,isize_g,jsize_g,isize_l, &
+                                        jsize_l, ksize,l_addr2,flags) RESULT(d_comm)
       type(DomainCommunicator2D), pointer       :: d_comm
       type(domain2D),target,      intent(in)    :: domain
       integer(LONG_KIND),         intent(in)    :: l_addr
@@ -809,11 +648,11 @@ contains
       integer, optional,          intent(in)    :: flags
 
       integer(LONG_KIND) :: domain_id
-      integer :: m, n, lpos, rpos, list
+      integer :: n, lpos, rpos, list, nlist, tile_id
       integer :: update_flags
       logical :: xonly, yonly
-      integer :: is, ie, js, je, ke, ioff, joff
-      integer :: i, lsize,rsize,msgsize,this_pe,my_pe,to_pe,from_pe
+      integer :: is, ie, js, je, ioff, joff, ishift, jshift
+      integer :: lsize,rsize,msgsize,to_pe,from_pe
       integer,           allocatable,dimension(:) :: isL, jsL
       integer(LONG_KIND),allocatable,dimension(:,:) :: slist_addr
       integer(LONG_KIND),save       ,dimension(2)   :: rem_addr
@@ -841,14 +680,17 @@ contains
           if( .NOT.xonly .AND. .NOT.yonly )call mpp_error( WARNING, 'MPP_GLOBAL_FIELD: you must have flags=XUPDATE or YUPDATE.' )
       end if
 
-      if( isize_g /= domain%x%global%size .OR. jsize_g /= domain%y%global%size ) &
+      !--- get shift size for global data, when domain is non-symmetry, ishift and jshift will be 0.
+      call mpp_get_global_shift(domain, isize_l, jsize_l, ishift, jshift)
+
+      if( isize_g /= (domain%x%global%size+ishift) .OR. jsize_g /= (domain%y%global%size+jshift) ) &
            call mpp_error( FATAL, 'MPP_GLOBAL_FIELD_INIT_COMM: incoming arrays do not match domain.' )
 
-      if( isize_l == domain%x%compute%size .AND. jsize_l == domain%y%compute%size )then
+      if( isize_l == (domain%x%compute%size+ishift) .AND. jsize_l == (domain%y%compute%size+jshift) )then
 !local is on compute domain                                                                      
         ioff = -domain%x%compute%begin + 1                                                       
         joff = -domain%y%compute%begin + 1
-      elseif( isize_l == domain%x%data%size .AND. jsize_l == domain%y%data%size )then
+      elseif( isize_l == (domain%x%data%size+ishift) .AND. jsize_l == (domain%y%data%size+jshift) )then
 !local is on data domain                                                                        
         ioff = -domain%x%data%begin + 1                                                         
         joff = -domain%y%data%begin + 1
@@ -892,16 +734,16 @@ contains
         d_comm%R_msize=0
         do list = 0,rsize
           rpos = mod(domain%x%pos+list,rsize+1)
-          d_comm%cfrom_pe(list) = domain%x%list(rpos)%pe
-          is = domain%x%list(rpos)%compute%begin; ie = domain%x%list(rpos)%compute%end
-          js = domain%y%compute%begin; je = domain%y%compute%end
+          from_pe = domain%x%list(rpos)%pe
+          d_comm%cfrom_pe(list) = from_pe
+          is = domain%list(from_pe)%x%compute%begin; ie = domain%list(from_pe)%x%compute%end + ishift
+          js = domain%y%compute%begin; je = domain%y%compute%end + jshift
           d_comm%recvis(1,list)=is; d_comm%recvie(1,list)=ie
           d_comm%recvjs(1,list)=js; d_comm%recvje(1,list)=je
-          d_comm%R_msize(1,list) = domain%x%list(rpos)%compute%size * domain%x%list(rpos)%compute%size * ksize
+          d_comm%R_msize(1,list) = (ie-is+1) * (je-js+1) * ksize
         end do
 
       elseif( yonly )then
-
 !send  
         d_comm%Slist_size = size(domain%y%list(:))
         lsize = d_comm%Slist_size-1
@@ -924,24 +766,30 @@ contains
         d_comm%R_msize=0
         do list = 0,rsize
           rpos = mod(domain%y%pos+list,rsize+1)
-          d_comm%cfrom_pe(list) = domain%y%list(rpos)%pe
-          is = domain%x%compute%begin; ie = domain%x%compute%end
-          js = domain%y%list(rpos)%compute%begin; je = domain%y%list(rpos)%compute%end
+          from_pe = domain%y%list(rpos)%pe
+          d_comm%cfrom_pe(list) = from_pe
+          is = domain%x%compute%begin; ie = domain%x%compute%end + ishift
+          js = domain%list(from_pe)%y%compute%begin; je = domain%list(from_pe)%y%compute%end + jshift
           d_comm%recvis(1,list)=is; d_comm%recvie(1,list)=ie
           d_comm%recvjs(1,list)=js; d_comm%recvje(1,list)=je
-          d_comm%R_msize(1,list) = domain%y%list(rpos)%compute%size * domain%y%list(rpos)%compute%size * ksize
+          d_comm%R_msize(1,list) = (ie-is+1) * (je-js+1) * ksize
         end do
 
       else
 
 !send
-        d_comm%Slist_size =  size(domain%list(:))
+        tile_id = domain%tile_id
+        d_comm%Slist_size =  count(domain%list(:)%tile_id == tile_id)
         lsize = d_comm%Slist_size-1
         allocate(d_comm%cto_pe(0:lsize))
         d_comm%cto_pe=-1
-        do list = 0,lsize
-          lpos = mod(domain%pos+lsize+1-list,lsize+1)
-          d_comm%cto_pe(list) = domain%list(lpos)%pe
+        n = 0
+        nlist = size(domain%list(:))        
+        do list = 0,nlist-1
+          lpos = mod(domain%pos+nlist-list,nlist)
+          if( domain%list(lpos)%tile_id .NE. tile_id ) cycle
+          d_comm%cto_pe(n) = domain%list(lpos)%pe
+          n = n+1
         end do
 !recv
         d_comm%Rlist_size = d_comm%Slist_size
@@ -954,18 +802,20 @@ contains
         d_comm%recvis=0; d_comm%recvie=0
         d_comm%recvjs=0; d_comm%recvje=0;
         d_comm%R_msize=0
-        do list = 0,rsize
-          rpos = mod(domain%pos+list,rsize+1)
-          d_comm%cfrom_pe(list) = domain%list(rpos)%pe
-          is = domain%list(rpos)%x%compute%begin; ie = domain%list(rpos)%x%compute%end
-          js = domain%list(rpos)%y%compute%begin; je = domain%list(rpos)%y%compute%end
-          d_comm%recvis(1,list)=is; d_comm%recvie(1,list)=ie
-          d_comm%recvjs(1,list)=js; d_comm%recvje(1,list)=je
-          d_comm%R_msize(1,list) = domain%list(rpos)%x%compute%size * domain%list(rpos)%y%compute%size * ksize
+        n = 0
+        do list = 0,nlist-1
+          rpos = mod(domain%pos+list,nlist)
+          if( domain%list(rpos)%tile_id .NE. tile_id ) cycle
+          d_comm%cfrom_pe(n) = domain%list(rpos)%pe
+          is = domain%list(rpos)%x%compute%begin; ie = domain%list(rpos)%x%compute%end + ishift
+          js = domain%list(rpos)%y%compute%begin; je = domain%list(rpos)%y%compute%end + jshift
+          d_comm%recvis(1,n)=is; d_comm%recvie(1,n)=ie
+          d_comm%recvjs(1,n)=js; d_comm%recvje(1,n)=je
+          d_comm%R_msize(1,n) = (je-js+1) * (ie-is+1) * ksize
+          n = n+1
         end do
 
       endif
-
 
 !send 
 
@@ -980,11 +830,11 @@ contains
       d_comm%S_msize=0
       do list = 0,lsize
         to_pe = d_comm%cto_pe(list)
-        is=domain%x%compute%begin; ie=domain%x%compute%end
-        js=domain%y%compute%begin; je=domain%y%compute%end
+        is=domain%x%compute%begin; ie=domain%x%compute%end + ishift
+        js=domain%y%compute%begin; je=domain%y%compute%end + jshift
         d_comm%sendis(1,list)=is; d_comm%sendie(1,list)=ie
         d_comm%sendjs(1,list)=js; d_comm%sendje(1,list)=je
-        d_comm%S_msize(1,list) = domain%x%compute%size * domain%y%compute%size * ksize
+        d_comm%S_msize(1,list) = (je-js+1) * (ie-is+1) * ksize
         isL(list) = ioff+domain%x%compute%begin; jsL(list) = joff+domain%y%compute%begin
 #ifdef use_GSM
         if(.not.use_shmem_ptr)then  ! address is from GLOBAL_ALLOC
@@ -1061,10 +911,12 @@ contains
       endif
 #endif
 
+#ifdef use_GSM
       d_comm%isize_max = isize_l; call mpp_max(d_comm%isize_max)
       d_comm%jsize_max = jsize_l; call mpp_max(d_comm%jsize_max)
+#endif
 
-#if defined(use_libMPI) || defined(use_libSMA)
+#if (!defined(use_GSM)) && (!defined(use_CAF))
     ! Handles case where S_msize and/or R_msize are 0 size array
       msgsize = MAXVAL( (/0,sum(d_comm%S_msize(:,:))/) ) + MAXVAL( (/0,sum(d_comm%R_msize(:,:))/) )
       if(msgsize>0)then
@@ -1150,7 +1002,7 @@ contains
       integer(LONG_KIND),optional,intent(in) :: l_addr2
 
       integer(LONG_KIND) :: dc_key,a_key
-      integer :: i,dc_idx,a_idx,i_idx,insert,insert_a,insert_i
+      integer :: dc_idx,a_idx,i_idx,insert,insert_a,insert_i
       integer :: a2_idx,insert_a2
 
 
@@ -1243,14 +1095,14 @@ contains
 
 
     function push_key(sorted,idx,n_idx,insert,key,ival)
-      integer(LONG_KIND),intent(inout),dimension(:) :: sorted
-      integer,           intent(inout),dimension(:) :: idx
-      integer,           intent(inout)              :: n_idx
-      integer,           intent(in)                 :: insert
-      integer(LONG_KIND),intent(in)                 :: key
-      integer,           intent(in)                 :: ival
+      integer(LONG_KIND),intent(inout),dimension(:)   :: sorted
+      integer,           intent(inout),dimension(-1:) :: idx  ! Start -1 to simplify first call logic in get_comm
+      integer,           intent(inout)                :: n_idx
+      integer,           intent(in)                   :: insert
+      integer(LONG_KIND),intent(in)                   :: key
+      integer,           intent(in)                   :: ival
 
-      integer                                       :: push_key,i
+      integer                                         :: push_key,i
 
       do i=n_idx,insert,-1
         sorted(i+1) = sorted(i)
@@ -1264,12 +1116,12 @@ contains
 
 
     subroutine pop_key(sorted,idx,n_idx,key_idx)
-      integer(LONG_KIND),intent(inout),dimension(:) :: sorted
-      integer,           intent(inout),dimension(:) :: idx
-      integer,           intent(inout)              :: n_idx
-      integer,           intent(in)                 :: key_idx
+      integer(LONG_KIND),intent(inout),dimension(:)   :: sorted
+      integer,           intent(inout),dimension(-1:) :: idx  ! Start -1 to simplify first call logic in get_comm
+      integer,           intent(inout)                :: n_idx
+      integer,           intent(in)                   :: key_idx
 
-      integer                                       :: i
+      integer                                         :: i
 
       do i=key_idx,n_idx-1
         sorted(i) = sorted(i+1)
@@ -1379,17 +1231,24 @@ contains
     end subroutine deallocate_comm
 
 
-    function set_domain_id(d_id,ksize,flags,gtype)
+    function set_domain_id(d_id,ksize,flags,gtype, position)
       integer(LONG_KIND), intent(in) :: d_id
       integer           , intent(in) :: ksize
       integer           , optional, intent(in) :: flags
       integer           , optional, intent(in) :: gtype
+      integer           , optional, intent(in) :: position
 
       integer(LONG_KIND)             :: set_domain_id
       
       set_domain_id=d_id + KE_BASE*int(ksize,KIND(d_id))
       if(PRESENT(flags))set_domain_id=set_domain_id+int(flags,KIND(d_id))
       if(PRESENT(gtype))set_domain_id=set_domain_id+GT_BASE*int(gtype,KIND(d_id))  ! Must be LONG_KIND arithmetic
+      !--- gtype is never been used to set id. we need to add position to calculate id to seperate
+      !--- BGRID and CGRID or scalar variable.
+      if(present(position)) then
+         set_domain_id=set_domain_id+GT_BASE*int(2**position, KIND(d_id))
+      endif
+
     end function set_domain_id
 
 
@@ -1406,65 +1265,88 @@ contains
 
 
 #ifdef use_CAF
+#undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
 !#define CAFPNTR_TYPE_1D_ cafptr_r8_1d_type
 !#define MPP_ASSOC_CAF_FIELD_1D_ associate_caf_field_r8_1d
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_r8_3d_type
+#undef MPP_ASSOC_CAF_FIELD_3D_
 #define MPP_ASSOC_CAF_FIELD_3D_ associate_caf_field_r8_3d
 #include <mpp_domains_comm.h>
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 !#define CAFPNTR_TYPE_1D_ cafptr_c8_1d_type
 !#define MPP_ASSOC_CAF_FIELD_1D_ associate_caf_field_c8_1d
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_c8_3d_type
+#undef MPP_ASSOC_CAF_FIELD_3D_
 #define MPP_ASSOC_CAF_FIELD_3D_ associate_caf_field_c8_3d
 #include <mpp_domains_comm.h>
 
 #ifndef no_8byte_integers
+#undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
 !#define CAFPNTR_TYPE_1D_ cafptr_i8_1d_type
 !#define MPP_ASSOC_CAF_FIELD_1D_ associate_caf_field_i8_1d
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_i8_3d_type
+#undef MPP_ASSOC_CAF_FIELD_3D_
 #define MPP_ASSOC_CAF_FIELD_3D_ associate_caf_field_i8_3d
 #include <mpp_domains_comm.h>
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ logical(LONG_KIND)
 !#define CAFPNTR_TYPE_1D_ cafptr_l8_1d_type
 !#define MPP_ASSOC_CAF_FIELD_1D_ associate_caf_field_l8_1d
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_l8_3d_type
+#undef MPP_ASSOC_CAF_FIELD_3D_
 #define MPP_ASSOC_CAF_FIELD_3D_ associate_caf_field_l8_3d
 #include <mpp_domains_comm.h>
 #endif
 
 #ifndef no_4byte_reals
+#undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 !#define CAFPNTR_TYPE_1D_ cafptr_r4_1d_type
 !#define MPP_ASSOC_CAF_FIELD_1D_ associate_caf_field_r4_1d
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_r4_3d_type
+#undef MPP_ASSOC_CAF_FIELD_3D_
 #define MPP_ASSOC_CAF_FIELD_3D_ associate_caf_field_r4_3d
 #include <mpp_domains_comm.h>
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
 !#define CAFPNTR_TYPE_1D_ cafptr_c4_1d_type
 !#define MPP_ASSOC_CAF_FIELD_1D_ associate_caf_field_c4_1d
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_c4_3d_type
+#undef MPP_ASSOC_CAF_FIELD_3D_
 #define MPP_ASSOC_CAF_FIELD_3D_ associate_caf_field_c4_3d
 #include <mpp_domains_comm.h>
 #endif
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
 !#define CAFPNTR_TYPE_1D_ cafptr_i4_1d_type
 !#define MPP_ASSOC_CAF_FIELD_1D_ associate_caf_field_i4_1d
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_i4_3d_type
+#undef MPP_ASSOC_CAF_FIELD_3D_
 #define MPP_ASSOC_CAF_FIELD_3D_ associate_caf_field_i4_3d
 #include <mpp_domains_comm.h>
 
+#undef MPP_TYPE_
 #define MPP_TYPE_ logical(INT_KIND)
 !#define CAFPNTR_TYPE_1D_ cafptr_l4_1d_type
 !#define MPP_ASSOC_CAF_FIELD_1D_ associate_caf_field_l4_1d
+#undef CAFPNTR_TYPE_3D_
 #define CAFPNTR_TYPE_3D_ cafptr_l4_3d_type
+#undef MPP_ASSOC_CAF_FIELD_3D_
 #define MPP_ASSOC_CAF_FIELD_3D_ associate_caf_field_l4_3d
 #include <mpp_domains_comm.h>                                                                      
 #endif
 
-end module mpp_domains_comm_mod

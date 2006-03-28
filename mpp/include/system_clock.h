@@ -36,8 +36,6 @@ end subroutine system_clock_sgi
 subroutine system_clock_mpi( count, count_rate, count_max )
 ! There can be one ONE baseline count0 and this routine is
 ! included in multiple places.
-  use mpp_data_mod, only: first_call_system_clock_mpi
-  use mpp_data_mod, only: mpi_count0, mpi_tick_rate
 !mimics F90 SYSTEM_CLOCK intrinsic
       integer(LONG_KIND), intent(out), optional :: count, count_rate, count_max
 !count must return a number between 0 and count_max
@@ -58,4 +56,18 @@ subroutine system_clock_mpi( count, count_rate, count_max )
       end if
       return
     end subroutine system_clock_mpi
+
+#else
+#define SYSTEM_CLOCK system_clock_default
+subroutine system_clock_default( count, count_rate, count_max )
+!mimics F90 SYSTEM_CLOCK intrinsic
+      integer(LONG_KIND), optional :: count, count_rate, count_max
+!count must return a number between 0 and count_max
+      integer                      :: count_int, count_rate_int, count_max_int 
+      call system_clock( count_int, count_rate_int, count_max_int)
+      if( PRESENT(count) )      count      = count_int
+      if( PRESENT(count_rate) ) count_rate = count_rate_int
+      if( PRESENT(count_max) )  count_max  = count_max_int
+      return
+    end subroutine system_clock_default
 #endif

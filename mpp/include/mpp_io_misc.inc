@@ -1,35 +1,6 @@
-module mpp_io_misc_mod
-#include <fms_platform.h>
 
-use mpp_mod,           only : mpp_init, stdin, stdout, stderr, stdlog, mpp_pe, mpp_npes, mpp_root_pe
-use mpp_mod,           only : mpp_error, FATAL, MPP_DEBUG, MPP_VERBOSE, mpp_sync, mpp_max
-use mpp_domains_mod,   only : mpp_domains_init, mpp_get_compute_domain, mpp_get_global_domain
-use mpp_domains_mod,   only : mpp_domains_version=>version, mpp_domains_tagname=>tagname
-use mpp_parameter_mod, only : NULLUNIT, NULLTIME, MPP_SINGLE, MPP_NETCDF
-use mpp_data_mod,      only : module_is_initialized=>mpp_io_is_initialized, maxunits
-use mpp_data_mod,      only : unit_begin, unit_end, debug=>debug_mpp_io, verbose=>verbose_mpp_io
-use mpp_data_mod,      only : default_axis, default_field, default_att, mpp_file
-use mpp_data_mod,      only : mpp_io_stack_hwm, text, pe, npes, error
-use mpp_datatype_mod,  only : filetype, axistype, fieldtype, atttype
-use mpp_io_util_mod,   only : mpp_set_unit_range, mpp_io_set_stack_size
-use mpp_io_util_mod,   only : mpp_io_util_version=>version, mpp_io_util_tagname=>tagname
-use mpp_domains_define_mod, only: mpp_domains_define_version=>version, mpp_domains_define_tagname=>tagname
-use mpp_domains_reduce_mod, only: mpp_domains_reduce_version=>version, mpp_domains_reduce_tagname=>tagname
-implicit none
-private
-
-public :: mpp_io_init, mpp_io_exit, netcdf_err, mpp_flush
-
-  character(len=128), private :: version= &
-       '$Id: mpp_io_misc.F90,v 12.0 2005/04/14 17:58:32 fms Exp $'
-  character(len=128), private :: tagname= &
-       '$Name: lima $'
-
-#ifdef use_netCDF
-#include <netcdf.inc>
-#endif
-
-contains
+! -*-f90-*-
+! $Id: mpp_io_misc.inc,v 13.0 2006/03/28 21:41:19 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -141,14 +112,6 @@ contains
       if( pe.EQ.mpp_root_pe() )then
           write( stdlog(),'(/a)' )'MPP_IO module '//trim(version)
           write( stdlog(),'( a)' )'MPP_IO module '//trim(tagname)
-          write( stdlog(),'(/a)' )'MPP_IO module '//trim(mpp_domains_version)
-          write( stdlog(),'( a)' )'MPP_IO module '//trim(mpp_domains_tagname)
-          write( stdlog(),'(/a)' )'MPP_IO module '//trim(mpp_io_util_version)
-          write( stdlog(),'( a)' )'MPP_IO module '//trim(mpp_io_util_tagname)
-          write( stdlog(),'(/a)' )'MPP_IO module '//trim(mpp_domains_define_version)
-          write( stdlog(),'( a)' )'MPP_IO module '//trim(mpp_domains_define_tagname)
-          write( stdlog(),'(/a)' )'MPP_IO module '//trim(mpp_domains_reduce_version)
-          write( stdlog(),'( a)' )'MPP_IO module '//trim(mpp_domains_reduce_tagname)
 #ifdef use_netCDF
           text = NF_INQ_LIBVERS()
           write( stdlog(),'(/a)' )'Using netCDF library version '//trim(text)
@@ -263,4 +226,3 @@ contains
     end subroutine mpp_flush
 
 
-end module mpp_io_misc_mod

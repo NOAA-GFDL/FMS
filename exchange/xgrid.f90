@@ -282,8 +282,8 @@ type xmap_type
 end type xmap_type
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: xgrid.f90,v 11.0 2004/09/28 19:59:01 fms Exp $'
- character(len=128) :: tagname = '$Name: lima $'
+ character(len=128) :: version = '$Id: xgrid.f90,v 13.0 2006/03/28 21:38:46 fms Exp $'
+ character(len=128) :: tagname = '$Name: memphis $'
 
  real, parameter                              :: EPS = 1.0e-10
  logical :: module_is_initialized = .FALSE.
@@ -377,7 +377,7 @@ integer, intent(in), optional :: id_di, id_dj
   integer, dimension(n_areas) :: i1, j1, i2, j2 ! xgrid quintuples
   real,    dimension(n_areas) :: area, di, dj     ! from grid file
   type (grid_type), pointer, save   :: grid1 =>NULL()
-  integer, dimension(0:xmap%npes-1) :: is_2, ie_2, js_2, je_2 ! side 2 decomp.
+
   integer :: start(4), nread(4), rcode, l, ll, ll_repro, p
 
   grid1 => xmap%grids(1)
@@ -473,7 +473,7 @@ subroutine get_grid(grid, grid_id, ncid)
   integer,         intent(in)    :: ncid
   character(len=3), intent(in)   :: grid_id
 
-  integer :: rcode, start(4), nread(4), id_lon, id_lat, i, j
+  integer :: rcode, start(4), nread(4), id_lon, id_lat
   real, dimension(grid%im) :: lonb
   real, dimension(grid%jm) :: latb
   real ::  d2r
@@ -540,10 +540,11 @@ end subroutine get_grid
 subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file )
   type (xmap_type),                          intent(inout) :: xmap
   character(len=3), dimension(:),            intent(in ) :: grid_ids
-  type(Domain2d), dimension(size(grid_ids(:))), intent(in ) :: grid_domains
+!!$  type(Domain2d), dimension(size(grid_ids(:))), intent(in ) :: grid_domains
+  type(Domain2d), dimension(:), intent(in ) :: grid_domains
   character(len=*)                         , intent(in ) :: grid_file
 
-  integer :: g, l, ll, p, n_areas, send_size, recv_size
+  integer :: g,     p, n_areas, send_size, recv_size
   integer :: ncid, i1_id, j1_id, i2_id, j2_id, area_id, di_id, dj_id
   integer :: dims(4), rcode
   integer :: unit
@@ -551,7 +552,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file )
   real, dimension(3) :: xxx
   real, dimension(:,:), allocatable :: check_data
   real, dimension(:,:,:), allocatable :: check_data_3D
-  integer :: i, j
+
   logical :: use_higher_order = .false.
 
   if(interp_method .ne. 'first_order')  use_higher_order = .true.
@@ -1011,7 +1012,7 @@ type (xmap_type),           intent(in) :: xmap
 character(len=3), optional, intent(in) :: grid_id
 logical, dimension(xmap%size), intent(out) :: some_arr
 
-  integer :: g, l
+  integer :: g
 
   if (.not.present(grid_id)) then
     some_arr = .true.
@@ -1043,7 +1044,7 @@ real, dimension(grid%is_me:grid%ie_me, &
 real, dimension(:    ), intent(inout) :: x
 type (xmap_type),       intent(in   ) :: xmap
 
-  integer                 :: k, l
+  integer                 ::   l
 
   do l=grid%first,grid%last
     x(l) = d(xmap%x2(l)%i,xmap%x2(l)%j,xmap%x2(l)%k)
@@ -1080,8 +1081,8 @@ function get_side_1(pe, im, jm)
 integer, intent(in)    :: pe, im, jm
 real, dimension(im,jm) :: get_side_1
 
-  real, dimension(im*jm) :: buf
-  integer :: i, j, l
+
+
 
 !  call mpp_recv(buf, im*jm, pe)
 !  l = 0
@@ -1404,7 +1405,7 @@ type (xmap_type),        intent(inout) :: xmap
 real, dimension(3)                     :: conservation_check_side1
 integer, intent(in), optional :: remap_method
 
-  real                       :: gsum
+
   real, dimension(xmap%size) :: x_over, x_back
   real, dimension(size(d,1),size(d,2)) :: d1
   real, dimension(:,:,:), allocatable  :: d2
@@ -1448,7 +1449,7 @@ type (xmap_type),       intent(inout)  :: xmap
 real, dimension(3)                     :: conservation_check_side2
 integer, intent(in), optional :: remap_method
 
-  real                       :: gsum
+
   real, dimension(xmap%size) :: x_over, x_back
   real, dimension(:,:  ), allocatable :: d1
   real, dimension(:,:,:), allocatable :: d2

@@ -1,3 +1,27 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!                                                                   !!
+!!                   GNU General Public License                      !!
+!!                                                                   !!
+!! This file is part of the Flexible Modeling System (FMS).          !!
+!!                                                                   !!
+!! FMS is free software; you can redistribute it and/or modify       !!
+!! it and are expected to follow the terms of the GNU General Public !!
+!! License as published by the Free Software Foundation.             !!
+!!                                                                   !!
+!! FMS is distributed in the hope that it will be useful,            !!
+!! but WITHOUT ANY WARRANTY; without even the implied warranty of    !!
+!! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the     !!
+!! GNU General Public License for more details.                      !!
+!!                                                                   !!
+!! You should have received a copy of the GNU General Public License !!
+!! along with FMS; if not, write to:                                 !!
+!!          Free Software Foundation, Inc.                           !!
+!!          59 Temple Place, Suite 330                               !!
+!!          Boston, MA  02111-1307  USA                              !!
+!! or see:                                                           !!
+!!          http://www.gnu.org/licenses/gpl.txt                      !!
+!!                                                                   !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 module horiz_interp_type_mod
 ! <CONTACT EMAIL="Zhi.Liang@noaa.gov"> Zhi Liang </CONTACT>
 
@@ -14,7 +38,7 @@ module horiz_interp_type_mod
 ! </DESCRIPTION>
 
 
-use mpp_mod, only : mpp_send, mpp_recv
+use mpp_mod, only : mpp_send, mpp_recv, mpp_sync_self
 
 
 implicit none
@@ -30,7 +54,8 @@ public :: horiz_interp_type, stats
    integer, dimension(:,:), pointer   :: ilon =>NULL(), jlat =>NULL()   !indices for conservative scheme
    real,    dimension(:,:), pointer   :: area_src =>NULL()              !area of the source grid
    real,    dimension(:,:), pointer   :: area_dst =>NULL()              !area of the destination grid
-   real,    dimension(:,:,:), pointer :: wti =>NULL(),wtj =>NULL()      !weights for bilinear interpolation 
+   real,    dimension(:,:,:), pointer :: wti =>NULL(),wtj =>NULL()      !weights for bilinear interpolation
+                                                                        !wti ist used for derivative "weights" in bicubic 
    integer, dimension(:,:,:), pointer :: i_lon =>NULL(), j_lat =>NULL() !indices for bilinear interpolation 
                                                                         !and spherical regrid
    real,    dimension(:,:,:), pointer :: src_dist =>NULL()              !distance between destination grid and 
@@ -45,6 +70,10 @@ public :: horiz_interp_type, stats
                                                             !=1, conservative scheme
                                                             !=2, bilinear interpolation
                                                             !=3, spherical regrid
+                                                            !=4, bicubic regrid
+   real,    dimension(:,:), pointer   :: rat_x =>NULL(), rat_y =>NULL() !the ratio of coordinates of the dest grid
+                                                                                ! (x_dest -x_src_r)/(x_src_l -x_src_r) and (y_dest -y_src_r)/(y_src_l -y_src_r)
+   real,    dimension(:), pointer     :: lon_in =>NULL(),  lat_in =>NULL()      !the coordinates of the source grid
  end type
 !</PUBLICTYPE>
 
@@ -110,6 +139,8 @@ contains
       buffer_int(2) = npts
       call mpp_send(buffer_int(1), plen=2, to_pe=root_pe)
     endif
+
+    call mpp_sync_self()
 
     return
 

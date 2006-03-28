@@ -87,7 +87,7 @@
 #define NF_GET_ATT_REAL nf_get_att_double
 #endif
 
-#if defined(__INTEL_COMPILER) || defined(__IBMC__)
+#if defined(__INTEL_COMPILER)
 #define _F95
 #define _F2000
 #endif

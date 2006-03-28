@@ -1,5 +1,5 @@
-// Fortran-callable routine for returning the MLD ("brick"?) where
-// this thread/process is located.
+/* Fortran-callable routine for returning the MLD ("brick"?) where
+   this thread/process is located. */
 #include <stdio.h>
 #include <unistd.h>
 #ifdef use_libMPI
@@ -26,7 +26,7 @@ int mld_id_() {
   pm_pginfo_t pginfo_buf;
   int thisdev, thisnode;
 
-  bzero( array, sizeof(array) ); // zero to force allocation
+  bzero( array, sizeof(array) ); /* zero to force allocation */
 
   __pm_get_page_info( array, 1, &pginfo_buf, 1 );
   thisdev = pginfo_buf.node_dev;
@@ -47,10 +47,10 @@ int find_nodenum(int mynodedev) {
 
 }
 #else
-int mld_id_() { // dummy routine for portability
+int mld_id_() { /* dummy routine for portability */
   return 0;
 }
-#endif // sgi
+#endif /* sgi */
 
 #ifdef test_threadloc
 void main(int argc, char **argv) {

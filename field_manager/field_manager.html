@@ -302,7 +302,7 @@ file_out = RESTART/ocean_age.res.nc/</pre>   The field table consists of entries
 <td> fm_type_name_len  </td><td> integer, parameter  </td><td> 8  </td><td> ---  </td><td>    The length of a character string representing the various types that the values of the field can take.   </td>
 </tr>
 <tr>
-<td> NUM_MODELS  </td><td> integer, parameter  </td><td> 5  </td><td> ---  </td><td>    Number of models (ATMOS, OCEAN, LAND, ICE and DEFAULT).   </td>
+<td> NUM_MODELS  </td><td> integer, parameter  </td><td> 5  </td><td> ---  </td><td>    Number of models (ATMOS, OCEAN, LAND, ICE, COUPLER).   </td>
 </tr>
 <tr>
 <td> NO_FIELD  </td><td> integer, parameter  </td><td> -1  </td><td> ---  </td><td>    The value returned if a field is not defined.   </td>
@@ -320,10 +320,10 @@ file_out = RESTART/ocean_age.res.nc/</pre>   The field table consists of entries
 <td> MODEL_ICE  </td><td> integer, parameter  </td><td> 4  </td><td> ---  </td><td>    Ice model.   </td>
 </tr>
 <tr>
-<td> MODEL_COUPLER  </td><td> integer, parameter  </td><td> 6  </td><td> ---  </td><td>    Ice model.   </td>
+<td> MODEL_COUPLER  </td><td> integer, parameter  </td><td> 5  </td><td> ---  </td><td>    Ice model.   </td>
 </tr>
 <tr>
-<td> MODEL_DEFAULT  </td><td> integer, parameter  </td><td> 5  </td><td> ---  </td><td>    Default model.   </td>
+<td> MODEL_NAMES  </td><td> character(len=11), parameter  </td><td> ---  </td><td> ---  </td><td>    Model names, e.g. MODEL_NAMES(MODEL_OCEAN) is 'oceanic'   </td>
 </tr>
 </table>
 <br>
@@ -1577,6 +1577,20 @@ file_out = RESTART/ocean_age.res.nc/</pre>   The field table consists of entries
 <span class="errmsg">Unterminated field in field entry.</span>
 </dd>
 <dd>   There is an unterminated or unquoted string in the field table entry. </dd>
+<dt>
+<b>FATAL in field_manager_init</b>
+</dt>
+<dd>
+<span class="errmsg">Unterminated field in field entry.</span>
+</dd>
+<dd>   Bad format for field entry (comma without equals sign) </dd>
+<dt>
+<b>FATAL in field_manager_init</b>
+</dt>
+<dd>
+<span class="errmsg">Unterminated field in field entry.</span>
+</dd>
+<dd>   Too many fields in field entry </dd>
 <dt>
 <b>FATAL in field_manager_init</b>
 </dt>
