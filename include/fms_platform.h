@@ -1,3 +1,6 @@
+#ifndef __FMS_PLATFORM_
+#define __FMS_PLATFORM_
+
 ! -*-f90-*-*
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!                                                                   !!
@@ -60,12 +63,19 @@
 #define POINTER_KIND 8
 #else
 !these might be different on non-SGICRAY, I believe
+! Warning: these numbers may not map to byte sizes for all compilers
 #define DOUBLE_KIND 8
 #define FLOAT_KIND 4
 #define LONG_KIND 8
 #define INT_KIND 4
 #define SHORT_KIND 2
+#ifndef _32bits
 #define POINTER_KIND 8
+!DEC$ MESSAGE:'Using 8-byte addressing'
+#else
+#define POINTER_KIND 4
+!DEC$ MESSAGE:'Using 4-byte addressing'
+#endif
 #endif
 
 #ifdef sgi_generic
@@ -112,5 +122,5 @@
 #define _ALLOCATED ASSOCIATED
 #endif
 
-
-
+! __FMS_PLATFORM_
+#endif

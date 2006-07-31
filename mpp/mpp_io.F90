@@ -318,7 +318,8 @@ use mpp_mod,            only : mpp_error, FATAL, WARNING, NOTE, stdin, stdout, s
 use mpp_mod,            only : mpp_pe, mpp_root_pe, mpp_npes, lowercase, mpp_transmit
 use mpp_mod,            only : mpp_init, mpp_sync
 use mpp_domains_mod,    only : domain1d, domain2d, NULL_DOMAIN1D, mpp_domains_init
-use mpp_domains_mod,    only : mpp_get_global_domain, mpp_get_compute_domain, mpp_get_data_domain
+use mpp_domains_mod,    only : mpp_get_global_domain, mpp_get_compute_domain
+use mpp_domains_mod,    only :  mpp_get_data_domain, mpp_get_memory_domain
 use mpp_domains_mod,    only : mpp_update_domains, mpp_global_field, mpp_domain_is_symmetry
 use mpp_domains_mod,    only : operator( .NE. )
 
@@ -770,6 +771,8 @@ private
   character(len=256) :: text
   integer            :: error
   integer            :: records_per_pe
+!initial value of buffer between meta_data and data in .nc file
+  integer            :: header_buffer_val = 0 
   real(DOUBLE_KIND), allocatable :: mpp_io_stack(:)
   type(axistype),save            :: default_axis      !provided to users with default components
   type(fieldtype),save           :: default_field     !provided to users with default components
@@ -778,9 +781,9 @@ private
 
 
   character(len=128) :: version= &
-       '$Id: mpp_io.F90,v 13.0 2006/03/28 21:42:28 fms Exp $'
+       '$Id: mpp_io.F90,v 13.0.2.1.2.1 2006/05/18 15:56:44 pjp Exp $'
   character(len=128) :: tagname= &
-       '$Name: memphis $'
+       '$Name: memphis_2006_07 $'
 
 contains
 
@@ -797,12 +800,12 @@ program mpp_io_test
 #include <fms_platform.h>
 
   use mpp_mod,         only : mpp_init, mpp_pe, mpp_npes, mpp_root_pe, mpp_error
-  use mpp_mod,         only : FATAL, mpp_chksum, MPP_DEBUG, mpp_set_stack_size
-  use mpp_mod,         only : mpp_broadcast, mpp_sync, mpp_exit
+  use mpp_mod,         only : FATAL, NOTE, mpp_chksum, MPP_DEBUG, mpp_set_stack_size
+  use mpp_mod,         only : mpp_sync, mpp_exit
   use mpp_domains_mod, only : mpp_define_domains, mpp_domains_set_stack_size, domain1D
   use mpp_domains_mod, only : domain2D, mpp_define_layout, mpp_get_domain_components
-  use mpp_domains_mod, only : mpp_get_data_domain, mpp_get_compute_domain, mpp_domains_exit
-  use mpp_domains_mod, only : CENTER, EAST, NORTH, CORNER
+  use mpp_domains_mod, only : mpp_get_memory_domain, mpp_get_compute_domain, mpp_domains_exit
+  use mpp_domains_mod, only : CENTER, EAST, NORTH, CORNER, mpp_get_data_domain
   use mpp_io_mod,      only : mpp_io_init, mpp_write_meta, axistype, fieldtype, atttype
   use mpp_io_mod,      only : MPP_RDONLY, mpp_open, MPP_OVERWR, MPP_ASCII, MPP_SINGLE
   use mpp_io_mod,      only : MPP_NETCDF, MPP_MULTI, mpp_get_atts, mpp_write, mpp_close
@@ -825,7 +828,6 @@ program mpp_io_test
   integer        :: pe, npes
   type(domain2D) :: domain
 
-  integer            :: is, ie, js, je, isd, ied, jsd, jed
   integer            :: tk, tk0, tks_per_sec
   integer            :: i,j,k, unit=7, layout(2)
   logical            :: opened
@@ -874,12 +876,15 @@ program mpp_io_test
 
   write( file,'(a,i3.3)' )trim(file), npes
 
-  call test_netcdf_io(.false., CENTER)
-  call test_netcdf_io(.true. , CENTER)
-  call test_netcdf_io(.true. , EAST)
-  call test_netcdf_io(.true. , NORTH)
-  call test_netcdf_io(.true. , CORNER)
-
+  call test_netcdf_io('Simple')
+  call test_netcdf_io('Symmetry T_cell')
+  call test_netcdf_io('Symmetry E_cell')
+  call test_netcdf_io('Symmetry N_cell')
+  call test_netcdf_io('Symmetry C_cell')
+  call test_netcdf_io('Symmetry T_cell memory')
+  call test_netcdf_io('Symmetry E_cell memory')
+  call test_netcdf_io('Symmetry N_cell memory')
+  call test_netcdf_io('Symmetry C_cell memory')
   call mpp_io_exit()
   call mpp_domains_exit()
   call mpp_exit()
@@ -888,64 +893,66 @@ program mpp_io_test
 
   !------------------------------------------------------------------
 
-  subroutine test_netcdf_io(symmetry, position)
-  logical, intent(in) :: symmetry
-  integer, intent(in) :: position
-  integer :: ishift, jshift
-  character(len=32) :: type
+  subroutine test_netcdf_io(type)
+  character(len=*), intent(in) :: type
 
-  !--- when the domain is symmetry, some shift may be needed.
+  integer :: is, ie, js, je, isd, ied, jsd, jed, ism, iem, jsm, jem
+  integer :: ishift, jshift, msize(2), ioff, joff
+  logical :: symmetry
 
-  ishift = 0; jshift = 0
-  if(symmetry) then
-     select case (position)
-     case (CENTER)
-        type = "symmetry_T"
-     case (EAST)
-        type = "symmetry_E"
-        ishift = 1
-     case (NORTH)
-        type = "symmetry_N"
-        jshift = 1
-     case (CORNER)
-        type = "symmetry_C"
-        ishift = 1; jshift = 1
-     end select
-  else
-     type = "non_symmetry"
-  end if
+  !--- determine the shift and symmetry according to type, 
+  select case(type)
+  case('Simple')
+     ishift = 0; jshift = 0; symmetry = .false.
+  case('Symmetry T_cell', 'Symmetry T_cell memory')
+     ishift = 0; jshift = 0; symmetry = .true.
+  case('Symmetry E_cell', 'Symmetry E_cell memory')
+     ishift = 1; jshift = 0; symmetry = .true.
+  case('Symmetry N_cell', 'Symmetry N_cell memory')
+     ishift = 0; jshift = 1; symmetry = .true.
+  case('Symmetry C_cell', 'Symmetry C_cell memory')
+     ishift = 1; jshift = 1; symmetry = .true.
+  case default
+     call mpp_error(FATAL, "type = "//type//" is not a valid test type")
+  end select
 
 !define global data array
   allocate( gdata(nx+ishift,ny+jshift,nz) )
-  if( pe.EQ.mpp_root_pe() )then
-!      call random_number(gdata) )
-!fill in global array: with k.iiijjj
-      gdata = 0.
-      do k = 1,nz
-         do j = 1,ny+jshift
-            do i = 1,nx+ishift
-               gdata(i,j,k) = k + i*1e-3 + j*1e-6
-            end do
-         end do
-      end do
-  end if
-  call mpp_broadcast( gdata, size(gdata), mpp_root_pe() )
+  gdata = 0.
+  do k = 1,nz
+     do j = 1,ny+jshift
+        do i = 1,nx+ishift
+           gdata(i,j,k) = k + i*1e-3 + j*1e-6
+        end do
+     end do
+  end do
 
 !define domain decomposition
   call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
-  call mpp_define_domains( (/1,nx,1,ny/), layout, domain, xhalo=halo, yhalo=halo, symmetry = symmetry )
+  if(index(type,"memory") == 0) then  
+     call mpp_define_domains( (/1,nx,1,ny/), layout, domain, xhalo=halo, yhalo=halo, symmetry = symmetry )
+  else  ! on memory domain
+     msize(1) = nx/layout(1) + 2*halo + 2
+     msize(2) = ny/layout(2) + 2*halo + 2
+     call mpp_define_domains( (/1,nx,1,ny/), layout, domain, xhalo=halo, yhalo=halo, symmetry = symmetry, &
+                              memory_size = msize )
+  end if
+
   call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
   call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+  call mpp_get_memory_domain ( domain, ism, iem, jsm, jem )
   call mpp_get_domain_components( domain, xdom, ydom )
+  ioff = ism - isd; joff = jsm - jsd
   ie  = ie +ishift; je  = je +jshift
   ied = ied+ishift; jed = jed+jshift  
-  allocate( data(isd:ied,jsd:jed,nz) )
-  data(is:ie,js:je,:) = gdata(is:ie,js:je,:)
+  iem = iem+ishift; jem = jem+jshift 
+  allocate( data(ism:iem,jsm:jem,nz) )
+  data(is+ioff:ie+ioff,js+joff:je+joff,:) = gdata(is:ie,js:je,:)
 
 !tests
 
 !sequential write: single-threaded formatted: only if small
-  if( nx*ny*nz*nt.LT.1000 )then
+  if( nx*ny*nz*nt.LT.1000 .AND. index(type,"memory") .NE. 0 )then
       if( pe.EQ.mpp_root_pe() )print *, 'sequential write: single-threaded formatted'
 !here the only test is a successful write: please look at test.txt for verification.
       call mpp_open( unit, trim(file)//'s.txt', action=MPP_OVERWR, form=MPP_ASCII, threading=MPP_SINGLE )
@@ -1020,9 +1027,13 @@ program mpp_io_test
   allocate( rdata(is:ie,js:je,nz) )
   call mpp_read( unit, vars(1), domain, rdata, 1 )
   rchk = mpp_chksum(rdata(is:ie,js:je,:))
-  chk  = mpp_chksum( data(is:ie,js:je,:))
+  chk  = mpp_chksum( data(is+ioff:ie+ioff,js+joff:je+joff,:))
   if( pe.EQ.mpp_root_pe() )print '(a,2z18)', trim(type)//' checksum=', rchk, chk
-  if( rchk.NE.chk )call mpp_error( FATAL, 'Checksum error on multi-threaded netCDF read for type '//trim(type) )
+  if( rchk == chk ) then
+      if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, trim(type)//': data comparison are OK.' )
+  else
+      call mpp_error( FATAL, 'Checksum error on multi-threaded netCDF read for type '//trim(type) )
+  end if
 
   deallocate( atts, axes, vars, tstamp )
   deallocate( rdata, gdata, data)

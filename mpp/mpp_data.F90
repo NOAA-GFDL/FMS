@@ -13,7 +13,7 @@ module mpp_data_mod
   character(len=128), public :: version= &
        '$Id mpp_data.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: memphis $'
+       '$Name: memphis_2006_07 $'
 
 #if defined(use_libSMA) || defined(use_libGSM)
 #include <mpp/shmem.fh>
@@ -31,16 +31,6 @@ module mpp_data_mod
   !--- public data which is used by mpp_domains_mod. 
   !--- All othere modules should import these parameters from mpp_domains_mod. 
   public :: mpp_domains_stack, ptr_domains_stack
-  public :: domain_info_buf, ptr_info
-
-  !----------------------------------------------------------------------!
-  !  The following data are used by mpp_mod and its components.          !
-  !----------------------------------------------------------------------!
-
-  !----------------------------------------------------------------------------!
-  ! The following data types are used by mpp_domains_mod and its components.   !
-  !----------------------------------------------------------------------------!
-  integer        :: domain_info_buf(26)
 
   !-------------------------------------------------------------------------------!
   ! The following data included in the .inc file are diffrent for sma or mpi case !

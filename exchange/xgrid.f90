@@ -282,8 +282,8 @@ type xmap_type
 end type xmap_type
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: xgrid.f90,v 13.0 2006/03/28 21:38:46 fms Exp $'
- character(len=128) :: tagname = '$Name: memphis $'
+ character(len=128) :: version = '$Id: xgrid.f90,v 13.0.2.1 2006/04/11 20:36:16 z1l Exp $'
+ character(len=128) :: tagname = '$Name: memphis_2006_07 $'
 
  real, parameter                              :: EPS = 1.0e-10
  logical :: module_is_initialized = .FALSE.
@@ -575,7 +575,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file )
      if (g==1) grid1 => xmap%grids(g)
      grid%id     = grid_ids    (g)
      grid%domain = grid_domains(g)
-     call mpp_modify_domain(grid%domain, grid%domain_with_halo, xhalo = 1, yhalo =1)
+     call mpp_modify_domain(grid%domain, grid%domain_with_halo, whalo=1, ehalo=1, shalo=1, nhalo=1)
      call mpp_get_data_domain(grid%domain_with_halo, grid%isd_me, grid%ied_me, grid%jsd_me, grid%jed_me)
 
      allocate ( grid%is(0:xmap%npes-1), grid%ie(0:xmap%npes-1) )

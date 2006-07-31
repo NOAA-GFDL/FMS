@@ -64,7 +64,8 @@ use time_manager_mod, only: time_type, operator(+), operator(>), &
                              get_date, set_time, set_date
 
 use  horiz_interp_mod, only: horiz_interp_init, horiz_interp,  &
-                             horiz_interp_end, horiz_interp_type
+                             horiz_interp_new, horiz_interp_del, &
+                             horiz_interp_type
 
 use           fms_mod, only: file_exist, error_mesg, write_version_number,  &
                              NOTE, WARNING, FATAL, stdlog, check_nml_error, &
@@ -90,8 +91,8 @@ public amip_interp_init, get_amip_sst, get_amip_ice,  &
 
 !  ---- version number -----
 
-character(len=128) :: version = '$Id: amip_interp.F90,v 11.0 2004/09/28 19:58:23 fms Exp $'
-character(len=128) :: tagname = '$Name: memphis $'
+character(len=128) :: version = '$Id: amip_interp.F90,v 11.0.6.1 2006/05/20 15:19:41 pjp Exp $'
+character(len=128) :: tagname = '$Name: memphis_2006_07 $'
 
 !-----------------------------------------------------------------------
 !------ private defined data type --------
@@ -589,7 +590,7 @@ endif
 !-----------------------------------------------------------------------
 !   ---- initialization of horizontal interpolation ----
 
-    call horiz_interp_init ( Interp%Hintrp, lon_bnd, lat_bnd, &
+    call horiz_interp_new ( Interp%Hintrp, lon_bnd, lat_bnd, &
                              lon, lat, interp_method= interp_method )
 
     allocate ( Interp % data1 (size(lon(:))-1,size(lat(:))-1), &
@@ -623,7 +624,7 @@ endif
 !-----------------------------------------------------------------------
 !   ---- initialization of horizontal interpolation ----
 
-    call horiz_interp_init ( Interp%Hintrp, lon_bnd, lat_bnd, &
+    call horiz_interp_new ( Interp%Hintrp, lon_bnd, lat_bnd, &
                              lon, lat, interp_method = interp_method)
 
     allocate ( Interp % data1 (size(lon,1),size(lat,2)), &
@@ -647,6 +648,8 @@ endif
 !----- initialization done once ------
 
  if (do_init_once) then
+
+    call horiz_interp_init
 
 !   ---- read namelist ----
 
@@ -791,7 +794,7 @@ endif
    type (amip_interp_type), intent(inout) :: Interp
 
      deallocate(Interp%data1, Interp%data2, lon_bnd, lat_bnd)
-     call horiz_interp_end ( Interp%Hintrp )
+     call horiz_interp_del ( Interp%Hintrp )
 
    end subroutine amip_interp_end
 ! </SUBROUTINE>

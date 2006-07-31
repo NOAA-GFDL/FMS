@@ -50,6 +50,7 @@ module mpp_pset_mod
 !public type
   type :: mpp_pset_type
      private
+!     sequence
      integer :: npset !number of PSETs
      integer :: next_in_pset, prev_in_pset !next and prev PE in PSET (cyclic)
      integer :: root_in_pset !PE designated to be the root within PSET
@@ -61,7 +62,7 @@ module mpp_pset_mod
 !stack is allocated by root
 !it is then mapped to mpp_pset_stack by mpp_pset_broadcast_ptr
      real, _ALLOCATABLE :: stack(:) _NULL
-     integer :: lstack, maxstack !length of currently used stack, max
+     integer :: lstack, maxstack, hiWM !current stack length, max, hiWM
      integer(POINTER_KIND) :: p_stack
      integer :: commID
      character(len=32) :: name
@@ -159,6 +160,7 @@ contains
     pset%root = pe.EQ.pset%root_in_pset
 
 !stack
+    pset%hiWM = 0 !initialize hi-water-mark
     pset%maxstack = 1000000 !default
     if( PRESENT(stacksize) )pset%maxstack = stacksize
     write( stdout(),'(a,i8)' ) &
@@ -189,6 +191,8 @@ contains
     deallocate( pset%root_pelist )
     deallocate( pset%pset )
     if( pset%root )deallocate( pset%stack )
+    write( stdout(), '(a,i10)' ) &
+         'Deleting PSETs... stack high-water-mark=', pset%hiWM
 !... and set status flag
     pset%initialized = .FALSE.
   end subroutine mpp_pset_delete
@@ -349,7 +353,7 @@ contains
   subroutine mpp_pset_check_ptr(pset,ptr)
 !checks if the supplied pointer is indeed shared
     type(mpp_pset_type), intent(in) :: pset
-#ifdef sgi_mipspro
+#ifdef use_CRI_pointers
     real :: dummy
     pointer( ptr, dummy )
 #else
@@ -390,12 +394,14 @@ contains
 
     if( .NOT.pset%initialized )call mpp_error( FATAL, &
          'MPP_PSET_SEGMENT_ARRAY: called with uninitialized PSET.' )
+#ifdef PSET_DEBUG
     if( le-ls+1.LT.pset%npset )then
         write( text,'(3(a,i4))' ) &
              'MPP_PSET_ARRAY_SEGMENT: parallel range (', ls, ',', le, &
              ') is smaller than the number of threads:', pset%npset
         call mpp_error( WARNING, text )
     end if
+#endif
     lep = ls-1 !initialize so that lsp is correct on first pass
     do i = 0,pset%pos
        lsp = lep + 1
@@ -429,6 +435,7 @@ contains
     ptr = LOC( stack(pset%lstack+1) )
     call mpp_pset_check_ptr(pset,ptr) !make sure ptr is the same across PSETs
     pset%lstack = pset%lstack + len
+    pset%hiWM = max( pset%hiWM, pset%lstack )
 #else
     integer(POINTER_KIND), intent(out) :: ptr
     call mpp_error( FATAL, &
@@ -583,7 +590,7 @@ program test
        mpp_clock_id, mpp_clock_begin, mpp_clock_end
   use mpp_pset_mod, only: mpp_pset_type, mpp_pset_create, mpp_pset_root, &
        mpp_pset_broadcast_ptr, mpp_pset_segment_array, mpp_pset_sync, &
-       mpp_pset_stack_push, mpp_pset_print_chksum
+       mpp_pset_stack_push, mpp_pset_print_chksum, mpp_pset_delete
   implicit none
 !test program demonstrates how to create PSETs
 !  how to distribute allocatable arrays
@@ -655,6 +662,7 @@ program test
        pe, sum(b), sum(c)
   call mpp_pset_print_chksum( pset, 'test_alloc', c(:,:,ks:ke) )
   call test_auto(n)
+  call mpp_pset_delete(pset)
   call mpp_exit()
 
 contains

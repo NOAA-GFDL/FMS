@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_connect.inc,v 13.0 2006/03/28 21:41:17 fms Exp $
+! $Id: mpp_io_connect.inc,v 13.0.4.1 2006/05/05 19:51:15 z1l Exp $
 
 ! <SUBROUTINE NAME="mpp_open">
 
@@ -162,7 +162,7 @@
 !                                                                            !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     subroutine mpp_open( unit, file, action, form, access, threading, &
-                                     fileset, iospec, nohdrs, recl, pelist, iostat )
+                                     fileset, iospec, nohdrs, recl, pelist, iostat, is_root_pe )
       integer, intent(out) :: unit   
       character(len=*), intent(in) :: file
       integer, intent(in), optional :: action, form, access, threading, &
@@ -171,14 +171,17 @@
       logical, intent(in), optional :: nohdrs
       integer, intent(in), optional :: pelist(:) !default ALL
       integer, intent(out), optional :: iostat
-      
+      logical, intent(in), optional :: is_root_pe      
+
       character(len=16) :: act, acc, for, pos
       character(len=128) :: mesg
       integer :: action_flag, form_flag, access_flag, threading_flag, fileset_flag, length
-      logical :: exists
+      logical :: exists, on_root_pe
       integer :: ios
       type(axistype) :: unlim    !used by netCDF with mpp_append
       
+      on_root_pe = mpp_pe() == mpp_root_pe()
+      if(present(is_root_pe)) on_root_pe = is_root_pe
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_OPEN: must first call mpp_io_init.' )
 !set flags
       action_flag = MPP_WRONLY        !default
@@ -199,7 +202,7 @@
       
 !get a unit number
       if( threading_flag.EQ.MPP_SINGLE )then
-          if( mpp_pe().NE.mpp_root_pe() .AND. action_flag.NE.MPP_RDONLY )then
+          if( .NOT. on_root_pe .AND. action_flag.NE.MPP_RDONLY )then
               unit = NULLUNIT           !PEs not participating in IO from this mpp_open() will return this value for unit
               return
           end if
@@ -422,7 +425,7 @@
       if( action_flag.EQ.MPP_WRONLY )then
           if( form_flag.NE.MPP_NETCDF .AND. access_flag.EQ.MPP_DIRECT )call mpp_write_meta( unit, 'record_length', ival=recl )
 !actual file name
-          call mpp_write_meta( unit, 'filename', cval=mpp_file(unit)%name )
+          call mpp_write_meta( unit, 'filename', cval=mpp_file(unit)%name, is_root_pe=is_root_pe )
 !MPP_IO package version
 !          call mpp_write_meta( unit, 'MPP_IO_VERSION', cval=trim(version) )
 !filecount for multifileset

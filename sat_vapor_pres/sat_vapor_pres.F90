@@ -59,14 +59,14 @@ module sat_vapor_pres_mod
 
  use  constants_mod, only:  TFREEZE
  use        fms_mod, only:  write_version_number,   &
-                            error_mesg, FATAL
-! use sat_vapor_pres_inter_mod
+                            mpp_error, FATAL, fms_error_handler
+ use  sat_vapor_pres_k_mod, only: sat_vapor_pres_type, sat_vapor_pres_init_k, lookup_es_k, lookup_des_k
 
 implicit none
 private
 
- public :: lookup_es, lookup_des, sat_vapor_pres_init
- public :: compute_es
+ public :: lookup_es, lookup_des, sat_vapor_pres_init, sat_vapor_pres_data
+!public :: compute_es
  public :: escomp, descomp ! for backward compatibility
                            ! use lookup_es, lookup_des instead
 
@@ -166,19 +166,21 @@ private
 !             Must have the same order and size as temp.
 !   </OUT>
 
- interface compute_es
-   module procedure compute_es_0d, compute_es_1d, compute_es_2d, compute_es_3d
- end interface
+!interface compute_es
+!  module procedure compute_es_0d, compute_es_1d, compute_es_2d, compute_es_3d
+!end interface
 ! </INTERFACE>
 !-----------------------------------------------------------------------
  interface temp_check
-   module procedure temp_check_0d, temp_check_1d, temp_check_2d, temp_check_3d
+   module procedure temp_check_1d, temp_check_2d, temp_check_3d
  end interface
 !-----------------------------------------------------------------------
 !  cvs version and tag name
 
-character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 13.0 2006/03/28 21:42:50 fms Exp $'
-character(len=128) :: tagname = '$Name: memphis $'
+ character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 13.0.2.2 2006/05/26 02:04:41 pjp Exp $'
+ character(len=128) :: tagname = '$Name: memphis_2006_07 $'
+
+ logical :: module_is_initialized = .false.
 
 !-----------------------------------------------------------------------
 !  parameters for table size and resolution
@@ -189,16 +191,12 @@ character(len=128) :: tagname = '$Name: memphis $'
  integer, parameter :: nsize = (tcmax-tcmin)*esres+1    !  lookup table size
  integer, parameter :: nlim  = nsize-1
 
- real    :: tmin, tmax          !  lookup table limits in degK
- real    :: dtres, dtinv, teps
-
- real ::   TABLE(nsize)    !  sat vapor pres (es)
- real ::  DTABLE(nsize)    !  first derivative of es
- real :: D2TABLE(nsize)    ! second derivative of es
-
- logical :: module_is_initialized = .FALSE.
+ type(sat_vapor_pres_type), save :: sat_vapor_pres_data
 
 !-----------------------------------------------------------------------
+!  varibles needed by temp_check
+
+ real :: tmin, dtinv, teps
 
 contains
 
@@ -208,26 +206,29 @@ contains
 !   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(scalar)"></IN>
 !   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(scalar)"></OUT>
 ! </SUBROUTINE>
- subroutine lookup_es_0d ( temp, esat )
+ subroutine lookup_es_0d ( temp, esat, err_msg )
 
  real, intent(in)  :: temp
  real, intent(out) :: esat
+ character(len=*), intent(out), optional :: err_msg
 
- real    :: tmp, del
- integer :: ind
-!-----------------------------------------------
+ integer :: nbad
+ character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) call sat_vapor_pres_init
 
-   tmp = temp-tmin
-   ind = int(dtinv*(tmp+teps))
-   del = tmp-dtres*real(ind)
-   esat = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-!!!esat = TABLE(ind+1) + del*DTABLE(ind+1)
+   call lookup_es_k(sat_vapor_pres_data, temp, esat, nbad)
+   if ( nbad == 0 ) then
+     if(present(err_msg)) err_msg = ''
+   else
+     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
+     if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
+   endif
 
-     if (ind < 0 .or. ind > nlim) call temp_check ( 1, temp )
-
-!-----------------------------------------------
+!  varibles needed by temp_check
+   tmin  = sat_vapor_pres_data%tmin
+   dtinv = sat_vapor_pres_data%dtinv
+   teps  = sat_vapor_pres_data%teps
 
  end subroutine lookup_es_0d
 
@@ -237,28 +238,26 @@ contains
 !   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:)"></IN>
 !   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:)"></OUT>
 ! </SUBROUTINE>
- subroutine lookup_es_1d ( temp, esat )
+ subroutine lookup_es_1d ( temp, esat, err_msg )
 
  real, intent(in)  :: temp(:)
  real, intent(out) :: esat(:)
+ character(len=*), intent(out), optional :: err_msg
 
- real    :: tmp, del
- integer :: ind, i, n
+ character(len=54) :: err_msg_local
+ integer :: nbad
 !-----------------------------------------------
 
    if (.not.module_is_initialized) call sat_vapor_pres_init
 
-   n = 0
-   do i = 1, size(temp,1)
-     tmp = temp(i)-tmin
-     ind = int(dtinv*(tmp+teps))
-     del = tmp-dtres*real(ind)
-     esat(i) = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-!!!!!esat(i) = TABLE(ind+1) + del*DTABLE(ind+1)
-     if (ind < 0 .or. ind > nlim) n = n+1
-   enddo
-
-   if ( n > 0 ) call temp_check ( n, temp )
+   call lookup_es_k(sat_vapor_pres_data, temp, esat, nbad)
+   if ( nbad == 0 ) then
+     if(present(err_msg)) err_msg = ''
+   else
+     call temp_check ( temp )
+     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
+     if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
+   endif
 
 !-----------------------------------------------
 
@@ -270,30 +269,27 @@ contains
 !   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:)"></IN>
 !   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:,:)"></OUT>
 ! </SUBROUTINE>
- subroutine lookup_es_2d ( temp, esat )
+ subroutine lookup_es_2d ( temp, esat, err_msg )
 
  real, intent(in)  :: temp(:,:)
  real, intent(out) :: esat(:,:)
+ character(len=*), intent(out), optional :: err_msg
 
- real    :: tmp, del
- integer :: ind, i, j, n
+ character(len=54) :: err_msg_local
+ integer :: nbad
 !-----------------------------------------------
 
    if (.not.module_is_initialized) call sat_vapor_pres_init
+   if(present(err_msg)) err_msg=''
 
-   n = 0
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j)-tmin
-     ind = int(dtinv*(tmp+teps))
-     del = tmp-dtres*real(ind)
-     esat(i,j) = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-!!!!!esat(i,j) = TABLE(ind+1) + del*DTABLE(ind+1)
-     if (ind < 0 .or. ind > nlim) n = n+1
-   enddo
-   enddo
-
-   if ( n > 0 ) call temp_check_2d ( n, temp )
+   call lookup_es_k(sat_vapor_pres_data, temp, esat, nbad)
+   if ( nbad == 0 ) then
+     if(present(err_msg)) err_msg = ''
+   else
+     call temp_check ( temp )
+     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
+     if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
+   endif
 
 !-----------------------------------------------
 
@@ -305,34 +301,25 @@ contains
 !   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:,:)"></IN>
 !   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:,:,:)"></OUT>
 ! </SUBROUTINE>
- subroutine lookup_es_3d ( temp, esat )
+ subroutine lookup_es_3d ( temp, esat, err_msg )
 
  real, intent(in)  :: temp(:,:,:)
  real, intent(out) :: esat(:,:,:)
+ character(len=*), intent(out), optional :: err_msg
 
- real    :: tmp, del
- integer :: ind, i, j, k, n
-!-----------------------------------------------
+ integer :: nbad
+ character(len=128) :: err_msg_tmp
 
    if (.not.module_is_initialized) call sat_vapor_pres_init
 
-   n = 0
-   do k = 1, size(temp,3)
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tmin
-     ind = int(dtinv*(tmp+teps))
-     del = tmp-dtres*real(ind)
-     esat(i,j,k) = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-!!!!!esat(i,j,k) = TABLE(ind+1) + del*DTABLE(ind+1)
-     if (ind < 0 .or. ind > nlim) n = n+1
-   enddo
-   enddo
-   enddo
-
-   if ( n > 0 ) call temp_check ( n, temp )
-
-!-----------------------------------------------
+   call lookup_es_k(sat_vapor_pres_data, temp, esat, nbad)
+   if ( nbad == 0 ) then
+     if(present(err_msg)) err_msg = ''
+   else
+     call temp_check ( temp )
+     write(err_msg_tmp,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
+     if(fms_error_handler('lookup_es',err_msg_tmp,err_msg)) return
+   endif
 
  end subroutine lookup_es_3d
 
@@ -344,25 +331,24 @@ contains
 !   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(scalar)"></IN>
 !   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(scalar)"></OUT>
 ! </SUBROUTINE>
- subroutine lookup_des_0d ( temp, desat )
+ subroutine lookup_des_0d ( temp, desat, err_msg )
 
  real, intent(in)  :: temp
  real, intent(out) :: desat
+ character(len=*), intent(out), optional :: err_msg
 
- real    :: tmp, del
- integer :: ind
-!-----------------------------------------------
+ integer :: nbad
+ character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) call sat_vapor_pres_init
 
-   tmp = temp-tmin
-   ind = int(dtinv*(tmp+teps))
-   del = tmp-dtres*real(ind)
-   desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
-
-   if (ind < 0 .or. ind > nlim) call temp_check ( 1, temp )
-
-!-----------------------------------------------
+   call lookup_des_k(sat_vapor_pres_data, temp, desat, nbad)
+   if ( nbad == 0 ) then
+     if(present(err_msg)) err_msg = ''
+   else
+     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
+     if(fms_error_handler('lookup_des',err_msg_local,err_msg)) return
+   endif
 
  end subroutine lookup_des_0d
 
@@ -372,28 +358,27 @@ contains
 !   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:)"></IN>
 !   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(:)"></OUT>
 ! </SUBROUTINE>
- subroutine lookup_des_1d ( temp, desat )
+ subroutine lookup_des_1d ( temp, desat, err_msg )
 
  real, intent(in)  :: temp (:)
  real, intent(out) :: desat(:)
+ character(len=*), intent(out), optional :: err_msg
 
- real    :: tmp, del
- integer :: ind, i, n
+ character(len=54) :: err_msg_local
+ integer :: nbad
 !-----------------------------------------------
 
    if (.not.module_is_initialized) call sat_vapor_pres_init
+   if(present(err_msg)) err_msg=''
 
-   n = 0
-   do i = 1, size(temp,1)
-     tmp = temp(i)-tmin
-     ind = int(dtinv*(tmp+teps))
-     del = tmp-dtres*real(ind)
-     desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
-     if (ind < 0 .or. ind > nlim) n = n+1
-   enddo
-
-   if ( n > 0 ) call temp_check ( n, temp )
-
+   call lookup_des_k(sat_vapor_pres_data, temp, desat, nbad)
+   if ( nbad == 0 ) then
+     if(present(err_msg)) err_msg = ''
+   else
+     call temp_check ( temp )
+     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
+     if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
+   endif
 !-----------------------------------------------
 
  end subroutine lookup_des_1d
@@ -404,30 +389,27 @@ contains
 !   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:)"></IN>
 !   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(:,:)"></OUT>
 ! </SUBROUTINE>
- subroutine lookup_des_2d ( temp, desat )
+ subroutine lookup_des_2d ( temp, desat, err_msg )
 
  real, intent(in)  :: temp (:,:)
  real, intent(out) :: desat(:,:)
+ character(len=*), intent(out), optional :: err_msg
 
- real    :: tmp, del
- integer :: ind, i, j, n
+ character(len=54) :: err_msg_local
+ integer :: nbad
 !-----------------------------------------------
    
    if (.not.module_is_initialized) call sat_vapor_pres_init
+   if(present(err_msg)) err_msg=''
    
-   n = 0
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j)-tmin
-     ind = int(dtinv*(tmp+teps))
-     del = tmp-dtres*real(ind)
-     desat(i,j) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
-     if (ind < 0 .or. ind > nlim) n = n+1
-   enddo
-   enddo
-
-   if ( n > 0 ) call temp_check ( n, temp )
-
+   call lookup_des_k(sat_vapor_pres_data, temp, desat, nbad)
+   if ( nbad == 0 ) then
+     if(present(err_msg)) err_msg = ''
+   else
+     call temp_check ( temp )
+     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
+     if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
+   endif
 !-----------------------------------------------
 
  end subroutine lookup_des_2d
@@ -437,35 +419,29 @@ contains
 !   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:,:)"></IN>
 !   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(:,:,:)"></OUT>
 ! </SUBROUTINE>
- subroutine lookup_des_3d ( temp, desat )
+ subroutine lookup_des_3d ( temp, desat, err_msg )
 
  real, intent(in)  :: temp (:,:,:)
  real, intent(out) :: desat(:,:,:)
+ character(len=*), intent(out), optional :: err_msg
 
- real    :: tmp, del
- integer :: ind, i, j, k, n
-!-----------------------------------------------
+ integer :: nbad
+ character(len=128) :: err_msg_tmp
 
    if (.not.module_is_initialized) call sat_vapor_pres_init
 
-   n = 0
-   do k = 1, size(temp,3)
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tmin
-     ind = int(dtinv*(tmp+teps))
-     del = tmp-dtres*real(ind)
-     desat(i,j,k) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
-     if (ind < 0 .or. ind > nlim) n = n+1
-   enddo
-   enddo
-   enddo
-
-   if ( n > 0 ) call temp_check ( n, temp )
-   
-!-----------------------------------------------
+   call lookup_des_k(sat_vapor_pres_data, temp, desat, nbad )
+   if ( nbad == 0 ) then
+     if(present(err_msg)) err_msg=''
+   else
+     call temp_check ( temp )
+     write(err_msg_tmp,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
+     if(fms_error_handler('lookup_des',err_msg_tmp,err_msg)) return
+   endif
 
  end subroutine lookup_des_3d
+
+!========================================================================================================
 
 !#######################################################################
 !#######################################################################
@@ -487,7 +463,7 @@ contains
 !   </TEMPLATE>
 
 ! </SUBROUTINE>
- subroutine sat_vapor_pres_init
+ subroutine sat_vapor_pres_init(err_msg)
 
 !  =================================================================
 !  +                                                               +
@@ -504,63 +480,25 @@ contains
 !  +   note: all es computation is done in pascals                 +
 !  =================================================================
 
- real    :: tem(3), es(3), hdtinv
- real  :: esat_dum = 0.
- real  :: temp_dum = 0. 
- integer :: i, n
- character(len=128)   :: ermesg
-
-! increment used to generate derivative table
-  real, parameter :: tinrc = .01           
-  real, parameter :: tfact = 1./(2.*tinrc)
+  character(len=*), intent(out), optional :: err_msg
+  character(len=128) :: err_msg_local
 
 ! return silently if this routine has already been called
-      if (module_is_initialized) return
+  if (module_is_initialized) return
 
 ! write version number to log file
-      call write_version_number (version, tagname)
+  call write_version_number (version, tagname)
 
-! global variables
-      tmin = real(tcmin)+TFREEZE   ! minimum valid temp in table
-      tmax = real(tcmax)+TFREEZE   ! maximum valid temp in table
-      dtinv = real(esres)
-      dtres = 1./dtinv
-      teps = 1./real(2*esres)
-! local variables
-      hdtinv = dtinv*0.5
+  call sat_vapor_pres_init_k(sat_vapor_pres_data, nsize, real(tcmin), real(tcmax), TFREEZE, err_msg_local)
+  if ( err_msg_local == '' ) then
+     if(present(err_msg)) err_msg = ''
+  else
+     if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
+  endif
 
-! compute es tables from tcmin to tcmax
-! estimate es derivative with small +/- difference
+  module_is_initialized = .true.
 
-      do i = 1, nsize
-         tem(1) = tmin + dtres*real(i-1)
-         tem(2) = tem(1)-tinrc
-         tem(3) = tem(1)+tinrc
-         es = compute_es (tem)
-          TABLE(i) = es(1)
-         DTABLE(i) = (es(3)-es(2))*tfact
-      enddo
-
-! compute one-half second derivative using centered differences
-! differencing des values in the table
-
-      do i = 2, nsize-1
-         D2TABLE(i) = 0.25*dtinv*(DTABLE(i+1)-DTABLE(i-1))
-      enddo
-    ! one-sided derivatives at boundaries
-         D2TABLE(1)     = 0.50*dtinv*(DTABLE(2)    -DTABLE(1))
-         D2TABLE(nsize) = 0.50*dtinv*(DTABLE(nsize)-DTABLE(nsize-1))
-
-    call sat_vapor_pres_hold_tables_k   &
-        (nsize, ermesg, table, dtable, d2table, temp_dum, esat_dum)     
-    if (trim(ermesg) /= ' ') then
-      call error_mesg ('sat_vapor_pres_init in sat_vapor_pres_mod', &
-                                                 ermesg, FATAL)
-    endif
-
-    module_is_initialized = .true.
-
- end subroutine sat_vapor_pres_init
+end subroutine sat_vapor_pres_init
 
 !#######################################################################
 !#######################################################################
@@ -581,74 +519,29 @@ contains
 !   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:)"></IN>
 !   <OUT NAME="es" UNITS="pascal" TYPE="real" DIM="(:)"></OUT>
 ! </FUNCTION>
- function compute_es_1d (tem) result (es)
- real, intent(in) :: tem(:)
- real :: es(size(tem,1))
+!function compute_es_1d (tem) result (es)
+!real, intent(in) :: tem(:)
+!real :: es(size(tem,1))
 
- real, parameter :: TBASW = TFREEZE+100.
- real, parameter :: TBASI = TFREEZE
- real, parameter :: ESBASW = 101324.60
- real, parameter :: ESBASI =    610.71
+!es = compute_es_k(tem, TFREEZE)
 
- real    :: x, esice, esh2o
- integer :: i
-
-   do i = 1, size(tem(:))
-
-!  compute es over ice 
-
-     if (tem(i) < TBASI) then
-         x = -9.09718*(TBASI/tem(i)-1.0) - 3.56654*log10(TBASI/tem(i)) &
-             +0.876793*(1.0-tem(i)/TBASI) + log10(ESBASI)
-         esice =10.**(x)
-     else
-         esice = 0.
-     endif
-
-!  compute es over water greater than -20 c.
-!  values over 100 c may not be valid
-!  see smithsonian meteorological tables page 350.
-
-     if (tem(i) > -20.+TBASI) then
-         x = -7.90298*(TBASW/tem(i)-1) + 5.02808*log10(TBASW/tem(i)) &
-             -1.3816e-07*(10**((1-tem(i)/TBASW)*11.344)-1)        &
-             +8.1328e-03*(10**((TBASW/tem(i)-1)*(-3.49149))-1)    &
-             +log10(ESBASW)
-         esh2o = 10.**(x)
-     else
-         esh2o = 0.
-     endif
-
-!  derive blended es over ice and supercooled water between -20c and 0c
-
-     if (tem(i) <= -20.+TBASI) then
-         es(i) = esice
-     else if (tem(i) >= TBASI) then
-         es(i) = esh2o
-     else
-         es(i) = 0.05*((TBASI-tem(i))*esice + (tem(i)-TBASI+20.)*esh2o)
-     endif
-
-   enddo
-   
- end function compute_es_1d
-
+!end function compute_es_1d
 !--------------------------------------------------------
 
 ! <FUNCTION NAME="compute_es_0d" INTERFACE="compute_es">
 !   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(scalar)"></IN>
 !   <OUT NAME="es" UNITS="pascal" TYPE="real" DIM="(scalar)"></OUT>
 ! </FUNCTION>
- function compute_es_0d (tem) result (es)
- real, intent(in) :: tem
- real :: es
- real, dimension(1) :: tem1, es1
+!function compute_es_0d (tem) result (es)
+!real, intent(in) :: tem
+!real :: es
+!real, dimension(1) :: tem1, es1
 
-   tem1(1) = tem
-   es1 = compute_es_1d (tem1)
-   es = es1(1)
+!  tem1(1) = tem
+!  es1 = compute_es_1d (tem1)
+!  es = es1(1)
 
- end function compute_es_0d
+!end function compute_es_0d
 
 !--------------------------
 
@@ -656,57 +549,40 @@ contains
 !   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:)"></IN>
 !   <OUT NAME="es" UNITS="pascal" TYPE="real" DIM="(:,:)"></OUT>
 ! </FUNCTION>
- function compute_es_2d (tem) result (es)
- real, intent(in) :: tem(:,:)
- real, dimension(size(tem,1),size(tem,2)) :: es
- integer :: j
+!function compute_es_2d (tem) result (es)
+!real, intent(in) :: tem(:,:)
+!real, dimension(size(tem,1),size(tem,2)) :: es
+!integer :: j
 
-    do j = 1, size(tem,2)
-      es(:,j) = compute_es_1d (tem(:,j))
-    enddo
+!   do j = 1, size(tem,2)
+!     es(:,j) = compute_es_1d (tem(:,j))
+!   enddo
 
- end function compute_es_2d
+!end function compute_es_2d
 
 !--------------------------
 ! <FUNCTION NAME="compute_es_3d" INTERFACE="compute_es">
 !   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:,:)"></IN>
 !   <OUT NAME="es" UNITS="pascal" TYPE="real" DIM="(:,:,:)"></OUT>
 ! </FUNCTION>
- function compute_es_3d (tem) result (es)
- real, intent(in) :: tem(:,:,:)
- real, dimension(size(tem,1),size(tem,2),size(tem,3)) :: es
- integer :: j, k
+!function compute_es_3d (tem) result (es)
+!real, intent(in) :: tem(:,:,:)
+!real, dimension(size(tem,1),size(tem,2),size(tem,3)) :: es
+!integer :: j, k
 
-    do k = 1, size(tem,3)
-    do j = 1, size(tem,2)
-      es(:,j,k) = compute_es_1d (tem(:,j,k))
-    enddo
-    enddo
+!   do k = 1, size(tem,3)
+!   do j = 1, size(tem,2)
+!     es(:,j,k) = compute_es_1d (tem(:,j,k))
+!   enddo
+!   enddo
 
- end function compute_es_3d
-
-!#######################################################################
-!#######################################################################
-
- subroutine error_handler ( n )
- integer, intent(in) :: n
- character(len=28) :: mesg
-
-   write (mesg,'(a21,i7)') 'table overflow, nbad=', n
-
-   call error_mesg ('sat_vapor_pres_mod', mesg, FATAL)
-
-!  print *, 'ERROR: ' // mesg
-!  stop 111
-
- end subroutine error_handler
+!end function compute_es_3d
 
 !#######################################################################
 
  function check_1d ( temp ) result ( nbad )
  real   , intent(in)  :: temp(:)
  integer :: nbad, ind, i
- real    :: tmp
 
    nbad = 0
    do i = 1, size(temp,1)
@@ -721,8 +597,8 @@ contains
  function check_2d ( temp ) result ( nbad )
  real   , intent(in)  :: temp(:,:)
  integer :: nbad
- integer :: j, ind
- real    :: tmp
+ integer :: j
+
     nbad = 0
     do j = 1, size(temp,2)
       nbad = nbad + check_1d ( temp(:,j) )
@@ -731,56 +607,40 @@ contains
 
 !#######################################################################
 
- subroutine temp_check_0d ( nbad, temp )
- integer, intent(in) :: nbad
- real   , intent(in) :: temp
-
-   call error_handler (nbad)
-
- end subroutine temp_check_0d
-
-!--------------------------------------------------------------
-
- subroutine temp_check_1d ( nbad, temp )
- integer, intent(in) :: nbad
+ subroutine temp_check_1d ( temp )
  real   , intent(in) :: temp(:)
  integer :: i
 
    print *, 'Bad temperatures (dimension 1): ', (check_1d(temp(i:i)),i=1,size(temp,1))
-   call error_handler (nbad)
 
  end subroutine temp_check_1d
 
 !--------------------------------------------------------------
 
- subroutine temp_check_2d ( nbad, temp )
- integer, intent(in) :: nbad
+ subroutine temp_check_2d ( temp )
  real   , intent(in) :: temp(:,:)
  integer :: i, j
 
    print *, 'Bad temperatures (dimension 1): ', (check_1d(temp(i,:)),i=1,size(temp,1))
    print *, 'Bad temperatures (dimension 2): ', (check_1d(temp(:,j)),j=1,size(temp,2))
-   call error_handler (nbad)
 
  end subroutine temp_check_2d
 
 !--------------------------------------------------------------
 
- subroutine temp_check_3d ( nbad, temp )
- integer, intent(in) :: nbad
+ subroutine temp_check_3d ( temp )
  real, intent(in)  :: temp(:,:,:)
  integer :: i, j, k
 
    print *, 'Bad temperatures (dimension 1): ', (check_2d(temp(i,:,:)),i=1,size(temp,1))
    print *, 'Bad temperatures (dimension 2): ', (check_2d(temp(:,j,:)),j=1,size(temp,2))
    print *, 'Bad temperatures (dimension 3): ', (check_2d(temp(:,:,k)),k=1,size(temp,3))
-   call error_handler (nbad)
 
  end subroutine temp_check_3d
 
 !#######################################################################
-
 end module sat_vapor_pres_mod
+!#######################################################################
 
 ! <INFO>
 

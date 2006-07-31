@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_misc.inc,v 13.0 2006/03/28 21:40:38 fms Exp $
+! $Id: mpp_domains_misc.inc,v 13.0.2.1 2006/04/11 18:08:44 z1l Exp $
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -419,6 +419,10 @@
           allocate( domain%list(0:listsize-1) )
           domain%pe = NULL_PE
           domain%pos = -1
+          allocate(domain%x(1), domain%y(1))
+          do n = 0, listsize-1
+             allocate(domain%list(n)%x(1), domain%list(n)%y(1) )
+          end do
           domain%x%compute%begin =  1
           domain%x%compute%end   = -1
           domain%y%compute%begin =  1
@@ -528,25 +532,25 @@
 #define MPP_REDISTRIBUTE_5D_ mpp_redistribute_i8_5D
 #include <mpp_update_domains2D.h>
 
-#undef MPP_TYPE_
-#define MPP_TYPE_ logical(LONG_KIND)
-#undef MPP_UPDATE_DOMAINS_2D_
-#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_l8_2D
-#undef MPP_UPDATE_DOMAINS_3D_
-#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_l8_3D
-#undef MPP_UPDATE_DOMAINS_4D_
-#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_l8_4D
-#undef MPP_UPDATE_DOMAINS_5D_
-#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_l8_5D
-#undef MPP_REDISTRIBUTE_2D_
-#define MPP_REDISTRIBUTE_2D_ mpp_redistribute_l8_2D
-#undef MPP_REDISTRIBUTE_3D_
-#define MPP_REDISTRIBUTE_3D_ mpp_redistribute_l8_3D
-#undef MPP_REDISTRIBUTE_4D_
-#define MPP_REDISTRIBUTE_4D_ mpp_redistribute_l8_4D
-#undef MPP_REDISTRIBUTE_5D_
-#define MPP_REDISTRIBUTE_5D_ mpp_redistribute_l8_5D
-#include <mpp_update_domains2D.h>
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ logical(LONG_KIND)
+!!$#undef MPP_UPDATE_DOMAINS_2D_
+!!$#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_l8_2D
+!!$#undef MPP_UPDATE_DOMAINS_3D_
+!!$#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_l8_3D
+!!$#undef MPP_UPDATE_DOMAINS_4D_
+!!$#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_l8_4D
+!!$#undef MPP_UPDATE_DOMAINS_5D_
+!!$#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_l8_5D
+!!$#undef MPP_REDISTRIBUTE_2D_
+!!$#define MPP_REDISTRIBUTE_2D_ mpp_redistribute_l8_2D
+!!$#undef MPP_REDISTRIBUTE_3D_
+!!$#define MPP_REDISTRIBUTE_3D_ mpp_redistribute_l8_3D
+!!$#undef MPP_REDISTRIBUTE_4D_
+!!$#define MPP_REDISTRIBUTE_4D_ mpp_redistribute_l8_4D
+!!$#undef MPP_REDISTRIBUTE_5D_
+!!$#define MPP_REDISTRIBUTE_5D_ mpp_redistribute_l8_5D
+!!$#include <mpp_update_domains2D.h>
 #endif
 
 #ifndef no_4byte_reals
@@ -624,25 +628,25 @@
 #define MPP_REDISTRIBUTE_5D_ mpp_redistribute_i4_5D
 #include <mpp_update_domains2D.h>
 
-#undef MPP_TYPE_
-#define MPP_TYPE_ logical(INT_KIND)
-#undef MPP_UPDATE_DOMAINS_2D_
-#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_l4_2D
-#undef MPP_UPDATE_DOMAINS_3D_
-#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_l4_3D
-#undef MPP_UPDATE_DOMAINS_4D_
-#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_l4_4D
-#undef MPP_UPDATE_DOMAINS_5D_
-#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_l4_5D
-#undef MPP_REDISTRIBUTE_2D_
-#define MPP_REDISTRIBUTE_2D_ mpp_redistribute_l4_2D
-#undef MPP_REDISTRIBUTE_3D_
-#define MPP_REDISTRIBUTE_3D_ mpp_redistribute_l4_3D
-#undef MPP_REDISTRIBUTE_4D_
-#define MPP_REDISTRIBUTE_4D_ mpp_redistribute_l4_4D
-#undef MPP_REDISTRIBUTE_5D_
-#define MPP_REDISTRIBUTE_5D_ mpp_redistribute_l4_5D
-#include <mpp_update_domains2D.h>
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ logical(INT_KIND)
+!!$#undef MPP_UPDATE_DOMAINS_2D_
+!!$#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_l4_2D
+!!$#undef MPP_UPDATE_DOMAINS_3D_
+!!$#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_l4_3D
+!!$#undef MPP_UPDATE_DOMAINS_4D_
+!!$#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_l4_4D
+!!$#undef MPP_UPDATE_DOMAINS_5D_
+!!$#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_l4_5D
+!!$#undef MPP_REDISTRIBUTE_2D_
+!!$#define MPP_REDISTRIBUTE_2D_ mpp_redistribute_l4_2D
+!!$#undef MPP_REDISTRIBUTE_3D_
+!!$#define MPP_REDISTRIBUTE_3D_ mpp_redistribute_l4_3D
+!!$#undef MPP_REDISTRIBUTE_4D_
+!!$#define MPP_REDISTRIBUTE_4D_ mpp_redistribute_l4_4D
+!!$#undef MPP_REDISTRIBUTE_5D_
+!!$#define MPP_REDISTRIBUTE_5D_ mpp_redistribute_l4_5D
+!!$#include <mpp_update_domains2D.h>
 
 !*******************************************************
 #undef VECTOR_FIELD_
@@ -713,22 +717,22 @@
 #endif
 
 
-#undef MPP_TYPE_
-#define MPP_TYPE_ logical(LONG_KIND)
-#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
-#define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_l8_3d
-#undef MPP_DOMAINS_DO_UPDATE_3Dold_
-#define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_l8_3d
-#include <mpp_do_update_old.h>
-#if defined(use_GSM)              
-#include <mpp_do_update_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_l8_3d_type
-#include <mpp_do_update_caf.h>
-#else
-#include <mpp_do_update_new.h>
-#endif
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ logical(LONG_KIND)
+!!$#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
+!!$#define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_l8_3d
+!!$#undef MPP_DOMAINS_DO_UPDATE_3Dold_
+!!$#define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_l8_3d
+!!$#include <mpp_do_update_old.h>
+!!$#if defined(use_GSM)              
+!!$#include <mpp_do_update_gsm.h>
+!!$#elif defined(use_CAF)
+!!$#undef CAFPNTR_TYPE_3D_
+!!$#define CAFPNTR_TYPE_3D_ cafptr_l8_3d_type
+!!$#include <mpp_do_update_caf.h>
+!!$#else
+!!$#include <mpp_do_update_new.h>
+!!$#endif
 
 #endif
 
@@ -800,22 +804,22 @@
 #include <mpp_do_update_new.h>
 #endif
 
-#undef MPP_TYPE_
-#define MPP_TYPE_ logical(INT_KIND)
-#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
-#define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_l4_3d
-#undef MPP_DOMAINS_DO_UPDATE_3Dold_
-#define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_l4_3d
-#include <mpp_do_update_old.h>
-#if defined(use_GSM)              
-#include <mpp_do_update_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_l4_3d_type
-#include <mpp_do_update_caf.h>
-#else
-#include <mpp_do_update_new.h>
-#endif
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ logical(INT_KIND)
+!!$#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
+!!$#define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_l4_3d
+!!$#undef MPP_DOMAINS_DO_UPDATE_3Dold_
+!!$#define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_l4_3d
+!!$#include <mpp_do_update_old.h>
+!!$#if defined(use_GSM)              
+!!$#include <mpp_do_update_gsm.h>
+!!$#elif defined(use_CAF)
+!!$#undef CAFPNTR_TYPE_3D_
+!!$#define CAFPNTR_TYPE_3D_ cafptr_l4_3d_type
+!!$#include <mpp_do_update_caf.h>
+!!$#else
+!!$#include <mpp_do_update_new.h>
+!!$#endif
 
 
 !********************************************************

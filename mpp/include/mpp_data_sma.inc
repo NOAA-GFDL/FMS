@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_data_sma.inc,v 13.0 2006/03/28 21:40:22 fms Exp $
+! $Id: mpp_data_sma.inc,v 13.0.2.1 2006/04/11 18:08:42 z1l Exp $
 
 !----------------------------------------------------------------!
 ! The following data is used in mpp_mod and its components       !
@@ -29,4 +29,4 @@ integer, parameter :: stat = -999
 !-------------------------------------------------------------------!
 real(DOUBLE_KIND) :: mpp_domains_stack(1)
 pointer( ptr_domains_stack, mpp_domains_stack )  
-pointer( ptr_info, domain_info_buf )
+

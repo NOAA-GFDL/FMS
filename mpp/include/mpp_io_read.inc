@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_read.inc,v 13.0 2006/03/28 21:41:21 fms Exp $
+! $Id: mpp_io_read.inc,v 13.0.4.3 2006/05/31 20:47:29 z1l Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -16,7 +16,7 @@
 #define MPP_TYPE_ real
 #include <mpp_read_2Ddecomp.h>
 
-    subroutine read_record( unit, field, nwords, data, time_level, domain, position )
+    subroutine read_record( unit, field, nwords, data, time_level, domain, position, tile_number )
 !routine that is finally called by all mpp_read routines to perform the read
 !a non-netCDF record contains:
 !      field ID
@@ -33,12 +33,12 @@
 !   with a timestamp of NULLTIME. There is no check in the code to prevent
 !   the user from repeatedly writing a static field.
 
-      integer, intent(in) :: unit, nwords
-      type(fieldtype), intent(in) :: field
-      real, intent(inout) :: data(nwords)
-      integer, intent(in), optional  :: time_level
-      type(domain2D), intent(in), optional :: domain
-      integer, intent(in), optional        :: position
+      integer,         intent(in)             :: unit, nwords
+      type(fieldtype), intent(in)             :: field
+      real,           intent(inout)           :: data(nwords)
+      integer,        intent(in),    optional :: time_level
+      type(domain2D), intent(in),    optional :: domain
+      integer,        intent(in),    optional :: position, tile_number
       integer, dimension(size(field%axes(:))) :: start, axsiz
 
       integer :: tlevel !,subdomain(4)
@@ -117,8 +117,8 @@
              if( field%axes(i)%did.EQ.field%time_axis_index )start(i) = tlevel
           end do
           if( PRESENT(domain) )then
-              call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
-              call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg )
+              call mpp_get_compute_domain( domain, is,  ie,  js,  je, tile_number=tile_number  )
+              call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg, tile_number=tile_number )
               ! when domain is symmetry, one extra point is needed for E, C, N-cell
               if( mpp_domain_is_symmetry(domain) ) then
                  if(present(position)) then
@@ -135,19 +135,21 @@
               end if
               axsiz(1) = ie-is+1
               axsiz(2) = je-js+1
-              if( npes.GT.1 .AND. mpp_file(unit)%fileset.EQ.MPP_SINGLE )then
-                  start(1) = is - isg + 1
-                  start(2) = js - jsg + 1
-              else   !--- the following don't make sense.
-                  if( ie-is+1.NE.ie-is+1 )then
-                      start(1) = is - isg + 1
-                      axsiz(1) = ie - is + 1 
-                  end if
-                  if( je-js+1.NE.je-js+1 )then
-                      start(2) = js - jsg + 1
-                      axsiz(2) = je - js + 1 
-                  end if
-              end if  
+              if( mpp_file(unit)%fileset.EQ.MPP_SINGLE )then
+                 if( npes.GT.1 )then
+                    start(1) = is - isg + 1
+                    start(2) = js - jsg + 1
+                 else   !--- z1l fix a problem related obc when npes = 1
+                    if( ie-is+1.NE.ieg-isg+1 )then
+                       start(1) = is - isg + 1
+                       axsiz(1) = ie - is + 1 
+                    end if
+                    if( je-js+1.NE.jeg-jsg+1 )then
+                       start(2) = js - jsg + 1
+                       axsiz(2) = je - js + 1 
+                    end if
+                 end if
+              end if
           end if  
               
           if( verbose )print '(a,2i3,i6,12i4)', 'READ_RECORD: PE, unit, nwords, start, axsiz=', pe, unit, nwords, start, axsiz

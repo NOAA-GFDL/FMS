@@ -49,8 +49,8 @@ module time_interp_external_mod
   private
 
   character(len=128), private :: version= &
-   'CVS $Id: time_interp_external.F90,v 13.0 2006/03/28 21:43:05 fms Exp $'
-  character(len=128), private :: tagname='Tag $Name: memphis $'
+   'CVS $Id: time_interp_external.F90,v 13.0.2.1 2006/05/20 14:32:22 pjp Exp $'
+  character(len=128), private :: tagname='Tag $Name: memphis_2006_07 $'
 
   integer, parameter, private :: max_fields = 1, modulo_year= 0001,max_files= 1
   integer, parameter, private :: LINEAR_TIME_INTERP = 1 ! not used currently
@@ -958,7 +958,7 @@ use time_interp_external_mod, only : time_interp_external, time_interp_external_
      time_interp_external_exit, time_interp_external, init_external_field, get_external_field_size
 use time_manager_mod, only : get_date, set_date, time_manager_init, set_calendar_type, JULIAN, time_type, increment_time,&
                              NOLEAP
-use horiz_interp_mod, only: horiz_interp, horiz_interp_init, horiz_interp_type
+use horiz_interp_mod, only: horiz_interp, horiz_interp_init, horiz_interp_new, horiz_interp_type
 use axis_utils_mod, only: get_axis_bounds
 implicit none
 
@@ -992,6 +992,7 @@ call mpp_io_init
 call mpp_domains_init
 call time_interp_external_init
 call time_manager_init
+call horiz_interp_init
 
 call mpp_open(unit,'input.nml',action=MPP_RDONLY,form=MPP_ASCII)
 read(unit,test_time_interp_ext_nml,iostat=io_status)
@@ -1099,7 +1100,7 @@ allocate(lat_in(fld_size(2)+1))
 call mpp_get_axis_data(axis_bounds(1), lon_in) ; lon_in = lon_in*atan(1.0)/45
 call mpp_get_axis_data(axis_bounds(2), lat_in) ; lat_in = lat_in*atan(1.0)/45
 
-call horiz_interp_init(Hinterp,lon_in,lat_in, lon_local_out, lat_local_out, &
+call horiz_interp_new(Hinterp,lon_in,lat_in, lon_local_out, lat_local_out, &
      interp_method='bilinear')
 
 time = set_date(year0,month0,day0)

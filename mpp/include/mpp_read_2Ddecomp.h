@@ -17,20 +17,21 @@
       return
     end subroutine MPP_READ_2DDECOMP_2D_
 
-    subroutine MPP_READ_2DDECOMP_3D_( unit, field, domain, data, tindex )
+    subroutine MPP_READ_2DDECOMP_3D_( unit, field, domain, data, tindex, tile_number )
 !mpp_read reads <data> which has the domain decomposition <domain>
-      integer, intent(in) :: unit
-      type(fieldtype), intent(in) :: field
-      type(domain2D), intent(in) :: domain
-      MPP_TYPE_, intent(inout) :: data(:,:,:)
-      integer, intent(in), optional :: tindex
+      integer,           intent(in) :: unit
+      type(fieldtype),   intent(in) :: field
+      type(domain2D),    intent(in) :: domain
+      MPP_TYPE_,      intent(inout) :: data(:,:,:)
+      integer, intent(in), optional :: tindex, tile_number
 
       MPP_TYPE_, allocatable :: cdata(:,:,:)
       MPP_TYPE_, allocatable :: gdata(:)
       integer :: len, lenx,leny,lenz,i,j,k,n
 !NEW: data may be on compute OR data domain
       logical :: data_has_halos, halos_are_global, x_is_global, y_is_global
-      integer :: is, ie, js, je, isd, ied, jsd, jed, isg, ieg, jsg, jeg, ioff, joff, position
+      integer :: is, ie, js, je, isd, ied, jsd, jed, isg, ieg, jsg, jeg, ism, iem, jsm, jem
+      integer :: ioff, joff, position
 
       if (.NOT. present(tindex) .AND. mpp_file(unit)%time_level .ne. -1) &
       call mpp_error(FATAL, 'MPP_READ: need to specify a time level for data with time axis')
@@ -40,6 +41,7 @@
 
       call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
       call mpp_get_data_domain   ( domain, isd, ied, jsd, jed, x_is_global=x_is_global, y_is_global=y_is_global )
+      call mpp_get_memory_domain ( domain, ism, iem, jsm, jem )
       call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg )
 
       ! when domain is symmetry, extra point is needed for some data on x/y direction
@@ -50,31 +52,29 @@
          else if( size(data,1).EQ.ie-is+2 .AND. size(data,2).EQ.je-js+1 ) then ! EAST
             data_has_halos = .FALSE.
             position = EAST
-            ie = ie + 1; ied = ied + 1; ieg = ieg + 1
+            ie = ie + 1
          else if( size(data,1).EQ.ie-is+1 .AND. size(data,2).EQ.je-js+2 ) then ! NORTH
             position = NORTH
             data_has_halos = .FALSE.
-            je = je + 1; jed = jed + 1; jeg = ieg + 1
+            je = je + 1
          else if( size(data,1).EQ.ie-is+2 .AND. size(data,2).EQ.je-js+2 ) then ! CORNER
             position = CORNER
             data_has_halos = .FALSE.
-            ie = ie + 1; ied = ied + 1; ieg = ieg + 1
-            je = je + 1; jed = jed + 1; jeg = ieg + 1
-         else if( size(data,1).EQ.ied-isd+1 .AND. size(data,2).EQ.jed-jsd+1 )then ! CENTER
+            ie = ie + 1;   je = je + 1
+         else if( size(data,1).EQ.iem-ism+1 .AND. size(data,2).EQ.jem-jsm+1 )then ! CENTER
             data_has_halos = .TRUE.
-         else if( size(data,1).EQ.ied-isd+2 .AND. size(data,2).EQ.jed-jsd+1 )then ! EAST
+         else if( size(data,1).EQ.iem-ism+2 .AND. size(data,2).EQ.jem-jsm+1 )then ! EAST
             position = EAST
             data_has_halos = .TRUE.
-            ie = ie + 1; ied = ied + 1; ieg = ieg + 1
-         else if( size(data,1).EQ.ied-isd+1 .AND. size(data,2).EQ.jed-jsd+2 )then ! NORTH
+            ie = ie + 1
+         else if( size(data,1).EQ.iem-ism+1 .AND. size(data,2).EQ.jem-jsm+2 )then ! NORTH
             position = NORTH
             data_has_halos = .TRUE.
-            je = je + 1; jed = jed + 1; jeg = ieg + 1
-         else if( size(data,1).EQ.ied-isd+2 .AND. size(data,2).EQ.jed-jsd+2 )then ! CORNER
+            je = je + 1
+         else if( size(data,1).EQ.iem-ism+2 .AND. size(data,2).EQ.jem-jsm+2 )then ! CORNER
             position = CORNER
             data_has_halos = .TRUE.
-            ie = ie + 1; ied = ied + 1; ieg = ieg + 1
-            je = je + 1; jed = jed + 1; jeg = ieg + 1
+            ie = ie + 1;  je = je + 1
          else
             call mpp_error( FATAL, 'MPP_READ: when domain is symmetry, data must be either on ' &
                       //'compute domain or data domain with the consideration of shifting.' )
@@ -82,7 +82,7 @@
       else
          if( size(data,1).EQ.ie-is+1 .AND. size(data,2).EQ.je-js+1 )then
             data_has_halos = .FALSE.
-         else if( size(data,1).EQ.ied-isd+1 .AND. size(data,2).EQ.jed-jsd+1 )then
+         else if( size(data,1).EQ.iem-ism+1 .AND. size(data,2).EQ.jem-jsm+1 )then
             data_has_halos = .TRUE.
          else
             call mpp_error( FATAL, 'MPP_READ: data must be either on compute domain or data domain.' )
@@ -122,12 +122,12 @@
 ! read compute domain as contiguous data
 
           allocate( cdata(is:ie,js:je,size(data,3)) )
-          call read_record(unit,field,size(cdata(:,:,:)),cdata,tindex,domain,position)
+          call read_record(unit,field,size(cdata(:,:,:)),cdata,tindex,domain,position,tile_number)
 
           data(is-isd+1:ie-isd+1,js-jsd+1:je-jsd+1,:) = cdata(:,:,:)
           deallocate(cdata)
       else
-          call read_record(unit,field,size(data(:,:,:)),data,tindex,domain,position)
+          call read_record(unit,field,size(data(:,:,:)),data,tindex,domain,position,tile_number)
       end if
 
       return

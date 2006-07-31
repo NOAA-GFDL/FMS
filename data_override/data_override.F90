@@ -56,11 +56,11 @@ module data_override_mod
 ! data_override will take place, field values outside the region will not be affected. 
 !</OVERVIEW>
 #include <fms_platform.h>
-use  platform_mod, only: r8_kind
+use platform_mod, only: r8_kind
 use constants_mod, only: PI
-use mpp_io_mod, only: axistype, mpp_close, mpp_open, mpp_get_axis_data, MPP_RDONLY
-use mpp_mod, only : mpp_error,FATAL,mpp_pe, stdout, stdlog
-use horiz_interp_mod, only : horiz_interp, horiz_interp_init, horiz_interp_type
+use mpp_io_mod, only: axistype,mpp_close,mpp_open,mpp_get_axis_data,MPP_RDONLY,MPP_ASCII
+use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe,stdout,stdlog,mpp_root_pe
+use horiz_interp_mod, only : horiz_interp, horiz_interp_init, horiz_interp_new, horiz_interp_type
 use time_interp_external_mod, only:time_interp_external_init, time_interp_external, &
      init_external_field, get_external_field_size
 use fms_io_mod, only: field_size, read_data, write_data,fms_io_init,nullify_domain,return_domain, &
@@ -73,44 +73,44 @@ use time_manager_mod, only: time_type
 implicit none
 private
 
-character(len=128) :: version = '$Id: data_override.F90,v 13.0 2006/03/28 21:37:43 fms Exp $'
-character(len=128) :: tagname = '$Name: memphis $'
+character(len=128) :: version = '$Id: data_override.F90,v 13.0.2.3 2006/05/26 13:46:39 gtn Exp $'
+character(len=128) :: tagname = '$Name: memphis_2006_07 $'
 
 type data_type_lima
-   character(len=3) :: gridname
+   character(len=3)   :: gridname
    character(len=128) :: fieldname_code !fieldname used in user's code (model)
    character(len=128) :: fieldname_file ! fieldname used in the netcdf data file
    character(len=128) :: file_name   ! name of netCDF data file
-   logical :: ongrid   ! true if data is on model's grid, false otherwise
-   real :: factor ! For unit conversion, default=1, see OVERVIEW above
+   logical            :: ongrid   ! true if data is on model's grid, false otherwise
+   real               :: factor ! For unit conversion, default=1, see OVERVIEW above
 end type data_type_lima
 
 type data_type
-   character(len=3) :: gridname
+   character(len=3)   :: gridname
    character(len=128) :: fieldname_code !fieldname used in user's code (model)
    character(len=128) :: fieldname_file ! fieldname used in the netcdf data file
    character(len=128) :: file_name   ! name of netCDF data file
    character(len=128) :: interpol_method   ! interpolation method (default "bilinear")
-   real :: factor ! For unit conversion, default=1, see OVERVIEW above
+   real               :: factor ! For unit conversion, default=1, see OVERVIEW above
 end type data_type
 
 type override_type
-   character(len=3) :: gridname  
-   character(len=128) :: fieldname
-   integer :: t_index !index for time interp
+   character(len=3)        :: gridname  
+   character(len=128)      :: fieldname
+   integer                 :: t_index !index for time interp
    type(horiz_interp_type) :: horz_interp ! index for horizontal spatial interp
-   integer :: dims(4) ! dimensions(x,y,z,t) of the field stored in filename
-   integer :: comp_domain(4) ! istart,iend,jstart,jend for compute domain
+   integer                 :: dims(4) ! dimensions(x,y,z,t) of the field in filename
+   integer                 :: comp_domain(4) ! istart,iend,jstart,jend for compute domain
    logical, dimension(:,:), _ALLOCATABLE :: region1 ! mask for regional override
    logical, dimension(:,:), _ALLOCATABLE :: region2 ! mask for regional override
 end type override_type
 
  integer, parameter :: max_table=100, max_array=100
- integer :: table_size ! actual size of data table
+ integer            :: table_size ! actual size of data table
  integer, parameter :: ANNUAL=1, MONTHLY=2, DAILY=3, HOURLY=4, UNDEF=-1
- real, parameter :: tpi=2*PI
- real :: deg_to_radian, radian_to_deg 
- logical:: module_is_initialized = .FALSE.
+ real, parameter    :: tpi=2*PI
+ real               :: deg_to_radian, radian_to_deg 
+ logical            :: module_is_initialized = .FALSE.
 
 type(domain2D),save :: ocn_domain,atm_domain,lnd_domain, ice_domain 
 real(r8_kind), dimension(:,:), target, allocatable :: glo_lat_ocn, glo_lon_ocn, glo_lat_atm, &
@@ -119,12 +119,12 @@ real, dimension(:,:), target, allocatable :: lon_local_ocn, lat_local_ocn,lon_lo
      lon_local_ice, lon_local_lnd, lat_local_atm, lat_local_ice, lat_local_lnd
 real :: min_glo_lon_ocn, max_glo_lon_ocn, min_glo_lon_atm, max_glo_lon_atm, min_glo_lon_lnd, max_glo_lon_lnd
 integer:: num_fields = 0 ! number of fields in override_array already processed
-type(data_type), dimension(max_table) :: data_table ! user-provided data table
-type(data_type) :: default_table
+type(data_type), dimension(max_table)           :: data_table ! user-provided data table
+type(data_type)                                 :: default_table
 type(override_type), dimension(max_array), save :: override_array ! to store processed fields
-type(override_type), save :: default_array
-logical :: atm_on, ocn_on, lnd_on, ice_on
-
+type(override_type), save                       :: default_array
+logical                                         :: atm_on, ocn_on, lnd_on, ice_on
+logical                                         :: debug_data_override
 interface data_override
      module procedure data_override_2d
      module procedure data_override_3d
@@ -161,16 +161,27 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
 ! line of data_table contains one data_entry. Items of data_entry are comma separated.
 !
 ! </NOTE>
+
   integer :: is,ie,js,je
-  integer :: i, iunit, ntable, ntable_lima, ntable_new, unit
-  character(len=256) :: record
+  integer :: i, iunit, ntable, ntable_lima, ntable_new, unit,io_status 
+  character(len=256)   :: record
   type(data_type_lima) :: data_entry_lima
-  type(data_type) :: data_entry
-  type (domain2d) :: domain2 ! It should not be necessary to save and restore the
-                             ! the current_domain of fms_io_mod because it should
-                             ! not have a current_domain. domain should be a required
-                             ! argument of read_data and write_data rather than an
-                             ! optional argument.
+  type(data_type)      :: data_entry
+  type (domain2d)      :: domain2 ! It should not be necessary to save and restore the
+                                  ! the current_domain of fms_io_mod because it should
+                                  ! not have a current_domain. domain should be a required
+                                  ! argument of read_data and write_data rather than an
+                                  ! optional argument.
+  namelist /data_override_nml/ debug_data_override
+
+  debug_data_override = .false.
+  call mpp_open(iunit, 'input.nml',form=MPP_ASCII,action=MPP_RDONLY)
+  read(iunit,data_override_nml,iostat=io_status)
+  write(stdlog(), data_override_nml)
+  if (io_status > 0) then
+     call mpp_error(FATAL,'data_override_init: Error reading data_override_nml')
+  endif
+  call mpp_close (iunit)
 
 !  if(module_is_initialized) return
 
@@ -180,6 +191,7 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
   ice_on = PRESENT(Ice_domain_in)
    
   if(.not. module_is_initialized) then
+    call horiz_interp_init
     radian_to_deg = 180./PI
     deg_to_radian = PI/180.
 
@@ -486,7 +498,11 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
        index1 = i                               ! field found        
        exit
     enddo
-    if(index1 .eq. -1) return  ! NO override was performed
+    if(index1 .eq. -1) then
+       if(mpp_pe() == mpp_root_pe() .and. debug_data_override) &
+            call mpp_error(WARNING,'this field is NOT found in data_table: '//trim(fieldname_code))
+       return  ! NO override was performed
+    endif
   endif
  
   if(present(region2) .and. .not. present(region1)) &
@@ -494,8 +510,6 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
 
   fieldname = data_table(index1)%fieldname_file ! fieldname in netCDF data file
   factor = data_table(index1)%factor
-
-
 
   if(fieldname == "") then
      data1 = factor
@@ -579,10 +593,10 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
 !8 do horizontal_interp_init to get id_horz_interp 
         select case (data_table(index1)%interpol_method)
         case ('bilinear')
-          call horiz_interp_init (id_horz_interp,lon_in, lat_in, lon_local, lat_local,&
+          call horiz_interp_new (id_horz_interp,lon_in, lat_in, lon_local, lat_local,&
                interp_method="bilinear")
         case ('bicubic')
-          call horiz_interp_init (id_horz_interp,lon_in, lat_in, lon_local, lat_local,&
+          call horiz_interp_new (id_horz_interp,lon_in, lat_in, lon_local, lat_local,&
                interp_method="bicubic")
         end select
         override_array(curr_position)%horz_interp = id_horz_interp

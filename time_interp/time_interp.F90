@@ -28,10 +28,11 @@ module time_interp_mod
 use time_manager_mod, only: time_type, get_date, set_date, set_time, &
                             days_in_year, days_in_month, leap_year,  &
                             time_type_to_real, real_to_time_type,    &
+                            get_calendar_type, JULIAN, GREGORIAN, NO_CALENDAR, &
                             operator(+), operator(-), operator(>),   &
                             operator(<), operator( // ), operator( / ),  &
                             operator(>=), operator(<=), operator( * ), &
-                            operator(==), print_date
+                            operator(==), print_date, print_time
 
 use          fms_mod, only: write_version_number, &
                             error_mesg, FATAL, stdout
@@ -193,8 +194,8 @@ integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
    integer :: yrmod, momod, dymod
    logical :: mod_leapyear
 
-   character(len=128) :: version='$Id: time_interp.F90,v 13.0 2006/03/28 21:43:09 fms Exp $'
-   character(len=128) :: tagname='$Name: memphis $'
+   character(len=128) :: version='$Id: time_interp.F90,v 13.0.2.1 2006/04/18 13:23:22 pjp Exp $'
+   character(len=128) :: tagname='$Name: memphis_2006_07 $'
 
    logical :: module_is_initialized=.FALSE.
 
@@ -439,15 +440,17 @@ logical, intent(in), optional :: correct_leap_year_inconsistency
   integer :: ye,me,de,he,mine,se ! components of the ending date
   integer :: yt,mt,dt,ht,mint,st ! components of the current date
   integer :: dt1                 ! temporary value for day 
-  logical :: correct_lyr
+  integer :: stdoutunit
+  logical :: correct_lyr, calendar_has_leap_years, do_the_lyr_correction
 
   if ( .not. module_is_initialized ) call time_interp_init
+  stdoutunit = stdout()
   
   if (Time_beg>=Time_end) then
-     call print_date(Time_beg, 'Time_beg' )
-     call print_date(Time_end, 'Time_end' )
      call error_handler("end of the specified time loop interval must be later than its beginning")
   endif
+
+  calendar_has_leap_years = (get_calendar_type() == JULIAN .or. get_calendar_type() == GREGORIAN)
   
   Period = Time_end-Time_beg ! period of the time axis
 
@@ -459,22 +462,37 @@ logical, intent(in), optional :: correct_leap_year_inconsistency
   
   ! bring the requested time inside the specified time period
   T = Time
-  call get_date(Time_beg,ys,ms,ds,hs,mins,ss)
-  call get_date(Time_end,ye,me,de,he,mine,se)
-  
-  if(correct_lyr.and.ms==me.and.ds==de.and.hs==he.and.mins==mine.and.ss==se) then
-     ! whole number of years
+
+  do_the_lyr_correction = .false.
+
+  ! Determine if the leap year correction needs to be done.
+  ! It never needs to be done unless 3 conditions are met:
+  ! 1) We are using a calendar with leap years
+  ! 2) optional argument correct_leap_year_inconsistency is present and equals .true.
+  ! 3) The modulo time period is an integer number of years
+  ! If all of these are true then set do_the_lyr_correction to .true.
+
+  if(calendar_has_leap_years .and. correct_lyr) then
+    call get_date(Time_beg,ys,ms,ds,hs,mins,ss)
+    call get_date(Time_end,ye,me,de,he,mine,se)
+    if(ms==me.and.ds==de.and.hs==he.and.mins==mine.and.ss==se) then
+      ! whole number of years
+      do_the_lyr_correction = .true.
+    endif
+  endif
+
+  if(do_the_lyr_correction) then
      call get_date(T,yt,mt,dt,ht,mint,st)
      yt = ys+modulo(yt-ys,ye-ys)
      dt1 = dt
+     ! If it is Feb 29, but we map into a common year, use Feb 28
      if(mt==2.and.dt==29.and..not.leap_year(set_date(yt,1,1))) dt1=28
      T = set_date(yt,mt,dt1,ht,mint,st)
      if (T < Time_beg) then
-        ! the requested time is within the first year, 
-        ! but before the starting date. So we shift it to the
-        ! last year.
-        if(mt==2.and.dt==29.and..not.leap_year(set_date(ye,1,1))) dt=28
-        T = set_date(ye,mt,dt,ht,mint,st)
+       ! the requested time is within the first year, 
+       ! but before the starting date. So we shift it to the last year.
+       if(mt==2.and.dt==29.and..not.leap_year(set_date(ye,1,1))) dt=28
+       T = set_date(ye,mt,dt,ht,mint,st)
      endif
   else
      do while ( T > Time_end )
@@ -488,11 +506,18 @@ logical, intent(in), optional :: correct_leap_year_inconsistency
   ! find indices of the first and last records in the Timelist that are within 
   ! the requested time period.
   if (Time_end<Timelist(1).or.Time_beg>Timelist(size(Timelist(:)))) then
-     call print_date(Time_beg,                   'Time_beg'    )
-     call print_date(Time_end,                   'Time_end'    )
-     call print_date(Timelist(1),                'Timelist(1)' )
-     call print_date(Timelist(size(Timelist(:))),'Timelist(n)' )
-     write(stdout(),*)'where n =',size(Timelist(:))
+     if(get_calendar_type() == NO_CALENDAR) then
+       call print_time(Time_beg,                   'Time_beg'    )
+       call print_time(Time_end,                   'Time_end'    )
+       call print_time(Timelist(1),                'Timelist(1)' )
+       call print_time(Timelist(size(Timelist(:))),'Timelist(n)' )
+     else
+       call print_date(Time_beg,                   'Time_beg'    )
+       call print_date(Time_end,                   'Time_end'    )
+       call print_date(Timelist(1),                'Timelist(1)' )
+       call print_date(Timelist(size(Timelist(:))),'Timelist(n)' )
+     endif
+     write(stdoutunit,*)'where n =',size(Timelist(:))
      call error_handler('the entire time list is outside the specified time loop interval')
   endif
   
@@ -514,12 +539,19 @@ logical, intent(in), optional :: correct_leap_year_inconsistency
      ie = i1 ! Time_end inside the interval (or on lower boundary)
   endif
   if (is>=ie) then
-     call print_date(Time_beg,                   'Time_beg'    )
-     call print_date(Time_end,                   'Time_end'    )
-     call print_date(Timelist(1),                'Timelist(1)' )
-     call print_date(Timelist(size(Timelist(:))),'Timelist(n)' )
-     write(stdout(),*)'where n =',size(Timelist(:))
-     write(stdout(),*)'is =',is,'ie =',ie
+     if(get_calendar_type() == NO_CALENDAR) then
+       call print_time(Time_beg,                   'Time_beg'    )
+       call print_time(Time_end,                   'Time_end'    )
+       call print_time(Timelist(1),                'Timelist(1)' )
+       call print_time(Timelist(size(Timelist(:))),'Timelist(n)' )
+     else
+       call print_date(Time_beg,                   'Time_beg'    )
+       call print_date(Time_end,                   'Time_end'    )
+       call print_date(Timelist(1),                'Timelist(1)' )
+       call print_date(Timelist(size(Timelist(:))),'Timelist(n)' )
+     endif
+     write(stdoutunit,*)'where n =',size(Timelist(:))
+     write(stdoutunit,*)'is =',is,'ie =',ie
      call error_handler('error in calculation of time list bounds within the specified time loop interval')
   endif
   
@@ -535,7 +567,7 @@ logical, intent(in), optional :: correct_leap_year_inconsistency
      index1 = ie;   index2 = is
      weight = 1.0-((Timelist(is)-T)//(Period-(Timelist(ie)-Timelist(is))))
   else
-     call time_interp_list(T,Timelist,weight,index1,index2,NONE)
+     call time_interp_list(T,Timelist,weight,index1,index2)
   endif
 
 end subroutine time_interp_modulo

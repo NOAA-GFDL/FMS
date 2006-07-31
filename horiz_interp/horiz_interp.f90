@@ -43,7 +43,7 @@ module horiz_interp_mod
 !     bilinear interpolation that use the surround four source grid to interpolate onto
 !     the destination grid, bicubic interpolation, which does the same with higher
 !     order polynominals and spherical regrid that use thes inverse of square distance
-!     as weight. User can choose the interpolation method in the horiz_interp_init.
+!     as weight. User can choose the interpolation method in the horiz_interp_new.
 !     The default method is conservative scheme. When the source grid is tripolar grid,
 !     only spherical regrid is allowed. When destination grid is tripolar, conservative 
 !     scheme can not be used. 
@@ -76,10 +76,10 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_end
 
 !---- interfaces ----
 
- public   horiz_interp_type, horiz_interp, horiz_interp_init, &
-          horiz_interp_end
+ public   horiz_interp_type, horiz_interp, horiz_interp_new, horiz_interp_del, &
+          horiz_interp_init, horiz_interp_end
 
-! <INTERFACE NAME="horiz_interp_init">
+! <INTERFACE NAME="horiz_interp_new">
 !   <OVERVIEW>
 !      Allocates space and initializes a derived-type variable
 !      that contains pre-computed interpolation indices and weights.
@@ -138,14 +138,14 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_end
 !   <OUT NAME="Interp" >
 !      A derived-type variable containing indices and weights used for subsequent 
 !      interpolations. To reinitialize this variable for a different grid-to-grid 
-!      interpolation you must first use the "horiz_interp_end" interface.
+!      interpolation you must first use the "horiz_interp_del" interface.
 !   </OUT>
 
- interface horiz_interp_init
-    module procedure horiz_interp_init_1d     ! Source grid is 1d, destination grid is 1d
-    module procedure horiz_interp_init_1d_src ! Source grid is 1d, destination grid is 2d
-    module procedure horiz_interp_init_2d     ! Source grid is 2d, destination grid is 2d
-    module procedure horiz_interp_init_1d_dst ! Source grid is 2d, destination grid is 1d
+ interface horiz_interp_new
+    module procedure horiz_interp_new_1d     ! Source grid is 1d, destination grid is 1d
+    module procedure horiz_interp_new_1d_src ! Source grid is 1d, destination grid is 2d
+    module procedure horiz_interp_new_2d     ! Source grid is 2d, destination grid is 2d
+    module procedure horiz_interp_new_1d_dst ! Source grid is 2d, destination grid is 1d
  end interface
 ! </INTERFACE>
 
@@ -157,13 +157,13 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_end
 !   <DESCRIPTION>
 !     Subroutine for performing the horizontal interpolation between
 !     two grids. There are two forms of this interface.
-!     Form A requires first calling horiz_interp_init, while Form B
+!     Form A requires first calling horiz_interp_new, while Form B
 !     requires no initialization.
 !   </DESCRIPTION>
 
 !   <IN NAME="Interp" >
 !     Derived-type variable containing interpolation indices and weights.
-!     Returned by a previous call to horiz_interp_init.
+!     Returned by a previous call to horiz_interp_new.
 !   </IN>
 !   <IN NAME="data_in">
 !      Input data on source grid.
@@ -187,11 +187,11 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_end
 !   </IN>
 !   <IN NAME="lon_in, lat_in" >
 !      longitude and latitude (in radians) of source grid. More explanation can 
-!      be found in the documentation of horiz_interp_init.
+!      be found in the documentation of horiz_interp_new.
 !   </IN>
 !   <IN NAME="lon_out, lat_out" >
 !      longitude and latitude (in radians) of destination grid. More explanation can 
-!      be found in the documentation of horiz_interp_init.
+!      be found in the documentation of horiz_interp_new.
 !   </IN>
 !   <OUT NAME="data_out">
 !      Output data on destination grid.
@@ -232,17 +232,34 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_end
  integer, parameter :: BICUBIC  = 4
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: horiz_interp.f90,v 13.0 2006/03/28 21:39:40 fms Exp $'
- character(len=128) :: tagname = '$Name: memphis $'
- logical            :: do_vers = .true.
+ character(len=128) :: version = '$Id: horiz_interp.f90,v 13.0.2.1 2006/05/19 16:14:17 pjp Exp $'
+ character(len=128) :: tagname = '$Name: memphis_2006_07 $'
  logical            :: module_is_initialized = .FALSE.
 !-----------------------------------------------------------------------
 
 contains
 
+!#######################################################################
+!  <SUBROUTINE NAME="horiz_interp_init">
+!  <OVERVIEW>
+!     writes version number and tag name to logfile.out
+!  </OVERVIEW>
+!  <DESCRIPTION>       
+!     writes version number and tag name to logfile.out
+!  </DESCRIPTION>
+
+  subroutine horiz_interp_init
+
+  if(module_is_initialized) return
+  call write_version_number (version, tagname)
+  module_is_initialized = .true.
+
+  end subroutine horiz_interp_init
+
+!  </SUBROUTINE>
 
 !#######################################################################
-!  <SUBROUTINE NAME="horiz_interp_init_1d" INTERFACE="horiz_interp_init">
+!  <SUBROUTINE NAME="horiz_interp_new_1d" INTERFACE="horiz_interp_new">
 !  <IN NAME="lon_in" TYPE="real" DIM="(:),(:,:)" UNITS="radians"></IN>
 !  <IN NAME="lat_in" TYPE="real" DIM="(:),(:,:)"></IN>
 !  <IN NAME="lon_out" TYPE="real" DIM="(:),(:,:)"></IN>
@@ -252,8 +269,8 @@ contains
 !  <IN NAME="src_modulo" TYPE="logical, optional" > </IN>
 !  <OUT NAME="Interp" TYPE="type(horiz_interp_type)"></OUT>
 
-!<PUBLICROUTINE INTERFACE="horiz_interp_init">
-  subroutine horiz_interp_init_1d (Interp, lon_in, lat_in, lon_out, lat_out,  &
+!<PUBLICROUTINE INTERFACE="horiz_interp_new">
+  subroutine horiz_interp_new_1d (Interp, lon_in, lat_in, lon_out, lat_out,  &
        verbose, interp_method, num_nbrs, max_dist, src_modulo, &
        grid_at_center)
     !</PUBLICROUTINE>
@@ -275,12 +292,7 @@ contains
     logical                           :: center
     character(len=40)                 :: method
     !-----------------------------------------------------------------------
-    module_is_initialized = .true.
-    !  write version number and tag name
-    if (do_vers) then
-       call write_version_number (version, tagname)
-       do_vers = .false.
-    endif
+    call horiz_interp_init
 
     method = 'conservative'
     if(present(interp_method)) method = interp_method
@@ -395,12 +407,12 @@ contains
 
     !-----------------------------------------------------------------------
 
-  end subroutine horiz_interp_init_1d
+  end subroutine horiz_interp_new_1d
 !  </SUBROUTINE>
 
 !#######################################################################
 
- subroutine horiz_interp_init_1d_src (Interp, lon_in, lat_in, lon_out, lat_out,   &
+ subroutine horiz_interp_new_1d_src (Interp, lon_in, lat_in, lon_out, lat_out,   &
                                       verbose, interp_method, num_nbrs, max_dist, &
                                       src_modulo, grid_at_center )
 
@@ -420,12 +432,7 @@ contains
    character(len=40)                 :: method
    logical                           :: center
    !-----------------------------------------------------------------------
-   module_is_initialized = .true.
-   !  write version number and tag name
-   if (do_vers) then
-      call write_version_number (version, tagname)
-      do_vers = .false.
-   endif
+   call horiz_interp_init
 
    method = 'conservative'
    if(present(interp_method)) method = interp_method
@@ -494,11 +501,11 @@ contains
 
    !-----------------------------------------------------------------------
 
- end subroutine horiz_interp_init_1d_src
+ end subroutine horiz_interp_new_1d_src
 
 !#######################################################################
 
- subroutine horiz_interp_init_2d (Interp, lon_in, lat_in, lon_out, lat_out,   &
+ subroutine horiz_interp_new_2d (Interp, lon_in, lat_in, lon_out, lat_out,   &
                                   verbose, interp_method, num_nbrs, max_dist, src_modulo)
  type(horiz_interp_type), intent(inout)     :: Interp
  real, intent(in),  dimension(:,:)          :: lon_in , lat_in
@@ -511,12 +518,7 @@ contains
 
  character(len=40) :: method
 !-----------------------------------------------------------------------
-   module_is_initialized = .true.   
-!  write version number and tag name
-   if (do_vers) then
-      call write_version_number (version, tagname)
-      do_vers = .false.
-   endif
+   call horiz_interp_init
 
    method = 'bilinear'
    if(present(interp_method)) method = interp_method
@@ -536,10 +538,10 @@ contains
 
 !-----------------------------------------------------------------------
 
- end subroutine horiz_interp_init_2d
+ end subroutine horiz_interp_new_2d
 
 !#######################################################################
- subroutine horiz_interp_init_1d_dst (Interp, lon_in, lat_in, lon_out, lat_out,   &
+ subroutine horiz_interp_new_1d_dst (Interp, lon_in, lat_in, lon_out, lat_out,   &
       verbose, interp_method, num_nbrs, max_dist, src_modulo)
    type(horiz_interp_type), intent(inout)     :: Interp
    real, intent(in),  dimension(:,:)          :: lon_in , lat_in
@@ -555,12 +557,7 @@ contains
    integer                           :: i, j, nlon_out, nlat_out
    real, dimension(:,:), allocatable :: lon_dst, lat_dst
    !-----------------------------------------------------------------------
-   module_is_initialized = .true.   
-   !  write version number and tag name
-   if (do_vers) then
-      call write_version_number (version, tagname)
-      do_vers = .false.
-   endif
+   call horiz_interp_init
 
    method = 'bilinear'
    if(present(interp_method)) method = interp_method
@@ -591,7 +588,7 @@ contains
 
    !-----------------------------------------------------------------------
 
- end subroutine horiz_interp_init_1d_dst
+ end subroutine horiz_interp_new_1d_dst
 
 !#######################################################################
 ! <SUBROUTINE NAME="horiz_interp_base_2d" INTERFACE="horiz_interp">
@@ -700,7 +697,7 @@ contains
 !-----------------------------------------------------------------------
 !   interpolates from a rectangular grid to rectangular grid.
 !   interp_method can be the value conservative, bilinear or spherical.
-!   horiz_interp_init don't need to be called before calling this routine.
+!   horiz_interp_new don't need to be called before calling this routine.
 
 !-----------------------------------------------------------------------
       real, intent(in),  dimension(:,:) :: data_in
@@ -720,14 +717,15 @@ contains
 !-----------------------------------------------------------------------
     type (horiz_interp_type) :: Interp
 !-----------------------------------------------------------------------
+    call horiz_interp_init
 
-    call horiz_interp_init ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
+    call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
                              interp_method, num_nbrs, max_dist, src_modulo, grid_at_center )
 
     call horiz_interp ( Interp, data_in, data_out, verbose,   &
                         mask_in, mask_out, missing_value, missing_permit )
 
-    call horiz_interp_end ( Interp )
+    call horiz_interp_del ( Interp )
 !-----------------------------------------------------------------------
 
  end subroutine horiz_interp_solo_1d
@@ -742,7 +740,7 @@ contains
 !
 !   interpolates from a uniformly spaced grid to any output grid.
 !   interp_method can be the value "onservative","bilinear" or "spherical".
-!   horiz_interp_init don't need to be called before calling this routine.
+!   horiz_interp_new don't need to be called before calling this routine.
 !
 !-----------------------------------------------------------------------
       real, intent(in),  dimension(:,:) :: data_in
@@ -762,14 +760,15 @@ contains
 !-----------------------------------------------------------------------
     type (horiz_interp_type) :: Interp
 !-----------------------------------------------------------------------
+    call horiz_interp_init
 
-    call horiz_interp_init ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
+    call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
                              interp_method, num_nbrs, max_dist, src_modulo, grid_at_center )
 
     call horiz_interp ( Interp, data_in, data_out, verbose,   &
                         mask_in, mask_out, missing_value, missing_permit )
 
-    call horiz_interp_end ( Interp )
+    call horiz_interp_del ( Interp )
 
 !-----------------------------------------------------------------------
 
@@ -784,7 +783,7 @@ contains
 !-----------------------------------------------------------------------
 !
 !   interpolates from any grid to any grid. interp_method should be "spherical"
-!   horiz_interp_init don't need to be called before calling this routine.
+!   horiz_interp_new don't need to be called before calling this routine.
 !
 !-----------------------------------------------------------------------
       real, intent(in),  dimension(:,:) :: data_in
@@ -803,14 +802,15 @@ contains
 !-----------------------------------------------------------------------
     type (horiz_interp_type) :: Interp
 !-----------------------------------------------------------------------
+    call horiz_interp_init
 
-    call horiz_interp_init ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
+    call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
                              interp_method, num_nbrs, max_dist, src_modulo )
 
     call horiz_interp ( Interp, data_in, data_out, verbose,   &
                         mask_in, mask_out, missing_value, missing_permit )
 
-    call horiz_interp_end ( Interp )
+    call horiz_interp_del ( Interp )
 
 !-----------------------------------------------------------------------
 
@@ -825,7 +825,7 @@ contains
 !
 !   interpolates from any grid to rectangular longitude/latitude grid. 
 !   interp_method should be "spherical".
-!   horiz_interp_init don't need to be called before calling this routine.
+!   horiz_interp_new don't need to be called before calling this routine.
 !
 !-----------------------------------------------------------------------
       real, intent(in),  dimension(:,:) :: data_in
@@ -844,14 +844,15 @@ contains
 !-----------------------------------------------------------------------
     type (horiz_interp_type) :: Interp
 !-----------------------------------------------------------------------
+    call horiz_interp_init
 
-    call horiz_interp_init ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
+    call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
                              interp_method, num_nbrs, max_dist, src_modulo )
 
     call horiz_interp ( Interp, data_in, data_out, verbose,   &
                         mask_in, mask_out, missing_value, missing_permit )
 
-    call horiz_interp_end ( Interp )
+    call horiz_interp_del ( Interp )
 
 !-----------------------------------------------------------------------
 
@@ -911,6 +912,7 @@ contains
      integer :: i, j, nlon_in, nlat_in
      real    :: tpi
 !-----------------------------------------------------------------------
+   call horiz_interp_init
  
    tpi = 2.*pi
    nlon_in = size(data_in,1)
@@ -938,30 +940,30 @@ contains
  end subroutine horiz_interp_solo_old
 
 !#######################################################################
-! <SUBROUTINE NAME="horiz_interp_end">
+! <SUBROUTINE NAME="horiz_interp_del">
 
 !   <OVERVIEW>
 !     Deallocates memory used by "horiz_interp_type" variables.
-!       Must be called before reinitializing with horiz_interp_init.
+!       Must be called before reinitializing with horiz_interp_new.
 !   </OVERVIEW>
 !   <DESCRIPTION>
 !     Deallocates memory used by "horiz_interp_type" variables.
-!     Must be called before reinitializing with horiz_interp_init.
+!     Must be called before reinitializing with horiz_interp_new.
 !   </DESCRIPTION>
 !   <TEMPLATE>
-!     call horiz_interp_end ( Interp )
+!     call horiz_interp_del ( Interp )
 !   </TEMPLATE>
 
 !   <INOUT NAME="Interp" TYPE="horiz_interp_type">
 !     A derived-type variable returned by previous call
-!              to horiz_interp_init. The input variable must have
+!              to horiz_interp_new. The input variable must have
 !              allocated arrays. The returned variable will contain
 !              deallocated arrays.
 !   </INOUT>
 
 ! </SUBROUTINE>
 
- subroutine horiz_interp_end ( Interp )
+ subroutine horiz_interp_del ( Interp )
 
    type (horiz_interp_type), intent(inout) :: Interp
 
@@ -982,9 +984,29 @@ contains
 
 !-----------------------------------------------------------------------
 
- end subroutine horiz_interp_end
+ end subroutine horiz_interp_del
 
  !#####################################################################
+
+! <SUBROUTINE NAME="horiz_interp_end">
+
+!   <OVERVIEW>
+!     Dummy routine.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Dummy routine.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call horiz_interp_end
+!   </TEMPLATE>
+
+! </SUBROUTINE>
+
+ subroutine horiz_interp_end
+ return
+ end subroutine horiz_interp_end
+
+!#####################################################################
 
 end module horiz_interp_mod
 

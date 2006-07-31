@@ -23,7 +23,8 @@ use  mpp_domains_mod, only: domain1d, domain2d, mpp_define_domains, mpp_get_peli
 use mpp_mod, only         : mpp_npes, mpp_pe
 use    diag_axis_mod, only: diag_axis_init, get_diag_axis,           &
                             get_axis_length, get_axis_global_length, &
-                            get_domain1d, get_domain2d, get_axis_aux
+                            get_domain1d, get_domain2d, get_axis_aux,&
+                            get_tile_number
 
 use time_manager_mod, only: get_calendar_type, valid_calendar_types
 
@@ -94,9 +95,9 @@ type(axistype),save     :: Axis_types     (max_axis_num)
 logical                 :: module_is_initialized = .FALSE.
 
 character(len=128), private :: version= &
-  '$Id: diag_output.F90,v 13.0 2006/03/28 21:38:03 fms Exp $'
+  '$Id: diag_output.F90,v 13.0.4.2.2.1 2006/05/22 02:10:30 fms Exp $'
 character(len=128), private :: tagname= &
-  '$Name: memphis $'
+  '$Name: memphis_2006_07 $'
 
 contains
 
@@ -377,7 +378,8 @@ function write_field_meta_data ( file_unit, name, axes, units,      &
   character(len=128)                     :: standard_name2
   type(diag_fieldtype)                   :: Field
   logical                                :: coord_present
-  character(len=128)                     :: coord_att, aux_axes1
+  character(len=40)                      :: aux_axes(4)
+  character(len=160)                     :: coord_att
 !-----------------------------------------------------------------------
 !
 ! INPUT: file_name  = output file name (character, max len=128)
@@ -438,12 +440,19 @@ function write_field_meta_data ( file_unit, name, axes, units,      &
      endif     
   enddo
 !  Create coordinate attribute
-  if(num >= 2) then      
-     aux_axes1 = get_axis_aux(axes(1))
-     if(trim(aux_axes1) /= 'none' ) then
-        coord_att = trim(aux_axes1)
-        coord_present = .true.
-     endif
+  if(num >= 2) then     
+     coord_att = ' '
+     do i = 1, num
+        aux_axes(i) = get_axis_aux(axes(i))
+        if(trim(aux_axes(i)) /= 'none' ) then
+           if(len_trim(coord_att) == 0) then
+              coord_att = trim(aux_axes(i))
+           else
+              coord_att = trim(coord_att)// ' '//trim(aux_axes(i))
+           endif
+           coord_present = .true.
+        endif
+     enddo
   endif
 
 !--------------------- write field meta data ---------------------------
@@ -547,6 +556,7 @@ function write_field_meta_data ( file_unit, name, axes, units,      &
 
 !---- get axis domain ----
   Field%Domain = get_domain2d ( axes )
+  Field%tile_number = get_tile_number ( axes )
 
 !-----------------------------------------------------------------------
 
@@ -590,7 +600,7 @@ endif
 !---- output data ----
 
 if ( Field%Domain /= null_domain2d ) then
-   call mpp_write (file_unit, Field%Field, Field%Domain, data, time)
+   call mpp_write (file_unit, Field%Field, Field%Domain, data, time, tile_number=Field%tile_number)
 else
    call mpp_write (file_unit, Field%Field, data, time)
 endif

@@ -2,13 +2,14 @@
 !get a global field from a local field
 !local field may be on compute OR data domain
       type(DomainCommunicator2D), intent(in) :: d_comm
-      MPP_TYPE_, intent(in)  ::  local(:,:,:)
-      MPP_TYPE_, intent(out) :: global(d_comm%domain%x%global%begin:,d_comm%domain%y%global%begin:,:)
+      MPP_TYPE_,                 intent(in)  ::  local(:,:,:)
+      MPP_TYPE_, intent(out) :: global(d_comm%domain%x(1)%global%begin:,d_comm%domain%y(1)%global%begin:,:)
+
       integer :: i, j, k, m, n, nd, nwords, msgsize
       integer :: is, ie, js, je
-      MPP_TYPE_ :: clocal ((d_comm%domain%x%compute%size+1)*    (d_comm%domain%y%compute%size+1)*    size(local,3))
-      MPP_TYPE_ :: cremote((d_comm%domain%x%compute%max_size+1)*(d_comm%domain%y%compute%max_size+1)*size(local,3))
-      integer :: words_per_long, stackuse
+      MPP_TYPE_ :: clocal ((d_comm%domain%x(1)%compute%size)*    (d_comm%domain%y(1)%compute%size)*    size(local,3))
+      MPP_TYPE_ :: cremote((d_comm%domain%x(1)%compute%max_size)*(d_comm%domain%y(1)%compute%max_size)*size(local,3))
+      integer :: stackuse
       character(len=8) :: text
       pointer( ptr_local,  clocal  )
       pointer( ptr_remote, cremote )
@@ -17,8 +18,7 @@
       ptr_remote = LOC(mpp_domains_stack(size(clocal(:))+1))
 
 #ifdef use_CRI_pointers
-      words_per_long = size(transfer(local(1,1,1),mpp_domains_stack))
-      stackuse = (size(clocal(:))+size(cremote(:)))*words_per_long
+      stackuse = size(clocal(:))+size(cremote(:))
       if( stackuse.GT.mpp_domains_stack_size )then
           write( text, '(i8)' )stackuse
           call mpp_error( FATAL, &
@@ -42,12 +42,12 @@
       end do
 
       nd = d_comm%Rlist_size  ! same as size of send list
-      msgsize = d_comm%S_msize(1,1)  ! constant for all sends
+      msgsize = m  ! constant for all sends
       do n = 1,nd-1
          call mpp_send( clocal(1), plen=msgsize, to_pe=d_comm%cto_pe(n) )
       end do
       do n = 1,nd-1
-         nwords = d_comm%R_msize(1,n)
+         nwords = d_comm%R_msize(n)
          call mpp_recv( cremote(1), glen=nwords, from_pe=d_comm%cfrom_pe(n) )
          is=d_comm%recvis(1,n); ie=d_comm%recvie(1,n)
          js=d_comm%recvjs(1,n); je=d_comm%recvje(1,n)

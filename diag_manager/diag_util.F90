@@ -13,7 +13,7 @@ use diag_axis_mod, only  : get_diag_axis_data, get_axis_global_length, get_diag_
                            get_axis_aux
 use diag_output_mod, only: diag_flush, diag_field_out, diag_output_init, write_axis_meta_data, &
                            write_field_meta_data, done_meta_data, diag_flush, diag_field_out
-use fms_mod, only        : error_mesg, FATAL, WARNING, mpp_pe, mpp_root_pe, lowercase
+use fms_mod, only        : error_mesg, FATAL, WARNING, mpp_pe, mpp_root_pe, lowercase, fms_error_handler
 use mpp_domains_mod,only : domain1d, domain2d, mpp_get_compute_domain, null_domain1d,&
                            null_domain2d, operator(/=), mpp_modify_domain, mpp_get_domain_components 
 use time_manager_mod,only: time_type, operator(==), operator(>), NO_CALENDAR, increment_date, &
@@ -28,8 +28,8 @@ public get_subfield_size, log_diag_field_info, update_bounds, check_out_of_bound
        find_input_field, init_input_field, init_output_field, diag_data_out, write_static, &
        check_duplicate_output_fields, get_date_dif
 
-character(len=128),private  :: version = '$Id: diag_util.F90,v 13.0 2006/03/28 21:38:12 fms Exp $'
-character(len=128),private  :: tagname = '$Name: memphis $'
+character(len=128),private  :: version = '$Id: diag_util.F90,v 1.1.2.6.2.3 2006/05/21 16:27:03 fms Exp $'
+character(len=128),private  :: tagname = '$Name: memphis_2006_07 $'
 
 contains
 
@@ -105,9 +105,11 @@ do i = 1,size(axes(:))
    end select
 enddo
 do i = 1,size(axes(:))
-   if(gstart_indx(i)== -1 .or. gend_indx(i)== -1) &
-        call error_mesg ('diag_util, get_subfield_size', 'can not find gstart_indx/gend_indx for ' &
-        //trim(output_fields(outnum)%output_name), FATAL)  
+   if(gstart_indx(i)== -1 .or. gend_indx(i)== -1) then
+      write(msg,'(a,I2)') ' check region bounds for axis ', i
+      call error_mesg ('diag_util, get_subfield_size', 'can not find gstart_indx/gend_indx for ' &
+           //trim(output_fields(outnum)%output_name)//','//trim(msg), FATAL)
+   endif
 enddo
 
 ! get domain and compute_domain(xbegin,xend,ybegin,yend)
@@ -257,16 +259,14 @@ function get_index(number, array)
 !   </DESCRIPTION>
 !   <TEMPLATE>
 !     call log_diag_field_info ( module_name, field_name, axes, long_name, units,
-!     missing_value, range, mask_variant, require, dynamic )
+!     missing_value, range, dynamic )
 !   </TEMPLATE>
 subroutine log_diag_field_info ( module_name, field_name, axes, long_name, units, &
-                                 missing_value, range, mask_variant, require, dynamic)
+                                 missing_value, range, dynamic)
 character(len=*), intent(in)           :: module_name, field_name
 integer, intent(in)                    :: axes(:)
 character(len=*), optional, intent(in) :: long_name, units
 real   , optional, intent(in)          :: missing_value, range(2)
-logical, optional, intent(in)          :: mask_variant
-logical, optional, intent(in)          :: require  !require static field to be in every file, e.g. 2-d axes
 logical, optional, intent(in)          :: dynamic
 
 ! ---- local vars
@@ -330,8 +330,9 @@ end subroutine log_diag_field_info
 
 end subroutine update_bounds
 !===================================================================================================
- subroutine check_out_of_bounds(out_num, diag_field_id)
+ subroutine check_out_of_bounds(out_num, diag_field_id, err_msg)
  integer, intent(in) :: out_num, diag_field_id
+ character(len=*), intent(out) :: err_msg
  character(len=128)  :: error_string1, error_string2
 
  if(output_fields(out_num)%imin < lbound(output_fields(out_num)%buffer,1) .or. &
@@ -354,24 +355,28 @@ end subroutine update_bounds
     write(error_string2(66:68),'(i3)') output_fields(out_num)%jmax
     write(error_string2(70:72),'(i3)') output_fields(out_num)%kmin
     write(error_string2(74:76),'(i3)') output_fields(out_num)%kmax
-    call error_mesg('send_data in diag_manager_mod','module/output_field='// &
-                     trim(error_string1)//'  Bounds of buffer exceeded.  '//trim(error_string2), FATAL)
+    err_msg = 'module/output_field='//trim(error_string1)//'  Bounds of buffer exceeded.  '//trim(error_string2)
+!   imax, imin, etc need to be reset in case the program is not terminated.
+    output_fields(out_num)%imax = 0
+    output_fields(out_num)%imin = VERY_LARGE_AXIS_LENGTH
+    output_fields(out_num)%jmax = 0
+    output_fields(out_num)%jmin = VERY_LARGE_AXIS_LENGTH
+    output_fields(out_num)%kmax = 0
+    output_fields(out_num)%kmin = VERY_LARGE_AXIS_LENGTH
+ else
+    err_msg = ''
  endif
 
  end subroutine check_out_of_bounds
 !===================================================================================================
- subroutine check_bounds_are_exact_dynamic(out_num, diag_field_id, Time)
- integer, intent(in)                   :: out_num, diag_field_id
- type(time_type), intent(in), optional :: Time
- character(len=128)                    :: error_string1, error_string2
- logical                               :: do_check
+ subroutine check_bounds_are_exact_dynamic(out_num, diag_field_id, Time, err_msg)
+ integer,          intent(in)  :: out_num, diag_field_id
+ type(time_type),  intent(in)  :: Time
+ character(len=*), intent(out) :: err_msg
+ character(len=128)            :: error_string1, error_string2
+ logical                       :: do_check
 
- if(.not.present(Time)) then
-!  check_bounds_are_exact_dynamic can be called only if field is not static.
-!  A previous check should exist that ensures Time will be present when not static.
-   call error_mesg('send_data in diag_manager_mod', &
-                   'This message should not appear unless there is a coding error. Contact pjp',FATAL)
- endif
+ err_msg = ''
 
 ! Check bounds only when the value of Time changes. When windows are used, a change in Time indicates
 ! that a new loop through the windows has begun, so a check of the previous loop can be done.
@@ -408,8 +413,7 @@ end subroutine update_bounds
         write(error_string2(66:68),'(i3)') output_fields(out_num)%jmax
         write(error_string2(70:72),'(i3)') output_fields(out_num)%kmin
         write(error_string2(74:76),'(i3)') output_fields(out_num)%kmax
-        call error_mesg('send_data',trim(error_string1)// &
-                        '  Bounds of data do not match those of buffer.  '//trim(error_string2), FATAL)
+        err_msg = trim(error_string1)//' Bounds of data do not match those of buffer. '//trim(error_string2)
    endif
    output_fields(out_num)%imax = 0
    output_fields(out_num)%imin = VERY_LARGE_AXIS_LENGTH
@@ -417,15 +421,16 @@ end subroutine update_bounds
    output_fields(out_num)%jmin = VERY_LARGE_AXIS_LENGTH
    output_fields(out_num)%kmax = 0
    output_fields(out_num)%kmin = VERY_LARGE_AXIS_LENGTH
- else
-   return
  endif
 
  end subroutine check_bounds_are_exact_dynamic
 !===================================================================================================
- subroutine check_bounds_are_exact_static(out_num, diag_field_id)
+ subroutine check_bounds_are_exact_static(out_num, diag_field_id, err_msg)
  integer, intent(in) :: out_num, diag_field_id
+ character(len=*), intent(out) :: err_msg
  character(len=128)  :: error_string1, error_string2
+
+ err_msg = ''
 
  if(output_fields(out_num)%imin /= lbound(output_fields(out_num)%buffer,1) .or. &
     output_fields(out_num)%imax /= ubound(output_fields(out_num)%buffer,1) .or. &
@@ -447,8 +452,7 @@ end subroutine update_bounds
       write(error_string2(66:68),'(i3)') output_fields(out_num)%jmax
       write(error_string2(70:72),'(i3)') output_fields(out_num)%kmin
       write(error_string2(74:76),'(i3)') output_fields(out_num)%kmax
-      call error_mesg('send_data',trim(error_string1)// &
-                      '  Bounds of data do not match those of buffer.  '//trim(error_string2), FATAL)
+      err_msg = trim(error_string1)//' Bounds of data do not match those of buffer. '//trim(error_string2)
    endif
    output_fields(out_num)%imax = 0
    output_fields(out_num)%imin = VERY_LARGE_AXIS_LENGTH
@@ -527,15 +531,15 @@ files(num_files)%time_bounds_id = diag_axis_init( 'nv',(/1.,2./),'none','N','ver
 end subroutine init_file
 
 !---------------------------------------------------------------------------------------------------
-function diag_time_inc(time, output_freq, output_units, error_message)
+function diag_time_inc(time, output_freq, output_units, err_msg)
 
 type (time_type)                        :: diag_time_inc
 type (time_type), intent(in)            :: time
 integer, intent(in)                     :: output_freq, output_units
-character(len=*), intent(out), optional :: error_message
+character(len=*), intent(out), optional :: err_msg
 character(len=128)                      :: error_message_local
 
-if(present(error_message)) error_message = ''
+if(present(err_msg)) err_msg = ''
 error_message_local = ''
 
 ! special values for output frequency are -1 for output at end of run
@@ -551,7 +555,7 @@ endif
 
 if(output_units == DIAG_SECONDS) then
    if (get_calendar_type() == NO_CALENDAR) then
-       diag_time_inc = increment_time(time, output_freq, 0, err_msg = error_message_local)
+       diag_time_inc = increment_time(time, output_freq, 0, err_msg=error_message_local)
    else
        diag_time_inc = increment_date(time, 0, 0, 0, 0, 0, output_freq, err_msg=error_message_local)
    endif
@@ -589,12 +593,8 @@ else
     error_message_local = 'illegal output units'
 endif
 
- if(error_message_local /= '') then
-   if(present(error_message)) then
-     error_message = error_message_local
-   else
-     call error_mesg('diag_time_inc',trim(error_message_local),FATAL)
-   endif
+if(error_message_local /= '') then
+  if(fms_error_handler('diag_time_inc',error_message_local,err_msg)) return
 endif
 
 end function diag_time_inc
@@ -915,8 +915,7 @@ subroutine opening_file(file, time)
              trim(input_fields(input_field_num)%field_name)
         if(mpp_pe() .eq. mpp_root_pe()) &
              call error_mesg ('diag_util opening_file', &
-             'module/field_name '//trim(error_string)//&
-             &' NOT registered, ALL fields should be registered BEFORE the first send_data', WARNING)  
+             'module/field_name '//trim(error_string)//' NOT registered', WARNING)  
         cycle
      endif
 ! Put the time axis in the axis field
@@ -1342,22 +1341,31 @@ call mpp_close(files(file)%file_unit)
 files(file)%file_unit = -1
 end subroutine write_static
 !---------------------------------------------------------------------------------------------------
-subroutine check_duplicate_output_fields()
+subroutine check_duplicate_output_fields(err_msg)
 ! pair(output_name and output_file) should be unique in output_fields
+character(len=*), intent(out), optional :: err_msg
 integer            :: i, j, tmp_file
 character(len=128) :: tmp_name
+character(len=256) :: err_msg_local
 ! Do the checking when more than 1 output_fileds present
+
+if(present(err_msg)) err_msg=''
 if(num_output_fields <= 1) return 
-do i = 1, num_output_fields-1
-   tmp_name = trim(output_fields(i)%output_name)
-   tmp_file =  output_fields(i)%output_file
-   do j = i+1, num_output_fields
-      if((tmp_name == trim(output_fields(j)%output_name)).and. &
-           (tmp_file == output_fields(j)%output_file)) &
-           call error_mesg (' ERROR in diag_table', &           
-           &' output_field '//tmp_name//' duplicated', FATAL)
-   enddo
-enddo
+err_msg_local = ''
+
+i_loop: do i = 1, num_output_fields-1
+  tmp_name = trim(output_fields(i)%output_name)
+  tmp_file =  output_fields(i)%output_file
+  do j = i+1, num_output_fields
+    if((tmp_name == trim(output_fields(j)%output_name)).and.(tmp_file == output_fields(j)%output_file)) then
+      err_msg_local = ' output_field "'//trim(tmp_name)//'" duplicated in file "'//trim(files(tmp_file)%name)//'"'
+      exit i_loop
+    endif
+  enddo
+enddo i_loop
+if(err_msg_local /= '') then
+  if(fms_error_handler(' ERROR in diag_table',err_msg_local,err_msg)) return
+endif
 end subroutine check_duplicate_output_fields
 
 !---------------------------------------------------------------------------------------------------

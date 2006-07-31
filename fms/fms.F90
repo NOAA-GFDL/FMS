@@ -163,7 +163,7 @@ public :: get_domain_decomp, field_size, nullify_domain
 
 ! miscellaneous i/o routines
 public :: file_exist, check_nml_error, field_exist,     &
-          write_version_number, error_mesg
+          write_version_number, error_mesg, fms_error_handler
 
 ! miscellaneous utilities (non i/o)
 public :: lowercase, uppercase, string,        &
@@ -271,8 +271,8 @@ integer, public :: clock_flag_default
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: fms.F90,v 13.0 2006/03/28 21:39:10 fms Exp $'
-  character(len=128) :: tagname = '$Name: memphis $'
+  character(len=128) :: version = '$Id: fms.F90,v 12.0.6.1.4.1.2.1 2006/02/15 19:47:38 pjp Exp $'
+  character(len=128) :: tagname = '$Name: memphis_2006_07 $'
 
   logical :: module_is_initialized = .FALSE.
 
@@ -607,6 +607,52 @@ end subroutine fms_end
 
  end subroutine error_mesg
 ! </SUBROUTINE>
+
+!#######################################################################
+! <FUNCTION NAME="fms_error_handler">
+
+!   <OVERVIEW>
+!     Facilitates the control of fatal error conditions
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     When err_msg is present, message is copied into err_msg
+!     and the function returns a value of .true.
+!     Otherwise calls mpp_error to terminate execution.
+!     The intended use is as shown below.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     if(fms_error_handler(routine, message, err_msg)) return
+!   </TEMPLATE>
+!   <IN NAME="routine"  TYPE="character">
+!     Routine name where the fatal error has occurred.
+!   </IN>
+!   <IN NAME="message"  TYPE="character">
+!     fatal error message to be printed.
+!   </IN>
+!   <OUT NAME="fms_error_handler"  TYPE="logical">
+!     .true.  when err_msg is present
+!     .false. when err_msg is not present
+!   </OUT>
+!   <OUT NAME="err_msg"  TYPE="character">
+!     When err_msg is present: err_msg = message
+!   </OUT>
+
+ function fms_error_handler(routine, message, err_msg)
+
+ logical :: fms_error_handler
+ character(len=*), intent(in) :: routine, message
+ character(len=*), intent(out), optional :: err_msg
+
+ fms_error_handler = .false.
+ if(present(err_msg)) then
+   err_msg = message
+   fms_error_handler = .true.
+ else
+   call mpp_error(trim(routine),trim(message),FATAL)
+ endif
+
+ end function fms_error_handler
+! </FUNCTION>
 
 !#######################################################################
 ! <FUNCTION NAME="check_nml_error">
@@ -977,8 +1023,6 @@ end function monotonic_array
     return
 
   end function string_from_real
-
-!#######################################################################
 
 end module fms_mod
 ! <INFO>

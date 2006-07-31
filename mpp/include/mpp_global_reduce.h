@@ -1,36 +1,39 @@
-  function MPP_GLOBAL_REDUCE_2D_( domain, field, locus )
+  function MPP_GLOBAL_REDUCE_2D_( domain, field, locus, position )
     MPP_TYPE_ :: MPP_GLOBAL_REDUCE_2D_
     type(domain2D), intent(in) :: domain
     MPP_TYPE_, intent(in) :: field(:,:)
     integer, intent(out), optional :: locus(2)
+    integer, intent(in),  optional :: position
     MPP_TYPE_ :: field3D(size(field,1),size(field,2),1)
     integer :: locus3D(3)
 #ifdef use_CRI_pointers
     pointer( ptr, field3D )
     ptr = LOC(field)
     if( PRESENT(locus) )then
-        MPP_GLOBAL_REDUCE_2D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D )
+        MPP_GLOBAL_REDUCE_2D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D, position )
         locus = locus3D(1:2)
     else
-        MPP_GLOBAL_REDUCE_2D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D )
+        MPP_GLOBAL_REDUCE_2D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, position = position )
     end if
 #else
     field3D = RESHAPE( field, SHAPE(field3D) )
     if( PRESENT(locus) )then
-        MPP_GLOBAL_REDUCE_2D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D )
+        MPP_GLOBAL_REDUCE_2D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D, position )
         locus = locus3D(1:2)
     else
-        MPP_GLOBAL_REDUCE_2D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D )
+        MPP_GLOBAL_REDUCE_2D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, position = position  )
     end if
 #endif
     return
   end function MPP_GLOBAL_REDUCE_2D_
 
-  function MPP_GLOBAL_REDUCE_3D_( domain, field, locus )
+  function MPP_GLOBAL_REDUCE_3D_( domain, field, locus, position )
     MPP_TYPE_ :: MPP_GLOBAL_REDUCE_3D_
     type(domain2D), intent(in) :: domain
     MPP_TYPE_, intent(in) :: field(0:,0:,:)
     integer, intent(out), optional :: locus(3)
+    integer, intent(in),  optional :: position
+
     MPP_TYPE_ :: local
     integer, save :: l_locus(3)
     MPP_TYPE_, save :: g_val  ! need storage class w/ global address; not sure whether fn result has required class
@@ -39,19 +42,17 @@
 
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_REDUCE: You must first call mpp_domains_init.' )
     !--- when domain is symmetry, there may be an extra point on x/y direction
-    call mpp_get_global_shift(domain, size(field,1), size(field,2), ishift, jshift )
+    call mpp_get_domain_shift(domain, ishift, jshift, position )
+    call mpp_get_compute_domain(domain, isc, iec, jsc, jec )
 
-    isc = domain%x%compute%begin; iec = domain%x%compute%end
-    jsc = domain%y%compute%begin; jec = domain%y%compute%end
-
-    if( size(field,1).EQ.domain%x%compute%size+ishift .AND. size(field,2).EQ.domain%y%compute%size+jshift )then
+    if( size(field,1).EQ.domain%x(1)%compute%size+ishift .AND. size(field,2).EQ.domain%y(1)%compute%size+jshift )then
 !field is on compute domain
         ioff = isc
         joff = jsc
-    else if( size(field,1).EQ.domain%x%data%size+ishift .AND. size(field,2).EQ.domain%y%data%size+jshift )then
+    else if( size(field,1).EQ.domain%x(1)%memory%size+ishift .AND. size(field,2).EQ.domain%y(1)%memory%size+jshift )then
 !field is on data domain
-        ioff = domain%x%data%begin
-        joff = domain%y%data%begin
+        ioff = domain%x(1)%data%begin
+        joff = domain%y(1)%data%begin
     else
         call mpp_error( FATAL, 'MPP_GLOBAL_REDUCE_: incoming field array must match either compute domain or data domain.' )
     end if
@@ -78,18 +79,20 @@
     return
   end function MPP_GLOBAL_REDUCE_3D_
 
-  function MPP_GLOBAL_REDUCE_4D_( domain, field, locus )
+  function MPP_GLOBAL_REDUCE_4D_( domain, field, locus, position )
     MPP_TYPE_ :: MPP_GLOBAL_REDUCE_4D_
     type(domain2D), intent(in) :: domain
     MPP_TYPE_, intent(in) :: field(:,:,:,:)
     integer, intent(out), optional :: locus(4)
+    integer, intent(in),  optional :: position
+
     MPP_TYPE_ :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4))
     integer :: locus3D(3)
 #ifdef use_CRI_pointers
     pointer( ptr, field3D )
     ptr = LOC(field)
     if( PRESENT(locus) )then
-        MPP_GLOBAL_REDUCE_4D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D )
+        MPP_GLOBAL_REDUCE_4D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D, position )
         locus(1:2) = locus3D(1:2)
         locus(3) = modulo(locus3D(3),size(field,3))
         locus(4) = (locus3D(3)-locus(3))/size(field,3) + 1
@@ -98,12 +101,12 @@
             locus(4) = locus(4) - 1
         end if
     else
-        MPP_GLOBAL_REDUCE_4D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D )
+        MPP_GLOBAL_REDUCE_4D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, position = position  )
     end if
 #else
     field3D = RESHAPE( field, SHAPE(field3D) )
     if( PRESENT(locus) )then
-        MPP_GLOBAL_REDUCE_4D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D )
+        MPP_GLOBAL_REDUCE_4D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D, position )
         locus(1:2) = locus3D(1:2)
         locus(3) = modulo(locus3D(3),size(field,3))
         locus(4) = (locus3D(3)-locus(3))/size(field,3) + 1
@@ -112,24 +115,26 @@
             locus(4) = locus(4) - 1
         end if
     else
-        MPP_GLOBAL_REDUCE_4D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D )
+        MPP_GLOBAL_REDUCE_4D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, position = position  )
     end if
 #endif
     return
   end function MPP_GLOBAL_REDUCE_4D_
 
-  function MPP_GLOBAL_REDUCE_5D_( domain, field, locus )
+  function MPP_GLOBAL_REDUCE_5D_( domain, field, locus, position )
     MPP_TYPE_ :: MPP_GLOBAL_REDUCE_5D_
     type(domain2D), intent(in) :: domain
     MPP_TYPE_, intent(in) :: field(:,:,:,:,:)
     integer, intent(out), optional :: locus(5)
+    integer, intent(in),  optional :: position
+
     MPP_TYPE_ :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4)*size(field,5))
     integer :: locus3D(3)
 #ifdef use_CRI_pointers
     pointer( ptr, field3D )
     ptr = LOC(field)
     if( PRESENT(locus) )then
-        MPP_GLOBAL_REDUCE_5D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D )
+        MPP_GLOBAL_REDUCE_5D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D, position )
         locus(1:2) = locus3D(1:2)
         locus(3) = modulo(locus3D(3),size(field,3))
         locus(4) = modulo(locus3D(3),size(field,3)*size(field,4))
@@ -139,12 +144,12 @@
             locus(4) = locus(4) - 1
         end if
     else
-        MPP_GLOBAL_REDUCE_5D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D )
+        MPP_GLOBAL_REDUCE_5D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, position = position  )
     end if
 #else
     field3D = RESHAPE( field, SHAPE(field3D) )
     if( PRESENT(locus) )then
-        MPP_GLOBAL_REDUCE_5D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D )
+        MPP_GLOBAL_REDUCE_5D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D, position )
         locus(1:2) = locus3D(1:2)
         locus(3) = modulo(locus3D(3),size(field,3))
         locus(4) = modulo(locus3D(3),size(field,3)*size(field,4))
@@ -154,7 +159,7 @@
             locus(4) = locus(4) - 1
         end if
     else
-        MPP_GLOBAL_REDUCE_5D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D )
+        MPP_GLOBAL_REDUCE_5D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, position = position  )
     end if
 #endif
     return

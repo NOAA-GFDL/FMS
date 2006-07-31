@@ -20,7 +20,7 @@ implicit none
 private
 
 character(len=128) :: version='$Id: constants.F90,v 13.0 2006/03/28 21:37:37 fms Exp $'
-character(len=128) :: tagname='$Name: memphis $'
+character(len=128) :: tagname='$Name: memphis_2006_07 $'
 !dummy variable to use in HUGE initializations
 real :: realnumber
 

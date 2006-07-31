@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_data_mpi.inc,v 13.0 2006/03/28 21:40:16 fms Exp $
+! $Id: mpp_data_mpi.inc,v 13.0.2.1 2006/04/11 18:08:42 z1l Exp $
 
 !----------------------------------------------------------------!
 ! The following data is used in mpp_mod and its components       !
@@ -20,5 +20,4 @@ integer, parameter :: mpp_from_pe = -999, ptr_from = -999
 !-------------------------------------------------------------------!
 real(DOUBLE_KIND), allocatable :: mpp_domains_stack(:)
 !--- some dummy variables with dummy values that will never be used
-integer, parameter :: ptr_info = -999
 integer, parameter :: ptr_domains_stack = -999

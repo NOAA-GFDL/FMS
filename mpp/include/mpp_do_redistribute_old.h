@@ -36,11 +36,11 @@
       if( ke.EQ.0 )call mpp_error( FATAL, 'MPP_REDISTRIBUTE: either domain_in or domain_out must be native.' )
 !check sizes
       if( domain_in%pe.NE.NULL_PE )then
-          if( size(field_in,1).NE.domain_in%x%data%size .OR. size(field_in,2).NE.domain_in%y%data%size ) &
+          if( size(field_in,1).NE.domain_in%x(1)%data%size .OR. size(field_in,2).NE.domain_in%y(1)%data%size ) &
                call mpp_error( FATAL, 'MPP_REDISTRIBUTE: field_in must be on data domain of domain_in.' )
       end if
       if( domain_out%pe.NE.NULL_PE )then
-          if( size(field_out,1).NE.domain_out%x%data%size .OR. size(field_out,2).NE.domain_out%y%data%size ) &
+          if( size(field_out,1).NE.domain_out%x(1)%data%size .OR. size(field_out,2).NE.domain_out%y(1)%data%size ) &
                call mpp_error( FATAL, 'MPP_REDISTRIBUTE: field_out must be on data domain of domain_out.' )
       end if
 
@@ -68,8 +68,8 @@
              end if
              pos = buffer_pos
              do k = 1,ke
-                do j = js-domain_in%y%data%begin+1,je-domain_in%y%data%begin+1
-                   do i = is-domain_in%x%data%begin+1,ie-domain_in%x%data%begin+1
+                do j = js-domain_in%y(1)%data%begin+1,je-domain_in%y(1)%data%begin+1
+                   do i = is-domain_in%x(1)%data%begin+1,ie-domain_in%x(1)%data%begin+1
                       pos = pos+1
                       buffer(pos) = field_in(i,j,k)
                    end do
@@ -101,8 +101,8 @@
              call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe )
              pos = buffer_pos
              do k = 1,ke
-                do j = js-domain_out%y%data%begin+1,je-domain_out%y%data%begin+1
-                   do i = is-domain_out%x%data%begin+1,ie-domain_out%x%data%begin+1
+                do j = js-domain_out%y(1)%data%begin+1,je-domain_out%y(1)%data%begin+1
+                   do i = is-domain_out%x(1)%data%begin+1,ie-domain_out%x(1)%data%begin+1
                       pos = pos+1
                       field_out(i,j,k) = buffer(pos)
                    end do

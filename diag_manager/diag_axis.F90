@@ -17,7 +17,7 @@ module diag_axis_mod
 
 use mpp_domains_mod, only: domain1d, domain2d, mpp_get_compute_domain, &
                            mpp_get_domain_components, null_domain1d, &
-                           null_domain2d, operator(/=)
+                           null_domain2d, operator(/=), mpp_get_global_domain
 use         fms_mod, only: error_mesg, write_version_number, lowercase, FATAL
 use diag_data_mod, only  : diag_axis_type, max_subaxes, max_axes
 implicit none
@@ -25,7 +25,8 @@ implicit none
 private
 public  diag_axis_init, get_diag_axis, get_domain1d, get_domain2d, &
         get_axis_length, get_axis_global_length, diag_subaxes_init, &
-        get_diag_axis_cart, get_diag_axis_data, max_axes, get_axis_aux
+        get_diag_axis_cart, get_diag_axis_data, max_axes, get_axis_aux, &
+        get_tile_number
 
 
 
@@ -55,14 +56,14 @@ character(len=128) :: Axis_sets(max_num_axis_sets)
 type (diag_axis_type), allocatable, save :: Axes(:)
 logical            :: module_is_initialized = .FALSE.
 character(len=128) :: &
-     version='$Id: diag_axis.F90,v 13.0 2006/03/28 21:37:49 fms Exp $'
-character(len=128) :: tagname='$Name: memphis $'
+     version='$Id: diag_axis.F90,v 13.0.2.1 2006/05/05 20:04:41 z1l Exp $'
+character(len=128) :: tagname='$Name: memphis_2006_07 $'
 
 contains
 !#######################################################################
 
 function diag_axis_init (name, data, units, cart_name, long_name,     &
-       direction, set_name, edges, Domain, Domain2, aux) &
+       direction, set_name, edges, Domain, Domain2, aux, tile_number) &
        result (indexx)
 
 ! increment axis counter and fill in axes     
@@ -88,9 +89,11 @@ function diag_axis_init (name, data, units, cart_name, long_name,     &
   type(domain1d)  , intent(in), optional :: Domain
   type(domain2d)  , intent(in), optional :: Domain2
   character(len=*), intent(in), optional :: aux
+  integer         , intent(in), optional :: tile_number
   type(domain1d)                         :: domain_x, domain_y
   integer                                :: indexx, ierr, axlen
   integer                                :: i, set
+  integer                                :: isc, iec, isg, ieg
 
   if ( .not.module_is_initialized ) then
      call write_version_number( version, tagname )
@@ -173,6 +176,7 @@ function diag_axis_init (name, data, units, cart_name, long_name,     &
   Axes(indexx)%start = -1
   Axes(indexx)%end = -1
   Axes(indexx)%subaxis_name = ""
+  Axes(indexx)%shift = 0
 
   if (present(long_name))then
      Axes(indexx)%long_name = long_name
@@ -206,9 +210,13 @@ function diag_axis_init (name, data, units, cart_name, long_name,     &
            'Presence of both Domain and Domain2 at the same time is prohibited', &
             FATAL)
   endif
+
+  Axes(indexx)%tile_number = 1
+  if(present(tile_number)) Axes(indexx)%tile_number = tile_number
+
   if ( present(Domain2) ) then
      Axes(indexx)%Domain2 = Domain2
-     call mpp_get_domain_components(Domain2, domain_x, domain_y)
+     call mpp_get_domain_components(Domain2, domain_x, domain_y, tile_number=tile_number)
      if ( Axes(indexx)%cart_name == 'X' ) Axes(indexx)%Domain = domain_x
      if ( Axes(indexx)%cart_name == 'Y' ) Axes(indexx)%Domain = domain_y
   else
@@ -220,6 +228,16 @@ function diag_axis_init (name, data, units, cart_name, long_name,     &
         Axes(indexx)%Domain = null_domain1d
      endif
   endif
+
+  !--- set up the shift value for x-y axis
+  if(Axes(indexx)%Domain .ne. null_domain1d ) then
+     call mpp_get_compute_domain(Axes(indexx)%Domain, isc, iec)
+     call mpp_get_global_domain(Axes(indexx)%Domain, isg, ieg)
+     if(  Axes(indexx)%length == ieg - isg + 2 ) then
+        Axes(indexx)%shift = 1 
+     endif
+  endif
+
 !---- have axis edges been defined ? ----
   Axes(indexx)%edges = 0
   if (present(edges))then
@@ -334,8 +352,10 @@ subroutine get_diag_axis (id, name, units, long_name, cart_name, &
   if (Axes(id)%length > size(data(:))) call error_mesg ('get_diag_axis in diag_axis_mod', &
        'array data is too small', FATAL)
   data(1:Axes(id)%length) = Axes(id)%data
-!#####################################################################
+
 end subroutine get_diag_axis
+!#####################################################################
+
 subroutine get_diag_axis_cart(id, cart_name)
 ! Return the axis cartesian from  index id
 !  id         =  axis number
@@ -363,6 +383,8 @@ function get_axis_length (id) result (length)
   integer             :: length   
   if ( Axes(id)%Domain /= null_domain1d ) then
      call mpp_get_compute_domain(Axes(id)%Domain,size=length)
+     !---one extra point is needed for some case. ( like symmetry domain )
+     length = length + Axes(id)%shift
   else
      length = Axes(id) % length
   endif
@@ -383,6 +405,29 @@ function get_axis_global_length (id) result (length)
   integer             :: length
   length = Axes(id) % length
 end function get_axis_global_length
+!#######################################################################
+
+function get_tile_number (ids) result (tile_number)
+  integer, intent(in) :: ids(:)
+  integer             :: tile_number
+  integer             :: i, id, flag
+
+  if ( size(ids(:)) < 1 .or. size(ids(:)) > 4 ) call error_mesg  &
+       ('get_tile_number in diag_axis_mod', &
+       'input argument has incorrect size', FATAL)
+  flag = 0
+  do i = 1, size(ids(:))
+     id = ids(i)
+     if ( Axes(id)%cart_name == 'X' .or.  &
+          Axes(id)%cart_name == 'Y' ) flag = flag + 1
+!     --- both x/y axes found ---
+     if ( flag == 2 ) then
+        tile_number = Axes(id)%tile_number
+        exit
+     endif
+  enddo
+
+end function get_tile_number
 !#######################################################################
 
 function get_domain1d (id) result (Domain1)

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_misc.inc,v 13.0 2006/03/28 21:41:19 fms Exp $
+! $Id: mpp_io_misc.inc,v 13.0.4.1 2006/05/10 20:11:38 gtn Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -29,6 +29,14 @@
 
     subroutine mpp_io_init( flags, maxunit )
       integer, intent(in), optional :: flags, maxunit
+      integer                       :: unit_nml, io_status
+
+      namelist /mpp_io_nml/header_buffer_val ! value used in NF__ECDDEF
+      unit_nml = unit_begin
+      open(unit_nml,file='input.nml')
+      read(unit_nml,mpp_io_nml,iostat=io_status)
+      close(unit_nml)
+
 !initialize IO package: initialize mpp_file array, set valid range of units for fortran IO
 
       if( module_is_initialized )return

@@ -50,6 +50,7 @@ type diag_fieldtype
    type(domain2d)       :: Domain
    real                 :: miss, miss_pack
    logical              :: miss_present, miss_pack_present
+   integer              :: tile_number
 end type
 
 type file_type
@@ -136,8 +137,8 @@ character (len=10)  :: time_unit_list(6) = (/'seconds   ', 'minutes   ', &
 character(len=32)   :: pelist_name
 
 
-character(len=128),private  :: version = '$Id: diag_data.F90,v 13.1 2006/04/25 23:22:56 fms Exp $'
-character(len=128),private  :: tagname = '$Name: memphis $'
+character(len=128),private  :: version = '$Id: diag_data.F90,v 13.1.2.1 2006/05/05 20:04:41 z1l Exp $'
+character(len=128),private  :: tagname = '$Name: memphis_2006_07 $'
 
 
 ! definitions for diag_axis_mod
@@ -152,10 +153,11 @@ type diag_axis_type
    integer              :: start(max_subaxes)
    integer              :: end(max_subaxes)
    character(len=128)   :: subaxis_name(max_subaxes)
-   integer              :: length, direction, edges, set
+   integer              :: length, direction, edges, set, shift
    type(domain1d)       :: Domain
    type(domain2d)       :: Domain2
    character(len=128)   :: aux
+   integer              :: tile_number
 end type diag_axis_type
 
 

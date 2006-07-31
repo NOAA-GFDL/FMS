@@ -87,14 +87,24 @@ use time_manager_mod, only: set_time, set_date, operator(>=), operator(>), opera
 use mpp_io_mod, only      : mpp_open, MPP_RDONLY, MPP_ASCII, mpp_close
 use fms_mod, only         : error_mesg, FATAL, WARNING, NOTE, close_file, stdlog, write_version_number,  &
                             file_exist, mpp_pe, open_namelist_file, check_nml_error, lowercase, stdout, &
-                            mpp_error
+                            mpp_error, fms_error_handler
 use mpp_mod, only         : mpp_get_current_pelist, mpp_npes, mpp_sync, mpp_root_pe, mpp_sum    
 use diag_axis_mod, only   : diag_axis_init, get_axis_length, max_axes                            
-use diag_data_mod
 use diag_util_mod, only   : get_subfield_size, log_diag_field_info, update_bounds, check_out_of_bounds, &
                             check_bounds_are_exact_dynamic, check_bounds_are_exact_static, init_file, &
                             diag_time_inc, find_input_field, init_input_field, init_output_field, &
                             diag_data_out, write_static, check_duplicate_output_fields, get_date_dif
+
+use diag_data_mod, only   : max_files, DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, EVERY_TIME, END_OF_RUN, &
+                            DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, &
+                            num_files, max_input_fields, max_output_fields, num_output_fields, EMPTY, &
+                            FILL_VALUE, null_axis_id, MAX_VALUE, MIN_VALUE, single, base_time, base_year, &
+                            base_month, base_day, base_hour, base_minute, base_second, global_descriptor, &
+                            coord_type, files, input_fields, output_fields, Time_zero, append_pelist_name, &
+                            mix_snapshot_average_fields, first_send_data_call, do_diag_field_log, &
+                            write_bytes_in_file, debug_diag_manager, diag_log_unit, time_unit_list, &
+                            pelist_name, max_axes, module_is_initialized
+
 implicit none
 private
 
@@ -106,8 +116,8 @@ public  diag_manager_init, send_data, send_tile_averaged_data, diag_manager_end,
 
 
 ! version number of this module
-character(len=128)  :: version = '$Id: diag_manager.f90,v 13.1 2006/04/25 23:23:27 fms Exp $'
-character(len=128)  :: tagname = '$Name: memphis $'  
+character(len=128)  :: version = '$Id: diag_manager.F90,v 1.1.2.6.2.6 2006/05/22 15:05:19 pjp Exp $'
+character(len=128)  :: tagname = '$Name: memphis_2006_07 $'  
 
 
 ! <INTERFACE NAME="send_data">
@@ -207,7 +217,7 @@ contains
 
 !-------------------------------------------------------------------------
 function register_diag_field_scalar(module_name, field_name, init_time, &
-   long_name, units, missing_value, range)
+   long_name, units, missing_value, range, err_msg)
 
 ! Indicates the calling modules intent to supply data for this field.
 integer                                :: register_diag_field_scalar
@@ -215,11 +225,13 @@ character(len=*), intent(in)           :: module_name, field_name
 type(time_type),  optional, intent(in) :: init_time
 character(len=*), optional, intent(in) :: long_name, units
 real, optional, intent(in)             :: missing_value, range(2)
+character(len=*), optional, intent(out):: err_msg
  
 if(present(init_time)) then
    register_diag_field_scalar = register_diag_field_array(module_name, field_name,&
-        (/null_axis_id/), init_time,long_name, units, missing_value, range)
+        (/null_axis_id/), init_time,long_name, units, missing_value, range, err_msg=err_msg)
 else
+   if(present(err_msg)) err_msg = ''
    register_diag_field_scalar = register_static_field(module_name, field_name,&
         (/null_axis_id/),long_name, units, missing_value, range)
 endif
@@ -258,7 +270,7 @@ end function register_diag_field_scalar
 !   <IN NAME="mask_variant" TYPE="logical"> </IN> 
 
 function register_diag_field_array(module_name, field_name, axes, init_time, &
-   long_name, units, missing_value, range, mask_variant,standard_name,verbose)
+   long_name, units, missing_value, range, mask_variant,standard_name,verbose,err_msg)
 
 ! Indicates the calling modules intent to supply data for this field.
 
@@ -269,6 +281,7 @@ type(time_type), intent(in)            :: init_time
 character(len=*), optional, intent(in) :: long_name, units, standard_name
 real, optional, intent(in)             :: missing_value, range(2)
 logical, optional, intent(in)          :: mask_variant,verbose
+character(len=*), optional, intent(out):: err_msg
 integer                                :: field, j, ind, file_num, freq
 integer                                :: output_units
 logical                                :: mask_variant1, verbose1
@@ -276,12 +289,8 @@ character(len=128)                     :: msg
 mask_variant1 = .false.
 verbose1 = .false.
 if(present(mask_variant)) mask_variant1 = mask_variant
-if(present(verbose)) then
-  verbose1 = verbose
-  if (mpp_pe() == mpp_root_pe()) &
-       call error_mesg ('register_diag_field','verbose will be removed in the next release, '//&
-       'use namelist debug_diag_manager instead', WARNING)
-endif
+if(present(verbose)) verbose1 = verbose
+if(present(err_msg)) err_msg = ''
 
 ! Call register static, then set static back to false
 
@@ -322,16 +331,22 @@ if(register_diag_field_array >0) then
       do
          if(files(file_num)%next_open > init_time) exit
          files(file_num)%next_open = diag_time_inc(files(file_num)%next_open, &
-              files(file_num)%new_file_freq, files(file_num)%new_file_freq_units, msg)
-         if(msg /= '') call error_mesg('register_diag_field',' file='//trim(files(file_num)%name)//': '//trim(msg),FATAL)
+              files(file_num)%new_file_freq, files(file_num)%new_file_freq_units, err_msg=msg)
+         if(msg /= '') then
+           if(fms_error_handler('register_diag_field',' file='//trim(files(file_num)%name)//': '//trim(msg),err_msg)) return
+         endif
       enddo
       freq = files(file_num)%output_freq
       output_units = files(file_num)%output_units
-      output_fields(ind)%next_output = diag_time_inc(init_time, freq, output_units, msg)
-      if(msg /= '') call error_mesg('register_diag_field',' file='//trim(files(file_num)%name)//': '//trim(msg),FATAL)
+      output_fields(ind)%next_output = diag_time_inc(init_time, freq, output_units, err_msg=msg)
+      if(msg /= '') then
+        if(fms_error_handler('register_diag_field',' file='//trim(files(file_num)%name)//': '//trim(msg),err_msg)) return
+      endif
       output_fields(ind)%next_next_output = &
-         diag_time_inc(output_fields(ind)%next_output, freq, output_units, msg)
-      if(msg /= '') call error_mesg('register_diag_field',' file='//trim(files(file_num)%name)//': '//trim(msg),FATAL)
+         diag_time_inc(output_fields(ind)%next_output, freq, output_units, err_msg=msg)
+      if(msg /= '') then
+        if(fms_error_handler('register_diag_field',' file='//trim(files(file_num)%name)//': '//trim(msg),err_msg)) return
+      endif
       if(debug_diag_manager .and. mpp_pe() == mpp_root_pe() .and. output_fields(ind)%local_output ) then
          write(msg,'(" lon(",F5.1,", ",F5.1,"), lat(",F5.1,", ",F5.1,")")')output_fields(ind)%output_grid%start(1),&
             output_fields(ind)%output_grid%end(1),output_fields(ind)%output_grid%start(2),&
@@ -392,7 +407,7 @@ if (.not.module_is_initialized) call error_mesg ('register_static_field',  &
 if ( do_diag_field_log) then
    call log_diag_field_info (module_name, field_name, axes, &
         long_name, units, missing_value=missing_value, range=range, &
-        mask_variant=mask_variant1, require=require, dynamic=dynamic1)
+        dynamic=dynamic1)
 endif
 
 register_static_field = find_input_field(module_name, field_name)
@@ -501,7 +516,7 @@ do j = 1, input_fields(field)%num_output_fields
          if(output_fields(out_num)%time_max) then
             output_fields(out_num)%buffer = MAX_VALUE
          else if(output_fields(out_num)%time_min) then
-            output_fields(out_num)%buffer = MIN_VALUE 
+            output_fields(out_num)%buffer = MIN_VALUE
          else
             output_fields(out_num)%buffer = EMPTY
          endif
@@ -515,7 +530,7 @@ do j = 1, input_fields(field)%num_output_fields
       if(output_fields(out_num)%time_max) then
          output_fields(out_num)%buffer = MAX_VALUE
       else if(output_fields(out_num)%time_min) then
-         output_fields(out_num)%buffer = MIN_VALUE 
+         output_fields(out_num)%buffer = MIN_VALUE
       else
          output_fields(out_num)%buffer = EMPTY
       endif
@@ -566,17 +581,18 @@ end function register_static_field
 !   <IN NAME="time" TYPE="time_type"  > </IN>
 ! </FUNCTION>
 
-function send_data_0d(diag_field_id, field, time)
+function send_data_0d(diag_field_id, field, time, err_msg)
     
 logical                      :: send_data_0d
 integer, intent(in)          :: diag_field_id
 real, intent(in)             :: field
-type (time_type), intent(in), optional :: time
-real                         :: field_out(1, 1, 1)
+type (time_type), intent(in),  optional :: time
+character(len=*), intent(out), optional :: err_msg
+real :: field_out(1, 1, 1)
 
 ! First copy the data to a three d array with last element 1
 field_out(1, 1, 1) = field
-send_data_0d = send_data_3d(diag_field_id, field_out, time)
+send_data_0d = send_data_3d(diag_field_id, field_out, time, err_msg=err_msg)
 end function send_data_0d
 
 !-------------------------------------------------------------------------
@@ -586,18 +602,19 @@ end function send_data_0d
 !   <IN NAME="time" TYPE="time_type"  > </IN>
 ! </FUNCTION>
 
-function send_data_1d(diag_field_id, field, time, is_in, mask, rmask, ie_in, weight)
+function send_data_1d(diag_field_id, field, time, is_in, mask, rmask, ie_in, weight, err_msg)
 
 logical                      :: send_data_1d
 integer, intent(in)          :: diag_field_id
 real, intent(in)             :: field(:)
 real, intent(in), optional   :: weight
 type (time_type), intent(in), optional :: time
-integer, optional            :: is_in, ie_in
-logical, optional            :: mask(:)
-real, optional               :: rmask(:)
-real                         :: field_out(size(field(:)), 1, 1)
-logical                      :: mask_out(size(field(:)), 1, 1)
+integer, intent(in), optional          :: is_in, ie_in
+logical, intent(in), optional          :: mask(:)
+real,    intent(in), optional          :: rmask(:)
+character(len=*), intent(out), optional :: err_msg
+real    :: field_out(size(field(:)), 1, 1)
+logical ::  mask_out(size(field(:)), 1, 1)
 
 
 ! First copy the data to a three d array with last element 1
@@ -608,9 +625,10 @@ mask_out = .true.
 if(present(mask)) mask_out(:, 1, 1) = mask
 if(present(rmask)) where (rmask < 0.5) mask_out(:, 1, 1) = .false.
 if(present(mask) .or. present(rmask)) then
-   send_data_1d = send_data_3d(diag_field_id, field_out, time, is_in, 1, 1, mask_out, ie_in=ie_in,weight=weight)
+   send_data_1d = send_data_3d(diag_field_id, field_out, time, is_in, 1, 1, mask_out, &
+        ie_in=ie_in,weight=weight, err_msg=err_msg)
 else
-   send_data_1d = send_data_3d(diag_field_id, field_out, time, is_in, 1, 1, ie_in=ie_in, weight=weight)
+   send_data_1d = send_data_3d(diag_field_id, field_out, time, is_in, 1, 1, ie_in=ie_in, weight=weight, err_msg=err_msg)
 endif
 end function send_data_1d
 
@@ -623,18 +641,19 @@ end function send_data_1d
 ! </FUNCTION>
 
 function send_data_2d(diag_field_id, field, time, is_in, js_in, &
-    mask, rmask, ie_in, je_in, weight)
+    mask, rmask, ie_in, je_in, weight, err_msg)
 
 logical                      :: send_data_2d
 integer, intent(in)          :: diag_field_id
 real, intent(in)             :: field(:, :)
 real, intent(in), optional   :: weight
-type (time_type), intent(in), optional :: time
-integer, optional            :: is_in, js_in, ie_in, je_in
-logical, optional            :: mask(:, :)
-real, optional               :: rmask(:, :)
-real                         :: field_out(size(field, 1), size(field, 2), 1)
-logical                      :: mask_out(size(field, 1), size(field, 2), 1)
+type (time_type), intent(in),  optional :: time
+integer, intent(in), optional           :: is_in, js_in, ie_in, je_in
+logical, intent(in), optional           :: mask(:, :)
+real,    intent(in), optional           :: rmask(:, :)
+character(len=*), intent(out), optional :: err_msg
+real    :: field_out(size(field, 1), size(field, 2), 1)
+logical ::  mask_out(size(field, 1), size(field, 2), 1)
 
 
 ! First copy the data to a three d array with last element 1
@@ -646,9 +665,9 @@ if(present(mask)) mask_out(:, :, 1) = mask
 if(present(rmask)) where (rmask < 0.5) mask_out(:, :, 1) = .false.
 if(present(mask) .or. present(rmask)) then
    send_data_2d = send_data_3d(diag_field_id, field_out, time, is_in, js_in, 1, mask_out,&
-        ie_in=ie_in, je_in=je_in,weight=weight)
+        ie_in=ie_in, je_in=je_in,weight=weight, err_msg=err_msg)
 else
-   send_data_2d = send_data_3d(diag_field_id, field_out,time,is_in,js_in,1,ie_in=ie_in,je_in=je_in,weight=weight)
+   send_data_2d = send_data_3d(diag_field_id, field_out,time,is_in,js_in,1,ie_in=ie_in,je_in=je_in,weight=weight, err_msg=err_msg)
 endif
 
 end function send_data_2d
@@ -661,7 +680,7 @@ end function send_data_2d
 ! </FUNCTION>
 
 function send_data_3d(diag_field_id, field, time, is_in, js_in, ks_in, &
-             mask, rmask, ie_in,je_in, ke_in,weight)
+             mask, rmask, ie_in,je_in, ke_in,weight, err_msg)
 
 logical                      :: send_data_3d
 integer, intent(in)          :: diag_field_id
@@ -671,6 +690,8 @@ type (time_type), intent(in), optional :: time
 integer, intent(in),optional :: is_in, js_in, ks_in,ie_in,je_in, ke_in 
 logical, intent(in),optional :: mask(:, :, :)
 real,    intent(in),optional :: rmask(:, :, :)
+character(len=*), intent(out), optional :: err_msg
+character(len=256)           :: err_msg_local
 real                         :: num, weight1
 logical                      :: average, need_compute, local_output, phys_window
 logical                      :: time_max, time_min
@@ -684,7 +705,11 @@ type (time_type)             :: middle_time
 logical                      :: missvalue_present
 real                         :: missvalue
 
-if (.not.module_is_initialized) call error_mesg ('send_data_3d',' diag_manager NOT initialized', FATAL)
+if(present(err_msg)) err_msg = ''
+if (.not.module_is_initialized) then
+  if(fms_error_handler('send_data_3d','diag_manager NOT initialized',err_msg)) return
+endif
+err_msg_local = ''
 
 ! send_data works in either one or another of two modes.
 ! 1. Input field is a window (e.g. FMS physics)
@@ -699,18 +724,18 @@ if (.not.module_is_initialized) call error_mesg ('send_data_3d',' diag_manager N
 ! of presence/absence of is,ie,js,je. The checks below should catch improper combinations.
 if(present(ie_in)) then
   if(.not.present(is_in)) then
-    call error_mesg('send_data','ie_in present without is_in',FATAL)
+    if(fms_error_handler('send_data_3d','ie_in present without is_in',err_msg)) return
   endif
   if(present(js_in) .and. .not.present(je_in)) then
-    call error_mesg('send_data','is_in and ie_in present, but js_in present without je_in',FATAL)
+    if(fms_error_handler('send_data_3d','is_in and ie_in present, but js_in present without je_in',err_msg)) return
   endif
 endif
 if(present(je_in)) then
   if(.not.present(js_in)) then
-    call error_mesg('send_data','je_in present without js_in',FATAL)
+    if(fms_error_handler('send_data_3d','je_in present without js_in',err_msg)) return
   endif
   if(present(is_in) .and. .not.present(ie_in)) then
-    call error_mesg('send_data','js_in and je_in present, but is_in present without ie_in',FATAL)
+    if(fms_error_handler('send_data_3d','js_in and je_in present, but is_in present without ie_in',err_msg)) return
   endif
 endif
 
@@ -725,9 +750,13 @@ if (present(ie_in)) ie = ie_in
 if (present(je_in)) je = je_in
 if (present(ke_in)) ke = ke_in
 twohi = n1-(ie-is+1)
-if(mod(twohi,2) /= 0) call error_mesg('send_data','non-symmetric halos in first dimension',FATAL)
+if(mod(twohi,2) /= 0) then
+  if(fms_error_handler('send_data_3d','non-symmetric halos in first dimension',err_msg)) return
+endif
 twohj = n2-(je-js+1)
-if(mod(twohj,2) /= 0) call error_mesg('send_data','non-symmetric halos in second dimension',FATAL)
+if(mod(twohj,2) /= 0) then
+  if(fms_error_handler('send_data_3d','non-symmetric halos in second dimension',err_msg)) return
+endif
 hi = twohi/2; hj = twohj/2
 
 ! The next line is necessary to ensure that is,ie,js,ie are relative to field(1:,1:)
@@ -803,9 +832,8 @@ do ii = 1, number_of_outputs
          write (error_string,'(a,"/",a)')  &
              trim(input_fields(diag_field_id)%module_name), &
              trim(output_fields(out_num)%output_name)
-          call error_mesg('diag_manager send_data ', &
-             'module/output_field '//trim(error_string)//&
-             ', time must be present when output frequency = EVERY_TIME', FATAL)
+          if(fms_error_handler('send_data_3d','module/output_field '//trim(error_string)//&
+             ', time must be present when output frequency = EVERY_TIME', err_msg)) return
        endif
      endif
    endif
@@ -813,9 +841,8 @@ do ii = 1, number_of_outputs
          write (error_string,'(a,"/",a)')  &
              trim(input_fields(diag_field_id)%module_name), &
              trim(output_fields(out_num)%output_name)
-          call error_mesg('diag_manager send_data ', &
-             'module/output_field '//trim(error_string)//&
-             ', time must be present for nonstatic field', FATAL)
+          if(fms_error_handler('send_data_3d','module/output_field '//trim(error_string)//&
+             ', time must be present for nonstatic field', err_msg)) return
    endif
 
 ! Is it time to output for this field; CAREFUL ABOUT > vs >= HERE
@@ -827,9 +854,8 @@ do ii = 1, number_of_outputs
                write (error_string,'(a,"/",a)')  &
                     trim(input_fields(diag_field_id)%module_name), &
                     trim(output_fields(out_num)%output_name)
-               call error_mesg('Warning1, diag_manager send_data ', &
-                    'module/output_field '//trim(error_string)//&
-                    ' is skipped one time level in output data', WARNING)
+               if(fms_error_handler('send_data_3d','module/output_field '//trim(error_string)//&
+                    ' is skipped one time level in output data', err_msg)) return
             endif
          end if
 ! If average get size: Average intervals are last_output, next_output
@@ -870,9 +896,10 @@ do ii = 1, number_of_outputs
                         write (error_string,'(a,"/",a)')  &
                              trim(input_fields(diag_field_id)%module_name), &
                              trim(output_fields(out_num)%output_name)
-                        if(mpp_pe() .eq. mpp_root_pe())  call error_mesg ('error3 diag_manager_mod', &
-                             'module/output_field '//trim(error_string)//&
-                             &', write EMPTY buffer', FATAL)
+                        if(mpp_pe() .eq. mpp_root_pe()) then
+                          if(fms_error_handler('send_data_3d','module/output_field '//trim(error_string)//&
+                             &', write EMPTY buffer', err_msg)) return
+                        endif
                      endif
                   endif
                endif
@@ -916,7 +943,10 @@ do ii = 1, number_of_outputs
 ! Finished output of previously buffered data, now deal with buffering new data   
 
    if(.not.output_fields(out_num)%static .and. .not.need_compute .and. debug_diag_manager ) then
-      call check_bounds_are_exact_dynamic(out_num, diag_field_id, Time)
+      call check_bounds_are_exact_dynamic(out_num, diag_field_id, Time, err_msg=err_msg_local)
+      if(err_msg_local /= '') then
+        if(fms_error_handler('send_data',err_msg_local,err_msg)) return
+      endif
    endif
  
 ! Take care of submitted field data
@@ -926,14 +956,17 @@ do ii = 1, number_of_outputs
             write (error_string,'(a,"/",a)')  &
                  trim(input_fields(diag_field_id)%module_name), &
                  trim(output_fields(out_num)%output_name)   
-            call error_mesg ('error4 diag_manager_mod', 'module/output_field '//trim(error_string)//&
-                 &', regional output NOT supported with mask_variant', FATAL)
+            if(fms_error_handler('send_data_3d','module/output_field '//trim(error_string)//&
+                 &', regional output NOT supported with mask_variant', err_msg)) return
          endif
          if (present(mask)) then
             if (missvalue_present) then              
                if(debug_diag_manager) then
                   call update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                  call check_out_of_bounds(out_num, diag_field_id)
+                  call check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                  if(err_msg_local /= '') then
+                    if(fms_error_handler('send_data in diag_manager_mod',err_msg_local,err_msg)) return
+                  endif
                endif
 !               do i=is,ie; do j=js,je; do k=ks,ke
                do k=ks,ke; do j=js,je;
@@ -950,15 +983,15 @@ do ii = 1, number_of_outputs
                write (error_string,'(a,"/",a)')  &
                     trim(input_fields(diag_field_id)%module_name), &
                     trim(output_fields(out_num)%output_name)
-               call error_mesg ('error5 diag_manager_mod', 'module/output_field '//trim(error_string)//&
-                    &', variable mask but no missing value defined', FATAL)
+               if(fms_error_handler('send_data_3d','module/output_field '//trim(error_string)//&
+                    &', variable mask but no missing value defined', err_msg)) return
             endif
          else  ! no mask present
             write (error_string,'(a,"/",a)')  &
                  trim(input_fields(diag_field_id)%module_name), &
                  trim(output_fields(out_num)%output_name)
-            call error_mesg ('error6 diag_manager_mod', 'module/output_field '//trim(error_string)//&
-                 &', variable mask but no mask given', FATAL)
+            if(fms_error_handler('send_data_3d','module/output_field '//trim(error_string)//&
+                 &', variable mask but no mask given', err_msg)) return
          endif         
       else ! mask_variant=false
          if (present(mask)) then
@@ -987,7 +1020,10 @@ do ii = 1, number_of_outputs
                else
                   if(debug_diag_manager) then
                      call update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     call check_out_of_bounds(out_num, diag_field_id)
+                     call check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                     if(err_msg_local /= '') then
+                       if(fms_error_handler('send_data in diag_manager_mod',err_msg_local,err_msg)) return
+                     endif
                   endif
 !                  do i=is,ie; do j=js,je; do k=ks,ke
                   do k=ks,ke; do j=js,je;
@@ -1009,9 +1045,10 @@ do ii = 1, number_of_outputs
                   if(any(mask(f1:f2,f3:f4,ks:ke))) output_fields(out_num)%count_0d=output_fields(out_num)%count_0d+weight1
                endif               
             else ! missing value NOT present
-               if(.not.all(mask(f1:f2,f3:f4,ks:ke)) .and. mpp_pe() .eq. mpp_root_pe()) &
-                    call error_mesg('warning2 send_data_3d', &
-                    'Mask will be ignored since missing values were not specified',WARNING)
+               if(.not.all(mask(f1:f2,f3:f4,ks:ke)) .and. mpp_pe() .eq. mpp_root_pe()) then
+                  call error_mesg('warning2 send_data_3d', &
+                  'Mask will be ignored since missing values were not specified',WARNING)
+               endif
                if(need_compute) then                 
                   do j = js,je 
                      do i = is, ie
@@ -1026,7 +1063,10 @@ do ii = 1, number_of_outputs
                else                          
                   if(debug_diag_manager) then
                      call update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     call check_out_of_bounds(out_num, diag_field_id)
+                     call check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                     if(err_msg_local /= '') then
+                       if(fms_error_handler('send_data in diag_manager_mod',err_msg_local,err_msg)) return
+                     endif
                   endif
                   output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke) = &
                        output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke) &
@@ -1065,7 +1105,10 @@ do ii = 1, number_of_outputs
                else
                   if(debug_diag_manager) then
                      call update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     call check_out_of_bounds(out_num, diag_field_id)
+                     call check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                     if(err_msg_local /= '') then
+                       if(fms_error_handler('send_data in diag_manager_mod',err_msg_local,err_msg)) return
+                     endif
                   endif
 !                  do i=is,ie; do j=js,je; do k=ks,ke
                   do k=ks,ke; do j=js,je;
@@ -1097,7 +1140,10 @@ do ii = 1, number_of_outputs
                else 
                   if(debug_diag_manager) then
                      call update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     call check_out_of_bounds(out_num, diag_field_id)
+                     call check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                     if(err_msg_local /= '') then
+                       if(fms_error_handler('send_data in diag_manager_mod',err_msg_local,err_msg)) return
+                     endif
                   endif
                   output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke) = &
                        output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke) + field(f1:f2,f3:f4,ks:ke)*weight1
@@ -1112,7 +1158,10 @@ do ii = 1, number_of_outputs
    else if (time_max) then
       if(debug_diag_manager)then
          call update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-         call check_out_of_bounds(out_num, diag_field_id)
+         call check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+         if(err_msg_local /= '') then
+           if(fms_error_handler('send_data in diag_manager_mod',err_msg_local,err_msg)) return
+         endif
       endif
       if (present(mask)) then
          where(mask(f1:f2,f3:f4,ks:ke).and.field(f1:f2,f3:f4,ks:ke)>output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke))&
@@ -1125,7 +1174,10 @@ do ii = 1, number_of_outputs
    else if (time_min) then
       if(debug_diag_manager) then
          call update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-         call check_out_of_bounds(out_num, diag_field_id)
+         call check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+         if(err_msg_local /= '') then
+           if(fms_error_handler('send_data in diag_manager_mod',err_msg_local,err_msg)) return
+         endif
       endif
       if (present(mask)) then
          where(mask(f1:f2,f3:f4,ks:ke).and.field(f1:f2,f3:f4,ks:ke)<output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke)) &
@@ -1149,7 +1201,10 @@ do ii = 1, number_of_outputs
       else
          if(debug_diag_manager) then
             call update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-            call check_out_of_bounds(out_num, diag_field_id)
+            call check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+            if(err_msg_local /= '') then
+              if(fms_error_handler('send_data in diag_manager_mod',err_msg_local,err_msg)) return
+            endif
          endif
          output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke) = field(f1:f2,f3:f4,ks:ke)
       endif
@@ -1177,7 +1232,10 @@ do ii = 1, number_of_outputs
    endif !average
 
    if(output_fields(out_num)%static .and. .not.need_compute .and. debug_diag_manager) then
-      call check_bounds_are_exact_static(out_num, diag_field_id)
+      call check_bounds_are_exact_static(out_num, diag_field_id, err_msg=err_msg_local)
+      if(err_msg_local /= '') then
+        if(fms_error_handler('send_data in diag_manager_mod',err_msg_local,err_msg)) return
+      endif
    endif
  
 ! If rmask and missing value present, then insert missing value     
@@ -1420,7 +1478,7 @@ do j = 1, files(file)%num_fields
            ' check if output interval > runlength. Netcdf fill_values are written', NOTE)
       output_fields(i)%buffer = FILL_VALUE
       call diag_data_out(file, i, output_fields(i)%buffer, time, .true.)   
-   end if
+   end if 
 end do
 ! Now it's time to output static fields
 call  write_static(file)
@@ -1445,9 +1503,11 @@ end subroutine closing_file
 !     call diag_manager_init()
 !   </TEMPLATE>
 
-subroutine diag_manager_init(diag_model_subset)
+subroutine diag_manager_init(diag_model_subset, err_msg)
 integer, optional, intent(IN) :: diag_model_subset
+character(len=*), intent(out), optional :: err_msg
 integer                       :: diag_subset_output
+character(len=256) :: err_msg_local
 
 type tableB_type
    character(len=128) :: module_name,field_name,output_name,name
@@ -1471,7 +1531,7 @@ type tableA_type
    character(len=25)  :: file_duration_units
 end type tableA_type
 
-character(len=256) :: record, error_message
+character(len=256) :: record
 character(len=128) :: record_tail
 character(len=9)   :: amonth
 integer            :: iunit,time_units, output_freq_units, nfiles,nfields
@@ -1491,6 +1551,7 @@ type(tableB_type)  :: textB
 type(tableA_type ) :: textA
 type(coord_type)   :: local_coord !local coordinates used in local output
 
+if (present(err_msg)) err_msg=''
 !  If the module was already initialized do nothing
 if (module_is_initialized) return
 min_value = huge(foo)
@@ -1502,14 +1563,14 @@ if (PRESENT(diag_model_subset))then
   if(diag_model_subset>=DIAG_OTHER .AND. diag_model_subset<=DIAG_ALL) then
     diag_subset_output = diag_model_subset
   else
-    call error_mesg('diag_manager_init','invalid value of diag_model_subset',FATAL)
+    if(fms_error_handler('diag_manager_init','invalid value of diag_model_subset',err_msg)) return
   endif
 endif
 call mpp_open(iunit, 'input.nml',form=MPP_ASCII,action=MPP_RDONLY)
 read(iunit,diag_manager_nml,iostat=io_status)
 write(stdlog(), diag_manager_nml)
 if (io_status > 0) then
-   call error_mesg('diag_manager_init', 'Error reading diag_manager_nml',FATAL)
+   if(fms_error_handler('diag_manager_init', 'Error reading diag_manager_nml',err_msg)) return
 endif
 call mpp_close (iunit)
 if(mix_snapshot_average_fields) then
@@ -1519,8 +1580,9 @@ if(mix_snapshot_average_fields) then
 endif
 allocate(output_fields(max_output_fields))
 allocate(input_fields(max_input_fields))
-if (.not.file_exist('diag_table') ) &
-call error_mesg('diag_manager_init','file diag_table nonexistent', FATAL)
+if (.not.file_exist('diag_table') ) then
+  if(fms_error_handler('diag_manager_init','file diag_table nonexistent', err_msg)) return
+endif
 call mpp_open(iunit, 'diag_table', action=MPP_RDONLY)
 ! Read in the global file labeling string
 read(iunit, *, end = 99, err=99) global_descriptor
@@ -1531,11 +1593,10 @@ read(iunit, *, end = 99, err = 99) base_year, base_month, base_day, &
 
 ! Set up the time type for base time
 if (get_calendar_type() /= NO_CALENDAR) then
-   if(base_year==0 .or. base_month==0 .or. base_day==0) &
-        call error_mesg('diag_manager_init','base_year/month/day can not equal zero', FATAL) 
-   base_time = set_date(base_year, base_month, base_day, base_hour, &
-                        base_minute, base_second, err_msg=error_message)
-   if(trim(error_message) /= '') call error_mesg('diag_manager_init',trim(error_message),FATAL)
+   if(base_year==0 .or. base_month==0 .or. base_day==0) then
+     if(fms_error_handler('diag_manager_init','base_year/month/day can not equal zero', err_msg)) return
+   endif
+   base_time = set_date(base_year, base_month, base_day, base_hour, base_minute, base_second)
    amonth = month_name(base_month)
 else
 ! No calendar - ignore year and month
@@ -1593,8 +1654,10 @@ do while (nfiles <= max_files)
 ! does the record contain start time for the file ???   
    if(file_start_present) then
       read(textA%start_time_s,*,end=85,err=85) yr, mo, dy, hr, mi, sc
-      start_time = set_date( yr, mo, dy, hr, mi, sc, err_msg=error_message)
-      if(trim(error_message) /= '') call error_mesg('diag_manager_init',trim(error_message),FATAL)
+      start_time = set_date( yr, mo, dy, hr, mi, sc, err_msg=err_msg_local)
+      if(err_msg_local /= '') then
+        if(fms_error_handler('diag_manager_init',err_msg_local,err_msg)) return
+      endif
    else
       start_time = base_time
    endif
@@ -1607,6 +1670,7 @@ do while (nfiles <= max_files)
    time_units = 0
    output_freq_units = 0
    new_file_freq_units = 0
+   file_duration_units = 0
    do j = 1, size(time_unit_list(:))
       if(textA%time_units == time_unit_list(j)) time_units = j
       if(textA%output_freq_units == time_unit_list(j)) output_freq_units = j
@@ -1617,14 +1681,18 @@ do while (nfiles <= max_files)
         if(textA%file_duration_units == time_unit_list(j))  file_duration_units = j
      endif
    end do
-   if(time_units == 0) &
-        call error_mesg('diag_manager_init','invalid time units, check time unit in diag_table',FATAL)
-   if(output_freq_units == 0) & 
-        call error_mesg('diag_manager_init','invalid output frequency units, check diag table',FATAL)
-   if (file_freq_present .and. new_file_freq_units == 0 ) &
-        call error_mesg('diag_manager_init','invalid new_file frequency units, check diag table',FATAL)
-   if (file_duration_present .and. file_duration_units == 0 ) &
-        call error_mesg('diag_manager_init','invalid new_file frequency units, check diag table',FATAL)
+   if(time_units == 0) then
+     if(fms_error_handler('diag_manager_init','invalid time units, check time unit in diag_table',err_msg)) return
+   endif
+   if(output_freq_units == 0) then
+     if(fms_error_handler('diag_manager_init','invalid output frequency units, check diag table',err_msg)) return
+   endif
+   if(file_freq_present .and. new_file_freq_units == 0 ) then
+     if(fms_error_handler('diag_manager_init','invalid new_file frequency units, check diag table',err_msg)) return
+   endif
+   if(file_duration_present .and. file_duration_units == 0 ) then
+     if(fms_error_handler('diag_manager_init','invalid new_file frequency units, check diag table',err_msg)) return
+   endif
 
    ! remove trailing .nc extension from file name 
    name_len = len_trim(textA%name)
@@ -1655,7 +1723,7 @@ do while (nfiles <= max_files)
 
 85 continue
 enddo
-call error_mesg('diag_manager_init','max_files exceeded, increase max_files', FATAL)
+if(fms_error_handler('diag_manager_init','max_files exceeded, increase max_files',err_msg)) return
 86 continue
 1 format(1x,A21, 4x,I5,4x,A30)
 write(stdout(), *)' '
@@ -1705,13 +1773,16 @@ do while (nfields <= max_output_fields)
    endif
 93 continue
 enddo
-call error_mesg('diag_manager_init','max_output_fields exceeded, increase it via diag_manager_nml', FATAL)
+if(fms_error_handler('diag_manager_init','max_output_fields exceeded, increase it via diag_manager_nml',err_msg)) return
 94 continue
 call close_file(iunit)
 2 format(1x,A15,1x,A15,4x,A21,A10)
 if(debug_diag_manager) write(stdout(), *)'************************************************************************'
 ! check duplicate output_fields in the diag_table
-call check_duplicate_output_fields
+call check_duplicate_output_fields(err_msg=err_msg_local)
+if(err_msg_local /= '') then
+  if(fms_error_handler('diag_manager_init',err_msg_local,err_msg)) return
+endif
 !initialize files%bytes_written to zero
 files(:)%bytes_written = 0
 
@@ -1735,7 +1806,7 @@ module_is_initialized = .true.
 null_axis_id= diag_axis_init( 'scalar_axis', (/0./), 'none', 'X', 'none')
 return
 99 continue
-call error_mesg('diag_manager_init','error reading table', FATAL)
+if(fms_error_handler('diag_manager_init','error reading table',err_msg)) return
 end subroutine diag_manager_init
 ! </SUBROUTINE>
 
@@ -1867,3 +1938,703 @@ end module diag_manager_mod
 !   </LOADER>
 
 ! </INFO>
+!###################################################################################################
+
+#ifdef test_diag_manager
+
+ ! This program runs only one of many possible tests with each execution.
+ ! Each test ends with an intentional fatal error.
+ ! diag_manager_mod is not a stateless module, and there are situations
+ ! where a fatal error leaves the module in a state that does not allow
+ ! it to function properly if used again. Therefore, the program must
+ ! be terminated after each intentional fatal error.
+
+ ! Each test is dependent on the diag_table, and different diag_tables
+ ! exist for each test. Depending on the test, an intentional fatal error
+ ! may be triggered upon the call to diag_manager_init, register_diag_field or send_data.
+ ! Because of this, the calls to all of those routines differ depending on the test.
+
+ ! The diag_table for each test is included below.
+
+ !--------------------------------------------------------------------------------------------------
+ ! diag_table for test 1
+
+ ! test_diag_manager
+ ! 1 3 1 0 0 0
+ ! #output files
+ !  "diag_test",  1, "days", 1, "days", "time",
+ ! #output variables
+ !  "test_diag_manager_mod", "dat1", "dat1", "diag_test",  "all", .false., "none", 2,
+ !--------------------------------------------------------------------------------------------------
+ ! diag_table for test 2
+
+ ! test_diag_manager
+ ! 1 3 1 0 0 0
+ ! #output files
+ !  "diag_test",  1, "days", 1, "days", "time",
+ ! #output variables
+ !  "test_diag_manager_mod", "dat1", "dat1", "diag_test",  "all", .false., "none", 2,
+ !--------------------------------------------------------------------------------------------------
+ ! diag_table for test 3
+
+ ! test_diag_manager
+ ! 1 3 1 0 0 0
+ ! #output files
+ !  "diag_test",  1, "days", 1, "days", "time",
+ ! #output variables
+ !  "test_diag_manager_mod", "dat1", "dat1", "diag_test",  "all", .false., "none", 2,
+ !--------------------------------------------------------------------------------------------------
+ ! diag_table for test 4
+
+ ! test_diag_manager
+ ! 1 3 1 0 0 0
+ ! #output files
+ !  "diag_test",  1, "days", 1, "days", "time",
+ !  "diag_test2", 1, "days", 1, "days", "time",
+ ! #output variables
+ !  "test_diag_manager_mod", "dat2", "dat2", "diag_test",  "all", .false., "none", 2,
+ !  "test_mod",              "dat2", "dat2", "diag_test2", "all", .false., "none", 2,
+ !--------------------------------------------------------------------------------------------------
+ ! diag_table for test 5
+
+ ! test_diag_manager
+ ! 1 3 1 0 0 0
+ ! #output files
+ !  "diag_test",  1, "days", 1, "days", "time",
+ !  "diag_test2", 1, "days", 1, "days", "time",
+ ! #output variables
+ !  "test_diag_manager_mod", "dat2", "dat2", "diag_test",  "all", .false., "none", 2,
+ !  "test_mod",              "dat2", "dat2", "diag_test2", "all", .false., "none", 2,
+ !--------------------------------------------------------------------------------------------------
+ ! diag_table for test 6
+
+ ! test_diag_manager
+ ! 1 3 1 0 0 0
+ ! #output files
+ !  "diag_test",  1, "days", 1, "days", "time",
+ !  "diag_test2", 1, "days", 1, "days", "time",
+ ! #output variables
+ !  "test_diag_manager_mod", "dat2", "dat2", "diag_test",  "all", .false., "none", 2,
+ !  "test_mod",              "dat2", "dat2", "diag_test2", "all", .false., "none", 2,
+ !--------------------------------------------------------------------------------------------------
+ ! diag_table for test 7
+
+ ! test_diag_manager
+ ! 1 3 1 0 0 0
+ ! #output files
+ !  "diag_test",  1, "days", 1, "days", "time",
+ ! #output variables
+ !  "test_diag_manager_mod", "dat1", "dat1", "diag_test",  "all", .false., "none", 2,
+ !--------------------------------------------------------------------------------------------------
+ ! diag_table for test 8
+
+ ! test_diag_manager
+ ! 1 3 1 0 0 0
+ ! #output files
+ !  "diag_test",  1, "days", 1, "days", "time",
+ !  "diag_test2", 1, "days", 1, "days", "time",
+ ! #output variables
+ !  "test_diag_manager_mod", "dat2", "dat2", "diag_test",  "all", .false., "none", 2,
+ !  "test_mod",              "dat2", "dat2", "diag_test2", "all", .false., "none", 2,
+ !--------------------------------------------------------------------------------------------------
+ ! diag_table for test 9
+
+ ! test_diag_manager
+ ! 1 3 1 0 0 0
+ ! #output files
+ !  "diag_test",  1, "days", 1, "days", "time",
+ ! #output variables
+ !  "test_diag_manager_mod", "bk",   "bk",   "diag_test",  "all", .false., "none", 2,
+ !--------------------------------------------------------------------------------------------------
+ ! diag_table for test 10
+
+ ! test_diag_manager
+ ! 1 3 1 0 0 0
+ ! #output files
+ !  "diag_test",  1, "days", 1, "days", "time",
+ ! #output variables
+ !  "test_diag_manager_mod", "bk",   "bk",   "diag_test",  "all", .false., "none", 2,
+ !--------------------------------------------------------------------------------------------------
+ ! diag_table for test 11
+
+ ! test_diag_manager
+ ! 1 3 1 0 0 0
+ ! #output files
+ !  "diag_test",  1, "days", 1, "days", "time",
+ ! #output variables
+ !  "test_diag_manager_mod", "dat2", "dat2", "diag_test",  "all", .false., "none", 2,
+ !--------------------------------------------------------------------------------------------------
+ ! diag_table for test 12
+
+ ! test_diag_manager
+ ! 1 3 1 0 0 0
+ ! #output files
+ !  "diag_test",  1, "days", 1, "days", "time",
+ ! #output variables
+ !  "test_diag_manager_mod", "dat2", "dat2", "diag_test",  "all", .false., "none", 2,
+ ! # Test of the error check that duplicate field names do not appear in same file,
+ !  "test_mod",              "dat2", "dat2", "diag_test",  "all", .false., "none", 2,
+ !--------------------------------------------------------------------------------------------------
+ ! diag_table for test 13
+
+ ! test_diag_manager
+ ! 1 3 1 0 0 0
+ ! #output files
+ !  "diag_test",  1, "days", 1, "days", "time",
+ !  "diag_test2", 1, "months", 1, "days", "time",
+ ! #output variables
+ !  "test_diag_manager_mod", "dat2", "dat2", "diag_test",  "all", .false., "none", 2,
+ ! # Test of WARNING message that no data is written when run length is less than output interval  
+ !  "test_mod",              "dat2", "dat2", "diag_test2", "all", .false., "none", 2,
+ !--------------------------------------------------------------------------------------------------
+ ! diag_table for test 14
+
+ ! test_diag_manager
+ ! 1990 1 29 0 0 0
+ ! #output files
+ !  "diag_test2", 1, "months", 1, "days", "time",
+ ! #output variables
+ ! # Test of check for invalid date. (Jan 29 1990 + one month = Feb 29 1990)
+ !  "test_mod",              "dat2", "dat2", "diag_test2", "all", .false., "none", 2,
+ !--------------------------------------------------------------------------------------------------
+
+ program test
+
+ ! This program runs only one of many possible tests with each execution.
+ ! Each test ends with an intentional fatal error.
+ ! diag_manager_mod is not a stateless module, and there are situations
+ ! where a fatal error leaves the module in a state that does not allow
+ ! it to function properly if used again. Therefore, the program must
+ ! be terminated after each intentional fatal error.
+
+ ! Each test is dependent on the diag_table, and different diag_tables
+ ! exist for each test. Depending on the test, an intentional fatal error
+ ! may be triggered upon the call to diag_manager_init, register_diag_field or send_data.
+ ! Because of this, the calls to all of those routines differ depending on the test.
+
+ use          mpp_mod, only: mpp_pe
+ use  mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_get_compute_domain
+ use          fms_mod, only: fms_init, fms_end, mpp_npes, file_exist, open_namelist_file, check_nml_error, close_file, open_file
+ use          fms_mod, only: error_mesg, FATAL, stdlog
+ use       fms_io_mod, only: fms_io_exit
+ use    constants_mod, only: constants_init, pi
+
+ use time_manager_mod, only: time_type, set_calendar_type, set_date, decrement_date, operator(+), set_time
+ use time_manager_mod, only: NOLEAP, JULIAN, GREGORIAN, THIRTY_DAY_MONTHS
+
+ use diag_manager_mod, only: diag_manager_init, send_data, diag_axis_init, diag_manager_end
+ use diag_manager_mod, only: register_static_field, register_diag_field
+
+ implicit none
+
+ type(domain2d) :: Domain1
+ type(domain2d) :: Domain2
+ integer, parameter :: nlon1=18, nlat1=18, nlev=2
+ integer, parameter :: nlon2=36, nlat2=36
+ real, dimension(nlon1  ) :: lon_global1
+ real, dimension(nlon1+1) :: lonb_global1
+ real, dimension(nlat1)   :: lat_global1
+ real, dimension(nlat1+1) :: latb_global1
+ real, dimension(nlon2  ) :: lon_global2
+ real, dimension(nlon2+1) :: lonb_global2
+ real, dimension(nlat2)   :: lat_global2
+ real, dimension(nlat2+1) :: latb_global2
+ real, dimension(nlev  )  :: pfull, bk
+ real, dimension(nlev+1)  :: phalf
+ real, allocatable, dimension(:) :: lon1, lat1, lonb1, latb1
+ real, allocatable, dimension(:) :: lon2, lat2, lonb2, latb2
+ real, allocatable, dimension(:,:,:) :: dat1, dat1h
+ real, allocatable, dimension(:,:,:) :: dat2, dat2h
+ real, allocatable, dimension(:,:) :: dat2_2d
+ integer :: id_phalf, id_pfull, id_bk
+ integer :: id_lon1, id_lonb1, id_latb1, id_lat1, id_dat1
+ integer :: id_lon2, id_lat2, id_dat2, id_dat2_2d
+ integer :: i, j, k, is1, ie1, js1, je1, nml_unit, io, ierr, log_unit, out_unit
+ integer :: is_in, ie_in, js_in, je_in
+ integer :: is2, ie2, js2, je2, hi=1, hj=1
+ real :: rad_to_deg, dp, surf_press=1.e5
+ type(time_type) :: Time
+ logical :: used, test_successful
+ integer, dimension(2) :: layout = (/0,0/)
+ integer :: test_number=1
+ character(len=256) :: err_msg
+
+ namelist / test_diag_manager_nml / layout, test_number
+
+ call fms_init
+ nml_unit = open_namelist_file()
+ log_unit = stdlog()
+ out_unit = open_file(file='test_diag_manager.out', form='formatted', threading='multi', action='write')
+ call constants_init
+ call set_calendar_type(JULIAN)
+
+ rad_to_deg = 180./pi
+
+ if (file_exist('input.nml')) then
+   ierr=1
+   do while (ierr /= 0)
+     read(nml_unit, nml=test_diag_manager_nml, iostat=io, end=10)
+          ierr = check_nml_error(io, 'test_diag_manager_nml')
+   enddo
+10 call close_file(nml_unit)
+ endif
+ write(log_unit,test_diag_manager_nml)
+
+ if(test_number == 12) then
+   call diag_manager_init(err_msg=err_msg)
+   if(err_msg /= '') then
+     write(out_unit,'(a)') 'test12 successful: err_msg='//trim(err_msg)
+     call error_mesg('test_diag_manager','test12 successful.',FATAL)
+   else
+     write(out_unit,'(a)') 'test12 fails'
+     call error_mesg('test_diag_manager','test12 fails',FATAL)
+   endif
+ else
+   call diag_manager_init
+ endif
+
+ if(any(layout == (/0,0/))) then
+   layout = (/1,mpp_npes()/)
+ endif
+ call mpp_define_domains( (/1,nlon1,1,nlat1/), layout, Domain1, name='test_diag_manager')
+ call mpp_get_compute_domain(Domain1, is1, ie1, js1, je1)
+ allocate(lon1(is1:ie1), lat1(js1:je1), lonb1(is1:ie1+1), latb1(js1:je1+1))
+ call compute_grid(nlon1, nlat1, is1,ie1,js1,je1, lon_global1, lat_global1, lonb_global1, latb_global1, lon1, lat1, lonb1, latb1)
+ call mpp_define_domains( (/1,nlon2,1,nlat2/), layout, Domain2, name='test_diag_manager')
+ call mpp_get_compute_domain(Domain2, is2, ie2, js2, je2)
+ allocate(lon2(is2:ie2), lat2(js2:je2), lonb2(is2:ie2+1), latb2(js2:je2+1))
+ call compute_grid(nlon2, nlat2, is2,ie2,js2,je2, lon_global2, lat_global2, lonb_global2, latb_global2, lon2, lat2, lonb2, latb2)
+ dp = surf_press/nlev
+ do k=1,nlev+1
+   phalf(k) = dp*(k-1)
+ enddo
+ do k=1,nlev
+   pfull(k) = .5*(phalf(k) + phalf(k+1))
+   bk(k) = pfull(k)/surf_press
+ enddo
+
+ allocate(dat1 (is1   :ie1   , js1   :je1   , nlev))
+ allocate(dat1h(is1-hi:ie1+hi, js1-hj:je1+hj, nlev))
+ dat1h = 0.
+ do j=js1,je1
+   do i=is1,ie1
+     dat1 (i,j,1) = sin(lon1(i))*cos(lat1(j))
+   enddo
+ enddo
+ dat1h(is1:ie1,js1:je1,1) = dat1(:,:,1)
+ dat1 (:,:,2) = -dat1 (:,:,1)
+ dat1h(:,:,2) = -dat1h(:,:,1)
+
+ allocate(dat2    (is2   :ie2   , js2   : je2, nlev))
+ allocate(dat2_2d (is2   :ie2   , js2   : je2 ))
+ allocate(dat2h(is2-hi:ie2+hi, js2-hj: je2+hj, nlev))
+ dat2h = 0.
+ do j=js2,je2
+   do i=is2,ie2
+     dat2(i,j,1) = sin(lon2(i))*cos(lat2(j))
+   enddo
+ enddo
+ dat2h(is2:ie2,js2:je2,1) = dat2(:,:,1)
+ dat2 (:,:,2) = -dat2(:,:,1)
+ dat2h(:,:,2) = -dat2h(:,:,1)
+ dat2_2d = dat2(:,:,1)
+
+ id_lonb1 = diag_axis_init('lonb1', rad_to_deg*lonb_global1, 'degrees_E', 'x', long_name='longitude edges', Domain2=Domain1)
+ id_latb1 = diag_axis_init('latb1', rad_to_deg*latb_global1, 'degrees_N', 'y', long_name='latitude edges',  Domain2=Domain1)
+
+ id_lon1  = diag_axis_init('lon1',  rad_to_deg*lon_global1, 'degrees_E','x',long_name='longitude',Domain2=Domain1,edges=id_lonb1)
+ id_lat1  = diag_axis_init('lat1',  rad_to_deg*lat_global1, 'degrees_N','y',long_name='latitude', Domain2=Domain1,edges=id_latb1)
+
+ id_phalf= diag_axis_init('phalf', phalf, 'Pa', 'z', long_name='half pressure level', direction=-1)
+ id_pfull= diag_axis_init('pfull', pfull, 'Pa', 'z', long_name='full pressure level', direction=-1, edges=id_phalf)
+
+ id_lon2 = diag_axis_init('lon2',  rad_to_deg*lon_global2,  'degrees_E', 'x', long_name='longitude', Domain2=Domain2)
+ id_lat2 = diag_axis_init('lat2',  rad_to_deg*lat_global2,  'degrees_N', 'y', long_name='latitude',  Domain2=Domain2)
+
+ if(test_number == 14) then
+   Time = set_date(1990,1,29,0,0,0)
+ else
+   Time = set_date(1990,1,1,0,0,0)
+ endif
+
+ id_dat1 = register_diag_field('test_diag_manager_mod', 'dat1', (/id_lon1,id_lat1,id_pfull/), Time, 'sample data', 'K')
+ id_dat2 = register_diag_field('test_diag_manager_mod', 'dat2', (/id_lon2,id_lat2,id_pfull/), Time, 'sample data', 'K')
+
+ if(test_number == 14) then
+   id_dat2_2d = register_diag_field('test_mod', 'dat2', (/id_lon2,id_lat2/), Time, 'sample data', 'K', err_msg=err_msg)
+   if(err_msg /= '') then
+     write(out_unit,'(a)') 'test14 successful. err_msg='//trim(err_msg)
+   else
+     write(out_unit,'(a)') 'test14 fails.'
+   endif
+ else
+   id_dat2_2d = register_diag_field('test_mod', 'dat2', (/id_lon2,id_lat2/), Time, 'sample data', 'K')
+ endif
+
+ id_bk = register_static_field('test_diag_manager_mod', 'bk', (/id_pfull/), 'half level sigma', 'none')
+
+ if(test_number == 13) then
+   if(id_dat2_2d > 0) used=send_data(id_dat2_2d, dat2(:,:,1), Time, err_msg=err_msg)
+   if(err_msg == '') then
+     write(out_unit,'(a)') 'test13: successful if a WARNING message appears that refers to output interval greater than runlength'
+   else
+     write(out_unit,'(a)') 'test13 fails: err_msg='//trim(err_msg)
+   endif
+ endif
+
+! Note: test12 involves diag_manager_init, it does not require a call to send_data.
+!       See call to diag_manager_init above.
+
+ if(test_number == 11) then
+   is_in=1+hi
+   js_in=1+hj
+   ie_in=ie2-is2+1+hi
+   je_in=je2-js2+1+hj
+
+   if(id_dat2 > 0) used=send_data(id_dat2, dat2h, Time, is_in=is_in, js_in=js_in, ie_in=ie_in, je_in=je_in, err_msg=err_msg)
+   if(err_msg == '') then
+     write(out_unit,'(a)') 'test11.1 successful.'
+   else
+     write(out_unit,'(a)') 'test11.1 fails. err_msg='//trim(err_msg)
+   endif
+
+!  intentional_error: je_in is missing
+   if(id_dat2 > 0) used=send_data(id_dat2, dat2h, Time, is_in=is_in, js_in=js_in, ie_in=ie_in, err_msg=err_msg)
+   if(err_msg == '') then
+     write(out_unit,'(a)') 'test11.2 fails.'
+   else
+     write(out_unit,'(a)') 'test11.2 successful. err_msg='//trim(err_msg)
+   endif
+
+ endif
+
+ if(test_number == 10) then
+!  1 window, no halos, static, 1 dimension, global data.
+
+   if(id_bk > 0) used = send_data(id_bk, bk, err_msg=err_msg)
+   if(err_msg == '') then
+     write(out_unit,'(a)') 'test10.1 successful.'
+   else
+     write(out_unit,'(a)') 'test10.1 fails: err_msg='//trim(err_msg)
+   endif
+
+!  intentional_error: data array too large.
+   if(id_bk > 0) used = send_data(id_bk, phalf, err_msg=err_msg)
+   if(err_msg == '') then
+     write(out_unit,'(a)') 'test10.2 fails.'
+   else
+     write(out_unit,'(a)') 'test10.2 successful: err_msg='//trim(err_msg)
+   endif
+
+ endif
+
+ if(test_number == 9) then
+!  1 window, no halos, static, 1 dimension, global data
+
+   if(id_bk > 0) used = send_data(id_bk, bk, err_msg=err_msg)
+   if(err_msg == '') then
+     write(out_unit,'(a)') 'test9.1 successful.'
+   else
+     write(out_unit,'(a)') 'test9.1 fails: err_msg='//trim(err_msg)
+   endif
+
+!  intentional_error: data array too small
+   if(id_bk > 0) used = send_data(id_bk, bk(1:nlev-1), err_msg=err_msg) ! intentional_error
+   if(err_msg == '') then
+     write(out_unit,'(a)') 'test9.2 fails.'
+   else
+     write(out_unit,'(a)') 'test9.2 successful: err_msg='//trim(err_msg)
+   endif
+
+ endif
+
+ if(test_number == 8) then
+!  1 window with halos
+   is_in=1+hi; js_in=1+hj
+
+   ie_in=ie2-is2+1+hi
+   je_in=je2-js2+1+hj
+   if(id_dat2 > 0) used=send_data(id_dat2, dat2h, Time, is_in=is_in, js_in=js_in, &
+                   ks_in=1, ie_in=ie_in, je_in=je_in, ke_in=nlev, err_msg=err_msg)
+   if(err_msg == '') then
+     write(out_unit,'(a)') 'test8.1 successful.'
+   else
+     write(out_unit,'(a)') 'test8.1 fails: err_msg='//trim(err_msg)
+   endif
+
+!  intentional_error: data array too small in both x and y directions
+!  Error check is done on second call to send_data. Change in value of Time triggers the check.
+   Time = Time + set_time(0,1)
+   ie_in=ie1-is1+1+hi
+   je_in=je1-js1+1+hj
+   if(id_dat2 > 0) used=send_data(id_dat2, dat1h, Time, is_in=is_in, js_in=js_in, &
+                   ks_in=1, ie_in=ie_in, je_in=je_in, ke_in=nlev, err_msg=err_msg)
+   Time = Time + set_time(0,1)
+   if(id_dat2 > 0) used=send_data(id_dat2, dat1h, Time, is_in=is_in, js_in=js_in, &
+                   ks_in=1, ie_in=ie_in, je_in=je_in, ke_in=nlev, err_msg=err_msg)
+   if(err_msg == '') then
+     write(out_unit,'(a)') 'test8.2 fails.'
+   else
+     write(out_unit,'(a)') 'test8.2 successful: err_msg='//trim(err_msg)
+   endif
+
+ endif
+
+ if(test_number == 7) then
+!  1 window with halos
+   is_in=1+hi; js_in=1+hj
+
+   ie_in=ie1-is1+1+hi
+   je_in=je1-js1+1+hj
+   if(id_dat1 > 0) used=send_data(id_dat1, dat1h, Time, is_in=is_in, js_in=js_in, &
+                   ks_in=1, ie_in=ie_in, je_in=je_in, ke_in=nlev, err_msg=err_msg)
+   if(err_msg == '') then
+     write(out_unit,'(a)') 'test7.1 successful.'
+   else
+     write(out_unit,'(a)') 'test7.1 fails: err_msg='//trim(err_msg)
+   endif
+
+!  intentional_error: data array too large in both x and y directions
+   ie_in=ie2-is2+1+hi
+   je_in=je2-js2+1+hj
+   if(id_dat1 > 0) used=send_data(id_dat1, dat2h, Time, is_in=is_in, js_in=js_in, &
+                   ks_in=1, ie_in=ie_in, je_in=je_in, ke_in=nlev, err_msg=err_msg)
+   if(err_msg == '') then
+     write(out_unit,'(a)') 'test7.2 fails.'
+   else
+     write(out_unit,'(a)') 'test7.2 successful: err_msg='//trim(err_msg)
+   endif
+
+ endif
+
+ if(test_number == 6) then
+!  multiple windows, no halos
+
+!  No error messages should appear at any point within either do loop for test6.1
+   test_successful = .true.
+   do i=is2,ie2
+     if(id_dat2 > 0) used = send_data(id_dat2, dat2(i:i,:,:), Time, i-is2+1, 1, err_msg=err_msg)
+     if(err_msg /= '') then
+       write(out_unit,'(a)') 'test6.1 fails: err_msg='//trim(err_msg)
+       test_successful = .false.
+     endif
+   enddo
+   Time = Time + set_time(0,1)
+   do i=is2,ie2
+     if(id_dat2 > 0) used = send_data(id_dat2, dat2(i:i,:,:), Time, i-is2+1, 1, err_msg=err_msg)
+     if(err_msg /= '') then
+       write(out_unit,'(a)') 'test6.1 fails: err_msg='//trim(err_msg)
+       test_successful = .false.
+     endif
+   enddo
+   if(test_successful) then
+     write(out_unit,'(a)') 'test6.1 successful.'
+   else
+     write(out_unit,'(a)') 'test6.1 fails.'
+   endif
+
+!  intentional_error: data array too small in y direction
+!  Error check is done on second call to send_data. Change in value of Time triggers the check.
+   Time = Time + set_time(0,1)
+   do i=is2,ie2
+     if(id_dat2 > 0) used = send_data(id_dat2, dat2(i:i,js2:je2-1,:), Time, i-is2+1, 1)
+   enddo
+   Time = Time + set_time(0,1)
+   do i=is2,ie2
+     if(id_dat2 > 0) used = send_data(id_dat2, dat2(i:i,js2:je2-1,:), Time, i-is2+1, 1, err_msg=err_msg)
+     if(err_msg /= '') exit ! exit immediately after error is detected. No need to continue.
+   enddo
+   if(err_msg == '') then
+     write(out_unit,'(a)') 'test6.2 fails.'
+   else
+     write(out_unit,'(a)') 'test6.2 successful: err_msg='//trim(err_msg)
+   endif
+
+ endif
+
+ if(test_number == 5) then
+!  multiple windows, no halos
+
+!  No error messages should appear at any point within either do loop for test5.1
+   test_successful = .true.
+   do j=js2,je2
+     if(id_dat2 > 0) used = send_data(id_dat2, dat2(:,j:j,:), Time, 1, j-js2+1, err_msg=err_msg)
+     if(err_msg /= '') then
+       write(out_unit,'(a)') 'test5.1 fails: err_msg='//trim(err_msg)
+       test_successful = .false.
+     endif
+   enddo
+   Time = Time + set_time(0,1)
+   do j=js2,je2
+     if(id_dat2 > 0) used = send_data(id_dat2, dat2(:,j:j,:), Time, 1, j-js2+1, err_msg=err_msg)
+     if(err_msg /= '') then
+       write(out_unit,'(a)') 'test5.1 fails: err_msg='//trim(err_msg)
+       test_successful = .false.
+     endif
+   enddo
+   if(test_successful) then
+     write(out_unit,'(a)') 'test5.1 successful.'
+   else
+     write(out_unit,'(a)') 'test5.1 fails.'
+   endif
+
+!  intentional_error: data array too small in x direction.
+!  Error check is done on second call to send_data. Change in value of Time triggers the check.
+   Time = Time + set_time(0,1)
+   do j=js2,je2
+     if(id_dat2 > 0) used = send_data(id_dat2, dat2(is2:ie2-1,j:j,:), Time, 1, j-js2+1)
+   enddo
+   Time = Time + set_time(0,1)
+   do j=js2,je2
+     if(id_dat2 > 0) used = send_data(id_dat2, dat2(is2:ie2-1,j:j,:), Time, 1, j-js2+1, err_msg=err_msg)
+     if(err_msg /= '') exit ! exit immediately after error is detected. No need to continue.
+   enddo
+   if(err_msg == '') then
+     write(out_unit,'(a)') 'test5.2 fails.'
+   else
+     write(out_unit,'(a)') 'test5.2 successful: err_msg='//trim(err_msg)
+   endif
+ endif
+
+ if(test_number == 4) then
+!  1 window, no halos
+
+   if(id_dat2 > 0) used = send_data(id_dat2, dat2, Time, err_msg=err_msg)
+   Time = Time + set_time(0,1)
+   if(id_dat2 > 0) used = send_data(id_dat2, dat2, Time, err_msg=err_msg)
+   if(err_msg == '') then
+     write(out_unit,'(a)') 'test4.1 successful.'
+   else
+     write(out_unit,'(a)') 'test4.1 fails: err_msg='//trim(err_msg)
+   endif
+
+!  intentional_error: data array too small in both x and y directions
+!  Error check is done on second call to send_data. Change in value of Time triggers the check.
+   Time = Time + set_time(0,1)
+   if(id_dat2 > 0) used = send_data(id_dat2, dat1, Time, err_msg=err_msg)
+   Time = Time + set_time(0,1)
+   if(id_dat2 > 0) used = send_data(id_dat2, dat1, Time, err_msg=err_msg)
+   if(err_msg == '') then
+     write(out_unit,'(a)') 'test4.2 fails.'
+   else
+     write(out_unit,'(a)') 'test4.2 successful: err_msg='//trim(err_msg)
+   endif
+
+ endif
+
+ if(test_number == 3) then
+!  multiple windows, no halos
+
+!  No error messages should appear at any point within do loop for test3.1
+   test_successful = .true.
+   do i=is1,ie1
+     if(id_dat1 > 0) used = send_data(id_dat1, dat1(i:i,:,:), Time, i-is1+1, 1, err_msg=err_msg)
+     if(err_msg /= '') then
+       write(out_unit,'(a)') 'test3.1 fails: err_msg='//trim(err_msg)
+       test_successful = .false.
+     endif
+   enddo
+   if(test_successful) then
+     write(out_unit,'(a)') 'test3.1 successful.'
+   else
+     write(out_unit,'(a)') 'test3.1 fails.'
+   endif
+
+!  intentional_error: data array too large in y direction
+   do i=is1,ie1
+     if(id_dat1 > 0) used = send_data(id_dat1, dat2(i:i,:,:), Time, i-is1+1, 1, err_msg=err_msg)
+     if(err_msg /= '') exit ! exit immediately after error is detected. No need to continue.
+   enddo
+   if(err_msg == '') then
+     write(out_unit,'(a)') 'test3.2 fails.'
+   else
+     write(out_unit,'(a)') 'test3.2 successful: err_msg='//trim(err_msg)
+   endif
+
+ endif
+
+ if(test_number == 2) then
+!  multiple windows, no halos
+
+!  No error messages should appear at any point within do loop for test2.1
+   test_successful = .true.
+   do j=js1,je1
+     if(id_dat1 > 0) used = send_data(id_dat1, dat1(:,j:j,:), Time, 1, j-js1+1, err_msg=err_msg)
+     if(err_msg /= '') then
+       write(out_unit,'(a)') 'test2.1 fails: err_msg='//trim(err_msg)
+       test_successful = .false.
+     endif
+   enddo
+   if(test_successful) then
+     write(out_unit,'(a)') 'test2.1 successful.'
+   else
+     write(out_unit,'(a)') 'test2.1 fails.'
+   endif
+
+!  intentional_error: data array too large in x direction
+   do j=js1,je1
+     if(id_dat1 > 0) used = send_data(id_dat1, dat2(:,j:j,:), Time, 1, j-js1+1, err_msg=err_msg)
+     if(err_msg /= '') exit ! exit immediately after error is detected. No need to continue.
+   enddo
+   if(err_msg == '') then
+     write(out_unit,'(a)') 'test2.2 fails.'
+   else
+     write(out_unit,'(a)') 'test2.2 successful: err_msg='//trim(err_msg)
+   endif
+
+ endif
+ if(test_number == 1) then
+!  1 window, no halos
+   if(id_dat1 > 0) used = send_data(id_dat1, dat2, Time, err_msg=err_msg)
+   if(err_msg == '') then
+     write(out_unit,'(a)') 'test1.1 fails: Intentional error not detected'
+   else
+     write(out_unit,'(a)') 'test1.1 successful: '//trim(err_msg)
+   endif
+
+!  intentional_error: data array too large in both x and y directions
+   if(id_dat1 > 0) used = send_data(id_dat1, dat1, Time, err_msg=err_msg)
+   if(err_msg == '') then
+     write(out_unit,'(a)') 'test1.2 successful'
+   else
+     write(out_unit,'(a)') 'test1.2 fails: '//trim(err_msg)
+   endif
+
+ endif
+
+ call diag_manager_end(Time)
+ call fms_io_exit
+ call fms_end
+
+ contains
+!=================================================================================================================================
+ subroutine compute_grid(nlon, nlat, is, ie, js, je, lon_global, lat_global, lonb_global, latb_global, lon, lat, lonb, latb)
+ integer, intent(in) :: nlon, nlat, is, ie, js, je
+ real, intent(out), dimension(:) :: lon_global, lat_global, lonb_global, latb_global, lon, lat, lonb, latb
+ real :: dlon, dlat
+ integer :: i, j
+
+ dlon = 2*pi/nlon
+ dlat =   pi/nlat
+
+ do i=1,nlon+1
+   lonb_global(i) = dlon*(i-1)
+ enddo
+ do j=1,nlat+1
+   latb_global(j) = dlat*(j-1) - .5*pi
+ enddo
+ do i=1,nlon
+   lon_global(i) = .5*(lonb_global(i) + lonb_global(i+1))
+ enddo
+ do j=1,nlat
+   lat_global(j) = .5*(latb_global(j) + latb_global(j+1))
+ enddo
+ lon  = lon_global(is:ie)
+ lat  = lat_global(js:je)
+ lonb = lon_global(is:ie+1)
+ latb = lat_global(js:je+1)
+
+ end subroutine compute_grid
+!=================================================================================================================================
+ end program test
+#endif
