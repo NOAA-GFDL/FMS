@@ -81,6 +81,8 @@ use mpp_mod,           only: stdout, stdlog, mpp_error, FATAL, mpp_sum, mpp_npes
 use coupler_types_mod, only: coupler_1d_bc_type
 use coupler_types_mod, only: ind_alpha, ind_csurf
 use coupler_types_mod, only: ind_pcair, ind_u10, ind_psurf
+use coupler_types_mod, only: ind_deposition
+use coupler_types_mod, only: ind_runoff
 use coupler_types_mod, only: ind_flux
 
 use field_manager_mod, only: fm_path_name_len, fm_string_len, fm_exists, fm_get_index
@@ -186,8 +188,8 @@ character(len=48), parameter    :: mod_name = 'atmos_ocean_fluxes_mod'
 !----------------------------------------------------------------------
 !
 
-character(len=128) :: version = '$Id: atmos_ocean_fluxes.F90,v 13.0 2006/03/28 21:20:20 fms Exp $'
-character(len=128) :: tagname = '$Name: memphis_2006_07 $'
+character(len=128) :: version = '$Id: atmos_ocean_fluxes.F90,v 13.0.2.2 2006/07/13 16:02:36 fil Exp $'
+character(len=128) :: tagname = '$Name: memphis_2006_08 $'
 
 !
 !-----------------------------------------------------------------------
@@ -249,12 +251,15 @@ character(len=48), parameter  :: sub_name = 'aof_set_coupler_flux'
 integer                                                 :: n
 character(len=fm_path_name_len)                         :: coupler_list
 character(len=fm_path_name_len)                         :: current_list
+character(len=fm_string_len)                            :: flux_type_test
+character(len=fm_string_len)                            :: implementation_test
 character(len=256)                                      :: error_header
 character(len=256)                                      :: warn_header
 character(len=256)                                      :: note_header
 character(len=128)                                      :: flux_list
 character(len=128)                                      :: caller_str
 character(len=fm_string_len), pointer, dimension(:)     :: good_list => NULL()
+character(len=256)                                      :: long_err_msg
 
 !
 !       set the caller string and headers
@@ -363,22 +368,56 @@ call fm_util_set_caller(caller_str)
 !
 
 if (flux_type .eq. ' ') then  !{
-  call mpp_error(FATAL, trim(error_header) // ' Blank flux type given')
+  call mpp_error(FATAL, trim(error_header) // ' Blank flux_type given')
 else  !}{
   if (fm_exists('/coupler_mod/types/' // trim(flux_type))) then  !{
     call fm_util_set_value('flux_type', flux_type)
+!
+!       check that the flux_type that we will use (possibly given from the field_table)
+!       is defined
+!
+    flux_type_test = fm_util_get_string('flux_type', scalar = .true.)
+    if (.not. fm_exists('/coupler_mod/types/' // trim(flux_type_test))) then  !{
+      call mpp_error(FATAL, trim(error_header) // ' Undefined flux_type given from field_table: ' // trim(flux_type_test))
+    endif  !}
   else  !}{
-    call mpp_error(FATAL, trim(error_header) // ' Undefined flux type given: ' // trim(flux_type))
+    call mpp_error(FATAL, trim(error_header) // ' Undefined flux_type given as argument to the subroutine: ' // trim(flux_type))
   endif  !}
 endif  !}
 
 if (implementation .eq. ' ') then  !{
-  call mpp_error(FATAL, trim(error_header) // ' Blank flux type given')
+  call mpp_error(FATAL, trim(error_header) // ' Blank flux_type given')
 else  !}{
   if (fm_exists('/coupler_mod/types/' // trim(flux_type) // '/implementation/' // trim(implementation))) then  !{
     call fm_util_set_value('implementation', implementation)
+!
+!       check that the flux_type/implementation that we will use
+!       (both possibly given from the field_table) is defined
+!
+    implementation_test = fm_util_get_string('implementation', scalar = .true.)
+    if (.not. fm_exists('/coupler_mod/types/' // trim(flux_type_test) //  '/implementation/' // trim(implementation_test))) then  !{
+      if (flux_type .eq. flux_type_test) then
+        if (implementation .eq. implementation_test) then
+          call mpp_error(FATAL, trim(error_header) // ' Should not get here, as it is tested for above')
+        else
+          call mpp_error(FATAL, trim(error_header) //                                                   &
+               ' Undefined flux_type/implementation (implementation given from field_table): ' //       &
+               trim(flux_type_test) // '/implementation/' // trim(implementation_test))
+        endif
+      else
+        if (implementation .eq. implementation_test) then
+	  long_err_msg = 'Undefined flux_type/implementation (flux_type given from field_table): '
+	  long_err_msg = long_err_msg // trim(flux_type_test) // '/implementation/' // trim(implementation_test)
+          call mpp_error(FATAL, trim(error_header) // long_err_msg)
+        else
+	  long_err_msg = ' Undefined flux_type/implementation (both given from field_table): '
+	  long_err_msg = long_err_msg //  trim(flux_type_test) // '/implementation/' // trim(implementation_test)
+          call mpp_error(FATAL, trim(error_header) // long_err_msg)
+        endif
+      endif
+    endif  !}
   else  !}{
-    call mpp_error(FATAL, trim(error_header) // ' Undefined implementation given: ' //          &
+    call mpp_error(FATAL, trim(error_header) // ' Undefined flux_type/implementation given as argument to the subroutine: ' //  &
          trim(flux_type) // '/implementation/' // trim(implementation))
   endif  !}
 endif  !}
@@ -611,7 +650,7 @@ allocate (gas_fields_atm%bc(gas_fields_atm%num_bcs))
 allocate (gas_fields_ice%bc(gas_fields_ice%num_bcs))
 
 !
-!       loop over the input fields, setting the values in the flux type
+!       loop over the input fields, setting the values in the flux_type
 !
 
 n = 0
@@ -639,16 +678,30 @@ do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))  !{
     endif  !}
 
 !
-!       save the flux_type
+!       save and check the flux_type
 !
 
     gas_fluxes%bc(n)%flux_type = fm_util_get_string('flux_type', scalar = .true.)
+    if (.not. fm_exists('/coupler_mod/types/' // trim(gas_fluxes%bc(n)%flux_type))) then  !{
+      call mpp_error(FATAL, trim(error_header) // ' Undefined flux_type given for ' //          &
+           trim(name) // ': ' // trim(gas_fluxes%bc(n)%flux_type))
+    endif  !}
+    gas_fields_atm%bc(n)%flux_type = gas_fluxes%bc(n)%flux_type
+    gas_fields_ice%bc(n)%flux_type = gas_fluxes%bc(n)%flux_type
 
 !
-!       save the implementation
+!       save and check the implementation
 !
 
     gas_fluxes%bc(n)%implementation = fm_util_get_string('implementation', scalar = .true.)
+    if (.not. fm_exists('/coupler_mod/types/' // trim(gas_fluxes%bc(n)%flux_type) //            &
+         '/implementation/' // trim(gas_fluxes%bc(n)%implementation))) then  !{
+      call mpp_error(FATAL, trim(error_header) // ' Undefined implementation given for ' //     &
+           trim(name) // ': ' // trim(gas_fluxes%bc(n)%flux_type) // '/implementation/' //      &
+           trim(gas_fluxes%bc(n)%implementation))
+    endif  !}
+    gas_fields_atm%bc(n)%implementation = gas_fluxes%bc(n)%implementation
+    gas_fields_ice%bc(n)%implementation = gas_fluxes%bc(n)%implementation
 
 !
 !       set the flux list name
@@ -832,6 +885,10 @@ do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))  !{
     gas_fields_atm%bc(n)%use_10m_wind_speed = gas_fluxes%bc(n)%use_10m_wind_speed
     gas_fields_ice%bc(n)%use_10m_wind_speed = gas_fluxes%bc(n)%use_10m_wind_speed
 
+    gas_fluxes%bc(n)%pass_through_ice = fm_util_get_logical(trim(flux_list) // '/pass_through_ice')
+    gas_fields_atm%bc(n)%pass_through_ice = gas_fluxes%bc(n)%pass_through_ice
+    gas_fields_ice%bc(n)%pass_through_ice = gas_fluxes%bc(n)%pass_through_ice
+
   endif  !}
 
 enddo  !}
@@ -923,6 +980,7 @@ integer                                 :: i
 integer                                 :: length
 real, dimension(:), allocatable         :: kw
 real, dimension(:), allocatable         :: cair
+character(len=128)                      :: error_string
 
 !
 !       Return if no fluxes to be calculated
@@ -973,7 +1031,7 @@ do n = 1, gas_fluxes%num_bcs  !{
 
         do i = 1, length  !{
           if (seawater(i) == 1) then  !{
-            kw(i) = gas_fluxes%bc(n)%param(ind_flux) * gas_fields_atm%bc(n)%field(ind_u10)%values(i)
+            kw(i) = gas_fluxes%bc(n)%param(1) * gas_fields_atm%bc(n)%field(ind_u10)%values(i)
             cair(i) =                                                           &
                  gas_fields_ice%bc(n)%field(ind_alpha)%values(i) *              &
                  gas_fields_atm%bc(n)%field(ind_pCair)%values(i) *              &
@@ -991,7 +1049,7 @@ do n = 1, gas_fluxes%num_bcs  !{
 
         do i = 1, length  !{
           if (seawater(i) == 1) then  !{
-            kw(i) = gas_fluxes%bc(n)%param(ind_flux) * gas_fields_atm%bc(n)%field(ind_u10)%values(i)**2
+            kw(i) = gas_fluxes%bc(n)%param(1) * gas_fields_atm%bc(n)%field(ind_u10)%values(i)**2
             cair(i) =                                                           &
                  gas_fields_ice%bc(n)%field(ind_alpha)%values(i) *              &
                  gas_fields_atm%bc(n)%field(ind_pCair)%values(i) *              &
@@ -1013,12 +1071,75 @@ do n = 1, gas_fluxes%num_bcs  !{
       endif  !}
 
     elseif (gas_fluxes%bc(n)%flux_type .eq. 'air_sea_deposition') then  !}{
-      call mpp_error(FATAL, ' Unimplemented flux type (' // trim(gas_fluxes%bc(n)%flux_type) //    &
-           ') for ' // trim(gas_fluxes%bc(n)%name))
+
+      if (gas_fluxes%bc(n)%param(1) .le. 0.0) then
+        write (error_string, '(1pe10.3)') gas_fluxes%bc(n)%param(1)
+        call mpp_error(FATAL, ' Bad parameter (' // trim(error_string) //       &
+             ') for air_sea_deposition for ' // trim(gas_fluxes%bc(n)%name))
+      endif
+
+      length = size(gas_fluxes%bc(n)%field(1)%values(:))
+
+      if (gas_fluxes%bc(n)%implementation .eq. 'dry') then  !{
+
+        do i = 1, length  !{
+          if (seawater(i) == 1) then  !{
+            gas_fluxes%bc(n)%field(ind_flux)%values(i) =        &
+                 gas_fields_atm%bc(n)%field(ind_deposition)%values(i) / gas_fluxes%bc(n)%param(1)
+          else  !}{
+            gas_fluxes%bc(n)%field(ind_flux)%values(i) = 0.0
+          endif  !}
+        enddo  !} i
+
+      elseif (gas_fluxes%bc(n)%implementation .eq. 'wet') then  !}{
+
+        do i = 1, length  !{
+          if (seawater(i) == 1) then  !{
+            gas_fluxes%bc(n)%field(ind_flux)%values(i) =        &
+                 gas_fields_atm%bc(n)%field(ind_deposition)%values(i) / gas_fluxes%bc(n)%param(1)
+          else  !}{
+            gas_fluxes%bc(n)%field(ind_flux)%values(i) = 0.0
+          endif  !}
+        enddo  !} i
+    
+      else  !}{
+
+        call mpp_error(FATAL, ' Unknown implementation (' // trim(gas_fluxes%bc(n)%implementation) //    &
+             ') for ' // trim(gas_fluxes%bc(n)%name))
+
+      endif  !}
+
+    elseif (gas_fluxes%bc(n)%flux_type .eq. 'land_sea_runoff') then  !}{
+
+      if (gas_fluxes%bc(n)%param(1) .le. 0.0) then
+        write (error_string, '(1pe10.3)') gas_fluxes%bc(n)%param(1)
+        call mpp_error(FATAL, ' Bad parameter (' // trim(error_string) //       &
+             ') for land_sea_runoff for ' // trim(gas_fluxes%bc(n)%name))
+      endif
+
+      length = size(gas_fluxes%bc(n)%field(1)%values(:))
+
+      if (gas_fluxes%bc(n)%implementation .eq. 'river') then  !{
+
+        do i = 1, length  !{
+          if (seawater(i) == 1) then  !{
+            gas_fluxes%bc(n)%field(ind_flux)%values(i) =        &
+                 gas_fields_atm%bc(n)%field(ind_deposition)%values(i) / gas_fluxes%bc(n)%param(1)
+          else  !}{
+            gas_fluxes%bc(n)%field(ind_flux)%values(i) = 0.0
+          endif  !}
+        enddo  !} i
+
+      else  !}{
+
+        call mpp_error(FATAL, ' Unknown implementation (' // trim(gas_fluxes%bc(n)%implementation) //    &
+             ') for ' // trim(gas_fluxes%bc(n)%name))
+
+      endif  !}
 
     else  !}{
 
-      call mpp_error(FATAL, ' Unknown flux type (' // trim(gas_fluxes%bc(n)%flux_type) //    &
+      call mpp_error(FATAL, ' Unknown flux_type (' // trim(gas_fluxes%bc(n)%flux_type) //    &
            ') for ' // trim(gas_fluxes%bc(n)%name))
 
     endif  !}

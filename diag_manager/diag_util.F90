@@ -12,7 +12,7 @@ use diag_axis_mod, only  : get_diag_axis_data, get_axis_global_length, get_diag_
                            get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, &
                            get_axis_aux
 use diag_output_mod, only: diag_flush, diag_field_out, diag_output_init, write_axis_meta_data, &
-                           write_field_meta_data, done_meta_data, diag_flush, diag_field_out
+                           write_field_meta_data, done_meta_data
 use fms_mod, only        : error_mesg, FATAL, WARNING, mpp_pe, mpp_root_pe, lowercase, fms_error_handler
 use mpp_domains_mod,only : domain1d, domain2d, mpp_get_compute_domain, null_domain1d,&
                            null_domain2d, operator(/=), mpp_modify_domain, mpp_get_domain_components 
@@ -28,8 +28,8 @@ public get_subfield_size, log_diag_field_info, update_bounds, check_out_of_bound
        find_input_field, init_input_field, init_output_field, diag_data_out, write_static, &
        check_duplicate_output_fields, get_date_dif
 
-character(len=128),private  :: version = '$Id: diag_util.F90,v 1.1.2.6.2.3 2006/05/21 16:27:03 fms Exp $'
-character(len=128),private  :: tagname = '$Name: memphis_2006_07 $'
+character(len=128),private  :: version = '$Id: diag_util.F90,v 13.0.2.2 2006/05/30 20:19:57 gtn Exp $'
+character(len=128),private  :: tagname = '$Name: memphis_2006_08 $'
 
 contains
 

@@ -49,8 +49,8 @@ module time_interp_external_mod
   private
 
   character(len=128), private :: version= &
-   'CVS $Id: time_interp_external.F90,v 13.0.2.1 2006/05/20 14:32:22 pjp Exp $'
-  character(len=128), private :: tagname='Tag $Name: memphis_2006_07 $'
+   'CVS $Id: time_interp_external.F90,v 13.0.2.3 2006/06/25 15:41:04 pjp Exp $'
+  character(len=128), private :: tagname='Tag $Name: memphis_2006_08 $'
 
   integer, parameter, private :: max_fields = 1, modulo_year= 0001,max_files= 1
   integer, parameter, private :: LINEAR_TIME_INTERP = 1 ! not used currently
@@ -187,16 +187,18 @@ module time_interp_external_mod
 
 
     function init_external_field(file,fieldname,format,threading,domain,desired_units,&
-         verbose,axis_centers,axis_sizes,override,correct_leap_year_inconsistency,permit_calendar_conversion)
+         verbose,axis_centers,axis_sizes,override,correct_leap_year_inconsistency,&
+         permit_calendar_conversion,use_comp_domain)
       
-      character(len=*), intent(in) :: file,fieldname
-      integer, intent(in), optional :: format, threading
-      logical, intent(in), optional :: verbose
-      character(len=*), intent(in), optional :: desired_units
-      type(domain2d), intent(in), optional :: domain
+      character(len=*), intent(in)            :: file,fieldname
+      integer, intent(in), optional           :: format, threading
+      logical, intent(in), optional           :: verbose 
+      character(len=*), intent(in), optional  :: desired_units
+      type(domain2d), intent(in), optional    :: domain
       type(axistype), intent(inout), optional :: axis_centers(4)
-      integer, intent(inout), optional :: axis_sizes(4)
-      logical, intent(in), optional :: override, correct_leap_year_inconsistency,permit_calendar_conversion
+      integer, intent(inout), optional        :: axis_sizes(4)
+      logical, intent(in), optional           :: override, correct_leap_year_inconsistency,&
+           permit_calendar_conversion,use_comp_domain
 
       
       integer :: init_external_field
@@ -210,7 +212,7 @@ module time_interp_external_mod
       integer :: form, thread, fset, unit,ndim,nvar,natt,ntime,i,j
       integer :: iscomp,iecomp,jscomp,jecomp,isglobal,ieglobal,jsglobal,jeglobal
       integer :: isdata,iedata,jsdata,jedata, dxsize, dysize,dxsize_max,dysize_max
-      logical :: verb, transpose_xy
+      logical :: verb, transpose_xy,use_comp_domain1
       real(KIND=r8_kind), dimension(:), allocatable :: tstamp, tstart, tend, tavg
       character(len=1) :: cart
       character(len=128) :: units, fld_units
@@ -218,10 +220,11 @@ module time_interp_external_mod
       integer :: siz(4), siz_in(4), gxsize, gysize,gxsize_max, gysize_max
       type(time_type) :: tdiff
       integer :: yr, mon, day, hr, minu, sec
-      integer :: len, nfile, nfields_orig, nbuf
+      integer :: len, nfile, nfields_orig, nbuf, nx,ny
 
       if (.not. module_initialized) call mpp_error(FATAL,'Must call time_interp_external_init first')
-
+      use_comp_domain1 = .false.
+      if(PRESENT(use_comp_domain)) use_comp_domain1 = use_comp_domain
       form=MPP_NETCDF
       if (PRESENT(format)) form = format
       thread = MPP_MULTI
@@ -274,13 +277,15 @@ module time_interp_external_mod
       call mpp_get_fields(unit,flds)
       allocate(tstamp(ntime),tstart(ntime),tend(ntime),tavg(ntime))
       call mpp_get_times(unit,tstamp)
-
-      transpose_xy = .false.
-
+      transpose_xy = .false.     
       if (PRESENT(domain)) then
-          call mpp_get_compute_domain(domain,iscomp,iecomp,jscomp,jecomp)
-          call mpp_get_data_domain(domain,isdata,iedata,jsdata,jedata,dxsize,dxsize_max,dysize,dysize_max)
-          call mpp_get_global_domain(domain,isglobal,ieglobal,jsglobal,jeglobal,gxsize,gxsize_max,gysize,gysize_max)
+         call mpp_get_compute_domain(domain,iscomp,iecomp,jscomp,jecomp)
+         nx = iecomp-iscomp+1; ny = jecomp-jscomp+1
+         call mpp_get_data_domain(domain,isdata,iedata,jsdata,jedata,dxsize,dxsize_max,dysize,dysize_max)
+         call mpp_get_global_domain(domain,isglobal,ieglobal,jsglobal,jeglobal,gxsize,gxsize_max,gysize,gysize_max)
+      elseif(use_comp_domain1) then
+         call mpp_error(FATAL,"init_external_field:"//&
+              " use_comp_domain=true but domain is not present") 
       endif
       
       init_external_field = -1
@@ -341,7 +346,11 @@ module time_interp_external_mod
                   if (PRESENT(axis_sizes)) axis_sizes(1) = len
                endif
                field(num_fields)%axes(1) = fld_axes(j)
-               field(num_fields)%siz(1) = dxsize
+               if(use_comp_domain1) then
+                  field(num_fields)%siz(1) = nx
+               else
+                  field(num_fields)%siz(1) = dxsize
+               endif
                if (len /= gxsize) then
                   write(msg,'(a,"/",a)')  trim(file),trim(fieldname)
                   call mpp_error(FATAL,'time_interp_ext, file/field '//trim(msg)//' x dim doesnt match model')
@@ -358,7 +367,11 @@ module time_interp_external_mod
                   gysize = len 
                   if (PRESENT(axis_sizes)) axis_sizes(2) = len
                endif
-               field(num_fields)%siz(2) = dysize
+               if(use_comp_domain1) then
+                  field(num_fields)%siz(2) = ny
+               else
+                  field(num_fields)%siz(2) = dysize
+               endif
                if (len /= gysize) then
                   write(msg,'(a,"/",a)')  trim(file),trim(fieldname)
                   call mpp_error(FATAL,'time_interp_ext, file/field '//trim(msg)//' y dim doesnt match model')
@@ -958,7 +971,7 @@ use time_interp_external_mod, only : time_interp_external, time_interp_external_
      time_interp_external_exit, time_interp_external, init_external_field, get_external_field_size
 use time_manager_mod, only : get_date, set_date, time_manager_init, set_calendar_type, JULIAN, time_type, increment_time,&
                              NOLEAP
-use horiz_interp_mod, only: horiz_interp, horiz_interp_init, horiz_interp_new, horiz_interp_type
+use horiz_interp_mod, only: horiz_interp, horiz_interp_init, horiz_interp_new, horiz_interp_del, horiz_interp_type
 use axis_utils_mod, only: get_axis_bounds
 implicit none
 
@@ -1129,7 +1142,7 @@ do i=1,ntime
    time = increment_time(time,0,days_inc)
 enddo
 
-
+call horiz_interp_del(Hinterp)
 
 
 call time_interp_external_exit

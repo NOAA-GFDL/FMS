@@ -97,7 +97,7 @@ logical                 :: module_is_initialized = .FALSE.
 character(len=128), private :: version= &
   '$Id: diag_output.F90,v 13.0.4.2.2.1 2006/05/22 02:10:30 fms Exp $'
 character(len=128), private :: tagname= &
-  '$Name: memphis_2006_07 $'
+  '$Name: memphis_2006_08 $'
 
 contains
 

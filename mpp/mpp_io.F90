@@ -781,9 +781,9 @@ private
 
 
   character(len=128) :: version= &
-       '$Id: mpp_io.F90,v 13.0.2.1.2.1 2006/05/18 15:56:44 pjp Exp $'
+       '$Id: mpp_io.F90,v 13.0.2.1.2.1.4.1 2006/07/31 12:29:27 z1l Exp $'
   character(len=128) :: tagname= &
-       '$Name: memphis_2006_07 $'
+       '$Name: memphis_2006_08 $'
 
 contains
 
@@ -823,7 +823,7 @@ program mpp_io_test
   integer           :: halo=2, stackmax=1500000, stackmaxd=500000
   logical           :: debug=.FALSE.  
   character(len=64) :: file='test', iospec='-F cachea' 
-  namelist / mpp_io_nml / nx, ny, nz, nt, halo, stackmax, stackmaxd, debug, file, iospec
+  namelist / mpp_io_test_nml / nx, ny, nz, nt, halo, stackmax, stackmaxd, debug, file, iospec
 
   integer        :: pe, npes
   type(domain2D) :: domain
@@ -848,15 +848,15 @@ program mpp_io_test
   pe = mpp_pe()
   npes = mpp_npes()
 
-!possibly open a file called mpp_io.nml
+!possibly open a file called mpp_io_test.nml
   do
      inquire( unit=unit, opened=opened )
      if( .NOT.opened )exit
      unit = unit + 1
      if( unit.EQ.100 )call mpp_error( FATAL, 'Unable to locate unit number.' )
   end do
-  open( unit=unit, status='OLD', file='mpp_io.nml', err=10 )
-  read( unit,mpp_io_nml )
+  open( unit=unit, status='OLD', file='mpp_io_test.nml', err=10 )
+  read( unit,mpp_io_test_nml )
   close(unit)
 10 continue
 

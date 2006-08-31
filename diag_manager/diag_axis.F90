@@ -26,7 +26,7 @@ private
 public  diag_axis_init, get_diag_axis, get_domain1d, get_domain2d, &
         get_axis_length, get_axis_global_length, diag_subaxes_init, &
         get_diag_axis_cart, get_diag_axis_data, max_axes, get_axis_aux, &
-        get_tile_number
+        get_tile_number, get_axes_shift
 
 
 
@@ -56,8 +56,8 @@ character(len=128) :: Axis_sets(max_num_axis_sets)
 type (diag_axis_type), allocatable, save :: Axes(:)
 logical            :: module_is_initialized = .FALSE.
 character(len=128) :: &
-     version='$Id: diag_axis.F90,v 13.0.2.1 2006/05/05 20:04:41 z1l Exp $'
-character(len=128) :: tagname='$Name: memphis_2006_07 $'
+     version='$Id: diag_axis.F90,v 13.0.2.1.4.1 2006/07/10 16:13:14 wfc Exp $'
+character(len=128) :: tagname='$Name: memphis_2006_08 $'
 
 contains
 !#######################################################################
@@ -415,6 +415,7 @@ function get_tile_number (ids) result (tile_number)
   if ( size(ids(:)) < 1 .or. size(ids(:)) > 4 ) call error_mesg  &
        ('get_tile_number in diag_axis_mod', &
        'input argument has incorrect size', FATAL)
+  tile_number = 1
   flag = 0
   do i = 1, size(ids(:))
      id = ids(i)
@@ -464,6 +465,26 @@ function get_domain2d (ids) result (Domain2)
      endif
   enddo
 end function get_domain2d
+
+!#######################################################################
+subroutine get_axes_shift ( ids, ishift, jshift ) 
+  integer, intent(in)  :: ids(:)
+  integer, intent(out) :: ishift, jshift
+  integer              :: i, id
+
+  !-- get the value of the shift.
+  ishift = 0; jshift = 0
+  do i = 1, size(ids(:))
+     id = ids(i)
+     select case (Axes(id)%cart_name)
+     case ( 'X' )
+        ishift = Axes(id)%shift
+     case ( 'Y' )
+        jshift = Axes(id)%shift
+     end select
+  end do
+
+end subroutine get_axes_shift
 
 !#######################################################################
 function get_axis_num (axis_name, set_name) result (num)

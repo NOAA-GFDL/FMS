@@ -65,13 +65,13 @@ use time_manager_mod, only: time_type, operator(+), operator(>), &
 
 use  horiz_interp_mod, only: horiz_interp_init, horiz_interp,  &
                              horiz_interp_new, horiz_interp_del, &
-                             horiz_interp_type
+                             horiz_interp_type, assignment(=)
 
 use           fms_mod, only: file_exist, error_mesg, write_version_number,  &
                              NOTE, WARNING, FATAL, stdlog, check_nml_error, &
                              open_namelist_file, open_ieee32_file,          &
                              mpp_pe, close_file, lowercase, mpp_root_pe,    &
-                             NOTE, mpp_error
+                             NOTE, mpp_error, fms_error_handler
 use        fms_io_mod, only: read_data
 use     constants_mod, only: TFREEZE, pi
 use      platform_mod, only: R4_KIND, I2_KIND
@@ -82,17 +82,17 @@ private
 !-----------------------------------------------------------------------
 !----------------- Public interfaces -----------------------------------
 
-public amip_interp_init, get_amip_sst, get_amip_ice,  &
-       get_sst_grid_boundary, get_sst_grid_size, amip_interp_end,  &
-       amip_interp_type
+public amip_interp_init, get_amip_sst, get_amip_ice, amip_interp_new, &
+       get_sst_grid_boundary, get_sst_grid_size, amip_interp_del,  &
+       amip_interp_type, assignment(=)
 
 !-----------------------------------------------------------------------
 !--------------------- private below here ------------------------------
 
 !  ---- version number -----
 
-character(len=128) :: version = '$Id: amip_interp.F90,v 11.0.6.1 2006/05/20 15:19:41 pjp Exp $'
-character(len=128) :: tagname = '$Name: memphis_2006_07 $'
+character(len=128) :: version = '$Id: amip_interp.F90,v 11.0.6.5 2006/07/25 18:53:06 pjp Exp $'
+character(len=128) :: tagname = '$Name: memphis_2006_08 $'
 
 !-----------------------------------------------------------------------
 !------ private defined data type --------
@@ -101,6 +101,10 @@ type date_type
    sequence
    integer :: year, month, day
 end type
+
+interface assignment(=)
+  module procedure  amip_interp_type_eq
+end interface
 
 interface operator (==)
    module procedure date_equals
@@ -114,7 +118,7 @@ interface operator (>)
    module procedure date_gt
 end interface
 
-! <INTERFACE NAME="amip_interp_init">
+! <INTERFACE NAME="amip_interp_new">
 !   <OVERVIEW>
 !     Function that initializes data needed for the horizontal
 !         interpolation between the sst grid and model grid. The 
@@ -152,7 +156,7 @@ end interface
 !     A defined data type variable needed when calling get_amip_sst and get_amip_ice.
 !   </OUT>
 !   <TEMPLATE>
-!     Interp = amip_interp_init ( blon, blat, mask, use_climo, use_annual, interp_method )
+!     Interp = amip_interp_new ( blon, blat, mask, use_climo, use_annual, interp_method )
 !   </TEMPLATE>
 
 !   <NOTE>
@@ -176,16 +180,16 @@ end interface
 !      See the section on DATA SETS to properly set the data up.
 !   </ERROR>
 !   <ERROR MSG="use_climo mismatch" STATUS="FATAL">
-!     The namelist variable date_out_of_range = 'fail' and the amip_interp_init 
+!     The namelist variable date_out_of_range = 'fail' and the amip_interp_new
 !     argument use_climo = true.  This combination is not allowed.
 !   </ERROR>
 !   <ERROR MSG="use_annual(climo) mismatch" STATUS="FATAL">
-!     The namelist variable date_out_of_range = 'fail' and the amip_interp_init 
+!     The namelist variable date_out_of_range = 'fail' and the amip_interp_new
 !     argument use_annual = true.  This combination is not allowed.
 !   </ERROR>
-interface amip_interp_init
-   module procedure amip_interp_init_1d
-   module procedure amip_interp_init_2d
+interface amip_interp_new
+   module procedure amip_interp_new_1d
+   module procedure amip_interp_new_2d
 end interface
 ! </INTERFACE>
 
@@ -203,6 +207,7 @@ type amip_interp_type
                                   data2(:,:) =>NULL()
    type (date_type)         ::    Date1,       Date2
    logical                  :: use_climo, use_annual
+   logical                  :: I_am_initialized=.false.
 end type
 
 !-----------------------------------------------------------------------
@@ -223,7 +228,7 @@ end type
    real             :: tice_crit_k
    integer(I2_KIND) ::  ice_crit
 
-   logical :: do_init_once = .true.
+   logical :: module_is_initialized = .false.
 
 !-----------------------------------------------------------------------
 !---- namelist ----
@@ -337,11 +342,12 @@ contains
 !   <INOUT NAME="Interp" TYPE="amip_interp_type"> </INOUT>
 ! </SUBROUTINE>
 
-subroutine get_amip_sst (Time, Interp, sst)
+subroutine get_amip_sst (Time, Interp, sst, err_msg)
 
    type (time_type),         intent(in)    :: Time
    type (amip_interp_type),  intent(inout) :: Interp
    real,                     intent(out)   ::  sst(:,:)
+   character(len=*), optional, intent(out) :: err_msg
 
     real, dimension(mobs,nobs) :: sice, temp
 
@@ -352,11 +358,13 @@ subroutine get_amip_sst (Time, Interp, sst)
     type(time_type) :: Amip_Time
     integer :: tod(3),dum
 
+    if(present(err_msg)) err_msg = ''
+    if(.not.Interp%I_am_initialized) then
+      if(fms_error_handler('get_amip_sst','The amip_interp_type variable is not initialized',err_msg)) return
+    endif
 
 !-----------------------------------------------------------------------
 !----- compute zonally symetric sst ---------------
-
-
 
     if (all(amip_date>0)) then
        call get_date(Time,dum,dum,dum,tod(1),tod(2),tod(3))
@@ -364,7 +372,6 @@ subroutine get_amip_sst (Time, Interp, sst)
     else
        Amip_Time = Time
     endif
-       
        
 if (use_zonal) then
    call zonal_sst (Amip_Time, sice, temp)
@@ -455,11 +462,12 @@ endif
 !   <INOUT NAME="Interp" TYPE="amip_interp_type"> </INOUT>
 ! </SUBROUTINE>
 
-subroutine get_amip_ice (Time, Interp, ice)
+subroutine get_amip_ice (Time, Interp, ice, err_msg)
 
    type (time_type),         intent(in)    :: Time
    type (amip_interp_type),  intent(inout) :: Interp
    real,                     intent(out)   :: ice(:,:)
+   character(len=*), optional, intent(out) :: err_msg
 
     real, dimension(mobs,nobs) :: sice, temp
 
@@ -469,6 +477,11 @@ subroutine get_amip_ice (Time, Interp, ice)
 
     type(time_type) :: Amip_Time
     integer :: tod(3),dum
+
+    if(present(err_msg)) err_msg = ''
+    if(.not.Interp%I_am_initialized) then
+      if(fms_error_handler('get_amip_ice','The amip_interp_type variable is not initialized',err_msg)) return
+    endif
 
 !-----------------------------------------------------------------------
 !----- compute zonally symetric sst ---------------
@@ -565,7 +578,7 @@ endif
 
 !#######################################################################
 
-! <FUNCTION NAME="amip_interp_init_1d" INTERFACE="amip_interp_init">
+! <FUNCTION NAME="amip_interp_new_1d" INTERFACE="amip_interp_new">
 
 !   <IN NAME="blon" TYPE="real" DIM="(:)"> </IN>
 !   <IN NAME="blat" TYPE="real" DIM="(:)"> </IN>
@@ -575,7 +588,7 @@ endif
 !   <IN NAME="interp_method" TYPE="character(len=*), optional" DEFAULT="interp_method = conservative"></IN>
 !   <OUT NAME="Interp" TYPE="amip_interp_type"> </OUT>
 
- function amip_interp_init_1d ( lon , lat , mask , use_climo, use_annual, &
+ function amip_interp_new_1d ( lon , lat , mask , use_climo, use_annual, &
                                 interp_method ) result (Interp)
 
  real,    intent(in), dimension(:)   :: lon, lat
@@ -585,7 +598,21 @@ endif
 
    type (amip_interp_type) :: Interp
 
-   Interp = initialize (mask , use_climo, use_annual, interp_method)
+   if(.not.module_is_initialized) call amip_interp_init
+
+   Interp % use_climo  = .false.
+   if (present(use_climo)) Interp % use_climo  = use_climo
+   Interp % use_annual = .false.
+   if (present(use_annual)) Interp % use_annual  = use_annual
+
+   if ( date_out_of_range == 'fail' .and. Interp%use_climo ) &
+      call error_mesg ('amip_interp_new_1d', 'use_climo mismatch', FATAL)
+
+   if ( date_out_of_range == 'fail' .and. Interp%use_annual ) &
+      call error_mesg ('amip_interp_new_1d', 'use_annual(climo) mismatch', FATAL)
+
+   Interp % Date1 = date_type( -99, -99, -99 )
+   Interp % Date2 = date_type( -99, -99, -99 )
 
 !-----------------------------------------------------------------------
 !   ---- initialization of horizontal interpolation ----
@@ -596,11 +623,13 @@ endif
     allocate ( Interp % data1 (size(lon(:))-1,size(lat(:))-1), &
                Interp % data2 (size(lon(:))-1,size(lat(:))-1)  )
 
-   end function amip_interp_init_1d
+    Interp%I_am_initialized = .true.
+
+   end function amip_interp_new_1d
 ! </FUNCTION>
 
 !#######################################################################
-! <FUNCTION NAME="amip_interp_init_2d" INTERFACE="amip_interp_init">
+! <FUNCTION NAME="amip_interp_new_2d" INTERFACE="amip_interp_new">
 !   <IN NAME="blon" TYPE="real" DIM="(:)"> </IN>
 !   <IN NAME="blat" TYPE="real" DIM="(:)"> </IN>
 !   <IN NAME="mask" TYPE="logical" DIM="(:,:)"> </IN>
@@ -609,7 +638,7 @@ endif
 !   <IN NAME="interp_method" TYPE="character(len=*), optional" DEFAULT="interp_method = conservative "></IN>
 !   <OUT NAME="Interp" TYPE="amip_interp_type"> </OUT>
 
- function amip_interp_init_2d ( lon , lat , mask , use_climo, use_annual, &
+ function amip_interp_new_2d ( lon , lat , mask , use_climo, use_annual, &
                                 interp_method ) result (Interp)
 
  real,    intent(in), dimension(:,:)   :: lon, lat
@@ -619,35 +648,43 @@ endif
 
    type (amip_interp_type) :: Interp
 
-   Interp = initialize (mask , use_climo, use_annual, interp_method)
+   if(.not.module_is_initialized) call amip_interp_init
+
+   Interp % use_climo  = .false.
+   if (present(use_climo)) Interp % use_climo  = use_climo
+   Interp % use_annual = .false.
+   if (present(use_annual)) Interp % use_annual  = use_annual
+
+   if ( date_out_of_range == 'fail' .and. Interp%use_climo ) &
+      call error_mesg ('amip_interp_new_2d', 'use_climo mismatch', FATAL)
+
+   if ( date_out_of_range == 'fail' .and. Interp%use_annual ) &
+      call error_mesg ('amip_interp_new_2d', 'use_annual(climo) mismatch', FATAL)
+
+   Interp % Date1 = date_type( -99, -99, -99 )
+   Interp % Date2 = date_type( -99, -99, -99 )
 
 !-----------------------------------------------------------------------
 !   ---- initialization of horizontal interpolation ----
 
-    call horiz_interp_new ( Interp%Hintrp, lon_bnd, lat_bnd, &
-                             lon, lat, interp_method = interp_method)
+   call horiz_interp_new ( Interp%Hintrp, lon_bnd, lat_bnd, &
+                            lon, lat, interp_method = interp_method)
 
-    allocate ( Interp % data1 (size(lon,1),size(lat,2)), &
-               Interp % data2 (size(lon,1),size(lat,2))) 
+   allocate ( Interp % data1 (size(lon,1),size(lat,2)), &
+              Interp % data2 (size(lon,1),size(lat,2))) 
 
-   end function amip_interp_init_2d
+   Interp%I_am_initialized = .true.
+
+   end function amip_interp_new_2d
 ! </FUNCTION>
 
 !#######################################################################
- function initialize (mask , use_climo, use_annual, interp_method) result (Interp)
 
- logical, intent(in), dimension(:,:) :: mask
- character(len=*), intent(in), optional       :: interp_method
- logical, intent(in), optional       :: use_climo, use_annual
-
-   type (amip_interp_type) :: Interp
+ subroutine amip_interp_init()
 
    integer :: unit,io,ierr
 
 !-----------------------------------------------------------------------
-!----- initialization done once ------
-
- if (do_init_once) then
 
     call horiz_interp_init
 
@@ -736,7 +773,6 @@ endif
     if (verbose > 1 .and. mpp_pe() == 0) &
               print *, 'ice_crit,tice_crit_k=',ice_crit,tice_crit_k
 
-
 !  --- check existence of sst data file ??? ---
 
     if (.not.file_exist(trim(file_name_sst)) .and. .not.file_exist(trim(file_name_sst)//'.nc')) then
@@ -748,55 +784,40 @@ endif
             'Neither '//trim(file_name_ice)//' or '//trim(file_name_ice)//'.nc exists', FATAL)
     endif
 
-    do_init_once = .false.
+    module_is_initialized = .true.
 
- endif
+ end subroutine amip_interp_init
 
-!-----------------------------------------------------------------------
-!  --- optional arguments ? -----
-
-   Interp % use_climo  = .false.
-   if (present(use_climo)) Interp % use_climo  = use_climo
-   Interp % use_annual = .false.
-   if (present(use_annual)) Interp % use_annual  = use_annual
-
-   if ( date_out_of_range == 'fail' .and. Interp%use_climo ) &
-             call error_mesg ('amip_interp_init',  &
-                              'use_climo mismatch', FATAL)
-
-   if ( date_out_of_range == 'fail' .and. Interp%use_annual ) &
-             call error_mesg ('amip_interp_init', &
-                              'use_annual(climo) mismatch', FATAL)
-
-   Interp % Date1 = date_type( -99, -99, -99 )
-   Interp % Date2 = date_type( -99, -99, -99 )
-
-   end function initialize
 !#######################################################################
 
-! <SUBROUTINE NAME="amip_interp_end">
+! <SUBROUTINE NAME="amip_interp_del">
 
 !   <OVERVIEW>
-!     Call this routine for all amip_interp_type variables created by amip_interp_init.
+!     Call this routine for all amip_interp_type variables created by amip_interp_new.
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!     Call this routine for all amip_interp_type variables created by amip_interp_init.
+!     Call this routine for all amip_interp_type variables created by amip_interp_new.
 !   </DESCRIPTION>
 !   <TEMPLATE>
-!     call amip_interp_end (Interp)
+!     call amip_interp_del (Interp)
 !   </TEMPLATE>
 !   <INOUT NAME="Interp" TYPE="amip_interp_type">
-!     A defined data type variable initialized by amip_interp_init
+!     A defined data type variable initialized by amip_interp_new
 !            and used when calling get_amip_sst and get_amip_ice.
 !   </INOUT>
 
-   subroutine amip_interp_end (Interp)
+   subroutine amip_interp_del (Interp)
    type (amip_interp_type), intent(inout) :: Interp
 
-     deallocate(Interp%data1, Interp%data2, lon_bnd, lat_bnd)
+     if(associated(Interp%data1)) deallocate(Interp%data1)
+     if(associated(Interp%data2)) deallocate(Interp%data2)
+     if(allocated(lon_bnd))       deallocate(lon_bnd)
+     if(allocated(lat_bnd))       deallocate(lat_bnd)
      call horiz_interp_del ( Interp%Hintrp )
 
-   end subroutine amip_interp_end
+     Interp%I_am_initialized = .false.
+
+   end subroutine amip_interp_del
 ! </SUBROUTINE>
 
 !#######################################################################
@@ -877,16 +898,15 @@ endif
 !     The number of latitude points (second dimension) in the
 !        observed data grid.  For AMIP 1 nlon = 91, and the Reynolds nlon = 180.
 !   </OUT>
-!   <ERROR MSG="have not called amip_interp_init" STATUS="FATAL">
-!     Must call amip_interp_init before get_sst_grid_size.
+!   <ERROR MSG="have not called amip_interp_new" STATUS="FATAL">
+!     Must call amip_interp_new before get_sst_grid_size.
 !   </ERROR>
 
    subroutine get_sst_grid_size (nlon, nlat)
 
    integer, intent(out) :: nlon, nlat
 
-      if ( do_init_once ) call error_mesg ('get_sst_grid_size',  &
-                         'have not called amip_interp_init', FATAL)
+      if ( .not.module_is_initialized ) call amip_interp_init
 
       nlon = mobs;  nlat = nobs
 
@@ -914,8 +934,8 @@ endif
 !     The grid box edges (in radians) for latitude points of the
 !        observed data grid. The size of this argument must be nlat+1.
 !   </OUT>
-!   <ERROR MSG="have not called amip_interp_init" STATUS="FATAL">
-!     Must call amip_interp_init before get_sst_grid_boundary.
+!   <ERROR MSG="have not called amip_interp_new" STATUS="FATAL">
+!     Must call amip_interp_new before get_sst_grid_boundary.
 !   </ERROR>
 !   <ERROR MSG="invalid argument dimensions" STATUS="FATAL">
 !     The size of the output argument arrays do not agree with
@@ -928,8 +948,7 @@ endif
    real,    intent(out) :: blon(:), blat(:)
    logical, intent(out) :: mask(:,:)
 
-      if ( do_init_once ) call error_mesg ('get_sst_grid_boundary',  &
-                         'have not called amip_interp_init', FATAL)
+      if ( .not.module_is_initialized ) call amip_interp_init
 
 ! ---- check size of argument(s) ----
 
@@ -1260,6 +1279,29 @@ subroutine zonal_sst (Time, ice, sst)
 
 
 end subroutine zonal_sst
+
+!#######################################################################
+
+subroutine amip_interp_type_eq(amip_interp_out, amip_interp_in)
+    type(amip_interp_type), intent(inout) :: amip_interp_out
+    type(amip_interp_type), intent(in)    :: amip_interp_in
+
+    if(.not.amip_interp_in%I_am_initialized) then
+      call mpp_error(FATAL,'amip_interp_type_eq: amip_interp_type variable on right hand side is unassigned')
+    endif
+
+    amip_interp_out%Hintrp     =  amip_interp_in%Hintrp
+    amip_interp_out%data1      => amip_interp_in%data1
+    amip_interp_out%data2      => amip_interp_in%data2
+    amip_interp_out%Date1      =  amip_interp_in%Date1
+    amip_interp_out%Date2      =  amip_interp_in%Date2
+    amip_interp_out%Date1      =  amip_interp_in%Date1
+    amip_interp_out%Date2      =  amip_interp_in%Date2
+    amip_interp_out%use_climo  =  amip_interp_in%use_climo
+    amip_interp_out%use_annual =  amip_interp_in%use_annual
+    amip_interp_out%I_am_initialized = .true.
+
+end subroutine amip_interp_type_eq
 
 !#######################################################################
 

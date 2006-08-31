@@ -60,12 +60,13 @@ use platform_mod, only: r8_kind
 use constants_mod, only: PI
 use mpp_io_mod, only: axistype,mpp_close,mpp_open,mpp_get_axis_data,MPP_RDONLY,MPP_ASCII
 use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe,stdout,stdlog,mpp_root_pe
-use horiz_interp_mod, only : horiz_interp, horiz_interp_init, horiz_interp_new, horiz_interp_type
+use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_type, &
+     assignment(=), horiz_interp_del
 use time_interp_external_mod, only:time_interp_external_init, time_interp_external, &
      init_external_field, get_external_field_size
-use fms_io_mod, only: field_size, read_data, write_data,fms_io_init,nullify_domain,return_domain, &
+use fms_io_mod, only: field_size, read_data, fms_io_init,nullify_domain,return_domain, &
      set_domain
-use fms_mod, only: write_version_number, file_exist, field_exist, lowercase
+use fms_mod, only: write_version_number, field_exist, lowercase
 use axis_utils_mod, only: get_axis_bounds
 use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, NULL_DOMAIN2D,operator(.NE.),operator(.EQ.), mpp_get_global_domain
 use time_manager_mod, only: time_type
@@ -73,14 +74,14 @@ use time_manager_mod, only: time_type
 implicit none
 private
 
-character(len=128) :: version = '$Id: data_override.F90,v 13.0.2.3 2006/05/26 13:46:39 gtn Exp $'
-character(len=128) :: tagname = '$Name: memphis_2006_07 $'
+character(len=128) :: version = '$Id: data_override.F90,v 13.0.4.8 2006/07/22 14:31:09 pjp Exp $'
+character(len=128) :: tagname = '$Name: memphis_2006_08 $'
 
 type data_type_lima
    character(len=3)   :: gridname
    character(len=128) :: fieldname_code !fieldname used in user's code (model)
    character(len=128) :: fieldname_file ! fieldname used in the netcdf data file
-   character(len=128) :: file_name   ! name of netCDF data file
+   character(len=512) :: file_name   ! name of netCDF data file
    logical            :: ongrid   ! true if data is on model's grid, false otherwise
    real               :: factor ! For unit conversion, default=1, see OVERVIEW above
 end type data_type_lima
@@ -89,7 +90,7 @@ type data_type
    character(len=3)   :: gridname
    character(len=128) :: fieldname_code !fieldname used in user's code (model)
    character(len=128) :: fieldname_file ! fieldname used in the netcdf data file
-   character(len=128) :: file_name   ! name of netCDF data file
+   character(len=512) :: file_name   ! name of netCDF data file
    character(len=128) :: interpol_method   ! interpolation method (default "bilinear")
    real               :: factor ! For unit conversion, default=1, see OVERVIEW above
 end type data_type
@@ -463,7 +464,7 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
   integer, intent(in), optional :: data_index
   real, dimension(:,:,:), intent(out) :: data1 !data returned by this call
   real, dimension(:,:,:), allocatable :: data !temporary array for data
-  character(len=128) :: filename !file containing source data
+  character(len=512) :: filename !file containing source data
   character(len=128) :: fieldname ! fieldname used in the data file
   integer :: i,j
   integer :: dims(4)
@@ -477,12 +478,14 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
 
   type(axistype) :: axis_centers(4), axis_bounds(4)
   logical :: data_file_is_2D = .false.  !data in netCDF file is 2D
-  logical :: ongrid
+  logical :: ongrid, use_comp_domain
   type(domain2D) :: domain
   integer :: curr_position ! position of the field currently processed in override_array
   real :: factor
   integer, dimension(4) :: comp_domain = 0  ! istart,iend,jstart,jend for compute domain
-  integer :: ilocal, jlocal
+  integer :: ilocal, jlocal, dxsize, dysize
+
+  use_comp_domain = .false.
   if(.not.module_is_initialized) &
        call mpp_error(FATAL,'Error: need to call data_override_init first')
 
@@ -537,6 +540,9 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
      curr_position = num_fields     
 ! Get working domain from model's gridname
      call get_domain(gridname,domain,comp_domain)                          
+     dxsize = comp_domain(2)-comp_domain(1) + 1
+     dysize = comp_domain(4)-comp_domain(3) + 1
+     if(dxsize==size(data1,1) .and. dysize==size(data1,2)) use_comp_domain = .true.
      if(present(region1)) then
        allocate(override_array(curr_position)%region1(comp_domain(1):comp_domain(2), comp_domain(3):comp_domain(4)))
        call get_region_bounds( &
@@ -553,14 +559,14 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
      override_array(curr_position)%comp_domain = comp_domain
 !4 get index for time interp   
      if(ongrid) then
-        id_time = init_external_field(filename,fieldname,domain=domain,verbose=.false.)
+        id_time = init_external_field(filename,fieldname,domain=domain,verbose=.false.,use_comp_domain=use_comp_domain)
         dims = get_external_field_size(id_time)
         override_array(curr_position)%dims = dims
         if(id_time<0) call mpp_error(FATAL,'data_override:field not found in init_external_field 1') 
         override_array(curr_position)%t_index = id_time     
      else !ongrid=false
         id_time = init_external_field(filename,fieldname,domain=domain, axis_centers=axis_centers,&
-             axis_sizes=axis_sizes, verbose=.false.,override=.true.)  
+             axis_sizes=axis_sizes, verbose=.false.,override=.true.,use_comp_domain=use_comp_domain)  
         dims = get_external_field_size(id_time)
         override_array(curr_position)%dims = dims
         if(id_time<0) call mpp_error(FATAL,'data_override:field not found in init_external_field 2')

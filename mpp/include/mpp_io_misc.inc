@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_misc.inc,v 13.0.4.1 2006/05/10 20:11:38 gtn Exp $
+! $Id: mpp_io_misc.inc,v 13.0.4.1.4.2.2.1 2006/08/10 18:09:11 wfc Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -29,17 +29,15 @@
 
     subroutine mpp_io_init( flags, maxunit )
       integer, intent(in), optional :: flags, maxunit
-      integer                       :: unit_nml, io_status
+      integer                       :: unit_nml, io_status, iunit
+      logical                       :: opened
 
       namelist /mpp_io_nml/header_buffer_val ! value used in NF__ECDDEF
-      unit_nml = unit_begin
-      open(unit_nml,file='input.nml')
-      read(unit_nml,mpp_io_nml,iostat=io_status)
-      close(unit_nml)
+
+      if( module_is_initialized )return
 
 !initialize IO package: initialize mpp_file array, set valid range of units for fortran IO
 
-      if( module_is_initialized )return
       call mpp_init(flags)           !if mpp_init has been called, this call will merely return
       pe = mpp_pe()
       npes = mpp_npes()
@@ -51,6 +49,19 @@
           debug   = flags.EQ.MPP_DEBUG
           verbose = flags.EQ.MPP_VERBOSE .OR. debug
       end if
+
+!set range of allowed fortran unit numbers: could be compiler-dependent (should not overlap stdin/out/err)
+      call mpp_set_unit_range( 103, maxunits )
+
+      !--- namelist 
+      do unit_nml = unit_begin, unit_end
+         inquire( unit_nml,OPENED=opened )
+         if( .NOT.opened )exit
+      end do
+      open(unit_nml,file='input.nml')
+      read(unit_nml,mpp_io_nml,iostat=io_status)
+      close(unit_nml)
+
 !initialize default_field
       default_field%name = 'noname'
       default_field%units = 'nounits'
@@ -110,19 +121,18 @@
       mpp_file(NULLUNIT)%opened = .TRUE.
       mpp_file(NULLUNIT)%initialized = .TRUE.
 !declare the stdunits to be open
-      mpp_file(stdin ())%opened = .TRUE.
+      mpp_file(stdin())%opened = .TRUE.
       mpp_file(stdout())%opened = .TRUE.
       mpp_file(stderr())%opened = .TRUE.
       mpp_file(stdlog())%opened = .TRUE.
-!set range of allowed fortran unit numbers: could be compiler-dependent (should not overlap stdin/out/err)
-      call mpp_set_unit_range( 103, maxunits )
       
       if( pe.EQ.mpp_root_pe() )then
-          write( stdlog(),'(/a)' )'MPP_IO module '//trim(version)
-          write( stdlog(),'( a)' )'MPP_IO module '//trim(tagname)
+          iunit = stdlog()  ! PGI compiler does not like stdlog() doing I/O within write call
+          write( iunit,'(/a)' )'MPP_IO module '//trim(version)
+          write( iunit,'( a)' )'MPP_IO module '//trim(tagname)
 #ifdef use_netCDF
           text = NF_INQ_LIBVERS()
-          write( stdlog(),'(/a)' )'Using netCDF library version '//trim(text)
+          write( iunit,'(/a)' )'Using netCDF library version '//trim(text)
 #endif    
       endif
       

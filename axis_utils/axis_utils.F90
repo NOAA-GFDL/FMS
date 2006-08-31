@@ -44,7 +44,7 @@ module axis_utils_mod
   real, parameter    :: epsln= 1.e-10
   real, parameter    :: fp5 = 0.5, f360 = 360.0
   character(len=256) :: version = '$Id: axis_utils.F90,v 13.0 2006/03/28 21:37:29 fms Exp $'
-  character(len=256) :: tagname = '$Name: memphis_2006_07 $'   
+  character(len=256) :: tagname = '$Name: memphis_2006_08 $'   
 
   interface interp_1d
      module procedure interp_1d_1d

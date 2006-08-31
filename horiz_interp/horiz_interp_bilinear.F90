@@ -37,8 +37,8 @@ module horiz_interp_bilinear_mod
   real, parameter :: epsln=1.e-10
 
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_bilinear.F90,v 13.0 2006/03/28 21:39:32 fms Exp $'
-  character(len=128) :: tagname = '$Name: memphis_2006_07 $'
+  character(len=128) :: version = '$Id: horiz_interp_bilinear.F90,v 13.0.2.1 2006/06/25 14:46:16 pjp Exp $'
+  character(len=128) :: tagname = '$Name: memphis_2006_08 $'
   logical            :: do_vers = .true.
 
 
@@ -846,8 +846,10 @@ contains
 
     type (horiz_interp_type), intent(inout) :: Interp
 
-    deallocate (Interp%wti,   Interp%wtj, Interp%i_lon,    Interp%j_lat )
-
+    if(associated(Interp%wti))   deallocate(Interp%wti)
+    if(associated(Interp%wtj))   deallocate(Interp%wtj)
+    if(associated(Interp%i_lon)) deallocate(Interp%i_lon)
+    if(associated(Interp%j_lat)) deallocate(Interp%j_lat)
 
   end subroutine horiz_interp_bilinear_end
   ! </SUBROUTINE>

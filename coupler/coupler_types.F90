@@ -47,42 +47,47 @@ module coupler_types_mod  !{
 !                         num_flags = 0
 !                         use_atm_pressure = t
 !                         use_10m_wind_speed = t
+!                         pass_through_ice = f
 !                         atm/
 !                             name/
 !                                  pcair, u10, psurf
 !                             long_name/
-!                                       'Atmospheric concentration', 'Wind speed at 10 m', 'Surface atmospheric pressure'
+!                                       'Atmospheric concentration'
+!                                       'Wind speed at 10 m'
+!                                       'Surface atmospheric pressure'
 !                             units/
 !                                   'kg/kg', 'm/s', 'Pa'
 !                         ice/
 !                             name/
 !                                  alpha, csurf
 !                             long_name/
-!                                       'Solubility from atmosphere', 'Surface concentration from ocean'
+!                                       'Solubility from atmosphere'
+!                                       'Surface concentration from ocean'
 !                             units/
 !                                   'mol/m^3/atm', 'mol/m^3'
 !                         flux/
 !                              name/
 !                                   flux
 !                              long_name/
-!                                        'Surface flux'
+!                                        'Surface gas flux'
 !                              units/
 !                                    'mol/m^2/s'
 !                    air_sea_deposition/
 !                         implementation/
 !                                        dry/
 !                                        wet/
-!                         num_parameters = 0
-!                         num_flags = 1
+!                         num_parameters = 1
+!                         num_flags = 0
 !                         use_atm_pressure = f
 !                         use_10m_wind_speed = f
+!                         pass_through_ice = t
 !                         atm/
 !                             name/
 !                                  depostion
 !                             long_name/
 !                                       'Atmospheric deposition'
 !                             units/
-!                                   'kg/kg', 'm/s', 'Pa'
+!                                   'kg/m^2/s'
 !                         ice/
 !                             name/
 !                             long_name/
@@ -91,9 +96,35 @@ module coupler_types_mod  !{
 !                              name/
 !                                   flux
 !                              long_name/
-!                                        'Surface flux'
+!                                        'Surface deposition'
 !                              units/
-!                                    'kg/m^2/s'
+!                                    'mol/m^2/s'
+!                    land_sea_runoff/
+!                         implementation/
+!                                        river/
+!                         num_parameters = 1
+!                         num_flags = 0
+!                         use_atm_pressure = f
+!                         use_10m_wind_speed = f
+!                         pass_through_ice = t
+!                         atm/                  ! really land (perhaps should change this?)
+!                             name/
+!                                  runoff
+!                             long_name/
+!                                       'Concentration in land runoff'
+!                             units/
+!                                   'kg/m^3'
+!                         ice/
+!                             name/
+!                             long_name/
+!                             units/
+!                         flux/
+!                              name/
+!                                   flux
+!                              long_name/
+!                                        'Concentration in land runoff'
+!                              units/
+!                                    'mol/m^3'
 !
 
 use field_manager_mod, only: fm_field_name_len, fm_string_len, fm_dump_list
@@ -178,6 +209,7 @@ type, public    :: coupler_3d_field_type  !{
   character(len=fm_string_len)                          :: ocean_file_out = ' '
   logical                                               :: use_atm_pressure
   logical                                               :: use_10m_wind_speed
+  logical                                               :: pass_through_ice
 end type coupler_3d_field_type
 
 type, public    :: coupler_3d_bc_type  !{
@@ -214,6 +246,7 @@ type, public    :: coupler_2d_field_type  !{
   character(len=fm_string_len)                          :: ocean_file_out = ' '
   logical                                               :: use_atm_pressure
   logical                                               :: use_10m_wind_speed
+  logical                                               :: pass_through_ice
 end type coupler_2d_field_type
 
 type, public    :: coupler_2d_bc_type  !{
@@ -250,6 +283,7 @@ type, public    :: coupler_1d_field_type  !{
   character(len=fm_string_len)                          :: ocean_file_out = ' '
   logical                                               :: use_atm_pressure
   logical                                               :: use_10m_wind_speed
+  logical                                               :: pass_through_ice
 end type coupler_1d_field_type
 
 type, public    :: coupler_1d_bc_type  !{
@@ -280,6 +314,7 @@ integer, public :: ind_csurf
 integer, public :: ind_alpha
 integer, public :: ind_flux
 integer, public :: ind_deposition
+integer, public :: ind_runoff
 
 !
 !----------------------------------------------------------------------
@@ -418,14 +453,16 @@ endif  !}
 call fm_util_set_value('/coupler_mod/GOOD/good_coupler_mod_list', 'types', append = .true.)
 
 !
-!       Define the air_sea_gas_flux type
-!
-
 !       change to the "/coupler_mod/types" list
+!
 
 if (.not. fm_change_list('/coupler_mod/types')) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not change to "/coupler_mod/types"')
 endif  !}
+
+!
+!       Define the air_sea_gas_flux type
+!
 
 !       add the new type
 
@@ -454,6 +491,7 @@ call fm_util_set_value('air_sea_gas_flux/num_parameters', 2)
 call fm_util_set_value('air_sea_gas_flux/num_flags', 0)
 call fm_util_set_value('air_sea_gas_flux/use_atm_pressure', .true.)
 call fm_util_set_value('air_sea_gas_flux/use_10m_wind_speed', .true.)
+call fm_util_set_value('air_sea_gas_flux/pass_through_ice', .false.)
 
 !       add required fields that will come from the atmosphere model
 
@@ -515,6 +553,10 @@ call fm_util_set_value('air_sea_gas_flux/flux/name',      'flux',         index 
 call fm_util_set_value('air_sea_gas_flux/flux/long_name', 'Surface flux', index = ind_flux)
 call fm_util_set_value('air_sea_gas_flux/flux/units',     'mol/m^2/s',    index = ind_flux)
 
+!
+!       Define the air_sea_deposition type
+!
+
 !       add the new type
 
 if (fm_new_list('air_sea_deposition') .le. 0) then  !{
@@ -538,10 +580,11 @@ endif  !}
 
 !       add some scalar quantaties
 
-call fm_util_set_value('air_sea_deposition/num_parameters', 0)
-call fm_util_set_value('air_sea_deposition/num_flags', 1)
+call fm_util_set_value('air_sea_deposition/num_parameters', 1)
+call fm_util_set_value('air_sea_deposition/num_flags', 0)
 call fm_util_set_value('air_sea_deposition/use_atm_pressure', .false.)
 call fm_util_set_value('air_sea_deposition/use_10m_wind_speed', .false.)
+call fm_util_set_value('air_sea_deposition/pass_through_ice', .true.)
 
 !       add required fields that will come from the atmosphere model
 
@@ -579,11 +622,83 @@ field_index = 0
 
 field_index = field_index + 1
 ind_flux = field_index
-call fm_util_set_value('air_sea_deposition/flux/name',      'flux',         index = ind_flux)
-call fm_util_set_value('air_sea_deposition/flux/long_name', 'Surface flux', index = ind_flux)
-call fm_util_set_value('air_sea_deposition/flux/units',     'kg/m^2/s',     index = ind_flux)
+call fm_util_set_value('air_sea_deposition/flux/name',      'flux',               index = ind_flux)
+call fm_util_set_value('air_sea_deposition/flux/long_name', 'Surface deposition', index = ind_flux)
+call fm_util_set_value('air_sea_deposition/flux/units',     'mol/m^2/s',          index = ind_flux)
 
+!
+!       Define the land_sea_runoff type
+!
+
+!       add the new type
+
+if (fm_new_list('land_sea_runoff') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "land_sea_runoff" list')
+endif  !}
+
+!       add the implementation list
+
+if (fm_new_list('land_sea_runoff/implementation') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "land_sea_runoff/implementation" list')
+endif  !}
+
+!       add the names of the different implementations
+
+if (fm_new_list('land_sea_runoff/implementation/river') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "land_sea_runoff/implementation/river" list')
+endif  !}
+
+!       add some scalar quantaties
+
+call fm_util_set_value('land_sea_runoff/num_parameters', 1)
+call fm_util_set_value('land_sea_runoff/num_flags', 0)
+call fm_util_set_value('land_sea_runoff/use_atm_pressure', .false.)
+call fm_util_set_value('land_sea_runoff/use_10m_wind_speed', .false.)
+call fm_util_set_value('land_sea_runoff/pass_through_ice', .true.)
+
+!       add required fields that will come from the land model (the array name is still called "atm")
+
+if (fm_new_list('land_sea_runoff/atm') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "land_sea_runoff/atm" list')
+endif  !}
+
+field_index = 0
+
+field_index = field_index + 1
+ind_runoff = field_index
+call fm_util_set_value('land_sea_runoff/atm/name',      'runoff',                       index = ind_runoff)
+call fm_util_set_value('land_sea_runoff/atm/long_name', 'Concentration in land runoff', index = ind_runoff)
+call fm_util_set_value('land_sea_runoff/atm/units',     'mol/m^3',                      index = ind_runoff)
+
+!       add required fields that will come from the ice model
+
+if (fm_new_list('land_sea_runoff/ice') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "land_sea_runoff/ice" list')
+endif  !}
+
+field_index = 0
+
+call fm_util_set_value('land_sea_runoff/ice/name',      ' ', index = 0)
+call fm_util_set_value('land_sea_runoff/ice/long_name', ' ', index = 0)
+call fm_util_set_value('land_sea_runoff/ice/units',     ' ', index = 0)
+
+!       add the flux output field(s)
+
+if (fm_new_list('land_sea_runoff/flux') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "land_sea_runoff/flux" list')
+endif  !}
+
+field_index = 0
+
+field_index = field_index + 1
+ind_flux = field_index
+call fm_util_set_value('land_sea_runoff/flux/name',      'flux',                         index = ind_flux)
+call fm_util_set_value('land_sea_runoff/flux/long_name', 'Concentration in land runoff', index = ind_flux)
+call fm_util_set_value('land_sea_runoff/flux/units',     'mol/m^3',                      index = ind_flux)
+
+!
 !       change back to root list
+!
 
 if (.not. fm_change_list('/')) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not change to "/"')
@@ -751,6 +866,7 @@ if (var_in%num_bcs .ne. 0) then  !{
     var_out%bc(n)%ocean_file_out = var_in%bc(n)%ocean_file_out
     var_out%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
     var_out%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
+    var_out%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
     var_out%bc(n)%num_fields = var_in%bc(n)%num_fields
     if (associated(var_out%bc(n)%field)) then  !{
       write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field already associated'
@@ -935,6 +1051,7 @@ if (var_in%num_bcs .ne. 0) then  !{
     var_out%bc(n)%ocean_file_out = var_in%bc(n)%ocean_file_out
     var_out%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
     var_out%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
+    var_out%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
     var_out%bc(n)%num_fields = var_in%bc(n)%num_fields
     if (associated(var_out%bc(n)%field)) then  !{
       write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field already associated'

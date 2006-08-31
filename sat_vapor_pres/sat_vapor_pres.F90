@@ -178,7 +178,7 @@ private
 !  cvs version and tag name
 
  character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 13.0.2.2 2006/05/26 02:04:41 pjp Exp $'
- character(len=128) :: tagname = '$Name: memphis_2006_07 $'
+ character(len=128) :: tagname = '$Name: memphis_2006_08 $'
 
  logical :: module_is_initialized = .false.
 

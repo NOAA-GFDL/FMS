@@ -34,7 +34,7 @@
  private
 
  character(len=128), parameter :: version = '$Id: sat_vapor_pres_k.F90,v 13.0.2.2 2006/05/26 01:13:36 pjp Exp $'
- character(len=128), parameter :: tagname = '$Name: memphis_2006_07 $'
+ character(len=128), parameter :: tagname = '$Name: memphis_2006_08 $'
 
  public :: sat_vapor_pres_type
  public :: sat_vapor_pres_init_k

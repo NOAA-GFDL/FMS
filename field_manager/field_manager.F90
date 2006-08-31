@@ -175,8 +175,8 @@ implicit none
 private
 
 
-character(len=128) :: version = '$Id: field_manager.F90,v 13.0 2006/03/28 21:38:59 fms Exp $'
-character(len=128) :: tagname = '$Name: memphis_2006_07 $'
+character(len=128) :: version = '$Id: field_manager.F90,v 13.0.6.1 2006/07/10 16:07:58 wfc Exp $'
+character(len=128) :: tagname = '$Name: memphis_2006_08 $'
 logical            :: module_is_initialized  = .false.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -449,7 +449,7 @@ integer,           parameter :: num_types         = 5
 integer,           parameter :: line_len          = 256
 integer,           parameter :: array_increment   = 10
 integer,           parameter :: MAX_FIELDS        = 150
-integer,           parameter :: MAX_FIELD_METHODS = 100
+integer,           parameter :: MAX_FIELD_METHODS = 150
 
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -2798,6 +2798,7 @@ if (name .eq. ' ') then  !{
 !        If list is empty, then dump the current list
 !
   temp_list_p => current_list_p
+  success = .true.
 else  !}{
 !
 !        Get a pointer to the list
@@ -5765,6 +5766,7 @@ type (field_def), pointer, save :: temp_list_p
 type (field_def), pointer, save :: temp_value_p 
 type (field_def), pointer, save :: this_field_p 
 !
+  success     = .false.
   recursive_t = .true.
   method_name = " "
   method_control = " "
@@ -6059,6 +6061,7 @@ if (list_name .eq. ' ') then  !{
 !        If list is empty, then dump the current list
 !
   temp_list_p => current_list_p
+  success = .true.
 else  !}{
 !
 !        Get a pointer to the list
@@ -6205,6 +6208,7 @@ if (list_name .eq. ' ') then  !{
 !        If list is empty, then dump the current list
 !
   temp_list_p => current_list_p
+  success = .true.
 else  !}{
 !
 !        Get a pointer to the list
@@ -6335,17 +6339,17 @@ else  !}{
 !
 !        If this is a list, then this is the method name
 !
-    if ( this_field_p%length > 1) then
-       do n = num_meth+1, num_meth + this_field_p%length - 1
-          write (method(n),'(a,a,a,$)') trim(method(num_meth)), &
-                                        trim(this_field_p%name), list_sep
-       enddo
-       write (method(num_meth),'(a,a,a,$)') trim(method(num_meth)), &
+        if ( this_field_p%length > 1) then
+           do n = num_meth+1, num_meth + this_field_p%length - 1
+              write (method(n),'(a,a,a,$)') trim(method(num_meth)), &
                                             trim(this_field_p%name), list_sep
-    else
-       write (method(num_meth),'(a,a,a,$)') trim(method(num_meth)), &
-                                            trim(this_field_p%name), list_sep
-    endif
+           enddo
+           write (method(num_meth),'(a,a,a,$)') trim(method(num_meth)), &
+                                                trim(this_field_p%name), list_sep
+        else
+           write (method(num_meth),'(a,a,a,$)') trim(method(num_meth)), &
+                                                trim(this_field_p%name), list_sep
+        endif
         success = find_method(this_field_p, .true., num_meth, method, control)
 
     case(integer_type)

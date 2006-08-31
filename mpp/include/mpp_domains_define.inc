@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_define.inc,v 13.0.2.3 2006/05/08 15:29:23 z1l Exp $
+! $Id: mpp_domains_define.inc,v 13.0.2.3.2.1 2006/07/11 17:31:50 wfc Exp $
 
 
   ! <SUBROUTINE NAME="mpp_define_layout2D" INTERFACE="mpp_define_layout">
@@ -3370,6 +3370,7 @@
                                
       else    
          domain_out = NULL_DOMAIN2D
+         allocate(domain_out%x(1), domain_out%y(1)) 
          call mpp_modify_domain(domain_in%x(1), domain_out%x(1), isc, iec, isg, ieg)
          call mpp_modify_domain(domain_in%y(1), domain_out%y(1), jsc, jec, jsg, jeg)
       endif

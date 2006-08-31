@@ -39,8 +39,8 @@ module horiz_interp_bicubic_mod
   end interface
 
 !   character(len=128) :: version="bicubic 1.0.0.2004-09-30"
-   character(len=128) :: version="$Id: horiz_interp_bicubic.F90,v 13.0 2006/03/28 21:39:27 fms Exp $"
-   character(len=128) :: tagname = '$Name: memphis_2006_07 $'
+   character(len=128) :: version="$Id: horiz_interp_bicubic.F90,v 13.0.2.1 2006/06/25 14:58:33 pjp Exp $"
+   character(len=128) :: tagname = '$Name: memphis_2006_08 $'
    logical            :: do_vers = .true.
    integer            :: verbose_bicubic = 0
    
@@ -666,11 +666,13 @@ module horiz_interp_bicubic_mod
 
     type (horiz_interp_type), intent(inout) :: Interp
 
-    deallocate ( Interp%rat_x, Interp%rat_y )
-    deallocate ( Interp%lon_in,  Interp%lat_in )
-    deallocate ( Interp%i_lon )
-    deallocate ( Interp%j_lat )
-    deallocate ( Interp%wti )
+    if(associated(Interp%rat_x))  deallocate ( Interp%rat_x )
+    if(associated(Interp%rat_y))  deallocate ( Interp%rat_y )
+    if(associated(Interp%lon_in)) deallocate ( Interp%lon_in )
+    if(associated(Interp%lat_in)) deallocate ( Interp%lat_in )
+    if(associated(Interp%i_lon))  deallocate ( Interp%i_lon )
+    if(associated(Interp%j_lat))  deallocate ( Interp%j_lat )
+    if(associated(Interp%wti))    deallocate ( Interp%wti )
 
   end subroutine horiz_interp_bicubic_end
 

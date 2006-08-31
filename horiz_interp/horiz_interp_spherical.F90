@@ -58,8 +58,8 @@ module horiz_interp_spherical_mod
   namelist /horiz_interp_spherical_nml/ search_method
 
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_spherical.F90,v 13.0 2006/03/28 21:39:46 fms Exp $'
-  character(len=128) :: tagname = '$Name: memphis_2006_07 $'
+  character(len=128) :: version = '$Id: horiz_interp_spherical.F90,v 13.0.2.1 2006/06/25 14:58:32 pjp Exp $'
+  character(len=128) :: tagname = '$Name: memphis_2006_08 $'
   logical            :: do_vers = .true.
   logical            :: module_is_initialized = .FALSE.
 
@@ -485,7 +485,10 @@ contains
 
     type (horiz_interp_type), intent(inout) :: Interp
 
-    deallocate ( Interp%src_dist, Interp%num_found, Interp%i_lon, Interp%j_lat )
+    if(associated(Interp%src_dist))  deallocate(Interp%src_dist)
+    if(associated(Interp%num_found)) deallocate(Interp%num_found)
+    if(associated(Interp%i_lon))     deallocate(Interp%i_lon)
+    if(associated(Interp%j_lat))     deallocate(Interp%j_lat)
 
   end subroutine horiz_interp_spherical_end
   ! </SUBROUTINE>

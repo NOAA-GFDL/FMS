@@ -31,8 +31,8 @@ module horiz_interp_conserve_mod
 
   integer :: pe, root_pe
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_conserve.F90,v 13.0 2006/03/28 21:39:36 fms Exp $'
-  character(len=128) :: tagname = '$Name: memphis_2006_07 $'
+  character(len=128) :: version = '$Id: horiz_interp_conserve.F90,v 13.0.2.1 2006/06/25 14:58:33 pjp Exp $'
+  character(len=128) :: tagname = '$Name: memphis_2006_08 $'
   logical            :: do_vers = .true.
 
 contains
@@ -501,8 +501,12 @@ contains
 
     type (horiz_interp_type), intent(inout) :: Interp
 
-    deallocate ( Interp%area_src , Interp%area_dst , &
-         Interp%facj, Interp%jlat, Interp%faci, Interp%ilon  )
+    if(associated(Interp%area_src)) deallocate(Interp%area_src)
+    if(associated(Interp%area_dst)) deallocate(Interp%area_dst)
+    if(associated(Interp%facj))     deallocate(Interp%facj)
+    if(associated(Interp%jlat))     deallocate(Interp%jlat)
+    if(associated(Interp%faci))     deallocate(Interp%faci)
+    if(associated(Interp%ilon))     deallocate(Interp%ilon)
 
   end subroutine horiz_interp_conserve_end
   ! </SUBROUTINE>

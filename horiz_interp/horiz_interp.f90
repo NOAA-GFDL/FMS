@@ -58,10 +58,10 @@ module horiz_interp_mod
 !
 !-----------------------------------------------------------------------
 
-use fms_mod,                    only: write_version_number
+use fms_mod,                    only: write_version_number, fms_error_handler
 use mpp_mod,                    only: mpp_error, FATAL, stdout
 use constants_mod,              only: pi
-use horiz_interp_type_mod,      only: horiz_interp_type
+use horiz_interp_type_mod,      only: horiz_interp_type, assignment(=)
 use horiz_interp_conserve_mod,  only: horiz_interp_conserve_init,  horiz_interp_conserve
 use horiz_interp_conserve_mod,  only: horiz_interp_conserve_end
 use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_init,  horiz_interp_bilinear
@@ -77,7 +77,7 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_end
 !---- interfaces ----
 
  public   horiz_interp_type, horiz_interp, horiz_interp_new, horiz_interp_del, &
-          horiz_interp_init, horiz_interp_end
+          horiz_interp_init, horiz_interp_end, assignment(=)
 
 ! <INTERFACE NAME="horiz_interp_new">
 !   <OVERVIEW>
@@ -232,8 +232,8 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_end
  integer, parameter :: BICUBIC  = 4
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: horiz_interp.f90,v 13.0.2.1 2006/05/19 16:14:17 pjp Exp $'
- character(len=128) :: tagname = '$Name: memphis_2006_07 $'
+ character(len=128) :: version = '$Id: horiz_interp.f90,v 13.0.2.3 2006/06/29 19:24:44 pjp Exp $'
+ character(len=128) :: tagname = '$Name: memphis_2006_08 $'
  logical            :: module_is_initialized = .FALSE.
 !-----------------------------------------------------------------------
 
@@ -406,6 +406,7 @@ contains
     end select
 
     !-----------------------------------------------------------------------
+    Interp%I_am_initialized = .true.
 
   end subroutine horiz_interp_new_1d
 !  </SUBROUTINE>
@@ -500,6 +501,7 @@ contains
    end select
 
    !-----------------------------------------------------------------------
+   Interp%I_am_initialized = .true.
 
  end subroutine horiz_interp_new_1d_src
 
@@ -537,6 +539,7 @@ contains
    end select     
 
 !-----------------------------------------------------------------------
+   Interp%I_am_initialized = .true.
 
  end subroutine horiz_interp_new_2d
 
@@ -587,6 +590,7 @@ contains
    deallocate(lon_dst,lat_dst)
 
    !-----------------------------------------------------------------------
+   Interp%I_am_initialized = .true.
 
  end subroutine horiz_interp_new_1d_dst
 
@@ -605,7 +609,7 @@ contains
 
 !<PUBLICROUTINE INTERFACE="horiz_interp"> 
  subroutine horiz_interp_base_2d ( Interp, data_in, data_out, verbose, &
-                                   mask_in, mask_out, missing_value, missing_permit )
+                                   mask_in, mask_out, missing_value, missing_permit, err_msg )
 !</PUBLICROUTINE>
 !-----------------------------------------------------------------------
    type (horiz_interp_type), intent(in) :: Interp
@@ -616,7 +620,12 @@ contains
       real, intent(out),  dimension(:,:), optional :: mask_out
       real, intent(in),                   optional :: missing_value
       integer, intent(in),                optional :: missing_permit
+   character(len=*), intent(out),         optional :: err_msg
 !-----------------------------------------------------------------------
+   if(present(err_msg)) err_msg = ''
+   if(.not.Interp%I_am_initialized) then
+     if(fms_error_handler('horiz_interp','The horiz_interp_type variable is not initialized',err_msg)) return
+   endif
 
    select case(Interp%interp_method)
    case(CONSERVE)
@@ -642,7 +651,7 @@ contains
 !#######################################################################
 
  subroutine horiz_interp_base_3d ( Interp, data_in, data_out, verbose, mask_in, mask_out, &
-      missing_value, missing_permit  )
+      missing_value, missing_permit, err_msg  )
    !-----------------------------------------------------------------------
    !   overload of interface horiz_interp_base_2d
    !   uses 3d arrays for data and mask
@@ -656,8 +665,14 @@ contains
    real, intent(out),  dimension(:,:,:), optional :: mask_out
    real, intent(in),                     optional :: missing_value
    integer, intent(in),                  optional :: missing_permit
+   character(len=*), intent(out),        optional :: err_msg
    !-----------------------------------------------------------------------
    integer :: n
+
+   if(present(err_msg)) err_msg = ''
+   if(.not.Interp%I_am_initialized) then          
+     if(fms_error_handler('horiz_interp','The horiz_interp_type variable is not initialized',err_msg)) return
+   endif
 
    do n = 1, size(data_in,3)
       if (present(mask_in))then
@@ -982,6 +997,7 @@ contains
       call horiz_interp_spherical_end(Interp )
    end select
 
+   Interp%I_am_initialized = .false.
 !-----------------------------------------------------------------------
 
  end subroutine horiz_interp_del

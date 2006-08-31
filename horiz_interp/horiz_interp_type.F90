@@ -38,15 +38,18 @@ module horiz_interp_type_mod
 ! </DESCRIPTION>
 
 
-use mpp_mod, only : mpp_send, mpp_recv, mpp_sync_self
+use mpp_mod, only : mpp_send, mpp_recv, mpp_sync_self, mpp_error, FATAL
 
 
 implicit none
 private
 
 
-public :: horiz_interp_type, stats
+public :: horiz_interp_type, stats, assignment(=)
 
+interface assignment(=)
+  module procedure horiz_interp_type_eq
+end interface
 
 !<PUBLICTYPE >
  type horiz_interp_type
@@ -74,6 +77,7 @@ public :: horiz_interp_type, stats
    real,    dimension(:,:), pointer   :: rat_x =>NULL(), rat_y =>NULL() !the ratio of coordinates of the dest grid
                                                                                 ! (x_dest -x_src_r)/(x_src_l -x_src_r) and (y_dest -y_src_r)/(y_src_l -y_src_r)
    real,    dimension(:), pointer     :: lon_in =>NULL(),  lat_in =>NULL()      !the coordinates of the source grid
+   logical                            :: I_am_initialized=.false.
  end type
 !</PUBLICTYPE>
 
@@ -146,7 +150,41 @@ contains
 
  end subroutine stats
 
+!#################################################################################################################################
+ subroutine horiz_interp_type_eq(horiz_interp_out, horiz_interp_in)
+    type(horiz_interp_type), intent(inout) :: horiz_interp_out
+    type(horiz_interp_type), intent(in)    :: horiz_interp_in
 
+    if(.not.horiz_interp_in%I_am_initialized) then
+      call mpp_error(FATAL,'horiz_interp_type_eq: horiz_interp_type variable on right hand side is unassigned')
+    endif
 
+    horiz_interp_out%faci            => horiz_interp_in%faci
+    horiz_interp_out%facj            => horiz_interp_in%facj
+    horiz_interp_out%ilon            => horiz_interp_in%ilon
+    horiz_interp_out%jlat            => horiz_interp_in%jlat
+    horiz_interp_out%area_src        => horiz_interp_in%area_src
+    horiz_interp_out%area_dst        => horiz_interp_in%area_dst
+    horiz_interp_out%wti             => horiz_interp_in%wti
+    horiz_interp_out%wtj             => horiz_interp_in%wtj
+    horiz_interp_out%i_lon           => horiz_interp_in%i_lon
+    horiz_interp_out%j_lat           => horiz_interp_in%j_lat
+    horiz_interp_out%src_dist        => horiz_interp_in%src_dist
+    horiz_interp_out%found_neighbors => horiz_interp_in%found_neighbors
+    horiz_interp_out%max_src_dist    =  horiz_interp_in%max_src_dist
+    horiz_interp_out%num_found       => horiz_interp_in%num_found
+    horiz_interp_out%nlon_src        =  horiz_interp_in%nlon_src
+    horiz_interp_out%nlat_src        =  horiz_interp_in%nlat_src
+    horiz_interp_out%nlon_dst        =  horiz_interp_in%nlon_dst
+    horiz_interp_out%nlat_dst        =  horiz_interp_in%nlat_dst
+    horiz_interp_out%interp_method   =  horiz_interp_in%interp_method
+    horiz_interp_out%rat_x           => horiz_interp_in%rat_x
+    horiz_interp_out%rat_y           => horiz_interp_in%rat_y
+    horiz_interp_out%lon_in          => horiz_interp_in%lon_in
+    horiz_interp_out%lat_in          => horiz_interp_in%lat_in
+    horiz_interp_out%I_am_initialized = .true.
+
+ end subroutine horiz_interp_type_eq
+!#################################################################################################################################
 
 end module horiz_interp_type_mod
