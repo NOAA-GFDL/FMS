@@ -38,27 +38,28 @@
     integer, save :: l_locus(3)
     MPP_TYPE_, save :: g_val  ! need storage class w/ global address; not sure whether fn result has required class
     integer, save   :: here   ! need storage class w/ global address
-    integer :: ioff, joff, ishift, jshift, isc, iec, jsc, jec
+    integer :: ioff, joff, isc, iec, jsc, jec
+    type(domain2D), pointer :: Dom => NULL()
 
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_REDUCE: You must first call mpp_domains_init.' )
-    !--- when domain is symmetry, there may be an extra point on x/y direction
-    call mpp_get_domain_shift(domain, ishift, jshift, position )
-    call mpp_get_compute_domain(domain, isc, iec, jsc, jec )
 
-    if( size(field,1).EQ.domain%x(1)%compute%size+ishift .AND. size(field,2).EQ.domain%y(1)%compute%size+jshift )then
+    Dom => get_domain(domain, position)
+    call mpp_get_compute_domain(Dom, isc, iec, jsc, jec )
+
+    if( size(field,1).EQ.Dom%x(1)%compute%size .AND. size(field,2).EQ.Dom%y(1)%compute%size )then
 !field is on compute domain
         ioff = isc
         joff = jsc
-    else if( size(field,1).EQ.domain%x(1)%memory%size+ishift .AND. size(field,2).EQ.domain%y(1)%memory%size+jshift )then
+    else if( size(field,1).EQ.Dom%x(1)%memory%size .AND. size(field,2).EQ.Dom%y(1)%memory%size )then
 !field is on data domain
-        ioff = domain%x(1)%data%begin
-        joff = domain%y(1)%data%begin
+        ioff = Dom%x(1)%data%begin
+        joff = Dom%y(1)%data%begin
     else
         call mpp_error( FATAL, 'MPP_GLOBAL_REDUCE_: incoming field array must match either compute domain or data domain.' )
     end if
 
 !get your local max/min
-    local = REDUCE_VAL_(field(isc-ioff: iec-ioff+ishift, jsc-joff: jec-joff+jshift,:))
+    local = REDUCE_VAL_(field(isc-ioff: iec-ioff, jsc-joff: jec-joff,:))
 !find the global
     g_val = local
     call MPP_REDUCE_( g_val, domain%list(:)%pe )
@@ -69,7 +70,7 @@
         if( g_val == local )here = pe
         call mpp_min( here, domain%list(:)%pe )
 !find the locus here
-        if( pe.EQ.here )l_locus = REDUCE_LOC_(field(isc-ioff: iec-ioff+ishift, jsc-joff: jec-joff+jshift,:))
+        if( pe.EQ.here )l_locus = REDUCE_LOC_(field(isc-ioff: iec-ioff, jsc-joff: jec-joff,:))
         l_locus(1) = l_locus(1) + ioff
         l_locus(2) = l_locus(2) + joff
         call mpp_broadcast( l_locus, 3, here, domain%list(:)%pe )

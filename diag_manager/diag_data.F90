@@ -12,7 +12,7 @@ public
 #endif
 
 ! Specify storage limits for fixed size tables used for pointers, etc.
-integer, parameter  :: max_fields_per_file = 150
+integer, parameter  :: max_fields_per_file = 300
 integer, parameter  :: max_out_per_in_field = 10 !max number of output_fields per input_field
 integer, parameter  :: max_files = 31
 integer, parameter  :: DIAG_OTHER = 0
@@ -50,7 +50,7 @@ type diag_fieldtype
    type(domain2d)       :: Domain
    real                 :: miss, miss_pack
    logical              :: miss_present, miss_pack_present
-   integer              :: tile_number
+   integer              :: tile_count
 end type
 
 type file_type
@@ -137,8 +137,8 @@ character (len=10)  :: time_unit_list(6) = (/'seconds   ', 'minutes   ', &
 character(len=32)   :: pelist_name
 
 
-character(len=128),private  :: version = '$Id: diag_data.F90,v 13.1.2.1 2006/05/05 20:04:41 z1l Exp $'
-character(len=128),private  :: tagname = '$Name: memphis_2006_08 $'
+character(len=128),private  :: version = '$Id: diag_data.F90,v 13.1.2.1.2.1.4.1 2006/12/01 17:14:38 fms Exp $'
+character(len=128),private  :: tagname = '$Name: memphis_2006_12 $'
 
 
 ! definitions for diag_axis_mod
@@ -157,7 +157,7 @@ type diag_axis_type
    type(domain1d)       :: Domain
    type(domain2d)       :: Domain2
    character(len=128)   :: aux
-   integer              :: tile_number
+   integer              :: tile_count
 end type diag_axis_type
 
 

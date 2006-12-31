@@ -1,5 +1,5 @@
 !FDOC_TAG_GFDL fdoc.pl generated xml skeleton
-! $Id: drifters.F90,v 13.0 2006/03/28 21:38:24 fms Exp $
+! $Id: drifters.F90,v 13.0.2.2.2.1 2006/11/29 19:08:13 fms Exp $
 
 #include <fms_platform.h>
 #include "fms_switches.h"
@@ -88,19 +88,35 @@ module drifters_mod
 
 #endif
 
-  use drifters_core_mod
-  use drifters_input_mod
-  use drifters_io_mod
-  use drifters_comm_mod
-  
+  use drifters_core_mod,  only: drifters_core_type, drifters_core_new, drifters_core_del, assignment(=)
+
+  use drifters_input_mod, only: drifters_input_type, drifters_input_new, drifters_input_del, assignment(=)
+
+  use drifters_io_mod,    only: drifters_io_type, drifters_io_new, drifters_io_del, drifters_io_set_time_units, &
+                                drifters_io_set_position_names, drifters_io_set_position_units, &
+                                drifters_io_set_field_names, drifters_io_set_field_units, drifters_io_write
+
+  use drifters_comm_mod,  only: drifters_comm_type, drifters_comm_new, drifters_comm_del, drifters_comm_set_pe_neighbors, &
+                                drifters_comm_set_domain, drifters_comm_gather, drifters_comm_update
+
+  use cloud_interpolator_mod, only: cld_ntrp_linear_cell_interp, cld_ntrp_locate_cell, cld_ntrp_get_cell_values
+
   implicit none
-  
-  
+  private  
+
+  public :: drifters_type, assignment(=), drifters_push, drifters_compute_k, drifters_set_field
+  public :: drifters_new, drifters_del, drifters_set_domain, drifters_set_pe_neighbors
+  public :: drifters_set_v_axes, drifters_set_domain_bounds, drifters_positions2lonlat
+  public :: drifters_print_checksums, drifters_computek2d, drifters_computek3d
+  public :: drifters_push_2, drifters_push_3, drifters_set_field_2d, drifters_set_field_3d
+
   integer, parameter, private :: MAX_STR_LEN = 128
-  character(len=MAX_STR_LEN), parameter, private :: version = '$Id: drifters.F90,v 13.0 2006/03/28 21:38:24 fms Exp $'
+  character(len=MAX_STR_LEN), parameter, private :: version = '$Id: drifters.F90,v 13.0.2.2.2.1 2006/11/29 19:08:13 fms Exp $'
   real :: DRFT_EMPTY_ARRAY(0)
 
   type drifters_type
+     ! Be sure to update drifters_new, drifters_del and drifters_copy_new
+     ! when adding members
      type(drifters_core_type)  :: core
      type(drifters_input_type) :: input
      type(drifters_io_type)    :: io
@@ -125,11 +141,18 @@ module drifters_mod
      real, _ALLOCATABLE :: rk4_k2(:,:) _NULL
      real, _ALLOCATABLE :: rk4_k3(:,:) _NULL
      real, _ALLOCATABLE :: rk4_k4(:,:) _NULL
+     ! store filenames for convenience
+     character(len=MAX_STR_LEN) :: input_file, output_file
+     ! Runge Kutta stuff
      integer :: rk4_step
      logical :: rk4_completed
      integer :: nx, ny
      logical, _ALLOCATABLE   :: remove(:) _NULL
   end type drifters_type
+
+  interface assignment(=)
+     module procedure drifters_copy_new
+  end interface
 
   interface drifters_push
     module procedure drifters_push_2
@@ -180,7 +203,6 @@ contains
 !
   subroutine drifters_new(self, input_file, output_file, ermesg)
 
-    use drifters_io_mod
     type(drifters_type) :: self
     character(len=*), intent(in)  :: input_file
     character(len=*), intent(in)  :: output_file
@@ -190,6 +212,10 @@ contains
     character(len=4) :: pe_str
 
     ermesg = ''
+
+    self%input_file  = input_file
+    self%output_file = output_file
+
     call drifters_input_new(self%input, input_file, ermesg)
     if(ermesg/='') return
 
@@ -301,7 +327,6 @@ contains
     deallocate(self%rk4_k3, stat=flag)
     deallocate(self%rk4_k4, stat=flag)
     deallocate(self%remove, stat=flag)
-    deallocate(self%fields, stat=flag)
     
     call drifters_core_del(self%core, ermesg)
     if(ermesg/='') return
@@ -313,6 +338,99 @@ contains
     if(ermesg/='') return
 
   end subroutine drifters_del
+
+  !============================================================================
+! <SUBROUTINE NAME="drifters_copy_new">
+!  <OVERVIEW>
+!   Copy constructor.
+!  </OVERVIEW>
+!  <DESCRIPTION>
+!   Copy a drifter state into a new state. Note: this will not open new files; this will
+!   copy all members into a new container.
+!  </DESCRIPTION>
+!  <TEMPLATE>
+!   call   drifters_copy_new(new_instance, old_instance)
+!		
+!  </TEMPLATE>
+!  <INOUT NAME="new_instance" TYPE="drifters_type" DIM="SCALAR" UNITS="" DEFAULT="">
+!   New data structure.
+!  </INOUT>
+!  <IN NAME="old_instance" TYPE="drifters_type" DIM="SCALAR" UNITS="" DEFAULT="">
+!   Old data structure.
+!  </IN>
+! </SUBROUTINE>
+!
+  !============================================================================
+  subroutine drifters_copy_new(new_instance, old_instance)
+
+    type(drifters_type), intent(in)    :: old_instance
+    type(drifters_type), intent(inout) :: new_instance
+
+    character(len=MAX_STR_LEN) :: ermesg
+
+    ermesg = ''
+
+    ! make sure new_instance is empty
+    call drifters_del(new_instance, ermesg)
+    if(ermesg/='') return
+
+    new_instance%core  = old_instance%core
+    new_instance%input = old_instance%input
+    new_instance%io    = old_instance%io
+    new_instance%comm  = old_instance%comm
+
+     new_instance%dt     = old_instance%dt
+     new_instance%time   = old_instance%time
+
+     allocate(new_instance%fields( size(old_instance%fields, 1), &
+          &                        size(old_instance%fields, 2) ))
+     new_instance%fields = old_instance%fields
+
+     allocate(new_instance%xu( size(old_instance%xu) ))
+     allocate(new_instance%yu( size(old_instance%yu) ))
+     allocate(new_instance%zu( size(old_instance%zu) ))
+     new_instance%xu = old_instance%xu
+     new_instance%yu = old_instance%yu
+     new_instance%zu = old_instance%zu
+     allocate(new_instance%xv( size(old_instance%xv) ))
+     allocate(new_instance%yv( size(old_instance%yv) ))
+     allocate(new_instance%zv( size(old_instance%zv) ))
+     new_instance%xv = old_instance%xv
+     new_instance%yv = old_instance%yv
+     new_instance%zv = old_instance%zv
+     allocate(new_instance%xw( size(old_instance%xw) ))
+     allocate(new_instance%yw( size(old_instance%yw) ))
+     allocate(new_instance%zw( size(old_instance%zw) ))
+     new_instance%xw = old_instance%xw
+     new_instance%yw = old_instance%yw
+     new_instance%zw = old_instance%zw
+
+     allocate(new_instance%temp_pos( size(old_instance%temp_pos,1), &
+          &                          size(old_instance%temp_pos,2) ))
+     new_instance%temp_pos = old_instance%temp_pos
+     allocate(new_instance%rk4_k1( size(old_instance%rk4_k1,1), &
+          &                        size(old_instance%rk4_k1,2) ))
+     allocate(new_instance%rk4_k2( size(old_instance%rk4_k2,1), &
+          &                        size(old_instance%rk4_k2,2) ))
+     allocate(new_instance%rk4_k3( size(old_instance%rk4_k3,1), &
+          &                        size(old_instance%rk4_k3,2) ))
+     allocate(new_instance%rk4_k4( size(old_instance%rk4_k4,1), &
+          &                        size(old_instance%rk4_k4,2) ))
+     new_instance%rk4_k1 = old_instance%rk4_k1
+     new_instance%rk4_k2 = old_instance%rk4_k2 
+     new_instance%rk4_k3 = old_instance%rk4_k3
+     new_instance%rk4_k4 = old_instance%rk4_k4
+
+     new_instance%rk4_step = old_instance%rk4_step
+     new_instance%rk4_completed = old_instance%rk4_completed
+     new_instance%nx = old_instance%nx
+     new_instance%ny = old_instance%ny
+
+     allocate(new_instance%remove(size(old_instance%remove)))
+     new_instance%remove = old_instance%remove
+
+
+  end subroutine drifters_copy_new
 
   !============================================================================
 ! <SUBROUTINE NAME="drifters_set_domain">
@@ -939,7 +1057,7 @@ contains
        &                                        x2, y2, geolat2, &
        &                                        lons, lats, &
        &                                        ermesg)
-    use cloud_interpolator_mod
+
     type(drifters_type) :: self
     ! Input positions
     real, intent(in)    :: positions(:,:)
@@ -1139,17 +1257,19 @@ end module drifters_mod
 !
 !
 ! Example 1: Altix with MPP
+! set FMS="/net2/ap/regression/ia64/25-May-2006/SM2.1U_Control-1990_D1_lm2/"
 ! set NETCDF="-lnetcdf"
 ! set MPI="-lmpi"
-! set MPP="-I/home/ap/HIM/him_global/exec /home/ap/HIM/him_global/exec/mpp*.o /home/ap/HIM/him_global/exec/threadloc.o"
-! set INC="-I/usr/include -I/usr/local/include -I /home/ap/HIM/him_global/include -I./"
+! set MPP="-I $FMS/exec $FMS//exec/mpp*.o $FMS/exec/threadloc.o"
+! set INC="-I/usr/include -I/usr/local/include -I $FMS/src/shared/include -I./"
 ! set F90="ifort -Duse_libMPI -r8 -g -check bounds"
 !
 ! Example 2: IRIX with MPP
+! set FMS="/net2/ap/regression/sgi/25-May-2006/SM2.1U_Control-1990_D1_lm2/"
 ! set NETCDF="-lnetcdf"
-! set MPI="-lmpi"
-! set MPP="-I/net2/ap/regression/sgi/18-Oct-2005/CM2.1U_Control-1990_E1.k32pe/exec/ /net2/ap/regression/sgi/18-Oct-2005/CM2.1U_Control-1990_E1.k32pe/exec/mpp*.o /net2/ap/regression/sgi/18-Oct-2005/CM2.1U_Control-1990_E1.k32pe/exec/threadloc.o"
-! set INC="-I/usr/include -I/usr/local/include -I /home/ap/HIM/him_global/include -I./"
+! set MPI="-lmpi -lexc"
+! set MPP="-I $FMS/exec/ $FMS/exec/mpp*.o $FMS/exec/threadloc.o $FMS/exec/nsclock.o"
+! set INC="-I/usr/include -I/usr/local/include -I $FMS/src/shared/include -I./"
 ! set F90="f90 -Duse_libMPI -r8 -g -64 -macro_expand -DEBUG:conform_check=YES:subscript_check=ON:trap_uninitialized=ON:verbose_runtime=ON"
 !
 ! Example 3: ia32 without MPP/MPI
@@ -1248,7 +1368,8 @@ program test
   implicit none
   
   ! declare drifters object
-  type(drifters_type) :: drfts ! drifters' object
+  type(drifters_type) :: drfts  ! drifters' object
+  type(drifters_type) :: drfts2 ! to test copy
   character(len=128)  :: ermesg
 
   real    :: t0, dt, t, tend, rho
@@ -1502,6 +1623,8 @@ program test
           & ermesg=ermesg)  
      if(ermesg/='') call my_error_handler(ermesg)
 
+     ! test copy
+     drfts2 = drfts
 
      ! destroy
 

@@ -24,7 +24,7 @@ use mpp_mod, only         : mpp_npes, mpp_pe
 use    diag_axis_mod, only: diag_axis_init, get_diag_axis,           &
                             get_axis_length, get_axis_global_length, &
                             get_domain1d, get_domain2d, get_axis_aux,&
-                            get_tile_number
+                            get_tile_count
 
 use time_manager_mod, only: get_calendar_type, valid_calendar_types
 
@@ -95,9 +95,9 @@ type(axistype),save     :: Axis_types     (max_axis_num)
 logical                 :: module_is_initialized = .FALSE.
 
 character(len=128), private :: version= &
-  '$Id: diag_output.F90,v 13.0.4.2.2.1 2006/05/22 02:10:30 fms Exp $'
+  '$Id: diag_output.F90,v 13.0.4.2.2.1.2.1 2006/08/30 11:49:22 z1l Exp $'
 character(len=128), private :: tagname= &
-  '$Name: memphis_2006_08 $'
+  '$Name: memphis_2006_12 $'
 
 contains
 
@@ -556,7 +556,7 @@ function write_field_meta_data ( file_unit, name, axes, units,      &
 
 !---- get axis domain ----
   Field%Domain = get_domain2d ( axes )
-  Field%tile_number = get_tile_number ( axes )
+  Field%tile_count = get_tile_count ( axes )
 
 !-----------------------------------------------------------------------
 
@@ -600,7 +600,7 @@ endif
 !---- output data ----
 
 if ( Field%Domain /= null_domain2d ) then
-   call mpp_write (file_unit, Field%Field, Field%Domain, data, time, tile_number=Field%tile_number)
+   call mpp_write (file_unit, Field%Field, Field%Domain, data, time, tile_count=Field%tile_count)
 else
    call mpp_write (file_unit, Field%Field, data, time)
 endif

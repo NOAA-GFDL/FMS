@@ -1,7 +1,7 @@
 #include <fms_platform.h>
 #include "fms_switches.h"
 
-! $Id: drifters_comm.F90,v 13.0 2006/03/28 21:38:18 fms Exp $
+! $Id: drifters_comm.F90,v 13.0.2.1.2.1 2006/11/29 19:08:15 fms Exp $
 
 module drifters_comm_mod
 
@@ -27,10 +27,13 @@ module drifters_comm_mod
 
 #endif
 
-  use drifters_core_mod, only      : drifters_core_type, drifters_core_remove_and_add, &
-       & drifters_core_set_positions
+  use drifters_core_mod, only: drifters_core_type, drifters_core_remove_and_add,  drifters_core_set_positions
 
   implicit none
+  private
+
+  public :: drifters_comm_type, drifters_comm_new, drifters_comm_del, drifters_comm_set_pe_neighbors
+  public :: drifters_comm_set_domain, drifters_comm_update, drifters_comm_gather
 
   type drifters_comm_type
      ! compute domain
@@ -49,6 +52,7 @@ module drifters_comm_mod
      ! starting/ending pe, set this to a value /= 0 if running concurrently
      integer        :: pe_beg, pe_end
   end type drifters_comm_type
+
 
 contains
 

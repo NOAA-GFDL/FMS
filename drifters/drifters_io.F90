@@ -1,14 +1,19 @@
-! $Id: drifters_io.F90,v 13.0 2006/03/28 21:38:32 fms Exp $
+! $Id: drifters_io.F90,v 13.0.2.1.2.1 2006/11/29 19:08:21 fms Exp $
 
 !!#include <fms_platform.h>
 
 module drifters_io_mod
   implicit none  
+  private
+
+  public :: drifters_io_type, drifters_io_new, drifters_io_del, drifters_io_set_time_units
+  public :: drifters_io_set_position_names, drifters_io_set_position_units, drifters_io_set_field_names
+  public :: drifters_io_set_field_units, drifters_io_write
 
   ! Globals
   integer, parameter, private   :: MAX_STR_LEN = 128
   character(MAX_STR_LEN), parameter, private :: &
-       & version = '$Id: drifters_io.F90,v 13.0 2006/03/28 21:38:32 fms Exp $'
+       & version = '$Id: drifters_io.F90,v 13.0.2.1.2.1 2006/11/29 19:08:21 fms Exp $'
 
   real :: drfts_eps_t = 10*epsilon(1.)
   

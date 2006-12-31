@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_nocomm.inc,v 13.0 2006/03/28 21:40:10 fms Exp $
+! $Id: mpp_comm_nocomm.inc,v 13.0.6.1 2006/07/27 17:56:03 wfc Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -12,7 +12,7 @@
 subroutine mpp_init( flags,localcomm )
   integer, optional, intent(in) :: flags
   integer, optional, intent(in) :: localcomm ! dummy here, used only in MPI
-  integer                       :: my_pe, num_pes, len, i
+  integer                       :: my_pe, num_pes, len, i, logunit
   logical                       :: opened
 
   if( module_is_initialized )return
@@ -85,12 +85,13 @@ subroutine mpp_init( flags,localcomm )
   !messages
   if( verbose )call mpp_error( NOTE, 'MPP_INIT: initializing MPP module...' )
   if( pe.EQ.root_pe )then
-     write( stdlog(),'(/a)' )'MPP module '//trim(version)//trim(tagname)
-     write( stdlog(),'(a,i4)' )'MPP started with NPES=', npes
-     write( stdlog(),'(a)' )'Using MPI library for message passing...'
-     write( stdlog(), '(a,es12.4,a,i10,a)' ) &
+logunit = stdlog()
+     write( logunit,'(/a)' )'MPP module '//trim(version)//trim(tagname)
+     write( logunit,'(a,i4)' )'MPP started with NPES=', npes
+     write( logunit,'(a)' )'Using no library for message passing...'
+     write( logunit, '(a26,es12.4,a6,i10,a11)' ) &
           'Realtime clock resolution=', tick_rate, ' sec (', ticks_per_sec, ' ticks/sec)'
-     write( stdlog(), '(a,es12.4,a,i20,a)' ) &
+     write( logunit, '(a23,es12.4,a6,i20,a7)' ) &
           'Clock rolls over after ', max_ticks*tick_rate, ' sec (', max_ticks, ' ticks)'
   end if
   call mpp_clock_begin(clock0)

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_mpi.inc,v 13.0 2006/03/28 21:40:07 fms Exp $
+! $Id: mpp_comm_mpi.inc,v 13.0.14.1 2006/11/03 19:36:07 wfc Exp $
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -20,7 +20,7 @@
   if( module_is_initialized )return
 
   call MPI_INITIALIZED( opened, error ) !in case called from another MPI package
-  if(opened .and. .NOT. PRESENT(localcomm)) call mpp_error( ERROR, 'MPP_INIT: communicator is required' )
+  if(opened .and. .NOT. PRESENT(localcomm)) call mpp_error( FATAL, 'MPP_INIT: communicator is required' )
   if( .NOT.opened ) then
     call MPI_INIT(error)
     mpp_comm_private = MPI_COMM_WORLD

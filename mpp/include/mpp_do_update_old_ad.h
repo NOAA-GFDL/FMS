@@ -1,11 +1,10 @@
 ! -*-f90-*- 
-    subroutine MPP_DO_UPDATE_3Dold_( field, domain, flags, name, fillbuffer)
-!updates data domain of 3D field whose computational domains have been computed
+    subroutine MPP_DO_UPDATE_AD_3Dold_( field, domain, flags, name )
+! adjoint updates data domain of 3D field whose computational domains have been computed
       type(domain2D), intent(in)    :: domain
-      MPP_TYPE_, intent(inout)      :: field(domain%x(1)%memory%begin:,domain%y(1)%memory%begin:,:)
+      MPP_TYPE_, intent(inout)      :: field(domain%x(1)%data%begin:,domain%y(1)%data%begin:,:)
       integer, intent(in), optional :: flags
       character(len=*), intent(in), optional :: name  ! variable name to be updated
-      MPP_TYPE_, intent(inout), optional     :: fillbuffer(:)
 
       integer                    :: update_flags
       type(boundary),   pointer  :: check   => NULL()
@@ -23,13 +22,14 @@
 !for non-blocking version, could be recomputed
       integer :: to_pe, from_pe, list, pos, msgsize
       logical :: send(8), recv(8)
-      character(len=8)  :: text
       character(len=64) :: field_name
-      integer :: start, start1, index, is1, ie1, js1, je1, ni, nj, total, b_size
+      character(len=8)  :: text
+
+
 
       !--- there should be only one domain on each pe for the old update
       if(size(domain%x(:)) > 1 ) call mpp_error(FATAL, &
-          "MPP_DO_UPDATE_OLD: more than one domain on this pe, should use mpp_do_update_new")
+          "MPP_DO_UPDATE_OLD_AD: more than one domain on this pe, should use mpp_do_update_ad_new")
 
       update_flags = XUPDATE+YUPDATE   !default
       if( PRESENT(flags) )update_flags = flags
@@ -46,37 +46,22 @@
       nlist = size(domain%list(:))
       ke = size(field,3)
       buffer_pos = 0        !this initialization goes away if update_domains becomes non-blocking
-
 #ifdef use_CRI_pointers
       ptr = LOC(mpp_domains_stack)
 #endif
-      b_size = 0
-      if(present(fillbuffer)) b_size = size(fillbuffer(:))
-
       ! send
       do list = 0,nlist-1
          m = mod( domain%pos+list, nlist )
          if( .NOT. domain%list(m)%overlap )cycle
          call mpp_clock_begin(pack_clock)
          pos = buffer_pos
-
          do dir = 1, 8  ! loop over 8 direction
-            if( send(dir) ) then
-               overPtr => domain%list(m)%send(1,1,dir)
+            if( recv(dir) ) then
+               overPtr => domain%list(m)%recv(1,1,dir)
                do n = 1, 3
                   if( overPtr%overlap(n) ) then
                      is = overPtr%is(n); ie = overPtr%ie(n)
                      js = overPtr%js(n); je = overPtr%je(n)
-                     if( overptr%is_refined(n) ) then
-                        do k = 1,ke  
-                           do j = js, je
-                              do i = is, ie
-                                 pos = pos + 1
-                                 buffer(pos) = field(i,j,k)
-                              end do
-                           end do
-                        end do
-                     else
                         select case( overPtr%rotation )
                         case(ZERO)
                            do k = 1,ke  
@@ -116,7 +101,6 @@
                            end do
                         end select
                      end if
-                  endif
                end do
                nsend = overPtr%n
                if( nsend > 0 ) then
@@ -139,7 +123,7 @@
             mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, pos )
             if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
                write( text,'(i8)' )mpp_domains_stack_hwm
-               call mpp_error( FATAL, 'MPP_DO_UPDATE_OLD: mpp_domains_stack overflow, ' // &
+               call mpp_error( FATAL, 'MPP_DO_UPDATE_OLD_AD: mpp_domains_stack overflow, ' // &
                     'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.')
             end if
             call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
@@ -157,14 +141,12 @@
          msgsize = 0
 
          do dir = 1, 8  ! loop over 8 direction
-            if(recv(dir)) then
-               overPtr => domain%list(m)%recv(1,1,dir)
+            if(send(dir)) then
+               overPtr => domain%list(m)%send(1,1,dir)
                do n = 1, 3
-                  if( overPtr%overlap(n) ) then
                      is = overPtr%is(n); ie = overPtr%ie(n)
                      js = overPtr%js(n); je = overPtr%je(n)
                      msgsize = msgsize + (ie-is+1)*(je-js+1)
-                  end if
                end do
                msgsize = msgsize + overPtr%n
             end if
@@ -176,7 +158,7 @@
             mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize) )
             if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
                write( text,'(i8)' )mpp_domains_stack_hwm
-               call mpp_error( FATAL, 'MPP_DO_UPDATE_OLD: mpp_domains_stack overflow, '// &
+               call mpp_error( FATAL, 'MPP_DO_UPDATE_OLD_AD: mpp_domains_stack overflow, '// &
                     'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
             end if
             call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe )
@@ -191,10 +173,12 @@
          m = mod( domain%pos+nlist-list, nlist )
          if( .NOT.domain%list(m)%overlap)cycle
          call mpp_clock_begin(unpk_clock)
+         from_pe = domain%list(m)%pe
          pos = buffer_pos
+
          do dir = 8,1,-1
-            if( recv(dir) ) then
-               overPtr => domain%list(m)%recv(1,1,dir) 
+            if( send(dir) ) then
+               overPtr => domain%list(m)%send(1,1,dir) 
                nrecv = overPtr%n
                if( nrecv > 0 ) then
                   msgsize = nrecv*ke
@@ -204,7 +188,7 @@
                      i = overPtr%i(n); j = overPtr%j(n)
                      do k = 1,ke
                         pos = pos + 1
-                        field(i,j,k) = buffer(pos)
+                        field(i,j,k) = field(i,j,k) + buffer(pos)
                      end do
                   end do
                endif
@@ -215,38 +199,15 @@
                      msgsize = (ie-is+1)*(je-js+1)*ke
                      pos = buffer_pos - msgsize
                      buffer_pos = pos
-                     if(OverPtr%is_refined(n)) then
-                        index = overPtr%index
-                        is1 = domain%rSpec(1)%isNbr(index); ie1 = domain%rSpec(1)%ieNbr(index)
-                        js1 = domain%rSpec(1)%jsNbr(index); je1 = domain%rSpec(1)%jeNbr(index)
-                        ni = ie1 - is1 + 1
-                        nj = je1 - js1 + 1
-                        total = ni*nj
-                        start1 = (domain%rSpec(1)%start(index)-1)*ke
-                        if(start1+total*ke>b_size ) call mpp_error(FATAL, &
-                             "MPP_DO_UPDATE_OLD: b_size is less than the size of the data to be filled.")
-                        msgsize = ie - is + 1
-                        start1 = start1 + (js-js1)*ni + is - is1
-                        do k = 1, ke
-                           start = start1
-                           do j = js, je
-                              fillbuffer(start+1:start+msgsize) = buffer(pos+1:pos+msgsize)
-                              start = start + ni
-                              pos   = pos + msgsize
-                           end do
-                           start1 = start1 + total
-                        end do
-                     else
                         do k = 1,ke
                            do j = js, je
                               do i = is, ie
                                  pos = pos + 1
-                                 field(i,j,k) = buffer(pos)
+                              field(i,j,k) = field(i,j,k) + buffer(pos)
                               end do
                            end do
                         end do
                      endif
-                  end if
                end do
             end if
          enddo
@@ -322,7 +283,7 @@
                mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, pos)
                if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
                   write( text,'(i8)' )mpp_domains_stack_hwm
-                  call mpp_error( FATAL, 'MPP_DO_UPDATE_OLD: mpp_domains_stack overflow, ' // &
+                  call mpp_error( FATAL, 'MPP_DO_UPDATE_OLD_AD: mpp_domains_stack overflow, ' // &
                        'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.')
                end if
                call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
@@ -347,7 +308,7 @@
                mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize) )
                if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
                   write( text,'(i8)' )mpp_domains_stack_hwm
-                  call mpp_error( FATAL, 'MPP_DO_UPDATE_OLD: mpp_domains_stack overflow, '// &
+                  call mpp_error( FATAL, 'MPP_DO_UPDATE_OLD_AD: mpp_domains_stack overflow, '// &
                        'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
                end if
                call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe )
@@ -370,10 +331,10 @@
                      do i = is, ie
                         pos = pos + 1
                         if( field(i,j,k) .NE. buffer(pos) ) then
-                           print*,"Error from MPP_DO_UPDATE_OLD on pe = ", mpp_pe(), ": field ", &
+                              print*,"Error from MPP_DO_UPDATE_OLD_AD on pe = ", mpp_pe(), ": field ", &
                                 trim(field_name), " at point (", i, ",", j, ",", k, ") = ", field(i,j,k), &
                                 " does not equal to the value = ", buffer(pos), " on pe ", domain%list(m)%pe
-                           call mpp_error(FATAL, "MPP_DO_UPDATE_OLD: mismatch on the boundary for symmetry point")
+                              call mpp_error(FATAL, "MPP_DO_UPDATE_OLD_AD: mismatch on the boundary for symmetry point")
                         end if
                      end do
                   end do
@@ -386,4 +347,5 @@
       call mpp_sync_self( )
       call mpp_clock_end(wait_clock)
       return
-    end subroutine MPP_DO_UPDATE_3Dold_
+
+    end subroutine MPP_DO_UPDATE_AD_3Dold_

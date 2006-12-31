@@ -1,141 +1,105 @@
-  function MPP_GLOBAL_SUM_( domain, field, flags, new, position, tile_number )
+  function MPP_GLOBAL_SUM_( domain, field, flags, position, tile_count )
     MPP_TYPE_ :: MPP_GLOBAL_SUM_
     type(domain2D), intent(in) :: domain
     MPP_TYPE_, intent(in) :: field(:,: MPP_EXTRA_INDICES_ )
     integer, intent(in), optional :: flags
-    logical, intent(in), optional :: new
     integer, intent(in), optional :: position
-    integer, intent(in), optional :: tile_number
+    integer, intent(in), optional :: tile_count
 
-!    MPP_TYPE_, allocatable, dimension(:),save :: field1D
-    MPP_TYPE_, dimension(:,:), allocatable :: field2D
-!z1l    MPP_TYPE_, dimension(domain%x%compute%begin:domain%x%compute%end+1,domain%y%compute%begin:domain%y%compute%end+1) :: field2D
-!    pointer(ptr_field2D,field2D)
-    MPP_TYPE_, allocatable, dimension(:,:) :: field2Dold, global2D
-    integer :: i,j, ioff,joff, ishift, jshift, isc, iec, jsc, jec, is, js
-    integer :: gxsize, gysize, pos
-!    logical :: use_new
-!    integer, save :: f1D_len=0
-!    integer(LONG_KIND), save :: f_addr
-!    type(domain2D), save :: domain_prev
-    integer :: global_flag, tile
-    logical :: has_decomposition
+    MPP_TYPE_, dimension(:,:),       allocatable :: field2D
+    MPP_TYPE_, dimension(:,:),       allocatable :: global2D
+    MPP_TYPE_, dimension(MAX_TILES), save        :: gsum, nbrgsum, mygsum
+    
+    integer :: i,j, ioff,joff, isc, iec, jsc, jec, is, ie, js, je, ishift, jshift, ioffset, joffset
+    integer :: gxsize, gysize
+    integer :: global_flag, tile, ntile, nlist, n, list, m
+    type(domain2D), pointer :: Dom => NULL()
 
+    if( domain%max_ntile_pe > MAX_TILES ) call mpp_error(FATAL, "MPP_GLOBAL_SUM: number of tiles is exceed MAX_TILES")
+    ntile     = size(domain%x(:))
+    nlist     = size(domain%list(:))
     tile = 1
-    if(present(tile_number)) tile = tile_number
+    if(present(tile_count)) tile = tile_count
     global_flag = NON_BITWISE_EXACT_SUM
     if(present(flags)) global_flag = flags
 
-    call mpp_get_compute_domain(domain, isc, iec, jsc, jec, tile_number=tile_number)
-    call mpp_get_global_domain(domain, xsize = gxsize, ysize = gysize, tile_number=tile_number)
-    call mpp_get_domain_shift(domain, ishift, jshift, position)
+    Dom => get_domain(domain, position)
+    ishift = Dom%x(tile)%shift;   jshift  = Dom%y(tile)%shift
 
-    if( size(field,1).EQ.domain%x(tile)%compute%size+ishift .AND. size(field,2).EQ.domain%y(tile)%compute%size+jshift )then
+    if( size(field,1).EQ.Dom%x(tile)%compute%size .AND. size(field,2).EQ.Dom%y(tile)%compute%size )then
 !field is on compute domain
-        ioff = -domain%x(tile)%compute%begin + 1 
-        joff = -domain%y(tile)%compute%begin + 1
-    else if( size(field,1).EQ.domain%x(tile)%memory%size+ishift .AND. size(field,2).EQ.domain%y(tile)%memory%size+jshift )then
+        ioff = -Dom%x(tile)%compute%begin + 1 
+        joff = -Dom%y(tile)%compute%begin + 1
+    else if( size(field,1).EQ.Dom%x(tile)%memory%size .AND. size(field,2).EQ.Dom%y(tile)%memory%size )then
 !field is on data domain
-        ioff = -domain%x(tile)%data%begin + 1
-        joff = -domain%y(tile)%data%begin + 1
+        ioff = -Dom%x(tile)%data%begin + 1
+        joff = -Dom%y(tile)%data%begin + 1
     else
         call mpp_error( FATAL, 'MPP_GLOBAL_SUM_: incoming field array must match either compute domain or data domain.' )
     end if
 
-    !--- define the data location according to cyclic condition and cell position
-    pos = CENTER
-    !--- reset position 
-    if( ishift .NE. 0 .AND. .NOT. domain%x(tile)%cyclic) then
-       if( jshift .NE. 0 .AND. .NOT. domain%y(tile)%cyclic ) then
-          pos = CORNER
-       else
-          pos = EAST
-       end if
-    else if( jshift .NE. 0 .AND. .NOT. domain%y(tile)%cyclic ) then
-       pos = NORTH
-    end if
+    if(domain%ntiles > MAX_TILES)  call mpp_error( FATAL,  &
+         'MPP_GLOBAL_SUM_: number of tiles on this mosaic is greater than MAXTILES')
 
-    is = isc
-    !--- Add extra point and/or shift the index of data if needed.
-    if(ishift .NE. 0) then
-       iec = iec + ishift
-       if( domain%x(tile)%cyclic ) then
-          isc = isc + ishift
-          is  = isc
-       else if(domain%x(tile)%compute%begin == domain%x(tile)%global%begin) then
-          gxsize = gxsize+ishift
-          is = isc;
-       else
-          gxsize = gxsize+ishift
-          is = isc + ishift
-       endif
-    endif
-    js = jsc
-    if(jshift .NE. 0) then
-       jec = jec + jshift
-       if( domain%y(tile)%cyclic ) then
-          jsc = jsc + jshift
-          js  = jsc
-       else if(domain%y(tile)%compute%begin == domain%y(tile)%global%begin) then
-          gysize = gysize+jshift
-          js = jsc
-       else
-          gysize = gysize+jshift
-          js = jsc + jshift
-       endif
-    endif
+    call mpp_get_compute_domain( Dom, isc, iec, jsc, jec, tile_count = tile_count )
+    call mpp_get_compute_domain( domain, is,  ie,  js,  je,  tile_count = tile_count )
 
-    has_decomposition = .true.
-    if( domain%x(tile)%compute%begin == domain%x(tile)%global%begin .AND.   &
-        domain%x(tile)%compute%end   == domain%x(tile)%global%end   .AND.   & 
-        domain%y(tile)%compute%begin == domain%y(tile)%global%begin .AND.   &
-        domain%y(tile)%compute%end   == domain%y(tile)%global%end  ) then
-       has_decomposition = .false.
-    end if
-
+    call mpp_get_global_domain(domain, xsize = gxsize, ysize = gysize )
+    MPP_GLOBAL_SUM_ = 0
     if( global_flag == BITWISE_EXACT_SUM )then
         !this is bitwise exact across different PE counts.
 
-        !--- z1l: comments out the following because cray pointer will cause problem when
-        !---      implementing symmetric domain.
-!!$        use_new=.false.; if(PRESENT(new))use_new=new
-!!$        if(use_new)then
-!!$          
-!!$
-!!$          if(f1D_len<(iec-isc+1)*(jec-jsc+1) )then
-!!$            if(ALLOCATED(field1D))then
-!!$              call mpp_global_field_free_comm(domain_prev,f_addr,ksize=1)
-!!$              deallocate(field1D)
-!!$            endif
-!!$            f1D_len = (iec-isc+1)*(jec-jsc+1)
-!!$            allocate(field1D(f1D_len))
-!!$            f_addr=LOC(field1D); domain_prev%id = domain%id
-!!$          endif
-!!$          ptr_field2D = f_addr
-!!$        else
-!!$          allocate( field2Dold(isc:iec+1, jsc:jec+1) )
-!!$          ptr_field2D = LOC(field2Dold)
-!!$        endif
-        allocate( field2D (isc:iec,jsc:jec) )
-        do j = jsc, jec
-           do i = isc, iec
-               field2D(i,j) = sum( field(i+ioff:i+ioff,j+joff:j+joff MPP_EXTRA_INDICES_) )
-           end do
-        end do
-        if(has_decomposition) then
-           allocate( global2D( gxsize, gysize ) )
-           global2D = 0.
-           call mpp_global_field( domain, field2D(isc:iec,jsc:jec), global2D, new=new, position=pos )
-           MPP_GLOBAL_SUM_ = sum(global2D)
-           deallocate(global2D)
-        else
-           MPP_GLOBAL_SUM_ = sum( field2D )
-        end if
-        if(allocated(field2Dold))deallocate(field2Dold)
-    else
-        !this is not bitwise-exact across different PE counts
-        MPP_GLOBAL_SUM_ = sum( field(is+ioff:iec+ioff, js+joff:jec+joff MPP_EXTRA_INDICES_) )
-        if(has_decomposition) call mpp_sum( MPP_GLOBAL_SUM_, domain%list(:)%pe )
+       allocate( field2D (isc:iec,jsc:jec) )
+       do j = jsc, jec
+          do i = isc, iec
+             field2D(i,j) = sum( field(i+ioff:i+ioff,j+joff:j+joff MPP_EXTRA_INDICES_) )
+          end do
+       end do
+       allocate( global2D( gxsize+ishift, gysize+jshift ) )
+       global2D = 0.
+       call mpp_global_field( domain, field2D, global2D, position=position, tile_count=tile_count )
+       ioffset = Dom%x(tile)%goffset; joffset = Dom%y(tile)%goffset
+       mygsum(tile) = sum(global2D(1:gxsize+ioffset,1:gysize+joffset))
+       deallocate(global2D, field2d)
+       if( tile == ntile) then 
+          if(domain%ntiles == 1 ) then
+             MPP_GLOBAL_SUM_ = mygsum(tile)
+          else if( nlist == 1) then
+             MPP_GLOBAL_SUM_ = sum(mygsum(1:ntile))
+          else ! need to sum by the order of tile_count
+             ! first fill the global sum on current pe.
+             do n = 1, ntile
+                gsum(domain%tile_id(n)) = mygsum(n)
+             end do
+             !--- send the data to other pe if the current pe is the root pe of any tile
+             if( mpp_domain_is_root_pe(domain) ) then
+                do list = 1, nlist - 1
+                   m = mod( domain%pos+list, nlist )
+                   call mpp_send( mygsum(1), plen=ntile, to_pe=domain%list(m)%pe )
+                end do
+             end if
+             call mpp_sync_self()
+             !--- receive data from root_pe of each tile
+             do list = 1, nlist - 1
+                m = mod( domain%pos+nlist-list, nlist )
+                if( mpp_domain_is_root_pe(domain%list(m)) ) then
+                    call mpp_recv( nbrgsum(1), glen=size(domain%list(m)%x(:)), from_pe=domain%list(m)%pe)
+                    do n = 1, size(domain%list(m)%x(:))
+                       gsum(domain%list(m)%tile_id(n)) = nbrgsum(n)
+                    end do
+                end if
+             end do
+
+             MPP_GLOBAL_SUM_ = sum(gsum(1:domain%ntiles))
+          end if
+       end if
+    else  !this is not bitwise-exact across different PE counts
+       ioffset = Dom%x(tile)%loffset; joffset = Dom%y(tile)%loffset
+       mygsum(tile) = sum( field(is+ioff:ie+ioff+ioffset, js+joff:je+joff+joffset MPP_EXTRA_INDICES_) )
+       if(tile == ntile) then
+          MPP_GLOBAL_SUM_ = sum(mygsum)
+          call mpp_sum( MPP_GLOBAL_SUM_, domain%list(:)%pe )
+       end if
     end if
 
     return

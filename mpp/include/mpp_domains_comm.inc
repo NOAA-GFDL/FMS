@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_comm.inc,v 13.0.2.1 2006/04/11 18:08:43 z1l Exp $
+! $Id: mpp_domains_comm.inc,v 13.0.2.1.2.1.4.1 2006/10/30 19:33:28 z1l Exp $
 
 #ifdef use_GSM
 #include "mpp/shmem.fh"
@@ -43,7 +43,7 @@
       integer :: m, n, list, l, nn, tMe, tNbr
       integer :: update_flags
       integer :: is, ie, js, je, list_size, ndir, nsec, ntileMe, ntileNbr
-      integer :: i, lsize,msgsize,to_pe,from_pe, ioff, joff
+      integer :: i, lsize,to_pe,from_pe, ioff, joff
       integer :: num_component, x_position, y_position
       integer, allocatable :: isL(:,:), jsL(:,:)
       logical :: recv(8), send(8), is_vector
@@ -52,7 +52,6 @@
       real,dimension(*) :: f_r, f2_r
       pointer(ptr_r,f_r);  pointer(ptr2_r,f2_r)
       logical :: use_shmem_ptr
-      character(len=8) :: text
       type(DomainCommunicator2D), pointer :: d_comm_local => NULL()
       type(domain2d),             pointer :: Dom          => NULL()
       use_shmem_ptr=.false.   ! False for any but GSM
@@ -99,11 +98,6 @@
          call mpp_error( FATAL, 'mpp_update_comm_mod: position and gridtype can not both be presented')
       else if (PRESENT(position)) then
          x_position = position; y_position = position
-         !--- for cubic grid, can not use scalar version update_domain for data on E or N-cell
-         if( domain%topology_type == CUBIC_GRID .AND. ( position == EAST .OR. position == NORTH ) ) then
-            call mpp_error(FATAL, 'mpp_domains_comm_mod: for cubic grid, ' // &
-                 'can not use scalar version update_domain for data on E or N-cell' )
-         end if
       else if ( PRESENT(gridtype)) then
          is_vector = .true.
          if( BTEST(update_flags,WEST) .AND. BTEST(domain%fold,WEST)  .AND. BTEST(gridtype,EAST)  ) &
@@ -114,12 +108,6 @@
               call mpp_error( FATAL, 'Incompatible grid offset and fold.' )
          if( BTEST(update_flags,NORTH) .AND. BTEST(domain%fold,NORTH) .AND. BTEST(gridtype,SOUTH) ) &
               call mpp_error( FATAL, 'Incompatible grid offset and fold.' )
-
-         !--- For cubic grid, velocity is not allowed on the CORNER.
-         if( domain%topology_type == CUBIC_GRID .AND. ( .NOT. BTEST(update_flags,SCALAR_BIT)) .AND. &
-              ( gridtype == BGRID_NE .OR. gridtype == BGRID_SW ) ) then
-            call mpp_error(FATAL,"mpp_update_comm_mod: velocity is not allowed on the C-cell for cubic grid")
-         end if
 
          select case(gridtype)
          case (AGRID)
@@ -540,7 +528,7 @@
 
 
     function mpp_global_field_init_comm(domain,l_addr,isize_g,jsize_g,isize_l, &
-                                        jsize_l, ksize,l_addr2,flags,position) RESULT(d_comm)
+                                        jsize_l, ksize,l_addr2,flags, position) RESULT(d_comm)
       type(DomainCommunicator2D), pointer       :: d_comm
       type(domain2D),target,      intent(in)    :: domain
       integer(LONG_KIND),         intent(in)    :: l_addr
@@ -557,7 +545,7 @@
       integer :: n, lpos, rpos, list, nlist, tile_id
       integer :: update_flags
       logical :: xonly, yonly
-      integer :: is, ie, js, je, ioff, joff, ishift, jshift
+      integer :: is, ie, js, je, ioff, joff
       integer :: lsize,msgsize,to_pe,from_pe
       integer,           allocatable,dimension(:) :: isL, jsL
       integer(LONG_KIND),allocatable,dimension(:,:) :: slist_addr
@@ -586,17 +574,14 @@
           if( .NOT.xonly .AND. .NOT.yonly )call mpp_error( WARNING, 'MPP_GLOBAL_FIELD: you must have flags=XUPDATE or YUPDATE.' )
       end if
 
-      !--- get shift size 
-      call mpp_get_domain_shift(domain, ishift, jshift, position)
-
-      if( isize_g /= (domain%x(1)%global%size+ishift) .OR. jsize_g /= (domain%y(1)%global%size+jshift) ) &
+      if( isize_g /= (domain%x(1)%global%size) .OR. jsize_g /= (domain%y(1)%global%size) ) &
            call mpp_error( FATAL, 'MPP_GLOBAL_FIELD_INIT_COMM: incoming arrays do not match domain.' )
 
-      if( isize_l == (domain%x(1)%compute%size+ishift) .AND. jsize_l == (domain%y(1)%compute%size+jshift) )then
+      if( isize_l == (domain%x(1)%compute%size) .AND. jsize_l == (domain%y(1)%compute%size) )then
 !local is on compute domain                                                                      
         ioff = -domain%x(1)%compute%begin + 1                                                       
         joff = -domain%y(1)%compute%begin + 1
-      elseif( isize_l == (domain%x(1)%memory%size+ishift) .AND. jsize_l == (domain%y(1)%memory%size+jshift) )then
+      elseif( isize_l == (domain%x(1)%memory%size) .AND. jsize_l == (domain%y(1)%memory%size) )then
 !local is on data domain                                                                        
         ioff = -domain%x(1)%data%begin + 1                                                         
         joff = -domain%y(1)%data%begin + 1
@@ -605,11 +590,11 @@
       endif
 
     ! Create unique domain identifier
-      domain_id=set_domain_id(domain%id,ksize,update_flags)
+      domain_id=set_domain_id(domain%id,ksize,update_flags, position=position)
       d_comm =>get_comm(domain_id,l_addr,l_addr2)
       
       if(d_comm%initialized)return   ! Found existing field/domain communicator
-      d_comm%domain => get_domain(domain, position)
+      d_comm%domain => domain
       d_comm%isize_in = isize_l; d_comm%isize_out = isize_g
       d_comm%jsize_in = jsize_l; d_comm%jsize_out = jsize_g
       d_comm%ke = ksize
@@ -638,8 +623,8 @@
           rpos = mod(domain%x(1)%pos+list,lsize)
           from_pe = domain%x(1)%list(rpos)%pe
           d_comm%cfrom_pe(list) = from_pe
-          is = domain%list(from_pe)%x(1)%compute%begin; ie = domain%list(from_pe)%x(1)%compute%end + ishift
-          js = domain%y(1)%compute%begin; je = domain%y(1)%compute%end + jshift
+          is = domain%list(from_pe)%x(1)%compute%begin; ie = domain%list(from_pe)%x(1)%compute%end
+          js = domain%y(1)%compute%begin; je = domain%y(1)%compute%end
           d_comm%recvis(1,list)=is; d_comm%recvie(1,list)=ie
           d_comm%recvjs(1,list)=js; d_comm%recvje(1,list)=je
           d_comm%R_msize(list) = (ie-is+1) * (je-js+1) * ksize
@@ -667,8 +652,8 @@
           rpos = mod(domain%y(1)%pos+list,lsize)
           from_pe = domain%y(1)%list(rpos)%pe
           d_comm%cfrom_pe(list) = from_pe
-          is = domain%x(1)%compute%begin; ie = domain%x(1)%compute%end + ishift
-          js = domain%list(from_pe)%y(1)%compute%begin; je = domain%list(from_pe)%y(1)%compute%end + jshift
+          is = domain%x(1)%compute%begin; ie = domain%x(1)%compute%end
+          js = domain%list(from_pe)%y(1)%compute%begin; je = domain%list(from_pe)%y(1)%compute%end
           d_comm%recvis(1,list)=is; d_comm%recvie(1,list)=ie
           d_comm%recvjs(1,list)=js; d_comm%recvje(1,list)=je
           d_comm%R_msize(list) = (ie-is+1) * (je-js+1) * ksize
@@ -708,8 +693,8 @@
             rpos = mod(domain%pos+list,nlist)
             if( domain%list(rpos)%tile_id(1) .NE. tile_id ) cycle
             d_comm%cfrom_pe(n) = domain%list(rpos)%pe
-            is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end + ishift
-            js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end + jshift
+            is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end
+            js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end
             d_comm%recvis(1,n)=is; d_comm%recvie(1,n)=ie
             d_comm%recvjs(1,n)=js; d_comm%recvje(1,n)=je
             d_comm%R_msize(n) = (je-js+1) * (ie-is+1) * ksize
@@ -722,7 +707,6 @@
       d_comm%Rlist_size = lsize
 
 !send 
-
       allocate(d_comm%sendis(1,0:lsize-1), d_comm%sendie(1,0:lsize-1), &
                d_comm%sendjs(1,0:lsize-1), d_comm%sendje(1,0:lsize-1), &
                d_comm%S_msize(0:lsize-1),isL(0:lsize-1),jsL(0:lsize-1))
@@ -733,8 +717,8 @@
       d_comm%sendjs=0; d_comm%sendje=0;
       d_comm%S_msize=0
       do list = 0,lsize-1
-        is=domain%x(1)%compute%begin; ie=domain%x(1)%compute%end + ishift
-        js=domain%y(1)%compute%begin; je=domain%y(1)%compute%end + jshift
+        is=domain%x(1)%compute%begin; ie=domain%x(1)%compute%end
+        js=domain%y(1)%compute%begin; je=domain%y(1)%compute%end
         d_comm%sendis(1,list)=is; d_comm%sendie(1,list)=ie
         d_comm%sendjs(1,list)=js; d_comm%sendje(1,list)=je
         d_comm%S_msize(list) = (je-js+1) * (ie-is+1) * ksize
@@ -758,6 +742,7 @@
 #endif
       end do
 
+#ifdef use_GSM
       if( xonly ) then
         call mpp_sync_self(domain%x(1)%list(:)%pe)
       elseif( yonly ) then
@@ -765,6 +750,7 @@
       else
         call mpp_sync_self(domain%list(:)%pe)
       endif
+#endif
 
 !recv
       allocate(d_comm%isizeR(0:lsize-1), d_comm%jsizeR(0:lsize-1))

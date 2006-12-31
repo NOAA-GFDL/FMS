@@ -1,4 +1,3 @@
-#include <fms_platform.h>
 
  module sat_vapor_pres_k_mod
 
@@ -17,12 +16,8 @@
 !    modules to avoid using a module that computes the saturation vapor
 !    pressure of water vapor.
 
-! 2) A kernel should be stateless.
-!    To facilitate this it is convenient for the kernel to define a derived
-!    type which is public and which allows information associated with each
-!    user to be available to every interface.
-!    Typically this would be data that previously was saved as module globals
-!    or was available by use association.
+! 2) For the sake of thread safety, module globals should be written only at initialization.
+!    In this case, the module globals are the tables and a handful of scalars.
 
 ! 3) A kernel should not read from an external file.
 
@@ -33,10 +28,9 @@
  implicit none
  private
 
- character(len=128), parameter :: version = '$Id: sat_vapor_pres_k.F90,v 13.0.2.2 2006/05/26 01:13:36 pjp Exp $'
- character(len=128), parameter :: tagname = '$Name: memphis_2006_08 $'
+ character(len=128), parameter :: version = '$Id: sat_vapor_pres_k.F90,v 13.0.2.3 2006/07/15 13:35:40 pjp Exp $'
+ character(len=128), parameter :: tagname = '$Name: memphis_2006_12 $'
 
- public :: sat_vapor_pres_type
  public :: sat_vapor_pres_init_k
  public :: lookup_es_k
  public :: lookup_des_k
@@ -55,26 +49,24 @@
    module procedure lookup_des_k_3d
  end interface
 
- type sat_vapor_pres_type
-   real :: dtres, teps, tmin, dtinv
-   integer :: table_size
-   real, dimension(:), _ALLOCATABLE :: TABLE _NULL  !  sat vapor pres (es)
-   real, dimension(:), _ALLOCATABLE :: DTABLE _NULL !  first derivative of es
-   real, dimension(:), _ALLOCATABLE :: D2TABLE _NULL! second derivative of es
- end type
+ real :: dtres, tepsl, tminl, dtinvl
+ integer :: table_siz
+ real, dimension(:), allocatable :: TABLE   !  sat vapor pres (es)
+ real, dimension(:), allocatable :: DTABLE  !  first derivative of es
+ real, dimension(:), allocatable :: D2TABLE ! second derivative of es
 
  contains
 
- subroutine sat_vapor_pres_init_k(svp_data, table_size, tcmin, tcmax, TFREEZE, err_msg)
+ subroutine sat_vapor_pres_init_k(table_size, tcmin, tcmax, TFREEZE, err_msg, teps, tmin, dtinv)
 
 ! This routine has been generalized to return tables for any temperature range and resolution
 
- type(sat_vapor_pres_type), intent(inout) :: svp_data
  integer, intent(in) :: table_size
  real, intent(in) :: tcmin ! TABLE(1)          = sat vapor pressure at temperature tcmin (deg C)
  real, intent(in) :: tcmax ! TABLE(table_size) = sat vapor pressure at temperature tcmax (deg C)
  real, intent(in) :: TFREEZE
  character(len=*), intent(out) :: err_msg
+ real, intent(out), optional :: teps, tmin, dtinv
 
 ! increment used to generate derivative table
   real, dimension(3) :: tem(3), es(3)
@@ -83,51 +75,54 @@
 
       err_msg = ''
 
-      if(_ALLOCATED(svp_data%TABLE) .or. _ALLOCATED(svp_data%DTABLE) .or. _ALLOCATED(svp_data%D2TABLE)) then
+      if(allocated(TABLE) .or. allocated(DTABLE) .or. allocated(D2TABLE)) then
         err_msg = 'Attempt to allocate sat vapor pressure tables when already allocated'
         return
       else
-        allocate(svp_data%TABLE(table_size), svp_data%DTABLE(table_size), svp_data%D2TABLE(table_size))
+        allocate(TABLE(table_size), DTABLE(table_size), D2TABLE(table_size))
       endif
 
-      svp_data%table_size = table_size
-      svp_data%dtres = (tcmax - tcmin)/(table_size-1)
-      svp_data%tmin = real(tcmin)+TFREEZE  ! minimum valid temp in table
-      svp_data%dtinv = 1./svp_data%dtres
-      svp_data%teps = .5*svp_data%dtres
-      tinrc = .1*svp_data%dtres
+      table_siz = table_size
+      dtres = (tcmax - tcmin)/(table_size-1)
+      tminl = real(tcmin)+TFREEZE  ! minimum valid temp in table
+      dtinvl = 1./dtres
+      tepsl = .5*dtres
+      tinrc = .1*dtres
+      if(present(teps )) teps =tepsl
+      if(present(tmin )) tmin =tminl
+      if(present(dtinv)) dtinv=dtinvl
 
 ! To be able to compute tables for any temperature range and resolution,
 ! and at the same time exactly reproduce answers from memphis revision,
 ! it is necessary to compute ftact differently than it is in memphis.
-      tfact = 5*svp_data%dtinv
+      tfact = 5*dtinvl
 
-      hdtinv = svp_data%dtinv*0.5
+      hdtinv = dtinvl*0.5
 
 ! compute es tables from tcmin to tcmax
 ! estimate es derivative with small +/- difference
 
       do i = 1, table_size
-         tem(1) = svp_data%tmin + svp_data%dtres*real(i-1)
+         tem(1) = tminl + dtres*real(i-1)
          tem(2) = tem(1)-tinrc
          tem(3) = tem(1)+tinrc
          es = compute_es_k (tem, TFREEZE)
-         svp_data%TABLE(i) = es(1)
-         svp_data%DTABLE(i) = (es(3)-es(2))*tfact
+         TABLE(i) = es(1)
+         DTABLE(i) = (es(3)-es(2))*tfact
       enddo
 
 ! compute one-half second derivative using centered differences
 ! differencing des values in the table
 
       do i = 2, table_size-1
-         svp_data%D2TABLE(i) = 0.25*svp_data%dtinv*(svp_data%DTABLE(i+1)-svp_data%DTABLE(i-1))
+         D2TABLE(i) = 0.25*dtinvl*(DTABLE(i+1)-DTABLE(i-1))
       enddo
     ! one-sided derivatives at boundaries
 
-         svp_data%D2TABLE(1) = 0.50*svp_data%dtinv*(svp_data%DTABLE(2)-svp_data%DTABLE(1))
+         D2TABLE(1) = 0.50*dtinvl*(DTABLE(2)-DTABLE(1))
 
-         svp_data%D2TABLE(table_size) = 0.50*svp_data%dtinv*&
-              (svp_data%DTABLE(table_size)-svp_data%DTABLE(table_size-1))
+         D2TABLE(table_size) = 0.50*dtinvl*&
+              (DTABLE(table_size)-DTABLE(table_size-1))
 
  end subroutine sat_vapor_pres_init_k
 
@@ -187,8 +182,7 @@
 
 !#######################################################################
 
- subroutine lookup_es_k_3d(svp_data, temp, esat, nbad)
- type(sat_vapor_pres_type), intent(in) :: svp_data
+ subroutine lookup_es_k_3d(temp, esat, nbad)
  real, intent(in),  dimension(:,:,:)  :: temp
  real, intent(out), dimension(:,:,:)  :: esat
  integer, intent(out) :: nbad
@@ -199,12 +193,12 @@
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-svp_data%tmin
-     ind = int(svp_data%dtinv*(tmp+svp_data%teps))
-     del = tmp-svp_data%dtres*real(ind)
-     esat(i,j,k) = svp_data%TABLE(ind+1) + &
-     del*(svp_data%DTABLE(ind+1) + del*svp_data%D2TABLE(ind+1))
-     if (ind < 0 .or. ind >= svp_data%table_size) nbad = nbad+1
+     tmp = temp(i,j,k)-tminl
+     ind = int(dtinvl*(tmp+tepsl))
+     del = tmp-dtres*real(ind)
+     esat(i,j,k) = TABLE(ind+1) + &
+     del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+     if (ind < 0 .or. ind >= table_siz) nbad = nbad+1
    enddo
    enddo
    enddo
@@ -213,8 +207,7 @@
 
 !#######################################################################
 
- subroutine lookup_des_k_3d(svp_data, temp, desat, nbad)
- type(sat_vapor_pres_type), intent(in) :: svp_data
+ subroutine lookup_des_k_3d(temp, desat, nbad)
  real, intent(in),  dimension(:,:,:)  :: temp
  real, intent(out), dimension(:,:,:)  :: desat
  integer, intent(out) :: nbad
@@ -225,11 +218,11 @@
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-svp_data%tmin
-     ind = int(svp_data%dtinv*(tmp+svp_data%teps))
-     del = tmp-svp_data%dtres*real(ind)
-     desat(i,j,k) = svp_data%DTABLE(ind+1) + 2.*del*svp_data%D2TABLE(ind+1)
-     if (ind < 0 .or. ind >= svp_data%table_size) nbad = nbad+1
+     tmp = temp(i,j,k)-tminl
+     ind = int(dtinvl*(tmp+tepsl))
+     del = tmp-dtres*real(ind)
+     desat(i,j,k) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     if (ind < 0 .or. ind >= table_siz) nbad = nbad+1
    enddo
    enddo
    enddo
@@ -237,80 +230,74 @@
  end subroutine lookup_des_k_3d
 
 !#######################################################################
- subroutine lookup_des_k_2d(svp_data, temp, desat, nbad)
- type(sat_vapor_pres_type), intent(in) :: svp_data
+ subroutine lookup_des_k_2d(temp, desat, nbad)
  real, intent(in),  dimension(:,:)  :: temp
  real, intent(out), dimension(:,:)  :: desat
  integer, intent(out) :: nbad
  real, dimension(size(temp,1), size(temp,2), 1) :: temp_3d, desat_3d
 
  temp_3d(:,:,1) = temp
- call lookup_des_k_3d(svp_data, temp_3d, desat_3d, nbad)
+ call lookup_des_k_3d(temp_3d, desat_3d, nbad)
  desat = desat_3d(:,:,1)
 
  end subroutine lookup_des_k_2d
 !#######################################################################
- subroutine lookup_es_k_2d(svp_data, temp, esat, nbad)
- type(sat_vapor_pres_type), intent(in) :: svp_data
+ subroutine lookup_es_k_2d(temp, esat, nbad)
  real, intent(in),  dimension(:,:)  :: temp
  real, intent(out), dimension(:,:)  :: esat
  integer, intent(out) :: nbad
  real, dimension(size(temp,1), size(temp,2), 1) :: temp_3d, esat_3d
 
  temp_3d(:,:,1) = temp
- call lookup_es_k_3d(svp_data, temp_3d, esat_3d, nbad)
+ call lookup_es_k_3d(temp_3d, esat_3d, nbad)
  esat = esat_3d(:,:,1)
 
  end subroutine lookup_es_k_2d
 !#######################################################################
- subroutine lookup_des_k_1d(svp_data, temp, desat, nbad)
- type(sat_vapor_pres_type), intent(in) :: svp_data
+ subroutine lookup_des_k_1d(temp, desat, nbad)
  real, intent(in),  dimension(:)  :: temp
  real, intent(out), dimension(:)  :: desat
  integer, intent(out) :: nbad
  real, dimension(size(temp),1,1) :: temp_3d, desat_3d
 
  temp_3d(:,1,1) = temp
- call lookup_des_k_3d(svp_data, temp_3d, desat_3d, nbad)
+ call lookup_des_k_3d(temp_3d, desat_3d, nbad)
  desat = desat_3d(:,1,1)
 
  end subroutine lookup_des_k_1d
 !#######################################################################
- subroutine lookup_es_k_1d(svp_data, temp, esat, nbad)
- type(sat_vapor_pres_type), intent(in) :: svp_data
+ subroutine lookup_es_k_1d(temp, esat, nbad)
  real, intent(in),  dimension(:)  :: temp
  real, intent(out), dimension(:)  :: esat
  integer, intent(out) :: nbad
  real, dimension(size(temp),1,1) :: temp_3d, esat_3d
 
  temp_3d(:,1,1) = temp
- call lookup_es_k_3d(svp_data, temp_3d, esat_3d, nbad)
+ call lookup_es_k_3d(temp_3d, esat_3d, nbad)
  esat = esat_3d(:,1,1)
 
  end subroutine lookup_es_k_1d
 !#######################################################################
- subroutine lookup_des_k_0d(svp_data, temp, desat, nbad)
- type(sat_vapor_pres_type), intent(in) :: svp_data
+ subroutine lookup_des_k_0d(temp, desat, nbad)
  real, intent(in)     :: temp
  real, intent(out)    :: desat
  integer, intent(out) :: nbad
  real, dimension(1,1,1) :: temp_3d, desat_3d
 
  temp_3d(1,1,1) = temp
- call lookup_des_k_3d(svp_data, temp_3d, desat_3d, nbad)
+ call lookup_des_k_3d(temp_3d, desat_3d, nbad)
  desat = desat_3d(1,1,1)
 
  end subroutine lookup_des_k_0d
 !#######################################################################
- subroutine lookup_es_k_0d(svp_data, temp, esat, nbad)
- type(sat_vapor_pres_type), intent(in) :: svp_data
+ subroutine lookup_es_k_0d(temp, esat, nbad)
  real, intent(in)     :: temp
  real, intent(out)    :: esat
  integer, intent(out) :: nbad
  real, dimension(1,1,1) :: temp_3d, esat_3d
 
  temp_3d(1,1,1) = temp
- call lookup_es_k_3d(svp_data, temp_3d, esat_3d, nbad)
+ call lookup_es_k_3d(temp_3d, esat_3d, nbad)
  esat = esat_3d(1,1,1)
 
  end subroutine lookup_es_k_0d

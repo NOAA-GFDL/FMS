@@ -41,6 +41,9 @@
          end do
       end do
 
+! if there is more than one tile on this pe, then no decomposition for all tiles on this pe, so we can just return
+      if(size(d_comm%domain%x(:))>1) return
+
       nd = d_comm%Rlist_size  ! same as size of send list
       msgsize = m  ! constant for all sends
       do n = 1,nd-1
@@ -60,8 +63,6 @@
                end do
             end do
          end do
-!     write(stdout(),*) 'new cremote chksum:', mpp_chksum(mpp_domains_stack(1:size(clocal(:))))
-!     write(stdout(),*) 'new global chksum:', mpp_chksum(mpp_domains_stack(size(clocal(:))+1:size(global(:,:,:))))
       end do
-      call mpp_sync_self()
+      call mpp_sync_self( )
     end subroutine MPP_DO_GLOBAL_FIELD_3Dnew_

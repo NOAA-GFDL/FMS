@@ -60,12 +60,12 @@ module sat_vapor_pres_mod
  use  constants_mod, only:  TFREEZE
  use        fms_mod, only:  write_version_number,   &
                             mpp_error, FATAL, fms_error_handler
- use  sat_vapor_pres_k_mod, only: sat_vapor_pres_type, sat_vapor_pres_init_k, lookup_es_k, lookup_des_k
+ use  sat_vapor_pres_k_mod, only: sat_vapor_pres_init_k, lookup_es_k, lookup_des_k
 
 implicit none
 private
 
- public :: lookup_es, lookup_des, sat_vapor_pres_init, sat_vapor_pres_data
+ public :: lookup_es, lookup_des, sat_vapor_pres_init
 !public :: compute_es
  public :: escomp, descomp ! for backward compatibility
                            ! use lookup_es, lookup_des instead
@@ -177,8 +177,8 @@ private
 !-----------------------------------------------------------------------
 !  cvs version and tag name
 
- character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 13.0.2.2 2006/05/26 02:04:41 pjp Exp $'
- character(len=128) :: tagname = '$Name: memphis_2006_08 $'
+ character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 13.0.2.3 2006/07/15 13:35:39 pjp Exp $'
+ character(len=128) :: tagname = '$Name: memphis_2006_12 $'
 
  logical :: module_is_initialized = .false.
 
@@ -190,8 +190,6 @@ private
  integer, parameter :: esres =  10   ! table resolution (increments per degree)
  integer, parameter :: nsize = (tcmax-tcmin)*esres+1    !  lookup table size
  integer, parameter :: nlim  = nsize-1
-
- type(sat_vapor_pres_type), save :: sat_vapor_pres_data
 
 !-----------------------------------------------------------------------
 !  varibles needed by temp_check
@@ -217,18 +215,13 @@ contains
 
    if (.not.module_is_initialized) call sat_vapor_pres_init
 
-   call lookup_es_k(sat_vapor_pres_data, temp, esat, nbad)
+   call lookup_es_k(temp, esat, nbad)
    if ( nbad == 0 ) then
      if(present(err_msg)) err_msg = ''
    else
      write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
      if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
    endif
-
-!  varibles needed by temp_check
-   tmin  = sat_vapor_pres_data%tmin
-   dtinv = sat_vapor_pres_data%dtinv
-   teps  = sat_vapor_pres_data%teps
 
  end subroutine lookup_es_0d
 
@@ -250,7 +243,7 @@ contains
 
    if (.not.module_is_initialized) call sat_vapor_pres_init
 
-   call lookup_es_k(sat_vapor_pres_data, temp, esat, nbad)
+   call lookup_es_k(temp, esat, nbad)
    if ( nbad == 0 ) then
      if(present(err_msg)) err_msg = ''
    else
@@ -282,7 +275,7 @@ contains
    if (.not.module_is_initialized) call sat_vapor_pres_init
    if(present(err_msg)) err_msg=''
 
-   call lookup_es_k(sat_vapor_pres_data, temp, esat, nbad)
+   call lookup_es_k(temp, esat, nbad)
    if ( nbad == 0 ) then
      if(present(err_msg)) err_msg = ''
    else
@@ -312,7 +305,7 @@ contains
 
    if (.not.module_is_initialized) call sat_vapor_pres_init
 
-   call lookup_es_k(sat_vapor_pres_data, temp, esat, nbad)
+   call lookup_es_k(temp, esat, nbad)
    if ( nbad == 0 ) then
      if(present(err_msg)) err_msg = ''
    else
@@ -342,7 +335,7 @@ contains
 
    if (.not.module_is_initialized) call sat_vapor_pres_init
 
-   call lookup_des_k(sat_vapor_pres_data, temp, desat, nbad)
+   call lookup_des_k( temp, desat, nbad)
    if ( nbad == 0 ) then
      if(present(err_msg)) err_msg = ''
    else
@@ -371,7 +364,7 @@ contains
    if (.not.module_is_initialized) call sat_vapor_pres_init
    if(present(err_msg)) err_msg=''
 
-   call lookup_des_k(sat_vapor_pres_data, temp, desat, nbad)
+   call lookup_des_k(temp, desat, nbad)
    if ( nbad == 0 ) then
      if(present(err_msg)) err_msg = ''
    else
@@ -402,7 +395,7 @@ contains
    if (.not.module_is_initialized) call sat_vapor_pres_init
    if(present(err_msg)) err_msg=''
    
-   call lookup_des_k(sat_vapor_pres_data, temp, desat, nbad)
+   call lookup_des_k(temp, desat, nbad)
    if ( nbad == 0 ) then
      if(present(err_msg)) err_msg = ''
    else
@@ -430,7 +423,7 @@ contains
 
    if (.not.module_is_initialized) call sat_vapor_pres_init
 
-   call lookup_des_k(sat_vapor_pres_data, temp, desat, nbad )
+   call lookup_des_k( temp, desat, nbad )
    if ( nbad == 0 ) then
      if(present(err_msg)) err_msg=''
    else
@@ -489,7 +482,7 @@ contains
 ! write version number to log file
   call write_version_number (version, tagname)
 
-  call sat_vapor_pres_init_k(sat_vapor_pres_data, nsize, real(tcmin), real(tcmax), TFREEZE, err_msg_local)
+  call sat_vapor_pres_init_k(nsize, real(tcmin), real(tcmax), TFREEZE, err_msg_local, teps, tmin, dtinv)
   if ( err_msg_local == '' ) then
      if(present(err_msg)) err_msg = ''
   else

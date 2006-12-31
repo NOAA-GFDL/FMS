@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_read.inc,v 13.0.4.3 2006/05/31 20:47:29 z1l Exp $
+! $Id: mpp_io_read.inc,v 13.0.4.3.2.1 2006/08/29 15:25:01 z1l Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -16,7 +16,7 @@
 #define MPP_TYPE_ real
 #include <mpp_read_2Ddecomp.h>
 
-    subroutine read_record( unit, field, nwords, data, time_level, domain, position, tile_number )
+    subroutine read_record( unit, field, nwords, data, time_level, domain, position, tile_count )
 !routine that is finally called by all mpp_read routines to perform the read
 !a non-netCDF record contains:
 !      field ID
@@ -38,7 +38,7 @@
       real,           intent(inout)           :: data(nwords)
       integer,        intent(in),    optional :: time_level
       type(domain2D), intent(in),    optional :: domain
-      integer,        intent(in),    optional :: position, tile_number
+      integer,        intent(in),    optional :: position, tile_count
       integer, dimension(size(field%axes(:))) :: start, axsiz
 
       integer :: tlevel !,subdomain(4)
@@ -79,11 +79,8 @@
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'READ_RECORD: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'READ_RECORD: invalid unit number.' )
       if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
-      if( mpp_file(unit)%fileset.EQ.MPP_MULTI )call mpp_error( FATAL, 'READ_RECORD: multiple filesets not supported for MPP_READ' )
 
       if( .NOT.mpp_file(unit)%initialized ) call mpp_error( FATAL, 'MPP_READ: must first call mpp_read_meta.' )
-
-
 
       if( verbose )print '(a,2i3,2i5)', 'MPP_READ: PE, unit, %id, %time_level =',&
            pe, unit, mpp_file(unit)%id, tlevel
@@ -117,8 +114,8 @@
              if( field%axes(i)%did.EQ.field%time_axis_index )start(i) = tlevel
           end do
           if( PRESENT(domain) )then
-              call mpp_get_compute_domain( domain, is,  ie,  js,  je, tile_number=tile_number  )
-              call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg, tile_number=tile_number )
+              call mpp_get_compute_domain( domain, is,  ie,  js,  je, tile_count=tile_count  )
+              call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg, tile_count=tile_count )
               ! when domain is symmetry, one extra point is needed for E, C, N-cell
               if( mpp_domain_is_symmetry(domain) ) then
                  if(present(position)) then

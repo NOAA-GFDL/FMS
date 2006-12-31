@@ -1,4 +1,4 @@
-! $Id: drifters_core.F90,v 13.0 2006/03/28 21:38:22 fms Exp $
+! $Id: drifters_core.F90,v 13.0.2.1.2.1 2006/11/29 19:08:17 fms Exp $
 !
 ! nf95 -r8 -g -I ~/regression/ia64/23-Jun-2005/CM2.1U_Control-1990_E1.k32pe/include/ -D_TEST_DRIFTERS -D_F95 quicksort.F90 drifters_core.F90
 
@@ -6,12 +6,18 @@
 
 module drifters_core_mod
   implicit none
+  private
+
+  public :: drifters_core_type, drifters_core_new, drifters_core_del
+  public :: drifters_core_remove_and_add, drifters_core_set_positions, assignment(=)
 
   ! Globals
   integer, parameter, private   :: MAX_STR_LEN = 128
-  character(MAX_STR_LEN), parameter, private :: version = '$Id: drifters_core.F90,v 13.0 2006/03/28 21:38:22 fms Exp $'
+  character(MAX_STR_LEN), parameter, private :: version = '$Id: drifters_core.F90,v 13.0.2.1.2.1 2006/11/29 19:08:17 fms Exp $'
 
   type drifters_core_type
+     ! Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new
+     ! when adding members
      integer*8 :: it   ! time index
      integer :: nd     ! number of dimensions
      integer :: np     ! number of particles (drifters)
@@ -19,6 +25,10 @@ module drifters_core_mod
      integer, _ALLOCATABLE :: ids(:)_NULL  ! particle id number
      real   , _ALLOCATABLE :: positions(:,:)   _NULL
   end type drifters_core_type
+
+  interface assignment(=)
+     module procedure drifters_core_copy_new
+  end interface
 
 contains
 
@@ -67,7 +77,29 @@ contains
     if(ier/=0) ermesg = 'drifters::ERROR in drifters_core_del'
   end subroutine drifters_core_del
 
-  
+ !###############################################################################
+ subroutine drifters_core_copy_new(new_instance, old_instance)
+
+    type(drifters_core_type), intent(inout)   :: new_instance
+    type(drifters_core_type), intent(in)      :: old_instance
+
+    character(len=MAX_STR_LEN) :: ermesg
+
+    ermesg = ''
+    call drifters_core_del(new_instance, ermesg)
+    if(ermesg/='') return
+    ! this should provide the right behavior for both pointers and allocatables
+    new_instance%it         = old_instance%it
+    new_instance%nd         = old_instance%nd
+    new_instance%np         = old_instance%np
+    new_instance%npdim      = old_instance%npdim
+    allocate(new_instance%ids( size(old_instance%ids) ))
+    new_instance%ids        = old_instance%ids
+    allocate(new_instance%positions( size(old_instance%positions,1), &
+         &                           size(old_instance%positions,2) ))
+    new_instance%positions  = old_instance%positions
+   
+ end subroutine drifters_core_copy_new
  !###############################################################################
   subroutine drifters_core_resize(self, npdim, ermesg)
     type(drifters_core_type)        :: self

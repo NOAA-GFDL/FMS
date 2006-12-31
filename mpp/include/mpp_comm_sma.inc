@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_sma.inc,v 13.0 2006/03/28 21:40:13 fms Exp $
+! $Id: mpp_comm_sma.inc,v 13.0.6.1 2006/07/27 17:56:03 wfc Exp $
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -14,7 +14,7 @@ subroutine mpp_init( flags,localcomm )
   integer, optional, intent(in) :: flags
   integer, optional, intent(in) :: localcomm ! dummy here, used only in MPI
   integer                       :: num_pes, len
-  integer                       :: i
+  integer                       :: i, logunit
   logical                       :: opened
 #ifdef _CRAYT3E
   intrinsic my_pe
@@ -108,12 +108,13 @@ subroutine mpp_init( flags,localcomm )
   !messages
   if( verbose )call mpp_error( NOTE, 'MPP_INIT: initializing MPP module...' )
   if( pe.EQ.root_pe )then
-     write( stdlog(),'(/a)' )'MPP module '//trim(version)//trim(tagname)
-     write( stdlog(),'(a,i4)' )'MPP started with NPES=', npes
-     write( stdlog(),'(a)' )'Using SMA (shmem) library for message passing...'
-     write( stdlog(), '(a,es12.4,a,i10,a)' ) &
+logunit = stdlog()
+     write( logunit,'(/a)' )'MPP module '//trim(version)//trim(tagname)
+     write( logunit,'(a,i4)' )'MPP started with NPES=', npes
+     write( logunit,'(a)' )'Using SMA (shmem) library for message passing...'
+     write( logunit, '(a,es12.4,a,i10,a)' ) &
           'Realtime clock resolution=', tick_rate, ' sec (', ticks_per_sec, ' ticks/sec)'
-     write( stdlog(), '(a,es12.4,a,i20,a)' ) &
+     write( logunit, '(a,es12.4,a,i20,a)' ) &
           'Clock rolls over after ', max_ticks*tick_rate, ' sec (', max_ticks, ' ticks)'
   end if
   call mpp_clock_begin(clock0)
@@ -124,25 +125,26 @@ end subroutine mpp_init
 !#######################################################################
  !to be called at the end of a run
 subroutine mpp_exit()
-  integer :: i, j, k, n, nmax, istat
+  integer :: i, j, k, n, nmax, istat, outunit
   real    :: t, tmin, tmax, tavg, tstd
   real    :: m, mmin, mmax, mavg, mstd, t_total
 
   if( .NOT.module_is_initialized )return
   call mpp_set_current_pelist()
   call mpp_clock_end(clock0)
+  outunit = stdout()
   t_total = clocks(clock0)%total_ticks*tick_rate
   if( clock_num.GT.0 )then
      if( ANY(clocks(1:clock_num)%detailed) )then
         call sum_clock_data; call dump_clock_summary
      end if
      if( pe.EQ.root_pe )then
-        write( stdout(),'(/a,i4,a)' ) 'Tabulating mpp_clock statistics across ', npes, ' PEs...'
+        write( outunit,'(/a,i4,a)' ) 'Tabulating mpp_clock statistics across ', npes, ' PEs...'
         if( ANY(clocks(1:clock_num)%detailed) ) &
-             write( stdout(),'(a)' )'   ... see mpp_clock.out.#### for details on individual PEs.'
-        write( stdout(),'(/32x,a)' ) '          tmin          tmax          tavg          tstd  tfrac grain pemin pemax'
+             write( outunit,'(a)' )'   ... see mpp_clock.out.#### for details on individual PEs.'
+        write( outunit,'(/32x,a)' ) '          tmin          tmax          tavg          tstd  tfrac grain pemin pemax'
      end if
-     call FLUSH( stdout(), istat )
+     call FLUSH( outunit, istat )
      call mpp_sync()
      do i = 1,clock_num
         if( .NOT.ANY(peset(clocks(i)%peset_num)%list(:).EQ.pe) )cycle
@@ -153,12 +155,12 @@ subroutine mpp_exit()
         tmax = t; call mpp_max(tmax)
         tavg = t; call mpp_sum(tavg); tavg = tavg/mpp_npes()
         tstd = (t-tavg)**2; call mpp_sum(tstd); tstd = sqrt( tstd/mpp_npes() )
-        if( pe.EQ.root_pe )write( stdout(),'(a32,4f14.6,f7.3,3i6)' ) &
+        if( pe.EQ.root_pe )write( outunit,'(a32,4f14.6,f7.3,3i6)' ) &
              clocks(i)%name, tmin, tmax, tavg, tstd, tavg/t_total, &
              clocks(i)%grain, minval(peset(clocks(i)%peset_num)%list), &
              maxval(peset(clocks(i)%peset_num)%list)
      end do
-     if( ANY(clocks(1:clock_num)%detailed) .AND. pe.EQ.root_pe )write( stdout(),'(/32x,a)' ) &
+     if( ANY(clocks(1:clock_num)%detailed) .AND. pe.EQ.root_pe )write( outunit,'(/32x,a)' ) &
           '       tmin       tmax       tavg       tstd       mmin       mmax       mavg       mstd  mavg/tavg'
      do i = 1,clock_num
         !messages: bytelengths and times
@@ -180,7 +182,7 @@ subroutine mpp_exit()
               tmax = t; call mpp_max(tmax)
               tavg = t; call mpp_sum(tavg); tavg = tavg/mpp_npes()
               tstd = (t-tavg)**2; call mpp_sum(tstd); tstd = sqrt( tstd/mpp_npes() )
-              if( pe.EQ.root_pe )write( stdout(),'(a32,4f11.3,5es11.3)' ) &
+              if( pe.EQ.root_pe )write( outunit,'(a32,4f11.3,5es11.3)' ) &
                    trim(clocks(i)%name)//' '//trim(clocks(i)%events(j)%name), &
                    tmin, tmax, tavg, tstd, mmin, mmax, mavg, mstd, mavg/tavg
            end if
@@ -190,7 +192,7 @@ subroutine mpp_exit()
   call mpp_set_current_pelist()
   call mpp_sync()
   call mpp_max(mpp_stack_hwm)
-  if( pe.EQ.root_pe )write( stdout(),* )'MPP_STACK high water mark=', mpp_stack_hwm
+  if( pe.EQ.root_pe )write( outunit,* )'MPP_STACK high water mark=', mpp_stack_hwm
   return
 end subroutine mpp_exit
 
@@ -204,7 +206,7 @@ subroutine mpp_malloc( ptr, newlen, len )
   integer, intent(in)    :: newlen
   integer, intent(inout) :: len
   real                   :: dummy
-  integer                :: words_per_long
+  integer                :: words_per_long, outunit
   integer(LONG_KIND)     :: long
   !argument ptr is a cray pointer, points to a dummy argument in this routine
   pointer( ptr, dummy )
@@ -226,7 +228,8 @@ subroutine mpp_malloc( ptr, newlen, len )
 
   if( debug )then
      call SYSTEM_CLOCK(tick)
-     write( stdout(),'(a,i18,a,i5,a,2i8,i16)' )'T=', tick, ' PE=', pe, ' MPP_MALLOC: len, newlen, ptr=', len, newlen, ptr
+     outunit = stdout()
+     write( outunit,'(a,i18,a,i5,a,2i8,i16)' )'T=', tick, ' PE=', pe, ' MPP_MALLOC: len, newlen, ptr=', len, newlen, ptr
   end if
   return
 end subroutine mpp_malloc

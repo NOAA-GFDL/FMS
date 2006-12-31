@@ -82,14 +82,14 @@ public time_type
 ! Operators defined on time_type
 public operator(+),  operator(-),   operator(*),   operator(/),  &
        operator(>),  operator(>=),  operator(==),  operator(/=), &
-       operator(<),  operator(<=),  operator(//)
+       operator(<),  operator(<=),  operator(//),  assignment(=)
 
 ! Subroutines and functions operating on time_type
 public set_time, increment_time, decrement_time, get_time, interval_alarm
 public repeat_alarm, time_type_to_real, real_to_time_type
 
 ! List of available calendar types
-public    THIRTY_DAY_MONTHS,    JULIAN,    GREGORIAN,  NOLEAP,   NO_CALENDAR
+public    THIRTY_DAY_MONTHS,    JULIAN,    GREGORIAN,  NOLEAP,   NO_CALENDAR, INVALID_CALENDAR
 
 ! Subroutines and functions involving relations between time and calendar
 public set_calendar_type
@@ -125,7 +125,7 @@ public :: set_date_julian, set_date_no_leap, get_date_julian, get_date_no_leap
 ! Global data to define calendar type
 integer, parameter :: THIRTY_DAY_MONTHS = 1,      JULIAN = 2, &
                       GREGORIAN = 3,              NOLEAP = 4, &
-                      NO_CALENDAR = 0
+                      NO_CALENDAR = 0,  INVALID_CALENDAR =-1
 integer, private :: calendar_type = NO_CALENDAR
 integer, parameter :: max_type = 4
 
@@ -161,6 +161,7 @@ interface operator (<=);  module procedure time_le;          end interface
 interface operator (==);  module procedure time_eq;          end interface
 interface operator (/=);  module procedure time_ne;          end interface
 interface operator (//);  module procedure time_real_divide; end interface
+interface assignment(=);  module procedure time_assignment;  end interface
 
 !======================================================================
 
@@ -174,8 +175,8 @@ end interface
 
 !======================================================================
 
-character(len=128) :: version='$Id: time_manager.F90,v 13.0 2006/03/28 21:43:20 fms Exp $'
-character(len=128) :: tagname='$Name: memphis_2006_08 $'
+character(len=128) :: version='$Id: time_manager.F90,v 13.0.2.2 2006/10/07 13:41:24 fms Exp $'
+character(len=128) :: tagname='$Name: memphis_2006_12 $'
 logical :: module_is_initialized = .false.
 
 !======================================================================
@@ -1177,6 +1178,37 @@ time_real_divide = d1 / d2
 
 end function time_real_divide
 ! </FUNCTION>
+
+!-------------------------------------------------------------------------
+! <SUBROUTINE NAME="time_assignment; assignment(=)">
+
+!   <OVERVIEW>
+!       Assigns all components of the time_type variable on
+!       RHS to same components of time_type variable on LHS.
+!   </OVERVIEW>
+!   <DESCRIPTION>         
+!       Assigns all components of the time_type variable on
+!       RHS to same components of time_type variable on LHS.
+!   </DESCRIPTION> 
+!   <TEMPLATE>
+!     time1 = time2
+!   </TEMPLATE>
+
+!   <OUT NAME="time1" UNITS="" TYPE="time_type" DIM="">
+!      A time type variable.
+!   </OUT>
+!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
+!      A time type variable.
+!   </IN>
+
+subroutine time_assignment(time1, time2)
+type(time_type), intent(out) :: time1
+type(time_type), intent(in)  :: time2
+   time1%seconds = time2%seconds
+   time1%days    = time2%days
+   time1%ticks   = time2%ticks
+end subroutine time_assignment
+! </SUBROUTINE>
 
 !-------------------------------------------------------------------------
 ! <FUNCTION NAME="time_type_to_real">
@@ -3324,7 +3356,7 @@ end module time_manager_mod
  use time_manager_mod, only: JULIAN, GREGORIAN, THIRTY_DAY_MONTHS, NOLEAP
  use time_manager_mod, only: operator(-), operator(+),  operator(*),  operator(/),  &
                              operator(>), operator(>=), operator(==), operator(/=), &
-                             operator(<), operator(<=), operator(//)
+                             operator(<), operator(<=), operator(//), assignment(=)
 
  implicit none
 

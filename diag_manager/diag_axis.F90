@@ -26,7 +26,7 @@ private
 public  diag_axis_init, get_diag_axis, get_domain1d, get_domain2d, &
         get_axis_length, get_axis_global_length, diag_subaxes_init, &
         get_diag_axis_cart, get_diag_axis_data, max_axes, get_axis_aux, &
-        get_tile_number, get_axes_shift
+        get_tile_count, get_axes_shift
 
 
 
@@ -56,14 +56,14 @@ character(len=128) :: Axis_sets(max_num_axis_sets)
 type (diag_axis_type), allocatable, save :: Axes(:)
 logical            :: module_is_initialized = .FALSE.
 character(len=128) :: &
-     version='$Id: diag_axis.F90,v 13.0.2.1.4.1 2006/07/10 16:13:14 wfc Exp $'
-character(len=128) :: tagname='$Name: memphis_2006_08 $'
+     version='$Id: diag_axis.F90,v 13.0.2.1.4.1.2.3 2006/11/30 13:39:03 z1l Exp $'
+character(len=128) :: tagname='$Name: memphis_2006_12 $'
 
 contains
 !#######################################################################
 
 function diag_axis_init (name, data, units, cart_name, long_name,     &
-       direction, set_name, edges, Domain, Domain2, aux, tile_number) &
+       direction, set_name, edges, Domain, Domain2, aux, tile_count) &
        result (indexx)
 
 ! increment axis counter and fill in axes     
@@ -89,7 +89,7 @@ function diag_axis_init (name, data, units, cart_name, long_name,     &
   type(domain1d)  , intent(in), optional :: Domain
   type(domain2d)  , intent(in), optional :: Domain2
   character(len=*), intent(in), optional :: aux
-  integer         , intent(in), optional :: tile_number
+  integer         , intent(in), optional :: tile_count
   type(domain1d)                         :: domain_x, domain_y
   integer                                :: indexx, ierr, axlen
   integer                                :: i, set
@@ -191,8 +191,8 @@ function diag_axis_init (name, data, units, cart_name, long_name,     &
  
 !---- axis direction (-1, 0, or +1) ----
   if (present(direction))then
-     if(abs(direction) /= 1) call error_mesg('diag_axis_init in diag_axis_mod', &
-          'direction must be either +1 or -1',FATAL)
+     if(abs(direction) /= 1 .AND. direction /= 0) call error_mesg('diag_axis_init in diag_axis_mod', &
+          'direction must be 0, +1 or -1',FATAL)
      Axes(indexx)%direction = direction
   else
      Axes(indexx)%direction = 0
@@ -211,12 +211,12 @@ function diag_axis_init (name, data, units, cart_name, long_name,     &
             FATAL)
   endif
 
-  Axes(indexx)%tile_number = 1
-  if(present(tile_number)) Axes(indexx)%tile_number = tile_number
+  Axes(indexx)%tile_count = 1
+  if(present(tile_count)) Axes(indexx)%tile_count = tile_count
 
   if ( present(Domain2) ) then
      Axes(indexx)%Domain2 = Domain2
-     call mpp_get_domain_components(Domain2, domain_x, domain_y, tile_number=tile_number)
+     call mpp_get_domain_components(Domain2, domain_x, domain_y, tile_count=tile_count)
      if ( Axes(indexx)%cart_name == 'X' ) Axes(indexx)%Domain = domain_x
      if ( Axes(indexx)%cart_name == 'Y' ) Axes(indexx)%Domain = domain_y
   else
@@ -269,7 +269,7 @@ function diag_subaxes_init(axis,subdata,start_indx,end_indx,domain_1d,domain_2d)
   type(domain2d), intent(in), optional  :: domain_2d
 
   integer                        :: index
-  integer                        :: i,nsub_axis
+  integer                        :: i,nsub_axis, direction
   character(len=128)             :: name, nsub_name   
   character(len=128)             :: units
   character(len=128)             :: cart_name
@@ -308,7 +308,8 @@ function diag_subaxes_init(axis,subdata,start_indx,end_indx,domain_1d,domain_2d)
      long_name = trim(Axes(axis)%long_name)
      units = trim(Axes(axis)%units)
      cart_name = trim(Axes(axis)%cart_name)
-     index =  diag_axis_init (trim(name), subdata, trim(units), trim(cart_name), trim(long_name), &
+     direction = Axes(axis)%direction
+     index =  diag_axis_init (trim(name), subdata, trim(units), trim(cart_name), trim(long_name), direction, &
           Domain2=domain_2d)
   endif        
 end function diag_subaxes_init
@@ -407,15 +408,15 @@ function get_axis_global_length (id) result (length)
 end function get_axis_global_length
 !#######################################################################
 
-function get_tile_number (ids) result (tile_number)
+function get_tile_count (ids) result (tile_count)
   integer, intent(in) :: ids(:)
-  integer             :: tile_number
+  integer             :: tile_count
   integer             :: i, id, flag
 
   if ( size(ids(:)) < 1 .or. size(ids(:)) > 4 ) call error_mesg  &
-       ('get_tile_number in diag_axis_mod', &
+       ('get_tile_count in diag_axis_mod', &
        'input argument has incorrect size', FATAL)
-  tile_number = 1
+  tile_count = 1
   flag = 0
   do i = 1, size(ids(:))
      id = ids(i)
@@ -423,12 +424,12 @@ function get_tile_number (ids) result (tile_number)
           Axes(id)%cart_name == 'Y' ) flag = flag + 1
 !     --- both x/y axes found ---
      if ( flag == 2 ) then
-        tile_number = Axes(id)%tile_number
+        tile_count = Axes(id)%tile_count
         exit
      endif
   enddo
 
-end function get_tile_number
+end function get_tile_count
 !#######################################################################
 
 function get_domain1d (id) result (Domain1)

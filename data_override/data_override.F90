@@ -74,8 +74,8 @@ use time_manager_mod, only: time_type
 implicit none
 private
 
-character(len=128) :: version = '$Id: data_override.F90,v 13.0.4.8 2006/07/22 14:31:09 pjp Exp $'
-character(len=128) :: tagname = '$Name: memphis_2006_08 $'
+character(len=128) :: version = '$Id: data_override.F90,v 13.0.4.9 2006/07/25 12:37:03 pjp Exp $'
+character(len=128) :: tagname = '$Name: memphis_2006_12 $'
 
 type data_type_lima
    character(len=3)   :: gridname
@@ -471,7 +471,6 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
   integer :: index1 ! field index in data_table
   integer :: id_time !index for time interp in override array
   integer :: axis_sizes(4)
-  type(horiz_interp_type) :: id_horz_interp   !index for horizontal interp 
   real, dimension(:),allocatable :: lon_in, lat_in !of the input (source) grid
   real, dimension(:,:), pointer :: lon_local =>NULL(), &
                                    lat_local =>NULL() !of output (target) grid cells
@@ -596,16 +595,14 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
 ! convert lon_in and lat_in from deg to radian
         lon_in = lon_in * deg_to_radian
         lat_in = lat_in * deg_to_radian
-!8 do horizontal_interp_init to get id_horz_interp 
         select case (data_table(index1)%interpol_method)
         case ('bilinear')
-          call horiz_interp_new (id_horz_interp,lon_in, lat_in, lon_local, lat_local,&
+          call horiz_interp_new (override_array(curr_position)%horz_interp,lon_in, lat_in, lon_local, lat_local,&
                interp_method="bilinear")
         case ('bicubic')
-          call horiz_interp_new (id_horz_interp,lon_in, lat_in, lon_local, lat_local,&
+          call horiz_interp_new (override_array(curr_position)%horz_interp,lon_in, lat_in, lon_local, lat_local,&
                interp_method="bicubic")
         end select
-        override_array(curr_position)%horz_interp = id_horz_interp
         deallocate(lon_in)
         deallocate(lat_in)
      endif !(ongrid)
@@ -614,9 +611,6 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
      comp_domain = override_array(curr_position)%comp_domain
 !9 Get id_time  previously stored in override_array
      id_time = override_array(curr_position)%t_index
-! if ongrid == .false. need to get id_horz_interp
-     if(.not. ongrid) &
-          id_horz_interp = override_array(curr_position)%horz_interp
   endif !if curr_position < 0
 
   allocate(data(comp_domain(1):comp_domain(2),comp_domain(3):comp_domain(4),size(data1,3)))
@@ -640,13 +634,13 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
   else  ! off grid case
 ! do time interp to get global data
      if(data_file_is_2D) then
-        call time_interp_external(id_time,time,data(:,:,1),verbose=.false.,horz_interp=id_horz_interp) 
+        call time_interp_external(id_time,time,data(:,:,1),verbose=.false.,horz_interp=override_array(curr_position)%horz_interp) 
         data(:,:,1) = data(:,:,1)*factor
         do i = 2, size(data,3)
            data(:,:,i) = data(:,:,1)
         enddo
      else
-        call time_interp_external(id_time,time,data,verbose=.false.,horz_interp=id_horz_interp)
+        call time_interp_external(id_time,time,data,verbose=.false.,horz_interp=override_array(curr_position)%horz_interp)
         data = data*factor
      endif
   endif

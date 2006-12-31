@@ -1,29 +1,29 @@
-    subroutine MPP_READ_2DDECOMP_2D_( unit, field, domain, data, tindex )
+    subroutine MPP_READ_2DDECOMP_2D_( unit, field, domain, data, tindex, tile_count )
       integer, intent(in) :: unit
       type(fieldtype), intent(in) :: field
       type(domain2D), intent(in) :: domain
       MPP_TYPE_, intent(inout) :: data(:,:)
-      integer, intent(in), optional :: tindex
+      integer, intent(in), optional :: tindex, tile_count
       MPP_TYPE_ :: data3D(size(data,1),size(data,2),1)
 #ifdef use_CRI_pointers
       pointer( ptr, data3D )
       ptr = LOC(data)
-      call mpp_read( unit, field, domain, data3D, tindex)
+      call mpp_read( unit, field, domain, data3D, tindex, tile_count)
 #else
       data3D = RESHAPE( data, SHAPE(data3D) )
-      call mpp_read( unit, field, domain, data3D, tindex)
+      call mpp_read( unit, field, domain, data3D, tindex, tile_count)
       data   = RESHAPE( data3D, SHAPE(data) )
 #endif
       return
     end subroutine MPP_READ_2DDECOMP_2D_
 
-    subroutine MPP_READ_2DDECOMP_3D_( unit, field, domain, data, tindex, tile_number )
+    subroutine MPP_READ_2DDECOMP_3D_( unit, field, domain, data, tindex, tile_count )
 !mpp_read reads <data> which has the domain decomposition <domain>
       integer,           intent(in) :: unit
       type(fieldtype),   intent(in) :: field
       type(domain2D),    intent(in) :: domain
       MPP_TYPE_,      intent(inout) :: data(:,:,:)
-      integer, intent(in), optional :: tindex, tile_number
+      integer, intent(in), optional :: tindex, tile_count
 
       MPP_TYPE_, allocatable :: cdata(:,:,:)
       MPP_TYPE_, allocatable :: gdata(:)
@@ -122,12 +122,12 @@
 ! read compute domain as contiguous data
 
           allocate( cdata(is:ie,js:je,size(data,3)) )
-          call read_record(unit,field,size(cdata(:,:,:)),cdata,tindex,domain,position,tile_number)
+          call read_record(unit,field,size(cdata(:,:,:)),cdata,tindex,domain,position,tile_count)
 
           data(is-isd+1:ie-isd+1,js-jsd+1:je-jsd+1,:) = cdata(:,:,:)
           deallocate(cdata)
       else
-          call read_record(unit,field,size(data(:,:,:)),data,tindex,domain,position,tile_number)
+          call read_record(unit,field,size(data(:,:,:)),data,tindex,domain,position,tile_count)
       end if
 
       return

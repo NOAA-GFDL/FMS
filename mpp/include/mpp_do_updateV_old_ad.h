@@ -1,12 +1,11 @@
 ! -*-f90-*- 
-    subroutine MPP_DO_UPDATE_3Dold_V_( fieldx, fieldy, domainx, domainy, gridtype, flags,  name, bufferx, buffery)
+    subroutine MPP_DO_UPDATE_AD_3Dold_V_( fieldx, fieldy, domainx, domainy, gridtype, flags, name)
 !updates data domain of 3D field whose computational domains have been computed
       type(domain2D), intent(in)    :: domainx, domainy
       MPP_TYPE_, intent(inout), dimension(domainx%x(1)%memory%begin:,domainx%y(1)%memory%begin:,:) :: fieldx, fieldy
-      integer, intent(in)           :: gridtype
+      integer, intent(in), optional :: gridtype
       integer, intent(in), optional :: flags
       character(len=*), intent(in), optional :: name
-      MPP_TYPE_, intent(inout), optional :: bufferx(:), buffery(:)
 
       MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
 #ifdef use_CRI_pointers
@@ -18,7 +17,6 @@
       integer :: midpoint, dir
       integer :: i, j, k, m, n, is, ie, js, je, ke, nlist
       integer :: to_pe, from_pe, list, pos, msgsize
-      integer :: index, is1, ie1, js1, je1, ni, nj, total, start, start1, b_sizex, b_sizey
       logical :: send(8), recv(8)
       character(len=8) :: text
       character(len=64) :: field_name      
@@ -40,7 +38,7 @@
       end if  
 
       if( BTEST(update_flags,NORTH) .AND. BTEST(domainx%fold,NORTH) .AND. BTEST(gridtype,SOUTH) ) &
-           call mpp_error( FATAL, 'MPP_DO_UPDATE_V_OLd: Incompatible grid offset and fold.' )
+           call mpp_error( FATAL, 'MPP_DO_UPDATE_V_OLd_ad: Incompatible grid offset and fold.' )
 
       recv(1) = BTEST(update_flags,EAST)
       recv(3) = BTEST(update_flags,SOUTH)
@@ -56,10 +54,6 @@
       ke = size(fieldx,3)
       buffer_pos = 0        !this initialization goes away if update_domains becomes non-blocking
 
-      b_sizex = 0
-      if(present(bufferx)) b_sizex = size(buffery(:))
-      b_sizey = 0
-      if(present(buffery)) b_sizey = size(buffery(:))
 #ifdef use_CRI_pointers
       ptr = LOC(mpp_domains_stack)
 #endif
@@ -73,13 +67,12 @@
          select case ( gridtype )
          case(BGRID_NE, BGRID_SW, AGRID)
             do dir = 1, 8  ! loop over 8 direction
-               if(send(dir)) then
-                  overPtrx => domainx%list(m)%send(1,1,dir)
+               if(recv(dir)) then
+                  overPtrx => domainx%list(m)%recv(1,1,dir)
                   do n = 1, 3
                      if( overPtrx%overlap(n) ) then
                         is = overPtrx%is(n); ie = overPtrx%ie(n)
                         js = overPtrx%js(n); je = overPtrx%je(n)
-                        if( overPtrx%is_refined(n) ) then
                            select case(overPtrx%rotation)
                            case(ZERO)
                               do k = 1,ke  
@@ -94,90 +87,11 @@
                            case(MINUS_NINETY)
                               if( BTEST(update_flags,SCALAR_BIT) ) then
                                  do k = 1,ke
-                                    do j = js, je
                                        do i = is, ie
-                                          pos = pos + 2
-                                          buffer(pos-1) =  fieldy(i,j,k)
-                                          buffer(pos)   =  fieldx(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              else
-                                 do k = 1,ke
-                                    do j = js, je
-                                       do i = is, ie
-                                          pos = pos + 2
-                                          buffer(pos-1) = -fieldy(i,j,k)
-                                          buffer(pos)   =  fieldx(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end if
-                           case(NINETY)
-                              if( BTEST(update_flags,SCALAR_BIT) ) then
-                                 do k = 1,ke
-                                    do j = js, je
-                                       do i = is, ie
-                                          pos = pos + 2
-                                          buffer(pos-1) = fieldy(i,j,k)
-                                          buffer(pos)   = fieldx(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              else
-                                 do k = 1,ke
-                                    do j = js, je
-                                       do i = is, ie
-                                          pos = pos + 2
-                                          buffer(pos-1) = fieldy(i,j,k)
-                                          buffer(pos)   = -fieldx(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end if
-                           case(ONE_HUNDRED_EIGHTY)
-                              if( BTEST(update_flags,SCALAR_BIT) ) then
-                                 do k = 1,ke
-                                    do j = js, je
-                                       do i = is, ie
+                                    do j = je, js, -1
                                           pos = pos + 2
                                           buffer(pos-1) = fieldx(i,j,k)
                                           buffer(pos)   = fieldy(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              else
-                                 do k = 1,ke
-                                    do j = js, je
-                                       do i = is, ie
-                                          pos = pos + 2
-                                          buffer(pos-1) = -fieldx(i,j,k)
-                                          buffer(pos)   = -fieldy(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end if
-                           end select
-                        else
-                           select case( overPtrx%rotation )
-                           case(ZERO)
-                              do k = 1,ke  
-                                 do j = js, je
-                                    do i = is, ie
-                                       pos = pos + 2
-                                       buffer(pos-1) = fieldx(i,j,k)
-                                       buffer(pos)   = fieldy(i,j,k)
-                                    end do
-                                 end do
-                              end do
-                           case( MINUS_NINETY ) 
-                              if( BTEST(update_flags,SCALAR_BIT) ) then
-                                 do k = 1,ke
-                                    do i = is, ie
-                                       do j = je, js, -1
-                                          pos = pos + 2
-                                          buffer(pos-1) = fieldy(i,j,k)
-                                          buffer(pos)   = fieldx(i,j,k)
                                        end do
                                     end do
                                  end do
@@ -198,8 +112,8 @@
                                     do i = ie, is, -1
                                        do j = js, je
                                           pos = pos + 2
-                                          buffer(pos-1) = fieldy(i,j,k)
-                                          buffer(pos)   = fieldx(i,j,k)
+                                       buffer(pos-1) = fieldx(i,j,k)
+                                       buffer(pos)   = fieldy(i,j,k)
                                        end do
                                     end do
                                  end do
@@ -238,7 +152,6 @@
                              end if
                            end select
                         end if
-                     end if
                   end do
                   nsend = overPtrx%n
                   if( nsend > 0 ) then
@@ -273,57 +186,6 @@
                      if( overPtrx%overlap(n) ) then
                         is = overPtrx%is(n); ie = overPtrx%ie(n)
                         js = overPtrx%js(n); je = overPtrx%je(n)
-                        if( overPtrx%is_refined(n) ) then
-                           select case( overPtrx%rotation )
-                           case( ZERO )
-                              do k = 1,ke
-                                 do j = js, je
-                                    do i = is, ie
-                                       pos = pos + 1
-                                       buffer(pos) = fieldx(i,j,k)
-                                    end do
-                                 end do
-                              end do
-                           case( MINUS_NINETY )
-                              if( BTEST(update_flags,SCALAR_BIT) ) then
-                                 do k = 1,ke
-                                    do j = js, je
-                                       do i = is, ie
-                                          pos = pos + 1
-                                          buffer(pos)   = fieldy(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              else
-                                 do k = 1,ke
-                                    do j = js, je
-                                       do i = is, ie
-                                          pos = pos + 1
-                                          buffer(pos) = -fieldy(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end if
-                           case( NINETY )
-                              do k = 1,ke
-                                 do j = js, je
-                                    do i = is, ie
-                                       pos = pos + 1
-                                       buffer(pos) = fieldy(i,j,k)
-                                    end do
-                                 end do
-                              end do
-                           case (ONE_HUNDRED_EIGHTY)  ! no refinement is considered yet
-                              do k = 1,ke
-                                 do j = js, je
-                                    do i = is, ie
-                                       pos = pos + 1
-                                       buffer(pos) = fieldx(i,j,k)
-                                    end do
-                                 end do
-                              end do
-                           end select
-                        else
                            select case( overPtrx%rotation )
                            case( ZERO )
                               do k = 1,ke  
@@ -385,61 +247,9 @@
                               end if
                            end select
                         end if
-                     end if
                      if(overPtry%overlap(n)) then
                         is = overPtry%is(n); ie = overPtry%ie(n)
                         js = overPtry%js(n); je = overPtry%je(n)
-                        if( overPtry%is_refined(n) ) then
-                           select case( overPtry%rotation )
-                           case(ZERO)
-                              do k = 1,ke  
-                                 do j = js, je
-                                    do i = is, ie
-                                       pos = pos + 1
-                                       buffer(pos)   = fieldy(i,j,k)
-                                    end do
-                                 end do
-                              end do
-                           case( MINUS_NINETY ) 
-                              do k = 1,ke
-                                 do j = js, je
-                                    do i = is, ie
-                                       pos = pos + 1
-                                       buffer(pos) = fieldx(i,j,k)
-                                    end do
-                                 end do
-                              end do
-                           case( NINETY )
-                              if( BTEST(update_flags,SCALAR_BIT) ) then
-                                 do k = 1,ke
-                                    do j = js, je
-                                       do i = is, ie
-                                          pos = pos + 1
-                                          buffer(pos) = fieldx(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              else
-                                 do k = 1,ke
-                                    do j = js, je
-                                       do i = is, ie
-                                          pos = pos + 1
-                                          buffer(pos)   = -fieldx(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end if
-                           case (ONE_HUNDRED_EIGHTY)  ! no refinement is considered yet
-                              do k = 1,ke
-                                 do j = js ,je
-                                    do i = is, ie
-                                       pos = pos + 1
-                                       buffer(pos)   = fieldy(i,j,k)
-                                    end do
-                                 end do
-                              end do
-                           end select
-                        else
                            select case( overPtry%rotation )
                            case(ZERO)
                               do k = 1,ke  
@@ -501,7 +311,6 @@
                               end if
                            end select
                         end if
-                     end if
                   end do
 
                   nsend = overPtrx%n
@@ -556,7 +365,7 @@
             mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, pos )
             if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
                write( text,'(i8)' )mpp_domains_stack_hwm
-               call mpp_error( FATAL, 'MPP_DO_UPDATE_V_old: mpp_domains_stack overflow, ' // &
+               call mpp_error( FATAL, 'MPP_DO_UPDATE_V_OLD_AD: mpp_domains_stack overflow, ' // &
                     'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.')
             end if
             call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
@@ -575,8 +384,8 @@
          select case (gridtype)
          case(BGRID_NE, BGRID_SW, AGRID)
             do dir = 1, 8  ! loop over 8 direction
-               if(recv(dir)) then
-                  overPtrx => domainx%list(m)%recv(1,1,dir)
+               if(send(dir)) then
+                  overPtrx => domainx%list(m)%send(1,1,dir)
                   do n = 1, 3
                      if( overPtrx%overlap(n) ) then
                         is = overPtrx%is(n); ie = overPtrx%ie(n)
@@ -590,9 +399,9 @@
             msgsize = msgsize*2
          case(CGRID_NE, CGRID_SW)
             do dir = 1, 8  ! loop over 8 direction
-               if(recv(dir)) then
-                  overPtrx => domainx%list(m)%recv(1,1,dir)
-                  overPtry => domainy%list(m)%recv(1,1,dir)
+               if(send(dir)) then
+                  overPtrx => domainx%list(m)%send(1,1,dir)
+                  overPtry => domainy%list(m)%send(1,1,dir)
                   do n = 1, 3
                      if( overPtrx%overlap(n) ) then
                         is = overPtrx%is(n); ie = overPtrx%ie(n)
@@ -616,7 +425,7 @@
             mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, buffer_pos+msgsize )
             if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
                write( text,'(i8)' )mpp_domains_stack_hwm
-               call mpp_error( FATAL, 'MPP_DO_UPDATE_V_OLD: mpp_domains_stack overflow, '// &
+               call mpp_error( FATAL, 'MPP_DO_UPDATE_V_OLD_AD: mpp_domains_stack overflow, '// &
                     'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
             end if
             call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe )
@@ -635,8 +444,8 @@
          select case( gridtype )
          case(BGRID_NE, BGRID_SW, AGRID)
             do dir = 8,1,-1
-               if(recv(dir)) then
-                  overPtrx => domainx%list(m)%recv(1,1,dir)
+               if(send(dir)) then
+                  overPtrx => domainx%list(m)%send(1,1,dir)
                   nrecv = overPtrx%n
                   if( nrecv > 0 ) then
                      msgsize = nrecv*ke*2
@@ -646,8 +455,8 @@
                         i = overPtrx%i(n); j = overPtrx%j(n)
                         do k = 1,ke
                            pos = pos + 2
-                           fieldx(i,j,k) = buffer(pos-1)
-                           fieldy(i,j,k) = buffer(pos)
+                           fieldx(i,j,k) = fieldx(i,j,k) + buffer(pos-1)
+                           fieldy(i,j,k) = fieldy(i,j,k) + buffer(pos)
                         end do
                      end do
                   endif
@@ -658,51 +467,24 @@
                         msgsize = (ie-is+1)*(je-js+1)*ke*2
                         pos = buffer_pos - msgsize
                         buffer_pos = pos
-                        if(OverPtrx%is_refined(n)) then
-                           index = overPtrx%index
-                           is1 = domainx%rSpec(1)%isNbr(index); ie1 = domainx%rSpec(1)%ieNbr(index)
-                           js1 = domainx%rSpec(1)%jsNbr(index); je1 = domainx%rSpec(1)%jeNbr(index)
-                           ni = ie1 - is1 + 1
-                           nj = je1 - js1 + 1
-                           total = ni*nj
-                           start1 = (domainx%rSpec(1)%start(index)-1)*ke
-
-                           if(start1+total*ke>b_sizex ) call mpp_error(FATAL, &
-                                "MPP_DO_UPDATE_V_OLD: b_size is less than the size of the data to be filled.")
-                           msgsize = ie - is + 1
-                           start1 = start1 + (js-js1)*ni + is - is1 
-                           do k = 1, ke
-                              start = start1
-                              do j = js, je
-                                 do i = start+1, start+msgsize
-                                    pos = pos + 2
-                                    bufferx(i) = buffer(pos-1)
-                                    buffery(i) = buffer(pos)
-                                 end do
-                                 start = start + ni
-                              end do
-                              start1 = start1 + total
-                           end do
-                        else
                            do k = 1,ke
                               do j = js, je
                                  do i = is, ie
                                     pos = pos + 2
-                                    fieldx(i,j,k) = buffer(pos-1)
-                                    fieldy(i,j,k) = buffer(pos)
+                                 fieldx(i,j,k) = fieldx(i,j,k) + buffer(pos-1)
+                                 fieldy(i,j,k) = fieldy(i,j,k) + buffer(pos)
                                  end do
                               end do
                            end do
                         end if
-                     endif
                   end do
                end if
             enddo
          case(CGRID_NE, CGRID_SW)
             do dir = 8,1,-1
-               if(recv(dir)) then
-                  overPtrx => domainx%list(m)%recv(1,1,dir)
-                  overPtry => domainy%list(m)%recv(1,1,dir)
+               if(send(dir)) then
+                  overPtrx => domainx%list(m)%send(1,1,dir)
+                  overPtry => domainy%list(m)%send(1,1,dir)
                   nrecv = overPtry%n
                   if( nrecv > 0 ) then
                      msgsize = nrecv*ke
@@ -712,7 +494,7 @@
                         i = overPtry%i(n); j = overPtry%j(n)
                         do k = 1,ke
                            pos = pos + 1
-                           fieldy(i,j,k) = buffer(pos)
+                           fieldy(i,j,k) = fieldy(i,j,k) + buffer(pos)
                         end do
                      end do
                   endif
@@ -725,7 +507,7 @@
                         i = overPtrx%i(n); j = overPtrx%j(n)
                         do k = 1,ke
                            pos = pos + 1
-                           fieldx(i,j,k) = buffer(pos)
+                           fieldx(i,j,k) = fieldx(i,j,k) + buffer(pos)
                         end do
                      end do
                   end if
@@ -737,84 +519,30 @@
                         msgsize = (ie-is+1)*(je-js+1)*ke
                         pos = buffer_pos - msgsize
                         buffer_pos = pos
-                        if(OverPtry%is_refined(n)) then
-                           index = overPtry%index
-                           is1 = domainy%rSpec(1)%isNbr(index); ie1 = domainy%rSpec(1)%ieNbr(index)
-                           js1 = domainy%rSpec(1)%jsNbr(index); je1 = domainy%rSpec(1)%jeNbr(index)
-                           ni = ie1 - is1 + 1
-                           nj = je1 - js1 + 1
-                           total = ni*nj
-                           start1 = (domainy%rSpec(1)%start(index)-1)*ke
-
-                           if(start1+total*ke>b_sizey ) call mpp_error(FATAL, &
-                                "MPP_DO_UPDATE_V_OLD: b_size is less than the size of the data to be filled.")
-                           
-                           msgsize = ie - is + 1
-                           start1 = start1 + (js-js1)*ni + is - is1 
-                           do k = 1, ke
-                              start = start1
-                              do j = js, je
-                                 do i = start+1, start+msgsize
-                                    pos = pos + 1
-                                    buffery(i) = buffer(pos)
-                                 end do
-                                 start = start + ni
-                              end do
-                              start1 = start1 + total
-                           end do
-                        else
                            do k = 1,ke
                               do j = js, je
                                  do i = is, ie
                                     pos = pos + 1
-                                    fieldy(i,j,k) = buffer(pos)
+                                 fieldy(i,j,k) = fieldy(i,j,k) + buffer(pos)
                                  end do
                               end do
                            end do
                         end if
-                     endif
                      if(overPtrx%overlap(n)) then
                         is = overPtrx%is(n); ie = overPtrx%ie(n)
                         js = overPtrx%js(n); je = overPtrx%je(n)
                         msgsize = (ie-is+1)*(je-js+1)*ke
                         pos = buffer_pos - msgsize
                         buffer_pos = pos
-                        if(OverPtrx%is_refined(n)) then
-                           index = overPtrx%index
-                           is1 = domainx%rSpec(1)%isNbr(index); ie1 = domainx%rSpec(1)%ieNbr(index)
-                           js1 = domainx%rSpec(1)%jsNbr(index); je1 = domainx%rSpec(1)%jeNbr(index)
-                           ni = ie1 - is1 + 1
-                           nj = je1 - js1 + 1
-                           total = ni*nj
-                           start1 = (domainx%rSpec(1)%start(index)-1)*ke
-
-                           if(start1+total*ke>b_sizex ) call mpp_error(FATAL, &
-                                "MPP_DO_UPDATE_V_OLD: b_size is less than the size of the data to be filled.")
-
-                           msgsize = ie - is + 1
-                           start1 = start1 + (js-js1)*ni + is - is1 
-                           do k = 1, ke
-                              start = start1
-                              do j = js, je
-                                 do i = start+1, start+msgsize
-                                    pos = pos + 1
-                                    bufferx(i) = buffer(pos)
-                                 end do
-                                 start = start + ni
-                              end do
-                              start1 = start1 + total
-                           end do
-                        else                        
                            do k = 1,ke
                               do j = js, je
                                  do i = is, ie
                                     pos = pos + 1
-                                    fieldx(i,j,k) = buffer(pos)
+                                 fieldx(i,j,k) = fieldx(i,j,k) + buffer(pos)
                                  end do
                               end do
                            end do
                         end if
-                     endif
                   end do
                end if
             enddo
@@ -824,11 +552,10 @@
 
       !--- for vector field flip the sign if necessary.            
       if( BTEST(domainx%fold,NORTH) .AND. (.NOT.BTEST(update_flags,SCALAR_BIT)) )then
-
+         !--- flip the sign at the folded north edge.
          j = domainy%y(1)%global%end
          if( domainy%y(1)%data%begin.LE.j .AND. j.LE.domainy%y(1)%data%end )then !fold is within domain
             midpoint = (domainy%x(1)%global%begin+domainy%x(1)%global%end-1)/2
-
             !poles set to 0: BGRID only
             if( gridtype.EQ.BGRID_NE )then
                j  = domainx%y(1)%global%end 
@@ -861,7 +588,7 @@
                   if( is.GT.domainx%x(1)%data%begin )then
 
                      if( 2*is-domainx%x(1)%data%begin.GT.domainx%x(1)%data%end ) &
-                          call mpp_error( FATAL, 'MPP_DO_UPDATE_V_OLD: BGRID_NE west edge ubound error.' )
+                          call mpp_error( FATAL, 'MPP_DO_UPDATE_V_OLD_AD: BGRID_NE west edge ubound error.' )
                      do k = 1,ke
                         do i = domainx%x(1)%data%begin,is-1
                            fieldx(i,j,k) = fieldx(2*is-i,j,k)
@@ -873,7 +600,7 @@
                   is = domainy%x(1)%global%begin
                   if( is.GT.domainy%x(1)%data%begin )then
                      if( 2*is-domainy%x(1)%data%begin-1.GT.domainy%x(1)%data%end ) &
-                          call mpp_error( FATAL, 'MPP_DO_UPDATE_V_OLD: CGRID_NE west edge ubound error.' )
+                          call mpp_error( FATAL, 'MPP_DO_UPDATE_V_OLD_AD: CGRID_NE west edge ubound error.' )
                      do k = 1,ke
                         do i = domainy%x(1)%data%begin,is-1
                            fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
@@ -1062,7 +789,7 @@
                mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, pos)
                if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
                   write( text,'(i8)' )mpp_domains_stack_hwm
-                  call mpp_error( FATAL, 'MPP_DO_UPDATE_V_OLD: mpp_domains_stack overflow, ' // &
+                  call mpp_error( FATAL, 'MPP_DO_UPDATE_V_OLD_AD: mpp_domains_stack overflow, ' // &
                        'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.')
                end if
                call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
@@ -1093,7 +820,7 @@
                mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize) )
                if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
                   write( text,'(i8)' )mpp_domains_stack_hwm
-                  call mpp_error( FATAL, 'MPP_DO_UPDATE_V_OLD: mpp_domains_stack overflow, '// &
+                  call mpp_error( FATAL, 'MPP_DO_UPDATE_V_OLD_AD: mpp_domains_stack overflow, '// &
                        'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
                end if
                call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe )
@@ -1117,10 +844,10 @@
                      do i = is, ie
                         pos = pos + 1
                         if( fieldy(i,j,k) .NE. buffer(pos) ) then
-                           print*,"Error from MPP_DO_UPDATE_V_OLD on pe = ", mpp_pe(), ": y component of vector ", &
+                              print*,"Error from MPP_DO_UPDATE_V_OLD_AD on pe = ", mpp_pe(), ": y component of vector ", &
                                 trim(field_name), " at point (", i, ",", j, ",", k, ") = ", fieldy(i,j,k), &
                                 " does not equal to the value = ", buffer(pos), " on pe ", domainx%list(m)%pe
-                           call mpp_error(FATAL, "MPP_DO_UPDATE_V_OLD: mismatch on the boundary for symmetry point")
+                              call mpp_error(FATAL, "MPP_DO_UPDATE_V_OLD_AD: mismatch on the boundary for symmetry point")
                         end if
                      end do
                   end do
@@ -1137,17 +864,17 @@
                      do i = is, ie
                         pos = pos + 1
                         if( fieldx(i,j,k) .NE. buffer(pos) ) then
-                           print*,"Error from MPP_DO_UPDATE_V_OLD on pe = ", mpp_pe(), ": x-component of vector ", &
+                              print*,"Error from MPP_DO_UPDATE_V_OLD_AD on pe = ", mpp_pe(), ": x-component of vector ", &
                                 trim(field_name), " at point (", i, ",", j, ",", k, ") = ", fieldx(i,j,k), &
                                 " does not equal to the value = ", buffer(pos), " on pe ", domainx%list(m)%pe
-                           call mpp_error(FATAL, "MPP_DO_UPDATE_V_OLD: mismatch on the boundary for symmetry point")
+                              call mpp_error(FATAL, "MPP_DO_UPDATE_V_OLD_AD: mismatch on the boundary for symmetry point")
                         end if
                      end do
                   end do
                end do
             end do
          end do
-         write(stdout(),*) "NOTE from MPP_DO_UPDATE_V_OLD: the data on the boundary is consistent for field " &
+         write(stdout(),*) "NOTE from MPP_DO_UPDATE_V_OLD_AD: the data on the boundary is consistent for field " &
               //trim(field_name)
       end if
 
@@ -1157,4 +884,4 @@
 
       return
 
-    end subroutine MPP_DO_UPDATE_3Dold_V_
+    end subroutine MPP_DO_UPDATE_AD_3Dold_V_

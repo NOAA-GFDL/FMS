@@ -10,7 +10,7 @@ use diag_data_mod, only  : output_fields, input_fields, files, do_diag_field_log
                            global_descriptor
 use diag_axis_mod, only  : get_diag_axis_data, get_axis_global_length, get_diag_axis_cart, &
                            get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, &
-                           get_axis_aux
+                           get_axis_aux, get_axes_shift
 use diag_output_mod, only: diag_flush, diag_field_out, diag_output_init, write_axis_meta_data, &
                            write_field_meta_data, done_meta_data
 use fms_mod, only        : error_mesg, FATAL, WARNING, mpp_pe, mpp_root_pe, lowercase, fms_error_handler
@@ -28,8 +28,8 @@ public get_subfield_size, log_diag_field_info, update_bounds, check_out_of_bound
        find_input_field, init_input_field, init_output_field, diag_data_out, write_static, &
        check_duplicate_output_fields, get_date_dif
 
-character(len=128),private  :: version = '$Id: diag_util.F90,v 13.0.2.2 2006/05/30 20:19:57 gtn Exp $'
-character(len=128),private  :: tagname = '$Name: memphis_2006_08 $'
+character(len=128),private  :: version = '$Id: diag_util.F90,v 13.0.2.2.2.1 2006/08/29 13:39:29 z1l Exp $'
+character(len=128),private  :: tagname = '$Name: memphis_2006_12 $'
 
 contains
 
@@ -49,6 +49,8 @@ real                :: start(3), end(3) ! start and end coordinates in 3 axes
 integer             :: gstart_indx(3), gend_indx(3) ! global start and end indices of output domain in 3 axes 
 real, allocatable   :: subaxis_x(:), subaxis_y(:), subaxis_z(:) !containing local coordinates in x,y,z axes
 character(len=128)  :: msg
+integer             :: ishift, jshift
+
 !initilization for local output
 start = -1.e10; end=-1.e10 ! initially out of (lat/lon/depth) range
 gstart_indx = -1; gend_indx=-1
@@ -139,6 +141,11 @@ else
       endif
    enddo
 endif      
+
+call get_axes_shift(axes, ishift, jshift)
+xend = xend+ishift
+yend = yend+jshift
+
 if(xbegin== -1 .or. xend==-1 .or. ybegin==-1 .or. yend==-1) &
    call error_mesg ('diag_util, get_subfield_size', 'wrong compute domain indices',FATAL)  
 

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_write.inc,v 13.0.4.1.2.1 2006/05/22 01:57:49 fms Exp $
+! $Id: mpp_io_write.inc,v 13.0.4.1.2.1.4.1 2006/08/29 15:25:01 z1l Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                            !
@@ -244,6 +244,18 @@
       integer :: istat      
       logical :: on_root_pe
 
+      !--- the shift and cartesian information is needed in mpp_write_meta_field from all the pe.
+      !--- we may revise this in the future.
+      axis%cartesian = 'N'
+      if( PRESENT(cartesian) )axis%cartesian = cartesian
+      axis%shift = 0
+      if( PRESENT(domain) ) then
+         call mpp_get_global_domain( domain, isg, ieg )
+         if( PRESENT(data) ) then
+            if( size(data(:)) == ieg-isg+2 ) axis%shift = 1
+         end if
+      end if
+
       on_root_pe = pe.EQ.mpp_root_pe()
       if(present(is_root_pe)) on_root_pe = is_root_pe
       if( .NOT.module_is_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
@@ -262,12 +274,9 @@
       axis%name     = name
       axis%units    = units
       axis%longname = longname
-      axis%shift    = 0
-      if( PRESENT(cartesian) )axis%cartesian = cartesian
       if( PRESENT(sense)     )axis%sense     = sense
       if( PRESENT(domain)    )then
           axis%domain = domain
-          call mpp_get_global_domain( domain, isg, ieg )
           call mpp_get_compute_domain( domain, is, ie )
       else
           axis%domain = NULL_DOMAIN1D
@@ -281,9 +290,8 @@
              if(size(data(:)) == ieg-isg+1 ) then
                 allocate( axis%data(isg:ieg) )
              else if( size(data(:)) == ieg-isg+2 ) then
-                if(ie == ieg) ie = ie + 1
+                ie = ie + 1
                 ieg = ieg + 1
-                axis%shift = 1
                 allocate( axis%data(isg:ieg) )
              else
                 call mpp_error( FATAL, 'MPP_WRITE_META_AXIS: size(data) should be equal to ' &
@@ -376,8 +384,30 @@
 !this array is required because of f77 binding on netCDF interface
       integer, allocatable :: axis_id(:)
       real :: a, b
-      integer :: i, istat
+      integer :: i, istat, ishift, jshift
       logical :: on_root_pe
+
+      !--- figure out the location of data, this is needed in mpp_write.
+      !--- for NON-symmetry domain, the position is not an issue.
+      !--- we may need to rethink how to address the symmetric issue.
+      ishift = 0; jshift = 0
+      do i = 1, size(axes(:))
+         select case ( lowercase( axes(i)%cartesian ) )
+         case ( 'x' )
+            ishift = axes(i)%shift
+         case ( 'y' )
+            jshift = axes(i)%shift 
+         end select
+      end do
+
+      field%position = CENTER
+      if(ishift == 1 .AND. jshift == 1) then
+         field%position = CORNER
+      else if(ishift == 1) then
+         field%position = EAST
+      else if(jshift == 1) then
+         field%position = NORTH
+      endif
       
       on_root_pe = pe .EQ. mpp_root_pe()
       if(present(is_root_pe)) on_root_pe = is_root_pe
@@ -753,7 +783,7 @@
       if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
           call mpp_get_compute_domain( axis%domain, is, ie )
           call mpp_get_global_domain( axis%domain, isg, ieg )
-          if( ie == ieg) ie = ie + axis%shift
+          ie = ie + axis%shift
           field%size(1) = ie-is+1
           call write_record( unit, field, field%size(1), axis%data(is:) )
       else
@@ -763,7 +793,7 @@
       return
     end subroutine mpp_write_axis
       
-    subroutine write_record( unit, field, nwords, data, time_in, domain, tile_number, is_root_pe )
+    subroutine write_record( unit, field, nwords, data, time_in, domain, tile_count, is_root_pe )
 !routine that is finally called by all mpp_write routines to perform the write
 !a non-netCDF record contains:
 !      field ID
@@ -785,7 +815,7 @@
       real,              intent(in)           :: data(nwords)
       real(DOUBLE_KIND), intent(in), optional :: time_in
       type(domain2D),    intent(in), optional :: domain
-      integer,           intent(in), optional :: tile_number
+      integer,           intent(in), optional :: tile_count
       logical,           intent(in), optional :: is_root_pe
       integer, dimension(size(field%axes(:))) :: start, axsiz
       real(DOUBLE_KIND) :: time
@@ -881,8 +911,8 @@
              start(i) = max(start(i),1)
           end do
           if( PRESENT(domain) )then
-              call mpp_get_compute_domain( domain, is,  ie,  js,  je,  xsize=isizc, ysize=jsizc, tile_number=tile_number )
-              call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg, xsize=isizg, ysize=jsizg, tile_number=tile_number )
+              call mpp_get_compute_domain( domain, is,  ie,  js,  je,  xsize=isizc, ysize=jsizc, tile_count=tile_count )
+              call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg, xsize=isizg, ysize=jsizg, tile_count=tile_count )
               axsiz(1) = isizc
               axsiz(2) = jsizc
               if( npes.GT.1 .AND. mpp_file(unit)%fileset.EQ.MPP_SINGLE )then
@@ -898,8 +928,8 @@
                       axsiz(2) = je - js + 1
                   end if
               end if  
-              if(ie == ieg) axsiz(1) = axsiz(1) + field%axes(1)%shift
-              if(je == jeg) axsiz(2) = axsiz(2) + field%axes(2)%shift
+              axsiz(1) = axsiz(1) + field%axes(1)%shift
+              axsiz(2) = axsiz(2) + field%axes(2)%shift
           end if  
           if( debug )print '(a,2i3,12i4)', 'WRITE_RECORD: PE, unit, start, axsiz=', pe, unit, start, axsiz
 #ifdef use_netCDF
@@ -1053,7 +1083,7 @@
               if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
                   call mpp_get_compute_domain( axis%domain, is, ie )
                   call mpp_get_global_domain( axis%domain, isg, ieg )
-                  if(ie == ieg) ie  = ie + axis%shift
+                  ie  = ie + axis%shift
                   ieg = ieg + axis%shift
                   error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, ie-is+1, axis%did )
               else

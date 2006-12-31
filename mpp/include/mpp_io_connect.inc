@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_connect.inc,v 13.0.4.1 2006/05/05 19:51:15 z1l Exp $
+! $Id: mpp_io_connect.inc,v 13.0.4.1.2.1.2.1 2006/09/24 13:42:52 fms Exp $
 
 ! <SUBROUTINE NAME="mpp_open">
 
@@ -172,17 +172,17 @@
       integer, intent(in), optional :: pelist(:) !default ALL
       integer, intent(out), optional :: iostat
       logical, intent(in), optional :: is_root_pe      
-
       character(len=16) :: act, acc, for, pos
       character(len=128) :: mesg
       integer :: action_flag, form_flag, access_flag, threading_flag, fileset_flag, length
-      logical :: exists, on_root_pe
-      integer :: ios
+      logical :: exists, on_root_pe, dist_file
+      integer :: ios, nc_pos     !position of .nc in file name
       type(axistype) :: unlim    !used by netCDF with mpp_append
       
       on_root_pe = mpp_pe() == mpp_root_pe()
       if(present(is_root_pe)) on_root_pe = is_root_pe
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_OPEN: must first call mpp_io_init.' )
+      dist_file = .false.
 !set flags
       action_flag = MPP_WRONLY        !default
       if( PRESENT(action) )action_flag = action
@@ -227,10 +227,11 @@
       end if
           
 !get a filename
+      nc_pos = index(file,'.nc.')
+      dist_file = nc_pos>0  ! this is a distributed file ending with filename.nc.0???
       text = file
-      length = len(file)
-      
-      if( form_flag.EQ.MPP_NETCDF.AND. file(length-2:length) /= '.nc' ) &
+      length = len(file)      
+      if(form_flag.EQ.MPP_NETCDF.AND. file(length-2:length) /= '.nc' .AND. .NOT.dist_file) &
          text = trim(file)//'.nc'
          
       if( fileset_flag.EQ.MPP_MULTI )write( text,'(a,i4.4)' )trim(text)//'.', pe
@@ -242,7 +243,6 @@
       if( action_flag.EQ.MPP_RDONLY )then
           act = 'READ'
           pos = 'REWIND'
-!          if( form_flag.EQ.MPP_NETCDF )call mpp_error( FATAL, 'MPP_OPEN: only writes are currently supported with netCDF.' )
       else if( action_flag.EQ.MPP_WRONLY .OR. action_flag.EQ.MPP_OVERWR )then
           act = 'WRITE'
           pos = 'REWIND'

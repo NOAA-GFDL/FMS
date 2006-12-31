@@ -49,8 +49,8 @@ module time_interp_external_mod
   private
 
   character(len=128), private :: version= &
-   'CVS $Id: time_interp_external.F90,v 13.0.2.3 2006/06/25 15:41:04 pjp Exp $'
-  character(len=128), private :: tagname='Tag $Name: memphis_2006_08 $'
+   'CVS $Id: time_interp_external.F90,v 13.0.2.3.2.1 2006/10/03 12:55:04 z1l Exp $'
+  character(len=128), private :: tagname='Tag $Name: memphis_2006_12 $'
 
   integer, parameter, private :: max_fields = 1, modulo_year= 0001,max_files= 1
   integer, parameter, private :: LINEAR_TIME_INTERP = 1 ! not used currently
@@ -58,6 +58,7 @@ module time_interp_external_mod
   ! denotes time intervals in file (interpreted from metadata)
   integer, private :: num_io_buffers = -1 ! set -1 to read all records from disk into memory 
   logical, private :: module_initialized = .false.
+  logical, private :: debug_this_module = .false.
 
   public init_external_field, time_interp_external, time_interp_external_init, &
        time_interp_external_exit, get_external_field_size, get_time_axis
@@ -115,7 +116,7 @@ module time_interp_external_mod
 
       integer :: ioun, io_status
 
-      namelist /time_interp_external_nml/ num_io_buffers
+      namelist /time_interp_external_nml/ num_io_buffers, debug_this_module
 
       ! open and read namelist
 
@@ -232,6 +233,7 @@ module time_interp_external_mod
       fset = MPP_SINGLE
       verb=.false.
       if (PRESENT(verbose)) verb=verbose
+      if (debug_this_module) verb = .true.
       units = 'same'
       if (PRESENT(desired_units)) then
           units = desired_units
@@ -626,6 +628,7 @@ module time_interp_external_mod
       if (PRESENT(interp)) interp_method = interp
       verb=.false.
       if (PRESENT(verbose)) verb=verbose
+      if (debug_this_module) verb = .true.
       
       if (index < 1.or.index > num_fields) &
            call mpp_error(FATAL,'invalid index in call to time_interp_ext -- field was not initialized or failed to initialize')
@@ -749,8 +752,10 @@ subroutine load_record(field, rec, interp)
      jsc=field%jsc;jec=field%jec
 
      if (field%domain_present.and..not.PRESENT(interp)) then
+        if (debug_this_module) write(stdout(),*) 'reading record with domain for field ',trim(field%name)
         call mpp_read(field%unit,field%field,field%domain,field%buf3d,rec)
      else
+        if (debug_this_module) write(stdout(),*) 'reading record without domain for field ',trim(field%name)
         call mpp_read(field%unit,field%field,field%buf3d,rec)
      endif
 

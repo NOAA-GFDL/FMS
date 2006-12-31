@@ -1,28 +1,38 @@
-! $Id: drifters_input.F90,v 13.0 2006/03/28 21:38:28 fms Exp $
+! $Id: drifters_input.F90,v 13.0.2.1.2.1 2006/11/29 19:08:19 fms Exp $
 
 #include <fms_platform.h>
 
 
 module drifters_input_mod
   implicit none
+  private
+
+  public :: drifters_input_type, drifters_input_new, drifters_input_del, drifters_input_save, assignment(=)
 
   ! Globals
   integer, parameter, private   :: MAX_STR_LEN = 128
-  character(MAX_STR_LEN), parameter, private :: version = '$Id: drifters_input.F90,v 13.0 2006/03/28 21:38:28 fms Exp $'
+  character(MAX_STR_LEN), parameter, private :: version = '$Id: drifters_input.F90,v 13.0.2.1.2.1 2006/11/29 19:08:19 fms Exp $'
   character, parameter, private :: SEPARATOR = ' '
 
   type drifters_input_type
+     ! Be sure to update drifters_input_new, drifters_input_del and drifters_input_copy_new
+     ! when adding members
      character(len=MAX_STR_LEN), _ALLOCATABLE :: position_names(:) _NULL
      character(len=MAX_STR_LEN), _ALLOCATABLE :: position_units(:) _NULL
      character(len=MAX_STR_LEN), _ALLOCATABLE :: field_names(:)    _NULL
      character(len=MAX_STR_LEN), _ALLOCATABLE :: field_units(:)    _NULL
      character(len=MAX_STR_LEN), _ALLOCATABLE :: velocity_names(:) _NULL
+     real                      , _ALLOCATABLE :: positions(:,:) _NULL
+     integer                   , _ALLOCATABLE :: ids(:)         _NULL
      character(len=MAX_STR_LEN)               :: time_units
      character(len=MAX_STR_LEN)               :: title
      character(len=MAX_STR_LEN)               :: version
-     real   , _ALLOCATABLE :: positions(:,:) _NULL
-     integer, _ALLOCATABLE :: ids(:)         _NULL
   end type drifters_input_type
+
+  interface assignment(=)
+     module procedure drifters_input_copy_new
+  end interface
+ 
 
   contains
 
@@ -196,17 +206,45 @@ module drifters_input_mod
     type(drifters_input_type)    :: self
     character(len=*), intent(out):: ermesg
 
+    integer :: iflag
+
     ermesg = ''
 
-    deallocate(self%position_names)
-    deallocate(self%position_units)
-    deallocate(self%field_names)
-    deallocate(self%field_units)
-    deallocate(self%velocity_names)
-    deallocate(self%ids)
-    deallocate(self%positions)
+    deallocate(self%position_names, stat=iflag)
+    deallocate(self%position_units, stat=iflag)
+    deallocate(self%field_names, stat=iflag)
+    deallocate(self%field_units, stat=iflag)
+    deallocate(self%velocity_names, stat=iflag)
+    deallocate(self%ids, stat=iflag)
+    deallocate(self%positions, stat=iflag)
     
   end subroutine drifters_input_del
+
+!===============================================================================
+  subroutine drifters_input_copy_new(new_instance, old_instance)
+
+    type(drifters_input_type), intent(inout) :: new_instance
+    type(drifters_input_type), intent(in)    :: old_instance
+
+    allocate(new_instance%position_names( size(old_instance%position_names) ))
+    allocate(new_instance%position_units( size(old_instance%position_units) ))
+    allocate(new_instance%field_names( size(old_instance%field_names) ))
+    allocate(new_instance%field_units( size(old_instance%field_units) ))
+    allocate(new_instance%velocity_names( size(old_instance%velocity_names) ))
+    new_instance%position_names = old_instance%position_names
+    new_instance%position_units = old_instance%position_units 
+    new_instance%field_names    = old_instance%field_names
+    new_instance%field_units    = old_instance%field_units
+    new_instance%velocity_names = old_instance%velocity_names
+    new_instance%time_units     = old_instance%time_units
+    new_instance%title          = old_instance%title
+    new_instance%version        = old_instance%version
+    allocate(new_instance%positions( size(old_instance%positions,1),size(old_instance%positions,2) ))
+    new_instance%positions      = old_instance%positions
+    allocate(new_instance%ids(size(old_instance%ids)))
+    new_instance%ids            = old_instance%ids
+
+  end subroutine drifters_input_copy_new
 
 !===============================================================================
   subroutine drifters_input_save(self, filename, geolon, geolat, ermesg)

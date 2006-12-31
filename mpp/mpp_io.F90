@@ -321,7 +321,7 @@ use mpp_domains_mod,    only : domain1d, domain2d, NULL_DOMAIN1D, mpp_domains_in
 use mpp_domains_mod,    only : mpp_get_global_domain, mpp_get_compute_domain
 use mpp_domains_mod,    only :  mpp_get_data_domain, mpp_get_memory_domain
 use mpp_domains_mod,    only : mpp_update_domains, mpp_global_field, mpp_domain_is_symmetry
-use mpp_domains_mod,    only : operator( .NE. )
+use mpp_domains_mod,    only : operator( .NE. ), mpp_get_domain_shift
 
 implicit none
 private
@@ -410,6 +410,7 @@ private
      integer                 :: time_axis_index
      integer                 :: id, type, natt, ndim
      type(atttype), pointer  :: Att(:) =>NULL()
+     integer                 :: position ! indicate the location of the data ( CENTER, NORTH, EAST, CORNER )
   end type fieldtype
 
   type :: filetype
@@ -781,9 +782,9 @@ private
 
 
   character(len=128) :: version= &
-       '$Id: mpp_io.F90,v 13.0.2.1.2.1.4.1 2006/07/31 12:29:27 z1l Exp $'
+       '$Id: mpp_io.F90,v 13.0.2.1.2.1.4.1.2.2 2006/09/01 16:05:16 z1l Exp $'
   character(len=128) :: tagname= &
-       '$Name: memphis_2006_08 $'
+       '$Name: memphis_2006_12 $'
 
 contains
 
@@ -848,14 +849,13 @@ program mpp_io_test
   pe = mpp_pe()
   npes = mpp_npes()
 
-!possibly open a file called mpp_io_test.nml
   do
      inquire( unit=unit, opened=opened )
      if( .NOT.opened )exit
      unit = unit + 1
      if( unit.EQ.100 )call mpp_error( FATAL, 'Unable to locate unit number.' )
   end do
-  open( unit=unit, status='OLD', file='mpp_io_test.nml', err=10 )
+  open( unit=unit, status='OLD', file='input.nml', err=10 )
   read( unit,mpp_io_test_nml )
   close(unit)
 10 continue
@@ -877,14 +877,14 @@ program mpp_io_test
   write( file,'(a,i3.3)' )trim(file), npes
 
   call test_netcdf_io('Simple')
-  call test_netcdf_io('Symmetry T_cell')
-  call test_netcdf_io('Symmetry E_cell')
-  call test_netcdf_io('Symmetry N_cell')
-  call test_netcdf_io('Symmetry C_cell')
-  call test_netcdf_io('Symmetry T_cell memory')
-  call test_netcdf_io('Symmetry E_cell memory')
-  call test_netcdf_io('Symmetry N_cell memory')
-  call test_netcdf_io('Symmetry C_cell memory')
+  call test_netcdf_io('Symmetry_T_cell')
+  call test_netcdf_io('Symmetry_E_cell')
+  call test_netcdf_io('Symmetry_N_cell')
+  call test_netcdf_io('Symmetry_C_cell')
+  call test_netcdf_io('Symmetry_T_cell_memory')
+  call test_netcdf_io('Symmetry_E_cell_memory')
+  call test_netcdf_io('Symmetry_N_cell_memory')
+  call test_netcdf_io('Symmetry_C_cell_memory')
   call mpp_io_exit()
   call mpp_domains_exit()
   call mpp_exit()
@@ -904,13 +904,13 @@ program mpp_io_test
   select case(type)
   case('Simple')
      ishift = 0; jshift = 0; symmetry = .false.
-  case('Symmetry T_cell', 'Symmetry T_cell memory')
+  case('Symmetry_T_cell', 'Symmetry_T_cell_memory')
      ishift = 0; jshift = 0; symmetry = .true.
-  case('Symmetry E_cell', 'Symmetry E_cell memory')
+  case('Symmetry_E_cell', 'Symmetry_E_cell_memory')
      ishift = 1; jshift = 0; symmetry = .true.
-  case('Symmetry N_cell', 'Symmetry N_cell memory')
+  case('Symmetry_N_cell', 'Symmetry_N_cell_memory')
      ishift = 0; jshift = 1; symmetry = .true.
-  case('Symmetry C_cell', 'Symmetry C_cell memory')
+  case('Symmetry_C_cell', 'Symmetry_C_cell_memory')
      ishift = 1; jshift = 1; symmetry = .true.
   case default
      call mpp_error(FATAL, "type = "//type//" is not a valid test type")
@@ -975,11 +975,11 @@ program mpp_io_test
   if( pe.EQ.mpp_root_pe() )print *, 'netCDF distributed write'
   call mpp_open( unit, trim(type)//"_"//trim(file)//'d', action=MPP_OVERWR, &
                  form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI )
-  call mpp_write_meta( unit, x, 'X', 'km', 'X distance', domain=xdom, data=(/(i-1.,i=1,nx+ishift)/) )
-  call mpp_write_meta( unit, y, 'Y', 'km', 'Y distance', domain=ydom, data=(/(i-1.,i=1,ny+jshift)/) )
-  call mpp_write_meta( unit, z, 'Z', 'km', 'Z distance',              data=(/(i-1.,i=1,nz)/) )
-  call mpp_write_meta( unit, t, 'T', 'sec', 'Time' )
-  call mpp_write_meta( unit, f, (/x,y,z,t/), 'Data', 'metres', 'Random data' )
+  call mpp_write_meta( unit, x, 'X', 'km', 'X distance', 'X', domain=xdom, data=(/(i-1.,i=1,nx+ishift)/) )
+  call mpp_write_meta( unit, y, 'Y', 'km', 'Y distance', 'Y', domain=ydom, data=(/(i-1.,i=1,ny+jshift)/) )
+  call mpp_write_meta( unit, z, 'Z', 'km', 'Z distance', 'Z', data=(/(i-1.,i=1,nz)/) )
+  call mpp_write_meta( unit, t, 'T', 'sec', 'Time', 'T' )
+  call mpp_write_meta( unit, f, (/x,y,z,t/), 'Data', 'metres', 'Random data', pack=1 )
   call mpp_write( unit, x )
   call mpp_write( unit, y )
   call mpp_write( unit, z )
@@ -992,10 +992,10 @@ program mpp_io_test
 !netCDF single-threaded write
   if( pe.EQ.mpp_root_pe() )print *, 'netCDF single-threaded write'
   call mpp_open( unit, trim(type)//"_"//trim(file)//'s', action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE )
-  call mpp_write_meta( unit, x, 'X', 'km', 'X distance', domain=xdom, data=(/(i-1.,i=1,nx+ishift)/) )
-  call mpp_write_meta( unit, y, 'Y', 'km', 'Y distance', domain=ydom, data=(/(i-1.,i=1,ny+jshift)/) )
-  call mpp_write_meta( unit, z, 'Z', 'km', 'Z distance',              data=(/(i-1.,i=1,nz)/) )
-  call mpp_write_meta( unit, t, 'T', 'sec', 'Time' )
+  call mpp_write_meta( unit, x, 'X', 'km', 'X distance', 'X', domain=xdom, data=(/(i-1.,i=1,nx+ishift)/) )
+  call mpp_write_meta( unit, y, 'Y', 'km', 'Y distance', 'Y', domain=ydom, data=(/(i-1.,i=1,ny+jshift)/) )
+  call mpp_write_meta( unit, z, 'Z', 'km', 'Z distance', 'Z',              data=(/(i-1.,i=1,nz)/) )
+  call mpp_write_meta( unit, t, 'T', 'sec', 'Time', 'T' )
   call mpp_write_meta( unit, f, (/x,y,z,t/), 'Data', 'metres', 'Random data', pack=1 )
   call mpp_write( unit, x )
   call mpp_write( unit, y )
@@ -1006,6 +1006,7 @@ program mpp_io_test
   end do
   call mpp_close(unit)
 
+  allocate( rdata(is:ie,js:je,nz) )
 !netCDF multi-threaded read
   if( pe.EQ.mpp_root_pe() )print *, 'netCDF multi-threaded read'
   call mpp_sync()               !wait for previous write to complete
@@ -1024,18 +1025,51 @@ program mpp_io_test
   call mpp_get_atts(vars(1),name=varname)
 
   if( varname.NE.'Data' )call mpp_error( FATAL, 'File being read is not the expected one.' )
-  allocate( rdata(is:ie,js:je,nz) )
   call mpp_read( unit, vars(1), domain, rdata, 1 )
   rchk = mpp_chksum(rdata(is:ie,js:je,:))
   chk  = mpp_chksum( data(is+ioff:ie+ioff,js+joff:je+joff,:))
   if( pe.EQ.mpp_root_pe() )print '(a,2z18)', trim(type)//' checksum=', rchk, chk
   if( rchk == chk ) then
-      if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, trim(type)//': data comparison are OK.' )
+      if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, trim(type)//': single-fileset: data comparison are OK.' )
   else
-      call mpp_error( FATAL, 'Checksum error on multi-threaded netCDF read for type '//trim(type) )
+      call mpp_error( FATAL, 'Checksum error on multi-threaded/single-fileset netCDF read for type ' &
+               //trim(type) )
   end if
 
   deallocate( atts, axes, vars, tstamp )
+
+!netCDF distributed read
+  if( pe.EQ.mpp_root_pe() )print *, 'netCDF multi-threaded read'
+  call mpp_sync()               !wait for previous write to complete
+  call mpp_open( unit, trim(type)//"_"//trim(file)//'d', action=MPP_RDONLY,  &
+                 form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI )
+  call mpp_get_info( unit, ndim, nvar, natt, ntime )
+  allocate( atts(natt) )
+  allocate( axes(ndim) )
+  allocate( vars(nvar) )
+  allocate( tstamp(ntime) )
+  call mpp_get_atts ( unit, atts(:) )
+  call mpp_get_axes ( unit, axes(:) )
+  call mpp_get_fields ( unit, vars(:) )
+  call mpp_get_times( unit, tstamp(:) )
+
+  call mpp_get_atts(vars(1),name=varname)
+  rdata = 0
+
+  if( varname.NE.'Data' )call mpp_error( FATAL, 'File being read is not the expected one.' )
+  call mpp_read( unit, vars(1), domain, rdata, 1 )
+  rchk = mpp_chksum(rdata(is:ie,js:je,:))
+  chk  = mpp_chksum( data(is+ioff:ie+ioff,js+joff:je+joff,:))
+  if( pe.EQ.mpp_root_pe() )print '(a,2z18)', trim(type)//' checksum=', rchk, chk
+  if( rchk == chk ) then
+      if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, trim(type)//': multi-fileset: data comparison are OK.' )
+  else
+      call mpp_error( FATAL, 'Checksum error on multi-threaded/multi-fileset netCDF read for type ' &
+           //trim(type) )
+  end if
+
+  deallocate( atts, axes, vars, tstamp )
+
   deallocate( rdata, gdata, data)
 
   end subroutine test_netcdf_io

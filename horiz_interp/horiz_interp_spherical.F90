@@ -59,7 +59,7 @@ module horiz_interp_spherical_mod
 
   !-----------------------------------------------------------------------
   character(len=128) :: version = '$Id: horiz_interp_spherical.F90,v 13.0.2.1 2006/06/25 14:58:32 pjp Exp $'
-  character(len=128) :: tagname = '$Name: memphis_2006_08 $'
+  character(len=128) :: tagname = '$Name: memphis_2006_12 $'
   logical            :: do_vers = .true.
   logical            :: module_is_initialized = .FALSE.
 

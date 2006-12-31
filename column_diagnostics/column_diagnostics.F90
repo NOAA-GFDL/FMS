@@ -33,8 +33,8 @@ private
 !----------- ****** VERSION NUMBER ******* ---------------------------
 
 
-character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 13.0 2006/03/28 21:37:34 fms Exp $'
-character(len=128)  :: tag     =  '$Name: memphis_2006_08 $'
+character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 13.0.4.1 2006/09/19 20:26:05 wfc Exp $'
+character(len=128)  :: tag     =  '$Name: memphis_2006_12 $'
 
 
 
@@ -129,10 +129,10 @@ subroutine column_diagnostics_init
 !    write version number and namelist to logfile.
 !---------------------------------------------------------------------
       call write_version_number (version, tag)
-      if (mpp_pe() == mpp_root_pe())    &
+      if (mpp_pe() == mpp_root_pe())    then
                     unit = stdlog()
                     write (unit, nml=column_diagnostics_nml)
-
+      endif
 !--------------------------------------------------------------------
       module_is_initialized = .true.
 

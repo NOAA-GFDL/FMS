@@ -233,7 +233,7 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_end
 
 !-----------------------------------------------------------------------
  character(len=128) :: version = '$Id: horiz_interp.f90,v 13.0.2.3 2006/06/29 19:24:44 pjp Exp $'
- character(len=128) :: tagname = '$Name: memphis_2006_08 $'
+ character(len=128) :: tagname = '$Name: memphis_2006_12 $'
  logical            :: module_is_initialized = .FALSE.
 !-----------------------------------------------------------------------
 

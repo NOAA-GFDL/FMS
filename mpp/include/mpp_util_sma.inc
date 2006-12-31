@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util_sma.inc,v 13.0 2006/03/28 21:42:03 fms Exp $
+! $Id: mpp_util_sma.inc,v 13.0.6.1 2006/08/29 15:25:01 z1l Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -37,7 +37,11 @@ subroutine mpp_error_basic( errortype, errormsg )
   case(NOTE)
      write( stdout(),'(a)' )trim(text)
   case default
+#ifdef __SX
+     write( stderr(), * )trim(text)
+#else
      write( stderr(),'(/a/)' )trim(text)
+#endif
      write( stdout(),'(/a/)' )trim(text)
      if( errortype.EQ.FATAL .OR. warnings_are_fatal )then
         call FLUSH(stdout(),istat)

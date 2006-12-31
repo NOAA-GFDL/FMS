@@ -6,8 +6,11 @@
 
 MODULE cloud_interpolator_mod
   implicit none
+  private
 
-character(128), parameter :: version = '$Id: cloud_interpolator.F90,v 13.0 2006/03/28 21:38:14 fms Exp $'
+  public :: cld_ntrp_linear_cell_interp, cld_ntrp_locate_cell, cld_ntrp_get_cell_values
+
+character(128), parameter :: version = '$Id: cloud_interpolator.F90,v 13.0.4.1 2006/11/29 19:08:04 fms Exp $'
 real, parameter           :: tol = 10*epsilon(1.)
 
 CONTAINS

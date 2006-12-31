@@ -116,8 +116,8 @@ public  diag_manager_init, send_data, send_tile_averaged_data, diag_manager_end,
 
 
 ! version number of this module
-character(len=128)  :: version = '$Id: diag_manager.F90,v 1.1.2.6.2.6 2006/05/22 15:05:19 pjp Exp $'
-character(len=128)  :: tagname = '$Name: memphis_2006_08 $'  
+character(len=128)  :: version = '$Id: diag_manager.F90,v 1.1.2.6.2.7 2006/10/19 18:00:42 fms Exp $'
+character(len=128)  :: tagname = '$Name: memphis_2006_12 $'  
 
 
 ! <INTERFACE NAME="send_data">
@@ -2631,8 +2631,8 @@ end module diag_manager_mod
  enddo
  lon  = lon_global(is:ie)
  lat  = lat_global(js:je)
- lonb = lon_global(is:ie+1)
- latb = lat_global(js:je+1)
+ lonb = lonb_global(is:ie+1)
+ latb = latb_global(js:je+1)
 
  end subroutine compute_grid
 !=================================================================================================================================

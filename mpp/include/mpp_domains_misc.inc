@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_misc.inc,v 13.0.2.1 2006/04/11 18:08:44 z1l Exp $
+! $Id: mpp_domains_misc.inc,v 13.0.2.1.2.3.2.1.4.1 2006/12/01 01:03:32 z1l Exp $
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -33,6 +33,8 @@
     subroutine mpp_domains_init(flags)
       integer, intent(in), optional :: flags
       integer                       :: l=0
+      integer                       :: unit_begin, unit_end, unit_nml, io_status
+      logical                       :: opened
 
       if( module_is_initialized )return
       call mpp_init(flags)           !this is a no-op if already initialized
@@ -47,19 +49,25 @@
           domain_clocks_on = flags.EQ.MPP_DOMAIN_TIME
       end if
 
+      !--- namelist 
+      unit_begin = 103
+      unit_end   = 512
+      do unit_nml = unit_begin, unit_end
+         inquire( unit_nml,OPENED=opened )
+         if( .NOT.opened )exit
+      end do
+      open(unit_nml,file='input.nml')
+      read(unit_nml,mpp_domains_nml,iostat=io_status)
+      close(unit_nml)
+
       call mpp_domains_set_stack_size(32768) !default, pretty arbitrary
 #ifdef use_libSMA
       call mpp_malloc( ptr_info, 16, l )
 #endif 
 
 !NULL_DOMAIN is a domaintype that can be used to initialize to undef
-      NULL_DOMAIN1D%global%begin  = -1; NULL_DOMAIN1D%global%end  = -1; NULL_DOMAIN1D%global%size = 0
-      NULL_DOMAIN1D%data%begin    = -1; NULL_DOMAIN1D%data%end    = -1; NULL_DOMAIN1D%data%size = 0
-      NULL_DOMAIN1D%compute%begin = -1; NULL_DOMAIN1D%compute%end = -1; NULL_DOMAIN1D%compute%size = 0
-      NULL_DOMAIN1D%pe = NULL_PE
-      NULL_DOMAIN2D%x = NULL_DOMAIN1D
-      NULL_DOMAIN2D%y = NULL_DOMAIN1D
-      NULL_DOMAIN2D%pe = NULL_PE 
+      call mpp_define_null_domain(NULL_DOMAIN1d);
+      call mpp_define_null_domain(NULL_DOMAIN2d);
 
       if( domain_clocks_on )then
           pack_clock      = mpp_clock_id( 'Halo pack' )
@@ -531,26 +539,6 @@
 #undef MPP_REDISTRIBUTE_5D_
 #define MPP_REDISTRIBUTE_5D_ mpp_redistribute_i8_5D
 #include <mpp_update_domains2D.h>
-
-!!$#undef MPP_TYPE_
-!!$#define MPP_TYPE_ logical(LONG_KIND)
-!!$#undef MPP_UPDATE_DOMAINS_2D_
-!!$#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_l8_2D
-!!$#undef MPP_UPDATE_DOMAINS_3D_
-!!$#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_l8_3D
-!!$#undef MPP_UPDATE_DOMAINS_4D_
-!!$#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_l8_4D
-!!$#undef MPP_UPDATE_DOMAINS_5D_
-!!$#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_l8_5D
-!!$#undef MPP_REDISTRIBUTE_2D_
-!!$#define MPP_REDISTRIBUTE_2D_ mpp_redistribute_l8_2D
-!!$#undef MPP_REDISTRIBUTE_3D_
-!!$#define MPP_REDISTRIBUTE_3D_ mpp_redistribute_l8_3D
-!!$#undef MPP_REDISTRIBUTE_4D_
-!!$#define MPP_REDISTRIBUTE_4D_ mpp_redistribute_l8_4D
-!!$#undef MPP_REDISTRIBUTE_5D_
-!!$#define MPP_REDISTRIBUTE_5D_ mpp_redistribute_l8_5D
-!!$#include <mpp_update_domains2D.h>
 #endif
 
 #ifndef no_4byte_reals
@@ -628,40 +616,20 @@
 #define MPP_REDISTRIBUTE_5D_ mpp_redistribute_i4_5D
 #include <mpp_update_domains2D.h>
 
-!!$#undef MPP_TYPE_
-!!$#define MPP_TYPE_ logical(INT_KIND)
-!!$#undef MPP_UPDATE_DOMAINS_2D_
-!!$#define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_l4_2D
-!!$#undef MPP_UPDATE_DOMAINS_3D_
-!!$#define MPP_UPDATE_DOMAINS_3D_ mpp_update_domain2D_l4_3D
-!!$#undef MPP_UPDATE_DOMAINS_4D_
-!!$#define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_l4_4D
-!!$#undef MPP_UPDATE_DOMAINS_5D_
-!!$#define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_l4_5D
-!!$#undef MPP_REDISTRIBUTE_2D_
-!!$#define MPP_REDISTRIBUTE_2D_ mpp_redistribute_l4_2D
-!!$#undef MPP_REDISTRIBUTE_3D_
-!!$#define MPP_REDISTRIBUTE_3D_ mpp_redistribute_l4_3D
-!!$#undef MPP_REDISTRIBUTE_4D_
-!!$#define MPP_REDISTRIBUTE_4D_ mpp_redistribute_l4_4D
-!!$#undef MPP_REDISTRIBUTE_5D_
-!!$#define MPP_REDISTRIBUTE_5D_ mpp_redistribute_l4_5D
-!!$#include <mpp_update_domains2D.h>
-
 !*******************************************************
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
-#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
-#define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_r8_3d
-#undef MPP_DOMAINS_DO_UPDATE_3Dold_
-#define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_r8_3d
+#undef MPP_DO_UPDATE_3Dnew_
+#define MPP_DO_UPDATE_3Dnew_ mpp_do_update_new_r8_3d
+#undef MPP_DO_UPDATE_3Dold_
+#define MPP_DO_UPDATE_3Dold_ mpp_do_update_old_r8_3d
 #ifdef  VECTOR_FIELD_
-#undef MPP_DOMAINS_DO_UPDATE_3Dnew_V_
-#define MPP_DOMAINS_DO_UPDATE_3Dnew_V_ mpp_do_update_new_r8_3dv
-#undef MPP_DOMAINS_DO_UPDATE_3Dold_V_
-#define MPP_DOMAINS_DO_UPDATE_3Dold_V_ mpp_do_update_old_r8_3dv
+#undef MPP_DO_UPDATE_3Dnew_V_
+#define MPP_DO_UPDATE_3Dnew_V_ mpp_do_update_new_r8_3dv
+#undef MPP_DO_UPDATE_3Dold_V_
+#define MPP_DO_UPDATE_3Dold_V_ mpp_do_update_old_r8_3dv
 #endif
 #include <mpp_do_update_old.h>
 #include <mpp_do_updateV_old.h>
@@ -682,10 +650,10 @@
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
-#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
-#define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_c8_3d
-#undef MPP_DOMAINS_DO_UPDATE_3Dold_
-#define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_c8_3d
+#undef MPP_DO_UPDATE_3Dnew_
+#define MPP_DO_UPDATE_3Dnew_ mpp_do_update_new_c8_3d
+#undef MPP_DO_UPDATE_3Dold_
+#define MPP_DO_UPDATE_3Dold_ mpp_do_update_old_c8_3d
 #include <mpp_do_update_old.h>
 #if defined(use_GSM)              
 #include <mpp_do_update_gsm.h>
@@ -701,10 +669,10 @@
 #ifndef no_8byte_integers
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
-#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
-#define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_i8_3d
-#undef MPP_DOMAINS_DO_UPDATE_3Dold_
-#define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_i8_3d
+#undef MPP_DO_UPDATE_3Dnew_
+#define MPP_DO_UPDATE_3Dnew_ mpp_do_update_new_i8_3d
+#undef MPP_DO_UPDATE_3Dold_
+#define MPP_DO_UPDATE_3Dold_ mpp_do_update_old_i8_3d
 #include <mpp_do_update_old.h>
 #if defined(use_GSM)              
 #include <mpp_do_update_gsm.h>
@@ -716,24 +684,6 @@
 #include <mpp_do_update_new.h>
 #endif
 
-
-!!$#undef MPP_TYPE_
-!!$#define MPP_TYPE_ logical(LONG_KIND)
-!!$#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
-!!$#define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_l8_3d
-!!$#undef MPP_DOMAINS_DO_UPDATE_3Dold_
-!!$#define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_l8_3d
-!!$#include <mpp_do_update_old.h>
-!!$#if defined(use_GSM)              
-!!$#include <mpp_do_update_gsm.h>
-!!$#elif defined(use_CAF)
-!!$#undef CAFPNTR_TYPE_3D_
-!!$#define CAFPNTR_TYPE_3D_ cafptr_l8_3d_type
-!!$#include <mpp_do_update_caf.h>
-!!$#else
-!!$#include <mpp_do_update_new.h>
-!!$#endif
-
 #endif
 
 #ifndef no_4byte_reals
@@ -741,15 +691,15 @@
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
-#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
-#define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_r4_3d
-#undef MPP_DOMAINS_DO_UPDATE_3Dold_
-#define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_r4_3d
+#undef MPP_DO_UPDATE_3Dnew_
+#define MPP_DO_UPDATE_3Dnew_ mpp_do_update_new_r4_3d
+#undef MPP_DO_UPDATE_3Dold_
+#define MPP_DO_UPDATE_3Dold_ mpp_do_update_old_r4_3d
 #ifdef  VECTOR_FIELD_
-#undef MPP_DOMAINS_DO_UPDATE_3Dnew_V_
-#define MPP_DOMAINS_DO_UPDATE_3Dnew_V_ mpp_do_update_new_r4_3dv
-#undef MPP_DOMAINS_DO_UPDATE_3Dold_V_
-#define MPP_DOMAINS_DO_UPDATE_3Dold_V_ mpp_do_update_old_r4_3dv
+#undef MPP_DO_UPDATE_3Dnew_V_
+#define MPP_DO_UPDATE_3Dnew_V_ mpp_do_update_new_r4_3dv
+#undef MPP_DO_UPDATE_3Dold_V_
+#define MPP_DO_UPDATE_3Dold_V_ mpp_do_update_old_r4_3dv
 #endif
 #include <mpp_do_update_old.h>
 #include <mpp_do_updateV_old.h>
@@ -770,10 +720,10 @@
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
-#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
-#define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_c4_3d
-#undef MPP_DOMAINS_DO_UPDATE_3Dold_
-#define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_c4_3d
+#undef MPP_DO_UPDATE_3Dnew_
+#define MPP_DO_UPDATE_3Dnew_ mpp_do_update_new_c4_3d
+#undef MPP_DO_UPDATE_3Dold_
+#define MPP_DO_UPDATE_3Dold_ mpp_do_update_old_c4_3d
 #include <mpp_do_update_old.h>
 #if defined(use_GSM)              
 #include <mpp_do_update_gsm.h>
@@ -789,10 +739,10 @@
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
-#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
-#define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_i4_3d
-#undef MPP_DOMAINS_DO_UPDATE_3Dold_
-#define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_i4_3d
+#undef MPP_DO_UPDATE_3Dnew_
+#define MPP_DO_UPDATE_3Dnew_ mpp_do_update_new_i4_3d
+#undef MPP_DO_UPDATE_3Dold_
+#define MPP_DO_UPDATE_3Dold_ mpp_do_update_old_i4_3d
 #include <mpp_do_update_old.h>
 #if defined(use_GSM)              
 #include <mpp_do_update_gsm.h>
@@ -804,22 +754,248 @@
 #include <mpp_do_update_new.h>
 #endif
 
-!!$#undef MPP_TYPE_
-!!$#define MPP_TYPE_ logical(INT_KIND)
-!!$#undef MPP_DOMAINS_DO_UPDATE_3Dnew_
-!!$#define MPP_DOMAINS_DO_UPDATE_3Dnew_ mpp_do_update_new_l4_3d
-!!$#undef MPP_DOMAINS_DO_UPDATE_3Dold_
-!!$#define MPP_DOMAINS_DO_UPDATE_3Dold_ mpp_do_update_old_l4_3d
-!!$#include <mpp_do_update_old.h>
-!!$#if defined(use_GSM)              
-!!$#include <mpp_do_update_gsm.h>
-!!$#elif defined(use_CAF)
-!!$#undef CAFPNTR_TYPE_3D_
-!!$#define CAFPNTR_TYPE_3D_ cafptr_l4_3d_type
-!!$#include <mpp_do_update_caf.h>
-!!$#else
-!!$#include <mpp_do_update_new.h>
-!!$#endif
+!bnc
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                                                                             !
+!              MPP_UPDATE_DOMAINS_AD: adjoint fill halos for 2D decomposition !
+!                                                                             !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#undef VECTOR_FIELD_
+#define VECTOR_FIELD_
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(DOUBLE_KIND)
+#undef MPP_UPDATE_DOMAINS_AD_2D_
+#define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domain2D_ad_r8_2D
+#undef MPP_UPDATE_DOMAINS_AD_3D_
+#define MPP_UPDATE_DOMAINS_AD_3D_ mpp_update_domain2D_ad_r8_3D
+#undef MPP_UPDATE_DOMAINS_AD_4D_
+#define MPP_UPDATE_DOMAINS_AD_4D_ mpp_update_domain2D_ad_r8_4D
+#undef MPP_UPDATE_DOMAINS_AD_5D_
+#define MPP_UPDATE_DOMAINS_AD_5D_ mpp_update_domain2D_ad_r8_5D
+#ifdef  VECTOR_FIELD_
+#undef MPP_UPDATE_DOMAINS_AD_2D_V_
+#define MPP_UPDATE_DOMAINS_AD_2D_V_ mpp_update_domain2D_ad_r8_2Dv
+#undef MPP_UPDATE_DOMAINS_AD_3D_V_
+#define MPP_UPDATE_DOMAINS_AD_3D_V_ mpp_update_domain2D_ad_r8_3Dv
+#undef MPP_UPDATE_DOMAINS_AD_4D_V_
+#define MPP_UPDATE_DOMAINS_AD_4D_V_ mpp_update_domain2D_ad_r8_4Dv
+#undef MPP_UPDATE_DOMAINS_AD_5D_V_
+#define MPP_UPDATE_DOMAINS_AD_5D_V_ mpp_update_domain2D_ad_r8_5Dv
+#endif
+#include <mpp_update_domains2D_ad.h>
+#undef  VECTOR_FIELD_
+
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(DOUBLE_KIND)
+#undef MPP_UPDATE_DOMAINS_AD_2D_
+#define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domain2D_ad_c8_2D
+#undef MPP_UPDATE_DOMAINS_AD_3D_
+#define MPP_UPDATE_DOMAINS_AD_3D_ mpp_update_domain2D_ad_c8_3D
+#undef MPP_UPDATE_DOMAINS_AD_4D_
+#define MPP_UPDATE_DOMAINS_AD_4D_ mpp_update_domain2D_ad_c8_4D
+#undef MPP_UPDATE_DOMAINS_AD_5D_
+#define MPP_UPDATE_DOMAINS_AD_5D_ mpp_update_domain2D_ad_c8_5D
+#include <mpp_update_domains2D_ad.h>
+
+#ifndef no_8byte_integers
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(LONG_KIND)
+#undef MPP_UPDATE_DOMAINS_AD_2D_
+#define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domain2D_ad_i8_2D
+#undef MPP_UPDATE_DOMAINS_AD_3D_
+#define MPP_UPDATE_DOMAINS_AD_3D_ mpp_update_domain2D_ad_i8_3D
+#undef MPP_UPDATE_DOMAINS_AD_4D_
+#define MPP_UPDATE_DOMAINS_AD_4D_ mpp_update_domain2D_ad_i8_4D
+#undef MPP_UPDATE_DOMAINS_AD_5D_
+#define MPP_UPDATE_DOMAINS_AD_5D_ mpp_update_domain2D_ad_i8_5D
+#include <mpp_update_domains2D_ad.h>
+#endif
+
+#ifndef no_4byte_reals
+#undef VECTOR_FIELD_
+#define VECTOR_FIELD_
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(FLOAT_KIND)
+#undef MPP_UPDATE_DOMAINS_AD_2D_
+#define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domain2D_ad_r4_2D
+#undef MPP_UPDATE_DOMAINS_AD_3D_
+#define MPP_UPDATE_DOMAINS_AD_3D_ mpp_update_domain2D_ad_r4_3D
+#undef MPP_UPDATE_DOMAINS_AD_4D_
+#define MPP_UPDATE_DOMAINS_AD_4D_ mpp_update_domain2D_ad_r4_4D
+#undef MPP_UPDATE_DOMAINS_AD_5D_
+#define MPP_UPDATE_DOMAINS_AD_5D_ mpp_update_domain2D_ad_r4_5D
+#ifdef  VECTOR_FIELD_
+#undef MPP_UPDATE_DOMAINS_AD_2D_V_
+#define MPP_UPDATE_DOMAINS_AD_2D_V_ mpp_update_domain2D_ad_r4_2Dv
+#undef MPP_UPDATE_DOMAINS_AD_3D_V_
+#define MPP_UPDATE_DOMAINS_AD_3D_V_ mpp_update_domain2D_ad_r4_3Dv
+#undef MPP_UPDATE_DOMAINS_AD_4D_V_
+#define MPP_UPDATE_DOMAINS_AD_4D_V_ mpp_update_domain2D_ad_r4_4Dv
+#undef MPP_UPDATE_DOMAINS_AD_5D_V_
+#define MPP_UPDATE_DOMAINS_AD_5D_V_ mpp_update_domain2D_ad_r4_5Dv
+#endif
+#include <mpp_update_domains2D_ad.h>
+#undef  VECTOR_FIELD_
+
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(FLOAT_KIND)
+#undef MPP_UPDATE_DOMAINS_AD_2D_
+#define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domain2D_ad_c4_2D
+#undef MPP_UPDATE_DOMAINS_AD_3D_
+#define MPP_UPDATE_DOMAINS_AD_3D_ mpp_update_domain2D_ad_c4_3D
+#undef MPP_UPDATE_DOMAINS_AD_4D_
+#define MPP_UPDATE_DOMAINS_AD_4D_ mpp_update_domain2D_ad_c4_4D
+#undef MPP_UPDATE_DOMAINS_AD_5D_
+#define MPP_UPDATE_DOMAINS_AD_5D_ mpp_update_domain2D_ad_c4_5D
+#include <mpp_update_domains2D_ad.h>
+#endif
+
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(INT_KIND)
+#undef MPP_UPDATE_DOMAINS_AD_2D_
+#define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domain2D_ad_i4_2D
+#undef MPP_UPDATE_DOMAINS_AD_3D_
+#define MPP_UPDATE_DOMAINS_AD_3D_ mpp_update_domain2D_ad_i4_3D
+#undef MPP_UPDATE_DOMAINS_AD_4D_
+#define MPP_UPDATE_DOMAINS_AD_4D_ mpp_update_domain2D_ad_i4_4D
+#undef MPP_UPDATE_DOMAINS_AD_5D_
+#define MPP_UPDATE_DOMAINS_AD_5D_ mpp_update_domain2D_ad_i4_5D
+#include <mpp_update_domains2D_ad.h>
+
+!*******************************************************
+#undef VECTOR_FIELD_
+#define VECTOR_FIELD_
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(DOUBLE_KIND)
+#undef MPP_DO_UPDATE_AD_3Dnew_
+#define MPP_DO_UPDATE_AD_3Dnew_ mpp_do_update_ad_new_r8_3d
+#undef MPP_DO_UPDATE_AD_3Dold_
+#define MPP_DO_UPDATE_AD_3Dold_ mpp_do_update_ad_old_r8_3d
+#ifdef  VECTOR_FIELD_
+#undef MPP_DO_UPDATE_AD_3Dnew_V_
+#define MPP_DO_UPDATE_AD_3Dnew_V_ mpp_do_update_ad_new_r8_3dv
+#undef MPP_DO_UPDATE_AD_3Dold_V_
+#define MPP_DO_UPDATE_AD_3Dold_V_ mpp_do_update_ad_old_r8_3dv
+#endif
+#include <mpp_do_update_old_ad.h>
+#include <mpp_do_updateV_old_ad.h>
+#if defined(use_GSM)
+#include <mpp_do_update_gsm.h>
+#include <mpp_do_updateV_gsm.h>
+#elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
+#define CAFPNTR_TYPE_3D_ cafptr_r8_3d_type
+#include <mpp_do_update_caf.h>
+#include <mpp_do_updateV_caf.h>
+#else
+#include <mpp_do_update_new_ad.h>
+#include <mpp_do_updateV_new_ad.h>
+#endif
+#undef  VECTOR_FIELD_
+
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(DOUBLE_KIND)
+#undef MPP_DO_UPDATE_AD_3Dnew_
+#define MPP_DO_UPDATE_AD_3Dnew_ mpp_do_update_ad_new_c8_3d
+#undef MPP_DO_UPDATE_AD_3Dold_
+#define MPP_DO_UPDATE_AD_3Dold_ mpp_do_update_ad_old_c8_3d
+#include <mpp_do_update_old_ad.h>
+#if defined(use_GSM)
+#include <mpp_do_update_gsm.h>
+#elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
+#define CAFPNTR_TYPE_3D_ cafptr_c8_3d_type
+#include <mpp_do_update_caf.h>
+#else
+#include <mpp_do_update_new_ad.h>
+#endif
+                                                                                  
+#ifndef no_8byte_integers
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(LONG_KIND)
+#undef MPP_DO_UPDATE_AD_3Dnew_
+#define MPP_DO_UPDATE_AD_3Dnew_ mpp_do_update_ad_new_i8_3d
+#undef MPP_DO_UPDATE_AD_3Dold_
+#define MPP_DO_UPDATE_AD_3Dold_ mpp_do_update_ad_old_i8_3d
+#include <mpp_do_update_old_ad.h>
+#if defined(use_GSM)
+#include <mpp_do_update_gsm.h>
+#elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
+#define CAFPNTR_TYPE_3D_ cafptr_i8_3d_type
+#include <mpp_do_update_caf.h>
+#else
+#include <mpp_do_update_new_ad.h>
+#endif
+#endif
+
+#ifndef no_4byte_reals
+#undef  VECTOR_FIELD_
+#define VECTOR_FIELD_
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(FLOAT_KIND)
+#undef MPP_DO_UPDATE_AD_3Dnew_
+#define MPP_DO_UPDATE_AD_3Dnew_ mpp_do_update_ad_new_r4_3d
+#undef MPP_DO_UPDATE_AD_3Dold_
+#define MPP_DO_UPDATE_AD_3Dold_ mpp_do_update_ad_old_r4_3d
+#ifdef  VECTOR_FIELD_
+#undef MPP_DO_UPDATE_AD_3Dnew_V_
+#define MPP_DO_UPDATE_AD_3Dnew_V_ mpp_do_update_ad_new_r4_3dv
+#undef MPP_DO_UPDATE_AD_3Dold_V_
+#define MPP_DO_UPDATE_AD_3Dold_V_ mpp_do_update_ad_old_r4_3dv
+#endif
+#include <mpp_do_update_old_ad.h>
+#include <mpp_do_updateV_old_ad.h>
+#if defined(use_GSM)
+#include <mpp_do_update_gsm.h>
+#include <mpp_do_updateV_gsm.h>
+#elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
+#define CAFPNTR_TYPE_3D_ cafptr_r4_3d_type
+#include <mpp_do_update_caf.h>
+#include <mpp_do_updateV_caf.h>
+#else
+#include <mpp_do_update_new_ad.h>
+#include <mpp_do_updateV_new_ad.h>
+#endif
+#undef  VECTOR_FIELD_
+
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(FLOAT_KIND)
+#undef MPP_DO_UPDATE_AD_3Dnew_
+#define MPP_DO_UPDATE_AD_3Dnew_ mpp_do_update_ad_new_c4_3d
+#undef MPP_DO_UPDATE_AD_3Dold_
+#define MPP_DO_UPDATE_AD_3Dold_ mpp_do_update_ad_old_c4_3d
+#include <mpp_do_update_old_ad.h>
+#if defined(use_GSM)
+#include <mpp_do_update_gsm.h>
+#elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
+#define CAFPNTR_TYPE_3D_ cafptr_c4_3d_type
+#include <mpp_do_update_caf.h>
+#else
+#include <mpp_do_update_new_ad.h>
+#endif
+#endif
+
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(INT_KIND)
+#undef MPP_DO_UPDATE_AD_3Dnew_
+#define MPP_DO_UPDATE_AD_3Dnew_ mpp_do_update_ad_new_i4_3d
+#undef MPP_DO_UPDATE_AD_3Dold_
+#define MPP_DO_UPDATE_AD_3Dold_ mpp_do_update_ad_old_i4_3d
+#include <mpp_do_update_old_ad.h>
+#if defined(use_GSM)
+#include <mpp_do_update_gsm.h>
+#elif defined(use_CAF)
+#undef CAFPNTR_TYPE_3D_
+#define CAFPNTR_TYPE_3D_ cafptr_i4_3d_type
+#include <mpp_do_update_caf.h>
+#else
+#include <mpp_do_update_new_ad.h>
+#endif
+
+!bnc
 
 
 !********************************************************
@@ -860,7 +1036,6 @@
 
 
 #ifndef no_8byte_integers
-
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
 #undef MPP_DO_REDISTRIBUTE_3Dnew_
@@ -972,3 +1147,73 @@
 #include <mpp_do_redistribute_new.h>
 #endif
 
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(DOUBLE_KIND)
+#undef MPP_GET_BOUNDARY_2D_
+#define MPP_GET_BOUNDARY_2D_ mpp_get_boundary_r8_2d
+#undef MPP_GET_BOUNDARY_3D_
+#define MPP_GET_BOUNDARY_3D_ mpp_get_boundary_r8_3d
+#undef MPP_GET_BOUNDARY_4D_
+#define MPP_GET_BOUNDARY_4D_ mpp_get_boundary_r8_4d
+#undef MPP_GET_BOUNDARY_5D_
+#define MPP_GET_BOUNDARY_5D_ mpp_get_boundary_r8_5d
+#undef MPP_GET_BOUNDARY_2D_V_
+#define MPP_GET_BOUNDARY_2D_V_ mpp_get_boundary_r8_2dv
+#undef MPP_GET_BOUNDARY_3D_V_
+#define MPP_GET_BOUNDARY_3D_V_ mpp_get_boundary_r8_3dv
+#undef MPP_GET_BOUNDARY_4D_V_
+#define MPP_GET_BOUNDARY_4D_V_ mpp_get_boundary_r8_4dv
+#undef MPP_GET_BOUNDARY_5D_V_
+#define MPP_GET_BOUNDARY_5D_V_ mpp_get_boundary_r8_5dv
+#include <mpp_get_boundary.h>
+
+#ifndef no_4byte_reals
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(FLOAT_KIND)
+#undef MPP_GET_BOUNDARY_2D_
+#define MPP_GET_BOUNDARY_2D_ mpp_get_boundary_r4_2d
+#undef MPP_GET_BOUNDARY_3D_
+#define MPP_GET_BOUNDARY_3D_ mpp_get_boundary_r4_3d
+#undef MPP_GET_BOUNDARY_4D_
+#define MPP_GET_BOUNDARY_4D_ mpp_get_boundary_r4_4d
+#undef MPP_GET_BOUNDARY_5D_
+#define MPP_GET_BOUNDARY_5D_ mpp_get_boundary_r4_5d
+#undef MPP_GET_BOUNDARY_2D_V_
+#define MPP_GET_BOUNDARY_2D_V_ mpp_get_boundary_r4_2dv
+#undef MPP_GET_BOUNDARY_3D_V_
+#define MPP_GET_BOUNDARY_3D_V_ mpp_get_boundary_r4_3dv
+#undef MPP_GET_BOUNDARY_4D_V_
+#define MPP_GET_BOUNDARY_4D_V_ mpp_get_boundary_r4_4dv
+#undef MPP_GET_BOUNDARY_5D_V_
+#define MPP_GET_BOUNDARY_5D_V_ mpp_get_boundary_r4_5dv
+#endif
+#include <mpp_get_boundary.h>
+
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(DOUBLE_KIND)
+#undef MPP_DO_GET_BOUNDARY_3Dnew_
+#define MPP_DO_GET_BOUNDARY_3Dnew_ mpp_do_get_boundary_new_r8_3d
+#undef MPP_DO_GET_BOUNDARY_3Dnew_V_
+#define MPP_DO_GET_BOUNDARY_3Dnew_V_ mpp_do_get_boundary_new_r8_3dv
+#include <mpp_do_get_boundary_new.h>
+
+#undef MPP_DO_GET_BOUNDARY_3Dold_
+#define MPP_DO_GET_BOUNDARY_3Dold_ mpp_do_get_boundary_old_r8_3d
+#undef MPP_DO_GET_BOUNDARY_3Dold_V_
+#define MPP_DO_GET_BOUNDARY_3Dold_V_ mpp_do_get_boundary_old_r8_3dv
+#include <mpp_do_get_boundary_old.h>
+
+#ifndef no_4byte_reals
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(FLOAT_KIND)
+#undef MPP_DO_GET_BOUNDARY_3Dnew_
+#define MPP_DO_GET_BOUNDARY_3Dnew_ mpp_do_get_boundary_new_r4_3d
+#undef MPP_DO_GET_BOUNDARY_3Dnew_V_
+#define MPP_DO_GET_BOUNDARY_3Dnew_V_ mpp_do_get_boundary_new_r4_3dv
+#include <mpp_do_get_boundary_new.h>
+#undef MPP_DO_GET_BOUNDARY_3Dold_
+#define MPP_DO_GET_BOUNDARY_3Dold_ mpp_do_get_boundary_old_r4_3d
+#undef MPP_DO_GET_BOUNDARY_3Dold_V_
+#define MPP_DO_GET_BOUNDARY_3Dold_V_ mpp_do_get_boundary_old_r4_3dv
+#include <mpp_do_get_boundary_old.h>
+#endif

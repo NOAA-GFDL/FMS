@@ -100,7 +100,7 @@ module xgrid_mod
 !     by the <TT>make_xgrids</TT> utility.
 ! </DATASET>
 use       fms_mod,   only: file_exist, open_namelist_file, check_nml_error,  &
-                           error_mesg, close_file, FATAL, stdlog,            &
+                           error_mesg, close_file, FATAL, NOTE, stdlog,      &
                            write_version_number 
 use mpp_mod,         only: mpp_npes, mpp_pe, mpp_root_pe, mpp_send, mpp_recv, &
                            mpp_sync_self, stdout
@@ -110,15 +110,17 @@ use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_compute_domains, &
                            YUPDATE
 use mpp_io_mod,      only: mpp_open, MPP_MULTI, MPP_SINGLE, MPP_OVERWR
 use constants_mod,   only: PI
-
+use stock_constants_mod, only: STOCK_NAMES
 
 implicit none
 include 'netcdf.inc'
 private
 
 public xmap_type, setup_xmap, set_frac_area, put_to_xgrid, get_from_xgrid, &
-       xgrid_count, some, conservation_check, xgrid_init
-
+       xgrid_count, some, conservation_check, xgrid_init, &
+       AREA_ATM_SPHERE, AREA_LND_SPHERE, AREA_OCN_SPHERE, &
+       AREA_ATM_MODEL, AREA_LND_MODEL, AREA_OCN_MODEL, &
+       get_ocean_model_area_elements
 !--- paramters that determine the remapping method
 integer, parameter :: FIRST_ORDER        = 1
 integer, parameter :: SECOND_ORDER       = 2
@@ -141,6 +143,11 @@ namelist /xgrid_nml/ make_exchange_reproduce, interp_method
 ! </NAMELIST>
 logical :: init = .true.
 integer :: remapping_method
+
+! Area elements used inside each model
+real, allocatable, dimension(:,:) :: AREA_ATM_MODEL, AREA_LND_MODEL, AREA_OCN_MODEL
+! Area elements based on a the spherical model used by the ICE layer
+real, allocatable, dimension(:,:) :: AREA_ATM_SPHERE, AREA_LND_SPHERE, AREA_OCN_SPHERE
 
 ! <INTERFACE NAME="put_to_xgrid">
 
@@ -282,11 +289,29 @@ type xmap_type
 end type xmap_type
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: xgrid.f90,v 13.0.2.1 2006/04/11 20:36:16 z1l Exp $'
- character(len=128) :: tagname = '$Name: memphis_2006_08 $'
+ character(len=128) :: version = '$Id: xgrid.F90,v 1.1.2.1 2006/11/28 17:34:02 fms Exp $'
+ character(len=128) :: tagname = '$Name: memphis_2006_12 $'
 
  real, parameter                              :: EPS = 1.0e-10
  logical :: module_is_initialized = .FALSE.
+
+ ! The following is required to compute stocks of water, heat, ...
+
+  integer, parameter :: NSIDES  = 3         ! top, bottom, side
+ 
+  type stock_type
+     real                   :: q_start    = 0.0    ! stock at start
+     ! delta_t * surf integr of flux
+     ! these are the stock increments at the present time, one for
+     ! each side (ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE)
+     real                   :: dq(NSIDES) = 0.0    ! stock increments at present time      
+  end type stock_type
+
+  interface stock_move
+     module procedure stock_move_3d, stock_move_2d
+  end interface
+
+  public stock_move, stock_type, stock_print, get_index_range, stock_integrate_2d
 
 contains
 
@@ -477,10 +502,14 @@ subroutine get_grid(grid, grid_id, ncid)
   real, dimension(grid%im) :: lonb
   real, dimension(grid%jm) :: latb
   real ::  d2r
+  integer :: varid, dimids(2), ns(2), i
+  integer :: is, ie, js, je
 
   d2r = PI/180.0
 
   start = 1; nread = 1  
+
+  call mpp_get_compute_domain(grid%domain, is, ie, js, je)
 
   if(grid_id == 'ATM') then
      nread(1) =  grid%im     
@@ -492,6 +521,18 @@ subroutine get_grid(grid, grid_id, ncid)
      if (rcode/=0) call error_mesg('xgrid_mod', 'cannot find grid file field yta', FATAL)
      nread(1) =  grid%jm
      rcode = nf_get_vara_double(ncid, id_lat, start, nread,latb)
+
+     if(.not. allocated(AREA_ATM_MODEL)) then
+        allocate(AREA_ATM_MODEL(is:ie, js:je))
+        call get_area_elements(ncid=ncid, name='AREA_ATM_MODEL', &
+             & start_indices=(/is,js/), end_indices=(/ie,je/), data=AREA_ATM_MODEL)
+     endif
+     if(.not. allocated(AREA_ATM_SPHERE)) then
+        allocate(AREA_ATM_SPHERE(is:ie, js:je))
+        call get_area_elements(ncid=ncid, name='AREA_ATM', &
+             & start_indices=(/is,js/), end_indices=(/ie,je/), data=AREA_ATM_SPHERE)
+     endif
+
   else if(grid_id == 'LND') then
      nread(1) =  grid%im     
      rcode = nf_inq_varid(ncid,'xtl',id_lon)
@@ -502,6 +543,26 @@ subroutine get_grid(grid, grid_id, ncid)
      rcode = nf_inq_varid(ncid,'ytl',id_lat)
      if (rcode/=0) call error_mesg('xgrid_mod', 'cannot find grid file field ytl', FATAL)
      rcode = nf_get_vara_double(ncid, id_lat, start, nread,latb)
+
+     if(.not. allocated(AREA_LND_MODEL)) then
+        allocate(AREA_LND_MODEL(is:ie, js:je))
+        call get_area_elements(ncid=ncid, name='AREA_LND_MODEL', &
+             & start_indices=(/is,js/), end_indices=(/ie,je/), data=AREA_LND_MODEL)
+     endif
+     if(.not. allocated(AREA_LND_SPHERE)) then
+        allocate(AREA_LND_SPHERE(is:ie, js:je))
+        call get_area_elements(ncid=ncid, name='AREA_LND', &
+             & start_indices=(/is,js/), end_indices=(/ie,je/), data=AREA_LND_SPHERE)
+     endif
+     
+  else if(grid_id == 'OCN' ) then
+     
+     if(.not. allocated(AREA_OCN_SPHERE)) then
+        allocate(AREA_OCN_SPHERE(is:ie, js:je))
+        call get_area_elements(ncid=ncid, name='AREA_OCN', &
+             & start_indices=(/is,js/), end_indices=(/ie,je/), data=AREA_OCN_SPHERE)
+     endif
+
   endif
 
      !--- second order remapping suppose second order
@@ -514,8 +575,80 @@ subroutine get_grid(grid, grid_id, ncid)
 
 end subroutine get_grid
   
+!#######################################################################
+! Read the area elements from NetCDF file
+subroutine get_area_elements(ncid, name, start_indices, end_indices, data)
+  integer, intent(in)          :: ncid
+  character(len=*), intent(in) :: name
+  integer, intent(in)          :: start_indices(:)
+  integer, intent(in)          :: end_indices(:)
+  real, intent(out)            :: data(:,:)
 
+  integer :: rcode, varid
 
+  rcode = nf_inq_varid(ncid, name, varid)
+  if(rcode/=0) then 
+     call error_mesg('xgrid_mod', 'no field named '//trim(name)//' in grid file? Will set data to negative values...', NOTE)
+     ! area elements no present in grid_spec file, set to negative values....
+     data = -1
+     return
+  endif
+  
+  rcode = nf_get_vara_double(ncid, varid, start_indices, &
+       & (/end_indices(1)-start_indices(1)+1, end_indices(2)-start_indices(2)+1/), &
+       & data)
+  if(rcode/=0) call error_mesg('xgrid_mod', 'error while reading data for '//trim(name), FATAL)
+
+end subroutine get_area_elements
+
+!#######################################################################
+! Read the OCN model area elements from NetCDF file
+! <SUBROUTINE NAME="get_ocean_model_area_elements">
+
+!   <OVERVIEW>
+!      Read Ocean area element data.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!      If available in the NetCDF file, this routine will read the 
+!      AREA_OCN_MODEL field and load the data into global AREA_OCN_MODEL.
+!      If not available, then the array AREA_OCN_MODEL will be left
+!      unallocated. Must be called by all PEs.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!     call get_ocean_model_area_elements(ocean_domain, grid_file)
+!   </TEMPLATE>
+
+!   <IN NAME="ocean_domain" TYPE="type(Domain2d)"> </IN>
+!   <IN NAME="grid_file" TYPE="character(len=*)" > </IN>
+subroutine get_ocean_model_area_elements(domain, grid_file)
+
+  type(Domain2d), intent(in) :: domain
+  character(len=*), intent(in) :: grid_file
+  integer :: is, ie, js, je, rcode, varid, rcode2, ncid
+
+  if(allocated(AREA_OCN_MODEL)) return
+
+  call mpp_get_compute_domain(domain, is, ie, js, je)
+  ! allocate even if ie<is, ... in which case the array will have zero size
+  ! but will still return .T. for allocated(...)
+  allocate(AREA_OCN_MODEL(is:ie, js:je))
+  if(ie < is .or. je < js ) return
+
+  rcode = nf_open(grid_file,0,ncid)
+  if (rcode/=0) call error_mesg ('xgrid_mod', 'cannot open grid file', FATAL)
+  
+  rcode = nf_inq_varid(ncid, 'AREA_OCN_MODEL', varid)
+  if(rcode==0) then
+     rcode2 = nf_get_vara_double(ncid, varid, (/is, js/), (/ie-is+1, je-js+1/), AREA_OCN_MODEL)
+     if(rcode2/=0) call error_mesg('xgrid_mod', 'error while reading AREA_OCN_MODEL ', FATAL)
+  else
+     deallocate(AREA_OCN_MODEL)
+  endif
+
+  rcode = nf_close(ncid)
+
+end subroutine get_ocean_model_area_elements
+! </SUBROUTINE>
 !#######################################################################
 
 ! <SUBROUTINE NAME="setup_xmap">
@@ -1564,9 +1697,231 @@ function grad_merid(d, lat, is, ie, js, je, isd, ied, jsd, jed)
 end function grad_merid
 
 !#######################################################################
+subroutine get_index_range(xmap, grid_index, is, ie, js, je, km)
 
+  type(xmap_type), intent(in)     :: xmap
+  integer, intent(in)             :: grid_index
+  integer, intent(out)            :: is, ie, js, je, km
+
+  is = xmap % grids(grid_index) % is_me
+  ie = xmap % grids(grid_index) % ie_me
+  js = xmap % grids(grid_index) % js_me
+  je = xmap % grids(grid_index) % je_me
+  km = xmap % grids(grid_index) % km
+  
+end subroutine get_index_range
+!#######################################################################
+
+subroutine stock_move_3d(from, to, grid_index, data, xmap, &
+     & delta_t, from_side, to_side, radius, verbose, ier)
+
+  ! this version takes rank 3 data, it can be used to compute the flux on anything but the 
+  ! first grid, which typically is on the atmos side.
+  ! note that "from" and "to" are optional, the stocks will be subtracted, resp. added, only
+  ! if these are present.
+
+  use mpp_mod, only : mpp_sum
+  use mpp_domains_mod, only : domain2D, mpp_redistribute, mpp_get_compute_domain
+
+  type(stock_type), intent(inout), optional :: from, to
+  integer, intent(in)             :: grid_index        ! grid index
+  real, intent(in)                :: data(:,:,:)  ! data array is 3d
+  type(xmap_type), intent(in)     :: xmap
+  real, intent(in)                :: delta_t
+  integer, intent(in)             :: from_side, to_side ! ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
+  real, intent(in)                :: radius       ! earth radius
+  character(len=*), intent(in), optional      :: verbose
+  integer, intent(out)            :: ier
+
+  real    :: from_dq, to_dq
+  real, allocatable, dimension(:,:) :: from_data2d, to_data2d
+  integer :: is, ie, js, je
+
+
+  ier = 0
+  if(grid_index == 1) then
+     ! data has rank 3 so grid index must be > 1
+     ier = 1
+     return
+  endif
+
+  if(.not. associated(xmap%grids) ) then
+     ier = 2
+     return
+  endif
+
+     from_dq = delta_t * 4*PI*radius**2 * sum( sum(xmap%grids(grid_index)%area * &
+          & sum(xmap%grids(grid_index)%frac_area * data, DIM=3), DIM=1))
+     to_dq = from_dq
+
+  ! update only if argument is present.
+  if(present(to  )) to   % dq(  to_side) = to   % dq(  to_side) + to_dq
+  if(present(from)) from % dq(from_side) = from % dq(from_side) - from_dq
+
+  if(present(verbose)) then
+     call mpp_sum(from_dq)
+     call mpp_sum(to_dq)
+     from_dq = from_dq/(4*PI*radius**2)
+     to_dq   = to_dq  /(4*PI*radius**2)
+     if(mpp_pe()==mpp_root_pe()) then
+        write(*,'(a,es19.12,a,es19.12,a)') verbose, from_dq,' -> ', to_dq,' [*/m^2]'
+     endif
+  endif
+
+end subroutine stock_move_3d
+
+!...................................................................
+
+subroutine stock_move_2d(from, to, grid_index, data, xmap, &
+     & delta_t, from_side, to_side, radius, verbose, ier)
+
+  ! this version takes rank 2 data, it can be used to compute the flux on the atmos side
+  ! note that "from" and "to" are optional, the stocks will be subtracted, resp. added, only
+  ! if these are present.
+
+  use mpp_mod, only : mpp_sum
+  use mpp_domains_mod, only : domain2D, mpp_redistribute, mpp_get_compute_domain
+
+  type(stock_type), intent(inout), optional :: from, to
+  integer, optional, intent(in)   :: grid_index
+  real, intent(in)                :: data(:,:)    ! data array is 2d
+  type(xmap_type), intent(in)     :: xmap
+  real, intent(in)                :: delta_t
+  integer, intent(in)             :: from_side, to_side ! ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
+  real, intent(in)                :: radius       ! earth radius
+  character(len=*), intent(in), optional      :: verbose
+  integer, intent(out)            :: ier
+
+  real    :: to_dq, from_dq
+  real, allocatable :: to_data2d(:,:)
+  integer :: is, ie, js, je
+  
+
+  ier = 0
+
+  if(.not. associated(xmap%grids) ) then
+     ier = 3
+     return
+  endif
+
+  if( .not. present(grid_index) .or. grid_index==1 ) then
+
+     ! only makes sense if grid_index == 1
+     from_dq = delta_t * 4*PI*radius**2 * sum(sum(xmap%grids(1)%area * data, DIM=1))
+     to_dq = from_dq
+
+  else
+
+     ier = 4
+     return
+
+  endif
+
+  ! update only if argument is present.
+  if(present(to  )) to   % dq(  to_side) = to   % dq(  to_side) + to_dq
+  if(present(from)) from % dq(from_side) = from % dq(from_side) - from_dq
+
+  if(present(verbose)) then
+     call mpp_sum(from_dq)
+     call mpp_sum(to_dq)
+     from_dq = from_dq/(4*PI*radius**2)
+     to_dq   = to_dq  /(4*PI*radius**2)
+     if(mpp_pe()==mpp_root_pe()) then
+        write(*,'(a,es19.12,a,es19.12,a)') verbose, from_dq,' -> ', to_dq,' [*/m^2]'
+     endif
+  endif
+
+end subroutine stock_move_2d
+
+!#######################################################################
+subroutine stock_integrate_2d(data, xmap, delta_t, radius, res, verbose, ier)
+
+  ! surface/time integral of a 2d array
+
+  use mpp_mod, only : mpp_sum
+
+  real, intent(in)                :: data(:,:)    ! data array is 2d
+  type(xmap_type), intent(in)     :: xmap
+  real, intent(in)                :: delta_t
+  real, intent(in)                :: radius       ! earth radius
+  real, intent(out)               :: res
+  character(len=*), optional      :: verbose
+  integer, intent(out)            :: ier
+
+  real :: tmp
+
+  ier = 0
+  res = 0
+
+  if(.not. associated(xmap%grids) ) then
+     ier = 6
+     return
+  endif
+
+  res = delta_t * 4*PI*radius**2 * sum(sum(xmap%grids(1)%area * data, DIM=1))
+  
+  if(present(verbose)) then
+     tmp = res/(4*PI*radius**2)
+     call mpp_sum(tmp)
+     if(mpp_pe()==mpp_root_pe()) then
+        write(*,'(a,es22.15,a)') verbose, tmp, ' [*/m^2]'
+     endif
+  endif
+
+end subroutine stock_integrate_2d
+!#######################################################################
+subroutine stock_print(stck, Time, comp_name, index, ref_value, radius, pelist)
+
+  use mpp_mod, only : mpp_pe, mpp_root_pe, mpp_sum
+  use time_manager_mod, only : time_type, get_time
+  use stock_constants_mod, only : ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE
+
+  type(stock_type), intent(in)  :: stck
+  type(time_type), intent(in)   :: Time
+  character(len=*)              :: comp_name
+  integer, intent(in), optional :: index     ! to map stock element (water, heat, ..) to a name
+  real, intent(in)              :: ref_value ! the stock value returned by the component per PE
+  real, intent(in)              :: radius
+  integer, intent(in), optional :: pelist(:)
+
+  real :: f_value, c_value, q0, planet_area
+  real :: val_top, val_bot, val_sid
+  character(len=32) :: name
+  integer :: iday, isec
+
+  name = ''
+  if(present(index)) name = STOCK_NAMES(index)
+
+  f_value = sum(stck % dq)
+  c_value = ref_value      - stck % q_start
+  if(present(pelist)) then
+     call mpp_sum(f_value, pelist=pelist)
+     call mpp_sum(c_value, pelist=pelist)
+  else
+     call mpp_sum(f_value)
+     call mpp_sum(c_value)
+  endif
+
+  if(mpp_pe() == mpp_root_pe()) then
+     ! normalize to 1 earth m^2
+     planet_area = 4*PI*radius**2
+     f_value       = f_value     / planet_area
+     c_value       = c_value     / planet_area
+     call get_time(Time, isec, iday)
+     write(*,'(a,i10,a,i5,1x,a,1x,a,a,es19.12,a,es19.12,a,es19.12,a)') &
+          & 'day ', iday, ' secs ', isec, comp_name, &
+          & trim(name),' DeltaQ(from fluxes) (f): ', f_value, &
+          &            '  DeltaQ(from compnt) (c): ', c_value, &
+          &            ' (f)-(c): ', f_value - c_value, ' */m^2'
+  endif
+
+
+end subroutine stock_print
+
+!#######################################################################
 
 end module xgrid_mod
+
 
 ! <INFO>
 
@@ -1578,3 +1933,181 @@ end module xgrid_mod
 !   </REFERENCE>
 
 ! </INFO>
+
+
+!======================================================================================
+! standalone unit test
+
+#ifdef _XGRID_MAIN
+! to compile on Altix:
+! setenv FMS /net2/ap/regression/ia64/10-Aug-2006/CM2.1U_Control-1990_E1.k_dyn30pe/exec
+! ifort -fpp -r8 -i4 -g -check all -D_XGRID_MAIN -I $FMS xgrid.f90 $FMS/stock_constants.o $FMS/fms*.o $FMS/mpp*.o $FMS/constants.o $FMS/time_manager.o $FMS/memutils.o $FMS/threadloc.o -L/usr/local/lib -lnetcdf -L/usr/lib -lmpi -lsma
+! mpirun -np 30 a.out
+program main
+  use mpp_mod
+  use fms_mod
+  use mpp_domains_mod
+  use xgrid_mod, only : xmap_type, setup_xmap, stock_move, stock_type, get_index_range
+  use stock_constants_mod, only : ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE, ISTOCK_WATER, ISTOCK_HEAT
+  use constants_mod, only       : PI
+  implicit none
+
+  type(xmap_type)  :: xmap_sfc, xmap_runoff
+  integer          :: npes, pe, root, i, nx, ny, ier
+  integer          :: patm_beg, patm_end, pocn_beg, pocn_end
+  integer          :: is, ie, js, je, km, index_ice, index_lnd
+  integer          :: layout(2)
+  integer, parameter :: NELEMS=2
+  type(stock_type), save :: Atm_stock(NELEMS), Ice_stock(NELEMS), &
+       &                    Lnd_stock(NELEMS), Ocn_stock(NELEMS)
+  type(domain2D)   :: Atm_domain, Ice_domain, Lnd_domain, Ocn_domain
+  logical, pointer :: maskmap(:,:)
+  real, allocatable :: data2d(:,:), data3d(:,:,:)
+  real              :: dt, dq_tot_atm, dq_tot_ice, dq_tot_lnd, dq_tot_ocn
+
+  call fms_init
+
+  npes   = mpp_npes()
+  pe     = mpp_pe()
+  root   = mpp_root_pe()
+  patm_beg = 0
+  patm_end = npes/2 - 1
+  pocn_beg = patm_end + 1
+  pocn_end = npes - 1
+
+  if(npes /= 30) call mpp_error(FATAL,'must run unit test on 30 pes')
+
+  call mpp_domains_init ! (MPP_DEBUG)
+
+  call mpp_declare_pelist( (/ (i, i=patm_beg, patm_end) /), 'atm_lnd_ice pes' ) 
+  call mpp_declare_pelist( (/ (i, i=pocn_beg, pocn_end) /), 'ocn pes' ) 
+
+  index_ice = 2 ! 2nd exchange grid
+  index_lnd = 3 ! 3rd exchange grid
+
+  dt = 1.0
+
+  if(pe < 15) then
+
+     call mpp_set_current_pelist( (/ (i, i=patm_beg, patm_end) /) )
+
+     ! Lnd
+     nx = 144
+     ny = 90
+     layout = (/ 5, 3 /)
+     call mpp_define_domains( (/1,nx, 1,ny/), layout, Lnd_domain, &
+          & xflags = CYCLIC_GLOBAL_DOMAIN, name = 'LAND MODEL' )
+
+     ! Atm
+     nx = 144
+     ny = 90
+     layout = (/1, 15/)
+     call mpp_define_domains( (/1,nx, 1,ny/), layout, Atm_domain)
+
+     ! Ice
+     nx = 360
+     ny = 200
+     layout = (/15, 1/)
+     call mpp_define_domains( (/1,nx, 1,ny/), layout, Ice_domain, name='ice_nohalo' )
+
+     ! Build exchange grid
+     call setup_xmap(xmap_sfc, (/ 'ATM', 'OCN', 'LND' /), &
+          &                    (/ Atm_domain, Ice_domain, Lnd_domain /), &
+          &                    "INPUT/grid_spec.nc")
+
+!  call setup_xmap(xmap_sfc, (/ 'LND', 'OCN' /), &
+!       &                    (/  Lnd_domain, Ice_domain /), &
+!       &                    "INPUT/grid_spec.nc")
+
+
+     ! Atm -> Ice
+
+     i = index_ice
+
+     call get_index_range(xmap=xmap_sfc, grid_index=i, is=is, ie=ie, js=js, je=je, km=km)
+
+     allocate(data3d(is:ie, js:je, km))
+     data3d(:,:,1   ) = 1.0/(4.0*PI)
+     data3d(:,:,2:km) = 0.0
+     call stock_move(from=Atm_stock(ISTOCK_WATER), to=Ice_stock(ISTOCK_WATER), &
+          & grid_index=i, data=data3d, xmap=xmap_sfc, &
+          & delta_t=dt, from_side=ISTOCK_BOTTOM, to_side=ISTOCK_TOP, radius=1.0, ier=ier)
+     deallocate(data3d)
+
+     ! Atm -> Lnd
+
+     i = index_lnd
+
+     call get_index_range(xmap=xmap_sfc, grid_index=i, is=is, ie=ie, js=js, je=je, km=km)
+     
+     allocate(data3d(is:ie, js:je, km))
+     data3d(:,:,1   ) = 1.0/(4.0*PI)
+     data3d(:,:,2:km) = 0.0
+     call stock_move(from=Atm_stock(ISTOCK_WATER), to=Lnd_stock(ISTOCK_WATER), &
+          & grid_index=i, data=data3d, xmap=xmap_sfc, &
+          & delta_t=dt, from_side=ISTOCK_BOTTOM, to_side=ISTOCK_TOP, radius=1.0, ier=ier)
+     deallocate(data3d)
+
+  else ! pes: 15...29
+
+     call mpp_set_current_pelist( (/ (i, i=pocn_beg, pocn_end) /) )
+
+     ! Ocn
+     nx = 360
+     ny = 200
+     layout = (/ 5, 3 /)
+     call mpp_define_domains( (/1,nx,1,ny/), layout, Ocn_domain, name='ocean model')
+
+  endif
+
+  ! Ice -> Ocn (same grid different layout)
+
+  i = index_ice
+
+  if( pe < pocn_beg ) then 
+
+     call get_index_range(xmap=xmap_sfc, grid_index=i, is=is, ie=ie, js=js, je=je, km=km)
+
+     allocate(data3d(is:ie, js:je, km))
+     data3d(:,:,1   ) = 1.0/(4.0*PI)
+     data3d(:,:,2:km) = 0.0
+  else
+     is = 0
+     ie = 0
+     js = 0
+     je = 0
+     km = 0
+     allocate(data3d(is:ie, js:je, km))
+  endif
+
+  call stock_move(from=Ice_stock(ISTOCK_WATER), to=Ocn_stock(ISTOCK_WATER), &
+       & grid_index=i, data=data3d(:,:,1), xmap=xmap_sfc, &
+       & delta_t=dt, from_side=ISTOCK_BOTTOM, to_side=ISTOCK_TOP, radius=1.0, ier=ier)
+  deallocate(data3d)
+
+  ! Sum across sides and PEs
+
+  dq_tot_atm = sum(Atm_stock(ISTOCK_WATER)%dq)
+  call mpp_sum(dq_tot_atm)
+
+  dq_tot_lnd = sum(Lnd_stock(ISTOCK_WATER)%dq)
+  call mpp_sum(dq_tot_lnd)
+
+  dq_tot_ice = sum(Ice_stock(ISTOCK_WATER)%dq)
+  call mpp_sum(dq_tot_ice)
+
+  dq_tot_ocn = sum(Ocn_stock(ISTOCK_WATER)%dq)
+  call mpp_sum(dq_tot_ocn)
+
+  if(pe==root) then
+     write(*,'(a,4f10.7,a,e10.2)') ' Total delta_q(water) Atm/Lnd/Ice/Ocn: ', &
+          & dq_tot_atm, dq_tot_lnd, dq_tot_ice, dq_tot_ocn, &
+          & ' residue: ', dq_tot_atm + dq_tot_lnd + dq_tot_ice + dq_tot_ocn
+  endif
+
+  call mpp_domains_exit
+  call fms_end
+
+end program main
+! end of _XGRID_MAIN
+#endif

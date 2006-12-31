@@ -118,7 +118,7 @@ type file_type
    integer                                :: domain_idx(max_fields) 
    logical                                :: is_dimvar(max_fields)
    logical                                :: is_root_pe
-   integer                                :: tile_number
+   integer                                :: tile_count
 end type file_type
 
 interface read_data
@@ -182,8 +182,8 @@ public  :: open_file, open_direct_file
 public  :: get_restart_io_mode
 private :: lookup_field_w, lookup_axis, unique_axes
 
-character(len=128) :: version = '$Id: fms_io.F90,v 13.0.4.5.2.1.2.1.2.2 2006/08/04 17:15:07 wfc Exp $'
-character(len=128) :: tagname = '$Name: memphis_2006_08 $'
+character(len=128) :: version = '$Id: fms_io.F90,v 13.0.4.5.2.1.2.1.2.2.2.1 2006/08/30 11:47:43 z1l Exp $'
+character(len=128) :: tagname = '$Name: memphis_2006_12 $'
 
 contains
 
@@ -376,7 +376,7 @@ subroutine fms_io_exit()
         if (files_write(i)%domain_present(j)) then
            domain_idx = files_write(i)%domain_idx(j)
            call mpp_get_domain_components(array_domain(domain_idx), domain_x(j), domain_y(j), &
-                     tile_number=files_write(i)%tile_number)
+                     tile_count=files_write(i)%tile_count)
         else
            domain_x(j) = NULL_DOMAIN1D
            domain_y(j) = NULL_DOMAIN1D
@@ -589,29 +589,29 @@ end subroutine fms_io_exit
 !   domain of fieldname
 !   </IN>
 !=================================================================================
-subroutine write_data_i3d_new(filename, fieldname, data, domain,append_pelist_name, no_domain, position, tile_number)
+subroutine write_data_i3d_new(filename, fieldname, data, domain,append_pelist_name, no_domain, position, tile_count)
   IMPLICIT NONE
 
   character(len=*), intent(in) :: filename, fieldname 
   integer, dimension(:,:,:), intent(in) :: data
   type(domain2d), intent(in), optional :: domain
   logical, intent(in), optional :: append_pelist_name, no_domain
-  integer, intent(in), optional :: position, tile_number
+  integer, intent(in), optional :: position, tile_count
 
 
   call write_data_3d_new(filename, fieldname, real(data), domain,append_pelist_name, no_domain, position)
 end subroutine write_data_i3d_new
 !.....................................................................
-subroutine write_data_i2d_new(filename, fieldname, data, domain,append_pelist_name, no_domain, position, tile_number)
+subroutine write_data_i2d_new(filename, fieldname, data, domain,append_pelist_name, no_domain, position, tile_count)
   IMPLICIT NONE
 
   character(len=*), intent(in) :: filename, fieldname 
   integer, dimension(:,:), intent(in) :: data
   type(domain2d), intent(in), optional :: domain
   logical, intent(in), optional :: append_pelist_name, no_domain
-  integer, intent(in), optional :: position, tile_number
+  integer, intent(in), optional :: position, tile_count
 
-  call write_data_2d_new(filename, fieldname, real(data), domain,append_pelist_name, no_domain, position, tile_number)
+  call write_data_2d_new(filename, fieldname, real(data), domain,append_pelist_name, no_domain, position, tile_count)
 end subroutine write_data_i2d_new
 !.....................................................................
 subroutine write_data_i1d_new(filename, fieldname, data, domain, append_pelist_name, no_domain)
@@ -635,7 +635,7 @@ subroutine write_data_iscalar_new(filename, fieldname, data, domain, append_peli
 
 end subroutine write_data_iscalar_new
 !.....................................................................
-subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_name, no_domain, position, tile_number)
+subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_name, no_domain, position, tile_count)
   IMPLICIT NONE
 
   character(len=*), intent(in)         :: filename, fieldname 
@@ -643,7 +643,7 @@ subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_nam
   type(domain2d), intent(in), optional :: domain
   real, dimension(:,:,:), pointer      :: global_data =>NULL()
   logical, intent(in), optional        :: append_pelist_name, no_domain   
-  integer, intent(in), optional        :: position, tile_number
+  integer, intent(in), optional        :: position, tile_count
   character(len=128)                   :: temp_name   !name of the temporary file
   integer :: i, domain_idx
   integer :: nfile  ! index of the currently open file in array files
@@ -695,11 +695,11 @@ subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_nam
      num_files_w=num_files_w + 1
      nfile = num_files_w           
      files_write(nfile)%filename = trim(fname)         
-     files_write(nfile)%tile_number=1
-     if(present(tile_number)) files_write(nfile)%tile_number = tile_number
+     files_write(nfile)%tile_count=1
+     if(present(tile_count)) files_write(nfile)%tile_count = tile_count
      files_write(nfile)%is_root_pe = mpp_pe() == mpp_root_pe()
-     if(present(tile_number)) then
-        if(.not. present(domain)) call mpp_error(FATAL, 'fms_io write_data: when tile_number is present, domain should be present')
+     if(present(tile_count)) then
+        if(.not. present(domain)) call mpp_error(FATAL, 'fms_io write_data: when tile_count is present, domain should be present')
         files_write(nfile)%is_root_pe = mpp_domain_is_root_pe(domain)
      end if
   endif
@@ -757,7 +757,7 @@ subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_nam
      if (files_write(nfile)%domain_present(index_field)) then
         call mpp_get_domain_shift ( array_domain(domain_idx), ishift, jshift, position)
         call mpp_get_global_domain(array_domain(files_write(nfile)%domain_idx(index_field)), &
-                                   xsize=gxsize,ysize=gysize,tile_number=tile_number)
+                                   xsize=gxsize,ysize=gysize,tile_count=tile_count)
         files_write(nfile)%gsiz(index_field,1)   = gxsize + ishift
         files_write(nfile)%gsiz(index_field,2)   = gysize + jshift
         files_write(nfile)%gsiz(index_field,3)   = size(data,3)
@@ -781,7 +781,7 @@ subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_nam
      !--- of some arbitrary value.
      global_data = 0.0
      call mpp_global_field(array_domain(files_write(nfile)%domain_idx(index_field)),data,global_data, &
-                                   position=position,tile_number=tile_number)
+                                   position=position,tile_count=tile_count)
      if(files_write(nfile)%is_root_pe) write(unit2) global_data
      deallocate(global_data)
 ! write data to temporary storage without halos
@@ -791,7 +791,7 @@ subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_nam
 end subroutine write_data_3d_new
 ! </SUBROUTINE>  
 !.....................................................................
-subroutine write_data_2d_new(filename, fieldname, data, domain,append_pelist_name, no_domain, position,tile_number)
+subroutine write_data_2d_new(filename, fieldname, data, domain,append_pelist_name, no_domain, position,tile_count)
 
   IMPLICIT NONE
   character(len=*), intent(in)                 :: filename, fieldname 
@@ -799,11 +799,11 @@ subroutine write_data_2d_new(filename, fieldname, data, domain,append_pelist_nam
   real, dimension(size(data,1),size(data,2),1) :: data_3d
   type(domain2d), intent(in), optional         :: domain
   logical, intent(in), optional                :: append_pelist_name, no_domain
-  integer, intent(in), optional                :: position, tile_number
+  integer, intent(in), optional                :: position, tile_count
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(write_data_2d_new):need to call fms_io_init first')
   data_3d(:,:,1) = data(:,:)
-  call write_data_3d_new(filename, fieldname, data_3d, domain, append_pelist_name, no_domain, position, tile_number)
+  call write_data_3d_new(filename, fieldname, data_3d, domain, append_pelist_name, no_domain, position, tile_count)
 end subroutine write_data_2d_new
 
 ! ........................................................
@@ -1096,31 +1096,31 @@ end subroutine field_size
 !   array containing data of fieldname
 !   </OUT>
 !=====================================================================================
-subroutine read_data_i3d_new(filename,fieldname,data,domain,timelevel,append_pelist_name,no_domain,position)
+subroutine read_data_i3d_new(filename,fieldname,data,domain,timelevel,append_pelist_name,no_domain,position, tile_count)
   IMPLICIT NONE
   character(len=*),           intent(in)   :: filename, fieldname
   integer, dimension(:,:,:), intent(inout) :: data ! 3 dimensional data    
   type(domain2d), intent(in),   optional   :: domain
   integer, intent(in),          optional   :: timelevel
   logical, intent(in),          optional   :: append_pelist_name, no_domain 
-  integer, intent(in) ,         optional   :: position
+  integer, intent(in) ,         optional   :: position, tile_count
 
   real, dimension(size(data,1),size(data,2),size(data,3)) :: r_data
-  call read_data_3d_new(filename,fieldname,r_data,domain,timelevel,append_pelist_name, no_domain,position)
+  call read_data_3d_new(filename,fieldname,r_data,domain,timelevel,append_pelist_name, no_domain,position, tile_count)
   data = CEILING(r_data)
 end subroutine read_data_i3d_new
 
-subroutine read_data_i2d_new(filename,fieldname,data,domain,timelevel,append_pelist_name, no_domain,position)
+subroutine read_data_i2d_new(filename,fieldname,data,domain,timelevel,append_pelist_name, no_domain,position, tile_count)
   IMPLICIT NONE
   character(len=*),         intent(in)   :: filename, fieldname
   integer, dimension(:,:), intent(inout) :: data ! 2 dimensional data    
   type(domain2d), intent(in), optional   :: domain
   integer, intent(in),        optional   :: timelevel
   logical, intent(in),        optional   :: append_pelist_name , no_domain
-  integer, intent(in) ,       optional   :: position
+  integer, intent(in) ,       optional   :: position, tile_count
   real, dimension(size(data,1),size(data,2)) :: r_data
 
-  call read_data_2d_new(filename,fieldname,r_data,domain,timelevel,append_pelist_name, no_domain,position)
+  call read_data_2d_new(filename,fieldname,r_data,domain,timelevel,append_pelist_name, no_domain,position, tile_count)
   data = CEILING(r_data)
 end subroutine read_data_i2d_new
 !.....................................................................
@@ -1149,14 +1149,14 @@ subroutine read_data_iscalar_new(filename,fieldname,data,domain,timelevel,append
   data = CEILING(r_data)
 end subroutine read_data_iscalar_new
 !=====================================================================================
-subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_pelist_name, no_domain, position, tile_number)
+subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_pelist_name, no_domain, position, tile_count)
   IMPLICIT NONE
   character(len=*), intent(in)          :: filename, fieldname
   real, dimension(:,:,:), intent(inout) :: data ! 3 dimensional data    
   type(domain2d), intent(in), optional  :: domain
   integer, intent(in) , optional        :: timelevel
   logical, intent(in), optional         :: append_pelist_name, no_domain 
-  integer, intent(in), optional         :: position, tile_number
+  integer, intent(in), optional         :: position, tile_count
   character(len=128)                    :: name
   character(len=256)                    :: fname
   character(len=5)                      :: pe_name
@@ -1223,9 +1223,9 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
   endif
 
   if (PRESENT(domain).AND. .NOT.read_dist) then
-     call mpp_get_compute_domain(domain, xsize = cxsize, ysize = cysize, tile_number=tile_number)
-     call mpp_get_data_domain   (domain, xsize = dxsize, ysize = dysize, tile_number=tile_number)
-     call mpp_get_global_domain (domain, xsize = gxsize, ysize = gysize, tile_number=tile_number)
+     call mpp_get_compute_domain(domain, xsize = cxsize, ysize = cysize, tile_count=tile_count)
+     call mpp_get_data_domain   (domain, xsize = dxsize, ysize = dysize, tile_count=tile_count)
+     call mpp_get_global_domain (domain, xsize = gxsize, ysize = gysize, tile_count=tile_count)
      call mpp_get_domain_shift  (domain, ishift, jshift, position)
      if (ishift .NE. 0) then
         cxsize = cxsize+ishift; dxsize = dxsize+ishift; gxsize = gxsize+ishift
@@ -1383,9 +1383,9 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
         if (files_read(nfile)%is_dimvar(index_field)) call mpp_error(FATAL,'fms_io(read_data_3d_new): domain is present' &
              //' but the variable is a dimension variable.  Remove domain flag for this var')
         if (PRESENT(domain)) then
-           call mpp_read(unit,files_read(nfile)%fields(index_field),domain,data,tlev,tile_number)
+           call mpp_read(unit,files_read(nfile)%fields(index_field),domain,data,tlev,tile_count)
         else
-           call mpp_read(unit, files_read(nfile)%fields(index_field),Current_domain,data,tlev,tile_number)
+           call mpp_read(unit, files_read(nfile)%fields(index_field),Current_domain,data,tlev,tile_count)
         endif
      endif
   endif  
@@ -1394,7 +1394,7 @@ end subroutine read_data_3d_new
 !.............................................................. 
 ! </SUBROUTINE>
 subroutine read_data_2d_new(filename,fieldname,data,domain,timelevel,&
-     append_pelist_name, no_domain,position,tile_number)
+     append_pelist_name, no_domain,position,tile_count)
   IMPLICIT NONE
   character(len=*), intent(in)                 :: filename, fieldname
   real, dimension(:,:), intent(inout)          :: data     !2 dimensional data 
@@ -1402,28 +1402,29 @@ subroutine read_data_2d_new(filename,fieldname,data,domain,timelevel,&
   type(domain2d), intent(in), optional         :: domain
   integer, intent(in) , optional               :: timelevel
   logical, intent(in), optional                :: append_pelist_name, no_domain
-  integer, intent(in) , optional               :: position, tile_number
+  integer, intent(in) , optional               :: position, tile_count
   integer                                      :: isc,iec,jsc,jec,isd,ied,jsd,jed
   integer :: isg,ieg,jsg,jeg
   integer                                      :: xsize_c,ysize_c,xsize_d,ysize_d
-  integer                                      :: xsize_g,ysize_g
+  integer                                      :: xsize_g,ysize_g, ishift, jshift
 
 !#ifdef use_CRI_pointers
 !  pointer( p, data_3d )
 !  p = LOC(data)
 !#endif
   call read_data_3d_new(filename,fieldname,data_3d,domain,timelevel,&
-       append_pelist_name, no_domain,position,tile_number)
+       append_pelist_name, no_domain,position,tile_count)
 
   if(PRESENT(domain)) then
-     call mpp_get_global_domain( domain,isg,ieg,jsg,jeg,xsize=xsize_g,ysize=ysize_g)
-     call mpp_get_compute_domain( domain,isc,iec,jsc,jec,xsize=xsize_c,ysize=ysize_c)
-     call mpp_get_data_domain( domain,isd,ied,jsd,jed,xsize=xsize_d,ysize=ysize_d)
-     if((size(data,1)==xsize_c) .and. (size(data,2)==ysize_c)) then !on_comp_domain
+     call mpp_get_global_domain( domain,isg,ieg,jsg,jeg,xsize=xsize_g,ysize=ysize_g, tile_count=tile_count)
+     call mpp_get_compute_domain( domain,isc,iec,jsc,jec,xsize=xsize_c,ysize=ysize_c, tile_count=tile_count)
+     call mpp_get_data_domain( domain,isd,ied,jsd,jed,xsize=xsize_d,ysize=ysize_d, tile_count=tile_count)
+     call mpp_get_domain_shift  (domain, ishift, jshift, position)
+     if((size(data,1)==xsize_c+ishift) .and. (size(data,2)==ysize_c+jshift)) then !on_comp_domain
         data(:,:) = data_3d(:,:,1)
-     else if((size(data,1)==xsize_d) .and. (size(data,2)==ysize_d)) then !on_data_domain
+     else if((size(data,1)==xsize_d+ishift) .and. (size(data,2)==ysize_d+jshift)) then !on_data_domain
         data(isc-isd+1:iec-isd+1,jsc-jsd+1:jec-jsd+1) = data_3d(isc-isd+1:iec-isd+1,jsc-jsd+1:jec-jsd+1,1)
-     else if((size(data,1)==xsize_g) .and. (size(data,2)==ysize_g)) then !on_data_domain
+     else if((size(data,1)==xsize_g+ishift) .and. (size(data,2)==ysize_g+jshift)) then !on_data_domain
         data(:,:) = data_3d(:,:,1)
      else 
         call mpp_error(FATAL,'error in read_data_2d_new, field '//trim(fieldname)// &

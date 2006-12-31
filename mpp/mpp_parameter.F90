@@ -7,7 +7,7 @@ module mpp_parameter_mod
   character(len=128), public :: version= &
        '$Id mpp_parameter.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: memphis_2006_08 $'
+       '$Name: memphis_2006_12 $'
 
   !--- public paramters which is used by mpp_mod and its components. 
   !--- All othere modules should import these parameters from mpp_mod. 
@@ -19,15 +19,14 @@ module mpp_parameter_mod
 
   !--- public paramters which is used by mpp_domains_mod and its components. 
   !--- All othere modules should import these parameters from mpp_domains_mod. 
-  public :: GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, BGRID_NE, BGRID_SW, CGRID_NE
-  public :: CGRID_SW, FOLD_WEST_EDGE, FOLD_EAST_EDGE, FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE
+  public :: GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, BGRID_NE, BGRID_SW, CGRID_NE, CGRID_SW
+  public :: DGRID_NE, DGRID_SW, FOLD_WEST_EDGE, FOLD_EAST_EDGE, FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE
   public :: WUPDATE, EUPDATE, SUPDATE, NUPDATE, XUPDATE, YUPDATE, BITWISE_EXACT_SUM, NON_BITWISE_EXACT_SUM
   public :: MPP_DOMAIN_TIME, WEST, EAST, SOUTH, NORTH, SCALAR_BIT, SCALAR_PAIR
   public :: NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST
   public :: AGRID, GLOBAL, CYCLIC, DOMAIN_ID_BASE, CENTER, CORNER
-  public :: MAX_DOMAIN_FIELDS
+  public :: MAX_DOMAIN_FIELDS, MAX_TILES
   public :: ZERO, NINETY, MINUS_NINETY, ONE_HUNDRED_EIGHTY
-  public :: REGULAR, CUBIC_GRID
 
   !--- public paramters which is used by mpp_domains_mod and its components. 
   !--- All othere modules should import these parameters from mpp_io_mod. 
@@ -63,17 +62,18 @@ module mpp_parameter_mod
   integer, parameter :: SOUTH_WEST=7, SOUTH_EAST=8, NORTH_WEST=9, NORTH_EAST=10
   integer, parameter :: SEND=1, RECV=2
   integer, parameter :: GLOBAL_DATA_DOMAIN=2**GLOBAL, CYCLIC_GLOBAL_DOMAIN=2**CYCLIC
-  integer, parameter :: AGRID=0, BGRID=1, CGRID=2
+  integer, parameter :: AGRID=0, BGRID=1, CGRID=2, DGRID=3
   integer, parameter :: BGRID_NE=BGRID+2**NORTH+2**EAST
   integer, parameter :: BGRID_SW=BGRID+2**SOUTH+2**WEST
   integer, parameter :: CGRID_NE=CGRID+2**NORTH+2**EAST
   integer, parameter :: CGRID_SW=CGRID+2**SOUTH+2**WEST
+  integer, parameter :: DGRID_NE=DGRID+2**NORTH+2**EAST
+  integer, parameter :: DGRID_SW=DGRID+2**SOUTH+2**WEST
   integer, parameter :: FOLD_WEST_EDGE = 2**WEST, FOLD_EAST_EDGE = 2**EAST
   integer, parameter :: FOLD_SOUTH_EDGE=2**SOUTH, FOLD_NORTH_EDGE=2**NORTH
   integer, parameter :: WUPDATE=2**WEST, EUPDATE=2**EAST, SUPDATE=2**SOUTH, NUPDATE=2**NORTH
   integer, parameter :: XUPDATE=WUPDATE+EUPDATE, YUPDATE=SUPDATE+NUPDATE, SCALAR_PAIR=2**SCALAR_BIT
   integer, parameter :: ZERO=0, NINETY=1, MINUS_NINETY=2, ONE_HUNDRED_EIGHTY=3
-  integer, parameter :: REGULAR=1, CUBIC_GRID=2
 
 ! DOMAIN_ID_BASE acts as a counter increment for domains as they are defined. It's used in
 ! combination with the flag parameter defined above to create a unique identifier for
@@ -84,6 +84,7 @@ module mpp_parameter_mod
   integer, parameter :: BITWISE_EXACT_SUM=1
   integer, parameter :: MPP_DOMAIN_TIME=MPP_DEBUG+1
   integer, parameter :: MAX_DOMAIN_FIELDS=100
+  integer, parameter :: MAX_TILES=100
 
   !--- The following paramters are used by mpp_io_mod and its components.
   integer, parameter :: MPP_WRONLY=100, MPP_RDONLY=101, MPP_APPEND=102, MPP_OVERWR=103 !action on open

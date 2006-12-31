@@ -301,12 +301,6 @@ use mpp_io_mod, only : mpp_open, mpp_close, mpp_ascii, mpp_rdonly,     &
 
 real, intent(out) :: memuse
 
-#ifdef __aix
-  print*,'mem_dump not implemented for AIX machines.'
-  print*,'See the Loadleveler log instead.'
-  return
-#endif
-
 ! This routine returns the memory usage on Linux systems.
 ! It does this by querying a system file (file_name below).
 ! It is intended for use by print_memuse_stats above.
@@ -315,6 +309,12 @@ character(len=32) :: file_name = '/proc/self/status'
 character(len=32) :: string
 integer :: mem_unit
 real    :: multiplier
+
+#ifdef __aix
+  print*,'mem_dump not implemented for AIX machines.'
+  print*,'See the Loadleveler log instead.'
+  return
+#endif
 
   memuse = 0.0
   multiplier = 1.0

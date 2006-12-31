@@ -19,8 +19,8 @@ module constants_mod
 implicit none
 private
 
-character(len=128) :: version='$Id: constants.F90,v 13.0 2006/03/28 21:37:37 fms Exp $'
-character(len=128) :: tagname='$Name: memphis_2006_08 $'
+character(len=128) :: version='$Id: constants.F90,v 13.0.6.1 2006/10/20 15:40:12 rsh Exp $'
+character(len=128) :: tagname='$Name: memphis_2006_12 $'
 !dummy variable to use in HUGE initializations
 real :: realnumber
 
@@ -106,7 +106,7 @@ real, public, parameter :: TFREEZE = 273.16
 ! <DATA NAME="WTMH2O" UNITS="AMU" TYPE="real" DEFAULT="1.801534E+01">
 !  molecular weight of water
 ! </DATA>
-! <DATA NAME="WTMO3" UNITS="AMU" TYPE="real" DEFAULT="47.99820E+01">
+! <DATA NAME="WTMOZONE" UNITS="AMU" TYPE="real" DEFAULT="4.799820E+01">
 !   molecular weight of ozone
 ! </DATA>
 ! <DATA NAME="DIFFAC" TYPE="real" DEFAULT="1.660000E+00">
@@ -127,7 +127,8 @@ real, public, parameter :: TFREEZE = 273.16
 
 real, public, parameter :: WTMAIR = 2.896440E+01
 real, public, parameter :: WTMH2O = WTMAIR*(RDGAS/RVGAS) !pjp OK to change value because not used yet.
-real, public, parameter :: WTMO3  = 47.99820E+01
+!real, public, parameter :: WTMO3  = 47.99820E+01
+real, public, parameter :: WTMOZONE  = 4.799820E+01
 real, public, parameter :: DIFFAC = 1.660000E+00
 real, public, parameter :: SECONDS_PER_DAY  = 8.640000E+04
 real, public, parameter :: AVOGNO = 6.023000E+23

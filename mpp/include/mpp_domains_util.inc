@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_util.inc,v 13.0.2.3 2006/05/05 19:51:14 z1l Exp $
+! $Id: mpp_domains_util.inc,v 13.0.2.3.4.1.2.2 2006/11/08 18:25:25 fms Exp $
 
   ! <SUBROUTINE NAME="mpp_domains_set_stack_size">
   !  <OVERVIEW>
@@ -160,44 +160,16 @@
   end subroutine mpp_get_memory_domain1D
 
   !#####################################################################
-  subroutine mpp_get_memory_compute_domain1D( domain, begin, end, size, max_size, is_global )
-    type(domain1D),     intent(in) :: domain
-    integer, intent(out), optional :: begin, end, size, max_size
-    logical, intent(out), optional :: is_global
-
-    if( PRESENT(begin)     )begin     = domain%memory%begin + domain%compute%begin - domain%data%begin
-    if( PRESENT(end)       )end       = domain%memory%begin + domain%compute%end - domain%data%begin
-    if( PRESENT(size)      )size      = domain%compute%size
-    if( PRESENT(max_size)  )max_size  = domain%compute%max_size
-    if( PRESENT(is_global) )is_global = domain%compute%is_global
-    return
-  end subroutine mpp_get_memory_compute_domain1D
-
-  !#####################################################################
-  subroutine mpp_get_memory_data_domain1D( domain, begin, end, size, max_size, is_global )
-    type(domain1D),     intent(in) :: domain
-    integer, intent(out), optional :: begin, end, size, max_size
-    logical, intent(out), optional :: is_global
-
-    if( PRESENT(begin)     )begin     = domain%memory%begin
-    if( PRESENT(end)       )end       = domain%memory%begin + domain%data%end - domain%data%begin
-    if( PRESENT(size)      )size      = domain%data%size
-    if( PRESENT(max_size)  )max_size  = domain%data%max_size
-    if( PRESENT(is_global) )is_global = domain%data%is_global
-    return
-  end subroutine mpp_get_memory_data_domain1D
-
-  !#####################################################################
   subroutine mpp_get_compute_domain2D( domain, xbegin, xend, ybegin, yend, xsize, xmax_size, ysize, ymax_size, &
-       x_is_global, y_is_global, tile_number )
+       x_is_global, y_is_global, tile_count )
     type(domain2D),     intent(in) :: domain
     integer, intent(out), optional :: xbegin, xend, ybegin, yend, xsize, xmax_size, ysize, ymax_size
     logical, intent(out), optional :: x_is_global, y_is_global
-    integer, intent(in),  optional :: tile_number
+    integer, intent(in),  optional :: tile_count
     integer                        :: tile
 
     tile = 1
-    if(present(tile_number)) tile = tile_number
+    if(present(tile_count)) tile = tile_count
 
     call mpp_get_compute_domain( domain%x(tile), xbegin, xend, xsize, xmax_size, x_is_global )
     call mpp_get_compute_domain( domain%y(tile), ybegin, yend, ysize, ymax_size, y_is_global )
@@ -207,15 +179,15 @@
 
   !#####################################################################
   subroutine mpp_get_data_domain2D( domain, xbegin, xend, ybegin, yend, xsize, xmax_size, ysize, ymax_size, &
-       x_is_global, y_is_global, tile_number )
+       x_is_global, y_is_global, tile_count )
     type(domain2D),     intent(in) :: domain
     integer, intent(out), optional :: xbegin, xend, ybegin, yend, xsize, xmax_size, ysize, ymax_size
     logical, intent(out), optional :: x_is_global, y_is_global
-    integer, intent(in),  optional :: tile_number
+    integer, intent(in),  optional :: tile_count
     integer                        :: tile
 
     tile = 1
-    if(present(tile_number)) tile = tile_number
+    if(present(tile_count)) tile = tile_count
 
     call mpp_get_data_domain( domain%x(tile), xbegin, xend, xsize, xmax_size, x_is_global )
     call mpp_get_data_domain( domain%y(tile), ybegin, yend, ysize, ymax_size, y_is_global )
@@ -224,14 +196,14 @@
   end subroutine mpp_get_data_domain2D
 
   !#####################################################################
-  subroutine mpp_get_global_domain2D( domain, xbegin, xend, ybegin, yend, xsize, xmax_size, ysize, ymax_size, tile_number )
+  subroutine mpp_get_global_domain2D( domain, xbegin, xend, ybegin, yend, xsize, xmax_size, ysize, ymax_size, tile_count )
     type(domain2D),     intent(in) :: domain
     integer, intent(out), optional :: xbegin, xend, ybegin, yend, xsize, xmax_size, ysize, ymax_size
-    integer, intent(in),  optional :: tile_number
+    integer, intent(in),  optional :: tile_count
     integer                        :: tile
 
     tile = 1
-    if(present(tile_number)) tile = tile_number
+    if(present(tile_count)) tile = tile_count
 
     call mpp_get_global_domain( domain%x(tile), xbegin, xend, xsize, xmax_size )
     call mpp_get_global_domain( domain%y(tile), ybegin, yend, ysize, ymax_size )
@@ -256,42 +228,6 @@
   end subroutine mpp_get_memory_domain2D
 
   !#####################################################################
-  subroutine mpp_get_memory_compute_domain2D( domain, xbegin, xend, ybegin, yend, xsize, xmax_size, &
-       ysize, ymax_size, x_is_global, y_is_global, tile_number )
-    type(domain2D),     intent(in) :: domain
-    integer, intent(out), optional :: xbegin, xend, ybegin, yend, xsize, xmax_size, ysize, ymax_size
-    logical, intent(out), optional :: x_is_global, y_is_global
-    integer, intent(in),  optional :: tile_number
-    integer                        :: tile
-
-    tile = 1
-    if(present(tile_number)) tile = tile_number
-
-    call mpp_get_memory_compute_domain( domain%x(tile), xbegin, xend, xsize, xmax_size, x_is_global )
-    call mpp_get_memory_compute_domain( domain%y(tile), ybegin, yend, ysize, ymax_size, y_is_global )
-
-    return
-  end subroutine mpp_get_memory_compute_domain2D
-
-  !#####################################################################
-  subroutine mpp_get_memory_data_domain2D( domain, xbegin, xend, ybegin, yend, xsize, xmax_size, &
-       ysize, ymax_size, x_is_global, y_is_global, tile_number )
-    type(domain2D),     intent(in) :: domain
-    integer, intent(out), optional :: xbegin, xend, ybegin, yend, xsize, xmax_size, ysize, ymax_size
-    logical, intent(out), optional :: x_is_global, y_is_global
-    integer, intent(in),  optional :: tile_number
-    integer                        :: tile
-
-    tile = 1
-    if(present(tile_number)) tile = tile_number
-
-    call mpp_get_memory_data_domain( domain%x(tile), xbegin, xend, xsize, xmax_size, x_is_global )
-    call mpp_get_memory_data_domain( domain%y(tile), ybegin, yend, ysize, ymax_size, y_is_global )
-
-    return
-  end subroutine mpp_get_memory_data_domain2D
-
-  !#####################################################################
   subroutine mpp_set_compute_domain1D( domain, begin, end, size, is_global )
     type(domain1D), intent(inout) :: domain
     integer, intent(in), optional :: begin, end, size
@@ -306,15 +242,15 @@
 
   !#####################################################################
   subroutine mpp_set_compute_domain2D( domain, xbegin, xend, ybegin, yend, xsize, ysize, &
-                                       x_is_global, y_is_global, tile_number )
+                                       x_is_global, y_is_global, tile_count )
     type(domain2D), intent(inout) :: domain
     integer, intent(in), optional :: xbegin, xend, ybegin, yend, xsize, ysize
     logical, intent(in), optional :: x_is_global, y_is_global
-    integer, intent(in),  optional :: tile_number
+    integer, intent(in),  optional :: tile_count
     integer                        :: tile
 
     tile = 1
-    if(present(tile_number)) tile = tile_number
+    if(present(tile_count)) tile = tile_count
 
     call mpp_set_compute_domain(domain%x(tile), xbegin, xend, xsize, x_is_global)
     call mpp_set_compute_domain(domain%y(tile), ybegin, yend, ysize, y_is_global)
@@ -336,15 +272,15 @@
 
   !#####################################################################
   subroutine mpp_set_data_domain2D( domain, xbegin, xend, ybegin, yend, xsize, ysize, &
-                                    x_is_global, y_is_global, tile_number )
+                                    x_is_global, y_is_global, tile_count )
     type(domain2D), intent(inout) :: domain
     integer, intent(in), optional :: xbegin, xend, ybegin, yend, xsize, ysize
     logical, intent(in), optional :: x_is_global, y_is_global
-    integer, intent(in),  optional :: tile_number
+    integer, intent(in),  optional :: tile_count
     integer                        :: tile
 
     tile = 1
-    if(present(tile_number)) tile = tile_number
+    if(present(tile_count)) tile = tile_count
 
     call mpp_set_data_domain(domain%x(tile), xbegin, xend, xsize, x_is_global)
     call mpp_set_data_domain(domain%y(tile), ybegin, yend, ysize, y_is_global)
@@ -363,14 +299,14 @@
   end subroutine mpp_set_global_domain1D
 
   !#####################################################################
-  subroutine mpp_set_global_domain2D( domain, xbegin, xend, ybegin, yend, xsize, ysize, tile_number )
+  subroutine mpp_set_global_domain2D( domain, xbegin, xend, ybegin, yend, xsize, ysize, tile_count )
     type(domain2D), intent(inout) :: domain
     integer, intent(in), optional :: xbegin, xend, ybegin, yend, xsize, ysize
-    integer, intent(in),  optional :: tile_number
+    integer, intent(in),  optional :: tile_count
     integer                        :: tile
 
     tile = 1
-    if(present(tile_number)) tile = tile_number
+    if(present(tile_count)) tile = tile_count
     call mpp_set_global_domain(domain%x(tile), xbegin, xend, xsize)
     call mpp_set_global_domain(domain%y(tile), ybegin, yend, ysize)
 
@@ -391,14 +327,14 @@
   !  <IN NAME="domain" TYPE="type(domain2D)"></IN>
   !  <OUT NAME="x,y"  TYPE="type(domain1D)"></OUT>
   ! </SUBROUTINE>
-  subroutine mpp_get_domain_components( domain, x, y, tile_number )
+  subroutine mpp_get_domain_components( domain, x, y, tile_count )
     type(domain2D),            intent(in) :: domain
     type(domain1D), intent(inout), optional :: x, y
-    integer, intent(in),  optional :: tile_number
+    integer, intent(in),  optional :: tile_count
     integer                        :: tile
 
     tile = 1
-    if(present(tile_number)) tile = tile_number
+    if(present(tile_count)) tile = tile_count
     if( PRESENT(x) )x = domain%x(tile)
     if( PRESENT(y) )y = domain%y(tile)
     return
@@ -813,7 +749,8 @@ end subroutine mpp_get_domain_shift
 
     if(whalo == 0 .AND. ehalo==0 .AND. shalo == 0 .AND. nhalo==0 ) then
        domain_update_is_needed = .false.
-       call mpp_error(NOTE, 'mpp_domains_util.inc: halo size to be updated are all zero, no update will be done')
+       if( debug )call mpp_error(NOTE, &
+          'mpp_domains_util.inc: halo size to be updated are all zero, no update will be done')
        return
     end if
     if(  (whalo == -domain%whalo .AND. domain%whalo .NE. 0) .or.  & 
@@ -863,7 +800,6 @@ end subroutine mpp_get_domain_shift
        update_position = CENTER
     end if
 
-
     select case(update_position)
     case (CENTER)
        Dom_ref => domain%T
@@ -877,38 +813,68 @@ end subroutine mpp_get_domain_shift
        call mpp_error(FATAL,"mpp_domains_util.inc: position should be CENTER|CORNER|EAST|NORTH")
     end select
 
-    if( whalo == Dom_ref%whalo .AND. ehalo == Dom_ref%ehalo .AND. shalo == Dom_ref%shalo &
-         .AND. nhalo == Dom_ref%nhalo ) then
-       search_domain => Dom_ref
-    else     
-       search_domain => domain%next
+    search_domain => Dom_ref
 
-       do 
-          if(.NOT. ASSOCIATED(search_domain)) then
-             allocate(search_domain)
-             search_domain%initialized = .false.
-             call set_overlaps(Dom_ref, search_domain, whalo, ehalo, shalo, nhalo )
-          end if
-
-          if(whalo == search_domain%whalo .AND. ehalo == search_domain%ehalo .AND. &
-               shalo == search_domain%shalo .AND. nhalo == search_domain%nhalo ) exit ! found domain
-
+    do 
+       if(whalo == search_domain%whalo .AND. ehalo == search_domain%ehalo .AND. &
+            shalo == search_domain%shalo .AND. nhalo == search_domain%nhalo ) exit ! found domain
+       !--- if not found, switch to next
+       if(.NOT. ASSOCIATED(search_domain%next)) then
+          allocate(search_domain%next)
           search_domain => search_domain%next
-       end do
-    end if
+          search_domain%initialized = .false.
+          call set_overlaps(Dom_ref, search_domain, whalo, ehalo, shalo, nhalo )
+          exit
+       else
+          search_domain => search_domain%next
+       end if
+ 
+    end do
 
   end function search_domain
 
   !########################################################################
   ! return the domain list correponding to position
-  function get_domain(domain, position)
+  function get_domain(domain, position, whalo, ehalo, shalo, nhalo, gridtype, direction)
      type(domain2d),    intent(in) :: domain
      integer, optional, intent(in) :: position
+     integer, optional, intent(in) :: whalo, ehalo, shalo, nhalo
+     integer, optional, intent(in) :: gridtype
+     character(len=1), optional, intent(in) :: direction
      integer                       :: update_position
+     integer                       :: whalosz, ehalosz, shalosz, nhalosz
      type(domain2d), pointer       :: get_domain
 
-     update_position = CENTER
-     if(present(position)) update_position = position
+     if(present(position)) then
+        update_position = position
+     else if(present(gridtype)) then
+        if(.NOT. present(direction)) call mpp_error(FATAL,  &
+             "mpp_omains_util.inc: when gridtype is present, direction must present.")
+        select case(gridtype)
+        case(AGRID)
+           update_position = CENTER
+        case(BGRID_NE, BGRID_SW)
+           update_position = CORNER
+        case(CGRID_NE, CGRID_SW)
+           if(direction == 'x' ) then
+              update_position = EAST
+           else
+              update_position = NORTH
+           end if
+        case(DGRID_NE, DGRID_SW)
+           if(direction == 'x' ) then
+              update_position = NORTH
+           else
+              update_position = EAST
+           end if
+        case default
+           call mpp_error(FATAL, &
+              "mpp_domains_util.inc: gridtype should be AGRID|BGRID_NE|BGRID_SW|CGRID_NE|CGRID_SW|DGRID_NE|DGRID_SW")
+        end select
+     else
+       update_position = CENTER
+     end if
+
      select case (update_position)
      case ( CENTER )
         get_domain => domain%T
@@ -919,6 +885,17 @@ end subroutine mpp_get_domain_shift
      case ( NORTH )
         get_domain => domain%N     
      end select
+     whalosz = get_domain%whalo; if(present(whalo) ) whalosz = whalo
+     ehalosz = get_domain%ehalo; if(present(ehalo) ) ehalosz = ehalo
+     shalosz = get_domain%shalo; if(present(shalo) ) shalosz = shalo
+     nhalosz = get_domain%nhalo; if(present(nhalo) ) nhalosz = nhalo
+
+     do while(ASSOCIATED(get_domain))
+        if(get_domain%whalo == whalosz .AND. get_domain%ehalo == ehalosz .AND. &
+           get_domain%shalo == shalosz .AND. get_domain%nhalo == nhalosz ) exit ! found it
+        get_domain => get_domain%next
+     end do
+     if(.NOT. ASSOCIATED(get_domain) ) call mpp_error(FATAL,"mpp_domains_util.inc(get_domain): domain is not found " )
 
      return
 
@@ -964,3 +941,58 @@ end subroutine mpp_get_domain_shift
      end if
 
   end function
+
+  !#######################################################################
+  !--- the order of overlapping will be consistent with the unpack done in update_domains.
+  function mpp_get_refine_overlap_number(domain, position, whalo, ehalo, shalo, nhalo, tile_count)
+     type(domain2d), intent(in)           :: domain
+     integer,        intent(in), optional :: position                   ! position of the cell, CENTER/EAST/NORTH/CORNER
+     integer,        intent(in), optional :: whalo, ehalo, shalo, nhalo ! halo size to be updated
+     integer,        intent(in), optional :: tile_count                ! tile number on current pe.
+     integer                              :: mpp_get_refine_overlap_number
+     type(domain2d), pointer              :: dom => NULL()
+     integer                              :: tMe
+
+     tMe = 1
+     if(present(tile_count)) tMe = tile_count
+
+     dom => get_domain( domain, position, whalo, ehalo, shalo, nhalo )
+     mpp_get_refine_overlap_number = dom%rSpec(tMe)%count
+
+     return    
+ 
+  end function mpp_get_refine_overlap_number
+
+  !#######################################################################
+  ! return overlap information for refined contact.
+  subroutine mpp_get_mosaic_refine_overlap(domain, isMe, ieMe, jsMe, jeMe, isNbr, ieNbr, jsNbr, jeNbr, &
+                                           rotation, position, whalo, ehalo, shalo, nhalo, tile_count)
+     type(domain2d), intent(in)           :: domain
+     integer, dimension(:), intent(inout) :: isMe,  ieMe,  jsMe,  jeMe  ! index on current tile
+     integer, dimension(:), intent(inout) :: isNbr, ieNbr, jsNbr, jeNbr ! index on neighbor tile
+     integer, dimension(:), intent(inout) :: rotation                   ! rotation angle
+     integer, optional,     intent(in)    :: position                   ! position of the cell, CENTER/EAST/NORTH/CORNER
+     integer, optional,     intent(in)    :: whalo, ehalo, shalo, nhalo ! halo size to be updated
+     integer, optional,     intent(in)    :: tile_count                ! tile number on current pe.
+     type(domain2d), pointer              :: dom => NULL()
+     integer                              :: tMe, count
+
+     tMe = 1
+     if(present(tile_count)) tMe = tile_count
+
+     dom => get_domain( domain, position, whalo, ehalo, shalo, nhalo )
+     count = dom%rSpec(tMe)%count
+     isMe(1:count)      = dom%rSpec(tMe)%isMe
+     ieMe(1:count)      = dom%rSpec(tMe)%ieMe
+     jsMe(1:count)      = dom%rSpec(tMe)%jsMe
+     jeMe(1:count)      = dom%rSpec(tMe)%jeMe
+     isNbr(1:count)     = dom%rSpec(tMe)%isNbr
+     ieNbr(1:count)     = dom%rSpec(tMe)%ieNbr
+     jsNbr(1:count)     = dom%rSpec(tMe)%jsNbr
+     jeNbr(1:count)     = dom%rSpec(tMe)%jeNbr
+     rotation(1:count)  = dom%rSpec(tMe)%rotation
+
+     return
+
+  end subroutine mpp_get_mosaic_refine_overlap
+
