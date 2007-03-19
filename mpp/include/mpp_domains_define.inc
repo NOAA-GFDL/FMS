@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_define.inc,v 13.0.2.3.2.1.2.1.2.2.2.2 2006/12/01 15:57:03 z1l Exp $
+! $Id: mpp_domains_define.inc,v 14.0 2007/03/15 22:42:44 fms Exp $
 
 
   ! <SUBROUTINE NAME="mpp_define_layout2D" INTERFACE="mpp_define_layout">
@@ -1212,8 +1212,14 @@
     deallocate(align1, align2, is1, ie1, js1, je1, is2, ie2, js2, je2  )
     deallocate(isgList, iegList, jsgList, jegList )
 
+    mosaic_defined = .true.
   end subroutine mpp_define_mosaic
 
+!#####################################################################
+  logical function mpp_mosaic_defined()
+  ! Accessor function for value of mosaic_defined
+    mpp_mosaic_defined = mosaic_defined
+  end function mpp_mosaic_defined
 !#####################################################################
 
     subroutine compute_overlaps( domain, ishift, jshift )

@@ -50,20 +50,20 @@ module mpp_pset_mod
 !public type
   type :: mpp_pset_type
      private
-!     sequence
+     sequence
      integer :: npset !number of PSETs
      integer :: next_in_pset, prev_in_pset !next and prev PE in PSET (cyclic)
      integer :: root_in_pset !PE designated to be the root within PSET
      logical :: root !true if you are the root PSET
-     integer, _ALLOCATABLE :: pelist(:) _NULL !base PElist
-     integer, _ALLOCATABLE :: root_pelist(:) _NULL !a PElist of all the roots
-     integer, _ALLOCATABLE :: pset(:) _NULL !PSET IDs
      integer :: pos !position of current PE within pset
 !stack is allocated by root
 !it is then mapped to mpp_pset_stack by mpp_pset_broadcast_ptr
      real, _ALLOCATABLE :: stack(:) _NULL
-     integer :: lstack, maxstack, hiWM !current stack length, max, hiWM
+     integer, _ALLOCATABLE :: pelist(:) _NULL !base PElist
+     integer, _ALLOCATABLE :: root_pelist(:) _NULL !a PElist of all the roots
+     integer, _ALLOCATABLE :: pset(:) _NULL !PSET IDs
      integer(POINTER_KIND) :: p_stack
+     integer :: lstack, maxstack, hiWM !current stack length, max, hiWM
      integer :: commID
      character(len=32) :: name
      logical :: initialized=.FALSE.

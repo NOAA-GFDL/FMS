@@ -175,8 +175,8 @@ implicit none
 private
 
 
-character(len=128) :: version = '$Id: field_manager.F90,v 13.0.6.1.2.1 2006/09/19 21:11:09 wfc Exp $'
-character(len=128) :: tagname = '$Name: memphis_2006_12 $'
+character(len=128) :: version = '$Id: field_manager.F90,v 14.0 2007/03/15 22:39:21 fms Exp $'
+character(len=128) :: tagname = '$Name: nalanda $'
 logical            :: module_is_initialized  = .false.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -747,13 +747,15 @@ do while (.TRUE.)
       m = 1
       do while (flag_method)
          read(iunit,'(a)',end=99,err=99) record
+! If the line is blank then fetch the next line.
+         if (LEN_TRIM(record) .le. 0) cycle
 ! If the last character in the line is / then this is the end of the field methods
          if ( record(LEN_TRIM(record):LEN_TRIM(record)) == list_sep) then
             flag_method = .FALSE.
             if (LEN_TRIM(record) == 1) cycle
             record = record(:LEN_TRIM(record)-1) ! Remove the end of field method marker
          endif
-! If the line is now blank then fetch the next line.
+! If the line is now blank, after removing the field separator marker, then fetch the next line.
          if (LEN_TRIM(record) .le. 0) cycle
 ! If the first character in the line is # then it is treated as a comment
          if (record(1:1) == comment ) cycle

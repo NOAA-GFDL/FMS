@@ -1,4 +1,4 @@
-! $Id: drifters_core.F90,v 13.0.2.1.2.1 2006/11/29 19:08:17 fms Exp $
+! $Id: drifters_core.F90,v 14.0 2007/03/15 22:38:50 fms Exp $
 !
 ! nf95 -r8 -g -I ~/regression/ia64/23-Jun-2005/CM2.1U_Control-1990_E1.k32pe/include/ -D_TEST_DRIFTERS -D_F95 quicksort.F90 drifters_core.F90
 
@@ -10,10 +10,13 @@ module drifters_core_mod
 
   public :: drifters_core_type, drifters_core_new, drifters_core_del
   public :: drifters_core_remove_and_add, drifters_core_set_positions, assignment(=)
+#ifdef _TEST_DRIFTERS_CORE
+  public :: drifters_core_print, drifters_core_resize
+#endif
 
   ! Globals
   integer, parameter, private   :: MAX_STR_LEN = 128
-  character(MAX_STR_LEN), parameter, private :: version = '$Id: drifters_core.F90,v 13.0.2.1.2.1 2006/11/29 19:08:17 fms Exp $'
+  character(MAX_STR_LEN), parameter, private :: version = '$Id: drifters_core.F90,v 14.0 2007/03/15 22:38:50 fms Exp $'
 
   type drifters_core_type
      ! Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new

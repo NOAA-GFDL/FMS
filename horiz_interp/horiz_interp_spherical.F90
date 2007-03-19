@@ -28,7 +28,8 @@ module horiz_interp_spherical_mod
   private
 
 
-  public :: horiz_interp_spherical_init, horiz_interp_spherical, horiz_interp_spherical_end
+  public :: horiz_interp_spherical_new, horiz_interp_spherical, horiz_interp_spherical_del
+  public :: horiz_interp_spherical_init
 
   integer, parameter :: max_neighbors = 400 
   real,    parameter :: max_dist_default = 0.1  ! radians
@@ -58,15 +59,46 @@ module horiz_interp_spherical_mod
   namelist /horiz_interp_spherical_nml/ search_method
 
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_spherical.F90,v 13.0.2.1 2006/06/25 14:58:32 pjp Exp $'
-  character(len=128) :: tagname = '$Name: memphis_2006_12 $'
-  logical            :: do_vers = .true.
+  character(len=128) :: version = '$Id: horiz_interp_spherical.F90,v 14.0 2007/03/15 22:40:07 fms Exp $'
+  character(len=128) :: tagname = '$Name: nalanda $'
   logical            :: module_is_initialized = .FALSE.
 
 contains
 
   !#######################################################################
-  ! <SUBROUTINE NAME="horiz_interp_spherical_init">
+  !  <SUBROUTINE NAME="horiz_interp_spherical_init">
+  !  <OVERVIEW>
+  !     writes version number and tag name to logfile.out
+  !  </OVERVIEW>
+  !  <DESCRIPTION>       
+  !     writes version number and tag name to logfile.out
+  !  </DESCRIPTION>
+
+  subroutine horiz_interp_spherical_init
+    integer :: unit, ierr, io
+
+
+    if(module_is_initialized) return
+    call write_version_number (version, tagname)
+    if (file_exist('input.nml')) then
+       unit = open_namelist_file ( )
+       ierr=1; do while (ierr /= 0)
+       read  (unit, nml=horiz_interp_spherical_nml, iostat=io, end=10)
+       ierr = check_nml_error(io,'horiz_interp_spherical_nml')  ! also initializes nml error codes
+    enddo
+10  call close_file (unit)
+    endif
+
+ module_is_initialized = .true.
+
+
+
+end subroutine horiz_interp_spherical_init
+
+  !  </SUBROUTINE>
+
+  !#######################################################################
+  ! <SUBROUTINE NAME="horiz_interp_spherical_new">
 
   !   <OVERVIEW>
   !      Initialization routine.
@@ -76,7 +108,7 @@ contains
   !      that contains pre-computed interpolation indices and weights.
   !   </DESCRIPTION>
   !   <TEMPLATE>
-  !     call horiz_interp_spherical_init(Interp, lon_in,lat_in,lon_out,lat_out, num_nbrs, max_dist, src_modulo)
+  !     call horiz_interp_spherical_new(Interp, lon_in,lat_in,lon_out,lat_out, num_nbrs, max_dist, src_modulo)
   !   </TEMPLATE>
   !   
   !   <IN NAME="lon_in" TYPE="real, dimension(:,:)" UNITS="radians">
@@ -115,10 +147,10 @@ contains
   !   <INOUT NAME="Interp" TYPE="type(horiz_interp_type)">
   !      A derived-type variable containing indices and weights used for subsequent 
   !      interpolations. To reinitialize this variable for a different grid-to-grid 
-  !      interpolation you must first use the "horiz_interp_end" interface.
+  !      interpolation you must first use the "horiz_interp_del" interface.
   !   </INOUT>
 
-  subroutine horiz_interp_spherical_init(Interp, lon_in,lat_in,lon_out,lat_out, &
+  subroutine horiz_interp_spherical_new(Interp, lon_in,lat_in,lon_out,lat_out, &
        num_nbrs, max_dist, src_modulo)
     type(horiz_interp_type), intent(inout) :: Interp
     real, intent(in),       dimension(:,:) :: lon_in, lat_in, lon_out, lat_out
@@ -127,7 +159,7 @@ contains
     logical,          intent(in), optional :: src_modulo
 
     !------local variables ---------------------------------------
-    integer :: i, j, n, unit, ierr, io
+    integer :: i, j, n
     integer :: map_dst_xsize, map_dst_ysize, map_src_xsize, map_src_ysize
     integer :: map_src_size, num_neighbors
     real    :: max_src_dist, tpi, hpi 
@@ -145,20 +177,6 @@ contains
 
     pe      = mpp_pe()
     root_pe = mpp_root_pe()
-
-    if (do_vers) then
-       call write_version_number (version, tagname)
-       do_vers = .false.
-    endif
-
-    if (file_exist('input.nml')) then
-       unit = open_namelist_file ( )
-       ierr=1; do while (ierr /= 0)
-          read  (unit, nml=horiz_interp_spherical_nml, iostat=io, end=10)
-          ierr = check_nml_error(io,'horiz_interp_spherical_nml')  ! also initializes nml error codes
-       enddo
- 10    call close_file (unit)
-    endif
 
     tpi = 2.0*PI; hpi = 0.5*PI
 
@@ -249,7 +267,7 @@ contains
        call full_search(theta_src, phi_src, theta_dst, phi_dst, map_src_add, map_src_dist, &
             num_found, num_neighbors,max_src_dist )
     case default
-       call mpp_error(FATAL,"horiz_interp_spherical_init: nml search_method = "// &
+       call mpp_error(FATAL,"horiz_interp_spherical_new: nml search_method = "// &
                   trim(search_method)//" is not a valid namelist option")
     end select    
 
@@ -280,7 +298,7 @@ contains
     deallocate(map_src_add, map_src_dist, ilon, jlat)
     return
 
-  end subroutine horiz_interp_spherical_init
+  end subroutine horiz_interp_spherical_new
   ! </SUBROUTINE>
 
   !#######################################################################
@@ -291,7 +309,7 @@ contains
   !   </OVERVIEW>
   !   <DESCRIPTION>
   !     Subroutine for performing the horizontal interpolation between two grids. 
-  !     horiz_interp_spherical_init must be called before calling this routine.
+  !     horiz_interp_spherical_new must be called before calling this routine.
   !   </DESCRIPTION>
   !   <TEMPLATE>
   !     call horiz_interp_spherical( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value)
@@ -299,7 +317,7 @@ contains
   !   
   !   <IN NAME="Interp" TYPE="type(horiz_interp_type)">
   !     Derived-type variable containing interpolation indices and weights.
-  !     Returned by a previous call to horiz_interp_init.
+  !     Returned by a previous call to horiz_interp_spherical_new.
   !   </IN>
   !   <IN NAME="data_in" TYPE="real, dimension(:,:)">
   !      Input data on source grid.
@@ -459,29 +477,29 @@ contains
   ! </SUBROUTINE>
 
   !#######################################################################
-  ! <SUBROUTINE NAME="horiz_interp_spherical_end">
+  ! <SUBROUTINE NAME="horiz_interp_spherical_del">
 
   !   <OVERVIEW>
   !     Deallocates memory used by "horiz_interp_type" variables.
-  !     Must be called before reinitializing with horiz_interp_init.
+  !     Must be called before reinitializing with horiz_interp_spherical_new.
   !   </OVERVIEW>
   !   <DESCRIPTION>
   !     Deallocates memory used by "horiz_interp_type" variables.
-  !     Must be called before reinitializing with horiz_interp_init.
+  !     Must be called before reinitializing with horiz_interp_spherical_new.
   !   </DESCRIPTION>
   !   <TEMPLATE>
-  !     call horiz_interp_spherical_end ( Interp )
+  !     call horiz_interp_spherical_del ( Interp )
   !   </TEMPLATE>
 
   !   <INOUT NAME="Interp" TYPE="horiz_interp_type">
   !     A derived-type variable returned by previous call
-  !     to horiz_interp_init. The input variable must have
+  !     to horiz_interp_spherical_new. The input variable must have
   !     allocated arrays. The returned variable will contain
   !     deallocated arrays.
   !   </INOUT>
 
 
-  subroutine horiz_interp_spherical_end( Interp )
+  subroutine horiz_interp_spherical_del( Interp )
 
     type (horiz_interp_type), intent(inout) :: Interp
 
@@ -490,7 +508,7 @@ contains
     if(associated(Interp%i_lon))     deallocate(Interp%i_lon)
     if(associated(Interp%j_lat))     deallocate(Interp%j_lat)
 
-  end subroutine horiz_interp_spherical_end
+  end subroutine horiz_interp_spherical_del
   ! </SUBROUTINE>
 
   !#######################################################################

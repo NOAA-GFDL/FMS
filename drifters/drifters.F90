@@ -1,5 +1,5 @@
 !FDOC_TAG_GFDL fdoc.pl generated xml skeleton
-! $Id: drifters.F90,v 13.0.2.2.2.1 2006/11/29 19:08:13 fms Exp $
+! $Id: drifters.F90,v 14.0 2007/03/15 22:38:38 fms Exp $
 
 #include <fms_platform.h>
 #include "fms_switches.h"
@@ -107,11 +107,10 @@ module drifters_mod
   public :: drifters_type, assignment(=), drifters_push, drifters_compute_k, drifters_set_field
   public :: drifters_new, drifters_del, drifters_set_domain, drifters_set_pe_neighbors
   public :: drifters_set_v_axes, drifters_set_domain_bounds, drifters_positions2lonlat
-  public :: drifters_print_checksums, drifters_computek2d, drifters_computek3d
-  public :: drifters_push_2, drifters_push_3, drifters_set_field_2d, drifters_set_field_3d
+  public :: drifters_print_checksums, drifters_save, drifters_write_restart, drifters_distribute
 
   integer, parameter, private :: MAX_STR_LEN = 128
-  character(len=MAX_STR_LEN), parameter, private :: version = '$Id: drifters.F90,v 13.0.2.2.2.1 2006/11/29 19:08:13 fms Exp $'
+  character(len=MAX_STR_LEN), parameter, private :: version = '$Id: drifters.F90,v 14.0 2007/03/15 22:38:38 fms Exp $'
   real :: DRFT_EMPTY_ARRAY(0)
 
   type drifters_type

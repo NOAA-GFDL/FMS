@@ -531,6 +531,7 @@ private
      module procedure mpp_read_r1D
      module procedure mpp_read_r2D
      module procedure mpp_read_r3D
+     module procedure mpp_read_text
   end interface
 
 !***********************************************************************
@@ -772,8 +773,11 @@ private
   character(len=256) :: text
   integer            :: error
   integer            :: records_per_pe
+
 !initial value of buffer between meta_data and data in .nc file
-  integer            :: header_buffer_val = 0 
+  integer            :: header_buffer_val = 16384
+  namelist /mpp_io_nml/header_buffer_val ! value used in NF__ECDDEF
+
   real(DOUBLE_KIND), allocatable :: mpp_io_stack(:)
   type(axistype),save            :: default_axis      !provided to users with default components
   type(fieldtype),save           :: default_field     !provided to users with default components
@@ -782,9 +786,9 @@ private
 
 
   character(len=128) :: version= &
-       '$Id: mpp_io.F90,v 13.0.2.1.2.1.4.1.2.2 2006/09/01 16:05:16 z1l Exp $'
+       '$Id: mpp_io.F90,v 14.0 2007/03/15 22:41:06 fms Exp $'
   character(len=128) :: tagname= &
-       '$Name: memphis_2006_12 $'
+       '$Name: nalanda $'
 
 contains
 

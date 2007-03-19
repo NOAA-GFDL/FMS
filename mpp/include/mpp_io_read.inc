@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_read.inc,v 13.0.4.3.2.1 2006/08/29 15:25:01 z1l Exp $
+! $Id: mpp_io_read.inc,v 14.0 2007/03/15 22:43:19 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -246,6 +246,76 @@
       call read_record( unit, field, 1, data_tmp, tindex )
       data=data_tmp(1)
     end subroutine mpp_read_r0D
+
+    !--- Assume the text field is at most two-dimensional 
+    !--- the level is always for the first dimension
+    subroutine mpp_read_text( unit, field, data, level )
+      integer,             intent(in) :: unit
+      type(fieldtype),     intent(in) :: field
+      character(len=*), intent(inout) :: data
+      integer, intent(in), optional   :: level
+      integer                         :: lev, n
+      character(len=256)              :: error_msg
+      integer, dimension(size(field%axes(:))) :: start, axsiz
+      character(len=len(data))        :: text
+
+#ifdef use_netCDF
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'READ_RECORD: must first call mpp_io_init.' )
+      if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'READ_RECORD: invalid unit number.' )
+      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
+
+      if( .NOT.mpp_file(unit)%initialized ) call mpp_error( FATAL, 'MPP_READ: must first call mpp_read_meta.' )
+      lev = 1
+      if(present(level)) lev = 1
+
+      if( verbose )print '(a,2i3,2i5)', 'MPP_READ: PE, unit, %id, level =', pe, unit, mpp_file(unit)%id, lev
+
+      if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
+         start = 1
+         axsiz(:) = field%size(:)
+         if(len(data) < field%size(1) ) call mpp_error(FATAL, &
+                'mpp_io(mpp_read_text): the first dimension size is greater than data length')
+         select case( field%ndim)
+         case(1)
+            if(lev .NE. 1) call mpp_error(FATAL,'mpp_io(mpp_read_text): level should be 1 when ndim is 1')
+         case(2)
+            if(lev<1 .OR. lev > field%size(2)) then
+               write(error_msg,'(I5,"/",I5)') lev, field%size(2)
+               call mpp_error(FATAL,'mpp_io(mpp_read_text): level out of range, level/max_level='//trim(error_msg))
+            end if
+            start(2) = lev
+            axsiz(2) = 1
+         case default
+            call mpp_error( FATAL, 'MPP_READ: ndim of text field should be at most 2')
+         end select
+
+         if( verbose )print '(a,2i3,i6,12i4)', 'mpp_read_text: PE, unit, nwords, start, axsiz=', pe, unit, len(data), start, axsiz
+          
+          select case (field%type)
+             case(NF_CHAR)
+                if(field%ndim==1) then
+                   error = NF_GET_VAR_TEXT(mpp_file(unit)%ncid, field%id, text) 
+                else
+                   error = NF_GET_VARA_TEXT(mpp_file(unit)%ncid, field%id, start, axsiz, text) 
+                end if
+                call netcdf_err( error, mpp_file(unit), field=field )
+                do n = 1, len_trim(text)
+                   if(text(n:n) == CHAR(0) ) exit
+                end do
+                n = n-1
+                data = text(1:n)
+             case default
+                call mpp_error( FATAL, 'mpp_read_text: the field type should be NF_CHAR' )
+          end select
+      else                      !non-netCDF
+          call mpp_error( FATAL, 'Currently dont support non-NetCDF mpp read' )
+          
+      end if
+#else 
+      call mpp_error( FATAL, 'mpp_read_text currently requires use_netCDF option' )
+#endif
+      return
+    end subroutine mpp_read_text
 
 ! <SUBROUTINE NAME="mpp_read_meta">
 
@@ -605,6 +675,8 @@
                  mpp_file(unit)%Var(nv)%pack = 1
              case (NF_INT)
                  mpp_file(unit)%Var(nv)%pack = 2
+             case (NF_CHAR)
+                 mpp_file(unit)%Var(nv)%pack = 1
              case default
                    call mpp_error( FATAL, 'Invalid variable type in NetCDF file' )
              end select

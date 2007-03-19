@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_util.inc,v 13.0.2.3.4.1.2.2 2006/11/08 18:25:25 fms Exp $
+! $Id: mpp_domains_util.inc,v 14.0 2007/03/15 22:42:53 fms Exp $
 
   ! <SUBROUTINE NAME="mpp_domains_set_stack_size">
   !  <OVERVIEW>
@@ -911,6 +911,17 @@ end subroutine mpp_get_domain_shift
      return
 
   end function mpp_get_tile_id
+
+  !########################################################################
+  ! return number of tiles in mosaic
+  function mpp_get_ntile_count(domain)
+     type(domain2d),                  intent(in) :: domain
+     integer                                     :: mpp_get_ntile_count
+
+     mpp_get_ntile_count = domain%ntiles
+     return
+
+  end function mpp_get_ntile_count
 
   !########################################################################
   ! return number of tile on current pe

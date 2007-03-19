@@ -140,7 +140,7 @@ use       mpp_io_mod, only:  mpp_io_init, mpp_open, mpp_close,         &
 use fms_io_mod, only : read_data, write_data, fms_io_init, fms_io_exit, field_size, &
                        open_namelist_file, open_restart_file, open_ieee32_file, close_file, &
                        set_domain, get_domain_decomp, nullify_domain, &
-                       open_file, open_direct_file
+                       open_file, open_direct_file, string, get_mosaic_tile_grid, get_mosaic_tile_file
 
 use memutils_mod, only: print_memuse_stats, memutils_init
 use constants_mod, only: constants_version=>version, constants_tagname=>tagname !pjp: PI not computed
@@ -161,6 +161,9 @@ public :: open_namelist_file, open_restart_file, &
 public :: set_domain, read_data, write_data
 public :: get_domain_decomp, field_size, nullify_domain
 
+! routines for get mosaic information
+public :: get_mosaic_tile_grid, get_mosaic_tile_file
+
 ! miscellaneous i/o routines
 public :: file_exist, check_nml_error, field_exist,     &
           write_version_number, error_mesg, fms_error_handler
@@ -180,6 +183,7 @@ public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
 public :: CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, &
           CLOCK_MODULE_DRIVER, CLOCK_MODULE,   &
           CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
+
 !Balaji
 !this is published by fms and applied to any initialized clocks
 !of course you can go and set the flag to SYNC or DETAILED by hand
@@ -256,12 +260,6 @@ integer, public :: clock_flag_default
                       stack_size, domains_stack_size, &
                       print_memory_usage
 
-  !--- public interface ---
-  interface string
-     module procedure string_from_integer
-     module procedure string_from_real
-  end interface 
-
 !   ---- private data for check_nml_error ----
 
    integer, private :: num_nml_error_codes, nml_error_codes(20)
@@ -271,8 +269,8 @@ integer, public :: clock_flag_default
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: fms.F90,v 13.0.4.1 2006/08/16 15:11:48 pjp Exp $'
-  character(len=128) :: tagname = '$Name: memphis_2006_12 $'
+  character(len=128) :: version = '$Id: fms.F90,v 14.0 2007/03/15 22:39:30 fms Exp $'
+  character(len=128) :: tagname = '$Name: nalanda $'
 
   logical :: module_is_initialized = .FALSE.
 
@@ -1000,29 +998,6 @@ integer :: i
 
 end function monotonic_array
 ! </FUNCTION>
-
-  !#######################################################################
-
-  function string_from_integer(n)
-    integer, intent(in) :: n
-    character(len=16) :: string_from_integer
-
-    write(string_from_integer,*) n
-
-    return
-
-  end function string_from_integer
-
-  !#######################################################################
-  function string_from_real(a)
-    real, intent(in) :: a
-    character(len=32) :: string_from_real
-
-    write(string_from_real,*) a
-
-    return
-
-  end function string_from_real
 
 end module fms_mod
 ! <INFO>

@@ -137,8 +137,8 @@ character (len=10)  :: time_unit_list(6) = (/'seconds   ', 'minutes   ', &
 character(len=32)   :: pelist_name
 
 
-character(len=128),private  :: version = '$Id: diag_data.F90,v 13.1.2.1.2.1.4.1 2006/12/01 17:14:38 fms Exp $'
-character(len=128),private  :: tagname = '$Name: memphis_2006_12 $'
+character(len=128),private  :: version = '$Id: diag_data.F90,v 14.0 2007/03/15 22:38:17 fms Exp $'
+character(len=128),private  :: tagname = '$Name: nalanda $'
 
 
 ! definitions for diag_axis_mod

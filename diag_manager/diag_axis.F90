@@ -1,5 +1,4 @@
 module diag_axis_mod
-
 ! <CONTACT EMAIL="Giang.Nong@noaa.gov">
 !   Giang Nong
 ! </CONTACT>
@@ -56,8 +55,8 @@ character(len=128) :: Axis_sets(max_num_axis_sets)
 type (diag_axis_type), allocatable, save :: Axes(:)
 logical            :: module_is_initialized = .FALSE.
 character(len=128) :: &
-     version='$Id: diag_axis.F90,v 13.0.2.1.4.1.2.3 2006/11/30 13:39:03 z1l Exp $'
-character(len=128) :: tagname='$Name: memphis_2006_12 $'
+     version='$Id: diag_axis.F90,v 14.0 2007/03/15 22:38:12 fms Exp $'
+character(len=128) :: tagname='$Name: nalanda $'
 
 contains
 !#######################################################################
@@ -299,7 +298,11 @@ function diag_subaxes_init(axis,subdata,start_indx,end_indx,domain_1d,domain_2d)
 
 ! If subaxis already exists, get the index and return       
   if(subaxis_set) then
-     index = get_axis_num(name)     
+     if (Axes(axis)%set > 0) then
+        index = get_axis_num(name,set_name=trim(Axis_sets(Axes(axis)%set)))     
+     else
+        index = get_axis_num(name)     
+     endif
   else
 ! get a new index for subaxis
      write(nsub_name,'(I1)') nsub_axis
@@ -309,8 +312,13 @@ function diag_subaxes_init(axis,subdata,start_indx,end_indx,domain_1d,domain_2d)
      units = trim(Axes(axis)%units)
      cart_name = trim(Axes(axis)%cart_name)
      direction = Axes(axis)%direction
-     index =  diag_axis_init (trim(name), subdata, trim(units), trim(cart_name), trim(long_name), direction, &
-          Domain2=domain_2d)
+     if (Axes(axis)%set > 0) then
+        index =  diag_axis_init (trim(name), subdata, trim(units), trim(cart_name), trim(long_name), &
+             set_name=trim(Axis_sets(Axes(axis)%set)), Domain2=domain_2d)
+     else
+        index =  diag_axis_init (trim(name), subdata, trim(units), trim(cart_name), trim(long_name), &
+             Domain2=domain_2d)
+     endif
   endif        
 end function diag_subaxes_init
 !#######################################################################

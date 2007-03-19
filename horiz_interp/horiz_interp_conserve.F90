@@ -10,11 +10,18 @@ module horiz_interp_conserve_mod
   ! </OVERVIEW>
 
   ! <DESCRIPTION>
-  !     This module can interpolate data from regular rectangular grid
-  !     to rectangular/tripolar grid. The interpolation scheme is area-averaging 
-  !     conservative scheme. There is an optional mask field for missing input data.
-  !     An optional output mask field may be used in conjunction with
-  !     the input mask to show where output data exists.
+  !     This module can conservatively interpolate data from any logically rectangular grid
+  !     to any rectangular grid. The interpolation scheme is area-averaging 
+  !     conservative scheme. There is an optional mask field for missing input data in both
+  !     horiz_interp__conserveinit and horiz_interp_conserve. For efficiency purpose, mask should only be 
+  !     kept in horiz_interp_init (will remove the mask in horiz_interp in the future). 
+  !     There are 1-D and 2-D version of horiz_interp_conserve_init for 1-D and 2-D grid.
+  !     There is a optional argument mask in horiz_interp_conserve_init_2d and no mask should 
+  !     to passed into horiz_interp_conserv. optional argument mask will not be passed into
+  !     horiz_interp_conserve_init_1d and optional argument mask may be passed into 
+  !     horiz_interp_conserve (For the purpose of reproduce Memphis??? results).   
+  !     An optional output mask field may be used in conjunction with the input mask to show 
+  !     where output data exists.
   ! </DESCRIPTION>
 
   use mpp_mod,               only: mpp_send, mpp_recv, mpp_pe, mpp_root_pe
@@ -27,75 +34,106 @@ module horiz_interp_conserve_mod
   implicit none
   private
 
-  public :: horiz_interp_conserve_init, horiz_interp_conserve, horiz_interp_conserve_end
+  ! public interface
+
+
+  ! <INTERFACE NAME="horiz_interp_conserve_new">
+  !   <OVERVIEW>
+  !      Allocates space and initializes a derived-type variable
+  !      that contains pre-computed interpolation indices and weights.
+  !   </OVERVIEW>
+  !   <DESCRIPTION>
+  !      Allocates space and initializes a derived-type variable
+  !      that contains pre-computed interpolation indices and weights
+  !      for improved performance of multiple interpolations between
+  !      the same grids. 
+
+  !   </DESCRIPTION>
+  !   <IN NAME="lon_in" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians">
+  !      Longitude (in radians) for source data grid. 
+  !   </IN>
+  !   <IN NAME="lat_in" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians">
+  !      Latitude (in radians) for source data grid.
+  !   </IN>
+  !   <IN NAME="lon_out" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians" >
+  !      Longitude (in radians) for destination data grid. 
+  !   </IN>
+  !   <IN NAME="lat_out" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians" >
+  !      Latitude (in radians) for destination data grid. 
+  !   </IN>
+  !   <IN NAME="verbose" TYPE="integer, optional" >
+  !      flag for the amount of print output.
+  !   </IN>
+  !   <IN NAME="mask_in" TYPE="real, dimension(:,:),optional">
+  !      Input mask.  must be the size (size(lon_in)-1, size(lon. The real value of
+  !      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points 
+  !      that should not be used or have missing data.
+  !   </IN>
+  !   <OUT NAME="mask_out" TYPE="real, dimension(:,:),optional">
+  !      Output mask that specifies whether data was computed.
+  !   </OUT>
+  !   <INOUT NAME="Interp" TYPE="type(horiz_interp_type)" >
+  !      A derived-type variable containing indices and weights used for subsequent 
+  !      interpolations. To reinitialize this variable for a different grid-to-grid 
+  !      interpolation you must first use the "horiz_interp_del" interface.
+  !   </INOUT>
+  interface horiz_interp_conserve_new
+     module procedure horiz_interp_conserve_new_1dx1d
+     module procedure horiz_interp_conserve_new_1dx2d
+     module procedure horiz_interp_conserve_new_2dx1d
+     module procedure horiz_interp_conserve_new_2dx2d
+  end interface
+  ! </INTERFACE>
+  public :: horiz_interp_conserve_init 
+  public :: horiz_interp_conserve_new, horiz_interp_conserve, horiz_interp_conserve_del
 
   integer :: pe, root_pe
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_conserve.F90,v 13.0.2.1 2006/06/25 14:58:33 pjp Exp $'
-  character(len=128) :: tagname = '$Name: memphis_2006_12 $'
-  logical            :: do_vers = .true.
+  character(len=128) :: version = '$Id: horiz_interp_conserve.F90,v 14.0 2007/03/15 22:40:02 fms Exp $'
+  character(len=128) :: tagname = '$Name: nalanda $'
+  logical            :: module_is_initialized = .FALSE.
 
 contains
 
   !#######################################################################
-  ! <SUBROUTINE NAME="horiz_interp_conserve_init">
+  !  <SUBROUTINE NAME="horiz_interp_conserve_init">
+  !  <OVERVIEW>
+  !     writes version number and tag name to logfile.out
+  !  </OVERVIEW>
+  !  <DESCRIPTION>       
+  !     writes version number and tag name to logfile.out
+  !  </DESCRIPTION>
 
-  !   <OVERVIEW>
-  !      Initialization routine.
-  !   </OVERVIEW>
-  !   <DESCRIPTION>
-  !      Allocates space and initializes a derived-type variable
-  !      that contains pre-computed interpolation indices and weights.
-  !   </DESCRIPTION>
-  !   <TEMPLATE>
-  !     call horiz_interp_conserve_init ( Interp, lon_in, lat_in, lon_out, lat_out, verbose)
+  subroutine horiz_interp_conserve_init
 
-  !   </TEMPLATE>
-  !   
-  !   <IN NAME="lon_in" TYPE="real, dimension(:,:)" UNITS="radians">
-  !      Longitude (in radians) for source data grid. 
-  !   </IN>
+    if(module_is_initialized) return
+    call write_version_number (version, tagname)
+    module_is_initialized = .true.
 
-  !   <IN NAME="lat_in" TYPE="real, dimension(:,:)" UNITS="radians">
-  !      Latitude (in radians) for source data grid.
-  !   </IN>
+  end subroutine horiz_interp_conserve_init
 
-  !   <IN NAME="lon_out" TYPE="real, dimension(:,:)" UNITS="radians" >
-  !      Longitude (in radians) for source data grid. 
-  !   </IN>
+  !  </SUBROUTINE>
 
-  !   <IN NAME="lat_out" TYPE="real, dimension(:,:)" UNITS="radians" >
-  !      Latitude (in radians) for source data grid. 
-  !   </IN>
-
-  !   <IN NAME="verbose" TYPE="integer, optional" >
-  !      flag for the amount of print output.
-  !   </IN>
-
-  !   <INOUT NAME="Interp" TYPE="type(horiz_interp_type)" >
-  !      A derived-type variable containing indices and weights used for subsequent 
-  !      interpolations. To reinitialize this variable for a different grid-to-grid 
-  !      interpolation you must first use the "horiz_interp_end" interface.
-  !   </INOUT>
-  subroutine horiz_interp_conserve_init ( Interp, lon_in, lat_in,   &
-       lon_out, lat_out, verbose)
-
+  !#######################################################################
+  !<PUBLICROUTINE INTERFACE="horiz_interp_conserve_new">
+  subroutine horiz_interp_conserve_new_1dx1d ( Interp, lon_in, lat_in, lon_out, lat_out, verbose)
     type(horiz_interp_type), intent(inout) :: Interp
-    real, intent(in),    dimension(:)      :: lon_in , lat_in
-    real, intent(in),    dimension(:,:)    :: lon_out, lat_out
+    real, intent(in),       dimension(:)   :: lon_in , lat_in
+    real, intent(in),       dimension(:)   :: lon_out, lat_out
     integer, intent(in),       optional    :: verbose
-
+  !</PUBLICROUTINE>
     !-----------------------------------------------------------------------
-    real, dimension(size(lat_out,1),size(lat_out,2)) :: sph
-    real, dimension(size(lat_in(:)))    :: slat_in
-    real, dimension(size(lon_in,1)-1) :: dlon_in
-    real, dimension(size(lat_in,1)-1) :: dsph_in
-    real, dimension(size(lon_out,1))  :: dlon_out
-    real, dimension(size(lat_out,1))  :: dsph_out
+    real, dimension(size(lat_out(:))-1,2) :: sph
+    real, dimension(size(lon_out(:))-1,2) :: theta
+    real, dimension(size(lat_in(:)))      :: slat_in
+    real, dimension(size(lon_in(:))-1)    :: dlon_in
+    real, dimension(size(lat_in(:))-1)    :: dsph_in
+    real, dimension(size(lon_out(:))-1)   :: dlon_out
+    real, dimension(size(lat_out(:))-1)   :: dsph_out
     real    :: blon, fac, hpi, tpi, eps
     integer :: num_iters = 4
     integer :: i, j, m, n, nlon_in, nlat_in, nlon_out, nlat_out,   &
-               iverbose, m2, n2, iter
+         iverbose, m2, n2, iter
     logical :: s2n
     character(len=64) :: mesg
     !-----------------------------------------------------------------------
@@ -103,30 +141,17 @@ contains
 
     pe      = mpp_pe()
     root_pe = mpp_root_pe()
-
-    if (do_vers) then
-       call write_version_number (version, tagname)
-       do_vers = .false.
-    endif
-
-
-    allocate ( Interp % facj (size(lat_out,1),size(lat_out,2)),      &
-         Interp % jlat (size(lat_out,1),size(lat_out,2)),      &
-         Interp % faci (size(lon_out,1),size(lon_out,2)),      &
-         Interp % ilon (size(lon_out,1),size(lon_out,2)),      &
-         Interp % area_src (size(lon_in)-1, size(lat_in)-1),   &
-         Interp % area_dst (size(lon_out,1),size(lat_out,1)) )
     !-----------------------------------------------------------------------
     hpi = 0.5*pi
     tpi = 4.*hpi
+    Interp%version = 1
+    nlon_in = size(lon_in(:))-1;  nlat_in = size(lat_in(:))-1
+    nlon_out = size(lon_out(:))-1;  nlat_out = size(lat_out(:))-1
 
-    nlon_in = size(lon_in)-1;  nlat_in = size(lat_in)-1
-
-    ! check size of input arguments
-
-    if ( size(lon_out,2) /=2 .or. size(lat_out,2) /= 2 )  &
-         call mpp_error(FATAL, 'horiz_interp_conserve_mod: '// &
-         'when using conservative scheme, dimension 2 of lon_out and/or lat_out must be 2')
+    allocate ( Interp % facj (nlat_out,2), Interp % jlat (nlat_out,2),      &
+               Interp % faci (nlon_out,2), Interp % ilon (nlon_out,2),      &
+               Interp % area_src (nlon_in, nlat_in),   &
+               Interp % area_dst (nlon_out, nlat_out) )
 
     !-----------------------------------------------------------------------
     !  --- set-up for input grid boxes ---
@@ -150,14 +175,14 @@ contains
     !-----------------------------------------------------------------------
     !  --- set-up for output grid boxes ---
 
-    nlon_out = size(lon_out,1);  nlat_out = size(lat_out,1)
-
     do n = 1, nlat_out
-       dsph_out(n) = abs(sin(lat_out(n,2))-sin(lat_out(n,1)))
+       dsph_out(n) = abs(sin(lat_out(n+1))-sin(lat_out(n)))
     enddo
 
     do m = 1,nlon_out
-       dlon_out(m) = abs(lon_out(m,2)-lon_out(m,1))
+       theta(m,1)  = lon_out(m)
+       theta(m,2)  = lon_out(m+1)
+       dlon_out(m) = abs(lon_out(m+1)-lon_out(m))
     enddo
 
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
@@ -168,12 +193,12 @@ contains
     !------ make sure output grid goes south to north ------
 
     do n = 1, nlat_out
-       if (lat_out(n,1) < lat_out(n,2)) then
-          sph(n,1) = sin(lat_out(n,1))
-          sph(n,2) = sin(lat_out(n,2))
+       if (lat_out(n) < lat_out(n+1)) then
+          sph(n,1) = sin(lat_out(n))
+          sph(n,2) = sin(lat_out(n+1))
        else
-          sph(n,1) = sin(lat_out(n,2))
-          sph(n,2) = sin(lat_out(n,1))
+          sph(n,1) = sin(lat_out(n+1))
+          sph(n,2) = sin(lat_out(n))
        endif
     enddo
 
@@ -220,7 +245,7 @@ contains
     Interp%ilon = 0
     do m2 = 1, 2         ! looping on grid box edges
        do m = 1, nlon_out   ! looping on output longitudes
-          blon = lon_out(m,m2)
+          blon = theta(m,m2)
           if ( blon < lon_in(1)         ) blon = blon + tpi
           if ( blon > lon_in(nlon_in+1) ) blon = blon - tpi
           eps = 0.0
@@ -244,7 +269,7 @@ contains
           ! no match
           if ( Interp%ilon(m,m2) == 0 ) then
              print *, 'lon_out,blon,blon_in,eps=',  &
-                  lon_out(m,m2),blon,lon_in(1),lon_in(nlon_in+1),eps
+                  theta(m,m2),blon,lon_in(1),lon_in(nlon_in+1),eps
              call mpp_error(FATAL, 'horiz_interp_conserve_mod: no longitude index found')
           endif
        enddo
@@ -281,8 +306,218 @@ contains
     endif
     !-----------------------------------------------------------------------
 
-  end subroutine horiz_interp_conserve_init
-  ! </SUBROUTINE>
+  end subroutine horiz_interp_conserve_new_1dx1d
+
+  !#######################################################################
+  !<PUBLICROUTINE INTERFACE="horiz_interp_conserve_new">
+  subroutine horiz_interp_conserve_new_1dx2d ( Interp, lon_in, lat_in, lon_out, lat_out, mask_in, mask_out, verbose)
+    type(horiz_interp_type),        intent(inout) :: Interp
+    real, intent(in),              dimension(:)   :: lon_in , lat_in
+    real, intent(in),              dimension(:,:) :: lon_out, lat_out
+    real, intent(in),    optional, dimension(:,:) :: mask_in
+    real, intent(inout), optional, dimension(:,:) :: mask_out
+    integer, intent(in), optional                 :: verbose
+  !</PUBLICROUTINE>
+
+    integer :: create_xgrid_1DX2D_order1, get_maxxgrid, maxxgrid
+    integer :: nlon_in, nlat_in, nlon_out, nlat_out, nxgrid, i
+    real, dimension(size(lon_in(:))-1, size(lat_in(:))-1) :: mask_src
+    integer, allocatable, dimension(:)   :: i_src, j_src, i_dst, j_dst
+    real,    allocatable, dimension(:)   :: xgrid_area
+    real,    allocatable, dimension(:,:) :: dst_area
+
+    if( (size(lon_out,1) .NE. size(lat_out,1)) .OR. (size(lon_out,2) .NE. size(lat_out,2)) )  &
+        call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_out and lat_out')
+    nlon_in  = size(lon_in(:)) - 1;  nlat_in  = size(lat_in(:)) - 1
+    nlon_out = size(lon_out,1) - 1;  nlat_out = size(lon_out,2) - 1
+
+    mask_src = 1
+    if(present(mask_in)) then
+       if( (size(mask_in,1) .NE. nlon_in) .OR.  (size(mask_in,2) .NE. nlat_in)) call mpp_error(FATAL, &
+         'horiz_interp_conserve_mod: size mismatch between mask_in and lon_in/lat_in')
+       mask_src = mask_in
+    end if
+
+    maxxgrid = get_maxxgrid()
+    allocate(i_src(maxxgrid), j_src(maxxgrid), i_dst(maxxgrid), j_dst(maxxgrid) )
+    allocate( xgrid_area(maxxgrid), dst_area(nlon_out, nlat_out) )
+    nxgrid = create_xgrid_1DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in, lat_in, lon_out, lat_out, &
+                                       mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
+    allocate(Interp%i_src(nxgrid), Interp%j_src(nxgrid) )
+    allocate(Interp%i_dst(nxgrid), Interp%j_dst(nxgrid) )
+    allocate(Interp%area_frac_dst(nxgrid) )
+    Interp%version = 2
+    Interp%nxgrid   = nxgrid
+    Interp%i_src = i_src(1:nxgrid)+1 ! in C, the starting index is 0
+    Interp%j_src = j_src(1:nxgrid)+1
+    Interp%i_dst = i_dst(1:nxgrid)+1
+    Interp%j_dst = j_dst(1:nxgrid)+1
+
+    ! sum over exchange grid area to get destination grid area
+    dst_area = 0
+    do i = 1, nxgrid
+       dst_area(Interp%i_dst(i), Interp%j_dst(i)) = dst_area(Interp%i_dst(i), Interp%j_dst(i)) + xgrid_area(i)       
+    end do    
+
+    do i = 1, nxgrid
+       Interp%area_frac_dst(i) = xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) )
+    end do
+    Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
+    Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
+    if(present(mask_out)) then
+       if( (size(mask_out,1) .NE. nlon_out) .OR. (size(mask_out,2) .NE. nlat_out) ) call mpp_error(FATAL, &
+         'horiz_interp_conserve_mod: size mismatch between mask_out and lon_out/lat_out')
+       mask_out = 0.0
+       do i = 1, nxgrid
+          mask_out(i_dst(i),j_dst(i)) = mask_out(i_dst(i),j_dst(i)) + Interp%area_frac_dst(i)
+       end do
+    end if
+
+    deallocate(i_src, j_src, i_dst, j_dst, xgrid_area, dst_area )
+
+  end subroutine horiz_interp_conserve_new_1dx2d
+
+  !#######################################################################
+  !<PUBLICROUTINE INTERFACE="horiz_interp_conserve_new">
+  subroutine horiz_interp_conserve_new_2dx1d ( Interp, lon_in, lat_in, lon_out, lat_out, mask_in, mask_out, verbose)
+    type(horiz_interp_type),        intent(inout) :: Interp
+    real, intent(in),              dimension(:,:) :: lon_in , lat_in
+    real, intent(in),              dimension(:)   :: lon_out, lat_out
+    real, intent(in),    optional, dimension(:,:) :: mask_in
+    real, intent(inout), optional, dimension(:,:) :: mask_out
+    integer, intent(in), optional                 :: verbose
+  !</PUBLICROUTINE>
+
+    integer :: create_xgrid_2DX1D_order1, get_maxxgrid, maxxgrid
+    integer :: nlon_in, nlat_in, nlon_out, nlat_out, nxgrid, i
+    real, dimension(size(lon_in,1)-1, size(lon_in,2)-1) :: mask_src
+    integer, allocatable, dimension(:)   :: i_src, j_src, i_dst, j_dst
+    real,    allocatable, dimension(:)   :: xgrid_area
+    real,    allocatable, dimension(:,:) :: dst_area
+
+    if( (size(lon_in,1) .NE. size(lat_in,1)) .OR. (size(lon_in,2) .NE. size(lat_in,2)) )  &
+        call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_in and lat_in')
+    nlon_in  = size(lon_in,1)   - 1;  nlat_in  = size(lon_in,2)   - 1
+    nlon_out = size(lon_out(:)) - 1;  nlat_out = size(lat_out(:)) - 1
+
+    mask_src = 1
+    if(present(mask_in)) then
+       if( (size(mask_in,1) .NE. nlon_in) .OR.  (size(mask_in,2) .NE. nlat_in)) call mpp_error(FATAL, &
+         'horiz_interp_conserve_mod: size mismatch between mask_in and lon_in/lat_in')
+       mask_src = mask_in
+    end if
+
+    maxxgrid = get_maxxgrid()
+    allocate(i_src(maxxgrid), j_src(maxxgrid), i_dst(maxxgrid), j_dst(maxxgrid) )
+    allocate( xgrid_area(maxxgrid), dst_area(nlon_out, nlat_out) )
+
+    nxgrid = create_xgrid_2DX1D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in, lat_in, lon_out, lat_out, &
+                                       mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
+    allocate(Interp%i_src(nxgrid), Interp%j_src(nxgrid) )
+    allocate(Interp%i_dst(nxgrid), Interp%j_dst(nxgrid) )
+    allocate(Interp%area_frac_dst(nxgrid) )
+    Interp%version = 2
+    Interp%nxgrid   = nxgrid
+    Interp%i_src = i_src(1:nxgrid)+1 ! in C, the starting index is 0
+    Interp%j_src = j_src(1:nxgrid)+1
+    Interp%i_dst = i_dst(1:nxgrid)+1
+    Interp%j_dst = j_dst(1:nxgrid)+1
+
+    ! sum over exchange grid area to get destination grid area
+    dst_area = 0
+    do i = 1, nxgrid
+       dst_area(Interp%i_dst(i), Interp%j_dst(i)) = dst_area(Interp%i_dst(i), Interp%j_dst(i)) + xgrid_area(i)       
+    end do    
+
+    do i = 1, nxgrid
+       Interp%area_frac_dst(i) = xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) )
+    end do
+    Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
+    Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
+    if(present(mask_out)) then
+       if( (size(mask_out,1) .NE. nlon_out) .OR. (size(mask_out,2) .NE. nlat_out) ) call mpp_error(FATAL, &
+         'horiz_interp_conserve_mod: size mismatch between mask_out and lon_out/lat_out')
+       mask_out = 0.0
+       do i = 1, nxgrid
+          mask_out(i_dst(i),j_dst(i)) = mask_out(i_dst(i),j_dst(i)) + Interp%area_frac_dst(i)
+       end do
+    end if
+
+    deallocate(i_src, j_src, i_dst, j_dst, xgrid_area, dst_area)
+
+  end subroutine horiz_interp_conserve_new_2dx1d
+
+  !#######################################################################
+  !<PUBLICROUTINE INTERFACE="horiz_interp_conserve_new">
+  subroutine horiz_interp_conserve_new_2dx2d ( Interp, lon_in, lat_in, lon_out, lat_out, mask_in, mask_out, verbose)
+    type(horiz_interp_type),        intent(inout) :: Interp
+    real, intent(in),              dimension(:,:) :: lon_in , lat_in
+    real, intent(in),              dimension(:,:) :: lon_out, lat_out
+    real, intent(in),    optional, dimension(:,:) :: mask_in
+    real, intent(inout), optional, dimension(:,:) :: mask_out
+    integer, intent(in), optional                 :: verbose
+  !</PUBLICROUTINE>
+
+    integer :: create_xgrid_2DX2D_order1, get_maxxgrid, maxxgrid
+    integer :: nlon_in, nlat_in, nlon_out, nlat_out, nxgrid, i
+    real, dimension(size(lon_in,1)-1, size(lon_in,2)-1) :: mask_src
+    integer, allocatable, dimension(:)   :: i_src, j_src, i_dst, j_dst
+    real,    allocatable, dimension(:)   :: xgrid_area
+    real,    allocatable, dimension(:,:) :: dst_area
+
+    if( (size(lon_in,1) .NE. size(lat_in,1)) .OR. (size(lon_in,2) .NE. size(lat_in,2)) )  &
+        call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_in and lat_in')
+    if( (size(lon_out,1) .NE. size(lat_out,1)) .OR. (size(lon_out,2) .NE. size(lat_out,2)) )  &
+        call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_out and lat_out')
+    nlon_in  = size(lon_in,1)  - 1;  nlat_in  = size(lon_in,2)  - 1
+    nlon_out = size(lon_out,1) - 1;  nlat_out = size(lon_out,2) - 1
+
+    mask_src = 1
+    if(present(mask_in)) then
+       if( (size(mask_in,1) .NE. nlon_in) .OR.  (size(mask_in,2) .NE. nlat_in)) call mpp_error(FATAL, &
+         'horiz_interp_conserve_mod: size mismatch between mask_in and lon_in/lat_in')
+       mask_src = mask_in
+    end if
+
+    maxxgrid = get_maxxgrid()
+    allocate(i_src(maxxgrid), j_src(maxxgrid), i_dst(maxxgrid), j_dst(maxxgrid) )
+    allocate( xgrid_area(maxxgrid), dst_area(nlon_out, nlat_out) )
+    nxgrid = create_xgrid_2DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in, lat_in, lon_out, lat_out, &
+                                       mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
+    allocate(Interp%i_src(nxgrid), Interp%j_src(nxgrid) )
+    allocate(Interp%i_dst(nxgrid), Interp%j_dst(nxgrid) )
+    allocate(Interp%area_frac_dst(nxgrid) )
+    Interp%version = 2
+    Interp%nxgrid   = nxgrid
+    Interp%i_src = i_src(1:nxgrid)+1 ! in C, the starting index is 0
+    Interp%j_src = j_src(1:nxgrid)+1
+    Interp%i_dst = i_dst(1:nxgrid)+1
+    Interp%j_dst = j_dst(1:nxgrid)+1
+
+    ! sum over exchange grid area to get destination grid area
+    dst_area = 0
+    do i = 1, nxgrid
+       dst_area(Interp%i_dst(i), Interp%j_dst(i)) = dst_area(Interp%i_dst(i), Interp%j_dst(i)) + xgrid_area(i)       
+    end do    
+
+    do i = 1, nxgrid
+       Interp%area_frac_dst(i) = xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) )
+    end do
+
+    Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
+    Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
+    if(present(mask_out)) then
+       if( (size(mask_out,1) .NE. nlon_out) .OR. (size(mask_out,2) .NE. nlat_out) ) call mpp_error(FATAL, &
+         'horiz_interp_conserve_mod: size mismatch between mask_out and lon_out/lat_out')
+       mask_out = 0.0
+       do i = 1, nxgrid
+          mask_out(i_dst(i),j_dst(i)) = mask_out(i_dst(i),j_dst(i)) + Interp%area_frac_dst(i)
+       end do
+    end if
+
+    deallocate(i_src, j_src, i_dst, j_dst, xgrid_area, dst_area )
+
+  end subroutine horiz_interp_conserve_new_2dx2d
 
   !########################################################################
   ! <SUBROUTINE NAME="horiz_interp_conserve">
@@ -292,7 +527,7 @@ contains
   !   </OVERVIEW>
   !   <DESCRIPTION>
   !     Subroutine for performing the horizontal interpolation between two grids. 
-  !     horiz_interp_conserve_init must be called before calling this routine.
+  !     horiz_interp_conserve_new must be called before calling this routine.
   !   </DESCRIPTION>
   !   <TEMPLATE>
   !     call horiz_interp_conserve ( Interp, data_in, data_out, verbose, mask_in, mask_out)
@@ -300,7 +535,7 @@ contains
   !   
   !   <IN NAME="Interp" TYPE="type(horiz_interp_type)">
   !     Derived-type variable containing interpolation indices and weights.
-  !     Returned by a previous call to horiz_interp_init.
+  !     Returned by a previous call to horiz_interp_new.
   !   </IN>
   !   <IN NAME="data_in" TYPE="real, dimension(:,:)">
   !      Input data on source grid.
@@ -313,17 +548,49 @@ contains
   !   <IN NAME="mask_in" TYPE="real, dimension(:,:),optional">
   !      Input mask, must be the same size as the input data. The real value of
   !      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points 
-  !      that should not be used or have missing data.
+  !      that should not be used or have missing data. mask_in will be applied only
+  !      when horiz_interp_conserve_new_1d is called. mask_in will be passed into
+  !      horiz_interp_conserve_new_2d.
   !   </IN>
 
   !   <OUT NAME="data_out" TYPE="real, dimension(:,:)">
   !      Output data on destination grid.
   !   </OUT>
   !   <OUT NAME="mask_out" TYPE="real, dimension(:,:),optional">
-  !      Output mask that specifies whether data was computed.
+  !      Output mask that specifies whether data was computed. mask_out will be computed only
+  !      when horiz_interp_conserve_new_1d is called. mask_out will be computed in
+  !      horiz_interp_conserve_new_2d.
   !   </OUT>
 
   subroutine horiz_interp_conserve ( Interp, data_in, data_out, verbose, &
+       mask_in, mask_out)
+    !-----------------------------------------------------------------------
+    type (horiz_interp_type), intent(in) :: Interp
+    real, intent(in),  dimension(:,:) :: data_in
+    real, intent(out), dimension(:,:) :: data_out
+    integer, intent(in),                   optional :: verbose
+    real, intent(in),   dimension(:,:), optional :: mask_in
+    real, intent(out),  dimension(:,:), optional :: mask_out
+
+    !  --- error checking ---
+    if (size(data_in,1) /= Interp%nlon_src .or. size(data_in,2) /= Interp%nlat_src) &
+         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size of input array incorrect')
+
+    if (size(data_out,1) /= Interp%nlon_dst .or. size(data_out,2) /= Interp%nlat_dst) &
+         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size of output array incorrect')
+
+    select case ( Interp%version)
+    case (1)
+       call horiz_interp_conserve_version1(Interp, data_in, data_out, verbose, mask_in, mask_out)
+    case (2)
+       call horiz_interp_conserve_version2(Interp, data_in, data_out, verbose)     
+    end select
+
+  end subroutine horiz_interp_conserve
+  ! </SUBROUTINE>
+
+  !##############################################################################
+  subroutine horiz_interp_conserve_version1 ( Interp, data_in, data_out, verbose, &
        mask_in, mask_out)
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in) :: Interp
@@ -346,13 +613,6 @@ contains
 
     nlon_in  = Interp%nlon_src;  nlat_in  = Interp%nlat_src
     nlon_out = Interp%nlon_dst; nlat_out = Interp%nlat_dst
-
-    !  --- error checking ---
-    if (size(data_in,1) /= nlon_in .or. size(data_in,2) /= nlat_in) &
-         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size of input array incorrect')
-
-    if (size(data_out,1) /= nlon_out .or. size(data_out,2) /= nlat_out) &
-         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size of output array incorrect')
 
     if (present(mask_in)) then
        if ( count(mask_in < -.0001 .or. mask_in > 1.0001) > 0 ) &
@@ -472,43 +732,69 @@ contains
     endif
 
     !-----------------------------------------------------------------------
-  end subroutine horiz_interp_conserve
-  ! </SUBROUTINE>
+  end subroutine horiz_interp_conserve_version1
+
+  !#############################################################################
+  subroutine horiz_interp_conserve_version2 ( Interp, data_in, data_out, verbose )
+    !-----------------------------------------------------------------------
+    type (horiz_interp_type), intent(in) :: Interp
+    real,    intent(in),  dimension(:,:) :: data_in
+    real,    intent(out), dimension(:,:) :: data_out
+    integer, intent(in),        optional :: verbose  
+    integer :: i, i_src, j_src, i_dst, j_dst
+
+    data_out = 0.0
+    do i = 1, Interp%nxgrid
+       i_src = Interp%i_src(i); j_src = Interp%j_src(i)
+       i_dst = Interp%i_dst(i); j_dst = Interp%j_dst(i)
+       data_out(i_dst, j_dst) = data_out(i_dst, j_dst) + data_in(i_src,j_src)*Interp%area_frac_dst(i)
+    end do
+    
+  end subroutine horiz_interp_conserve_version2
 
   !#######################################################################
-  ! <SUBROUTINE NAME="horiz_interp_conserve_end">
+  ! <SUBROUTINE NAME="horiz_interp_conserve_del">
 
   !   <OVERVIEW>
   !     Deallocates memory used by "horiz_interp_type" variables.
-  !     Must be called before reinitializing with horiz_interp_init.
+  !     Must be called before reinitializing with horiz_interp_new.
   !   </OVERVIEW>
   !   <DESCRIPTION>
   !     Deallocates memory used by "horiz_interp_type" variables.
-  !     Must be called before reinitializing with horiz_interp_init.
+  !     Must be called before reinitializing with horiz_interp_new.
   !   </DESCRIPTION>
   !   <TEMPLATE>
-  !     call horiz_interp_conserve_end ( Interp )
+  !     call horiz_interp_conserve_del ( Interp )
   !   </TEMPLATE>
 
   !   <INOUT NAME="Interp" TYPE="horiz_interp_type">
   !     A derived-type variable returned by previous call
-  !     to horiz_interp_init. The input variable must have
+  !     to horiz_interp_new. The input variable must have
   !     allocated arrays. The returned variable will contain
   !     deallocated arrays.
   !   </INOUT>
 
-  subroutine horiz_interp_conserve_end ( Interp )
+  subroutine horiz_interp_conserve_del ( Interp )
 
     type (horiz_interp_type), intent(inout) :: Interp
 
-    if(associated(Interp%area_src)) deallocate(Interp%area_src)
-    if(associated(Interp%area_dst)) deallocate(Interp%area_dst)
-    if(associated(Interp%facj))     deallocate(Interp%facj)
-    if(associated(Interp%jlat))     deallocate(Interp%jlat)
-    if(associated(Interp%faci))     deallocate(Interp%faci)
-    if(associated(Interp%ilon))     deallocate(Interp%ilon)
+    select case(Interp%version)  
+    case (1)
+       if(associated(Interp%area_src)) deallocate(Interp%area_src)
+       if(associated(Interp%area_dst)) deallocate(Interp%area_dst)
+       if(associated(Interp%facj))     deallocate(Interp%facj)
+       if(associated(Interp%jlat))     deallocate(Interp%jlat)
+       if(associated(Interp%faci))     deallocate(Interp%faci)
+       if(associated(Interp%ilon))     deallocate(Interp%ilon)
+    case (2)
+       if(associated(Interp%i_src)) deallocate(Interp%i_src)
+       if(associated(Interp%j_src)) deallocate(Interp%j_src)
+       if(associated(Interp%i_dst)) deallocate(Interp%i_dst)
+       if(associated(Interp%j_dst)) deallocate(Interp%j_dst)
+       if(associated(Interp%area_frac_dst)) deallocate(Interp%area_frac_dst)
+    end select
 
-  end subroutine horiz_interp_conserve_end
+  end subroutine horiz_interp_conserve_del
   ! </SUBROUTINE>
 
   !#######################################################################
@@ -613,7 +899,6 @@ contains
        dwtsum = dwtsum + sum(wt*data)
        wtsum =  wtsum + asum
     endif
-
     !-----------------------------------------------------------------------
 
   end subroutine data_sum
@@ -622,3 +907,5 @@ contains
   !#######################################################################
 
 end module horiz_interp_conserve_mod
+
+

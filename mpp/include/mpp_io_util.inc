@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_util.inc,v 13.0 2006/03/28 21:41:23 fms Exp $
+! $Id: mpp_io_util.inc,v 14.0 2007/03/15 22:43:22 fms Exp $
 
 
   !#####################################################################
@@ -518,6 +518,8 @@
         ! external representation
         v%min = f%att(imissing)%fatt(1)*f%scale + f%add
      else if (ifill>0) then
+     !z1l ifdef is added in to be able to compile without using use_netCDF.
+#ifdef use_netCDF  
         ! define min and max according to _FillValue
         if(f%att(ifill)%fatt(1)>0) then
             ! if _FillValue is positive, then it defines valid maximum
@@ -548,6 +550,7 @@
             ! representation
             v%min = v%min*f%scale + f%add
         endif
+#endif
     endif
 	! If valid_range is the same type as scale_factor (actually the wider of
 	! scale_factor and add_offset) and this is wider than the external data, then it

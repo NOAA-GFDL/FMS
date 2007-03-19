@@ -95,9 +95,9 @@ type(axistype),save     :: Axis_types     (max_axis_num)
 logical                 :: module_is_initialized = .FALSE.
 
 character(len=128), private :: version= &
-  '$Id: diag_output.F90,v 13.0.4.2.2.1.2.1 2006/08/30 11:49:22 z1l Exp $'
+  '$Id: diag_output.F90,v 14.0 2007/03/15 22:38:24 fms Exp $'
 character(len=128), private :: tagname= &
-  '$Name: memphis_2006_12 $'
+  '$Name: nalanda $'
 
 contains
 

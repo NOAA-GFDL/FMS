@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_comm.inc,v 13.0.2.1.2.1.4.1 2006/10/30 19:33:28 z1l Exp $
+! $Id: mpp_domains_comm.inc,v 14.0 2007/03/15 22:42:41 fms Exp $
 
 #ifdef use_GSM
 #include "mpp/shmem.fh"

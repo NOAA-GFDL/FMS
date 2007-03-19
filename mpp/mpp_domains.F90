@@ -156,7 +156,7 @@ module mpp_domains_mod
   public :: mpp_get_neighbor_pe, mpp_nullify_domain_list
   public :: mpp_set_compute_domain, mpp_set_data_domain, mpp_set_global_domain
   public :: mpp_get_memory_domain, mpp_get_domain_shift, mpp_domain_is_root_pe
-  public :: mpp_get_tile_id, mpp_get_domain_extents, mpp_get_current_ntile
+  public :: mpp_get_tile_id, mpp_get_domain_extents, mpp_get_current_ntile, mpp_get_ntile_count
   public :: mpp_get_refine_overlap_number, mpp_get_mosaic_refine_overlap
   !--- public interface from mpp_domains_reduce.h
   public :: mpp_global_field, mpp_global_max, mpp_global_min, mpp_global_sum
@@ -168,7 +168,7 @@ module mpp_domains_mod
   public :: mpp_get_boundary
   !--- public interface from mpp_domains_define.h
   public :: mpp_define_layout, mpp_define_domains, mpp_modify_domain, mpp_define_mosaic
-  public :: mpp_define_mosaic_pelist, mpp_define_null_domain
+  public :: mpp_define_mosaic_pelist, mpp_define_null_domain, mpp_mosaic_defined
 
 #ifdef use_CAF
   public :: cafptr_r8_3d_type
@@ -459,6 +459,7 @@ module mpp_domains_mod
   logical             :: debug                 = .FALSE.
   logical             :: verbose=.FALSE.
   logical             :: debug_gsm=.false.
+  logical             :: mosaic_defined = .false.
   integer             :: mpp_domains_stack_size=0
   integer             :: mpp_domains_stack_hwm=0
   type(domain1D),save :: NULL_DOMAIN1D
@@ -1801,9 +1802,9 @@ module mpp_domains_mod
 
   !--- version information variables
   character(len=128), public :: version= &
-       '$Id: mpp_domains.F90,v 13.0.2.2.2.2.2.1.4.1.4.1 2006/12/01 01:03:27 z1l Exp $'
+       '$Id: mpp_domains.F90,v 14.0 2007/03/15 22:41:01 fms Exp $'
   character(len=128), public :: tagname= &
-       '$Name: memphis_2006_12 $'
+       '$Name: nalanda $'
 
 
 contains

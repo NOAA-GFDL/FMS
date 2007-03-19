@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_misc.inc,v 13.0.4.1.4.2.2.1 2006/08/10 18:09:11 wfc Exp $
+! $Id: mpp_io_misc.inc,v 14.0 2007/03/15 22:43:16 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -32,8 +32,6 @@
       integer                       :: unit_nml, io_status, iunit
       logical                       :: opened
 
-      namelist /mpp_io_nml/header_buffer_val ! value used in NF__ECDDEF
-
       if( module_is_initialized )return
 
 !initialize IO package: initialize mpp_file array, set valid range of units for fortran IO
@@ -43,7 +41,7 @@
       npes = mpp_npes()
       call mpp_domains_init(flags)
 
-      maxunits = 512
+      maxunits = 1024
       if( PRESENT(maxunit) )maxunits = maxunit
       if( PRESENT(flags) )then
           debug   = flags.EQ.MPP_DEBUG

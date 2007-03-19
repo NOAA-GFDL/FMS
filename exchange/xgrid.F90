@@ -101,19 +101,20 @@ module xgrid_mod
 ! </DATASET>
 use       fms_mod,   only: file_exist, open_namelist_file, check_nml_error,  &
                            error_mesg, close_file, FATAL, NOTE, stdlog,      &
-                           write_version_number 
+                           write_version_number, read_data, field_exist,     &
+                           field_size, lowercase, string, get_mosaic_tile_grid
 use mpp_mod,         only: mpp_npes, mpp_pe, mpp_root_pe, mpp_send, mpp_recv, &
                            mpp_sync_self, stdout
 use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_compute_domains, &
                            Domain2d, mpp_global_sum, mpp_update_domains,    &
                            mpp_modify_domain, mpp_get_data_domain, XUPDATE,  &
-                           YUPDATE
+                           YUPDATE, mpp_get_current_ntile, mpp_get_tile_id
 use mpp_io_mod,      only: mpp_open, MPP_MULTI, MPP_SINGLE, MPP_OVERWR
 use constants_mod,   only: PI
 use stock_constants_mod, only: STOCK_NAMES
+use mosaic_mod,          only: get_mosaic_xgrid
 
 implicit none
-include 'netcdf.inc'
 private
 
 public xmap_type, setup_xmap, set_frac_area, put_to_xgrid, get_from_xgrid, &
@@ -125,7 +126,7 @@ public xmap_type, setup_xmap, set_frac_area, put_to_xgrid, get_from_xgrid, &
 integer, parameter :: FIRST_ORDER        = 1
 integer, parameter :: SECOND_ORDER       = 2
 integer, parameter :: SECOND_ORDER_MERID = 3
-integer, parameter :: SECOND_ORDER_ZONAL = 4
+integer, parameter :: SECOND_ORDER_ZONAL = 4 
 
 ! <NAMELIST NAME="xgrid_nml">
 !   <DATA NAME="make_exchange_reproduce" TYPE="logical"  DEFAULT=".false.">
@@ -226,6 +227,8 @@ type xcell_type
   integer :: i1, j1, i2, j2 ! indices of cell in model arrays on both sides
   integer :: pe             ! other side pe that has this cell
   real    :: area           ! geographic area of exchange cell
+!  real    :: area1_ratio     !(= x_area/grid1_area), will be added in the future to improve efficiency
+!  real    :: area2_ratio     !(= x_area/grid2_area), will be added in the future to improve efficiency
   real    :: di, dj         ! Weight for the gradient of flux
 end type xcell_type
 
@@ -255,12 +258,14 @@ end type grid_type
 type x1_type
   integer :: i, j
   real    :: area   ! (= geographic area * frac_area)
+!  real    :: area_ratio !(= x1_area/grid1_area) ! will be added in the future to improve efficiency
   real    :: di, dj ! weight for the gradient of flux
 end type x1_type
 
 type x2_type
   integer :: i, j, k
   real    :: area   ! geographic area of exchange cell
+!  real    :: area_ratio !(=x2_area/grid2_area )  ! will be added in the future to improve efficiency
 end type x2_type
 
 type xmap_type
@@ -286,11 +291,13 @@ type xmap_type
   real, pointer, dimension(:) :: send_buffer =>NULL() ! for non-blocking sends
   real, pointer, dimension(:) :: recv_buffer =>NULL() ! for non-blocking recv
   integer, pointer, dimension(:) :: send_count_repro =>NULL(), recv_count_repro  =>NULL()
+  integer :: version                                  ! version of xgrids. version=1 is for grid_spec.nc 
+                                                      ! and version=2 is for mosaic.nc
 end type xmap_type
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: xgrid.F90,v 1.1.2.1 2006/11/28 17:34:02 fms Exp $'
- character(len=128) :: tagname = '$Name: memphis_2006_12 $'
+ character(len=128) :: version = '$Id: xgrid.F90,v 14.0 2007/03/15 22:39:11 fms Exp $'
+ character(len=128) :: tagname = '$Name: nalanda $'
 
  real, parameter                              :: EPS = 1.0e-10
  logical :: module_is_initialized = .FALSE.
@@ -391,33 +398,45 @@ end subroutine xgrid_init
 
 !#######################################################################
 
-subroutine load_xgrid (xmap, grid, domain, ncid, id_i1, id_j1, id_i2, id_j2, &
-                           id_area, n_areas, id_di, id_dj  )
-type(xmap_type), intent(inout)  :: xmap
-type(grid_type), intent(inout)  :: grid
-type(Domain2d), intent(inout)   :: domain
-integer, intent(in) :: ncid, id_i1, id_j1, id_i2, id_j2, id_area, n_areas
-integer, intent(in), optional :: id_di, id_dj 
+subroutine load_xgrid (xmap, grid, grid_file, grid1_id, grid_id, use_higher_order)
+type(xmap_type), intent(inout)         :: xmap
+type(grid_type), intent(inout)         :: grid
+character(len=*), intent(in)           :: grid_file
+character(len=3), intent(in)           :: grid1_id, grid_id
+logical,        intent(in)             :: use_higher_order
 
-  integer, dimension(n_areas) :: i1, j1, i2, j2 ! xgrid quintuples
-  real,    dimension(n_areas) :: area, di, dj     ! from grid file
-  type (grid_type), pointer, save   :: grid1 =>NULL()
+  integer, allocatable, dimension(:) :: i1, j1, i2, j2            ! xgrid quintuples
+  real,    allocatable, dimension(:) :: area, di, dj              ! from grid file
+  type (grid_type), pointer, save    :: grid1 =>NULL()
+  integer :: l, ll, ll_repro, p, siz(4), nxgrid
 
-  integer :: start(4), nread(4), rcode, l, ll, ll_repro, p
+
 
   grid1 => xmap%grids(1)
-  start = 1; nread = 1; nread(1) = n_areas
-  rcode = nf_get_vara_int(ncid, id_i1, start, nread, i1)
-  rcode = nf_get_vara_int(ncid, id_j1, start, nread, j1)
-  rcode = nf_get_vara_int(ncid, id_i2, start, nread, i2)
-  rcode = nf_get_vara_int(ncid, id_j2, start, nread, j2)
-  rcode = nf_get_vara_double(ncid, id_area, start, nread, area)
-  di = 0.0;  dj = 0.0
-  if(present(id_di))  rcode = nf_get_vara_double(ncid, id_di, start, nread, di)
-  if(present(id_dj))  rcode = nf_get_vara_double(ncid, id_dj, start, nread, dj)
-  
+  select case(xmap%version)
+  case(1)
+     call field_size(grid_file, 'AREA_'//grid1_id//'x'//grid_id, siz)
+     nxgrid = siz(1);
+     allocate(i1(nxgrid), j1(nxgrid), i2(nxgrid), j2(nxgrid), area(nxgrid))
+     call read_data(grid_file, 'I_'//grid1_id//'_'//grid1_id//'x'//grid_id, i1, no_domain=.true.)
+     call read_data(grid_file, 'J_'//grid1_id//'_'//grid1_id//'x'//grid_id, j1, no_domain=.true.)
+     call read_data(grid_file, 'I_'//grid_id//'_'//grid1_id//'x'//grid_id, i2, no_domain=.true.)
+     call read_data(grid_file, 'J_'//grid_id//'_'//grid1_id//'x'//grid_id, j2, no_domain=.true.)
+     call read_data(grid_file, 'AREA_'//grid1_id//'x'//grid_id, area, no_domain=.true.)
+     if(use_higher_order) then
+        allocate(di(nxgrid), dj(nxgrid))
+        call read_data(grid_file, 'DI_'//grid1_id//'x'//grid_id, di, no_domain=.true.)
+        call read_data(grid_file, 'DJ_'//grid1_id//'x'//grid_id, dj, no_domain=.true.)
+     end if
+  case(2)
+     !--- max_size is the exchange grid size between super grid.
+     call field_size(grid_file, 'xgrid_area', siz)
+     nxgrid = siz(1);
+     allocate(i1(nxgrid), j1(nxgrid), i2(nxgrid), j2(nxgrid), area(nxgrid) )
+     call get_mosaic_xgrid(grid_file, nxgrid, i1, j1, i2, j2, area)
+  end select
 
-  do l=1,n_areas
+  do l=1,nxgrid
     if (in_box(i1(l), j1(l), grid1%is_me, grid1%ie_me, &
                              grid1%js_me, grid1%je_me) ) then
       grid1%area(i1(l),j1(l)) = grid1%area(i1(l),j1(l))+area(l)
@@ -446,15 +465,17 @@ integer, intent(in), optional :: id_di, id_dj
   if (make_exchange_reproduce) allocate ( grid%x_repro(grid%size_repro) )
   ll = 0
   ll_repro = 0
-  do l=1,n_areas
+  do l=1,nxgrid
     if (in_box(i2(l), j2(l), grid%is_me, grid%ie_me, grid%js_me, grid%je_me)) then
       ! insert in this grids cell pattern list and add area to side 2 area
       ll = ll + 1
       grid%x(ll)%i1   = i1(l); grid%x(ll)%i2   = i2(l)
       grid%x(ll)%j1   = j1(l); grid%x(ll)%j2   = j2(l)
       grid%x(ll)%area = area(l)
-      grid%x(ll)%di  = di(l)
-      grid%x(ll)%dj  = dj(l)
+      if(use_higher_order) then
+         grid%x(ll)%di  = di(l)
+         grid%x(ll)%dj  = dj(l)
+      end if
 
       if (make_exchange_reproduce) then
         do p=0,xmap%npes-1
@@ -471,8 +492,10 @@ integer, intent(in), optional :: id_di, id_dj
       grid%x_repro(ll_repro)%i1   = i1(l); grid%x_repro(ll_repro)%i2   = i2(l)
       grid%x_repro(ll_repro)%j1   = j1(l); grid%x_repro(ll_repro)%j2   = j2(l)
       grid%x_repro(ll_repro)%area = area(l)
-      grid%x_repro(ll_repro)%di  = di(l)
-      grid%x_repro(ll_repro)%dj  = dj(l)
+      if(use_higher_order) then
+         grid%x_repro(ll_repro)%di  = di(l)
+         grid%x_repro(ll_repro)%dj  = dj(l)
+      end if
       do p=0,xmap%npes-1
         if (in_box(i2(l), j2(l), grid%is(p), grid%ie(p), &
                                  grid%js(p), grid%je(p))) then
@@ -483,6 +506,10 @@ integer, intent(in), optional :: id_di, id_dj
   end do
   grid%area_inv = 0.0;
   where (grid%area>0.0) grid%area_inv = 1.0/grid%area
+
+  deallocate(i1, j1, i2, j2, area)
+  if(use_higher_order) deallocate(di, dj)
+
 end subroutine load_xgrid
 
 !#######################################################################
@@ -493,83 +520,64 @@ end subroutine load_xgrid
 !
 !
 
-subroutine get_grid(grid, grid_id, ncid)
+subroutine get_grid(grid, grid_id, grid_file, grid_version)
   type(grid_type), intent(inout) :: grid
-  integer,         intent(in)    :: ncid
   character(len=3), intent(in)   :: grid_id
+  character(len=*), intent(in)   :: grid_file
+  integer,          intent(in)   :: grid_version
 
-  integer :: rcode, start(4), nread(4), id_lon, id_lat
   real, dimension(grid%im) :: lonb
   real, dimension(grid%jm) :: latb
   real ::  d2r
-  integer :: varid, dimids(2), ns(2), i
   integer :: is, ie, js, je
 
   d2r = PI/180.0
 
-  start = 1; nread = 1  
-
   call mpp_get_compute_domain(grid%domain, is, ie, js, je)
 
-  if(grid_id == 'ATM') then
-     nread(1) =  grid%im     
-     rcode = nf_inq_varid(ncid,'xta',id_lon)
-     if (rcode/=0) call error_mesg('xgrid_mod', 'cannot find grid file field xta', FATAL)
-     rcode = nf_get_vara_double(ncid, id_lon, start, nread,lonb)
+  select case(grid_version)
+  case(1)
+     if(grid_id == 'ATM') then
+        call read_data(grid_file, 'xta', lonb, no_domain=.true.)
+        call read_data(grid_file, 'yta', latb, no_domain=.true.)
 
-     rcode = nf_inq_varid(ncid,'yta',id_lat)
-     if (rcode/=0) call error_mesg('xgrid_mod', 'cannot find grid file field yta', FATAL)
-     nread(1) =  grid%jm
-     rcode = nf_get_vara_double(ncid, id_lat, start, nread,latb)
-
-     if(.not. allocated(AREA_ATM_MODEL)) then
-        allocate(AREA_ATM_MODEL(is:ie, js:je))
-        call get_area_elements(ncid=ncid, name='AREA_ATM_MODEL', &
-             & start_indices=(/is,js/), end_indices=(/ie,je/), data=AREA_ATM_MODEL)
+        if(.not. allocated(AREA_ATM_MODEL)) then
+           allocate(AREA_ATM_MODEL(is:ie, js:je))
+           call get_area_elements(grid_file, 'AREA_ATM_MODEL', grid%domain, AREA_ATM_MODEL)
+        endif
+        if(.not. allocated(AREA_ATM_SPHERE)) then
+           allocate(AREA_ATM_SPHERE(is:ie, js:je))
+           call get_area_elements(grid_file, 'AREA_ATM', grid%domain, AREA_ATM_SPHERE)
+        endif
+     else if(grid_id == 'LND') then
+        call read_data(grid_file, 'xtl', lonb, no_domain=.true.)
+        call read_data(grid_file, 'ytl', latb, no_domain=.true.)
+        if(.not. allocated(AREA_LND_MODEL)) then
+           allocate(AREA_LND_MODEL(is:ie, js:je))
+           call get_area_elements(grid_file, 'AREA_LND_MODEL', grid%domain, AREA_LND_MODEL)
+        endif
+        if(.not. allocated(AREA_LND_SPHERE)) then
+           allocate(AREA_LND_SPHERE(is:ie, js:je))
+           call get_area_elements(grid_file, 'AREA_LND', grid%domain, AREA_LND_SPHERE)
+        endif
+     else if(grid_id == 'OCN' ) then
+        if(.not. allocated(AREA_OCN_SPHERE)) then
+           allocate(AREA_OCN_SPHERE(is:ie, js:je))
+           call get_area_elements(grid_file, 'AREA_OCN', grid%domain, AREA_OCN_SPHERE)
+        endif
      endif
-     if(.not. allocated(AREA_ATM_SPHERE)) then
-        allocate(AREA_ATM_SPHERE(is:ie, js:je))
-        call get_area_elements(ncid=ncid, name='AREA_ATM', &
-             & start_indices=(/is,js/), end_indices=(/ie,je/), data=AREA_ATM_SPHERE)
-     endif
-
-  else if(grid_id == 'LND') then
-     nread(1) =  grid%im     
-     rcode = nf_inq_varid(ncid,'xtl',id_lon)
-     if (rcode/=0) call error_mesg('xgrid_mod', 'cannot find grid file field xtl', FATAL)
-     rcode = nf_get_vara_double(ncid, id_lon, start, nread,lonb)
-
-     nread(1) =  grid%jm
-     rcode = nf_inq_varid(ncid,'ytl',id_lat)
-     if (rcode/=0) call error_mesg('xgrid_mod', 'cannot find grid file field ytl', FATAL)
-     rcode = nf_get_vara_double(ncid, id_lat, start, nread,latb)
-
-     if(.not. allocated(AREA_LND_MODEL)) then
-        allocate(AREA_LND_MODEL(is:ie, js:je))
-        call get_area_elements(ncid=ncid, name='AREA_LND_MODEL', &
-             & start_indices=(/is,js/), end_indices=(/ie,je/), data=AREA_LND_MODEL)
-     endif
-     if(.not. allocated(AREA_LND_SPHERE)) then
-        allocate(AREA_LND_SPHERE(is:ie, js:je))
-        call get_area_elements(ncid=ncid, name='AREA_LND', &
-             & start_indices=(/is,js/), end_indices=(/ie,je/), data=AREA_LND_SPHERE)
-     endif
-     
-  else if(grid_id == 'OCN' ) then
-     
-     if(.not. allocated(AREA_OCN_SPHERE)) then
-        allocate(AREA_OCN_SPHERE(is:ie, js:je))
-        call get_area_elements(ncid=ncid, name='AREA_OCN', &
-             & start_indices=(/is,js/), end_indices=(/ie,je/), data=AREA_OCN_SPHERE)
-     endif
-
-  endif
-
      !--- second order remapping suppose second order
-  if(grid_id == 'LND' .or. grid_id == 'ATM') then
-      grid%lon   = lonb * d2r
-      grid%lat   = latb * d2r
-  endif
+     if(grid_id == 'LND' .or. grid_id == 'ATM') then
+        grid%lon   = lonb * d2r
+        grid%lat   = latb * d2r
+     endif
+  case(2)
+     if(grid_id == 'ATM' .OR. grid_id == 'LND') then
+!        /* will be added later, since those fields only needed for second order interpolation */
+     end if
+  end select
+
+
 
   return
 
@@ -577,27 +585,20 @@ end subroutine get_grid
   
 !#######################################################################
 ! Read the area elements from NetCDF file
-subroutine get_area_elements(ncid, name, start_indices, end_indices, data)
-  integer, intent(in)          :: ncid
+subroutine get_area_elements(file, name, domain, data)
+  character(len=*), intent(in) :: file
   character(len=*), intent(in) :: name
-  integer, intent(in)          :: start_indices(:)
-  integer, intent(in)          :: end_indices(:)
+  type(domain2d),   intent(in) :: domain
   real, intent(out)            :: data(:,:)
 
-  integer :: rcode, varid
-
-  rcode = nf_inq_varid(ncid, name, varid)
-  if(rcode/=0) then 
-     call error_mesg('xgrid_mod', 'no field named '//trim(name)//' in grid file? Will set data to negative values...', NOTE)
+  if(field_exist(file, name)) then
+     call read_data(file, name, data, domain)
+  else
+     call error_mesg('xgrid_mod', 'no field named '//trim(name)//' in grid file '//trim(file)// &
+                     ' Will set data to negative values...', NOTE)
      ! area elements no present in grid_spec file, set to negative values....
      data = -1
-     return
-  endif
-  
-  rcode = nf_get_vara_double(ncid, varid, start_indices, &
-       & (/end_indices(1)-start_indices(1)+1, end_indices(2)-start_indices(2)+1/), &
-       & data)
-  if(rcode/=0) call error_mesg('xgrid_mod', 'error while reading data for '//trim(name), FATAL)
+  endif    
 
 end subroutine get_area_elements
 
@@ -624,7 +625,7 @@ subroutine get_ocean_model_area_elements(domain, grid_file)
 
   type(Domain2d), intent(in) :: domain
   character(len=*), intent(in) :: grid_file
-  integer :: is, ie, js, je, rcode, varid, rcode2, ncid
+  integer :: is, ie, js, je
 
   if(allocated(AREA_OCN_MODEL)) return
 
@@ -634,18 +635,13 @@ subroutine get_ocean_model_area_elements(domain, grid_file)
   allocate(AREA_OCN_MODEL(is:ie, js:je))
   if(ie < is .or. je < js ) return
 
-  rcode = nf_open(grid_file,0,ncid)
-  if (rcode/=0) call error_mesg ('xgrid_mod', 'cannot open grid file', FATAL)
-  
-  rcode = nf_inq_varid(ncid, 'AREA_OCN_MODEL', varid)
-  if(rcode==0) then
-     rcode2 = nf_get_vara_double(ncid, varid, (/is, js/), (/ie-is+1, je-js+1/), AREA_OCN_MODEL)
-     if(rcode2/=0) call error_mesg('xgrid_mod', 'error while reading AREA_OCN_MODEL ', FATAL)
+
+  if(field_exist(grid_file, 'AREA_OCN_MODEL') )then
+     call read_data(grid_file, 'AREA_OCN_MODEL', AREA_OCN_MODEL, domain)
   else
      deallocate(AREA_OCN_MODEL)
   endif
 
-  rcode = nf_close(ncid)
 
 end subroutine get_ocean_model_area_elements
 ! </SUBROUTINE>
@@ -677,15 +673,16 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file )
   type(Domain2d), dimension(:), intent(in ) :: grid_domains
   character(len=*)                         , intent(in ) :: grid_file
 
-  integer :: g,     p, n_areas, send_size, recv_size
-  integer :: ncid, i1_id, j1_id, i2_id, j2_id, area_id, di_id, dj_id
-  integer :: dims(4), rcode
+  integer :: g,     p, send_size, recv_size
   integer :: unit
   type (grid_type), pointer, save :: grid =>NULL(), grid1 =>NULL()
   real, dimension(3) :: xxx
   real, dimension(:,:), allocatable :: check_data
   real, dimension(:,:,:), allocatable :: check_data_3D
-
+  character(len=128) :: mosaic_file = 'INPUT/mosaic.nc'
+  character(len=256) :: mosaic1_name, mosaic_name, xgrid_file
+  character(len=256) :: tile1_name, tile_name, tile_file
+  integer :: ntileMe, tile_id(1), tile1, tile  
   logical :: use_higher_order = .false.
 
   if(interp_method .ne. 'first_order')  use_higher_order = .true.
@@ -700,8 +697,22 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file )
 
   xmap%your1my2 = .false.; xmap%your2my1 = .false.;
 
-  rcode = nf_open(grid_file,0,ncid)
-  if (rcode/=0) call error_mesg ('xgrid_mod', 'cannot open grid file', FATAL)
+!  /* check the exchange grid file version to be used */
+  if(grid_file == mosaic_file) then
+     xmap%version = 2
+  else
+     if(file_exist(grid_file) ) then
+        xmap%version = 1
+     else if(file_exist(mosaic_file) ) then
+        xmap%version = 2
+     end if
+  end if
+
+  if(xmap%version==1) then
+     call error_mesg('xgrid_mod', 'reading exchange grid information from '//trim(grid_file), NOTE)
+  else
+     call error_mesg('xgrid_mod', 'reading exchange grid information from '//trim(mosaic_file), NOTE)
+  end if
 
   do g=1,size(grid_ids(:))
      grid => xmap%grids(g)
@@ -718,8 +729,9 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file )
 
      grid%is_me => grid%is(xmap%me-xmap%root_pe); grid%ie_me => grid%ie(xmap%me-xmap%root_pe)
      grid%js_me => grid%js(xmap%me-xmap%root_pe); grid%je_me => grid%je(xmap%me-xmap%root_pe)
-     grid%im = maxval(grid%ie)
-     grid%jm = maxval(grid%je)
+     !--- The starting index of compute domain may not start at 1.
+     grid%im = maxval(grid%ie) - minval(grid%is) + 1
+     grid%jm = maxval(grid%je) - minval(grid%js) + 1
      grid%km = 1
 
      allocate( grid%area    (grid%is_me:grid%ie_me, grid%js_me:grid%je_me) )
@@ -727,63 +739,51 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file )
      grid%area       = 0.0
      grid%size       = 0
      grid%size_repro = 0
-     if (g>1) then
-        allocate( grid%frac_area(grid%is_me:grid%ie_me, grid%js_me:grid%je_me, &
-             grid%km              ) )
-        grid%frac_area = 1.0
-
-        rcode = nf_inq_varid(ncid, &
-             'I_'//grid_ids(1)//'_'//grid_ids(1)//'x'//grid_ids(g),&
-             i1_id)
-        if (rcode/=0) &
-             call error_mesg('xgrid_mod', 'cannot find grid file field', FATAL)
-        rcode = nf_inq_varid(ncid, &
-             'J_'//grid_ids(1)//'_'//grid_ids(1)//'x'//grid_ids(g),&
-             j1_id)
-        if (rcode/=0) &
-             call error_mesg('xgrid_mod', 'cannot find grid file field', FATAL)
-        rcode = nf_inq_varid(ncid, &
-             'I_'//grid_ids(g)//'_'//grid_ids(1)//'x'//grid_ids(g),&
-             i2_id)
-        if (rcode/=0) &
-             call error_mesg('xgrid_mod', 'cannot find grid file field', FATAL)
-        rcode = nf_inq_varid(ncid, &
-             'J_'//grid_ids(g)//'_'//grid_ids(1)//'x'//grid_ids(g),&
-             j2_id)
-        if (rcode/=0) &
-             call error_mesg('xgrid_mod', 'cannot find grid file field', FATAL)
-
-        rcode = nf_inq_varid(ncid, 'AREA_'//grid_ids(1)//'x'//grid_ids(g), area_id)
-        if (rcode/=0) &
-             call error_mesg('xgrid_mod', 'cannot find grid file field', FATAL)
-        if(use_higher_order) then
-           rcode = nf_inq_varid(ncid, 'DI_'//grid_ids(1)//'x'//grid_ids(g), di_id)
-           if (rcode/=0) &
-                call error_mesg('xgrid_mod', 'cannot find grid file field DI1_'//grid_ids(1)//'x'//grid_ids(g), FATAL)
-
-           rcode = nf_inq_varid(ncid, 'DJ_'//grid_ids(1)//'x'//grid_ids(g), dj_id)
-           if (rcode/=0) &
-                call error_mesg('xgrid_mod', 'cannot find grid file field DJ1'//grid_ids(1)//'x'//grid_ids(g), FATAL)
-        endif
-        rcode = nf_inq_vardimid(ncid, area_id, dims)
-        rcode = nf_inq_dimlen(ncid, dims(1), n_areas)
-
-        ! load exchange cells, sum grid cell areas, set your1my2/your2my1
-        if(use_higher_order) then
-           call load_xgrid (xmap, grid, grid%domain, ncid, i1_id, j1_id, i2_id, j2_id, &
-                area_id, n_areas, di_id, dj_id)
-        else 
-           call load_xgrid (xmap, grid, grid%domain, ncid, i1_id, j1_id, i2_id, j2_id, &
-                area_id, n_areas )
-        endif
-     end if
 
      ! get the center point of the grid box
      allocate(grid%lon(grid%im), grid%lat(grid%jm))
-     call get_grid(grid, grid_ids(g), ncid)
+     select case(xmap%version)
+     case(1)
+        call get_grid(grid, grid_ids(g), grid_file, xmap%version)
+     case(2)
+        ntileMe = mpp_get_current_ntile(grid1%domain)
+        if(ntileMe > 1) call error_mesg('xgrid_mod',  &
+             'multiple-tile-per-pe is not implemented yet, contact developer', FATAL)
+        ntileMe = mpp_get_current_ntile(grid%domain)
+        if(ntileMe > 1) call error_mesg('xgrid_mod',  &
+             'multiple-tile-per-pe is not implemented yet, contact developer', FATAL)
+        tile_id = mpp_get_tile_id(grid1%domain)
+        tile1 = tile_id(1)
+        tile_id = mpp_get_tile_id(grid%domain)
+        tile = tile_id(1)
+        call read_data(mosaic_file, lowercase(grid_ids(g))//'_mosaic', mosaic_name)      
+        call read_data(mosaic_file, lowercase(grid_ids(1))//'_mosaic', mosaic1_name) 
+        call get_mosaic_tile_grid(tile_file, 'INPUT/'//trim(mosaic_name)//'.nc', grid%domain)
+        call get_grid(grid, grid_ids(g), tile_file, xmap%version)
+     end select
 
+     if (g>1) then
+        allocate( grid%frac_area(grid%is_me:grid%ie_me, grid%js_me:grid%je_me, grid%km) )
+        grid%frac_area = 1.0
+
+        ! load exchange cells, sum grid cell areas, set your1my2/your2my1
+        select case(xmap%version)
+        case(1)
+           call load_xgrid (xmap, grid, grid_file, grid_ids(1), grid_ids(g), use_higher_order)
+        case(2)
+           !--- get the exchange grid file name
+           call read_data(mosaic_file, lowercase(grid_ids(1))//'_mosaic', mosaic1_name)
+           call read_data('INPUT/'//trim(mosaic1_name)//'.nc', "gridtiles", tile1_name, level=tile1)
+           call read_data('INPUT/'//trim(mosaic_name)//'.nc', "gridtiles", tile_name, level=tile)
+           xgrid_file = 'INPUT/'//trim(mosaic1_name)//'_'//trim(tile1_name)//'X'//trim(mosaic_name)//'_'//trim(tile_name)//'.nc'
+           if( .NOT. file_exist(xgrid_file) )call error_mesg('xgrid_mod', &
+                'file '//trim(xgrid_file)//' does not exist, check your xgrid file.', FATAL)
+           if(use_higher_order)call error_mesg('xgrid_mod',  &
+                'second-order remapping for MOSAIC is not implemented yet, contact developer', NOTE)
+           call load_xgrid (xmap, grid, xgrid_file, grid_ids(1), grid_ids(g),.false.)
+        end select
+     end if
   end do
-  rcode = nf_close(ncid)
 
   grid1%area_inv = 0.0;
   where (grid1%area>0.0)
@@ -954,6 +954,8 @@ type (xmap_type),       intent(inout) :: xmap
 
 end subroutine  set_frac_area
 ! </SUBROUTINE>
+
+
 
 !#######################################################################
 
@@ -1734,9 +1736,6 @@ subroutine stock_move_3d(from, to, grid_index, data, xmap, &
   integer, intent(out)            :: ier
 
   real    :: from_dq, to_dq
-  real, allocatable, dimension(:,:) :: from_data2d, to_data2d
-  integer :: is, ie, js, je
-
 
   ier = 0
   if(grid_index == 1) then
@@ -1793,9 +1792,6 @@ subroutine stock_move_2d(from, to, grid_index, data, xmap, &
   integer, intent(out)            :: ier
 
   real    :: to_dq, from_dq
-  real, allocatable :: to_data2d(:,:)
-  integer :: is, ie, js, je
-  
 
   ier = 0
 
@@ -1884,8 +1880,7 @@ subroutine stock_print(stck, Time, comp_name, index, ref_value, radius, pelist)
   real, intent(in)              :: radius
   integer, intent(in), optional :: pelist(:)
 
-  real :: f_value, c_value, q0, planet_area
-  real :: val_top, val_bot, val_sid
+  real :: f_value, c_value, planet_area
   character(len=32) :: name
   integer :: iday, isec
 
@@ -1938,6 +1933,125 @@ end module xgrid_mod
 !======================================================================================
 ! standalone unit test
 
+#ifdef TEST_XGRID
+! Now only test some simple test, will test cubic grid mosaic in the future.
+
+program xgrid_test
+
+  use mpp_mod,         only : mpp_pe, mpp_npes, mpp_error, FATAL
+  use mpp_domains_mod, only : mpp_define_domains, mpp_define_layout, mpp_domains_exit
+  use mpp_domains_mod, only : mpp_get_compute_domain, domain2d, mpp_domains_init
+  use fms_mod,         only : fms_init, file_exist, field_size, open_namelist_file
+  use fms_mod,         only : check_nml_error, close_file, read_data, stdout, fms_end
+  use xgrid_mod,       only : xgrid_init, setup_xmap, put_to_xgrid, get_from_xgrid
+  use xgrid_mod,       only : xmap_type, xgrid_count
+
+
+implicit none
+
+  real, parameter :: EPSLN = 1.0e-10
+  integer :: grid_version = 2         ! = 1, read 'INPUT/grid_spec.nc'
+                                      ! = 2, read 'INPUT/mosaic.nc'
+  namelist /xgrid_test_nml/ grid_version
+
+  integer            :: remap_method
+  integer            :: pe, npes, ierr, nml_unit, io
+  integer            :: siz(4), ntile, layout(2)
+  integer            :: atm_nx, atm_ny, ocn_nx, ocn_ny, lnd_nx, lnd_ny
+  character(len=256) :: grid_file, atm_mosaic, ocn_mosaic, lnd_mosaic
+  character(len=256) :: atm_mosaic_file, ocn_mosaic_file, lnd_mosaic_file
+  character(len=256) :: atm_grid_file, ocn_grid_file, lnd_grid_file
+  type(domain2d)     :: Atm_domain, Ocn_domain, Lnd_domain
+  type(xmap_type)    :: Xmap
+
+
+  call fms_init
+  call mpp_domains_init
+  call xgrid_init(remap_method)
+
+  npes   = mpp_npes()
+  pe     = mpp_pe()
+
+ if (file_exist('input.nml')) then
+   ierr=1
+   nml_unit = open_namelist_file()
+   do while (ierr /= 0)
+     read(nml_unit, nml=xgrid_test_nml, iostat=io, end=10)
+          ierr = check_nml_error(io, 'xgrid_test_nml')
+   enddo
+10 call close_file(nml_unit)
+ endif
+
+  select case(grid_version)
+  case ( 1 )
+     grid_file = "INPUT/grid_spec.nc"
+     call field_size(grid_file, "AREA_ATM", siz )
+     atm_nx = siz(1); atm_ny = siz(2)
+     call field_size(grid_file, "AREA_OCN", siz )
+     ocn_nx = siz(1); ocn_ny = siz(2)
+     call field_size(grid_file, "AREA_LND", siz )
+     lnd_nx = siz(1); lnd_ny = siz(2)
+  case ( 2 )
+     grid_file = "INPUT/mosaic.nc" 
+     !--- Get the mosaic data of each component model 
+     call read_data(grid_file, 'atm_mosaic', atm_mosaic)
+     call read_data(grid_file, 'lnd_mosaic', lnd_mosaic)
+     call read_data(grid_file, 'ocn_mosaic', ocn_mosaic)
+     atm_mosaic_file = 'INPUT/'//trim(atm_mosaic)//'.nc'
+     lnd_mosaic_file = 'INPUT/'//trim(lnd_mosaic)//'.nc'
+     ocn_mosaic_file = 'INPUT/'//trim(ocn_mosaic)//'.nc'
+     call field_size(atm_mosaic_file, 'gridtiles' ,siz )
+     ntile = siz(2)
+     if(ntile > 1) call mpp_error(FATAL,  &
+         'xgrid_test: there is more than one tile in atm_mosaic, which is not implemented yet')
+     call field_size(lnd_mosaic_file, 'gridtiles' ,siz )
+     ntile = siz(2)
+     if(ntile > 1) call mpp_error(FATAL,  &
+           'xgrid_test: there is more than one tile in lnd_mosaic, which is not implemented yet')
+     call field_size(ocn_mosaic_file, 'gridtiles' ,siz )
+     ntile = siz(2)
+     if(ntile > 1) call mpp_error(FATAL,  &
+           'xgrid_test: there is more than one tile in ocn_mosaic, which is not implemented yet')
+     call read_data(atm_mosaic_file, "gridfiles", atm_grid_file, level=1)
+     call read_data(lnd_mosaic_file, "gridfiles", lnd_grid_file, level=1)
+     call read_data(ocn_mosaic_file, "gridfiles", ocn_grid_file, level=1)
+     atm_grid_file = "INPUT/"//trim(atm_grid_file)
+     ocn_grid_file = "INPUT/"//trim(ocn_grid_file)
+     lnd_grid_file = "INPUT/"//trim(lnd_grid_file)
+     call field_size(atm_grid_file, 'area', siz )
+     atm_nx = siz(1)/2; atm_ny = siz(2)/2
+     call field_size(lnd_grid_file, 'area', siz )
+     lnd_nx = siz(1)/2; lnd_ny = siz(2)/2
+     call field_size(ocn_grid_file, 'area', siz )
+     ocn_nx = siz(1)/2; ocn_ny = siz(2)/2
+  case default 
+     call mpp_error(FATAL, "xgrid_test: nml grid_version should be 1 or 2")
+  end select
+
+  !--- Will replace mpp_define_domain with mpp_define_mosaic when test multiple-tile mosaic.
+  call mpp_define_layout( (/1,atm_nx,1,atm_ny/), npes, layout) 
+  call mpp_define_domains( (/1,atm_nx,1,atm_ny/), layout, Atm_domain)
+  call mpp_define_layout( (/1,lnd_nx,1,lnd_ny/), npes, layout) 
+  call mpp_define_domains( (/1,lnd_nx,1,lnd_ny/), layout, Lnd_domain) 
+  call mpp_define_layout( (/1,ocn_nx,1,ocn_ny/), npes, layout) 
+  call mpp_define_domains( (/1,ocn_nx,1,ocn_ny/), layout, Ocn_domain)
+
+  !--- conservation check is done in setup_xmap. 
+  call setup_xmap(Xmap, (/ 'ATM', 'OCN', 'LND' /), (/ Atm_domain, Ocn_domain, Lnd_domain /), grid_file)
+
+  write(stdout(),*) "************************************************************************"
+  write(stdout(),*) "***********      Finish running program test_xgrid         *************"
+  write(stdout(),*) "************************************************************************"
+
+  call mpp_domains_exit
+  call fms_end
+
+end program xgrid_test
+
+! end of TEST_XGRID
+#endif
+
+
 #ifdef _XGRID_MAIN
 ! to compile on Altix:
 ! setenv FMS /net2/ap/regression/ia64/10-Aug-2006/CM2.1U_Control-1990_E1.k_dyn30pe/exec
@@ -1964,6 +2078,8 @@ program main
   logical, pointer :: maskmap(:,:)
   real, allocatable :: data2d(:,:), data3d(:,:,:)
   real              :: dt, dq_tot_atm, dq_tot_ice, dq_tot_lnd, dq_tot_ocn
+
+
 
   call fms_init
 
@@ -2105,9 +2221,7 @@ program main
           & ' residue: ', dq_tot_atm + dq_tot_lnd + dq_tot_ice + dq_tot_ocn
   endif
 
-  call mpp_domains_exit
-  call fms_end
-
+ 
 end program main
 ! end of _XGRID_MAIN
 #endif

@@ -40,11 +40,17 @@ module horiz_interp_type_mod
 
 use mpp_mod, only : mpp_send, mpp_recv, mpp_sync_self, mpp_error, FATAL
 
-
 implicit none
 private
 
 
+! parameter to determine interpolation method
+ integer, parameter :: CONSERVE = 1
+ integer, parameter :: BILINEAR = 2
+ integer, parameter :: SPHERICA = 3
+ integer, parameter :: BICUBIC  = 4
+
+public :: CONSERVE, BILINEAR, SPHERICA, BICUBIC
 public :: horiz_interp_type, stats, assignment(=)
 
 interface assignment(=)
@@ -75,9 +81,15 @@ end interface
                                                             !=3, spherical regrid
                                                             !=4, bicubic regrid
    real,    dimension(:,:), pointer   :: rat_x =>NULL(), rat_y =>NULL() !the ratio of coordinates of the dest grid
-                                                                                ! (x_dest -x_src_r)/(x_src_l -x_src_r) and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real,    dimension(:), pointer     :: lon_in =>NULL(),  lat_in =>NULL()      !the coordinates of the source grid
+                                                                        ! (x_dest -x_src_r)/(x_src_l -x_src_r) and (y_dest -y_src_r)/(y_src_l -y_src_r)
+   real,    dimension(:), pointer     :: lon_in =>NULL(),  lat_in =>NULL()  !the coordinates of the source grid
    logical                            :: I_am_initialized=.false.
+   integer                            :: version                            !indicate conservative interpolation version with value 1 or 2
+   !--- The following are for conservative interpolation scheme version 2 ( through xgrid)
+   integer                            :: nxgrid                             !number of exchange grid between src and dst grid.
+   integer, dimension(:), pointer     :: i_src=>NULL(), j_src=>NULL()       !indices in source grid.
+   integer, dimension(:), pointer     :: i_dst=>NULL(), j_dst=>NULL()       !indices in destination grid.
+   real,    dimension(:), pointer     :: area_frac_dst=>NULL()              !area fraction in destination grid.
  end type
 !</PUBLICTYPE>
 
@@ -183,6 +195,15 @@ contains
     horiz_interp_out%lon_in          => horiz_interp_in%lon_in
     horiz_interp_out%lat_in          => horiz_interp_in%lat_in
     horiz_interp_out%I_am_initialized = .true.
+    horiz_interp_out%i_src           => horiz_interp_in%i_src
+    horiz_interp_out%j_src           => horiz_interp_in%j_src
+    horiz_interp_out%i_dst           => horiz_interp_in%i_dst
+    horiz_interp_out%j_dst           => horiz_interp_in%j_dst
+    horiz_interp_out%area_frac_dst   => horiz_interp_in%area_frac_dst
+    if(horiz_interp_in%interp_method == CONSERVE) then
+       horiz_interp_out%version =  horiz_interp_in%version
+       if(horiz_interp_in%version==2) horiz_interp_out%nxgrid = horiz_interp_in%nxgrid
+    end if
 
  end subroutine horiz_interp_type_eq
 !#################################################################################################################################

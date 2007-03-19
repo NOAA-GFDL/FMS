@@ -19,8 +19,8 @@ module constants_mod
 implicit none
 private
 
-character(len=128) :: version='$Id: constants.F90,v 13.0.6.1 2006/10/20 15:40:12 rsh Exp $'
-character(len=128) :: tagname='$Name: memphis_2006_12 $'
+character(len=128) :: version='$Id: constants.F90,v 14.0 2007/03/15 22:37:51 fms Exp $'
+character(len=128) :: tagname='$Name: nalanda $'
 !dummy variable to use in HUGE initializations
 real :: realnumber
 

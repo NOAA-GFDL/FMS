@@ -116,8 +116,8 @@ public  diag_manager_init, send_data, send_tile_averaged_data, diag_manager_end,
 
 
 ! version number of this module
-character(len=128)  :: version = '$Id: diag_manager.F90,v 1.1.2.6.2.7 2006/10/19 18:00:42 fms Exp $'
-character(len=128)  :: tagname = '$Name: memphis_2006_12 $'  
+character(len=128)  :: version = '$Id: diag_manager.F90,v 14.0 2007/03/15 22:38:19 fms Exp $'
+character(len=128)  :: tagname = '$Name: nalanda $'  
 
 
 ! <INTERFACE NAME="send_data">
@@ -326,6 +326,15 @@ if(register_diag_field_array >0) then
 ! Need to sync start_time of file with init time of model
       if(files(file_num)%start_time < init_time) then
          files(file_num)%start_time = init_time
+! Need to sync  close_time too
+         files(file_num)%close_time = diag_time_inc(files(file_num)%start_time,  &
+                                                    files(file_num)%duration,    &
+                                                    files(file_num)%duration_units)
+!-- NZ
+!-- Why is this block of code here in this function? 
+!-- This kind of resetting the member variables should be done by one function call
+!-- in the module that first sets them (diag_util_mod).
+
       endif
 ! Need to increase next_open until it is greater than init time
       do
@@ -1156,35 +1165,113 @@ do ii = 1, number_of_outputs
            output_fields(out_num)%num_elements = output_fields(out_num)%num_elements + (ie-is+1)*(je-js+1)*(ke-ks+1)
 ! Add processing for Max and Min
    else if (time_max) then
-      if(debug_diag_manager)then
-         call update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-         call check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
-         if(err_msg_local /= '') then
-           if(fms_error_handler('send_data in diag_manager_mod',err_msg_local,err_msg)) return
-         endif
-      endif
       if (present(mask)) then
-         where(mask(f1:f2,f3:f4,ks:ke).and.field(f1:f2,f3:f4,ks:ke)>output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke))&
-              output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke) = field(f1:f2,f3:f4,ks:ke)
+         if (need_compute) then
+            do k = l_start(3),l_end(3)
+               k1=k-l_start(3)+1
+               do j = js,je
+                  do i = is, ie
+                     if(l_start(1)+hi<=i.and.i<=l_end(1)+hi.and.l_start(2)+hj<=j.and.j<=l_end(2)+hj) then
+                        i1 = i-l_start(1)-hi+1 ; j1=  j-l_start(2)-hj+1
+                        if(mask(i-is+1+hi,j-js+1+hj,k).and.field(i-is+1+hi,j-js+1+hj,k)>output_fields(out_num)%buffer(i1,j1,k1)) then
+                           output_fields(out_num)%buffer(i1,j1,k1) = field(i-is+1+hi,j-js+1+hj,k)
+                        endif
+                     endif
+                  enddo
+               enddo
+            enddo
+         else
+            if(debug_diag_manager)then
+               call update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+               call check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+               if(err_msg_local /= '') then
+                  if(fms_error_handler('send_data in diag_manager_mod',err_msg_local,err_msg)) return
+               endif
+            endif
+            where(mask(f1:f2,f3:f4,ks:ke).and.field(f1:f2,f3:f4,ks:ke)>output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke))&
+                 output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke) = field(f1:f2,f3:f4,ks:ke)
+         endif
       else
-         where (field(f1:f2,f3:f4,ks:ke) > output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke)) &
-              output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke) = field(f1:f2,f3:f4,ks:ke)
+         if (need_compute) then
+            do k = l_start(3),l_end(3)
+               k1=k-l_start(3)+1
+               do j = js,je
+                  do i = is, ie
+                     if(l_start(1)+hi<=i.and.i<=l_end(1)+hi.and.l_start(2)+hj<=j.and.j<=l_end(2)+hj) then
+                        i1 = i-l_start(1)-hi+1 ; j1=  j-l_start(2)-hj+1
+                        if(field(i-is+1+hi,j-js+1+hj,k) > output_fields(out_num)%buffer(i1,j1,k1)) then
+                           output_fields(out_num)%buffer(i1,j1,k1) = field(i-is+1+hi,j-js+1+hj,k)
+                        endif
+                     endif
+                  enddo
+               enddo
+            enddo
+         else
+            if(debug_diag_manager)then
+               call update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+               call check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+               if(err_msg_local /= '') then
+                  if(fms_error_handler('send_data in diag_manager_mod',err_msg_local,err_msg)) return
+               endif
+            endif            
+            where (field(f1:f2,f3:f4,ks:ke) > output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke)) &
+                 output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke) = field(f1:f2,f3:f4,ks:ke)
+         endif
       endif
       output_fields(out_num)%count_0d = 1
    else if (time_min) then
-      if(debug_diag_manager) then
-         call update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-         call check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
-         if(err_msg_local /= '') then
-           if(fms_error_handler('send_data in diag_manager_mod',err_msg_local,err_msg)) return
-         endif
-      endif
       if (present(mask)) then
-         where(mask(f1:f2,f3:f4,ks:ke).and.field(f1:f2,f3:f4,ks:ke)<output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke)) &
-              output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke) = field(f1:f2,f3:f4,ks:ke) 
+         if (need_compute) then
+            do k = l_start(3),l_end(3)
+               k1=k-l_start(3)+1
+               do j = js,je
+                  do i = is, ie
+                     if(l_start(1)+hi<=i.and.i<=l_end(1)+hi.and.l_start(2)+hj<=j.and.j<=l_end(2)+hj) then
+                        i1 = i-l_start(1)-hi+1 ; j1=  j-l_start(2)-hj+1
+                        if(mask(i-is+1+hi,j-js+1+hj,k).and.field(i-is+1+hi,j-js+1+hj,k)<output_fields(out_num)%buffer(i1,j1,k1)) then
+                           output_fields(out_num)%buffer(i1,j1,k1) = field(i-is+1+hi,j-js+1+hj,k)
+                        endif
+                     endif
+                  enddo
+               enddo
+            enddo
+         else
+            if(debug_diag_manager) then
+               call update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+               call check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+               if(err_msg_local /= '') then
+                  if(fms_error_handler('send_data in diag_manager_mod',err_msg_local,err_msg)) return
+               endif
+            endif
+            where(mask(f1:f2,f3:f4,ks:ke).and.field(f1:f2,f3:f4,ks:ke)<output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke)) &
+                 output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke) = field(f1:f2,f3:f4,ks:ke) 
+         endif
       else
-         where (field(f1:f2,f3:f4,ks:ke) < output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke)) &
-              output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke) = field(f1:f2,f3:f4,ks:ke)
+         if (need_compute) then
+            do k = l_start(3),l_end(3)
+               k1=k-l_start(3)+1
+               do j = js,je
+                  do i = is, ie
+                     if(l_start(1)+hi<=i.and.i<=l_end(1)+hi.and.l_start(2)+hj<=j.and.j<=l_end(2)+hj) then
+                        i1 = i-l_start(1)-hi+1 ; j1=  j-l_start(2)-hj+1
+                        if(field(i-is+1+hi,j-js+1+hj,k) < output_fields(out_num)%buffer(i1,j1,k1)) then
+                           output_fields(out_num)%buffer(i1,j1,k1) = field(i-is+1+hi,j-js+1+hj,k)
+                        endif
+                     endif
+                  enddo
+               enddo
+            enddo
+         else
+            if(debug_diag_manager) then
+               call update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+               call check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+               if(err_msg_local /= '') then
+                  if(fms_error_handler('send_data in diag_manager_mod',err_msg_local,err_msg)) return
+               endif
+            endif
+            where (field(f1:f2,f3:f4,ks:ke) < output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke)) &
+                 output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke) = field(f1:f2,f3:f4,ks:ke)
+         endif
       endif
       output_fields(out_num)%count_0d = 1
    else  ! ( not average, not min, max)
@@ -1626,6 +1713,15 @@ do while (nfiles <= max_files)
    record_len = len_trim(record)
    if(record_len == 0) cycle
    time_pos = MAX(index(record,'time'), index(record,'Time'))
+! We are only looking for time axis here.
+   if(time_pos == 0) cycle
+
+!-- NZ   
+!-- Even this can be problematic if one of the fields in table contains the string "time".
+!-- This part of the code (sparcing the diag_table) needs enhancements.
+!-- How about designing a .xml format for diag_table?
+!-- Fortran is not good for regexp. How about a Perl preprocessing of the table?
+
    record_tail = record(time_pos+6:record_len)
    record_tail_len = len_trim(record_tail)
    if (time_pos + 7 < record_len) then

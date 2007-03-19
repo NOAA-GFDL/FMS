@@ -1,7 +1,7 @@
 #include <fms_platform.h>
 #include "fms_switches.h"
 
-! $Id: drifters_comm.F90,v 13.0.2.1.2.1 2006/11/29 19:08:15 fms Exp $
+! $Id: drifters_comm.F90,v 14.0 2007/03/15 22:38:45 fms Exp $
 
 module drifters_comm_mod
 

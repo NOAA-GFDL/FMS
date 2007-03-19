@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_connect.inc,v 13.0.4.1.2.1.2.1 2006/09/24 13:42:52 fms Exp $
+! $Id: mpp_io_connect.inc,v 14.0 2007/03/15 22:43:13 fms Exp $
 
 ! <SUBROUTINE NAME="mpp_open">
 

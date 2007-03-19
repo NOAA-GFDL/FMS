@@ -1075,7 +1075,7 @@ private
   character(len=128), public :: version= &
        '$Id mpp.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: memphis_2006_12 $'
+       '$Name: nalanda $'
 
   contains
 #include <system_clock.h>

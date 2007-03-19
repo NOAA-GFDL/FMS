@@ -9,8 +9,11 @@ MODULE cloud_interpolator_mod
   private
 
   public :: cld_ntrp_linear_cell_interp, cld_ntrp_locate_cell, cld_ntrp_get_cell_values
+#ifdef _TEST_CLOUD_INTERPOLATOR
+  public :: cld_ntrp_expand_index, cld_ntrp_contract_indices
+#endif
 
-character(128), parameter :: version = '$Id: cloud_interpolator.F90,v 13.0.4.1 2006/11/29 19:08:04 fms Exp $'
+character(128), parameter :: version = '$Id: cloud_interpolator.F90,v 14.0 2007/03/15 22:38:35 fms Exp $'
 real, parameter           :: tol = 10*epsilon(1.)
 
 CONTAINS

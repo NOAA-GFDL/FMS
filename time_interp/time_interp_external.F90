@@ -49,8 +49,8 @@ module time_interp_external_mod
   private
 
   character(len=128), private :: version= &
-   'CVS $Id: time_interp_external.F90,v 13.0.2.3.2.1 2006/10/03 12:55:04 z1l Exp $'
-  character(len=128), private :: tagname='Tag $Name: memphis_2006_12 $'
+   'CVS $Id: time_interp_external.F90,v 14.0 2007/03/15 22:44:49 fms Exp $'
+  character(len=128), private :: tagname='Tag $Name: nalanda $'
 
   integer, parameter, private :: max_fields = 1, modulo_year= 0001,max_files= 1
   integer, parameter, private :: LINEAR_TIME_INTERP = 1 ! not used currently

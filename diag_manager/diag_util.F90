@@ -14,8 +14,10 @@ use diag_axis_mod, only  : get_diag_axis_data, get_axis_global_length, get_diag_
 use diag_output_mod, only: diag_flush, diag_field_out, diag_output_init, write_axis_meta_data, &
                            write_field_meta_data, done_meta_data
 use fms_mod, only        : error_mesg, FATAL, WARNING, mpp_pe, mpp_root_pe, lowercase, fms_error_handler
+use fms_io_mod, only     : get_tile_string, return_domain
 use mpp_domains_mod,only : domain1d, domain2d, mpp_get_compute_domain, null_domain1d,&
-                           null_domain2d, operator(/=), mpp_modify_domain, mpp_get_domain_components 
+                           null_domain2d, operator(/=), operator(==), mpp_modify_domain, mpp_get_domain_components, &
+                           mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined
 use time_manager_mod,only: time_type, operator(==), operator(>), NO_CALENDAR, increment_date, &
                            increment_time, get_calendar_type, get_date, get_time, leap_year, &
                            operator(-),  operator(<), operator(>=)
@@ -28,8 +30,8 @@ public get_subfield_size, log_diag_field_info, update_bounds, check_out_of_bound
        find_input_field, init_input_field, init_output_field, diag_data_out, write_static, &
        check_duplicate_output_fields, get_date_dif
 
-character(len=128),private  :: version = '$Id: diag_util.F90,v 13.0.2.2.2.1 2006/08/29 13:39:29 z1l Exp $'
-character(len=128),private  :: tagname = '$Name: memphis_2006_12 $'
+character(len=128),private  :: version = '$Id: diag_util.F90,v 14.0 2007/03/15 22:38:32 fms Exp $'
+character(len=128),private  :: tagname = '$Name: nalanda $'
 
 contains
 
@@ -861,6 +863,11 @@ subroutine opening_file(file, time)
   type(domain1d)                :: domain
   integer                       :: dir, edges
   real, dimension(2)            :: data
+  character(len=256)            :: fname
+  integer                       :: ntileMe
+  integer, allocatable          :: tile_id(:)
+  type(domain2d)                :: domain2d
+
 
   aux_present = .false.; match_aux_name = .false.
 ! it's unlikely that a file starts with word "rregion", need to check anyway.
@@ -900,6 +907,24 @@ subroutine opening_file(file, time)
 !     filename = trim(prefix2)//trim(base_name)//trim(suffix)
      filename = trim(base_name)//trim(suffix)
   endif
+
+! Loop through all fields with this file to output axes
+! JWD: This is a klooge; need something more robust
+  if(mpp_mosaic_defined())then
+    call return_domain(domain2d)
+    if(domain2d == NULL_DOMAIN2D)then
+      call error_mesg ('diag_util opening_file','Domain not defined through set_domain interface; cannot retrieve tile info', FATAL)
+    endif
+    if(mpp_get_ntile_count(domain2d) > 1)then
+        ntileMe = mpp_get_current_ntile(domain2d)
+        allocate(tile_id(ntileMe))
+        tile_id = mpp_get_tile_id(domain2d)
+        fname = trim(filename)
+        call get_tile_string(filename, trim(fname)//'.tile' , tile_id(1))
+        deallocate(tile_id)
+    endif
+  endif
+
   call diag_output_init(filename, files(file)%format, global_descriptor, &
        files(file)%long_name, time_units, files(file)%file_unit) 
   files(file)%bytes_written = 0 

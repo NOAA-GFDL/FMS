@@ -34,21 +34,17 @@ module horiz_interp_mod
 ! </OVERVIEW>
 
 ! <DESCRIPTION>
-!     This module can interpolate data from rectangular/tripolar grid
-!     to rectangular/tripolar grid. Three interpolation schems are used here.
-!     when the source grid is tripolar grid, inverse of square distance weighted
-!     scheme (spherical regrid) is used. When the source grid is rectangular 
-!     longitude/latitude grid, any one of following three schemes can be applied: 
-!     conservation scheme that conserves the area-weighed integral of the input field, 
-!     bilinear interpolation that use the surround four source grid to interpolate onto
-!     the destination grid, bicubic interpolation, which does the same with higher
-!     order polynominals and spherical regrid that use thes inverse of square distance
-!     as weight. User can choose the interpolation method in the horiz_interp_new.
-!     The default method is conservative scheme. When the source grid is tripolar grid,
-!     only spherical regrid is allowed. When destination grid is tripolar, conservative 
-!     scheme can not be used. 
-!     There is an optional mask field for missing input data.
-!     An optional output mask field may be used in conjunction with
+!     This module can interpolate data from any logically rectangular grid
+!     to any logically rectangular grid. Four interpolation schems are used here:
+!     conservative, bilinear, bicubic and inverse of square distance weighted. 
+!     The four interpolation schemes are implemented seperately in 
+!     horiz_interp_conserver_mod, horiz_interp_blinear_mod, horiz_interp_bicubic_mod
+!     and horiz_interp_spherical_mod. bicubic interpolation requires the source grid
+!     is regular lon/lat grid. User can choose the interpolation method in the 
+!     public interface horiz_interp_new through optional argument interp_method,
+!     with acceptable value "conservative", "bilinear", "bicubic" and "spherical".
+!     The default value is "conservative". There is an optional mask field for 
+!     missing input data. An optional output mask field may be used in conjunction with
 !     the input mask to show where output data exists.
 ! </DESCRIPTION>
 
@@ -62,14 +58,15 @@ use fms_mod,                    only: write_version_number, fms_error_handler
 use mpp_mod,                    only: mpp_error, FATAL, stdout
 use constants_mod,              only: pi
 use horiz_interp_type_mod,      only: horiz_interp_type, assignment(=)
-use horiz_interp_conserve_mod,  only: horiz_interp_conserve_init,  horiz_interp_conserve
-use horiz_interp_conserve_mod,  only: horiz_interp_conserve_end
-use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_init,  horiz_interp_bilinear
-use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_end
-use horiz_interp_bicubic_mod,   only: horiz_interp_bicubic_init,   horiz_interp_bicubic
-use horiz_interp_bicubic_mod,   only: horiz_interp_bicubic_end
+use horiz_interp_type_mod,      only: CONSERVE, BILINEAR, SPHERICA, BICUBIC
+use horiz_interp_conserve_mod,  only: horiz_interp_conserve_init, horiz_interp_conserve
+use horiz_interp_conserve_mod,  only: horiz_interp_conserve_new, horiz_interp_conserve_del
+use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_init, horiz_interp_bilinear
+use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_new, horiz_interp_bilinear_del
+use horiz_interp_bicubic_mod,   only: horiz_interp_bicubic_init, horiz_interp_bicubic
+use horiz_interp_bicubic_mod,   only: horiz_interp_bicubic_new, horiz_interp_bicubic_del
 use horiz_interp_spherical_mod, only: horiz_interp_spherical_init, horiz_interp_spherical
-use horiz_interp_spherical_mod, only: horiz_interp_spherical_end
+use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_spherical_del
 
  implicit none
  private
@@ -92,31 +89,28 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_end
 !      are doing a single grid-to-grid interpolation.
 !   </DESCRIPTION>
 !   <IN NAME="lon_in" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians">
-!      Longitude (in radians) for source data grid. when lon_in is 1D, it is the longitude
-!      edges and its value are for adjacent grid boxes and must increase 
-!      in value. When lon_in is 2D, there are two cases: one is the longitude edges stored as
-!      pairs for each grid box (when interp_method is "conservative"), the other is the longitude
-!      of the center of each grid box. 
+!      Longitude (in radians) for source data grid. You can pass 1-D lon_in to 
+!      represent the geographical longitude of regular lon/lat grid, or just 
+!      pass geographical longitude(lon_in is 2-D). The grid location may be 
+!      located at grid cell edge or center, decided by optional argument "grid_at_center".
 !   </IN>
 !   <IN NAME="lat_in" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians">
-!      Latitude (in radians) for source data grid. when lat_in is 1D, it is the latitude
-!      edges and its value are for adjacent grid boxes and must increase 
-!      in value. When lat_in is 2D, it is the longitude of the center of each grid box.
-!      When interp_method is "conservative" or "bilinear", lon_in should be 1D.
+!      Latitude (in radians) for source data grid. You can pass 1-D lat_in to 
+!      represent the geographical latitude of regular lon/lat grid, or just 
+!      pass geographical latitude(lat_in is 2-D). The grid location may be 
+!      located at grid cell edge or center, decided by optional argument "grid_at_center".
 !   </IN>
 !   <IN NAME="lon_out" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians" >
-!      Longitude (in radians) for destination data grid. when lon_out is 1D, it is the longitude
-!      edges and its value are for adjacent grid boxes and must increase 
-!      in value. When lon_out is 2D, there are two cases: one is the longitude edges stored as
-!      pairs for each grid box (when interp_method is "conservative"), the other is the longitude
-!      of the center of each grid box (when interp_method is "bilinear"). 
+!      Longitude (in radians) for destination data grid. You can pass 1-D lon_out to 
+!      represent the geographical longitude of regular lon/lat grid, or just 
+!      pass geographical longitude(lon_out is 2-D). The grid location may be 
+!      located at grid cell edge or center, decided by optional argument "grid_at_center".
 !   </IN>
 !   <IN NAME="lat_out" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians" >
-!      Latitude (in radians) for destination data grid. when lat_out is 1D, it is the latitude
-!      edges and its value are for adjacent grid boxes and must increase 
-!      in value. When lat_out is 2D, there are two cases: one is the latitude edges stored as
-!      pairs for each grid box (when interp_method is "conservative"), the other is the latitude
-!      of the center of each grid box (when interp_method is "bilinear").
+!      Latitude (in radians) for destination data grid. You can pass 1-D lat_out to 
+!      represent the geographical latitude of regular lon/lat grid, or just 
+!      pass geographical latitude(lat_out is 2-D). The grid location may be 
+!      located at grid cell edge or center, decided by optional argument "grid_at_center".
 !   </IN>
 !   <IN NAME="verbose" TYPE="integer">
 !      Integer flag that controls the amount of printed output.
@@ -125,8 +119,7 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_end
 !   <IN NAME="interp_method" TYPE="character(len=*)" > 
 !      interpolation method, = "conservative", using conservation scheme,
 !      = "bilinear", using bilinear interpolation, = "spherical",using spherical regrid.
-!      when source grid is 1d, default value is "conservative"; when source grid is 2d,
-!      default value is "spherical".
+!      = "bicubic", using bicubic interpolation. The default value is "convervative".
 !   </IN>
 !   <IN NAME = "src_modulo" >
 !      Indicate the source data grid is cyclic or not.
@@ -134,6 +127,7 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_end
 !   <IN NAME = "grid_at_center" >
 !      Indicate the data is on the center of grid box or the edge of grid box. 
 !      When true, the data is on the center of grid box. default vaule is false.
+!      This option is only available when interp_method = "bilinear" or "bicubic".
 !   </IN>
 !   <OUT NAME="Interp" >
 !      A derived-type variable containing indices and weights used for subsequent 
@@ -222,18 +216,9 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_end
  end interface
 ! </INTERFACE>
 
-!---- derived-types ----
-
-
-! parameter to determine interpolation method
- integer, parameter :: CONSERVE = 1
- integer, parameter :: BILINEAR = 2
- integer, parameter :: SPHERICA = 3
- integer, parameter :: BICUBIC  = 4
-
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: horiz_interp.f90,v 13.0.2.3 2006/06/29 19:24:44 pjp Exp $'
- character(len=128) :: tagname = '$Name: memphis_2006_12 $'
+ character(len=128) :: version = '$Id: horiz_interp.F90,v 14.0 2007/03/15 22:39:47 fms Exp $'
+ character(len=128) :: tagname = '$Name: nalanda $'
  logical            :: module_is_initialized = .FALSE.
 !-----------------------------------------------------------------------
 
@@ -252,6 +237,11 @@ contains
 
   if(module_is_initialized) return
   call write_version_number (version, tagname)
+  call horiz_interp_conserve_init
+  call horiz_interp_bilinear_init
+  call horiz_interp_bicubic_init
+  call horiz_interp_spherical_init
+
   module_is_initialized = .true.
 
   end subroutine horiz_interp_init
@@ -270,10 +260,10 @@ contains
 !  <OUT NAME="Interp" TYPE="type(horiz_interp_type)"></OUT>
 
 !<PUBLICROUTINE INTERFACE="horiz_interp_new">
-  subroutine horiz_interp_new_1d (Interp, lon_in, lat_in, lon_out, lat_out,  &
-       verbose, interp_method, num_nbrs, max_dist, src_modulo, &
-       grid_at_center)
-    !</PUBLICROUTINE>
+  subroutine horiz_interp_new_1d (Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
+                                  interp_method, num_nbrs, max_dist, src_modulo,     &
+                                  grid_at_center, mask_in, mask_out)
+!</PUBLICROUTINE>
 
     !-----------------------------------------------------------------------
     type(horiz_interp_type), intent(inout)        :: Interp
@@ -285,6 +275,8 @@ contains
     real,    intent(in),                 optional :: max_dist
     logical, intent(in),                 optional :: src_modulo
     logical, intent(in),                 optional :: grid_at_center
+    real, intent(in), dimension(:,:),    optional :: mask_in  ! dummy
+    real, intent(out),dimension(:,:),    optional :: mask_out ! dummy
     !-----------------------------------------------------------------------
     real, dimension(:,:), allocatable :: lon_src, lat_src, lon_dst, lat_dst
     real, dimension(:),   allocatable :: lon_src_1d, lat_src_1d, lon_dst_1d, lat_dst_1d
@@ -300,19 +292,7 @@ contains
     select case (trim(method))
     case ("conservative")
        Interp%interp_method = CONSERVE
-       nlon_out = size(lon_out(:))-1; nlat_out = size(lat_out(:))-1
-       allocate(lon_dst(nlon_out,2), lat_dst(nlat_out,2))
-       do i=1,nlon_out
-          lon_dst(i,1) = lon_out(i)
-          lon_dst(i,2) = lon_out(i+1)
-       enddo
-       do j=1,nlat_out
-          lat_dst(j,1) = lat_out(j)
-          lat_dst(j,2) = lat_out(j+1)
-       enddo
-       call horiz_interp_conserve_init ( Interp, lon_in, lat_in, lon_dst, lat_dst, &
-            verbose)
-       deallocate(lon_dst, lat_dst)
+       call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose)
     case ("bilinear")
        Interp%interp_method = BILINEAR
        center = .false.
@@ -327,7 +307,7 @@ contains
              lat_dst(:,j) = lat_out(j)
           enddo
 
-          call horiz_interp_bilinear_init ( Interp, lon_in, lat_in, lon_dst, lat_dst, &
+          call horiz_interp_bilinear_new ( Interp, lon_in, lat_in, lon_dst, lat_dst, &
                verbose, src_modulo)
           deallocate(lon_dst, lat_dst)
        else
@@ -347,7 +327,7 @@ contains
           do j = 1, nlat_out
              lat_dst(:,j) = (lat_out(j) + lat_out(j+1)) * 0.5
           enddo
-          call horiz_interp_bilinear_init ( Interp, lon_src_1d, lat_src_1d, lon_dst, lat_dst, &
+          call horiz_interp_bilinear_new ( Interp, lon_src_1d, lat_src_1d, lon_dst, lat_dst, &
                verbose, src_modulo)
           deallocate(lon_src_1d, lat_src_1d, lon_dst, lat_dst)
        endif
@@ -355,9 +335,9 @@ contains
        Interp%interp_method = BICUBIC
        center = .false.
        if(present(grid_at_center) ) center = grid_at_center
-       !No need to expand to 2d, horiz_interp_bicubic_init does 1d-1d
+       !No need to expand to 2d, horiz_interp_bicubic_new does 1d-1d
        if(center) then 
-          call horiz_interp_bicubic_init ( Interp, lon_in, lat_in, lon_out, lat_out, &
+          call horiz_interp_bicubic_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
             verbose, src_modulo)
        else
           nlon_in  = size(lon_in(:))-1;  nlat_in  = size(lat_in(:))-1
@@ -376,7 +356,7 @@ contains
           do j = 1, nlat_out
              lat_dst_1d(j) = (lat_out(j) + lat_out(j+1)) * 0.5
           enddo
-          call horiz_interp_bicubic_init ( Interp, lon_src_1d, lat_src_1d, lon_dst_1d, lat_dst_1d, &
+          call horiz_interp_bicubic_new ( Interp, lon_src_1d, lat_src_1d, lon_dst_1d, lat_dst_1d, &
                verbose, src_modulo)
           deallocate(lon_src_1d, lat_src_1d, lon_dst_1d, lat_dst_1d)
        endif
@@ -398,7 +378,7 @@ contains
        do j = 1, nlat_out
           lat_dst(:,j) = lat_out(j)
        enddo
-       call horiz_interp_spherical_init ( Interp, lon_src, lat_src, lon_dst, lat_dst, &
+       call horiz_interp_spherical_new ( Interp, lon_src, lat_src, lon_dst, lat_dst, &
             num_nbrs, max_dist, src_modulo)
        deallocate(lon_src, lat_src, lon_dst, lat_dst)
     case default
@@ -414,8 +394,8 @@ contains
 !#######################################################################
 
  subroutine horiz_interp_new_1d_src (Interp, lon_in, lat_in, lon_out, lat_out,   &
-                                      verbose, interp_method, num_nbrs, max_dist, &
-                                      src_modulo, grid_at_center )
+                                     verbose, interp_method, num_nbrs, max_dist, &
+                                     src_modulo, grid_at_center, mask_in, mask_out )
 
    type(horiz_interp_type), intent(inout)        :: Interp
    real, intent(in),  dimension(:)               :: lon_in , lat_in
@@ -426,6 +406,8 @@ contains
    real,    intent(in),                 optional :: max_dist
    logical, intent(in),                 optional :: src_modulo
    logical, intent(in),                 optional :: grid_at_center
+   real, intent(in), dimension(:,:),    optional :: mask_in
+   real, intent(out),dimension(:,:),    optional :: mask_out
 
    real, dimension(:,:), allocatable :: lon_src, lat_src
    real, dimension(:),   allocatable :: lon_src_1d, lat_src_1d
@@ -441,14 +423,14 @@ contains
    select case (trim(method))
    case ("conservative")
       Interp%interp_method = CONSERVE
-      call horiz_interp_conserve_init ( Interp, lon_in, lat_in, lon_out, lat_out, &
-           verbose )
+      call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
+           verbose=verbose, mask_in=mask_in, mask_out=mask_out )
    case ("bilinear")
       Interp%interp_method = BILINEAR
       center = .false.
       if(present(grid_at_center) ) center = grid_at_center
       if(center) then
-         call horiz_interp_bilinear_init ( Interp, lon_in, lat_in, lon_out, lat_out, &
+         call horiz_interp_bilinear_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
               verbose, src_modulo )
       else
          nlon_in  = size(lon_in(:))-1;  nlat_in  = size(lat_in(:))-1
@@ -459,7 +441,7 @@ contains
          do j = 1, nlat_in
             lat_src_1d(j) = (lat_in(j) + lat_in(j+1)) * 0.5
          enddo
-         call horiz_interp_bilinear_init ( Interp, lon_src_1d, lat_src_1d, lon_out, lat_out, &
+         call horiz_interp_bilinear_new ( Interp, lon_src_1d, lat_src_1d, lon_out, lat_out, &
               verbose, src_modulo )
          deallocate(lon_src_1d,lat_src_1d)
       endif
@@ -468,7 +450,7 @@ contains
       center = .false.
       if(present(grid_at_center) ) center = grid_at_center
       if(center) then
-        call horiz_interp_bicubic_init ( Interp, lon_in, lat_in, lon_out, lat_out, &
+        call horiz_interp_bicubic_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
               verbose, src_modulo )
       else
          nlon_in  = size(lon_in(:))-1;  nlat_in  = size(lat_in(:))-1
@@ -479,7 +461,7 @@ contains
          do j = 1, nlat_in
             lat_src_1d(j) = (lat_in(j) + lat_in(j+1)) * 0.5
          enddo
-           call horiz_interp_bicubic_init ( Interp, lon_src_1d, lat_src_1d, lon_out, lat_out, &
+           call horiz_interp_bicubic_new ( Interp, lon_src_1d, lat_src_1d, lon_out, lat_out, &
               verbose, src_modulo )
          deallocate(lon_src_1d,lat_src_1d)
       endif
@@ -493,7 +475,7 @@ contains
       do j = 1, nlat_in
          lat_src(:,j) = lat_in(j)
       enddo
-      call horiz_interp_spherical_init ( Interp, lon_src, lat_src, lon_out, lat_out, &
+      call horiz_interp_spherical_new ( Interp, lon_src, lat_src, lon_out, lat_out, &
            num_nbrs, max_dist, src_modulo)
       deallocate(lon_src, lat_src)
    case default
@@ -508,7 +490,8 @@ contains
 !#######################################################################
 
  subroutine horiz_interp_new_2d (Interp, lon_in, lat_in, lon_out, lat_out,   &
-                                  verbose, interp_method, num_nbrs, max_dist, src_modulo)
+                                 verbose, interp_method, num_nbrs, max_dist, &
+                                 src_modulo, mask_in, mask_out )
  type(horiz_interp_type), intent(inout)     :: Interp
  real, intent(in),  dimension(:,:)          :: lon_in , lat_in
  real, intent(in),  dimension(:,:)          :: lon_out, lat_out
@@ -517,6 +500,8 @@ contains
  integer, intent(in),              optional :: num_nbrs
  real,    intent(in),              optional :: max_dist
  logical, intent(in),              optional :: src_modulo
+ real, intent(in), dimension(:,:), optional :: mask_in
+ real, intent(out),dimension(:,:), optional :: mask_out
 
  character(len=40) :: method
 !-----------------------------------------------------------------------
@@ -526,13 +511,17 @@ contains
    if(present(interp_method)) method = interp_method
 
    select case (trim(method))
+   case ("conservative")
+      Interp%interp_method = CONSERVE
+      call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
+                                       verbose=verbose, mask_in=mask_in, mask_out=mask_out )
    case ("spherical") 
       Interp%interp_method = SPHERICA
-      call horiz_interp_spherical_init ( Interp, lon_in, lat_in, lon_out, lat_out, &
+      call horiz_interp_spherical_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                     num_nbrs, max_dist, src_modulo )
    case ("bilinear")
       Interp%interp_method = BILINEAR
-      call horiz_interp_bilinear_init ( Interp, lon_in, lat_in, lon_out, lat_out, &
+      call horiz_interp_bilinear_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                         verbose, src_modulo )
    case default
       call mpp_error(FATAL,'when source grid are 2d, interp_method should be spherical or bilinear')
@@ -545,7 +534,7 @@ contains
 
 !#######################################################################
  subroutine horiz_interp_new_1d_dst (Interp, lon_in, lat_in, lon_out, lat_out,   &
-      verbose, interp_method, num_nbrs, max_dist, src_modulo)
+      verbose, interp_method, num_nbrs, max_dist, src_modulo, mask_in, mask_out )
    type(horiz_interp_type), intent(inout)     :: Interp
    real, intent(in),  dimension(:,:)          :: lon_in , lat_in
    real, intent(in),  dimension(:)            :: lon_out, lat_out
@@ -554,6 +543,8 @@ contains
    integer, intent(in),              optional :: num_nbrs
    real,    intent(in),              optional :: max_dist
    logical, intent(in),              optional :: src_modulo
+   real, intent(in), dimension(:,:), optional :: mask_in
+   real, intent(out),dimension(:,:), optional :: mask_out
 
    character(len=40) :: method
    !-------------some local variables-----------------------------------------------
@@ -575,13 +566,17 @@ contains
    enddo
 
    select case (trim(method))
+   case ("conservative")
+      Interp%interp_method = CONSERVE
+      call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
+                                       verbose=verbose, mask_in=mask_in, mask_out=mask_out )
    case ("bilinear")
       Interp%interp_method = BILINEAR
-      call horiz_interp_bilinear_init ( Interp, lon_in, lat_in, lon_dst, lat_dst, &
+      call horiz_interp_bilinear_new ( Interp, lon_in, lat_in, lon_dst, lat_dst, &
            verbose, src_modulo )
    case ("spherical")
       Interp%interp_method = SPHERICA
-      call horiz_interp_spherical_init ( Interp, lon_in, lat_in, lon_dst, lat_dst, &
+      call horiz_interp_spherical_new ( Interp, lon_in, lat_in, lon_dst, lat_dst, &
            num_nbrs, max_dist, src_modulo)
    case default
       call mpp_error(FATAL,'when source grid are 2d, interp_method should be spherical or bilinear')
@@ -778,7 +773,8 @@ contains
     call horiz_interp_init
 
     call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
-                             interp_method, num_nbrs, max_dist, src_modulo, grid_at_center )
+                            interp_method, num_nbrs, max_dist, src_modulo,    &
+                            grid_at_center, mask_in, mask_out )
 
     call horiz_interp ( Interp, data_in, data_out, verbose,   &
                         mask_in, mask_out, missing_value, missing_permit )
@@ -820,7 +816,7 @@ contains
     call horiz_interp_init
 
     call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
-                             interp_method, num_nbrs, max_dist, src_modulo )
+                             interp_method, num_nbrs, max_dist, src_modulo, mask_in, mask_out )
 
     call horiz_interp ( Interp, data_in, data_out, verbose,   &
                         mask_in, mask_out, missing_value, missing_permit )
@@ -862,7 +858,7 @@ contains
     call horiz_interp_init
 
     call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
-                             interp_method, num_nbrs, max_dist, src_modulo )
+                             interp_method, num_nbrs, max_dist, src_modulo, mask_in, mask_out )
 
     call horiz_interp ( Interp, data_in, data_out, verbose,   &
                         mask_in, mask_out, missing_value, missing_permit )
@@ -988,13 +984,13 @@ contains
 !-----------------------------------------------------------------------
    select case(Interp % interp_method) 
    case (CONSERVE)
-      call horiz_interp_conserve_end(Interp )
+      call horiz_interp_conserve_del(Interp )
    case (BILINEAR)
-      call horiz_interp_bilinear_end(Interp )
+      call horiz_interp_bilinear_del(Interp )
    case (BICUBIC)
-      call horiz_interp_bicubic_end(Interp )
+      call horiz_interp_bicubic_del(Interp )
    case (SPHERICA)
-      call horiz_interp_spherical_end(Interp )
+      call horiz_interp_spherical_del(Interp )
    end select
 
    Interp%I_am_initialized = .false.
@@ -1083,3 +1079,210 @@ end module horiz_interp_mod
 !     </PRE>
 !   </TESTPROGRAM>
 ! </INFO>
+
+#ifdef test_horiz_interp
+! T More tests will be added in the future.
+program horiz_interp_test
+
+use mpp_mod,          only : mpp_init, mpp_exit, mpp_error, FATAL, stdout, mpp_npes
+use mpp_mod,          only : mpp_clock_id, mpp_clock_begin, mpp_clock_end
+use mpp_mod,          only : mpp_pe, mpp_root_pe, NOTE, MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
+use mpp_io_mod,       only : mpp_io_init, mpp_io_exit
+use mpp_domains_mod,  only : mpp_define_layout, mpp_define_domains, mpp_get_compute_domain
+use mpp_domains_mod,  only : mpp_domains_init, domain2d
+use fms_mod,          only : file_exist, open_namelist_file, close_file, check_nml_error
+use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_del
+use horiz_interp_mod, only : horiz_interp, horiz_interp_type
+use constants_mod,    only : constants_init, PI
+
+implicit none
+
+  integer :: ni_src = 360, nj_src = 180
+  integer :: ni_dst = 144, nj_dst = 72
+
+  namelist /test_horiz_interp_nml/ ni_src, nj_src, ni_dst, nj_dst
+
+  real :: lon_src_beg = 0,    lon_src_end = 360
+  real :: lat_src_beg = -90,  lat_src_end = 90
+  real :: lon_dst_beg = -280, lon_dst_end = 80
+  real :: lat_dst_beg = -90,  lat_dst_end = 90
+  real :: D2R = PI/180.
+  real, parameter :: SMALL = 1.0e-10
+
+  type(domain2d)                    :: domain
+  type(horiz_interp_type)           :: Interp
+  integer                           :: id1, id2, id3, id4
+  integer                           :: isc, iec, jsc, jec, i, j
+  integer                           :: nml_unit, io, ierr, layout(2)
+  real                              :: dlon_src, dlat_src, dlon_dst, dlat_dst
+  real, allocatable, dimension(:)   :: lon1D_src, lat1D_src, lon1D_dst, lat1D_dst
+  real, allocatable, dimension(:,:) :: lon2D_src, lat2D_src, lon2D_dst, lat2D_dst
+  real, allocatable, dimension(:,:) :: data_src, data1_dst, data2_dst, data3_dst, data4_dst
+
+  call constants_init
+  call mpp_init
+  call mpp_domains_init
+  call mpp_io_init
+  call horiz_interp_init
+
+  !--- read namelist
+  if (file_exist('input.nml')) then
+     ierr=1
+     nml_unit = open_namelist_file()
+     do while (ierr /= 0)
+        read(nml_unit, nml=test_horiz_interp_nml, iostat=io, end=10)
+        ierr = check_nml_error(io, 'test_horiz_interp_nml')
+     enddo
+10   call close_file(nml_unit)
+  endif
+
+  !--- define domains
+  call mpp_define_layout( (/1, ni_dst, 1, nj_dst/), mpp_npes(), layout)
+  call mpp_define_domains((/1, ni_dst, 1, nj_dst/), layout, domain)
+  call mpp_get_compute_domain(domain,isc,iec,jsc,jec)
+
+  !--- test conservative horiz_interp with a simple test. the source grid is the region
+  !    (0:360,-90:90) with grid size ni_src, nj_src ( default 360X180). and the destination 
+  !    is the region (-280:80, -90:90) with grid size ni_dstXnj_dst( default 144X72). 
+  !    integer checksum and global sum will be printed out for both the 1D and 2D version. 
+
+  allocate(lon2D_src(ni_src+1, nj_src+1), lat2D_src(ni_src+1, nj_src+1) )
+  allocate(lon1D_src(ni_src+1), lat1D_src(nj_src+1), data_src(ni_src, nj_src) )
+
+  allocate(lon2D_dst(isc:iec+1, jsc:jec+1), lat2D_dst(isc:iec+1, jsc:jec+1) )
+  allocate(lon1D_dst(isc:iec+1), lat1D_dst(jsc:jec+1) )
+  allocate(data1_dst(isc:iec, jsc:jec), data2_dst(isc:iec, jsc:jec) )
+  allocate(data3_dst(isc:iec, jsc:jec), data4_dst(isc:iec, jsc:jec) )
+
+  ! set up longitude and latitude of source/destination grid.   
+  dlon_src = (lon_src_end-lon_src_beg)/ni_src 
+  dlat_src = (lat_src_end-lat_src_beg)/nj_src
+  dlon_dst = (lon_dst_end-lon_dst_beg)/ni_dst 
+  dlat_dst = (lat_dst_end-lat_dst_beg)/nj_dst
+
+  do i = 1, ni_src+1
+     lon1D_src(i) = lon_src_beg + (i-1)*dlon_src
+  end do
+
+  do j = 1, nj_src+1
+     lat1D_src(j) = lat_src_beg + (j-1)*dlat_src
+  end do
+
+  do i = isc, iec+1
+     lon1D_dst(i) = lon_dst_beg + (i-1)*dlon_dst
+  end do
+
+  do j = jsc, jec+1
+     lat1D_dst(j) = lat_dst_beg + (j-1)*dlat_dst
+  end do
+
+  ! scale grid to radians.
+  lon1D_src = lon1D_src * D2R
+  lat1D_src = lat1D_src * D2R
+  lon1D_dst = lon1D_dst * D2R
+  lat1D_dst = lat1D_dst * D2R
+
+  do i = 1, ni_src+1
+     lon2D_src(i,:) = lon1D_src(i)
+  end do
+
+  do j = 1, nj_src+1
+     lat2D_src(:,j) = lat1D_src(j)
+  end do
+
+  do i = isc, iec+1
+     lon2D_dst(i,:) = lon1D_dst(i)
+  end do
+
+  do j = jsc, jec+1
+     lat2D_dst(:,j) = lat1D_dst(j)
+  end do
+
+  !--- set up the source data
+  do j = 1, nj_src
+     do i = 1, ni_src
+        data_src(i,j) = i + j*0.001
+     end do
+  end do
+
+  id1 = mpp_clock_id( 'horiz_interp_1dx1d', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+  id2 = mpp_clock_id( 'horiz_interp_1dx2d', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+  id3 = mpp_clock_id( 'horiz_interp_2dx1d', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+  id4 = mpp_clock_id( 'horiz_interp_2dx2d', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+
+  ! --- 1dx1d version conservative interpolation
+  call mpp_clock_begin(id1)
+  call horiz_interp_new(Interp, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, interp_method = "conservative")
+  call horiz_interp(Interp, data_src, data1_dst)
+  call horiz_interp_del(Interp)
+  call mpp_clock_end(id1)
+
+  ! --- 1dx2d version conservative interpolation
+  call mpp_clock_begin(id2)
+  call horiz_interp_new(Interp, lon1D_src, lat1D_src, lon2D_dst, lat2D_dst, interp_method = "conservative")
+  call horiz_interp(Interp, data_src, data2_dst)
+  call horiz_interp_del(Interp)
+  call mpp_clock_end(id2)
+
+  ! --- 2dx1d version conservative interpolation
+  call mpp_clock_begin(id3)
+  call horiz_interp_new(Interp, lon2D_src, lat2D_src, lon1D_dst, lat1D_dst, interp_method = "conservative")
+  call horiz_interp(Interp, data_src, data3_dst)
+  call horiz_interp_del(Interp)
+  call mpp_clock_end(id3)
+
+  ! --- 2dx2d version conservative interpolation
+  call mpp_clock_begin(id4)
+  call horiz_interp_new(Interp, lon2D_src, lat2D_src, lon2D_dst, lat2D_dst, interp_method = "conservative")
+  call horiz_interp(Interp, data_src, data4_dst)
+  call horiz_interp_del(Interp)
+  call mpp_clock_end(id4)
+
+  !--- compare the data after interpolation between 1-D and 2-D version interpolation
+  do j = jsc, jsc
+     do i = isc, iec
+
+        if( abs(data1_dst(i,j)-data2_dst(i,j)) > SMALL ) then
+           print*, "After interpolation At point (i,j) = (", i, ",", j, "), data1 = ", data1_dst(i,j), &
+           ", data2 = ", data2_dst(i,j), ", data1-data2 = ",  data1_dst(i,j) - data2_dst(i,j)
+           call mpp_error(FATAL,"horiz_interp_test: data1_dst does not approxiamate data2_dst")
+        end if
+     end do
+  end do
+
+  if(mpp_pe() == mpp_root_pe()) call mpp_error(NOTE,   &
+       "The test that verify 1dx2d version horiz_interp can reproduce 1dx1d version of horiz_interp is succesful") 
+
+  do j = jsc, jsc
+     do i = isc, iec
+
+        if( abs(data1_dst(i,j)-data3_dst(i,j)) > SMALL ) then
+           print*, "After interpolation At point (i,j) = (", i, ",", j, "), data1 = ", data1_dst(i,j), &
+           ", data2 = ", data3_dst(i,j), ", data1-data2 = ",  data1_dst(i,j) - data3_dst(i,j)
+           call mpp_error(FATAL,"horiz_interp_test: data1_dst does not approxiamate data3_dst")
+        end if
+     end do
+  end do
+
+  if(mpp_pe() == mpp_root_pe()) call mpp_error(NOTE,   &
+       "The test that verify 2dx1d version horiz_interp can reproduce 1dx1d version of horiz_interp is succesful") 
+
+  do j = jsc, jsc
+     do i = isc, iec
+
+        if( abs(data1_dst(i,j)-data4_dst(i,j)) > SMALL ) then
+           print*, "After interpolation At point (i,j) = (", i, ",", j, "), data1 = ", data1_dst(i,j), &
+           ", data2 = ", data4_dst(i,j), ", data1-data2 = ",  data1_dst(i,j) - data4_dst(i,j)
+           call mpp_error(FATAL,"horiz_interp_test: data1_dst does not approxiamate data4_dst")
+        end if
+     end do
+  end do
+
+  if(mpp_pe() == mpp_root_pe()) call mpp_error(NOTE,   &
+       "The test that verify 2dx2d version horiz_interp can reproduce 1dx1d version of horiz_interp is succesful") 
+
+  call mpp_io_exit
+  call mpp_exit
+
+end program horiz_interp_test
+#endif

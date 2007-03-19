@@ -43,8 +43,8 @@ module axis_utils_mod
   integer, parameter :: maxatts = 100
   real, parameter    :: epsln= 1.e-10
   real, parameter    :: fp5 = 0.5, f360 = 360.0
-  character(len=256) :: version = '$Id: axis_utils.F90,v 13.0 2006/03/28 21:37:29 fms Exp $'
-  character(len=256) :: tagname = '$Name: memphis_2006_12 $'   
+  character(len=256) :: version = '$Id: axis_utils.F90,v 14.0 2007/03/15 22:37:43 fms Exp $'
+  character(len=256) :: tagname = '$Name: nalanda $'   
 
   interface interp_1d
      module procedure interp_1d_1d
@@ -162,7 +162,7 @@ contains
           endif
        enddo
        call mpp_get_atts(axis_bound,len=len)
-       if (len < 1) call mpp_error(FATAL,'error locating boundary axis')
+       if (len < 1) call mpp_error(FATAL,'error locating boundary axis for '//bounds_name)
     else
        call mpp_get_atts(axis,name=name,units=units,longname=longname,&
             cartesian=cartesian,len=len)

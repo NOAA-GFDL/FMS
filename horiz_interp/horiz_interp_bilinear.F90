@@ -25,26 +25,47 @@ module horiz_interp_bilinear_mod
   private
 
 
-  public :: horiz_interp_bilinear_init, horiz_interp_bilinear, horiz_interp_bilinear_end
+  public :: horiz_interp_bilinear_new, horiz_interp_bilinear, horiz_interp_bilinear_del
+  public :: horiz_interp_bilinear_init
 
   !--- public interface
-  interface horiz_interp_bilinear_init
-    module procedure horiz_interp_bilinear_init_1d
-    module procedure horiz_interp_bilinear_init_2d
+  interface horiz_interp_bilinear_new
+    module procedure horiz_interp_bilinear_new_1d
+    module procedure horiz_interp_bilinear_new_2d
   end interface
 
 
   real, parameter :: epsln=1.e-10
 
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_bilinear.F90,v 13.0.2.1 2006/06/25 14:46:16 pjp Exp $'
-  character(len=128) :: tagname = '$Name: memphis_2006_12 $'
-  logical            :: do_vers = .true.
-
+  character(len=128) :: version = '$Id: horiz_interp_bilinear.F90,v 14.0 2007/03/15 22:39:57 fms Exp $'
+  character(len=128) :: tagname = '$Name: nalanda $'
+  logical            :: module_is_initialized = .FALSE.
 
 contains
 
-  subroutine horiz_interp_bilinear_init_1d ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  !#######################################################################
+  !  <SUBROUTINE NAME="horiz_interp_bilinear_init">
+  !  <OVERVIEW>
+  !     writes version number and tag name to logfile.out
+  !  </OVERVIEW>
+  !  <DESCRIPTION>       
+  !     writes version number and tag name to logfile.out
+  !  </DESCRIPTION>
+
+  subroutine horiz_interp_bilinear_init
+
+    if(module_is_initialized) return
+    call write_version_number (version, tagname)
+    module_is_initialized = .true.
+
+  end subroutine horiz_interp_bilinear_init
+
+  !  </SUBROUTINE>
+
+  !########################################################################
+
+  subroutine horiz_interp_bilinear_new_1d ( Interp, lon_in, lat_in, lon_out, lat_out, &
        verbose, src_modulo )
 
     !-----------------------------------------------------------------------
@@ -59,11 +80,6 @@ contains
     integer :: ie, is, je, js, ln_err, lt_err, warns, unit
     real    :: wtw, wte, wts, wtn, lon, lat, tpi, hpi
     real    :: glt_min, glt_max, gln_min, gln_max, min_lon, max_lon
-
-    if (do_vers) then
-       call write_version_number (version, tagname)
-       do_vers = .false.
-    endif
 
     warns = 0
     if(present(verbose)) warns = verbose
@@ -199,10 +215,10 @@ contains
 
     return
 
-  end subroutine horiz_interp_bilinear_init_1d
+  end subroutine horiz_interp_bilinear_new_1d
 
   !#######################################################################
-  ! <SUBROUTINE NAME="horiz_interp_bilinear_init">
+  ! <SUBROUTINE NAME="horiz_interp_bilinear_new">
 
   !   <OVERVIEW>
   !      Initialization routine.
@@ -212,7 +228,7 @@ contains
   !      that contains pre-computed interpolation indices and weights.
   !   </DESCRIPTION>
   !   <TEMPLATE>
-  !     call horiz_interp_bilinear_init ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, src_modulo )
+  !     call horiz_interp_bilinear_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, src_modulo )
 
   !   </TEMPLATE>
   !   
@@ -244,10 +260,10 @@ contains
   !   <INOUT NAME="Interp" TYPE="type(horiz_interp_type)" >
   !      A derived-type variable containing indices and weights used for subsequent 
   !      interpolations. To reinitialize this variable for a different grid-to-grid 
-  !      interpolation you must first use the "horiz_interp_end" interface.
+  !      interpolation you must first use the "horiz_interp_del" interface.
   !   </INOUT>
 
-  subroutine horiz_interp_bilinear_init_2d ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine horiz_interp_bilinear_new_2d ( Interp, lon_in, lat_in, lon_out, lat_out, &
        verbose, src_modulo )
 
     !-----------------------------------------------------------------------
@@ -264,11 +280,6 @@ contains
     real                                   :: a1, b1, c1, d1, a2, b2, c2, d2, a, b, c
     real                                   :: lon1, lat1, lon2, lat2, lon3, lat3, lon4, lat4
     real                                   :: tpi, lon_min, lon_max
-
-    if (do_vers) then
-       call write_version_number (version, tagname)
-       do_vers = .false.
-    endif
 
     tpi = 2.0*pi
 
@@ -414,7 +425,7 @@ contains
        enddo
     enddo
 
-  end subroutine horiz_interp_bilinear_init_2d
+  end subroutine horiz_interp_bilinear_new_2d
   ! </SUBROUTINE>
 
   !#######################################################################
@@ -645,7 +656,7 @@ contains
   !   </OVERVIEW>
   !   <DESCRIPTION>
   !     Subroutine for performing the horizontal interpolation between two grids. 
-  !     horiz_interp_bilinear_init must be called before calling this routine.
+  !     horiz_interp_bilinear_new must be called before calling this routine.
   !   </DESCRIPTION>
   !   <TEMPLATE>
   !     call horiz_interp_bilinear ( Interp, data_in, data_out, verbose, mask_in,mask_out, missing_value, missing_permit)
@@ -653,7 +664,7 @@ contains
   !   
   !   <IN NAME="Interp" TYPE="type(horiz_interp_type)">
   !     Derived-type variable containing interpolation indices and weights.
-  !     Returned by a previous call to horiz_interp_init.
+  !     Returned by a previous call to horiz_interp_bilinear_new.
   !   </IN>
   !   <IN NAME="data_in" TYPE="real, dimension(:,:)">
   !      Input data on source grid.
@@ -821,28 +832,28 @@ contains
   ! </SUBROUTINE>
 
   !#######################################################################
-  ! <SUBROUTINE NAME="horiz_interp_bilinear_end">
+  ! <SUBROUTINE NAME="horiz_interp_bilinear_del">
 
   !   <OVERVIEW>
   !     Deallocates memory used by "horiz_interp_type" variables.
-  !     Must be called before reinitializing with horiz_interp_init.
+  !     Must be called before reinitializing with horiz_interp_bilinear_new.
   !   </OVERVIEW>
   !   <DESCRIPTION>
   !     Deallocates memory used by "horiz_interp_type" variables.
-  !     Must be called before reinitializing with horiz_interp_init.
+  !     Must be called before reinitializing with horiz_interp_bilinear_new.
   !   </DESCRIPTION>
   !   <TEMPLATE>
-  !     call horiz_interp_bilinear_end ( Interp )
+  !     call horiz_interp_bilinear_del ( Interp )
   !   </TEMPLATE>
 
   !   <INOUT NAME="Interp" TYPE="horiz_interp_type">
   !     A derived-type variable returned by previous call
-  !     to horiz_interp_init. The input variable must have
+  !     to horiz_interp_bilinear_new. The input variable must have
   !     allocated arrays. The returned variable will contain
   !     deallocated arrays.
   !   </INOUT>
 
-  subroutine horiz_interp_bilinear_end( Interp )
+  subroutine horiz_interp_bilinear_del( Interp )
 
     type (horiz_interp_type), intent(inout) :: Interp
 
@@ -851,7 +862,7 @@ contains
     if(associated(Interp%i_lon)) deallocate(Interp%i_lon)
     if(associated(Interp%j_lat)) deallocate(Interp%j_lat)
 
-  end subroutine horiz_interp_bilinear_end
+  end subroutine horiz_interp_bilinear_del
   ! </SUBROUTINE>
 
   !#######################################################################

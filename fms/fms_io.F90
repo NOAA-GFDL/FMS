@@ -84,7 +84,8 @@ use mpp_io_mod, only : mpp_open, mpp_close, mpp_io_init, mpp_io_exit, &
 use mpp_domains_mod, only : domain2d, domain1d, mpp_get_domain_components, &
      mpp_get_compute_domain, mpp_get_data_domain, mpp_get_domain_shift, &
      mpp_get_global_domain, NULL_DOMAIN1D, &
-     NULL_DOMAIN2D, mpp_global_field, operator( == ), mpp_domain_is_root_pe
+     NULL_DOMAIN2D, mpp_global_field, operator( == ), mpp_domain_is_root_pe, &
+     mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined
   
 use mpp_mod, only : mpp_error, FATAL, NOTE, mpp_pe, mpp_root_pe, mpp_npes, &
      stdlog, stdout, mpp_broadcast, ALL_PES, &
@@ -93,7 +94,7 @@ implicit none
 private
 
 integer                     :: max_files_w, max_files_r    !  max_files will change as needed
-integer, parameter, private :: max_fields=150
+integer, parameter, private :: max_fields=400
 integer, parameter, private :: max_axes=40
 integer, parameter, private :: max_atts=20
 integer, parameter, private :: max_domains = 10
@@ -133,6 +134,7 @@ interface read_data
    module procedure read_data_2d, read_ldata_2d, read_idata_2d
    module procedure read_data_3d, read_data_4d
    module procedure read_cdata_2d,read_cdata_3d,read_cdata_4d
+   module procedure read_data_text
 end interface
 
 interface write_data
@@ -179,11 +181,18 @@ public  :: read_data, write_data, fms_io_init, fms_io_exit, field_size
 public  :: open_namelist_file, open_restart_file, open_ieee32_file, close_file 
 public  :: set_domain, nullify_domain, get_domain_decomp, return_domain
 public  :: open_file, open_direct_file
-public  :: get_restart_io_mode
+public  :: get_restart_io_mode, get_tile_string, string
+public  :: get_mosaic_tile_grid, get_mosaic_tile_file
 private :: lookup_field_w, lookup_axis, unique_axes
 
-character(len=128) :: version = '$Id: fms_io.F90,v 13.0.4.5.2.1.2.1.2.2.2.1 2006/08/30 11:47:43 z1l Exp $'
-character(len=128) :: tagname = '$Name: memphis_2006_12 $'
+!--- public interface ---
+interface string
+   module procedure string_from_integer
+   module procedure string_from_real
+end interface
+
+character(len=128) :: version = '$Id: fms_io.F90,v 14.0 2007/03/15 22:39:35 fms Exp $'
+character(len=128) :: tagname = '$Name: nalanda $'
 
 contains
 
@@ -589,7 +598,8 @@ end subroutine fms_io_exit
 !   domain of fieldname
 !   </IN>
 !=================================================================================
-subroutine write_data_i3d_new(filename, fieldname, data, domain,append_pelist_name, no_domain, position, tile_count)
+subroutine write_data_i3d_new(filename, fieldname, data, domain,append_pelist_name, &
+                              no_domain, position, tile_count, mosaicfile)
   IMPLICIT NONE
 
   character(len=*), intent(in) :: filename, fieldname 
@@ -597,12 +607,14 @@ subroutine write_data_i3d_new(filename, fieldname, data, domain,append_pelist_na
   type(domain2d), intent(in), optional :: domain
   logical, intent(in), optional :: append_pelist_name, no_domain
   integer, intent(in), optional :: position, tile_count
+  character(len=*), intent(in), optional :: mosaicfile
 
-
-  call write_data_3d_new(filename, fieldname, real(data), domain,append_pelist_name, no_domain, position)
+  call write_data_3d_new(filename, fieldname, real(data), domain,append_pelist_name, &
+                         no_domain, position, tile_count, mosaicfile)
 end subroutine write_data_i3d_new
 !.....................................................................
-subroutine write_data_i2d_new(filename, fieldname, data, domain,append_pelist_name, no_domain, position, tile_count)
+subroutine write_data_i2d_new(filename, fieldname, data, domain,append_pelist_name, &
+                              no_domain, position, tile_count, mosaicfile)
   IMPLICIT NONE
 
   character(len=*), intent(in) :: filename, fieldname 
@@ -610,68 +622,90 @@ subroutine write_data_i2d_new(filename, fieldname, data, domain,append_pelist_na
   type(domain2d), intent(in), optional :: domain
   logical, intent(in), optional :: append_pelist_name, no_domain
   integer, intent(in), optional :: position, tile_count
+  character(len=*), intent(in), optional :: mosaicfile
 
-  call write_data_2d_new(filename, fieldname, real(data), domain,append_pelist_name, no_domain, position, tile_count)
+  call write_data_2d_new(filename, fieldname, real(data), domain,append_pelist_name, &
+                         no_domain, position, tile_count, mosaicfile)
 end subroutine write_data_i2d_new
 !.....................................................................
-subroutine write_data_i1d_new(filename, fieldname, data, domain, append_pelist_name, no_domain)
+subroutine write_data_i1d_new(filename, fieldname, data, domain, append_pelist_name, &
+                              no_domain, tile_count, mosaicfile)
   IMPLICIT NONE
   type(domain2d), intent(in), optional :: domain
   character(len=*), intent(in) :: filename, fieldname 
   integer, dimension(:), intent(in) :: data
   logical, intent(in), optional :: append_pelist_name, no_domain
+  integer, intent(in), optional :: tile_count
+  character(len=*), intent(in), optional :: mosaicfile
 
-  call write_data_1d_new(filename, fieldname, real(data), domain, append_pelist_name, no_domain)
+  call write_data_1d_new(filename, fieldname, real(data), domain, append_pelist_name, &
+                         no_domain, tile_count, mosaicfile)
 end subroutine write_data_i1d_new
 !.....................................................................
-subroutine write_data_iscalar_new(filename, fieldname, data, domain, append_pelist_name, no_domain)
+subroutine write_data_iscalar_new(filename, fieldname, data, domain, append_pelist_name, &
+                                  no_domain, tile_count, mosaicfile)
   IMPLICIT NONE
   type(domain2d), intent(in), optional :: domain
   character(len=*), intent(in) :: filename, fieldname 
   integer, intent(in) :: data
   logical, intent(in), optional :: append_pelist_name, no_domain
+  integer, intent(in), optional :: tile_count
+  character(len=*), intent(in), optional :: mosaicfile
 
-  call write_data_scalar_new(filename, fieldname, real(data), domain, append_pelist_name, no_domain)
+  call write_data_scalar_new(filename, fieldname, real(data), domain, append_pelist_name, &
+                             no_domain, tile_count, mosaicfile)
 
 end subroutine write_data_iscalar_new
 !.....................................................................
-subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_name, no_domain, position, tile_count)
+subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_name, no_domain, &
+                             position, tile_count, mosaicfile)
   IMPLICIT NONE
 
-  character(len=*), intent(in)         :: filename, fieldname 
-  real, dimension(:,:,:), intent(in)   :: data
-  type(domain2d), intent(in), optional :: domain
-  real, dimension(:,:,:), pointer      :: global_data =>NULL()
-  logical, intent(in), optional        :: append_pelist_name, no_domain   
-  integer, intent(in), optional        :: position, tile_count
-  character(len=128)                   :: temp_name   !name of the temporary file
+  character(len=*), intent(in)           :: filename, fieldname 
+  real, dimension(:,:,:), intent(in)     :: data
+  type(domain2d), intent(in), optional, target :: domain
+  real, dimension(:,:,:), pointer        :: global_data =>NULL()
+  logical, intent(in), optional          :: append_pelist_name, no_domain   
+  integer, intent(in), optional          :: position, tile_count
+  character(len=*), intent(in), optional :: mosaicfile
+  character(len=128)                     :: temp_name   !name of the temporary file
   integer :: i, domain_idx
   integer :: nfile  ! index of the currently open file in array files
   integer :: index_field ! position of the fieldname in the list of fields
   integer :: unit2 ! unit of temporary file
   integer :: gxsize, gysize, ishift, jshift
   logical :: file_open = .false., is_no_domain = .false.
-  character(len=256) :: fname  
-
+  character(len=256) :: fname
+  type(domain2d), pointer, save :: d_ptr =>NULL()
 
 ! Initialize files to default values
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(write_data_3d_new): need to call fms_io_init')  
-  fname = trim(filename)
-
-  if (PRESENT(append_pelist_name)) then
-     if (append_pelist_name) then
-        allocate(pelist(mpp_npes()))        
-        call mpp_get_current_pelist(pelist,pelist_name)
-        fname = trim(filename)//trim(pelist_name)
-        deallocate(pelist)
-     endif
-  endif
 
   is_no_domain = .false.
   if (PRESENT(no_domain)) THEN
      if(PRESENT(domain) .AND. no_domain) &
        call mpp_error(FATAL, 'fms_io(write_data_3d_new): no_domain cannot be .true. when optional argument domain is present.')
      is_no_domain = no_domain
+  endif
+
+  if(PRESENT(domain))then
+     d_ptr => domain
+  elseif (ASSOCIATED(Current_domain) .AND. .NOT. is_no_domain ) then
+     d_ptr => Current_domain
+  endif
+
+!JWD:  This is likely a temporary fix. Since fms_io needs to know tile_count,
+!JWD:  I just don't see how the physics can remain "tile neutral"
+!z1l:  one solution is add one more public interface called set_tile_count
+  call get_mosaic_tile_file(filename, fname, is_no_domain, domain, tile_count, mosaicfile)
+
+  if (PRESENT(append_pelist_name)) then
+     if (append_pelist_name) then
+        allocate(pelist(mpp_npes()))        
+        call mpp_get_current_pelist(pelist,pelist_name)
+        fname = trim(fname)//trim(pelist_name)
+        deallocate(pelist)
+     endif
   endif
 
 ! Check if filename has been open  or not
@@ -697,12 +731,17 @@ subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_nam
      files_write(nfile)%filename = trim(fname)         
      files_write(nfile)%tile_count=1
      if(present(tile_count)) files_write(nfile)%tile_count = tile_count
+     if(ASSOCIATED(d_ptr))then
+       files_write(nfile)%is_root_pe = mpp_domain_is_root_pe(d_ptr)
+     else
      files_write(nfile)%is_root_pe = mpp_pe() == mpp_root_pe()
+     endif
      if(present(tile_count)) then
-        if(.not. present(domain)) call mpp_error(FATAL, 'fms_io write_data: when tile_count is present, domain should be present')
+        if(.not. present(domain)) call mpp_error(FATAL, 'fms_io write_data: when tile_count is present, domain must be present')
         files_write(nfile)%is_root_pe = mpp_domain_is_root_pe(domain)
      end if
   endif
+  d_ptr =>NULL()
 
 ! check if the field is new or not and get position and dimension of the field
   index_field =  lookup_field_w(nfile,fieldname)
@@ -791,7 +830,8 @@ subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_nam
 end subroutine write_data_3d_new
 ! </SUBROUTINE>  
 !.....................................................................
-subroutine write_data_2d_new(filename, fieldname, data, domain,append_pelist_name, no_domain, position,tile_count)
+subroutine write_data_2d_new(filename, fieldname, data, domain,append_pelist_name, &
+                             no_domain, position,tile_count, mosaicfile)
 
   IMPLICIT NONE
   character(len=*), intent(in)                 :: filename, fieldname 
@@ -800,40 +840,52 @@ subroutine write_data_2d_new(filename, fieldname, data, domain,append_pelist_nam
   type(domain2d), intent(in), optional         :: domain
   logical, intent(in), optional                :: append_pelist_name, no_domain
   integer, intent(in), optional                :: position, tile_count
-
+  character(len=*), intent(in), optional       :: mosaicfile
+ 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(write_data_2d_new):need to call fms_io_init first')
   data_3d(:,:,1) = data(:,:)
-  call write_data_3d_new(filename, fieldname, data_3d, domain, append_pelist_name, no_domain, position, tile_count)
+  call write_data_3d_new(filename, fieldname, data_3d, domain, append_pelist_name, &
+                         no_domain, position, tile_count, mosaicfile)
+
 end subroutine write_data_2d_new
 
 ! ........................................................
-subroutine write_data_1d_new(filename, fieldname, data,domain,append_pelist_name, no_domain)
+subroutine write_data_1d_new(filename, fieldname, data,domain,append_pelist_name, &
+                             no_domain, tile_count, mosaicfile)
   
   IMPLICIT NONE
-  type(domain2d), intent(in), optional :: domain
-  character(len=*), intent(in)         :: filename, fieldname 
-  real, dimension(:), intent(in)       :: data
-  real, dimension(size(data(:)),1,1)   :: data_3d
-  logical, intent(in), optional        :: append_pelist_name, no_domain
+  type(domain2d), intent(in), optional   :: domain
+  character(len=*), intent(in)           :: filename, fieldname 
+  real, dimension(:), intent(in)         :: data
+  real, dimension(size(data(:)),1,1)     :: data_3d
+  logical, intent(in), optional          :: append_pelist_name, no_domain
+  integer, intent(in), optional          :: tile_count
+  character(len=*), intent(in), optional :: mosaicfile
+
   
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(write_data_1d_new): module not initialized')  
   data_3d(:,1,1) = data(:)  
-  call write_data_3d_new(filename, fieldname, data_3d,domain,append_pelist_name, no_domain)  
+  call write_data_3d_new(filename, fieldname, data_3d,domain,append_pelist_name, &
+                         no_domain, tile_count=tile_count, mosaicfile=mosaicfile)  
 end subroutine write_data_1d_new
 
 ! ..........................................................
-subroutine write_data_scalar_new(filename, fieldname, data, domain, append_pelist_name, no_domain)
+subroutine write_data_scalar_new(filename, fieldname, data, domain, append_pelist_name, &
+                                 no_domain, tile_count, mosaicfile)
 
   IMPLICIT NONE
-  type(domain2d), intent(in), optional :: domain
-  character(len=*), intent(in)         :: filename, fieldname 
-  real, intent(in)                     :: data
-  real, dimension(1,1,1)               :: data_3d
-  logical, intent(in), optional        :: append_pelist_name, no_domain
+  type(domain2d), intent(in), optional   :: domain
+  character(len=*), intent(in)           :: filename, fieldname 
+  real, intent(in)                       :: data
+  real, dimension(1,1,1)                 :: data_3d
+  logical, intent(in), optional          :: append_pelist_name, no_domain
+  integer, intent(in), optional          :: tile_count
+  character(len=*), intent(in), optional :: mosaicfile
     
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(write_data_scalar_new):  module not initialized: '//fieldname)  
   data_3d(1,1,1) = data
-  call write_data_3d_new(filename, fieldname, data_3d,domain,append_pelist_name, no_domain)
+  call write_data_3d_new(filename, fieldname, data_3d,domain,append_pelist_name, &
+                         no_domain, tile_count=tile_count, mosaicfile=mosaicfile)
 end subroutine write_data_scalar_new
 ! ..........................................................
 
@@ -1096,7 +1148,8 @@ end subroutine field_size
 !   array containing data of fieldname
 !   </OUT>
 !=====================================================================================
-subroutine read_data_i3d_new(filename,fieldname,data,domain,timelevel,append_pelist_name,no_domain,position, tile_count)
+subroutine read_data_i3d_new(filename,fieldname,data,domain,timelevel,append_pelist_name, &
+                             no_domain,position, tile_count, mosaicfile)
   IMPLICIT NONE
   character(len=*),           intent(in)   :: filename, fieldname
   integer, dimension(:,:,:), intent(inout) :: data ! 3 dimensional data    
@@ -1104,13 +1157,16 @@ subroutine read_data_i3d_new(filename,fieldname,data,domain,timelevel,append_pel
   integer, intent(in),          optional   :: timelevel
   logical, intent(in),          optional   :: append_pelist_name, no_domain 
   integer, intent(in) ,         optional   :: position, tile_count
+  character(len=*), intent(in), optional   :: mosaicfile
 
   real, dimension(size(data,1),size(data,2),size(data,3)) :: r_data
-  call read_data_3d_new(filename,fieldname,r_data,domain,timelevel,append_pelist_name, no_domain,position, tile_count)
+  call read_data_3d_new(filename,fieldname,r_data,domain,timelevel,append_pelist_name, &
+                        no_domain,position, tile_count, mosaicfile)
   data = CEILING(r_data)
 end subroutine read_data_i3d_new
 
-subroutine read_data_i2d_new(filename,fieldname,data,domain,timelevel,append_pelist_name, no_domain,position, tile_count)
+subroutine read_data_i2d_new(filename,fieldname,data,domain,timelevel,append_pelist_name, &
+                             no_domain,position, tile_count, mosaicfile)
   IMPLICIT NONE
   character(len=*),         intent(in)   :: filename, fieldname
   integer, dimension(:,:), intent(inout) :: data ! 2 dimensional data    
@@ -1118,45 +1174,60 @@ subroutine read_data_i2d_new(filename,fieldname,data,domain,timelevel,append_pel
   integer, intent(in),        optional   :: timelevel
   logical, intent(in),        optional   :: append_pelist_name , no_domain
   integer, intent(in) ,       optional   :: position, tile_count
+  character(len=*), intent(in), optional :: mosaicfile
   real, dimension(size(data,1),size(data,2)) :: r_data
 
-  call read_data_2d_new(filename,fieldname,r_data,domain,timelevel,append_pelist_name, no_domain,position, tile_count)
+  call read_data_2d_new(filename,fieldname,r_data,domain,timelevel,append_pelist_name, &
+                        no_domain,position, tile_count, mosaicfile)
   data = CEILING(r_data)
 end subroutine read_data_i2d_new
 !.....................................................................
-subroutine read_data_i1d_new(filename,fieldname,data,domain,timelevel,append_pelist_name, no_domain)
+subroutine read_data_i1d_new(filename,fieldname,data,domain,timelevel,append_pelist_name, &
+                             no_domain, tile_count, mosaicfile)
   IMPLICIT NONE
-  character(len=*), intent(in)         :: filename, fieldname
-  integer, dimension(:), intent(inout) :: data ! 1 dimensional data    
-  type(domain2d), intent(in), optional :: domain
-  integer, intent(in) , optional       :: timelevel
-  logical, intent(in), optional        :: append_pelist_name, no_domain 
+  character(len=*), intent(in)           :: filename, fieldname
+  integer, dimension(:), intent(inout)   :: data ! 1 dimensional data    
+  type(domain2d), intent(in), optional   :: domain
+  integer, intent(in) , optional         :: timelevel
+  logical, intent(in), optional          :: append_pelist_name, no_domain 
+  integer, intent(in), optional          :: tile_count
+  character(len=*), intent(in), optional :: mosaicfile
+
   real, dimension(size(data,1))        :: r_data
 
-  call read_data_1d_new(filename,fieldname,r_data,domain,timelevel,append_pelist_name, no_domain)
+  call read_data_1d_new(filename,fieldname,r_data,domain,timelevel,append_pelist_name, &
+                        no_domain, tile_count, mosaicfile)
   data = CEILING(r_data)
 end subroutine read_data_i1d_new
 !.....................................................................
-subroutine read_data_iscalar_new(filename,fieldname,data,domain,timelevel,append_pelist_name, no_domain)
+subroutine read_data_iscalar_new(filename,fieldname,data,domain,timelevel,append_pelist_name, &
+                                 no_domain, tile_count, mosaicfile)
   IMPLICIT NONE
-  character(len=*), intent(in)         :: filename, fieldname
-  integer, intent(inout)               :: data     
-  type(domain2d), intent(in), optional :: domain
-  integer, intent(in) , optional       :: timelevel
-  logical, intent(in), optional        :: append_pelist_name, no_domain 
+  character(len=*), intent(in)           :: filename, fieldname
+  integer, intent(inout)                 :: data     
+  type(domain2d), intent(in), optional   :: domain
+  integer, intent(in) , optional         :: timelevel
+  logical, intent(in), optional          :: append_pelist_name, no_domain 
+  integer, intent(in), optional          :: tile_count
+  character(len=*), intent(in), optional :: mosaicfile
+
   real                                 :: r_data
-  call read_data_scalar_new(filename,fieldname,r_data,domain,timelevel,append_pelist_name, no_domain)
+  call read_data_scalar_new(filename,fieldname,r_data,domain,timelevel,append_pelist_name, &
+                            no_domain, tile_count, mosaicfile)
   data = CEILING(r_data)
 end subroutine read_data_iscalar_new
 !=====================================================================================
-subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_pelist_name, no_domain, position, tile_count)
+subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_pelist_name, &
+      no_domain, position, tile_count, mosaicfile)
   IMPLICIT NONE
   character(len=*), intent(in)          :: filename, fieldname
   real, dimension(:,:,:), intent(inout) :: data ! 3 dimensional data    
-  type(domain2d), intent(in), optional  :: domain
+  type(domain2d), intent(in), optional, target  :: domain
   integer, intent(in) , optional        :: timelevel
   logical, intent(in), optional         :: append_pelist_name, no_domain 
   integer, intent(in), optional         :: position, tile_count
+  character(len=*), intent(in), optional:: mosaicfile
+
   character(len=128)                    :: name
   character(len=256)                    :: fname
   character(len=5)                      :: pe_name
@@ -1172,6 +1243,8 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
   logical :: file_opened, found, is_no_domain = .false.
   integer :: index_axis
   logical :: read_dist,dist_file_exist, file_exist, file_exist1, file_exist2
+
+
 ! read disttributed files is used when reading restart files that are NOT mppnccombined. In this
 ! case PE 0 will read file_res.nc.0000, PE 1 will read file_res.nc.0001 and so forth.
 ! 
@@ -1180,6 +1253,13 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
 
 ! Initialize files to default values
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(read_data_3d_new):  module not initialized')  
+  is_no_domain = .false.
+  if (PRESENT(no_domain)) THEN
+     if(PRESENT(domain) .AND. no_domain) &
+       call mpp_error(FATAL, 'fms_io(write_data_3d_new): no_domain cannot be .true. when optional argument domain is present.')
+     is_no_domain = no_domain
+  endif
+
   data_is_global=.false.
   file_opened=.false.
   read_dist=.false.
@@ -1191,12 +1271,17 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
   else
      tlev = 1
   endif  
-  fname = trim(filename)   
+
+!JWD:  This is likely a temporary fix. Since fms_io needs to know tile_count, 
+!JWD:  I just don't see how the physics can remain "tile neutral"
+!z1l:  one solution is add one more public interface called set_tile_count
+  call get_mosaic_tile_file(filename, fname, is_no_domain, domain, tile_count, mosaicfile)
+
   if (PRESENT(append_pelist_name)) then
      if (append_pelist_name) then
         allocate(pelist(mpp_npes()))        
         call mpp_get_current_pelist(pelist,pelist_name)
-        fname = trim(filename)//trim(pelist_name)
+        fname = trim(fname)//trim(pelist_name)
         deallocate(pelist)
      endif
   endif    
@@ -1214,12 +1299,6 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
      else
         call mpp_error(FATAL,'fms_io(read_data_3d_new): file '//trim(filename)//' not found')
      endif
-  endif
-  is_no_domain = .false.
-  if (PRESENT(no_domain)) THEN
-     if(PRESENT(domain) .AND. no_domain) &
-       call mpp_error(FATAL, 'fms_io(write_data_3d_new): no_domain cannot be .true. when optional argument domain is present.')
-     is_no_domain = no_domain
   endif
 
   if (PRESENT(domain).AND. .NOT.read_dist) then
@@ -1391,10 +1470,111 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
   endif  
   return
 end subroutine read_data_3d_new
+
+!=====================================================================================
+!--- we assume any text data are at most 2-dimensional and level is for first dimension
+subroutine read_data_text(filename,fieldname,data,level)
+  IMPLICIT NONE
+  character(len=*), intent(in)   :: filename, fieldname
+  character(len=*), intent(out)  :: data
+  integer, intent(in) , optional :: level
+  logical                        :: file_opened, file_exist      
+  integer                        :: lev, unit, nvar, ndim, index_field, siz_in(4)
+  integer                        :: nfile, var_dim, i, j
+  character(len=256)             :: fname, name
+
+! Initialize files to default values
+  if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(read_data_text):  module not initialized')  
+
+  file_opened=.false.
+  file_exist = .false.
+  if (PRESENT(level)) then
+     lev = level
+  else
+     lev = 1
+  endif  
+  fname = trim(filename)   
+  inquire (file=trim(fname), exist=file_exist)
+  if(.not. file_exist) inquire (file=trim(fname)//'.nc', exist=file_exist)
+  if(.NOT. file_exist) call mpp_error(FATAL,'fms_io(read_data_text): file '//trim(filename)//' not found')
+
+  if(num_files_r ==0) then
+     file_opened = .false.
+  else
+     file_opened=.false.
+     do i=1,num_files_r
+        if (files_read(i)%filename == trim(fname))  then
+           nfile = i
+           file_opened = .true.
+           exit ! file is already opened
+        endif
+     enddo
+  endif
+  if (.not. file_opened) then !Need to open the file now     
+     if (fset_r == MPP_MULTI .and. thread_r == MPP_SINGLE) then
+        call mpp_error(FATAL,'fms_io(read_data_text: single-threaded read from multi fileset not allowed' &
+             //'change either threading_read or fileset_read')
+     endif
+     call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=thread_r,fileset=fset_r)
+! Increase num_files_r and set file_type 
+     if(num_files_r == max_files_r) &  ! need to have bigger max_files_r
+          call mpp_error(FATAL,'fms_io(read_data_text): max_files_r exceeded, increase it via fms_io_nml')
+     num_files_r=num_files_r + 1
+     files_read(num_files_r)%filename = trim(fname)
+     nfile = num_files_r
+     files_read(nfile)%unit = unit
+  else
+     unit = files_read(nfile)%unit
+  endif  
+! Get info of this file and field   
+  if ((thread_r == MPP_MULTI).or.(mpp_pe()==mpp_root_pe())) then
+     call mpp_get_info(unit,files_read(nfile)%ndim, &
+          files_read(nfile)%nvar, files_read(nfile)%natt,files_read(nfile)%max_ntime)
+     if(files_read(nfile)%max_ntime < 1)  files_read(nfile)%max_ntime = 1
+     nvar = files_read(nfile)%nvar  
+     ndim = files_read(nfile)%ndim
+     if (nvar > max_fields) then
+        write(error_msg,'(I3,"/",I3)') nvar,max_fields
+        call mpp_error(FATAL,'fms_io(read_data_text)1: max_fields too small needs increasing,nvar/max_fields=' &
+             //trim(error_msg)//'in file'//trim(filename))
+     endif
+     call mpp_get_fields(unit,files_read(nfile)%fields(1:nvar))     
+     call mpp_get_axes(unit,files_read(nfile)%axes(1:ndim))
+     siz_in = 1
+     index_field = -1
+     files_read(nfile)%is_dimvar(:) = .false.
+     do i=1,files_read(nfile)%nvar
+        call mpp_get_atts(files_read(nfile)%fields(i),name=name,ndim=var_dim,siz=siz_in)
+        if(var_dim > 2) call mpp_error(FATAL, 'fms_io, read_data_text: field '//trim(fieldname)// &
+          ' NOT found in file '//trim(filename))
+        if (lowercase(trim(name)) == lowercase(trim(fieldname))) then ! found the variable
+           index_field = i
+           do j=var_dim+1,3
+              siz_in(j)=1
+           enddo
+           files_read(nfile)%fieldname(i) = fieldname
+           files_read(nfile)%siz(i,:)  = siz_in
+           files_read(nfile)%gsiz(i,:) = siz_in
+           exit  !jump out of i loop
+        endif
+     enddo
+
+     if(index_field <1) call mpp_error(FATAL, 'fms_io, read_data_text: field '//trim(fieldname)// &
+          ' NOT found in file '//trim(filename))
+     if ( lev < 1 .or. lev > siz_in(1) )  then
+        write(error_msg,'(I5,"/",I5)') lev, siz_in(1)
+        call mpp_error(FATAL,'fms_io(read_data_text): text level out of range, level/max_level=' &
+             //trim(error_msg)//' in field/file: '//trim(fieldname)//'/'//trim(filename))
+     endif
+
+     call mpp_read(unit,files_read(nfile)%fields(index_field),data, level=level)
+  endif  
+  return
+end subroutine read_data_text
 !.............................................................. 
 ! </SUBROUTINE>
 subroutine read_data_2d_new(filename,fieldname,data,domain,timelevel,&
-     append_pelist_name, no_domain,position,tile_count)
+     append_pelist_name, no_domain,position,tile_count, mosaicfile)
   IMPLICIT NONE
   character(len=*), intent(in)                 :: filename, fieldname
   real, dimension(:,:), intent(inout)          :: data     !2 dimensional data 
@@ -1403,6 +1583,7 @@ subroutine read_data_2d_new(filename,fieldname,data,domain,timelevel,&
   integer, intent(in) , optional               :: timelevel
   logical, intent(in), optional                :: append_pelist_name, no_domain
   integer, intent(in) , optional               :: position, tile_count
+  character(len=*), intent(in), optional       :: mosaicfile
   integer                                      :: isc,iec,jsc,jec,isd,ied,jsd,jed
   integer :: isg,ieg,jsg,jeg
   integer                                      :: xsize_c,ysize_c,xsize_d,ysize_d
@@ -1413,7 +1594,7 @@ subroutine read_data_2d_new(filename,fieldname,data,domain,timelevel,&
 !  p = LOC(data)
 !#endif
   call read_data_3d_new(filename,fieldname,data_3d,domain,timelevel,&
-       append_pelist_name, no_domain,position,tile_count)
+       append_pelist_name, no_domain,position,tile_count, mosaicfile)
 
   if(PRESENT(domain)) then
      call mpp_get_global_domain( domain,isg,ieg,jsg,jeg,xsize=xsize_g,ysize=ysize_g, tile_count=tile_count)
@@ -1437,40 +1618,43 @@ subroutine read_data_2d_new(filename,fieldname,data,domain,timelevel,&
 end subroutine read_data_2d_new
 !.....................................................................
 subroutine read_data_1d_new(filename,fieldname,data,domain,timelevel,&
-     append_pelist_name, no_domain)
+     append_pelist_name, no_domain, tile_count, mosaicfile)
   IMPLICIT NONE
-  character(len=*), intent(in)         :: filename, fieldname
-  real, dimension(:), intent(inout)    :: data     !1 dimensional data 
-  real, dimension(size(data,1),1,1)    :: data_3d
-  type(domain2d), intent(in), optional :: domain
-  integer, intent(in) , optional       :: timelevel
-  logical, intent(in), optional        :: append_pelist_name, no_domain
-  
+  character(len=*), intent(in)           :: filename, fieldname
+  real, dimension(:), intent(inout)      :: data     !1 dimensional data 
+  real, dimension(size(data,1),1,1)      :: data_3d
+  type(domain2d), intent(in), optional   :: domain
+  integer, intent(in) , optional         :: timelevel
+  logical, intent(in), optional          :: append_pelist_name, no_domain
+  integer, intent(in), optional          :: tile_count
+  character(len=*), intent(in), optional :: mosaicfile  
 #ifdef use_CRI_pointers
   pointer( p, data_3d )
   p = LOC(data)
 #endif
   call read_data_3d_new(filename,fieldname,data_3d,domain,timelevel,&
-       append_pelist_name, no_domain)
+       append_pelist_name, no_domain, tile_count=tile_count, mosaicfile=mosaicfile)
 
 end subroutine read_data_1d_new
 !.....................................................................
 
 subroutine read_data_scalar_new(filename,fieldname,data,domain,timelevel,&
-     append_pelist_name, no_domain)
+     append_pelist_name, no_domain, tile_count, mosaicfile)
   IMPLICIT NONE
 ! this subroutine is for reading a single number
-  character(len=*), intent(in)         :: filename, fieldname
-  real, intent(inout)                  :: data     !zero dimension data 
-  real, dimension(1,1,1)               :: data_3d
-  type(domain2d), intent(in), optional :: domain
-  integer, intent(in) , optional       :: timelevel
-  logical, intent(in), optional        :: append_pelist_name, no_domain
+  character(len=*), intent(in)           :: filename, fieldname
+  real, intent(inout)                    :: data     !zero dimension data 
+  real, dimension(1,1,1)                 :: data_3d
+  type(domain2d), intent(in), optional   :: domain
+  integer, intent(in) , optional         :: timelevel
+  logical, intent(in), optional          :: append_pelist_name, no_domain
+  integer, intent(in), optional          :: tile_count
+  character(len=*), intent(in), optional :: mosaicfile  
 
 !  data_3d = 0.0
 
   call read_data_3d_new(filename,fieldname,data_3d,domain,timelevel,&
-       append_pelist_name, no_domain)
+       append_pelist_name, no_domain, tile_count=tile_count, mosaicfile=mosaicfile)
 
   data = data_3d(1,1,1)
 
@@ -2255,8 +2439,146 @@ end subroutine get_axis_cart
 
  end function open_file
 
+  !#######################################################################
 
-  
+  function string_from_integer(n)
+    integer, intent(in) :: n
+    character(len=16) :: string_from_integer
+
+    if(n<0) then
+       call mpp_error(FATAL, 'fms_io_mod: n should be non-negative integer, contact developer')
+    else if( n<10 ) then
+       write(string_from_integer,'(i1)') n
+    else if( n<100 ) then
+       write(string_from_integer,'(i2)') n
+    else if( n<1000 ) then
+       write(string_from_integer,'(i3)') n
+    else if( n<10000 ) then
+       write(string_from_integer,'(i4)') n
+    else if( n<100000 ) then
+       write(string_from_integer,'(i5)') n
+    else if( n<1000000 ) then
+       write(string_from_integer,'(i6)') n
+    else if( n<10000000 ) then
+       write(string_from_integer,'(i7)') n
+    else if( n<100000000 ) then
+       write(string_from_integer,'(i8)') n
+    else
+       call mpp_error(FATAL, 'fms_io_mod: n is too big, contact developer')
+    end if
+
+    return
+
+  end function string_from_integer
+
+  !#######################################################################
+  function string_from_real(a)
+    real, intent(in) :: a
+    character(len=32) :: string_from_real
+
+    write(string_from_real,*) a
+
+    return
+
+  end function string_from_real
+
+  !#######################################################################
+
+ subroutine get_tile_string(str_out, str_in, tile, str2_in)
+    character(len=*), intent(inout)        :: str_out
+    character(len=*), intent(in)           :: str_in
+    integer,          intent(in)           :: tile
+    character(len=*), intent(in), optional :: str2_in
+
+    if(tile > 0 .AND. tile < 9) then
+       write(str_out,'(a,i1)') trim(str_in), tile
+    else if(tile >= 10 .AND. tile < 99) then
+       write(str_out,'(a,i2)') trim(str_in), tile
+    else
+       call mpp_error(FATAL, "FMS_IO: get_tile_string: tile must be a positive number less than 100")
+    end if
+
+    if(present(str2_in)) str_out=trim(str_out)//trim(str2_in)
+
+ end subroutine get_tile_string
+
+
+  !#####################################################################
+  subroutine get_mosaic_tile_file(file_in, file_out, is_no_domain, domain, tile_count, mosaicfile)
+    character(len=*), intent(in)                   :: file_in
+    character(len=*), intent(out)                  :: file_out
+    logical,          intent(in)                   :: is_no_domain
+    type(domain2D),   intent(in), optional, target :: domain
+    character(len=*), intent(in), optional         :: mosaicfile
+    integer,          intent(in), optional         :: tile_count 
+    character(len=256)                             :: basefile, tilename
+    integer                                        :: lens, ntiles, ntileMe, tile
+    integer, dimension(:), allocatable             :: tile_id
+    type(domain2d), pointer, save                  :: d_ptr =>NULL()
+
+    if(index(file_in, '.nc', back=.true.)==0) then
+       basefile = trim(file_in)
+    else
+       lens = len_trim(file_in)
+       if(file_in(lens-2:lens) .NE. '.nc') call mpp_error(FATAL, &
+            'fms_io_mod: .nc should be at the end of file '//trim(file_in))
+       basefile = file_in(1:lens-3)
+    end if
+
+    if(mpp_mosaic_defined())then
+       !--- get the tile name
+       ntiles = 1
+       if(PRESENT(domain))then
+          ntiles = mpp_get_ntile_count(domain)
+          d_ptr => domain
+       elseif (ASSOCIATED(Current_domain) .AND. .NOT. is_no_domain ) then
+          ntiles = mpp_get_ntile_count(Current_domain)
+          d_ptr => Current_domain
+       endif
+       if(ntiles > 1 )then
+          ntileMe = mpp_get_current_ntile(d_ptr)
+          allocate(tile_id(ntileMe))
+          tile_id = mpp_get_tile_id(d_ptr)
+          tile = 1
+          if(present(tile_count)) tile = tile_count
+          if(present(mosaicfile)) then
+             !--- read tilename from mosaic file
+             call read_data(mosaicfile, "gridtiles", tilename, level=tile)
+          else
+             tilename = 'tile'//string(tile_id(tile))
+          end if
+          deallocate(tile_id)
+          if(index(basefile,'.'//trim(tilename),back=.true.) == 0)then
+             basefile = trim(basefile)//'.'//trim(tilename);
+          end if
+       end if
+    endif
+
+    file_out = trim(basefile)//'.nc'
+
+  end subroutine get_mosaic_tile_file
+
+  !#############################################################################
+  subroutine get_mosaic_tile_grid(grid_file, mosaic_file, domain, tile_count) 
+    character(len=*), intent(out)          :: grid_file
+    character(len=*), intent(in)           :: mosaic_file
+    type(domain2D),   intent(in)           :: domain
+    integer,          intent(in), optional :: tile_count 
+    integer                                :: tile, ntileMe
+    integer, dimension(:), allocatable     :: tile_id
+
+    tile = 1
+    if(present(tile_count)) tile = tile_count
+    ntileMe = mpp_get_current_ntile(domain)
+    allocate(tile_id(ntileMe))
+    tile_id = mpp_get_tile_id(domain)     
+    call read_data(mosaic_file, "gridfiles", grid_file, level=tile)
+    grid_file = 'INPUT/'//trim(grid_file)
+    deallocate(tile_id)
+
+  end subroutine get_mosaic_tile_grid
+
+
 end module fms_io_mod
 
 

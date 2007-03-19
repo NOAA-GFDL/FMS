@@ -1,0 +1,26 @@
+/***********************************************************************
+                      mosaic_util.h
+    This header file provide some utilities routine that will be used in many tools.
+    
+    contact: Zhi.Liang@noaa.gov
+***********************************************************************/
+#ifndef MOSAIC_UTIL_H_
+#define MOSAIC_UTIL_H_
+
+#define min(a,b) (a<b ? a:b)
+#define max(a,b) (a>b ? a:b)
+void error_handler(const char *msg);
+int nearest_index(double value, const double *array, int ia);
+int lon_fix(double *x, double *y, int n_in, double tlon);
+double minval_double(int size, const double *data);
+double maxval_double(int size, const double *data);
+double avgval_double(int size, const double *data);
+void latlon2xyz(int size, const double *lon, const double *lat, double *x, double *y, double *z); 
+double box_area(double ll_lon, double ll_lat, double ur_lon, double ur_lat);
+double poly_area(const double lon[], const double lat[], int n);
+double box_area_unit_radius(double ll_lon, double ll_lat, double ur_lon, double ur_lat);
+double poly_area_unit_radius(const double lon[], const double lat[], int n);
+int fix_lon(double lon[], double lat[], int n, double tlon);
+void tokenize(const char * const string, const char *tokens, unsigned int varlen,
+	      unsigned int maxvar, char * pstring, unsigned int * const nstr);
+#endif
