@@ -192,7 +192,7 @@ interface string
 end interface
 
 character(len=128) :: version = '$Id: fms_io.F90,v 14.0 2007/03/15 22:39:35 fms Exp $'
-character(len=128) :: tagname = '$Name: nalanda $'
+character(len=128) :: tagname = '$Name: nalanda_2007_04 $'
 
 contains
 

@@ -33,7 +33,7 @@ public :: get_mosaic_xgrid
 logical :: module_is_initialized = .true.
 ! version information varaible
  character(len=128) :: version = '$Id: mosaic.F90,v 14.0 2007/03/15 22:40:39 fms Exp $'
- character(len=128) :: tagname = '$Name: nalanda $'
+ character(len=128) :: tagname = '$Name: nalanda_2007_04 $'
 
 contains
 

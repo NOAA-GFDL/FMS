@@ -138,7 +138,7 @@ character(len=32)   :: pelist_name
 
 
 character(len=128),private  :: version = '$Id: diag_data.F90,v 14.0 2007/03/15 22:38:17 fms Exp $'
-character(len=128),private  :: tagname = '$Name: nalanda $'
+character(len=128),private  :: tagname = '$Name: nalanda_2007_04 $'
 
 
 ! definitions for diag_axis_mod
