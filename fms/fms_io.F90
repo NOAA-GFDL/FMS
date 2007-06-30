@@ -80,7 +80,7 @@ use mpp_io_mod, only : mpp_open, mpp_close, mpp_io_init, mpp_io_exit, &
      MPP_RDONLY, MPP_NATIVE, MPP_DELETE, MPP_APPEND, &
      default_field, default_axis, default_att, &
      mpp_get_fields, MPP_SEQUENTIAL, MPP_DIRECT, mpp_get_axes, &
-     mpp_get_axis_data
+     mpp_get_axis_data, mpp_get_att_char, mpp_get_att_name, mpp_get_att_real_scalar
 use mpp_domains_mod, only : domain2d, domain1d, mpp_get_domain_components, &
      mpp_get_compute_domain, mpp_get_data_domain, mpp_get_domain_shift, &
      mpp_get_global_domain, NULL_DOMAIN1D, &
@@ -151,6 +151,11 @@ interface write_data
    module procedure write_cdata_2d,write_cdata_3d,write_cdata_4d
 end interface
 
+interface get_global_att_value
+  module procedure get_global_att_value_text
+  module procedure get_global_att_value_real
+end interface
+
 integer, private :: num_files_r=0 ! number of currently opened files for reading
 integer, private :: num_files_w=0 ! number of currently opened files for writing
 integer, private :: num_domains = 0 ! number of domains in array_domain
@@ -183,6 +188,7 @@ public  :: set_domain, nullify_domain, get_domain_decomp, return_domain
 public  :: open_file, open_direct_file
 public  :: get_restart_io_mode, get_tile_string, string
 public  :: get_mosaic_tile_grid, get_mosaic_tile_file
+public  :: get_global_att_value
 private :: lookup_field_w, lookup_axis, unique_axes
 
 !--- public interface ---
@@ -191,8 +197,8 @@ interface string
    module procedure string_from_real
 end interface
 
-character(len=128) :: version = '$Id: fms_io.F90,v 14.0 2007/03/15 22:39:35 fms Exp $'
-character(len=128) :: tagname = '$Name: nalanda_2007_04 $'
+character(len=128) :: version = '$Id: fms_io.F90,v 14.0.2.1.2.1 2007/06/08 14:06:20 z1l Exp $'
+character(len=128) :: tagname = '$Name: nalanda_2007_06 $'
 
 contains
 
@@ -2572,12 +2578,67 @@ end subroutine get_axis_cart
     ntileMe = mpp_get_current_ntile(domain)
     allocate(tile_id(ntileMe))
     tile_id = mpp_get_tile_id(domain)     
-    call read_data(mosaic_file, "gridfiles", grid_file, level=tile)
+    call read_data(mosaic_file, "gridfiles", grid_file, level=tile_id(tile) )
     grid_file = 'INPUT/'//trim(grid_file)
     deallocate(tile_id)
 
   end subroutine get_mosaic_tile_grid
 
+  !#############################################################################
+  ! return false if the attribute is not find in the file.
+  function get_global_att_value_text(file, att, attvalue)
+    character(len=*), intent(in)    :: file
+    character(len=*), intent(in)    :: att
+    character(len=*), intent(inout) :: attvalue
+    logical                         :: get_global_att_value_text
+    integer                         :: unit, ndim, nvar, natt, ntime, i
+    type(atttype), allocatable      :: global_atts(:)
+
+    get_global_att_value_text = .false.
+    call mpp_open(unit,trim(file),MPP_RDONLY,MPP_NETCDF,threading=MPP_MULTI,fileset=MPP_SINGLE)
+    call mpp_get_info(unit, ndim, nvar, natt, ntime)
+    allocate(global_atts(natt))
+    call mpp_get_atts(unit,global_atts)
+    do i=1,natt
+       if( trim(mpp_get_att_name(global_atts(i))) == trim(att) ) then
+          attvalue = trim(mpp_get_att_char(global_atts(i)))
+          get_global_att_value_text = .true.
+          exit
+       end if
+    end do
+    deallocate(global_atts)
+
+    return
+
+  end function get_global_att_value_text
+
+  !#############################################################################
+  ! return false if the attribute is not find in the file.
+  function get_global_att_value_real(file, att, attvalue)
+    character(len=*), intent(in)    :: file
+    character(len=*), intent(in)    :: att
+    real,             intent(inout) :: attvalue
+    logical                         :: get_global_att_value_real
+    integer                         :: unit, ndim, nvar, natt, ntime, i
+    type(atttype), allocatable      :: global_atts(:)
+
+    get_global_att_value_real = .false.
+    call mpp_open(unit,trim(file),MPP_RDONLY,MPP_NETCDF,threading=MPP_MULTI,fileset=MPP_SINGLE)
+    call mpp_get_info(unit, ndim, nvar, natt, ntime)
+    allocate(global_atts(natt))
+    call mpp_get_atts(unit,global_atts)
+    do i=1,natt
+       if( trim(mpp_get_att_name(global_atts(i))) == trim(att) ) then
+          attvalue = mpp_get_att_real_scalar(global_atts(i))
+          get_global_att_value_real = .true.
+          exit
+       end if
+    end do
+    deallocate(global_atts)
+
+    return
+
+  end function get_global_att_value_real
 
 end module fms_io_mod
 

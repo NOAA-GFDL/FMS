@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_reduce.inc,v 14.0 2007/03/15 22:42:50 fms Exp $
+! $Id: mpp_domains_reduce.inc,v 14.0.2.1 2007/04/25 13:26:15 z1l Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -880,15 +880,7 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #include <mpp_do_global_field_old.h>
-#if defined(use_GSM)
-#include <mpp_do_global_field_gsm.h>
-#elif defined(use_CAF)                                    
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_r8_3d_type
-#include <mpp_do_global_field_caf.h>                                    
-#else                                    
 #include <mpp_do_global_field_new.h>                                    
-#endif
 
 #undef MPP_DO_GLOBAL_FIELD_3Dnew_
 #define MPP_DO_GLOBAL_FIELD_3Dnew_ mpp_do_global_field2Dnew_c8_3d
@@ -897,15 +889,7 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #include <mpp_do_global_field_old.h>
-#if defined(use_GSM)
-#include <mpp_do_global_field_gsm.h>
-#elif defined(use_CAF)                                    
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_c8_3d_type
-#include <mpp_do_global_field_caf.h>                                    
-#else                                    
 #include <mpp_do_global_field_new.h>                                    
-#endif
 
 #ifndef no_8byte_integers
 #undef MPP_DO_GLOBAL_FIELD_3Dnew_
@@ -915,15 +899,7 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
 #include <mpp_do_global_field_old.h>
-#if defined(use_GSM)
-#include <mpp_do_global_field_gsm.h>
-#elif defined(use_CAF)                                    
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_i8_3d_type
-#include <mpp_do_global_field_caf.h>                                    
-#else                                    
 #include <mpp_do_global_field_new.h>                                    
-#endif
 
 #undef MPP_DO_GLOBAL_FIELD_3Dnew_
 #define MPP_DO_GLOBAL_FIELD_3Dnew_ mpp_do_global_field2Dnew_l8_3d
@@ -932,15 +908,7 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(LONG_KIND)
 #include <mpp_do_global_field_old.h>
-#if defined(use_GSM)
-#include <mpp_do_global_field_gsm.h>
-#elif defined(use_CAF)                                    
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_l8_3d_type
-#include <mpp_do_global_field_caf.h>                                    
-#else                                    
 #include <mpp_do_global_field_new.h>                                    
-#endif
 
 #endif
 
@@ -952,15 +920,7 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #include <mpp_do_global_field_old.h>
-#if defined(use_GSM)
-#include <mpp_do_global_field_gsm.h>
-#elif defined(use_CAF)                                    
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_r4_3d_type
-#include <mpp_do_global_field_caf.h>                                    
-#else                                    
 #include <mpp_do_global_field_new.h>                                    
-#endif
 
 #undef MPP_DO_GLOBAL_FIELD_3Dnew_
 #define MPP_DO_GLOBAL_FIELD_3Dnew_ mpp_do_global_field2Dnew_c4_3d
@@ -969,15 +929,7 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
 #include <mpp_do_global_field_old.h>
-#if defined(use_GSM)
-#include <mpp_do_global_field_gsm.h>
-#elif defined(use_CAF)                                    
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_c4_3d_type
-#include <mpp_do_global_field_caf.h>                                    
-#else                                    
 #include <mpp_do_global_field_new.h>                                    
-#endif
 
 #endif
 
@@ -988,15 +940,7 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
 #include <mpp_do_global_field_old.h>
-#if defined(use_GSM)
-#include <mpp_do_global_field_gsm.h>
-#elif defined(use_CAF)                                    
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_i4_3d_type
-#include <mpp_do_global_field_caf.h>                                    
-#else                                    
 #include <mpp_do_global_field_new.h>                                    
-#endif
 
 #undef MPP_DO_GLOBAL_FIELD_3Dnew_
 #define MPP_DO_GLOBAL_FIELD_3Dnew_ mpp_do_global_field2Dnew_l4_3d
@@ -1005,13 +949,5 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(INT_KIND)
 #include <mpp_do_global_field_old.h>
-#if defined(use_GSM)
-#include <mpp_do_global_field_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_l4_3d_type
-#include <mpp_do_global_field_caf.h>
-#else
 #include <mpp_do_global_field_new.h>
-#endif
 

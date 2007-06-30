@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_mpi.inc,v 14.0 2007/03/15 22:41:25 fms Exp $
+! $Id: mpp_comm_mpi.inc,v 14.0.2.1 2007/04/25 13:26:14 z1l Exp $
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -739,21 +739,9 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_BYTELEN_ 8
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
-#if defined(use_GSM)
-#undef GSM_REDUCE_
-#define GSM_REDUCE_ .GT.
-#include <mpp_reduce_gsm.h>
-#elif defined(use_CAF)
-#undef CAF_REDUCE_
-#define CAF_REDUCE_ .GT.
-#undef CAFPNTR_TYPE_1D_
-#define CAFPNTR_TYPE_1D_ cafptr_r8_1d_type
-#include <mpp_reduce_caf.h>
-#else
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MAX
 #include <mpp_reduce_mpi.h>
-#endif
 
 #ifndef no_4byte_reals
 #undef MPP_REDUCE_
@@ -764,21 +752,9 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_BYTELEN_ 4
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
-#if defined(use_GSM)
-#undef GSM_REDUCE_
-#define GSM_REDUCE_ .GT.
-#include <mpp_reduce_gsm.h>
-#elif defined(use_CAF) 
-#undef CAF_REDUCE_
-#define CAF_REDUCE_ .GT.
-#undef CAFPNTR_TYPE_1D_
-#define CAFPNTR_TYPE_1D_ cafptr_r4_1d_type
-#include <mpp_reduce_caf.h>
-#else
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MAX
 #include <mpp_reduce_mpi.h>
-#endif
 #endif
 
 #ifndef no_8byte_integers
@@ -790,21 +766,9 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_BYTELEN_ 8
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER8
-#if defined(use_GSM)
-#undef GSM_REDUCE_
-#define GSM_REDUCE_ .GT.
-#include <mpp_reduce_gsm.h>
-#elif defined(use_CAF) 
-#undef CAF_REDUCE_
-#define CAF_REDUCE_ .GT.
-#undef CAFPNTR_TYPE_1D_
-#define CAFPNTR_TYPE_1D_ cafptr_i8_1d_type
-#include <mpp_reduce_caf.h>
-#else
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MAX
 #include <mpp_reduce_mpi.h>
-#endif
 #endif
 
 #undef MPP_REDUCE_
@@ -815,21 +779,9 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_BYTELEN_ 4
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
-#if defined(use_GSM)
-#undef GSM_REDUCE_
-#define GSM_REDUCE_ .GT.
-#include <mpp_reduce_gsm.h>
-#elif defined(use_CAF) 
-#undef CAF_REDUCE_
-#define CAF_REDUCE_ .GT.
-#undef CAFPNTR_TYPE_1D_
-#define CAFPNTR_TYPE_1D_ cafptr_i4_1d_type
-#include <mpp_reduce_caf.h>
-#else
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MAX
 #include <mpp_reduce_mpi.h>
-#endif
 
 #undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_min_real8
@@ -839,21 +791,9 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_BYTELEN_ 8
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
-#if defined(use_GSM)
-#undef GSM_REDUCE_
-#define GSM_REDUCE_ .LT.
-#include <mpp_reduce_gsm.h>
-#elif defined(use_CAF) 
-#undef CAF_REDUCE_
-#define CAF_REDUCE_ .LT.
-#undef CAFPNTR_TYPE_1D_
-#define CAFPNTR_TYPE_1D_ cafptr_r8_1d_type
-#include <mpp_reduce_caf.h>
-#else
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MIN
 #include <mpp_reduce_mpi.h>
-#endif
 
 #ifndef no_4byte_reals
 #undef MPP_REDUCE_
@@ -864,21 +804,9 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_BYTELEN_ 4
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
-#if defined(use_GSM)
-#undef GSM_REDUCE_
-#define GSM_REDUCE_ .LT.
-#include <mpp_reduce_gsm.h>
-#elif defined(use_CAF) 
-#undef CAF_REDUCE_
-#define CAF_REDUCE_ .LT.
-#undef CAFPNTR_TYPE_1D_
-#define CAFPNTR_TYPE_1D_ cafptr_r4_1d_type
-#include <mpp_reduce_caf.h>
-#else
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MIN
 #include <mpp_reduce_mpi.h>
-#endif
 #endif
 
 #ifndef no_8byte_integers
@@ -890,21 +818,9 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_BYTELEN_ 8
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER8
-#if defined(use_GSM)
-#undef GSM_REDUCE_
-#define GSM_REDUCE_ .LT.
-#include <mpp_reduce_gsm.h>
-#elif defined(use_CAF) 
-#undef CAF_REDUCE_
-#define CAF_REDUCE_ .LT.
-#undef CAFPNTR_TYPE_1D_
-#define CAFPNTR_TYPE_1D_ cafptr_i8_1d_type
-#include <mpp_reduce_caf.h>
-#else
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MIN
 #include <mpp_reduce_mpi.h>
-#endif       
 #endif       
              
 #undef MPP_REDUCE_
@@ -915,21 +831,9 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_BYTELEN_ 4
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
-#if defined(use_GSM)
-#undef GSM_REDUCE_
-#define GSM_REDUCE_ .LT.
-#include <mpp_reduce_gsm.h>
-#elif defined(use_CAF) 
-#undef CAF_REDUCE_
-#define CAF_REDUCE_ .LT.
-#undef CAFPNTR_TYPE_1D_
-#define CAFPNTR_TYPE_1D_ cafptr_i4_1d_type
-#include <mpp_reduce_caf.h>
-#else
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MIN
 #include <mpp_reduce_mpi.h>
-#endif
 
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_real8
@@ -949,15 +853,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_REAL8
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
-#if defined(use_GSM)
-#include <mpp_sum_gsm.h>
-#elif defined(use_CAF) 
-#undef CAFPNTR_TYPE_1D_
-#define CAFPNTR_TYPE_1D_ cafptr_r8_1d_type
-#include <mpp_sum_caf.h>
-#else
 #include <mpp_sum_mpi.h>
-#endif
 
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_cmplx8
@@ -977,15 +873,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_DOUBLE_COMPLEX
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 16
-#if defined(use_GSM)
-#include <mpp_sum_gsm.h>
-#elif defined(use_CAF) 
-#undef CAFPNTR_TYPE_1D_
-#define CAFPNTR_TYPE_1D_ cafptr_c8_1d_type
-#include <mpp_sum_caf.h>
-#else
 #include <mpp_sum_mpi.h>
-#endif
 
 #ifndef no_4byte_reals
 #undef MPP_SUM_
@@ -1006,15 +894,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_REAL4
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
-#if defined(use_GSM)
-#include <mpp_sum_gsm.h>
-#elif defined(use_CAF) 
-#undef CAFPNTR_TYPE_1D_
-#define CAFPNTR_TYPE_1D_ cafptr_r4_1d_type
-#include <mpp_sum_caf.h>
-#else
 #include <mpp_sum_mpi.h>
-#endif
 
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_cmplx4
@@ -1034,15 +914,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_COMPLEX
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
-#if defined(use_GSM)
-#include <mpp_sum_gsm.h>
-#elif defined(use_CAF) 
-#undef CAFPNTR_TYPE_1D_
-#define CAFPNTR_TYPE_1D_ cafptr_c4_1d_type
-#include <mpp_sum_caf.h>
-#else
 #include <mpp_sum_mpi.h>
-#endif
 #endif
 
 #ifndef no_8byte_integers
@@ -1064,15 +936,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_INTEGER8
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
-#if defined(use_GSM)
-#include <mpp_sum_gsm.h>
-#elif defined(use_CAF) 
-#undef CAFPNTR_TYPE_1D_
-#define CAFPNTR_TYPE_1D_ cafptr_i8_1d_type
-#include <mpp_sum_caf.h>
-#else
 #include <mpp_sum_mpi.h>
-#endif
 #endif
 
 #undef MPP_SUM_
@@ -1093,12 +957,4 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_INTEGER4
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
-#if defined(use_GSM)
-#include <mpp_sum_gsm.h>
-#elif defined(use_CAF) 
-#undef CAFPNTR_TYPE_1D_
-#define CAFPNTR_TYPE_1D_ cafptr_i4_1d_type
-#include <mpp_sum_caf.h>
-#else
 #include <mpp_sum_mpi.h>
-#endif

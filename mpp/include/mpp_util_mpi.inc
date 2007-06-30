@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util_mpi.inc,v 14.0 2007/03/15 22:44:09 fms Exp $
+! $Id: mpp_util_mpi.inc,v 14.0.2.1 2007/04/25 13:26:16 z1l Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -112,18 +112,7 @@ function get_peset(pelist)
   allocate( peset(i)%list(size(sorted(:))) )
   peset(i)%list(:) = sorted(:)
   peset(i)%count = size(sorted(:))
-#if defined(use_GSM) || defined(use_CAF)
-  peset(i)%start = sorted(1)
-  if( size(sorted(:)).GT.1 )then
-     stride = sorted(2)-sorted(1)
-     if( ANY(sorted(2:n)-sorted(1:n-1).NE.stride) ) &
-          call mpp_error( WARNING, 'GET_PESET: pelist must have constant stride.' )
-     peset(i)%log2stride = nint( log(real(stride))/log(2.) )
-     if( 2**peset(i)%log2stride.NE.stride )call mpp_error( WARNING, 'GET_PESET: pelist must have power-of-2 stride.' )
-  else
-     peset(i)%log2stride = 0
-  end if
-#endif
+
   call MPI_GROUP_INCL( peset(current_peset_num)%group, size(sorted(:)), sorted, peset(i)%group, error )
   call MPI_COMM_CREATE( peset(current_peset_num)%id, peset(i)%group, peset(i)%id, error )
   deallocate(sorted)
@@ -160,7 +149,7 @@ subroutine mpp_sync( pelist, do_self )
   integer, intent(in), optional :: pelist(:)
   logical, intent(in), optional :: do_self
   logical                       :: dself
-  integer                       :: n,list(MAXPES),icnt
+  integer                       :: n
 
   dself=.true.; if(PRESENT(do_self))dself=do_self
   if(dself)call mpp_sync_self(pelist)
@@ -168,23 +157,9 @@ subroutine mpp_sync( pelist, do_self )
   n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
 
   if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
-#if defined(use_GSM)
-  if( n.EQ.world_peset_num )then
-     call SHMEM_BARRIER_ALL() !special call is faster
-  else
-    call SHMEM_BARRIER( peset(n)%start, peset(n)%log2stride, peset(n)%count, sync )
-  endif
-#elif defined(use_CAF)
-  if( n.EQ.world_peset_num )then
-     call MMPI_BARRIER_ALL() !special call is faster
-  else
-    icnt = peset(n)%count
-    list(1:icnt) = peset(n)%list(1:icnt)+1  ! CAF numbers PEs from 1 instead of 0
-    call SYNC_TEAM( list(1:icnt) )
-  endif
-#else
+
   call MPI_BARRIER( peset(n)%id, error )
-#endif
+
   if( current_clock.NE.0 )call increment_current_clock(EVENT_WAIT)
 
   return

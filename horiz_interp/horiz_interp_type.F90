@@ -90,6 +90,7 @@ end interface
    integer, dimension(:), pointer     :: i_src=>NULL(), j_src=>NULL()       !indices in source grid.
    integer, dimension(:), pointer     :: i_dst=>NULL(), j_dst=>NULL()       !indices in destination grid.
    real,    dimension(:), pointer     :: area_frac_dst=>NULL()              !area fraction in destination grid.
+   real,    dimension(:,:), pointer   :: mask_in=>NULL() 
  end type
 !</PUBLICTYPE>
 

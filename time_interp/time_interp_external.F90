@@ -49,11 +49,12 @@ module time_interp_external_mod
   private
 
   character(len=128), private :: version= &
-   'CVS $Id: time_interp_external.F90,v 14.0 2007/03/15 22:44:49 fms Exp $'
-  character(len=128), private :: tagname='Tag $Name: nalanda_2007_04 $'
+   'CVS $Id: time_interp_external.F90,v 14.0.2.1 2007/05/09 18:28:02 pjp Exp $'
+  character(len=128), private :: tagname='Tag $Name: nalanda_2007_06 $'
 
   integer, parameter, private :: max_fields = 1, modulo_year= 0001,max_files= 1
   integer, parameter, private :: LINEAR_TIME_INTERP = 1 ! not used currently
+  integer, parameter, public  :: SUCCESS = 0, ERR_FIELD_NOT_FOUND = 1
   integer, private :: num_fields = 0, num_files=0
   ! denotes time intervals in file (interpreted from metadata)
   integer, private :: num_io_buffers = -1 ! set -1 to read all records from disk into memory 
@@ -189,7 +190,7 @@ module time_interp_external_mod
 
     function init_external_field(file,fieldname,format,threading,domain,desired_units,&
          verbose,axis_centers,axis_sizes,override,correct_leap_year_inconsistency,&
-         permit_calendar_conversion,use_comp_domain)
+         permit_calendar_conversion,use_comp_domain,ierr)
       
       character(len=*), intent(in)            :: file,fieldname
       integer, intent(in), optional           :: format, threading
@@ -200,7 +201,7 @@ module time_interp_external_mod
       integer, intent(inout), optional        :: axis_sizes(4)
       logical, intent(in), optional           :: override, correct_leap_year_inconsistency,&
            permit_calendar_conversion,use_comp_domain
-
+      integer, intent(out), optional :: ierr
       
       integer :: init_external_field
       
@@ -224,6 +225,7 @@ module time_interp_external_mod
       integer :: len, nfile, nfields_orig, nbuf, nx,ny
 
       if (.not. module_initialized) call mpp_error(FATAL,'Must call time_interp_external_init first')
+      if(present(ierr)) ierr = SUCCESS
       use_comp_domain1 = .false.
       if(PRESENT(use_comp_domain)) use_comp_domain1 = use_comp_domain
       form=MPP_NETCDF
@@ -534,9 +536,13 @@ module time_interp_external_mod
 
       enddo
     
-      if (num_fields == nfields_orig) &
+      if (num_fields == nfields_orig) then
+        if (present(ierr)) then
+           ierr = ERR_FIELD_NOT_FOUND
+        else
            call mpp_error(FATAL,'external field "'//trim(fieldname)//'" not found in file "'//trim(file)//'"')
-
+        endif
+      endif
 
       deallocate(global_atts)
       deallocate(axes)

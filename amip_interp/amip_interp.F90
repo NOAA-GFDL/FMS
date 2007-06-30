@@ -91,8 +91,8 @@ public amip_interp_init, get_amip_sst, get_amip_ice, amip_interp_new, &
 
 !  ---- version number -----
 
-character(len=128) :: version = '$Id: amip_interp.F90,v 14.0 2007/03/15 22:37:37 fms Exp $'
-character(len=128) :: tagname = '$Name: nalanda_2007_04 $'
+character(len=128) :: version = '$Id: amip_interp.F90,v 14.0.4.2 2007/05/25 16:32:14 vb Exp $'
+character(len=128) :: tagname = '$Name: nalanda_2007_06 $'
 
 !-----------------------------------------------------------------------
 !------ private defined data type --------
@@ -131,11 +131,13 @@ end interface
 !         returned variable of type amip_interp_type is needed when
 !         calling get_amip_sst and get_amip_ice.
 !   </DESCRIPTION>
-!   <IN NAME="blon">
-!     Longitude in radians of the model's grid box edges.
+!   <IN NAME="lon">
+!     Longitude in radians of the model's grid box edges (1d lat/lon grid case)
+!     or at grid box mid-point (2d case for arbitrary grids).
 !   </IN>
-!   <IN NAME="blat">
-!     Latitude in radians of the model's grid box edges.
+!   <IN NAME="lat">
+!     Latitude in radians of the model's grid box edges (1d lat/lon grid case)
+!     or at grid box mid-point (2d case for arbitrary grids).
 !   </IN>
 !   <IN NAME="mask">
 !     A mask for the model grid.
@@ -156,7 +158,7 @@ end interface
 !     A defined data type variable needed when calling get_amip_sst and get_amip_ice.
 !   </OUT>
 !   <TEMPLATE>
-!     Interp = amip_interp_new ( blon, blat, mask, use_climo, use_annual, interp_method )
+!     Interp = amip_interp_new ( lon, lat, mask, use_climo, use_annual, interp_method )
 !   </TEMPLATE>
 
 !   <NOTE>
@@ -166,8 +168,8 @@ end interface
 !   </NOTE>
 !   <NOTE>
 !     The size of input augment mask must be a function of the size
-!     of input augments blon and blat. The first and second dimensions
-!     of mask must equal (size(blon)-1, size(blon)-1).
+!     of input augments lon and lat. The first and second dimensions
+!     of mask must equal (size(lon,1)-1, size(lat,2)-1).
 !   </NOTE>
 
 !   <ERROR MSG="the value of the namelist parameter DATA_SET being used is not allowed" STATUS="FATAL">
@@ -580,8 +582,8 @@ endif
 
 ! <FUNCTION NAME="amip_interp_new_1d" INTERFACE="amip_interp_new">
 
-!   <IN NAME="blon" TYPE="real" DIM="(:)"> </IN>
-!   <IN NAME="blat" TYPE="real" DIM="(:)"> </IN>
+!   <IN NAME="lon" TYPE="real" DIM="(:)"> </IN>
+!   <IN NAME="lat" TYPE="real" DIM="(:)"> </IN>
 !   <IN NAME="mask" TYPE="logical" DIM="(:,:)"> </IN>
 !   <IN NAME="use_climo" TYPE="logical" DEFAULT="use_climo = .false."> </IN>
 !   <IN NAME="use_annual" TYPE="logical" DEFAULT="use_annual = .false."> </IN>
@@ -630,8 +632,8 @@ endif
 
 !#######################################################################
 ! <FUNCTION NAME="amip_interp_new_2d" INTERFACE="amip_interp_new">
-!   <IN NAME="blon" TYPE="real" DIM="(:)"> </IN>
-!   <IN NAME="blat" TYPE="real" DIM="(:)"> </IN>
+!   <IN NAME="lon" TYPE="real" DIM="(:,:)"> </IN>
+!   <IN NAME="lat" TYPE="real" DIM="(:,:)"> </IN>
 !   <IN NAME="mask" TYPE="logical" DIM="(:,:)"> </IN>
 !   <IN NAME="use_climo" TYPE="logical" DEFAULT="use_climo = .false."> </IN>
 !   <IN NAME="use_annual" TYPE="logical" DEFAULT="use_annual = .false."> </IN>
@@ -668,7 +670,7 @@ endif
 !   ---- initialization of horizontal interpolation ----
 
    call horiz_interp_new ( Interp%Hintrp, lon_bnd, lat_bnd, &
-                            lon, lat, interp_method = interp_method)
+                           lon, lat, interp_method = interp_method)
 
    allocate ( Interp % data1 (size(lon,1),size(lat,2)), &
               Interp % data2 (size(lon,1),size(lat,2))) 

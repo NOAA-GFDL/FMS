@@ -93,10 +93,22 @@
 <!-- END PUBLIC INTERFACE -->
 <a name="PUBLIC DATA"></a>
 <hr>
-<h4>PUBLIC DATA</h4>
 <!-- BEGIN PUBLIC DATA -->
-<div>None.<br>
+<dt>
+<b>OUTPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>&nbsp;&nbsp;&nbsp;err_field_not_found</tt></td><td> &nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>&nbsp;&nbsp;&nbsp;success</tt></td><td> &nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+</table>
+</dd>
 <br>
+(To be used in combination with optional argument ierr of function init_external_field)
 </div>
 <!-- END PUBLIC DATA -->
 <a name="PUBLIC ROUTINES"></a>
@@ -166,6 +178,7 @@
 </table>
 </dd>
 <br>
+
 <dt>
 <b>INPUT/OUTPUT</b>
 </dt>
@@ -179,6 +192,18 @@
 </tr>
 </table>
 </dd>
+
+<dt>
+<b>OUTPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>ierr&nbsp;&nbsp;&nbsp;</tt></td><td> returned value=err_field_not_found if field does not exist, returned value=success otherwise (optional).<br>Program will terminate fatally if field does not exist and ierr is not present.&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+</table>
+</dd>
+
 <br>
 </dl>
 </li>

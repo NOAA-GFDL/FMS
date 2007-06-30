@@ -17,6 +17,8 @@ module mosaic_mod
 !    grid information. Each routine will call a C-version routine to get these information.
 ! </DESCRIPTION>
 
+use mpp_mod, only : mpp_error, FATAL
+
 implicit none
 private
 
@@ -28,12 +30,14 @@ public :: get_mosaic_ntiles
 public :: get_mosaic_ncontacts
 public :: get_mosaic_grid_sizes
 public :: get_mosaic_contact
+public :: get_mosaic_xgrid_size
 public :: get_mosaic_xgrid
+public :: calc_mosaic_grid_area
 
 logical :: module_is_initialized = .true.
 ! version information varaible
- character(len=128) :: version = '$Id: mosaic.F90,v 14.0 2007/03/15 22:40:39 fms Exp $'
- character(len=128) :: tagname = '$Name: nalanda_2007_04 $'
+ character(len=128) :: version = '$Id: mosaic.F90,v 14.0.2.3 2007/05/03 19:58:46 z1l Exp $'
+ character(len=128) :: tagname = '$Name: nalanda_2007_06 $'
 
 contains
 
@@ -62,6 +66,39 @@ end subroutine mosaic_init
 ! </SUBROUTINE>
 
 !#######################################################################
+! <FUNCTION NAME="get_mosaic_xgrid_size">
+!   <OVERVIEW>
+!     return exchange grid size of mosaic xgrid file.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     return exchange grid size of mosaic xgrid file.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!    nxgrid = get_mosaic_xgrid_size(xgrid_file)
+!   </TEMPLATE>
+!   <IN NAME="xgrid_file" TYPE="character(len=*)">
+!     The file that contains exchange grid information.
+!   </IN>
+  function get_mosaic_xgrid_size(xgrid_file)
+    character(len=*), intent(in)          :: xgrid_file
+    integer                               :: get_mosaic_xgrid_size
+    character(len=len_trim(xgrid_file)+1) :: xfile    
+    integer                               :: read_mosaic_xgrid_size
+    integer                               :: strlen
+
+    !---- transfer to C-stype string
+    strlen = len_trim(xgrid_file)
+    xfile(1:strlen) = xgrid_file(1:strlen)
+    strlen = strlen+1
+    xfile(strlen:strlen) = CHAR(0)
+
+    get_mosaic_xgrid_size = read_mosaic_xgrid_size(xfile)
+
+    return   
+
+  end function get_mosaic_xgrid_size
+! </FUNCTION>
+!#######################################################################
 ! <SUBROUTINE NAME="get_mosaic_xgrid">
 !   <OVERVIEW>
 !     get exchange grid information from mosaic xgrid file.
@@ -87,14 +124,14 @@ end subroutine mosaic_init
 !   <INOUT NAME="area" TYPE="real, dimension(:)">
 !     area of the exchange grid. The area is scaled to represent unit earth area.
 !   </INOUT>
-  subroutine get_mosaic_xgrid(xgrid_file, nxgrid, i1, j1, i2, j2, area)
+  subroutine get_mosaic_xgrid(xgrid_file, i1, j1, i2, j2, area, di, dj)
     character(len=*), intent(in) :: xgrid_file
-    integer,       intent(inout) :: nxgrid
     integer,       intent(inout) :: i1(:), j1(:), i2(:), j2(:)
     real,          intent(inout) :: area(:)
-    integer                      :: read_mosaic_xgrid_order1
+    real, optional,intent(inout) :: di(:), dj(:)
+
     character(len=len_trim(xgrid_file)+1) :: xfile
-    integer :: n, strlen
+    integer :: n, strlen, nxgrid
 
     !---- transfer to C-stype string
     strlen = len_trim(xgrid_file)
@@ -103,7 +140,14 @@ end subroutine mosaic_init
     xfile(strlen:strlen) = CHAR(0)
 
     !--- order 2 xgrid will be implemented later 
-    nxgrid = read_mosaic_xgrid_order1(xfile, i1, j1, i2, j2, area)
+    nxgrid = size(i1(:))
+
+    if(PRESENT(di)) then
+       if(.NOT. PRESENT(dj) ) call mpp_error(FATAL, "mosaic_mod: when di is present, dj should be present")
+       call read_mosaic_xgrid_order2(xfile, i1, j1, i2, j2, area, di, dj)
+    else
+       call read_mosaic_xgrid_order1(xfile, i1, j1, i2, j2, area)
+    end if
 
     ! in C, programming, the starting index is 0, so need add 1 to the index.
     do n = 1, nxgrid
@@ -207,7 +251,6 @@ end subroutine mosaic_init
     integer, dimension(:), intent(inout) :: nx, ny
 
     character(len=len_trim(mosaic_file)+1) :: mfile    
-    character(len=6)                      :: tdir
     integer                                :: strlen
 
     !---- transfer to C-stype string
@@ -215,10 +258,8 @@ end subroutine mosaic_init
     mfile(1:strlen) = mosaic_file(1:strlen)
     strlen = strlen+1
     mfile(strlen:strlen) = CHAR(0)
-    tdir(1:5) = "INPUT"
-    tdir(6:6) = CHAR(0)
 
-    call read_mosaic_grid_sizes(mfile, tdir, nx, ny)
+    call read_mosaic_grid_sizes(mfile, nx, ny)
 
   end subroutine get_mosaic_grid_sizes
 ! </SUBROUTINE>
@@ -297,6 +338,46 @@ end subroutine mosaic_init
 
   end subroutine get_mosaic_contact
 ! </SUBROUTINE>
+
+  !###############################################################################
+  ! <SUBROUTINE NAME="calc_mosaic_grid_area">
+  !   <OVERVIEW>
+  !     calculate grid cell area.
+  !   </OVERVIEW>
+  !   <DESCRIPTION>
+  !     calculate the grid cell area. The purpose of this routine is to make 
+  !     sure the consistency between model grid area and exchange grid area.
+  !   </DESCRIPTION>
+  !   <TEMPLATE>
+  !     call calc_mosaic_grid_area(lon, lat, area)
+  !   </TEMPLATE>
+  !   <IN NAME="lon" TYPE="real, dimension(:,:)">
+  !     geographical longitude of grid cell vertices.
+  !   </IN>
+  !   <IN NAME="lat" TYPE="real, dimension(:,:)">
+  !     geographical latitude of grid cell vertices.
+  !   </IN>
+  !   <INOUT NAME="area" TYPE="real, dimension(:,:)">
+  !     grid cell area.
+  !   </INOUT>
+  subroutine calc_mosaic_grid_area(lon, lat, area)
+     real, dimension(:,:), intent(in)    :: lon
+     real, dimension(:,:), intent(in)    :: lat
+     real, dimension(:,:), intent(inout) :: area
+     integer                             :: nlon, nlat
+
+     nlon = size(area,1)
+     nlat = size(area,2)
+     /* make sure size of lon, lat and area are consitency */
+     if( size(lon,1) .NE. nlon+1 .OR. size(lat,1) .NE. nlon+1 ) &
+        call mpp_error(FATAL, "mosaic_mod: size(lon,1) and size(lat,1) should equal to size(area,1)+1")
+     if( size(lon,2) .NE. nlat+1 .OR. size(lat,2) .NE. nlat+1 ) &
+        call mpp_error(FATAL, "mosaic_mod: size(lon,2) and size(lat,2) should equal to size(area,2)+1")
+
+     call get_grid_area( nlon, nlat, lon, lat, area)
+
+  end subroutine calc_mosaic_grid_area
+  ! </SUBROUTINE>
 
 end module mosaic_mod
 

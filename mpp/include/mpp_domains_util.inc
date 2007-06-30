@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_util.inc,v 14.0 2007/03/15 22:42:53 fms Exp $
+! $Id: mpp_domains_util.inc,v 14.0.2.1.2.1 2007/05/23 15:37:16 z1l Exp $
 
   ! <SUBROUTINE NAME="mpp_domains_set_stack_size">
   !  <OVERVIEW>
@@ -366,7 +366,6 @@
     return
 end subroutine mpp_get_compute_domains1D
 
-
 !#####################################################################
 subroutine mpp_get_compute_domains2D( domain, xbegin, xend, xsize, ybegin, yend, ysize )
  type(domain2D),                   intent(in) :: domain
@@ -420,6 +419,84 @@ integer :: i
  return
 end subroutine mpp_get_compute_domains2D
 
+  !#####################################################################
+  subroutine mpp_get_global_domains1D( domain, begin, end, size )
+    type(domain1D),                   intent(in) :: domain
+    integer, intent(out), optional, dimension(:) :: begin, end, size 
+
+    if( .NOT.module_is_initialized ) &
+         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: must first call mpp_domains_init.' )
+    !we use shape instead of size for error checks because size is used as an argument
+    if( PRESENT(begin) )then
+       if( any(shape(begin).NE.shape(domain%list)) ) &
+            call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: begin array size does not match domain.' )
+       begin(:) = domain%list(:)%global%begin
+    end if
+    if( PRESENT(end) )then
+       if( any(shape(end).NE.shape(domain%list)) ) &
+            call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: end array size does not match domain.' )
+            end(:) = domain%list(:)%global%end
+    end if
+    if( PRESENT(size) )then
+       if( any(shape(size).NE.shape(domain%list)) ) &
+           call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: size array size does not match domain.' )
+           size(:) = domain%list(:)%global%size
+    end if
+    return
+end subroutine mpp_get_global_domains1D
+
+!#####################################################################
+subroutine mpp_get_global_domains2D( domain, xbegin, xend, xsize, ybegin, yend, ysize )
+ type(domain2D),                   intent(in) :: domain
+ integer, intent(out), optional, dimension(:) :: xbegin, xend, xsize, ybegin, yend, ysize
+integer :: i
+ if( .NOT.module_is_initialized ) &
+      call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: must first call mpp_domains_init.' )
+
+ if( PRESENT(xbegin) )then
+    if( size(xbegin(:)).NE.size(domain%list(:)) ) &
+         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: xbegin array size does not match domain.' )
+    do i = 1, size(xbegin(:))
+       xbegin(i) = domain%list(i-1)%x(1)%global%begin
+    end do
+ end if
+ if( PRESENT(xend) )then
+    if( size(xend(:)).NE.size(domain%list(:)) ) &
+         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: xend array size does not match domain.' )
+    do i = 1, size(xend(:))
+       xend(i) = domain%list(i-1)%x(1)%global%end
+    end do
+ end if
+ if( PRESENT(xsize) )then
+    if( size(xsize(:)).NE.size(domain%list(:)) ) &
+         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: xsize array size does not match domain.' )
+    do i = 1, size(xsize(:))
+       xsize(i) = domain%list(i-1)%x(1)%global%size
+    end do
+ end if
+ if( PRESENT(ybegin) )then
+    if( size(ybegin(:)).NE.size(domain%list(:)) ) &
+         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: ybegin array size does not match domain.' )
+    do i = 1, size(ybegin(:))
+       ybegin(i) = domain%list(i-1)%y(1)%global%begin
+    end do
+ end if
+ if( PRESENT(yend) )then
+    if( size(yend(:)).NE.size(domain%list(:)) ) &
+         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: yend array size does not match domain.' )
+    do i = 1, size(yend(:))
+       yend(i) = domain%list(i-1)%y(1)%global%end
+    end do
+ end if
+ if( PRESENT(ysize) )then
+    if( size(ysize(:)).NE.size(domain%list(:)) ) &
+         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: ysize array size does not match domain.' )
+    do i = 1, size(ysize(:))
+       ysize(i) = domain%list(i-1)%y(1)%global%size
+    end do
+ end if
+ return
+end subroutine mpp_get_global_domains2D
 
 !#####################################################################
 ! This will return xextent and yextent for each tile
@@ -912,6 +989,23 @@ end subroutine mpp_get_domain_shift
 
   end function mpp_get_tile_id
 
+  !#######################################################################
+  ! return the tile_id on current pelist. one-tile-per-pe is assumed.
+  subroutine mpp_get_tile_list(domain, tiles)
+     type(domain2d), intent(in) :: domain
+     integer,     intent(inout) :: tiles(:)
+     integer                    :: i
+
+    if( size(tiles(:)).NE.size(domain%list(:)) ) &
+         call mpp_error( FATAL, 'mpp_get_tile_list: tiles array size does not match domain.' )
+    do i = 1, size(tiles(:))
+       if(size(domain%list(i-1)%tile_id(:)) > 1) call mpp_error( FATAL,  &
+               'mpp_get_tile_list: only support one-tile-per-pe now, contact developer');
+       tiles(i) = domain%list(i-1)%tile_id(1)
+    end do     
+
+  end subroutine mpp_get_tile_list
+
   !########################################################################
   ! return number of tiles in mosaic
   function mpp_get_ntile_count(domain)
@@ -951,7 +1045,7 @@ end subroutine mpp_get_domain_shift
         mpp_domain_is_root_pe = .false.
      end if
 
-  end function
+  end function mpp_domain_is_root_pe
 
   !#######################################################################
   !--- the order of overlapping will be consistent with the unpack done in update_domains.
@@ -1007,3 +1101,19 @@ end subroutine mpp_get_domain_shift
 
   end subroutine mpp_get_mosaic_refine_overlap
 
+  !#########################################################################
+  ! return number of processors used on current tile.
+  function mpp_get_tile_npes(domain)
+    type(domain2d), intent(in)  :: domain
+    integer                     :: mpp_get_tile_npes
+    integer                     :: i, tile
+
+    if(size(domain%tile_id(:)) > 1) call mpp_error( FATAL,  &
+         'mpp_get_tile_npes: only support one-tile-per-pe now, contact developer');
+    mpp_get_tile_npes = 0
+    tile = domain%tile_id(1)
+    do i = 0, size(domain%list(:))-1
+       if(tile == domain%list(i)%tile_id(1) )  mpp_get_tile_npes =  mpp_get_tile_npes + 1
+    end do     
+
+  end function mpp_get_tile_npes

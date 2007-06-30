@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_read.inc,v 14.0 2007/03/15 22:43:19 fms Exp $
+! $Id: mpp_io_read.inc,v 14.0.2.1 2007/03/27 19:20:16 z1l Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -266,7 +266,7 @@
 
       if( .NOT.mpp_file(unit)%initialized ) call mpp_error( FATAL, 'MPP_READ: must first call mpp_read_meta.' )
       lev = 1
-      if(present(level)) lev = 1
+      if(present(level)) lev = level
 
       if( verbose )print '(a,2i3,2i5)', 'MPP_READ: PE, unit, %id, level =', pe, unit, mpp_file(unit)%id, lev
 

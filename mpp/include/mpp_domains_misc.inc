@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_misc.inc,v 14.0 2007/03/15 22:42:47 fms Exp $
+! $Id: mpp_domains_misc.inc,v 14.0.2.1 2007/04/25 13:26:15 z1l Exp $
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -32,7 +32,9 @@
 ! </SUBROUTINE>
     subroutine mpp_domains_init(flags)
       integer, intent(in), optional :: flags
+#ifdef use_libSMA
       integer                       :: l=0
+#endif
       integer                       :: unit_begin, unit_end, unit_nml, io_status
       logical                       :: opened
 
@@ -633,18 +635,8 @@
 #endif
 #include <mpp_do_update_old.h>
 #include <mpp_do_updateV_old.h>
-#if defined(use_GSM)
-#include <mpp_do_update_gsm.h>
-#include <mpp_do_updateV_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_r8_3d_type
-#include <mpp_do_update_caf.h>
-#include <mpp_do_updateV_caf.h>
-#else
 #include <mpp_do_update_new.h>
 #include <mpp_do_updateV_new.h>
-#endif
 
 #undef  VECTOR_FIELD_
 
@@ -655,16 +647,7 @@
 #undef MPP_DO_UPDATE_3Dold_
 #define MPP_DO_UPDATE_3Dold_ mpp_do_update_old_c8_3d
 #include <mpp_do_update_old.h>
-#if defined(use_GSM)              
-#include <mpp_do_update_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_c8_3d_type
-#include <mpp_do_update_caf.h>
-#else
 #include <mpp_do_update_new.h>
-#endif
-
 
 #ifndef no_8byte_integers
 #undef MPP_TYPE_
@@ -674,15 +657,7 @@
 #undef MPP_DO_UPDATE_3Dold_
 #define MPP_DO_UPDATE_3Dold_ mpp_do_update_old_i8_3d
 #include <mpp_do_update_old.h>
-#if defined(use_GSM)              
-#include <mpp_do_update_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_i8_3d_type
-#include <mpp_do_update_caf.h>
-#else
 #include <mpp_do_update_new.h>
-#endif
 
 #endif
 
@@ -703,18 +678,8 @@
 #endif
 #include <mpp_do_update_old.h>
 #include <mpp_do_updateV_old.h>
-#if defined(use_GSM)              
-#include <mpp_do_update_gsm.h>
-#include <mpp_do_updateV_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_r4_3d_type
-#include <mpp_do_update_caf.h>
-#include <mpp_do_updateV_caf.h>
-#else
 #include <mpp_do_update_new.h>
 #include <mpp_do_updateV_new.h>
-#endif
 
 #undef  VECTOR_FIELD_
 
@@ -725,15 +690,7 @@
 #undef MPP_DO_UPDATE_3Dold_
 #define MPP_DO_UPDATE_3Dold_ mpp_do_update_old_c4_3d
 #include <mpp_do_update_old.h>
-#if defined(use_GSM)              
-#include <mpp_do_update_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_c4_3d_type
-#include <mpp_do_update_caf.h>
-#else
 #include <mpp_do_update_new.h>
-#endif
 
 #endif
 
@@ -744,15 +701,7 @@
 #undef MPP_DO_UPDATE_3Dold_
 #define MPP_DO_UPDATE_3Dold_ mpp_do_update_old_i4_3d
 #include <mpp_do_update_old.h>
-#if defined(use_GSM)              
-#include <mpp_do_update_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_i4_3d_type
-#include <mpp_do_update_caf.h>
-#else
 #include <mpp_do_update_new.h>
-#endif
 
 !bnc
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -879,18 +828,8 @@
 #endif
 #include <mpp_do_update_old_ad.h>
 #include <mpp_do_updateV_old_ad.h>
-#if defined(use_GSM)
-#include <mpp_do_update_gsm.h>
-#include <mpp_do_updateV_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_r8_3d_type
-#include <mpp_do_update_caf.h>
-#include <mpp_do_updateV_caf.h>
-#else
 #include <mpp_do_update_new_ad.h>
 #include <mpp_do_updateV_new_ad.h>
-#endif
 #undef  VECTOR_FIELD_
 
 #undef MPP_TYPE_
@@ -900,15 +839,7 @@
 #undef MPP_DO_UPDATE_AD_3Dold_
 #define MPP_DO_UPDATE_AD_3Dold_ mpp_do_update_ad_old_c8_3d
 #include <mpp_do_update_old_ad.h>
-#if defined(use_GSM)
-#include <mpp_do_update_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_c8_3d_type
-#include <mpp_do_update_caf.h>
-#else
 #include <mpp_do_update_new_ad.h>
-#endif
                                                                                   
 #ifndef no_8byte_integers
 #undef MPP_TYPE_
@@ -918,15 +849,7 @@
 #undef MPP_DO_UPDATE_AD_3Dold_
 #define MPP_DO_UPDATE_AD_3Dold_ mpp_do_update_ad_old_i8_3d
 #include <mpp_do_update_old_ad.h>
-#if defined(use_GSM)
-#include <mpp_do_update_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_i8_3d_type
-#include <mpp_do_update_caf.h>
-#else
 #include <mpp_do_update_new_ad.h>
-#endif
 #endif
 
 #ifndef no_4byte_reals
@@ -946,18 +869,8 @@
 #endif
 #include <mpp_do_update_old_ad.h>
 #include <mpp_do_updateV_old_ad.h>
-#if defined(use_GSM)
-#include <mpp_do_update_gsm.h>
-#include <mpp_do_updateV_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_r4_3d_type
-#include <mpp_do_update_caf.h>
-#include <mpp_do_updateV_caf.h>
-#else
 #include <mpp_do_update_new_ad.h>
 #include <mpp_do_updateV_new_ad.h>
-#endif
 #undef  VECTOR_FIELD_
 
 #undef MPP_TYPE_
@@ -967,15 +880,7 @@
 #undef MPP_DO_UPDATE_AD_3Dold_
 #define MPP_DO_UPDATE_AD_3Dold_ mpp_do_update_ad_old_c4_3d
 #include <mpp_do_update_old_ad.h>
-#if defined(use_GSM)
-#include <mpp_do_update_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_c4_3d_type
-#include <mpp_do_update_caf.h>
-#else
 #include <mpp_do_update_new_ad.h>
-#endif
 #endif
 
 #undef MPP_TYPE_
@@ -985,15 +890,7 @@
 #undef MPP_DO_UPDATE_AD_3Dold_
 #define MPP_DO_UPDATE_AD_3Dold_ mpp_do_update_ad_old_i4_3d
 #include <mpp_do_update_old_ad.h>
-#if defined(use_GSM)
-#include <mpp_do_update_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_i4_3d_type
-#include <mpp_do_update_caf.h>
-#else
 #include <mpp_do_update_new_ad.h>
-#endif
 
 !bnc
 
@@ -1006,15 +903,7 @@
 #undef MPP_DO_REDISTRIBUTE_3Dold_
 #define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_r8_3D
 #include <mpp_do_redistribute_old.h>
-#if defined(use_GSM)
-#include <mpp_do_redistribute_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_r8_3d_type
-#include <mpp_do_redistribute_caf.h>
-#else
 #include <mpp_do_redistribute_new.h>
-#endif
 #undef  VECTOR_FIELD_
 
 #undef MPP_TYPE_
@@ -1024,16 +913,7 @@
 #undef MPP_DO_REDISTRIBUTE_3Dold_
 #define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_c8_3D
 #include <mpp_do_redistribute_old.h>
-#if defined(use_GSM)
-#include <mpp_do_redistribute_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_c8_3d_type
-#include <mpp_do_redistribute_caf.h>
-#else
 #include <mpp_do_redistribute_new.h>
-#endif
-
 
 #ifndef no_8byte_integers
 #undef MPP_TYPE_
@@ -1043,16 +923,7 @@
 #undef MPP_DO_REDISTRIBUTE_3Dold_
 #define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_i8_3D
 #include <mpp_do_redistribute_old.h>
-#if defined(use_GSM)
-#include <mpp_do_redistribute_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_i8_3d_type
-#include <mpp_do_redistribute_caf.h>
-#else
 #include <mpp_do_redistribute_new.h>
-#endif
-
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(LONG_KIND)
@@ -1061,15 +932,7 @@
 #undef MPP_DO_REDISTRIBUTE_3Dold_
 #define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_l8_3D
 #include <mpp_do_redistribute_old.h>
-#if defined(use_GSM)
-#include <mpp_do_redistribute_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_l8_3d_type
-#include <mpp_do_redistribute_caf.h>
-#else
 #include <mpp_do_redistribute_new.h>
-#endif
 
 #endif
 
@@ -1082,15 +945,7 @@
 #undef MPP_DO_REDISTRIBUTE_3Dold_
 #define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_r4_3D
 #include <mpp_do_redistribute_old.h>
-#if defined(use_GSM)
-#include <mpp_do_redistribute_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_r4_3d_type
-#include <mpp_do_redistribute_caf.h>
-#else
 #include <mpp_do_redistribute_new.h>
-#endif
 #undef  VECTOR_FIELD_
 
 #undef MPP_TYPE_
@@ -1100,15 +955,7 @@
 #undef MPP_DO_REDISTRIBUTE_3Dold_
 #define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_c4_3D
 #include <mpp_do_redistribute_old.h>
-#if defined(use_GSM)
-#include <mpp_do_redistribute_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_c4_3d_type
-#include <mpp_do_redistribute_caf.h>
-#else
 #include <mpp_do_redistribute_new.h>
-#endif
 
 #endif
 
@@ -1119,16 +966,7 @@
 #undef MPP_DO_REDISTRIBUTE_3Dold_
 #define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_i4_3D
 #include <mpp_do_redistribute_old.h>
-#if defined(use_GSM)
-#include <mpp_do_redistribute_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_i4_3d_type
-#include <mpp_do_redistribute_caf.h>
-#else
 #include <mpp_do_redistribute_new.h>
-#endif
-
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(INT_KIND)
@@ -1137,15 +975,7 @@
 #undef MPP_DO_REDISTRIBUTE_3Dold_
 #define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_l4_3D
 #include <mpp_do_redistribute_old.h>
-#if defined(use_GSM)
-#include <mpp_do_redistribute_gsm.h>
-#elif defined(use_CAF)
-#undef CAFPNTR_TYPE_3D_
-#define CAFPNTR_TYPE_3D_ cafptr_l4_3d_type
-#include <mpp_do_redistribute_caf.h>
-#else
 #include <mpp_do_redistribute_new.h>
-#endif
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)

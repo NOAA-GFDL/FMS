@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_define.inc,v 14.0 2007/03/15 22:42:44 fms Exp $
+! $Id: mpp_domains_define.inc,v 14.0.4.1 2007/04/25 13:26:14 z1l Exp $
 
 
   ! <SUBROUTINE NAME="mpp_define_layout2D" INTERFACE="mpp_define_layout">
@@ -9,11 +9,14 @@
   !  <OUT NAME="layout" TYPE="integer" DIM="(2)"></OUT>
   ! </SUBROUTINE>
   subroutine mpp_define_layout2D( global_indices, ndivs, layout )
-    integer, intent(in) :: global_indices(4) !(/ isg, ieg, jsg, jeg /)
+    integer, intent(in) :: global_indices(:) !(/ isg, ieg, jsg, jeg /)
     integer, intent(in) :: ndivs !number of divisions to divide global domain
-    integer, intent(out) :: layout(2)
+    integer, intent(out) :: layout(:)
 
     integer :: isg, ieg, jsg, jeg, isz, jsz, idiv, jdiv
+
+    if(size(global_indices(:)) .NE. 4) call mpp_error(FATAL,"mpp_define_layout2D: size of global_indices should be 4")
+    if(size(layout(:)) .NE. 2) call mpp_error(FATAL,"mpp_define_layout2D: size of layout should be 2")
 
     isg = global_indices(1)
     ieg = global_indices(2)
@@ -170,7 +173,7 @@
     !      maskmap (optional) a division whose maskmap=.FALSE. is not assigned to any domain
     !  By default we assume decomposition of compute and data domains, non-periodic boundaries, no halo, as close to uniform extents
     !  as the input parameters permit
-    integer, intent(in) :: global_indices(2) !(/ isg, ieg /)
+    integer, intent(in) :: global_indices(:) !(/ isg, ieg /)
     integer, intent(in) :: ndivs
     type(domain1D), intent(inout) :: domain !declared inout so that existing links, if any, can be nullified
     integer, intent(in), optional :: pelist(0:)
@@ -194,6 +197,7 @@
     odd (n) = (mod(n,2).EQ.1)
 
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS1D: You must first call mpp_domains_init.' )
+    if(size(global_indices(:)) .NE. 2) call mpp_error(FATAL,"mpp_define_domains1D: size of global_indices should be 2")
     !get global indices
     isg = global_indices(1)
     ieg = global_indices(2)
@@ -406,8 +410,8 @@
          xhalo, yhalo, xextent, yextent, maskmap, name, symmetry,  memory_size,               &
          whalo, ehalo, shalo, nhalo, is_mosaic, tile_count, complete )
     !define 2D data and computational domain on global rectilinear cartesian domain (isg:ieg,jsg:jeg) and assign them to PEs
-    integer, intent(in) :: global_indices(4) !(/ isg, ieg, jsg, jeg /)
-    integer, intent(in) :: layout(2)
+    integer,           intent(in) :: global_indices(:) !(/ isg, ieg, jsg, jeg /)
+    integer,           intent(in) :: layout(:)
     type(domain2D), intent(inout) :: domain
     integer, intent(in), optional :: pelist(0:)
     integer, intent(in), optional :: xflags, yflags, xhalo, yhalo
@@ -416,7 +420,7 @@
     character(len=*), intent(in), optional :: name
     logical, intent(in), optional :: symmetry
     logical, intent(in), optional :: is_mosaic ! indicate if calling mpp_define_domains from mpp_define_mosaic.
-    integer, intent(in), optional :: memory_size(2)
+    integer, intent(in), optional :: memory_size(:)
     integer, intent(in), optional :: whalo, ehalo, shalo, nhalo ! halo size for West, East, South and North direction.
                                                                 ! if whalo and ehalo is not present, 
                                                                 ! will take the value of xhalo
@@ -437,6 +441,9 @@
     character(len=8)        :: text
 
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS2D: You must first call mpp_domains_init.' )
+    if(size(global_indices(:)) .NE. 4) call mpp_error(FATAL,"mpp_define_domains2D: size of global_indices should be 4")
+    if(size(layout(:)) .NE. 2) call mpp_error(FATAL,"mpp_define_domains2D: size of layout should be 2")
+
     ndivx = layout(1); ndivy = layout(2)
     isg = global_indices(1); ieg = global_indices(2); jsg = global_indices(3); jeg = global_indices(4)
 
@@ -531,6 +538,7 @@
 
        memory_xsize = 0; memory_ysize = 0
        if(present(memory_size)) then
+          if(size(memory_size(:)) .NE. 2) call mpp_error(FATAL,"mpp_define_domains2D: size of memory_size should be 2")
           memory_xsize = memory_size(1)
           memory_ysize = memory_size(2)
        end if
@@ -947,11 +955,13 @@
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !??? do we need optional argument xextent and yextent
-!??? how to specify pelist, we may use two dimensional variable pelist to represent. 
-  subroutine mpp_define_mosaic( global_indices, layout, domain, num_tile, num_contact, tile1, tile2,         &
-                                istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2, pe_start,    &
-                                pe_end, pelist, whalo, ehalo, shalo, nhalo, xextent, yextent,                &
-                                maskmap, name, memory_size, symmetry )
+!??? how to specify pelist, we may use two dimensional variable pelist to represent.
+!z1l: We assume the tilelist are in always limited to 1, 2, ... num_tile. If we want 
+!     to remove this limitation, we need to add one more argument tilelist.
+  subroutine mpp_define_mosaic( global_indices, layout, domain, num_tile, num_contact, tile1, tile2, &
+                                istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2, pe_start,      &
+                                pe_end, pelist, whalo, ehalo, shalo, nhalo, xextent, yextent,                  &
+                                maskmap, name, memory_size, symmetry, xflags, yflags )
     integer,          intent(in)           :: global_indices(:,:)  ! The size of first indice is 4, (/ isg, ieg, jsg, jeg /)
                                                                    ! The size of second indice is number of tiles in mosaic.
     integer,          intent(in)           :: layout(:,:)
@@ -972,9 +982,11 @@
     character(len=*), intent(in), optional :: name
     integer,          intent(in), optional :: memory_size(2)
     logical,          intent(in), optional :: symmetry
+    integer,          intent(in), optional :: xflags, yflags
 
     integer              :: n, m, ndivx, ndivy, list, nc, tile_count, nlist, nt, pos, n1, n2
     integer              :: whalosz, ehalosz, shalosz, nhalosz, xhalosz, yhalosz, t1, t2, tile
+    integer              :: flags_x, flags_y
     logical, allocatable :: mask(:,:)
     integer, allocatable :: pes(:), xext(:), yext(:), pelist_tile(:), ntile_per_pe(:)
     logical              :: is_symmetry
@@ -1095,18 +1107,47 @@
        xext = 0; yext = 0
        if(present(xextent)) xext = xextent(1:ndivx,n)
        if(present(yextent)) yext = yextent(1:ndivy,n)
-
-       call mpp_define_domains(global_indices(:,n), layout(:,n), domain, pelist=pelist_tile,                   &
-                               whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, xextent=xext, yextent=yext, &
-                               maskmap=mask, name=name, symmetry=is_symmetry, memory_size = memory_size,       &
-                               is_mosaic = .true., tile_count = tile_count, complete = n==num_tile  )
+       ! when num_tile is one, we assume only folded_north and cyclic_x, cyclic_y boundary condition is the possible
+       ! z1l: when we decide to support multiple-tile tripolar grid, we will redesign the following part.
+       if(num_tile == 1) then
+          flags_x = 0
+          flags_y = 0
+          if(PRESENT(xflags)) flags_x = xflags
+          if(PRESENT(yflags)) flags_y = yflags
+          do m = 1, num_contact
+             if(istart1(m) == iend1(m) ) then  ! x-direction contact, only cyclic condition
+                if(istart2(m) .NE. iend2(m) ) call mpp_error(FATAL,  &
+                   "mpp_domains_define: for one tile mosaic, only cyclic condition is allowed for x-boundary")
+                if(.NOT. BTEST(flags_x,CYCLIC))  flags_x = flags_x + CYCLIC_GLOBAL_DOMAIN
+             else if( jstart1(m) == jend1(m) ) then  ! y-direction contact, cyclic or folded-north
+                if(jstart2(m) .NE. jend2(m) ) call mpp_error(FATAL,  &
+                   "mpp_domains_define: for one tile mosaic, only cyclic/folded-north condition is allowed for y-boundary")
+                if( jstart1(m) == jstart2(m) ) then ! folded north
+                   if(.NOT. BTEST(flags_y,NORTH) )  flags_y = flags_y + FOLD_NORTH_EDGE
+                else 
+                   if(.NOT. BTEST(flags_y,CYCLIC))  flags_y = flags_y + CYCLIC_GLOBAL_DOMAIN
+                end if
+             else 
+               call mpp_error(FATAL,  &
+                   "mpp_domains_define: for one tile mosaic, invalid boundary contact")
+             end if
+          end do
+          call mpp_define_domains(global_indices(:,n), layout(:,n), domain, pelist=pelist_tile, xflags = flags_x, &
+                                  yflags = flags_y, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo,           &
+                                  xextent=xext, yextent=yext, maskmap=mask, name=name, symmetry=is_symmetry,      &
+                                  memory_size = memory_size, is_mosaic = .true.)
+       else
+          call mpp_define_domains(global_indices(:,n), layout(:,n), domain, pelist=pelist_tile,                   &
+                                  whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, xextent=xext, yextent=yext, &
+                                  maskmap=mask, name=name, symmetry=is_symmetry, memory_size = memory_size,       &
+                                  is_mosaic = .true., tile_count = tile_count, complete = n==num_tile  )
+       end if
        deallocate(mask, xext, yext, pelist_tile)
     end do
 
     deallocate(pes)
 
-    domain%ncontacts = num_contact
-    if(num_contact == 0) return
+    if(num_contact == 0 .OR. num_tile == 1) return
 
     !--- loop through each contact region and find the contact for each tile ( including alignment )
     !--- we assume the tiles list is continuous and starting from 1.
@@ -1198,7 +1239,7 @@
     end do
 
     !--- set the overlapping for boundary check if domain is symmetry
-    if(domain%symmetry .AND. domain%ncontacts > 0 ) then
+    if(domain%symmetry ) then
        allocate(domain%C%check, domain%E%check, domain%N%check )
        call set_checkbound( domain%C, domain%C%check )
        call set_checkbound( domain%E, domain%E%check )

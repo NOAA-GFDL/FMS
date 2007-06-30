@@ -55,7 +55,7 @@ module horiz_interp_mod
 !-----------------------------------------------------------------------
 
 use fms_mod,                    only: write_version_number, fms_error_handler
-use mpp_mod,                    only: mpp_error, FATAL, stdout
+use mpp_mod,                    only: mpp_error, FATAL, stdout, mpp_min
 use constants_mod,              only: pi
 use horiz_interp_type_mod,      only: horiz_interp_type, assignment(=)
 use horiz_interp_type_mod,      only: CONSERVE, BILINEAR, SPHERICA, BICUBIC
@@ -217,8 +217,8 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
 ! </INTERFACE>
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: horiz_interp.F90,v 14.0 2007/03/15 22:39:47 fms Exp $'
- character(len=128) :: tagname = '$Name: nalanda_2007_04 $'
+ character(len=128) :: version = '$Id: horiz_interp.F90,v 14.0.4.3 2007/05/30 18:53:27 z1l Exp $'
+ character(len=128) :: tagname = '$Name: nalanda_2007_06 $'
  logical            :: module_is_initialized = .FALSE.
 !-----------------------------------------------------------------------
 
@@ -423,8 +423,20 @@ contains
    select case (trim(method))
    case ("conservative")
       Interp%interp_method = CONSERVE
-      call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
-           verbose=verbose, mask_in=mask_in, mask_out=mask_out )
+      !--- check to see if the source grid is regular lat-lon grid or not.
+      if(is_lat_lon(lon_out, lat_out) ) then
+         if(present(mask_in)) then
+            if ( ANY(mask_in < -.0001) .or. ANY(mask_in > 1.0001)  ) call mpp_error(FATAL, &
+                  'horiz_interp_conserve_new_1d_src(horiz_interp_conserve_mod): input mask not between 0,1')
+            allocate(Interp%mask_in(size(mask_in,1), size(mask_in,2)) )
+            Interp%mask_in = mask_in
+         end if
+         call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out(:,1), lat_out(1,:), &
+              verbose=verbose )
+      else
+         call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
+              verbose=verbose, mask_in=mask_in, mask_out=mask_out )
+      end if
    case ("bilinear")
       Interp%interp_method = BILINEAR
       center = .false.
@@ -502,7 +514,7 @@ contains
  logical, intent(in),              optional :: src_modulo
  real, intent(in), dimension(:,:), optional :: mask_in
  real, intent(out),dimension(:,:), optional :: mask_out
-
+ logical           :: src_is_latlon, dst_is_latlon
  character(len=40) :: method
 !-----------------------------------------------------------------------
    call horiz_interp_init
@@ -513,8 +525,28 @@ contains
    select case (trim(method))
    case ("conservative")
       Interp%interp_method = CONSERVE
-      call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
-                                       verbose=verbose, mask_in=mask_in, mask_out=mask_out )
+      src_is_latlon = is_lat_lon(lon_in, lat_in)
+      dst_is_latlon = is_lat_lon(lon_out, lat_out)
+      if(src_is_latlon .AND. dst_is_latlon) then
+         if(present(mask_in)) then
+            if ( ANY(mask_in < -.0001) .or. ANY(mask_in > 1.0001)  ) call mpp_error(FATAL, &
+              'horiz_interp_conserve_new_2d(horiz_interp_conserve_mod): input mask not between 0,1')
+            allocate(Interp%mask_in(size(mask_in,1), size(mask_in,2)) )
+            Interp%mask_in = mask_in
+         end if
+         call horiz_interp_conserve_new ( Interp, lon_in(:,1), lat_in(1,:), lon_out(:,1), lat_out(1,:), &
+              verbose=verbose )
+      else if(src_is_latlon) then
+         call horiz_interp_conserve_new ( Interp, lon_in(:,1), lat_in(1,:), lon_out, lat_out, &
+              verbose=verbose, mask_in=mask_in, mask_out=mask_out )
+      else if(dst_is_latlon) then
+         call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out(:,1), lat_out(1,:), &
+              verbose=verbose, mask_in=mask_in, mask_out=mask_out )
+      else 
+         call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
+              verbose=verbose, mask_in=mask_in, mask_out=mask_out )
+      end if
+
    case ("spherical") 
       Interp%interp_method = SPHERICA
       call horiz_interp_spherical_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
@@ -568,8 +600,19 @@ contains
    select case (trim(method))
    case ("conservative")
       Interp%interp_method = CONSERVE
-      call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
-                                       verbose=verbose, mask_in=mask_in, mask_out=mask_out )
+      if(is_lat_lon(lon_in, lat_in)) then
+         if(present(mask_in)) then
+            if ( ANY(mask_in < -.0001) .or. ANY(mask_in > 1.0001)  ) call mpp_error(FATAL, &
+              'horiz_interp_conserve_new_1d_dst(horiz_interp_conserve_mod): input mask not between 0,1')
+            allocate(Interp%mask_in(size(mask_in,1), size(mask_in,2)) )
+            Interp%mask_in = mask_in
+         end if
+         call horiz_interp_conserve_new ( Interp, lon_in(:,1), lat_in(1,:), lon_out, lat_out, &
+              verbose=verbose)
+      else
+         call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
+              verbose=verbose, mask_in=mask_in, mask_out=mask_out )
+      end if
    case ("bilinear")
       Interp%interp_method = BILINEAR
       call horiz_interp_bilinear_new ( Interp, lon_in, lat_in, lon_dst, lat_dst, &
@@ -1017,6 +1060,47 @@ contains
  subroutine horiz_interp_end
  return
  end subroutine horiz_interp_end
+
+ !####################################################################
+ function is_lat_lon(lon, lat)
+    real, dimension(:,:), intent(in) :: lon, lat
+    logical                          :: is_lat_lon
+    integer                          :: i, j, nlon, nlat, num
+
+    is_lat_lon = .true.
+    nlon = size(lon,1)
+    nlat = size(lon,2)
+    LOOP_LAT: do j = 1, nlat
+       do i = 2, nlon
+          if(lat(i,j) .NE. lat(1,j)) then
+             is_lat_lon = .false.
+             exit LOOP_LAT
+          end if
+       end do
+    end do LOOP_LAT
+
+    if(is_lat_lon) then
+       LOOP_LON: do i = 1, nlon
+          do j = 2, nlat
+             if(lon(i,j) .NE. lon(i,1)) then
+                is_lat_lon = .false.
+                exit LOOP_LON
+             end if
+          end do
+       end do LOOP_LON
+    end if
+
+    num = 0
+    if(is_lat_lon) num = 1
+    call mpp_min(num)
+    if(num == 1) then
+       is_lat_lon = .true.
+    else
+       is_lat_lon = .false.
+    end if
+
+    return
+ end function is_lat_lon
 
 !#####################################################################
 

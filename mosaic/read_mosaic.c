@@ -21,6 +21,32 @@ void handle_netcdf_error(const char *msg, int status )
 
 }; /* handle_netcdf_error */
 
+/***************************************************************************
+  void get_file_dir(const char *file, char *dir)
+  get the directory where file is located. The dir will be the complate path
+  before the last "/". If no "/" exist in file, the path will be current ".".
+***************************************************************************/
+void get_file_dir(const char *file, char *dir)
+{
+  int len;
+  char *strptr = NULL;
+
+  /* get the diretory */
+ 
+  strptr = strrchr(file, '/');
+  if(strptr) {
+    len = strptr - file;
+    strncpy(dir, file, len);
+  }
+  else {
+    len = 1;
+    strcpy(dir, ".");
+  }
+  dir[len] = 0;
+
+}; /* get_file_dir */
+
+
 int get_dimlen(const char* file, const char *name)
 {
   int ncid, dimid, status, len;
@@ -29,7 +55,7 @@ int get_dimlen(const char* file, const char *name)
 #ifdef use_netCDF  
   status = nc_open(file, NC_NOWRITE, &ncid);
   if(status != NC_NOERR) {
-    sprintf(msg, "in opening file ", file);
+    sprintf(msg, "in opening file %s", file);
     handle_netcdf_error(msg, status);
   }
   
@@ -45,7 +71,10 @@ int get_dimlen(const char* file, const char *name)
     handle_netcdf_error(msg, status);
   }
   status = nc_close(ncid);
-  
+  if(status != NC_NOERR) {
+    sprintf(msg, "in closing file %s.", file);
+    handle_netcdf_error(msg, status);
+  }
   
   len = size;
   if(status != NC_NOERR) {
@@ -84,7 +113,12 @@ void get_string_data(const char *file, const char *name, char *data)
   if(status != NC_NOERR) {
     sprintf(msg, "in getting data of %s from file %s.", name, file);
     handle_netcdf_error(msg, status);
-  }    
+  }
+  status = nc_close(ncid);
+  if(status != NC_NOERR) {
+    sprintf(msg, "in closing file %s.", file);
+    handle_netcdf_error(msg, status);
+  }  
 #else
   error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
 #endif
@@ -120,7 +154,12 @@ void get_string_data_level(const char *file, const char *name, char *data, const
   if(status != NC_NOERR) {
     sprintf(msg, "in getting data of %s from file %s.", name, file);
     handle_netcdf_error(msg, status);
-  }    
+  }
+  status = nc_close(ncid);
+  if(status != NC_NOERR) {
+    sprintf(msg, "in closing file %s.", file);
+    handle_netcdf_error(msg, status);
+  }  
 #else
   error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
 #endif
@@ -152,7 +191,12 @@ void get_int_data(const char *file, const char *name, int *data)
   if(status != NC_NOERR) {
     sprintf(msg, "in getting data of %s from file %s", name, file);
     handle_netcdf_error(msg, status);
-  }    
+  }
+  status = nc_close(ncid);
+  if(status != NC_NOERR) {
+    sprintf(msg, "in closing file %s.", file);
+    handle_netcdf_error(msg, status);
+  }  
 #else
   error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
 #endif
@@ -184,7 +228,12 @@ void get_double_data(const char *file, const char *name, double *data)
   if(status != NC_NOERR) {
     sprintf(msg, "in getting data of %s from file %s.", name, file);
     handle_netcdf_error(msg, status);
-  }    
+  }
+  status = nc_close(ncid);
+  if(status != NC_NOERR) {
+    sprintf(msg, "in closing file %s.", file);
+    handle_netcdf_error(msg, status);
+  }  
 #else
   error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
 #endif
@@ -216,32 +265,53 @@ void get_var_text_att(const char *file, const char *name, const char *attname, c
     sprintf(msg, "in getting attribute %s of %s from file %s.", attname, name, file);
     handle_netcdf_error(msg, status);
   }
+  status = nc_close(ncid);
+  if(status != NC_NOERR) {
+    sprintf(msg, "in closing file %s.", file);
+    handle_netcdf_error(msg, status);
+  }  
 #else
   error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
 #endif
   
 }; /* get_var_text_att */
 
+/***********************************************************************
+  return number of overlapping cells.
+***********************************************************************/
+#ifndef __AIX
+int read_mosaic_xgrid_size_( const char *xgrid_file )
+{
+  return read_mosaic_xgrid_size(xgrid_file);
+}
+#endif
+
+int read_mosaic_xgrid_size( const char *xgrid_file )
+{
+  int ncells;
+  
+  ncells = get_dimlen(xgrid_file, "ncells");
+  return ncells;
+}
+
+
+
 /****************************************************************************/
 #ifndef __AIX
-int read_mosaic_xgrid_order1_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area )
+void read_mosaic_xgrid_order1_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area )
 {
-  int nxgrid;
-  nxgrid = read_mosaic_xgrid_order1(xgrid_file, i1, j1, i2, j2, area);
-  return nxgrid;
+  read_mosaic_xgrid_order1(xgrid_file, i1, j1, i2, j2, area);
   
 };
 #endif
 
-
-int read_mosaic_xgrid_order1(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area )
+void read_mosaic_xgrid_order1(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area )
 {
   int    ncells, n;
   int    *tile1_cell, *tile2_cell;
   double garea;
   
   ncells = get_dimlen(xgrid_file, "ncells");
-  if(ncells ==0) return ncells;
 
   tile1_cell       = (int *)malloc(ncells*2*sizeof(int));
   tile2_cell       = (int *)malloc(ncells*2*sizeof(int));
@@ -261,10 +331,51 @@ int read_mosaic_xgrid_order1(const char *xgrid_file, int *i1, int *j1, int *i2, 
   free(tile1_cell);
   free(tile2_cell);
   
-  return ncells;
-  
-}; /* get_mosaic_xgrid */
+}; /* read_mosaic_xgrid_order1 */
 
+/* NOTE: di, dj is for tile1, */
+/****************************************************************************/
+#ifndef __AIX
+void read_mosaic_xgrid_order2_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, double *di, double *dj )
+{
+  read_mosaic_xgrid_order2(xgrid_file, i1, j1, i2, j2, area, di, dj);
+  
+};
+#endif
+
+void read_mosaic_xgrid_order2(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, double *di, double *dj )
+{
+  int    ncells, n;
+  int    *tile1_cell, *tile2_cell;
+  double *tile1_distance;
+  double garea;
+  
+  ncells = get_dimlen(xgrid_file, "ncells");
+
+  tile1_cell       = (int    *)malloc(ncells*2*sizeof(int   ));
+  tile2_cell       = (int    *)malloc(ncells*2*sizeof(int   ));
+  tile1_distance   = (double *)malloc(ncells*2*sizeof(double));
+  get_int_data(xgrid_file, "tile1_cell", tile1_cell);
+  get_int_data(xgrid_file, "tile2_cell", tile2_cell);
+  get_double_data(xgrid_file, "xgrid_area", area);
+  get_double_data(xgrid_file, "tile1_distance", tile1_distance);
+  garea = 4*M_PI*RADIUS*RADIUS;
+  
+  for(n=0; n<ncells; n++) {
+    i1[n] = tile1_cell[n*2] - 1;
+    j1[n] = tile1_cell[n*2+1] - 1;
+    i2[n] = tile2_cell[n*2] - 1;
+    j2[n] = tile2_cell[n*2+1] - 1;
+    di[n] = tile1_distance[n*2];
+    dj[n] = tile1_distance[n*2+1];
+    area[n] /= garea; /* rescale the exchange grid area to unit earth area */
+  }
+
+  free(tile1_cell);
+  free(tile2_cell);
+  free(tile1_distance);
+  
+}; /* read_mosaic_xgrid_order2 */
 
 /******************************************************************************
   int read_mosaic_ntiles(const char *mosaic_file)
@@ -312,25 +423,22 @@ int read_mosaic_ncontacts(const char *mosaic_file)
 /*****************************************************************************
   void read_mosaic_grid_sizes(const char *mosaic_file, int *nx, int *ny)
   read mosaic grid size of each tile, currently we are assuming the refinement is 2.
+  We assume the grid files are located at the same directory as mosaic_file.
 *****************************************************************************/
 #ifndef __AIX
-void read_mosaic_grid_sizes_(const char *mosaic_file, const char *tile_dir, int *nx, int *ny)
+void read_mosaic_grid_sizes_(const char *mosaic_file, int *nx, int *ny)
 {
-  read_mosaic_grid_sizes(mosaic_file, tile_dir, nx, ny);
+  read_mosaic_grid_sizes(mosaic_file, nx, ny);
 }
 #endif
-void read_mosaic_grid_sizes(const char *mosaic_file, const char *tile_dir, int *nx, int *ny)
+void read_mosaic_grid_sizes(const char *mosaic_file, int *nx, int *ny)
 {
   int ntiles, n;
   char gridfile[STRING], tilefile[2*STRING];
   char dir[STRING];
   const int x_refine = 2, y_refine = 2;
 
-  if( tile_dir )
-    strcpy(dir, tile_dir);
-  else
-    get_string_data(mosaic_file, "gridlocation", dir);
-  
+  get_file_dir(mosaic_file, dir);  
   ntiles = get_dimlen(mosaic_file, "ntiles");
   for(n = 0; n < ntiles; n++) {
     get_string_data_level(mosaic_file, "gridfiles", gridfile, &n);
@@ -363,7 +471,7 @@ void read_mosaic_contact(const char *mosaic_file, int *tile1, int *tile2, int *i
 {
   char contacts[STRING];
   char **gridtiles;
-  const unsigned int MAXVAR = 40;
+#define MAXVAR 40
   char pstring[MAXVAR][STRING];
   int ntiles, ncontacts, n, m, l, nstr, found;
   const int x_refine = 2, y_refine = 2;
@@ -529,11 +637,43 @@ void read_mosaic_contact(const char *mosaic_file, int *tile1, int *tile2, int *i
       error_handler("Error from read_mosaic_contact: only line contact is supported now, contact developer");
     }
 
-    
   }
 
-  
-
 }; /* read_mosaic_contact */
+
+
+/******************************************************************************
+  void read_mosaic_grid_data(const char *mosaic_file, const char *name, int nx, int ny,
+                             double *data, int level, int ioff, int joff)
+  read mosaic grid information onto model grid. We assume the refinement is 2 right now.
+  We may remove this restriction in the future. nx and ny are model grid size. level
+  is the tile number. ioff and joff to indicate grid location. ioff =0 and joff = 0
+  for C-cell. ioff=0 and joff=1 for E-cell, ioff=1 and joff=0 for N-cell,
+  ioff=1 and joff=1 for T-cell
+******************************************************************************/
+void read_mosaic_grid_data(const char *mosaic_file, const char *name, int nx, int ny,
+                           double *data, int level, int ioff, int joff)
+{
+  char   tilefile[STRING], gridfile[STRING], dir[STRING];
+  double *tmp;
+  int    ni, nj, nxp, nyp, i, j;
+
+  get_file_dir(mosaic_file, dir);
+  
+  get_string_data_level(mosaic_file, "gridfiles", gridfile, &level);
+  sprintf(tilefile, "%s/%s", dir, gridfile);
+  
+  ni = get_dimlen(tilefile, "nx");
+  nj = get_dimlen(tilefile, "ny");
+
+  if( ni != nx*2 || nj != ny*2) error_handler("supergrid size should be double of the model grid size");
+  tmp = (double *)malloc((ni+1)*(nj+1)*sizeof(double));
+  get_double_data( tilefile, name, tmp);
+  nxp = nx + 1 - ioff;
+  nyp = ny + 1 - joff;
+  for(j=0; j<nyp; j++) for(i=0; i<nxp; i++) data[j*nxp+i] = tmp[(2*j+joff)*(ni+1)+2*i+ioff];
+  free(tmp);
+   
+}; /* read_mosaic_grid_data */
 
 

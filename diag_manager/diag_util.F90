@@ -17,11 +17,13 @@ use fms_mod, only        : error_mesg, FATAL, WARNING, mpp_pe, mpp_root_pe, lowe
 use fms_io_mod, only     : get_tile_string, return_domain
 use mpp_domains_mod,only : domain1d, domain2d, mpp_get_compute_domain, null_domain1d,&
                            null_domain2d, operator(/=), operator(==), mpp_modify_domain, mpp_get_domain_components, &
-                           mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined
+                           mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, &
+                           mpp_get_tile_npes
 use time_manager_mod,only: time_type, operator(==), operator(>), NO_CALENDAR, increment_date, &
                            increment_time, get_calendar_type, get_date, get_time, leap_year, &
                            operator(-),  operator(<), operator(>=)
 use     mpp_io_mod, only : mpp_close
+use     mpp_mod,    only : mpp_npes
 implicit none
 private
 
@@ -30,8 +32,8 @@ public get_subfield_size, log_diag_field_info, update_bounds, check_out_of_bound
        find_input_field, init_input_field, init_output_field, diag_data_out, write_static, &
        check_duplicate_output_fields, get_date_dif
 
-character(len=128),private  :: version = '$Id: diag_util.F90,v 14.0 2007/03/15 22:38:32 fms Exp $'
-character(len=128),private  :: tagname = '$Name: nalanda_2007_04 $'
+character(len=128),private  :: version = '$Id: diag_util.F90,v 14.0.2.1 2007/05/23 15:41:24 z1l Exp $'
+character(len=128),private  :: tagname = '$Name: nalanda_2007_06 $'
 
 contains
 
@@ -864,7 +866,7 @@ subroutine opening_file(file, time)
   integer                       :: dir, edges
   real, dimension(2)            :: data
   character(len=256)            :: fname
-  integer                       :: ntileMe
+  integer                       :: ntileMe, nfiles_in_set
   integer, allocatable          :: tile_id(:)
   type(domain2d)                :: domain2d
 
@@ -910,11 +912,16 @@ subroutine opening_file(file, time)
 
 ! Loop through all fields with this file to output axes
 ! JWD: This is a klooge; need something more robust
+  nfiles_in_set = mpp_npes()
   if(mpp_mosaic_defined())then
-    call return_domain(domain2d)
+    field_num = files(file)%fields(1)
+    num_axes = output_fields(field_num)%num_axes
+    domain2d = get_domain2d ( output_fields(field_num)%axes(1:num_axes) )
+    if(domain2d == NULL_DOMAIN2D) call return_domain(domain2d)
     if(domain2d == NULL_DOMAIN2D)then
       call error_mesg ('diag_util opening_file','Domain not defined through set_domain interface; cannot retrieve tile info', FATAL)
     endif
+    nfiles_in_set = mpp_get_tile_npes(domain2d)
     if(mpp_get_ntile_count(domain2d) > 1)then
         ntileMe = mpp_get_current_ntile(domain2d)
         allocate(tile_id(ntileMe))
@@ -926,7 +933,7 @@ subroutine opening_file(file, time)
   endif
 
   call diag_output_init(filename, files(file)%format, global_descriptor, &
-       files(file)%long_name, time_units, files(file)%file_unit) 
+       files(file)%long_name, time_units, files(file)%file_unit, nfiles_in_set) 
   files(file)%bytes_written = 0 
 ! Does this file contain time_average fields?
   time_ops = .false.

@@ -27,7 +27,8 @@ module topography_mod
 ! </DESCRIPTION>
 
 use gaussian_topog_mod, only: gaussian_topog_init, get_gaussian_topog
-use   horiz_interp_mod, only: horiz_interp
+use   horiz_interp_mod, only: horiz_interp_type, horiz_interp_new, &
+                              horiz_interp, horiz_interp_del
 
 use            fms_mod, only: file_exist, check_nml_error,               &
                               open_namelist_file, close_file, stdlog,    &
@@ -35,6 +36,7 @@ use            fms_mod, only: file_exist, check_nml_error,               &
                               open_ieee32_file, error_mesg, FATAL, NOTE, &
                               mpp_error
 use         fms_io_mod, only: read_data
+use      constants_mod, only: PI
 implicit none
 private
 
@@ -43,6 +45,25 @@ public :: topography_init,                 &
           get_ocean_frac, get_ocean_mask,  &
           get_water_frac, get_water_mask,  &
           gaussian_topog_init, get_gaussian_topog
+
+interface get_topog_mean
+  module procedure get_topog_mean_1d, get_topog_mean_2d
+end interface
+interface get_topog_stdev
+  module procedure get_topog_stdev_1d, get_topog_stdev_2d
+end interface
+interface get_ocean_frac
+  module procedure get_ocean_frac_1d, get_ocean_frac_2d
+end interface
+interface get_ocean_mask
+  module procedure get_ocean_mask_1d, get_ocean_mask_2d
+end interface
+interface get_water_frac
+  module procedure get_water_frac_1d, get_water_frac_2d
+end interface
+interface get_water_mask
+  module procedure get_water_mask_1d, get_water_mask_2d
+end interface
 
 !-----------------------------------------------------------------------
 ! <NAMELIST NAME="topography_nml">
@@ -92,8 +113,8 @@ public :: topography_init,                 &
 
 !-----------------------------------------------------------------------
 
- character(len=128) :: version = '$Id: topography.F90,v 13.0 2006/03/28 21:43:31 fms Exp $'
- character(len=128) :: tagname = '$Name: nalanda_2007_04 $'
+ character(len=128) :: version = '$Id: topography.F90,v 13.0.8.2 2007/05/25 16:32:21 vb Exp $'
+ character(len=128) :: tagname = '$Name: nalanda_2007_06 $'
 
  logical :: module_is_initialized = .FALSE.
 
@@ -150,31 +171,58 @@ public :: topography_init,                 &
 !     Check the input grid size and output field size.
 !   </ERROR>
 
- function get_topog_mean (blon, blat, zmean)
+ function get_topog_mean_1d (blon, blat, zmean)
 
    real, intent(in),  dimension(:)   :: blon, blat
    real, intent(out), dimension(:,:) :: zmean
-   logical :: get_topog_mean
+   logical :: get_topog_mean_1d
 
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
    if ( any(shape(zmean(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
-        call error_mesg('get_topog_mean','shape(zmean) is not&
+        call error_mesg('get_topog_mean_1d','shape(zmean) is not&
             & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
    if ( open_topog_file(topog_file) ) then
-       call interp_topog ( blon, blat, zmean )
-       get_topog_mean = .true.
+       call interp_topog_1d ( blon, blat, zmean )
+       get_topog_mean_1d = .true.
    else
-       get_topog_mean = .false.
+       get_topog_mean_1d = .false.
    endif
 
 !-----------------------------------------------------------------------
 
- end function get_topog_mean
-! </FUNCTION>
+ end function get_topog_mean_1d
 
+!############################################################
+
+ function get_topog_mean_2d (blon, blat, zmean)
+
+   real, intent(in),  dimension(:,:) :: blon, blat
+   real, intent(out), dimension(:,:) :: zmean
+   logical :: get_topog_mean_2d
+
+!-----------------------------------------------------------------------
+   if (.not. module_is_initialized) call topography_init()
+
+   if ( any(shape(zmean(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
+        any(shape(zmean(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
+        call error_mesg('get_topog_mean_2d','shape(zmean) is not&
+            & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
+
+   if ( open_topog_file(topog_file) ) then
+       call interp_topog_2d ( blon, blat, zmean )
+       get_topog_mean_2d = .true.
+   else
+       get_topog_mean_2d = .false.
+   endif
+
+!-----------------------------------------------------------------------
+
+ end function get_topog_mean_2d
+
+! </FUNCTION>
 !#######################################################################
 
 ! <FUNCTION NAME="get_topog_stdev">
@@ -208,11 +256,11 @@ public :: topography_init,                 &
 !     input topography data set was not readable.
 !   </OUT>
 
- function get_topog_stdev (blon, blat, stdev)
+ function get_topog_stdev_1d (blon, blat, stdev)
 
    real, intent(in),  dimension(:)   :: blon, blat
    real, intent(out), dimension(:,:) :: stdev
-   logical :: get_topog_stdev
+   logical :: get_topog_stdev_1d
 
    real :: zsurf (size(stdev,1),size(stdev,2))
 !-----------------------------------------------------------------------
@@ -223,17 +271,45 @@ public :: topography_init,                 &
             & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
    if ( open_topog_file(topog_file) ) then
-       call interp_topog ( blon, blat, stdev, flag=COMPUTE_STDEV )
-       get_topog_stdev = .true.
+       call interp_topog_1d ( blon, blat, stdev, flag=COMPUTE_STDEV )
+       get_topog_stdev_1d = .true.
    else
-       get_topog_stdev = .false.
+       get_topog_stdev_1d = .false.
    endif
 
 !-----------------------------------------------------------------------
 
- end function get_topog_stdev
-! </FUNCTION>
+ end function get_topog_stdev_1d
 
+!#######################################################################
+
+ function get_topog_stdev_2d (blon, blat, stdev)
+
+   real, intent(in),  dimension(:,:) :: blon, blat
+   real, intent(out), dimension(:,:) :: stdev
+   logical :: get_topog_stdev_2d
+
+   real :: zsurf (size(stdev,1),size(stdev,2))
+!-----------------------------------------------------------------------
+   if (.not. module_is_initialized) call topography_init()
+
+   if ( any(shape(stdev(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
+        any(shape(stdev(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
+        call error_mesg('get_topog_stdev_2d','shape(stdev) is not&
+            & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
+
+   if ( open_topog_file(topog_file) ) then
+       call interp_topog_2d ( blon, blat, stdev, flag=COMPUTE_STDEV )
+       get_topog_stdev_2d = .true.
+   else
+       get_topog_stdev_2d = .false.
+   endif
+
+!-----------------------------------------------------------------------
+
+ end function get_topog_stdev_2d
+
+! </FUNCTION>
 !#######################################################################
 
 ! <FUNCTION NAME="get_ocean_frac">
@@ -264,11 +340,11 @@ public :: topography_init,                 &
 !     if the Navy 1/6 degree percent water data set was not readable.
 !   </OUT>
 
- function get_ocean_frac (blon, blat, ocean_frac)
+ function get_ocean_frac_1d (blon, blat, ocean_frac)
 
  real, intent(in),  dimension(:)   :: blon, blat
  real, intent(out), dimension(:,:) :: ocean_frac
- logical :: get_ocean_frac
+ logical :: get_ocean_frac_1d
 
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
@@ -278,17 +354,44 @@ public :: topography_init,                 &
                  & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
    if ( open_topog_file(water_file) ) then
-       call interp_water ( blon, blat, ocean_frac, do_ocean=.true. )
-       get_ocean_frac = .true.
+       call interp_water_1d ( blon, blat, ocean_frac, do_ocean=.true. )
+       get_ocean_frac_1d = .true.
    else
-       get_ocean_frac = .false.
+       get_ocean_frac_1d = .false.
    endif
 
 !-----------------------------------------------------------------------
 
- end function get_ocean_frac
-! </FUNCTION>
+ end function get_ocean_frac_1d
 
+!#######################################################################
+
+ function get_ocean_frac_2d (blon, blat, ocean_frac)
+
+ real, intent(in),  dimension(:,:) :: blon, blat
+ real, intent(out), dimension(:,:) :: ocean_frac
+ logical :: get_ocean_frac_2d
+
+!-----------------------------------------------------------------------
+   if (.not. module_is_initialized) call topography_init()
+
+   if ( any(shape(ocean_frac(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
+        any(shape(ocean_frac(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
+        call error_mesg('get_ocean_frac_2d','shape(ocean_frac) is not&
+            & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
+
+   if ( open_topog_file(water_file) ) then
+       call interp_water_2d ( blon, blat, ocean_frac, do_ocean=.true. )
+       get_ocean_frac_2d = .true.
+   else
+       get_ocean_frac_2d = .false.
+   endif
+
+!-----------------------------------------------------------------------
+
+ end function get_ocean_frac_2d
+
+! </FUNCTION>
 !#######################################################################
 ! <FUNCTION NAME="get_ocean_mask">
 
@@ -318,11 +421,11 @@ public :: topography_init,                 &
 !     if the Navy 1/6 degree percent water data set was not readable.
 !   </OUT>
 
- function get_ocean_mask (blon, blat, ocean_mask)
+ function get_ocean_mask_1d (blon, blat, ocean_mask)
 
  real   , intent(in),  dimension(:)   :: blon, blat
  logical, intent(out), dimension(:,:) :: ocean_mask
- logical :: get_ocean_mask
+ logical :: get_ocean_mask_1d
 
  real, dimension(size(ocean_mask,1),size(ocean_mask,2)) :: ocean_frac
 !-----------------------------------------------------------------------
@@ -334,16 +437,43 @@ public :: topography_init,                 &
    elsewhere
      ocean_mask = .false.
    end where
-   get_ocean_mask = .true.
+   get_ocean_mask_1d = .true.
  else
-   get_ocean_mask = .false.
+   get_ocean_mask_1d = .false.
  endif
 
 !-----------------------------------------------------------------------
 
- end function get_ocean_mask
-! </FUNCTION>
+ end function get_ocean_mask_1d
 
+!#######################################################################
+
+ function get_ocean_mask_2d (blon, blat, ocean_mask)
+
+ real   , intent(in),  dimension(:,:) :: blon, blat
+ logical, intent(out), dimension(:,:) :: ocean_mask
+ logical :: get_ocean_mask_2d
+
+ real, dimension(size(ocean_mask,1),size(ocean_mask,2)) :: ocean_frac
+!-----------------------------------------------------------------------
+   if (.not. module_is_initialized) call topography_init()
+
+ if ( get_ocean_frac(blon, blat, ocean_frac) ) then
+   where (ocean_frac > 0.50)
+     ocean_mask = .true.
+   elsewhere
+     ocean_mask = .false.
+   end where
+   get_ocean_mask_2d = .true.
+ else
+   get_ocean_mask_2d = .false.
+ endif
+
+!-----------------------------------------------------------------------
+
+ end function get_ocean_mask_2d
+
+! </FUNCTION>
 !#######################################################################
 ! <FUNCTION NAME="get_water_frac">
 
@@ -376,31 +506,58 @@ public :: topography_init,                 &
 !      Check the input grid size and output field size.
 !   </ERROR>
 
- function get_water_frac (blon, blat, water_frac)
+ function get_water_frac_1d (blon, blat, water_frac)
 
  real, intent(in),  dimension(:)   :: blon, blat
  real, intent(out), dimension(:,:) :: water_frac
- logical :: get_water_frac
+ logical :: get_water_frac_1d
 
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
    if ( any(shape(water_frac(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
-        call error_mesg('get_water_frac','shape(water_frac) is not&
+        call error_mesg('get_water_frac_1d','shape(water_frac) is not&
                  & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
    if ( open_topog_file(water_file) ) then
-       call interp_water ( blon, blat, water_frac )
-       get_water_frac = .true.
+       call interp_water_1d ( blon, blat, water_frac )
+       get_water_frac_1d = .true.
    else
-       get_water_frac = .false.
+       get_water_frac_1d = .false.
    endif
 
 !-----------------------------------------------------------------------
 
- end function get_water_frac
-! </FUNCTION>
+ end function get_water_frac_1d
 
+!#######################################################################
+
+ function get_water_frac_2d (blon, blat, water_frac)
+
+ real, intent(in),  dimension(:,:) :: blon, blat
+ real, intent(out), dimension(:,:) :: water_frac
+ logical :: get_water_frac_2d
+
+!-----------------------------------------------------------------------
+   if (.not. module_is_initialized) call topography_init()
+
+   if ( any(shape(water_frac(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
+        any(shape(water_frac(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
+        call error_mesg('get_water_frac_2d','shape(water_frac) is not&
+            & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
+
+   if ( open_topog_file(water_file) ) then
+       call interp_water_2d ( blon, blat, water_frac )
+       get_water_frac_2d = .true.
+   else
+       get_water_frac_2d = .false.
+   endif
+
+!-----------------------------------------------------------------------
+
+ end function get_water_frac_2d
+
+! </FUNCTION>
 !#######################################################################
 ! <FUNCTION NAME="get_water_mask">
 
@@ -430,11 +587,11 @@ public :: topography_init,                 &
 !     if the Navy 1/6 degree percent water data set was not readable.
 !   </OUT>
 
- function get_water_mask (blon, blat, water_mask)
+ function get_water_mask_1d (blon, blat, water_mask)
 
  real   , intent(in),  dimension(:)   :: blon, blat
  logical, intent(out), dimension(:,:) :: water_mask
- logical :: get_water_mask
+ logical :: get_water_mask_1d
 
  real, dimension(size(water_mask,1),size(water_mask,2)) :: water_frac
 !-----------------------------------------------------------------------
@@ -446,14 +603,42 @@ public :: topography_init,                 &
    elsewhere
      water_mask = .false.
    end where
-   get_water_mask = .true.
+   get_water_mask_1d = .true.
  else
-   get_water_mask = .false.
+   get_water_mask_1d = .false.
  endif
 
 !-----------------------------------------------------------------------
 
- end function get_water_mask
+ end function get_water_mask_1d
+
+!#######################################################################
+
+ function get_water_mask_2d (blon, blat, water_mask)
+
+ real   , intent(in),  dimension(:,:) :: blon, blat
+ logical, intent(out), dimension(:,:) :: water_mask
+ logical :: get_water_mask_2d
+
+ real, dimension(size(water_mask,1),size(water_mask,2)) :: water_frac
+!-----------------------------------------------------------------------
+   if (.not. module_is_initialized) call topography_init()
+
+ if ( get_water_frac(blon, blat, water_frac) ) then
+   where (water_frac > 0.50)
+     water_mask = .true.
+   elsewhere
+     water_mask = .false.
+   end where
+   get_water_mask_2d = .true.
+ else
+   get_water_mask_2d = .false.
+ endif
+
+!-----------------------------------------------------------------------
+
+ end function get_water_mask_2d
+
 ! </FUNCTION>
 
 !#######################################################################
@@ -491,7 +676,7 @@ public :: topography_init,                 &
 
 !#######################################################################
 
- subroutine interp_topog ( blon, blat, zout, flag )
+ subroutine interp_topog_1d ( blon, blat, zout, flag )
  real   , intent(in)  :: blon(:), blat(:)
  real   , intent(out) :: zout(:,:)
  integer, intent(in), optional :: flag
@@ -501,19 +686,7 @@ public :: topography_init,                 &
  real :: zout2(size(zout,1),size(zout,2))
  integer :: namelen
 
- namelen = len(trim(topog_file))
-
-! note: ipts,jpts,unit are global
-
-  if ( file_exist(topog_file) .AND. topog_file(namelen-2:namelen)=='.nc') then
-     call read_data(topog_file, 'xdat', xdat, no_domain=.true.)
-     call read_data(topog_file, 'ydat', ydat, no_domain=.true.)
-     call read_data(topog_file, 'zdat', zdat, no_domain=.true.)
-  else
-    read (unit) xdat, ydat    ! read lon/lat edges in radians
-    read (unit) zdat          ! read land surface height in meters
-    call close_file (unit)
- endif
+    call input_data ( topog_file, xdat, ydat, zdat )
 
     call horiz_interp ( zdat, xdat, ydat, blon, blat, zout )
 
@@ -531,11 +704,98 @@ public :: topography_init,                 &
        endif
     endif
 
- end subroutine interp_topog
+ end subroutine interp_topog_1d
 
 !#######################################################################
 
- subroutine interp_water ( blon, blat, zout, do_ocean )
+ subroutine interp_topog_2d ( blon, blat, zout, flag )
+ real   , intent(in)  :: blon(:,:), blat(:,:)
+ real   , intent(out) :: zout(:,:)
+ integer, intent(in), optional :: flag
+
+ real :: xdat(ipts+1), ydat(jpts+1), ydel(jpts+1)
+ real :: zdat(ipts,jpts)
+ real :: zout2(size(zout,1),size(zout,2))
+ integer :: is, ie, js, je
+ type (horiz_interp_type) :: Interp
+
+    call input_data ( topog_file, xdat, ydat, zdat )
+    call find_indices ( minval(blat), maxval(blat), ydat, js, je )
+
+    call horiz_interp_new ( Interp, xdat, ydat(js:je+1), blon, blat )
+    call horiz_interp     ( Interp, zdat(:,js:je), zout )
+
+! compute standard deviation if necessary
+    if (present(flag)) then
+       if (flag == COMPUTE_STDEV) then
+           zdat = zdat*zdat
+           call horiz_interp ( Interp, zdat(:,js:je), zout2 )
+           zout = zout2 - zout*zout
+           where (zout > 0.0)
+             zout = sqrt ( zout )
+           elsewhere
+             zout = 0.0
+           endwhere
+       endif
+    endif
+
+    call horiz_interp_del ( Interp )
+
+ end subroutine interp_topog_2d
+
+!#######################################################################
+
+ subroutine find_indices ( ybeg, yend, ydat, js, je )
+ real,    intent(in)  :: ybeg, yend, ydat(:)
+ integer, intent(out) :: js, je
+ integer :: j
+
+   js = 1
+   do j = 1, size(ydat(:))-1
+      if (ybeg >= ydat(j) .and. ybeg <= ydat(j+1)) then
+         js = j
+         exit
+      endif
+   enddo
+
+   je = size(ydat(:))-1
+   do j = js, size(ydat(:))-1
+      if (yend >= ydat(j) .and. yend <= ydat(j+1)) then
+         je = j
+         exit
+      endif
+   enddo
+
+   !print '(a,i2,2(a,f10.5),2(a,i4))', "PE=",mpp_pe(),"  phs=",ybeg,"  phn=",yend,"  js=",js,"  je=",je
+
+ end subroutine find_indices
+
+!#######################################################################
+
+ subroutine input_data ( ifile, xdat, ydat, zdat )
+ character(len=*), intent(in) :: ifile
+ real, intent(out) :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)
+ integer :: nc
+
+   nc = len_trim(ifile)
+
+! note: ipts,jpts,unit are global
+
+  if ( file_exist(trim(ifile)) .AND. topog_file(nc-2:nc) == '.nc') then
+     call read_data(trim(ifile), 'xdat', xdat, no_domain=.true.)
+     call read_data(trim(ifile), 'ydat', ydat, no_domain=.true.)
+     call read_data(trim(ifile), 'zdat', zdat, no_domain=.true.)
+  else
+    read (unit) xdat, ydat    ! read lon/lat edges in radians
+    read (unit) zdat          ! read land surface height in meters
+    call close_file (unit)
+ endif
+
+ end subroutine input_data
+
+!#######################################################################
+
+ subroutine interp_water_1d ( blon, blat, zout, do_ocean )
  real   , intent(in)  :: blon(:), blat(:)
  real   , intent(out) :: zout(:,:)
  logical, intent(in), optional :: do_ocean
@@ -543,18 +803,8 @@ public :: topography_init,                 &
  real :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)
  integer :: namelen
 
- namelen = len(trim(water_file))
+    call input_data ( water_file, xdat, ydat, zdat )
 
-! note: ipts,jpts,unit are global
-   if( file_exist(trim(water_file)) .AND. water_file(namelen-2:namelen)=='.nc') then
-      call read_data(water_file, 'xdat', xdat, no_domain=.true.)
-      call read_data(water_file, 'ydat', ydat, no_domain=.true.)
-      call read_data(water_file, 'zdat', zdat, no_domain=.true.)
-   else
-    read (unit) xdat, ydat    ! read lon/lat edges in radians
-    read (unit) zdat          ! read fractional water
-    call close_file (unit)
- endif
 ! only use designated ocean points
     if (present(do_ocean)) then
         if (do_ocean) call determine_ocean_points (zdat)
@@ -563,7 +813,29 @@ public :: topography_init,                 &
 ! interpolate onto output grid
     call horiz_interp ( zdat, xdat, ydat, blon, blat, zout )
 
- end subroutine interp_water
+ end subroutine interp_water_1d
+
+!#######################################################################
+
+ subroutine interp_water_2d ( blon, blat, zout, do_ocean )
+ real   , intent(in)  :: blon(:,:), blat(:,:)
+ real   , intent(out) :: zout(:,:)
+ logical, intent(in), optional :: do_ocean
+
+ real :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)
+ integer :: namelen
+
+    call input_data ( water_file, xdat, ydat, zdat )
+
+! only use designated ocean points
+    if (present(do_ocean)) then
+        if (do_ocean) call determine_ocean_points (zdat)
+    endif
+
+! interpolate onto output grid
+    call horiz_interp ( zdat, xdat, ydat, blon, blat, zout )
+
+ end subroutine interp_water_2d
 
 !#######################################################################
 

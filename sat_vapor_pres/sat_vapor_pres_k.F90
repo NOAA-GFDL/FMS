@@ -28,8 +28,8 @@
  implicit none
  private
 
- character(len=128), parameter :: version = '$Id: sat_vapor_pres_k.F90,v 14.0 2007/03/15 22:44:37 fms Exp $'
- character(len=128), parameter :: tagname = '$Name: nalanda_2007_04 $'
+ character(len=128), parameter :: version = '$Id: sat_vapor_pres_k.F90,v 14.0.2.1 2007/05/02 01:37:24 pjp Exp $'
+ character(len=128), parameter :: tagname = '$Name: nalanda_2007_06 $'
 
  public :: sat_vapor_pres_init_k
  public :: lookup_es_k
@@ -234,11 +234,19 @@
  real, intent(in),  dimension(:,:)  :: temp
  real, intent(out), dimension(:,:)  :: desat
  integer, intent(out) :: nbad
- real, dimension(size(temp,1), size(temp,2), 1) :: temp_3d, desat_3d
+ real    :: tmp, del
+ integer :: ind, i, j
 
- temp_3d(:,:,1) = temp
- call lookup_des_k_3d(temp_3d, desat_3d, nbad)
- desat = desat_3d(:,:,1)
+   nbad = 0
+   do j = 1, size(temp,2)
+   do i = 1, size(temp,1)
+     tmp = temp(i,j)-tminl
+     ind = int(dtinvl*(tmp+tepsl))
+     del = tmp-dtres*real(ind)
+     desat(i,j) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     if (ind < 0 .or. ind >= table_siz) nbad = nbad+1
+   enddo
+   enddo
 
  end subroutine lookup_des_k_2d
 !#######################################################################
@@ -246,11 +254,19 @@
  real, intent(in),  dimension(:,:)  :: temp
  real, intent(out), dimension(:,:)  :: esat
  integer, intent(out) :: nbad
- real, dimension(size(temp,1), size(temp,2), 1) :: temp_3d, esat_3d
+ real    :: tmp, del
+ integer :: ind, i, j
 
- temp_3d(:,:,1) = temp
- call lookup_es_k_3d(temp_3d, esat_3d, nbad)
- esat = esat_3d(:,:,1)
+   nbad = 0
+   do j = 1, size(temp,2)
+   do i = 1, size(temp,1)
+     tmp = temp(i,j)-tminl
+     ind = int(dtinvl*(tmp+tepsl))
+     del = tmp-dtres*real(ind)
+     esat(i,j) = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+     if (ind < 0 .or. ind >= table_siz) nbad = nbad+1
+   enddo
+   enddo
 
  end subroutine lookup_es_k_2d
 !#######################################################################
@@ -258,11 +274,17 @@
  real, intent(in),  dimension(:)  :: temp
  real, intent(out), dimension(:)  :: desat
  integer, intent(out) :: nbad
- real, dimension(size(temp),1,1) :: temp_3d, desat_3d
+ real    :: tmp, del
+ integer :: ind, i
 
- temp_3d(:,1,1) = temp
- call lookup_des_k_3d(temp_3d, desat_3d, nbad)
- desat = desat_3d(:,1,1)
+   nbad = 0
+   do i = 1, size(temp,1)
+     tmp = temp(i)-tminl
+     ind = int(dtinvl*(tmp+tepsl))
+     del = tmp-dtres*real(ind)
+     desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     if (ind < 0 .or. ind >= table_siz) nbad = nbad+1
+   enddo
 
  end subroutine lookup_des_k_1d
 !#######################################################################
@@ -270,11 +292,17 @@
  real, intent(in),  dimension(:)  :: temp
  real, intent(out), dimension(:)  :: esat
  integer, intent(out) :: nbad
- real, dimension(size(temp),1,1) :: temp_3d, esat_3d
+ real    :: tmp, del
+ integer :: ind, i
 
- temp_3d(:,1,1) = temp
- call lookup_es_k_3d(temp_3d, esat_3d, nbad)
- esat = esat_3d(:,1,1)
+   nbad = 0
+   do i = 1, size(temp,1)
+     tmp = temp(i)-tminl
+     ind = int(dtinvl*(tmp+tepsl))
+     del = tmp-dtres*real(ind)
+     esat(i) = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+     if (ind < 0 .or. ind >= table_siz) nbad = nbad+1
+   enddo
 
  end subroutine lookup_es_k_1d
 !#######################################################################
@@ -282,11 +310,15 @@
  real, intent(in)     :: temp
  real, intent(out)    :: desat
  integer, intent(out) :: nbad
- real, dimension(1,1,1) :: temp_3d, desat_3d
+ real    :: tmp, del
+ integer :: ind
 
- temp_3d(1,1,1) = temp
- call lookup_des_k_3d(temp_3d, desat_3d, nbad)
- desat = desat_3d(1,1,1)
+   nbad = 0
+   tmp = temp-tminl
+   ind = int(dtinvl*(tmp+tepsl))
+   del = tmp-dtres*real(ind)
+   desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+   if (ind < 0 .or. ind >= table_siz) nbad = nbad+1
 
  end subroutine lookup_des_k_0d
 !#######################################################################
@@ -294,11 +326,15 @@
  real, intent(in)     :: temp
  real, intent(out)    :: esat
  integer, intent(out) :: nbad
- real, dimension(1,1,1) :: temp_3d, esat_3d
+ real    :: tmp, del
+ integer :: ind
 
- temp_3d(1,1,1) = temp
- call lookup_es_k_3d(temp_3d, esat_3d, nbad)
- esat = esat_3d(1,1,1)
+   nbad = 0
+   tmp = temp-tminl
+   ind = int(dtinvl*(tmp+tepsl))
+   del = tmp-dtres*real(ind)
+   esat = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+   if (ind < 0 .or. ind >= table_siz) nbad = nbad+1
 
  end subroutine lookup_es_k_0d
 !#######################################################################

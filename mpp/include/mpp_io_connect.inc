@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_connect.inc,v 14.0 2007/03/15 22:43:13 fms Exp $
+! $Id: mpp_io_connect.inc,v 14.0.2.1 2007/05/23 15:37:15 z1l Exp $
 
 ! <SUBROUTINE NAME="mpp_open">
 
@@ -162,17 +162,19 @@
 !                                                                            !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     subroutine mpp_open( unit, file, action, form, access, threading, &
-                                     fileset, iospec, nohdrs, recl, pelist, iostat, is_root_pe )
-      integer, intent(out) :: unit   
-      character(len=*), intent(in) :: file
-      integer, intent(in), optional :: action, form, access, threading, &
-           fileset, recl
+                         fileset, iospec, nohdrs, recl, pelist,       &
+                         iostat, is_root_pe, nfiles_in_set )
+      integer,         intent(out)           :: unit   
+      character(len=*), intent(in)           :: file
+      integer,          intent(in), optional :: action, form, access 
+      integer,          intent(in), optional :: threading, fileset, recl
       character(len=*), intent(in), optional :: iospec
-      logical, intent(in), optional :: nohdrs
-      integer, intent(in), optional :: pelist(:) !default ALL
-      integer, intent(out), optional :: iostat
-      logical, intent(in), optional :: is_root_pe      
-      character(len=16) :: act, acc, for, pos
+      logical,          intent(in), optional :: nohdrs
+      integer,          intent(in), optional :: pelist(:) !default ALL
+      integer,         intent(out), optional :: iostat
+      logical,          intent(in), optional :: is_root_pe      
+      integer,          intent(in), optional :: nfiles_in_set
+      character(len=16)  :: act, acc, for, pos
       character(len=128) :: mesg
       integer :: action_flag, form_flag, access_flag, threading_flag, fileset_flag, length
       logical :: exists, on_root_pe, dist_file
@@ -429,8 +431,15 @@
 !MPP_IO package version
 !          call mpp_write_meta( unit, 'MPP_IO_VERSION', cval=trim(version) )
 !filecount for multifileset
-          if( threading_flag.EQ.MPP_MULTI .AND. fileset_flag.EQ.MPP_MULTI ) &
-               call mpp_write_meta( unit, 'NumFilesInSet', ival=mpp_npes() )
+          if( threading_flag.EQ.MPP_MULTI .AND. fileset_flag.EQ.MPP_MULTI ) then
+             if(present(nfiles_in_set) ) then
+                if(nfiles_in_set < 1 .OR. nfiles_in_set > mpp_npes() ) call mpp_error( FATAL, &
+                     'MPP_OPEN: optional argument nfiles_in_set should be between 1 and mpp_npes')
+                call mpp_write_meta( unit, 'NumFilesInSet', ival=nfiles_in_set )
+             else
+                call mpp_write_meta( unit, 'NumFilesInSet', ival=mpp_npes() )
+             end if
+          end if
       end if   
                
       return

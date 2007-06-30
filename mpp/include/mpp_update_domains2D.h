@@ -3,7 +3,7 @@
                                        position, whalo, ehalo, shalo, nhalo, name, tile_count, buffer)
 !updates data domain of 2D field whose computational domains have been computed
       MPP_TYPE_,        intent(inout)        :: field(:,:)
-      type(domain2D),   intent(inout)        :: domain  ! Must be definable in mpp_update_init_comm
+      type(domain2D),   intent(inout)        :: domain  
       integer,          intent(in), optional :: flags
       logical,          intent(in), optional :: complete, free
       integer,          intent(in), optional :: list_size
@@ -32,7 +32,7 @@
                                        position, whalo, ehalo, shalo, nhalo, name, tile_count, buffer )
 !updates data domain of 3D field whose computational domains have been computed
       MPP_TYPE_,        intent(inout)        :: field(:,:,:)
-      type(domain2D),   intent(inout)        :: domain  ! Must be definable in mpp_update_init_comm
+      type(domain2D),   intent(inout)        :: domain  
       integer,          intent(in), optional :: flags
       logical,          intent(in), optional :: complete, free
       integer,          intent(in), optional :: list_size
@@ -189,7 +189,7 @@
                                        position, whalo, ehalo, shalo, nhalo, name, tile_count, buffer )
 !updates data domain of 4D field whose computational domains have been computed
       MPP_TYPE_,        intent(inout)        :: field(:,:,:,:)
-      type(domain2D),   intent(inout)        :: domain  ! Must be definable in mpp_update_init_comm
+      type(domain2D),   intent(inout)        :: domain  
       integer,          intent(in), optional :: flags
       logical,          intent(in), optional :: complete, free
       integer,          intent(in), optional :: list_size
@@ -218,7 +218,7 @@
                                        position, whalo, ehalo, shalo, nhalo, name, tile_count, buffer )
 !updates data domain of 5D field whose computational domains have been computed
       MPP_TYPE_,        intent(inout)        :: field(:,:,:,:,:)
-      type(domain2D),   intent(inout)        :: domain  ! Must be definable in mpp_update_init_comm
+      type(domain2D),   intent(inout)        :: domain  
       integer,          intent(in), optional :: flags
       logical,          intent(in), optional :: complete, free
       integer,          intent(in), optional :: list_size
@@ -299,20 +299,20 @@
         do_redist=.true.; if(PRESENT(complete))do_redist=complete
         free_comm=.false.; if(PRESENT(free))free_comm=free
         if(free_comm)then
-          l_addrs_in(1) = LOC(field_in); l_addrs_out(1) = LOC(field_out)
-          if(l_addrs_out(1)>0)then
-          ke = size(field_out,3)
-          else
-            ke = size(field_in,3)
-      end if
-          lsize=1; if(PRESENT(list_size))lsize=list_size
-          call mpp_redistribute_free_comm(domain_in,l_addrs_in(1),domain_out,l_addrs_out(1),ke,lsize)
+           l_addrs_in(1) = LOC(field_in); l_addrs_out(1) = LOC(field_out)
+           if(l_addrs_out(1)>0)then
+              ke = size(field_out,3)
+           else
+              ke = size(field_in,3)
+           end if
+           lsize=1; if(PRESENT(list_size))lsize=list_size
+           call mpp_redistribute_free_comm(domain_in,l_addrs_in(1),domain_out,l_addrs_out(1),ke,lsize)
         else
-          l_size = l_size+1
-          if(l_size > MAX_DOMAIN_FIELDS)then
-            write( text,'(i2)' ) MAX_DOMAIN_FIELDS
-            call mpp_error(FATAL,'MPP_REDISTRIBUTE_3D: MAX_DOMAIN_FIELDS='//text//' exceeded for group redistribute.' )
-      end if
+           l_size = l_size+1
+           if(l_size > MAX_DOMAIN_FIELDS)then
+              write( text,'(i2)' ) MAX_DOMAIN_FIELDS
+              call mpp_error(FATAL,'MPP_REDISTRIBUTE_3D: MAX_DOMAIN_FIELDS='//text//' exceeded for group redistribute.' )
+           end if
           l_addrs_in(l_size) = LOC(field_in); l_addrs_out(l_size) = LOC(field_out)
           if(l_size == 1)then
             if(l_addrs_in(l_size) > 0)then

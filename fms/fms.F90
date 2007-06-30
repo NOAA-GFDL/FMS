@@ -140,7 +140,8 @@ use       mpp_io_mod, only:  mpp_io_init, mpp_open, mpp_close,         &
 use fms_io_mod, only : read_data, write_data, fms_io_init, fms_io_exit, field_size, &
                        open_namelist_file, open_restart_file, open_ieee32_file, close_file, &
                        set_domain, get_domain_decomp, nullify_domain, &
-                       open_file, open_direct_file, string, get_mosaic_tile_grid, get_mosaic_tile_file
+                       open_file, open_direct_file, string, get_mosaic_tile_grid, &
+                       get_mosaic_tile_file, get_global_att_value
 
 use memutils_mod, only: print_memuse_stats, memutils_init
 use constants_mod, only: constants_version=>version, constants_tagname=>tagname !pjp: PI not computed
@@ -160,6 +161,7 @@ public :: open_namelist_file, open_restart_file, &
 ! routines for reading/writing distributed data
 public :: set_domain, read_data, write_data
 public :: get_domain_decomp, field_size, nullify_domain
+public :: get_global_att_value
 
 ! routines for get mosaic information
 public :: get_mosaic_tile_grid, get_mosaic_tile_file
@@ -269,8 +271,8 @@ integer, public :: clock_flag_default
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: fms.F90,v 14.0 2007/03/15 22:39:30 fms Exp $'
-  character(len=128) :: tagname = '$Name: nalanda_2007_04 $'
+  character(len=128) :: version = '$Id: fms.F90,v 14.0.4.1 2007/06/08 14:06:19 z1l Exp $'
+  character(len=128) :: tagname = '$Name: nalanda_2007_06 $'
 
   logical :: module_is_initialized = .FALSE.
 

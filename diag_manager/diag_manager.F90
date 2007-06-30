@@ -117,7 +117,7 @@ public  diag_manager_init, send_data, send_tile_averaged_data, diag_manager_end,
 
 ! version number of this module
 character(len=128)  :: version = '$Id: diag_manager.F90,v 14.0 2007/03/15 22:38:19 fms Exp $'
-character(len=128)  :: tagname = '$Name: nalanda_2007_04 $'  
+character(len=128)  :: tagname = '$Name: nalanda_2007_06 $'  
 
 
 ! <INTERFACE NAME="send_data">

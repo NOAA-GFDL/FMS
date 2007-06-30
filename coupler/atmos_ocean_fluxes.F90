@@ -77,6 +77,7 @@ module  atmos_ocean_fluxes_mod  !{
 !
 
 use mpp_mod,           only: stdout, stdlog, mpp_error, FATAL, mpp_sum, mpp_npes
+use mpp_mod,           only: mpp_pe, mpp_root_pe, mpp_broadcast
 
 use coupler_types_mod, only: coupler_1d_bc_type
 use coupler_types_mod, only: ind_alpha, ind_csurf
@@ -188,8 +189,8 @@ character(len=48), parameter    :: mod_name = 'atmos_ocean_fluxes_mod'
 !----------------------------------------------------------------------
 !
 
-character(len=128) :: version = '$Id: atmos_ocean_fluxes.F90,v 14.0 2007/03/15 22:37:56 fms Exp $'
-character(len=128) :: tagname = '$Name: nalanda_2007_04 $'
+character(len=128) :: version = '$Id: atmos_ocean_fluxes.F90,v 14.0.2.1 2007/05/24 17:34:32 jwd Exp $'
+character(len=128) :: tagname = '$Name: nalanda_2007_06 $'
 
 !
 !-----------------------------------------------------------------------
@@ -580,6 +581,7 @@ integer                                 :: num_parameters
 integer                                 :: num_flags
 integer                                 :: n
 integer                                 :: m
+integer                                 :: n_bcs
 character(len=128)                      :: caller_str
 character(len=fm_type_name_len)         :: typ
 character(len=fm_field_name_len)        :: name
@@ -628,6 +630,14 @@ call fm_util_set_caller(caller_str)
 !
 
 gas_fluxes%num_bcs = fm_util_get_length('/coupler_mod/fluxes/')
+
+n_bcs= 0
+if(mpp_pe() == mpp_root_pe())n_bcs = gas_fluxes%num_bcs
+call mpp_broadcast(n_bcs, mpp_root_pe())
+if (gas_fluxes%num_bcs /= n_bcs) then 
+  call mpp_error(FATAL,trim(error_header) // ' Count of Atm fluxes not equal count of Ocn fluxes')
+endif
+
 gas_fields_atm%num_bcs = gas_fluxes%num_bcs
 gas_fields_ice%num_bcs = gas_fluxes%num_bcs
 if (gas_fluxes%num_bcs .lt. 0) then  !{

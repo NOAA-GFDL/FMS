@@ -95,9 +95,9 @@ type(axistype),save     :: Axis_types     (max_axis_num)
 logical                 :: module_is_initialized = .FALSE.
 
 character(len=128), private :: version= &
-  '$Id: diag_output.F90,v 14.0 2007/03/15 22:38:24 fms Exp $'
+  '$Id: diag_output.F90,v 14.0.2.1 2007/05/23 15:41:25 z1l Exp $'
 character(len=128), private :: tagname= &
-  '$Name: nalanda_2007_04 $'
+  '$Name: nalanda_2007_06 $'
 
 contains
 
@@ -105,12 +105,13 @@ contains
 
 subroutine diag_output_init ( file_name, format, file_title,  &
                             time_name, time_units,          &
-                            file_unit)
+                            file_unit, nfiles_in_set)
 
  character(len=*), intent(in)  :: file_name, file_title,  &
                                   time_name, time_units
  integer         , intent(in)  :: format
  integer         , intent(out) :: file_unit
+ integer         , intent(in)  :: nfiles_in_set
 !-----------------------------------------------------------------------
 !
 !        Registers the time axis and opens the output file
@@ -156,7 +157,7 @@ subroutine diag_output_init ( file_name, format, file_title,  &
 
 !---- open output file (return file_unit id) -----
       call mpp_open ( file_unit, file_name, action=MPP_OVERWR,        &
-           form=form, threading=threading, fileset=fileset )
+           form=form, threading=threading, fileset=fileset, nfiles_in_set = nfiles_in_set )
 
 !---- write global attributes ----
 

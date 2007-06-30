@@ -89,8 +89,8 @@ module horiz_interp_conserve_mod
 
   integer :: pe, root_pe
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_conserve.F90,v 14.0 2007/03/15 22:40:02 fms Exp $'
-  character(len=128) :: tagname = '$Name: nalanda_2007_04 $'
+  character(len=128) :: version = '$Id: horiz_interp_conserve.F90,v 14.0.4.1 2007/05/29 18:02:48 z1l Exp $'
+  character(len=128) :: tagname = '$Name: nalanda_2007_06 $'
   logical            :: module_is_initialized = .FALSE.
 
 contains
@@ -583,6 +583,8 @@ contains
     case (1)
        call horiz_interp_conserve_version1(Interp, data_in, data_out, verbose, mask_in, mask_out)
     case (2)
+       if(present(mask_in) .OR. present(mask_out) ) call mpp_error(FATAL,  &
+            'horiz_interp_conserve_mod: mask_in and mask_out should be passed in horiz_interp_new for version 2')
        call horiz_interp_conserve_version2(Interp, data_in, data_out, verbose)     
     end select
 
@@ -664,6 +666,9 @@ contains
              if (present(mask_in)) then
                 call data_sum ( data_in(is:ie,js:je), Interp%area_src(is:ie,js:je), &
                      fis, fie, fjs,fje, dwtsum, wtsum, arsum, mask_in(is:ie,js:je)  )
+             else if( ASSOCIATED(Interp%mask_in) ) then
+                call data_sum ( data_in(is:ie,js:je), Interp%area_src(is:ie,js:je), &
+                     fis, fie, fjs,fje, dwtsum, wtsum, arsum, Interp%mask_in(is:ie,js:je)  )
              else
                 call data_sum ( data_in(is:ie,js:je), Interp%area_src(is:ie,js:je), &
                      fis, fie, fjs,fje,  dwtsum, wtsum, arsum    )

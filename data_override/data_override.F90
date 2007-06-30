@@ -74,8 +74,8 @@ use time_manager_mod, only: time_type
 implicit none
 private
 
-character(len=128) :: version = '$Id: data_override.F90,v 14.0 2007/03/15 22:38:06 fms Exp $'
-character(len=128) :: tagname = '$Name: nalanda_2007_04 $'
+character(len=128) :: version = '$Id: data_override.F90,v 14.0.2.4.2.1 2007/06/08 14:06:13 z1l Exp $'
+character(len=128) :: tagname = '$Name: nalanda_2007_06 $'
 
 type data_type_lima
    character(len=3)   :: gridname
@@ -167,7 +167,6 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
 !
 ! </NOTE>
   character(len=128) :: grid_file = 'INPUT/grid_spec.nc'
-  character(len=128) :: mosaic_file = 'INPUT/mosaic.nc'
   integer :: is,ie,js,je
   integer :: i, iunit, ntable, ntable_lima, ntable_new, unit,io_status 
   character(len=256)   :: record
@@ -217,13 +216,12 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
     call fms_io_init
     call nullify_domain
 !    get global lat and lon of all three model grids
-    if(file_exist( grid_file) ) then
+    if(field_exist(grid_file, "x_T" ) .OR. field_exist(grid_file, "geolon_t" ) ) then
        call get_global_grid(grid_file)
-    else if(file_exist(mosaic_file) ) then
-       call get_global_mosaic_grid(mosaic_file)
+    else if(field_exist(grid_file, "ocn_mosaic_file" ) .OR. field_exist(grid_file, "gridfiles" ) ) then
+       call get_global_mosaic_grid(grid_file)
     else
-       call mpp_error(FATAL, 'data_override_mod: both '//trim(grid_file) // &
-            ' and '//trim(mosaic_file)//' does not exist')
+       call mpp_error(FATAL, 'data_override_mod: none of x_T, geolon_t, ocn_mosaic_file or gridfiles exist in '//trim(grid_file))
     end if
 
     if (domain2 .NE. NULL_DOMAIN2D) call set_domain(domain2) ! See comment above
@@ -723,8 +721,8 @@ subroutine get_global_grid(grid_file)
       call field_size(grid_file, 'x_T', siz)
       nlon_out = siz(1); nlat_out = siz(2)
       allocate(lon_vert_glo(nlon_out,nlat_out,4), lat_vert_glo(nlon_out,nlat_out,4) )
-      call read_data(trim(grid_file), 'x_vert_T', lon_vert_glo)
-      call read_data(trim(grid_file), 'y_vert_T', lat_vert_glo)
+      call read_data(trim(grid_file), 'x_vert_T', lon_vert_glo, no_domain=.true.)
+      call read_data(trim(grid_file), 'y_vert_T', lat_vert_glo, no_domain=.true.)
       
 !2 Global lon and lat of ocean grid cell centers are determined from adjacent vertices
       if(.not. (allocated(glo_lat_ocn) .or. allocated(glo_lon_ocn))) &
@@ -740,8 +738,8 @@ subroutine get_global_grid(grid_file)
       nlon_out = siz(1) - 1; nlat_out = siz(2) - 1; 
       allocate(lon_vert_glo(nlon_out+1,nlat_out+1,1))
       allocate(lat_vert_glo(nlon_out+1,nlat_out+1,1))
-      call read_data(trim(grid_file), 'geolon_vert_t', lon_vert_glo)
-      call read_data(trim(grid_file), 'geolat_vert_t', lat_vert_glo)
+      call read_data(trim(grid_file), 'geolon_vert_t', lon_vert_glo, no_domain=.true.)
+      call read_data(trim(grid_file), 'geolat_vert_t', lat_vert_glo, no_domain=.true.)
 
       if(.not. (allocated(glo_lat_ocn) .or. allocated(glo_lon_ocn))) &
       allocate(glo_lat_ocn(nlon_out, nlat_out), glo_lon_ocn(nlon_out,nlat_out))
@@ -776,11 +774,11 @@ subroutine get_global_grid(grid_file)
   if (atm_on) then
      call field_size(grid_file, 'xta', siz)
      nlon_out = siz(1); allocate(lon_atm(nlon_out))
-     call read_data(grid_file, 'xta', lon_atm)
+     call read_data(grid_file, 'xta', lon_atm, no_domain=.true.)
 
      call field_size(grid_file, 'yta', siz)
      nlat_out = siz(1); allocate(lat_atm(nlat_out))
-     call read_data(grid_file, 'yta', lat_atm)
+     call read_data(grid_file, 'yta', lat_atm, no_domain=.true.)
 
 !4 create 2D array of ATM lon and lat
      if(.not.(allocated(glo_lat_atm) .or. allocated(glo_lon_atm))) &
@@ -805,11 +803,11 @@ subroutine get_global_grid(grid_file)
  if (lnd_on) then
      call field_size(grid_file, 'xtl', siz)
      nlon_out = siz(1); allocate(lon_lnd(nlon_out))
-     call read_data(grid_file, 'xtl', lon_lnd)
+     call read_data(grid_file, 'xtl', lon_lnd, no_domain=.true.)
 
      call field_size(grid_file, 'ytl', siz)
      nlat_out = siz(1); allocate(lat_lnd(nlat_out))
-     call read_data(grid_file, 'ytl', lat_lnd)
+     call read_data(grid_file, 'ytl', lat_lnd, no_domain=.true.)
 
 !6 create 2D array of LND lon and lat
      if(.not.(allocated(glo_lat_lnd) .or. allocated(glo_lon_lnd))) &
@@ -835,7 +833,7 @@ end subroutine get_global_grid
 subroutine get_global_mosaic_grid(mosaic_file)
   character(len=*), intent(in)          :: mosaic_file
 
-  integer :: i, j, siz(4)
+  integer :: i, j, siz(4), count
   integer :: nlon_out, nlat_out ! size of global lon and lat
   logical :: file_open
   character(len=256) :: solo_mosaic_file, grid_file
@@ -845,16 +843,32 @@ subroutine get_global_mosaic_grid(mosaic_file)
   inquire (file=trim(mosaic_file), opened=file_open)
   if(file_open) call mpp_error(FATAL, trim(mosaic_file)//' already opened')
 
+  /* the grid file may be solo mosaic or coupler mosaic */
+  if(field_exist(mosaic_file, "gridfiles" ) )then /* solo mosaic, only one of atm_on, land_on or ice_on will be true */
+     count = 0
+     if (atm_on) count = count + 1 
+     if (lnd_on) count = count + 1 
+     if ( ocn_on .OR. ice_on ) count = count + 1 
+     if(count .NE. 1) call mpp_error(FATAL, 'data_override_mod: the grid file is a solo mosaic, ' // &
+          'one and only one of atm_on, lnd_on or ice_on/ocn_on should be true')
+  end if
+
+
 !1 get global lon and lat of ocean grid vertices
 
   ! z1l: currently we assume the refinement ratio is 2 and there is one tile on each pe.
   if ( ocn_on .OR. ice_on ) then
      ! get the grid file to read
-     call read_data(mosaic_file, 'ocn_mosaic_file', solo_mosaic_file) 
-     if(ice_on) then    
-        call get_mosaic_tile_grid(grid_file, 'INPUT/'//trim(solo_mosaic_file), ice_domain)
+     if(field_exist(mosaic_file, "ocn_mosaic_file" )) then
+        call read_data(mosaic_file, 'ocn_mosaic_file', solo_mosaic_file) 
+        solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
      else
-        call get_mosaic_tile_grid(grid_file, 'INPUT/'//trim(solo_mosaic_file), ocn_domain)
+        solo_mosaic_file = mosaic_file
+     end if
+     if(ice_on) then    
+        call get_mosaic_tile_grid(grid_file, solo_mosaic_file, ice_domain)
+     else
+        call get_mosaic_tile_grid(grid_file, solo_mosaic_file, ocn_domain)
      end if
 
      call field_size(grid_file, 'area', siz)
@@ -864,8 +878,8 @@ subroutine get_global_mosaic_grid(mosaic_file)
      if( mod(nlat_out,2) .NE. 0) call mpp_error(FATAL,  &
           'data_override_mod: ocean supergrid latitude size can not be divided by 2')
      allocate(tmpx(nlon_out+1, nlat_out+1), tmpy(nlon_out+1, nlat_out+1))
-     call read_data( grid_file, 'x', tmpx)
-     call read_data( grid_file, 'y', tmpy)     
+     call read_data( grid_file, 'x', tmpx, no_domain=.true.)
+     call read_data( grid_file, 'y', tmpy, no_domain=.true.)     
      ! copy data onto model grid
      nlon_out = nlon_out/2;
      nlat_out = nlat_out/2;
@@ -873,16 +887,15 @@ subroutine get_global_mosaic_grid(mosaic_file)
           allocate(glo_lat_ocn(nlon_out,nlat_out),glo_lon_ocn(nlon_out,nlat_out))
      do j = 1, nlat_out
         do i = 1, nlon_out
-           glo_lon_ocn(i,j) = tmpx(i*2,j*2)
-           glo_lat_ocn(i,j) = tmpy(i*2,j*2)
+           glo_lon_ocn(i,j) = (tmpx(i*2-1,j*2-1)+tmpx(i*2+1,j*2-1)+tmpx(i*2+1,j*2+1)+tmpx(i*2-1,j*2+1))*0.25
+           glo_lat_ocn(i,j) = (tmpy(i*2-1,j*2-1)+tmpy(i*2+1,j*2-1)+tmpy(i*2+1,j*2+1)+tmpy(i*2-1,j*2+1))*0.25
         end do
      end do
 
      ! convert to radian
      glo_lon_ocn = glo_lon_ocn * deg_to_radian
      glo_lat_ocn = glo_lat_ocn * deg_to_radian
-     deallocate(tmpx)
-     deallocate(tmpy)
+     deallocate(tmpx, tmpy)
      min_glo_lon_ocn = minval(glo_lon_ocn)
      max_glo_lon_ocn = maxval(glo_lon_ocn)
   endif
@@ -892,8 +905,13 @@ subroutine get_global_mosaic_grid(mosaic_file)
   ! z1l: currently we assume the refinement ratio is 2 and there is one tile on each pe.
   if ( atm_on ) then
      ! get the grid file to read
-     call read_data(mosaic_file, 'atm_mosaic_file', solo_mosaic_file)    
-     call get_mosaic_tile_grid(grid_file, 'INPUT/'//trim(solo_mosaic_file), atm_domain)
+     if(field_exist(mosaic_file, "atm_mosaic_file" )) then
+        call read_data(mosaic_file, 'atm_mosaic_file', solo_mosaic_file) 
+        solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
+     else
+        solo_mosaic_file = mosaic_file
+     end if
+     call get_mosaic_tile_grid(grid_file, solo_mosaic_file, atm_domain)
 
      call field_size(grid_file, 'area', siz)
      nlon_out = siz(1); nlat_out = siz(2)
@@ -902,8 +920,8 @@ subroutine get_global_mosaic_grid(mosaic_file)
      if( mod(nlat_out,2) .NE. 0) call mpp_error(FATAL,  &
                 'data_override_mod: atmos supergrid latitude size can not be divided by 2')
      allocate(tmpx(nlon_out+1, nlat_out+1), tmpy(nlon_out+1, nlat_out+1))
-     call read_data( grid_file, 'x', tmpx)
-     call read_data( grid_file, 'y', tmpy)     
+     call read_data( grid_file, 'x', tmpx, no_domain=.true.)
+     call read_data( grid_file, 'y', tmpy, no_domain=.true.)     
      ! copy data onto model grid
      nlon_out = nlon_out/2;
      nlat_out = nlat_out/2;
@@ -929,8 +947,13 @@ subroutine get_global_mosaic_grid(mosaic_file)
   ! z1l: currently we assume the refinement ratio is 2 and there is one tile on each pe.
   if ( lnd_on ) then
      ! get the grid file to read
-     call read_data(mosaic_file, 'lnd_mosaic_file', solo_mosaic_file)    
-     call get_mosaic_tile_grid(grid_file, 'INPUT/'//trim(solo_mosaic_file), lnd_domain)
+     if(field_exist(mosaic_file, "lnd_mosaic_file" )) then
+        call read_data(mosaic_file, 'lnd_mosaic_file', solo_mosaic_file) 
+        solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
+     else
+        solo_mosaic_file = mosaic_file
+     end if
+     call get_mosaic_tile_grid(grid_file, solo_mosaic_file, lnd_domain)
 
      call field_size(grid_file, 'area', siz)
      nlon_out = siz(1); nlat_out = siz(2)
@@ -939,8 +962,8 @@ subroutine get_global_mosaic_grid(mosaic_file)
      if( mod(nlat_out,2) .NE. 0) call mpp_error(FATAL,  &
              'data_override_mod: land supergrid latitude size can not be divided by 2')
      allocate(tmpx(nlon_out+1, nlat_out+1), tmpy(nlon_out+1, nlat_out+1))
-     call read_data( grid_file, 'x', tmpx)
-     call read_data( grid_file, 'y', tmpy)     
+     call read_data( grid_file, 'x', tmpx, no_domain=.true.)
+     call read_data( grid_file, 'y', tmpy, no_domain=.true.)     
      ! copy data onto model grid
      nlon_out = nlon_out/2;
      nlat_out = nlat_out/2;
@@ -1089,8 +1112,6 @@ end module data_override_mod
  integer, dimension(2)             :: layout = (/0,0/)
  character(len=256)                :: solo_mosaic_file, tile_file
  character(len=128)                :: grid_file   = "INPUT/grid_spec.nc"
- character(len=128)                :: mosaic_file = "INPUT/mosaic.nc"
-
 
  namelist / test_data_override_nml / layout
 
@@ -1111,16 +1132,16 @@ end module data_override_mod
 10 call close_file (unit)
  endif
 
- if(file_exist(grid_file) ) then
-    if(field_exist( grid_file, 'x_T') ) then
-       call field_size(grid_file, 'x_T', siz)
-    else
-       call field_size(grid_file, 'geolon_t', siz)
-    end if
+ if(field_exist(grid_file, "x_T" ) ) then
+    call field_size(grid_file, 'x_T', siz)
     nlon = siz(1)
     nlat = siz(2)
- else if (file_exist(mosaic_file) ) then
-    call read_data(mosaic_file, 'ocn_mosaic_file', solo_mosaic_file) 
+ else if(field_exist(grid_file, "geolon_t" ) ) then
+    call field_size(grid_file, 'geolon_t', siz)
+    nlon = siz(1)
+    nlat = siz(2)
+ else if (field_exist(grid_file, "ocn_mosaic_file" )) then
+    call read_data(grid_file, 'ocn_mosaic_file', solo_mosaic_file) 
     solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
     call field_size(solo_mosaic_file, 'gridfiles', siz)
     if( siz(2) .NE. 1) call error_mesg('test_data_override', 'only support single tile mosaic, contact developer', FATAL)
@@ -1132,7 +1153,7 @@ end module data_override_mod
     nlon = siz(1)/2
     nlat = siz(2)/2
  else
-    call error_mesg('test_data_override', 'both '//trim(grid_file)//' and '//trim(mosaic_file)//' does not exist', FATAL)
+    call error_mesg('test_data_override', 'x_T, geolon_t and ocn_mosaic_file does not exist', FATAL)
  end if
 
  if(layout(1)*layout(2) .NE. mpp_npes() ) then
@@ -1238,56 +1259,55 @@ end module data_override_mod
    integer, dimension(4)  :: siz
    character(len=128) :: message
 
-   if(file_exist(grid_file)) then
-      if(field_exist(grid_file, 'x_T')) then
-         call field_size(grid_file, 'x_T', siz)
-         if(siz(1) /= nlon .or. siz(2) /= nlat) then
-            write(message,'(a,2i4)') 'x_T is wrong shape. shape(x_T)=',siz(1:2)
-            call error_mesg('test_data_override', trim(message), FATAL)
-         endif
-         allocate(lon_vert_glo(nlon,nlat,4), lat_vert_glo(nlon,nlat,4) )
-         allocate(lon_global  (nlon,nlat  ), lat_global  (nlon,nlat  ) )
-         call read_data(trim(grid_file), 'x_vert_T', lon_vert_glo)
-         call read_data(trim(grid_file), 'y_vert_T', lat_vert_glo)
-         lon_global(:,:)  = (lon_vert_glo(:,:,1) + lon_vert_glo(:,:,2) + lon_vert_glo(:,:,3) + lon_vert_glo(:,:,4))*0.25
-         lat_global(:,:) =  (lat_vert_glo(:,:,1) + lat_vert_glo(:,:,2) + lat_vert_glo(:,:,3) + lat_vert_glo(:,:,4))*0.25
-      else      
-         call field_size(grid_file, 'geolon_vert_t', siz)
-         if(siz(1) /= nlon+1 .or. siz(2) /= nlat+1) then
-            write(message,'(a,2i4)') 'geolon_vert_t is wrong shape. shape(geolon_vert_t)=',siz(1:2)
-            call error_mesg('test_data_override', trim(message), FATAL)
-         endif
-         allocate(lon_vert_glo(nlon+1,nlat+1,1), lat_vert_glo(nlon+1,nlat+1,1))
-         allocate(lon_global  (nlon,  nlat    ), lat_global  (nlon,  nlat    ))
-         call read_data(trim(grid_file), 'geolon_vert_t', lon_vert_glo)
-         call read_data(trim(grid_file), 'geolat_vert_t', lat_vert_glo)
 
-         do i = 1, nlon
-            do j = 1, nlat
-               lon_global(i,j) = (lon_vert_glo(i,j,1) + lon_vert_glo(i+1,j,1) + &
-                    lon_vert_glo(i+1,j+1,1) + lon_vert_glo(i,j+1,1))*0.25
-               lat_global(i,j) = (lat_vert_glo(i,j,1) + lat_vert_glo(i+1,j,1) + &
-                    lat_vert_glo(i+1,j+1,1) + lat_vert_glo(i,j+1,1))*0.25
-            enddo
-         enddo
+   if(field_exist(grid_file, 'x_T')) then
+      call field_size(grid_file, 'x_T', siz)
+      if(siz(1) /= nlon .or. siz(2) /= nlat) then
+         write(message,'(a,2i4)') 'x_T is wrong shape. shape(x_T)=',siz(1:2)
+         call error_mesg('test_data_override', trim(message), FATAL)
       endif
-   else if( file_exist(mosaic_file) ) then ! reading from mosaic file
-     call field_size(tile_file, 'area', siz)
-     if(siz(1) /= nlon*2 .or. siz(2) /= nlat*2) then
-        write(message,'(a,2i4)') 'area is wrong shape. shape(area)=',siz(1:2)
-        call error_mesg('test_data_override', trim(message), FATAL)
-     endif
-     allocate(lon_vert_glo(siz(1)+1,siz(2)+1,1), lat_vert_glo(siz(1)+1,siz(2)+1,1))
-     allocate(lon_global  (nlon,  nlat    ), lat_global  (nlon,  nlat    ))
-     call read_data( tile_file, 'x', lon_vert_glo)
-     call read_data( tile_file, 'y', lat_vert_glo)  
-     do j = 1, nlat
-        do i = 1, nlon
-           lon_global(i,j) = lon_vert_glo(i*2,j*2,1)
-           lat_global(i,j) = lat_vert_glo(i*2,j*2,1)
-        end do
-     end do
-  end if
+      allocate(lon_vert_glo(nlon,nlat,4), lat_vert_glo(nlon,nlat,4) )
+      allocate(lon_global  (nlon,nlat  ), lat_global  (nlon,nlat  ) )
+      call read_data(trim(grid_file), 'x_vert_T', lon_vert_glo, no_domain=.true.)
+      call read_data(trim(grid_file), 'y_vert_T', lat_vert_glo, no_domain=.true.)
+      lon_global(:,:)  = (lon_vert_glo(:,:,1) + lon_vert_glo(:,:,2) + lon_vert_glo(:,:,3) + lon_vert_glo(:,:,4))*0.25
+      lat_global(:,:) =  (lat_vert_glo(:,:,1) + lat_vert_glo(:,:,2) + lat_vert_glo(:,:,3) + lat_vert_glo(:,:,4))*0.25
+   else  if(field_exist(grid_file, "geolon_t" ) ) then
+      call field_size(grid_file, 'geolon_vert_t', siz)
+      if(siz(1) /= nlon+1 .or. siz(2) /= nlat+1) then
+         write(message,'(a,2i4)') 'geolon_vert_t is wrong shape. shape(geolon_vert_t)=',siz(1:2)
+         call error_mesg('test_data_override', trim(message), FATAL)
+      endif
+      allocate(lon_vert_glo(nlon+1,nlat+1,1), lat_vert_glo(nlon+1,nlat+1,1))
+      allocate(lon_global  (nlon,  nlat    ), lat_global  (nlon,  nlat    ))
+      call read_data(trim(grid_file), 'geolon_vert_t', lon_vert_glo, no_domain=.true.)
+      call read_data(trim(grid_file), 'geolat_vert_t', lat_vert_glo, no_domain=.true.)
+
+      do i = 1, nlon
+         do j = 1, nlat
+            lon_global(i,j) = (lon_vert_glo(i,j,1) + lon_vert_glo(i+1,j,1) + &
+                 lon_vert_glo(i+1,j+1,1) + lon_vert_glo(i,j+1,1))*0.25
+            lat_global(i,j) = (lat_vert_glo(i,j,1) + lat_vert_glo(i+1,j,1) + &
+                 lat_vert_glo(i+1,j+1,1) + lat_vert_glo(i,j+1,1))*0.25
+         enddo
+      enddo
+   else if( field_exist(grid_file, "ocn_mosaic_file") ) then ! reading from mosaic file
+      call field_size(tile_file, 'area', siz)
+      if(siz(1) /= nlon*2 .or. siz(2) /= nlat*2) then
+         write(message,'(a,2i4)') 'area is wrong shape. shape(area)=',siz(1:2)
+         call error_mesg('test_data_override', trim(message), FATAL)
+      endif
+      allocate(lon_vert_glo(siz(1)+1,siz(2)+1,1), lat_vert_glo(siz(1)+1,siz(2)+1,1))
+      allocate(lon_global  (nlon,  nlat    ), lat_global  (nlon,  nlat    ))
+      call read_data( tile_file, 'x', lon_vert_glo, no_domain=.true.)
+      call read_data( tile_file, 'y', lat_vert_glo, no_domain=.true.)  
+      do j = 1, nlat
+         do i = 1, nlon
+            lon_global(i,j) = lon_vert_glo(i*2,j*2,1)
+            lat_global(i,j) = lat_vert_glo(i*2,j*2,1)
+         end do
+      end do
+   end if
 
   allocate(lon(is:ie,js:je), lat(is:ie,js:je))
   lon = lon_global(is:ie,js:je)

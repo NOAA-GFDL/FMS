@@ -1,1848 +1,5 @@
-!-----------------------------------------------------------------------
-!   Domain decomposition and domain update for message-passing codes
-!
-! AUTHOR: V. Balaji (vb@gfdl.gov)
-!         SGI/GFDL Princeton University
-!
-! This program is free software; you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation; either version 2 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! For the full text of the GNU General Public License,
-! write to: Free Software Foundation, Inc.,
-!           675 Mass Ave, Cambridge, MA 02139, USA.  
-!-----------------------------------------------------------------------
-
-! <CONTACT EMAIL="V.Balaji@noaa.gov">
-!   V. Balaji
-! </CONTACT>
-! <CONTACT EMAIL="Zhi.Liang@noaa.gov">
-!   Zhi Liang
-! </CONTACT>
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-! <RCSLOG SRC="http://www.gfdl.noaa.gov/~vb/changes_mpp_domains.html"/>
-
-! <OVERVIEW>
-!   <TT>mpp_domains_mod</TT> is a set of simple calls for domain
-!   decomposition and domain updates on rectilinear grids. It requires the
-!   module <LINK SRC="mpp.html">mpp_mod</LINK>, upon which it is built.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!   Scalable implementations of finite-difference codes are generally
-!   based on decomposing the model domain into subdomains that are
-!   distributed among processors. These domains will then be obliged to
-!   exchange data at their boundaries if data dependencies are merely
-!   nearest-neighbour, or may need to acquire information from the global
-!   domain if there are extended data dependencies, as in the spectral
-!   transform. The domain decomposition is a key operation in the
-!   development of parallel codes.
-!   
-!   <TT>mpp_domains_mod</TT> provides a domain decomposition and domain
-!   update API for <I>rectilinear</I> grids, built on top of the <LINK
-!   SRC="mpp.html">mpp_mod</LINK> API for message passing. Features
-!   of <TT>mpp_domains_mod</TT> include:
-! 
-!   Simple, minimal API, with free access to underlying API for more complicated stuff.
-!
-!   Design toward typical use in climate/weather CFD codes.
-!  
-!   <H4>Domains</H4>
-! 
-!   I have assumed that domain decomposition will mainly be in 2
-!   horizontal dimensions, which will in general be the two
-!   fastest-varying indices. There is a separate implementation of 1D
-!   decomposition on the fastest-varying index, and 1D decomposition on
-!   the second index, treated as a special case of 2D decomposition, is
-!   also possible. We define <I>domain</I> as the grid associated with a <I>task</I>.
-!   We define the <I>compute domain</I> as the set of gridpoints that are
-!   computed by a task, and the <I>data domain</I> as the set of points
-!   that are required by the task for the calculation. There can in
-!   general be more than 1 task per PE, though often
-!   the number of domains is the same as the processor count. We define
-!   the <I>global domain</I> as the global computational domain of the
-!   entire model (i.e, the same as the computational domain if run on a
-!   single processor). 2D domains are defined using a derived type <TT>domain2D</TT>,
-!   constructed as follows (see comments in code for more details):
-!   
-!   <PRE>
-!     type, public :: domain_axis_spec
-!        private
-!        integer :: begin, end, size, max_size
-!        logical :: is_global
-!     end type domain_axis_spec
-!     type, public :: domain1D
-!        private
-!        type(domain_axis_spec) :: compute, data, global, active
-!        logical :: mustputb, mustgetb, mustputf, mustgetf, folded
-!        type(domain1D), pointer, dimension(:) :: list
-!        integer :: pe              !PE to which this domain is assigned
-!        integer :: pos
-!     end type domain1D
-!domaintypes of higher rank can be constructed from type domain1D
-!typically we only need 1 and 2D, but could need higher (e.g 3D LES)
-!some elements are repeated below if they are needed once per domain
-!     type, public :: domain2D
-!        private
-!        type(domain1D) :: x
-!        type(domain1D) :: y
-!        type(domain2D), pointer, dimension(:) :: list
-!        integer :: pe              !PE to which this domain is assigned
-!        integer :: pos
-!     end type domain2D
-!     type(domain1D), public :: NULL_DOMAIN1D
-!     type(domain2D), public :: NULL_DOMAIN2D
-!   </PRE>
-
-!   The <TT>domain2D</TT> type contains all the necessary information to
-!   define the global, compute and data domains of each task, as well as the PE
-!   associated with the task. The PEs from which remote data may be
-!   acquired to update the data domain are also contained in a linked list
-!   of neighbours.
-! </DESCRIPTION>
-
-module mpp_domains_mod
-!a generalized domain decomposition package for use with mpp_mod
-!Balaji (vb@gfdl.gov) 15 March 1999
-  use mpp_parameter_mod,      only : MPP_DEBUG, MPP_VERBOSE, MPP_DOMAIN_TIME
-  use mpp_parameter_mod,      only : GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, GLOBAL,CYCLIC 
-  use mpp_parameter_mod,      only : AGRID, BGRID_SW, BGRID_NE, CGRID_NE, CGRID_SW, DGRID_NE, DGRID_SW
-  use mpp_parameter_mod,      only : FOLD_WEST_EDGE, FOLD_EAST_EDGE, FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE
-  use mpp_parameter_mod,      only : WUPDATE, EUPDATE, SUPDATE, NUPDATE, XUPDATE, YUPDATE
-  use mpp_parameter_mod,      only : NON_BITWISE_EXACT_SUM, BITWISE_EXACT_SUM, MPP_DOMAIN_TIME
-  use mpp_parameter_mod,      only : CENTER, CORNER, SCALAR_PAIR, SCALAR_BIT
-  use mpp_parameter_mod,      only : NORTH, NORTH_EAST, EAST, SOUTH_EAST
-  use mpp_parameter_mod,      only : SOUTH, SOUTH_WEST, WEST, NORTH_WEST
-  use mpp_parameter_mod,      only : MAX_DOMAIN_FIELDS, NULL_PE, DOMAIN_ID_BASE
-  use mpp_parameter_mod,      only : ZERO, NINETY, MINUS_NINETY, ONE_HUNDRED_EIGHTY, MAX_TILES
-  use mpp_data_mod,           only : mpp_domains_stack, ptr_domains_stack
-  use mpp_mod,                only : mpp_pe, mpp_root_pe, mpp_npes, mpp_error, FATAL, WARNING, NOTE
-  use mpp_mod,                only : stdout, stderr, stdlog, mpp_send, mpp_recv, mpp_transmit, mpp_sync_self
-  use mpp_mod,                only : mpp_clock_id, mpp_clock_begin, mpp_clock_end
-  use mpp_mod,                only : mpp_max, mpp_min, mpp_sum, mpp_get_current_pelist, mpp_broadcast
-  use mpp_mod,                only : mpp_sync, mpp_init, mpp_malloc
-  use mpp_pset_mod, only: mpp_pset_init
-  implicit none
-  private
-
-#include <fms_platform.h>
-
-  !--- public paramters imported from mpp_domains_parameter_mod
-  public :: GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, BGRID_NE, BGRID_SW, CGRID_NE, CGRID_SW
-  public :: DGRID_NE, DGRID_SW, FOLD_WEST_EDGE, FOLD_EAST_EDGE, FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE
-  public :: WUPDATE, EUPDATE, SUPDATE, NUPDATE, XUPDATE, YUPDATE
-  public :: NON_BITWISE_EXACT_SUM, BITWISE_EXACT_SUM, MPP_DOMAIN_TIME
-  public :: CENTER, CORNER, SCALAR_PAIR
-  public :: NORTH, NORTH_EAST, EAST, SOUTH_EAST
-  public :: SOUTH, SOUTH_WEST, WEST, NORTH_WEST
-  public :: ZERO, NINETY, MINUS_NINETY, ONE_HUNDRED_EIGHTY 
-
-  !--- public data imported from mpp_data_mod
-  public :: NULL_DOMAIN1D, NULL_DOMAIN2D
-
-  public :: domain_axis_spec, domain1D, domain2D, DomainCommunicator2D
-
-  !--- public interface from mpp_domains_util.h
-  public :: mpp_domains_set_stack_size, mpp_get_compute_domain, mpp_get_compute_domains
-  public :: mpp_get_data_domain, mpp_get_global_domain, mpp_get_domain_components
-  public :: mpp_get_layout, mpp_get_pelist, operator(.EQ.), operator(.NE.) 
-  public :: mpp_domain_is_symmetry
-  public :: mpp_get_neighbor_pe, mpp_nullify_domain_list
-  public :: mpp_set_compute_domain, mpp_set_data_domain, mpp_set_global_domain
-  public :: mpp_get_memory_domain, mpp_get_domain_shift, mpp_domain_is_root_pe
-  public :: mpp_get_tile_id, mpp_get_domain_extents, mpp_get_current_ntile, mpp_get_ntile_count
-  public :: mpp_get_refine_overlap_number, mpp_get_mosaic_refine_overlap
-  public :: mpp_get_tile_list, mpp_get_global_domains
-  public :: mpp_get_tile_npes
-  !--- public interface from mpp_domains_reduce.h
-  public :: mpp_global_field, mpp_global_max, mpp_global_min, mpp_global_sum
-  public :: mpp_global_sum_tl, mpp_global_sum_ad
-  !--- public interface from mpp_domains_misc.h
-  public :: mpp_broadcast_domain, mpp_domains_init, mpp_domains_exit, mpp_redistribute
-  public :: mpp_update_domains, mpp_check_field
-  public :: mpp_update_domains_ad   ! bnc
-  public :: mpp_get_boundary
-  !--- public interface from mpp_domains_define.h
-  public :: mpp_define_layout, mpp_define_domains, mpp_modify_domain, mpp_define_mosaic
-  public :: mpp_define_mosaic_pelist, mpp_define_null_domain, mpp_mosaic_defined
-
-#ifdef use_CAF
-  public :: cafptr_r8_3d_type
-  public :: cafptr_r8_3d
-  public :: cafptr_r8_1d_type
-  public :: cafptr_r8_1d
-  public :: cafptr_c8_3d_type
-  public :: cafptr_c8_3d
-  public :: cafptr_c8_1d_type
-  public :: cafptr_c8_1d
-#ifndef no_8byte_integers
-  public :: cafptr_i8_3d_type
-  public :: cafptr_i8_3d
-  public :: cafptr_i8_1d_type
-  public :: cafptr_i8_1d
-  public :: cafptr_l8_3d_type
-  public :: cafptr_l8_3d
-  public :: cafptr_l8_1d_type
-  public :: cafptr_l8_1d
-
-#endif
-#ifndef no_4byte_reals
-  public :: cafptr_r4_3d_type
-  public :: cafptr_r4_3d
-  public :: cafptr_r4_1d_type
-  public :: cafptr_r4_1d
-  public :: cafptr_c4_3d_type
-  public :: cafptr_c4_3d
-  public :: cafptr_c4_1d_type
-  public :: cafptr_c4_1d
-#endif
-  public :: cafptr_i4_3d_type
-  public :: cafptr_i4_3d
-  public :: cafptr_i4_1d_type
-  public :: cafptr_i4_1d
-  public :: cafptr_l4_3d_type
-  public :: cafptr_l4_3d
-  public :: cafptr_l4_1d_type
-  public :: cafptr_l4_1d
-#endif
-
-  !--- data types used mpp_domains_mod.
-  type domain_axis_spec        !type used to specify index limits along an axis of a domain
-     private
-     integer :: begin, end, size, max_size      !start, end of domain axis, size, max size in set
-     logical :: is_global       !TRUE if domain axis extent covers global domain
-  end type domain_axis_spec
-
-  type domain1D
-     private
-     type(domain_axis_spec) :: compute, data, global, memory
-     logical :: cyclic
-     type(domain1D), pointer :: list(:) =>NULL()
-     integer :: pe               !PE to which this domain is assigned
-     integer :: pos              !position of this PE within link list, i.e domain%list(pos)%pe = pe
-     integer :: shift            !Always=0 for non-symmetry domain and equal 0 or 1 for symmetry domain depending on position.
-     integer :: goffset, loffset !needed for mpp_global_sum
-  end type domain1D
-
-  type overlapSpec
-     private
-     integer          :: n              ! number of points to send/recv
-     integer, pointer :: i(:) => NULL() ! i-index of each point to send/recv
-     integer, pointer :: j(:) => NULL() ! j-index of each point to send/recv
-     integer          :: is(3), ie(3)   ! i-index of overlapping region
-     integer          :: js(3), je(3)   ! j-index of overlapping region.
-     integer          :: isMe, ieMe     ! i-index of overlapping region in the my tile when there is refinement
-     integer          :: jsMe, jeMe     ! j-index of overlapping region in the my tile when there is refinement
-     integer          :: index          ! index in the all overlapping of current contact
-     logical          :: overlap(3)     ! indicate if overlapped
-     logical          :: folded         ! indicate if the overlap is folded.
-     integer          :: rotation       ! rotate angle between tiles.
-     logical          :: is_refined(3)      ! indicate if there is refinement.
-  end type overlapSpec
-
-  type refineSpec
-     integer          :: count              ! number of ovrelapping
-     integer          :: total              ! total number of points to be saved in buffer.
-     integer, pointer :: isMe(:)     => NULL() ! starting i-index on current pe and tile.
-     integer, pointer :: ieMe(:)     => NULL() ! ending i-index on current pe and tile.
-     integer, pointer :: jsMe(:)     => NULL() ! starting j-index on current pe and tile.
-     integer, pointer :: jeMe(:)     => NULL() ! ending j-index on current pe and tile.
-     integer, pointer :: isNbr(:)    => NULL() ! starting i-index on neighbor pe or tile
-     integer, pointer :: ieNbr(:)    => NULL() ! ending i-index on neighbor pe or tile
-     integer, pointer :: jsNbr(:)    => NULL() ! starting j-index on neighbor pe or tile
-     integer, pointer :: jeNbr(:)    => NULL() ! ending j-index on neighbor pe or tile
-     integer, pointer :: start(:)    => NULL() ! starting index in the buffer
-     integer, pointer :: end(:)      => NULL() ! ending index in the buffer
-     integer, pointer :: rotation(:) => NULL() ! rotation angle.
-  end type refineSpec
-
-  type boundary
-     integer                  :: count              ! number of overlap
-     integer,         pointer :: index(:)    => NULL() ! starting position in the boundary recving buffer.
-     integer,         pointer :: tileMe(:)   => NULL() ! tile count for this overlap
-     integer,         pointer :: is(:)       => NULL() ! starting i-index 
-     integer,         pointer :: ie(:)       => NULL() ! ending   i-index 
-     integer,         pointer :: js(:)       => NULL() ! starting j-index 
-     integer,         pointer :: je(:)       => NULL() ! ending   j-index 
-     integer,         pointer :: isMe(:)     => NULL() ! starting i-index of my tile on current pe
-     integer,         pointer :: ieMe(:)     => NULL() ! ending   i-index of my tile on current pe
-     integer,         pointer :: jsMe(:)     => NULL() ! starting j-index of my tile on current pe
-     integer,         pointer :: jeMe(:)     => NULL() ! ending   j-index of my tile on current pe
-     integer,         pointer :: dir(:)      => NULL() ! direction ( value 1,2,3,4 = E,S,W,N)
-     integer,         pointer :: rotation(:) => NULL() ! rotation angle.
-     type(boundary),  pointer :: send(:)     => NULL() ! list of overlapping for send
-     type(boundary),  pointer :: recv(:)     => NULL() ! list of overlapping for recv
-  end type boundary
-
-
-!domaintypes of higher rank can be constructed from type domain1D
-!typically we only need 1 and 2D, but could need higher (e.g 3D LES)
-!some elements are repeated below if they are needed once per domain, not once per axis
-
-  type domain2D
-     private
-     integer(LONG_KIND)          :: id 
-     integer                     :: pe                    ! PE to which this domain is assigned
-     integer                     :: fold          
-     integer                     :: pos                   ! position of this PE within link list
-     logical                     :: symmetry              ! indicate the domain is symmetric or non-symmetric.
-     integer                     :: whalo, ehalo          ! halo size in x-direction
-     integer                     :: shalo, nhalo          ! halo size in y-direction
-     integer                     :: ntiles                ! number of tiles within mosaic
-     integer                     :: max_ntile_pe          ! maximum value in the pelist of number of tiles on each pe.
-     integer                     :: ncontacts             ! number of contact region within mosaic.
-     logical                     :: rotated_ninety        ! indicate if any contact rotate NINETY or MINUS_NINETY
-     logical                     :: overlap               
-     integer,            pointer :: tile_id(:)  => NULL() ! tile id of each tile
-     type(domain1D),     pointer :: x(:)        => NULL() ! x-direction domain decomposition
-     type(domain1D),     pointer :: y(:)        => NULL() ! y-direction domain decomposition
-     type(overlapSpec),  pointer :: send(:,:,:) => NULL() ! overlapping for sending
-     type(overlapSpec),  pointer :: recv(:,:,:) => NULL() ! overlapping for recving
-     type(boundary),     pointer :: check       => NULL() ! send and recv information for boundary consistency check
-     type(boundary),     pointer :: bound       => NULL() ! send and recv information for getting boundary value for symmetry domain.
-     type(refineSpec),   pointer :: rSpec(:)    => NULL() ! refine overlapping for recving.
-     type(domain2D),     pointer :: T           => NULL() ! domain for T-cell
-     type(domain2D),     pointer :: E           => NULL() ! domain for E-cell
-     type(domain2D),     pointer :: C           => NULL() ! domain for C-cell
-     type(domain2D),     pointer :: N           => NULL() ! domain for N-cell
-     type(domain2D),     pointer :: next        => NULL() ! next domain with different halo size
-     type(domain2d),     pointer :: list(:)     => NULL() ! domain on pe list
-     integer,            pointer :: pearray(:,:)=>NULL()  ! pe of each layout position 
-     integer                     :: position              ! position of the domain, CENTER, EAST, NORTH, CORNER
-     logical                     :: initialized           ! indicate if the overlapping is computed or not.
-  end type domain2D     
-
-  !--- the following type is used to reprsent the contact between tiles.
-  !--- this type will only be used in mpp_domains_define.inc
-  type contact_type
-     integer          :: ncontact                               ! number of neighbor tile.
-     integer, pointer :: tile(:) =>NULL()                       ! neighbor tile 
-     integer, pointer :: align1(:)=>NULL(), align2(:)=>NULL()   ! alignment of me and neighbor
-     real,    pointer :: refine1(:)=>NULL(), refine2(:)=>NULL() !
-     integer, pointer :: is1(:)=>NULL(), ie1(:)=>NULL()         ! i-index of current tile repsenting contact
-     integer, pointer :: js1(:)=>NULL(), je1(:)=>NULL()         ! j-index of current tile repsenting contact
-     integer, pointer :: is2(:)=>NULL(), ie2(:)=>NULL()         ! i-index of neighbor tile repsenting contact
-     integer, pointer :: js2(:)=>NULL(), je2(:)=>NULL()         ! j-index of neighbor tile repsenting contact
-  end type contact_type
-
-
-  type DomainCommunicator2D
-     private
-     logical            :: initialized=.false.
-     integer(LONG_KIND) :: id=-9999
-     integer(LONG_KIND) :: l_addr  =-9999
-     integer(LONG_KIND) :: l_addrx =-9999
-     integer(LONG_KIND) :: l_addry =-9999
-     type(domain2D), pointer :: domain     =>NULL()
-     type(domain2D), pointer :: domain_in  =>NULL()
-     type(domain2D), pointer :: domain_out =>NULL()
-     type(overlapSpec), pointer :: send(:,:,:,:) => NULL()
-     type(overlapSpec), pointer :: recv(:,:,:,:) => NULL()
-     integer, dimension(:,:),       _ALLOCATABLE :: sendis _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: sendie _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: sendjs _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: sendje _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: recvis _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: recvie _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: recvjs _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: recvje _NULL
-     logical, dimension(:,:,:,:,:), _ALLOCATABLE :: do_thisS _NULL
-     logical, dimension(:,:,:,:,:), _ALLOCATABLE :: do_thisR _NULL
-     logical, dimension(:),         _ALLOCATABLE :: S_do_buf _NULL
-     logical, dimension(:),         _ALLOCATABLE :: R_do_buf _NULL
-     integer, dimension(:),         _ALLOCATABLE :: cto_pe  _NULL
-     integer, dimension(:),         _ALLOCATABLE :: cfrom_pe  _NULL
-     integer, dimension(:),         _ALLOCATABLE :: S_msize _NULL
-     integer, dimension(:),         _ALLOCATABLE :: R_msize _NULL
-     integer, dimension(:),         _ALLOCATABLE :: Rcaf_idx  _NULL
-     integer :: Slist_size=0, Rlist_size=0
-     integer :: isize=0, jsize=0, ke=0
-     integer :: isize_in=0, jsize_in=0
-     integer :: isize_out=0, jsize_out=0
-     integer :: isize_max=0, jsize_max=0
-     integer :: gf_ioff=0, gf_joff=0
-  ! Remote data
-     integer, dimension(:)  , _ALLOCATABLE :: isizeR _NULL
-     integer, dimension(:)  , _ALLOCATABLE :: jsizeR _NULL
-     integer, dimension(:,:), _ALLOCATABLE :: sendisR _NULL
-     integer, dimension(:,:), _ALLOCATABLE :: sendjsR _NULL
-     integer(LONG_KIND), dimension(:), _ALLOCATABLE :: rem_addr  _NULL
-     integer(LONG_KIND), dimension(:), _ALLOCATABLE :: rem_addrx _NULL
-     integer(LONG_KIND), dimension(:), _ALLOCATABLE :: rem_addry _NULL
-     integer(LONG_KIND), dimension(:,:), _ALLOCATABLE :: rem_addrl  _NULL
-     integer(LONG_KIND), dimension(:,:), _ALLOCATABLE :: rem_addrlx  _NULL
-     integer(LONG_KIND), dimension(:,:), _ALLOCATABLE :: rem_addrly  _NULL
-     integer(LONG_KIND), dimension(:), _ALLOCATABLE :: sync_start_list _NULL
-     integer(LONG_KIND), dimension(:), _ALLOCATABLE :: sync_end_list _NULL
-     type(DomainCommunicator2D), pointer :: dch_x =>NULL()
-     type(DomainCommunicator2D), pointer :: y_comm =>NULL() ! domain update information for y-component
-     logical                             :: staggered ! true means x and y-component are staggered grid.
-     integer                             :: position        ! data location. T, E, C, or N.
-  end type DomainCommunicator2D
-
-!#######################################################################
-
-#ifdef use_CAF
-#define MPP_TYPE_ real(DOUBLE_KIND)
-#define CAFPNTR_TYPE_3D_ cafptr_r8_3d_type
-#define CAFPNTR_3D_ cafptr_r8_3d
-#define CAFPNTR_TYPE_1D_ cafptr_r8_1d_type
-#define CAFPNTR_1D_ cafptr_r8_1d
-#include <mpp_datatype.h>
-
-#define MPP_TYPE_ complex(DOUBLE_KIND)
-#define CAFPNTR_TYPE_3D_ cafptr_c8_3d_type
-#define CAFPNTR_3D_ cafptr_c8_3d
-#define CAFPNTR_TYPE_1D_ cafptr_c8_1d_type
-#define CAFPNTR_1D_ cafptr_c8_1d
-#include <mpp_datatype.h>
-
-
-#ifndef no_8byte_integers
-#define MPP_TYPE_ integer(LONG_KIND)
-#define CAFPNTR_TYPE_3D_ cafptr_i8_3d_type
-#define CAFPNTR_3D_ cafptr_i8_3d
-#define CAFPNTR_TYPE_1D_ cafptr_i8_1d_type
-#define CAFPNTR_1D_ cafptr_i8_1d
-#include <mpp_datatype.h>
-
-#define MPP_TYPE_ logical(LONG_KIND)
-#define CAFPNTR_TYPE_3D_ cafptr_l8_3d_type
-#define CAFPNTR_3D_ cafptr_l8_3d
-#define CAFPNTR_TYPE_1D_ cafptr_l8_1d_type
-#define CAFPNTR_1D_ cafptr_l8_1d
-#include <mpp_datatype.h>
-#endif
-
-#ifndef no_4byte_reals
-#define MPP_TYPE_ real(FLOAT_KIND)
-#define CAFPNTR_TYPE_3D_ cafptr_r4_3d_type
-#define CAFPNTR_3D_ cafptr_r4_3d
-#define CAFPNTR_TYPE_1D_ cafptr_r4_1d_type
-#define CAFPNTR_1D_ cafptr_r4_1d
-#include <mpp_datatype.h>
-
-#define MPP_TYPE_ complex(FLOAT_KIND)
-#define CAFPNTR_TYPE_3D_ cafptr_c4_3d_type
-#define CAFPNTR_3D_ cafptr_c4_3d
-#define CAFPNTR_TYPE_1D_ cafptr_c4_1d_type
-#define CAFPNTR_1D_ cafptr_c4_1d
-#include <mpp_datatype.h>
-#endif
-
-#define MPP_TYPE_ integer(INT_KIND)
-#define CAFPNTR_TYPE_3D_ cafptr_i4_3d_type
-#define CAFPNTR_3D_ cafptr_i4_3d
-#define CAFPNTR_TYPE_1D_ cafptr_i4_1d_type
-#define CAFPNTR_1D_ cafptr_i4_1d
-#include <mpp_datatype.h>
-
-#define MPP_TYPE_ logical(INT_KIND)
-#define CAFPNTR_TYPE_3D_ cafptr_l4_3d_type
-#define CAFPNTR_3D_ cafptr_l4_3d
-#define CAFPNTR_TYPE_1D_ cafptr_l4_1d_type
-#define CAFPNTR_1D_ cafptr_l4_1d
-#include <mpp_datatype.h>
-#endif
-
-!***********************************************************************
-!
-!     module variables 
-!
-!***********************************************************************
-  integer             :: pe
-  logical             :: module_is_initialized = .false.
-  logical             :: debug                 = .FALSE.
-  logical             :: verbose=.FALSE.
-  logical             :: debug_gsm=.false.
-  logical             :: mosaic_defined = .false.
-  integer             :: mpp_domains_stack_size=0
-  integer             :: mpp_domains_stack_hwm=0
-  type(domain1D),save :: NULL_DOMAIN1D
-  type(domain2D),save :: NULL_DOMAIN2D
-
-  !-------- The following variables are used in mpp_domains_comm.h
-  
-  integer, parameter :: MAX_ADDRS=512
-  integer(LONG_KIND),dimension(MAX_ADDRS),save :: addrs_sorted=-9999  ! list of sorted local addrs
-  integer,           dimension(-1:MAX_ADDRS),save :: addrs_idx=-9999  ! idx of addr assoicated w/ d_comm
-  integer,           dimension(MAX_ADDRS),save :: a_salvage=-9999     ! freed idx list of addr
-  integer,                                save :: a_sort_len=0        ! len sorted memory list
-  integer,                                save :: n_addrs=0           ! num memory addresses used
-
-  integer(LONG_KIND), parameter :: ADDR2_BASE=Z'0000000000010000'
-  integer, parameter :: MAX_ADDRS2=128
-  integer(LONG_KIND),dimension(MAX_ADDRS2),save :: addrs2_sorted=-9999  ! list of sorted local addrs
-  integer,           dimension(-1:MAX_ADDRS2),save :: addrs2_idx=-9999  ! idx of addr2 assoicated w/ d_comm
-  integer,           dimension(MAX_ADDRS2),save :: a2_salvage=-9999     ! freed indices of addr2
-  integer,                                 save :: a2_sort_len=0        ! len sorted memory list
-  integer,                                 save :: n_addrs2=0           ! num memory addresses used
-
-  integer, parameter :: MAX_DOM_IDS=128
-  integer(LONG_KIND),dimension(MAX_DOM_IDS),save :: ids_sorted=-9999 ! list of sorted domain identifiers
-  integer,           dimension(-1:MAX_DOM_IDS),save :: ids_idx=-9999 ! idx of d_comm associated w/ sorted addr
-  integer,                                  save :: i_sort_len=0     ! len sorted domain ids list
-  integer,                                  save :: n_ids=0          ! num domain ids used (=i_sort_len; dom ids never removed)
-
-  integer, parameter :: MAX_FIELDS=1024
-  integer(LONG_KIND),        dimension(MAX_FIELDS),save           :: dcKey_sorted=-9999  ! list of sorted local addrs
-  !     Not sure why static d_comm fails during deallocation of derived type members; allocatable works
-  !     type(DomainCommunicator2D),dimension(MAX_FIELDS),save,target    :: d_comm              ! domain communicators
-  type(DomainCommunicator2D),dimension(:),allocatable,save,target :: d_comm              ! domain communicators
-  integer,                   dimension(-1:MAX_FIELDS),save           :: d_comm_idx=-9999 ! idx of d_comm associated w/ sorted addr
-  integer,                   dimension(MAX_FIELDS),save           :: dc_salvage=-9999    ! freed indices of d_comm
-  integer,                                         save           :: dc_sort_len=0       ! len sorted comm keys (=num active communicators)
-  integer,                                         save           :: n_comm=0            ! num communicators used
-
-  !     integer(LONG_KIND), parameter :: GT_BASE=2**8
-  integer(LONG_KIND), parameter :: GT_BASE=Z'0000000000000100'  ! Workaround for 64bit int init problem
-
-  !     integer(LONG_KIND), parameter :: KE_BASE=2**48
-  integer(LONG_KIND), parameter :: KE_BASE=Z'0001000000000000'  ! Workaround for 64bit int init problem
-
-
-  !--- the following variables are used in mpp_domains_misc.h
-  logical :: domain_clocks_on=.FALSE.
-  integer :: send_clock=0, recv_clock=0, unpk_clock=0
-  integer :: wait_clock=0, pack_clock=0, pack_loop_clock=0
-
-  !--- namelist interface
-! <NAMELIST NAME="mpp_domains_nml">
-!   <DATA NAME="debug_update_domain" TYPE="logical"  DEFAULT=".FALSE.">
-!     If set to .TRUE., will check the consistency on the boundary between
-!     processor/tile when updating doamin for symmetric domain
-!   </DATA>
-! </NAMELIST>
-  logical :: debug_update_domain = .FALSE.
-  namelist /mpp_domains_nml/ debug_update_domain
-
-  !***********************************************************************
-  !
-  !           public interface for mpp_domains_comm.h
-  !
-  !***********************************************************************
-
-#ifdef use_CAF
-  interface mpp_associate_caf_field
-     !     module procedure associate_caf_field_r8_1d
-     !     module procedure associate_caf_field_c8_1d
-     !     module procedure associate_caf_field_i8_1d
-     !     module procedure associate_caf_field_l8_1d
-     !     module procedure associate_caf_field_r4_1d
-     !     module procedure associate_caf_field_c4_1d
-     !     module procedure associate_caf_field_i4_1d
-     !     module procedure associate_caf_field_l4_1d
-     module procedure associate_caf_field_r8_3d
-     module procedure associate_caf_field_c8_3d
-     module procedure associate_caf_field_i8_3d
-     module procedure associate_caf_field_l8_3d
-     module procedure associate_caf_field_r4_3d
-     module procedure associate_caf_field_c4_3d
-     module procedure associate_caf_field_i4_3d
-     module procedure associate_caf_field_l4_3d
-  end interface
-#endif
-
-!***********************************************************************
-!
-!         public interface from mpp_domains_define.h
-!
-!***********************************************************************
-
-  ! <INTERFACE NAME="mpp_define_layout">
-  !  <OVERVIEW>
-  !    Retrieve layout associated with a domain decomposition.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    Given a global 2D domain and the number of divisions in the
-  !    decomposition (<TT>ndivs</TT>: usually the PE count unless some
-  !    domains are masked) this calls returns a 2D domain layout.
-  !    
-  !    By default, <TT>mpp_define_layout</TT> will attempt to divide the
-  !    2D index space into domains that maintain the aspect ratio of the
-  !    global domain. If this cannot be done, the algorithm favours domains
-  !    that are longer in <TT>x</TT> than <TT>y</TT>, a preference that could
-  !    improve vector performance.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call mpp_define_layout( global_indices, ndivs, layout )
-  !  </TEMPLATE>
-  !  <IN NAME="global_indices"></IN>
-  !  <IN NAME="ndivs"></IN>
-  !  <OUT NAME="layout"></OUT>
-  ! </INTERFACE>
-
-  interface mpp_define_layout
-     module procedure mpp_define_layout2D
-  end interface
-
-
-  ! <INTERFACE NAME="mpp_define_domains">
-
-  !   <OVERVIEW>
-  !     Set up a domain decomposition.
-  !   </OVERVIEW>
-  !   <DESCRIPTION>
-  !     There are two forms for the <TT>mpp_define_domains</TT> call. The 2D
-  !     version is generally to be used but is built by repeated calls to the
-  !     1D version, also provided.
-  !   </DESCRIPTION>
-  !   <TEMPLATE>
-  !     call mpp_define_domains( global_indices, ndivs, domain, &
-  !                                   pelist, flags, halo, extent, maskmap )
-  !   </TEMPLATE>
-  !  <TEMPLATE>
-  !    call mpp_define_domains( global_indices, layout, domain, pelist, &
-  !                                   xflags, yflags, xhalo, yhalo,           &
-  !                                   xextent, yextent, maskmap, name )
-  !  </TEMPLATE>
-  !   <IN NAME="global_indices" >
-  !     Defines the global domain.
-  !   </IN>
-  !   <IN NAME="ndivs">
-  !     Is the number of domain divisions required.
-  !   </IN>
-  !   <INOUT NAME="domain">
-  !     Holds the resulting domain decomposition.
-  !   </INOUT>
-  !   <IN NAME="pelist">
-  !     List of PEs to which the domains are to be assigned.
-  !   </IN>
-  !   <IN NAME="flags">
-  !      An optional flag to pass additional information
-  !      about the desired domain topology. Useful flags in a 1D decomposition
-  !      include <TT>GLOBAL_DATA_DOMAIN</TT> and
-  !      <TT>CYCLIC_GLOBAL_DOMAIN</TT>. Flags are integers: multiple flags may
-  !      be added together. The flag values are public parameters available by
-  !      use association.
-  !   </IN>
-  !   <IN NAME="halo">
-  !     Width of the halo.
-  !   </IN>
-  !   <IN NAME="extent">
-  !      Normally <TT>mpp_define_domains</TT> attempts
-  !      an even division of the global domain across <TT>ndivs</TT>
-  !      domains. The <TT>extent</TT> array can be used by the user to pass a
-  !      custom domain division. The <TT>extent</TT> array has <TT>ndivs</TT>
-  !      elements and holds the compute domain widths, which should add up to
-  !      cover the global domain exactly.
-  !   </IN>
-  !   <IN NAME="maskmap">
-  !     Some divisions may be masked
-  !     (<TT>maskmap=.FALSE.</TT>) to exclude them from the computation (e.g
-  !     for ocean model domains that are all land). The <TT>maskmap</TT> array
-  !     is dimensioned <TT>ndivs</TT> and contains <TT>.TRUE.</TT> values for
-  !     any domain that must be <I>included</I> in the computation (default
-  !     all). The <TT>pelist</TT> array length should match the number of
-  !     domains included in the computation.
-  !    </IN>   
-
-  !  <IN NAME="layout"></IN>
-  !  <IN NAME="xflags, yflags"></IN>
-  !  <IN NAME="xhalo, yhalo"></IN>
-  !  <IN NAME="xextent, yextent"></IN>
-  !  <IN NAME="name" ></IN>
-
-  !  <NOTE>    
-  !    For example:
-  !    
-  !    <PRE>
-  !    call mpp_define_domains( (/1,100/), 10, domain, &
-  !         flags=GLOBAL_DATA_DOMAIN+CYCLIC_GLOBAL_DOMAIN, halo=2 )
-  !    </PRE>
-  !    
-  !    defines 10 compute domains spanning the range [1,100] of the global
-  !    domain. The compute domains are non-overlapping blocks of 10. All the data
-  !    domains are global, and with a halo of 2 span the range [-1:102]. And
-  !    since the global domain has been declared to be cyclic,
-  !    <TT>domain(9)%next => domain(0)</TT> and <TT>domain(0)%prev =>
-  !    domain(9)</TT>. A field is allocated on the data domain, and computations proceed on
-  !    the compute domain. A call to <LINK
-  !    SRC="#mpp_update_domains"><TT>mpp_update_domains</TT></LINK> would fill in
-  !    the values in the halo region:
-
-  !    <PRE>
-  !    call mpp_get_data_domain( domain, isd, ied ) !returns -1 and 102
-  !    call mpp_get_compute_domain( domain, is, ie ) !returns (1,10) on PE 0 ...
-  !    allocate( a(isd:ied) )
-  !    do i = is,ie
-  !       a(i) = &lt;perform computations&gt;
-  !    end do
-  !    call mpp_update_domains( a, domain )
-  !    </PRE>
-
-  !    The call to <TT>mpp_update_domains</TT> fills in the regions outside
-  !    the compute domain. Since the global domain is cyclic, the values at
-  !    <TT>i=(-1,0)</TT> are the same as at <TT>i=(99,100)</TT>; and
-  !    <TT>i=(101,102)</TT> are the same as <TT>i=(1,2)</TT>.
-  !    
-  !    The 2D version is just an extension of this syntax to two
-  !    dimensions.
-  !
-  !    The 2D version of the above should generally be used in
-  !    codes, including 1D-decomposed ones, if there is a possibility of
-  !    future evolution toward 2D decomposition. The arguments are similar to
-  !    the 1D case, except that now we have optional arguments
-  !    <TT>flags</TT>, <TT>halo</TT>, <TT>extent</TT> and <TT>maskmap</TT>
-  !    along two axes.
-  !    
-  !    <TT>flags</TT> can now take an additional possible value to fold
-  !    one or more edges. This is done by using flags
-  !    <TT>FOLD_WEST_EDGE</TT>, <TT>FOLD_EAST_EDGE</TT>,
-  !    <TT>FOLD_SOUTH_EDGE</TT> or <TT>FOLD_NORTH_EDGE</TT>. When a fold
-  !    exists (e.g cylindrical domain), vector fields reverse sign upon
-  !    crossing the fold. This parity reversal is performed only in the
-  !    vector version of <LINK
-  !    SRC="#mpp_update_domains"><TT>mpp_update_domains</TT></LINK>. In
-  !    addition, shift operations may need to be applied to vector fields on
-  !    staggered grids, also described in the vector interface to
-  !    <TT>mpp_update_domains</TT>.
-  !    
-  !    <TT>name</TT> is the name associated with the decomposition,
-  !    e.g <TT>'Ocean model'</TT>. If this argument is present,
-  !    <TT>mpp_define_domains</TT> will print the domain decomposition
-  !    generated to <TT>stdlog</TT>.
-  !    
-  !    Examples:
-  !    
-  !    <PRE>
-  !    call mpp_define_domains( (/1,100,1,100/), (/2,2/), domain, xhalo=1 )
-  !    </PRE>
-  !    
-  !    will create the following domain layout:
-  !    <PRE>
-  !                   |---------|-----------|-----------|-------------|
-  !                   |domain(1)|domain(2)  |domain(3)  |domain(4)    |
-  !    |--------------|---------|-----------|-----------|-------------|
-  !    |Compute domain|1,50,1,50|51,100,1,50|1,50,51,100|51,100,51,100|
-  !    |--------------|---------|-----------|-----------|-------------|
-  !    |Data domain   |0,51,1,50|50,101,1,50|0,51,51,100|50,101,51,100|
-  !    |--------------|---------|-----------|-----------|-------------|
-  !    </PRE>
-  !    
-  !    Again, we allocate arrays on the data domain, perform computations
-  !    on the compute domain, and call <TT>mpp_update_domains</TT> to update
-  !    the halo region.
-  !    
-  !    If we wished to perfom a 1D decomposition along <TT>Y</TT>
-  !    on the same global domain, we could use:
-
-  !    <PRE>
-  !    call mpp_define_domains( (/1,100,1,100/), layout=(/4,1/), domain, xhalo=1 )
-  !    </PRE>
-
-  !    This will create the following domain layout:
-  !    <PRE>
-  !                   |----------|-----------|-----------|------------|
-  !                   |domain(1) |domain(2)  |domain(3)  |domain(4)   |
-  !    |--------------|----------|-----------|-----------|------------|
-  !    |Compute domain|1,100,1,25|1,100,26,50|1,100,51,75|1,100,76,100|
-  !    |--------------|----------|-----------|-----------|------------|
-  !    |Data domain   |0,101,1,25|0,101,26,50|0,101,51,75|1,101,76,100|
-  !    |--------------|----------|-----------|-----------|------------|
-  !    </PRE>
-  !   </NOTE>
-  ! </INTERFACE>
-  interface mpp_define_domains
-     module procedure mpp_define_domains1D
-     module procedure mpp_define_domains2D
-  end interface
-
-  interface mpp_define_null_domain
-     module procedure mpp_define_null_domain1D
-     module procedure mpp_define_null_domain2D
-  end interface
-
-! <INTERFACE NAME="mpp_modify_domain">
-!   <OVERVIEW>
-!     modifies the extents (compute, data and global) of domain
-!   </OVERVIEW>
-!   <IN NAME="domain_in">
-!     The source domain.
-!   </IN>
-!   <IN NAME="halo">
-!     Halo size of the returned 1D doamin. Default value is 0.
-!   </IN>
-!   <IN NAME="cbegin,cend">
-!    Axis specifications associated with the compute domain of the returned 1D domain.
-!   </IN>
-!   <IN NAME="gbegin,gend">
-!    Axis specifications associated with the global domain of the returned 1D domain.
-!   </IN>
-!   <IN NAME="isc,iec">
-!    Zonal axis specifications associated with the compute domain of the returned 2D domain.
-!   </IN>
-!   <IN NAME="jsc,jec">
-!    Meridinal axis specifications associated with the compute domain of the returned 2D domain.
-!   </IN>
-!   <IN NAME="isg,ieg">
-!    Zonal axis specifications associated with the global domain of the returned 2D domain.
-!   </IN>
-!   <IN NAME="jsg,jeg">
-!    Meridinal axis specifications associated with the global domain of the returned 2D domain.
-!   </IN>
-!   <IN NAME="xhalo,yhalo">
-!     Halo size of the returned 2D doamin. Default value is 0.
-!   </IN>
-!   <INOUT NAME="domain_out">
-!     The returned domain.
-!   </INOUT>
-
-! </INTERFACE>
-
-  interface mpp_modify_domain
-     module procedure mpp_modify_domain1D
-     module procedure mpp_modify_domain2D
-  end interface
-
-
-!***********************************************************************
-!
-!        public interface from mpp_domains_misc.h
-!
-!***********************************************************************
-
-! <INTERFACE NAME="mpp_update_domains">
-!  <OVERVIEW>
-!     Halo updates.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!    <TT>mpp_update_domains</TT> is used to perform a halo update of a
-!    domain-decomposed array on each PE. <TT>MPP_TYPE_</TT> can be of type
-!    <TT>complex</TT>, <TT>integer</TT>, <TT>logical</TT> or <TT>real</TT>;
-!    of 4-byte or 8-byte kind; of rank up to 5. The vector version (with
-!    two input data fields) is only present for <TT>real</TT> types.
-!    
-!    For 2D domain updates, if there are halos present along both
-!    <TT>x</TT> and <TT>y</TT>, we can choose to update one only, by
-!    specifying <TT>flags=XUPDATE</TT> or <TT>flags=YUPDATE</TT>. In
-!    addition, one-sided updates can be performed by setting <TT>flags</TT>
-!    to any combination of <TT>WUPDATE</TT>, <TT>EUPDATE</TT>,
-!    <TT>SUPDATE</TT> and <TT>NUPDATE</TT>, to update the west, east, north
-!    and south halos respectively. Any combination of halos may be used by
-!    adding the requisite flags, e.g: <TT>flags=XUPDATE+SUPDATE</TT> or
-!    <TT>flags=EUPDATE+WUPDATE+SUPDATE</TT> will update the east, west and
-!    south halos.
-!    
-!    If a call to <TT>mpp_update_domains</TT> involves at least one E-W
-!    halo and one N-S halo, the corners involved will also be updated, i.e,
-!    in the example above, the SE and SW corners will be updated.
-!    
-!    If <TT>flags</TT> is not supplied, that is
-!    equivalent to <TT>flags=XUPDATE+YUPDATE</TT>.
-!    
-!    The vector version is passed the <TT>x</TT> and <TT>y</TT>
-!    components of a vector field in tandem, and both are updated upon
-!    return. They are passed together to treat parity issues on various
-!    grids. For example, on a cubic sphere projection, the <TT>x</TT> and
-!    <TT>y</TT> components may be interchanged when passing from an
-!    equatorial cube face to a polar face. For grids with folds, vector
-!    components change sign on crossing the fold.  Paired scalar quantities
-!    can also be passed with the vector version if flags=SCALAR_PAIR, in which
-!    case components are appropriately interchanged, but signs are not.
-!    
-!    Special treatment at boundaries such as folds is also required for
-!    staggered grids. The following types of staggered grids are
-!    recognized:
-!    
-!    1) <TT>AGRID</TT>: values are at grid centers.<BR/>
-!    2) <TT>BGRID_NE</TT>: vector fields are at the NE vertex of a grid
-!    cell, i.e: the array elements <TT>u(i,j)</TT> and <TT>v(i,j)</TT> are
-!    actually at (i+&#189;,j+&#189;) with respect to the grid centers.<BR/>
-!    3) <TT>BGRID_SW</TT>: vector fields are at the SW vertex of a grid
-!    cell, i.e: the array elements <TT>u(i,j)</TT> and <TT>v(i,j)</TT> are
-!    actually at (i-&#189;,j-&#189;) with respect to the grid centers.<BR/>
-!    4) <TT>CGRID_NE</TT>: vector fields are at the N and E faces of a
-!    grid cell, i.e: the array elements <TT>u(i,j)</TT> and <TT>v(i,j)</TT>
-!    are actually at (i+&#189;,j) and (i,j+&#189;) with respect to the
-!    grid centers.<BR/>
-!    5) <TT>CGRID_SW</TT>: vector fields are at the S and W faces of a
-!    grid cell, i.e: the array elements <TT>u(i,j)</TT> and <TT>v(i,j)</TT>
-!    are actually at (i-&#189;,j) and (i,j-&#189;) with respect to the
-!    grid centers.
-!
-!    The gridtypes listed above are all available by use association as
-!    integer parameters. The scalar version of <TT>mpp_update_domains</TT>
-!    assumes that the values of a scalar field are always at <TT>AGRID</TT>
-!    locations, and no special boundary treatment is required. If vector
-!    fields are at staggered locations, the optional argument
-!    <TT>gridtype</TT> must be appropriately set for correct treatment at
-!    boundaries.
-!    
-!    It is safe to apply vector field updates to the appropriate arrays
-!    irrespective of the domain topology: if the topology requires no
-!    special treatment of vector fields, specifying <TT>gridtype</TT> will
-!    do no harm.
-!
-!    <TT>mpp_update_domains</TT> internally buffers the date being sent
-!    and received into single messages for efficiency. A turnable internal
-!    buffer area in memory is provided for this purpose by
-!    <TT>mpp_domains_mod</TT>. The size of this buffer area can be set by
-!    the user by calling <LINK SRC="mpp_domains.html#mpp_domains_set_stack_size">
-!    <TT>mpp_domains_set_stack_size</TT></LINK>.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!    call mpp_update_domains( field, domain, flags )
-!  </TEMPLATE>
-!  <TEMPLATE>
-!    call mpp_update_domains( fieldx, fieldy, domain, flags, gridtype )
-!  </TEMPLATE>
-! </INTERFACE>
-  interface mpp_update_domains
-     module procedure mpp_update_domain2D_r8_2d
-     module procedure mpp_update_domain2D_r8_3d
-     module procedure mpp_update_domain2D_r8_4d
-     module procedure mpp_update_domain2D_r8_5d
-     module procedure mpp_update_domain2D_r8_2dv
-     module procedure mpp_update_domain2D_r8_3dv
-     module procedure mpp_update_domain2D_r8_4dv
-     module procedure mpp_update_domain2D_r8_5dv
-     module procedure mpp_update_domain2D_c8_2d
-     module procedure mpp_update_domain2D_c8_3d
-     module procedure mpp_update_domain2D_c8_4d
-     module procedure mpp_update_domain2D_c8_5d
-#ifndef no_8byte_integers
-     module procedure mpp_update_domain2D_i8_2d
-     module procedure mpp_update_domain2D_i8_3d
-     module procedure mpp_update_domain2D_i8_4d
-     module procedure mpp_update_domain2D_i8_5d
-!!$     module procedure mpp_update_domain2D_l8_2d
-!!$     module procedure mpp_update_domain2D_l8_3d
-!!$     module procedure mpp_update_domain2D_l8_4d
-!!$     module procedure mpp_update_domain2D_l8_5d
-#endif
-#ifndef no_4byte_reals
-     module procedure mpp_update_domain2D_r4_2d
-     module procedure mpp_update_domain2D_r4_3d
-     module procedure mpp_update_domain2D_r4_4d
-     module procedure mpp_update_domain2D_r4_5d
-     module procedure mpp_update_domain2D_c4_2d
-     module procedure mpp_update_domain2D_c4_3d
-     module procedure mpp_update_domain2D_c4_4d
-     module procedure mpp_update_domain2D_c4_5d
-     module procedure mpp_update_domain2D_r4_2dv
-     module procedure mpp_update_domain2D_r4_3dv
-     module procedure mpp_update_domain2D_r4_4dv
-     module procedure mpp_update_domain2D_r4_5dv
-#endif
-     module procedure mpp_update_domain2D_i4_2d
-     module procedure mpp_update_domain2D_i4_3d
-     module procedure mpp_update_domain2D_i4_4d
-     module procedure mpp_update_domain2D_i4_5d
-!!$     module procedure mpp_update_domain2D_l4_2d
-!!$     module procedure mpp_update_domain2D_l4_3d
-!!$     module procedure mpp_update_domain2D_l4_4d
-!!$     module procedure mpp_update_domain2D_l4_5d
-  end interface
-
-!--------------------------------------------------------------
-!bnc: for adjoint update
-!--------------------------------------------------------------
-  interface mpp_update_domains_ad
-     module procedure mpp_update_domain2D_ad_r8_2d
-     module procedure mpp_update_domain2D_ad_r8_3d
-     module procedure mpp_update_domain2D_ad_r8_4d
-     module procedure mpp_update_domain2D_ad_r8_5d
-     module procedure mpp_update_domain2D_ad_r8_2dv
-     module procedure mpp_update_domain2D_ad_r8_3dv
-     module procedure mpp_update_domain2D_ad_r8_4dv
-     module procedure mpp_update_domain2D_ad_r8_5dv
-     module procedure mpp_update_domain2D_ad_c8_2d
-     module procedure mpp_update_domain2D_ad_c8_3d
-     module procedure mpp_update_domain2D_ad_c8_4d
-     module procedure mpp_update_domain2D_ad_c8_5d
-#ifndef no_8byte_integers
-     module procedure mpp_update_domain2D_ad_i8_2d
-     module procedure mpp_update_domain2D_ad_i8_3d
-     module procedure mpp_update_domain2D_ad_i8_4d
-     module procedure mpp_update_domain2D_ad_i8_5d
-!!$     module procedure mpp_update_domain2D_ad_l8_2d
-!!$     module procedure mpp_update_domain2D_ad_l8_3d
-!!$     module procedure mpp_update_domain2D_ad_l8_4d
-!!$     module procedure mpp_update_domain2D_ad_l8_5d
-#endif
-#ifndef no_4byte_reals
-     module procedure mpp_update_domain2D_ad_r4_2d
-     module procedure mpp_update_domain2D_ad_r4_3d
-     module procedure mpp_update_domain2D_ad_r4_4d
-     module procedure mpp_update_domain2D_ad_r4_5d
-     module procedure mpp_update_domain2D_ad_c4_2d
-     module procedure mpp_update_domain2D_ad_c4_3d
-     module procedure mpp_update_domain2D_ad_c4_4d
-     module procedure mpp_update_domain2D_ad_c4_5d
-     module procedure mpp_update_domain2D_ad_r4_2dv
-     module procedure mpp_update_domain2D_ad_r4_3dv
-     module procedure mpp_update_domain2D_ad_r4_4dv
-     module procedure mpp_update_domain2D_ad_r4_5dv
-#endif
-     module procedure mpp_update_domain2D_ad_i4_2d
-     module procedure mpp_update_domain2D_ad_i4_3d
-     module procedure mpp_update_domain2D_ad_i4_4d
-     module procedure mpp_update_domain2D_ad_i4_5d
-!!$     module procedure mpp_update_domain2D_ad_l4_2d
-!!$     module procedure mpp_update_domain2D_ad_l4_3d
-!!$     module procedure mpp_update_domain2D_ad_l4_4d
-!!$     module procedure mpp_update_domain2D_ad_l4_5d
-  end interface
-!bnc
-
-
-  interface mpp_do_update
-     module procedure mpp_do_update_new_r8_3d
-     module procedure mpp_do_update_old_r8_3d
-     module procedure mpp_do_update_new_r8_3dv
-     module procedure mpp_do_update_old_r8_3dv
-     module procedure mpp_do_update_new_c8_3d
-     module procedure mpp_do_update_old_c8_3d
-#ifndef no_8byte_integers
-     module procedure mpp_do_update_new_i8_3d
-     module procedure mpp_do_update_old_i8_3d
-!!$     module procedure mpp_do_update_new_l8_3d
-!!$     module procedure mpp_do_update_old_l8_3d
-#endif
-#ifndef no_4byte_reals
-     module procedure mpp_do_update_new_r4_3d
-     module procedure mpp_do_update_old_r4_3d
-     module procedure mpp_do_update_new_r4_3dv
-     module procedure mpp_do_update_old_r4_3dv
-     module procedure mpp_do_update_new_c4_3d
-     module procedure mpp_do_update_old_c4_3d
-#endif
-     module procedure mpp_do_update_new_i4_3d
-     module procedure mpp_do_update_old_i4_3d
-!!$     module procedure mpp_do_update_new_l4_3d
-!!$     module procedure mpp_do_update_old_l4_3d
-  end interface
-
-!-------------------------------------------------------
-!bnc  for adjoint do_update
-!-------------------------------------------------------
-  interface mpp_do_update_ad
-     module procedure mpp_do_update_ad_new_r8_3d
-     module procedure mpp_do_update_ad_old_r8_3d
-     module procedure mpp_do_update_ad_new_r8_3dv
-     module procedure mpp_do_update_ad_old_r8_3dv
-     module procedure mpp_do_update_ad_new_c8_3d
-     module procedure mpp_do_update_ad_old_c8_3d
-#ifndef no_8byte_integers
-     module procedure mpp_do_update_ad_new_i8_3d
-     module procedure mpp_do_update_ad_old_i8_3d
-!!$     module procedure mpp_do_update_ad_new_l8_3d
-!!$     module procedure mpp_do_update_ad_old_l8_3d
-#endif
-#ifndef no_4byte_reals
-     module procedure mpp_do_update_ad_new_r4_3d
-     module procedure mpp_do_update_ad_old_r4_3d
-     module procedure mpp_do_update_ad_new_r4_3dv
-     module procedure mpp_do_update_ad_old_r4_3dv
-     module procedure mpp_do_update_ad_new_c4_3d
-     module procedure mpp_do_update_ad_old_c4_3d
-#endif
-     module procedure mpp_do_update_ad_new_i4_3d
-     module procedure mpp_do_update_ad_old_i4_3d
-!!$     module procedure mpp_do_update_ad_new_l4_3d
-!!$     module procedure mpp_do_update_ad_old_l4_3d
-  end interface
-!bnc
-
-! <INTERFACE NAME="mpp_get_boundary">
-! <OVERVIEW>
-!    Get the boundary data for symmetric domain when the data is at C, E, or N-cell center
-! </OVERVIEW>
-!  <DESCRIPTION>
-!    <TT>mpp_get_boundary</TT> is used to get the boundary data for symmetric domain 
-!        when the data is at C, E, or N-cell center. For cubic grid, the data should 
-!        always at C-cell center. 
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!    call mpp_get_boundary
-!  </TEMPLATE>
-!  <TEMPLATE>
-!    call mpp_get_boundary
-!  </TEMPLATE>
-! </INTERFACE>
-  interface mpp_get_boundary
-     module procedure mpp_get_boundary_r8_2d
-     module procedure mpp_get_boundary_r8_3d
-     module procedure mpp_get_boundary_r8_4d
-     module procedure mpp_get_boundary_r8_5d
-     module procedure mpp_get_boundary_r8_2dv
-     module procedure mpp_get_boundary_r8_3dv
-     module procedure mpp_get_boundary_r8_4dv
-     module procedure mpp_get_boundary_r8_5dv
-#ifndef no_4byte_reals
-     module procedure mpp_get_boundary_r4_2d
-     module procedure mpp_get_boundary_r4_3d
-     module procedure mpp_get_boundary_r4_4d
-     module procedure mpp_get_boundary_r4_5d
-     module procedure mpp_get_boundary_r4_2dv
-     module procedure mpp_get_boundary_r4_3dv
-     module procedure mpp_get_boundary_r4_4dv
-     module procedure mpp_get_boundary_r4_5dv
-#endif
-  end interface
-
-  interface mpp_do_get_boundary
-     module procedure mpp_do_get_boundary_new_r8_3d
-     module procedure mpp_do_get_boundary_old_r8_3d
-     module procedure mpp_do_get_boundary_new_r8_3dv
-     module procedure mpp_do_get_boundary_old_r8_3dv
-#ifndef no_4byte_reals
-     module procedure mpp_do_get_boundary_new_r4_3d
-     module procedure mpp_do_get_boundary_old_r4_3d
-     module procedure mpp_do_get_boundary_new_r4_3dv
-     module procedure mpp_do_get_boundary_old_r4_3dv
-#endif
-  end interface
-
-! <INTERFACE NAME="mpp_redistribute">
-!  <OVERVIEW>
-!    Reorganization of distributed global arrays.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!    <TT>mpp_redistribute</TT> is used to reorganize a distributed
-!    array.  <TT>MPP_TYPE_</TT> can be of type <TT>integer</TT>,
-!    <TT>complex</TT>, or <TT>real</TT>; of 4-byte or 8-byte kind; of rank
-!    up to 5.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!    call mpp_redistribute( domain_in, field_in, domain_out, field_out )
-!  </TEMPLATE>
-!  <IN NAME="field_in" TYPE="MPP_TYPE_">
-!    <TT>field_in</TT> is dimensioned on the data domain of <TT>domain_in</TT>.
-!  </IN>
-!  <OUT NAME="field_out" TYPE="MPP_TYPE_">
-!    <TT>field_out</TT> on the data domain of <TT>domain_out</TT>.
-!  </OUT>
-! </INTERFACE>
-  interface mpp_redistribute
-     module procedure mpp_redistribute_r8_2D
-     module procedure mpp_redistribute_r8_3D
-     module procedure mpp_redistribute_r8_4D
-     module procedure mpp_redistribute_r8_5D
-     module procedure mpp_redistribute_c8_2D
-     module procedure mpp_redistribute_c8_3D
-     module procedure mpp_redistribute_c8_4D
-     module procedure mpp_redistribute_c8_5D
-#ifndef no_8byte_integers
-     module procedure mpp_redistribute_i8_2D
-     module procedure mpp_redistribute_i8_3D
-     module procedure mpp_redistribute_i8_4D
-     module procedure mpp_redistribute_i8_5D
-!!$     module procedure mpp_redistribute_l8_2D
-!!$     module procedure mpp_redistribute_l8_3D
-!!$     module procedure mpp_redistribute_l8_4D
-!!$     module procedure mpp_redistribute_l8_5D
-#endif
-#ifndef no_4byte_reals
-     module procedure mpp_redistribute_r4_2D
-     module procedure mpp_redistribute_r4_3D
-     module procedure mpp_redistribute_r4_4D
-     module procedure mpp_redistribute_r4_5D
-     module procedure mpp_redistribute_c4_2D
-     module procedure mpp_redistribute_c4_3D
-     module procedure mpp_redistribute_c4_4D
-     module procedure mpp_redistribute_c4_5D
-#endif
-     module procedure mpp_redistribute_i4_2D
-     module procedure mpp_redistribute_i4_3D
-     module procedure mpp_redistribute_i4_4D
-     module procedure mpp_redistribute_i4_5D
-!!$     module procedure mpp_redistribute_l4_2D
-!!$     module procedure mpp_redistribute_l4_3D
-!!$     module procedure mpp_redistribute_l4_4D
-!!$     module procedure mpp_redistribute_l4_5D
-  end interface
-
-  interface mpp_do_redistribute
-     module procedure mpp_do_redistribute_new_r8_3D
-     module procedure mpp_do_redistribute_old_r8_3D
-     module procedure mpp_do_redistribute_new_c8_3D
-     module procedure mpp_do_redistribute_old_c8_3D
-#ifndef no_8byte_integers
-     module procedure mpp_do_redistribute_new_i8_3D
-     module procedure mpp_do_redistribute_old_i8_3D
-     module procedure mpp_do_redistribute_new_l8_3D
-     module procedure mpp_do_redistribute_old_l8_3D
-#endif
-#ifndef no_4byte_reals
-     module procedure mpp_do_redistribute_new_r4_3D
-     module procedure mpp_do_redistribute_old_r4_3D
-     module procedure mpp_do_redistribute_new_c4_3D
-     module procedure mpp_do_redistribute_old_c4_3D
-#endif
-     module procedure mpp_do_redistribute_new_i4_3D
-     module procedure mpp_do_redistribute_old_i4_3D
-     module procedure mpp_do_redistribute_new_l4_3D
-     module procedure mpp_do_redistribute_old_l4_3D
-  end interface
-
-
-! <INTERFACE NAME="mpp_check_field">
-!   <OVERVIEW>
-!     Parallel checking between two ensembles which run
-!     on different set pes at the same time.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     There are two forms for the <TT>mpp_check_field</TT> call. The 2D
-!     version is generally to be used and 3D version is  built by repeated calls to the
-!     2D version.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call mpp_check_field(field_in, pelist1, pelist2, domain, mesg, &
-!                                w_halo, s_halo, e_halo, n_halo, force_abort  )
-!   </TEMPLATE>
-!   <IN NAME="field_in" >
-!     Field to be checked
-!   </IN>
-!   <IN NAME="pelist1, pelist2">
-!     Pelist of the two ensembles to be compared
-!   </IN>
-!   <IN NAME="domain">
-!     Domain of current pe
-!   </IN>
-!   <IN NAME="mesg" >
-!     Message to be printed out
-!   </IN>
-!   <IN NAME="w_halo, s_halo, e_halo, n_halo">
-!     Halo size to be checked. Default value is 0.
-!   </IN>
-!   <IN NAME="force_abort">
-!     When true, abort program when any difference found. Default value is false.
-!   </IN>
-! </INTERFACE>
-
-  interface mpp_check_field
-     module procedure mpp_check_field_2D
-     module procedure mpp_check_field_3D
-  end interface
-
-!***********************************************************************
-!
-!         public interface from mpp_domains_reduce.h
-!
-!***********************************************************************
-
-! <INTERFACE NAME="mpp_global_field">
-!  <OVERVIEW>
-!    Fill in a global array from domain-decomposed arrays.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!    <TT>mpp_global_field</TT> is used to get an entire
-!    domain-decomposed array on each PE. <TT>MPP_TYPE_</TT> can be of type
-!    <TT>complex</TT>, <TT>integer</TT>, <TT>logical</TT> or <TT>real</TT>;
-!    of 4-byte or 8-byte kind; of rank up to 5.
-!    
-!    All PEs in a domain decomposition must call
-!    <TT>mpp_global_field</TT>, and each will have a complete global field
-!    at the end. Please note that a global array of rank 3 or higher could
-!    occupy a lot of memory.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!    call mpp_global_field( domain, local, global, flags )
-!  </TEMPLATE>
-!  <IN NAME="domain" TYPE="type(domain2D)"></IN>
-!  <IN NAME="local" TYPE="MPP_TYPE_">
-!    <TT>local</TT> is dimensioned on either the compute domain or the
-!    data domain of <TT>domain</TT>.
-!  </IN>
-!  <OUT NAME="global" TYPE="MPP_TYPE_">
-!    <TT>global</TT> is dimensioned on the corresponding global domain.
-!  </OUT>
-!  <IN NAME="flags" TYPE="integer">
-!    <TT>flags</TT> can be given the value <TT>XONLY</TT> or
-!    <TT>YONLY</TT>, to specify a globalization on one axis only.
-!  </IN>
-! </INTERFACE>
-  interface mpp_global_field
-     module procedure mpp_global_field2D_r8_2d
-     module procedure mpp_global_field2D_r8_3d
-     module procedure mpp_global_field2D_r8_4d
-     module procedure mpp_global_field2D_r8_5d
-     module procedure mpp_global_field2D_c8_2d
-     module procedure mpp_global_field2D_c8_3d
-     module procedure mpp_global_field2D_c8_4d
-     module procedure mpp_global_field2D_c8_5d
-#ifndef no_8byte_integers
-     module procedure mpp_global_field2D_i8_2d
-     module procedure mpp_global_field2D_i8_3d
-     module procedure mpp_global_field2D_i8_4d
-     module procedure mpp_global_field2D_i8_5d
-     module procedure mpp_global_field2D_l8_2d
-     module procedure mpp_global_field2D_l8_3d
-     module procedure mpp_global_field2D_l8_4d
-     module procedure mpp_global_field2D_l8_5d
-#endif
-#ifndef no_4byte_reals
-     module procedure mpp_global_field2D_r4_2d
-     module procedure mpp_global_field2D_r4_3d
-     module procedure mpp_global_field2D_r4_4d
-     module procedure mpp_global_field2D_r4_5d
-     module procedure mpp_global_field2D_c4_2d
-     module procedure mpp_global_field2D_c4_3d
-     module procedure mpp_global_field2D_c4_4d
-     module procedure mpp_global_field2D_c4_5d
-#endif
-     module procedure mpp_global_field2D_i4_2d
-     module procedure mpp_global_field2D_i4_3d
-     module procedure mpp_global_field2D_i4_4d
-     module procedure mpp_global_field2D_i4_5d
-     module procedure mpp_global_field2D_l4_2d
-     module procedure mpp_global_field2D_l4_3d
-     module procedure mpp_global_field2D_l4_4d
-     module procedure mpp_global_field2D_l4_5d
-  end interface
-
-  interface mpp_do_global_field
-     module procedure mpp_do_global_field2Dnew_r8_3d
-     module procedure mpp_do_global_field2Dold_r8_3d
-     module procedure mpp_do_global_field2Dnew_c8_3d
-     module procedure mpp_do_global_field2Dold_c8_3d
-#ifndef no_8byte_integers
-     module procedure mpp_do_global_field2Dnew_i8_3d
-     module procedure mpp_do_global_field2Dold_i8_3d
-     module procedure mpp_do_global_field2Dnew_l8_3d
-     module procedure mpp_do_global_field2Dold_l8_3d
-#endif
-#ifndef no_4byte_reals
-     module procedure mpp_do_global_field2Dnew_r4_3d
-     module procedure mpp_do_global_field2Dold_r4_3d
-     module procedure mpp_do_global_field2Dnew_c4_3d
-     module procedure mpp_do_global_field2Dold_c4_3d
-#endif
-     module procedure mpp_do_global_field2Dnew_i4_3d
-     module procedure mpp_do_global_field2Dold_i4_3d
-     module procedure mpp_do_global_field2Dnew_l4_3d
-     module procedure mpp_do_global_field2Dold_l4_3d
-  end interface
-
-! <INTERFACE NAME="mpp_global_max">
-!  <OVERVIEW>
-!    Global max/min of domain-decomposed arrays.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!    <TT>mpp_global_max</TT> is used to get the maximum value of a
-!    domain-decomposed array on each PE. <TT>MPP_TYPE_</TT> can be of type
-!    <TT>integer</TT> or <TT>real</TT>; of 4-byte or 8-byte kind; of rank
-!    up to 5. The dimension of <TT>locus</TT> must equal the rank of
-!    <TT>field</TT>.
-!    
-!    All PEs in a domain decomposition must call
-!    <TT>mpp_global_max</TT>, and each will have the result upon exit.
-!    
-!    The function <TT>mpp_global_min</TT>, with an identical syntax. is
-!    also available.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!    mpp_global_max( domain, field, locus )
-!  </TEMPLATE>
-!  <IN NAME="domain" TYPE="type(domain2D)"></IN>
-!  <IN NAME="field" TYPE="MPP_TYPE_">  
-!    <TT>field</TT> is dimensioned on either the compute domain or the
-!    data domain of <TT>domain</TT>.
-!  </IN>
-!  <OUT NAME="locus" TYPE="integer" DIM="(:)">
-!    <TT>locus</TT>, if present, can be used to retrieve the location of
-!    the maximum (as in the <TT>MAXLOC</TT> intrinsic of f90).
-!  </OUT>
-! </INTERFACE>
-
-  interface mpp_global_max
-     module procedure mpp_global_max_r8_2d
-     module procedure mpp_global_max_r8_3d
-     module procedure mpp_global_max_r8_4d
-     module procedure mpp_global_max_r8_5d
-#ifndef no_4byte_reals
-     module procedure mpp_global_max_r4_2d
-     module procedure mpp_global_max_r4_3d
-     module procedure mpp_global_max_r4_4d
-     module procedure mpp_global_max_r4_5d
-#endif
-#ifndef no_8byte_integers
-     module procedure mpp_global_max_i8_2d
-     module procedure mpp_global_max_i8_3d
-     module procedure mpp_global_max_i8_4d
-     module procedure mpp_global_max_i8_5d
-#endif
-     module procedure mpp_global_max_i4_2d
-     module procedure mpp_global_max_i4_3d
-     module procedure mpp_global_max_i4_4d
-     module procedure mpp_global_max_i4_5d
-  end interface
-
-  interface mpp_global_min
-     module procedure mpp_global_min_r8_2d
-     module procedure mpp_global_min_r8_3d
-     module procedure mpp_global_min_r8_4d
-     module procedure mpp_global_min_r8_5d
-#ifndef no_4byte_reals
-     module procedure mpp_global_min_r4_2d
-     module procedure mpp_global_min_r4_3d
-     module procedure mpp_global_min_r4_4d
-     module procedure mpp_global_min_r4_5d
-#endif
-#ifndef no_8byte_integers
-     module procedure mpp_global_min_i8_2d
-     module procedure mpp_global_min_i8_3d
-     module procedure mpp_global_min_i8_4d
-     module procedure mpp_global_min_i8_5d
-#endif
-     module procedure mpp_global_min_i4_2d
-     module procedure mpp_global_min_i4_3d
-     module procedure mpp_global_min_i4_4d
-     module procedure mpp_global_min_i4_5d
-  end interface
-
-! <INTERFACE NAME="mpp_global_sum">
-!  <OVERVIEW>
-!    Global sum of domain-decomposed arrays.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!    <TT>mpp_global_sum</TT> is used to get the sum of a
-!    domain-decomposed array on each PE. <TT>MPP_TYPE_</TT> can be of type
-!    <TT>integer</TT>, <TT>complex</TT>, or <TT>real</TT>; of 4-byte or
-!    8-byte kind; of rank up to 5.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!    call mpp_global_sum( domain, field, flags )
-!  </TEMPLATE>
-!  <IN NAME="domain" TYPE="type(domain2D)"></IN>
-!  <IN NAME="field" TYPE="MPP_TYPE_">
-!    <TT>field</TT> is dimensioned on either the compute domain or the
-!    data domain of <TT>domain</TT>.
-!  </IN>
-!  <IN NAME="flags" TYPE="integer">
-!    <TT>flags</TT>, if present, must have the value
-!    <TT>BITWISE_EXACT_SUM</TT>. This produces a sum that is guaranteed to
-!    produce the identical result irrespective of how the domain is
-!    decomposed. This method does the sum first along the ranks beyond 2,
-!    and then calls <LINK
-!    SRC="#mpp_global_field"><TT>mpp_global_field</TT></LINK> to produce a
-!    global 2D array which is then summed. The default method, which is
-!    considerably faster, does a local sum followed by <LINK
-!    SRC="mpp.html#mpp_sum"><TT>mpp_sum</TT></LINK> across the domain
-!    decomposition.
-!  </IN>
-!  <NOTE>
-!    All PEs in a domain decomposition must call
-!    <TT>mpp_global_sum</TT>, and each will have the result upon exit.
-!  </NOTE>
-! </INTERFACE>
-
-  interface mpp_global_sum
-     module procedure mpp_global_sum_r8_2d
-     module procedure mpp_global_sum_r8_3d
-     module procedure mpp_global_sum_r8_4d
-     module procedure mpp_global_sum_r8_5d
-     module procedure mpp_global_sum_c8_2d
-     module procedure mpp_global_sum_c8_3d
-     module procedure mpp_global_sum_c8_4d
-     module procedure mpp_global_sum_c8_5d
-#ifndef no_4byte_reals
-     module procedure mpp_global_sum_r4_2d
-     module procedure mpp_global_sum_r4_3d
-     module procedure mpp_global_sum_r4_4d
-     module procedure mpp_global_sum_r4_5d
-     module procedure mpp_global_sum_c4_2d
-     module procedure mpp_global_sum_c4_3d
-     module procedure mpp_global_sum_c4_4d
-     module procedure mpp_global_sum_c4_5d
-#endif
-#ifndef no_8byte_integers
-     module procedure mpp_global_sum_i8_2d
-     module procedure mpp_global_sum_i8_3d
-     module procedure mpp_global_sum_i8_4d
-     module procedure mpp_global_sum_i8_5d
-#endif
-     module procedure mpp_global_sum_i4_2d
-     module procedure mpp_global_sum_i4_3d
-     module procedure mpp_global_sum_i4_4d
-     module procedure mpp_global_sum_i4_5d
-  end interface
-
-!gag
-  interface mpp_global_sum_tl
-     module procedure mpp_global_sum_tl_r8_2d
-     module procedure mpp_global_sum_tl_r8_3d
-     module procedure mpp_global_sum_tl_r8_4d
-     module procedure mpp_global_sum_tl_r8_5d
-     module procedure mpp_global_sum_tl_c8_2d
-     module procedure mpp_global_sum_tl_c8_3d
-     module procedure mpp_global_sum_tl_c8_4d
-     module procedure mpp_global_sum_tl_c8_5d
-#ifndef no_4byte_reals
-     module procedure mpp_global_sum_tl_r4_2d
-     module procedure mpp_global_sum_tl_r4_3d
-     module procedure mpp_global_sum_tl_r4_4d
-     module procedure mpp_global_sum_tl_r4_5d
-     module procedure mpp_global_sum_tl_c4_2d
-     module procedure mpp_global_sum_tl_c4_3d
-     module procedure mpp_global_sum_tl_c4_4d
-     module procedure mpp_global_sum_tl_c4_5d
-#endif
-#ifndef no_8byte_integers
-     module procedure mpp_global_sum_tl_i8_2d
-     module procedure mpp_global_sum_tl_i8_3d
-     module procedure mpp_global_sum_tl_i8_4d
-     module procedure mpp_global_sum_tl_i8_5d
-#endif
-     module procedure mpp_global_sum_tl_i4_2d
-     module procedure mpp_global_sum_tl_i4_3d
-     module procedure mpp_global_sum_tl_i4_4d
-     module procedure mpp_global_sum_tl_i4_5d
-  end interface
-!gag
-
-!bnc
-  interface mpp_global_sum_ad
-     module procedure mpp_global_sum_ad_r8_2d
-     module procedure mpp_global_sum_ad_r8_3d
-     module procedure mpp_global_sum_ad_r8_4d
-     module procedure mpp_global_sum_ad_r8_5d
-     module procedure mpp_global_sum_ad_c8_2d
-     module procedure mpp_global_sum_ad_c8_3d
-     module procedure mpp_global_sum_ad_c8_4d
-     module procedure mpp_global_sum_ad_c8_5d
-#ifndef no_4byte_reals
-     module procedure mpp_global_sum_ad_r4_2d
-     module procedure mpp_global_sum_ad_r4_3d
-     module procedure mpp_global_sum_ad_r4_4d
-     module procedure mpp_global_sum_ad_r4_5d
-     module procedure mpp_global_sum_ad_c4_2d
-     module procedure mpp_global_sum_ad_c4_3d
-     module procedure mpp_global_sum_ad_c4_4d
-     module procedure mpp_global_sum_ad_c4_5d
-#endif
-#ifndef no_8byte_integers
-     module procedure mpp_global_sum_ad_i8_2d
-     module procedure mpp_global_sum_ad_i8_3d
-     module procedure mpp_global_sum_ad_i8_4d
-     module procedure mpp_global_sum_ad_i8_5d
-#endif
-     module procedure mpp_global_sum_ad_i4_2d
-     module procedure mpp_global_sum_ad_i4_3d
-     module procedure mpp_global_sum_ad_i4_4d
-     module procedure mpp_global_sum_ad_i4_5d
-  end interface
-!bnc
-
-!***********************************************************************
-!
-!            public interface from mpp_domain_util.h
-!
-!***********************************************************************
-
-  ! <INTERFACE NAME="mpp_get_neighbor_pe">
-  !  <OVERVIEW>
-  !    Retrieve PE number of a neighboring domain.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    Given a 1-D or 2-D domain decomposition, this call allows users to retrieve 
-  !    the PE number of an adjacent PE-domain while taking into account that the 
-  !    domain may have holes (masked) and/or have cyclic boundary conditions and/or a 
-  !    folded edge. Which PE-domain will be retrived will depend on "direction": 
-  !    +1 (right) or -1 (left) for a 1-D domain decomposition and either NORTH, SOUTH, 
-  !    EAST, WEST, NORTH_EAST, SOUTH_EAST, SOUTH_WEST, or NORTH_WEST for a 2-D 
-  !    decomposition. If no neighboring domain exists (masked domain), then the 
-  !    returned "pe" value will be set to NULL_PE.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call mpp_get_neighbor_pe( domain1d, direction=+1   , pe)
-  !    call mpp_get_neighbor_pe( domain2d, direction=NORTH, pe)
-  !  </TEMPLATE>
-  ! </INTERFACE>
-  interface mpp_get_neighbor_pe
-     module procedure mpp_get_neighbor_pe_1d
-     module procedure mpp_get_neighbor_pe_2d
-  end interface 
-  ! <INTERFACE NAME="operator">
-  !  <OVERVIEW>
-  !    Equality/inequality operators for domaintypes.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    The module provides public operators to check for
-  !    equality/inequality of domaintypes, e.g:
-  !    
-  !    <PRE>
-  !    type(domain1D) :: a, b
-  !    type(domain2D) :: c, d
-  !    ...
-  !    if( a.NE.b )then
-  !        ...
-  !    end if
-  !    if( c==d )then
-  !        ...
-  !    end if
-  !    </PRE>
-  !    
-  !    Domains are considered equal if and only if the start and end
-  !    indices of each of their component global, data and compute domains
-  !    are equal.
-  !  </DESCRIPTION>
-  ! </INTERFACE>
-  interface operator(.EQ.)
-     module procedure mpp_domain1D_eq
-     module procedure mpp_domain2D_eq
-  end interface
-
-  interface operator(.NE.)
-     module procedure mpp_domain1D_ne
-     module procedure mpp_domain2D_ne
-  end interface
-
-  ! <INTERFACE NAME="mpp_get_compute_domain">
-  !  <OVERVIEW>
-  !    These routines retrieve the axis specifications associated with the compute domains.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    The domain is a derived type with private elements. These routines 
-  !    retrieve the axis specifications associated with the compute domains
-  !    The 2D version of these is a simple extension of 1D.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call mpp_get_compute_domain
-  !  </TEMPLATE>
-  ! </INTERFACE>
-  interface mpp_get_compute_domain
-     module procedure mpp_get_compute_domain1D
-     module procedure mpp_get_compute_domain2D
-  end interface
-
-  ! <INTERFACE NAME="mpp_get_compute_domains">
-  !  <OVERVIEW>
-  !    Retrieve the entire array of compute domain extents associated with a decomposition.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    Retrieve the entire array of compute domain extents associated with a decomposition.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call mpp_get_compute_domains( domain, xbegin, xend, xsize, &
-  !                                                ybegin, yend, ysize )
-  !  </TEMPLATE>
-  !  <IN NAME="domain" TYPE="type(domain2D)"></IN>
-  !  <OUT NAME="xbegin,ybegin" TYPE="integer" DIM="(:)"></OUT>
-  !  <OUT NAME="xend,yend" TYPE="integer" DIM="(:)"></OUT>
-  !  <OUT NAME="xsize,ysize" TYPE="integer" DIM="(:)"></OUT>
-  ! </INTERFACE>
-  interface mpp_get_compute_domains
-     module procedure mpp_get_compute_domains1D
-     module procedure mpp_get_compute_domains2D
-  end interface
-
-  ! <INTERFACE NAME="mpp_get_global_domains">
-  !  <OVERVIEW>
-  !    Retrieve the entire array of global domain extents associated with a decomposition.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    Retrieve the entire array of global domain extents associated with a decomposition.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call mpp_get_global_domains( domain, xbegin, xend, xsize, &
-  !                                                ybegin, yend, ysize )
-  !  </TEMPLATE>
-  !  <IN NAME="domain" TYPE="type(domain2D)"></IN>
-  !  <OUT NAME="xbegin,ybegin" TYPE="integer" DIM="(:)"></OUT>
-  !  <OUT NAME="xend,yend" TYPE="integer" DIM="(:)"></OUT>
-  !  <OUT NAME="xsize,ysize" TYPE="integer" DIM="(:)"></OUT>
-  ! </INTERFACE>
-  interface mpp_get_global_domains
-     module procedure mpp_get_global_domains1D
-     module procedure mpp_get_global_domains2D
-  end interface
-
-  ! <INTERFACE NAME="mpp_get_data_domain">
-  !  <OVERVIEW>
-  !    These routines retrieve the axis specifications associated with the data domains.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    The domain is a derived type with private elements. These routines 
-  !    retrieve the axis specifications associated with the data domains.
-  !    The 2D version of these is a simple extension of 1D.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call mpp_get_data_domain
-  !  </TEMPLATE>
-  ! </INTERFACE>
-  interface mpp_get_data_domain
-     module procedure mpp_get_data_domain1D
-     module procedure mpp_get_data_domain2D
-  end interface
-
-  ! <INTERFACE NAME="mpp_get_global_domain">
-  !  <OVERVIEW>
-  !    These routines retrieve the axis specifications associated with the global domains.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    The domain is a derived type with private elements. These routines 
-  !    retrieve the axis specifications associated with the global domains.
-  !    The 2D version of these is a simple extension of 1D.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call mpp_get_global_domain
-  !  </TEMPLATE>
-  ! </INTERFACE>
-  interface mpp_get_global_domain
-     module procedure mpp_get_global_domain1D
-     module procedure mpp_get_global_domain2D
-  end interface
-
-  ! <INTERFACE NAME="mpp_get_memory_domain">
-  !  <OVERVIEW>
-  !    These routines retrieve the axis specifications associated with the memory domains.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    The domain is a derived type with private elements. These routines 
-  !    retrieve the axis specifications associated with the memory domains.
-  !    The 2D version of these is a simple extension of 1D.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call mpp_get_memory_domain
-  !  </TEMPLATE>
-  ! </INTERFACE>
-  interface mpp_get_memory_domain
-     module procedure mpp_get_memory_domain1D
-     module procedure mpp_get_memory_domain2D
-  end interface
-
-  ! <INTERFACE NAME="mpp_set_compute_domain">
-  !  <OVERVIEW>
-  !    These routines set the axis specifications associated with the compute domains.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    The domain is a derived type with private elements. These routines 
-  !    set the axis specifications associated with the compute domains
-  !    The 2D version of these is a simple extension of 1D.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call mpp_set_compute_domain
-  !  </TEMPLATE>
-  ! </INTERFACE>
-  interface mpp_set_compute_domain
-     module procedure mpp_set_compute_domain1D
-     module procedure mpp_set_compute_domain2D
-  end interface
-
-  ! <INTERFACE NAME="mpp_set_data_domain">
-  !  <OVERVIEW>
-  !    These routines set the axis specifications associated with the data domains.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    The domain is a derived type with private elements. These routines 
-  !    set the axis specifications associated with the data domains.
-  !    The 2D version of these is a simple extension of 1D.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call mpp_set_data_domain
-  !  </TEMPLATE>
-  ! </INTERFACE>
-  interface mpp_set_data_domain
-     module procedure mpp_set_data_domain1D
-     module procedure mpp_set_data_domain2D
-  end interface
-
-  ! <INTERFACE NAME="mpp_set_global_domain">
-  !  <OVERVIEW>
-  !    These routines set the axis specifications associated with the global domains.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    The domain is a derived type with private elements. These routines 
-  !    set the axis specifications associated with the global domains.
-  !    The 2D version of these is a simple extension of 1D.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call mpp_set_global_domain
-  !  </TEMPLATE>
-  ! </INTERFACE>
-  interface mpp_set_global_domain
-     module procedure mpp_set_global_domain1D
-     module procedure mpp_set_global_domain2D
-  end interface
-
-
-  ! <INTERFACE NAME="mpp_get_pelist">
-  !  <OVERVIEW>
-  !    Retrieve list of PEs associated with a domain decomposition.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    The 1D version of this call returns an array of the PEs assigned to this 1D domain
-  !    decomposition. In addition the optional argument <TT>pos</TT> may be
-  !    used to retrieve the 0-based position of the domain local to the
-  !    calling PE, i.e <TT>domain%list(pos)%pe</TT> is the local PE,
-  !    as returned by <LINK SRC="mpp.html#mpp_pe"><TT>mpp_pe()</TT></LINK>.
-  !    The 2D version of this call is identical to 1D version.
-  !  </DESCRIPTION>
-  !  <IN NAME="domain"></IN>
-  !  <OUT NAME="pelist"></OUT>
-  !  <OUT NAME="pos"></OUT>
-  ! </INTERFACE>
-  interface mpp_get_pelist
-     module procedure mpp_get_pelist1D
-     module procedure mpp_get_pelist2D
-  end interface
-
-  ! <INTERFACE NAME="mpp_get_layout">
-  !  <OVERVIEW>
-  !    Retrieve layout associated with a domain decomposition.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    The 1D version of this call returns the number of divisions that was assigned to this
-  !    decomposition axis. The 2D version of this call returns an array of
-  !    dimension 2 holding the results on two axes.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call mpp_get_layout( domain, layout )
-  !  </TEMPLATE>
-  !  <IN NAME="domain"></IN>
-  !  <OUT NAME="layout"></OUT>
-  ! </INTERFACE>
-  interface mpp_get_layout
-     module procedure mpp_get_layout1D
-     module procedure mpp_get_layout2D
-  end interface
-
-  ! <INTERFACE NAME="mpp_nullify_domain_list">
-  !  <OVERVIEW>
-  !    nullify domain list.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    Nullify domain list. This interface is needed in mpp_domains_test.
-  !    1-D case can be added in if needed.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call mpp_nullify_domain_list( domain)
-  !  </TEMPLATE>
-  !  <INOUT NAME="domain"></INOUT>
-  ! </INTERFACE>
-  interface mpp_nullify_domain_list
-     module procedure nullify_domain2d_list
-  end interface  
-
-  !--- version information variables
-  character(len=128), public :: version= &
-       '$Id: mpp_domains.F90,v 14.0.2.1.2.1 2007/05/23 15:37:12 z1l Exp $'
-  character(len=128), public :: tagname= &
-       '$Name: nalanda_2007_06 $'
-
-
-contains
-
-#include <mpp_domains_util.inc>
-#include <mpp_domains_comm.inc>
-#include <mpp_domains_define.inc>
-#include <mpp_domains_misc.inc>
-#include <mpp_domains_reduce.inc>
-
-
-end module mpp_domains_mod
-
 #ifdef test_mpp_domains
-program mpp_domains_test
+program test
   use mpp_mod,         only : FATAL, MPP_DEBUG, NOTE, MPP_CLOCK_SYNC,MPP_CLOCK_DETAILED
   use mpp_mod,         only : mpp_pe, mpp_npes, mpp_node, mpp_root_pe, mpp_error, mpp_set_warn_level
   use mpp_mod,         only : mpp_declare_pelist, mpp_set_current_pelist, mpp_sync, mpp_sync_self
@@ -1874,7 +31,7 @@ program mpp_domains_test
                                        ! mpes should be equal to npes     
   integer :: mpes = 0
   integer :: whalo = 2, ehalo = 2, shalo = 2, nhalo = 2
-  namelist / mpp_domains_test_nml / nx, ny, nz, stackmax, debug, mpes, check_parallel, &
+  namelist / test_mpp_domains_nml / nx, ny, nz, stackmax, debug, mpes, check_parallel, &
                                whalo, ehalo, shalo, nhalo
   integer :: i, j, k
   integer :: layout(2)
@@ -1890,7 +47,7 @@ program mpp_domains_test
      if( unit.EQ.100 )call mpp_error( FATAL, 'Unable to locate unit number.' )
   end do
   open( unit=unit, status='OLD', file='input.nml', err=10 )
-  read( unit,mpp_domains_test_nml )
+  read( unit,test_mpp_domains_nml )
   close(unit)
 10 continue
   
@@ -1912,6 +69,7 @@ program mpp_domains_test
       call test_get_boundary('Four-Tile')
       call test_get_boundary('Cubic-Grid')
       call test_uniform_mosaic('Single-Tile')
+      call test_uniform_mosaic('Tripolar-Grid') ! one-tile tripolar grid
       call test_uniform_mosaic('Four-Tile')
       call test_uniform_mosaic('Cubic-Grid') ! 6 tiles.
       call test_nonuniform_mosaic('Five-Tile')
@@ -2202,7 +360,7 @@ contains
 
     call mpp_clock_begin(id)
     if(ALLOCATED(y))y=0.
-    call mpp_redistribute( domainx, x, domainy, y, complete=.false. )
+    call mpp_redistribute( domainx, x,  domainy, y,  complete=.false. )
     call mpp_redistribute( domainx, x2, domainy, y2, complete=.false. )
     call mpp_redistribute( domainx, x3, domainy, y3, complete=.false. )
     call mpp_redistribute( domainx, x4, domainy, y4, complete=.false. )
@@ -2283,7 +441,7 @@ contains
     type(domain2D) :: domain
     integer        :: num_contact, ntiles, npes_per_tile, ntile_per_pe, update_flags
     integer        :: i, j, k, l, n, shift, tw, te, ts, tn, tsw, tnw, tse, tne
-    integer        :: ism, iem, jsm, jem, msize(2), wh, eh, sh, nh
+    integer        :: ism, iem, jsm, jem, wh, eh, sh, nh
     integer        :: isc, iec, jsc, jec, isd, ied, jsd, jed
     real           :: gsum, lsum  
 
@@ -2301,7 +459,7 @@ contains
 
     !--- check the type
     select case(type)
-    case ( 'Single-Tile' )   !--- single with cyclic along x- and y-direction
+    case ( 'Single-Tile', 'Tripolar-Grid' )   !--- single with cyclic along x- and y-direction
        ntiles = 1
        num_contact = 2
     case ( 'Four-Tile' ) !--- cyclic along both x- and y-direction. 
@@ -2371,6 +529,18 @@ contains
        tile1(2) = 1; tile2(2) = 1
        istart1(2) = 1;  iend1(2) = nx; jstart1(2) = 1;   jend1(2) = 1
        istart2(2) = 1;  iend2(2) = nx; jstart2(2) = ny;  jend2(2) = ny
+       call mpp_define_mosaic(global_indices, layout2D, domain, ntiles, num_contact, tile1, tile2, &
+                              istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,      &
+                              pe_start, pe_end, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, name = type  )
+    case( 'Tripolar-Grid' )
+       !--- Contact line 1, between tile 1 (EAST) and tile 1 (WEST)  --- cyclic
+       tile1(1) = 1; tile2(1) = 1
+       istart1(1) = nx; iend1(1) = nx; jstart1(1) = 1;  jend1(1) = ny
+       istart2(1) = 1;  iend2(1) = 1;  jstart2(1) = 1;  jend2(1) = ny
+       !--- Contact line 2, between tile 1 (NORTH) and tile 1 (NORTH)  --- folded-north-edge
+       tile1(2) = 1; tile2(2) = 1
+       istart1(2) = 1;  iend1(2) = nx/2;   jstart1(2) = ny;  jend1(2) = ny
+       istart2(2) = nx; iend2(2) = nx/2+1; jstart2(2) = ny;  jend2(2) = ny
        call mpp_define_mosaic(global_indices, layout2D, domain, ntiles, num_contact, tile1, tile2, &
                               istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,      &
                               pe_start, pe_end, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, name = type  )
@@ -2455,6 +625,12 @@ contains
        select case ( type )
        case ( 'Single-Tile')
           call fill_regular_mosaic_halo(global2(:,:,:,n), global_all, 1, 1, 1, 1, 1, 1, 1, 1)
+       case ( 'Tripolar-Grid')
+          global2(1-whalo:0,              1:ny,:,n) = global_all(nx-whalo+1:nx,1:ny,:,n)
+          global2(nx+1:nx+ehalo,          1:ny,:,n) = global_all(1:ehalo,      1:ny,:,n)
+          global2(1-whalo:0,     ny+1:ny+nhalo,:,n) = global_all(whalo:1:-1,       ny:ny-nhalo+1:-1,:,n)
+          global2(1:nx,          ny+1:ny+nhalo,:,n) = global_all(nx:1:-1,          ny:ny-nhalo+1:-1,:,n)
+          global2(nx+1:nx+ehalo, ny+1:ny+nhalo,:,n) = global_all(nx:nx-ehalo+1:-1, ny:ny-nhalo+1:-1,:,n)         
        case ( 'Four-Tile' )
           select case ( tile(n) )
           case (1)
@@ -2488,7 +664,7 @@ contains
     end do
 
     !partial update only be done when there is at most one tile on each pe
-    if(ntile_per_pe == 1) then
+    if(ntile_per_pe == 1 ) then
        id = mpp_clock_id( type//' partial', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
        call mpp_clock_begin(id)
        call mpp_update_domains( x1, domain, NUPDATE+EUPDATE, complete=.false. )
@@ -2500,29 +676,32 @@ contains
        call compare_checksums( x2(isc:ied,jsc:jed,:,1), global2(isc:ied,jsc:jed,:,1), type//' partial x2' )
        call compare_checksums( x3(isc:ied,jsc:jed,:,1), global2(isc:ied,jsc:jed,:,1), type//' partial x3' )
        call compare_checksums( x4(isc:ied,jsc:jed,:,1), global2(isc:ied,jsc:jed,:,1), type//' partial x4' )
-       !arbitrary halo update.
-       allocate(local2(isd:ied,jsd:jed,nz) )
-       do wh = 1-whalo, whalo
-          do eh = 1-ehalo, ehalo
-             do sh = 1-shalo, shalo
-                do nh = 1-nhalo, nhalo
-                   if( wh*eh <= 0 ) cycle
-                   if( sh*nh <= 0 ) cycle
-                   if( wh*sh <= 0 ) cycle
-                   local2(isd:ied,jsd:jed,:) = global2(isd:ied,jsd:jed,:,1)
-                   x = 0.
-                   x(isc:iec,jsc:jec,:,1) = local2(isc:iec,jsc:jec,:)       
-                   call fill_halo_zero(local2, wh, eh, sh, nh, 0, 0, isc, iec, jsc, jec, isd, ied, jsd, jed) 
 
-                   write(type2,'(a,a,i2,a,i2,a,i2,a,i2)') trim(type), ' with whalo = ', wh, &
-                        ', ehalo = ',eh, ', shalo = ', sh, ', nhalo = ', nh
-                   call mpp_update_domains( x, domain, whalo=wh, ehalo=eh, shalo=sh, nhalo=nh, name = type2  )
-                   call compare_checksums( x(isd:ied,jsd:jed,:,1), local2, trim(type2) )
+       !arbitrary halo update. not for tripolar grid
+       if(type .NE. 'Tripolar-Grid' ) then
+          allocate(local2(isd:ied,jsd:jed,nz) )
+          do wh = 1-whalo, whalo
+             do eh = 1-ehalo, ehalo
+                do sh = 1-shalo, shalo
+                   do nh = 1-nhalo, nhalo
+                      if( wh*eh <= 0 ) cycle
+                      if( sh*nh <= 0 ) cycle
+                      if( wh*sh <= 0 ) cycle
+                      local2(isd:ied,jsd:jed,:) = global2(isd:ied,jsd:jed,:,1)
+                      x = 0.
+                      x(isc:iec,jsc:jec,:,1) = local2(isc:iec,jsc:jec,:)       
+                      call fill_halo_zero(local2, wh, eh, sh, nh, 0, 0, isc, iec, jsc, jec, isd, ied, jsd, jed) 
+
+                      write(type2,'(a,a,i2,a,i2,a,i2,a,i2)') trim(type), ' with whalo = ', wh, &
+                           ', ehalo = ',eh, ', shalo = ', sh, ', nhalo = ', nh
+                      call mpp_update_domains( x, domain, whalo=wh, ehalo=eh, shalo=sh, nhalo=nh, name = type2  )
+                      call compare_checksums( x(isd:ied,jsd:jed,:,1), local2, trim(type2) )
+                   end do
                 end do
              end do
           end do
-       end do
-       deallocate(local2)
+          deallocate(local2)
+       end if
     end if
 
     deallocate(global2, global_all, x, x1, x2, x3, x4)
@@ -2532,7 +711,7 @@ contains
     !--- setup data
     shift = 0
     select case ( type ) 
-    case ( 'Four-Tile', 'Single-Tile' )
+    case ( 'Four-Tile', 'Single-Tile', 'Tripolar-Grid' )
        shift = 0
     case ( 'Cubic-Grid' ) 
        shift = 1
@@ -2613,14 +792,14 @@ contains
     !                   fill up the value at halo points.     
     !-----------------------------------------------------------------------
     select case ( type )
-    case ( 'Four-Tile', 'Single-Tile' )
+    case ( 'Four-Tile', 'Single-Tile', 'Tripolar-Grid' )
        type2 = type//' vector BGRID_NE'
     case ( 'Cubic-Grid' )
        type2 = type//' paired-scalar BGRID_NE'
     end select
     id = mpp_clock_id( trim(type2), flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
     select case ( type ) 
-    case ( 'Four-Tile', 'Single-Tile' )
+    case ( 'Four-Tile', 'Single-Tile', 'Tripolar-Grid' )
        update_flags = XUPDATE + YUPDATE
     case ( 'Cubic-Grid' )
        update_flags = SCALAR_PAIR
@@ -2633,6 +812,33 @@ contains
        case ( 'Single-Tile' )
           call fill_regular_mosaic_halo(global1(:,:,:,n), global1_all, 1, 1, 1, 1, 1, 1, 1, 1)       
           call fill_regular_mosaic_halo(global2(:,:,:,n), global2_all, 1, 1, 1, 1, 1, 1, 1, 1)     
+       case ( 'Tripolar-Grid')
+          global1(1-whalo:0,            1:ny,:,n) =  global1_all(nx-whalo+1:nx,              1:ny,:,n)
+          global1(nx+1:nx+ehalo,        1:ny,:,n) =  global1_all(1:ehalo,                    1:ny,:,n)
+          global1(1-whalo:-1,  ny+1:ny+nhalo,:,n) = -global1_all(whalo-1:1:-1,   ny-1:ny-nhalo:-1,:,n)
+          global1(0:nx-1,      ny+1:ny+nhalo,:,n) = -global1_all(nx:1:-1,        ny-1:ny-nhalo:-1,:,n)
+          global1(nx:nx+ehalo, ny+1:ny+nhalo,:,n) = -global1_all(nx:nx-ehalo:-1, ny-1:ny-nhalo:-1,:,n)
+          global2(1-whalo:0,            1:ny,:,n) =  global2_all(nx-whalo+1:nx,              1:ny,:,n)
+          global2(nx+1:nx+ehalo,        1:ny,:,n) =  global2_all(1:ehalo,                    1:ny,:,n)
+          global2(1-whalo:-1,  ny+1:ny+nhalo,:,n) = -global2_all(whalo-1:1:-1,   ny-1:ny-nhalo:-1,:,n)
+          global2(0:nx-1,      ny+1:ny+nhalo,:,n) = -global2_all(nx:1:-1,        ny-1:ny-nhalo:-1,:,n)
+          global2(nx:nx+ehalo, ny+1:ny+nhalo,:,n) = -global2_all(nx:nx-ehalo:-1, ny-1:ny-nhalo:-1,:,n)
+          !redundant points must be equal and opposite for tripolar grid
+          global1(nx/2+shift,                ny+shift,:,:) = 0.  !pole points must have 0 velocity
+          global1(nx+shift  ,                ny+shift,:,:) = 0.  !pole points must have 0 velocity
+          global1(nx/2+1+shift:nx-1+shift,   ny+shift,:,:) = -global1(nx/2-1+shift:1+shift:-1, ny+shift,:,:)
+          global1(1-whalo:shift,             ny+shift,:,:) = -global1(nx-whalo+1:nx+shift,     ny+shift,:,:)
+          global1(nx+1+shift:nx+ehalo+shift, ny+shift,:,:) = -global1(1+shift:ehalo+shift,     ny+shift,:,:)
+          global2(nx/2+shift,                ny+shift,:,:) = 0.  !pole points must have 0 velocity
+          global2(nx+shift  ,                ny+shift,:,:) = 0.  !pole points must have 0 velocity
+          global2(nx/2+1+shift:nx-1+shift,   ny+shift,:,:) = -global2(nx/2-1+shift:1+shift:-1, ny+shift,:,:)
+          global2(1-whalo:shift,             ny+shift,:,:) = -global2(nx-whalo+1:nx+shift,     ny+shift,:,:)
+          global2(nx+1+shift:nx+ehalo+shift, ny+shift,:,:) = -global2(1+shift:ehalo+shift,     ny+shift,:,:)
+          !--- the following will fix the +0/-0 problem on altix
+          if(nhalo >0) then
+             global1(shift,ny+shift,:,:) = 0.  !pole points must have 0 velocity
+             global2(shift,ny+shift,:,:) = 0.  !pole points must have 0 velocity
+          end if
        case ( 'Four-Tile' )
           select case ( tile(n) )
           case (1)
@@ -2687,35 +893,37 @@ contains
        call compare_checksums( y4(isd:ied+shift,jsd:jed+shift,:,1), global2(isd:ied+shift,jsd:jed+shift,:,1), trim(type2)//' Y4')
 
        !--- arbitrary halo updates ---------------------------------------
-       allocate(local1(isd:ied+shift,jsd:jed+shift,nz) )     
-       allocate(local2(isd:ied+shift,jsd:jed+shift,nz) )    
-       do wh = 1-whalo, whalo
-          do eh = 1-ehalo, ehalo
-             do sh = 1-shalo, shalo
-                do nh = 1-nhalo, nhalo
-                   if( wh*eh <= 0 ) cycle
-                   if( sh*nh <= 0 ) cycle
-                   if( wh*sh <= 0 ) cycle
+       if(type .NE. 'Tripolar-Grid' ) then
+          allocate(local1(isd:ied+shift,jsd:jed+shift,nz) )     
+          allocate(local2(isd:ied+shift,jsd:jed+shift,nz) )    
+          do wh = 1-whalo, whalo
+             do eh = 1-ehalo, ehalo
+                do sh = 1-shalo, shalo
+                   do nh = 1-nhalo, nhalo
+                      if( wh*eh <= 0 ) cycle
+                      if( sh*nh <= 0 ) cycle
+                      if( wh*sh <= 0 ) cycle
 
-                   local1(isd:ied+shift,jsd:jed+shift,:) = global1(isd:ied+shift,jsd:jed+shift,:,1)
-                   local2(isd:ied+shift,jsd:jed+shift,:) = global2(isd:ied+shift,jsd:jed+shift,:,1)
-                   x = 0.; y = 0.
-                   x(isc:iec+shift,jsc:jec+shift,:,1) = global1_all(isc:iec+shift,jsc:jec+shift,:,tile(1))       
-                   y(isc:iec+shift,jsc:jec+shift,:,1) = global2_all(isc:iec+shift,jsc:jec+shift,:,tile(1))    
-                   call fill_halo_zero(local1, wh, eh, sh, nh, shift, shift, isc, iec, jsc, jec, isd, ied, jsd, jed)  
-                   call fill_halo_zero(local2, wh, eh, sh, nh, shift, shift, isc, iec, jsc, jec, isd, ied, jsd, jed) 
+                      local1(isd:ied+shift,jsd:jed+shift,:) = global1(isd:ied+shift,jsd:jed+shift,:,1)
+                      local2(isd:ied+shift,jsd:jed+shift,:) = global2(isd:ied+shift,jsd:jed+shift,:,1)
+                      x = 0.; y = 0.
+                      x(isc:iec+shift,jsc:jec+shift,:,1) = global1_all(isc:iec+shift,jsc:jec+shift,:,tile(1))       
+                      y(isc:iec+shift,jsc:jec+shift,:,1) = global2_all(isc:iec+shift,jsc:jec+shift,:,tile(1))    
+                      call fill_halo_zero(local1, wh, eh, sh, nh, shift, shift, isc, iec, jsc, jec, isd, ied, jsd, jed)  
+                      call fill_halo_zero(local2, wh, eh, sh, nh, shift, shift, isc, iec, jsc, jec, isd, ied, jsd, jed) 
 
-                   write(type3,'(a,a,i2,a,i2,a,i2,a,i2)') trim(type2), ' with whalo = ', wh, &
-                        ', ehalo = ',eh, ', shalo = ', sh, ', nhalo = ', nh
-                   call mpp_update_domains( x,  y,  domain, flags=update_flags, gridtype=BGRID_NE, &
-                        whalo=wh, ehalo=eh, shalo=sh, nhalo=nh, name=type3)
-                   call compare_checksums( x(isd:ied+shift,jsd:jed+shift,:,1),  local1, trim(type3)//' X' )
-                   call compare_checksums( y(isd:ied+shift,jsd:jed+shift,:,1),  local2, trim(type3)//' Y' )
+                      write(type3,'(a,a,i2,a,i2,a,i2,a,i2)') trim(type2), ' with whalo = ', wh, &
+                           ', ehalo = ',eh, ', shalo = ', sh, ', nhalo = ', nh
+                      call mpp_update_domains( x,  y,  domain, flags=update_flags, gridtype=BGRID_NE, &
+                           whalo=wh, ehalo=eh, shalo=sh, nhalo=nh, name=type3)
+                      call compare_checksums( x(isd:ied+shift,jsd:jed+shift,:,1),  local1, trim(type3)//' X' )
+                      call compare_checksums( y(isd:ied+shift,jsd:jed+shift,:,1),  local2, trim(type3)//' Y' )
+                   end do
                 end do
              end do
           end do
-       end do
-       deallocate(local1, local2)
+          deallocate(local1, local2)
+       end if
     end if
     !------------------------------------------------------------------
     !              vector update : CGRID_NE
@@ -2780,6 +988,9 @@ contains
        allocate( y2(ism:iem  ,jsm:jem+shift,nz,ntile_per_pe) )
        allocate( y3(ism:iem  ,jsm:jem+shift,nz,ntile_per_pe) )
        allocate( y4(ism:iem  ,jsm:jem+shift,nz,ntile_per_pe) )
+    else if(type == 'Tripolar-Grid' ) then
+       global1(1:nx+shift,1:ny+shift,:,:) = global1_all(:,:,:,:)
+       global2(1:nx+shift,1:ny+shift,:,:) = global2_all(:,:,:,:)
     end if
     x = 0.; y = 0.
     x (isc:iec+shift,jsc:jec  ,:,:) = global1(isc:iec+shift,jsc:jec  ,:,:)
@@ -2801,6 +1012,21 @@ contains
        if( type == 'Cubic-Grid' ) then    
           call fill_cubic_grid_halo(global1(:,:,:,n), global1_all, global2_all, tile(n), 1, 0, 1, -1 )
           call fill_cubic_grid_halo(global2(:,:,:,n), global2_all, global1_all, tile(n), 0, 1, -1, 1 )
+       else if( type == 'Tripolar-Grid' ) then
+          global1(1-whalo:0,              1:ny,:,:) =  global1(nx-whalo+1:nx,                1:ny,:,:)
+          global1(nx+1:nx+ehalo,          1:ny,:,:) =  global1(1:ehalo,                      1:ny,:,:)
+          global2(1-whalo:0,              1:ny,:,:) =  global2(nx-whalo+1:nx,                1:ny,:,:)
+          global2(nx+1:nx+ehalo,          1:ny,:,:) =  global2(1:ehalo,                      1:ny,:,:)
+          global1(1-whalo:-1,    ny+1:ny+nhalo,:,:) = -global1(whalo-1:1:-1,     ny:ny-nhalo+1:-1,:,:)
+          global1(0:nx-1,        ny+1:ny+nhalo,:,:) = -global1(nx:1:-1,          ny:ny-nhalo+1:-1,:,:)
+          global1(nx:nx+ehalo,   ny+1:ny+nhalo,:,:) = -global1(nx:nx-ehalo:-1,   ny:ny-nhalo+1:-1,:,:)
+          global2(1-whalo:0,     ny+1:ny+nhalo,:,:) = -global2(whalo:1:-1,       ny-1:ny-nhalo:-1,:,:)
+          global2(1:nx,          ny+1:ny+nhalo,:,:) = -global2(nx:1:-1,          ny-1:ny-nhalo:-1,:,:)
+          global2(nx+1:nx+ehalo, ny+1:ny+nhalo,:,:) = -global2(nx:nx-ehalo+1:-1, ny-1:ny-nhalo:-1,:,:)
+          !redundant points must be equal and opposite
+          global2(nx/2+1:nx,     ny+shift,:,:) = -global2(nx/2:1:-1, ny+shift,:,:)
+          global2(1-whalo:0,     ny+shift,:,:) = -global2(nx-whalo+1:nx, ny+shift,:,:)
+          global2(nx+1:nx+ehalo, ny+shift,:,:) = -global2(1:ehalo,       ny+shift,:,:)
        end if
 
        if(ntile_per_pe > 1) write(type2, *)type, " at tile_count = ",n
@@ -2840,38 +1066,40 @@ contains
        call compare_checksums( y4(isd:ied,jsd:jed+shift,:,1), global2(isd:ied,jsd:jed+shift,:,1), type//' CGRID_NE Y4')
 
        !--- arbitrary halo updates ---------------------------------------
-       allocate(local1(isd:ied+shift,jsd:jed,      nz) )     
-       allocate(local2(isd:ied,      jsd:jed+shift,nz) )    
+       if(type .NE. 'Tripolar-Grid' ) then
+          allocate(local1(isd:ied+shift,jsd:jed,      nz) )     
+          allocate(local2(isd:ied,      jsd:jed+shift,nz) )    
 
-       do wh = 1-whalo, whalo
-          do eh = 1-ehalo, ehalo
-             do sh = 1-shalo, shalo
-                do nh = 1-nhalo, nhalo
-                   if( wh*eh <= 0 ) cycle
-                   if( sh*nh <= 0 ) cycle
-                   if( wh*sh <= 0 ) cycle
-                   local1(isd:ied+shift,jsd:jed,      :) = global1(isd:ied+shift,jsd:jed,      :,1)
-                   local2(isd:ied,      jsd:jed+shift,:) = global2(isd:ied,      jsd:jed+shift,:,1)
-                   x = 0.; y = 0.
-                   x(isc:iec+shift,jsc:jec,      :,1) = global1_all(isc:iec+shift,jsc:jec,      :,tile(1))       
-                   y(isc:iec,      jsc:jec+shift,:,1) = global2_all(isc:iec,      jsc:jec+shift,:,tile(1))    
-                   call fill_halo_zero(local1, wh, eh, sh, nh, shift, 0, isc, iec, jsc, jec, isd, ied, jsd, jed)  
-                   call fill_halo_zero(local2, wh, eh, sh, nh, 0, shift, isc, iec, jsc, jec, isd, ied, jsd, jed) 
+          do wh = 1-whalo, whalo
+             do eh = 1-ehalo, ehalo
+                do sh = 1-shalo, shalo
+                   do nh = 1-nhalo, nhalo
+                      if( wh*eh <= 0 ) cycle
+                      if( sh*nh <= 0 ) cycle
+                      if( wh*sh <= 0 ) cycle
+                      local1(isd:ied+shift,jsd:jed,      :) = global1(isd:ied+shift,jsd:jed,      :,1)
+                      local2(isd:ied,      jsd:jed+shift,:) = global2(isd:ied,      jsd:jed+shift,:,1)
+                      x = 0.; y = 0.
+                      x(isc:iec+shift,jsc:jec,      :,1) = global1_all(isc:iec+shift,jsc:jec,      :,tile(1))       
+                      y(isc:iec,      jsc:jec+shift,:,1) = global2_all(isc:iec,      jsc:jec+shift,:,tile(1))    
+                      call fill_halo_zero(local1, wh, eh, sh, nh, shift, 0, isc, iec, jsc, jec, isd, ied, jsd, jed)  
+                      call fill_halo_zero(local2, wh, eh, sh, nh, 0, shift, isc, iec, jsc, jec, isd, ied, jsd, jed) 
 
-                   write(type3,'(a,a,i2,a,i2,a,i2,a,i2)') trim(type), ' vector CGRID_NE with whalo = ', &
-                        wh, ', ehalo = ',eh, ', shalo = ', sh, ', nhalo = ', nh
-                   !          id = mpp_clock_id( trim(type3), flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-                   !          call mpp_clock_begin(id)
-                   call mpp_update_domains( x,  y,  domain, gridtype=CGRID_NE, whalo=wh, ehalo=eh, &
-                        shalo=sh, nhalo=nh, name=type3)
-                   !          call mpp_clock_end  (id)
-                   call compare_checksums( x(isd:ied+shift,jsd:jed, :,1),  local1, trim(type3)//' X' )
-                   call compare_checksums( y(isd:ied,jsd:jed+shift, :,1),  local2, trim(type3)//' Y' )
+                      write(type3,'(a,a,i2,a,i2,a,i2,a,i2)') trim(type), ' vector CGRID_NE with whalo = ', &
+                           wh, ', ehalo = ',eh, ', shalo = ', sh, ', nhalo = ', nh
+                      !          id = mpp_clock_id( trim(type3), flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+                      !          call mpp_clock_begin(id)
+                      call mpp_update_domains( x,  y,  domain, gridtype=CGRID_NE, whalo=wh, ehalo=eh, &
+                           shalo=sh, nhalo=nh, name=type3)
+                      !          call mpp_clock_end  (id)
+                      call compare_checksums( x(isd:ied+shift,jsd:jed, :,1),  local1, trim(type3)//' X' )
+                      call compare_checksums( y(isd:ied,jsd:jed+shift, :,1),  local2, trim(type3)//' Y' )
+                   end do
                 end do
              end do
           end do
-       end do
-       deallocate(local1, local2)
+          deallocate(local1, local2)
+       end if
     end if
 
     deallocate(global1, global2, x, y, x1, x2, x3, x4, y1, y2, y3, y4, global1_all, global2_all)
@@ -3511,7 +1739,6 @@ contains
     character(len=*), intent(in) :: type
 
     type(domain2D)                           :: domain
-    integer                                  :: msize(2)
     integer,              dimension(4)       :: isMe1, ieMe1, jsMe1, jeMe1
     integer,              dimension(4)       :: isNb1, ieNb1, jsNb1, jeNb1
     integer,              dimension(4)       :: isMe2, ieMe2, jsMe2, jeMe2
@@ -3544,9 +1771,9 @@ contains
        ntiles = 4
        allocate(ni(ntiles), nj(ntiles))
        ! "Four-Tile" test case will only run on one pe or multiple 0f 8 ( balanced).
-       if( npes .NE. 1 .AND. mod(npes,8) .NE. 0) then
+       if( npes .NE. 1 .AND. npes .NE. 8 .AND. npes .NE. 16 .AND. npes .NE. 32) then
           call mpp_error(NOTE,'TEST_MPP_DOMAINS(test_refined_mosaic: ' // &
-                  type// ' mosaic will not be tested because npes is not 1 and can not be divided by 8')
+                  type// ' mosaic will not be tested because npes is not 1, 8, 16 or 32')
           return
        end if            
        ni(1) =   nx; nj(1) =   ny
@@ -3908,20 +2135,20 @@ contains
           end select
        end select
 
-       if(total1 .NE. total2) call mpp_error(FATAL, "mpp_domains_test: mismatch on total number of points")
+       if(total1 .NE. total2) call mpp_error(FATAL, "test_mpp_domains: mismatch on total number of points")
        !--- we add one extra point in each direction for the consideration of symmetric domain.
        total2 = sum( (ieNb2(1:noverlap2) - isNb2(1:noverlap2) + 2) * (jeNb2(1:noverlap2) - jsNb2(1:noverlap2) + 2) )
        maxtotal = max(maxtotal, total2)
        !--- comparing
-       if( noverlap1 .NE. noverlap2 ) call mpp_error(FATAL, "mpp_domains_test: mismatch on number of overlapping region")
+       if( noverlap1 .NE. noverlap2 ) call mpp_error(FATAL, "test_mpp_domains: mismatch on number of overlapping region")
        do m = 1, noverlap1
           if( (isMe1(m) .NE. isMe2(m)) .OR. (ieMe1(m) .NE. ieMe2(m))        &
               .OR. (jsMe1(m) .NE. jsMe2(m)) .OR. (jeMe1(m) .NE. jeMe2(m)) ) &
-              call mpp_error(FATAL, "mpp_domains_test: mismatch on myself overlapping index")
+              call mpp_error(FATAL, "test_mpp_domains: mismatch on myself overlapping index")
           if( (isNb1(m) .NE. isNb2(m)) .OR. (ieNb1(m) .NE. ieNb2(m))        &
               .OR. (jsNb1(m) .NE. jsNb2(m)) .OR. (jeNb1(m) .NE. jeNb2(m)) ) &
-              call mpp_error(FATAL, "mpp_domains_test: mismatch on neighbor overlapping index") 
-          if(rotation1(m) .NE. rotation2(m)) call mpp_error(FATAL, "mpp_domains_test: mismatch on rotation angle");
+              call mpp_error(FATAL, "test_mpp_domains: mismatch on neighbor overlapping index") 
+          if(rotation1(m) .NE. rotation2(m)) call mpp_error(FATAL, "test_mpp_domains: mismatch on rotation angle");
        end do
     end do
 
@@ -5042,8 +3269,8 @@ contains
     tile1(8) = 3; tile2(8) = 4
     istart1(8) = 1;     iend1(8) = 1;     jstart1(8) = 1;     jend1(8) = nj(3)
     istart2(8) = ni(4); iend2(8) = ni(4); jstart2(8) = 1;     jend2(8) = nj(4)
-    msize(1) = maxval(ni(:)/layout(1,:)) + whalo + ehalo  ! make sure memory domain size is no smaller than
-    msize(2) = maxval(nj(:)/layout(2,:)) + shalo + nhalo  ! data domain size       
+    msize(1) = maxval(ni(:)/layout(1,:)) + whalo + ehalo + 1 ! make sure memory domain size is no smaller than
+    msize(2) = maxval(nj(:)/layout(2,:)) + shalo + nhalo + 1 ! data domain size       
     call mpp_define_mosaic(global_indices, layout, domain, ntiles, num_contact, tile1, tile2,       &
          istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,          &
          pe_start, pe_end, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo,    &
@@ -5129,8 +3356,8 @@ contains
     tile1(12) = 5; tile2(12) = 6
     istart1(12) = ni(5); iend1(12) = ni(5); jstart1(12) = 1;     jend1(12) = nj(5)
     istart2(12) = 1;     iend2(12) = 1;     jstart2(12) = 1;     jend2(12) = nj(6)
-    msize(1) = maxval(ni(:)/layout(1,:)) + whalo + ehalo  ! make sure memory domain size is no smaller than
-    msize(2) = maxval(nj(:)/layout(2,:)) + shalo + nhalo  ! data domain size       
+    msize(1) = maxval(ni(:)/layout(1,:)) + whalo + ehalo + 1 ! make sure memory domain size is no smaller than
+    msize(2) = maxval(nj(:)/layout(2,:)) + shalo + nhalo + 1 ! data domain size       
     call mpp_define_mosaic(global_indices, layout, domain, ntiles, num_contact, tile1, tile2, &
          istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,      &
          pe_start, pe_end, symmetry = .true., whalo=whalo, ehalo=ehalo,   &
@@ -6011,7 +4238,7 @@ end subroutine test_modify_domain
     halo = 2
     npes = mpp_npes()
     if( npes .NE. 8 ) then 
-       call mpp_error(NOTE, 'mpp_domains_test: test_get_neighbor_non_cyclic '// &
+       call mpp_error(NOTE, 'test_mpp_domains: test_get_neighbor_non_cyclic '// &
                             ' will be performed only when npes = 8')
       return
     end if
@@ -6037,7 +4264,7 @@ end subroutine test_modify_domain
     halo = 2
     npes = mpp_npes()
     if( npes .NE. 8 ) then 
-       call mpp_error(NOTE, 'mpp_domains_test: test_get_neighbor_cyclic '// &
+       call mpp_error(NOTE, 'test_mpp_domains: test_get_neighbor_cyclic '// &
                             ' will be performed only when npes = 8')
       return
     end if
@@ -6064,7 +4291,7 @@ end subroutine test_modify_domain
     halo = 2
     npes = mpp_npes()
     if( npes .NE. 8 ) then 
-       call mpp_error(NOTE, 'mpp_domains_test: test_get_neighbor_folded_north '// &
+       call mpp_error(NOTE, 'test_mpp_domains: test_get_neighbor_folded_north '// &
                             ' will be performed only when npes = 8')
       return
     end if
@@ -6095,7 +4322,7 @@ end subroutine test_modify_domain
     
     n_remove = 2
     if( npes .NE. 8 ) then 
-       call mpp_error(NOTE, 'mpp_domains_test: test_get_neighbor_mask '// &
+       call mpp_error(NOTE, 'test_mpp_domains: test_get_neighbor_mask '// &
                             ' will be performed only when npes = 8')
       return
     end if
@@ -6201,50 +4428,5 @@ end subroutine test_modify_domain
 
   end subroutine test_define_mosaic_pelist
 
-
-end program mpp_domains_test
+end program test
 #endif
-
-
-! <INFO>
-
-!   <COMPILER NAME="">     
-!     Any module or program unit using <TT>mpp_domains_mod</TT>
-!     must contain the line
-
-!     <PRE>
-!     use mpp_domains_mod
-!     </PRE>
-
-!     <TT>mpp_domains_mod</TT> <TT>use</TT>s <LINK
-!     SRC="mpp.html">mpp_mod</LINK>, and therefore is subject to the <LINK
-!     SRC="mpp.html#COMPILING AND LINKING SOURCE">compiling and linking requirements of that module.</LINK>
-!   </COMPILER>
-!   <PRECOMP FLAG="">      
-!     <TT>mpp_domains_mod</TT> uses standard f90, and has no special
-!     requirements. There are some OS-dependent
-!     pre-processor directives that you might need to modify on
-!     non-SGI/Cray systems and compilers. The <LINK
-!     SRC="mpp.html#PORTABILITY">portability of mpp_mod</LINK>
-!     obviously is a constraint, since this module is built on top of
-!     it. Contact me, Balaji, SGI/GFDL, with questions.
-!   </PRECOMP> 
-!   <LOADER FLAG="">       
-!     The <TT>mpp_domains</TT> source consists of the main source file
-!     <TT>mpp_domains.F90</TT> and also requires the following include files:
-!    <PRE>
-!     <TT>fms_platform.h</TT>
-!     <TT>mpp_update_domains2D.h</TT>
-!     <TT>mpp_global_reduce.h</TT>
-!     <TT>mpp_global_sum.h</TT>
-!     <TT>mpp_global_field.h</TT>
-!    </PRE>
-!    GFDL users can check it out of the main CVS repository as part of
-!    the <TT>mpp</TT> CVS module. The current public tag is <TT>galway</TT>.
-!    External users can download the latest <TT>mpp</TT> package <LINK SRC=
-!    "ftp://ftp.gfdl.gov/pub/vb/mpp/mpp.tar.Z">here</LINK>. Public access
-!    to the GFDL CVS repository will soon be made available.
-
-!   </LOADER>
-
-! </INFO>
