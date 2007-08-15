@@ -32,13 +32,15 @@ use          fms_mod, only: error_mesg, mpp_pe, write_version_number, FATAL
 
 use platform_mod, only    : r8_kind
 
-use diag_data_mod, only   : diag_fieldtype
+use diag_data_mod, only   : diag_fieldtype, diag_global_att_type 
 
 implicit none
 private
+type(diag_global_att_type), SAVE :: diag_global_att
 
 public :: diag_output_init, write_axis_meta_data, write_field_meta_data, &
-          done_meta_data, diag_field_out, diag_flush, diag_fieldtype
+          done_meta_data, diag_field_out, diag_flush, diag_fieldtype, &
+          get_diag_global_att, set_diag_global_att
 
 !-----------------------------------------------------------------------
 !------------------------- interfaces ----------------------------------
@@ -95,9 +97,9 @@ type(axistype),save     :: Axis_types     (max_axis_num)
 logical                 :: module_is_initialized = .FALSE.
 
 character(len=128), private :: version= &
-  '$Id: diag_output.F90,v 14.0.2.1 2007/05/23 15:41:25 z1l Exp $'
+  '$Id: diag_output.F90,v 15.0 2007/08/14 04:13:29 fms Exp $'
 character(len=128), private :: tagname= &
-  '$Name: nalanda_2007_06 $'
+  '$Name: omsk $'
 
 contains
 
@@ -136,6 +138,7 @@ subroutine diag_output_init ( file_name, format, file_title,  &
  integer :: form, threading, fileset
 
 !-----------------------------------------------------------------------
+  type(diag_global_att_type) :: gAtt
 !---- initialize mpp_io ----
 
  if ( .not.module_is_initialized ) then
@@ -164,6 +167,13 @@ subroutine diag_output_init ( file_name, format, file_title,  &
  if ( file_title(1:1) /= ' ' ) then
     call mpp_write_meta ( file_unit, 'title', cval=trim(file_title))
  endif
+
+!---- write grid type (mosaic or regular)
+
+ call get_diag_global_att (gAtt)
+ call mpp_write_meta ( file_unit, 'grid_type', cval=trim(gAtt%grid_type))
+ call mpp_write_meta ( file_unit, 'grid_tile', cval=trim(gAtt%tile_name))
+
 !-----------------------------------------------------------------------
 end subroutine diag_output_init
 
@@ -639,5 +649,23 @@ function get_axis_index ( num ) result ( index )
 
 end function get_axis_index
 
+!#######################################################################
+
+subroutine get_diag_global_att (gAtt)
+  type(diag_global_att_type) :: gAtt
+
+  gAtt=diag_global_att
+end subroutine get_diag_global_att
+
+subroutine set_diag_global_att (component,gridType,tileName)
+  character(len=*),intent(in) :: component,gridType,tileName 
+! Don't know how to set these for specific component
+! Want to be able to say 
+! if(output_file has component) then
+  diag_global_att%grid_type = gridType
+  diag_global_att%tile_name = tileName
+! endif
+end subroutine set_diag_global_att
+ 
 end module diag_output_mod
 

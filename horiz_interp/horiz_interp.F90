@@ -217,8 +217,8 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
 ! </INTERFACE>
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: horiz_interp.F90,v 14.0.4.3 2007/05/30 18:53:27 z1l Exp $'
- character(len=128) :: tagname = '$Name: nalanda_2007_06 $'
+ character(len=128) :: version = '$Id: horiz_interp.F90,v 15.0 2007/08/14 04:14:08 fms Exp $'
+ character(len=128) :: tagname = '$Name: omsk $'
  logical            :: module_is_initialized = .FALSE.
 !-----------------------------------------------------------------------
 
@@ -395,7 +395,7 @@ contains
 
  subroutine horiz_interp_new_1d_src (Interp, lon_in, lat_in, lon_out, lat_out,   &
                                      verbose, interp_method, num_nbrs, max_dist, &
-                                     src_modulo, grid_at_center, mask_in, mask_out )
+                                     src_modulo, grid_at_center, mask_in, mask_out, is_latlon_out )
 
    type(horiz_interp_type), intent(inout)        :: Interp
    real, intent(in),  dimension(:)               :: lon_in , lat_in
@@ -408,12 +408,14 @@ contains
    logical, intent(in),                 optional :: grid_at_center
    real, intent(in), dimension(:,:),    optional :: mask_in
    real, intent(out),dimension(:,:),    optional :: mask_out
+   logical, intent(in),                 optional :: is_latlon_out
 
    real, dimension(:,:), allocatable :: lon_src, lat_src
    real, dimension(:),   allocatable :: lon_src_1d, lat_src_1d
    integer                           :: i, j, nlon_in, nlat_in
    character(len=40)                 :: method
    logical                           :: center
+   logical                           :: dst_is_latlon
    !-----------------------------------------------------------------------
    call horiz_interp_init
 
@@ -424,7 +426,12 @@ contains
    case ("conservative")
       Interp%interp_method = CONSERVE
       !--- check to see if the source grid is regular lat-lon grid or not.
-      if(is_lat_lon(lon_out, lat_out) ) then
+      if(PRESENT(is_latlon_out)) then
+         dst_is_latlon = is_latlon_out
+      else
+         dst_is_latlon = is_lat_lon(lon_out, lat_out) 
+      end if
+      if(dst_is_latlon ) then
          if(present(mask_in)) then
             if ( ANY(mask_in < -.0001) .or. ANY(mask_in > 1.0001)  ) call mpp_error(FATAL, &
                   'horiz_interp_conserve_new_1d_src(horiz_interp_conserve_mod): input mask not between 0,1')
@@ -503,7 +510,7 @@ contains
 
  subroutine horiz_interp_new_2d (Interp, lon_in, lat_in, lon_out, lat_out,   &
                                  verbose, interp_method, num_nbrs, max_dist, &
-                                 src_modulo, mask_in, mask_out )
+                                 src_modulo, mask_in, mask_out, is_latlon_in, is_latlon_out  )
  type(horiz_interp_type), intent(inout)     :: Interp
  real, intent(in),  dimension(:,:)          :: lon_in , lat_in
  real, intent(in),  dimension(:,:)          :: lon_out, lat_out
@@ -514,6 +521,7 @@ contains
  logical, intent(in),              optional :: src_modulo
  real, intent(in), dimension(:,:), optional :: mask_in
  real, intent(out),dimension(:,:), optional :: mask_out
+ logical, intent(in),              optional :: is_latlon_in, is_latlon_out
  logical           :: src_is_latlon, dst_is_latlon
  character(len=40) :: method
 !-----------------------------------------------------------------------
@@ -525,8 +533,16 @@ contains
    select case (trim(method))
    case ("conservative")
       Interp%interp_method = CONSERVE
-      src_is_latlon = is_lat_lon(lon_in, lat_in)
-      dst_is_latlon = is_lat_lon(lon_out, lat_out)
+      if(PRESENT(is_latlon_in)) then
+         src_is_latlon = is_latlon_in
+      else
+         src_is_latlon = is_lat_lon(lon_in, lat_in)
+      end if
+      if(PRESENT(is_latlon_out)) then
+         dst_is_latlon = is_latlon_out
+      else
+         dst_is_latlon = is_lat_lon(lon_out, lat_out)
+      end if
       if(src_is_latlon .AND. dst_is_latlon) then
          if(present(mask_in)) then
             if ( ANY(mask_in < -.0001) .or. ANY(mask_in > 1.0001)  ) call mpp_error(FATAL, &
@@ -566,7 +582,7 @@ contains
 
 !#######################################################################
  subroutine horiz_interp_new_1d_dst (Interp, lon_in, lat_in, lon_out, lat_out,   &
-      verbose, interp_method, num_nbrs, max_dist, src_modulo, mask_in, mask_out )
+      verbose, interp_method, num_nbrs, max_dist, src_modulo, mask_in, mask_out, is_latlon_in )
    type(horiz_interp_type), intent(inout)     :: Interp
    real, intent(in),  dimension(:,:)          :: lon_in , lat_in
    real, intent(in),  dimension(:)            :: lon_out, lat_out
@@ -577,11 +593,13 @@ contains
    logical, intent(in),              optional :: src_modulo
    real, intent(in), dimension(:,:), optional :: mask_in
    real, intent(out),dimension(:,:), optional :: mask_out
+   logical, intent(in),              optional :: is_latlon_in
 
    character(len=40) :: method
    !-------------some local variables-----------------------------------------------
    integer                           :: i, j, nlon_out, nlat_out
    real, dimension(:,:), allocatable :: lon_dst, lat_dst
+   logical                           :: src_is_latlon
    !-----------------------------------------------------------------------
    call horiz_interp_init
 
@@ -600,7 +618,13 @@ contains
    select case (trim(method))
    case ("conservative")
       Interp%interp_method = CONSERVE
-      if(is_lat_lon(lon_in, lat_in)) then
+      if(PRESENT(is_latlon_in)) then
+         src_is_latlon = is_latlon_in
+      else
+         src_is_latlon = is_lat_lon(lon_in, lat_in)
+      end if      
+
+      if(src_is_latlon) then
          if(present(mask_in)) then
             if ( ANY(mask_in < -.0001) .or. ANY(mask_in > 1.0001)  ) call mpp_error(FATAL, &
               'horiz_interp_conserve_new_1d_dst(horiz_interp_conserve_mod): input mask not between 0,1')

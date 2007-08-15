@@ -175,8 +175,8 @@ implicit none
 private
 
 
-character(len=128) :: version = '$Id: field_manager.F90,v 14.0 2007/03/15 22:39:21 fms Exp $'
-character(len=128) :: tagname = '$Name: nalanda_2007_06 $'
+character(len=128) :: version = '$Id: field_manager.F90,v 15.0 2007/08/14 04:13:49 fms Exp $'
+character(len=128) :: tagname = '$Name: omsk $'
 logical            :: module_is_initialized  = .false.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -3763,11 +3763,11 @@ if (associated(temp_field_p)) then  !{
 !        extract the value
 !
       value = temp_field_p%s_value(index_t)
-      if (trim(value) == '') then
-        success = .false.
-      else
+      !if (trim(value) == '') then
+        !success = .false.
+      !else
         success = .true.
-      endif
+      !endif
     endif !}
   else  !}{
 !

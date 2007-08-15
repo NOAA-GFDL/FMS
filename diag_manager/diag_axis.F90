@@ -18,7 +18,7 @@ use mpp_domains_mod, only: domain1d, domain2d, mpp_get_compute_domain, &
                            mpp_get_domain_components, null_domain1d, &
                            null_domain2d, operator(/=), mpp_get_global_domain
 use         fms_mod, only: error_mesg, write_version_number, lowercase, FATAL
-use diag_data_mod, only  : diag_axis_type, max_subaxes, max_axes
+use diag_data_mod, only  : diag_axis_type, max_subaxes, max_axes, max_num_axis_sets
 implicit none
 
 private
@@ -48,15 +48,14 @@ integer             :: num_def_axes = 0
 
 ! ---- storage for axis set names ----
 
-integer, parameter :: max_num_axis_sets = 25
 integer            :: num_axis_sets = 0
-character(len=128) :: Axis_sets(max_num_axis_sets)
+character(len=128), allocatable, save :: Axis_sets(:)
 ! ---- global storage for all defined axes ----
 type (diag_axis_type), allocatable, save :: Axes(:)
 logical            :: module_is_initialized = .FALSE.
 character(len=128) :: &
-     version='$Id: diag_axis.F90,v 14.0 2007/03/15 22:38:12 fms Exp $'
-character(len=128) :: tagname='$Name: nalanda_2007_06 $'
+     version='$Id: diag_axis.F90,v 15.0 2007/08/14 04:13:21 fms Exp $'
+character(len=128) :: tagname='$Name: omsk $'
 
 contains
 !#######################################################################
@@ -97,6 +96,7 @@ function diag_axis_init (name, data, units, cart_name, long_name,     &
   if ( .not.module_is_initialized ) then
      call write_version_number( version, tagname )
   endif
+  if (.not. allocated(Axis_sets)) allocate(Axis_sets(max_num_axis_sets))
   if (.not. allocated(Axes)) allocate(Axes(max_axes))
   if (.not. allocated(num_subaxes)) then
      allocate(num_subaxes(max_axes))

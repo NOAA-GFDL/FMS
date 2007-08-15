@@ -24,6 +24,7 @@ use time_manager_mod,only: time_type, operator(==), operator(>), NO_CALENDAR, in
                            operator(-),  operator(<), operator(>=)
 use     mpp_io_mod, only : mpp_close
 use     mpp_mod,    only : mpp_npes
+use  constants_mod, only : SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
 implicit none
 private
 
@@ -32,8 +33,8 @@ public get_subfield_size, log_diag_field_info, update_bounds, check_out_of_bound
        find_input_field, init_input_field, init_output_field, diag_data_out, write_static, &
        check_duplicate_output_fields, get_date_dif
 
-character(len=128),private  :: version = '$Id: diag_util.F90,v 14.0.2.1 2007/05/23 15:41:24 z1l Exp $'
-character(len=128),private  :: tagname = '$Name: nalanda_2007_06 $'
+character(len=128),private  :: version = '$Id: diag_util.F90,v 15.0 2007/08/14 04:13:33 fms Exp $'
+character(len=128),private  :: tagname = '$Name: omsk $'
 
 contains
 
@@ -572,13 +573,13 @@ if(output_units == DIAG_SECONDS) then
    endif
 else if(output_units == DIAG_MINUTES) then
    if (get_calendar_type() == NO_CALENDAR) then
-       diag_time_inc = increment_time(time, output_freq*60, 0, err_msg=error_message_local)
+       diag_time_inc = increment_time(time, nint(output_freq*SECONDS_PER_MINUTE), 0, err_msg=error_message_local)
    else
        diag_time_inc = increment_date(time, 0, 0, 0, 0, output_freq, 0, err_msg=error_message_local)
    endif
 else if(output_units == DIAG_HOURS) then
    if (get_calendar_type() == NO_CALENDAR) then
-       diag_time_inc = increment_time(time, output_freq*3600, 0, err_msg=error_message_local)
+       diag_time_inc = increment_time(time, nint(output_freq*SECONDS_PER_HOUR), 0, err_msg=error_message_local)
    else
        diag_time_inc = increment_date(time, 0, 0, 0, output_freq, 0, 0, err_msg=error_message_local)
    endif
@@ -868,7 +869,7 @@ subroutine opening_file(file, time)
   character(len=256)            :: fname
   integer                       :: ntileMe, nfiles_in_set
   integer, allocatable          :: tile_id(:)
-  type(domain2d)                :: domain2d
+  type(domain2d)                :: domain2
 
 
   aux_present = .false.; match_aux_name = .false.
@@ -916,16 +917,16 @@ subroutine opening_file(file, time)
   if(mpp_mosaic_defined())then
     field_num = files(file)%fields(1)
     num_axes = output_fields(field_num)%num_axes
-    domain2d = get_domain2d ( output_fields(field_num)%axes(1:num_axes) )
-    if(domain2d == NULL_DOMAIN2D) call return_domain(domain2d)
-    if(domain2d == NULL_DOMAIN2D)then
+    domain2 = get_domain2d ( output_fields(field_num)%axes(1:num_axes) )
+    if(domain2 == NULL_DOMAIN2D) call return_domain(domain2)
+    if(domain2 == NULL_DOMAIN2D)then
       call error_mesg ('diag_util opening_file','Domain not defined through set_domain interface; cannot retrieve tile info', FATAL)
     endif
-    nfiles_in_set = mpp_get_tile_npes(domain2d)
-    if(mpp_get_ntile_count(domain2d) > 1)then
-        ntileMe = mpp_get_current_ntile(domain2d)
+    nfiles_in_set = mpp_get_tile_npes(domain2)
+    if(mpp_get_ntile_count(domain2) > 1)then
+        ntileMe = mpp_get_current_ntile(domain2)
         allocate(tile_id(ntileMe))
-        tile_id = mpp_get_tile_id(domain2d)
+        tile_id = mpp_get_tile_id(domain2)
         fname = trim(filename)
         call get_tile_string(filename, trim(fname)//'.tile' , tile_id(1))
         deallocate(tile_id)
@@ -1201,7 +1202,7 @@ endif
 if(LEN_TRIM(mi) > 0) then
    sc1_s = sc1
 else
-   sc1_s = mi2*60 + sc1
+   sc1_s = nint(mi2*SECONDS_PER_MINUTE) + sc1
 endif
 position = INDEX(filetail, 'sc')
 if(position>0) then
@@ -1233,13 +1234,13 @@ dif_time = t2 - t1
 call get_time(dif_time, dif_seconds, dif_days)
 
 if(units == DIAG_SECONDS) then
-   get_date_dif = dif_seconds + 86400 * dif_days
+   get_date_dif = dif_seconds + SECONDS_PER_DAY * dif_days
 else if(units == DIAG_MINUTES) then
-   get_date_dif = 1440 * dif_days + dif_seconds / 60.
+   get_date_dif = 1440 * dif_days + dif_seconds / SECONDS_PER_MINUTE
 else if(units == DIAG_HOURS) then
-   get_date_dif = 24 * dif_days + dif_seconds / 3600.
+   get_date_dif = 24 * dif_days + dif_seconds / SECONDS_PER_HOUR
 else if(units == DIAG_DAYS) then
-   get_date_dif = dif_days + dif_seconds / 86400.
+   get_date_dif = dif_days + dif_seconds / SECONDS_PER_DAY
 else if(units == DIAG_MONTHS) then
    call error_mesg('diag_data_out', 'months not supported as output units', FATAL)
 else if(units == DIAG_YEARS) then

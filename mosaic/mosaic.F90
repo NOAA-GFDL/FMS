@@ -36,8 +36,8 @@ public :: calc_mosaic_grid_area
 
 logical :: module_is_initialized = .true.
 ! version information varaible
- character(len=128) :: version = '$Id: mosaic.F90,v 14.0.2.3 2007/05/03 19:58:46 z1l Exp $'
- character(len=128) :: tagname = '$Name: nalanda_2007_06 $'
+ character(len=128) :: version = '$Id: mosaic.F90,v 15.0 2007/08/14 04:14:22 fms Exp $'
+ character(len=128) :: tagname = '$Name: omsk $'
 
 contains
 
@@ -368,7 +368,7 @@ end subroutine mosaic_init
 
      nlon = size(area,1)
      nlat = size(area,2)
-     /* make sure size of lon, lat and area are consitency */
+     ! make sure size of lon, lat and area are consitency
      if( size(lon,1) .NE. nlon+1 .OR. size(lat,1) .NE. nlon+1 ) &
         call mpp_error(FATAL, "mosaic_mod: size(lon,1) and size(lat,1) should equal to size(area,1)+1")
      if( size(lon,2) .NE. nlat+1 .OR. size(lat,2) .NE. nlat+1 ) &

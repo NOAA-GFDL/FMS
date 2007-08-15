@@ -74,8 +74,8 @@ use time_manager_mod, only: time_type
 implicit none
 private
 
-character(len=128) :: version = '$Id: data_override.F90,v 14.0.2.4.2.1 2007/06/08 14:06:13 z1l Exp $'
-character(len=128) :: tagname = '$Name: nalanda_2007_06 $'
+character(len=128) :: version = '$Id: data_override.F90,v 15.0 2007/08/14 04:13:18 fms Exp $'
+character(len=128) :: tagname = '$Name: omsk $'
 
 type data_type_lima
    character(len=3)   :: gridname
@@ -843,8 +843,8 @@ subroutine get_global_mosaic_grid(mosaic_file)
   inquire (file=trim(mosaic_file), opened=file_open)
   if(file_open) call mpp_error(FATAL, trim(mosaic_file)//' already opened')
 
-  /* the grid file may be solo mosaic or coupler mosaic */
-  if(field_exist(mosaic_file, "gridfiles" ) )then /* solo mosaic, only one of atm_on, land_on or ice_on will be true */
+  ! the grid file may be solo mosaic or coupler mosaic
+  if(field_exist(mosaic_file, "gridfiles" ) )then ! solo mosaic, only one of atm_on, land_on or ice_on will be true
      count = 0
      if (atm_on) count = count + 1 
      if (lnd_on) count = count + 1 

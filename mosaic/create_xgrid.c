@@ -6,7 +6,7 @@
 
 
 const double MASK_THRESH = 1.0e-8;
-const double EPSLN = 1.0e-10;
+const double EPSLN = 1.0e-15;
 double grid_box_radius(const double *x, const double *y, const double *z, int n);
 double dist_between_boxes(const double *x1, const double *y1, const double *z1, int n1,
 			  const double *x2, const double *y2, const double *z2, int n2);
@@ -1174,10 +1174,7 @@ double dist_between_boxes(const double *x1, const double *y1, const double *z1, 
    double product;
    
    product = ( x-x0 )*(y1-y0) + (x0-x1)*(y-y0);
-
-   if(product<EPSLN)
-     return 1;
-   else
-     return 0;
+   return (product<=EPSLN) ? 1:0;
+   
  }; /* inside_edge */
 

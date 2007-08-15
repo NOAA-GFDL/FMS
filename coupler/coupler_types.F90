@@ -42,8 +42,11 @@ module coupler_types_mod  !{
 !                    air_sea_gas_flux/
 !                         implementation/
 !                                        ocmip2/
+!                                                    num_parameters = 2
 !                                        ocmip2_data/
-!                         num_parameters = 2
+!                                                    num_parameters = 2
+!                                        linear/
+!                                                    num_parameters = 3
 !                         num_flags = 0
 !                         use_atm_pressure = t
 !                         use_10m_wind_speed = t
@@ -75,8 +78,9 @@ module coupler_types_mod  !{
 !                    air_sea_deposition/
 !                         implementation/
 !                                        dry/
+!                                            num_parameters = 1
 !                                        wet/
-!                         num_parameters = 1
+!                                            num_parameters = 1
 !                         num_flags = 0
 !                         use_atm_pressure = f
 !                         use_10m_wind_speed = f
@@ -102,7 +106,7 @@ module coupler_types_mod  !{
 !                    land_sea_runoff/
 !                         implementation/
 !                                        river/
-!                         num_parameters = 1
+!                                              num_parameters = 1
 !                         num_flags = 0
 !                         use_atm_pressure = f
 !                         use_10m_wind_speed = f
@@ -126,231 +130,17 @@ module coupler_types_mod  !{
 !                              units/
 !                                    'mol/m^3'
 !
-  use mpp_mod,                    only: mpp_pe, mpp_root_pe, &
-       mpp_error, stdlog
-  use mpp_io_mod,                 only: mpp_close
-  use fms_mod,                    only: open_namelist_file, write_version_number, check_nml_error
 
-  use field_manager_mod,          only: fm_field_name_len, fm_string_len, fm_dump_list
-  use xgrid_mod,                  only: xmap_type
-  use tracer_manager_mod,         only: NO_TRACER
-  use constants_mod,              only: rdgas, rvgas
+use field_manager_mod, only: fm_field_name_len, fm_string_len, fm_dump_list
 
 implicit none
 !
 !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: coupler_types.F90,v 14.0 2007/03/15 22:38:01 fms Exp $'
-  character(len=128) :: tag = '$Name: nalanda_2007_06 $'
+  character(len=128) :: version = '$Id: coupler_types.F90,v 15.0 2007/08/14 04:13:15 fms Exp $'
+  character(len=128) :: tag = '$Name: omsk $'
 !-----------------------------------------------------------------------
 real, parameter :: bound_tol = 1e-7
 
-real, parameter :: d622 = rdgas/rvgas
-real, parameter :: d378 = 1.0-d622
-public:: bound_tol, d622, d378
-!
-integer, allocatable :: id_tr_atm(:), id_tr_surf(:), id_tr_flux(:), id_tr_mol_flux(:)
-
-logical :: first_static = .true.
-logical :: do_init = .true.
-public:: ex_gas_fields_atm, ex_gas_fields_ice, ex_gas_fluxes, id_tr_atm, id_tr_surf, id_tr_flux, id_tr_mol_flux, first_static, do_init
-!
-type :: tracer_ind_type
-   integer :: atm, ice, lnd ! indices of the tracer in the respective models
-end type 
-type(tracer_ind_type), allocatable :: tr_table(:) ! table of tracer indices
-type :: tracer_exch_ind_type
-   integer :: exch = 0  ! exchange grid index
-   integer :: ice = 0   ! ice model index
-   integer :: lnd = 0   ! land model index
-end type tracer_exch_ind_type
-type(tracer_exch_ind_type), allocatable :: tr_table_map(:) ! map atm tracers to exchange, ice and land variables
-integer :: isphum = NO_TRACER       ! index of specific humidity tracer in tracer table
-public:: tracer_ind_type, tr_table, tracer_exch_ind_type, tr_table_map, isphum
-!, ex_gas_fields_atm, ex_gas_fields_ice, ex_gas_fluxes
-!
-integer :: remap_method = 1
-public:: remap_method
-!
-integer :: n_atm_tr  ! number of prognostic tracers in the atmos model
-integer :: n_atm_tr_tot  ! number of prognostic tracers in the atmos model
-integer :: n_lnd_tr  ! number of prognostic tracers in the land model 
-integer :: n_lnd_tr_tot  ! number of prognostic tracers in the land model 
-integer :: n_exch_tr ! number of tracers exchanged between models
-public:: n_atm_tr, n_atm_tr_tot, n_lnd_tr, n_lnd_tr_tot, n_exch_tr
-!
-integer :: ni_atm, nj_atm ! to do atmos diagnostic from flux_ocean_to_ice
-public:: ni_atm, nj_atm
-!
-integer :: id_drag_moist,  id_drag_heat,  id_drag_mom,     &
-     id_rough_moist, id_rough_heat, id_rough_mom,    &
-     id_land_mask,   id_ice_mask,     &
-     id_u_star, id_b_star, id_q_star, id_u_flux, id_v_flux,   &
-     id_t_surf, id_t_flux, id_r_flux, id_q_flux,              &
-     id_t_atm,  id_u_atm,  id_v_atm,  id_wind,                &
-     id_t_ref,  id_rh_ref, id_u_ref,  id_v_ref,               &
-     id_del_h,  id_del_m,  id_del_q,  id_rough_scale,         &
-     id_t_ca,   id_q_surf, id_q_atm, id_z_atm, id_p_atm, id_gust, &
-     id_t_ref_land, id_rh_ref_land, id_u_ref_land, id_v_ref_land, &
-     id_q_ref,  id_q_ref_land
-public:: id_drag_moist,  id_drag_heat,  id_drag_mom,     &
-     id_rough_moist, id_rough_heat, id_rough_mom,    &
-     id_land_mask,   id_ice_mask,     &
-     id_u_star, id_b_star, id_q_star, id_u_flux, id_v_flux,   &
-     id_t_surf, id_t_flux, id_r_flux, id_q_flux,              &
-     id_t_atm,  id_u_atm,  id_v_atm,  id_wind,                &
-     id_t_ref,  id_rh_ref, id_u_ref,  id_v_ref,               &
-     id_del_h,  id_del_m,  id_del_q,  id_rough_scale,         &
-     id_t_ca,   id_q_surf, id_q_atm, id_z_atm, id_p_atm, id_gust, &
-     id_t_ref_land, id_rh_ref_land, id_u_ref_land, id_v_ref_land, &
-     id_q_ref,  id_q_ref_land
-!
-type(xmap_type), save :: xmap_sfc, xmap_runoff
-
-integer         :: n_xgrid_sfc,  n_xgrid_runoff
-
-public:: xmap_sfc, xmap_runoff, n_xgrid_sfc, n_xgrid_runoff
-!
-  logical :: ocn_pe, ice_pe
-  integer, allocatable, dimension(:) :: ocn_pelist, ice_pelist
-public:: ocn_pe, ice_pe, ocn_pelist, ice_pelist
-
-!model_boundary_data_type contains all model fields at the boundary.
-!model1_model2_boundary_type contains fields that model2 gets
-!from model1, may also include fluxes. These are declared by
-!flux_exchange_mod and have private components. All model fields in
-!model_boundary_data_type may not be exchanged.
-!will support 3 types of flux_exchange:
-!  REGRID: grids are physically different, pass via exchange grid
-!  REDIST: same physical grid, different decomposition, must move data around
-!  DIRECT: same physical grid, same domain decomposition, can directly copy data
-integer, parameter :: REGRID=1, REDIST=2, DIRECT=3
-
-public:: REGRID, REDIST, DIRECT
-!
-integer :: cplClock, sfcClock, fluxAtmDnClock, fluxLandIceClock, &
-             fluxIceOceanClock, fluxOceanIceClock, regenClock, fluxAtmUpClock, &
-             cplOcnClock
-
-public:: cplClock, sfcClock, fluxAtmDnClock, fluxLandIceClock, &
-             fluxIceOceanClock, fluxOceanIceClock, regenClock, fluxAtmUpClock, &
-             cplOcnClock
-
-! ---- allocatable module storage --------------------------------------------
-real, allocatable, dimension(:) :: &
-     ! NOTE: T canopy is only differet from t_surf over vegetated land
-     ex_t_surf,    &   ! surface temperature for radiation calc, degK
-     ex_t_ca,      &   ! near-surface (canopy) air temperature, degK
-     ex_p_surf,    &   ! surface pressure
-
-     ex_flux_t,    &   ! sens heat flux
-     ex_flux_lw,   &   ! longwave radiation flux
-
-     ex_dhdt_surf, &   ! d(sens.heat.flux)/d(T canopy)
-     ex_dedt_surf, &   ! d(water.vap.flux)/d(T canopy)
-     ex_dqsatdt_surf, &   ! d(water.vap.flux)/d(q canopy)
-     ex_e_q_n,     &
-     ex_drdt_surf, &   ! d(LW flux)/d(T surf)
-     ex_dhdt_atm,  &   ! d(sens.heat.flux)/d(T atm)
-     ex_flux_u,    &   ! u stress on atmosphere
-     ex_flux_v,    &   ! v stress on atmosphere
-     ex_dtaudu_atm,&   ! d(stress)/d(u)
-     ex_dtaudv_atm,&   ! d(stress)/d(v)
-     ex_albedo_fix,&
-     ex_albedo_vis_dir_fix,&
-     ex_albedo_nir_dir_fix,&
-     ex_albedo_vis_dif_fix,&
-     ex_albedo_nir_dif_fix,&
-     ex_old_albedo,&   ! old value of albedo for downward flux calculations
-     ex_drag_q,    &   ! q drag.coeff.
-     ex_cd_t,      &
-     ex_cd_m,      &
-     ex_b_star,    &
-     ex_u_star,    &
-     ex_wind,      &
-     ex_z_atm
-
-real, allocatable, dimension(:,:) :: &
-     ex_tr_surf,    & ! near-surface tracer fields
-     ex_flux_tr,    & ! tracer fluxes
-     ex_dfdtr_surf, & ! d(tracer flux)/d(surf tracer)
-     ex_dfdtr_atm,  & ! d(tracer flux)/d(atm tracer)
-     ex_e_tr_n,     & ! coefficient in implicit scheme 
-     ex_f_tr_delt_n   ! coefficient in implicit scheme
-
-logical, allocatable, dimension(:) :: &
-     ex_avail,     &   ! true where data on exchange grid are available
-     ex_land           ! true if exchange grid cell is over land
-real, allocatable, dimension(:) :: &
-     ex_e_t_n,      &
-     ex_f_t_delt_n
-public::     ex_t_surf,    &   ! surface temperature for radiation calc, degK
-     ex_t_ca,      &   ! near-surface (canopy) air temperature, degK
-     ex_p_surf,    &   ! surface pressure
-
-     ex_flux_t,    &   ! sens heat flux
-     ex_flux_lw,   &   ! longwave radiation flux
-
-     ex_dhdt_surf, &   ! d(sens.heat.flux)/d(T canopy)
-     ex_dedt_surf, &   ! d(water.vap.flux)/d(T canopy)
-     ex_dqsatdt_surf, &   ! d(water.vap.flux)/d(q canopy)
-     ex_e_q_n,     &
-     ex_drdt_surf, &   ! d(LW flux)/d(T surf)
-     ex_dhdt_atm,  &   ! d(sens.heat.flux)/d(T atm)
-     ex_flux_u,    &   ! u stress on atmosphere
-     ex_flux_v,    &   ! v stress on atmosphere
-     ex_dtaudu_atm,&   ! d(stress)/d(u)
-     ex_dtaudv_atm,&   ! d(stress)/d(v)
-     ex_albedo_fix,&
-     ex_albedo_vis_dir_fix,&
-     ex_albedo_nir_dir_fix,&
-     ex_albedo_vis_dif_fix,&
-     ex_albedo_nir_dif_fix,&
-     ex_old_albedo,&   ! old value of albedo for downward flux calculations
-     ex_drag_q,    &   ! q drag.coeff.
-     ex_cd_t,      &
-     ex_cd_m,      &
-     ex_b_star,    &
-     ex_u_star,    &
-     ex_wind,      &
-     ex_z_atm,     &
-     ex_tr_surf,    & ! near-surface tracer fields
-     ex_flux_tr,    & ! tracer fluxes
-     ex_dfdtr_surf, & ! d(tracer flux)/d(surf tracer)
-     ex_dfdtr_atm,  & ! d(tracer flux)/d(atm tracer)
-     ex_e_tr_n,     & ! coefficient in implicit scheme 
-     ex_f_tr_delt_n,&   ! coefficient in implicit scheme
-     ex_avail,     &   ! true where data on exchange grid are available
-     ex_land      ,&    ! true if exchange grid cell is over land
-     ex_e_t_n,      &
-     ex_f_t_delt_n
-
-!-----------------------------------------------------------------------
-!-------- namelist (for diagnostics) ------
-!--- namelist interface ------------------------------------------------------
-! <NAMELIST NAME="coupler_types_nml">
-!   <DATA NAME="z_ref_heat"  TYPE="real"  DEFAULT="2.0">
-!    eference height (meters) for temperature and relative humidity 
-!    diagnostics (t_ref,rh_ref,del_h,del_q)
-!   </DATA>
-!   <DATA NAME="z_ref_mom"  TYPE="real"  DEFAULT="10.0">
-!    reference height (meters) for momentum diagnostics (u_ref,v_ref,del_m)
-!   </DATA>
-!   <DATA NAME="ex_u_star_smooth_bug"  TYPE="logical"  DEFAULT="false">
-!    By default, the global exchange grid u_star will not be interpolated from 
-!    atmospheric grid, this is different from Jakarta behavior and will
-!    change answers. So to perserve Jakarta behavior and reproduce answers
-!    explicitly set this namelist variable to .true. in input.nml.
-!    Talk to mw, ens for details.
-!   </DATA>
-
-  real ::  z_ref_heat =  2.,  &
-           z_ref_mom  = 10.
-  logical :: ex_u_star_smooth_bug = .false.
-  logical :: sw1way_bug = .false.
-
-namelist /coupler_types_nml/ z_ref_heat, z_ref_mom, ex_u_star_smooth_bug, sw1way_bug
-! </NAMELIST>
-public:: z_ref_heat, z_ref_mom, ex_u_star_smooth_bug, sw1way_bug
 private
 
 !
@@ -389,7 +179,7 @@ public  coupler_type_copy_1d_3d
 !
 !----------------------------------------------------------------------
 !
-integer :: unit, ierr, io,  i
+
 character(len=48), parameter                    :: mod_name = 'coupler_types_mod'
 
 !
@@ -566,12 +356,7 @@ end interface  coupler_type_copy  !}
 !
 !-----------------------------------------------------------------------
 !
-type(coupler_1d_bc_type), save        :: ex_gas_fields_atm  ! gas fields in atm
-                     ! Place holder for various atmospheric fields.
-type(coupler_1d_bc_type), save        :: ex_gas_fields_ice  ! gas fields on ice
-type(coupler_1d_bc_type), save        :: ex_gas_fluxes      ! gas flux
-                     ! Place holder of intermediate calculations, such as
-                     ! piston velocities etc.
+
 contains
 
 
@@ -647,19 +432,6 @@ if (module_is_initialized) then  !{
   return
 endif  !}
 
-!-----------------------------------------------------------------------
-!----- read namelist -------
-
-    unit = open_namelist_file()
-    ierr=1; do while (ierr /= 0)
-       read  (unit, nml=coupler_types_nml, iostat=io, end=10)
-       ierr = check_nml_error (io, 'coupler_types_nml')
-    enddo
-10  call mpp_close(unit)
-!----- write namelist to logfile -----
-    call write_version_number (version, tag)
-    if( mpp_pe() == mpp_root_pe() )write( stdlog(), nml=coupler_types_nml )
-
 !
 !       Set other defaults for the fm_util_set_value routines
 !
@@ -719,13 +491,18 @@ endif  !}
 if (fm_new_list('air_sea_gas_flux/implementation/ocmip2') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux/implementation/ocmip2" list')
 endif  !}
+call fm_util_set_value('air_sea_gas_flux/implementation/ocmip2/num_parameters', 2)
 if (fm_new_list('air_sea_gas_flux/implementation/ocmip2_data') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux/implementation/ocmip2_data" list')
 endif  !}
+call fm_util_set_value('air_sea_gas_flux/implementation/ocmip2_data/num_parameters', 2)
+if (fm_new_list('air_sea_gas_flux/implementation/linear') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux/implementation/linear" list')
+endif  !}
+call fm_util_set_value('air_sea_gas_flux/implementation/linear/num_parameters', 3)
 
 !       add some scalar quantaties
 
-call fm_util_set_value('air_sea_gas_flux/num_parameters', 2)
 call fm_util_set_value('air_sea_gas_flux/num_flags', 0)
 call fm_util_set_value('air_sea_gas_flux/use_atm_pressure', .true.)
 call fm_util_set_value('air_sea_gas_flux/use_10m_wind_speed', .true.)
@@ -812,13 +589,14 @@ endif  !}
 if (fm_new_list('air_sea_deposition/implementation/dry') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_deposition/implementation/dry" list')
 endif  !}
+call fm_util_set_value('air_sea_deposition/implementation/dry/num_parameters', 1)
 if (fm_new_list('air_sea_deposition/implementation/wet') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_deposition/implementation/wet" list')
 endif  !}
+call fm_util_set_value('air_sea_deposition/implementation/wet/num_parameters', 1)
 
 !       add some scalar quantaties
 
-call fm_util_set_value('air_sea_deposition/num_parameters', 1)
 call fm_util_set_value('air_sea_deposition/num_flags', 0)
 call fm_util_set_value('air_sea_deposition/use_atm_pressure', .false.)
 call fm_util_set_value('air_sea_deposition/use_10m_wind_speed', .false.)
@@ -885,10 +663,10 @@ endif  !}
 if (fm_new_list('land_sea_runoff/implementation/river') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "land_sea_runoff/implementation/river" list')
 endif  !}
+call fm_util_set_value('land_sea_runoff/implementation/river/num_parameters', 1)
 
 !       add some scalar quantaties
 
-call fm_util_set_value('land_sea_runoff/num_parameters', 1)
 call fm_util_set_value('land_sea_runoff/num_flags', 0)
 call fm_util_set_value('land_sea_runoff/use_atm_pressure', .false.)
 call fm_util_set_value('land_sea_runoff/use_10m_wind_speed', .false.)
@@ -1113,7 +891,7 @@ if (var_in%num_bcs .ne. 0) then  !{
     allocate ( var_out%bc(n)%field(var_out%bc(n)%num_fields) )
     do m = 1, var_out%bc(n)%num_fields  !{
       if (present(suffix)) then  !{
-        var_out%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // suffix
+        var_out%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
       else  !}{
         var_out%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
       endif  !}

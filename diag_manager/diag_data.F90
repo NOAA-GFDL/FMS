@@ -38,6 +38,7 @@ integer, parameter  :: single = selected_real_kind(p=6,r=37)
 type (time_type)    :: base_time
 integer             :: base_year, base_month, base_day, base_hour, base_minute, base_second
 character(len = 256):: global_descriptor
+integer             :: max_num_axis_sets = 25
 
 type diag_grid
    real    :: start(3), end(3) ! coordinates (lat,lon,depth) of local domain to output   
@@ -137,8 +138,8 @@ character (len=10)  :: time_unit_list(6) = (/'seconds   ', 'minutes   ', &
 character(len=32)   :: pelist_name
 
 
-character(len=128),private  :: version = '$Id: diag_data.F90,v 14.0 2007/03/15 22:38:17 fms Exp $'
-character(len=128),private  :: tagname = '$Name: nalanda_2007_06 $'
+character(len=128),private  :: version = '$Id: diag_data.F90,v 15.0 2007/08/14 04:13:24 fms Exp $'
+character(len=128),private  :: tagname = '$Name: omsk $'
 
 
 ! definitions for diag_axis_mod
@@ -160,8 +161,10 @@ type diag_axis_type
    integer              :: tile_count
 end type diag_axis_type
 
-
-
+type diag_global_att_type
+   character(len=128)   :: grid_type='regular'
+   character(len=128)   :: tile_name='N/A'
+end type diag_global_att_type
 
 
 end module diag_data_mod

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_define.inc,v 14.0.4.1 2007/04/25 13:26:14 z1l Exp $
+! $Id: mpp_domains_define.inc,v 15.0 2007/08/14 04:14:40 fms Exp $
 
 
   ! <SUBROUTINE NAME="mpp_define_layout2D" INTERFACE="mpp_define_layout">

@@ -1825,9 +1825,9 @@ module mpp_domains_mod
 
   !--- version information variables
   character(len=128), public :: version= &
-       '$Id: mpp_domains.F90,v 14.0.2.1.2.1 2007/05/23 15:37:12 z1l Exp $'
+       '$Id: mpp_domains.F90,v 15.0 2007/08/14 04:15:18 fms Exp $'
   character(len=128), public :: tagname= &
-       '$Name: nalanda_2007_06 $'
+       '$Name: omsk $'
 
 
 contains

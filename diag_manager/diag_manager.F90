@@ -103,7 +103,11 @@ use diag_data_mod, only   : max_files, DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, EVERY_T
                             coord_type, files, input_fields, output_fields, Time_zero, append_pelist_name, &
                             mix_snapshot_average_fields, first_send_data_call, do_diag_field_log, &
                             write_bytes_in_file, debug_diag_manager, diag_log_unit, time_unit_list, &
-                            pelist_name, max_axes, module_is_initialized
+                            pelist_name, max_axes, module_is_initialized, max_num_axis_sets
+
+use diag_output_mod, only : get_diag_global_att, set_diag_global_att
+
+use constants_mod, only   : SECONDS_PER_HOUR, SECONDS_PER_MINUTE
 
 implicit none
 private
@@ -112,12 +116,12 @@ public  diag_manager_init, send_data, send_tile_averaged_data, diag_manager_end,
         register_diag_field, register_static_field, diag_axis_init, get_base_time, &
         get_base_date, need_data, average_tiles, DIAG_ALL, DIAG_OCEAN, DIAG_OTHER, &
         get_date_dif, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, &
-        DIAG_YEARS
+        DIAG_YEARS, get_diag_global_att, set_diag_global_att
 
 
 ! version number of this module
-character(len=128)  :: version = '$Id: diag_manager.F90,v 14.0 2007/03/15 22:38:19 fms Exp $'
-character(len=128)  :: tagname = '$Name: nalanda_2007_06 $'  
+character(len=128)  :: version = '$Id: diag_manager.F90,v 15.0 2007/08/14 04:13:26 fms Exp $'
+character(len=128)  :: tagname = '$Name: omsk $'  
 
 
 ! <INTERFACE NAME="send_data">
@@ -1173,7 +1177,8 @@ do ii = 1, number_of_outputs
                   do i = is, ie
                      if(l_start(1)+hi<=i.and.i<=l_end(1)+hi.and.l_start(2)+hj<=j.and.j<=l_end(2)+hj) then
                         i1 = i-l_start(1)-hi+1 ; j1=  j-l_start(2)-hj+1
-                        if(mask(i-is+1+hi,j-js+1+hj,k).and.field(i-is+1+hi,j-js+1+hj,k)>output_fields(out_num)%buffer(i1,j1,k1)) then
+                        if(mask(i-is+1+hi,j-js+1+hj,k).and. &
+                           field(i-is+1+hi,j-js+1+hj,k)>output_fields(out_num)%buffer(i1,j1,k1)) then
                            output_fields(out_num)%buffer(i1,j1,k1) = field(i-is+1+hi,j-js+1+hj,k)
                         endif
                      endif
@@ -1188,7 +1193,8 @@ do ii = 1, number_of_outputs
                   if(fms_error_handler('send_data in diag_manager_mod',err_msg_local,err_msg)) return
                endif
             endif
-            where(mask(f1:f2,f3:f4,ks:ke).and.field(f1:f2,f3:f4,ks:ke)>output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke))&
+            where(mask(f1:f2,f3:f4,ks:ke).and. &
+                  field(f1:f2,f3:f4,ks:ke)>output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke))&
                  output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke) = field(f1:f2,f3:f4,ks:ke)
          endif
       else
@@ -1228,7 +1234,8 @@ do ii = 1, number_of_outputs
                   do i = is, ie
                      if(l_start(1)+hi<=i.and.i<=l_end(1)+hi.and.l_start(2)+hj<=j.and.j<=l_end(2)+hj) then
                         i1 = i-l_start(1)-hi+1 ; j1=  j-l_start(2)-hj+1
-                        if(mask(i-is+1+hi,j-js+1+hj,k).and.field(i-is+1+hi,j-js+1+hj,k)<output_fields(out_num)%buffer(i1,j1,k1)) then
+                        if(mask(i-is+1+hi,j-js+1+hj,k).and. &
+                           field(i-is+1+hi,j-js+1+hj,k)<output_fields(out_num)%buffer(i1,j1,k1)) then
                            output_fields(out_num)%buffer(i1,j1,k1) = field(i-is+1+hi,j-js+1+hj,k)
                         endif
                      endif
@@ -1243,7 +1250,8 @@ do ii = 1, number_of_outputs
                   if(fms_error_handler('send_data in diag_manager_mod',err_msg_local,err_msg)) return
                endif
             endif
-            where(mask(f1:f2,f3:f4,ks:ke).and.field(f1:f2,f3:f4,ks:ke)<output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke)) &
+            where(mask(f1:f2,f3:f4,ks:ke).and. &
+                  field(f1:f2,f3:f4,ks:ke)<output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke)) &
                  output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke) = field(f1:f2,f3:f4,ks:ke) 
          endif
       else
@@ -1632,7 +1640,7 @@ type(time_type)    :: start_time
 real(kind=single)  :: foo
 
 namelist /diag_manager_nml/ append_pelist_name, mix_snapshot_average_fields, max_output_fields, &
-     max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager
+     max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager, max_num_axis_sets
 
 type(tableB_type)  :: textB
 type(tableA_type ) :: textA
@@ -1687,7 +1695,7 @@ if (get_calendar_type() /= NO_CALENDAR) then
    amonth = month_name(base_month)
 else
 ! No calendar - ignore year and month
-   base_time = set_time(base_hour*3600+base_minute*60+base_second, base_day)
+   base_time = set_time(nint(base_hour*SECONDS_PER_HOUR)+nint(base_minute*SECONDS_PER_MINUTE)+base_second, base_day)
    base_year  = 0
    base_month = 0
    amonth = 'day'
@@ -2006,7 +2014,8 @@ return
 end function need_data
 ! </FUNCTION>
 !###################################################################################################
- 
+
+
 end module diag_manager_mod
 
 ! <INFO>

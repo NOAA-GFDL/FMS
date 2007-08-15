@@ -117,8 +117,8 @@ use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_compute_domains, &
                            mpp_get_global_domains
 use mpp_io_mod,      only: mpp_open, MPP_MULTI, MPP_SINGLE, MPP_OVERWR
 use constants_mod,   only: PI
-use stock_constants_mod, only: STOCK_NAMES
 use mosaic_mod,          only: get_mosaic_xgrid, get_mosaic_xgrid_size
+use stock_constants_mod, only: ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE, STOCK_NAMES, STOCK_UNITS, NELEMS, stocks_file
 
 implicit none
 private
@@ -147,8 +147,8 @@ integer, parameter :: VERSION2           = 2 ! mosaic grid file
 !   </DATA>
 logical :: make_exchange_reproduce = .false. ! exactly same on different # PEs
 character(len=64) :: interp_method = 'first_order'
-
-namelist /xgrid_nml/ make_exchange_reproduce, interp_method
+logical :: debug_stocks = .false. 
+namelist /xgrid_nml/ make_exchange_reproduce, interp_method, debug_stocks
 ! </NAMELIST>
 logical :: init = .true.
 integer :: remapping_method
@@ -323,8 +323,8 @@ type xmap_type
 end type xmap_type
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: xgrid.F90,v 14.0.2.5.2.2.2.1.2.1 2007/06/08 14:06:16 z1l Exp $'
- character(len=128) :: tagname = '$Name: nalanda_2007_06 $'
+ character(len=128) :: version = '$Id: xgrid.F90,v 15.0 2007/08/14 04:13:45 fms Exp $'
+ character(len=128) :: tagname = '$Name: omsk $'
 
  real, parameter                              :: EPS = 1.0e-10
  logical :: module_is_initialized = .FALSE.
@@ -918,7 +918,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file )
            case default 
               call error_mesg('xgrid_mod', 'grid_ids(g) should be LND or OCN', FATAL)
            end select       
-           /* get the tile list for each mosaic */
+           ! get the tile list for each mosaic
            call read_data(grid_file, lowercase(grid_ids(1))//'_mosaic_file', mosaic1) 
            call read_data(grid_file, lowercase(grid_ids(g))//'_mosaic_file', mosaic2) 
            mosaic1 = 'INPUT/'//trim(mosaic1)
@@ -2033,13 +2033,13 @@ subroutine stock_move_3d(from, to, grid_index, data, xmap, &
   if(present(to  )) to   % dq(  to_side) = to   % dq(  to_side) + to_dq
   if(present(from)) from % dq(from_side) = from % dq(from_side) - from_dq
 
-  if(present(verbose)) then
+  if(present(verbose).and.debug_stocks) then
      call mpp_sum(from_dq)
      call mpp_sum(to_dq)
      from_dq = from_dq/(4*PI*radius**2)
      to_dq   = to_dq  /(4*PI*radius**2)
      if(mpp_pe()==mpp_root_pe()) then
-        write(*,'(a,es19.12,a,es19.12,a)') verbose, from_dq,' -> ', to_dq,' [*/m^2]'
+        write(stocks_file,'(a,es19.12,a,es19.12,a)') verbose, from_dq,' [*/m^2]'
      endif
   endif
 
@@ -2064,7 +2064,7 @@ subroutine stock_move_2d(from, to, grid_index, data, xmap, &
   real, intent(in)                :: delta_t
   integer, intent(in)             :: from_side, to_side ! ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
   real, intent(in)                :: radius       ! earth radius
-  character(len=*), intent(in), optional      :: verbose
+  character(len=*), intent(in)    :: verbose
   integer, intent(out)            :: ier
 
   real    :: to_dq, from_dq
@@ -2093,20 +2093,20 @@ subroutine stock_move_2d(from, to, grid_index, data, xmap, &
   if(present(to  )) to   % dq(  to_side) = to   % dq(  to_side) + to_dq
   if(present(from)) from % dq(from_side) = from % dq(from_side) - from_dq
 
-  if(present(verbose)) then
+  if(debug_stocks) then
      call mpp_sum(from_dq)
      call mpp_sum(to_dq)
      from_dq = from_dq/(4*PI*radius**2)
      to_dq   = to_dq  /(4*PI*radius**2)
      if(mpp_pe()==mpp_root_pe()) then
-        write(*,'(a,es19.12,a,es19.12,a)') verbose, from_dq,' -> ', to_dq,' [*/m^2]'
+        write(stocks_file,'(a,es19.12,a,es19.12,a)') verbose, from_dq,' [*/m^2]'
      endif
   endif
 
 end subroutine stock_move_2d
 
 !#######################################################################
-subroutine stock_integrate_2d(data, xmap, delta_t, radius, res, verbose, ier)
+subroutine stock_integrate_2d(data, xmap, delta_t, radius, res, ier)
 
   ! surface/time integral of a 2d array
 
@@ -2117,7 +2117,6 @@ subroutine stock_integrate_2d(data, xmap, delta_t, radius, res, verbose, ier)
   real, intent(in)                :: delta_t
   real, intent(in)                :: radius       ! earth radius
   real, intent(out)               :: res
-  character(len=*), optional      :: verbose
   integer, intent(out)            :: ier
 
   real :: tmp
@@ -2131,37 +2130,39 @@ subroutine stock_integrate_2d(data, xmap, delta_t, radius, res, verbose, ier)
   endif
 
   res = delta_t * 4*PI*radius**2 * sum(sum(xmap%grids(1)%area * data, DIM=1))
-  
-  if(present(verbose)) then
-     tmp = res/(4*PI*radius**2)
-     call mpp_sum(tmp)
-     if(mpp_pe()==mpp_root_pe()) then
-        write(*,'(a,es22.15,a)') verbose, tmp, ' [*/m^2]'
-     endif
-  endif
 
 end subroutine stock_integrate_2d
 !#######################################################################
+
+!#######################################################################
+
+
+
 subroutine stock_print(stck, Time, comp_name, index, ref_value, radius, pelist)
 
   use mpp_mod, only : mpp_pe, mpp_root_pe, mpp_sum
   use time_manager_mod, only : time_type, get_time
-  use stock_constants_mod, only : ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE
+  use diag_manager_mod, only : register_diag_field,send_data
 
   type(stock_type), intent(in)  :: stck
   type(time_type), intent(in)   :: Time
   character(len=*)              :: comp_name
-  integer, intent(in), optional :: index     ! to map stock element (water, heat, ..) to a name
+  integer, intent(in)           :: index     ! to map stock element (water, heat, ..) to a name
   real, intent(in)              :: ref_value ! the stock value returned by the component per PE
   real, intent(in)              :: radius
   integer, intent(in), optional :: pelist(:)
 
   real :: f_value, c_value, planet_area
-  character(len=32) :: name
-  integer :: iday, isec
+  character(len=80) :: formatString
+  integer :: iday, isec, hours
+  integer :: diagID, compInd
+  integer, dimension(NELEMS,4), save :: f_valueDiagID = -1
+  integer, dimension(NELEMS,4), save :: c_valueDiagID = -1
+  integer, dimension(NELEMS,4), save :: fmc_valueDiagID = -1
 
-  name = ''
-  if(present(index)) name = STOCK_NAMES(index)
+  real :: diagField
+  logical :: used
+  character(len=30) :: field_name, units
 
   f_value = sum(stck % dq)
   c_value = ref_value      - stck % q_start
@@ -2178,16 +2179,59 @@ subroutine stock_print(stck, Time, comp_name, index, ref_value, radius, pelist)
      planet_area = 4*PI*radius**2
      f_value       = f_value     / planet_area
      c_value       = c_value     / planet_area
+
+     if(comp_name == 'ATM') compInd = 1
+     if(comp_name == 'LND') compInd = 2
+     if(comp_name == 'ICE') compInd = 3
+     if(comp_name == 'OCN') compInd = 4
+
+
+     if(f_valueDiagID(index,compInd) == -1) then
+        field_name = trim(comp_name) // trim(STOCK_NAMES(index))
+        field_name  = trim(field_name) // 'StocksChange_Flux'
+        units = trim(STOCK_UNITS(index))
+        f_valueDiagID(index,compInd) = register_diag_field('stock_print', field_name, Time, &
+             units=units)
+     endif
+
+     if(c_valueDiagID(index,compInd) == -1) then
+        field_name = trim(comp_name) // trim(STOCK_NAMES(index))
+        field_name = trim(field_name) // 'StocksChange_Comp'
+        units = trim(STOCK_UNITS(index))
+        c_valueDiagID(index,compInd) = register_diag_field('stock_print', field_name, Time, &
+             units=units)
+     endif
+
+     if(fmc_valueDiagID(index,compInd) == -1) then
+        field_name = trim(comp_name) // trim(STOCK_NAMES(index))
+        field_name = trim(field_name) // 'StocksChange_Diff'
+        units = trim(STOCK_UNITS(index))
+        fmc_valueDiagID(index,compInd) = register_diag_field('stock_print', field_name, Time, &
+             units=units)
+     endif
+
+     DiagID=f_valueDiagID(index,compInd)
+     diagField = f_value
+     if (DiagID > 0)  used = send_data(DiagID, diagField, Time)
+     DiagID=c_valueDiagID(index,compInd)
+     diagField = c_value
+     if (DiagID > 0)  used = send_data(DiagID, diagField, Time)
+     DiagID=fmc_valueDiagID(index,compInd)
+     diagField = f_value-c_value
+     if (DiagID > 0)  used = send_data(DiagID, diagField, Time)
+
+
      call get_time(Time, isec, iday)
-     write(*,'(a,i10,a,i5,1x,a,1x,a,a,es19.12,a,es19.12,a,es19.12,a)') &
-          & 'day ', iday, ' secs ', isec, comp_name, &
-          & trim(name),' DeltaQ(from fluxes) (f): ', f_value, &
-          &            '  DeltaQ(from compnt) (c): ', c_value, &
-          &            ' (f)-(c): ', f_value - c_value, ' */m^2'
+     hours = iday*24 + isec/3600
+     formatString = '(a,a,a,i16,2x,es22.15,2x,es22.15,2x,es22.15)'
+     write(stocks_file,formatString) trim(comp_name),STOCK_NAMES(index),STOCK_UNITS(index) &
+          ,hours,f_value,c_value,f_value-c_value
+
   endif
 
 
 end subroutine stock_print
+
 
 !###############################################################################
 function is_lat_lon(lon, lat)
@@ -2411,7 +2455,7 @@ program main
   use fms_mod
   use mpp_domains_mod
   use xgrid_mod, only : xmap_type, setup_xmap, stock_move, stock_type, get_index_range
-  use stock_constants_mod, only : ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE, ISTOCK_WATER, ISTOCK_HEAT
+  use stock_constants_mod, only : ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE, ISTOCK_WATER, ISTOCK_HEAT, NELEMS
   use constants_mod, only       : PI
   implicit none
 
@@ -2420,7 +2464,6 @@ program main
   integer          :: patm_beg, patm_end, pocn_beg, pocn_end
   integer          :: is, ie, js, je, km, index_ice, index_lnd
   integer          :: layout(2)
-  integer, parameter :: NELEMS=2
   type(stock_type), save :: Atm_stock(NELEMS), Ice_stock(NELEMS), &
        &                    Lnd_stock(NELEMS), Ocn_stock(NELEMS)
   type(domain2D)   :: Atm_domain, Ice_domain, Lnd_domain, Ocn_domain

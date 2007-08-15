@@ -71,6 +71,7 @@ module time_manager_mod
 !    contains three PRIVATE variables: days, seconds and ticks.
 ! </DATA>
 
+use constants_mod, only: rseconds_per_day=>seconds_per_day
 use fms_mod, only: error_mesg, FATAL, WARNING, write_version_number, stdout
 
 implicit none
@@ -131,7 +132,7 @@ integer, parameter :: max_type = 4
 
 ! Define number of days per month
 integer, private :: days_per_month(12) = (/31,28,31,30,31,30,31,31,30,31,30,31/)
-integer, parameter :: seconds_per_day = 86400
+integer, parameter :: seconds_per_day=int(rseconds_per_day)
 integer, parameter :: days_in_400_year_period = 146097    ! Used only for gregorian
 integer, dimension(days_in_400_year_period) :: coded_date ! Used only for gregorian
 integer, dimension(400,12,31) :: date_to_day              ! Used only for gregorian
@@ -175,8 +176,8 @@ end interface
 
 !======================================================================
 
-character(len=128) :: version='$Id: time_manager.F90,v 14.0 2007/03/15 22:44:58 fms Exp $'
-character(len=128) :: tagname='$Name: nalanda_2007_06 $'
+character(len=128) :: version='$Id: time_manager.F90,v 15.0 2007/08/14 04:15:52 fms Exp $'
+character(len=128) :: tagname='$Name: omsk $'
 logical :: module_is_initialized = .false.
 
 !======================================================================
@@ -1496,7 +1497,7 @@ integer, intent(in) :: type
 character(len=*), intent(out), optional :: err_msg
 integer :: iday, days_this_month, year, month, day
 logical :: leap
-character(len=128) :: err_msg_local
+character(len=256) :: err_msg_local
 
 if(.not.module_is_initialized) call time_manager_init()
 
@@ -1506,6 +1507,13 @@ if(type <  0 .or. type > max_type) then
   err_msg_local = 'Illegal calendar type'
   if(error_handler('subroutine set_calendar_type', err_msg_local, err_msg)) return
 endif
+
+if(seconds_per_day /= 86400 .and. type /= NO_CALENDAR ) then
+  err_msg_local = 'Only calendar type NO_CALENDAR is allowed when seconds_per_day is not 86400.'// &
+                  ' You are using '//trim(valid_calendar_types(type))//' and seconds_per_day='
+  write(err_msg_local(len_trim(err_msg_local)+1:len_trim(err_msg_local)+8),'(i8)') seconds_per_day
+  if(error_handler('subroutine set_calendar_type', err_msg_local, err_msg)) return
+endif 
 
 calendar_type = type
 
@@ -3347,7 +3355,7 @@ end module time_manager_mod
  program test
  use          fms_mod, only: fms_init, fms_end, stderr
  use          fms_mod, only: open_namelist_file, check_nml_error, close_file, open_file
- use    constants_mod, only: constants_init
+ use    constants_mod, only: constants_init, rseconds_per_day=>seconds_per_day
  use       fms_io_mod, only: fms_io_exit
  use time_manager_mod, only: time_type, set_date, get_date, set_time, set_calendar_type, real_to_time_type
  use time_manager_mod, only: length_of_year, leap_year, days_in_month, days_in_year, print_time

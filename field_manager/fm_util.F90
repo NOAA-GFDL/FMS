@@ -87,8 +87,8 @@ logical                         :: save_default_no_overwrite = .false.
 character(len=fm_path_name_len) :: save_current_list
 character(len=fm_path_name_len) :: save_path
 character(len=fm_path_name_len) :: save_name
-character(len=128) :: version = '$Id: fm_util.F90,v 13.0 2006/03/28 21:39:05 fms Exp $'
-character(len=128) :: tagname = '$Name: nalanda_2007_06 $'
+character(len=128) :: version = '$Id: fm_util.F90,v 15.0 2007/08/14 04:13:52 fms Exp $'
+character(len=128) :: tagname = '$Name: omsk $'
 
 !
 !        Interface definitions for overloaded routines
@@ -499,7 +499,7 @@ if (list_length .lt. good_length) then  !{
 !       are given in good_fields
 !
 
-  write (stdout(),*) trim(error_header), 'List length < number of good fields (',       &
+  write (stdout(),*) trim(error_header), ' List length < number of good fields (',       &
        list_length, ' < ', good_length, ') in list ', trim(list)
 
   write (stdout(),*)
@@ -508,9 +508,10 @@ if (list_length .lt. good_length) then  !{
   write (stdout(),*)
   write (stdout(),*) 'The supposed list of good fields is:'
   do i = 1, good_length  !{
-    write (stdout(),*) '"', trim(good_fields(i)), '"'
-    if (.not. fm_exists(trim(list) // '/' // good_fields(i))) then  !{
-      write (stdout(),*) trim(error_header), trim(good_fields(i)), ' is an extra good field'
+    if (fm_exists(trim(list) // '/' // good_fields(i))) then  !{
+      write (stdout(),*) 'List field: "', trim(good_fields(i)), '"'
+    else  !}{
+      write (stdout(),*) 'EXTRA good field: "', trim(good_fields(i)), '"'
     endif  !}
   enddo  !} i
   write (stdout(),*)
@@ -529,15 +530,19 @@ elseif (list_length .gt. good_length) then  !}{
   write (stdout(),*) trim(warn_header), 'List length > number of good fields (',        &
        list_length, ' > ', good_length, ') in list ', trim(list)
 
+  write (stdout(),*) trim(error_header), ' Start of list of fields'
   do while (fm_loop_over_list(list, name, typ, ind))  !{
     found = .false.
     do i = 1, good_length  !{
       found = found .or. (name .eq. good_fields(i))
     enddo  !} i
-    if (.not. found) then  !{
-      write (stdout(),*) trim(error_header), trim(name), ' is an extra list field'
+    if (found) then  !{
+      write (stdout(),*) 'Good list field: "', trim(name), '"'
+    else  !}{
+      write (stdout(),*) 'EXTRA list field: "', trim(name), '"'
     endif  !}
   enddo  !}
+  write (stdout(),*) trim(error_header), ' End of list of fields'
 
   call mpp_error(FATAL, trim(error_header) //                                           &
        ' List length > number of good fields for list: ' // trim(list))
@@ -638,7 +643,7 @@ end function fm_util_get_length  !}
 ! <FUNCTION NAME="fm_util_get_index_string">
 !
 ! <DESCRIPTION>
-! Get the length of an element of the Field Manager tree
+! Get the index of an element of a string in the Field Manager tree
 ! </DESCRIPTION>
 !
 function fm_util_get_index_string(name, string, caller)       &
@@ -734,9 +739,9 @@ else  !}{
  call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(name) // ', found (' // trim(fm_type) // ')')
 endif  !}
 
-if (fm_index .eq. 0) then  !{
-  call mpp_error(FATAL, trim(error_header) // ' "' // trim(string) // '" does not exist in ' // trim(name))
-endif  !}
+!if (fm_index .eq. 0) then  !{
+  !call mpp_error(FATAL, trim(error_header) // ' "' // trim(string) // '" does not exist in ' // trim(name))
+!endif  !}
 
 return
 
@@ -1333,6 +1338,8 @@ if (fm_type .eq. 'integer') then  !{
   endif  !}
 elseif (fm_type .eq. ' ' .and. present(default_value)) then  !}{
   value = default_value
+elseif (fm_type .eq. ' ') then  !}{
+  call mpp_error(FATAL, trim(error_header) // ' Field does not exist: ' // trim(name))
 else  !}{
  call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(name) // ', found (' // trim(fm_type) // ')')
 endif  !}
@@ -1450,6 +1457,8 @@ if (fm_type .eq. 'logical') then  !{
   endif  !}
 elseif (fm_type .eq. ' ' .and. present(default_value)) then  !}{
   value = default_value
+elseif (fm_type .eq. ' ') then  !}{
+  call mpp_error(FATAL, trim(error_header) // ' Field does not exist: ' // trim(name))
 else  !}{
  call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(name) // ', found (' // trim(fm_type) // ')')
 endif  !}
@@ -1567,6 +1576,8 @@ if (fm_type .eq. 'real') then  !{
   endif  !}
 elseif (fm_type .eq. ' ' .and. present(default_value)) then  !}{
   value = default_value
+elseif (fm_type .eq. ' ') then  !}{
+  call mpp_error(FATAL, trim(error_header) // ' Field does not exist: ' // trim(name))
 else  !}{
  call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(name) // ', found (' // trim(fm_type) // ')')
 endif  !}
@@ -1684,6 +1695,8 @@ if (fm_type .eq. 'string') then  !{
   endif  !}
 elseif (fm_type .eq. ' ' .and. present(default_value)) then  !}{
   value = default_value
+elseif (fm_type .eq. ' ') then  !}{
+  call mpp_error(FATAL, trim(error_header) // ' Field does not exist: ' // trim(name))
 else  !}{
  call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(name) // ', found (' // trim(fm_type) // ')')
 endif  !}
@@ -1737,6 +1750,7 @@ integer                         :: field_length
 integer                         :: n
 logical                         :: no_overwrite_use
 character(len=fm_path_name_len) :: good_name_list_use
+logical                         :: add_name
 
 !
 !       set the caller string and headers
@@ -1837,9 +1851,17 @@ endif  !}
 !
 
 if (good_name_list_use .ne. ' ') then  !{
-  if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
-    call mpp_error(FATAL, trim(error_header) //                           &
-         ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+  if (fm_exists(good_name_list_use)) then  !{
+    add_name = fm_util_get_index_string(good_name_list_use, name,               &
+       caller = caller_str) .le. 0              ! true if name does not exist in string array
+  else  !}{
+    add_name = .true.                           ! always add to new list
+  endif  !}
+  if (add_name .and. fm_exists(name)) then  !{
+    if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
+      call mpp_error(FATAL, trim(error_header) //                               &
+           ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+    endif  !}
   endif  !}
 endif  !}
 
@@ -1892,6 +1914,7 @@ integer                         :: field_length
 integer                         :: n
 logical                         :: no_overwrite_use
 character(len=fm_path_name_len) :: good_name_list_use
+logical                         :: add_name
 
 !
 !       set the caller string and headers
@@ -1992,9 +2015,17 @@ endif  !}
 !
 
 if (good_name_list_use .ne. ' ') then  !{
-  if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
-    call mpp_error(FATAL, trim(error_header) //                           &
-         ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+  if (fm_exists(good_name_list_use)) then  !{
+    add_name = fm_util_get_index_string(good_name_list_use, name,               &
+       caller = caller_str) .le. 0              ! true if name does not exist in string array
+  else  !}{
+    add_name = .true.                           ! always add to new list
+  endif  !}
+  if (add_name .and. fm_exists(name)) then  !{
+    if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
+      call mpp_error(FATAL, trim(error_header) //                               &
+           ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+    endif  !}
   endif  !}
 endif  !}
 
@@ -2047,6 +2078,7 @@ integer                         :: field_length
 integer                         :: n
 logical                         :: no_overwrite_use
 character(len=fm_path_name_len) :: good_name_list_use
+logical                         :: add_name
 
 !
 !       set the caller string and headers
@@ -2147,9 +2179,17 @@ endif  !}
 !
 
 if (good_name_list_use .ne. ' ') then  !{
-  if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
-    call mpp_error(FATAL, trim(error_header) //                           &
-         ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+  if (fm_exists(good_name_list_use)) then  !{
+    add_name = fm_util_get_index_string(good_name_list_use, name,               &
+       caller = caller_str) .le. 0              ! true if name does not exist in string array
+  else  !}{
+    add_name = .true.                           ! always add to new list
+  endif  !}
+  if (add_name .and. fm_exists(name)) then  !{
+    if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
+      call mpp_error(FATAL, trim(error_header) //                               &
+           ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+    endif  !}
   endif  !}
 endif  !}
 
@@ -2202,6 +2242,7 @@ integer                         :: field_length
 integer                         :: n
 logical                         :: no_overwrite_use
 character(len=fm_path_name_len) :: good_name_list_use
+logical                         :: add_name
 
 !
 !       set the caller string and headers
@@ -2302,9 +2343,17 @@ endif  !}
 !
 
 if (good_name_list_use .ne. ' ') then  !{
-  if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
-    call mpp_error(FATAL, trim(error_header) //                           &
-         ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+  if (fm_exists(good_name_list_use)) then  !{
+    add_name = fm_util_get_index_string(good_name_list_use, name,               &
+       caller = caller_str) .le. 0              ! true if name does not exist in string array
+  else  !}{
+    add_name = .true.                           ! always add to new list
+  endif  !}
+  if (add_name .and. fm_exists(name)) then  !{
+    if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
+      call mpp_error(FATAL, trim(error_header) //                               &
+           ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+    endif  !}
   endif  !}
 endif  !}
 
@@ -2424,8 +2473,6 @@ else  !}{
   create = .true.
 endif  !}
 
-add_name = .true.
-
 if (present(index)) then  !{
   if (fm_exists(name)) then  !{
     field_length = fm_get_length(name)
@@ -2465,8 +2512,6 @@ else  !}{
     if (field_index .le. 0) then  !{
       call mpp_error(FATAL, trim(error_header) // ' Problem creating ' // trim(name))
     endif  !}
-  else  !}{
-    add_name = .false.
   endif  !}
 endif  !}
 
@@ -2475,10 +2520,18 @@ endif  !}
 !       later for a consistency check, unless the field did not exist and we did not create it
 !
 
-if (good_name_list_use .ne. ' ' .and. add_name) then  !{
-  if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
-    call mpp_error(FATAL, trim(error_header) //                           &
-         ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+if (good_name_list_use .ne. ' ') then  !{
+  if (fm_exists(good_name_list_use)) then  !{
+    add_name = fm_util_get_index_string(good_name_list_use, name,               &
+       caller = caller_str) .le. 0              ! true if name does not exist in string array
+  else  !}{
+    add_name = .true.                           ! always add to new list
+  endif  !}
+  if (add_name .and. fm_exists(name)) then  !{
+    if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
+      call mpp_error(FATAL, trim(error_header) //                               &
+           ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+    endif  !}
   endif  !}
 endif  !}
 
@@ -2598,8 +2651,6 @@ else  !}{
   create = .true.
 endif  !}
 
-add_name = .true.
-
 if (present(index)) then  !{
   if (fm_exists(name)) then  !{
     field_length = fm_get_length(name)
@@ -2639,8 +2690,6 @@ else  !}{
     if (field_index .le. 0) then  !{
       call mpp_error(FATAL, trim(error_header) // ' Problem creating ' // trim(name))
     endif  !}
-  else  !}{
-    add_name = .false.
   endif  !}
 endif  !}
 
@@ -2649,10 +2698,18 @@ endif  !}
 !       later for a consistency check, unless the field did not exist and we did not create it
 !
 
-if (good_name_list_use .ne. ' ' .and. add_name) then  !{
-  if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
-    call mpp_error(FATAL, trim(error_header) //                           &
-         ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+if (good_name_list_use .ne. ' ') then  !{
+  if (fm_exists(good_name_list_use)) then  !{
+    add_name = fm_util_get_index_string(good_name_list_use, name,               &
+       caller = caller_str) .le. 0              ! true if name does not exist in string array
+  else  !}{
+    add_name = .true.                           ! always add to new list
+  endif  !}
+  if (add_name .and. fm_exists(name)) then  !{
+    if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
+      call mpp_error(FATAL, trim(error_header) //                               &
+           ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+    endif  !}
   endif  !}
 endif  !}
 
@@ -2772,8 +2829,6 @@ else  !}{
   create = .true.
 endif  !}
 
-add_name = .true.
-
 if (present(index)) then  !{
   if (fm_exists(name)) then  !{
     field_length = fm_get_length(name)
@@ -2813,8 +2868,6 @@ else  !}{
     if (field_index .le. 0) then  !{
       call mpp_error(FATAL, trim(error_header) // ' Problem creating ' // trim(name))
     endif  !}
-  else  !}{
-    add_name = .false.
   endif  !}
 endif  !}
 
@@ -2823,10 +2876,18 @@ endif  !}
 !       later for a consistency check, unless the field did not exist and we did not create it
 !
 
-if (good_name_list_use .ne. ' ' .and. add_name) then  !{
-  if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
-    call mpp_error(FATAL, trim(error_header) //                           &
-         ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+if (good_name_list_use .ne. ' ') then  !{
+  if (fm_exists(good_name_list_use)) then  !{
+    add_name = fm_util_get_index_string(good_name_list_use, name,               &
+       caller = caller_str) .le. 0              ! true if name does not exist in string array
+  else  !}{
+    add_name = .true.                           ! always add to new list
+  endif  !}
+  if (add_name .and. fm_exists(name)) then  !{
+    if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
+      call mpp_error(FATAL, trim(error_header) //                               &
+           ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+    endif  !}
   endif  !}
 endif  !}
 
@@ -2946,8 +3007,6 @@ else  !}{
   create = .true.
 endif  !}
 
-add_name = .true.
-
 if (present(index)) then  !{
   if (fm_exists(name)) then  !{
     field_length = fm_get_length(name)
@@ -2987,8 +3046,6 @@ else  !}{
     if (field_index .le. 0) then  !{
       call mpp_error(FATAL, trim(error_header) // ' Problem creating ' // trim(name))
     endif  !}
-  else  !}{
-    add_name = .false.
   endif  !}
 endif  !}
 
@@ -2997,10 +3054,18 @@ endif  !}
 !       later for a consistency check, unless the field did not exist and we did not create it
 !
 
-if (good_name_list_use .ne. ' ' .and. add_name) then  !{
-  if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
-    call mpp_error(FATAL, trim(error_header) //                           &
-         ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+if (good_name_list_use .ne. ' ') then  !{
+  if (fm_exists(good_name_list_use)) then  !{
+    add_name = fm_util_get_index_string(good_name_list_use, name,               &
+       caller = caller_str) .le. 0              ! true if name does not exist in string array
+  else  !}{
+    add_name = .true.                           ! always add to new list
+  endif  !}
+  if (add_name .and. fm_exists(name)) then  !{
+    if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
+      call mpp_error(FATAL, trim(error_header) //                               &
+           ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+    endif  !}
   endif  !}
 endif  !}
 

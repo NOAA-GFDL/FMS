@@ -28,8 +28,8 @@
  implicit none
  private
 
- character(len=128), parameter :: version = '$Id: sat_vapor_pres_k.F90,v 14.0.2.1 2007/05/02 01:37:24 pjp Exp $'
- character(len=128), parameter :: tagname = '$Name: nalanda_2007_06 $'
+ character(len=128), parameter :: version = '$Id: sat_vapor_pres_k.F90,v 15.0 2007/08/14 04:15:43 fms Exp $'
+ character(len=128), parameter :: tagname = '$Name: omsk $'
 
  public :: sat_vapor_pres_init_k
  public :: lookup_es_k

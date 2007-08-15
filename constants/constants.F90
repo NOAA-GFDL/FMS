@@ -19,8 +19,8 @@ module constants_mod
 implicit none
 private
 
-character(len=128) :: version='$Id: constants.F90,v 14.0 2007/03/15 22:37:51 fms Exp $'
-character(len=128) :: tagname='$Name: nalanda_2007_06 $'
+character(len=128) :: version='$Id: constants.F90,v 15.0 2007/08/14 04:13:09 fms Exp $'
+character(len=128) :: tagname='$Name: omsk $'
 !dummy variable to use in HUGE initializations
 real :: realnumber
 
@@ -130,7 +130,7 @@ real, public, parameter :: WTMH2O = WTMAIR*(RDGAS/RVGAS) !pjp OK to change value
 !real, public, parameter :: WTMO3  = 47.99820E+01
 real, public, parameter :: WTMOZONE  = 4.799820E+01
 real, public, parameter :: DIFFAC = 1.660000E+00
-real, public, parameter :: SECONDS_PER_DAY  = 8.640000E+04
+real, public, parameter :: SECONDS_PER_DAY  = 8.640000E+04, SECONDS_PER_HOUR = 3600., SECONDS_PER_MINUTE=60.
 real, public, parameter :: AVOGNO = 6.023000E+23
 real, public, parameter :: PSTD   = 1.013250E+06
 real, public, parameter :: PSTD_MKS    = 101325.0

@@ -197,8 +197,8 @@ interface string
    module procedure string_from_real
 end interface
 
-character(len=128) :: version = '$Id: fms_io.F90,v 14.0.2.1.2.1 2007/06/08 14:06:20 z1l Exp $'
-character(len=128) :: tagname = '$Name: nalanda_2007_06 $'
+character(len=128) :: version = '$Id: fms_io.F90,v 15.0 2007/08/14 04:13:58 fms Exp $'
+character(len=128) :: tagname = '$Name: omsk $'
 
 contains
 
