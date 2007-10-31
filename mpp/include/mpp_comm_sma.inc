@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_sma.inc,v 14.0 2007/03/15 22:41:31 fms Exp $
+! $Id: mpp_comm_sma.inc,v 14.0.6.1 2007/08/23 23:34:37 vb Exp $
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -311,6 +311,7 @@ end subroutine mpp_malloc
 #define SHMEM_GET_ SHMEM_GET8
 #include <mpp_transmit_sma.h>
 
+#ifdef OVERLOAD_C8
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_cmplx8
 #undef MPP_TRANSMIT_SCALAR_
@@ -368,8 +369,9 @@ end subroutine mpp_malloc
 #undef SHMEM_GET_
 #define SHMEM_GET_ SHMEM_GET128
 #include <mpp_transmit_sma.h>
+#endif
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_real4
 #undef MPP_TRANSMIT_SCALAR_
@@ -427,7 +429,9 @@ end subroutine mpp_malloc
 #undef SHMEM_GET_
 #define SHMEM_GET_ SHMEM_GET4
 #include <mpp_transmit_sma.h>
+#endif
 
+#ifdef OVERLOAD_C4
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_cmplx4
 #undef MPP_TRANSMIT_SCALAR_
@@ -739,7 +743,7 @@ end subroutine mpp_malloc
 #define SHMEM_REDUCE_ SHMEM_REAL8_MAX_TO_ALL
 #include <mpp_reduce_sma.h>
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_max_real4
 #undef MPP_TYPE_
@@ -783,7 +787,7 @@ end subroutine mpp_malloc
 #define SHMEM_REDUCE_ SHMEM_REAL8_MIN_TO_ALL
 #include <mpp_reduce_sma.h>
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_min_real4
 #undef MPP_TYPE_
@@ -837,6 +841,7 @@ end subroutine mpp_malloc
 #define MPP_TYPE_BYTELEN_ 8
 #include <mpp_sum_sma.h>
 
+#ifdef OVERLOAD_C8
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_cmplx8
 #undef MPP_SUM_SCALAR_
@@ -856,8 +861,9 @@ end subroutine mpp_malloc
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 16
 #include <mpp_sum_sma.h>
+#endif
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_real4
 #undef MPP_SUM_SCALAR_
@@ -877,7 +883,9 @@ end subroutine mpp_malloc
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #include <mpp_sum_sma.h>
+#endif
 
+#ifdef OVERLOAD_C4
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_cmplx4
 #undef MPP_SUM_SCALAR_

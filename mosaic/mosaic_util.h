@@ -16,6 +16,7 @@ double minval_double(int size, const double *data);
 double maxval_double(int size, const double *data);
 double avgval_double(int size, const double *data);
 void latlon2xyz(int size, const double *lon, const double *lat, double *x, double *y, double *z); 
+void xyz2latlon(int size, const double *x, const double *y, const double *z, double *lon, double *lat);
 double box_area(double ll_lon, double ll_lat, double ur_lon, double ur_lat);
 double poly_area(const double lon[], const double lat[], int n);
 double box_area_unit_radius(double ll_lon, double ll_lat, double ur_lon, double ur_lat);

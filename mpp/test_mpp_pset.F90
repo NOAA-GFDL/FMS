@@ -109,4 +109,7 @@ contains
   end subroutine test_auto
     
 end program test
+#else
+module null_mpp_pset_test
+end module
 #endif

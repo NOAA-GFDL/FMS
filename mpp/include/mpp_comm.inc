@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm.inc,v 13.0 2006/03/28 21:40:04 fms Exp $
+! $Id: mpp_comm.inc,v 13.0.18.1 2007/08/23 23:34:37 vb Exp $
 
 
 #ifdef use_libSMA
@@ -99,7 +99,7 @@
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #undef MPP_RANK_
 #define MPP_RANK_ !
-#include <mpp_chksum.h>
+#include <mpp_chksum_scalar.h>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_r8_1d
@@ -141,13 +141,14 @@
 #define MPP_RANK_ (:,:,:,:,:)
 #include <mpp_chksum.h>
 
+#ifdef OVERLOAD_C8
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_c8_0d
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #undef MPP_RANK_
 #define MPP_RANK_ !
-#include <mpp_chksum.h>
+#include <mpp_chksum_scalar.h>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_c8_1d
@@ -188,19 +189,16 @@
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:,:,:)
 #include <mpp_chksum.h>
+#endif
 
-#ifndef no_4byte_reals
-  !CAUTION: the r4 versions of these may produce
-  !unpredictable results: I'm not sure what the result
-  !of the TRANSFER() to integer(8) is from an odd number of real(4)s?
-  !However the complex(4) will work, since it is guaranteed even.
+#ifdef OVERLOAD_R4
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_r4_0d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #undef MPP_RANK_
 #define MPP_RANK_ !
-#include <mpp_chksum.h>
+#include <mpp_chksum_scalar.h>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_r4_1d
@@ -241,14 +239,16 @@
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:,:,:)
 #include <mpp_chksum.h>
+#endif
 
+#ifdef OVERLOAD_C4
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_c4_0d
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
 #undef MPP_RANK_
 #define MPP_RANK_ !
-#include <mpp_chksum.h>
+#include <mpp_chksum_scalar.h>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_c4_1d

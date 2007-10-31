@@ -184,6 +184,37 @@ void latlon2xyz(int size, const double *lon, const double *lat, double *x, doubl
 
 } /* latlon2xyz */
 
+/*------------------------------------------------------------
+       void xyz2laton(np, p, xs, ys)
+   Transfer cartesian coordinates to spherical coordinates
+   ----------------------------------------------------------*/
+void xyz2latlon( int np, const double *x, const double *y, const double *z, double *lon, double *lat)
+{
+
+  double xx, yy, zz;
+  double dist, sinp;
+  int i;
+
+  for(i=0; i<np; i++) {
+    xx = x[i];
+    yy = y[i];
+    zz = z[i];
+    dist = sqrt(xx*xx+yy*yy+zz*zz);
+    xx /= dist;
+    yy /= dist;
+    zz /= dist;
+    
+    if ( fabs(xx)+fabs(yy)  < EPSLN ) 
+       lon[i] = 0;
+     else
+       lon[i] = atan2(yy, xx);
+     lat[i] = asin(zz);
+    
+     if ( lon[i] < 0.) lon[i] = 2.*M_PI + lon[i];
+  }
+
+} /* xyz2latlon */
+
 /*------------------------------------------------------------------------------
   double box_area(double ll_lon, double ll_lat, double ur_lon, double ur_lat)
   return the area of a lat-lon grid box. grid is in radians.

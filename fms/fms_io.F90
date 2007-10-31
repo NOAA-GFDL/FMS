@@ -43,8 +43,8 @@ module fms_io_mod
 ! 05222006
 ! Read distributed files in NetCDF is available. Details can be found in read_data_3d_new
 ! <PRE>
-!threading_read='multi', fileset_read='single', threading_write='multi', fileset_write='multi' (default)
-!threading_read='multi', fileset_read='single', threading_write='single', fileset_write='single'
+!threading_read='multi', threading_write='multi', fileset_write='multi' (default)
+!threading_read='multi', threading_write='single', fileset_write='single'
 ! </PRE>
 !</DESCRIPTION>
 ! <NAMELIST NAME="fms_io_nml">  
@@ -53,9 +53,6 @@ module fms_io_mod
 ! </DATA>
 ! <DATA NAME="threading_write" TYPE="character">
 ! threading_write can be 'single' or 'multi'
-! </DATA>
-! <DATA NAME="fileset_read" TYPE="character">
-! fileset_read can be 'single' or 'multi'
 ! </DATA>
 ! <DATA NAME="fileset_write" TYPE="character">
 ! fileset_write can be 'single' or 'multi'
@@ -133,7 +130,9 @@ interface read_data
    module procedure read_data_iscalar_new
    module procedure read_data_2d, read_ldata_2d, read_idata_2d
    module procedure read_data_3d, read_data_4d
+#ifdef OVERLOAD_C8
    module procedure read_cdata_2d,read_cdata_3d,read_cdata_4d
+#endif
    module procedure read_data_text
 end interface
 
@@ -148,7 +147,9 @@ interface write_data
    module procedure write_data_iscalar_new
    module procedure write_data_2d, write_ldata_2d, write_idata_2d
    module procedure write_data_3d, write_data_4d
+#ifdef OVERLOAD_C8
    module procedure write_cdata_2d,write_cdata_3d,write_cdata_4d
+#endif
 end interface
 
 interface get_global_att_value
@@ -160,13 +161,14 @@ integer, private :: num_files_r=0 ! number of currently opened files for reading
 integer, private :: num_files_w=0 ! number of currently opened files for writing
 integer, private :: num_domains = 0 ! number of domains in array_domain
 logical, private :: fms_netcdf_override = .true., fms_netcdf_restart = .true.
-character(len=32), private :: threading_read, fileset_read, threading_write, &
+character(len=32), private :: threading_read, threading_write, &
      fileset_write, format ! global i/o settings
-integer, private :: thread_r, thread_w, fset_r, fset_w, form
+integer, private :: thread_r, thread_w, fset_w, form
 logical, private :: module_is_initialized = .FALSE.
 logical, private :: read_all_pe = .TRUE.
-integer, allocatable, dimension(:) :: pelist
+
 character(len=32) :: pelist_name
+character(len=5)  :: pe_name
 character(len=128):: error_msg  
 character(len=64) :: iospec_ieee32 = '-N ieee_32'
   
@@ -197,8 +199,8 @@ interface string
    module procedure string_from_real
 end interface
 
-character(len=128) :: version = '$Id: fms_io.F90,v 15.0 2007/08/14 04:13:58 fms Exp $'
-character(len=128) :: tagname = '$Name: omsk $'
+character(len=128) :: version = '$Id: fms_io.F90,v 15.0.2.2.2.1.2.2.2.2 2007/10/04 21:46:44 wfc Exp $'
+character(len=128) :: tagname = '$Name: omsk_2007_10 $'
 
 contains
 
@@ -241,12 +243,11 @@ end subroutine get_restart_io_mode
 !   </TEMPLATE>
 subroutine fms_io_init()
     
-  IMPLICIT NONE
-    
-  integer  :: i, unit, io_status, logunit
+  integer                            :: i, unit, io_status, logunit
+  integer, allocatable, dimension(:) :: pelist
 
   namelist /fms_io_nml/ fms_netcdf_override, fms_netcdf_restart, &
-       threading_read, fileset_read, threading_write, &
+       threading_read, threading_write, &
        fileset_write, format, read_all_pe, iospec_ieee32,max_files_w,max_files_r, &
        read_data_bug
 
@@ -255,7 +256,7 @@ subroutine fms_io_init()
 
 ! Initialize values of max_files_w and max_files_r  
   max_files_w = 40; max_files_r = 40
-  threading_read='multi';fileset_read='single';format='netcdf'
+  threading_read='multi';format='netcdf'
   threading_write='multi';fileset_write='multi'
   read_data_bug = .false.
   call mpp_open(unit, 'input.nml',form=MPP_ASCII,action=MPP_RDONLY)
@@ -267,15 +268,6 @@ subroutine fms_io_init()
   call mpp_close (unit)
 
 ! take namelist options if present
-
-  select case (fileset_read) 
-  case ('multi')
-     fset_r = MPP_MULTI
-  case ('single')
-     fset_r = MPP_SINGLE
-  case default
-     call mpp_error(FATAL,'fms_io_init: fileset_read should be multi/single but you chose'//trim(fileset_read))
-  end select
 
   select case (threading_read) 
   case ('multi')
@@ -332,6 +324,11 @@ subroutine fms_io_init()
   files_write(:) = default_file
   files_read(:)  = default_file
 
+  allocate(pelist(mpp_npes()))        
+  call mpp_get_current_pelist(pelist,pelist_name)
+  write(pe_name,'(a,i4.4)' )'.', mpp_pe()    
+  deallocate(pelist)
+
   do i = 1, max_domains
      array_domain(i) = NULL_DOMAIN2D
   enddo
@@ -353,7 +350,7 @@ end subroutine fms_io_init
 
 subroutine fms_io_exit()
   use platform_mod, only: r8_kind
-  IMPLICIT NONE
+
   integer, parameter :: max_axis_size=10000
   integer :: i,j,k,unit,unit2
   integer :: num_axes, t_axis_id, x_axis_id, y_axis_id, z_axis_id
@@ -385,8 +382,13 @@ subroutine fms_io_exit()
      enddo
      allocate(files_write(i)%field_buffer(files_write(i)%nvar))
      filename = files_write(i)%filename
-     call mpp_open(unit,trim(filename),action=MPP_OVERWR,form=form,threading=thread_w,&
-          fileset=fset_w, is_root_pe=files_write(i)%is_root_pe)
+     if( ANY(files_write(i)%domain_present(1:max_fields)) ) then
+        call mpp_open(unit,trim(filename),action=MPP_OVERWR,form=form,threading=thread_w,&
+             fileset=fset_w, is_root_pe=files_write(i)%is_root_pe)
+     else  ! global data
+        call mpp_open(unit,trim(filename),action=MPP_OVERWR,form=form,threading=MPP_SINGLE,&
+             fileset=MPP_SINGLE, is_root_pe=files_write(i)%is_root_pe)
+     end if
      do j = 1, max_fields
         if (files_write(i)%domain_present(j)) then
            domain_idx = files_write(i)%domain_idx(j)
@@ -542,8 +544,8 @@ subroutine fms_io_exit()
               files_write(i)%unit_tmpfile(j) = unit2
            endif
            if ( k <= size_field(4)) then
-              if((files_write(i)%is_root_pe .and.thread_w==MPP_SINGLE).or.(thread_w==MPP_MULTI)) &
-                   read(unit2) files_write(i)%field_buffer(j)%buffer
+              if((files_write(i)%is_root_pe .and.thread_w==MPP_SINGLE).or. thread_w==MPP_MULTI )&
+                 read(unit2) files_write(i)%field_buffer(j)%buffer
            else
               files_write(i)%field_buffer(j)%buffer = 0.0
            endif           
@@ -605,72 +607,82 @@ end subroutine fms_io_exit
 !   </IN>
 !=================================================================================
 subroutine write_data_i3d_new(filename, fieldname, data, domain,append_pelist_name, &
-                              no_domain, position, tile_count, mosaicfile)
-  IMPLICIT NONE
+                              no_domain, position, tile_count, data_default, mosaicfile)
 
   character(len=*), intent(in) :: filename, fieldname 
   integer, dimension(:,:,:), intent(in) :: data
   type(domain2d), intent(in), optional :: domain
   logical, intent(in), optional :: append_pelist_name, no_domain
-  integer, intent(in), optional :: position, tile_count
+  integer, intent(in), optional :: position, tile_count, data_default
   character(len=*), intent(in), optional :: mosaicfile
+  real :: default_data
+
+  default_data = 0
+  if(present(data_default)) default_data = real(data_default)
 
   call write_data_3d_new(filename, fieldname, real(data), domain,append_pelist_name, &
-                         no_domain, position, tile_count, mosaicfile)
+                         no_domain, position, tile_count, data_default=default_data, mosaicfile=mosaicfile)
 end subroutine write_data_i3d_new
 !.....................................................................
 subroutine write_data_i2d_new(filename, fieldname, data, domain,append_pelist_name, &
-                              no_domain, position, tile_count, mosaicfile)
-  IMPLICIT NONE
+                              no_domain, position, tile_count, data_default, mosaicfile)
 
   character(len=*), intent(in) :: filename, fieldname 
   integer, dimension(:,:), intent(in) :: data
   type(domain2d), intent(in), optional :: domain
   logical, intent(in), optional :: append_pelist_name, no_domain
-  integer, intent(in), optional :: position, tile_count
+  integer, intent(in), optional :: position, tile_count, data_default
   character(len=*), intent(in), optional :: mosaicfile
+  real :: default_data
 
+  default_data = 0
+  if(present(data_default)) default_data = real(data_default)
   call write_data_2d_new(filename, fieldname, real(data), domain,append_pelist_name, &
-                         no_domain, position, tile_count, mosaicfile)
+                         no_domain, position, tile_count, data_default=default_data, mosaicfile=mosaicfile)
+
 end subroutine write_data_i2d_new
 !.....................................................................
 subroutine write_data_i1d_new(filename, fieldname, data, domain, append_pelist_name, &
-                              no_domain, tile_count, mosaicfile)
-  IMPLICIT NONE
+                              no_domain, tile_count, data_default, mosaicfile)
   type(domain2d), intent(in), optional :: domain
   character(len=*), intent(in) :: filename, fieldname 
   integer, dimension(:), intent(in) :: data
   logical, intent(in), optional :: append_pelist_name, no_domain
-  integer, intent(in), optional :: tile_count
+  integer, intent(in), optional :: tile_count, data_default
   character(len=*), intent(in), optional :: mosaicfile
+  real :: default_data
 
+  default_data = 0
+  if(present(data_default)) default_data = real(data_default)
   call write_data_1d_new(filename, fieldname, real(data), domain, append_pelist_name, &
-                         no_domain, tile_count, mosaicfile)
+                         no_domain, tile_count, data_default=default_data, mosaicfile=mosaicfile)
 end subroutine write_data_i1d_new
 !.....................................................................
 subroutine write_data_iscalar_new(filename, fieldname, data, domain, append_pelist_name, &
-                                  no_domain, tile_count, mosaicfile)
-  IMPLICIT NONE
+                                  no_domain, tile_count, data_default, mosaicfile)
   type(domain2d), intent(in), optional :: domain
   character(len=*), intent(in) :: filename, fieldname 
   integer, intent(in) :: data
   logical, intent(in), optional :: append_pelist_name, no_domain
-  integer, intent(in), optional :: tile_count
+  integer, intent(in), optional :: tile_count, data_default
   character(len=*), intent(in), optional :: mosaicfile
+  real :: default_data
 
+  default_data = 0
+  if(present(data_default)) default_data = real(data_default)
   call write_data_scalar_new(filename, fieldname, real(data), domain, append_pelist_name, &
-                             no_domain, tile_count, mosaicfile)
+                             no_domain, tile_count, data_default=default_data, mosaicfile=mosaicfile)
 
 end subroutine write_data_iscalar_new
 !.....................................................................
 subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_name, no_domain, &
-                             position, tile_count, mosaicfile)
-  IMPLICIT NONE
+                             position, tile_count, data_default, mosaicfile)
 
   character(len=*), intent(in)           :: filename, fieldname 
   real, dimension(:,:,:), intent(in)     :: data
   type(domain2d), intent(in), optional, target :: domain
-  real, dimension(:,:,:), pointer        :: global_data =>NULL()
+  real, dimension(:,:,:), pointer        :: global_data =>NULL() 
+  real, intent(in), optional             :: data_default
   logical, intent(in), optional          :: append_pelist_name, no_domain   
   integer, intent(in), optional          :: position, tile_count
   character(len=*), intent(in), optional :: mosaicfile
@@ -680,6 +692,7 @@ subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_nam
   integer :: index_field ! position of the fieldname in the list of fields
   integer :: unit2 ! unit of temporary file
   integer :: gxsize, gysize, ishift, jshift
+  real    :: default_data
   logical :: file_open = .false., is_no_domain = .false.
   character(len=256) :: fname
   type(domain2d), pointer, save :: d_ptr =>NULL()
@@ -699,6 +712,11 @@ subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_nam
   elseif (ASSOCIATED(Current_domain) .AND. .NOT. is_no_domain ) then
      d_ptr => Current_domain
   endif
+  if(PRESENT(data_default))then
+     default_data=data_default
+  else
+     default_data=0.
+  endif
 
 !JWD:  This is likely a temporary fix. Since fms_io needs to know tile_count,
 !JWD:  I just don't see how the physics can remain "tile neutral"
@@ -707,26 +725,21 @@ subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_nam
 
   if (PRESENT(append_pelist_name)) then
      if (append_pelist_name) then
-        allocate(pelist(mpp_npes()))        
-        call mpp_get_current_pelist(pelist,pelist_name)
+        if(is_no_domain) call mpp_error(FATAL, &
+           'fms_io write_data: when append_pelist_name is set to true, no_domain should not be set to true') 
         fname = trim(fname)//trim(pelist_name)
-        deallocate(pelist)
      endif
   endif
 
-! Check if filename has been open  or not
-  if(num_files_w == 0) then
-     file_open=.false.
-  else
-     file_open=.false.
-     do i=1,num_files_w
-        nfile = i
-        if (trim(files_write(i)%filename) == trim(fname)) then
-           file_open = .true. !file already open
-           exit
-        endif
-     enddo
-  endif
+  ! Check if filename has been open  or not
+  file_open=.false.
+  do i=1,num_files_w
+     nfile = i
+     if (trim(files_write(i)%filename) == trim(fname)) then
+        file_open = .true. !file already open
+        exit
+     endif
+  enddo
 
   if (.not.file_open) then 
      if(num_files_w == max_files_w) &  ! need to have bigger max_files_w
@@ -752,10 +765,6 @@ subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_nam
 ! check if the field is new or not and get position and dimension of the field
   index_field =  lookup_field_w(nfile,fieldname)
   if(index_field < 0) then  ! this field is new in file filename
-! open temporary file for writing data only, each field is written to a separate file
-     temp_name = trim(fname)//'_'//trim(fieldname)//'_tmp'
-     call mpp_open(unit2,temp_name,form=MPP_NATIVE,nohdrs=.true.,threading=MPP_MULTI,&
-          fileset=MPP_MULTI, action=MPP_OVERWR)               
      files_write(nfile)%nvar = files_write(nfile)%nvar +1
      if(files_write(nfile)%nvar>max_fields) then
         write(error_msg,'(I3,"/",I3)') files_write(nfile)%nvar, max_fields 
@@ -768,7 +777,6 @@ subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_nam
      files_write(nfile)%siz(index_field,2) = size(data,2)
      files_write(nfile)%siz(index_field,3) = size(data,3)
      files_write(nfile)%siz(index_field,4) = 1
-     files_write(nfile)%unit_tmpfile(index_field) = unit2
 
      if(PRESENT(domain)) then
         files_write(nfile)%domain_present(index_field)=.true.
@@ -799,6 +807,14 @@ subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_nam
         files_write(nfile)%domain_present(index_field)=.false.
      endif
 
+! open temporary file for writing data only, each field is written to a separate file
+     temp_name = trim(fname)//'_'//trim(fieldname)//'_tmp'
+      
+     call mpp_open(unit2,temp_name,form=MPP_NATIVE,nohdrs=.true.,threading=MPP_MULTI,&
+          fileset=MPP_MULTI, action=MPP_OVERWR)   
+
+     files_write(nfile)%unit_tmpfile(index_field) = unit2
+
      if (files_write(nfile)%domain_present(index_field)) then
         call mpp_get_domain_shift ( array_domain(domain_idx), ishift, jshift, position)
         call mpp_get_global_domain(array_domain(files_write(nfile)%domain_idx(index_field)), &
@@ -824,25 +840,25 @@ subroutine write_data_3d_new(filename, fieldname, data, domain,append_pelist_nam
      !--- This temporary fix is to allow the mom4 test with some domain
      !--- region masked-out to get value 0 at the masked region, instead 
      !--- of some arbitrary value.
-     global_data = 0.0
+     global_data = default_data
      call mpp_global_field(array_domain(files_write(nfile)%domain_idx(index_field)),data,global_data, &
                                    position=position,tile_count=tile_count)
      if(files_write(nfile)%is_root_pe) write(unit2) global_data
      deallocate(global_data)
 ! write data to temporary storage without halos
   else 
-     write(unit2) data ! write data to a temporary file
+     write(unit2) data
   endif
 end subroutine write_data_3d_new
 ! </SUBROUTINE>  
 !.....................................................................
 subroutine write_data_2d_new(filename, fieldname, data, domain,append_pelist_name, &
-                             no_domain, position,tile_count, mosaicfile)
+                             no_domain, position,tile_count, data_default, mosaicfile)
 
-  IMPLICIT NONE
   character(len=*), intent(in)                 :: filename, fieldname 
   real, dimension(:,:), intent(in)             :: data
   real, dimension(size(data,1),size(data,2),1) :: data_3d
+  real, intent(in), optional                   :: data_default
   type(domain2d), intent(in), optional         :: domain
   logical, intent(in), optional                :: append_pelist_name, no_domain
   integer, intent(in), optional                :: position, tile_count
@@ -851,19 +867,19 @@ subroutine write_data_2d_new(filename, fieldname, data, domain,append_pelist_nam
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(write_data_2d_new):need to call fms_io_init first')
   data_3d(:,:,1) = data(:,:)
   call write_data_3d_new(filename, fieldname, data_3d, domain, append_pelist_name, &
-                         no_domain, position, tile_count, mosaicfile)
+                         no_domain, position, tile_count, data_default, mosaicfile)
 
 end subroutine write_data_2d_new
 
 ! ........................................................
 subroutine write_data_1d_new(filename, fieldname, data,domain,append_pelist_name, &
-                             no_domain, tile_count, mosaicfile)
+                             no_domain, tile_count, data_default, mosaicfile)
   
-  IMPLICIT NONE
   type(domain2d), intent(in), optional   :: domain
   character(len=*), intent(in)           :: filename, fieldname 
   real, dimension(:), intent(in)         :: data
   real, dimension(size(data(:)),1,1)     :: data_3d
+  real, intent(in), optional             :: data_default
   logical, intent(in), optional          :: append_pelist_name, no_domain
   integer, intent(in), optional          :: tile_count
   character(len=*), intent(in), optional :: mosaicfile
@@ -872,18 +888,18 @@ subroutine write_data_1d_new(filename, fieldname, data,domain,append_pelist_name
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(write_data_1d_new): module not initialized')  
   data_3d(:,1,1) = data(:)  
   call write_data_3d_new(filename, fieldname, data_3d,domain,append_pelist_name, &
-                         no_domain, tile_count=tile_count, mosaicfile=mosaicfile)  
+                         no_domain, tile_count=tile_count, data_default=data_default, mosaicfile=mosaicfile)  
 end subroutine write_data_1d_new
 
 ! ..........................................................
 subroutine write_data_scalar_new(filename, fieldname, data, domain, append_pelist_name, &
-                                 no_domain, tile_count, mosaicfile)
+                                 no_domain, tile_count, data_default, mosaicfile)
 
-  IMPLICIT NONE
   type(domain2d), intent(in), optional   :: domain
   character(len=*), intent(in)           :: filename, fieldname 
   real, intent(in)                       :: data
   real, dimension(1,1,1)                 :: data_3d
+  real, intent(in), optional             :: data_default
   logical, intent(in), optional          :: append_pelist_name, no_domain
   integer, intent(in), optional          :: tile_count
   character(len=*), intent(in), optional :: mosaicfile
@@ -891,12 +907,11 @@ subroutine write_data_scalar_new(filename, fieldname, data, domain, append_pelis
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(write_data_scalar_new):  module not initialized: '//fieldname)  
   data_3d(1,1,1) = data
   call write_data_3d_new(filename, fieldname, data_3d,domain,append_pelist_name, &
-                         no_domain, tile_count=tile_count, mosaicfile=mosaicfile)
+                         no_domain, tile_count=tile_count, data_default=data_default, mosaicfile=mosaicfile)
 end subroutine write_data_scalar_new
 ! ..........................................................
 
 function lookup_field_w(nfile,fieldname)
-  IMPLICIT NONE
 ! Given fieldname, this function returns the field position in the model's fields list
 
   integer, intent(in)          :: nfile
@@ -935,7 +950,6 @@ function lookup_axis(axis_sizes,siz,domains,dom)
 
 ! Given axis size (global), this function returns the axis id  
 
-  IMPLICIT NONE
   integer, intent(in)      :: axis_sizes(:), siz
   type(domain1d), optional :: domains(:)
   type(domain1d), optional :: dom
@@ -991,7 +1005,7 @@ subroutine field_size(filename, fieldname, siz, append_pelist_name, field_found 
   character(len=128)             :: name
   character(len=1)               :: cart
   integer :: i, nfile, unit, ndim, nvar, natt, ntime, siz_in(4), j, len
-  logical :: file_opened, found
+  logical :: file_opened, found, is_exist
   character(len=256)             :: fname
   type(fieldtype)                :: fields(max_fields)
   type(axistype)                 :: axes(max_fields)
@@ -1003,10 +1017,7 @@ subroutine field_size(filename, fieldname, siz, append_pelist_name, field_found 
   fname = trim(filename)
   if (PRESENT(append_pelist_name)) then
      if (append_pelist_name) then
-        allocate(pelist(mpp_npes()))
-        call mpp_get_current_pelist(pelist,pelist_name)
         fname = trim(filename)//trim(pelist_name)
-        deallocate(pelist)
      endif
   endif        
   nfile = 0
@@ -1022,13 +1033,102 @@ subroutine field_size(filename, fieldname, siz, append_pelist_name, field_found 
   found= .false.
   siz=-1
   if (.not. file_opened) then
-     call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_SINGLE, &
-          fileset=MPP_SINGLE)
+     inquire (file=trim(fname)//trim(pe_name), exist=is_exist)
+     if(.not. is_exist) inquire (file=trim(fname)//'.nc'//trim(pe_name), exist=is_exist)
+     if(is_exist) then
+        call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_MULTI, &
+             fileset=MPP_MULTI)
+     else 
+        inquire (file=trim(fname), exist=is_exist)
+        if(.not. is_exist) inquire (file=trim(fname)//'.nc', exist=is_exist)
+        if(is_exist) then     
+           call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_SINGLE, &
+                fileset=MPP_SINGLE)
+        else
+           call mpp_error(FATAL, 'fms_io(field_size): file '//trim(fname)//' and distributed file not found')
+        end if
+     end if
+
+     call get_size(unit,fieldname,siz,found)
+     call mpp_close(unit)
+  else
+     do i=1, files_read(nfile)%nvar
+        if (trim(fieldname) == trim(files_read(nfile)%fieldname(i))) then
+           found = .true.
+           siz = files_read(nfile)%siz(i,:)
+           exit
+        endif
+     enddo
+     if (.not. found) then
+        call get_size(files_read(nfile)%unit,fieldname,siz,found)
+     endif
+ endif
+
+ if (.not. found) then 
+! Perhaps the variable is in a "tile" file.
+     call get_mosaic_tile_file(filename, fname, is_no_domain= .false., domain = Current_domain)!, tile_count, mosaicfile)
+
+     nfile = 0
+     file_opened=.false.
+     do i=1,num_files_r
+        if (trim(files_read(i)%filename) == trim(fname))  then
+           nfile = i
+           file_opened = .true.
+           exit ! file is already opened
+        endif
+     enddo
+     found= .false.
+     siz=-1
+     if (.not. file_opened) then
+     ! File is not open yet. 
+        call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_SINGLE, &
+             fileset=MPP_SINGLE)
+        call get_size(unit, fieldname, siz, found)
+        call mpp_close(unit)
+     else
+        do i=1, files_read(nfile)%nvar
+           if (trim(fieldname) == trim(files_read(nfile)%fieldname(i))) then
+              found = .true.
+              siz = files_read(nfile)%siz(i,:)
+              exit
+           endif
+        enddo
+! Scan the already open file in order to get the size of the field.
+        if (.not. found) then
+           call get_size(files_read(nfile)%unit, fieldname, siz, found)
+        endif
+     endif
+  endif
+
+ if( PRESENT(field_found) )then
+     field_found = found
+ else if (.not. found .and. mpp_pe() == mpp_root_pe() )then
+     call mpp_error(FATAL, 'fms_io(field_size): field '//trim(fieldname)// ' NOT found in file '//trim(filename))
+ end if
+  call mpp_sync() !is this needed?
+  return
+end subroutine field_size
+! </SUBROUTINE>
+
+subroutine get_size(unit, fieldname, siz, found)
+integer,          intent(in)    :: unit
+character(len=*), intent(in)    :: fieldname
+integer,          intent(inout) :: siz(:)
+logical,          intent(out)   :: found
+
+  character(len=128)             :: name
+  character(len=1)               :: cart
+  logical :: file_opened
+  integer :: i, nfile, ndim, nvar, natt, ntime, siz_in(4), j, len
+  character(len=256)             :: fname
+  type(fieldtype)                :: fields(max_fields)
+  type(axistype)                 :: axes(max_fields)
+     found = .false.
      call mpp_get_info(unit,ndim,nvar,natt,ntime)
      if (nvar > max_fields) then
         write(error_msg,'(I3,"/",I3)') nvar,max_fields 
         call  mpp_error(FATAL,'fms_io(field_size): max_fields too small, needs increasing, nvar/max_fields=' &
-             //trim(error_msg)//' in file '//trim(filename))
+             //trim(error_msg))!//' in file '//trim(filename))
      endif
      call mpp_get_fields(unit,fields(1:nvar))
      do i=1, nvar
@@ -1057,6 +1157,7 @@ subroutine field_size(filename, fieldname, siz, append_pelist_name, field_found 
            exit
         endif
      enddo
+
      if(.not. found) then
         call mpp_get_axes(unit,axes(1:ndim))
         do i=1, ndim
@@ -1068,66 +1169,7 @@ subroutine field_size(filename, fieldname, siz, append_pelist_name, field_found 
            endif
         enddo
      endif
-     call mpp_close(unit)
-  else
-     do i=1, files_read(nfile)%nvar
-        if (trim(fieldname) == trim(files_read(nfile)%fieldname(i))) then
-           found = .true.
-           siz = files_read(nfile)%siz(i,:)
-           exit
-        endif
-     enddo
-     if (.not. found) then
-        call mpp_get_info(files_read(nfile)%unit,ndim,nvar,natt,ntime)
-        call mpp_get_fields(files_read(nfile)%unit,fields(1:nvar))
-        do i=1, nvar
-           call mpp_get_atts(fields(i),name=name)
-           if (lowercase(trim(name)) == lowercase(trim(fieldname))) then
-              call mpp_get_atts(fields(i),ndim=ndim)
-              call mpp_get_atts(fields(i),axes=axes(1:ndim))
-              call mpp_get_atts(fields(i),siz=siz_in)
-              siz = siz_in
-              siz(4) = ntime
-              do j = 1, ndim
-                 call mpp_get_atts(axes(j),len=len)
-                 call get_axis_cart(axes(j),cart)
-                 select case (cart)
-                 case ('X')
-                    siz(1) = len
-                 case('Y')
-                    siz(2) = len
-                 case('Z')
-                    siz(3) = len
-                 case('T')
-                    siz(4) = len
-                 end select
-              enddo
-              found=.true.
-              exit
-           endif
-        enddo
-     endif
-     if(.not. found) then         
-        do i=1, files_read(nfile)%ndim
-           call mpp_get_atts(files_read(nfile)%axes(i),name=name, len= siz_in(1))
-           if (lowercase(trim(name)) == lowercase(trim(fieldname))) then
-              siz(1)= siz_in(1)
-              found = .true.
-              exit
-           endif
-        enddo
-     endif
- endif
- if( PRESENT(field_found) )then
-     field_found = found
- else if (.not. found .and. mpp_pe() == mpp_root_pe() )then
-     call mpp_error(FATAL, 'fms_io(field_size): field '//trim(fieldname)// ' NOT found in file '//trim(filename))
- end if
-  call mpp_sync() !is this needed?
-  return
-end subroutine field_size
-! </SUBROUTINE>
-
+end subroutine get_size
 
 ! <SUBROUTINE NAME="read_data">
 !<DESCRIPTION>
@@ -1156,7 +1198,6 @@ end subroutine field_size
 !=====================================================================================
 subroutine read_data_i3d_new(filename,fieldname,data,domain,timelevel,append_pelist_name, &
                              no_domain,position, tile_count, mosaicfile)
-  IMPLICIT NONE
   character(len=*),           intent(in)   :: filename, fieldname
   integer, dimension(:,:,:), intent(inout) :: data ! 3 dimensional data    
   type(domain2d), intent(in),   optional   :: domain
@@ -1173,7 +1214,6 @@ end subroutine read_data_i3d_new
 
 subroutine read_data_i2d_new(filename,fieldname,data,domain,timelevel,append_pelist_name, &
                              no_domain,position, tile_count, mosaicfile)
-  IMPLICIT NONE
   character(len=*),         intent(in)   :: filename, fieldname
   integer, dimension(:,:), intent(inout) :: data ! 2 dimensional data    
   type(domain2d), intent(in), optional   :: domain
@@ -1190,7 +1230,6 @@ end subroutine read_data_i2d_new
 !.....................................................................
 subroutine read_data_i1d_new(filename,fieldname,data,domain,timelevel,append_pelist_name, &
                              no_domain, tile_count, mosaicfile)
-  IMPLICIT NONE
   character(len=*), intent(in)           :: filename, fieldname
   integer, dimension(:), intent(inout)   :: data ! 1 dimensional data    
   type(domain2d), intent(in), optional   :: domain
@@ -1208,7 +1247,6 @@ end subroutine read_data_i1d_new
 !.....................................................................
 subroutine read_data_iscalar_new(filename,fieldname,data,domain,timelevel,append_pelist_name, &
                                  no_domain, tile_count, mosaicfile)
-  IMPLICIT NONE
   character(len=*), intent(in)           :: filename, fieldname
   integer, intent(inout)                 :: data     
   type(domain2d), intent(in), optional   :: domain
@@ -1225,7 +1263,6 @@ end subroutine read_data_iscalar_new
 !=====================================================================================
 subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_pelist_name, &
       no_domain, position, tile_count, mosaicfile)
-  IMPLICIT NONE
   character(len=*), intent(in)          :: filename, fieldname
   real, dimension(:,:,:), intent(inout) :: data ! 3 dimensional data    
   type(domain2d), intent(in), optional, target  :: domain
@@ -1236,7 +1273,6 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
 
   character(len=128)                    :: name
   character(len=256)                    :: fname
-  character(len=5)                      :: pe_name
   integer :: unit, siz_in(4), siz(4), i, j
   integer :: nfile  ! index of the opened file in array files
   integer :: ndim, nvar, var_dim, tlev=1
@@ -1245,16 +1281,15 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
   integer :: dxsize, dysize
   integer :: gxsize, gysize
   integer :: ishift, jshift
-  logical :: data_is_global
   logical :: file_opened, found, is_no_domain = .false.
   integer :: index_axis
-  logical :: read_dist,dist_file_exist, file_exist, file_exist1, file_exist2
-
+  logical :: read_dist, file_exist
+  type(domain2d), pointer, save :: d_ptr =>NULL()
 
 ! read disttributed files is used when reading restart files that are NOT mppnccombined. In this
 ! case PE 0 will read file_res.nc.0000, PE 1 will read file_res.nc.0001 and so forth.
 ! 
-! namelist to be used with read_dist_files: threading_read=multi, fileset_read=single,
+! namelist to be used with read_dist_files: threading_read=multi,
 ! threading_write=multi, fileset_write=multi.
 
 ! Initialize files to default values
@@ -1262,16 +1297,22 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
   is_no_domain = .false.
   if (PRESENT(no_domain)) THEN
      if(PRESENT(domain) .AND. no_domain) &
-       call mpp_error(FATAL, 'fms_io(write_data_3d_new): no_domain cannot be .true. when optional argument domain is present.')
+       call mpp_error(FATAL, 'fms_io(read_data_3d_new): no_domain cannot be .true. when optional argument domain is present.')
      is_no_domain = no_domain
+  endif  
+ 
+  if(PRESENT(domain))then
+     d_ptr => domain
+  elseif (ASSOCIATED(Current_domain) .AND. .NOT. is_no_domain ) then
+     d_ptr => Current_domain
   endif
 
-  data_is_global=.false.
+  if(.not. PRESENT(domain) .and. .not. ASSOCIATED(Current_domain) ) is_no_domain = .true.
+
   file_opened=.false.
   read_dist=.false.
-  pe_name='     '
-  file_exist = .false.; file_exist1=.false.; file_exist2=.false.
-  dist_file_exist = .false.
+  file_exist = .false.
+
   if (PRESENT(timelevel)) then
      tlev = timelevel
   else
@@ -1285,65 +1326,54 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
 
   if (PRESENT(append_pelist_name)) then
      if (append_pelist_name) then
-        allocate(pelist(mpp_npes()))        
-        call mpp_get_current_pelist(pelist,pelist_name)
+        if(is_no_domain) call mpp_error(FATAL, &
+           'fms_io read_data: when append_pelist_name is set to true, no_domain should not be set to true') 
         fname = trim(fname)//trim(pelist_name)
-        deallocate(pelist)
      endif
   endif    
-  inquire (file=trim(fname), exist=file_exist1)
-  if(.not. file_exist1) inquire (file=trim(fname)//'.nc', exist=file_exist2)
-  file_exist = (file_exist1 .or. file_exist2)
+
+  inquire (file=trim(fname)//trim(pe_name), exist=file_exist)
+  if(.not. file_exist) inquire (file=trim(fname)//'.nc'//trim(pe_name), exist=file_exist)
   if(file_exist) then
-     read_dist = .false.  
+     read_dist = .true.  
   else
-     write(pe_name,'(a,i4.4)' )'.', mpp_pe()    
-     inquire (file=trim(fname//pe_name), exist=dist_file_exist)
-     if(dist_file_exist) then
-        read_dist = .true.
-        fname = trim(fname)//pe_name
+     read_dist = .false.
+     inquire (file=trim(fname), exist=file_exist)
+     if(.not. file_exist) inquire (file=trim(fname)//'.nc', exist=file_exist)
+  endif
+  if( .not. file_exist) then 
+     call mpp_error(FATAL,'fms_io(read_data_3d_new): file '//trim(filename)//' and distributed file not found')
+  end if
+
+  siz_in(3) = size(data,3)
+  if( read_dist .or. is_no_domain) then
+     if(associated(d_ptr)) then  !-- read_dist will be true, global size will be compute domain size.
+        call mpp_get_compute_domain(d_ptr, xsize = gxsize, ysize = gysize, tile_count=tile_count)
+        call mpp_get_domain_shift  (d_ptr, ishift, jshift, position)
+        if (ishift .NE. 0)  gxsize = gxsize+ishift
+        if (jshift .NE. 0)  gysize = gysize+jshift
      else
-        call mpp_error(FATAL,'fms_io(read_data_3d_new): file '//trim(filename)//' not found')
-     endif
-  endif
-
-  if (PRESENT(domain).AND. .NOT.read_dist) then
-     call mpp_get_compute_domain(domain, xsize = cxsize, ysize = cysize, tile_count=tile_count)
-     call mpp_get_data_domain   (domain, xsize = dxsize, ysize = dysize, tile_count=tile_count)
-     call mpp_get_global_domain (domain, xsize = gxsize, ysize = gysize, tile_count=tile_count)
-     call mpp_get_domain_shift  (domain, ishift, jshift, position)
+        gxsize = size(data,1)
+        gysize = size(data,2)
+     end if
+  else  ! d_ptr must not be null
+     call mpp_get_compute_domain(d_ptr, xsize = cxsize, ysize = cysize, tile_count=tile_count)
+     call mpp_get_data_domain   (d_ptr, xsize = dxsize, ysize = dysize, tile_count=tile_count)
+     call mpp_get_global_domain (d_ptr, xsize = gxsize, ysize = gysize, tile_count=tile_count)
+     call mpp_get_domain_shift  (d_ptr, ishift, jshift, position)
      if (ishift .NE. 0) then
         cxsize = cxsize+ishift; dxsize = dxsize+ishift; gxsize = gxsize+ishift
      endif
      if (jshift .NE. 0) then
         cysize = cysize+jshift; dysize = dysize+jshift; gysize = gysize+jshift
      endif
-     if (gxsize == size(data,1) .and. gysize == size(data,2)) data_is_global = .true.
-  else  if (ASSOCIATED(Current_domain)  .AND. .NOT. is_no_domain .AND. .NOT.read_dist) then
-     gxsize=ieg-isg+1
-     gysize=jeg-jsg+1
-     dxsize=ied-isd+1
-     dysize=jed-jsd+1
-     cxsize=ie-is+1
-     cysize=je-js+1
-     call mpp_get_domain_shift  (Current_domain, ishift, jshift, position)
-     if (ishift .NE. 0) then
-        cxsize = cxsize+ishift; dxsize = dxsize+ishift; gxsize = gxsize+ishift
-     endif
-     if (jshift .NE. 0) then
-        cysize = cysize+jshift; dysize = dysize+jshift; gysize = gysize+jshift
-     endif
-     if (gxsize == size(data,1) .and. gysize == size(data,2)) data_is_global = .true.
-  else ! no_domain or read_dist = true
-     data_is_global =.true.
-     gxsize = size(data,1)
-     gysize = size(data,2)
-     siz_in(3) = size(data,3)
+     if( (size(data,1) .NE. cxsize .AND. size(data,1) .NE. dxsize) .OR. &
+         (size(data,2) .NE. cysize .AND. size(data,2) .NE. dysize) )then
+       call mpp_error(FATAL,'fms_io(read_data_3d_new): data should be on either computer domain '//&
+                            'or data domain when domain is present')
+     end if 
   endif
 
-  if (data_is_global .and. fset_r == MPP_MULTI) &
-       call mpp_error(FATAL,'fms_io(read_data_3d_new): can not do global read on multi fileset ' &
-       //'change fileset_reading to single')  
 ! Need to check if filename has been opened or not
   nfile = 0
   if(num_files_r ==0) then
@@ -1358,13 +1388,18 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
         endif
      enddo
   endif
-  if (.not. file_opened) then !Need to open the file now     
-     if (fset_r == MPP_MULTI .and. thread_r == MPP_SINGLE) then
-        call mpp_error(FATAL,'fms_io(read_data_3d_new): single-threaded read from multi fileset not allowed' &
-             //'change either threading_read or fileset_read')
+  if (.not. file_opened) then !Need to open the file now   
+     if (read_dist .and. thread_r == MPP_SINGLE) then
+        call mpp_error(FATAL,'fms_io(read_data_3d_new): single-threaded read from distributed fileset not allowed' &
+             //'change threading_read to MULTI')
      endif
-     call mpp_open(unit,trim(fname),form=form,action=MPP_RDONLY,threading=thread_r, &
-          fileset=fset_r)
+     if(read_dist) then
+        call mpp_open(unit,trim(fname),form=form,action=MPP_RDONLY,threading=thread_r, &
+             fileset=MPP_MULTI)
+     else
+        call mpp_open(unit,trim(fname),form=form,action=MPP_RDONLY,threading=thread_r, &
+             fileset=MPP_SINGLE)
+     end if
 ! Increase num_files_r and set file_type 
      if(num_files_r == max_files_r) &  ! need to have bigger max_files_r
           call mpp_error(FATAL,'fms_io read_data: max_files_r exceeded, increase it via fms_io_nml')
@@ -1405,19 +1440,11 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
            files_read(nfile)%fieldname(i) = fieldname
            files_read(nfile)%siz(i,:)  = siz_in
            files_read(nfile)%gsiz(i,:) = siz_in
-           if (fset_r == MPP_SINGLE) then
-
-              if (siz_in(1) /= gxsize .or. siz_in(2) /= gysize .or. siz_in(3) /= &
-                   size(data,3)) then
-                 PRINT *, gxsize, gysize, size(data, 3), siz_in(1), siz_in(2), siz_in(3)
-                 call mpp_error(FATAL,'fms_io(read_data_3d_new), field '//trim(fieldname)// &
+           !--- check if the file size are matching with global size.
+           if (siz_in(1) /= gxsize .or. siz_in(2) /= gysize .or. siz_in(3) /= size(data,3)) then
+              PRINT *, gxsize, gysize, size(data, 3), siz_in(1), siz_in(2), siz_in(3)
+              call mpp_error(FATAL,'fms_io(read_data_3d_new), field '//trim(fieldname)// &
                    ' in file '//trim(filename)//': field size mismatch 1')
-              endif
-           else if (fset_r == MPP_MULTI) then
-              if (siz_in(1) /= dxsize .or. siz_in(2) /= dysize & 
-                   .or. siz_in(3) /= size(data,3)) &
-                   call mpp_error(FATAL,'fms_io(read_data_3d_new), field '//trim(fieldname)// &
-                   ' in file '//trim(filename)//': field size mismatch 2')
            endif
            found = .true.
            exit  !jump out of i loop
@@ -1432,15 +1459,17 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
         do i=1,files_read(nfile)%ndim
            call mpp_get_atts(files_read(nfile)%axes(i),name=name, len= siz_in(1)) 
            if (lowercase(trim(name)) == lowercase(trim(fieldname))) then
+              if(.not. is_no_domain) call mpp_error(FATAL, &
+                  'fms_io(read_data_3d_new): the field is a dimension variable, no_domain should be true.')
               index_field = i+nvar
               files_read(nfile)%is_dimvar(index_field) = .true.
               files_read(nfile)%fieldname(index_field) = fieldname
               files_read(nfile)%siz(index_field,:)  = siz_in
               files_read(nfile)%gsiz(index_field,:) = siz_in
-              if (fset_r == MPP_SINGLE) then
+              if (.not. read_dist) then
                  if (siz_in(1) /= gxsize) &
                       call mpp_error(FATAL,'fms_io(read_data_3d_new), field '//trim(fieldname)// &
-                      ' in file '//trim(filename)//' field size mismatch 3')
+                      ' in file '//trim(filename)//' field size mismatch 2')
               endif
               siz(1)= siz_in(1)
               found = .true.
@@ -1457,7 +1486,7 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
         call mpp_error(FATAL,'fms_io(read_data_3d_new): time level out of range, time level/max_time_level=' &
              //trim(error_msg)//' in field/file: '//trim(fieldname)//'/'//trim(filename))
      endif
-     if (data_is_global) then
+     if(is_no_domain) then
         if (files_read(nfile)%is_dimvar(index_field)) then
            index_axis = index_field - files_read(nfile)%nvar 
            call mpp_get_axis_data( files_read(nfile)%axes(index_axis),data(:,1,1))
@@ -1465,26 +1494,22 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
            call mpp_read(unit,files_read(nfile)%fields(index_field),data(:,:,:),tlev)
         endif
      else 
-        if (files_read(nfile)%is_dimvar(index_field)) call mpp_error(FATAL,'fms_io(read_data_3d_new): domain is present' &
-             //' but the variable is a dimension variable.  Remove domain flag for this var')
-        if (PRESENT(domain)) then
-           call mpp_read(unit,files_read(nfile)%fields(index_field),domain,data,tlev,tile_count)
-        else
-           call mpp_read(unit, files_read(nfile)%fields(index_field),Current_domain,data,tlev,tile_count)
-        endif
+           call mpp_read(unit,files_read(nfile)%fields(index_field),d_ptr,data,tlev,tile_count)
      endif
   endif  
+
+  d_ptr =>NULL()
+
   return
 end subroutine read_data_3d_new
 
 !=====================================================================================
 !--- we assume any text data are at most 2-dimensional and level is for first dimension
 subroutine read_data_text(filename,fieldname,data,level)
-  IMPLICIT NONE
   character(len=*), intent(in)   :: filename, fieldname
   character(len=*), intent(out)  :: data
   integer, intent(in) , optional :: level
-  logical                        :: file_opened, file_exist      
+  logical                        :: file_opened, file_exist, read_dist      
   integer                        :: lev, unit, nvar, ndim, index_field, siz_in(4)
   integer                        :: nfile, var_dim, i, j
   character(len=256)             :: fname, name
@@ -1500,9 +1525,17 @@ subroutine read_data_text(filename,fieldname,data,level)
      lev = 1
   endif  
   fname = trim(filename)   
-  inquire (file=trim(fname), exist=file_exist)
-  if(.not. file_exist) inquire (file=trim(fname)//'.nc', exist=file_exist)
-  if(.NOT. file_exist) call mpp_error(FATAL,'fms_io(read_data_text): file '//trim(filename)//' not found')
+  inquire (file=trim(fname)//trim(pe_name), exist=file_exist )
+  if(.not. file_exist)  inquire (file=trim(fname)//'.nc'//trim(pe_name), exist=file_exist)    
+  if(file_exist) then
+     read_dist = .true.
+  else
+     inquire (file=trim(fname), exist=file_exist)
+     if(.not. file_exist) inquire (file=trim(fname)//'.nc', exist=file_exist)
+     read_dist=.false.
+  end if
+
+  if(.NOT. file_exist) call mpp_error(FATAL,'fms_io(read_data_text): file '//trim(filename)//' and distributed file not found')
 
   if(num_files_r ==0) then
      file_opened = .false.
@@ -1517,11 +1550,15 @@ subroutine read_data_text(filename,fieldname,data,level)
      enddo
   endif
   if (.not. file_opened) then !Need to open the file now     
-     if (fset_r == MPP_MULTI .and. thread_r == MPP_SINGLE) then
+     if (read_dist .and. thread_r == MPP_SINGLE) then
         call mpp_error(FATAL,'fms_io(read_data_text: single-threaded read from multi fileset not allowed' &
-             //'change either threading_read or fileset_read')
+             //'change either threading_read')
      endif
-     call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=thread_r,fileset=fset_r)
+     if(read_dist) then
+        call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=thread_r,fileset=MPP_MULTI)
+     else
+        call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=thread_r,fileset=MPP_SINGLE)
+     end if
 ! Increase num_files_r and set file_type 
      if(num_files_r == max_files_r) &  ! need to have bigger max_files_r
           call mpp_error(FATAL,'fms_io(read_data_text): max_files_r exceeded, increase it via fms_io_nml')
@@ -1581,7 +1618,6 @@ end subroutine read_data_text
 ! </SUBROUTINE>
 subroutine read_data_2d_new(filename,fieldname,data,domain,timelevel,&
      append_pelist_name, no_domain,position,tile_count, mosaicfile)
-  IMPLICIT NONE
   character(len=*), intent(in)                 :: filename, fieldname
   real, dimension(:,:), intent(inout)          :: data     !2 dimensional data 
   real, dimension(size(data,1),size(data,2),1) :: data_3d
@@ -1625,7 +1661,6 @@ end subroutine read_data_2d_new
 !.....................................................................
 subroutine read_data_1d_new(filename,fieldname,data,domain,timelevel,&
      append_pelist_name, no_domain, tile_count, mosaicfile)
-  IMPLICIT NONE
   character(len=*), intent(in)           :: filename, fieldname
   real, dimension(:), intent(inout)      :: data     !1 dimensional data 
   real, dimension(size(data,1),1,1)      :: data_3d
@@ -1646,7 +1681,7 @@ end subroutine read_data_1d_new
 
 subroutine read_data_scalar_new(filename,fieldname,data,domain,timelevel,&
      append_pelist_name, no_domain, tile_count, mosaicfile)
-  IMPLICIT NONE
+
 ! this subroutine is for reading a single number
   character(len=*), intent(in)           :: filename, fieldname
   real, intent(inout)                    :: data     !zero dimension data 
@@ -1668,7 +1703,6 @@ end subroutine read_data_scalar_new
 !.....................................................................
 
 function unique_axes(array,dom)
-  IMPLICIT NONE
   integer, dimension(:), intent(in) :: array
   type(domain1d), dimension(:), intent(in), optional :: dom
   integer, dimension(max_axes) :: unique_axes
@@ -1757,6 +1791,7 @@ end subroutine read_idata_2d
 
 !#######################################################################
 
+#ifdef OVERLOAD_C8
 subroutine read_cdata_2d ( unit, data, end)
   
   integer, intent(in)                           :: unit
@@ -1768,6 +1803,7 @@ subroutine read_cdata_2d ( unit, data, end)
 
   include "read_data_2d.inc"
 end subroutine read_cdata_2d
+#endif
 
 !#######################################################################
 
@@ -1785,6 +1821,7 @@ end subroutine read_data_3d
 
 !#######################################################################
 
+#ifdef OVERLOAD_C8
 subroutine read_cdata_3d ( unit, data, end)
 
   integer, intent(in)                              :: unit
@@ -1796,6 +1833,7 @@ subroutine read_cdata_3d ( unit, data, end)
 
   include "read_data_3d.inc"  
 end subroutine read_cdata_3d
+#endif
 
 !#######################################################################
 
@@ -1814,6 +1852,7 @@ end subroutine read_data_4d
 
 !#######################################################################
 
+#ifdef OVERLOAD_C8
 subroutine read_cdata_4d ( unit, data, end)
 
   integer, intent(in)                                           :: unit
@@ -1826,6 +1865,7 @@ subroutine read_cdata_4d ( unit, data, end)
  
   include "read_data_4d.inc"
 end subroutine read_cdata_4d
+#endif
 
 !#######################################################################
 !     -------- routines for writing distributed data --------
@@ -1863,6 +1903,7 @@ end subroutine write_idata_2d
 
 !#######################################################################
 
+#ifdef OVERLOAD_C8
 subroutine write_cdata_2d ( unit, data )
 
   integer, intent(in)                       :: unit
@@ -1871,6 +1912,7 @@ subroutine write_cdata_2d ( unit, data )
 
   include "write_data.inc"
 end subroutine write_cdata_2d
+#endif
 
 !#######################################################################
 
@@ -1885,6 +1927,7 @@ end subroutine write_data_3d
 
 !#######################################################################
 
+#ifdef OVERLOAD_C8
 subroutine write_cdata_3d ( unit, data )
 
   integer, intent(in) :: unit
@@ -1893,6 +1936,7 @@ subroutine write_cdata_3d ( unit, data )
 
   include "write_data.inc"
 end subroutine write_cdata_3d
+#endif
 
 !#######################################################################
 subroutine write_data_4d ( unit, data )
@@ -1915,6 +1959,7 @@ end subroutine write_data_4d
 
 !#######################################################################
 
+#ifdef OVERLOAD_C8
 subroutine write_cdata_4d ( unit, data )
 
   integer, intent(in) :: unit
@@ -1931,6 +1976,7 @@ subroutine write_cdata_4d ( unit, data )
   enddo
   if ( mpp_pe() == mpp_root_pe() ) write (unit) gdata
 end subroutine write_cdata_4d
+#endif
 
 !#######################################################################
 ! private routines (read_eof,do_read)

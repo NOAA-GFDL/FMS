@@ -509,7 +509,7 @@ private
 #ifndef no_8byte_integers
      module procedure mpp_max_int8
 #endif
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
      module procedure mpp_max_real4
 #endif
      module procedure mpp_max_int4
@@ -520,7 +520,7 @@ private
 #ifndef no_8byte_integers
      module procedure mpp_min_int8
 #endif
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
      module procedure mpp_min_real4
 #endif
      module procedure mpp_min_int4
@@ -575,25 +575,29 @@ private
      module procedure mpp_sum_real8_3d
      module procedure mpp_sum_real8_4d
      module procedure mpp_sum_real8_5d
+#ifdef OVERLOAD_C4
      module procedure mpp_sum_cmplx8
      module procedure mpp_sum_cmplx8_scalar
      module procedure mpp_sum_cmplx8_2d
      module procedure mpp_sum_cmplx8_3d
      module procedure mpp_sum_cmplx8_4d
      module procedure mpp_sum_cmplx8_5d
+#endif
      module procedure mpp_sum_int4
      module procedure mpp_sum_int4_scalar
      module procedure mpp_sum_int4_2d
      module procedure mpp_sum_int4_3d
      module procedure mpp_sum_int4_4d
      module procedure mpp_sum_int4_5d
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
      module procedure mpp_sum_real4
      module procedure mpp_sum_real4_scalar
      module procedure mpp_sum_real4_2d
      module procedure mpp_sum_real4_3d
      module procedure mpp_sum_real4_4d
      module procedure mpp_sum_real4_5d
+#endif
+#ifdef OVERLOAD_C4
      module procedure mpp_sum_cmplx4
      module procedure mpp_sum_cmplx4_scalar
      module procedure mpp_sum_cmplx4_2d
@@ -684,12 +688,14 @@ private
      module procedure mpp_transmit_real8_3d
      module procedure mpp_transmit_real8_4d
      module procedure mpp_transmit_real8_5d
+#ifdef OVERLOAD_C8
      module procedure mpp_transmit_cmplx8
      module procedure mpp_transmit_cmplx8_scalar
      module procedure mpp_transmit_cmplx8_2d
      module procedure mpp_transmit_cmplx8_3d
      module procedure mpp_transmit_cmplx8_4d
      module procedure mpp_transmit_cmplx8_5d
+#endif
 #ifndef no_8byte_integers
      module procedure mpp_transmit_int8
      module procedure mpp_transmit_int8_scalar
@@ -704,13 +710,15 @@ private
      module procedure mpp_transmit_logical8_4d
      module procedure mpp_transmit_logical8_5d
 #endif
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
      module procedure mpp_transmit_real4
      module procedure mpp_transmit_real4_scalar
      module procedure mpp_transmit_real4_2d
      module procedure mpp_transmit_real4_3d
      module procedure mpp_transmit_real4_4d
      module procedure mpp_transmit_real4_5d
+#endif
+#ifdef OVERLOAD_C4
      module procedure mpp_transmit_cmplx4
      module procedure mpp_transmit_cmplx4_scalar
      module procedure mpp_transmit_cmplx4_2d
@@ -738,12 +746,14 @@ private
      module procedure mpp_recv_real8_3d
      module procedure mpp_recv_real8_4d
      module procedure mpp_recv_real8_5d
+#ifdef OVERLOAD_C8
      module procedure mpp_recv_cmplx8
      module procedure mpp_recv_cmplx8_scalar
      module procedure mpp_recv_cmplx8_2d
      module procedure mpp_recv_cmplx8_3d
      module procedure mpp_recv_cmplx8_4d
      module procedure mpp_recv_cmplx8_5d
+#endif
 #ifndef no_8byte_integers
      module procedure mpp_recv_int8
      module procedure mpp_recv_int8_scalar
@@ -758,13 +768,15 @@ private
      module procedure mpp_recv_logical8_4d
      module procedure mpp_recv_logical8_5d
 #endif
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
      module procedure mpp_recv_real4
      module procedure mpp_recv_real4_scalar
      module procedure mpp_recv_real4_2d
      module procedure mpp_recv_real4_3d
      module procedure mpp_recv_real4_4d
      module procedure mpp_recv_real4_5d
+#endif
+#ifdef OVERLOAD_C4
      module procedure mpp_recv_cmplx4
      module procedure mpp_recv_cmplx4_scalar
      module procedure mpp_recv_cmplx4_2d
@@ -792,12 +804,14 @@ private
      module procedure mpp_send_real8_3d
      module procedure mpp_send_real8_4d
      module procedure mpp_send_real8_5d
+#ifdef OVERLOAD_C8
      module procedure mpp_send_cmplx8
      module procedure mpp_send_cmplx8_scalar
      module procedure mpp_send_cmplx8_2d
      module procedure mpp_send_cmplx8_3d
      module procedure mpp_send_cmplx8_4d
      module procedure mpp_send_cmplx8_5d
+#endif
 #ifndef no_8byte_integers
      module procedure mpp_send_int8
      module procedure mpp_send_int8_scalar
@@ -812,13 +826,15 @@ private
      module procedure mpp_send_logical8_4d
      module procedure mpp_send_logical8_5d
 #endif
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
      module procedure mpp_send_real4
      module procedure mpp_send_real4_scalar
      module procedure mpp_send_real4_2d
      module procedure mpp_send_real4_3d
      module procedure mpp_send_real4_4d
      module procedure mpp_send_real4_5d
+#endif
+#ifdef OVERLOAD_C4
      module procedure mpp_send_cmplx4
      module procedure mpp_send_cmplx4_scalar
      module procedure mpp_send_cmplx4_2d
@@ -879,12 +895,14 @@ private
      module procedure mpp_broadcast_real8_3d
      module procedure mpp_broadcast_real8_4d
      module procedure mpp_broadcast_real8_5d
+#ifdef OVERLOAD_C8
      module procedure mpp_broadcast_cmplx8
      module procedure mpp_broadcast_cmplx8_scalar
      module procedure mpp_broadcast_cmplx8_2d
      module procedure mpp_broadcast_cmplx8_3d
      module procedure mpp_broadcast_cmplx8_4d
      module procedure mpp_broadcast_cmplx8_5d
+#endif
 #ifndef no_8byte_integers
      module procedure mpp_broadcast_int8
      module procedure mpp_broadcast_int8_scalar
@@ -899,13 +917,15 @@ private
      module procedure mpp_broadcast_logical8_4d
      module procedure mpp_broadcast_logical8_5d
 #endif
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
      module procedure mpp_broadcast_real4
      module procedure mpp_broadcast_real4_scalar
      module procedure mpp_broadcast_real4_2d
      module procedure mpp_broadcast_real4_3d
      module procedure mpp_broadcast_real4_4d
      module procedure mpp_broadcast_real4_5d
+#endif
+#ifdef OVERLOAD_C4
      module procedure mpp_broadcast_cmplx4
      module procedure mpp_broadcast_cmplx4_scalar
      module procedure mpp_broadcast_cmplx4_2d
@@ -992,19 +1012,23 @@ private
      module procedure mpp_chksum_r8_3d
      module procedure mpp_chksum_r8_4d
      module procedure mpp_chksum_r8_5d
+#ifdef OVERLOAD_C8
      module procedure mpp_chksum_c8_0d
      module procedure mpp_chksum_c8_1d
      module procedure mpp_chksum_c8_2d
      module procedure mpp_chksum_c8_3d
      module procedure mpp_chksum_c8_4d
      module procedure mpp_chksum_c8_5d
-#ifndef no_4byte_reals
+#endif
+#ifdef OVERLOAD_R4
      module procedure mpp_chksum_r4_0d
      module procedure mpp_chksum_r4_1d
      module procedure mpp_chksum_r4_2d
      module procedure mpp_chksum_r4_3d
      module procedure mpp_chksum_r4_4d
      module procedure mpp_chksum_r4_5d
+#endif
+#ifdef OVERLOAD_C4
      module procedure mpp_chksum_c4_0d
      module procedure mpp_chksum_c4_1d
      module procedure mpp_chksum_c4_2d
@@ -1060,6 +1084,11 @@ private
   integer, parameter :: MPI_INTEGER8=MPI_INTEGER
 #endif
 #endif use_libMPI
+#ifdef use_MPI_SMA
+#include <mpp/shmem.fh>
+  integer :: pSync(SHMEM_BARRIER_SYNC_SIZE)
+  pointer( p_pSync, pSync ) !used by SHPALLOC
+#endif
 
   integer            :: clock0    !measures total runtime from mpp_init to mpp_exit
   integer            :: mpp_stack_size=0, mpp_stack_hwm=0
@@ -1075,7 +1104,7 @@ private
   character(len=128), public :: version= &
        '$Id mpp.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: omsk $'
+       '$Name: omsk_2007_10 $'
 
   contains
 #include <system_clock.h>

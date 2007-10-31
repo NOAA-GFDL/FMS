@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_define.inc,v 15.0 2007/08/14 04:14:40 fms Exp $
+! $Id: mpp_domains_define.inc,v 15.0.2.1.2.1.2.2 2007/10/09 15:38:08 z1l Exp $
 
 
   ! <SUBROUTINE NAME="mpp_define_layout2D" INTERFACE="mpp_define_layout">
@@ -491,6 +491,7 @@
     !Considering mosaic, the following will only be done on the pe in the pelist
     !when there is only one tile, all the current pe will be in the pelist.
     if( ANY(pes == mpp_pe()) ) then
+       domain%is_tile_root_pe  = mpp_pe() .eq. pes(0)
        allocate( mask(0:ndivx-1,0:ndivy-1) )
        mask = .TRUE.
        if( PRESENT(maskmap) )then
@@ -622,10 +623,10 @@
        ntile = size(domain%x(:))
        ! Because of mosaic, we need to replace mpp_transmit with mpp_send and mpp_recv.
        !--- pack the domain information and send to other pe.
-       msgsize = ntile*19
+       msgsize = ntile*20
        allocate(send_buf(msgsize))
        do n = 1, ntile
-          nn = (n-1)*19
+          nn = (n-1)*20
           call mpp_get_compute_domain( domain, send_buf(nn+1), send_buf(nn+2), send_buf(nn+3), send_buf(nn+4), tile_count = n )
           call mpp_get_data_domain   ( domain, send_buf(nn+5), send_buf(nn+6), send_buf(nn+7), send_buf(nn+8), tile_count = n )
           call mpp_get_global_domain ( domain, send_buf(nn+9), send_buf(nn+10), send_buf(nn+11), send_buf(nn+12), tile_count = n )
@@ -633,6 +634,11 @@
           send_buf(nn+17) = domain%tile_id(n)
           send_buf(nn+18) = domain%x(n)%pos
           send_buf(nn+19) = domain%y(n)%pos
+          if(domain%is_tile_root_pe) then
+             send_buf(nn+20) = 1
+          else
+             send_buf(nn+20) = 0
+          end if
        end do
 
        !the following are only used for storage of remote compute and data domain info
@@ -653,11 +659,11 @@
           m = mod(pos+i,nlist) 
           domain%list(m)%pe = pesall(m)
           ntile = size(domain%list(m)%x(:))
-          msgsize = 19*ntile
+          msgsize = 20*ntile
           allocate(recv_buf(msgsize))
           call mpp_recv(recv_buf(1), glen=msgsize, from_pe=pesall(m) ) 
           do n = 1, ntile
-             nn = (n-1)*19
+             nn = (n-1)*20
              domain%list(m)%x(n)%compute%begin = recv_buf(nn+1)
              domain%list(m)%x(n)%compute%end   = recv_buf(nn+2)
              domain%list(m)%y(n)%compute%begin = recv_buf(nn+3)
@@ -677,6 +683,11 @@
              domain%list(m)%tile_id(n)         = recv_buf(nn+17)
              domain%list(m)%x(n)%pos           = recv_buf(nn+18)
              domain%list(m)%y(n)%pos           = recv_buf(nn+19)
+             if(recv_buf(nn+20) == 1) then
+                domain%list(m)%is_tile_root_pe = .true.
+             else
+                domain%list(m)%is_tile_root_pe = .false.
+             end if
              domain%list(m)%pe                 = pesall(m)
           end do
           deallocate(recv_buf)
@@ -709,6 +720,16 @@
        domain%shalo = shalosz; domain%nhalo = nhalosz
 
        allocate(domain%T, domain%E, domain%N, domain%C)
+       allocate(domain%T%check, domain%C%check, domain%E%check, domain%N%check )
+       allocate(domain%T%check%send(0:nlist-1), domain%T%check%recv(0:nlist-1))
+       allocate(domain%C%check%send(0:nlist-1), domain%C%check%recv(0:nlist-1))
+       allocate(domain%E%check%send(0:nlist-1), domain%E%check%recv(0:nlist-1))
+       allocate(domain%N%check%send(0:nlist-1), domain%N%check%recv(0:nlist-1))
+       domain%T%check%send(:)%count = 0; domain%T%check%recv(:)%count = 0
+       domain%C%check%send(:)%count = 0; domain%C%check%recv(:)%count = 0
+       domain%E%check%send(:)%count = 0; domain%E%check%recv(:)%count = 0       
+       domain%N%check%send(:)%count = 0; domain%N%check%recv(:)%count = 0
+
        call set_domain2d(domain, domain%T, CENTER, whalosz, ehalosz, shalosz, nhalosz, 0,           0)      
        call set_domain2d(domain, domain%C, CORNER, whalosz, ehalosz, shalosz, nhalosz, ishift, jshift)
        call set_domain2d(domain, domain%E, EAST,   whalosz, ehalosz, shalosz, nhalosz, ishift,      0)
@@ -719,7 +740,6 @@
        call compute_overlaps(domain%N,      0, jshift)
        !--- when ncontacts is nonzero, set_checkbound_point will be called in mpp_define
        if(domain%symmetry .AND. domain%ncontacts == 0 ) then
-          allocate(domain%C%check, domain%E%check, domain%N%check )
           call set_checkbound( domain%C, domain%C%check )
           call set_checkbound( domain%E, domain%E%check )
           call set_checkbound( domain%N, domain%N%check )
@@ -820,6 +840,7 @@
     integer                       :: whalosz, ehalosz, shalosz, nhalosz
     type(domain1d), pointer       :: domx => NULL(), domy => NULL()
 
+    domain_out%is_tile_root_pe = domain_in%is_tile_root_pe
     whalosz = domain_in%whalo
     ehalosz = domain_in%ehalo
     shalosz = domain_in%shalo
@@ -912,6 +933,7 @@
        domain_out%list(n)%overlap          = .FALSE.
        domain_out%list(n)%pe               = domain_in%list(n)%pe
        domain_out%list(n)%tile_id          = domain_in%list(n)%tile_id
+       domain_out%list(n)%is_tile_root_pe  = domain_in%list(n)%is_tile_root_pe
        do tNbr = 1, ntileNbr
           domx => domain_out%list(n)%x(tNbr)
           domy => domain_out%list(n)%y(tNbr)
@@ -1240,7 +1262,6 @@
 
     !--- set the overlapping for boundary check if domain is symmetry
     if(domain%symmetry ) then
-       allocate(domain%C%check, domain%E%check, domain%N%check )
        call set_checkbound( domain%C, domain%C%check )
        call set_checkbound( domain%E, domain%E%check )
        call set_checkbound( domain%N, domain%N%check )
@@ -1844,6 +1865,19 @@
                            i=is; is = isg+ieg-ie-1+ishift; ie = isg+ieg-i-1+ishift
                         end select
                         call define_list_overlap( domain%list(m)%send(tNbr,tMe,7), is, ie, js, je, isc, iec, jsc, jec)           
+                        is = max(is, isc); ie = min(ie, iec)
+                        js = max(js, jsc); je = min(je, jec)
+                        if(ie.GE.is .AND. je.GE.js )then
+                           domain%check%send(m)%count = 1
+                           allocate(domain%check%send(m)%is(1),  domain%check%send(m)%ie(1) )
+                           allocate(domain%check%send(m)%js(1),  domain%check%send(m)%je(1) )
+                           allocate(domain%check%send(m)%dir(1), domain%check%send(m)%rotation(1) )
+                           allocate(domain%check%send(m)%tileMe(1))   
+                           domain%check%send(m)%is(1) = is; domain%check%send(m)%ie(1) = ie
+                           domain%check%send(m)%js(1) = js; domain%check%send(m)%je(1) = je
+                           domain%check%send(m)%dir(1) = 4; domain%check%send(m)%rotation = ONE_HUNDRED_EIGHTY
+                           domain%check%send(m)%tileMe(1) = tMe
+                        end if                        
                      end if
                   end if
                end do
@@ -1868,6 +1902,19 @@
                            i=is; is = isg+ieg-ie-1+ishift; ie = isg+ieg-i-1+ishift
                         end select
                         call define_list_overlap( domain%list(m)%recv(tMe,tNbr,7), is, ie, js, je, isd, ied, jsd, jed, .TRUE.) 
+                        is = max(is, isd); ie = min(ie, ied)
+                        js = max(js, jsd); je = min(je, jed)
+                        if(ie.GE.is .AND. je.GE.js )then
+                           domain%check%recv(m)%count = 1
+                           allocate(domain%check%recv(m)%is(1),  domain%check%recv(m)%ie(1) )
+                           allocate(domain%check%recv(m)%js(1),  domain%check%recv(m)%je(1) )
+                           allocate(domain%check%recv(m)%dir(1), domain%check%recv(m)%rotation(1) )
+                           allocate(domain%check%recv(m)%tileMe(1))   
+                           domain%check%recv(m)%is(1) = is; domain%check%recv(m)%ie(1) = ie
+                           domain%check%recv(m)%js(1) = js; domain%check%recv(m)%je(1) = je
+                           domain%check%recv(m)%dir(1) = 4; domain%check%recv(m)%rotation = ONE_HUNDRED_EIGHTY
+                           domain%check%recv(m)%tileMe(1) = tMe
+                        end if                   
                      end if
                   end if
                end do
@@ -3144,10 +3191,7 @@
 
     nlist = size(domain%list(:))
     ntileMe = size(domain%x(:))
-    allocate(check%send(0:nlist-1))
-    allocate(check%recv(0:nlist-1))
-    check%send(:)%count = 0
-    check%recv(:)%count = 0
+
     !--- loop over the list of domains to find the boundary overlap for send
     do list = 0, nlist-1
        m = mod( domain%pos+list, nlist )
@@ -3202,20 +3246,7 @@
              end if
           end do ! end do tNbr = 1, ntileNbr
        end do ! end do tMe = 1, ntileMe
-       if(count>0) then
-          check%send(m)%count = count
-          allocate(check%send(m)%is(count),  check%send(m)%ie(count) )
-          allocate(check%send(m)%js(count),  check%send(m)%je(count) )
-          allocate(check%send(m)%dir(count), check%send(m)%rotation(count) )
-          allocate(check%send(m)%tileMe(count))
-          check%send(m)%is(:)       = is(1:count)
-          check%send(m)%ie(:)       = ie(1:count)
-          check%send(m)%js(:)       = js(1:count)
-          check%send(m)%je(:)       = je(1:count)
-          check%send(m)%dir(:)      = dir(1:count)
-          check%send(m)%tileMe(:)   = tileMe(1:count)
-          check%send(m)%rotation(:) = rotation(1:count)
-       end if
+       if(count>0) call assign_bound_data(check%send(m), count, is, ie, js, je, dir, tileMe, rotation)  
     end do ! end  do list = 0, nlist
 
     do list = 0, nlist-1
@@ -3253,23 +3284,56 @@
              end if
           end do ! end do tNbr = 1, ntileNbr
        end do ! end do tMe = 1, ntileMe
-       if(count>0) then
-          check%recv(m)%count = count
-          allocate(check%recv(m)%is(count),     check%recv(m)%ie(count) )
-          allocate(check%recv(m)%js(count),     check%recv(m)%je(count) )
-          allocate(check%recv(m)%dir(count)  )
-          allocate(check%recv(m)%tileMe(count), check%recv(m)%rotation(count) )
-          check%recv(m)%is(:)       = is(1:count)
-          check%recv(m)%ie(:)       = ie(1:count)
-          check%recv(m)%js(:)       = js(1:count)
-          check%recv(m)%je(:)       = je(1:count)
-          check%recv(m)%dir(:)      = dir(1:count)
-          check%recv(m)%tileMe(:)   = tileMe(1:count)
-          check%recv(m)%rotation(:) = rotation(1:count)
-       end if
+       if(count>0) call assign_bound_data(check%recv(m), count, is, ie, js, je, dir, tileMe, rotation)  
     end do ! end  do list = 0, nlist
 
   end subroutine set_checkbound
+
+  !#############################################################################
+  subroutine assign_bound_data(bound, count, is, ie, js, je, dir, tileMe, rotation)
+     type(boundary),     intent(inout) :: bound
+     integer,               intent(in) :: count
+     integer, dimension(:), intent(in) :: is, ie, js, je, dir, tileMe, rotation
+     integer, dimension(bound%count+1) :: is_old, ie_old, js_old, je_old, dir_old, tileMe_old, rotation_old
+     integer                           :: count_old, count_now, n
+
+
+     if(count ==0) return
+
+     count_old = bound%count
+     if(count_old > 0) then
+        is_old(1:count_old)       = bound%is(1:count_old) 
+        ie_old(1:count_old)       = bound%ie(1:count_old) 
+        js_old(1:count_old)       = bound%js(1:count_old) 
+        je_old(1:count_old)       = bound%je(1:count_old) 
+        dir_old(1:count_old)      = bound%dir(1:count_old)
+        tileMe_old(1:count_old)   = bound%tileMe(1:count_old)
+        rotation_old(1:count_old) = bound%rotation(1:count_old)
+        deallocate(bound%is, bound%ie, bound%js, bound%je)
+        deallocate(bound%dir, bound%tileMe, bound%rotation ) 
+     end if
+     count_now = count_old + count
+     allocate(bound%is(count_now), bound%ie(count_now), bound%js(count_now), bound%je(count_now) )
+     allocate(bound%dir(count_now), bound%tileMe(count_now), bound%rotation(count_now) )
+     do n = 1, count_old
+        bound%is(n)       = is_old(n)
+        bound%ie(n)       = ie_old(n)
+        bound%js(n)       = js_old(n)
+        bound%je(n)       = je_old(n)
+        bound%dir(n)      = dir_old(n)
+        bound%tileMe(n)   = tileMe_old(n)
+        bound%rotation(n) = rotation_old(n)
+     end do
+
+     bound%is(count_old+1:count_now)       = is(1:count)
+     bound%ie(count_old+1:count_now)       = ie(1:count)
+     bound%js(count_old+1:count_now)       = js(1:count)
+     bound%je(count_old+1:count_now)       = je(1:count)
+     bound%dir(count_old+1:count_now)      = dir(1:count)
+     bound%tileMe(count_old+1:count_now)   = tileMe(1:count)
+     bound%rotation(count_old+1:count_now) = rotation(1:count)
+
+  end subroutine assign_bound_data
 
   !#############################################################################
   !--- set up the overlapping for boundary if the domain is symmetry.

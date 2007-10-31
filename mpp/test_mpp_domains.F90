@@ -4429,4 +4429,7 @@ end subroutine test_modify_domain
   end subroutine test_define_mosaic_pelist
 
 end program test
+#else
+module null_mpp_domains_test
+end module
 #endif

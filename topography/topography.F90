@@ -113,8 +113,8 @@ end interface
 
 !-----------------------------------------------------------------------
 
- character(len=128) :: version = '$Id: topography.F90,v 15.0 2007/08/14 04:15:56 fms Exp $'
- character(len=128) :: tagname = '$Name: omsk $'
+ character(len=128) :: version = '$Id: topography.F90,v 15.0.2.1 2007/08/23 15:19:48 wfc Exp $'
+ character(len=128) :: tagname = '$Name: omsk_2007_10 $'
 
  logical :: module_is_initialized = .FALSE.
 
@@ -781,7 +781,7 @@ end interface
 
 ! note: ipts,jpts,unit are global
 
-  if ( file_exist(trim(ifile)) .AND. topog_file(nc-2:nc) == '.nc') then
+  if ( file_exist(trim(ifile)) .AND. ifile(nc-2:nc) == '.nc') then
      call read_data(trim(ifile), 'xdat', xdat, no_domain=.true.)
      call read_data(trim(ifile), 'ydat', ydat, no_domain=.true.)
      call read_data(trim(ifile), 'zdat', zdat, no_domain=.true.)

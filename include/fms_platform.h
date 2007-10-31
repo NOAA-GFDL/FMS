@@ -97,6 +97,16 @@
 #define NF_GET_ATT_REAL nf_get_att_double
 #endif
 
+#ifdef use_SGI_GSM
+!MPI_SGI_Globaltr requires MPI
+#define use_libMPI
+#endif
+
+#ifdef use_MPI_SMA
+!embedded shmem within MPI
+#define use_libMPI
+#endif
+
 #if defined(__INTEL_COMPILER)
 #define _F95
 #define _F2000
@@ -120,6 +130,11 @@
 #define _ALLOCATABLE POINTER
 #define _NULL =>NULL()
 #define _ALLOCATED ASSOCIATED
+#endif
+
+#ifdef no_4byte_reals
+#undef OVERLOAD_R4
+#undef OVERLOAD_C4
 #endif
 
 ! __FMS_PLATFORM_

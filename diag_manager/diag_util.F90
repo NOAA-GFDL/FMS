@@ -34,7 +34,7 @@ public get_subfield_size, log_diag_field_info, update_bounds, check_out_of_bound
        check_duplicate_output_fields, get_date_dif
 
 character(len=128),private  :: version = '$Id: diag_util.F90,v 15.0 2007/08/14 04:13:33 fms Exp $'
-character(len=128),private  :: tagname = '$Name: omsk $'
+character(len=128),private  :: tagname = '$Name: omsk_2007_10 $'
 
 contains
 

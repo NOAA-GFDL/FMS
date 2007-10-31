@@ -13,9 +13,9 @@ module mpp_data_mod
   character(len=128), public :: version= &
        '$Id mpp_data.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: omsk $'
+       '$Name: omsk_2007_10 $'
 
-#if defined(use_libSMA) || defined(use_libGSM)
+#if defined(use_libSMA) || defined(use_MPI_SMA)
 #include <mpp/shmem.fh>
 #endif
 
@@ -38,10 +38,12 @@ module mpp_data_mod
 
 #ifdef use_libSMA
 #include <mpp_data_sma.inc>
-#elif use_libMPI
+#else
+#ifdef use_libMPI
 #include <mpp_data_mpi.inc>
 #else
 #include <mpp_data_nocomm.inc>
+#endif
 #endif
 
 end module mpp_data_mod

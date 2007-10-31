@@ -191,7 +191,7 @@ program test   !test various aspects of mpp_mod
       call random_number(d)
   end if
   call mpp_sync()
-  call test_shared_pointers(locd,n)
+!  call test_shared_pointers(locd,n)
 
 #ifdef use_MPI_GSM
   call mpp_gsm_free( locd )
@@ -213,7 +213,8 @@ contains
 
     p = locd
     print *, 'TEST_SHARED_POINTERS: pe, locd=', pe, locd
-    print *, 'TEST_SHARED_POINTERS: pe, chksum(d)=', pe, mpp_chksum(dd,(/pe/))
+!    print *, 'TEST_SHARED_POINTERS: pe, chksum(d)=', pe, mpp_chksum(dd,(/pe/))
+    print *, 'TEST_SHARED_POINTERS: pe, sum(d)=', pe, sum(dd)
     return
   end subroutine test_shared_pointers
 end program test

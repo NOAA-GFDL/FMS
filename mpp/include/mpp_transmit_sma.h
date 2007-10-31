@@ -62,6 +62,7 @@
           if( current_clock.NE.0 )call increment_current_clock(EVENT_WAIT)
 #ifdef __ia64
           data_loc = shmem_ptr(put_data,pe)
+!          write(0,*)'pe, data_loc, loc(put_data)=', pe, data_loc, loc(put_data)
 #else
           data_loc = LOC(put_data)
 #endif

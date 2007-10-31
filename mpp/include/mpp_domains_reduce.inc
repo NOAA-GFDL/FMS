@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_reduce.inc,v 15.0 2007/08/14 04:14:44 fms Exp $
+! $Id: mpp_domains_reduce.inc,v 15.0.2.1 2007/08/23 23:34:37 vb Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -44,7 +44,7 @@
 #define MPP_REDUCE_ mpp_min
 #include <mpp_global_reduce.h>
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_GLOBAL_REDUCE_2D_
 #define MPP_GLOBAL_REDUCE_2D_ mpp_global_max_r4_2d
 #undef MPP_GLOBAL_REDUCE_3D_
@@ -194,6 +194,7 @@
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #include <mpp_global_sum.h>
 
+#ifdef OVERLOAD_C8
 #undef MPP_GLOBAL_SUM_
 #define MPP_GLOBAL_SUM_ mpp_global_sum_c8_2d
 #undef MPP_EXTRA_INDICES_
@@ -225,8 +226,9 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #include <mpp_global_sum.h>
+#endif
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_GLOBAL_SUM_
 #define MPP_GLOBAL_SUM_ mpp_global_sum_r4_2d
 #undef MPP_EXTRA_INDICES_
@@ -258,7 +260,9 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #include <mpp_global_sum.h>
+#endif
 
+#ifdef OVERLOAD_C4
 #undef MPP_GLOBAL_SUM_
 #define MPP_GLOBAL_SUM_ mpp_global_sum_c4_2d
 #undef MPP_EXTRA_INDICES_
@@ -397,6 +401,7 @@
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #include <mpp_global_sum_tl.h>
 
+#ifdef OVERLOAD_C8
 #undef MPP_GLOBAL_SUM_TL_
 #define MPP_GLOBAL_SUM_TL_ mpp_global_sum_tl_c8_2d
 #undef MPP_EXTRA_INDICES_
@@ -428,8 +433,9 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #include <mpp_global_sum_tl.h>
+#endif
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_GLOBAL_SUM_TL_
 #define MPP_GLOBAL_SUM_TL_ mpp_global_sum_tl_r4_2d
 #undef MPP_EXTRA_INDICES_
@@ -461,7 +467,9 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #include <mpp_global_sum_tl.h>
+#endif
 
+#ifdef OVERLOAD_C4
 #undef MPP_GLOBAL_SUM_TL_
 #define MPP_GLOBAL_SUM_TL_ mpp_global_sum_tl_c4_2d
 #undef MPP_EXTRA_INDICES_
@@ -601,6 +609,7 @@
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #include <mpp_global_sum_ad.h>
 
+#ifdef OVERLOAD_C8
 #undef MPP_GLOBAL_SUM_AD_
 #define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_c8_2d
 #undef MPP_EXTRA_INDICES_
@@ -632,8 +641,9 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #include <mpp_global_sum_ad.h>
+#endif
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_GLOBAL_SUM_AD_
 #define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_r4_2d
 #undef MPP_EXTRA_INDICES_
@@ -665,7 +675,9 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #include <mpp_global_sum_ad.h>
+#endif
 
+#ifdef OVERLOAD_C4
 #undef MPP_GLOBAL_SUM_AD_
 #define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_c4_2d
 #undef MPP_EXTRA_INDICES_
@@ -784,6 +796,7 @@
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #include <mpp_global_field.h>
 
+#ifdef OVERLOAD_C8
 #undef MPP_GLOBAL_FIELD_2D_
 #define MPP_GLOBAL_FIELD_2D_ mpp_global_field2D_c8_2d
 #undef MPP_GLOBAL_FIELD_3D_
@@ -795,6 +808,7 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #include <mpp_global_field.h>
+#endif
 
 #ifndef no_8byte_integers
 #undef MPP_GLOBAL_FIELD_2D_
@@ -822,7 +836,7 @@
 #include <mpp_global_field.h>
 #endif
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_GLOBAL_FIELD_2D_
 #define MPP_GLOBAL_FIELD_2D_ mpp_global_field2D_r4_2d
 #undef MPP_GLOBAL_FIELD_3D_
@@ -834,7 +848,9 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #include <mpp_global_field.h>
+#endif
 
+#ifdef OVERLOAD_C4
 #undef MPP_GLOBAL_FIELD_2D_
 #define MPP_GLOBAL_FIELD_2D_ mpp_global_field2D_c4_2d
 #undef MPP_GLOBAL_FIELD_3D_
@@ -882,6 +898,7 @@
 #include <mpp_do_global_field_old.h>
 #include <mpp_do_global_field_new.h>                                    
 
+#ifdef OVERLOAD_C8
 #undef MPP_DO_GLOBAL_FIELD_3Dnew_
 #define MPP_DO_GLOBAL_FIELD_3Dnew_ mpp_do_global_field2Dnew_c8_3d
 #undef MPP_DO_GLOBAL_FIELD_3Dold_
@@ -890,6 +907,7 @@
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #include <mpp_do_global_field_old.h>
 #include <mpp_do_global_field_new.h>                                    
+#endif
 
 #ifndef no_8byte_integers
 #undef MPP_DO_GLOBAL_FIELD_3Dnew_
@@ -909,10 +927,9 @@
 #define MPP_TYPE_ logical(LONG_KIND)
 #include <mpp_do_global_field_old.h>
 #include <mpp_do_global_field_new.h>                                    
-
 #endif
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_DO_GLOBAL_FIELD_3Dnew_
 #define MPP_DO_GLOBAL_FIELD_3Dnew_ mpp_do_global_field2Dnew_r4_3d
 #undef MPP_DO_GLOBAL_FIELD_3Dold_
@@ -921,7 +938,9 @@
 #define MPP_TYPE_ real(FLOAT_KIND)
 #include <mpp_do_global_field_old.h>
 #include <mpp_do_global_field_new.h>                                    
+#endif
 
+#ifdef OVERLOAD_C4
 #undef MPP_DO_GLOBAL_FIELD_3Dnew_
 #define MPP_DO_GLOBAL_FIELD_3Dnew_ mpp_do_global_field2Dnew_c4_3d
 #undef MPP_DO_GLOBAL_FIELD_3Dold_
@@ -930,7 +949,6 @@
 #define MPP_TYPE_ complex(FLOAT_KIND)
 #include <mpp_do_global_field_old.h>
 #include <mpp_do_global_field_new.h>                                    
-
 #endif
 
 #undef MPP_DO_GLOBAL_FIELD_3Dnew_

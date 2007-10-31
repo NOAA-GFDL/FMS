@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_mpi.inc,v 15.0 2007/08/14 04:14:31 fms Exp $
+! $Id: mpp_comm_mpi.inc,v 15.0.2.2 2007/09/20 19:42:50 vb Exp $
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -29,6 +29,11 @@
   endif
   call MPI_COMM_RANK( mpp_comm_private, pe,   error )
   call MPI_COMM_SIZE( mpp_comm_private, npes, error )
+#ifdef use_MPI_SMA
+  call SHMEM_BARRIER_ALL()
+  call SHPALLOC( p_pSync, SHMEM_BARRIER_SYNC_SIZE, error, -1 )
+  call SHMEM_BARRIER_ALL()
+#endif
 
   allocate( request(0:npes-1) )
   request(:) = MPI_REQUEST_NULL
@@ -200,15 +205,28 @@ subroutine mpp_exit()
 end subroutine mpp_exit
 
 !#######################################################################
- !--- dummy routine, should never been called -------------------------
     subroutine mpp_malloc( ptr, newlen, len )
       integer, intent(in)    :: newlen
       integer, intent(inout) :: len
+#ifdef use_MPI_SMA
       real                   :: dummy
       pointer( ptr, dummy )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_MALLOC: You must first call mpp_init.' )
+!use existing allocation if it is enough
+      if( newlen.LE.len )return
 
-      call mpp_error(FATAL,'mpp_malloc: Should not been called when use_libMPI is defined')
-
+      call SHMEM_BARRIER_ALL()
+!if the pointer is already allocated, deallocate
+!      if( len.NE.0 )call SHPDEALLC( ptr, error_8, -1 ) !BWA: error_8 instead of error, see PV 682618 (fixed in mpt.1.3.0.1)
+      if( len.NE.0 )call SHPDEALLC( ptr, error, -1 )
+!allocate new length: assume that the array is KIND=8
+      call SHPALLOC( ptr, newlen, error, -1 )
+      len = newlen
+      call SHMEM_BARRIER_ALL()
+#else
+      integer(POINTER_KIND), intent(in) :: ptr
+      call mpp_error( FATAL, 'mpp_malloc: requires use_MPI_SMA' )
+#endif
       return
     end subroutine mpp_malloc
 
@@ -328,6 +346,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_REAL8
 #include <mpp_transmit_mpi.h>
 
+#ifdef OVERLOAD_C8
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_cmplx8
 #undef MPP_TRANSMIT_SCALAR_
@@ -383,8 +402,9 @@ end subroutine mpp_gsm_free
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_DOUBLE_COMPLEX
 #include <mpp_transmit_mpi.h>
+#endif
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_real4
 #undef MPP_TRANSMIT_SCALAR_
@@ -440,7 +460,9 @@ end subroutine mpp_gsm_free
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
 #include <mpp_transmit_mpi.h>
+#endif
 
+#ifdef OVERLOAD_C4
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_cmplx4
 #undef MPP_TRANSMIT_SCALAR_
@@ -743,7 +765,7 @@ end subroutine mpp_gsm_free
 #define MPI_REDUCE_ MPI_MAX
 #include <mpp_reduce_mpi.h>
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_max_real4
 #undef MPP_TYPE_
@@ -795,7 +817,7 @@ end subroutine mpp_gsm_free
 #define MPI_REDUCE_ MPI_MIN
 #include <mpp_reduce_mpi.h>
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_min_real4
 #undef MPP_TYPE_
@@ -855,6 +877,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_BYTELEN_ 8
 #include <mpp_sum_mpi.h>
 
+#ifdef OVERLOAD_C8
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_cmplx8
 #undef MPP_SUM_SCALAR_
@@ -874,8 +897,9 @@ end subroutine mpp_gsm_free
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 16
 #include <mpp_sum_mpi.h>
+#endif
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_real4
 #undef MPP_SUM_SCALAR_
@@ -895,7 +919,9 @@ end subroutine mpp_gsm_free
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #include <mpp_sum_mpi.h>
+#endif
 
+#ifdef OVERLOAD_C4
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_cmplx4
 #undef MPP_SUM_SCALAR_

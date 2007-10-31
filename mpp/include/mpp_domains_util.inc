@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_util.inc,v 15.0 2007/08/14 04:14:46 fms Exp $
+! $Id: mpp_domains_util.inc,v 15.0.4.1 2007/09/21 18:38:06 z1l Exp $
 
   ! <SUBROUTINE NAME="mpp_domains_set_stack_size">
   !  <OVERVIEW>
@@ -1036,14 +1036,7 @@ end subroutine mpp_get_domain_shift
      type(domain2d), intent(in) :: domain
      logical                    :: mpp_domain_is_root_pe
 
-     if(size(domain%tile_id(:)) > 1) then
-        mpp_domain_is_root_pe = .true.
-     else if(domain%x(1)%compute%begin == domain%x(1)%global%begin .AND.  & 
-             domain%y(1)%compute%begin == domain%y(1)%global%begin ) then
-        mpp_domain_is_root_pe = .true.
-     else
-        mpp_domain_is_root_pe = .false.
-     end if
+     mpp_domain_is_root_pe = domain%is_tile_root_pe;
 
   end function mpp_domain_is_root_pe
 

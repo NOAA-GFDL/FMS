@@ -63,6 +63,250 @@
 #ifdef use_CRI_pointers
       ptr = LOC(mpp_domains_stack)
 #endif
+
+      !--- if debug_update_level is not NO_DEBUG, check the consistency on the bounds 
+      !--- (domain is symmetry or folded north edge). North bound will be checked when north edge is folded.
+      !--- when domain is symmetry, For data on T-cell, no check is needed; for data on E-cell, 
+      !--- data on East and West boundary will be checked ; For data on N-cell, data on North and South 
+      !--- boundary will be checked; For data on C-cell, data on West, East, South, North will be checked.
+      !--- The check will be done in the following way: Western boundary data sent to Eastern boundary to check
+      !--- and Southern boundary to check
+
+      if( debug_update_level .NE. NO_CHECK ) then      
+         if(present(name)) then
+            field_name = name
+         else
+            field_name = "un-named"
+         end if
+
+         !--- send the data
+         do list = 0,nlist-1
+            m = mod( domainx%pos+list, nlist )
+            check_x => domainx%check%send(m)
+            check_y => domainy%check%send(m)
+            pos = buffer_pos
+            do n = 1, check_x%count
+               is = check_x%is(n); ie = check_x%ie(n)
+               js = check_x%js(n); je = check_x%je(n)
+               select case( check_x%rotation(n) )
+               case(ZERO)
+                  do k = 1,ke  
+                     do j = js, je
+                        do i = is, ie
+                           pos = pos + 1
+                           buffer(pos) = fieldx(i,j,k)
+                        end do
+                     end do
+                  end do
+               case(MINUS_NINETY)
+                  if( BTEST(update_flags,SCALAR_BIT) ) then
+                     do k = 1, ke
+                        do j = je, js, -1
+                           do i = is, ie
+                              pos = pos + 1
+                              buffer(pos) = fieldy(i,j,k)
+                           end do
+                        end do
+                     end do
+                  else
+                     do k = 1, ke
+                        do j = je, js, -1
+                           do i = is, ie
+                              pos = pos + 1
+                              buffer(pos) = -fieldy(i,j,k)
+                           end do
+                        end do
+                     end do
+                  end if
+               case(NINETY)
+                  do k = 1, ke
+                     do j = js, je
+                        do i = ie, is, -1
+                           pos = pos + 1
+                           buffer(pos) = fieldy(i,j,k)
+                        end do
+                     end do
+                  end do
+               case(ONE_HUNDRED_EIGHTY) 
+                  if( BTEST(update_flags,SCALAR_BIT) ) then
+                     do k = 1, ke
+                        do j = je, js, -1
+                           do i = ie, is, -1
+                              pos = pos + 1
+                              buffer(pos) = fieldx(i,j,k)
+                           end do
+                        end do
+                     end do
+                  else
+                     do k = 1, ke
+                        do j = je, js, -1
+                           do i = ie, is, -1
+                              pos = pos + 1
+                              buffer(pos) = -fieldx(i,j,k)
+                           end do
+                        end do
+                     end do
+                  end if
+               end select
+            end do
+            do n = 1, check_y%count
+               is = check_y%is(n); ie = check_y%ie(n)
+               js = check_y%js(n); je = check_y%je(n)
+               select case( check_y%rotation(n) )
+               case(ZERO)
+                  do k = 1,ke  
+                     do j = js, je
+                        do i = is, ie
+                           pos = pos + 1
+                           buffer(pos) = fieldy(i,j,k)
+                        end do
+                     end do
+                  end do
+               case(MINUS_NINETY)
+                  do k = 1, ke
+                     do j = je, js, -1
+                        do i = is, ie
+                           pos = pos + 1
+                           buffer(pos) = fieldx(i,j,k)
+                        end do
+                     end do
+                  end do
+               case(NINETY)
+                  if( BTEST(update_flags,SCALAR_BIT) ) then
+                     do k = 1, ke
+                        do j = js, je
+                           do i = ie, is, -1
+                              pos = pos + 1
+                              buffer(pos) = fieldx(i,j,k)
+                           end do
+                        end do
+                     end do
+                  else
+                     do k = 1, ke
+                        do j = js, je
+                           do i = ie, is, -1
+                              pos = pos + 1
+                              buffer(pos) = -fieldx(i,j,k)
+                           end do
+                        end do
+                     end do
+                  end if
+               case(ONE_HUNDRED_EIGHTY) 
+                  if( BTEST(update_flags,SCALAR_BIT) ) then
+                     do k = 1, ke
+                        do j = je, js, -1
+                           do i = ie, is, -1
+                              pos = pos + 1
+                              buffer(pos) = fieldy(i,j,k)
+                           end do
+                        end do
+                     end do
+                  else
+                     do k = 1, ke
+                        do j = je, js, -1
+                           do i = ie, is, -1
+                              pos = pos + 1
+                              buffer(pos) = -fieldy(i,j,k)
+                           end do
+                        end do
+                     end do
+                  end if
+               end select
+            end do
+            msgsize = pos - buffer_pos
+            if( msgsize.GT.0 )then
+               to_pe = domainx%list(m)%pe
+               mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, pos)
+               if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
+                  write( text,'(i8)' )mpp_domains_stack_hwm
+                  call mpp_error( FATAL, 'MPP_DO_UPDATE_V_OLD: mpp_domains_stack overflow, ' // &
+                       'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.')
+               end if
+               call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
+               buffer_pos = pos
+            end if
+         end do
+
+         !--- recv the data 
+         do list = 0,nlist-1
+            m = mod( domainx%pos+nlist-list, nlist )
+            check_x=>domainx%check%recv(m)
+            check_y=>domainy%check%recv(m)
+            msgsize = 0
+            do n = 1, check_x%count
+               is = check_x%is(n); ie = check_x%ie(n)
+               js = check_x%js(n); je = check_x%je(n)
+               msgsize = msgsize + (ie-is+1)*(je-js+1)
+            end do
+            do n = 1, check_y%count
+               is = check_y%is(n); ie = check_y%ie(n)
+               js = check_y%js(n); je = check_y%je(n)
+               msgsize = msgsize + (ie-is+1)*(je-js+1)
+            end do
+            msgsize = msgsize*ke
+
+            if( msgsize.GT.0 )then
+               from_pe = domainx%list(m)%pe
+               mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize) )
+               if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
+                  write( text,'(i8)' )mpp_domains_stack_hwm
+                  call mpp_error( FATAL, 'MPP_DO_UPDATE_V_OLD: mpp_domains_stack overflow, '// &
+                       'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+               end if
+               call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe )
+               buffer_pos = buffer_pos + msgsize
+            end if
+         end do
+
+         !--- compare the data in reverse order
+         CHECK_LOOP: do list = nlist-1,0,-1
+            m = mod( domainx%pos+nlist-list, nlist )
+            check_x=>domainx%check%recv(m)
+            check_y=>domainy%check%recv(m)
+            do n = check_y%count, 1, -1
+               is = check_y%is(n); ie = check_y%ie(n)
+               js = check_y%js(n); je = check_y%je(n)
+               msgsize = (ie-is+1)*(je-js+1)*ke
+               pos = buffer_pos - msgsize
+               buffer_pos = pos
+               do k = 1,ke
+                  do j = js, je
+                     do i = is, ie
+                        pos = pos + 1
+                        if( fieldy(i,j,k) .NE. buffer(pos) ) then
+                           print*,"Error from MPP_DO_UPDATE_V_OLD on pe = ", mpp_pe(), ": y component of vector ", &
+                                trim(field_name), " at point (", i, ",", j, ",", k, ") = ", fieldy(i,j,k), &
+                                " does not equal to the value = ", buffer(pos), " on pe ", domainx%list(m)%pe
+                           call mpp_error(debug_update_level, "MPP_DO_UPDATE_V_OLD: mismatch on the boundary for symmetry point")
+                           exit CHECK_LOOP
+                        end if
+                     end do
+                  end do
+               end do
+            end do
+            do n = check_x%count, 1, -1
+               is = check_x%is(n); ie = check_x%ie(n)
+               js = check_x%js(n); je = check_x%je(n)
+               msgsize = (ie-is+1)*(je-js+1)*ke
+               pos = buffer_pos - msgsize
+               buffer_pos = pos
+               do k = 1,ke
+                  do j = js, je
+                     do i = is, ie
+                        pos = pos + 1
+                        if( fieldx(i,j,k) .NE. buffer(pos) ) then
+                           print*,"Error from MPP_DO_UPDATE_V_OLD on pe = ", mpp_pe(), ": x-component of vector ", &
+                                trim(field_name), " at point (", i, ",", j, ",", k, ") = ", fieldx(i,j,k), &
+                                " does not equal to the value = ", buffer(pos), " on pe ", domainx%list(m)%pe
+                           call mpp_error(debug_update_level, "MPP_DO_UPDATE_V_OLD: mismatch on the boundary for symmetry point")
+                           exit CHECK_LOOP
+                        end if
+                     end do
+                  end do
+               end do
+            end do
+         end do CHECK_LOOP
+      end if
       
       ! send
       do list = 0,nlist-1
@@ -907,249 +1151,6 @@
          end if
       end if
 
-      !--- if debug_update_domain is true and domain is symmetry, check the consistency on the bounds between tiles.
-      !--- For data on AGRID, no check is needed; for data on CGRID, u will be checked on east boundary
-      !--- and v will be checked on north boundary; For data on BGRID, u and v will be checked on east 
-      !--- and north boundary.
-      !--- The check will be done in the following way: Western/southern boundary data sent to 
-      !--- Eastern boundary to check,  Southern/western boundary sent to northern boundary to check
-      !--- folded-north-edge will not be checked.
-
-      if( debug_update_domain .AND. domainx%symmetry .AND.  gridtype .NE. AGRID ) then      
-         if(present(name)) then
-            field_name = name
-         else
-            field_name = "un-named"
-         end if
-
-         !--- send the data
-         do list = 0,nlist-1
-            m = mod( domainx%pos+list, nlist )
-            check_x => domainx%check%send(m)
-            check_y => domainy%check%send(m)
-            pos = buffer_pos
-            do n = 1, check_x%count
-               is = check_x%is(n); ie = check_x%ie(n)
-               js = check_x%js(n); je = check_x%je(n)
-               select case( check_x%rotation(n) )
-               case(ZERO)
-                  do k = 1,ke  
-                     do j = js, je
-                        do i = is, ie
-                           pos = pos + 1
-                           buffer(pos) = fieldx(i,j,k)
-                        end do
-                     end do
-                  end do
-               case(MINUS_NINETY)
-                  if( BTEST(update_flags,SCALAR_BIT) ) then
-                     do k = 1, ke
-                        do j = je, js, -1
-                           do i = is, ie
-                              pos = pos + 1
-                              buffer(pos) = fieldy(i,j,k)
-                           end do
-                        end do
-                     end do
-                  else
-                     do k = 1, ke
-                        do j = je, js, -1
-                           do i = is, ie
-                              pos = pos + 1
-                              buffer(pos) = -fieldy(i,j,k)
-                           end do
-                        end do
-                     end do
-                  end if
-               case(NINETY)
-                  do k = 1, ke
-                     do j = js, je
-                        do i = ie, is, -1
-                           pos = pos + 1
-                           buffer(pos) = fieldy(i,j,k)
-                        end do
-                     end do
-                  end do
-               case(ONE_HUNDRED_EIGHTY) 
-                  if( BTEST(update_flags,SCALAR_BIT) ) then
-                     do k = 1, ke
-                        do j = je, js, -1
-                           do i = ie, is, -1
-                              pos = pos + 1
-                              buffer(pos) = fieldx(i,j,k)
-                           end do
-                        end do
-                     end do
-                  else
-                     do k = 1, ke
-                        do j = je, js, -1
-                           do i = ie, is, -1
-                              pos = pos + 1
-                              buffer(pos) = -fieldx(i,j,k)
-                           end do
-                        end do
-                     end do
-                  end if
-               end select
-            end do
-            do n = 1, check_y%count
-               is = check_y%is(n); ie = check_y%ie(n)
-               js = check_y%js(n); je = check_y%je(n)
-               select case( check_y%rotation(n) )
-               case(ZERO)
-                  do k = 1,ke  
-                     do j = js, je
-                        do i = is, ie
-                           pos = pos + 1
-                           buffer(pos) = fieldy(i,j,k)
-                        end do
-                     end do
-                  end do
-               case(MINUS_NINETY)
-                  do k = 1, ke
-                     do j = je, js, -1
-                        do i = is, ie
-                           pos = pos + 1
-                           buffer(pos) = fieldx(i,j,k)
-                        end do
-                     end do
-                  end do
-               case(NINETY)
-                  if( BTEST(update_flags,SCALAR_BIT) ) then
-                     do k = 1, ke
-                        do j = js, je
-                           do i = ie, is, -1
-                              pos = pos + 1
-                              buffer(pos) = fieldx(i,j,k)
-                           end do
-                        end do
-                     end do
-                  else
-                     do k = 1, ke
-                        do j = js, je
-                           do i = ie, is, -1
-                              pos = pos + 1
-                              buffer(pos) = -fieldx(i,j,k)
-                           end do
-                        end do
-                     end do
-                  end if
-               case(ONE_HUNDRED_EIGHTY) 
-                  if( BTEST(update_flags,SCALAR_BIT) ) then
-                     do k = 1, ke
-                        do j = je, js, -1
-                           do i = ie, is, -1
-                              pos = pos + 1
-                              buffer(pos) = fieldy(i,j,k)
-                           end do
-                        end do
-                     end do
-                  else
-                     do k = 1, ke
-                        do j = je, js, -1
-                           do i = ie, is, -1
-                              pos = pos + 1
-                              buffer(pos) = -fieldy(i,j,k)
-                           end do
-                        end do
-                     end do
-                  end if
-               end select
-            end do
-            msgsize = pos - buffer_pos
-            if( msgsize.GT.0 )then
-               to_pe = domainx%list(m)%pe
-               mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, pos)
-               if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
-                  write( text,'(i8)' )mpp_domains_stack_hwm
-                  call mpp_error( FATAL, 'MPP_DO_UPDATE_V_OLD: mpp_domains_stack overflow, ' // &
-                       'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.')
-               end if
-               call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
-               buffer_pos = pos
-            end if
-         end do
-
-         !--- recv the data 
-         do list = 0,nlist-1
-            m = mod( domainx%pos+nlist-list, nlist )
-            check_x=>domainx%check%recv(m)
-            check_y=>domainy%check%recv(m)
-            msgsize = 0
-            do n = 1, check_x%count
-               is = check_x%is(n); ie = check_x%ie(n)
-               js = check_x%js(n); je = check_x%je(n)
-               msgsize = msgsize + (ie-is+1)*(je-js+1)
-            end do
-            do n = 1, check_y%count
-               is = check_y%is(n); ie = check_y%ie(n)
-               js = check_y%js(n); je = check_y%je(n)
-               msgsize = msgsize + (ie-is+1)*(je-js+1)
-            end do
-            msgsize = msgsize*ke
-
-            if( msgsize.GT.0 )then
-               from_pe = domainx%list(m)%pe
-               mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize) )
-               if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
-                  write( text,'(i8)' )mpp_domains_stack_hwm
-                  call mpp_error( FATAL, 'MPP_DO_UPDATE_V_OLD: mpp_domains_stack overflow, '// &
-                       'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
-               end if
-               call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe )
-               buffer_pos = buffer_pos + msgsize
-            end if
-         end do
-
-         !--- compare the data in reverse order
-         do list = nlist-1,0,-1
-            m = mod( domainx%pos+nlist-list, nlist )
-            check_x=>domainx%check%recv(m)
-            check_y=>domainy%check%recv(m)
-            do n = check_y%count, 1, -1
-               is = check_y%is(n); ie = check_y%ie(n)
-               js = check_y%js(n); je = check_y%je(n)
-               msgsize = (ie-is+1)*(je-js+1)*ke
-               pos = buffer_pos - msgsize
-               buffer_pos = pos
-               do k = 1,ke
-                  do j = js, je
-                     do i = is, ie
-                        pos = pos + 1
-                        if( fieldy(i,j,k) .NE. buffer(pos) ) then
-                           print*,"Error from MPP_DO_UPDATE_V_OLD on pe = ", mpp_pe(), ": y component of vector ", &
-                                trim(field_name), " at point (", i, ",", j, ",", k, ") = ", fieldy(i,j,k), &
-                                " does not equal to the value = ", buffer(pos), " on pe ", domainx%list(m)%pe
-                           call mpp_error(FATAL, "MPP_DO_UPDATE_V_OLD: mismatch on the boundary for symmetry point")
-                        end if
-                     end do
-                  end do
-               end do
-            end do
-            do n = check_x%count, 1, -1
-               is = check_x%is(n); ie = check_x%ie(n)
-               js = check_x%js(n); je = check_x%je(n)
-               msgsize = (ie-is+1)*(je-js+1)*ke
-               pos = buffer_pos - msgsize
-               buffer_pos = pos
-               do k = 1,ke
-                  do j = js, je
-                     do i = is, ie
-                        pos = pos + 1
-                        if( fieldx(i,j,k) .NE. buffer(pos) ) then
-                           print*,"Error from MPP_DO_UPDATE_V_OLD on pe = ", mpp_pe(), ": x-component of vector ", &
-                                trim(field_name), " at point (", i, ",", j, ",", k, ") = ", fieldx(i,j,k), &
-                                " does not equal to the value = ", buffer(pos), " on pe ", domainx%list(m)%pe
-                           call mpp_error(FATAL, "MPP_DO_UPDATE_V_OLD: mismatch on the boundary for symmetry point")
-                        end if
-                     end do
-                  end do
-               end do
-            end do
-         end do
-         write(stdout(),*) "NOTE from MPP_DO_UPDATE_V_OLD: the data on the boundary is consistent for field " &
-              //trim(field_name)
-      end if
 
       call mpp_clock_begin(wait_clock)
       call mpp_sync_self( )

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_nocomm.inc,v 14.0 2007/03/15 22:41:28 fms Exp $
+! $Id: mpp_comm_nocomm.inc,v 14.0.6.1 2007/08/23 23:34:37 vb Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -268,6 +268,7 @@ end subroutine mpp_exit
 #define MPI_TYPE_ MPI_REAL8
 #include <mpp_transmit_nocomm.h>
 
+#ifdef OVERLOAD_C8
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_cmplx8
 #undef MPP_TRANSMIT_SCALAR_
@@ -323,8 +324,9 @@ end subroutine mpp_exit
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_DOUBLE_COMPLEX
 #include <mpp_transmit_nocomm.h>
+#endif
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_real4
 #undef MPP_TRANSMIT_SCALAR_
@@ -380,7 +382,9 @@ end subroutine mpp_exit
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
 #include <mpp_transmit_nocomm.h>
+#endif
 
+#ifdef OVERLOAD_C4
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_cmplx4
 #undef MPP_TRANSMIT_SCALAR_
@@ -683,7 +687,7 @@ end subroutine mpp_exit
 #define MPI_REDUCE_ MPI_MAX
 #include <mpp_reduce_nocomm.h>
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_max_real4
 #undef MPP_TYPE_
@@ -735,7 +739,7 @@ end subroutine mpp_exit
 #define MPI_REDUCE_ MPI_MIN
 #include <mpp_reduce_nocomm.h>
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_min_real4
 #undef MPP_TYPE_
@@ -795,6 +799,7 @@ end subroutine mpp_exit
 #define MPP_TYPE_BYTELEN_ 8
 #include <mpp_sum_nocomm.h>
 
+#ifdef OVERLOAD_C8
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_cmplx8
 #undef MPP_SUM_SCALAR_
@@ -814,8 +819,9 @@ end subroutine mpp_exit
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 16
 #include <mpp_sum_nocomm.h>
+#endif
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_real4
 #undef MPP_SUM_SCALAR_
@@ -835,7 +841,9 @@ end subroutine mpp_exit
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #include <mpp_sum_nocomm.h>
+#endif
 
+#ifdef OVERLOAD_C4
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_cmplx4
 #undef MPP_SUM_SCALAR_

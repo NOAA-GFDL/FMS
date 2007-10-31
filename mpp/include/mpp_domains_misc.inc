@@ -1,8 +1,4 @@
-
 ! -*-f90-*-
-! $Id: mpp_domains_misc.inc,v 15.0 2007/08/14 04:14:42 fms Exp $
-
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
 !                 MPP_DOMAINS: initialization and termination                 !
@@ -37,6 +33,10 @@
 #endif
       integer                       :: unit_begin, unit_end, unit_nml, io_status
       logical                       :: opened
+#ifdef use_libSMA
+      integer(POINTER_KIND) :: ptr_info_var(16)
+      pointer( ptr_info, ptr_info_var )
+#endif 
 
       if( module_is_initialized )return
       call mpp_init(flags)           !this is a no-op if already initialized
@@ -61,6 +61,19 @@
       open(unit_nml,file='input.nml')
       read(unit_nml,mpp_domains_nml,iostat=io_status)
       close(unit_nml)
+
+      select case(lowercase(trim(debug_update_domain)))
+      case("none")
+         debug_update_level = NO_CHECK
+      case("fatal")
+         debug_update_level = FATAL
+      case("warning")
+         debug_update_level = WARNING
+      case("note")
+         debug_update_level = NOTe
+      case default
+         call mpp_error(FATAL, "mpp_domains_init: debug_update_level should be 'none', 'fatal', 'warning', or 'note'") 
+      end select
 
       call mpp_domains_set_stack_size(32768) !default, pretty arbitrary
 #ifdef use_libSMA
@@ -501,6 +514,7 @@
 #include <mpp_update_domains2D.h>
 #undef  VECTOR_FIELD_
 
+#ifdef OVERLOAD_C8
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #undef MPP_UPDATE_DOMAINS_2D_
@@ -520,6 +534,7 @@
 #undef MPP_REDISTRIBUTE_5D_
 #define MPP_REDISTRIBUTE_5D_ mpp_redistribute_c8_5D
 #include <mpp_update_domains2D.h>
+#endif
 
 #ifndef no_8byte_integers
 #undef MPP_TYPE_
@@ -543,7 +558,7 @@
 #include <mpp_update_domains2D.h>
 #endif
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
@@ -576,7 +591,9 @@
 #define MPP_REDISTRIBUTE_5D_ mpp_redistribute_r4_5D
 #include <mpp_update_domains2D.h>
 #undef  VECTOR_FIELD_
+#endif
 
+#ifdef OVERLOAD_C4
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
 #undef MPP_UPDATE_DOMAINS_2D_
@@ -638,8 +655,8 @@
 #include <mpp_do_update_new.h>
 #include <mpp_do_updateV_new.h>
 
+#ifdef OVERLOAD_C8
 #undef  VECTOR_FIELD_
-
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #undef MPP_DO_UPDATE_3Dnew_
@@ -648,6 +665,7 @@
 #define MPP_DO_UPDATE_3Dold_ mpp_do_update_old_c8_3d
 #include <mpp_do_update_old.h>
 #include <mpp_do_update_new.h>
+#endif
 
 #ifndef no_8byte_integers
 #undef MPP_TYPE_
@@ -658,10 +676,9 @@
 #define MPP_DO_UPDATE_3Dold_ mpp_do_update_old_i8_3d
 #include <mpp_do_update_old.h>
 #include <mpp_do_update_new.h>
-
 #endif
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
@@ -680,9 +697,10 @@
 #include <mpp_do_updateV_old.h>
 #include <mpp_do_update_new.h>
 #include <mpp_do_updateV_new.h>
+#endif
 
+#ifdef OVERLOAD_C4
 #undef  VECTOR_FIELD_
-
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
 #undef MPP_DO_UPDATE_3Dnew_
@@ -691,7 +709,6 @@
 #define MPP_DO_UPDATE_3Dold_ mpp_do_update_old_c4_3d
 #include <mpp_do_update_old.h>
 #include <mpp_do_update_new.h>
-
 #endif
 
 #undef MPP_TYPE_
@@ -734,6 +751,7 @@
 #include <mpp_update_domains2D_ad.h>
 #undef  VECTOR_FIELD_
 
+#ifdef OVERLOAD_C8
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #undef MPP_UPDATE_DOMAINS_AD_2D_
@@ -745,6 +763,7 @@
 #undef MPP_UPDATE_DOMAINS_AD_5D_
 #define MPP_UPDATE_DOMAINS_AD_5D_ mpp_update_domain2D_ad_c8_5D
 #include <mpp_update_domains2D_ad.h>
+#endif
 
 #ifndef no_8byte_integers
 #undef MPP_TYPE_
@@ -760,7 +779,7 @@
 #include <mpp_update_domains2D_ad.h>
 #endif
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
@@ -784,8 +803,10 @@
 #define MPP_UPDATE_DOMAINS_AD_5D_V_ mpp_update_domain2D_ad_r4_5Dv
 #endif
 #include <mpp_update_domains2D_ad.h>
-#undef  VECTOR_FIELD_
+#endif
 
+#ifdef OVERLOAD_C4
+#undef  VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
 #undef MPP_UPDATE_DOMAINS_AD_2D_
@@ -832,6 +853,7 @@
 #include <mpp_do_updateV_new_ad.h>
 #undef  VECTOR_FIELD_
 
+#ifdef OVERLOAD_C8
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #undef MPP_DO_UPDATE_AD_3Dnew_
@@ -840,6 +862,7 @@
 #define MPP_DO_UPDATE_AD_3Dold_ mpp_do_update_ad_old_c8_3d
 #include <mpp_do_update_old_ad.h>
 #include <mpp_do_update_new_ad.h>
+#endif
                                                                                   
 #ifndef no_8byte_integers
 #undef MPP_TYPE_
@@ -852,7 +875,7 @@
 #include <mpp_do_update_new_ad.h>
 #endif
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef  VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
@@ -871,8 +894,10 @@
 #include <mpp_do_updateV_old_ad.h>
 #include <mpp_do_update_new_ad.h>
 #include <mpp_do_updateV_new_ad.h>
-#undef  VECTOR_FIELD_
+#endif
 
+#ifdef OVERLOAD_C4
+#undef  VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
 #undef MPP_DO_UPDATE_AD_3Dnew_
@@ -906,6 +931,7 @@
 #include <mpp_do_redistribute_new.h>
 #undef  VECTOR_FIELD_
 
+#ifdef OVERLOAD_C8
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #undef MPP_DO_REDISTRIBUTE_3Dnew_
@@ -914,6 +940,7 @@
 #define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_c8_3D
 #include <mpp_do_redistribute_old.h>
 #include <mpp_do_redistribute_new.h>
+#endif
 
 #ifndef no_8byte_integers
 #undef MPP_TYPE_
@@ -933,11 +960,9 @@
 #define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_l8_3D
 #include <mpp_do_redistribute_old.h>
 #include <mpp_do_redistribute_new.h>
-
 #endif
 
-#ifndef no_4byte_reals
-
+#ifdef OVERLOAD_R4
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #undef MPP_DO_REDISTRIBUTE_3Dnew_
@@ -947,7 +972,9 @@
 #include <mpp_do_redistribute_old.h>
 #include <mpp_do_redistribute_new.h>
 #undef  VECTOR_FIELD_
+#endif
 
+#ifdef OVERLOAD_C4
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
 #undef MPP_DO_REDISTRIBUTE_3Dnew_
@@ -956,7 +983,6 @@
 #define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_c4_3D
 #include <mpp_do_redistribute_old.h>
 #include <mpp_do_redistribute_new.h>
-
 #endif
 
 #undef MPP_TYPE_
@@ -997,7 +1023,7 @@
 #define MPP_GET_BOUNDARY_5D_V_ mpp_get_boundary_r8_5dv
 #include <mpp_get_boundary.h>
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #undef MPP_GET_BOUNDARY_2D_
@@ -1016,8 +1042,8 @@
 #define MPP_GET_BOUNDARY_4D_V_ mpp_get_boundary_r4_4dv
 #undef MPP_GET_BOUNDARY_5D_V_
 #define MPP_GET_BOUNDARY_5D_V_ mpp_get_boundary_r4_5dv
-#endif
 #include <mpp_get_boundary.h>
+#endif
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
@@ -1033,7 +1059,7 @@
 #define MPP_DO_GET_BOUNDARY_3Dold_V_ mpp_do_get_boundary_old_r8_3dv
 #include <mpp_do_get_boundary_old.h>
 
-#ifndef no_4byte_reals
+#ifdef OVERLOAD_R4
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #undef MPP_DO_GET_BOUNDARY_3Dnew_

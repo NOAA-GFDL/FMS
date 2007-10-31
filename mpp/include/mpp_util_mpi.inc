@@ -1,6 +1,5 @@
-
 ! -*-f90-*-
-! $Id: mpp_util_mpi.inc,v 15.0 2007/08/14 04:15:13 fms Exp $
+! $Id: mpp_util_mpi.inc,v 15.0.2.1 2007/09/20 19:42:51 vb Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -81,8 +80,9 @@ function get_peset(pelist)
   integer                       :: get_peset
   integer, intent(in), optional :: pelist(:)
   integer                       :: group
-  integer                       :: i, n, stride
+  integer                       :: i, n, stride, l
   integer,          allocatable :: sorted(:)
+  character(len=128) :: text
 
   if( .NOT.PRESENT(pelist) )then !set it to current_peset_num
      get_peset = current_peset_num; return
@@ -115,6 +115,21 @@ function get_peset(pelist)
 
   call MPI_GROUP_INCL( peset(current_peset_num)%group, size(sorted(:)), sorted, peset(i)%group, error )
   call MPI_COMM_CREATE( peset(current_peset_num)%id, peset(i)%group, peset(i)%id, error )
+#ifdef use_MPI_SMA
+  write( text, '(20i4)' )( sorted(l), l=1,min(n,20) )
+  if( n.GT.20 )text = trim(text)//' ...'
+  peset(i)%start = sorted(1)
+  if( size(sorted(:)).GT.1 )then
+     stride = sorted(2)-sorted(1)
+     if( ANY(sorted(2:n)-sorted(1:n-1).NE.stride) ) &
+          call mpp_error( FATAL, 'GET_PESET: pelist must have constant stride. PEs='//trim(text) )
+     peset(i)%log2stride = nint( log(real(stride))/log(2.) )
+     if( 2**peset(i)%log2stride.NE.stride ) &
+          call mpp_error( FATAL, 'GET_PESET: pelist must have power-of-2 stride. PEs='//trim(text) )
+  else
+     peset(i)%log2stride = 0
+  end if
+#endif
   deallocate(sorted)
   get_peset = i
 
@@ -157,8 +172,15 @@ subroutine mpp_sync( pelist, do_self )
   n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
 
   if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
-
+#ifdef use_MPI_SMA
+  if( n.EQ.world_peset_num )then
+     call SHMEM_BARRIER_ALL() !special call is faster
+  else
+     call SHMEM_BARRIER( peset(n)%start, peset(n)%log2stride, peset(n)%count, pSync )
+  end if
+#else
   call MPI_BARRIER( peset(n)%id, error )
+#endif
 
   if( current_clock.NE.0 )call increment_current_clock(EVENT_WAIT)
 

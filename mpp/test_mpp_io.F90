@@ -278,4 +278,7 @@ program test
 
 end program test
 
+#else
+module null_mpp_io_test
+end module
 #endif
