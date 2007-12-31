@@ -331,7 +331,8 @@
                               print*,"Error from MPP_DO_UPDATE_V_NEW_AD on pe = ", mpp_pe(), ": y component of vector ", &
                                    trim(field_name), " at point (", i, ",", j, ",", k, ") = ", fieldy(i,j,k), &
                                    " does not equal to the value = ", buffer(pos), " on pe ", domainx%list(m)%pe
-                              call mpp_error(debug_update_level, "MPP_DO_UPDATE_V_NEW_AD: mismatch on the boundary for symmetry point")
+                              call mpp_error(debug_update_level, &
+					"MPP_DO_UPDATE_V_NEW_AD: mismatch on the boundary for symmetry point")
                               exit CHECK_LOOP
                            end if
                         end do
@@ -357,7 +358,8 @@
                               print*,"Error from MPP_DO_UPDATE_V_NEW_AD on pe = ", mpp_pe(), ": x-component of vector ", &
                                    trim(field_name), " at point (", i, ",", j, ",", k, ") = ", fieldx(i,j,k), &
                                    " does not equal to the value = ", buffer(pos), " on pe ", domainx%list(m)%pe
-                              call mpp_error(debug_update_level, "MPP_DO_UPDATE_V_NEW_AD: mismatch on the boundary for symmetry point")
+                              call mpp_error(debug_update_level, &
+                                             "MPP_DO_UPDATE_V_NEW_AD: mismatch on the boundary for symmetry point")
                               exit CHECK_LOOP
                            end if
                         end do

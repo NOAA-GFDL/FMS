@@ -25,7 +25,7 @@ private
 public  diag_axis_init, get_diag_axis, get_domain1d, get_domain2d, &
         get_axis_length, get_axis_global_length, diag_subaxes_init, &
         get_diag_axis_cart, get_diag_axis_data, max_axes, get_axis_aux, &
-        get_tile_count, get_axes_shift
+        get_tile_count, get_axes_shift, get_diag_axis_name
 
 
 
@@ -54,8 +54,8 @@ character(len=128), allocatable, save :: Axis_sets(:)
 type (diag_axis_type), allocatable, save :: Axes(:)
 logical            :: module_is_initialized = .FALSE.
 character(len=128) :: &
-     version='$Id: diag_axis.F90,v 15.0 2007/08/14 04:13:21 fms Exp $'
-character(len=128) :: tagname='$Name: omsk_2007_10 $'
+     version='$Id: diag_axis.F90,v 15.0.4.1 2007/12/04 17:12:54 slm Exp $'
+character(len=128) :: tagname='$Name: omsk_2007_12 $'
 
 contains
 !#######################################################################
@@ -384,6 +384,22 @@ subroutine get_diag_axis_data(id,data)
        'array data is too small', FATAL)
   data(1:Axes(id)%length) = Axes(id)%data
 end subroutine get_diag_axis_data
+
+
+!#######################################################################
+subroutine get_diag_axis_name (id, name)
+  integer         , intent(in)  :: id
+  character(len=*), intent(out) :: name
+
+  character(len=128) :: error_msg
+
+  if (id < 1 .or. id > num_def_axes) then
+     write(error_msg,'(i2)')id
+     call error_mesg('get_diag_axis_name in diag_axis_mod', &
+          trim(error_msg)//' is illegal value for axis_id', FATAL)
+  endif
+  name      = Axes(id)%name
+end subroutine get_diag_axis_name
 
 !######################################################################
 

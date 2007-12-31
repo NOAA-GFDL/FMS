@@ -184,7 +184,8 @@
                               print*,"Error from MPP_DO_UPDATE_NEW_AD on pe = ", mpp_pe(), ": field ", &
                                    trim(field_name), " at point (", i, ",", j, ",", k, ") = ", field(i,j,k), &
                                    " does not equal to the value = ", buffer(pos), " on pe ", domain%list(m)%pe
-                              call mpp_error(debug_update_level, "MPP_DO_UPDATE_NEW_AD: mismatch on the boundary for symmetry point")
+                              call mpp_error(debug_update_level, &
+				   "MPP_DO_UPDATE_NEW_AD: mismatch on the boundary for symmetry point")
                               exit CHECK_LOOP
                            end if
                         end do

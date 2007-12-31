@@ -86,7 +86,7 @@ use mpp_domains_mod, only : domain2d, domain1d, mpp_get_domain_components, &
   
 use mpp_mod, only : mpp_error, FATAL, NOTE, mpp_pe, mpp_root_pe, mpp_npes, &
      stdlog, stdout, mpp_broadcast, ALL_PES, &
-     mpp_chksum, mpp_sync, mpp_get_current_pelist, mpp_npes, lowercase
+     mpp_chksum, mpp_get_current_pelist, mpp_npes, lowercase
 implicit none
 private
 
@@ -199,8 +199,8 @@ interface string
    module procedure string_from_real
 end interface
 
-character(len=128) :: version = '$Id: fms_io.F90,v 15.0.2.2.2.1.2.2.2.2 2007/10/04 21:46:44 wfc Exp $'
-character(len=128) :: tagname = '$Name: omsk_2007_10 $'
+character(len=128) :: version = '$Id: fms_io.F90,v 15.0.2.2.2.1.2.2.2.2.2.2 2007/11/26 16:17:41 z1l Exp $'
+character(len=128) :: tagname = '$Name: omsk_2007_12 $'
 
 contains
 
@@ -1105,7 +1105,7 @@ subroutine field_size(filename, fieldname, siz, append_pelist_name, field_found 
  else if (.not. found .and. mpp_pe() == mpp_root_pe() )then
      call mpp_error(FATAL, 'fms_io(field_size): field '//trim(fieldname)// ' NOT found in file '//trim(filename))
  end if
-  call mpp_sync() !is this needed?
+
   return
 end subroutine field_size
 ! </SUBROUTINE>
@@ -1646,8 +1646,8 @@ subroutine read_data_2d_new(filename,fieldname,data,domain,timelevel,&
      if((size(data,1)==xsize_c+ishift) .and. (size(data,2)==ysize_c+jshift)) then !on_comp_domain
         data(:,:) = data_3d(:,:,1)
      else if((size(data,1)==xsize_d+ishift) .and. (size(data,2)==ysize_d+jshift)) then !on_data_domain
-        data(isc-isd+1:iec-isd+1,jsc-jsd+1:jec-jsd+1) = data_3d(isc-isd+1:iec-isd+1,jsc-jsd+1:jec-jsd+1,1)
-     else if((size(data,1)==xsize_g+ishift) .and. (size(data,2)==ysize_g+jshift)) then !on_data_domain
+        data(isc-isd+1:iec-isd+1+ishift,jsc-jsd+1:jec-jsd+1+jshift) = data_3d(isc-isd+1:iec-isd+1+ishift,jsc-jsd+1:jec-jsd+1+jshift,1)
+     else if((size(data,1)==xsize_g+ishift) .and. (size(data,2)==ysize_g+jshift)) then !on_global_domain
         data(:,:) = data_3d(:,:,1)
      else 
         call mpp_error(FATAL,'error in read_data_2d_new, field '//trim(fieldname)// &

@@ -58,8 +58,10 @@ module sat_vapor_pres_mod
 ! </PUBLIC>
 
  use  constants_mod, only:  TFREEZE
- use        fms_mod, only:  write_version_number,   &
-                            mpp_error, FATAL, fms_error_handler
+ use        fms_mod, only:  write_version_number, stdout, stdlog, mpp_pe, mpp_root_pe, &
+                            mpp_error, FATAL, fms_error_handler, open_namelist_file,   &
+                            file_exist, check_nml_error
+ use     mpp_io_mod, only:  mpp_close
  use  sat_vapor_pres_k_mod, only: sat_vapor_pres_init_k, lookup_es_k, lookup_des_k
 
 implicit none
@@ -174,11 +176,15 @@ private
  interface temp_check
    module procedure temp_check_1d, temp_check_2d, temp_check_3d
  end interface
+
+ interface show_all_bad
+   module procedure show_all_bad_0d, show_all_bad_1d, show_all_bad_2d, show_all_bad_3d
+ end interface
 !-----------------------------------------------------------------------
 !  cvs version and tag name
 
- character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 14.0 2007/03/15 22:44:32 fms Exp $'
- character(len=128) :: tagname = '$Name: omsk_2007_10 $'
+ character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 14.0.8.1 2007/10/13 14:05:07 pjp Exp $'
+ character(len=128) :: tagname = '$Name: omsk_2007_12 $'
 
  logical :: module_is_initialized = .false.
 
@@ -192,9 +198,13 @@ private
  integer, parameter :: nlim  = nsize-1
 
 !-----------------------------------------------------------------------
-!  varibles needed by temp_check
-
+!  variables needed by temp_check
  real :: tmin, dtinv, teps
+
+! The default values below preserve the behavior of omsk and earlier revisions.
+ logical :: show_bad_value_count_by_slice=.true.
+ logical :: show_all_bad_values=.false.
+ namelist / sat_vapor_pres_nml / show_bad_value_count_by_slice, show_all_bad_values
 
 contains
 
@@ -219,6 +229,7 @@ contains
    if ( nbad == 0 ) then
      if(present(err_msg)) err_msg = ''
    else
+     if(show_all_bad_values) call show_all_bad ( temp )
      write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
      if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
    endif
@@ -247,7 +258,8 @@ contains
    if ( nbad == 0 ) then
      if(present(err_msg)) err_msg = ''
    else
-     call temp_check ( temp )
+     if(show_bad_value_count_by_slice) call temp_check ( temp )
+     if(show_all_bad_values) call show_all_bad ( temp )
      write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
      if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
    endif
@@ -279,7 +291,8 @@ contains
    if ( nbad == 0 ) then
      if(present(err_msg)) err_msg = ''
    else
-     call temp_check ( temp )
+     if(show_bad_value_count_by_slice) call temp_check ( temp )
+     if(show_all_bad_values) call show_all_bad ( temp )
      write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
      if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
    endif
@@ -309,7 +322,8 @@ contains
    if ( nbad == 0 ) then
      if(present(err_msg)) err_msg = ''
    else
-     call temp_check ( temp )
+     if(show_bad_value_count_by_slice) call temp_check ( temp )
+     if(show_all_bad_values) call show_all_bad ( temp )
      write(err_msg_tmp,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
      if(fms_error_handler('lookup_es',err_msg_tmp,err_msg)) return
    endif
@@ -339,6 +353,7 @@ contains
    if ( nbad == 0 ) then
      if(present(err_msg)) err_msg = ''
    else
+     if(show_all_bad_values) call show_all_bad ( temp )
      write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
      if(fms_error_handler('lookup_des',err_msg_local,err_msg)) return
    endif
@@ -368,7 +383,8 @@ contains
    if ( nbad == 0 ) then
      if(present(err_msg)) err_msg = ''
    else
-     call temp_check ( temp )
+     if(show_bad_value_count_by_slice) call temp_check ( temp )
+     if(show_all_bad_values) call show_all_bad ( temp )
      write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
      if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
    endif
@@ -399,7 +415,8 @@ contains
    if ( nbad == 0 ) then
      if(present(err_msg)) err_msg = ''
    else
-     call temp_check ( temp )
+     if(show_bad_value_count_by_slice) call temp_check ( temp )
+     if(show_all_bad_values) call show_all_bad ( temp )
      write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
      if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
    endif
@@ -427,7 +444,8 @@ contains
    if ( nbad == 0 ) then
      if(present(err_msg)) err_msg=''
    else
-     call temp_check ( temp )
+     if(show_bad_value_count_by_slice) call temp_check ( temp )
+     if(show_all_bad_values) call show_all_bad ( temp )
      write(err_msg_tmp,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
      if(fms_error_handler('lookup_des',err_msg_tmp,err_msg)) return
    endif
@@ -475,12 +493,24 @@ contains
 
   character(len=*), intent(out), optional :: err_msg
   character(len=128) :: err_msg_local
+  integer :: unit, ierr, io
 
 ! return silently if this routine has already been called
   if (module_is_initialized) return
 
-! write version number to log file
+!---- read namelist input ----
+  if (file_exist('input.nml')) then
+     unit = open_namelist_file ( )
+     ierr=1; do while (ierr /= 0)
+        read  (unit, nml=sat_vapor_pres_nml, iostat=io, end=10)
+        ierr = check_nml_error(io,'sat_vapor_pres_nml')
+     enddo
+10   call mpp_close (unit)
+  endif
+
+! write version number and namelist to log file
   call write_version_number (version, tagname)
+  if (mpp_pe() == mpp_root_pe()) write (stdlog(), nml=sat_vapor_pres_nml)
 
   call sat_vapor_pres_init_k(nsize, real(tcmin), real(tcmax), TFREEZE, err_msg_local, teps, tmin, dtinv)
   if ( err_msg_local == '' ) then
@@ -604,7 +634,7 @@ end subroutine sat_vapor_pres_init
  real   , intent(in) :: temp(:)
  integer :: i
 
-   print *, 'Bad temperatures (dimension 1): ', (check_1d(temp(i:i)),i=1,size(temp,1))
+   write(stdout(),*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i:i)),i=1,size(temp,1))
 
  end subroutine temp_check_1d
 
@@ -614,8 +644,8 @@ end subroutine sat_vapor_pres_init
  real   , intent(in) :: temp(:,:)
  integer :: i, j
 
-   print *, 'Bad temperatures (dimension 1): ', (check_1d(temp(i,:)),i=1,size(temp,1))
-   print *, 'Bad temperatures (dimension 2): ', (check_1d(temp(:,j)),j=1,size(temp,2))
+   write(stdout(),*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i,:)),i=1,size(temp,1))
+   write(stdout(),*) 'Bad temperatures (dimension 2): ', (check_1d(temp(:,j)),j=1,size(temp,2))
 
  end subroutine temp_check_2d
 
@@ -625,11 +655,75 @@ end subroutine sat_vapor_pres_init
  real, intent(in)  :: temp(:,:,:)
  integer :: i, j, k
 
-   print *, 'Bad temperatures (dimension 1): ', (check_2d(temp(i,:,:)),i=1,size(temp,1))
-   print *, 'Bad temperatures (dimension 2): ', (check_2d(temp(:,j,:)),j=1,size(temp,2))
-   print *, 'Bad temperatures (dimension 3): ', (check_2d(temp(:,:,k)),k=1,size(temp,3))
+   write(stdout(),*) 'Bad temperatures (dimension 1): ', (check_2d(temp(i,:,:)),i=1,size(temp,1))
+   write(stdout(),*) 'Bad temperatures (dimension 2): ', (check_2d(temp(:,j,:)),j=1,size(temp,2))
+   write(stdout(),*) 'Bad temperatures (dimension 3): ', (check_2d(temp(:,:,k)),k=1,size(temp,3))
 
  end subroutine temp_check_3d
+
+!#######################################################################
+
+subroutine show_all_bad_0d ( temp )
+ real   , intent(in) :: temp
+ integer :: ind
+
+ ind = int(dtinv*(temp-tmin+teps))
+ if (ind < 0 .or. ind > nlim) then
+   write(stdout(),'(a,e,a,i4)') 'Bad temperature=',temp,' pe=',mpp_pe()
+ endif
+ 
+ end subroutine show_all_bad_0d
+
+!--------------------------------------------------------------
+
+ subroutine show_all_bad_1d ( temp )
+ real   , intent(in) :: temp(:)
+ integer :: i, ind
+
+ do i=1,size(temp)
+   ind = int(dtinv*(temp(i)-tmin+teps))
+   if (ind < 0 .or. ind > nlim) then
+     write(stdout(),'(a,e,a,i4,a,i4)') 'Bad temperature=',temp(i),'  at i=',i,' pe=',mpp_pe()
+   endif
+ enddo
+
+ end subroutine show_all_bad_1d
+
+!--------------------------------------------------------------
+
+ subroutine show_all_bad_2d ( temp )
+ real   , intent(in) :: temp(:,:)
+ integer :: i, j, ind
+
+ do j=1,size(temp,2)
+ do i=1,size(temp,1)
+   ind = int(dtinv*(temp(i,j)-tmin+teps))
+   if (ind < 0 .or. ind > nlim) then
+     write(stdout(),'(a,e,a,i4,a,i4,a,i4)') 'Bad temperature=',temp(i,j),'  at i=',i,' j=',j,' pe=',mpp_pe()
+   endif
+ enddo
+ enddo
+
+ end subroutine show_all_bad_2d
+
+!--------------------------------------------------------------
+
+ subroutine show_all_bad_3d ( temp )
+ real, intent(in)  :: temp(:,:,:)
+ integer :: i, j, k, ind
+
+ do k=1,size(temp,3)
+ do j=1,size(temp,2)
+ do i=1,size(temp,1)
+   ind = int(dtinv*(temp(i,j,k)-tmin+teps))
+   if (ind < 0 .or. ind > nlim) then
+     write(stdout(),'(a,e,a,i4,a,i4,a,i4,a,i4)') 'Bad temperature=',temp(i,j,k),'  at i=',i,' j=',j,' k=',k,' pe=',mpp_pe()
+   endif
+ enddo
+ enddo
+ enddo
+
+ end subroutine show_all_bad_3d
 
 !#######################################################################
 end module sat_vapor_pres_mod

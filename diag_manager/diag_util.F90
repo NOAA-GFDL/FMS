@@ -10,7 +10,7 @@ use diag_data_mod, only  : output_fields, input_fields, files, do_diag_field_log
                            global_descriptor
 use diag_axis_mod, only  : get_diag_axis_data, get_axis_global_length, get_diag_axis_cart, &
                            get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, &
-                           get_axis_aux, get_axes_shift
+                           get_axis_aux, get_axes_shift, get_diag_axis_name
 use diag_output_mod, only: diag_flush, diag_field_out, diag_output_init, write_axis_meta_data, &
                            write_field_meta_data, done_meta_data
 use fms_mod, only        : error_mesg, FATAL, WARNING, mpp_pe, mpp_root_pe, lowercase, fms_error_handler
@@ -33,8 +33,8 @@ public get_subfield_size, log_diag_field_info, update_bounds, check_out_of_bound
        find_input_field, init_input_field, init_output_field, diag_data_out, write_static, &
        check_duplicate_output_fields, get_date_dif
 
-character(len=128),private  :: version = '$Id: diag_util.F90,v 15.0 2007/08/14 04:13:33 fms Exp $'
-character(len=128),private  :: tagname = '$Name: omsk_2007_10 $'
+character(len=128),private  :: version = '$Id: diag_util.F90,v 15.0.6.1.2.1.2.1 2007/12/06 18:48:52 z1l Exp $'
+character(len=128),private  :: tagname = '$Name: omsk_2007_12 $'
 
 contains
 
@@ -286,6 +286,8 @@ character(len=256) :: lmodule, lfield, lname, lunits
 character(len=64)  :: lmissval, lmin, lmax
 character(len=8)   :: numaxis, timeaxis
 character(len=1)   :: sep = '|'
+character(len=256) :: axis_name, axes_list
+integer :: i
 
 if (.not.do_diag_field_log)    return
 if (mpp_pe().ne.mpp_root_pe()) return
@@ -321,11 +323,19 @@ else
    timeaxis = ''
 endif
 
+axes_list=''
+do i = 1,size(axes)
+   call get_diag_axis_name(axes(i),axis_name)
+   if(trim(axes_list)/='')axes_list=trim(axes_list)//','
+   axes_list=trim(axes_list)//trim(axis_name)
+enddo
+
 !write (diag_log_unit,'(8(a,a),a)') &
-write (diag_log_unit,'(17a)') &
+write (diag_log_unit,'(777a)') &
              trim(lmodule),  sep, trim(lfield),  sep, trim(lname),    sep, &
              trim(lunits),   sep, trim(numaxis), sep, trim(timeaxis), sep, &
-             trim(lmissval), sep, trim(lmin),    sep, trim(lmax)
+             trim(lmissval), sep, trim(lmin),    sep, trim(lmax),     sep, &
+             trim(axes_list)
 
 end subroutine log_diag_field_info
 ! </SUBROUTINE>
@@ -915,9 +925,12 @@ subroutine opening_file(file, time)
 ! JWD: This is a klooge; need something more robust
   nfiles_in_set = mpp_npes()
   if(mpp_mosaic_defined())then
-    field_num = files(file)%fields(1)
-    num_axes = output_fields(field_num)%num_axes
-    domain2 = get_domain2d ( output_fields(field_num)%axes(1:num_axes) )
+    do j = 1, files(file)%num_fields
+      field_num = files(file)%fields(j)
+      num_axes = output_fields(field_num)%num_axes
+      domain2 = get_domain2d ( output_fields(field_num)%axes(1:num_axes) )
+      if(.NOT. (domain2 == NULL_DOMAIN2D) ) exit
+    enddo
     if(domain2 == NULL_DOMAIN2D) call return_domain(domain2)
     if(domain2 == NULL_DOMAIN2D)then
       call error_mesg ('diag_util opening_file','Domain not defined through set_domain interface; cannot retrieve tile info', FATAL)

@@ -89,8 +89,8 @@ module horiz_interp_conserve_mod
 
   integer :: pe, root_pe
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_conserve.F90,v 15.0 2007/08/14 04:14:05 fms Exp $'
-  character(len=128) :: tagname = '$Name: omsk_2007_10 $'
+  character(len=128) :: version = '$Id: horiz_interp_conserve.F90,v 15.0.4.1 2007/10/16 23:09:20 slm Exp $'
+  character(len=128) :: tagname = '$Name: omsk_2007_12 $'
   logical            :: module_is_initialized = .FALSE.
 
 contains
@@ -369,7 +369,7 @@ contains
          'horiz_interp_conserve_mod: size mismatch between mask_out and lon_out/lat_out')
        mask_out = 0.0
        do i = 1, nxgrid
-          mask_out(i_dst(i),j_dst(i)) = mask_out(i_dst(i),j_dst(i)) + Interp%area_frac_dst(i)
+          mask_out(Interp%i_dst(i),Interp%j_dst(i)) = mask_out(Interp%i_dst(i),Interp%j_dst(i)) + Interp%area_frac_dst(i)
        end do
     end if
 
@@ -439,7 +439,7 @@ contains
          'horiz_interp_conserve_mod: size mismatch between mask_out and lon_out/lat_out')
        mask_out = 0.0
        do i = 1, nxgrid
-          mask_out(i_dst(i),j_dst(i)) = mask_out(i_dst(i),j_dst(i)) + Interp%area_frac_dst(i)
+          mask_out(Interp%i_dst(i),Interp%j_dst(i)) = mask_out(Interp%i_dst(i),Interp%j_dst(i)) + Interp%area_frac_dst(i)
        end do
     end if
 
@@ -511,7 +511,7 @@ contains
          'horiz_interp_conserve_mod: size mismatch between mask_out and lon_out/lat_out')
        mask_out = 0.0
        do i = 1, nxgrid
-          mask_out(i_dst(i),j_dst(i)) = mask_out(i_dst(i),j_dst(i)) + Interp%area_frac_dst(i)
+          mask_out(Interp%i_dst(i),Interp%j_dst(i)) = mask_out(Interp%i_dst(i),Interp%j_dst(i)) + Interp%area_frac_dst(i)
        end do
     end if
 
@@ -584,7 +584,7 @@ contains
        call horiz_interp_conserve_version1(Interp, data_in, data_out, verbose, mask_in, mask_out)
     case (2)
        if(present(mask_in) .OR. present(mask_out) ) call mpp_error(FATAL,  &
-            'horiz_interp_conserve_mod: mask_in and mask_out should be passed in horiz_interp_new for version 2')
+            'horiz_interp_conserve: for version 2, mask_in and mask_out must be passed in horiz_interp_new, not in horiz_interp')
        call horiz_interp_conserve_version2(Interp, data_in, data_out, verbose)     
     end select
 

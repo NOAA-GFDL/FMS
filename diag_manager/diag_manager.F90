@@ -120,8 +120,8 @@ public  diag_manager_init, send_data, send_tile_averaged_data, diag_manager_end,
 
 
 ! version number of this module
-character(len=128)  :: version = '$Id: diag_manager.F90,v 15.0 2007/08/14 04:13:26 fms Exp $'
-character(len=128)  :: tagname = '$Name: omsk_2007_10 $'  
+character(len=128)  :: version = '$Id: diag_manager.F90,v 15.0.4.1 2007/12/04 17:12:54 slm Exp $'
+character(len=128)  :: tagname = '$Name: omsk_2007_12 $'  
 
 
 ! <INTERFACE NAME="send_data">
@@ -221,7 +221,7 @@ contains
 
 !-------------------------------------------------------------------------
 function register_diag_field_scalar(module_name, field_name, init_time, &
-   long_name, units, missing_value, range, err_msg)
+   long_name, units, missing_value, range, do_not_log, err_msg)
 
 ! Indicates the calling modules intent to supply data for this field.
 integer                                :: register_diag_field_scalar
@@ -229,15 +229,17 @@ character(len=*), intent(in)           :: module_name, field_name
 type(time_type),  optional, intent(in) :: init_time
 character(len=*), optional, intent(in) :: long_name, units
 real, optional, intent(in)             :: missing_value, range(2)
+logical,          optional, intent(in) :: do_not_log ! if TRUE, field information is not logged
 character(len=*), optional, intent(out):: err_msg
  
 if(present(init_time)) then
    register_diag_field_scalar = register_diag_field_array(module_name, field_name,&
-        (/null_axis_id/), init_time,long_name, units, missing_value, range, err_msg=err_msg)
+        (/null_axis_id/), init_time,long_name, units, missing_value, range, &
+        do_not_log=do_not_log, err_msg=err_msg)
 else
    if(present(err_msg)) err_msg = ''
    register_diag_field_scalar = register_static_field(module_name, field_name,&
-        (/null_axis_id/),long_name, units, missing_value, range)
+        (/null_axis_id/),long_name, units, missing_value, range, do_not_log=do_not_log)
 endif
 
 end function register_diag_field_scalar
@@ -274,7 +276,8 @@ end function register_diag_field_scalar
 !   <IN NAME="mask_variant" TYPE="logical"> </IN> 
 
 function register_diag_field_array(module_name, field_name, axes, init_time, &
-   long_name, units, missing_value, range, mask_variant,standard_name,verbose,err_msg)
+   long_name, units, missing_value, range, mask_variant,standard_name,verbose,&
+   do_not_log,err_msg)
 
 ! Indicates the calling modules intent to supply data for this field.
 
@@ -285,6 +288,7 @@ type(time_type), intent(in)            :: init_time
 character(len=*), optional, intent(in) :: long_name, units, standard_name
 real, optional, intent(in)             :: missing_value, range(2)
 logical, optional, intent(in)          :: mask_variant,verbose
+logical, optional, intent(in)          :: do_not_log ! if TRUE, field info is not logged
 character(len=*), optional, intent(out):: err_msg
 integer                                :: field, j, ind, file_num, freq
 integer                                :: output_units
@@ -299,7 +303,8 @@ if(present(err_msg)) err_msg = ''
 ! Call register static, then set static back to false
 
 register_diag_field_array = register_static_field(module_name, field_name, axes, &
-   long_name, units, missing_value, range, mask_variant1, dynamic =.true.)
+   long_name, units, missing_value, range, mask_variant1, dynamic =.true., &
+   do_not_log=do_not_log)
 
 if((debug_diag_manager.or.verbose1) .and. register_diag_field_array<0 ) &
      call error_mesg ('register_diag_field', &
@@ -395,7 +400,8 @@ end function register_diag_field_array
 !   <IN NAME="range" TYPE="real" DIM="(2)"> </IN>
 
 function register_static_field(module_name, field_name, axes, &
-   long_name, units, missing_value, range, mask_variant, require, standard_name, dynamic)
+   long_name, units, missing_value, range, mask_variant, require, standard_name, dynamic, &
+   do_not_log)
 
 integer                                :: register_static_field
 character(len=*), intent(in)           :: module_name, field_name
@@ -405,8 +411,9 @@ real, optional, intent(in)             :: missing_value, range(2)
 logical, optional, intent(in)          :: mask_variant
 logical, optional, intent(in)          :: require  ! require static field to be in every file, e.g. 2-d axes
 logical, optional, intent(in)          :: dynamic
+logical, optional, intent(in)          :: do_not_log ! if TRUE, field information is not logged
 integer                                :: field, num_axes, j, out_num, siz(3), local_siz(3), k
-logical                                :: mask_variant1, dynamic1
+logical                                :: mask_variant1, dynamic1, allow_log
 integer                                :: local_start(3), local_end(3) ! indices of local domain of global axes
 character(len=128)                     :: msg
 
@@ -417,7 +424,8 @@ if(present(dynamic)) dynamic1 = dynamic
 if (.not.module_is_initialized) call error_mesg ('register_static_field',  &
                        'diag_manager has NOT been initialized', FATAL)
 
-if ( do_diag_field_log) then
+allow_log = .TRUE. ; if (present(do_not_log)) allow_log = .not.do_not_log
+if ( do_diag_field_log.and.allow_log ) then
    call log_diag_field_info (module_name, field_name, axes, &
         long_name, units, missing_value=missing_value, range=range, &
         dynamic=dynamic1)

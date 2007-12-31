@@ -217,8 +217,8 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
 ! </INTERFACE>
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: horiz_interp.F90,v 15.0 2007/08/14 04:14:08 fms Exp $'
- character(len=128) :: tagname = '$Name: omsk_2007_10 $'
+ character(len=128) :: version = '$Id: horiz_interp.F90,v 15.0.4.1 2007/11/13 14:11:13 z1l Exp $'
+ character(len=128) :: tagname = '$Name: omsk_2007_12 $'
  logical            :: module_is_initialized = .FALSE.
 !-----------------------------------------------------------------------
 
@@ -834,17 +834,32 @@ contains
       real, intent(in),                   optional :: max_dist
    logical, intent(in),                   optional :: src_modulo
    logical, intent(in),                   optional :: grid_at_center
+
 !-----------------------------------------------------------------------
-    type (horiz_interp_type) :: Interp
+   type (horiz_interp_type) :: Interp
+   logical                  :: dst_is_latlon
+   character(len=128)       :: method
 !-----------------------------------------------------------------------
     call horiz_interp_init
+    method = 'conservative'
+    if(present(interp_method)) method = interp_method
+    dst_is_latlon = .true.
+    if(trim(method) == 'conservative') dst_is_latlon = is_lat_lon(lon_out, lat_out)
 
-    call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
-                            interp_method, num_nbrs, max_dist, src_modulo,    &
-                            grid_at_center, mask_in, mask_out )
+    if(dst_is_latlon) then
+       call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
+                               interp_method, num_nbrs, max_dist, src_modulo,    &
+                               grid_at_center, is_latlon_out = dst_is_latlon )
+       call horiz_interp ( Interp, data_in, data_out, verbose,   &
+                           mask_in, mask_out, missing_value, missing_permit )
+    else
+       call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
+                               interp_method, num_nbrs, max_dist, src_modulo,    &
+                               grid_at_center, mask_in, mask_out, is_latlon_out = dst_is_latlon)
 
-    call horiz_interp ( Interp, data_in, data_out, verbose,   &
-                        mask_in, mask_out, missing_value, missing_permit )
+       call horiz_interp ( Interp, data_in, data_out, verbose,   &
+                           missing_value=missing_value, missing_permit=missing_permit )
+    end if
 
     call horiz_interp_del ( Interp )
 
@@ -878,15 +893,35 @@ contains
       real, intent(in),                   optional :: max_dist
    logical, intent(in),                   optional :: src_modulo
 !-----------------------------------------------------------------------
-    type (horiz_interp_type) :: Interp
+   type (horiz_interp_type) :: Interp
+   logical                  :: dst_is_latlon, src_is_latlon
+   character(len=128)       :: method
 !-----------------------------------------------------------------------
     call horiz_interp_init
 
-    call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
-                             interp_method, num_nbrs, max_dist, src_modulo, mask_in, mask_out )
+    method = 'conservative'
+    if(present(interp_method)) method = interp_method
+    dst_is_latlon = .true.
+    src_is_latlon = .true.
+    if(trim(method) == 'conservative') then
+       dst_is_latlon = is_lat_lon(lon_out, lat_out)
+       src_is_latlon = is_lat_lon(lon_in, lat_in)
+    end if
 
-    call horiz_interp ( Interp, data_in, data_out, verbose,   &
-                        mask_in, mask_out, missing_value, missing_permit )
+    if(dst_is_latlon .and. src_is_latlon) then
+       call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
+                               interp_method, num_nbrs, max_dist, src_modulo,    &
+                               is_latlon_in=dst_is_latlon, is_latlon_out = dst_is_latlon )
+       call horiz_interp ( Interp, data_in, data_out, verbose,   &
+                           mask_in, mask_out, missing_value, missing_permit )
+    else
+       call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
+                               interp_method, num_nbrs, max_dist, src_modulo,    &
+                               mask_in, mask_out, &
+                               is_latlon_in=dst_is_latlon, is_latlon_out = dst_is_latlon)
+       call horiz_interp ( Interp, data_in, data_out, verbose,   &
+                           missing_value=missing_value, missing_permit=missing_permit )
+    end if
 
     call horiz_interp_del ( Interp )
 
@@ -920,15 +955,31 @@ contains
       real, intent(in),                   optional :: max_dist
    logical, intent(in),                   optional :: src_modulo
 !-----------------------------------------------------------------------
-    type (horiz_interp_type) :: Interp
+   type (horiz_interp_type) :: Interp
+   logical                  :: src_is_latlon
+   character(len=128)       :: method
 !-----------------------------------------------------------------------
     call horiz_interp_init
 
-    call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
-                             interp_method, num_nbrs, max_dist, src_modulo, mask_in, mask_out )
+    method = 'conservative'
+    if(present(interp_method)) method = interp_method
+    src_is_latlon = .true.
+    if(trim(method) == 'conservative') src_is_latlon = is_lat_lon(lon_in, lat_in)
 
-    call horiz_interp ( Interp, data_in, data_out, verbose,   &
-                        mask_in, mask_out, missing_value, missing_permit )
+    if(src_is_latlon) then
+       call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
+                               interp_method, num_nbrs, max_dist, src_modulo,    &
+                               is_latlon_in = src_is_latlon )
+       call horiz_interp ( Interp, data_in, data_out, verbose,   &
+                           mask_in, mask_out, missing_value, missing_permit )
+    else
+       call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
+                               interp_method, num_nbrs, max_dist, src_modulo,    &
+                               mask_in, mask_out, is_latlon_in = src_is_latlon)
+
+       call horiz_interp ( Interp, data_in, data_out, verbose,   &
+                           missing_value=missing_value, missing_permit=missing_permit )
+    end if
 
     call horiz_interp_del ( Interp )
 

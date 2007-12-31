@@ -132,7 +132,7 @@ integer, parameter :: max_type = 4
 
 ! Define number of days per month
 integer, private :: days_per_month(12) = (/31,28,31,30,31,30,31,31,30,31,30,31/)
-integer, parameter :: seconds_per_day=int(rseconds_per_day)
+integer, parameter :: seconds_per_day = rseconds_per_day  ! This should automatically cast real to integer
 integer, parameter :: days_in_400_year_period = 146097    ! Used only for gregorian
 integer, dimension(days_in_400_year_period) :: coded_date ! Used only for gregorian
 integer, dimension(400,12,31) :: date_to_day              ! Used only for gregorian
@@ -176,8 +176,8 @@ end interface
 
 !======================================================================
 
-character(len=128) :: version='$Id: time_manager.F90,v 15.0 2007/08/14 04:15:52 fms Exp $'
-character(len=128) :: tagname='$Name: omsk_2007_10 $'
+character(len=128) :: version='$Id: time_manager.F90,v 15.0.4.1 2007/12/05 20:58:12 nnz Exp $'
+character(len=128) :: tagname='$Name: omsk_2007_12 $'
 logical :: module_is_initialized = .false.
 
 !======================================================================
