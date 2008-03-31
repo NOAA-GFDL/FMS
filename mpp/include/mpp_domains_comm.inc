@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_comm.inc,v 15.0 2007/08/14 04:14:38 fms Exp $
+! $Id: mpp_domains_comm.inc,v 15.0.6.1 2008/01/03 14:55:23 z1l Exp $
 
 
     function mpp_redistribute_init_comm(domain_in,l_addrs_in, domain_out,l_addrs_out, &
@@ -389,26 +389,6 @@
       d_comm%initialized = .true.
 
     end function mpp_global_field_init_comm
-
-
-    subroutine mpp_update_free_comm(domain,l_addr,ksize,lsize,l_addr2,flags,gridtype)
-    ! Since initialization of the d_comm type is expensive, freeing should be a rare
-    ! event. Thus no attempt is made to salvage freed d_comm's.
-      type(domain2D),target,      intent(in)    :: domain
-      integer(LONG_KIND),         intent(in)    :: l_addr
-      integer,                    intent(in)    :: ksize
-      integer,                    intent(in)    :: lsize
-      integer(LONG_KIND),optional,intent(in)    :: l_addr2
-      integer, optional,          intent(in)    :: flags
-      integer, optional,          intent(in)    :: gridtype
-
-      integer(LONG_KIND) :: domain_id
-      integer :: update_flags
-
-      update_flags = XUPDATE+YUPDATE; if( PRESENT(flags) )update_flags = flags
-      domain_id=set_domain_id(domain%id,ksize+lsize,update_flags,gridtype)
-      call free_comm(domain_id,l_addr,l_addr2)
-    end subroutine mpp_update_free_comm
 
 
     subroutine mpp_redistribute_free_comm(domain_in,l_addr,domain_out,l_addr2,ksize,lsize)

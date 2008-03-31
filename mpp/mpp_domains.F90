@@ -172,48 +172,6 @@ module mpp_domains_mod
   public :: mpp_define_layout, mpp_define_domains, mpp_modify_domain, mpp_define_mosaic
   public :: mpp_define_mosaic_pelist, mpp_define_null_domain, mpp_mosaic_defined
 
-#ifdef use_CAF
-  public :: cafptr_r8_3d_type
-  public :: cafptr_r8_3d
-  public :: cafptr_r8_1d_type
-  public :: cafptr_r8_1d
-#ifdef OVERLOAD_C8
-  public :: cafptr_c8_3d_type
-  public :: cafptr_c8_3d
-  public :: cafptr_c8_1d_type
-  public :: cafptr_c8_1d
-#endif
-#ifndef no_8byte_integers
-  public :: cafptr_i8_3d_type
-  public :: cafptr_i8_3d
-  public :: cafptr_i8_1d_type
-  public :: cafptr_i8_1d
-  public :: cafptr_l8_3d_type
-  public :: cafptr_l8_3d
-  public :: cafptr_l8_1d_type
-  public :: cafptr_l8_1d
-#endif
-#ifdef OVERLOAD_R4
-  public :: cafptr_r4_3d_type
-  public :: cafptr_r4_3d
-  public :: cafptr_r4_1d_type
-  public :: cafptr_r4_1d
-#endif
-#ifdef OVERLOAD_C4
-  public :: cafptr_c4_3d_type
-  public :: cafptr_c4_3d
-  public :: cafptr_c4_1d_type
-  public :: cafptr_c4_1d
-#endif
-  public :: cafptr_i4_3d_type
-  public :: cafptr_i4_3d
-  public :: cafptr_i4_1d_type
-  public :: cafptr_i4_1d
-  public :: cafptr_l4_3d_type
-  public :: cafptr_l4_3d
-  public :: cafptr_l4_1d_type
-  public :: cafptr_l4_1d
-#endif
   !--- data types used mpp_domains_mod.
   type domain_axis_spec        !type used to specify index limits along an axis of a domain
      private
@@ -234,35 +192,23 @@ module mpp_domains_mod
 
   type overlapSpec
      private
-     integer          :: n              ! number of points to send/recv
-     integer, pointer :: i(:) => NULL() ! i-index of each point to send/recv
-     integer, pointer :: j(:) => NULL() ! j-index of each point to send/recv
-     integer          :: is(3), ie(3)   ! i-index of overlapping region
-     integer          :: js(3), je(3)   ! j-index of overlapping region.
-     integer          :: isMe, ieMe     ! i-index of overlapping region in the my tile when there is refinement
-     integer          :: jsMe, jeMe     ! j-index of overlapping region in the my tile when there is refinement
-     integer          :: index          ! index in the all overlapping of current contact
-     logical          :: overlap(3)     ! indicate if overlapped
-     logical          :: folded         ! indicate if the overlap is folded.
-     integer          :: rotation       ! rotate angle between tiles.
-     logical          :: is_refined(3)      ! indicate if there is refinement.
+     integer                  :: count                 ! number of ovrelapping
+     integer,         pointer :: tileMe(:)       => NULL() ! my tile id for this overlap
+     integer,         pointer :: tileNbr(:)      => NULL() ! neighbor tile id for this overlap
+     integer,         pointer :: is(:)           => NULL() ! starting i-index 
+     integer,         pointer :: ie(:)           => NULL() ! ending   i-index 
+     integer,         pointer :: js(:)           => NULL() ! starting j-index 
+     integer,         pointer :: je(:)           => NULL() ! ending   j-index 
+     integer,         pointer :: isMe(:)         => NULL() ! starting i-index of my tile on current pe
+     integer,         pointer :: ieMe(:)         => NULL() ! ending   i-index of my tile on current pe
+     integer,         pointer :: jsMe(:)         => NULL() ! starting j-index of my tile on current pe
+     integer,         pointer :: jeMe(:)         => NULL() ! ending   j-index of my tile on current pe
+     integer,         pointer :: dir(:)          => NULL() ! direction ( value 1,2,3,4 = E,S,W,N)
+     integer,         pointer :: rotation(:)     => NULL() ! rotation angle.
+     logical,         pointer :: is_refined(:)   => NULL() ! indicate if the overlap is refined or not.
+     integer,         pointer :: index(:)        => NULL() ! for refinement
+     logical,         pointer :: from_contact(:) => NULL() ! indicate if the overlap is computed from define_contact_overlap
   end type overlapSpec
-
-  type refineSpec
-     integer          :: count              ! number of ovrelapping
-     integer          :: total              ! total number of points to be saved in buffer.
-     integer, pointer :: isMe(:)     => NULL() ! starting i-index on current pe and tile.
-     integer, pointer :: ieMe(:)     => NULL() ! ending i-index on current pe and tile.
-     integer, pointer :: jsMe(:)     => NULL() ! starting j-index on current pe and tile.
-     integer, pointer :: jeMe(:)     => NULL() ! ending j-index on current pe and tile.
-     integer, pointer :: isNbr(:)    => NULL() ! starting i-index on neighbor pe or tile
-     integer, pointer :: ieNbr(:)    => NULL() ! ending i-index on neighbor pe or tile
-     integer, pointer :: jsNbr(:)    => NULL() ! starting j-index on neighbor pe or tile
-     integer, pointer :: jeNbr(:)    => NULL() ! ending j-index on neighbor pe or tile
-     integer, pointer :: start(:)    => NULL() ! starting index in the buffer
-     integer, pointer :: end(:)      => NULL() ! ending index in the buffer
-     integer, pointer :: rotation(:) => NULL() ! rotation angle.
-  end type refineSpec
 
   type boundary
      integer                  :: count              ! number of overlap
@@ -282,6 +228,21 @@ module mpp_domains_mod
      type(boundary),  pointer :: recv(:)     => NULL() ! list of overlapping for recv
   end type boundary
 
+  type refineSpec
+     integer          :: count                 ! number of ovrelapping
+     integer          :: total                 ! total number of points to be saved in buffer.
+     integer, pointer :: isMe(:)     => NULL() ! starting i-index on current pe and tile.
+     integer, pointer :: ieMe(:)     => NULL() ! ending i-index on current pe and tile.
+     integer, pointer :: jsMe(:)     => NULL() ! starting j-index on current pe and tile.
+     integer, pointer :: jeMe(:)     => NULL() ! ending j-index on current pe and tile.
+     integer, pointer :: isNbr(:)    => NULL() ! starting i-index on neighbor pe or tile
+     integer, pointer :: ieNbr(:)    => NULL() ! ending i-index on neighbor pe or tile
+     integer, pointer :: jsNbr(:)    => NULL() ! starting j-index on neighbor pe or tile
+     integer, pointer :: jeNbr(:)    => NULL() ! ending j-index on neighbor pe or tile
+     integer, pointer :: start(:)    => NULL() ! starting index in the buffer
+     integer, pointer :: end(:)      => NULL() ! ending index in the buffer
+     integer, pointer :: rotation(:) => NULL() ! rotation angle.
+  end type refineSpec
 
 !domaintypes of higher rank can be constructed from type domain1D
 !typically we only need 1 and 2D, but could need higher (e.g 3D LES)
@@ -300,25 +261,28 @@ module mpp_domains_mod
      integer                     :: max_ntile_pe          ! maximum value in the pelist of number of tiles on each pe.
      integer                     :: ncontacts             ! number of contact region within mosaic.
      logical                     :: rotated_ninety        ! indicate if any contact rotate NINETY or MINUS_NINETY
-     logical                     :: overlap               
-     integer,            pointer :: tile_id(:)  => NULL() ! tile id of each tile
-     type(domain1D),     pointer :: x(:)        => NULL() ! x-direction domain decomposition
-     type(domain1D),     pointer :: y(:)        => NULL() ! y-direction domain decomposition
-     type(overlapSpec),  pointer :: send(:,:,:) => NULL() ! overlapping for sending
-     type(overlapSpec),  pointer :: recv(:,:,:) => NULL() ! overlapping for recving
+     integer,            pointer :: tile_id(:)     => NULL() ! tile id of each tile
+     type(domain1D),     pointer :: x(:)           => NULL() ! x-direction domain decomposition
+     type(domain1D),     pointer :: y(:)           => NULL() ! y-direction domain decomposition
      type(boundary),     pointer :: check       => NULL() ! send and recv information for boundary consistency check
      type(boundary),     pointer :: bound       => NULL() ! send and recv information for getting boundary value for symmetry domain.
-     type(refineSpec),   pointer :: rSpec(:)    => NULL() ! refine overlapping for recving.
-     type(domain2D),     pointer :: T           => NULL() ! domain for T-cell
-     type(domain2D),     pointer :: E           => NULL() ! domain for E-cell
-     type(domain2D),     pointer :: C           => NULL() ! domain for C-cell
-     type(domain2D),     pointer :: N           => NULL() ! domain for N-cell
-     type(domain2D),     pointer :: next        => NULL() ! next domain with different halo size
-     type(domain2d),     pointer :: list(:)     => NULL() ! domain on pe list
-     integer,            pointer :: pearray(:,:)=>NULL()  ! pe of each layout position 
-     integer                     :: position              ! position of the domain, CENTER, EAST, NORTH, CORNER
-     logical                     :: initialized           ! indicate if the overlapping is computed or not.
-     logical                     :: is_tile_root_pe       ! indicate if current pe is the root pe of current tile.
+!!$     type(overlapSpec),  pointer :: check_send     => NULL() ! send information for boundary consistency check
+!!$     type(overlapSpec),  pointer :: check_recv     => NULL() ! recv information for boundary consistency check
+!!$     type(overlapSpec),  pointer :: bound_send     => NULL() ! send information for getting boundary value for symmetry domain.
+!!$     type(overlapSpec),  pointer :: bound_recv     => NULL() ! recv information for getting boundary value for symmetry domain.
+     type(overlapSpec),  pointer :: update_send(:) => NULL() ! send information for halo update.
+     type(overlapSpec),  pointer :: update_recv(:) => NULL() ! recv information for halo update.
+     type(refineSpec),   pointer :: rSpec(:)       => NULL() ! refine overlapping for recving.
+     type(domain2D),     pointer :: T              => NULL() ! domain for T-cell
+     type(domain2D),     pointer :: E              => NULL() ! domain for E-cell
+     type(domain2D),     pointer :: C              => NULL() ! domain for C-cell
+     type(domain2D),     pointer :: N              => NULL() ! domain for N-cell
+     type(domain2D),     pointer :: next           => NULL() ! next domain with different halo size
+     type(domain2d),     pointer :: list(:)        => NULL() ! domain on pe list
+     integer,            pointer :: pearray(:,:)   =>NULL()  ! pe of each layout position 
+     integer                     :: position                 ! position of the domain, CENTER, EAST, NORTH, CORNER
+     logical                     :: initialized              ! indicate if the overlapping is computed or not.
+     logical                     :: is_tile_root_pe          ! indicate if current pe is the root pe of current tile.
   end type domain2D     
 
   !--- the following type is used to reprsent the contact between tiles.
@@ -383,71 +347,6 @@ module mpp_domains_mod
 
 !#######################################################################
 
-#ifdef use_CAF
-#define MPP_TYPE_ real(DOUBLE_KIND)
-#define CAFPNTR_TYPE_3D_ cafptr_r8_3d_type
-#define CAFPNTR_3D_ cafptr_r8_3d
-#define CAFPNTR_TYPE_1D_ cafptr_r8_1d_type
-#define CAFPNTR_1D_ cafptr_r8_1d
-#include <mpp_datatype.h>
-
-#ifdef OVERLOAD_C8
-#define MPP_TYPE_ complex(DOUBLE_KIND)
-#define CAFPNTR_TYPE_3D_ cafptr_c8_3d_type
-#define CAFPNTR_3D_ cafptr_c8_3d
-#define CAFPNTR_TYPE_1D_ cafptr_c8_1d_type
-#define CAFPNTR_1D_ cafptr_c8_1d
-#include <mpp_datatype.h>
-#endif
-
-#ifndef no_8byte_integers
-#define MPP_TYPE_ integer(LONG_KIND)
-#define CAFPNTR_TYPE_3D_ cafptr_i8_3d_type
-#define CAFPNTR_3D_ cafptr_i8_3d
-#define CAFPNTR_TYPE_1D_ cafptr_i8_1d_type
-#define CAFPNTR_1D_ cafptr_i8_1d
-#include <mpp_datatype.h>
-
-#define MPP_TYPE_ logical(LONG_KIND)
-#define CAFPNTR_TYPE_3D_ cafptr_l8_3d_type
-#define CAFPNTR_3D_ cafptr_l8_3d
-#define CAFPNTR_TYPE_1D_ cafptr_l8_1d_type
-#define CAFPNTR_1D_ cafptr_l8_1d
-#include <mpp_datatype.h>
-#endif
-
-#ifdef OVERLOAD_R4
-#define MPP_TYPE_ real(FLOAT_KIND)
-#define CAFPNTR_TYPE_3D_ cafptr_r4_3d_type
-#define CAFPNTR_3D_ cafptr_r4_3d
-#define CAFPNTR_TYPE_1D_ cafptr_r4_1d_type
-#define CAFPNTR_1D_ cafptr_r4_1d
-#include <mpp_datatype.h>
-#endif
-
-#ifdef OVERLOAD_C4
-#define MPP_TYPE_ complex(FLOAT_KIND)
-#define CAFPNTR_TYPE_3D_ cafptr_c4_3d_type
-#define CAFPNTR_3D_ cafptr_c4_3d
-#define CAFPNTR_TYPE_1D_ cafptr_c4_1d_type
-#define CAFPNTR_1D_ cafptr_c4_1d
-#include <mpp_datatype.h>
-#endif
-
-#define MPP_TYPE_ integer(INT_KIND)
-#define CAFPNTR_TYPE_3D_ cafptr_i4_3d_type
-#define CAFPNTR_3D_ cafptr_i4_3d
-#define CAFPNTR_TYPE_1D_ cafptr_i4_1d_type
-#define CAFPNTR_1D_ cafptr_i4_1d
-#include <mpp_datatype.h>
-
-#define MPP_TYPE_ logical(INT_KIND)
-#define CAFPNTR_TYPE_3D_ cafptr_l4_3d_type
-#define CAFPNTR_3D_ cafptr_l4_3d
-#define CAFPNTR_TYPE_1D_ cafptr_l4_1d_type
-#define CAFPNTR_1D_ cafptr_l4_1d
-#include <mpp_datatype.h>
-#endif
 !***********************************************************************
 !
 !     module variables 
@@ -502,6 +401,8 @@ module mpp_domains_mod
   !     integer(LONG_KIND), parameter :: KE_BASE=2**48
   integer(LONG_KIND), parameter :: KE_BASE=Z'0001000000000000'  ! Workaround for 64bit int init problem
 
+  integer, parameter :: MAXOVERLAP = 100 
+
 
   !--- the following variables are used in mpp_domains_misc.h
   logical :: domain_clocks_on=.FALSE.
@@ -523,37 +424,6 @@ module mpp_domains_mod
   namelist /mpp_domains_nml/ debug_update_domain
 
   !***********************************************************************
-  !
-  !           public interface for mpp_domains_comm.h
-  !
-  !***********************************************************************
-
-#ifdef use_CAF
-  interface mpp_associate_caf_field
-     !     module procedure associate_caf_field_r8_1d
-     !     module procedure associate_caf_field_c8_1d
-     !     module procedure associate_caf_field_i8_1d
-     !     module procedure associate_caf_field_l8_1d
-     !     module procedure associate_caf_field_r4_1d
-     !     module procedure associate_caf_field_c4_1d
-     !     module procedure associate_caf_field_i4_1d
-     !     module procedure associate_caf_field_l4_1d
-     module procedure associate_caf_field_r8_3d
-#ifdef OVERLOAD_C8
-     module procedure associate_caf_field_c8_3d
-#endif
-     module procedure associate_caf_field_i8_3d
-     module procedure associate_caf_field_l8_3d
-#ifdef OVERLOAD_R4
-     module procedure associate_caf_field_r4_3d
-#endif
-#ifdef OVERLOAD_R4
-     module procedure associate_caf_field_c4_3d
-#endif
-     module procedure associate_caf_field_i4_3d
-     module procedure associate_caf_field_l4_3d
-  end interface
-#endif
 
   integer, parameter :: NO_CHECK = -1
   integer            :: debug_update_level = NO_CHECK
@@ -1001,77 +871,49 @@ module mpp_domains_mod
      module procedure mpp_update_domain2D_ad_i4_3d
      module procedure mpp_update_domain2D_ad_i4_4d
      module procedure mpp_update_domain2D_ad_i4_5d
-!!$     module procedure mpp_update_domain2D_ad_l4_2d
-!!$     module procedure mpp_update_domain2D_ad_l4_3d
-!!$     module procedure mpp_update_domain2D_ad_l4_4d
-!!$     module procedure mpp_update_domain2D_ad_l4_5d
   end interface
 !bnc
 
 
   interface mpp_do_update
-     module procedure mpp_do_update_new_r8_3d
-     module procedure mpp_do_update_old_r8_3d
-     module procedure mpp_do_update_new_r8_3dv
-     module procedure mpp_do_update_old_r8_3dv
+     module procedure mpp_do_update_r8_3d
+     module procedure mpp_do_update_r8_3dv
 #ifdef OVERLOAD_C8
-     module procedure mpp_do_update_new_c8_3d
-     module procedure mpp_do_update_old_c8_3d
+     module procedure mpp_do_update_c8_3d
 #endif
 #ifndef no_8byte_integers
-     module procedure mpp_do_update_new_i8_3d
-     module procedure mpp_do_update_old_i8_3d
-!!$     module procedure mpp_do_update_new_l8_3d
-!!$     module procedure mpp_do_update_old_l8_3d
+     module procedure mpp_do_update_i8_3d
 #endif
 #ifdef OVERLOAD_R4
-     module procedure mpp_do_update_new_r4_3d
-     module procedure mpp_do_update_old_r4_3d
-     module procedure mpp_do_update_new_r4_3dv
-     module procedure mpp_do_update_old_r4_3dv
+     module procedure mpp_do_update_r4_3d
+     module procedure mpp_do_update_r4_3dv
 #endif
 #ifdef OVERLOAD_C4
-     module procedure mpp_do_update_new_c4_3d
-     module procedure mpp_do_update_old_c4_3d
+     module procedure mpp_do_update_c4_3d
 #endif
-     module procedure mpp_do_update_new_i4_3d
-     module procedure mpp_do_update_old_i4_3d
-!!$     module procedure mpp_do_update_new_l4_3d
-!!$     module procedure mpp_do_update_old_l4_3d
+     module procedure mpp_do_update_i4_3d
   end interface
 
 !-------------------------------------------------------
 !bnc  for adjoint do_update
 !-------------------------------------------------------
   interface mpp_do_update_ad
-     module procedure mpp_do_update_ad_new_r8_3d
-     module procedure mpp_do_update_ad_old_r8_3d
-     module procedure mpp_do_update_ad_new_r8_3dv
-     module procedure mpp_do_update_ad_old_r8_3dv
+     module procedure mpp_do_update_ad_r8_3d
+     module procedure mpp_do_update_ad_r8_3dv
 #ifdef OVERLOAD_C8
-     module procedure mpp_do_update_ad_new_c8_3d
-     module procedure mpp_do_update_ad_old_c8_3d
+     module procedure mpp_do_update_ad_c8_3d
 #endif
 #ifndef no_8byte_integers
-     module procedure mpp_do_update_ad_new_i8_3d
-     module procedure mpp_do_update_ad_old_i8_3d
-!!$     module procedure mpp_do_update_ad_new_l8_3d
-!!$     module procedure mpp_do_update_ad_old_l8_3d
+     module procedure mpp_do_update_ad_i8_3d
 #endif
 #ifdef OVERLOAD_R4
-     module procedure mpp_do_update_ad_new_r4_3d
-     module procedure mpp_do_update_ad_old_r4_3d
-     module procedure mpp_do_update_ad_new_r4_3dv
-     module procedure mpp_do_update_ad_old_r4_3dv
+     module procedure mpp_do_update_ad_r4_3d
+     module procedure mpp_do_update_ad_r4_3dv
 #endif
 #ifdef OVERLOAD_C4
-     module procedure mpp_do_update_ad_new_c4_3d
-     module procedure mpp_do_update_ad_old_c4_3d
+     module procedure mpp_do_update_ad_c4_3d
 #endif
-     module procedure mpp_do_update_ad_new_i4_3d
-     module procedure mpp_do_update_ad_old_i4_3d
-!!$     module procedure mpp_do_update_ad_new_l4_3d
-!!$     module procedure mpp_do_update_ad_old_l4_3d
+     module procedure mpp_do_update_ad_i4_3d
   end interface
 !bnc
 
@@ -1113,15 +955,11 @@ module mpp_domains_mod
   end interface
 
   interface mpp_do_get_boundary
-     module procedure mpp_do_get_boundary_new_r8_3d
-     module procedure mpp_do_get_boundary_old_r8_3d
-     module procedure mpp_do_get_boundary_new_r8_3dv
-     module procedure mpp_do_get_boundary_old_r8_3dv
+     module procedure mpp_do_get_boundary_r8_3d
+     module procedure mpp_do_get_boundary_r8_3dv
 #ifdef OVERLOAD_R4
-     module procedure mpp_do_get_boundary_new_r4_3d
-     module procedure mpp_do_get_boundary_old_r4_3d
-     module procedure mpp_do_get_boundary_new_r4_3dv
-     module procedure mpp_do_get_boundary_old_r4_3dv
+     module procedure mpp_do_get_boundary_r4_3d
+     module procedure mpp_do_get_boundary_r4_3dv
 #endif
   end interface
 
@@ -1875,9 +1713,9 @@ module mpp_domains_mod
 
   !--- version information variables
   character(len=128), public :: version= &
-       '$Id: mpp_domains.F90,v 15.0.2.2.2.1 2007/09/21 18:38:02 z1l Exp $'
+       '$Id: mpp_domains.F90,v 15.0.2.2.2.1.2.1.2.1 2008/01/22 14:40:49 z1l Exp $'
   character(len=128), public :: tagname= &
-       '$Name: omsk_2007_12 $'
+       '$Name: omsk_2008_03 $'
 
 
 contains

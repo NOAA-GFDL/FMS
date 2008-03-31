@@ -199,8 +199,8 @@ interface string
    module procedure string_from_real
 end interface
 
-character(len=128) :: version = '$Id: fms_io.F90,v 15.0.2.2.2.1.2.2.2.2.2.2 2007/11/26 16:17:41 z1l Exp $'
-character(len=128) :: tagname = '$Name: omsk_2007_12 $'
+character(len=128) :: version = '$Id: fms_io.F90,v 15.0.2.2.2.1.2.2.2.2.2.2.2.1.2.3 2008/02/12 20:11:38 z1l Exp $'
+character(len=128) :: tagname = '$Name: omsk_2008_03 $'
 
 contains
 
@@ -1044,13 +1044,12 @@ subroutine field_size(filename, fieldname, siz, append_pelist_name, field_found 
         if(is_exist) then     
            call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_SINGLE, &
                 fileset=MPP_SINGLE)
-        else
-           call mpp_error(FATAL, 'fms_io(field_size): file '//trim(fname)//' and distributed file not found')
         end if
      end if
-
-     call get_size(unit,fieldname,siz,found)
-     call mpp_close(unit)
+     if(is_exist) then
+        call get_size(unit,fieldname,siz,found)
+        call mpp_close(unit)
+     end if
   else
      do i=1, files_read(nfile)%nvar
         if (trim(fieldname) == trim(files_read(nfile)%fieldname(i))) then
@@ -1139,6 +1138,9 @@ logical,          intent(out)   :: found
            call mpp_get_atts(fields(i),siz=siz_in)
            siz = siz_in
            siz(4) = ntime
+           if(ndim == 1) then
+              call mpp_get_atts(axes(1), len=siz(1))
+           end if
            do j = 1, ndim
               call mpp_get_atts(axes(j),len=len)
               call get_axis_cart(axes(j),cart)
@@ -1370,7 +1372,8 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
      if( (size(data,1) .NE. cxsize .AND. size(data,1) .NE. dxsize) .OR. &
          (size(data,2) .NE. cysize .AND. size(data,2) .NE. dysize) )then
        call mpp_error(FATAL,'fms_io(read_data_3d_new): data should be on either computer domain '//&
-                            'or data domain when domain is present')
+                            'or data domain when domain is present. '//&
+                            'shape(data)=',shape(data),'  cxsize,cysize,dxsize,dysize=',(/cxsize,cysize,dxsize,dysize/))
      end if 
   endif
 
@@ -1646,7 +1649,8 @@ subroutine read_data_2d_new(filename,fieldname,data,domain,timelevel,&
      if((size(data,1)==xsize_c+ishift) .and. (size(data,2)==ysize_c+jshift)) then !on_comp_domain
         data(:,:) = data_3d(:,:,1)
      else if((size(data,1)==xsize_d+ishift) .and. (size(data,2)==ysize_d+jshift)) then !on_data_domain
-        data(isc-isd+1:iec-isd+1+ishift,jsc-jsd+1:jec-jsd+1+jshift) = data_3d(isc-isd+1:iec-isd+1+ishift,jsc-jsd+1:jec-jsd+1+jshift,1)
+        data(isc-isd+1:iec-isd+1+ishift,jsc-jsd+1:jec-jsd+1+jshift) = &
+               data_3d(isc-isd+1:iec-isd+1+ishift,jsc-jsd+1:jec-jsd+1+jshift,1)
      else if((size(data,1)==xsize_g+ishift) .and. (size(data,2)==ysize_g+jshift)) then !on_global_domain
         data(:,:) = data_3d(:,:,1)
      else 

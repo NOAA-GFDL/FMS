@@ -27,7 +27,7 @@
 
 *********************************************************************/
 
-void cubic_spline(int size1, int size2, double *grid1, double *grid2, double *data1,
+void cubic_spline(int size1, int size2, const double *grid1, const double *grid2, const double *data1,
 		  double *data2, double yp1, double ypn  )
 {
   double *y2=NULL, *u=NULL;

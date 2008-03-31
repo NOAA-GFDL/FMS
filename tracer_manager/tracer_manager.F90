@@ -106,7 +106,7 @@ end interface
 !-----------------------------------------------------------------------
 
 integer            :: num_tracer_fields = 0
-integer, parameter :: MAX_TRACER_FIELDS = 100
+integer, parameter :: MAX_TRACER_FIELDS = 120
 integer, parameter :: MAX_TRACER_METHOD = 20
 integer, parameter :: NO_TRACER         = 1-HUGE(1)
 integer, parameter :: NOTRACER          = -HUGE(1)
@@ -136,8 +136,8 @@ end type inst_type
 type(tracer_type), save  :: tracers(MAX_TRACER_FIELDS)
 type(inst_type)  , save  :: instantiations(MAX_TRACER_FIELDS)
 
-character(len=128) :: version = '$Id: tracer_manager.F90,v 13.0 2006/03/28 21:43:35 fms Exp $'
-character(len=128) :: tagname = '$Name: omsk_2007_12 $'
+character(len=128) :: version = '$Id: tracer_manager.F90,v 13.0.16.1 2007/12/08 13:51:13 rsh Exp $'
+character(len=128) :: tagname = '$Name: omsk_2008_03 $'
 logical            :: module_is_initialized = .false.
 
 logical            :: verbose_local

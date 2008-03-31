@@ -90,7 +90,7 @@ module horiz_interp_conserve_mod
   integer :: pe, root_pe
   !-----------------------------------------------------------------------
   character(len=128) :: version = '$Id: horiz_interp_conserve.F90,v 15.0.4.1 2007/10/16 23:09:20 slm Exp $'
-  character(len=128) :: tagname = '$Name: omsk_2007_12 $'
+  character(len=128) :: tagname = '$Name: omsk_2008_03 $'
   logical            :: module_is_initialized = .FALSE.
 
 contains

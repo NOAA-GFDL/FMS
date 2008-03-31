@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util_nocomm.inc,v 13.0 2006/03/28 21:42:00 fms Exp $
+! $Id: mpp_util_nocomm.inc,v 13.0.26.1 2008/02/22 15:30:10 z1l Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -51,22 +51,6 @@ subroutine mpp_error_basic( errortype, errormsg )
   error_state = errortype
   return
 end subroutine mpp_error_basic
-
-!#####################################################################
-!overloads to mpp_error_basic
-!support for error_mesg routine in FMS
-subroutine mpp_error_mesg( routine, errormsg, errortype )
-  character(len=*), intent(in) :: routine, errormsg
-  integer,          intent(in) :: errortype
-
-  call mpp_error( errortype, trim(routine)//': '//trim(errormsg) )
-  return
-end subroutine mpp_error_mesg
-
-!#####################################################################
-subroutine mpp_error_noargs()
-  call mpp_error(FATAL)
-end subroutine mpp_error_noargs
 
 !#####################################################################
 !--- makes a PE set out of a PE list. A PE list is an ordered list of PEs

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util.inc,v 13.0 2006/03/28 21:41:54 fms Exp $
+! $Id: mpp_util.inc,v 13.0.28.1 2008/02/22 15:30:09 z1l Exp $
 
 
 #ifdef use_libSMA
@@ -137,6 +137,187 @@
     mpp_error_state = error_state
     return
   end function mpp_error_state
+
+!#####################################################################
+!overloads to mpp_error_basic
+!support for error_mesg routine in FMS
+subroutine mpp_error_mesg( routine, errormsg, errortype )
+  character(len=*), intent(in) :: routine, errormsg
+  integer,          intent(in) :: errortype
+
+  call mpp_error( errortype, trim(routine)//': '//trim(errormsg) )
+  return
+end subroutine mpp_error_mesg
+
+!#####################################################################
+subroutine mpp_error_noargs()
+  call mpp_error(FATAL)
+end subroutine mpp_error_noargs
+
+!#####################################################################
+subroutine mpp_error_Is(errortype, errormsg1, value, errormsg2)
+  integer,          intent(in) :: errortype
+  INTEGER,          intent(in) :: value
+  character(len=*), intent(in) :: errormsg1
+  character(len=*),      intent(in), optional :: errormsg2
+  call mpp_error( errortype, errormsg1, (/value/), errormsg2)
+end subroutine mpp_error_Is
+!#####################################################################
+subroutine mpp_error_Rs(errortype, errormsg1, value, errormsg2)
+  integer,          intent(in) :: errortype
+  REAL,             intent(in) :: value
+  character(len=*), intent(in) :: errormsg1
+  character(len=*),      intent(in), optional :: errormsg2
+  call mpp_error( errortype, errormsg1, (/value/), errormsg2)
+end subroutine mpp_error_Rs
+!#####################################################################
+subroutine mpp_error_Ia(errortype, errormsg1, array, errormsg2)
+  integer,               intent(in) :: errortype
+  INTEGER, dimension(:), intent(in) :: array
+  character(len=*),      intent(in) :: errormsg1
+  character(len=*),      intent(in), optional :: errormsg2
+  character(len=512) :: string
+
+  string = errormsg1//trim(array_to_char(array))
+  if(present(errormsg2)) string = trim(string)//errormsg2
+  call mpp_error_basic( errortype, trim(string))
+
+end subroutine mpp_error_Ia
+
+!#####################################################################
+subroutine mpp_error_Ra(errortype, errormsg1, array, errormsg2)
+  integer,            intent(in) :: errortype
+  REAL, dimension(:), intent(in) :: array
+  character(len=*),      intent(in) :: errormsg1
+  character(len=*),   intent(in), optional :: errormsg2
+  character(len=512) :: string
+
+  string = errormsg1//trim(array_to_char(array))
+  if(present(errormsg2)) string = trim(string)//errormsg2
+  call mpp_error_basic( errortype, trim(string))
+
+end subroutine mpp_error_Ra
+
+!#####################################################################
+#define _SUBNAME_ mpp_error_ia_ia
+#define _ARRAY1TYPE_ integer
+#define _ARRAY2TYPE_ integer
+#include <mpp_error_a_a.h>
+!#####################################################################
+#define _SUBNAME_ mpp_error_ia_ra
+#define _ARRAY1TYPE_ integer
+#define _ARRAY2TYPE_ real
+#include <mpp_error_a_a.h>
+!#####################################################################
+#define _SUBNAME_ mpp_error_ra_ia
+#define _ARRAY1TYPE_ real
+#define _ARRAY2TYPE_ integer
+#include <mpp_error_a_a.h>
+!#####################################################################
+#define _SUBNAME_ mpp_error_ra_ra
+#define _ARRAY1TYPE_ real
+#define _ARRAY2TYPE_ real
+#include <mpp_error_a_a.h>
+!#####################################################################
+#define _SUBNAME_ mpp_error_ia_is
+#define _ARRAY1TYPE_ integer
+#define _ARRAY2TYPE_ integer
+#include <mpp_error_a_s.h>
+!#####################################################################
+#define _SUBNAME_ mpp_error_ia_rs
+#define _ARRAY1TYPE_ integer
+#define _ARRAY2TYPE_ real
+#include <mpp_error_a_s.h>
+!#####################################################################
+#define _SUBNAME_ mpp_error_ra_is
+#define _ARRAY1TYPE_ real
+#define _ARRAY2TYPE_ integer
+#include <mpp_error_a_s.h>
+!#####################################################################
+#define _SUBNAME_ mpp_error_ra_rs
+#define _ARRAY1TYPE_ real
+#define _ARRAY2TYPE_ real
+#include <mpp_error_a_s.h>
+!#####################################################################
+#define _SUBNAME_ mpp_error_is_ia
+#define _ARRAY1TYPE_ integer
+#define _ARRAY2TYPE_ integer
+#include <mpp_error_s_a.h>
+!#####################################################################
+#define _SUBNAME_ mpp_error_is_ra
+#define _ARRAY1TYPE_ integer
+#define _ARRAY2TYPE_ real
+#include <mpp_error_s_a.h>
+!#####################################################################
+#define _SUBNAME_ mpp_error_rs_ia
+#define _ARRAY1TYPE_ real
+#define _ARRAY2TYPE_ integer
+#include <mpp_error_s_a.h>
+!#####################################################################
+#define _SUBNAME_ mpp_error_rs_ra
+#define _ARRAY1TYPE_ real
+#define _ARRAY2TYPE_ real
+#include <mpp_error_s_a.h>
+!#####################################################################
+#define _SUBNAME_ mpp_error_is_is
+#define _ARRAY1TYPE_ integer
+#define _ARRAY2TYPE_ integer
+#include <mpp_error_s_s.h>
+!#####################################################################
+#define _SUBNAME_ mpp_error_is_rs
+#define _ARRAY1TYPE_ integer
+#define _ARRAY2TYPE_ real
+#include <mpp_error_s_s.h>
+!#####################################################################
+#define _SUBNAME_ mpp_error_rs_is
+#define _ARRAY1TYPE_ real
+#define _ARRAY2TYPE_ integer
+#include <mpp_error_s_s.h>
+!#####################################################################
+#define _SUBNAME_ mpp_error_rs_rs
+#define _ARRAY1TYPE_ real
+#define _ARRAY2TYPE_ real
+#include <mpp_error_s_s.h>
+!#####################################################################
+function iarray_to_char(iarray) result(string)
+integer, intent(in) :: iarray(:)
+character(len=256) :: string
+character(len=32)  :: chtmp
+integer :: i, len_tmp, len_string
+
+ string = ''
+ do i=1,size(iarray)
+   write(chtmp,'(i16)') iarray(i)
+   chtmp = adjustl(chtmp)
+   len_tmp = len_trim(chtmp)
+   len_string  = len_trim(string)
+   string(len_string+1:len_string+len_tmp) = trim(chtmp)
+   string(len_string+len_tmp+1:len_string+len_tmp+1) = ','
+ enddo
+ len_string = len_trim(string)
+ string(len_string:len_string) = ' ' ! remove trailing comma
+
+end function iarray_to_char
+!#####################################################################
+function rarray_to_char(rarray) result(string)
+real, intent(in) :: rarray(:)
+character(len=256) :: string
+character(len=32)  :: chtmp
+integer :: i, len_tmp, len_string
+
+ string = ''
+ do i=1,size(rarray)
+   write(chtmp,'(G16.9)') rarray(i)
+   chtmp = adjustl(chtmp)
+   len_tmp = len_trim(chtmp)
+   len_string  = len_trim(string)
+   string(len_string+1:len_string+len_tmp) = trim(chtmp)
+   string(len_string+len_tmp+1:len_string+len_tmp+1) = ','
+ enddo
+ len_string = len_trim(string)
+ string(len_string:len_string) = ' ' ! remove trailing comma
+
+end function rarray_to_char
 
   !#####################################################################
   ! <FUNCTION NAME="mpp_pe">

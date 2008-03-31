@@ -1,15 +1,19 @@
 ! -*-f90-*- 
-    subroutine MPP_DO_UPDATE_AD_3Dnew_( f_addrs, domain, d_type, ke, flags, name)
+    subroutine MPP_DO_UPDATE_3D_( f_addrs, domain, d_type, ke, b_addrs, b_size, flags, name)
 !updates data domain of 3D field whose computational domains have been computed
       integer(LONG_KIND), intent(in)         :: f_addrs(:,:)
       type(domain2D), intent(in)    :: domain
       MPP_TYPE_, intent(in)                  :: d_type  ! creates unique interface
       integer,   intent(in)                  :: ke
+      integer(LONG_KIND), intent(in)         :: b_addrs(:,:)
+      integer,            intent(in)         :: b_size
       integer, intent(in), optional :: flags
       character(len=*), intent(in), optional :: name
 
       MPP_TYPE_ :: field(domain%x(1)%memory%begin:domain%x(1)%memory%end, domain%y(1)%memory%begin:domain%y(1)%memory%end,ke)
+      MPP_TYPE_ :: fillbuffer(b_size)
       pointer(ptr_field, field)
+      pointer(ptr_buffer, fillbuffer)
       integer                    :: update_flags
       type(boundary),   pointer  :: check   => NULL()
       type(overlapSpec), pointer :: overPtr => NULL()      
@@ -25,11 +29,11 @@
 !for non-blocking version, could be recomputed
       logical :: send(8), recv(8)
       integer :: to_pe, from_pe, list, pos, msgsize
-      integer :: n, l_size, l, m, i, j, k, nlist, nrecv, nsend
-      integer :: is, ie, js, je, ntileMe, ntileNbr, tMe, tNbr, dir
+      integer :: n, l_size, l, m, i, j, k, nlist
+      integer :: is, ie, js, je, tMe, dir
+      integer :: start, start1, start2, index, is1, ie1, js1, je1, ni, nj, total
 
       nlist = size(domain%list(:))
-      ntileMe = size(domain%x(:))
       buffer_pos = 0        !this initialization goes away if update_domains becomes non-blocking
       ptr = LOC(mpp_domains_stack)
       l_size = size(f_addrs,1)
@@ -55,7 +59,7 @@
       !--- The check will be done in the following way: Western boundary data sent to Eastern boundary to check
       !--- and Southern boundary to check
 
-      if( debug_update_level .NE. NO_CHECK ) then  
+      if( debug_update_level .NE. NO_CHECK ) then      
          if(present(name)) then
             field_name = name
          else
@@ -130,7 +134,7 @@
                mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, pos)
                if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
                   write( text,'(i8)' )mpp_domains_stack_hwm
-                  call mpp_error( FATAL, 'MPP_DO_UPDATE_NEW_AD: mpp_domains_stack overflow, ' // &
+                  call mpp_error( FATAL, 'MPP_DO_UPDATE: mpp_domains_stack overflow, ' // &
                        'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.')
                end if
                call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
@@ -155,7 +159,7 @@
                mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize) )
                if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
                   write( text,'(i8)' )mpp_domains_stack_hwm
-                  call mpp_error( FATAL, 'MPP_DO_UPDATE_NEW_AD: mpp_domains_stack overflow, '// &
+                  call mpp_error( FATAL, 'MPP_DO_UPDATE: mpp_domains_stack overflow, '// &
                        'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
                end if
                call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe )
@@ -181,11 +185,10 @@
                         do i = is, ie
                            pos = pos + 1
                            if( field(i,j,k) .NE. buffer(pos) ) then
-                              print*,"Error from MPP_DO_UPDATE_NEW_AD on pe = ", mpp_pe(), ": field ", &
+                              print*,"Error from MPP_DO_UPDATE on pe = ", mpp_pe(), ": field ", &
                                    trim(field_name), " at point (", i, ",", j, ",", k, ") = ", field(i,j,k), &
                                    " does not equal to the value = ", buffer(pos), " on pe ", domain%list(m)%pe
-                              call mpp_error(debug_update_level, &
-				   "MPP_DO_UPDATE_NEW_AD: mismatch on the boundary for symmetry point")
+                              call mpp_error(debug_update_level, "MPP_DO_UPDATE: mismatch on the boundary for symmetry point")
                               exit CHECK_LOOP
                            end if
                         end do
@@ -199,88 +202,82 @@
       ! send
       do list = 0,nlist-1
          m = mod( domain%pos+list, nlist )
-         if( .NOT. domain%list(m)%overlap )cycle
-         ntileNbr = size(domain%list(m)%x(:) )
+         overPtr => domain%update_send(m)
+         if( overPtr%count == 0 )cycle
          call mpp_clock_begin(pack_clock)
          pos = buffer_pos
-         do dir = 1,8
-            if( recv(dir) ) then
-               do tMe = 1, ntileMe
-                  do tNbr = 1, ntileNbr
-                     overPtr => domain%list(m)%recv(tNbr,tMe,dir)
-               do n = 1, 3
-                  if( overPtr%overlap(n) ) then
-                     is = overPtr%is(n); ie = overPtr%ie(n)
-                     js = overPtr%js(n); je = overPtr%je(n)
-                        select case( overPtr%rotation )
-                        case(ZERO)
-                                 do l=1,l_size  ! loop over number of fields
-                                    ptr_field = f_addrs(l, tMe)
-                           do k = 1,ke  
-                              do j = js, je
-                                 do i = is, ie
-                                    pos = pos + 1
-                                    buffer(pos) = field(i,j,k)
-                                 end do
-                              end do
-                           end do
-                                 end do
-                        case( MINUS_NINETY ) 
-                                 do l=1,l_size  ! loop over number of fields
-                                    ptr_field = f_addrs(l, tMe)
-                           do k = 1,ke  
-                              do i = is, ie
-                                 do j = je, js, -1
-                                    pos = pos + 1
-                                    buffer(pos) = field(i,j,k)
-                                 end do
-                              end do
-                           end do
-                                 end do
-                        case( NINETY ) 
-                                 do l=1,l_size  ! loop over number of fields
-                                    ptr_field = f_addrs(l, tMe)
-                           do k = 1,ke  
-                              do i = ie, is, -1
-                                 do j = js, je
-                                    pos = pos + 1
-                                    buffer(pos) = field(i,j,k)
-                                 end do
-                              end do
-                           end do
-                                 end do
-                              case( ONE_HUNDRED_EIGHTY ) 
-                                 do l=1,l_size  ! loop over number of fields
-                                    ptr_field = f_addrs(l, tMe)
-                           do k = 1,ke  
-                              do j = je, js, -1
-                                 do i = ie, is, -1
-                                    pos = pos + 1
-                                    buffer(pos) = field(i,j,k)
-                                 end do
-                              end do
-                           end do
-                                 end do
-                        end select
-                     end if
-                     end do ! end do n = 1, 3
-               nsend = overPtr%n
-               if( nsend > 0 ) then
-                        do l=1,l_size  ! loop over number of fields
-                           ptr_field = f_addrs(l, tMe)
-                  do n = 1, nsend
-                     i = overPtr%i(n); j = overPtr%j(n)
+         do n = 1, overPtr%count
+            dir = overPtr%dir(n)
+            if( send(dir) ) then
+               tMe = overPtr%tileMe(n)
+               is = overPtr%is(n); ie = overPtr%ie(n)
+               js = overPtr%js(n); je = overPtr%je(n)
+               if( overptr%is_refined(n) ) then
+                  do l=1,l_size  ! loop over number of fields
+                     ptr_field = f_addrs(l, tMe)
                      do k = 1,ke  
-                        pos = pos + 1
-                        buffer(pos) = field(i,j,k)
+                        do j = js, je
+                           do i = is, ie
+                              pos = pos + 1
+                              buffer(pos) = field(i,j,k)
+                           end do
+                        end do
                      end do
                   end do
+               else
+                  select case( overPtr%rotation(n) )
+                  case(ZERO)
+                     do l=1,l_size  ! loop over number of fields
+                        ptr_field = f_addrs(l, tMe)
+                        do k = 1,ke  
+                           do j = js, je
+                              do i = is, ie
+                                 pos = pos + 1
+                                 buffer(pos) = field(i,j,k)
+                              end do
+                           end do
                         end do
-               endif
-                  end do ! end do tNbr = 1, ntileNbr
-               end do  ! do tMe = 1, ntileMe
-            end if ! end if ( send(dir) )
-         end do ! end do dir = 1, 8
+                     end do
+                  case( MINUS_NINETY ) 
+                     do l=1,l_size  ! loop over number of fields
+                        ptr_field = f_addrs(l, tMe)
+                        do k = 1,ke  
+                           do i = is, ie
+                              do j = je, js, -1
+                                 pos = pos + 1
+                                 buffer(pos) = field(i,j,k)
+                              end do
+                           end do
+                        end do
+                     end do
+                  case( NINETY ) 
+                     do l=1,l_size  ! loop over number of fields
+                        ptr_field = f_addrs(l, tMe)
+                        do k = 1,ke  
+                           do i = ie, is, -1
+                              do j = js, je
+                                 pos = pos + 1
+                                 buffer(pos) = field(i,j,k)
+                              end do
+                           end do
+                        end do
+                     end do
+                  case( ONE_HUNDRED_EIGHTY ) 
+                     do l=1,l_size  ! loop over number of fields
+                        ptr_field = f_addrs(l, tMe)
+                        do k = 1,ke  
+                           do j = je, js, -1
+                              do i = ie, is, -1
+                                 pos = pos + 1
+                                 buffer(pos) = field(i,j,k)
+                              end do
+                           end do
+                        end do
+                     end do
+                  end select
+               end if
+            endif
+         end do ! do n = 1, overPtr%count
 
          call mpp_clock_end(pack_clock)
          call mpp_clock_begin(send_clock)
@@ -290,7 +287,7 @@
             mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, pos )
             if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
                write( text,'(i8)' )mpp_domains_stack_hwm
-               call mpp_error( FATAL, 'MPP_DO_UPDATE_NEW_AD: mpp_domains_stack overflow, ' // &
+               call mpp_error( FATAL, 'MPP_DO_UPDATE: mpp_domains_stack overflow, ' // &
                     'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.')
             end if
             call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
@@ -302,25 +299,16 @@
       !recv
       do list = 0,nlist-1
          m = mod( domain%pos+nlist-list, nlist )
-         if( .NOT. domain%list(m)%overlap )cycle
-         ntileNbr = size(domain%list(m)%x(:))
+         overPtr => domain%update_recv(m)
+         if( overPtr%count == 0 )cycle
          call mpp_clock_begin(recv_clock)
          msgsize = 0
-         do dir = 1, 8  ! loop over 8 direction
-            if(send(dir)) then
-               do tNbr = 1, ntileNbr
-                  do tMe = 1, ntileMe
-                     overPtr => domain%list(m)%send(tMe,tNbr,dir)
-               do n = 1, 3
-                  if( overPtr%overlap(n) ) then
-                     is = overPtr%is(n); ie = overPtr%ie(n)
-                     js = overPtr%js(n); je = overPtr%je(n)
-                     msgsize = msgsize + (ie-is+1)*(je-js+1)
-                  end if
-               end do
-               msgsize = msgsize + overPtr%n
-                  end do
-               end do
+         do n = 1, overPtr%count
+            dir = overPtr%dir(n)
+            if(recv(dir)) then
+               is = overPtr%is(n); ie = overPtr%ie(n)
+               js = overPtr%js(n); je = overPtr%je(n)
+               msgsize = msgsize + (ie-is+1)*(je-js+1)
             end if
          end do
 
@@ -330,7 +318,7 @@
             mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize) )
             if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
                write( text,'(i8)' )mpp_domains_stack_hwm
-               call mpp_error( FATAL, 'MPP_DO_UPDATE_NEW_AD: mpp_domains_stack overflow, '// &
+               call mpp_error( FATAL, 'MPP_DO_UPDATE: mpp_domains_stack overflow, '// &
                     'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
             end if
             call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe )
@@ -345,58 +333,58 @@
 
       do list = nlist-1,0,-1
          m = mod( domain%pos+nlist-list, nlist )
-         if( .NOT.domain%list(m)%overlap)cycle
-         ntileNbr = size(domain%list(m)%x(:))         
+         overPtr => domain%update_recv(m)
+         if( overPtr%count == 0 )cycle
          call mpp_clock_begin(unpk_clock)
          pos = buffer_pos
-         do dir = 8,1,-1
-            if( send(dir) ) then
-               do tNbr = ntileNbr, 1, -1
-                  do tMe = ntileMe, 1, -1
-                     overPtr => domain%list(m)%send(tMe,tNbr,dir)
-                     nrecv = overPtr%n
-                     !--- no refinement is considered for tripolar grid case. May update in the future.
-                     if( nrecv > 0 )then  ! direction
-                        msgsize = nrecv*ke*l_size
-                        pos = buffer_pos - msgsize
-                        buffer_pos = pos
-                        do l=1, l_size  ! loop over number of fields
-                           ptr_field = f_addrs(l, tMe)
-                           do n = 1, nrecv
-                              i = overPtr%i(n)
-                              j = overPtr%j(n)
-                              do k = 1,ke
-                                 pos = pos + 1
-                                 field(i,j,k) = field(i,j,k) + buffer(pos)
-                              end do
+         do n = overPtr%count, 1, -1
+            dir = overPtr%dir(n)
+            if( recv(dir) ) then
+               tMe = overPtr%tileMe(n)
+               is = overPtr%is(n); ie = overPtr%ie(n)
+               js = overPtr%js(n); je = overPtr%je(n)
+               msgsize = (ie-is+1)*(je-js+1)*ke*l_size
+               pos = buffer_pos - msgsize
+               buffer_pos = pos
+               if(OverPtr%is_refined(n)) then
+                  index = overPtr%index(n)
+                  is1 = domain%rSpec(tMe)%isNbr(index); ie1 = domain%rSpec(tMe)%ieNbr(index)
+                  js1 = domain%rSpec(tMe)%jsNbr(index); je1 = domain%rSpec(tMe)%jeNbr(index)
+                  ni = ie1 - is1 + 1
+                  nj = je1 - js1 + 1
+                  total = ni*nj
+                  start = (domain%rSpec(tMe)%start(index)-1)*ke
+                  if(start+total*ke>b_size ) call mpp_error(FATAL, &
+                       "MPP_DO_UPDATE: b_size is less than the size of the data to be filled.")
+                  msgsize = ie - is + 1
+                  do l=1, l_size  ! loop over number of fields
+                     ptr_buffer = b_addrs(l, tMe)
+                     start1 = start + (js-js1)*ni + is - is1
+                     do k = 1, ke
+                        start2 = start1
+                        do j = js, je
+                           fillbuffer(start2+1:start2+msgsize) = buffer(pos+1:pos+msgsize)
+                           start2 = start2 + ni
+                           pos   = pos + msgsize
+                        end do
+                        start1 = start1 + total
+                     end do
+                  end do
+               else
+                  do l=1,l_size  ! loop over number of fields
+                     ptr_field = f_addrs(l, tMe)
+                     do k = 1,ke
+                        do j = js, je
+                           do i = is, ie
+                              pos = pos + 1
+                              field(i,j,k) = buffer(pos)
                            end do
                         end do
-                     endif
-               do n = 3, 1, -1
-                        if( overPtr%overlap(n) )then  ! direction
-                     is = overPtr%is(n); ie = overPtr%ie(n)
-                     js = overPtr%js(n); je = overPtr%je(n)
-                           msgsize = (ie-is+1)*(je-js+1)*ke*l_size
-                     pos = buffer_pos - msgsize
-                     buffer_pos = pos
-                              do l=1, l_size  ! loop over number of fields
-                                 ptr_field = f_addrs(l, tMe)
-                        do k = 1,ke
-                           do j = js, je
-                              do i = is, ie
-                                 pos = pos + 1
-                                       field(i,j,k) = field(i,j,k) + buffer(pos)
-                              end do
-                           end do
-                        end do
-                              end do
-                     endif
-                     end do ! end do n = 3, 1, -1 
-                  end do  ! do tMe=ntileMe,1,-1
-               end do ! end do tNbr = ntileNbr, 1, -1
-            end if ! end if( recv(dir) )
-         end do  ! do dir=8,1,-1
-
+                     end do
+                  end do
+               endif
+            end if
+         end do ! do n = 1, overPtr%count
          call mpp_clock_end(unpk_clock)
       end do
 
@@ -404,4 +392,4 @@
       call mpp_sync_self( )
       call mpp_clock_end(wait_clock)
       return
-    end subroutine MPP_DO_UPDATE_AD_3Dnew_
+    end subroutine MPP_DO_UPDATE_3D_

@@ -31,8 +31,10 @@ program test
                                        ! mpes should be equal to npes     
   integer :: mpes = 0
   integer :: whalo = 2, ehalo = 2, shalo = 2, nhalo = 2
+  integer :: x_cyclic_offset = 3   ! to be used in test_cyclic_offset
+  integer :: y_cyclic_offset = -4  ! to be used in test_cyclic_offset
   namelist / test_mpp_domains_nml / nx, ny, nz, stackmax, debug, mpes, check_parallel, &
-                               whalo, ehalo, shalo, nhalo
+                               whalo, ehalo, shalo, nhalo, x_cyclic_offset, y_cyclic_offset
   integer :: i, j, k
   integer :: layout(2)
   integer :: id
@@ -66,6 +68,11 @@ program test
   
   if( .not. check_parallel) then
       call test_modify_domain()
+      call test_cyclic_offset('x_cyclic_offset')
+      call test_cyclic_offset('y_cyclic_offset')
+      call test_cyclic_offset('torus_x_offset')
+      call test_cyclic_offset('torus_y_offset')
+
       call test_get_boundary('Four-Tile')
       call test_get_boundary('Cubic-Grid')
       call test_uniform_mosaic('Single-Tile')
@@ -1785,8 +1792,11 @@ contains
        ntiles = 6; num_contact = 12
        allocate(ni(ntiles), nj(ntiles))
        ! "Cubic-Grid" will be tested only when nx = ny
-       if( nx /= ny ) call mpp_error(NOTE,'TEST_MPP_DOMAINS(test_refined_mosaic: ' // &
+       if( nx /= ny ) then
+           call mpp_error(NOTE,'TEST_MPP_DOMAINS(test_refined_mosaic: ' // &
            type//' will not be tested because nx is not equal to ny' )
+           return
+       end if
        ! "Cubic-Grid" test case will only run on one pe or multiple 0f 16 pes ( balanced).
        if( npes .NE. 1 .AND. mod(npes,16) .NE. 0) then
           call mpp_error(NOTE,'TEST_MPP_DOMAINS(test_refined_mosaic: ' // &
@@ -1882,20 +1892,7 @@ contains
                 end if
                 total2 = total2 + (ieNb2(noverlap2) - isNb2(noverlap2) + 1) * (jeNb2(noverlap2) - jsNb2(noverlap2) + 1)
              end if
-             if( jsc == jsg ) then   ! --- SOUTH
-                noverlap2 = noverlap2 + 1
-                tNb = mod(tiles(n)+2, ntiles)
-                from_tile(noverlap2,n) = tNb
-                isMe2(noverlap2) = max(isg,isc-whalo); ieMe2(noverlap2) = min(ieg, iec+ehalo)
-                jsMe2(noverlap2) = jsc - shalo;        jeMe2(noverlap2) = jsc - 1
-                if(tiles(n) == 1) then  ! refinement is 2
-                   isNb2(noverlap2) = (isMe2(noverlap2)-1)*2+1;    ieNb2(noverlap2) = ieMe2(noverlap2)*2
-                else                   ! refinement is 2
-                   isNb2(noverlap2) = (isMe2(noverlap2)-1)/2+1;    ieNb2(noverlap2) = ceiling(ieMe2(noverlap2)/2.)
-                end if
-                jsNb2(noverlap2) = nj(tNb) - shalo + 1; jeNb2(noverlap2) = nj(tNb)
-                total2 = total2 + (ieNb2(noverlap2) - isNb2(noverlap2) + 1) * (jeNb2(noverlap2) - jsNb2(noverlap2) + 1)
-             end if
+
              if( isc == isg ) then   ! --- WEST
                 noverlap2 = noverlap2 + 1
                 tNb = tiles(n) + 1
@@ -1908,6 +1905,21 @@ contains
                 else                   ! refinement is 2
                    jsNb2(noverlap2) = (jsMe2(noverlap2)-1)*2+1;  jeNb2(noverlap2) = jeMe2(noverlap2)*2
                 end if
+                total2 = total2 + (ieNb2(noverlap2) - isNb2(noverlap2) + 1) * (jeNb2(noverlap2) - jsNb2(noverlap2) + 1)
+             end if
+
+             if( jsc == jsg ) then   ! --- SOUTH
+                noverlap2 = noverlap2 + 1
+                tNb = mod(tiles(n)+2, ntiles)
+                from_tile(noverlap2,n) = tNb
+                isMe2(noverlap2) = max(isg,isc-whalo); ieMe2(noverlap2) = min(ieg, iec+ehalo)
+                jsMe2(noverlap2) = jsc - shalo;        jeMe2(noverlap2) = jsc - 1
+                if(tiles(n) == 1) then  ! refinement is 2
+                   isNb2(noverlap2) = (isMe2(noverlap2)-1)*2+1;    ieNb2(noverlap2) = ieMe2(noverlap2)*2
+                else                   ! refinement is 2
+                   isNb2(noverlap2) = (isMe2(noverlap2)-1)/2+1;    ieNb2(noverlap2) = ceiling(ieMe2(noverlap2)/2.)
+                end if
+                jsNb2(noverlap2) = nj(tNb) - shalo + 1; jeNb2(noverlap2) = nj(tNb)
                 total2 = total2 + (ieNb2(noverlap2) - isNb2(noverlap2) + 1) * (jeNb2(noverlap2) - jsNb2(noverlap2) + 1)
              end if
 
@@ -2024,7 +2036,17 @@ contains
                 total2 = total2 + (ieNb2(noverlap2) - isNb2(noverlap2) + 1) * (jeNb2(noverlap2) - jsNb2(noverlap2) + 1) 
                 rotation2(noverlap2) = MINUS_NINETY
              end if
-          case ( 4 )  ! possible refined overlap will be at EAST, SOUTH, WEST, NORTH
+          case ( 4 )  ! possible refined overlap will be at NORTH, EAST, SOUTH, WEST
+             if( jec == jeg ) then   ! --- NORTH
+                noverlap2 = noverlap2 + 1
+                tNb = 5
+                from_tile(noverlap2,n) = tNb
+                isMe2(noverlap2) = max(isg,isc - whalo);        ieMe2(noverlap2) = min(ieg, iec+ehalo)
+                jsMe2(noverlap2) = jec + 1;                     jeMe2(noverlap2) = jec + nhalo
+                isNb2(noverlap2) = (isMe2(noverlap2)-1)*2+1;    ieNb2(noverlap2) = ieMe2(noverlap2)*2
+                jsNb2(noverlap2) = 1;                           jeNb2(noverlap2) = nhalo
+                total2 = total2 + (ieNb2(noverlap2) - isNb2(noverlap2) + 1) * (jeNb2(noverlap2) - jsNb2(noverlap2) + 1) 
+             end if
              if( iec == ieg ) then   ! --- EAST
                 noverlap2 = noverlap2 + 1
                 tNb = 6
@@ -2057,17 +2079,8 @@ contains
                 jsNb2(noverlap2) = (jsMe2(noverlap2)-1)/3+1; jeNb2(noverlap2) = ceiling(jeMe2(noverlap2)/3.)
                 total2 = total2 + (ieNb2(noverlap2) - isNb2(noverlap2) + 1) * (jeNb2(noverlap2) - jsNb2(noverlap2) + 1)
              end if
-             if( jec == jeg ) then   ! --- NORTH
-                noverlap2 = noverlap2 + 1
-                tNb = 5
-                from_tile(noverlap2,n) = tNb
-                isMe2(noverlap2) = max(isg,isc - whalo);        ieMe2(noverlap2) = min(ieg, iec+ehalo)
-                jsMe2(noverlap2) = jec + 1;                     jeMe2(noverlap2) = jec + nhalo
-                isNb2(noverlap2) = (isMe2(noverlap2)-1)*2+1;    ieNb2(noverlap2) = ieMe2(noverlap2)*2
-                jsNb2(noverlap2) = 1;                           jeNb2(noverlap2) = nhalo
-                total2 = total2 + (ieNb2(noverlap2) - isNb2(noverlap2) + 1) * (jeNb2(noverlap2) - jsNb2(noverlap2) + 1) 
-             end if
-         case ( 5 )  ! possible refined overlap will be at EAST, SOUTH, WEST, NORTH          
+
+         case ( 5 )  ! possible refined overlap will be at EAST, NORTH, WEST, SOUTH       
              if( iec == ieg ) then   ! --- EAST
                 noverlap2 = noverlap2 + 1
                 tNb = 6
@@ -2077,27 +2090,6 @@ contains
                 isNb2(noverlap2) = 1;                        ieNb2(noverlap2) = ehalo
                 jsNb2(noverlap2) = (jsMe2(noverlap2)-1)*2+1; jeNb2(noverlap2) = jeMe2(noverlap2)*2
                 total2 = total2 + (ieNb2(noverlap2) - isNb2(noverlap2) + 1) * (jeNb2(noverlap2) - jsNb2(noverlap2) + 1) 
-             end if
-             if( jsc == jsg ) then   ! --- SOUTH
-                noverlap2 = noverlap2 + 1
-                tNb = 4
-                from_tile(noverlap2,n) = tNb
-                isMe2(noverlap2) = max(isg,isc - whalo);        ieMe2(noverlap2) = min(ieg, iec+ehalo)
-                jsMe2(noverlap2) = jsc - shalo;                 jeMe2(noverlap2) = jsc  - 1
-                isNb2(noverlap2) = (isMe2(noverlap2)-1)/2+1;    ieNb2(noverlap2) = ceiling(ieMe2(noverlap2)/2.)
-                jsNb2(noverlap2) = nj(tNb) - shalo + 1;         jeNb2(noverlap2) = nj(tNb)
-                total2 = total2 + (ieNb2(noverlap2) - isNb2(noverlap2) + 1) * (jeNb2(noverlap2) - jsNb2(noverlap2) + 1) 
-             end if
-             if( isc == isg ) then   ! --- WEST
-                noverlap2 = noverlap2 + 1
-                tNb = 3
-                from_tile(noverlap2,n) = tNb
-                isMe2(noverlap2) = isc - whalo;                  ieMe2(noverlap2) = isc - 1
-                jsMe2(noverlap2) = max(jsg,jsc - shalo);         jeMe2(noverlap2) = min(jeg, jec+nhalo)
-                isNb2(noverlap2) = (nj(5)-jeMe2(noverlap2))*2+1; ieNb2(noverlap2) = (nj(5)-jsMe2(noverlap2)+1)*2
-                jsNb2(noverlap2) = nj(tNb) - whalo + 1;          jeNb2(noverlap2) = nj(tNb)
-                total2 = total2 + (ieNb2(noverlap2) - isNb2(noverlap2) + 1) * (jeNb2(noverlap2) - jsNb2(noverlap2) + 1)
-                rotation2(noverlap2) = NINETY
              end if
              if( jec == jeg ) then   ! --- NORTH
                 noverlap2 = noverlap2 + 1
@@ -2110,6 +2102,29 @@ contains
                 total2 = total2 + (ieNb2(noverlap2) - isNb2(noverlap2) + 1) * (jeNb2(noverlap2) - jsNb2(noverlap2) + 1)
                 rotation2(noverlap2) = MINUS_NINETY 
              end if
+             if( isc == isg ) then   ! --- WEST
+                noverlap2 = noverlap2 + 1
+                tNb = 3
+                from_tile(noverlap2,n) = tNb
+                isMe2(noverlap2) = isc - whalo;                  ieMe2(noverlap2) = isc - 1
+                jsMe2(noverlap2) = max(jsg,jsc - shalo);         jeMe2(noverlap2) = min(jeg, jec+nhalo)
+                isNb2(noverlap2) = (nj(5)-jeMe2(noverlap2))*2+1; ieNb2(noverlap2) = (nj(5)-jsMe2(noverlap2)+1)*2
+                jsNb2(noverlap2) = nj(tNb) - whalo + 1;          jeNb2(noverlap2) = nj(tNb)
+                total2 = total2 + (ieNb2(noverlap2) - isNb2(noverlap2) + 1) * (jeNb2(noverlap2) - jsNb2(noverlap2) + 1)
+                rotation2(noverlap2) = NINETY
+             end if
+             if( jsc == jsg ) then   ! --- SOUTH
+                noverlap2 = noverlap2 + 1
+                tNb = 4
+                from_tile(noverlap2,n) = tNb
+                isMe2(noverlap2) = max(isg,isc - whalo);        ieMe2(noverlap2) = min(ieg, iec+ehalo)
+                jsMe2(noverlap2) = jsc - shalo;                 jeMe2(noverlap2) = jsc  - 1
+                isNb2(noverlap2) = (isMe2(noverlap2)-1)/2+1;    ieNb2(noverlap2) = ceiling(ieMe2(noverlap2)/2.)
+                jsNb2(noverlap2) = nj(tNb) - shalo + 1;         jeNb2(noverlap2) = nj(tNb)
+                total2 = total2 + (ieNb2(noverlap2) - isNb2(noverlap2) + 1) * (jeNb2(noverlap2) - jsNb2(noverlap2) + 1) 
+             end if
+
+
           case ( 6 )  ! possible refined overlap will be at SOUTH, WEST
              if( jsc == jsg ) then   ! --- SOUTH
                 noverlap2 = noverlap2 + 1
@@ -3680,8 +3695,7 @@ contains
     call compare_checksums( y2, global(isd:ied+shift,jsd:jed+shift,:), type//' BGRID_NE Y2' )
     call compare_checksums( y3, global(isd:ied+shift,jsd:jed+shift,:), type//' BGRID_NE Y3' )
     call compare_checksums( y4, global(isd:ied+shift,jsd:jed+shift,:), type//' BGRID_NE Y4' )
-    !--- delete the communicator
-!!$    call mpp_update_domains( x1, domain, free=.true., list_size=4 )
+
     deallocate(global, x, x1, x2, x3, x4, y, y1, y2, y3, y4)
 
     !------------------------------------------------------------------
@@ -3791,16 +3805,247 @@ contains
     call compare_checksums( y3, global2(isd:ied,      jsd:jed+shift,:), type//' CGRID_NE Y3' )
     call compare_checksums( y4, global2(isd:ied,      jsd:jed+shift,:), type//' CGRID_NE Y4' )
 
-!!$    !--- delete the communicator
-!!$    if(type == 'Simple' .or. type == 'Cyclic' .or. type == 'Folded') then
-!!$       call mpp_update_domains( x1, domain, free=.true., list_size=4 )
-!!$    else
-!!$       call mpp_update_domains( x1, domain, free=.true., list_size=2 )
-!!$    endif
     deallocate(global1, global2, x, x1, x2, x3, x4, y, y1, y2, y3, y4)
 
 
   end subroutine test_halo_update
+
+  !##################################################################################
+  subroutine test_cyclic_offset( type )
+    character(len=*), intent(in) :: type
+    real, allocatable, dimension(:,:,:) :: x, x1, x2, x3, x4
+    real, allocatable, dimension(:,:,:) :: y, y1, y2, y3, y4
+    type(domain2D) :: domain
+    real,    allocatable :: global1(:,:,:), global2(:,:,:), global(:,:,:)
+    integer              :: i, j, k, jj, ii
+    integer              :: is, ie, js, je, isd, ied, jsd, jed
+    character(len=128)   :: type2
+
+    allocate(global(1-whalo:nx+ehalo,1-shalo:ny+nhalo,nz))
+
+    global = 0
+    do k = 1,nz
+       do j = 1,ny
+          do i = 1,nx
+             global(i,j,k) = k + i*1e-3 + j*1e-6
+          end do
+       end do
+    end do
+
+    call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
+    select case(type)
+    case( 'x_cyclic_offset' )
+        write(type2, *)type, ' x_cyclic=', x_cyclic_offset
+        call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
+                                 shalo=shalo, nhalo=nhalo, xflags=CYCLIC_GLOBAL_DOMAIN,   &
+                                 name=type, x_cyclic_offset = x_cyclic_offset)
+        do j = 1, ny
+           jj = mod(j + x_cyclic_offset + ny, ny)
+           if(jj==0) jj = ny
+           global(1-whalo:0,j,:) = global(nx-whalo+1:nx, jj,:) ! West
+           jj = mod(j - x_cyclic_offset + ny, ny)
+           if(jj==0) jj = ny
+           global(nx+1:nx+ehalo,j,:) = global(1:ehalo,jj,:)    ! East
+        end do
+    case( 'y_cyclic_offset' )
+        write(type2, *)type, ' y_cyclic = ', y_cyclic_offset
+        call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
+                                 shalo=shalo, nhalo=nhalo, yflags=CYCLIC_GLOBAL_DOMAIN,   &
+                                 name=type, y_cyclic_offset = y_cyclic_offset)
+        do i = 1, nx
+           ii = mod(i + y_cyclic_offset + nx, nx)
+           if(ii==0) ii = nx
+           global(i, 1-shalo:0,:) = global(ii, ny-shalo+1:ny,:) ! South
+           ii = mod(i - y_cyclic_offset + nx, nx)
+           if(ii==0) ii = nx
+           global(i,ny+1:ny+nhalo,:) = global(ii,1:nhalo,:)    ! NORTH
+        end do
+    case( 'torus_x_offset' )
+        write(type2, *)type, ' x_cyclic = ', x_cyclic_offset
+        call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
+                                 shalo=shalo, nhalo=nhalo, xflags=CYCLIC_GLOBAL_DOMAIN,   &
+                                 yflags=CYCLIC_GLOBAL_DOMAIN, name=type,                  &
+                                 x_cyclic_offset = x_cyclic_offset)
+        do j = 1, ny
+           jj = mod(j + x_cyclic_offset + ny, ny)
+           if(jj==0) jj = ny
+           global(1-whalo:0,j,:) = global(nx-whalo+1:nx, jj,:) ! West
+           jj = mod(j - x_cyclic_offset + ny, ny)
+           if(jj==0) jj = ny
+           global(nx+1:nx+ehalo,j,:) = global(1:ehalo,jj,:)    ! East
+        end do
+        global(1:nx,1-shalo:0,:)     = global(1:nx, ny-shalo+1:ny,:) ! South
+        global(1:nx,ny+1:ny+nhalo,:) = global(1:nx, 1:nhalo, :)    ! NORTH
+        
+        do j = 1, shalo
+           jj = mod(ny-j+1 + x_cyclic_offset + ny, ny)
+           if(jj==0) jj = ny
+           global(1-whalo:0, 1-j,:) = global(nx-whalo+1:nx, jj, :)  ! Southwest
+           jj = mod(ny-j+1-x_cyclic_offset+ny,ny)
+           if(jj==0) jj = ny
+           global(nx+1:nx+ehalo, 1-j,:) = global(1:ehalo, jj, :)    ! Southeast
+        end do
+        do j = 1, nhalo
+           jj = mod(j + x_cyclic_offset + ny, ny)
+           if(jj==0) jj = ny
+           global(1-whalo:0, ny+j,:) = global(nx-whalo+1:nx, jj, :)  ! northwest
+           jj = mod(j - x_cyclic_offset+ny,ny)
+           if(jj==0) jj = ny
+           global(nx+1:nx+ehalo, ny+j,:) = global(1:ehalo, jj, :)    ! northeast
+        end do
+
+    case( 'torus_y_offset' )
+        write(type2, *)type, ' y_cyclic = ', y_cyclic_offset
+        call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
+                                 shalo=shalo, nhalo=nhalo, xflags=CYCLIC_GLOBAL_DOMAIN,   &
+                                 yflags=CYCLIC_GLOBAL_DOMAIN, name=type,                  &
+                                 y_cyclic_offset = y_cyclic_offset)
+        do i = 1, nx
+           ii = mod(i + y_cyclic_offset + nx, nx)
+           if(ii==0) ii = nx
+           global(i, 1-shalo:0,:) = global(ii, ny-shalo+1:ny,:) ! South
+           ii = mod(i - y_cyclic_offset + nx, nx)
+           if(ii==0) ii = nx
+           global(i,ny+1:ny+nhalo,:) = global(ii,1:nhalo,:)    ! NORTH
+        end do
+        global(1-whalo:0,1:ny,:)     = global(nx-whalo+1:nx, 1:ny,:) ! West
+        global(nx+1:nx+ehalo,1:ny,:) = global(1:ehalo, 1:ny, :)      ! East
+        do i = 1, whalo
+           ii = mod(nx-i+1 + y_cyclic_offset + nx, nx)
+           if(ii==0) ii = nx
+           global(1-i, 1-shalo:0,:) = global(ii, ny-shalo+1:ny,:) ! southwest
+           ii = mod(nx-i+1 - y_cyclic_offset + nx, nx)
+           if(ii==0) ii = nx
+           global(1-i,ny+1:ny+nhalo,:) = global(ii,1:nhalo,:)    ! northwest
+        end do
+        do i = 1, ehalo
+           ii = mod(i + y_cyclic_offset + nx, nx)
+           if(ii==0) ii = nx
+           global(nx+i, 1-shalo:0,:) = global(ii, ny-shalo+1:ny,:) ! southeast
+           ii = mod(i - y_cyclic_offset + nx, nx)
+           if(ii==0) ii = nx
+           global(nx+i,ny+1:ny+nhalo,:) = global(ii,1:nhalo,:)    ! northeast
+        end do
+    case default
+        call mpp_error( FATAL, 'TEST_MPP_DOMAINS: no such test: '//type )
+    end select
+        
+!set up x array
+    call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
+    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+    allocate( x (isd:ied,jsd:jed,nz) )
+    allocate( x1(isd:ied,jsd:jed,nz) )
+    allocate( x2(isd:ied,jsd:jed,nz) )
+    allocate( x3(isd:ied,jsd:jed,nz) )
+    allocate( x4(isd:ied,jsd:jed,nz) )
+    x = 0.
+    x (is:ie,js:je,:) = global(is:ie,js:je,:)
+    x1 = x; x2 = x; x3 = x; x4 = x
+
+!full update
+    id = mpp_clock_id( type, flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+    call mpp_clock_begin(id)
+    call mpp_update_domains( x, domain )
+    call mpp_clock_end  (id)
+    call compare_checksums( x, global(isd:ied,jsd:jed,:), trim(type2) )
+
+!partial update
+    id = mpp_clock_id( type//' partial', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+    call mpp_clock_begin(id)
+    call mpp_update_domains( x1, domain, NUPDATE+EUPDATE, complete=.false. )
+    call mpp_update_domains( x2, domain, NUPDATE+EUPDATE, complete=.false. )
+    call mpp_update_domains( x3, domain, NUPDATE+EUPDATE, complete=.false. )
+    call mpp_update_domains( x4, domain, NUPDATE+EUPDATE, complete=.true. )
+    call mpp_clock_end  (id)
+    call compare_checksums( x1(is:ied,js:jed,:), global(is:ied,js:jed,:), trim(type2)//' partial x1' )
+    call compare_checksums( x2(is:ied,js:jed,:), global(is:ied,js:jed,:), trim(type2)//' partial x2' )
+    call compare_checksums( x3(is:ied,js:jed,:), global(is:ied,js:jed,:), trim(type2)//' partial x3' )
+    call compare_checksums( x4(is:ied,js:jed,:), global(is:ied,js:jed,:), trim(type2)//' partial x4' )
+    
+    !--- test vector update for FOLDED and MASKED case.
+    deallocate(x,x1,x2,x3,x4)
+
+
+    !------------------------------------------------------------------
+    !              vector update : BGRID_NE
+    !------------------------------------------------------------------
+    !--- global1 is x-component and global2 is y-component
+    allocate(global1(1-whalo:nx+ehalo, 1-shalo:ny+nhalo, nz))
+    allocate(global2(1-whalo:nx+ehalo, 1-shalo:ny+nhalo, nz))
+    allocate(x (isd:ied,jsd:jed,nz), y (isd:ied,jsd:jed,nz) )
+    allocate(x1(isd:ied,jsd:jed,nz), y1(isd:ied,jsd:jed,nz) )
+    allocate(x2(isd:ied,jsd:jed,nz), y2(isd:ied,jsd:jed,nz) )
+    allocate(x3(isd:ied,jsd:jed,nz), y3(isd:ied,jsd:jed,nz) )
+    allocate(x4(isd:ied,jsd:jed,nz), y4(isd:ied,jsd:jed,nz) )
+    where (global >0)
+       global1 = 1000 + global
+       global2 = 2000 + global
+    elsewhere
+       global1 = 0
+       global2 = 0
+    end where
+    x = 0.; y = 0
+    x(is:ie,js:je,:) = global1(is:ie,js:je,:)
+    y(is:ie,js:je,:) = global2(is:ie,js:je,:)
+    x1 = x; x2 = x; x3 = x; x4 = x
+    y1 = y; y2 = y; y3 = y; y4 = y
+
+    id = mpp_clock_id( type//' vector BGRID_NE', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+    call mpp_clock_begin(id)
+    call mpp_update_domains( x,  y,  domain, gridtype=BGRID_NE)
+    call mpp_update_domains( x1, y1, domain, gridtype=BGRID_NE, complete=.false. )
+    call mpp_update_domains( x2, y2, domain, gridtype=BGRID_NE, complete=.false. )
+    call mpp_update_domains( x3, y3, domain, gridtype=BGRID_NE, complete=.false. )
+    call mpp_update_domains( x4, y4, domain, gridtype=BGRID_NE, complete=.true.  )
+    call mpp_clock_end  (id)
+
+    !redundant points must be equal and opposite
+
+    call compare_checksums( x,  global1(isd:ied,jsd:jed,:), trim(type2)//' BGRID_NE X' )
+    call compare_checksums( y,  global2(isd:ied,jsd:jed,:), trim(type2)//' BGRID_NE Y' )
+    call compare_checksums( x1, global1(isd:ied,jsd:jed,:), trim(type2)//' BGRID_NE X1' )
+    call compare_checksums( x2, global1(isd:ied,jsd:jed,:), trim(type2)//' BGRID_NE X2' )
+    call compare_checksums( x3, global1(isd:ied,jsd:jed,:), trim(type2)//' BGRID_NE X3' )
+    call compare_checksums( x4, global1(isd:ied,jsd:jed,:), trim(type2)//' BGRID_NE X4' )
+    call compare_checksums( y1, global2(isd:ied,jsd:jed,:), trim(type2)//' BGRID_NE Y1' )
+    call compare_checksums( y2, global2(isd:ied,jsd:jed,:), trim(type2)//' BGRID_NE Y2' )
+    call compare_checksums( y3, global2(isd:ied,jsd:jed,:), trim(type2)//' BGRID_NE Y3' )
+    call compare_checksums( y4, global2(isd:ied,jsd:jed,:), trim(type2)//' BGRID_NE Y4' )
+
+    !------------------------------------------------------------------
+    !              vector update : CGRID_NE
+    !------------------------------------------------------------------
+
+    x = 0.; y = 0.
+    x(is:ie,js:je,:) = global1(is:ie,js:je,:)
+    y(is:ie,js:je,:) = global2(is:ie,js:je,:)
+    x1 = x; x2 = x; x3 = x; x4 = x
+    y1 = y; y2 = y; y3 = y; y4 = y
+
+    id = mpp_clock_id( type//' vector CGRID_NE', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+    call mpp_clock_begin(id)
+    call mpp_update_domains( x,  y,  domain, gridtype=CGRID_NE)
+    call mpp_update_domains( x1, y1, domain, gridtype=CGRID_NE, complete=.false. )
+    call mpp_update_domains( x2, y2, domain, gridtype=CGRID_NE, complete=.false. )
+    call mpp_update_domains( x3, y3, domain, gridtype=CGRID_NE, complete=.false. )
+    call mpp_update_domains( x4, y4, domain, gridtype=CGRID_NE, complete=.true.  )
+    call mpp_clock_end  (id)
+
+    call compare_checksums( x,  global1(isd:ied,jsd:jed,:), trim(type2)//' CGRID_NE X' )
+    call compare_checksums( y,  global2(isd:ied,jsd:jed,:), trim(type2)//' CGRID_NE Y' )
+    call compare_checksums( x1, global1(isd:ied,jsd:jed,:), trim(type2)//' CGRID_NE X1' )
+    call compare_checksums( x2, global1(isd:ied,jsd:jed,:), trim(type2)//' CGRID_NE X2' )
+    call compare_checksums( x3, global1(isd:ied,jsd:jed,:), trim(type2)//' CGRID_NE X3' )
+    call compare_checksums( x4, global1(isd:ied,jsd:jed,:), trim(type2)//' CGRID_NE X4' )
+    call compare_checksums( y1, global2(isd:ied,jsd:jed,:), trim(type2)//' CGRID_NE Y1' )
+    call compare_checksums( y2, global2(isd:ied,jsd:jed,:), trim(type2)//' CGRID_NE Y2' )
+    call compare_checksums( y3, global2(isd:ied,jsd:jed,:), trim(type2)//' CGRID_NE Y3' )
+    call compare_checksums( y4, global2(isd:ied,jsd:jed,:), trim(type2)//' CGRID_NE Y4' )
+
+    deallocate(global1, global2, x, x1, x2, x3, x4, y, y1, y2, y3, y4)
+
+
+  end subroutine test_cyclic_offset
 
 
   subroutine test_global_field( type )

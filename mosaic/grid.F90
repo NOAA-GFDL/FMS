@@ -36,7 +36,7 @@ end interface
 character(len=*), parameter :: &
      module_name = 'grid_mod', &
      version     = '$Id: grid.F90,v 1.1.2.1 2007/12/05 16:59:14 slm Exp $', &
-     tagname     = '$Name: omsk_2007_12 $'
+     tagname     = '$Name: omsk_2008_03 $'
 
 character(len=*), parameter :: &
      grid_dir  = 'INPUT/',     &      ! root directory for all grid files

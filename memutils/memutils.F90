@@ -223,7 +223,7 @@ module memutils_mod
     if( present(hplast   ) )hplast    = IHPSTAT(14) !Last word address
     return
   end function hplen
-#endif _CRAY
+#endif /* _CRAY */
 
 #ifdef _CRAYT90
   integer function stklen(            stkhiwm, stknumber, stktotal, stkmost, stkgrew, stkgtimes )
@@ -241,7 +241,7 @@ module memutils_mod
     if( present(stkgtimes) )stkgtimes = istat(7) !#times stack grew
     return
   end function stklen
-#endif _CRAYT90
+#endif /* _CRAYT90 */
 
 !cache utilities: need to write version for other argument types
   function get_l1_cache_line(a)

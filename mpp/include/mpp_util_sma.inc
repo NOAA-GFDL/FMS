@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util_sma.inc,v 14.0 2007/03/15 22:44:14 fms Exp $
+! $Id: mpp_util_sma.inc,v 14.0.12.1 2008/02/22 15:30:10 z1l Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -55,21 +55,6 @@ subroutine mpp_error_basic( errortype, errormsg )
   error_state = errortype
   return
 end subroutine mpp_error_basic
-
-!#####################################################################
-!overloads to mpp_error_basic
-subroutine mpp_error_mesg( routine, errormsg, errortype )
-  !support for error_mesg routine in FMS
-  character(len=*), intent(in) :: routine, errormsg
-  integer, intent(in) :: errortype
-  call mpp_error( errortype, trim(routine)//': '//trim(errormsg) )
-  return
-end subroutine mpp_error_mesg
-
-!#####################################################################
-subroutine mpp_error_noargs()
-  call mpp_error(FATAL)
-end subroutine mpp_error_noargs
 
 !#####################################################################
 

@@ -50,7 +50,7 @@ module time_interp_external_mod
 
   character(len=128), private :: version= &
    'CVS $Id: time_interp_external.F90,v 15.0 2007/08/14 04:15:46 fms Exp $'
-  character(len=128), private :: tagname='Tag $Name: omsk_2007_12 $'
+  character(len=128), private :: tagname='Tag $Name: omsk_2008_03 $'
 
   integer, parameter, private :: max_fields = 1, modulo_year= 0001,max_files= 1
   integer, parameter, private :: LINEAR_TIME_INTERP = 1 ! not used currently

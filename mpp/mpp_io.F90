@@ -346,8 +346,9 @@ private
   public :: mpp_set_unit_range, mpp_get_info, mpp_get_atts, mpp_get_fields
   public :: mpp_get_times, mpp_get_axes, mpp_get_recdimid, mpp_get_axis_data
   public :: mpp_io_set_stack_size, mpp_get_field_index, mpp_get_axis_index
-  public :: mpp_get_att_name, mpp_get_att_type, mpp_get_att_char, mpp_get_att_length
-  public :: mpp_get_field_name, mpp_get_att_real, mpp_get_att_real_scalar
+  public :: mpp_get_field_name, mpp_get_att_value, mpp_get_att_length
+  public :: mpp_get_att_type, mpp_get_att_name, mpp_get_att_real, mpp_get_att_char
+  public :: mpp_get_att_real_scalar
   public :: mpp_get_file_name, mpp_file_is_opened 
 
   !--- public interface from mpp_io_misc.h ----------------------
@@ -462,6 +463,11 @@ private
      module procedure mpp_get_field_atts
      module procedure mpp_get_axis_atts
   end interface
+
+  interface mpp_get_att_value
+     module procedure mpp_get_field_att_text 
+  end interface
+
 
 !***********************************************************************
 !
@@ -786,9 +792,9 @@ private
 
 
   character(len=128) :: version= &
-       '$Id: mpp_io.F90,v 15.0 2007/08/14 04:15:24 fms Exp $'
+       '$Id: mpp_io.F90,v 15.0.6.1 2007/12/19 17:01:19 z1l Exp $'
   character(len=128) :: tagname= &
-       '$Name: omsk_2007_12 $'
+       '$Name: omsk_2008_03 $'
 
 contains
 

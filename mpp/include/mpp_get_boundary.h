@@ -13,12 +13,8 @@ subroutine MPP_GET_BOUNDARY_2D_(field, domain, ebuffer, sbuffer, wbuffer, nbuffe
   MPP_TYPE_, allocatable, dimension(:,:) :: ebuffer2D, sbuffer2D, wbuffer2D, nbuffer2D
   integer                               :: xcount, ycount
 
-#ifdef use_CRI_pointers
   pointer( ptr, field3D )
   ptr  = LOC(field)
-#else
-  field3D   = RESHAPE( field, SHAPE(field3D) )
-#endif
 
   !--- We require wbuffer and ebuffer should coexist, sbuffer and nbuffer should coexist.
   xcount =0; ycount = 0
@@ -79,16 +75,14 @@ subroutine MPP_GET_BOUNDARY_3D_(field, domain, ebuffer, sbuffer, wbuffer, nbuffe
   type(domain2d),  pointer :: Dom => NULL()
   integer                  :: update_flags, ntile
   logical                  :: need_ebuffer, need_sbuffer, need_wbuffer, need_nbuffer
-#ifdef use_CRI_pointers
   integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrs=-9999
   integer(LONG_KIND),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrs=-9999
   integer, save    :: bsize(4)=0, isize=0, jsize=0, ksize=0, pos, list=0, l_size=0, upflags
   integer          :: buffer_size(4)
   integer          :: max_ntile, tile, update_position
-  logical          :: do_update, is_complete, use_new, set_mismatch
+  logical          :: do_update, is_complete, set_mismatch
   character(len=3) :: text
   MPP_TYPE_        :: d_type
-#endif
 
   ntile = size(domain%x(:))
 
@@ -124,14 +118,11 @@ subroutine MPP_GET_BOUNDARY_3D_(field, domain, ebuffer, sbuffer, wbuffer, nbuffe
       if(.NOT. PRESENT(nbuffer) ) call mpp_error( FATAL,'MPP_GET_BOUNDARY_3D: optional argument nbuffer should be presented')
    end if  
 
-#ifdef use_CRI_pointers
   tile = 1
   max_ntile = domain%max_ntile_pe
   is_complete = .true.
-  use_new=.false.
   if(PRESENT(complete)) then
      is_complete = complete
-     use_new = .true.
   end if
 
   if(max_ntile>1) then
@@ -141,91 +132,70 @@ subroutine MPP_GET_BOUNDARY_3D_(field, domain, ebuffer, sbuffer, wbuffer, nbuffe
      endif
      if(.NOT. present(tile_count) ) call mpp_error(FATAL, "MPP_GET_BOUNDARY_3D: "// &
           "optional argument tile_count should be present when number of tiles on this pe is more than 1")
-     use_new = .true.
      tile = tile_count
   end if
 
-  if(use_new) then
-     do_update = (tile == ntile) .AND. is_complete        
-     list = list+1
-     if(list > MAX_DOMAIN_FIELDS)then
-        write( text,'(i2)' ) MAX_DOMAIN_FIELDS
-        call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
-     endif
-     f_addrs(list, tile) = LOC(field)
-     buffer_size = 0
-     if(present(ebuffer)) then
-        b_addrs(1, list, tile) = LOC(ebuffer)
-        buffer_size(1) = size(ebuffer,1)
-     end if
+  do_update = (tile == ntile) .AND. is_complete        
+  list = list+1
+  if(list > MAX_DOMAIN_FIELDS)then
+     write( text,'(i2)' ) MAX_DOMAIN_FIELDS
+     call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
+  endif
+  f_addrs(list, tile) = LOC(field)
+  buffer_size = 0
+  if(present(ebuffer)) then
+     b_addrs(1, list, tile) = LOC(ebuffer)
+     buffer_size(1) = size(ebuffer,1)
+  end if
 
-     if(present(sbuffer)) then
-        b_addrs(2, list, tile) = LOC(sbuffer)
-        buffer_size(2) = size(sbuffer,1)
-     end if     
+  if(present(sbuffer)) then
+     b_addrs(2, list, tile) = LOC(sbuffer)
+     buffer_size(2) = size(sbuffer,1)
+  end if
 
-     if(present(wbuffer)) then
-        b_addrs(3, list, tile) = LOC(wbuffer)
-        buffer_size(3) = size(wbuffer,1)
-     end if
+  if(present(wbuffer)) then
+     b_addrs(3, list, tile) = LOC(wbuffer)
+     buffer_size(3) = size(wbuffer,1)
+  end if
 
-     if(present(nbuffer)) then
-        b_addrs(4, list, tile) = LOC(nbuffer)
-        buffer_size(4) = size(nbuffer,1)
-     end if
+  if(present(nbuffer)) then
+     b_addrs(4, list, tile) = LOC(nbuffer)
+     buffer_size(4) = size(nbuffer,1)
+  end if
 
-     update_position = CENTER
-     if(present(position)) update_position = position
-     if(present(position)) update_position = position
-     if(list == 1 .AND. tile == 1 )then
-        isize=size(field,1); jsize=size(field,2); ksize = size(field,3); pos = update_position
-        bsize = buffer_size; upflags = update_flags
-     else
-        set_mismatch = .false.
-        set_mismatch = set_mismatch .OR. (isize .NE. size(field,1))
-        set_mismatch = set_mismatch .OR. (jsize .NE. size(field,2))
-        set_mismatch = set_mismatch .OR. (ksize .NE. size(field,3))
-        set_mismatch = set_mismatch .OR. ANY( bsize .NE. buffer_size )
-        set_mismatch = set_mismatch .OR. (update_position .NE. pos)
-        set_mismatch = set_mismatch .OR. (upflags .NE. update_flags)
-        if(set_mismatch)then
-           write( text,'(i2)' ) list
-           call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D: Incompatible field at count '//text//' for group update.' )
-        endif
-     endif
-     if(is_complete) then
-        l_size = list
-        list = 0
-     end if
-
-     if(do_update )then
-        !--- only non-center data in symmetry domain will be retrieved.
-        if(position == CENTER .OR. (.NOT. domain%symmetry) ) return 
-        Dom => get_domain(domain, position)
-        if(size(field,1) .NE. Dom%x(1)%memory%size .OR. size(field,2) .NE. Dom%y(1)%memory%size ) &
-             call mpp_error(FATAL, "MPP_GET_BOUNDARY_3D: field is not on memory domain")
-        call mpp_do_get_boundary(f_addrs(1:l_size,1:ntile), Dom, b_addrs(:,1:l_size,1:ntile), bsize, ksize, d_type, update_flags)
-        l_size=0; f_addrs=-9999; bsize=0; b_addrs=-9999; isize=0;  jsize=0;  ksize=0
-     end if
+  update_position = CENTER
+  if(present(position)) update_position = position
+  if(present(position)) update_position = position
+  if(list == 1 .AND. tile == 1 )then
+     isize=size(field,1); jsize=size(field,2); ksize = size(field,3); pos = update_position
+     bsize = buffer_size; upflags = update_flags
   else
+     set_mismatch = .false.
+     set_mismatch = set_mismatch .OR. (isize .NE. size(field,1))
+     set_mismatch = set_mismatch .OR. (jsize .NE. size(field,2))
+     set_mismatch = set_mismatch .OR. (ksize .NE. size(field,3))
+     set_mismatch = set_mismatch .OR. ANY( bsize .NE. buffer_size )
+     set_mismatch = set_mismatch .OR. (update_position .NE. pos)
+     set_mismatch = set_mismatch .OR. (upflags .NE. update_flags)
+     if(set_mismatch)then
+        write( text,'(i2)' ) list
+        call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D: Incompatible field at count '//text//' for group update.' )
+     endif
+  endif
+  if(is_complete) then
+     l_size = list
+     list = 0
+  end if
+
+  if(do_update )then
      !--- only non-center data in symmetry domain will be retrieved.
      if(position == CENTER .OR. (.NOT. domain%symmetry) ) return 
      Dom => get_domain(domain, position)
-     !--- data must be on memory domain
      if(size(field,1) .NE. Dom%x(1)%memory%size .OR. size(field,2) .NE. Dom%y(1)%memory%size ) &
-         call mpp_error(FATAL, "MPP_GET_BOUNDARY_3D: field is not on memory domain")
-     call mpp_do_get_boundary( field, Dom, update_flags, ebuffer, sbuffer, wbuffer, nbuffer)
+          call mpp_error(FATAL, "MPP_GET_BOUNDARY_3D: field is not on memory domain")
+     call mpp_do_get_boundary(f_addrs(1:l_size,1:ntile), Dom, b_addrs(:,1:l_size,1:ntile), bsize, ksize, d_type, update_flags)
+     l_size=0; f_addrs=-9999; bsize=0; b_addrs=-9999; isize=0;  jsize=0;  ksize=0
   end if
-#else
-  if(ntile>1) call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D: when use_CRI_pointers is not defined, '// &
-       'number of tiles on each pe should be 1')    
-  !--- only non-center data in symmetry domain will be retrieved.
-        if(position == CENTER .OR. (.NOT. domain%symmetry) ) return 
-  Dom => get_domain(domain, position)
-  if(size(field,1) .NE. Dom%x(1)%memory%size .OR. size(field,2) .NE. Dom%y(1)%memory%size ) &
-       call mpp_error(FATAL, "MPP_GET_BOUNDARY_3D: field is not on memory domain")
-  call mpp_do_get_boundary( field, Dom, update_flags, ebuffer, sbuffer, wbuffer, nbuffer)
-#endif
 
 end subroutine MPP_GET_BOUNDARY_3D_
 
@@ -241,12 +211,8 @@ subroutine MPP_GET_BOUNDARY_4D_(field, domain, ebuffer, sbuffer, wbuffer, nbuffe
   MPP_TYPE_                              :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4))
   MPP_TYPE_, allocatable, dimension(:,:) :: ebuffer2D, sbuffer2D, wbuffer2D, nbuffer2D
   integer                                :: xcount, ycount
-#ifdef use_CRI_pointers
   pointer( ptr, field3D )
   ptr = LOC(field)
-#else
-  field3D = RESHAPE( field, SHAPE(field3D) )
-#endif
 
   !--- We require wbuffer and ebuffer should coexist, sbuffer and nbuffer should coexist.
   xcount = 0; ycount = 0
@@ -308,12 +274,8 @@ subroutine MPP_GET_BOUNDARY_5D_(field, domain, ebuffer, sbuffer, wbuffer, nbuffe
   MPP_TYPE_                              :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4)*size(field,5))
   MPP_TYPE_, allocatable, dimension(:,:) :: ebuffer2D, sbuffer2D, wbuffer2D, nbuffer2D
   integer                                :: xcount, ycount
-#ifdef use_CRI_pointers
   pointer( ptr, field3D )
   ptr = LOC(field)
-#else
-  field3D = RESHAPE( field, SHAPE(field3D) )
-#endif
 
   !--- We require wbuffer and ebuffer should coexist, sbuffer and nbuffer should coexist.
   xcount = 0; ycount = 0
@@ -383,15 +345,10 @@ subroutine MPP_GET_BOUNDARY_2D_V_(fieldx, fieldy, domain, ebufferx, sbufferx, wb
   MPP_TYPE_, allocatable, dimension(:,:) :: ebuffery2D, sbuffery2D, wbuffery2D, nbuffery2D
   integer                                :: xxcount, xycount, yycount, yxcount
 
-#ifdef use_CRI_pointers
   pointer( ptrx, field3Dx )
   pointer( ptry, field3Dy )
   ptrx  = LOC(fieldx)
   ptry  = LOC(fieldy)
-#else
-  field3Dx   = RESHAPE( fieldx, SHAPE(field3Dx) )
-  field3Dy   = RESHAPE( fieldy, SHAPE(field3Dy) )
-#endif
 
   !--- We require wbuffex and ebufferx should coexist, sbufferx and nbufferx should coexist.
   !---            wbuffey and ebuffery should coexist, sbuffery and nbuffery should coexist.
@@ -494,7 +451,7 @@ subroutine MPP_GET_BOUNDARY_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx, wb
   integer                 :: ntile, update_flags
   logical                 :: need_ebufferx, need_sbufferx, need_wbufferx, need_nbufferx
   logical                 :: need_ebuffery, need_sbuffery, need_wbuffery, need_nbuffery
-#ifdef use_CRI_pointers
+
   integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrsx=-9999
   integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrsy=-9999
   integer(LONG_KIND),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrsx=-9999
@@ -503,10 +460,10 @@ subroutine MPP_GET_BOUNDARY_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx, wb
   integer, save    :: offset_type, upflags
   integer          :: bufferx_size(4), buffery_size(4)
   integer          :: max_ntile, tile, grid_offset_type
-  logical          :: do_update, is_complete, use_new, set_mismatch
+  logical          :: do_update, is_complete, set_mismatch
   character(len=3) :: text
   MPP_TYPE_        :: d_type
-#endif
+
 
   ntile = size(domain%x(:))
   update_flags = XUPDATE+YUPDATE   !default
@@ -571,14 +528,11 @@ subroutine MPP_GET_BOUNDARY_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx, wb
       if(.NOT. PRESENT(nbuffery) ) call mpp_error( FATAL,'MPP_GET_BOUNDARY_3D_V: optional argument nbuffery should be presented')
    end if  
 
-#ifdef use_CRI_pointers
   tile = 1
   max_ntile = domain%max_ntile_pe
   is_complete = .true.
-  use_new=.false.
   if(PRESENT(complete)) then
      is_complete = complete
-     use_new = .true.
   end if
 
   if(max_ntile>1) then
@@ -588,124 +542,100 @@ subroutine MPP_GET_BOUNDARY_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx, wb
      endif
      if(.NOT. present(tile_count) ) call mpp_error(FATAL, "MPP_GET_BOUNDARY_3D: "// &
           "optional argument tile_count should be present when number of tiles on this pe is more than 1")
-     use_new = .true.
      tile = tile_count
   end if
 
-  if(use_new) then
-     do_update = (tile == ntile) .AND. is_complete        
-     list = list+1
-     if(list > MAX_DOMAIN_FIELDS)then
-        write( text,'(i2)' ) MAX_DOMAIN_FIELDS
-        call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
-     endif
-     f_addrsx(list, tile) = LOC(fieldx)
-     f_addrsy(list, tile) = LOC(fieldy)
+  do_update = (tile == ntile) .AND. is_complete        
+  list = list+1
+  if(list > MAX_DOMAIN_FIELDS)then
+     write( text,'(i2)' ) MAX_DOMAIN_FIELDS
+     call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
+  endif
+  f_addrsx(list, tile) = LOC(fieldx)
+  f_addrsy(list, tile) = LOC(fieldy)
 
-     bufferx_size = 0; buffery_size = 0     
-     if(present(ebufferx)) then
-        b_addrsx(1, list, tile) = LOC(ebufferx)
-        bufferx_size(1) = size(ebufferx,1)
-     end if
+  bufferx_size = 0; buffery_size = 0     
+  if(present(ebufferx)) then
+     b_addrsx(1, list, tile) = LOC(ebufferx)
+     bufferx_size(1) = size(ebufferx,1)
+  end if
 
-     if(present(sbufferx)) then
-        b_addrsx(2, list, tile) = LOC(sbufferx)
-        bufferx_size(2) = size(sbufferx,1)
-     end if     
+  if(present(sbufferx)) then
+     b_addrsx(2, list, tile) = LOC(sbufferx)
+     bufferx_size(2) = size(sbufferx,1)
+  end if
 
-     if(present(wbufferx)) then
-        b_addrsx(3, list, tile) = LOC(wbufferx)
-        bufferx_size(3) = size(wbufferx,1)
-     end if
+  if(present(wbufferx)) then
+     b_addrsx(3, list, tile) = LOC(wbufferx)
+     bufferx_size(3) = size(wbufferx,1)
+  end if
 
-     if(present(nbufferx)) then
-        b_addrsx(4, list, tile) = LOC(nbufferx)
-        bufferx_size(4) = size(nbufferx,1)
-     end if
+  if(present(nbufferx)) then
+     b_addrsx(4, list, tile) = LOC(nbufferx)
+     bufferx_size(4) = size(nbufferx,1)
+  end if
 
-     if(present(ebuffery)) then
-        b_addrsy(1, list, tile) = LOC(ebuffery)
-        buffery_size(1) = size(ebuffery,1)
-     end if
+  if(present(ebuffery)) then
+     b_addrsy(1, list, tile) = LOC(ebuffery)
+     buffery_size(1) = size(ebuffery,1)
+  end if
 
-     if(present(sbuffery)) then
-        b_addrsy(2, list, tile) = LOC(sbuffery)
-        buffery_size(2) = size(sbuffery,1)
-     end if     
+  if(present(sbuffery)) then
+     b_addrsy(2, list, tile) = LOC(sbuffery)
+     buffery_size(2) = size(sbuffery,1)
+  end if
 
-     if(present(wbuffery)) then
-        b_addrsy(3, list, tile) = LOC(wbuffery)
-        buffery_size(3) = size(wbuffery,1)
-     end if
+  if(present(wbuffery)) then
+     b_addrsy(3, list, tile) = LOC(wbuffery)
+     buffery_size(3) = size(wbuffery,1)
+  end if
 
-     if(present(nbuffery)) then
-        b_addrsy(4, list, tile) = LOC(nbuffery)
-        buffery_size(4) = size(nbuffery,1)
-     end if
+  if(present(nbuffery)) then
+     b_addrsy(4, list, tile) = LOC(nbuffery)
+     buffery_size(4) = size(nbuffery,1)
+  end if
 
-     grid_offset_type = AGRID
-     if(present(gridtype)) grid_offset_type = gridtype
-     if(list == 1 .AND. tile == 1 )then
-        isize(1)=size(fieldx,1); jsize(1)=size(fieldx,2); isize(2)=size(fieldy,1); jsize(2)=size(fieldy,2)
-        ksize = size(fieldx,3); offset_type = grid_offset_type
-        bsizex = bufferx_size; bsizey = buffery_size; upflags = update_flags
-     else
-        set_mismatch = .false.
-        set_mismatch = set_mismatch .OR. (isize(1) .NE. size(fieldx,1))
-        set_mismatch = set_mismatch .OR. (jsize(1) .NE. size(fieldx,2))
-        set_mismatch = set_mismatch .OR. (ksize    .NE. size(fieldx,3))
-        set_mismatch = set_mismatch .OR. (isize(2) .NE. size(fieldy,1))
-        set_mismatch = set_mismatch .OR. (jsize(2) .NE. size(fieldy,2))
-        set_mismatch = set_mismatch .OR. (ksize    .NE. size(fieldy,3))
-        set_mismatch = set_mismatch .OR. ANY( bsizex .NE. bufferx_size )
-        set_mismatch = set_mismatch .OR. ANY( bsizey .NE. buffery_size )
-        set_mismatch = set_mismatch .OR. (offset_type .NE. grid_offset_type)
-        set_mismatch = set_mismatch .OR. (upflags .NE. update_flags)
-        if(set_mismatch)then
-           write( text,'(i2)' ) list
-           call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D_V: Incompatible field at count '//text//' for group update.' )
-        endif
-     endif
-     if(is_complete) then
-        l_size = list
-        list = 0
-     end if
-
-     if(do_update )then
-        Domx => get_domain(domain, gridtype=gridtype, direction='x')
-        Domy => get_domain(domain, gridtype=gridtype, direction='y')
-        if(size(fieldx,1) .NE. Domx%x(1)%memory%size .OR. size(fieldx,2) .NE. Domx%y(1)%memory%size ) &
-             call mpp_error(FATAL, "MPP_GET_BOUNDARY_3D_V: fieldx is not on memory domain")
-        if(size(fieldy,1) .NE. Domy%x(1)%memory%size .OR. size(fieldy,2) .NE. Domy%y(1)%memory%size ) &
-             call mpp_error(FATAL, "MPP_GET_BOUNDARY_3D_V: fieldy is not on memory domain")
-        call mpp_do_get_boundary(f_addrsx(1:l_size,1:ntile), f_addrsy(1:l_size,1:ntile), Domx, Domy, &
-                                 b_addrsx(:,1:l_size,1:ntile), b_addrsy(:,1:l_size,1:ntile), bsizex, &
-                                 bsizey, ksize, d_type, update_flags)
-        l_size=0; f_addrsx=-9999; f_addrsy=-9999; bsizex=0; bsizey=0; 
-        b_addrsx=-9999; b_addrsy=-9999; isize=0;  jsize=0;  ksize=0
-     end if
+  grid_offset_type = AGRID
+  if(present(gridtype)) grid_offset_type = gridtype
+  if(list == 1 .AND. tile == 1 )then
+     isize(1)=size(fieldx,1); jsize(1)=size(fieldx,2); isize(2)=size(fieldy,1); jsize(2)=size(fieldy,2)
+     ksize = size(fieldx,3); offset_type = grid_offset_type
+     bsizex = bufferx_size; bsizey = buffery_size; upflags = update_flags
   else
+     set_mismatch = .false.
+     set_mismatch = set_mismatch .OR. (isize(1) .NE. size(fieldx,1))
+     set_mismatch = set_mismatch .OR. (jsize(1) .NE. size(fieldx,2))
+     set_mismatch = set_mismatch .OR. (ksize    .NE. size(fieldx,3))
+     set_mismatch = set_mismatch .OR. (isize(2) .NE. size(fieldy,1))
+     set_mismatch = set_mismatch .OR. (jsize(2) .NE. size(fieldy,2))
+     set_mismatch = set_mismatch .OR. (ksize    .NE. size(fieldy,3))
+     set_mismatch = set_mismatch .OR. ANY( bsizex .NE. bufferx_size )
+     set_mismatch = set_mismatch .OR. ANY( bsizey .NE. buffery_size )
+     set_mismatch = set_mismatch .OR. (offset_type .NE. grid_offset_type)
+     set_mismatch = set_mismatch .OR. (upflags .NE. update_flags)
+     if(set_mismatch)then
+        write( text,'(i2)' ) list
+        call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D_V: Incompatible field at count '//text//' for group update.' )
+     endif
+  endif
+  if(is_complete) then
+     l_size = list
+     list = 0
+  end if
+
+  if(do_update )then
      Domx => get_domain(domain, gridtype=gridtype, direction='x')
      Domy => get_domain(domain, gridtype=gridtype, direction='y')
      if(size(fieldx,1) .NE. Domx%x(1)%memory%size .OR. size(fieldx,2) .NE. Domx%y(1)%memory%size ) &
           call mpp_error(FATAL, "MPP_GET_BOUNDARY_3D_V: fieldx is not on memory domain")
      if(size(fieldy,1) .NE. Domy%x(1)%memory%size .OR. size(fieldy,2) .NE. Domy%y(1)%memory%size ) &
           call mpp_error(FATAL, "MPP_GET_BOUNDARY_3D_V: fieldy is not on memory domain")
-     call mpp_do_get_boundary( fieldx, fieldy, Domx, Domy, update_flags, ebufferx, sbufferx, wbufferx, nbufferx, &
-                               ebuffery, sbuffery, wbuffery, nbuffery)
+     call mpp_do_get_boundary(f_addrsx(1:l_size,1:ntile), f_addrsy(1:l_size,1:ntile), Domx, Domy, &
+          b_addrsx(:,1:l_size,1:ntile), b_addrsy(:,1:l_size,1:ntile), bsizex, &
+          bsizey, ksize, d_type, update_flags)
+     l_size=0; f_addrsx=-9999; f_addrsy=-9999; bsizex=0; bsizey=0; 
+     b_addrsx=-9999; b_addrsy=-9999; isize=0;  jsize=0;  ksize=0
   end if
-#else
-  if(ntile>1) call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D_V: when use_CRI_pointers is not defined, '// &
-       'number of tiles on each pe should be 1')    
-  Domx => get_domain(domain, gridtype=gridtype, direction='x')
-  Domy => get_domain(domain, gridtype=gridtype, direction='y')
-  if(size(fieldx,1) .NE. Domx%x(1)%memory%size .OR. size(fieldx,2) .NE. Domx%y(1)%memory%size ) &
-       call mpp_error(FATAL, "MPP_GET_BOUNDARY_3D_V: fieldx is not on memory domain")
-  if(size(fieldy,1) .NE. Domy%x(1)%memory%size .OR. size(fieldy,2) .NE. Domy%y(1)%memory%size ) &
-       call mpp_error(FATAL, "MPP_GET_BOUNDARY_3D_V: fieldy is not on memory domain")
-  call mpp_do_get_boundary( fieldx, fieldy, Domx, Domy, update_flags, ebufferx, sbufferx, wbufferx, nbufferx, &
-                            ebuffery, sbuffery, wbuffery, nbuffery)
-#endif
 
 end subroutine MPP_GET_BOUNDARY_3D_V_
 
@@ -725,15 +655,10 @@ subroutine MPP_GET_BOUNDARY_4D_V_(fieldx, fieldy, domain, ebufferx, sbufferx, wb
   MPP_TYPE_, allocatable, dimension(:,:) :: ebuffery2D, sbuffery2D, wbuffery2D, nbuffery2D
   integer                                :: xxcount, xycount, yycount, yxcount
 
-#ifdef use_CRI_pointers
   pointer( ptrx, field3Dx )
   pointer( ptry, field3Dy )
   ptrx  = LOC(fieldx)
   ptry  = LOC(fieldy)
-#else
-  field3Dx   = RESHAPE( fieldx, SHAPE(field3Dx) )
-  field3Dy   = RESHAPE( fieldy, SHAPE(field3Dy) )
-#endif
 
   !--- We require wbuffex and ebufferx should coexist, sbufferx and nbufferx should coexist.
   !---            wbuffey and ebuffery should coexist, sbuffery and nbuffery should coexist.
@@ -838,15 +763,10 @@ subroutine MPP_GET_BOUNDARY_5D_V_(fieldx, fieldy, domain, ebufferx, sbufferx, wb
   MPP_TYPE_, allocatable, dimension(:,:) :: ebuffery2D, sbuffery2D, wbuffery2D, nbuffery2D
   integer                                :: xxcount, xycount, yycount, yxcount
 
-#ifdef use_CRI_pointers
   pointer( ptrx, field3Dx )
   pointer( ptry, field3Dy )
   ptrx  = LOC(fieldx)
   ptry  = LOC(fieldy)
-#else
-  field3Dx   = RESHAPE( fieldx, SHAPE(field3Dx) )
-  field3Dy   = RESHAPE( fieldy, SHAPE(field3Dy) )
-#endif
 
   !--- We require wbuffex and ebufferx should coexist, sbufferx and nbufferx should coexist.
   !---            wbuffey and ebuffery should coexist, sbuffery and nbuffery should coexist.

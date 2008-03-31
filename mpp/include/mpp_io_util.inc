@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_util.inc,v 14.0 2007/03/15 22:43:22 fms Exp $
+! $Id: mpp_io_util.inc,v 14.0.10.1 2007/12/19 17:01:22 z1l Exp $
 
 
   !#####################################################################
@@ -704,3 +704,38 @@
 
    end function mpp_file_is_opened
 
+   !####################################################################
+   ! return the attribute value of given field name
+   subroutine mpp_get_field_att_text(unit, fieldname, attname, attvalue)
+     integer,           intent(in) :: unit  
+     character(len=*),  intent(in) :: fieldname, attname
+     character(len=*), intent(out) :: attvalue 
+     logical                       :: found_field,  found_att
+     integer                       :: i, j
+
+     found_field = .false.
+     found_att = .false.
+     do i=1,mpp_file(unit)%nvar
+        if( trim(mpp_file(unit)%Var(i)%name) == trim(fieldname)) then
+           found_field = .true.
+           do j=1, size(mpp_file(unit)%Var(i)%Att(:))
+              if( trim(mpp_file(unit)%Var(i)%Att(j)%name) == trim(attname) ) then
+                 found_att = .true.
+                 if(len(attvalue) .LE. len_trim(mpp_file(unit)%Var(i)%Att(j)%catt) ) call mpp_error(FATAL, &
+                      'mpp_io_util.inc: length of attvalue is less than the length of catt')
+                 attvalue = trim(mpp_file(unit)%Var(i)%Att(j)%catt)
+                 exit
+              end if
+           end do
+           exit
+        end if
+     end do
+
+     if(.NOT. found_field) call mpp_error(FATAL,"mpp_io_util.inc: field "//trim(fieldname)// &
+               " does not exist in the file "//trim(mpp_file(unit)%name) )
+     if(.NOT. found_att) call mpp_error(FATAL,"mpp_io_util.inc: attribute "//trim(attname)//" of field "&
+               //trim(fieldname)// " does not exist in the file "//trim(mpp_file(unit)%name) )
+
+     return
+
+   end subroutine mpp_get_field_att_text

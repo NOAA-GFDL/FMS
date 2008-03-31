@@ -1,5 +1,5 @@
 ! -*-f90-*- 
-subroutine MPP_DO_GET_BOUNDARY_3Dnew_( f_addrs, domain, b_addrs, bsize, ke, d_type, flags)
+subroutine MPP_DO_GET_BOUNDARY_3D_( f_addrs, domain, b_addrs, bsize, ke, d_type, flags)
   type(domain2D), intent(in)      :: domain
   integer(LONG_KIND), intent(in)  :: f_addrs(:,:)
   integer(LONG_KIND), intent(in)  :: b_addrs(:,:,:)
@@ -221,10 +221,10 @@ subroutine MPP_DO_GET_BOUNDARY_3Dnew_( f_addrs, domain, b_addrs, bsize, ke, d_ty
   call mpp_sync_self( )
 
 
-end subroutine MPP_DO_GET_BOUNDARY_3Dnew_
+end subroutine MPP_DO_GET_BOUNDARY_3D_
 
 
-subroutine MPP_DO_GET_BOUNDARY_3Dnew_V_(f_addrsx, f_addrsy, domainx, domainy, b_addrsx, b_addrsy, &
+subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domainx, domainy, b_addrsx, b_addrsy, &
                                         bsizex, bsizey, ke, d_type, flags)
   type(domain2D), intent(in)      :: domainx, domainy
   integer(LONG_KIND), intent(in)  :: f_addrsx(:,:), f_addrsy(:,:)
@@ -455,7 +455,7 @@ subroutine MPP_DO_GET_BOUNDARY_3Dnew_V_(f_addrsx, f_addrsy, domainx, domainy, b_
         mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, pos )
         if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
            write( text,'(i8)' )mpp_domains_stack_hwm
-           call mpp_error( FATAL, 'MPP_DO_GET_BOUNDARY_V_NEW: mpp_domains_stack overflow, ' // &
+           call mpp_error( FATAL, 'MPP_DO_GET_BOUNDARY_V_: mpp_domains_stack overflow, ' // &
                 'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.')
         end if
         call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=domainx%list(m)%pe )
@@ -489,7 +489,7 @@ subroutine MPP_DO_GET_BOUNDARY_3Dnew_V_(f_addrsx, f_addrsy, domainx, domainy, b_
         mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize) )
         if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
            write( text,'(i8)' )mpp_domains_stack_hwm
-           call mpp_error( FATAL, 'MPP_DO_GET_BOUNDARY_V_NEW: mpp_domains_stack overflow, '// &
+           call mpp_error( FATAL, 'MPP_DO_GET_BOUNDARY_V_: mpp_domains_stack overflow, '// &
                 'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
         end if
         call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=domainx%list(m)%pe )
@@ -647,4 +647,4 @@ subroutine MPP_DO_GET_BOUNDARY_3Dnew_V_(f_addrsx, f_addrsy, domainx, domainy, b_
 
 
 
-end subroutine MPP_DO_GET_BOUNDARY_3Dnew_V_
+end subroutine MPP_DO_GET_BOUNDARY_3D_V_

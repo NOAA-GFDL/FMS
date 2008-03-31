@@ -33,8 +33,8 @@ private
 !----------- ****** VERSION NUMBER ******* ---------------------------
 
 
-character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 14.0 2007/03/15 22:37:48 fms Exp $'
-character(len=128)  :: tag     =  '$Name: omsk_2007_12 $'
+character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 14.0.8.1 2008/01/08 14:45:07 rsh Exp $'
+character(len=128)  :: tag     =  '$Name: omsk_2008_03 $'
 
 
 
@@ -53,10 +53,22 @@ public    column_diagnostics_init,  &
 !--------------------------------------------------------------------
 !----    namelist -----
 
-integer      :: dummy
+real          :: crit_xdistance = 4.0   
+                 ! model grid points must be within crit_xdistance in 
+                 ! longitude of the requested diagnostics point 
+                 ! coordinates in order to be flagged as the desired
+                 ! point 
+                 ! [ degrees ]
+real          :: crit_ydistance = 4.0   
+                 ! model grid points must be within crit_ydistance in 
+                 ! latitude of the requested diagnostics point 
+                 ! coordinates in order to be flagged as the desired
+                 ! point 
+                 ! [ degrees ]
 
 namelist / column_diagnostics_nml /              &
-                                      dummy
+                                      crit_xdistance, &
+                                      crit_ydistance
 
 !--------------------------------------------------------------------
 !-------- public data  -----
@@ -164,8 +176,8 @@ integer,               intent(in)    :: num_diag_pts_latlon,  &
 integer, dimension(:), intent(in)    :: global_i, global_j   
 real   , dimension(:), intent(in)    :: global_lat_latlon,    &
                                         global_lon_latlon 
-real,    dimension(:), intent(in)    :: lonb_in, latb_in
-logical, dimension(:), intent(out)   :: do_column_diagnostics
+real,    dimension(:,:), intent(in)  :: lonb_in, latb_in
+logical, dimension(:,:), intent(out) :: do_column_diagnostics
 integer, dimension(:), intent(inout) :: diag_i, diag_j        
 real   , dimension(:), intent(out)   :: diag_lat, diag_lon
 integer, dimension(:), intent(out)   :: diag_units
@@ -200,15 +212,23 @@ integer, dimension(:), intent(out)   :: diag_units
 !--------------------------------------------------------------------
 !    local variables:
 
-      real, dimension(size(diag_i,1)) :: global_lat, global_lon
-      real, dimension(size(latb_in(:))) :: latb_deg
-      real, dimension(size(lonb_in(:))) :: lonb_deg
+      real, dimension(size(diag_i,1))     :: global_lat, global_lon
+      real, dimension(size(latb_in,1)-1, size(latb_in,2)-1) ::  &
+                                  distance, distance_x, distance_y, &
+                                   distance_x2, distance2
+      real, dimension(size(latb_in,1), size(latb_in,2)) :: latb_deg
+      real, dimension(size(lonb_in,1), size(lonb_in,2)) :: lonb_deg
       real       :: dellat, dellon
+      real       :: latb_max, latb_min, lonb_max, lonb_min
 
       integer            ::  num_diag_pts
       integer            ::  i, j, nn
+      real               ::  ref_lat
+      real               ::  current_distance
       character(len=8)   ::  char
-      character(len=32)  ::   filename
+      character(len=32)  ::  filename
+      logical            ::  allow_ij_input
+      logical            ::  open_file        
 
 !--------------------------------------------------------------------
 !    local variables:
@@ -231,8 +251,32 @@ integer, dimension(:), intent(out)   :: diag_units
 !--------------------------------------------------------------------
       latb_deg = latb_in*RADIAN
       lonb_deg = lonb_in*RADIAN
-      dellat = latb_in(2) - latb_in(1)
-      dellon = lonb_in(2) - lonb_in(1)
+      dellat = latb_in(1,2) - latb_in(1,1)
+      dellon = lonb_in(2,1) - lonb_in(1,1)
+      latb_max = MAXVAL (latb_deg(:,:))
+      latb_min = MINVAL (latb_deg(:,:))
+      lonb_max = MAXVAL (lonb_deg(:,:))
+      lonb_min = MINVAL (lonb_deg(:,:))
+      if (lonb_min < 10.0 .or. lonb_max > 350.) then
+        lonb_min = 0.
+        lonb_max = 360.0
+      endif
+
+      allow_ij_input = .true.
+      ref_lat = latb_in(1,1)
+      do i =2,size(latb_in,1)
+        if (latb_in(i,1) /= ref_lat) then
+          allow_ij_input = .false.
+          exit
+        endif
+      end do
+
+      if ( .not. allow_ij_input .and. num_diag_pts_ij /= 0) then
+        call error_mesg ('column_diagnostics_mod', &
+        'cannot specify column diagnostics column with (i,j) &
+           &coordinates when using cubed sphere -- must specify &
+                                    & lat/lon coordinates', FATAL)
+      endif
 
 !----------------------------------------------------------------------
 !    initialize column_diagnostics flag and diag unit numbers. define 
@@ -267,6 +311,8 @@ integer, dimension(:), intent(out)   :: diag_units
 !    this processor.
 !----------------------------------------------------------------------
       do nn=1,num_diag_pts
+        open_file = .false.
+
 !----------------------------------------------------------------------
 !    verify that the values of lat and lon are valid.
 !----------------------------------------------------------------------
@@ -282,38 +328,86 @@ integer, dimension(:), intent(out)   :: diag_units
         endif
 
 !--------------------------------------------------------------------
-!    determine if the diagnostics column is within the current 
-!    processor's domain. if so, set a logical flag indicating the
-!    presence of a diagnostic column on the particular row, define the 
-!    i and j processor-coordinates and the latitude and longitude of 
-!    the diagnostics column.
+!    if the desired diagnostics column is within the current 
+!    processor's domain, define the total and coordinate distances from
+!    each of the processor's grid points to the diagnostics point. 
 !--------------------------------------------------------------------
-        do j=1,size(latb_deg(:)) - 1
-          if (global_lat(nn) .ge. latb_deg(j) .and.  &
-              global_lat(nn) .lt. latb_deg(j+1)) then
-            do i=1,size(lonb_deg(:)) - 1
-              if (global_lon(nn) .ge. lonb_deg(i)     .and.&
-                  global_lon(nn) .lt. lonb_deg(i+1))  then
-                do_column_diagnostics(j) = .true.
-                diag_j(nn) = j
-                diag_i(nn) = i
-                diag_lon(nn) = 0.5*(lonb_deg(i) + lonb_deg(i+1))
-                diag_lat(nn) = 0.5*(latb_deg(j) + latb_deg(j+1))
-                write (char, '(i2)') nn
-                filename = trim(module) // '_point' //    &
-                           trim(adjustl(char)) // '.out'
-                call mpp_open (diag_units(nn), filename, &
-                               form=MPP_ASCII, &
-                               action=MPP_OVERWR,  &
-                               access=MPP_SEQUENTIAL,  &
-                               threading=MPP_MULTI, nohdrs=.true.)
-                exit
-              endif
+
+        if (global_lat(nn) .ge. latb_min .and.  &
+            global_lat(nn) .le. latb_max) then
+          if (global_lon(nn) .ge. lonb_min     .and.&
+              global_lon(nn) .le. lonb_max)  then
+            do j=1,size(latb_deg,2) - 1
+              do i=1,size(lonb_deg,1) - 1
+                distance_y(i,j) = ABS(global_lat(nn) - latb_deg(i,j))
+                distance_x(i,j) = ABS(global_lon(nn) - lonb_deg(i,j))
+                distance_x2(i,j) = ABS((global_lon(nn)-360.) -  &
+                                                       lonb_deg(i,j))
+                distance(i,j) = (global_lat(nn) - latb_deg(i,j))**2 + &
+                                (global_lon(nn) - lonb_deg(i,j))**2
+                distance2(i,j) = (global_lat(nn) - latb_deg(i,j))**2 + &
+                                 ((global_lon(nn)-360.) -    &
+                                                   lonb_deg(i,j))**2
+              end do
             end do
-            exit
+
+!--------------------------------------------------------------------
+!    find the grid point on the processor that is within the specified
+!    critical distance and also closest to the requested diagnostics 
+!    column. save the (i,j) coordinates and (lon,lat) of this model
+!    grid point. set a flag indicating that a disgnostics file should
+!    be opened on this processor for this diagnostic point.
+!--------------------------------------------------------------------
+            current_distance = distance(1,1)
+            do j=1,size(latb_deg,2) - 1
+              do i=1,size(lonb_deg,1) - 1
+                if (distance_x(i,j) <= crit_xdistance .and. &
+                    distance_y(i,j) <= crit_ydistance ) then  
+                  if (distance(i,j) < current_distance) then
+                    current_distance = distance(i,j)
+                    do_column_diagnostics(i,j) = .true.
+                    diag_j(nn) = j
+                    diag_i(nn) = i
+                    diag_lon(nn) = lonb_deg(i,j)
+                    diag_lat(nn) = latb_deg(i,j)
+                    open_file = .true.
+                  endif
+                endif
+
+!---------------------------------------------------------------------
+!    check needed because of the 0.0 / 360.0 longitude periodicity.
+!---------------------------------------------------------------------
+                if (distance_x2(i,j) <= crit_xdistance .and. &
+                    distance_y(i,j) <= crit_ydistance ) then  
+                  if (distance2(i,j) < current_distance) then
+                    current_distance = distance2(i,j)
+                    do_column_diagnostics(i,j) = .true.
+                    diag_j(nn) = j
+                    diag_i(nn) = i
+                    diag_lon(nn) = lonb_deg(i,j)
+                    diag_lat(nn) = latb_deg(i,j)
+                    open_file = .true.
+                  endif
+                endif
+              end do
+            end do
+
+!--------------------------------------------------------------------
+!    if the point has been found on this processor, open a diagnostics
+!    file. 
+!--------------------------------------------------------------------
+            if (open_file) then
+              write (char, '(i2)') nn
+              filename = trim(module) // '_point' //    &
+                         trim(adjustl(char)) // '.out'
+              call mpp_open (diag_units(nn), filename, &
+                             form=MPP_ASCII, &
+                             action=MPP_OVERWR,  &
+                             access=MPP_SEQUENTIAL,  &
+                             threading=MPP_MULTI, nohdrs=.true.)
+            endif  ! (open_file)
           endif
-        end do
-        
+        endif
       end do
 
 !---------------------------------------------------------------------

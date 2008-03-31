@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_write.inc,v 14.0 2007/03/15 22:43:25 fms Exp $
+! $Id: mpp_io_write.inc,v 14.0.12.1 2008/02/21 16:11:59 z1l Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                            !
@@ -657,7 +657,7 @@
       else
           call mpp_error( FATAL, 'WRITE_ATTRIBUTE_NETCDF: one of rval, ival, cval must be present.' )
       end if
-#endif use_netCDF
+#endif /* use_netCDF */
       return
     end subroutine write_attribute_netcdf
       

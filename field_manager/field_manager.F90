@@ -175,8 +175,8 @@ implicit none
 private
 
 
-character(len=128) :: version = '$Id: field_manager.F90,v 15.0 2007/08/14 04:13:49 fms Exp $'
-character(len=128) :: tagname = '$Name: omsk_2007_12 $'
+character(len=128) :: version = '$Id: field_manager.F90,v 15.0.4.1 2008/01/04 22:00:56 wfc Exp $'
+character(len=128) :: tagname = '$Name: omsk_2008_03 $'
 logical            :: module_is_initialized  = .false.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -1768,10 +1768,10 @@ list_p%length = 0
 list_p%field_type = null_type
 list_p%max_index = 0
 list_p%array_dim = 0
-deallocate(list_p%i_value, stat=ier)
-deallocate(list_p%l_value, stat=ier)
-deallocate(list_p%r_value, stat=ier)
-deallocate(list_p%s_value, stat=ier)
+if (associated(list_p%i_value)) deallocate(list_p%i_value)
+if (associated(list_p%l_value)) deallocate(list_p%l_value)
+if (associated(list_p%r_value)) deallocate(list_p%r_value)
+if (associated(list_p%s_value)) deallocate(list_p%s_value)
 !
 !        If this is the first field in the parent, then set the pointer
 !        to it, otherwise, update the "next" pointer for the last list
@@ -3917,7 +3917,7 @@ if (error .ne. 0) then !{
   nullify(return_p)
   return
 endif  !}
-deallocate(return_p%names, stat=ier)
+if ( associated(return_p%names)) deallocate(return_p%names)
 !
 !        return if any list is empty
 !
@@ -4507,7 +4507,7 @@ if (associated(temp_list_p)) then  !{
       do i = 1, temp_field_p%max_index  !{
         temp_i_value(i) = temp_field_p%i_value(i)
       enddo  !} i
-      deallocate(temp_field_p%i_value, stat=ier)
+      if (associated (temp_field_p%i_value)) deallocate(temp_field_p%i_value)
       temp_field_p%i_value => temp_i_value
       temp_field_p%max_index = index_t
     endif  !}
@@ -4741,7 +4741,7 @@ if (associated(temp_list_p)) then  !{
       do i = 1, temp_field_p%max_index  !{
         temp_l_value(i) = temp_field_p%l_value(i)
       enddo  !} i
-      deallocate(temp_field_p%l_value, stat=ier)
+      if (associated(temp_field_p%l_value)) deallocate(temp_field_p%l_value)
       temp_field_p%l_value => temp_l_value
       temp_field_p%max_index = index_t
 
@@ -4970,7 +4970,7 @@ if (associated(temp_list_p)) then  !{
       do i = 1, temp_field_p%max_index  !{
         temp_r_value(i) = temp_field_p%r_value(i)
       enddo  !} i
-      deallocate(temp_field_p%r_value, stat=ier)
+      if (associated(temp_field_p%r_value)) deallocate(temp_field_p%r_value)
       temp_field_p%r_value => temp_r_value
       temp_field_p%max_index = index_t
     endif  !}
@@ -5204,7 +5204,7 @@ if (associated(temp_list_p)) then  !{
       do i = 1, temp_field_p%max_index  !{
         temp_s_value(i) = temp_field_p%s_value(i)
       enddo  !} i
-      deallocate(temp_field_p%s_value, stat=ier)
+      if (associated(temp_field_p%s_value)) deallocate(temp_field_p%s_value)
       temp_field_p%s_value => temp_s_value
       temp_field_p%max_index = index_t
 
@@ -5582,10 +5582,10 @@ if (.not. module_is_initialized) then  !{
   nullify(root%last_field)
   root%max_index = 0
   root%array_dim = 0
-  deallocate(root%i_value, stat=ier)
-  deallocate(root%l_value, stat=ier)
-  deallocate(root%r_value, stat=ier)
-  deallocate(root%s_value, stat=ier)
+  if (associated(root%i_value)) deallocate(root%i_value)
+  if (associated(root%l_value)) deallocate(root%l_value)
+  if (associated(root%r_value)) deallocate(root%r_value)
+  if (associated(root%s_value)) deallocate(root%s_value)
 
   nullify(root%next)
   nullify(root%prev)
@@ -5694,10 +5694,10 @@ endif  !}
 !
 list_p%length = 0
 list_p%field_type = list_type
-deallocate(list_p%i_value, stat=ier)
-deallocate(list_p%l_value, stat=ier)
-deallocate(list_p%r_value, stat=ier)
-deallocate(list_p%s_value, stat=ier)
+if (associated(list_p%i_value)) deallocate(list_p%i_value)
+if (associated(list_p%l_value)) deallocate(list_p%l_value)
+if (associated(list_p%r_value)) deallocate(list_p%r_value)
+if (associated(list_p%s_value)) deallocate(list_p%s_value)
 
 end function  make_list  !}
 ! </FUNCTION> NAME="make_list"

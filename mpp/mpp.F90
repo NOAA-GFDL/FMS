@@ -334,6 +334,31 @@ private
      module procedure mpp_error_basic
      module procedure mpp_error_mesg
      module procedure mpp_error_noargs
+     module procedure mpp_error_is
+     module procedure mpp_error_rs
+     module procedure mpp_error_ia
+     module procedure mpp_error_ra
+     module procedure mpp_error_ia_ia
+     module procedure mpp_error_ia_ra
+     module procedure mpp_error_ra_ia
+     module procedure mpp_error_ra_ra
+     module procedure mpp_error_ia_is
+     module procedure mpp_error_ia_rs
+     module procedure mpp_error_ra_is
+     module procedure mpp_error_ra_rs
+     module procedure mpp_error_is_ia
+     module procedure mpp_error_is_ra
+     module procedure mpp_error_rs_ia
+     module procedure mpp_error_rs_ra
+     module procedure mpp_error_is_is
+     module procedure mpp_error_is_rs
+     module procedure mpp_error_rs_is
+     module procedure mpp_error_rs_rs
+  end interface
+
+  interface array_to_char
+     module procedure iarray_to_char
+     module procedure rarray_to_char
   end interface
 
 !***********************************************************************
@@ -575,7 +600,7 @@ private
      module procedure mpp_sum_real8_3d
      module procedure mpp_sum_real8_4d
      module procedure mpp_sum_real8_5d
-#ifdef OVERLOAD_C4
+#ifdef OVERLOAD_C8
      module procedure mpp_sum_cmplx8
      module procedure mpp_sum_cmplx8_scalar
      module procedure mpp_sum_cmplx8_2d
@@ -1083,7 +1108,7 @@ private
   !(t3e: fixed on 3.3 I believe)
   integer, parameter :: MPI_INTEGER8=MPI_INTEGER
 #endif
-#endif use_libMPI
+#endif /* use_libMPI */
 #ifdef use_MPI_SMA
 #include <mpp/shmem.fh>
   integer :: pSync(SHMEM_BARRIER_SYNC_SIZE)
@@ -1104,7 +1129,7 @@ private
   character(len=128), public :: version= &
        '$Id mpp.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: omsk_2007_12 $'
+       '$Name: omsk_2008_03 $'
 
   contains
 #include <system_clock.h>

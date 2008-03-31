@@ -640,42 +640,30 @@
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
-#undef MPP_DO_UPDATE_3Dnew_
-#define MPP_DO_UPDATE_3Dnew_ mpp_do_update_new_r8_3d
-#undef MPP_DO_UPDATE_3Dold_
-#define MPP_DO_UPDATE_3Dold_ mpp_do_update_old_r8_3d
+#undef MPP_DO_UPDATE_3D_
+#define MPP_DO_UPDATE_3D_ mpp_do_update_r8_3d
 #ifdef  VECTOR_FIELD_
-#undef MPP_DO_UPDATE_3Dnew_V_
-#define MPP_DO_UPDATE_3Dnew_V_ mpp_do_update_new_r8_3dv
-#undef MPP_DO_UPDATE_3Dold_V_
-#define MPP_DO_UPDATE_3Dold_V_ mpp_do_update_old_r8_3dv
+#undef MPP_DO_UPDATE_3D_V_
+#define MPP_DO_UPDATE_3D_V_ mpp_do_update_r8_3dv
 #endif
-#include <mpp_do_update_old.h>
-#include <mpp_do_updateV_old.h>
-#include <mpp_do_update_new.h>
-#include <mpp_do_updateV_new.h>
+#include <mpp_do_update.h>
+#include <mpp_do_updateV.h>
 
 #ifdef OVERLOAD_C8
 #undef  VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
-#undef MPP_DO_UPDATE_3Dnew_
-#define MPP_DO_UPDATE_3Dnew_ mpp_do_update_new_c8_3d
-#undef MPP_DO_UPDATE_3Dold_
-#define MPP_DO_UPDATE_3Dold_ mpp_do_update_old_c8_3d
-#include <mpp_do_update_old.h>
-#include <mpp_do_update_new.h>
+#undef MPP_DO_UPDATE_3D_
+#define MPP_DO_UPDATE_3D_ mpp_do_update_c8_3d
+#include <mpp_do_update.h>
 #endif
 
 #ifndef no_8byte_integers
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
-#undef MPP_DO_UPDATE_3Dnew_
-#define MPP_DO_UPDATE_3Dnew_ mpp_do_update_new_i8_3d
-#undef MPP_DO_UPDATE_3Dold_
-#define MPP_DO_UPDATE_3Dold_ mpp_do_update_old_i8_3d
-#include <mpp_do_update_old.h>
-#include <mpp_do_update_new.h>
+#undef MPP_DO_UPDATE_3D_
+#define MPP_DO_UPDATE_3D_ mpp_do_update_i8_3d
+#include <mpp_do_update.h>
 #endif
 
 #ifdef OVERLOAD_R4
@@ -683,42 +671,30 @@
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
-#undef MPP_DO_UPDATE_3Dnew_
-#define MPP_DO_UPDATE_3Dnew_ mpp_do_update_new_r4_3d
-#undef MPP_DO_UPDATE_3Dold_
-#define MPP_DO_UPDATE_3Dold_ mpp_do_update_old_r4_3d
+#undef MPP_DO_UPDATE_3D_
+#define MPP_DO_UPDATE_3D_ mpp_do_update_r4_3d
 #ifdef  VECTOR_FIELD_
-#undef MPP_DO_UPDATE_3Dnew_V_
-#define MPP_DO_UPDATE_3Dnew_V_ mpp_do_update_new_r4_3dv
-#undef MPP_DO_UPDATE_3Dold_V_
-#define MPP_DO_UPDATE_3Dold_V_ mpp_do_update_old_r4_3dv
+#undef MPP_DO_UPDATE_3D_V_
+#define MPP_DO_UPDATE_3D_V_ mpp_do_update_r4_3dv
 #endif
-#include <mpp_do_update_old.h>
-#include <mpp_do_updateV_old.h>
-#include <mpp_do_update_new.h>
-#include <mpp_do_updateV_new.h>
+#include <mpp_do_update.h>
+#include <mpp_do_updateV.h>
 #endif
 
 #ifdef OVERLOAD_C4
 #undef  VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
-#undef MPP_DO_UPDATE_3Dnew_
-#define MPP_DO_UPDATE_3Dnew_ mpp_do_update_new_c4_3d
-#undef MPP_DO_UPDATE_3Dold_
-#define MPP_DO_UPDATE_3Dold_ mpp_do_update_old_c4_3d
-#include <mpp_do_update_old.h>
-#include <mpp_do_update_new.h>
+#undef MPP_DO_UPDATE_3D_
+#define MPP_DO_UPDATE_3D_ mpp_do_update_c4_3d
+#include <mpp_do_update.h>
 #endif
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
-#undef MPP_DO_UPDATE_3Dnew_
-#define MPP_DO_UPDATE_3Dnew_ mpp_do_update_new_i4_3d
-#undef MPP_DO_UPDATE_3Dold_
-#define MPP_DO_UPDATE_3Dold_ mpp_do_update_old_i4_3d
-#include <mpp_do_update_old.h>
-#include <mpp_do_update_new.h>
+#undef MPP_DO_UPDATE_3D_
+#define MPP_DO_UPDATE_3D_ mpp_do_update_i4_3d
+#include <mpp_do_update.h>
 
 !bnc
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -837,42 +813,30 @@
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
-#undef MPP_DO_UPDATE_AD_3Dnew_
-#define MPP_DO_UPDATE_AD_3Dnew_ mpp_do_update_ad_new_r8_3d
-#undef MPP_DO_UPDATE_AD_3Dold_
-#define MPP_DO_UPDATE_AD_3Dold_ mpp_do_update_ad_old_r8_3d
+#undef MPP_DO_UPDATE_AD_3D_
+#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_r8_3d
 #ifdef  VECTOR_FIELD_
-#undef MPP_DO_UPDATE_AD_3Dnew_V_
-#define MPP_DO_UPDATE_AD_3Dnew_V_ mpp_do_update_ad_new_r8_3dv
-#undef MPP_DO_UPDATE_AD_3Dold_V_
-#define MPP_DO_UPDATE_AD_3Dold_V_ mpp_do_update_ad_old_r8_3dv
+#undef MPP_DO_UPDATE_AD_3D_V_
+#define MPP_DO_UPDATE_AD_3D_V_ mpp_do_update_ad_r8_3dv
 #endif
-#include <mpp_do_update_old_ad.h>
-#include <mpp_do_updateV_old_ad.h>
-#include <mpp_do_update_new_ad.h>
-#include <mpp_do_updateV_new_ad.h>
+#include <mpp_do_update_ad.h>
+#include <mpp_do_updateV_ad.h>
 #undef  VECTOR_FIELD_
 
 #ifdef OVERLOAD_C8
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
-#undef MPP_DO_UPDATE_AD_3Dnew_
-#define MPP_DO_UPDATE_AD_3Dnew_ mpp_do_update_ad_new_c8_3d
-#undef MPP_DO_UPDATE_AD_3Dold_
-#define MPP_DO_UPDATE_AD_3Dold_ mpp_do_update_ad_old_c8_3d
-#include <mpp_do_update_old_ad.h>
-#include <mpp_do_update_new_ad.h>
+#undef MPP_DO_UPDATE_AD_3D_
+#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_c8_3d
+#include <mpp_do_update_ad.h>
 #endif
                                                                                   
 #ifndef no_8byte_integers
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
-#undef MPP_DO_UPDATE_AD_3Dnew_
-#define MPP_DO_UPDATE_AD_3Dnew_ mpp_do_update_ad_new_i8_3d
-#undef MPP_DO_UPDATE_AD_3Dold_
-#define MPP_DO_UPDATE_AD_3Dold_ mpp_do_update_ad_old_i8_3d
-#include <mpp_do_update_old_ad.h>
-#include <mpp_do_update_new_ad.h>
+#undef MPP_DO_UPDATE_AD_3D_
+#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_i8_3d
+#include <mpp_do_update_ad.h>
 #endif
 
 #ifdef OVERLOAD_R4
@@ -880,42 +844,30 @@
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
-#undef MPP_DO_UPDATE_AD_3Dnew_
-#define MPP_DO_UPDATE_AD_3Dnew_ mpp_do_update_ad_new_r4_3d
-#undef MPP_DO_UPDATE_AD_3Dold_
-#define MPP_DO_UPDATE_AD_3Dold_ mpp_do_update_ad_old_r4_3d
+#undef MPP_DO_UPDATE_AD_3D_
+#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_r4_3d
 #ifdef  VECTOR_FIELD_
-#undef MPP_DO_UPDATE_AD_3Dnew_V_
-#define MPP_DO_UPDATE_AD_3Dnew_V_ mpp_do_update_ad_new_r4_3dv
-#undef MPP_DO_UPDATE_AD_3Dold_V_
-#define MPP_DO_UPDATE_AD_3Dold_V_ mpp_do_update_ad_old_r4_3dv
+#undef MPP_DO_UPDATE_AD_3D_V_
+#define MPP_DO_UPDATE_AD_3D_V_ mpp_do_update_ad_r4_3dv
 #endif
-#include <mpp_do_update_old_ad.h>
-#include <mpp_do_updateV_old_ad.h>
-#include <mpp_do_update_new_ad.h>
-#include <mpp_do_updateV_new_ad.h>
+#include <mpp_do_update_ad.h>
+#include <mpp_do_updateV_ad.h>
 #endif
 
 #ifdef OVERLOAD_C4
 #undef  VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
-#undef MPP_DO_UPDATE_AD_3Dnew_
-#define MPP_DO_UPDATE_AD_3Dnew_ mpp_do_update_ad_new_c4_3d
-#undef MPP_DO_UPDATE_AD_3Dold_
-#define MPP_DO_UPDATE_AD_3Dold_ mpp_do_update_ad_old_c4_3d
-#include <mpp_do_update_old_ad.h>
-#include <mpp_do_update_new_ad.h>
+#undef MPP_DO_UPDATE_AD_3D_
+#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_c4_3d
+#include <mpp_do_update_ad.h>
 #endif
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
-#undef MPP_DO_UPDATE_AD_3Dnew_
-#define MPP_DO_UPDATE_AD_3Dnew_ mpp_do_update_ad_new_i4_3d
-#undef MPP_DO_UPDATE_AD_3Dold_
-#define MPP_DO_UPDATE_AD_3Dold_ mpp_do_update_ad_old_i4_3d
-#include <mpp_do_update_old_ad.h>
-#include <mpp_do_update_new_ad.h>
+#undef MPP_DO_UPDATE_AD_3D_
+#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_i4_3d
+#include <mpp_do_update_ad.h>
 
 !bnc
 
@@ -1047,29 +999,18 @@
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
-#undef MPP_DO_GET_BOUNDARY_3Dnew_
-#define MPP_DO_GET_BOUNDARY_3Dnew_ mpp_do_get_boundary_new_r8_3d
-#undef MPP_DO_GET_BOUNDARY_3Dnew_V_
-#define MPP_DO_GET_BOUNDARY_3Dnew_V_ mpp_do_get_boundary_new_r8_3dv
-#include <mpp_do_get_boundary_new.h>
-
-#undef MPP_DO_GET_BOUNDARY_3Dold_
-#define MPP_DO_GET_BOUNDARY_3Dold_ mpp_do_get_boundary_old_r8_3d
-#undef MPP_DO_GET_BOUNDARY_3Dold_V_
-#define MPP_DO_GET_BOUNDARY_3Dold_V_ mpp_do_get_boundary_old_r8_3dv
-#include <mpp_do_get_boundary_old.h>
+#undef MPP_DO_GET_BOUNDARY_3D_
+#define MPP_DO_GET_BOUNDARY_3D_ mpp_do_get_boundary_r8_3d
+#undef MPP_DO_GET_BOUNDARY_3DV_
+#define MPP_DO_GET_BOUNDARY_3D_V_ mpp_do_get_boundary_r8_3dv
+#include <mpp_do_get_boundary.h>
 
 #ifdef OVERLOAD_R4
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
-#undef MPP_DO_GET_BOUNDARY_3Dnew_
-#define MPP_DO_GET_BOUNDARY_3Dnew_ mpp_do_get_boundary_new_r4_3d
-#undef MPP_DO_GET_BOUNDARY_3Dnew_V_
-#define MPP_DO_GET_BOUNDARY_3Dnew_V_ mpp_do_get_boundary_new_r4_3dv
-#include <mpp_do_get_boundary_new.h>
-#undef MPP_DO_GET_BOUNDARY_3Dold_
-#define MPP_DO_GET_BOUNDARY_3Dold_ mpp_do_get_boundary_old_r4_3d
-#undef MPP_DO_GET_BOUNDARY_3Dold_V_
-#define MPP_DO_GET_BOUNDARY_3Dold_V_ mpp_do_get_boundary_old_r4_3dv
-#include <mpp_do_get_boundary_old.h>
+#undef MPP_DO_GET_BOUNDARY_3D_
+#define MPP_DO_GET_BOUNDARY_3D_ mpp_do_get_boundary_r4_3d
+#undef MPP_DO_GET_BOUNDARY_3D_V_
+#define MPP_DO_GET_BOUNDARY_3D_V_ mpp_do_get_boundary_r4_3dv
+#include <mpp_do_get_boundary.h>
 #endif

@@ -137,7 +137,7 @@ implicit none
 !
 !-----------------------------------------------------------------------
   character(len=128) :: version = '$Id: coupler_types.F90,v 15.0 2007/08/14 04:13:15 fms Exp $'
-  character(len=128) :: tag = '$Name: omsk_2007_12 $'
+  character(len=128) :: tag = '$Name: omsk_2008_03 $'
 !-----------------------------------------------------------------------
 real, parameter :: bound_tol = 1e-7
 

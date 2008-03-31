@@ -55,7 +55,7 @@ type (diag_axis_type), allocatable, save :: Axes(:)
 logical            :: module_is_initialized = .FALSE.
 character(len=128) :: &
      version='$Id: diag_axis.F90,v 15.0.4.1 2007/12/04 17:12:54 slm Exp $'
-character(len=128) :: tagname='$Name: omsk_2007_12 $'
+character(len=128) :: tagname='$Name: omsk_2008_03 $'
 
 contains
 !#######################################################################

@@ -88,7 +88,7 @@ character(len=fm_path_name_len) :: save_current_list
 character(len=fm_path_name_len) :: save_path
 character(len=fm_path_name_len) :: save_name
 character(len=128) :: version = '$Id: fm_util.F90,v 15.0 2007/08/14 04:13:52 fms Exp $'
-character(len=128) :: tagname = '$Name: omsk_2007_12 $'
+character(len=128) :: tagname = '$Name: omsk_2008_03 $'
 
 !
 !        Interface definitions for overloaded routines

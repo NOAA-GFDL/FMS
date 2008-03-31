@@ -534,51 +534,39 @@ void read_mosaic_contact(const char *mosaic_file, int *tile1, int *tile2, int *i
       istart1[n] = (istart1[n]+1)/x_refine-1;
       iend1[n]   = istart1[n];
       if( jend1[n] > jstart1[n] ) {
-	--(jstart1[n]);
-	if(jstart1[n]%y_refine != 0)
-	  error_handler("Error from read_mosaic_contact: jstart1 should be an odd number when istart1=iend1");
-	if((jend1[n]-jstart1[n])%y_refine != 0)
-	  error_handler("Error from read_mosaic_contact: ny1 can not be divided by y_refine when istart1=iend1");
-	jstart1[n] /= y_refine;
-	jend1[n] = jstart1[n] + (jend1[n]-jstart1[n])/y_refine - 1;
+	jstart1[n] -= 1;
+	jend1[n]   -= y_refine;
       }
-      else if( jstart1[n] > jend1[n] ) {
-	--(jend1[n]);
-	if(jend1[n]%y_refine != 0)
-	  error_handler("Error from read_mosaic_contact: jend1 should be an odd number when istart1=iend1");
-	if((jstart1[n]-jend1[n])%y_refine != 0)
-	  error_handler("Error from read_mosaic_contact: ny1 can not be divided by y_refine when istart1=iend1");
-	jend1[n] /= y_refine;
-	jstart1[n] = jend1[n] + (jstart1[n]-jend1[n])/y_refine - 1;
+      else if( jend1[n] < jstart1[n] ) {
+	jstart1[n] -= y_refine;
+	jend1[n]   -= 1;
       }
-      else {
+      else
 	error_handler("Error from read_mosaic_contact: jstart1 and jend1 should not be equal when istart1=iend1");
-      }
+
+      if(jstart1[n]%y_refine || jend1[n]%y_refine)
+	error_handler("Error from read_mosaic_contact: mismatch between y_refine and jstart1/jend1 when istart1=iend1");
+      jstart1[n] /= y_refine;
+      jend1[n]   /= y_refine;
     }
     else if( jstart1[n] == jend1[n] ) {
       jstart1[n] = (jstart1[n]+1)/y_refine-1;
-      jend1[n]   = jstart1[n];
-      if(iend1[n] > istart1[n] ){
-	--(istart1[n]);
-	if(istart1[n]%x_refine != 0)
-	  error_handler("Error from read_mosaic_contact: istart1 should be an odd number when jstart1=jend1");
-	if((iend1[n]-istart1[n])%x_refine != 0)
-	  error_handler("Error from read_mosaic_contact: nx1 can not be divided by y_refine when jstart1=jend1");
-	istart1[n] /= x_refine;
-	iend1[n] = istart1[n] + (iend1[n]-istart1[n])/x_refine - 1;
+      jend1[n]   = jstart1[n];      
+      if(iend1[n] > istart1[n] ) {
+	istart1[n] -= 1;
+	iend1[n]   -= x_refine;
       }
-      else if(istart1[n] > iend1[n] ){
-	--(iend1[n]);
-	if(iend1[n]%x_refine != 0)
-	  error_handler("Error from read_mosaic_contact: iend1 should be an odd number when jstart1=jend1");
-	if((istart1[n]-iend1[n])%x_refine != 0)
-	  error_handler("Error from read_mosaic_contact: nx1 can not be divided by y_refine when jstart1=jend1");
-	iend1[n] /= x_refine;
-	istart1[n] = iend1[n] + (istart1[n]-iend1[n])/x_refine - 1;
+      else if(istart1[n] > iend1[n] ) {
+	istart1[n] -= x_refine;
+	iend1[n]   -= 1;	
       }
-      else {
+      else
 	error_handler("Error from read_mosaic_contact: istart1 and iend1 should not be equal when jstart1=jend1");
-      }
+      
+      if(istart1[n]%x_refine || iend1[n]%x_refine)
+	error_handler("Error from read_mosaic_contact: mismatch between x_refine and istart1/iend1 when jstart1=jend1");
+      istart1[n] /= x_refine;
+      iend1[n]   /= x_refine;
     }
     else {
       error_handler("Error from read_mosaic_contact: only line contact is supported now, contact developer");
@@ -587,51 +575,40 @@ void read_mosaic_contact(const char *mosaic_file, int *tile1, int *tile2, int *i
       istart2[n] = (istart2[n]+1)/x_refine-1;
       iend2[n]   = istart2[n];
       if( jend2[n] > jstart2[n] ) {
-	--(jstart2[n]);
-	if(jstart2[n]%y_refine != 0)
-	  error_handler("Error from read_mosaic_contact: jstart2 should be an odd number when istart2=iend2");
-	if((jend2[n]-jstart2[n])%y_refine != 0)
-	  error_handler("Error from read_mosaic_contact: ny2 can not be divided by y_refine when istart2=iend2");
-	jstart2[n] /= y_refine;
-	jend2[n] = jstart2[n] + (jend2[n]-jstart2[n])/y_refine - 1;
+	jstart2[n] -= 1;
+	jend2[n]   -= y_refine;
       }
       else if( jstart2[n] > jend2[n] ) {
-	--(jend2[n]);
-	if(jend2[n]%y_refine != 0)
-	  error_handler("Error from read_mosaic_contact: jend2 should be an odd number when istart2=iend2");
-	if((jstart2[n]-jend2[n])%y_refine != 0)
-	  error_handler("Error from read_mosaic_contact: ny2 can not be divided by y_refine when istart2=iend2");
-	jend2[n] /= y_refine;
-	jstart2[n] = jend2[n] + (jstart2[n]-jend2[n])/y_refine - 1;
+	jstart2[n] -= y_refine;
+	jend2[n]   -= 1;
       }
-      else {
+      else
 	error_handler("Error from read_mosaic_contact: jstart2 and jend2 should not be equal when istart2=iend2");
-      }
+      
+      if(jstart2[n]%y_refine || jend2[n]%y_refine )
+	error_handler("Error from read_mosaic_contact: mismatch between y_refine and jstart2/jend2 when istart2=iend2");
+
+      jstart2[n] /= y_refine;
+      jend2[n]   /= y_refine;
     }
     else if( jstart2[n] == jend2[n] ) {
       jstart2[n] = (jstart2[n]+1)/y_refine-1;
       jend2[n]   = jstart2[n];
-      if(iend2[n] > istart2[n] ){
-	--(istart2[n]);
-	if(istart2[n]%x_refine != 0)
-	  error_handler("Error from read_mosaic_contact: istart2 should be an odd number when jstart2=jend2");
-	if((iend2[n]-istart2[n])%x_refine != 0)
-	  error_handler("Error from read_mosaic_contact: nx2 can not be divided by y_refine when jstart2=jend2");
-	istart2[n] /= x_refine;
-	iend2[n] = istart2[n] + (iend2[n]-istart2[n])/x_refine - 1;
+      if(iend2[n] > istart2[n] ) {
+	istart2[n] -= 1;
+	iend2[n]   -= x_refine;
       }
-      else if(istart2[n] > iend2[n] ){
-	--(iend2[n]);
-	if(iend2[n]%x_refine != 0)
-	  error_handler("Error from read_mosaic_contact: iend2 should be an odd number when jstart2=jend2");
-	if((istart2[n]-iend2[n])%x_refine != 0)
-	  error_handler("Error from read_mosaic_contact: nx2 can not be divided by y_refine when jstart2=jend2");
-	iend2[n] /= x_refine;
-	istart2[n] = iend2[n] + (istart2[n]-iend2[n])/x_refine - 1;
+      else if(istart2[n] > iend2[n] ) {
+	istart2[n] -= x_refine;
+	iend2[n]   -= 1;
       }
-      else {
+      else
 	error_handler("Error from read_mosaic_contact: istart2 and iend2 should not be equal when jstart2=jend2");
-      }
+      
+      if(istart2[n]%x_refine || iend2[n]%x_refine)
+	error_handler("Error from read_mosaic_contact: mismatch between x_refine and istart2/iend2 when jstart2=jend2");
+      istart2[n] /= x_refine;
+      iend2[n]   /= x_refine;
     }
     else {
       error_handler("Error from read_mosaic_contact: only line contact is supported now, contact developer");

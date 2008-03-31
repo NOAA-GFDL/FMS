@@ -219,4 +219,4 @@ contains
   end subroutine test_shared_pointers
 end program test
   
-#endif test_mpp
+#endif /* test_mpp */
