@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_util.inc,v 15.0.4.1 2007/09/21 18:38:06 z1l Exp $
+! $Id: mpp_domains_util.inc,v 16.0 2008/07/30 22:46:41 fms Exp $
 
   ! <SUBROUTINE NAME="mpp_domains_set_stack_size">
   !  <OVERVIEW>
@@ -1110,3 +1110,89 @@ end subroutine mpp_get_domain_shift
     end do     
 
   end function mpp_get_tile_npes
+
+
+  !#############################################################################
+  function mpp_get_num_overlap(domain, action, p, position)
+    type(domain2d),    intent(in) :: domain
+    integer,           intent(in) :: action
+    integer,           intent(in) :: p
+    integer, optional, intent(in) :: position
+    integer                       :: mpp_get_num_overlap
+    type(domain2d), pointer       :: dom=>NULL()
+    integer                       :: pos
+
+    pos = CENTER
+    if(present(position)) pos = CENTER
+    select case(pos)
+    case (CENTER)
+       dom => domain%T
+    case (CORNER)
+       dom => domain%C
+    case (EAST)
+       dom => domain%E
+    case (NORTH)
+       dom => domain%N
+    case default
+       call mpp_error( FATAL, "mpp_domains_mod(mpp_get_num_overlap): invalid option of position")
+    end select
+
+    if(action == EVENT_SEND) then
+       mpp_get_num_overlap = dom%update_send(p)%count
+    else if(action == EVENT_RECV) then
+       mpp_get_num_overlap = dom%update_recv(p)%count
+    else
+       call mpp_error( FATAL, "mpp_domains_mod(mpp_get_num_overlap): invalid option of action")
+    end if
+
+  end function mpp_get_num_overlap
+
+  !#############################################################################
+  subroutine mpp_get_overlap(domain, action, p, is, ie, js, je, dir, rot, position)
+    type(domain2d),         intent(in) :: domain
+    integer,                intent(in) :: action
+    integer,                intent(in) :: p
+    integer, dimension(:), intent(out) :: is, ie, js, je
+    integer, dimension(:), intent(out) :: dir, rot    
+    integer, optional,      intent(in) :: position
+
+    type(domain2d),    pointer    :: dom     => NULL()
+    type(overlapSpec), pointer    :: overlap => NULL()
+    integer                       :: count, pos
+
+    pos = CENTER
+    if(present(position)) pos = CENTER
+    select case(pos)
+    case (CENTER)
+       dom => domain%T
+    case (CORNER)
+       dom => domain%C
+    case (EAST)
+       dom => domain%E
+    case (NORTH)
+       dom => domain%N
+    case default
+       call mpp_error( FATAL, "mpp_domains_mod(mpp_get_overlap): invalid option of position")
+    end select    
+
+    if(action == EVENT_SEND) then
+       overlap => dom%update_send(p)
+    else if(action == EVENT_RECV) then
+       overlap => dom%update_recv(p)
+    else
+       call mpp_error( FATAL, "mpp_domains_mod(mpp_get_overlap): invalid option of action")
+    end if
+
+    count = overlap%count
+    if(size(is(:)) .NE. count .OR. size(ie (:)) .NE. count .OR. size(js (:)) .NE. count .OR.  &
+       size(je(:)) .NE. count .OR. size(dir(:)) .NE. count .OR. size(rot(:)) .NE. count ) &
+       call mpp_error( FATAL, "mpp_domains_mod(mpp_get_overlap): size mismatch between number of overlap and array size")
+
+    is  = overlap%is      (1:count)
+    ie  = overlap%ie      (1:count)
+    js  = overlap%js      (1:count)
+    je  = overlap%je      (1:count)
+    dir = overlap%dir     (1:count)
+    rot = overlap%rotation(1:count)
+
+  end subroutine mpp_get_overlap

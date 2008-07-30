@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_write.inc,v 14.0.12.1 2008/02/21 16:11:59 z1l Exp $
+! $Id: mpp_io_write.inc,v 16.0 2008/07/30 22:47:02 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                            !
@@ -831,10 +831,7 @@
       pointer( ptr1, data_r4)
       pointer( ptr2, packed_data)
       
-      if (mpp_io_stack_size < 2*nwords) call mpp_io_set_stack_size(2*nwords)
-      
-      ptr1 = LOC(mpp_io_stack(1))
-      ptr2 = LOC(mpp_io_stack(nwords+1))
+      if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
 #endif
       on_root_pe = pe.EQ.mpp_root_pe()
       if(present(is_root_pe)) on_root_pe = is_root_pe
@@ -882,6 +879,9 @@
            pe, unit, mpp_file(unit)%id, mpp_file(unit)%time_level, mpp_file(unit)%time
            
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
+#ifdef use_CRI_pointers
+          ptr2 = LOC(mpp_io_stack(1))
+#endif
 !define netCDF data block to be written:
 !  time axis: START = time level
 !             AXSIZ = 1
@@ -954,6 +954,9 @@
           call netcdf_err( error, mpp_file(unit), field=field )
 #endif    
       else                      !non-netCDF
+#ifdef use_CRI_pointers
+          ptr1 = LOC(mpp_io_stack(1))
+#endif
 !subdomain contains (/is,ie,js,je/)  
           if( PRESENT(domain) )then
               subdomain(:) = (/ is, ie, js, je /)  ! ??? is, ie, js, je are never initialized.

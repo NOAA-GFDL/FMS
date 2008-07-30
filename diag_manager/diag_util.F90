@@ -33,8 +33,8 @@ public get_subfield_size, log_diag_field_info, update_bounds, check_out_of_bound
        find_input_field, init_input_field, init_output_field, diag_data_out, write_static, &
        check_duplicate_output_fields, get_date_dif
 
-character(len=128),private  :: version = '$Id: diag_util.F90,v 15.0.6.1.2.1.2.1 2007/12/06 18:48:52 z1l Exp $'
-character(len=128),private  :: tagname = '$Name: omsk_2008_03 $'
+character(len=128),private  :: version = '$Id: diag_util.F90,v 16.0 2008/07/30 22:45:10 fms Exp $'
+character(len=128),private  :: tagname = '$Name: perth $'
 
 contains
 
@@ -765,6 +765,7 @@ output_fields(out_num)%written_once = .false.
 if (files(file_num)%output_freq == EVERY_TIME) then
    output_fields(out_num)%time_average = .false.
    method_selected = method_selected+1
+   t_method = 'point'
 else
    t_method = lowercase(time_method)
    select case (trim(t_method))

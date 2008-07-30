@@ -218,5 +218,9 @@ contains
     return
   end subroutine test_shared_pointers
 end program test
-  
+
+#else
+module null_mpp_test
+end module  
+
 #endif /* test_mpp */

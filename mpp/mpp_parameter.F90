@@ -7,7 +7,7 @@ module mpp_parameter_mod
   character(len=128), public :: version= &
        '$Id mpp_parameter.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: omsk_2008_03 $'
+       '$Name: perth $'
 
   !--- public paramters which is used by mpp_mod and its components. 
   !--- All othere modules should import these parameters from mpp_mod. 
@@ -33,6 +33,7 @@ module mpp_parameter_mod
   public :: MPP_WRONLY, MPP_RDONLY, MPP_APPEND, MPP_OVERWR, MPP_ASCII, MPP_IEEE32
   public :: MPP_NATIVE, MPP_NETCDF, MPP_SEQUENTIAL, MPP_DIRECT, MPP_SINGLE, MPP_MULTI
   public :: MPP_DELETE, MPP_COLLECT, NULLUNIT, NULLTIME
+  public :: MAX_FILE_SIZE
 
   !--- The following paramters are used by mpp_mod and its components.
   integer, parameter :: MAXPES=2048            !used for dimensioning stuff that might be indexed by pe
@@ -95,6 +96,11 @@ module mpp_parameter_mod
   integer, parameter :: NULLUNIT=-1                        !returned by PEs not participating in 
                                                            !IO after a collective call
   real(DOUBLE_KIND), parameter :: NULLTIME=-1.
+#ifdef LARGE_FILE
+  integer(LONG_KIND), parameter :: MAX_FILE_SIZE = 4294967295
+#else
+  integer(LONG_KIND), parameter :: MAX_FILE_SIZE = 2147483647
+#endif
 
   !#####################################################################
 

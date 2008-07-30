@@ -175,8 +175,8 @@ implicit none
 private
 
 
-character(len=128) :: version = '$Id: field_manager.F90,v 15.0.4.1 2008/01/04 22:00:56 wfc Exp $'
-character(len=128) :: tagname = '$Name: omsk_2008_03 $'
+character(len=128) :: version = '$Id: field_manager.F90,v 16.0 2008/07/30 22:45:25 fms Exp $'
+character(len=128) :: tagname = '$Name: perth $'
 logical            :: module_is_initialized  = .false.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -633,9 +633,12 @@ endif
 
 
 call mpp_open(iunit,file=trim(tbl_name), form=MPP_ASCII, action=MPP_RDONLY)
+!write_version_number should precede all writes to stdlog from field_manager
+call write_version_number (version, tagname)
 
 do while (.TRUE.)
    read(iunit,'(a)',end=89,err=99) record
+   write( stdlog(),'(a)' )record
    if (record(1:1) == "#" ) cycle
    ltrec =  LEN_TRIM(record)
    if (ltrec .le. 0 ) cycle ! Blank line
@@ -948,8 +951,6 @@ enddo
          
 89 continue
 close(iunit)
-
-call write_version_number (version, tagname)
 
 if(present(nfields)) nfields = num_fields
 if (verb .gt. verb_level_warn) &

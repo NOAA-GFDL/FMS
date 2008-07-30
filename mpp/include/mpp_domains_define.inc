@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_define.inc,v 15.0.2.1.2.1.2.2.4.2 2008/02/07 16:48:39 z1l Exp $
+! $Id: mpp_domains_define.inc,v 16.0 2008/07/30 22:46:35 fms Exp $
 
 
   ! <SUBROUTINE NAME="mpp_define_layout2D" INTERFACE="mpp_define_layout">
@@ -1012,6 +1012,8 @@
     integer, allocatable :: isgList(:), iegList(:), jsgList(:), jegList(:)
     real,    allocatable :: refine1(:), refine2(:)
 
+    mosaic_defined = .true.
+
     !--- the size of first indice of global_indices must be 4.
     if(size(global_indices, 1) .NE. 4) call mpp_error(FATAL, &
          'mpp_domains_define.inc: The size of first dimension of global_indices is not 4')
@@ -1270,7 +1272,6 @@
     deallocate(align1, align2, is1, ie1, js1, je1, is2, ie2, js2, je2  )
     deallocate(isgList, iegList, jsgList, jegList )
 
-    mosaic_defined = .true.
   end subroutine mpp_define_mosaic
 
 !#####################################################################

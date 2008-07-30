@@ -1,3 +1,5 @@
+#include <fms_platform.h>
+
 module diag_data_mod
 
 
@@ -96,8 +98,8 @@ type output_field_type
    logical             :: time_min, time_ops
    integer             :: pack
    character(len=8)    :: time_method   
-   real, pointer       :: buffer(:, :, :)=>null()
-   real, pointer       :: counter(:, :, :)=>null()
+   real, _ALLOCATABLE  :: buffer(:, :, :) _NULL
+   real, _ALLOCATABLE  :: counter(:, :, :) _NULL
    type(time_type)     :: last_output, next_output, next_next_output
    real                :: count_0d
    type(diag_fieldtype):: f_type
@@ -138,8 +140,8 @@ character (len=10)  :: time_unit_list(6) = (/'seconds   ', 'minutes   ', &
 character(len=32)   :: pelist_name
 
 
-character(len=128),private  :: version = '$Id: diag_data.F90,v 15.0 2007/08/14 04:13:24 fms Exp $'
-character(len=128),private  :: tagname = '$Name: omsk_2008_03 $'
+character(len=128),private  :: version = '$Id: diag_data.F90,v 16.0 2008/07/30 22:45:02 fms Exp $'
+character(len=128),private  :: tagname = '$Name: perth $'
 
 
 ! definitions for diag_axis_mod

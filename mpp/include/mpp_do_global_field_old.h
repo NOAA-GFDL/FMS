@@ -15,13 +15,20 @@
       MPP_TYPE_ :: cremote((domain%x(1)%compute%max_size)*(domain%y(1)%compute%max_size)*size(local,3))
       integer :: stackuse
       character(len=8) :: text
-#ifdef use_CRI_pointers
+
       pointer( ptr_local,  clocal  ) 
       pointer( ptr_remote, cremote )
 
+      stackuse = size(clocal(:))+size(cremote(:))
+      if( stackuse.GT.mpp_domains_stack_size )then
+          write( text, '(i8)' )stackuse
+          call mpp_error( FATAL, &
+               'MPP_UPDATE_DOMAINS user stack overflow: call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+      end if
+      mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, stackuse )
+
       ptr_local  = LOC(mpp_domains_stack)
       ptr_remote = LOC(mpp_domains_stack(size(clocal(:))+1))
-#endif
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: must first call mpp_domains_init.' )
 
@@ -74,15 +81,6 @@
       end if
 
       root_pe = mpp_root_pe()
-
-      stackuse = size(clocal(:))+size(cremote(:))
-      if( stackuse.GT.mpp_domains_stack_size )then
-          write( text, '(i8)' )stackuse
-          call mpp_error( FATAL, &
-               'MPP_UPDATE_DOMAINS user stack overflow: call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
-      end if
-      mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, stackuse )
-
 
 !fill off-domains (note loops begin at an offset of 1)
       if( xonly )then

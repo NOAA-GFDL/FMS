@@ -120,8 +120,8 @@ public  diag_manager_init, send_data, send_tile_averaged_data, diag_manager_end,
 
 
 ! version number of this module
-character(len=128)  :: version = '$Id: diag_manager.F90,v 15.0.4.1 2007/12/04 17:12:54 slm Exp $'
-character(len=128)  :: tagname = '$Name: omsk_2008_03 $'  
+character(len=128)  :: version = '$Id: diag_manager.F90,v 16.0 2008/07/30 22:45:04 fms Exp $'
+character(len=128)  :: tagname = '$Name: perth $'  
 
 
 ! <INTERFACE NAME="send_data">
@@ -991,7 +991,6 @@ do ii = 1, number_of_outputs
                endif
 !               do i=is,ie; do j=js,je; do k=ks,ke
                do k=ks,ke; do j=js,je;
-!CDIR NODEP
                                       do i=is,ie
                   if(mask(i-is+1+hi,j-js+1+hj,k)) then
                      output_fields(out_num)%buffer(i-hi,j-hj,k)=output_fields(out_num)%buffer(i-hi,j-hj,k) + &
@@ -1024,7 +1023,6 @@ do ii = 1, number_of_outputs
                         do i = is, ie
                            if(l_start(1)+hi<=i.and.i<=l_end(1)+hi.and.l_start(2)+hj<=j.and.j<=l_end(2)+hj) then
                               i1 = i-l_start(1)-hi+1 ; j1=  j-l_start(2)-hj+1
-!CDIR NODEP                          
                               if(mask(i-is+1+hi,j-js+1+hj,k)) then
                                  output_fields(out_num)%buffer(i1,j1,k1) = output_fields(out_num)%buffer(i1,j1,k1)+ &
                                       field(i-is+1+hi,j-js+1+hj,k)*weight1                              
@@ -1048,7 +1046,6 @@ do ii = 1, number_of_outputs
                   endif
 !                  do i=is,ie; do j=js,je; do k=ks,ke
                   do k=ks,ke; do j=js,je;
-!CDIR NODEP
                                          do i=is,ie
                      if(mask(i-is+1+hi,j-js+1+hj,k)) then
                         output_fields(out_num)%buffer(i-hi,j-hj,k)=output_fields(out_num)%buffer(i-hi,j-hj,k)+&
@@ -1104,7 +1101,6 @@ do ii = 1, number_of_outputs
                         do i = is, ie
                            if(l_start(1)+hi<=i.and.i<=l_end(1)+hi.and.l_start(2)+hj<=j.and.j<=l_end(2)+hj) then
                               i1 = i-l_start(1)-hi+1 ; j1=  j-l_start(2)-hj+1 
-!CDIR NODEP                          
                               if(field(i-is+1,j-js+1,k) /= missvalue) then
                                  output_fields(out_num)%buffer(i1,j1,k1)= output_fields(out_num)%buffer(i1,j1,k1)+ &
                                    field(i-is+1+hi,j-js+1+hj,k)*weight1
@@ -1119,9 +1115,18 @@ do ii = 1, number_of_outputs
                      enddo
                   enddo
                   if(.not. phys_window) then
-                     if(any(field(l_start(1)+hi:l_end(1)+hi,l_start(2)+hj:l_end(2)+hj,l_start(3):l_end(3)) /= &
-                          missvalue)) &
-                          output_fields(out_num)%count_0d = output_fields(out_num)%count_0d + weight1 
+!rab                     if(any(field(l_start(1)+hi:l_end(1)+hi,l_start(2)+hj:l_end(2)+hj,l_start(3):l_end(3)) /= &
+!rab                          missvalue)) &
+!rab                          output_fields(out_num)%count_0d = output_fields(out_num)%count_0d + weight1 
+          outer0: do k=l_start(3)    , l_end(3)
+                  do j=l_start(2)+hj , l_end(2)+hj
+                  do i=l_start(1)+hi , l_end(1)+hi
+                    if (field(i,j,k) /= missvalue) then
+                      output_fields(out_num)%count_0d = output_fields(out_num)%count_0d + weight1    
+                      exit outer0
+                    endif
+                   enddo; enddo
+                   enddo outer0
                   endif
                else
                   if(debug_diag_manager) then
@@ -1133,7 +1138,6 @@ do ii = 1, number_of_outputs
                   endif
 !                  do i=is,ie; do j=js,je; do k=ks,ke
                   do k=ks,ke; do j=js,je;
-!CDIR NODEP
                                          do i=is,ie
                      if(field(i-is+1+hi,j-js+1+hj,k) /= missvalue)  then
                         output_fields(out_num)%buffer(i-hi,j-hj,k)=output_fields(out_num)%buffer(i-hi,j-hj,k) + &
@@ -1143,8 +1147,19 @@ do ii = 1, number_of_outputs
                      endif
                   enddo; enddo; enddo                  
 
-                  if(any(field(f1:f2,f3:f4,ks:ke) /= missvalue)) &
-                       output_fields(out_num)%count_0d = output_fields(out_num)%count_0d + weight1    
+!rab
+!rab                  if(any(field(f1:f2,f3:f4,ks:ke) /= missvalue)) &
+!rab                       output_fields(out_num)%count_0d = output_fields(out_num)%count_0d + weight1    
+          outer1: do k=ks,ke 
+                  do j=f3,f4 
+                  do i=f1,f2 
+                    if (field(i,j,k) /= missvalue) then
+                      output_fields(out_num)%count_0d = output_fields(out_num)%count_0d + weight1    
+                      exit outer1
+                    endif
+                   enddo
+                   enddo
+                   enddo outer1
                endif
             else       ! no missing value defined, No mask
                if(need_compute) then
@@ -1660,6 +1675,9 @@ if (module_is_initialized) return
 min_value = huge(foo)
 max_value = -min_value
 
+! version number to logfile
+call write_version_number (version, tagname)
+
 Time_zero = set_time(0,0)
 diag_subset_output = DIAG_ALL
 if (PRESENT(diag_model_subset))then
@@ -1671,7 +1689,7 @@ if (PRESENT(diag_model_subset))then
 endif
 call mpp_open(iunit, 'input.nml',form=MPP_ASCII,action=MPP_RDONLY)
 read(iunit,diag_manager_nml,iostat=io_status)
-write(stdlog(), diag_manager_nml)
+if ( mpp_pe() == mpp_root_pe() ) write(stdlog(), diag_manager_nml)
 if (io_status > 0) then
    if(fms_error_handler('diag_manager_init', 'Error reading diag_manager_nml',err_msg)) return
 endif
@@ -1708,6 +1726,13 @@ else
    base_month = 0
    amonth = 'day'
 end if
+
+if ( mpp_pe() == mpp_root_pe() ) then
+   write (stdlog(),95) base_year, trim(amonth), base_day, &
+        base_hour, base_minute, base_second
+endif
+95 format ('base date used = ',i4,1x,a,2i3,2(':',i2.2),' gmt')
+
 
 allocate(pelist(mpp_npes()))
 call mpp_get_current_pelist(pelist, pelist_name)
@@ -1903,16 +1928,6 @@ if (do_diag_field_log) then
    call mpp_open (diag_log_unit, 'diag_field_log.out', nohdrs=.TRUE.)
 endif
 
-! version number to logfile
-call write_version_number (version, tagname)
-
-log_unit = stdlog()
-if ( mpp_pe() == 0 ) then
-   write (log_unit,95) base_year, trim(amonth), base_day, &
-        base_hour, base_minute, base_second
-endif
-call close_file (log_unit)
-95 format ('base date used = ',i4,1x,a,2i3,2(':',i2.2),' gmt')
 module_is_initialized = .true.
 ! create axis_id for scalars here
 null_axis_id= diag_axis_init( 'scalar_axis', (/0./), 'none', 'X', 'none')

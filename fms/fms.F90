@@ -141,7 +141,7 @@ use fms_io_mod, only : read_data, write_data, fms_io_init, fms_io_exit, field_si
                        open_namelist_file, open_restart_file, open_ieee32_file, close_file, &
                        set_domain, get_domain_decomp, nullify_domain, &
                        open_file, open_direct_file, string, get_mosaic_tile_grid, &
-                       get_mosaic_tile_file, get_global_att_value
+                       get_mosaic_tile_file, get_global_att_value, file_exist, field_exist
 
 use memutils_mod, only: print_memuse_stats, memutils_init
 use constants_mod, only: constants_version=>version, constants_tagname=>tagname !pjp: PI not computed
@@ -271,8 +271,8 @@ integer, public :: clock_flag_default
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: fms.F90,v 15.0.2.1.2.1 2007/09/25 15:33:45 z1l Exp $'
-  character(len=128) :: tagname = '$Name: omsk_2008_03 $'
+  character(len=128) :: version = '$Id: fms.F90,v 16.0 2008/07/30 22:45:29 fms Exp $'
+  character(len=128) :: tagname = '$Name: perth $'
 
   logical :: module_is_initialized = .FALSE.
 
@@ -433,7 +433,7 @@ end subroutine fms_init
 subroutine fms_end ( )
 
     if (.not.module_is_initialized) return  ! return silently
-!    call fms_io_exit !now called from coupler_end
+!    call fms_io_exit  ! now called from coupler_end
     call mpp_io_exit
     call mpp_domains_exit
     call mpp_exit
@@ -442,138 +442,6 @@ subroutine fms_end ( )
 end subroutine fms_end
 ! </SUBROUTINE>
 
-!#######################################################################
-! <FUNCTION NAME="file_exist">
-
-!   <OVERVIEW>
-!     check if a given field name exists in a given file name. 
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     check if a given field name exists in a given file name. 
-!     If the field_name string has zero length or the
-!     first character is blank return a false result.
-!     if the file file_name don't exist, return a false result.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     field_exist ( file_name, field_name )
-!   </TEMPLATE>
-
-!   <IN NAME="file_name"  TYPE="character" >
-!     A file name (or path name) that is checked for existence.
-!   </IN>
-!   <IN NAME="field_name"  TYPE="character" >
-!     A field name that is checked for existence.
-!   </IN>
-!   <OUT NAME=""  TYPE="logical" >
-!     This function returns a logical result.  If field exists in the 
-!     file file_name, the result is true, otherwise false is returned.
-!     If the length of character string "field_name" is zero or the first
-!     character is blank, then the returned value will be false.
-!     if the file file_name don't exist, return a false result.
-!   </OUT>
-
- function field_exist (file_name, field_name)
-  character(len=*), intent(in) :: file_name
-  character(len=*), intent(in) :: field_name
-  logical                      :: field_exist
-  integer                      :: unit, ndim, nvar, natt, ntime, i
-  character(len=64)            :: name
-  type(fieldtype), allocatable :: fields(:)
-  character(len=5)             :: pe_name
-  logical                      :: is_exist
-
-   field_exist = .false.
-   if (len_trim(field_name) == 0) return
-   if (field_name(1:1) == ' ')    return
-
-
-   write(pe_name,'(a,i4.4)' )'.', mpp_pe()   
-   inquire (file=trim(file_name)//trim(pe_name), exist=is_exist)
-   if(.not. is_exist) inquire (file=trim(file_name)//'.nc'//trim(pe_name), exist=is_exist)
-   if(is_exist) then
-      call mpp_open(unit, trim(file_name), MPP_RDONLY, MPP_NETCDF, threading=MPP_MULTI, &
-           fileset = MPP_MULTI)
-   else
-      inquire (file=trim(file_name), exist=is_exist)
-      if(.not. is_exist) inquire (file=trim(file_name)//'.nc', exist=is_exist)
-      if(is_exist) then
-         !--- open the file file_name
-         call mpp_open(unit, trim(file_name), MPP_RDONLY, MPP_NETCDF, threading=MPP_MULTI, &
-              fileset = MPP_SINGLE)
-      end if
-   end if
-   if(.not. is_exist) return
-
-    call mpp_get_info(unit, ndim, nvar, natt, ntime)
-    allocate(fields(nvar))
-    call mpp_get_fields(unit,fields)
-
-    do i=1, nvar
-       call mpp_get_atts(fields(i),name=name)
-       if(lowercase(trim(name)) == lowercase(trim(field_name))) field_exist = .true.
-    enddo
-
-    deallocate(fields)
-    call mpp_close(unit)
-
-    return
-
- end function field_exist
-! </FUNCTION>
-
-!#######################################################################
-! check the existence of the given file name
-! if the file_name string has zero length or the
-! first character is blank return a false result
-! <FUNCTION NAME="file_exist">
-
-!   <OVERVIEW>
-!     Checks the existence of a given file name.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Checks the existence of the given file name.
-!     If the file_name string has zero length or the
-!     first character is blank return a false result.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     file_exist ( file_name )
-!   </TEMPLATE>
-
-!   <IN NAME="file_name"  TYPE="character" >
-!     A file name (or path name) that is checked for existence.
-!   </IN>
-!   <OUT NAME=""  TYPE="logical" >
-!     This function returns a logical result.  If file_name exists the result 
-!     is true, otherwise false is returned.
-!     If the length of character string "file_name" is zero or the first
-!     character is blank, then the returned value will be false.
-!     When reading a file, this function is often used in conjunction with
-!     routine open_file.
-!   </OUT>
-!   <ERROR MSG="set_domain not called" STATUS="FATAL">
-!     Before calling write_data you must first call set_domain with domain2d data 
-!     type associated with the distributed data you are writing.
-!   </ERROR>
-
- function file_exist (file_name)
-  character(len=*), intent(in) :: file_name
-  logical  file_exist
-  character(len=5)                      :: pe_name
-
-   file_exist = .false.
-   if (len_trim(file_name) == 0) return
-   if (file_name(1:1) == ' ')    return
-
-   inquire (file=trim(file_name), exist=file_exist)
-   !--- also check to see if it is distributed data
-   if(.not. file_exist) then
-      write(pe_name,'(a,i4.4)' )'.', mpp_pe()    
-     inquire (file=trim(file_name)//trim(pe_name), exist=file_exist)
-   end if
-
-
- end function file_exist
-! </FUNCTION>
 
 !#######################################################################
 ! <SUBROUTINE NAME="error_mesg">

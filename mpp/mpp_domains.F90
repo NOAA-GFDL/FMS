@@ -121,6 +121,7 @@ module mpp_domains_mod
   use mpp_parameter_mod,      only : SOUTH, SOUTH_WEST, WEST, NORTH_WEST
   use mpp_parameter_mod,      only : MAX_DOMAIN_FIELDS, NULL_PE, DOMAIN_ID_BASE
   use mpp_parameter_mod,      only : ZERO, NINETY, MINUS_NINETY, ONE_HUNDRED_EIGHTY, MAX_TILES
+  use mpp_parameter_mod,      only : EVENT_SEND, EVENT_RECV
   use mpp_data_mod,           only : mpp_domains_stack, ptr_domains_stack
   use mpp_mod,                only : mpp_pe, mpp_root_pe, mpp_npes, mpp_error, FATAL, WARNING, NOTE
   use mpp_mod,                only : stdout, stderr, stdlog, mpp_send, mpp_recv, mpp_transmit, mpp_sync_self
@@ -160,6 +161,7 @@ module mpp_domains_mod
   public :: mpp_get_refine_overlap_number, mpp_get_mosaic_refine_overlap
   public :: mpp_get_tile_list, mpp_get_global_domains
   public :: mpp_get_tile_npes
+  public :: mpp_get_num_overlap, mpp_get_overlap
   !--- public interface from mpp_domains_reduce.h
   public :: mpp_global_field, mpp_global_max, mpp_global_min, mpp_global_sum
   public :: mpp_global_sum_tl, mpp_global_sum_ad
@@ -1713,9 +1715,9 @@ module mpp_domains_mod
 
   !--- version information variables
   character(len=128), public :: version= &
-       '$Id: mpp_domains.F90,v 15.0.2.2.2.1.2.1.2.1 2008/01/22 14:40:49 z1l Exp $'
+       '$Id: mpp_domains.F90,v 16.0 2008/07/30 22:47:28 fms Exp $'
   character(len=128), public :: tagname= &
-       '$Name: omsk_2008_03 $'
+       '$Name: perth $'
 
 
 contains

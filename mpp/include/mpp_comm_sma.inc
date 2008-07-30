@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_sma.inc,v 14.0.6.1 2007/08/23 23:34:37 vb Exp $
+! $Id: mpp_comm_sma.inc,v 16.0 2008/07/30 22:46:24 fms Exp $
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -65,12 +65,16 @@ subroutine mpp_init( flags,localcomm )
   status(0:npes-1) = MPP_READY
   remote_data_loc(0:npes-1) = MPP_WAIT
   call mpp_set_stack_size(32768) !default initial value
-  !logunit: log messages are written to configfile.out by default
-  etc_unit=get_unit()
-  !      write( etcfile,'(a,i4.4)' )trim(etcfile)//'.', pe
-  if( pe.EQ.root_pe )open( unit=etc_unit, file=trim(etcfile), status='REPLACE' )
-  call mpp_sync()                         
-  if( pe.NE.root_pe )open( unit=etc_unit, file=trim(etcfile), status='OLD' )
+
+! non-root pe messages written to other location than stdout()
+! 9 is reserved for etc_unit
+  etc_unit=9
+  inquire(unit=etc_unit,opened=opened)
+  if(opened) call mpp_error(FATAL,'Unit 9 is already in use (etc_unit) in mpp_comm_sma')
+  if (trim(etcfile) /= '/dev/null') then
+    write( etcfile,'(a,i4.4)' )trim(etcfile)//'.', pe
+  endif
+  open( unit=etc_unit, file=trim(etcfile), status='REPLACE' )
   !if optional argument logunit=stdout, write messages to stdout instead.
   !if specifying non-defaults, you must specify units not yet in use.
   !      if( PRESENT(in) )then
@@ -125,14 +129,16 @@ end subroutine mpp_init
 !#######################################################################
  !to be called at the end of a run
 subroutine mpp_exit()
-  integer :: i, j, k, n, nmax, istat, outunit
+  integer :: i, j, k, n, nmax, istat, outunit,logunit
   real    :: t, tmin, tmax, tavg, tstd
   real    :: m, mmin, mmax, mavg, mstd, t_total
+  logical :: opened
 
   if( .NOT.module_is_initialized )return
   call mpp_set_current_pelist()
   call mpp_clock_end(clock0)
   outunit = stdout()
+  logunit = stdlog()
   t_total = clocks(clock0)%total_ticks*tick_rate
   if( clock_num.GT.0 )then
      if( ANY(clocks(1:clock_num)%detailed) )then
@@ -144,6 +150,7 @@ subroutine mpp_exit()
              write( outunit,'(a)' )'   ... see mpp_clock.out.#### for details on individual PEs.'
         write( outunit,'(/32x,a)' ) '          tmin          tmax          tavg          tstd  tfrac grain pemin pemax'
      end if
+     write( logunit, '(/37x,a)' ) 'time'
      call FLUSH( outunit, istat )
      call mpp_sync()
      do i = 1,clock_num
@@ -159,6 +166,7 @@ subroutine mpp_exit()
              clocks(i)%name, tmin, tmax, tavg, tstd, tavg/t_total, &
              clocks(i)%grain, minval(peset(clocks(i)%peset_num)%list), &
              maxval(peset(clocks(i)%peset_num)%list)
+         write(logunit,'(a32,f14.6)') clocks(i)%name, clocks(i)%total_ticks*tick_rate
      end do
      if( ANY(clocks(1:clock_num)%detailed) .AND. pe.EQ.root_pe )write( outunit,'(/32x,a)' ) &
           '       tmin       tmax       tavg       tstd       mmin       mmax       mavg       mstd  mavg/tavg'
@@ -189,6 +197,14 @@ subroutine mpp_exit()
         end do
      end do
   end if
+
+! close down etc_unit: 9
+  inquire(unit=etc_unit, opened=opened)
+  if (opened) then
+   call FLUSH (etc_unit, istat)
+   close(etc_unit)
+  endif
+
   call mpp_set_current_pelist()
   call mpp_sync()
   call mpp_max(mpp_stack_hwm)

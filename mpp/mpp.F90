@@ -187,7 +187,7 @@ private
   public :: MPP_VERBOSE, MPP_DEBUG, ALL_PES, ANY_PE, NULL_PE, NOTE, WARNING, FATAL
   public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED, CLOCK_COMPONENT, CLOCK_SUBCOMPONENT
   public :: CLOCK_MODULE_DRIVER, CLOCK_MODULE, CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
-  public :: MAXPES
+  public :: MAXPES, EVENT_RECV, EVENT_SEND
 
   !--- public data from mpp_data_mod ------------------------------
   public :: request
@@ -197,7 +197,7 @@ private
   public :: mpp_set_warn_level, mpp_sync, mpp_sync_self, mpp_set_stack_size, mpp_pe
   public :: mpp_node, mpp_npes, mpp_root_pe, mpp_set_root_pe, mpp_declare_pelist
   public :: mpp_get_current_pelist, mpp_set_current_pelist, mpp_clock_begin, mpp_clock_end
-  public :: mpp_clock_id, mpp_clock_set_grain, mpp_record_timing_data
+  public :: mpp_clock_id, mpp_clock_set_grain, mpp_record_timing_data, get_unit
 
   !--- public interface from mpp_comm.h ------------------------------
   public :: mpp_chksum, mpp_max, mpp_min, mpp_sum, mpp_transmit, mpp_send, mpp_recv
@@ -239,6 +239,8 @@ private
      logical              :: sync_on_begin, detailed
      integer              :: grain
      type(event), pointer :: events(:) =>NULL() !if needed, allocate to MAX_EVENT_TYPES
+     logical              :: is_on              !initialize to false. set true when calling mpp_clock_begin
+                                                ! set false when calling mpp_clock_end
   end type clock
 
   type :: Clock_Data_Summary
@@ -1087,7 +1089,11 @@ private
   integer              :: clock_num=0, num_clock_ids=0,current_clock=0, previous_clock(MAX_CLOCKS)=0
   real                 :: tick_rate
   integer, allocatable :: request(:)
-  character(len=32)    :: etcfile='._mpp.nonrootpe.stdout'
+! if you want to save the non-root PE information uncomment out the following line
+! and comment out the assigment of etcfile to '/dev/null'
+!  character(len=32)    :: etcfile='._mpp.nonrootpe.msgs'
+  character(len=32)    :: etcfile='/dev/null'
+
 #ifdef SGICRAY
   integer :: in_unit=100, out_unit=101, err_unit=102 !see intro_io(3F): to see why these values are used rather than 5,6,0
 #else
@@ -1129,7 +1135,7 @@ private
   character(len=128), public :: version= &
        '$Id mpp.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: omsk_2008_03 $'
+       '$Name: perth $'
 
   contains
 #include <system_clock.h>

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm.inc,v 13.0.18.1 2007/08/23 23:34:37 vb Exp $
+! $Id: mpp_comm.inc,v 16.0 2008/07/30 22:46:18 fms Exp $
 
 
 #ifdef use_libSMA

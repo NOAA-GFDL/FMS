@@ -146,10 +146,14 @@ integer, parameter :: VERSION2           = 2 ! mosaic grid file
 !     exchange grid interpolation method. It has two options: 
 !     "first_order", "second_order".
 !   </DATA>
+!   <DATA NAME="xgrid_log" TYPE="logical"  DEFAULT=" .false. ">
+!     Outputs exchange grid information to xgrid.out.<pe> for debug/diag purposes.
+!   </DATA>
 logical :: make_exchange_reproduce = .false. ! exactly same on different # PEs
+logical :: xgrid_log = .false. 
 character(len=64) :: interp_method = 'first_order'
 logical :: debug_stocks = .false. 
-namelist /xgrid_nml/ make_exchange_reproduce, interp_method, debug_stocks
+namelist /xgrid_nml/ make_exchange_reproduce, interp_method, debug_stocks, xgrid_log
 ! </NAMELIST>
 logical :: init = .true.
 integer :: remapping_method
@@ -327,8 +331,8 @@ type xmap_type
 end type xmap_type
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: xgrid.F90,v 15.0.4.3 2008/02/12 20:12:41 z1l Exp $'
- character(len=128) :: tagname = '$Name: omsk_2008_03 $'
+ character(len=128) :: version = '$Id: xgrid.F90,v 16.0 2008/07/30 22:45:21 fms Exp $'
+ character(len=128) :: tagname = '$Name: perth $'
 
  real, parameter                              :: EPS = 1.0e-10
  logical :: module_is_initialized = .FALSE.
@@ -448,15 +452,15 @@ logical,        intent(in)             :: complete
      nxgrid = siz(1);
      if(nxgrid .LE. 0) return
      allocate(i1(nxgrid), j1(nxgrid), i2(nxgrid), j2(nxgrid), area(nxgrid))
-     call read_data(grid_file, 'I_'//grid1_id//'_'//grid1_id//'x'//grid_id, i1, no_domain=.true.)
-     call read_data(grid_file, 'J_'//grid1_id//'_'//grid1_id//'x'//grid_id, j1, no_domain=.true.)
-     call read_data(grid_file, 'I_'//grid_id//'_'//grid1_id//'x'//grid_id, i2, no_domain=.true.)
-     call read_data(grid_file, 'J_'//grid_id//'_'//grid1_id//'x'//grid_id, j2, no_domain=.true.)
-     call read_data(grid_file, 'AREA_'//grid1_id//'x'//grid_id, area, no_domain=.true.)
+     call read_data(grid_file, 'I_'//grid1_id//'_'//grid1_id//'x'//grid_id, i1)
+     call read_data(grid_file, 'J_'//grid1_id//'_'//grid1_id//'x'//grid_id, j1)
+     call read_data(grid_file, 'I_'//grid_id//'_'//grid1_id//'x'//grid_id, i2)
+     call read_data(grid_file, 'J_'//grid_id//'_'//grid1_id//'x'//grid_id, j2)
+     call read_data(grid_file, 'AREA_'//grid1_id//'x'//grid_id, area)
      if(use_higher_order) then
         allocate(di(nxgrid), dj(nxgrid))
-        call read_data(grid_file, 'DI_'//grid1_id//'x'//grid_id, di, no_domain=.true.)
-        call read_data(grid_file, 'DJ_'//grid1_id//'x'//grid_id, dj, no_domain=.true.)
+        call read_data(grid_file, 'DI_'//grid1_id//'x'//grid_id, di)
+        call read_data(grid_file, 'DJ_'//grid1_id//'x'//grid_id, dj)
      end if
   case(VERSION2)
      !--- max_size is the exchange grid size between super grid.
@@ -624,8 +628,8 @@ subroutine get_grid(grid, grid_id, grid_file, grid_version)
   case(VERSION1)
      allocate(grid%lon(grid%im), grid%lat(grid%jm))
      if(grid_id == 'ATM') then
-        call read_data(grid_file, 'xta', lonb, no_domain=.true.)
-        call read_data(grid_file, 'yta', latb, no_domain=.true.)
+        call read_data(grid_file, 'xta', lonb)
+        call read_data(grid_file, 'yta', latb)
 
         if(.not. allocated(AREA_ATM_MODEL)) then
            allocate(AREA_ATM_MODEL(is:ie, js:je))
@@ -636,8 +640,8 @@ subroutine get_grid(grid, grid_id, grid_file, grid_version)
            call get_area_elements(grid_file, 'AREA_ATM', grid%domain, AREA_ATM_SPHERE)
         endif
      else if(grid_id == 'LND') then
-        call read_data(grid_file, 'xtl', lonb, no_domain=.true.)
-        call read_data(grid_file, 'ytl', latb, no_domain=.true.)
+        call read_data(grid_file, 'xtl', lonb)
+        call read_data(grid_file, 'ytl', latb)
         if(.not. allocated(AREA_LND_MODEL)) then
            allocate(AREA_LND_MODEL(is:ie, js:je))
            call get_area_elements(grid_file, 'AREA_LND_MODEL', grid%domain, AREA_LND_MODEL)
@@ -1062,14 +1066,17 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
   allocate (xmap%send_buffer(send_size))
   allocate (xmap%recv_buffer(recv_size))
 
-  call mpp_open( unit, 'xgrid.out', action=MPP_OVERWR, threading=MPP_MULTI, &
-       fileset=MPP_SINGLE, nohdrs=.TRUE. )  
+  if (xgrid_log) then
+    call mpp_open( unit, 'xgrid.out', action=MPP_OVERWR, threading=MPP_MULTI, &
+         fileset=MPP_MULTI, nohdrs=.TRUE. )  
 
-  write( unit,* )xmap%grids(:)%id, ' GRID: PE ', xmap%me, ' #XCELLS=', &
+    write( unit,* )xmap%grids(:)%id, ' GRID: PE ', xmap%me, ' #XCELLS=', &
        xmap%grids(2:size(xmap%grids(:)))%size, ' #COMM. PARTNERS=', &
        count(xmap%your1my2), '/', count(xmap%your2my1), &
        pack((/(p+xmap%root_pe,p=0,xmap%npes-1)/), xmap%your1my2),  &
        '/', pack((/(p+xmap%root_pe,p=0,xmap%npes-1)/), xmap%your2my1)
+    call close_file (unit)
+  endif
 
   allocate( xmap%x1(1:sum(xmap%grids(2:size(xmap%grids(:)))%size)) )
   allocate( xmap%x2(1:sum(xmap%grids(2:size(xmap%grids(:)))%size)) )
@@ -1105,8 +1112,6 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
         deallocate( check_data_3d)
      end do
   endif
-
-  call close_file (unit)
 
 end subroutine setup_xmap
 ! </SUBROUTINE>

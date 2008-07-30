@@ -28,8 +28,8 @@
  implicit none
  private
 
- character(len=128), parameter :: version = '$Id: sat_vapor_pres_k.F90,v 15.0 2007/08/14 04:15:43 fms Exp $'
- character(len=128), parameter :: tagname = '$Name: omsk_2008_03 $'
+ character(len=128), parameter :: version = '$Id: sat_vapor_pres_k.F90,v 16.0 2008/07/30 22:47:57 fms Exp $'
+ character(len=128), parameter :: tagname = '$Name: perth $'
 
  public :: sat_vapor_pres_init_k
  public :: lookup_es_k
@@ -55,6 +55,8 @@
  real, dimension(:), allocatable :: DTABLE  !  first derivative of es
  real, dimension(:), allocatable :: D2TABLE ! second derivative of es
 
+ logical  :: module_is_initialized = .false.
+
  contains
 
  subroutine sat_vapor_pres_init_k(table_size, tcmin, tcmax, TFREEZE, err_msg, teps, tmin, dtinv)
@@ -74,6 +76,8 @@
   integer :: i
 
       err_msg = ''
+
+      if (module_is_initialized) return
 
       if(allocated(TABLE) .or. allocated(DTABLE) .or. allocated(D2TABLE)) then
         err_msg = 'Attempt to allocate sat vapor pressure tables when already allocated'
@@ -123,6 +127,8 @@
 
          D2TABLE(table_size) = 0.50*dtinvl*&
               (DTABLE(table_size)-DTABLE(table_size-1))
+
+        module_is_initialized = .true.
 
  end subroutine sat_vapor_pres_init_k
 

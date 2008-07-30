@@ -14,10 +14,6 @@
       pointer( ptr_local,  clocal  )
       pointer( ptr_remote, cremote )
 
-      ptr_local  = LOC(mpp_domains_stack)
-      ptr_remote = LOC(mpp_domains_stack(size(clocal(:))+1))
-
-#ifdef use_CRI_pointers
       stackuse = size(clocal(:))+size(cremote(:))
       if( stackuse.GT.mpp_domains_stack_size )then
           write( text, '(i8)' )stackuse
@@ -25,7 +21,10 @@
                'MPP_UPDATE_DOMAINS user stack overflow: call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
       end if
       mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, stackuse )
-#endif
+
+      ptr_local  = LOC(mpp_domains_stack)
+      ptr_remote = LOC(mpp_domains_stack(size(clocal(:))+1))
+
 
 ! make contiguous array from compute domain
       m = 0

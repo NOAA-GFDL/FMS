@@ -176,8 +176,8 @@ end interface
 
 !======================================================================
 
-character(len=128) :: version='$Id: time_manager.F90,v 15.0.4.1 2007/12/05 20:58:12 nnz Exp $'
-character(len=128) :: tagname='$Name: omsk_2008_03 $'
+character(len=128) :: version='$Id: time_manager.F90,v 16.0 2008/07/30 22:48:04 fms Exp $'
+character(len=128) :: tagname='$Name: perth $'
 logical :: module_is_initialized = .false.
 
 !======================================================================

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_comm.inc,v 15.0.6.1 2008/01/03 14:55:23 z1l Exp $
+! $Id: mpp_domains_comm.inc,v 16.0 2008/07/30 22:46:33 fms Exp $
 
 
     function mpp_redistribute_init_comm(domain_in,l_addrs_in, domain_out,l_addrs_out, &

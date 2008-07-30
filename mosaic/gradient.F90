@@ -24,8 +24,8 @@ private
 public :: gradient_cubic
 public :: calc_cubic_grid_info
 
-character(len=128) :: version = '$Id: gradient.F90,v 1.1.4.1 2007/12/19 16:32:59 z1l Exp $'
-character(len=128) :: tagname = '$Name: omsk_2008_03 $'
+character(len=128) :: version = '$Id: gradient.F90,v 16.0 2008/07/30 22:46:00 fms Exp $'
+character(len=128) :: tagname = '$Name: perth $'
 
 contains
 
@@ -36,10 +36,10 @@ contains
 !  the size of dx     will be (nx, ny+1),  N-cell center
 !  the size of dy     will be (nx+1, ny),  E-cell center
 !  the size of area   will be (nx, ny),    T-cell center.
-!  The size of edge_w will be (ny-1),      C-cell center, without two end point
-!  The size of edge_e will be (ny-1),      C-cell center, without two end point
-!  The size of edge_s will be (nx-1),      C-cell center, without two end point
-!  The size of edge_n will be (nx-1),      C-cell center, without two end point
+!  The size of edge_w will be (ny+1),      C-cell center
+!  The size of edge_e will be (ny+1),      C-cell center
+!  The size of edge_s will be (nx+1),      C-cell center
+!  The size of edge_n will be (nx+1),      C-cell center
 !  The size of en_n   will be (3,nx,ny+1), N-cell center
 !  The size of en_e   will be (3,nx+1,ny), E-cell center
 !  The size of vlon   will be (3,nx, ny)   T-cell center

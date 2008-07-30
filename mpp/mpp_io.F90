@@ -314,6 +314,7 @@ use mpp_parameter_mod,  only : MPP_IEEE32, MPP_NATIVE, MPP_NETCDF, MPP_SEQUENTIA
 use mpp_parameter_mod,  only : MPP_DIRECT, MPP_SINGLE, MPP_MULTI, MPP_DELETE, MPP_COLLECT
 use mpp_parameter_mod,  only : MPP_DEBUG, MPP_VERBOSE, NULLUNIT, NULLTIME, ALL_PES
 use mpp_parameter_mod,  only : CENTER, EAST, NORTH, CORNER
+use mpp_parameter_mod,  only : MAX_FILE_SIZE
 use mpp_mod,            only : mpp_error, FATAL, WARNING, NOTE, stdin, stdout, stderr, stdlog
 use mpp_mod,            only : mpp_pe, mpp_root_pe, mpp_npes, lowercase, mpp_transmit
 use mpp_mod,            only : mpp_init, mpp_sync
@@ -334,7 +335,7 @@ private
   public :: MPP_WRONLY, MPP_RDONLY, MPP_APPEND, MPP_OVERWR, MPP_ASCII, MPP_IEEE32
   public :: MPP_NATIVE, MPP_NETCDF, MPP_SEQUENTIAL, MPP_DIRECT, MPP_SINGLE
   public :: MPP_MULTI, MPP_DELETE, MPP_COLLECT
-
+  public :: MAX_FILE_SIZE
   !--- public data type ------------------------------------------------
   public :: axistype, atttype, fieldtype, validtype, filetype
 
@@ -782,7 +783,7 @@ private
 
 !initial value of buffer between meta_data and data in .nc file
   integer            :: header_buffer_val = 16384
-  namelist /mpp_io_nml/header_buffer_val ! value used in NF__ECDDEF
+  namelist /mpp_io_nml/header_buffer_val ! value used in NF__ENDDEF
 
   real(DOUBLE_KIND), allocatable :: mpp_io_stack(:)
   type(axistype),save            :: default_axis      !provided to users with default components
@@ -792,9 +793,9 @@ private
 
 
   character(len=128) :: version= &
-       '$Id: mpp_io.F90,v 15.0.6.1 2007/12/19 17:01:19 z1l Exp $'
+       '$Id: mpp_io.F90,v 16.0 2008/07/30 22:47:34 fms Exp $'
   character(len=128) :: tagname= &
-       '$Name: omsk_2008_03 $'
+       '$Name: perth $'
 
 contains
 

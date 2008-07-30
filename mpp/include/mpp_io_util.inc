@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_util.inc,v 14.0.10.1 2007/12/19 17:01:22 z1l Exp $
+! $Id: mpp_io_util.inc,v 16.0 2008/07/30 22:47:00 fms Exp $
 
 
   !#####################################################################
@@ -455,13 +455,13 @@
     subroutine mpp_io_set_stack_size(n)
 !set the mpp_io_stack variable to be at least n LONG words long
       integer, intent(in) :: n
-      character(len=8) :: text
+      character(len=10) :: text
 
       if( n.GT.mpp_io_stack_size .AND. allocated(mpp_io_stack) )deallocate(mpp_io_stack)
       if( .NOT.allocated(mpp_io_stack) )then
           allocate( mpp_io_stack(n) )
           mpp_io_stack_size = n
-          write( text,'(i8)' )n
+          write( text,'(i10)' )n
           if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, 'MPP_IO_SET_STACK_SIZE: stack size set to '//text//'.' )
       end if
 

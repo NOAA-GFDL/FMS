@@ -17,10 +17,10 @@ void a2b_ord2(int nx, int ny, const double *qin, const double *edge_w, const dou
   the size of dx     will be (nx, ny+1),  N-cell center
   the size of dy     will be (nx+1, ny),  E-cell center
   the size of area   will be (nx, ny),    T-cell center.
-  The size of edge_w will be (ny-1),      C-cell center, without two end point
-  The size of edge_e will be (ny-1),      C-cell center, without two end point
-  The size of edge_s will be (nx-1),      C-cell center, without two end point
-  The size of edge_n will be (nx-1),      C-cell center, without two end point
+  The size of edge_w will be (ny+1),      C-cell center
+  The size of edge_e will be (ny+1),      C-cell center
+  The size of edge_s will be (nx+1),      C-cell center
+  The size of edge_n will be (nx+1),      C-cell center
   The size of en_n   will be (nx, ny+1,3),N-cell center
   The size of en_e   will be (nx+1,ny,3), E-cell center
   The size of vlon   will be (nx, ny, 3)  T-cell center

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util.inc,v 13.0.28.1 2008/02/22 15:30:09 z1l Exp $
+! $Id: mpp_util.inc,v 16.0 2008/07/30 22:47:16 fms Exp $
 
 
 #ifdef use_libSMA
@@ -44,7 +44,7 @@
   function stdout()
     integer :: stdout
     stdout = out_unit
-    if( pe.NE.root_pe )stdout = etc_unit
+    if( pe.NE.root_pe )stdout = stdlog()
     return
   end function stdout
 
@@ -94,10 +94,17 @@
        end if
        stdlog = log_unit
     else
+       inquire( unit=etc_unit, opened=opened )
+       if( opened )then
+          call FLUSH(etc_unit,istat)
+       else
+          open( unit=etc_unit, status='UNKNOWN', file=trim(etcfile), position='APPEND', err=11 )
+       end if
        stdlog = etc_unit
     end if
     return
 10  call mpp_error( FATAL, 'STDLOG: unable to open '//trim(configfile)//this_pe//'.' )
+11  call mpp_error( FATAL, 'STDLOG: unable to open '//trim(etcfile)//'.' )
   end function stdlog
 
   !#####################################################################
@@ -740,9 +747,11 @@ end function rarray_to_char
     if( id.EQ.0 )return
     if( id.LT.0 .OR. id.GT.clock_num )call mpp_error( FATAL, 'MPP_CLOCK_BEGIN: invalid id.' )
 
-    !      if( clocks(id)%peset_num.EQ.0 )clocks(id)%peset_num = current_peset_num
     if( clocks(id)%peset_num.NE.current_peset_num ) &
          call mpp_error( FATAL, 'MPP_CLOCK_BEGIN: cannot change pelist context of a clock.' )
+    if( clocks(id)%is_on) call mpp_error(FATAL, 'MPP_CLOCK_BEGIN: mpp_clock_begin is called again '// &
+                'before calling mpp_clock_end for the clock '//trim(clocks(id)%name) )
+
     if( clocks(id)%sync_on_begin )then
        !do an untimed sync at the beginning of the clock
        !this puts all PEs in the current pelist on par, so that measurements begin together
@@ -754,6 +763,7 @@ end function rarray_to_char
     previous_clock(num_clock_ids) = current_clock
     current_clock = id
     call SYSTEM_CLOCK( clocks(id)%tick )
+    clocks(id)%is_on = .true.
     return
   end subroutine mpp_clock_begin
 
@@ -766,6 +776,9 @@ end function rarray_to_char
     if( .not. mpp_record_timing_data)return
     if( id.EQ.0 )return
     if( id.LT.0 .OR. id.GT.clock_num )call mpp_error( FATAL, 'MPP_CLOCK_BEGIN: invalid id.' )
+    if( .NOT. clocks(id)%is_on) call mpp_error(FATAL, 'MPP_CLOCK_END: mpp_clock_end is called '// &
+                'before calling mpp_clock_begin for the clock '//trim(clocks(id)%name) )
+
     call SYSTEM_CLOCK(end_tick)
     if( clocks(id)%peset_num.NE.current_peset_num ) &
          call mpp_error( FATAL, 'MPP_CLOCK_END: cannot change pelist context of a clock.' )
@@ -781,6 +794,7 @@ end function rarray_to_char
     endif
     current_clock = previous_clock(num_clock_ids)
     num_clock_ids = num_clock_ids-1
+    clocks(id)%is_on = .false.
     return
   end subroutine mpp_clock_end
 
@@ -954,7 +968,7 @@ end function rarray_to_char
     integer,save :: i
     logical      :: l_open
 
-    i = 10
+!  9 is reserved for etc_unit
     do i=10,99
        inquire(unit=i,opened=l_open)
        if(.not.l_open)exit

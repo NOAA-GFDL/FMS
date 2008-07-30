@@ -74,8 +74,8 @@ use time_manager_mod, only: time_type
 implicit none
 private
 
-character(len=128) :: version = '$Id: data_override.F90,v 15.0 2007/08/14 04:13:18 fms Exp $'
-character(len=128) :: tagname = '$Name: omsk_2008_03 $'
+character(len=128) :: version = '$Id: data_override.F90,v 16.0 2008/07/30 22:44:56 fms Exp $'
+character(len=128) :: tagname = '$Name: perth $'
 
 type data_type_lima
    character(len=3)   :: gridname
@@ -216,12 +216,14 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
     call fms_io_init
     call nullify_domain
 !    get global lat and lon of all three model grids
+    if (atm_on .or. ocn_on .or. lnd_on .or. ice_on) then
     if(field_exist(grid_file, "x_T" ) .OR. field_exist(grid_file, "geolon_t" ) ) then
        call get_global_grid(grid_file)
     else if(field_exist(grid_file, "ocn_mosaic_file" ) .OR. field_exist(grid_file, "gridfiles" ) ) then
        call get_global_mosaic_grid(grid_file)
     else
        call mpp_error(FATAL, 'data_override_mod: none of x_T, geolon_t, ocn_mosaic_file or gridfiles exist in '//trim(grid_file))
+    end if
     end if
 
     if (domain2 .NE. NULL_DOMAIN2D) call set_domain(domain2) ! See comment above
@@ -774,11 +776,11 @@ subroutine get_global_grid(grid_file)
   if (atm_on) then
      call field_size(grid_file, 'xta', siz)
      nlon_out = siz(1); allocate(lon_atm(nlon_out))
-     call read_data(grid_file, 'xta', lon_atm, no_domain=.true.)
+     call read_data(grid_file, 'xta', lon_atm)
 
      call field_size(grid_file, 'yta', siz)
      nlat_out = siz(1); allocate(lat_atm(nlat_out))
-     call read_data(grid_file, 'yta', lat_atm, no_domain=.true.)
+     call read_data(grid_file, 'yta', lat_atm)
 
 !4 create 2D array of ATM lon and lat
      if(.not.(allocated(glo_lat_atm) .or. allocated(glo_lon_atm))) &
@@ -803,11 +805,11 @@ subroutine get_global_grid(grid_file)
  if (lnd_on) then
      call field_size(grid_file, 'xtl', siz)
      nlon_out = siz(1); allocate(lon_lnd(nlon_out))
-     call read_data(grid_file, 'xtl', lon_lnd, no_domain=.true.)
+     call read_data(grid_file, 'xtl', lon_lnd)
 
      call field_size(grid_file, 'ytl', siz)
      nlat_out = siz(1); allocate(lat_lnd(nlat_out))
-     call read_data(grid_file, 'ytl', lat_lnd, no_domain=.true.)
+     call read_data(grid_file, 'ytl', lat_lnd)
 
 !6 create 2D array of LND lon and lat
      if(.not.(allocated(glo_lat_lnd) .or. allocated(glo_lon_lnd))) &

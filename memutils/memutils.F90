@@ -277,7 +277,7 @@ module memutils_mod
         if( .NOT.print_memory_usage )return
     end if
     mu = stderr(); if( PRESENT(unit) )mu = unit
-#ifdef __sgi
+#if defined(__sgi) || defined(__aix) || defined(__SX)
     m = memuse()*1e-3
 #else
     call mem_dump(m)
@@ -309,12 +309,6 @@ character(len=32) :: file_name = '/proc/self/status'
 character(len=32) :: string
 integer :: mem_unit
 real    :: multiplier
-
-#ifdef __aix
-  print*,'mem_dump not implemented for AIX machines.'
-  print*,'See the Loadleveler log instead.'
-  return
-#endif
 
   memuse = 0.0
   multiplier = 1.0

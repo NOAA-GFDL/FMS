@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_read.inc,v 15.0 2007/08/14 04:15:00 fms Exp $
+! $Id: mpp_io_read.inc,v 16.0 2008/07/30 22:46:58 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -44,6 +44,9 @@
       integer :: tlevel !,subdomain(4)
       
       integer(SHORT_KIND) :: i2vals(nwords)
+!rab used in conjunction with transfer intrinsic to determine size of a variable
+      integer(KIND=1) :: one_byte(8)
+      integer         :: word_sz
 !#ifdef __sgi
       integer(INT_KIND) :: ivals(nwords)
       real(FLOAT_KIND) :: rvals(nwords)
@@ -61,14 +64,11 @@
       pointer( ptr2, ivals )
       pointer( ptr3, rvals )
       pointer( ptr4, r8vals )
-      
-      if (mpp_io_stack_size < 4*nwords) call mpp_io_set_stack_size(4*nwords)
-      
-      ptr1 = LOC(mpp_io_stack(1))
-      ptr2 = LOC(mpp_io_stack(nwords+1))
-      ptr3 = LOC(mpp_io_stack(2*nwords+1))
-      ptr4 = LOC(mpp_io_stack(3*nwords+1))
+
+      if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
 #endif
+      word_sz = size(transfer(data(1),one_byte))
+
       if (.not.PRESENT(time_level)) then
           tlevel = 0
       else
@@ -156,6 +156,9 @@
 ! use type conversion
                 call mpp_error( FATAL, 'MPP_READ: does not support NF_BYTE packing' )
              case(NF_SHORT)
+#ifdef use_CRI_pointers
+                ptr1 = LOC(mpp_io_stack(1))
+#endif
                 error = NF_GET_VARA_INT2  ( mpp_file(unit)%ncid, field%id, start, axsiz, i2vals )
                 call netcdf_err( error, mpp_file(unit), field=field )
                 if(field%scale == 1.0 .and. field%add == 0.0) then
@@ -164,6 +167,9 @@
                    data(:)=i2vals(:)*field%scale + field%add
                 end if
              case(NF_INT)
+#ifdef use_CRI_pointers
+                ptr2 = LOC(mpp_io_stack(1))
+#endif
                 error = NF_GET_VARA_INT   ( mpp_file(unit)%ncid, field%id, start, axsiz, ivals  )
                 call netcdf_err( error, mpp_file(unit), field=field )
                 if(field%scale == 1.0 .and. field%add == 0.0) then
@@ -172,20 +178,42 @@
                    data(:)=ivals(:)*field%scale + field%add
                 end if
              case(NF_FLOAT)
-                error = NF_GET_VARA_REAL  ( mpp_file(unit)%ncid, field%id, start, axsiz, rvals  )
-                call netcdf_err( error, mpp_file(unit), field=field )
-                if(field%scale == 1.0 .and. field%add == 0.0) then
-                   data(:)=rvals(:)
+#ifdef use_CRI_pointers
+                ptr3 = LOC(mpp_io_stack(1))
+#endif
+                if (size(transfer(rvals(1),one_byte)) .eq. word_sz) then
+                  error = NF_GET_VARA_REAL  ( mpp_file(unit)%ncid, field%id, start, axsiz, data  )
+                  call netcdf_err( error, mpp_file(unit), field=field )
+                  if(field%scale /= 1.0 .or. field%add /= 0.0) then
+                     data(:)=data(:)*field%scale + field%add
+                  end if
                 else
-                   data(:)=rvals(:)*field%scale + field%add
+                  error = NF_GET_VARA_REAL  ( mpp_file(unit)%ncid, field%id, start, axsiz, rvals  )
+                  call netcdf_err( error, mpp_file(unit), field=field )
+                  if(field%scale == 1.0 .and. field%add == 0.0) then
+                     data(:)=rvals(:)
+                  else
+                     data(:)=rvals(:)*field%scale + field%add
+                  end if
                 end if
              case(NF_DOUBLE)
-                error = NF_GET_VARA_DOUBLE( mpp_file(unit)%ncid, field%id, start, axsiz, r8vals )
-                call netcdf_err( error, mpp_file(unit), field=field )
-                if(field%scale == 1.0 .and. field%add == 0.0) then
-                   data(:)=r8vals(:)
+#ifdef use_CRI_pointers
+                ptr4 = LOC(mpp_io_stack(1))
+#endif
+                if (size(transfer(r8vals(1),one_byte)) .eq. word_sz) then
+                  error = NF_GET_VARA_DOUBLE( mpp_file(unit)%ncid, field%id, start, axsiz, data )
+                  call netcdf_err( error, mpp_file(unit), field=field )
+                  if(field%scale /= 1.0 .or. field%add /= 0.0) then
+                     data(:)=data(:)*field%scale + field%add
+                  end if
                 else
-                   data(:)=r8vals(:)*field%scale + field%add
+                  error = NF_GET_VARA_DOUBLE( mpp_file(unit)%ncid, field%id, start, axsiz, r8vals )
+                  call netcdf_err( error, mpp_file(unit), field=field )
+                  if(field%scale == 1.0 .and. field%add == 0.0) then
+                     data(:)=r8vals(:)
+                  else
+                     data(:)=r8vals(:)*field%scale + field%add
+                  end if
                 end if
              case default
                 call mpp_error( FATAL, 'MPP_READ: invalid pack value' )
