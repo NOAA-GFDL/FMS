@@ -41,8 +41,7 @@ module field_manager_mod
 !"prog_tracers","ocean_mod","age_global"
 !horizontal-advection-scheme = mdfl_sweby
 !vertical-advection-scheme = mdfl_sweby
-!file_in = INPUT/ocean_age.res.nc
-!file_out = RESTART/ocean_age.res.nc/
+!restart_file = ocean_age.res.nc
 ! </PRE>
 ! 
 ! The field table consists of entries in the following format.
@@ -175,8 +174,8 @@ implicit none
 private
 
 
-character(len=128) :: version = '$Id: field_manager.F90,v 16.0 2008/07/30 22:45:25 fms Exp $'
-character(len=128) :: tagname = '$Name: perth $'
+character(len=128) :: version = '$Id: field_manager.F90,v 16.0.4.1 2008/09/03 18:17:08 z1l Exp $'
+character(len=128) :: tagname = '$Name: perth_2008_10 $'
 logical            :: module_is_initialized  = .false.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+

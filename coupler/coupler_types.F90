@@ -59,7 +59,7 @@ module coupler_types_mod  !{
 !                                       'Wind speed at 10 m'
 !                                       'Surface atmospheric pressure'
 !                             units/
-!                                   'kg/kg', 'm/s', 'Pa'
+!                                   'mol/mol', 'm/s', 'Pa'
 !                         ice/
 !                             name/
 !                                  alpha, csurf
@@ -136,8 +136,8 @@ use field_manager_mod, only: fm_field_name_len, fm_string_len, fm_dump_list
 implicit none
 !
 !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: coupler_types.F90,v 15.0 2007/08/14 04:13:15 fms Exp $'
-  character(len=128) :: tag = '$Name: perth $'
+  character(len=128) :: version = '$Id: coupler_types.F90,v 15.0.10.1.2.2 2008/09/19 02:25:31 wfc Exp $'
+  character(len=128) :: tag = '$Name: perth_2008_10 $'
 !-----------------------------------------------------------------------
 real, parameter :: bound_tol = 1e-7
 
@@ -213,13 +213,12 @@ type, public    :: coupler_3d_field_type  !{
   real, pointer, dimension(:)                           :: param => NULL()
   logical, pointer, dimension(:)                        :: flag => NULL()
   integer                                               :: atm_tr_index = 0
-  character(len=fm_string_len)                          :: ice_file_in = ' '
-  character(len=fm_string_len)                          :: ice_file_out = ' '
-  character(len=fm_string_len)                          :: ocean_file_in = ' '
-  character(len=fm_string_len)                          :: ocean_file_out = ' '
+  character(len=fm_string_len)                          :: ice_restart_file = ' '
+  character(len=fm_string_len)                          :: ocean_restart_file = ' '
   logical                                               :: use_atm_pressure
   logical                                               :: use_10m_wind_speed
   logical                                               :: pass_through_ice
+  real							:: mol_wt = 0.0
 end type coupler_3d_field_type
 
 type, public    :: coupler_3d_bc_type  !{
@@ -250,13 +249,12 @@ type, public    :: coupler_2d_field_type  !{
   real, pointer, dimension(:)                           :: param => NULL()
   logical, pointer, dimension(:)                        :: flag => NULL()
   integer                                               :: atm_tr_index = 0
-  character(len=fm_string_len)                          :: ice_file_in = ' '
-  character(len=fm_string_len)                          :: ice_file_out = ' '
-  character(len=fm_string_len)                          :: ocean_file_in = ' '
-  character(len=fm_string_len)                          :: ocean_file_out = ' '
+  character(len=fm_string_len)                          :: ice_restart_file = ' '
+  character(len=fm_string_len)                          :: ocean_restart_file = ' '
   logical                                               :: use_atm_pressure
   logical                                               :: use_10m_wind_speed
   logical                                               :: pass_through_ice
+  real							:: mol_wt = 0.0
 end type coupler_2d_field_type
 
 type, public    :: coupler_2d_bc_type  !{
@@ -287,13 +285,12 @@ type, public    :: coupler_1d_field_type  !{
   real, pointer, dimension(:)                           :: param => NULL()
   logical, pointer, dimension(:)                        :: flag => NULL()
   integer                                               :: atm_tr_index = 0
-  character(len=fm_string_len)                          :: ice_file_in = ' '
-  character(len=fm_string_len)                          :: ice_file_out = ' '
-  character(len=fm_string_len)                          :: ocean_file_in = ' '
-  character(len=fm_string_len)                          :: ocean_file_out = ' '
+  character(len=fm_string_len)                          :: ice_restart_file = ' '
+  character(len=fm_string_len)                          :: ocean_restart_file = ' '
   logical                                               :: use_atm_pressure
   logical                                               :: use_10m_wind_speed
   logical                                               :: pass_through_ice
+  real							:: mol_wt = 0.0
 end type coupler_1d_field_type
 
 type, public    :: coupler_1d_bc_type  !{
@@ -520,7 +517,7 @@ field_index = field_index + 1
 ind_pcair = field_index
 call fm_util_set_value('air_sea_gas_flux/atm/name',      'pcair',                     index = ind_pcair)
 call fm_util_set_value('air_sea_gas_flux/atm/long_name', 'Atmospheric concentration', index = ind_pcair)
-call fm_util_set_value('air_sea_gas_flux/atm/units',     'kg/kg',                     index = ind_pcair)
+call fm_util_set_value('air_sea_gas_flux/atm/units',     'mol/mol',                   index = ind_pcair)
 
 field_index = field_index + 1
 ind_u10 = field_index
@@ -876,13 +873,12 @@ if (var_in%num_bcs .ne. 0) then  !{
   do n = 1, var_out%num_bcs  !{
     var_out%bc(n)%name = var_in%bc(n)%name
     var_out%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
-    var_out%bc(n)%ice_file_in = var_in%bc(n)%ice_file_in
-    var_out%bc(n)%ice_file_out = var_in%bc(n)%ice_file_out
-    var_out%bc(n)%ocean_file_in = var_in%bc(n)%ocean_file_in
-    var_out%bc(n)%ocean_file_out = var_in%bc(n)%ocean_file_out
+    var_out%bc(n)%ice_restart_file = var_in%bc(n)%ice_restart_file
+    var_out%bc(n)%ocean_restart_file = var_in%bc(n)%ocean_restart_file
     var_out%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
     var_out%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
     var_out%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
+    var_out%bc(n)%mol_wt = var_in%bc(n)%mol_wt
     var_out%bc(n)%num_fields = var_in%bc(n)%num_fields
     if (associated(var_out%bc(n)%field)) then  !{
       write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field already associated'
@@ -908,13 +904,9 @@ if (var_in%num_bcs .ne. 0) then  !{
         if (size(axes) .lt. 2) then  !{
           call mpp_error(FATAL, trim(error_header) // ' axes less than 2 elements')
         endif  !}
-        if (axes(1) .gt. 0) then  !{
-          var_out%bc(n)%field(m)%id_diag = register_diag_field(diag_name,                &
-               var_out%bc(n)%field(m)%name, axes(1:2), Time,                             &
-               var_out%bc(n)%field(m)%long_name, var_out%bc(n)%field(m)%units )
-        else  !}{
-          var_out%bc(n)%field(m)%id_diag = 0
-        endif  !}
+        var_out%bc(n)%field(m)%id_diag = register_diag_field(diag_name,                &
+             var_out%bc(n)%field(m)%name, axes(1:2), Time,                             &
+             var_out%bc(n)%field(m)%long_name, var_out%bc(n)%field(m)%units )
       endif  !}
     enddo  !} m
   enddo  !} n
@@ -1061,13 +1053,12 @@ if (var_in%num_bcs .ne. 0) then  !{
   do n = 1, var_out%num_bcs  !{
     var_out%bc(n)%name = var_in%bc(n)%name
     var_out%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
-    var_out%bc(n)%ice_file_in = var_in%bc(n)%ice_file_in
-    var_out%bc(n)%ice_file_out = var_in%bc(n)%ice_file_out
-    var_out%bc(n)%ocean_file_in = var_in%bc(n)%ocean_file_in
-    var_out%bc(n)%ocean_file_out = var_in%bc(n)%ocean_file_out
+    var_out%bc(n)%ice_restart_file = var_in%bc(n)%ice_restart_file
+    var_out%bc(n)%ocean_restart_file = var_in%bc(n)%ocean_restart_file
     var_out%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
     var_out%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
     var_out%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
+    var_out%bc(n)%mol_wt = var_in%bc(n)%mol_wt
     var_out%bc(n)%num_fields = var_in%bc(n)%num_fields
     if (associated(var_out%bc(n)%field)) then  !{
       write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field already associated'
@@ -1093,13 +1084,9 @@ if (var_in%num_bcs .ne. 0) then  !{
         if (size(axes) .lt. 3) then  !{
           call mpp_error(FATAL, trim(error_header) // ' axes less than 3 elements')
         endif  !}
-        if (axes(1) .gt. 0) then  !{
-          var_out%bc(n)%field(m)%id_diag = register_diag_field(diag_name,                &
-               var_out%bc(n)%field(m)%name, axes(1:3), Time,                             &
-               var_out%bc(n)%field(m)%long_name, var_out%bc(n)%field(m)%units )
-        else  !}{
-          var_out%bc(n)%field(m)%id_diag = 0
-        endif  !}
+        var_out%bc(n)%field(m)%id_diag = register_diag_field(diag_name,                &
+             var_out%bc(n)%field(m)%name, axes(1:3), Time,                             &
+             var_out%bc(n)%field(m)%long_name, var_out%bc(n)%field(m)%units )
       endif  !}
     enddo  !} m
   enddo  !} n

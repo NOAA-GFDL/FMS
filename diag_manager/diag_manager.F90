@@ -118,11 +118,12 @@ public  diag_manager_init, send_data, send_tile_averaged_data, diag_manager_end,
         get_date_dif, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, &
         DIAG_YEARS, get_diag_global_att, set_diag_global_att
 
+public  :: set_diag_filename_appendix
+character(len=32), save :: filename_appendix = ''
 
 ! version number of this module
-character(len=128)  :: version = '$Id: diag_manager.F90,v 16.0 2008/07/30 22:45:04 fms Exp $'
-character(len=128)  :: tagname = '$Name: perth $'  
-
+character(len=128)  :: version = '$Id: diag_manager.F90,v 16.0.4.2.2.2.2.1 2008/09/23 17:56:51 nnz Exp $'
+character(len=128)  :: tagname = '$Name: perth_2008_10 $'  
 
 ! <INTERFACE NAME="send_data">
 ! <TEMPLATE>
@@ -277,7 +278,7 @@ end function register_diag_field_scalar
 
 function register_diag_field_array(module_name, field_name, axes, init_time, &
    long_name, units, missing_value, range, mask_variant,standard_name,verbose,&
-   do_not_log,err_msg)
+   do_not_log,err_msg,interp_method)
 
 ! Indicates the calling modules intent to supply data for this field.
 
@@ -290,6 +291,7 @@ real, optional, intent(in)             :: missing_value, range(2)
 logical, optional, intent(in)          :: mask_variant,verbose
 logical, optional, intent(in)          :: do_not_log ! if TRUE, field info is not logged
 character(len=*), optional, intent(out):: err_msg
+character(len=*), optional, intent(in) :: interp_method
 integer                                :: field, j, ind, file_num, freq
 integer                                :: output_units
 logical                                :: mask_variant1, verbose1
@@ -304,7 +306,7 @@ if(present(err_msg)) err_msg = ''
 
 register_diag_field_array = register_static_field(module_name, field_name, axes, &
    long_name, units, missing_value, range, mask_variant1, dynamic =.true., &
-   do_not_log=do_not_log)
+   do_not_log=do_not_log, interp_method=interp_method)
 
 if((debug_diag_manager.or.verbose1) .and. register_diag_field_array<0 ) &
      call error_mesg ('register_diag_field', &
@@ -388,7 +390,7 @@ end function register_diag_field_array
 !   </DESCRIPTION>
 !   <TEMPLATE>
 !     register_static_field(module_name, field_name, axes, &
-!     long_name, units, missing_value, range, require)
+!     long_name, units, missing_value, range, require, interp_method)
 !   </TEMPLATE>
 
 !   <IN NAME="module_name" TYPE="character(len=*)"> </IN>
@@ -401,7 +403,7 @@ end function register_diag_field_array
 
 function register_static_field(module_name, field_name, axes, &
    long_name, units, missing_value, range, mask_variant, require, standard_name, dynamic, &
-   do_not_log)
+   do_not_log, interp_method)
 
 integer                                :: register_static_field
 character(len=*), intent(in)           :: module_name, field_name
@@ -412,6 +414,8 @@ logical, optional, intent(in)          :: mask_variant
 logical, optional, intent(in)          :: require  ! require static field to be in every file, e.g. 2-d axes
 logical, optional, intent(in)          :: dynamic
 logical, optional, intent(in)          :: do_not_log ! if TRUE, field information is not logged
+character(len=*), optional, intent(in) :: interp_method
+
 integer                                :: field, num_axes, j, out_num, siz(3), local_siz(3), k
 logical                                :: mask_variant1, dynamic1, allow_log
 integer                                :: local_start(3), local_end(3) ! indices of local domain of global axes
@@ -494,6 +498,15 @@ if(present(range)) then
 else
    input_fields(field)%range = (/ 1., 0. /)
    input_fields(field)%range_present = .false.
+endif
+
+input_fields(field)%interp_method = ''
+if(present(interp_method)) then
+   if(trim(interp_method) .NE. 'conserve_order1') call error_mesg ('register_diag_field', &
+     'when registering module/output_field '//trim(module_name)//'/'//&
+     &trim(field_name)//', the optional argument interp_method = '//trim(interp_method)// &
+      ', but it should be "conserve_order1"', FATAL)
+   input_fields(field)%interp_method = trim(interp_method)
 endif
 
 siz = 1; local_siz = 1
@@ -611,6 +624,11 @@ type (time_type), intent(in),  optional :: time
 character(len=*), intent(out), optional :: err_msg
 real :: field_out(1, 1, 1)
 
+! If diag_field_id is < 0 it means that this field is not registered, simply return
+if(diag_field_id <= 0) then
+   send_data_0d = .false.
+   return
+endif
 ! First copy the data to a three d array with last element 1
 field_out(1, 1, 1) = field
 send_data_0d = send_data_3d(diag_field_id, field_out, time, err_msg=err_msg)
@@ -637,6 +655,11 @@ character(len=*), intent(out), optional :: err_msg
 real    :: field_out(size(field(:)), 1, 1)
 logical ::  mask_out(size(field(:)), 1, 1)
 
+! If diag_field_id is < 0 it means that this field is not registered, simply return
+if(diag_field_id <= 0) then
+   send_data_1d = .false.
+   return
+endif
 
 ! First copy the data to a three d array with last element 1
 field_out(:, 1, 1) = field
@@ -676,6 +699,11 @@ character(len=*), intent(out), optional :: err_msg
 real    :: field_out(size(field, 1), size(field, 2), 1)
 logical ::  mask_out(size(field, 1), size(field, 2), 1)
 
+! If diag_field_id is < 0 it means that this field is not registered, simply return
+if(diag_field_id <= 0) then
+   send_data_2d = .false.
+   return
+endif
 
 ! First copy the data to a three d array with last element 1
 field_out(:, :, 1) = field
@@ -731,6 +759,14 @@ if (.not.module_is_initialized) then
   if(fms_error_handler('send_data_3d','diag_manager NOT initialized',err_msg)) return
 endif
 err_msg_local = ''
+
+! If diag_field_id is < 0 it means that this field is not registered, simply return
+if(diag_field_id <= 0) then
+   send_data_3d = .false.
+   return
+else
+   send_data_3d = .true.
+endif
 
 ! send_data works in either one or another of two modes.
 ! 1. Input field is a window (e.g. FMS physics)
@@ -791,13 +827,6 @@ f1=1+hi; f2=n1-hi; f3=1+hj; f4=n2-hj ! used for field, mask and rmask bounds
 weight1 = 1.
 if(present(weight)) weight1 = weight
 
-! If diag_field_id is < 0 it means that this field is not registered, simply return
-if(diag_field_id < 0) then
-   send_data_3d = .false.
-   return
-else
-   send_data_3d = .true.
-endif
 if(input_fields(diag_field_id)%local) then
 ! need to increase number_of_outputs by 1 for mpp_sync() in case of local output
    number_of_outputs = input_fields(diag_field_id)%num_output_fields + 1  
@@ -1841,6 +1870,10 @@ do while (nfiles <= max_files)
    if (append_pelist_name) then
       textA%name(name_len+1:) = trim(pelist_name)
    endif   
+
+   !append a string to the filename
+   if(len_trim(filename_appendix) > 0)   textA%name(name_len+1:) = trim(filename_appendix)
+   
    ! assign values to file_types
    if(file_freq_present) then
       if(file_duration_present) then
@@ -1899,6 +1932,10 @@ do while (nfields <= max_output_fields)
    if (append_pelist_name) then
        textB%name(name_len+1:) = trim(pelist_name)
    endif
+
+   !append a string to the filename
+   if(len_trim(filename_appendix) > 0)   textB%name(name_len+1:) = trim(filename_appendix)
+
    if(debug_diag_manager) &
         write(stdout(),2)textB%module_name,textB%field_name,textB%name,textB%time_method 
    if(trim(textB%spatial_ops) == 'none') then
@@ -2038,6 +2075,10 @@ end function need_data
 ! </FUNCTION>
 !###################################################################################################
 
+subroutine set_diag_filename_appendix(string_in)
+  character(len=*) , intent(in) :: string_in
+  filename_appendix = trim(string_in)
+end subroutine set_diag_filename_appendix
 
 end module diag_manager_mod
 

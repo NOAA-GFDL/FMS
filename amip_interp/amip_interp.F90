@@ -75,6 +75,11 @@ use           fms_mod, only: file_exist, error_mesg, write_version_number,  &
 use        fms_io_mod, only: read_data
 use     constants_mod, only: TFREEZE, pi
 use      platform_mod, only: R4_KIND, I2_KIND
+#ifdef NCEP_SST
+!DEC$ MESSAGE: 'Trying to use FV-CS external_ic_mod code while compiling' 
+!DEC$ MESSAGE: 'the shared code will cause a failure when using FRE4'
+use   fv_grid_utils_mod, only: sst_ncep, i_sst, j_sst
+#endif
 
 implicit none
 private
@@ -91,8 +96,8 @@ public amip_interp_init, get_amip_sst, get_amip_ice, amip_interp_new, &
 
 !  ---- version number -----
 
-character(len=128) :: version = '$Id: amip_interp.F90,v 15.0 2007/08/14 04:13:04 fms Exp $'
-character(len=128) :: tagname = '$Name: perth $'
+character(len=128) :: version = '$Id: amip_interp.F90,v 15.0.8.1 2008/09/15 23:22:43 wfc Exp $'
+character(len=128) :: tagname = '$Name: perth_2008_10 $'
 
 !-----------------------------------------------------------------------
 !------ private defined data type --------
@@ -326,7 +331,9 @@ end type
 !global temperature perturbation used for sensitivity experiments
  real :: sst_pert = 0.
 
- namelist /amip_interp_nml/ tice_crit, &
+ logical :: use_ncep_sst = .false.
+
+ namelist /amip_interp_nml/ use_ncep_sst, tice_crit, &
                             data_set, date_out_of_range,         &
                             use_zonal, teq, tdif, tann, tlag,    &
                             amip_date, sst_pert, verbose
@@ -408,7 +415,15 @@ else
             Interp % Date1 = Interp % Date2
             Interp % data1 = Interp % data2
         else
-            call read_record ('sst', Date1, Udate1, temp)
+!-- SJL -----------------------------------------
+            if ( use_ncep_sst ) then
+#ifdef NCEP_SST
+                 temp(:,:) = sst_ncep(:,:)
+#endif
+            else
+                 call read_record ('sst', Date1, Udate1, temp)
+            endif
+!------------------------------------------------
             call horiz_interp ( Interp%Hintrp, temp, Interp%data1 )
             call clip_data ('sst', Interp%data1)
             Interp % Date1 = Date1
@@ -418,8 +433,15 @@ else
 !-----------------------------------------------------------------------
 
     if (Date2 /= Interp % Date2) then
-
-        call read_record ('sst', Date2, Udate2, temp)
+!-- SJL -----------------------------------------
+            if ( use_ncep_sst ) then
+#ifdef NCEP_SST
+                 temp(:,:) = sst_ncep(:,:)
+#endif
+            else
+                 call read_record ('sst', Date2, Udate2, temp)
+            endif
+!------------------------------------------------
         call horiz_interp ( Interp%Hintrp, temp, Interp%data2 )
         call clip_data ('sst', Interp%data2)
         Interp % Date2 = Date2
@@ -536,7 +558,19 @@ else
             Interp % Date1 = Interp % Date2
             Interp % data1 = Interp % data2
         else
-            call read_record ('ice', Date1, Udate1, sice)
+!-- SJL -------------------------------------------------------------
+            if ( use_ncep_sst ) then
+#ifdef NCEP_SST
+               where ( sst_ncep <= (TFREEZE+tice_crit) )
+                   sice = 1.
+               elsewhere
+                   sice = 0.
+               endwhere
+#endif
+            else
+               call read_record ('ice', Date1, Udate1, sice)
+            endif
+!--------------------------------------------------------------------
             call horiz_interp ( Interp%Hintrp, sice, Interp%data1 )
             call clip_data ('ice', Interp%data1)
             Interp % Date1 = Date1
@@ -547,7 +581,19 @@ else
 
     if (Date2 /= Interp % Date2) then
 
-        call read_record ('ice', Date2, Udate2, sice)
+!-- SJL -------------------------------------------------------------
+            if ( use_ncep_sst ) then
+#ifdef NCEP_SST
+               where ( sst_ncep <= (TFREEZE+tice_crit) )
+                   sice = 1.
+               elsewhere
+                   sice = 0.
+               endwhere
+#endif
+            else
+               call read_record ('ice', Date2, Udate2, sice)
+            endif
+!--------------------------------------------------------------------
         call horiz_interp ( Interp%Hintrp, sice, Interp%data2 )
         call clip_data ('ice', Interp%data2)
         Interp % Date2 = Date2
@@ -710,6 +756,13 @@ endif
     endif
     call close_file (unit)
 
+#ifdef NCEP_SST
+    if (.not. use_ncep_sst) &
+       call error_mesg ('amip_interp_init', 'use_ncep_sst is false but NCEP_SST is #defined', FATAL)
+#else
+    if (use_ncep_sst) &
+       call error_mesg ('amip_interp_init', 'use_ncep_sst is true but NCEP_SST is #undefined', FATAL)
+#endif
 !   ---- freezing point of sea water in deg K ---
 
     tice_crit_k = tice_crit
@@ -761,7 +814,15 @@ endif
     else if (lowercase(trim(data_set)) == 'reynolds_oi') then
         file_name_sst = 'INPUT/' // 'reyoi_sst.data'
         file_name_ice = 'INPUT/' // 'reyoi_sst.data'
-        mobs = 360;  nobs = 180
+!--- Added by SJL ---------------------------------------------- 
+        if ( use_ncep_sst ) then
+#ifdef NCEP_SST
+             mobs = i_sst;  nobs = j_sst
+#endif
+        else
+             mobs = 360;    nobs = 180
+        endif
+!--- Added by SJL ---------------------------------------------- 
         call set_sst_grid_edges_oi
         if (mpp_pe() == 0) &
         call error_mesg ('amip_interp_init', 'using Reynolds OI SST', &

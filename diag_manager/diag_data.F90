@@ -82,6 +82,7 @@ end type file_type
 
 type input_field_type
    character(len=128) :: module_name, field_name, long_name, units, standard_name
+   character(len=64)  :: interp_method
    integer            :: axes(3), num_axes 
    logical            :: missing_value_present, range_present
    real               :: missing_value, range(2)
@@ -140,8 +141,8 @@ character (len=10)  :: time_unit_list(6) = (/'seconds   ', 'minutes   ', &
 character(len=32)   :: pelist_name
 
 
-character(len=128),private  :: version = '$Id: diag_data.F90,v 16.0 2008/07/30 22:45:02 fms Exp $'
-character(len=128),private  :: tagname = '$Name: perth $'
+character(len=128),private  :: version = '$Id: diag_data.F90,v 16.0.4.1 2008/09/08 17:42:27 z1l Exp $'
+character(len=128),private  :: tagname = '$Name: perth_2008_10 $'
 
 
 ! definitions for diag_axis_mod

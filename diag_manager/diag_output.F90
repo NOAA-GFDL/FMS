@@ -15,7 +15,7 @@ use       mpp_io_mod, only: axistype, fieldtype, mpp_io_init,     &
                             mpp_open,  mpp_write_meta, mpp_write, &
                             mpp_flush, mpp_close, mpp_get_id,     &
                             MPP_WRONLY, MPP_OVERWR,   &
-                            MPP_NETCDF, MPP_MULTI
+                            MPP_NETCDF, MPP_MULTI, MPP_SINGLE
 
 use  mpp_domains_mod, only: domain1d, domain2d, mpp_define_domains, mpp_get_pelist,&
                             mpp_get_global_domain, mpp_get_compute_domains, &
@@ -97,9 +97,9 @@ type(axistype),save     :: Axis_types     (max_axis_num)
 logical                 :: module_is_initialized = .FALSE.
 
 character(len=128), private :: version= &
-  '$Id: diag_output.F90,v 15.0 2007/08/14 04:13:29 fms Exp $'
+  '$Id: diag_output.F90,v 15.0.8.1.2.1 2008/09/19 19:42:11 z1l Exp $'
 character(len=128), private :: tagname= &
-  '$Name: perth $'
+  '$Name: perth_2008_10 $'
 
 contains
 
@@ -107,13 +107,14 @@ contains
 
 subroutine diag_output_init ( file_name, format, file_title,  &
                             time_name, time_units,          &
-                            file_unit, nfiles_in_set)
+                            file_unit, nfiles_in_set, all_scalar_or_1d)
 
  character(len=*), intent(in)  :: file_name, file_title,  &
                                   time_name, time_units
  integer         , intent(in)  :: format
  integer         , intent(out) :: file_unit
  integer         , intent(in)  :: nfiles_in_set
+ logical         , intent(in)  :: all_scalar_or_1d
 !-----------------------------------------------------------------------
 !
 !        Registers the time axis and opens the output file
@@ -157,6 +158,11 @@ subroutine diag_output_init ( file_name, format, file_title,  &
  case default
     call error_mesg ('diag_output_init', 'invalid format', FATAL)
  end select
+
+ if(all_scalar_or_1d) then
+    threading = MPP_SINGLE
+    fileset   = MPP_SINGLE
+ endif
 
 !---- open output file (return file_unit id) -----
       call mpp_open ( file_unit, file_name, action=MPP_OVERWR,        &
@@ -378,7 +384,7 @@ end subroutine write_axis_meta_data
 !#######################################################################
 
 function write_field_meta_data ( file_unit, name, axes, units,      &
-     long_name, range, pack, mval, avg_name, time_method,standard_name )  &
+     long_name, range, pack, mval, avg_name, time_method,standard_name,interp_method)  &
      result ( Field )
 
   integer         ,  intent(in)          :: file_unit, axes(:)
@@ -386,6 +392,7 @@ function write_field_meta_data ( file_unit, name, axes, units,      &
   real,    optional, intent(in)          :: range(2), mval
   integer, optional, intent(in)          :: pack
   character(len=*), optional, intent(in) :: avg_name, time_method,standard_name
+  character(len=*), optional, intent(in) :: interp_method
   character(len=128)                     :: standard_name2
   type(diag_fieldtype)                   :: Field
   logical                                :: coord_present
@@ -557,6 +564,7 @@ function write_field_meta_data ( file_unit, name, axes, units,      &
              trim(avg_name) // '_DT'  )
      endif
   endif
+
 ! write coordinates attribute for CF compliance
   if (coord_present) &
        call mpp_write_meta (file_unit, mpp_get_id(Field%Field),       &
@@ -564,6 +572,12 @@ function write_field_meta_data ( file_unit, name, axes, units,      &
   if(trim(standard_name2) /= 'none') &
        call mpp_write_meta (file_unit, mpp_get_id(Field%Field),       &
        'standard_name', cval=trim(standard_name2))
+
+!---- write attribute for interp_method ----
+  if( present(interp_method) ) then
+        call mpp_write_meta ( file_unit, mpp_get_id(Field%Field),       &
+             'interp_method', cval=trim(interp_method)  ) 
+  endif
 
 !---- get axis domain ----
   Field%Domain = get_domain2d ( axes )

@@ -28,12 +28,15 @@
  implicit none
  private
 
- character(len=128), parameter :: version = '$Id: sat_vapor_pres_k.F90,v 16.0 2008/07/30 22:47:57 fms Exp $'
- character(len=128), parameter :: tagname = '$Name: perth $'
+ character(len=128), parameter :: version = '$Id: sat_vapor_pres_k.F90,v 16.0.6.2.2.1 2008/09/15 23:25:30 wfc Exp $'
+ character(len=128), parameter :: tagname = '$Name: perth_2008_10 $'
 
  public :: sat_vapor_pres_init_k
  public :: lookup_es_k
  public :: lookup_des_k
+ public :: lookup_es_des_k
+ public :: compute_qs_k
+ public :: compute_mrs_k
 
  interface lookup_es_k
    module procedure lookup_es_k_0d
@@ -49,24 +52,48 @@
    module procedure lookup_des_k_3d
  end interface
 
+ interface lookup_es_des_k
+   module procedure lookup_es_des_k_0d
+   module procedure lookup_es_des_k_1d
+   module procedure lookup_es_des_k_2d
+   module procedure lookup_es_des_k_3d
+ end interface
+
+ interface compute_qs_k
+   module procedure compute_qs_k_0d
+   module procedure compute_qs_k_1d
+   module procedure compute_qs_k_2d
+   module procedure compute_qs_k_3d
+ end interface
+
+ interface compute_mrs_k
+   module procedure compute_mrs_k_0d
+   module procedure compute_mrs_k_1d
+   module procedure compute_mrs_k_2d
+   module procedure compute_mrs_k_3d
+ end interface
+
  real :: dtres, tepsl, tminl, dtinvl
  integer :: table_siz
  real, dimension(:), allocatable :: TABLE   !  sat vapor pres (es)
  real, dimension(:), allocatable :: DTABLE  !  first derivative of es
  real, dimension(:), allocatable :: D2TABLE ! second derivative of es
 
+ logical  :: use_exact_qs
  logical  :: module_is_initialized = .false.
 
  contains
 
- subroutine sat_vapor_pres_init_k(table_size, tcmin, tcmax, TFREEZE, err_msg, teps, tmin, dtinv)
+ subroutine sat_vapor_pres_init_k(table_size, tcmin, tcmax, TFREEZE, HLV, RVGAS, ES0, err_msg, &
+                                  use_exact_qs_input, do_simple, teps, tmin, dtinv)
 
 ! This routine has been generalized to return tables for any temperature range and resolution
 
  integer, intent(in) :: table_size
  real, intent(in) :: tcmin ! TABLE(1)          = sat vapor pressure at temperature tcmin (deg C)
  real, intent(in) :: tcmax ! TABLE(table_size) = sat vapor pressure at temperature tcmax (deg C)
- real, intent(in) :: TFREEZE
+ real, intent(in) :: TFREEZE, HLV, RVGAS, ES0
+ logical, intent(in)  :: use_exact_qs_input, do_simple
  character(len=*), intent(out) :: err_msg
  real, intent(out), optional :: teps, tmin, dtinv
 
@@ -106,14 +133,26 @@
 ! compute es tables from tcmin to tcmax
 ! estimate es derivative with small +/- difference
 
-      do i = 1, table_size
-         tem(1) = tminl + dtres*real(i-1)
-         tem(2) = tem(1)-tinrc
-         tem(3) = tem(1)+tinrc
-         es = compute_es_k (tem, TFREEZE)
-         TABLE(i) = es(1)
-         DTABLE(i) = (es(3)-es(2))*tfact
-      enddo
+      if (do_simple) then
+
+        do i = 1, table_size
+          tem(1) = tminl + dtres*real(i-1)
+          TABLE(i) = ES0*610.78*exp(-hlv/rvgas*(1./tem(1) - 1./tfreeze)) 
+          DTABLE(i) = hlv*TABLE(i)/rvgas/tem(1)**2.
+        enddo
+
+      else
+
+        do i = 1, table_size
+          tem(1) = tminl + dtres*real(i-1)
+          tem(2) = tem(1)-tinrc
+          tem(3) = tem(1)+tinrc
+          es = compute_es_k (tem, TFREEZE)
+          TABLE(i) = es(1)
+          DTABLE(i) = (es(3)-es(2))*tfact
+        enddo
+
+      endif !if (do_simple)
 
 ! compute one-half second derivative using centered differences
 ! differencing des values in the table
@@ -128,7 +167,8 @@
          D2TABLE(table_size) = 0.50*dtinvl*&
               (DTABLE(table_size)-DTABLE(table_size-1))
 
-        module_is_initialized = .true.
+      use_exact_qs = use_exact_qs_input
+      module_is_initialized = .true.
 
  end subroutine sat_vapor_pres_init_k
 
@@ -188,6 +228,646 @@
 
 !#######################################################################
 
+ subroutine compute_qs_k_3d (temp, press, eps, zvir, qs, nbad, q, hc, &
+                                                         dqsdT, esat)
+
+ real, intent(in),  dimension(:,:,:)           :: temp, press   
+ real, intent(in)                              :: eps, zvir
+ real, intent(out), dimension(:,:,:)           :: qs   
+ integer, intent(out)                          :: nbad
+ real, intent(in),  dimension(:,:,:), optional :: q
+ real, intent(in),                    optional :: hc
+ real, intent(out), dimension(:,:,:), optional :: dqsdT, esat
+
+ real, dimension(size(temp,1), size(temp,2), size(temp,3)) ::   &
+                                                  esloc, desat, denom
+ integer :: i, j, k
+ real    :: hc_loc
+
+   if (present(hc)) then
+     hc_loc = hc
+   else
+     hc_loc = 1.0
+   endif
+   if (present (dqsdT)) then
+     call lookup_es_des_k (temp, esloc, desat, nbad)
+     desat = desat*hc_loc
+   else
+     call lookup_es_k (temp, esloc, nbad)
+   endif
+   esloc = esloc*hc_loc
+   if (present (esat)) then
+     esat = esloc
+   endif 
+   if (nbad == 0) then
+     if (present (q) .and. use_exact_qs) then
+       qs = (1.0 + zvir*q)*eps*esloc/press
+       if (present (dqsdT)) then
+         dqsdT = (1.0 + zvir*q)*eps*desat/press
+       endif
+     else  ! (present(q))
+       denom = press - (1.0 - eps)*esloc
+       do k=1,size(qs,3)
+         do j=1,size(qs,2)
+           do i=1,size(qs,1)
+             if (denom(i,j,k) > 0.0) then
+               qs(i,j,k) = eps*esloc(i,j,k)/denom(i,j,k)         
+             else
+               qs(i,j,k) = eps
+             endif
+           end do
+         end do
+       end do
+       if (present (dqsdT)) then
+         dqsdT = eps*press*desat/denom**2
+       endif
+     endif ! (present(q))
+   else ! (nbad = 0)
+     qs = -999.
+     if (present (dqsdT)) then
+       dqsdT = -999.
+     endif
+     if (present (esat)) then
+       esat = -999.
+     endif 
+   endif ! (nbad = 0)
+
+     
+ end subroutine compute_qs_k_3d
+
+!#######################################################################
+
+ subroutine compute_qs_k_2d (temp, press, eps, zvir, qs, nbad, q, hc, &
+                                                         dqsdT, esat)
+
+ real, intent(in),  dimension(:,:)           :: temp, press   
+ real, intent(in)                            :: eps, zvir
+ real, intent(out), dimension(:,:)           :: qs   
+ integer, intent(out)                        :: nbad
+ real, intent(in),  dimension(:,:), optional :: q
+ real, intent(in),                    optional :: hc
+ real, intent(out), dimension(:,:), optional :: dqsdT, esat
+
+ real, dimension(size(temp,1), size(temp,2)) :: esloc, desat, denom
+ integer :: i, j
+ real    :: hc_loc
+
+   if (present(hc)) then
+     hc_loc = hc
+   else
+     hc_loc = 1.0
+   endif
+
+   if (present (dqsdT)) then
+     call lookup_es_des_k (temp, esloc, desat, nbad)
+     desat = desat*hc_loc
+   else
+     call lookup_es_k (temp, esloc, nbad)
+   endif
+   esloc = esloc*hc_loc
+   if (present (esat)) then
+     esat = esloc
+   endif 
+   if (nbad == 0) then
+     if (present (q) .and. use_exact_qs) then
+       qs = (1.0 + zvir*q)*eps*esloc/press
+       if (present (dqsdT)) then
+         dqsdT = (1.0 + zvir*q)*eps*desat/press
+       endif
+     else  ! (present(q))
+       denom = press - (1.0 - eps)*esloc
+      do j=1,size(qs,2)
+        do i=1,size(qs,1)
+          if (denom(i,j) > 0.0) then
+            qs(i,j) = eps*esloc(i,j)/denom(i,j)
+          else
+            qs(i,j) = eps
+          endif
+        end do
+      end do
+      if (present (dqsdT)) then
+        dqsdT = eps*press*desat/denom**2
+      endif
+    endif ! (present(q))
+   else ! (nbad = 0)
+     qs = -999.
+     if (present (dqsdT)) then
+       dqsdT = -999.
+     endif
+     if (present (esat)) then
+       esat = -999.
+     endif 
+   endif ! (nbad = 0)
+
+
+ end subroutine compute_qs_k_2d
+
+!#######################################################################
+
+ subroutine compute_qs_k_1d (temp, press, eps, zvir, qs, nbad, q, hc, &
+                                                           dqsdT, esat)
+
+ real, intent(in),  dimension(:)           :: temp, press   
+ real, intent(in)                          :: eps, zvir
+ real, intent(out), dimension(:)           :: qs   
+ integer, intent(out)                      :: nbad
+ real, intent(in),  dimension(:), optional :: q
+ real, intent(in),                    optional :: hc
+ real, intent(out), dimension(:), optional :: dqsdT, esat
+
+ real, dimension(size(temp,1)) :: esloc, desat, denom
+ integer :: i
+ real    :: hc_loc
+
+   if (present(hc)) then
+     hc_loc = hc
+   else
+     hc_loc = 1.0
+   endif
+
+   if (present (dqsdT)) then
+     call lookup_es_des_k (temp, esloc, desat, nbad)
+     desat = desat*hc_loc
+   else
+     call lookup_es_k (temp, esloc, nbad)
+   endif
+   esloc = esloc*hc_loc
+   if (present (esat)) then
+     esat = esloc
+   endif 
+   if (nbad == 0) then
+     if (present (q) .and. use_exact_qs) then
+       qs = (1.0 + zvir*q)*eps*esloc/press
+       if (present (dqsdT)) then
+         dqsdT = (1.0 + zvir*q)*eps*desat/press
+       endif
+     else  ! (present(q))
+       denom = press - (1.0 - eps)*esloc
+       do i=1,size(qs,1)
+         if (denom(i) >  0.0) then
+           qs(i) = eps*esloc(i)/denom(i)
+         else
+           qs(i) = eps
+         endif
+       end do
+       if (present (dqsdT)) then
+         dqsdT = eps*press*desat/denom**2
+       endif
+     endif ! (present(q))
+   else ! (nbad = 0)
+     qs = -999.
+     if (present (dqsdT)) then
+       dqsdT = -999.
+     endif
+     if (present (esat)) then
+       esat = -999.
+     endif 
+   endif ! (nbad = 0)
+
+
+ end subroutine compute_qs_k_1d
+
+!#######################################################################
+
+ subroutine compute_qs_k_0d (temp, press, eps, zvir, qs, nbad, q, hc, &
+                                                            dqsdT, esat)
+
+ real, intent(in)                :: temp, press   
+ real, intent(in)                :: eps, zvir
+ real, intent(out)               :: qs   
+ integer, intent(out)            :: nbad
+ real, intent(in),      optional :: q
+ real, intent(in),                    optional :: hc
+ real, intent(out),     optional :: dqsdT, esat
+
+ real    :: esloc, desat, denom
+ real    :: hc_loc
+
+   if (present(hc)) then
+     hc_loc = hc
+   else
+     hc_loc = 1.0
+   endif
+
+   if (present (dqsdT)) then
+     call lookup_es_des_k (temp, esloc, desat, nbad)
+     desat = desat*hc_loc
+   else
+     call lookup_es_k (temp, esloc, nbad)
+   endif
+   esloc = esloc*hc_loc
+   if (present (esat)) then
+     esat = esloc
+   endif 
+   if (nbad == 0) then
+     if (present (q) .and. use_exact_qs) then
+       qs = (1.0 + zvir*q)*eps*esloc/press
+       if (present (dqsdT)) then
+         dqsdT = (1.0 + zvir*q)*eps*desat/press
+       endif
+     else  ! (present(q))
+       denom = press - (1.0 - eps)*esloc
+       if (denom > 0.0) then
+         qs = eps*esloc/denom
+       else
+         qs = eps
+       endif
+       if (present (dqsdT)) then
+         dqsdT = eps*press*desat/denom**2
+       endif
+     endif ! (present(q))
+   else ! (nbad = 0)
+     qs = -999.
+     if (present (dqsdT)) then
+       dqsdT = -999.
+     endif
+     if (present (esat)) then
+       esat = -999.
+     endif 
+   endif ! (nbad = 0)
+
+
+ end subroutine compute_qs_k_0d
+
+!#######################################################################
+
+!#######################################################################
+
+ subroutine compute_mrs_k_3d (temp, press, eps, zvir, mrs, nbad,   &
+                                                 mr, hc, dmrsdT, esat)
+
+ real, intent(in),  dimension(:,:,:)           :: temp, press
+ real, intent(in)                              :: eps, zvir
+ real, intent(out), dimension(:,:,:)           :: mrs   
+ integer, intent(out)                          :: nbad
+ real, intent(in),  dimension(:,:,:), optional :: mr
+ real, intent(in),                    optional :: hc
+ real, intent(out), dimension(:,:,:), optional :: dmrsdT, esat
+
+ real, dimension(size(temp,1), size(temp,2), size(temp,3)) ::    &
+                                                    esloc, desat, denom
+ integer :: i, j, k
+ real    :: hc_loc
+
+   if (present(hc)) then
+     hc_loc = hc
+   else
+     hc_loc = 1.0
+   endif
+
+   if (present (dmrsdT)) then
+     call lookup_es_des_k (temp, esloc, desat, nbad)
+     desat = desat*hc_loc
+   else
+     call lookup_es_k (temp, esloc, nbad)
+   endif
+   esloc = esloc*hc_loc
+   if (present (esat)) then
+     esat = esloc
+   endif 
+   if (nbad == 0) then
+     if (present (mr) .and. use_exact_qs) then
+       mrs = (eps + mr)*esloc/press
+       if (present (dmrsdT)) then
+         dmrsdT =  (eps + mr)*desat/press
+       endif
+     else ! (present (mr))
+       denom = press - esloc
+       do k=1,size(mrs,3)
+         do j=1,size(mrs,2)
+           do i=1,size(mrs,1)
+             if (denom(i,j,k) > 0.0) then
+               mrs(i,j,k) = eps*esloc(i,j,k)/denom(i,j,k) 
+             else
+               mrs(i,j,k) = eps
+             endif
+           end do
+         end do
+       end do
+       if (present (dmrsdT)) then
+         dmrsdT = eps*press*desat/denom**2
+       endif
+     endif !(present (mr))
+   else
+     mrs = -999.
+     if (present (dmrsdT)) then
+       dmrsdT = -999.
+     endif
+     if (present (esat)) then
+       esat = -999.
+     endif 
+   endif
+
+     
+ end subroutine compute_mrs_k_3d
+
+!#######################################################################
+
+ subroutine compute_mrs_k_2d (temp, press, eps, zvir, mrs, nbad,  &
+                                                  mr, hc, dmrsdT, esat)
+
+ real, intent(in),  dimension(:,:)           :: temp, press
+ real, intent(in)                            :: eps, zvir
+ real, intent(out), dimension(:,:)           :: mrs   
+ integer, intent(out)                        :: nbad
+ real, intent(in), dimension(:,:), optional  :: mr
+ real, intent(in),                    optional :: hc
+ real, intent(out), dimension(:,:), optional :: dmrsdT, esat
+
+ real, dimension(size(temp,1), size(temp,2)) :: esloc, desat, denom
+ integer :: i, j
+ real    :: hc_loc
+
+   if (present(hc)) then
+     hc_loc = hc
+   else
+     hc_loc = 1.0
+   endif
+
+   if (present (dmrsdT)) then
+     call lookup_es_des_k (temp, esloc, desat, nbad)
+     desat = desat*hc_loc
+   else
+     call lookup_es_k (temp, esloc, nbad)
+   endif
+   esloc = esloc*hc_loc
+   if (present (esat)) then
+     esat = esloc
+   endif 
+   if (nbad == 0) then
+     if (present (mr) .and. use_exact_qs) then
+       mrs = (eps + mr)*esloc/press
+       if (present (dmrsdT)) then
+         dmrsdT = (eps + mr)*desat/press
+       endif
+     else ! (present (mr))
+       denom = press - esloc
+       do j=1,size(mrs,2)
+         do i=1,size(mrs,1)
+           if (denom(i,j) > 0.0) then
+             mrs(i,j) = eps*esloc(i,j)/denom(i,j) 
+           else
+             mrs(i,j) = eps
+           endif
+         end do
+       end do
+       if (present (dmrsdT)) then
+         dmrsdT = eps*press*desat/denom**2
+       endif
+     endif !(present (mr))
+   else
+     mrs = -999.
+     if (present (dmrsdT)) then
+       dmrsdT = -999.
+     endif
+     if (present (esat)) then
+       esat = -999.
+     endif 
+   endif
+
+
+ end subroutine compute_mrs_k_2d
+
+!#######################################################################
+
+ subroutine compute_mrs_k_1d (temp, press, eps, zvir, mrs, nbad,  &
+                                                  mr, hc, dmrsdT, esat)
+
+ real, intent(in),  dimension(:)           :: temp, press
+ real, intent(in)                          :: eps, zvir
+ real, intent(out), dimension(:)           :: mrs   
+ integer, intent(out)                      :: nbad
+ real, intent(in),  dimension(:), optional :: mr
+ real, intent(in),                    optional :: hc
+ real, intent(out), dimension(:), optional :: dmrsdT, esat
+
+ real, dimension(size(temp,1)) :: esloc, desat, denom
+ integer :: i
+ real    :: hc_loc
+
+   if (present(hc)) then
+     hc_loc = hc
+   else
+     hc_loc = 1.0
+   endif
+
+   if (present (dmrsdT)) then
+     call lookup_es_des_k (temp, esloc, desat, nbad)
+     desat = desat*hc_loc
+   else
+     call lookup_es_k (temp, esloc, nbad)
+   endif
+   esloc = esloc*hc_loc
+   if (present (esat)) then
+     esat = esloc
+   endif 
+   if (nbad == 0) then
+     if (present (mr) .and. use_exact_qs) then
+       mrs = (eps + mr)*esloc/press
+       if (present (dmrsdT)) then
+         dmrsdT =  (eps + mr)*desat/press
+       endif
+     else ! (present (mr))
+       denom = press - esloc
+       do i=1,size(mrs,1)
+         if (denom(i) > 0.0) then
+           mrs(i) = eps*esloc(i)/denom(i) 
+         else
+           mrs(i) = eps
+         endif
+       end do
+       if (present (dmrsdT)) then
+         dmrsdT = eps*press*desat/denom**2
+       endif
+     endif !(present (mr))
+   else
+     mrs = -999.
+     if (present (dmrsdT)) then
+       dmrsdT = -999.
+     endif
+     if (present (esat)) then
+       esat = -999.
+     endif 
+   endif
+
+
+ end subroutine compute_mrs_k_1d
+
+!#######################################################################
+
+ subroutine compute_mrs_k_0d (temp, press, eps, zvir, mrs, nbad,   &
+                                                  mr, hc, dmrsdT, esat)
+
+ real, intent(in)                              :: temp, press
+ real, intent(in)                              :: eps, zvir
+ real, intent(out)                             :: mrs   
+ integer, intent(out)                          :: nbad
+ real, intent(in),                    optional :: mr
+ real, intent(in),                    optional :: hc
+ real, intent(out),                   optional :: dmrsdT, esat
+
+ real    :: esloc, desat, denom
+ real    :: hc_loc
+
+   if (present(hc)) then
+     hc_loc = hc
+   else
+     hc_loc = 1.0
+   endif
+
+   if (present (dmrsdT)) then
+     call lookup_es_des_k (temp, esloc, desat, nbad)
+     desat = desat*hc_loc
+   else
+     call lookup_es_k (temp, esloc, nbad)
+   endif
+   esloc = esloc*hc_loc
+   if (present (esat)) then
+     esat = esloc
+   endif 
+   if (nbad == 0) then
+     if (present (mr) .and. use_exact_qs) then
+       mrs = (eps + mr)*esloc/press
+       if (present (dmrsdT)) then
+         dmrsdT = (eps + mr)*desat/press
+       endif
+     else ! (present (mr))
+       denom = press - esloc
+       if (denom > 0.0) then
+         mrs = eps*esloc/denom 
+       else
+         mrs = eps       
+       endif
+       if (present (dmrsdT)) then
+         dmrsdT = eps*press*desat/denom**2
+       endif
+     endif !(present (mr))
+   else
+     mrs = -999.
+     if (present (dmrsdT)) then
+       dmrsdT = -999.
+     endif
+     if (present (esat)) then
+       esat = -999.
+     endif 
+   endif
+
+
+ end subroutine compute_mrs_k_0d
+
+!#######################################################################
+
+
+!#######################################################################
+
+ subroutine lookup_es_des_k_3d (temp, esat, desat, nbad)
+ real, intent(in),  dimension(:,:,:)  :: temp
+ real, intent(out), dimension(:,:,:)  :: esat, desat
+ integer, intent(out)                 :: nbad
+
+ real    :: tmp, del
+ integer :: ind, i, j, k
+
+   nbad = 0
+   do k = 1, size(temp,3)
+   do j = 1, size(temp,2)
+   do i = 1, size(temp,1)
+     tmp = temp(i,j,k)-tminl
+     ind = int(dtinvl*(tmp+tepsl))
+     if (ind < 0 .or. ind >= table_siz) then
+       nbad = nbad+1
+     else
+       del = tmp-dtres*real(ind)
+       esat(i,j,k) = TABLE(ind+1) +  &
+                     del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+       desat(i,j,k) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     endif
+   enddo
+   enddo
+   enddo
+
+ end subroutine lookup_es_des_k_3d
+
+!#######################################################################
+
+ subroutine lookup_es_des_k_2d (temp, esat, desat, nbad)
+ real, intent(in),  dimension(:,:)  :: temp
+ real, intent(out), dimension(:,:)  :: esat, desat
+ integer, intent(out)               :: nbad
+
+ real    :: tmp, del
+ integer :: ind, i, j
+
+   nbad = 0
+   do j = 1, size(temp,2)
+   do i = 1, size(temp,1)
+     tmp = temp(i,j)-tminl
+     ind = int(dtinvl*(tmp+tepsl))
+     if (ind < 0 .or. ind >= table_siz)  then
+       nbad = nbad+1
+     else
+       del = tmp-dtres*real(ind)
+       esat(i,j) = TABLE(ind+1) + &
+                   del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+       desat(i,j) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     endif
+   enddo
+   enddo
+
+ end subroutine lookup_es_des_k_2d
+
+!#######################################################################
+
+ subroutine lookup_es_des_k_1d (temp, esat, desat, nbad)
+ real, intent(in),  dimension(:)  :: temp
+ real, intent(out), dimension(:)  :: esat, desat
+ integer, intent(out)             :: nbad
+
+ real    :: tmp, del
+ integer :: ind, i
+
+   nbad = 0
+   do i = 1, size(temp,1)
+     tmp = temp(i)-tminl
+     ind = int(dtinvl*(tmp+tepsl))
+     if (ind < 0 .or. ind >= table_siz)  then
+       nbad = nbad+1
+     else
+       del = tmp-dtres*real(ind)
+       esat(i) = TABLE(ind+1) + &
+                   del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+       desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     endif
+   enddo
+
+ end subroutine lookup_es_des_k_1d
+
+!#######################################################################
+
+ subroutine lookup_es_des_k_0d (temp, esat, desat, nbad)
+ real, intent(in)     :: temp
+ real, intent(out)    :: esat, desat
+ integer, intent(out) :: nbad
+
+ real    :: tmp, del
+ integer :: ind
+
+   nbad = 0
+   tmp = temp-tminl
+   ind = int(dtinvl*(tmp+tepsl))
+   if (ind < 0 .or. ind >= table_siz)  then
+     nbad = nbad+1
+   else
+     del = tmp-dtres*real(ind)
+     esat = TABLE(ind+1) + &
+            del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+     desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+   endif
+
+ end subroutine lookup_es_des_k_0d
+
+!#######################################################################
+
  subroutine lookup_es_k_3d(temp, esat, nbad)
  real, intent(in),  dimension(:,:,:)  :: temp
  real, intent(out), dimension(:,:,:)  :: esat
@@ -201,10 +881,13 @@
    do i = 1, size(temp,1)
      tmp = temp(i,j,k)-tminl
      ind = int(dtinvl*(tmp+tepsl))
-     del = tmp-dtres*real(ind)
-     esat(i,j,k) = TABLE(ind+1) + &
-     del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-     if (ind < 0 .or. ind >= table_siz) nbad = nbad+1
+     if (ind < 0 .or. ind >= table_siz)  then
+       nbad = nbad+1
+     else
+       del = tmp-dtres*real(ind)
+       esat(i,j,k) = TABLE(ind+1) + &
+                     del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+     endif
    enddo
    enddo
    enddo
@@ -226,9 +909,12 @@
    do i = 1, size(temp,1)
      tmp = temp(i,j,k)-tminl
      ind = int(dtinvl*(tmp+tepsl))
-     del = tmp-dtres*real(ind)
-     desat(i,j,k) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
-     if (ind < 0 .or. ind >= table_siz) nbad = nbad+1
+     if (ind < 0 .or. ind >= table_siz)  then
+       nbad = nbad+1
+     else
+       del = tmp-dtres*real(ind)
+       desat(i,j,k) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     endif
    enddo
    enddo
    enddo
@@ -248,9 +934,12 @@
    do i = 1, size(temp,1)
      tmp = temp(i,j)-tminl
      ind = int(dtinvl*(tmp+tepsl))
-     del = tmp-dtres*real(ind)
-     desat(i,j) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
-     if (ind < 0 .or. ind >= table_siz) nbad = nbad+1
+     if (ind < 0 .or. ind >= table_siz)  then
+       nbad = nbad+1
+     else
+       del = tmp-dtres*real(ind)
+       desat(i,j) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     endif
    enddo
    enddo
 
@@ -268,9 +957,13 @@
    do i = 1, size(temp,1)
      tmp = temp(i,j)-tminl
      ind = int(dtinvl*(tmp+tepsl))
-     del = tmp-dtres*real(ind)
-     esat(i,j) = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-     if (ind < 0 .or. ind >= table_siz) nbad = nbad+1
+     if (ind < 0 .or. ind >= table_siz)  then
+       nbad = nbad+1
+     else
+       del = tmp-dtres*real(ind)
+       esat(i,j) = TABLE(ind+1) + del*(DTABLE(ind+1) +   &
+                                                  del*D2TABLE(ind+1))
+     endif
    enddo
    enddo
 
@@ -287,9 +980,12 @@
    do i = 1, size(temp,1)
      tmp = temp(i)-tminl
      ind = int(dtinvl*(tmp+tepsl))
-     del = tmp-dtres*real(ind)
-     desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
-     if (ind < 0 .or. ind >= table_siz) nbad = nbad+1
+     if (ind < 0 .or. ind >= table_siz)  then
+       nbad = nbad+1
+     else
+       del = tmp-dtres*real(ind)
+       desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     endif 
    enddo
 
  end subroutine lookup_des_k_1d
@@ -305,9 +1001,12 @@
    do i = 1, size(temp,1)
      tmp = temp(i)-tminl
      ind = int(dtinvl*(tmp+tepsl))
-     del = tmp-dtres*real(ind)
-     esat(i) = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-     if (ind < 0 .or. ind >= table_siz) nbad = nbad+1
+     if (ind < 0 .or. ind >= table_siz)  then
+       nbad = nbad+1
+     else
+       del = tmp-dtres*real(ind)
+       esat(i) = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+     endif
    enddo
 
  end subroutine lookup_es_k_1d
@@ -322,9 +1021,12 @@
    nbad = 0
    tmp = temp-tminl
    ind = int(dtinvl*(tmp+tepsl))
-   del = tmp-dtres*real(ind)
-   desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
-   if (ind < 0 .or. ind >= table_siz) nbad = nbad+1
+   if (ind < 0 .or. ind >= table_siz)  then
+     nbad = nbad+1
+   else
+     del = tmp-dtres*real(ind)
+     desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+   endif 
 
  end subroutine lookup_des_k_0d
 !#######################################################################
@@ -338,9 +1040,12 @@
    nbad = 0
    tmp = temp-tminl
    ind = int(dtinvl*(tmp+tepsl))
-   del = tmp-dtres*real(ind)
-   esat = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-   if (ind < 0 .or. ind >= table_siz) nbad = nbad+1
+   if (ind < 0 .or. ind >= table_siz)  then
+     nbad = nbad+1
+   else
+     del = tmp-dtres*real(ind)
+     esat = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+   endif 
 
  end subroutine lookup_es_k_0d
 !#######################################################################

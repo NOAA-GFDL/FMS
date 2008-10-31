@@ -19,8 +19,8 @@ module constants_mod
 implicit none
 private
 
-character(len=128) :: version='$Id: constants.F90,v 15.0 2007/08/14 04:13:09 fms Exp $'
-character(len=128) :: tagname='$Name: perth $'
+character(len=128) :: version='$Id: constants.F90,v 15.0.8.1.2.1 2008/09/16 04:16:11 wfc Exp $'
+character(len=128) :: tagname='$Name: perth_2008_10 $'
 !dummy variable to use in HUGE initializations
 real :: realnumber
 
@@ -68,6 +68,10 @@ real, public, parameter :: RHO0R   = 1.0/RHO0
 real, public, parameter :: RHO_CP  = RHO0*CP_OCEAN
 
 !------------ water vapor constants ---------------
+! <DATA NAME="ES0" TYPE="real" DEFAULT="1.0">
+!   Humidity factor. Controls the humidity content of the atmosphere through 
+!   the Saturation Vapour Pressure expression when using DO_SIMPLE.
+! </DATA>
 ! <DATA NAME="RVGAS" UNITS="J/kg/deg" TYPE="real" DEFAULT="461.50">
 !   gas constant for water vapor
 ! </DATA>
@@ -90,6 +94,7 @@ real, public, parameter :: RHO_CP  = RHO0*CP_OCEAN
 !   temp where fresh water freezes
 ! </DATA>
 
+real, public, parameter :: ES0 = 1.0 
 real, public, parameter :: RVGAS = 461.50 
 real, public, parameter :: CP_VAPOR = 4.0*RVGAS
 real, public, parameter :: DENS_H2O = 1000. 
@@ -108,6 +113,15 @@ real, public, parameter :: TFREEZE = 273.16
 ! </DATA>
 ! <DATA NAME="WTMOZONE" UNITS="AMU" TYPE="real" DEFAULT="4.799820E+01">
 !   molecular weight of ozone
+! </DATA>
+! <DATA NAME="WTMCO2" UNITS="AMU" TYPE="real" DEFAULT="4.400995+01">
+!   molecular weight of carbon dioxide
+! <DATA NAME="WTMO2" UNITS="AMU" TYPE="real" DEFAULT="3.19988+01">
+!   molecular weight of molecular oxygen
+! <DATA NAME="WTMCFC11" UNITS="AMU" TYPE="real" DEFAULT="1.373681+02">
+!   molecular weight of CFC-11 (CCl3F)
+! <DATA NAME="WTMCFC12" UNITS="AMU" TYPE="real" DEFAULT="1.209135+02">
+!   molecular weight of CFC-21 (CCl2F2)
 ! </DATA>
 ! <DATA NAME="DIFFAC" TYPE="real" DEFAULT="1.660000E+00">
 ! diffusivity factor
@@ -128,7 +142,11 @@ real, public, parameter :: TFREEZE = 273.16
 real, public, parameter :: WTMAIR = 2.896440E+01
 real, public, parameter :: WTMH2O = WTMAIR*(RDGAS/RVGAS) !pjp OK to change value because not used yet.
 !real, public, parameter :: WTMO3  = 47.99820E+01
-real, public, parameter :: WTMOZONE  = 4.799820E+01
+real, public, parameter :: WTMOZONE =  47.99820
+real, public, parameter :: WTMCO2   =  44.00995
+real, public, parameter :: WTMO2    =  31.9988
+real, public, parameter :: WTMCFC11 = 137.3681
+real, public, parameter :: WTMCFC12 = 120.9135
 real, public, parameter :: DIFFAC = 1.660000E+00
 real, public, parameter :: SECONDS_PER_DAY  = 8.640000E+04, SECONDS_PER_HOUR = 3600., SECONDS_PER_MINUTE=60.
 real, public, parameter :: AVOGNO = 6.023000E+23

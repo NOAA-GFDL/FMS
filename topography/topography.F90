@@ -113,8 +113,8 @@ end interface
 
 !-----------------------------------------------------------------------
 
- character(len=128) :: version = '$Id: topography.F90,v 16.0 2008/07/30 22:48:08 fms Exp $'
- character(len=128) :: tagname = '$Name: perth $'
+ character(len=128) :: version = '$Id: topography.F90,v 16.0.4.1 2008/08/26 18:38:49 z1l Exp $'
+ character(len=128) :: tagname = '$Name: perth_2008_10 $'
 
  logical :: module_is_initialized = .FALSE.
 
@@ -262,7 +262,6 @@ end interface
    real, intent(out), dimension(:,:) :: stdev
    logical :: get_topog_stdev_1d
 
-   real :: zsurf (size(stdev,1),size(stdev,2))
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
@@ -289,7 +288,6 @@ end interface
    real, intent(out), dimension(:,:) :: stdev
    logical :: get_topog_stdev_2d
 
-   real :: zsurf (size(stdev,1),size(stdev,2))
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
@@ -684,7 +682,6 @@ end interface
  real :: xdat(ipts+1), ydat(jpts+1)
  real :: zdat(ipts,jpts)
  real :: zout2(size(zout,1),size(zout,2))
- integer :: namelen
 
     call input_data ( topog_file, xdat, ydat, zdat )
 
@@ -713,10 +710,10 @@ end interface
  real   , intent(out) :: zout(:,:)
  integer, intent(in), optional :: flag
 
- real :: xdat(ipts+1), ydat(jpts+1), ydel(jpts+1)
+ real :: xdat(ipts+1), ydat(jpts+1)
  real :: zdat(ipts,jpts)
  real :: zout2(size(zout,1),size(zout,2))
- integer :: is, ie, js, je
+ integer :: js, je
  type (horiz_interp_type) :: Interp
 
     call input_data ( topog_file, xdat, ydat, zdat )
@@ -801,7 +798,6 @@ end interface
  logical, intent(in), optional :: do_ocean
 
  real :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)
- integer :: namelen
 
     call input_data ( water_file, xdat, ydat, zdat )
 
@@ -823,7 +819,6 @@ end interface
  logical, intent(in), optional :: do_ocean
 
  real :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)
- integer :: namelen
 
     call input_data ( water_file, xdat, ydat, zdat )
 
@@ -898,7 +893,6 @@ end interface
 subroutine read_namelist
 
    integer :: unit, ierr, io
-   real    :: dtr, ght
 
 !  read namelist
 

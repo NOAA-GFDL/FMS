@@ -74,6 +74,13 @@ module fms_io_mod
 !            time_stamp is passed into save_restart.
 !    default is true.
 ! </DATA>
+! <DATA NAME="print_chksum" TYPE="logical">
+!    set print_chksum (default is false) to true to print out chksum of fields that are
+!    read and written through save_restart/restore_state. The chksum is accross all the 
+!    processors, so there will be only one chksum even there are multiple-tiles in the 
+!    grid. For the multiple case, the filename appeared in the message will contain
+!    tile1 because the message is print out from root pe and on root pe the tile id is tile1. 
+! </DATA>
 !</NAMELIST>
   
 use mpp_io_mod,      only: mpp_open, mpp_close, mpp_io_init, mpp_io_exit, mpp_read, mpp_write
@@ -126,6 +133,7 @@ type var_type
    integer                                :: id_axes(3)  ! store index for x/y/z axistype.
    logical                                :: initialized ! indicate if the field is read or not in routine save_state.
    logical                                :: mandatory   ! indicate if the field is mandatory to be when restart.
+   integer                                :: is, ie, js, je  ! index of the data in compute domain
 end type var_type
 
 type Ptr0Dr
@@ -255,6 +263,7 @@ interface restore_state
 end interface
 
 interface query_initialized
+   module procedure query_initialized_id
    module procedure query_initialized_name
    module procedure query_initialized_r2d
 end interface
@@ -303,6 +312,9 @@ public  :: restart_file_type, query_initialized
 public  :: reset_field_name, reset_field_pointer
 private :: lookup_field_r, lookup_axis, unique_axes
 
+public  :: set_filename_appendix, get_instance_filename
+character(len=32), save :: filename_appendix = ''
+
 !--- public interface ---
 interface string
    module procedure string_from_integer
@@ -322,14 +334,15 @@ integer           :: max_files_w         = 40
 integer           :: max_files_r         = 40
 logical           :: read_data_bug       = .false.
 logical           :: time_stamp_restart  = .true.
+logical           :: print_chksum        = .false.
   namelist /fms_io_nml/ fms_netcdf_override, fms_netcdf_restart, &
        threading_read, threading_write, &
        fileset_write, format, read_all_pe, iospec_ieee32,max_files_w,max_files_r, &
-       read_data_bug, time_stamp_restart
+       read_data_bug, time_stamp_restart, print_chksum
 
 
-character(len=128) :: version = '$Id: fms_io.F90,v 16.0 2008/07/30 22:45:32 fms Exp $'
-character(len=128) :: tagname = '$Name: perth $'
+character(len=128) :: version = '$Id: fms_io.F90,v 16.0.4.3.2.1.2.1.4.1.2.1 2008/11/04 16:28:30 z1l Exp $'
+character(len=128) :: tagname = '$Name: perth_2008_10 $'
 
 contains
 
@@ -731,7 +744,7 @@ subroutine write_data_3d_new(filename, fieldname, data, domain, append_pelist_na
   integer                         :: index_field ! position of the fieldname in the list of fields
   integer                         :: index_file  ! position of the filename in the list of files_write
   logical                         :: append_pelist, is_no_domain
-  character(len=256)              :: fname, filename2
+  character(len=256)              :: fname, filename2,append_string
   real                            :: default_data
   integer                         :: length, i, domain_idx
   integer                         :: ishift, jshift
@@ -745,8 +758,6 @@ subroutine write_data_3d_new(filename, fieldname, data, domain, append_pelist_na
 ! Initialize files to default values
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(write_data_3d_new): need to call fms_io_init')  
 
-  append_pelist = .false.
-  if(present(append_pelist_name)) append_pelist = append_pelist_name
 
   if(PRESENT(data_default))then
      default_data=data_default
@@ -780,9 +791,22 @@ subroutine write_data_3d_new(filename, fieldname, data, domain, append_pelist_na
      filename2 = filename(1:length)
   end if
 
+  !Logical append_pelist decides whether to append the pelist_name to file name
+  append_pelist = .false.
+  !Append a string to the file name
+  append_string=''
+  !If instance_name is passed
   if(present(append_pelist_name)) then
-     if(append_pelist_name) filename2 = trim(filename2)//'.'//trim(pelist_name)
-  end if
+     append_pelist = append_pelist_name
+     append_string = pelist_name
+  endif
+  !If the filename_appendix  is set override the passed argument. 
+  if(len_trim(filename_appendix) > 0)  then
+     append_pelist = .true.
+     append_string = filename_appendix
+  endif
+
+  if(append_pelist) filename2 = trim(filename2)//'.'//trim(append_string)
 
   !JWD:  This is likely a temporary fix. Since fms_io needs to know tile_count,
   !JWD:  I just don't see how the physics can remain "tile neutral"
@@ -1799,7 +1823,62 @@ subroutine save_restart(fileObj, time_stamp, directory )
 
   cur_var =>NULL()
 
+  if(print_chksum) call write_chksum(fileObj, MPP_OVERWR)
+
 end subroutine save_restart
+
+!-------------------------------------------------------------------------------
+!    This subroutine will calculate chksum and print out chksum information.
+!
+subroutine write_chksum(fileObj, action)
+  type(restart_file_type), intent(inout) :: fileObj
+  integer,                 intent(in)    :: action
+  integer(LONG_KIND)                     :: data_chksum
+  integer                                :: j, k
+  type(var_type), pointer, save          :: cur_var=>NULL()
+  character(len=32)                      :: routine_name
+
+  if(action == MPP_OVERWR) then
+     routine_name = "save_restart"
+  else if(action == MPP_RDONLY) then
+     routine_name = "restore_state"
+  else
+     call mpp_error(FATAL, "fms_io_mod(write_chksum): action should be MPP_OVERWR or MPP_RDONLY")
+  endif
+
+  do j=1,fileObj%nvar
+     cur_var => fileObj%var(j)
+     if(action == MPP_OVERWR .OR. (action == MPP_RDONLY .AND. cur_var%initialized) ) then 
+        do k = 1, cur_var%siz(4)
+           if ( Associated(fileObj%p0dr(k,j)%p) ) then
+              data_chksum = mpp_chksum(fileObj%p0dr(k,j)%p, (/mpp_pe()/) )
+           else if ( Associated(fileObj%p1dr(k,j)%p) ) then
+              data_chksum = mpp_chksum(fileObj%p1dr(k,j)%p, (/mpp_pe()/) )
+           else if ( Associated(fileObj%p2dr(k,j)%p) ) then
+              data_chksum = mpp_chksum(fileObj%p2dr(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je) )
+           else if ( Associated(fileObj%p3dr(k,j)%p) ) then
+              data_chksum = mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je, :) )
+           else if ( Associated(fileObj%p0di(k,j)%p) ) then
+              data_chksum = fileObj%p0di(k,j)%p
+           else if ( Associated(fileObj%p1di(k,j)%p) ) then
+              data_chksum = mpp_chksum(fileObj%p1di(k,j)%p, (/mpp_pe()/) )
+           else if ( Associated(fileObj%p2di(k,j)%p) ) then
+              data_chksum = mpp_chksum(fileObj%p2di(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je) )
+           else if ( Associated(fileObj%p3di(k,j)%p) ) then
+              data_chksum = mpp_chksum(fileObj%p3di(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je, :))
+           else
+              call mpp_error(FATAL, "fms_io(write_chksum): There is no pointer associated with the data of  field "// &
+                   trim(cur_var%name)//" of file "//trim(fileObj%name) )
+           end if
+           write(stdout(),'(a, I1, a, I)')'fms_io('//trim(routine_name)//'): At time level = ', k, ', chksum for "'// &
+                trim(cur_var%name)// '" of "'// trim(fileObj%name)// '" = ', data_chksum    
+
+        enddo
+     endif
+  enddo
+  cur_var =>NULL()
+
+end subroutine write_chksum
 
 !-------------------------------------------------------------------------------
 !
@@ -1990,6 +2069,8 @@ subroutine restore_state_all(fileObj, directory)
      end if
   end do
   cur_var =>NULL()
+
+  if(print_chksum) call write_chksum(fileObj, MPP_RDONLY )
 
 end subroutine restore_state_all
 
@@ -2209,7 +2290,7 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
   integer                         :: dxsize, dysize
   real                            :: default_data
   logical                         :: is_no_domain = .false.
-  character(len=256)              :: fname, filename2
+  character(len=256)              :: fname, filename2, append_string
   type(domain2d), pointer, save   :: d_ptr   =>NULL()
   type(var_type), pointer, save   :: cur_var =>NULL()
   integer                         :: length
@@ -2249,9 +2330,14 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
      filename2 = filename(1:length)
   end if
 
-  if(present(instance_name)) then
-     if(len_trim(instance_name) > 0) filename2 = trim(filename2)//'.'//trim(instance_name)
-  end if
+  !Append a string to the file name
+  append_string=''
+  !If instance_name is passed
+  if(present(instance_name)) append_string = instance_name
+  !If the filename_appendix  is set override the passed argument. 
+  if(len_trim(filename_appendix) > 0)   append_string = filename_appendix
+
+  if(len_trim(append_string) > 0) filename2 = trim(filename2)//'.'//trim(append_string)
 
   !JWD:  This is likely a temporary fix. Since fms_io needs to know tile_count,
   !JWD:  I just don't see how the physics can remain "tile neutral"
@@ -2348,6 +2434,8 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
      end if
      if(present(units))    cur_var%units    = units
      if(present(position)) cur_var%position = position
+     cur_var%is = 1; cur_var%ie =  cur_var%siz(1) 
+     cur_var%js = 1; cur_var%je =  cur_var%siz(2) 
      if(ASSOCIATED(d_ptr)) then
         cur_var%domain_present = .true.
         domain_idx = lookup_domain(d_ptr)
@@ -2376,7 +2464,10 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
             call mpp_error(FATAL, 'fms_io(setup_one_field): data should be on either computer domain '//&
               'or data domain when domain is present for field '//trim(fieldname)//' of file '//trim(filename) )
         end if
-
+        cur_var%is   = 1 + (cur_var%siz(1) - cxsize)/2
+        cur_var%ie   = cur_var%is + cxsize - 1;
+        cur_var%js   = 1 + (cur_var%siz(2) - cysize)/2
+        cur_var%je   = cur_var%js + cysize - 1;
         cur_var%gsiz(1)   = gxsize
         cur_var%gsiz(2)   = gysize
         if(thread_w == MPP_MULTI) then
@@ -2563,11 +2654,22 @@ subroutine field_size(filename, fieldname, siz, append_pelist_name, field_found,
   logical,        intent(in), optional :: append_pelist_name
   logical,       intent(out), optional :: field_found  
   type(domain2d), intent(in), optional :: domain
-  integer                              :: i, nfile, unit
+  integer                              :: i, nfile, unit, ntiles, lens
   logical                              :: file_opened, found, is_exist
-  character(len=256)                   :: fname
+  character(len=256)                   :: fname, basefile, actual_file
+
   if (size(siz(:)) < 4) call mpp_error(FATAL,'fms_io(field_size): size array must be >=4 to receive field size of ' &
        //trim(fieldname)//' in file '// trim(filename))
+
+! get the number of tiles
+  ntiles = 1
+  if(mpp_mosaic_defined())then 
+    if(PRESENT(domain))then
+       ntiles = mpp_get_ntile_count(domain)
+    elseif (ASSOCIATED(Current_domain)) then
+       ntiles = mpp_get_ntile_count(Current_domain)
+    endif
+  endif
 
 ! Need to check if filename has been opened or not
 
@@ -2583,29 +2685,62 @@ subroutine field_size(filename, fieldname, siz, append_pelist_name, field_found,
      if (trim(files_read(i)%name) == trim(fname))  then
         nfile = i
         file_opened = .true.
+        actual_file = trim(fname)
         exit ! file is already opened
      endif
   enddo
 !Need to open the file now, Only works for single NetCDF files for now ...
   found= .false.
   siz=-1
+
+!remove .nc from the file name.
+  lens = len_trim(fname)
+  basefile = trim(fname)
+  if(lens>3) then
+     if(fname(lens-2:lens) == '.nc') basefile = fname(1:lens-3)
+  endif
+
   if (.not. file_opened) then
-     inquire (file=trim(fname)//trim(pe_name), exist=is_exist)
-     if(.not. is_exist) inquire (file=trim(fname)//'.nc'//trim(pe_name), exist=is_exist)
+     inquire (file=trim(basefile)//'.nc'//trim(pe_name), exist=is_exist)
      if(is_exist) then
-        call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_MULTI, &
+        actual_file = trim(basefile)//'.nc'//trim(pe_name)
+        call mpp_open(unit,trim(basefile),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_MULTI, &
              fileset=MPP_MULTI)
      else 
-        inquire (file=trim(fname), exist=is_exist)
-        if(.not. is_exist) inquire (file=trim(fname)//'.nc', exist=is_exist)
+        inquire (file=trim(basefile)//'.nc', exist=is_exist)
         if(is_exist) then     
-           call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_SINGLE, &
+           actual_file = trim(basefile)//'.nc'
+           call mpp_open(unit,trim(basefile),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_SINGLE, &
                 fileset=MPP_SINGLE)
         end if
      end if
+     
+     !Perhaps the file has an ensemble instance appendix
+     if(.not. is_exist .AND. len_trim(filename_appendix) > 0) then
+        call get_instance_filename(fname, fname)
+        inquire (file=trim(fname)//trim(pe_name), exist=is_exist)
+        if(.not. is_exist) inquire (file=trim(fname)//'.nc'//trim(pe_name), exist=is_exist)
+        if(is_exist) then
+           call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_MULTI, &
+                fileset=MPP_MULTI)
+        else 
+           inquire (file=trim(fname), exist=is_exist)
+           if(.not. is_exist) inquire (file=trim(fname)//'.nc', exist=is_exist)
+           if(is_exist) then     
+              call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_SINGLE, &
+                   fileset=MPP_SINGLE)
+           end if
+        end if
+        
+     endif
+  
+
      if(is_exist) then
         call get_size(unit,fieldname,siz,found)
         call mpp_close(unit)
+     else if(ntiles == 1) then
+        call mpp_error(FATAL, 'fms_io(field_size): neither file '//trim(basefile)// &
+             '.nc nor file '//trim(basefile)//'.nc'//trim(pe_name)// ' exist')         
      end if
   else
      do i=1, files_read(nfile)%nvar
@@ -2618,16 +2753,17 @@ subroutine field_size(filename, fieldname, siz, append_pelist_name, field_found,
      if (.not. found) then
         call get_size(files_read(nfile)%unit,fieldname,siz,found)
      endif
- endif
+  endif
 
- if (.not. found) then 
-! Perhaps the variable is in a "tile" file.
+  if(ntiles > 1 .AND. .not. found) then
+     ! Perhaps the variable is in a "tile" file.
      call get_mosaic_tile_file(filename, fname, is_no_domain= .false., domain=domain)
 
      nfile = 0
      file_opened=.false.
      do i=1,num_files_r
         if (trim(files_read(i)%name) == trim(fname))  then
+           actual_file = trim(fname)
            nfile = i
            file_opened = .true.
            exit ! file is already opened
@@ -2639,12 +2775,15 @@ subroutine field_size(filename, fieldname, siz, append_pelist_name, field_found,
         ! File is not open yet. 
         inquire (file=trim(fname)//trim(pe_name), exist=is_exist)
         if(is_exist) then
+           actual_file = trim(fname)//trim(pe_name)
            call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_MULTI, &
                 fileset=MPP_MULTI)
         else
            inquire (file=trim(fname), exist=is_exist)
-           if(.not. is_exist) call mpp_error(FATAL, 'fms_io(field_size): file '//trim(filename)// &
-                ' does not exist with the consideration tile number and distribute file')
+           if(.not. is_exist) call mpp_error(FATAL, 'fms_io(field_size): None of the files '// &
+                trim(basefile)// '.nc, '//trim(basefile)//'.nc'//trim(pe_name)//', '// &
+                trim(fname)//', nor '//trim(fname)//trim(pe_name)//' exist.' )
+           actual_file = trim(fname)
            call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_SINGLE, &
                 fileset=MPP_SINGLE)
         end if
@@ -2667,8 +2806,8 @@ subroutine field_size(filename, fieldname, siz, append_pelist_name, field_found,
 
   if( PRESENT(field_found) )then
      field_found = found
-  else if (.not. found .and. mpp_pe() == mpp_root_pe() )then
-     call mpp_error(FATAL, 'fms_io(field_size): field '//trim(fieldname)//' NOT found in file '//trim(filename))
+  else if (.not. found )then
+     call mpp_error(FATAL, 'fms_io(field_size): field '//trim(fieldname)//' NOT found in file '//trim(actual_file))
   end if
 
   return
@@ -3783,6 +3922,31 @@ subroutine reset_field_pointer_i3d_2level(fileObj, id_field, data1, data2)
 end subroutine reset_field_pointer_i3d_2level
 
 !#########################################################################
+!   This function returns .true. if the field referred to by id has
+! initialized from a restart file, and .false. otherwise. 
+!
+! Arguments: id - A integer that is the index of the field in fileObj.
+!  (in)  fileObj - The control structure returned by a previous call to
+!                  register_restart_field
+function query_initialized_id(fileObj, id)
+  type(restart_file_type), intent(in) :: fileObj
+  integer,                 intent(in) :: id
+
+  logical :: query_initialized_id
+
+  if (.not.associated(fileObj%var)) call mpp_error(FATAL, "fms_io(query_initialized_id): " // &
+      "restart_file_type data must be initialized by calling register_restart_field before using it")
+
+  if(id < 1 .OR. id > fileObj%nvar) call mpp_error(FATAL, "fms_io(query_initialized_id): " // &
+      "argument id must be between 1 and nvar in the restart_file_type object")
+
+  query_initialized_id = fileObj%var(id)%initialized
+
+  return
+
+end function query_initialized_id
+
+!#########################################################################
 !   This function returns .true. if the field referred to by name has
 ! initialized from a restart file, and .false. otherwise. 
 !
@@ -3790,8 +3954,8 @@ end subroutine reset_field_pointer_i3d_2level
 !  (in)  fileObj - The control structure returned by a previous call to
 !                  register_restart_field
 function query_initialized_name(fileObj, name)
-  type(restart_file_type)      :: fileObj
-  character(len=*), intent(in) :: name
+  type(restart_file_type), intent(inout) :: fileObj
+  character(len=*),           intent(in) :: name
 
   logical :: query_initialized_name
 
@@ -3829,7 +3993,7 @@ end function query_initialized_name
 !  (in)      CS - The control structure returned by a previous call to
 !                 restart_init.
 function query_initialized_r2d(fileObj, f_ptr, name)
-  type(restart_file_type),      intent(in) :: fileObj 
+  type(restart_file_type),   intent(inout) :: fileObj 
   real, dimension(:,:), target, intent(in) :: f_ptr
   character(len=*),             intent(in) :: name
 
@@ -4429,6 +4593,14 @@ end subroutine get_axis_cart
     integer, dimension(:), allocatable             :: tile_id
     type(domain2d), pointer, save                  :: d_ptr =>NULL()
 
+    !--- deal with the situation that the file is alreday in the full name.
+    lens = len_trim(file_in)
+    if(lens > 8) then
+       if(file_in(lens-7:lens) == '.nc'//trim(pe_name) ) then
+         file_out = file_in
+         return
+        endif
+    endif
 
     if(index(file_in, '.nc', back=.true.)==0) then
        basefile = trim(file_in)
@@ -4591,6 +4763,21 @@ end subroutine get_axis_cart
        inquire (file=trim(actual_file), exist=fexist)
        if(.not. fexist) inquire (file=trim(actual_file)//'.nc', exist=fexist)
     endif
+    
+    !Perhaps the file has an ensemble instance appendix
+    if( .not. fexist ) then
+       call get_instance_filename(actual_file, actual_file)
+       inquire (file=trim(actual_file)//trim(pe_name), exist=fexist)       
+       if(.not. fexist) inquire (file=trim(actual_file)//'.nc'//trim(pe_name), exist=fexist)
+       if(fexist) then
+          read_dist = .true.  
+       else
+          read_dist = .false.
+          inquire (file=trim(actual_file), exist=fexist)
+          if(.not. fexist) inquire (file=trim(actual_file)//'.nc', exist=fexist)
+       endif
+    endif
+    
     if( .not. fexist) then 
        call mpp_error(FATAL,'fms_io(get_file_name): file '//trim(orig_file)//' and distributed file not found')
     end if
@@ -4771,20 +4958,30 @@ end subroutine get_axis_cart
    if (len_trim(file_name) == 0) return
    if (file_name(1:1) == ' ')    return
 
-   if(present(domain)) then
-      call get_mosaic_tile_file(file_name, fname, .false.,  domain)
-   else
-      fname = file_name
+   inquire (file=trim(file_name), exist=file_exist)
+   !--- also check to see if it is distributed data
+   if(.not. file_exist) then
+      write(pe_name,'(a,i4.4)' )'.', mpp_pe()    
+     inquire (file=trim(file_name)//trim(pe_name), exist=file_exist)
    end if
 
-   inquire (file=trim(fname), exist=file_exist)
-   !--- also check to see if it is distributed data
+   if(file_exist) return
+
+   !--- to deal with mosaic file, in this case, the file is assumed to be in netcdf format
+   call get_mosaic_tile_file(file_name, fname, .false.,  domain)
+   inquire (file=trim(fname)//trim(pe_name), exist=file_exist)
+   if(.not. file_exist)  inquire (file=trim(fname), exist=file_exist)
+
+   !Perhaps the file has an ensemble instance appendix
+   if( .not. file_exist ) then
+       call get_instance_filename(fname, fname)
+       inquire (file=trim(fname), exist=file_exist)       
+    endif
    if(.not. file_exist) then
       write(pe_name,'(a,i4.4)' )'.', mpp_pe()    
      inquire (file=trim(fname)//trim(pe_name), exist=file_exist)
    end if
-
-
+ 
  end function file_exist
 ! </FUNCTION>
 
@@ -4828,6 +5025,7 @@ end subroutine get_axis_cart
   type(fieldtype), allocatable :: fields(:)
   character(len=5)             :: pe_name
   logical                      :: is_exist
+  character(len=256)                    :: fname
 
    field_exist = .false.
    if (len_trim(field_name) == 0) return
@@ -4849,6 +5047,27 @@ end subroutine get_axis_cart
               fileset = MPP_SINGLE)
       end if
    end if
+
+   !Perhaps the file has an ensemble instance appendix
+   if(.not. is_exist .AND. len_trim(filename_appendix) > 0) then
+      call get_instance_filename(file_name, fname)
+      inquire (file=trim(fname)//trim(pe_name), exist=is_exist)
+      if(.not. is_exist) inquire (file=trim(fname)//'.nc'//trim(pe_name), exist=is_exist)
+      if(is_exist) then
+         call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_MULTI, &
+              fileset=MPP_MULTI)
+      else 
+         inquire (file=trim(fname), exist=is_exist)
+         if(.not. is_exist) inquire (file=trim(fname)//'.nc', exist=is_exist)
+         if(is_exist) then     
+            call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_SINGLE, &
+                   fileset=MPP_SINGLE)
+         end if
+      end if
+      
+   endif
+   
+
    if(.not. is_exist) return
 
     call mpp_get_info(unit, ndim, nvar, natt, ntime)
@@ -4867,6 +5086,29 @@ end subroutine get_axis_cart
 
  end function field_exist
 ! </FUNCTION>
+
+subroutine set_filename_appendix(string_in)
+  character(len=*) , intent(in) :: string_in
+  filename_appendix = trim(string_in)
+end subroutine set_filename_appendix
+
+subroutine get_instance_filename(name_in,name_out)
+  character(len=*)  , intent(in)  :: name_in
+  character(len=*), intent(inout) :: name_out
+  integer :: length
+  
+  length = len_trim(name_in)
+  name_out = name_in(1:length)
+  
+  if(len_trim(filename_appendix) > 0) then
+     if(name_in(length-2:length) == '.nc') then
+        name_out = name_in(1:length-3)//'.'//trim(filename_appendix)//'.nc'
+     else
+        name_out = name_in(1:length)  //'.'//trim(filename_appendix)
+     end if
+  end if
+  
+end subroutine get_instance_filename
 
 end module fms_io_mod
 
@@ -4945,8 +5187,6 @@ end module fms_io_mod
     call mpp_close (unit)
  end if
 
-
-
  write(stdout(), test_fms_io_nml )
   call mpp_domains_set_stack_size(stackmax)
  !--- currently we assume at most two time level will be written to restart file.
@@ -4973,11 +5213,11 @@ end module fms_io_mod
 
  do step = 1, num_step
     write(time_stamp, '(a,I4.4)') "step", step
-    call save_restart(restart_latlon, time_stamp)
-    call save_restart(restart_cubic, time_stamp)
+    if(mod(npes,ntile_latlon) == 0) call save_restart(restart_latlon, time_stamp)
+    if(mod(npes,ntile_cubic) == 0 ) call save_restart(restart_cubic, time_stamp)
  end do
- call save_restart(restart_latlon)
- call save_restart(restart_cubic)
+ if(mod(npes,ntile_latlon) == 0) call save_restart(restart_latlon)
+ if(mod(npes,ntile_cubic)  == 0) call save_restart(restart_cubic)
 
  if(mod(npes,ntile_latlon) == 0) call release_storage_memory(latlon_data)
  if(mod(npes,ntile_cubic) == 0 ) call release_storage_memory(cubic_data)
@@ -5012,7 +5252,7 @@ contains
     integer                                  :: i, j, k, nx, ny
     integer                                  :: isc, iec, jsc, jec
     integer                                  :: isd, ied, jsd, jed
-
+    integer                                  :: id_restart
 
     file_r = "INPUT/test.res."//trim(type)//".read_write.nc"
     file_w = "RESTART/test.res."//trim(type)//".read_write.nc"
@@ -5152,61 +5392,69 @@ contains
 
     !--- test register_restart_field, save_restart, restore_state
 
-    call register_restart_field(restart_data, file, "data1_r3d", storage%data1_r3d_read(:,:,:,1), &
+    id_restart = register_restart_field(restart_data, file, "data1_r3d", storage%data1_r3d_read(:,:,:,1), &
                                 domain, longname="first data_r3d",units="none")
-    call register_restart_field(restart_data, file, "data1_r3d", storage%data1_r3d_read(:,:,:,2), &
+    id_restart = register_restart_field(restart_data, file, "data1_r3d", storage%data1_r3d_read(:,:,:,2), &
                                 domain, longname="first data_r3d",units="none")
-    call register_restart_field(restart_data, file, "data2_r3d", storage%data2_r3d_read(:,:,:,1), storage%data2_r3d_read(:,:,:,2), &
+    id_restart = register_restart_field(restart_data, file, "data2_r3d", storage%data2_r3d_read(:,:,:,1), &
+                                storage%data2_r3d_read(:,:,:,2), &
                                 domain, longname="second data_i3d", units="none")
 
-    call register_restart_field(restart_data, file, "data1_i3d", storage%data1_i3d_read(:,:,:,1), &
+    id_restart = register_restart_field(restart_data, file, "data1_i3d", storage%data1_i3d_read(:,:,:,1), &
                                 domain, longname="first data_i3d",units="none")
-    call register_restart_field(restart_data, file, "data1_i3d", storage%data1_i3d_read(:,:,:,2), &
+    id_restart = register_restart_field(restart_data, file, "data1_i3d", storage%data1_i3d_read(:,:,:,2), &
                                 domain, longname="first data_i3d",units="none")
-    call register_restart_field(restart_data, file, "data2_i3d", storage%data2_i3d_read(:,:,:,1), storage%data2_i3d_read(:,:,:,2), &
+    id_restart = register_restart_field(restart_data, file, "data2_i3d", storage%data2_i3d_read(:,:,:,1), &
+                                storage%data2_i3d_read(:,:,:,2), &
                                 domain, longname="second data_i3d", units="none")
 
-    call register_restart_field(restart_data, file, "data1_r2d", storage%data1_r2d_read(:,:,  1), &
+    id_restart = register_restart_field(restart_data, file, "data1_r2d", storage%data1_r2d_read(:,:,  1), &
                                 domain, longname="first data_r2d",units="none")
-    call register_restart_field(restart_data, file, "data1_r2d", storage%data1_r2d_read(:,:,  2), &
+    id_restart = register_restart_field(restart_data, file, "data1_r2d", storage%data1_r2d_read(:,:,  2), &
                                 domain, longname="first data_r2d",units="none")
-    call register_restart_field(restart_data, file, "data2_r2d", storage%data2_r2d_read(:,:,  1), storage%data2_r2d_read(:,:,2), &
+    id_restart = register_restart_field(restart_data, file, "data2_r2d", storage%data2_r2d_read(:,:,  1), &
+                                storage%data2_r2d_read(:,:,2), &
                                 domain, longname="second data_i2d", units="none")
 
-    call register_restart_field(restart_data, file, "data1_i2d", storage%data1_i2d_read(:,:,  1), &
+    id_restart = register_restart_field(restart_data, file, "data1_i2d", storage%data1_i2d_read(:,:,  1), &
                                 domain, longname="first data_i2d",units="none")
-    call register_restart_field(restart_data, file, "data1_i2d", storage%data1_i2d_read(:,:,  2), &
+    id_restart = register_restart_field(restart_data, file, "data1_i2d", storage%data1_i2d_read(:,:,  2), &
                                 domain, longname="first data_i2d",units="none")
-    call register_restart_field(restart_data, file, "data2_i2d", storage%data2_i2d_read(:,:,  1), storage%data2_i2d_read(:,:,2), &
+    id_restart = register_restart_field(restart_data, file, "data2_i2d", storage%data2_i2d_read(:,:,  1), &
+                                storage%data2_i2d_read(:,:,2), &
                                 domain, longname="second data_i2d", units="none")
 
-    call register_restart_field(restart_data, file, "data1_r1d", storage%data1_r1d_read(:,    1), &
+    id_restart = register_restart_field(restart_data, file, "data1_r1d", storage%data1_r1d_read(:,    1), &
                                 domain, longname="first data_r1d",units="none")
-    call register_restart_field(restart_data, file, "data1_r1d", storage%data1_r1d_read(:,    2), &
+    id_restart = register_restart_field(restart_data, file, "data1_r1d", storage%data1_r1d_read(:,    2), &
                                 domain, longname="first data_r1d",units="none")
-    call register_restart_field(restart_data, file, "data2_r1d", storage%data2_r1d_read(:,    1), storage%data2_r1d_read(:,  2), &
+    id_restart = register_restart_field(restart_data, file, "data2_r1d", storage%data2_r1d_read(:,    1), &
+                                storage%data2_r1d_read(:,  2), &
                                 domain, longname="second data_i1d", units="none")
 
-    call register_restart_field(restart_data, file, "data1_i1d", storage%data1_i1d_read(:,    1), &
+    id_restart = register_restart_field(restart_data, file, "data1_i1d", storage%data1_i1d_read(:,    1), &
                                 domain, longname="first data_i1d",units="none")
-    call register_restart_field(restart_data, file, "data1_i1d", storage%data1_i1d_read(:,    2), &
+    id_restart = register_restart_field(restart_data, file, "data1_i1d", storage%data1_i1d_read(:,    2), &
                                 domain, longname="first data_i1d",units="none")
-    call register_restart_field(restart_data, file, "data2_i1d", storage%data2_i1d_read(:,    1), storage%data2_i1d_read(:,  2), &
+    id_restart = register_restart_field(restart_data, file, "data2_i1d", storage%data2_i1d_read(:,    1), &
+                                storage%data2_i1d_read(:,  2), &
                                 domain, longname="second data_i1d", units="none")
 
 
-    call register_restart_field(restart_data, file, "data1_r0d", storage%data1_r0d_read(      1), &
+    id_restart = register_restart_field(restart_data, file, "data1_r0d", storage%data1_r0d_read(      1), &
                                 domain, longname="first data_r0d",units="none")
-    call register_restart_field(restart_data, file, "data1_r0d", storage%data1_r0d_read(      2), &
+    id_restart = register_restart_field(restart_data, file, "data1_r0d", storage%data1_r0d_read(      2), &
                                 domain, longname="first data_r0d",units="none")
-    call register_restart_field(restart_data, file, "data2_r0d", storage%data2_r0d_read(      1), storage%data2_r0d_read(    2), &
+    id_restart = register_restart_field(restart_data, file, "data2_r0d", storage%data2_r0d_read(      1), &
+                                storage%data2_r0d_read(    2), &
                                 domain, longname="second data_i0d", units="none")
 
-    call register_restart_field(restart_data, file, "data1_i0d", storage%data1_i0d_read(      1), &
+    id_restart = register_restart_field(restart_data, file, "data1_i0d", storage%data1_i0d_read(      1), &
                                 domain, longname="first data_i0d",units="none")
-    call register_restart_field(restart_data, file, "data1_i0d", storage%data1_i0d_read(      2), &
+    id_restart = register_restart_field(restart_data, file, "data1_i0d", storage%data1_i0d_read(      2), &
                                 domain, longname="first data_i0d",units="none")
-    call register_restart_field(restart_data, file, "data2_i0d", storage%data2_i0d_read(      1), storage%data2_i0d_read(    2), &
+    id_restart = register_restart_field(restart_data, file, "data2_i0d", storage%data2_i0d_read(      1), &
+                                storage%data2_i0d_read(    2), &
                                 domain, longname="second data_i0d", units="none")
 
   end subroutine setup_test_restart

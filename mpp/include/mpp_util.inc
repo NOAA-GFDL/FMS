@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util.inc,v 16.0 2008/07/30 22:47:16 fms Exp $
+! $Id: mpp_util.inc,v 16.0.6.1 2008/10/15 11:41:41 z1l Exp $
 
 
 #ifdef use_libSMA
@@ -726,7 +726,8 @@ end function rarray_to_char
           mpp_clock_id = mpp_clock_id + 1
           if( mpp_clock_id.GT.clock_num )then
              if( mpp_clock_id.GT.MAX_CLOCKS )then
-                call mpp_error( WARNING, 'MPP_CLOCK_ID: too many clock requests, this one is ignored.' )
+                call mpp_error( FATAL, 'MPP_CLOCK_ID: too many clock requests, ' // &
+                      'check your clock id request or increase MAX_CLOCKS.')
              else               !new clock: initialize
                 clock_num = mpp_clock_id
                 call clock_init(mpp_clock_id,name,flags,grain)

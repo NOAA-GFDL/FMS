@@ -33,8 +33,8 @@ public get_subfield_size, log_diag_field_info, update_bounds, check_out_of_bound
        find_input_field, init_input_field, init_output_field, diag_data_out, write_static, &
        check_duplicate_output_fields, get_date_dif
 
-character(len=128),private  :: version = '$Id: diag_util.F90,v 16.0 2008/07/30 22:45:10 fms Exp $'
-character(len=128),private  :: tagname = '$Name: perth $'
+character(len=128),private  :: version = '$Id: diag_util.F90,v 16.0.2.2.2.1.2.2 2008/09/19 21:32:40 z1l Exp $'
+character(len=128),private  :: tagname = '$Name: perth_2008_10 $'
 
 contains
 
@@ -881,6 +881,7 @@ subroutine opening_file(file, time)
   integer                       :: ntileMe, nfiles_in_set
   integer, allocatable          :: tile_id(:)
   type(domain2d)                :: domain2
+  logical                       :: all_scalar_or_1d
 
 
   aux_present = .false.; match_aux_name = .false.
@@ -925,30 +926,37 @@ subroutine opening_file(file, time)
 ! Loop through all fields with this file to output axes
 ! JWD: This is a klooge; need something more robust
   nfiles_in_set = mpp_npes()
-  if(mpp_mosaic_defined())then
-    do j = 1, files(file)%num_fields
-      field_num = files(file)%fields(j)
-      num_axes = output_fields(field_num)%num_axes
-      domain2 = get_domain2d ( output_fields(field_num)%axes(1:num_axes) )
-      if(.NOT. (domain2 == NULL_DOMAIN2D) ) exit
-    enddo
-    if(domain2 == NULL_DOMAIN2D) call return_domain(domain2)
-    if(domain2 == NULL_DOMAIN2D)then
-      call error_mesg ('diag_util opening_file','Domain not defined through set_domain interface; cannot retrieve tile info', FATAL)
-    endif
-    nfiles_in_set = mpp_get_tile_npes(domain2)
-    if(mpp_get_ntile_count(domain2) > 1)then
+
+  domain2 = NULL_DOMAIN2D
+  all_scalar_or_1d = .true.
+  do j = 1, files(file)%num_fields
+     field_num = files(file)%fields(j)
+     num_axes = output_fields(field_num)%num_axes
+     if(num_axes>1)then
+        all_scalar_or_1d = .false.
+        domain2 = get_domain2d ( output_fields(field_num)%axes(1:num_axes) )
+        if(domain2 /= NULL_DOMAIN2D) exit
+     endif
+  enddo
+  if(.not.all_scalar_or_1d) then
+     if(domain2 == NULL_DOMAIN2D) call return_domain(domain2)
+     if(domain2 == NULL_DOMAIN2D)then
+        call error_mesg ('diag_util opening_file', &
+             'Domain not defined through set_domain interface; cannot retrieve tile info', FATAL)
+     endif
+     nfiles_in_set = mpp_get_tile_npes(domain2)
+     if(mpp_get_ntile_count(domain2) > 1)then
         ntileMe = mpp_get_current_ntile(domain2)
         allocate(tile_id(ntileMe))
         tile_id = mpp_get_tile_id(domain2)
         fname = trim(filename)
         call get_tile_string(filename, trim(fname)//'.tile' , tile_id(1))
         deallocate(tile_id)
-    endif
+     endif
   endif
 
   call diag_output_init(filename, files(file)%format, global_descriptor, &
-       files(file)%long_name, time_units, files(file)%file_unit, nfiles_in_set) 
+       files(file)%long_name, time_units, files(file)%file_unit, nfiles_in_set, all_scalar_or_1d) 
   files(file)%bytes_written = 0 
 ! Does this file contain time_average fields?
   time_ops = .false.
@@ -1048,25 +1056,48 @@ subroutine opening_file(file, time)
         avg = " "
      end if
      if(input_fields(input_field_num)%missing_value_present) then
-        output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit, &
-             output_fields(field_num)%output_name, axes(1:num_axes), &
-             input_fields(input_field_num)%units, &
-             input_fields(input_field_num)%long_name, &
-             input_fields(input_field_num)%range, output_fields(field_num)%pack,&
-             input_fields(input_field_num)%missing_value, avg_name = avg,&
-             time_method=output_fields(field_num)%time_method,&
-             standard_name = input_fields(input_field_num)%standard_name)
-        
+        if(len_trim(input_fields(input_field_num)%interp_method)>0) then
+           output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit, &
+                output_fields(field_num)%output_name, axes(1:num_axes), &
+                input_fields(input_field_num)%units, &
+                input_fields(input_field_num)%long_name, &
+                input_fields(input_field_num)%range, output_fields(field_num)%pack,&
+                input_fields(input_field_num)%missing_value, avg_name = avg,&
+                time_method=output_fields(field_num)%time_method,&
+                standard_name = input_fields(input_field_num)%standard_name, &
+                interp_method = input_fields(input_field_num)%interp_method)
+        else
+           output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit, &
+                output_fields(field_num)%output_name, axes(1:num_axes), &
+                input_fields(input_field_num)%units, &
+                input_fields(input_field_num)%long_name, &
+                input_fields(input_field_num)%range, output_fields(field_num)%pack,&
+                input_fields(input_field_num)%missing_value, avg_name = avg,&
+                time_method=output_fields(field_num)%time_method,&
+                standard_name = input_fields(input_field_num)%standard_name)
+        endif        
 ! NEED TO TAKE CARE OF TIME AVERAGING INFO TOO BOTH CASES
      else
-        output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit, &
-             output_fields(field_num)%output_name, axes(1:num_axes), &
-             input_fields(input_field_num)%units, &
-             input_fields(input_field_num)%long_name, &
-             input_fields(input_field_num)%range, output_fields(field_num)%pack,&
-             avg_name = avg,&
-             time_method=output_fields(field_num)%time_method, &
-             standard_name = input_fields(input_field_num)%standard_name)
+        if(len_trim(input_fields(input_field_num)%interp_method) >0) then
+           output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit, &
+                output_fields(field_num)%output_name, axes(1:num_axes), &
+                input_fields(input_field_num)%units, &
+                input_fields(input_field_num)%long_name, &
+                input_fields(input_field_num)%range, output_fields(field_num)%pack,&
+                avg_name = avg,&
+                time_method=output_fields(field_num)%time_method, &
+                standard_name = input_fields(input_field_num)%standard_name, &
+                interp_method = input_fields(input_field_num)%interp_method)
+        else
+           output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit, &
+                output_fields(field_num)%output_name, axes(1:num_axes), &
+                input_fields(input_field_num)%units, &
+                input_fields(input_field_num)%long_name, &
+                input_fields(input_field_num)%range, output_fields(field_num)%pack,&
+                avg_name = avg,&
+                time_method=output_fields(field_num)%time_method, &
+                standard_name = input_fields(input_field_num)%standard_name)
+        endif
      endif
   end do
 

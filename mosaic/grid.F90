@@ -35,8 +35,8 @@ end interface
 ! ==== module constants ======================================================
 character(len=*), parameter :: &
      module_name = 'grid_mod', &
-     version     = '$Id: grid.F90,v 16.0 2008/07/30 22:46:01 fms Exp $', &
-     tagname     = '$Name: perth $'
+     version     = '$Id: grid.F90,v 16.0.4.3 2008/09/19 16:50:49 slm Exp $', &
+     tagname     = '$Name: perth_2008_10 $'
 
 character(len=*), parameter :: &
      grid_dir  = 'INPUT/',     &      ! root directory for all grid files
@@ -168,6 +168,8 @@ subroutine get_grid_cell_area(component, tile, cellarea)
              'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN',&
              FATAL)
      end select
+     ! convert area to m2
+     cellarea = cellarea*4*PI*radius**2
   case(VERSION_2)
      call get_grid_size(component,tile,nlon,nlat)
      allocate(glonb(nlon+1,nlat+1),glatb(nlon+1,nlat+1))
@@ -243,9 +245,10 @@ subroutine get_grid_comp_area(component,tile,area)
         ! get the name of the current exchange grid file
         call read_data(grid_file,xgrid_name,xgrid_file,level=n)
         ! skip the rest of the loop if the name of the current tile isn't found 
-        ! in the file name
-        if(index(xgrid_file,trim(tile_name))==0) cycle
-
+        ! in the file name, but check this only if there is more than 1 tile
+        if(n_xgrid_files>1) then
+           if(index(xgrid_file,trim(tile_name))==0) cycle
+        endif
         ! finally read the exchange grid
         nxgrid = get_mosaic_xgrid_size(grid_dir//xgrid_file)
         allocate(i1(nxgrid), j1(nxgrid), i2(nxgrid), j2(nxgrid), xgrid_area(nxgrid))
@@ -257,9 +260,9 @@ subroutine get_grid_comp_area(component,tile,area)
         end do
         deallocate(i1, j1, i2, j2, xgrid_area)
      enddo
-     ! convert area to m2
-     area = area*4*PI*radius**2
   end select ! version
+  ! convert area to m2
+  area = area*4*PI*radius**2
 end subroutine
 
 
@@ -425,7 +428,7 @@ subroutine get_grid_cell_centers(component, tile, glon, glat)
         deallocate(buffer)
      case('OCN')
         call read_data(grid_file, 'x_T', glon, no_domain=.TRUE. )
-        call read_data(grid_file, 'x_T', glat, no_domain=.TRUE. )
+        call read_data(grid_file, 'y_T', glat, no_domain=.TRUE. )
      case default
         call error_mesg(module_name,&
              'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN',&

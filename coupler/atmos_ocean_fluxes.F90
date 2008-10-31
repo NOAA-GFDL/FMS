@@ -188,8 +188,8 @@ character(len=48), parameter    :: mod_name = 'atmos_ocean_fluxes_mod'
 !----------------------------------------------------------------------
 !
 
-character(len=128) :: version = '$Id: atmos_ocean_fluxes.F90,v 15.0 2007/08/14 04:13:12 fms Exp $'
-character(len=128) :: tagname = '$Name: perth $'
+character(len=128) :: version = '$Id: atmos_ocean_fluxes.F90,v 15.0.10.1.2.1 2008/09/16 13:40:35 wfc Exp $'
+character(len=128) :: tagname = '$Name: perth_2008_10 $'
 
 !
 !-----------------------------------------------------------------------
@@ -210,7 +210,7 @@ contains
 ! </DESCRIPTION>
 !
 function aof_set_coupler_flux(name, flux_type, implementation, atm_tr_index, param, flag,       &
-     ice_file_in, ice_file_out, ocean_file_in, ocean_file_out, units, caller)                   &
+     mol_wt, ice_restart_file, ocean_restart_file, units, caller)           &
          result (coupler_index)  !{
 
 implicit none
@@ -231,10 +231,9 @@ character(len=*), intent(in)                            :: implementation
 integer, intent(in), optional                           :: atm_tr_index
 real, intent(in), dimension(:), optional                :: param
 logical, intent(in), dimension(:), optional             :: flag
-character(len=*), intent(in), optional                  :: ice_file_in
-character(len=*), intent(in), optional                  :: ice_file_out
-character(len=*), intent(in), optional                  :: ocean_file_in
-character(len=*), intent(in), optional                  :: ocean_file_out
+real, intent(in), optional                              :: mol_wt
+character(len=*), intent(in), optional                  :: ice_restart_file
+character(len=*), intent(in), optional                  :: ocean_restart_file
 character(len=*), intent(in), optional                  :: units
 character(len=*), intent(in), optional                  :: caller
 
@@ -430,28 +429,22 @@ else  !}{
   call fm_util_set_value('atm_tr_index', 0)
 endif  !}
 
-if (present(ice_file_in)) then  !{
-  call fm_util_set_value('ice_file_in', ice_file_in)
+if (present(mol_wt)) then  !{
+  call fm_util_set_value('mol_wt', mol_wt)
 else  !}{
-  call fm_util_set_value('ice_file_in', 'INPUT/ice_coupler_fluxes.res.nc')
+  call fm_util_set_value('mol_wt', 0.0)
 endif  !}
 
-if (present(ice_file_out)) then  !{
-  call fm_util_set_value('ice_file_out', ice_file_out)
+if (present(ice_restart_file)) then  !{
+  call fm_util_set_value('ice_restart_file', ice_restart_file)
 else  !}{
-  call fm_util_set_value('ice_file_out', 'RESTART/ice_coupler_fluxes.res.nc')
+  call fm_util_set_value('ice_restart_file', 'ice_coupler_fluxes.res.nc')
 endif  !}
 
-if (present(ocean_file_in)) then  !{
-  call fm_util_set_value('ocean_file_in', ocean_file_in)
+if (present(ocean_restart_file)) then  !{
+  call fm_util_set_value('ocean_restart_file', ocean_restart_file)
 else  !}{
-  call fm_util_set_value('ocean_file_in', 'INPUT/ocean_coupler_fluxes.res.nc')
-endif  !}
-
-if (present(ocean_file_out)) then  !{
-  call fm_util_set_value('ocean_file_out', ocean_file_out)
-else  !}{
-  call fm_util_set_value('ocean_file_out', 'RESTART/ocean_coupler_fluxes.res.nc')
+  call fm_util_set_value('ocean_restart_file', 'ocean_coupler_fluxes.res.nc')
 endif  !}
 
 if (present(param)) then  !{
@@ -805,36 +798,28 @@ do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))  !{
     gas_fluxes%bc(n)%atm_tr_index = fm_util_get_integer('atm_tr_index', scalar = .true.)
 
 !
-!       save the ice_file_in
+!       save the molecular weight
 !
 
-    gas_fluxes%bc(n)%ice_file_in = fm_util_get_string('ice_file_in', scalar = .true.)
-    gas_fields_atm%bc(n)%ice_file_in = gas_fluxes%bc(n)%ice_file_in
-    gas_fields_ice%bc(n)%ice_file_in = gas_fluxes%bc(n)%ice_file_in
+    gas_fluxes%bc(n)%mol_wt = fm_util_get_real('mol_wt', scalar = .true.)
+    gas_fields_atm%bc(n)%mol_wt = gas_fluxes%bc(n)%mol_wt
+    gas_fields_ice%bc(n)%mol_wt = gas_fluxes%bc(n)%mol_wt
 
 !
-!       save the ice_file_out
+!       save the ice_restart_file
 !
 
-    gas_fluxes%bc(n)%ice_file_out = fm_util_get_string('ice_file_out', scalar = .true.)
-    gas_fields_atm%bc(n)%ice_file_out = gas_fluxes%bc(n)%ice_file_out
-    gas_fields_ice%bc(n)%ice_file_out = gas_fluxes%bc(n)%ice_file_out
+    gas_fluxes%bc(n)%ice_restart_file = fm_util_get_string('ice_restart_file', scalar = .true.)
+    gas_fields_atm%bc(n)%ice_restart_file = gas_fluxes%bc(n)%ice_restart_file
+    gas_fields_ice%bc(n)%ice_restart_file = gas_fluxes%bc(n)%ice_restart_file
 
 !
-!       save the ocean_file_in
+!       save the ocean_restart_file
 !
 
-    gas_fluxes%bc(n)%ocean_file_in = fm_util_get_string('ocean_file_in', scalar = .true.)
-    gas_fields_atm%bc(n)%ocean_file_in = gas_fluxes%bc(n)%ocean_file_in
-    gas_fields_ice%bc(n)%ocean_file_in = gas_fluxes%bc(n)%ocean_file_in
-
-!
-!       save the ocean_file_out
-!
-
-    gas_fluxes%bc(n)%ocean_file_out = fm_util_get_string('ocean_file_out', scalar = .true.)
-    gas_fields_atm%bc(n)%ocean_file_out = gas_fluxes%bc(n)%ocean_file_out
-    gas_fields_ice%bc(n)%ocean_file_out = gas_fluxes%bc(n)%ocean_file_out
+    gas_fluxes%bc(n)%ocean_restart_file = fm_util_get_string('ocean_restart_file', scalar = .true.)
+    gas_fields_atm%bc(n)%ocean_restart_file = gas_fluxes%bc(n)%ocean_restart_file
+    gas_fields_ice%bc(n)%ocean_restart_file = gas_fluxes%bc(n)%ocean_restart_file
 
 !
 !       save the params

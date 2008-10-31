@@ -75,7 +75,7 @@ implicit none
 private
 
 character(len=128) :: version = '$Id: data_override.F90,v 16.0 2008/07/30 22:44:56 fms Exp $'
-character(len=128) :: tagname = '$Name: perth $'
+character(len=128) :: tagname = '$Name: perth_2008_10 $'
 
 type data_type_lima
    character(len=3)   :: gridname

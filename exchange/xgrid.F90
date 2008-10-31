@@ -332,7 +332,7 @@ end type xmap_type
 
 !-----------------------------------------------------------------------
  character(len=128) :: version = '$Id: xgrid.F90,v 16.0 2008/07/30 22:45:21 fms Exp $'
- character(len=128) :: tagname = '$Name: perth $'
+ character(len=128) :: tagname = '$Name: perth_2008_10 $'
 
  real, parameter                              :: EPS = 1.0e-10
  logical :: module_is_initialized = .FALSE.

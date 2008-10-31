@@ -121,6 +121,8 @@ public :: time_manager_init, print_time, print_date
 ! (e.g., rename set_date_julian_private to be just set_date_julian)
 public :: set_date_julian, set_date_no_leap, get_date_julian, get_date_no_leap
 
+public :: date_to_string
+
 !====================================================================
 
 ! Global data to define calendar type
@@ -176,8 +178,8 @@ end interface
 
 !======================================================================
 
-character(len=128) :: version='$Id: time_manager.F90,v 16.0 2008/07/30 22:48:04 fms Exp $'
-character(len=128) :: tagname='$Name: perth $'
+character(len=128) :: version='$Id: time_manager.F90,v 16.0.4.1 2008/09/03 18:17:12 z1l Exp $'
+character(len=128) :: tagname='$Name: perth_2008_10 $'
 logical :: module_is_initialized = .false.
 
 !======================================================================
@@ -3240,6 +3242,26 @@ endif
 end function valid_calendar_types
 ! </FUNCTION>
 !------------------------------------------------------------------------
+
+!--- get the a character string that represents the time. The format will be 
+!--- yyyymmdd.hhmmss
+function date_to_string(time, err_msg)
+  type(time_type),  intent(in)            :: time
+  character(len=*), intent(out), optional :: err_msg
+  character(len=128)                      :: err_msg_local
+  character(len=15)                       :: date_to_string
+  integer                                 :: yr,mon,day,hr,min,sec
+
+  if(present(err_msg)) err_msg = ''
+  call get_date(time,yr,mon,day,hr,min,sec)
+  if (yr <= 9999) then
+     write(date_to_string,'(I4.4,I2.2,I2.2,".",I2.2,I2.2,I2.2)') yr, mon, day, hr, min, sec
+  else
+     write(err_msg_local, '(a,i,a)') 'year = ', yr, ' should be less than 10000'
+     if(error_handler('function date_to_string', err_msg_local, err_msg)) return
+  endif
+
+end function date_to_string
 
 end module time_manager_mod
 

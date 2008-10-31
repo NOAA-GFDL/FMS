@@ -100,43 +100,68 @@ contains
     module_is_initialized = .TRUE.
   end subroutine mpp_pset_init
   
-  subroutine mpp_pset_create(npset,pset,stacksize)
+  subroutine mpp_pset_create(npset,pset,stacksize,pelist, commID)
 !create PSETs
 !  called by all PEs in parent pelist
 !  mpset must be exact divisor of npes
     integer, intent(in) :: npset !number of PSETs per set
     type(mpp_pset_type), intent(inout) :: pset
     integer, intent(in), optional :: stacksize
+    integer, intent(in), optional :: pelist(:)
+    integer, intent(in), optional :: commID
 
-    integer :: npes
+    integer :: npes, my_commID
     integer :: i, j, k
+    integer, allocatable :: my_pelist(:), root_pelist(:)
 
     call mpp_init()
     call mpp_pset_init()
-    if( pset%initialized )call mpp_error( FATAL, &
-         'MPP_PSET_CREATE: PSET already initialized!' )
+
 #ifdef PSET_DEBUG
     verbose=.TRUE.
 #endif
     pe = mpp_pe()
-    npes = mpp_npes()
+    if(present(pelist)) then
+       npes = size(pelist(:))
+    else
+       npes = mpp_npes()
+    endif
     if( mod(npes,npset).NE.0 )then
         write( text,'(a,2i4)' ) &
              'MPP_PSET_CREATE: PSET size (npset) must divide npes exactly:'// &
              ' npset, npes=', npset, npes
         call mpp_error( FATAL, text )
     end if
+
+    !configure out root_pelist
+    allocate(my_pelist(0:npes-1) )
+    allocate(root_pelist(0:npes/npset-1) )
+    if(present(pelist)) then
+       if(.not. present(commID)) call mpp_error(FATAL, &
+         'MPP_PSET_CREATE: when pelist is present, commID should also be present')
+       my_pelist = pelist
+       my_commID = commID
+    else
+       call mpp_get_current_pelist(my_pelist, commID = my_commID)
+    endif
+    do i = 0,npes/npset-1
+       root_pelist(i) = my_pelist(npset*i)
+    enddo
 !    write( stdlog(),'(a,i4)' )'MPP_PSET_CREATE creating PSETs... npset=', npset
     write( stdout(),'(a,i4)' )'MPP_PSET_CREATE creating PSETs... npset=', npset
+    if(ANY(my_pelist == pe) ) then
+    if( pset%initialized )call mpp_error( FATAL, &
+         'MPP_PSET_CREATE: PSET already initialized!' )     
     pset%npset = npset
     allocate( pset%pelist(0:npes-1) )
-    call mpp_get_current_pelist( pset%pelist, commID=pset%commID )
-!create the root PElist
     allocate( pset%root_pelist(0:npes/npset-1) )
+    pset%commID = my_commID
+    pset%pelist = my_pelist
+!create the root PElist
+    pset%root_pelist = root_pelist
     allocate( pset%pset(0:npset-1) )
     do i = 0,npes/npset-1
        k = npset*i
-       pset%root_pelist(i) =  pset%pelist(k)
 !designate the root PE, next PE, prev PE
        do j = 0,npset-1
           if( pe.EQ.pset%pelist(k+j) )then
@@ -156,7 +181,7 @@ contains
           end if
        end do
     end do
-    call mpp_declare_pelist(pset%root_pelist)
+
     pset%root = pe.EQ.pset%root_in_pset
 
 !stack
@@ -173,6 +198,10 @@ contains
     end if
     pset%initialized = .TRUE. !must be called before using pset
     call mpp_pset_broadcast_ptr(pset,pset%p_stack)
+    endif
+
+    call mpp_declare_pelist(root_pelist)
+
     if( verbose )then
         write( stderr(),'(a,4i4)' )'MPP_PSET_CREATE: pe, root, next, prev=', &
              pe, pset%root_in_pset, pset%next_in_pset, pset%prev_in_pset

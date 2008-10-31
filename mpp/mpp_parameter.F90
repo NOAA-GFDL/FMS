@@ -7,7 +7,7 @@ module mpp_parameter_mod
   character(len=128), public :: version= &
        '$Id mpp_parameter.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: perth $'
+       '$Name: perth_2008_10 $'
 
   !--- public paramters which is used by mpp_mod and its components. 
   !--- All othere modules should import these parameters from mpp_mod. 
@@ -40,7 +40,7 @@ module mpp_parameter_mod
   integer, parameter :: MPP_VERBOSE=1, MPP_DEBUG=2
   integer, parameter :: ALL_PES=-1, ANY_PE=-2, NULL_PE=-3
   integer, parameter :: NOTE=0, WARNING=1, FATAL=2
-  integer, parameter :: MAX_CLOCKS=200, MAX_EVENT_TYPES=5, MAX_EVENTS=40000
+  integer, parameter :: MAX_CLOCKS=400, MAX_EVENT_TYPES=5, MAX_EVENTS=40000
   integer, parameter :: EVENT_ALLREDUCE=1, EVENT_BROADCAST=2, EVENT_RECV=3, EVENT_SEND=4, EVENT_WAIT=5
   integer, parameter :: MPP_CLOCK_SYNC=1, MPP_CLOCK_DETAILED=2
   !--- predefined clock granularities, but you can use any integer

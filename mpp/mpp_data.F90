@@ -13,7 +13,7 @@ module mpp_data_mod
   character(len=128), public :: version= &
        '$Id mpp_data.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: perth $'
+       '$Name: perth_2008_10 $'
 
 #if defined(use_libSMA) || defined(use_MPI_SMA)
 #include <mpp/shmem.fh>
