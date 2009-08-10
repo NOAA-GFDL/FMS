@@ -451,8 +451,8 @@ private
 !-----------------------------------------------------------------------
 !  cvs version and tag name
 
- character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 16.0.4.1.2.3 2008/09/22 19:36:01 wfc Exp $'
- character(len=128) :: tagname = '$Name: perth_2008_10 $'
+ character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 17.0 2009/07/21 03:21:41 fms Exp $'
+ character(len=128) :: tagname = '$Name: quebec $'
 
  logical :: module_is_initialized = .false.
 
@@ -1269,7 +1269,8 @@ real,  intent(in),              optional :: hc
 
 ! write version number and namelist to log file
   call write_version_number (version, tagname)
-  if (mpp_pe() == mpp_root_pe()) write (stdlog(), nml=sat_vapor_pres_nml)
+  unit = stdlog()
+  if (mpp_pe() == mpp_root_pe()) write (unit, nml=sat_vapor_pres_nml)
 
   if(do_simple) then
     tcmin = -350  
@@ -1399,9 +1400,10 @@ end subroutine sat_vapor_pres_init
 
  subroutine temp_check_1d ( temp )
  real   , intent(in) :: temp(:)
- integer :: i
+ integer :: i, unit
 
-   write(stdout(),*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i:i)),i=1,size(temp,1))
+   unit = stdout()
+   write(unit,*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i:i)),i=1,size(temp,1))
 
  end subroutine temp_check_1d
 
@@ -1409,10 +1411,11 @@ end subroutine sat_vapor_pres_init
 
  subroutine temp_check_2d ( temp )
  real   , intent(in) :: temp(:,:)
- integer :: i, j
+ integer :: i, j, unit
 
-   write(stdout(),*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i,:)),i=1,size(temp,1))
-   write(stdout(),*) 'Bad temperatures (dimension 2): ', (check_1d(temp(:,j)),j=1,size(temp,2))
+   unit = stdout()
+   write(unit,*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i,:)),i=1,size(temp,1))
+   write(unit,*) 'Bad temperatures (dimension 2): ', (check_1d(temp(:,j)),j=1,size(temp,2))
 
  end subroutine temp_check_2d
 
@@ -1420,11 +1423,12 @@ end subroutine sat_vapor_pres_init
 
  subroutine temp_check_3d ( temp )
  real, intent(in)  :: temp(:,:,:)
- integer :: i, j, k
+ integer :: i, j, k, unit
 
-   write(stdout(),*) 'Bad temperatures (dimension 1): ', (check_2d(temp(i,:,:)),i=1,size(temp,1))
-   write(stdout(),*) 'Bad temperatures (dimension 2): ', (check_2d(temp(:,j,:)),j=1,size(temp,2))
-   write(stdout(),*) 'Bad temperatures (dimension 3): ', (check_2d(temp(:,:,k)),k=1,size(temp,3))
+   unit = stdout()
+   write(unit,*) 'Bad temperatures (dimension 1): ', (check_2d(temp(i,:,:)),i=1,size(temp,1))
+   write(unit,*) 'Bad temperatures (dimension 2): ', (check_2d(temp(:,j,:)),j=1,size(temp,2))
+   write(unit,*) 'Bad temperatures (dimension 3): ', (check_2d(temp(:,:,k)),k=1,size(temp,3))
 
  end subroutine temp_check_3d
 
@@ -1432,11 +1436,12 @@ end subroutine sat_vapor_pres_init
 
 subroutine show_all_bad_0d ( temp )
  real   , intent(in) :: temp
- integer :: ind
+ integer :: ind, unit
 
+ unit = stdout()
  ind = int(dtinv*(temp-tmin+teps))
  if (ind < 0 .or. ind > nlim) then
-   write(stdout(),'(a,e,a,i4)') 'Bad temperature=',temp,' pe=',mpp_pe()
+   write(unit,'(a,e,a,i6)') 'Bad temperature=',temp,' pe=',mpp_pe()
  endif
  
  end subroutine show_all_bad_0d
@@ -1445,12 +1450,13 @@ subroutine show_all_bad_0d ( temp )
 
  subroutine show_all_bad_1d ( temp )
  real   , intent(in) :: temp(:)
- integer :: i, ind
+ integer :: i, ind, unit
 
+ unit = stdout()
  do i=1,size(temp)
    ind = int(dtinv*(temp(i)-tmin+teps))
    if (ind < 0 .or. ind > nlim) then
-     write(stdout(),'(a,e,a,i4,a,i4)') 'Bad temperature=',temp(i),'  at i=',i,' pe=',mpp_pe()
+     write(unit,'(a,e,a,i4,a,i6)') 'Bad temperature=',temp(i),'  at i=',i,' pe=',mpp_pe()
    endif
  enddo
 
@@ -1460,13 +1466,14 @@ subroutine show_all_bad_0d ( temp )
 
  subroutine show_all_bad_2d ( temp )
  real   , intent(in) :: temp(:,:)
- integer :: i, j, ind
+ integer :: i, j, ind, unit
 
+ unit = stdout()
  do j=1,size(temp,2)
  do i=1,size(temp,1)
    ind = int(dtinv*(temp(i,j)-tmin+teps))
    if (ind < 0 .or. ind > nlim) then
-     write(stdout(),'(a,e,a,i4,a,i4,a,i4)') 'Bad temperature=',temp(i,j),'  at i=',i,' j=',j,' pe=',mpp_pe()
+     write(unit,'(a,e,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j),'  at i=',i,' j=',j,' pe=',mpp_pe()
    endif
  enddo
  enddo
@@ -1477,14 +1484,15 @@ subroutine show_all_bad_0d ( temp )
 
  subroutine show_all_bad_3d ( temp )
  real, intent(in)  :: temp(:,:,:)
- integer :: i, j, k, ind
+ integer :: i, j, k, ind, unit
 
+ unit = stdout()
  do k=1,size(temp,3)
  do j=1,size(temp,2)
  do i=1,size(temp,1)
    ind = int(dtinv*(temp(i,j,k)-tmin+teps))
    if (ind < 0 .or. ind > nlim) then
-     write(stdout(),'(a,e,a,i4,a,i4,a,i4,a,i4)') 'Bad temperature=',temp(i,j,k),'  at i=',i,' j=',j,' k=',k,' pe=',mpp_pe()
+     write(unit,'(a,e,a,i4,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j,k),'  at i=',i,' j=',j,' k=',k,' pe=',mpp_pe()
    endif
  enddo
  enddo

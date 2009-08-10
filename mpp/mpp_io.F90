@@ -314,15 +314,19 @@ use mpp_parameter_mod,  only : MPP_IEEE32, MPP_NATIVE, MPP_NETCDF, MPP_SEQUENTIA
 use mpp_parameter_mod,  only : MPP_DIRECT, MPP_SINGLE, MPP_MULTI, MPP_DELETE, MPP_COLLECT
 use mpp_parameter_mod,  only : MPP_DEBUG, MPP_VERBOSE, NULLUNIT, NULLTIME, ALL_PES
 use mpp_parameter_mod,  only : CENTER, EAST, NORTH, CORNER
-use mpp_parameter_mod,  only : MAX_FILE_SIZE
+use mpp_parameter_mod,  only : MAX_FILE_SIZE, GLOBAL_ROOT_ONLY, XUPDATE, YUPDATE
 use mpp_mod,            only : mpp_error, FATAL, WARNING, NOTE, stdin, stdout, stderr, stdlog
 use mpp_mod,            only : mpp_pe, mpp_root_pe, mpp_npes, lowercase, mpp_transmit
-use mpp_mod,            only : mpp_init, mpp_sync
+use mpp_mod,            only : mpp_init, mpp_sync, mpp_clock_id, mpp_clock_begin, mpp_clock_end
+use mpp_mod,            only : MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED, CLOCK_ROUTINE
 use mpp_domains_mod,    only : domain1d, domain2d, NULL_DOMAIN1D, mpp_domains_init
 use mpp_domains_mod,    only : mpp_get_global_domain, mpp_get_compute_domain
 use mpp_domains_mod,    only :  mpp_get_data_domain, mpp_get_memory_domain
 use mpp_domains_mod,    only : mpp_update_domains, mpp_global_field, mpp_domain_is_symmetry
 use mpp_domains_mod,    only : operator( .NE. ), mpp_get_domain_shift
+use mpp_domains_mod,    only : mpp_get_io_domain, mpp_domain_is_tile_root_pe, mpp_get_domain_tile_root_pe
+use mpp_domains_mod,    only : mpp_get_tile_id, mpp_get_tile_npes, mpp_get_io_domain_layout
+use mpp_domains_mod,    only : mpp_get_domain_name
 
 implicit none
 private
@@ -351,6 +355,7 @@ private
   public :: mpp_get_att_type, mpp_get_att_name, mpp_get_att_real, mpp_get_att_char
   public :: mpp_get_att_real_scalar
   public :: mpp_get_file_name, mpp_file_is_opened 
+  public :: mpp_io_clock_on
 
   !--- public interface from mpp_io_misc.h ----------------------
   public :: mpp_io_init, mpp_io_exit, netcdf_err, mpp_flush
@@ -422,6 +427,9 @@ private
      logical            :: opened, initialized, nohdrs
      integer            :: time_level
      real(DOUBLE_KIND)  :: time
+     logical            :: valid
+     logical            :: write_on_this_pe   ! indicate if will write out from this pe
+     logical            :: io_domain_exist    ! indicate if io_domain exist or not.
      integer            :: id       !variable ID of time axis associated with file (only one time axis per file)
      integer            :: recdimid !dim ID of time axis associated with file (only one time axis per file)
      real(DOUBLE_KIND), pointer :: time_values(:) =>NULL() ! time axis values are stored here instead of axis%data 
@@ -434,6 +442,7 @@ private
      type(axistype), pointer  :: axis(:) =>NULL()
      type(fieldtype), pointer :: var(:) =>NULL()
      type(atttype), pointer   :: att(:) =>NULL()
+     type(domain2d), pointer  :: domain =>NULL()
   end type filetype
 
 !***********************************************************************
@@ -758,10 +767,12 @@ private
   interface mpp_write
      module procedure mpp_write_2ddecomp_r2d
      module procedure mpp_write_2ddecomp_r3d
+     module procedure mpp_write_2ddecomp_r4d
      module procedure mpp_write_r0D
      module procedure mpp_write_r1D
      module procedure mpp_write_r2D
      module procedure mpp_write_r3D
+     module procedure mpp_write_r4D
      module procedure mpp_write_axis
   end interface
 
@@ -780,10 +791,15 @@ private
   character(len=256) :: text
   integer            :: error
   integer            :: records_per_pe
+  integer            :: mpp_read_clock=0, mpp_write_clock=0
+  integer            :: mpp_open_clock=0, mpp_close_clock=0
+
 
 !initial value of buffer between meta_data and data in .nc file
-  integer            :: header_buffer_val = 16384
-  namelist /mpp_io_nml/header_buffer_val ! value used in NF__ENDDEF
+  integer            :: header_buffer_val = 16384  ! value used in NF__ENDDEF
+  logical            :: global_field_on_root_pe = .true.
+  logical            :: io_clocks_on = .false.
+  namelist /mpp_io_nml/header_buffer_val, global_field_on_root_pe, io_clocks_on
 
   real(DOUBLE_KIND), allocatable :: mpp_io_stack(:)
   type(axistype),save            :: default_axis      !provided to users with default components
@@ -793,9 +809,9 @@ private
 
 
   character(len=128) :: version= &
-       '$Id: mpp_io.F90,v 16.0 2008/07/30 22:47:34 fms Exp $'
+       '$Id: mpp_io.F90,v 17.0 2009/07/21 03:21:17 fms Exp $'
   character(len=128) :: tagname= &
-       '$Name: perth_2008_10 $'
+       '$Name: quebec $'
 
 contains
 

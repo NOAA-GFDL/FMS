@@ -33,8 +33,8 @@ private
 !----------- ****** VERSION NUMBER ******* ---------------------------
 
 
-character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 16.0 2008/07/30 22:44:50 fms Exp $'
-character(len=128)  :: tag     =  '$Name: perth_2008_10 $'
+character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 17.0 2009/07/21 03:18:24 fms Exp $'
+character(len=128)  :: tag     =  '$Name: quebec $'
 
 
 
@@ -498,7 +498,7 @@ integer, dimension(:), intent(in)  :: diag_i, diag_j
       write (diag_unit,'(a)')  ' '
       write (diag_unit,'(a,f8.3,a,f8.3)') ' longitude = ',    &
                    diag_lon(nn), ' latitude  = ', diag_lat(nn)
-      write (diag_unit,'(a, i4, a,i6,a,i6)')    &
+      write (diag_unit,'(a, i6, a,i6,a,i6)')    &
                                ' on processor # ', mpp_pe(),   &
                                ' :   processor i =', diag_i(nn),     &
                                ' ,   processor j =', diag_j(nn)

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_sma.inc,v 16.0 2008/07/30 22:46:24 fms Exp $
+! $Id: mpp_comm_sma.inc,v 17.0 2009/07/21 03:19:58 fms Exp $
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -15,7 +15,7 @@ subroutine mpp_init( flags,localcomm )
   integer, optional, intent(in) :: localcomm ! dummy here, used only in MPI
   integer                       :: num_pes, len
   integer                       :: i, logunit
-  logical                       :: opened
+  logical                       :: opened, existed
 #ifdef _CRAYT3E
   intrinsic my_pe
 #else
@@ -72,9 +72,14 @@ subroutine mpp_init( flags,localcomm )
   inquire(unit=etc_unit,opened=opened)
   if(opened) call mpp_error(FATAL,'Unit 9 is already in use (etc_unit) in mpp_comm_sma')
   if (trim(etcfile) /= '/dev/null') then
-    write( etcfile,'(a,i4.4)' )trim(etcfile)//'.', pe
+    write( etcfile,'(a,i6.6)' )trim(etcfile)//'.', pe
   endif
-  open( unit=etc_unit, file=trim(etcfile), status='REPLACE' )
+  inquire(file=etcfile, exist=existed)
+  if(existed) then
+     open( unit=etc_unit, file=trim(etcfile), status='REPLACE' )
+  else
+     open( unit=etc_unit, file=trim(etcfile) )
+  endif
   !if optional argument logunit=stdout, write messages to stdout instead.
   !if specifying non-defaults, you must specify units not yet in use.
   !      if( PRESENT(in) )then
@@ -114,7 +119,7 @@ subroutine mpp_init( flags,localcomm )
   if( pe.EQ.root_pe )then
 logunit = stdlog()
      write( logunit,'(/a)' )'MPP module '//trim(version)//trim(tagname)
-     write( logunit,'(a,i4)' )'MPP started with NPES=', npes
+     write( logunit,'(a,i6)' )'MPP started with NPES=', npes
      write( logunit,'(a)' )'Using SMA (shmem) library for message passing...'
      write( logunit, '(a,es12.4,a,i10,a)' ) &
           'Realtime clock resolution=', tick_rate, ' sec (', ticks_per_sec, ' ticks/sec)'
@@ -145,7 +150,7 @@ subroutine mpp_exit()
         call sum_clock_data; call dump_clock_summary
      end if
      if( pe.EQ.root_pe )then
-        write( outunit,'(/a,i4,a)' ) 'Tabulating mpp_clock statistics across ', npes, ' PEs...'
+        write( outunit,'(/a,i6,a)' ) 'Tabulating mpp_clock statistics across ', npes, ' PEs...'
         if( ANY(clocks(1:clock_num)%detailed) ) &
              write( outunit,'(a)' )'   ... see mpp_clock.out.#### for details on individual PEs.'
         write( outunit,'(/32x,a)' ) '          tmin          tmax          tavg          tstd  tfrac grain pemin pemax'

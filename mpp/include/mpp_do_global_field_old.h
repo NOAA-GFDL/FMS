@@ -7,10 +7,9 @@
       MPP_TYPE_, intent(out)        :: global(domain%x(tile)%global%begin:,domain%y(tile)%global%begin:,:)
       integer, intent(in), optional :: flags
 
-
       integer :: i, j, k, m, n, nd, nwords, lpos, rpos, ioff, joff, from_pe, root_pe, tile_id
       integer :: ke, isc, iec, jsc, jec, is, ie, js, je, nword_me
-      logical :: xonly, yonly
+      logical :: xonly, yonly, root_only, global_on_this_pe
       MPP_TYPE_ :: clocal ((domain%x(1)%compute%size)    *(domain%y(1)%compute%size)    *size(local,3))
       MPP_TYPE_ :: cremote((domain%x(1)%compute%max_size)*(domain%y(1)%compute%max_size)*size(local,3))
       integer :: stackuse
@@ -34,15 +33,29 @@
 
       xonly = .FALSE.
       yonly = .FALSE.
-      if( PRESENT(flags) )then
-          xonly = flags.EQ.XUPDATE
-          yonly = flags.EQ.YUPDATE
-          if( .NOT.xonly .AND. .NOT.yonly )call mpp_error( WARNING, 'MPP_GLOBAL_FIELD: you must have flags=XUPDATE or YUPDATE.' )
-      end if
-
-      if( size(global,1).NE.(domain%x(tile)%global%size) .OR. size(global,2).NE.(domain%y(tile)%global%size) .OR. &
-           size(local,3).NE.size(global,3) ) &
-           call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: incoming arrays do not match domain.' )
+      root_only = .FALSE.
+      if( PRESENT(flags) ) then
+         xonly = BTEST(flags,EAST)
+         yonly = BTEST(flags,SOUTH)
+         if( .NOT.xonly .AND. .NOT.yonly )call mpp_error( WARNING,  &
+                   'MPP_GLOBAL_FIELD: you must have flags=XUPDATE, YUPDATE or XUPDATE+YUPDATE' )
+         if(xonly .AND. yonly) then
+            xonly = .false.; yonly = .false.
+         endif
+         root_only = BTEST(flags, ROOT_GLOBAL)
+         if( (xonly .or. yonly) .AND. root_only ) then
+            call mpp_error( WARNING, 'MPP_GLOBAL_FIELD: flags = XUPDATE+GLOBAL_ROOT_ONLY or ' // &
+                 'flags = YUPDATE+GLOBAL_ROOT_ONLY is not supported, will ignore GLOBAL_ROOT_ONLY' )     
+            root_only = .FALSE.
+         endif
+      endif
+    
+      global_on_this_pe =  .NOT. root_only .OR. domain%pe == domain%tile_root_pe
+      if(global_on_this_pe ) then      
+         if( size(global,1).NE.(domain%x(tile)%global%size) .OR. size(global,2).NE.(domain%y(tile)%global%size) .OR. &
+              size(local,3).NE.size(global,3) ) &
+              call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: incoming arrays do not match domain.' )
+      endif
       if( size(local,1).EQ.(domain%x(tile)%compute%size) .AND. size(local,2).EQ.(domain%y(tile)%compute%size) )then
          !local is on compute domain
          ioff = -domain%x(tile)%compute%begin + 1
@@ -63,15 +76,26 @@
 
 ! make contiguous array from compute domain
       m = 0
-      do k = 1, ke
-         do j = jsc, jec
-            do i = isc, iec
-               m = m + 1
-               clocal(m) = local(i+ioff,j+joff,k)
-               global(i,j,k) = clocal(m) !always fill local domain directly
+      if(global_on_this_pe) then
+         do k = 1, ke
+            do j = jsc, jec
+               do i = isc, iec
+                  m = m + 1
+                  clocal(m) = local(i+ioff,j+joff,k)
+                  global(i,j,k) = clocal(m) !always fill local domain directly
+               end do
             end do
          end do
-      end do
+      else
+         do k = 1, ke
+            do j = jsc, jec
+               do i = isc, iec
+                  m = m + 1
+                  clocal(m) = local(i+ioff,j+joff,k)
+               end do
+            end do
+         end do
+      endif
 
 ! if there is more than one tile on this pe, then no decomposition for all tiles on this pe, so we can just return
       if(size(domain%x(:))>1) then
@@ -129,31 +153,56 @@
              end do
           end do
       else
-          tile_id = domain%tile_id(1)
-          nd = size(domain%list(:))
-          do n = 1,nd-1
-             lpos = mod(domain%pos+nd-n,nd)
-             if( domain%list(lpos)%tile_id(1).NE. tile_id ) cycle ! global field only within tile
-             call mpp_send( clocal(1), plen=nword_me, to_pe=domain%list(lpos)%pe )
-          end do
-          do n = 1,nd-1
-             rpos = mod(domain%pos+n,nd)
-             if( domain%list(rpos)%tile_id(1) .NE. tile_id ) cycle ! global field only within tile
-             nwords = (domain%list(rpos)%x(1)%compute%size) * (domain%list(rpos)%y(1)%compute%size) * ke
-             call mpp_recv( cremote(1), glen=nwords, from_pe=domain%list(rpos)%pe )
-             m = 0
-             is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end
-             js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end
-             
-             do k = 1,ke
-                do j = js, je
-                   do i = is, ie
-                      m = m + 1
-                      global(i,j,k) = cremote(m)
-                   end do
-                end do
-             end do
-          end do
+         tile_id = domain%tile_id(1)
+         nd = size(domain%list(:))
+         if(root_only) then
+            if(domain%pe .NE. domain%tile_root_pe) then
+               call mpp_send( clocal(1), plen=nword_me, to_pe=domain%tile_root_pe )
+            else
+               do n = 1,nd-1
+                  rpos = mod(domain%pos+n,nd)
+                  if( domain%list(rpos)%tile_id(1) .NE. tile_id ) cycle
+                  nwords = (domain%list(rpos)%x(1)%compute%size) * (domain%list(rpos)%y(1)%compute%size) * ke
+                  call mpp_recv(cremote(1), glen=nwords, from_pe=domain%list(rpos)%pe )
+                  m = 0
+                  is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end
+                  js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end
+
+                  do k = 1,ke
+                     do j = js, je
+                        do i = is, ie
+                           m = m + 1
+                           global(i,j,k) = cremote(m)
+                        end do
+                     end do
+                  end do
+               end do
+            endif
+         else
+            do n = 1,nd-1
+               lpos = mod(domain%pos+nd-n,nd)
+               if( domain%list(lpos)%tile_id(1).NE. tile_id ) cycle ! global field only within tile
+               call mpp_send( clocal(1), plen=nword_me, to_pe=domain%list(lpos)%pe )
+            end do
+            do n = 1,nd-1
+               rpos = mod(domain%pos+n,nd)
+               if( domain%list(rpos)%tile_id(1) .NE. tile_id ) cycle ! global field only within tile
+               nwords = (domain%list(rpos)%x(1)%compute%size) * (domain%list(rpos)%y(1)%compute%size) * ke
+               call mpp_recv( cremote(1), glen=nwords, from_pe=domain%list(rpos)%pe )
+               m = 0
+               is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end
+               js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end
+
+               do k = 1,ke
+                  do j = js, je
+                     do i = is, ie
+                        m = m + 1
+                        global(i,j,k) = cremote(m)
+                     end do
+                  end do
+               end do
+            end do
+         endif
       end if
 
       call mpp_sync_self()

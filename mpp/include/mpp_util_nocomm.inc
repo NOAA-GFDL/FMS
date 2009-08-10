@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util_nocomm.inc,v 16.0 2008/07/30 22:47:20 fms Exp $
+! $Id: mpp_util_nocomm.inc,v 17.0 2009/07/21 03:21:02 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -15,7 +15,7 @@ subroutine mpp_error_basic( errortype, errormsg )
   character(len=*), intent(in), optional :: errormsg
   character(len=256)                     :: text
   logical                                :: opened
-  integer                                :: istat
+  integer                                :: istat, errunit, outunit
 
   if( .NOT.module_is_initialized )call ABORT()
 
@@ -32,15 +32,18 @@ subroutine mpp_error_basic( errortype, errormsg )
 
   if( npes.GT.1 )write( text,'(a,i5)' )trim(text)//' from PE', pe   !this is the mpp part
   if( PRESENT(errormsg) )text = trim(text)//': '//trim(errormsg)
+  
+  errunit = stderr()
+  outunit = stdout()
 
   select case( errortype )
   case(NOTE)
-     write( stdout(),'(a)' )trim(text)
+     write( outunit,'(a)' )trim(text)
   case default
-     write( stderr(),'(/a/)' )trim(text)
-     write( stdout(),'(/a/)' )trim(text)
+     write( errunit,'(/a/)' )trim(text)
+     write( outunit,'(/a/)' )trim(text)
      if( errortype.EQ.FATAL .OR. warnings_are_fatal )then
-        call FLUSH(stdout(),istat)
+        call FLUSH(outunit,istat)
 #ifdef sgi_mipspro
         call TRACE_BACK_STACK_AND_PRINT()
 #endif
@@ -73,8 +76,9 @@ end function get_peset
 
 !#######################################################################
  !synchronize PEs in list
-subroutine mpp_sync( pelist )
+subroutine mpp_sync( pelist, check )
   integer, intent(in), optional :: pelist(:)
+  integer, intent(in), optional :: check
 
   return
 end subroutine mpp_sync
@@ -83,8 +87,9 @@ end subroutine mpp_sync
   !this is to check if current PE's outstanding puts are complete
   !but we can't use shmem_fence because we are actually waiting for
   !a remote PE to complete its get
-subroutine mpp_sync_self( pelist )
+subroutine mpp_sync_self( pelist, check )
   integer, intent(in), optional :: pelist(:)
+  integer, intent(in), optional :: check
   return
 end subroutine mpp_sync_self
 

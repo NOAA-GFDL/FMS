@@ -7,7 +7,7 @@ module mpp_parameter_mod
   character(len=128), public :: version= &
        '$Id mpp_parameter.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: perth_2008_10 $'
+       '$Name: quebec $'
 
   !--- public paramters which is used by mpp_mod and its components. 
   !--- All othere modules should import these parameters from mpp_mod. 
@@ -33,7 +33,7 @@ module mpp_parameter_mod
   public :: MPP_WRONLY, MPP_RDONLY, MPP_APPEND, MPP_OVERWR, MPP_ASCII, MPP_IEEE32
   public :: MPP_NATIVE, MPP_NETCDF, MPP_SEQUENTIAL, MPP_DIRECT, MPP_SINGLE, MPP_MULTI
   public :: MPP_DELETE, MPP_COLLECT, NULLUNIT, NULLTIME
-  public :: MAX_FILE_SIZE
+  public :: MAX_FILE_SIZE, ROOT_GLOBAL, GLOBAL_ROOT_ONLY
 
   !--- The following paramters are used by mpp_mod and its components.
   integer, parameter :: MAXPES=2048            !used for dimensioning stuff that might be indexed by pe
@@ -74,7 +74,7 @@ module mpp_parameter_mod
   integer, parameter :: FOLD_SOUTH_EDGE=2**SOUTH, FOLD_NORTH_EDGE=2**NORTH
   integer, parameter :: WUPDATE=2**WEST, EUPDATE=2**EAST, SUPDATE=2**SOUTH, NUPDATE=2**NORTH
   integer, parameter :: XUPDATE=WUPDATE+EUPDATE, YUPDATE=SUPDATE+NUPDATE, SCALAR_PAIR=2**SCALAR_BIT
-  integer, parameter :: ZERO=0, NINETY=1, MINUS_NINETY=2, ONE_HUNDRED_EIGHTY=3
+  integer, parameter :: ZERO=0, NINETY=90, MINUS_NINETY=-90, ONE_HUNDRED_EIGHTY=180
 
 ! DOMAIN_ID_BASE acts as a counter increment for domains as they are defined. It's used in
 ! combination with the flag parameter defined above to create a unique identifier for
@@ -94,7 +94,10 @@ module mpp_parameter_mod
   integer, parameter :: MPP_SINGLE=400, MPP_MULTI=401      !threading, fileset
   integer, parameter :: MPP_DELETE=501, MPP_COLLECT=502    !action on close
   integer, parameter :: NULLUNIT=-1                        !returned by PEs not participating in 
-                                                           !IO after a collective call
+                                                           !IO after a collective call with threading
+                                                           !equal to MPP_SINGLE
+  integer, parameter :: ROOT_GLOBAL = 9
+  integer, parameter :: GLOBAL_ROOT_ONLY = 2**ROOT_GLOBAL 
   real(DOUBLE_KIND), parameter :: NULLTIME=-1.
 #ifdef LARGE_FILE
   integer(LONG_KIND), parameter :: MAX_FILE_SIZE = 4294967295

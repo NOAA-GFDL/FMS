@@ -29,7 +29,7 @@ program test
   call mpp_init()
   pe = mpp_pe()
   npes = mpp_npes()
-  write( stdout(),'(a,i4)' )'Starting MPP_PSET unit test, npes=', npes
+  write( stdout(),'(a,i6)' )'Starting MPP_PSET unit test, npes=', npes
   call mpp_pset_create( npes, pset )
   root = mpp_pset_root(pset)
   id_full = mpp_clock_id( 'Full array' )
@@ -62,7 +62,7 @@ program test
   call mpp_clock_end(id_full)
 !divide up among PSETs
   call mpp_pset_segment_array( pset, 1, n, ks, ke )
-  write( stderr(),'(a,4i4)' )'pe, n, ks, ke=', pe, n, ks, ke
+  write( stderr(),'(a,4i6)' )'pe, n, ks, ke=', pe, n, ks, ke
   call mpp_clock_begin(id_alloc)
   do k = ks,ke
      do j = 1,n
@@ -73,7 +73,7 @@ program test
   end do
   call mpp_pset_sync(pset)
   call mpp_clock_end(id_alloc)
-  write( stderr(),'(a,i4,2es23.15)' )'b, c should be equal: pe b c=', &
+  write( stderr(),'(a,i6,2es23.15)' )'b, c should be equal: pe b c=', &
        pe, sum(b), sum(c)
   call mpp_pset_print_chksum( pset, 'test_alloc', c(:,:,ks:ke) )
   call test_auto(n)
@@ -103,7 +103,7 @@ contains
     end do
     call mpp_pset_sync(pset)
     call mpp_clock_end(id_auto)
-    write( stderr(),'(a,i4,2es23.15)' )'b, d should be equal: pe b d=', &
+    write( stderr(),'(a,i6,2es23.15)' )'b, d should be equal: pe b d=', &
          pe, sum(b), sum(d)
     call mpp_pset_print_chksum( pset, 'test_auto ', d(:,js:je,:) )
   end subroutine test_auto

@@ -136,8 +136,8 @@ use field_manager_mod, only: fm_field_name_len, fm_string_len, fm_dump_list
 implicit none
 !
 !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: coupler_types.F90,v 15.0.10.1.2.2 2008/09/19 02:25:31 wfc Exp $'
-  character(len=128) :: tag = '$Name: perth_2008_10 $'
+  character(len=128) :: version = '$Id: coupler_types.F90,v 17.0 2009/07/21 03:18:32 fms Exp $'
+  character(len=128) :: tag = '$Name: quebec $'
 !-----------------------------------------------------------------------
 real, parameter :: bound_tol = 1e-7
 
@@ -412,7 +412,7 @@ character(len=256), parameter   :: note_header =                                
 !-----------------------------------------------------------------------
 !
 
-integer                 :: field_index
+integer                 :: field_index, outunit
 character(len=128)      :: error_msg
 
 !
@@ -729,9 +729,9 @@ module_is_initialized = .true.
 !
 !       Dump the coupler_mod types list
 !
-
-write (stdout(),*)
-write (stdout(),*) 'Dumping coupler_mod/types tree'
+outunit = stdout()
+write (outunit,*)
+write (outunit,*) 'Dumping coupler_mod/types tree'
 if (.not. fm_dump_list('/coupler_mod/types', recursive = .true.)) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Problem dumping /coupler_mod/types tree')
 endif  !}

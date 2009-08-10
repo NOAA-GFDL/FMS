@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_write.inc,v 16.0 2008/07/30 22:47:02 fms Exp $
+! $Id: mpp_io_write.inc,v 17.0 2009/07/21 03:20:41 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                            !
@@ -116,7 +116,7 @@
 ! write_attribute_netcdf, that are private to this module.                   !
 !                                                                            !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    subroutine mpp_write_meta_global( unit, name, rval, ival, cval, pack, is_root_pe )
+    subroutine mpp_write_meta_global( unit, name, rval, ival, cval, pack)
 !writes a global metadata attribute to unit <unit>
 !attribute <name> can be an real, integer or character
 !one and only one of rval, ival, and cval should be present
@@ -128,16 +128,14 @@
       integer,          intent(in), optional :: ival(:)
       character(len=*), intent(in), optional :: cval
       integer, intent(in), optional :: pack
-      logical, intent(in), optional :: is_root_pe     
-      logical                       :: on_root_pe
 
-      on_root_pe = pe.EQ.mpp_root_pe()
-      if(present(is_root_pe)) on_root_pe = is_root_pe
+!      call mpp_clock_begin(mpp_write_clock)
       if( .NOT.module_is_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
+      if( .NOT. mpp_file(unit)%write_on_this_pe) then
+!         call mpp_clock_end(mpp_write_clock)
+         return
+      endif
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. .NOT.on_root_pe )return
-      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. .NOT.on_root_pe )return
-      if( mpp_file(unit)%action.NE.MPP_WRONLY )return !no writing metadata on APPEND
       if( mpp_file(unit)%initialized ) &
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
            
@@ -148,6 +146,7 @@
       else
           call write_attribute( unit, 'GLOBAL '//trim(name), rval, ival, cval, pack )
       end if
+!      call mpp_clock_end(mpp_write_clock)
           
       return
     end subroutine mpp_write_meta_global
@@ -172,7 +171,7 @@
       return
     end subroutine mpp_write_meta_global_scalar_i
       
-    subroutine mpp_write_meta_var( unit, id, name, rval, ival, cval, pack, is_root_pe )
+    subroutine mpp_write_meta_var( unit, id, name, rval, ival, cval, pack)
 !writes a metadata attribute for variable <id> to unit <unit>
 !attribute <name> can be an real, integer or character
 !one and only one of rval, ival, and cval should be present
@@ -184,16 +183,12 @@
       integer,          intent(in), optional :: ival(:)
       character(len=*), intent(in), optional :: cval
       integer,          intent(in), optional :: pack
-      logical,          intent(in), optional :: is_root_pe
-      logical                                :: on_root_pe
-      
-      on_root_pe = pe.EQ.mpp_root_pe()
-      if(present(is_root_pe)) on_root_pe = is_root_pe
+
       if( .NOT.module_is_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
+      if( .NOT. mpp_file(unit)%write_on_this_pe) then
+         return
+      endif
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. .NOT. on_root_pe )return
-      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. .NOT. on_root_pe )return
-      if( mpp_file(unit)%action.NE.MPP_WRONLY )return !no writing metadata on APPEND
       if( mpp_file(unit)%initialized ) &
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
            
@@ -203,7 +198,7 @@
           write( text, '(a,i4,a)' )'VARIABLE ', id, ' '//name
           call write_attribute( unit, trim(text), rval, ival, cval, pack )
       end if
-          
+
       return
     end subroutine mpp_write_meta_var
       
@@ -227,7 +222,7 @@
       return
     end subroutine mpp_write_meta_scalar_i
       
-    subroutine mpp_write_meta_axis( unit, axis, name, units, longname, cartesian, sense, domain, data, is_root_pe)
+    subroutine mpp_write_meta_axis( unit, axis, name, units, longname, cartesian, sense, domain, data)
 !load the values in an axistype (still need to call mpp_write)
 !write metadata attributes for axis
 !it is declared intent(inout) so you can nullify pointers in the incoming object if needed
@@ -239,33 +234,54 @@
       integer, intent(in), optional :: sense
       type(domain1D), intent(in), optional :: domain
       real, intent(in), optional :: data(:)
-      logical, intent(in), optional :: is_root_pe
       integer :: is, ie, isg, ieg
       integer :: istat      
-      logical :: on_root_pe
+      logical :: domain_exist
+      type(domain2d), pointer :: io_domain => NULL()
 
+!      call mpp_clock_begin(mpp_write_clock)
       !--- the shift and cartesian information is needed in mpp_write_meta_field from all the pe.
       !--- we may revise this in the future.
       axis%cartesian = 'N'
       if( PRESENT(cartesian) )axis%cartesian = cartesian
-      axis%shift = 0
-      if( PRESENT(domain) ) then
-         call mpp_get_global_domain( domain, isg, ieg )
-         if( PRESENT(data) ) then
-            if( size(data(:)) == ieg-isg+2 ) axis%shift = 1
-         end if
-      end if
+           
+      domain_exist = .false.
 
-      on_root_pe = pe.EQ.mpp_root_pe()
-      if(present(is_root_pe)) on_root_pe = is_root_pe
+     if( PRESENT(domain) ) then
+         domain_exist = .true.
+         call mpp_get_global_domain( domain, isg, ieg )
+         if(mpp_file(unit)%io_domain_exist) then
+            io_domain => mpp_get_io_domain(mpp_file(unit)%domain)
+            if(axis%cartesian=='X') then
+               call mpp_get_global_domain( io_domain, xbegin=is, xend=ie)
+            else if(axis%cartesian=='Y') then                        
+               call mpp_get_global_domain( io_domain, ybegin=is, yend=ie)
+            endif
+         else
+            call mpp_get_compute_domain( domain, is, ie )
+         endif
+      else if( PRESENT(data) )then
+         isg=1; ieg=size(data(:)); is=isg; ie=ieg
+      endif
+
+      axis%shift = 0         
+      if( PRESENT(data) .AND. domain_exist ) then
+         if( size(data(:)) == ieg-isg+2 ) then
+            axis%shift = 1
+            ie = ie   + 1
+            ieg = ieg + 1
+         endif
+      endif
+
       if( .NOT.module_is_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
+      if( .NOT. mpp_file(unit)%write_on_this_pe) then
+!         call mpp_clock_end(mpp_write_clock)
+         return
+      endif
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. .NOT. on_root_pe )return
-      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. .NOT. on_root_pe )return
-      if( mpp_file(unit)%action.NE.MPP_WRONLY )return !no writing metadata on APPEND
       if( mpp_file(unit)%initialized ) &
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
-           
+
 !pre-existing pointers need to be nullified
       if( ASSOCIATED(axis%data) ) then
          DEALLOCATE(axis%data, stat=istat)
@@ -275,45 +291,24 @@
       axis%units    = units
       axis%longname = longname
       if( PRESENT(sense)     )axis%sense     = sense
-      if( PRESENT(domain)    )then
-          axis%domain = domain
-          call mpp_get_compute_domain( domain, is, ie )
-      else
-          axis%domain = NULL_DOMAIN1D
-          if( PRESENT(data) )then
-             isg=1; ieg=size(data(:)); is=isg; ie=ieg
-          endif
-      end if 
       if( PRESENT(data) )then
-          if( PRESENT(domain) )then
-             !--- size of data can be ieg-isg+1 or ieg-isg+2
-             if(size(data(:)) == ieg-isg+1 ) then
-                allocate( axis%data(isg:ieg) )
-             else if( size(data(:)) == ieg-isg+2 ) then
-                ie = ie + 1
-                ieg = ieg + 1
-                allocate( axis%data(isg:ieg) )
-             else
-                call mpp_error( FATAL, 'MPP_WRITE_META_AXIS: size(data) should be equal to ' &
-                     //'domain%global%size or domain%global%size+1.' )
-             endif
-          else     
-             allocate( axis%data(size(data(:))) )
-          end if
-          axis%data = data
-      end if
-          
+         if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. domain_exist ) then
+            axis%len = ie - is + 1
+            allocate(axis%data(axis%len))
+            axis%data = data(is-isg+1:ie-isg+1)
+         else
+            axis%len = size(data(:))
+            allocate(axis%data(axis%len))
+            axis%data = data
+         endif
+      endif
 !write metadata
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
 #ifdef use_netCDF
 !write axis def
 !space axes are always floats, time axis is always double
           if( ASSOCIATED(axis%data) )then !space axis
-              if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
-                  error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, ie-is+1,         axis%did )
-              else
-                  error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, size(axis%data(:)), axis%did )
-              end if
+              error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, axis%len, axis%did )
               call netcdf_err( error, mpp_file(unit), axis )
               error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_FLOAT, 1, axis%did, axis%id )
               call netcdf_err( error, mpp_file(unit), axis )
@@ -336,11 +331,11 @@
           call write_attribute( unit, trim(text), cval=axis%name )
           write( text, '(a,i4,a)' )'AXIS ', axis%id, ' size'
           if( ASSOCIATED(axis%data) )then !space axis
-              if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
-                  call write_attribute( unit, trim(text), ival=(/ie-is+1/) )
-              else
+!              if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
+!                  call write_attribute( unit, trim(text), ival=(/ie-is+1/) )
+!              else
                   call write_attribute( unit, trim(text), ival=(/size(axis%data(:))/) )
-              end if
+!              end if
           else                            !time axis
               if( mpp_file(unit)%id.NE.-1 ) &
                    call mpp_error( FATAL, 'MPP_WRITE_META_AXIS: There is already a time axis for this file.' )
@@ -349,28 +344,29 @@
           end if
       end if  
 !write axis attributes
-      call mpp_write_meta( unit, axis%id, 'long_name', cval=axis%longname, is_root_pe=is_root_pe )
-      call mpp_write_meta( unit, axis%id, 'units',     cval=axis%units , is_root_pe=is_root_pe   )
-      if( PRESENT(cartesian) )call mpp_write_meta( unit, axis%id, 'cartesian_axis', cval=axis%cartesian, is_root_pe=is_root_pe )
+      call mpp_write_meta( unit, axis%id, 'long_name', cval=axis%longname)
+      call mpp_write_meta( unit, axis%id, 'units',     cval=axis%units)
+      if( PRESENT(cartesian) )call mpp_write_meta( unit, axis%id, 'cartesian_axis', cval=axis%cartesian)
       if( PRESENT(sense) )then
           if( sense.EQ.-1 )then
-              call mpp_write_meta( unit, axis%id, 'positive', cval='down', is_root_pe=is_root_pe )
+              call mpp_write_meta( unit, axis%id, 'positive', cval='down')
           else if( sense.EQ.1 )then
-              call mpp_write_meta( unit, axis%id, 'positive', cval='up', is_root_pe=is_root_pe )
+              call mpp_write_meta( unit, axis%id, 'positive', cval='up')
           end if
 !silently ignore values of sense other than +/-1.
       end if
-      if( mpp_file(unit)%threading.EQ.MPP_MULTI .AND. mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
-          call mpp_write_meta( unit, axis%id, 'domain_decomposition', ival=(/isg,ieg,is,ie/), is_root_pe=is_root_pe )
+      if( mpp_file(unit)%threading.EQ.MPP_MULTI .AND. mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. domain_exist )then
+          call mpp_write_meta( unit, axis%id, 'domain_decomposition', ival=(/isg,ieg,is,ie/))
       end if
       if( verbose )print '(a,2i3,x,a,2i3)', 'MPP_WRITE_META: Wrote axis metadata, pe, unit, axis%name, axis%id, axis%did=', &
            pe, unit, trim(axis%name), axis%id, axis%did
-           
+
+!      call mpp_clock_end(mpp_write_clock)           
       return
     end subroutine mpp_write_meta_axis
       
     subroutine mpp_write_meta_field( unit, field, axes, name, units, longname,&
-         min, max, missing, fill, scale, add, pack, time_method,standard_name, is_root_pe )
+         min, max, missing, fill, scale, add, pack, time_method,standard_name)
 !define field: must have already called mpp_write_meta(axis) for each axis
       integer, intent(in) :: unit
       type(fieldtype), intent(inout) :: field
@@ -380,12 +376,12 @@
       integer, intent(in), optional :: pack
       character(len=*), intent(in), optional :: time_method
       character(len=*), intent(in), optional :: standard_name
-      logical,          intent(in), optional :: is_root_pe 
 !this array is required because of f77 binding on netCDF interface
       integer, allocatable :: axis_id(:)
       real :: a, b
       integer :: i, istat, ishift, jshift
-      logical :: on_root_pe
+
+!      call mpp_clock_begin(mpp_write_clock)
 
       !--- figure out the location of data, this is needed in mpp_write.
       !--- for NON-symmetry domain, the position is not an issue.
@@ -409,13 +405,14 @@
          field%position = NORTH
       endif
       
-      on_root_pe = pe .EQ. mpp_root_pe()
-      if(present(is_root_pe)) on_root_pe = is_root_pe
       if( .NOT.module_is_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. .NOT.on_root_pe )return
-      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. .NOT.on_root_pe )return
-      if( mpp_file(unit)%action.NE.MPP_WRONLY )return !no writing metadata on APPEND
+
+      if( .NOT.mpp_file(unit)%write_on_this_pe) then
+         if( .NOT. ASSOCIATED(field%axes) )allocate(field%axes(1)) !temporary fix
+!         call mpp_clock_end(mpp_write_clock)
+         return
+      endif
+      if( .NOT.mpp_file(unit)%opened ) call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
       if( mpp_file(unit)%initialized ) &
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
            
@@ -490,8 +487,8 @@
           call write_attribute( unit, trim(text), ival=field%axes(:)%did )
       end if
 !write field attributes: these names follow netCDF conventions
-      call mpp_write_meta( unit, field%id, 'long_name', cval=field%longname, is_root_pe=is_root_pe )
-      call mpp_write_meta( unit, field%id, 'units',     cval=field%units, is_root_pe=is_root_pe   )
+      call mpp_write_meta( unit, field%id, 'long_name', cval=field%longname)
+      call mpp_write_meta( unit, field%id, 'units',     cval=field%units)
 !all real attributes must be written as packed
       if( PRESENT(min) .AND. PRESENT(max) )then
           if( field%pack.EQ.1 .OR. field%pack.EQ.2 )then
@@ -546,7 +543,8 @@
 
       if( verbose )print '(a,2i3,x,a,i3)', 'MPP_WRITE_META: Wrote field metadata: pe, unit, field%name, field%id=', &
            pe, unit, trim(field%name), field%id
-           
+          
+!      call mpp_clock_end(mpp_write_clock) 
       return
     end subroutine mpp_write_meta_field
       
@@ -715,6 +713,8 @@
 #define MPP_WRITE_2DDECOMP_2D_ mpp_write_2ddecomp_r2d
 #undef MPP_WRITE_2DDECOMP_3D_
 #define MPP_WRITE_2DDECOMP_3D_ mpp_write_2ddecomp_r3d
+#undef MPP_WRITE_2DDECOMP_4D_
+#define MPP_WRITE_2DDECOMP_4D_ mpp_write_2ddecomp_r4d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
 #include <mpp_write_2Ddecomp.h>
@@ -726,7 +726,7 @@
 #undef MPP_RANK_
 #define MPP_RANK_ !
 #undef MPP_WRITE_RECORD_
-#define MPP_WRITE_RECORD_ call write_record( unit, field, 1, (/data/), tstamp, is_root_pe=is_root_pe )
+#define MPP_WRITE_RECORD_ call write_record( unit, field, 1, (/data/), tstamp)
 #include <mpp_write.h>
 
 #undef MPP_WRITE_
@@ -734,7 +734,7 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
 #undef MPP_WRITE_RECORD_
-#define MPP_WRITE_RECORD_ call write_record( unit, field, size(data(:)), data, tstamp, is_root_pe=is_root_pe )
+#define MPP_WRITE_RECORD_ call write_record( unit, field, size(data(:)), data, tstamp)
 #undef MPP_RANK_
 #define MPP_RANK_ (:)
 #include <mpp_write.h>
@@ -744,7 +744,7 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
 #undef MPP_WRITE_RECORD_
-#define MPP_WRITE_RECORD_ call write_record( unit, field, size(data(:,:)), data, tstamp, is_root_pe=is_root_pe )
+#define MPP_WRITE_RECORD_ call write_record( unit, field, size(data(:,:)), data, tstamp )
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:)
 #include <mpp_write.h>
@@ -754,46 +754,47 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
 #undef MPP_WRITE_RECORD_
-#define MPP_WRITE_RECORD_ call write_record( unit, field, size(data(:,:,:)), data, tstamp, is_root_pe=is_root_pe )
+#define MPP_WRITE_RECORD_ call write_record( unit, field, size(data(:,:,:)), data, tstamp)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:)
 #include <mpp_write.h>
 
-    subroutine mpp_write_axis( unit, axis, is_root_pe )
+#undef MPP_WRITE_
+#define MPP_WRITE_ mpp_write_r4D
+#undef MPP_TYPE_
+#define MPP_TYPE_ real
+#undef MPP_WRITE_RECORD_
+#define MPP_WRITE_RECORD_ call write_record( unit, field, size(data(:,:,:,:)), data, tstamp)
+#undef MPP_RANK_
+#define MPP_RANK_ (:,:,:,:)
+#include <mpp_write.h>
+
+    subroutine mpp_write_axis( unit, axis )
       integer, intent(in) :: unit
       type(axistype), intent(in) :: axis
-      logical, intent(in), optional :: is_root_pe
       type(fieldtype) :: field
-      integer :: is, ie, isg, ieg
-      logical :: on_root_pe
 
-      on_root_pe =  pe.EQ.mpp_root_pe()     
-      if(present(is_root_pe)) on_root_pe = is_root_pe
-
+      call mpp_clock_begin(mpp_write_clock)
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
+      if( .NOT. mpp_file(unit)%write_on_this_pe ) then
+         call mpp_clock_end(mpp_write_clock)
+         return
+      endif
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. .NOT. on_root_pe )return
-      if( mpp_file(unit)%fileset  .EQ.MPP_SINGLE .AND. .NOT. on_root_pe )return
 !we convert axis to type(fieldtype) in order to call write_record
       field = default_field
       allocate( field%axes(1) )
       field%axes(1) = axis
       allocate( field%size(1) )
+      field%size(1) = axis%len
       field%id = axis%id
-      if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
-          call mpp_get_compute_domain( axis%domain, is, ie )
-          call mpp_get_global_domain( axis%domain, isg, ieg )
-          ie = ie + axis%shift
-          field%size(1) = ie-is+1
-          call write_record( unit, field, field%size(1), axis%data(is:) )
-      else
-          field%size(1) = size(axis%data(:))
-          call write_record( unit, field, field%size(1), axis%data, is_root_pe=is_root_pe )
-      end if
+
+      call write_record( unit, field, axis%len, axis%data )
+      call mpp_clock_end(mpp_write_clock)
       return
     end subroutine mpp_write_axis
       
-    subroutine write_record( unit, field, nwords, data, time_in, domain, tile_count, is_root_pe )
+    subroutine write_record( unit, field, nwords, data, time_in, domain, tile_count)
 !routine that is finally called by all mpp_write routines to perform the write
 !a non-netCDF record contains:
 !      field ID
@@ -816,15 +817,13 @@
       real(DOUBLE_KIND), intent(in), optional :: time_in
       type(domain2D),    intent(in), optional :: domain
       integer,           intent(in), optional :: tile_count
-      logical,           intent(in), optional :: is_root_pe
       integer, dimension(size(field%axes(:))) :: start, axsiz
       real(DOUBLE_KIND) :: time
       integer :: time_level
       logical :: newtime
       integer :: subdomain(4)
       integer :: packed_data(nwords)
-      integer :: i, is, ie, js, je, isg, ieg, jsg, jeg, isizc, jsizc, isizg, jsizg
-      logical :: on_root_pe      
+      integer :: i, is, ie, js, je
 
 #ifdef use_CRI_pointers
       real(FLOAT_KIND) :: data_r4(nwords)
@@ -833,13 +832,9 @@
       
       if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
 #endif
-      on_root_pe = pe.EQ.mpp_root_pe()
-      if(present(is_root_pe)) on_root_pe = is_root_pe
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
+      if( .NOT.mpp_file(unit)%write_on_this_pe) return
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. .NOT. on_root_pe )return
-      if( mpp_file(unit)%fileset  .EQ.MPP_SINGLE .AND. .NOT. on_root_pe )return
-      
       if( .NOT.mpp_file(unit)%initialized )then
 !this is the first call to mpp_write
 !we now declare the file to be initialized
@@ -910,28 +905,8 @@
              if( i.EQ.field%time_axis_index )start(i) = mpp_file(unit)%time_level
              start(i) = max(start(i),1)
           end do
-          if( PRESENT(domain) )then
-              call mpp_get_compute_domain( domain, is,  ie,  js,  je,  xsize=isizc, ysize=jsizc, tile_count=tile_count )
-              call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg, xsize=isizg, ysize=jsizg, tile_count=tile_count )
-              axsiz(1) = isizc
-              axsiz(2) = jsizc
-              if( npes.GT.1 .AND. mpp_file(unit)%fileset.EQ.MPP_SINGLE )then
-                  start(1) = is - isg + 1
-                  start(2) = js - jsg + 1
-              else   ! the following don't make any sense.
-                  if( isizc.NE.ie-is+1 )then
-                      start(1) = is - isg + 1
-                      axsiz(1) = ie - is + 1
-                  end if
-                  if( jsizc.NE.je-js+1 )then
-                      start(2) = js - jsg + 1
-                      axsiz(2) = je - js + 1
-                  end if
-              end if  
-              axsiz(1) = axsiz(1) + field%axes(1)%shift
-              axsiz(2) = axsiz(2) + field%axes(2)%shift
-          end if  
-          if( debug )print '(a,2i3,12i4)', 'WRITE_RECORD: PE, unit, start, axsiz=', pe, unit, start, axsiz
+
+          if( debug )print '(a,2i6,12i6)', 'WRITE_RECORD: PE, unit, start, axsiz=', pe, unit, start, axsiz
 #ifdef use_netCDF
 !write time information if new time
           if( newtime )then
@@ -1023,10 +998,8 @@
       integer :: len
       
       if( .NOT.module_is_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
+      if( .NOT. mpp_file(unit)%write_on_this_pe )return
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
-      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.mpp_root_pe() )return
-      if( mpp_file(unit)%action.NE.MPP_WRONLY )return !no writing metadata on APPEND
       if( mpp_file(unit)%initialized ) &
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
 #ifdef use_netCDF
@@ -1061,12 +1034,14 @@
       type(domain1D), intent(in), optional :: domain
       character(len=512) :: text
       integer :: i, len, is, ie, isg, ieg
-      
+
+!      call mpp_clock_begin(mpp_write_clock)      
       if( .NOT.module_is_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
+      if( .NOT. mpp_file(unit)%write_on_this_pe ) then 
+!         call mpp_clock_end(mpp_write_clock)
+         return
+      endif
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
-      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.mpp_root_pe() )return
-      if( mpp_file(unit)%action.NE.MPP_WRONLY )return !no writing metadata on APPEND
       if( mpp_file(unit)%initialized ) &
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
            
@@ -1145,6 +1120,7 @@
 #else      
       call mpp_error( FATAL, 'MPP_READ currently requires use_netCDF option' )
 #endif
+!      call mpp_clock_end(mpp_write_clock)
       return
     end subroutine mpp_copy_meta_axis
       
@@ -1159,11 +1135,13 @@
       real :: a, b
       integer :: i
       
+!      call mpp_clock_begin(mpp_write_clock)
       if( .NOT.module_is_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META: must first call mpp_io_init.' )
+      if( .NOT. mpp_file(unit)%write_on_this_pe ) then
+!         call mpp_clock_end(mpp_write_clock)
+         return
+      endif
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
-      if( mpp_file(unit)%fileset.EQ.MPP_SINGLE   .AND. pe.NE.mpp_root_pe() )return
-      if( mpp_file(unit)%action.NE.MPP_WRONLY )return !no writing metadata on APPEND
       if( mpp_file(unit)%initialized ) &
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
            
@@ -1273,7 +1251,8 @@
       end if
       if( verbose )print '(a,2i3,x,a,i3)', 'MPP_WRITE_META: Wrote field metadata: pe, unit, field%name, field%id=', &
            pe, unit, trim(field%name), field%id
-           
+
+!      call mpp_clock_end(mpp_write_clock)           
       return
     end subroutine mpp_copy_meta_field
 

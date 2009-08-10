@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_read.inc,v 16.0 2008/07/30 22:46:58 fms Exp $
+! $Id: mpp_io_read.inc,v 17.0 2009/07/21 03:20:37 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -58,6 +58,7 @@
       real(DOUBLE_KIND) :: r8vals(nwords)
       
       integer :: i, error, is, ie, js, je, isg, ieg, jsg, jeg
+      type(domain2d), pointer :: io_domain=>NULL()
       
 #ifdef use_CRI_pointers
       pointer( ptr1, i2vals )
@@ -114,22 +115,8 @@
              if( field%axes(i)%did.EQ.field%time_axis_index )start(i) = tlevel
           end do
           if( PRESENT(domain) )then
-              call mpp_get_compute_domain( domain, is,  ie,  js,  je, tile_count=tile_count  )
-              call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg, tile_count=tile_count )
-              ! when domain is symmetry, one extra point is needed for E, C, N-cell
-              if( mpp_domain_is_symmetry(domain) ) then
-                 if(present(position)) then
-                    select case (position)
-                    case (EAST)
-                       ie = ie + 1
-                    case (NORTH)
-                       je = je + 1
-                    case (CORNER)
-                       ie = ie + 1
-                       je = je + 1
-                    end select
-                 end if
-              end if
+              call mpp_get_compute_domain( domain, is,  ie,  js,  je, tile_count=tile_count, position=position  )
+              call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg, tile_count=tile_count, position=position )
               axsiz(1) = ie-is+1
               axsiz(2) = je-js+1
               if( mpp_file(unit)%fileset.EQ.MPP_SINGLE )then
@@ -146,10 +133,17 @@
                        axsiz(2) = je - js + 1 
                     end if
                  end if
+              else if( mpp_file(unit)%io_domain_exist ) then
+                 io_domain=>mpp_get_io_domain(domain)
+                 call mpp_get_compute_domain( io_domain, is,  ie,  js,  je, tile_count=tile_count, position=position  )
+                 call mpp_get_global_domain ( io_domain, isg, ieg, jsg, jeg, tile_count=tile_count, position=position )
+                 start(1) = is - isg + 1
+                 start(2) = js - jsg + 1
+                 io_domain => NULL()
               end if
           end if  
               
-          if( verbose )print '(a,2i3,i6,12i4)', 'READ_RECORD: PE, unit, nwords, start, axsiz=', pe, unit, nwords, start, axsiz
+          if( verbose )print '(a,2i6,i6,12i4)', 'READ_RECORD: PE, unit, nwords, start, axsiz=', pe, unit, nwords, start, axsiz
           
           select case (field%type)
              case(NF_BYTE)
@@ -317,7 +311,7 @@
             call mpp_error( FATAL, 'MPP_READ: ndim of text field should be at most 2')
          end select
 
-         if( verbose )print '(a,2i3,i6,12i4)', 'mpp_read_text: PE, unit, nwords, start, axsiz=', pe, unit, len(data), start, axsiz
+         if( verbose )print '(a,2i6,i6,12i4)', 'mpp_read_text: PE, unit, nwords, start, axsiz=', pe, unit, len(data), start, axsiz
           
           select case (field%type)
              case(NF_CHAR)

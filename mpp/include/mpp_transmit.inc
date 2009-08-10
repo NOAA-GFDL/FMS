@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_transmit.inc,v 13.0 2006/03/28 21:41:46 fms Exp $
+! $Id: mpp_transmit.inc,v 17.0 2009/07/21 03:20:49 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -117,12 +117,14 @@
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    subroutine MPP_RECV_( get_data, get_len, from_pe )
+    subroutine MPP_RECV_( get_data, get_len, from_pe, block )
 !a mpp_transmit with null arguments on the put side
       integer, intent(in) :: get_len, from_pe
       MPP_TYPE_, intent(out) :: get_data(*)
+      logical, intent(in), optional :: block
+
       MPP_TYPE_ :: dummy(1)
-      call mpp_transmit( dummy, 1, NULL_PE, get_data, get_len, from_pe )
+      call mpp_transmit( dummy, 1, NULL_PE, get_data, get_len, from_pe, block )
     end subroutine MPP_RECV_
 
     subroutine MPP_SEND_( put_data, put_len, to_pe )
@@ -133,10 +135,12 @@
       call mpp_transmit( put_data, put_len, to_pe, dummy, 1, NULL_PE )
     end subroutine MPP_SEND_
 
-    subroutine MPP_RECV_SCALAR_( get_data, from_pe, glen )
+    subroutine MPP_RECV_SCALAR_( get_data, from_pe, glen, block )
 !a mpp_transmit with null arguments on the put side
       integer, intent(in) :: from_pe
       MPP_TYPE_, intent(out) :: get_data
+      logical, intent(in), optional :: block
+
       integer, optional, intent(in) :: glen
       integer                       :: get_len
       MPP_TYPE_ :: get_data1D(1)
@@ -145,9 +149,9 @@
       pointer( ptr, get_data1D )
       ptr = LOC(get_data)
       get_len=1; if(PRESENT(glen))get_len=glen
-      call mpp_transmit( dummy, 1, NULL_PE, get_data1D, get_len, from_pe )
+      call mpp_transmit( dummy, 1, NULL_PE, get_data1D, get_len, from_pe , block)
 #else
-      call mpp_transmit( dummy, 1, NULL_PE, get_data1D, 1, from_pe )
+      call mpp_transmit( dummy, 1, NULL_PE, get_data1D, 1, from_pe, block )
       get_data = get_data1D(1)
 #endif
     end subroutine MPP_RECV_SCALAR_

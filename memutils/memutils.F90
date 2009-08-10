@@ -318,7 +318,7 @@ real    :: multiplier
                       access=MPP_SEQUENTIAL, threading=MPP_SINGLE )
   
   do; read (mem_unit,'(a)', end=10) string
-    if ( INDEX ( string, 'VmRSS:' ) == 1 ) then
+    if ( INDEX ( string, 'VmHWM:' ) == 1 ) then
       read (string(7:LEN_TRIM(string)-2),*) memuse
       exit
     endif

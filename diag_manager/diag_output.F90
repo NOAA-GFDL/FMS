@@ -1,685 +1,657 @@
+MODULE diag_output_mod
+  ! <CONTACT EMAIL="seth.underwood@noaa.gov">
+  !   Seth Underwood
+  ! </CONTACT>
 
-module diag_output_mod
-! <CONTACT EMAIL="Giang.Nong@noaa.gov">
-!   Giang Nong
-! </CONTACT>
+  ! <OVERVIEW> <TT>diag_output_mod</TT> is an integral part of 
+  !   diag_manager_mod. Its function is to write axis-meta-data, 
+  !   field-meta-data and field data
+  ! </OVERVIEW>
 
-! <OVERVIEW>
-!   <TT>diag_output_mod</TT> is an integral part of diag_manager_mod. Its function is
-! to write axis-meta-data, field-meta-data and, finally, field data
-! </OVERVIEW>
+  USE mpp_io_mod, ONLY: axistype, fieldtype, mpp_io_init, mpp_open,  mpp_write_meta,&
+       & mpp_write, mpp_flush, mpp_close, mpp_get_id, MPP_WRONLY, MPP_OVERWR,&
+       & MPP_NETCDF, MPP_MULTI, MPP_SINGLE
+  USE mpp_domains_mod, ONLY: domain1d, domain2d, mpp_define_domains, mpp_get_pelist,&
+       &  mpp_get_global_domain, mpp_get_compute_domains, null_domain1d, null_domain2d,&
+       & OPERATOR(/=), mpp_get_layout, OPERATOR(==)
+  USE mpp_mod, ONLY: mpp_npes, mpp_pe
+  USE diag_axis_mod, ONLY: diag_axis_init, get_diag_axis, get_axis_length,&
+       & get_axis_global_length, get_domain1d, get_domain2d, get_axis_aux, get_tile_count
+  USE diag_data_mod, ONLY: diag_fieldtype, diag_global_att_type 
+  USE time_manager_mod, ONLY: get_calendar_type, valid_calendar_types
+  USE fms_mod, ONLY: error_mesg, mpp_pe, write_version_number, FATAL
+  USE platform_mod, ONLY: r8_kind
 
-!-----------------------------------------------------------------------
+  IMPLICIT NONE
 
-use       mpp_io_mod, only: axistype, fieldtype, mpp_io_init,     &
-                            mpp_open,  mpp_write_meta, mpp_write, &
-                            mpp_flush, mpp_close, mpp_get_id,     &
-                            MPP_WRONLY, MPP_OVERWR,   &
-                            MPP_NETCDF, MPP_MULTI, MPP_SINGLE
+  PRIVATE
+  PUBLIC :: diag_output_init, write_axis_meta_data, write_field_meta_data, done_meta_data,&
+       & diag_field_out, diag_flush, diag_fieldtype, get_diag_global_att, set_diag_global_att
 
-use  mpp_domains_mod, only: domain1d, domain2d, mpp_define_domains, mpp_get_pelist,&
-                            mpp_get_global_domain, mpp_get_compute_domains, &
-                            null_domain1d, null_domain2d, operator(/=), mpp_get_layout
-use mpp_mod, only         : mpp_npes, mpp_pe
-use    diag_axis_mod, only: diag_axis_init, get_diag_axis,           &
-                            get_axis_length, get_axis_global_length, &
-                            get_domain1d, get_domain2d, get_axis_aux,&
-                            get_tile_count
+  TYPE(diag_global_att_type), SAVE :: diag_global_att
 
-use time_manager_mod, only: get_calendar_type, valid_calendar_types
+  INTEGER, PARAMETER      :: NETCDF = 1
+  INTEGER, PARAMETER      :: mxch  = 128
+  INTEGER, PARAMETER      :: mxchl = 256
+  INTEGER                 :: current_file_unit = -1
+  INTEGER, DIMENSION(2,2) :: max_range = RESHAPE((/ -32767, 32767, -127,   127 /),(/2,2/))
+!  DATA max_range / -32767, 32767, -127,   127 /
+  INTEGER, DIMENSION(2)   :: missval = (/ -32768, -128 /)
+  
+  INTEGER, PARAMETER      :: max_axis_num = 20
+  INTEGER                 :: num_axis_in_file = 0
+  INTEGER, DIMENSION(max_axis_num) :: axis_in_file   
+  LOGICAL, DIMENSION(max_axis_num) :: time_axis_flag, edge_axis_flag
+  TYPE(axistype), DIMENSION(max_axis_num), SAVE :: Axis_types
 
-use          fms_mod, only: error_mesg, mpp_pe, write_version_number, FATAL
+  LOGICAL :: module_is_initialized = .FALSE.
 
-use platform_mod, only    : r8_kind
+  CHARACTER(len=128), PRIVATE :: version= &
+       '$Id: diag_output.F90,v 17.0 2009/07/21 03:18:49 fms Exp $'
+  CHARACTER(len=128), PRIVATE :: tagname= &
+       '$Name: quebec $'
 
-use diag_data_mod, only   : diag_fieldtype, diag_global_att_type 
+CONTAINS
 
-implicit none
-private
-type(diag_global_att_type), SAVE :: diag_global_att
+  ! <SUBROUTINE NAME="diag_output_init">
+  !   <OVERVIEW>
+  !     Registers the time axis and opens the output file.
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE diag_output_init (file_name, format, file_title, file_unit,
+  !      all_scalar_or_1d, domain)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     Registers the time axis, and initialized, and open the file for 
+  !     output.
+  !   </DESCRIPTION>
+  !   <IN NAME="file_name" TYPE="CHARACTER(len=*)">Output file name</IN>
+  !   <IN NAME="format" TYPE="INTEGER">File format (Currently only 'NETCDF' is valid)</IN>
+  !   <IN NAME="file_title" TYPE="CHARACTER(len=*)">Descriptive title for the file</IN>
+  !   <OUT NAME="file_unit" TYPE="INTEGER">
+  !     File unit number assigned to the output file.  Needed for subsuquent calls to
+  !     <TT>diag_output_mod</TT>
+  !   </OUT>
+  !   <IN NAME="all_scalar_or_1d" TYPE="LOGICAL" />
+  !   <IN NAME="domain" TYPE="TYPE(domain2d)" />
+  SUBROUTINE diag_output_init(file_name, FORMAT, file_title, file_unit,&
+       & all_scalar_or_1d, domain)
+    CHARACTER(len=*), INTENT(in)  :: file_name, file_title
+    INTEGER         , INTENT(in)  :: FORMAT
+    INTEGER         , INTENT(out) :: file_unit
+    LOGICAL         , INTENT(in)  :: all_scalar_or_1d
+    TYPE(domain2d)  , INTENT(in)  :: domain
 
-public :: diag_output_init, write_axis_meta_data, write_field_meta_data, &
-          done_meta_data, diag_field_out, diag_flush, diag_fieldtype, &
-          get_diag_global_att, set_diag_global_att
+    ! real(KIND=r8_kind), dimension(1) :: tdata
+    INTEGER :: form, threading, fileset
+    TYPE(diag_global_att_type) :: gAtt
 
-!-----------------------------------------------------------------------
-!------------------------- interfaces ----------------------------------
-!
-!   diag_output_init:   initializes output file and time axis
-!
-!   write_axis_meta_data:  writes meta data for axes
-!                           called for each field in a file
-!
-!   write_field_meta_data:  writes meta data for fields and returns a
-!                             fieldtype, called for each field in a file
-!
-!   done_meta_data:   writes axis data, called once per file after all
-!                       "write_meta_data" calls and before the first
-!                       "diag_field_out" call
-!
-!   diag_field_out:   writes field data to an output file
-!
-!   diag_flush:       called periodically to flush buffer and insure
-!                       that data is not lost if execution fails
-!
-!   diag_output_end:  called once to write all data at the end of
-!                       a program
-!
-!------------------------ data type ------------------------------------
-!
-!   fieldtype:   made public from mpp_io_mod,
-!                  needed by several interfaces in diag_output_mod
-!
-!------------------------ data -----------------------------------------
-!
-!   NETCDF:    valid format types, needed in "diag_output_init"
-!
-!-----------------------------------------------------------------------
-
-integer, parameter      :: NETCDF = 1
-integer, parameter      :: mxch  = 128
-integer, parameter      :: mxchl = 256
-integer                 :: current_file_unit = -1
-integer, dimension(2,2) :: max_range
-data max_range / -32767, 32767, &
-                   -127,   127 /
-
-integer, dimension(2)   :: missval = (/ -32768, -128 /)
-
-integer, parameter      :: max_axis_num = 20
-integer                 :: num_axis_in_file = 0
-integer                 :: axis_in_file   (max_axis_num)
-logical                 :: time_axis_flag (max_axis_num)
-logical                 :: edge_axis_flag (max_axis_num)
-type(axistype),save     :: Axis_types     (max_axis_num)
-!-----------------------------------------------------------------------
-
-logical                 :: module_is_initialized = .FALSE.
-
-character(len=128), private :: version= &
-  '$Id: diag_output.F90,v 15.0.8.1.2.1 2008/09/19 19:42:11 z1l Exp $'
-character(len=128), private :: tagname= &
-  '$Name: perth_2008_10 $'
-
-contains
-
-!#######################################################################
-
-subroutine diag_output_init ( file_name, format, file_title,  &
-                            time_name, time_units,          &
-                            file_unit, nfiles_in_set, all_scalar_or_1d)
-
- character(len=*), intent(in)  :: file_name, file_title,  &
-                                  time_name, time_units
- integer         , intent(in)  :: format
- integer         , intent(out) :: file_unit
- integer         , intent(in)  :: nfiles_in_set
- logical         , intent(in)  :: all_scalar_or_1d
-!-----------------------------------------------------------------------
-!
-!        Registers the time axis and opens the output file
-!
-! INPUT: file_name  = output file name (character, max len=128)
-!        format     = file format (integer, only type NETCDF allowed)
-!        file_title = descriptive title for the file (char, max len=128)
-!        time_name  = name of the time axis (character, max len=128)
-!                       note: this name will also be used for the
-!                             long name
-!        time_units = units for the time axis (character, max len=128)
-!                       note: this string may contain date information,
-!                             e.g., days since 1979-01-01 00:00:00.0
-!
-! OUTPUT: file_unit = file unit assign to the output file, needed
-!                     for subsequent calls to diag_output_mod (integer)
-!         time_id   = axis id assigned to the time axis (integer)
-!
-!-----------------------------------------------------------------------
-
-! real(KIND=r8_kind), dimension(1) :: tdata
- integer :: form, threading, fileset
-
-!-----------------------------------------------------------------------
-  type(diag_global_att_type) :: gAtt
-!---- initialize mpp_io ----
-
- if ( .not.module_is_initialized ) then
-    call mpp_io_init ()
-    module_is_initialized = .TRUE.
- endif
- call write_version_number( version, tagname )
+    !---- initialize mpp_io ----
+    IF ( .NOT.module_is_initialized ) THEN
+       CALL mpp_io_init ()
+       module_is_initialized = .TRUE.
+    END IF
+    CALL write_version_number( version, tagname )
    
-!---- set up output file ----
+    !---- set up output file ----
+    SELECT CASE (FORMAT)
+    CASE (NETCDF)
+       form      = MPP_NETCDF
+       threading = MPP_MULTI
+       fileset   = MPP_MULTI
+    CASE default
+       ! <ERROR STATUS="FATAL">invalid format</ERROR>
+       CALL error_mesg('diag_output_init', 'invalid format', FATAL)
+    END SELECT
 
- select case (format)
- case (NETCDF)
-    form      = MPP_NETCDF
-    threading = MPP_MULTI
-    fileset   = MPP_MULTI
- case default
-    call error_mesg ('diag_output_init', 'invalid format', FATAL)
- end select
+    IF(all_scalar_or_1d) THEN
+       threading = MPP_SINGLE
+       fileset   = MPP_SINGLE
+    END IF
 
- if(all_scalar_or_1d) then
-    threading = MPP_SINGLE
-    fileset   = MPP_SINGLE
- endif
+    !---- open output file (return file_unit id) -----
+    IF ( domain == NULL_DOMAIN2D ) THEN
+       CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
+            & threading=threading, fileset=fileset)
+    ELSE
+       CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
+            & threading=threading, fileset=fileset, domain=domain) 
+    END IF
 
-!---- open output file (return file_unit id) -----
-      call mpp_open ( file_unit, file_name, action=MPP_OVERWR,        &
-           form=form, threading=threading, fileset=fileset, nfiles_in_set = nfiles_in_set )
+    !---- write global attributes ----
+    IF ( file_title(1:1) /= ' ' ) THEN
+       CALL mpp_write_meta(file_unit, 'title', cval=TRIM(file_title))
+    END IF
 
-!---- write global attributes ----
+    !---- write grid type (mosaic or regular)
+    CALL get_diag_global_att(gAtt)
+    CALL mpp_write_meta(file_unit, 'grid_type', cval=TRIM(gAtt%grid_type))
+    CALL mpp_write_meta(file_unit, 'grid_tile', cval=TRIM(gAtt%tile_name))
 
- if ( file_title(1:1) /= ' ' ) then
-    call mpp_write_meta ( file_unit, 'title', cval=trim(file_title))
- endif
+  END SUBROUTINE diag_output_init
+  ! </SUBROUTINE>
 
-!---- write grid type (mosaic or regular)
+  ! <SUBROUTINE NAME="write_axis_meta_data">
+  !   <OVERVIEW>
+  !     Write the axes data to file.
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE write_axis_meta_data(file_unit, axes, time_ops)
+  !   </TEMPLATE>
+  !   <IN NAME="file_unit" TYPE="INTEGER">File unit number</IN>
+  !   <IN NAME="axes" TYPE="INTEGER, DIMENSION(:)">Array of axis ID's, including the time axis</IN>
+  !   <IN NAME="time_ops" TYPE="LOGICAL, OPTIONAL">
+  !     .TRUE. if this file contains any min, max, or time_average
+  !   </IN>
+  SUBROUTINE write_axis_meta_data(file_unit, axes, time_ops)
+    INTEGER, INTENT(in) :: file_unit, axes(:)
+    LOGICAL, INTENT(in), OPTIONAL :: time_ops
 
- call get_diag_global_att (gAtt)
- call mpp_write_meta ( file_unit, 'grid_type', cval=trim(gAtt%grid_type))
- call mpp_write_meta ( file_unit, 'grid_tile', cval=trim(gAtt%tile_name))
+    TYPE(domain1d)       :: Domain
+    TYPE(domain1d)       :: Edge_Domain
 
-!-----------------------------------------------------------------------
-end subroutine diag_output_init
+    CHARACTER(len=mxch)  :: axis_name, axis_units
+    CHARACTER(len=mxchl) :: axis_long_name
+    CHARACTER(len=1)     :: axis_cart_name
+    INTEGER              :: axis_direction, axis_edges
+    REAL, ALLOCATABLE    :: axis_data(:)
+    INTEGER, ALLOCATABLE :: axis_extent(:), pelist(:)
 
-!#######################################################################
+    INTEGER              :: calendar, id_axis, id_time_axis
+    INTEGER              :: i, index, num, length, edges_index
+    INTEGER              :: gbegin, gend, gsize, ndivs
+    LOGICAL              :: time_ops1
 
-subroutine write_axis_meta_data ( file_unit, axes,time_ops )
+    IF ( PRESENT(time_ops) ) THEN 
+       time_ops1 = time_ops
+    ELSE
+       time_ops1 = .FALSE.
+    END IF
 
-  integer         ,  intent(in)  :: file_unit, axes(:)
-  logical, intent(in), optional  :: time_ops
+    !---- save the current file_unit ----
+    IF ( num_axis_in_file == 0 ) current_file_unit = file_unit
 
-!-----------------------------------------------------------------------
-!
-! INPUT: file_name  = output file name (character, max len=128)
-!        axes       = array of axis id's (including the time axis)
-!                       (integer, dimension(:))
-!     time_ops = true if this file contains any min, max, time_average
-!-----------------------------------------------------------------------
+    !---- dummy checks ----
+    num = SIZE(axes(:))
+    ! <ERROR STATUS="FATAL">number of axes < 1 </ERROR>
+    IF ( num < 1 ) CALL error_mesg('write_axis_meta_data', 'number of axes < 1.', FATAL)
 
-  type(domain1d)       :: Domain
-  type(domain1d)       :: Edge_Domain
+    ! <ERROR STATUS="FATAL">writing meta data out-of-order to different files.</ERROR>
+    IF ( file_unit /= current_file_unit ) CALL error_mesg('write_axis_meta_data',&
+         & 'writing meta data out-of-order to different files.', FATAL)
 
-  character(len=mxch)  :: axis_name, axis_units
-  character(len=mxchl) :: axis_long_name
-  character(len=1)     :: axis_cart_name
-  integer              :: axis_direction, axis_edges
-  real, allocatable    :: axis_data(:)
-  integer, allocatable :: axis_extent(:), pelist(:)
+    !---- check all axes ----
+    !---- write axis meta data for new axes ----
+    DO i = 1, num
+       id_axis = axes(i)
+       index = get_axis_index ( id_axis )
 
-  integer              :: calendar, id_axis, id_time_axis
-  integer              :: i, index, num, length, edges_index
-  integer              :: gbegin, gend, gsize, ndivs
-  logical              :: time_ops1
+       !---- skip axes already written -----
+       IF ( index > 0 ) CYCLE
 
-  time_ops1 = .false.
-  if(present(time_ops)) time_ops1 = time_ops
+       !---- create new axistype (then point to) -----
+       num_axis_in_file = num_axis_in_file + 1
+       axis_in_file(num_axis_in_file) = id_axis
+       edge_axis_flag(num_axis_in_file) = .FALSE.
+       length = get_axis_global_length(id_axis)
+       ALLOCATE(axis_data(length))
 
-!-----------------------------------------------------------------------
-!---- save the current file_unit ----
+       CALL get_diag_axis(id_axis, axis_name, axis_units, axis_long_name,&
+            & axis_cart_name, axis_direction, axis_edges, Domain, axis_data)
 
- if ( num_axis_in_file == 0 ) current_file_unit = file_unit
+       IF ( Domain .NE. null_domain1d ) THEN
+          IF ( length > 0 ) THEN
+             CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file),&
+                  & axis_name, axis_units, axis_long_name, axis_cart_name,&
+                  & axis_direction, Domain, axis_data )
+          ELSE
+             CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
+                  & axis_units, axis_long_name, axis_cart_name, axis_direction, Domain)
+          END IF
+       ELSE
+          IF ( length > 0 ) THEN
+             CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
+                  & axis_units, axis_long_name, axis_cart_name, axis_direction, DATA=axis_data)
+          ELSE
+             CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
+                  & axis_units, axis_long_name, axis_cart_name, axis_direction)
+          END IF
+       END IF
 
-!-----------------------------------------------------------------------
-!---- dummy checks ----
-
- num = size(axes(:))
- if ( num < 1 ) call error_mesg ( 'write_axis_meta_data', &
-      'number of axes < 1', FATAL)
-
- if ( file_unit /= current_file_unit ) call error_mesg  &
-      ( 'write_axis_meta_data',  &
-      'writing meta data out-of-order to different files', FATAL)
-
-!-----------------------------------------------------------------------
-!---- check all axes ----
-!---- write axis meta data for new axes ----
-
- do i = 1, num
-
-!-----------------------------------------------------------------------
-
-    id_axis = axes(i)
-    index = get_axis_index ( id_axis )
-
-!---- skip axes already written -----
-
-    if ( index > 0 ) cycle
-
-!---- create new axistype (then point to) -----
-
-    num_axis_in_file = num_axis_in_file + 1
-    axis_in_file(num_axis_in_file) = id_axis
-    edge_axis_flag(num_axis_in_file) = .false.
-    length = get_axis_global_length ( id_axis )
-    allocate ( axis_data(length) )
-
-    call get_diag_axis ( id_axis, axis_name, axis_units,     &
-         axis_long_name, axis_cart_name,     &
-         axis_direction, axis_edges, Domain, &
-         axis_data )
-
-    if ( Domain .ne. null_domain1d ) then
-       if (length > 0) then
-          call mpp_write_meta ( file_unit, Axis_types(num_axis_in_file),  &
-               axis_name,      axis_units,       &
-               axis_long_name, axis_cart_name,   &
-               axis_direction, Domain, axis_data )
-       else
-          call mpp_write_meta ( file_unit, Axis_types(num_axis_in_file),  &
-               axis_name,      axis_units,       &
-               axis_long_name, axis_cart_name,   &
-               axis_direction, Domain            )
-       endif
-    else
-       if (length > 0) then
-          call mpp_write_meta ( file_unit, Axis_types(num_axis_in_file),  &
-               axis_name,      axis_units,       &
-               axis_long_name, axis_cart_name,   &
-               axis_direction,    data=axis_data )
-       else
-          call mpp_write_meta ( file_unit, Axis_types(num_axis_in_file),  &
-               axis_name,      axis_units,       &
-               axis_long_name, axis_cart_name,   &
-               axis_direction                    )
-       endif
-    endif
-
-!---- write additional attribute (calendar_type) for time axis ----
-!---- NOTE: calendar attribute is compliant with CF convention 
-!---- http://www.cgd.ucar.edu/cms/eaton/netcdf/CF-current.htm#cal
-
-    if ( axis_cart_name == 'T' ) then
-       time_axis_flag (num_axis_in_file) = .true.
-       id_time_axis = mpp_get_id( Axis_types(num_axis_in_file) )
-       calendar = get_calendar_type ( )
-       call mpp_write_meta ( file_unit, id_time_axis, 'calendar_type', cval=trim(valid_calendar_types(calendar)))
-       call mpp_write_meta ( file_unit, id_time_axis, 'calendar'     , cval=trim(valid_calendar_types(calendar)))
-       if(time_ops1) call mpp_write_meta( file_unit, id_time_axis, &
-            'bounds', cval = trim(axis_name)//'_bounds')        
-    else
-       time_axis_flag (num_axis_in_file) = .false.
-    endif
+       !---- write additional attribute (calendar_type) for time axis ----
+       !---- NOTE: calendar attribute is compliant with CF convention 
+       !---- http://www.cgd.ucar.edu/cms/eaton/netcdf/CF-current.htm#cal
+       IF ( axis_cart_name == 'T' ) THEN
+          time_axis_flag(num_axis_in_file) = .TRUE.
+          id_time_axis = mpp_get_id(Axis_types(num_axis_in_file))
+          calendar = get_calendar_type()
+          CALL mpp_write_meta(file_unit, id_time_axis, 'calendar_type', cval=TRIM(valid_calendar_types(calendar)))
+          CALL mpp_write_meta(file_unit, id_time_axis, 'calendar', cval=TRIM(valid_calendar_types(calendar)))
+          IF ( time_ops1 ) THEN 
+             CALL mpp_write_meta( file_unit, id_time_axis, 'bounds', cval = TRIM(axis_name)//'_bounds')        
+          END IF
+       ELSE
+          time_axis_flag(num_axis_in_file) = .FALSE.
+       END IF
     
-    deallocate (axis_data)
+       DEALLOCATE(axis_data)
 
-!-----------------------------------------------------------------------
-!  ------------- write axis containing edge information ---------------
+       !------------- write axis containing edge information ---------------
 
-!  --- this axis has no edges -----
-    if ( axis_edges <= 0 ) cycle
+       !  --- this axis has no edges -----
+       IF ( axis_edges <= 0 ) CYCLE
 
-!  --- was this axis edge previously defined? ---
-    id_axis = axis_edges
-    edges_index = get_axis_index ( id_axis )
-    if ( edges_index > 0 ) cycle
+       !  --- was this axis edge previously defined? ---
+       id_axis = axis_edges
+       edges_index = get_axis_index(id_axis)
+       IF ( edges_index > 0 ) CYCLE
     
-!  ---- get data for axis edges ----
-
-    length = get_axis_global_length ( id_axis )
-    allocate ( axis_data(length) )
-    call get_diag_axis ( id_axis, axis_name, axis_units,     &
-         axis_long_name, axis_cart_name,     &
-         axis_direction, axis_edges, Domain, &
-         axis_data )
-
-!  ---- write edges attribute to original axis ----
-
-    call mpp_write_meta ( file_unit, mpp_get_id(Axis_types(num_axis_in_file)), &
-         'edges', cval=axis_name )
-
-!  ---- add edges index to axis list ----
-!  ---- assume this is not a time axis ----
-
-    num_axis_in_file = num_axis_in_file + 1
-    axis_in_file(num_axis_in_file) = id_axis
-    edge_axis_flag(num_axis_in_file) = .true.
-    time_axis_flag (num_axis_in_file) = .false.
-
-!  ---- write edges axis to file ----
-
-    if ( Domain /= null_domain1d ) then
-! assume domain decomposition is irregular and loop through all prev and next
-! domain pointers extracting domain extents.  Assume all pes are used in
-! decomposition
-       call mpp_get_global_domain(Domain,begin=gbegin,end=gend,size=gsize)
-       call mpp_get_layout(Domain, ndivs)
-       if (ndivs .EQ. 1) then
-          call mpp_write_meta ( file_unit, Axis_types(num_axis_in_file),  &
-               axis_name,      axis_units,       &
-               axis_long_name, axis_cart_name,   &
-               axis_direction,  data=axis_data )
-       else
-          if (ALLOCATED(axis_extent)) deallocate(axis_extent)
-          allocate(axis_extent(0:ndivs-1))
-          call mpp_get_compute_domains(Domain,size=axis_extent(0:ndivs-1))
-          gend=gend+1
-          axis_extent(ndivs-1)= axis_extent(ndivs-1)+1
-          if (ALLOCATED(pelist)) deallocate(pelist)      
-          allocate(pelist(0:ndivs-1))
-          call mpp_get_pelist(Domain,pelist)
-          call mpp_define_domains((/gbegin,gend/),ndivs,Edge_Domain,&
-               pelist=pelist(0:ndivs-1), &
-               extent=axis_extent(0:ndivs-1))
-          call mpp_write_meta ( file_unit, Axis_types(num_axis_in_file),  &
-               axis_name,      axis_units,       &
-               axis_long_name, axis_cart_name,   &
-               axis_direction, Edge_Domain,  data=axis_data )
-       endif
-    else
-       
-       call mpp_write_meta ( file_unit, Axis_types(num_axis_in_file),  &
-            axis_name,      axis_units,       &
-            axis_long_name, axis_cart_name,   &
-            axis_direction, data=axis_data )
-    endif
-    deallocate (axis_data)
- enddo
-
-!-----------------------------------------------------------------------
-
-end subroutine write_axis_meta_data
-
-!#######################################################################
-
-function write_field_meta_data ( file_unit, name, axes, units,      &
-     long_name, range, pack, mval, avg_name, time_method,standard_name,interp_method)  &
-     result ( Field )
-
-  integer         ,  intent(in)          :: file_unit, axes(:)
-  character(len=*),  intent(in)          :: name, units, long_name
-  real,    optional, intent(in)          :: range(2), mval
-  integer, optional, intent(in)          :: pack
-  character(len=*), optional, intent(in) :: avg_name, time_method,standard_name
-  character(len=*), optional, intent(in) :: interp_method
-  character(len=128)                     :: standard_name2
-  type(diag_fieldtype)                   :: Field
-  logical                                :: coord_present
-  character(len=40)                      :: aux_axes(4)
-  character(len=160)                     :: coord_att
-!-----------------------------------------------------------------------
-!
-! INPUT: file_name  = output file name (character, max len=128)
-!        name       = field name (character, max len=128)
-!        axes       = array of axis id's (including the time axis)
-!                       (integer, dimension(4))
-!        units      = field units (character, max len=128)
-!        long_name  = field long_name (character, max len=256)
-!
-! OPTIONAL INPUT:
-!        range      = valid range (min, max), if min > max the range
-!                        will be ignored (real, dimension(2))
-!        pack       = packing flag, only valid when range specified
-!                      (1=64 bit, 2=32 bit, 4=16 bit, 8=8 bit)
-!                      (integer)
-!        mval       = missing value, must be within valid range (real)
-!        avg_name   = name of variable containing time averaging info
-!                      (character, max len=128)
-!        time_method = name of transformation applied to time-varying
-!                     data, i.e. "avg","min","max"
-! RETURNS:  Field = diag_fieldtype, will be needed for
-!                     subsequent calls to diag_output_mod
-!
-!-----------------------------------------------------------------------
-
-  real    :: scale, add
-  integer :: i, indexx, num, ipack, np
-  logical :: use_range
-  integer :: axis_indices(4)
-
-!-----------------------------------------------------------------------
-!---- dummy checks ----
-  standard_name2 = 'none'
-  coord_present = .false.
-  if(present(standard_name)) standard_name2 = standard_name
-  num = size(axes(:))
-  if ( num < 1 ) call error_mesg ( 'write_meta_data', &
-       'number of axes < 1', FATAL)
-  if ( num > 4 ) call error_mesg ( 'write_meta_data', &
-       'number of axes > 4', FATAL)
-  if ( file_unit /= current_file_unit ) call error_mesg  &
-       ( 'write_meta_data',  &
-       'writing meta data out-of-order to different files', FATAL)
-
-
-!---- check all axes for this field ----
-!---- set up indexing to axistypes ----
-
-  do i = 1, num
-     indexx = get_axis_index ( axes(i) )
-
-!---- point to existing axistype -----
-     if ( indexx > 0 ) then
-        axis_indices(i) = indexx
-     else
-        call error_mesg ('write_field_meta_data',   &
-             'axis data not written for field '//trim(name), FATAL)
-     endif     
-  enddo
-!  Create coordinate attribute
-  if(num >= 2) then     
-     coord_att = ' '
-     do i = 1, num
-        aux_axes(i) = get_axis_aux(axes(i))
-        if(trim(aux_axes(i)) /= 'none' ) then
-           if(len_trim(coord_att) == 0) then
-              coord_att = trim(aux_axes(i))
-           else
-              coord_att = trim(coord_att)// ' '//trim(aux_axes(i))
-           endif
-           coord_present = .true.
-        endif
-     enddo
-  endif
-
-!--------------------- write field meta data ---------------------------
-
-!       ---- select packing? ----
-!            (packing option only valid with range option)
-
-  ipack = 2
-  if (present(pack))  ipack = pack
-
-!---- check range ----
-
-  use_range = .false.
-  add   = 0.0
-  scale = 1.0
-  if ( present(range) ) then
-     if ( range(2) > range(1) ) then
-        use_range = .true.
-!            ---- set packing parameters ----
-        if ( ipack > 2 ) then
-           np = ipack/4
-           add   = 0.5*(range(1)+range(2))
-           scale = (range(2)-range(1))/ &
-                real(max_range(2,np)-max_range(1,np))
-        endif
-     endif
-  endif
-
-!       ---- select packing? ----
-
-  if ( present(mval) ) then
-     Field%miss = mval
-     Field%miss_present = .true.
-     if (ipack > 2 ) then
-        np = ipack/4
-        Field%miss_pack = real(missval(np))*scale+add
-        Field%miss_pack_present = .true.
-     else
-        Field%miss_pack = mval
-        Field%miss_pack_present = .false.
-     endif
-  else
-     Field%miss_present      = .false.
-     Field%miss_pack_present = .false.
-  endif
-
-!------ write meta data and return fieldtype -------
-
-  if ( use_range ) then
-     if ( Field%miss_present ) then
-        call mpp_write_meta ( file_unit, Field%Field,            &
-             Axis_types(axis_indices(1:num)),   &
-             name, units, long_name,            &
-             range(1), range(2),                &
-             missing=Field%miss_pack,           &
-             scale=scale, add=add, pack=ipack,   &
-             time_method=time_method)
-     else
-        call mpp_write_meta ( file_unit, Field%Field,            &
-             Axis_types(axis_indices(1:num)),   &
-             name, units,  long_name,           &
-             range(1), range(2),                &
-             scale=scale, add=add, pack=ipack,   &
-             time_method=time_method)
-     endif
-
-  else
-     if ( Field%miss_present ) then
-        call mpp_write_meta ( file_unit, Field%Field,            &
-             Axis_types(axis_indices(1:num)),   &
-             name, units, long_name,            &
-             missing=Field%miss_pack,           &
-             pack=ipack, time_method=time_method)
-     else
-
-        call mpp_write_meta ( file_unit, Field%Field,            &
-             Axis_types(axis_indices(1:num)),   &
-             name, units, long_name,            &
-             pack=ipack, time_method=time_method)
-     endif
-  endif
-
-!---- write additional attribute for time averaging -----
-
-  if ( present(avg_name) ) then
-     if ( avg_name(1:1) /= ' ' ) then
-        call mpp_write_meta ( file_unit, mpp_get_id(Field%Field),       &
-             'time_avg_info',                 &
-             cval=trim(avg_name) // '_T1,' // &
-             trim(avg_name) // '_T2,' // &
-             trim(avg_name) // '_DT'  )
-     endif
-  endif
-
-! write coordinates attribute for CF compliance
-  if (coord_present) &
-       call mpp_write_meta (file_unit, mpp_get_id(Field%Field),       &
-       'coordinates', cval=trim(coord_att))
-  if(trim(standard_name2) /= 'none') &
-       call mpp_write_meta (file_unit, mpp_get_id(Field%Field),       &
-       'standard_name', cval=trim(standard_name2))
-
-!---- write attribute for interp_method ----
-  if( present(interp_method) ) then
-        call mpp_write_meta ( file_unit, mpp_get_id(Field%Field),       &
-             'interp_method', cval=trim(interp_method)  ) 
-  endif
-
-!---- get axis domain ----
-  Field%Domain = get_domain2d ( axes )
-  Field%tile_count = get_tile_count ( axes )
-
-!-----------------------------------------------------------------------
-
-end function write_field_meta_data
-
-!#######################################################################
-
-subroutine done_meta_data (file_unit)
-
-  integer,  intent(in)  :: file_unit  
-  integer               :: i
-
-!---- write data for all non-time axes ----
-
-   do i = 1, num_axis_in_file
-       if (time_axis_flag(i)) cycle
-       call mpp_write ( file_unit, Axis_types(i) )
-   enddo
-
-   num_axis_in_file = 0
-
-end subroutine done_meta_data
-
-!#######################################################################
-
-subroutine diag_field_out ( file_unit, Field, data, time )
-
-integer, intent(in)                      :: file_unit
-type(diag_fieldtype), intent(inout)      :: Field
-real , intent(inout)                     :: data(:,:,:)
-real(KIND=r8_kind), optional, intent(in) :: time
-
-!---- replace original missing value with (un)packed missing value ----
-!print *, 'PE,name,miss_pack_present=',mpp_pe(), &
-!  trim(Field%Field%name),Field%miss_pack_present
-
-if ( Field%miss_pack_present ) then
-   where ( data == Field%miss ) data = Field%miss_pack
-endif
-
-!---- output data ----
-
-if ( Field%Domain /= null_domain2d ) then
-   call mpp_write (file_unit, Field%Field, Field%Domain, data, time, tile_count=Field%tile_count)
-else
-   call mpp_write (file_unit, Field%Field, data, time)
-endif
-end subroutine diag_field_out
-
-!#######################################################################
-
-subroutine diag_flush (file_unit)
-
-integer        , intent(in) :: file_unit
-
-call mpp_flush (file_unit)
-end subroutine diag_flush
-
-
-!#######################################################################
-
-function get_axis_index ( num ) result ( index )
-
-  integer, intent(in) :: num
-  integer             :: index
-  integer             :: i
-
-!---- get the array index for this axis type ----
-!---- set up pointers to axistypes ----
-!---- write axis meta data for new axes ----
-
-  index = 0
-  do i = 1, num_axis_in_file
-     if ( num == axis_in_file(i) ) then
-        index = i
-        exit
-     endif
-  enddo
-
-end function get_axis_index
-
-!#######################################################################
-
-subroutine get_diag_global_att (gAtt)
-  type(diag_global_att_type) :: gAtt
-
-  gAtt=diag_global_att
-end subroutine get_diag_global_att
-
-subroutine set_diag_global_att (component,gridType,tileName)
-  character(len=*),intent(in) :: component,gridType,tileName 
-! Don't know how to set these for specific component
-! Want to be able to say 
-! if(output_file has component) then
-  diag_global_att%grid_type = gridType
-  diag_global_att%tile_name = tileName
-! endif
-end subroutine set_diag_global_att
- 
-end module diag_output_mod
+       !  ---- get data for axis edges ----
+       length = get_axis_global_length ( id_axis )
+       ALLOCATE(axis_data(length))
+       CALL get_diag_axis(id_axis, axis_name, axis_units, axis_long_name, axis_cart_name,&
+            & axis_direction, axis_edges, Domain, axis_data )
+
+       !  ---- write edges attribute to original axis ----
+       CALL mpp_write_meta(file_unit, mpp_get_id(Axis_types(num_axis_in_file)),&
+            & 'edges', cval=axis_name )
+
+       !  ---- add edges index to axis list ----
+       !  ---- assume this is not a time axis ----
+       num_axis_in_file = num_axis_in_file + 1
+       axis_in_file(num_axis_in_file) = id_axis
+       edge_axis_flag(num_axis_in_file) = .TRUE.
+       time_axis_flag (num_axis_in_file) = .FALSE.
+
+       !  ---- write edges axis to file ----
+       IF ( Domain /= null_domain1d ) THEN
+          ! assume domain decomposition is irregular and loop through all prev and next
+          ! domain pointers extracting domain extents.  Assume all pes are used in
+          ! decomposition
+          CALL mpp_get_global_domain(Domain, begin=gbegin, END=gend, size=gsize)
+          CALL mpp_get_layout(Domain, ndivs)
+          IF ( ndivs .EQ. 1 ) THEN
+             CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
+                  & axis_units, axis_long_name, axis_cart_name, axis_direction, DATA=axis_data )
+          ELSE
+             IF ( ALLOCATED(axis_extent) ) DEALLOCATE(axis_extent)
+             ALLOCATE(axis_extent(0:ndivs-1))
+             CALL mpp_get_compute_domains(Domain,size=axis_extent(0:ndivs-1))
+             gend=gend+1
+             axis_extent(ndivs-1)= axis_extent(ndivs-1)+1
+             IF ( ALLOCATED(pelist) ) DEALLOCATE(pelist)      
+             ALLOCATE(pelist(0:ndivs-1))
+             CALL mpp_get_pelist(Domain,pelist)
+             CALL mpp_define_domains((/gbegin,gend/),ndivs,Edge_Domain,&
+                  & pelist=pelist(0:ndivs-1), extent=axis_extent(0:ndivs-1))
+             CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file),&
+                  & axis_name, axis_units, axis_long_name, axis_cart_name,&
+                  & axis_direction, Edge_Domain,  DATA=axis_data)
+          END IF
+       ELSE
+          CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name, axis_units,&
+               & axis_long_name, axis_cart_name, axis_direction, DATA=axis_data)
+       END IF
+       DEALLOCATE (axis_data)
+    END DO
+  END SUBROUTINE write_axis_meta_data
+  ! </SUBROUTINE>
+
+  ! <FUNCTION NAME="write_field_meta_data">
+  !   <OVERVIEW>
+  !     Write the field meta data to file.
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     TYPE(diag_fieldtype) FUNCTION write_field_meta_data(file_unit, name, axes, units,
+  !     long_name, rnage, pack, mval, avg_name, time_method, standard_name, interp_method)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     The meta data for the field is written to the file indicated by file_unit
+  !   </DESCRIPTION>
+  !   <IN NAME="file_unit" TYPE="INTEGER">Output file unit number</IN>
+  !   <IN NAME="name" TYPE="CHARACTER(len=*)">Field name</IN>
+  !   <IN NAME="axes" TYPE="INTEGER, DIMENSION(:)">Array of axis IDs</IN>
+  !   <IN NAME="units" TYPE="CHARACTER(len=*)">Field units</IN>
+  !   <IN NAME="long_name" TYPE="CHARACTER(len=*)">Field's long name</IN>
+  !   <IN NAME="range" TYPE="REAL, DIMENSION(2), OPTIONAL">
+  !     Valid range (min, max).  If min > max, the range will be ignored
+  !   </IN>
+  !   <IN NAME="pack" TYPE="INTEGER, OPTIONAL" DEFAULT="2">
+  !     Packing flag.  Only valid when range specified.  Valid values:
+  !     <UL>
+  !       <LI> 1 = 64bit </LI>
+  !       <LI> 2 = 32bit </LI>
+  !       <LI> 4 = 16bit </LI>
+  !       <LI> 8 =  8bit </LI>
+  !     </UL>
+  !   </IN>
+  !   <IN NAME="mval" TYPE="REAL, OPTIONAL">Missing value, must be within valid range</IN>
+  !   <IN NAME="avg_name" TYPE="CHARACTER(len=*), OPTIONAL">
+  !     Name of varuable containing time averaging info
+  !   </IN>
+  !   <IN NAME="time_method" TYPE="CHARACTER(len=*), OPTIONAL">
+  !     Name of transformation applied to the time-varying data, i.e. "avg", "min", "max"
+  !   </IN>
+  !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL">Standard name of field</IN>
+  !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIONAL" />
+  FUNCTION write_field_meta_data ( file_unit, name, axes, units, long_name, range, pack,&
+       & mval, avg_name, time_method,standard_name,interp_method) result ( Field )
+    INTEGER, INTENT(in) :: file_unit, axes(:)
+    CHARACTER(len=*), INTENT(in) :: name, units, long_name
+    REAL, OPTIONAL, INTENT(in) :: RANGE(2), mval
+    INTEGER, OPTIONAL, INTENT(in) :: pack
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: avg_name, time_method,standard_name
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method
+
+    CHARACTER(len=128) :: standard_name2
+    TYPE(diag_fieldtype) :: Field
+    LOGICAL :: coord_present
+    CHARACTER(len=40) :: aux_axes(SIZE(axes))
+    CHARACTER(len=160) :: coord_att
+
+    REAL :: scale, add
+    INTEGER :: i, indexx, num, ipack, np
+    LOGICAL :: use_range
+    INTEGER :: axis_indices(SIZE(axes))
+
+    !---- dummy checks ----
+    coord_present = .FALSE.
+    IF( PRESENT(standard_name) ) THEN 
+       standard_name2 = standard_name
+    ELSE
+       standard_name2 = 'none'
+    END IF
+    
+    num = SIZE(axes(:))
+    ! <ERROR STATUS="FATAL">number of axes < 1</ERROR>
+    IF ( num < 1 ) CALL error_mesg ( 'write_meta_data', 'number of axes < 1', FATAL)
+    ! <ERROR STATUS="FATAL">writing meta data out-of-order to different files</ERROR>
+    IF ( file_unit /= current_file_unit ) CALL error_mesg ( 'write_meta_data',  &
+         & 'writing meta data out-of-order to different files', FATAL)
+
+
+    !---- check all axes for this field ----
+    !---- set up indexing to axistypes ----
+    DO i = 1, num
+       indexx = get_axis_index(axes(i))
+       !---- point to existing axistype -----
+       IF ( indexx > 0 ) THEN
+          axis_indices(i) = indexx
+       ELSE
+          ! <ERROR STATUS="FATAL">axis data not written for field</ERROR>
+          CALL error_mesg ('write_field_meta_data',&
+               & 'axis data not written for field '//TRIM(name), FATAL)
+       END IF
+    END DO
+
+    !  Create coordinate attribute
+    IF ( num >= 2 ) THEN     
+       coord_att = ' '
+       DO i = 1, num
+          aux_axes(i) = get_axis_aux(axes(i))
+          IF( TRIM(aux_axes(i)) /= 'none' ) THEN
+             IF(LEN_TRIM(coord_att) == 0) THEN
+                coord_att = TRIM(aux_axes(i))
+             ELSE
+                coord_att = TRIM(coord_att)// ' '//TRIM(aux_axes(i))
+             ENDIF
+             coord_present = .TRUE.
+          END IF
+       END DO
+    END IF
+
+    !--------------------- write field meta data ---------------------------
+
+    !---- select packing? ----
+    !(packing option only valid with range option)
+    IF ( PRESENT(pack) ) THEN
+       ipack = pack
+    ELSE
+       ipack = 2
+    END IF
+    
+    !---- check range ----
+    use_range = .FALSE.
+    add = 0.0
+    scale = 1.0
+    IF ( PRESENT(range) ) THEN
+       IF ( RANGE(2) > RANGE(1) ) THEN
+          use_range = .TRUE.
+          !---- set packing parameters ----
+          IF ( ipack > 2 ) THEN
+             np = ipack/4
+             add = 0.5*(RANGE(1)+RANGE(2))
+             scale = (RANGE(2)-RANGE(1)) / real(max_range(2,np)-max_range(1,np))
+          END IF
+       END IF
+    END IF
+
+    !---- select packing? ----
+    IF ( PRESENT(mval) ) THEN
+       Field%miss = mval
+       Field%miss_present = .TRUE.
+       IF ( ipack > 2 ) THEN
+          np = ipack/4
+          Field%miss_pack = REAL(missval(np))*scale+add
+          Field%miss_pack_present = .TRUE.
+       ELSE
+          Field%miss_pack = mval
+          Field%miss_pack_present = .FALSE.
+       END IF
+    ELSE
+       Field%miss_present = .FALSE.
+       Field%miss_pack_present = .FALSE.
+    END IF
+
+    !------ write meta data and return fieldtype -------
+    IF ( use_range ) THEN
+       IF ( Field%miss_present ) THEN
+          CALL mpp_write_meta(file_unit, Field%Field,&
+               & Axis_types(axis_indices(1:num)),&
+               & name, units, long_name,&
+               & RANGE(1), RANGE(2),&
+               & missing=Field%miss_pack,&
+               & scale=scale, add=add, pack=ipack,&
+               & time_method=time_method)
+       ELSE
+          CALL mpp_write_meta(file_unit, Field%Field,&
+               & Axis_types(axis_indices(1:num)),&
+               & name, units,  long_name,&
+               & RANGE(1), RANGE(2),&
+               & scale=scale, add=add, pack=ipack,&
+               & time_method=time_method)
+       END IF
+    ELSE
+       IF ( Field%miss_present ) THEN
+          CALL mpp_write_meta(file_unit, Field%Field,&
+               & Axis_types(axis_indices(1:num)),&
+               & name, units, long_name,&
+               & missing=Field%miss_pack,&
+               & pack=ipack, time_method=time_method)
+       ELSE
+          CALL mpp_write_meta(file_unit, Field%Field,&
+               & Axis_types(axis_indices(1:num)),&
+               & name, units, long_name,&
+               & pack=ipack, time_method=time_method)
+       END IF
+    END IF
+
+    !---- write additional attribute for time averaging -----
+    IF ( PRESENT(avg_name) ) THEN
+       IF ( avg_name(1:1) /= ' ' ) THEN
+          CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field),&
+             & 'time_avg_info',&
+             & cval=trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT')
+       END IF
+    END IF
+
+    ! write coordinates attribute for CF compliance
+    IF ( coord_present ) &
+         CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field),&
+         & 'coordinates', cval=TRIM(coord_att))
+    IF ( TRIM(standard_name2) /= 'none' ) CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field),&
+         & 'standard_name', cval=TRIM(standard_name2))
+
+    !---- write attribute for interp_method ----
+    IF( PRESENT(interp_method) ) THEN
+       CALL mpp_write_meta ( file_unit, mpp_get_id(Field%Field),&
+            & 'interp_method', cval=TRIM(interp_method)) 
+    END IF
+
+    !---- get axis domain ----
+    Field%Domain = get_domain2d ( axes )
+    Field%tile_count = get_tile_count ( axes )
+
+  END FUNCTION write_field_meta_data
+  ! </FUNCTION>
+
+  ! <SUBROUTINE NAME="done_meta_data">
+  !   <OVERVIEW>
+  !     Writes axis data to file.
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE done_meta_data(file_unit)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     Writes axis data to file.  This subroutine is to be called once per file
+  !     after all <TT>write_meta_data</TT> call, and before the first 
+  !     <TT>diag_field_out</TT> call.
+  !   </DESCRIPTION>
+  !   <IN NAME="file_unit" TYPE="INTEGER">Output file unit number</IN>
+  SUBROUTINE done_meta_data(file_unit)
+    INTEGER,  INTENT(in)  :: file_unit  
+
+    INTEGER               :: i
+
+    !---- write data for all non-time axes ----
+    DO i = 1, num_axis_in_file
+       IF ( time_axis_flag(i) ) CYCLE
+       CALL mpp_write(file_unit, Axis_types(i))
+    END DO
+
+    num_axis_in_file = 0
+  END SUBROUTINE done_meta_data
+  ! </SUBROUTINE>
+
+  ! <SUBROUTINE NAME="diag_field_out">
+  !   <OVERVIEW>
+  !     Writes field data to an output file.
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE diag_field_out(file_unit, field, data, time)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <IN NAME="file_unit" TYPE="INTEGER">Output file unit number</IN>
+  !   <INOUT NAME="field" TYPE="TYPE(diag_fieldtype)"></INOUT>
+  !   <INOUT NAME="data" TYPE="REAL, DIMENSIONS(:,:,:,:)"></INOUT>
+  !   <IN NAME="time" TYPE="REAL(KIND=r8_kind), OPTIONAL"></IN>
+  SUBROUTINE diag_field_out(file_unit, Field, DATA, time)
+    INTEGER, INTENT(in) :: file_unit
+    TYPE(diag_fieldtype), INTENT(inout) :: Field
+    REAL , INTENT(inout) :: data(:,:,:,:)
+    REAL(KIND=r8_kind), OPTIONAL, INTENT(in) :: time
+
+    !---- replace original missing value with (un)packed missing value ----
+    !print *, 'PE,name,miss_pack_present=',mpp_pe(), &
+    !  trim(Field%Field%name),Field%miss_pack_present
+    IF ( Field%miss_pack_present ) THEN
+       WHERE ( DATA == Field%miss ) DATA = Field%miss_pack
+    END IF
+
+    !---- output data ----
+    IF ( Field%Domain /= null_domain2d ) THEN
+       CALL mpp_write(file_unit, Field%Field, Field%Domain, DATA, time, tile_count=Field%tile_count)
+    ELSE
+       CALL mpp_write(file_unit, Field%Field, DATA, time)
+    END IF
+  END SUBROUTINE diag_field_out
+  ! </SUBROUTINE>
+
+  ! <SUBROUTINE NAME="diag_flush">
+  !   <OVERVIEW>
+  !     Flush buffer and insure data is not lost.
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     CALL diag_flush(file_unit)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     This subroutine can be called periodically to flush the buffer, and
+  !     insure that data is not lost if the execution fails.
+  !   </DESCRIPTION>
+  !   <IN NAME="file_unit" TYPE="INTEGER">Output file unit number to flush</IN>
+  SUBROUTINE diag_flush(file_unit)
+    INTEGER, INTENT(in) :: file_unit
+
+    CALL mpp_flush (file_unit)
+  END SUBROUTINE diag_flush
+  ! </SUBROUTINE>
+
+
+  ! <FUNCTION NAME="get_axis_index">
+  !   <OVERVIEW>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     INTEGER FUNCTION get_axis_index(num)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <IN NAME="num" TYPE="INTEGER"></IN>
+  FUNCTION get_axis_index(num) RESULT ( index )
+    INTEGER, INTENT(in) :: num
+
+    INTEGER :: index
+    INTEGER :: i
+
+    !---- get the array index for this axis type ----
+    !---- set up pointers to axistypes ----
+    !---- write axis meta data for new axes ----
+    index = 0
+    DO i = 1, num_axis_in_file
+       IF ( num == axis_in_file(i) ) THEN
+          index = i
+          EXIT
+       END IF
+    END DO
+  END FUNCTION get_axis_index
+  ! </FUNCTION>
+
+  ! <SUBROUTINE NAME="get_diag_global_att">
+  !   <OVERVIEW>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     CALL get_diag_global_att(gAtt)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <OUT NAME="gAtt" TYPE="TYPE(diag_global_att_type"></OUT>
+  SUBROUTINE get_diag_global_att(gAtt)
+    TYPE(diag_global_att_type), INTENT(out) :: gAtt
+
+    gAtt=diag_global_att
+  END SUBROUTINE get_diag_global_att
+  ! </SUBROUTINE>
+
+  ! <SUBROUTINE NAME="set_diag_global_att">
+  !   <OVERVIEW>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     CALL set_diag_global_att(component, gridType, timeName)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <IN NAME="component" TYPE="CHARACTER(len=*)"></IN>
+  !   <IN NAME="gridType" TYPE="CHARACTER(len=*)"></IN>
+  !   <IN NAME="tileName" TYPE="CHARACTER(len=*)"></IN>
+  SUBROUTINE set_diag_global_att(component, gridType, tileName)
+    CHARACTER(len=*),INTENT(in) :: component, gridType, tileName 
+    ! Don't know how to set these for specific component
+    ! Want to be able to say 
+    ! if(output_file has component) then
+    diag_global_att%grid_type = gridType
+    diag_global_att%tile_name = tileName
+    ! endif
+  END SUBROUTINE set_diag_global_att
+  ! </SUBROUTINE>
+END MODULE diag_output_mod
 

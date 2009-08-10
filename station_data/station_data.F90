@@ -155,7 +155,7 @@ subroutine station_data_init()
 
 character(len=128)    :: station_name
 real                  :: lat, lon  
-integer               :: iunit,nfiles,nfields,time_units,output_freq_units,j,station_id,io_status
+integer               :: iunit,nfiles,nfields,time_units,output_freq_units,j,station_id,io_status,logunit
 logical               :: init_verbose
 character(len=128)    :: record
 type file_part_type
@@ -184,7 +184,8 @@ namelist /station_data_nml/ max_output_fields, max_stations,init_verbose
 ! read namelist
   call mpp_open(iunit, 'input.nml',form=MPP_ASCII,action=MPP_RDONLY)
   read(iunit,station_data_nml,iostat=io_status)
-  write(stdlog(), station_data_nml)
+  logunit = stdlog()
+  write(logunit, station_data_nml)
   if (io_status > 0) then
      call error_mesg('station_data_init', 'Error reading station_data_nml',FATAL)
   endif
@@ -192,11 +193,12 @@ namelist /station_data_nml/ max_output_fields, max_stations,init_verbose
   allocate(output_fields(max_output_fields), stations(max_stations))
 ! read list of stations
   if(init_verbose) then
-     write(stdout(), *) ' '
-     write(stdout(), *) '****** Summary of STATION information from list_stations ********'
-     write(stdout(), *) ' '
-     write(stdout(), *) 'station name      ', '   latitude ', '   longitude '
-     write(stdout(), *) ' '
+     logunit = stdout()
+     write(logunit, *) ' '
+     write(logunit, *) '****** Summary of STATION information from list_stations ********'
+     write(logunit, *) ' '
+     write(logunit, *) 'station name      ', '   latitude ', '   longitude '
+     write(logunit, *) ' '
   endif
   call mpp_open(iunit, 'list_stations',form=MPP_ASCII,action=MPP_RDONLY)
   do while (num_stations<max_stations)
@@ -210,15 +212,17 @@ namelist /station_data_nml/ max_output_fields, max_stations,init_verbose
      else
         call error_mesg('station_data_init','station DUPLICATED in file list_stations', FATAL)
      endif
+     logunit = stdout()
      if( init_verbose.and.  mpp_pe() == mpp_root_pe()) &
-          write(stdout(),1)stations(station_id)%name,stations(station_id)%lat,stations(station_id)%lon
+          write(logunit,1)stations(station_id)%name,stations(station_id)%lat,stations(station_id)%lon
 1 format(1x,A18, 1x,F8.2,4x,F8.2)     
 75   continue
   enddo
   call error_mesg('station_data_init','max_stations exceeded, increase it via namelist', FATAL)
 76 continue
   call mpp_close (iunit)
-  if(init_verbose)  write(stdout(), *)'*****************************************************************'
+  logunit = stdout()
+  if(init_verbose)  write(logunit, *)'*****************************************************************'
      
 ! read station_data table
   call mpp_open(iunit, 'station_data_table',form=MPP_ASCII,action=MPP_RDONLY)
@@ -487,7 +491,7 @@ function register_station_field3d (module_name,fieldname,glo_lat,glo_lon,levels,
   character(len=128)                     :: error_msg
   integer                                :: local_num_stations ! number of stations on this PE
   integer                                :: out_num ! position of this field in array output_fields
-  integer                                :: file_num, freq, output_units
+  integer                                :: file_num, freq, output_units, outunit
   real, allocatable                      :: station_values(:), level_values(:)
   character(len=128)                     :: longname2,units2
 
@@ -509,16 +513,17 @@ function register_station_field3d (module_name,fieldname,glo_lat,glo_lon,levels,
      level_values(i) = real(i)
   enddo
 ! determine global index of this field in all stations
+  outunit = stdout()
   do i = 1,num_stations
      station_values(i) = real(i)
      if(stations(i)%lat<glo_lat(1) .or. stations(i)%lat>glo_lat(nlat)) then
         write(error_msg,'(F9.3)') stations(i)%lat
-        write(stdout(),*) 'Station with latitude '//trim(error_msg)//' outside global latitude values'
+        write(outunit,*) 'Station with latitude '//trim(error_msg)//' outside global latitude values'
         call error_mesg ('register_station_field', 'latitude out of range', FATAL)
      endif
       if(stations(i)%lon<glo_lon(1) .or. stations(i)%lon>glo_lon(nlon)) then
         write(error_msg,'(F9.3)') stations(i)%lon
-        write(stdout(),*) 'Station with longitude '//trim(error_msg)//' outside global longitude values'
+        write(outunit,*) 'Station with longitude '//trim(error_msg)//' outside global longitude values'
         call error_mesg ('register_station_field', 'longitude out of range', FATAL)
      endif
      stations(i)%global_i = nearest_index(stations(i)%lon, glo_lon)

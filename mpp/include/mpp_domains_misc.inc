@@ -31,7 +31,7 @@
 #ifdef use_libSMA
       integer                       :: l=0
 #endif
-      integer                       :: unit_begin, unit_end, unit_nml, io_status
+      integer                       :: unit_begin, unit_end, unit_nml, io_status, unit
       logical                       :: opened
 #ifdef use_libSMA
       integer(POINTER_KIND) :: ptr_info_var(16)
@@ -43,7 +43,8 @@
       call mpp_pset_init             !this is a no-op if already initialized
       module_is_initialized = .TRUE.
       pe = mpp_root_pe()
-      if( mpp_pe() .EQ.mpp_root_pe() ) write( stdlog(),'(/a)' )'MPP_DOMAINS module '//trim(version)//trim(tagname)
+      unit = stdlog()
+      if( mpp_pe() .EQ.mpp_root_pe() ) write( unit,'(/a)' )'MPP_DOMAINS module '//trim(version)//trim(tagname)
 
       if( PRESENT(flags) )then
           debug   = flags.EQ.MPP_DEBUG
@@ -58,7 +59,8 @@
          inquire( unit_nml,OPENED=opened )
          if( .NOT.opened )exit
       end do
-      open(unit_nml,file='input.nml')
+
+      open(unit_nml,file='input.nml', iostat=io_status)
       read(unit_nml,mpp_domains_nml,iostat=io_status)
       close(unit_nml)
 
@@ -109,9 +111,11 @@
 !  </TEMPLATE>
 ! </SUBROUTINE>
     subroutine mpp_domains_exit()
+      integer :: unit 
       if( .NOT.module_is_initialized )return
       call mpp_max(mpp_domains_stack_hwm)
-      if( mpp_pe().EQ.mpp_root_pe() )write( stdout(),* )'MPP_DOMAINS_STACK high water mark=', mpp_domains_stack_hwm
+      unit = stdout()
+      if( mpp_pe().EQ.mpp_root_pe() )write( unit,* )'MPP_DOMAINS_STACK high water mark=', mpp_domains_stack_hwm
       module_is_initialized = .FALSE.
       return
     end subroutine mpp_domains_exit

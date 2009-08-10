@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util.inc,v 16.0.6.1 2008/10/15 11:41:41 z1l Exp $
+! $Id: mpp_util.inc,v 17.0 2009/07/21 03:20:58 fms Exp $
 
 
 #ifdef use_libSMA
@@ -82,9 +82,9 @@
   function stdlog()
     integer :: stdlog,istat
     logical :: opened
-    character(len=9) :: this_pe
+    character(len=11) :: this_pe
     if( pe.EQ.root_pe )then
-       write(this_pe,'(a,i4.4,a)') '.',pe,'.out'
+       write(this_pe,'(a,i6.6,a)') '.',pe,'.out'
        inquire( file=trim(configfile)//this_pe, opened=opened )
        if( opened )then
           call FLUSH(log_unit,istat)
@@ -111,11 +111,11 @@
   subroutine mpp_init_logfile()
   integer :: p
   logical :: exist
-  character(len=9) :: this_pe
+  character(len=11) :: this_pe
   if( pe.EQ.root_pe )then
      log_unit = get_unit()
      do p=0,npes-1
-       write(this_pe,'(a,i4.4,a)') '.',p,'.out'
+       write(this_pe,'(a,i6.6,a)') '.',p,'.out'
        inquire( file=trim(configfile)//this_pe, exist=exist )
        if(exist)then
          open( unit=log_unit, file=trim(configfile)//this_pe, status='REPLACE' )
@@ -210,81 +210,129 @@ end subroutine mpp_error_Ra
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ integer
 #include <mpp_error_a_a.h>
+#undef _SUBNAME_
+#undef _ARRAY1TYPE_
+#undef _ARRAY2TYPE_
 !#####################################################################
 #define _SUBNAME_ mpp_error_ia_ra
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ real
 #include <mpp_error_a_a.h>
+#undef _SUBNAME_
+#undef _ARRAY1TYPE_
+#undef _ARRAY2TYPE_
 !#####################################################################
 #define _SUBNAME_ mpp_error_ra_ia
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ integer
 #include <mpp_error_a_a.h>
+#undef _SUBNAME_
+#undef _ARRAY1TYPE_
+#undef _ARRAY2TYPE_
 !#####################################################################
 #define _SUBNAME_ mpp_error_ra_ra
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ real
 #include <mpp_error_a_a.h>
+#undef _SUBNAME_
+#undef _ARRAY1TYPE_
+#undef _ARRAY2TYPE_
 !#####################################################################
 #define _SUBNAME_ mpp_error_ia_is
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ integer
 #include <mpp_error_a_s.h>
+#undef _SUBNAME_
+#undef _ARRAY1TYPE_
+#undef _ARRAY2TYPE_
 !#####################################################################
 #define _SUBNAME_ mpp_error_ia_rs
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ real
 #include <mpp_error_a_s.h>
+#undef _SUBNAME_
+#undef _ARRAY1TYPE_
+#undef _ARRAY2TYPE_
 !#####################################################################
 #define _SUBNAME_ mpp_error_ra_is
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ integer
 #include <mpp_error_a_s.h>
+#undef _SUBNAME_
+#undef _ARRAY1TYPE_
+#undef _ARRAY2TYPE_
 !#####################################################################
 #define _SUBNAME_ mpp_error_ra_rs
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ real
 #include <mpp_error_a_s.h>
+#undef _SUBNAME_
+#undef _ARRAY1TYPE_
+#undef _ARRAY2TYPE_
 !#####################################################################
 #define _SUBNAME_ mpp_error_is_ia
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ integer
 #include <mpp_error_s_a.h>
+#undef _SUBNAME_
+#undef _ARRAY1TYPE_
+#undef _ARRAY2TYPE_
 !#####################################################################
 #define _SUBNAME_ mpp_error_is_ra
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ real
 #include <mpp_error_s_a.h>
+#undef _SUBNAME_
+#undef _ARRAY1TYPE_
+#undef _ARRAY2TYPE_
 !#####################################################################
 #define _SUBNAME_ mpp_error_rs_ia
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ integer
 #include <mpp_error_s_a.h>
+#undef _SUBNAME_
+#undef _ARRAY1TYPE_
+#undef _ARRAY2TYPE_
 !#####################################################################
 #define _SUBNAME_ mpp_error_rs_ra
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ real
 #include <mpp_error_s_a.h>
+#undef _SUBNAME_
+#undef _ARRAY1TYPE_
+#undef _ARRAY2TYPE_
 !#####################################################################
 #define _SUBNAME_ mpp_error_is_is
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ integer
 #include <mpp_error_s_s.h>
+#undef _SUBNAME_
+#undef _ARRAY1TYPE_
+#undef _ARRAY2TYPE_
 !#####################################################################
 #define _SUBNAME_ mpp_error_is_rs
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ real
 #include <mpp_error_s_s.h>
+#undef _SUBNAME_
+#undef _ARRAY1TYPE_
+#undef _ARRAY2TYPE_
 !#####################################################################
 #define _SUBNAME_ mpp_error_rs_is
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ integer
 #include <mpp_error_s_s.h>
+#undef _SUBNAME_
+#undef _ARRAY1TYPE_
+#undef _ARRAY2TYPE_
 !#####################################################################
 #define _SUBNAME_ mpp_error_rs_rs
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ real
 #include <mpp_error_s_s.h>
+#undef _SUBNAME_
+#undef _ARRAY1TYPE_
+#undef _ARRAY2TYPE_
 !#####################################################################
 function iarray_to_char(iarray) result(string)
 integer, intent(in) :: iarray(:)
@@ -839,7 +887,7 @@ end function rarray_to_char
     integer           :: SD_UNIT, total_calls
     integer           :: i,j,k,ct, msg_cnt
     character(len=2)  :: u
-    character(len=18) :: filename
+    character(len=20) :: filename
     character(len=20),dimension(MAX_BINS),save :: bin
 
     data bin( 1)  /'  0   -    8    B:  '/
@@ -864,7 +912,7 @@ end function rarray_to_char
     data bin(20)  /' >2.1          MB:  '/
 
     if( .NOT.ANY(clocks(1:clock_num)%detailed) )return
-    write( filename,'(a,i4.4)' )'mpp_clock.out.', pe
+    write( filename,'(a,i6.6)' )'mpp_clock.out.', pe
 
     SD_UNIT = get_unit()
     open(SD_UNIT,file=trim(filename),form='formatted')

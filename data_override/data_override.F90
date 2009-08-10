@@ -74,8 +74,8 @@ use time_manager_mod, only: time_type
 implicit none
 private
 
-character(len=128) :: version = '$Id: data_override.F90,v 16.0 2008/07/30 22:44:56 fms Exp $'
-character(len=128) :: tagname = '$Name: perth_2008_10 $'
+character(len=128) :: version = '$Id: data_override.F90,v 17.0 2009/07/21 03:18:36 fms Exp $'
+character(len=128) :: tagname = '$Name: quebec $'
 
 type data_type_lima
    character(len=3)   :: gridname
@@ -131,6 +131,7 @@ logical                                         :: grid_center_bug = .false.
 namelist /data_override_nml/ debug_data_override, grid_center_bug
 
 interface data_override
+     module procedure data_override_0d
      module procedure data_override_2d
      module procedure data_override_3d
 end interface
@@ -172,16 +173,17 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
   character(len=256)   :: record
   type(data_type_lima) :: data_entry_lima
   type(data_type)      :: data_entry
-  type (domain2d)      :: domain2 ! It should not be necessary to save and restore the
-                                  ! the current_domain of fms_io_mod because it should
-                                  ! not have a current_domain. domain should be a required
-                                  ! argument of read_data and write_data rather than an
-                                  ! optional argument.
+  type (domain2d), save :: domain2 ! It should not be necessary to save and restore the
+                                   ! the current_domain of fms_io_mod because it should
+                                   ! not have a current_domain. domain should be a required
+                                   ! argument of read_data and write_data rather than an
+                                   ! optional argument.
 
   debug_data_override = .false.
   call mpp_open(iunit, 'input.nml',form=MPP_ASCII,action=MPP_RDONLY)
   read(iunit,data_override_nml,iostat=io_status)
-  write(stdlog(), data_override_nml)
+  unit = stdlog()
+  write(unit, data_override_nml)
   if (io_status > 0) then
      call mpp_error(FATAL,'data_override_init: Error reading data_override_nml')
   endif
@@ -688,6 +690,115 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
 
 end subroutine data_override_3d
 ! </SUBROUTINE>
+
+! <SUBROUTINE NAME="data_override_0d">
+!   <DESCRIPTION>
+! This routine performs data override for scalar fields
+!   <TEMPLATE>
+! call data_override(fieldname,data,time,override)
+!   </TEMPLATE>
+!   </DESCRIPTION>
+!   <IN NAME="gridname"  TYPE="character" DIM="(*)">
+! Grid name (Ocean, Ice, Atmosphere, Land)
+!   </IN>
+!   <IN NAME="fieldname_code" TYPE="character" DIM="(*)">
+!    Field name as used in the code (may be different from the name in NetCDF data file)
+!   </IN>
+!   <OUT NAME="data" TYPE="real" DIM="(:,:,:)">
+!    array containing output data
+!   </OUT>
+!   <IN NAME="time" TYPE="time_type">
+!    model time
+!   </IN>
+!   <OUT NAME="override" TYPE="logical">
+!    TRUE if the field is overriden, FALSE otherwise
+!   </OUT>
+!   <IN NAME="data_index" TYPE="integer">
+!   </IN>
+subroutine data_override_0d(gridname,fieldname_code,data,time,override,data_index)
+  character(len=3), intent(in) :: gridname ! model grid ID
+  character(len=*), intent(in) :: fieldname_code ! field name as used in the model
+  logical, intent(out), optional :: override ! true if the field has been overriden succesfully
+  type(time_type), intent(in) :: time !(target) model time
+  real,             intent(out) :: data !data returned by this call
+  integer, intent(in), optional :: data_index
+
+  character(len=512) :: filename !file containing source data
+  character(len=128) :: fieldname ! fieldname used in the data file
+  integer :: index1 ! field index in data_table
+  integer :: id_time !index for time interp in override array
+  integer :: curr_position ! position of the field currently processed in override_array
+  integer :: i
+  real :: factor
+
+  if(.not.module_is_initialized) &
+       call mpp_error(FATAL,'Error: need to call data_override_init first')
+
+!1  Look  for the data file in data_table 
+  if(PRESENT(override)) override = .false.
+  if (present(data_index)) then
+    index1 = data_index
+  else
+    index1 = -1
+    do i = 1, table_size
+       if( trim(gridname) /= trim(data_table(i)%gridname)) cycle
+       if( trim(fieldname_code) /= trim(data_table(i)%fieldname_code)) cycle
+       index1 = i                               ! field found        
+       exit
+    enddo
+    if(index1 .eq. -1) then
+       if(mpp_pe() == mpp_root_pe() .and. debug_data_override) &
+            call mpp_error(WARNING,'this field is NOT found in data_table: '//trim(fieldname_code))
+       return  ! NO override was performed
+    endif
+  endif
+ 
+  fieldname = data_table(index1)%fieldname_file ! fieldname in netCDF data file
+  factor = data_table(index1)%factor
+
+  if(fieldname == "") then
+     data = factor
+     if(PRESENT(override)) override = .true.
+     return
+  else
+     filename = data_table(index1)%file_name
+     if (filename == "") call mpp_error(FATAL,'data_override: filename not given in data_table')
+  endif  
+
+!3 Check if fieldname has been previously processed
+  curr_position = -1
+  if(num_fields > 0 ) then
+     do i = 1, num_fields
+        if(trim(override_array(i)%gridname) /= trim(gridname))   cycle 
+        if(trim(override_array(i)%fieldname) /= trim(fieldname_code)) cycle
+        curr_position = i
+        exit        
+     enddo
+  endif
+
+  if(curr_position < 0) then ! the field has not been processed previously
+     num_fields = num_fields + 1
+     curr_position = num_fields     
+     ! record fieldname, gridname in override_array    
+     override_array(curr_position)%fieldname = fieldname_code
+     override_array(curr_position)%gridname = gridname
+     id_time = init_external_field(filename,fieldname,verbose=.false.)
+     if(id_time<0) call mpp_error(FATAL,'data_override:field not found in init_external_field 1') 
+     override_array(curr_position)%t_index = id_time     
+  else !curr_position >0
+     !9 Get id_time  previously stored in override_array
+     id_time = override_array(curr_position)%t_index
+  endif !if curr_position < 0
+
+  !10 do time interp to get data in compute_domain
+  call time_interp_external(id_time, time, data, verbose=.false.)
+  data = data*factor
+
+  if(PRESENT(override)) override = .true.
+
+end subroutine data_override_0d
+! </SUBROUTINE>
+
 !===============================================================================================
 
 ! Get global lon and lat of three model (target) grids from grid_spec.nc

@@ -96,8 +96,8 @@ public amip_interp_init, get_amip_sst, get_amip_ice, amip_interp_new, &
 
 !  ---- version number -----
 
-character(len=128) :: version = '$Id: amip_interp.F90,v 15.0.8.1 2008/09/15 23:22:43 wfc Exp $'
-character(len=128) :: tagname = '$Name: perth_2008_10 $'
+character(len=128) :: version = '$Id: amip_interp.F90,v 17.0 2009/07/21 03:18:17 fms Exp $'
+character(len=128) :: tagname = '$Name: quebec $'
 
 !-----------------------------------------------------------------------
 !------ private defined data type --------

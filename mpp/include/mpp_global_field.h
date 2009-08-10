@@ -51,6 +51,11 @@
       if(use_new)then
         if(domain%ntiles>1) call mpp_error(FATAL,"MPP_GLOBAL_FIELD: new version mpp_global_field for multple-tile mosaic "// &
                                           "is not implemented yet, contact developer")
+        if(PRESENT(flags)) then
+           if(BTEST(flags, ROOT_GLOBAL)) call mpp_error(FATAL,"MPP_GLOBAL_FIELD: global_field_on_root_pe_only capability "// &
+               "is not implemented in new version mpp_global_field, contact developer")
+        endif
+
         ke = size(local,3)
         if(ke /= size(global,3))call mpp_error(FATAL, 'MPP_GLOBAL_FIELD: incoming arrays have mismatched K extent.')
         isize_l = size(local,1); jsize_l = size(local,2)
@@ -66,8 +71,9 @@
         call mpp_do_global_field( local, global, d_comm )
         d_comm =>NULL()
       else
-        call mpp_do_global_field( Dom, local, global, tile, flags )
+        call mpp_do_global_field( Dom, local, global, tile, flags)
       end if
+      Dom =>NULL()
 #else
       integer, optional :: dc_handle  ! not used when there are no cray pointers
       type(domain2d), pointer :: Dom => NULL()
@@ -75,6 +81,7 @@
       Dom => get_domain( domain, position )
       tile = 1; if(PRESENT(tile_count)) tile = tile_count
       call mpp_do_global_field( Dom, local, global, tile, flags )
+      Dom =>NULL()
 #endif
     end subroutine MPP_GLOBAL_FIELD_3D_
 

@@ -32,6 +32,7 @@
       integer :: n, l_size, l, m, i, j, k, nlist
       integer :: is, ie, js, je, tMe, dir
       integer :: start, start1, start2, index, is1, ie1, js1, je1, ni, nj, total
+      integer :: buffer_recv_size
 
       nlist = size(domain%list(:))
       buffer_pos = 0        !this initialization goes away if update_domains becomes non-blocking
@@ -65,6 +66,32 @@
          else
             field_name = "un-named"
          end if
+
+         !--- pre-post recv the data 
+         do list = 0,nlist-1
+            m = mod( domain%pos+nlist-list, nlist )
+            check=>domain%check%recv(m)
+            msgsize = 0
+            do n = 1, check%count
+               is = check%is(n); ie = check%ie(n)
+               js = check%js(n); je = check%je(n)
+               msgsize = msgsize + (ie-is+1)*(je-js+1)
+            end do
+            msgsize = msgsize*ke*l_size
+
+            if( msgsize.GT.0 )then
+               from_pe = domain%list(m)%pe
+               mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize) )
+               if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
+                  write( text,'(i8)' )mpp_domains_stack_hwm
+                  call mpp_error( FATAL, 'MPP_DO_UPDATE: mpp_domains_stack overflow, '// &
+                       'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+               end if
+               call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.FALSE. )
+               buffer_pos = buffer_pos + msgsize
+            end if
+         end do
+         buffer_recv_size = buffer_pos
 
          !--- send the data
          do list = 0,nlist-1
@@ -142,31 +169,8 @@
             end if
          end do ! end do list = 0,nlist-1
 
-         !--- recv the data 
-         do list = 0,nlist-1
-            m = mod( domain%pos+nlist-list, nlist )
-            check=>domain%check%recv(m)
-            msgsize = 0
-            do n = 1, check%count
-               is = check%is(n); ie = check%ie(n)
-               js = check%js(n); je = check%je(n)
-               msgsize = msgsize + (ie-is+1)*(je-js+1)
-            end do
-            msgsize = msgsize*ke*l_size
-
-            if( msgsize.GT.0 )then
-               from_pe = domain%list(m)%pe
-               mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize) )
-               if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
-                  write( text,'(i8)' )mpp_domains_stack_hwm
-                  call mpp_error( FATAL, 'MPP_DO_UPDATE: mpp_domains_stack overflow, '// &
-                       'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
-               end if
-               call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe )
-               buffer_pos = buffer_pos + msgsize
-            end if
-         end do
-
+         call mpp_sync_self(check=EVENT_RECV) ! To ensure recv is completed.
+         buffer_pos = buffer_recv_size
          !--- compare the data in reverse order
          CHECK_LOOP: do list = nlist-1,0,-1
             m = mod( domain%pos+nlist-list, nlist )
@@ -197,7 +201,42 @@
                end do
             end do
          end do CHECK_LOOP ! end do list = nlist-1,0,-1
+         call mpp_sync_self()
       end if ! end if( check ... )
+
+      buffer_pos = 0
+
+      !recv
+      do list = 0,nlist-1
+         m = mod( domain%pos+nlist-list, nlist )
+         overPtr => domain%update_recv(m)
+         if( overPtr%count == 0 )cycle
+         call mpp_clock_begin(recv_clock)
+         msgsize = 0
+         do n = 1, overPtr%count
+            dir = overPtr%dir(n)
+            if(recv(dir)) then
+               is = overPtr%is(n); ie = overPtr%ie(n)
+               js = overPtr%js(n); je = overPtr%je(n)
+               msgsize = msgsize + (ie-is+1)*(je-js+1)
+            end if
+         end do
+
+         msgsize = msgsize*ke*l_size
+         if( msgsize.GT.0 )then
+            from_pe = domain%list(m)%pe
+            mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize) )
+            if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
+               write( text,'(i8)' )mpp_domains_stack_hwm
+               call mpp_error( FATAL, 'MPP_DO_UPDATE: mpp_domains_stack overflow, '// &
+                    'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+            end if
+            call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.FALSE. )
+            buffer_pos = buffer_pos + msgsize
+         end if
+         call mpp_clock_end(recv_clock)
+      end do ! end do list = 0,nlist-1
+      buffer_recv_size = buffer_pos
 
       ! send
       do list = 0,nlist-1
@@ -296,40 +335,13 @@
          call mpp_clock_end(send_clock)
       end do ! end do ist = 0,nlist-1
 
-      !recv
-      do list = 0,nlist-1
-         m = mod( domain%pos+nlist-list, nlist )
-         overPtr => domain%update_recv(m)
-         if( overPtr%count == 0 )cycle
-         call mpp_clock_begin(recv_clock)
-         msgsize = 0
-         do n = 1, overPtr%count
-            dir = overPtr%dir(n)
-            if(recv(dir)) then
-               is = overPtr%is(n); ie = overPtr%ie(n)
-               js = overPtr%js(n); je = overPtr%je(n)
-               msgsize = msgsize + (ie-is+1)*(je-js+1)
-            end if
-         end do
-
-         msgsize = msgsize*ke*l_size
-         if( msgsize.GT.0 )then
-            from_pe = domain%list(m)%pe
-            mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize) )
-            if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
-               write( text,'(i8)' )mpp_domains_stack_hwm
-               call mpp_error( FATAL, 'MPP_DO_UPDATE: mpp_domains_stack overflow, '// &
-                    'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
-            end if
-            call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe )
-            buffer_pos = buffer_pos + msgsize
-         end if
-         call mpp_clock_end(recv_clock)
-      end do ! end do list = 0,nlist-1
-
       !unpack recv
       !unpack halos in reverse order
 !     ptr_rfield = f_addrs(1)
+      call mpp_clock_begin(wait_clock)
+      call mpp_sync_self(check=EVENT_RECV)
+      call mpp_clock_end(wait_clock)
+      buffer_pos = buffer_recv_size      
 
       do list = nlist-1,0,-1
          m = mod( domain%pos+nlist-list, nlist )

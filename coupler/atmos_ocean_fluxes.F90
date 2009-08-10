@@ -188,8 +188,8 @@ character(len=48), parameter    :: mod_name = 'atmos_ocean_fluxes_mod'
 !----------------------------------------------------------------------
 !
 
-character(len=128) :: version = '$Id: atmos_ocean_fluxes.F90,v 15.0.10.1.2.1 2008/09/16 13:40:35 wfc Exp $'
-character(len=128) :: tagname = '$Name: perth_2008_10 $'
+character(len=128) :: version = '$Id: atmos_ocean_fluxes.F90,v 17.0 2009/07/21 03:18:29 fms Exp $'
+character(len=128) :: tagname = '$Name: quebec $'
 
 !
 !-----------------------------------------------------------------------
@@ -250,6 +250,7 @@ character(len=48), parameter  :: sub_name = 'aof_set_coupler_flux'
 integer                                                 :: n
 integer                                                 :: length
 integer                                                 :: num_parameters
+integer                                                 :: outunit
 character(len=fm_path_name_len)                         :: coupler_list
 character(len=fm_path_name_len)                         :: current_list
 character(len=fm_string_len)                            :: flux_type_test
@@ -286,9 +287,9 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 if (name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
-
-write (stdout(),*)
-write (stdout(),*) trim(note_header), ' Processing coupler fluxes ', trim(name)
+outunit = stdout()
+write (outunit,*)
+write (outunit,*) trim(note_header), ' Processing coupler fluxes ', trim(name)
 
 !
 !       define the coupler list name
@@ -305,8 +306,8 @@ coupler_list = '/coupler_mod/fluxes/' // trim(name)
 !
 
 if (fm_exists('/coupler_mod/GOOD/fluxes/' // trim(name) // '/good_list')) then  !{
-  write (stdout(),*)
-  write (stdout(),*) trim(note_header), ' Using previously defined coupler flux'
+  write (outunit,*)
+  write (outunit,*) trim(note_header), ' Using previously defined coupler flux'
   coupler_index = fm_get_index(coupler_list)
   if (coupler_index .le. 0) then  !{
     call mpp_error(FATAL, trim(error_header) // ' Could not get coupler flux ')
@@ -320,7 +321,7 @@ if (fm_exists('/coupler_mod/GOOD/fluxes/' // trim(name) // '/good_list')) then  
 !
 
   if (present(atm_tr_index)) then  !{
-    write (stdout(),*) trim(note_header), ' Redefining atm_tr_index to ', atm_tr_index
+    write (outunit,*) trim(note_header), ' Redefining atm_tr_index to ', atm_tr_index
     call fm_util_set_value(trim(coupler_list) // '/atm_tr_index', atm_tr_index, no_create = .true.,        &
          no_overwrite = .false., caller = caller_str)
   endif  !}
@@ -453,10 +454,10 @@ if (present(param)) then  !{
        trim(fm_util_get_string('implementation', scalar = .true.)) // '/num_parameters', scalar = .true.)
   length = min(size(param(:)),num_parameters)
   if (length .ne. num_parameters) then  !{
-    write (stdout(),*) trim(note_header), ' Number of parameters provided for ', trim(name), ' does not match the'
-    write (stdout(),*) 'number of parameters required (', size(param(:)), ' != ', num_parameters, ').'
-    write (stdout(),*) 'This could be an error, or more likely is just a result of the implementation being'
-    write (stdout(),*) 'overridden by the field table input'
+    write (outunit,*) trim(note_header), ' Number of parameters provided for ', trim(name), ' does not match the'
+    write (outunit,*) 'number of parameters required (', size(param(:)), ' != ', num_parameters, ').'
+    write (outunit,*) 'This could be an error, or more likely is just a result of the implementation being'
+    write (outunit,*) 'overridden by the field table input'
   endif  !}
   if (length .gt. 0) then  !{
     call fm_util_set_value('param', param(1:length), length)
@@ -593,6 +594,7 @@ character(len=128)                      :: caller_str
 character(len=fm_type_name_len)         :: typ
 character(len=fm_field_name_len)        :: name
 integer                                 :: ind
+integer                                 :: outunit
 integer                                 :: total_fluxes
 character(len=8)                        :: string
 character(len=128)                      :: error_string
@@ -616,9 +618,9 @@ if (initialized) then  !{
 endif  !}
 
 initialized = .true.
-
-!write (stdout(),*)
-!write (stdout(),*) 'Dumping field manager tree'
+outunit = stdout()
+!write (outunit,*)
+!write (outunit,*) 'Dumping field manager tree'
 !if (.not. fm_dump_list('/', recursive = .true.)) then  !{
   !call mpp_error(FATAL, trim(error_header) // ' Problem dumping field manager tree')
 !endif  !}
@@ -642,10 +644,10 @@ gas_fields_ice%num_bcs = gas_fluxes%num_bcs
 if (gas_fluxes%num_bcs .lt. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not get number of fluxes')
 elseif (gas_fluxes%num_bcs .eq. 0) then  !}{
-  write (stdout(),*) trim(note_header), ' No gas fluxes'
+  write (outunit,*) trim(note_header), ' No gas fluxes'
   return
 else  !}{
-  write (stdout(),*) trim(note_header), ' Processing ', gas_fluxes%num_bcs, ' gas fluxes'
+  write (outunit,*) trim(note_header), ' Processing ', gas_fluxes%num_bcs, ' gas fluxes'
 endif  !}
 
 !
@@ -674,7 +676,7 @@ do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))  !{
     n = n + 1  ! increment the array index
 
     if (n .ne. ind) then  !{
-      write (stdout(),*) trim(warn_header), ' Flux index, ', ind,       &
+      write (outunit,*) trim(warn_header), ' Flux index, ', ind,       &
            ' does not match array index, ', n, ' for ', trim(name)
     endif  !}
 
@@ -895,8 +897,8 @@ do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))  !{
 
 enddo  !}
 
-write (stdout(),*)
-write (stdout(),*) 'Dumping fluxes tracer tree'
+write (outunit,*)
+write (outunit,*) 'Dumping fluxes tracer tree'
 if (.not. fm_dump_list('/coupler_mod/fluxes', recursive = .true.)) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Problem dumping fluxes tracer tree')
 endif  !}

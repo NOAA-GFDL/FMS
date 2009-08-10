@@ -4,6 +4,7 @@
 #include <string.h>
 #include "read_mosaic.h"
 #include "constant.h"
+#include "mosaic_util.h"
 #ifdef use_netCDF
 #include <netcdf.h>
 #endif
@@ -47,6 +48,36 @@ void get_file_dir(const char *file, char *dir)
 }; /* get_file_dir */
 
 
+int field_exist(const char* file, const char *name)
+{
+  int ncid, varid, status, existed;
+  char msg[512];  
+#ifdef use_netCDF
+  status = nc_open(file, NC_NOWRITE, &ncid);
+  if(status != NC_NOERR) {
+    sprintf(msg, "field_exist: in opening file %s", file);
+    handle_netcdf_error(msg, status);
+  }
+  status = nc_inq_varid(ncid, name, &varid);  
+  if(status == NC_NOERR)
+    existed = 1;
+  else
+    existed = 0;
+    
+  status = nc_close(ncid);
+  if(status != NC_NOERR) {
+    sprintf(msg, "field_exist: in closing file %s.", file);
+    handle_netcdf_error(msg, status);
+  }
+
+  return existed;
+#else
+  error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
+
+#endif
+  return 0; 
+}; /* field_exist */
+
 int get_dimlen(const char* file, const char *name)
 {
   int ncid, dimid, status, len;
@@ -78,7 +109,7 @@ int get_dimlen(const char* file, const char *name)
   
   len = size;
   if(status != NC_NOERR) {
-    sprintf(msg, "in closing file ", file);
+    sprintf(msg, "in closing file %s", file);
     handle_netcdf_error(msg, status);
   }
 #else
@@ -216,7 +247,7 @@ void get_double_data(const char *file, const char *name, double *data)
 #ifdef use_netCDF    
   status = nc_open(file, NC_NOWRITE, &ncid);
   if(status != NC_NOERR) {
-    sprintf(msg, "in opening file ", file);
+    sprintf(msg, "in opening file %s", file);
     handle_netcdf_error(msg, status);
   }
   status = nc_inq_varid(ncid, name, &varid);
@@ -252,7 +283,7 @@ void get_var_text_att(const char *file, const char *name, const char *attname, c
 #ifdef use_netCDF    
   status = nc_open(file, NC_NOWRITE, &ncid);
   if(status != NC_NOERR) {
-    sprintf(msg, "in opening file ", file);
+    sprintf(msg, "in opening file %s", file);
     handle_netcdf_error(msg, status);
   }
   status = nc_inq_varid(ncid, name, &varid);
@@ -413,8 +444,11 @@ int read_mosaic_ncontacts(const char *mosaic_file)
 
   int ncontacts;
 
-  ncontacts = get_dimlen(mosaic_file, "ncontact");
-
+  if(field_exist(mosaic_file, "contacts") )
+    ncontacts = get_dimlen(mosaic_file, "ncontact");
+  else
+    ncontacts = 0;
+  
   return ncontacts;
   
 }; /* read_mosaic_ncontacts */

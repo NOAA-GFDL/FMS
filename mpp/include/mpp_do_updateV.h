@@ -39,6 +39,7 @@
       type(overlapSpec), pointer :: overPtry => NULL()
       type(boundary),    pointer :: check_x  => NULL()
       type(boundary),    pointer :: check_y  => NULL()
+      integer :: buffer_recv_size
 
       update_flags = XUPDATE+YUPDATE   !default
       if( PRESENT(flags) ) then 
@@ -84,6 +85,38 @@
          else
             field_name = "un-named"
          end if
+
+         !--- recv the data 
+         do list = 0,nlist-1
+            m = mod( domainx%pos+nlist-list, nlist )
+            check_x=>domainx%check%recv(m)
+            check_y=>domainy%check%recv(m)
+            msgsize = 0
+            do n = 1, check_x%count
+               is = check_x%is(n); ie = check_x%ie(n)
+               js = check_x%js(n); je = check_x%je(n)
+               msgsize = msgsize + (ie-is+1)*(je-js+1)
+            end do
+            do n = 1, check_y%count
+               is = check_y%is(n); ie = check_y%ie(n)
+               js = check_y%js(n); je = check_y%je(n)
+               msgsize = msgsize + (ie-is+1)*(je-js+1)
+            end do
+            msgsize = msgsize*ke*l_size
+
+            if( msgsize.GT.0 )then
+               from_pe = domainx%list(m)%pe
+               mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize) )
+               if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
+                  write( text,'(i8)' )mpp_domains_stack_hwm
+                  call mpp_error( FATAL, 'MPP_DO_UPDATE_V: mpp_domains_stack overflow, '// &
+                       'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+               end if
+               call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.false. )
+               buffer_pos = buffer_pos + msgsize
+            end if
+         end do
+         buffer_recv_size = buffer_pos
 
          !--- send the data
          do list = 0,nlist-1
@@ -284,36 +317,8 @@
             end if
          end do ! end do list = 0,nlist-1
 
-         !--- recv the data 
-         do list = 0,nlist-1
-            m = mod( domainx%pos+nlist-list, nlist )
-            check_x=>domainx%check%recv(m)
-            check_y=>domainy%check%recv(m)
-            msgsize = 0
-            do n = 1, check_x%count
-               is = check_x%is(n); ie = check_x%ie(n)
-               js = check_x%js(n); je = check_x%je(n)
-               msgsize = msgsize + (ie-is+1)*(je-js+1)
-            end do
-            do n = 1, check_y%count
-               is = check_y%is(n); ie = check_y%ie(n)
-               js = check_y%js(n); je = check_y%je(n)
-               msgsize = msgsize + (ie-is+1)*(je-js+1)
-            end do
-            msgsize = msgsize*ke*l_size
-
-            if( msgsize.GT.0 )then
-               from_pe = domainx%list(m)%pe
-               mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize) )
-               if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
-                  write( text,'(i8)' )mpp_domains_stack_hwm
-                  call mpp_error( FATAL, 'MPP_DO_UPDATE_V: mpp_domains_stack overflow, '// &
-                       'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
-               end if
-               call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe )
-               buffer_pos = buffer_pos + msgsize
-            end if
-         end do
+         call mpp_sync_self(check=EVENT_RECV) ! To ensure recv is completed.
+         buffer_pos = buffer_recv_size
 
          !--- compare the data in reverse order
          CHECK_LOOP: do list = nlist-1,0,-1
@@ -373,7 +378,65 @@
                end do
             end do
          end do CHECK_LOOP ! end do list = nlist-1,0,-1
+         call mpp_sync_self()
       end if
+
+      buffer_pos = 0
+!recv
+      do list = 0,nlist-1
+         m = mod( domainx%pos+nlist-list, nlist )
+         overPtrx => domainx%update_recv(m)
+         overPtry => domainy%update_recv(m)
+         if( overPtrx%count == 0 .AND. overPtry%count == 0 )cycle
+         call mpp_clock_begin(recv_clock)
+         msgsize = 0
+         select case(gridtype)
+         case(BGRID_NE, BGRID_SW, AGRID)
+            do n = 1, overPtrx%count
+               dir = overPtrx%dir(n)
+               if(recv(dir)) then
+                  tMe = overPtrx%tileMe(n)
+                  is = overPtrx%is(n); ie = overPtrx%ie(n)
+                  js = overPtrx%js(n); je = overPtrx%je(n)
+                  msgsize = msgsize + (ie-is+1)*(je-js+1)
+               end if
+            end do
+            msgsize = msgsize*2
+         case(CGRID_NE, CGRID_SW)
+            do n = 1, overPtrx%count
+
+               dir = overPtrx%dir(n)
+               if(recv(dir)) then
+                  is = overPtrx%is(n); ie = overPtrx%ie(n)
+                  js = overPtrx%js(n); je = overPtrx%je(n)
+                  msgsize = msgsize + (ie-is+1)*(je-js+1)
+               end if
+            end do
+            do n = 1, overPtry%count
+               dir = overPtry%dir(n)
+               if(recv(dir)) then
+                  is = overPtry%is(n); ie = overPtry%ie(n)
+                  js = overPtry%js(n); je = overPtry%je(n)
+                  msgsize = msgsize + (ie-is+1)*(je-js+1)
+               end if
+            end do
+         end select
+         msgsize = msgsize*ke*l_size
+   
+         if( msgsize.GT.0 )then
+             from_pe = domainx%list(m)%pe
+             mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, buffer_pos+msgsize )
+             if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
+                write( text,'(i8)' )mpp_domains_stack_hwm
+                call mpp_error( FATAL, 'MPP_DO_UPDATE_V: mpp_domains_stack overflow, '// &
+                     'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+             end if
+             call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.false. )
+             buffer_pos = buffer_pos + msgsize
+         end if
+         call mpp_clock_end(recv_clock)
+      end do
+      buffer_recv_size = buffer_pos
 
       !--- send
       do list = 0,nlist-1
@@ -957,63 +1020,13 @@
          !     write(stdout(),*) 'Update send checksum=',mpp_chksum(rbuffer(buffer_pos))
       end do ! do list = 0,nlist-1
 
-!recv
-      do list = 0,nlist-1
-         m = mod( domainx%pos+nlist-list, nlist )
-         overPtrx => domainx%update_recv(m)
-         overPtry => domainy%update_recv(m)
-         if( overPtrx%count == 0 .AND. overPtry%count == 0 )cycle
-         call mpp_clock_begin(recv_clock)
-         msgsize = 0
-         select case(gridtype)
-         case(BGRID_NE, BGRID_SW, AGRID)
-            do n = 1, overPtrx%count
-               dir = overPtrx%dir(n)
-               if(recv(dir)) then
-                  tMe = overPtrx%tileMe(n)
-                  is = overPtrx%is(n); ie = overPtrx%ie(n)
-                  js = overPtrx%js(n); je = overPtrx%je(n)
-                  msgsize = msgsize + (ie-is+1)*(je-js+1)
-               end if
-            end do
-            msgsize = msgsize*2
-         case(CGRID_NE, CGRID_SW)
-            do n = 1, overPtrx%count
-
-               dir = overPtrx%dir(n)
-               if(recv(dir)) then
-                  is = overPtrx%is(n); ie = overPtrx%ie(n)
-                  js = overPtrx%js(n); je = overPtrx%je(n)
-                  msgsize = msgsize + (ie-is+1)*(je-js+1)
-               end if
-            end do
-            do n = 1, overPtry%count
-               dir = overPtry%dir(n)
-               if(recv(dir)) then
-                  is = overPtry%is(n); ie = overPtry%ie(n)
-                  js = overPtry%js(n); je = overPtry%je(n)
-                  msgsize = msgsize + (ie-is+1)*(je-js+1)
-               end if
-            end do
-         end select
-         msgsize = msgsize*ke*l_size
-   
-         if( msgsize.GT.0 )then
-             from_pe = domainx%list(m)%pe
-             mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, buffer_pos+msgsize )
-             if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
-                write( text,'(i8)' )mpp_domains_stack_hwm
-                call mpp_error( FATAL, 'MPP_DO_UPDATE_V: mpp_domains_stack overflow, '// &
-                     'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
-             end if
-             call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe )
-             buffer_pos = buffer_pos + msgsize
-         end if
-         call mpp_clock_end(recv_clock)
-      end do
 
 !unpack recv
 !unpack halos in reverse order
+      call mpp_clock_begin(wait_clock)
+      call mpp_sync_self(check=EVENT_RECV)
+      call mpp_clock_end(wait_clock)
+      buffer_pos = buffer_recv_size      
 
       do list = nlist-1,0,-1
          m = mod( domainx%pos+nlist-list, nlist )
@@ -1229,7 +1242,7 @@
                   if( is.GT.domainx%x(1)%data%begin )then
 
                      if( 2*is-domainx%x(1)%data%begin.GT.domainx%x(1)%data%end ) &
-                          call mpp_error( FATAL, 'MPP_DO_UPDATE_V: BGRID_NE west edge ubound error.' )
+                          call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north BGRID_NE west edge ubound error.' )
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
                         ptr_fieldy = f_addrsy(l, 1)   
@@ -1245,7 +1258,7 @@
                   is = domainy%x(1)%global%begin
                   if( is.GT.domainy%x(1)%data%begin )then
                      if( 2*is-domainy%x(1)%data%begin-1.GT.domainy%x(1)%data%end ) &
-                          call mpp_error( FATAL, 'MPP_DO_UPDATE_V: CGRID_NE west edge ubound error.' )
+                          call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
                      do l=1,l_size
                         ptr_fieldy = f_addrsy(l, 1)   
                         do k = 1,ke
@@ -1281,6 +1294,282 @@
                      do k = 1,ke
                         do i = is, ie
                            fieldy(i,j,k) = -fieldy(i,j,k)
+                        end do
+                     end do
+                  end do
+               end select
+            end if
+         end if
+      else if( BTEST(domainx%fold,SOUTH) .AND. (.NOT.BTEST(update_flags,SCALAR_BIT)) )then      ! ---southern boundary fold
+         ! NOTE: symmetry is assumed for fold-south boundary
+         j = domainy%y(1)%global%begin
+         if( domainy%y(1)%data%begin.LE.j .AND. j.LE.domainy%y(1)%data%end )then !fold is within domain
+            midpoint = (domainy%x(1)%global%begin+domainy%x(1)%global%end-1)/2
+            !poles set to 0: BGRID only
+            if( gridtype.EQ.BGRID_NE )then
+               j  = domainx%y(1)%global%begin
+               is = domainx%x(1)%global%begin; ie = domainx%x(1)%global%end
+               do i = is ,ie, midpoint
+                  if( domainx%x(1)%data%begin.LE.i .AND. i.LE. domainx%x(1)%data%end )then
+                     do l=1,l_size
+                        ptr_fieldx = f_addrsx(l, 1)
+                        ptr_fieldy = f_addrsy(l, 1)   
+                        do k = 1,ke
+                           fieldx(i,j,k) = 0.
+                           fieldy(i,j,k) = 0.
+                        end do
+                     end do
+                  end if
+               end do
+            endif
+
+            ! the following code code block correct an error where the data in your halo coming from 
+            ! other half may have the wrong sign
+            !off west edge, when update north or west direction
+            j = domainy%y(1)%global%begin
+            if ( BTEST(update_flags,SOUTH) .OR. BTEST(update_flags,WEST) ) then
+               select case(gridtype)
+               case(BGRID_NE)
+                  is = domainx%x(1)%global%begin
+                  if( is.GT.domainx%x(1)%data%begin )then
+
+                     if( 2*is-domainx%x(1)%data%begin.GT.domainx%x(1)%data%end ) &
+                          call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-south BGRID_NE west edge ubound error.' )
+                     do l=1,l_size
+                        ptr_fieldx = f_addrsx(l, 1)
+                        ptr_fieldy = f_addrsy(l, 1)   
+                        do k = 1,ke
+                           do i = domainx%x(1)%data%begin,is-1
+                              fieldx(i,j,k) = fieldx(2*is-i,j,k)
+                              fieldy(i,j,k) = fieldy(2*is-i,j,k)
+                           end do
+                        end do
+                     end do
+                  end if
+               case(CGRID_NE)
+                  is = domainy%x(1)%global%begin
+                  if( is.GT.domainy%x(1)%data%begin )then
+                     if( 2*is-domainy%x(1)%data%begin-1.GT.domainy%x(1)%data%end ) &
+                          call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-south CGRID_NE west edge ubound error.' )
+                     do l=1,l_size
+                        ptr_fieldy = f_addrsy(l, 1)   
+                        do k = 1,ke
+                           do i = domainy%x(1)%data%begin,is-1
+                              fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
+                           end do
+                        end do
+                     end do
+                  end if
+               end select
+            end if
+
+            !off east edge
+            is = domainy%x(1)%global%end
+            if(domainy%x(1)%cyclic .AND. is.LT.domainy%x(1)%data%end )then
+               ie = domainy%x(1)%data%end
+               is = is + 1
+               select case(gridtype)
+               case(BGRID_NE)
+                  do l=1,l_size
+                     ptr_fieldx = f_addrsx(l, 1)
+                     ptr_fieldy = f_addrsy(l, 1)   
+                     do k = 1,ke
+                        do i = is,ie
+                           fieldx(i,j,k) = -fieldx(i,j,k)
+                           fieldy(i,j,k) = -fieldy(i,j,k)
+                        end do
+                     end do
+                  end do
+               case(CGRID_NE)
+                  do l=1,l_size
+                     ptr_fieldy = f_addrsy(l, 1)   
+                     do k = 1,ke
+                        do i = is, ie
+                           fieldy(i,j,k) = -fieldy(i,j,k)
+                        end do
+                     end do
+                  end do
+               end select
+            end if
+         end if
+      else if( BTEST(domainx%fold,WEST) .AND. (.NOT.BTEST(update_flags,SCALAR_BIT)) )then      ! ---eastern boundary fold
+         ! NOTE: symmetry is assumed for fold-west boundary
+         i = domainy%x(1)%global%begin
+         if( domainy%x(1)%data%begin.LE.i .AND. i.LE.domainy%x(1)%data%end )then !fold is within domain
+            midpoint = (domainy%y(1)%global%begin+domainy%y(1)%global%end-1)/2
+            !poles set to 0: BGRID only
+            if( gridtype.EQ.BGRID_NE )then
+               i  = domainx%x(1)%global%begin
+               js = domainx%y(1)%global%begin; je = domainx%y(1)%global%end
+               do j = js ,je, midpoint
+                  if( domainx%y(1)%data%begin.LE.j .AND. j.LE. domainx%y(1)%data%end )then
+                     do l=1,l_size
+                        ptr_fieldx = f_addrsx(l, 1)
+                        ptr_fieldy = f_addrsy(l, 1)   
+                        do k = 1,ke
+                           fieldx(i,j,k) = 0.
+                           fieldy(i,j,k) = 0.
+                        end do
+                     end do
+                  end if
+               end do
+            endif
+
+            ! the following code code block correct an error where the data in your halo coming from 
+            ! other half may have the wrong sign
+            !off south edge, when update south or west direction
+            i = domainx%x(1)%global%begin
+            if ( BTEST(update_flags,SOUTH) .OR. BTEST(update_flags,WEST) ) then
+               select case(gridtype)
+               case(BGRID_NE)
+                  js = domainx%y(1)%global%begin
+                  if( js.GT.domainx%y(1)%data%begin )then
+
+                     if( 2*js-domainx%y(1)%data%begin.GT.domainx%y(1)%data%end ) &
+                          call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-west BGRID_NE west edge ubound error.' )
+                     do l=1,l_size
+                        ptr_fieldx = f_addrsx(l, 1)
+                        ptr_fieldy = f_addrsy(l, 1)   
+                        do k = 1,ke
+                           do j = domainx%y(1)%data%begin,js-1
+                              fieldx(i,j,k) = fieldx(i,2*js-j,k)
+                              fieldy(i,j,k) = fieldy(i,2*js-j,k)
+                           end do
+                        end do
+                     end do
+                  end if
+               case(CGRID_NE)
+                  js = domainx%y(1)%global%begin
+                  if( js.GT.domainx%y(1)%data%begin )then
+                     if( 2*js-domainx%y(1)%data%begin-1.GT.domainx%y(1)%data%end ) &
+                          call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-west CGRID_NE west edge ubound error.' )
+                     do l=1,l_size
+                        ptr_fieldx = f_addrsx(l, 1)   
+                        do k = 1,ke
+                           do j = domainx%y(1)%data%begin,js-1
+                              fieldx(i,j,k) = fieldx(i, 2*js-j-1,k)
+                           end do
+                        end do
+                     end do
+                  end if
+               end select
+            end if
+
+            !off east edge
+            js = domainx%y(1)%global%end
+            if(domainx%y(1)%cyclic .AND. js.LT.domainx%y(1)%data%end )then
+               je = domainx%y(1)%data%end
+               js = js + 1
+               select case(gridtype)
+               case(BGRID_NE)
+                  do l=1,l_size
+                     ptr_fieldx = f_addrsx(l, 1)
+                     ptr_fieldy = f_addrsy(l, 1)   
+                     do k = 1,ke
+                        do j = js,je
+                           fieldx(i,j,k) = -fieldx(i,j,k)
+                           fieldy(i,j,k) = -fieldy(i,j,k)
+                        end do
+                     end do
+                  end do
+               case(CGRID_NE)
+                  do l=1,l_size
+                     ptr_fieldx = f_addrsx(l, 1)   
+                     do k = 1,ke
+                        do j = js, je
+                           fieldx(i,j,k) = -fieldx(i,j,k)
+                        end do
+                     end do
+                  end do
+               end select
+            end if
+         end if
+      else if( BTEST(domainx%fold,EAST) .AND. (.NOT.BTEST(update_flags,SCALAR_BIT)) )then      ! ---eastern boundary fold
+         ! NOTE: symmetry is assumed for fold-west boundary
+         i = domainy%x(1)%global%end
+         if( domainy%x(1)%data%begin.LE.i .AND. i.LE.domainy%x(1)%data%end )then !fold is within domain
+            midpoint = (domainy%y(1)%global%begin+domainy%y(1)%global%end-1)/2
+            !poles set to 0: BGRID only
+            if( gridtype.EQ.BGRID_NE )then
+               i  = domainx%x(1)%global%end
+               js = domainx%y(1)%global%begin; je = domainx%y(1)%global%end
+               do j = js ,je, midpoint
+                  if( domainx%y(1)%data%begin.LE.j .AND. j.LE. domainx%y(1)%data%end )then
+                     do l=1,l_size
+                        ptr_fieldx = f_addrsx(l, 1)
+                        ptr_fieldy = f_addrsy(l, 1)   
+                        do k = 1,ke
+                           fieldx(i,j,k) = 0.
+                           fieldy(i,j,k) = 0.
+                        end do
+                     end do
+                  end if
+               end do
+            endif
+
+            ! the following code code block correct an error where the data in your halo coming from 
+            ! other half may have the wrong sign
+            !off south edge, when update south or west direction
+            i = domainx%x(1)%global%end
+            if ( BTEST(update_flags,SOUTH) .OR. BTEST(update_flags,EAST) ) then
+               select case(gridtype)
+               case(BGRID_NE)
+                  js = domainx%y(1)%global%begin
+                  if( js.GT.domainx%y(1)%data%begin )then
+
+                     if( 2*js-domainx%y(1)%data%begin.GT.domainx%y(1)%data%end ) &
+                          call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-east BGRID_NE west edge ubound error.' )
+                     do l=1,l_size
+                        ptr_fieldx = f_addrsx(l, 1)
+                        ptr_fieldy = f_addrsy(l, 1)   
+                        do k = 1,ke
+                           do j = domainx%y(1)%data%begin,js-1
+                              fieldx(i,j,k) = fieldx(i,2*js-j,k)
+                              fieldy(i,j,k) = fieldy(i,2*js-j,k)
+                           end do
+                        end do
+                     end do
+                  end if
+               case(CGRID_NE)
+                  js = domainx%y(1)%global%begin
+                  if( js.GT.domainx%y(1)%data%begin )then
+                     if( 2*js-domainx%y(1)%data%begin-1.GT.domainx%y(1)%data%end ) &
+                          call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-east CGRID_NE west edge ubound error.' )
+                     do l=1,l_size
+                        ptr_fieldx = f_addrsx(l, 1)   
+                        do k = 1,ke
+                           do j = domainx%y(1)%data%begin,js-1
+                              fieldx(i,j,k) = fieldx(i, 2*js-j-1,k)
+                           end do
+                        end do
+                     end do
+                  end if
+               end select
+            end if
+
+            !off north edge
+            js = domainx%y(1)%global%end
+            if(domainx%y(1)%cyclic .AND. js.LT.domainx%y(1)%data%end )then
+               je = domainx%y(1)%data%end
+               js = js + 1
+               select case(gridtype)
+               case(BGRID_NE)
+                  do l=1,l_size
+                     ptr_fieldx = f_addrsx(l, 1)
+                     ptr_fieldy = f_addrsy(l, 1)   
+                     do k = 1,ke
+                        do j = js,je
+                           fieldx(i,j,k) = -fieldx(i,j,k)
+                           fieldy(i,j,k) = -fieldy(i,j,k)
+                        end do
+                     end do
+                  end do
+               case(CGRID_NE)
+                  do l=1,l_size
+                     ptr_fieldx = f_addrsx(l, 1)   
+                     do k = 1,ke
+                        do j = js, je
+                           fieldx(i,j,k) = -fieldx(i,j,k)
                         end do
                      end do
                   end do

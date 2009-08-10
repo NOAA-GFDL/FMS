@@ -1,5 +1,5 @@
 ! -*-f90-*-
-! $Id: mpp_util_mpi.inc,v 16.0 2008/07/30 22:47:18 fms Exp $
+! $Id: mpp_util_mpi.inc,v 17.0 2009/07/21 03:21:00 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -14,7 +14,7 @@ subroutine mpp_error_basic( errortype, errormsg )
   character(len=*), intent(in), optional :: errormsg
   character(len=256)                     :: text
   logical                                :: opened
-  integer                                :: istat
+  integer                                :: istat, out_unit
 
   if( .NOT.module_is_initialized )call ABORT()
 
@@ -32,18 +32,19 @@ subroutine mpp_error_basic( errortype, errormsg )
   if( npes.GT.1 )write( text,'(a,i5)' )trim(text)//' from PE', pe   !this is the mpp part
   if( PRESENT(errormsg) )text = trim(text)//': '//trim(errormsg)
 
+  out_unit = stdout()
   select case( errortype )
   case(NOTE)
-     write( stdout(),'(a)' )trim(text)
+     write( out_unit,'(a)' )trim(text)
   case default
 #ifdef __SX
      write( stderr(), * )trim(text)
 #else
      write( stderr(), '(/a/)' )trim(text)
 #endif
-     write( stdout(),'(/a/)' )trim(text)
+     write( out_unit,'(/a/)' )trim(text)
      if( errortype.EQ.FATAL .OR. warnings_are_fatal )then
-        call FLUSH(stdout(),istat)
+        call FLUSH(out_unit,istat)
 #ifdef sgi_mipspro
         call TRACE_BACK_STACK_AND_PRINT()
 #endif
@@ -74,13 +75,19 @@ function get_peset(pelist)
   if( size(pelist(:)).EQ.1 .AND. npes.GT.1 )then    !collective ops on single PEs should return
      get_peset = 0; return
   end if
-  !make a sorted list
-  n = 1
-  if( ascend_sort(pelist).NE.1 )call mpp_error( FATAL, 'GET_PESET: sort error.' )   !result is the array sorted(:)
-  if( debug )write( stderr(),* )'pelist=', pelist, ' sorted=', sorted
+
+  !--- first make sure pelist is monotonically increasing.
+  do n = 2, size(pelist(:))
+     if(pelist(n) <= pelist(n-1)) call mpp_error(FATAL, "GET_PESET: pelist is not monotonically increasing")
+  enddo
+
+  allocate( sorted(size(pelist(:))) )
+  sorted = pelist 
+  if( debug )write( stderr(),* )'pelist=', pelist
+
   !find if this array matches any existing peset
   do i = 1,peset_num
-     if( debug )write( stderr(),'(a,3i4)' )'pe, i, peset_num=', pe, i, peset_num
+     if( debug )write( stderr(),'(a,3i6)' )'pe, i, peset_num=', pe, i, peset_num
      if( size(sorted(:)).EQ.size(peset(i)%list(:)) )then
         if( ALL(sorted.EQ.peset(i)%list) )then
            deallocate(sorted)
@@ -100,7 +107,8 @@ function get_peset(pelist)
   call MPI_GROUP_INCL( peset(current_peset_num)%group, size(sorted(:)), sorted, peset(i)%group, error )
   call MPI_COMM_CREATE( peset(current_peset_num)%id, peset(i)%group, peset(i)%id, error )
 #ifdef use_MPI_SMA
-  write( text, '(20i4)' )( sorted(l), l=1,min(n,20) )
+  n = size(sorted(:))
+  write( text, '(20i6)' )( sorted(l), l=1,min(n,20) )
   if( n.GT.20 )text = trim(text)//' ...'
   peset(i)%start = sorted(1)
   if( size(sorted(:)).GT.1 )then
@@ -118,27 +126,6 @@ function get_peset(pelist)
   get_peset = i
 
   return
-
-contains
-
-  recursive function ascend_sort(a) result(a_sort)
-    integer             :: a_sort
-    integer, intent(in) :: a(:)
-    integer             :: b, i
-
-    if( size(a(:)).EQ.1 .OR. ALL(a.EQ.a(1)) )then
-       allocate( sorted(n) )
-       sorted(n) = a(1)
-       a_sort = n
-       return
-    end if
-    b = minval(a)
-    n = n + 1
-    i = ascend_sort( pack(a(:),mask=a(:).NE.b) )
-    a_sort = i - 1
-    sorted(i-1) = b
-    return
-  end function ascend_sort
 
 end function get_peset
 
@@ -175,18 +162,32 @@ end subroutine mpp_sync
   !this is to check if current PE's outstanding puts are complete
   !but we can't use shmem_fence because we are actually waiting for
   !a remote PE to complete its get
-subroutine mpp_sync_self( pelist )
+subroutine mpp_sync_self( pelist, check )
   integer, intent(in), optional :: pelist(:)
-  integer                       :: i, m, n, stride
+  integer, intent(in), optional :: check
+
+  integer                       :: i, m, n, stride, my_check
 
   n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
 
   if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
 
-  do m = 1,peset(n)%count
-     i = peset(n)%list(m)
-     if( request(i).NE.MPI_REQUEST_NULL )call MPI_WAIT( request(i), stat, error )
-  end do
+  my_check = EVENT_SEND
+  if(present(check)) my_check = check
+  select case(my_check)
+  case(EVENT_SEND)
+     do m = 1,peset(n)%count
+        i = peset(n)%list(m)
+        if( request(i).NE.MPI_REQUEST_NULL )call MPI_WAIT( request(i), stat, error )
+     end do
+  case(EVENT_RECV)
+     do m = 1,peset(n)%count
+        i = peset(n)%list(m)
+        if( request_recv(i).NE.MPI_REQUEST_NULL )call MPI_WAIT( request_recv(i), stat, error )
+     end do    
+  case default
+     call mpp_error( FATAL, 'mpp_sync_self: The value of optional argument check should be EVENT_SEND or EVENT_RECV')
+  end select 
   if( current_clock.NE.0 )call increment_current_clock(EVENT_WAIT)
   return
 end subroutine mpp_sync_self

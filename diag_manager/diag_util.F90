@@ -1,1457 +1,1991 @@
-module diag_util_mod
+MODULE diag_util_mod
+  ! <CONTACT EMAIL="seth.underwood@noaa.gov">
+  !   Seth Underwood
+  ! </CONTACT>
+  ! <HISTORY SRC="http://cobweb.gfdl.noaa.gov/fms-cgi-bin/viewcvs/FMS/shared/diag_manager/"/>
 
-use diag_data_mod, only  : output_fields, input_fields, files, do_diag_field_log, diag_log_unit, &
-                           VERY_LARGE_AXIS_LENGTH, time_zero, VERY_LARGE_FILE_FREQ, END_OF_RUN, &
-                           EVERY_TIME, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, &
-                           DIAG_YEARS, base_time, time_unit_list, max_files, base_year, base_month, &
-                           base_day, base_hour, base_minute, base_second, num_files, max_files, &
-                           max_fields_per_file, max_out_per_in_field, max_input_fields,num_input_fields, &
-                           max_output_fields, num_output_fields, coord_type, mix_snapshot_average_fields, &
-                           global_descriptor
-use diag_axis_mod, only  : get_diag_axis_data, get_axis_global_length, get_diag_axis_cart, &
-                           get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, &
-                           get_axis_aux, get_axes_shift, get_diag_axis_name
-use diag_output_mod, only: diag_flush, diag_field_out, diag_output_init, write_axis_meta_data, &
-                           write_field_meta_data, done_meta_data
-use fms_mod, only        : error_mesg, FATAL, WARNING, mpp_pe, mpp_root_pe, lowercase, fms_error_handler
-use fms_io_mod, only     : get_tile_string, return_domain
-use mpp_domains_mod,only : domain1d, domain2d, mpp_get_compute_domain, null_domain1d,&
-                           null_domain2d, operator(/=), operator(==), mpp_modify_domain, mpp_get_domain_components, &
-                           mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, &
-                           mpp_get_tile_npes
-use time_manager_mod,only: time_type, operator(==), operator(>), NO_CALENDAR, increment_date, &
-                           increment_time, get_calendar_type, get_date, get_time, leap_year, &
-                           operator(-),  operator(<), operator(>=)
-use     mpp_io_mod, only : mpp_close
-use     mpp_mod,    only : mpp_npes
-use  constants_mod, only : SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
-implicit none
-private
+  ! <OVERVIEW>
+  ! </OVERVIEW>
+  ! <DESCRIPTION>
+  ! </DESCRIPTION>
+  USE diag_data_mod, ONLY  : output_fields, input_fields, files, do_diag_field_log, diag_log_unit,&
+       & VERY_LARGE_AXIS_LENGTH, time_zero, VERY_LARGE_FILE_FREQ, END_OF_RUN, EVERY_TIME,&
+       & DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, base_time,&
+       & time_unit_list, max_files, base_year, base_month, base_day, base_hour, base_minute,&
+       & base_second, num_files, max_files, max_fields_per_file, max_out_per_in_field,&
+       & max_input_fields,num_input_fields, max_output_fields, num_output_fields, coord_type,&
+       & mix_snapshot_average_fields, global_descriptor
+  USE diag_axis_mod, ONLY  : get_diag_axis_data, get_axis_global_length, get_diag_axis_cart,&
+       & get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, get_axis_aux,&
+       & get_axes_shift, get_diag_axis_name
+  USE diag_output_mod, ONLY: diag_flush, diag_field_out, diag_output_init, write_axis_meta_data,&
+       & write_field_meta_data, done_meta_data
+  USE fms_mod, ONLY        : error_mesg, FATAL, WARNING, mpp_pe, mpp_root_pe, lowercase, fms_error_handler
+  USE fms_io_mod, ONLY     : get_tile_string, return_domain, string
+  USE mpp_domains_mod,ONLY : domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
+       & OPERATOR(/=), OPERATOR(==), mpp_modify_domain, mpp_get_domain_components,&
+       & mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, mpp_get_tile_npes
+  USE time_manager_mod,ONLY: time_type, OPERATOR(==), OPERATOR(>), NO_CALENDAR, increment_date,&
+       & increment_time, get_calendar_type, get_date, get_time, leap_year, OPERATOR(-),&
+       & OPERATOR(<), OPERATOR(>=)
+  USE mpp_io_mod, ONLY : mpp_close
+  USE mpp_mod, ONLY : mpp_npes
+  USE constants_mod, ONLY : SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
 
-public get_subfield_size, log_diag_field_info, update_bounds, check_out_of_bounds, &
-       check_bounds_are_exact_dynamic, check_bounds_are_exact_static, init_file, diag_time_inc, &
-       find_input_field, init_input_field, init_output_field, diag_data_out, write_static, &
-       check_duplicate_output_fields, get_date_dif
+  IMPLICIT NONE
+  PRIVATE
+  PUBLIC get_subfield_size, log_diag_field_info, update_bounds, check_out_of_bounds,&
+       & check_bounds_are_exact_dynamic, check_bounds_are_exact_static, init_file, diag_time_inc,&
+       & find_input_field, init_input_field, init_output_field, diag_data_out, write_static,&
+       & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size
 
-character(len=128),private  :: version = '$Id: diag_util.F90,v 16.0.2.2.2.1.2.2 2008/09/19 21:32:40 z1l Exp $'
-character(len=128),private  :: tagname = '$Name: perth_2008_10 $'
+  CHARACTER(len=128),PRIVATE  :: version = '$Id: diag_util.F90,v 17.0 2009/07/21 03:18:54 fms Exp $'
+  CHARACTER(len=128),PRIVATE  :: tagname = '$Name: quebec $'
 
-contains
+CONTAINS
 
-subroutine get_subfield_size(axes, outnum)
-! Get size, start and end indices for output_fields(outnum), fill in
-! output_fields(outnum)%output_grid%(start_indx, end_indx)
+  ! <SUBROUTINE NAME="get_subfield_size">
+  !   <OVERVIEW>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE get_subfield_size(axes, outnum)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     Get the size, start and end indices for output_fields(outnum), then  
+  !     fill in output_fields(outnum)%output_grid%(start_indx, end_indx)
+  !   </DESCRIPTION>
+  !   <IN NAME="axes" TYPE="INTEGER, DIMENSION(:)">Axes of the input_field.</IN>
+  !   <IN NAME="outnum" TYPE="INTEGER">Position in array output_fields.</IN>
+  SUBROUTINE get_subfield_size(axes, outnum)
+    INTEGER, INTENT(in) :: axes(:) ! axes of the input_field
+    INTEGER, INTENT(in) :: outnum  ! position in array output_fields
 
-integer, intent(in) :: axes(:) ! axes of the input_field
-integer, intent(in) :: outnum  ! position in array output_fields
-real, allocatable   :: global_lat(:), global_lon(:), global_depth(:)
-integer             :: global_axis_size
-integer             :: i,xbegin,xend,ybegin,yend,xbegin_l,xend_l,ybegin_l,yend_l 
-character(len=1)    :: cart
-type(domain2d)      :: Domain2, Domain2_new
-type(domain1d)      :: Domain1,Domain1x,Domain1y,Domain1x_new,Domain1y_new
-real                :: start(3), end(3) ! start and end coordinates in 3 axes
-integer             :: gstart_indx(3), gend_indx(3) ! global start and end indices of output domain in 3 axes 
-real, allocatable   :: subaxis_x(:), subaxis_y(:), subaxis_z(:) !containing local coordinates in x,y,z axes
-character(len=128)  :: msg
-integer             :: ishift, jshift
+    REAL, ALLOCATABLE   :: global_lat(:), global_lon(:), global_depth(:)
+    INTEGER :: global_axis_size
+    INTEGER :: i,xbegin,xend,ybegin,yend,xbegin_l,xend_l,ybegin_l,yend_l 
+    CHARACTER(len=1) :: cart
+    TYPE(domain2d) :: Domain2, Domain2_new
+    TYPE(domain1d) :: Domain1,Domain1x,Domain1y,Domain1x_new,Domain1y_new
+    REAL :: start(3), end(3) ! start and end coordinates in 3 axes
+    INTEGER :: gstart_indx(3), gend_indx(3) ! global start and end indices of output domain in 3 axes 
+    REAL, ALLOCATABLE :: subaxis_x(:), subaxis_y(:), subaxis_z(:) !containing local coordinates in x,y,z axes
+    CHARACTER(len=128) :: msg
+    INTEGER :: ishift, jshift
 
-!initilization for local output
-start = -1.e10; end=-1.e10 ! initially out of (lat/lon/depth) range
-gstart_indx = -1; gend_indx=-1
+    !initilization for local output
+    ! initially out of (lat/lon/depth) range
+    start = -1.e10
+    end = -1.e10 
+    gstart_indx = -1
+    gend_indx=-1
 
-! get axis data (lat, lon, depth) and indices
-   start= output_fields(outnum)%output_grid%start
-   end = output_fields(outnum)%output_grid%end
+    ! get axis data (lat, lon, depth) and indices
+    start = output_fields(outnum)%output_grid%start
+    end = output_fields(outnum)%output_grid%end
 
-do i = 1,size(axes(:))   
-   global_axis_size = get_axis_global_length(axes(i))
-   output_fields(outnum)%output_grid%subaxes(i) = -1
-   call get_diag_axis_cart(axes(i), cart)
-   select case(cart)
-   case ('X')
-      if(i.ne.1) &
-           call error_mesg ('diag_util, get subfield size', 'wrong order of axes, X should come first',FATAL)
-      allocate(global_lon(global_axis_size))
-      call get_diag_axis_data(axes(i),global_lon)
-      gstart_indx(i) = get_index(start(i),global_lon)
-      gend_indx(i) = get_index(end(i),global_lon)
-      allocate(subaxis_x(gstart_indx(i):gend_indx(i)))
-      subaxis_x=global_lon(gstart_indx(i):gend_indx(i))   
-   case ('Y')
-      if(i.ne.2) &
-           call error_mesg ('diag_util, get subfield size', 'wrong order of axes, Y should come second',FATAL)
-      allocate(global_lat(global_axis_size))
-      call get_diag_axis_data(axes(i),global_lat)
-      gstart_indx(i) = get_index(start(i),global_lat)
-      gend_indx(i) = get_index(end(i),global_lat)
-      allocate(subaxis_y(gstart_indx(i):gend_indx(i)))
-      subaxis_y=global_lat(gstart_indx(i):gend_indx(i))
-   case ('Z')
-      if(start(i)*end(i)<0) &
-           call error_mesg ('diag_util, get subfield size','wrong values in vertical axis of region',FATAL)
-      if(start(i)>0 .and. end(i)>0) then 
-         allocate(global_depth(global_axis_size))
-         call get_diag_axis_data(axes(i),global_depth)
-         gstart_indx(i) = get_index(start(i),global_depth)
-         gend_indx(i) = get_index(end(i),global_depth)
-         allocate(subaxis_z(gstart_indx(i):gend_indx(i)))
-         subaxis_z=global_depth(gstart_indx(i):gend_indx(i))
-         output_fields(outnum)%output_grid%subaxes(i) = &
-              diag_subaxes_init(axes(i),subaxis_z, gstart_indx(i),gend_indx(i))
-         deallocate(subaxis_z,global_depth)
-      else ! regional vertical axis is the same as global vertical axis
-         gstart_indx(i) = 1
-         gend_indx(i) = global_axis_size
-         output_fields(outnum)%output_grid%subaxes(i) = axes(i)
-         if(i /= 3) &
-              call error_mesg ('diag_util, get subfield size','i should equal 3 for z axis', FATAL)
-      endif      
-   case default
-       call error_mesg ('diag_util, get_subfield_size', 'Wrong axis_cart', FATAL)
-   end select
-enddo
-do i = 1,size(axes(:))
-   if(gstart_indx(i)== -1 .or. gend_indx(i)== -1) then
-      write(msg,'(a,I2)') ' check region bounds for axis ', i
-      call error_mesg ('diag_util, get_subfield_size', 'can not find gstart_indx/gend_indx for ' &
-           //trim(output_fields(outnum)%output_name)//','//trim(msg), FATAL)
-   endif
-enddo
+    DO i = 1, SIZE(axes(:))   
+       global_axis_size = get_axis_global_length(axes(i))
+       output_fields(outnum)%output_grid%subaxes(i) = -1
+       CALL get_diag_axis_cart(axes(i), cart)
+       SELECT CASE(cart)
+       CASE ('X')
+          ! <ERROR STATUS="FATAL">wrong order of axes.  X should come first.</ERROR>
+          IF( i.NE.1 ) CALL error_mesg ('diag_util, get subfield size',&
+               & 'wrong order of axes, X should come first',FATAL)
+          ALLOCATE(global_lon(global_axis_size))
+          CALL get_diag_axis_data(axes(i),global_lon)
+          IF( INT( start(i)*END(i) ) == 1 ) THEN 
+             gstart_indx(i) = 1
+             gend_indx(i) = global_axis_size
+             output_fields(outnum)%output_grid%subaxes(i) = axes(i)
+          ELSE 
+             gstart_indx(i) = get_index(start(i),global_lon)
+             gend_indx(i) = get_index(END(i),global_lon)
+          END IF
+          ALLOCATE(subaxis_x(gstart_indx(i):gend_indx(i)))
+          subaxis_x=global_lon(gstart_indx(i):gend_indx(i))   
+       CASE ('Y')
+          ! <ERROR STATUS="FATAL">wrong order of axes, Y should come second.</ERROR>
+          IF( i.NE.2 ) CALL error_mesg ('diag_util, get subfield size',&
+               & 'wrong order of axes, Y should come second',FATAL)
+          ALLOCATE(global_lat(global_axis_size))
+          CALL get_diag_axis_data(axes(i),global_lat)
+          IF( INT( start(i)*END(i) ) == 1 ) THEN 
+             gstart_indx(i) = 1
+             gend_indx(i) = global_axis_size
+             output_fields(outnum)%output_grid%subaxes(i) = axes(i)
+          ELSE
+             gstart_indx(i) = get_index(start(i),global_lat)
+             gend_indx(i) = get_index(END(i),global_lat)
+          END IF
+          ALLOCATE(subaxis_y(gstart_indx(i):gend_indx(i)))
+          subaxis_y=global_lat(gstart_indx(i):gend_indx(i))
+       CASE ('Z')
+          ! <ERROR STATUS="FATAL">wrong values in vertical axis of region</ERROR>
+          IF ( start(i)*END(i)<0 ) CALL error_mesg ('diag_util, get subfield size',&
+               & 'wrong values in vertical axis of region',FATAL)
+          IF ( start(i)>0 .AND. END(i)>0 ) THEN 
+             ALLOCATE(global_depth(global_axis_size))
+             CALL get_diag_axis_data(axes(i),global_depth)
+             gstart_indx(i) = get_index(start(i),global_depth)
+             gend_indx(i) = get_index(END(i),global_depth)
+             ALLOCATE(subaxis_z(gstart_indx(i):gend_indx(i)))
+             subaxis_z=global_depth(gstart_indx(i):gend_indx(i))
+             output_fields(outnum)%output_grid%subaxes(i) =&
+                  & diag_subaxes_init(axes(i),subaxis_z, gstart_indx(i),gend_indx(i))
+             DEALLOCATE(subaxis_z,global_depth)
+          ELSE ! regional vertical axis is the same as global vertical axis
+             gstart_indx(i) = 1
+             gend_indx(i) = global_axis_size
+             output_fields(outnum)%output_grid%subaxes(i) = axes(i)
+             ! <ERROR STATUS="FATAL">i should equal 3 for z axis</ERROR>
+             IF( i /= 3 ) CALL error_mesg ('diag_util, get subfield size',&
+                  & 'i should equal 3 for z axis', FATAL)
+          END IF
+       CASE default
+          ! <ERROR STATUS="FATAL">Wrong axis_cart</ERROR>
+          CALL error_mesg ('diag_util, get_subfield_size', 'Wrong axis_cart', FATAL)
+       END SELECT
+    END DO
 
-! get domain and compute_domain(xbegin,xend,ybegin,yend)
-xbegin=-1; xend=-1
-ybegin=-1; yend=-1
+    DO i = 1, SIZE(axes(:))
+       IF( gstart_indx(i) == -1 .OR. gend_indx(i) == -1 ) THEN
+          ! <ERROR STATUS="FATAL">
+          !   can not find gstart_indx/gend_indx for <output_fields(outnum)%output_name>
+          !   check region bounds for axis <i>.
+          ! </ERROR>
+          WRITE(msg,'(a,I2)') ' check region bounds for axis ', i
+          CALL error_mesg ('diag_util, get_subfield_size', 'can not find gstart_indx/gend_indx for '&
+               & //TRIM(output_fields(outnum)%output_name)//','//TRIM(msg), FATAL)
+       END IF
+    END DO
 
-Domain2 = get_domain2d(axes)
-if(Domain2 /= NULL_DOMAIN2D) then
-   call mpp_get_compute_domain(Domain2,xbegin,xend,ybegin,yend)
-   call mpp_get_domain_components(Domain2, Domain1x, Domain1y)
-else
-   do i = 1, MIN(size(axes(:)),2)    
-      Domain1 = get_domain1d(axes(i))
-      if(Domain1 /= NULL_DOMAIN1D) then
-         call get_diag_axis_cart(axes(i),cart)
-         select case(cart)
-         case ('X')
-            Domain1x = get_domain1d(axes(i))
-            call mpp_get_compute_domain(Domain1x,xbegin,xend)   
-         case ('Y')
-            Domain1y = get_domain1d(axes(i))
-            call mpp_get_compute_domain(Domain1y,ybegin,yend)
-         case default ! do nothing here
-         end select
-      else
-         call error_mesg ('diag_util, get_subfield_size', 'NO domain available', FATAL)
-      endif
-   enddo
-endif      
+    ! get domain and compute_domain(xbegin,xend,ybegin,yend)
+    xbegin=-1
+    xend=-1
+    ybegin=-1
+    yend=-1
 
-call get_axes_shift(axes, ishift, jshift)
-xend = xend+ishift
-yend = yend+jshift
+    Domain2 = get_domain2d(axes)
+    IF ( Domain2 /= NULL_DOMAIN2D ) THEN
+       CALL mpp_get_compute_domain(Domain2,xbegin,xend,ybegin,yend)
+       CALL mpp_get_domain_components(Domain2, Domain1x, Domain1y)
+    ELSE
+       DO i = 1, MIN(SIZE(axes(:)),2)    
+          Domain1 = get_domain1d(axes(i))
+          IF ( Domain1 /= NULL_DOMAIN1D ) THEN
+             CALL get_diag_axis_cart(axes(i),cart)
+             SELECT CASE(cart)
+             CASE ('X')
+                Domain1x = get_domain1d(axes(i))
+                CALL mpp_get_compute_domain(Domain1x,xbegin,xend)   
+             CASE ('Y')
+                Domain1y = get_domain1d(axes(i))
+                CALL mpp_get_compute_domain(Domain1y,ybegin,yend)
+             CASE default ! do nothing here
+             END SELECT
+          ELSE
+             ! <ERROR STATUS="FATAL">No domain available</ERROR>
+             CALL error_mesg ('diag_util, get_subfield_size', 'NO domain available', FATAL)
+          END IF
+       END DO
+    END IF
 
-if(xbegin== -1 .or. xend==-1 .or. ybegin==-1 .or. yend==-1) &
-   call error_mesg ('diag_util, get_subfield_size', 'wrong compute domain indices',FATAL)  
+    CALL get_axes_shift(axes, ishift, jshift)
+    xend = xend+ishift
+    yend = yend+jshift
 
-! get the area containing BOTH compute domain AND local output area
-if(gstart_indx(1)> xend .or. xbegin > gend_indx(1)) then
-   output_fields(outnum)%output_grid%l_start_indx(1) = -1
-   output_fields(outnum)%output_grid%l_end_indx(1) = -1
-   output_fields(outnum)%need_compute = .false. ! not involved
-elseif (gstart_indx(2)> yend .or. ybegin > gend_indx(2)) then
-   output_fields(outnum)%output_grid%l_start_indx(2) = -1
-   output_fields(outnum)%output_grid%l_end_indx(2) = -1
-   output_fields(outnum)%need_compute = .false. ! not involved
-else
-   output_fields(outnum)%output_grid%l_start_indx(1) = MAX(xbegin, gstart_indx(1))
-   output_fields(outnum)%output_grid%l_start_indx(2) = MAX(ybegin, gstart_indx(2))
-   output_fields(outnum)%output_grid%l_end_indx(1) = MIN(xend, gend_indx(1))
-   output_fields(outnum)%output_grid%l_end_indx(2) = MIN(yend, gend_indx(2))
-   output_fields(outnum)%need_compute = .true.  ! involved in local output
-endif
+    IF ( xbegin== -1 .OR. xend==-1 .OR. ybegin==-1 .OR. yend==-1 ) THEN
+       ! <ERROR STATUS="FATAL">wrong compute domain indices</ERROR>
+       CALL error_mesg ('diag_util, get_subfield_size', 'wrong compute domain indices',FATAL)  
+    END IF
+      
+    ! get the area containing BOTH compute domain AND local output area
+    IF(gstart_indx(1)> xend .OR. xbegin > gend_indx(1)) THEN
+       output_fields(outnum)%output_grid%l_start_indx(1) = -1
+       output_fields(outnum)%output_grid%l_end_indx(1) = -1
+       output_fields(outnum)%need_compute = .FALSE. ! not involved
+    ELSEIF (gstart_indx(2)> yend .OR. ybegin > gend_indx(2)) THEN
+       output_fields(outnum)%output_grid%l_start_indx(2) = -1
+       output_fields(outnum)%output_grid%l_end_indx(2) = -1
+       output_fields(outnum)%need_compute = .FALSE. ! not involved
+    ELSE
+       output_fields(outnum)%output_grid%l_start_indx(1) = MAX(xbegin, gstart_indx(1))
+       output_fields(outnum)%output_grid%l_start_indx(2) = MAX(ybegin, gstart_indx(2))
+       output_fields(outnum)%output_grid%l_end_indx(1) = MIN(xend, gend_indx(1))
+       output_fields(outnum)%output_grid%l_end_indx(2) = MIN(yend, gend_indx(2))
+       output_fields(outnum)%need_compute = .TRUE.  ! involved in local output
+    END IF
 
-if(output_fields(outnum)%need_compute) then
-! need to modify domain1d and domain2d for subaxes
-   xbegin_l = output_fields(outnum)%output_grid%l_start_indx(1)
-   xend_l = output_fields(outnum)%output_grid%l_end_indx(1)
-   ybegin_l = output_fields(outnum)%output_grid%l_start_indx(2)
-   yend_l = output_fields(outnum)%output_grid%l_end_indx(2)
-   call mpp_modify_domain(Domain2, Domain2_new, xbegin_l,xend_l, ybegin_l,yend_l, &
-                          gstart_indx(1),gend_indx(1), gstart_indx(2),gend_indx(2))
-   call mpp_get_domain_components(Domain2_new, Domain1x_new, Domain1y_new)
+    IF ( output_fields(outnum)%need_compute ) THEN
+       ! need to modify domain1d and domain2d for subaxes
+       xbegin_l = output_fields(outnum)%output_grid%l_start_indx(1)
+       xend_l = output_fields(outnum)%output_grid%l_end_indx(1)
+       ybegin_l = output_fields(outnum)%output_grid%l_start_indx(2)
+       yend_l = output_fields(outnum)%output_grid%l_end_indx(2)
+       CALL mpp_modify_domain(Domain2, Domain2_new, xbegin_l,xend_l, ybegin_l,yend_l,&
+            & gstart_indx(1),gend_indx(1), gstart_indx(2),gend_indx(2))
+       CALL mpp_get_domain_components(Domain2_new, Domain1x_new, Domain1y_new)
 
-   output_fields(outnum)%output_grid%subaxes(1) = &
-        diag_subaxes_init(axes(1),subaxis_x, gstart_indx(1),gend_indx(1),Domain1x_new,Domain2_new)
-   output_fields(outnum)%output_grid%subaxes(2) = &
-        diag_subaxes_init(axes(2),subaxis_y, gstart_indx(2),gend_indx(2),Domain1y_new,Domain2_new)
-   do i = 1, size(axes(:))
-      if(output_fields(outnum)%output_grid%subaxes(i) == -1) then  
-         write(msg,'(a,"/",I4)') 'at i = ',i
-         call error_mesg ('diag_util, get_subfield_size '//trim(output_fields(outnum)%output_name),&
-              'error '//trim(msg), FATAL)   
-      endif
-   enddo
-! local start index should start from 1
-   output_fields(outnum)%output_grid%l_start_indx(1) = MAX(xbegin, gstart_indx(1)) - xbegin + 1   
-   output_fields(outnum)%output_grid%l_start_indx(2) = MAX(ybegin, gstart_indx(2)) - ybegin + 1
-   output_fields(outnum)%output_grid%l_end_indx(1) = MIN(xend, gend_indx(1)) - xbegin + 1 
-   output_fields(outnum)%output_grid%l_end_indx(2) = MIN(yend, gend_indx(2)) - ybegin + 1
-   if(size(axes(:))>2) then
-      output_fields(outnum)%output_grid%l_start_indx(3) = gstart_indx(3)
-      output_fields(outnum)%output_grid%l_end_indx(3) = gend_indx(3)
-   else
-      output_fields(outnum)%output_grid%l_start_indx(3) = 1
-      output_fields(outnum)%output_grid%l_end_indx(3) = 1
-   endif
-endif
-deallocate(subaxis_x, global_lon)
-deallocate(subaxis_y, global_lat)
+       output_fields(outnum)%output_grid%subaxes(1) =&
+            & diag_subaxes_init(axes(1),subaxis_x, gstart_indx(1),gend_indx(1),Domain2_new)
+       output_fields(outnum)%output_grid%subaxes(2) =&
+            & diag_subaxes_init(axes(2),subaxis_y, gstart_indx(2),gend_indx(2),Domain2_new)
+       DO i = 1, SIZE(axes(:))
+          IF(output_fields(outnum)%output_grid%subaxes(i) == -1) THEN  
+             ! <ERROR STATUS="FATAL"><output_fields(outnum)%output_name> error at i = <i></ERROR>
+             WRITE(msg,'(a,"/",I4)') 'at i = ',i
+             CALL error_mesg ('diag_util, get_subfield_size '//TRIM(output_fields(outnum)%output_name),&
+                  'error '//TRIM(msg), FATAL)   
+          END IF
+       END DO
 
-end subroutine get_subfield_size 
-!---------------------------------------------------------------------------------------------------
-function get_index(number, array)
-  real, intent(in)               :: number
-  real, intent(in), dimension(:) :: array
-  integer                        :: get_index, i, n
-  logical                        :: found
-! Find index i of array such that array(i) is closest to number
-! array must be  monotonouslly ordered
+       ! local start index should start from 1
+       output_fields(outnum)%output_grid%l_start_indx(1) = MAX(xbegin, gstart_indx(1)) - xbegin + 1   
+       output_fields(outnum)%output_grid%l_start_indx(2) = MAX(ybegin, gstart_indx(2)) - ybegin + 1
+       output_fields(outnum)%output_grid%l_end_indx(1) = MIN(xend, gend_indx(1)) - xbegin + 1 
+       output_fields(outnum)%output_grid%l_end_indx(2) = MIN(yend, gend_indx(2)) - ybegin + 1
+       IF ( SIZE(axes(:))>2 ) THEN
+          output_fields(outnum)%output_grid%l_start_indx(3) = gstart_indx(3)
+          output_fields(outnum)%output_grid%l_end_indx(3) = gend_indx(3)
+       ELSE
+          output_fields(outnum)%output_grid%l_start_indx(3) = 1
+          output_fields(outnum)%output_grid%l_end_indx(3) = 1
+       END IF
+    END IF
+    DEALLOCATE(subaxis_x, global_lon)
+    DEALLOCATE(subaxis_y, global_lat)
 
-  n = size(array(:))
-! check if array is monotonous
-  do i = 2, n-1
-     if((array(i-1)<array(i) .and. array(i)>array(i+1)).or.(array(i-1)>array(i) .and. array(i)<array(i+1))) &
-          call error_mesg('diag_util', 'get_index, array NOT monotonously ordered',FATAL) 
-  enddo
-  get_index = -1
-  found = .false.
-! search in increasing array 
-  do i = 1, n-1                
-     if ((array(i)<=number) .and. (array(i+1)>= number)) then
-        if(number - array(i) <= array(i+1) - number) then
-           get_index = i
-           found=.true.
-        else
-           get_index = i+1
-           found=.true.
-        endif
-        exit
-     endif     
-  enddo 
-! if not found, search in decreasing array
-  if(.not.found) then
-      do i = 1, n-1
-         if ((array(i)>=number) .and. (array(i+1)<= number)) then
-            if(array(i)-number <= number-array(i+1)) then
-               get_index = i              
-            else
-               get_index = i+1               
-            endif
-            exit
-         endif
-      enddo
-   endif
-  end function get_index
+  END SUBROUTINE get_subfield_size
+  ! </SUBROUTINE>
+  
+  ! <SUBROUTINE NAME="get_subfield_vert_size">
+  !   <OVERVIEW>
+  !     Get size, start and end indices for <TT>output_fields(outnum)</TT>, fill in
+  !     <TT>output_fields(outnum)%output_grid%(start_indx, end_indx)</TT>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE get_subfield_ver_size(axes, outnum)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     Get size, start and end indices for <TT>output_fields(outnum)</TT>, fill in
+  !     <TT>output_fields(outnum)%output_grid%(start_indx, end_indx)</TT>.
+  !   </DESCRIPTION>
+  !   <IN NAME="axes" TYPE="INTEGER, DIMENSION(:)">Axes of the <TT>input_field</TT></IN>
+  !   <IN NAME="outnum" TYPE="INTEGER">Position in array <TT>output_fields</TT>.</IN>
+  SUBROUTINE get_subfield_vert_size(axes, outnum)
+    INTEGER, DIMENSION(:), INTENT(in) :: axes ! axes of the input_field
+    INTEGER, INTENT(in) :: outnum  ! position in array output_fields
 
-! </FUNCTION>
-!---------------------------------------------------------------------------------------------------
-! <SUBROUTINE NAME="log_diag_field_info">
-!   <OVERVIEW>
-!     Writes brief diagnostic field info to the log file.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     If <TT>init_verbose</TT> namelist parameter is true, adds a line briefly 
-!     describing diagnostic field to the log file. Normally users should not call
-!     this subroutine directly, since it is called by register_static_field and register_diag_field
-!     if do_not_log is not set to true. It is used, however, in LM3 to avoid excessive
-!     log due to a number of fields registered for each of the tile types. LM3 code uses
-!     do_not_log parameter in the registration calls, and calls this subroutine to
-!     log field information under generic name.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call log_diag_field_info ( module_name, field_name, axes, long_name, units,
-!     missing_value, range, dynamic )
-!   </TEMPLATE>
-subroutine log_diag_field_info ( module_name, field_name, axes, long_name, units, &
-                                 missing_value, range, dynamic)
-character(len=*), intent(in)           :: module_name, field_name
-integer, intent(in)                    :: axes(:)
-character(len=*), optional, intent(in) :: long_name, units
-real   , optional, intent(in)          :: missing_value, range(2)
-logical, optional, intent(in)          :: dynamic
+    REAL, DIMENSION(3) :: start, end ! start and end coordinates in 3 axes
+    REAL, ALLOCATABLE, DIMENSION(:) :: global_depth
+    REAL, ALLOCATABLE, DIMENSION(:) :: subaxis_z !containing local coordinates in x,y,z axes
+    INTEGER :: i, global_axis_size
+    INTEGER, DIMENSION(3) :: gstart_indx, gend_indx ! global start and end indices of output domain in 3 axes 
+    CHARACTER(len=1) :: cart
+    CHARACTER(len=128) :: msg
 
-! ---- local vars
-character(len=256) :: lmodule, lfield, lname, lunits
-character(len=64)  :: lmissval, lmin, lmax
-character(len=8)   :: numaxis, timeaxis
-character(len=1)   :: sep = '|'
-character(len=256) :: axis_name, axes_list
-integer :: i
+    !initilization for local output
+    start = -1.e10
+    end = -1.e10 ! initially out of (lat/lon/depth) range
+    gstart_indx = -1 
+    gend_indx=-1
 
-if (.not.do_diag_field_log)    return
-if (mpp_pe().ne.mpp_root_pe()) return
+    ! get axis data (lat, lon, depth) and indices
+    start= output_fields(outnum)%output_grid%start
+    end = output_fields(outnum)%output_grid%end
 
-lmodule = trim(module_name)
-lfield = trim(field_name)
-lname  = ''; if(present(long_name)) lname  = trim(long_name)
-lunits = ''; if(present(units))     lunits = trim(units)
+    DO i = 1, SIZE(axes(:))   
+       global_axis_size = get_axis_global_length(axes(i))
+       output_fields(outnum)%output_grid%subaxes(i) = -1
+       CALL get_diag_axis_cart(axes(i), cart)
+       SELECT CASE(cart)
+       CASE ('X')
+          ! <ERROR STATUS="FATAL">wrong order of axes, X should come first</ERROR>
+          IF ( i.NE.1 ) CALL error_mesg ('diag_util, get subfield vert size',&
+               & 'wrong order of axes, X should come first',FATAL)
+          gstart_indx(i) = 1
+          gend_indx(i) = global_axis_size
+          output_fields(outnum)%output_grid%subaxes(i) = axes(i)
+       CASE ('Y')
+          ! <ERROR STATUS="FATAL">wrong order of axes, Y should come second</ERROR>
+          IF( i.NE.2 ) CALL error_mesg ('diag_util, get subfield vert size',&
+               & 'wrong order of axes, Y should come second',FATAL)
+          gstart_indx(i) = 1
+          gend_indx(i) = global_axis_size
+          output_fields(outnum)%output_grid%subaxes(i) = axes(i)
+       CASE ('Z')
+          ! <ERROR STATUS="FATAL">wrong values in vertical axis of region</ERROR>
+          IF( start(i)*END(i) < 0 ) CALL error_mesg ('diag_util, get subfield vert size',&
+               & 'wrong values in vertical axis of region',FATAL)
+          IF( start(i) >= 0 .AND. END(i) > 0 ) THEN 
+             ALLOCATE(global_depth(global_axis_size))
+             CALL get_diag_axis_data(axes(i),global_depth)
+             gstart_indx(i) = get_index(start(i),global_depth)
+             IF( start(i) == 0.0 )  gstart_indx(i) = 1
 
-write (numaxis,'(i1)') size(axes)
+             gend_indx(i) = get_index(END(i),global_depth)
+             IF( start(i) >= MAXVAL(global_depth) ) gstart_indx(i)= global_axis_size
+             IF( END(i)   >= MAXVAL(global_depth) ) gend_indx(i)  = global_axis_size
 
-if (present(missing_value)) then
-   write (lmissval,*) missing_value
-else
-   lmissval = ''
-endif
+             ALLOCATE(subaxis_z(gstart_indx(i):gend_indx(i)))
+             subaxis_z=global_depth(gstart_indx(i):gend_indx(i))
+             output_fields(outnum)%output_grid%subaxes(i) =&
+                  & diag_subaxes_init(axes(i),subaxis_z, gstart_indx(i),gend_indx(i))
+             DEALLOCATE(subaxis_z,global_depth)
+          ELSE !   vertical axis is the same as global vertical axis
+             gstart_indx(i) = 1
+             gend_indx(i) = global_axis_size
+             output_fields(outnum)%output_grid%subaxes(i) = axes(i)
+             ! <ERROR STATUS="FATAL">i should equal 3 for z axis</ERROR>
+             IF( i /= 3 ) CALL error_mesg ('diag_util, get subfield vert size',&
+                  & 'i should equal 3 for z axis', FATAL)
+          END IF
+       CASE default
+          ! <ERROR STATUS="FATAL">Wrong axis_cart</ERROR>
+          CALL error_mesg ('diag_util, get_subfield_vert_size', 'Wrong axis_cart', FATAL)
+       END SELECT
+    END DO
 
-if (present(range)) then
-   write (lmin,*) range(1)
-   write (lmax,*) range(2)
-else
-   lmin = ''
-   lmax = ''
-endif
+    DO i = 1,SIZE(axes(:))
+       IF ( gstart_indx(i)== -1 .OR. gend_indx(i)== -1 ) THEN
+          ! <ERROR STATUS="FATAL">
+          !   can not find gstart_indx/gend_indx for <output_fields(outnum)%output_name>
+          !   check region bounds for axis
+          ! </ERROR>
+          WRITE(msg,'(a,I2)') ' check region bounds for axis ', i
+          CALL error_mesg ('diag_util, get_subfield_vert_size', 'can not find gstart_indx/gend_indx for '&
+               & //TRIM(output_fields(outnum)%output_name)//','//TRIM(msg), FATAL)
+       END IF
+    END DO
 
-if (present(dynamic)) then
-   if (dynamic) then
-      timeaxis = 'T'
-   else
-      timeaxis = 'F'
-   endif
-else
-   timeaxis = ''
-endif
+    DO i= 1, 2
+       output_fields(outnum)%output_grid%l_start_indx(i) = gstart_indx(i)
+       output_fields(outnum)%output_grid%l_end_indx(i)   = gend_indx(i)
+    END DO
 
-axes_list=''
-do i = 1,size(axes)
-   call get_diag_axis_name(axes(i),axis_name)
-   if(trim(axes_list)/='')axes_list=trim(axes_list)//','
-   axes_list=trim(axes_list)//trim(axis_name)
-enddo
+    IF( SIZE(axes(:)) > 2 ) THEN
+       output_fields(outnum)%output_grid%l_start_indx(3) = gstart_indx(3)
+       output_fields(outnum)%output_grid%l_end_indx(3)   = gend_indx(3)
+       PRINT *, 'Diag:  ', TRIM(output_fields(outnum)%output_name), outnum, gstart_indx(3), gend_indx(3)
+    ELSE
+       output_fields(outnum)%output_grid%l_start_indx(3) = 1
+       output_fields(outnum)%output_grid%l_end_indx(3)   = 1
+    END IF
+  END SUBROUTINE get_subfield_vert_size
+  ! </SUBROUTINE>
+  
+  ! <PRIVATE>
+  ! <FUNCTION NAME="get_index">
+  !   <OVERVIEW>
+  !     Find index i of array such that array(i) is closest to number
+  !     array must be  monotonouslly ordered
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     INTEGER FUNCTION get_index(number, array)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     Find index i of array such that array(i) is closest to number
+  !     array must be  monotonouslly ordered
+  !   </DESCRIPTION>
+  !   <IN NAME="number" TYPE="REAL"></IN>
+  !   <IN NAME="array" TYPE="REAL, DIMENSION(:)"></IN>
+  INTEGER FUNCTION get_index(number, array)
+    REAL, INTENT(in) :: number
+    REAL, INTENT(in), DIMENSION(:) :: array
 
-!write (diag_log_unit,'(8(a,a),a)') &
-write (diag_log_unit,'(777a)') &
-             trim(lmodule),  sep, trim(lfield),  sep, trim(lname),    sep, &
-             trim(lunits),   sep, trim(numaxis), sep, trim(timeaxis), sep, &
-             trim(lmissval), sep, trim(lmin),    sep, trim(lmax),     sep, &
-             trim(axes_list)
+    INTEGER :: i, n
+    LOGICAL :: found
 
-end subroutine log_diag_field_info
-! </SUBROUTINE>
-!===================================================================================================
- subroutine update_bounds(out_num, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k)
- integer, intent(in) :: out_num, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k
+    n = SIZE(array(:))
+    ! check if array is monotonous
+    DO i = 2, n-1
+       IF( (array(i-1)<array(i).AND.array(i)>array(i+1)) .OR. (array(i-1)>array(i).AND.array(i)<array(i+1))) THEN
+          ! <ERROR STATUS="FATAL">array NOT monotonously ordered</ERROR>
+          CALL error_mesg('diag_util', 'get_index, array NOT monotonously ordered',FATAL) 
+       END IF
+    END DO
+    get_index = -1
+    found = .FALSE.
+    ! search in increasing array 
+    DO i = 1, n-1                
+       IF ( (array(i)<=number).AND.(array(i+1)>= number) ) THEN
+          IF( number - array(i) <= array(i+1) - number ) THEN
+             get_index = i
+             found=.TRUE.
+          ELSE
+             get_index = i+1
+             found=.TRUE.
+          ENDIF
+          EXIT
+       END IF
+    END DO
+    ! if not found, search in decreasing array
+    IF( .NOT.found ) THEN
+       DO i = 1, n-1
+          IF ( (array(i)>=number).AND.(array(i+1)<= number) ) THEN
+             IF ( array(i)-number <= number-array(i+1) ) THEN
+                get_index = i 
+                found = .TRUE.
+             ELSE
+                get_index = i+1
+                found = .TRUE.
+             END IF
+             EXIT
+          END IF
+       END DO
+    END IF
+    ! if still not found, is it less than the first element
+    ! or greater than last element? (Increasing Array)
+    IF ( .NOT. found ) THEN
+       IF ( array(1).GT.number ) THEN
+          get_index = 1
+          found = .TRUE.
+       ELSE IF ( array(n).LT.number ) THEN
+          get_index = n
+          found = .TRUE.
+       ELSE
+          found = .FALSE.
+       END IF
+    END IF
+   
+   ! if still not found, is it greater than the first element
+   ! or less than the last element? (Decreasing Array)
+    IF ( .NOT. found ) THEN
+       IF ( array(1).LT.number ) THEN
+          get_index = 1
+          found = .TRUE.
+       ELSE IF ( array(n).GT.number ) THEN
+          get_index = n
+          found = .TRUE.
+       ELSE
+          found = .FALSE.
+       END IF
+    END IF
+  END FUNCTION get_index
+  ! </FUNCTION>
+  ! </PRIVATE>
 
- output_fields(out_num)%imin = min(output_fields(out_num)%imin, lower_i)
- output_fields(out_num)%imax = max(output_fields(out_num)%imax, upper_i)
- output_fields(out_num)%jmin = min(output_fields(out_num)%jmin, lower_j)
- output_fields(out_num)%jmax = max(output_fields(out_num)%jmax, upper_j)
- output_fields(out_num)%kmin = min(output_fields(out_num)%kmin, lower_k)
- output_fields(out_num)%kmax = max(output_fields(out_num)%kmax, upper_k)
+  ! <SUBROUTINE NAME="log_diag_field_info">
+  !   <OVERVIEW>
+  !     Writes brief diagnostic field info to the log file.
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE log_diag_field_info(module_name, field_name, axes, long_name, units,
+  !     missing_value, range, dynamic)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     If <TT>init_verbose</TT> namelist parameter is true, adds a line briefly 
+  !     describing diagnostic field to the log file. Normally users should not call
+  !     this subroutine directly, since it is called by register_static_field and register_diag_field
+  !     if do_not_log is not set to true. It is used, however, in LM3 to avoid excessive
+  !     log due to a number of fields registered for each of the tile types. LM3 code uses
+  !     do_not_log parameter in the registration calls, and calls this subroutine to
+  !     log field information under generic name.
+  !   </DESCRIPTION>
+  !   <IN NAME="module_name" TYPE="CHARACTER(len=*)"></IN>
+  !   <IN NAME="field_name" TYPE="CHARACTER(len=*)"></IN>
+  !   <IN NAME="axes" TYPE="INTEGER, DIMENSION(:)"></IN>
+  !   <IN NAME="long_name" TYPE="CHARACTER(len=*), OPTIONAL"></IN>
+  !   <IN NAME="units" TYPE="CHARACTER(len=*), OPTIONAL"></IN>
+  !   <IN NAME="missing_value" TYPE="REAL, OPTIONAL"></IN>
+  !   <IN NAME="range" TYPE="REAL, DIMENSION(2), OPTIONAL"></IN>
+  !   <IN NAME="dynamic" TYPE="LOGICAL, OPTIONAL"></IN>
+  SUBROUTINE log_diag_field_info(module_name, field_name, axes, long_name, units,&
+       & missing_value, range, dynamic)
+    CHARACTER(len=*), INTENT(in) :: module_name, field_name
+    INTEGER, DIMENSION(:), INTENT(in) :: axes
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units
+    REAL, OPTIONAL, INTENT(in) :: missing_value
+    REAL, DIMENSION(2), OPTIONAL, INTENT(IN) :: range
+    LOGICAL, OPTIONAL, INTENT(in) :: dynamic
 
-end subroutine update_bounds
-!===================================================================================================
- subroutine check_out_of_bounds(out_num, diag_field_id, err_msg)
- integer, intent(in) :: out_num, diag_field_id
- character(len=*), intent(out) :: err_msg
- character(len=128)  :: error_string1, error_string2
+    ! ---- local vars
+    CHARACTER(len=256) :: lmodule, lfield, lname, lunits
+    CHARACTER(len=64)  :: lmissval, lmin, lmax
+    CHARACTER(len=8)   :: numaxis, timeaxis
+    CHARACTER(len=1)   :: sep = '|'
+    CHARACTER(len=256) :: axis_name, axes_list
+    INTEGER :: i
 
- if(output_fields(out_num)%imin < lbound(output_fields(out_num)%buffer,1) .or. &
-    output_fields(out_num)%imax > ubound(output_fields(out_num)%buffer,1) .or. &
-    output_fields(out_num)%jmin < lbound(output_fields(out_num)%buffer,2) .or. &
-    output_fields(out_num)%jmax > ubound(output_fields(out_num)%buffer,2) .or. &
-    output_fields(out_num)%kmin < lbound(output_fields(out_num)%buffer,3) .or. &
-    output_fields(out_num)%kmax > ubound(output_fields(out_num)%buffer,3) ) then
-    write(error_string1,'(a,"/",a)') trim(input_fields(diag_field_id)%module_name),trim(output_fields(out_num)%output_name)
-    error_string2 ='Buffer bounds=   :   ,   :   ,   :     Actual bounds=   :   ,   :   ,   :   '
-    write(error_string2(15:17),'(i3)') lbound(output_fields(out_num)%buffer,1)
-    write(error_string2(19:21),'(i3)') ubound(output_fields(out_num)%buffer,1)
-    write(error_string2(23:25),'(i3)') lbound(output_fields(out_num)%buffer,2)
-    write(error_string2(27:29),'(i3)') ubound(output_fields(out_num)%buffer,2)
-    write(error_string2(31:33),'(i3)') lbound(output_fields(out_num)%buffer,3)
-    write(error_string2(35:37),'(i3)') ubound(output_fields(out_num)%buffer,3)
-    write(error_string2(54:56),'(i3)') output_fields(out_num)%imin
-    write(error_string2(58:60),'(i3)') output_fields(out_num)%imax
-    write(error_string2(62:64),'(i3)') output_fields(out_num)%jmin
-    write(error_string2(66:68),'(i3)') output_fields(out_num)%jmax
-    write(error_string2(70:72),'(i3)') output_fields(out_num)%kmin
-    write(error_string2(74:76),'(i3)') output_fields(out_num)%kmax
-    err_msg = 'module/output_field='//trim(error_string1)//'  Bounds of buffer exceeded.  '//trim(error_string2)
-!   imax, imin, etc need to be reset in case the program is not terminated.
+    IF ( .NOT.do_diag_field_log ) RETURN
+    IF ( mpp_pe().NE.mpp_root_pe() ) RETURN
+
+    lmodule = TRIM(module_name)
+    lfield = TRIM(field_name)
+
+    IF ( PRESENT(long_name) ) THEN
+       lname  = TRIM(long_name)
+    ELSE 
+       lname  = ''
+    END IF
+    
+    IF ( PRESENT(units) ) THEN
+       lunits = TRIM(units)
+    ELSE
+       lunits = ''
+    END IF
+ 
+    WRITE (numaxis,'(i1)') SIZE(axes)
+
+    IF (PRESENT(missing_value)) THEN
+       WRITE (lmissval,*) missing_value
+    ELSE
+       lmissval = ''
+    ENDIF
+
+    IF ( PRESENT(range) ) THEN
+       WRITE (lmin,*) range(1)
+       WRITE (lmax,*) range(2)
+    ELSE
+       lmin = ''
+       lmax = ''
+    END IF
+
+    IF ( PRESENT(dynamic) ) THEN
+       IF (dynamic) THEN
+          timeaxis = 'T'
+       ELSE
+          timeaxis = 'F'
+       END IF
+    ELSE
+       timeaxis = ''
+    END IF
+
+    axes_list=''
+    DO i = 1, SIZE(axes)
+       CALL get_diag_axis_name(axes(i),axis_name)
+       IF ( TRIM(axes_list) /= '' ) axes_list = TRIM(axes_list)//','
+       axes_list = TRIM(axes_list)//TRIM(axis_name)
+    END DO
+
+    !write (diag_log_unit,'(8(a,a),a)') &
+    WRITE (diag_log_unit,'(777a)') &
+         & TRIM(lmodule),  sep, TRIM(lfield),  sep, TRIM(lname),    sep,&
+         & TRIM(lunits),   sep, TRIM(numaxis), sep, TRIM(timeaxis), sep,&
+         & TRIM(lmissval), sep, TRIM(lmin),    sep, TRIM(lmax),     sep,&
+         & TRIM(axes_list)
+  END SUBROUTINE log_diag_field_info
+  ! </SUBROUTINE>
+
+  ! <SUBROUTINE NAME="update_bounds">
+  !   <OVERVIEW>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE update_bonds(out_num, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <IN NAME="out_num" TYPE="INTEGER"></IN>
+  !   <IN NAME="lower_i" TYPE="INTEGER"></IN>
+  !   <IN NAME="upper_i" TYPE="INTEGER"></IN>
+  !   <IN NAME="lower_j" TYPE="INTEGER"></IN>
+  !   <IN NAME="upper_j" TYPE="INTEGER"></IN>
+  !   <IN NAME="lower_k" TYPE="INTEGER"></IN>
+  !   <IN NAME="upper_k" TYPE="INTEGER"></IN>
+  SUBROUTINE update_bounds(out_num, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k)
+    INTEGER, INTENT(in) :: out_num, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k
+    
+    output_fields(out_num)%imin = MIN(output_fields(out_num)%imin, lower_i)
+    output_fields(out_num)%imax = MAX(output_fields(out_num)%imax, upper_i)
+    output_fields(out_num)%jmin = MIN(output_fields(out_num)%jmin, lower_j)
+    output_fields(out_num)%jmax = MAX(output_fields(out_num)%jmax, upper_j)
+    output_fields(out_num)%kmin = MIN(output_fields(out_num)%kmin, lower_k)
+    output_fields(out_num)%kmax = MAX(output_fields(out_num)%kmax, upper_k)
+  END SUBROUTINE update_bounds
+  ! </SUBROUTINE>
+
+  ! <SUBROUTINE NAME="check_out_of_bounds">
+  !   <OVERVIEW>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE check_out_of_bounds(out_num, diag_field_id, err_msg)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <IN NAME="out_num" TYPE="INTEGER"></IN>
+  !   <IN NAME="diag_field_id" TYPE="INTEGER"></IN>
+  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*)"></OUT>
+  SUBROUTINE check_out_of_bounds(out_num, diag_field_id, err_msg)
+    INTEGER, INTENT(in) :: out_num, diag_field_id
+    CHARACTER(len=*), INTENT(out) :: err_msg
+
+    CHARACTER(len=128) :: error_string1, error_string2
+
+    IF(output_fields(out_num)%imin < LBOUND(output_fields(out_num)%buffer,1) .OR.&
+         & output_fields(out_num)%imax > UBOUND(output_fields(out_num)%buffer,1) .OR.&
+         & output_fields(out_num)%jmin < LBOUND(output_fields(out_num)%buffer,2) .OR.&
+         & output_fields(out_num)%jmax > UBOUND(output_fields(out_num)%buffer,2) .OR.&
+         & output_fields(out_num)%kmin < LBOUND(output_fields(out_num)%buffer,3) .OR.&
+         & output_fields(out_num)%kmax > UBOUND(output_fields(out_num)%buffer,3) ) THEN
+       WRITE(error_string1,'(a,"/",a)') TRIM(input_fields(diag_field_id)%module_name),&
+            & TRIM(output_fields(out_num)%output_name)
+       error_string2 ='Buffer bounds=   :   ,   :   ,   :     Actual bounds=   :   ,   :   ,   :   '
+       WRITE(error_string2(15:17),'(i3)') LBOUND(output_fields(out_num)%buffer,1)
+       WRITE(error_string2(19:21),'(i3)') UBOUND(output_fields(out_num)%buffer,1)
+       WRITE(error_string2(23:25),'(i3)') LBOUND(output_fields(out_num)%buffer,2)
+       WRITE(error_string2(27:29),'(i3)') UBOUND(output_fields(out_num)%buffer,2)
+       WRITE(error_string2(31:33),'(i3)') LBOUND(output_fields(out_num)%buffer,3)
+       WRITE(error_string2(35:37),'(i3)') UBOUND(output_fields(out_num)%buffer,3)
+       WRITE(error_string2(54:56),'(i3)') output_fields(out_num)%imin
+       WRITE(error_string2(58:60),'(i3)') output_fields(out_num)%imax
+       WRITE(error_string2(62:64),'(i3)') output_fields(out_num)%jmin
+       WRITE(error_string2(66:68),'(i3)') output_fields(out_num)%jmax
+       WRITE(error_string2(70:72),'(i3)') output_fields(out_num)%kmin
+       WRITE(error_string2(74:76),'(i3)') output_fields(out_num)%kmax
+       err_msg = 'module/output_field='//TRIM(error_string1)//&
+            & '  Bounds of buffer exceeded.  '//TRIM(error_string2)
+       !   imax, imin, etc need to be reset in case the program is not terminated.
+       output_fields(out_num)%imax = 0
+       output_fields(out_num)%imin = VERY_LARGE_AXIS_LENGTH
+       output_fields(out_num)%jmax = 0
+       output_fields(out_num)%jmin = VERY_LARGE_AXIS_LENGTH
+       output_fields(out_num)%kmax = 0
+       output_fields(out_num)%kmin = VERY_LARGE_AXIS_LENGTH
+    ELSE
+       err_msg = ''
+    END IF
+
+  END SUBROUTINE check_out_of_bounds
+  ! </SUBROUTINE>
+
+  ! <SUBROUTINE NAME="check_bounds_are_exact_dynamic">
+  !   <OVERVIEW>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE check_bounds_are_exact_dynamic(out_num, diag_field_id, Time, err_msg)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <IN NAME="out_num" TYPE="INTEGER"></IN>
+  !   <IN NAME="diag_field_id" TYPE="INTEGER"></IN>
+  !   <IN NAME="Time" TYPE="TYPE(time_type)"></IN>
+  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*)"></OUT>
+  SUBROUTINE check_bounds_are_exact_dynamic(out_num, diag_field_id, Time, err_msg)
+    INTEGER, INTENT(in) :: out_num, diag_field_id
+    TYPE(time_type), INTENT(in) :: Time
+    CHARACTER(len=*), INTENT(out) :: err_msg
+
+    CHARACTER(len=128) :: error_string1, error_string2
+    LOGICAL :: do_check
+
+    err_msg = ''
+
+    ! Check bounds only when the value of Time changes. When windows are used,
+    ! a change in Time indicates that a new loop through the windows has begun,
+    !  so a check of the previous loop can be done.
+    IF ( Time == output_fields(out_num)%Time_of_prev_field_data ) THEN
+       do_check = .FALSE.
+    ELSE
+       IF ( output_fields(out_num)%Time_of_prev_field_data == Time_zero ) THEN
+          ! It may or may not be OK to check, I don't know how to tell.
+          ! Check will be done on subsequent calls anyway.
+          do_check = .FALSE.
+       ELSE
+          do_check = .TRUE.
+       END IF
+       output_fields(out_num)%Time_of_prev_field_data = Time
+    END IF
+
+    IF ( do_check ) THEN
+       IF ( output_fields(out_num)%imin /= LBOUND(output_fields(out_num)%buffer,1 ) .OR.&
+            & output_fields(out_num)%imax /= UBOUND(output_fields(out_num)%buffer,1) .OR.&
+            & output_fields(out_num)%jmin /= LBOUND(output_fields(out_num)%buffer,2) .OR.&
+            & output_fields(out_num)%jmax /= UBOUND(output_fields(out_num)%buffer,2) .OR.&
+            & output_fields(out_num)%kmin /= LBOUND(output_fields(out_num)%buffer,3) .OR.&
+            & output_fields(out_num)%kmax /= UBOUND(output_fields(out_num)%buffer,3) ) THEN
+          WRITE(error_string1,'(a,"/",a)') TRIM(input_fields(diag_field_id)%module_name),&
+               & TRIM(output_fields(out_num)%output_name)
+          error_string2 ='Buffer bounds=   :   ,   :   ,   :     Actual bounds=   :   ,   :   ,   :   '
+          WRITE(error_string2(15:17),'(i3)') LBOUND(output_fields(out_num)%buffer,1)
+          WRITE(error_string2(19:21),'(i3)') UBOUND(output_fields(out_num)%buffer,1)
+          WRITE(error_string2(23:25),'(i3)') LBOUND(output_fields(out_num)%buffer,2)
+          WRITE(error_string2(27:29),'(i3)') UBOUND(output_fields(out_num)%buffer,2)
+          WRITE(error_string2(31:33),'(i3)') LBOUND(output_fields(out_num)%buffer,3)
+          WRITE(error_string2(35:37),'(i3)') UBOUND(output_fields(out_num)%buffer,3)
+          WRITE(error_string2(54:56),'(i3)') output_fields(out_num)%imin
+          WRITE(error_string2(58:60),'(i3)') output_fields(out_num)%imax
+          WRITE(error_string2(62:64),'(i3)') output_fields(out_num)%jmin
+          WRITE(error_string2(66:68),'(i3)') output_fields(out_num)%jmax
+          WRITE(error_string2(70:72),'(i3)') output_fields(out_num)%kmin
+          WRITE(error_string2(74:76),'(i3)') output_fields(out_num)%kmax
+          err_msg = TRIM(error_string1)//' Bounds of data do not match those of buffer. '//TRIM(error_string2)
+       END IF
+       output_fields(out_num)%imax = 0
+       output_fields(out_num)%imin = VERY_LARGE_AXIS_LENGTH
+       output_fields(out_num)%jmax = 0
+       output_fields(out_num)%jmin = VERY_LARGE_AXIS_LENGTH
+       output_fields(out_num)%kmax = 0
+       output_fields(out_num)%kmin = VERY_LARGE_AXIS_LENGTH
+    END IF
+  END SUBROUTINE check_bounds_are_exact_dynamic
+  ! </SUBROUTINE>
+
+  ! <SUBROUTINE NAME="check_bounds_are_exact_static">
+  !   <OVERVIEW>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE check_bounds_are_exact_static(out_num, diag_field_id, err_msg)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <IN NAME="out_num" TYPE="INTEGER"></IN>
+  !   <IN NAME="diag_field_id" TYPE="INTEGER"></IN>
+  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*)"></OUT>
+  SUBROUTINE check_bounds_are_exact_static(out_num, diag_field_id, err_msg)
+    INTEGER, INTENT(in) :: out_num, diag_field_id
+    CHARACTER(len=*), INTENT(out) :: err_msg
+
+    CHARACTER(len=128)  :: error_string1, error_string2
+
+    err_msg = ''
+
+    IF( output_fields(out_num)%imin /= LBOUND(output_fields(out_num)%buffer,1 ) .OR.&
+         & output_fields(out_num)%imax /= UBOUND(output_fields(out_num)%buffer,1) .OR.&
+         & output_fields(out_num)%jmin /= LBOUND(output_fields(out_num)%buffer,2) .OR.&
+         & output_fields(out_num)%jmax /= UBOUND(output_fields(out_num)%buffer,2) .OR.&
+         & output_fields(out_num)%kmin /= LBOUND(output_fields(out_num)%buffer,3) .OR.&
+         & output_fields(out_num)%kmax /= UBOUND(output_fields(out_num)%buffer,3) ) THEN
+       WRITE(error_string1,'(a,"/",a)') TRIM(input_fields(diag_field_id)%module_name),&
+            & TRIM(output_fields(out_num)%output_name)
+       error_string2 ='Buffer bounds=   :   ,   :   ,   :     Actual bounds=   :   ,   :   ,   :   '
+       WRITE(error_string2(15:17),'(i3)') LBOUND(output_fields(out_num)%buffer,1)
+       WRITE(error_string2(19:21),'(i3)') UBOUND(output_fields(out_num)%buffer,1)
+       WRITE(error_string2(23:25),'(i3)') LBOUND(output_fields(out_num)%buffer,2)
+       WRITE(error_string2(27:29),'(i3)') UBOUND(output_fields(out_num)%buffer,2)
+       WRITE(error_string2(31:33),'(i3)') LBOUND(output_fields(out_num)%buffer,3)
+       WRITE(error_string2(35:37),'(i3)') UBOUND(output_fields(out_num)%buffer,3)
+       WRITE(error_string2(54:56),'(i3)') output_fields(out_num)%imin
+       WRITE(error_string2(58:60),'(i3)') output_fields(out_num)%imax
+       WRITE(error_string2(62:64),'(i3)') output_fields(out_num)%jmin
+       WRITE(error_string2(66:68),'(i3)') output_fields(out_num)%jmax
+       WRITE(error_string2(70:72),'(i3)') output_fields(out_num)%kmin
+       WRITE(error_string2(74:76),'(i3)') output_fields(out_num)%kmax
+       err_msg = TRIM(error_string1)//' Bounds of data do not match those of buffer. '//TRIM(error_string2)
+    END IF
     output_fields(out_num)%imax = 0
     output_fields(out_num)%imin = VERY_LARGE_AXIS_LENGTH
     output_fields(out_num)%jmax = 0
     output_fields(out_num)%jmin = VERY_LARGE_AXIS_LENGTH
     output_fields(out_num)%kmax = 0
     output_fields(out_num)%kmin = VERY_LARGE_AXIS_LENGTH
- else
-    err_msg = ''
- endif
+    
+  END SUBROUTINE check_bounds_are_exact_static
+  ! </SUBROUTINE>
 
- end subroutine check_out_of_bounds
-!===================================================================================================
- subroutine check_bounds_are_exact_dynamic(out_num, diag_field_id, Time, err_msg)
- integer,          intent(in)  :: out_num, diag_field_id
- type(time_type),  intent(in)  :: Time
- character(len=*), intent(out) :: err_msg
- character(len=128)            :: error_string1, error_string2
- logical                       :: do_check
+  ! <SUBROUTINE NAME="init_file">
+  !   <OVERVIEW>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE init_file(name, output_freq, output_units, format, time_units
+  !     long_name, tile_count, new_file_freq, new_file_freq_units, start_time,
+  !     file_duration, file_duration_units)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <IN NAME="name" TYPE="CHARACTER(len=*)"></IN>
+  !   <IN NAME="output_freq" TYPE="INTEGER"></IN>
+  !   <IN NAME="output_units" TYPE="INTEGER"></IN>
+  !   <IN NAME="format" TYPE="INTEGER"></IN>
+  !   <IN NAME="time_units" TYPE="INTEGER"></IN>
+  !   <IN NAME="log_name" TYPE="CHARACTER(len=*)"></IN>
+  !   <IN NAME="tile_count" TYPE="INTEGER"></IN>
+  !   <IN NAME="new_file_freq" TYPE="INTEGER, OPTIONAL"></IN>
+  !   <IN NAME="new_file_freq_units" TYPE="INTEGER, OPTIONAL"></IN>
+  !   <IN NAME="start_time" TYPE="TYPE(time_type), OPTIONAL"></IN>
+  !   <IN NAME="file_duration" TYPE="INTEGER, OPTIONAL"></IN>
+  !   <IN NAME="file_duration_units" TYPE="INTEGER, OPTIONAL"></IN>
+  SUBROUTINE init_file(name, output_freq, output_units, FORMAT, time_units, long_name, tile_count,&
+       & new_file_freq, new_file_freq_units, start_time,file_duration,file_duration_units)
+    CHARACTER(len=*), INTENT(in) :: name, long_name
+    INTEGER, INTENT(in) :: output_freq, output_units, FORMAT, time_units
+    INTEGER, INTENT(in) :: tile_count
+    INTEGER, INTENT(in), OPTIONAL :: new_file_freq, new_file_freq_units
+    INTEGER, INTENT(in), OPTIONAL :: file_duration, file_duration_units
+    TYPE(time_type), INTENT(in), OPTIONAL :: start_time
 
- err_msg = ''
+    INTEGER :: new_file_freq1, new_file_freq_units1
+    INTEGER :: file_duration1, file_duration_units1
+    REAL, DIMENSION(1) :: tdata
+    CHARACTER(len=128) :: time_units_str
 
-! Check bounds only when the value of Time changes. When windows are used, a change in Time indicates
-! that a new loop through the windows has begun, so a check of the previous loop can be done.
+    ! Get a number for this file
+    num_files = num_files + 1
+    IF ( num_files >= max_files ) THEN
+       ! <ERROR STATUS="FATAL">max_files exceeded, increase max_files</ERROR>
+       CALL error_mesg('diag_util, init_file', ' max_files exceeded, increase max_files via the max_files variable in the namelist diag_manager_nml.', FATAL)
+    END IF
 
- if(Time == output_fields(out_num)%Time_of_prev_field_data) then
-    do_check = .false.
- else
-    if(output_fields(out_num)%Time_of_prev_field_data == Time_zero) then
-       do_check = .false. ! It may or may not be OK to check, I don't know how to tell. Check will be done on subsequent calls anyway.
-    else
-       do_check = .true.
-    endif
-    output_fields(out_num)%Time_of_prev_field_data = Time
- endif
+    new_file_freq1 = VERY_LARGE_FILE_FREQ
+    IF ( PRESENT(new_file_freq) ) new_file_freq1 = new_file_freq
+    IF ( get_calendar_type() == NO_CALENDAR ) THEN
+       new_file_freq_units1 = DIAG_DAYS
+    ELSE 
+       new_file_freq_units1 = DIAG_YEARS
+    END IF
+    IF ( PRESENT(new_file_freq_units) ) new_file_freq_units1 = new_file_freq_units 
+    file_duration1 = new_file_freq1
+    IF ( PRESENT(file_duration) ) file_duration1 = file_duration 
+    file_duration_units1 = new_file_freq_units1
+    IF ( PRESENT(file_duration_units) ) file_duration_units1 = file_duration_units
 
- if(do_check) then
-   if(output_fields(out_num)%imin /= lbound(output_fields(out_num)%buffer,1) .or. &
-      output_fields(out_num)%imax /= ubound(output_fields(out_num)%buffer,1) .or. &
-      output_fields(out_num)%jmin /= lbound(output_fields(out_num)%buffer,2) .or. &
-      output_fields(out_num)%jmax /= ubound(output_fields(out_num)%buffer,2) .or. &
-      output_fields(out_num)%kmin /= lbound(output_fields(out_num)%buffer,3) .or. &
-      output_fields(out_num)%kmax /= ubound(output_fields(out_num)%buffer,3) ) then
-        write(error_string1,'(a,"/",a)') trim(input_fields(diag_field_id)%module_name),trim(output_fields(out_num)%output_name)
-        error_string2 ='Buffer bounds=   :   ,   :   ,   :     Actual bounds=   :   ,   :   ,   :   '
-        write(error_string2(15:17),'(i3)') lbound(output_fields(out_num)%buffer,1)
-        write(error_string2(19:21),'(i3)') ubound(output_fields(out_num)%buffer,1)
-        write(error_string2(23:25),'(i3)') lbound(output_fields(out_num)%buffer,2)
-        write(error_string2(27:29),'(i3)') ubound(output_fields(out_num)%buffer,2)
-        write(error_string2(31:33),'(i3)') lbound(output_fields(out_num)%buffer,3)
-        write(error_string2(35:37),'(i3)') ubound(output_fields(out_num)%buffer,3)
-        write(error_string2(54:56),'(i3)') output_fields(out_num)%imin
-        write(error_string2(58:60),'(i3)') output_fields(out_num)%imax
-        write(error_string2(62:64),'(i3)') output_fields(out_num)%jmin
-        write(error_string2(66:68),'(i3)') output_fields(out_num)%jmax
-        write(error_string2(70:72),'(i3)') output_fields(out_num)%kmin
-        write(error_string2(74:76),'(i3)') output_fields(out_num)%kmax
-        err_msg = trim(error_string1)//' Bounds of data do not match those of buffer. '//trim(error_string2)
-   endif
-   output_fields(out_num)%imax = 0
-   output_fields(out_num)%imin = VERY_LARGE_AXIS_LENGTH
-   output_fields(out_num)%jmax = 0
-   output_fields(out_num)%jmin = VERY_LARGE_AXIS_LENGTH
-   output_fields(out_num)%kmax = 0
-   output_fields(out_num)%kmin = VERY_LARGE_AXIS_LENGTH
- endif
+    files(num_files)%tile_count = tile_count
+    files(num_files)%name = TRIM(name)
+    files(num_files)%output_freq = output_freq
+    files(num_files)%output_units = output_units
+    files(num_files)%format = FORMAT
+    files(num_files)%time_units = time_units
+    files(num_files)%long_name = TRIM(long_name)
+    files(num_files)%num_fields = 0
+    files(num_files)%local = .FALSE.
+    files(num_files)%last_flush = base_time
+    files(num_files)%file_unit = -1
+    files(num_files)%new_file_freq = new_file_freq1
+    files(num_files)%new_file_freq_units = new_file_freq_units1
+    files(num_files)%duration = file_duration1
+    files(num_files)%duration_units = file_duration_units1
+    IF ( PRESENT(start_time) ) THEN 
+       files(num_files)%start_time = start_time
+    ELSE
+       files(num_files)%start_time = base_time
+    END IF
+    files(num_files)%next_open=diag_time_inc(files(num_files)%start_time,new_file_freq1,new_file_freq_units1)
+    files(num_files)%close_time = diag_time_inc(files(num_files)%start_time,file_duration1, file_duration_units1)
+    IF(files(num_files)%close_time>files(num_files)%next_open) THEN
+       ! <ERROR STATUS="FATAL">
+       !   close time GREATER than next_open time, check file duration,
+       !   file frequency in <files(num_files)%name>
+       ! </ERROR>
+       CALL error_mesg('init_file', 'close time '//'GREATER than'//&
+            & ' next_open time, check file duration, file frequency in '// files(num_files)%name, FATAL)
+    END IF
+    
+    ! add time_axis_id and time_bounds_id here
+    WRITE(time_units_str, 11) TRIM(time_unit_list(files(num_files)%time_units)), base_year,&
+         & base_month, base_day, base_hour, base_minute, base_second
+11  FORMAT(a, ' since ', i4.4, '-', i2.2, '-', i2.2, ' ', i2.2, ':', i2.2, ':', i2.2)
+    files(num_files)%time_axis_id = diag_axis_init (TRIM(long_name), tdata, time_units_str, 'T',&
+         & TRIM(long_name) , set_name=TRIM(name) )
+    !---- register axis for storing time boundaries
+    files(num_files)%time_bounds_id = diag_axis_init( 'nv',(/1.,2./),'none','N','vertex number',&
+         & set_name=TRIM(name))
+  END SUBROUTINE init_file
+  ! </SUBROUTINE>
 
- end subroutine check_bounds_are_exact_dynamic
-!===================================================================================================
- subroutine check_bounds_are_exact_static(out_num, diag_field_id, err_msg)
- integer, intent(in) :: out_num, diag_field_id
- character(len=*), intent(out) :: err_msg
- character(len=128)  :: error_string1, error_string2
+  ! <FUNCTION NAME="diag_time_inc">
+  !   <OVERVIEW>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     TYPE(time_type) FUNCTION diag_time_inc(time, output_freq, output_units, err_msg)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <IN NAME="time" TYPE="TYPE(time_type)"></IN>
+  !   <IN NAME="output_freq" TYPE="INTEGER"></IN>
+  !   <IN NAME="output_units" TYPE="INTEGER"></IN>
+  !   <OUT NAME="err_msg" TYPE="CHARACTER, OPTIONAL"></OUT>
+  TYPE(time_type) FUNCTION diag_time_inc(time, output_freq, output_units, err_msg)
+    TYPE(time_type), INTENT(in) :: time
+    INTEGER, INTENT(in):: output_freq, output_units
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
- err_msg = ''
+    CHARACTER(len=128) :: error_message_local
 
- if(output_fields(out_num)%imin /= lbound(output_fields(out_num)%buffer,1) .or. &
-    output_fields(out_num)%imax /= ubound(output_fields(out_num)%buffer,1) .or. &
-    output_fields(out_num)%jmin /= lbound(output_fields(out_num)%buffer,2) .or. &
-    output_fields(out_num)%jmax /= ubound(output_fields(out_num)%buffer,2) .or. &
-    output_fields(out_num)%kmin /= lbound(output_fields(out_num)%buffer,3) .or. &
-    output_fields(out_num)%kmax /= ubound(output_fields(out_num)%buffer,3) ) then
-      write(error_string1,'(a,"/",a)') trim(input_fields(diag_field_id)%module_name),trim(output_fields(out_num)%output_name)
-      error_string2 ='Buffer bounds=   :   ,   :   ,   :     Actual bounds=   :   ,   :   ,   :   '
-      write(error_string2(15:17),'(i3)') lbound(output_fields(out_num)%buffer,1)
-      write(error_string2(19:21),'(i3)') ubound(output_fields(out_num)%buffer,1)
-      write(error_string2(23:25),'(i3)') lbound(output_fields(out_num)%buffer,2)
-      write(error_string2(27:29),'(i3)') ubound(output_fields(out_num)%buffer,2)
-      write(error_string2(31:33),'(i3)') lbound(output_fields(out_num)%buffer,3)
-      write(error_string2(35:37),'(i3)') ubound(output_fields(out_num)%buffer,3)
-      write(error_string2(54:56),'(i3)') output_fields(out_num)%imin
-      write(error_string2(58:60),'(i3)') output_fields(out_num)%imax
-      write(error_string2(62:64),'(i3)') output_fields(out_num)%jmin
-      write(error_string2(66:68),'(i3)') output_fields(out_num)%jmax
-      write(error_string2(70:72),'(i3)') output_fields(out_num)%kmin
-      write(error_string2(74:76),'(i3)') output_fields(out_num)%kmax
-      err_msg = trim(error_string1)//' Bounds of data do not match those of buffer. '//trim(error_string2)
-   endif
-   output_fields(out_num)%imax = 0
-   output_fields(out_num)%imin = VERY_LARGE_AXIS_LENGTH
-   output_fields(out_num)%jmax = 0
-   output_fields(out_num)%jmin = VERY_LARGE_AXIS_LENGTH
-   output_fields(out_num)%kmax = 0
-   output_fields(out_num)%kmin = VERY_LARGE_AXIS_LENGTH
+    IF ( PRESENT(err_msg) ) err_msg = ''
+    error_message_local = ''
 
- end subroutine check_bounds_are_exact_static
-!===================================================================================================
-subroutine init_file(name, output_freq, output_units, format, time_units, long_name, &
-     new_file_freq, new_file_freq_units, start_time,file_duration,file_duration_units)
+    ! special values for output frequency are -1 for output at end of run
+    ! and 0 for every timestep.  Need to check for these here?
+    ! Return zero time increment, hopefully this value is never used
+    IF ( output_freq == END_OF_RUN .OR. output_freq == EVERY_TIME ) THEN
+       diag_time_inc = time
+       RETURN
+    END IF
 
-character(len=*), intent(in)          :: name, long_name
-integer, intent(in)                   :: output_freq, output_units, format, time_units
-integer, intent(in), optional         :: new_file_freq, new_file_freq_units
-integer, intent(in), optional         :: file_duration, file_duration_units
-type(time_type), intent(in), optional :: start_time
-integer                               :: new_file_freq1, new_file_freq_units1
-integer                               :: file_duration1, file_duration_units1
-real, dimension(1)                    :: tdata
-character(len=128)                    :: time_units_str
-! Get a number for this file
-num_files = num_files + 1
-if(num_files >= max_files) then
-   call error_mesg('diag_util, init_file', ' max_files exceeded, incease max_files', FATAL)
-endif
+    ! Make sure calendar was not set after initialization
+    IF ( output_units == DIAG_SECONDS ) THEN
+       IF ( get_calendar_type() == NO_CALENDAR ) THEN
+          diag_time_inc = increment_time(time, output_freq, 0, err_msg=error_message_local)
+       ELSE
+          diag_time_inc = increment_date(time, 0, 0, 0, 0, 0, output_freq, err_msg=error_message_local)
+       END IF
+    ELSE IF ( output_units == DIAG_MINUTES ) THEN
+       IF ( get_calendar_type() == NO_CALENDAR ) THEN
+          diag_time_inc = increment_time(time, NINT(output_freq*SECONDS_PER_MINUTE), 0, &
+               &err_msg=error_message_local)
+       ELSE
+          diag_time_inc = increment_date(time, 0, 0, 0, 0, output_freq, 0, err_msg=error_message_local)
+       END IF
+    ELSE IF ( output_units == DIAG_HOURS ) THEN
+       IF ( get_calendar_type() == NO_CALENDAR ) THEN
+          diag_time_inc = increment_time(time, NINT(output_freq*SECONDS_PER_HOUR), 0, err_msg=error_message_local)
+       ELSE
+          diag_time_inc = increment_date(time, 0, 0, 0, output_freq, 0, 0, err_msg=error_message_local)
+       END IF
+    ELSE IF ( output_units == DIAG_DAYS ) THEN
+       IF (get_calendar_type() == NO_CALENDAR) THEN
+          diag_time_inc = increment_time(time, 0, output_freq, err_msg=error_message_local)
+       ELSE
+          diag_time_inc = increment_date(time, 0, 0, output_freq, 0, 0, 0, err_msg=error_message_local)
+       END IF
+    ELSE IF ( output_units == DIAG_MONTHS ) THEN
+       IF (get_calendar_type() == NO_CALENDAR) THEN
+          error_message_local = 'output units of months NOT allowed with no calendar'
+       ELSE
+          diag_time_inc = increment_date(time, 0, output_freq, 0, 0, 0, 0, err_msg=error_message_local)
+       END IF
+    ELSE IF ( output_units == DIAG_YEARS ) THEN
+       IF ( get_calendar_type() == NO_CALENDAR ) THEN
+          error_message_local = 'output units of years NOT allowed with no calendar'
+       ELSE
+          diag_time_inc = increment_date(time, output_freq, 0, 0, 0, 0, 0, err_msg=error_message_local)
+       END IF
+    ELSE 
+       error_message_local = 'illegal output units'
+    END IF
 
-new_file_freq1 = VERY_LARGE_FILE_FREQ
-if(present(new_file_freq)) new_file_freq1 = new_file_freq
-if (get_calendar_type() == NO_CALENDAR) then
-  new_file_freq_units1 = DIAG_DAYS
-else 
-   new_file_freq_units1 = DIAG_YEARS
-endif
-if(present(new_file_freq_units)) new_file_freq_units1 = new_file_freq_units 
-file_duration1 = new_file_freq1
-if(present(file_duration)) file_duration1 = file_duration 
-file_duration_units1 = new_file_freq_units1
-if(present(file_duration_units)) file_duration_units1 = file_duration_units
+    IF ( error_message_local /= '' ) THEN
+       IF ( fms_error_handler('diag_time_inc',error_message_local,err_msg) ) RETURN
+    END IF
+  END FUNCTION diag_time_inc
+  ! </FUNCTION>
 
-files(num_files)%name = trim(name)
-files(num_files)%output_freq = output_freq
-files(num_files)%output_units = output_units
-files(num_files)%format = format
-files(num_files)%time_units = time_units
-files(num_files)%long_name = trim(long_name)
-files(num_files)%num_fields = 0
-files(num_files)%local = .false.
-files(num_files)%last_flush = base_time
-files(num_files)%file_unit = -1
-files(num_files)%new_file_freq = new_file_freq1
-files(num_files)%new_file_freq_units = new_file_freq_units1
-files(num_files)%duration = file_duration1
-files(num_files)%duration_units = file_duration_units1
-if(present(start_time)) then 
-   files(num_files)%start_time = start_time
-else
-   files(num_files)%start_time = base_time
-endif
-files(num_files)%next_open=diag_time_inc(files(num_files)%start_time,new_file_freq1,new_file_freq_units1)
-files(num_files)%close_time = diag_time_inc(files(num_files)%start_time,file_duration1, &
-     file_duration_units1)
-if(files(num_files)%close_time>files(num_files)%next_open) call error_mesg('init_file', 'close time '//&
-     'GREATER than'//' next_open time, check file duration, file frequency in '// &
-     files(num_files)%name, FATAL)
-! add time_axis_id and time_bounds_id here
-write(time_units_str, 11) trim(time_unit_list(files(num_files)%time_units)), base_year, &
-     base_month, base_day, base_hour, base_minute, base_second
-11 format(a, ' since ', i4.4, '-', i2.2, '-', i2.2, ' ', i2.2, ':', i2.2, ':', i2.2)
-files(num_files)%time_axis_id = diag_axis_init (trim(long_name), tdata, time_units_str, 'T', &
-     trim(long_name) , set_name=trim(name) )
-!---- register axis for storing time boundaries
-files(num_files)%time_bounds_id = diag_axis_init( 'nv',(/1.,2./),'none','N','vertex number', &
-     set_name=trim(name))
-end subroutine init_file
+  ! <PRIVATE>
+  ! <FUNCTION NAME="find_file">
+  !   <OVERVIEW>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     INTEGER FUNCTION fild_file(name, time_count)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <IN NAME="name=" TYPE="CHARACTER(len=*)"></IN>
+  !   <IN NAME="tile_count" TYPE="INTEGER"></IN>
+  INTEGER FUNCTION find_file(name, tile_count)
+    INTEGER, INTENT(in) :: tile_count
+    CHARACTER(len=*), INTENT(in) :: name
 
-!---------------------------------------------------------------------------------------------------
-function diag_time_inc(time, output_freq, output_units, err_msg)
+    INTEGER :: i
 
-type (time_type)                        :: diag_time_inc
-type (time_type), intent(in)            :: time
-integer, intent(in)                     :: output_freq, output_units
-character(len=*), intent(out), optional :: err_msg
-character(len=128)                      :: error_message_local
+    find_file = -1
+    DO i = 1, num_files
+       IF( TRIM(files(i)%name) == TRIM(name) .AND. tile_count == files(i)%tile_count ) THEN
+          find_file = i
+          RETURN
+       END IF
+    END DO
+  END FUNCTION find_file
+  ! </FUNCTION>
+  ! </PRIVATE>
 
-if(present(err_msg)) err_msg = ''
-error_message_local = ''
+  ! <FUNCTION NAME="find_input_field">
+  !   <OVERVIEW>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     INTEGER FUNCTION find_input_field(module_name, field_name, tile_count)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <IN NAME="module_name" TYPE="CHARACTER(len=*)"></IN>
+  !   <IN NAME="field_name" TYPE="CHARACTER(len=*)"></IN>
+  !   <IN NAME="tile_count" TYPE="INTEGER"></IN>
+  INTEGER FUNCTION find_input_field(module_name, field_name, tile_count)
+    CHARACTER(len=*), INTENT(in) :: module_name, field_name
+    INTEGER, INTENT(in) :: tile_count
 
-! special values for output frequency are -1 for output at end of run
-! and 0 for every timestep.  Need to check for these here?
-! Return zero time increment, hopefully this value is never used
+    INTEGER :: i
 
-if (output_freq == END_OF_RUN .or. output_freq == EVERY_TIME) then
-    diag_time_inc = time
-    return
-endif
+    find_input_field = -1
+    DO i = 1, num_input_fields
+       IF(tile_count == input_fields(i)%tile_count .AND.&
+            & TRIM(input_fields(i)%module_name) == TRIM(module_name) .AND.&
+            & lowercase(TRIM(input_fields(i)%field_name)) == lowercase(TRIM(field_name))) THEN 
+          find_input_field = i
+          RETURN
+       END IF
+    END DO
+  END FUNCTION find_input_field
+  ! </FUNCTION>
 
-! Make sure calendar was not set after initialization
+  ! <SUBROUTINE NAME="init_input_field">
+  !   <OVERVIEW>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE init_input_field(module_name, field_name, tile_count)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <IN NAME="module_name" TYPE="CHARACTER(len=*)"></IN>
+  !   <IN NAME="field_name" TYPE="CHARACTER(len=*)"></IN>
+  !   <IN NAME="tile_count" TYPE="INTEGER"></IN>
+  SUBROUTINE init_input_field(module_name, field_name, tile_count)
+    CHARACTER(len=*),  INTENT(in) :: module_name, field_name
+    INTEGER, INTENT(in) :: tile_count
 
-if(output_units == DIAG_SECONDS) then
-   if (get_calendar_type() == NO_CALENDAR) then
-       diag_time_inc = increment_time(time, output_freq, 0, err_msg=error_message_local)
-   else
-       diag_time_inc = increment_date(time, 0, 0, 0, 0, 0, output_freq, err_msg=error_message_local)
-   endif
-else if(output_units == DIAG_MINUTES) then
-   if (get_calendar_type() == NO_CALENDAR) then
-       diag_time_inc = increment_time(time, nint(output_freq*SECONDS_PER_MINUTE), 0, err_msg=error_message_local)
-   else
-       diag_time_inc = increment_date(time, 0, 0, 0, 0, output_freq, 0, err_msg=error_message_local)
-   endif
-else if(output_units == DIAG_HOURS) then
-   if (get_calendar_type() == NO_CALENDAR) then
-       diag_time_inc = increment_time(time, nint(output_freq*SECONDS_PER_HOUR), 0, err_msg=error_message_local)
-   else
-       diag_time_inc = increment_date(time, 0, 0, 0, output_freq, 0, 0, err_msg=error_message_local)
-   endif
-else if(output_units == DIAG_DAYS) then
-   if (get_calendar_type() == NO_CALENDAR) then
-       diag_time_inc = increment_time(time, 0, output_freq, err_msg=error_message_local)
-   else
-       diag_time_inc = increment_date(time, 0, 0, output_freq, 0, 0, 0, err_msg=error_message_local)
-   endif
-else if(output_units == DIAG_MONTHS) then
-   if (get_calendar_type() == NO_CALENDAR) then
-       error_message_local = 'output units of months NOT allowed with no calendar'
-   else
-       diag_time_inc = increment_date(time, 0, output_freq, 0, 0, 0, 0, err_msg=error_message_local)
-   endif
-else if(output_units == DIAG_YEARS) then
-   if (get_calendar_type() == NO_CALENDAR) then
-       error_message_local = 'output units of years NOT allowed with no calendar'
-   else
-       diag_time_inc = increment_date(time, output_freq, 0, 0, 0, 0, 0, err_msg=error_message_local)
-   endif
-else 
-    error_message_local = 'illegal output units'
-endif
+    ! Get a number for this input_field if not already set up
+    IF ( find_input_field(module_name, field_name, tile_count) < 0 ) THEN
+       num_input_fields = num_input_fields + 1
+       IF ( num_input_fields > max_input_fields ) THEN
+          ! <ERROR STATUS="FATAL">max_input_fields exceeded, increase it via diag_manager_nml</ERROR>
+          CALL error_mesg('diag_util,init_input_field',&
+               & 'max_input_fields exceeded, increase it via diag_manager_nml', FATAL)
+       END IF
+    ELSE
+       ! If this is already initialized do not need to do anything
+       RETURN
+    END IF
 
-if(error_message_local /= '') then
-  if(fms_error_handler('diag_time_inc',error_message_local,err_msg)) return
-endif
+    input_fields(num_input_fields)%module_name = TRIM(module_name)
+    input_fields(num_input_fields)%field_name = TRIM(field_name)
+    input_fields(num_input_fields)%num_output_fields = 0
+    ! Set flag that this field has not been registered
+    input_fields(num_input_fields)%register = .FALSE.
+    input_fields(num_input_fields)%local = .FALSE.
+    input_fields(num_input_fields)%standard_name = 'none'
+    input_fields(num_input_fields)%tile_count = tile_count
+  END SUBROUTINE init_input_field
+  ! </SUBROUTINE>
 
-end function diag_time_inc
+  ! <SUBROUTINE NAME="init_output_field">
+  !   <OVERVIEW>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE init_output_field(module_name, field_name, output_name, output_file
+  !     time_method, pack, tile_count, local_coord)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <IN NAME="module_name" TYPE="CHARACTER(len=*)"></IN>
+  !   <IN NAME="field_name" TYPE="CHARACTER(len=*)"></IN>
+  !   <IN NAME="output_name" TYPE="CHARACTER(len=*)"></IN>
+  !   <IN NAME="output_file" TYPE="CHARACTER(len=*)"></IN>
+  !   <IN NAME="time_method" TYPE="CHARACTER(len=*)"></IN>
+  !   <IN NAME="pack" TYPE="INTEGER"></IN>
+  !   <IN NAME="tile_count" TYPE="INTEGER"></IN>
+  !   <IN NAME="local_coord" TYPE="INTEGER, OPTIONAL"></IN>
+  SUBROUTINE init_output_field(module_name, field_name, output_name, output_file,&
+       & time_method, pack, tile_count, local_coord)
+    CHARACTER(len=*), INTENT(in) :: module_name, field_name, output_name, output_file
+    CHARACTER(len=*), INTENT(in) :: time_method
+    INTEGER, INTENT(in) :: pack
+    INTEGER, INTENT(in) :: tile_count
+    TYPE(coord_type), INTENT(in), OPTIONAL :: local_coord
+    INTEGER :: out_num, in_num, file_num, file_num_tile1,&
+         & num_fields, i, method_selected, l1
+    CHARACTER(len=128) :: error_msg
+    CHARACTER(len=50) :: t_method
 
-!---------------------------------------------------------------------------------------------------
-function find_file(name)
-integer                      :: find_file
-character(len=*), intent(in) :: name
-integer                      :: i
+    ! Get a number for this output field
+    num_output_fields = num_output_fields + 1
+    IF ( num_output_fields > max_output_fields ) THEN
+       ! <ERROR STATUS="FATAL">max_output_fields exceeded, increase it via diag_manager_nml</ERROR>
+       CALL error_mesg('diag_util', 'max_output_fields exceeded, increase it via diag_manager_nml', FATAL)
+    END IF
+    out_num = num_output_fields
 
-find_file = -1
-do i = 1, num_files
-   if(trim(files(i)%name) == trim(name)) then
-      find_file = i
-      return
-   end if
-end do
-end function find_file
-!---------------------------------------------------------------------------------------------------
+    ! First, find the index to the associated input field
+    in_num = find_input_field(module_name, field_name, tile_count)
+    IF ( in_num < 0 ) THEN
+       IF ( tile_count > 1 ) THEN
+          WRITE (error_msg,'(a,"/",a,"/",a)') TRIM(module_name),TRIM(field_name),&
+               & "tile_count="//TRIM(string(tile_count))
+       ELSE
+          WRITE (error_msg,'(a,"/",a)') TRIM(module_name),TRIM(field_name)
+       END IF
+       ! <ERROR STATUS="FATAL">module_name/field_name <module_name>/<field_name>[/tile_count=<tile_count>] NOT registered</ERROR>
+       CALL error_mesg('diag_util,init_output_field',&
+            & 'module_name/field_name '//TRIM(error_msg)//' NOT registered', FATAL)
+    END IF
 
-function find_input_field(module_name, field_name)
-integer                      :: find_input_field
-character(len=*), intent(in) :: module_name, field_name
-integer                      :: i
+    ! Add this output field into the list for this input field
+    input_fields(in_num)%num_output_fields =&
+         & input_fields(in_num)%num_output_fields + 1
+    IF ( input_fields(in_num)%num_output_fields > max_out_per_in_field ) THEN
+       ! <ERROR STATUS="FATAL">max_out_per_in_field exceeded, increase max_out_per_in_field</ERROR>
+       CALL error_mesg('diag_util,init_output_field',&
+            & 'max_out_per_in_field exceeded, increase max_out_per_in_field', FATAL)
+    END IF
+    input_fields(in_num)%output_fields(input_fields(in_num)%num_output_fields) = out_num
 
-find_input_field = -1
-do i = 1, num_input_fields
-   if(trim(input_fields(i)%module_name) == trim(module_name) .and. &
-      lowercase(trim(input_fields(i)%field_name)) == &
-      lowercase(trim(field_name))) then 
-      find_input_field = i
-      return
-   endif
-end do
-end function find_input_field
-!---------------------------------------------------------------------------------------------------
+    ! Also put pointer to input field in this output field
+    output_fields(out_num)%input_field = in_num
 
-subroutine init_input_field(module_name, field_name)
+    ! Next, find the number for the corresponding file
+    IF ( TRIM(output_file).EQ.'null' ) THEN
+       file_num = max_files
+    ELSE
+       file_num = find_file(output_file, 1)
+       IF ( file_num < 0 ) THEN
+          CALL error_mesg('diag_util,init_output_field', 'file '&
+               & //TRIM(output_file)//' is NOT found in diag_table', FATAL)
+       END IF
+       IF ( tile_count > 1 ) THEN
+          file_num_tile1 = file_num
+          file_num = find_file(output_file, tile_count)
+          IF(file_num < 0) THEN
+             CALL init_file(files(file_num_tile1)%name, files(file_num_tile1)%output_freq,&
+                  & files(file_num_tile1)%output_units, files(file_num_tile1)%format,&
+                  & files(file_num_tile1)%time_units, files(file_num_tile1)%long_name,&
+                  & tile_count, files(file_num_tile1)%new_file_freq,&
+                  & files(file_num_tile1)%new_file_freq_units, files(file_num_tile1)%start_time,&
+                  & files(file_num_tile1)%duration, files(file_num_tile1)%duration_units  )
+             file_num = find_file(output_file, tile_count)
+             IF ( file_num < 0 ) THEN
+                CALL error_mesg('diag_util,init_output_field', 'file '//TRIM(output_file)//&
+                     & ' is not initialized for tile_count = '//TRIM(string(tile_count)), FATAL)
+             END IF
+          END IF
+       END IF
+    END IF
 
-character(len=*), intent(in) :: module_name, field_name
+    ! Insert this field into list for this file
+    files(file_num)%num_fields = files(file_num)%num_fields + 1
+    IF ( files(file_num)%num_fields > max_fields_per_file ) THEN
+       CALL error_mesg('diag_util,init_output_field',&
+            & 'max_fields_per_file exceeded, increase max_fields_per_file ', FATAL)
+    END IF
+    num_fields = files(file_num)%num_fields
+    files(file_num)%fields(num_fields) = out_num
 
-! Get a number for this input_field if not already set up
-if(find_input_field(module_name, field_name) < 0) then
-   num_input_fields = num_input_fields + 1
-   if(num_input_fields > max_input_fields) then
-      call error_mesg('diag_util,init_input_field', 'max_input_fields exceeded, increase it via diag_manager_nml',&
-           FATAL)
-   end if
-else
-! If this is already initialized don't need to do anything
-   return
-end if
+    ! Set the file for this output field
+    output_fields(out_num)%output_file = file_num
 
-input_fields(num_input_fields)%module_name = trim(module_name)
-input_fields(num_input_fields)%field_name = trim(field_name)
-input_fields(num_input_fields)%num_output_fields = 0
-! Set flag that this field has not been registered
-input_fields(num_input_fields)%register = .false.
-input_fields(num_input_fields)%local = .false.
-input_fields(num_input_fields)%standard_name = 'none'
-end subroutine init_input_field
+    ! Enter the other data for this output field
+    output_fields(out_num)%output_name = TRIM(output_name)
+    output_fields(out_num)%pack = pack
+    !output_fields(out_num)%num_elements = 0
+    output_fields(out_num)%total_elements = 0
+    output_fields(out_num)%region_elements = 0
+    output_fields(out_num)%imax = 0
+    output_fields(out_num)%jmax = 0
+    output_fields(out_num)%kmax = 0
+    output_fields(out_num)%imin = VERY_LARGE_AXIS_LENGTH
+    output_fields(out_num)%jmin = VERY_LARGE_AXIS_LENGTH
+    output_fields(out_num)%kmin = VERY_LARGE_AXIS_LENGTH
 
-!---------------------------------------------------------------------------------------------------
+    ! initialize the size of the diurnal axis to 1
+    output_fields(out_num)%n_diurnal_samples = 1
 
-subroutine init_output_field(module_name, field_name, output_name, output_file,&
-   time_method, pack, local_coord)
+    ! Initialize all time method to false
+    method_selected = 0
+    output_fields(out_num)%time_average = .FALSE.
+    output_fields(out_num)%time_min = .FALSE.
+    output_fields(out_num)%time_max = .FALSE. 
+    output_fields(out_num)%time_ops = .FALSE.
+    output_fields(out_num)%written_once = .FALSE.
 
-character(len=*), intent(in)           :: module_name, field_name, output_name, output_file
-character(len=*), intent(in)           :: time_method
-integer, intent(in)                    :: pack
-type(coord_type), intent(in), optional :: local_coord
-integer                                :: out_num, in_num, file_num, &
-                                          num_fields, i, method_selected, l1
-character(len=128)                     :: error_msg
-character(len=8)                       :: t_method
+    t_method = lowercase(time_method)
+    ! cannot time average fields output every time
+    IF ( files(file_num)%output_freq == EVERY_TIME ) THEN
+       output_fields(out_num)%time_average = .FALSE.
+       method_selected = method_selected+1
+       t_method = 'point'
+    ELSEIF (INDEX(t_method,'diurnal')==1) THEN
+       ! get the integer number from the t_method -- this is stupid and simplistic,
+       ! biut will work
+       output_fields(out_num)%n_diurnal_samples = 0
+       DO i = 1, LEN_TRIM(t_method)
+          IF( ICHAR(t_method(i:i))>=ICHAR('0').AND.ICHAR(t_method(i:i))<=ICHAR('9') ) THEN
+             output_fields(out_num)%n_diurnal_samples =&
+                  & output_fields(out_num)%n_diurnal_samples * 10+ICHAR(t_method(i:i))-ICHAR('0')
+          END IF
+       END DO
+       IF ( output_fields(out_num)%n_diurnal_samples == 0 ) THEN
+          ! <ERROR STATUS="FATAL">could not find integer number of diurnal samples in string <t_method></ERROR>
+          CALL error_mesg('init_output_field',&
+               'could not find integer number of diurnal samples in string "'&
+               //TRIM(t_method)//'"', FATAL)
+       END IF
+       output_fields(out_num)%time_average = .TRUE.
+       method_selected = method_selected+1
+       t_method='mean'
+    ELSE
+       SELECT CASE(TRIM(t_method))
+       CASE ( '.true.', 'mean', 'average', 'avg' )
+          output_fields(out_num)%time_average = .TRUE.
+          method_selected = method_selected+1
+          t_method = 'mean'
+       CASE ( '.false.', 'none', 'point' )
+          output_fields(out_num)%time_average = .FALSE.
+          method_selected = method_selected+1
+          t_method = 'point'
+       CASE ( 'maximum', 'max' )
+          output_fields(out_num)%time_max = .TRUE.
+          l1 = LEN_TRIM(output_fields(out_num)%output_name)
+          IF ( output_fields(out_num)%output_name(l1-2:l1) /= 'max' ) &
+               output_fields(out_num)%output_name = TRIM(output_name)//'_max'
+          method_selected = method_selected+1
+          t_method = 'max'        
+       CASE ( 'minimum', 'min' )
+          output_fields(out_num)%time_min = .TRUE.
+          l1 = LEN_TRIM(output_fields(out_num)%output_name)
+          IF ( output_fields(out_num)%output_name(l1-2:l1) /= 'min' )&
+               & output_fields(out_num)%output_name = TRIM(output_name)//'_min'
+          method_selected = method_selected+1
+          t_method = 'min'        
+       END SELECT
+    END IF
+    
+    ! reconcile logical flags
+    output_fields(out_num)%time_ops = output_fields(out_num)%time_min.OR.output_fields(out_num)%time_max&
+         & .OR.output_fields(out_num)%time_average
 
-! Get a number for this output field
-num_output_fields = num_output_fields + 1
-if(num_output_fields > max_output_fields) then
-   call error_mesg('diag_util', 'max_output_fields exceeded, increase it via diag_manager_nml', FATAL)
-endif
-out_num = num_output_fields
+    output_fields(out_num)%phys_window = .FALSE.
+    ! need to initialize grid_type = -1(start, end, l_start_indx,l_end_indx etc...)
+    IF ( PRESENT(local_coord) ) THEN
+       input_fields(in_num)%local = .TRUE.
+       input_fields(in_num)%local_coord = local_coord
+       IF ( INT(local_coord%xbegin * local_coord%xbegin) == 1 .AND.&
+            & INT(local_coord%ybegin * local_coord%ybegin) ==1 ) THEN
+          output_fields(out_num)%local_output = .FALSE.
+          output_fields(out_num)%need_compute = .FALSE.
+          output_fields(out_num)%reduced_k_range = .TRUE.
+       ELSE
+          output_fields(out_num)%local_output = .TRUE.
+          output_fields(out_num)%need_compute = .FALSE.
+          output_fields(out_num)%reduced_k_range = .FALSE.
+       END IF
 
-! First, find the index to the associated input field
-in_num = find_input_field(module_name, field_name)
-if(in_num < 0) then
-   write (error_msg,'(a,"/",a)') trim(module_name),trim(field_name)
-   call error_mesg('diag_util,init_output_field', &
-      'module_name/field_name '//trim(error_msg)//' NOT registered', FATAL)
-endif
+       output_fields(out_num)%output_grid%start(1) = local_coord%xbegin
+       output_fields(out_num)%output_grid%start(2) = local_coord%ybegin
+       output_fields(out_num)%output_grid%start(3) = local_coord%zbegin
+       output_fields(out_num)%output_grid%end(1) = local_coord%xend
+       output_fields(out_num)%output_grid%end(2) = local_coord%yend
+       output_fields(out_num)%output_grid%end(3) = local_coord%zend
+       DO i = 1, 3
+          output_fields(out_num)%output_grid%l_start_indx(i) = -1
+          output_fields(out_num)%output_grid%l_end_indx(i) = -1
+          output_fields(out_num)%output_grid%subaxes(i) = -1
+       END DO
+    ELSE
+       output_fields(out_num)%local_output = .FALSE.
+       output_fields(out_num)%need_compute = .FALSE.
+       output_fields(out_num)%reduced_k_range = .FALSE.
+    END IF
 
-! Add this output field into the list for this input field
-input_fields(in_num)%num_output_fields = &
-   input_fields(in_num)%num_output_fields + 1
-if(input_fields(in_num)%num_output_fields > max_out_per_in_field) then
-   call error_mesg('diag_util,init_output_field', 'max_out_per_in_field exceeded, increase max_out_per_in_field', FATAL)
-endif
-input_fields(in_num)%output_fields(input_fields(in_num)%num_output_fields) &
-   = out_num
+    ! <ERROR STATUS="FATAL">improper time method in diag_table for output field <output_name></ERROR>
+    IF ( method_selected /= 1 ) CALL error_mesg('init_output_field','improper &
+         &time method in diag_table for output field:'//TRIM(output_name),FATAL)
 
-! Also put pointer to input field in this output field
-output_fields(out_num)%input_field = in_num
+    output_fields(out_num)%time_method = TRIM(t_method)
 
-! Next, find the number for the corresponding file
-if(trim(output_file).eq.'null') then
-   file_num = max_files
-else
-   file_num = find_file(output_file)
-   if(file_num < 0) then
-      call error_mesg('diag_util,init_output_field', 'file '//trim(output_file)//' is NOT found in diag_table', FATAL)
-   end if
-endif
-
-! Insert this field into list for this file
-files(file_num)%num_fields = files(file_num)%num_fields + 1
-if(files(file_num)%num_fields > max_fields_per_file) then
-   call error_mesg('diag_util,init_output_field', 'max_fields_per_file exceeded, increase max_fields_per_file ', FATAL)
-endif
-num_fields = files(file_num)%num_fields
-files(file_num)%fields(num_fields) = out_num
-output_fields(out_num)%count_0d = 0
-
-! Set the file for this output field
-output_fields(out_num)%output_file = file_num
-
-! Enter the other data for this output field
-output_fields(out_num)%output_name = trim(output_name)
-output_fields(out_num)%pack = pack
-output_fields(out_num)%num_elements = 0
-output_fields(out_num)%total_elements = 0
-output_fields(out_num)%region_elements = 0
-output_fields(out_num)%imax = 0
-output_fields(out_num)%jmax = 0
-output_fields(out_num)%kmax = 0
-output_fields(out_num)%imin = VERY_LARGE_AXIS_LENGTH
-output_fields(out_num)%jmin = VERY_LARGE_AXIS_LENGTH
-output_fields(out_num)%kmin = VERY_LARGE_AXIS_LENGTH
-method_selected = 0
-! Initialize all time method to false
-output_fields(out_num)%time_average = .false.
-output_fields(out_num)%time_min = .false.
-output_fields(out_num)%time_max = .false. 
-output_fields(out_num)%time_ops = .false.
-output_fields(out_num)%written_once = .false.
-! cannot time average fields output every time
-if (files(file_num)%output_freq == EVERY_TIME) then
-   output_fields(out_num)%time_average = .false.
-   method_selected = method_selected+1
-   t_method = 'point'
-else
-   t_method = lowercase(time_method)
-   select case (trim(t_method))
-   case('.true.')
-      output_fields(out_num)%time_average = .true.
-      method_selected = method_selected+1
-      t_method = 'mean'
-   case('mean')
-      output_fields(out_num)%time_average = .true.
-      method_selected = method_selected+1
-      t_method = 'mean'
-   case('average')
-      output_fields(out_num)%time_average = .true.
-      method_selected = method_selected+1
-      t_method = 'mean'
-   case('avg')
-      output_fields(out_num)%time_average = .true.
-      method_selected = method_selected+1
-      t_method = 'mean'
-   case('.false.')
-      output_fields(out_num)%time_average = .false.
-      method_selected = method_selected+1
-      t_method = 'point'
-   case('none')
-      output_fields(out_num)%time_average = .false.
-      method_selected = method_selected+1
-      t_method = 'point'
-   case('point')
-      output_fields(out_num)%time_average = .false.
-      method_selected = method_selected+1
-      t_method = 'point'   
-   case ('maximum')
-      output_fields(out_num)%time_max = .true.
-      l1 = len_trim(output_fields(out_num)%output_name)
-      if(output_fields(out_num)%output_name(l1-2:l1) /= 'max') &
-           output_fields(out_num)%output_name = trim(output_name)//'_max'
-      method_selected = method_selected+1
-      t_method = 'max'        
-   case ('max')
-      output_fields(out_num)%time_max = .true.
-      l1 = len_trim(output_fields(out_num)%output_name)
-      if(output_fields(out_num)%output_name(l1-2:l1) /= 'max') &
-           output_fields(out_num)%output_name = trim(output_name)//'_max'
-      method_selected = method_selected+1
-      t_method = 'max'
-   case ('minimum')
-      output_fields(out_num)%time_min = .true.
-      l1 = len_trim(output_fields(out_num)%output_name)
-      if(output_fields(out_num)%output_name(l1-2:l1) /= 'min') &
-           output_fields(out_num)%output_name = trim(output_name)//'_min'
-      method_selected = method_selected+1
-      t_method = 'min'        
-   case ('min')
-      output_fields(out_num)%time_min = .true.
-      l1 = len_trim(output_fields(out_num)%output_name)
-      if(output_fields(out_num)%output_name(l1-2:l1) /= 'min') &
-           output_fields(out_num)%output_name = trim(output_name)//'_min'
-      method_selected = method_selected+1
-      t_method = 'min'     
-   end select
-endif
-output_fields(out_num)%time_ops = output_fields(out_num)%time_min.or.output_fields(out_num)%time_max &
-     .or.output_fields(out_num)%time_average
-
-output_fields(out_num)%phys_window = .false.
-! need to initialize grid_type = -1(start, end, l_start_indx,l_end_indx etc...)
-if(present(local_coord)) then
-   input_fields(in_num)%local = .true.
-   output_fields(out_num)%output_grid%start(1) = local_coord%xbegin
-   output_fields(out_num)%output_grid%start(2) = local_coord%ybegin
-   output_fields(out_num)%output_grid%start(3) = local_coord%zbegin
-   output_fields(out_num)%output_grid%end(1) = local_coord%xend
-   output_fields(out_num)%output_grid%end(2) = local_coord%yend
-   output_fields(out_num)%output_grid%end(3) = local_coord%zend
-   do i = 1,3
-      output_fields(out_num)%output_grid%l_start_indx(i) = -1
-      output_fields(out_num)%output_grid%l_end_indx(i) = -1
-      output_fields(out_num)%output_grid%subaxes(i) = -1
-   enddo
-   output_fields(out_num)%local_output = .true.
-   output_fields(out_num)%need_compute = .false.
-else
-   output_fields(out_num)%local_output = .false.
-   output_fields(out_num)%need_compute = .false.
-endif
-
-if (method_selected /= 1) call error_mesg('init_output_field','improper &
-     &time method in diag_table for output field:'//trim(output_name),FATAL)
-output_fields(out_num)%time_method = trim(t_method)
-
-end subroutine init_output_field
-
-!---------------------------------------------------------------------------------------------------
-
-subroutine opening_file(file, time)
-
-! WARNING: Assumes that all data structures are fully initialized
-  integer, intent(in)           :: file
-  type(time_type), intent(in)   :: time  
-  integer                       :: j, field_num, axes(5), input_field_num, num_axes, k
-  character(len=128)            :: time_units, timeb_units, avg, error_string, filename, aux_name,fieldname
-  logical                       :: time_ops, aux_present, match_aux_name
-  integer                       :: time_axis_id(1), field_num1, time_bounds_id(1)
-  character(len=7)              :: prefix
-  character (len = 7)           :: avg_name = 'average'
-  character(len=128)            :: suffix, base_name
-  integer                       :: position
-  character(len=32)             :: time_name, timeb_name,time_longname, timeb_longname, cart_name
-  type(domain1d)                :: domain
-  integer                       :: dir, edges
-  real, dimension(2)            :: data
-  character(len=256)            :: fname
-  integer                       :: ntileMe, nfiles_in_set
-  integer, allocatable          :: tile_id(:)
-  type(domain2d)                :: domain2
-  logical                       :: all_scalar_or_1d
-
-
-  aux_present = .false.; match_aux_name = .false.
-! it's unlikely that a file starts with word "rregion", need to check anyway.
-  if (len(files(file)%name) >=7 .and. .not. files(file)%local) then
-     prefix = files(file)%name(1:7)
-     if(lowercase(prefix) == 'rregion') &
-          call error_mesg ('diag_util opening_file', 'file name should not start with' &
-          //' word "rregion"', WARNING)
-  endif
+    ! allocate counters: NOTE that for simplicity we always allocate them, even 
+    ! if they are superceeded by 4D "counter" array. This isn't most memory 
+    ! efficient, approach, but probably tolerable since they are so small anyway
+    ALLOCATE(output_fields(out_num)%count_0d(output_fields(out_num)%n_diurnal_samples))
+    ALLOCATE(output_fields(out_num)%num_elements(output_fields(out_num)%n_diurnal_samples))
+    output_fields(out_num)%count_0d(:) = 0
+    output_fields(out_num)%num_elements(:) = 0
+  END SUBROUTINE init_output_field
+  ! </SUBROUTINE>
   
-! Here is where time_units string must be set up; time since base date
-  write(time_units, 11) trim(time_unit_list(files(file)%time_units)), base_year, &
-       base_month, base_day, base_hour, base_minute, base_second
-11 format(a, ' since ', i4.4, '-', i2.2, '-', i2.2, ' ', i2.2, ':', i2.2, ':', i2.2)
-  base_name = files(file)%name
-  if(files(file)%new_file_freq < VERY_LARGE_FILE_FREQ) then
-     position = INDEX(files(file)%name, '%')
-     if(position>0) then
-        base_name = base_name(1:position-1)
-     else
-        call error_mesg ('diag_util opening_file', 'file name '//TRIM(files(file)%name)// &
-             ' does not contain % for time stamp string', FATAL) 
-     endif
-     suffix = get_time_string(files(file)%name, time)
-  else
-     suffix = ' '
-  endif 
-! Add CVS tag as prefix of filename  (currently not implemented)
-!  i1 = INDEX(tagname,':') + 2
-!  i2 = len_trim(tagname) - 2
-!  if(i2 <=i1)  call error_mesg ('diag_util opening_file','error in CVS tagname index',FATAL)
-!  prefix2 = tagname(i1:i2)//'_'
-  if(files(file)%local) then      
-! prepend "rregion" to all local files for post processing, the prefix will be removed in postprocessing
-     filename = 'rregion'//trim(base_name)//trim(suffix)
-  else
-!     filename = trim(prefix2)//trim(base_name)//trim(suffix)
-     filename = trim(base_name)//trim(suffix)
-  endif
+  ! <PRIVATE>
+  ! <SUBROUTINE NAME="opening_file">
+  !   <OVERVIEW>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE opening_file(file, time)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <IN NAME="file" TYPE="INTEGER"></IN>
+  !   <IN NAME="tile" TYPE="TYPE(time_type)"></IN>
+  SUBROUTINE opening_file(file, time)
+    ! WARNING: Assumes that all data structures are fully initialized
+    INTEGER, INTENT(in) :: file
+    TYPE(time_type), INTENT(in) :: time  
 
-! Loop through all fields with this file to output axes
-! JWD: This is a klooge; need something more robust
-  nfiles_in_set = mpp_npes()
+    REAL, DIMENSION(2) :: DATA
+    INTEGER :: j, field_num, input_field_num, num_axes, k 
+    INTEGER :: field_num1
+    INTEGER :: position
+    INTEGER :: dir, edges
+    INTEGER :: ntileMe
+    INTEGER, ALLOCATABLE :: tile_id(:)
+    INTEGER, DIMENSION(1) :: time_axis_id, time_bounds_id
+    ! size of this axes array must be at least max num. of
+    ! axes per field + 2; the last two elements are for time
+    ! and time bounds dimensions
+    INTEGER, DIMENSION(6) :: axes 
+    LOGICAL :: time_ops, aux_present, match_aux_name
+    LOGICAL :: all_scalar_or_1d
+    CHARACTER(len=7) :: prefix
+    CHARACTER (len = 7) :: avg_name = 'average'
+    CHARACTER(len=128) :: time_units, timeb_units, avg, error_string, filename, aux_name,fieldname
+    CHARACTER(len=128) :: suffix, base_name
+    CHARACTER(len=32) :: time_name, timeb_name,time_longname, timeb_longname, cart_name
+    CHARACTER(len=256) :: fname
+    TYPE(domain1d) :: domain
+    TYPE(domain2d) :: domain2
 
-  domain2 = NULL_DOMAIN2D
-  all_scalar_or_1d = .true.
-  do j = 1, files(file)%num_fields
-     field_num = files(file)%fields(j)
-     num_axes = output_fields(field_num)%num_axes
-     if(num_axes>1)then
-        all_scalar_or_1d = .false.
-        domain2 = get_domain2d ( output_fields(field_num)%axes(1:num_axes) )
-        if(domain2 /= NULL_DOMAIN2D) exit
-     endif
-  enddo
-  if(.not.all_scalar_or_1d) then
-     if(domain2 == NULL_DOMAIN2D) call return_domain(domain2)
-     if(domain2 == NULL_DOMAIN2D)then
-        call error_mesg ('diag_util opening_file', &
-             'Domain not defined through set_domain interface; cannot retrieve tile info', FATAL)
-     endif
-     nfiles_in_set = mpp_get_tile_npes(domain2)
-     if(mpp_get_ntile_count(domain2) > 1)then
-        ntileMe = mpp_get_current_ntile(domain2)
-        allocate(tile_id(ntileMe))
-        tile_id = mpp_get_tile_id(domain2)
-        fname = trim(filename)
-        call get_tile_string(filename, trim(fname)//'.tile' , tile_id(1))
-        deallocate(tile_id)
-     endif
-  endif
+    aux_present = .FALSE.
+    match_aux_name = .FALSE.
+    ! it's unlikely that a file starts with word "rregion", need to check anyway.
+    IF ( LEN(files(file)%name) >=7 .AND. .NOT.files(file)%local ) THEN
+       prefix = files(file)%name(1:7)
+       IF ( lowercase(prefix) == 'rregion' ) THEN 
+          ! <ERROR STATUS="WARNING">file name should not start with word "rregion"</ERROR>
+          CALL error_mesg ('diag_util opening_file', 'file name should not start with'&
+               & //' word "rregion"', WARNING)
+       END IF
+    END IF
+    
+    ! Here is where time_units string must be set up; time since base date
+    WRITE(time_units, 11) TRIM(time_unit_list(files(file)%time_units)), base_year,&
+         & base_month, base_day, base_hour, base_minute, base_second
+11  FORMAT(a, ' since ', i4.4, '-', i2.2, '-', i2.2, ' ', i2.2, ':', i2.2, ':', i2.2)
+    base_name = files(file)%name
+    IF ( files(file)%new_file_freq < VERY_LARGE_FILE_FREQ ) THEN
+       position = INDEX(files(file)%name, '%')
+       IF ( position > 0 )  THEN
+          base_name = base_name(1:position-1)
+       ELSE
+          ! <ERROR STATUS="FATAL">
+          !   filename <files(file)%name> does not contain % for time stamp string
+          ! </ERROR>
+          CALL error_mesg ('diag_util opening_file', 'file name '//TRIM(files(file)%name)//&
+               & ' does not contain % for time stamp string', FATAL) 
+       END IF
+       suffix = get_time_string(files(file)%name, time)
+    ELSE
+       suffix = ' '
+    END IF
+    ! Add CVS tag as prefix of filename  (currently not implemented)
+    !  i1 = INDEX(tagname,':') + 2
+    !  i2 = len_trim(tagname) - 2
+    !  if(i2 <=i1)  call error_mesg ('diag_util opening_file','error in CVS tagname index',FATAL)
+    !  prefix2 = tagname(i1:i2)//'_'
+    IF ( files(file)%local ) THEN      
+       ! prepend "rregion" to all local files for post processing, the prefix will be removed in postprocessing
+       filename = 'rregion'//TRIM(base_name)//TRIM(suffix)
+    ELSE
+       ! filename = trim(prefix2)//trim(base_name)//trim(suffix)
+       filename = TRIM(base_name)//TRIM(suffix)
+    END IF
 
-  call diag_output_init(filename, files(file)%format, global_descriptor, &
-       files(file)%long_name, time_units, files(file)%file_unit, nfiles_in_set, all_scalar_or_1d) 
-  files(file)%bytes_written = 0 
-! Does this file contain time_average fields?
-  time_ops = .false.
-  do j = 1, files(file)%num_fields
-     field_num = files(file)%fields(j)
-     if(output_fields(field_num)%time_ops) then
-        time_ops = .true.
-        exit
-     endif
-  enddo
-! Loop through all fields with this file to output axes
-  do j = 1, files(file)%num_fields
-     field_num = files(file)%fields(j)
-     input_field_num = output_fields(field_num)%input_field
-     if (.not.input_fields(input_field_num)%register) then
-        write (error_string,'(a,"/",a)')  &
-             trim(input_fields(input_field_num)%module_name), &
-             trim(input_fields(input_field_num)%field_name)
-        if(mpp_pe() .eq. mpp_root_pe()) &
-             call error_mesg ('diag_util opening_file', &
-             'module/field_name '//trim(error_string)//' NOT registered', WARNING)  
-        cycle
-     endif
-! Put the time axis in the axis field
-     num_axes = output_fields(field_num)%num_axes
-     axes(1:num_axes) = output_fields(field_num)%axes(1:num_axes)
-! make sure that axis_id are not -1
-     do k = 1,num_axes
-        if(axes(k)<0) then
-           write(error_string,'(a)') output_fields(field_num)%output_name
-           call error_mesg ('diag_util opening_file','output_name '//trim(error_string)// &
-                ' has axis_id = -1', FATAL)
-        endif        
-     enddo
-! check if aux is present in any axes
-     if (.not. aux_present) then
-        do k = 1,num_axes
-           aux_name = get_axis_aux(axes(k))
-           if (trim(aux_name) /= 'none') then
-              aux_present = .true.
-              exit
-           endif
-        end do
-     endif
+    ! Loop through all fields with this file to output axes
+    ! JWD: This is a klooge; need something more robust
+    domain2 = NULL_DOMAIN2D
+    all_scalar_or_1d = .TRUE.
+    DO j = 1, files(file)%num_fields
+       field_num = files(file)%fields(j)
+       num_axes = output_fields(field_num)%num_axes
+       IF ( num_axes > 1 ) THEN
+          all_scalar_or_1d = .FALSE.
+          domain2 = get_domain2d ( output_fields(field_num)%axes(1:num_axes) )
+          IF ( domain2 /= NULL_DOMAIN2D ) EXIT
+       END IF
+    END DO
+    IF( .NOT.all_scalar_or_1d ) THEN
+       IF ( domain2 == NULL_DOMAIN2D ) CALL return_domain(domain2)
+       IF ( domain2 == NULL_DOMAIN2D ) THEN
+          ! <ERROR STATUS="FATAL">
+          !   Domain not defined through set_domain interface; cannot retrieve tile info
+          ! </ERROR>
+          CALL error_mesg ('diag_util opening_file',&
+               & 'Domain not defined through set_domain interface; cannot retrieve tile info', FATAL)
+       END IF
+       IF ( mpp_get_ntile_count(domain2) > 1 ) THEN
+          ntileMe = mpp_get_current_ntile(domain2)
+          ALLOCATE(tile_id(ntileMe))
+          tile_id = mpp_get_tile_id(domain2)
+          fname = TRIM(filename)
+          CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(files(file)%tile_count))
+          DEALLOCATE(tile_id)
+       END IF
+    END IF
 
-     axes(num_axes + 1) = files(file)%time_axis_id
-     call write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 1), time_ops)
-     if(time_ops) then
-        axes(num_axes + 2) = files(file)%time_bounds_id
-        call write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 2))     
-     endif
-  end do
+    CALL diag_output_init(filename, files(file)%format, global_descriptor,&
+         & files(file)%file_unit, all_scalar_or_1d, domain2) 
+    files(file)%bytes_written = 0 
+    ! Does this file contain time_average fields?
+    time_ops = .FALSE.
+    DO j = 1, files(file)%num_fields
+       field_num = files(file)%fields(j)
+       IF ( output_fields(field_num)%time_ops ) THEN
+          time_ops = .TRUE.
+          EXIT
+       END IF
+    END DO
+    ! Loop through all fields with this file to output axes
+    DO j = 1, files(file)%num_fields
+       field_num = files(file)%fields(j)
+       input_field_num = output_fields(field_num)%input_field
+       IF (.NOT.input_fields(input_field_num)%register) THEN
+          WRITE (error_string,'(a,"/",a)') TRIM(input_fields(input_field_num)%module_name),&
+               & TRIM(input_fields(input_field_num)%field_name)
+          IF(mpp_pe() .EQ. mpp_root_pe()) THEN
+             ! <ERROR STATUS="WARNING">
+             !   module/field_name <input_fields(input_field_num)%module_name>/<input_fields(input_field_num)%field_name>
+             !   NOT registered
+             ! </ERROR>
+             CALL error_mesg ('diag_util opening_file',&
+                  & 'module/field_name '//TRIM(error_string)//' NOT registered', WARNING)  
+          END IF
+          CYCLE
+       END IF
+       ! Put the time axis in the axis field
+       num_axes = output_fields(field_num)%num_axes
+       axes(1:num_axes) = output_fields(field_num)%axes(1:num_axes)
+       ! make sure that axis_id are not -1
+       DO k = 1, num_axes
+          IF ( axes(k) < 0 ) THEN
+             WRITE(error_string,'(a)') output_fields(field_num)%output_name
+             ! <ERROR STATUS="FATAL">
+             !   ouptut_name <output_fields(field_num)%output_name> has axis_id = -1
+             ! </ERROR>
+             CALL error_mesg ('diag_util opening_file','output_name '//TRIM(error_string)//&
+                  & ' has axis_id = -1', FATAL)
+          END IF
+       END DO
+       ! check if aux is present in any axes
+       IF ( .NOT.aux_present ) THEN
+          DO k = 1, num_axes
+             aux_name = get_axis_aux(axes(k))
+             IF ( TRIM(aux_name) /= 'none' ) THEN
+                aux_present = .TRUE.
+                EXIT
+             END IF
+          END DO
+       END IF
 
-! Looking for the first NON-static field in a file
-  field_num1 = files(file)%fields(1)
-  do j = 1, files(file)%num_fields
-     field_num = files(file)%fields(j)
-     if(output_fields(field_num)%time_ops) then
-        field_num1 = field_num
-        exit
-     endif
-  enddo
-  do j = 1, files(file)%num_fields
-     field_num = files(file)%fields(j)
-     input_field_num = output_fields(field_num)%input_field
-     if (.not.input_fields(input_field_num)%register) cycle
-! Make sure that 1 file contains either time_average or instantaneous fields
-! cannot have both time_average and instantaneous in 1 file
-     if(.not. mix_snapshot_average_fields) then
-        if((output_fields(field_num)%time_ops.neqv.output_fields(field_num1)%time_ops) .and. &
-             .not.output_fields(field_num1)%static .and. .not.output_fields(field_num)%static) then
-           if(mpp_pe() == mpp_root_pe()) call error_mesg ('diag_util opening_file','file '// &
-                trim(files(file)%name)//' can NOT have BOTH time average AND instantaneous fields.'// &
-                ' Create a new file or set mix_snapshot_average_fields=.true.' , FATAL)
-        endif
-     endif    
-! check if any field has the same name as aux_name
-     if(aux_present .and. .not. match_aux_name) then
-        fieldname = output_fields(field_num)%output_name
-        if(index(aux_name, trim(fieldname))>0) match_aux_name = .true.   
-     endif
+       axes(num_axes + 1) = files(file)%time_axis_id
+       CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 1), time_ops)
+       IF ( time_ops ) THEN
+          axes(num_axes + 2) = files(file)%time_bounds_id
+          CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 2))     
+       END IF
+    END DO
 
-! Put the time axis in the axis field
-     num_axes = output_fields(field_num)%num_axes
-     axes(1:num_axes) = output_fields(field_num)%axes(1:num_axes)
-     if (.not. output_fields(field_num)%static) then
-        num_axes=num_axes+1
-        axes(num_axes) = files(file)%time_axis_id
-     endif
-     if(output_fields(field_num)%time_average) then
-        avg = avg_name
-     else if(output_fields(field_num)%time_max) then
-        avg = avg_name
-     else if(output_fields(field_num)%time_min) then
-        avg = avg_name
-     else
-        avg = " "
-     end if
-     if(input_fields(input_field_num)%missing_value_present) then
-        if(len_trim(input_fields(input_field_num)%interp_method)>0) then
-           output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit, &
-                output_fields(field_num)%output_name, axes(1:num_axes), &
-                input_fields(input_field_num)%units, &
-                input_fields(input_field_num)%long_name, &
-                input_fields(input_field_num)%range, output_fields(field_num)%pack,&
-                input_fields(input_field_num)%missing_value, avg_name = avg,&
-                time_method=output_fields(field_num)%time_method,&
-                standard_name = input_fields(input_field_num)%standard_name, &
-                interp_method = input_fields(input_field_num)%interp_method)
-        else
-           output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit, &
-                output_fields(field_num)%output_name, axes(1:num_axes), &
-                input_fields(input_field_num)%units, &
-                input_fields(input_field_num)%long_name, &
-                input_fields(input_field_num)%range, output_fields(field_num)%pack,&
-                input_fields(input_field_num)%missing_value, avg_name = avg,&
-                time_method=output_fields(field_num)%time_method,&
-                standard_name = input_fields(input_field_num)%standard_name)
-        endif        
-! NEED TO TAKE CARE OF TIME AVERAGING INFO TOO BOTH CASES
-     else
-        if(len_trim(input_fields(input_field_num)%interp_method) >0) then
-           output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit, &
-                output_fields(field_num)%output_name, axes(1:num_axes), &
-                input_fields(input_field_num)%units, &
-                input_fields(input_field_num)%long_name, &
-                input_fields(input_field_num)%range, output_fields(field_num)%pack,&
-                avg_name = avg,&
-                time_method=output_fields(field_num)%time_method, &
-                standard_name = input_fields(input_field_num)%standard_name, &
-                interp_method = input_fields(input_field_num)%interp_method)
-        else
-           output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit, &
-                output_fields(field_num)%output_name, axes(1:num_axes), &
-                input_fields(input_field_num)%units, &
-                input_fields(input_field_num)%long_name, &
-                input_fields(input_field_num)%range, output_fields(field_num)%pack,&
-                avg_name = avg,&
-                time_method=output_fields(field_num)%time_method, &
-                standard_name = input_fields(input_field_num)%standard_name)
-        endif
-     endif
-  end do
+    ! Looking for the first NON-static field in a file
+    field_num1 = files(file)%fields(1)
+    DO j = 1, files(file)%num_fields
+       field_num = files(file)%fields(j)
+       IF ( output_fields(field_num)%time_ops ) THEN
+          field_num1 = field_num
+          EXIT
+       END IF
+    END DO
+    DO j = 1, files(file)%num_fields
+       field_num = files(file)%fields(j)
+       input_field_num = output_fields(field_num)%input_field
+       IF (.NOT.input_fields(input_field_num)%register) CYCLE
+       ! Make sure that 1 file contains either time_average or instantaneous fields
+       ! cannot have both time_average and instantaneous in 1 file
+       IF ( .NOT.mix_snapshot_average_fields ) THEN
+          IF ( (output_fields(field_num)%time_ops.NEQV.output_fields(field_num1)%time_ops) .AND.&
+               & .NOT.output_fields(field_num1)%static .AND. .NOT.output_fields(field_num)%static) THEN
+             IF ( mpp_pe() == mpp_root_pe() ) THEN
+                ! <ERROR STATUS="FATAL">
+                !   <files(file)%name> can NOT have BOTH time average AND instantaneous fields.
+                !   Create a new file or set mix_snapshot_average_fields=.TRUE.
+                ! </ERROR>
+                CALL error_mesg ('diag_util opening_file','file '//&
+                     & TRIM(files(file)%name)//' can NOT have BOTH time average AND instantaneous fields.'//&
+                     & ' Create a new file or set mix_snapshot_average_fields=.TRUE.' , FATAL)
+             END IF
+          END IF
+       END IF
+       ! check if any field has the same name as aux_name
+       IF ( aux_present .AND. .NOT.match_aux_name ) THEN
+          fieldname = output_fields(field_num)%output_name
+          IF ( INDEX(aux_name, TRIM(fieldname)) > 0 ) match_aux_name = .TRUE.   
+       END IF
 
-! If any of the fields in the file are time averaged, need to output the axes
-! Use double precision since time axis is double precision
-   if(time_ops) then
-      time_axis_id(1) = files(file)%time_axis_id
-      files(file)%f_avg_start = write_field_meta_data(files(file)%file_unit, &
-           avg_name // '_T1', time_axis_id, time_units, &
-           "Start time for average period", pack=1)
-      files(file)%f_avg_end = write_field_meta_data(files(file)%file_unit, &
-           avg_name // '_T2', time_axis_id, time_units, &
-           "End time for average period", pack=1)
-      files(file)%f_avg_nitems = write_field_meta_data(files(file)%file_unit, &
-           avg_name // '_DT', time_axis_id,     &
-           trim(time_unit_list(files(file)%time_units)), &
-           "Length of average period", pack=1)
-  endif
+       ! Put the time axis in the axis field
+       num_axes = output_fields(field_num)%num_axes
+       axes(1:num_axes) = output_fields(field_num)%axes(1:num_axes)
+       IF ( .NOT.output_fields(field_num)%static ) THEN
+          num_axes=num_axes+1
+          axes(num_axes) = files(file)%time_axis_id
+       END IF
+       IF(output_fields(field_num)%time_average) THEN
+          avg = avg_name
+       ELSE IF(output_fields(field_num)%time_max) THEN
+          avg = avg_name
+       ELSE IF(output_fields(field_num)%time_min) THEN
+          avg = avg_name
+       ELSE
+          avg = " "
+       END IF
+       IF ( input_fields(input_field_num)%missing_value_present ) THEN
+          IF ( LEN_TRIM(input_fields(input_field_num)%interp_method) > 0 ) THEN
+             output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit,&
+                  & output_fields(field_num)%output_name, axes(1:num_axes),&
+                  & input_fields(input_field_num)%units,&
+                  & input_fields(input_field_num)%long_name,&
+                  & input_fields(input_field_num)%range, output_fields(field_num)%pack,&
+                  & input_fields(input_field_num)%missing_value, avg_name = avg,&
+                  & time_method=output_fields(field_num)%time_method,&
+                  & standard_name = input_fields(input_field_num)%standard_name,&
+                  & interp_method = input_fields(input_field_num)%interp_method)
+          ELSE
+             output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit,&
+                  & output_fields(field_num)%output_name, axes(1:num_axes),&
+                  & input_fields(input_field_num)%units,&
+                  & input_fields(input_field_num)%long_name,&
+                  & input_fields(input_field_num)%range, output_fields(field_num)%pack,&
+                  & input_fields(input_field_num)%missing_value, avg_name = avg,&
+                  & time_method=output_fields(field_num)%time_method,&
+                  & standard_name = input_fields(input_field_num)%standard_name)
+          END IF
+          ! NEED TO TAKE CARE OF TIME AVERAGING INFO TOO BOTH CASES
+       ELSE
+          IF ( LEN_TRIM(input_fields(input_field_num)%interp_method) > 0 ) THEN
+             output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit,&
+                  & output_fields(field_num)%output_name, axes(1:num_axes),&
+                  & input_fields(input_field_num)%units,&
+                  & input_fields(input_field_num)%long_name,&
+                  & input_fields(input_field_num)%range, output_fields(field_num)%pack,&
+                  & avg_name = avg,&
+                  & time_method=output_fields(field_num)%time_method,&
+                  & standard_name = input_fields(input_field_num)%standard_name,&
+                  & interp_method = input_fields(input_field_num)%interp_method)
+          ELSE
+             output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit,&
+                  & output_fields(field_num)%output_name, axes(1:num_axes),&
+                  & input_fields(input_field_num)%units,&
+                  & input_fields(input_field_num)%long_name,&
+                  & input_fields(input_field_num)%range, output_fields(field_num)%pack,&
+                  & avg_name = avg,&
+                  & time_method=output_fields(field_num)%time_method,&
+                  & standard_name = input_fields(input_field_num)%standard_name)
+          END IF
+       END IF
+    END DO
 
-  if (time_ops) then
-      time_axis_id(1) = files(file)%time_axis_id
-      time_bounds_id(1) = files(file)%time_bounds_id
-      call get_diag_axis( time_axis_id(1), time_name, time_units, time_longname, &
-           &cart_name, dir, edges, Domain, data)
-      call get_diag_axis( time_bounds_id(1), timeb_name, timeb_units, timeb_longname, &
-           &cart_name, dir, edges, Domain, data)     
-      files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit, &
-           trim(time_name)//'_bounds', (/time_bounds_id,time_axis_id/),     &
-           trim(time_unit_list(files(file)%time_units)), &
-           trim(time_name)//' axis boundaries', pack=1)      
-   end if
-! Let lower levels know that all meta data has been sent
-   call done_meta_data(files(file)%file_unit)
-   if(aux_present .and. .not. match_aux_name) &
-        call error_mesg ('diag_util opening_file','one axis has auxiliary but the corresponding field'// &
-        ' is NOT found in file '//files(file)%name , WARNING)
- end subroutine opening_file
-!- -------------------------------------------------------------------------------------------------
+    ! If any of the fields in the file are time averaged, need to output the axes
+    ! Use double precision since time axis is double precision
+    IF ( time_ops ) THEN
+       time_axis_id(1) = files(file)%time_axis_id
+       files(file)%f_avg_start = write_field_meta_data(files(file)%file_unit,&
+            & avg_name // '_T1', time_axis_id, time_units,&
+            & "Start time for average period", pack=1)
+       files(file)%f_avg_end = write_field_meta_data(files(file)%file_unit,&
+            & avg_name // '_T2', time_axis_id, time_units,&
+            & "End time for average period", pack=1)
+       files(file)%f_avg_nitems = write_field_meta_data(files(file)%file_unit,&
+            & avg_name // '_DT', time_axis_id,&
+            & TRIM(time_unit_list(files(file)%time_units)),& 
+            & "Length of average period", pack=1)
+    END IF
 
-function get_time_string(filename, current_time)
-! This function determines a string based on current time.
-! This string is used as suffix in output file name
+    IF ( time_ops ) THEN
+       time_axis_id(1) = files(file)%time_axis_id
+       time_bounds_id(1) = files(file)%time_bounds_id
+       CALL get_diag_axis( time_axis_id(1), time_name, time_units, time_longname,&
+            & cart_name, dir, edges, Domain, DATA)
+       CALL get_diag_axis( time_bounds_id(1), timeb_name, timeb_units, timeb_longname,&
+            & cart_name, dir, edges, Domain, DATA)     
+       files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
+            & TRIM(time_name)//'_bounds', (/time_bounds_id,time_axis_id/),&
+            & TRIM(time_unit_list(files(file)%time_units)),&
+            & TRIM(time_name)//' axis boundaries', pack=1)      
+    END IF
+    ! Let lower levels know that all meta data has been sent
+    CALL done_meta_data(files(file)%file_unit)
+    IF( aux_present .AND. .NOT.match_aux_name ) THEN
+       ! <ERROR STATUS="WARNING">
+       !   one axis has auxiliary but the corresponding field is NOT found in file <files(file)%name>_
+       ! </ERROR>
+       CALL error_mesg ('diag_util opening_file','one axis has auxiliary but the corresponding field'//&
+            & ' is NOT found in file '//files(file)%name , WARNING)
+    END IF
+  END SUBROUTINE opening_file
+  ! </SUBROUTINE>
+  ! </PRIVATE>
+  
+  ! <PRIVATE>
+  ! <FUNCTION NAME="get_time_string">
+  !   <OVERVIEW>
+  !     This function determines a string based on current time.
+  !     This string is used as suffix in output file name
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     CHARACTER(len=128) FUNCTION get_time_string(filename, current_time)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     This function determines a string based on current time.
+  !     This string is used as suffix in output file name
+  !   </DESCRIPTION>
+  !   <IN NAME="filename" TYPE="CHARACTER(len=128)"></IN>
+  !   <IN NAME="current_time" TYPE="TYPE(time_type)"></IN>
+  CHARACTER(len=128) FUNCTION get_time_string(filename, current_time)
+    CHARACTER(len=128), INTENT(in) :: filename
+    TYPE(time_type), INTENT(in) :: current_time
 
-type(time_type), intent(in)    :: current_time
-character(len=128), intent(in) :: filename
-character(len=128)             :: get_time_string
-integer                        :: yr1, mo1, dy1, hr1, mi1, sc1  ! get from current time
-integer                        :: yr2, dy2, hr2, mi2            ! for computing next_level time unit
-integer                        :: yr1_s, mo1_s, dy1_s, hr1_s, mi1_s, sc1_s ! actual values to write string
-character(len=20)              :: yr, mo, dy, hr, mi, sc        ! string of current time (output)
-integer                        :: abs_sec, abs_day              ! component of current_time
-integer                        :: days_per_month(12) = (/31,28,31,30,31,30,31,31,30,31,30,31/)
-integer                        :: julian_day, i, position, len, first_percent
-character(len=10)              :: format
-character(len=1)               :: width  ! width of the field in format write
-character(len=128)             :: filetail
+    INTEGER :: yr1, mo1, dy1, hr1, mi1, sc1  ! get from current time
+    INTEGER :: yr2, dy2, hr2, mi2            ! for computing next_level time unit
+    INTEGER :: yr1_s, mo1_s, dy1_s, hr1_s, mi1_s, sc1_s ! actual values to write string
+    INTEGER :: abs_sec, abs_day              ! component of current_time
+    INTEGER :: days_per_month(12) = (/31,28,31,30,31,30,31,31,30,31,30,31/)
+    INTEGER :: julian_day, i, position, len, first_percent
+    CHARACTER(len=1) :: width  ! width of the field in format write
+    CHARACTER(len=10) :: format
+    CHARACTER(len=20) :: yr, mo, dy, hr, mi, sc        ! string of current time (output)
+    CHARACTER(len=128) :: filetail
 
-format = '("_",i*.*)'
-call get_date(current_time, yr1, mo1, dy1, hr1, mi1, sc1)
-len = len_trim(filename)
-first_percent = index(filename, '%')
-filetail = filename(first_percent:len)
-! compute year string 
-position = INDEX(filetail, 'yr')
-if(position>0) then
-   width = filetail(position-1:position-1)
-   yr1_s = yr1
-   format(7:9) = width//'.'//width
-   write(yr, format) yr1_s   
-   yr2 = 0
-else  
-   yr = ' '
-   yr2 = yr1 - 1
-endif
-! compute month string 
-position = INDEX(filetail, 'mo')
-if(position>0) then   
-   width = filetail(position-1:position-1)
-   mo1_s = yr2*12 + mo1  
-   format(7:9) = width//'.'//width
-   write(mo, format) mo1_s
-else
-   mo = ' '
-endif
-! compute day string        
-if(LEN_TRIM(mo) > 0) then       !  month present
-   dy1_s = dy1 
-   dy2 = dy1_s - 1
-elseif(LEN_TRIM(yr) >0 )  then  ! no month, year present
-! compute julian day
-   if(mo1 == 1) then
-      dy1_s = dy1
-   else
-      julian_day = 0
-      do i = 1, mo1-1
-         julian_day = julian_day + days_per_month(i)
-      enddo
-      if(leap_year(current_time) .and. mo1>2) julian_day = julian_day + 1
-      julian_day = julian_day + dy1
-      dy1_s = julian_day
-   endif
-   dy2 = dy1_s - 1
-else                            ! no month, no year
-   call get_time(current_time, abs_sec, abs_day)
-   dy1_s = abs_day  
-   dy2 = dy1_s 
-endif
-position = INDEX(filetail, 'dy')
-if(position>0) then 
-   width = filetail(position-1:position-1)
-   format(7:9) = width//'.'//width
-   write(dy, format) dy1_s
-else
-   dy = ' '
-endif
-! compute hour string
-if(LEN_TRIM(dy) > 0) then
-   hr1_s = hr1
-else
-   hr1_s = dy2*24 + hr1
-endif
-hr2 = hr1_s
-position = INDEX(filetail, 'hr')
-if(position>0) then
-   width = filetail(position-1:position-1)
-   format(7:9) = width//'.'//width
-   write(hr, format) hr1_s
-else
-   hr = ' '
-endif
-! compute minute string
-if(LEN_TRIM(hr) > 0) then
-   mi1_s = mi1
-else
-   mi1_s = hr2*60 + mi1
-endif
-mi2 = mi1_s
-position = INDEX(filetail, 'mi')
-if(position>0) then
-   width = filetail(position-1:position-1)
-   format(7:9) = width//'.'//width
-   write(mi, format) mi1_s
-else
-   mi = ' '
-endif
-! compute second string
-if(LEN_TRIM(mi) > 0) then
-   sc1_s = sc1
-else
-   sc1_s = nint(mi2*SECONDS_PER_MINUTE) + sc1
-endif
-position = INDEX(filetail, 'sc')
-if(position>0) then
-   width = filetail(position-1:position-1)
-   format(7:9) = width//'.'//width
-   write(sc, format) sc1_s
-else
-   sc = ' '
-endif
-get_time_string = trim(yr)//trim(mo)//trim(dy)//trim(hr)//trim(mi)//trim(sc)
-end function get_time_string
-      
-!--------------------------------------------------------------------------
+    format = '("_",i*.*)'
+    CALL get_date(current_time, yr1, mo1, dy1, hr1, mi1, sc1)
+    len = LEN_TRIM(filename)
+    first_percent = INDEX(filename, '%')
+    filetail = filename(first_percent:len)
+    ! compute year string 
+    position = INDEX(filetail, 'yr')
+    IF ( position > 0 ) THEN
+       width = filetail(position-1:position-1)
+       yr1_s = yr1
+       format(7:9) = width//'.'//width
+       WRITE(yr, format) yr1_s   
+       yr2 = 0
+    ELSE  
+       yr = ' '
+       yr2 = yr1 - 1
+    END IF
+    ! compute month string 
+    position = INDEX(filetail, 'mo')
+    IF ( position > 0 ) THEN   
+       width = filetail(position-1:position-1)
+       mo1_s = yr2*12 + mo1  
+       format(7:9) = width//'.'//width
+       WRITE(mo, format) mo1_s
+    ELSE
+       mo = ' '
+    END IF
+    ! compute day string        
+    IF ( LEN_TRIM(mo) > 0 ) THEN ! month present
+       dy1_s = dy1 
+       dy2 = dy1_s - 1
+    ELSE IF ( LEN_TRIM(yr) >0 )  THEN ! no month, year present
+       ! compute julian day
+       IF ( mo1 == 1 ) THEN
+          dy1_s = dy1
+       ELSE
+          julian_day = 0
+          DO i = 1, mo1-1
+             julian_day = julian_day + days_per_month(i)
+          END DO
+          IF ( leap_year(current_time) .AND. mo1 > 2 ) julian_day = julian_day + 1
+          julian_day = julian_day + dy1
+          dy1_s = julian_day
+       END IF
+       dy2 = dy1_s - 1
+    ELSE ! no month, no year
+       CALL get_time(current_time, abs_sec, abs_day)
+       dy1_s = abs_day  
+       dy2 = dy1_s 
+    END IF
+    position = INDEX(filetail, 'dy')
+    IF ( position > 0 ) THEN 
+       width = filetail(position-1:position-1)
+       FORMAT(7:9) = width//'.'//width
+       WRITE(dy, FORMAT) dy1_s
+    ELSE
+       dy = ' '
+    END IF
+    ! compute hour string
+    IF ( LEN_TRIM(dy) > 0 ) THEN
+       hr1_s = hr1
+    ELSE
+       hr1_s = dy2*24 + hr1
+    END IF
+    hr2 = hr1_s
+    position = INDEX(filetail, 'hr')
+    IF ( position > 0 ) THEN
+       width = filetail(position-1:position-1)
+       format(7:9) = width//'.'//width
+       WRITE(hr, format) hr1_s
+    ELSE
+       hr = ' '
+    END IF
+    ! compute minute string
+    IF ( LEN_TRIM(hr) > 0 ) THEN
+       mi1_s = mi1
+    ELSE
+       mi1_s = hr2*60 + mi1
+    END IF
+    mi2 = mi1_s
+    position = INDEX(filetail, 'mi')
+    IF(position>0) THEN
+       width = filetail(position-1:position-1)
+       format(7:9) = width//'.'//width
+       WRITE(mi, format) mi1_s
+    ELSE
+       mi = ' '
+    END IF
+    ! compute second string
+    IF ( LEN_TRIM(mi) > 0 ) THEN
+       sc1_s = sc1
+    ELSE
+       sc1_s = NINT(mi2*SECONDS_PER_MINUTE) + sc1
+    END IF
+    position = INDEX(filetail, 'sc')
+    IF ( position > 0 ) THEN
+       width = filetail(position-1:position-1)
+       format(7:9) = width//'.'//width
+       WRITE(sc, format) sc1_s
+    ELSE
+       sc = ' '
+    ENDIF
+    get_time_string = TRIM(yr)//TRIM(mo)//TRIM(dy)//TRIM(hr)//TRIM(mi)//TRIM(sc)
+  END FUNCTION get_time_string
+  ! </FUNCTION>
+  ! </PRIVATE>
 
-function get_date_dif(t2, t1, units)
+  ! <FUNCTION NAME="get_date_dif">
+  !   <OVERVIEW>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     REAL FUNCTION get_date_dif(t2, t1, units)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <IN NAME="t2" TYPE="TYPE(time_type)"></IN>
+  !   <IN NAME="t1" TYPE="TYPE(time_type)"></IN>
+  !   <IN NAME="units" TYPE="INTEGER"></IN>
+  REAL FUNCTION get_date_dif(t2, t1, units)
+    TYPE(time_type), INTENT(in) :: t2, t1
+    INTEGER, INTENT(in) :: units
 
-real                        :: get_date_dif
-type(time_type), intent(in) :: t2, t1
-integer, intent(in)         :: units
-integer                     :: dif_seconds, dif_days
-type(time_type)             :: dif_time
+    INTEGER :: dif_seconds, dif_days
+    TYPE(time_type) :: dif_time
 
-! Compute time axis label value
-if(t2 < t1)   call error_mesg('get_date_dif', &
-                't2 is less than t1', FATAL)
+    ! Compute time axis label value
+    IF ( t2 < t1 ) CALL error_mesg('get_date_dif', &
+         & 't2 is less than t1', FATAL)
 
-dif_time = t2 - t1
+    dif_time = t2 - t1
 
-call get_time(dif_time, dif_seconds, dif_days)
+    CALL get_time(dif_time, dif_seconds, dif_days)
 
-if(units == DIAG_SECONDS) then
-   get_date_dif = dif_seconds + SECONDS_PER_DAY * dif_days
-else if(units == DIAG_MINUTES) then
-   get_date_dif = 1440 * dif_days + dif_seconds / SECONDS_PER_MINUTE
-else if(units == DIAG_HOURS) then
-   get_date_dif = 24 * dif_days + dif_seconds / SECONDS_PER_HOUR
-else if(units == DIAG_DAYS) then
-   get_date_dif = dif_days + dif_seconds / SECONDS_PER_DAY
-else if(units == DIAG_MONTHS) then
-   call error_mesg('diag_data_out', 'months not supported as output units', FATAL)
-else if(units == DIAG_YEARS) then
-call error_mesg('diag_data_out', 'years not supported as output units', FATAL)
-else
-   call error_mesg('diag_data_out', 'illegal time units', FATAL)
-end if
+    IF ( units == DIAG_SECONDS ) THEN
+       get_date_dif = dif_seconds + SECONDS_PER_DAY * dif_days
+    ELSE IF ( units == DIAG_MINUTES ) THEN
+       get_date_dif = 1440 * dif_days + dif_seconds / SECONDS_PER_MINUTE
+    ELSE IF ( units == DIAG_HOURS ) THEN
+       get_date_dif = 24 * dif_days + dif_seconds / SECONDS_PER_HOUR
+    ELSE IF ( units == DIAG_DAYS ) THEN
+       get_date_dif = dif_days + dif_seconds / SECONDS_PER_DAY
+    ELSE IF ( units == DIAG_MONTHS ) THEN
+       ! <ERROR STATUS="FATAL">months not supported as output units</ERROR>
+       CALL error_mesg('diag_data_out', 'months not supported as output units', FATAL)
+    ELSE IF ( units == DIAG_YEARS ) THEN
+       ! <ERROR STATUS="FATAL">years not suppored as output units</ERROR>
+       CALL error_mesg('diag_data_out', 'years not supported as output units', FATAL)
+    ELSE
+       ! <ERROR STATUS="FATAL">illegal time units</ERROR>
+       CALL error_mesg('diag_data_out', 'illegal time units', FATAL)
+    END IF
+  END FUNCTION get_date_dif
+  ! </FUNCTION>
 
-end function get_date_dif
-!------------------------------------
-subroutine diag_data_out(file, field, dat, time, final_call_in, static_write_in)
+  ! <SUBROUTINE NAME="diag_data_out">
+  !   <OVERVIEW>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE diag_data_out(file, field, dat, time, fianl_call_in, static_write_in)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <IN NAME="file" TYPE="INTEGER"></IN>
+  !   <IN NAME="field" TYPE="INTEGER"></IN>
+  !   <INOUT NAME="dat" TYPE="REAL, DIMENSION(:,:,:,:)"></INOUT>
+  !   <IN NAME="time" TYPE="TYPE(time_type)"></IN>
+  !   <IN NAME="final_call_in" TYPE="LOGICAL, OPTIONAL"></IN>
+  !   <IN NAME="static_write_in" TYPE="LOGICAL, OPTIONAL"></IN>
+  SUBROUTINE diag_data_out(file, field, dat, time, final_call_in, static_write_in)
+    INTEGER, INTENT(in) :: file, field
+    REAL, DIMENSION(:,:,:,:), INTENT(inout) :: dat
+    TYPE(time_type), INTENT(in) :: time
+    LOGICAL, OPTIONAL, INTENT(in):: final_call_in, static_write_in
 
-integer, intent(in)          :: file, field
-real, intent(inout)          :: dat(:, :, :)
-type(time_type), intent(in)  :: time
-logical, optional, intent(in):: final_call_in, static_write_in
-logical                      :: final_call, do_write, static_write
-integer                      :: i, num
-real                         :: dif, time_data(2, 1, 1), dt_time(1, 1, 1), start_dif, end_dif
+    LOGICAL :: final_call, do_write, static_write
+    INTEGER :: i, num
+    REAL :: dif, time_data(2, 1, 1, 1), dt_time(1, 1, 1, 1), start_dif, end_dif
 
-do_write = .true.
-final_call = .false.
-if(present(final_call_in)) final_call = final_call_in
-static_write = .false.
-if(present(static_write_in)) static_write = static_write_in
-dif = get_date_dif(time, base_time, files(file)%time_units)
-! get file_unit, open new file and close curent file if necessary
-If(.not. static_write .or. files(file)%file_unit<0) call check_and_open(file, time, do_write)
-if(.not. do_write) return  ! no need to write data
-call diag_field_out(files(file)%file_unit,output_fields(field)%f_type, dat, dif)
-! record number of bytes written to this file
-files(file)%bytes_written = files(file)%bytes_written + (size(dat,1)*size(dat,2)*size(dat,3))*(8/output_fields(field)%pack)
-if(.not. output_fields(field)%written_once) output_fields(field)%written_once = .true.
-! *** inserted this line because start_dif < 0 for static fields ***
-if (.not. output_fields(field)%static) then 
-   start_dif = get_date_dif(output_fields(field)%last_output, base_time,files(file)%time_units)
-   if(.not. mix_snapshot_average_fields) then
-      end_dif = get_date_dif(output_fields(field)%next_output, base_time, files(file)%time_units)
-   else
-      end_dif = dif
-   endif
-endif
+    do_write = .TRUE.
+    final_call = .FALSE.
+    IF ( PRESENT(final_call_in) ) final_call = final_call_in
+    static_write = .FALSE.
+    IF ( PRESENT(static_write_in) ) static_write = static_write_in
+    dif = get_date_dif(time, base_time, files(file)%time_units)
+    ! get file_unit, open new file and close curent file if necessary
+    IF ( .NOT.static_write .OR. files(file)%file_unit < 0 ) CALL check_and_open(file, time, do_write)
+    IF ( .NOT.do_write ) RETURN  ! no need to write data
+    CALL diag_field_out(files(file)%file_unit,output_fields(field)%f_type, dat, dif)
+    ! record number of bytes written to this file
+    files(file)%bytes_written = files(file)%bytes_written +&
+         & (SIZE(dat,1)*SIZE(dat,2)*SIZE(dat,3))*(8/output_fields(field)%pack)
+    IF ( .NOT.output_fields(field)%written_once ) output_fields(field)%written_once = .TRUE.
+    ! *** inserted this line because start_dif < 0 for static fields ***
+    IF ( .NOT.output_fields(field)%static ) THEN 
+       start_dif = get_date_dif(output_fields(field)%last_output, base_time,files(file)%time_units)
+       IF ( .NOT.mix_snapshot_average_fields ) THEN
+          end_dif = get_date_dif(output_fields(field)%next_output, base_time, files(file)%time_units)
+       ELSE
+          end_dif = dif
+       END IF
+    END IF
 
-! Need to write average axes out;
-do i = 1, files(file)%num_fields
-   num = files(file)%fields(i)
-   if(output_fields(num)%time_ops .and. &
-      input_fields(output_fields(num)%input_field)%register) then
-      if(num == field) then
-! Output the axes if this is first time-averaged field
-         time_data(1, 1, 1) = start_dif
-         call diag_field_out(files(file)%file_unit, files(file)%f_avg_start, &
-            time_data(1:1,:,:), dif)
-         time_data(2, 1, 1) = end_dif
-         call diag_field_out(files(file)%file_unit, files(file)%f_avg_end, &
-            time_data(2:2,:,:), dif)
-! Compute the length of the average
-         dt_time(1, 1, 1) = end_dif - start_dif
-         call diag_field_out(files(file)%file_unit, files(file)%f_avg_nitems, &
-            dt_time(1:1,:,:), dif)
-!
-! Include boundary variable for CF compliance
-!
-         call diag_field_out(files(file)%file_unit, files(file)%f_bounds, &
-            time_data(1:2,:,:), dif)         
-         exit
-      endif
-   end if
-end do
+    ! Need to write average axes out;
+    DO i = 1, files(file)%num_fields
+       num = files(file)%fields(i)
+       IF ( output_fields(num)%time_ops .AND. &
+            input_fields(output_fields(num)%input_field)%register) THEN
+          IF ( num == field ) THEN
+             ! Output the axes if this is first time-averaged field
+             time_data(1, 1, 1, 1) = start_dif
+             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_start, time_data(1:1,:,:,:), dif)
+             time_data(2, 1, 1, 1) = end_dif
+             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_end, time_data(2:2,:,:,:), dif)
+             ! Compute the length of the average
+             dt_time(1, 1, 1, 1) = end_dif - start_dif
+             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_nitems, dt_time(1:1,:,:,:), dif)
 
-! If write time is greater (equal for the last call) than last_flush for this file, flush it
-if(final_call) then
-   if(time >= files(file)%last_flush) then
-      call diag_flush(files(file)%file_unit)
-      files(file)%last_flush = time
-   endif
-else
-   if(time > files(file)%last_flush) then
-      call diag_flush(files(file)%file_unit)
-      files(file)%last_flush = time
-   endif
-endif
+             ! Include boundary variable for CF compliance
+             CALL diag_field_out(files(file)%file_unit, files(file)%f_bounds, time_data(1:2,:,:,:), dif)         
+             EXIT
+          END IF
+       END IF
+    END DO
 
-end subroutine diag_data_out
+    ! If write time is greater (equal for the last call) than last_flush for this file, flush it
+    IF ( final_call ) THEN
+       IF ( time >= files(file)%last_flush ) THEN
+          CALL diag_flush(files(file)%file_unit)
+          files(file)%last_flush = time
+       END IF
+    ELSE
+       IF ( time > files(file)%last_flush ) THEN
+          CALL diag_flush(files(file)%file_unit)
+          files(file)%last_flush = time
+       END IF
+    END IF
+  END SUBROUTINE diag_data_out
+  ! </SUBROUTINE>
 
-!---------------------------------------------------------------------------------------------------
-subroutine check_and_open(file, time, do_write )
-! this routine checks if it is time to open a new file. If yes, it first closes the
-! current file, open a new file and returns file_unit
-! previous diag_manager_end is replaced by closing_file and output_setup by opening_file.
+  ! <PRIVATE>
+  ! <SUBROUTINE NAME="check_and_open">
+  !   <OVERVIEW>
+  !     Checks if it is time to open a new file.
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE check_and_open(file, time, do_write)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     Checks if it is time to open a new file. If yes, it first closes the
+  !     current file, opens a new file and returns file_unit
+  !     previous diag_manager_end is replaced by closing_file and output_setup by opening_file.
+  !   </DESCRIPTION>
+  !   <IN NAME="file" TYPE="INTEGER"></IN>
+  !   <IN NAME="time" TYPE="TYPE(time_type)"></IN>
+  !   <OUT NAME="do_write" TYPE="LOGICAL"></OUT>
+  SUBROUTINE check_and_open(file, time, do_write)
+    INTEGER, INTENT(in) :: file
+    TYPE(time_type), INTENT(in) :: time
+    LOGICAL, INTENT(out) :: do_write
 
-integer, intent(in)         :: file
-type(time_type), intent(in) :: time
-logical, intent(out)        :: do_write
+    IF ( time >= files(file)%start_time ) THEN 
+       IF ( files(file)%file_unit < 0 ) THEN ! need to open a new file
+          CALL opening_file(file, time)
+          do_write = .TRUE.
+       ELSE
+          do_write = .TRUE.
+          IF ( time > files(file)%close_time .AND. time < files(file)%next_open ) THEN
+             do_write = .FALSE. ! file still open but receives NO MORE data
+          ELSE IF ( time > files(file)%next_open ) THEN ! need to close current file and open a new one 
+             CALL write_static(file)  ! write all static fields and close this file
+             CALL opening_file(file, time)        
+             files(file)%start_time = files(file)%next_open
+             files(file)%close_time =&
+                  & diag_time_inc(files(file)%start_time,files(file)%duration, files(file)%duration_units)  
+             files(file)%next_open =&
+                  & diag_time_inc(files(file)%next_open, files(file)%new_file_freq,&
+                  & files(file)%new_file_freq_units)
+             IF ( files(file)%close_time > files(file)%next_open ) THEN 
+                ! <ERROR STATUS="FATAL">
+                !   <files(file)%name> has close time GREATER than next_open time,
+                !   check file duration and frequency
+                ! </ERROR>
+                CALL error_mesg('check_and_open', files(file)%name//&
+                     & ' has close time GREATER than next_open time, check file duration and frequency',FATAL)
+             END IF
+          END IF ! no need to open new file, simply return file_unit
+       END IF
+    ELSE
+       do_write = .FALSE.
+    END IF
+  END SUBROUTINE check_and_open
+  ! </SUBROUTINE>
+  ! </PRIVATE>
 
-if(time>=files(file)%start_time) then 
-   if(files(file)%file_unit < 0)then ! need to open a new file
-      call opening_file(file, time)
-      do_write =.true.
-   else
-      do_write =.true.
-      if(time > files(file)%close_time .and. time<files(file)%next_open ) then
-         do_write = .false. ! file still open but receives NO MORE data
-      elseif(time>files(file)%next_open) then ! need to close current file and open a new one 
-         call write_static(file)  ! write all static fields and close this file
-         call opening_file(file, time)        
-         files(file)%start_time = files(file)%next_open
-         files(file)%close_time = diag_time_inc(files(file)%start_time,files(file)%duration, &
-            files(file)%duration_units)  
-         files(file)%next_open = diag_time_inc(files(file)%next_open, files(file)%new_file_freq, &
-              files(file)%new_file_freq_units)
-         if (files(file)%close_time>files(file)%next_open) call error_mesg('check_and_open',&
-              files(file)%name// &
-              ' has close time GREATER than next_open time, check file duration and frequency',FATAL)
-      endif ! no need to open new file, simply return file_unit
-   endif  
-else
-   do_write = .false.
-endif
-end subroutine check_and_open
-!---------------------------------------------------------------------------------------------------
-subroutine write_static(file)
-! Output all static fields in this file
-integer, intent(in) :: file
-integer             :: j, i, input_num
+  ! <SUBROUTINE NAME="write_static">
+  !   <OVERVIEW>
+  !     Output all static fields in this file
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE write_static(file)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <IN NAME="file" TYPE="INTEGER"></IN>
+  SUBROUTINE write_static(file)
+    INTEGER, INTENT(in) :: file
 
-do j = 1, files(file)%num_fields
-   i = files(file)%fields(j)
-   input_num = output_fields(i)%input_field
-! skip fields that were not registered
-   if (.not.input_fields(input_num)%register) cycle
-! only output static fields here
-   if (.not.output_fields(i)%static) cycle
-   call diag_data_out(file, i, output_fields(i)%buffer, files(file)%last_flush, .true., .true.)
-end do
-! Close up this file   
-call mpp_close(files(file)%file_unit)
-files(file)%file_unit = -1
-end subroutine write_static
-!---------------------------------------------------------------------------------------------------
-subroutine check_duplicate_output_fields(err_msg)
-! pair(output_name and output_file) should be unique in output_fields
-character(len=*), intent(out), optional :: err_msg
-integer            :: i, j, tmp_file
-character(len=128) :: tmp_name
-character(len=256) :: err_msg_local
-! Do the checking when more than 1 output_fileds present
+    INTEGER :: j, i, input_num
 
-if(present(err_msg)) err_msg=''
-if(num_output_fields <= 1) return 
-err_msg_local = ''
+    DO j = 1, files(file)%num_fields
+       i = files(file)%fields(j)
+       input_num = output_fields(i)%input_field
+       ! skip fields that were not registered
+       IF ( .NOT.input_fields(input_num)%register ) CYCLE
+       ! only output static fields here
+       IF ( .NOT.output_fields(i)%static ) CYCLE
+       CALL diag_data_out(file, i, output_fields(i)%buffer, files(file)%last_flush, .TRUE., .TRUE.)
+    END DO
+    ! Close up this file   
+    CALL mpp_close(files(file)%file_unit)
+    files(file)%file_unit = -1
+  END SUBROUTINE write_static
+  ! </SUBROUTINE>
 
-i_loop: do i = 1, num_output_fields-1
-  tmp_name = trim(output_fields(i)%output_name)
-  tmp_file =  output_fields(i)%output_file
-  do j = i+1, num_output_fields
-    if((tmp_name == trim(output_fields(j)%output_name)).and.(tmp_file == output_fields(j)%output_file)) then
-      err_msg_local = ' output_field "'//trim(tmp_name)//'" duplicated in file "'//trim(files(tmp_file)%name)//'"'
-      exit i_loop
-    endif
-  enddo
-enddo i_loop
-if(err_msg_local /= '') then
-  if(fms_error_handler(' ERROR in diag_table',err_msg_local,err_msg)) return
-endif
-end subroutine check_duplicate_output_fields
+  ! <SUBROUTINE NAME="check_duplicate_output_fields">
+  !   <OVERVIEW>
+  !     Checks to see if <TT>output_name</TT> and <TT>output_file</TT> are unique in <TT>output_fields</TT>.
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE check_duplicate_output_fields(err_msg)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"></OUT>
+  SUBROUTINE check_duplicate_output_fields(err_msg)
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
-!---------------------------------------------------------------------------------------------------
-end module diag_util_mod
+    INTEGER :: i, j, tmp_file
+    CHARACTER(len=128) :: tmp_name
+    CHARACTER(len=256) :: err_msg_local
+
+    IF ( PRESENT(err_msg) ) err_msg=''
+    ! Do the checking when more than 1 output_fileds present
+    IF ( num_output_fields <= 1 ) RETURN 
+    err_msg_local = ''
+
+    i_loop: DO i = 1, num_output_fields-1
+       tmp_name = TRIM(output_fields(i)%output_name)
+       tmp_file =  output_fields(i)%output_file
+       DO j = i+1, num_output_fields
+          IF ( (tmp_name == TRIM(output_fields(j)%output_name)) .AND. &
+               &(tmp_file == output_fields(j)%output_file)) THEN
+             err_msg_local = ' output_field "'//TRIM(tmp_name)//&
+                  &'" duplicated in file "'//TRIM(files(tmp_file)%name)//'"'
+             EXIT i_loop
+          END IF
+       END DO
+    END DO i_loop
+    IF ( err_msg_local /= '' ) THEN
+       IF ( fms_error_handler(' ERROR in diag_table',err_msg_local,err_msg) ) RETURN
+    END IF
+  END SUBROUTINE check_duplicate_output_fields
+  ! </SUBROUTINE>
+END MODULE diag_util_mod

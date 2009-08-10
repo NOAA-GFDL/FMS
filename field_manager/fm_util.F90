@@ -87,8 +87,8 @@ logical                         :: save_default_no_overwrite = .false.
 character(len=fm_path_name_len) :: save_current_list
 character(len=fm_path_name_len) :: save_path
 character(len=fm_path_name_len) :: save_name
-character(len=128) :: version = '$Id: fm_util.F90,v 15.0 2007/08/14 04:13:52 fms Exp $'
-character(len=128) :: tagname = '$Name: perth_2008_10 $'
+character(len=128) :: version = '$Id: fm_util.F90,v 17.0 2009/07/21 03:19:16 fms Exp $'
+character(len=128) :: tagname = '$Name: quebec $'
 
 !
 !        Interface definitions for overloaded routines
@@ -440,6 +440,9 @@ character(len=256)                      :: error_header
 character(len=256)                      :: warn_header
 character(len=256)                      :: note_header
 character(len=128)                      :: caller_str
+integer                         :: out_unit
+
+out_unit = stdout()
 
 !
 !       set the caller string and headers
@@ -463,7 +466,7 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !
 
 if (list .eq. ' ') then  !{
-  write (stdout(),*) trim(error_header) // ' Empty list given'
+  write (out_unit,*) trim(error_header) // ' Empty list given'
   call mpp_error(FATAL, trim(error_header) // ' Empty list given')
 endif  !}
 
@@ -472,7 +475,7 @@ endif  !}
 !
 
 if (fm_get_type(list) .ne. 'list') then  !{
-  write (stdout(),*) trim(error_header) // ' Not given a list: ' // trim(list)
+  write (out_unit,*) trim(error_header) // ' Not given a list: ' // trim(list)
   call mpp_error(FATAL, trim(error_header) // ' Not given a list: ' // trim(list))
 endif  !}
 
@@ -499,22 +502,22 @@ if (list_length .lt. good_length) then  !{
 !       are given in good_fields
 !
 
-  write (stdout(),*) trim(error_header), ' List length < number of good fields (',       &
+  write (out_unit,*) trim(error_header), ' List length < number of good fields (',       &
        list_length, ' < ', good_length, ') in list ', trim(list)
 
-  write (stdout(),*)
-  write (stdout(),*) 'The list contains the following fields:'
+  write (out_unit,*)
+  write (out_unit,*) 'The list contains the following fields:'
   fm_success= fm_dump_list(list, .false.)
-  write (stdout(),*)
-  write (stdout(),*) 'The supposed list of good fields is:'
+  write (out_unit,*)
+  write (out_unit,*) 'The supposed list of good fields is:'
   do i = 1, good_length  !{
     if (fm_exists(trim(list) // '/' // good_fields(i))) then  !{
-      write (stdout(),*) 'List field: "', trim(good_fields(i)), '"'
+      write (out_unit,*) 'List field: "', trim(good_fields(i)), '"'
     else  !}{
-      write (stdout(),*) 'EXTRA good field: "', trim(good_fields(i)), '"'
+      write (out_unit,*) 'EXTRA good field: "', trim(good_fields(i)), '"'
     endif  !}
   enddo  !} i
-  write (stdout(),*)
+  write (out_unit,*)
 
   call mpp_error(FATAL, trim(error_header) //                                           &
        ' List length < number of good fields for list: ' // trim(list))
@@ -527,22 +530,22 @@ elseif (list_length .gt. good_length) then  !}{
 !       and we'll check which extra fields are given in the list
 !
 
-  write (stdout(),*) trim(warn_header), 'List length > number of good fields (',        &
+  write (out_unit,*) trim(warn_header), 'List length > number of good fields (',        &
        list_length, ' > ', good_length, ') in list ', trim(list)
 
-  write (stdout(),*) trim(error_header), ' Start of list of fields'
+  write (out_unit,*) trim(error_header), ' Start of list of fields'
   do while (fm_loop_over_list(list, name, typ, ind))  !{
     found = .false.
     do i = 1, good_length  !{
       found = found .or. (name .eq. good_fields(i))
     enddo  !} i
     if (found) then  !{
-      write (stdout(),*) 'Good list field: "', trim(name), '"'
+      write (out_unit,*) 'Good list field: "', trim(name), '"'
     else  !}{
-      write (stdout(),*) 'EXTRA list field: "', trim(name), '"'
+      write (out_unit,*) 'EXTRA list field: "', trim(name), '"'
     endif  !}
   enddo  !}
-  write (stdout(),*) trim(error_header), ' End of list of fields'
+  write (out_unit,*) trim(error_header), ' End of list of fields'
 
   call mpp_error(FATAL, trim(error_header) //                                           &
        ' List length > number of good fields for list: ' // trim(list))
@@ -3112,6 +3115,9 @@ character(len=256)              :: error_header
 character(len=256)              :: warn_header
 character(len=256)              :: note_header
 character(len=128)              :: caller_str
+integer                         :: out_unit
+
+out_unit = stdout()
 
 !
 !       set the caller string and headers
@@ -3188,8 +3194,8 @@ endif  !}
 !       Process the namelist
 !
 
-write (stdout(),*)
-write (stdout(),*) trim(note_header), ' Processing namelist ', trim(path_name)
+write (out_unit,*)
+write (out_unit,*) trim(note_header), ' Processing namelist ', trim(path_name)
 
 !
 !       Check whether the namelist already exists. If so, then use that one
@@ -3198,7 +3204,7 @@ write (stdout(),*) trim(note_header), ' Processing namelist ', trim(path_name)
 namelist_index = fm_get_index('/ocean_mod/namelists/' // trim(path_name))
 if (namelist_index .gt. 0) then  !{
 
-  !write (stdout(),*) trim(note_header), ' Namelist already set with index ', namelist_index
+  !write (out_unit,*) trim(note_header), ' Namelist already set with index ', namelist_index
 
 else  !}{
 

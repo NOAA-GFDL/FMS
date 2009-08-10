@@ -1089,6 +1089,7 @@ private
   integer              :: clock_num=0, num_clock_ids=0,current_clock=0, previous_clock(MAX_CLOCKS)=0
   real                 :: tick_rate
   integer, allocatable :: request(:)
+  integer, allocatable :: request_recv(:)
 ! if you want to save the non-root PE information uncomment out the following line
 ! and comment out the assigment of etcfile to '/dev/null'
 !  character(len=32)    :: etcfile='._mpp.nonrootpe.msgs'
@@ -1135,7 +1136,7 @@ private
   character(len=128), public :: version= &
        '$Id mpp.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: perth_2008_10 $'
+       '$Name: quebec $'
 
   contains
 #include <system_clock.h>

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_misc.inc,v 14.0 2007/03/15 22:43:16 fms Exp $
+! $Id: mpp_io_misc.inc,v 17.0 2009/07/21 03:20:35 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -59,6 +59,8 @@
       open(unit_nml,file='input.nml')
       read(unit_nml,mpp_io_nml,iostat=io_status)
       close(unit_nml)
+      write(stdout(), mpp_io_nml)
+      write(stdlog(), mpp_io_nml)
 
 !initialize default_field
       default_field%name = 'noname'
@@ -108,15 +110,18 @@
       mpp_file(:)%ncid      = -1
       mpp_file(:)%opened = .FALSE.
       mpp_file(:)%initialized = .FALSE.
+      mpp_file(:)%write_on_this_pe = .FALSE.
+      mpp_file(:)%io_domain_exist = .FALSE.
       mpp_file(:)%time_level = 0
       mpp_file(:)%time = NULLTIME
       mpp_file(:)%id = -1
-!     
+      mpp_file(:)%valid = .FALSE.     
       mpp_file(:)%ndim = -1
       mpp_file(:)%nvar = -1
 !NULLUNIT "file" is always single-threaded, open and initialized (to pass checks in mpp_write)
       mpp_file(NULLUNIT)%threading = MPP_SINGLE
       mpp_file(NULLUNIT)%opened = .TRUE.
+      mpp_file(NULLUNIT)%valid  = .TRUE.
       mpp_file(NULLUNIT)%initialized = .TRUE.
 !declare the stdunits to be open
       mpp_file(stdin())%opened = .TRUE.
@@ -141,6 +146,12 @@
       
       call mpp_io_set_stack_size(131072) ! default initial value
       call mpp_sync()
+      if( io_clocks_on )then
+          mpp_read_clock  = mpp_clock_id( 'mpp_read')
+          mpp_write_clock  = mpp_clock_id( 'mpp_write')
+          mpp_open_clock  = mpp_clock_id( 'mpp_open')
+          mpp_close_clock  = mpp_clock_id( 'mpp_close')
+      endif
       module_is_initialized = .TRUE.
       return
     end subroutine mpp_io_init
@@ -227,9 +238,9 @@
       integer, intent(in) :: unit
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_FLUSH: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_FLUSH: invalid unit number.' )
+      if( .NOT.mpp_file(unit)%write_on_this_pe) return
+      if( .NOT.mpp_file(unit)%opened ) call mpp_error( FATAL, 'MPP_FLUSH: invalid unit number.' )
       if( .NOT.mpp_file(unit)%initialized )call mpp_error( FATAL, 'MPP_FLUSH: cannot flush a file during writing of metadata.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
 
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
 #ifdef use_netCDF

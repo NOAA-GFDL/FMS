@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_comm.inc,v 16.0 2008/07/30 22:46:33 fms Exp $
+! $Id: mpp_domains_comm.inc,v 17.0 2009/07/21 03:20:07 fms Exp $
 
 
     function mpp_redistribute_init_comm(domain_in,l_addrs_in, domain_out,l_addrs_out, &
@@ -198,14 +198,17 @@
       integer(LONG_KIND),save       ,dimension(2)   :: rem_addr
       character(len=8) :: text
 
-
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: must first call mpp_domains_init.' )
-      update_flags=0; xonly = .FALSE.;  yonly = .FALSE.
+      update_flags=XUPDATE+YUPDATE; xonly = .FALSE.;  yonly = .FALSE.
       if( PRESENT(flags) )then
           update_flags = flags
-          xonly = flags == XUPDATE
-          yonly = flags == YUPDATE
-          if( .NOT.xonly .AND. .NOT.yonly )call mpp_error( WARNING, 'MPP_GLOBAL_FIELD: you must have flags=XUPDATE or YUPDATE.' )
+          xonly = BTEST(flags,EAST)
+          yonly = BTEST(flags,SOUTH)
+          if( .NOT.xonly .AND. .NOT.yonly )call mpp_error( WARNING,  &
+                    'MPP_GLOBAL_FIELD: you must have flags=XUPDATE, YUPDATE or XUPDATE+YUPDATE' )
+         if(xonly .AND. yonly) then
+            xonly = .false.; yonly = .false.
+         endif
       end if
 
       if( isize_g /= (domain%x(1)%global%size) .OR. jsize_g /= (domain%y(1)%global%size) ) &

@@ -110,7 +110,7 @@ program test   !test various aspects of mpp_mod
   call SYSTEM_CLOCK(tick)
   dt = real(tick-tick0)/ticks_per_sec
   dt = max( dt, epsilon(dt) )
-  if( pe.EQ.root )write( stdout(),'(a,2i4,f9.1,i8,f13.6,f8.2/)' ) &
+  if( pe.EQ.root )write( stdout(),'(a,2i6,f9.1,i8,f13.6,f8.2/)' ) &
        'mpp_sum: pe, npes, sum(pe+1), length, time, bw(Mb/s)=', pe, npes, a(1), n, dt, n*8e-6/dt
   call mpp_clock_end(id)
   !---------------------------------------------------------------------!

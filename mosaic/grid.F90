@@ -35,8 +35,8 @@ end interface
 ! ==== module constants ======================================================
 character(len=*), parameter :: &
      module_name = 'grid_mod', &
-     version     = '$Id: grid.F90,v 16.0.4.3 2008/09/19 16:50:49 slm Exp $', &
-     tagname     = '$Name: perth_2008_10 $'
+     version     = '$Id: grid.F90,v 17.0 2009/07/21 03:19:44 fms Exp $', &
+     tagname     = '$Name: quebec $'
 
 character(len=*), parameter :: &
      grid_dir  = 'INPUT/',     &      ! root directory for all grid files

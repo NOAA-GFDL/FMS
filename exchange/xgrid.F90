@@ -118,7 +118,7 @@ use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_compute_domains, &
 use mpp_io_mod,      only: mpp_open, MPP_MULTI, MPP_SINGLE, MPP_OVERWR
 use constants_mod,   only: PI
 use mosaic_mod,          only: get_mosaic_xgrid, get_mosaic_xgrid_size
-use stock_constants_mod, only: ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE, STOCK_NAMES, STOCK_UNITS, NELEMS, stocks_file
+use stock_constants_mod, only: ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE, STOCK_NAMES, STOCK_UNITS, NELEMS, stocks_file, stock_type
 use gradient_mod,        only: gradient_cubic
 
 implicit none
@@ -243,6 +243,7 @@ type xcell_type
 !  real    :: area1_ratio     !(= x_area/grid1_area), will be added in the future to improve efficiency
 !  real    :: area2_ratio     !(= x_area/grid2_area), will be added in the future to improve efficiency
   real    :: di, dj         ! Weight for the gradient of flux
+  real    :: scale
 end type xcell_type
 
 type grid_box_type
@@ -331,23 +332,13 @@ type xmap_type
 end type xmap_type
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: xgrid.F90,v 16.0 2008/07/30 22:45:21 fms Exp $'
- character(len=128) :: tagname = '$Name: perth_2008_10 $'
+ character(len=128) :: version = '$Id: xgrid.F90,v 17.0 2009/07/21 03:19:09 fms Exp $'
+ character(len=128) :: tagname = '$Name: quebec $'
 
  real, parameter                              :: EPS = 1.0e-10
  logical :: module_is_initialized = .FALSE.
 
  ! The following is required to compute stocks of water, heat, ...
-
-  integer, parameter :: NSIDES  = 3         ! top, bottom, side
- 
-  type stock_type
-     real                   :: q_start    = 0.0    ! stock at start
-     ! delta_t * surf integr of flux
-     ! these are the stock increments at the present time, one for
-     ! each side (ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE)
-     real                   :: dq(NSIDES) = 0.0    ! stock increments at present time      
-  end type stock_type
 
   interface stock_move
      module procedure stock_move_3d, stock_move_2d
@@ -443,9 +434,14 @@ logical,        intent(in)             :: complete
   type (grid_type), pointer, save    :: grid1 =>NULL()
   integer                            :: l, ll, ll_repro, p, siz(4), nxgrid, size_prev
   type(xcell_type), allocatable      :: x_local(:)
-  integer                            :: size_repro
+  integer                            :: size_repro, out_unit
+  logical                            :: scale_exist = .false.
+  real,    allocatable, dimension(:) :: scale
 
+
+  scale_exist = .false.
   grid1 => xmap%grids(1)
+  out_unit = stdout()
   select case(xmap%version)
   case(VERSION1)
      call field_size(grid_file, 'AREA_'//grid1_id//'x'//grid_id, siz)
@@ -472,6 +468,17 @@ logical,        intent(in)             :: complete
      else
         call get_mosaic_xgrid(grid_file, i1, j1, i2, j2, area)
      end if
+     !--- if field "scale" exist, read this field. Normally this 
+     !--- field only exist in landXocean exchange grid cell.
+     if(grid1_id == 'LND' .AND. grid_id == 'OCN') then
+        if(field_exist(grid_file, "scale")) then
+           allocate(scale(nxgrid))
+           write(out_unit, *)"NOTE from load_xgrid(xgrid_mod): field 'scale' exist in the file "// &
+               trim(grid_file)//", this field will be read and the exchange grid cell area will be multiplied by scale"
+           call read_data(grid_file, "scale", scale)
+           scale_exist = .true.
+        endif
+     endif
   end select
 
   size_repro = 0
@@ -534,6 +541,11 @@ logical,        intent(in)             :: complete
            grid%x(ll)%j1   = j1(l); grid%x(ll)%j2   = j2(l)
            grid%x(ll)%tile = tile1
            grid%x(ll)%area = area(l)
+           if(scale_exist) then
+              grid%x(ll)%scale = scale(l)
+           else
+              grid%x(ll)%scale = 1
+           endif
            if(use_higher_order) then
               grid%x(ll)%di  = di(l)
               grid%x(ll)%dj  = dj(l)
@@ -578,6 +590,7 @@ logical,        intent(in)             :: complete
               grid%x_repro(ll_repro)%di  = di(l)
               grid%x_repro(ll_repro)%dj  = dj(l)
            end if
+
            do p=0,xmap%npes-1
               if(grid%tile(p) == tile2) then
                  if (in_box(i2(l), j2(l), grid%is(p), grid%ie(p), &
@@ -597,6 +610,7 @@ logical,        intent(in)             :: complete
 
   deallocate(i1, j1, i2, j2, area)
   if(use_higher_order) deallocate(di, dj)
+  if(scale_exist) deallocate(scale)
 
 end subroutine load_xgrid
 
@@ -803,7 +817,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
 
   integer :: g,     p, send_size, recv_size, i, siz(4)
   integer :: unit, nxgrid_file, i1, i2, i3, tile1, tile2, j
-  integer :: nxc, nyc
+  integer :: nxc, nyc, out_unit
   type (grid_type), pointer, save :: grid =>NULL(), grid1 =>NULL()
   real, dimension(3) :: xxx
   real, dimension(:,:), allocatable   :: check_data
@@ -818,6 +832,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
 
   if(interp_method .ne. 'first_order')  use_higher_order = .true.
 
+  out_unit = stdout()
   xmap%me   = mpp_pe  ()
   xmap%npes = mpp_npes()
   xmap%root_pe = mpp_root_pe()
@@ -1084,12 +1099,12 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
   call regen(xmap)
 
   xxx = conservation_check(grid1%area*0+1.0, grid1%id, xmap)
-  write(stdout(),* )"Checked data is array of constant 1"
-  write(stdout(),* )grid1%id,'(',xmap%grids(:)%id,')=', xxx 
+  write(out_unit,* )"Checked data is array of constant 1"
+  write(out_unit,* )grid1%id,'(',xmap%grids(:)%id,')=', xxx 
 
   do g=2,size(xmap%grids(:))
      xxx = conservation_check(xmap%grids(g)%frac_area*0+1.0, xmap%grids(g)%id, xmap )
-     write( stdout(),* )xmap%grids(g)%id,'(',xmap%grids(:)%id,')=', xxx 
+     write( out_unit,* )xmap%grids(g)%id,'(',xmap%grids(:)%id,')=', xxx 
   enddo
   ! create an random number 2d array
   if(grid1%id == "ATM") then
@@ -1098,9 +1113,9 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
 
      !--- second order along both zonal and meridinal direction
      xxx = conservation_check(check_data, grid1%id, xmap,  remap_method = remapping_method )
-     write( stdout(),* ) &
+     write( out_unit,* ) &
           "Checked data is array of random number between 0 and 1 using "//trim(interp_method)
-     write( stdout(),* )grid1%id,'(',xmap%grids(:)%id,')=', xxx 
+     write( out_unit,* )grid1%id,'(',xmap%grids(:)%id,')=', xxx 
 
      deallocate(check_data)
      do g=2,size(xmap%grids(:))
@@ -1108,7 +1123,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
              size(xmap%grids(g)%frac_area,3) )) 
         call random_number(check_data_3d)
         xxx = conservation_check(check_data_3d, xmap%grids(g)%id, xmap,  remap_method = remapping_method )
-        write( stdout(),* )xmap%grids(g)%id,'(',xmap%grids(:)%id,')=', xxx
+        write( out_unit,* )xmap%grids(g)%id,'(',xmap%grids(:)%id,')=', xxx
         deallocate( check_data_3d)
      end do
   endif
@@ -1154,7 +1169,7 @@ type (xmap_type), intent(inout) :: xmap
           xmap%x2(xmap%size)%i    = xmap%grids(g)%x(l)%i2
           xmap%x2(xmap%size)%j    = xmap%grids(g)%x(l)%j2
           xmap%x2(xmap%size)%k    = k
-          xmap%x2(xmap%size)%area = xmap%grids(g)%x(l)%area
+          xmap%x2(xmap%size)%area = xmap%grids(g)%x(l)%area * xmap%grids(g)%x(l)%scale 
         end if
       end do
     end do
@@ -2150,13 +2165,17 @@ subroutine stock_print(stck, Time, comp_name, index, ref_value, radius, pelist)
   real, intent(in)              :: radius
   integer, intent(in), optional :: pelist(:)
 
+  integer, parameter :: initID = -2 ! initial value for diag IDs. Must not be equal to the value 
+  ! that register_diag_field returns when it can't register the filed -- otherwise the registration 
+  ! is attempted every time this subroutine is called
+
   real :: f_value, c_value, planet_area
   character(len=80) :: formatString
   integer :: iday, isec, hours
   integer :: diagID, compInd
-  integer, dimension(NELEMS,4), save :: f_valueDiagID = -1
-  integer, dimension(NELEMS,4), save :: c_valueDiagID = -1
-  integer, dimension(NELEMS,4), save :: fmc_valueDiagID = -1
+  integer, dimension(NELEMS,4), save :: f_valueDiagID = initID
+  integer, dimension(NELEMS,4), save :: c_valueDiagID = initID
+  integer, dimension(NELEMS,4), save :: fmc_valueDiagID = initID
 
   real :: diagField
   logical :: used
@@ -2184,7 +2203,7 @@ subroutine stock_print(stck, Time, comp_name, index, ref_value, radius, pelist)
      if(comp_name == 'OCN') compInd = 4
 
 
-     if(f_valueDiagID(index,compInd) == -1) then
+     if(f_valueDiagID(index,compInd) == initID) then
         field_name = trim(comp_name) // trim(STOCK_NAMES(index))
         field_name  = trim(field_name) // 'StocksChange_Flux'
         units = trim(STOCK_UNITS(index))
@@ -2192,7 +2211,7 @@ subroutine stock_print(stck, Time, comp_name, index, ref_value, radius, pelist)
              units=units)
      endif
 
-     if(c_valueDiagID(index,compInd) == -1) then
+     if(c_valueDiagID(index,compInd) == initID) then
         field_name = trim(comp_name) // trim(STOCK_NAMES(index))
         field_name = trim(field_name) // 'StocksChange_Comp'
         units = trim(STOCK_UNITS(index))
@@ -2200,7 +2219,7 @@ subroutine stock_print(stck, Time, comp_name, index, ref_value, radius, pelist)
              units=units)
      endif
 
-     if(fmc_valueDiagID(index,compInd) == -1) then
+     if(fmc_valueDiagID(index,compInd) == initID) then
         field_name = trim(comp_name) // trim(STOCK_NAMES(index))
         field_name = trim(field_name) // 'StocksChange_Diff'
         units = trim(STOCK_UNITS(index))
@@ -2307,13 +2326,17 @@ implicit none
 
   real, parameter :: EPSLN = 1.0e-10
   character(len=256) :: atm_input_file  = "INPUT/atmos_input.nc"
-  character(len=256) :: field_name      = "none"
   character(len=256) :: atm_output_file = "atmos_output.nc"
   character(len=256) :: lnd_output_file = "land_output.nc"
   character(len=256) :: ocn_output_file = "ocean_output.nc"
-  logical            :: test_with_file  = .false.
+  character(len=256) :: atm_field_name  = "none"
 
-  namelist /xgrid_test_nml/ atm_input_file, field_name, atm_output_file, lnd_output_file, ocn_output_file, test_with_file
+  character(len=256) :: runoff_input_file  = "INPUT/land_runoff.nc"
+  character(len=256) :: runoff_output_file  = "land_runoff.nc"
+  character(len=256) :: runoff_field_name  = "none"
+
+
+  namelist /xgrid_test_nml/ atm_input_file, atm_field_name, runoff_input_file, runoff_field_name
 
   integer              :: remap_method
   integer              :: pe, npes, ierr, nml_unit, io, n
@@ -2331,25 +2354,30 @@ implicit none
   integer              :: isc_lnd, iec_lnd, jsc_lnd, jec_lnd
   integer              :: isc_ocn, iec_ocn, jsc_ocn, jec_ocn
   integer              :: isd_atm, ied_atm, jsd_atm, jed_atm
-  integer              :: unit, i, j, nxa, nya, nxgrid
+  integer              :: unit, i, j, nxa, nya, nxgrid, nxl, nyl, out_unit
   type(domain2d)       :: Atm_domain, Ocn_domain, Lnd_domain
-  type(xmap_type)      :: Xmap
+  type(xmap_type)      :: Xmap, Xmap_runoff
   type(grid_box_type)  :: atm_grid
   real, allocatable    :: xt(:,:), yt(:,:)  ! on T-cell data domain
   real, allocatable    :: xc(:,:), yc(:,:)  ! on C-cell compute domain
   real, allocatable    :: tmpx(:,:), tmpy(:,:)
   real, allocatable    :: atm_data_in(:,:), atm_data_out(:,:)
   real, allocatable    :: lnd_data_out(:,:,:), ocn_data_out(:,:,:)
+  real, allocatable    :: runoff_data_in(:,:), runoff_data_out(:,:,:)
   real, allocatable    :: atm_area(:,:), lnd_area(:,:), ocn_area(:,:)
   real, allocatable    :: x_1(:), x_2(:)
   real                 :: sum_atm_in, sum_ocn_out, sum_lnd_out, sum_atm_out
+  real                 :: sum_runoff_in, sum_runoff_out
+  logical              :: atm_input_file_exist, runoff_input_file_exist
+
 
   call fms_init
   call mpp_domains_init
   call xgrid_init(remap_method)
 
-  npes   = mpp_npes()
-  pe     = mpp_pe()
+  npes     = mpp_npes()
+  pe       = mpp_pe()
+  out_unit = stdout()
 
  if (file_exist('input.nml')) then
    ierr=1
@@ -2396,9 +2424,9 @@ implicit none
      if(ntile_ocn > 1) call mpp_error(FATAL,  &
            'xgrid_test: there is more than one tile in ocn_mosaic, which is not implemented yet')
 
-     write(stdout(),*)" There is ", ntile_atm, " tiles in atmos mosaic"
-     write(stdout(),*)" There is ", ntile_lnd, " tiles in land  mosaic"
-     write(stdout(),*)" There is ", ntile_ocn, " tiles in ocean mosaic"
+     write(out_unit,*)" There is ", ntile_atm, " tiles in atmos mosaic"
+     write(out_unit,*)" There is ", ntile_lnd, " tiles in land  mosaic"
+     write(out_unit,*)" There is ", ntile_ocn, " tiles in ocean mosaic"
      allocate(atm_nx(ntile_atm), atm_ny(ntile_atm))
      allocate(lnd_nx(ntile_ocn), lnd_ny(ntile_lnd))
      allocate(ocn_nx(ntile_ocn), ocn_ny(ntile_ocn))
@@ -2408,14 +2436,15 @@ implicit none
      call get_mosaic_grid_sizes(ocn_mosaic_file, ocn_nx, ocn_ny)
 
      ncontact = get_mosaic_ncontacts(atm_mosaic_file)
-     allocate(tile1(ncontact),   tile2(ncontact) )
-     allocate(istart1(ncontact), iend1(ncontact) )
-     allocate(jstart1(ncontact), jend1(ncontact) )
-     allocate(istart2(ncontact), iend2(ncontact) )
-     allocate(jstart2(ncontact), jend2(ncontact) )
-     call get_mosaic_contact( atm_mosaic_file, tile1, tile2, istart1, iend1, jstart1, jend1, &
-                              istart2, iend2, jstart2, jend2)
-     
+     if(ncontact > 0) then
+        allocate(tile1(ncontact),   tile2(ncontact) )
+        allocate(istart1(ncontact), iend1(ncontact) )
+        allocate(jstart1(ncontact), jend1(ncontact) )
+        allocate(istart2(ncontact), iend2(ncontact) )
+        allocate(jstart2(ncontact), jend2(ncontact) )
+        call get_mosaic_contact( atm_mosaic_file, tile1, tile2, istart1, iend1, jstart1, jend1, &
+                                 istart2, iend2, jstart2, jend2)
+     endif
 
      if(mod(npes, ntile_atm) .NE. 0 ) call mpp_error(FATAL,"npes should be divided by ntile_atm")
 
@@ -2468,6 +2497,7 @@ implicit none
   call mpp_get_compute_domain(ocn_domain, isc_ocn, iec_ocn, jsc_ocn, jec_ocn)
   call mpp_get_data_domain(atm_domain, isd_atm, ied_atm, jsd_atm, jed_atm)
   call mpp_get_global_domain(atm_domain, xsize = nxa, ysize = nya)
+  call mpp_get_global_domain(lnd_domain, xsize = nxl, ysize = nyl)
   nxc_atm = iec_atm - isc_atm + 1
   nyc_atm = jec_atm - jsc_atm + 1
 
@@ -2517,15 +2547,17 @@ implicit none
   end if
   !--- conservation check is done in setup_xmap. 
   call setup_xmap(Xmap, (/ 'ATM', 'OCN', 'LND' /), (/ Atm_domain, Ocn_domain, Lnd_domain /), grid_file, atm_grid)
+  call setup_xmap(Xmap_runoff, (/ 'LND', 'OCN'/), (/ Lnd_domain, Ocn_domain/), grid_file )
   call set_domain(atm_domain)
   !--- remap realistic data and write the output file when atmos_input_file does exist
-  if( test_with_file ) then
+  atm_input_file_exist = file_exist(atm_input_file)
+  if( atm_input_file_exist ) then
      if(trim(atm_input_file) == trim(atm_output_file) ) call mpp_error(FATAL, &
           "test_xgrid: atm_input_file should have a different name from atm_output_file")
-     call field_size(atm_input_file, field_name, siz )
-     if(siz(1) .NE. nxa .OR. siz(2) .NE. nya ) call mpp_error(FATAL,"test_xgrid: x- and y-size of field "//trim(field_name) &
+     call field_size(atm_input_file, atm_field_name, siz )
+     if(siz(1) .NE. nxa .OR. siz(2) .NE. nya ) call mpp_error(FATAL,"test_xgrid: x- and y-size of field "//trim(atm_field_name) &
             //" in file "//trim(atm_input_file) //" does not compabile with the grid size" )
-     if(siz(3) > 1) call mpp_error(FATAL,"test_xgrid: number of vertical level of field "//trim(field_name) &
+     if(siz(3) > 1) call mpp_error(FATAL,"test_xgrid: number of vertical level of field "//trim(atm_field_name) &
             //" in file "//trim(atm_input_file) //" should be no larger than 1")
 
      allocate(atm_data_in (isc_atm:iec_atm, jsc_atm:jec_atm   ) )
@@ -2540,16 +2572,16 @@ implicit none
      lnd_data_out = 0
      ocn_data_out = 0
      ! test one time level should be sufficient
-     call read_data(atm_input_file, field_name, atm_data_in, atm_domain)
+     call read_data(atm_input_file, atm_field_name, atm_data_in, atm_domain)
      call put_to_xgrid(atm_data_in, 'ATM', x_1, Xmap, remap_method=remap_method)
      call get_from_xgrid(lnd_data_out, 'LND', x_1, xmap)
      call get_from_xgrid(ocn_data_out, 'OCN', x_1, xmap)
      call put_to_xgrid(lnd_data_out, 'LND', x_2, xmap)
      call put_to_xgrid(ocn_data_out, 'OCN', x_2, xmap)
      call get_from_xgrid(atm_data_out, 'ATM', x_2, xmap)
-     call write_data( atm_output_file, field_name, atm_data_out, atm_domain)
-     call write_data( lnd_output_file, field_name, lnd_data_out, lnd_domain)
-     call write_data( ocn_output_file, field_name, ocn_data_out, ocn_domain)
+     call write_data( atm_output_file, atm_field_name, atm_data_out, atm_domain)
+     call write_data( lnd_output_file, atm_field_name, lnd_data_out, lnd_domain)
+     call write_data( ocn_output_file, atm_field_name, ocn_data_out, ocn_domain)
      ! conservation check 
      allocate(atm_area(isc_atm:iec_atm, jsc_atm:jec_atm ) )
      allocate(lnd_area(isc_lnd:iec_lnd, jsc_lnd:jec_lnd ) )
@@ -2563,19 +2595,56 @@ implicit none
      sum_lnd_out = mpp_global_sum(lnd_domain, lnd_area * lnd_data_out(:,:,1))
      sum_ocn_out = mpp_global_sum(ocn_domain, ocn_area * ocn_data_out(:,:,1))
      sum_atm_out = mpp_global_sum(atm_domain, atm_area * atm_data_out)
-     write(stdout(),*) "********************** check conservation *********************** "
-     write(stdout(),*) "the glboal area sum of atmos input data is                    : ", sum_atm_in 
-     write(stdout(),*) "the glboal area sum of atmos output data is                   : ", sum_atm_out
-     write(stdout(),*) "the glboal area sum of land output data + ocean output data is: ", sum_lnd_out+sum_ocn_out
+     write(out_unit,*) "********************** check conservation *********************** "
+     write(out_unit,*) "the global area sum of atmos input data is                    : ", sum_atm_in 
+     write(out_unit,*) "the global area sum of atmos output data is                   : ", sum_atm_out
+     write(out_unit,*) "the global area sum of land output data + ocean output data is: ", sum_lnd_out+sum_ocn_out
+     deallocate(atm_area, lnd_area, ocn_area, atm_data_in, atm_data_out, lnd_data_out, ocn_data_out)
+     deallocate(x_1, x_2)
   else
-     write(stdout(),*) "NOTE from test_xgrid ==> file "//trim(atm_input_file)//" does not exist, no check is done for real data sets."
+     write(out_unit,*) "NOTE from test_xgrid ==> file "//trim(atm_input_file)//" does not exist, no check is done for real data sets."
   end if           
-     
 
+  runoff_input_file_exist = file_exist(runoff_input_file)     
+  if( runoff_input_file_exist ) then
+     if(trim(runoff_input_file) == trim(runoff_output_file) ) call mpp_error(FATAL, &
+          "test_xgrid: runoff_input_file should have a different name from runoff_output_file")
+     call field_size(runoff_input_file, runoff_field_name, siz )
+     if(siz(1) .NE. nxl .OR. siz(2) .NE. nyl ) call mpp_error(FATAL,"test_xgrid: x- and y-size of field "//trim(runoff_field_name) &
+            //" in file "//trim(runoff_input_file) //" does not compabile with the grid size" )
+     if(siz(3) > 1) call mpp_error(FATAL,"test_xgrid: number of vertical level of field "//trim(runoff_field_name) &
+            //" in file "//trim(runoff_input_file) //" should be no larger than 1")
 
-  write(stdout(),*) "************************************************************************"
-  write(stdout(),*) "***********      Finish running program test_xgrid         *************"
-  write(stdout(),*) "************************************************************************"
+     allocate(runoff_data_in (isc_lnd:iec_lnd, jsc_lnd:jec_lnd   ) ) 
+     allocate(runoff_data_out(isc_ocn:iec_ocn, jsc_ocn:jec_ocn, 1) )
+     nxgrid = max(xgrid_count(Xmap_runoff), 1)
+     allocate(x_1(nxgrid), x_2(nxgrid))
+
+     runoff_data_in  = 0
+     runoff_data_out = 0
+     ! test one time level should be sufficient
+     call read_data(runoff_input_file, runoff_field_name, runoff_data_in, lnd_domain)
+     call put_to_xgrid(runoff_data_in, 'LND', x_1, Xmap_runoff)
+     call get_from_xgrid(runoff_data_out, 'OCN', x_1, xmap_runoff)
+     call write_data( runoff_output_file, runoff_field_name, runoff_data_out, ocn_domain)
+     ! conservation check 
+     allocate(lnd_area(isc_lnd:iec_lnd, jsc_lnd:jec_lnd ) )
+     allocate(ocn_area(isc_ocn:iec_ocn, jsc_ocn:jec_ocn ) )
+     call get_xmap_grid_area("LND", Xmap_runoff, lnd_area)
+     call get_xmap_grid_area("OCN", Xmap_runoff, ocn_area)
+
+     sum_runoff_in  = mpp_global_sum(lnd_domain, lnd_area * runoff_data_in)
+     sum_runoff_out = mpp_global_sum(ocn_domain, ocn_area * runoff_data_out(:,:,1))
+     write(out_unit,*) "********************** check conservation *********************** "
+     write(out_unit,*) "the global area sum of runoff input data is                    : ", sum_runoff_in 
+     write(out_unit,*) "the global area sum of runoff output data is                   : ", sum_runoff_out
+  else
+     write(out_unit,*) "NOTE from test_xgrid ==> file "//trim(runoff_input_file)//" does not exist, no check is done for real data sets."
+  end if           
+
+  write(out_unit,*) "************************************************************************"
+  write(out_unit,*) "***********      Finish running program test_xgrid         *************"
+  write(out_unit,*) "************************************************************************"
 
   call mpp_domains_exit
   call fms_io_exit

@@ -5,7 +5,8 @@ program test
   use mpp_mod,         only : mpp_declare_pelist, mpp_set_current_pelist, mpp_sync, mpp_sync_self
   use mpp_mod,         only : mpp_clock_begin, mpp_clock_end, mpp_clock_id
   use mpp_mod,         only : mpp_init, mpp_exit, mpp_chksum, stdout, stderr
-  use mpp_domains_mod, only : GLOBAL_DATA_DOMAIN, BITWISE_EXACT_SUM, BGRID_NE, FOLD_NORTH_EDGE, CGRID_NE
+  use mpp_domains_mod, only : GLOBAL_DATA_DOMAIN, BITWISE_EXACT_SUM, BGRID_NE, CGRID_NE
+  use mpp_domains_mod, only : FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE, FOLD_WEST_EDGE, FOLD_EAST_EDGE
   use mpp_domains_mod, only : MPP_DOMAIN_TIME, CYCLIC_GLOBAL_DOMAIN, NUPDATE,EUPDATE, XUPDATE, YUPDATE, SCALAR_PAIR
   use mpp_domains_mod, only : domain1D, domain2D, DomainCommunicator2D
   use mpp_domains_mod, only : mpp_get_compute_domain, mpp_get_data_domain, mpp_domains_set_stack_size
@@ -63,7 +64,7 @@ program test
   end if
   call mpp_domains_set_stack_size(stackmax)
   
-  if( pe.EQ.mpp_root_pe() )print '(a,9i4)', 'npes, mpes, nx, ny, nz, whalo, ehalo, shalo, nhalo =', &
+  if( pe.EQ.mpp_root_pe() )print '(a,9i6)', 'npes, mpes, nx, ny, nz, whalo, ehalo, shalo, nhalo =', &
                            npes, mpes, nx, ny, nz, whalo, ehalo, shalo, nhalo
   
   if( .not. check_parallel) then
@@ -76,7 +77,11 @@ program test
       call test_get_boundary('Four-Tile')
       call test_get_boundary('Cubic-Grid')
       call test_uniform_mosaic('Single-Tile')
-      call test_uniform_mosaic('Tripolar-Grid') ! one-tile tripolar grid
+      call test_uniform_mosaic('Folded-north mosaic') ! one-tile tripolar grid
+      call test_uniform_mosaic('Folded-north symmetry mosaic') ! one-tile tripolar grid
+      call test_uniform_mosaic('Folded-south symmetry mosaic') ! one-tile tripolar grid
+      call test_uniform_mosaic('Folded-west symmetry mosaic') ! one-tile tripolar grid
+      call test_uniform_mosaic('Folded-east symmetry mosaic') ! one-tile tripolar grid
       call test_uniform_mosaic('Four-Tile')
       call test_uniform_mosaic('Cubic-Grid') ! 6 tiles.
       call test_nonuniform_mosaic('Five-Tile')
@@ -86,13 +91,17 @@ program test
 
       call test_halo_update( 'Simple' ) !includes global field, global sum tests
       call test_halo_update( 'Cyclic' )
-      call test_halo_update( 'Folded' ) !includes vector field test
+      call test_halo_update( 'Folded-north' ) !includes vector field test
       call test_halo_update( 'Masked' ) !includes vector field test
       call test_halo_update( 'Folded xy_halo' ) ! 
 
       call test_halo_update( 'Simple symmetry' ) !includes global field, global sum tests
       call test_halo_update( 'Cyclic symmetry' )
-      call test_halo_update( 'Folded symmetry' ) !includes vector field test
+      call test_halo_update( 'Folded-north symmetry' ) !includes vector field test
+      call test_halo_update( 'Folded-south symmetry' ) !includes vector field test
+      call test_halo_update( 'Folded-west symmetry' ) !includes vector field test
+      call test_halo_update( 'Folded-east symmetry' ) !includes vector field test
+
       !--- z1l: The following will not work due to symmetry and domain%x is cyclic.
       !--- Will solve this problem in the future if needed.
       ! call test_halo_update( 'Masked symmetry' ) !includes vector field test
@@ -114,9 +123,9 @@ program test
       call test_global_reduce( 'Cyclic symmetry north')
 
       call test_redistribute( 'Complete pelist' )
-      call test_redistribute( 'Overlap  pelist' )
-      call test_redistribute( 'Disjoint pelist' )
-
+!!$      call test_redistribute( 'Overlap  pelist' )
+!!$      call test_redistribute( 'Disjoint pelist' )
+!!$
       call test_define_mosaic_pelist('One tile', 1)
       call test_define_mosaic_pelist('Two uniform tile', 2)
       call test_define_mosaic_pelist('Two nonuniform tile', 2)
@@ -156,16 +165,15 @@ contains
     call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
     allocate( a(isd:ied,jsd:jed,nz) )
     maxthr = omp_get_max_threads()
-    write( stdout(),'(a,4i4)' )'pe,js,je,maxthr=', pe, js, je, maxthr
-!    write( stderr(),'(a,2i4)' )'pe,mldid=', pe, mld_id()
+    write( stdout(),'(a,4i6)' )'pe,js,je,maxthr=', pe, js, je, maxthr
     if( mod(je-js+1,maxthr).NE.0 ) &
          call mpp_error( FATAL, 'maxthr must divide domain (TEMPORARY).' )
     jthr = (je-js+1)/maxthr
 !$OMP PARALLEL PRIVATE(i,j,k,thrnum)
     thrnum = omp_get_thread_num()
-    write( stdout(),'(a,4i4)' )'pe,thrnum,js,je=', &
+    write( stdout(),'(a,4i6)' )'pe,thrnum,js,je=', &
          pe, thrnum, js+thrnum*jthr,js+(thrnum+1)*jthr-1
-    write( stdout(),'(a,3i4)' )'pe,thrnum,node=', pe, thrnum, mpp_node()
+    write( stdout(),'(a,3i6)' )'pe,thrnum,node=', pe, thrnum, mpp_node()
 !!$OMP DO
     do k = 1,nz
 !when omp DO is commented out, user must compute j loop limits
@@ -463,18 +471,53 @@ contains
     real,    allocatable, dimension(:,:,:,:) :: global1, global2, gcheck  
     real,    allocatable, dimension(:,:,:,:) :: global1_all, global2_all, global_all
     character(len=128) :: type2, type3
+    logical            :: folded_north, folded_north_sym, folded_north_nonsym
+    logical            :: folded_south_sym, folded_west_sym, folded_east_sym
+    logical            :: cubic_grid, single_tile, four_tile
 
+    folded_north_nonsym = .false.
+    folded_north_sym    = .false.
+    folded_north        = .false.
+    folded_south_sym    = .false.
+    folded_west_sym     = .false.
+    folded_east_sym     = .false.
+    cubic_grid        = .false.
+    single_tile        = .false.
+    four_tile          = .false.
     !--- check the type
     select case(type)
-    case ( 'Single-Tile', 'Tripolar-Grid' )   !--- single with cyclic along x- and y-direction
+    case ( 'Single-Tile' )   !--- single with cyclic along x- and y-direction
+       single_tile = .true.
        ntiles = 1
        num_contact = 2
+    case ( 'Folded-north mosaic' )
+       ntiles = 1
+       num_contact = 2
+       folded_north_nonsym = .true.
+    case ( 'Folded-north symmetry mosaic' )
+       ntiles = 1
+       num_contact = 2
+       folded_north_sym = .true.
+    case ( 'Folded-south symmetry mosaic' )
+       ntiles = 1
+       num_contact = 2
+       folded_south_sym = .true.
+    case ( 'Folded-west symmetry mosaic' )
+       ntiles = 1
+       num_contact = 2
+       folded_west_sym = .true.
+    case ( 'Folded-east symmetry mosaic' )
+       ntiles = 1
+       num_contact = 2
+       folded_east_sym = .true.
     case ( 'Four-Tile' ) !--- cyclic along both x- and y-direction. 
        ntiles = 4
        num_contact = 8
+       four_tile = .true.
     case ( 'Cubic-Grid' )
        ntiles = 6
        num_contact = 12
+       cubic_grid = .true.
        if( nx .NE. ny) then
           call mpp_error(NOTE,'TEST_MPP_DOMAINS: for Cubic_grid mosaic, nx should equal ny, '//&
                    'No test is done for Cubic-Grid mosaic. ' )
@@ -483,6 +526,8 @@ contains
     case default
        call mpp_error(FATAL, 'TEST_MPP_DOMAINS: no such test: '//type)
     end select
+
+    folded_north = folded_north_nonsym .OR. folded_north_sym
       
     allocate(layout2D(2,ntiles), global_indices(4,ntiles), pe_start(ntiles), pe_end(ntiles) )
     if( mod(npes, ntiles) == 0 ) then
@@ -526,8 +571,7 @@ contains
     allocate(istart2(num_contact), iend2(num_contact), jstart2(num_contact), jend2(num_contact) ) 
 
     !--- define domain
-    select case(type)
-    case( 'Single-Tile' )
+    if(single_tile) then
        !--- Contact line 1, between tile 1 (EAST) and tile 1 (WEST)
        tile1(1) = 1; tile2(1) = 1
        istart1(1) = nx; iend1(1) = nx; jstart1(1) = 1;  jend1(1) = ny
@@ -538,8 +582,9 @@ contains
        istart2(2) = 1;  iend2(2) = nx; jstart2(2) = ny;  jend2(2) = ny
        call mpp_define_mosaic(global_indices, layout2D, domain, ntiles, num_contact, tile1, tile2, &
                               istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,      &
-                              pe_start, pe_end, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, name = type  )
-    case( 'Tripolar-Grid' )
+                              pe_start, pe_end, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
+                              name = type, symmetry = .false. )
+    else if(folded_north) then
        !--- Contact line 1, between tile 1 (EAST) and tile 1 (WEST)  --- cyclic
        tile1(1) = 1; tile2(1) = 1
        istart1(1) = nx; iend1(1) = nx; jstart1(1) = 1;  jend1(1) = ny
@@ -548,16 +593,63 @@ contains
        tile1(2) = 1; tile2(2) = 1
        istart1(2) = 1;  iend1(2) = nx/2;   jstart1(2) = ny;  jend1(2) = ny
        istart2(2) = nx; iend2(2) = nx/2+1; jstart2(2) = ny;  jend2(2) = ny
+       if(folded_north_nonsym) then
+          call mpp_define_mosaic(global_indices, layout2D, domain, ntiles, num_contact, tile1, tile2, &
+                                 istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,      &
+                                 pe_start, pe_end, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
+                                 name = type, symmetry = .false.  )
+       else
+          call mpp_define_mosaic(global_indices, layout2D, domain, ntiles, num_contact, tile1, tile2, &
+                                 istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,      &
+                                 pe_start, pe_end, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
+                                 name = type, symmetry = .true.  )
+       endif
+    else if(folded_south_sym) then
+       !--- Contact line 1, between tile 1 (EAST) and tile 1 (WEST)  --- cyclic
+       tile1(1) = 1; tile2(1) = 1
+       istart1(1) = nx; iend1(1) = nx; jstart1(1) = 1;  jend1(1) = ny
+       istart2(1) = 1;  iend2(1) = 1;  jstart2(1) = 1;  jend2(1) = ny
+       !--- Contact line 2, between tile 1 (SOUTH) and tile 1 (SOUTH)  --- folded-south-edge
+       tile1(2) = 1; tile2(2) = 1
+       istart1(2) = 1;  iend1(2) = nx/2;   jstart1(2) = 1;  jend1(2) = 1
+       istart2(2) = nx; iend2(2) = nx/2+1; jstart2(2) = 1;  jend2(2) = 1
        call mpp_define_mosaic(global_indices, layout2D, domain, ntiles, num_contact, tile1, tile2, &
                               istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,      &
-                              pe_start, pe_end, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, name = type  )
-    case( 'Four-Tile' )
+                              pe_start, pe_end, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
+                              name = type, symmetry = .true.  )
+    else if(folded_west_sym) then
+       !--- Contact line 1, between tile 1 (NORTH) and tile 1 (SOUTH)  --- cyclic
+       tile1(1) = 1; tile2(1) = 1
+       istart1(1) = 1; iend1(1) = nx; jstart1(1) = ny;  jend1(1) = ny
+       istart2(1) = 1; iend2(1) = nx; jstart2(1) = 1;   jend2(1) = 1
+       !--- Contact line 2, between tile 1 (WEST) and tile 1 (WEST)  --- folded-west-edge
+       tile1(2) = 1; tile2(2) = 1
+       istart1(2) = 1;  iend1(2) = 1; jstart1(2) = 1;  jend1(2) = ny/2
+       istart2(2) = 1;  iend2(2) = 1; jstart2(2) = ny; jend2(2) = ny/2+1
+       call mpp_define_mosaic(global_indices, layout2D, domain, ntiles, num_contact, tile1, tile2, &
+                              istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,      &
+                              pe_start, pe_end, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
+                              name = type, symmetry = .true.  )
+    else if(folded_east_sym) then
+       !--- Contact line 1, between tile 1 (NORTH) and tile 1 (SOUTH)  --- cyclic
+       tile1(1) = 1; tile2(1) = 1
+       istart1(1) = 1; iend1(1) = nx; jstart1(1) = ny;  jend1(1) = ny
+       istart2(1) = 1; iend2(1) = nx; jstart2(1) = 1;   jend2(1) = 1
+       !--- Contact line 2, between tile 1 (EAST) and tile 1 (EAST)  --- folded-west-edge
+       tile1(2) = 1; tile2(2) = 1
+       istart1(2) = nx;  iend1(2) = nx; jstart1(2) = 1;  jend1(2) = ny/2
+       istart2(2) = nx;  iend2(2) = nx; jstart2(2) = ny; jend2(2) = ny/2+1
+       call mpp_define_mosaic(global_indices, layout2D, domain, ntiles, num_contact, tile1, tile2, &
+                              istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,      &
+                              pe_start, pe_end, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
+                              name = type, symmetry = .true.  )
+    else if( four_tile ) then
        call define_fourtile_mosaic(type, domain, (/nx,nx,nx,nx/), (/ny,ny,ny,ny/), global_indices, &
-                                   layout2D, pe_start, pe_end, .false. )
-    case( 'Cubic-Grid' )
+                                   layout2D, pe_start, pe_end, symmetry = .false. )
+    else if( cubic_grid ) then
        call define_cubic_mosaic(type, domain, (/nx,nx,nx,nx,nx,nx/), (/ny,ny,ny,ny,ny,ny/), &
                                 global_indices, layout2D, pe_start, pe_end )
-    end select
+    endif
 
     !--- setup data
     allocate(global2(1-whalo:nx+ehalo,1-shalo:ny+nhalo,nz, ntile_per_pe) ) 
@@ -629,16 +721,17 @@ contains
     id = mpp_clock_id( type, flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
     do n = 1, ntile_per_pe
        !--- fill up the value at halo points.
-       select case ( type )
-       case ( 'Single-Tile')
+       if(single_tile) then
           call fill_regular_mosaic_halo(global2(:,:,:,n), global_all, 1, 1, 1, 1, 1, 1, 1, 1)
-       case ( 'Tripolar-Grid')
-          global2(1-whalo:0,              1:ny,:,n) = global_all(nx-whalo+1:nx,1:ny,:,n)
-          global2(nx+1:nx+ehalo,          1:ny,:,n) = global_all(1:ehalo,      1:ny,:,n)
-          global2(1-whalo:0,     ny+1:ny+nhalo,:,n) = global_all(whalo:1:-1,       ny:ny-nhalo+1:-1,:,n)
-          global2(1:nx,          ny+1:ny+nhalo,:,n) = global_all(nx:1:-1,          ny:ny-nhalo+1:-1,:,n)
-          global2(nx+1:nx+ehalo, ny+1:ny+nhalo,:,n) = global_all(nx:nx-ehalo+1:-1, ny:ny-nhalo+1:-1,:,n)         
-       case ( 'Four-Tile' )
+       else if(folded_north) then
+          call fill_folded_north_halo(global2(:,:,:,n), 0, 0, 0, 0, 1)
+       else if(folded_south_sym) then
+          call fill_folded_south_halo(global2(:,:,:,n), 0, 0, 0, 0, 1)
+       else if(folded_west_sym) then
+          call fill_folded_west_halo(global2(:,:,:,n), 0, 0, 0, 0, 1)
+       else if(folded_east_sym) then
+          call fill_folded_east_halo(global2(:,:,:,n), 0, 0, 0, 0, 1)
+       else if(four_tile) then
           select case ( tile(n) )
           case (1)
              tw = 2; ts = 3; tsw = 4
@@ -651,9 +744,9 @@ contains
           end select
           te = tw; tn = ts; tse = tsw; tnw = tsw; tne = tsw
           call fill_regular_mosaic_halo(global2(:,:,:,n), global_all, te, tse, ts, tsw, tw, tnw, tn, tne )
-       case ( 'Cubic-Grid' )
+       else if(cubic_grid) then
           call fill_cubic_grid_halo(global2(:,:,:,n), global_all, global_all, tile(n), 0, 0, 1, 1 )
-       end select
+       endif
 
        !full update
        call mpp_clock_begin(id)
@@ -685,7 +778,7 @@ contains
        call compare_checksums( x4(isc:ied,jsc:jed,:,1), global2(isc:ied,jsc:jed,:,1), type//' partial x4' )
 
        !arbitrary halo update. not for tripolar grid
-       if(type .NE. 'Tripolar-Grid' ) then
+       if(single_tile .or. four_tile .or. cubic_grid ) then
           allocate(local2(isd:ied,jsd:jed,nz) )
           do wh = 1-whalo, whalo
              do eh = 1-ehalo, ehalo
@@ -717,12 +810,11 @@ contains
     !------------------------------------------------------------------
     !--- setup data
     shift = 0
-    select case ( type ) 
-    case ( 'Four-Tile', 'Single-Tile', 'Tripolar-Grid' )
+    if(single_tile .or. four_tile .or. folded_north_nonsym) then
        shift = 0
-    case ( 'Cubic-Grid' ) 
+    else
        shift = 1
-    end select
+    endif
 
     allocate(global1(1-whalo:nx+shift+ehalo,1-shalo:ny+shift+nhalo,nz,ntile_per_pe) ) 
     allocate(global2(1-whalo:nx+shift+ehalo,1-shalo:ny+shift+nhalo,nz,ntile_per_pe) ) 
@@ -747,7 +839,7 @@ contains
     !--- corner between 1, 2, 3 takes the value at 3, 
     !--- corner between 1, 3, 5 takes the value at 3
     !-----------------------------------------------------------------------
-    if( type == 'Cubic-Grid' ) then
+    if( cubic_grid ) then
        do l = 1, ntiles
           if(mod(l,2) == 0) then ! tile 2, 4, 6
              te = l + 2
@@ -778,6 +870,20 @@ contains
        global2(1:nx+shift,1:ny+shift,:,n) = global2_all(:,:,:,tile(n))
     end do
 
+    if(folded_north) then
+       call fill_folded_north_halo(global1(:,:,:,1), 1, 1, shift, shift, -1)    
+       call fill_folded_north_halo(global2(:,:,:,1), 1, 1, shift, shift, -1)   
+    else if(folded_south_sym) then
+       call fill_folded_south_halo(global1(:,:,:,1), 1, 1, shift, shift, -1)    
+       call fill_folded_south_halo(global2(:,:,:,1), 1, 1, shift, shift, -1)  
+    else if(folded_west_sym) then
+       call fill_folded_west_halo(global1(:,:,:,1), 1, 1, shift, shift, -1)    
+       call fill_folded_west_halo(global2(:,:,:,1), 1, 1, shift, shift, -1) 
+    else if(folded_east_sym) then
+       call fill_folded_east_halo(global1(:,:,:,1), 1, 1, shift, shift, -1)    
+       call fill_folded_east_halo(global2(:,:,:,1), 1, 1, shift, shift, -1) 
+    endif
+
     allocate( x (ism:iem+shift,jsm:jem+shift,nz,ntile_per_pe) )
     allocate( y (ism:iem+shift,jsm:jem+shift,nz,ntile_per_pe) )
     allocate( x1(ism:iem+shift,jsm:jem+shift,nz,ntile_per_pe) )
@@ -798,38 +904,22 @@ contains
     !-----------------------------------------------------------------------
     !                   fill up the value at halo points.     
     !-----------------------------------------------------------------------
-    select case ( type )
-    case ( 'Four-Tile', 'Single-Tile', 'Tripolar-Grid' )
-       type2 = type//' vector BGRID_NE'
-    case ( 'Cubic-Grid' )
+    if(cubic_grid) then
        type2 = type//' paired-scalar BGRID_NE'
-    end select
-    id = mpp_clock_id( trim(type2), flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    select case ( type ) 
-    case ( 'Four-Tile', 'Single-Tile', 'Tripolar-Grid' )
-       update_flags = XUPDATE + YUPDATE
-    case ( 'Cubic-Grid' )
        update_flags = SCALAR_PAIR
-    end select
+    else
+       type2 = type//' vector BGRID_NE'
+       update_flags = XUPDATE + YUPDATE
+    endif
 
+    id = mpp_clock_id( trim(type2), flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
     type3 = type2
 
     do n = 1, ntile_per_pe
-       select case ( type )
-       case ( 'Single-Tile' )
+       if(single_tile) then
           call fill_regular_mosaic_halo(global1(:,:,:,n), global1_all, 1, 1, 1, 1, 1, 1, 1, 1)       
           call fill_regular_mosaic_halo(global2(:,:,:,n), global2_all, 1, 1, 1, 1, 1, 1, 1, 1)     
-       case ( 'Tripolar-Grid')
-          global1(1-whalo:0,            1:ny,:,n) =  global1_all(nx-whalo+1:nx,              1:ny,:,n)
-          global1(nx+1:nx+ehalo,        1:ny,:,n) =  global1_all(1:ehalo,                    1:ny,:,n)
-          global1(1-whalo:-1,  ny+1:ny+nhalo,:,n) = -global1_all(whalo-1:1:-1,   ny-1:ny-nhalo:-1,:,n)
-          global1(0:nx-1,      ny+1:ny+nhalo,:,n) = -global1_all(nx:1:-1,        ny-1:ny-nhalo:-1,:,n)
-          global1(nx:nx+ehalo, ny+1:ny+nhalo,:,n) = -global1_all(nx:nx-ehalo:-1, ny-1:ny-nhalo:-1,:,n)
-          global2(1-whalo:0,            1:ny,:,n) =  global2_all(nx-whalo+1:nx,              1:ny,:,n)
-          global2(nx+1:nx+ehalo,        1:ny,:,n) =  global2_all(1:ehalo,                    1:ny,:,n)
-          global2(1-whalo:-1,  ny+1:ny+nhalo,:,n) = -global2_all(whalo-1:1:-1,   ny-1:ny-nhalo:-1,:,n)
-          global2(0:nx-1,      ny+1:ny+nhalo,:,n) = -global2_all(nx:1:-1,        ny-1:ny-nhalo:-1,:,n)
-          global2(nx:nx+ehalo, ny+1:ny+nhalo,:,n) = -global2_all(nx:nx-ehalo:-1, ny-1:ny-nhalo:-1,:,n)
+       else if(folded_north) then
           !redundant points must be equal and opposite for tripolar grid
           global1(nx/2+shift,                ny+shift,:,:) = 0.  !pole points must have 0 velocity
           global1(nx+shift  ,                ny+shift,:,:) = 0.  !pole points must have 0 velocity
@@ -846,7 +936,45 @@ contains
              global1(shift,ny+shift,:,:) = 0.  !pole points must have 0 velocity
              global2(shift,ny+shift,:,:) = 0.  !pole points must have 0 velocity
           end if
-       case ( 'Four-Tile' )
+       else if(folded_south_sym) then
+          global1(nx/2+shift,                1,:,:) = 0.  !pole points must have 0 velocity
+          global1(nx+shift  ,                1,:,:) = 0.  !pole points must have 0 velocity
+          global1(nx/2+1+shift:nx-1+shift,   1,:,:) = -global1(nx/2-1+shift:1+shift:-1, 1,:,:)
+          global1(1-whalo:shift,             1,:,:) = -global1(nx-whalo+1:nx+shift,     1,:,:)
+          global1(nx+1+shift:nx+ehalo+shift, 1,:,:) = -global1(1+shift:ehalo+shift,     1,:,:)
+          global2(nx/2+shift,                1,:,:) = 0.  !pole points must have 0 velocity
+          global2(nx+shift  ,                1,:,:) = 0.  !pole points must have 0 velocity
+          global2(nx/2+1+shift:nx-1+shift,   1,:,:) = -global2(nx/2-1+shift:1+shift:-1, 1,:,:)
+          global2(1-whalo:shift,             1,:,:) = -global2(nx-whalo+1:nx+shift,     1,:,:)
+          global2(nx+1+shift:nx+ehalo+shift, 1,:,:) = -global2(1+shift:ehalo+shift,     1,:,:)
+          !--- the following will fix the +0/-0 problem on altix
+          if(shalo >0) then
+             global1(shift,1,:,:) = 0.  !pole points must have 0 velocity
+             global2(shift,1,:,:) = 0.  !pole points must have 0 velocity
+          endif
+       else if(folded_west_sym) then
+          global1(1, ny/2+shift, :,:) = 0. !pole points must have 0 velocity
+          global1(1, ny+shift,   :,:) = 0. !pole points must have 0 velocity
+          global1(1, ny/2+1+shift:ny-1+shift,   :,:) = -global1(1, ny/2-1+shift:1+shift:-1, :,:)
+          global1(1, 1-shalo:shift,             :,:) = -global1(1, ny-shalo+1:ny+shift,     :,:)
+          global1(1, ny+1+shift:ny+nhalo+shift, :,:) = -global1(1, 1+shift:nhalo+shift,     :,:)
+          global2(1, ny/2+shift, :,:) = 0. !pole points must have 0 velocity
+          global2(1, ny+shift,   :,:) = 0. !pole points must have 0 velocity
+          global2(1, ny/2+1+shift:ny-1+shift,   :,:) = -global2(1, ny/2-1+shift:1+shift:-1, :,:)
+          global2(1, 1-shalo:shift,             :,:) = -global2(1, ny-shalo+1:ny+shift,     :,:)
+          global2(1, ny+1+shift:ny+nhalo+shift, :,:) = -global2(1, 1+shift:nhalo+shift,     :,:)
+       else if(folded_east_sym) then
+          global1(nx+shift, ny/2+shift, :,:) = 0. !pole points must have 0 velocity
+          global1(nx+shift, ny+shift,   :,:) = 0. !pole points must have 0 velocity
+          global1(nx+shift, ny/2+1+shift:ny-1+shift,   :,:) = -global1(nx+shift, ny/2-1+shift:1+shift:-1, :,:)
+          global1(nx+shift, 1-shalo:shift,             :,:) = -global1(nx+shift, ny-shalo+1:ny+shift,     :,:)
+          global1(nx+shift, ny+1+shift:ny+nhalo+shift, :,:) = -global1(nx+shift, 1+shift:nhalo+shift,     :,:)
+          global2(nx+shift, ny/2+shift, :,:) = 0. !pole points must have 0 velocity
+          global2(nx+shift, ny+shift,   :,:) = 0. !pole points must have 0 velocity
+          global2(nx+shift, ny/2+1+shift:ny-1+shift,   :,:) = -global2(nx+shift, ny/2-1+shift:1+shift:-1, :,:)
+          global2(nx+shift, 1-shalo:shift,             :,:) = -global2(nx+shift, ny-shalo+1:ny+shift,     :,:)
+          global2(nx+shift, ny+1+shift:ny+nhalo+shift, :,:) = -global2(nx+shift, 1+shift:nhalo+shift,     :,:)
+       else if(four_tile) then
           select case ( tile(n) )
           case (1)
              tw = 2; ts = 3; tsw = 4
@@ -860,10 +988,10 @@ contains
           te = tw; tn = ts; tse = tsw; tnw = tsw; tne = tsw
           call fill_regular_mosaic_halo(global1(:,:,:,n), global1_all, te, tse, ts, tsw, tw, tnw, tn, tne )
           call fill_regular_mosaic_halo(global2(:,:,:,n), global2_all, te, tse, ts, tsw, tw, tnw, tn, tne )
-       case ( 'Cubic-Grid' )
+       else if(cubic_grid) then
           call fill_cubic_grid_halo(global1(:,:,:,n), global1_all, global2_all, tile(n), 1, 1, 1, 1 )
           call fill_cubic_grid_halo(global2(:,:,:,n), global2_all, global1_all, tile(n), 1, 1, 1, 1 )
-       end select
+       endif
 
        if(ntile_per_pe > 1) write(type3, *)trim(type2), " at tile_count = ",n
        call mpp_clock_begin(id)
@@ -900,7 +1028,7 @@ contains
        call compare_checksums( y4(isd:ied+shift,jsd:jed+shift,:,1), global2(isd:ied+shift,jsd:jed+shift,:,1), trim(type2)//' Y4')
 
        !--- arbitrary halo updates ---------------------------------------
-       if(type .NE. 'Tripolar-Grid' ) then
+       if(single_tile .or. four_tile .or. cubic_grid ) then
           allocate(local1(isd:ied+shift,jsd:jed+shift,nz) )     
           allocate(local2(isd:ied+shift,jsd:jed+shift,nz) )    
           do wh = 1-whalo, whalo
@@ -936,11 +1064,21 @@ contains
     !              vector update : CGRID_NE
     !------------------------------------------------------------------
     !--- setup data
-    if( type == 'Cubic-Grid' ) then
+    if(cubic_grid .or. folded_north .or. folded_south_sym .or. folded_west_sym .or. folded_east_sym ) then
        deallocate(global1_all, global2_all)
+       allocate(global1_all(nx+shift,ny,nz, ntiles),  global2_all(nx,ny+shift,nz, ntiles))   
        deallocate(global1, global2, x, y, x1, x2, x3, x4, y1, y2, y3, y4)
-       allocate(global1_all(nx+shift,ny,nz, ntiles),  global2_all(nx,ny+shift,nz, ntiles))    
        allocate(global1(1-whalo:nx+shift+ehalo,1-shalo:ny  +nhalo,nz,ntile_per_pe) ) 
+       allocate( x (ism:iem+shift,jsm:jem  ,nz,ntile_per_pe) )
+       allocate( y (ism:iem  ,jsm:jem+shift,nz,ntile_per_pe) )
+       allocate( x1(ism:iem+shift,jsm:jem  ,nz,ntile_per_pe) )
+       allocate( x2(ism:iem+shift,jsm:jem  ,nz,ntile_per_pe) )
+       allocate( x3(ism:iem+shift,jsm:jem  ,nz,ntile_per_pe) )
+       allocate( x4(ism:iem+shift,jsm:jem  ,nz,ntile_per_pe) )
+       allocate( y1(ism:iem  ,jsm:jem+shift,nz,ntile_per_pe) )
+       allocate( y2(ism:iem  ,jsm:jem+shift,nz,ntile_per_pe) )
+       allocate( y3(ism:iem  ,jsm:jem+shift,nz,ntile_per_pe) )
+       allocate( y4(ism:iem  ,jsm:jem+shift,nz,ntile_per_pe) )
        allocate(global2(1-whalo:nx  +ehalo,1-shalo:ny+shift+nhalo,nz,ntile_per_pe) ) 
        global1 = 0; global2 = 0
        do l = 1, ntiles
@@ -957,7 +1095,15 @@ contains
              end do
           end do
        end do
+    endif
+    if( folded_north .or. folded_south_sym .or. folded_west_sym .or. folded_east_sym ) then
+       do n = 1, ntile_per_pe
+          global1(1:nx+shift,1:ny  ,:,n) = global1_all(1:nx+shift,1:ny,  :,tile(n))
+          global2(1:nx  ,1:ny+shift,:,n) = global2_all(1:nx  ,1:ny+shift,:,tile(n))
+       end do
+    endif
 
+    if( cubic_grid ) then
        !-----------------------------------------------------------------------
        !--- make sure consistency on the boundary for cubic grid
        !--- east boundary will take the value of neighbor tile ( west/south),
@@ -979,26 +1125,23 @@ contains
              global2_all(1:nx,ny+shift,:,l) = global1_all(1,ny:1:-1,:,tn) ! north
           end if
        end do
-       
        do n = 1, ntile_per_pe
           global1(1:nx+shift,1:ny  ,:,n) = global1_all(1:nx+shift,1:ny,  :,tile(n))
           global2(1:nx  ,1:ny+shift,:,n) = global2_all(1:nx  ,1:ny+shift,:,tile(n))
        end do
-
-       allocate( x (ism:iem+shift,jsm:jem  ,nz,ntile_per_pe) )
-       allocate( y (ism:iem  ,jsm:jem+shift,nz,ntile_per_pe) )
-       allocate( x1(ism:iem+shift,jsm:jem  ,nz,ntile_per_pe) )
-       allocate( x2(ism:iem+shift,jsm:jem  ,nz,ntile_per_pe) )
-       allocate( x3(ism:iem+shift,jsm:jem  ,nz,ntile_per_pe) )
-       allocate( x4(ism:iem+shift,jsm:jem  ,nz,ntile_per_pe) )
-       allocate( y1(ism:iem  ,jsm:jem+shift,nz,ntile_per_pe) )
-       allocate( y2(ism:iem  ,jsm:jem+shift,nz,ntile_per_pe) )
-       allocate( y3(ism:iem  ,jsm:jem+shift,nz,ntile_per_pe) )
-       allocate( y4(ism:iem  ,jsm:jem+shift,nz,ntile_per_pe) )
-    else if(type == 'Tripolar-Grid' ) then
-       global1(1:nx+shift,1:ny+shift,:,:) = global1_all(:,:,:,:)
-       global2(1:nx+shift,1:ny+shift,:,:) = global2_all(:,:,:,:)
-    end if
+    else if( folded_north ) then
+       call fill_folded_north_halo(global1(:,:,:,1), 1, 0, shift, 0, -1)
+       call fill_folded_north_halo(global2(:,:,:,1), 0, 1, 0, shift, -1)
+    else if(folded_south_sym ) then
+       call fill_folded_south_halo(global1(:,:,:,1), 1, 0, shift, 0, -1)
+       call fill_folded_south_halo(global2(:,:,:,1), 0, 1, 0, shift, -1)
+    else if(folded_west_sym ) then
+       call fill_folded_west_halo(global1(:,:,:,1), 1, 0, shift, 0, -1)
+       call fill_folded_west_halo(global2(:,:,:,1), 0, 1, 0, shift, -1)
+    else if(folded_east_sym ) then
+       call fill_folded_east_halo(global1(:,:,:,1), 1, 0, shift, 0, -1)
+       call fill_folded_east_halo(global2(:,:,:,1), 0, 1, 0, shift, -1)
+    endif
     x = 0.; y = 0.
     x (isc:iec+shift,jsc:jec  ,:,:) = global1(isc:iec+shift,jsc:jec  ,:,:)
     y (isc:iec  ,jsc:jec+shift,:,:) = global2(isc:iec  ,jsc:jec+shift,:,:)
@@ -1016,24 +1159,26 @@ contains
     id = mpp_clock_id( type//' vector CGRID_NE', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
     type2 = type
     do n = 1, ntile_per_pe
-       if( type == 'Cubic-Grid' ) then    
+       if( cubic_grid ) then    
           call fill_cubic_grid_halo(global1(:,:,:,n), global1_all, global2_all, tile(n), 1, 0, 1, -1 )
           call fill_cubic_grid_halo(global2(:,:,:,n), global2_all, global1_all, tile(n), 0, 1, -1, 1 )
-       else if( type == 'Tripolar-Grid' ) then
-          global1(1-whalo:0,              1:ny,:,:) =  global1(nx-whalo+1:nx,                1:ny,:,:)
-          global1(nx+1:nx+ehalo,          1:ny,:,:) =  global1(1:ehalo,                      1:ny,:,:)
-          global2(1-whalo:0,              1:ny,:,:) =  global2(nx-whalo+1:nx,                1:ny,:,:)
-          global2(nx+1:nx+ehalo,          1:ny,:,:) =  global2(1:ehalo,                      1:ny,:,:)
-          global1(1-whalo:-1,    ny+1:ny+nhalo,:,:) = -global1(whalo-1:1:-1,     ny:ny-nhalo+1:-1,:,:)
-          global1(0:nx-1,        ny+1:ny+nhalo,:,:) = -global1(nx:1:-1,          ny:ny-nhalo+1:-1,:,:)
-          global1(nx:nx+ehalo,   ny+1:ny+nhalo,:,:) = -global1(nx:nx-ehalo:-1,   ny:ny-nhalo+1:-1,:,:)
-          global2(1-whalo:0,     ny+1:ny+nhalo,:,:) = -global2(whalo:1:-1,       ny-1:ny-nhalo:-1,:,:)
-          global2(1:nx,          ny+1:ny+nhalo,:,:) = -global2(nx:1:-1,          ny-1:ny-nhalo:-1,:,:)
-          global2(nx+1:nx+ehalo, ny+1:ny+nhalo,:,:) = -global2(nx:nx-ehalo+1:-1, ny-1:ny-nhalo:-1,:,:)
+       else if( folded_north ) then
           !redundant points must be equal and opposite
           global2(nx/2+1:nx,     ny+shift,:,:) = -global2(nx/2:1:-1, ny+shift,:,:)
           global2(1-whalo:0,     ny+shift,:,:) = -global2(nx-whalo+1:nx, ny+shift,:,:)
           global2(nx+1:nx+ehalo, ny+shift,:,:) = -global2(1:ehalo,       ny+shift,:,:)
+       else if( folded_south_sym ) then
+          global2(nx/2+1:nx,     1,:,:) = -global2(nx/2:1:-1, 1,:,:)
+          global2(1-whalo:0,     1,:,:) = -global2(nx-whalo+1:nx, 1, :,:)
+          global2(nx+1:nx+ehalo, 1,:,:) = -global2(1:ehalo,       1, :,:)
+       else if( folded_west_sym ) then
+          global1(1, ny/2+1:ny,     :,:) = -global1(1, ny/2:1:-1,     :,:)
+          global1(1, 1-shalo:0,     :,:) = -global1(1, ny-shalo+1:ny, :,:)
+          global1(1, ny+1:ny+nhalo, :,:) = -global1(1, 1:nhalo,       :,:)
+       else if( folded_east_sym ) then
+          global1(ny+shift, ny/2+1:ny,     :,:) = -global1(ny+shift, ny/2:1:-1,     :,:)
+          global1(ny+shift, 1-shalo:0,     :,:) = -global1(ny+shift, ny-shalo+1:ny, :,:)
+          global1(ny+shift, ny+1:ny+nhalo, :,:) = -global1(ny+shift, 1:nhalo,       :,:)
        end if
 
        if(ntile_per_pe > 1) write(type2, *)type, " at tile_count = ",n
@@ -1044,8 +1189,10 @@ contains
           call mpp_update_domains( x(:,:,:,n),  y(:,:,:,n),  domain, gridtype=CGRID_NE, &
                name=type2//' vector CGRID_NE', tile_count = n)
        end if
-    call mpp_clock_end  (id)
+       call mpp_clock_end  (id)
     end do
+
+
 
     do n = 1, ntile_per_pe
        if(ntile_per_pe > 1) write(type2, *)type, " at tile_count = ",n
@@ -1073,7 +1220,7 @@ contains
        call compare_checksums( y4(isd:ied,jsd:jed+shift,:,1), global2(isd:ied,jsd:jed+shift,:,1), type//' CGRID_NE Y4')
 
        !--- arbitrary halo updates ---------------------------------------
-       if(type .NE. 'Tripolar-Grid' ) then
+       if(single_tile .or. four_tile .or. cubic_grid ) then
           allocate(local1(isd:ied+shift,jsd:jed,      nz) )     
           allocate(local2(isd:ied,      jsd:jed+shift,nz) )    
 
@@ -1157,7 +1304,85 @@ contains
        data(1-whalo:0,     ny+1:ny+nhalo, :) = data_all(nx-whalo+1:nx, 1:nhalo,       :,tne) ! northwest    
 
 
+
   end subroutine fill_regular_mosaic_halo
+
+  !################################################################################
+  subroutine fill_folded_north_halo(data, ioff, joff, ishift, jshift, sign)
+    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+    integer,                              intent(in   ) :: ioff, joff, ishift, jshift, sign    
+    integer  :: nxp, nyp, m1, m2
+
+    nxp = nx+ishift
+    nyp = ny+jshift
+    m1 = ishift - ioff
+    m2 = 2*ishift - ioff
+
+    data(1-whalo:0,                  1:nyp,:) =      data(nx-whalo+1:nx,        1:ny+jshift,:) ! west
+    data(nx+1:nx+ehalo+ishift,       1:nyp,:) =      data(1:ehalo+ishift,       1:ny+jshift,:) ! east
+    data(1-whalo:m1,       nyp+1:nyp+nhalo,:) = sign*data(whalo+m2:1+ishift:-1, nyp-joff:nyp-nhalo-joff+1:-1,:)
+    data(m1+1:nx+m2,       nyp+1:nyp+nhalo,:) = sign*data(nx+ishift:1:-1,       nyp-joff:nyp-nhalo-joff+1:-1,:)
+    data(nx+m2+1:nxp+ehalo,nyp+1:nyp+nhalo,:) = sign*data(nx:nx-ehalo-m1+1:-1,  nyp-joff:nyp-nhalo-joff+1:-1,:)
+
+  end subroutine fill_folded_north_halo
+
+  !################################################################################
+  subroutine fill_folded_south_halo(data, ioff, joff, ishift, jshift, sign)
+    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+    integer,                              intent(in   ) :: ioff, joff, ishift, jshift, sign    
+    integer  :: nxp, nyp, m1, m2
+
+    nxp = nx+ishift
+    nyp = ny+jshift
+    m1 = ishift - ioff
+    m2 = 2*ishift - ioff
+
+
+    data(1-whalo:0,                  1:nyp,:) =      data(nx-whalo+1:nx,        1:nyp,:) ! west
+    data(nx+1:nx+ehalo+ishift,       1:nyp,:) =      data(1:ehalo+ishift,       1:nyp,:) ! east
+    data(1-whalo:m1,       1-shalo:0,:) = sign*data(whalo+m2:1+ishift:-1, shalo+jshift:1+jshift:-1,:)
+    data(m1+1:nx+m2,       1-shalo:0,:) = sign*data(nxp:1:-1,             shalo+jshift:1+jshift:-1,:)
+    data(nx+m2+1:nxp+ehalo,1-shalo:0,:) = sign*data(nx:nx-ehalo-m1+1:-1,  shalo+jshift:1+jshift:-1,:)
+
+  end subroutine fill_folded_south_halo
+
+  !################################################################################
+  subroutine fill_folded_west_halo(data, ioff, joff, ishift, jshift, sign)
+    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+    integer,                              intent(in   ) :: ioff, joff, ishift, jshift, sign    
+    integer  :: nxp, nyp, m1, m2
+
+    nxp = nx+ishift
+    nyp = ny+jshift
+    m1 = jshift - joff
+    m2 = 2*jshift - joff
+
+    data(1:nxp, 1-shalo:0, :)      = data(1:nxp, ny-shalo+1:ny, :) ! south
+    data(1:nxp, ny+1:nyp+nhalo, :) = data(1:nxp, 1:nhalo+jshift,:) ! north
+    data(1-whalo:0, 1-shalo:m1, :) = sign*data(whalo+ishift:1+ishift:-1, shalo+m2:1+jshift:-1,:)
+    data(1-whalo:0, m1+1:nx+m2, :) = sign*data(whalo+ishift:1+ishift:-1, nyp:1:-1, :)
+    data(1-whalo:0, ny+m2+1:nyp+nhalo,:) = sign*data(whalo+ishift:1+ishift:-1, ny:ny-nhalo-m1+1:-1,:)
+
+  end subroutine fill_folded_west_halo
+
+  !################################################################################
+  subroutine fill_folded_east_halo(data, ioff, joff, ishift, jshift, sign)
+    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+    integer,                              intent(in   ) :: ioff, joff, ishift, jshift, sign    
+    integer  :: nxp, nyp, m1, m2
+
+    nxp = nx+ishift
+    nyp = ny+jshift
+    m1 = jshift - joff
+    m2 = 2*jshift - joff
+
+    data(1:nxp, 1-shalo:0, :)      = data(1:nxp, ny-shalo+1:ny, :) ! south
+    data(1:nxp, ny+1:nyp+nhalo, :) = data(1:nxp, 1:nhalo+jshift,:) ! north
+    data(nxp+1:nxp+ehalo, 1-shalo:m1, :) = sign*data(nxp-ioff:nxp-ehalo-ioff+1:-1, shalo+m2:1+jshift:-1,:)
+    data(nxp+1:nxp+ehalo, m1+1:nx+m2, :) = sign*data(nxp-ioff:nxp-ehalo-ioff+1:-1, nyp:1:-1, :)
+    data(nxp+1:nxp+ehalo, ny+m2+1:nyp+nhalo,:) = sign*data(nxp-ioff:nxp-ehalo-ioff+1:-1, ny:ny-nhalo-m1+1:-1,:)
+
+  end subroutine fill_folded_east_halo
 
   !################################################################################
   subroutine fill_four_tile_bound(data_all, is, ie, js, je, ioff, joff, tile, &
@@ -1397,7 +1622,12 @@ contains
     allocate(layout2D(2,ntiles), global_indices(4,ntiles) )
 
     do n = 1, ntiles
-       global_indices(:,n) = indices
+       if(n==1) then
+          global_indices(:,n) = (/1,2*nx,1,2*ny/)
+       else
+          global_indices(:,n) = (/1,nx,1,ny/)
+       endif  
+!       global_indices(:,n) = indices
        layout2D(:,n)       = layout
     end do
 
@@ -3476,7 +3706,7 @@ contains
     real,    allocatable :: global1(:,:,:), global2(:,:,:), global(:,:,:)
     logical, allocatable :: maskmap(:,:)
     integer              :: shift, i, xhalo, yhalo
-    logical              :: is_symmetry
+    logical              :: is_symmetry, folded_south, folded_west, folded_east
     integer              :: is, ie, js, je, isd, ied, jsd, jed
 
     ! when testing maskmap option, nx*ny should be able to be divided by both npes and npes+1
@@ -3523,16 +3753,30 @@ contains
         global(nx+1:nx+ehalo,             1:ny,:) = global(1:ehalo,                   1:ny,:)
         global(1-whalo:nx+ehalo,     1-shalo:0,:) = global(1-whalo:nx+ehalo, ny-shalo+1:ny,:)
         global(1-whalo:nx+ehalo, ny+1:ny+nhalo,:) = global(1-whalo:nx+ehalo,       1:nhalo,:)
-    case( 'Folded', 'Folded symmetry' )
+    case( 'Folded-north', 'Folded-north symmetry' )
         call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
         call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo,   &
              shalo=shalo, nhalo=nhalo, xflags=CYCLIC_GLOBAL_DOMAIN, yflags=FOLD_NORTH_EDGE, &
              name=type, symmetry = is_symmetry  )
-        global(1-whalo:0,              1:ny,:) = global(nx-whalo+1:nx,                1:ny,:)
-        global(nx+1:nx+ehalo,          1:ny,:) = global(1:ehalo,                      1:ny,:)
-        global(1-whalo:0,     ny+1:ny+nhalo,:) = global(whalo:1:-1,       ny:ny-nhalo+1:-1,:)
-        global(1:nx,          ny+1:ny+nhalo,:) = global(nx:1:-1,          ny:ny-nhalo+1:-1,:)
-        global(nx+1:nx+ehalo, ny+1:ny+nhalo,:) = global(nx:nx-ehalo+1:-1, ny:ny-nhalo+1:-1,:)
+        call fill_folded_north_halo(global, 0, 0, 0, 0, 1)
+    case( 'Folded-south symmetry' )
+        call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
+        call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo,   &
+             shalo=shalo, nhalo=nhalo, xflags=CYCLIC_GLOBAL_DOMAIN, yflags=FOLD_SOUTH_EDGE, &
+             name=type, symmetry = is_symmetry  )
+        call fill_folded_south_halo(global, 0, 0, 0, 0, 1)
+    case( 'Folded-west symmetry' )
+        call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
+        call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo,   &
+             shalo=shalo, nhalo=nhalo, xflags=FOLD_WEST_EDGE, yflags=CYCLIC_GLOBAL_DOMAIN, &
+             name=type, symmetry = is_symmetry  )
+        call fill_folded_west_halo(global, 0, 0, 0, 0, 1)
+    case( 'Folded-east symmetry' )
+        call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
+        call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo,   &
+             shalo=shalo, nhalo=nhalo, xflags=FOLD_EAST_EDGE, yflags=CYCLIC_GLOBAL_DOMAIN, &
+             name=type, symmetry = is_symmetry  )
+        call fill_folded_east_halo(global, 0, 0, 0, 0, 1)
     case( 'Folded xy_halo' )
         call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
         call mpp_define_domains( (/1,nx,1,ny/), layout, domain, xhalo=xhalo, yhalo=yhalo,   &
@@ -3554,12 +3798,7 @@ contains
         if( mod(nx,layout(1)).NE.0 .OR. mod(ny,layout(2)).NE.0 )call mpp_error( FATAL, &
              'TEST_MPP_DOMAINS: test for masked domains needs (nx,ny) to divide evenly on npes+1 PEs.' )
         global(nx-nx/layout(1)+1:nx,ny-ny/layout(2)+1:ny,:) = 0
-        !then apply same folded logic as above
-        global(1-whalo:0,              1:ny,:) = global(nx-whalo+1:nx,1:ny,:)
-        global(nx+1:nx+ehalo,          1:ny,:) = global(1:ehalo,      1:ny,:)
-        global(1-whalo:0,     ny+1:ny+nhalo,:) = global(whalo:1:-1,       ny:ny-nhalo+1:-1,:)
-        global(1:nx,          ny+1:ny+nhalo,:) = global(nx:1:-1,          ny:ny-nhalo+1:-1,:)
-        global(nx+1:nx+ehalo, ny+1:ny+nhalo,:) = global(nx:nx-ehalo+1:-1, ny:ny-nhalo+1:-1,:)
+        call fill_folded_north_halo(global, 0, 0, 0, 0, 1)        
     case default
         call mpp_error( FATAL, 'TEST_MPP_DOMAINS: no such test: '//type )
     end select
@@ -3629,26 +3868,32 @@ contains
        allocate( x4(isd:ied+1,jsd:jed+1,nz) )
     endif
 
+    folded_south = .false.
+    folded_west  = .false.
+    folded_east  = .false.
     select case (type)
-    case ('Folded', 'Masked')
+    case ('Folded-north', 'Masked')
        !fill in folded north edge, cyclic east and west edge
-       global(1-whalo:0,            1:ny,:) =  global(nx-whalo+1:nx,              1:ny,:)
-       global(nx+1:nx+ehalo,        1:ny,:) =  global(1:ehalo,                    1:ny,:)
-       global(1-whalo:-1,  ny+1:ny+nhalo,:) = -global(whalo-1:1:-1,   ny-1:ny-nhalo:-1,:)
-       global(0:nx-1,      ny+1:ny+nhalo,:) = -global(nx:1:-1,        ny-1:ny-nhalo:-1,:)
-       global(nx:nx+ehalo, ny+1:ny+nhalo,:) = -global(nx:nx-ehalo:-1, ny-1:ny-nhalo:-1,:)
+       call fill_folded_north_halo(global, 1, 1, 0, 0, -1)     
     case ('Folded xy_halo')
        !fill in folded north edge, cyclic east and west edge
        global(1-xhalo:0,                  1:ny,:) =  global(nx-xhalo+1:nx,                     1:ny,:)
        global(nx+1:nx+xhalo,              1:ny,:) =  global(1:xhalo,                           1:ny,:)
        global(1-xhalo:nx+xhalo-1,ny+1:ny+yhalo,:) = -global(nx+xhalo-1:1-xhalo:-1,ny-1:ny-yhalo:-1,:)
        global(nx+xhalo,          ny+1:ny+yhalo,:) = -global(nx-xhalo,             ny-1:ny-yhalo:-1,:)
-    case ('Folded symmetry', 'Masked symmetry' )
-       global(1-whalo:0,               1:ny+1,:) =  global(nx-whalo+1:nx,             1:ny+1,:)
-       global(nx+1:nx+ehalo+1,         1:ny+1,:) =  global(1:ehalo+1,                 1:ny+1,:)
-       global(1-whalo:0,      ny+2:ny+nhalo+1,:) = -global(1+whalo:2:-1,    ny:ny-nhalo+1:-1,:)
-       global(1:nx+1,         ny+2:ny+nhalo+1,:) = -global(nx+1:1:-1,       ny:ny-nhalo+1:-1,:)
-       global(nx+2:nx+ehalo+1,ny+2:ny+nhalo+1,:) = -global(nx:nx+1-ehalo:-1,ny:ny-nhalo+1:-1,:) 
+    case ('Folded-north symmetry', 'Masked symmetry' )
+       call fill_folded_north_halo(global, 1, 1, 1, 1, -1)
+    case ('Folded-south symmetry' )
+       folded_south = .true.
+       call fill_folded_south_halo(global, 1, 1, 1, 1, -1)
+    case ('Folded-west symmetry' )
+       folded_west = .true.
+       call fill_folded_west_halo(global, 1, 1, 1, 1, -1)
+    case ('Folded-east symmetry' )
+       folded_east = .true.
+       call fill_folded_east_halo(global, 1, 1, 1, 1, -1)
+    case default
+        call mpp_error( FATAL, 'TEST_MPP_DOMAINS: no such test: '//type )
     end select
 
     x = 0.
@@ -3672,18 +3917,41 @@ contains
     call mpp_clock_end  (id)
 
     !redundant points must be equal and opposite
-    global(nx/2+shift,                ny+shift,:) = 0.  !pole points must have 0 velocity
-    global(nx+shift  ,                ny+shift,:) = 0.  !pole points must have 0 velocity
-    global(nx/2+1+shift:nx-1+shift,   ny+shift,:) = -global(nx/2-1+shift:1+shift:-1, ny+shift,:)
-    if(type == 'Folded xy_halo') then
-       global(1-xhalo:shift,             ny+shift,:) = -global(nx-xhalo+1:nx+shift,     ny+shift,:)
-       global(nx+1+shift:nx+xhalo+shift, ny+shift,:) = -global(1+shift:xhalo+shift,     ny+shift,:)
+
+    if(folded_south) then
+       global(nx/2+shift,                1,:) = 0.  !pole points must have 0 velocity
+       global(nx+shift  ,                1,:) = 0.  !pole points must have 0 velocity
+       global(nx/2+1+shift:nx-1+shift,   1,:) = -global(nx/2-1+shift:1+shift:-1, 1,:)
+       global(1-whalo:shift,             1,:) = -global(nx-whalo+1:nx+shift,     1,:)
+       global(nx+1+shift:nx+ehalo+shift, 1,:) = -global(1+shift:ehalo+shift,     1,:)
+       !--- the following will fix the +0/-0 problem on altix
+       if(shalo >0) global(shift,1,:) = 0.  !pole points must have 0 velocity
+    else if(folded_west) then
+       global(1, ny/2+shift, :) = 0. !pole points must have 0 velocity
+       global(1, ny+shift,   :) = 0. !pole points must have 0 velocity
+       global(1, ny/2+1+shift:ny-1+shift,   :) = -global(1, ny/2-1+shift:1+shift:-1, :)
+       global(1, 1-shalo:shift,             :) = -global(1, ny-shalo+1:ny+shift,     :)
+       global(1, ny+1+shift:ny+nhalo+shift, :) = -global(1, 1+shift:nhalo+shift,     :)
+    else if(folded_east) then
+       global(nx+shift, ny/2+shift, :) = 0. !pole points must have 0 velocity
+       global(nx+shift, ny+shift,   :) = 0. !pole points must have 0 velocity
+       global(nx+shift, ny/2+1+shift:ny-1+shift,   :) = -global(nx+shift, ny/2-1+shift:1+shift:-1, :)
+       global(nx+shift, 1-shalo:shift,             :) = -global(nx+shift, ny-shalo+1:ny+shift,     :)
+       global(nx+shift, ny+1+shift:ny+nhalo+shift, :) = -global(nx+shift, 1+shift:nhalo+shift,     :)
     else
-       global(1-whalo:shift,             ny+shift,:) = -global(nx-whalo+1:nx+shift,     ny+shift,:)
-       global(nx+1+shift:nx+ehalo+shift, ny+shift,:) = -global(1+shift:ehalo+shift,     ny+shift,:)
-    end if       
-    !--- the following will fix the +0/-0 problem on altix
-    if(nhalo >0) global(shift,ny+shift,:) = 0.  !pole points must have 0 velocity
+       global(nx/2+shift,                ny+shift,:) = 0.  !pole points must have 0 velocity
+       global(nx+shift  ,                ny+shift,:) = 0.  !pole points must have 0 velocity
+       global(nx/2+1+shift:nx-1+shift,   ny+shift,:) = -global(nx/2-1+shift:1+shift:-1, ny+shift,:)
+       if(type == 'Folded xy_halo') then
+          global(1-xhalo:shift,             ny+shift,:) = -global(nx-xhalo+1:nx+shift,     ny+shift,:)
+          global(nx+1+shift:nx+xhalo+shift, ny+shift,:) = -global(1+shift:xhalo+shift,     ny+shift,:)
+       else
+          global(1-whalo:shift,             ny+shift,:) = -global(nx-whalo+1:nx+shift,     ny+shift,:)
+          global(nx+1+shift:nx+ehalo+shift, ny+shift,:) = -global(1+shift:ehalo+shift,     ny+shift,:)
+       end if
+       !--- the following will fix the +0/-0 problem on altix
+       if(nhalo >0) global(shift,ny+shift,:) = 0.  !pole points must have 0 velocity
+    endif
 
     call compare_checksums( x,  global(isd:ied+shift,jsd:jed+shift,:), type//' BGRID_NE X' )
     call compare_checksums( y,  global(isd:ied+shift,jsd:jed+shift,:), type//' BGRID_NE Y' )
@@ -3736,18 +4004,10 @@ contains
     end if
 
     select case (type)
-    case ('Folded', 'Masked')
+    case ('Folded-north', 'Masked')
        !fill in folded north edge, cyclic east and west edge
-       global1(1-whalo:0,              1:ny,:) =  global1(nx-whalo+1:nx,                1:ny,:)
-       global1(nx+1:nx+ehalo,          1:ny,:) =  global1(1:ehalo,                      1:ny,:)
-       global2(1-whalo:0,              1:ny,:) =  global2(nx-whalo+1:nx,                1:ny,:)
-       global2(nx+1:nx+ehalo,          1:ny,:) =  global2(1:ehalo,                      1:ny,:)
-       global1(1-whalo:-1,    ny+1:ny+nhalo,:) = -global1(whalo-1:1:-1,     ny:ny-nhalo+1:-1,:)
-       global1(0:nx-1,        ny+1:ny+nhalo,:) = -global1(nx:1:-1,          ny:ny-nhalo+1:-1,:)
-       global1(nx:nx+ehalo,   ny+1:ny+nhalo,:) = -global1(nx:nx-ehalo:-1,   ny:ny-nhalo+1:-1,:)
-       global2(1-whalo:0,     ny+1:ny+nhalo,:) = -global2(whalo:1:-1,       ny-1:ny-nhalo:-1,:)
-       global2(1:nx,          ny+1:ny+nhalo,:) = -global2(nx:1:-1,          ny-1:ny-nhalo:-1,:)
-       global2(nx+1:nx+ehalo, ny+1:ny+nhalo,:) = -global2(nx:nx-ehalo+1:-1, ny-1:ny-nhalo:-1,:)
+       call fill_folded_north_halo(global1, 1, 0, 0, 0, -1)
+       call fill_folded_north_halo(global2, 0, 1, 0, 0, -1)
     case ('Folded xy_halo')
        global1(1-xhalo:0,                   1:ny,:) =  global1(nx-xhalo+1:nx,                     1:ny,:)
        global1(nx+1:nx+xhalo,               1:ny,:) =  global1(1:xhalo,                           1:ny,:)
@@ -3756,17 +4016,20 @@ contains
        global1(1-xhalo:nx+xhalo-1, ny+1:ny+yhalo,:) = -global1(nx+xhalo-1:1-xhalo:-1, ny:ny-yhalo+1:-1,:)
        global1(nx+xhalo,           ny+1:ny+yhalo,:) = -global1(nx-xhalo,              ny:ny-yhalo+1:-1,:)
        global2(1-xhalo:nx+xhalo,   ny+1:ny+yhalo,:) = -global2(nx+xhalo:1-xhalo:-1,   ny-1:ny-yhalo:-1,:)
-    case ('Folded symmetry')
-       global1(1-whalo:0,                1:ny,:) =  global1(nx-whalo+1:nx,                1:ny,:)
-       global1(nx+1:nx+ehalo+1,          1:ny,:) =  global1(1:ehalo+1,                    1:ny,:)
-       global2(1-whalo:0,              1:ny+1,:) =  global2(nx-whalo+1:nx,              1:ny+1,:)
-       global2(nx+1:nx+ehalo,          1:ny+1,:) =  global2(1:ehalo,                    1:ny+1,:)
-       global1(1-whalo:0,       ny+1:ny+nhalo,:) = -global1(1+whalo:2:-1,     ny:ny-nhalo+1:-1,:)
-       global1(1:nx+1,          ny+1:ny+nhalo,:) = -global1(nx+1:1:-1,        ny:ny-nhalo+1:-1,:)
-       global1(nx+2:nx+ehalo+1, ny+1:ny+nhalo,:) = -global1(nx:nx+1-ehalo:-1, ny:ny-nhalo+1:-1,:)
-       global2(1-whalo:0,     ny+2:ny+nhalo+1,:) = -global2(whalo:1:-1,       ny:ny-nhalo+1:-1,:)
-       global2(1:nx,          ny+2:ny+nhalo+1,:) = -global2( nx:1:-1,         ny:ny-nhalo+1:-1,:)
-       global2(nx+1:nx+ehalo, ny+2:ny+nhalo+1,:) = -global2(nx:nx-ehalo+1:-1, ny:ny-nhalo+1:-1,:)
+    case ('Folded-north symmetry')
+       call fill_folded_north_halo(global1, 1, 0, 1, 0, -1)
+       call fill_folded_north_halo(global2, 0, 1, 0, 1, -1)
+    case ('Folded-south symmetry')
+       call fill_folded_south_halo(global1, 1, 0, 1, 0, -1)
+       call fill_folded_south_halo(global2, 0, 1, 0, 1, -1)
+    case ('Folded-west symmetry')
+       call fill_folded_west_halo(global1, 1, 0, 1, 0, -1)
+       call fill_folded_west_halo(global2, 0, 1, 0, 1, -1)
+    case ('Folded-east symmetry')
+       call fill_folded_east_halo(global1, 1, 0, 1, 0, -1)
+       call fill_folded_east_halo(global2, 0, 1, 0, 1, -1)
+    case default
+        call mpp_error( FATAL, 'TEST_MPP_DOMAINS: no such test: '//type )
     end select
 
     x = 0.; y = 0.
@@ -3785,14 +4048,28 @@ contains
     call mpp_clock_end  (id)
 
     !redundant points must be equal and opposite
-    global2(nx/2+1:nx,     ny+shift,:) = -global2(nx/2:1:-1, ny+shift,:)
-    if(type == 'Folded xy_halo') then
-       global2(1-xhalo:0,     ny+shift,:) = -global2(nx-xhalo+1:nx, ny+shift,:)
-       global2(nx+1:nx+xhalo, ny+shift,:) = -global2(1:xhalo,       ny+shift,:)
+    if(folded_south) then
+       global2(nx/2+1:nx,     1,:) = -global2(nx/2:1:-1, 1,:)
+       global2(1-whalo:0,     1,:) = -global2(nx-whalo+1:nx, 1, :)
+       global2(nx+1:nx+ehalo, 1,:) = -global2(1:ehalo,       1, :)
+    else if(folded_west) then
+       global1(1, ny/2+1:ny,     :) = -global1(1, ny/2:1:-1,     :)
+       global1(1, 1-shalo:0,     :) = -global1(1, ny-shalo+1:ny, :)
+       global1(1, ny+1:ny+nhalo, :) = -global1(1, 1:nhalo,       :)
+    else if(folded_east) then
+       global1(ny+shift, ny/2+1:ny,     :) = -global1(ny+shift, ny/2:1:-1,     :)
+       global1(ny+shift, 1-shalo:0,     :) = -global1(ny+shift, ny-shalo+1:ny, :)
+       global1(ny+shift, ny+1:ny+nhalo, :) = -global1(ny+shift, 1:nhalo,       :)
     else
-       global2(1-whalo:0,     ny+shift,:) = -global2(nx-whalo+1:nx, ny+shift,:)
-       global2(nx+1:nx+ehalo, ny+shift,:) = -global2(1:ehalo,       ny+shift,:)
-    end if
+       global2(nx/2+1:nx,     ny+shift,:) = -global2(nx/2:1:-1, ny+shift,:)
+       if(type == 'Folded xy_halo') then
+          global2(1-xhalo:0,     ny+shift,:) = -global2(nx-xhalo+1:nx, ny+shift,:)
+          global2(nx+1:nx+xhalo, ny+shift,:) = -global2(1:xhalo,       ny+shift,:)
+       else
+          global2(1-whalo:0,     ny+shift,:) = -global2(nx-whalo+1:nx, ny+shift,:)
+          global2(nx+1:nx+ehalo, ny+shift,:) = -global2(1:ehalo,       ny+shift,:)
+       end if
+    endif
 
     call compare_checksums( x,  global1(isd:ied+shift,jsd:jed,      :), type//' CGRID_NE X' )
     call compare_checksums( y,  global2(isd:ied,      jsd:jed+shift,:), type//' CGRID_NE Y' )

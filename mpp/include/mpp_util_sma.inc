@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util_sma.inc,v 16.0 2008/07/30 22:47:22 fms Exp $
+! $Id: mpp_util_sma.inc,v 17.0 2009/07/21 03:21:04 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -15,7 +15,7 @@ subroutine mpp_error_basic( errortype, errormsg )
   character(len=*), intent(in), optional :: errormsg
   character(len=256) :: text
   logical :: opened
-  integer :: istat
+  integer :: istat, errunit, outunit
 
   if( .NOT.module_is_initialized )call ABORT()
 
@@ -33,18 +33,20 @@ subroutine mpp_error_basic( errortype, errormsg )
   if( npes.GT.1 )write( text,'(a,i5)' )trim(text)//' from PE', pe   !this is the mpp part
   if( PRESENT(errormsg) )text = trim(text)//': '//trim(errormsg)
 
+  outunit = stdout()
+  errunit = stderr()
   select case( errortype )
   case(NOTE)
-     write( stdout(),'(a)' )trim(text)
+     write( outunit,'(a)' )trim(text)
   case default
 #ifdef __SX
-     write( stderr(), * )trim(text)
+     write( errunit, * )trim(text)
 #else
-     write( stderr(),'(/a/)' )trim(text)
+     write( errunit,'(/a/)' )trim(text)
 #endif
-     write( stdout(),'(/a/)' )trim(text)
+     write( outunit,'(/a/)' )trim(text)
      if( errortype.EQ.FATAL .OR. warnings_are_fatal )then
-        call FLUSH(stdout(),istat)
+        call FLUSH(outunit,istat)
 #ifdef sgi_mipspro
         call TRACE_BACK_STACK_AND_PRINT()
 #endif
@@ -66,7 +68,7 @@ function get_peset(pelist)
   !if stride is non-uniform or not a power of 2, will return error (not required for MPI but enforced for uniformity)
   integer, intent(in), optional :: pelist(:)
   integer :: group
-  integer :: i, n, stride
+  integer :: i, n, stride, errunit
   integer, allocatable :: sorted(:)
 
   if( .NOT.PRESENT(pelist) )then !set it to current_peset_num
@@ -75,13 +77,18 @@ function get_peset(pelist)
   if( size(pelist(:)).EQ.1 .AND. npes.GT.1 )then    !collective ops on single PEs should return
      get_peset = 0; return
   end if
-  !make a sorted list
-  n = 1
-  if( ascend_sort(pelist).NE.1 )call mpp_error( FATAL, 'GET_PESET: sort error.' )   !result is the array sorted(:)
-  if( debug )write( stderr(),* )'pelist=', pelist, ' sorted=', sorted
+  errunit = stderr()
+  !--- first make sure pelist is monotonically increasing.
+  do n = 2, size(pelist(:))
+     if(pelist(n) <= pelist(n-1)) call mpp_error(FATAL, "GET_PESET: pelist is not monotonically increasing")
+  enddo
+  allocate( sorted(size(pelist(:))) )
+  sorted = pelist 
+  if( debug )write( errunit,* )'pelist=', pelist
+
   !find if this array matches any existing peset
   do i = 1,peset_num
-     if( debug )write( stderr(),'(a,3i4)' )'pe, i, peset_num=', pe, i, peset_num
+     if( debug )write( errunit,'(a,3i6)' )'pe, i, peset_num=', pe, i, peset_num
      if( size(sorted(:)).EQ.size(peset(i)%list(:)) )then
         if( ALL(sorted.EQ.peset(i)%list) )then
            deallocate(sorted)
@@ -98,6 +105,7 @@ function get_peset(pelist)
   peset(i)%list(:) = sorted(:)
   peset(i)%count = size(sorted(:))
   peset(i)%start = sorted(1)
+  n = size(sorted(:))
   if( size(sorted(:)).GT.1 )then
      stride = sorted(2)-sorted(1)
      if( ANY(sorted(2:n)-sorted(1:n-1).NE.stride) ) &
@@ -113,26 +121,6 @@ function get_peset(pelist)
 
   return
 
-contains
-
-  recursive function ascend_sort(a) result(a_sort)
-    integer :: a_sort
-    integer, intent(in) :: a(:)
-    integer :: b, i
-    if( size(a(:)).EQ.1 .OR. ALL(a.EQ.a(1)) )then
-       allocate( sorted(n) )
-       sorted(n) = a(1)
-       a_sort = n
-       return
-    end if
-    b = minval(a)
-    n = n + 1
-    i = ascend_sort( pack(a(:),mask=a(:).NE.b) )
-    a_sort = i - 1
-    sorted(i-1) = b
-    return
-  end function ascend_sort
-
 end function get_peset
 
 
@@ -143,7 +131,7 @@ end function get_peset
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-subroutine mpp_sync( pelist )
+subroutine mpp_sync( pelist)
   !synchronize PEs in list
   integer, intent(in), optional :: pelist(:)
   integer :: n
@@ -182,11 +170,13 @@ end subroutine mpp_sync
 !  </DESCRIPTION>
 !  <IN NAME="pelist" TYPE="integer" DIM="(:)"></IN>
 ! </SUBROUTINE>
-subroutine mpp_sync_self( pelist )
+subroutine mpp_sync_self( pelist, check )
   !this is to check if current PE's outstanding puts are complete
   !but we can't use shmem_fence because we are actually waiting for
   !a remote PE to complete its get
   integer, intent(in), optional :: pelist(:)
+  integer, intent(in), optional :: check
+
   integer :: i, m, n, stride
 
   n = get_peset(pelist); if( peset(n)%count.EQ.1 )return

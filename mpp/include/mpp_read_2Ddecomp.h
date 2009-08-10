@@ -33,16 +33,19 @@
       integer :: is, ie, js, je, isd, ied, jsd, jed, isg, ieg, jsg, jeg, ism, iem, jsm, jem
       integer :: ioff, joff, position
 
+      call mpp_clock_begin(mpp_read_clock)
+      
       if (.NOT. present(tindex) .AND. mpp_file(unit)%time_level .ne. -1) &
       call mpp_error(FATAL, 'MPP_READ: need to specify a time level for data with time axis')
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_READ: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_READ: invalid unit number.' )
 
-      call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
-      call mpp_get_data_domain   ( domain, isd, ied, jsd, jed, x_is_global=x_is_global, y_is_global=y_is_global )
+      call mpp_get_compute_domain( domain, is,  ie,  js,  je, tile_count=tile_count )
+      call mpp_get_data_domain   ( domain, isd, ied, jsd, jed, x_is_global=x_is_global, &
+                                   y_is_global=y_is_global, tile_count=tile_count )
       call mpp_get_memory_domain ( domain, ism, iem, jsm, jem )
-      call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg )
+      call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg, tile_count=tile_count )
 
       ! when domain is symmetry, extra point is needed for some data on x/y direction
       position = CENTER
@@ -129,6 +132,8 @@
       else
           call read_record(unit,field,size(data(:,:,:)),data,tindex,domain,position,tile_count)
       end if
+
+      call mpp_clock_end(mpp_read_clock)
 
       return
     end subroutine MPP_READ_2DDECOMP_3D_

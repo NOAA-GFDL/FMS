@@ -4,7 +4,7 @@
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    subroutine MPP_TRANSMIT_( put_data, put_len, to_pe, get_data, get_len, from_pe )
+    subroutine MPP_TRANSMIT_( put_data, put_len, to_pe, get_data, get_len, from_pe, block )
 !a message-passing routine intended to be reminiscent equally of both MPI and SHMEM
 
 !put_data and get_data are contiguous MPP_TYPE_ arrays
@@ -26,15 +26,17 @@
       integer, intent(in) :: put_len, to_pe, get_len, from_pe
       MPP_TYPE_, intent(in)  :: put_data(*)
       MPP_TYPE_, intent(out) :: get_data(*)
-      integer :: i
+      logical, intent(in), optional :: block
+      integer :: i, outunit
       MPP_TYPE_, allocatable, save :: local_data(:) !local copy used by non-parallel code (no SHMEM or MPI)
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_TRANSMIT: You must first call mpp_init.' )
       if( to_pe.EQ.NULL_PE .AND. from_pe.EQ.NULL_PE )return
       
+      outunit = stdout()
       if( debug )then
           call SYSTEM_CLOCK(tick)
-          write( stdout(),'(a,i18,a,i5,a,2i5,2i8)' )&
+          write( outunit,'(a,i18,a,i5,a,2i5,2i8)' )&
                'T=',tick, ' PE=',pe, ' MPP_TRANSMIT begin: to_pe, from_pe, put_len, get_len=', to_pe, from_pe, put_len, get_len
       end if
 
@@ -90,7 +92,7 @@
 
       if( debug )then
           call SYSTEM_CLOCK(tick)
-          write( stdout(),'(a,i18,a,i5,a,2i5,2i8)' )&
+          write( outunit,'(a,i18,a,i5,a,2i5,2i8)' )&
                'T=',tick, ' PE=',pe, ' MPP_TRANSMIT end: to_pe, from_pe, put_len, get_len=', to_pe, from_pe, put_len, get_len
       end if
       return

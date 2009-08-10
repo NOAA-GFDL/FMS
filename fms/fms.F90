@@ -271,8 +271,8 @@ integer, public :: clock_flag_default
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: fms.F90,v 16.0 2008/07/30 22:45:29 fms Exp $'
-  character(len=128) :: tagname = '$Name: perth_2008_10 $'
+  character(len=128) :: version = '$Id: fms.F90,v 17.0 2009/07/21 03:19:19 fms Exp $'
+  character(len=128) :: tagname = '$Name: quebec $'
 
   logical :: module_is_initialized = .FALSE.
 
@@ -398,8 +398,9 @@ subroutine fms_init (localcomm )
 
     call write_version_number (version, tagname)
     if (mpp_pe() == mpp_root_pe()) then
-      write (stdlog(), nml=fms_nml)
-      write (stdlog(),*) 'nml_error_codes=', nml_error_codes(1:num_nml_error_codes)
+      unit = stdlog()
+      write (unit, nml=fms_nml)
+      write (unit,*) 'nml_error_codes=', nml_error_codes(1:num_nml_error_codes)
     endif
 
     call memutils_init( print_memory_usage )

@@ -111,7 +111,7 @@ contains
     integer, intent(in), optional :: commID
 
     integer :: npes, my_commID
-    integer :: i, j, k
+    integer :: i, j, k, out_unit
     integer, allocatable :: my_pelist(:), root_pelist(:)
 
     call mpp_init()
@@ -120,6 +120,7 @@ contains
 #ifdef PSET_DEBUG
     verbose=.TRUE.
 #endif
+    out_unit = stdout()
     pe = mpp_pe()
     if(present(pelist)) then
        npes = size(pelist(:))
@@ -127,7 +128,7 @@ contains
        npes = mpp_npes()
     endif
     if( mod(npes,npset).NE.0 )then
-        write( text,'(a,2i4)' ) &
+        write( text,'(a,2i6)' ) &
              'MPP_PSET_CREATE: PSET size (npset) must divide npes exactly:'// &
              ' npset, npes=', npset, npes
         call mpp_error( FATAL, text )
@@ -147,8 +148,7 @@ contains
     do i = 0,npes/npset-1
        root_pelist(i) = my_pelist(npset*i)
     enddo
-!    write( stdlog(),'(a,i4)' )'MPP_PSET_CREATE creating PSETs... npset=', npset
-    write( stdout(),'(a,i4)' )'MPP_PSET_CREATE creating PSETs... npset=', npset
+    write( out_unit,'(a,i6)' )'MPP_PSET_CREATE creating PSETs... npset=', npset
     if(ANY(my_pelist == pe) ) then
     if( pset%initialized )call mpp_error( FATAL, &
          'MPP_PSET_CREATE: PSET already initialized!' )     
@@ -188,7 +188,7 @@ contains
     pset%hiWM = 0 !initialize hi-water-mark
     pset%maxstack = 1000000 !default
     if( PRESENT(stacksize) )pset%maxstack = stacksize
-    write( stdout(),'(a,i8)' ) &
+    write( out_unit,'(a,i8)' ) &
          'MPP_PSET_CREATE: setting stacksize=', pset%maxstack
     if( pset%root )then
         allocate( pset%stack(pset%maxstack) )
@@ -203,16 +203,18 @@ contains
     call mpp_declare_pelist(root_pelist)
 
     if( verbose )then
-        write( stderr(),'(a,4i4)' )'MPP_PSET_CREATE: pe, root, next, prev=', &
+        write( stderr(),'(a,4i6)' )'MPP_PSET_CREATE: pe, root, next, prev=', &
              pe, pset%root_in_pset, pset%next_in_pset, pset%prev_in_pset
         write( stderr(),* )'PE ', pe, ' pset=', pset%pset(:)
-        write( stdout(),* )'root pelist=', pset%root_pelist(:)
+        write( out_unit,* )'root pelist=', pset%root_pelist(:)
     end if
   end subroutine mpp_pset_create
 
   subroutine mpp_pset_delete(pset)
     type(mpp_pset_type), intent(inout) :: pset
+    integer :: out_unit
 
+    out_unit = stdout()
     if( .NOT.pset%initialized )call mpp_error( FATAL, &
          'MPP_PSET_DELETE: called with uninitialized PSET.' )
 !deallocate arrays...
@@ -220,7 +222,7 @@ contains
     deallocate( pset%root_pelist )
     deallocate( pset%pset )
     if( pset%root )deallocate( pset%stack )
-    write( stdout(), '(a,i10)' ) &
+    write( out_unit, '(a,i10)' ) &
          'Deleting PSETs... stack high-water-mark=', pset%hiWM
 !... and set status flag
     pset%initialized = .FALSE.
@@ -425,7 +427,7 @@ contains
          'MPP_PSET_SEGMENT_ARRAY: called with uninitialized PSET.' )
 #ifdef PSET_DEBUG
     if( le-ls+1.LT.pset%npset )then
-        write( text,'(3(a,i4))' ) &
+        write( text,'(3(a,i6))' ) &
              'MPP_PSET_ARRAY_SEGMENT: parallel range (', ls, ',', le, &
              ') is smaller than the number of threads:', pset%npset
         call mpp_error( WARNING, text )
@@ -595,7 +597,7 @@ contains
     if( .NOT.pset%initialized )call mpp_error( FATAL, &
          'MPP_PSET_GET_ROOT_PELIST: called with uninitialized PSET.' )
     if( size(pelist).NE.size(pset%root_pelist) )then
-        write( text,'(a,2i4)' ) &
+        write( text,'(a,2i6)' ) &
              'pelist argument has wrong size: requested, actual=', &
              size(pelist), size(pset%root_pelist)
         call mpp_error( FATAL, 'MPP_PSET_GET_ROOT_PELIST: '//text )

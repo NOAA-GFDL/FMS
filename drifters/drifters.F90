@@ -1,5 +1,5 @@
 !FDOC_TAG_GFDL fdoc.pl generated xml skeleton
-! $Id: drifters.F90,v 14.0 2007/03/15 22:38:38 fms Exp $
+! $Id: drifters.F90,v 17.0 2009/07/21 03:19:00 fms Exp $
 
 #include <fms_platform.h>
 #include "fms_switches.h"
@@ -110,7 +110,7 @@ module drifters_mod
   public :: drifters_print_checksums, drifters_save, drifters_write_restart, drifters_distribute
 
   integer, parameter, private :: MAX_STR_LEN = 128
-  character(len=MAX_STR_LEN), parameter, private :: version = '$Id: drifters.F90,v 14.0 2007/03/15 22:38:38 fms Exp $'
+  character(len=MAX_STR_LEN), parameter, private :: version = '$Id: drifters.F90,v 17.0 2009/07/21 03:19:00 fms Exp $'
   real :: DRFT_EMPTY_ARRAY(0)
 
   type drifters_type
@@ -208,7 +208,7 @@ contains
     character(len=*), intent(out) :: ermesg
     
     integer nd, nf, npdim, i
-    character(len=4) :: pe_str
+    character(len=6) :: pe_str
 
     ermesg = ''
 
@@ -230,7 +230,7 @@ contains
 
     ! one output file per PE
     pe_str = '    '
-    write(pe_str, '(i4)') _MPP_PE
+    write(pe_str, '(i6)') _MPP_PE
     pe_str = adjustr(pe_str)
     do i = 1, 4
        if(pe_str(i:i)==' ') pe_str(i:i)='0'
@@ -1191,12 +1191,12 @@ contains
        chksum_tot = chksum_pos + chksum_k1 + chksum_k2 + chksum_k3 +chksum_k4
 
        print *,'==============drifters checksums=========================='
-       print '(a,i25,a,i4,a,e15.7)','==positions: ', chksum_pos,  ' PE=', me, ' time = ', self%time
-       print '(a,i25,a,i4,a,e15.7)','==k1       : ', chksum_k1,   ' PE=', me, ' time = ', self%time
-       print '(a,i25,a,i4,a,e15.7)','==k2       : ', chksum_k2,   ' PE=', me, ' time = ', self%time
-       print '(a,i25,a,i4,a,e15.7)','==k3       : ', chksum_k3,   ' PE=', me, ' time = ', self%time
-       print '(a,i25,a,i4,a,e15.7)','==k4       : ', chksum_k4,   ' PE=', me, ' time = ', self%time
-       print '(a,i25,a,i4,a,e15.7)','==total    : ', chksum_tot,  ' PE=', me, ' time = ', self%time
+       print '(a,i25,a,i6,a,e15.7)','==positions: ', chksum_pos,  ' PE=', me, ' time = ', self%time
+       print '(a,i25,a,i6,a,e15.7)','==k1       : ', chksum_k1,   ' PE=', me, ' time = ', self%time
+       print '(a,i25,a,i6,a,e15.7)','==k2       : ', chksum_k2,   ' PE=', me, ' time = ', self%time
+       print '(a,i25,a,i6,a,e15.7)','==k3       : ', chksum_k3,   ' PE=', me, ' time = ', self%time
+       print '(a,i25,a,i6,a,e15.7)','==k4       : ', chksum_k4,   ' PE=', me, ' time = ', self%time
+       print '(a,i25,a,i6,a,e15.7)','==total    : ', chksum_tot,  ' PE=', me, ' time = ', self%time
 
     endif
 

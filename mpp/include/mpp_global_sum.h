@@ -72,7 +72,7 @@
                 gsum(domain%tile_id(n)) = mygsum(n)
              end do
              !--- send the data to other pe if the current pe is the root pe of any tile
-             if( mpp_domain_is_root_pe(domain) ) then
+             if( mpp_domain_is_tile_root_pe(domain) ) then
                 do list = 1, nlist - 1
                    m = mod( domain%pos+list, nlist )
                    call mpp_send( mygsum(1), plen=ntile, to_pe=domain%list(m)%pe )
@@ -82,7 +82,7 @@
              !--- receive data from root_pe of each tile
              do list = 1, nlist - 1
                 m = mod( domain%pos+nlist-list, nlist )
-                if( mpp_domain_is_root_pe(domain%list(m)) ) then
+                if( mpp_domain_is_tile_root_pe(domain%list(m)) ) then
                     call mpp_recv( nbrgsum(1), glen=size(domain%list(m)%x(:)), from_pe=domain%list(m)%pe)
                     do n = 1, size(domain%list(m)%x(:))
                        gsum(domain%list(m)%tile_id(n)) = nbrgsum(n)

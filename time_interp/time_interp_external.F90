@@ -49,8 +49,8 @@ module time_interp_external_mod
   private
 
   character(len=128), private :: version= &
-   'CVS $Id: time_interp_external.F90,v 15.0 2007/08/14 04:15:46 fms Exp $'
-  character(len=128), private :: tagname='Tag $Name: perth_2008_10 $'
+   'CVS $Id: time_interp_external.F90,v 17.0 2009/07/21 03:21:49 fms Exp $'
+  character(len=128), private :: tagname='Tag $Name: quebec $'
 
   integer, parameter, private :: max_fields = 1, modulo_year= 0001,max_files= 1
   integer, parameter, private :: LINEAR_TIME_INTERP = 1 ! not used currently
@@ -97,6 +97,7 @@ module time_interp_external_mod
   end type filetype
 
   interface time_interp_external
+     module procedure time_interp_external_0d
      module procedure time_interp_external_2d
      module procedure time_interp_external_3d
   end interface
@@ -115,7 +116,7 @@ module time_interp_external_mod
 !
     subroutine time_interp_external_init()
 
-      integer :: ioun, io_status
+      integer :: ioun, io_status, logunit
 
       namelist /time_interp_external_nml/ num_io_buffers, debug_this_module
 
@@ -123,12 +124,13 @@ module time_interp_external_mod
 
       if(module_initialized) return
       
-      write(stdlog(),'(/a/)') version
-      write(stdlog(),'(/a/)') tagname
+      logunit = stdlog()
+      write(logunit,'(/a/)') version
+      write(logunit,'(/a/)') tagname
 
       call mpp_open(ioun,'input.nml',action=MPP_RDONLY,form=MPP_ASCII)
       read(ioun,time_interp_external_nml,iostat=io_status)
-      write(stdlog(),time_interp_external_nml)
+      write(logunit,time_interp_external_nml)
       if (io_status .gt. 0) then
          call mpp_error(FATAL,'=>Error reading time_interp_external_nml')
       endif
@@ -211,7 +213,7 @@ module time_interp_external_mod
       type(atttype), allocatable, dimension(:) :: global_atts
       
       real(DOUBLE_KIND) :: slope, intercept
-      integer :: form, thread, fset, unit,ndim,nvar,natt,ntime,i,j
+      integer :: form, thread, fset, unit,ndim,nvar,natt,ntime,i,j, outunit
       integer :: iscomp,iecomp,jscomp,jecomp,isglobal,ieglobal,jsglobal,jeglobal
       integer :: isdata,iedata,jsdata,jedata, dxsize, dysize,dxsize_max,dysize_max
       logical :: verb, transpose_xy,use_comp_domain1
@@ -282,6 +284,10 @@ module time_interp_external_mod
       allocate(tstamp(ntime),tstart(ntime),tend(ntime),tavg(ntime))
       call mpp_get_times(unit,tstamp)
       transpose_xy = .false.     
+      isdata=1; iedata=1; jsdata=1; jedata=1
+      gxsize=1; gysize=1
+      siz_in = 1
+
       if (PRESENT(domain)) then
          call mpp_get_compute_domain(domain,iscomp,iecomp,jscomp,jecomp)
          nx = iecomp-iscomp+1; ny = jecomp-jscomp+1
@@ -295,6 +301,7 @@ module time_interp_external_mod
       init_external_field = -1
       nfields_orig = num_fields
 
+      outunit = stdout()
       do i=1,nvar
          call mpp_get_atts(flds(i),name=name,units=fld_units,ndim=ndim,siz=siz_in)
          call mpp_get_tavg_info(unit,flds(i),flds,tstamp,tstart,tend,tavg)
@@ -302,7 +309,7 @@ module time_interp_external_mod
          ! why does it convert case of the field name?
          if (trim(lowercase(name)) /= trim(lowercase(fieldname))) cycle
 
-         if (verb) write(stdout(),*) 'found field ',trim(fieldname), ' in file !!'
+         if (verb) write(outunit,*) 'found field ',trim(fieldname), ' in file !!'
          num_fields = num_fields + 1
          if(num_fields > size(field)) &
               call realloc_fields(size(field)*2)
@@ -311,6 +318,10 @@ module time_interp_external_mod
          field(num_fields)%name = trim(name)
          field(num_fields)%units = trim(fld_units)
          field(num_fields)%field = flds(i)
+         field(num_fields)%isc = 1
+         field(num_fields)%iec = 1
+         field(num_fields)%jsc = 1
+         field(num_fields)%jec = 1
          if (PRESENT(domain)) then
             field(num_fields)%domain_present = .true.
             field(num_fields)%domain = domain
@@ -323,8 +334,8 @@ module time_interp_external_mod
          call mpp_get_atts(flds(i),valid=field(num_fields)%valid )
          allocate(fld_axes(ndim))
          call mpp_get_atts(flds(i),axes=fld_axes)
-         if (ndim < 2 .or. ndim > 4) call mpp_error(FATAL, &
-              'invalid array rank only 2-4d fields supported')
+         if (ndim > 4) call mpp_error(FATAL, &
+              'invalid array rank <=4d fields supported')
          field(num_fields)%siz = 1
          field(num_fields)%ndim = ndim
          do j=1,field(num_fields)%ndim
@@ -399,8 +410,8 @@ module time_interp_external_mod
          endif
          
          deallocate(fld_axes)
-         if (verb) write(stdout(),'(a,4i6)') 'field x,y,z,t local size= ',siz
-         if (verb) write(stdout(),*) 'field contains data in units = ',trim(field(num_fields)%units)
+         if (verb) write(outunit,'(a,4i6)') 'field x,y,z,t local size= ',siz
+         if (verb) write(outunit,*) 'field contains data in units = ',trim(field(num_fields)%units)
          if (transpose_xy) call mpp_error(FATAL,'axis ordering not supported')
          if (num_io_buffers == -1) then
             nbuf = min(siz(4),2)                 
@@ -415,8 +426,8 @@ module time_interp_external_mod
          slope=1.0;intercept=0.0
 !             if (units /= 'same') call convert_units(trim(field(num_fields)%units),trim(units),slope,intercept)
 !             if (verb.and.units /= 'same') then
-!                 write(stdout(),*) 'attempting to convert data to units = ',trim(units)
-!                 write(stdout(),'(a,f8.3,a,f8.3)') 'factor = ',slope,' offset= ',intercept
+!                 write(outunit,*) 'attempting to convert data to units = ',trim(units)
+!                 write(outunit,'(a,f8.3,a,f8.3)') 'factor = ',slope,' offset= ',intercept
 !             endif
          field(num_fields)%slope = slope
          field(num_fields)%intercept = intercept
@@ -424,9 +435,9 @@ module time_interp_external_mod
          field(num_fields)%ibuf = -1
          field(num_fields)%nbuf =  0 ! initialize buffer number so that first reading fills data(:,:,:,1)
          if(PRESENT(override)) then
-            allocate(field(num_fields)%buf3d(gxsize,gysize,siz_in(3)))
+            allocate(field(num_fields)%buf3d(gxsize,gysize,siz(3)))
          else
-            allocate(field(num_fields)%buf3d(isdata:iedata,jsdata:jedata,siz_in(3)))
+            allocate(field(num_fields)%buf3d(isdata:iedata,jsdata:jedata,siz(3)))
          endif
          
          allocate(field(num_fields)%time(ntime))
@@ -519,17 +530,17 @@ module time_interp_external_mod
          field(num_fields)%modulo_time = get_axis_modulo(time_axis)
              
          if (verb) then
-            if (field(num_fields)%modulo_time) write(stdout(),*) 'data are being treated as modulo in time'
+            if (field(num_fields)%modulo_time) write(outunit,*) 'data are being treated as modulo in time'
             do j= 1, ntime
-               write(stdout(),*) 'time index,  ', j
+               write(outunit,*) 'time index,  ', j
                call get_date(field(num_fields)%start_time(j),yr,mon,day,hr,minu,sec)
-               write(stdout(),'(a,i4,a,i2,a,i2,1x,i2,a,i2,a,i2)') &
+               write(outunit,'(a,i4,a,i2,a,i2,1x,i2,a,i2,a,i2)') &
                     'start time: yyyy/mm/dd hh:mm:ss= ',yr,'/',mon,'/',day,hr,':',minu,':',sec
                call get_date(field(num_fields)%time(j),yr,mon,day,hr,minu,sec)
-               write(stdout(),'(a,i4,a,i2,a,i2,1x,i2,a,i2,a,i2)') &
+               write(outunit,'(a,i4,a,i2,a,i2,1x,i2,a,i2,a,i2)') &
                     'mid time: yyyy/mm/dd hh:mm:ss= ',yr,'/',mon,'/',day,hr,':',minu,':',sec
                call get_date(field(num_fields)%end_time(j),yr,mon,day,hr,minu,sec)
-               write(stdout(),'(a,i4,a,i2,a,i2,1x,i2,a,i2,a,i2)') &
+               write(outunit,'(a,i4,a,i2,a,i2,1x,i2,a,i2,a,i2)') &
                     'end time: yyyy/mm/dd hh:mm:ss= ',yr,'/',mon,'/',day,hr,':',minu,':',sec                  
             enddo
          end if
@@ -613,7 +624,7 @@ module time_interp_external_mod
       logical, dimension(:,:,:), intent(out), optional :: mask_out ! set to true where output data is valid 
       
       integer :: nx, ny, nz, interp_method, t1, t2
-      integer :: i1, i2, isc, iec, jsc, jec, mod_time
+      integer :: i1, i2, isc, iec, jsc, jec, mod_time, outunit
       integer :: yy, mm, dd, hh, min, ss
 
       integer :: isu, ieu, jsu, jeu 
@@ -629,6 +640,7 @@ module time_interp_external_mod
       nx = size(data,1)
       ny = size(data,2)
       nz = size(data,3)
+      outunit = stdout()
 
       interp_method = LINEAR_TIME_INTERP
       if (PRESENT(interp)) interp_method = interp
@@ -687,9 +699,9 @@ module time_interp_external_mod
          w1 = 1.0-w2
          if (verb) then
             call get_date(time,yy,mm,dd,hh,min,ss)
-            write(stdout(),'(a,i4,a,i2,a,i2,1x,i2,a,i2,a,i2)') &
+            write(outunit,'(a,i4,a,i2,a,i2,1x,i2,a,i2,a,i2)') &
                  'target time yyyy/mm/dd hh:mm:ss= ',yy,'/',mm,'/',dd,hh,':',min,':',ss
-            write(stdout(),*) 't1, t2, w1, w2= ', t1, t2, w1, w2
+            write(outunit,*) 't1, t2, w1, w2= ', t1, t2, w1, w2
          endif
          call load_record(field(index),t1,horz_interp)
          call load_record(field(index),t2,horz_interp)
@@ -700,8 +712,8 @@ module time_interp_external_mod
               call mpp_error(FATAL,'time_interp_external : records were not loaded correctly in memory')
 
          if (verb) then
-            write(stdout(),*) 'ibuf= ',field(index)%ibuf
-            write(stdout(),*) 'i1,i2= ',i1, i2
+            write(outunit,*) 'ibuf= ',field(index)%ibuf
+            write(outunit,*) 'i1,i2= ',i1, i2
          endif
 
          where(field(index)%mask(isc:iec,jsc:jec,:,i1).and.field(index)%mask(isc:iec,jsc:jec,:,i2))
@@ -719,6 +731,68 @@ module time_interp_external_mod
     end subroutine time_interp_external_3d
 !</SUBROUTINE> NAME="time_interp_external"
     
+    subroutine time_interp_external_0d(index, time, data, verbose)
+
+      integer, intent(in) :: index
+      type(time_type), intent(in) :: time
+      real, intent(inout) :: data
+      logical, intent(in), optional :: verbose
+      
+      integer :: t1, t2, outunit
+      integer :: i1, i2, mod_time
+      integer :: yy, mm, dd, hh, min, ss
+
+      real :: w1,w2
+      logical :: verb
+
+      outunit = stdout()
+      verb=.false.
+      if (PRESENT(verbose)) verb=verbose
+      if (debug_this_module) verb = .true.
+      
+      if (index < 1.or.index > num_fields) &
+           call mpp_error(FATAL,'invalid index in call to time_interp_ext -- field was not initialized or failed to initialize')
+     
+      if (field(index)%siz(4) == 1) then
+         ! only one record in the file => time-independent field
+         call load_record(field(index),1)
+         i1 = find_buf_index(1,field(index)%ibuf)
+         data = field(index)%data(1,1,1,i1)
+      else
+        if(field(index)%have_modulo_times) then
+          call time_interp(time,field(index)%modulo_time_beg, field(index)%modulo_time_end, field(index)%time(:), &
+                          w2, t1, t2, field(index)%correct_leap_year_inconsistency)
+        else
+          if(field(index)%modulo_time) then
+            mod_time=1
+          else
+            mod_time=0
+          endif
+          call time_interp(time,field(index)%time(:),w2,t1,t2,modtime=mod_time)
+        endif
+         w1 = 1.0-w2
+         if (verb) then
+            call get_date(time,yy,mm,dd,hh,min,ss)
+            write(outunit,'(a,i4,a,i2,a,i2,1x,i2,a,i2,a,i2)') &
+                 'target time yyyy/mm/dd hh:mm:ss= ',yy,'/',mm,'/',dd,hh,':',min,':',ss
+            write(outunit,*) 't1, t2, w1, w2= ', t1, t2, w1, w2
+         endif
+         call load_record(field(index),t1)
+         call load_record(field(index),t2)
+         i1 = find_buf_index(t1,field(index)%ibuf)
+         i2 = find_buf_index(t2,field(index)%ibuf)
+
+         if(i1<0.or.i2<0) &
+              call mpp_error(FATAL,'time_interp_external : records were not loaded correctly in memory')
+         data = field(index)%data(1,1,1,i1)*w1 + field(index)%data(1,1,1,i2)*w2
+         if (verb) then
+            write(outunit,*) 'ibuf= ',field(index)%ibuf
+            write(outunit,*) 'i1,i2= ',i1, i2
+         endif
+      endif
+
+    end subroutine time_interp_external_0d
+
     subroutine set_time_modulo(Time)
 
       type(time_type), intent(inout), dimension(:) :: Time
@@ -747,21 +821,22 @@ subroutine load_record(field, rec, interp)
   ! ---- local vars 
   integer :: ib ! index in the array of input buffers
   integer :: isc,iec,jsc,jec ! boundaries of the domain
+  integer :: outunit
   real    :: mask_in(size(field%buf3d,1),size(field%buf3d,2),size(field%buf3d,3))
   real    :: mask_out(field%isc:field%iec,field%jsc:field%jec,size(field%buf3d,3))
 
+  outunit = stdout()
   ib = find_buf_index(rec,field%ibuf)
   if(ib>0) then
      ! do nothing, since field is already in memory
-  else
+  else 
      isc=field%isc;iec=field%iec
      jsc=field%jsc;jec=field%jec
-
      if (field%domain_present.and..not.PRESENT(interp)) then
-        if (debug_this_module) write(stdout(),*) 'reading record with domain for field ',trim(field%name)
+        if (debug_this_module) write(outunit,*) 'reading record with domain for field ',trim(field%name)
         call mpp_read(field%unit,field%field,field%domain,field%buf3d,rec)
      else
-        if (debug_this_module) write(stdout(),*) 'reading record without domain for field ',trim(field%name)
+        if (debug_this_module) write(outunit,*) 'reading record without domain for field ',trim(field%name)
         call mpp_read(field%unit,field%field,field%buf3d,rec)
      endif
 
@@ -1005,7 +1080,7 @@ type(axistype) :: Axis_centers(4), Axis_bounds(4)
 real :: lon_out(180,89), lat_out(180,89)
 real, allocatable, dimension(:,:) :: lon_local_out, lat_local_out
 real, allocatable, dimension(:) :: lon_in, lat_in
-integer :: isc_o, iec_o, jsc_o, jec_o
+integer :: isc_o, iec_o, jsc_o, jec_o, outunit
 
 namelist /test_time_interp_ext_nml/ filename, fieldname,ntime,year0,month0,&
      day0,days_inc, cal_type
@@ -1020,7 +1095,8 @@ call horiz_interp_init
 
 call mpp_open(unit,'input.nml',action=MPP_RDONLY,form=MPP_ASCII)
 read(unit,test_time_interp_ext_nml,iostat=io_status)
-write(stdlog(),test_time_interp_ext_nml)
+outunit = stdlog()
+write(outunit,test_time_interp_ext_nml)
 if (io_status .gt. 0) then
    call mpp_error(FATAL,'=>Error reading test_time_interp_ext_nml')
 endif
@@ -1036,8 +1112,9 @@ case default
    call mpp_error(FATAL,'invalid calendar type')
 end select
 
-write(stdout(),*) 'INTERPOLATING NON DECOMPOSED FIELDS'
-write(stdout(),*) '======================================'
+outunit = stdout()
+write(outunit,*) 'INTERPOLATING NON DECOMPOSED FIELDS'
+write(outunit,*) '======================================'
 
 call time_interp_external_init
 
@@ -1055,9 +1132,9 @@ do i=1,ntime
    sm = sum(data_g)
    mn = minval(data_g)
    mx = maxval(data_g)
-   write(stdout(),*) 'sum= ', sm
-   write(stdout(),*) 'max= ', mx
-   write(stdout(),*) 'min= ', mn
+   write(outunit,*) 'sum= ', sm
+   write(outunit,*) 'max= ', mx
+   write(outunit,*) 'min= ', mn
    time = increment_time(time,0,days_inc)
 enddo
 
@@ -1070,8 +1147,8 @@ call mpp_domains_set_stack_size(fld_size(1)*fld_size(2)*min(fld_size(3),1)*2)
 allocate(data_d(isd:ied,jsd:jed,fld_size(3)))
 data_d = 0
 
-write(stdout(),*) 'INTERPOLATING DOMAIN DECOMPOSED FIELDS'
-write(stdout(),*) '======================================'
+write(outunit,*) 'INTERPOLATING DOMAIN DECOMPOSED FIELDS'
+write(outunit,*) '======================================'
 
 id = init_external_field(filename,fieldname,domain=domain, verbose=.true.)
 
@@ -1082,14 +1159,14 @@ do i=1,ntime
    sm = mpp_global_sum(domain,data_d,flags=BITWISE_EXACT_SUM)
    mx = mpp_global_max(domain,data_d)
    mn = mpp_global_min(domain,data_d)
-   write(stdout(),*) 'global sum= ', sm
-   write(stdout(),*) 'global max= ', mx
-   write(stdout(),*) 'global min= ', mn
+   write(outunit,*) 'global sum= ', sm
+   write(outunit,*) 'global max= ', mx
+   write(outunit,*) 'global min= ', mn
    time = increment_time(time,0,days_inc)
 enddo
 
-write(stdout(),*) 'INTERPOLATING DOMAIN DECOMPOSED FIELDS USING HORIZ INTERP'
-write(stdout(),*) '======================================'
+write(outunit,*) 'INTERPOLATING DOMAIN DECOMPOSED FIELDS USING HORIZ INTERP'
+write(outunit,*) '======================================'
 
 
 ! define a global 2 degree output grid
@@ -1138,9 +1215,9 @@ do i=1,ntime
    sm = mpp_global_sum(domain_out,data_d,flags=BITWISE_EXACT_SUM)
    mx = mpp_global_max(domain_out,data_d)
    mn = mpp_global_min(domain_out,data_d)
-   write(stdout(),*) 'global sum= ', sm
-   write(stdout(),*) 'global max= ', mx
-   write(stdout(),*) 'global min= ', mn
+   write(outunit,*) 'global sum= ', sm
+   write(outunit,*) 'global max= ', mx
+   write(outunit,*) 'global min= ', mn
    
    where(mask_d) 
       data_d = 1.0
@@ -1148,7 +1225,7 @@ do i=1,ntime
       data_d = 0.0
    endwhere
    sm = mpp_global_sum(domain_out,data_d,flags=BITWISE_EXACT_SUM)
-   write(stdout(),*) 'n valid points= ', sm
+   write(outunit,*) 'n valid points= ', sm
    
    time = increment_time(time,0,days_inc)
 enddo

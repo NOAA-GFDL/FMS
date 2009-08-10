@@ -6,7 +6,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_( f_addrs, domain, b_addrs, bsize, ke, d_type,
   integer,            intent(in)  :: bsize(:), ke
   MPP_TYPE_, intent(in)           :: d_type  ! creates unique interface
   integer, intent(in)             :: flags
-  
+
   MPP_TYPE_ :: field(domain%x(1)%memory%begin:domain%x(1)%memory%end, domain%y(1)%memory%begin:domain%y(1)%memory%end,ke)
   MPP_TYPE_ :: ebuffer(bsize(1), ke), sbuffer(bsize(2), ke), wbuffer(bsize(3), ke), nbuffer(bsize(4), ke)
   pointer(ptr_field, field)
@@ -17,7 +17,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_( f_addrs, domain, b_addrs, bsize, ke, d_type,
 
   logical                 :: recv(4), send(4)
   integer                 :: nlist, buffer_pos, list, pos, tMe
-  integer                 :: i, j, k, l, m, n, index
+  integer                 :: i, j, k, l, m, n, index, buffer_recv_size
   integer                 :: is, ie, js, je, msgsize, l_size
   character(len=8)        :: text
   type(boundary), pointer :: bound => NULL()
@@ -37,6 +37,33 @@ subroutine MPP_DO_GET_BOUNDARY_3D_( f_addrs, domain, b_addrs, bsize, ke, d_type,
 
   nlist = size(domain%list(:))  
   buffer_pos = 0     
+
+  !recv
+  do list = 0,nlist-1
+     m = mod( domain%pos+nlist-list, nlist )
+     bound=>domain%bound%recv(m)
+     if( bound%count == 0) cycle
+     msgsize = 0
+     do n = 1, bound%count
+        if(recv(bound%dir(n))) then
+           is = bound%is(n); ie = bound%ie(n)
+           js = bound%js(n); je = bound%je(n)
+           msgsize = msgsize + (ie-is+1)*(je-js+1)
+        end if
+     end do
+     msgsize = msgsize*ke*l_size
+     if( msgsize.GT.0 )then
+        mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize) )
+        if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
+           write( text,'(i8)' )mpp_domains_stack_hwm
+           call mpp_error( FATAL, 'MPP_DO_GET_BOUNDARY_OLD: mpp_domains_stack overflow, '// &
+                'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+        end if
+        call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=domain%list(m)%pe, block=.false. )
+        buffer_pos = buffer_pos + msgsize
+     end if
+  end do
+  buffer_recv_size = buffer_pos
 
   ! send
   do list = 0,nlist-1
@@ -116,31 +143,10 @@ subroutine MPP_DO_GET_BOUNDARY_3D_( f_addrs, domain, b_addrs, bsize, ke, d_type,
      end if
   end do
 
-  !recv
-  do list = 0,nlist-1
-     m = mod( domain%pos+nlist-list, nlist )
-     bound=>domain%bound%recv(m)
-     if( bound%count == 0) cycle
-     msgsize = 0
-     do n = 1, bound%count
-        if(recv(bound%dir(n))) then
-           is = bound%is(n); ie = bound%ie(n)
-           js = bound%js(n); je = bound%je(n)
-           msgsize = msgsize + (ie-is+1)*(je-js+1)
-        end if
-     end do
-     msgsize = msgsize*ke*l_size
-     if( msgsize.GT.0 )then
-        mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize) )
-        if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
-           write( text,'(i8)' )mpp_domains_stack_hwm
-           call mpp_error( FATAL, 'MPP_DO_GET_BOUNDARY_OLD: mpp_domains_stack overflow, '// &
-                'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
-        end if
-        call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=domain%list(m)%pe )
-        buffer_pos = buffer_pos + msgsize
-     end if
-  end do
+  call mpp_clock_begin(wait_clock)
+  call mpp_sync_self(check=EVENT_RECV)
+  call mpp_clock_end(wait_clock)
+  buffer_pos = buffer_recv_size  
 
   !unpack recv
   !unpack buffer in reverse order.

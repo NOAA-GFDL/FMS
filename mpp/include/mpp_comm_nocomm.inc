@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_nocomm.inc,v 16.0 2008/07/30 22:46:22 fms Exp $
+! $Id: mpp_comm_nocomm.inc,v 17.0 2009/07/21 03:19:56 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -13,7 +13,7 @@ subroutine mpp_init( flags,localcomm )
   integer, optional, intent(in) :: flags
   integer, optional, intent(in) :: localcomm ! dummy here, used only in MPI
   integer                       :: my_pe, num_pes, len, i, logunit
-  logical                       :: opened
+  logical                       :: opened, existed
 
   if( module_is_initialized )return
 
@@ -48,9 +48,14 @@ subroutine mpp_init( flags,localcomm )
   inquire(unit=etc_unit,opened=opened)
   if(opened) call mpp_error(FATAL,'Unit 9 is already in use (etc_unit) in mpp_comm_nocomm')
   if (trim(etcfile) /= '/dev/null') then
-    write( etcfile,'(a,i4.4)' )trim(etcfile)//'.', pe
+    write( etcfile,'(a,i6.6)' )trim(etcfile)//'.', pe
   endif
-  open( unit=etc_unit, file=trim(etcfile), status='REPLACE' )
+  inquire(file=etcfile, exist=existed)
+  if(existed) then
+     open( unit=etc_unit, file=trim(etcfile), status='REPLACE' )
+  else
+     open( unit=etc_unit, file=trim(etcfile) )
+  endif
   !if optional argument logunit=stdout, write messages to stdout instead.
   !if specifying non-defaults, you must specify units not yet in use.
   !      if( PRESENT(in) )then
@@ -88,9 +93,9 @@ subroutine mpp_init( flags,localcomm )
   !messages
   if( verbose )call mpp_error( NOTE, 'MPP_INIT: initializing MPP module...' )
   if( pe.EQ.root_pe )then
-logunit = stdlog()
+     logunit = stdlog()
      write( logunit,'(/a)' )'MPP module '//trim(version)//trim(tagname)
-     write( logunit,'(a,i4)' )'MPP started with NPES=', npes
+     write( logunit,'(a,i6)' )'MPP started with NPES=', npes
      write( logunit,'(a)' )'Using no library for message passing...'
      write( logunit, '(a26,es12.4,a6,i10,a11)' ) &
           'Realtime clock resolution=', tick_rate, ' sec (', ticks_per_sec, ' ticks/sec)'
@@ -105,7 +110,7 @@ end subroutine mpp_init
 !#######################################################################
   !to be called at the end of a run
 subroutine mpp_exit()
-  integer :: i, j, k, n, nmax, istat
+  integer :: i, j, k, n, nmax, istat, out_unit
   real    :: t, tmin, tmax, tavg, tstd
   real    :: m, mmin, mmax, mavg, mstd, t_total
   logical :: opened
@@ -114,19 +119,20 @@ subroutine mpp_exit()
   call mpp_set_current_pelist()
   call mpp_clock_end(clock0)
   t_total = clocks(clock0)%total_ticks*tick_rate
+  out_unit = stdout()
   if( clock_num.GT.0 )then
      if( ANY(clocks(1:clock_num)%detailed) )then
         call sum_clock_data; call dump_clock_summary
      end if
      if( pe.EQ.root_pe )then
-        write( stdout(),'(/a,i4,a)' ) 'Tabulating mpp_clock statistics across ', npes, ' PEs...'
+        write( out_unit,'(/a,i6,a)' ) 'Tabulating mpp_clock statistics across ', npes, ' PEs...'
         if( ANY(clocks(1:clock_num)%detailed) ) &
-             write( stdout(),'(a)' )'   ... see mpp_clock.out.#### for details on individual PEs.'
-        write( stdout(),'(/32x,a)' ) '          tmin          tmax          tavg          tstd  tfrac grain pemin pemax'
+             write( out_unit,'(a)' )'   ... see mpp_clock.out.#### for details on individual PEs.'
+        write( out_unit,'(/32x,a)' ) '          tmin          tmax          tavg          tstd  tfrac grain pemin pemax'
      else
-        write( stdout(),'(/37x,a)' ) 'time'
+        write( out_unit,'(/37x,a)' ) 'time'
      end if
-     call FLUSH( stdout(), istat )
+     call FLUSH( out_unit, istat )
      call mpp_sync()
      do i = 1,clock_num
         if( .NOT.ANY(peset(clocks(i)%peset_num)%list(:).EQ.pe) )cycle
@@ -137,13 +143,13 @@ subroutine mpp_exit()
         tmax = t; call mpp_max(tmax)
         tavg = t; call mpp_sum(tavg); tavg = tavg/mpp_npes()
         tstd = (t-tavg)**2; call mpp_sum(tstd); tstd = sqrt( tstd/mpp_npes() )
-        if( pe.EQ.root_pe )write( stdout(),'(a32,4f14.6,f7.3,3i6)' ) &
+        if( pe.EQ.root_pe )write( out_unit,'(a32,4f14.6,f7.3,3i6)' ) &
              clocks(i)%name, tmin, tmax, tavg, tstd, tavg/t_total, &
              clocks(i)%grain, minval(peset(clocks(i)%peset_num)%list), &
              maxval(peset(clocks(i)%peset_num)%list)
-        if (pe.NE.root_pe) write(stdout(),'(a32,f14.6)') clocks(i)%name, clocks(i)%total_ticks*tick_rate
+        if (pe.NE.root_pe) write(out_unit,'(a32,f14.6)') clocks(i)%name, clocks(i)%total_ticks*tick_rate
      end do
-     if( ANY(clocks(1:clock_num)%detailed) .AND. pe.EQ.root_pe )write( stdout(),'(/32x,a)' ) &
+     if( ANY(clocks(1:clock_num)%detailed) .AND. pe.EQ.root_pe )write( out_unit,'(/32x,a)' ) &
           '       tmin       tmax       tavg       tstd       mmin       mmax       mavg       mstd  mavg/tavg'
 
      do i = 1,clock_num
@@ -166,7 +172,7 @@ subroutine mpp_exit()
               tmax = t; call mpp_max(tmax)
               tavg = t; call mpp_sum(tavg); tavg = tavg/mpp_npes()
               tstd = (t-tavg)**2; call mpp_sum(tstd); tstd = sqrt( tstd/mpp_npes() )
-              if( pe.EQ.root_pe )write( stdout(),'(a32,4f11.3,5es11.3)' ) &
+              if( pe.EQ.root_pe )write( out_unit,'(a32,4f11.3,5es11.3)' ) &
                    trim(clocks(i)%name)//' '//trim(clocks(i)%events(j)%name), &
                    tmin, tmax, tavg, tstd, mmin, mmax, mavg, mstd, mavg/tavg
            end if
@@ -184,7 +190,7 @@ subroutine mpp_exit()
   call mpp_set_current_pelist()
   call mpp_sync()
   call mpp_max(mpp_stack_hwm)
-  if( pe.EQ.root_pe )write( stdout(),* )'MPP_STACK high water mark=', mpp_stack_hwm
+  if( pe.EQ.root_pe )write( out_unit,* )'MPP_STACK high water mark=', mpp_stack_hwm
 
   return
 end subroutine mpp_exit

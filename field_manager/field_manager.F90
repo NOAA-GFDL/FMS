@@ -174,8 +174,8 @@ implicit none
 private
 
 
-character(len=128) :: version = '$Id: field_manager.F90,v 16.0.4.1 2008/09/03 18:17:08 z1l Exp $'
-character(len=128) :: tagname = '$Name: perth_2008_10 $'
+character(len=128) :: version = '$Id: field_manager.F90,v 17.0 2009/07/21 03:19:13 fms Exp $'
+character(len=128) :: tagname = '$Name: quebec $'
 logical            :: module_is_initialized  = .false.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -244,8 +244,8 @@ private :: make_list           ! (list_p, name) return field pointer
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        Public parameters
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-integer, parameter, public :: fm_field_name_len = 32
-! <DATA NAME="fm_field_name_len" TYPE="integer, parameter" DEFAULT="32">
+integer, parameter, public :: fm_field_name_len = 48
+! <DATA NAME="fm_field_name_len" TYPE="integer, parameter" DEFAULT="48">
 !   The length of a character string representing the field name.
 ! </DATA>
 integer, parameter, public :: fm_path_name_len  = 512
@@ -457,7 +457,7 @@ integer,           parameter :: MAX_FIELD_METHODS = 150
 
 type, private :: field_type !{
   character(len=fm_field_name_len)                    :: field_type
-  character(len=fm_field_name_len)                    :: field_name
+  character(len=fm_string_len)                    :: field_name
   integer                                             :: model, num_methods
   type(method_type)                                   :: methods(MAX_FIELD_METHODS)
 end type field_type !}
@@ -465,7 +465,7 @@ end type field_type !}
 type, private :: field_names_type !{
   character(len=fm_field_name_len)                    :: fld_type
   character(len=fm_field_name_len)                    :: mod_name
-  character(len=fm_field_name_len)                    :: fld_name
+  character(len=fm_string_len)                    :: fld_name
 end  type field_names_type !}
 
 type, private :: field_names_type_short !{
@@ -586,6 +586,7 @@ integer                          :: icount
 integer                          :: index_list_name
 integer                          :: iunit
 integer                          :: l
+integer                          :: log_unit
 integer                          :: ltrec
 integer                          :: m
 integer                          :: midcont
@@ -634,10 +635,10 @@ endif
 call mpp_open(iunit,file=trim(tbl_name), form=MPP_ASCII, action=MPP_RDONLY)
 !write_version_number should precede all writes to stdlog from field_manager
 call write_version_number (version, tagname)
-
+log_unit = stdlog()
 do while (.TRUE.)
    read(iunit,'(a)',end=89,err=99) record
-   write( stdlog(),'(a)' )record
+   write( log_unit,'(a)' )record
    if (record(1:1) == "#" ) cycle
    ltrec =  LEN_TRIM(record)
    if (ltrec .le. 0 ) cycle ! Blank line
@@ -978,9 +979,11 @@ do i=1,num_fields-1
   if ( fields(i)%field_type == fields(num_fields)%field_type .and. &
        fields(i)%model      == fields(num_fields)%model      .and. &
        fields(i)%field_name == fields(num_fields)%field_name ) then
-    call mpp_error(FATAL,'Error in field_manager_mod. Duplicate field name: Field type='//trim(fields(i)%field_type)// &
-        ',  Model='//trim(MODEL_NAMES(fields(i)%model))// &
-        ',  Duplicated name='//trim(fields(i)%field_name))
+    if (mpp_pe() .eq. mpp_root_pe()) then
+      call mpp_error(WARNING,'Error in field_manager_mod. Duplicate field name: Field type='//trim(fields(i)%field_type)// &
+         ',  Model='//trim(MODEL_NAMES(fields(i)%model))// &
+         ',  Duplicated name='//trim(fields(i)%field_name))
+    endif
   endif
 enddo
 
@@ -1042,12 +1045,14 @@ integer                        :: i
 integer                        :: index_t
 integer                        :: left_br
 integer                        :: num_elem
+integer                        :: out_unit
 integer                        :: right_br
 integer                        :: val_int
 integer                        :: val_type
 logical                        :: append_new
 logical                        :: val_logic
 real                           :: val_real
+integer                        :: length
 
 call strip_front_blanks(val_name_in)
 method_name = trim (method_name_in)
@@ -1108,7 +1113,7 @@ endif
 
 do i = 1, num_elem
 
-  if ( i .gt. 1 ) then
+  if ( i .gt. 1 .or. index_t .eq. 0 ) then
     append_new = .true.
     index_t = 0 ! If append is true then index must be <= 0
   endif  
@@ -1117,81 +1122,111 @@ do i = 1, num_elem
   call strip_front_blanks(val_name)
 
 
+!
+!       if the string starts and ends with matching single quotes, then this is a string
+!       if there are quotes which do not match, then this is an error
+!
+
+  length = len_trim(val_name)
+  if (val_name(1:1) .eq. squote) then  !{
+
+    if (val_name(length:length) .eq. squote) then
+      val_name = val_name(2:length-1)
+      val_type = string_type
+    elseif (val_name(length:length) .eq. dquote) then
+      call mpp_error(FATAL, trim(error_header) // ' Quotes do not match in ' // trim(val_name) //       &
+           ' for ' // trim(method_name) // ' of ' // trim(list_name))
+    else
+      call mpp_error(FATAL, trim(error_header) // ' No trailing quote in ' // trim(val_name) //         &
+           ' for ' // trim(method_name) // ' of ' // trim(list_name))
+    endif
+
+  elseif (val_name(1:1) .eq. dquote .or. val_name(length:length) .eq. dquote) then  !}{
+
+    call mpp_error(FATAL, trim(error_header) // ' Double quotes not allowed in ' // trim(val_name) //   &
+         ' for ' // trim(method_name) // ' of ' // trim(list_name))
+
+  elseif (val_name(length:length) .eq. squote) then  !}{
+
+    call mpp_error(FATAL, trim(error_header) // ' No leading quote in ' // trim(val_name) //            &
+         ' for ' // trim(method_name) // ' of ' // trim(list_name))
+
+  else  !}{
 ! If the string to be parsed is a real then all the characters must be numeric, 
 ! be a plus/minus, be a decimal point or, for exponentials, be e or E.
 
 ! If a string is an integer, then all the characters must be numeric.
 
-  if ( scan(val_name(1:1), setnum ) > 0 ) then
+  if ( scan(val_name(1:1), setnum ) > 0 ) then  
 
 ! If there is a letter in the name it may only be e or E
 
-    if ( scan(val_name, set_nonexp ) > 0 ) then
-      if (verb .gt. verb_level_warn) then
+      if ( scan(val_name, set_nonexp ) > 0 ) then
+        if (verb .gt. verb_level_warn) then
 !     <ERROR MSG="First character of value is numerical but the value does not appear to be numerical." STATUS="WARNING">
 !       The value may not be numerical. This is a warning as the user may wish to use a value of 2nd_order.
 !     </ERROR>
-        call mpp_error(WARNING, trim(warn_header)//                                  &
-             'First character of value is numerical but the value does not appear to be numerical.')
-        call mpp_error(WARNING, 'Name = '// trim(list_name)// list_sep//                &
-             trim(method_name)// ' Value = '// trim(val_name))
+          call mpp_error(WARNING, trim(warn_header)//                                  &
+               'First character of value is numerical but the value does not appear to be numerical.')
+          call mpp_error(WARNING, 'Name = '// trim(list_name)// list_sep//                &
+               trim(method_name)// ' Value = '// trim(val_name))
+        endif
+
+      else
+! It is real if there is a . in the name or the value appears exponential
+        if ( scan(val_name, '.') > 0 .or. scan(val_name, 'e') > 0 .or. scan(val_name, 'E') > 0) then 
+          read(val_name, *) val_real
+          val_type = real_type
+        else
+          read(val_name, *) val_int
+          val_type = integer_type
+        endif   
       endif
 
-    else
-! It is real if there is a . in the name or the value appears exponential
-      if ( scan(val_name, '.') > 0 .or. scan(val_name, 'e') > 0 .or. scan(val_name, 'E') > 0) then 
-        read(val_name, *) val_real
-        val_type = real_type
-      else
-        read(val_name, *) val_int
-        val_type = integer_type
-      endif   
     endif
 
-  endif
-
 ! If val_name is t/T or f/F then this is a logical flag.
-  if ( len_trim(val_name) == 1 .or. len_trim(val_name) == 3) then
-     if ( val_name == 't' .or. val_name == 'T' .or. val_name == '.t.' .or. val_name == '.T.' ) then
-       val_logic = .TRUE.
-       val_type = logical_type
-     endif
-     if ( val_name == 'f' .or. val_name == 'F' .or. val_name == '.f.' .or. val_name == '.F.' ) then
-       val_logic = .FALSE.
-       val_type = logical_type
-     endif
-  endif
-  if ( trim(lowercase(val_name)) == 'true' .or. trim(lowercase(val_name)) == '.true.' ) then
-    val_logic = .TRUE.
-    val_type = logical_type
-  endif
-  if ( trim(lowercase(val_name)) == 'false' .or. trim(lowercase(val_name)) == '.false.' ) then
-    val_logic = .FALSE.
-    val_type = logical_type
-  endif
-
+    if ( len_trim(val_name) == 1 .or. len_trim(val_name) == 3) then
+       if ( val_name == 't' .or. val_name == 'T' .or. val_name == '.t.' .or. val_name == '.T.' ) then
+         val_logic = .TRUE.
+         val_type = logical_type
+       endif
+       if ( val_name == 'f' .or. val_name == 'F' .or. val_name == '.f.' .or. val_name == '.F.' ) then
+         val_logic = .FALSE.
+         val_type = logical_type
+       endif
+    endif
+    if ( trim(lowercase(val_name)) == 'true' .or. trim(lowercase(val_name)) == '.true.' ) then
+      val_logic = .TRUE.
+      val_type = logical_type
+    endif
+    if ( trim(lowercase(val_name)) == 'false' .or. trim(lowercase(val_name)) == '.false.' ) then
+      val_logic = .FALSE.
+      val_type = logical_type
+    endif
+  endif  !}
 
   select case(val_type) 
 
     case (integer_type)
       if ( fm_new_value( method_name, val_int, create = .true., index = index_t, append = append_new ) < 0 ) &
-        call mpp_error(FATAL, trim(error_header)//'Could not set the '//trim(method_name)//&
-                              ' for '//trim(list_name))
+        call mpp_error(FATAL, trim(error_header)//'Could not set "' // trim(val_name) // '" for '//trim(method_name)//&
+                              ' (I) for '//trim(list_name))
 
     case (logical_type)
       if ( fm_new_value( method_name, val_logic, create = .true., index = index_t, append = append_new) < 0 ) &
-        call mpp_error(FATAL, trim(error_header)//'Could not set the '//trim(method_name)//&
-                              ' for '//trim(list_name))
+        call mpp_error(FATAL, trim(error_header)//'Could not set "' // trim(val_name) // '" for '//trim(method_name)//&
+                              ' (L) for '//trim(list_name))
 
     case (real_type)
       if ( fm_new_value( method_name, val_real, create = .true., index = index_t, append = append_new) < 0 ) &
-        call mpp_error(FATAL, trim(error_header)//'Could not set the '//trim(method_name)//&
-                              ' for '//trim(list_name))
+        call mpp_error(FATAL, trim(error_header)//'Could not set "' // trim(val_name) // '" for '//trim(method_name)//&
+                              ' (R) for '//trim(list_name))
 
     case (string_type)
       if ( fm_new_value( method_name, val_name, create = .true., index = index_t, append = append_new) < 0 ) &
-        call mpp_error(FATAL, trim(error_header)//'Could not set the '//trim(method_name)//&
-                              ' for '//trim(list_name))
+        call mpp_error(FATAL, trim(error_header)//'Could not set "' // trim(val_name) // '" for '//trim(method_name)//&
+                              ' (S) for '//trim(list_name))
     case default
       call mpp_error(FATAL, trim(error_header)//'Could not find a valid type to set the '//trim(method_name)//&
                             ' for '//trim(list_name))
@@ -1200,7 +1235,8 @@ do i = 1, num_elem
 
   if (mpp_pe() == mpp_root_pe() ) then
     if (verb .gt. verb_level_note) then
-      write (stdout(),*) trim(note_header), 'Creating new value = ', trim(method_name), ' ', trim(val_name)
+      out_unit = stdout()
+      write (out_unit,*) trim(note_header), 'Creating new value = ', trim(method_name), ' ', trim(val_name)
     endif
   endif
 
@@ -1236,10 +1272,14 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_name)    //  &
                                                '(' // trim(sub_name) // '): '
 
+integer :: unit 
+
 call write_version_number (version, tagname)
 if ( mpp_pe() == mpp_root_pe() ) then
-   write (stdlog(),'(/,(a))') trim(note_header), 'Exiting field_manager, have a nice day ...'
-   write (stdout(),'(/,(a))') trim(note_header), 'Exiting field_manager, have a nice day ...'
+   unit = stdlog()
+   write (unit,'(/,(a))') trim(note_header), 'Exiting field_manager, have a nice day ...'
+   unit = stdout()
+   write (unit,'(/,(a))') trim(note_header), 'Exiting field_manager, have a nice day ...'
 endif
 
 module_is_initialized = .false.
@@ -1723,14 +1763,15 @@ integer                      :: ier
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-integer                      :: error
+integer                      :: error, out_unit
 !
 !        Check for fatal errors which should never arise
 !
+out_unit = stdout()
 if (.not. associated(parent_p)) then  !{
 
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header), 'Unnassociated pointer'  &
+    write (out_unit,*) trim(warn_header), 'Unnassociated pointer'  &
                    , ' for ', trim(name)
   endif  !}
   nullify(list_p)
@@ -1739,7 +1780,7 @@ endif  !}
 
 if (name .eq. ' ') then  !{
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header), 'Empty name for '        &
+    write (out_unit,*) trim(warn_header), 'Empty name for '        &
                    , trim(name)
   endif  !}
   nullify(list_p)
@@ -1750,7 +1791,7 @@ endif  !}
 !
 allocate(list_p, stat = error)
 if (error .ne. 0) then !{
-  write (stdout(),*) trim(error_header), 'Error ', error,       &
+  write (out_unit,*) trim(error_header), 'Error ', error,       &
        ' allocating memory for list ', trim(name)
   nullify(list_p)
   return
@@ -1870,6 +1911,7 @@ integer                             :: j
 integer                             :: last
 integer                             :: nf
 integer                             :: nl
+integer                             :: out_unit
 character(len=fm_field_name_len)    :: num
 character(len=fm_field_name_len)    :: scratch
 type (field_def), pointer           :: this_field_p
@@ -1877,18 +1919,19 @@ type (field_def), pointer           :: this_field_p
 !        Check for a valid list
 !
 
+out_unit = stdout()
 this_field_p => NULL()
 
 if (.not. associated(list_p)) then  !{
 
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header), 'Invalid list pointer'
+    write (out_unit,*) trim(warn_header), 'Invalid list pointer'
   endif  !}
   success = .false.
 elseif (list_p%field_type .ne. list_type) then  !}{
 
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header),               &
+    write (out_unit,*) trim(warn_header),               &
                        trim(list_p%name), ' is not a list'
   endif  !}
   success = .false.
@@ -1900,13 +1943,13 @@ else  !}{
 !
 !        Print the name of this list
 !
-  write (stdout(),'(a,a,a)') blank(1:depth), trim(list_p%name), list_sep
+  write (out_unit,'(a,a,a)') blank(1:depth), trim(list_p%name), list_sep
 !
 !        Increment the indentation depth
 !
   if (depth .eq. max_depth) then  !{
     if (verb .gt. verb_level_note) then  !{
-      write (stdout(),*) trim(note_header),                        &
+      write (out_unit,*) trim(note_header),                        &
           'Indentation depth exceeded'
     endif  !}
   else  !}{
@@ -1930,7 +1973,7 @@ else  !}{
           exit
         endif  !}
       else  !}{ ! Otherwise it will print out the name of this field.
-        write (stdout(),'(a,a,a)') blank(1:depthp1),               &
+        write (out_unit,'(a,a,a)') blank(1:depthp1),               &
                 trim(this_field_p%name), list_sep
       endif  !}
 
@@ -1938,12 +1981,12 @@ else  !}{
 
          if (this_field_p%max_index .eq. 0) then  !{
          ! Write out the solitary value for this field.
-          write (stdout(),'(a,a,a)') blank(1:depthp1),             &
+          write (out_unit,'(a,a,a)') blank(1:depthp1),             &
                trim(this_field_p%name), ' = NULL'
         elseif (this_field_p%max_index .eq. 1) then  !}{
           write (scratch,*) this_field_p%i_value(1)
           call strip_front_blanks(scratch)
-          write (stdout(),'(a,a,a,a)') blank(1:depthp1),           &
+          write (out_unit,'(a,a,a,a)') blank(1:depthp1),           &
                 trim(this_field_p%name), ' = ', trim(scratch)
 
         else  !}{ Write out the array of values for this field.
@@ -1952,7 +1995,7 @@ else  !}{
             call strip_front_blanks(scratch)
             write (num,*) j
             call strip_front_blanks(num)
-            write (stdout(),'(a,a,a,a,a,a)') blank(1:depthp1),     &
+            write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1),     &
                  trim(this_field_p%name), '[', trim(num),          &
                  '] = ', trim(scratch)
           enddo  !} j
@@ -1960,7 +2003,7 @@ else  !}{
           call strip_front_blanks(scratch)
           write (num,*) this_field_p%max_index
           call strip_front_blanks(num)
-          write (stdout(),'(a,a,a,a,a,a)') blank(1:depthp1),       &
+          write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1),       &
                trim(this_field_p%name), '[', trim(num),            &
                '] = ', trim(scratch)
         endif  !}
@@ -1971,24 +2014,24 @@ else  !}{
 
         if (this_field_p%max_index .eq. 0) then  !{
          ! Write out the solitary value for this field.
-          write (stdout(),'(a,a,a)') blank(1:depthp1),             &
+          write (out_unit,'(a,a,a)') blank(1:depthp1),             &
                trim(this_field_p%name), ' = NULL'
         elseif (this_field_p%max_index .eq. 1) then  !}{
-          write (stdout(),'(a,a,a,l1)') blank(1:depthp1),          &
+          write (out_unit,'(a,a,a,l1)') blank(1:depthp1),          &
                trim(this_field_p%name), ' = ',                     &
                this_field_p%l_value(1)
         else  !}{ Write out the array of values for this field.
           do j = 1, this_field_p%max_index - 1  !{
             write (num,*) j
             call strip_front_blanks(num)
-            write (stdout(),'(a,a,a,a,a,l1)') blank(1:depthp1),    &
+            write (out_unit,'(a,a,a,a,a,l1)') blank(1:depthp1),    &
                  trim(this_field_p%name), '[', trim(num),          &
                  '] = ', this_field_p%l_value(j)
           enddo  !} j
           write (num,*) this_field_p%max_index
           call strip_front_blanks(num)
 
-       write (stdout(),'(a,a,a,a,a,l1)') blank(1:depthp1),         &
+       write (out_unit,'(a,a,a,a,a,l1)') blank(1:depthp1),         &
                trim(this_field_p%name), '[', trim(num),            &
                '] = ', this_field_p%l_value(this_field_p%max_index)
         endif  !}
@@ -1998,12 +2041,12 @@ else  !}{
 
         if (this_field_p%max_index .eq. 0) then  !{
          ! Write out the solitary value for this field.
-          write (stdout(),'(a,a,a)') blank(1:depthp1),             &
+          write (out_unit,'(a,a,a)') blank(1:depthp1),             &
                trim(this_field_p%name), ' = NULL'
         elseif (this_field_p%max_index .eq. 1) then  !}{
           write (scratch,*) this_field_p%r_value(1)
           call strip_front_blanks(scratch)
-          write (stdout(),'(a,a,a,a)') blank(1:depthp1),           &
+          write (out_unit,'(a,a,a,a)') blank(1:depthp1),           &
                   trim(this_field_p%name), ' = ', trim(scratch)
         else  !}{ Write out the array of values for this field.
           do j = 1, this_field_p%max_index - 1  !{
@@ -2011,7 +2054,7 @@ else  !}{
             call strip_front_blanks(scratch)
             write (num,*) j
             call strip_front_blanks(num)
-            write (stdout(),'(a,a,a,a,a,a)') blank(1:depthp1),     &
+            write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1),     &
                  trim(this_field_p%name), '[', trim(num),          &
                  '] = ', trim(scratch)
           enddo  !} j
@@ -2019,7 +2062,7 @@ else  !}{
           call strip_front_blanks(scratch)
           write (num,*) this_field_p%max_index
           call strip_front_blanks(num)
-          write (stdout(),'(a,a,a,a,a,a)') blank(1:depthp1),       &
+          write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1),       &
                trim(this_field_p%name), '[', trim(num),            &
                '] = ', trim(scratch)
         endif  !}
@@ -2027,23 +2070,23 @@ else  !}{
     case(string_type)
         if (this_field_p%max_index .eq. 0) then  !{
          ! Write out the solitary value for this field.
-          write (stdout(),'(a,a,a)') blank(1:depthp1),             &
+          write (out_unit,'(a,a,a)') blank(1:depthp1),             &
                trim(this_field_p%name), ' = NULL'
         elseif (this_field_p%max_index .eq. 1) then  !}{
-        write (stdout(),'(a,a,a,a,a)') blank(1:depthp1),           &
+        write (out_unit,'(a,a,a,a,a)') blank(1:depthp1),           &
                 trim(this_field_p%name), ' = ''',                  &
                trim(this_field_p%s_value(1)), ''''
         else  !}{ Write out the array of values for this field.
           do j = 1, this_field_p%max_index - 1  !{
             write (num,*) j
             call strip_front_blanks(num)
-            write (stdout(),'(a,a,a,a,a,a,a)') blank(1:depthp1),   &
+            write (out_unit,'(a,a,a,a,a,a,a)') blank(1:depthp1),   &
                  trim(this_field_p%name), '[', trim(num),          &
                  '] = ''', trim(this_field_p%s_value(j)), ''''
           enddo  !} j
           write (num,*) this_field_p%max_index
           call strip_front_blanks(num)
-          write (stdout(),'(a,a,a,a,a,a,a)') blank(1:depthp1),     &
+          write (out_unit,'(a,a,a,a,a,a,a)') blank(1:depthp1),     &
                trim(this_field_p%name), '[', trim(num),            &
                '] = ''',                                           &
                trim(this_field_p%s_value(this_field_p%max_index)), &
@@ -2053,7 +2096,7 @@ else  !}{
     case default
 
         if (verb .gt. verb_level_warn) then  !{
-          write (stdout(),*) trim(warn_header),                    &
+          write (out_unit,*) trim(warn_header),                    &
                   'Undefined type for ',                           &
                   trim(this_field_p%name)
         endif  !}
@@ -2426,12 +2469,12 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 character(len=fm_path_name_len)  :: working_path
 character(len=fm_path_name_len)  :: rest
 character(len=fm_field_name_len) :: this_list
-integer                          :: i
+integer                          :: i, out_unit
 type (field_def), pointer, save  :: working_path_p 
 type (field_def), pointer, save  :: this_list_p 
 
 
-
+out_unit = stdout()
 nullify(list_p)
 !
 !        If the path is empty, then return the relative list
@@ -2490,7 +2533,7 @@ else  !}{
         this_list_p => make_list(working_path_p, this_list)
         if (.not. associated(this_list_p)) then  !{
           if (verb .gt. verb_level_warn) then  !{
-            write (stdout(),*) trim(warn_header), 'List "',       &
+            write (out_unit,*) trim(warn_header), 'List "',       &
                  trim(this_list), '" could not be created in ',   &
                  trim(path)
           endif  !}
@@ -2503,7 +2546,7 @@ else  !}{
 !
 
         if (verb .gt. verb_level_note) then  !{
-          write (stdout(),*) trim(note_header), 'List "',         &
+          write (out_unit,*) trim(note_header), 'List "',         &
                trim(this_list), '" does not exist in ', trim(path)
         endif  !}
         nullify(list_p)
@@ -2519,7 +2562,7 @@ else  !}{
       working_path = rest
     else  !}{
       if (verb .gt. verb_level_warn) then  !{
-        write (stdout(),*) trim(warn_header), '"',                &
+        write (out_unit,*) trim(warn_header), '"',                &
              trim(this_list), '" is not a list in ', trim(path)
       endif  !}
       nullify(list_p)
@@ -2660,18 +2703,20 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 type (field_def), pointer, save :: temp_list_p 
+integer :: out_unit
 !
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
   call initialize
 endif  !}
+out_unit = stdout()
 !
 !        Must supply a field field name
 !
 if (name .eq. ' ') then  !{
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header), 'Must supply a field name'
+    write (out_unit,*) trim(warn_header), 'Must supply a field name'
   endif  !}
   success = .false.
   return
@@ -2715,7 +2760,7 @@ else  !}{
 !
 
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header),                      &
+    write (out_unit,*) trim(warn_header),                      &
          'Could not find list ', trim(name)
   endif  !}
   success = .false.
@@ -2780,6 +2825,9 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 logical                         :: recursive_t
 type (field_def), pointer, save :: temp_list_p 
+integer                         :: out_unit
+
+out_unit = stdout()
 !
 !        Check whether to do things recursively
 !
@@ -2814,7 +2862,7 @@ else  !}{
 !
 
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                        &
+      write (out_unit,*) trim(warn_header),                        &
            'Could not follow path for ', trim(name)
     endif  !}
     success = .false.
@@ -2944,6 +2992,9 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 type (field_def), pointer, save :: temp_field_p 
+integer                         :: out_unit
+
+out_unit = stdout()
 !
 !        Initialize the field manager if needed
 !
@@ -2955,7 +3006,7 @@ endif  !}
 !
 if (name .eq. ' ') then  !{
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header), 'Must supply a field name'
+    write (out_unit,*) trim(warn_header), 'Must supply a field name'
   endif  !}
   index = NO_FIELD
   return
@@ -2974,7 +3025,7 @@ else  !}{
 !        Error following the path
 !
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header), 'Could not follow path for ', trim(name)
+    write (out_unit,*) trim(warn_header), 'Could not follow path for ', trim(name)
   endif  !}
   index = NO_FIELD
 endif  !}
@@ -3123,6 +3174,9 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 type (field_def), pointer, save :: temp_field_p 
+integer                         :: out_unit
+
+out_unit = stdout()
 !
 !        Initialize the field manager if needed
 !
@@ -3134,7 +3188,7 @@ endif  !}
 !
 if (name .eq. ' ') then  !{
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header), 'Must supply a field name'
+    write (out_unit,*) trim(warn_header), 'Must supply a field name'
   endif  !}
   length = 0
   return
@@ -3159,7 +3213,7 @@ else  !}{
 !
 
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header),                            &
+    write (out_unit,*) trim(warn_header),                            &
          'Could not follow path for ', trim(name)
   endif  !}
   length = 0
@@ -3217,6 +3271,9 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 type (field_def), pointer, save :: temp_field_p 
+integer                         :: out_unit
+
+out_unit = stdout()
 !
 !        Initialize the field manager if needed
 !
@@ -3228,7 +3285,7 @@ endif  !}
 !
 if (name .eq. ' ') then  !{
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header), 'Must supply a field name'
+    write (out_unit,*) trim(warn_header), 'Must supply a field name'
   endif  !}
   name_field_type = ' '
   return
@@ -3249,7 +3306,7 @@ else  !}{
 !
 
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header),                            &
+    write (out_unit,*) trim(warn_header),                            &
          'Could not follow path for ', trim(name)
   endif  !}
   name_field_type = ' '
@@ -3317,6 +3374,9 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: index_t
 type (field_def), pointer, save :: temp_field_p 
+integer                         :: out_unit
+
+out_unit = stdout()
 !
 !        Initialize the field manager if needed
 !
@@ -3328,7 +3388,7 @@ endif  !}
 !
 if (name .eq. ' ') then  !{
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header), 'Must supply a field name'
+    write (out_unit,*) trim(warn_header), 'Must supply a field name'
   endif  !}
   value = 0
   success = .false.
@@ -3358,7 +3418,7 @@ if (associated(temp_field_p)) then  !{
 !
 
       if (verb .gt. verb_level_warn) then  !{
-        write (stdout(),*) trim(warn_header),                   &
+        write (out_unit,*) trim(warn_header),                   &
              'Optional index for ', trim(name),                 &
              ' not positive: ', index_t
       endif  !}
@@ -3370,7 +3430,7 @@ if (associated(temp_field_p)) then  !{
 !
 
       if (verb .gt. verb_level_warn) then  !{
-        write (stdout(),*) trim(warn_header),                        &
+        write (out_unit,*) trim(warn_header),                        &
              'Optional index for ', trim(name),                      &
              ' too large: ', index_t, ' > ', temp_field_p%max_index
       endif  !}
@@ -3389,7 +3449,7 @@ if (associated(temp_field_p)) then  !{
 !
 
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                          &
+      write (out_unit,*) trim(warn_header),                          &
            'Field not type integer ', trim(name)
     endif  !}
     value = 0
@@ -3401,7 +3461,7 @@ else  !}{
 !
 
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header),                            &
+    write (out_unit,*) trim(warn_header),                            &
          'Could not follow path for ', trim(name)
   endif  !}
   value = 0
@@ -3441,6 +3501,9 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: index_t
 type (field_def), pointer, save :: temp_field_p 
+integer                         :: out_unit
+
+out_unit = stdout()
 !
 !        Initialize the field manager if needed
 !
@@ -3452,7 +3515,7 @@ endif  !}
 !
 if (name .eq. ' ') then  !{
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header), 'Must supply a field name'
+    write (out_unit,*) trim(warn_header), 'Must supply a field name'
   endif  !}
   value = .false.
   success = .false.
@@ -3483,7 +3546,7 @@ if (associated(temp_field_p)) then  !{
 !
 
       if (verb .gt. verb_level_warn) then  !{
-        write (stdout(),*) trim(warn_header),                   &
+        write (out_unit,*) trim(warn_header),                   &
              'Optional index for ', trim(name),                 &
              ' not positive: ', index_t
       endif  !}
@@ -3496,7 +3559,7 @@ if (associated(temp_field_p)) then  !{
 !
 
       if (verb .gt. verb_level_warn) then  !{
-        write (stdout(),*) trim(warn_header),                        &
+        write (out_unit,*) trim(warn_header),                        &
              'Optional index for ', trim(name),                      &
              ' too large: ', index_t, ' > ', temp_field_p%max_index
       endif  !}
@@ -3516,7 +3579,7 @@ if (associated(temp_field_p)) then  !{
 !
 
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                          &
+      write (out_unit,*) trim(warn_header),                          &
            'Field not type logical ', trim(name)
     endif  !}
     value = .false.
@@ -3528,7 +3591,7 @@ else  !}{
 !
 
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header),                            &
+    write (out_unit,*) trim(warn_header),                            &
          'Could not follow path for ', trim(name)
   endif  !}
   value = .false.
@@ -3568,6 +3631,9 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: index_t
 type (field_def), pointer, save :: temp_field_p 
+integer                         :: out_unit
+
+out_unit = stdout()
 !
 !        Initialize the field manager if needed
 !
@@ -3579,7 +3645,7 @@ endif  !}
 !
 if (name .eq. ' ') then  !{
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header), 'Must supply a field name'
+    write (out_unit,*) trim(warn_header), 'Must supply a field name'
   endif  !}
   value = 0.0
   success = .false.
@@ -3611,7 +3677,7 @@ if (associated(temp_field_p)) then  !{
 !
 
       if (verb .gt. verb_level_warn) then  !{
-        write (stdout(),*) trim(warn_header),                        &
+        write (out_unit,*) trim(warn_header),                        &
              'Optional index for ', trim(name),                      &
              ' not positive: ', index_t
       endif  !}
@@ -3625,7 +3691,7 @@ if (associated(temp_field_p)) then  !{
 !
 
       if (verb .gt. verb_level_warn) then  !{
-        write (stdout(),*) trim(warn_header),                        &
+        write (out_unit,*) trim(warn_header),                        &
              'Optional index for ', trim(name),                      &
              ' too large: ', index_t, ' > ', temp_field_p%max_index
       endif  !}
@@ -3646,7 +3712,7 @@ if (associated(temp_field_p)) then  !{
 !
 
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                          &
+      write (out_unit,*) trim(warn_header),                          &
            'Field not type real ', trim(name)
     endif  !}
     value = 0.0
@@ -3658,7 +3724,7 @@ else  !}{
 !
 
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header),                            &
+    write (out_unit,*) trim(warn_header),                            &
          'Could not follow path for ', trim(name)
   endif  !}
   value = 0.0
@@ -3698,6 +3764,9 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: index_t
 type (field_def), pointer, save :: temp_field_p 
+integer                         :: out_unit
+
+out_unit = stdout()
 !
 !        Initialize the field manager if needed
 !
@@ -3709,7 +3778,7 @@ endif  !}
 !
 if (name .eq. ' ') then  !{
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header), 'Must supply a field name'
+    write (out_unit,*) trim(warn_header), 'Must supply a field name'
   endif  !}
   value = ''
   success = .false.
@@ -3739,7 +3808,7 @@ if (associated(temp_field_p)) then  !{
 !
 
       if (verb .gt. verb_level_warn) then  !{
-        write (stdout(),*) trim(warn_header),                        &
+        write (out_unit,*) trim(warn_header),                        &
              'Optional index for ', trim(name),                      &
              ' not positive: ', index_t
       endif  !}
@@ -3752,7 +3821,7 @@ if (associated(temp_field_p)) then  !{
 !
 
       if (verb .gt. verb_level_warn) then  !{
-        write (stdout(),*) trim(warn_header),                        &
+        write (out_unit,*) trim(warn_header),                        &
              'Optional index for ', trim(name),                      &
              ' too large: ', index_t, ' > ', temp_field_p%max_index
       endif  !}
@@ -3775,7 +3844,7 @@ if (associated(temp_field_p)) then  !{
 !
 
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                          &
+      write (out_unit,*) trim(warn_header),                          &
            'Field not type string ', trim(name)
     endif  !}
     value = ''
@@ -3787,7 +3856,7 @@ else  !}{
 !
 
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header),                            &
+    write (out_unit,*) trim(warn_header),                            &
          'Could not follow path for ', trim(name)
   endif  !}
   value = ''
@@ -3862,6 +3931,9 @@ integer                            :: n, ier
 integer                            :: shortest
 logical                            :: found
 type (field_def), pointer, save    :: temp_p 
+integer                            :: out_unit
+
+out_unit = stdout()
 
 nullify(return_p)
 !
@@ -3875,7 +3947,7 @@ endif  !}
 !
 if (dim .le. 0) then  !{
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header), 'Non-positive dimension: ', dim
+    write (out_unit,*) trim(warn_header), 'Non-positive dimension: ', dim
   endif  !}
   nullify(return_p)
   return
@@ -3900,7 +3972,7 @@ do n = 1, dim  !{
     endif  !}
   else  !}{
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                          &
+      write (out_unit,*) trim(warn_header),                          &
                          'List does not exist: "', trim(lists(n)), '"'
     endif  !}
     nullify(return_p)
@@ -3912,7 +3984,7 @@ enddo  !} n
 !
 allocate( return_p, stat = error)
 if (error .ne. 0) then !{
-  write (stdout(),*) trim(error_header), 'Error ', error          &
+  write (out_unit,*) trim(error_header), 'Error ', error          &
                  , ' allocating memory for return_p '
   nullify(return_p)
   return
@@ -3934,7 +4006,7 @@ if (dim .eq. 1) then  !{
 !
   allocate( return_p%names(count), stat = error)
   if (error .ne. 0) then !{
-    write (stdout(),*) trim(error_header), 'Error ', error        &
+    write (out_unit,*) trim(error_header), 'Error ', error        &
                    , ' allocating memory for names in return_p '
     nullify(return_p)
     return
@@ -3951,7 +4023,7 @@ endif  !}
 !
 allocate( names(count), stat = error)
 if (error .ne. 0) then !{
-  write (stdout(),*) trim(error_header), 'Error ', error          &
+  write (out_unit,*) trim(error_header), 'Error ', error          &
                  , ' allocating memory for names '
   nullify(return_p)
   return
@@ -3983,7 +4055,7 @@ enddo  !}
 !
 allocate( return_p%names(count), stat = error)
 if (error .ne. 0) then !{
-  write (stdout(),*) trim(error_header), 'Error ', error  &
+  write (out_unit,*) trim(error_header), 'Error ', error  &
                  , ' allocating memory for names in return_p '
   deallocate(names)
   nullify(return_p)
@@ -4061,6 +4133,9 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 type (field_def), pointer, save :: temp_list_p 
+integer                         :: out_unit
+
+out_unit = stdout()
 !
 !        Initialize the field manager if needed
 !
@@ -4096,7 +4171,7 @@ else  !}{
 !
 
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                        &
+      write (out_unit,*) trim(warn_header),                        &
            'Could not follow path for ', trim(list)
     endif  !}
     success = .false.
@@ -4203,6 +4278,9 @@ logical                          :: keep_t
 character(len=fm_path_name_len)  :: path
 character(len=fm_field_name_len) :: base
 type (field_def), pointer, save  :: temp_list_p 
+integer                         :: out_unit
+
+out_unit = stdout()
 !
 !        Initialize the field manager if needed
 !
@@ -4214,7 +4292,7 @@ endif  !}
 !
 if (name .eq. ' ') then  !{
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header), 'Must supply a list name'
+    write (out_unit,*) trim(warn_header), 'Must supply a list name'
   endif  !}
   index = NO_FIELD
   return
@@ -4259,7 +4337,7 @@ if (associated(temp_list_p)) then  !{
 !
 
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                        &
+      write (out_unit,*) trim(warn_header),                        &
            'Could not create list ', trim(name)
     endif  !}
     index = NO_FIELD
@@ -4271,7 +4349,7 @@ else  !}{
 !
 
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header),                  &
+    write (out_unit,*) trim(warn_header),                  &
          'Could not follow path for ', trim(name)
   endif  !}
   index = NO_FIELD
@@ -4359,6 +4437,9 @@ character(len=fm_path_name_len)  :: path
 character(len=fm_field_name_len) :: base
 type (field_def), pointer, save  :: temp_list_p 
 type (field_def), pointer, save  :: temp_field_p 
+integer                          :: out_unit
+
+out_unit = stdout()
 !
 !        Initialize the field manager if needed
 !
@@ -4370,7 +4451,7 @@ endif  !}
 !
 if (name .eq. ' ') then  !{
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header), 'Must supply a field name'
+    write (out_unit,*) trim(warn_header), 'Must supply a field name'
   endif  !}
   field_index = NO_FIELD
   return
@@ -4388,9 +4469,9 @@ endif  !}
 !
 
 if (present(index) .and. present(append)) then  !{
-  if (append .and. index .ge. 0) then  !{
+  if (append .and. index .gt. 0) then  !{
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                          &
+      write (out_unit,*) trim(warn_header),                          &
            'Index and Append both set for ', trim(name)
     endif  !}
     field_index = NO_FIELD
@@ -4408,7 +4489,7 @@ if (present(index)) then  !{
 !
 
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                     &
+      write (out_unit,*) trim(warn_header),                     &
            'Optional index for ', trim(name),                   &
            ' negative: ', index_t
     endif  !}
@@ -4441,7 +4522,7 @@ if (associated(temp_list_p)) then  !{
         temp_field_p%max_index = 0
       if (temp_field_p%field_type /= null_type ) then  !{
         if (verb .gt. verb_level_warn) then  !{
-          write (stdout(),*) trim(warn_header),                   &
+          write (out_unit,*) trim(warn_header),                   &
                'Changing type of ', trim(name), ' from ',         &
                trim(field_type_name(temp_field_p%field_type)),    &
                ' to ', trim(field_type_name(integer_type))
@@ -4469,7 +4550,7 @@ if (associated(temp_list_p)) then  !{
 !
 
       if (verb .gt. verb_level_warn) then  !{
-        write (stdout(),*) trim(warn_header),                   &
+        write (out_unit,*) trim(warn_header),                   &
              'Index too large for ', trim(name), ': ', index_t
       endif  !}
       field_index = NO_FIELD
@@ -4482,7 +4563,7 @@ if (associated(temp_list_p)) then  !{
 !
 
       if (verb .gt. verb_level_warn) then  !{
-        write (stdout(),*) trim(warn_header),                   &
+        write (out_unit,*) trim(warn_header),                   &
              'Trying to nullify a non-null field: ',            &
              trim(name)
       endif  !}
@@ -4529,7 +4610,7 @@ if (associated(temp_list_p)) then  !{
 !
 
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                     &
+      write (out_unit,*) trim(warn_header),                     &
            'Could not create integer value field ',             &
            trim(name)
     endif  !}
@@ -4541,7 +4622,7 @@ else  !}{
 !
 
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header),                       &
+    write (out_unit,*) trim(warn_header),                       &
          'Could not follow path for ',                          &
          trim(name)
   endif  !}
@@ -4589,6 +4670,9 @@ logical                              :: create_t
 logical, dimension(:), pointer       :: temp_l_value 
 type (field_def),      pointer, save :: temp_list_p 
 type (field_def),      pointer, save :: temp_field_p 
+integer                              :: out_unit
+
+out_unit = stdout()
 !
 !        Initialize the field manager if needed
 !
@@ -4600,7 +4684,7 @@ endif  !}
 !
 if (name .eq. ' ') then  !{
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header), 'Must supply a field name'
+    write (out_unit,*) trim(warn_header), 'Must supply a field name'
   endif  !}
   field_index = NO_FIELD
   return
@@ -4619,7 +4703,7 @@ endif  !}
 if (present(index) .and. present(append)) then  !{
   if (append .and. index .gt. 0) then  !{
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                          &
+      write (out_unit,*) trim(warn_header),                          &
            'Index and Append both set for ', trim(name)
     endif  !}
     field_index = NO_FIELD
@@ -4638,7 +4722,7 @@ if (present(index)) then  !{
 !
 
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                     &
+      write (out_unit,*) trim(warn_header),                     &
            'Optional index for ', trim(name),                   &
            ' negative: ', index_t
     endif  !}
@@ -4671,7 +4755,7 @@ if (associated(temp_list_p)) then  !{
         temp_field_p%max_index = 0
       if (temp_field_p%field_type /= null_type ) then  !{
         if (verb .gt. verb_level_warn) then  !{
-          write (stdout(),*) trim(warn_header),                   &
+          write (out_unit,*) trim(warn_header),                   &
                'Changing type of ', trim(name), ' from ',         &
                trim(field_type_name(temp_field_p%field_type)),    &
                ' to ', trim(field_type_name(logical_type))
@@ -4699,7 +4783,7 @@ if (associated(temp_list_p)) then  !{
 !
 
       if (verb .gt. verb_level_warn) then  !{
-        write (stdout(),*) trim(warn_header),                   &
+        write (out_unit,*) trim(warn_header),                   &
              'Index too large for ', trim(name), ': ', index_t
       endif  !}
       field_index = NO_FIELD
@@ -4713,7 +4797,7 @@ if (associated(temp_list_p)) then  !{
 !
 
       if (verb .gt. verb_level_warn) then  !{
-        write (stdout(),*) trim(warn_header),                   &
+        write (out_unit,*) trim(warn_header),                   &
              'Trying to nullify a non-null field: ', trim(name)
       endif  !}
       field_index = NO_FIELD
@@ -4765,7 +4849,7 @@ if (associated(temp_list_p)) then  !{
 !
 
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                     &
+      write (out_unit,*) trim(warn_header),                     &
            'Could not create logical value field ',             &
            trim(name)
     endif  !}
@@ -4777,7 +4861,7 @@ else  !}{
 !
 
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header),                       &
+    write (out_unit,*) trim(warn_header),                       &
          'Could not follow path for ',                          &
          trim(name)
   endif  !}
@@ -4826,6 +4910,9 @@ character(len=fm_path_name_len)  :: path
 character(len=fm_field_name_len) :: base
 type (field_def), pointer, save  :: temp_list_p 
 type (field_def), pointer, save  :: temp_field_p 
+integer                          :: out_unit
+
+out_unit = stdout()
 !
 !        Initialize the field manager if needed
 !
@@ -4837,7 +4924,7 @@ endif  !}
 !
 if (name .eq. ' ') then  !{
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header), 'Must supply a field name'
+    write (out_unit,*) trim(warn_header), 'Must supply a field name'
   endif  !}
   field_index = NO_FIELD
   return
@@ -4856,7 +4943,7 @@ endif  !}
 if (present(index) .and. present(append)) then  !{
   if (append .and. index .gt. 0) then  !{
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                          &
+      write (out_unit,*) trim(warn_header),                          &
            'Index and Append both set for ', trim(name)
     endif  !}
     field_index = NO_FIELD
@@ -4875,7 +4962,7 @@ if (present(index)) then  !{
 !
 
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                     &
+      write (out_unit,*) trim(warn_header),                     &
            'Optional index for ', trim(name),                   &
            ' negative: ', index_t
     endif  !}
@@ -4909,7 +4996,7 @@ if (associated(temp_list_p)) then  !{
         temp_field_p%max_index = 0
       if (temp_field_p%field_type /= null_type ) then  !{
         if (verb .gt. verb_level_warn) then  !{
-          write (stdout(),*) trim(warn_header),                   &
+          write (out_unit,*) trim(warn_header),                   &
                'Changing type of ', trim(name), ' from ',         &
                trim(field_type_name(temp_field_p%field_type)),    &
                ' to ', trim(field_type_name(real_type))
@@ -4934,7 +5021,7 @@ if (associated(temp_list_p)) then  !{
 !
 
       if (verb .gt. verb_level_warn) then  !{
-        write (stdout(),*) trim(warn_header),                   &
+        write (out_unit,*) trim(warn_header),                   &
              'Index too large for ', trim(name), ': ', index_t
       endif  !}
       field_index = NO_FIELD
@@ -4946,7 +5033,7 @@ if (associated(temp_list_p)) then  !{
 !
 
       if (verb .gt. verb_level_warn) then  !{
-        write (stdout(),*) trim(warn_header),                   &
+        write (out_unit,*) trim(warn_header),                   &
              'Trying to nullify a non-null field: ',            &
              trim(name)
       endif  !}
@@ -4991,7 +5078,7 @@ if (associated(temp_list_p)) then  !{
 !
 
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                        &
+      write (out_unit,*) trim(warn_header),                        &
            'Could not create real value field ', trim(name)
     endif  !}
     field_index = NO_FIELD
@@ -5002,7 +5089,7 @@ else  !}{
 !
 
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header),                          &
+    write (out_unit,*) trim(warn_header),                          &
          'Could not follow path for ', trim(name)
   endif  !}
   field_index = NO_FIELD
@@ -5050,6 +5137,9 @@ integer                                             :: index_t
 logical                                             :: create_t
 type (field_def),                     save, pointer :: temp_list_p
 type (field_def),                     save, pointer :: temp_field_p
+integer                         :: out_unit
+
+out_unit = stdout()
 !
 !        Initialize the field manager if needed
 !
@@ -5061,7 +5151,7 @@ endif  !}
 !
 if (name .eq. ' ') then  !{
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header), 'Must supply a field name'
+    write (out_unit,*) trim(warn_header), 'Must supply a field name'
   endif  !}
   field_index = NO_FIELD
   return
@@ -5081,7 +5171,7 @@ endif  !}
 if (present(index) .and. present(append)) then  !{
   if (append .and. index .gt. 0) then  !{
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                     &
+      write (out_unit,*) trim(warn_header),                     &
            'Index and Append both set for ', trim(name)
     endif  !}
     field_index = NO_FIELD
@@ -5099,7 +5189,7 @@ if (present(index)) then  !{
 !
 
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                     &
+      write (out_unit,*) trim(warn_header),                     &
            'Optional index for ', trim(name),                   &
            ' negative: ', index_t
     endif  !}
@@ -5133,7 +5223,7 @@ if (associated(temp_list_p)) then  !{
         temp_field_p%max_index = 0
       if (temp_field_p%field_type /= null_type ) then  !{
         if (verb .gt. verb_level_warn) then  !{
-          write (stdout(),*) trim(warn_header),                   &
+          write (out_unit,*) trim(warn_header),                   &
                'Changing type of ', trim(name), ' from ',         &
                trim(field_type_name(temp_field_p%field_type)),    &
                ' to ', trim(field_type_name(string_type))
@@ -5161,7 +5251,7 @@ if (associated(temp_list_p)) then  !{
 !
 
       if (verb .gt. verb_level_warn) then  !{
-        write (stdout(),*) trim(warn_header),                   &
+        write (out_unit,*) trim(warn_header),                   &
              'Index too large for ', trim(name), ': ', index_t
       endif  !}
       field_index = NO_FIELD
@@ -5175,7 +5265,7 @@ if (associated(temp_list_p)) then  !{
 !
 
       if (verb .gt. verb_level_warn) then  !{
-        write (stdout(),*) trim(warn_header),                   &
+        write (out_unit,*) trim(warn_header),                   &
              'Trying to nullify a non-null field: ',            &
              trim(name)
       endif  !}
@@ -5228,7 +5318,7 @@ if (associated(temp_list_p)) then  !{
 !
 
     if (verb .gt. verb_level_warn) then  !{
-      write (stdout(),*) trim(warn_header),                     &
+      write (out_unit,*) trim(warn_header),                     &
            'Could not create string value field ',              &
            trim(name)
     endif  !}
@@ -5240,7 +5330,7 @@ else  !}{
 !
 
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header),                       &
+    write (out_unit,*) trim(warn_header),                       &
          'Could not follow path for ', trim(name)
   endif  !}
   field_index = NO_FIELD
@@ -5658,6 +5748,9 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer :: ier
 type (field_def), pointer, save :: dummy_p 
+integer                         :: out_unit
+
+out_unit = stdout()
 !
 !        Check to see whether there is already a list with
 !        this name, and if so, return an error as list names
@@ -5669,7 +5762,7 @@ if (associated(dummy_p)) then  !{
 !        This list is already specified, return an error
 !
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header), 'List ',                 &
+    write (out_unit,*) trim(warn_header), 'List ',                 &
          trim(name), ' already exists'
   endif  !}
 !  nullify(list_p)
@@ -5683,7 +5776,7 @@ nullify(list_p)
 list_p => create_field(this_list_p, name)
 if (.not. associated(list_p)) then !{
   if (verb .gt. verb_level_warn) then  !{
-    write (stdout(),*) trim(warn_header),                          &
+    write (out_unit,*) trim(warn_header),                          &
          'Could not create field ', trim(name)
   endif  !}
   nullify(list_p)
@@ -5767,7 +5860,9 @@ logical                         :: recursive_t
 type (field_def), pointer, save :: temp_list_p 
 type (field_def), pointer, save :: temp_value_p 
 type (field_def), pointer, save :: this_field_p 
-!
+integer                         :: out_unit
+
+  out_unit = stdout()
   success     = .false.
   recursive_t = .true.
   method_name = " "
@@ -5812,7 +5907,7 @@ else  !}{
 !        Error following the path
 !
     if (verb .gt. verb_level_warn) then
-      write (stdout(),*) trim(warn_header), 'Could not follow path for ', trim(path)
+      write (out_unit,*) trim(warn_header), 'Could not follow path for ', trim(path)
     endif
     success = .false.
   endif  !}
@@ -5888,18 +5983,21 @@ integer                         :: i
 integer                         :: last
 character(len=64)               :: scratch
 type (field_def), pointer :: this_field_p 
+integer                         :: out_unit
+
+out_unit = stdout()
 
 !
 !        Check for a valid list
 !
 if (.not. associated(list_p)) then  !{
   if (verb .gt. verb_level_warn) then
-    write (stdout(),*) trim(warn_header), 'Invalid list pointer'
+    write (out_unit,*) trim(warn_header), 'Invalid list pointer'
   endif
   success = .false.
 elseif (list_p%field_type .ne. list_type) then  !}{
   if (verb .gt. verb_level_warn) then
-    write (stdout(),*) trim(warn_header), trim(list_p%name)//' is not a list'
+    write (out_unit,*) trim(warn_header), trim(list_p%name)//' is not a list'
   endif
   success = .false.
 else  !}{
@@ -5962,7 +6060,7 @@ else  !}{
 
     case default
         if (verb .gt. verb_level_warn) then
-          write (stdout(),*) trim(warn_header), 'Undefined type for ', trim(this_field_p%name)
+          write (out_unit,*) trim(warn_header), 'Undefined type for ', trim(this_field_p%name)
         endif
         success = .false.
         exit
@@ -6045,6 +6143,9 @@ logical                                                    :: val_logical
 real                                                       :: val_real
 type (field_def), pointer, save                            :: temp_field_p 
 type (field_def), pointer, save                            :: temp_list_p 
+integer                                                    :: out_unit
+
+out_unit = stdout()
 
 
 num_meth= 1
@@ -6076,7 +6177,7 @@ else  !}{
 !        Error following the path
 !
     if (verb .gt. verb_level_warn) then
-      write (stdout(),*) trim(warn_header), 'Could not follow path for ', trim(list_name)
+      write (out_unit,*) trim(warn_header), 'Could not follow path for ', trim(list_name)
     endif
     success = .false.
   endif  !}
@@ -6191,7 +6292,9 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 integer                         :: num_meth
 logical                         :: recursive_t
 type (field_def), pointer, save :: temp_list_p 
+integer                         :: out_unit
 
+out_unit = stdout()
 num_meth= 1
 !
 !        Check whether to do things recursively
@@ -6223,7 +6326,7 @@ else  !}{
 !        Error following the path
 !
     if (verb .gt. verb_level_warn) then
-      write (stdout(),*) trim(warn_header), 'Could not follow path for ', trim(list_name)
+      write (out_unit,*) trim(warn_header), 'Could not follow path for ', trim(list_name)
     endif
     success = .false.
   endif  !}
@@ -6314,17 +6417,20 @@ integer                         :: i
 integer                         :: last
 integer                         :: n
 type (field_def), pointer, save :: this_field_p 
+integer                         :: out_unit
+
+out_unit = stdout()
 !
 !        Check for a valid list
 !
 if (.not. associated(list_p)) then  !{
   if (verb .gt. verb_level_warn) then
-    write (stdout(),*) trim(warn_header), 'Invalid list pointer'
+    write (out_unit,*) trim(warn_header), 'Invalid list pointer'
   endif
   success = .false.
 elseif (list_p%field_type .ne. list_type) then  !}{
   if (verb .gt. verb_level_warn) then
-    write (stdout(),*) trim(warn_header), trim(list_p%name), ' is not a list'
+    write (out_unit,*) trim(warn_header), trim(list_p%name), ' is not a list'
   endif
   success = .false.
 else  !}{
@@ -6396,7 +6502,7 @@ else  !}{
 
     case default
         if (verb .gt. verb_level_warn) then
-          write (stdout(),*) trim(warn_header), 'Undefined type for ', trim(this_field_p%name)
+          write (out_unit,*) trim(warn_header), 'Undefined type for ', trim(this_field_p%name)
         endif
         success = .false.
         exit
@@ -6454,6 +6560,9 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+integer                         :: out_unit
+
+out_unit = stdout()
 
 !
 !       Check whether an argument has been given
@@ -6479,10 +6588,10 @@ else  !}{
 
 endif  !}
 
-write (stdout(),*) 
-write (stdout(),*) trim(note_header),                          &
+write (out_unit,*) 
+write (out_unit,*) trim(note_header),                          &
      'Verbosity now at level ', verb
-write (stdout(),*) 
+write (out_unit,*) 
 
 end subroutine  fm_set_verbosity  !}
 ! </SUBROUTINE> NAME="fm_set_verbosity"

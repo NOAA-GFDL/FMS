@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_util.inc,v 16.0 2008/07/30 22:47:00 fms Exp $
+! $Id: mpp_io_util.inc,v 17.0 2009/07/21 03:20:39 fms Exp $
 
 
   !#####################################################################
@@ -739,3 +739,14 @@
      return
 
    end subroutine mpp_get_field_att_text
+
+
+   !####################################################################
+   ! return mpp_io_nml variable io_clock_on
+   function mpp_io_clock_on()
+      logical :: mpp_io_clock_on
+
+      mpp_io_clock_on = io_clocks_on
+      return
+
+   end function mpp_io_clock_on   

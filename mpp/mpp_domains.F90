@@ -121,7 +121,7 @@ module mpp_domains_mod
   use mpp_parameter_mod,      only : SOUTH, SOUTH_WEST, WEST, NORTH_WEST
   use mpp_parameter_mod,      only : MAX_DOMAIN_FIELDS, NULL_PE, DOMAIN_ID_BASE
   use mpp_parameter_mod,      only : ZERO, NINETY, MINUS_NINETY, ONE_HUNDRED_EIGHTY, MAX_TILES
-  use mpp_parameter_mod,      only : EVENT_SEND, EVENT_RECV
+  use mpp_parameter_mod,      only : EVENT_SEND, EVENT_RECV, ROOT_GLOBAL
   use mpp_data_mod,           only : mpp_domains_stack, ptr_domains_stack
   use mpp_mod,                only : mpp_pe, mpp_root_pe, mpp_npes, mpp_error, FATAL, WARNING, NOTE
   use mpp_mod,                only : stdout, stderr, stdlog, mpp_send, mpp_recv, mpp_transmit, mpp_sync_self
@@ -156,12 +156,15 @@ module mpp_domains_mod
   public :: mpp_domain_is_symmetry
   public :: mpp_get_neighbor_pe, mpp_nullify_domain_list
   public :: mpp_set_compute_domain, mpp_set_data_domain, mpp_set_global_domain
-  public :: mpp_get_memory_domain, mpp_get_domain_shift, mpp_domain_is_root_pe
+  public :: mpp_get_memory_domain, mpp_get_domain_shift, mpp_domain_is_tile_root_pe
   public :: mpp_get_tile_id, mpp_get_domain_extents, mpp_get_current_ntile, mpp_get_ntile_count
   public :: mpp_get_refine_overlap_number, mpp_get_mosaic_refine_overlap
   public :: mpp_get_tile_list, mpp_get_global_domains
   public :: mpp_get_tile_npes
   public :: mpp_get_num_overlap, mpp_get_overlap
+  public :: mpp_get_io_domain, mpp_get_domain_pe, mpp_get_domain_tile_root_pe
+  public :: mpp_get_domain_name, mpp_get_io_domain_layout
+
   !--- public interface from mpp_domains_reduce.h
   public :: mpp_global_field, mpp_global_max, mpp_global_min, mpp_global_sum
   public :: mpp_global_sum_tl, mpp_global_sum_ad
@@ -173,6 +176,10 @@ module mpp_domains_mod
   !--- public interface from mpp_domains_define.h
   public :: mpp_define_layout, mpp_define_domains, mpp_modify_domain, mpp_define_mosaic
   public :: mpp_define_mosaic_pelist, mpp_define_null_domain, mpp_mosaic_defined
+  public :: mpp_define_io_domain, mpp_deallocate_domain
+  public :: mpp_compute_extent
+
+  integer, parameter :: NAME_LENGTH = 64
 
   !--- data types used mpp_domains_mod.
   type domain_axis_spec        !type used to specify index limits along an axis of a domain
@@ -194,7 +201,7 @@ module mpp_domains_mod
 
   type overlapSpec
      private
-     integer                  :: count                 ! number of ovrelapping
+     integer                  :: count = 0                 ! number of ovrelapping
      integer,         pointer :: tileMe(:)       => NULL() ! my tile id for this overlap
      integer,         pointer :: tileNbr(:)      => NULL() ! neighbor tile id for this overlap
      integer,         pointer :: is(:)           => NULL() ! starting i-index 
@@ -266,12 +273,8 @@ module mpp_domains_mod
      integer,            pointer :: tile_id(:)     => NULL() ! tile id of each tile
      type(domain1D),     pointer :: x(:)           => NULL() ! x-direction domain decomposition
      type(domain1D),     pointer :: y(:)           => NULL() ! y-direction domain decomposition
-     type(boundary),     pointer :: check       => NULL() ! send and recv information for boundary consistency check
-     type(boundary),     pointer :: bound       => NULL() ! send and recv information for getting boundary value for symmetry domain.
-!!$     type(overlapSpec),  pointer :: check_send     => NULL() ! send information for boundary consistency check
-!!$     type(overlapSpec),  pointer :: check_recv     => NULL() ! recv information for boundary consistency check
-!!$     type(overlapSpec),  pointer :: bound_send     => NULL() ! send information for getting boundary value for symmetry domain.
-!!$     type(overlapSpec),  pointer :: bound_recv     => NULL() ! recv information for getting boundary value for symmetry domain.
+     type(boundary),     pointer :: check          => NULL() ! send and recv information for boundary consistency check
+     type(boundary),     pointer :: bound          => NULL() ! send and recv information for getting boundary value for symmetry domain.
      type(overlapSpec),  pointer :: update_send(:) => NULL() ! send information for halo update.
      type(overlapSpec),  pointer :: update_recv(:) => NULL() ! recv information for halo update.
      type(refineSpec),   pointer :: rSpec(:)       => NULL() ! refine overlapping for recving.
@@ -281,17 +284,21 @@ module mpp_domains_mod
      type(domain2D),     pointer :: N              => NULL() ! domain for N-cell
      type(domain2D),     pointer :: next           => NULL() ! next domain with different halo size
      type(domain2d),     pointer :: list(:)        => NULL() ! domain on pe list
+     type(domain2d),     pointer :: io_domain      => NULL() ! domain for IO, will be set through calling mpp_set_io_domain
      integer,            pointer :: pearray(:,:)   =>NULL()  ! pe of each layout position 
      integer                     :: position                 ! position of the domain, CENTER, EAST, NORTH, CORNER
      logical                     :: initialized              ! indicate if the overlapping is computed or not.
-     logical                     :: is_tile_root_pe          ! indicate if current pe is the root pe of current tile.
+     integer                     :: tile_root_pe             ! root pe of current tile.
+     integer                     :: io_layout(2)             ! io_layout, will be set through mpp_define_io_domain
+                                                             ! default = domain layout
+     character(len=NAME_LENGTH)  :: name='unnamed'           ! name of the domain, default is "unspecified"
   end type domain2D     
 
   !--- the following type is used to reprsent the contact between tiles.
   !--- this type will only be used in mpp_domains_define.inc
   type contact_type
      integer          :: ncontact                               ! number of neighbor tile.
-     integer, pointer :: tile(:) =>NULL()                       ! neighbor tile 
+     integer, pointer :: tile(:) =>NULL()                      ! neighbor tile 
      integer, pointer :: align1(:)=>NULL(), align2(:)=>NULL()   ! alignment of me and neighbor
      real,    pointer :: refine1(:)=>NULL(), refine2(:)=>NULL() !
      integer, pointer :: is1(:)=>NULL(), ie1(:)=>NULL()         ! i-index of current tile repsenting contact
@@ -405,6 +412,7 @@ module mpp_domains_mod
 
   integer, parameter :: MAXOVERLAP = 100 
 
+  integer(LONG_KIND) :: domain_cnt=0
 
   !--- the following variables are used in mpp_domains_misc.h
   logical :: domain_clocks_on=.FALSE.
@@ -421,9 +429,15 @@ module mpp_domains_mod
 !     processor/tile when updating doamin for symmetric domain and check the consistency on the north
 !     folded edge. 
 !   </DATA>
+!   <DATA NAME="debug_io_domain" TYPE="logical"  DEFAULT=".FALSE.">
+!     When debug_io_domain = .false., when calling mpp_define_io_domain, io_domain will not be defined
+!     when ntile_x==1 and ntile_y==1 or ntile_x==layout(1) and ntile_y==layout(2). Set debug_io_domain
+!     to true to define io_domain in those situations.
+!   </DATA>
 ! </NAMELIST>
   character(len=32) :: debug_update_domain = "none"
-  namelist /mpp_domains_nml/ debug_update_domain
+  logical           :: debug_io_domain = .false.
+  namelist /mpp_domains_nml/ debug_update_domain, debug_io_domain
 
   !***********************************************************************
 
@@ -637,6 +651,10 @@ module mpp_domains_mod
   interface mpp_define_null_domain
      module procedure mpp_define_null_domain1D
      module procedure mpp_define_null_domain2D
+  end interface
+
+  interface mpp_deallocate_domain 
+     module procedure mpp_deallocate_domain2D
   end interface
 
 ! <INTERFACE NAME="mpp_modify_domain">
@@ -1715,9 +1733,9 @@ module mpp_domains_mod
 
   !--- version information variables
   character(len=128), public :: version= &
-       '$Id: mpp_domains.F90,v 16.0 2008/07/30 22:47:28 fms Exp $'
+       '$Id: mpp_domains.F90,v 17.0 2009/07/21 03:21:11 fms Exp $'
   character(len=128), public :: tagname= &
-       '$Name: perth_2008_10 $'
+       '$Name: quebec $'
 
 
 contains

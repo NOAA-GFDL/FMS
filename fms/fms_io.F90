@@ -5,7 +5,7 @@ module fms_io_mod
 !
 !
 ! <CONTACT EMAIL="Zhi.Liang@noaa.gov">
-! G.T. Nong
+! Zhi Liang
 ! </CONTACT>
 
 ! <CONTACT EMAIL="Matthew.Harrison@noaa.gov">
@@ -82,7 +82,7 @@ module fms_io_mod
 !    tile1 because the message is print out from root pe and on root pe the tile id is tile1. 
 ! </DATA>
 !</NAMELIST>
-  
+
 use mpp_io_mod,      only: mpp_open, mpp_close, mpp_io_init, mpp_io_exit, mpp_read, mpp_write
 use mpp_io_mod,      only: mpp_write_meta, mpp_get_info, mpp_get_atts, mpp_get_fields
 use mpp_io_mod,      only: mpp_get_axes, mpp_get_axis_data, mpp_get_att_char, mpp_get_att_name
@@ -93,8 +93,9 @@ use mpp_io_mod,      only: MPP_IEEE32, MPP_NATIVE, MPP_DELETE, MPP_APPEND, MPP_S
 use mpp_io_mod,      only: MAX_FILE_SIZE
 use mpp_domains_mod, only: domain2d, domain1d, NULL_DOMAIN1D, NULL_DOMAIN2D, operator( == ), CENTER
 use mpp_domains_mod, only: mpp_get_domain_components, mpp_get_compute_domain, mpp_get_data_domain
-use mpp_domains_mod, only: mpp_get_domain_shift, mpp_get_global_domain, mpp_global_field, mpp_domain_is_root_pe
+use mpp_domains_mod, only: mpp_get_domain_shift, mpp_get_global_domain, mpp_global_field, mpp_domain_is_tile_root_pe
 use mpp_domains_mod, only: mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined
+use mpp_domains_mod, only: mpp_get_io_domain
 use mpp_mod,         only: mpp_error, FATAL, NOTE, mpp_pe, mpp_root_pe, mpp_npes, stdlog, stdout
 use mpp_mod,         only: mpp_broadcast, ALL_PES, mpp_chksum, mpp_get_current_pelist, mpp_npes, lowercase
 
@@ -134,6 +135,7 @@ type var_type
    logical                                :: initialized ! indicate if the field is read or not in routine save_state.
    logical                                :: mandatory   ! indicate if the field is mandatory to be when restart.
    integer                                :: is, ie, js, je  ! index of the data in compute domain
+   real                                   :: default_data 
 end type var_type
 
 type Ptr0Dr
@@ -283,7 +285,7 @@ integer :: thread_r, thread_w, fset_w, form
 logical :: module_is_initialized = .FALSE.
 
 character(len=32) :: pelist_name
-character(len=5)  :: pe_name
+character(len=7)  :: pe_name
 character(len=128):: error_msg  
 
   
@@ -341,8 +343,8 @@ logical           :: print_chksum        = .false.
        read_data_bug, time_stamp_restart, print_chksum
 
 
-character(len=128) :: version = '$Id: fms_io.F90,v 16.0.4.3.2.1.2.1.4.1.2.1 2008/11/04 16:28:30 z1l Exp $'
-character(len=128) :: tagname = '$Name: perth_2008_10 $'
+character(len=128) :: version = '$Id: fms_io.F90,v 17.0 2009/07/21 03:19:22 fms Exp $'
+character(len=128) :: tagname = '$Name: quebec $'
 
 contains
 
@@ -445,7 +447,11 @@ subroutine fms_io_init()
 
   allocate(pelist(mpp_npes()))        
   call mpp_get_current_pelist(pelist,pelist_name)
-  write(pe_name,'(a,i4.4)' )'.', mpp_pe()    
+  if(mpp_npes()>10000) then
+     write(pe_name,'(a,i6.6)' )'.', mpp_pe()    
+  else
+     write(pe_name,'(a,i4.4)' )'.', mpp_pe()    
+  endif
   deallocate(pelist)
 
   do i = 1, max_domains
@@ -472,7 +478,6 @@ subroutine fms_io_exit()
     integer                             :: unit
     real, dimension(max_axis_size)      :: axisdata
     real(r8_kind)                       :: tlev  
-    real,           allocatable         :: global_data(:,:,:)
     integer,        dimension(max_axes) :: id_x_axes, siz_x_axes
     integer,        dimension(max_axes) :: id_y_axes, siz_y_axes
     integer,        dimension(max_axes) :: id_z_axes, siz_z_axes
@@ -514,7 +519,7 @@ subroutine fms_io_exit()
 
        if( domain_present ) then
           call mpp_open(unit,trim(filename),action=MPP_OVERWR,form=form,threading=thread_w,&
-               fileset=fset_w, is_root_pe=files_write(i)%is_root_pe)
+               fileset=fset_w, is_root_pe=files_write(i)%is_root_pe, domain=array_domain(files_write(i)%var(j)%domain_idx))
        else  ! global data
           call mpp_open(unit,trim(filename),action=MPP_OVERWR,form=form,threading=MPP_SINGLE,&
                fileset=MPP_SINGLE, is_root_pe=files_write(i)%is_root_pe)
@@ -528,11 +533,10 @@ subroutine fms_io_exit()
           endif          
           if(id_x_axes(j) > 0) then
              call mpp_write_meta(unit,x_axes(j),axisname,'none',axisname, &
-                  data=axisdata(1:siz_x_axes(j)),domain=domain_x(id_x_axes(j)),cartesian='X',    &
-                  is_root_pe=files_write(i)%is_root_pe )
+                  data=axisdata(1:siz_x_axes(j)),domain=domain_x(id_x_axes(j)),cartesian='X')
           else
              call mpp_write_meta(unit,x_axes(j),axisname,'none',axisname, &
-                  data=axisdata(1:siz_x_axes(j)),cartesian='X', is_root_pe=files_write(i)%is_root_pe )
+                  data=axisdata(1:siz_x_axes(j)),cartesian='X')
           endif             
        end do
 
@@ -544,11 +548,10 @@ subroutine fms_io_exit()
           endif          
           if(id_y_axes(j) > 0) then
              call mpp_write_meta(unit,y_axes(j),axisname,'none',axisname, &
-                  data=axisdata(1:siz_y_axes(j)),domain=domain_y(id_y_axes(j)),cartesian='Y',    &
-                  is_root_pe=files_write(i)%is_root_pe )
+                  data=axisdata(1:siz_y_axes(j)),domain=domain_y(id_y_axes(j)),cartesian='Y')
           else
              call mpp_write_meta(unit,y_axes(j),axisname,'none',axisname, &
-                  data=axisdata(1:siz_y_axes(j)),cartesian='Y', is_root_pe=files_write(i)%is_root_pe )
+                  data=axisdata(1:siz_y_axes(j)),cartesian='Y')
           endif             
        end do
 
@@ -559,31 +562,31 @@ subroutine fms_io_exit()
              write(axisname,'(a,i2)') 'zaxis_',j
           endif          
           call mpp_write_meta(unit,z_axes(j),axisname,'none',axisname, &
-               data=axisdata(1:siz_z_axes(j)),cartesian='Z', is_root_pe=files_write(i)%is_root_pe )
+               data=axisdata(1:siz_z_axes(j)),cartesian='Z')
        end do
 
 
        ! write time axis  (comment out if no time axis)
        call mpp_write_meta(unit,t_axes,&
-            'Time','time level','Time',cartesian='T', is_root_pe=files_write(i)%is_root_pe)
+            'Time','time level','Time',cartesian='T')
 
        ! write metadata for fields
        do j = 1, files_write(i)%nvar
           cur_var => files_write(i)%var(j)
           call mpp_write_meta(unit,cur_var%field, (/x_axes(cur_var%id_axes(1)), &
                y_axes(cur_var%id_axes(2)), z_axes(cur_var%id_axes(3)), t_axes/), cur_var%name, &
-               'none',cur_var%name,pack=1, is_root_pe=files_write(i)%is_root_pe)
+               'none',cur_var%name,pack=1)
        enddo
 
        ! write values for ndim of spatial axes
        do j = 1, num_x_axes
-          call mpp_write(unit,x_axes(j), is_root_pe=files_write(i)%is_root_pe)
+          call mpp_write(unit,x_axes(j))
        enddo
        do j = 1, num_y_axes
-          call mpp_write(unit,y_axes(j), is_root_pe=files_write(i)%is_root_pe)
+          call mpp_write(unit,y_axes(j))
        enddo
        do j = 1, num_z_axes
-          call mpp_write(unit,z_axes(j), is_root_pe=files_write(i)%is_root_pe)
+          call mpp_write(unit,z_axes(j))
        enddo
 
        ! write data of each field
@@ -601,18 +604,10 @@ subroutine fms_io_exit()
                 kk = k
              end if
              if(cur_var%domain_present) then
-                if(thread_w == MPP_MULTI) then
-                   call mpp_write(unit, cur_var%field,array_domain(cur_var%domain_idx), cur_var%buffer(:,:,:,kk), tlev)
-                else
-                   allocate(global_data(cur_var%gsiz(1), cur_var%gsiz(2), cur_var%gsiz(3)) )
-                   call mpp_global_field(array_domain(cur_var%domain_idx), cur_var%buffer(:,:,:,kk), global_data, &
-                        position=cur_var%position,tile_count=files_write(i)%tile_count)
-
-                   call mpp_write(unit,  cur_var%field, global_data, tlev, is_root_pe=files_write(i)%is_root_pe)
-                   deallocate(global_data)
-                end if
+                call mpp_write(unit, cur_var%field,array_domain(cur_var%domain_idx), cur_var%buffer(:,:,:,kk), tlev, &
+                               default_data=cur_var%default_data)
              else if (thread_w == MPP_MULTI .or. (files_write(i)%is_root_pe.and.thread_w == MPP_SINGLE)) then
-                call mpp_write(unit, cur_var%field, cur_var%buffer(:,:,:,kk), tlev, is_root_pe=files_write(i)%is_root_pe)
+                call mpp_write(unit, cur_var%field, cur_var%buffer(:,:,:,kk), tlev)
              end if
           enddo ! end j loop
        enddo ! end k loop
@@ -659,85 +654,80 @@ end subroutine fms_io_exit
 !   domain of fieldname
 !   </IN>
 !=================================================================================
-subroutine write_data_i3d_new(filename, fieldname, data, domain,append_pelist_name, &
-                              no_domain, position, tile_count, data_default, mosaicfile)
+subroutine write_data_i3d_new(filename, fieldname, data, domain,                  &
+                              no_domain, position, tile_count, data_default)
 
   character(len=*), intent(in) :: filename, fieldname 
   integer, dimension(:,:,:), intent(in) :: data
   type(domain2d), intent(in), optional :: domain
-  logical, intent(in), optional :: append_pelist_name, no_domain
+  logical, intent(in), optional :: no_domain
   integer, intent(in), optional :: position, tile_count, data_default
-  character(len=*), intent(in), optional :: mosaicfile
   real :: default_data
 
   default_data = 0
   if(present(data_default)) default_data = real(data_default)
 
-  call write_data_3d_new(filename, fieldname, real(data), domain,append_pelist_name, &
-                         no_domain, position, tile_count, data_default=default_data, mosaicfile=mosaicfile)
+  call write_data_3d_new(filename, fieldname, real(data), domain,  &
+                         no_domain, position, tile_count, data_default=default_data)
 end subroutine write_data_i3d_new
 !.....................................................................
-subroutine write_data_i2d_new(filename, fieldname, data, domain,append_pelist_name, &
-                              no_domain, position, tile_count, data_default, mosaicfile)
+subroutine write_data_i2d_new(filename, fieldname, data, domain, &
+                              no_domain, position, tile_count, data_default)
 
   character(len=*), intent(in) :: filename, fieldname 
   integer, dimension(:,:), intent(in) :: data
   type(domain2d), intent(in), optional :: domain
-  logical, intent(in), optional :: append_pelist_name, no_domain
+  logical, intent(in), optional :: no_domain
   integer, intent(in), optional :: position, tile_count, data_default
-  character(len=*), intent(in), optional :: mosaicfile
   real :: default_data
 
   default_data = 0
   if(present(data_default)) default_data = real(data_default)
-  call write_data_2d_new(filename, fieldname, real(data), domain,append_pelist_name, &
-                         no_domain, position, tile_count, data_default=default_data, mosaicfile=mosaicfile)
+  call write_data_2d_new(filename, fieldname, real(data), domain, &
+                         no_domain, position, tile_count, data_default=default_data)
 
 end subroutine write_data_i2d_new
 !.....................................................................
-subroutine write_data_i1d_new(filename, fieldname, data, domain, append_pelist_name, &
-                              no_domain, tile_count, data_default, mosaicfile)
+subroutine write_data_i1d_new(filename, fieldname, data, domain, &
+                              no_domain, tile_count, data_default)
   type(domain2d), intent(in), optional :: domain
   character(len=*), intent(in) :: filename, fieldname 
   integer, dimension(:), intent(in) :: data
-  logical, intent(in), optional :: append_pelist_name, no_domain
+  logical, intent(in), optional :: no_domain
   integer, intent(in), optional :: tile_count, data_default
-  character(len=*), intent(in), optional :: mosaicfile
   real :: default_data
 
   default_data = 0
   if(present(data_default)) default_data = real(data_default)
-  call write_data_1d_new(filename, fieldname, real(data), domain, append_pelist_name, &
-                         no_domain, tile_count, data_default=default_data, mosaicfile=mosaicfile)
+  call write_data_1d_new(filename, fieldname, real(data), domain, &
+                         no_domain, tile_count, data_default=default_data)
 end subroutine write_data_i1d_new
 !.....................................................................
-subroutine write_data_iscalar_new(filename, fieldname, data, domain, append_pelist_name, &
-                                  no_domain, tile_count, data_default, mosaicfile)
+subroutine write_data_iscalar_new(filename, fieldname, data, domain, &
+                                  no_domain, tile_count, data_default)
   type(domain2d), intent(in), optional :: domain
   character(len=*), intent(in) :: filename, fieldname 
   integer, intent(in) :: data
-  logical, intent(in), optional :: append_pelist_name, no_domain
+  logical, intent(in), optional :: no_domain
   integer, intent(in), optional :: tile_count, data_default
-  character(len=*), intent(in), optional :: mosaicfile
   real :: default_data
 
   default_data = 0
   if(present(data_default)) default_data = real(data_default)
-  call write_data_scalar_new(filename, fieldname, real(data), domain, append_pelist_name, &
-                             no_domain, tile_count, data_default=default_data, mosaicfile=mosaicfile)
+  call write_data_scalar_new(filename, fieldname, real(data), domain, &
+                             no_domain, tile_count, data_default=default_data)
 
 end subroutine write_data_iscalar_new
 !.....................................................................
-subroutine write_data_3d_new(filename, fieldname, data, domain, append_pelist_name, no_domain, &
-                             position, tile_count, data_default, mosaicfile)
+subroutine write_data_3d_new(filename, fieldname, data, domain, no_domain, &
+                             position, tile_count, data_default)
 
   character(len=*),         intent(in)         :: filename, fieldname 
   real, dimension(:,:,:),   intent(in)         :: data
   type(domain2d), optional, intent(in), target :: domain
   real,           optional, intent(in)         :: data_default
-  logical,        optional, intent(in)         :: append_pelist_name, no_domain   
+  logical,        optional, intent(in)         :: no_domain   
   integer,        optional, intent(in)         :: position, tile_count
-  character(len=*), optional, intent(in)       :: mosaicfile
 
   !--- local variables
   real,               allocatable :: tmp_buffer(:,:,:,:)
@@ -795,11 +785,7 @@ subroutine write_data_3d_new(filename, fieldname, data, domain, append_pelist_na
   append_pelist = .false.
   !Append a string to the file name
   append_string=''
-  !If instance_name is passed
-  if(present(append_pelist_name)) then
-     append_pelist = append_pelist_name
-     append_string = pelist_name
-  endif
+
   !If the filename_appendix  is set override the passed argument. 
   if(len_trim(filename_appendix) > 0)  then
      append_pelist = .true.
@@ -811,7 +797,7 @@ subroutine write_data_3d_new(filename, fieldname, data, domain, append_pelist_na
   !JWD:  This is likely a temporary fix. Since fms_io needs to know tile_count,
   !JWD:  I just don't see how the physics can remain "tile neutral"
   !z1l:  one solution is add one more public interface called set_tile_count
-  call get_mosaic_tile_file(filename2, fname, is_no_domain, domain, tile_count, mosaicfile)
+  call get_mosaic_tile_file(filename2, fname, is_no_domain, domain, tile_count)
 
   ! Check if filename has been open  or not
   index_file = -1
@@ -834,13 +820,14 @@ subroutine write_data_3d_new(filename, fieldname, data, domain, append_pelist_na
      cur_file%tile_count=1
      if(present(tile_count)) cur_file%tile_count = tile_count
      if(ASSOCIATED(d_ptr))then
-        cur_file%is_root_pe = mpp_domain_is_root_pe(d_ptr)
+        cur_file%is_root_pe = mpp_domain_is_tile_root_pe(d_ptr)
      else
         cur_file%is_root_pe = mpp_pe() == mpp_root_pe()
      endif
      cur_file%max_ntime = 1
      !-- allocate memory
      allocate(cur_file%var(max_fields) )
+     cur_file%nvar = 0
      do i = 1, max_fields
         cur_file%var(i)%name           = 'none'
         cur_file%var(i)%domain_present = .false.
@@ -885,6 +872,7 @@ subroutine write_data_3d_new(filename, fieldname, data, domain, append_pelist_na
      cur_var%siz(4)  = 1
      cur_var%gsiz(3) = cur_var%siz(3)
      cur_var%name = fieldname
+     cur_var%default_data = default_data
      cur_var%ndim = 3
      if(present(position)) cur_var%position = position
      if(ASSOCIATED(d_ptr)) then
@@ -953,7 +941,7 @@ end subroutine write_data_3d_new
 !   The routine will register a scalar real restart file field with one time level
 !
 !-------------------------------------------------------------------------------
-function register_restart_field_r0d(fileObj, filename, fieldname, data, domain, instance_name, mandatory, &
+function register_restart_field_r0d(fileObj, filename, fieldname, data, domain, mandatory, &
                                       position, tile_count, data_default, longname, units)
   type(restart_file_type),    intent(inout)      :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
@@ -962,14 +950,13 @@ function register_restart_field_r0d(fileObj, filename, fieldname, data, domain, 
   real,             optional, intent(in)         :: data_default
   logical,          optional, intent(in)         :: mandatory
   integer,          optional, intent(in)         :: position, tile_count
-  character(len=*), optional, intent(in)         :: instance_name
   character(len=*), optional, intent(in)         :: longname, units
   integer                                        :: index_field
   integer                                        :: register_restart_field_r0d
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_r0d): need to call fms_io_init')  
   call setup_one_field(fileObj, filename, fieldname, (/1, 1, 1, 1/), index_field, domain,      &
-                       instance_name, mandatory, no_domain=.true., position=position, tile_count=tile_count, &
+                       mandatory, no_domain=.true., position=position, tile_count=tile_count, &
                        data_default=data_default, longname=longname, units=units)
   fileObj%p0dr(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 0
@@ -984,7 +971,7 @@ end function register_restart_field_r0d
 !   The routine will register a 1-D real restart file field with one time level
 !
 !-------------------------------------------------------------------------------
-function register_restart_field_r1d(fileObj, filename, fieldname, data, domain, instance_name, mandatory, &
+function register_restart_field_r1d(fileObj, filename, fieldname, data, domain, mandatory, &
                              position, tile_count, data_default, longname, units)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
@@ -992,7 +979,6 @@ function register_restart_field_r1d(fileObj, filename, fieldname, data, domain, 
   type(domain2d),   optional, intent(in), target :: domain
   real,             optional, intent(in)         :: data_default
   integer,          optional, intent(in)         :: position, tile_count
-  character(len=*), optional, intent(in)         :: instance_name
   logical,          optional, intent(in)         :: mandatory
   character(len=*), optional, intent(in)         :: longname, units
   integer                                        :: index_field
@@ -1000,7 +986,7 @@ function register_restart_field_r1d(fileObj, filename, fieldname, data, domain, 
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_r1d): need to call fms_io_init')  
   call setup_one_field(fileObj, filename, fieldname, (/size(data,1), 1, 1, 1/), index_field, domain, &
-                       instance_name, mandatory, no_domain=.true., position=position, tile_count=tile_count, &
+                       mandatory, no_domain=.true., position=position, tile_count=tile_count, &
                        data_default=data_default, longname=longname, units=units )
 
   fileObj%p1dr(fileObj%var(index_field)%siz(4), index_field)%p => data
@@ -1016,7 +1002,7 @@ end function register_restart_field_r1d
 !   The routine will register a 2-D real restart file field with one time level
 !
 !-------------------------------------------------------------------------------
-function register_restart_field_r2d(fileObj, filename, fieldname, data, domain, instance_name, mandatory, &
+function register_restart_field_r2d(fileObj, filename, fieldname, data, domain, mandatory, &
                              no_domain, position, tile_count, data_default, longname, units)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
@@ -1025,7 +1011,6 @@ function register_restart_field_r2d(fileObj, filename, fieldname, data, domain, 
   real,             optional, intent(in)         :: data_default
   logical,          optional, intent(in)         :: no_domain   
   integer,          optional, intent(in)         :: position, tile_count
-  character(len=*), optional, intent(in)         :: instance_name
   logical,          optional, intent(in)         :: mandatory
   character(len=*), optional, intent(in)         :: longname, units
   integer                                        :: index_field
@@ -1033,7 +1018,7 @@ function register_restart_field_r2d(fileObj, filename, fieldname, data, domain, 
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_r2d): need to call fms_io_init')  
   call setup_one_field(fileObj, filename, fieldname, (/size(data,1), size(data,2), 1, 1/), &
-                       index_field, domain, instance_name, mandatory, no_domain, &
+                       index_field, domain, mandatory, no_domain, &
                        position, tile_count, data_default, longname, units)
   fileObj%p2dr(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 2
@@ -1049,7 +1034,7 @@ end function register_restart_field_r2d
 !   The routine will register a 3-D real restart file field with one time level
 !
 !-------------------------------------------------------------------------------
-function register_restart_field_r3d(fileObj, filename, fieldname, data, domain, instance_name, mandatory, &
+function register_restart_field_r3d(fileObj, filename, fieldname, data, domain, mandatory, &
                              no_domain, position, tile_count, data_default, longname, units)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
@@ -1058,7 +1043,6 @@ function register_restart_field_r3d(fileObj, filename, fieldname, data, domain, 
   real,             optional, intent(in)         :: data_default
   logical,          optional, intent(in)         :: no_domain   
   integer,          optional, intent(in)         :: position, tile_count
-  character(len=*), optional, intent(in)         :: instance_name
   logical,          optional, intent(in)         :: mandatory
   character(len=*), optional, intent(in)         :: longname, units
   integer                                        :: index_field
@@ -1066,7 +1050,7 @@ function register_restart_field_r3d(fileObj, filename, fieldname, data, domain, 
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_r3d): need to call fms_io_init')  
   call setup_one_field(fileObj, filename, fieldname, (/size(data,1), size(data,2), size(data,3), 1/), &
-                       index_field, domain, instance_name, mandatory, no_domain, &
+                       index_field, domain, mandatory, no_domain, &
                        position, tile_count, data_default, longname, units)
   fileObj%p3dr(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 3
@@ -1081,7 +1065,7 @@ end function register_restart_field_r3d
 !   The routine will register a scalar integer restart file field with one time level
 !
 !-------------------------------------------------------------------------------
-function register_restart_field_i0d(fileObj, filename, fieldname, data, domain, instance_name, mandatory, &
+function register_restart_field_i0d(fileObj, filename, fieldname, data, domain, mandatory, &
                              position, tile_count, data_default, longname, units)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
@@ -1089,7 +1073,6 @@ function register_restart_field_i0d(fileObj, filename, fieldname, data, domain, 
   type(domain2d),   optional, intent(in), target :: domain
   real,             optional, intent(in)         :: data_default
   integer,          optional, intent(in)         :: position, tile_count
-  character(len=*), optional, intent(in)         :: instance_name
   logical,          optional, intent(in)         :: mandatory
   character(len=*), optional, intent(in)         :: longname, units
   integer                                        :: index_field
@@ -1097,7 +1080,7 @@ function register_restart_field_i0d(fileObj, filename, fieldname, data, domain, 
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_i0d): need to call fms_io_init')  
   call setup_one_field(fileObj, filename, fieldname, (/1, 1, 1, 1/), index_field, domain, &
-                       instance_name, mandatory, no_domain=.true., position=position, tile_count=tile_count, &
+                       mandatory, no_domain=.true., position=position, tile_count=tile_count, &
                        data_default=data_default, longname=longname, units=units)
   fileObj%p0di(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 0
@@ -1112,7 +1095,7 @@ end function register_restart_field_i0d
 !   The routine will register a 1-D integer restart file field with one time level
 !
 !-------------------------------------------------------------------------------
-function register_restart_field_i1d(fileObj, filename, fieldname, data, domain, instance_name, mandatory, &
+function register_restart_field_i1d(fileObj, filename, fieldname, data, domain, mandatory, &
                              position, tile_count, data_default, longname, units)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
@@ -1120,7 +1103,6 @@ function register_restart_field_i1d(fileObj, filename, fieldname, data, domain, 
   type(domain2d),   optional, intent(in), target :: domain
   real,             optional, intent(in)         :: data_default
   integer,          optional, intent(in)         :: position, tile_count
-  character(len=*), optional, intent(in)         :: instance_name
   logical,          optional, intent(in)         :: mandatory
   character(len=*), optional, intent(in)         :: longname, units
   integer                                        :: index_field
@@ -1128,7 +1110,7 @@ function register_restart_field_i1d(fileObj, filename, fieldname, data, domain, 
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_i1d): need to call fms_io_init')  
   call setup_one_field(fileObj, filename, fieldname, (/size(data,1), 1, 1, 1/), index_field, domain, &
-                       instance_name, mandatory, no_domain=.true., position=position, tile_count=tile_count, &
+                       mandatory, no_domain=.true., position=position, tile_count=tile_count, &
                        data_default=data_default, longname=longname, units=units)
   fileObj%p1di(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 1
@@ -1144,7 +1126,7 @@ end function register_restart_field_i1d
 !   The routine will register a 2-D real restart file field with one time level
 !
 !-------------------------------------------------------------------------------
-function register_restart_field_i2d(fileObj, filename, fieldname, data, domain, instance_name, mandatory, &
+function register_restart_field_i2d(fileObj, filename, fieldname, data, domain, mandatory, &
                              no_domain, position, tile_count, data_default, longname, units)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
@@ -1153,7 +1135,6 @@ function register_restart_field_i2d(fileObj, filename, fieldname, data, domain, 
   real,             optional, intent(in)         :: data_default
   logical,          optional, intent(in)         :: no_domain   
   integer,          optional, intent(in)         :: position, tile_count
-  character(len=*), optional, intent(in)         :: instance_name
   logical,          optional, intent(in)         :: mandatory
   character(len=*), optional, intent(in)         :: longname, units
   integer                                        :: index_field
@@ -1161,7 +1142,7 @@ function register_restart_field_i2d(fileObj, filename, fieldname, data, domain, 
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_i2d): need to call fms_io_init')  
   call setup_one_field(fileObj, filename, fieldname, (/size(data,1), size(data,2), 1, 1/), &
-                       index_field, domain, instance_name, mandatory, no_domain, &
+                       index_field, domain, mandatory, no_domain, &
                        position, tile_count, data_default, longname, units)
   fileObj%p2di(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 2
@@ -1176,7 +1157,7 @@ end function register_restart_field_i2d
 !   The routine will register a 3-D real restart file field with one time level
 !
 !-------------------------------------------------------------------------------
-function register_restart_field_i3d(fileObj, filename, fieldname, data, domain, instance_name, mandatory, &
+function register_restart_field_i3d(fileObj, filename, fieldname, data, domain, mandatory, &
                              no_domain, position, tile_count, data_default, longname, units)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
@@ -1185,7 +1166,6 @@ function register_restart_field_i3d(fileObj, filename, fieldname, data, domain, 
   real,             optional, intent(in)         :: data_default
   logical,          optional, intent(in)         :: no_domain   
   integer,          optional, intent(in)         :: position, tile_count
-  character(len=*), optional, intent(in)         :: instance_name
   logical,          optional, intent(in)         :: mandatory
   character(len=*), optional, intent(in)         :: longname, units
   integer                                        :: index_field
@@ -1193,7 +1173,7 @@ function register_restart_field_i3d(fileObj, filename, fieldname, data, domain, 
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_i3d): need to call fms_io_init')  
   call setup_one_field(fileObj, filename, fieldname, (/size(data,1), size(data,2), size(data,3), 1/), &
-                       index_field, domain, instance_name, mandatory, no_domain, &
+                       index_field, domain, mandatory, no_domain, &
                        position, tile_count, data_default, longname, units)
   fileObj%p3di(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 3
@@ -1208,7 +1188,7 @@ end function register_restart_field_i3d
 !   The routine will register a scalar real restart file field with two time level
 !
 !-------------------------------------------------------------------------------
-function register_restart_field_r0d_2level(fileObj, filename, fieldname, data1, data2, domain, instance_name, mandatory, &
+function register_restart_field_r0d_2level(fileObj, filename, fieldname, data1, data2, domain, mandatory, &
                              position, tile_count, data_default, longname, units)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
@@ -1216,7 +1196,6 @@ function register_restart_field_r0d_2level(fileObj, filename, fieldname, data1, 
   type(domain2d),   optional, intent(in), target :: domain
   real,             optional, intent(in)         :: data_default
   integer,          optional, intent(in)         :: position, tile_count
-  character(len=*), optional, intent(in)         :: instance_name
   logical,          optional, intent(in)         :: mandatory
   character(len=*), optional, intent(in)         :: longname, units
   integer                                        :: index_field
@@ -1225,7 +1204,7 @@ function register_restart_field_r0d_2level(fileObj, filename, fieldname, data1, 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_r0d_2level): need to call fms_io_init')  
   call setup_one_field(fileObj, filename, fieldname, (/1, 1, 1, 2/), index_field, domain, &
-                       instance_name, mandatory, no_domain=.true., position=position, tile_count=tile_count, &
+                       mandatory, no_domain=.true., position=position, tile_count=tile_count, &
                        data_default=data_default, longname=longname, units=units)
   fileObj%p0dr(1, index_field)%p => data1
   fileObj%p0dr(2, index_field)%p => data2
@@ -1241,7 +1220,7 @@ end function register_restart_field_r0d_2level
 !   The routine will register a 1-D real restart file field with two time level
 !
 !-------------------------------------------------------------------------------
-function register_restart_field_r1d_2level(fileObj, filename, fieldname, data1, data2, domain, instance_name, mandatory, &
+function register_restart_field_r1d_2level(fileObj, filename, fieldname, data1, data2, domain, mandatory, &
                              position, tile_count, data_default, longname, units)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
@@ -1249,7 +1228,6 @@ function register_restart_field_r1d_2level(fileObj, filename, fieldname, data1, 
   type(domain2d),   optional, intent(in), target :: domain
   real,             optional, intent(in)         :: data_default
   integer,          optional, intent(in)         :: position, tile_count
-  character(len=*), optional, intent(in)         :: instance_name
   logical,          optional, intent(in)         :: mandatory
   character(len=*), optional, intent(in)         :: longname, units
   integer                                        :: index_field
@@ -1258,7 +1236,7 @@ function register_restart_field_r1d_2level(fileObj, filename, fieldname, data1, 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_r1d_2level): need to call fms_io_init')  
   call setup_one_field(fileObj, filename, fieldname, (/size(data1,1), 1, 1, 2/), index_field, domain, &
-                       instance_name, mandatory, no_domain=.true., position=position, tile_count=tile_count, &
+                       mandatory, no_domain=.true., position=position, tile_count=tile_count, &
                        data_default=data_default, longname=longname, units=units)
   fileObj%p1dr(1, index_field)%p => data1
   fileObj%p1dr(2, index_field)%p => data2
@@ -1274,7 +1252,7 @@ end function register_restart_field_r1d_2level
 !   The routine will register a 3-D real restart file field with two time level
 !
 !-------------------------------------------------------------------------------
-function register_restart_field_r2d_2level(fileObj, filename, fieldname, data1, data2, domain, instance_name, mandatory, &
+function register_restart_field_r2d_2level(fileObj, filename, fieldname, data1, data2, domain, mandatory, &
                              no_domain, position, tile_count, data_default, longname, units)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
@@ -1283,7 +1261,6 @@ function register_restart_field_r2d_2level(fileObj, filename, fieldname, data1, 
   real,             optional, intent(in)         :: data_default
   logical,          optional, intent(in)         :: no_domain   
   integer,          optional, intent(in)         :: position, tile_count
-  character(len=*), optional, intent(in)         :: instance_name
   logical,          optional, intent(in)         :: mandatory
   character(len=*), optional, intent(in)         :: longname, units
   integer                                        :: index_field
@@ -1292,7 +1269,7 @@ function register_restart_field_r2d_2level(fileObj, filename, fieldname, data1, 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_r2d_2level): need to call fms_io_init')  
   call setup_one_field(fileObj, filename, fieldname, (/size(data1,1), size(data1,2), 1, 2/), &
-                       index_field, domain, instance_name, mandatory, no_domain, &
+                       index_field, domain, mandatory, no_domain, &
                        position, tile_count, data_default, longname, units)
   fileObj%p2dr(1, index_field)%p => data1
   fileObj%p2dr(2, index_field)%p => data2
@@ -1308,7 +1285,7 @@ end function register_restart_field_r2d_2level
 !   The routine will register a 3-D real restart file field with two time level
 !
 !-------------------------------------------------------------------------------
-function register_restart_field_r3d_2level(fileObj, filename, fieldname, data1, data2, domain, instance_name, mandatory, &
+function register_restart_field_r3d_2level(fileObj, filename, fieldname, data1, data2, domain, mandatory, &
                              no_domain, position, tile_count, data_default, longname, units)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
@@ -1317,7 +1294,6 @@ function register_restart_field_r3d_2level(fileObj, filename, fieldname, data1, 
   real,             optional, intent(in)         :: data_default
   logical,          optional, intent(in)         :: no_domain   
   integer,          optional, intent(in)         :: position, tile_count
-  character(len=*), optional, intent(in)         :: instance_name
   logical,          optional, intent(in)         :: mandatory
   character(len=*), optional, intent(in)         :: longname, units
   integer                                        :: index_field
@@ -1326,7 +1302,7 @@ function register_restart_field_r3d_2level(fileObj, filename, fieldname, data1, 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_r3d_2level): need to call fms_io_init')  
   call setup_one_field(fileObj, filename, fieldname, (/size(data1,1), size(data1,2), size(data1,3), 2/), &
-                       index_field, domain, instance_name, mandatory, no_domain, &
+                       index_field, domain, mandatory, no_domain, &
                        position, tile_count, data_default, longname, units)
   fileObj%p3dr(1, index_field)%p => data1
   fileObj%p3dr(2, index_field)%p => data2
@@ -1342,7 +1318,7 @@ end function register_restart_field_r3d_2level
 !   The routine will register a scalar integer restart file field with two time level
 !
 !-------------------------------------------------------------------------------
-function register_restart_field_i0d_2level(fileObj, filename, fieldname, data1, data2, domain, instance_name, mandatory, &
+function register_restart_field_i0d_2level(fileObj, filename, fieldname, data1, data2, domain, mandatory, &
                              position, tile_count, data_default, longname, units)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
@@ -1350,7 +1326,6 @@ function register_restart_field_i0d_2level(fileObj, filename, fieldname, data1, 
   type(domain2d),   optional, intent(in), target :: domain
   real,             optional, intent(in)         :: data_default
   integer,          optional, intent(in)         :: position, tile_count
-  character(len=*), optional, intent(in)         :: instance_name
   logical,          optional, intent(in)         :: mandatory
   character(len=*), optional, intent(in)         :: longname, units
   integer                                        :: index_field
@@ -1359,7 +1334,7 @@ function register_restart_field_i0d_2level(fileObj, filename, fieldname, data1, 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_i0d_2level): need to call fms_io_init')  
   call setup_one_field(fileObj, filename, fieldname, (/1, 1, 1, 2/), index_field, domain, &
-                       instance_name, mandatory, no_domain=.true., position=position, tile_count=tile_count, &
+                       mandatory, no_domain=.true., position=position, tile_count=tile_count, &
                        data_default=data_default, longname=longname, units=units)
   fileObj%p0di(1, index_field)%p => data1
   fileObj%p0di(2, index_field)%p => data2
@@ -1375,7 +1350,7 @@ end function register_restart_field_i0d_2level
 !   The routine will register a 1-D integer restart file field with two time level
 !
 !-------------------------------------------------------------------------------
-function register_restart_field_i1d_2level(fileObj, filename, fieldname, data1, data2, domain, instance_name, mandatory, &
+function register_restart_field_i1d_2level(fileObj, filename, fieldname, data1, data2, domain, mandatory, &
                              position, tile_count, data_default, longname, units)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
@@ -1383,7 +1358,6 @@ function register_restart_field_i1d_2level(fileObj, filename, fieldname, data1, 
   type(domain2d),   optional, intent(in), target :: domain
   real,             optional, intent(in)         :: data_default
   integer,          optional, intent(in)         :: position, tile_count
-  character(len=*), optional, intent(in)         :: instance_name
   logical,          optional, intent(in)         :: mandatory
   character(len=*), optional, intent(in)         :: longname, units
   integer                                        :: index_field
@@ -1392,7 +1366,7 @@ function register_restart_field_i1d_2level(fileObj, filename, fieldname, data1, 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_i1d_2level): need to call fms_io_init')  
   call setup_one_field(fileObj, filename, fieldname, (/size(data1,1), 1, 1, 2/), index_field, domain, &
-                       instance_name, mandatory, no_domain=.true., position=position, tile_count=tile_count, &
+                       mandatory, no_domain=.true., position=position, tile_count=tile_count, &
                        data_default=data_default, longname=longname, units=units)
   fileObj%p1di(1, index_field)%p => data1
   fileObj%p1di(2, index_field)%p => data2
@@ -1408,7 +1382,7 @@ end function register_restart_field_i1d_2level
 !   The routine will register a 3-D integer restart file field with two time level
 !
 !-------------------------------------------------------------------------------
-function register_restart_field_i2d_2level(fileObj, filename, fieldname, data1, data2, domain, instance_name, mandatory, &
+function register_restart_field_i2d_2level(fileObj, filename, fieldname, data1, data2, domain, mandatory, &
                              no_domain, position, tile_count, data_default, longname, units)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
@@ -1417,7 +1391,6 @@ function register_restart_field_i2d_2level(fileObj, filename, fieldname, data1, 
   real,             optional, intent(in)         :: data_default
   logical,          optional, intent(in)         :: no_domain   
   integer,          optional, intent(in)         :: position, tile_count
-  character(len=*), optional, intent(in)         :: instance_name
   logical,          optional, intent(in)         :: mandatory
   character(len=*), optional, intent(in)         :: longname, units
   integer                                        :: index_field
@@ -1426,7 +1399,7 @@ function register_restart_field_i2d_2level(fileObj, filename, fieldname, data1, 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_i2d_2level): need to call fms_io_init')  
   call setup_one_field(fileObj, filename, fieldname, (/size(data1,1), size(data1,2), 1, 2/), &
-                       index_field, domain, instance_name, mandatory, no_domain, &
+                       index_field, domain, mandatory, no_domain, &
                        position, tile_count, data_default, longname, units)
   fileObj%p2di(1, index_field)%p => data1
   fileObj%p2di(2, index_field)%p => data2
@@ -1442,7 +1415,7 @@ end function register_restart_field_i2d_2level
 !   The routine will register a 3-D integer restart file field with two time level
 !
 !-------------------------------------------------------------------------------
-function register_restart_field_i3d_2level(fileObj, filename, fieldname, data1, data2, domain, instance_name, mandatory, &
+function register_restart_field_i3d_2level(fileObj, filename, fieldname, data1, data2, domain, mandatory, &
                              no_domain, position, tile_count, data_default, longname, units)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
@@ -1451,7 +1424,6 @@ function register_restart_field_i3d_2level(fileObj, filename, fieldname, data1, 
   real,             optional, intent(in)         :: data_default
   logical,          optional, intent(in)         :: no_domain   
   integer,          optional, intent(in)         :: position, tile_count
-  character(len=*), optional, intent(in)         :: instance_name
   logical,          optional, intent(in)         :: mandatory
   character(len=*), optional, intent(in)         :: longname, units
   integer                                        :: index_field
@@ -1460,7 +1432,7 @@ function register_restart_field_i3d_2level(fileObj, filename, fieldname, data1, 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_i3d_2level): need to call fms_io_init')  
   call setup_one_field(fileObj, filename, fieldname, (/size(data1,1), size(data1,2), size(data1,3), 2/), &
-                       index_field, domain, instance_name, mandatory, no_domain, &
+                       index_field, domain, mandatory, no_domain, &
                        position, tile_count, data_default, longname, units)
   fileObj%p3di(1, index_field)%p => data1
   fileObj%p3di(2, index_field)%p => data2
@@ -1503,12 +1475,12 @@ subroutine save_restart(fileObj, time_stamp, directory )
   type(var_type), pointer, save       :: cur_var=>NULL()
   integer                             :: num_x_axes, num_y_axes, num_z_axes
   integer                             :: naxes_x, naxes_y, naxes_z
-  integer                             :: nfiles, i, j, k, l, siz
+  integer                             :: nfiles, i, j, k, l, siz, ind_dom
   logical                             :: domain_present
   real(r8_kind)                       :: tlev  
   character(len=10)                   :: axisname  
 
-  real, allocatable, dimension(:,:,:) :: r3d, global_r3d
+  real, allocatable, dimension(:,:,:) :: r3d
   real, allocatable, dimension(:,:)   :: r2d, global_r2d
   real, allocatable, dimension(:)     :: r1d  
   real                                :: r0d
@@ -1540,6 +1512,7 @@ subroutine save_restart(fileObj, time_stamp, directory )
   do j = 1, fileObj%nvar
      if (fileObj%var(j)%domain_present) then
         domain_present = .true.
+        ind_dom = j
         exit
      end if
   end do
@@ -1593,7 +1566,7 @@ subroutine save_restart(fileObj, time_stamp, directory )
      end if
      if( domain_present ) then
         call mpp_open(unit,trim(restartpath),action=MPP_OVERWR,form=form,threading=thread_w,&
-             fileset=fset_w, is_root_pe=fileObj%is_root_pe)
+             fileset=fset_w, is_root_pe=fileObj%is_root_pe, domain=array_domain(fileObj%var(ind_dom)%domain_idx) )
      else  ! global data
         call mpp_open(unit,trim(restartpath),action=MPP_OVERWR,form=form,threading=MPP_SINGLE,&
              fileset=MPP_SINGLE, is_root_pe=fileObj%is_root_pe)
@@ -1615,11 +1588,10 @@ subroutine save_restart(fileObj, time_stamp, directory )
         endif
         if(id_x_axes(j) > 0) then
            call mpp_write_meta(unit,x_axes(naxes_x),axisname,'none',axisname, &
-                data=axisdata(1:siz_x_axes(j)),domain=domain_x(id_x_axes(j)),cartesian='X',    &
-                is_root_pe=fileObj%is_root_pe )
+                data=axisdata(1:siz_x_axes(j)),domain=domain_x(id_x_axes(j)),cartesian='X')
         else
            call mpp_write_meta(unit,x_axes(naxes_x),axisname,'none',axisname, &
-                data=axisdata(1:siz_x_axes(j)),cartesian='X', is_root_pe=fileObj%is_root_pe )
+                data=axisdata(1:siz_x_axes(j)),cartesian='X')
         endif
      end do
 
@@ -1639,11 +1611,10 @@ subroutine save_restart(fileObj, time_stamp, directory )
         endif
         if(id_y_axes(j) > 0) then
            call mpp_write_meta(unit,y_axes(naxes_y),axisname,'none',axisname, &
-                data=axisdata(1:siz_y_axes(j)),domain=domain_y(id_y_axes(j)),cartesian='Y',    &
-                is_root_pe=fileObj%is_root_pe )
+                data=axisdata(1:siz_y_axes(j)),domain=domain_y(id_y_axes(j)),cartesian='Y')
         else
            call mpp_write_meta(unit,y_axes(naxes_y),axisname,'none',axisname, &
-                data=axisdata(1:siz_y_axes(j)),cartesian='Y', is_root_pe=fileObj%is_root_pe )
+                data=axisdata(1:siz_y_axes(j)),cartesian='Y')
         endif
      end do
 
@@ -1662,12 +1633,12 @@ subroutine save_restart(fileObj, time_stamp, directory )
            write(axisname,'(a,i2)') 'zaxis_',naxes_z
         endif
         call mpp_write_meta(unit,z_axes(naxes_z),axisname,'none',axisname, &
-             data=axisdata(1:siz_z_axes(j)),cartesian='Z', is_root_pe=fileObj%is_root_pe )
+             data=axisdata(1:siz_z_axes(j)),cartesian='Z')
      end do
 
      ! write out time axis  
      call mpp_write_meta(unit,t_axes,&
-          'Time','time level','Time',cartesian='T', is_root_pe=fileObj%is_root_pe)
+          'Time','time level','Time',cartesian='T')
      ! write metadata for fields
      do j = start_var,next_var-1
         cur_var => fileObj%var(j)
@@ -1704,18 +1675,18 @@ subroutine save_restart(fileObj, time_stamp, directory )
            end if
         end if
         call mpp_write_meta(unit,cur_var%field, var_axes(1:num_var_axes), cur_var%name, &
-                 cur_var%units,cur_var%longname,pack=1, is_root_pe=fileObj%is_root_pe)
+                 cur_var%units,cur_var%longname,pack=1)
      enddo
 
      ! write values for ndim of spatial axes
      do j = 1, naxes_x
-        call mpp_write(unit,x_axes(j), is_root_pe=fileObj%is_root_pe)
+        call mpp_write(unit,x_axes(j))
      enddo
      do j = 1, naxes_y
-        call mpp_write(unit,y_axes(j), is_root_pe=fileObj%is_root_pe)
+        call mpp_write(unit,y_axes(j))
      enddo
      do j = 1, naxes_z
-        call mpp_write(unit,z_axes(j), is_root_pe=fileObj%is_root_pe)
+        call mpp_write(unit,z_axes(j))
      enddo
 
      ! write data of each field
@@ -1727,87 +1698,55 @@ subroutine save_restart(fileObj, time_stamp, directory )
            ! the data missing.
            if(k <= cur_var%siz(4)) then
               if(cur_var%domain_present) then  ! one 2-D or 3-D case possible present domain
-                 if(thread_w == MPP_MULTI) then
-                    if( Associated(fileObj%p2dr(k,j)%p) ) then
-                       call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), fileObj%p2dr(k,j)%p, tlev)
-                    else if( Associated(fileObj%p3dr(k,j)%p) ) then
-                       call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), fileObj%p3dr(k,j)%p, tlev)
-                    else if( Associated(fileObj%p2di(k,j)%p) ) then
-                       allocate(r2d(cur_var%siz(1), cur_var%siz(2)) )
-                       r2d = fileObj%p2di(k,j)%p
-                       call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), r2d, tlev)
-                       deallocate(r2d)
-                    else if( Associated(fileObj%p3di(k,j)%p) ) then
-                       allocate(r3d(cur_var%siz(1), cur_var%siz(2), cur_var%siz(3)) )
-                       r3d = fileObj%p3di(k,j)%p
-                       call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), r3d, tlev)
-                       deallocate(r3d)
-                    else
-                       call mpp_error(FATAL, "fms_io(save_restart): domain is present and thread_w  "// &
-                            "is MPP_MULTI, field "//trim(cur_var%name)//" of file "//trim(fileObj%name)// &
-                            ", but none of p2dr, p3dr, p2di and p3di is associated") 
-                    end if
-                 else 
-                    if( Associated(fileObj%p2dr(k,j)%p) ) then
-                       allocate(global_r2d(cur_var%gsiz(1), cur_var%gsiz(2)) )
-                       call mpp_global_field(array_domain(cur_var%domain_idx), fileObj%p2dr(k,j)%p, global_r2d, &
-                            position=cur_var%position,tile_count=fileObj%tile_count)
-                       call mpp_write(unit,  cur_var%field, global_r2d, tlev, is_root_pe=fileObj%is_root_pe)
-                       deallocate(global_r2d)
-                    else if( Associated(fileObj%p3dr(k,j)%p) ) then
-                       allocate(global_r3d(cur_var%gsiz(1), cur_var%gsiz(2), cur_var%gsiz(3)) )
-                       call mpp_global_field(array_domain(cur_var%domain_idx), fileObj%p3dr(k,j)%p, global_r3d, &
-                            position=cur_var%position,tile_count=fileObj%tile_count)
-                       call mpp_write(unit,  cur_var%field, global_r3d, tlev, is_root_pe=fileObj%is_root_pe)
-                       deallocate(global_r3d)
-                    else if( Associated(fileObj%p2di(k,j)%p) ) then
-                       allocate(global_r2d(cur_var%gsiz(1), cur_var%gsiz(2)) )
-                       allocate(r2d(cur_var%siz(1), cur_var%siz(2)) )
-                       r2d = fileObj%p2di(k,j)%p
-                       call mpp_global_field(array_domain(cur_var%domain_idx), r2d, global_r2d, &
-                            position=cur_var%position,tile_count=fileObj%tile_count)
-                       call mpp_write(unit,  cur_var%field, global_r2d, tlev, is_root_pe=fileObj%is_root_pe)
-                       deallocate(global_r2d, r2d)
-                    else if( Associated(fileObj%p3di(k,j)%p) ) then
-                       allocate(global_r3d(cur_var%gsiz(1), cur_var%gsiz(2), cur_var%gsiz(3)) )
-                       allocate(r3d(cur_var%siz(1), cur_var%siz(2), cur_var%siz(3)) )
-                       r3d = fileObj%p3di(k,j)%p
-                       call mpp_global_field(array_domain(cur_var%domain_idx), r3d, global_r3d, &
-                            position=cur_var%position,tile_count=fileObj%tile_count)
-                       call mpp_write(unit,  cur_var%field, global_r3d, tlev, is_root_pe=fileObj%is_root_pe)
-                       deallocate(global_r3d, r3d)
-                    else
-                       call mpp_error(FATAL, "fms_io(save_restart): domain is present and thread_w  "// &
-                            "is MPP_SINGLE, field "//trim(cur_var%name)//" of file "//trim(fileObj%name)// &
-                            ", but none of p2dr, p3dr, p2di and p3di is associated") 
-                    end if
+                 if( Associated(fileObj%p2dr(k,j)%p) ) then
+                    call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), fileObj%p2dr(k,j)%p, tlev, &
+                                   default_data=cur_var%default_data)
+                 else if( Associated(fileObj%p3dr(k,j)%p) ) then
+                    call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), fileObj%p3dr(k,j)%p, tlev, &
+                                   default_data=cur_var%default_data)
+                 else if( Associated(fileObj%p2di(k,j)%p) ) then
+                    allocate(r2d(cur_var%siz(1), cur_var%siz(2)) )
+                    r2d = fileObj%p2di(k,j)%p
+                    call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), r2d, tlev, &
+                                   default_data=cur_var%default_data)
+                    deallocate(r2d)
+                 else if( Associated(fileObj%p3di(k,j)%p) ) then
+                    allocate(r3d(cur_var%siz(1), cur_var%siz(2), cur_var%siz(3)) )
+                    r3d = fileObj%p3di(k,j)%p
+                    call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), r3d, tlev, &
+                                   default_data=cur_var%default_data)
+                    deallocate(r3d)
+                 else
+                    call mpp_error(FATAL, "fms_io(save_restart): domain is present and thread_w  "// &
+                         "is MPP_MULTI, field "//trim(cur_var%name)//" of file "//trim(fileObj%name)// &
+                         ", but none of p2dr, p3dr, p2di and p3di is associated") 
                  end if
               else if (thread_w == MPP_MULTI .or. (fileObj%is_root_pe.and.thread_w == MPP_SINGLE)) then     
                  if ( Associated(fileObj%p0dr(k,j)%p) ) then
-                    call mpp_write(unit, cur_var%field, fileObj%p0dr(k,j)%p, tlev, is_root_pe=fileObj%is_root_pe)
+                    call mpp_write(unit, cur_var%field, fileObj%p0dr(k,j)%p, tlev)
                  else if ( Associated(fileObj%p1dr(k,j)%p) ) then
-                    call mpp_write(unit, cur_var%field, fileObj%p1dr(k,j)%p, tlev, is_root_pe=fileObj%is_root_pe)
+                    call mpp_write(unit, cur_var%field, fileObj%p1dr(k,j)%p, tlev)
                  else if ( Associated(fileObj%p2dr(k,j)%p) ) then
-                    call mpp_write(unit, cur_var%field, fileObj%p2dr(k,j)%p, tlev, is_root_pe=fileObj%is_root_pe)
+                    call mpp_write(unit, cur_var%field, fileObj%p2dr(k,j)%p, tlev)
                  else if ( Associated(fileObj%p3dr(k,j)%p) ) then
-                    call mpp_write(unit, cur_var%field, fileObj%p3dr(k,j)%p, tlev, is_root_pe=fileObj%is_root_pe)
+                    call mpp_write(unit, cur_var%field, fileObj%p3dr(k,j)%p, tlev)
                  else if ( Associated(fileObj%p0di(k,j)%p) ) then
                     r0d =  fileObj%p0di(k,j)%p
-                    call mpp_write(unit, cur_var%field, r0d,                  tlev, is_root_pe=fileObj%is_root_pe)
+                    call mpp_write(unit, cur_var%field, r0d,                  tlev)
                  else if ( Associated(fileObj%p1di(k,j)%p) ) then
                     allocate(r1d(cur_var%siz(1)) )
                     r1d = fileObj%p1di(k,j)%p
-                    call mpp_write(unit, cur_var%field, r1d,                  tlev, is_root_pe=fileObj%is_root_pe)
+                    call mpp_write(unit, cur_var%field, r1d,                  tlev)
                     deallocate(r1d)
                  else if ( Associated(fileObj%p2di(k,j)%p) ) then
                     allocate(r2d(cur_var%siz(1), cur_var%siz(2)) )
                     r2d = fileObj%p2di(k,j)%p
-                    call mpp_write(unit, cur_var%field, r2d,                  tlev, is_root_pe=fileObj%is_root_pe)
+                    call mpp_write(unit, cur_var%field, r2d,                  tlev)
                     deallocate(global_r2d, r2d)
                  else if ( Associated(fileObj%p3di(k,j)%p) ) then
                     allocate(r3d(cur_var%siz(1), cur_var%siz(2), cur_var%siz(3)) )
                     r3d = fileObj%p3di(k,j)%p
-                    call mpp_write(unit, cur_var%field, r3d,                  tlev, is_root_pe=fileObj%is_root_pe)
+                    call mpp_write(unit, cur_var%field, r3d,                  tlev)
                     deallocate(r3d)
                  else
                     call mpp_error(FATAL, "fms_io(save_restart): There is no pointer associated with the data of  field "// &
@@ -1900,6 +1839,7 @@ subroutine restore_state_all(fileObj, directory)
   character(len=8)   :: suffix      ! A suffix (like "_2") that is added to any
                                     ! additional restart files.
   character(len=80)  :: varname     ! A variable's name.
+  character(len=256) :: filename
   integer            :: num_restart ! The number of restart files that have already
                                     ! been opened.
   integer            :: nfile       ! The number of files (restart files and others
@@ -1910,10 +1850,12 @@ subroutine restore_state_all(fileObj, directory)
   type(fieldtype), allocatable        :: fields(:)
   logical                             :: fexist, domain_present
   integer                             :: j, n, l, k, missing_fields, domain_idx
+  integer                             :: tile_id(1)
   real, allocatable, dimension(:,:,:) :: r3d
   real, allocatable, dimension(:,:)   :: r2d
   real, allocatable, dimension(:)     :: r1d  
   real                                :: r0d
+  type(domain2d), pointer, save       :: io_domain=>NULL()
 
   if (.not.associated(fileObj%var)) call mpp_error(FATAL, "fms_io(restore_state_all): " // &
       "restart_file_type data must be initialized by calling register_restart_field before using it")
@@ -1928,13 +1870,42 @@ subroutine restore_state_all(fileObj, directory)
   else
      restartpath = trim(fileObj%name)
   end if
+
+  domain_present = .false.
+  do j = 1, fileObj%nvar
+     if (fileObj%var(j)%domain_present) then
+        domain_present = .true.
+        domain_idx = fileObj%var(j)%domain_idx
+        exit
+     end if
+  end do
+
   !--- first open all the restart files
   !--- NOTE: For distributed restart file, we are assuming there is only one file exist.
-  inquire (file=trim(restartpath)//trim(pe_name), exist=fexist)     
+
+  inquire (file=trim(restartpath)//trim(pe_name), exist=fexist)
+  if(.NOT. fexist .and. domain_present) then
+     io_domain => mpp_get_io_domain(array_domain(domain_idx))
+     if(associated(io_domain)) then
+        tile_id = mpp_get_tile_id(io_domain)
+        if(mpp_npes() > 10000) then
+           write(filename, '(a,i6.6)' ) trim(restartpath)//'.', tile_id(1)
+        else
+           write(filename, '(a,i4.4)' ) trim(restartpath)//'.', tile_id(1)
+        endif
+        inquire (file=trim(filename), exist = fexist)
+     endif
+     io_domain => NULL()
+  endif
   if(fexist) then
      nfile = 1
-     call mpp_open(unit(nfile), trim(restartpath), form=form,action=MPP_RDONLY,threading=thread_r, &
-          fileset=MPP_MULTI)
+     if(domain_present) then
+        call mpp_open(unit(nfile), trim(restartpath), form=form,action=MPP_RDONLY,threading=thread_r, &
+             fileset=MPP_MULTI, domain=array_domain(domain_idx) )
+     else
+        call mpp_open(unit(nfile), trim(restartpath), form=form,action=MPP_RDONLY,threading=thread_r, &
+             fileset=MPP_MULTI)
+     endif
   else
      do while(.true.)
         if (num_restart < 10) then
@@ -2095,6 +2066,7 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
   character(len=8)   :: suffix      ! A suffix (like "_2") that is added to any
                                     ! additional restart files.
   character(len=80)  :: varname     ! A variable's name.
+  character(len=256) :: filename
   integer            :: num_restart ! The number of restart files that have already
                                     ! been opened.
   integer            :: nfile       ! The number of files (restart files and others
@@ -2102,6 +2074,7 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
   integer   :: unit(max_split_file) ! The mpp unit of all open files.
   type(var_type), pointer, save       :: cur_var=>NULL()
   integer                             :: ndim, nvar, natt, ntime, tlev, siz
+  integer                             :: tile_id(1)
   type(fieldtype), allocatable        :: fields(:)
   logical                             :: fexist, domain_present
   integer                             :: j, n, l, k, missing_fields, domain_idx
@@ -2109,12 +2082,17 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
   real, allocatable, dimension(:,:)   :: r2d
   real, allocatable, dimension(:)     :: r1d  
   real                                :: r0d
+  type(domain2d), pointer, save       :: io_domain=>NULL()
 
   if (.not.associated(fileObj%var)) call mpp_error(FATAL, "fms_io(restore_state_one_field): " // &
       "restart_file_type data must be initialized by calling register_restart_field before using it")
 
   dir = 'INPUT'
   if(present(directory)) dir = directory
+
+  cur_var => fileObj%var(id_field)
+  domain_present = cur_var%domain_present
+  domain_idx = cur_var%domain_idx
 
   num_restart = 0
   nfile = 0
@@ -2126,10 +2104,29 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
   !--- first open all the restart files
   !--- NOTE: For distributed restart file, we are assuming there is only one file exist.
   inquire (file=trim(restartpath)//trim(pe_name), exist=fexist)     
+  if(.NOT. fexist .and. domain_present) then
+     io_domain => mpp_get_io_domain(array_domain(domain_idx))
+     if(associated(io_domain)) then
+        tile_id = mpp_get_tile_id(io_domain)
+        if(mpp_npes()>10000) then
+           write(filename, '(a,i6.6)' ) trim(restartpath)//'.', tile_id(1)
+        else
+           write(filename, '(a,i4.4)' ) trim(restartpath)//'.', tile_id(1)
+        endif
+        inquire (file=trim(filename), exist = fexist)
+     endif
+     io_domain=>NULL()
+  endif
+
   if(fexist) then
      nfile = 1
-     call mpp_open(unit(nfile), trim(restartpath), form=form,action=MPP_RDONLY,threading=thread_r, &
-          fileset=MPP_MULTI)
+     if(domain_present) then
+        call mpp_open(unit(nfile), trim(restartpath), form=form,action=MPP_RDONLY,threading=thread_r, &
+             fileset=MPP_MULTI, domain=array_domain(domain_idx) )
+     else
+        call mpp_open(unit(nfile), trim(restartpath), form=form,action=MPP_RDONLY,threading=thread_r, &
+             fileset=MPP_MULTI)
+     endif
   else
      do while(.true.)
         if (num_restart < 10) then
@@ -2174,9 +2171,6 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
 
      missing_fields = 0
      j = id_field
-     cur_var => fileObj%var(j)
-     domain_present = cur_var%domain_present
-     domain_idx = cur_var%domain_idx
      do l=1, nvar
         call mpp_get_atts(fields(l),name=varname)
         if (lowercase(trim(varname)) == lowercase(trim(cur_var%name))) then
@@ -2267,8 +2261,8 @@ end subroutine restore_state_one_field
 !     This routine will setup one entry to be written out 
 !
 !-------------------------------------------------------------------------------
-subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,  domain, instance_name, mandatory, &
-                           no_domain, position, tile_count, data_default, longname, units, mosaicfile)
+subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,  domain, mandatory, &
+                           no_domain, position, tile_count, data_default, longname, units)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),         intent(in)           :: filename, fieldname 
   integer, dimension(:),    intent(in)           :: field_siz
@@ -2277,10 +2271,8 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
   real,           optional, intent(in)           :: data_default
   logical,        optional, intent(in)           :: no_domain   
   integer,        optional, intent(in)           :: position, tile_count
-  character(len=*), optional, intent(in)         :: instance_name
   logical,          optional, intent(in)         :: mandatory
   character(len=*), optional, intent(in)         :: longname, units
-  character(len=*), optional, intent(in)         :: mosaicfile
 
   !--- local variables
   integer                         :: i, domain_idx
@@ -2332,8 +2324,6 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
 
   !Append a string to the file name
   append_string=''
-  !If instance_name is passed
-  if(present(instance_name)) append_string = instance_name
   !If the filename_appendix  is set override the passed argument. 
   if(len_trim(filename_appendix) > 0)   append_string = filename_appendix
 
@@ -2342,7 +2332,7 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
   !JWD:  This is likely a temporary fix. Since fms_io needs to know tile_count,
   !JWD:  I just don't see how the physics can remain "tile neutral"
   !z1l:  one solution is add one more public interface called set_tile_count
-  call get_mosaic_tile_file(filename2, fname, is_no_domain, domain, tile_count, mosaicfile)
+  call get_mosaic_tile_file(filename2, fname, is_no_domain, domain, tile_count)
 
   if(Associated(fileObj%var) ) then
      ! make sure the consistency of file name
@@ -2369,7 +2359,7 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
      fileObj%tile_count=1
      if(present(tile_count)) fileObj%tile_count = tile_count
      if(ASSOCIATED(d_ptr))then
-        fileObj%is_root_pe = mpp_domain_is_root_pe(d_ptr)
+        fileObj%is_root_pe = mpp_domain_is_tile_root_pe(d_ptr)
      else
         fileObj%is_root_pe = mpp_pe() == mpp_root_pe()
      endif
@@ -2426,6 +2416,7 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
      cur_var%gsiz(3) = field_siz(3)
      cur_var%csiz(3) = field_siz(3)
      cur_var%name = fieldname
+     cur_var%default_data = default_data
      if(present(mandatory)) cur_var%mandatory = mandatory
      if(present(longname)) then
         cur_var%longname = longname
@@ -2492,39 +2483,36 @@ end subroutine setup_one_field
 
 
 !.....................................................................
-subroutine write_data_2d_new(filename, fieldname, data, domain,append_pelist_name, &
-                             no_domain, position,tile_count, data_default, mosaicfile)
+subroutine write_data_2d_new(filename, fieldname, data, domain,    &
+                             no_domain, position,tile_count, data_default)
 
   character(len=*), intent(in)                 :: filename, fieldname 
   real, dimension(:,:), intent(in)             :: data
   real, dimension(size(data,1),size(data,2),1) :: data_3d
   real, intent(in), optional                   :: data_default
   type(domain2d), intent(in), optional         :: domain
-  logical, intent(in), optional                :: append_pelist_name, no_domain
+  logical, intent(in), optional                :: no_domain
   integer, intent(in), optional                :: position, tile_count
-  character(len=*), intent(in), optional       :: mosaicfile
  
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(write_data_2d_new):need to call fms_io_init first')
   data_3d(:,:,1) = data(:,:)
 
-  call write_data_3d_new(filename, fieldname, data_3d, domain, append_pelist_name, &
-                         no_domain, position, tile_count, data_default, mosaicfile)
+  call write_data_3d_new(filename, fieldname, data_3d, domain, &
+                         no_domain, position, tile_count, data_default)
 
 end subroutine write_data_2d_new
 
 ! ........................................................
-subroutine write_data_1d_new(filename, fieldname, data,domain,append_pelist_name, &
-                             no_domain, tile_count, data_default, mosaicfile)
+subroutine write_data_1d_new(filename, fieldname, data,domain, &
+                             no_domain, tile_count, data_default)
   
   type(domain2d), intent(in), optional   :: domain
   character(len=*), intent(in)           :: filename, fieldname 
   real, dimension(:), intent(in)         :: data
   real, dimension(size(data(:)),1,1)     :: data_3d
   real, intent(in), optional             :: data_default
-  logical, intent(in), optional          :: append_pelist_name, no_domain
+  logical, intent(in), optional          :: no_domain
   integer, intent(in), optional          :: tile_count
-  character(len=*), intent(in), optional :: mosaicfile
-
   
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(write_data_1d_new): module not initialized')  
   if(present(no_domain)) then
@@ -2532,22 +2520,21 @@ subroutine write_data_1d_new(filename, fieldname, data,domain,append_pelist_name
                                  //trim(fieldname)//' of file '//trim(filename) )
   end if
   data_3d(:,1,1) = data(:)  
-  call write_data_3d_new(filename, fieldname, data_3d,domain,append_pelist_name, &
-                         no_domain=.true., tile_count=tile_count, data_default=data_default, mosaicfile=mosaicfile)  
+  call write_data_3d_new(filename, fieldname, data_3d,domain,   &
+                         no_domain=.true., tile_count=tile_count, data_default=data_default)  
 end subroutine write_data_1d_new
 
 ! ..........................................................
-subroutine write_data_scalar_new(filename, fieldname, data, domain, append_pelist_name, &
-                                 no_domain, tile_count, data_default, mosaicfile)
+subroutine write_data_scalar_new(filename, fieldname, data, domain, &
+                                 no_domain, tile_count, data_default)
 
   type(domain2d), intent(in), optional   :: domain
   character(len=*), intent(in)           :: filename, fieldname 
   real, intent(in)                       :: data
   real, dimension(1,1,1)                 :: data_3d
   real, intent(in), optional             :: data_default
-  logical, intent(in), optional          :: append_pelist_name, no_domain
+  logical, intent(in), optional          :: no_domain
   integer, intent(in), optional          :: tile_count
-  character(len=*), intent(in), optional :: mosaicfile
     
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(write_data_scalar_new):  module not initialized: '//fieldname)  
   if(present(no_domain)) then
@@ -2556,8 +2543,8 @@ subroutine write_data_scalar_new(filename, fieldname, data, domain, append_pelis
   end if
 
   data_3d(1,1,1) = data
-  call write_data_3d_new(filename, fieldname, data_3d,domain,append_pelist_name, &
-                         no_domain=.true., tile_count=tile_count, data_default=data_default, mosaicfile=mosaicfile)
+  call write_data_3d_new(filename, fieldname, data_3d,domain, &
+                         no_domain=.true., tile_count=tile_count, data_default=data_default)
 end subroutine write_data_scalar_new
 
 ! ..........................................................
@@ -2647,161 +2634,45 @@ end function lookup_axis
 !    Instead it will return T or F depending on
 !    whether or not the field was found.
 !   </OUT>
-subroutine field_size(filename, fieldname, siz, append_pelist_name, field_found, domain )
+subroutine field_size(filename, fieldname, siz, field_found, domain, no_domain )
 
-  character(len=*), intent(in)         :: filename, fieldname
-  integer,       intent(inout)         :: siz(:)
-  logical,        intent(in), optional :: append_pelist_name
-  logical,       intent(out), optional :: field_found  
-  type(domain2d), intent(in), optional :: domain
-  integer                              :: i, nfile, unit, ntiles, lens
-  logical                              :: file_opened, found, is_exist
-  character(len=256)                   :: fname, basefile, actual_file
+  character(len=*), intent(in)                 :: filename, fieldname
+  integer,       intent(inout)                 :: siz(:)
+  logical,       intent(out), optional         :: field_found  
+  type(domain2d), intent(in), optional, target :: domain
+  logical,       intent(in),  optional         :: no_domain
+
+  integer                              :: nfile, unit
+  logical                              :: found, found_file
+  character(len=256)                   :: actual_file
+  logical                              :: read_dist, io_domain_exist, is_no_domain
 
   if (size(siz(:)) < 4) call mpp_error(FATAL,'fms_io(field_size): size array must be >=4 to receive field size of ' &
        //trim(fieldname)//' in file '// trim(filename))
 
-! get the number of tiles
-  ntiles = 1
-  if(mpp_mosaic_defined())then 
-    if(PRESENT(domain))then
-       ntiles = mpp_get_ntile_count(domain)
-    elseif (ASSOCIATED(Current_domain)) then
-       ntiles = mpp_get_ntile_count(Current_domain)
-    endif
+  is_no_domain = .false.
+  if(present(no_domain)) is_no_domain = no_domain
+
+!--- first need to get the filename, when is_no_domain is true, only check file without tile
+!--- if is_no_domain is false, first check no_domain=.false., then check no_domain = .true.
+  found_file = get_file_name(filename, actual_file, read_dist, io_domain_exist, no_domain=is_no_domain, &
+                             domain=domain)
+  !--- when is_no_domain is true and file is not found, send out error message.
+  if(is_no_domain .AND. .NOT. found_file) call mpp_error(FATAL, &
+         'fms_io_mod(field_size): file '//trim(filename)//' and corresponding distributed file are not found')
+  found = .false.
+  if(found_file) then
+     call get_file_unit(actual_file, unit, nfile, read_dist, io_domain_exist, domain=domain)
+     call get_size(unit,fieldname,siz,found)    
   endif
 
-! Need to check if filename has been opened or not
-
-  fname = trim(filename)
-  if (PRESENT(append_pelist_name)) then
-     if (append_pelist_name) then
-        fname = trim(filename)//trim(pelist_name)
-     endif
-  endif        
-  nfile = 0
-  file_opened=.false.
-  do i=1,num_files_r
-     if (trim(files_read(i)%name) == trim(fname))  then
-        nfile = i
-        file_opened = .true.
-        actual_file = trim(fname)
-        exit ! file is already opened
-     endif
-  enddo
-!Need to open the file now, Only works for single NetCDF files for now ...
-  found= .false.
-  siz=-1
-
-!remove .nc from the file name.
-  lens = len_trim(fname)
-  basefile = trim(fname)
-  if(lens>3) then
-     if(fname(lens-2:lens) == '.nc') basefile = fname(1:lens-3)
-  endif
-
-  if (.not. file_opened) then
-     inquire (file=trim(basefile)//'.nc'//trim(pe_name), exist=is_exist)
-     if(is_exist) then
-        actual_file = trim(basefile)//'.nc'//trim(pe_name)
-        call mpp_open(unit,trim(basefile),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_MULTI, &
-             fileset=MPP_MULTI)
-     else 
-        inquire (file=trim(basefile)//'.nc', exist=is_exist)
-        if(is_exist) then     
-           actual_file = trim(basefile)//'.nc'
-           call mpp_open(unit,trim(basefile),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_SINGLE, &
-                fileset=MPP_SINGLE)
-        end if
-     end if
-     
-     !Perhaps the file has an ensemble instance appendix
-     if(.not. is_exist .AND. len_trim(filename_appendix) > 0) then
-        call get_instance_filename(fname, fname)
-        inquire (file=trim(fname)//trim(pe_name), exist=is_exist)
-        if(.not. is_exist) inquire (file=trim(fname)//'.nc'//trim(pe_name), exist=is_exist)
-        if(is_exist) then
-           call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_MULTI, &
-                fileset=MPP_MULTI)
-        else 
-           inquire (file=trim(fname), exist=is_exist)
-           if(.not. is_exist) inquire (file=trim(fname)//'.nc', exist=is_exist)
-           if(is_exist) then     
-              call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_SINGLE, &
-                   fileset=MPP_SINGLE)
-           end if
-        end if
-        
-     endif
-  
-
-     if(is_exist) then
-        call get_size(unit,fieldname,siz,found)
-        call mpp_close(unit)
-     else if(ntiles == 1) then
-        call mpp_error(FATAL, 'fms_io(field_size): neither file '//trim(basefile)// &
-             '.nc nor file '//trim(basefile)//'.nc'//trim(pe_name)// ' exist')         
-     end if
-  else
-     do i=1, files_read(nfile)%nvar
-        if (trim(fieldname) == trim(files_read(nfile)%var(i)%name)) then
-           found = .true.
-           siz = files_read(nfile)%var(i)%siz(:)
-           exit
-        endif
-     enddo
-     if (.not. found) then
-        call get_size(files_read(nfile)%unit,fieldname,siz,found)
-     endif
-  endif
-
-  if(ntiles > 1 .AND. .not. found) then
-     ! Perhaps the variable is in a "tile" file.
-     call get_mosaic_tile_file(filename, fname, is_no_domain= .false., domain=domain)
-
-     nfile = 0
-     file_opened=.false.
-     do i=1,num_files_r
-        if (trim(files_read(i)%name) == trim(fname))  then
-           actual_file = trim(fname)
-           nfile = i
-           file_opened = .true.
-           exit ! file is already opened
-        endif
-     enddo
-     found= .false.
-     siz=-1
-     if (.not. file_opened) then
-        ! File is not open yet. 
-        inquire (file=trim(fname)//trim(pe_name), exist=is_exist)
-        if(is_exist) then
-           actual_file = trim(fname)//trim(pe_name)
-           call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_MULTI, &
-                fileset=MPP_MULTI)
-        else
-           inquire (file=trim(fname), exist=is_exist)
-           if(.not. is_exist) call mpp_error(FATAL, 'fms_io(field_size): None of the files '// &
-                trim(basefile)// '.nc, '//trim(basefile)//'.nc'//trim(pe_name)//', '// &
-                trim(fname)//', nor '//trim(fname)//trim(pe_name)//' exist.' )
-           actual_file = trim(fname)
-           call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_SINGLE, &
-                fileset=MPP_SINGLE)
-        end if
-        call get_size(unit, fieldname, siz, found)
-        call mpp_close(unit)
-     else
-        do i=1, files_read(nfile)%nvar
-           if (trim(fieldname) == trim(files_read(nfile)%var(i)%name)) then
-              found = .true.
-              siz = files_read(nfile)%var(i)%siz(:)
-              exit
-           endif
-        enddo
-! Scan the already open file in order to get the size of the field.
-        if (.not. found) then
-           call get_size(files_read(nfile)%unit, fieldname, siz, found)
-        endif
-     endif
+  if(.not.found .AND. .not. is_no_domain) then
+     found_file =  get_file_name(filename, actual_file, read_dist, io_domain_exist, no_domain=.true.)
+     !--- when is_no_domain is true and file is not found, send out error message.
+     if(.NOT. found_file) call mpp_error(FATAL, 'fms_io_mod(field_size): file ' //trim(filename)// &
+          '(with the consideration of tile number) and corresponding distributed file are not found')  
+     call get_file_unit(actual_file, unit, nfile, read_dist, io_domain_exist, domain=domain)
+     call get_size(unit,fieldname,siz,found)
   endif
 
   if( PRESENT(field_found) )then
@@ -2901,82 +2772,77 @@ end subroutine get_size
 !   array containing data of fieldname
 !   </OUT>
 !=====================================================================================
-subroutine read_data_i3d_new(filename,fieldname,data,domain,timelevel,append_pelist_name, &
-                             no_domain,position, tile_count, mosaicfile)
+subroutine read_data_i3d_new(filename,fieldname,data,domain,timelevel, &
+                             no_domain,position, tile_count)
   character(len=*),           intent(in)   :: filename, fieldname
   integer, dimension(:,:,:), intent(inout) :: data ! 3 dimensional data    
   type(domain2d), intent(in),   optional   :: domain
   integer, intent(in),          optional   :: timelevel
-  logical, intent(in),          optional   :: append_pelist_name, no_domain 
+  logical, intent(in),          optional   :: no_domain 
   integer, intent(in) ,         optional   :: position, tile_count
-  character(len=*), intent(in), optional   :: mosaicfile
 
   real, dimension(size(data,1),size(data,2),size(data,3)) :: r_data
   r_data = 0
-  call read_data_3d_new(filename,fieldname,r_data,domain,timelevel,append_pelist_name, &
-                        no_domain,position, tile_count, mosaicfile)
+  call read_data_3d_new(filename,fieldname,r_data,domain,timelevel, &
+                        no_domain,position, tile_count)
   data = CEILING(r_data)
 end subroutine read_data_i3d_new
 
-subroutine read_data_i2d_new(filename,fieldname,data,domain,timelevel,append_pelist_name, &
-                             no_domain,position, tile_count, mosaicfile)
+subroutine read_data_i2d_new(filename,fieldname,data,domain,timelevel, &
+                             no_domain,position, tile_count)
   character(len=*),         intent(in)   :: filename, fieldname
   integer, dimension(:,:), intent(inout) :: data ! 2 dimensional data    
   type(domain2d), intent(in), optional   :: domain
   integer, intent(in),        optional   :: timelevel
-  logical, intent(in),        optional   :: append_pelist_name , no_domain
+  logical, intent(in),        optional   :: no_domain
   integer, intent(in) ,       optional   :: position, tile_count
-  character(len=*), intent(in), optional :: mosaicfile
   real, dimension(size(data,1),size(data,2)) :: r_data
 
   r_data = 0
-  call read_data_2d_new(filename,fieldname,r_data,domain,timelevel,append_pelist_name, &
-                        no_domain,position, tile_count, mosaicfile)
+  call read_data_2d_new(filename,fieldname,r_data,domain,timelevel, &
+                        no_domain,position, tile_count)
   data = CEILING(r_data)
 end subroutine read_data_i2d_new
 !.....................................................................
-subroutine read_data_i1d_new(filename,fieldname,data,domain,timelevel,append_pelist_name, &
-                             no_domain, tile_count, mosaicfile)
+subroutine read_data_i1d_new(filename,fieldname,data,domain,timelevel, &
+                             no_domain, tile_count)
   character(len=*), intent(in)           :: filename, fieldname
   integer, dimension(:), intent(inout)   :: data ! 1 dimensional data    
   type(domain2d), intent(in), optional   :: domain
   integer, intent(in) , optional         :: timelevel
-  logical, intent(in), optional          :: append_pelist_name, no_domain 
+  logical, intent(in), optional          :: no_domain 
   integer, intent(in), optional          :: tile_count
-  character(len=*), intent(in), optional :: mosaicfile
 
   real, dimension(size(data,1))        :: r_data
 
-  call read_data_1d_new(filename,fieldname,r_data,domain,timelevel,append_pelist_name, &
-                        no_domain, tile_count, mosaicfile)
+  call read_data_1d_new(filename,fieldname,r_data,domain,timelevel, &
+                        no_domain, tile_count)
   data = CEILING(r_data)
 end subroutine read_data_i1d_new
 !.....................................................................
-subroutine read_data_iscalar_new(filename,fieldname,data,domain,timelevel,append_pelist_name, &
-                                 no_domain, tile_count, mosaicfile)
+subroutine read_data_iscalar_new(filename,fieldname,data,domain,timelevel, &
+                                 no_domain, tile_count)
   character(len=*), intent(in)           :: filename, fieldname
   integer, intent(inout)                 :: data     
   type(domain2d), intent(in), optional   :: domain
   integer, intent(in) , optional         :: timelevel
-  logical, intent(in), optional          :: append_pelist_name, no_domain 
+  logical, intent(in), optional          :: no_domain 
   integer, intent(in), optional          :: tile_count
-  character(len=*), intent(in), optional :: mosaicfile
 
   real                                 :: r_data
-  call read_data_scalar_new(filename,fieldname,r_data,domain,timelevel,append_pelist_name, &
-                            no_domain, tile_count, mosaicfile)
+  call read_data_scalar_new(filename,fieldname,r_data,domain,timelevel, &
+                            no_domain, tile_count)
   data = CEILING(r_data)
 end subroutine read_data_iscalar_new
 !=====================================================================================
-subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_pelist_name, &
-      no_domain, position, tile_count, mosaicfile)
+subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel, &
+      no_domain, position, tile_count)
   character(len=*),                  intent(in) :: filename, fieldname
   real, dimension(:,:,:),         intent(inout) :: data ! 3 dimensional data    
   type(domain2d), target, optional,  intent(in) :: domain
   integer,                optional,  intent(in) :: timelevel
-  logical,                optional,  intent(in) :: append_pelist_name, no_domain 
+  logical,                optional,  intent(in) :: no_domain 
   integer,                optional,  intent(in) :: position, tile_count
-  character(len=*),       optional,  intent(in) :: mosaicfile
 
   character(len=256)            :: fname
   integer                       :: unit, siz_in(4)
@@ -2988,8 +2854,10 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
   integer                       :: gxsize, gysize
   integer                       :: ishift, jshift
   logical                       :: is_no_domain = .false.
-  logical                       :: read_dist
+  logical                       :: read_dist, io_domain_exist, found_file
   type(domain2d), pointer, save :: d_ptr =>NULL()
+  type(domain2d), pointer, save :: io_domain =>NULL()
+
 
 ! read disttributed files is used when reading restart files that are NOT mppnccombined. In this
 ! case PE 0 will read file_res.nc.0000, PE 1 will read file_res.nc.0001 and so forth.
@@ -3015,31 +2883,28 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel,append_peli
 
   if(.not. PRESENT(domain) .and. .not. ASSOCIATED(Current_domain) ) is_no_domain = .true.
 
-  call get_file_name(filename, fname, read_dist, is_no_domain, domain, append_pelist_name, tile_count, mosaicfile)
-  call get_file_unit(fname, unit, file_index, read_dist)
+  found_file = get_file_name(filename, fname, read_dist, io_domain_exist, is_no_domain, domain,  tile_count)
+  if(.not.found_file) call mpp_error(FATAL, 'fms_io_mod(read_data_3d_new): file ' //trim(filename)// &
+          '(with the consideration of tile number) and corresponding distributed file are not found')  
+  call get_file_unit(fname, unit, file_index, read_dist, io_domain_exist, domain=domain)
 
   siz_in(3) = size(data,3)
-  if( read_dist .or. is_no_domain) then
-     if(associated(d_ptr) .AND. (.NOT. is_no_domain) ) then  !-- read_dist will be true, global size will be compute domain size.
-        call mpp_get_compute_domain(d_ptr, xsize = gxsize, ysize = gysize, tile_count=tile_count)
-        call mpp_get_domain_shift  (d_ptr, ishift, jshift, position)
-        if (ishift .NE. 0)  gxsize = gxsize+ishift
-        if (jshift .NE. 0)  gysize = gysize+jshift
+  if(is_no_domain .or. .NOT. associated(d_ptr) ) then
+     gxsize = size(data,1)
+     gysize = size(data,2)
+  else if(read_dist) then
+     if(io_domain_exist) then
+        io_domain=>mpp_get_io_domain(d_ptr)
+        call mpp_get_global_domain(io_domain, xsize = gxsize, ysize = gysize, tile_count=tile_count, position=position)
+        io_domain=>NULL()
      else
-        gxsize = size(data,1)
-        gysize = size(data,2)
-     end if
-  else  ! d_ptr must not be null
-     call mpp_get_compute_domain(d_ptr, xsize = cxsize, ysize = cysize, tile_count=tile_count)
-     call mpp_get_data_domain   (d_ptr, xsize = dxsize, ysize = dysize, tile_count=tile_count)
-     call mpp_get_global_domain (d_ptr, xsize = gxsize, ysize = gysize, tile_count=tile_count)
+        call mpp_get_compute_domain(d_ptr, xsize = gxsize, ysize = gysize, tile_count=tile_count, position=position)
+     endif
+  else
+     call mpp_get_compute_domain(d_ptr, xsize = cxsize, ysize = cysize, tile_count=tile_count, position=position)
+     call mpp_get_data_domain   (d_ptr, xsize = dxsize, ysize = dysize, tile_count=tile_count, position=position)
+     call mpp_get_global_domain (d_ptr, xsize = gxsize, ysize = gysize, tile_count=tile_count, position=position)
      call mpp_get_domain_shift  (d_ptr, ishift, jshift, position)
-     if (ishift .NE. 0) then
-        cxsize = cxsize+ishift; dxsize = dxsize+ishift; gxsize = gxsize+ishift
-     endif
-     if (jshift .NE. 0) then
-        cysize = cysize+jshift; dysize = dysize+jshift; gysize = gysize+jshift
-     endif
      if( (size(data,1) .NE. cxsize .AND. size(data,1) .NE. dxsize) .OR. &
          (size(data,2) .NE. cysize .AND. size(data,2) .NE. dysize) )then
        call mpp_error(FATAL,'fms_io(read_data_3d_new): data should be on either computer domain '//&
@@ -3099,7 +2964,7 @@ subroutine read_data_text(filename,fieldname,data,level)
   character(len=*), intent(in)   :: filename, fieldname
   character(len=*), intent(out)  :: data
   integer, intent(in) , optional :: level
-  logical                        :: file_opened, fexist, read_dist      
+  logical                        :: file_opened, found_file, read_dist, io_domain_exist
   integer                        :: lev, unit, index_field
   integer                        :: file_index
   character(len=256)             :: fname
@@ -3108,15 +2973,16 @@ subroutine read_data_text(filename,fieldname,data,level)
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(read_data_text):  module not initialized')  
 
   file_opened=.false.
-  fexist = .false.
   if (PRESENT(level)) then
      lev = level
   else
      lev = 1
   endif  
 
-  call get_file_name(filename, fname, read_dist, .true. )
-  call get_file_unit(fname, unit, file_index, read_dist)
+  found_file = get_file_name(filename, fname, read_dist, io_domain_exist, no_domain=.true. )
+ if(.not.found_file) call mpp_error(FATAL, 'fms_io_mod(read_data_text): file ' //trim(filename)// &
+          '(with the consideration of tile number) and corresponding distributed file are not found')  
+  call get_file_unit(fname, unit, file_index, read_dist, io_domain_exist )
 
 ! Get info of this file and field   
   if ((thread_r == MPP_MULTI).or.(mpp_pe()==mpp_root_pe())) then
@@ -3135,15 +3001,14 @@ end subroutine read_data_text
 !.............................................................. 
 ! </SUBROUTINE>
 subroutine read_data_2d_new(filename,fieldname,data,domain,timelevel,&
-     append_pelist_name, no_domain,position,tile_count, mosaicfile)
+      no_domain,position,tile_count)
   character(len=*), intent(in)                 :: filename, fieldname
   real, dimension(:,:), intent(inout)          :: data     !2 dimensional data 
   real, dimension(size(data,1),size(data,2),1) :: data_3d
   type(domain2d), intent(in), optional         :: domain
   integer, intent(in) , optional               :: timelevel
-  logical, intent(in), optional                :: append_pelist_name, no_domain
+  logical, intent(in), optional                ::  no_domain
   integer, intent(in) , optional               :: position, tile_count
-  character(len=*), intent(in), optional       :: mosaicfile
   integer                                      :: isc,iec,jsc,jec,isd,ied,jsd,jed
   integer :: isg,ieg,jsg,jeg
   integer                                      :: xsize_c,ysize_c,xsize_d,ysize_d
@@ -3154,19 +3019,18 @@ subroutine read_data_2d_new(filename,fieldname,data,domain,timelevel,&
 !  p = LOC(data)
 !#endif
   call read_data_3d_new(filename,fieldname,data_3d,domain,timelevel,&
-       append_pelist_name, no_domain,position,tile_count, mosaicfile)
+        no_domain,position,tile_count)
 
   if(PRESENT(domain)) then
-     call mpp_get_global_domain( domain,isg,ieg,jsg,jeg,xsize=xsize_g,ysize=ysize_g, tile_count=tile_count)
-     call mpp_get_compute_domain( domain,isc,iec,jsc,jec,xsize=xsize_c,ysize=ysize_c, tile_count=tile_count)
-     call mpp_get_data_domain( domain,isd,ied,jsd,jed,xsize=xsize_d,ysize=ysize_d, tile_count=tile_count)
+     call mpp_get_global_domain( domain,isg,ieg,jsg,jeg,xsize=xsize_g,ysize=ysize_g, tile_count=tile_count, position=position)
+     call mpp_get_compute_domain( domain,isc,iec,jsc,jec,xsize=xsize_c,ysize=ysize_c, tile_count=tile_count, position=position)
+     call mpp_get_data_domain( domain,isd,ied,jsd,jed,xsize=xsize_d,ysize=ysize_d, tile_count=tile_count, position=position)
      call mpp_get_domain_shift  (domain, ishift, jshift, position)
-     if((size(data,1)==xsize_c+ishift) .and. (size(data,2)==ysize_c+jshift)) then !on_comp_domain
+     if((size(data,1)==xsize_c) .and. (size(data,2)==ysize_c)) then !on_comp_domain
         data(:,:) = data_3d(:,:,1)
-     else if((size(data,1)==xsize_d+ishift) .and. (size(data,2)==ysize_d+jshift)) then !on_data_domain
-        data(isc-isd+1:iec-isd+1+ishift,jsc-jsd+1:jec-jsd+1+jshift) = &
-               data_3d(isc-isd+1:iec-isd+1+ishift,jsc-jsd+1:jec-jsd+1+jshift,1)
-     else if((size(data,1)==xsize_g+ishift) .and. (size(data,2)==ysize_g+jshift)) then !on_global_domain
+     else if((size(data,1)==xsize_d) .and. (size(data,2)==ysize_d)) then !on_data_domain
+        data(isc-isd+1:iec-isd+1,jsc-jsd+1:jec-jsd+1) = data_3d(isc-isd+1:iec-isd+1,jsc-jsd+1:jec-jsd+1,1)
+     else if((size(data,1)==xsize_g) .and. (size(data,2)==ysize_g)) then !on_global_domain
         data(:,:) = data_3d(:,:,1)
      else 
         call mpp_error(FATAL,'error in read_data_2d_new, field '//trim(fieldname)// &
@@ -3179,15 +3043,14 @@ subroutine read_data_2d_new(filename,fieldname,data,domain,timelevel,&
 end subroutine read_data_2d_new
 !.....................................................................
 subroutine read_data_1d_new(filename,fieldname,data,domain,timelevel,&
-     append_pelist_name, no_domain, tile_count, mosaicfile)
+      no_domain, tile_count)
   character(len=*), intent(in)           :: filename, fieldname
   real, dimension(:), intent(inout)      :: data     !1 dimensional data 
   real, dimension(size(data,1),1,1)      :: data_3d
   type(domain2d), intent(in), optional   :: domain
   integer, intent(in) , optional         :: timelevel
-  logical, intent(in), optional          :: append_pelist_name, no_domain
+  logical, intent(in), optional          ::  no_domain
   integer, intent(in), optional          :: tile_count
-  character(len=*), intent(in), optional :: mosaicfile  
 #ifdef use_CRI_pointers
   pointer( p, data_3d )
   p = LOC(data)
@@ -3199,13 +3062,13 @@ subroutine read_data_1d_new(filename,fieldname,data,domain,timelevel,&
   end if
 
   call read_data_3d_new(filename,fieldname,data_3d,domain,timelevel,&
-       append_pelist_name, no_domain=.true., tile_count=tile_count, mosaicfile=mosaicfile)
+        no_domain=.true., tile_count=tile_count)
 
 end subroutine read_data_1d_new
 !.....................................................................
 
 subroutine read_data_scalar_new(filename,fieldname,data,domain,timelevel,&
-     append_pelist_name, no_domain, tile_count, mosaicfile)
+      no_domain, tile_count)
 
 ! this subroutine is for reading a single number
   character(len=*), intent(in)           :: filename, fieldname
@@ -3213,9 +3076,8 @@ subroutine read_data_scalar_new(filename,fieldname,data,domain,timelevel,&
   real, dimension(1,1,1)                 :: data_3d
   type(domain2d), intent(in), optional   :: domain
   integer, intent(in) , optional         :: timelevel
-  logical, intent(in), optional          :: append_pelist_name, no_domain
+  logical, intent(in), optional          ::  no_domain
   integer, intent(in), optional          :: tile_count
-  character(len=*), intent(in), optional :: mosaicfile  
 
   if(present(no_domain)) then
      if(.NOT. no_domain) call mpp_error(FATAL, 'fms_io(read_data_scalar_new): no_domain should be true for field ' &
@@ -3223,7 +3085,7 @@ subroutine read_data_scalar_new(filename,fieldname,data,domain,timelevel,&
   end if
 
   call read_data_3d_new(filename,fieldname,data_3d,domain,timelevel,&
-       append_pelist_name, no_domain=.true., tile_count=tile_count, mosaicfile=mosaicfile)
+        no_domain=.true., tile_count=tile_count)
 
   data = data_3d(1,1,1)
 
@@ -4581,12 +4443,11 @@ end subroutine get_axis_cart
 
 
   !#####################################################################
-  subroutine get_mosaic_tile_file(file_in, file_out, is_no_domain, domain, tile_count, mosaicfile)
+  subroutine get_mosaic_tile_file(file_in, file_out, is_no_domain, domain, tile_count)
     character(len=*), intent(in)                   :: file_in
     character(len=*), intent(out)                  :: file_out
     logical,          intent(in)                   :: is_no_domain
     type(domain2D),   intent(in), optional, target :: domain
-    character(len=*), intent(in), optional         :: mosaicfile
     integer,          intent(in), optional         :: tile_count 
     character(len=256)                             :: basefile, tilename
     integer                                        :: lens, ntiles, ntileMe, tile
@@ -4627,12 +4488,7 @@ end subroutine get_axis_cart
           tile_id = mpp_get_tile_id(d_ptr)
           tile = 1
           if(present(tile_count)) tile = tile_count
-          if(present(mosaicfile)) then
-             !--- read tilename from mosaic file
-             call read_data(mosaicfile, "gridtiles", tilename, level=tile)
-          else
-             tilename = 'tile'//string(tile_id(tile))
-          end if
+          tilename = 'tile'//string(tile_id(tile))
           deallocate(tile_id)
           if(index(basefile,'.'//trim(tilename),back=.true.) == 0)then
              basefile = trim(basefile)//'.'//trim(tilename);
@@ -4724,72 +4580,111 @@ end subroutine get_axis_cart
 
   !#############################################################################
   ! This routine will get the actual file name, as well as if read_dist is true or false.
-  subroutine get_file_name(orig_file, actual_file, read_dist, is_no_domain, domain, &
-                          append_pelist_name, tile_count, mosaicfile  )
+  ! return true if such file exist and return false if not.
+  function get_file_name(orig_file, actual_file, read_dist, io_domain_exist, no_domain, domain, &
+                           tile_count)
     character(len=*),                 intent(in) :: orig_file
     character(len=*),                intent(out) :: actual_file
     logical,                         intent(out) :: read_dist
-    logical,                          intent(in) :: is_no_domain
+    logical,                         intent(out) :: io_domain_exist
+    logical,                optional, intent(in) :: no_domain
     type(domain2D), target, optional, intent(in) :: domain
-    logical,                optional, intent(in) :: append_pelist_name  
     integer,                optional, intent(in) :: tile_count  
-    character(len=*),       optional, intent(in) :: mosaicfile
+    logical                                      :: get_file_name
 
-    logical             :: fexist
+    type(domain2d), pointer, save :: d_ptr, io_domain
+    logical                       :: fexist, is_no_domain
+    integer                       :: tile_id(1)
+    character(len=256)            :: fname
 
+    is_no_domain=.false.
+    if(PRESENT(no_domain)) is_no_domain = no_domain
 
-    fexist = .false.
-    read_dist=.false.
+    if(present(domain)) then
+       d_ptr => domain
+    elseif (ASSOCIATED(Current_domain) .AND. .NOT. is_no_domain ) then
+       d_ptr => Current_domain
+    endif
 
+    fexist          = .false.
+    read_dist       = .false.
+    get_file_name   = .false.
+    io_domain_exist = .false.
+
+  !--- The file maybe not netcdf file, we just check the original file.
+    if(index(orig_file, '.nc', back=.true.) == 0) then
+       inquire (file=trim(orig_file), exist=fexist)
+       if(fexist) then
+          actual_file = orig_file
+          get_file_name = .true.
+          return
+       endif
+    endif 
+    
     !JWD:  This is likely a temporary fix. Since fms_io needs to know tile_count, 
     !JWD:  I just don't see how the physics can remain "tile neutral"
-    !z1l:  one solution is add one more public interface called set_tile_count
-    call get_mosaic_tile_file(orig_file, actual_file, is_no_domain, domain, tile_count, mosaicfile)
+    call get_mosaic_tile_file(orig_file, actual_file, is_no_domain, domain, tile_count)
 
-    if (PRESENT(append_pelist_name)) then
-       if (append_pelist_name) then
-          if(is_no_domain) call mpp_error(FATAL, &
-               'fms_io(get_file_name): when append_pelist_name is set to true, no_domain should not be set to true') 
-          actual_file = trim(actual_file)//trim(pelist_name)
-       endif
-    endif
+    !--- check if the file is group redistribution.
+    if(ASSOCIATED(d_ptr)) then
+       io_domain => mpp_get_io_domain(d_ptr)
+       if(associated(io_domain)) then
+          tile_id = mpp_get_tile_id(io_domain)       
+          if(mpp_npes()>10000) then
+             write(fname, '(a,i6.6)' ) trim(actual_file)//'.', tile_id(1)
+          else
+             write(fname, '(a,i4.4)' ) trim(actual_file)//'.', tile_id(1)
+          endif
+          inquire (file=trim(fname), exist=fexist)
+          if(fexist) io_domain_exist = .true.
+       endif   
+       io_domain=>NULL()
+    endif 
 
-    inquire (file=trim(actual_file)//trim(pe_name), exist=fexist)
-    if(.not. fexist) inquire (file=trim(actual_file)//'.nc'//trim(pe_name), exist=fexist)
+    if(.not. fexist) inquire (file=trim(actual_file)//trim(pe_name), exist=fexist)
+
     if(fexist) then
-       read_dist = .true.  
-    else
-       read_dist = .false.
-       inquire (file=trim(actual_file), exist=fexist)
-       if(.not. fexist) inquire (file=trim(actual_file)//'.nc', exist=fexist)
+       read_dist = .true.
+       d_ptr => NULL()
+       get_file_name = .true.
+       return
     endif
-    
-    !Perhaps the file has an ensemble instance appendix
-    if( .not. fexist ) then
-       call get_instance_filename(actual_file, actual_file)
-       inquire (file=trim(actual_file)//trim(pe_name), exist=fexist)       
-       if(.not. fexist) inquire (file=trim(actual_file)//'.nc'//trim(pe_name), exist=fexist)
-       if(fexist) then
-          read_dist = .true.  
-       else
-          read_dist = .false.
-          inquire (file=trim(actual_file), exist=fexist)
-          if(.not. fexist) inquire (file=trim(actual_file)//'.nc', exist=fexist)
-       endif
-    endif
-    
-    if( .not. fexist) then 
-       call mpp_error(FATAL,'fms_io(get_file_name): file '//trim(orig_file)//' and distributed file not found')
-    end if
 
-  end subroutine get_file_name
+    inquire (file=trim(actual_file), exist=fexist)
+    if(fexist) then
+       d_ptr => NULL()
+       get_file_name = .true.
+       return
+    endif    
+
+    !Perhaps the file has an ensemble instance appendix
+    call get_instance_filename(actual_file, actual_file)
+    inquire (file=trim(actual_file)//trim(pe_name), exist=fexist)  
+    if(.not. fexist) inquire (file=trim(actual_file)//'.nc'//trim(pe_name), exist=fexist)     
+    if(fexist) then
+       read_dist = .true. 
+       d_ptr => NULL()
+       get_file_name = .true.
+       return
+    endif    
+    inquire (file=trim(actual_file), exist=fexist)
+          if(.not. fexist) inquire (file=trim(actual_file)//'.nc', exist=fexist)
+    
+    if(fexist) then
+       d_ptr => NULL()
+       get_file_name = .true.
+       return
+    endif
+
+  end function get_file_name
   
 
   !#############################################################################
-  subroutine get_file_unit(filename, unit, index_file, read_dist )
-    character(len=*),                  intent(in) :: filename
-    integer,                          intent(out) :: unit, index_file 
-    logical,                           intent(in) :: read_dist
+  subroutine get_file_unit(filename, unit, index_file, read_dist, io_domain_exist, domain )
+    character(len=*),         intent(in) :: filename
+    integer,                 intent(out) :: unit, index_file 
+    logical,                  intent(in) :: read_dist, io_domain_exist
+    type(domain2d), optional, intent(in) :: domain    
 
     logical  :: file_opened
     integer  :: i
@@ -4814,14 +4709,28 @@ end subroutine get_axis_cart
             //'change threading_read to MULTI')
     endif
     if(read_dist) then
-       call mpp_open(unit,trim(filename),form=form,action=MPP_RDONLY,threading=thread_r, &
+       if(io_domain_exist) then
+          if(present(domain)) then
+             call mpp_open(unit,filename,form=form,action=MPP_RDONLY,threading=MPP_MULTI, &
+                fileset=MPP_MULTI, domain=domain)
+          else if(ASSOCIATED(current_domain) ) then
+             call mpp_open(unit,filename,form=form,action=MPP_RDONLY,threading=MPP_MULTI, &
+                fileset=MPP_MULTI, domain=current_domain)
+          else
+             call mpp_error(FATAL,'fms_io(get_file_unit): when io_domain_exsit = .true., '// &
+                   'either domain is present or current_domain is associated')
+          endif
+       else
+          call mpp_open(unit,trim(filename),form=form,action=MPP_RDONLY,threading=thread_r, &
             fileset=MPP_MULTI)
+       endif
     else
        call mpp_open(unit,trim(filename),form=form,action=MPP_RDONLY,threading=thread_r, &
             fileset=MPP_SINGLE)
     end if
     files_read(num_files_r)%name = trim(filename)
     allocate(files_read(num_files_r)%var (max_fields) )
+    files_read(num_files_r)%nvar = 0
     index_file = num_files_r
     files_read(index_file)%unit = unit   
 
@@ -4947,40 +4856,23 @@ end subroutine get_axis_cart
 !     type associated with the distributed data you are writing.
 !   </ERROR>
 
- function file_exist (file_name, domain)
-  character(len=*), intent(in) :: file_name
+ function file_exist (file_name, domain, no_domain)
+  character(len=*), intent(in)         :: file_name
   type(domain2d), intent(in), optional :: domain
-  logical  file_exist
-  character(len=5)                      :: pe_name
-  character(len=256)                    :: fname
+  logical,        intent(iN), optional :: no_domain  
 
-   file_exist = .false.
-   if (len_trim(file_name) == 0) return
-   if (file_name(1:1) == ' ')    return
+  logical                              :: file_exist, is_no_domain
+  character(len=256)                   :: fname
+  logical                              :: read_dist, io_domain_exist
 
-   inquire (file=trim(file_name), exist=file_exist)
-   !--- also check to see if it is distributed data
-   if(.not. file_exist) then
-      write(pe_name,'(a,i4.4)' )'.', mpp_pe()    
-     inquire (file=trim(file_name)//trim(pe_name), exist=file_exist)
-   end if
-
-   if(file_exist) return
-
+  is_no_domain = .false.
+  if(present(no_domain)) is_no_domain = no_domain
    !--- to deal with mosaic file, in this case, the file is assumed to be in netcdf format
-   call get_mosaic_tile_file(file_name, fname, .false.,  domain)
-   inquire (file=trim(fname)//trim(pe_name), exist=file_exist)
-   if(.not. file_exist)  inquire (file=trim(fname), exist=file_exist)
+   file_exist = get_file_name(file_name, fname, read_dist, io_domain_exist, no_domain=is_no_domain, domain=domain)
+   if(is_no_domain) return
+   if(.not.file_exist) file_exist=get_file_name(file_name, fname, read_dist, io_domain_exist, no_domain=.true.)   
 
-   !Perhaps the file has an ensemble instance appendix
-   if( .not. file_exist ) then
-       call get_instance_filename(fname, fname)
-       inquire (file=trim(fname), exist=file_exist)       
-    endif
-   if(.not. file_exist) then
-      write(pe_name,'(a,i4.4)' )'.', mpp_pe()    
-     inquire (file=trim(fname)//trim(pe_name), exist=file_exist)
-   end if
+   return
  
  end function file_exist
 ! </FUNCTION>
@@ -5016,71 +4908,51 @@ end subroutine get_axis_cart
 !     if the file file_name don't exist, return a false result.
 !   </OUT>
 
- function field_exist (file_name, field_name)
-  character(len=*), intent(in) :: file_name
-  character(len=*), intent(in) :: field_name
-  logical                      :: field_exist
-  integer                      :: unit, ndim, nvar, natt, ntime, i
+ function field_exist (file_name, field_name, domain, no_domain)
+  character(len=*),                 intent(in) :: file_name
+  character(len=*),                 intent(in) :: field_name
+  type(domain2d), intent(in), optional, target :: domain
+  logical,       intent(in),  optional         :: no_domain
+  logical                      :: field_exist, is_no_domain
+  integer                      :: unit, ndim, nvar, natt, ntime, i, nfile
   character(len=64)            :: name
   type(fieldtype), allocatable :: fields(:)
-  character(len=5)             :: pe_name
-  logical                      :: is_exist
-  character(len=256)                    :: fname
+  logical                      :: file_exist, read_dist, io_domain_exist
+  character(len=256)           :: fname
 
    field_exist = .false.
    if (len_trim(field_name) == 0) return
    if (field_name(1:1) == ' ')    return
 
+   is_no_domain = .false.
+   if(present(no_domain)) is_no_domain = no_domain   
 
-   write(pe_name,'(a,i4.4)' )'.', mpp_pe()   
-   inquire (file=trim(file_name)//trim(pe_name), exist=is_exist)
-   if(.not. is_exist) inquire (file=trim(file_name)//'.nc'//trim(pe_name), exist=is_exist)
-   if(is_exist) then
-      call mpp_open(unit, trim(file_name), MPP_RDONLY, MPP_NETCDF, threading=MPP_MULTI, &
-           fileset = MPP_MULTI)
-   else
-      inquire (file=trim(file_name), exist=is_exist)
-      if(.not. is_exist) inquire (file=trim(file_name)//'.nc', exist=is_exist)
-      if(is_exist) then
-         !--- open the file file_name
-         call mpp_open(unit, trim(file_name), MPP_RDONLY, MPP_NETCDF, threading=MPP_MULTI, &
-              fileset = MPP_SINGLE)
-      end if
-   end if
+   file_exist=get_file_name(file_name, fname, read_dist, io_domain_exist, no_domain=is_no_domain, domain=domain)
+   if(file_exist) then
+      call get_file_unit(fname, unit, nfile, read_dist, io_domain_exist, domain=domain)
+      call mpp_get_info(unit, ndim, nvar, natt, ntime)
+      allocate(fields(nvar))
+      call mpp_get_fields(unit,fields)
 
-   !Perhaps the file has an ensemble instance appendix
-   if(.not. is_exist .AND. len_trim(filename_appendix) > 0) then
-      call get_instance_filename(file_name, fname)
-      inquire (file=trim(fname)//trim(pe_name), exist=is_exist)
-      if(.not. is_exist) inquire (file=trim(fname)//'.nc'//trim(pe_name), exist=is_exist)
-      if(is_exist) then
-         call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_MULTI, &
-              fileset=MPP_MULTI)
-      else 
-         inquire (file=trim(fname), exist=is_exist)
-         if(.not. is_exist) inquire (file=trim(fname)//'.nc', exist=is_exist)
-         if(is_exist) then     
-            call mpp_open(unit,trim(fname),form=MPP_NETCDF,action=MPP_RDONLY,threading=MPP_SINGLE, &
-                   fileset=MPP_SINGLE)
-         end if
-      end if
-      
-   endif
-   
-
-   if(.not. is_exist) return
-
-    call mpp_get_info(unit, ndim, nvar, natt, ntime)
-    allocate(fields(nvar))
-    call mpp_get_fields(unit,fields)
-
-    do i=1, nvar
-       call mpp_get_atts(fields(i),name=name)
-       if(lowercase(trim(name)) == lowercase(trim(field_name))) field_exist = .true.
-    enddo
-
-    deallocate(fields)
-    call mpp_close(unit)
+      do i=1, nvar
+         call mpp_get_atts(fields(i),name=name)
+         if(lowercase(trim(name)) == lowercase(trim(field_name))) field_exist = .true.
+      enddo
+      deallocate(fields)
+    endif
+    if(field_exist .or. is_no_domain) return
+    file_exist =  get_file_name(file_name, fname, read_dist, io_domain_exist, no_domain=.true.)
+    if(file_exist) then
+       call get_file_unit(fname, unit, nfile, read_dist, io_domain_exist)
+       call mpp_get_info(unit, ndim, nvar, natt, ntime)
+       allocate(fields(nvar))
+       call mpp_get_fields(unit,fields)
+       do i=1, nvar
+          call mpp_get_atts(fields(i),name=name)
+          if(lowercase(trim(name)) == lowercase(trim(field_name))) field_exist = .true.
+       enddo
+       deallocate(fields)
+    endif
 
     return
 
@@ -5113,586 +4985,3 @@ end subroutine get_instance_filename
 end module fms_io_mod
 
 
-#ifdef test_fms_io
-
- program fms_io_test
-
- use mpp_mod,         only: mpp_pe, mpp_npes, mpp_root_pe, mpp_init, mpp_exit
- use mpp_mod,         only: stdout, mpp_error, FATAL, NOTE, mpp_chksum
- use mpp_domains_mod, only: domain2D, mpp_define_layout, mpp_define_mosaic
- use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_data_domain
- use mpp_domains_mod, only: mpp_domains_init, mpp_domains_exit
- use mpp_domains_mod, only: mpp_domains_set_stack_size
- use mpp_io_mod,      only: mpp_open, mpp_close, MPP_ASCII, MPP_RDONLY
- use fms_io_mod,      only: read_data, write_data, fms_io_init, fms_io_exit
- use fms_io_mod,      only: file_exist, register_restart_field, save_restart, restore_state
- use fms_io_mod,      only: restart_file_type
- use mpp_io_mod,      only: MAX_FILE_SIZE
-
- implicit none
-
- integer :: sizex_latlon_grid = 144
- integer :: sizey_latlon_grid = 90
- integer :: size_cubic_grid = 48
- integer :: nz = 10, nt = 2, halo = 1
- integer :: stackmax =4000000
- integer :: num_step = 4 ! number of time steps to run, this is used for intermediate run.
-                         ! set num_step = 0 for no intermediate run.
- logical :: do_write=.true. ! set this to false for high resolution and single file,
-                            ! split file capability is not implemented for write_data
-
- namelist /test_fms_io_nml/ sizex_latlon_grid, sizey_latlon_grid, size_cubic_grid, &
-                            nz, nt, halo, num_step, stackmax, do_write
-
- integer           :: unit, io_status, step
- character(len=20) :: time_stamp
-
- type data_storage_type
-    real,    allocatable, dimension(:,:,:,:) :: data1_r3d, data2_r3d, data1_r3d_read, data2_r3d_read
-    real,    allocatable, dimension(:,:,:)   :: data1_r2d, data2_r2d, data1_r2d_read, data2_r2d_read
-    real,    allocatable, dimension(:,:)     :: data1_r1d, data2_r1d, data1_r1d_read, data2_r1d_read
-    real,    allocatable, dimension(:)       :: data1_r0d, data2_r0d, data1_r0d_read, data2_r0d_read
-    integer, allocatable, dimension(:,:,:,:) :: data1_i3d, data2_i3d, data1_i3d_read, data2_i3d_read
-    integer, allocatable, dimension(:,:,:)   :: data1_i2d, data2_i2d, data1_i2d_read, data2_i2d_read
-    integer, allocatable, dimension(:,:)     :: data1_i1d, data2_i1d, data1_i1d_read, data2_i1d_read
-    integer, allocatable, dimension(:)       :: data1_i0d, data2_i0d, data1_i0d_read, data2_i0d_read
- end type data_storage_type
- 
- type(data_storage_type), save :: latlon_data
- type(data_storage_type), save :: cubic_data
- type(domain2d),          save :: domain_latlon
- type(domain2d),          save :: domain_cubic
- type(restart_file_type), save :: restart_latlon
- type(restart_file_type), save :: restart_cubic
- integer                       :: ntile_latlon = 1
- integer                       :: ntile_cubic = 6
- integer                       :: npes
-
- character(len=128) :: file_latlon, file_cubic
-
- call mpp_init
- npes = mpp_npes()
-
- call mpp_domains_init  
-
- call fms_io_init
-
- if (file_exist('input.nml') )then
-    call mpp_open(unit, 'input.nml',form=MPP_ASCII,action=MPP_RDONLY)
-    read(unit,test_fms_io_nml,iostat=io_status)
-
-    if (io_status > 0) then
-     call mpp_error(FATAL,'=>test_fms_io: Error reading test_fms_io_nml')
-  endif
-    call mpp_close (unit)
- end if
-
- write(stdout(), test_fms_io_nml )
-  call mpp_domains_set_stack_size(stackmax)
- !--- currently we assume at most two time level will be written to restart file.
- if(nt > 2) call mpp_error(FATAL, "test_fms_io: test_fms_io_nml variable nt should be no larger than 2")
-
- file_latlon   = "test.res.latlon_grid.save_restore.nc"
- file_cubic    = "test.res.cubic_grid.save_restore.nc"
-
- call setup_test_restart(restart_latlon, "latlon_grid", ntile_latlon, latlon_data, file_latlon, domain_latlon)
- call setup_test_restart(restart_cubic,  "cubic_grid", ntile_cubic, cubic_data, file_cubic, domain_cubic )
-
- if(file_exist('INPUT/'//trim(file_latlon), domain_latlon)) then
-    call restore_state(restart_latlon)
-    call compare_restart("latlon_grid save_restore", latlon_data)
- end if
- if(file_exist('INPUT/'//trim(file_cubic), domain_cubic) ) then
-    call restore_state(restart_cubic)
-    call compare_restart("cubic_grid save_restore", cubic_data)
- end if
- 
- !---copy data
- if(mod(npes,ntile_latlon) == 0) call copy_restart_data(latlon_data)
- if(mod(npes,ntile_cubic) == 0 ) call copy_restart_data(cubic_data)
-
- do step = 1, num_step
-    write(time_stamp, '(a,I4.4)') "step", step
-    if(mod(npes,ntile_latlon) == 0) call save_restart(restart_latlon, time_stamp)
-    if(mod(npes,ntile_cubic) == 0 ) call save_restart(restart_cubic, time_stamp)
- end do
- if(mod(npes,ntile_latlon) == 0) call save_restart(restart_latlon)
- if(mod(npes,ntile_cubic)  == 0) call save_restart(restart_cubic)
-
- if(mod(npes,ntile_latlon) == 0) call release_storage_memory(latlon_data)
- if(mod(npes,ntile_cubic) == 0 ) call release_storage_memory(cubic_data)
-
- if(mod(npes,ntile_cubic) == 0 ) call mpp_error(NOTE, "test_fms_io: restart test is done for latlon_grid")
- if(mod(npes,ntile_cubic) == 0 ) call mpp_error(NOTE, "test_fms_io: restart test is done for cubic_grid")
-
- call fms_io_exit
- call mpp_domains_exit
- call mpp_exit
-
-contains
-
-  !******************************************************************************
-  subroutine setup_test_restart(restart_data, type, ntiles, storage, file, domain)
-    type(restart_file_type),   intent(inout) :: restart_data
-    character(len=*), intent(in)             :: type
-    integer,          intent(in)             :: ntiles
-    type(data_storage_type), intent(inout)   :: storage
-    character(len=*), intent(in)             :: file  
-    type(domain2d),   intent(inout)          :: domain
-    character(len=128)                       :: file_r
-    character(len=128)                       :: file_w
-    integer                                  :: pe, npes_per_tile, tile
-    integer                                  :: num_contact
-    integer                                  :: n, layout(2)
-    integer, allocatable, dimension(:,:)     :: global_indices, layout2D
-    integer, allocatable, dimension(:)       :: pe_start, pe_end
-    integer, dimension(1)                    :: tile1, tile2
-    integer, dimension(1)                    :: istart1, iend1, jstart1, jend1
-    integer, dimension(1)                    :: istart2, iend2, jstart2, jend2
-    integer                                  :: i, j, k, nx, ny
-    integer                                  :: isc, iec, jsc, jec
-    integer                                  :: isd, ied, jsd, jed
-    integer                                  :: id_restart
-
-    file_r = "INPUT/test.res."//trim(type)//".read_write.nc"
-    file_w = "RESTART/test.res."//trim(type)//".read_write.nc"
-
-    select case(type)
-    case("latlon_grid")
-       nx = sizex_latlon_grid
-       ny = sizey_latlon_grid
-    case("cubic_grid")
-       nx = size_cubic_grid
-       ny = size_cubic_grid
-    case default
-       call mpp_error(FATAL, "test_fms_io: "//type//" is not a valid option")
-    end select
-
-    pe   = mpp_pe()
-    if(mod(npes,ntiles) .NE. 0) then
-       call mpp_error(NOTE, "test_fms_io: npes can not be divided by ntiles, no test will be done for "//trim(type))
-       return
-    end if
-    npes_per_tile = npes/ntiles
-    tile = pe/npes_per_tile + 1
-
-    call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
-    allocate(global_indices(4,ntiles), layout2D(2,ntiles), pe_start(ntiles), pe_end(ntiles) )
-    do n = 1, ntiles
-       global_indices(:,n) = (/1,nx,1,ny/)
-       layout2D(:,n)       = layout
-       pe_start(n)         = (n-1)*npes_per_tile
-       pe_end(n)           = n*npes_per_tile-1
-    end do
-    num_contact = 0
-    call mpp_define_mosaic(global_indices, layout2D, domain, ntiles, num_contact, tile1, tile2, &
-                           istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,      &
-                           pe_start, pe_end, whalo=halo, ehalo=halo, shalo=halo, nhalo=halo, name = type  )
-    call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
-    call mpp_get_data_domain(domain, isd, ied, jsd, jed)
-
-    allocate(storage%data1_r3d(isd:ied, jsd:jed, nz, nt), storage%data1_r3d_read(isd:ied, jsd:jed, nz, nt) )
-    allocate(storage%data2_r3d(isd:ied, jsd:jed, nz, nt), storage%data2_r3d_read(isd:ied, jsd:jed, nz, nt) )
-    allocate(storage%data1_i3d(isd:ied, jsd:jed, nz, nt), storage%data1_i3d_read(isd:ied, jsd:jed, nz, nt) )
-    allocate(storage%data2_i3d(isd:ied, jsd:jed, nz, nt), storage%data2_i3d_read(isd:ied, jsd:jed, nz, nt) )
-    allocate(storage%data1_r2d(isd:ied, jsd:jed,     nt), storage%data1_r2d_read(isd:ied, jsd:jed,     nt) )
-    allocate(storage%data2_r2d(isd:ied, jsd:jed,     nt), storage%data2_r2d_read(isd:ied, jsd:jed,     nt) )
-    allocate(storage%data1_i2d(isd:ied, jsd:jed,     nt), storage%data1_i2d_read(isd:ied, jsd:jed,     nt) )
-    allocate(storage%data2_i2d(isd:ied, jsd:jed,     nt), storage%data2_i2d_read(isd:ied, jsd:jed,     nt) )
-    allocate(storage%data1_r1d(                  nz, nt), storage%data1_r1d_read(                  nz, nt) )
-    allocate(storage%data2_r1d(                  nz, nt), storage%data2_r1d_read(                  nz, nt) )
-    allocate(storage%data1_i1d(                  nz, nt), storage%data1_i1d_read(                  nz, nt) )
-    allocate(storage%data2_i1d(                  nz, nt), storage%data2_i1d_read(                  nz, nt) )
-    allocate(storage%data1_r0d(                      nt), storage%data1_r0d_read(                      nt) )
-    allocate(storage%data2_r0d(                      nt), storage%data2_r0d_read(                      nt) )
-    allocate(storage%data1_i0d(                      nt), storage%data1_i0d_read(                      nt) )
-    allocate(storage%data2_i0d(                      nt), storage%data2_i0d_read(                      nt) )
-
-    storage%data1_r3d = 0; storage%data1_r3d_read = 0; storage%data2_r3d = 0; storage%data2_r3d_read = 0
-    storage%data1_i3d = 0; storage%data1_i3d_read = 0; storage%data2_i3d = 0; storage%data2_i3d_read = 0
-    storage%data1_r2d = 0; storage%data1_r2d_read = 0; storage%data2_r2d = 0; storage%data2_r2d_read = 0
-    storage%data1_i2d = 0; storage%data1_i2d_read = 0; storage%data2_i2d = 0; storage%data2_i2d_read = 0
-    storage%data1_r1d = 0; storage%data1_r1d_read = 0; storage%data2_r1d = 0; storage%data2_r1d_read = 0
-    storage%data1_i1d = 0; storage%data1_i1d_read = 0; storage%data2_i1d = 0; storage%data2_i1d_read = 0
-    storage%data1_r0d = 0; storage%data1_r0d_read = 0; storage%data2_r0d = 0; storage%data2_r0d_read = 0
-    storage%data1_i0d = 0; storage%data1_i0d_read = 0; storage%data2_i0d = 0; storage%data2_i0d_read = 0
-    do n = 1, nt
-       storage%data1_r0d(n) =  tile + n*1e-3
-       storage%data2_r0d(n) = -tile - n*1e-3
-       storage%data1_i0d(n) =  tile*1e3 + n
-       storage%data2_i0d(n) = -tile*1e3 - n
-       do k = 1, nz
-          storage%data1_r1d(k,n) =   tile*1e3 + n + k*1e-3
-          storage%data2_r1d(k,n) =  -tile*1e3 - n - k*1e-3
-          storage%data1_i1d(k,n) =   tile*1e6 + n*1e3 + k
-          storage%data2_i1d(k,n) =  -tile*1e6 - n*1e3 - k
-          do j = jsc, jec
-             do i = isc, iec
-                storage%data1_r3d(i,j,k,n) =  tile*1e6 + n*1e3 + k + i*1e-3 + j*1e-6; 
-                storage%data2_r3d(i,j,k,n) = -tile*1e6 - n*1e3 - k - i*1e-3 - j*1e-6; 
-                storage%data1_i3d(i,j,k,n) =  tile*1e9 + n*1e8 + k*1e6 + i*1e3 + j; 
-                storage%data2_i3d(i,j,k,n) = -tile*1e9 - n*1e8 - k*1e6 - i*1e3 - j; 
-             end do
-          end do
-       end do
-
-       do j = jsc, jec
-          do i = isc, iec
-             storage%data1_r2d(i,j,n) =  tile*1e1 + n + i*1e-3 + j*1e-6; 
-             storage%data2_r2d(i,j,n) = -tile*1e1 - n - i*1e-3 - j*1e-6; 
-             storage%data1_i2d(i,j,n) =  tile*1e7 + n*1e6 + i*1e3 + j; 
-             storage%data2_i2d(i,j,n) = -tile*1e7 - n*1e6 - i*1e3 - j; 
-          end do
-       end do
-    end do
-    if(file_exist(file_r, domain)) then
-       do n = 1, nt
-          call read_data(file_r, "data1_r3d", storage%data1_r3d_read(:,:,:,n), domain, timelevel = n )
-          call read_data(file_r, "data2_r3d", storage%data2_r3d_read(:,:,:,n), domain, timelevel = n )
-          call read_data(file_r, "data1_i3d", storage%data1_i3d_read(:,:,:,n), domain, timelevel = n )
-          call read_data(file_r, "data2_i3d", storage%data2_i3d_read(:,:,:,n), domain, timelevel = n )
-          call read_data(file_r, "data1_r2d", storage%data1_r2d_read(:,:,  n), domain, timelevel = n )
-          call read_data(file_r, "data2_r2d", storage%data2_r2d_read(:,:,  n), domain, timelevel = n )
-          call read_data(file_r, "data1_i2d", storage%data1_i2d_read(:,:,  n), domain, timelevel = n )
-          call read_data(file_r, "data2_i2d", storage%data2_i2d_read(:,:,  n), domain, timelevel = n )
-          call read_data(file_r, "data1_r1d", storage%data1_r1d_read(:,    n), domain, timelevel = n )
-          call read_data(file_r, "data2_r1d", storage%data2_r1d_read(:,    n), domain, timelevel = n )
-          call read_data(file_r, "data1_i1d", storage%data1_i1d_read(:,    n), domain, timelevel = n )
-          call read_data(file_r, "data2_i1d", storage%data2_i1d_read(:,    n), domain, timelevel = n )
-          call read_data(file_r, "data1_r0d", storage%data1_r0d_read(      n), domain, timelevel = n )
-          call read_data(file_r, "data2_r0d", storage%data2_r0d_read(      n), domain, timelevel = n )
-          call read_data(file_r, "data1_i0d", storage%data1_i0d_read(      n), domain, timelevel = n )
-          call read_data(file_r, "data2_i0d", storage%data2_i0d_read(      n), domain, timelevel = n )
-       end do
-       call compare_restart(type//" read_write", storage)
-    end if
-
-
-    !--- high resolution restart is not implemented for write data
-    if(do_write ) then 
-       do n = 1, nt
-          call write_data(file_w, "data1_r3d", storage%data1_r3d(:,:,:,n), domain )
-          call write_data(file_w, "data2_r3d", storage%data2_r3d(:,:,:,n), domain )
-          call write_data(file_w, "data1_i3d", storage%data1_i3d(:,:,:,n), domain )
-          call write_data(file_w, "data2_i3d", storage%data2_i3d(:,:,:,n), domain )
-          call write_data(file_w, "data1_r2d", storage%data1_r2d(:,:,  n), domain )
-          call write_data(file_w, "data2_r2d", storage%data2_r2d(:,:,  n), domain )
-          call write_data(file_w, "data1_i2d", storage%data1_i2d(:,:,  n), domain )
-          call write_data(file_w, "data2_i2d", storage%data2_i2d(:,:,  n), domain )
-          call write_data(file_w, "data1_r1d", storage%data1_r1d(:,    n), domain )
-          call write_data(file_w, "data2_r1d", storage%data2_r1d(:,    n), domain )
-          call write_data(file_w, "data1_i1d", storage%data1_i1d(:,    n), domain )
-          call write_data(file_w, "data2_i1d", storage%data2_i1d(:,    n), domain )
-          call write_data(file_w, "data1_r0d", storage%data1_r0d(      n), domain )
-          call write_data(file_w, "data2_r0d", storage%data2_r0d(      n), domain )
-          call write_data(file_w, "data1_i0d", storage%data1_i0d(      n), domain )
-          call write_data(file_w, "data2_i0d", storage%data2_i0d(      n), domain )
-       end do
-    end if
-
-    !--- test register_restart_field, save_restart, restore_state
-
-    id_restart = register_restart_field(restart_data, file, "data1_r3d", storage%data1_r3d_read(:,:,:,1), &
-                                domain, longname="first data_r3d",units="none")
-    id_restart = register_restart_field(restart_data, file, "data1_r3d", storage%data1_r3d_read(:,:,:,2), &
-                                domain, longname="first data_r3d",units="none")
-    id_restart = register_restart_field(restart_data, file, "data2_r3d", storage%data2_r3d_read(:,:,:,1), &
-                                storage%data2_r3d_read(:,:,:,2), &
-                                domain, longname="second data_i3d", units="none")
-
-    id_restart = register_restart_field(restart_data, file, "data1_i3d", storage%data1_i3d_read(:,:,:,1), &
-                                domain, longname="first data_i3d",units="none")
-    id_restart = register_restart_field(restart_data, file, "data1_i3d", storage%data1_i3d_read(:,:,:,2), &
-                                domain, longname="first data_i3d",units="none")
-    id_restart = register_restart_field(restart_data, file, "data2_i3d", storage%data2_i3d_read(:,:,:,1), &
-                                storage%data2_i3d_read(:,:,:,2), &
-                                domain, longname="second data_i3d", units="none")
-
-    id_restart = register_restart_field(restart_data, file, "data1_r2d", storage%data1_r2d_read(:,:,  1), &
-                                domain, longname="first data_r2d",units="none")
-    id_restart = register_restart_field(restart_data, file, "data1_r2d", storage%data1_r2d_read(:,:,  2), &
-                                domain, longname="first data_r2d",units="none")
-    id_restart = register_restart_field(restart_data, file, "data2_r2d", storage%data2_r2d_read(:,:,  1), &
-                                storage%data2_r2d_read(:,:,2), &
-                                domain, longname="second data_i2d", units="none")
-
-    id_restart = register_restart_field(restart_data, file, "data1_i2d", storage%data1_i2d_read(:,:,  1), &
-                                domain, longname="first data_i2d",units="none")
-    id_restart = register_restart_field(restart_data, file, "data1_i2d", storage%data1_i2d_read(:,:,  2), &
-                                domain, longname="first data_i2d",units="none")
-    id_restart = register_restart_field(restart_data, file, "data2_i2d", storage%data2_i2d_read(:,:,  1), &
-                                storage%data2_i2d_read(:,:,2), &
-                                domain, longname="second data_i2d", units="none")
-
-    id_restart = register_restart_field(restart_data, file, "data1_r1d", storage%data1_r1d_read(:,    1), &
-                                domain, longname="first data_r1d",units="none")
-    id_restart = register_restart_field(restart_data, file, "data1_r1d", storage%data1_r1d_read(:,    2), &
-                                domain, longname="first data_r1d",units="none")
-    id_restart = register_restart_field(restart_data, file, "data2_r1d", storage%data2_r1d_read(:,    1), &
-                                storage%data2_r1d_read(:,  2), &
-                                domain, longname="second data_i1d", units="none")
-
-    id_restart = register_restart_field(restart_data, file, "data1_i1d", storage%data1_i1d_read(:,    1), &
-                                domain, longname="first data_i1d",units="none")
-    id_restart = register_restart_field(restart_data, file, "data1_i1d", storage%data1_i1d_read(:,    2), &
-                                domain, longname="first data_i1d",units="none")
-    id_restart = register_restart_field(restart_data, file, "data2_i1d", storage%data2_i1d_read(:,    1), &
-                                storage%data2_i1d_read(:,  2), &
-                                domain, longname="second data_i1d", units="none")
-
-
-    id_restart = register_restart_field(restart_data, file, "data1_r0d", storage%data1_r0d_read(      1), &
-                                domain, longname="first data_r0d",units="none")
-    id_restart = register_restart_field(restart_data, file, "data1_r0d", storage%data1_r0d_read(      2), &
-                                domain, longname="first data_r0d",units="none")
-    id_restart = register_restart_field(restart_data, file, "data2_r0d", storage%data2_r0d_read(      1), &
-                                storage%data2_r0d_read(    2), &
-                                domain, longname="second data_i0d", units="none")
-
-    id_restart = register_restart_field(restart_data, file, "data1_i0d", storage%data1_i0d_read(      1), &
-                                domain, longname="first data_i0d",units="none")
-    id_restart = register_restart_field(restart_data, file, "data1_i0d", storage%data1_i0d_read(      2), &
-                                domain, longname="first data_i0d",units="none")
-    id_restart = register_restart_field(restart_data, file, "data2_i0d", storage%data2_i0d_read(      1), &
-                                storage%data2_i0d_read(    2), &
-                                domain, longname="second data_i0d", units="none")
-
-  end subroutine setup_test_restart
-
-  subroutine compare_restart(type, storage)
-    character(len=*), intent(in)             :: type
-    type(data_storage_type), intent(inout)   :: storage
-
-       call compare_data_r4d(storage%data1_r3d, storage%data1_r3d_read, type//" data1_r3d")
-       call compare_data_r4d(storage%data2_r3d, storage%data2_r3d_read, type//" data2_r3d")
-       call compare_data_i4d(storage%data1_i3d, storage%data1_i3d_read, type//" data1_i3d")
-       call compare_data_i4d(storage%data2_i3d, storage%data2_i3d_read, type//" data2_i3d")
-       call compare_data_r3d(storage%data1_r2d, storage%data1_r2d_read, type//" data1_r2d")
-       call compare_data_r3d(storage%data2_r2d, storage%data2_r2d_read, type//" data2_r2d")
-       call compare_data_i3d(storage%data1_i2d, storage%data1_i2d_read, type//" data1_i2d")
-       call compare_data_i3d(storage%data2_i2d, storage%data2_i2d_read, type//" data2_i2d")
-       call compare_data_r2d(storage%data1_r1d, storage%data1_r1d_read, type//" data1_r1d")
-       call compare_data_r2d(storage%data2_r1d, storage%data2_r1d_read, type//" data2_r1d")
-       call compare_data_i2d(storage%data1_i1d, storage%data1_i1d_read, type//" data1_i1d")
-       call compare_data_i2d(storage%data2_i1d, storage%data2_i1d_read, type//" data2_i1d")
-       call compare_data_r1d(storage%data1_r0d, storage%data1_r0d_read, type//" data1_r0d")
-       call compare_data_r1d(storage%data2_r0d, storage%data2_r0d_read, type//" data2_r0d")
-       call compare_data_i1d(storage%data1_i0d, storage%data1_i0d_read, type//" data1_i0d")
-       call compare_data_i1d(storage%data2_i0d, storage%data2_i0d_read, type//" data2_i0d")
-
-  end subroutine compare_restart
-
-  subroutine release_storage_memory(storage)
-    type(data_storage_type), intent(inout)   :: storage
-
-    deallocate(storage%data1_r3d, storage%data2_r3d, storage%data1_r3d_read, storage%data2_r3d_read)
-    deallocate(storage%data1_i3d, storage%data2_i3d, storage%data1_i3d_read, storage%data2_i3d_read)
-    deallocate(storage%data1_r2d, storage%data2_r2d, storage%data1_r2d_read, storage%data2_r2d_read)
-    deallocate(storage%data1_i2d, storage%data2_i2d, storage%data1_i2d_read, storage%data2_i2d_read)
-    deallocate(storage%data1_r1d, storage%data2_r1d, storage%data1_r1d_read, storage%data2_r1d_read)
-    deallocate(storage%data1_i1d, storage%data2_i1d, storage%data1_i1d_read, storage%data2_i1d_read)
-    deallocate(storage%data1_r0d, storage%data2_r0d, storage%data1_r0d_read, storage%data2_r0d_read)
-    deallocate(storage%data1_i0d, storage%data2_i0d, storage%data1_i0d_read, storage%data2_i0d_read)
-
-  end subroutine release_storage_memory
-
-  subroutine copy_restart_data(storage)
-    type(data_storage_type), intent(inout)   :: storage
-
-    storage%data1_r3d_read = storage%data1_r3d; storage%data2_r3d_read = storage%data2_r3d
-    storage%data1_i3d_read = storage%data1_i3d; storage%data2_i3d_read = storage%data2_i3d
-    storage%data1_r2d_read = storage%data1_r2d; storage%data2_r2d_read = storage%data2_r2d
-    storage%data1_i2d_read = storage%data1_i2d; storage%data2_i2d_read = storage%data2_i2d
-    storage%data1_r1d_read = storage%data1_r1d; storage%data2_r1d_read = storage%data2_r1d
-    storage%data1_i1d_read = storage%data1_i1d; storage%data2_i1d_read = storage%data2_i1d
-    storage%data1_r0d_read = storage%data1_r0d; storage%data2_r0d_read = storage%data2_r0d
-    storage%data1_i0d_read = storage%data1_i0d; storage%data2_i0d_read = storage%data2_i0d
-
-    return
-
-  end subroutine copy_restart_data
-
-  subroutine compare_data_r4d( a, b, string )
-    real, intent(in), dimension(:,:,:,:) :: a, b
-    character(len=*), intent(in)         :: string
-    integer(LONG_KIND)                   :: sum1, sum2
-    integer                              :: i, j, k, l
-    integer, parameter                   :: stdunit = 6
-
-    if(size(a,1) .ne. size(b,1) .or. size(a,2) .ne. size(b,2) .or. size(a,3) .ne. size(b,3) .or. size(a,4) .ne. size(b,4) ) &
-         call mpp_error(FATAL,'compare_data_r4d: size of a and b does not match')
-
-    do l = 1, size(a,4)
-       do k = 1, size(a,3)
-          do j = 1, size(a,2)
-             do i = 1, size(a,1)
-                if(a(i,j,k,l) .ne. b(i,j,k,l)) then
-                   write(stdunit,'(a,i3,a,i3,a,i3,a,i3,a,i3,a,f18.9,a,f18.9)')" at pe ", mpp_pe(), &
-                        ", at point (",i,", ", j, ", ", k, ", ", l, "), a = ", a(i,j,k,l), ", b = ", b(i,j,k,l)
-                   call mpp_error(FATAL, trim(string)//': point by point comparison are not OK.')
-                endif
-             enddo
-          enddo
-       enddo
-    enddo
-    sum1 = mpp_chksum( a, (/mpp_pe()/) )
-    sum2 = mpp_chksum( b, (/mpp_pe()/) )
-
-    if( sum1.EQ.sum2 )then
-       if( mpp_pe() .EQ. mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )
-       !--- in some case, even though checksum agree, the two arrays 
-       !    actually are different, like comparing (1.1,-1.2) with (-1.1,1.2)
-       !--- hence we need to check the value point by point.
-    else
-       call mpp_error( FATAL, trim(string)//': chksums are not OK.' )
-    end if
-  end subroutine compare_data_r4d
-
-  subroutine compare_data_i4d( a, b, string )
-    integer, intent(in), dimension(:,:,:,:) :: a, b
-    character(len=*), intent(in)            :: string
-    real                                    :: real_a(size(a,1),size(a,2),size(a,3),size(a,4))
-    real                                    :: real_b(size(b,1),size(b,2),size(b,3),size(b,4))
-
-    real_a = a 
-    real_b = b
-    call compare_data_r4d(real_a, real_b, string)
-
-  end subroutine compare_data_i4d
-
-
-  subroutine compare_data_r3d( a, b, string )
-    real, intent(in), dimension(:,:,:) :: a, b
-    character(len=*), intent(in)       :: string
-    integer(LONG_KIND)                 :: sum1, sum2
-    integer                            :: i, j, l
-    integer, parameter                 :: stdunit = 6
-
-    if(size(a,1) .ne. size(b,1) .or. size(a,2) .ne. size(b,2) .or. size(a,3) .ne. size(b,3) ) &
-         call mpp_error(FATAL,'compare_data_r3d: size of a and b does not match')
-
-    do l = 1, size(a,3)
-       do j = 1, size(a,2)
-          do i = 1, size(a,1)
-             if(a(i,j,l) .ne. b(i,j,l)) then
-                write(stdunit,'(a,i3,a,i3,a,i3,a,i3,a,f16.9,a,f16.9)')" at pe ", mpp_pe(), &
-                     ", at point (",i,", ", j, ", ", l, "), a = ", a(i,j,l), ", b = ", b(i,j,l)
-                call mpp_error(FATAL, trim(string)//': point by point comparison are not OK.')
-             endif
-          enddo
-       enddo
-    enddo
-    sum1 = mpp_chksum( a, (/mpp_pe()/) )
-    sum2 = mpp_chksum( b, (/mpp_pe()/) )
-
-    if( sum1.EQ.sum2 )then
-       if( mpp_pe() .EQ. mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )
-       !--- in some case, even though checksum agree, the two arrays 
-       !    actually are different, like comparing (1.1,-1.2) with (-1.1,1.2)
-       !--- hence we need to check the value point by point.
-    else
-       call mpp_error( FATAL, trim(string)//': chksums are not OK.' )
-    end if
-  end subroutine compare_data_r3d
-
-  subroutine compare_data_i3d( a, b, string )
-    integer, intent(in), dimension(:,:,:) :: a, b
-    character(len=*), intent(in)          :: string
-    real                                  :: real_a(size(a,1),size(a,2),size(a,3))
-    real                                  :: real_b(size(b,1),size(b,2),size(b,3))
-
-    real_a = a 
-    real_b = b
-    call compare_data_r3d(real_a, real_b, string)
-
-  end subroutine compare_data_i3d
-
-
-  subroutine compare_data_r2d( a, b, string )
-    real, intent(in), dimension(:,:) :: a, b
-    character(len=*), intent(in)     :: string
-    integer(LONG_KIND)               :: sum1, sum2
-    integer                          :: i, l
-    integer, parameter               :: stdunit = 6
-
-    if(size(a,1) .ne. size(b,1) .or. size(a,2) .ne. size(b,2) ) &
-         call mpp_error(FATAL,'compare_data_r2d: size of a and b does not match')
-
-    do l = 1, size(a,2)
-       do i = 1, size(a,1)
-          if(a(i,l) .ne. b(i,l)) then
-             write(stdunit,'(a,i3,a,i3,a,i3,a,f16.9,a,f16.9)')" at pe ", mpp_pe(), &
-                  ", at point (",i, ", ", l, "), a = ", a(i,l), ", b = ", b(i,l)
-             call mpp_error(FATAL, trim(string)//': point by point comparison are not OK.')
-          endif
-       enddo
-    end do
-    sum1 = mpp_chksum( a, (/mpp_pe()/) )
-    sum2 = mpp_chksum( b, (/mpp_pe()/) )
-
-    if( sum1.EQ.sum2 )then
-       if( mpp_pe() .EQ. mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )
-       !--- in some case, even though checksum agree, the two arrays 
-       !    actually are different, like comparing (1.1,-1.2) with (-1.1,1.2)
-       !--- hence we need to check the value point by point.
-    else
-       call mpp_error( FATAL, trim(string)//': chksums are not OK.' )
-    end if
-  end subroutine compare_data_r2d
-
-  subroutine compare_data_i2d( a, b, string )
-    integer, intent(in), dimension(:,:) :: a, b
-    character(len=*), intent(in)        :: string
-    real                                :: real_a(size(a,1),size(a,2))
-    real                                :: real_b(size(b,1),size(b,2))
-
-    real_a = a 
-    real_b = b
-    call compare_data_r2d(real_a, real_b, string)
-
-  end subroutine compare_data_i2d
-
-  subroutine compare_data_r1d( a, b, string )
-    real, intent(in), dimension(:) :: a, b
-    character(len=*), intent(in)   :: string
-    integer(LONG_KIND)             :: sum1, sum2
-    integer                        :: l
-    integer, parameter             :: stdunit = 6
-
-    if(size(a,1) .ne. size(b,1) ) &
-         call mpp_error(FATAL,'compare_data_r1d: size of a and b does not match')
-
-    do l = 1, size(a(:))
-       if(a(l) .ne. b(l)) then
-          write(stdunit,'(a,i3,a,i3,a,f16.9,a,f16.9)')" at pe ", mpp_pe(), &
-               ", at point (",l, "), a = ", a(l), ", b = ", b(l)
-          call mpp_error(FATAL, trim(string)//': point by point comparison are not OK.')
-       endif
-    enddo
-    sum1 = mpp_chksum( a, (/mpp_pe()/) )
-    sum2 = mpp_chksum( b, (/mpp_pe()/) )
-
-    if( sum1.EQ.sum2 )then
-       if( mpp_pe() .EQ. mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )
-       !--- in some case, even though checksum agree, the two arrays 
-       !    actually are different, like comparing (1.1,-1.2) with (-1.1,1.2)
-       !--- hence we need to check the value point by point.
-    else
-       call mpp_error( FATAL, trim(string)//': chksums are not OK.' )
-    end if
-  end subroutine compare_data_r1d
-
-  subroutine compare_data_i1d( a, b, string )
-    integer, intent(in), dimension(:) :: a, b
-    character(len=*), intent(in)      :: string
-    real                              :: real_a(size(a(:)))
-    real                              :: real_b(size(b(:)))
-
-    real_a = a 
-    real_b = b
-    call compare_data_r1d(real_a, real_b, string)
-
-  end subroutine compare_data_i1d
-
-end program fms_io_test
-#endif

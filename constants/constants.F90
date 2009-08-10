@@ -19,8 +19,8 @@ module constants_mod
 implicit none
 private
 
-character(len=128) :: version='$Id: constants.F90,v 15.0.8.1.2.1 2008/09/16 04:16:11 wfc Exp $'
-character(len=128) :: tagname='$Name: perth_2008_10 $'
+character(len=128) :: version='$Id: constants.F90,v 17.0 2009/07/21 03:18:26 fms Exp $'
+character(len=128) :: tagname='$Name: quebec $'
 !dummy variable to use in HUGE initializations
 real :: realnumber
 
@@ -114,6 +114,8 @@ real, public, parameter :: TFREEZE = 273.16
 ! <DATA NAME="WTMOZONE" UNITS="AMU" TYPE="real" DEFAULT="4.799820E+01">
 !   molecular weight of ozone
 ! </DATA>
+! <DATA NAME="WTMC" UNITS="AMU" TYPE="real" DEFAULT="1.200000+01">
+!   molecular weight of carbon 
 ! <DATA NAME="WTMCO2" UNITS="AMU" TYPE="real" DEFAULT="4.400995+01">
 !   molecular weight of carbon dioxide
 ! <DATA NAME="WTMO2" UNITS="AMU" TYPE="real" DEFAULT="3.19988+01">
@@ -143,6 +145,7 @@ real, public, parameter :: WTMAIR = 2.896440E+01
 real, public, parameter :: WTMH2O = WTMAIR*(RDGAS/RVGAS) !pjp OK to change value because not used yet.
 !real, public, parameter :: WTMO3  = 47.99820E+01
 real, public, parameter :: WTMOZONE =  47.99820
+real, public, parameter :: WTMC     =  12.00000
 real, public, parameter :: WTMCO2   =  44.00995
 real, public, parameter :: WTMO2    =  31.9988
 real, public, parameter :: WTMCFC11 = 137.3681

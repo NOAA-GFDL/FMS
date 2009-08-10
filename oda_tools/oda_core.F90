@@ -244,7 +244,7 @@ module oda_core_mod
     ! NOTE: fields are restricted to be in separate files
     real :: lon, lat, time, depth(max_levels), temp(max_levels), salt(max_levels),&
          error(max_levels), rprobe, profile_error, rlink
-    integer :: nlev, probe, yr, mon, day, hr, minu, sec, kl
+    integer :: nlev, probe, yr, mon, day, hr, minu, sec, kl, outunit
     integer :: num_levs, num_levs_temp, num_levs_salt,&
                k, kk, ll, i, i0, j0, k0, nlevs, a, nn, ii, nlinks
     real :: ri0, rj0, rk0, dx1, dx2, dy1, dy2
@@ -293,7 +293,8 @@ module oda_core_mod
          threading=MPP_MULTI,action=MPP_RDONLY)
     call mpp_get_info(unit, ndim, nvar, natt, nstation)
 
-    write(stdout(),*) 'Opened profile dataset :',trim(filename)
+    outunit = stdout()
+    write(outunit,*) 'Opened profile dataset :',trim(filename)
 
     ! get version number of profiles
 
@@ -311,7 +312,7 @@ module oda_core_mod
     if (.NOT.ASSOCIATED(version)) then
         call mpp_error(NOTE,'no version number available for profile file, assuming v0.1a ')
     else
-        write(stdout(),*) 'Reading profile dataset version = ',trim(catt)
+        write(outunit,*) 'Reading profile dataset version = ',trim(catt)
     endif
     
     
@@ -369,14 +370,15 @@ module oda_core_mod
 
     if (nlevs < 1) call mpp_error(FATAL)
 
-    write(stdout(),*) 'There are ', nstation, ' records in this dataset'
-    write(stdout(),*) 'Searching for profiles matching selection criteria ...'
+    outunit = stdout()
+    write(outunit,*) 'There are ', nstation, ' records in this dataset'
+    write(outunit,*) 'Searching for profiles matching selection criteria ...'
 
     if (ASSOCIATED(field_temp)) found_temp=.true.
     if (ASSOCIATED(field_salt)) found_salt=.true.
 
     if (.not. found_temp .and. .not. found_salt) then
-        write(stdout(),*) 'temp or salt not found in profile file'
+        write(outunit,*) 'temp or salt not found in profile file'
         call mpp_error(FATAL)
     endif
     
@@ -387,9 +389,9 @@ module oda_core_mod
     call mpp_get_atts(field_depth,missing=depth_missing)        
 
     if (found_salt) then
-        write(stdout(),*) 'temperature and salinity where available'
+        write(outunit,*) 'temperature and salinity where available'
     else
-        write(stdout(),*) 'temperature only records'
+        write(outunit,*) 'temperature only records'
     endif
 
     
@@ -822,17 +824,18 @@ module oda_core_mod
     type(ocean_surface_type), dimension(:) :: Sfc
     integer, intent(inout) :: nprof, nsfc
 
-    integer :: i,k,yr,mon,day,hr,minu,sec,a,mon_obs,yr_obs
+    integer :: i,k,yr,mon,day,hr,minu,sec,a,mon_obs,yr_obs, outunit
     type(time_type) :: tdiff
     character(len=1) :: cchar
 
     nprof=0
     nsfc=0
 
-    write(stdout(),*) 'Gathering profiles for current analysis time'
+    outunit = stdout()
+    write(outunit,*) 'Gathering profiles for current analysis time'
     call get_date(model_time,yr,mon,day,hr,minu,sec)
-    write(stdout(),'(a,i4,a,i2,a,i2)') 'Current yyyy/mm/dd= ',yr,'/',mon,'/',day
-    write(stdout(),*) 'num_profiles=',num_profiles
+    write(outunit,'(a,i4,a,i2,a,i2)') 'Current yyyy/mm/dd= ',yr,'/',mon,'/',day
+    write(outunit,*) 'num_profiles=',num_profiles
 
     
     do i=1,num_profiles
@@ -891,7 +894,7 @@ module oda_core_mod
 
     a=nprof
     call mpp_sum(a)
-    write(stdout(),*) 'A total of ',a,'  profiles are being used for the current analysis step'
+    write(outunit,*) 'A total of ',a,'  profiles are being used for the current analysis step'
 
     return
 

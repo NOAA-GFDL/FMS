@@ -38,8 +38,8 @@ logical :: allow_calendar_conversion=.true.
 namelist / get_cal_time_nml / allow_calendar_conversion
 ! </NAMELIST>
 
-character(len=128) :: version='$Id: get_cal_time.F90,v 13.0 2006/03/28 21:43:15 fms Exp $'
-character(len=128) :: tagname='$Name: perth_2008_10 $'
+character(len=128) :: version='$Id: get_cal_time.F90,v 17.0 2009/07/21 03:21:55 fms Exp $'
+character(len=128) :: tagname='$Name: quebec $'
 
 contains
 !------------------------------------------------------------------------
@@ -154,7 +154,7 @@ type(time_type) :: get_cal_time
 integer :: year, month, day, hour, minute, second
 integer :: i1, i2, i3, i4, i5, i6, increment_seconds, increment_days, increment_years, increment_months
 real    :: month_fraction
-integer :: calendar_tm_i, calendar_in_i, namelist_unit, ierr, io
+integer :: calendar_tm_i, calendar_in_i, namelist_unit, ierr, io, logunit
 logical :: correct_form
 character(len=32) :: calendar_in_c
 character(len=64) :: err_msg
@@ -173,7 +173,8 @@ if(.not.module_is_initialized) then
   20 call close_file (namelist_unit)
 
   call write_version_number (version, tagname)
-  if(mpp_pe() == mpp_root_pe()) write (stdlog(), nml=get_cal_time_nml)
+  logunit = stdlog()
+  if(mpp_pe() == mpp_root_pe()) write (logunit, nml=get_cal_time_nml)
   module_is_initialized = .true.
 endif
 
