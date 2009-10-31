@@ -37,7 +37,7 @@ public :: calc_mosaic_grid_area
 logical :: module_is_initialized = .true.
 ! version information varaible
  character(len=128) :: version = '$Id: mosaic.F90,v 15.0 2007/08/14 04:14:22 fms Exp $'
- character(len=128) :: tagname = '$Name: quebec $'
+ character(len=128) :: tagname = '$Name: quebec_200910 $'
 
 contains
 

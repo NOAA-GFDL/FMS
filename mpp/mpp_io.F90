@@ -811,7 +811,7 @@ private
   character(len=128) :: version= &
        '$Id: mpp_io.F90,v 17.0 2009/07/21 03:21:17 fms Exp $'
   character(len=128) :: tagname= &
-       '$Name: quebec $'
+       '$Name: quebec_200910 $'
 
 contains
 

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util_sma.inc,v 17.0 2009/07/21 03:21:04 fms Exp $
+! $Id: mpp_util_sma.inc,v 17.0.2.1 2009/07/30 11:44:52 z1l Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -179,7 +179,7 @@ subroutine mpp_sync_self( pelist, check )
 
   integer :: i, m, n, stride
 
-  n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
+  n = get_peset(pelist)
 
   if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
 #ifdef _CRAYT90

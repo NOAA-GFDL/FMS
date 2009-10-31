@@ -1,5 +1,5 @@
 ! -*-f90-*-
-! $Id: mpp_util_mpi.inc,v 17.0 2009/07/21 03:21:00 fms Exp $
+! $Id: mpp_util_mpi.inc,v 17.0.2.1 2009/07/30 11:44:51 z1l Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -168,7 +168,7 @@ subroutine mpp_sync_self( pelist, check )
 
   integer                       :: i, m, n, stride, my_check
 
-  n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
+  n = get_peset(pelist)
 
   if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
 

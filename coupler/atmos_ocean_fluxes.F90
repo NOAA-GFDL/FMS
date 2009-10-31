@@ -79,11 +79,11 @@ module  atmos_ocean_fluxes_mod  !{
 use mpp_mod,           only: stdout, stdlog, mpp_error, FATAL, mpp_sum, mpp_npes
 
 use coupler_types_mod, only: coupler_1d_bc_type
-use coupler_types_mod, only: ind_alpha, ind_csurf
+use coupler_types_mod, only: ind_alpha, ind_csurf, ind_sc_no
 use coupler_types_mod, only: ind_pcair, ind_u10, ind_psurf
 use coupler_types_mod, only: ind_deposition
 use coupler_types_mod, only: ind_runoff
-use coupler_types_mod, only: ind_flux
+use coupler_types_mod, only: ind_flux, ind_deltap, ind_kw
 
 use field_manager_mod, only: fm_path_name_len, fm_string_len, fm_exists, fm_get_index
 use field_manager_mod, only: fm_new_list, fm_get_current_list, fm_change_list
@@ -188,8 +188,8 @@ character(len=48), parameter    :: mod_name = 'atmos_ocean_fluxes_mod'
 !----------------------------------------------------------------------
 !
 
-character(len=128) :: version = '$Id: atmos_ocean_fluxes.F90,v 17.0 2009/07/21 03:18:29 fms Exp $'
-character(len=128) :: tagname = '$Name: quebec $'
+character(len=128) :: version = '$Id: atmos_ocean_fluxes.F90,v 17.0.2.2 2009/08/28 19:18:25 nnz Exp $'
+character(len=128) :: tagname = '$Name: quebec_200910 $'
 
 !
 !-----------------------------------------------------------------------
@@ -986,6 +986,9 @@ real, dimension(:), allocatable         :: kw
 real, dimension(:), allocatable         :: cair
 character(len=128)                      :: error_string
 
+real, parameter :: epsln=1.0e-30
+real, parameter :: permeg=1.0e-6
+
 !
 !       Return if no fluxes to be calculated
 !
@@ -1020,7 +1023,47 @@ do n = 1, gas_fluxes%num_bcs  !{
 
   if ( .not. gas_fluxes%bc(n)%field(ind_flux)%override) then  !{
 
-    if (gas_fluxes%bc(n)%flux_type .eq. 'air_sea_gas_flux') then  !{
+    if (gas_fluxes%bc(n)%flux_type .eq. 'air_sea_gas_flux_generic') then  !{
+
+      length = size(gas_fluxes%bc(n)%field(1)%values(:))
+
+      if (.not. allocated(kw)) then
+        allocate( kw(length) )
+        allocate ( cair(length) )
+      elseif (size(kw(:)) .ne. length) then
+        call mpp_error(FATAL, trim(error_header) // ' Lengths of flux fields do not match')
+      endif
+
+      if (gas_fluxes%bc(n)%implementation .eq. 'ocmip2') then  !}{
+
+        do i = 1, length  !{
+          if (seawater(i) == 1) then  !{
+            gas_fluxes%bc(n)%field(ind_kw)%values(i) = gas_fluxes%bc(n)%param(1) * gas_fields_atm%bc(n)%field(ind_u10)%values(i)**2
+            cair(i) =                                                           &
+                 gas_fields_ice%bc(n)%field(ind_alpha)%values(i) *              &
+                 gas_fields_atm%bc(n)%field(ind_pCair)%values(i) *              &
+                 gas_fields_atm%bc(n)%field(ind_psurf)%values(i) * gas_fluxes%bc(n)%param(2)
+            gas_fluxes%bc(n)%field(ind_flux)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i) *                &
+                 sqrt(660 / (gas_fields_ice%bc(n)%field(ind_sc_no)%values(i) + epsln)) *                           &
+                 (gas_fields_ice%bc(n)%field(ind_csurf)%values(i) - cair(i))
+            gas_fluxes%bc(n)%field(ind_deltap)%values(i) = (gas_fields_ice%bc(n)%field(ind_csurf)%values(i) - cair(i)) / &
+                 (gas_fields_ice%bc(n)%field(ind_alpha)%values(i) * permeg + epsln)
+          else  !}{
+            gas_fluxes%bc(n)%field(ind_kw)%values(i) = 0.0
+            gas_fluxes%bc(n)%field(ind_flux)%values(i) = 0.0
+            gas_fluxes%bc(n)%field(ind_deltap)%values(i) = 0.0
+            cair(i) = 0.0
+          endif  !}
+        enddo  !} i
+
+      else  !}{
+
+        call mpp_error(FATAL, ' Unknown implementation (' // trim(gas_fluxes%bc(n)%implementation) //    &
+             ') for ' // trim(gas_fluxes%bc(n)%name))
+
+      endif  !}
+
+    elseif (gas_fluxes%bc(n)%flux_type .eq. 'air_sea_gas_flux') then  !{
 
       length = size(gas_fluxes%bc(n)%field(1)%values(:))
 
@@ -1091,7 +1134,6 @@ do n = 1, gas_fluxes%num_bcs  !{
              ') for ' // trim(gas_fluxes%bc(n)%name))
 
       endif  !}
-
     elseif (gas_fluxes%bc(n)%flux_type .eq. 'air_sea_deposition') then  !}{
 
       if (gas_fluxes%bc(n)%param(1) .le. 0.0) then

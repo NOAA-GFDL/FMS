@@ -44,7 +44,7 @@ MODULE diag_axis_mod
   TYPE (diag_axis_type), ALLOCATABLE, SAVE :: Axes(:)
   LOGICAL :: module_is_initialized = .FALSE.
   CHARACTER(len=128) :: version='$Id: diag_axis.F90,v 17.0 2009/07/21 03:18:39 fms Exp $'
-  CHARACTER(len=128) :: tagname='$Name: quebec $'
+  CHARACTER(len=128) :: tagname='$Name: quebec_200910 $'
 
 CONTAINS
 

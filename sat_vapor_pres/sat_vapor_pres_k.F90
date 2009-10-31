@@ -29,7 +29,7 @@
  private
 
  character(len=128), parameter :: version = '$Id: sat_vapor_pres_k.F90,v 17.0 2009/07/21 03:21:44 fms Exp $'
- character(len=128), parameter :: tagname = '$Name: quebec $'
+ character(len=128), parameter :: tagname = '$Name: quebec_200910 $'
 
  public :: sat_vapor_pres_init_k
  public :: lookup_es_k

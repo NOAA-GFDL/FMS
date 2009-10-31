@@ -40,7 +40,7 @@ MODULE diag_util_mod
        & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size
 
   CHARACTER(len=128),PRIVATE  :: version = '$Id: diag_util.F90,v 17.0 2009/07/21 03:18:54 fms Exp $'
-  CHARACTER(len=128),PRIVATE  :: tagname = '$Name: quebec $'
+  CHARACTER(len=128),PRIVATE  :: tagname = '$Name: quebec_200910 $'
 
 CONTAINS
 

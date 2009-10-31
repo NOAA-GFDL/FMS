@@ -166,7 +166,7 @@ MODULE diag_manager_mod
   USE time_manager_mod, ONLY: set_time, set_date, OPERATOR(>=), OPERATOR(>), OPERATOR(<),&
        & OPERATOR(==), OPERATOR(/=), time_type, month_name, get_calendar_type, NO_CALENDAR,&
        & OPERATOR(/), OPERATOR(+), get_time
-  USE mpp_io_mod, ONLY: mpp_open, MPP_RDONLY, MPP_ASCII, mpp_close
+  USE mpp_io_mod, ONLY: mpp_open, MPP_RDONLY, MPP_ASCII, mpp_close, mpp_get_field_name
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, close_file, stdlog, write_version_number,&
        & file_exist, mpp_pe, open_namelist_file, check_nml_error, lowercase, stdout, mpp_error,&
        & fms_error_handler
@@ -199,8 +199,8 @@ MODULE diag_manager_mod
 
   CHARACTER(len=32), SAVE :: filename_appendix = ''
   ! version number of this module
-  CHARACTER(len=128)  :: version = '$Id: diag_manager.F90,v 17.0 2009/07/21 03:18:45 fms Exp $'
-  CHARACTER(len=128)  :: tagname = '$Name: quebec $'  
+  CHARACTER(len=128)  :: version = '$Id: diag_manager.F90,v 17.0.4.2 2009/09/10 19:32:21 sdu Exp $'
+  CHARACTER(len=128)  :: tagname = '$Name: quebec_200910 $'  
 
   ! <INTERFACE NAME="send_data">
   !   <TEMPLATE>
@@ -1136,9 +1136,10 @@ CONTAINS
     IF ( missvalue_present ) missvalue = input_fields(diag_field_id)%missing_value
 
     ! Loop through each output field that depends on this input field
-    DO ii = 1, number_of_outputs
+    num_outputs: DO ii = 1, number_of_outputs
        ! Get index to an output field
        out_num = input_fields(diag_field_id)%output_fields(ii)
+
        ! is this field output on a local domain only?
        local_output = output_fields(out_num)%local_output
        ! if local_output, does the current PE take part in send_data?
@@ -1187,7 +1188,7 @@ CONTAINS
        ker= l_end(3)
 
        ! Initialize output time for fields output every time step
-       IF (freq == EVERY_TIME) THEN
+       IF ( freq == EVERY_TIME .AND. .NOT.output_fields(out_num)%static ) THEN
           IF (output_fields(out_num)%next_output == output_fields(out_num)%last_output) THEN
              IF(PRESENT(time)) THEN
                 output_fields(out_num)%next_output = time
@@ -1891,7 +1892,7 @@ CONTAINS
              END DO
           END IF
        END IF
-    END DO
+    END DO num_outputs
   END FUNCTION send_data_3d
   ! </FUNCTION>
 

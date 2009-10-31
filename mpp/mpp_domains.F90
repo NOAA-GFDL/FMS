@@ -1735,7 +1735,7 @@ module mpp_domains_mod
   character(len=128), public :: version= &
        '$Id: mpp_domains.F90,v 17.0 2009/07/21 03:21:11 fms Exp $'
   character(len=128), public :: tagname= &
-       '$Name: quebec $'
+       '$Name: quebec_200910 $'
 
 
 contains

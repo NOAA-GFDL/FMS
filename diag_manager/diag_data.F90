@@ -181,7 +181,7 @@ MODULE diag_data_mod
   
   
   CHARACTER(len=128),PRIVATE  :: version = '$Id: diag_data.F90,v 17.0 2009/07/21 03:18:43 fms Exp $'
-  CHARACTER(len=128),PRIVATE  :: tagname = '$Name: quebec $'
+  CHARACTER(len=128),PRIVATE  :: tagname = '$Name: quebec_200910 $'
   
   
   ! definitions for diag_axis_mod

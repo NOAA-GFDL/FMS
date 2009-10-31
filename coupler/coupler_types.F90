@@ -39,6 +39,41 @@ module coupler_types_mod  !{
 !
 ! /coupler_mod/
 !              types/
+!                    air_sea_gas_flux_generic/
+!                         implementation/
+!                                        ocmip2/
+!                                                    num_parameters = 2
+!                         num_flags = 0
+!                         use_atm_pressure = t
+!                         use_10m_wind_speed = t
+!                         pass_through_ice = f
+!                         atm/
+!                             name/
+!                                  pcair, u10, psurf
+!                             long_name/
+!                                       'Atmospheric concentration'
+!                                       'Wind speed at 10 m'
+!                                       'Surface atmospheric pressure'
+!                             units/
+!                                   'mol/mol', 'm/s', 'Pa'
+!                         ice/
+!                             name/
+!                                  alpha, csurf, sc_no
+!                             long_name/
+!                                       'Solubility from atmosphere'
+!                                       'Surface concentration from ocean'
+!                                       'Schmidt number'
+!                             units/
+!                                   'mol/m^3/atm', 'mol/m^3', 'dimensionless'
+!                         flux/
+!                              name/
+!                                   flux, deltap, kw
+!                              long_name/
+!                                        'Surface gas flux'
+!                                        'ocean-air delta pressure'
+!                                        'piston velocity'
+!                              units/
+!                                    'mol/m^2/s', 'uatm', 'm/s'
 !                    air_sea_gas_flux/
 !                         implementation/
 !                                        ocmip2/
@@ -136,8 +171,8 @@ use field_manager_mod, only: fm_field_name_len, fm_string_len, fm_dump_list
 implicit none
 !
 !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: coupler_types.F90,v 17.0 2009/07/21 03:18:32 fms Exp $'
-  character(len=128) :: tag = '$Name: quebec $'
+  character(len=128) :: version = '$Id: coupler_types.F90,v 17.0.2.2 2009/08/28 19:18:26 nnz Exp $'
+  character(len=128) :: tag = '$Name: quebec_200910 $'
 !-----------------------------------------------------------------------
 real, parameter :: bound_tol = 1e-7
 
@@ -319,7 +354,10 @@ integer, public :: ind_psurf
 integer, public :: ind_pcair
 integer, public :: ind_csurf
 integer, public :: ind_alpha
+integer, public :: ind_sc_no
 integer, public :: ind_flux
+integer, public :: ind_deltap
+integer, public :: ind_kw
 integer, public :: ind_deposition
 integer, public :: ind_runoff
 
@@ -466,6 +504,114 @@ call fm_util_set_value('/coupler_mod/GOOD/good_coupler_mod_list', 'types', appen
 if (.not. fm_change_list('/coupler_mod/types')) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not change to "/coupler_mod/types"')
 endif  !}
+
+!
+!       Define the air_sea_gas_flux_generic type
+!
+
+!       add the new type
+
+if (fm_new_list('air_sea_gas_flux_generic') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic" list')
+endif  !}
+
+!       add the implementation list
+
+if (fm_new_list('air_sea_gas_flux_generic/implementation') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/implementation" list')
+endif  !}
+
+!       add the names of the different implementations
+
+if (fm_new_list('air_sea_gas_flux_generic/implementation/ocmip2') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/implementation/ocmip2" list')
+endif  !}
+call fm_util_set_value('air_sea_gas_flux_generic/implementation/ocmip2/num_parameters', 2)
+
+!       add some scalar quantaties
+
+call fm_util_set_value('air_sea_gas_flux_generic/num_flags', 0)
+call fm_util_set_value('air_sea_gas_flux_generic/use_atm_pressure', .true.)
+call fm_util_set_value('air_sea_gas_flux_generic/use_10m_wind_speed', .true.)
+call fm_util_set_value('air_sea_gas_flux_generic/pass_through_ice', .false.)
+
+!       add required fields that will come from the atmosphere model
+
+if (fm_new_list('air_sea_gas_flux_generic/atm') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/atm" list')
+endif  !}
+
+field_index = 0
+
+field_index = field_index + 1
+ind_pcair = field_index
+call fm_util_set_value('air_sea_gas_flux_generic/atm/name',      'pcair',                     index = ind_pcair)
+call fm_util_set_value('air_sea_gas_flux_generic/atm/long_name', 'Atmospheric concentration', index = ind_pcair)
+call fm_util_set_value('air_sea_gas_flux_generic/atm/units',     'mol/mol',                   index = ind_pcair)
+
+field_index = field_index + 1
+ind_u10 = field_index
+call fm_util_set_value('air_sea_gas_flux_generic/atm/name',      'u10',                index = ind_u10)
+call fm_util_set_value('air_sea_gas_flux_generic/atm/long_name', 'Wind speed at 10 m', index = ind_u10)
+call fm_util_set_value('air_sea_gas_flux_generic/atm/units',     'm/s',                index = ind_u10)
+
+field_index = field_index + 1
+ind_psurf = field_index
+call fm_util_set_value('air_sea_gas_flux_generic/atm/name',      'psurf',                        index = ind_psurf)
+call fm_util_set_value('air_sea_gas_flux_generic/atm/long_name', 'Surface atmospheric pressure', index = ind_psurf)
+call fm_util_set_value('air_sea_gas_flux_generic/atm/units',     'Pa',                           index = ind_psurf)
+
+!       add required fields that will come from the ice model
+
+if (fm_new_list('air_sea_gas_flux_generic/ice') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/ice" list')
+endif  !}
+
+field_index = 0
+
+field_index = field_index + 1
+ind_alpha = field_index
+call fm_util_set_value('air_sea_gas_flux_generic/ice/name',      'alpha',                                                index = ind_alpha)
+call fm_util_set_value('air_sea_gas_flux_generic/ice/long_name', 'Solubility w.r.t. atmosphere', index = ind_alpha)
+call fm_util_set_value('air_sea_gas_flux_generic/ice/units',     'mol/m^3/atm',                                          index = ind_alpha)
+
+field_index = field_index + 1
+ind_csurf = field_index
+call fm_util_set_value('air_sea_gas_flux_generic/ice/name',      'csurf',                                         index = ind_csurf)
+call fm_util_set_value('air_sea_gas_flux_generic/ice/long_name', 'Ocean concentration', index = ind_csurf)
+call fm_util_set_value('air_sea_gas_flux_generic/ice/units',     'mol/m^3',                                       index = ind_csurf)
+
+field_index = field_index + 1
+ind_sc_no = field_index
+call fm_util_set_value('air_sea_gas_flux_generic/ice/name',      'sc_no',                                         index = ind_sc_no)
+call fm_util_set_value('air_sea_gas_flux_generic/ice/long_name', 'Schmidt number', index = ind_sc_no)
+call fm_util_set_value('air_sea_gas_flux_generic/ice/units',     'dimensionless',                                       index = ind_sc_no)
+
+!       add the flux output field(s)
+
+if (fm_new_list('air_sea_gas_flux_generic/flux') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/flux" list')
+endif  !}
+
+field_index = 0
+
+field_index = field_index + 1
+ind_flux = field_index
+call fm_util_set_value('air_sea_gas_flux_generic/flux/name',      'flux',         index = ind_flux)
+call fm_util_set_value('air_sea_gas_flux_generic/flux/long_name', 'Surface flux', index = ind_flux)
+call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'mol/m^2/s',    index = ind_flux)
+
+field_index = field_index + 1
+ind_deltap = field_index
+call fm_util_set_value('air_sea_gas_flux_generic/flux/name',      'deltap',         index = ind_deltap)
+call fm_util_set_value('air_sea_gas_flux_generic/flux/long_name', 'Ocean-air delta pressure', index = ind_deltap)
+call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'uatm',    index = ind_deltap)
+
+field_index = field_index + 1
+ind_kw = field_index
+call fm_util_set_value('air_sea_gas_flux_generic/flux/name',      'kw',         index = ind_kw)
+call fm_util_set_value('air_sea_gas_flux_generic/flux/long_name', 'Piston velocity', index = ind_kw)
+call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'm/s',    index = ind_kw)
 
 !
 !       Define the air_sea_gas_flux type
