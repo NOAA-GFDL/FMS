@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_sum.inc,v 13.0 2006/03/28 21:41:40 fms Exp $
+! $Id: mpp_sum.inc,v 18.0 2010/03/02 23:57:50 fms Exp $
 
 !#######################################################################
 
@@ -24,16 +24,10 @@
       integer, intent(in), optional :: pelist(:)
       MPP_TYPE_ :: a1D(length)
 
-#ifdef use_CRI_pointers
       pointer( ptr, a1D )
       ptr = LOC(a)
       call mpp_sum( a1D, length, pelist )
-#else
-      a1D = TRANSFER( a, a1D, length ) !faster than RESHAPE? length is probably redundant
-!      a1D = RESHAPE( a, SHAPE(a1D) )
-      call mpp_sum( a1D, length, pelist )
-      a = RESHAPE( a1D, SHAPE(a) )
-#endif
+
       return
     end subroutine MPP_SUM_2D_
 
@@ -44,16 +38,10 @@
       integer, intent(in), optional :: pelist(:)
       MPP_TYPE_ :: a1D(length)
 
-#ifdef use_CRI_pointers
       pointer( ptr, a1D )
       ptr = LOC(a)
       call mpp_sum( a1D, length, pelist )
-#else
-      a1D = TRANSFER( a, a1D, length ) !faster than RESHAPE? length is probably redundant
-!      a1D = RESHAPE( a, SHAPE(a1D) )
-      call mpp_sum( a1D, length, pelist )
-      a = RESHAPE( a1D, SHAPE(a) )
-#endif
+
       return
     end subroutine MPP_SUM_3D_
 
@@ -64,16 +52,10 @@
       integer, intent(in), optional :: pelist(:)
       MPP_TYPE_ :: a1D(length)
 
-#ifdef use_CRI_pointers
       pointer( ptr, a1D )
       ptr = LOC(a)
       call mpp_sum( a1D, length, pelist )
-#else
-      a1D = TRANSFER( a, a1D, length ) !faster than RESHAPE? length is probably redundant
-!      a1D = RESHAPE( a, SHAPE(a1D) )
-      call mpp_sum( a1D, length, pelist )
-      a = RESHAPE( a1D, SHAPE(a) )
-#endif
+
       return
     end subroutine MPP_SUM_4D_
 
@@ -84,15 +66,9 @@
       integer, intent(in), optional :: pelist(:)
       MPP_TYPE_ :: a1D(length)
 
-#ifdef use_CRI_pointers
       pointer( ptr, a1D )
       ptr = LOC(a)
       call mpp_sum( a1D, length, pelist )
-#else
-      a1D = TRANSFER( a, a1D, length ) !faster than RESHAPE? length is probably redundant
-!      a1D = RESHAPE( a, SHAPE(a1D) )
-      call mpp_sum( a1D, length, pelist )
-      a = RESHAPE( a1D, SHAPE(a) )
-#endif
+
       return
     end subroutine MPP_SUM_5D_

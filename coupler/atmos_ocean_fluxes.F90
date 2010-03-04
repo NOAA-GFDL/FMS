@@ -188,8 +188,8 @@ character(len=48), parameter    :: mod_name = 'atmos_ocean_fluxes_mod'
 !----------------------------------------------------------------------
 !
 
-character(len=128) :: version = '$Id: atmos_ocean_fluxes.F90,v 17.0.2.2 2009/08/28 19:18:25 nnz Exp $'
-character(len=128) :: tagname = '$Name: quebec_200910 $'
+character(len=128) :: version = '$Id: atmos_ocean_fluxes.F90,v 18.0 2010/03/02 23:55:03 fms Exp $'
+character(len=128) :: tagname = '$Name: riga $'
 
 !
 !-----------------------------------------------------------------------

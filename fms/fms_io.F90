@@ -90,8 +90,8 @@ use mpp_io_mod,      only: mpp_get_att_real_scalar
 use mpp_io_mod,      only: fieldtype, axistype, atttype, default_field, default_axis, default_att
 use mpp_io_mod,      only: MPP_NETCDF, MPP_ASCII, MPP_MULTI, MPP_SINGLE, MPP_OVERWR, MPP_RDONLY
 use mpp_io_mod,      only: MPP_IEEE32, MPP_NATIVE, MPP_DELETE, MPP_APPEND, MPP_SEQUENTIAL, MPP_DIRECT
-use mpp_io_mod,      only: MAX_FILE_SIZE
-use mpp_domains_mod, only: domain2d, domain1d, NULL_DOMAIN1D, NULL_DOMAIN2D, operator( == ), CENTER
+use mpp_io_mod,      only: MAX_FILE_SIZE, mpp_get_att_value
+use mpp_domains_mod, only: domain2d, domain1d, NULL_DOMAIN1D, NULL_DOMAIN2D, operator( .EQ. ), CENTER
 use mpp_domains_mod, only: mpp_get_domain_components, mpp_get_compute_domain, mpp_get_data_domain
 use mpp_domains_mod, only: mpp_get_domain_shift, mpp_get_global_domain, mpp_global_field, mpp_domain_is_tile_root_pe
 use mpp_domains_mod, only: mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined
@@ -203,6 +203,7 @@ interface read_data
    module procedure read_cdata_2d,read_cdata_3d,read_cdata_4d
 #endif
    module procedure read_data_text
+   module procedure read_data_2d_region
 end interface
 
 interface write_data
@@ -275,6 +276,10 @@ interface get_global_att_value
   module procedure get_global_att_value_real
 end interface
 
+interface get_var_att_value
+  module procedure get_var_att_value_text
+end interface
+
 integer :: num_files_r = 0 ! number of currently opened files for reading
 integer :: num_files_w = 0 ! number of currently opened files for writing
 integer :: num_domains = 0 ! number of domains in array_domain
@@ -307,7 +312,7 @@ public  :: set_domain, nullify_domain, get_domain_decomp, return_domain
 public  :: open_file, open_direct_file
 public  :: get_restart_io_mode, get_tile_string, string
 public  :: get_mosaic_tile_grid, get_mosaic_tile_file
-public  :: get_global_att_value
+public  :: get_global_att_value, get_var_att_value
 public  :: file_exist, field_exist
 public  :: register_restart_field, save_restart, restore_state
 public  :: restart_file_type, query_initialized
@@ -343,8 +348,8 @@ logical           :: print_chksum        = .false.
        read_data_bug, time_stamp_restart, print_chksum
 
 
-character(len=128) :: version = '$Id: fms_io.F90,v 17.0 2009/07/21 03:19:22 fms Exp $'
-character(len=128) :: tagname = '$Name: quebec_200910 $'
+character(len=128) :: version = '$Id: fms_io.F90,v 18.0 2010/03/02 23:55:56 fms Exp $'
+character(len=128) :: tagname = '$Name: riga $'
 
 contains
 
@@ -1773,7 +1778,7 @@ subroutine write_chksum(fileObj, action)
   type(restart_file_type), intent(inout) :: fileObj
   integer,                 intent(in)    :: action
   integer(LONG_KIND)                     :: data_chksum
-  integer                                :: j, k
+  integer                                :: j, k, outunit
   type(var_type), pointer, save          :: cur_var=>NULL()
   character(len=32)                      :: routine_name
 
@@ -1809,7 +1814,8 @@ subroutine write_chksum(fileObj, action)
               call mpp_error(FATAL, "fms_io(write_chksum): There is no pointer associated with the data of  field "// &
                    trim(cur_var%name)//" of file "//trim(fileObj%name) )
            end if
-           write(stdout(),'(a, I1, a, I)')'fms_io('//trim(routine_name)//'): At time level = ', k, ', chksum for "'// &
+           outunit = stdout()
+           write(outunit,'(a, I1, a, I16)')'fms_io('//trim(routine_name)//'): At time level = ', k, ', chksum for "'// &
                 trim(cur_var%name)// '" of "'// trim(fileObj%name)// '" = ', data_chksum    
 
         enddo
@@ -2577,7 +2583,7 @@ function lookup_domain(domain)
   integer                    :: i, lookup_domain
   lookup_domain = -1
   do i =1, num_domains
-     if(domain == array_domain(i)) then
+     if(domain .EQ. array_domain(i)) then
         lookup_domain = i
         exit
      endif
@@ -2599,7 +2605,7 @@ function lookup_axis(axis_sizes,siz,domains,dom)
   do j=1,size(axis_sizes(:))
      if (siz == axis_sizes(j)) then
         if (PRESENT(domains)) then
-           if (dom == domains(j)) then 
+           if (dom .EQ. domains(j)) then 
               lookup_axis = j
               exit
            endif
@@ -2958,6 +2964,64 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel, &
   return
 end subroutine read_data_3d_new
 
+
+!=====================================================================================
+subroutine read_data_2d_region(filename,fieldname,data,start,nread,domain, &
+                                 no_domain, tile_count)
+  character(len=*),                  intent(in) :: filename, fieldname
+  real, dimension(:,:),           intent(inout) :: data ! 3 dimensional data    
+  integer, dimension(:),             intent(in) :: start, nread
+  type(domain2d), target,  optional, intent(in) :: domain
+  logical,                 optional, intent(in) :: no_domain 
+  integer,                 optional, intent(in) :: tile_count
+  character(len=256)            :: fname
+  integer                       :: unit, siz_in(4)
+  integer                       :: file_index  ! index of the opened file in array files
+  integer                       :: tlev=1
+  integer                       :: index_field ! position of the fieldname in the list of variables
+  integer                       :: cxsize, cysize
+  integer                       :: dxsize, dysize
+  integer                       :: gxsize, gysize
+  integer                       :: ishift, jshift
+  logical                       :: is_no_domain = .false.
+  logical                       :: read_dist, io_domain_exist, found_file
+  type(domain2d), pointer, save :: d_ptr =>NULL()
+  type(domain2d), pointer, save :: io_domain =>NULL()
+
+
+! Initialize files to default values
+  if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(read_data_3d_new):  module not initialized')  
+  is_no_domain = .false.
+  if (PRESENT(no_domain)) is_no_domain = no_domain
+ 
+  if(PRESENT(domain))then
+     d_ptr => domain
+  elseif (ASSOCIATED(Current_domain) .AND. .NOT. is_no_domain ) then
+     d_ptr => Current_domain
+  endif
+
+  if(.not. PRESENT(domain) .and. .not. ASSOCIATED(Current_domain) ) is_no_domain = .true.
+
+  found_file = get_file_name(filename, fname, read_dist, io_domain_exist, is_no_domain, domain,  tile_count)
+  if(.not.found_file) call mpp_error(FATAL, 'fms_io_mod(read_data_2d_region): file ' //trim(filename)// &
+          '(with the consideration of tile number) and corresponding distributed file are not found')  
+  call get_file_unit(fname, unit, file_index, read_dist, io_domain_exist, domain=domain)
+
+
+  if ((thread_r == MPP_MULTI).or.(mpp_pe()==mpp_root_pe())) then
+     call get_field_id(unit, file_index, fieldname, index_field, is_no_domain, .false. )
+     siz_in = files_read(file_index)%var(index_field)%siz
+     if(files_read(file_index)%var(index_field)%is_dimvar) then
+        call mpp_error(FATAL, 'fms_io_mod(read_data_2d_region): the field should not be a dimension variable')
+     endif
+     call mpp_read(unit,files_read(file_index)%var(index_field)%field,data,start, nread)
+  endif  
+
+  d_ptr =>NULL()
+
+  return
+end subroutine read_data_2d_region
+
 !=====================================================================================
 !--- we assume any text data are at most 2-dimensional and level is for first dimension
 subroutine read_data_text(filename,fieldname,data,level)
@@ -3118,7 +3182,7 @@ function unique_axes(file, index, id_axes, siz_axes, dom)
                  found = .true.
                  exit
               else if(cur_var%domain_idx >0 .AND. id_axes(j) >0) then
-                 if(dom(cur_var%domain_idx) == dom(id_axes(j)) ) then
+                 if(dom(cur_var%domain_idx) .EQ. dom(id_axes(j)) ) then
                     found = .true.
                     exit
                  end if
@@ -4521,6 +4585,21 @@ end subroutine get_axis_cart
     deallocate(tile_id)
 
   end subroutine get_mosaic_tile_grid
+
+  subroutine get_var_att_value_text(file, varname, attname, attvalue)
+    character(len=*), intent(in)    :: file
+    character(len=*), intent(in)    :: varname
+    character(len=*), intent(in)    :: attname
+    character(len=*), intent(inout) :: attvalue
+    integer                         :: unit
+
+    call mpp_open(unit,trim(file),MPP_RDONLY,MPP_NETCDF,threading=MPP_MULTI,fileset=MPP_SINGLE)
+    call mpp_get_att_value(unit, varname, attname, attvalue)
+    call mpp_close(unit)
+ 
+    return
+
+  end subroutine get_var_att_value_text
 
   !#############################################################################
   ! return false if the attribute is not find in the file.

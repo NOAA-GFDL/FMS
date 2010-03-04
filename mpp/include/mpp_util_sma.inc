@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util_sma.inc,v 17.0.2.1 2009/07/30 11:44:52 z1l Exp $
+! $Id: mpp_util_sma.inc,v 18.0 2010/03/02 23:58:11 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -46,7 +46,7 @@ subroutine mpp_error_basic( errortype, errormsg )
 #endif
      write( outunit,'(/a/)' )trim(text)
      if( errortype.EQ.FATAL .OR. warnings_are_fatal )then
-        call FLUSH(outunit,istat)
+        call FLUSH(outunit)
 #ifdef sgi_mipspro
         call TRACE_BACK_STACK_AND_PRINT()
 #endif

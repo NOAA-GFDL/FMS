@@ -1,7 +1,7 @@
 <html>
 <head>
 <META http-equiv="Content-Type" content="text/html; charset=EUC-JP">
-<title>Module diag_anager_mod</title>
+<title>Module diag_manager_mod</title>
 <link type="text/css" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" rel="stylesheet">
 <STYLE TYPE="text/css">
           .fixed {
@@ -24,7 +24,7 @@
           <a href="#REFERENCES">REFERENCES </a>~ 
           <a href="#NOTES">NOTES</a></font>
 <hr>
-<h2>Module diag_anager_mod</h2>
+<h2>Module diag_manager_mod</h2>
 <a name="HEADER"></a>
 <!-- BEGIN HEADER -->
 <div>
@@ -98,7 +98,7 @@
    <br>
 <br>
    Here is an example of file information: <br> 
-<tt>"file2_yr_dy%1yr%3dy",2,"hours",1,"hours","Time", 10, "days", "1 1 7 0 0 0", 6, "hours"</tt>
+<tt>"file2_yr_dy%1yr%3dy",2,"hours",1,"hours","Time", 10, "days", "1 1 7 0 0 0", 6, "hours"</tt> 
 <br>   From left to right we have: <ul> 
 <li>file name</li> 
 <li>output frequency</li> 
@@ -182,7 +182,7 @@
 <h4>OTHER MODULES USED</h4>
 <!-- BEGIN OTHER MODULES USED -->
 <div>
-<pre>time_manager_mod<br>      mpp_io_mod<br>         fms_mod<br>         mpp_mod<br>   diag_axis_mod<br>   diag_util_mod<br>   diag_data_mod<br> diag_output_mod<br>   constants_mod</pre>
+<pre>time_manager_mod<br>      mpp_io_mod<br>         fms_mod<br>         mpp_mod<br>   diag_axis_mod<br>   diag_util_mod<br>   diag_data_mod<br> diag_output_mod<br>   diag_grid_mod<br>   constants_mod</pre>
 </div>
 <!-- END OTHER MODULES USED -->
 <!-- BEGIN PUBLIC INTERFACE -->
@@ -624,7 +624,7 @@
 </tr>
 <tr>
 <td valign="top" align="left"><tt>mask_variang&nbsp;&nbsp;&nbsp;</tt></td><td>
-<br>&nbsp;&nbsp;&nbsp;<span class="type">[LOGICAL, OPTIONAL]</span></td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[LOGICAL, OPTIONAL]&nbsp;[Default: .FALSE.]</span></td>
 </tr>
 <tr>
 <td valign="top" align="left"><tt>standard_name&nbsp;&nbsp;&nbsp;</tt></td><td>
@@ -632,11 +632,11 @@
 </tr>
 <tr>
 <td valign="top" align="left"><tt>dynamic&nbsp;&nbsp;&nbsp;</tt></td><td>
-<br>&nbsp;&nbsp;&nbsp;<span class="type">[LOGICAL, OPTIONAL]</span></td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[LOGICAL, OPTIONAL]&nbsp;[Default: .FALSE.]</span></td>
 </tr>
 <tr>
 <td valign="top" align="left"><tt>do_not_log&nbsp;&nbsp;&nbsp;</tt></td><td>
-<br>&nbsp;&nbsp;&nbsp;<span class="type">[LOGICAL, OPTIONAL]</span></td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[LOGICAL, OPTIONAL]&nbsp;[Default: .TRUE.]</span></td>
 </tr>
 <tr>
 <td valign="top" align="left"><tt>interp_method&nbsp;&nbsp;&nbsp;</tt></td><td>
@@ -654,9 +654,7 @@
 <li>
 <a name="average_tiles"></a>
 <h4>average_tiles</h4>
-<pre> 
-<b>average_tiles</b> 
-</pre>
+<pre>SUBROUTINE <b>average_tiles</b> (diag_field_id, x, area, mask, out)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -670,6 +668,10 @@
 </dt>
 <dd>
 <table border="0">
+<tr>
+<td valign="top" align="left"><tt>diag_field_id&nbsp;&nbsp;&nbsp;</tt></td><td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
+</tr>
 <tr>
 <td valign="top" align="left"><tt>x&nbsp;&nbsp;&nbsp;</tt></td><td>(lon, lat, tile) field to average<br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL, DIMENSION(:,:,:)]</span></td>
 </tr>
@@ -756,7 +758,7 @@
 <li>
 <a name="diag_manager_init"></a>
 <h4>diag_manager_init</h4>
-<pre>SUBROUTINE <b>diag_manager_init</b> (diag_model_dubset, err_msg)</pre>
+<pre>SUBROUTINE <b>diag_manager_init</b> (diag_model_subset, err_msg)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -950,63 +952,77 @@
 </dt>
 <dl> 
 <br>
-<span class="type">[logical, default: false]</span>
+<span class="type">[LOGICAL, default: .FALSE.]</span>
 </dl>
 <dt>
 <tt>mix_snapshot_average_fields</tt>
 </dt>
 <dl> 
 <br>
-<span class="type">[logical, default: false]</span>
+<span class="type">[LOGICAL, default: .FALSE.]</span>
+</dl>
+<dt>
+<tt>max_files</tt>
+</dt>
+<dl> 
+<br>
+<span class="type">[INTEGER]</span>
 </dl>
 <dt>
 <tt>max_output_fields</tt>
 </dt>
 <dl> 
 <br>
-<span class="type">[integer, default: 300]</span>
+<span class="type">[INTEGER, default: 300]</span>
 </dl>
 <dt>
 <tt>max_input_fields</tt>
 </dt>
 <dl> 
 <br>
-<span class="type">[integer, default: 300]</span>
+<span class="type">[INTEGER, default: 300]</span>
 </dl>
 <dt>
 <tt>max_axes</tt>
 </dt>
 <dl> 
 <br>
-<span class="type">[integer, default: 60]</span>
+<span class="type">[INTEGER, default: 60]</span>
 </dl>
 <dt>
-<tt>do_diag_fields_log</tt>
+<tt>do_diag_field_log</tt>
 </dt>
 <dl> 
 <br>
-<span class="type">[logical, default: false]</span>
+<span class="type">[LOGICAL, default: .FALSE.]</span>
 </dl>
 <dt>
 <tt>write_bytes_in_files</tt>
 </dt>
 <dl> 
 <br>
-<span class="type">[logical, default: false]</span>
+<span class="type">[LOGICAL, default: .FALSE.]</span>
 </dl>
 <dt>
 <tt>debug_diag_manager</tt>
 </dt>
 <dl> 
 <br>
-<span class="type">[logical, default: false]</span>
+<span class="type">[LOGICAL, default: .FALSE.]</span>
 </dl>
 <dt>
 <tt>max_num_axis_sets</tt>
 </dt>
 <dl> 
 <br>
-<span class="type">[integer, default: 25]</span>
+<span class="type">[INTEGER, default: 25]</span>
+</dl>
+<dt>
+<tt>use_cmor</tt>
+</dt>
+<dl>   Let diag_manager know if the missing value (if supplied) should be overridden to be the
+   CMOR standard value of -1.0e20. <br>
+<span class="type">[LOGICAL, default: .FALSE.]</span>
 </dl>
 </dl>
 </div>
@@ -1037,15 +1053,15 @@
 <dd>
 <span class="errmsg"></span>
 </dd>
-<dd>   module/output_field &lt;modul_name&gt;/&lt;field_name&gt; NOT found in diag_table </dd>
+<dd>   module/output_field &lt;module_name&gt;/&lt;field_name&gt; registered AFTER first
+   send_data call, TOO LATE </dd>
 <dt>
 <b>WARNING in register_diag_field</b>
 </dt>
 <dd>
 <span class="errmsg"></span>
 </dd>
-<dd>   module/output_field &lt;module_name&gt;/&lt;field_name&gt; registered AFTER first
-   send_data call, TOO LATE </dd>
+<dd>   module/output_field &lt;modul_name&gt;/&lt;field_name&gt; NOT found in diag_table </dd>
 <dt>
 <b>FATAL in register_static_field</b>
 </dt>
@@ -1076,7 +1092,7 @@
 <span class="errmsg"></span>
 </dd>
 <dd>   when registering module/output_field &lt;module_name&gt;/&lt;field_name&gt; then optional
-   argument interp_mothod = &lt;interp_method&gt;, but it should be "conserve_order1" </dd>
+   argument interp_method = &lt;interp_method&gt;, but it should be "conserve_order1" </dd>
 <dt>
 <b>FATAL in register_static_field</b>
 </dt>
@@ -1104,14 +1120,17 @@
 <dd>
 <span class="errmsg"></span>
 </dd>
-<dd>   module/field &lt;module_name&gt;/&lt;field_name&gt; is STATIC can NOT time ops </dd>
+<dd>   module/field &lt;module_name&gt;/&lt;field_name&gt; is STATIC.
+   Cannot perform time operations average, maximum or
+   minimum on static fields.  Setting the time operation to 'NONE'
+   for this field. </dd>
 <dt>
 <b>WARNING in send_data</b>
 </dt>
 <dd>
 <span class="errmsg"></span>
 </dd>
-<dd>Mask will be ignored since missing values were not specified</dd>
+<dd>   Mask will be ignored since missing values were not specified </dd>
 <dt>
 <b>WARNING in closing_file</b>
 </dt>
@@ -1128,6 +1147,61 @@
 </dd>
 <dd>   &lt;output_fields(i)%output_name) NOT available, check if output interval &gt; runlength.
    NetCDF fill_values are written </dd>
+<dt>
+<b>WARNING in diag_manager_init</b>
+</dt>
+<dd>
+<span class="errmsg"></span>
+</dd>
+<dd>   Problem reading the diag_table (line: &lt;line_number&gt;) </dd>
+<dt>
+<b>WARNING in diag_manager_init</b>
+</dt>
+<dd>
+<span class="errmsg"></span>
+</dd>
+<dd>   Incorrect file description format in the diag_table
+   (line: &lt;line_number&gt;).  Ignoring file. </dd>
+<dt>
+<b>WARNING in diag_manager_init</b>
+</dt>
+<dd>
+<span class="errmsg"></span>
+</dd>
+<dd>   Format value out of range for file description in the
+   diag_table (line: &lt;line_number&gt;).  Ignoring file. </dd>
+<dt>
+<b>WARNING in diag_manager_init</b>
+</dt>
+<dd>
+<span class="errmsg"></span>
+</dd>
+<dd>   Invalid start time in the file description in the
+   diag_table (line: &lt;line_number&gt;).  Ignoring file. </dd>
+<dt>
+<b>WARNING in diag_manager_init</b>
+</dt>
+<dd>
+<span class="errmsg"></span>
+</dd>
+<dd>   Field description format is incorrect in the diag_table (line: &lt;line_number&gt;).  Ignoring field. </dd>
+<dt>
+<b>WARNING in diag_manager_init</b>
+</dt>
+<dd>
+<span class="errmsg"></span>
+</dd>
+<dd>   Packing is out of range for the field description in
+   the diag_table (line: &lt;line_number&gt;).  Ignoring field. </dd>
+<dt>
+<b>WARNING in diag_manager_init</b>
+</dt>
+<dd>
+<span class="errmsg"></span>
+</dd>
+<dd>   Error in spatial options for the field
+   description in the diag_table (line: &lt;line_number&gt;).
+   Ignoring field. </dd>
 <dt>
 <b>STATUS UNKNOWN in get_base_time</b>
 </dt>

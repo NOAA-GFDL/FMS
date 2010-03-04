@@ -75,11 +75,6 @@ use           fms_mod, only: file_exist, error_mesg, write_version_number,  &
 use        fms_io_mod, only: read_data
 use     constants_mod, only: TFREEZE, pi
 use      platform_mod, only: R4_KIND, I2_KIND
-#ifdef NCEP_SST
-!DEC$ MESSAGE: 'Trying to use FV-CS external_ic_mod code while compiling' 
-!DEC$ MESSAGE: 'the shared code will cause a failure when using FRE4'
-use   fv_grid_utils_mod, only: sst_ncep, i_sst, j_sst
-#endif
 
 implicit none
 private
@@ -88,16 +83,26 @@ private
 !----------------- Public interfaces -----------------------------------
 
 public amip_interp_init, get_amip_sst, get_amip_ice, amip_interp_new, &
-       get_sst_grid_boundary, get_sst_grid_size, amip_interp_del,  &
-       amip_interp_type, assignment(=)
+       amip_interp_del, amip_interp_type, assignment(=)
+
+!-----------------------------------------------------------------------
+!----------------- Public Data -----------------------------------
+integer :: i_sst = 1200
+integer :: j_sst = 600
+logical :: forecast_mode = .false.
+real, allocatable, dimension(:,:) ::  sst_ncep, sst_anom
+
+public i_sst, j_sst, sst_ncep, sst_anom, forecast_mode
 
 !-----------------------------------------------------------------------
 !--------------------- private below here ------------------------------
 
 !  ---- version number -----
 
-character(len=128) :: version = '$Id: amip_interp.F90,v 17.0 2009/07/21 03:18:17 fms Exp $'
-character(len=128) :: tagname = '$Name: quebec_200910 $'
+character(len=128) :: version = '$Id: amip_interp.F90,v 18.0 2010/03/02 23:54:53 fms Exp $'
+character(len=128) :: tagname = '$Name: riga $'
+
+   real, allocatable:: temp1(:,:), temp2(:,:)
 
 !-----------------------------------------------------------------------
 !------ private defined data type --------
@@ -331,12 +336,19 @@ end type
 !global temperature perturbation used for sensitivity experiments
  real :: sst_pert = 0.
 
- logical :: use_ncep_sst = .false.
+! SJL: During nudging:   use_ncep_sst = .T.;  no_anom_sst = .T.
+!      during forecast:  use_ncep_sst = .T.;  no_anom_sst = .F.
+! For seasonal forecast: use_ncep_ice = .F.
 
- namelist /amip_interp_nml/ use_ncep_sst, tice_crit, &
-                            data_set, date_out_of_range,         &
-                            use_zonal, teq, tdif, tann, tlag,    &
-                            amip_date, sst_pert, verbose
+ logical :: use_ncep_sst = .false.
+ logical ::  no_anom_sst = .true.
+ logical :: use_ncep_ice = .true.
+ logical :: interp_oi_sst = .true.        ! changed to false for regular runs
+
+ namelist /amip_interp_nml/ use_ncep_sst, no_anom_sst, use_ncep_ice,  tice_crit, &
+                            interp_oi_sst, data_set, date_out_of_range,          &
+                            use_zonal, teq, tdif, tann, tlag, amip_date,         &
+                            sst_pert, verbose, i_sst, j_sst, forecast_mode
 ! </NAMELIST>
 
 
@@ -358,7 +370,7 @@ subroutine get_amip_sst (Time, Interp, sst, err_msg)
    real,                     intent(out)   ::  sst(:,:)
    character(len=*), optional, intent(out) :: err_msg
 
-    real, dimension(mobs,nobs) :: sice, temp
+   real, dimension(mobs,nobs) :: sice
 
     integer :: year1, year2, month1, month2
     real    :: fmonth
@@ -375,16 +387,21 @@ subroutine get_amip_sst (Time, Interp, sst, err_msg)
 !-----------------------------------------------------------------------
 !----- compute zonally symetric sst ---------------
 
+    if ( use_ncep_sst .and. forecast_mode ) no_anom_sst = .false.
+
     if (all(amip_date>0)) then
        call get_date(Time,dum,dum,dum,tod(1),tod(2),tod(3))
        Amip_Time = set_date(amip_date(1),amip_date(2),amip_date(3),tod(1),tod(2),tod(3))
     else
        Amip_Time = Time
     endif
+
+ if ( .not. allocated(temp1) ) allocate (temp1(mobs,nobs))
+ if ( .not. allocated(temp2) ) allocate (temp2(mobs,nobs))
        
 if (use_zonal) then
-   call zonal_sst (Amip_Time, sice, temp)
-   call horiz_interp ( Interp%Hintrp, temp, sst )
+   call zonal_sst (Amip_Time, sice, temp1)
+   call horiz_interp ( Interp%Hintrp, temp1, sst )
 else
 
 !-----------------------------------------------------------------------
@@ -409,22 +426,18 @@ else
    unit = -1
 !-----------------------------------------------------------------------
 
+
     if (Date1 /= Interp % Date1) then
 !       ---- use Date2 for Date1 ----
         if (Date1 == Interp % Date2) then
             Interp % Date1 = Interp % Date2
             Interp % data1 = Interp % data2
         else
-!-- SJL -----------------------------------------
-            if ( use_ncep_sst ) then
-#ifdef NCEP_SST
-                 temp(:,:) = sst_ncep(:,:)
-#endif
-            else
-                 call read_record ('sst', Date1, Udate1, temp)
+            call read_record ('sst', Date1, Udate1, temp1)
+            if ( use_ncep_sst .and. (.not. no_anom_sst) ) then
+                 temp1(:,:) = temp1(:,:) + sst_anom(:,:)
             endif
-!------------------------------------------------
-            call horiz_interp ( Interp%Hintrp, temp, Interp%data1 )
+            call horiz_interp ( Interp%Hintrp, temp1, Interp%data1 )
             call clip_data ('sst', Interp%data1)
             Interp % Date1 = Date1
         endif
@@ -433,19 +446,13 @@ else
 !-----------------------------------------------------------------------
 
     if (Date2 /= Interp % Date2) then
-!-- SJL -----------------------------------------
-            if ( use_ncep_sst ) then
-#ifdef NCEP_SST
-                 temp(:,:) = sst_ncep(:,:)
-#endif
-            else
-                 call read_record ('sst', Date2, Udate2, temp)
-            endif
-!------------------------------------------------
-        call horiz_interp ( Interp%Hintrp, temp, Interp%data2 )
+        call read_record ('sst', Date2, Udate2, temp2)
+        if ( use_ncep_sst .and. (.not. no_anom_sst) ) then
+             temp2(:,:) = temp2(:,:) + sst_anom(:,:)
+        endif
+        call horiz_interp ( Interp%Hintrp, temp2, Interp%data2 )
         call clip_data ('sst', Interp%data2)
         Interp % Date2 = Date2
-
     endif
 
 !   ---- if the unit was opened, close it and print dates ----
@@ -461,8 +468,19 @@ else
 !-----------------------------------------------------------------------
 !---------- time interpolation (between months) of sst's ---------------
 !-----------------------------------------------------------------------
+  sst = Interp % data1 + fmonth * (Interp % data2 - Interp % data1)
 
-   sst = Interp % data1 + fmonth * (Interp % data2 - Interp % data1)
+!-------------------------------------------------------------------------------
+! SJL mods for NWP and TCSF ---
+!      Nudging runs: (Note: NCEP SST updated only every 6-hr)
+!      Compute SST anomaly from global SST datasets for subsequent forecast runs
+!-------------------------------------------------------------------------------
+  if ( use_ncep_sst .and. no_anom_sst ) then
+       sst_anom(:,:) = sst_ncep(:,:) - (temp1(:,:) + fmonth*(temp2(:,:) - temp1(:,:)) )
+       call horiz_interp ( Interp%Hintrp, sst_ncep, sst )
+       call clip_data ('sst', sst)
+  endif
+
 
 endif
 
@@ -559,14 +577,14 @@ else
             Interp % data1 = Interp % data2
         else
 !-- SJL -------------------------------------------------------------
-            if ( use_ncep_sst ) then
-#ifdef NCEP_SST
+! Can NOT use ncep_sst to determine sea_ice For seasonal forecast
+! Use climo sea ice for seasonal runs
+            if ( use_ncep_sst .and. use_ncep_ice ) then
                where ( sst_ncep <= (TFREEZE+tice_crit) )
                    sice = 1.
                elsewhere
                    sice = 0.
                endwhere
-#endif
             else
                call read_record ('ice', Date1, Udate1, sice)
             endif
@@ -582,14 +600,12 @@ else
     if (Date2 /= Interp % Date2) then
 
 !-- SJL -------------------------------------------------------------
-            if ( use_ncep_sst ) then
-#ifdef NCEP_SST
+            if ( use_ncep_sst .and. use_ncep_ice ) then
                where ( sst_ncep <= (TFREEZE+tice_crit) )
                    sice = 1.
                elsewhere
                    sice = 0.
                endwhere
-#endif
             else
                call read_record ('ice', Date2, Udate2, sice)
             endif
@@ -756,13 +772,6 @@ endif
     endif
     call close_file (unit)
 
-#ifdef NCEP_SST
-    if (.not. use_ncep_sst) &
-       call error_mesg ('amip_interp_init', 'use_ncep_sst is false but NCEP_SST is #defined', FATAL)
-#else
-    if (use_ncep_sst) &
-       call error_mesg ('amip_interp_init', 'use_ncep_sst is true but NCEP_SST is #undefined', FATAL)
-#endif
 !   ---- freezing point of sea water in deg K ---
 
     tice_crit_k = tice_crit
@@ -816,9 +825,9 @@ endif
         file_name_ice = 'INPUT/' // 'reyoi_sst.data'
 !--- Added by SJL ---------------------------------------------- 
         if ( use_ncep_sst ) then
-#ifdef NCEP_SST
              mobs = i_sst;  nobs = j_sst
-#endif
+            if (.not. allocated (sst_ncep)) allocate (sst_ncep(i_sst,j_sst))
+            if (.not. allocated (sst_anom)) allocate (sst_anom(i_sst,j_sst))
         else
              mobs = 360;    nobs = 180
         endif
@@ -881,6 +890,8 @@ endif
      Interp%I_am_initialized = .false.
 
    end subroutine amip_interp_del
+!#######################################################################
+
 ! </SUBROUTINE>
 
 !#######################################################################
@@ -937,6 +948,114 @@ endif
       enddo
 
    end subroutine set_sst_grid_edges_oi
+
+
+   subroutine a2a_bilinear(nx, ny, dat1, n1, n2, dat2)
+   integer, intent(in):: nx, ny
+   integer, intent(in):: n1, n2
+   real, intent(in) :: dat1(nx,ny)
+   real, intent(out):: dat2(n1,n2)      ! output interpolated data
+
+! local:
+  real:: lon1(nx), lat1(ny)
+  real:: lon2(n1), lat2(n2)
+  real:: dx1, dy1, dx2, dy2
+  real:: xc, yc
+  real:: a1, b1, c1, c2, c3, c4
+  integer i1, i2, jc, i0, j0, it, jt
+  integer i,j
+
+
+!-----------------------------------------------------------
+! * Interpolate from "FMS" 1x1 SST data grid to a finer grid
+!                     lon: 0.5, 1.5, ..., 359.5
+!                     lat: -89.5, -88.5, ... , 88.5, 89.5
+!-----------------------------------------------------------
+
+! INput Grid
+  dx1 = 360./real(nx)
+  dy1 = 180./real(ny)
+
+  do i=1,nx
+     lon1(i) = 0.5*dx1 + real(i-1)*dx1
+  enddo
+  do j=1,ny
+     lat1(j) = -90. + 0.5*dy1 + real(j-1)*dy1
+  enddo
+
+! OutPut Grid:
+  dx2 = 360./real(n1)
+  dy2 = 180./real(n2)
+
+  do i=1,n1
+     lon2(i) = 0.5*dx2 + real(i-1)*dx2
+  enddo
+  do j=1,n2
+     lat2(j) = -90. + 0.5*dy2 + real(j-1)*dy2
+  enddo
+
+  jt = 1
+  do 5000 j=1,n2
+
+     yc = lat2(j)
+     if ( yc<lat1(1) ) then
+            jc = 1
+            b1 = 0.
+     elseif ( yc>lat1(ny) ) then
+            jc = ny-1
+            b1 = 1.
+     else
+          do j0=jt,ny-1
+          if ( yc>=lat1(j0) .and. yc<=lat1(j0+1) ) then
+               jc = j0
+               jt = j0
+               b1 = (yc-lat1(jc)) / dy1
+               go to 222
+          endif
+          enddo
+     endif
+222  continue
+
+     it = 1
+     do i=1,n1
+        xc = lon2(i)
+       if ( xc>lon1(nx) ) then
+            i1 = nx;     i2 = 1
+            a1 = (xc-lon1(nx)) / dx1
+       elseif ( xc<lon1(1) ) then
+            i1 = nx;     i2 = 1
+            a1 = (xc+360.-lon1(nx)) / dx1
+       else
+            do i0=it,nx-1
+            if ( xc>=lon1(i0) .and. xc<=lon1(i0+1) ) then
+               i1 = i0;  i2 = i0+1
+               it = i0
+               a1 = (xc-lon1(i1)) / dx1
+               go to 111
+            endif
+            enddo
+       endif
+111    continue
+
+! Debug code:
+       if ( a1<-0.001 .or. a1>1.001 .or.  b1<-0.001 .or. b1>1.001 ) then
+            write(*,*) i,j,a1, b1
+            call mpp_error(FATAL,'a2a bilinear interpolation')
+       endif
+
+       c1 = (1.-a1) * (1.-b1)
+       c2 =     a1  * (1.-b1)
+       c3 =     a1  *     b1
+       c4 = (1.-a1) *     b1
+
+! Bilinear interpolation:
+       dat2(i,j) = c1*dat1(i1,jc) + c2*dat1(i2,jc) + c3*dat1(i2,jc+1) + c4*dat1(i1,jc+1)
+
+     enddo   !i-loop
+
+5000 continue   ! j-loop
+
+   end subroutine a2a_bilinear
 
 !#######################################################################
 
@@ -1040,6 +1159,7 @@ endif
      type (date_type), intent(in)  :: Date
      type (date_type), intent(inout) :: Adate
      real,             intent(out) :: dat(mobs,nobs)
+     real :: tmp_dat(360,180)
 
      real   (R4_KIND) :: dat4(mobs,nobs)
      integer(I2_KIND) :: idat(mobs,nobs)
@@ -1167,7 +1287,17 @@ endif
    !---- read NETCDF data ----
 
      if (file_exist(ncfilename)) then
-        call read_data(ncfilename, ncfieldname, dat, timelevel=k, no_domain=.true.)
+         if ( interp_oi_sst ) then
+              call read_data(ncfilename, ncfieldname, tmp_dat, timelevel=k, no_domain=.true.)
+!     interpolate tmp_dat(360, 180) ---> dat(mobs,nobs) (to enable SST anom computation)
+              if ( mobs/=360 .or. nobs/=180 ) then
+                   call a2a_bilinear(360, 180, tmp_dat, mobs, nobs, dat)
+              else
+                   dat(:,:) = tmp_dat(:,:)
+              endif
+         else
+              call read_data(ncfilename, ncfieldname, dat, timelevel=k, no_domain=.true.)
+         endif
         idat =  nint(dat*100.) ! reconstruct packed data for reproducibity
      endif
 

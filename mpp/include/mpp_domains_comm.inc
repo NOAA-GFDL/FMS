@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_comm.inc,v 17.0 2009/07/21 03:20:07 fms Exp $
+! $Id: mpp_domains_comm.inc,v 18.0 2010/03/02 23:57:13 fms Exp $
 
 
     function mpp_redistribute_init_comm(domain_in,l_addrs_in, domain_out,l_addrs_out, &
@@ -100,7 +100,10 @@
          m = mod( domain_out%pos+list+lsize+1, lsize+1 )
          d_comm%cto_pe(list) = domain_out%list(m)%pe
          to_pe =  d_comm%cto_pe(list)
-         call mpp_get_compute_domain( domain_out%list(m), is, ie, js, je )
+         is = domain_out%list(m)%x(1)%compute%begin
+         ie = domain_out%list(m)%x(1)%compute%end
+         js = domain_out%list(m)%y(1)%compute%begin
+         je = domain_out%list(m)%y(1)%compute%end
          is = max(is,isc); ie = min(ie,iec)
          js = max(js,jsc); je = min(je,jec)
          if( ie >= is .AND. je >= js )then
@@ -141,7 +144,10 @@
          m = mod( domain_in%pos+rsize+1-list, rsize+1 )
          d_comm%cfrom_pe(list) = domain_in%list(m)%pe
          from_pe = d_comm%cfrom_pe(list)
-         call mpp_get_compute_domain( domain_in%list(m), is, ie, js, je )
+         is = domain_in%list(m)%x(1)%compute%begin
+         ie = domain_in%list(m)%x(1)%compute%end
+         js = domain_in%list(m)%y(1)%compute%begin
+         je = domain_in%list(m)%y(1)%compute%end
          is = max(is,isc); ie = min(ie,iec)
          js = max(js,jsc); je = min(je,jec)
          if( ie >= is .AND. je >= js )then
@@ -191,7 +197,7 @@
       integer :: n, lpos, rpos, list, nlist, tile_id
       integer :: update_flags
       logical :: xonly, yonly
-      integer :: is, ie, js, je, ioff, joff
+      integer :: is, ie, js, je, ioff, joff, ishift, jshift
       integer :: lsize,msgsize,from_pe
       integer,           allocatable,dimension(:) :: isL, jsL
       integer(LONG_KIND),allocatable,dimension(:,:) :: slist_addr
@@ -211,14 +217,16 @@
          endif
       end if
 
-      if( isize_g /= (domain%x(1)%global%size) .OR. jsize_g /= (domain%y(1)%global%size) ) &
+      call mpp_get_domain_shift(domain, ishift, jshift, position=position)
+
+      if( isize_g /= (domain%x(1)%global%size+ishift) .OR. jsize_g /= (domain%y(1)%global%size+jshift) ) &
            call mpp_error( FATAL, 'MPP_GLOBAL_FIELD_INIT_COMM: incoming arrays do not match domain.' )
 
-      if( isize_l == (domain%x(1)%compute%size) .AND. jsize_l == (domain%y(1)%compute%size) )then
+      if( isize_l == (domain%x(1)%compute%size+ishift) .AND. jsize_l == (domain%y(1)%compute%size+jshift) )then
 !local is on compute domain                                                                      
         ioff = -domain%x(1)%compute%begin + 1                                                       
         joff = -domain%y(1)%compute%begin + 1
-      elseif( isize_l == (domain%x(1)%memory%size) .AND. jsize_l == (domain%y(1)%memory%size) )then
+      elseif( isize_l == (domain%x(1)%memory%size+ishift) .AND. jsize_l == (domain%y(1)%memory%size+jshift) )then
 !local is on data domain                                                                        
         ioff = -domain%x(1)%data%begin + 1                                                         
         joff = -domain%y(1)%data%begin + 1
@@ -260,8 +268,8 @@
           rpos = mod(domain%x(1)%pos+list,lsize)
           from_pe = domain%x(1)%list(rpos)%pe
           d_comm%cfrom_pe(list) = from_pe
-          is = domain%list(from_pe)%x(1)%compute%begin; ie = domain%list(from_pe)%x(1)%compute%end
-          js = domain%y(1)%compute%begin; je = domain%y(1)%compute%end
+          is = domain%list(from_pe)%x(1)%compute%begin; ie = domain%list(from_pe)%x(1)%compute%end+ishift
+          js = domain%y(1)%compute%begin; je = domain%y(1)%compute%end+jshift
           d_comm%recvis(1,list)=is; d_comm%recvie(1,list)=ie
           d_comm%recvjs(1,list)=js; d_comm%recvje(1,list)=je
           d_comm%R_msize(list) = (ie-is+1) * (je-js+1) * ksize
@@ -289,8 +297,8 @@
           rpos = mod(domain%y(1)%pos+list,lsize)
           from_pe = domain%y(1)%list(rpos)%pe
           d_comm%cfrom_pe(list) = from_pe
-          is = domain%x(1)%compute%begin; ie = domain%x(1)%compute%end
-          js = domain%list(from_pe)%y(1)%compute%begin; je = domain%list(from_pe)%y(1)%compute%end
+          is = domain%x(1)%compute%begin; ie = domain%x(1)%compute%end+ishift
+          js = domain%list(from_pe)%y(1)%compute%begin; je = domain%list(from_pe)%y(1)%compute%end+jshift
           d_comm%recvis(1,list)=is; d_comm%recvie(1,list)=ie
           d_comm%recvjs(1,list)=js; d_comm%recvje(1,list)=je
           d_comm%R_msize(list) = (ie-is+1) * (je-js+1) * ksize
@@ -330,8 +338,8 @@
             rpos = mod(domain%pos+list,nlist)
             if( domain%list(rpos)%tile_id(1) .NE. tile_id ) cycle
             d_comm%cfrom_pe(n) = domain%list(rpos)%pe
-            is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end
-            js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end
+            is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end+ishift
+            js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end+jshift
             d_comm%recvis(1,n)=is; d_comm%recvie(1,n)=ie
             d_comm%recvjs(1,n)=js; d_comm%recvje(1,n)=je
             d_comm%R_msize(n) = (je-js+1) * (ie-is+1) * ksize
@@ -354,8 +362,8 @@
       d_comm%sendjs=0; d_comm%sendje=0;
       d_comm%S_msize=0
       do list = 0,lsize-1
-        is=domain%x(1)%compute%begin; ie=domain%x(1)%compute%end
-        js=domain%y(1)%compute%begin; je=domain%y(1)%compute%end
+        is=domain%x(1)%compute%begin; ie=domain%x(1)%compute%end+ishift
+        js=domain%y(1)%compute%begin; je=domain%y(1)%compute%end+jshift
         d_comm%sendis(1,list)=is; d_comm%sendie(1,list)=ie
         d_comm%sendjs(1,list)=js; d_comm%sendje(1,list)=je
         d_comm%S_msize(list) = (je-js+1) * (ie-is+1) * ksize

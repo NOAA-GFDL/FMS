@@ -33,7 +33,6 @@
       integer,          intent(in), optional :: tile_count
       MPP_TYPE_,     intent(inout), optional :: buffer(:)
 
-      type(domain2d), pointer :: Dom => NULL()
       integer                 :: update_position, update_whalo, update_ehalo, update_shalo, update_nhalo, ntile
 
       integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),save :: f_addrs=-9999
@@ -45,6 +44,8 @@
       integer, save    :: isize=0, jsize=0, ke=0, l_size=0, bsize=0, list=0
       integer, save    :: pos, whalosz, ehalosz, shalosz, nhalosz
       MPP_TYPE_        :: d_type
+      type(overlapSpec), pointer :: update => NULL()
+      type(overlapSpec), pointer :: check  => NULL()
 
       if(present(whalo)) then
          update_whalo = whalo
@@ -139,8 +140,15 @@
       end if
       if(do_update )then
          if( domain_update_is_needed(domain, update_whalo, update_ehalo, update_shalo, update_nhalo) )then
-            Dom => search_domain(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, update_position)
-            call mpp_do_update( f_addrs(1:l_size,1:ntile), Dom, d_type, ke, b_addrs(1:l_size,1:ntile), bsize, flags, name )
+            if(debug_update_level .NE. NO_CHECK) then
+               check => search_check_overlap(domain, update_position) 
+               if(ASSOCIATED(check) ) then
+                  call mpp_do_check(f_addrs(1:l_size,1:ntile), domain, check, d_type, ke, flags, name )
+               endif
+            endif
+            update => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, update_position)
+            call mpp_do_update( f_addrs(1:l_size,1:ntile), domain, update, d_type, ke, &
+                                b_addrs(1:l_size,1:ntile), bsize, flags)
          end if
          l_size=0; f_addrs=-9999; bsize=0; b_addrs=-9999; isize=0;  jsize=0;  ke=0
       endif
@@ -200,19 +208,13 @@
       integer, intent(in), optional :: position
       MPP_TYPE_ :: field3D_in (size(field_in, 1),size(field_in, 2),1)
       MPP_TYPE_ :: field3D_out(size(field_out,1),size(field_out,2),1)
-#ifdef use_CRI_pointers
       type(DomainCommunicator2D),pointer,optional :: dc_handle
       pointer( ptr_in,  field3D_in  )
       pointer( ptr_out, field3D_out )
       ptr_in  = LOC(field_in )
       ptr_out = LOC(field_out)
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, dc_handle, position )
-#else
-      integer, optional :: dc_handle  ! Not used when there are no Cray pointers
-      field3D_in = RESHAPE( field_in, SHAPE(field3D_in) )
-      call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, position=position )
-      field_out = RESHAPE( field3D_out, SHAPE(field_out) )
-#endif
+
       return
     end subroutine MPP_REDISTRIBUTE_2D_
 
@@ -224,8 +226,6 @@
       logical, intent(in), optional :: complete, free
       integer, intent(in), optional :: list_size
       integer, intent(in), optional :: position
-
-#ifdef use_CRI_pointers
       type(DomainCommunicator2D),pointer,optional :: dc_handle
       type(DomainCommunicator2D),pointer,save :: d_comm =>NULL()
       logical                       :: do_redist,free_comm
@@ -240,77 +240,70 @@
 
       if(present(position)) then
          if(position .NE. CENTER) call mpp_error( FATAL,  &
-             'MPP_REDISTRIBUTE_3Dold_: only position = CENTER is implemented, contact author')
+              'MPP_REDISTRIBUTE_3Dold_: only position = CENTER is implemented, contact author')
       endif
 
-      if(PRESENT(complete) .or. PRESENT(free))then
-        do_redist=.true.; if(PRESENT(complete))do_redist=complete
-        free_comm=.false.; if(PRESENT(free))free_comm=free
-        if(free_comm)then
-           l_addrs_in(1) = LOC(field_in); l_addrs_out(1) = LOC(field_out)
-           if(l_addrs_out(1)>0)then
-              ke = size(field_out,3)
-           else
-              ke = size(field_in,3)
-           end if
-           lsize=1; if(PRESENT(list_size))lsize=list_size
-           call mpp_redistribute_free_comm(domain_in,l_addrs_in(1),domain_out,l_addrs_out(1),ke,lsize)
-        else
-           l_size = l_size+1
-           if(l_size > MAX_DOMAIN_FIELDS)then
-              write( text,'(i2)' ) MAX_DOMAIN_FIELDS
-              call mpp_error(FATAL,'MPP_REDISTRIBUTE_3D: MAX_DOMAIN_FIELDS='//text//' exceeded for group redistribute.' )
-           end if
-          l_addrs_in(l_size) = LOC(field_in); l_addrs_out(l_size) = LOC(field_out)
-          if(l_size == 1)then
-            if(l_addrs_in(l_size) > 0)then
-              isize_in=size(field_in,1); jsize_in=size(field_in,2); ke_in = size(field_in,3)
+      do_redist=.true.; if(PRESENT(complete))do_redist=complete
+      free_comm=.false.; if(PRESENT(free))free_comm=free
+      if(free_comm)then
+         l_addrs_in(1) = LOC(field_in); l_addrs_out(1) = LOC(field_out)
+         if(l_addrs_out(1)>0)then
+            ke = size(field_out,3)
+         else
+            ke = size(field_in,3)
          end if
+         lsize=1; if(PRESENT(list_size))lsize=list_size
+         call mpp_redistribute_free_comm(domain_in,l_addrs_in(1),domain_out,l_addrs_out(1),ke,lsize)
+      else
+         l_size = l_size+1
+         if(l_size > MAX_DOMAIN_FIELDS)then
+            write( text,'(i2)' ) MAX_DOMAIN_FIELDS
+            call mpp_error(FATAL,'MPP_REDISTRIBUTE_3D: MAX_DOMAIN_FIELDS='//text//' exceeded for group redistribute.' )
+         end if
+         l_addrs_in(l_size) = LOC(field_in); l_addrs_out(l_size) = LOC(field_out)
+         if(l_size == 1)then
+            if(l_addrs_in(l_size) > 0)then
+               isize_in=size(field_in,1); jsize_in=size(field_in,2); ke_in = size(field_in,3)
+            end if
             if(l_addrs_out(l_size) > 0)then
-              isize_out=size(field_out,1); jsize_out=size(field_out,2); ke_out = size(field_out,3)
+               isize_out=size(field_out,1); jsize_out=size(field_out,2); ke_out = size(field_out,3)
             endif
-          else   
+         else   
             set_mismatch = .false.
             set_mismatch = l_addrs_in(l_size) == 0 .AND. l_addrs_in(l_size-1) /= 0
             set_mismatch = set_mismatch .OR. (l_addrs_in(l_size) > 0 .AND. l_addrs_in(l_size-1) == 0)
             set_mismatch = set_mismatch .OR. (l_addrs_out(l_size) == 0 .AND. l_addrs_out(l_size-1) /= 0)
             set_mismatch = set_mismatch .OR. (l_addrs_out(l_size) > 0 .AND. l_addrs_out(l_size-1) == 0)
-           if(l_addrs_in(l_size) > 0)then
-              set_mismatch = set_mismatch .OR. (isize_in /= size(field_in,1))
-              set_mismatch = set_mismatch .OR. (jsize_in /= size(field_in,2))
-              set_mismatch = set_mismatch .OR. (ke_in /= size(field_in,3))
+            if(l_addrs_in(l_size) > 0)then
+               set_mismatch = set_mismatch .OR. (isize_in /= size(field_in,1))
+               set_mismatch = set_mismatch .OR. (jsize_in /= size(field_in,2))
+               set_mismatch = set_mismatch .OR. (ke_in /= size(field_in,3))
             endif
             if(l_addrs_out(l_size) > 0)then
-              set_mismatch = set_mismatch .OR. (isize_out /= size(field_out,1))
-              set_mismatch = set_mismatch .OR. (jsize_out /= size(field_out,2))
-              set_mismatch = set_mismatch .OR. (ke_out /= size(field_out,3))
+               set_mismatch = set_mismatch .OR. (isize_out /= size(field_out,1))
+               set_mismatch = set_mismatch .OR. (jsize_out /= size(field_out,2))
+               set_mismatch = set_mismatch .OR. (ke_out /= size(field_out,3))
             endif
             if(set_mismatch)then
-              write( text,'(i2)' ) l_size
-              call mpp_error(FATAL,'MPP_REDISTRIBUTE_3D: Incompatible field at count '//text//' for group redistribute.' )
+               write( text,'(i2)' ) l_size
+               call mpp_error(FATAL,'MPP_REDISTRIBUTE_3D: Incompatible field at count '//text//' for group redistribute.' )
             endif
-          endif  
-          if(do_redist)then
+         endif
+         if(do_redist)then
             if(PRESENT(dc_handle))d_comm =>dc_handle  ! User has kept pointer to d_comm
             if(.not.ASSOCIATED(d_comm))then  ! d_comm needs initialization or lookup
-              d_comm =>mpp_redistribute_init_comm(domain_in,l_addrs_in(1:l_size),domain_out,l_addrs_out(1:l_size), &
-                                                                  isize_in,jsize_in,ke_in,isize_out,jsize_out,ke_out)
-              if(PRESENT(dc_handle))dc_handle =>d_comm  ! User wants to keep pointer to d_comm
+               d_comm =>mpp_redistribute_init_comm(domain_in,l_addrs_in(1:l_size),domain_out,l_addrs_out(1:l_size), &
+                    isize_in,jsize_in,ke_in,isize_out,jsize_out,ke_out)
+               if(PRESENT(dc_handle))dc_handle =>d_comm  ! User wants to keep pointer to d_comm
             endif
             call mpp_do_redistribute( l_addrs_in(1:l_size), l_addrs_out(1:l_size), d_comm, d_type )
             l_size=0; l_addrs_in=-9999; l_addrs_out=-9999
             isize_in=0;  jsize_in=0;  ke_in=0
             isize_out=0; jsize_out=0; ke_out=0
             d_comm =>NULL()
-          endif
-        endif
-      else
-        call mpp_do_redistribute( domain_in, field_in, domain_out, field_out )
+         endif
       endif
-#else
-      integer, optional :: dc_handle  ! Not used when there are no Cray pointers
-      call mpp_do_redistribute( domain_in, field_in, domain_out, field_out )
-#endif
+
     end subroutine MPP_REDISTRIBUTE_3D_
 
 
@@ -323,19 +316,13 @@
       integer, intent(in), optional :: position
       MPP_TYPE_ :: field3D_in (size(field_in, 1),size(field_in, 2),size(field_in ,3)*size(field_in ,4))
       MPP_TYPE_ :: field3D_out(size(field_out,1),size(field_out,2),size(field_out,3)*size(field_out,4))
-#ifdef use_CRI_pointers
       type(DomainCommunicator2D),pointer,optional :: dc_handle
       pointer( ptr_in,  field3D_in  )
       pointer( ptr_out, field3D_out )
       ptr_in  = LOC(field_in )
       ptr_out = LOC(field_out)
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, dc_handle, position  )
-#else
-      integer, optional :: dc_handle  ! Not used when there are no Cray pointers
-      field3D_in = RESHAPE( field_in, SHAPE(field3D_in) )
-      call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, position=position )
-      field_out = RESHAPE( field3D_out, SHAPE(field_out) )
-#endif
+
       return
     end subroutine MPP_REDISTRIBUTE_4D_
 
@@ -348,19 +335,14 @@
       integer, intent(in), optional :: position
       MPP_TYPE_ :: field3D_in (size(field_in, 1),size(field_in, 2),size(field_in ,3)*size(field_in ,4)*size(field_in ,5))
       MPP_TYPE_ :: field3D_out(size(field_out,1),size(field_out,2),size(field_out,3)*size(field_out,4)*size(field_out,5))
-#ifdef use_CRI_pointers
+
       type(DomainCommunicator2D),pointer,optional :: dc_handle
       pointer( ptr_in,  field3D_in  )
       pointer( ptr_out, field3D_out )
       ptr_in  = LOC(field_in )
       ptr_out = LOC(field_out)
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, dc_handle, position  )
-#else
-      integer, optional :: dc_handle  ! Not used when there are no Cray pointers
-      field3D_in = RESHAPE( field_in, SHAPE(field3D_in) )
-      call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, position=position )
-      field_out = RESHAPE( field3D_out, SHAPE(field_out) )
-#endif
+
       return
     end subroutine MPP_REDISTRIBUTE_5D_
 
@@ -404,8 +386,6 @@
       integer,          intent(in), optional :: tile_count
       MPP_TYPE_,     intent(inout), optional :: bufferx(:), buffery(:)
 
-      type(domain2d),                pointer :: domainx => NULL()
-      type(domain2d),                pointer :: domainy => NULL()
       integer                                :: update_whalo, update_ehalo, update_shalo, update_nhalo, ntile    
       integer                                :: grid_offset_type
       logical                                :: exchange_uv
@@ -417,9 +397,14 @@
       integer, save    :: whalosz, ehalosz, shalosz, nhalosz
       integer, save    :: bsizex=1, bsizey=1
       integer          :: bufferx_size, buffery_size, tile, max_ntile
+      integer          :: position_x, position_y
       logical          :: set_mismatch
       character(len=3) :: text
       MPP_TYPE_        :: d_type
+      type(overlapSpec),  pointer :: updatex => NULL()
+      type(overlapSpec),  pointer :: updatey => NULL()
+      type(overlapSpec),  pointer :: checkx  => NULL()
+      type(overlapSpec),  pointer :: checky  => NULL()
 
       if(present(whalo)) then
          update_whalo = whalo
@@ -530,18 +515,43 @@
       end if
       if(do_update)then
          if( domain_update_is_needed(domain, update_whalo, update_ehalo, update_shalo, update_nhalo) )then
-            domainx => search_domain(domain, update_whalo, update_ehalo, update_shalo, update_nhalo,    &
-                 gridtype=grid_offset_type, direction='x')
-            domainy => search_domain(domain, update_whalo, update_ehalo, update_shalo, update_nhalo,    &
-                 gridtype=grid_offset_type, direction='y')
+            select case(grid_offset_type)
+            case (AGRID)
+               position_x = CENTER
+               position_y = CENTER
+            case (BGRID_NE, BGRID_SW)
+               position_x = CORNER
+               position_y = CORNER
+            case (CGRID_NE, CGRID_SW)
+               position_x = EAST
+               position_y = NORTH
+            case default
+               call mpp_error(FATAL, "mpp_update_domains2D.h: invalid value of grid_offset_type")
+            end select
+
+            if(debug_update_level .NE. NO_CHECK) then
+                checkx => search_check_overlap(domain, position_x)
+                checky => search_check_overlap(domain, position_y)
+                if(ASSOCIATED(checkx)) then
+                   if(exchange_uv) then
+                      call mpp_do_check(f_addrsx(1:l_size,1:ntile),f_addrsy(1:l_size,1:ntile), domain,        &
+                           checky, checkx, d_type, ke, flags, name)
+                   else
+                      call mpp_do_check(f_addrsx(1:l_size,1:ntile),f_addrsy(1:l_size,1:ntile), domain,        &
+                           checkx, checky, d_type, ke, flags, name)
+                   end if
+                endif
+            endif
+            updatex => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_x)
+            updatey => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_y)
             if(exchange_uv) then
-               call mpp_do_update(f_addrsx(1:l_size,1:ntile),f_addrsy(1:l_size,1:ntile), domainy, domainx, &
-                    d_type,ke, b_addrsx(1:l_size,1:ntile), b_addrsy(1:l_size,1:ntile),                     &
-                    bsizex, bsizey, grid_offset_type, flags, name)
+               call mpp_do_update(f_addrsx(1:l_size,1:ntile),f_addrsy(1:l_size,1:ntile), domain, updatey, updatex, &
+                    d_type,ke, b_addrsx(1:l_size,1:ntile), b_addrsy(1:l_size,1:ntile),                             &
+                    bsizex, bsizey, grid_offset_type, flags)
             else
-               call mpp_do_update(f_addrsx(1:l_size,1:ntile),f_addrsy(1:l_size,1:ntile), domainx, domainy, &
-                    d_type,ke, b_addrsx(1:l_size,1:ntile), b_addrsy(1:l_size,1:ntile),                     &
-                    bsizex, bsizey, grid_offset_type, flags, name)
+               call mpp_do_update(f_addrsx(1:l_size,1:ntile),f_addrsy(1:l_size,1:ntile), domain, updatex, updatey, &
+                    d_type,ke, b_addrsx(1:l_size,1:ntile), b_addrsy(1:l_size,1:ntile),                             &
+                    bsizex, bsizey, grid_offset_type, flags)
             end if
          end if
          l_size=0; f_addrsx=-9999; f_addrsy=-9999; isize=0;  jsize=0;  ke=0

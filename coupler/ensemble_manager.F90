@@ -165,7 +165,7 @@ contains
        ensemble_pelist_atmos(n, 1:atmos_npes) = (/(i,i=atmos_pe_start,atmos_pe_end)/)
        ensemble_pelist_ocean(n, 1:ocean_npes) = (/(i,i=ocean_pe_start,ocean_pe_end)/)
        ensemble_pelist(n, 1:atmos_npes)       = ensemble_pelist_atmos(n, 1:atmos_npes)
-       ensemble_pelist(n, atmos_npes+1:npes)  = ensemble_pelist_ocean(n, 1:atmos_npes)
+       ensemble_pelist(n, atmos_npes+1:npes)  = ensemble_pelist_ocean(n, 1:ocean_npes)
        if(ANY(ensemble_pelist(n,:) == pe)) ensemble_id = n
        write(pelist_name,'(a,i2.2)')  '_ens',n
        call mpp_declare_pelist(ensemble_pelist(n,:), trim(pelist_name))

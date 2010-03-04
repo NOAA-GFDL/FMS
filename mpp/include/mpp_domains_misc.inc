@@ -660,6 +660,7 @@
 #undef MPP_DO_UPDATE_3D_
 #define MPP_DO_UPDATE_3D_ mpp_do_update_c8_3d
 #include <mpp_do_update.h>
+#define VECTOR_FIELD_
 #endif
 
 #ifndef no_8byte_integers
@@ -692,6 +693,7 @@
 #undef MPP_DO_UPDATE_3D_
 #define MPP_DO_UPDATE_3D_ mpp_do_update_c4_3d
 #include <mpp_do_update.h>
+#define VECTOR_FIELD_
 #endif
 
 #undef MPP_TYPE_
@@ -700,178 +702,239 @@
 #define MPP_DO_UPDATE_3D_ mpp_do_update_i4_3d
 #include <mpp_do_update.h>
 
+
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(DOUBLE_KIND)
+#undef MPP_DO_CHECK_3D_
+#define MPP_DO_CHECK_3D_ mpp_do_check_r8_3d
+#ifdef  VECTOR_FIELD_
+#undef MPP_DO_CHECK_3D_V_
+#define MPP_DO_CHECK_3D_V_ mpp_do_check_r8_3dv
+#endif
+#include <mpp_do_check.h>
+#include <mpp_do_checkV.h>
+
+#ifdef OVERLOAD_C8
+#undef  VECTOR_FIELD_
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(DOUBLE_KIND)
+#undef MPP_DO_CHECK_3D_
+#define MPP_DO_CHECK_3D_ mpp_do_check_c8_3d
+#include <mpp_do_check.h>
+#define VECTOR_FIELD_
+#endif
+
+#ifndef no_8byte_integers
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(LONG_KIND)
+#undef MPP_DO_CHECK_3D_
+#define MPP_DO_CHECK_3D_ mpp_do_check_i8_3d
+#include <mpp_do_check.h>
+#endif
+
+#ifdef OVERLOAD_R4
+#undef VECTOR_FIELD_
+#define VECTOR_FIELD_
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(FLOAT_KIND)
+#undef MPP_DO_CHECK_3D_
+#define MPP_DO_CHECK_3D_ mpp_do_check_r4_3d
+#ifdef  VECTOR_FIELD_
+#undef MPP_DO_CHECK_3D_V_
+#define MPP_DO_CHECK_3D_V_ mpp_do_check_r4_3dv
+#endif
+#include <mpp_do_check.h>
+#include <mpp_do_checkV.h>
+#endif
+
+#ifdef OVERLOAD_C4
+#undef  VECTOR_FIELD_
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(FLOAT_KIND)
+#undef MPP_DO_CHECK_3D_
+#define MPP_DO_CHECK_3D_ mpp_do_check_c4_3d
+#include <mpp_do_check.h>
+#endif
+
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(INT_KIND)
+#undef MPP_DO_CHECK_3D_
+#define MPP_DO_CHECK_3D_ mpp_do_check_i4_3d
+#include <mpp_do_check.h>
+
+
 !bnc
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
 !              MPP_UPDATE_DOMAINS_AD: adjoint fill halos for 2D decomposition !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#undef VECTOR_FIELD_
-#define VECTOR_FIELD_
-#undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
-#undef MPP_UPDATE_DOMAINS_AD_2D_
-#define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domain2D_ad_r8_2D
-#undef MPP_UPDATE_DOMAINS_AD_3D_
-#define MPP_UPDATE_DOMAINS_AD_3D_ mpp_update_domain2D_ad_r8_3D
-#undef MPP_UPDATE_DOMAINS_AD_4D_
-#define MPP_UPDATE_DOMAINS_AD_4D_ mpp_update_domain2D_ad_r8_4D
-#undef MPP_UPDATE_DOMAINS_AD_5D_
-#define MPP_UPDATE_DOMAINS_AD_5D_ mpp_update_domain2D_ad_r8_5D
-#ifdef  VECTOR_FIELD_
-#undef MPP_UPDATE_DOMAINS_AD_2D_V_
-#define MPP_UPDATE_DOMAINS_AD_2D_V_ mpp_update_domain2D_ad_r8_2Dv
-#undef MPP_UPDATE_DOMAINS_AD_3D_V_
-#define MPP_UPDATE_DOMAINS_AD_3D_V_ mpp_update_domain2D_ad_r8_3Dv
-#undef MPP_UPDATE_DOMAINS_AD_4D_V_
-#define MPP_UPDATE_DOMAINS_AD_4D_V_ mpp_update_domain2D_ad_r8_4Dv
-#undef MPP_UPDATE_DOMAINS_AD_5D_V_
-#define MPP_UPDATE_DOMAINS_AD_5D_V_ mpp_update_domain2D_ad_r8_5Dv
-#endif
-#include <mpp_update_domains2D_ad.h>
-#undef  VECTOR_FIELD_
-
-#ifdef OVERLOAD_C8
-#undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
-#undef MPP_UPDATE_DOMAINS_AD_2D_
-#define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domain2D_ad_c8_2D
-#undef MPP_UPDATE_DOMAINS_AD_3D_
-#define MPP_UPDATE_DOMAINS_AD_3D_ mpp_update_domain2D_ad_c8_3D
-#undef MPP_UPDATE_DOMAINS_AD_4D_
-#define MPP_UPDATE_DOMAINS_AD_4D_ mpp_update_domain2D_ad_c8_4D
-#undef MPP_UPDATE_DOMAINS_AD_5D_
-#define MPP_UPDATE_DOMAINS_AD_5D_ mpp_update_domain2D_ad_c8_5D
-#include <mpp_update_domains2D_ad.h>
-#endif
-
-#ifndef no_8byte_integers
-#undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
-#undef MPP_UPDATE_DOMAINS_AD_2D_
-#define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domain2D_ad_i8_2D
-#undef MPP_UPDATE_DOMAINS_AD_3D_
-#define MPP_UPDATE_DOMAINS_AD_3D_ mpp_update_domain2D_ad_i8_3D
-#undef MPP_UPDATE_DOMAINS_AD_4D_
-#define MPP_UPDATE_DOMAINS_AD_4D_ mpp_update_domain2D_ad_i8_4D
-#undef MPP_UPDATE_DOMAINS_AD_5D_
-#define MPP_UPDATE_DOMAINS_AD_5D_ mpp_update_domain2D_ad_i8_5D
-#include <mpp_update_domains2D_ad.h>
-#endif
-
-#ifdef OVERLOAD_R4
-#undef VECTOR_FIELD_
-#define VECTOR_FIELD_
-#undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
-#undef MPP_UPDATE_DOMAINS_AD_2D_
-#define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domain2D_ad_r4_2D
-#undef MPP_UPDATE_DOMAINS_AD_3D_
-#define MPP_UPDATE_DOMAINS_AD_3D_ mpp_update_domain2D_ad_r4_3D
-#undef MPP_UPDATE_DOMAINS_AD_4D_
-#define MPP_UPDATE_DOMAINS_AD_4D_ mpp_update_domain2D_ad_r4_4D
-#undef MPP_UPDATE_DOMAINS_AD_5D_
-#define MPP_UPDATE_DOMAINS_AD_5D_ mpp_update_domain2D_ad_r4_5D
-#ifdef  VECTOR_FIELD_
-#undef MPP_UPDATE_DOMAINS_AD_2D_V_
-#define MPP_UPDATE_DOMAINS_AD_2D_V_ mpp_update_domain2D_ad_r4_2Dv
-#undef MPP_UPDATE_DOMAINS_AD_3D_V_
-#define MPP_UPDATE_DOMAINS_AD_3D_V_ mpp_update_domain2D_ad_r4_3Dv
-#undef MPP_UPDATE_DOMAINS_AD_4D_V_
-#define MPP_UPDATE_DOMAINS_AD_4D_V_ mpp_update_domain2D_ad_r4_4Dv
-#undef MPP_UPDATE_DOMAINS_AD_5D_V_
-#define MPP_UPDATE_DOMAINS_AD_5D_V_ mpp_update_domain2D_ad_r4_5Dv
-#endif
-#include <mpp_update_domains2D_ad.h>
-#endif
-
-#ifdef OVERLOAD_C4
-#undef  VECTOR_FIELD_
-#undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
-#undef MPP_UPDATE_DOMAINS_AD_2D_
-#define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domain2D_ad_c4_2D
-#undef MPP_UPDATE_DOMAINS_AD_3D_
-#define MPP_UPDATE_DOMAINS_AD_3D_ mpp_update_domain2D_ad_c4_3D
-#undef MPP_UPDATE_DOMAINS_AD_4D_
-#define MPP_UPDATE_DOMAINS_AD_4D_ mpp_update_domain2D_ad_c4_4D
-#undef MPP_UPDATE_DOMAINS_AD_5D_
-#define MPP_UPDATE_DOMAINS_AD_5D_ mpp_update_domain2D_ad_c4_5D
-#include <mpp_update_domains2D_ad.h>
-#endif
-
-#undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
-#undef MPP_UPDATE_DOMAINS_AD_2D_
-#define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domain2D_ad_i4_2D
-#undef MPP_UPDATE_DOMAINS_AD_3D_
-#define MPP_UPDATE_DOMAINS_AD_3D_ mpp_update_domain2D_ad_i4_3D
-#undef MPP_UPDATE_DOMAINS_AD_4D_
-#define MPP_UPDATE_DOMAINS_AD_4D_ mpp_update_domain2D_ad_i4_4D
-#undef MPP_UPDATE_DOMAINS_AD_5D_
-#define MPP_UPDATE_DOMAINS_AD_5D_ mpp_update_domain2D_ad_i4_5D
-#include <mpp_update_domains2D_ad.h>
-
-!*******************************************************
-#undef VECTOR_FIELD_
-#define VECTOR_FIELD_
-#undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
-#undef MPP_DO_UPDATE_AD_3D_
-#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_r8_3d
-#ifdef  VECTOR_FIELD_
-#undef MPP_DO_UPDATE_AD_3D_V_
-#define MPP_DO_UPDATE_AD_3D_V_ mpp_do_update_ad_r8_3dv
-#endif
-#include <mpp_do_update_ad.h>
-#include <mpp_do_updateV_ad.h>
-#undef  VECTOR_FIELD_
-
-#ifdef OVERLOAD_C8
-#undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
-#undef MPP_DO_UPDATE_AD_3D_
-#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_c8_3d
-#include <mpp_do_update_ad.h>
-#endif
-                                                                                  
-#ifndef no_8byte_integers
-#undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
-#undef MPP_DO_UPDATE_AD_3D_
-#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_i8_3d
-#include <mpp_do_update_ad.h>
-#endif
-
-#ifdef OVERLOAD_R4
-#undef  VECTOR_FIELD_
-#define VECTOR_FIELD_
-#undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
-#undef MPP_DO_UPDATE_AD_3D_
-#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_r4_3d
-#ifdef  VECTOR_FIELD_
-#undef MPP_DO_UPDATE_AD_3D_V_
-#define MPP_DO_UPDATE_AD_3D_V_ mpp_do_update_ad_r4_3dv
-#endif
-#include <mpp_do_update_ad.h>
-#include <mpp_do_updateV_ad.h>
-#endif
-
-#ifdef OVERLOAD_C4
-#undef  VECTOR_FIELD_
-#undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
-#undef MPP_DO_UPDATE_AD_3D_
-#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_c4_3d
-#include <mpp_do_update_ad.h>
-#endif
-
-#undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
-#undef MPP_DO_UPDATE_AD_3D_
-#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_i4_3d
-#include <mpp_do_update_ad.h>
+!!$#undef VECTOR_FIELD_
+!!$#define VECTOR_FIELD_
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ real(DOUBLE_KIND)
+!!$#undef MPP_UPDATE_DOMAINS_AD_2D_
+!!$#define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domain2D_ad_r8_2D
+!!$#undef MPP_UPDATE_DOMAINS_AD_3D_
+!!$#define MPP_UPDATE_DOMAINS_AD_3D_ mpp_update_domain2D_ad_r8_3D
+!!$#undef MPP_UPDATE_DOMAINS_AD_4D_
+!!$#define MPP_UPDATE_DOMAINS_AD_4D_ mpp_update_domain2D_ad_r8_4D
+!!$#undef MPP_UPDATE_DOMAINS_AD_5D_
+!!$#define MPP_UPDATE_DOMAINS_AD_5D_ mpp_update_domain2D_ad_r8_5D
+!!$#ifdef  VECTOR_FIELD_
+!!$#undef MPP_UPDATE_DOMAINS_AD_2D_V_
+!!$#define MPP_UPDATE_DOMAINS_AD_2D_V_ mpp_update_domain2D_ad_r8_2Dv
+!!$#undef MPP_UPDATE_DOMAINS_AD_3D_V_
+!!$#define MPP_UPDATE_DOMAINS_AD_3D_V_ mpp_update_domain2D_ad_r8_3Dv
+!!$#undef MPP_UPDATE_DOMAINS_AD_4D_V_
+!!$#define MPP_UPDATE_DOMAINS_AD_4D_V_ mpp_update_domain2D_ad_r8_4Dv
+!!$#undef MPP_UPDATE_DOMAINS_AD_5D_V_
+!!$#define MPP_UPDATE_DOMAINS_AD_5D_V_ mpp_update_domain2D_ad_r8_5Dv
+!!$#endif
+!!$#include <mpp_update_domains2D_ad.h>
+!!$#undef  VECTOR_FIELD_
+!!$
+!!$#ifdef OVERLOAD_C8
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ complex(DOUBLE_KIND)
+!!$#undef MPP_UPDATE_DOMAINS_AD_2D_
+!!$#define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domain2D_ad_c8_2D
+!!$#undef MPP_UPDATE_DOMAINS_AD_3D_
+!!$#define MPP_UPDATE_DOMAINS_AD_3D_ mpp_update_domain2D_ad_c8_3D
+!!$#undef MPP_UPDATE_DOMAINS_AD_4D_
+!!$#define MPP_UPDATE_DOMAINS_AD_4D_ mpp_update_domain2D_ad_c8_4D
+!!$#undef MPP_UPDATE_DOMAINS_AD_5D_
+!!$#define MPP_UPDATE_DOMAINS_AD_5D_ mpp_update_domain2D_ad_c8_5D
+!!$#include <mpp_update_domains2D_ad.h>
+!!$#endif
+!!$
+!!$#ifndef no_8byte_integers
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ integer(LONG_KIND)
+!!$#undef MPP_UPDATE_DOMAINS_AD_2D_
+!!$#define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domain2D_ad_i8_2D
+!!$#undef MPP_UPDATE_DOMAINS_AD_3D_
+!!$#define MPP_UPDATE_DOMAINS_AD_3D_ mpp_update_domain2D_ad_i8_3D
+!!$#undef MPP_UPDATE_DOMAINS_AD_4D_
+!!$#define MPP_UPDATE_DOMAINS_AD_4D_ mpp_update_domain2D_ad_i8_4D
+!!$#undef MPP_UPDATE_DOMAINS_AD_5D_
+!!$#define MPP_UPDATE_DOMAINS_AD_5D_ mpp_update_domain2D_ad_i8_5D
+!!$#include <mpp_update_domains2D_ad.h>
+!!$#endif
+!!$
+!!$#ifdef OVERLOAD_R4
+!!$#undef VECTOR_FIELD_
+!!$#define VECTOR_FIELD_
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ real(FLOAT_KIND)
+!!$#undef MPP_UPDATE_DOMAINS_AD_2D_
+!!$#define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domain2D_ad_r4_2D
+!!$#undef MPP_UPDATE_DOMAINS_AD_3D_
+!!$#define MPP_UPDATE_DOMAINS_AD_3D_ mpp_update_domain2D_ad_r4_3D
+!!$#undef MPP_UPDATE_DOMAINS_AD_4D_
+!!$#define MPP_UPDATE_DOMAINS_AD_4D_ mpp_update_domain2D_ad_r4_4D
+!!$#undef MPP_UPDATE_DOMAINS_AD_5D_
+!!$#define MPP_UPDATE_DOMAINS_AD_5D_ mpp_update_domain2D_ad_r4_5D
+!!$#ifdef  VECTOR_FIELD_
+!!$#undef MPP_UPDATE_DOMAINS_AD_2D_V_
+!!$#define MPP_UPDATE_DOMAINS_AD_2D_V_ mpp_update_domain2D_ad_r4_2Dv
+!!$#undef MPP_UPDATE_DOMAINS_AD_3D_V_
+!!$#define MPP_UPDATE_DOMAINS_AD_3D_V_ mpp_update_domain2D_ad_r4_3Dv
+!!$#undef MPP_UPDATE_DOMAINS_AD_4D_V_
+!!$#define MPP_UPDATE_DOMAINS_AD_4D_V_ mpp_update_domain2D_ad_r4_4Dv
+!!$#undef MPP_UPDATE_DOMAINS_AD_5D_V_
+!!$#define MPP_UPDATE_DOMAINS_AD_5D_V_ mpp_update_domain2D_ad_r4_5Dv
+!!$#endif
+!!$#include <mpp_update_domains2D_ad.h>
+!!$#endif
+!!$
+!!$#ifdef OVERLOAD_C4
+!!$#undef  VECTOR_FIELD_
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ complex(FLOAT_KIND)
+!!$#undef MPP_UPDATE_DOMAINS_AD_2D_
+!!$#define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domain2D_ad_c4_2D
+!!$#undef MPP_UPDATE_DOMAINS_AD_3D_
+!!$#define MPP_UPDATE_DOMAINS_AD_3D_ mpp_update_domain2D_ad_c4_3D
+!!$#undef MPP_UPDATE_DOMAINS_AD_4D_
+!!$#define MPP_UPDATE_DOMAINS_AD_4D_ mpp_update_domain2D_ad_c4_4D
+!!$#undef MPP_UPDATE_DOMAINS_AD_5D_
+!!$#define MPP_UPDATE_DOMAINS_AD_5D_ mpp_update_domain2D_ad_c4_5D
+!!$#include <mpp_update_domains2D_ad.h>
+!!$#endif
+!!$
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ integer(INT_KIND)
+!!$#undef MPP_UPDATE_DOMAINS_AD_2D_
+!!$#define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domain2D_ad_i4_2D
+!!$#undef MPP_UPDATE_DOMAINS_AD_3D_
+!!$#define MPP_UPDATE_DOMAINS_AD_3D_ mpp_update_domain2D_ad_i4_3D
+!!$#undef MPP_UPDATE_DOMAINS_AD_4D_
+!!$#define MPP_UPDATE_DOMAINS_AD_4D_ mpp_update_domain2D_ad_i4_4D
+!!$#undef MPP_UPDATE_DOMAINS_AD_5D_
+!!$#define MPP_UPDATE_DOMAINS_AD_5D_ mpp_update_domain2D_ad_i4_5D
+!!$#include <mpp_update_domains2D_ad.h>
+!!$
+!!$!*******************************************************
+!!$#undef VECTOR_FIELD_
+!!$#define VECTOR_FIELD_
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ real(DOUBLE_KIND)
+!!$#undef MPP_DO_UPDATE_AD_3D_
+!!$#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_r8_3d
+!!$#ifdef  VECTOR_FIELD_
+!!$#undef MPP_DO_UPDATE_AD_3D_V_
+!!$#define MPP_DO_UPDATE_AD_3D_V_ mpp_do_update_ad_r8_3dv
+!!$#endif
+!!$#include <mpp_do_update_ad.h>
+!!$#include <mpp_do_updateV_ad.h>
+!!$#undef  VECTOR_FIELD_
+!!$
+!!$#ifdef OVERLOAD_C8
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ complex(DOUBLE_KIND)
+!!$#undef MPP_DO_UPDATE_AD_3D_
+!!$#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_c8_3d
+!!$#include <mpp_do_update_ad.h>
+!!$#endif
+!!$                                                                                  
+!!$#ifndef no_8byte_integers
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ integer(LONG_KIND)
+!!$#undef MPP_DO_UPDATE_AD_3D_
+!!$#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_i8_3d
+!!$#include <mpp_do_update_ad.h>
+!!$#endif
+!!$
+!!$#ifdef OVERLOAD_R4
+!!$#undef  VECTOR_FIELD_
+!!$#define VECTOR_FIELD_
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ real(FLOAT_KIND)
+!!$#undef MPP_DO_UPDATE_AD_3D_
+!!$#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_r4_3d
+!!$#ifdef  VECTOR_FIELD_
+!!$#undef MPP_DO_UPDATE_AD_3D_V_
+!!$#define MPP_DO_UPDATE_AD_3D_V_ mpp_do_update_ad_r4_3dv
+!!$#endif
+!!$#include <mpp_do_update_ad.h>
+!!$#include <mpp_do_updateV_ad.h>
+!!$#endif
+!!$
+!!$#ifdef OVERLOAD_C4
+!!$#undef  VECTOR_FIELD_
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ complex(FLOAT_KIND)
+!!$#undef MPP_DO_UPDATE_AD_3D_
+!!$#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_c4_3d
+!!$#include <mpp_do_update_ad.h>
+!!$#endif
+!!$
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ integer(INT_KIND)
+!!$#undef MPP_DO_UPDATE_AD_3D_
+!!$#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_i4_3d
+!!$#include <mpp_do_update_ad.h>
 
 !bnc
 
@@ -879,85 +942,61 @@
 !********************************************************
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
-#undef MPP_DO_REDISTRIBUTE_3Dnew_
-#define MPP_DO_REDISTRIBUTE_3Dnew_ mpp_do_redistribute_new_r8_3D
-#undef MPP_DO_REDISTRIBUTE_3Dold_
-#define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_r8_3D
-#include <mpp_do_redistribute_old.h>
-#include <mpp_do_redistribute_new.h>
+#undef MPP_DO_REDISTRIBUTE_3D_
+#define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_r8_3D
+#include <mpp_do_redistribute.h>
 #undef  VECTOR_FIELD_
 
 #ifdef OVERLOAD_C8
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
-#undef MPP_DO_REDISTRIBUTE_3Dnew_
-#define MPP_DO_REDISTRIBUTE_3Dnew_ mpp_do_redistribute_new_c8_3D
-#undef MPP_DO_REDISTRIBUTE_3Dold_
-#define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_c8_3D
-#include <mpp_do_redistribute_old.h>
-#include <mpp_do_redistribute_new.h>
+#undef MPP_DO_REDISTRIBUTE_3D_
+#define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_c8_3D
+#include <mpp_do_redistribute.h>
 #endif
 
 #ifndef no_8byte_integers
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
-#undef MPP_DO_REDISTRIBUTE_3Dnew_
-#define MPP_DO_REDISTRIBUTE_3Dnew_ mpp_do_redistribute_new_i8_3D
-#undef MPP_DO_REDISTRIBUTE_3Dold_
-#define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_i8_3D
-#include <mpp_do_redistribute_old.h>
-#include <mpp_do_redistribute_new.h>
+#undef MPP_DO_REDISTRIBUTE_3D_
+#define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_i8_3D
+#include <mpp_do_redistribute.h>
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(LONG_KIND)
-#undef MPP_DO_REDISTRIBUTE_3Dnew_
-#define MPP_DO_REDISTRIBUTE_3Dnew_ mpp_do_redistribute_new_l8_3D
-#undef MPP_DO_REDISTRIBUTE_3Dold_
-#define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_l8_3D
-#include <mpp_do_redistribute_old.h>
-#include <mpp_do_redistribute_new.h>
+#undef MPP_DO_REDISTRIBUTE_3D_
+#define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_l8_3D
+#include <mpp_do_redistribute.h>
 #endif
 
 #ifdef OVERLOAD_R4
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
-#undef MPP_DO_REDISTRIBUTE_3Dnew_
-#define MPP_DO_REDISTRIBUTE_3Dnew_ mpp_do_redistribute_new_r4_3D
-#undef MPP_DO_REDISTRIBUTE_3Dold_
-#define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_r4_3D
-#include <mpp_do_redistribute_old.h>
-#include <mpp_do_redistribute_new.h>
+#undef MPP_DO_REDISTRIBUTE_3D_
+#define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_r4_3D
+#include <mpp_do_redistribute.h>
 #undef  VECTOR_FIELD_
 #endif
 
 #ifdef OVERLOAD_C4
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
-#undef MPP_DO_REDISTRIBUTE_3Dnew_
-#define MPP_DO_REDISTRIBUTE_3Dnew_ mpp_do_redistribute_new_c4_3D
-#undef MPP_DO_REDISTRIBUTE_3Dold_
-#define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_c4_3D
-#include <mpp_do_redistribute_old.h>
-#include <mpp_do_redistribute_new.h>
+#undef MPP_DO_REDISTRIBUTE_3D_
+#define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_c4_3D
+#include <mpp_do_redistribute.h>
 #endif
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
-#undef MPP_DO_REDISTRIBUTE_3Dnew_
-#define MPP_DO_REDISTRIBUTE_3Dnew_ mpp_do_redistribute_new_i4_3D
-#undef MPP_DO_REDISTRIBUTE_3Dold_
-#define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_i4_3D
-#include <mpp_do_redistribute_old.h>
-#include <mpp_do_redistribute_new.h>
+#undef MPP_DO_REDISTRIBUTE_3D_
+#define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_i4_3D
+#include <mpp_do_redistribute.h>
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(INT_KIND)
-#undef MPP_DO_REDISTRIBUTE_3Dnew_
-#define MPP_DO_REDISTRIBUTE_3Dnew_ mpp_do_redistribute_new_l4_3D
-#undef MPP_DO_REDISTRIBUTE_3Dold_
-#define MPP_DO_REDISTRIBUTE_3Dold_ mpp_do_redistribute_old_l4_3D
-#include <mpp_do_redistribute_old.h>
-#include <mpp_do_redistribute_new.h>
+#undef MPP_DO_REDISTRIBUTE_3D_
+#define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_l4_3D
+#include <mpp_do_redistribute.h>
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)

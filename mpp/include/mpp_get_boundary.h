@@ -72,22 +72,24 @@ subroutine MPP_GET_BOUNDARY_3D_(field, domain, ebuffer, sbuffer, wbuffer, nbuffe
   integer,      intent(in), optional :: flags, position, tile_count
   logical,      intent(in), optional :: complete
 
-  type(domain2d),  pointer :: Dom => NULL()
   integer                  :: update_flags, ntile
   logical                  :: need_ebuffer, need_sbuffer, need_wbuffer, need_nbuffer
   integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrs=-9999
   integer(LONG_KIND),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrs=-9999
   integer, save    :: bsize(4)=0, isize=0, jsize=0, ksize=0, pos, list=0, l_size=0, upflags
   integer          :: buffer_size(4)
-  integer          :: max_ntile, tile, update_position
+  integer          :: max_ntile, tile, update_position, ishift, jshift
   logical          :: do_update, is_complete, set_mismatch
   character(len=3) :: text
   MPP_TYPE_        :: d_type
+  type(overlapSpec), pointer :: bound => NULL()
 
   ntile = size(domain%x(:))
 
   update_flags = XUPDATE+YUPDATE
   if(present(flags)) update_flags = flags
+  update_position = CENTER
+  if(present(position)) update_position = position
 
   !--- check if the suitable buffer are present
   need_ebuffer=.false.; need_sbuffer=.false.; need_wbuffer=.false.; need_nbuffer=.false.
@@ -163,9 +165,6 @@ subroutine MPP_GET_BOUNDARY_3D_(field, domain, ebuffer, sbuffer, wbuffer, nbuffe
      buffer_size(4) = size(nbuffer,1)
   end if
 
-  update_position = CENTER
-  if(present(position)) update_position = position
-  if(present(position)) update_position = position
   if(list == 1 .AND. tile == 1 )then
      isize=size(field,1); jsize=size(field,2); ksize = size(field,3); pos = update_position
      bsize = buffer_size; upflags = update_flags
@@ -187,13 +186,17 @@ subroutine MPP_GET_BOUNDARY_3D_(field, domain, ebuffer, sbuffer, wbuffer, nbuffe
      list = 0
   end if
 
-  if(do_update )then
+  if(do_update )then 
      !--- only non-center data in symmetry domain will be retrieved.
      if(position == CENTER .OR. (.NOT. domain%symmetry) ) return 
-     Dom => get_domain(domain, position)
-     if(size(field,1) .NE. Dom%x(1)%memory%size .OR. size(field,2) .NE. Dom%y(1)%memory%size ) &
+     bound => search_bound_overlap(domain, update_position)
+     call mpp_get_domain_shift(domain, ishift, jshift, update_position)
+     if(size(field,1) .NE. domain%x(1)%memory%size+ishift .OR. size(field,2) .NE. domain%y(1)%memory%size+jshift ) &
           call mpp_error(FATAL, "MPP_GET_BOUNDARY_3D: field is not on memory domain")
-     call mpp_do_get_boundary(f_addrs(1:l_size,1:ntile), Dom, b_addrs(:,1:l_size,1:ntile), bsize, ksize, d_type, update_flags)
+    if(ASSOCIATED(bound)) then
+        call mpp_do_get_boundary(f_addrs(1:l_size,1:ntile), domain, bound, b_addrs(:,1:l_size,1:ntile), &
+             bsize, ksize, d_type, update_flags)
+     endif
      l_size=0; f_addrs=-9999; bsize=0; b_addrs=-9999; isize=0;  jsize=0;  ksize=0
   end if
 
@@ -426,7 +429,7 @@ subroutine MPP_GET_BOUNDARY_2D_V_(fieldx, fieldy, domain, ebufferx, sbufferx, wb
   if(yycount>0) then
      sbuffery = RESHAPE( sbuffery2D, SHAPE(sbuffery) )
      nbuffery = RESHAPE( nbuffery2D, SHAPE(nbuffery) )
-     deallocate(sbufferx2D, nbuffery2D)
+     deallocate(sbuffery2D, nbuffery2D)
   end if
 
   return
@@ -446,8 +449,6 @@ subroutine MPP_GET_BOUNDARY_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx, wb
   integer,      intent(in), optional :: flags, gridtype, tile_count
   logical,      intent(in), optional :: complete
 
-  type(domain2d), pointer :: Domx => NULL()
-  type(domain2d), pointer :: Domy => NULL() 
   integer                 :: ntile, update_flags
   logical                 :: need_ebufferx, need_sbufferx, need_wbufferx, need_nbufferx
   logical                 :: need_ebuffery, need_sbuffery, need_wbuffery, need_nbuffery
@@ -463,7 +464,9 @@ subroutine MPP_GET_BOUNDARY_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx, wb
   logical          :: do_update, is_complete, set_mismatch
   character(len=3) :: text
   MPP_TYPE_        :: d_type
-
+  type(overlapSpec), pointer :: boundx=>NULL()
+  type(overlapSpec), pointer :: boundy=>NULL()
+  integer                     :: position_x, position_y, ishift, jshift
 
   ntile = size(domain%x(:))
   update_flags = XUPDATE+YUPDATE   !default
@@ -624,15 +627,37 @@ subroutine MPP_GET_BOUNDARY_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx, wb
   end if
 
   if(do_update )then
-     Domx => get_domain(domain, gridtype=gridtype, direction='x')
-     Domy => get_domain(domain, gridtype=gridtype, direction='y')
-     if(size(fieldx,1) .NE. Domx%x(1)%memory%size .OR. size(fieldx,2) .NE. Domx%y(1)%memory%size ) &
+     select case(grid_offset_type)
+     case (AGRID)
+        position_x = CENTER
+        position_y = CENTER
+     case (BGRID_NE, BGRID_SW)
+        position_x = CORNER
+        position_y = CORNER
+     case (CGRID_NE, CGRID_SW)
+        position_x = EAST
+        position_y = NORTH
+     case (DGRID_NE, DGRID_SW)
+        position_x = NORTH
+        position_y = EAST
+     case default
+        call mpp_error(FATAL, "mpp_get_boundary.h: invalid value of grid_offset_type")
+     end select
+
+     boundx => search_bound_overlap(domain, position_x)
+     boundy => search_bound_overlap(domain, position_y)  
+
+     call mpp_get_domain_shift(domain, ishift, jshift, position_x)
+     if(size(fieldx,1) .NE. domain%x(1)%memory%size+ishift .OR. size(fieldx,2) .NE. domain%y(1)%memory%size+jshift ) &
           call mpp_error(FATAL, "MPP_GET_BOUNDARY_3D_V: fieldx is not on memory domain")
-     if(size(fieldy,1) .NE. Domy%x(1)%memory%size .OR. size(fieldy,2) .NE. Domy%y(1)%memory%size ) &
+     call mpp_get_domain_shift(domain, ishift, jshift, position_y)
+     if(size(fieldy,1) .NE. domain%x(1)%memory%size+ishift .OR. size(fieldy,2) .NE. domain%y(1)%memory%size+jshift ) &
           call mpp_error(FATAL, "MPP_GET_BOUNDARY_3D_V: fieldy is not on memory domain")
-     call mpp_do_get_boundary(f_addrsx(1:l_size,1:ntile), f_addrsy(1:l_size,1:ntile), Domx, Domy, &
-          b_addrsx(:,1:l_size,1:ntile), b_addrsy(:,1:l_size,1:ntile), bsizex, &
-          bsizey, ksize, d_type, update_flags)
+     if(ASSOCIATED(boundx) ) then
+        call mpp_do_get_boundary(f_addrsx(1:l_size,1:ntile), f_addrsy(1:l_size,1:ntile), domain, boundx, boundy, &
+             b_addrsx(:,1:l_size,1:ntile), b_addrsy(:,1:l_size,1:ntile), bsizex, &
+             bsizey, ksize, d_type, update_flags)
+     endif
      l_size=0; f_addrsx=-9999; f_addrsy=-9999; bsizex=0; bsizey=0; 
      b_addrsx=-9999; b_addrsy=-9999; isize=0;  jsize=0;  ksize=0
   end if

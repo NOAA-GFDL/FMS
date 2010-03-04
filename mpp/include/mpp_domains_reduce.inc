@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_reduce.inc,v 16.0 2008/07/30 22:46:39 fms Exp $
+! $Id: mpp_domains_reduce.inc,v 18.0 2010/03/02 23:57:19 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -577,206 +577,206 @@
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_r8_2d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_
-#undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_global_sum_ad.h>
-
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_r8_3d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_ ,:
-#undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_global_sum_ad.h>
-
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_r8_4d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_ ,:,:
-#undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_global_sum_ad.h>
-
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_r8_5d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_ ,:,:,:
-#undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_global_sum_ad.h>
-
-#ifdef OVERLOAD_C8
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_c8_2d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_
-#undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
-#include <mpp_global_sum_ad.h>
-
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_c8_3d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_ ,:
-#undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
-#include <mpp_global_sum_ad.h>
-
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_c8_4d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_ ,:,:
-#undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
-#include <mpp_global_sum_ad.h>
-
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_c8_5d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_ ,:,:,:
-#undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
-#include <mpp_global_sum_ad.h>
-#endif
-
-#ifdef OVERLOAD_R4
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_r4_2d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_
-#undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
-#include <mpp_global_sum_ad.h>
-
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_r4_3d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_ ,:
-#undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
-#include <mpp_global_sum_ad.h>
-
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_r4_4d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_ ,:,:
-#undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
-#include <mpp_global_sum_ad.h>
-
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_r4_5d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_ ,:,:,:
-#undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
-#include <mpp_global_sum_ad.h>
-#endif
-
-#ifdef OVERLOAD_C4
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_c4_2d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_
-#undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
-#include <mpp_global_sum_ad.h>
-
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_c4_3d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_ ,:
-#undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
-#include <mpp_global_sum_ad.h>
-
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_c4_4d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_ ,:,:
-#undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
-#include <mpp_global_sum_ad.h>
-
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_c4_5d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_ ,:,:,:
-#undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
-#include <mpp_global_sum_ad.h>
-#endif
-
-#ifndef no_8byte_integers
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_i8_2d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_
-#undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
-#include <mpp_global_sum_ad.h>
-
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_i8_3d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_ ,:
-#undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
-#include <mpp_global_sum_ad.h>
-
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_i8_4d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_ ,:,:
-#undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
-#include <mpp_global_sum_ad.h>
-
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_i8_5d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_ ,:,:,:
-#undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
-#include <mpp_global_sum_ad.h>
-#endif
-
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_i4_2d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_
-#undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
-#include <mpp_global_sum_ad.h>
-
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_i4_3d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_ ,:
-#undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
-#include <mpp_global_sum_ad.h>
-
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_i4_4d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_ ,:,:
-#undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
-#include <mpp_global_sum_ad.h>
-
-#undef MPP_GLOBAL_SUM_AD_
-#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_i4_5d
-#undef MPP_EXTRA_INDICES_
-#define MPP_EXTRA_INDICES_ ,:,:,:
-#undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
-#include <mpp_global_sum_ad.h>
-!bnc
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_r8_2d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ real(DOUBLE_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_r8_3d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_ ,:
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ real(DOUBLE_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_r8_4d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_ ,:,:
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ real(DOUBLE_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_r8_5d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_ ,:,:,:
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ real(DOUBLE_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$
+!!$#ifdef OVERLOAD_C8
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_c8_2d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ complex(DOUBLE_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_c8_3d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_ ,:
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ complex(DOUBLE_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_c8_4d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_ ,:,:
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ complex(DOUBLE_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_c8_5d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_ ,:,:,:
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ complex(DOUBLE_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$#endif
+!!$
+!!$#ifdef OVERLOAD_R4
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_r4_2d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ real(FLOAT_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_r4_3d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_ ,:
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ real(FLOAT_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_r4_4d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_ ,:,:
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ real(FLOAT_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_r4_5d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_ ,:,:,:
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ real(FLOAT_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$#endif
+!!$
+!!$#ifdef OVERLOAD_C4
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_c4_2d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ complex(FLOAT_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_c4_3d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_ ,:
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ complex(FLOAT_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_c4_4d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_ ,:,:
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ complex(FLOAT_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_c4_5d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_ ,:,:,:
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ complex(FLOAT_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$#endif
+!!$
+!!$#ifndef no_8byte_integers
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_i8_2d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ integer(LONG_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_i8_3d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_ ,:
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ integer(LONG_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_i8_4d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_ ,:,:
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ integer(LONG_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_i8_5d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_ ,:,:,:
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ integer(LONG_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$#endif
+!!$
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_i4_2d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ integer(INT_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_i4_3d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_ ,:
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ integer(INT_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_i4_4d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_ ,:,:
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ integer(INT_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$
+!!$#undef MPP_GLOBAL_SUM_AD_
+!!$#define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_i4_5d
+!!$#undef MPP_EXTRA_INDICES_
+!!$#define MPP_EXTRA_INDICES_ ,:,:,:
+!!$#undef MPP_TYPE_
+!!$#define MPP_TYPE_ integer(INT_KIND)
+!!$#include <mpp_global_sum_ad.h>
+!!$!bnc
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -889,83 +889,59 @@
 #include <mpp_global_field.h>
 
 !****************************************************
-#undef MPP_DO_GLOBAL_FIELD_3Dnew_
-#define MPP_DO_GLOBAL_FIELD_3Dnew_ mpp_do_global_field2Dnew_r8_3d
-#undef MPP_DO_GLOBAL_FIELD_3Dold_
-#define MPP_DO_GLOBAL_FIELD_3Dold_ mpp_do_global_field2Dold_r8_3d
+#undef MPP_DO_GLOBAL_FIELD_3D_
+#define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_r8_3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_do_global_field_old.h>
-#include <mpp_do_global_field_new.h>                                    
+#include <mpp_do_global_field.h>                                    
 
 #ifdef OVERLOAD_C8
-#undef MPP_DO_GLOBAL_FIELD_3Dnew_
-#define MPP_DO_GLOBAL_FIELD_3Dnew_ mpp_do_global_field2Dnew_c8_3d
-#undef MPP_DO_GLOBAL_FIELD_3Dold_
-#define MPP_DO_GLOBAL_FIELD_3Dold_ mpp_do_global_field2Dold_c8_3d
+#undef MPP_DO_GLOBAL_FIELD_3D_
+#define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_c8_3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
-#include <mpp_do_global_field_old.h>
-#include <mpp_do_global_field_new.h>                                    
+#include <mpp_do_global_field.h>                                    
 #endif
 
 #ifndef no_8byte_integers
-#undef MPP_DO_GLOBAL_FIELD_3Dnew_
-#define MPP_DO_GLOBAL_FIELD_3Dnew_ mpp_do_global_field2Dnew_i8_3d
-#undef MPP_DO_GLOBAL_FIELD_3Dold_
-#define MPP_DO_GLOBAL_FIELD_3Dold_ mpp_do_global_field2Dold_i8_3d
+#undef MPP_DO_GLOBAL_FIELD_3D_
+#define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_i8_3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
-#include <mpp_do_global_field_old.h>
-#include <mpp_do_global_field_new.h>                                    
+#include <mpp_do_global_field.h>                                    
 
-#undef MPP_DO_GLOBAL_FIELD_3Dnew_
-#define MPP_DO_GLOBAL_FIELD_3Dnew_ mpp_do_global_field2Dnew_l8_3d
-#undef MPP_DO_GLOBAL_FIELD_3Dold_
-#define MPP_DO_GLOBAL_FIELD_3Dold_ mpp_do_global_field2Dold_l8_3d
+#undef MPP_DO_GLOBAL_FIELD_3D_
+#define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_l8_3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(LONG_KIND)
-#include <mpp_do_global_field_old.h>
-#include <mpp_do_global_field_new.h>                                    
+#include <mpp_do_global_field.h>                                    
 #endif
 
 #ifdef OVERLOAD_R4
-#undef MPP_DO_GLOBAL_FIELD_3Dnew_
-#define MPP_DO_GLOBAL_FIELD_3Dnew_ mpp_do_global_field2Dnew_r4_3d
-#undef MPP_DO_GLOBAL_FIELD_3Dold_
-#define MPP_DO_GLOBAL_FIELD_3Dold_ mpp_do_global_field2Dold_r4_3d
+#undef MPP_DO_GLOBAL_FIELD_3D_
+#define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_r4_3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
-#include <mpp_do_global_field_old.h>
-#include <mpp_do_global_field_new.h>                                    
+#include <mpp_do_global_field.h>                                    
 #endif
 
 #ifdef OVERLOAD_C4
-#undef MPP_DO_GLOBAL_FIELD_3Dnew_
-#define MPP_DO_GLOBAL_FIELD_3Dnew_ mpp_do_global_field2Dnew_c4_3d
-#undef MPP_DO_GLOBAL_FIELD_3Dold_
-#define MPP_DO_GLOBAL_FIELD_3Dold_ mpp_do_global_field2Dold_c4_3d
+#undef MPP_DO_GLOBAL_FIELD_3D_
+#define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_c4_3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
-#include <mpp_do_global_field_old.h>
-#include <mpp_do_global_field_new.h>                                    
+#include <mpp_do_global_field.h>                                    
 #endif
 
-#undef MPP_DO_GLOBAL_FIELD_3Dnew_
-#define MPP_DO_GLOBAL_FIELD_3Dnew_ mpp_do_global_field2Dnew_i4_3d
-#undef MPP_DO_GLOBAL_FIELD_3Dold_
-#define MPP_DO_GLOBAL_FIELD_3Dold_ mpp_do_global_field2Dold_i4_3d
+#undef MPP_DO_GLOBAL_FIELD_3D_
+#define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_i4_3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
-#include <mpp_do_global_field_old.h>
-#include <mpp_do_global_field_new.h>                                    
+#include <mpp_do_global_field.h>                                    
 
-#undef MPP_DO_GLOBAL_FIELD_3Dnew_
-#define MPP_DO_GLOBAL_FIELD_3Dnew_ mpp_do_global_field2Dnew_l4_3d
-#undef MPP_DO_GLOBAL_FIELD_3Dold_
-#define MPP_DO_GLOBAL_FIELD_3Dold_ mpp_do_global_field2Dold_l4_3d
+#undef MPP_DO_GLOBAL_FIELD_3D_
+#define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_l4_3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(INT_KIND)
-#include <mpp_do_global_field_old.h>
-#include <mpp_do_global_field_new.h>
+#include <mpp_do_global_field.h>
 

@@ -8,12 +8,9 @@
       MPP_TYPE_,         intent(in), optional :: default_data
 
       MPP_TYPE_ :: data3D(size(data,1),size(data,2),1)
-#ifdef use_CRI_pointers
       pointer( ptr, data3D )
       ptr = LOC(data)
-#else
-      data3D = RESHAPE( data, SHAPE(data3D) )
-#endif
+
       call mpp_write( unit, field, domain, data3D, tstamp, tile_count, default_data)
       return
     end subroutine MPP_WRITE_2DDECOMP_2D_

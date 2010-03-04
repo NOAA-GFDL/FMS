@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_misc.inc,v 17.0 2009/07/21 03:20:35 fms Exp $
+! $Id: mpp_io_misc.inc,v 18.0 2010/03/02 23:57:38 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -30,6 +30,7 @@
     subroutine mpp_io_init( flags, maxunit )
       integer, intent(in), optional :: flags, maxunit
       integer                       :: unit_nml, io_status, iunit
+      integer                       :: logunit, outunit, inunit, errunit
       logical                       :: opened
 
       if( module_is_initialized )return
@@ -59,8 +60,9 @@
       open(unit_nml,file='input.nml')
       read(unit_nml,mpp_io_nml,iostat=io_status)
       close(unit_nml)
-      write(stdout(), mpp_io_nml)
-      write(stdlog(), mpp_io_nml)
+      outunit = stdout(); logunit=stdlog()
+      write(outunit, mpp_io_nml)
+      write(logunit, mpp_io_nml)
 
 !initialize default_field
       default_field%name = 'noname'
@@ -124,10 +126,10 @@
       mpp_file(NULLUNIT)%valid  = .TRUE.
       mpp_file(NULLUNIT)%initialized = .TRUE.
 !declare the stdunits to be open
-      mpp_file(stdin())%opened = .TRUE.
-      mpp_file(stdout())%opened = .TRUE.
-      mpp_file(stderr())%opened = .TRUE.
-      mpp_file(stdlog())%opened = .TRUE.
+      mpp_file(outunit)%opened = .TRUE.
+      mpp_file(logunit)%opened = .TRUE.
+      inunit  = stdin()  ; mpp_file(inunit)%opened  = .TRUE.
+      errunit = stderr() ; mpp_file(errunit)%opened = .TRUE.
       
       if( pe.EQ.mpp_root_pe() )then
           iunit = stdlog()  ! PGI compiler does not like stdlog() doing I/O within write call
@@ -184,7 +186,7 @@
       end if
 !close all open fortran units
       do unit = unit_begin,unit_end
-         if( mpp_file(unit)%opened )call FLUSH(unit,istat)
+         if( mpp_file(unit)%opened )call FLUSH(unit)
       end do
       if( dosync )call mpp_sync()
       do unit = unit_begin,unit_end

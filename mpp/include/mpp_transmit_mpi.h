@@ -58,16 +58,12 @@
           if( from_pe.LT.0 .OR. from_pe.GE.npes )call mpp_error( FATAL, 'MPP_TRANSMIT: broadcasting from invalid PE.' )
           if( put_len.GT.get_len )call mpp_error( FATAL, 'MPP_TRANSMIT: size mismatch between put_data and get_data.' )
           if( pe.EQ.from_pe )then
-#ifdef use_CRI_pointers
               if( LOC(get_data).NE.LOC(put_data) )then
 !dir$ IVDEP
-#endif
                   do i = 1,get_len
                      get_data(i) = put_data(i)
                   end do
-#ifdef use_CRI_pointers
               end if
-#endif
           end if
           call mpp_broadcast( get_data, get_len, from_pe )
           return

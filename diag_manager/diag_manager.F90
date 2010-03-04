@@ -1,3 +1,5 @@
+#include <fms_platform.h>
+
 MODULE diag_manager_mod
   ! <CONTACT EMAIL="Matthew.Harrison@gfdl.noaa.gov">
   !   Matt Harrison
@@ -67,7 +69,8 @@ MODULE diag_manager_mod
   !              combination from year to second of current model time.
   !
   !              Here is an example of file information: <BR />
-  !              <TT>"file2_yr_dy%1yr%3dy",2,"hours",1,"hours","Time", 10, "days", "1 1 7 0 0 0", 6, "hours"</TT><BR />
+  !              <TT>"file2_yr_dy%1yr%3dy",2,"hours",1,"hours","Time", 10, "days", "1 1 7 0 0 0", 6, "hours"</TT>
+  !              <BR />
   !
   !              From left to right we have: 
   !              <UL>
@@ -143,23 +146,29 @@ MODULE diag_manager_mod
   ! </DESCRIPTION>
 
   ! <NAMELIST NAME="diag_manager_nml">
-  !   <DATA NAME="append_pelist_name" TYPE="logical" DEFAULT="false">
+  !   <DATA NAME="append_pelist_name" TYPE="LOGICAL" DEFAULT=".FALSE.">
   !   </DATA>
-  !   <DATA NAME="mix_snapshot_average_fields" TYPE="logical" DEFAULT="false">
+  !   <DATA NAME="mix_snapshot_average_fields" TYPE="LOGICAL" DEFAULT=".FALSE.">
   !   </DATA>
-  !   <DATA NAME="max_output_fields" TYPE="integer" DEFAULT="300">
+  !   <DATA NAME="max_files" TYPE="INTEGER" DEFULT="31">
   !   </DATA>
-  !   <DATA NAME="max_input_fields" TYPE="integer" DEFAULT="300">
+  !   <DATA NAME="max_output_fields" TYPE="INTEGER" DEFAULT="300">
   !   </DATA>
-  !   <DATA NAME="max_axes" TYPE="integer" DEFAULT="60">
+  !   <DATA NAME="max_input_fields" TYPE="INTEGER" DEFAULT="300">
   !   </DATA>
-  !   <DATA NAME="do_diag_fields_log" TYPE="logical" DEFAULT="false">
+  !   <DATA NAME="max_axes" TYPE="INTEGER" DEFAULT="60">
   !   </DATA>
-  !   <DATA NAME="write_bytes_in_files" TYPE="logical" DEFAULT="false">
+  !   <DATA NAME="do_diag_field_log" TYPE="LOGICAL" DEFAULT=".FALSE.">
   !   </DATA>
-  !   <DATA NAME="debug_diag_manager" TYPE="logical" DEFAULT="false">
+  !   <DATA NAME="write_bytes_in_files" TYPE="LOGICAL" DEFAULT=".FALSE.">
   !   </DATA>
-  !   <DATA NAME="max_num_axis_sets" TYPE="integer" DEFAULT="25">
+  !   <DATA NAME="debug_diag_manager" TYPE="LOGICAL" DEFAULT=".FALSE.">
+  !   </DATA>
+  !   <DATA NAME="max_num_axis_sets" TYPE="INTEGER" DEFAULT="25">
+  !   </DATA>
+  !   <DATA NAME="use_cmor" TYPE="LOGICAL" DEFAULT=".FALSE.">
+  !     Let diag_manager know if the missing value (if supplied) should be overridden to be the
+  !     CMOR standard value of -1.0e20.
   !   </DATA>
   ! </NAMELIST>
 
@@ -176,16 +185,18 @@ MODULE diag_manager_mod
        & check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
        & init_file, diag_time_inc, find_input_field, init_input_field, init_output_field,&
        & diag_data_out, write_static, check_duplicate_output_fields, get_date_dif,&
-       & get_subfield_vert_size
-  USE diag_data_mod, ONLY: max_files, DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, EVERY_TIME, END_OF_RUN,&
-       & DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, num_files,&
+       & get_subfield_vert_size, sync_file_times
+  USE diag_data_mod, ONLY: max_files, CMOR_MISSING_VALUE, DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, EVERY_TIME,&
+       & END_OF_RUN, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, num_files,&
        & max_input_fields, max_output_fields, num_output_fields, EMPTY, FILL_VALUE, null_axis_id,&
-       & MAX_VALUE, MIN_VALUE, single, base_time, base_year, base_month, base_day, base_hour,&
-       & base_minute, base_second, global_descriptor, coord_type, files, input_fields,&
+       & MAX_VALUE, MIN_VALUE, base_time, base_year, base_month, base_day,&
+       & base_hour, base_minute, base_second, global_descriptor, coord_type, files, input_fields,&
        & output_fields, Time_zero, append_pelist_name, mix_snapshot_average_fields,&
        & first_send_data_call, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
-       & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets
+       & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
+       & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
+  USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   USE constants_mod, ONLY: SECONDS_PER_HOUR, SECONDS_PER_MINUTE
 
   IMPLICIT NONE
@@ -195,12 +206,16 @@ MODULE diag_manager_mod
        & need_data, average_tiles, DIAG_ALL, DIAG_OCEAN, DIAG_OTHER, get_date_dif, DIAG_SECONDS,&
        & DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, get_diag_global_att,&
        & set_diag_global_att
-  PUBLIC  :: set_diag_filename_appendix
+  ! Public interfaces from diag_grid_mod
+  PUBLIC :: diag_grid_init, diag_grid_end
+  PUBLIC :: set_diag_filename_appendix
 
   CHARACTER(len=32), SAVE :: filename_appendix = ''
   ! version number of this module
-  CHARACTER(len=128)  :: version = '$Id: diag_manager.F90,v 17.0.4.2 2009/09/10 19:32:21 sdu Exp $'
-  CHARACTER(len=128)  :: tagname = '$Name: quebec_200910 $'  
+  CHARACTER(len=128), PARAMETER :: version =&
+       & '$Id: diag_manager.F90,v 18.0 2010/03/02 23:55:24 fms Exp $'
+  CHARACTER(len=128), PARAMETER :: tagname =&
+       & '$Name: riga $'  
 
   ! <INTERFACE NAME="send_data">
   !   <TEMPLATE>
@@ -454,27 +469,32 @@ CONTAINS
          & long_name, units, missing_value, range, mask_variant1, standard_name=standard_name,&
          & DYNAMIC=.TRUE., do_not_log=do_not_log, interp_method=interp_method, tile_count=tile_count)
 
-    IF ( (debug_diag_manager.OR.verbose1) .AND. register_diag_field_array < 0 ) THEN
-       ! <ERROR STATUS="WARNING">
-       !   module/output_field <modul_name>/<field_name> NOT found in diag_table
-       ! </ERROR>
-       CALL error_mesg ('register_diag_field', 'module/output_field '//TRIM(module_name)//'/'//&
-            & TRIM(field_name)//' NOT found in diag_table', WARNING) 
-    END IF
-
     IF ( .NOT.first_send_data_call ) THEN 
        ! <ERROR STATUS="WARNING">
        !   module/output_field <module_name>/<field_name> registered AFTER first
        !   send_data call, TOO LATE
        ! </ERROR>
-       CALL  error_mesg ('register_diag_field', 'module/output_field '//TRIM(module_name)//'/'//&
-            &TRIM(field_name)//' registered AFTER first send_data call, TOO LATE', WARNING)  
+       IF ( mpp_pe() == mpp_root_pe() ) &
+            & CALL  error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
+            &//TRIM(module_name)//'/'// TRIM(field_name)//&
+            &' registered AFTER first send_data call, TOO LATE', WARNING)  
     END IF
 
-    IF ( register_diag_field_array > 0 ) THEN
+    IF ( register_diag_field_array < 0 ) THEN
+       ! <ERROR STATUS="WARNING">
+       !   module/output_field <modul_name>/<field_name> NOT found in diag_table
+       ! </ERROR>
+       IF ( debug_diag_manager .OR. verbose1 ) THEN 
+          IF ( mpp_pe() == mpp_root_pe() ) &
+               & CALL error_mesg ('register_diag_field', 'module/output_field '&
+               &//TRIM(module_name)//'/'// TRIM(field_name)//' NOT found in diag_table',&
+               & WARNING) 
+       END IF
+    ELSE 
        input_fields(register_diag_field_array)%static = .FALSE.
        field = register_diag_field_array
        IF ( PRESENT(standard_name) ) input_fields(field)%standard_name = standard_name  
+
        DO j = 1, input_fields(field)%num_output_fields
           ind = input_fields(field)%output_fields(j)
           output_fields(ind)%static = .FALSE.
@@ -488,27 +508,15 @@ CONTAINS
                 files(file_num)%local = .TRUE.
              END IF
           END IF
+
           ! Need to sync start_time of file with init time of model
-          IF ( files(file_num)%start_time < init_time ) THEN
-             files(file_num)%start_time = init_time
-             ! Need to sync  close_time too
-             files(file_num)%close_time = diag_time_inc(files(file_num)%start_time,&
-                  & files(file_num)%duration, files(file_num)%duration_units)
-             !-- NZ
-             !-- Why is this block of code here in this function? 
-             !-- This kind of resetting the member variables should be done by one function call
-             !-- in the module that first sets them (diag_util_mod).
+          ! and close_time calculated with the duration of the file.
+          ! Also, increase next_open until it is greater than init_time.
+          CALL sync_file_times(file_num, init_time, err_msg=msg)
+          IF ( msg /= '' ) THEN
+             IF ( fms_error_handler('diag_manager_mod::register_diag_field', TRIM(msg), err_msg) ) RETURN
           END IF
-          ! Need to increase next_open until it is greater than init time
-          DO
-             IF ( files(file_num)%next_open > init_time ) EXIT
-             files(file_num)%next_open = diag_time_inc(files(file_num)%next_open,&
-                  & files(file_num)%new_file_freq, files(file_num)%new_file_freq_units, err_msg=msg)
-             IF ( msg /= '' ) THEN
-                IF ( fms_error_handler('register_diag_field',&
-                     & ' file='//TRIM(files(file_num)%name)//': '//TRIM(msg),err_msg) ) RETURN
-             END IF
-          END DO
+
           freq = files(file_num)%output_freq
           output_units = files(file_num)%output_units
           output_fields(ind)%next_output = diag_time_inc(init_time, freq, output_units, err_msg=msg)
@@ -554,10 +562,10 @@ CONTAINS
   !   <IN NAME="units" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <IN NAME="missing_value" TYPE="REAL, OPTIONAL" />
   !   <IN NAME="range" TYPE="REAL, DIMENSION(2), OPTIONAL" />
-  !   <IN NAME="mask_variang" TYPE="LOGICAL, OPTIONAL" />
+  !   <IN NAME="mask_variang" TYPE="LOGICAL, OPTIONAL" DEFAULT=".FALSE."/>
   !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL" />
-  !   <IN NAME="dynamic" TYPE="LOGICAL, OPTIONAL" />
-  !   <IN NAME="do_not_log" TYPE="LOGICAL, OPTIONAL" />
+  !   <IN NAME="dynamic" TYPE="LOGICAL, OPTIONAL" DEFAULT=".FALSE."/>
+  !   <IN NAME="do_not_log" TYPE="LOGICAL, OPTIONAL" DEFAULT=".TRUE."/>
   !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIOANL" />
   !   <IN NAME="tile_count" TYPE="INTEGER, OPTIONAL" />
   INTEGER FUNCTION register_static_field(module_name, field_name, axes, long_name, units,&
@@ -566,19 +574,36 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: module_name, field_name
     INTEGER, DIMENSION(:), INTENT(in) :: axes
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
-    REAL, OPTIONAL, INTENT(in) :: missing_value, RANGE(2)
+    REAL, OPTIONAL, INTENT(in) :: missing_value
+    REAL, DIMENSION(2), OPTIONAL, INTENT(in) :: range
     LOGICAL, OPTIONAL, INTENT(in) :: mask_variant
     LOGICAL, OPTIONAL, INTENT(in) :: DYNAMIC
     LOGICAL, OPTIONAL, INTENT(in) :: do_not_log ! if TRUE, field information is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method
     INTEGER,          OPTIONAL, INTENT(in) :: tile_count
 
-    INTEGER :: field, num_axes, j, out_num, siz(3), local_siz(3), k
-    INTEGER :: local_start(3), local_end(3) ! indices of local domain of global axes
+    REAL :: missing_value_use
+    INTEGER :: field, num_axes, j, out_num, k
+    INTEGER, DIMENSION(3) :: siz, local_siz, local_start, local_end ! indices of local domain of global axes
     INTEGER :: tile, file_num
     LOGICAL :: mask_variant1, dynamic1, allow_log
     CHARACTER(len=128) :: msg
 
+    ! Fatal error if the module has not been initialized.
+    IF ( .NOT.module_is_initialized ) THEN 
+       ! <ERROR STATUS="FATAL">diag_manager has NOT been initialized</ERROR>
+       CALL error_mesg ('register_static_field', 'diag_manager has NOT been initialized', FATAL)
+    END IF
+
+    ! Check if OPTIONAL parameters were passed in.
+    IF ( PRESENT(missing_value) ) THEN
+       IF ( use_cmor ) THEN 
+          missing_value_use = CMOR_MISSING_VALUE
+       ELSE
+          missing_value_use = missing_value
+       END IF
+    END IF
+    
     IF ( PRESENT(mask_variant) ) THEN 
        mask_variant1 = mask_variant
     ELSE 
@@ -591,12 +616,10 @@ CONTAINS
        dynamic1 = .FALSE.
     END IF
 
-    tile = 1
-    IF ( PRESENT(tile_count) ) tile = tile_count
-
-    IF ( .NOT.module_is_initialized ) THEN 
-       ! <ERROR STATUS="FATAL">diag_manager has NOT been initialized</ERROR>
-       CALL error_mesg ('register_static_field', 'diag_manager has NOT been initialized', FATAL)
+    IF ( PRESENT(tile_count) ) THEN 
+       tile = tile_count
+    ELSE
+       tile = 1
     END IF
 
     IF ( PRESENT(do_not_log) ) THEN
@@ -605,6 +628,10 @@ CONTAINS
        allow_log = .TRUE. 
     END IF
 
+    ! Namelist do_diag_field_log is by default false.  Thus to log the
+    ! registration of the data field, but the OPTIONAL parameter
+    ! do_not_log == .FALSE. and the namelist variable
+    ! do_diag_field_log == .TRUE..
     IF ( do_diag_field_log.AND.allow_log ) THEN
        CALL log_diag_field_info (module_name, field_name, axes, &
             & long_name, units, missing_value=missing_value, range=range, &
@@ -613,7 +640,7 @@ CONTAINS
 
     register_static_field = find_input_field(module_name, field_name, 1)
     field = register_static_field
-    ! Negative index returned if this field is not used in table
+    ! Negative index returned if this field was not found in the diag_table.
     IF ( register_static_field < 0 ) RETURN
 
     IF ( tile > 1 ) THEN
@@ -646,7 +673,8 @@ CONTAINS
 
     ! Store information for this input field into input field table
 
-    ! Set static to true, if called by register_diag_field this is flipped to false
+    ! Set static to true, if called by register_diag_field this is
+    ! flipped back to false
     input_fields(field)%static = .TRUE.
     ! check if the field is registered twice
     IF ( input_fields(field)%register .AND. mpp_pe() == mpp_root_pe() ) THEN
@@ -654,37 +682,37 @@ CONTAINS
        !   module/output_field <module_name>/<field_name> ALREADY Registered, should
        !   not register twice
        ! </ERROR>
-       CALL error_mesg ('register_diag_field', 'module/output_field '//trim(module_name)//'/'//&
+       CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '//trim(module_name)//'/'//&
             & TRIM(field_name)//' ALREADY registered, should not register twice', FATAL) 
     END IF
+
     ! Set flag that this field was registered
     input_fields(field)%register = .TRUE.
     ! set flag for mask: does it change with time?
     input_fields(field)%mask_variant = mask_variant1
 
-    ! Store the axis info
-    num_axes = SIZE(axes(:))
-    input_fields(field)%axes(1:num_axes) = axes
-    input_fields(field)%num_axes = num_axes
-    
-    ! Need to check for present, otherwise defaults
+    ! Check for more OPTIONAL parameters.
     IF ( PRESENT(long_name) ) THEN
        input_fields(field)%long_name = TRIM(long_name)
     ELSE
        input_fields(field)%long_name = input_fields(field)%field_name
     END IF
+    
     IF ( PRESENT(standard_name) ) input_fields(field)%standard_name = standard_name 
+    
     IF ( PRESENT(units) ) THEN
        input_fields(field)%units = TRIM(units)
     ELSE
        input_fields(field)%units = 'none'
     END IF
+    
     IF ( PRESENT(missing_value) ) THEN
-       input_fields(field)%missing_value = missing_value
+       input_fields(field)%missing_value = missing_value_use
        input_fields(field)%missing_value_present = .TRUE.
     ELSE
        input_fields(field)%missing_value_present = .FALSE.
     END IF
+    
     IF ( PRESENT(range) ) THEN
        input_fields(field)%range = range
        input_fields(field)%range_present = .TRUE.
@@ -693,31 +721,34 @@ CONTAINS
        input_fields(field)%range_present = .FALSE.
     END IF
 
-    input_fields(field)%interp_method = ''
     IF ( PRESENT(interp_method) ) THEN
        IF ( TRIM(interp_method) .NE. 'conserve_order1' ) THEN 
           ! <ERROR STATUS="FATAL">
           !   when registering module/output_field <module_name>/<field_name> then optional
-          !   argument interp_mothod = <interp_method>, but it should be "conserve_order1"
+          !   argument interp_method = <interp_method>, but it should be "conserve_order1"
           ! </ERROR>
-          CALL error_mesg ('register_diag_field',&
+          CALL error_mesg ('diag_manager_mod::register_diag_field',&
                & 'when registering module/output_field '//TRIM(module_name)//'/'//&
                & TRIM(field_name)//', the optional argument interp_method = '//TRIM(interp_method)//&
                & ', but it should be "conserve_order1"', FATAL)
        END IF
        input_fields(field)%interp_method = TRIM(interp_method)
+    ELSE 
+       input_fields(field)%interp_method = ''
     END IF
 
+    ! Store the axis info
+    num_axes = SIZE(axes(:)) ! num_axes should be <= 3.
+    input_fields(field)%axes(1:num_axes) = axes
+    input_fields(field)%num_axes = num_axes
+    
     siz = 1
-    local_siz = 1
-    local_start = 1
-    local_end= 1
     DO j = 1, num_axes
        IF ( axes(j) .LE. 0 ) THEN
           ! <ERROR STATUS="FATAL">
           !   module/output_field <module_name>/<field_name> has non-positive axis_id
           ! </ERROR>
-          CALL error_mesg ('register_diag_field', 'module/output_field '//trim(module_name)//'/'//&
+          CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '//trim(module_name)//'/'//&
                & TRIM(field_name)//' has non-positive axis_id', FATAL) 
        END IF
        siz(j) = get_axis_length(axes(j))
@@ -728,6 +759,9 @@ CONTAINS
        input_fields(field)%size(j) = siz(j)
     END DO
 
+    local_siz = 1
+    local_start = 1
+    local_end= 1
     ! Need to loop through all output_fields associated and allocate their buffers
     DO j = 1, input_fields(field)%num_output_fields
        out_num = input_fields(field)%output_fields(j)
@@ -737,7 +771,7 @@ CONTAINS
              ! <ERROR STATUS="FATAL">
              !   output_field <field_name> has pack >= 4, range is REQUIRED in register_diag_field
              ! </ERROR>
-             CALL error_mesg ('register_diag_field ', 'output_field '//TRIM(field_name)// &
+             CALL error_mesg ('diag_manager_mod::register_diag_field ', 'output_field '//TRIM(field_name)// &
                   ' has pack >=4, range is REQUIRED in register_diag_field', FATAL)
           END IF
        END IF
@@ -765,12 +799,12 @@ CONTAINS
           output_fields(out_num)%region_elements = siz(1)*siz(2)*local_siz(3)
           output_fields(out_num)%total_elements  = siz(1)*siz(2)*siz(3)
        ELSE IF ( output_fields(out_num)%local_output ) THEN
-          IF (SIZE(axes(:)) .LE. 1 ) THEN
+          IF ( SIZE(axes(:)) .LE. 1 ) THEN
              ! <ERROR STATUS="FATAL">axes of <field_name> must >= 2 for local output</ERROR>
-             CALL error_mesg ('Register_diag_field', 'axes of '//TRIM(field_name)// &
-                  & ' must >=2 for local output', FATAL)
+             CALL error_mesg ('diag_manager_mod::register_diag_field', 'axes of '//TRIM(field_name)//&
+                  & ' must >= 2 for local output', FATAL)
           END IF
-          CALL get_subfield_size(axes,out_num)
+          CALL get_subfield_size(axes, out_num)
           IF ( output_fields(out_num)%need_compute ) THEN
              DO k = 1, num_axes
                 local_start(k) = output_fields(out_num)%output_grid%l_start_indx(k)
@@ -810,10 +844,15 @@ CONTAINS
           WRITE (msg,'(a,"/",a)') TRIM(module_name), TRIM(field_name)
           IF ( mpp_pe() .EQ. mpp_root_pe() ) THEN
              ! <ERROR STATUS="WARNING">
-             !   module/field <module_name>/<field_name> is STATIC can NOT time ops
+             !   module/field <module_name>/<field_name> is STATIC.
+             !   Cannot perform time operations average, maximum or
+             !   minimum on static fields.  Setting the time operation to 'NONE'
+             !   for this field.
              ! </ERROR>
-             CALL error_mesg ('register_static_field', &
-                  &'module/field '//TRIM(msg)//' is STATIC, can NOT time ops',WARNING)
+             CALL error_mesg ('diag_manager_mod::register_static_field',&
+                  & 'module/field '//TRIM(msg)//' is STATIC.  Cannot perform time operations&
+                  & average, maximum, or minimum on static fields.  Setting the time operation&
+                  & to "NONE" for this field.', WARNING)
           END IF
           output_fields(out_num)%time_ops = .FALSE.
           output_fields(out_num)%time_average = .FALSE.
@@ -931,8 +970,12 @@ CONTAINS
     field_out(:, 1, 1) = field
 
     ! Default values for mask
-    mask_out = .TRUE.
-    IF ( PRESENT(mask) ) mask_out(:, 1, 1) = mask
+    IF ( PRESENT(mask) ) THEN 
+       mask_out(:, 1, 1) = mask
+    ELSE
+       mask_out = .TRUE.
+    END IF
+
     IF ( PRESENT(rmask) ) WHERE (rmask < 0.5) mask_out(:, 1, 1) = .FALSE.
     IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
        send_data_1d = send_data_3d(diag_field_id, field_out, time, is_in, 1, 1, mask_out,&
@@ -1039,7 +1082,7 @@ CONTAINS
     LOGICAL :: time_max, time_min
     LOGICAL :: missvalue_present
     CHARACTER(len=256) :: err_msg_local
-    CHARACTER(len=128) :: error_string
+    CHARACTER(len=128) :: error_string, error_string1
     TYPE(time_type) :: middle_time      
     TYPE(time_type) :: dt ! time interval for diurnal output
 
@@ -1126,17 +1169,56 @@ CONTAINS
     f2=n1-hi
     f3=1+hj
     f4=n2-hj
+
     ! weight is for time averaging where each time level may has a different weight
-    weight1 = 1.
-    IF ( PRESENT(weight) ) weight1 = weight
-
-    number_of_outputs = input_fields(diag_field_id)%num_output_fields
-
+    IF ( PRESENT(weight) ) THEN 
+       weight1 = weight
+    ELSE
+       weight1 = 1.
+    END IF
+    
+    ! Is there a missing_value?
     missvalue_present = input_fields(diag_field_id)%missing_value_present
     IF ( missvalue_present ) missvalue = input_fields(diag_field_id)%missing_value
 
+    number_of_outputs = input_fields(diag_field_id)%num_output_fields
+
+    ! Issue a warning if any value in field is outside the valid range
+    IF ( input_fields(diag_field_id)%range_present ) THEN
+       IF ( ISSUE_OOR_WARNINGS .OR. OOR_WARNINGS_FATAL ) THEN
+          WRITE (error_string, '("[",ES24.15E3,",",ES24.15E3,"]")')&
+               & input_fields(diag_field_id)%range(1:2)
+          WRITE (error_string1, '("(Min: ",ES24.15E3,", Max: ",ES24.15E3, ")")')&
+               & MINVAL(field(f1:f2,f3:f4,ks:ke)), MAXVAL(field(f1:f2,f3:f4,ks:ke))
+
+          IF ( missvalue_present .OR. input_fields(diag_field_id)%mask_variant ) THEN
+             IF ( ANY((field(f1:f2,f3:f4,ks:ke) < input_fields(diag_field_id)%range(1) .OR.&
+                  &    field(f1:f2,f3:f4,ks:ke) > input_fields(diag_field_id)%range(2)).AND.&
+                  &    field(f1:f2,f3:f4,ks:ke) .NE. missvalue) ) THEN
+                CALL error_mesg('diag_manager_mod::send_data_3d',&
+                     & 'A value for'//&
+                     &TRIM(input_fields(diag_field_id)%module_name)//' field '//&
+                     &TRIM(input_fields(diag_field_id)%field_name)//' '&
+                     &//TRIM(error_string1)//&
+                     &' is outside the range '//TRIM(error_string)//',&
+                     & and not equal to the missing value.',&
+                     &OOR_WARNING)
+             END IF
+          ELSE IF ( ANY(field(f1:f2,f3:f4,ks:ke) < input_fields(diag_field_id)%range(1) .OR.&
+               &        field(f1:f2,f3:f4,ks:ke) > input_fields(diag_field_id)%range(2)) ) THEN
+             CALL error_mesg('diag_manager_mod::send_data_3d',&
+                  & 'A value for '//TRIM(input_fields(diag_field_id)%&
+                  &module_name)//' field '//&
+                  &TRIM(input_fields(diag_field_id)%field_name)//' '&
+                  &//TRIM(error_string1)//&
+                  &' is outside the range '//TRIM(error_string)//'.',&
+                  &OOR_WARNING)
+          END IF
+       END IF
+    END IF
+
     ! Loop through each output field that depends on this input field
-    num_outputs: DO ii = 1, number_of_outputs
+    num_out_fields: DO ii = 1, number_of_outputs
        ! Get index to an output field
        out_num = input_fields(diag_field_id)%output_fields(ii)
 
@@ -1455,7 +1537,9 @@ CONTAINS
                    END IF
                 ELSE ! missing value NOT present
                    IF ( .NOT.ALL(mask(f1:f2,f3:f4,ks:ke)) .AND. mpp_pe() .EQ. mpp_root_pe() ) THEN
-                      ! <ERROR STATUS="WARNING">Mask will be ignored since missing values were not specified</ERROR>
+                      ! <ERROR STATUS="WARNING">
+                      !   Mask will be ignored since missing values were not specified
+                      ! </ERROR>
                       CALL error_mesg('warning2 send_data_3d',&
                            & 'Mask will be ignored since missing values were not specified',WARNING)
                    END IF
@@ -1892,7 +1976,8 @@ CONTAINS
              END DO
           END IF
        END IF
-    END DO num_outputs
+
+    END DO num_out_fields
   END FUNCTION send_data_3d
   ! </FUNCTION>
 
@@ -1911,7 +1996,7 @@ CONTAINS
 
     REAL, DIMENSION(SIZE(field,1),SIZE(field,2)) :: out(SIZE(field,1), SIZE(field,2))
 
-    CALL average_tiles(field, area, mask, out)
+    CALL average_tiles(id, field, area, mask, out)
     send_tile_averaged_data2d = send_data(id, out, time, mask=ANY(mask,DIM=3))
   END FUNCTION send_tile_averaged_data2d
   ! </FUNCTION>
@@ -1934,7 +2019,7 @@ CONTAINS
     INTEGER :: it
 
     DO it=1, SIZE(field,4)
-       CALL average_tiles(field(:,:,:,it), area, mask, out(:,:,it) )
+       CALL average_tiles(id, field(:,:,:,it), area, mask, out(:,:,it) )
     END DO
 
     mask3(:,:,1) = ANY(mask,DIM=3)
@@ -1950,15 +2035,17 @@ CONTAINS
   !   <OVERVIEW>
   !   </OVERVIEW>
   !   <TEMPLATE>
-  !     SUBROUTINE average)tiles(x, area, mask, out)
+  !     SUBROUTINE average_tiles(diag_field_id, x, area, mask, out)
   !   </TEMPLATE>
   !   <DESCRIPTION>
   !   </DESCRIPTION>
+  !   <IN NAME="diag_field_id" TYPE="INTEGER"></IN>
   !   <IN NAME="x" TYPE="REAL, DIMENSION(:,:,:)">(lon, lat, tile) field to average</IN>
   !   <IN NAME="area" TYPE="REAL, DIMENSION(:,:,:)">(lon, lat, tile) fractional area</IN>
   !   <IN NAME="mask" TYPE="LOGICAL, DIMENSION(:,:,:)">(lon, lat, tile) land mask</IN>
   !   <OUT NAME="out" TYPE="REAL, DIMENSION(:,:)">(lon, lat) result of averaging</OUT>
-  SUBROUTINE average_tiles(x, area, mask, out)
+  SUBROUTINE average_tiles(diag_field_id, x, area, mask, out)
+    INTEGER, INTENT(in) :: diag_field_id
     REAL, DIMENSION(:,:,:), INTENT(in) :: x 
     REAL, DIMENSION(:,:,:), INTENT(in) :: area
     LOGICAL, DIMENSION(:,:,:), INTENT(in) :: mask
@@ -1966,10 +2053,19 @@ CONTAINS
 
     INTEGER  :: it ! iterator over tile number
     REAL, DIMENSION(SIZE(x,1),SIZE(x,2)) :: s ! area accumulator
+    REAL :: local_missing_value
 
+    ! Initialize local_missing_value
+    IF ( input_fields(diag_field_id)%missing_value_present ) THEN
+       local_missing_value = input_fields(diag_field_id)%missing_value
+    ELSE 
+       local_missing_value = 0.0
+    END IF
+    
+    ! Initialize s and out to zero.
     s(:,:) = 0.0
     out(:,:) = 0.0
-
+    
     DO it = 1, SIZE(area,3)
        WHERE ( mask(:,:,it) ) 
           out(:,:) = out(:,:) + x(:,:,it)*area(:,:,it)
@@ -1977,7 +2073,11 @@ CONTAINS
        END WHERE
     END DO
 
-    WHERE ( s(:,:) > 0 ) out(:,:) = out(:,:)/s(:,:)
+    WHERE ( s(:,:) > 0 ) 
+       out(:,:) = out(:,:)/s(:,:)
+    ELSEWHERE
+       out(:,:) = local_missing_value
+    END WHERE
   END SUBROUTINE average_tiles
   ! </SUBROUTINE>
 
@@ -2140,7 +2240,7 @@ CONTAINS
   !     Initialize Diagnostics Manager.
   !   </OVERVIEW>
   !   <TEMPLATE>
-  !     SUBROUTINE diag_manager_init(diag_model_dubset, err_msg)
+  !     SUBROUTINE diag_manager_init(diag_model_subset, err_msg)
   !   </TEMPLATE>
   !   <DESCRIPTION>
   !     Open and read diag_table. Select fields and files for diagnostic output.
@@ -2155,7 +2255,7 @@ CONTAINS
     CHARACTER(len=256) :: err_msg_local
 
     TYPE tableB_type
-       CHARACTER(len=128) :: module_name,field_name,output_name,name
+       CHARACTER(len=128) :: module_name, field_name, output_name, name
        CHARACTER(len=50) :: time_sampling
        CHARACTER(len=50) :: time_method   
        CHARACTER(len=50) :: spatial_ops
@@ -2163,31 +2263,37 @@ CONTAINS
     END TYPE tableB_type
 
     TYPE tableA_type
-       CHARACTER(len=128) :: name
        INTEGER :: output_freq 
+       INTEGER :: output_format
+       INTEGER :: new_file_freq
+       INTEGER :: file_duration
+       CHARACTER(len=128) :: name
        CHARACTER(len=10) :: output_freq_units
-       INTEGER :: FORMAT
        CHARACTER(len=10) :: time_units
        CHARACTER(len=128) :: long_name
-       INTEGER :: new_file_freq
        CHARACTER(len=10) :: new_file_freq_units
        CHARACTER(len=25) :: start_time_s
-       INTEGER :: file_duration
        CHARACTER(len=25) :: file_duration_units
     END TYPE tableA_type
 
-    REAL(kind=single) :: foo
-    INTEGER :: iunit,time_units, output_freq_units, nfiles,nfields
-    INTEGER :: j, name_len, nrecs, io_status,file_duration_units
+    REAL(kind=FLOAT_KIND) :: foo
+    INTEGER :: iunit, time_units, output_freq_units, nfiles, nfields
+    INTEGER :: nrecs, io_status, file_duration_units
     INTEGER :: file_duration
     INTEGER, ALLOCATABLE, DIMENSION(:) :: pelist
-    INTEGER :: record_len, record_tail_len,time_pos
+    INTEGER :: record_len
+    INTEGER :: record_start, record_end ! indexes to positions in the record string
+    INTEGER :: record_count ! counting variable for record_data
+    INTEGER :: record_iostat ! iostat from reading in the variables
+    INTEGER :: line_num ! Integer value of line number
     INTEGER :: yr, mo, dy, hr, mi, sc, new_file_freq_units
     INTEGER :: stdlog_unit, stdout_unit
-    LOGICAL :: file_freq_present, file_start_present, file_duration_present
-    CHARACTER(len=256) :: record
-    CHARACTER(len=128) :: record_tail
-    CHARACTER(len=9)   :: amonth
+    CHARACTER(len=62), DIMENSION(11) :: record_data
+    CHARACTER(len=256) :: record, record1 ! record is used to hold the
+                                          ! data, record1 used to
+                                          ! begin number counter only.
+    CHARACTER(len=9) :: amonth
+    character(len=5) :: line_number ! String to hold line number for output.
     TYPE(time_type) :: start_time
 
     TYPE(tableB_type) :: textB
@@ -2196,11 +2302,12 @@ CONTAINS
 
     NAMELIST /diag_manager_nml/ append_pelist_name, mix_snapshot_average_fields, max_output_fields, &
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
-         & max_num_axis_sets, max_files
+         & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
+         & oor_warnings_fatal
 
 
     IF ( PRESENT(err_msg) ) err_msg = ''
-    !  If the module was already initialized do nothing
+    ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
     min_value = HUGE(foo)
     max_value = -min_value
@@ -2215,21 +2322,40 @@ CONTAINS
     Time_zero = set_time(0,0)
     diag_subset_output = DIAG_ALL
     IF ( PRESENT(diag_model_subset) ) THEN
-       IF ( diag_model_subset>=DIAG_OTHER .AND. diag_model_subset<=DIAG_ALL ) THEN
+       IF ( diag_model_subset >= DIAG_OTHER .AND. diag_model_subset <= DIAG_ALL ) THEN
           diag_subset_output = diag_model_subset
        ELSE
           IF ( fms_error_handler('diag_manager_init', 'invalid value of diag_model_subset',err_msg) ) RETURN
        END IF
     END IF
     CALL mpp_open(iunit, 'input.nml', form=MPP_ASCII, action=MPP_RDONLY)
-    READ (iunit,diag_manager_nml,iostat=io_status)
+    READ (iunit, diag_manager_nml, iostat=io_status)
     IF ( mpp_pe() == mpp_root_pe() ) THEN 
        WRITE (stdlog_unit, diag_manager_nml)
     END IF
     IF ( io_status > 0 ) THEN
        IF ( fms_error_handler('diag_manager_init', 'Error reading diag_manager_nml', err_msg) ) RETURN
     END IF
-    CALL mpp_close (iunit)
+    CALL mpp_close(iunit)
+
+    ! Issue note about using the CMOR missing value.
+    IF ( use_cmor ) THEN 
+       record = ''
+       WRITE (record,'(ES8.1E2)') CMOR_MISSING_VALUE
+       CALL error_mesg('diag_manager_mod::diag_manager_init', 'Usin&
+            &g CMOR missing value ('//TRIM(record)//').', NOTE)
+    END IF
+
+    ! How to handle Out of Range Warnings.
+    IF ( oor_warnings_fatal ) THEN
+       oor_warning = FATAL
+       CALL error_mesg('diag_manager_mod::diag_manager_init', 'Out &
+            &of Range warnings are fatal.', NOTE)
+    ELSEIF ( .NOT.issue_oor_warnings ) THEN
+       CALL error_mesg('diag_manager_mod::diag_manager_init', 'Out &
+            &of Range warnings will be ignored.', NOTE)
+    END IF
+
     IF ( mix_snapshot_average_fields ) THEN
        IF ( mpp_pe() == mpp_root_pe() ) CALL mpp_error(WARNING,'Namelist '//&
             & 'mix_snapshot_average_fields = true will cause ERROR in time coordinates '//&
@@ -2242,13 +2368,20 @@ CONTAINS
        IF ( fms_error_handler('diag_manager_init', 'file diag_table nonexistent', err_msg) ) RETURN
     END IF
     CALL mpp_open(iunit, 'diag_table', action=MPP_RDONLY)
+
     ! Read in the global file labeling string
-    READ (iunit,*,END = 99,err=99) global_descriptor
-
+    READ (UNIT=iunit, FMT=*, IOSTAT=io_status) global_descriptor
+    IF ( io_status /= 0 ) THEN
+       IF ( fms_error_handler('diag_manager_init', 'error reading the global descriptor from the diagnostic table.', err_msg) ) RETURN
+    END IF
+    
     ! Read in the base date
-    READ (iunit,*,END = 99,err = 99) base_year, base_month, base_day, &
+    READ (UNIT=iunit, FMT=*, IOSTAT=io_status) base_year, base_month, base_day, &
          & base_hour, base_minute, base_second
-
+    IF ( io_status /= 0 ) THEN
+       IF ( fms_error_handler('diag_manager_init', 'error reading the base date from the diagnostic table.', err_msg) ) RETURN
+    END IF
+    
     ! Set up the time type for base time
     IF ( get_calendar_type() /= NO_CALENDAR ) THEN
        IF ( base_year==0 .OR. base_month==0 .OR. base_day==0 ) THEN
@@ -2265,209 +2398,285 @@ CONTAINS
     END IF
 
     IF ( mpp_pe() == mpp_root_pe() ) THEN
-       WRITE (stdlog_unit,95) base_year, TRIM(amonth), base_day, &
+       WRITE (stdlog_unit,'("base date used = ",I4,1X,A,2I3,2(":",I2.2)," gmt")') base_year, TRIM(amonth), base_day, &
             & base_hour, base_minute, base_second
     END IF
-95  FORMAT ('base date used = ',i4,1x,a,2i3,2(':',i2.2),' gmt')
 
     ALLOCATE(pelist(mpp_npes()))
     CALL mpp_get_current_pelist(pelist, pelist_name)
 
-    nrecs=0
-    nfiles=0
-    IF( debug_diag_manager .AND. mpp_pe() == mpp_root_pe() ) THEN
-       WRITE(stdout_unit,*) ' '
-       WRITE(stdout_unit,*) '******** Summary of output FILES information from diag_manager *********'
-       WRITE(stdout_unit,*) ' '
-       WRITE(stdout_unit,*) 'file name     ', '       saving frequency   ', '      saving frequency unit'
-       WRITE(stdout_unit,*) ' '
-    END IF
-    DO WHILE (nfiles <= max_files)
-       file_freq_present=.FALSE.
-       file_start_present=.FALSE.
-       file_duration_present=.FALSE.
-       READ (iunit,'(a)',END=86,err=85) record
-       nrecs = nrecs+1
-       IF ( record(1:1) == '#' ) CYCLE   
-       record_len = LEN_TRIM(record)
-       IF(record_len == 0) CYCLE
-       time_pos = MAX(INDEX(record,'time'), INDEX(record,'Time'))
-       ! We are only looking for time axis here.
-       IF ( time_pos == 0 ) CYCLE
-
-       !-- NZ   
-       !-- Even this can be problematic if one of the fields in table contains the string "time".
-       !-- This part of the code (sparcing the diag_table) needs enhancements.
-       !-- How about designing a .xml format for diag_table?
-       !-- Fortran is not good for regexp. How about a Perl preprocessing of the table?
-       record_tail = record(time_pos+6:record_len)
-       record_tail_len = LEN_TRIM(record_tail)
-       IF ( time_pos + 7 < record_len ) THEN
-          file_freq_present = .TRUE.
-          IF ( INDEX(record_tail,'s',back=.TRUE.) == INDEX(record_tail,'s') ) THEN         
-             IF ( INDEX(record_tail,'s') + 3 < record_tail_len ) file_start_present = .TRUE.
-          ELSE
-             file_start_present = .TRUE.
-             file_duration_present = .TRUE.
+    ! Begin the line counter.  Since Fortran doesn't have a simple way
+    ! to keep track of line numbers, we need to 1) find the next
+    ! non-blank line. 2) rewind the file. 3) search, while counting
+    ! lines, for the same line found in (1), and 4) backspace one line (since it may
+    ! be a file description line) and then continue the file parsing.
+    record_len = 0
+    DO WHILE ( record_len == 0 )
+       ! Find the next non-blank line.
+       ! Ignoring IOSTAT.  Using it only to keep program from terminating.
+       READ (UNIT=iunit, FMT='(A)', IOSTAT=io_status) record1
+       IF ( io_status == 0 ) THEN 
+          record_len = LEN_TRIM(record1)
+       ELSE 
+          IF ( mpp_pe() == mpp_root_pe() ) THEN
+             CALL error_mesg("diag_manager_mod::diag_manager_init",&
+                  & "Problem reading diag_table, line numbers in warnings&
+                  & may be incorrect.", WARNING)
           END IF
+          EXIT
        END IF
-       ! Start reading file information  
-       IF( .NOT.file_freq_present ) THEN
-          READ (record,*,err=85,END=85) textA%name, textA%output_freq, textA%output_freq_units,&
-           & textA%format, textA%time_units, textA%long_name   
-       ELSEIF ( .NOT.file_start_present ) THEN
-          READ (record,*,err=85,END=85) textA%name,textA%output_freq,textA%output_freq_units,&
-               & textA%format,textA%time_units,textA%long_name,textA%new_file_freq,textA%new_file_freq_units
-       ELSEIF ( .NOT.file_duration_present ) THEN
-          READ(record,*,err=85,END=85) textA%name,textA%output_freq,textA%output_freq_units,&
-               & textA%format,textA%time_units,textA%long_name,textA%new_file_freq,&
-               & textA%new_file_freq_units, textA%start_time_s
-       ELSE
-          READ (record,*,err=85,END=85) textA
-       END IF
-       ! does the record contain start time for the file ???   
-       IF ( file_start_present ) THEN
-          READ (textA%start_time_s,*,END=85,err=85) yr, mo, dy, hr, mi, sc
-          start_time = set_date(yr, mo, dy, hr, mi, sc, err_msg=err_msg_local)
-          IF ( err_msg_local /= '' ) THEN
-             IF ( fms_error_handler('diag_manager_init', err_msg_local, err_msg) ) RETURN
-          END IF
-       ELSE
-          start_time = base_time
-       END IF
-
-       ! test file format to make sure its OK
-       IF ( textA%format .GT. 2 .OR. textA%format .LT. 1 ) CYCLE
-       IF( diag_subset_output==DIAG_OTHER .AND. VERIFY('ocean',lowercase(textA%name)) == 0 )CYCLE
-       IF( diag_subset_output==DIAG_OCEAN .AND. VERIFY('ocean',lowercase(textA%name)) /= 0 )CYCLE
-       nfiles = nfiles+1
-       time_units = 0
-       output_freq_units = 0
-       new_file_freq_units = 0
-       file_duration_units = 0
-       DO j = 1, SIZE(time_unit_list(:))
-          IF ( textA%time_units == time_unit_list(j) ) time_units = j
-          IF ( textA%output_freq_units == time_unit_list(j) ) output_freq_units = j
-          IF ( file_freq_present ) THEN
-             IF ( textA%new_file_freq_units == time_unit_list(j) ) new_file_freq_units = j
-          END IF
-          IF ( file_duration_present ) THEN
-             IF ( textA%file_duration_units == time_unit_list(j) ) file_duration_units = j
-          END IF
-       END DO
-       IF ( time_units == 0 ) THEN
-          IF ( fms_error_handler('diag_manager_init', 'invalid time units, check time unit in diag_table', err_msg) ) RETURN
-       END IF
-       IF ( output_freq_units == 0 ) THEN
-          IF ( fms_error_handler('diag_manager_init', 'invalid output frequency units, check diag table', err_msg) ) RETURN
-       END IF
-       IF ( file_freq_present .AND. new_file_freq_units == 0 ) THEN
-          IF ( fms_error_handler('diag_manager_init', 'invalid new_file frequency units, check diag table', err_msg) ) RETURN
-       END IF
-       IF ( file_duration_present .AND. file_duration_units == 0 ) THEN
-          IF ( fms_error_handler('diag_manager_init', 'invalid new_file frequency units, check diag table', err_msg) ) RETURN
-       END IF
-
-       ! remove trailing .nc extension from file name 
-       name_len = LEN_TRIM(textA%name)
-       IF ( name_len > 2 ) THEN
-          IF ( textA%name(name_len-2:name_len) == '.nc' ) THEN
-             textA%name = textA%name(1:name_len-3)
-             name_len = name_len - 3
-          END IF
-       END IF
-       ! add optional suffix based on pelist name
-       IF ( append_pelist_name ) THEN
-          textA%name(name_len+1:) = TRIM(pelist_name)
-       END IF
-
-       !append a string to the filename
-       IF ( LEN_TRIM(filename_appendix) > 0 ) textA%name(name_len+1:) = TRIM(filename_appendix)
-   
-       ! assign values to file_types
-       IF ( file_freq_present ) THEN
-          IF ( file_duration_present ) THEN
-             file_duration = textA%file_duration
-          ELSE
-             file_duration = textA%new_file_freq
-             file_duration_units = new_file_freq_units
-          END IF
-          CALL init_file(textA%name, textA%output_freq, output_freq_units,&
-               & textA%format, time_units, textA%long_name, 1, textA%new_file_freq, new_file_freq_units, start_time, &
-               & file_duration, file_duration_units)
-       ELSE
-          CALL init_file(textA%name, textA%output_freq, output_freq_units,&
-               & textA%format, time_units, textA%long_name, 1)
-       END IF
-       IF ( debug_diag_manager .AND. mpp_pe() == mpp_root_pe() ) WRITE (stdout_unit, 1) textA%name, textA%output_freq, textA%output_freq_units 
-
-85     CONTINUE
     END DO
-    IF ( fms_error_handler('diag_manager_init', 'max_files exceeded, increase max_files', err_msg) ) RETURN
-86  CONTINUE
-1   FORMAT(1x,A21, 4x,I5,4x,A30)
-    IF ( mpp_pe() == mpp_root_pe() ) WRITE (stdout_unit, *) ' '
-    IF ( debug_diag_manager .AND. mpp_pe() == mpp_root_pe() ) WRITE (stdout_unit, *) '************************************************************************'
+    
     REWIND(iunit)
 
-    IF ( debug_diag_manager .AND. mpp_pe() == mpp_root_pe() ) THEN
-       WRITE (stdout_unit, *) ' '
-       WRITE (stdout_unit, *) '******* Summary of output FIELDS information from diag_manager *********'
-       WRITE (stdout_unit, *) ' '
-       WRITE (stdout_unit, *) 'module         ',' field name      ', '   file name      ', '    time method '
-       WRITE (stdout_unit, *) ' '
-    END IF
-
-    nfields=0
-    nrecs=0
-    DO WHILE ( nfields <= max_output_fields )
-       READ (iunit,'(a)',END=94,err=93) record
-       nrecs=nrecs+1
-       IF ( record(1:1) == '#' ) CYCLE
-       READ (record,*,END=93,err=93) textB
-       IF (textB%pack .GT. 8 .OR. textB%pack .LT. 1 ) CYCLE
-       IF ( diag_subset_output==DIAG_OTHER .AND. VERIFY('ocean', lowercase(textB%name)) == 0 )CYCLE
-       IF ( diag_subset_output==DIAG_OCEAN .AND. VERIFY('ocean', lowercase(textB%name)) /= 0 )CYCLE
-       IF ( textB%spatial_ops /= 'none' ) READ (textB%spatial_ops,*,END=93,err=92) local_coord
-       nfields=nfields+1
-       !   assign values to field_types
-       CALL init_input_field(textB%module_name, textB%field_name, 1)
-       !   remove trailing .nc extension
-       name_len= LEN_TRIM(textB%name)
-       IF ( textB%name(name_len-2:name_len) == '.nc' ) THEN
-          textB%name = textB%name(1:name_len-3)
-          name_len = name_len-3
+    ! Start line counter and look for matching line.
+    line_num = 0
+    record = ''
+    DO WHILE ( record /= record1 )
+       READ ( UNIT=iunit, FMT='(A)', IOSTAT=io_status) record
+       IF ( io_status == 0 ) THEN 
+          line_num = line_num + 1
+       ELSE 
+          IF ( mpp_pe() == mpp_root_pe() ) THEN
+             CALL error_mesg("diag_manager_mod::diag_manager_init",&
+                  & "Problem reading diag_table, line numbers in warnings&
+                  & may be incorrect.", WARNING)
+          END IF
+          EXIT
        END IF
-       ! add optional suffix based on pelist name
-       IF ( append_pelist_name ) THEN
-          textB%name(name_len+1:) = TRIM(pelist_name)
-       END IF
-
-       !append a string to the filename
-       IF ( LEN_TRIM(filename_appendix) > 0 ) textB%name(name_len+1:) = TRIM(filename_appendix)
-
-       IF ( TRIM(textB%spatial_ops) == 'none' ) THEN
-          CALL init_output_field(textB%module_name, textB%field_name, textB%output_name,&
-               & textB%name, textB%time_method, textB%pack, 1)
-          IF ( debug_diag_manager )&
-               & WRITE (stdout_unit,2) textB%module_name, textB%field_name, textB%name, textB%time_method 
-       ELSE
-          CALL init_output_field(textB%module_name, textB%field_name, textB%output_name,&
-               & textB%name, textB%time_method, textB%pack, 1, local_coord)
-          IF ( debug_diag_manager )&
-               WRITE (stdout_unit,3) textB%module_name, textB%field_name, textB%name, textB%time_method,&
-               & local_coord%xbegin, local_coord%xend, local_coord%ybegin, local_coord%yend, local_coord%zbegin, local_coord%zend
-       END IF
-       CYCLE
-92     WRITE (stdout_unit,*) 'diag_manager_init: Error in local options. Skipping this line in diag_table.'//TRIM(textB%spatial_ops)
-93     CONTINUE
     END DO
-    IF ( fms_error_handler('diag_manager_init', 'max_output_fields exceeded, increase it via diag_manager_nml', err_msg) ) RETURN
-94  CONTINUE
+
+    ! Found matching line.  Backspace since this may actually be a file
+    ! description line.  Also, count back one.
+    BACKSPACE(iunit)
+    line_num = line_num - 1
+
+    nrecs=0
+    nfiles=0
+    nfields=0
+    parser: DO WHILE ( io_status >= 0 )
+       ! Read in the entire line from the file.
+       ! If there is a read error, give a warning, and
+       ! cycle the parser loop.
+       READ (iunit, FMT='(A)', IOSTAT=io_status) record
+       ! Increase line counter, and put in string for use in warning/error messages.
+       line_num = line_num + 1
+       WRITE (line_number, '(I5)') line_num
+
+       IF ( io_status > 0 ) THEN
+          ! <ERROR STATUS="WARNING">
+          !   Problem reading the diag_table (line: <line_number>)
+          ! </ERROR>
+          IF ( mpp_pe() == mpp_root_pe() ) &
+               & CALL error_mesg("diag_manager_mod::diag_manager_init",&
+               & "Problem reading the diag_table (line:" //line_number//").&
+               &  Skipping line.", WARNING)
+          CYCLE parser
+       ELSE IF ( io_status < 0 ) THEN
+          EXIT parser
+       END IF
+       
+
+       ! How long is the read in string?
+       record_len = LEN_TRIM(record)
+
+       ! ignore blank lines and  lines the begin with a '#'
+       IF ( record(1:1) == '#' .OR. record_len == 0 ) CYCLE parser
+
+       ! Check to see if the string is a file or field description.
+       ! If the sixth (6) position is '[Tt]ime' then we have a file
+       ! description.
+       record_start = 1 ! initial start position in the record string
+       isa_file: DO record_count = 1, SIZE(record_data)
+          ! Separate the data using the comma
+          record_end = INDEX(record(record_start:record_len), ',')
+
+          ! Have we reached the end of the line?
+          IF ( record_start > record_len ) EXIT isa_file
+
+          ! If there was more data, but no more commas
+          IF ( record_end == 0 ) THEN
+             record_end = record_len
+          ELSE
+             ! The 2 below comes from the string starting at 1, and the comma position.
+             record_end = record_start + record_end - 2
+          END IF
+          
+          record_data(record_count) = TRIM(record(record_start:record_end))
+          record_start = record_end + 2 ! the next position in the record string
+       END DO isa_file
+       
+       ! Do we have a file description (only if record_data(6) is 'time')
+       init: IF ( INDEX(lowercase(record_data(6)),'time') /= 0 ) THEN
+          ! Clear out any old results.  This only needs to be done for a subset of variables in 
+          textA%new_file_freq = 0
+          textA%new_file_freq_units = ''
+          textA%start_time_s = ''
+          textA%file_duration = 0
+          textA%file_duration_units = ''
+
+          ! Read in the new results.
+          READ (record, FMT=*, IOSTAT=record_iostat) textA%name, textA%output_freq, textA%output_freq_units,&
+               & textA%output_format, textA%time_units, textA%long_name, textA%new_file_freq, textA%new_file_freq_units,&
+               & textA%start_time_s, textA%file_duration, textA%file_duration_units
+          IF ( record_iostat > 0 ) THEN
+             ! <ERROR STATUS="WARNING">
+             !   Incorrect file description format in the diag_table
+             !   (line: <line_number>).  Ignoring file.
+             ! </ERROR>
+             IF ( mpp_pe() == mpp_root_pe() ) &
+                  & CALL error_mesg("diag_manager_mod::diag_manager_init",&
+                  & "Incorrect file description format in the diag_table (line:"&
+                  &//line_number//").  Ignoring file.", WARNING)
+             CYCLE parser
+          END IF
+          
+          ! Fix the file name
+          textA%name = fix_file_name(TRIM(textA%name))
+
+          ! Verify values / formats are correct
+          IF ( textA%output_format > 2 .OR. textA%output_format < 1 ) THEN
+             ! <ERROR STATUS="WARNING">
+             !   Format value out of range for file description in the
+             !   diag_table (line: <line_number>).  Ignoring file.
+             ! </ERROR>
+             IF ( mpp_pe() == mpp_root_pe() ) &
+                  &CALL error_mesg("diag_manager_mod::diag_manager_init",&
+                  & "Format value out of range for file description in the diag_table (line:"&
+                  &//line_number//").  Ignoring file.", WARNING)
+             CYCLE parser
+          END IF
+          
+          IF ( diag_subset_output == DIAG_OTHER .AND. VERIFY('ocean', lowercase(textA%name)) == 0 ) CYCLE parser
+          IF ( diag_subset_output == DIAG_OCEAN .AND. VERIFY('ocean', lowercase(textA%name)) /= 0 ) CYCLE parser
+
+          ! check for known units
+          time_units = find_unit_ivalue(textA%time_units)
+          output_freq_units = find_unit_ivalue(textA%output_freq_units)
+          new_file_freq_units = find_unit_ivalue(textA%new_file_freq_units)
+          file_duration_units = find_unit_ivalue(textA%file_duration_units)
+          ! Verify the units are valid
+          IF ( time_units < 0 ) THEN
+             IF ( fms_error_handler('diag_manager_init', &
+                  &'invalid time axis units, check the diag_table', err_msg) ) RETURN
+          END IF
+          IF ( output_freq_units < 0 ) THEN
+             IF ( fms_error_handler('diag_manager_init',&
+                  & 'invalid output frequency units, check the diag_table', err_msg) ) RETURN
+          END IF
+          IF ( new_file_freq_units < 0 .AND. textA%new_file_freq > 0 ) THEN
+             IF ( fms_error_handler('diag_manager_init',&
+                  & 'invalid new file frequency units, check the diag_table', err_msg) ) RETURN
+          END IF
+          IF ( file_duration_units < 0 .AND. textA%file_duration > 0 ) THEN
+             IF ( fms_error_handler('diag_manager_init',&
+                  & 'invalid file duration units, check the diag_table', err_msg) ) RETURN
+          END IF
+          
+          ! Check for file frequency, start time and duration presence.
+          ! This will determine how the init subroutine is called.
+          new_file_freq_present: IF ( textA%new_file_freq > 0 ) THEN ! New file frequency present.
+             IF ( LEN_TRIM(textA%start_time_s) > 0 ) THEN ! start time present
+                READ (textA%start_time_s, FMT=*, IOSTAT=record_iostat) yr, mo, dy, hr, mi, sc
+                ! <ERROR STATUS="WARNING">
+                !   Invalid start time in the file description in the
+                !   diag_table (line: <line_number>).  Ignoring file.
+                ! </ERROR>
+                IF ( record_iostat /= 0 ) THEN 
+                   IF ( mpp_pe() == mpp_root_pe() ) &
+                     & CALL error_mesg("diag_manager_mod::diag_manager_init",&
+                     & "Invalid start time in the file description in the diag_table (line:"&
+                     &//line_number//").  Ignoring file.", WARNING)
+                   CYCLE parser
+                END IF
+                start_time = set_date(yr, mo, dy, hr, mi, sc, err_msg=err_msg_local)
+                IF ( err_msg_local /= '' ) THEN
+                   IF ( fms_error_handler('diag_manager_init', err_msg_local, err_msg) ) RETURN
+                END IF
+                IF ( file_duration <= 0 ) THEN ! file_duration not present
+                   textA%file_duration = textA%new_file_freq
+                   file_duration_units = new_file_freq_units
+                END IF
+             ELSE
+                start_time = base_time
+                textA%file_duration = textA%new_file_freq
+                file_duration_units = new_file_freq_units
+             END IF
+             ! Call the init_file subroutine
+             ! The '1' is for the tile_count
+             CALL init_file(textA%name, textA%output_freq, output_freq_units, textA%output_format, time_units,&
+                  & textA%long_name, 1, textA%new_file_freq, new_file_freq_units, start_time,&
+                  & textA%file_duration, file_duration_units)
+          ELSE
+             CALL init_file(textA%name, textA%output_freq, output_freq_units, textA%output_format, time_units,&
+                  & textA%long_name, 1)
+          END IF new_file_freq_present
+
+          ! Increment number of files
+          nfiles = nfiles + 1
+       ELSE ! We have a field.
+          READ (record, FMT=*, IOSTAT=record_iostat) textB%module_name, textB%field_name, textB%output_name,&
+               & textB%name, textB%time_sampling, textB%time_method, textB%spatial_ops, textB%pack
+          IF ( record_iostat /= 0 ) THEN
+             ! <ERROR STATUS="WARNING">
+             !   Field description format is incorrect in the diag_table (line: <line_number>).  Ignoring field.
+             ! </ERROR>
+             IF ( mpp_pe() == mpp_root_pe() ) &
+                  &CALL error_mesg('diag_manager_mod::diag_manager_init',&
+                  & 'Field description format is incorrect in the diag_table (line:'&
+                  &//line_number//').  Ignoring field.', WARNING)
+             CYCLE parser
+          END IF
+          
+          ! Fix the file name
+          ! Removes any added '.nc' and appends additional information.
+          textB%name = fix_file_name(Trim(textB%name))
+
+          IF ( diag_subset_output == DIAG_OTHER .AND. VERIFY('ocean', lowercase(textB%name)) == 0 ) CYCLE parser
+          IF ( diag_subset_output == DIAG_OCEAN .AND. VERIFY('ocean', lowercase(textB%name)) /= 0 ) CYCLE parser
+
+          IF ( textB%pack > 8 .OR. textB%pack < 1 ) THEN
+             ! <ERROR STATUS="WARNING">
+             !   Packing is out of range for the field description in
+             !   the diag_table (line: <line_number>).  Ignoring field.
+             ! </ERROR>
+             IF ( mpp_pe() == mpp_root_pe() )&
+                  & CALL error_mesg("diag_manager_mod::diag_manager_init",&
+                  & "Packing is out of range for the field description in the diag_table (line:"&
+                  &//line_number//").  Ignoring field.", WARNING)
+             CYCLE parser
+          END IF
+          
+          ! Initialize the input and output field
+          IF ( lowercase(TRIM(textB%spatial_ops)) == 'none' ) THEN
+             CALL init_input_field(textB%module_name, textB%field_name, 1)
+             CALL init_output_field(textB%module_name, textB%field_name, textB%output_name, textB%name,&
+                  & textB%time_method, textB%pack, 1)
+          ELSE 
+             READ (textB%spatial_ops, FMT=*, IOSTAT=record_iostat) local_coord
+             IF ( record_iostat /= 0 ) THEN
+                ! <ERROR STATUS="WARNING">
+                !   Error in spatial options for the field
+                !   description in the diag_table (line: <line_number>).
+                !   Ignoring field.
+                ! </ERROR>
+                IF ( mpp_pe() == mpp_root_pe() )&
+                     & CALL error_mesg("diag_manager_mod::diag_manager_init",&
+                     & "Error in spatial options for the field description in the diag_table (line:"&
+                     &//line_number//").  Ignoring field.", WARNING)
+                CYCLE parser
+             END IF
+             CALL init_input_field(textB%module_name, textB%field_name, 1)
+             CALL init_output_field(textB%module_name, textB%field_name, textB%output_name, textB%name,&
+                  & textB%time_method, textB%pack, 1, local_coord)
+          END IF
+          ! Increment number of fields
+          nfields = nfields + 1
+       END IF init
+    END DO parser
+
     CALL close_file(iunit)
-2   FORMAT(1x,A15,1x,A15,4x,A21,A10)
-3   FORMAT(1x,A15,1x,A15,4x,A21,A10,F6.1,F6.1,F6.1,F6.1,F8.1,F8.1)
-    IF ( debug_diag_manager ) WRITE (stdout_unit,*) '************************************************************************'
+
     ! check duplicate output_fields in the diag_table
     CALL check_duplicate_output_fields(err_msg=err_msg_local)
     IF ( err_msg_local /= '' ) THEN
@@ -2485,8 +2694,6 @@ CONTAINS
     ! create axis_id for scalars here
     null_axis_id = diag_axis_init('scalar_axis', (/0./), 'none', 'X', 'none')
     RETURN
-99  CONTINUE
-    IF ( fms_error_handler('diag_manager_init', 'error reading table', err_msg) ) RETURN
   END SUBROUTINE diag_manager_init
   ! </SUBROUTINE>
 
@@ -2647,7 +2854,94 @@ CONTAINS
     END IF
   END FUNCTION init_diurnal_axis
   ! </FUNCTION>
+  
+  ! <PRIVATE>
+  ! <FUNCTION NAME="find_unit_ivalue">
+  !   <OVERVIEW>
+  !     Return the integer value for the given time unit.
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     INTEGER FUNCTION find_unit_ivalue(unit_string)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     Returns the corresponding integer value for the given time unit.
+  !     <UL>
+  !       <LI> seconds = 1 </LI>
+  !       <LI> minutes = 2 </LI>
+  !       <LI> hours = 3 </LI>
+  !       <LI> days = 4 </LI>
+  !       <LI> months = 5 </LI>
+  !       <LI> years = 6 </LI>
+  !       <LI> unknown = -1 </LI>
+  !     </UL>
+  !   </DESCRIPTION>
+  !   <IN NAME="unit_string" TYPE="CHARACTER(len=*)">String containing the unit.</IN>
+  INTEGER FUNCTION find_unit_ivalue(unit_string)
+       CHARACTER(len=*), INTENT(IN) :: unit_string !< Input string, containing the unit.
 
+    SELECT CASE (TRIM(unit_string))
+    CASE ('seconds')
+       find_unit_ivalue = 1
+    CASE ('minutes')
+       find_unit_ivalue = 2
+    CASE ('hours')
+       find_unit_ivalue = 3
+    CASE ('days')
+       find_unit_ivalue = 4
+    CASE ('months') 
+       find_unit_ivalue = 5
+    CASE ('years')
+       find_unit_ivalue = 6
+    CASE DEFAULT
+       find_unit_ivalue = -1 ! Return statement if an incorrect / unknown unit used.
+    END SELECT
+  END FUNCTION find_unit_ivalue
+  ! </FUNCTION>
+  ! </PRIVATE>
+
+  ! <PRIVATE>
+  ! <FUNCTION NAME="fix_file_name(file_name_string)">
+  !   <OVERVIEW>
+  !     Fixes the file name for use with diagnostic file and field initializations.
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     CHARACTER(len=128) FUNCTION fix_file_name(file_name_string)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     Removes any trailing '.nc' and appends to the file name additional information
+  !     depending on if we are running an ensemble, or requesting append_pelist_name.
+  !     
+  !     Presently, the ensemble appendix will override the append_pelist_name variable.
+  !   </DESCRIPTION>
+  !   <IN NAME="file_name_string" TYPE="CHARACTER(len=*)">String containing the file name from the diag_table.</IN>
+  CHARACTER(len=128) FUNCTION fix_file_name(file_name_string)
+    CHARACTER(len=*), INTENT(IN) :: file_name_string
+
+    INTEGER :: file_name_len
+
+    fix_file_name = file_name_string ! Default return value
+
+    file_name_len = LEN_TRIM(file_name_string)
+
+    ! Remove trailing '.nc' from the file_name, and append suffixes
+    IF ( file_name_len > 2 ) THEN 
+       IF ( file_name_string(file_name_len-2:file_name_len) == '.nc' ) THEN
+          fix_file_name = file_name_string(1:file_name_len-3)
+          file_name_len = file_name_len - 3
+       END IF
+    END IF
+       
+    ! If using ensembles, then append the ensemble information
+    ! Or add the optional suffix based on the pe list name if the
+    ! append_pelist_name == .TRUE.
+    IF ( LEN_TRIM(filename_appendix) > 0 ) THEN 
+       fix_file_name(file_name_len+1:) = TRIM(filename_appendix)    
+    ELSE IF ( append_pelist_name ) THEN
+       fix_file_name(file_name_len+1:) = TRIM(pelist_name)
+    END IF
+  END FUNCTION fix_file_name
+  ! </FUNCTION>
+  ! </PRIVATE>
 END MODULE diag_manager_mod
 
 ! <INFO>
@@ -2884,8 +3178,8 @@ PROGRAM test
   INTEGER :: nlon1, nlat1, nlon2, nlat2
   INTEGER, DIMENSION(2) :: layout = (/0,0/)
   INTEGER :: test_number=1
-  INTEGER            :: nlon=18, nlat=18, nlev=2
-  INTEGER            :: io_layout(2) = (/0,0/) 
+  INTEGER :: nlon=18, nlat=18, nlev=2
+  INTEGER :: io_layout(2) = (/0,0/) 
   TYPE(time_type) :: Time
   LOGICAL :: used, test_successful
   CHARACTER(len=256) :: err_msg

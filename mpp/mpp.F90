@@ -1092,8 +1092,11 @@ private
   integer, allocatable :: request_recv(:)
 ! if you want to save the non-root PE information uncomment out the following line
 ! and comment out the assigment of etcfile to '/dev/null'
-!  character(len=32)    :: etcfile='._mpp.nonrootpe.msgs'
+#ifdef NO_DEV_NULL
+  character(len=32)    :: etcfile='._mpp.nonrootpe.msgs'
+#else
   character(len=32)    :: etcfile='/dev/null'
+#endif
 
 #ifdef SGICRAY
   integer :: in_unit=100, out_unit=101, err_unit=102 !see intro_io(3F): to see why these values are used rather than 5,6,0
@@ -1136,7 +1139,7 @@ private
   character(len=128), public :: version= &
        '$Id mpp.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: quebec_200910 $'
+       '$Name: riga $'
 
   contains
 #include <system_clock.h>

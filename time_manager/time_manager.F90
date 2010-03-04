@@ -178,8 +178,8 @@ end interface
 
 !======================================================================
 
-character(len=128) :: version='$Id: time_manager.F90,v 17.0 2009/07/21 03:21:58 fms Exp $'
-character(len=128) :: tagname='$Name: quebec_200910 $'
+character(len=128) :: version='$Id: time_manager.F90,v 18.0 2010/03/02 23:58:36 fms Exp $'
+character(len=128) :: tagname='$Name: riga $'
 logical :: module_is_initialized = .false.
 
 !======================================================================
@@ -3257,7 +3257,7 @@ function date_to_string(time, err_msg)
   if (yr <= 9999) then
      write(date_to_string,'(I4.4,I2.2,I2.2,".",I2.2,I2.2,I2.2)') yr, mon, day, hr, min, sec
   else
-     write(err_msg_local, '(a,i,a)') 'year = ', yr, ' should be less than 10000'
+     write(err_msg_local, '(a,i4.4,a)') 'year = ', yr, ' should be less than 10000'
      if(error_handler('function date_to_string', err_msg_local, err_msg)) return
   endif
 

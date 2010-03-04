@@ -249,7 +249,8 @@ double poly_area(const double x[], const double y[], int n)
     int ip = (i+1) % n;
     double dx = (x[ip]-x[i]);
     double lat1, lat2;
-
+    double dy, dat;
+    
     lat1 = y[ip];
     lat2 = y[i];
     if(dx > M_PI)  dx = dx - 2.0*M_PI;
@@ -258,8 +259,15 @@ double poly_area(const double x[], const double y[], int n)
     
     if ( fabs(lat1-lat2) < SMALL_VALUE) /* cheap area calculation along latitude */
       area -= dx*sin(0.5*(lat1+lat2));
-    else
+    else {
+#ifdef fix_truncate      
+      dy = 0.5*(lat1-lat2);
+      dat = sin(dy)/dy;
+      area -= dx*sin(0.5*(lat1+lat2))*dat;
+#else
       area += dx*(cos(lat1)-cos(lat2))/(lat1-lat2);
+#endif
+    }
   }
   return area*RADIUS*RADIUS;
 

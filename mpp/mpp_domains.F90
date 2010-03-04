@@ -128,6 +128,7 @@ module mpp_domains_mod
   use mpp_mod,                only : mpp_clock_id, mpp_clock_begin, mpp_clock_end
   use mpp_mod,                only : mpp_max, mpp_min, mpp_sum, mpp_get_current_pelist, mpp_broadcast
   use mpp_mod,                only : mpp_sync, mpp_init, mpp_malloc, lowercase
+  use mpp_memutils_mod,       only : mpp_memuse_begin, mpp_memuse_end
   use mpp_pset_mod, only: mpp_pset_init
   implicit none
   private
@@ -159,19 +160,21 @@ module mpp_domains_mod
   public :: mpp_get_memory_domain, mpp_get_domain_shift, mpp_domain_is_tile_root_pe
   public :: mpp_get_tile_id, mpp_get_domain_extents, mpp_get_current_ntile, mpp_get_ntile_count
   public :: mpp_get_refine_overlap_number, mpp_get_mosaic_refine_overlap
-  public :: mpp_get_tile_list, mpp_get_global_domains
+  public :: mpp_get_tile_list
   public :: mpp_get_tile_npes
   public :: mpp_get_num_overlap, mpp_get_overlap
   public :: mpp_get_io_domain, mpp_get_domain_pe, mpp_get_domain_tile_root_pe
   public :: mpp_get_domain_name, mpp_get_io_domain_layout
+  public :: mpp_copy_domain, mpp_set_domain_symmetry
+  public :: mpp_get_update_pelist, mpp_get_update_size
 
   !--- public interface from mpp_domains_reduce.h
   public :: mpp_global_field, mpp_global_max, mpp_global_min, mpp_global_sum
-  public :: mpp_global_sum_tl, mpp_global_sum_ad
+!  public :: mpp_global_sum_tl, mpp_global_sum_ad
   !--- public interface from mpp_domains_misc.h
   public :: mpp_broadcast_domain, mpp_domains_init, mpp_domains_exit, mpp_redistribute
   public :: mpp_update_domains, mpp_check_field
-  public :: mpp_update_domains_ad   ! bnc
+!  public :: mpp_update_domains_ad   ! bnc
   public :: mpp_get_boundary
   !--- public interface from mpp_domains_define.h
   public :: mpp_define_layout, mpp_define_domains, mpp_modify_domain, mpp_define_mosaic
@@ -180,7 +183,8 @@ module mpp_domains_mod
   public :: mpp_compute_extent
 
   integer, parameter :: NAME_LENGTH = 64
-
+  integer, parameter :: MAXLIST = 8
+ 
   !--- data types used mpp_domains_mod.
   type domain_axis_spec        !type used to specify index limits along an axis of a domain
      private
@@ -195,13 +199,29 @@ module mpp_domains_mod
      type(domain1D), pointer :: list(:) =>NULL()
      integer :: pe               !PE to which this domain is assigned
      integer :: pos              !position of this PE within link list, i.e domain%list(pos)%pe = pe
-     integer :: shift            !Always=0 for non-symmetry domain and equal 0 or 1 for symmetry domain depending on position.
-     integer :: goffset, loffset !needed for mpp_global_sum
+     integer :: goffset, loffset !needed for global sum
   end type domain1D
 
-  type overlapSpec
+  type domain1D_spec
+     private
+     type(domain_axis_spec) :: compute
+     integer                :: pos
+  end type domain1D_spec
+       
+  type domain2D_spec
+     private
+     type(domain1D_spec), pointer :: x(:)       => NULL() ! x-direction domain decomposition
+     type(domain1D_spec), pointer :: y(:)       => NULL() ! x-direction domain decomposition
+     integer,        pointer :: tile_id(:) => NULL() ! tile id of each tile
+     integer                 :: pe                   ! PE to which this domain is assigned
+     integer                 :: pos                  ! position of this PE within link list
+     integer                 :: tile_root_pe         ! root pe of tile.
+  end type domain2D_spec
+
+  type overlap_type
      private
      integer                  :: count = 0                 ! number of ovrelapping
+     integer                  :: pe
      integer,         pointer :: tileMe(:)       => NULL() ! my tile id for this overlap
      integer,         pointer :: tileNbr(:)      => NULL() ! neighbor tile id for this overlap
      integer,         pointer :: is(:)           => NULL() ! starting i-index 
@@ -217,27 +237,25 @@ module mpp_domains_mod
      logical,         pointer :: is_refined(:)   => NULL() ! indicate if the overlap is refined or not.
      integer,         pointer :: index(:)        => NULL() ! for refinement
      logical,         pointer :: from_contact(:) => NULL() ! indicate if the overlap is computed from define_contact_overlap
+  end type overlap_type
+
+  type overlapSpec
+     private
+     integer                     :: whalo, ehalo, shalo, nhalo ! halo size
+     integer                     :: xbegin, xend, ybegin, yend
+     integer                     :: nsend, nrecv
+     type(overlap_type), pointer :: send(:) => NULL()
+     type(overlap_type), pointer :: recv(:) => NULL()
+     type(refineSpec),   pointer :: rSpec(:)=> NULL()
+     type(overlapSpec),  pointer :: next
   end type overlapSpec
 
-  type boundary
-     integer                  :: count              ! number of overlap
-     integer,         pointer :: index(:)    => NULL() ! starting position in the boundary recving buffer.
-     integer,         pointer :: tileMe(:)   => NULL() ! tile count for this overlap
-     integer,         pointer :: is(:)       => NULL() ! starting i-index 
-     integer,         pointer :: ie(:)       => NULL() ! ending   i-index 
-     integer,         pointer :: js(:)       => NULL() ! starting j-index 
-     integer,         pointer :: je(:)       => NULL() ! ending   j-index 
-     integer,         pointer :: isMe(:)     => NULL() ! starting i-index of my tile on current pe
-     integer,         pointer :: ieMe(:)     => NULL() ! ending   i-index of my tile on current pe
-     integer,         pointer :: jsMe(:)     => NULL() ! starting j-index of my tile on current pe
-     integer,         pointer :: jeMe(:)     => NULL() ! ending   j-index of my tile on current pe
-     integer,         pointer :: dir(:)      => NULL() ! direction ( value 1,2,3,4 = E,S,W,N)
-     integer,         pointer :: rotation(:) => NULL() ! rotation angle.
-     type(boundary),  pointer :: send(:)     => NULL() ! list of overlapping for send
-     type(boundary),  pointer :: recv(:)     => NULL() ! list of overlapping for recv
-  end type boundary
+  type tile_type
+     integer :: xbegin, xend, ybegin, yend
+  end type tile_type
 
   type refineSpec
+     private
      integer          :: count                 ! number of ovrelapping
      integer          :: total                 ! total number of points to be saved in buffer.
      integer, pointer :: isMe(:)     => NULL() ! starting i-index on current pe and tile.
@@ -250,6 +268,7 @@ module mpp_domains_mod
      integer, pointer :: jeNbr(:)    => NULL() ! ending j-index on neighbor pe or tile
      integer, pointer :: start(:)    => NULL() ! starting index in the buffer
      integer, pointer :: end(:)      => NULL() ! ending index in the buffer
+     integer, pointer :: dir(:)      => NULL() ! direction 
      integer, pointer :: rotation(:) => NULL() ! rotation angle.
   end type refineSpec
 
@@ -259,44 +278,45 @@ module mpp_domains_mod
 
   type domain2D
      private
+     character(len=NAME_LENGTH)  :: name='unnamed'          ! name of the domain, default is "unspecified"
      integer(LONG_KIND)          :: id 
-     integer                     :: pe                    ! PE to which this domain is assigned
+     integer                     :: pe                      ! PE to which this domain is assigned
      integer                     :: fold          
-     integer                     :: pos                   ! position of this PE within link list
-     logical                     :: symmetry              ! indicate the domain is symmetric or non-symmetric.
-     integer                     :: whalo, ehalo          ! halo size in x-direction
-     integer                     :: shalo, nhalo          ! halo size in y-direction
-     integer                     :: ntiles                ! number of tiles within mosaic
-     integer                     :: max_ntile_pe          ! maximum value in the pelist of number of tiles on each pe.
-     integer                     :: ncontacts             ! number of contact region within mosaic.
-     logical                     :: rotated_ninety        ! indicate if any contact rotate NINETY or MINUS_NINETY
-     integer,            pointer :: tile_id(:)     => NULL() ! tile id of each tile
-     type(domain1D),     pointer :: x(:)           => NULL() ! x-direction domain decomposition
-     type(domain1D),     pointer :: y(:)           => NULL() ! y-direction domain decomposition
-     type(boundary),     pointer :: check          => NULL() ! send and recv information for boundary consistency check
-     type(boundary),     pointer :: bound          => NULL() ! send and recv information for getting boundary value for symmetry domain.
-     type(overlapSpec),  pointer :: update_send(:) => NULL() ! send information for halo update.
-     type(overlapSpec),  pointer :: update_recv(:) => NULL() ! recv information for halo update.
-     type(refineSpec),   pointer :: rSpec(:)       => NULL() ! refine overlapping for recving.
-     type(domain2D),     pointer :: T              => NULL() ! domain for T-cell
-     type(domain2D),     pointer :: E              => NULL() ! domain for E-cell
-     type(domain2D),     pointer :: C              => NULL() ! domain for C-cell
-     type(domain2D),     pointer :: N              => NULL() ! domain for N-cell
-     type(domain2D),     pointer :: next           => NULL() ! next domain with different halo size
-     type(domain2d),     pointer :: list(:)        => NULL() ! domain on pe list
-     type(domain2d),     pointer :: io_domain      => NULL() ! domain for IO, will be set through calling mpp_set_io_domain
-     integer,            pointer :: pearray(:,:)   =>NULL()  ! pe of each layout position 
-     integer                     :: position                 ! position of the domain, CENTER, EAST, NORTH, CORNER
-     logical                     :: initialized              ! indicate if the overlapping is computed or not.
-     integer                     :: tile_root_pe             ! root pe of current tile.
-     integer                     :: io_layout(2)             ! io_layout, will be set through mpp_define_io_domain
-                                                             ! default = domain layout
-     character(len=NAME_LENGTH)  :: name='unnamed'           ! name of the domain, default is "unspecified"
+     integer                     :: pos                     ! position of this PE within link list
+     logical                     :: symmetry                ! indicate the domain is symmetric or non-symmetric.
+     integer                     :: whalo, ehalo            ! halo size in x-direction
+     integer                     :: shalo, nhalo            ! halo size in y-direction
+     integer                     :: ntiles                  ! number of tiles within mosaic
+     integer                     :: max_ntile_pe            ! maximum value in the pelist of number of tiles on each pe.
+     integer                     :: ncontacts               ! number of contact region within mosaic.
+     logical                     :: rotated_ninety          ! indicate if any contact rotate NINETY or MINUS_NINETY
+     logical                     :: initialized             ! indicate if the overlapping is computed or not.
+     integer                     :: tile_root_pe            ! root pe of current tile.
+     integer                     :: io_layout(2)            ! io_layout, will be set through mpp_define_io_domain
+                                                            ! default = domain layout
+     integer,            pointer :: pearray(:,:)  => NULL() ! pe of each layout position 
+     integer,            pointer :: tile_id(:)    => NULL() ! tile id of each tile
+     type(domain1D),     pointer :: x(:)          => NULL() ! x-direction domain decomposition
+     type(domain1D),     pointer :: y(:)          => NULL() ! y-direction domain decomposition
+     type(domain2D_spec),pointer :: list(:)       => NULL() ! domain decomposition on pe list
+     type(tile_type),    pointer :: tileList(:)   => NULL() ! store tile information
+     type(overlapSpec),  pointer :: check_C       => NULL() ! send and recv information for boundary consistency check of C-cell
+     type(overlapSpec),  pointer :: check_E       => NULL() ! send and recv information for boundary consistency check of E-cell
+     type(overlapSpec),  pointer :: check_N       => NULL() ! send and recv information for boundary consistency check of N-cell
+     type(overlapSpec),  pointer :: bound_C       => NULL() ! send information for getting boundary value for symmetry domain.
+     type(overlapSpec),  pointer :: bound_E       => NULL() ! send information for getting boundary value for symmetry domain.
+     type(overlapSpec),  pointer :: bound_N       => NULL() ! send information for getting boundary value for symmetry domain.
+     type(overlapSpec),  pointer :: update_T      => NULL() ! send and recv information for halo update of T-cell.
+     type(overlapSpec),  pointer :: update_E      => NULL() ! send and recv information for halo update of E-cell.
+     type(overlapSpec),  pointer :: update_C      => NULL() ! send and recv information for halo update of C-cell.
+     type(overlapSpec),  pointer :: update_N      => NULL() ! send and recv information for halo update of N-cell.
+     type(domain2d),     pointer :: io_domain     => NULL() ! domain for IO, will be set through calling mpp_set_io_domain ( this will be changed).
   end type domain2D     
 
   !--- the following type is used to reprsent the contact between tiles.
   !--- this type will only be used in mpp_domains_define.inc
   type contact_type
+     private
      integer          :: ncontact                               ! number of neighbor tile.
      integer, pointer :: tile(:) =>NULL()                      ! neighbor tile 
      integer, pointer :: align1(:)=>NULL(), align2(:)=>NULL()   ! alignment of me and neighbor
@@ -429,15 +449,10 @@ module mpp_domains_mod
 !     processor/tile when updating doamin for symmetric domain and check the consistency on the north
 !     folded edge. 
 !   </DATA>
-!   <DATA NAME="debug_io_domain" TYPE="logical"  DEFAULT=".FALSE.">
-!     When debug_io_domain = .false., when calling mpp_define_io_domain, io_domain will not be defined
-!     when ntile_x==1 and ntile_y==1 or ntile_x==layout(1) and ntile_y==layout(2). Set debug_io_domain
-!     to true to define io_domain in those situations.
-!   </DATA>
 ! </NAMELIST>
   character(len=32) :: debug_update_domain = "none"
-  logical           :: debug_io_domain = .false.
-  namelist /mpp_domains_nml/ debug_update_domain, debug_io_domain
+  logical           :: debug_message_passing = .false.
+  namelist /mpp_domains_nml/ debug_update_domain, domain_clocks_on, debug_message_passing
 
   !***********************************************************************
 
@@ -653,7 +668,13 @@ module mpp_domains_mod
      module procedure mpp_define_null_domain2D
   end interface
 
+  interface mpp_copy_domain
+     module procedure mpp_copy_domain1D
+     module procedure mpp_copy_domain2D
+  end interface mpp_copy_domain
+
   interface mpp_deallocate_domain 
+     module procedure mpp_deallocate_domain1D
      module procedure mpp_deallocate_domain2D
   end interface
 
@@ -846,52 +867,52 @@ module mpp_domains_mod
 !--------------------------------------------------------------
 !bnc: for adjoint update
 !--------------------------------------------------------------
-  interface mpp_update_domains_ad
-     module procedure mpp_update_domain2D_ad_r8_2d
-     module procedure mpp_update_domain2D_ad_r8_3d
-     module procedure mpp_update_domain2D_ad_r8_4d
-     module procedure mpp_update_domain2D_ad_r8_5d
-     module procedure mpp_update_domain2D_ad_r8_2dv
-     module procedure mpp_update_domain2D_ad_r8_3dv
-     module procedure mpp_update_domain2D_ad_r8_4dv
-     module procedure mpp_update_domain2D_ad_r8_5dv
-#ifdef OVERLOAD_C8
-     module procedure mpp_update_domain2D_ad_c8_2d
-     module procedure mpp_update_domain2D_ad_c8_3d
-     module procedure mpp_update_domain2D_ad_c8_4d
-     module procedure mpp_update_domain2D_ad_c8_5d
-#endif
-#ifndef no_8byte_integers
-     module procedure mpp_update_domain2D_ad_i8_2d
-     module procedure mpp_update_domain2D_ad_i8_3d
-     module procedure mpp_update_domain2D_ad_i8_4d
-     module procedure mpp_update_domain2D_ad_i8_5d
+!!$  interface mpp_update_domains_ad
+!!$     module procedure mpp_update_domain2D_ad_r8_2d
+!!$     module procedure mpp_update_domain2D_ad_r8_3d
+!!$     module procedure mpp_update_domain2D_ad_r8_4d
+!!$     module procedure mpp_update_domain2D_ad_r8_5d
+!!$     module procedure mpp_update_domain2D_ad_r8_2dv
+!!$     module procedure mpp_update_domain2D_ad_r8_3dv
+!!$     module procedure mpp_update_domain2D_ad_r8_4dv
+!!$     module procedure mpp_update_domain2D_ad_r8_5dv
+!!$#ifdef OVERLOAD_C8
+!!$     module procedure mpp_update_domain2D_ad_c8_2d
+!!$     module procedure mpp_update_domain2D_ad_c8_3d
+!!$     module procedure mpp_update_domain2D_ad_c8_4d
+!!$     module procedure mpp_update_domain2D_ad_c8_5d
+!!$#endif
+!!$#ifndef no_8byte_integers
+!!$     module procedure mpp_update_domain2D_ad_i8_2d
+!!$     module procedure mpp_update_domain2D_ad_i8_3d
+!!$     module procedure mpp_update_domain2D_ad_i8_4d
+!!$     module procedure mpp_update_domain2D_ad_i8_5d
 !!$     module procedure mpp_update_domain2D_ad_l8_2d
 !!$     module procedure mpp_update_domain2D_ad_l8_3d
 !!$     module procedure mpp_update_domain2D_ad_l8_4d
 !!$     module procedure mpp_update_domain2D_ad_l8_5d
-#endif
-#ifdef OVERLOAD_R4
-     module procedure mpp_update_domain2D_ad_r4_2d
-     module procedure mpp_update_domain2D_ad_r4_3d
-     module procedure mpp_update_domain2D_ad_r4_4d
-     module procedure mpp_update_domain2D_ad_r4_5d
-     module procedure mpp_update_domain2D_ad_r4_2dv
-     module procedure mpp_update_domain2D_ad_r4_3dv
-     module procedure mpp_update_domain2D_ad_r4_4dv
-     module procedure mpp_update_domain2D_ad_r4_5dv
-#endif
-#ifdef OVERLOAD_C4
-     module procedure mpp_update_domain2D_ad_c4_2d
-     module procedure mpp_update_domain2D_ad_c4_3d
-     module procedure mpp_update_domain2D_ad_c4_4d
-     module procedure mpp_update_domain2D_ad_c4_5d
-#endif
-     module procedure mpp_update_domain2D_ad_i4_2d
-     module procedure mpp_update_domain2D_ad_i4_3d
-     module procedure mpp_update_domain2D_ad_i4_4d
-     module procedure mpp_update_domain2D_ad_i4_5d
-  end interface
+!!$#endif
+!!$#ifdef OVERLOAD_R4
+!!$     module procedure mpp_update_domain2D_ad_r4_2d
+!!$     module procedure mpp_update_domain2D_ad_r4_3d
+!!$     module procedure mpp_update_domain2D_ad_r4_4d
+!!$     module procedure mpp_update_domain2D_ad_r4_5d
+!!$     module procedure mpp_update_domain2D_ad_r4_2dv
+!!$     module procedure mpp_update_domain2D_ad_r4_3dv
+!!$     module procedure mpp_update_domain2D_ad_r4_4dv
+!!$     module procedure mpp_update_domain2D_ad_r4_5dv
+!!$#endif
+!!$#ifdef OVERLOAD_C4
+!!$     module procedure mpp_update_domain2D_ad_c4_2d
+!!$     module procedure mpp_update_domain2D_ad_c4_3d
+!!$     module procedure mpp_update_domain2D_ad_c4_4d
+!!$     module procedure mpp_update_domain2D_ad_c4_5d
+!!$#endif
+!!$     module procedure mpp_update_domain2D_ad_i4_2d
+!!$     module procedure mpp_update_domain2D_ad_i4_3d
+!!$     module procedure mpp_update_domain2D_ad_i4_4d
+!!$     module procedure mpp_update_domain2D_ad_i4_5d
+!!$  end interface
 !bnc
 
 
@@ -914,27 +935,47 @@ module mpp_domains_mod
      module procedure mpp_do_update_i4_3d
   end interface
 
+  interface mpp_do_check
+     module procedure mpp_do_check_r8_3d
+     module procedure mpp_do_check_r8_3dv
+#ifdef OVERLOAD_C8
+     module procedure mpp_do_check_c8_3d
+#endif
+#ifndef no_8byte_integers
+     module procedure mpp_do_check_i8_3d
+#endif
+#ifdef OVERLOAD_R4
+     module procedure mpp_do_check_r4_3d
+     module procedure mpp_do_check_r4_3dv
+#endif
+#ifdef OVERLOAD_C4
+     module procedure mpp_do_check_c4_3d
+#endif
+     module procedure mpp_do_check_i4_3d
+  end interface
+
+
 !-------------------------------------------------------
 !bnc  for adjoint do_update
 !-------------------------------------------------------
-  interface mpp_do_update_ad
-     module procedure mpp_do_update_ad_r8_3d
-     module procedure mpp_do_update_ad_r8_3dv
-#ifdef OVERLOAD_C8
-     module procedure mpp_do_update_ad_c8_3d
-#endif
-#ifndef no_8byte_integers
-     module procedure mpp_do_update_ad_i8_3d
-#endif
-#ifdef OVERLOAD_R4
-     module procedure mpp_do_update_ad_r4_3d
-     module procedure mpp_do_update_ad_r4_3dv
-#endif
-#ifdef OVERLOAD_C4
-     module procedure mpp_do_update_ad_c4_3d
-#endif
-     module procedure mpp_do_update_ad_i4_3d
-  end interface
+!!$  interface mpp_do_update_ad
+!!$     module procedure mpp_do_update_ad_r8_3d
+!!$     module procedure mpp_do_update_ad_r8_3dv
+!!$#ifdef OVERLOAD_C8
+!!$     module procedure mpp_do_update_ad_c8_3d
+!!$#endif
+!!$#ifndef no_8byte_integers
+!!$     module procedure mpp_do_update_ad_i8_3d
+!!$#endif
+!!$#ifdef OVERLOAD_R4
+!!$     module procedure mpp_do_update_ad_r4_3d
+!!$     module procedure mpp_do_update_ad_r4_3dv
+!!$#endif
+!!$#ifdef OVERLOAD_C4
+!!$     module procedure mpp_do_update_ad_c4_3d
+!!$#endif
+!!$     module procedure mpp_do_update_ad_i4_3d
+!!$  end interface
 !bnc
 
 ! <INTERFACE NAME="mpp_get_boundary">
@@ -1047,28 +1088,22 @@ module mpp_domains_mod
   end interface
 
   interface mpp_do_redistribute
-     module procedure mpp_do_redistribute_new_r8_3D
-     module procedure mpp_do_redistribute_old_r8_3D
+     module procedure mpp_do_redistribute_r8_3D
 #ifdef OVERLOAD_C8
-     module procedure mpp_do_redistribute_new_c8_3D
-     module procedure mpp_do_redistribute_old_c8_3D
+     module procedure mpp_do_redistribute_c8_3D
 #endif
 #ifndef no_8byte_integers
-     module procedure mpp_do_redistribute_new_i8_3D
-     module procedure mpp_do_redistribute_old_i8_3D
-     module procedure mpp_do_redistribute_new_l8_3D
-     module procedure mpp_do_redistribute_old_l8_3D
+     module procedure mpp_do_redistribute_i8_3D
+     module procedure mpp_do_redistribute_l8_3D
 #endif
 #ifdef OVERLOAD_R4
-     module procedure mpp_do_redistribute_new_r4_3D
-     module procedure mpp_do_redistribute_old_r4_3D
-     module procedure mpp_do_redistribute_new_c4_3D
-     module procedure mpp_do_redistribute_old_c4_3D
+     module procedure mpp_do_redistribute_r4_3D
 #endif
-     module procedure mpp_do_redistribute_new_i4_3D
-     module procedure mpp_do_redistribute_old_i4_3D
-     module procedure mpp_do_redistribute_new_l4_3D
-     module procedure mpp_do_redistribute_old_l4_3D
+#ifdef OVERLOAD_C4
+     module procedure mpp_do_redistribute_c4_3D
+#endif
+     module procedure mpp_do_redistribute_i4_3D
+     module procedure mpp_do_redistribute_l4_3D
   end interface
 
 
@@ -1192,30 +1227,22 @@ module mpp_domains_mod
   end interface
 
   interface mpp_do_global_field
-     module procedure mpp_do_global_field2Dnew_r8_3d
-     module procedure mpp_do_global_field2Dold_r8_3d
+     module procedure mpp_do_global_field2D_r8_3d
 #ifdef OVERLOAD_C8
-     module procedure mpp_do_global_field2Dnew_c8_3d
-     module procedure mpp_do_global_field2Dold_c8_3d
+     module procedure mpp_do_global_field2D_c8_3d
 #endif
 #ifndef no_8byte_integers
-     module procedure mpp_do_global_field2Dnew_i8_3d
-     module procedure mpp_do_global_field2Dold_i8_3d
-     module procedure mpp_do_global_field2Dnew_l8_3d
-     module procedure mpp_do_global_field2Dold_l8_3d
+     module procedure mpp_do_global_field2D_i8_3d
+     module procedure mpp_do_global_field2D_l8_3d
 #endif
 #ifdef OVERLOAD_R4
-     module procedure mpp_do_global_field2Dnew_r4_3d
-     module procedure mpp_do_global_field2Dold_r4_3d
+     module procedure mpp_do_global_field2D_r4_3d
 #endif
 #ifdef OVERLOAD_C4
-     module procedure mpp_do_global_field2Dnew_c4_3d
-     module procedure mpp_do_global_field2Dold_c4_3d
+     module procedure mpp_do_global_field2D_c4_3d
 #endif
-     module procedure mpp_do_global_field2Dnew_i4_3d
-     module procedure mpp_do_global_field2Dold_i4_3d
-     module procedure mpp_do_global_field2Dnew_l4_3d
-     module procedure mpp_do_global_field2Dold_l4_3d
+     module procedure mpp_do_global_field2D_i4_3d
+     module procedure mpp_do_global_field2D_l4_3d
   end interface
 
 ! <INTERFACE NAME="mpp_global_max">
@@ -1404,40 +1431,40 @@ module mpp_domains_mod
 !gag
 
 !bnc
-  interface mpp_global_sum_ad
-     module procedure mpp_global_sum_ad_r8_2d
-     module procedure mpp_global_sum_ad_r8_3d
-     module procedure mpp_global_sum_ad_r8_4d
-     module procedure mpp_global_sum_ad_r8_5d
-#ifdef OVERLOAD_C8
-     module procedure mpp_global_sum_ad_c8_2d
-     module procedure mpp_global_sum_ad_c8_3d
-     module procedure mpp_global_sum_ad_c8_4d
-     module procedure mpp_global_sum_ad_c8_5d
-#endif
-#ifdef OVERLOAD_R4
-     module procedure mpp_global_sum_ad_r4_2d
-     module procedure mpp_global_sum_ad_r4_3d
-     module procedure mpp_global_sum_ad_r4_4d
-     module procedure mpp_global_sum_ad_r4_5d
-#endif
-#ifdef OVERLOAD_C4
-     module procedure mpp_global_sum_ad_c4_2d
-     module procedure mpp_global_sum_ad_c4_3d
-     module procedure mpp_global_sum_ad_c4_4d
-     module procedure mpp_global_sum_ad_c4_5d
-#endif
-#ifndef no_8byte_integers
-     module procedure mpp_global_sum_ad_i8_2d
-     module procedure mpp_global_sum_ad_i8_3d
-     module procedure mpp_global_sum_ad_i8_4d
-     module procedure mpp_global_sum_ad_i8_5d
-#endif
-     module procedure mpp_global_sum_ad_i4_2d
-     module procedure mpp_global_sum_ad_i4_3d
-     module procedure mpp_global_sum_ad_i4_4d
-     module procedure mpp_global_sum_ad_i4_5d
-  end interface
+!!$  interface mpp_global_sum_ad
+!!$     module procedure mpp_global_sum_ad_r8_2d
+!!$     module procedure mpp_global_sum_ad_r8_3d
+!!$     module procedure mpp_global_sum_ad_r8_4d
+!!$     module procedure mpp_global_sum_ad_r8_5d
+!!$#ifdef OVERLOAD_C8
+!!$     module procedure mpp_global_sum_ad_c8_2d
+!!$     module procedure mpp_global_sum_ad_c8_3d
+!!$     module procedure mpp_global_sum_ad_c8_4d
+!!$     module procedure mpp_global_sum_ad_c8_5d
+!!$#endif
+!!$#ifdef OVERLOAD_R4
+!!$     module procedure mpp_global_sum_ad_r4_2d
+!!$     module procedure mpp_global_sum_ad_r4_3d
+!!$     module procedure mpp_global_sum_ad_r4_4d
+!!$     module procedure mpp_global_sum_ad_r4_5d
+!!$#endif
+!!$#ifdef OVERLOAD_C4
+!!$     module procedure mpp_global_sum_ad_c4_2d
+!!$     module procedure mpp_global_sum_ad_c4_3d
+!!$     module procedure mpp_global_sum_ad_c4_4d
+!!$     module procedure mpp_global_sum_ad_c4_5d
+!!$#endif
+!!$#ifndef no_8byte_integers
+!!$     module procedure mpp_global_sum_ad_i8_2d
+!!$     module procedure mpp_global_sum_ad_i8_3d
+!!$     module procedure mpp_global_sum_ad_i8_4d
+!!$     module procedure mpp_global_sum_ad_i8_5d
+!!$#endif
+!!$     module procedure mpp_global_sum_ad_i4_2d
+!!$     module procedure mpp_global_sum_ad_i4_3d
+!!$     module procedure mpp_global_sum_ad_i4_4d
+!!$     module procedure mpp_global_sum_ad_i4_5d
+!!$  end interface
 !bnc
 
 !***********************************************************************
@@ -1543,27 +1570,6 @@ module mpp_domains_mod
      module procedure mpp_get_compute_domains2D
   end interface
 
-  ! <INTERFACE NAME="mpp_get_global_domains">
-  !  <OVERVIEW>
-  !    Retrieve the entire array of global domain extents associated with a decomposition.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    Retrieve the entire array of global domain extents associated with a decomposition.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call mpp_get_global_domains( domain, xbegin, xend, xsize, &
-  !                                                ybegin, yend, ysize )
-  !  </TEMPLATE>
-  !  <IN NAME="domain" TYPE="type(domain2D)"></IN>
-  !  <OUT NAME="xbegin,ybegin" TYPE="integer" DIM="(:)"></OUT>
-  !  <OUT NAME="xend,yend" TYPE="integer" DIM="(:)"></OUT>
-  !  <OUT NAME="xsize,ysize" TYPE="integer" DIM="(:)"></OUT>
-  ! </INTERFACE>
-  interface mpp_get_global_domains
-     module procedure mpp_get_global_domains1D
-     module procedure mpp_get_global_domains2D
-  end interface
-
   ! <INTERFACE NAME="mpp_get_data_domain">
   !  <OVERVIEW>
   !    These routines retrieve the axis specifications associated with the data domains.
@@ -1616,6 +1622,11 @@ module mpp_domains_mod
   interface mpp_get_memory_domain
      module procedure mpp_get_memory_domain1D
      module procedure mpp_get_memory_domain2D
+  end interface
+
+  interface mpp_get_domain_extents
+     module procedure mpp_get_domain_extents1D
+     module procedure mpp_get_domain_extents2D
   end interface
 
   ! <INTERFACE NAME="mpp_set_compute_domain">
@@ -1733,9 +1744,9 @@ module mpp_domains_mod
 
   !--- version information variables
   character(len=128), public :: version= &
-       '$Id: mpp_domains.F90,v 17.0 2009/07/21 03:21:11 fms Exp $'
+       '$Id: mpp_domains.F90,v 18.0 2010/03/02 23:56:33 fms Exp $'
   character(len=128), public :: tagname= &
-       '$Name: quebec_200910 $'
+       '$Name: riga $'
 
 
 contains

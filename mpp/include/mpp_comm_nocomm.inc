@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_nocomm.inc,v 17.0 2009/07/21 03:19:56 fms Exp $
+! $Id: mpp_comm_nocomm.inc,v 18.0 2010/03/02 23:56:55 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -132,7 +132,7 @@ subroutine mpp_exit()
      else
         write( out_unit,'(/37x,a)' ) 'time'
      end if
-     call FLUSH( out_unit, istat )
+     call FLUSH( out_unit )
      call mpp_sync()
      do i = 1,clock_num
         if( .NOT.ANY(peset(clocks(i)%peset_num)%list(:).EQ.pe) )cycle
@@ -183,7 +183,7 @@ subroutine mpp_exit()
 ! close down etc_unit: 9
   inquire(unit=etc_unit, opened=opened)
   if (opened) then
-   call FLUSH (etc_unit, istat)
+   call FLUSH (etc_unit)
    close(etc_unit)
   endif
 

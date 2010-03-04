@@ -35,8 +35,8 @@ end interface
 ! ==== module constants ======================================================
 character(len=*), parameter :: &
      module_name = 'grid_mod', &
-     version     = '$Id: grid.F90,v 17.0 2009/07/21 03:19:44 fms Exp $', &
-     tagname     = '$Name: quebec_200910 $'
+     version     = '$Id: grid.F90,v 18.0 2010/03/02 23:56:19 fms Exp $', &
+     tagname     = '$Name: riga $'
 
 character(len=*), parameter :: &
      grid_dir  = 'INPUT/',     &      ! root directory for all grid files
@@ -236,30 +236,35 @@ subroutine get_grid_comp_area(component,tile,area)
              'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN',&
              FATAL)
      end select
-     ! get the number of the exchange-grid files
-     call field_size(grid_file,xgrid_name,siz)
-     ! loop through all exchange grid files
+
      area(:,:) = 0
-     n_xgrid_files = siz(2)
-     do n = 1, n_xgrid_files
-        ! get the name of the current exchange grid file
-        call read_data(grid_file,xgrid_name,xgrid_file,level=n)
-        ! skip the rest of the loop if the name of the current tile isn't found 
-        ! in the file name, but check this only if there is more than 1 tile
-        if(n_xgrid_files>1) then
-           if(index(xgrid_file,trim(tile_name))==0) cycle
-        endif
-        ! finally read the exchange grid
-        nxgrid = get_mosaic_xgrid_size(grid_dir//xgrid_file)
-        allocate(i1(nxgrid), j1(nxgrid), i2(nxgrid), j2(nxgrid), xgrid_area(nxgrid))
-        call get_mosaic_xgrid(grid_dir//xgrid_file, i1, j1, i2, j2, xgrid_area)
-        ! and sum the exchange grid areas
-        do m = 1, nxgrid
-           i = i2(m); j = j2(m)
-           area(i,j) = area(i,j) + xgrid_area(m)
-        end do
-        deallocate(i1, j1, i2, j2, xgrid_area)
-     enddo
+     ! get the number of the exchange-grid files
+     if(field_exist(grid_file,xgrid_name)) then
+
+        call field_size(grid_file,xgrid_name,siz)
+        ! loop through all exchange grid files
+
+        n_xgrid_files = siz(2)
+        do n = 1, n_xgrid_files
+           ! get the name of the current exchange grid file
+           call read_data(grid_file,xgrid_name,xgrid_file,level=n)
+           ! skip the rest of the loop if the name of the current tile isn't found 
+           ! in the file name, but check this only if there is more than 1 tile
+           if(n_xgrid_files>1) then
+              if(index(xgrid_file,trim(tile_name))==0) cycle
+           endif
+           ! finally read the exchange grid
+           nxgrid = get_mosaic_xgrid_size(grid_dir//xgrid_file)
+           allocate(i1(nxgrid), j1(nxgrid), i2(nxgrid), j2(nxgrid), xgrid_area(nxgrid))
+           call get_mosaic_xgrid(grid_dir//xgrid_file, i1, j1, i2, j2, xgrid_area)
+           ! and sum the exchange grid areas
+           do m = 1, nxgrid
+              i = i2(m); j = j2(m)
+              area(i,j) = area(i,j) + xgrid_area(m)
+           end do
+           deallocate(i1, j1, i2, j2, xgrid_area)
+        enddo
+     endif
   end select ! version
   ! convert area to m2
   area = area*4*PI*radius**2

@@ -6,7 +6,6 @@
     integer, intent(in),  optional :: position
     MPP_TYPE_ :: field3D(size(field,1),size(field,2),1)
     integer :: locus3D(3)
-#ifdef use_CRI_pointers
     pointer( ptr, field3D )
     ptr = LOC(field)
     if( PRESENT(locus) )then
@@ -15,15 +14,6 @@
     else
         MPP_GLOBAL_REDUCE_2D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, position = position )
     end if
-#else
-    field3D = RESHAPE( field, SHAPE(field3D) )
-    if( PRESENT(locus) )then
-        MPP_GLOBAL_REDUCE_2D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D, position )
-        locus = locus3D(1:2)
-    else
-        MPP_GLOBAL_REDUCE_2D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, position = position  )
-    end if
-#endif
     return
   end function MPP_GLOBAL_REDUCE_2D_
 
@@ -38,22 +28,23 @@
     integer, save :: l_locus(3)
     MPP_TYPE_, save :: g_val  ! need storage class w/ global address; not sure whether fn result has required class
     integer, save   :: here   ! need storage class w/ global address
-    integer :: ioff, joff, isc, iec, jsc, jec
-    type(domain2D), pointer :: Dom => NULL()
+    integer :: ioff, joff, isc, iec, jsc, jec, ishift, jshift
 
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_REDUCE: You must first call mpp_domains_init.' )
 
-    Dom => get_domain(domain, position)
-    call mpp_get_compute_domain(Dom, isc, iec, jsc, jec )
+    call mpp_get_compute_domain(domain, isc, iec, jsc, jec )
+    call mpp_get_domain_shift(domain, ishift, jshift, position)
+    iec = iec + ishift
+    jec = jec + jshift
 
-    if( size(field,1).EQ.Dom%x(1)%compute%size .AND. size(field,2).EQ.Dom%y(1)%compute%size )then
+    if( size(field,1).EQ. iec-isc+1  .AND. size(field,2).EQ. jec-jsc+1 )then
 !field is on compute domain
         ioff = isc
         joff = jsc
-    else if( size(field,1).EQ.Dom%x(1)%memory%size .AND. size(field,2).EQ.Dom%y(1)%memory%size )then
+    else if( size(field,1).EQ.domain%x(1)%memory%size+ishift .AND. size(field,2).EQ.domain%y(1)%memory%size+jshift )then
 !field is on data domain
-        ioff = Dom%x(1)%data%begin
-        joff = Dom%y(1)%data%begin
+        ioff = domain%x(1)%data%begin
+        joff = domain%y(1)%data%begin
     else
         call mpp_error( FATAL, 'MPP_GLOBAL_REDUCE_: incoming field array must match either compute domain or data domain.' )
     end if
@@ -89,7 +80,6 @@
 
     MPP_TYPE_ :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4))
     integer :: locus3D(3)
-#ifdef use_CRI_pointers
     pointer( ptr, field3D )
     ptr = LOC(field)
     if( PRESENT(locus) )then
@@ -104,21 +94,6 @@
     else
         MPP_GLOBAL_REDUCE_4D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, position = position  )
     end if
-#else
-    field3D = RESHAPE( field, SHAPE(field3D) )
-    if( PRESENT(locus) )then
-        MPP_GLOBAL_REDUCE_4D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D, position )
-        locus(1:2) = locus3D(1:2)
-        locus(3) = modulo(locus3D(3),size(field,3))
-        locus(4) = (locus3D(3)-locus(3))/size(field,3) + 1
-        if( locus(3).EQ.0 )then
-            locus(3) = size(field,3)
-            locus(4) = locus(4) - 1
-        end if
-    else
-        MPP_GLOBAL_REDUCE_4D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, position = position  )
-    end if
-#endif
     return
   end function MPP_GLOBAL_REDUCE_4D_
 
@@ -131,7 +106,6 @@
 
     MPP_TYPE_ :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4)*size(field,5))
     integer :: locus3D(3)
-#ifdef use_CRI_pointers
     pointer( ptr, field3D )
     ptr = LOC(field)
     if( PRESENT(locus) )then
@@ -147,21 +121,5 @@
     else
         MPP_GLOBAL_REDUCE_5D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, position = position  )
     end if
-#else
-    field3D = RESHAPE( field, SHAPE(field3D) )
-    if( PRESENT(locus) )then
-        MPP_GLOBAL_REDUCE_5D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D, position )
-        locus(1:2) = locus3D(1:2)
-        locus(3) = modulo(locus3D(3),size(field,3))
-        locus(4) = modulo(locus3D(3),size(field,3)*size(field,4))
-        locus(5) = (locus3D(3)-locus(4))/size(field,3)/size(field,4) + 1
-        if( locus(3).EQ.0 )then
-            locus(3) = size(field,3)
-            locus(4) = locus(4) - 1
-        end if
-    else
-        MPP_GLOBAL_REDUCE_5D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, position = position  )
-    end if
-#endif
     return
   end function MPP_GLOBAL_REDUCE_5D_

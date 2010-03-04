@@ -218,7 +218,7 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
 
 !-----------------------------------------------------------------------
  character(len=128) :: version = '$Id: horiz_interp.F90,v 16.0 2008/07/30 22:45:42 fms Exp $'
- character(len=128) :: tagname = '$Name: quebec_200910 $'
+ character(len=128) :: tagname = '$Name: riga $'
  logical            :: module_is_initialized = .FALSE.
 !-----------------------------------------------------------------------
 

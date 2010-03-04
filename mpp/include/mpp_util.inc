@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util.inc,v 17.0 2009/07/21 03:20:58 fms Exp $
+! $Id: mpp_util.inc,v 18.0 2010/03/02 23:58:05 fms Exp $
 
 
 #ifdef use_libSMA
@@ -87,7 +87,7 @@
        write(this_pe,'(a,i6.6,a)') '.',pe,'.out'
        inquire( file=trim(configfile)//this_pe, opened=opened )
        if( opened )then
-          call FLUSH(log_unit,istat)
+          call FLUSH(log_unit)
        else
           log_unit=get_unit()
           open( unit=log_unit, status='UNKNOWN', file=trim(configfile)//this_pe, position='APPEND', err=10 )
@@ -96,7 +96,7 @@
     else
        inquire( unit=etc_unit, opened=opened )
        if( opened )then
-          call FLUSH(etc_unit,istat)
+          call FLUSH(etc_unit)
        else
           open( unit=etc_unit, status='UNKNOWN', file=trim(etcfile), position='APPEND', err=11 )
        end if
@@ -796,23 +796,25 @@ end function rarray_to_char
     if( id.EQ.0 )return
     if( id.LT.0 .OR. id.GT.clock_num )call mpp_error( FATAL, 'MPP_CLOCK_BEGIN: invalid id.' )
 
+!$OMP MASTER
     if( clocks(id)%peset_num.NE.current_peset_num ) &
          call mpp_error( FATAL, 'MPP_CLOCK_BEGIN: cannot change pelist context of a clock.' )
     if( clocks(id)%is_on) call mpp_error(FATAL, 'MPP_CLOCK_BEGIN: mpp_clock_begin is called again '// &
                 'before calling mpp_clock_end for the clock '//trim(clocks(id)%name) )
-
     if( clocks(id)%sync_on_begin )then
        !do an untimed sync at the beginning of the clock
        !this puts all PEs in the current pelist on par, so that measurements begin together
        !ending time will be different, thus measuring load imbalance for this clock.
        call mpp_sync()
     end if
+
     num_clock_ids = num_clock_ids+1
     if(num_clock_ids > MAX_CLOCKS)call mpp_error(FATAL,'MPP_CLOCK_BEGIN: max num previous_clock exceeded.' )
     previous_clock(num_clock_ids) = current_clock
     current_clock = id
     call SYSTEM_CLOCK( clocks(id)%tick )
     clocks(id)%is_on = .true.
+!$OMP END MASTER
     return
   end subroutine mpp_clock_begin
 
@@ -825,6 +827,7 @@ end function rarray_to_char
     if( .not. mpp_record_timing_data)return
     if( id.EQ.0 )return
     if( id.LT.0 .OR. id.GT.clock_num )call mpp_error( FATAL, 'MPP_CLOCK_BEGIN: invalid id.' )
+!$OMP MASTER
     if( .NOT. clocks(id)%is_on) call mpp_error(FATAL, 'MPP_CLOCK_END: mpp_clock_end is called '// &
                 'before calling mpp_clock_begin for the clock '//trim(clocks(id)%name) )
 
@@ -844,6 +847,7 @@ end function rarray_to_char
     current_clock = previous_clock(num_clock_ids)
     num_clock_ids = num_clock_ids-1
     clocks(id)%is_on = .false.
+!$OMP END MASTER
     return
   end subroutine mpp_clock_end
 

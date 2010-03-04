@@ -339,6 +339,7 @@ private
   public :: MPP_WRONLY, MPP_RDONLY, MPP_APPEND, MPP_OVERWR, MPP_ASCII, MPP_IEEE32
   public :: MPP_NATIVE, MPP_NETCDF, MPP_SEQUENTIAL, MPP_DIRECT, MPP_SINGLE
   public :: MPP_MULTI, MPP_DELETE, MPP_COLLECT
+  public :: FILE_TYPE_USED
   public :: MAX_FILE_SIZE
   !--- public data type ------------------------------------------------
   public :: axistype, atttype, fieldtype, validtype, filetype
@@ -372,7 +373,8 @@ private
   !-----------------------------------------------------------------------------
   !--- mpp_io data types
   !-----------------------------------------------------------------------------
-  type :: atttype
+integer FILE_TYPE_USED  
+type :: atttype
      private
      integer             :: type, len
      character(len=128)  :: name
@@ -548,6 +550,7 @@ private
      module procedure mpp_read_r2D
      module procedure mpp_read_r3D
      module procedure mpp_read_text
+     module procedure mpp_read_region_r2D
   end interface
 
 !***********************************************************************
@@ -809,9 +812,9 @@ private
 
 
   character(len=128) :: version= &
-       '$Id: mpp_io.F90,v 17.0 2009/07/21 03:21:17 fms Exp $'
+       '$Id: mpp_io.F90,v 18.0 2010/03/02 23:56:36 fms Exp $'
   character(len=128) :: tagname= &
-       '$Name: quebec_200910 $'
+       '$Name: riga $'
 
 contains
 

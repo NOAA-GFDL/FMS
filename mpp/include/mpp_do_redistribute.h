@@ -1,4 +1,4 @@
-    subroutine MPP_DO_REDISTRIBUTE_3Dnew_( f_in, f_out, d_comm, d_type )
+    subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type )
       integer(LONG_KIND), intent(in)         :: f_in(:), f_out(:)
       type(DomainCommunicator2D), intent(in) :: d_comm
       MPP_TYPE_, intent(in)                  :: d_type
@@ -37,8 +37,6 @@
          do l=1,l_size  ! loop over number of fields
            ptr_field_in = f_in(l)
            do k = 1,ke
-!             do j = js-domain_in%y%data%begin+1,je-domain_in%y%data%begin+1
-!                do i = is-domain_in%x%data%begin+1,ie-domain_in%x%data%begin+1
               do j = js,je
                  do i = is,ie
                     pos = pos+1
@@ -66,8 +64,6 @@
          do l=1,l_size  ! loop over number of in/out fields
            ptr_field_out = f_out(l)
            do k = 1,ke
-!             do j = js-domain_out%y%data%begin+1,je-domain_out%y%data%begin+1
-!                do i = is-domain_out%x%data%begin+1,ie-domain_out%x%data%begin+1
               do j = js,je
                  do i = is,ie
                     pos = pos+1
@@ -79,4 +75,4 @@
          buffer_pos = pos
       end do
       call mpp_sync_self()
-    end subroutine MPP_DO_REDISTRIBUTE_3Dnew_
+    end subroutine MPP_DO_REDISTRIBUTE_3D_

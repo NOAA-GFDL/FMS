@@ -86,6 +86,9 @@
 <a href="#get_diag_axis_name">get_diag_axis_name</a>:</dt>
 <dd>   Return the short name of the axis. </dd>
 <dt>
+<a href="#get_diag_axis-domain_name">get_diag_axis-domain_name</a>:</dt>
+<dd>   Return the name of the axis' domain </dd>
+<dt>
 <a href="#get_axis_length">get_axis_length</a>:</dt>
 <dd>   Return the length of the axis. </dd>
 <dt>
@@ -126,7 +129,7 @@
 <li>
 <a name="diag_axis_init"></a>
 <h4>diag_axis_init</h4>
-<pre>INTEGER function <b>diag_axis_init</b> name, data, units, cart_name, long_name, direction, set_name, edges, Domain, Domain2, aux, tile_count)</pre>
+<pre>INTEGER FUNCTION <b>diag_axis_init</b> (name, data, units, cart_name, long_name, direction, set_name, edges, Domain, Domain2, aux, tile_count)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -143,16 +146,16 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>Short name for axis<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+<td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>Short name for axis<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>data&nbsp;&nbsp;&nbsp;</tt></td><td>Array of coordinate values<br>&nbsp;&nbsp;&nbsp;<span class="type">[real, dimension(:)]</span></td>
+<td valign="top" align="left"><tt>data&nbsp;&nbsp;&nbsp;</tt></td><td>Array of coordinate values<br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL, DIMENSION(:)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>units&nbsp;&nbsp;&nbsp;</tt></td><td>Units for the axis<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+<td valign="top" align="left"><tt>units&nbsp;&nbsp;&nbsp;</tt></td><td>Units for the axis<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>cart_name&nbsp;&nbsp;&nbsp;</tt></td><td>   Cartesian axis ("X", "Y", "Z", "T") <br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+<td valign="top" align="left"><tt>cart_name&nbsp;&nbsp;&nbsp;</tt></td><td>   Cartesian axis ("X", "Y", "Z", "T") <br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span></td>
 </tr>
 <tr>
 <td valign="top" align="left"><tt>direction&nbsp;&nbsp;&nbsp;</tt></td><td>   Indicates the direction of the axis: <ul> 
@@ -160,29 +163,29 @@
 <li>Down if -1</li> 
 <li>Neither up or down if 0</li> 
 </ul> 
-<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional]&nbsp;[Default: 0]</span></td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, OPTIONAL]&nbsp;[Default: 0]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>long_name&nbsp;&nbsp;&nbsp;</tt></td><td>   Long name for the axis. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*), optional]&nbsp;[Default: name]</span></td>
+<td valign="top" align="left"><tt>long_name&nbsp;&nbsp;&nbsp;</tt></td><td>   Long name for the axis. <br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*), OPTIONAL]&nbsp;[Default: name]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>edges&nbsp;&nbsp;&nbsp;</tt></td><td>   Axis ID for the previously defined "edges axis" <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional]</span></td>
+<td valign="top" align="left"><tt>edges&nbsp;&nbsp;&nbsp;</tt></td><td>   Axis ID for the previously defined "edges axis" <br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, OPTIONAL]</span></td>
 </tr>
 <tr>
 <td valign="top" align="left"><tt>Domain&nbsp;&nbsp;&nbsp;</tt></td><td>
-<br>&nbsp;&nbsp;&nbsp;<span class="type">[type(domain1d), optional]</span></td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[TYPE(domain1d), OPTIONAL]</span></td>
 </tr>
 <tr>
 <td valign="top" align="left"><tt>Domain2&nbsp;&nbsp;&nbsp;</tt></td><td>
-<br>&nbsp;&nbsp;&nbsp;<span class="type">[type(domain2d), optional]</span></td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[TYPE(domain2d), OPTIONAL]</span></td>
 </tr>
 <tr>
 <td valign="top" align="left"><tt>aux&nbsp;&nbsp;&nbsp;</tt></td><td>   Auxiliary name, can only be <tt>geolon_t</tt>   or <tt>geolat_t</tt> 
-<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*), optional]</span></td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*), OPTIONAL]</span></td>
 </tr>
 <tr>
 <td valign="top" align="left"><tt>tile_count&nbsp;&nbsp;&nbsp;</tt></td><td>
-<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional]</span></td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, OPTIONAL]</span></td>
 </tr>
 </table>
 </dd>
@@ -192,7 +195,7 @@
 <li>
 <a name="diag_subaxes_init"></a>
 <h4>diag_subaxes_init</h4>
-<pre>INTEGER function <b>diag_subaxes_init</b> (axis, subdata, start_indx, end_indx, domain_1d, domain_2d)</pre>
+<pre>INTEGER FUNCTION <b>diag_subaxes_init</b> (axis, subdata, start_indx, end_indx, domain_1d, domain_2d)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -210,24 +213,24 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>axis&nbsp;&nbsp;&nbsp;</tt></td><td>ID of the parent axis<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>axis&nbsp;&nbsp;&nbsp;</tt></td><td>ID of the parent axis<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>subdata&nbsp;&nbsp;&nbsp;</tt></td><td>Data of the subaxis<br>&nbsp;&nbsp;&nbsp;<span class="type">[real, dimension(:)]</span></td>
+<td valign="top" align="left"><tt>subdata&nbsp;&nbsp;&nbsp;</tt></td><td>Data of the subaxis<br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL, DIMENSION(:)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>start_indx&nbsp;&nbsp;&nbsp;</tt></td><td>Start index of the subaxis<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>start_indx&nbsp;&nbsp;&nbsp;</tt></td><td>Start index of the subaxis<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>end_indx&nbsp;&nbsp;&nbsp;</tt></td><td>End index of the subaxis<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>end_indx&nbsp;&nbsp;&nbsp;</tt></td><td>End index of the subaxis<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
 </tr>
 <tr>
 <td valign="top" align="left"><tt>domain_1d&nbsp;&nbsp;&nbsp;</tt></td><td>
-<br>&nbsp;&nbsp;&nbsp;<span class="type">[type(domain1d), optional]</span></td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[TYPE(domain1d), OPTIONAL]</span></td>
 </tr>
 <tr>
 <td valign="top" align="left"><tt>domain_2d&nbsp;&nbsp;&nbsp;</tt></td><td>
-<br>&nbsp;&nbsp;&nbsp;<span class="type">[type(domain2d), optional]</span></td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[TYPE(domain2d), OPTIONAL]</span></td>
 </tr>
 </table>
 </dd>
@@ -237,7 +240,7 @@
 <li>
 <a name="get_diag_axis"></a>
 <h4>get_diag_axis</h4>
-<pre>subroutine <b>get_diag_axis</b> (id, name, units, long_name, cart_name, direction, edges, Domain, data)</pre>
+<pre>SUBROUTINE <b>get_diag_axis</b> (id, name, units, long_name, cart_name, direction, edges, Domain, data)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -251,7 +254,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>id&nbsp;&nbsp;&nbsp;</tt></td><td>Axis ID<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>id&nbsp;&nbsp;&nbsp;</tt></td><td>Axis ID<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
 </tr>
 </table>
 </dd>
@@ -262,30 +265,30 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>Short name for axis<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+<td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>Short name for axis<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>units&nbsp;&nbsp;&nbsp;</tt></td><td>Units for axis<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+<td valign="top" align="left"><tt>units&nbsp;&nbsp;&nbsp;</tt></td><td>Units for axis<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>long_name&nbsp;&nbsp;&nbsp;</tt></td><td>Long name for axis<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+<td valign="top" align="left"><tt>long_name&nbsp;&nbsp;&nbsp;</tt></td><td>Long name for axis<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>cart_name&nbsp;&nbsp;&nbsp;</tt></td><td>   Cartesian axis ("x", "y", "z", "t"). <br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+<td valign="top" align="left"><tt>cart_name&nbsp;&nbsp;&nbsp;</tt></td><td>   Cartesian axis ("x", "y", "z", "t"). <br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span></td>
 </tr>
 <tr>
 <td valign="top" align="left"><tt>direction&nbsp;&nbsp;&nbsp;</tt></td><td>   Direction of data. (See <tt>diag_axis_init</tt>   for a description of
-   allowed values) <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+   allowed values) <br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>edges&nbsp;&nbsp;&nbsp;</tt></td><td>   Axis ID for the previously defined "edges axis". <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>edges&nbsp;&nbsp;&nbsp;</tt></td><td>   Axis ID for the previously defined "edges axis". <br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
 </tr>
 <tr>
 <td valign="top" align="left"><tt>Domain&nbsp;&nbsp;&nbsp;</tt></td><td>
-<br>&nbsp;&nbsp;&nbsp;<span class="type">[type(domain1d)]</span></td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[TYPE(domain1d)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>data&nbsp;&nbsp;&nbsp;</tt></td><td>   Array of coordinate values for this axis. <br>&nbsp;&nbsp;&nbsp;<span class="type">[real, dimension(:)]</span></td>
+<td valign="top" align="left"><tt>data&nbsp;&nbsp;&nbsp;</tt></td><td>   Array of coordinate values for this axis. <br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL, DIMENSION(:)]</span></td>
 </tr>
 </table>
 </dd>
@@ -295,7 +298,7 @@
 <li>
 <a name="get_diag_axis_cart"></a>
 <h4>get_diag_axis_cart</h4>
-<pre>subroutine <b>get_diag_axis_cart</b> (id, cart_name)</pre>
+<pre>SUBROUTINE <b>get_diag_axis_cart</b> (id, cart_name)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -309,7 +312,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>id&nbsp;&nbsp;&nbsp;</tt></td><td>Axis ID<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>id&nbsp;&nbsp;&nbsp;</tt></td><td>Axis ID<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
 </tr>
 </table>
 </dd>
@@ -320,7 +323,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>cart_name&nbsp;&nbsp;&nbsp;</tt></td><td>Cartesian axis<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+<td valign="top" align="left"><tt>cart_name&nbsp;&nbsp;&nbsp;</tt></td><td>Cartesian axis<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span></td>
 </tr>
 </table>
 </dd>
@@ -330,7 +333,7 @@
 <li>
 <a name="get_diag_axis_data"></a>
 <h4>get_diag_axis_data</h4>
-<pre>subroutine <b>get_diag_axis_data</b> (id, data)</pre>
+<pre>SUBROUTINE <b>get_diag_axis_data</b> (id, data)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -344,7 +347,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>id&nbsp;&nbsp;&nbsp;</tt></td><td>Axis ID<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>id&nbsp;&nbsp;&nbsp;</tt></td><td>Axis ID<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
 </tr>
 </table>
 </dd>
@@ -355,7 +358,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>data&nbsp;&nbsp;&nbsp;</tt></td><td>Axis data<br>&nbsp;&nbsp;&nbsp;<span class="type">[real, dimension(:)]</span></td>
+<td valign="top" align="left"><tt>data&nbsp;&nbsp;&nbsp;</tt></td><td>Axis data<br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL, DIMENSION(:)]</span></td>
 </tr>
 </table>
 </dd>
@@ -365,7 +368,7 @@
 <li>
 <a name="get_diag_axis_name"></a>
 <h4>get_diag_axis_name</h4>
-<pre>subroutine <b>get_diag_axis_name</b> (id, name)</pre>
+<pre>SUBROUTINE <b>get_diag_axis_name</b> (id, name)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -379,7 +382,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>id&nbsp;&nbsp;&nbsp;</tt></td><td>Axis ID<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>id&nbsp;&nbsp;&nbsp;</tt></td><td>Axis ID<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
 </tr>
 </table>
 </dd>
@@ -390,7 +393,44 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>Axis short name<br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
+<td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>Axis short name<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="get_diag_axis-domain_name"></a>
+<h4>get_diag_axis-domain_name</h4>
+<pre> 
+<b>get_diag_axis-domain_name</b> 
+</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Retruns the name of the axis' domain. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>id&nbsp;&nbsp;&nbsp;</tt></td><td>Axis ID<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+<dt>
+<b>OUTPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>Axis' domain name<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span></td>
 </tr>
 </table>
 </dd>
@@ -400,7 +440,7 @@
 <li>
 <a name="get_axis_length"></a>
 <h4>get_axis_length</h4>
-<pre>INTEGER function <b>get_axis_length</b> (id)</pre>
+<pre>INTEGER FUNCTION <b>get_axis_length</b> (id)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -414,7 +454,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>id&nbsp;&nbsp;&nbsp;</tt></td><td>Axis ID<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>id&nbsp;&nbsp;&nbsp;</tt></td><td>Axis ID<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
 </tr>
 </table>
 </dd>
@@ -424,7 +464,7 @@
 <li>
 <a name="get_axis_aux"></a>
 <h4>get_axis_aux</h4>
-<pre>CHARACTER(LEN=128) function <b>get_axis_aux</b> (id)</pre>
+<pre>CHARACTER(LEN=128) FUNCTION <b>get_axis_aux</b> (id)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -439,7 +479,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>id&nbsp;&nbsp;&nbsp;</tt></td><td>Axis ID<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>id&nbsp;&nbsp;&nbsp;</tt></td><td>Axis ID<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
 </tr>
 </table>
 </dd>
@@ -449,7 +489,7 @@
 <li>
 <a name="get_axis_global_length"></a>
 <h4>get_axis_global_length</h4>
-<pre>INTEGER function <b>get_axis_global_length</b> (id)</pre>
+<pre>INTEGER FUNCTION <b>get_axis_global_length</b> (id)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -463,7 +503,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>id&nbsp;&nbsp;&nbsp;</tt></td><td>Axis ID<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>id&nbsp;&nbsp;&nbsp;</tt></td><td>Axis ID<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
 </tr>
 </table>
 </dd>
@@ -473,7 +513,7 @@
 <li>
 <a name="get_tile_count"></a>
 <h4>get_tile_count</h4>
-<pre>INTEGER function <b>get_tile_count</b> (ids)</pre>
+<pre>INTEGER FUNCTION <b>get_tile_count</b> (ids)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -487,7 +527,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>ids&nbsp;&nbsp;&nbsp;</tt></td><td>   Axis IDs.  Possible dimensions: 1 &lt;= <tt>size(ids(:))</tt>   &lt;= 4. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(:)]</span></td>
+<td valign="top" align="left"><tt>ids&nbsp;&nbsp;&nbsp;</tt></td><td>   Axis IDs.  Possible dimensions: 1 &lt;= <tt>size(ids(:))</tt>   &lt;= 4. <br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, DIMENSION(:)]</span></td>
 </tr>
 </table>
 </dd>
@@ -497,7 +537,7 @@
 <li>
 <a name="get_domain1d"></a>
 <h4>get_domain1d</h4>
-<pre>TYPE(domain1d) function <b>get_domain1d</b> (id)</pre>
+<pre>TYPE(domain1d) FUNCTION <b>get_domain1d</b> (id)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -511,7 +551,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>id&nbsp;&nbsp;&nbsp;</tt></td><td>Axis ID<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>id&nbsp;&nbsp;&nbsp;</tt></td><td>Axis ID<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
 </tr>
 </table>
 </dd>
@@ -521,7 +561,7 @@
 <li>
 <a name="get_domain2d"></a>
 <h4>get_domain2d</h4>
-<pre>TYPE(domain2d) function <b>get_domain2d</b> (ids)</pre>
+<pre>TYPE(domain2d) FUNCTION <b>get_domain2d</b> (ids)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -535,7 +575,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>ids&nbsp;&nbsp;&nbsp;</tt></td><td>   Axis IDs.  Possible dimensions: 1 &lt;= <tt>size(ids(:))</tt>   &lt;= 4. <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(:)]</span></td>
+<td valign="top" align="left"><tt>ids&nbsp;&nbsp;&nbsp;</tt></td><td>   Axis IDs.  Possible dimensions: 1 &lt;= <tt>size(ids(:))</tt>   &lt;= 4. <br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, DIMENSION(:)]</span></td>
 </tr>
 </table>
 </dd>
@@ -545,7 +585,7 @@
 <li>
 <a name="get_axes_shift"></a>
 <h4>get_axes_shift</h4>
-<pre>subroutine <b>get_axes_shift</b> (ids, ishift, jshift)</pre>
+<pre>SUBROUTINE <b>get_axes_shift</b> (ids, ishift, jshift)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -559,7 +599,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>ids&nbsp;&nbsp;&nbsp;</tt></td><td>   Axis IDs.  Possible dimensions: 1 &lt;= <tt>size(ids(:))</tt>   &lt;= 4 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, dimension(:)]</span></td>
+<td valign="top" align="left"><tt>ids&nbsp;&nbsp;&nbsp;</tt></td><td>   Axis IDs.  Possible dimensions: 1 &lt;= <tt>size(ids(:))</tt>   &lt;= 4 <br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, DIMENSION(:)]</span></td>
 </tr>
 </table>
 </dd>
@@ -570,10 +610,10 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>ishift&nbsp;&nbsp;&nbsp;</tt></td><td>X shift value.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>ishift&nbsp;&nbsp;&nbsp;</tt></td><td>X shift value.<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>jshift&nbsp;&nbsp;&nbsp;</tt></td><td>Y shift value.<br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+<td valign="top" align="left"><tt>jshift&nbsp;&nbsp;&nbsp;</tt></td><td>Y shift value.<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
 </tr>
 </table>
 </dd>
@@ -610,7 +650,8 @@
 <dd>
 <span class="errmsg"></span>
 </dd>
-<dd>exceeded max_num_axis_sets</dd>
+<dd>   num_axis_sets (&lt;num_axis_sets&gt;) exceeds max_num_axis_sets(&lt;num_axis_sets&gt;).
+   Increase max_num_axis_sets via diag_manager_nml. </dd>
 <dt>
 <b>FATAL in diag_axis_init</b>
 </dt>
@@ -702,6 +743,13 @@
 <span class="errmsg"></span>
 </dd>
 <dd>Illegal value for axis used (value &lt;VALUE&gt;).</dd>
+<dt>
+<b>FATAL in get_diag_axis-domain_name</b>
+</dt>
+<dd>
+<span class="errmsg"></span>
+</dd>
+<dd>   Illegal value for axis used (value &lt;VALUE&gt;). </dd>
 <dt>
 <b>FATAL in get_tile_count</b>
 </dt>

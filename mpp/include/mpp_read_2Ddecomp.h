@@ -5,15 +5,9 @@
       MPP_TYPE_, intent(inout) :: data(:,:)
       integer, intent(in), optional :: tindex, tile_count
       MPP_TYPE_ :: data3D(size(data,1),size(data,2),1)
-#ifdef use_CRI_pointers
       pointer( ptr, data3D )
       ptr = LOC(data)
       call mpp_read( unit, field, domain, data3D, tindex, tile_count)
-#else
-      data3D = RESHAPE( data, SHAPE(data3D) )
-      call mpp_read( unit, field, domain, data3D, tindex, tile_count)
-      data   = RESHAPE( data3D, SHAPE(data) )
-#endif
       return
     end subroutine MPP_READ_2DDECOMP_2D_
 

@@ -194,8 +194,8 @@ integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
    integer :: yrmod, momod, dymod
    logical :: mod_leapyear
 
-   character(len=128) :: version='$Id: time_interp.F90,v 17.0 2009/07/21 03:21:52 fms Exp $'
-   character(len=128) :: tagname='$Name: quebec_200910 $'
+   character(len=128) :: version='$Id: time_interp.F90,v 18.0 2010/03/02 23:58:30 fms Exp $'
+   character(len=128) :: tagname='$Name: riga $'
 
    logical :: module_is_initialized=.FALSE.
    logical :: perthlike_behavior=.FALSE.
@@ -206,7 +206,7 @@ contains
 
 
  subroutine time_interp_init()
-   integer :: ierr, io, namelist_unit
+   integer :: ierr, io, namelist_unit, logunit
 
    if ( module_is_initialized ) return
 
@@ -218,7 +218,8 @@ contains
    enddo
    20 call close_file (namelist_unit)
    call write_version_number( version, tagname )
-   write(stdlog(),time_interp_nml)
+   logunit = stdlog()
+   write(logunit,time_interp_nml)
 
    module_is_initialized = .TRUE.
 

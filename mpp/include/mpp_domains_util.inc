@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_util.inc,v 17.0 2009/07/21 03:20:14 fms Exp $
+! $Id: mpp_domains_util.inc,v 18.0 2010/03/02 23:57:21 fms Exp $
 
   ! <SUBROUTINE NAME="mpp_domains_set_stack_size">
   !  <OVERVIEW>
@@ -451,88 +451,30 @@ integer :: i
  return
 end subroutine mpp_get_compute_domains2D
 
-  !#####################################################################
-  subroutine mpp_get_global_domains1D( domain, begin, end, size )
-    type(domain1D),                   intent(in) :: domain
-    integer, intent(out), optional, dimension(:) :: begin, end, size 
-
-    if( .NOT.module_is_initialized ) &
-         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: must first call mpp_domains_init.' )
-    !we use shape instead of size for error checks because size is used as an argument
-    if( PRESENT(begin) )then
-       if( any(shape(begin).NE.shape(domain%list)) ) &
-            call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: begin array size does not match domain.' )
-       begin(:) = domain%list(:)%global%begin
-    end if
-    if( PRESENT(end) )then
-       if( any(shape(end).NE.shape(domain%list)) ) &
-            call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: end array size does not match domain.' )
-            end(:) = domain%list(:)%global%end
-    end if
-    if( PRESENT(size) )then
-       if( any(shape(size).NE.shape(domain%list)) ) &
-           call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: size array size does not match domain.' )
-           size(:) = domain%list(:)%global%size
-    end if
-    return
-end subroutine mpp_get_global_domains1D
-
 !#####################################################################
-subroutine mpp_get_global_domains2D( domain, xbegin, xend, xsize, ybegin, yend, ysize )
- type(domain2D),                   intent(in) :: domain
- integer, intent(out), optional, dimension(:) :: xbegin, xend, xsize, ybegin, yend, ysize
-integer :: i
- if( .NOT.module_is_initialized ) &
-      call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: must first call mpp_domains_init.' )
+subroutine mpp_get_domain_extents1D(domain, xextent, yextent)
+   type(domain2d),            intent(in) :: domain
+   integer, dimension(0:), intent(inout) :: xextent, yextent
+   integer                               :: n
 
- if( PRESENT(xbegin) )then
-    if( size(xbegin(:)).NE.size(domain%list(:)) ) &
-         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: xbegin array size does not match domain.' )
-    do i = 1, size(xbegin(:))
-       xbegin(i) = domain%list(i-1)%x(1)%global%begin
-    end do
- end if
- if( PRESENT(xend) )then
-    if( size(xend(:)).NE.size(domain%list(:)) ) &
-         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: xend array size does not match domain.' )
-    do i = 1, size(xend(:))
-       xend(i) = domain%list(i-1)%x(1)%global%end
-    end do
- end if
- if( PRESENT(xsize) )then
-    if( size(xsize(:)).NE.size(domain%list(:)) ) &
-         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: xsize array size does not match domain.' )
-    do i = 1, size(xsize(:))
-       xsize(i) = domain%list(i-1)%x(1)%global%size
-    end do
- end if
- if( PRESENT(ybegin) )then
-    if( size(ybegin(:)).NE.size(domain%list(:)) ) &
-         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: ybegin array size does not match domain.' )
-    do i = 1, size(ybegin(:))
-       ybegin(i) = domain%list(i-1)%y(1)%global%begin
-    end do
- end if
- if( PRESENT(yend) )then
-    if( size(yend(:)).NE.size(domain%list(:)) ) &
-         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: yend array size does not match domain.' )
-    do i = 1, size(yend(:))
-       yend(i) = domain%list(i-1)%y(1)%global%end
-    end do
- end if
- if( PRESENT(ysize) )then
-    if( size(ysize(:)).NE.size(domain%list(:)) ) &
-         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: ysize array size does not match domain.' )
-    do i = 1, size(ysize(:))
-       ysize(i) = domain%list(i-1)%y(1)%global%size
-    end do
- end if
- return
-end subroutine mpp_get_global_domains2D
+   if(domain%ntiles .NE. 1) call mpp_error(FATAL,"mpp_domains_util.inc(mpp_get_domain_extents1D): "// &
+       "ntiles is more than 1, please use mpp_get_domain_extents2D")
+   if(size(xextent) .NE. size(domain%x(1)%list(:)))  call mpp_error(FATAL,"mpp_domains_util.inc(mpp_get_domain_extents1D): "// &
+       "size(xextent) does not equal to size(domain%x(1)%list(:)))")
+   if(size(yextent) .NE. size(domain%y(1)%list(:)))  call mpp_error(FATAL,"mpp_domains_util.inc(mpp_get_domain_extents1D): "// &
+       "size(yextent) does not equal to size(domain%y(1)%list(:)))")
+   do n = 0, size(domain%x(1)%list(:))-1
+      xextent(n) = domain%x(1)%list(n)%compute%size
+   enddo
+   do n = 0, size(domain%y(1)%list(:))-1
+      yextent(n) = domain%y(1)%list(n)%compute%size
+   enddo
+
+end subroutine mpp_get_domain_extents1D
 
 !#####################################################################
 ! This will return xextent and yextent for each tile
-subroutine mpp_get_domain_extents(domain, xextent, yextent)
+subroutine mpp_get_domain_extents2D(domain, xextent, yextent)
    type(domain2d),             intent(in) :: domain
    integer, dimension(:,:), intent(inout) :: xextent, yextent
    integer                                :: ntile, nlist, n, m, ndivx, ndivy, tile, pos
@@ -562,9 +504,9 @@ subroutine mpp_get_domain_extents(domain, xextent, yextent)
    end do
 
 
-end subroutine mpp_get_domain_extents
+end subroutine mpp_get_domain_extents2D
    
-
+!#####################################################################
 function mpp_get_domain_pe(domain)
    type(domain2d), intent(in) :: domain
    integer                    :: mpp_get_domain_pe
@@ -907,139 +849,92 @@ end subroutine mpp_get_domain_shift
 !#######################################################################
   ! this routine found the domain has the same halo size with the input
   ! whalo, ehalo, 
-  function search_domain(domain, whalo, ehalo, shalo, nhalo, position, gridtype, direction)
-    type(domain2d),          intent(inout) :: domain
+  function search_update_overlap(domain, whalo, ehalo, shalo, nhalo, position)
+    type(domain2d),             intent(in) :: domain
     integer,                    intent(in) :: whalo, ehalo, shalo, nhalo
-    integer, optional,          intent(in) :: position, gridtype
-    character(len=1), optional, intent(in) :: direction
-    type(domain2d),             pointer    :: search_domain
-    type(domain2d),             pointer    :: Dom_ref => NULL()
-    integer                                :: update_position
+    integer,                    intent(in) :: position
+    type(overlapSpec),          pointer    :: search_update_overlap
+    type(overlapSpec),          pointer    :: update_ref
 
-    ! select the domain
-    if(present(position)) then
-       update_position = position
-    else if(present(gridtype)) then
-       if(.NOT. present(direction)) call mpp_error(FATAL,  &
-            "mpp_omains_util.inc: when gridtype is present, direction must present.")
-       select case(gridtype)
-       case(AGRID)
-          update_position = CENTER
-       case(BGRID_NE, BGRID_SW)
-          update_position = CORNER
-       case(CGRID_NE, CGRID_SW)
-          if(direction == 'x' ) then
-             update_position = EAST
-          else
-             update_position = NORTH
-          end if
-       case default
-          call mpp_error(FATAL,"mpp_domains_util.inc: gridtype should be AGRID|BGRID_NE|BGRID_SW|CGRID_NE|CGRID_SW")
-       end select
-    else
-       update_position = CENTER
-    end if
-
-    select case(update_position)
+    select case(position)
     case (CENTER)
-       Dom_ref => domain%T
+       update_ref => domain%update_T
     case (CORNER)
-       Dom_ref => domain%C
+       update_ref => domain%update_C
     case (NORTH)
-       Dom_ref => domain%N
+       update_ref => domain%update_N
     case (EAST)
-       Dom_ref => domain%E
+       update_ref => domain%update_E
     case default
-       call mpp_error(FATAL,"mpp_domains_util.inc: position should be CENTER|CORNER|EAST|NORTH")
+       call mpp_error(FATAL,"mpp_domains_util.inc(search_update_overlap): position should be CENTER|CORNER|EAST|NORTH")
     end select
 
-    search_domain => Dom_ref
+    search_update_overlap => update_ref
 
     do 
-       if(whalo == search_domain%whalo .AND. ehalo == search_domain%ehalo .AND. &
-            shalo == search_domain%shalo .AND. nhalo == search_domain%nhalo ) exit ! found domain
+       if(whalo == search_update_overlap%whalo .AND. ehalo == search_update_overlap%ehalo .AND. &
+            shalo == search_update_overlap%shalo .AND. nhalo == search_update_overlap%nhalo ) then
+            exit ! found domain
+       endif
        !--- if not found, switch to next
-       if(.NOT. ASSOCIATED(search_domain%next)) then
-          allocate(search_domain%next)
-          search_domain => search_domain%next
-          search_domain%initialized = .false.
-          call set_overlaps(Dom_ref, search_domain, whalo, ehalo, shalo, nhalo )
+       if(.NOT. ASSOCIATED(search_update_overlap%next)) then
+          allocate(search_update_overlap%next)
+          search_update_overlap => search_update_overlap%next
+          call set_overlaps(domain, update_ref, search_update_overlap, whalo, ehalo, shalo, nhalo )
           exit
        else
-          search_domain => search_domain%next
+          search_update_overlap => search_update_overlap%next
        end if
  
     end do
 
-  end function search_domain
+    update_ref => NULL()
 
-  !########################################################################
-  ! return the domain list correponding to position
-  function get_domain(domain, position, whalo, ehalo, shalo, nhalo, gridtype, direction)
-     type(domain2d),    intent(in) :: domain
-     integer, optional, intent(in) :: position
-     integer, optional, intent(in) :: whalo, ehalo, shalo, nhalo
-     integer, optional, intent(in) :: gridtype
-     character(len=1), optional, intent(in) :: direction
-     integer                       :: update_position
-     integer                       :: whalosz, ehalosz, shalosz, nhalosz
-     type(domain2d), pointer       :: get_domain
+  end function search_update_overlap
 
-     if(present(position)) then
-        update_position = position
-     else if(present(gridtype)) then
-        if(.NOT. present(direction)) call mpp_error(FATAL,  &
-             "mpp_omains_util.inc: when gridtype is present, direction must present.")
-        select case(gridtype)
-        case(AGRID)
-           update_position = CENTER
-        case(BGRID_NE, BGRID_SW)
-           update_position = CORNER
-        case(CGRID_NE, CGRID_SW)
-           if(direction == 'x' ) then
-              update_position = EAST
-           else
-              update_position = NORTH
-           end if
-        case(DGRID_NE, DGRID_SW)
-           if(direction == 'x' ) then
-              update_position = NORTH
-           else
-              update_position = EAST
-           end if
-        case default
-           call mpp_error(FATAL, &
-              "mpp_domains_util.inc: gridtype should be AGRID|BGRID_NE|BGRID_SW|CGRID_NE|CGRID_SW|DGRID_NE|DGRID_SW")
-        end select
-     else
-       update_position = CENTER
-     end if
+!#######################################################################
+  ! this routine found the check at certain position 
+  function search_check_overlap(domain, position)
+    type(domain2d),             intent(in) :: domain
+    integer,                    intent(in) :: position
+    type(overlapSpec),          pointer    :: search_check_overlap
 
-     select case (update_position)
-     case ( CENTER )
-        get_domain => domain%T
-     case ( CORNER )
-        get_domain => domain%C
-     case ( EAST )
-        get_domain => domain%E
-     case ( NORTH )
-        get_domain => domain%N     
-     end select
-     whalosz = get_domain%whalo; if(present(whalo) ) whalosz = whalo
-     ehalosz = get_domain%ehalo; if(present(ehalo) ) ehalosz = ehalo
-     shalosz = get_domain%shalo; if(present(shalo) ) shalosz = shalo
-     nhalosz = get_domain%nhalo; if(present(nhalo) ) nhalosz = nhalo
+    select case(position)
+    case (CENTER)
+       search_check_overlap => NULL()
+    case (CORNER)
+       search_check_overlap => domain%check_C
+    case (NORTH)
+       search_check_overlap => domain%check_N
+    case (EAST)
+       search_check_overlap => domain%check_E
+    case default
+       call mpp_error(FATAL,"mpp_domains_util.inc(search_check_overlap): position should be CENTER|CORNER|EAST|NORTH")
+    end select
 
-     do while(ASSOCIATED(get_domain))
-        if(get_domain%whalo == whalosz .AND. get_domain%ehalo == ehalosz .AND. &
-           get_domain%shalo == shalosz .AND. get_domain%nhalo == nhalosz ) exit ! found it
-        get_domain => get_domain%next
-     end do
-     if(.NOT. ASSOCIATED(get_domain) ) call mpp_error(FATAL,"mpp_domains_util.inc(get_domain): domain is not found " )
+  end function search_check_overlap
 
-     return
+!#######################################################################
+  ! this routine found the bound at certain position 
+  function search_bound_overlap(domain, position)
+    type(domain2d),             intent(in) :: domain
+    integer,                    intent(in) :: position
+    type(overlapSpec),          pointer    :: search_bound_overlap
 
-  end function get_domain
+    select case(position)
+    case (CENTER)
+       search_bound_overlap => NULL()
+    case (CORNER)
+       search_bound_overlap => domain%bound_C
+    case (NORTH)
+       search_bound_overlap => domain%bound_N
+    case (EAST)
+       search_bound_overlap => domain%bound_E
+    case default
+       call mpp_error(FATAL,"mpp_domains_util.inc(search_bound_overlap): position should be CENTER|CORNER|EAST|NORTH")
+    end select
+
+  end function search_bound_overlap
 
   !########################################################################
   ! return the tile_id on current pe
@@ -1111,14 +1006,19 @@ end subroutine mpp_get_domain_shift
      integer,        intent(in), optional :: whalo, ehalo, shalo, nhalo ! halo size to be updated
      integer,        intent(in), optional :: tile_count                ! tile number on current pe.
      integer                              :: mpp_get_refine_overlap_number
-     type(domain2d), pointer              :: dom => NULL()
-     integer                              :: tMe
+     type(overlapSpec), pointer           :: update => NULL()
+     integer                              :: tMe, whalosz, ehalosz, shalosz, nhalosz, pos
 
      tMe = 1
      if(present(tile_count)) tMe = tile_count
-
-     dom => get_domain( domain, position, whalo, ehalo, shalo, nhalo )
-     mpp_get_refine_overlap_number = dom%rSpec(tMe)%count
+     pos = CENTER;           if(present(position)) pos = position
+     whalosz = domain%whalo; if(present(whalo)) whalosz = whalo
+     ehalosz = domain%ehalo; if(present(ehalo)) ehalosz = ehalo
+     shalosz = domain%shalo; if(present(shalo)) shalosz = shalo
+     nhalosz = domain%nhalo; if(present(nhalo)) nhalosz = nhalo
+     update => search_update_overlap( domain, whalosz, ehalosz, shalosz, nhalosz, pos )
+     mpp_get_refine_overlap_number = update%rSpec(tMe)%count
+     update => NULL()
 
      return    
  
@@ -1127,32 +1027,41 @@ end subroutine mpp_get_domain_shift
   !#######################################################################
   ! return overlap information for refined contact.
   subroutine mpp_get_mosaic_refine_overlap(domain, isMe, ieMe, jsMe, jeMe, isNbr, ieNbr, jsNbr, jeNbr, &
-                                           rotation, position, whalo, ehalo, shalo, nhalo, tile_count)
+                                           dir, rotation, position, whalo, ehalo, shalo, nhalo, tile_count)
      type(domain2d), intent(in)           :: domain
      integer, dimension(:), intent(inout) :: isMe,  ieMe,  jsMe,  jeMe  ! index on current tile
      integer, dimension(:), intent(inout) :: isNbr, ieNbr, jsNbr, jeNbr ! index on neighbor tile
+     integer, dimension(:), intent(inout) :: dir                        ! direction
      integer, dimension(:), intent(inout) :: rotation                   ! rotation angle
      integer, optional,     intent(in)    :: position                   ! position of the cell, CENTER/EAST/NORTH/CORNER
      integer, optional,     intent(in)    :: whalo, ehalo, shalo, nhalo ! halo size to be updated
      integer, optional,     intent(in)    :: tile_count                ! tile number on current pe.
-     type(domain2d), pointer              :: dom => NULL()
-     integer                              :: tMe, count
+     type(overlapSpec), pointer           :: update => NULL()
+     integer                              :: tMe, count, whalosz, ehalosz, shalosz, nhalosz, pos
 
      tMe = 1
      if(present(tile_count)) tMe = tile_count
+     pos = CENTER;           if(present(position)) pos = position
+     whalosz = domain%whalo; if(present(whalo)) whalosz = whalo
+     ehalosz = domain%ehalo; if(present(ehalo)) ehalosz = ehalo
+     shalosz = domain%shalo; if(present(shalo)) shalosz = shalo
+     nhalosz = domain%nhalo; if(present(nhalo)) nhalosz = nhalo
 
-     dom => get_domain( domain, position, whalo, ehalo, shalo, nhalo )
-     count = dom%rSpec(tMe)%count
+     update => search_update_overlap( domain, whalosz, ehalosz, shalosz, nhalosz, pos )
+     count = update%rSpec(tMe)%count
      if(count>0) then
-        isMe(1:count)      = dom%rSpec(tMe)%isMe
-        ieMe(1:count)      = dom%rSpec(tMe)%ieMe
-        jsMe(1:count)      = dom%rSpec(tMe)%jsMe
-        jeMe(1:count)      = dom%rSpec(tMe)%jeMe
-        isNbr(1:count)     = dom%rSpec(tMe)%isNbr
-        ieNbr(1:count)     = dom%rSpec(tMe)%ieNbr
-        jsNbr(1:count)     = dom%rSpec(tMe)%jsNbr
-        jeNbr(1:count)     = dom%rSpec(tMe)%jeNbr
-        rotation(1:count)  = dom%rSpec(tMe)%rotation
+        if(size(isMe(:)) < count) call mpp_error(FATAL, &
+           "mpp_domains_util.inc(mpp_get_mosaic_refine_overlap): size of isMe is less than the number of overlap")
+        isMe(1:count)      = update%rSpec(tMe)%isMe
+        ieMe(1:count)      = update%rSpec(tMe)%ieMe
+        jsMe(1:count)      = update%rSpec(tMe)%jsMe
+        jeMe(1:count)      = update%rSpec(tMe)%jeMe
+        isNbr(1:count)     = update%rSpec(tMe)%isNbr
+        ieNbr(1:count)     = update%rSpec(tMe)%ieNbr
+        jsNbr(1:count)     = update%rSpec(tMe)%jsNbr
+        jeNbr(1:count)     = update%rSpec(tMe)%jeNbr
+        dir  (1:count)     = update%rSpec(tMe)%dir
+        rotation(1:count)  = update%rSpec(tMe)%rotation
      endif
 
      return
@@ -1187,33 +1096,107 @@ end subroutine mpp_get_domain_shift
     integer,           intent(in) :: p
     integer, optional, intent(in) :: position
     integer                       :: mpp_get_num_overlap
-    type(domain2d), pointer       :: dom=>NULL()
+    type(overlapSpec), pointer    :: update => NULL()
     integer                       :: pos
 
     pos = CENTER
-    if(present(position)) pos = CENTER
+    if(present(position)) pos = position
     select case(pos)
     case (CENTER)
-       dom => domain%T
+       update => domain%update_T
     case (CORNER)
-       dom => domain%C
+       update => domain%update_C
     case (EAST)
-       dom => domain%E
+       update => domain%update_E
     case (NORTH)
-       dom => domain%N
+       update => domain%update_N
     case default
        call mpp_error( FATAL, "mpp_domains_mod(mpp_get_num_overlap): invalid option of position")
     end select
 
     if(action == EVENT_SEND) then
-       mpp_get_num_overlap = dom%update_send(p)%count
+       if(p< 1 .OR. p > update%nsend) call mpp_error( FATAL, &
+                "mpp_domains_mod(mpp_get_num_overlap): p should be between 1 and update%nsend")
+       mpp_get_num_overlap = update%send(p)%count
     else if(action == EVENT_RECV) then
-       mpp_get_num_overlap = dom%update_recv(p)%count
+       if(p< 1 .OR. p > update%nrecv) call mpp_error( FATAL, &
+                "mpp_domains_mod(mpp_get_num_overlap): p should be between 1 and update%nrecv")
+       mpp_get_num_overlap = update%recv(p)%count
     else
        call mpp_error( FATAL, "mpp_domains_mod(mpp_get_num_overlap): invalid option of action")
     end if
 
   end function mpp_get_num_overlap
+
+  !#############################################################################
+  subroutine mpp_get_update_size(domain, nsend, nrecv, position)
+    type(domain2d),      intent(in) :: domain
+    integer,            intent(out) :: nsend, nrecv
+    integer, optional,   intent(in) :: position
+    integer                         :: pos
+
+    pos = CENTER
+    if(present(position)) pos = position
+    select case(pos)
+    case (CENTER)
+       nsend = domain%update_T%nsend
+       nrecv = domain%update_T%nrecv
+    case (CORNER)
+       nsend = domain%update_C%nsend
+       nrecv = domain%update_C%nrecv
+    case (EAST)
+       nsend = domain%update_E%nsend
+       nrecv = domain%update_E%nrecv
+    case (NORTH)
+       nsend = domain%update_N%nsend
+       nrecv = domain%update_N%nrecv
+    case default
+       call mpp_error( FATAL, "mpp_domains_mod(mpp_get_update_size): invalid option of position")
+    end select
+
+  end subroutine mpp_get_update_size
+
+  !#############################################################################
+  subroutine mpp_get_update_pelist(domain, action, pelist, position)
+    type(domain2d),       intent(in) :: domain
+    integer,              intent(in) :: action
+    integer,           intent(inout) :: pelist(:)
+    integer, optional,    intent(in) :: position
+    type(overlapSpec), pointer    :: update => NULL()
+    integer                       :: pos, p
+
+    pos = CENTER
+    if(present(position)) pos = position
+    select case(pos)
+    case (CENTER)
+       update => domain%update_T
+    case (CORNER)
+       update => domain%update_C
+    case (EAST)
+       update => domain%update_E
+    case (NORTH)
+       update => domain%update_N
+    case default
+       call mpp_error( FATAL, "mpp_domains_mod(mpp_get_update_pelist): invalid option of position")
+    end select
+
+    if(action == EVENT_SEND) then
+       if(size(pelist) .NE. update%nsend) call mpp_error( FATAL,  &
+             "mpp_domains_mod(mpp_get_update_pelist): size of pelist does not match update%nsend")
+       do p = 1, update%nsend
+          pelist(p) = update%send(p)%pe
+       enddo
+    else if(action == EVENT_RECV) then
+       if(size(pelist) .NE. update%nrecv) call mpp_error( FATAL,  &
+             "mpp_domains_mod(mpp_get_update_pelist): size of pelist does not match update%nrecv")
+       do p = 1, update%nrecv
+          pelist(p) = update%recv(p)%pe
+       enddo
+    else
+       call mpp_error( FATAL, "mpp_domains_mod(mpp_get_update_pelist): invalid option of action")
+    end if
+
+  end subroutine mpp_get_update_pelist
 
   !#############################################################################
   subroutine mpp_get_overlap(domain, action, p, is, ie, js, je, dir, rot, position)
@@ -1223,30 +1206,29 @@ end subroutine mpp_get_domain_shift
     integer, dimension(:), intent(out) :: is, ie, js, je
     integer, dimension(:), intent(out) :: dir, rot    
     integer, optional,      intent(in) :: position
-
-    type(domain2d),    pointer    :: dom     => NULL()
-    type(overlapSpec), pointer    :: overlap => NULL()
-    integer                       :: count, pos
+    type(overlapSpec),      pointer    :: update => NULL()
+    type(overlap_type),     pointer    :: overlap => NULL()
+    integer                            :: count, pos
 
     pos = CENTER
-    if(present(position)) pos = CENTER
+    if(present(position)) pos = position
     select case(pos)
     case (CENTER)
-       dom => domain%T
+       update => domain%update_T
     case (CORNER)
-       dom => domain%C
+       update => domain%update_C
     case (EAST)
-       dom => domain%E
+       update => domain%update_E
     case (NORTH)
-       dom => domain%N
+       update => domain%update_N
     case default
        call mpp_error( FATAL, "mpp_domains_mod(mpp_get_overlap): invalid option of position")
-    end select    
+    end select
 
     if(action == EVENT_SEND) then
-       overlap => dom%update_send(p)
+       overlap => update%send(p)
     else if(action == EVENT_RECV) then
-       overlap => dom%update_recv(p)
+       overlap => update%recv(p)
     else
        call mpp_error( FATAL, "mpp_domains_mod(mpp_get_overlap): invalid option of action")
     end if
@@ -1262,6 +1244,9 @@ end subroutine mpp_get_domain_shift
     je  = overlap%je      (1:count)
     dir = overlap%dir     (1:count)
     rot = overlap%rotation(1:count)
+
+    update  => NULL()
+    overlap => NULL()
 
   end subroutine mpp_get_overlap
 
@@ -1282,3 +1267,150 @@ end subroutine mpp_get_domain_shift
      mpp_get_io_domain_layout = domain%io_layout
 
   end function mpp_get_io_domain_layout
+
+  !################################################################
+  function get_rank_send(domain, overlap_x, overlap_y, rank_x, rank_y, ind_x, ind_y)
+    type(domain2D),    intent(in) :: domain
+    type(overlapSpec), intent(in) :: overlap_x, overlap_y
+    integer,          intent(out) :: rank_x, rank_y, ind_x, ind_y
+    integer                       :: get_rank_send
+    integer                       :: nlist, nsend_x, nsend_y
+
+    nlist = size(domain%list(:))
+    nsend_x = overlap_x%nsend
+    nsend_y = overlap_y%nsend
+    rank_x = nlist+1
+    rank_y = nlist+1
+    if(nsend_x>0) rank_x = overlap_x%send(1)%pe - domain%pe
+    if(nsend_y>0) rank_y = overlap_y%send(1)%pe - domain%pe
+    if(rank_x .LT. 0) rank_x = rank_x + nlist
+    if(rank_y .LT. 0) rank_y = rank_y + nlist
+    get_rank_send = min(rank_x, rank_y)
+    ind_x = nsend_x + 1
+    ind_y = nsend_y + 1
+    if(get_rank_send < nlist+1) then
+       if(nsend_x>0) ind_x = 1
+       if(nsend_y>0) ind_y = 1
+    endif
+
+  end function get_rank_send
+
+  !############################################################################
+  function get_rank_recv(domain, overlap_x, overlap_y, rank_x, rank_y, ind_x, ind_y)
+    type(domain2D),    intent(in) :: domain
+    type(overlapSpec), intent(in) :: overlap_x, overlap_y
+    integer,          intent(out) :: rank_x, rank_y, ind_x, ind_y
+    integer                       :: get_rank_recv
+    integer                       :: nlist, nrecv_x, nrecv_y
+
+    nlist = size(domain%list(:))
+    nrecv_x = overlap_x%nrecv
+    nrecv_y = overlap_y%nrecv
+    rank_x = -1
+    rank_y = -1
+    if(nrecv_x>0) rank_x = overlap_x%recv(1)%pe - domain%pe
+    if(nrecv_y>0) rank_y = overlap_y%recv(1)%pe - domain%pe    
+
+    if(rank_x .LE. 0) rank_x = rank_x + nlist
+    if(rank_y .LE. 0) rank_y = rank_y + nlist
+    get_rank_recv = max(rank_x, rank_y)
+    ind_x = nrecv_x + 1
+    ind_y = nrecv_y + 1
+    if(get_rank_recv < nlist+1) then
+       if(nrecv_x>0) ind_x = 1
+       if(nrecv_y>0) ind_y = 1
+    endif
+
+  end function get_rank_recv
+
+  !############################################################################  
+  function get_rank_unpack(domain, overlap_x, overlap_y, rank_x, rank_y, ind_x, ind_y)
+    type(domain2D),    intent(in) :: domain
+    type(overlapSpec), intent(in) :: overlap_x, overlap_y
+    integer,          intent(out) :: rank_x, rank_y, ind_x, ind_y
+    integer                       :: get_rank_unpack
+    integer                       :: nlist, nrecv_x, nrecv_y
+
+    nlist = size(domain%list(:))
+    nrecv_x = overlap_x%nrecv
+    nrecv_y = overlap_y%nrecv
+
+    rank_x = nlist+1
+    rank_y = nlist+1
+    if(nrecv_x>0) rank_x = overlap_x%recv(nrecv_x)%pe - domain%pe
+    if(nrecv_y>0) rank_y = overlap_y%recv(nrecv_y)%pe - domain%pe
+    if(rank_x .LE.0) rank_x = rank_x + nlist
+    if(rank_y .LE.0) rank_y = rank_y + nlist
+
+    get_rank_unpack = min(rank_x, rank_y)
+    ind_x = 0
+    ind_y = 0
+    if(get_rank_unpack < nlist+1) then
+       if(nrecv_x >0) ind_x = nrecv_x
+       if(nrecv_y >0) ind_y = nrecv_y
+    endif
+
+  end function get_rank_unpack
+
+  !#############################################################################
+  subroutine mpp_set_domain_symmetry(domain, symmetry)
+    type(domain2D), intent(inout) :: domain
+    logical,        intent(in   ) :: symmetry
+
+    domain%symmetry = symmetry
+
+  end subroutine mpp_set_domain_symmetry
+  
+
+  subroutine mpp_copy_domain1D(domain_in, domain_out)
+     type(domain1D),    intent(in) :: domain_in
+     type(domain1D), intent(inout) :: domain_out
+
+     domain_out%compute = domain_in%compute
+     domain_out%data    = domain_in%data
+     domain_out%global  = domain_in%global
+     domain_out%memory  = domain_in%memory
+     domain_out%cyclic  = domain_in%cyclic
+     domain_out%pe      = domain_in%pe 
+     domain_out%pos     = domain_in%pos 
+
+  end subroutine mpp_copy_domain1D
+
+  !#################################################################
+  !z1l: This is not fully implemented. The current purpose is to make
+  !     it work in read_data.
+  subroutine mpp_copy_domain2D(domain_in, domain_out)
+     type(domain2D),    intent(in) :: domain_in
+     type(domain2D), intent(inout) :: domain_out
+
+     integer :: n, ntiles
+
+     domain_out%id             = domain_in%id
+     domain_out%pe             = domain_in%pe
+     domain_out%fold           = domain_in%fold
+     domain_out%pos            = domain_in%pos
+     domain_out%symmetry       = domain_in%symmetry
+     domain_out%whalo          = domain_in%whalo
+     domain_out%ehalo          = domain_in%ehalo
+     domain_out%shalo          = domain_in%shalo
+     domain_out%nhalo          = domain_in%nhalo
+     domain_out%ntiles         = domain_in%ntiles
+     domain_out%max_ntile_pe   = domain_in%max_ntile_pe
+     domain_out%ncontacts      = domain_in%ncontacts
+     domain_out%rotated_ninety = domain_in%rotated_ninety
+     domain_out%initialized    = domain_in%initialized
+     domain_out%tile_root_pe   = domain_in%tile_root_pe
+     domain_out%io_layout      = domain_in%io_layout
+     domain_out%name           = domain_in%name
+
+     ntiles = size(domain_in%x(:))
+     allocate(domain_out%x(ntiles), domain_out%y(ntiles), domain_out%tile_id(ntiles) )
+     do n = 1, ntiles
+        call mpp_copy_domain1D(domain_in%x(n), domain_out%x(n))
+        call mpp_copy_domain1D(domain_in%y(n), domain_out%y(n))
+     enddo
+     domain_out%tile_id = domain_in%tile_id
+
+     return
+
+  end subroutine mpp_copy_domain2D

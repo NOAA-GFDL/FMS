@@ -14,20 +14,21 @@ MODULE diag_util_mod
        & time_unit_list, max_files, base_year, base_month, base_day, base_hour, base_minute,&
        & base_second, num_files, max_files, max_fields_per_file, max_out_per_in_field,&
        & max_input_fields,num_input_fields, max_output_fields, num_output_fields, coord_type,&
-       & mix_snapshot_average_fields, global_descriptor
+       & mix_snapshot_average_fields, global_descriptor, CMOR_MISSING_VALUE, use_cmor
   USE diag_axis_mod, ONLY  : get_diag_axis_data, get_axis_global_length, get_diag_axis_cart,&
        & get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, get_axis_aux,&
-       & get_axes_shift, get_diag_axis_name
+       & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name
   USE diag_output_mod, ONLY: diag_flush, diag_field_out, diag_output_init, write_axis_meta_data,&
        & write_field_meta_data, done_meta_data
+  USE diag_grid_mod, ONLY: get_local_indexes
   USE fms_mod, ONLY        : error_mesg, FATAL, WARNING, mpp_pe, mpp_root_pe, lowercase, fms_error_handler
   USE fms_io_mod, ONLY     : get_tile_string, return_domain, string
   USE mpp_domains_mod,ONLY : domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
-       & OPERATOR(/=), OPERATOR(==), mpp_modify_domain, mpp_get_domain_components,&
+       & OPERATOR(.NE.), OPERATOR(.EQ.), mpp_modify_domain, mpp_get_domain_components,&
        & mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, mpp_get_tile_npes
   USE time_manager_mod,ONLY: time_type, OPERATOR(==), OPERATOR(>), NO_CALENDAR, increment_date,&
        & increment_time, get_calendar_type, get_date, get_time, leap_year, OPERATOR(-),&
-       & OPERATOR(<), OPERATOR(>=)
+       & OPERATOR(<), OPERATOR(>=), OPERATOR(<=)
   USE mpp_io_mod, ONLY : mpp_close
   USE mpp_mod, ONLY : mpp_npes
   USE constants_mod, ONLY : SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
@@ -37,10 +38,12 @@ MODULE diag_util_mod
   PUBLIC get_subfield_size, log_diag_field_info, update_bounds, check_out_of_bounds,&
        & check_bounds_are_exact_dynamic, check_bounds_are_exact_static, init_file, diag_time_inc,&
        & find_input_field, init_input_field, init_output_field, diag_data_out, write_static,&
-       & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size
+       & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size, sync_file_times
 
-  CHARACTER(len=128),PRIVATE  :: version = '$Id: diag_util.F90,v 17.0 2009/07/21 03:18:54 fms Exp $'
-  CHARACTER(len=128),PRIVATE  :: tagname = '$Name: quebec_200910 $'
+  CHARACTER(len=128),PRIVATE  :: version =&
+       & '$Id: diag_util.F90,v 18.0 2010/03/02 23:55:31 fms Exp $'
+  CHARACTER(len=128),PRIVATE  :: tagname =&
+       & '$Name: riga $'
 
 CONTAINS
 
@@ -71,6 +74,7 @@ CONTAINS
     REAL, ALLOCATABLE :: subaxis_x(:), subaxis_y(:), subaxis_z(:) !containing local coordinates in x,y,z axes
     CHARACTER(len=128) :: msg
     INTEGER :: ishift, jshift
+    CHARACTER(len=128), DIMENSION(2) :: axis_domain_name
 
     !initilization for local output
     ! initially out of (lat/lon/depth) range
@@ -83,83 +87,139 @@ CONTAINS
     start = output_fields(outnum)%output_grid%start
     end = output_fields(outnum)%output_grid%end
 
-    DO i = 1, SIZE(axes(:))   
-       global_axis_size = get_axis_global_length(axes(i))
-       output_fields(outnum)%output_grid%subaxes(i) = -1
-       CALL get_diag_axis_cart(axes(i), cart)
-       SELECT CASE(cart)
-       CASE ('X')
-          ! <ERROR STATUS="FATAL">wrong order of axes.  X should come first.</ERROR>
-          IF( i.NE.1 ) CALL error_mesg ('diag_util, get subfield size',&
-               & 'wrong order of axes, X should come first',FATAL)
-          ALLOCATE(global_lon(global_axis_size))
-          CALL get_diag_axis_data(axes(i),global_lon)
-          IF( INT( start(i)*END(i) ) == 1 ) THEN 
-             gstart_indx(i) = 1
-             gend_indx(i) = global_axis_size
-             output_fields(outnum)%output_grid%subaxes(i) = axes(i)
-          ELSE 
-             gstart_indx(i) = get_index(start(i),global_lon)
-             gend_indx(i) = get_index(END(i),global_lon)
+    CALL get_diag_axis_domain_name(axes(1), axis_domain_name(1))
+    CALL get_diag_axis_domain_name(axes(2), axis_domain_name(2))
+
+    IF (   INDEX(lowercase(axis_domain_name(1)), 'cubed') == 0 .AND. &
+         & INDEX(lowercase(axis_domain_name(2)), 'cubed') == 0 ) THEN
+       DO i = 1, SIZE(axes(:))
+          global_axis_size = get_axis_global_length(axes(i))
+          output_fields(outnum)%output_grid%subaxes(i) = -1
+          CALL get_diag_axis_cart(axes(i), cart)
+          SELECT CASE(cart)
+          CASE ('X')
+             ! <ERROR STATUS="FATAL">wrong order of axes.  X should come first.</ERROR>
+             IF( i.NE.1 ) CALL error_mesg ('diag_util, get subfield size',&
+                  & 'wrong order of axes, X should come first',FATAL)
+             ALLOCATE(global_lon(global_axis_size))
+             CALL get_diag_axis_data(axes(i),global_lon)
+             IF( INT( start(i)*END(i) ) == 1 ) THEN 
+                gstart_indx(i) = 1
+                gend_indx(i) = global_axis_size
+                output_fields(outnum)%output_grid%subaxes(i) = axes(i)
+             ELSE 
+                gstart_indx(i) = get_index(start(i),global_lon)
+                gend_indx(i) = get_index(END(i),global_lon)
+             END IF
+             ALLOCATE(subaxis_x(gstart_indx(i):gend_indx(i)))
+             subaxis_x=global_lon(gstart_indx(i):gend_indx(i))   
+          CASE ('Y')
+             ! <ERROR STATUS="FATAL">wrong order of axes, Y should come second.</ERROR>
+             IF( i.NE.2 ) CALL error_mesg ('diag_util, get subfield size',&
+                  & 'wrong order of axes, Y should come second',FATAL)
+             ALLOCATE(global_lat(global_axis_size))
+             CALL get_diag_axis_data(axes(i),global_lat)
+             IF( INT( start(i)*END(i) ) == 1 ) THEN 
+                gstart_indx(i) = 1
+                gend_indx(i) = global_axis_size
+                output_fields(outnum)%output_grid%subaxes(i) = axes(i)
+             ELSE
+                gstart_indx(i) = get_index(start(i),global_lat)
+                gend_indx(i) = get_index(END(i),global_lat)
+             END IF
+             ALLOCATE(subaxis_y(gstart_indx(i):gend_indx(i)))
+             subaxis_y=global_lat(gstart_indx(i):gend_indx(i))
+          CASE ('Z')
+             ! <ERROR STATUS="FATAL">wrong values in vertical axis of region</ERROR>
+             IF ( start(i)*END(i)<0 ) CALL error_mesg ('diag_util, get subfield size',&
+                  & 'wrong values in vertical axis of region',FATAL)
+             IF ( start(i)>0 .AND. END(i)>0 ) THEN 
+                ALLOCATE(global_depth(global_axis_size))
+                CALL get_diag_axis_data(axes(i),global_depth)
+                gstart_indx(i) = get_index(start(i),global_depth)
+                gend_indx(i) = get_index(END(i),global_depth)
+                ALLOCATE(subaxis_z(gstart_indx(i):gend_indx(i)))
+                subaxis_z=global_depth(gstart_indx(i):gend_indx(i))
+                output_fields(outnum)%output_grid%subaxes(i) =&
+                     & diag_subaxes_init(axes(i),subaxis_z, gstart_indx(i),gend_indx(i))
+                DEALLOCATE(subaxis_z,global_depth)
+             ELSE ! regional vertical axis is the same as global vertical axis
+                gstart_indx(i) = 1
+                gend_indx(i) = global_axis_size
+                output_fields(outnum)%output_grid%subaxes(i) = axes(i)
+                ! <ERROR STATUS="FATAL">i should equal 3 for z axis</ERROR>
+                IF( i /= 3 ) CALL error_mesg ('diag_util, get subfield size',&
+                     & 'i should equal 3 for z axis', FATAL)
+             END IF
+          CASE default
+             ! <ERROR STATUS="FATAL">Wrong axis_cart</ERROR>
+             CALL error_mesg ('diag_util, get_subfield_size', 'Wrong axis_cart', FATAL)
+          END SELECT
+       END DO
+
+       DO i = 1, SIZE(axes(:))
+          IF( gstart_indx(i) == -1 .OR. gend_indx(i) == -1 ) THEN
+             ! <ERROR STATUS="FATAL">
+             !   can not find gstart_indx/gend_indx for <output_fields(outnum)%output_name>
+             !   check region bounds for axis <i>.
+             ! </ERROR>
+             WRITE(msg,'(a,I2)') ' check region bounds for axis ', i
+             CALL error_mesg ('diag_util, get_subfield_size', 'can not find gstart_indx/gend_indx for '&
+                  & //TRIM(output_fields(outnum)%output_name)//','//TRIM(msg), FATAL)
           END IF
-          ALLOCATE(subaxis_x(gstart_indx(i):gend_indx(i)))
-          subaxis_x=global_lon(gstart_indx(i):gend_indx(i))   
-       CASE ('Y')
-          ! <ERROR STATUS="FATAL">wrong order of axes, Y should come second.</ERROR>
-          IF( i.NE.2 ) CALL error_mesg ('diag_util, get subfield size',&
-               & 'wrong order of axes, Y should come second',FATAL)
-          ALLOCATE(global_lat(global_axis_size))
-          CALL get_diag_axis_data(axes(i),global_lat)
-          IF( INT( start(i)*END(i) ) == 1 ) THEN 
-             gstart_indx(i) = 1
-             gend_indx(i) = global_axis_size
-             output_fields(outnum)%output_grid%subaxes(i) = axes(i)
-          ELSE
-             gstart_indx(i) = get_index(start(i),global_lat)
-             gend_indx(i) = get_index(END(i),global_lat)
-          END IF
-          ALLOCATE(subaxis_y(gstart_indx(i):gend_indx(i)))
-          subaxis_y=global_lat(gstart_indx(i):gend_indx(i))
-       CASE ('Z')
+       END DO
+    ELSE ! cubed sphere
+       ! get the i and j start and end indexes
+       CALL get_local_indexes(LONSTART=start(1), LONEND=END(1), &
+            &                 LATSTART=start(2), LATEND=END(2), &
+            &                 ISTART=gstart_indx(1), IEND=gend_indx(1), &
+            &                 JSTART=gstart_indx(2), JEND=gend_indx(2))
+       global_axis_size =  get_axis_global_length(axes(1))
+       ALLOCATE(global_lon(global_axis_size))
+       global_axis_size = get_axis_global_length(axes(2))
+       ALLOCATE(global_lat(global_axis_size))
+       CALL get_diag_axis_data(axes(1),global_lon)
+       CALL get_diag_axis_data(axes(2),global_lat)
+       IF (   (gstart_indx(1) > 0 .AND. gstart_indx(2) > 0) .AND. &
+            & (gend_indx(1) > 0 .AND. gend_indx(2) > 0) ) THEN
+          ALLOCATE(subaxis_x(gstart_indx(1):gend_indx(1)))
+          ALLOCATE(subaxis_y(gstart_indx(2):gend_indx(2)))
+          subaxis_x=global_lon(gstart_indx(1):gend_indx(1))
+          subaxis_y=global_lat(gstart_indx(2):gend_indx(2))
+       END IF
+
+       ! Now deal with the Z component
+       IF ( SIZE(axes(:)) > 2 ) THEN
+          global_axis_size = get_axis_global_length(axes(3))
+          output_fields(outnum)%output_grid%subaxes(3) = -1
+          CALL get_diag_axis_cart(axes(3), cart)
+          IF ( lowercase(cart) /= 'z' ) CALL error_mesg('diag_util_mod::get_subfield_size', &
+               &'axis(3) should be Z-axis', FATAL)
           ! <ERROR STATUS="FATAL">wrong values in vertical axis of region</ERROR>
-          IF ( start(i)*END(i)<0 ) CALL error_mesg ('diag_util, get subfield size',&
+          IF ( start(3)*END(3)<0 ) CALL error_mesg ('diag_util, get subfield size',&
                & 'wrong values in vertical axis of region',FATAL)
-          IF ( start(i)>0 .AND. END(i)>0 ) THEN 
+          IF ( start(3)>0 .AND. END(3)>0 ) THEN 
              ALLOCATE(global_depth(global_axis_size))
-             CALL get_diag_axis_data(axes(i),global_depth)
-             gstart_indx(i) = get_index(start(i),global_depth)
-             gend_indx(i) = get_index(END(i),global_depth)
-             ALLOCATE(subaxis_z(gstart_indx(i):gend_indx(i)))
-             subaxis_z=global_depth(gstart_indx(i):gend_indx(i))
-             output_fields(outnum)%output_grid%subaxes(i) =&
-                  & diag_subaxes_init(axes(i),subaxis_z, gstart_indx(i),gend_indx(i))
+             CALL get_diag_axis_data(axes(3),global_depth)
+             gstart_indx(3) = get_index(start(3),global_depth)
+             IF( start(3) == 0.0 )  gstart_indx(3) = 1
+             gend_indx(3) = get_index(END(3),global_depth)
+             IF( start(3) >= MAXVAL(global_depth) ) gstart_indx(3)= global_axis_size
+             IF( END(3)   >= MAXVAL(global_depth) ) gend_indx(3)  = global_axis_size
+             
+             ALLOCATE(subaxis_z(gstart_indx(3):gend_indx(3)))
+             subaxis_z=global_depth(gstart_indx(3):gend_indx(3))
+             output_fields(outnum)%output_grid%subaxes(3) =&
+                  & diag_subaxes_init(axes(3),subaxis_z, gstart_indx(3),gend_indx(3))
              DEALLOCATE(subaxis_z,global_depth)
           ELSE ! regional vertical axis is the same as global vertical axis
-             gstart_indx(i) = 1
-             gend_indx(i) = global_axis_size
-             output_fields(outnum)%output_grid%subaxes(i) = axes(i)
-             ! <ERROR STATUS="FATAL">i should equal 3 for z axis</ERROR>
-             IF( i /= 3 ) CALL error_mesg ('diag_util, get subfield size',&
-                  & 'i should equal 3 for z axis', FATAL)
+             gstart_indx(3) = 1
+             gend_indx(3) = global_axis_size
+             output_fields(outnum)%output_grid%subaxes(3) = axes(3)
           END IF
-       CASE default
-          ! <ERROR STATUS="FATAL">Wrong axis_cart</ERROR>
-          CALL error_mesg ('diag_util, get_subfield_size', 'Wrong axis_cart', FATAL)
-       END SELECT
-    END DO
-
-    DO i = 1, SIZE(axes(:))
-       IF( gstart_indx(i) == -1 .OR. gend_indx(i) == -1 ) THEN
-          ! <ERROR STATUS="FATAL">
-          !   can not find gstart_indx/gend_indx for <output_fields(outnum)%output_name>
-          !   check region bounds for axis <i>.
-          ! </ERROR>
-          WRITE(msg,'(a,I2)') ' check region bounds for axis ', i
-          CALL error_mesg ('diag_util, get_subfield_size', 'can not find gstart_indx/gend_indx for '&
-               & //TRIM(output_fields(outnum)%output_name)//','//TRIM(msg), FATAL)
        END IF
-    END DO
-
+    END IF
+    
     ! get domain and compute_domain(xbegin,xend,ybegin,yend)
     xbegin=-1
     xend=-1
@@ -167,13 +227,13 @@ CONTAINS
     yend=-1
 
     Domain2 = get_domain2d(axes)
-    IF ( Domain2 /= NULL_DOMAIN2D ) THEN
+    IF ( Domain2 .NE. NULL_DOMAIN2D ) THEN
        CALL mpp_get_compute_domain(Domain2,xbegin,xend,ybegin,yend)
        CALL mpp_get_domain_components(Domain2, Domain1x, Domain1y)
     ELSE
        DO i = 1, MIN(SIZE(axes(:)),2)    
           Domain1 = get_domain1d(axes(i))
-          IF ( Domain1 /= NULL_DOMAIN1D ) THEN
+          IF ( Domain1 .NE. NULL_DOMAIN1D ) THEN
              CALL get_diag_axis_cart(axes(i),cart)
              SELECT CASE(cart)
              CASE ('X')
@@ -253,8 +313,8 @@ CONTAINS
           output_fields(outnum)%output_grid%l_end_indx(3) = 1
        END IF
     END IF
-    DEALLOCATE(subaxis_x, global_lon)
-    DEALLOCATE(subaxis_y, global_lat)
+    IF ( ALLOCATED(subaxis_x) ) DEALLOCATE(subaxis_x, global_lon)
+    IF ( ALLOCATED(subaxis_y) ) DEALLOCATE(subaxis_y, global_lat)
 
   END SUBROUTINE get_subfield_size
   ! </SUBROUTINE>
@@ -367,7 +427,6 @@ CONTAINS
     IF( SIZE(axes(:)) > 2 ) THEN
        output_fields(outnum)%output_grid%l_start_indx(3) = gstart_indx(3)
        output_fields(outnum)%output_grid%l_end_indx(3)   = gend_indx(3)
-       PRINT *, 'Diag:  ', TRIM(output_fields(outnum)%output_name), outnum, gstart_indx(3), gend_indx(3)
     ELSE
        output_fields(outnum)%output_grid%l_start_indx(3) = 1
        output_fields(outnum)%output_grid%l_end_indx(3)   = 1
@@ -475,13 +534,16 @@ CONTAINS
   !     missing_value, range, dynamic)
   !   </TEMPLATE>
   !   <DESCRIPTION>
-  !     If <TT>init_verbose</TT> namelist parameter is true, adds a line briefly 
-  !     describing diagnostic field to the log file. Normally users should not call
-  !     this subroutine directly, since it is called by register_static_field and register_diag_field
-  !     if do_not_log is not set to true. It is used, however, in LM3 to avoid excessive
-  !     log due to a number of fields registered for each of the tile types. LM3 code uses
-  !     do_not_log parameter in the registration calls, and calls this subroutine to
-  !     log field information under generic name.
+  !     If the <TT>do_diag_field_log</TT> namelist parameter is .TRUE.,
+  !     then a line briefly describing diagnostic field is added to
+  !     the log file.  Normally users should not call this subroutine
+  !     directly, since it is called by register_static_field and
+  !     register_diag_field if do_not_log is not set to .TRUE..  It is
+  !     used, however, in LM3 to avoid excessive logs due to the
+  !     number of fields registered for each of the tile types.  LM3
+  !     code uses a do_not_log parameter in the registration calls,
+  !     and subsequently calls this subroutine to log field information
+  !     under a generic name.
   !   </DESCRIPTION>
   !   <IN NAME="module_name" TYPE="CHARACTER(len=*)"></IN>
   !   <IN NAME="field_name" TYPE="CHARACTER(len=*)"></IN>
@@ -529,7 +591,11 @@ CONTAINS
     WRITE (numaxis,'(i1)') SIZE(axes)
 
     IF (PRESENT(missing_value)) THEN
-       WRITE (lmissval,*) missing_value
+       IF ( use_cmor ) THEN
+          WRITE (lmissval,*) CMOR_MISSING_VALUE
+       ELSE
+          WRITE (lmissval,*) missing_value
+       END IF
     ELSE
        lmissval = ''
     ENDIF
@@ -796,7 +862,7 @@ CONTAINS
   !   <IN NAME="file_duration" TYPE="INTEGER, OPTIONAL"></IN>
   !   <IN NAME="file_duration_units" TYPE="INTEGER, OPTIONAL"></IN>
   SUBROUTINE init_file(name, output_freq, output_units, FORMAT, time_units, long_name, tile_count,&
-       & new_file_freq, new_file_freq_units, start_time,file_duration,file_duration_units)
+       & new_file_freq, new_file_freq_units, start_time, file_duration, file_duration_units)
     CHARACTER(len=*), INTENT(in) :: name, long_name
     INTEGER, INTENT(in) :: output_freq, output_units, FORMAT, time_units
     INTEGER, INTENT(in) :: tile_count
@@ -812,23 +878,41 @@ CONTAINS
     ! Get a number for this file
     num_files = num_files + 1
     IF ( num_files >= max_files ) THEN
-       ! <ERROR STATUS="FATAL">max_files exceeded, increase max_files</ERROR>
-       CALL error_mesg('diag_util, init_file', ' max_files exceeded, increase max_files via the max_files variable in the namelist diag_manager_nml.', FATAL)
+       ! <ERROR STATUS="FATAL">
+       !   max_files exceeded, increase max_files via the max_files variable
+       !   in the namelist diag_manager_nml
+       ! </ERROR>
+       CALL error_mesg('diag_util, init_file',&
+            & ' max_files exceeded, increase max_files via the max_files variable&
+            & in the namelist diag_manager_nml.', FATAL)
     END IF
 
-    new_file_freq1 = VERY_LARGE_FILE_FREQ
-    IF ( PRESENT(new_file_freq) ) new_file_freq1 = new_file_freq
-    IF ( get_calendar_type() == NO_CALENDAR ) THEN
+    IF ( PRESENT(new_file_freq) ) THEN 
+       new_file_freq1 = new_file_freq
+    ELSE 
+       new_file_freq1 = VERY_LARGE_FILE_FREQ
+    END IF
+    
+    IF ( PRESENT(new_file_freq_units) ) THEN 
+       new_file_freq_units1 = new_file_freq_units 
+    ELSE IF ( get_calendar_type() == NO_CALENDAR ) THEN
        new_file_freq_units1 = DIAG_DAYS
     ELSE 
        new_file_freq_units1 = DIAG_YEARS
     END IF
-    IF ( PRESENT(new_file_freq_units) ) new_file_freq_units1 = new_file_freq_units 
-    file_duration1 = new_file_freq1
-    IF ( PRESENT(file_duration) ) file_duration1 = file_duration 
-    file_duration_units1 = new_file_freq_units1
-    IF ( PRESENT(file_duration_units) ) file_duration_units1 = file_duration_units
-
+    
+    IF ( PRESENT(file_duration) ) THEN
+       file_duration1 = file_duration 
+    ELSE
+       file_duration1 = new_file_freq1
+    END IF
+    
+    IF ( PRESENT(file_duration_units) ) THEN 
+       file_duration_units1 = file_duration_units
+    ELSE 
+       file_duration_units1 = new_file_freq_units1
+    END IF
+    
     files(num_files)%tile_count = tile_count
     files(num_files)%name = TRIM(name)
     files(num_files)%output_freq = output_freq
@@ -851,10 +935,10 @@ CONTAINS
     END IF
     files(num_files)%next_open=diag_time_inc(files(num_files)%start_time,new_file_freq1,new_file_freq_units1)
     files(num_files)%close_time = diag_time_inc(files(num_files)%start_time,file_duration1, file_duration_units1)
-    IF(files(num_files)%close_time>files(num_files)%next_open) THEN
+    IF ( files(num_files)%close_time>files(num_files)%next_open ) THEN
        ! <ERROR STATUS="FATAL">
        !   close time GREATER than next_open time, check file duration,
-       !   file frequency in <files(num_files)%name>
+       !   file frequency in < files(num_files)%name>
        ! </ERROR>
        CALL error_mesg('init_file', 'close time '//'GREATER than'//&
             & ' next_open time, check file duration, file frequency in '// files(num_files)%name, FATAL)
@@ -870,6 +954,52 @@ CONTAINS
     files(num_files)%time_bounds_id = diag_axis_init( 'nv',(/1.,2./),'none','N','vertex number',&
          & set_name=TRIM(name))
   END SUBROUTINE init_file
+  ! </SUBROUTINE>
+
+  ! <SUBROUTINE NAME="sync_file_times">
+  !   <OVERVIEW>
+  !     Synchronize the file's start and close times with the model start and end times.
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE sync_file_times(init_time)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     <TT>sync_file_times</TT> checks to see if the file start time is less than the
+  !     model's init time (passed in as the only argument).  If it is less, then the
+  !     both the file start time and end time are synchronized using the passed in initial time
+  !     and the duration as calculated by the <TT>diag_time_inc</TT> function.  <TT>sync_file_times</TT>
+  !     will also increase the <TT>next_open</TT> until it is greater than the init_time.
+  !   </DESCRIPTION>
+  !   <IN NAME="file_id" TYPE="INTEGER">The file ID</IN>
+  !   <IN NAME="init_time" TYPE="TYPE(time_type)">Initial time use for the synchronization.</IN>
+  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">Return error message</OUT>
+  SUBROUTINE sync_file_times(file_id, init_time, err_msg)
+    INTEGER, INTENT(in) :: file_id
+    TYPE(time_type), INTENT(in) :: init_time
+    CHARACTER(len=*), OPTIONAL, INTENT(out) :: err_msg
+
+    CHARACTER(len=128) :: msg
+
+    IF ( PRESENT(err_msg) ) err_msg = ''
+
+    IF ( files(file_id)%start_time < init_time ) THEN
+       ! Sync the start_time of the file with the initial time of the model
+       files(file_id)%start_time = init_time
+       ! Sync the file's close time also
+       files(file_id)%close_time = diag_time_inc(files(file_id)%start_time,&
+            & files(file_id)%duration, files(file_id)%duration_units)
+    END IF
+
+    ! Need to increase next_open until it is greate than init_time
+    DO WHILE ( files(file_id)%next_open <= init_time )
+       files(file_id)%next_open = diag_time_inc(files(file_id)%next_open,&
+            & files(file_id)%new_file_freq, files(file_id)%new_file_freq_units, err_msg=msg)
+       IF ( msg /= '' ) THEN
+          IF ( fms_error_handler('diag_util_mod::sync_file_times',&
+               & ' file='//TRIM(files(file_id)%name)//': '//TRIM(msg), err_msg) ) RETURN
+       END IF
+    END DO
+  END SUBROUTINE sync_file_times
   ! </SUBROUTINE>
 
   ! <FUNCTION NAME="diag_time_inc">
@@ -995,7 +1125,7 @@ CONTAINS
 
     INTEGER :: i
 
-    find_input_field = -1
+    find_input_field = -1 ! Default return value if not found.
     DO i = 1, num_input_fields
        IF(tile_count == input_fields(i)%tile_count .AND.&
             & TRIM(input_fields(i)%module_name) == TRIM(module_name) .AND.&
@@ -1070,8 +1200,9 @@ CONTAINS
     INTEGER, INTENT(in) :: pack
     INTEGER, INTENT(in) :: tile_count
     TYPE(coord_type), INTENT(in), OPTIONAL :: local_coord
-    INTEGER :: out_num, in_num, file_num, file_num_tile1,&
-         & num_fields, i, method_selected, l1
+    INTEGER :: out_num, in_num, file_num, file_num_tile1
+    INTEGER :: num_fields, i, method_selected, l1
+    INTEGER :: ioerror
     CHARACTER(len=128) :: error_msg
     CHARACTER(len=50) :: t_method
 
@@ -1103,7 +1234,7 @@ CONTAINS
     IF ( input_fields(in_num)%num_output_fields > max_out_per_in_field ) THEN
        ! <ERROR STATUS="FATAL">max_out_per_in_field exceeded, increase max_out_per_in_field</ERROR>
        CALL error_mesg('diag_util,init_output_field',&
-            & 'max_out_per_in_field exceeded, increase max_out_per_in_field', FATAL)
+        & 'max_out_per_in_field exceeded for '//TRIM(module_name)//"/"//TRIM(field_name)//', increase max_out_per_in_field', FATAL)
     END IF
     input_fields(in_num)%output_fields(input_fields(in_num)%num_output_fields) = out_num
 
@@ -1180,21 +1311,18 @@ CONTAINS
        output_fields(out_num)%time_average = .FALSE.
        method_selected = method_selected+1
        t_method = 'point'
-    ELSEIF (INDEX(t_method,'diurnal')==1) THEN
-       ! get the integer number from the t_method -- this is stupid and simplistic,
-       ! biut will work
-       output_fields(out_num)%n_diurnal_samples = 0
-       DO i = 1, LEN_TRIM(t_method)
-          IF( ICHAR(t_method(i:i))>=ICHAR('0').AND.ICHAR(t_method(i:i))<=ICHAR('9') ) THEN
-             output_fields(out_num)%n_diurnal_samples =&
-                  & output_fields(out_num)%n_diurnal_samples * 10+ICHAR(t_method(i:i))-ICHAR('0')
-          END IF
-       END DO
-       IF ( output_fields(out_num)%n_diurnal_samples == 0 ) THEN
+    ELSEIF ( INDEX(t_method,'diurnal') == 1 ) THEN
+       ! get the integer number from the t_method
+       READ (UNIT=t_method(8:LEN_TRIM(t_method)), FMT='(I)', IOSTAT=ioerror) output_fields(out_num)%n_diurnal_samples
+       IF ( ioerror /= 0 ) THEN
           ! <ERROR STATUS="FATAL">could not find integer number of diurnal samples in string <t_method></ERROR>
-          CALL error_mesg('init_output_field',&
-               'could not find integer number of diurnal samples in string "'&
-               //TRIM(t_method)//'"', FATAL)
+          CALL error_mesg('diag_util_mod::init_output_field',&
+               & 'could not find integer number of diurnal samples in string "'&
+               & //TRIM(t_method)//'"', FATAL)
+       ELSE IF ( output_fields(out_num)%n_diurnal_samples <= 0 ) THEN
+          ! <ERROR STATUS="FATAL">The integer value of diurnal samples must be greater than zero.</ERROR>
+          CALL error_mesg('diag_util_mod::init_output_field',&
+               & 'The integer value of diurnal samples must be greater than zero.', FATAL)
        END IF
        output_fields(out_num)%time_average = .TRUE.
        method_selected = method_selected+1
@@ -1325,7 +1453,8 @@ CONTAINS
        prefix = files(file)%name(1:7)
        IF ( lowercase(prefix) == 'rregion' ) THEN 
           ! <ERROR STATUS="WARNING">file name should not start with word "rregion"</ERROR>
-          CALL error_mesg ('diag_util opening_file', 'file name should not start with'&
+          IF ( mpp_pe() == mpp_root_pe() )&
+               &CALL error_mesg ('diag_util opening_file', 'file name should not start with'&
                & //' word "rregion"', WARNING)
        END IF
     END IF
@@ -1373,12 +1502,12 @@ CONTAINS
        IF ( num_axes > 1 ) THEN
           all_scalar_or_1d = .FALSE.
           domain2 = get_domain2d ( output_fields(field_num)%axes(1:num_axes) )
-          IF ( domain2 /= NULL_DOMAIN2D ) EXIT
+          IF ( domain2 .NE. NULL_DOMAIN2D ) EXIT
        END IF
     END DO
     IF( .NOT.all_scalar_or_1d ) THEN
-       IF ( domain2 == NULL_DOMAIN2D ) CALL return_domain(domain2)
-       IF ( domain2 == NULL_DOMAIN2D ) THEN
+       IF ( domain2 .EQ. NULL_DOMAIN2D ) CALL return_domain(domain2)
+       IF ( domain2 .EQ. NULL_DOMAIN2D ) THEN
           ! <ERROR STATUS="FATAL">
           !   Domain not defined through set_domain interface; cannot retrieve tile info
           ! </ERROR>
@@ -1416,11 +1545,12 @@ CONTAINS
                & TRIM(input_fields(input_field_num)%field_name)
           IF(mpp_pe() .EQ. mpp_root_pe()) THEN
              ! <ERROR STATUS="WARNING">
-             !   module/field_name <input_fields(input_field_num)%module_name>/<input_fields(input_field_num)%field_name>
+             !   module/field_name
+             !   <input_fields(input_field_num)%module_name>/<input_fields(input_field_num)%field_name>
              !   NOT registered
              ! </ERROR>
-             CALL error_mesg ('diag_util opening_file',&
-                  & 'module/field_name '//TRIM(error_string)//' NOT registered', WARNING)  
+             CALL error_mesg ('diag_util::opening_file',&
+                  & 'module/field_name ('//TRIM(error_string)//') NOT registered', WARNING)  
           END IF
           CYCLE
        END IF
@@ -1586,10 +1716,13 @@ CONTAINS
     CALL done_meta_data(files(file)%file_unit)
     IF( aux_present .AND. .NOT.match_aux_name ) THEN
        ! <ERROR STATUS="WARNING">
-       !   one axis has auxiliary but the corresponding field is NOT found in file <files(file)%name>_
+       !   one axis has auxiliary but the corresponding field is NOT
+       !   found in file <files(file)%name>
        ! </ERROR>
-       CALL error_mesg ('diag_util opening_file','one axis has auxiliary but the corresponding field'//&
-            & ' is NOT found in file '//files(file)%name , WARNING)
+       IF ( mpp_pe() == mpp_root_pe() )&
+            & CALL error_mesg ('diag_util opening_file',&
+            &'one axis has auxiliary but the corresponding field'//&
+            &' is NOT found in file '//files(file)%name , WARNING)
     END IF
   END SUBROUTINE opening_file
   ! </SUBROUTINE>

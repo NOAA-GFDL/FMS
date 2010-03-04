@@ -171,8 +171,8 @@ use field_manager_mod, only: fm_field_name_len, fm_string_len, fm_dump_list
 implicit none
 !
 !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: coupler_types.F90,v 17.0.2.2 2009/08/28 19:18:26 nnz Exp $'
-  character(len=128) :: tag = '$Name: quebec_200910 $'
+  character(len=128) :: version = '$Id: coupler_types.F90,v 18.0 2010/03/02 23:55:06 fms Exp $'
+  character(len=128) :: tag = '$Name: riga $'
 !-----------------------------------------------------------------------
 real, parameter :: bound_tol = 1e-7
 

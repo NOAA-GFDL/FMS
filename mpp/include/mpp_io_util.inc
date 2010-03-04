@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_util.inc,v 17.0 2009/07/21 03:20:39 fms Exp $
+! $Id: mpp_io_util.inc,v 18.0 2010/03/02 23:57:42 fms Exp $
 
 
   !#####################################################################
@@ -75,7 +75,7 @@
    end subroutine mpp_get_global_atts
 
   !#####################################################################
-   subroutine mpp_get_field_atts(field, name, units, longname, min, max, missing, ndim, siz, axes, atts, valid)
+   subroutine mpp_get_field_atts(field, name, units, longname, min, max, missing, ndim, siz, axes, atts, valid, scale, add)
 
      type(fieldtype), intent(in) :: field
      character(len=*), intent(out) , optional :: name, units
@@ -84,6 +84,8 @@
      integer, intent(out), optional :: ndim
      integer, intent(out), dimension(:), optional :: siz
      type(validtype), intent(out), optional :: valid
+     real,            intent(out), optional :: scale
+     real,            intent(out), optional :: add
 
      type(atttype), intent(inout), optional, dimension(:) :: atts
      type(axistype), intent(inout), optional, dimension(:) :: axes
@@ -131,6 +133,9 @@
      if(PRESENT(valid)) then
        call mpp_get_valid(field,valid)
      endif
+
+     if(PRESENT(scale)) scale = field%scale
+     if(present(add))   add   = field%add
 
      return
    end subroutine mpp_get_field_atts

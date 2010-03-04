@@ -55,7 +55,7 @@
 <h4>OTHER MODULES USED</h4>
 <!-- BEGIN OTHER MODULES USED -->
 <div>
-<pre>   diag_data_mod<br>   diag_axis_mod<br> diag_output_mod<br>         fms_mod<br>      fms_io_mod<br> mpp_domains_mod<br>time_manager_mod<br>      mpp_io_mod<br>         mpp_mod<br>   constants_mod</pre>
+<pre>   diag_data_mod<br>   diag_axis_mod<br> diag_output_mod<br>   diag_grid_mod<br>         fms_mod<br>      fms_io_mod<br> mpp_domains_mod<br>time_manager_mod<br>      mpp_io_mod<br>         mpp_mod<br>   constants_mod</pre>
 </div>
 <!-- END OTHER MODULES USED -->
 <!-- BEGIN PUBLIC INTERFACE -->
@@ -95,6 +95,9 @@
 <a href="#init_file">init_file</a>:</dt>
 <dd> 
 </dd>
+<dt>
+<a href="#sync_file_times">sync_file_times</a>:</dt>
+<dd>   Synchronize the file's start and close times with the model start and end times. </dd>
 <dt>
 <a href="#diag_time_inc">diag_time_inc</a>:</dt>
 <dd> 
@@ -208,13 +211,16 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   If <tt>init_verbose</tt>   namelist parameter is true, adds a line briefly 
-   describing diagnostic field to the log file. Normally users should not call
-   this subroutine directly, since it is called by register_static_field and register_diag_field
-   if do_not_log is not set to true. It is used, however, in LM3 to avoid excessive
-   log due to a number of fields registered for each of the tile types. LM3 code uses
-   do_not_log parameter in the registration calls, and calls this subroutine to
-   log field information under generic name. </dd>
+<dd>   If the <tt>do_diag_field_log</tt>   namelist parameter is .TRUE.,
+   then a line briefly describing diagnostic field is added to
+   the log file.  Normally users should not call this subroutine
+   directly, since it is called by register_static_field and
+   register_diag_field if do_not_log is not set to .TRUE..  It is
+   used, however, in LM3 to avoid excessive logs due to the
+   number of fields registered for each of the tile types.  LM3
+   code uses a do_not_log parameter in the registration calls,
+   and subsequently calls this subroutine to log field information
+   under a generic name. </dd>
 <br>
 <br>
 <dt>
@@ -505,6 +511,48 @@
 <tr>
 <td valign="top" align="left"><tt>file_duration_units&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, OPTIONAL]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="sync_file_times"></a>
+<h4>sync_file_times</h4>
+<pre>SUBROUTINE <b>sync_file_times</b> (init_time)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd> 
+<tt>sync_file_times</tt>   checks to see if the file start time is less than the
+   model's init time (passed in as the only argument).  If it is less, then the
+   both the file start time and end time are synchronized using the passed in initial time
+   and the duration as calculated by the <tt>diag_time_inc</tt>   function. <tt>sync_file_times</tt>   will also increase the <tt>next_open</tt>   until it is greater than the init_time. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>file_id&nbsp;&nbsp;&nbsp;</tt></td><td>The file ID<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>init_time&nbsp;&nbsp;&nbsp;</tt></td><td>Initial time use for the synchronization.<br>&nbsp;&nbsp;&nbsp;<span class="type">[TYPE(time_type)]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+<dt>
+<b>OUTPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>err_msg&nbsp;&nbsp;&nbsp;</tt></td><td>Return error message<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*), OPTIONAL]</span></td>
 </tr>
 </table>
 </dd>
@@ -892,6 +940,13 @@
 <dd>
 <span class="errmsg"></span>
 </dd>
+<dd>wrong values in vertical axis of region</dd>
+<dt>
+<b>FATAL in get_subfield_size</b>
+</dt>
+<dd>
+<span class="errmsg"></span>
+</dd>
 <dd>No domain available</dd>
 <dt>
 <b>FATAL in get_subfield_size</b>
@@ -956,7 +1011,8 @@
 <dd>
 <span class="errmsg"></span>
 </dd>
-<dd>max_files exceeded, increase max_files</dd>
+<dd>   max_files exceeded, increase max_files via the max_files variable
+   in the namelist diag_manager_nml </dd>
 <dt>
 <b>FATAL in init_file</b>
 </dt>
@@ -964,7 +1020,7 @@
 <span class="errmsg"></span>
 </dd>
 <dd>   close time GREATER than next_open time, check file duration,
-   file frequency in &lt;files(num_files)%name&gt; </dd>
+   file frequency in &lt; files(num_files)%name&gt; </dd>
 <dt>
 <b>FATAL in init_input_field</b>
 </dt>
@@ -1000,6 +1056,13 @@
 <span class="errmsg"></span>
 </dd>
 <dd>could not find integer number of diurnal samples in string &lt;t_method&gt;</dd>
+<dt>
+<b>FATAL in init_output_field</b>
+</dt>
+<dd>
+<span class="errmsg"></span>
+</dd>
+<dd>The integer value of diurnal samples must be greater than zero.</dd>
 <dt>
 <b>FATAL in init_output_field</b>
 </dt>

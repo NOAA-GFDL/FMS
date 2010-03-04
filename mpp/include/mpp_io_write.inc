@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_write.inc,v 17.0 2009/07/21 03:20:41 fms Exp $
+! $Id: mpp_io_write.inc,v 18.0 2010/03/02 23:57:44 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                            !
@@ -310,7 +310,7 @@
           if( ASSOCIATED(axis%data) )then !space axis
               error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, axis%len, axis%did )
               call netcdf_err( error, mpp_file(unit), axis )
-              error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_FLOAT, 1, axis%did, axis%id )
+              error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_DOUBLE, 1, axis%did, axis%id )
               call netcdf_err( error, mpp_file(unit), axis )
           else                            !time axis
               if( mpp_file(unit)%id.NE.-1 ) &
@@ -825,13 +825,12 @@
       integer :: packed_data(nwords)
       integer :: i, is, ie, js, je
 
-#ifdef use_CRI_pointers
       real(FLOAT_KIND) :: data_r4(nwords)
       pointer( ptr1, data_r4)
       pointer( ptr2, packed_data)
       
       if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
-#endif
+
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%write_on_this_pe) return
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
@@ -874,9 +873,7 @@
            pe, unit, mpp_file(unit)%id, mpp_file(unit)%time_level, mpp_file(unit)%time
            
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
-#ifdef use_CRI_pointers
           ptr2 = LOC(mpp_io_stack(1))
-#endif
 !define netCDF data block to be written:
 !  time axis: START = time level
 !             AXSIZ = 1
@@ -929,9 +926,7 @@
           call netcdf_err( error, mpp_file(unit), field=field )
 #endif    
       else                      !non-netCDF
-#ifdef use_CRI_pointers
           ptr1 = LOC(mpp_io_stack(1))
-#endif
 !subdomain contains (/is,ie,js,je/)  
           if( PRESENT(domain) )then
               subdomain(:) = (/ is, ie, js, je /)  ! ??? is, ie, js, je are never initialized.

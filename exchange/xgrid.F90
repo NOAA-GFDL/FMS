@@ -108,13 +108,13 @@ use       fms_mod,   only: file_exist, open_namelist_file, check_nml_error,  &
                            field_size, lowercase, string,                    &
                            get_mosaic_tile_grid
 use mpp_mod,         only: mpp_npes, mpp_pe, mpp_root_pe, mpp_send, mpp_recv, &
-                           mpp_sync_self, stdout
+                           mpp_sync_self, stdout, mpp_max
 use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_compute_domains, &
                            Domain2d, mpp_global_sum, mpp_update_domains,    &
                            mpp_modify_domain, mpp_get_data_domain, XUPDATE, &
                            YUPDATE, mpp_get_current_ntile, mpp_get_tile_id, &
                            mpp_get_ntile_count, mpp_get_tile_list,          &
-                           mpp_get_global_domains
+                           mpp_get_global_domain
 use mpp_io_mod,      only: mpp_open, MPP_MULTI, MPP_SINGLE, MPP_OVERWR
 use constants_mod,   only: PI
 use mosaic_mod,          only: get_mosaic_xgrid, get_mosaic_xgrid_size
@@ -332,8 +332,8 @@ type xmap_type
 end type xmap_type
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: xgrid.F90,v 17.0 2009/07/21 03:19:09 fms Exp $'
- character(len=128) :: tagname = '$Name: quebec_200910 $'
+ character(len=128) :: version = '$Id: xgrid.F90,v 18.0 2010/03/02 23:55:46 fms Exp $'
+ character(len=128) :: tagname = '$Name: riga $'
 
  real, parameter                              :: EPS = 1.0e-10
  logical :: module_is_initialized = .FALSE.
@@ -420,14 +420,13 @@ end subroutine xgrid_init
 
 !#######################################################################
 
-subroutine load_xgrid (xmap, grid, grid_file, grid1_id, grid_id, tile1, tile2, use_higher_order, complete)
+subroutine load_xgrid (xmap, grid, grid_file, grid1_id, grid_id, tile1, tile2, use_higher_order)
 type(xmap_type), intent(inout)         :: xmap
 type(grid_type), intent(inout)         :: grid
 character(len=*), intent(in)           :: grid_file
 character(len=3), intent(in)           :: grid1_id, grid_id
 integer,          intent(in)           :: tile1, tile2
 logical,        intent(in)             :: use_higher_order
-logical,        intent(in)             :: complete   
 
   integer, allocatable, dimension(:) :: i1, j1, i2, j2            ! xgrid quintuples
   real,    allocatable, dimension(:) :: area, di, dj              ! from grid file
@@ -601,11 +600,6 @@ logical,        intent(in)             :: complete
            end do
         end if ! make_exchange_reproduce
      end do
-  end if
-
-  if(complete ) then  
-     grid%area_inv = 0.0;
-     where (grid%area>0.0) grid%area_inv = 1.0/grid%area
   end if
 
   deallocate(i1, j1, i2, j2, area)
@@ -822,7 +816,6 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
   real, dimension(3) :: xxx
   real, dimension(:,:), allocatable   :: check_data
   real, dimension(:,:,:), allocatable :: check_data_3D
-  integer, dimension(:),  allocatable :: nilist, njlist
   character(len=256)                  :: xgrid_file, xgrid_name
   character(len=256)                  :: tile_file, mosaic_file
   character(len=256)                  :: mosaic1, mosaic2, contact
@@ -858,7 +851,6 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
      call error_mesg('xgrid_mod', 'reading exchange grid information from mosaic grid file', NOTE)
   end if
 
-  allocate ( nilist(0:xmap%npes-1), njlist(0:xmap%npes-1) )
   do g=1,size(grid_ids(:))
      grid => xmap%grids(g)
      if (g==1) grid1 => xmap%grids(g)
@@ -870,9 +862,9 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
      allocate ( grid%tile(0:xmap%npes-1) )
      call mpp_get_compute_domains(grid%domain, xbegin=grid%is, xend=grid%ie, &
           ybegin=grid%js, yend=grid%je  )
-     call mpp_get_global_domains(grid%domain, xsize=nilist, ysize=njlist)
-     grid%ni = maxval(nilist)
-     grid%nj = maxval(njlist)
+     call mpp_get_global_domain(grid%domain, xsize=grid%ni, ysize=grid%nj)
+     call mpp_max(grid%ni)
+     call mpp_max(grid%nj)
      
      call mpp_get_tile_list(grid%domain, grid%tile)
      grid%ntile = mpp_get_ntile_count(grid%domain)
@@ -975,7 +967,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
         ! load exchange cells, sum grid cell areas, set your1my2/your2my1
         select case(xmap%version)
         case(VERSION1)
-           call load_xgrid (xmap, grid, grid_file, grid_ids(1), grid_ids(g), 1, 1, use_higher_order, .true. )
+           call load_xgrid (xmap, grid, grid_file, grid_ids(1), grid_ids(g), 1, 1, use_higher_order)
         case(VERSION2)
            select case(grid_ids(1))
            case( 'ATM' )
@@ -1005,51 +997,55 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
            do j = 1, grid%ntile
               call read_data(mosaic2, 'gridtiles', tile2_list(j), level=j)
            end do
-           call field_size(grid_file, xgrid_name, siz)
-           nxgrid_file = siz(2)
-           ! loop through all the exchange grid file
-           do i = 1, nxgrid_file
-              call read_data(grid_file, xgrid_name, xgrid_file, level = i)
-              xgrid_file = 'INPUT/'//trim(xgrid_file) 
-              if( .NOT. file_exist(xgrid_file) )call error_mesg('xgrid_mod', &
-                   'file '//trim(xgrid_file)//' does not exist, check your xgrid file.', FATAL)
-              
-              ! find the tile number of side 1 and side 2 mosaic, which is contained in field contact
-              call read_data(xgrid_file, "contact", contact)
-              i1 = index(contact, ":")
-              i2 = index(contact, "::")
-              i3 = index(contact, ":", back=.true. )
-              if(i1 == 0 .OR. i2 == 0) call error_mesg('xgrid_mod', &
-                   'field contact in file '//trim(xgrid_file)//' should contains ":" and "::" ', FATAL)
-              if(i1 == i3) call error_mesg('xgrid_mod', &
-                   'field contact in file '//trim(xgrid_file)//' should contains two ":"', FATAL)
-              tile1_name = contact(i1+1:i2-1)
-              tile2_name = contact(i3+1:len_trim(contact))
-              tile1 = 0; tile2 = 0
-              do j = 1, grid1%ntile
-                 if( tile1_name == tile1_list(j) ) then
-                    tile1 = j
-                    exit
-                 end if
+           if(field_exist(grid_file, xgrid_name)) then
+              call field_size(grid_file, xgrid_name, siz)
+              nxgrid_file = siz(2)
+              ! loop through all the exchange grid file
+              do i = 1, nxgrid_file
+                 call read_data(grid_file, xgrid_name, xgrid_file, level = i)
+                 xgrid_file = 'INPUT/'//trim(xgrid_file) 
+                 if( .NOT. file_exist(xgrid_file) )call error_mesg('xgrid_mod', &
+                      'file '//trim(xgrid_file)//' does not exist, check your xgrid file.', FATAL)
+
+                 ! find the tile number of side 1 and side 2 mosaic, which is contained in field contact
+                 call read_data(xgrid_file, "contact", contact)
+                 i1 = index(contact, ":")
+                 i2 = index(contact, "::")
+                 i3 = index(contact, ":", back=.true. )
+                 if(i1 == 0 .OR. i2 == 0) call error_mesg('xgrid_mod', &
+                      'field contact in file '//trim(xgrid_file)//' should contains ":" and "::" ', FATAL)
+                 if(i1 == i3) call error_mesg('xgrid_mod', &
+                      'field contact in file '//trim(xgrid_file)//' should contains two ":"', FATAL)
+                 tile1_name = contact(i1+1:i2-1)
+                 tile2_name = contact(i3+1:len_trim(contact))
+                 tile1 = 0; tile2 = 0
+                 do j = 1, grid1%ntile
+                    if( tile1_name == tile1_list(j) ) then
+                       tile1 = j
+                       exit
+                    end if
+                 end do
+                 do j = 1, grid%ntile
+                    if( tile2_name == tile2_list(j) ) then
+                       tile2 = j
+                       exit
+                    end if
+                 end do
+                 if(tile1 == 0) call error_mesg('xgrid_mod', &
+                      trim(tile1_name)//' is not a tile of mosaic '//trim(mosaic1), FATAL)
+                 if(tile2 == 0) call error_mesg('xgrid_mod', &
+                      trim(tile2_name)//' is not a tile of mosaic '//trim(mosaic2), FATAL)
+                 call load_xgrid (xmap, grid, xgrid_file, grid_ids(1), grid_ids(g), tile1, tile2, &
+                                  use_higher_order)
               end do
-              do j = 1, grid%ntile
-                 if( tile2_name == tile2_list(j) ) then
-                    tile2 = j
-                    exit
-                 end if
-              end do
-              if(tile1 == 0) call error_mesg('xgrid_mod', &
-                   trim(tile1_name)//' is not a tile of mosaic '//trim(mosaic1), FATAL)
-              if(tile2 == 0) call error_mesg('xgrid_mod', &
-                   trim(tile2_name)//' is not a tile of mosaic '//trim(mosaic2), FATAL)
-              call load_xgrid (xmap, grid, xgrid_file, grid_ids(1), grid_ids(g), tile1, tile2, use_higher_order, i==nxgrid_file)
-           end do
+           endif
            deallocate(tile1_list, tile2_list)
         end select
+        grid%area_inv = 0.0;
+        where (grid%area>0.0) grid%area_inv = 1.0/grid%area
      end if
   end do
 
-  deallocate(nilist, njlist)
   grid1%area_inv = 0.0;
   where (grid1%area>0.0)
      grid1%area_inv = 1.0/grid1%area
