@@ -167,8 +167,17 @@ MODULE diag_manager_mod
   !   <DATA NAME="max_num_axis_sets" TYPE="INTEGER" DEFAULT="25">
   !   </DATA>
   !   <DATA NAME="use_cmor" TYPE="LOGICAL" DEFAULT=".FALSE.">
-  !     Let diag_manager know if the missing value (if supplied) should be overridden to be the
+  !     Let the <TT>diag_manager</TT> know if the missing value (if supplied) should be overridden to be the
   !     CMOR standard value of -1.0e20.
+  !   </DATA>
+  !   <DATA NAME="issue_oor_warnings" TYPE="LOGICAL" DEFAULT=".TRUE.">
+  !     If <TT>.TRUE.</TT>, then the <TT>diag_manager</TT> will check for values outside the valid range.  This range is defined in
+  !     the model, and passed to the <TT>diag_manager_mod</TT> via the OPTIONAL variable range in the <TT>register_diag_field</TT>
+  !     function.
+  !   </DATA>
+  !   <DATA NAME="oor_warnings_fatal" TYPE="LOGICAL" DEFAULT=".FALSE.">
+  !     If <TT>.TRUE.</TT> then <TT>diag_manager_mod</TT> will issue a <TT>FATAL</TT> error if any values for the output field are
+  !     outside the given range.
   !   </DATA>
   ! </NAMELIST>
 
@@ -213,9 +222,9 @@ MODULE diag_manager_mod
   CHARACTER(len=32), SAVE :: filename_appendix = ''
   ! version number of this module
   CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id: diag_manager.F90,v 18.0 2010/03/02 23:55:24 fms Exp $'
+       & '$Id: diag_manager.F90,v 18.0.2.1 2010/03/03 14:42:53 sdu Exp $'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: riga $'  
+       & '$Name: riga_201004 $'  
 
   ! <INTERFACE NAME="send_data">
   !   <TEMPLATE>
@@ -334,12 +343,12 @@ MODULE diag_manager_mod
   !    </DESCRIPTION>
   !    <IN NAME="module_name" TYPE="CHARACTER(len=*)" />
   !    <IN NAME="field_name" TYPE="CHARACTER(len=*)" />
-  !    <IN NAME="axes" TYPE="INTEGER" DIM="(:)" />
+  !    <IN NAME="axes" TYPE="INTEGER, DIMENSION(:)" />
   !    <IN NAME="init_time" TYPE="TYPE(time_type)" />
   !    <IN NAME="long_name" TYPE="CHARACTER(len=*)" />
   !    <IN NAME="units" TYPE="CHARACTER(len=*)" />
   !    <IN NAME="missing_value" TYPE="REAL" />
-  !    <IN NAME="range" TYPE="REAL" DIM="(2)" />
+  !    <IN NAME="range" TYPE="REAL, DIMENSION(2)" />
   !    <IN NAME="mask_variant" TYPE="LOGICAL" /> 
   !    <IN NAME="standard_name" TYPE="CHARACTER(len=*)" />
   INTERFACE register_diag_field
@@ -356,12 +365,12 @@ MODULE diag_manager_mod
   !      LOGICAL send_tile_averaged_data(diag_field_id, field, area, time, mask)
   !    </TEMPLATE>
   !    <DESCRIPTION>
-  !      <TT>send_tile_averaged_data</TT> is overloaded for 3-d and 4-d arrays. 
-  !      <TT>diag_field_id</TT> corresponds to the id returned by previous call
+  !      <TT>send_tile_averaged_data</TT> is overloaded for 3D and 4D arrays. 
+  !      <TT>diag_field_id</TT> corresponds to the ID returned by previous call
   !      to <TT>register_diag_field</TT>. Logical masks can be used to mask out
   !      undefined and/or unused values.  Note that the dimension of output field
   !      is smaller by one than the dimension of the data, since averaging over
-  !      tiles (3d dimension) is performed.
+  !      tiles (3D dimension) is performed.
   !    </DESCRIPTION>
   !    <IN NAME="diag_field_id" TYPE="INTEGER" />
   !    <IN NAME="field" TYPE="REAL" DIM="(:,:,:)" />
@@ -379,13 +388,13 @@ CONTAINS
   ! <FUNCTION NAME="register_diag_field_scalar" INTERFACE="register_diag_field">
   !   <IN NAME="module_name" TYPE="CHARACTER(len=*)" />
   !   <IN NAME="field_name" TYPE="CHARACTER(len=*)" />
-  !   <IN NAME="axes" TYPE="Not Required" />
+  !   <IN NAME="axes" TYPE="Not Applicable" />
   !   <IN NAME="init_time" TYPE="TYPE(time_type), OPTIONAL" />
   !   <IN NAME="long_name" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <IN NAME="units" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <IN NAME="missing_value" TYPE="REAL, OPTIONAL" />
-  !   <IN NAME="range" TYPE="REAL, OPTIONAL" DIM="(2)" />
-  !   <IN NAME="mask_variant" TYPE="Not Required" />
+  !   <IN NAME="range" TYPE="REAL, DIMENSION(2), OPTIONAL" />
+  !   <IN NAME="mask_variant" TYPE="Not Applicable" />
   !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <IN NAME="do_not_log" TYPE="LOGICAL, OPTIONAL" />
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL" />
@@ -415,14 +424,14 @@ CONTAINS
   ! <FUNCTION NAME="register_diag_field_array" INTERFACE="register_diag_field">
   !   <IN NAME="module_name" TYPE="CHARACTER(len=*)" />
   !   <IN NAME="field_name" TYPE="CHARACTER(len=*)" />
-  !   <IN NAME="axes" TYPE="INTEGER" DIM="(:)" />
+  !   <IN NAME="axes" TYPE="INTEGER, DIMENSION(:)" />
   !   <IN NAME="init_time" TYPE="TYPE(time_type)" />
   !   <IN NAME="long_name" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <IN NAME="units" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <IN NAME="missing_value" TYPE="REAL, OPTIONAL" />
-  !   <IN NAME="range" TYPE="real" DIM="(2), OPTIONAL" />
-  !   <IN NAME="mask_variant" TYPE="logical, OPTIONAL" />
-  !   <IN NAME="standard_name" TYPE="character(len=*), OPTIONAL" />
+  !   <IN NAME="range" TYPE="REAL, DIMENSION(2), OPTIONAL" />
+  !   <IN NAME="mask_variant" TYPE="LOGICAL, OPTIONAL" />
+  !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <IN NAME="do_not_log" TYPE="LOGICAL, OPTIONAL" />
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIONAL" />
@@ -904,15 +913,15 @@ CONTAINS
   !   <IN NAME="diag_field_id" TYPE="INTEGER"> </IN>
   !   <IN NAME="field" TYPE="REAL"> </IN>
   !   <IN NAME="time" TYPE="TYPE(time_type), OPTIONAL"> </IN>
-  !   <IN NAME="is_in" TYPE="Not Required"></IN>
-  !   <IN NAME="js_in" TYPE="Not Required"></IN>
-  !   <IN NAME="ks_in" TYPE="Not Required"></IN>
-  !   <IN NAME="mask" TYPE="Not Required"></IN>
-  !   <IN NAME="rmask" TYPE="Not Required"></IN>
-  !   <IN NAME="ie_in" TYPE="Not Required"></IN>
-  !   <IN NAME="je_in" TYPE="Not Required"></IN>
-  !   <IN NAME="ke_in" TYPE="Not Required"></IN>
-  !   <IN NAME="weight" TYPE="Not Required"></IN>
+  !   <IN NAME="is_in" TYPE="Not Applicable"></IN>
+  !   <IN NAME="js_in" TYPE="Not Applicable"></IN>
+  !   <IN NAME="ks_in" TYPE="Not Applicable"></IN>
+  !   <IN NAME="mask" TYPE="Not Applicable"></IN>
+  !   <IN NAME="rmask" TYPE="Not Applicable"></IN>
+  !   <IN NAME="ie_in" TYPE="Not Applicable"></IN>
+  !   <IN NAME="je_in" TYPE="Not Applicable"></IN>
+  !   <IN NAME="ke_in" TYPE="Not Applicable"></IN>
+  !   <IN NAME="weight" TYPE="Not Applicable"></IN>
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"></OUT>
   LOGICAL FUNCTION send_data_0d(diag_field_id, field, time, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
@@ -938,13 +947,13 @@ CONTAINS
   !   <IN NAME="field" TYPE="REAL, DIMENSION(:)"> </IN>
   !   <IN NAME="time" TYPE="TYPE(time_type)"> </IN>
   !   <IN NAME="is_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="js_in" TYPE="Not Required"></IN>
-  !   <IN NAME="ks_in" TYPE="Not Required"></IN>
+  !   <IN NAME="js_in" TYPE="Not Applicable"></IN>
+  !   <IN NAME="ks_in" TYPE="Not Applicable"></IN>
   !   <IN NAME="mask" TYPE="LOGICAL, DIMENSION(:), OPTIONAL"></IN>
   !   <IN NAME="rmask" TYPE="REAL, DIMENSION(:), OPTIONAL"></IN>
   !   <IN NAME="ie_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="je_in" TYPE="Not Required"></IN>
-  !   <IN NAME="ke_in" TYPE="Not Required"></IN>
+  !   <IN NAME="je_in" TYPE="Not Applicable"></IN>
+  !   <IN NAME="ke_in" TYPE="Not Applicable"></IN>
   !   <IN NAME="weight" TYPE="REAL, OPTIONAL"></IN>
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"></OUT>
   LOGICAL FUNCTION send_data_1d(diag_field_id, field, time, is_in, mask, rmask, ie_in, weight, err_msg)
@@ -993,12 +1002,12 @@ CONTAINS
   !   <IN NAME="time" TYPE="TYPE(time_type)"> </IN>
   !   <IN NAME="is_in" TYPE="INTEGER, OPTIONAL"></IN>
   !   <IN NAME="js_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="ks_in" TYPE="Not Required"></IN>
+  !   <IN NAME="ks_in" TYPE="Not Applicable"></IN>
   !   <IN NAME="mask" TYPE="LOGICAL, DIMENSION(:,:), OPTIONAL"></IN>
   !   <IN NAME="rmask" TYPE="REAL, DIMENSION(:,:), OPTIONAL"></IN>
   !   <IN NAME="ie_in" TYPE="INTEGER, OPTIONAL"></IN>
   !   <IN NAME="je_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="ke_in" TYPE="Not Required"></IN>
+  !   <IN NAME="ke_in" TYPE="Not Applicable"></IN>
   !   <IN NAME="weight" TYPE="REAL, OPTIONAL"></IN>
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"></OUT>
   LOGICAL FUNCTION send_data_2d(diag_field_id, field, time, is_in, js_in, &
@@ -1081,6 +1090,7 @@ CONTAINS
     LOGICAL :: reduced_k_range
     LOGICAL :: time_max, time_min
     LOGICAL :: missvalue_present
+    LOGICAL, DIMENSION(SIZE(field,1),SIZE(field,2),SIZE(field,3)) :: oor_mask
     CHARACTER(len=256) :: err_msg_local
     CHARACTER(len=128) :: error_string, error_string1
     TYPE(time_type) :: middle_time      
@@ -1099,6 +1109,14 @@ CONTAINS
     ELSE
        send_data_3d = .TRUE.
     END IF
+
+    ! oor_mask is only used for checking out of range values.
+    IF ( PRESENT(mask) ) THEN 
+       oor_mask = mask
+    ELSE 
+       oor_mask = .TRUE.
+    END IF
+    IF ( PRESENT(rmask) ) WHERE ( rmask < 0.5 ) oor_mask = .FALSE.
 
     ! send_data works in either one or another of two modes.
     ! 1. Input field is a window (e.g. FMS physics)
@@ -1186,33 +1204,46 @@ CONTAINS
     ! Issue a warning if any value in field is outside the valid range
     IF ( input_fields(diag_field_id)%range_present ) THEN
        IF ( ISSUE_OOR_WARNINGS .OR. OOR_WARNINGS_FATAL ) THEN
-          WRITE (error_string, '("[",ES24.15E3,",",ES24.15E3,"]")')&
+          WRITE (error_string, '("[",ES14.5E3,",",ES14.5E3,"]")')&
                & input_fields(diag_field_id)%range(1:2)
-          WRITE (error_string1, '("(Min: ",ES24.15E3,", Max: ",ES24.15E3, ")")')&
-               & MINVAL(field(f1:f2,f3:f4,ks:ke)), MAXVAL(field(f1:f2,f3:f4,ks:ke))
-
-          IF ( missvalue_present .OR. input_fields(diag_field_id)%mask_variant ) THEN
-             IF ( ANY((field(f1:f2,f3:f4,ks:ke) < input_fields(diag_field_id)%range(1) .OR.&
-                  &    field(f1:f2,f3:f4,ks:ke) > input_fields(diag_field_id)%range(2)).AND.&
-                  &    field(f1:f2,f3:f4,ks:ke) .NE. missvalue) ) THEN
+          WRITE (error_string1, '("(Min: ",ES14.5E3,", Max: ",ES14.5E3, ")")')&
+                  & MINVAL(field(f1:f2,f3:f4,ks:ke),MASK=oor_mask(f1:f2,f3:f4,ks:ke)),&
+                  & MAXVAL(field(f1:f2,f3:f4,ks:ke),MASK=oor_mask(f1:f2,f3:f4,ks:ke))
+          IF ( missvalue_present ) THEN
+             IF ( ANY(oor_mask(f1:f2,f3:f4,ks:ke) .AND.&
+                  &   ((field(f1:f2,f3:f4,ks:ke) < input_fields(diag_field_id)%range(1) .OR.&
+                  &     field(f1:f2,f3:f4,ks:ke) > input_fields(diag_field_id)%range(2)).AND.&
+                  &     field(f1:f2,f3:f4,ks:ke) .NE. missvalue)) ) THEN
+                ! <ERROR STATUS="WARNING/FATAL">
+                !   A value for <module_name> in field <field_name> (Min: <min_val>, Max: <max_val>)
+                !   is outside the range [<lower_val>,<upper_val>] and not equal to the missing
+                !   value.
+                ! </ERROR>
                 CALL error_mesg('diag_manager_mod::send_data_3d',&
-                     & 'A value for'//&
-                     &TRIM(input_fields(diag_field_id)%module_name)//' field '//&
+                     & 'A value for '//&
+                     &TRIM(input_fields(diag_field_id)%module_name)//' in field '//&
                      &TRIM(input_fields(diag_field_id)%field_name)//' '&
                      &//TRIM(error_string1)//&
                      &' is outside the range '//TRIM(error_string)//',&
                      & and not equal to the missing value.',&
                      &OOR_WARNING)
              END IF
-          ELSE IF ( ANY(field(f1:f2,f3:f4,ks:ke) < input_fields(diag_field_id)%range(1) .OR.&
-               &        field(f1:f2,f3:f4,ks:ke) > input_fields(diag_field_id)%range(2)) ) THEN
-             CALL error_mesg('diag_manager_mod::send_data_3d',&
-                  & 'A value for '//TRIM(input_fields(diag_field_id)%&
-                  &module_name)//' field '//&
-                  &TRIM(input_fields(diag_field_id)%field_name)//' '&
-                  &//TRIM(error_string1)//&
-                  &' is outside the range '//TRIM(error_string)//'.',&
-                  &OOR_WARNING)
+          ELSE
+             IF ( ANY(oor_mask(f1:f2,f3:f4,ks:ke) .AND.&
+                  &   (field(f1:f2,f3:f4,ks:ke) < input_fields(diag_field_id)%range(1) .OR.&
+                  &    field(f1:f2,f3:f4,ks:ke) > input_fields(diag_field_id)%range(2))) ) THEN
+                ! <ERROR STATUS="WARNING/FATAL">
+                !   A value for <module_name> in field <field_name> (Min: <min_val>, Max: <max_val>)
+                !   is outside the range [<lower_val>,<upper_val>].
+                ! </ERROR>
+                CALL error_mesg('diag_manager_mod::send_data_3d',&
+                     & 'A value for '//&
+                     &TRIM(input_fields(diag_field_id)%module_name)//' in field '//&
+                     &TRIM(input_fields(diag_field_id)%field_name)//' '&
+                     &//TRIM(error_string1)//&
+                     &' is outside the range '//TRIM(error_string)//'.',&
+                     &OOR_WARNING)
+             END IF
           END IF
        END IF
     END IF
@@ -1438,9 +1469,11 @@ CONTAINS
                          DO j=js, je
                             DO i=is, ie
                                IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                                  output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)=output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
+                                  output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
+                                       & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
                                        & field(i-is+1+hi, j-js+1+hj, k) * weight1  
-                                  output_fields(out_num)%counter(i-hi,j-hj,k1,sample)=output_fields(out_num)%counter(i-hi,j-hj,k1,sample) + weight1                 
+                                  output_fields(out_num)%counter(i-hi,j-hj,k1,sample) =&
+                                       & output_fields(out_num)%counter(i-hi,j-hj,k1,sample) + weight1
                                END IF
                             END DO
                          END DO
@@ -1450,9 +1483,11 @@ CONTAINS
                          DO j=js, je
                             DO i=is, ie
                                IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                                  output_fields(out_num)%buffer(i-hi,j-hj,k,sample)=output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
+                                  output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
+                                       & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
                                        & field(i-is+1+hi,j-js+1+hj,k)*weight1
-                                  output_fields(out_num)%counter(i-hi,j-hj,k,sample)=output_fields(out_num)%counter(i-hi,j-hj,k,sample) + weight1
+                                  output_fields(out_num)%counter(i-hi,j-hj,k,sample) =&
+                                       &output_fields(out_num)%counter(i-hi,j-hj,k,sample) + weight1
                                END IF
                             END DO
                          END DO
@@ -1484,8 +1519,9 @@ CONTAINS
                                   i1 = i-l_start(1)-hi+1 
                                   j1=  j-l_start(2)-hj+1
                                   IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                                     output_fields(out_num)%buffer(i1,j1,k1,sample) = output_fields(out_num)%buffer(i1,j1,k1,sample)+&
-                                          & field(i-is+1+hi,j-js+1+hj,k)*weight1                              
+                                     output_fields(out_num)%buffer(i1,j1,k1,sample) =&
+                                          & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
+                                          & field(i-is+1+hi,j-js+1+hj,k) * weight1                              
                                   ELSE
                                      output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue   
                                   ENDIF
@@ -1500,8 +1536,9 @@ CONTAINS
                          DO j=js, je
                             DO i=is, ie
                                IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
-                                  output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)=output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)+&
-                                       & field(i-is+1+hi,j-js+1+hj,k)*weight1  
+                                  output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
+                                       &output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
+                                       & field(i-is+1+hi,j-js+1+hj,k) * weight1  
                                ELSE
                                   output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
                                END IF
@@ -1520,8 +1557,9 @@ CONTAINS
                          DO j=js, je
                             DO i=is, ie
                                IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
-                                  output_fields(out_num)%buffer(i-hi,j-hj,k,sample)=output_fields(out_num)%buffer(i-hi,j-hj,k,sample)+&
-                                       & field(i-is+1+hi,j-js+1+hj,k)*weight1  
+                                  output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
+                                       & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
+                                       & field(i-is+1+hi,j-js+1+hj,k) * weight1  
                                ELSE
                                   output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
                                END IF
@@ -1531,9 +1569,11 @@ CONTAINS
                    END IF
                    IF ( need_compute .AND. .NOT.phys_window ) THEN
                       IF ( ANY(mask(l_start(1)+hi:l_end(1)+hi,l_start(2)+hj:l_end(2)+hj,l_start(3):l_end(3))) ) &
-                           & output_fields(out_num)%count_0d(sample)=output_fields(out_num)%count_0d(sample) + weight1
+                           & output_fields(out_num)%count_0d(sample) =&
+                           & output_fields(out_num)%count_0d(sample) + weight1
                    ELSE
-                      IF ( ANY(mask(f1:f2,f3:f4,ks:ke)) ) output_fields(out_num)%count_0d(sample)=output_fields(out_num)%count_0d(sample)+weight1
+                      IF ( ANY(mask(f1:f2,f3:f4,ks:ke)) ) output_fields(out_num)%count_0d(sample) =&
+                           & output_fields(out_num)%count_0d(sample)+weight1
                    END IF
                 ELSE ! missing value NOT present
                    IF ( .NOT.ALL(mask(f1:f2,f3:f4,ks:ke)) .AND. mpp_pe() .EQ. mpp_root_pe() ) THEN
@@ -1574,7 +1614,8 @@ CONTAINS
                            & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample)&
                            & + field(f1:f2,f3:f4,ks:ke)*weight1   
                    END IF
-                   IF ( .NOT.phys_window ) output_fields(out_num)%count_0d(sample) = output_fields(out_num)%count_0d(sample) + weight1
+                   IF ( .NOT.phys_window ) output_fields(out_num)%count_0d(sample) =&
+                        & output_fields(out_num)%count_0d(sample) + weight1
                 END IF
              ELSE ! mask NOT present
                 IF ( missvalue_present ) THEN
@@ -1587,8 +1628,9 @@ CONTAINS
                                   i1 = i-l_start(1)-hi+1 
                                   j1=  j-l_start(2)-hj+1 
                                   IF ( field(i-is+1,j-js+1,k) /= missvalue ) THEN
-                                     output_fields(out_num)%buffer(i1,j1,k1,sample)= output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                                          & field(i-is+1+hi,j-js+1+hj,k)*weight1
+                                     output_fields(out_num)%buffer(i1,j1,k1,sample) =&
+                                          & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
+                                          & field(i-is+1+hi,j-js+1+hj,k) * weight1
                                   ELSE
                                      output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
                                   END IF
@@ -1621,8 +1663,9 @@ CONTAINS
                          DO j=js, je
                             DO i=is, ie
                                IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
-                                  output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)=output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                       & field(i-is+1+hi,j-js+1+hj,k)*weight1  
+                                  output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
+                                       & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
+                                       & field(i-is+1+hi,j-js+1+hj,k) * weight1  
                                ELSE
                                   output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) = missvalue
                                END IF
@@ -1655,8 +1698,9 @@ CONTAINS
                          DO j=js, je
                             DO i=is, ie
                                IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue )  THEN
-                                  output_fields(out_num)%buffer(i-hi,j-hj,k,sample)=output_fields(out_num)%buffer(i-hi,j-hj,k,sample) + &
-                                       & field(i-is+1+hi,j-js+1+hj,k)*weight1  
+                                  output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
+                                       & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
+                                       & field(i-is+1+hi,j-js+1+hj,k) * weight1  
                                ELSE
                                   output_fields(out_num)%buffer(i-hi,j-hj,k,sample) = missvalue
                                ENDIF
@@ -1706,9 +1750,11 @@ CONTAINS
                          END IF
                       END IF
                       output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
-                           & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) + field(f1:f2,f3:f4,ks:ke)*weight1
+                           & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
+                           & field(f1:f2,f3:f4,ks:ke)*weight1
                    END IF
-                   IF ( .NOT.phys_window ) output_fields(out_num)%count_0d(sample) = output_fields(out_num)%count_0d(sample) + weight1
+                   IF ( .NOT.phys_window ) output_fields(out_num)%count_0d(sample) =&
+                        & output_fields(out_num)%count_0d(sample) + weight1
                 END IF
              END IF ! if mask present
           END IF  !if mask_variant
@@ -1716,7 +1762,8 @@ CONTAINS
                & output_fields(out_num)%num_elements(sample) =&
                & output_fields(out_num)%num_elements(sample) + (ie-is+1)*(je-js+1)*(ke-ks+1)
           IF ( reduced_k_range ) &
-               & output_fields(out_num)%num_elements(sample) = output_fields(out_num)%num_elements(sample) + (ie-is+1)*(je-js+1)*(ker-ksr+1)
+               & output_fields(out_num)%num_elements(sample) = output_fields(out_num)%num_elements(sample) +&
+               & (ie-is+1)*(je-js+1)*(ker-ksr+1)
           ! Add processing for Max and Min
        ELSE IF ( time_max ) THEN
           IF ( PRESENT(mask) ) THEN
@@ -1981,7 +2028,7 @@ CONTAINS
   END FUNCTION send_data_3d
   ! </FUNCTION>
 
-  ! <FUNCTION NAME="send_tile_averaged_data_2d" INTERFACE="send_tile_averaged_data">
+  ! <FUNCTION NAME="send_tile_averaged_data2d" INTERFACE="send_tile_averaged_data">
   !   <IN NAME="diag_field_id" TYPE="INTEGER"></IN>
   !   <IN NAME="field" TYPE="REAL, DIMENSION(:,:,:)"></IN>
   !   <IN NAME="area" TYPE="REAL, DIMENSION(:,:,:)">  </IN>
@@ -2144,7 +2191,7 @@ CONTAINS
 
        reduced_k_range = output_fields(i)%reduced_k_range
        ! skip all PEs not participating in outputting this field
-       IF ( local_output .AND. (.NOT. need_compute) ) RETURN
+       IF ( local_output .AND. (.NOT. need_compute) ) CYCLE
        ! skip fields that were not registered or non-static   
        input_num = output_fields(i)%input_field
        IF ( input_fields(input_num)%static ) CYCLE
@@ -2372,7 +2419,8 @@ CONTAINS
     ! Read in the global file labeling string
     READ (UNIT=iunit, FMT=*, IOSTAT=io_status) global_descriptor
     IF ( io_status /= 0 ) THEN
-       IF ( fms_error_handler('diag_manager_init', 'error reading the global descriptor from the diagnostic table.', err_msg) ) RETURN
+       IF ( fms_error_handler('diag_manager_init', 'error reading the global descriptor from the diagnostic table.', err_msg) )&
+            & RETURN
     END IF
     
     ! Read in the base date
@@ -2709,7 +2757,9 @@ CONTAINS
   !     Return base time for diagnostics (note: base time must be >= model time).
   !   </DESCRIPTION>
   TYPE(time_type) FUNCTION get_base_time ()
-    ! <ERROR TYPE="FATAL">module has not been initialized</ERROR>
+    ! <ERROR STATUS="FATAL">
+    !   MODULE has not been initialized
+    ! </ERROR>
     IF ( .NOT.module_is_initialized ) CALL error_mesg('get_base_time in diag_manager_mod', &
          & 'module has not been initialized', FATAL)
     get_base_time = base_time
@@ -2760,7 +2810,7 @@ CONTAINS
   !     instead of the current model time. This call can be used to minimize
   !     overhead for complicated diagnostics.
   !   </DESCRIPTION>
-  !   <IN NAME="inext_model_time" TYPE="TYPE(time_type)">
+  !   <IN NAME="next_model_time" TYPE="TYPE(time_type)">
   !     next_model_time = current model time + model time_step
   !   </IN>
   !   <IN NAME="diag_field_id" TYPE="INTEGER"></IN>
@@ -2812,7 +2862,7 @@ CONTAINS
   !   </TEMPLATE>
   !   <DESCRIPTION>
   !     Given number of time intervals in the day, finds or initializes a diurnal time axis
-  !     and returns its' ID. It uses get_base_date, so should be in the file where it's accessible.
+  !     and returns its ID. It uses get_base_date, so should be in the file where it's accessible.
   !     The units are 'days since BASE_DATE', all diurnal axes belong to the set 'diurnal'
   !   </DESCRIPTION>
   !   <IN NAME="n_samples" TYPE="INTEGER">Number of intervals during the day</IN>
@@ -2945,27 +2995,41 @@ CONTAINS
 END MODULE diag_manager_mod
 
 ! <INFO>
+!   <COMPILER NAME="PORTABILITY">
+!     <TT>diag_manager_mod</TT> uses standard Fortran 90.
+!   </COMPILER>
+!   <COMPILER NAME="ACQUIRING SOURCE">
+!     Use the following commands to check out the source at GFDL.
+!     <PRE>
+!       setenv CVSROOT '/home/fms/cvs'
+!       cvs co diag_manager
+!     </PRE>
+!   </COMPILER>
 !   <COMPILER NAME="COMPILING AND LINKING SOURCE">
 !     Any module or program unit using <TT>diag_manager_mod</TT> must contain the line
 !     <PRE>
 !     use diag_manager_mod
 !     </PRE>
 !     If netCDF output is desired, the cpp flag <TT>-Duse_netCDF</TT>
-!     must be turned on. The loader step requires an explicit link to the
-!     NetCDF library (typically something like <TT>-L/usr/local/lib
-!     -lnetcdf</TT>, depending on the path to the netCDF library).
-!     <LINK SRC="http://www.unidata.ucar.edu/packages/netcdf/guidef">
-!       netCDF release 3 for fortran
-!     </LINK>
-!     is required.
+!     must be turned on. 
 !   </COMPILER>
-!   <PRECOMP FLAG="PORTABILITY"> 
-!     <TT>diag_manager_mod</TT> uses standard f90.
+!   <PRECOMP FLAG="-Duse_netCDF"> 
+!     Used to write out <LINK SRC="http://www.unidata.ucar.edu/software/netcdf">NetCDF</LINK> files.
 !   </PRECOMP>
-!   <LOADER FLAG="ACQUIRING SOURCE">
-!     GFDL users can checkout diag_manager_mod using the cvs command
-!     <TT>setenv CVSROOT '/home/fms/cvs';cvs co diag_manager</TT>.  
+!   <PRECOMP FLAG="-Dtest_diag_manager">
+!     Used to build the unit test suite for the <TT>diag_manager_mod</TT>.
+!   </PRECOMP>
+!   <LOADER FLAG="-lnetcdf">
+!     Link in the NetCDF libraries.
 !   </LOADER>
+!   <TESTPROGRAM NAME="test">
+!     Unit test for the <TT>diag_manager_mod</TT>.  Each test must be run separately, and ends with an intentional fatal error.
+!     Each test has its own <TT>diag_table</TT>, see the source of <TT>diag_manager.F90</TT> for the list of <TT>diag_tables</TT>
+!     for the unit tests.
+!   </TESTPROGRAM>
+!   <FUTURE>
+!     Regional output for the cubed-sphere grid.
+!   </FUTURE>
 ! </INFO>
 
 ! ********** Test Program **********

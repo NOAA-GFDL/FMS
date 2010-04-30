@@ -1139,7 +1139,7 @@ private
   character(len=128), public :: version= &
        '$Id mpp.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: riga $'
+       '$Name: riga_201004 $'
 
   contains
 #include <system_clock.h>

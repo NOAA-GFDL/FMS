@@ -195,7 +195,7 @@ integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
    logical :: mod_leapyear
 
    character(len=128) :: version='$Id: time_interp.F90,v 18.0 2010/03/02 23:58:30 fms Exp $'
-   character(len=128) :: tagname='$Name: riga $'
+   character(len=128) :: tagname='$Name: riga_201004 $'
 
    logical :: module_is_initialized=.FALSE.
    logical :: perthlike_behavior=.FALSE.

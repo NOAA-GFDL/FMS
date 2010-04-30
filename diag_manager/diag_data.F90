@@ -1,6 +1,14 @@
 #include <fms_platform.h>
 
 MODULE diag_data_mod
+  ! <CONTACT EMAIL="seth.underwood@noaa.gov">
+  !   Seth Underwood
+  ! </CONTACT>
+  
+  ! <OVERVIEW>
+  !   Type descriptions and global variables for the diag_manager modules.
+  ! </OVERVIEW>
+
   ! <DESCRIPTION>
   !   Notation: 
   !   <DL>
@@ -31,7 +39,8 @@ MODULE diag_data_mod
   USE fms_mod, ONLY: WARNING
 
 #ifdef use_netCDF
-  USE netcdf
+  ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
+  USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
 #endif
 
   PUBLIC
@@ -61,7 +70,7 @@ MODULE diag_data_mod
 
   ! Specify storage limits for fixed size tables used for pointers, etc.
   INTEGER, PARAMETER :: MAX_FIELDS_PER_FILE = 300 !< Maximum number of fields per file.
-  INTEGER, PARAMETER :: MAX_OUT_PER_IN_FIELD = 30 !< Maximum number of output_fields per input_field
+  INTEGER, PARAMETER :: MAX_OUT_PER_IN_FIELD = 150 !< Maximum number of output_fields per input_field
   INTEGER, PARAMETER :: DIAG_OTHER = 0
   INTEGER, PARAMETER :: DIAG_OCEAN = 1
   INTEGER, PARAMETER :: DIAG_ALL   = 2
@@ -78,19 +87,19 @@ MODULE diag_data_mod
   !   <DESCRIPTION>
   !     Contains the coordinates of the local domain to output.
   !   </DESCRIPTION>
-  !   <DATA NAME="diag_grid::start" TYPE="REAL, DIMENSION(3)">
+  !   <DATA NAME="start" TYPE="REAL, DIMENSION(3)">
   !     Start coordinates (Lat, Lon, Depth) of the local domain to output.
   !   </DATA>
-  !   <DATA NAME="diag_grid::end" TYPE="REAL, DIMENSION(3)">
+  !   <DATA NAME="end" TYPE="REAL, DIMENSION(3)">
   !     End coordinates (Lat, Lon, Depth) of the local domain to output.
   !   </DATA>
-  !   <DATA NAME="diag_grid::l_start_indx" TYPE="INTEGER, DIMENSION(3)">
+  !   <DATA NAME="l_start_indx" TYPE="INTEGER, DIMENSION(3)">
   !     Start indices at each local PE.
   !   </DATA>
-  !   <DATA NAME="diag_grid::l_end_indx" TYPE="INTEGER, DIMENSION(3)">
+  !   <DATA NAME="l_end_indx" TYPE="INTEGER, DIMENSION(3)">
   !     End indices at each local PE.
   !   </DATA>
-  !   <DATA NAME="diag_grid::subaxes" TYPE="INTEGER, DIMENSION(3)">
+  !   <DATA NAME="subaxes" TYPE="INTEGER, DIMENSION(3)">
   !     ID returned from diag_subaxes_init of 3 subaces.
   !   </DATA>
   TYPE diag_grid
@@ -498,9 +507,9 @@ MODULE diag_data_mod
   
   ! Private CHARACTER Arrays for the CVS version and tagname.
   CHARACTER(len=128),PRIVATE  :: version =&
-       & '$Id: diag_data.F90,v 18.0 2010/03/02 23:55:18 fms Exp $'
+       & '$Id: diag_data.F90,v 18.0.2.3 2010/03/09 15:57:58 sdu Exp $'
   CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name: riga $'
+       & '$Name: riga_201004 $'
 
   ! <!-- Other public variables -->
   ! <DATA NAME="num_files" TYPE="INTEGER" DEFAULT="0">
@@ -564,11 +573,11 @@ MODULE diag_data_mod
 
   ! <!-- netCDF variable -->
   ! <DATA NAME="FILL_VALUE" TYPE="REAL" DEFAULT="NF90_FILL_REAL">
-  !   Fill value used.  Value will be NF90_FILL_REAL if using the
+  !   Fill value used.  Value will be <TT>NF90_FILL_REAL</TT> if using the
   !   netCDF module, otherwise will be 9.9692099683868690e+36.
   ! </DATA>
 #ifdef use_netCDF
-  REAL :: FILL_VALUE = NF90_FILL_REAL  ! from file /usr/local/include/netcdf.inc
+  REAL :: FILL_VALUE = NF_FILL_REAL  ! from file /usr/local/include/netcdf.inc
 #else
   REAL :: FILL_VALUE = 9.9692099683868690e+36 
 #endif

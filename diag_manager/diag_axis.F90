@@ -44,9 +44,9 @@ MODULE diag_axis_mod
   TYPE(diag_axis_type), ALLOCATABLE, SAVE :: Axes(:)
   LOGICAL :: module_is_initialized = .FALSE.
   CHARACTER(len=128) :: version =&
-       & '$Id: diag_axis.F90,v 18.0 2010/03/02 23:55:14 fms Exp $'
+       & '$Id: diag_axis.F90,v 18.0.2.1 2010/03/03 14:05:46 sdu Exp $'
   CHARACTER(len=128) :: tagname =&
-       & '$Name: riga $'
+       & '$Name: riga_201004 $'
 
 CONTAINS
 
@@ -286,7 +286,7 @@ CONTAINS
           IF ( Axes(edges)%length    /= Axes(indexx)%length+1 ) ierr=ierr+2
           IF ( Axes(edges)%set       /= Axes(indexx)%set      ) ierr=ierr+4
           IF ( ierr > 0 )   THEN 
-             ! <ERROR STATUS="FATAL">Edges axis does not match axis (code _CODE_).</ERROR>
+             ! <ERROR STATUS="FATAL">Edges axis does not match axis (code <CODE>).</ERROR>
              WRITE (errmsg,'("Edges axis does not match axis (code ",I1,").")') ierr
              CALL error_mesg ('diag_axis_mod :: diag_axis_init', errmsg, FATAL)
           END IF
@@ -375,7 +375,8 @@ CONTAINS
        END IF
     ELSE
        ! get a new index for subaxis
-       WRITE (nsub_name,'(I1)') nsub_axis
+       !::sdu:: Need a check to allow larger numbers in the index number.
+       WRITE (nsub_name,'(I2.2)') nsub_axis
        name = TRIM(Axes(axis)%name)//'_sub'//TRIM(nsub_name)
        Axes(axis)%subaxis_name(nsub_axis) = name
        long_name = TRIM(Axes(axis)%long_name)
@@ -527,7 +528,7 @@ CONTAINS
   END SUBROUTINE get_diag_axis_name
   ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="get_diag_axis-domain_name">
+  ! <SUBROUTINE NAME="get_diag_axis_domain_name">
   !   <OVERVIEW>
   !     Return the name of the axis' domain
   !   </OVERVIEW>

@@ -4,7 +4,7 @@ MODULE diag_output_mod
   ! </CONTACT>
 
   ! <OVERVIEW> <TT>diag_output_mod</TT> is an integral part of 
-  !   diag_manager_mod. Its function is to write axis-meta-data, 
+  !   <TT>diag_manager_mod</TT>. Its function is to write axis-meta-data, 
   !   field-meta-data and field data
   ! </OVERVIEW>
 
@@ -47,9 +47,9 @@ MODULE diag_output_mod
   LOGICAL :: module_is_initialized = .FALSE.
 
   CHARACTER(len=128), PRIVATE :: version= &
-       '$Id: diag_output.F90,v 17.0 2009/07/21 03:18:49 fms Exp $'
+       '$Id: diag_output.F90,v 17.0.8.1 2010/03/03 14:47:42 sdu Exp $'
   CHARACTER(len=128), PRIVATE :: tagname= &
-       '$Name: riga $'
+       '$Name: riga_201004 $'
 
 CONTAINS
 
@@ -62,8 +62,7 @@ CONTAINS
   !      all_scalar_or_1d, domain)
   !   </TEMPLATE>
   !   <DESCRIPTION>
-  !     Registers the time axis, and initialized, and open the file for 
-  !     output.
+  !     Registers the time axis, and opens the file for output.
   !   </DESCRIPTION>
   !   <IN NAME="file_name" TYPE="CHARACTER(len=*)">Output file name</IN>
   !   <IN NAME="format" TYPE="INTEGER">File format (Currently only 'NETCDF' is valid)</IN>
@@ -133,7 +132,7 @@ CONTAINS
 
   ! <SUBROUTINE NAME="write_axis_meta_data">
   !   <OVERVIEW>
-  !     Write the axes data to file.
+  !     Write the axes meta data to file.
   !   </OVERVIEW>
   !   <TEMPLATE>
   !     SUBROUTINE write_axis_meta_data(file_unit, axes, time_ops)
@@ -327,7 +326,7 @@ CONTAINS
   !   </IN>
   !   <IN NAME="mval" TYPE="REAL, OPTIONAL">Missing value, must be within valid range</IN>
   !   <IN NAME="avg_name" TYPE="CHARACTER(len=*), OPTIONAL">
-  !     Name of varuable containing time averaging info
+  !     Name of variable containing time averaging info
   !   </IN>
   !   <IN NAME="time_method" TYPE="CHARACTER(len=*), OPTIONAL">
   !     Name of transformation applied to the time-varying data, i.e. "avg", "min", "max"
@@ -514,7 +513,7 @@ CONTAINS
   !   </TEMPLATE>
   !   <DESCRIPTION>
   !     Writes axis data to file.  This subroutine is to be called once per file
-  !     after all <TT>write_meta_data</TT> call, and before the first 
+  !     after all <TT>write_meta_data</TT> calls, and before the first 
   !     <TT>diag_field_out</TT> call.
   !   </DESCRIPTION>
   !   <IN NAME="file_unit" TYPE="INTEGER">Output file unit number</IN>
@@ -541,6 +540,7 @@ CONTAINS
   !     SUBROUTINE diag_field_out(file_unit, field, data, time)
   !   </TEMPLATE>
   !   <DESCRIPTION>
+  !     Writes field data to an output file.
   !   </DESCRIPTION>
   !   <IN NAME="file_unit" TYPE="INTEGER">Output file unit number</IN>
   !   <INOUT NAME="field" TYPE="TYPE(diag_fieldtype)"></INOUT>
@@ -590,11 +590,13 @@ CONTAINS
 
   ! <FUNCTION NAME="get_axis_index">
   !   <OVERVIEW>
+  !     Return the axis index number.
   !   </OVERVIEW>
   !   <TEMPLATE>
   !     INTEGER FUNCTION get_axis_index(num)
   !   </TEMPLATE>
   !   <DESCRIPTION>
+  !     Return the axis index number.
   !   </DESCRIPTION>
   !   <IN NAME="num" TYPE="INTEGER"></IN>
   FUNCTION get_axis_index(num) RESULT ( index )
@@ -618,11 +620,13 @@ CONTAINS
 
   ! <SUBROUTINE NAME="get_diag_global_att">
   !   <OVERVIEW>
+  !     Return the global attribute type.
   !   </OVERVIEW>
   !   <TEMPLATE>
   !     CALL get_diag_global_att(gAtt)
   !   </TEMPLATE>
   !   <DESCRIPTION>
+  !     Return the global attribute type.
   !   </DESCRIPTION>
   !   <OUT NAME="gAtt" TYPE="TYPE(diag_global_att_type"></OUT>
   SUBROUTINE get_diag_global_att(gAtt)
@@ -634,17 +638,24 @@ CONTAINS
 
   ! <SUBROUTINE NAME="set_diag_global_att">
   !   <OVERVIEW>
+  !     Set the global attribute type.
   !   </OVERVIEW>
   !   <TEMPLATE>
   !     CALL set_diag_global_att(component, gridType, timeName)
   !   </TEMPLATE>
   !   <DESCRIPTION>
+  !     Set the global attribute type.
   !   </DESCRIPTION>
   !   <IN NAME="component" TYPE="CHARACTER(len=*)"></IN>
   !   <IN NAME="gridType" TYPE="CHARACTER(len=*)"></IN>
   !   <IN NAME="tileName" TYPE="CHARACTER(len=*)"></IN>
   SUBROUTINE set_diag_global_att(component, gridType, tileName)
     CHARACTER(len=*),INTENT(in) :: component, gridType, tileName 
+
+    ! The following two lines are set to remove compile time warnings
+    ! about 'only used once'.
+    CHARACTER(len=64) :: component_tmp
+    component_tmp = component
     ! Don't know how to set these for specific component
     ! Want to be able to say 
     ! if(output_file has component) then
@@ -653,5 +664,6 @@ CONTAINS
     ! endif
   END SUBROUTINE set_diag_global_att
   ! </SUBROUTINE>
+
 END MODULE diag_output_mod
 

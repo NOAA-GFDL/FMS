@@ -349,7 +349,7 @@ logical           :: print_chksum        = .false.
 
 
 character(len=128) :: version = '$Id: fms_io.F90,v 18.0 2010/03/02 23:55:56 fms Exp $'
-character(len=128) :: tagname = '$Name: riga $'
+character(len=128) :: tagname = '$Name: riga_201004 $'
 
 contains
 
