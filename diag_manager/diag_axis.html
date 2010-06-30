@@ -2,7 +2,7 @@
 <head>
 <META http-equiv="Content-Type" content="text/html; charset=EUC-JP">
 <title>Module diag_axis_mod</title>
-<link type="text/css" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" rel="stylesheet">
+<link type="text/css" href="http://data1.gfdl.noaa.gov/~fms/style/docbook.css" rel="stylesheet">
 <STYLE TYPE="text/css">
           .fixed {
             font-size:medium;
@@ -15,14 +15,10 @@
         </STYLE>
 </head>
 <body>
-<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC INTERFACE">PUBLIC INTERFACE </a>~
-          <a href="#PUBLIC DATA">PUBLIC DATA </a>~
-          <a href="#PUBLIC ROUTINES">PUBLIC ROUTINES </a>~
-          <a href="#NAMELIST">NAMELIST </a>~
-          <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
-          <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
-          <a href="#REFERENCES">REFERENCES </a>~ 
-          <a href="#NOTES">NOTES</a></font>
+<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC INTERFACE">PUBLIC INTERFACE </a>
+
+          ~ <a href="#PUBLIC ROUTINES">PUBLIC ROUTINES </a>
+	    ~ <a href="#ERROR MESSAGES">ERROR MESSAGES </a></font>
 <hr>
 <h2>Module diag_axis_mod</h2>
 <a name="HEADER"></a>
@@ -32,7 +28,7 @@
 <br>
 <b>Reviewers:&nbsp;</b>
 <br>
-<b>Change History:&nbsp;</b><a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/diag_manager">WebCVS Log</a>
+<b>Change History:&nbsp;</b><a href="http://cobweb.gfdl.noaa.gov/fms-cgi-bin/viewcvs/FMS/shared/diag_manager">WebCVS Log</a>
 <br>
 <br>
 </div>
@@ -86,7 +82,7 @@
 <a href="#get_diag_axis_name">get_diag_axis_name</a>:</dt>
 <dd>   Return the short name of the axis. </dd>
 <dt>
-<a href="#get_diag_axis-domain_name">get_diag_axis-domain_name</a>:</dt>
+<a href="#get_diag_axis_domain_name">get_diag_axis_domain_name</a>:</dt>
 <dd>   Return the name of the axis' domain </dd>
 <dt>
 <a href="#get_axis_length">get_axis_length</a>:</dt>
@@ -113,14 +109,6 @@
 </div>
 <br>
 <!-- END PUBLIC INTERFACE -->
-<a name="PUBLIC DATA"></a>
-<hr>
-<h4>PUBLIC DATA</h4>
-<!-- BEGIN PUBLIC DATA -->
-<div>None.<br>
-<br>
-</div>
-<!-- END PUBLIC DATA -->
 <a name="PUBLIC ROUTINES"></a>
 <hr>
 <h4>PUBLIC ROUTINES</h4>
@@ -401,11 +389,9 @@
 </dl>
 </li>
 <li>
-<a name="get_diag_axis-domain_name"></a>
-<h4>get_diag_axis-domain_name</h4>
-<pre> 
-<b>get_diag_axis-domain_name</b> 
-</pre>
+<a name="get_diag_axis_domain_name"></a>
+<h4>get_diag_axis_domain_name</h4>
+<pre>SUBROUTINE <b>get_diag_axis_domain_name</b> (id, name)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -624,24 +610,12 @@
 <!-- END PUBLIC ROUTINES -->
 <a name="PUBLIC TYPES"></a>
 <!-- BEGIN PUBLIC TYPES -->
-<!-- END PUBLIC TYPES --><a name="NAMELIST"></a>
-<!-- BEGIN NAMELIST -->
-<!-- END NAMELIST --><a name="DIAGNOSTIC FIELDS"></a>
-<!-- BEGIN DIAGNOSTIC FIELDS -->
-<!-- END DIAGNOSTIC FIELDS --><a name="DATA SETS"></a>
-<!-- BEGIN DATA SETS -->
-<hr>
-<h4>DATA SETS</h4>
-<div>None.<br>
-<br>
-</div>
-<!-- END DATA SETS -->
-<a name="PUBLIC CODE"></a>
+<!-- END PUBLIC TYPES --><a name="PUBLIC CODE"></a>
 <!-- BEGIN PUBLIC CODE -->
 <!-- END PUBLIC CODE --><a name="ERROR MESSAGES"></a>
-<!-- BEGIN ERROR MESSAGES -->
 <hr>
 <h4>ERROR MESSAGES</h4>
+<!-- BEGIN ERROR MESSAGES -->
 <div>
 <dl>
 <dt>
@@ -700,7 +674,7 @@
 <dd>
 <span class="errmsg"></span>
 </dd>
-<dd>Edges axis does not match axis (code _CODE_).</dd>
+<dd>Edges axis does not match axis (code &lt;CODE&gt;).</dd>
 <dt>
 <b>FATAL in diag_axis_init</b>
 </dt>
@@ -744,7 +718,7 @@
 </dd>
 <dd>Illegal value for axis used (value &lt;VALUE&gt;).</dd>
 <dt>
-<b>FATAL in get_diag_axis-domain_name</b>
+<b>FATAL in get_diag_axis_domain_name</b>
 </dt>
 <dd>
 <span class="errmsg"></span>

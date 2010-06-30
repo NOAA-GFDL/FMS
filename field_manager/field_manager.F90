@@ -175,7 +175,7 @@ private
 
 
 character(len=128) :: version = '$Id: field_manager.F90,v 17.0 2009/07/21 03:19:13 fms Exp $'
-character(len=128) :: tagname = '$Name: riga_201004 $'
+character(len=128) :: tagname = '$Name: riga_201006 $'
 logical            :: module_is_initialized  = .false.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+

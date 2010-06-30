@@ -2,7 +2,7 @@
 <head>
 <META http-equiv="Content-Type" content="text/html; charset=EUC-JP">
 <title>Module diag_grid_mod</title>
-<link type="text/css" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" rel="stylesheet">
+<link type="text/css" href="http://data1.gfdl.noaa.gov/~fms/style/docbook.css" rel="stylesheet">
 <STYLE TYPE="text/css">
           .fixed {
             font-size:medium;
@@ -15,14 +15,9 @@
         </STYLE>
 </head>
 <body>
-<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC INTERFACE">PUBLIC INTERFACE </a>~
-          <a href="#PUBLIC DATA">PUBLIC DATA </a>~
-          <a href="#PUBLIC ROUTINES">PUBLIC ROUTINES </a>~
-          <a href="#NAMELIST">NAMELIST </a>~
-          <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
-          <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
-          <a href="#REFERENCES">REFERENCES </a>~ 
-          <a href="#NOTES">NOTES</a></font>
+<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC INTERFACE">PUBLIC INTERFACE </a>
+
+          ~ <a href="#PUBLIC ROUTINES">PUBLIC ROUTINES </a></font>
 <hr>
 <h2>Module diag_grid_mod</h2>
 <a name="HEADER"></a>
@@ -32,7 +27,7 @@
 <br>
 <b>Reviewers:&nbsp;</b>
 <br>
-<b>Change History:&nbsp;</b><a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/diag_manager">WebCVS Log</a>
+<b>Change History:&nbsp;</b><a href="http://cobweb.gfdl.noaa.gov/fms-cgi-bin/viewcvs/FMS/shared/diag_manager">WebCVS Log</a>
 <br>
 <br>
 </div>
@@ -66,14 +61,6 @@
 </ul> 
 </dd> 
 </dl> 
-<b>To-Do</b> 
-<ul> 
-<li>Multi-tile regional output in the cubed sphere</li> 
-<li>Single grid in the tri-polar grid</li> 
-<li>Multi-tile regional output in the tri-polar grid</li> 
-<li>Regional output using array masking.  This should allow
-   regional output to work on any current or future grid.</li> 
-</ul> 
 </div>
 <br>
 <!-- END DESCRIPTION -->
@@ -102,18 +89,18 @@
 <a href="#get_local_indexes">get_local_indexes</a>:</dt>
 <dd>   Find the local start and local end indexes on the local PE
    for regional output. </dd>
+<dt>
+<a href="#get_local_indexes2">get_local_indexes2</a>:</dt>
+<dd>   Find the indices of the nearest grid point of the a-grid to the 
+   specified (lon,lat) location on the local PE. if desired point not 
+   within domain of local PE, return (0,0) as the indices. </dd>
+<dt>
+<a href="#gCirDistance">gCirDistance</a>:</dt>
+<dd>   Find the distance, along the geodesic, between two points. </dd>
 </dl>
 </div>
 <br>
 <!-- END PUBLIC INTERFACE -->
-<a name="PUBLIC DATA"></a>
-<hr>
-<h4>PUBLIC DATA</h4>
-<!-- BEGIN PUBLIC DATA -->
-<div>None.<br>
-<br>
-</div>
-<!-- END PUBLIC DATA -->
 <a name="PUBLIC ROUTINES"></a>
 <hr>
 <h4>PUBLIC ROUTINES</h4>
@@ -122,7 +109,7 @@
 <li>
 <a name="diag_grid_init"></a>
 <h4>diag_grid_init</h4>
-<pre>SUBROUTINE <b>diag_grid_init</b> (tile, glo_lat, glo_lon, stat, emsg)</pre>
+<pre>SUBROUTINE <b>diag_grid_init</b> (domain, glo_lat, glo_lon, aglo_lat, aglo_lon)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -144,13 +131,19 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>tile&nbsp;&nbsp;&nbsp;</tt></td><td>   The tile to which the grid data corresponds. <br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
+<td valign="top" align="left"><tt>domain&nbsp;&nbsp;&nbsp;</tt></td><td>   The domain to which the grid data corresponds. <br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
 </tr>
 <tr>
 <td valign="top" align="left"><tt>glo_lat&nbsp;&nbsp;&nbsp;</tt></td><td>   The latitude information for the grid tile. <br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL, DIMENSION(:,:)]</span></td>
 </tr>
 <tr>
 <td valign="top" align="left"><tt>glo_lon&nbsp;&nbsp;&nbsp;</tt></td><td>   The longitude information for the grid tile. <br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL, DIMENSION(:,:)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>aglo_lat&nbsp;&nbsp;&nbsp;</tt></td><td>   The latitude information for the a-grid tile. <br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL, DIMENSION(:,:)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>aglo_lon&nbsp;&nbsp;&nbsp;</tt></td><td>   The longitude information for the a-grid tile. <br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL, DIMENSION(:,:)]</span></td>
 </tr>
 </table>
 </dd>
@@ -232,32 +225,105 @@
 <br>
 </dl>
 </li>
+<li>
+<a name="get_local_indexes2"></a>
+<h4>get_local_indexes2</h4>
+<pre>SUBROUTINE <b>get_local_indexes2</b> (lat, lon, iindex, jindex)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Given a specified location, find the nearest a-grid indices on 
+   the local PE. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>lat&nbsp;&nbsp;&nbsp;</tt></td><td>   The requested latitude.  This value must be in the range [-90,90] <br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>lon&nbsp;&nbsp;&nbsp;</tt></td><td>   The requested longitude.
+   Possible ranges are either [-180,180] or [0,360]. <br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+<dt>
+<b>OUTPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>iindex&nbsp;&nbsp;&nbsp;</tt></td><td>   The local index on the local PE in the 'i' direction. <br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>jindex&nbsp;&nbsp;&nbsp;</tt></td><td>   The local index on the local PE in the 'j' direction. <br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="gCirDistance"></a>
+<h4>gCirDistance</h4>
+<pre>PURE ELEMENTAL REAL FUNCTION <b>gCirDistance</b> (lat1, lon1, lat2, lon2)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd> 
+<tt>aCirDistance</tt>   will find the distance, along the geodesic, between two points defined by the (lat,lon) position of
+   each point. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>lat1&nbsp;&nbsp;&nbsp;</tt></td><td>Latitude of the first point<br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>lon1&nbsp;&nbsp;&nbsp;</tt></td><td>Longitude of the first point<br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>lat2&nbsp;&nbsp;&nbsp;</tt></td><td>Latitude of the second point<br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>lon2&nbsp;&nbsp;&nbsp;</tt></td><td>Longitude of the second point<br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
 </ol>
 <!-- END PUBLIC ROUTINES -->
 <a name="PUBLIC TYPES"></a>
 <!-- BEGIN PUBLIC TYPES -->
-<!-- END PUBLIC TYPES --><a name="NAMELIST"></a>
-<!-- BEGIN NAMELIST -->
-<!-- END NAMELIST --><a name="DIAGNOSTIC FIELDS"></a>
-<!-- BEGIN DIAGNOSTIC FIELDS -->
-<!-- END DIAGNOSTIC FIELDS --><a name="DATA SETS"></a>
-<!-- BEGIN DATA SETS -->
-<hr>
-<h4>DATA SETS</h4>
-<div>None.<br>
-<br>
-</div>
-<!-- END DATA SETS -->
-<a name="PUBLIC CODE"></a>
+<!-- END PUBLIC TYPES --><a name="PUBLIC CODE"></a>
 <!-- BEGIN PUBLIC CODE -->
-<!-- END PUBLIC CODE --><a name="ERROR MESSAGES"></a>
-<!-- BEGIN ERROR MESSAGES -->
+<!-- END PUBLIC CODE --><a name="FUTURE PLANS"></a>
 <hr>
-<h4>ERROR MESSAGES</h4>
-<div>None.<br>
-<br>
+<h4>FUTURE PLANS</h4>
+<!-- BEGIN FUTURE PLANS -->
+<div>
+<ul>
+<li>   Multi-tile regional output in the cubed sphere. </li>
+<li>   Single grid in the tri-polar grid. </li>
+<li>   Multi-tile regional output in the tri-polar grid. </li>
+<li>   Regional output using array masking.  This should allow
+   regional output to work on any current or future grid. </li>
+</ul>
 </div>
-<!-- END ERROR MESSAGES -->
+<br>
+<!-- END FUTURE PLANS -->
 <hr>
 <div align="right">
 <font size="-1"><a href="#TOP">top</a></font>

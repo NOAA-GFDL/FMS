@@ -814,7 +814,7 @@ type :: atttype
   character(len=128) :: version= &
        '$Id: mpp_io.F90,v 18.0 2010/03/02 23:56:36 fms Exp $'
   character(len=128) :: tagname= &
-       '$Name: riga_201004 $'
+       '$Name: riga_201006 $'
 
 contains
 

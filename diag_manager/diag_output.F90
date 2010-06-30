@@ -49,7 +49,7 @@ MODULE diag_output_mod
   CHARACTER(len=128), PRIVATE :: version= &
        '$Id: diag_output.F90,v 17.0.8.1 2010/03/03 14:47:42 sdu Exp $'
   CHARACTER(len=128), PRIVATE :: tagname= &
-       '$Name: riga_201004 $'
+       '$Name: riga_201006 $'
 
 CONTAINS
 

@@ -271,8 +271,8 @@ integer, public :: clock_flag_default
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: fms.F90,v 17.0 2009/07/21 03:19:19 fms Exp $'
-  character(len=128) :: tagname = '$Name: riga_201004 $'
+  character(len=128) :: version = '$Id: fms.F90,v 17.0.10.1 2010/06/17 21:03:42 wfc Exp $'
+  character(len=128) :: tagname = '$Name: riga_201006 $'
 
   logical :: module_is_initialized = .FALSE.
 
@@ -660,7 +660,8 @@ subroutine nml_error_init
    character(len=8) ::  d='testing'
    namelist /b_nml/  a,b,c,d
 
-      nml_error_codes(1) = 0
+      nml_error_codes(1) = -1
+      nml_error_codes(2) = 0
 
 !     ---- create dummy namelist file that resembles actual ----
 !     ---- (each pe has own copy) ----
@@ -679,7 +680,7 @@ subroutine nml_error_init
       call mpp_open (unit, '_read_error.nml', form=MPP_ASCII,  &
                      action=MPP_RDONLY, access=MPP_SEQUENTIAL, &
                      threading=MPP_MULTI)
-      ir=1; io=1; do
+      ir=2; io=1; do
          read  (unit, nml=b_nml, iostat=io, end=20)
          if (io == 0) exit
          ir=ir+1; nml_error_codes(ir)=io

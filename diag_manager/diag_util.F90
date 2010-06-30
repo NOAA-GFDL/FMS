@@ -57,9 +57,9 @@ MODULE diag_util_mod
        & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size, sync_file_times
 
   CHARACTER(len=128),PRIVATE  :: version =&
-       & '$Id: diag_util.F90,v 18.0.2.1 2010/03/03 16:21:08 sdu Exp $'
+       & '$Id: diag_util.F90,v 18.0.2.5 2010/05/10 16:31:52 sdu Exp $'
   CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name: riga_201004 $'
+       & '$Name: riga_201006 $'
 
 CONTAINS
 
@@ -116,7 +116,7 @@ CONTAINS
           SELECT CASE(cart)
           CASE ('X')
              ! <ERROR STATUS="FATAL">wrong order of axes.  X should come first.</ERROR>
-             IF( i.NE.1 ) CALL error_mesg ('diag_util, get subfield size',&
+             IF( i.NE.1 ) CALL error_mesg('diag_util_mod::get_subfield_size',&
                   & 'wrong order of axes, X should come first',FATAL)
              ALLOCATE(global_lon(global_axis_size))
              CALL get_diag_axis_data(axes(i),global_lon)
@@ -132,7 +132,7 @@ CONTAINS
              subaxis_x=global_lon(gstart_indx(i):gend_indx(i))   
           CASE ('Y')
              ! <ERROR STATUS="FATAL">wrong order of axes, Y should come second.</ERROR>
-             IF( i.NE.2 ) CALL error_mesg ('diag_util, get subfield size',&
+             IF( i.NE.2 ) CALL error_mesg('diag_util_mod::get_subfield_size',&
                   & 'wrong order of axes, Y should come second',FATAL)
              ALLOCATE(global_lat(global_axis_size))
              CALL get_diag_axis_data(axes(i),global_lat)
@@ -148,7 +148,7 @@ CONTAINS
              subaxis_y=global_lat(gstart_indx(i):gend_indx(i))
           CASE ('Z')
              ! <ERROR STATUS="FATAL">wrong values in vertical axis of region</ERROR>
-             IF ( start(i)*END(i)<0 ) CALL error_mesg ('diag_util, get subfield size',&
+             IF ( start(i)*END(i)<0 ) CALL error_mesg('diag_util_mod::get_subfield_size',&
                   & 'wrong values in vertical axis of region',FATAL)
              IF ( start(i)>=0 .AND. END(i)>0 ) THEN 
                 ALLOCATE(global_depth(global_axis_size))
@@ -165,23 +165,23 @@ CONTAINS
                 gend_indx(i) = global_axis_size
                 output_fields(outnum)%output_grid%subaxes(i) = axes(i)
                 ! <ERROR STATUS="FATAL">i should equal 3 for z axis</ERROR>
-                IF( i /= 3 ) CALL error_mesg ('diag_util, get subfield size',&
+                IF( i /= 3 ) CALL error_mesg('diag_util_mod::get_subfield_size',&
                      & 'i should equal 3 for z axis', FATAL)
              END IF
           CASE default
              ! <ERROR STATUS="FATAL">Wrong axis_cart</ERROR>
-             CALL error_mesg ('diag_util, get_subfield_size', 'Wrong axis_cart', FATAL)
+             CALL error_mesg('diag_util_mod::get_subfield_size', 'Wrong axis_cart', FATAL)
           END SELECT
        END DO
 
        DO i = 1, SIZE(axes(:))
           IF( gstart_indx(i) == -1 .OR. gend_indx(i) == -1 ) THEN
              ! <ERROR STATUS="FATAL">
-             !   can not find gstart_indx/gend_indx for <output_fields(outnum)%output_name>
+             !   can not find gstart_indx/gend_indx for <output_fields(outnum)%output_name>,
              !   check region bounds for axis <i>.
              ! </ERROR>
-             WRITE(msg,'(a,I2)') ' check region bounds for axis ', i
-             CALL error_mesg ('diag_util, get_subfield_size', 'can not find gstart_indx/gend_indx for '&
+             WRITE(msg,'(A,I2)') ' check region bounds for axis ', i
+             CALL error_mesg('diag_util_mod::get_subfield_size', 'can not find gstart_indx/gend_indx for '&
                   & //TRIM(output_fields(outnum)%output_name)//','//TRIM(msg), FATAL)
           END IF
        END DO
@@ -210,10 +210,15 @@ CONTAINS
           global_axis_size = get_axis_global_length(axes(3))
           output_fields(outnum)%output_grid%subaxes(3) = -1
           CALL get_diag_axis_cart(axes(3), cart)
+          ! <ERROR STATUS="FATAL">
+          !   axis(3) should be Z-axis
+          ! </ERROR>
           IF ( lowercase(cart) /= 'z' ) CALL error_mesg('diag_util_mod::get_subfield_size', &
                &'axis(3) should be Z-axis', FATAL)
-          ! <ERROR STATUS="FATAL">wrong values in vertical axis of region</ERROR>
-          IF ( start(3)*END(3)<0 ) CALL error_mesg ('diag_util, get subfield size',&
+          ! <ERROR STATUS="FATAL">
+          !   wrong values in vertical axis of region
+          ! </ERROR>
+          IF ( start(3)*END(3)<0 ) CALL error_mesg('diag_util_mod::get_subfield_size',&
                & 'wrong values in vertical axis of region',FATAL)
           IF ( start(3)>=0 .AND. END(3)>0 ) THEN 
              ALLOCATE(global_depth(global_axis_size))
@@ -263,7 +268,7 @@ CONTAINS
              END SELECT
           ELSE
              ! <ERROR STATUS="FATAL">No domain available</ERROR>
-             CALL error_mesg ('diag_util, get_subfield_size', 'NO domain available', FATAL)
+             CALL error_mesg('diag_util_mod::get_subfield_size', 'NO domain available', FATAL)
           END IF
        END DO
     END IF
@@ -274,7 +279,7 @@ CONTAINS
 
     IF ( xbegin== -1 .OR. xend==-1 .OR. ybegin==-1 .OR. yend==-1 ) THEN
        ! <ERROR STATUS="FATAL">wrong compute domain indices</ERROR>
-       CALL error_mesg ('diag_util, get_subfield_size', 'wrong compute domain indices',FATAL)  
+       CALL error_mesg('diag_util_mod::get_subfield_size', 'wrong compute domain indices',FATAL)  
     END IF
       
     ! get the area containing BOTH compute domain AND local output area
@@ -310,9 +315,11 @@ CONTAINS
             & diag_subaxes_init(axes(2),subaxis_y, gstart_indx(2),gend_indx(2),Domain2_new)
        DO i = 1, SIZE(axes(:))
           IF(output_fields(outnum)%output_grid%subaxes(i) == -1) THEN  
-             ! <ERROR STATUS="FATAL"><output_fields(outnum)%output_name> error at i = <i></ERROR>
+             ! <ERROR STATUS="FATAL">
+             !   <output_fields(outnum)%output_name> error at i = <i>
+             ! </ERROR>
              WRITE(msg,'(a,"/",I4)') 'at i = ',i
-             CALL error_mesg ('diag_util, get_subfield_size '//TRIM(output_fields(outnum)%output_name),&
+             CALL error_mesg('diag_util_mod::get_subfield_size '//TRIM(output_fields(outnum)%output_name),&
                   'error '//TRIM(msg), FATAL)   
           END IF
        END DO
@@ -378,21 +385,21 @@ CONTAINS
        SELECT CASE(cart)
        CASE ('X')
           ! <ERROR STATUS="FATAL">wrong order of axes, X should come first</ERROR>
-          IF ( i.NE.1 ) CALL error_mesg ('diag_util, get subfield vert size',&
+          IF ( i.NE.1 ) CALL error_mesg('diag_util_mod::get_subfield_vert_size',&
                & 'wrong order of axes, X should come first',FATAL)
           gstart_indx(i) = 1
           gend_indx(i) = global_axis_size
           output_fields(outnum)%output_grid%subaxes(i) = axes(i)
        CASE ('Y')
           ! <ERROR STATUS="FATAL">wrong order of axes, Y should come second</ERROR>
-          IF( i.NE.2 ) CALL error_mesg ('diag_util, get subfield vert size',&
+          IF( i.NE.2 ) CALL error_mesg('diag_util_mod::get_subfield_vert_size',&
                & 'wrong order of axes, Y should come second',FATAL)
           gstart_indx(i) = 1
           gend_indx(i) = global_axis_size
           output_fields(outnum)%output_grid%subaxes(i) = axes(i)
        CASE ('Z')
           ! <ERROR STATUS="FATAL">wrong values in vertical axis of region</ERROR>
-          IF( start(i)*END(i) < 0 ) CALL error_mesg ('diag_util, get subfield vert size',&
+          IF( start(i)*END(i) < 0 ) CALL error_mesg('diag_util_mod::get_subfield_vert_size',&
                & 'wrong values in vertical axis of region',FATAL)
           IF( start(i) >= 0 .AND. END(i) > 0 ) THEN 
              ALLOCATE(global_depth(global_axis_size))
@@ -414,12 +421,12 @@ CONTAINS
              gend_indx(i) = global_axis_size
              output_fields(outnum)%output_grid%subaxes(i) = axes(i)
              ! <ERROR STATUS="FATAL">i should equal 3 for z axis</ERROR>
-             IF( i /= 3 ) CALL error_mesg ('diag_util, get subfield vert size',&
+             IF( i /= 3 ) CALL error_mesg('diag_util_mod::get_subfield_vert_size',&
                   & 'i should equal 3 for z axis', FATAL)
           END IF
        CASE default
           ! <ERROR STATUS="FATAL">Wrong axis_cart</ERROR>
-          CALL error_mesg ('diag_util, get_subfield_vert_size', 'Wrong axis_cart', FATAL)
+          CALL error_mesg('diag_util_mod::get_subfield_vert_size', 'Wrong axis_cart', FATAL)
        END SELECT
     END DO
 
@@ -429,8 +436,8 @@ CONTAINS
           !   can not find gstart_indx/gend_indx for <output_fields(outnum)%output_name>
           !   check region bounds for axis
           ! </ERROR>
-          WRITE(msg,'(a,I2)') ' check region bounds for axis ', i
-          CALL error_mesg ('diag_util, get_subfield_vert_size', 'can not find gstart_indx/gend_indx for '&
+          WRITE(msg,'(A,I2)') ' check region bounds for axis ', i
+          CALL error_mesg('diag_util_mod::get_subfield_vert_size', 'can not find gstart_indx/gend_indx for '&
                & //TRIM(output_fields(outnum)%output_name)//','//TRIM(msg), FATAL)
        END IF
     END DO
@@ -476,7 +483,7 @@ CONTAINS
     DO i = 2, n-1
        IF( (array(i-1)<array(i).AND.array(i)>array(i+1)) .OR. (array(i-1)>array(i).AND.array(i)<array(i+1))) THEN
           ! <ERROR STATUS="FATAL">array NOT monotonously ordered</ERROR>
-          CALL error_mesg('diag_util', 'get_index, array NOT monotonously ordered',FATAL) 
+          CALL error_mesg('diag_util_mod::get_index', 'array NOT monotonously ordered',FATAL) 
        END IF
     END DO
     get_index = -1
@@ -708,7 +715,7 @@ CONTAINS
 
     CHARACTER(len=128) :: error_string1, error_string2
 
-    IF(output_fields(out_num)%imin < LBOUND(output_fields(out_num)%buffer,1) .OR.&
+    IF (   output_fields(out_num)%imin < LBOUND(output_fields(out_num)%buffer,1) .OR.&
          & output_fields(out_num)%imax > UBOUND(output_fields(out_num)%buffer,1) .OR.&
          & output_fields(out_num)%jmin < LBOUND(output_fields(out_num)%buffer,2) .OR.&
          & output_fields(out_num)%jmax > UBOUND(output_fields(out_num)%buffer,2) .OR.&
@@ -800,7 +807,7 @@ CONTAINS
     END IF
 
     IF ( do_check ) THEN
-       IF ( output_fields(out_num)%imin /= LBOUND(output_fields(out_num)%buffer,1 ) .OR.&
+       IF (   output_fields(out_num)%imin /= LBOUND(output_fields(out_num)%buffer,1) .OR.&
             & output_fields(out_num)%imax /= UBOUND(output_fields(out_num)%buffer,1) .OR.&
             & output_fields(out_num)%jmin /= LBOUND(output_fields(out_num)%buffer,2) .OR.&
             & output_fields(out_num)%jmax /= UBOUND(output_fields(out_num)%buffer,2) .OR.&
@@ -854,7 +861,7 @@ CONTAINS
 
     err_msg = ''
 
-    IF( output_fields(out_num)%imin /= LBOUND(output_fields(out_num)%buffer,1 ) .OR.&
+    IF (   output_fields(out_num)%imin /= LBOUND(output_fields(out_num)%buffer,1) .OR.&
          & output_fields(out_num)%imax /= UBOUND(output_fields(out_num)%buffer,1) .OR.&
          & output_fields(out_num)%jmin /= LBOUND(output_fields(out_num)%buffer,2) .OR.&
          & output_fields(out_num)%jmax /= UBOUND(output_fields(out_num)%buffer,2) .OR.&
@@ -932,7 +939,7 @@ CONTAINS
        !   max_files exceeded, increase max_files via the max_files variable
        !   in the namelist diag_manager_nml.
        ! </ERROR>
-       CALL error_mesg('diag_util, init_file',&
+       CALL error_mesg('diag_util_mod::init_file',&
             & ' max_files exceeded, increase max_files via the max_files variable&
             & in the namelist diag_manager_nml.', FATAL)
     END IF
@@ -988,10 +995,10 @@ CONTAINS
     IF ( files(num_files)%close_time>files(num_files)%next_open ) THEN
        ! <ERROR STATUS="FATAL">
        !   close time GREATER than next_open time, check file duration,
-       !   file frequency in < files(num_files)%name>
+       !   file frequency in <files(num_files)%name>
        ! </ERROR>
-       CALL error_mesg('init_file', 'close time '//'GREATER than'//&
-            & ' next_open time, check file duration, file frequency in '// files(num_files)%name, FATAL)
+       CALL error_mesg('diag_util_mod::init_file', 'close time GREATER than next_open time, check file duration,&
+            & file frequency in '//files(num_files)%name, FATAL)
     END IF
     
     ! add time_axis_id and time_bounds_id here
@@ -1219,7 +1226,7 @@ CONTAINS
        num_input_fields = num_input_fields + 1
        IF ( num_input_fields > max_input_fields ) THEN
           ! <ERROR STATUS="FATAL">max_input_fields exceeded, increase it via diag_manager_nml</ERROR>
-          CALL error_mesg('diag_util,init_input_field',&
+          CALL error_mesg('diag_util_mod::init_input_field',&
                & 'max_input_fields exceeded, increase it via diag_manager_nml', FATAL)
        END IF
     ELSE
@@ -1235,6 +1242,8 @@ CONTAINS
     input_fields(num_input_fields)%local = .FALSE.
     input_fields(num_input_fields)%standard_name = 'none'
     input_fields(num_input_fields)%tile_count = tile_count
+    input_fields(num_input_fields)%numthreads = 1
+    input_fields(num_input_fields)%time = time_zero
   END SUBROUTINE init_input_field
   ! </SUBROUTINE>
 
@@ -1274,8 +1283,10 @@ CONTAINS
     ! Get a number for this output field
     num_output_fields = num_output_fields + 1
     IF ( num_output_fields > max_output_fields ) THEN
-       ! <ERROR STATUS="FATAL">max_output_fields exceeded, increase it via diag_manager_nml</ERROR>
-       CALL error_mesg('diag_util', 'max_output_fields exceeded, increase it via diag_manager_nml', FATAL)
+       ! <ERROR STATUS="FATAL">max_output_fields = <max_output_fields> exceeded.  Increase via diag_manager_nml</ERROR>
+       WRITE (UNIT=error_msg,FMT=*) max_output_fields
+       CALL error_mesg('diag_util_mod::init_output_field', 'max_output_fields = '//TRIM(error_msg)//' exceeded.&
+            &  Increase via diag_manager_nml', FATAL)
     END IF
     out_num = num_output_fields
 
@@ -1283,13 +1294,13 @@ CONTAINS
     in_num = find_input_field(module_name, field_name, tile_count)
     IF ( in_num < 0 ) THEN
        IF ( tile_count > 1 ) THEN
-          WRITE (error_msg,'(a,"/",a,"/",a)') TRIM(module_name),TRIM(field_name),&
+          WRITE (error_msg,'(A,"/",A,"/",A)') TRIM(module_name),TRIM(field_name),&
                & "tile_count="//TRIM(string(tile_count))
        ELSE
-          WRITE (error_msg,'(a,"/",a)') TRIM(module_name),TRIM(field_name)
+          WRITE (error_msg,'(A,"/",A)') TRIM(module_name),TRIM(field_name)
        END IF
        ! <ERROR STATUS="FATAL">module_name/field_name <module_name>/<field_name>[/tile_count=<tile_count>] NOT registered</ERROR>
-       CALL error_mesg('diag_util,init_output_field',&
+       CALL error_mesg('diag_util_mod::init_output_field',&
             & 'module_name/field_name '//TRIM(error_msg)//' NOT registered', FATAL)
     END IF
 
@@ -1297,9 +1308,14 @@ CONTAINS
     input_fields(in_num)%num_output_fields =&
          & input_fields(in_num)%num_output_fields + 1
     IF ( input_fields(in_num)%num_output_fields > max_out_per_in_field ) THEN
-       ! <ERROR STATUS="FATAL">max_out_per_in_field exceeded, increase max_out_per_in_field</ERROR>
-       CALL error_mesg('diag_util,init_output_field',&
-        & 'max_out_per_in_field exceeded for '//TRIM(module_name)//"/"//TRIM(field_name)//', increase max_out_per_in_field', FATAL)
+       ! <ERROR STATUS="FATAL">
+       !   MAX_OUT_PER_IN_FIELD = <MAX_OUT_PER_IN_FIELD> exceeded for <module_name>/<field_name>, increase MAX_OUT_PER_IN_FIELD
+       !   in diag_data.F90.
+       ! </ERROR>
+       WRITE (UNIT=error_msg,FMT=*) MAX_OUT_PER_IN_FIELD
+       CALL error_mesg('diag_util_mod::init_output_field',&
+        & 'MAX_OUT_PER_IN_FIELD exceeded for '//TRIM(module_name)//"/"//TRIM(field_name)//&
+        &', increase MAX_OUT_PER_IN_FIELD in diag_data.F90', FATAL)
     END IF
     input_fields(in_num)%output_fields(input_fields(in_num)%num_output_fields) = out_num
 
@@ -1312,8 +1328,11 @@ CONTAINS
     ELSE
        file_num = find_file(output_file, 1)
        IF ( file_num < 0 ) THEN
-          CALL error_mesg('diag_util,init_output_field', 'file '&
-               & //TRIM(output_file)//' is NOT found in diag_table', FATAL)
+          ! <ERROR STATUS="FATAL">
+          !   file <file_name> is NOT found in the diag_table.
+          ! </ERROR>
+          CALL error_mesg('diag_util_mod::init_output_field', 'file '&
+               & //TRIM(output_file)//' is NOT found in the diag_table', FATAL)
        END IF
        IF ( tile_count > 1 ) THEN
           file_num_tile1 = file_num
@@ -1327,7 +1346,10 @@ CONTAINS
                   & files(file_num_tile1)%duration, files(file_num_tile1)%duration_units  )
              file_num = find_file(output_file, tile_count)
              IF ( file_num < 0 ) THEN
-                CALL error_mesg('diag_util,init_output_field', 'file '//TRIM(output_file)//&
+                ! <ERROR STATUS="FATAL">
+                !   file <output_file> is not initialized for tile_count = <tile_count>
+                ! </ERROR>
+                CALL error_mesg('diag_util_mod::init_output_field', 'file '//TRIM(output_file)//&
                      & ' is not initialized for tile_count = '//TRIM(string(tile_count)), FATAL)
              END IF
           END IF
@@ -1336,9 +1358,13 @@ CONTAINS
 
     ! Insert this field into list for this file
     files(file_num)%num_fields = files(file_num)%num_fields + 1
-    IF ( files(file_num)%num_fields > max_fields_per_file ) THEN
-       CALL error_mesg('diag_util,init_output_field',&
-            & 'max_fields_per_file exceeded, increase max_fields_per_file ', FATAL)
+    IF ( files(file_num)%num_fields > MAX_FIELDS_PER_FILE ) THEN
+       WRITE (UNIT=error_msg, FMT=*) MAX_FIELDS_PER_FILE
+       ! <ERROR STATUS="FATAL">
+       !   MAX_FIELDS_PER_FILE = <MAX_FIELDS_PER_FILE> exceeded.  Increase MAX_FIELDS_PER_FILE in diag_data.F90.
+       ! </ERROR>
+       CALL error_mesg('diag_util_mod::init_output_field',&
+            & 'MAX_FIELDS_PER_FILE = '//TRIM(error_msg)//' exceeded.  Increase MAX_FIELDS_PER_FILE in diag_data.F90.', FATAL)
     END IF
     num_fields = files(file_num)%num_fields
     files(file_num)%fields(num_fields) = out_num
@@ -1349,7 +1375,7 @@ CONTAINS
     ! Enter the other data for this output field
     output_fields(out_num)%output_name = TRIM(output_name)
     output_fields(out_num)%pack = pack
-    !output_fields(out_num)%num_elements = 0
+    output_fields(out_num)%num_axes = 0
     output_fields(out_num)%total_elements = 0
     output_fields(out_num)%region_elements = 0
     output_fields(out_num)%imax = 0
@@ -1380,12 +1406,15 @@ CONTAINS
        ! get the integer number from the t_method
        READ (UNIT=t_method(8:LEN_TRIM(t_method)), FMT=*, IOSTAT=ioerror) output_fields(out_num)%n_diurnal_samples
        IF ( ioerror /= 0 ) THEN
-          ! <ERROR STATUS="FATAL">could not find integer number of diurnal samples in string <t_method></ERROR>
+          ! <ERROR STATUS="FATAL">
+          !   could not find integer number of diurnal samples in string "<t_method>"
+          ! </ERROR>
           CALL error_mesg('diag_util_mod::init_output_field',&
-               & 'could not find integer number of diurnal samples in string "'&
-               & //TRIM(t_method)//'"', FATAL)
+               & 'could not find integer number of diurnal samples in string "' //TRIM(t_method)//'"', FATAL)
        ELSE IF ( output_fields(out_num)%n_diurnal_samples <= 0 ) THEN
-          ! <ERROR STATUS="FATAL">The integer value of diurnal samples must be greater than zero.</ERROR>
+          ! <ERROR STATUS="FATAL">
+          !   The integer value of diurnal samples must be greater than zero.
+          ! </ERROR>
           CALL error_mesg('diag_util_mod::init_output_field',&
                & 'The integer value of diurnal samples must be greater than zero.', FATAL)
        END IF
@@ -1456,9 +1485,11 @@ CONTAINS
        output_fields(out_num)%reduced_k_range = .FALSE.
     END IF
 
-    ! <ERROR STATUS="FATAL">improper time method in diag_table for output field <output_name></ERROR>
-    IF ( method_selected /= 1 ) CALL error_mesg('init_output_field','improper &
-         &time method in diag_table for output field:'//TRIM(output_name),FATAL)
+    ! <ERROR STATUS="FATAL">
+    !   improper time method in diag_table for output field <output_name>
+    ! </ERROR>
+    IF ( method_selected /= 1 ) CALL error_mesg('diag_util_mod::init_output_field',&
+         &'improper time method in diag_table for output field:'//TRIM(output_name),FATAL)
 
     output_fields(out_num)%time_method = TRIM(t_method)
 
@@ -1519,17 +1550,18 @@ CONTAINS
     IF ( LEN(files(file)%name) >=7 .AND. .NOT.files(file)%local ) THEN
        prefix = files(file)%name(1:7)
        IF ( lowercase(prefix) == 'rregion' ) THEN 
-          ! <ERROR STATUS="WARNING">file name should not start with word "rregion"</ERROR>
-          IF ( mpp_pe() == mpp_root_pe() )&
-               &CALL error_mesg ('diag_util opening_file', 'file name should not start with'&
-               & //' word "rregion"', WARNING)
+          ! <ERROR STATUS="WARNING">
+          !   file name should not start with word "rregion"
+          ! </ERROR>
+          IF ( mpp_pe() == mpp_root_pe() ) CALL error_mesg('diag_util_mod::opening_file',&
+               & 'file name should not start with word "rregion"', WARNING)
        END IF
     END IF
     
     ! Here is where time_units string must be set up; time since base date
-    WRITE(time_units, 11) TRIM(time_unit_list(files(file)%time_units)), base_year,&
+    WRITE (time_units, 11) TRIM(time_unit_list(files(file)%time_units)), base_year,&
          & base_month, base_day, base_hour, base_minute, base_second
-11  FORMAT(a, ' since ', i4.4, '-', i2.2, '-', i2.2, ' ', i2.2, ':', i2.2, ':', i2.2)
+11  FORMAT(A, ' since ', I4.4, '-', I2.2, '-', I2.2, ' ', I2.2, ':', I2.2, ':', I2.2)
     base_name = files(file)%name
     IF ( files(file)%new_file_freq < VERY_LARGE_FILE_FREQ ) THEN
        position = INDEX(files(file)%name, '%')
@@ -1539,8 +1571,8 @@ CONTAINS
           ! <ERROR STATUS="FATAL">
           !   filename <files(file)%name> does not contain % for time stamp string
           ! </ERROR>
-          CALL error_mesg ('diag_util opening_file', 'file name '//TRIM(files(file)%name)//&
-               & ' does not contain % for time stamp string', FATAL) 
+          CALL error_mesg('diag_util_mod::opening_file',&
+               & 'file name '//TRIM(files(file)%name)//' does not contain % for time stamp string', FATAL) 
        END IF
        suffix = get_time_string(files(file)%name, time)
     ELSE
@@ -1549,7 +1581,7 @@ CONTAINS
     ! Add CVS tag as prefix of filename  (currently not implemented)
     !  i1 = INDEX(tagname,':') + 2
     !  i2 = len_trim(tagname) - 2
-    !  if(i2 <=i1)  call error_mesg ('diag_util opening_file','error in CVS tagname index',FATAL)
+    !  if(i2 <=i1)  call error_mesg('diag_util opening_file','error in CVS tagname index',FATAL)
     !  prefix2 = tagname(i1:i2)//'_'
     IF ( files(file)%local ) THEN      
        ! prepend "rregion" to all local files for post processing, the prefix will be removed in postprocessing
@@ -1579,7 +1611,7 @@ CONTAINS
           ! <ERROR STATUS="FATAL">
           !   Domain not defined through set_domain interface; cannot retrieve tile info
           ! </ERROR>
-          CALL error_mesg ('diag_util opening_file',&
+          CALL error_mesg('diag_util_mod::opening_file',&
                & 'Domain not defined through set_domain interface; cannot retrieve tile info', FATAL)
        END IF
        IF ( mpp_get_ntile_count(domain2) > 1 ) THEN
@@ -1609,15 +1641,14 @@ CONTAINS
        field_num = files(file)%fields(j)
        input_field_num = output_fields(field_num)%input_field
        IF (.NOT.input_fields(input_field_num)%register) THEN
-          WRITE (error_string,'(a,"/",a)') TRIM(input_fields(input_field_num)%module_name),&
+          WRITE (error_string,'(A,"/",A)') TRIM(input_fields(input_field_num)%module_name),&
                & TRIM(input_fields(input_field_num)%field_name)
           IF(mpp_pe() .EQ. mpp_root_pe()) THEN
              ! <ERROR STATUS="WARNING">
-             !   module/field_name
-             !   <input_fields(input_field_num)%module_name>/<input_fields(input_field_num)%field_name>
+             !   module/field_name (<input_fields(input_field_num)%module_name>/<input_fields(input_field_num)%field_name>)
              !   NOT registered
              ! </ERROR>
-             CALL error_mesg ('diag_util::opening_file',&
+             CALL error_mesg('diag_util_mod::opening_file',&
                   & 'module/field_name ('//TRIM(error_string)//') NOT registered', WARNING)  
           END IF
           CYCLE
@@ -1634,7 +1665,7 @@ CONTAINS
              ! <ERROR STATUS="FATAL">
              !   ouptut_name <output_fields(field_num)%output_name> has axis_id = -1
              ! </ERROR>
-             CALL error_mesg ('diag_util opening_file','output_name '//TRIM(error_string)//&
+             CALL error_mesg('diag_util_mod::opening_file','output_name '//TRIM(error_string)//&
                   & ' has axis_id = -1', FATAL)
           END IF
        END DO
@@ -1679,11 +1710,11 @@ CONTAINS
              IF ( mpp_pe() == mpp_root_pe() ) THEN
                 ! <ERROR STATUS="FATAL">
                 !   <files(file)%name> can NOT have BOTH time average AND instantaneous fields.
-                !   Create a new file or set mix_snapshot_average_fields=.TRUE.
+                !   Create a new file or set mix_snapshot_average_fields=.TRUE. in the namelist diag_manager_nml.
                 ! </ERROR>
-                CALL error_mesg ('diag_util opening_file','file '//&
+                CALL error_mesg('diag_util_mod::opening_file','file '//&
                      & TRIM(files(file)%name)//' can NOT have BOTH time average AND instantaneous fields.'//&
-                     & ' Create a new file or set mix_snapshot_average_fields=.TRUE.' , FATAL)
+                     & ' Create a new file or set mix_snapshot_average_fields=.TRUE. in the namelist diag_manager_nml.' , FATAL)
              END IF
           END IF
        END IF
@@ -1788,12 +1819,10 @@ CONTAINS
     IF( aux_present .AND. .NOT.match_aux_name ) THEN
        ! <ERROR STATUS="WARNING">
        !   one axis has auxiliary but the corresponding field is NOT
-       !   found in file <files(file)%name>
+       !   found in file <file_name>
        ! </ERROR>
-       IF ( mpp_pe() == mpp_root_pe() )&
-            & CALL error_mesg ('diag_util opening_file',&
-            &'one axis has auxiliary but the corresponding field'//&
-            &' is NOT found in file '//files(file)%name , WARNING)
+       IF ( mpp_pe() == mpp_root_pe() ) CALL error_mesg('diag_util_mod::opening_file',&
+            &'one axis has auxiliary but the corresponding field is NOT found in file '//TRIM(files(file)%name), WARNING)
     END IF
   END SUBROUTINE opening_file
   ! </SUBROUTINE>
@@ -1957,8 +1986,11 @@ CONTAINS
     TYPE(time_type) :: dif_time
 
     ! Compute time axis label value
-    IF ( t2 < t1 ) CALL error_mesg('get_date_dif', &
-         & 't2 is less than t1', FATAL)
+    ! <ERROR STATUS="FATAL">
+    !   variable t2 is less than in variable t1
+    ! </ERROR>
+    IF ( t2 < t1 ) CALL error_mesg('diag_util_mod::get_date_dif', &
+         & 'in variable t2 is less than in variable t1', FATAL)
 
     dif_time = t2 - t1
 
@@ -1973,14 +2005,20 @@ CONTAINS
     ELSE IF ( units == DIAG_DAYS ) THEN
        get_date_dif = dif_days + dif_seconds / SECONDS_PER_DAY
     ELSE IF ( units == DIAG_MONTHS ) THEN
-       ! <ERROR STATUS="FATAL">months not supported as output units</ERROR>
-       CALL error_mesg('diag_data_out', 'months not supported as output units', FATAL)
+       ! <ERROR STATUS="FATAL">
+       !   months not supported as output units
+       ! </ERROR>
+       CALL error_mesg('diag_util_mod::get_date_dif', 'months not supported as output units', FATAL)
     ELSE IF ( units == DIAG_YEARS ) THEN
-       ! <ERROR STATUS="FATAL">years not suppored as output units</ERROR>
-       CALL error_mesg('diag_data_out', 'years not supported as output units', FATAL)
+       ! <ERROR STATUS="FATAL">
+       !   years not suppored as output units
+       ! </ERROR>
+       CALL error_mesg('diag_util_mod::get_date_dif', 'years not supported as output units', FATAL)
     ELSE
-       ! <ERROR STATUS="FATAL">illegal time units</ERROR>
-       CALL error_mesg('diag_data_out', 'illegal time units', FATAL)
+       ! <ERROR STATUS="FATAL">
+       !   illegal time units
+       ! </ERROR>
+       CALL error_mesg('diag_util_mod::diag_date_dif', 'illegal time units', FATAL)
     END IF
   END FUNCTION get_date_dif
   ! </FUNCTION>
@@ -2112,11 +2150,11 @@ CONTAINS
                   & files(file)%new_file_freq_units)
              IF ( files(file)%close_time > files(file)%next_open ) THEN 
                 ! <ERROR STATUS="FATAL">
-                !   <files(file)%name> has close time GREATER than next_open time,
+                !   <file_name> has close time GREATER than next_open time,
                 !   check file duration and frequency
                 ! </ERROR>
-                CALL error_mesg('check_and_open', files(file)%name//&
-                     & ' has close time GREATER than next_open time, check file duration and frequency',FATAL)
+                CALL error_mesg('diag_util_mod::check_and_open',&
+                     & files(file)%name//' has close time GREATER than next_open time, check file duration and frequency',FATAL)
              END IF
           END IF ! no need to open new file, simply return file_unit
        END IF

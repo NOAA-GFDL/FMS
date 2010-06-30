@@ -2,7 +2,7 @@ module mpp_utilities_mod
 
 !-----------------------------------------------------------------------
   character(len=128) :: version = '$Id: mpp_utilities.F90,v 17.0 2009/07/21 03:21:23 fms Exp $'
-  character(len=128) :: tag = '$Name: riga_201004 $'
+  character(len=128) :: tag = '$Name: riga_201006 $'
 !-----------------------------------------------------------------------
 
   public :: mpp_array_global_min_max

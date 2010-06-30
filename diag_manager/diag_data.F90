@@ -37,19 +37,21 @@ MODULE diag_data_mod
   USE mpp_domains_mod,  ONLY: domain1d, domain2d
   USE mpp_io_mod,       ONLY: fieldtype
   USE fms_mod, ONLY: WARNING
-
 #ifdef use_netCDF
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
 #endif
 
+  IMPLICIT NONE
+
   PUBLIC
+
 
   ! <!-- PARAMETERS for diag_data.F90 -->
   ! <DATA NAME="MAX_FIELDS_PER_FILE" TYPE="INTEGER, PARAMETER" DEFAULT="300">
   !   Maximum number of fields per file.
   ! </DATA>
-  ! <DATA NAME="MAX_OUT_PER_IN_FIELD" TYPE="INTEGER, PARAMETER" DEFAULT="30">
+  ! <DATA NAME="MAX_OUT_PER_IN_FIELD" TYPE="INTEGER, PARAMETER" DEFAULT="150">
   !   Maximum number of output_fields per input_field.
   ! </DATA>
   ! <DATA NAME="DIAG_OTHER" TYPE="INTEGER, PARAMETER" DEFAULT="0" />
@@ -308,8 +310,10 @@ MODULE diag_data_mod
      INTEGER :: num_output_fields
      INTEGER, DIMENSION(3) :: size
      LOGICAL :: static, register, mask_variant, local
+     INTEGER :: numthreads
      INTEGER :: tile_count
      TYPE(coord_type) :: local_coord
+     TYPE(time_type)  :: time
   END TYPE input_field_type
   ! </TYPE>
 
@@ -507,9 +511,9 @@ MODULE diag_data_mod
   
   ! Private CHARACTER Arrays for the CVS version and tagname.
   CHARACTER(len=128),PRIVATE  :: version =&
-       & '$Id: diag_data.F90,v 18.0.2.3 2010/03/09 15:57:58 sdu Exp $'
+       & '$Id: diag_data.F90,v 18.0.2.8 2010/04/06 16:51:06 sdu Exp $'
   CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name: riga_201004 $'
+       & '$Name: riga_201006 $'
 
   ! <!-- Other public variables -->
   ! <DATA NAME="num_files" TYPE="INTEGER" DEFAULT="0">
@@ -617,6 +621,7 @@ MODULE diag_data_mod
   ! <DATA NAME="diag_log_unit" TYPE="INTEGER" />
   ! <DATA NAME="time_unit_list" TYPE="CHARACTER(len=10), DIMENSION(6)"
   !       DEFAULT="(/'seconds   ', 'minutes   ', 'hours     ', 'days      ', 'months    ', 'years     '/)" />
+  ! <DATA NAME="filename_appendix" TYPE="CHARACTER(len=32)" DEFAULT="" />
   ! <DATA NAME="pelist_name" TYPE="CHARACTER(len=32)" />
   TYPE(time_type) :: time_zero
   LOGICAL :: first_send_data_call = .TRUE.
@@ -624,7 +629,8 @@ MODULE diag_data_mod
   INTEGER :: diag_log_unit
   CHARACTER(len=10), DIMENSION(6) :: time_unit_list = (/'seconds   ', 'minutes   ',&
        & 'hours     ', 'days      ', 'months    ', 'years     '/)
-  CHARACTER(len=32)   :: pelist_name
+  CHARACTER(len=32), SAVE :: filename_appendix = ''
+  CHARACTER(len=32) :: pelist_name
   INTEGER :: oor_warning = WARNING
   
 END MODULE diag_data_mod

@@ -1746,7 +1746,7 @@ module mpp_domains_mod
   character(len=128), public :: version= &
        '$Id: mpp_domains.F90,v 18.0 2010/03/02 23:56:33 fms Exp $'
   character(len=128), public :: tagname= &
-       '$Name: riga_201004 $'
+       '$Name: riga_201006 $'
 
 
 contains

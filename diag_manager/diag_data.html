@@ -2,7 +2,7 @@
 <head>
 <META http-equiv="Content-Type" content="text/html; charset=EUC-JP">
 <title>Module diag_data_mod</title>
-<link type="text/css" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" rel="stylesheet">
+<link type="text/css" href="http://data1.gfdl.noaa.gov/~fms/style/docbook.css" rel="stylesheet">
 <STYLE TYPE="text/css">
           .fixed {
             font-size:medium;
@@ -15,24 +15,20 @@
         </STYLE>
 </head>
 <body>
-<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC INTERFACE">PUBLIC INTERFACE </a>~
-          <a href="#PUBLIC DATA">PUBLIC DATA </a>~
-          <a href="#PUBLIC ROUTINES">PUBLIC ROUTINES </a>~
-          <a href="#NAMELIST">NAMELIST </a>~
-          <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
-          <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
-          <a href="#REFERENCES">REFERENCES </a>~ 
-          <a href="#NOTES">NOTES</a></font>
+<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC INTERFACE">PUBLIC INTERFACE </a>
+	    ~ <a href="#PUBLIC DATA">PUBLIC DATA </a>
+
+          ~ <a href="#PUBLIC ROUTINES">PUBLIC ROUTINES </a></font>
 <hr>
 <h2>Module diag_data_mod</h2>
 <a name="HEADER"></a>
 <!-- BEGIN HEADER -->
 <div>
-<b>Contact:&nbsp;</b>
+<b>Contact:&nbsp;</b><a href="mailto:seth.underwood@noaa.gov">   Seth Underwood </a>
 <br>
 <b>Reviewers:&nbsp;</b>
 <br>
-<b>Change History:&nbsp;</b><a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/diag_manager">WebCVS Log</a>
+<b>Change History:&nbsp;</b><a href="http://cobweb.gfdl.noaa.gov/fms-cgi-bin/viewcvs/FMS/shared/diag_manager">WebCVS Log</a>
 <br>
 <br>
 </div>
@@ -41,7 +37,7 @@
 <hr>
 <h4>OVERVIEW</h4>
 <!-- BEGIN OVERVIEW -->
-<p class="text"></p>
+<p class="text">   Type descriptions and global variables for the diag_manager modules. </p>
 <!-- END OVERVIEW -->
 <a name="DESCRIPTION"></a>
 <!-- BEGIN DESCRIPTION -->
@@ -95,7 +91,7 @@
 <td> MAX_FIELDS_PER_FILE  </td><td> INTEGER, PARAMETER  </td><td> 300  </td><td> ---  </td><td>    Maximum number of fields per file.   </td>
 </tr>
 <tr>
-<td> MAX_OUT_PER_IN_FIELD  </td><td> INTEGER, PARAMETER  </td><td> 30  </td><td> ---  </td><td>    Maximum number of output_fields per input_field.   </td>
+<td> MAX_OUT_PER_IN_FIELD  </td><td> INTEGER, PARAMETER  </td><td> 150  </td><td> ---  </td><td>    Maximum number of output_fields per input_field.   </td>
 </tr>
 <tr>
 <td> DIAG_OTHER  </td><td> INTEGER, PARAMETER  </td><td> 0  </td><td> ---  </td><td> ---  </td>
@@ -196,7 +192,7 @@
    given range for a variable.   </td>
 </tr>
 <tr>
-<td> FILL_VALUE  </td><td> REAL  </td><td> NF90_FILL_REAL  </td><td> ---  </td><td>    Fill value used.  Value will be NF90_FILL_REAL if using the
+<td> FILL_VALUE  </td><td> REAL  </td><td> NF90_FILL_REAL  </td><td> ---  </td><td>    Fill value used.  Value will be    if using the
    netCDF module, otherwise will be 9.9692099683868690e+36.   </td>
 </tr>
 <tr>
@@ -257,6 +253,9 @@
 <td> time_unit_list  </td><td> CHARACTER(len=10), DIMENSION(6)  </td><td> (/'seconds   ', 'minutes   ', 'hours     ', 'days      ', 'months    ', 'years     '/)  </td><td> ---  </td><td> ---  </td>
 </tr>
 <tr>
+<td> filename_appendix  </td><td> CHARACTER(len=32)  </td><td>   </td><td> ---  </td><td> ---  </td>
+</tr>
+<tr>
 <td> pelist_name  </td><td> CHARACTER(len=32)  </td><td> ---  </td><td> ---  </td><td> ---  </td>
 </tr>
 </table>
@@ -281,31 +280,31 @@
 <dl>   Contains the coordinates of the local domain to output. <br>
 <br>
 <dt>
-<tt>diag_grid::start</tt>
+<tt>start</tt>
 </dt>
 <dl>   Start coordinates (Lat, Lon, Depth) of the local domain to output. <br>
 <span class="type">[REAL, DIMENSION(3)]</span>
 </dl>
 <dt>
-<tt>diag_grid::end</tt>
+<tt>end</tt>
 </dt>
 <dl>   End coordinates (Lat, Lon, Depth) of the local domain to output. <br>
 <span class="type">[REAL, DIMENSION(3)]</span>
 </dl>
 <dt>
-<tt>diag_grid::l_start_indx</tt>
+<tt>l_start_indx</tt>
 </dt>
 <dl>   Start indices at each local PE. <br>
 <span class="type">[INTEGER, DIMENSION(3)]</span>
 </dl>
 <dt>
-<tt>diag_grid::l_end_indx</tt>
+<tt>l_end_indx</tt>
 </dt>
 <dl>   End indices at each local PE. <br>
 <span class="type">[INTEGER, DIMENSION(3)]</span>
 </dl>
 <dt>
-<tt>diag_grid::subaxes</tt>
+<tt>subaxes</tt>
 </dt>
 <dl>   ID returned from diag_subaxes_init of 3 subaces. <br>
 <span class="type">[INTEGER, DIMENSION(3)]</span>
@@ -1179,28 +1178,9 @@
 </div>
 <br>
 <!-- END PUBLIC TYPES -->
-<a name="NAMELIST"></a>
-<!-- BEGIN NAMELIST -->
-<!-- END NAMELIST --><a name="DIAGNOSTIC FIELDS"></a>
-<!-- BEGIN DIAGNOSTIC FIELDS -->
-<!-- END DIAGNOSTIC FIELDS --><a name="DATA SETS"></a>
-<!-- BEGIN DATA SETS -->
-<hr>
-<h4>DATA SETS</h4>
-<div>None.<br>
-<br>
-</div>
-<!-- END DATA SETS -->
 <a name="PUBLIC CODE"></a>
 <!-- BEGIN PUBLIC CODE -->
-<!-- END PUBLIC CODE --><a name="ERROR MESSAGES"></a>
-<!-- BEGIN ERROR MESSAGES -->
-<hr>
-<h4>ERROR MESSAGES</h4>
-<div>None.<br>
-<br>
-</div>
-<!-- END ERROR MESSAGES -->
+<!-- END PUBLIC CODE -->
 <hr>
 <div align="right">
 <font size="-1"><a href="#TOP">top</a></font>

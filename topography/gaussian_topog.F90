@@ -72,7 +72,7 @@ public :: gaussian_topog_init, get_gaussian_topog
 !-----------------------------------------------------------------------
 
 character(len=128) :: version = '$Id: gaussian_topog.F90,v 13.0 2006/03/28 21:43:27 fms Exp $'
-character(len=128) :: tagname = '$Name: riga_201004 $'
+character(len=128) :: tagname = '$Name: riga_201006 $'
 
 logical :: do_nml = .true.
 logical :: module_is_initialized = .FALSE.

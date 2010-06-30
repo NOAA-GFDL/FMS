@@ -50,7 +50,7 @@ module time_interp_external_mod
 
   character(len=128), private :: version= &
    'CVS $Id: time_interp_external.F90,v 17.0 2009/07/21 03:21:49 fms Exp $'
-  character(len=128), private :: tagname='Tag $Name: riga_201004 $'
+  character(len=128), private :: tagname='Tag $Name: riga_201006 $'
 
   integer, parameter, private :: max_fields = 1, modulo_year= 0001,max_files= 1
   integer, parameter, private :: LINEAR_TIME_INTERP = 1 ! not used currently
