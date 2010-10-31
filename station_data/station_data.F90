@@ -45,9 +45,9 @@ use axis_utils_mod, only: nearest_index
 use mpp_io_mod,    only : mpp_open, MPP_RDONLY, MPP_ASCII, mpp_close,MPP_OVERWR,MPP_NETCDF, &
                           mpp_write_meta, MPP_SINGLE, mpp_write, fieldtype,mpp_flush
 use fms_mod,       only : error_mesg, FATAL, WARNING, stdlog, write_version_number,&
-                          mpp_pe, lowercase, stdout, close_file
+                          mpp_pe, lowercase, stdout, close_file, open_namelist_file, check_nml_error
 use mpp_mod,       only : mpp_npes,  mpp_sync, mpp_root_pe, mpp_send, mpp_recv, mpp_max, &
-                          mpp_get_current_pelist
+                          mpp_get_current_pelist, input_nml_file
 use mpp_domains_mod,only: domain2d, mpp_get_compute_domain
 use diag_axis_mod, only : diag_axis_init
 use diag_output_mod,only:  write_axis_meta_data, write_field_meta_data,diag_fieldtype,done_meta_data
@@ -155,7 +155,7 @@ subroutine station_data_init()
 
 character(len=128)    :: station_name
 real                  :: lat, lon  
-integer               :: iunit,nfiles,nfields,time_units,output_freq_units,j,station_id,io_status,logunit
+integer               :: iunit,nfiles,nfields,time_units,output_freq_units,j,station_id,io_status,logunit, ierr
 logical               :: init_verbose
 character(len=128)    :: record
 type file_part_type
@@ -181,15 +181,23 @@ namelist /station_data_nml/ max_output_fields, max_stations,init_verbose
   total_pe = mpp_npes()
   allocate(pelist(total_pe))
   call mpp_get_current_pelist(pelist, pelist_name) 
+
 ! read namelist
-  call mpp_open(iunit, 'input.nml',form=MPP_ASCII,action=MPP_RDONLY)
-  read(iunit,station_data_nml,iostat=io_status)
+#ifdef INTERNAL_FILE_NML
+  read (input_nml_file, station_data_nml, iostat=io_status)
+  ierr = check_nml_error(io_status, 'station_data_nml')
+#else
+  iunit = open_namelist_file ()
+  ierr=1; do while (ierr /= 0)
+  read  (iunit, nml=station_data_nml, iostat=io_status, end=10)
+  ierr = check_nml_error(io_status, 'station_data_nml')
+  enddo
+10 call close_file (iunit)
+
+#endif
   logunit = stdlog()
   write(logunit, station_data_nml)
-  if (io_status > 0) then
-     call error_mesg('station_data_init', 'Error reading station_data_nml',FATAL)
-  endif
-  call mpp_close (iunit)
+
   allocate(output_fields(max_output_fields), stations(max_stations))
 ! read list of stations
   if(init_verbose) then

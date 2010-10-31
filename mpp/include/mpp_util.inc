@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util.inc,v 18.0 2010/03/02 23:58:05 fms Exp $
+! $Id: mpp_util.inc,v 18.0.4.1.2.1.2.1 2010/08/19 16:34:23 rab Exp $
 
 
 #ifdef use_libSMA
@@ -1173,3 +1173,137 @@ end function rarray_to_char
 
   !#######################################################################
 
+!-----------------------------------------------------------------------
+!
+! AUTHOR: Rusty Benson (rusty.benson@noaa.gov)
+!
+!
+! THESE LINES MUST BE PRESENT IN MPP.F90
+!
+! ! parameter defining length of character variables 
+!   integer, parameter :: INPUT_STR_LENGTH = 256
+! ! public variable needed for reading input.nml from an internal file
+!   character(len=INPUT_STR_LENGTH), dimension(:), allocatable, public :: input_nml_file
+!
+
+!-----------------------------------------------------------------------
+! subroutine READ_INPUT_NML
+!
+!
+! Reads an existing input.nml into a character array and broadcasts
+! it to the non-root mpi-tasks. This allows the use of reads from an
+! internal file for namelist settings (requires 2003 compliant compiler)  
+!
+! read(input_nml_file, nml=<name_nml>, iostat=status)
+!
+! 
+  subroutine read_input_nml
+
+! version and tagging information
+    character(len=128) :: version = '$Id: mpp_util.inc,v 18.0.4.1.2.1.2.1 2010/08/19 16:34:23 rab Exp $'
+    character(len=128) :: tagname = '$Name: riga_201012 $' 
+
+!private variables
+    character(len=INPUT_STR_LENGTH) :: str_tmp
+    character(len=4) :: text
+    logical :: file_exist
+    integer :: status
+    integer :: num_lines
+    integer :: i
+    integer :: f_unit, log_unit, from_pe
+
+
+
+    if (pe == root_pe) then
+       log_unit = stdlog()
+! write info logfile
+       write(log_unit,'(a)')  '========================================================================'
+       write(log_unit,'(a)')  'READ_INPUT_NML: '//trim(version)//trim(tagname)
+
+! query existence of input.nml
+       inquire ( file= 'input.nml', exist=file_exist )
+
+       if (file_exist) then
+! file exists 
+! open file and read through to get the number of lines in the file
+          f_unit = get_unit()
+          open (f_unit, file='input.nml', action='read')
+
+          status = 0 
+          num_lines = 1
+  
+          do 
+             read (f_unit,'(a)',iostat=status) str_tmp
+             if (status .lt. 0) exit
+             num_lines = num_lines + 1
+             if (len_trim(str_tmp) == INPUT_STR_LENGTH) then
+                write(text, '(i4)') INPUT_STR_LENGTH
+                call mpp_error (FATAL, 'READ_INPUT_NML: INPUT_STR_LENGTH of '//text//' too small. &
+                         &                Find the maximum linelength and set INPUT_STR_LENGTH (mpp.F90) &
+                         &                to be greater than that number.')
+             endif
+          end do
+          close(f_unit)
+
+! error check the result
+          if (status .gt. 0) then
+             call mpp_error(FATAL, 'READ_INPUT_NML: error trying to read through input.nml to get num_lines.')
+          endif
+ 
+! allocate space to hold input.nml
+          allocate(input_nml_file(num_lines))
+          input_nml_file(:) = ' '
+
+! open file and populate input_nml_file with contents of input.nml
+          open (f_unit, file='input.nml', action='read')
+
+          status = 0 
+          num_lines = 1
+
+          do 
+             read (f_unit,'(a)',iostat=status) input_nml_file(num_lines)
+             if (status .lt. 0) exit
+             num_lines = num_lines + 1
+          end do
+          close(f_unit)
+
+! error check the result
+          if (status .gt. 0) then
+             call mpp_error(FATAL, 'READ_INPUT_NML: error trying to read/store input.nml into input_nml_file.')
+          endif
+
+! write input_nml_file to logfile
+          do i = 1, num_lines
+            write(log_unit,*) trim(input_nml_file(i))
+          enddo
+
+       else
+
+! handle case where there is no input.nml
+          write(log_unit,'(a)') 'input.nml does not exist:  using code/module defaults'
+          call mpp_error (NOTE, 'READ_INPUT_NML:  input.nml does not exist - using code/module defaults.')
+
+          num_lines = 1
+! allocate array to hold input.nml based on num_lines just gathered
+          allocate(input_nml_file(num_lines))
+          input_nml_file(:) = ' '
+
+       endif  !end of existence test
+
+    endif  !end of root_pe 
+
+! broadcast the number of lines/entries in the input.nml
+    from_pe = root_pe
+    call mpp_broadcast(num_lines, from_pe)
+
+! allocate space to hold input.nml for non-root pes 
+    if (pe /= root_pe) then
+       allocate (input_nml_file(num_lines))
+       input_nml_file(:) = ' '
+    endif
+
+! broadcast the populated array input_nml_file
+    from_pe = root_pe
+    call mpp_broadcast(input_nml_file, INPUT_STR_LENGTH, from_pe)
+
+  end subroutine read_input_nml

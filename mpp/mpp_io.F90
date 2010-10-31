@@ -319,6 +319,7 @@ use mpp_mod,            only : mpp_error, FATAL, WARNING, NOTE, stdin, stdout, s
 use mpp_mod,            only : mpp_pe, mpp_root_pe, mpp_npes, lowercase, mpp_transmit
 use mpp_mod,            only : mpp_init, mpp_sync, mpp_clock_id, mpp_clock_begin, mpp_clock_end
 use mpp_mod,            only : MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED, CLOCK_ROUTINE
+use mpp_mod,            only : input_nml_file
 use mpp_domains_mod,    only : domain1d, domain2d, NULL_DOMAIN1D, mpp_domains_init
 use mpp_domains_mod,    only : mpp_get_global_domain, mpp_get_compute_domain
 use mpp_domains_mod,    only :  mpp_get_data_domain, mpp_get_memory_domain
@@ -326,7 +327,7 @@ use mpp_domains_mod,    only : mpp_update_domains, mpp_global_field, mpp_domain_
 use mpp_domains_mod,    only : operator( .NE. ), mpp_get_domain_shift
 use mpp_domains_mod,    only : mpp_get_io_domain, mpp_domain_is_tile_root_pe, mpp_get_domain_tile_root_pe
 use mpp_domains_mod,    only : mpp_get_tile_id, mpp_get_tile_npes, mpp_get_io_domain_layout
-use mpp_domains_mod,    only : mpp_get_domain_name
+use mpp_domains_mod,    only : mpp_get_domain_name, mpp_get_domain_npes
 
 implicit none
 private
@@ -802,7 +803,12 @@ type :: atttype
   integer            :: header_buffer_val = 16384  ! value used in NF__ENDDEF
   logical            :: global_field_on_root_pe = .true.
   logical            :: io_clocks_on = .false.
-  namelist /mpp_io_nml/header_buffer_val, global_field_on_root_pe, io_clocks_on
+  integer            :: shuffle = 0
+  integer            :: deflate = 0
+  integer            :: deflate_level = -1
+  
+  namelist /mpp_io_nml/header_buffer_val, global_field_on_root_pe, io_clocks_on, &
+                       shuffle, deflate_level
 
   real(DOUBLE_KIND), allocatable :: mpp_io_stack(:)
   type(axistype),save            :: default_axis      !provided to users with default components
@@ -812,9 +818,9 @@ type :: atttype
 
 
   character(len=128) :: version= &
-       '$Id: mpp_io.F90,v 18.0 2010/03/02 23:56:36 fms Exp $'
+       '$Id: mpp_io.F90,v 16.0.8.2.2.2.4.1.6.1.2.1.6.2.2.1 2010/08/04 13:10:12 z1l Exp $'
   character(len=128) :: tagname= &
-       '$Name: riga_201006 $'
+       '$Name: riga_201012 $'
 
 contains
 

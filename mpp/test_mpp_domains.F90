@@ -5,6 +5,7 @@ program test
   use mpp_mod,         only : mpp_declare_pelist, mpp_set_current_pelist, mpp_sync, mpp_sync_self
   use mpp_mod,         only : mpp_clock_begin, mpp_clock_end, mpp_clock_id
   use mpp_mod,         only : mpp_init, mpp_exit, mpp_chksum, stdout, stderr
+  use mpp_mod,         only : input_nml_file
   use mpp_domains_mod, only : GLOBAL_DATA_DOMAIN, BITWISE_EXACT_SUM, BGRID_NE, CGRID_NE
   use mpp_domains_mod, only : FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE, FOLD_WEST_EDGE, FOLD_EAST_EDGE
   use mpp_domains_mod, only : MPP_DOMAIN_TIME, CYCLIC_GLOBAL_DOMAIN, NUPDATE,EUPDATE, XUPDATE, YUPDATE, SCALAR_PAIR
@@ -36,9 +37,11 @@ program test
   integer :: x_cyclic_offset = 3   ! to be used in test_cyclic_offset
   integer :: y_cyclic_offset = -4  ! to be used in test_cyclic_offset
   character(len=32) :: warn_level = "fatal"
+  integer :: wide_halo_x = 0, wide_halo_y = 0
+  integer :: nx_cubic = 0, ny_cubic = 0
   namelist / test_mpp_domains_nml / nx, ny, nz, stackmax, debug, mpes, check_parallel, &
                                whalo, ehalo, shalo, nhalo, x_cyclic_offset, y_cyclic_offset, &
-                               warn_level
+                               warn_level, wide_halo_x, wide_halo_y, nx_cubic, ny_cubic
   integer :: i, j, k
   integer :: layout(2)
   integer :: id
@@ -46,6 +49,9 @@ program test
   call mpp_memuse_begin()
   call mpp_init()
  
+#ifdef INTERNAL_FILE_NML
+  read (input_nml_file, test_mpp_domains_nml) 
+#else
   do
      inquire( unit=unit, opened=opened )
      if( .NOT.opened )exit
@@ -56,6 +62,7 @@ program test
   read( unit,test_mpp_domains_nml )
   close(unit)
 10 continue
+#endif
 
   select case(trim(warn_level))
   case("fatal")
@@ -79,12 +86,25 @@ program test
   if( pe.EQ.mpp_root_pe() )print '(a,9i6)', 'npes, mpes, nx, ny, nz, whalo, ehalo, shalo, nhalo =', &
                            npes, mpes, nx, ny, nz, whalo, ehalo, shalo, nhalo
   call mpp_memuse_end("in the begining", stdout())  
+
+  !--- wide_halo_x and wide_halo_y must be either both 0 or both positive.
+  if( wide_halo_x < 0 .OR. wide_halo_y < 0) call mpp_error(FATAL, &
+     "test_mpp_domain: both wide_halo_x and wide_halo_y should be non-negative")
+  if( wide_halo_x == 0 .NEQV. wide_halo_y == 0) call mpp_error(FATAL, &
+     "test_mpp_domain: wide_halo_x and wide_halo_y should be both zero or both positive")
+
+  !--- nx_cubic and ny_cubic must be either both 0 or both positive.
+  if( nx_cubic < 0 .OR. ny_cubic < 0) call mpp_error(FATAL, &
+     "test_mpp_domain: both nx_cubic and ny_cubic should be non-negative")
+  if( nx_cubic == 0 .NEQV. ny_cubic == 0) call mpp_error(FATAL, &
+     "test_mpp_domain: nx_cubic and ny_cubic should be both zero or both positive")
+
   if( .not. check_parallel) then
       call test_modify_domain()
-      call test_cyclic_offset('x_cyclic_offset')
-      call test_cyclic_offset('y_cyclic_offset')
-      call test_cyclic_offset('torus_x_offset')
-      call test_cyclic_offset('torus_y_offset')
+!!$      call test_cyclic_offset('x_cyclic_offset')
+!!$      call test_cyclic_offset('y_cyclic_offset')
+!!$      call test_cyclic_offset('torus_x_offset')
+!!$      call test_cyclic_offset('torus_y_offset')
 
       call test_get_boundary('Four-Tile')
       call test_get_boundary('Cubic-Grid')
@@ -112,7 +132,7 @@ program test
       call test_halo_update( 'Folded-north symmetry' ) !includes vector field test
       call test_halo_update( 'Folded-south symmetry' ) !includes vector field test
       call test_halo_update( 'Folded-west symmetry' ) !includes vector field test
-     call test_halo_update( 'Folded-east symmetry' ) !includes vector field test
+      call test_halo_update( 'Folded-east symmetry' ) !includes vector field test
 
       !--- z1l: The following will not work due to symmetry and domain%x is cyclic.
       !--- Will solve this problem in the future if needed.
@@ -135,8 +155,8 @@ program test
       call test_global_reduce( 'Cyclic symmetry north')
 
       call test_redistribute( 'Complete pelist' )
-!!$      call test_redistribute( 'Overlap  pelist' )
-!!$      call test_redistribute( 'Disjoint pelist' )
+!      call test_redistribute( 'Overlap  pelist' )
+!      call test_redistribute( 'Disjoint pelist' )
 
       call test_define_mosaic_pelist('One tile', 1)
       call test_define_mosaic_pelist('Two uniform tile', 2)
@@ -246,6 +266,11 @@ contains
     select case(type)
     case( 'Complete pelist' )
 !both pelists run from 0...npes-1
+        if(nx < npes) then
+           call mpp_error(NOTE, &
+              "test_mpp_domains(test_redistribute): nx is less than npes, no test will be done for complete pelist")
+           return
+        endif
         allocate( pelist(0:npes-1) )
         pelist = (/ (i,i=0,npes-1) /)
         call mpp_declare_pelist( pelist )
@@ -486,6 +511,30 @@ contains
     logical            :: folded_north, folded_north_sym, folded_north_nonsym
     logical            :: folded_south_sym, folded_west_sym, folded_east_sym
     logical            :: cubic_grid, single_tile, four_tile
+    integer            :: whalo_save, ehalo_save, nhalo_save, shalo_save
+    integer            :: nx_save, ny_save
+
+    if(wide_halo_x > 0) then
+       whalo_save = whalo
+       ehalo_save = ehalo
+       shalo_save = shalo
+       nhalo_save = nhalo
+       nx_save    = nx
+       ny_save    = ny
+       if(type == 'Single-Tile' .OR. type == 'Folded-north mosaic' .OR. type == 'Cubic-Grid') then
+          whalo = wide_halo_x
+          ehalo = wide_halo_x
+          shalo = wide_halo_y
+          nhalo = wide_halo_y
+       endif
+       if(type == 'Cubic-Grid') then
+          if(nx_cubic >0) then
+             nx = nx_cubic
+             ny = ny_cubic
+          endif          
+       endif
+
+    endif
 
     folded_north_nonsym = .false.
     folded_north_sym    = .false.
@@ -533,6 +582,14 @@ contains
        if( nx .NE. ny) then
           call mpp_error(NOTE,'TEST_MPP_DOMAINS: for Cubic_grid mosaic, nx should equal ny, '//&
                    'No test is done for Cubic-Grid mosaic. ' )
+          if(wide_halo_x > 0) then
+             whalo = whalo_save
+             ehalo = ehalo_save
+             shalo = shalo_save
+             nhalo = nhalo_save
+             nx    = nx_save
+             ny    = ny_save
+          endif
           return
        end if
     case default
@@ -569,7 +626,15 @@ contains
        layout = 1
     else
        call mpp_error(NOTE,'TEST_MPP_DOMAINS: npes should be multiple of ntiles or ' // &
-            'ntiles should be multiple of npes. No test is done for '//trim(type) )       
+            'ntiles should be multiple of npes. No test is done for '//trim(type) )  
+       if(wide_halo_x > 0) then
+          whalo = whalo_save
+          ehalo = ehalo_save
+          shalo = shalo_save
+          nhalo = nhalo_save
+          nx    = nx_save
+          ny    = ny_save
+       endif
        return
     end if
  
@@ -594,9 +659,9 @@ contains
        istart1(2) = 1;  iend1(2) = nx; jstart1(2) = 1;   jend1(2) = 1
        istart2(2) = 1;  iend2(2) = nx; jstart2(2) = ny;  jend2(2) = ny
        call mpp_define_mosaic(global_indices, layout2D, domain, ntiles, num_contact, tile1, tile2, &
-                              istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,      &
-                              pe_start, pe_end, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
-                              name = type, symmetry = .false. )
+            istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,      &
+            pe_start, pe_end, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
+            name = type, symmetry = .false. )
     else if(folded_north) then
        !--- Contact line 1, between tile 1 (EAST) and tile 1 (WEST)  --- cyclic
        tile1(1) = 1; tile2(1) = 1
@@ -792,30 +857,32 @@ contains
        call compare_checksums( x4(isc:ied,jsc:jed,:,1), global2(isc:ied,jsc:jed,:,1), type//' partial x4' )
 
        !arbitrary halo update. not for tripolar grid
-       if(single_tile .or. four_tile .or. cubic_grid ) then
-          allocate(local2(isd:ied,jsd:jed,nz) )
-          do wh = 1-whalo, whalo
-             do eh = 1-ehalo, ehalo
-                do sh = 1-shalo, shalo
-                   do nh = 1-nhalo, nhalo
-                      if( wh*eh <= 0 ) cycle
-                      if( sh*nh <= 0 ) cycle
-                      if( wh*sh <= 0 ) cycle
-                      local2(isd:ied,jsd:jed,:) = global2(isd:ied,jsd:jed,:,1)
-                      x = 0.
-                      x(isc:iec,jsc:jec,:,1) = local2(isc:iec,jsc:jec,:)       
-                      call fill_halo_zero(local2, wh, eh, sh, nh, 0, 0, isc, iec, jsc, jec, isd, ied, jsd, jed) 
+       if(wide_halo_x == 0) then
+          if(single_tile .or. four_tile .or. cubic_grid ) then
+             allocate(local2(isd:ied,jsd:jed,nz) )
+             do wh = 1-whalo, whalo
+                do eh = 1-ehalo, ehalo
+                   do sh = 1-shalo, shalo
+                      do nh = 1-nhalo, nhalo
+                         if( wh*eh <= 0 ) cycle
+                         if( sh*nh <= 0 ) cycle
+                         if( wh*sh <= 0 ) cycle
+                         local2(isd:ied,jsd:jed,:) = global2(isd:ied,jsd:jed,:,1)
+                         x = 0.
+                         x(isc:iec,jsc:jec,:,1) = local2(isc:iec,jsc:jec,:)       
+                         call fill_halo_zero(local2, wh, eh, sh, nh, 0, 0, isc, iec, jsc, jec, isd, ied, jsd, jed) 
 
-                      write(type2,'(a,a,i2,a,i2,a,i2,a,i2)') trim(type), ' with whalo = ', wh, &
-                           ', ehalo = ',eh, ', shalo = ', sh, ', nhalo = ', nh
-                      call mpp_update_domains( x, domain, whalo=wh, ehalo=eh, shalo=sh, nhalo=nh, name = type2  )
-                      call compare_checksums( x(isd:ied,jsd:jed,:,1), local2, trim(type2) )
+                         write(type2,'(a,a,i2,a,i2,a,i2,a,i2)') trim(type), ' with whalo = ', wh, &
+                              ', ehalo = ',eh, ', shalo = ', sh, ', nhalo = ', nh
+                         call mpp_update_domains( x, domain, whalo=wh, ehalo=eh, shalo=sh, nhalo=nh, name = type2  )
+                         call compare_checksums( x(isd:ied,jsd:jed,:,1), local2, trim(type2) )
+                      end do
                    end do
                 end do
              end do
-          end do
-          deallocate(local2)
-       end if
+             deallocate(local2)
+          end if
+       endif
     end if
 
     deallocate(global2, global_all, x, x1, x2, x3, x4)
@@ -977,6 +1044,11 @@ contains
           global2(1, ny/2+1+shift:ny-1+shift,   :,:) = -global2(1, ny/2-1+shift:1+shift:-1, :,:)
           global2(1, 1-shalo:shift,             :,:) = -global2(1, ny-shalo+1:ny+shift,     :,:)
           global2(1, ny+1+shift:ny+nhalo+shift, :,:) = -global2(1, 1+shift:nhalo+shift,     :,:)
+          !--- the following will fix the +0/-0 problem on altix
+          if(whalo>0) then
+             global1(1, shift, :, :) = 0.  !pole points must have 0 velocity
+             global2(1, shift, :, :) = 0.  !pole points must have 0 velocity
+          endif
        else if(folded_east_sym) then
           global1(nx+shift, ny/2+shift, :,:) = 0. !pole points must have 0 velocity
           global1(nx+shift, ny+shift,   :,:) = 0. !pole points must have 0 velocity
@@ -988,6 +1060,11 @@ contains
           global2(nx+shift, ny/2+1+shift:ny-1+shift,   :,:) = -global2(nx+shift, ny/2-1+shift:1+shift:-1, :,:)
           global2(nx+shift, 1-shalo:shift,             :,:) = -global2(nx+shift, ny-shalo+1:ny+shift,     :,:)
           global2(nx+shift, ny+1+shift:ny+nhalo+shift, :,:) = -global2(nx+shift, 1+shift:nhalo+shift,     :,:)
+          !--- the following will fix the +0/-0 problem on altix
+          if(ehalo >0) then
+             global1(nx+shift, shift, :,:) = 0.  !pole points must have 0 velocity
+             global2(nx+shift, shift, :,:) = 0.  !pole points must have 0 velocity
+          end if          
        else if(four_tile) then
           select case ( tile(n) )
           case (1)
@@ -1042,37 +1119,39 @@ contains
        call compare_checksums( y4(isd:ied+shift,jsd:jed+shift,:,1), global2(isd:ied+shift,jsd:jed+shift,:,1), trim(type2)//' Y4')
 
        !--- arbitrary halo updates ---------------------------------------
-       if(single_tile .or. four_tile .or. cubic_grid ) then
-          allocate(local1(isd:ied+shift,jsd:jed+shift,nz) )     
-          allocate(local2(isd:ied+shift,jsd:jed+shift,nz) )    
-          do wh = 1-whalo, whalo
-             do eh = 1-ehalo, ehalo
-                do sh = 1-shalo, shalo
-                   do nh = 1-nhalo, nhalo
-                      if( wh*eh <= 0 ) cycle
-                      if( sh*nh <= 0 ) cycle
-                      if( wh*sh <= 0 ) cycle
+       if(wide_halo_x == 0) then
+          if(single_tile .or. four_tile .or. cubic_grid ) then
+             allocate(local1(isd:ied+shift,jsd:jed+shift,nz) )     
+             allocate(local2(isd:ied+shift,jsd:jed+shift,nz) )    
+             do wh = 1-whalo, whalo
+                do eh = 1-ehalo, ehalo
+                   do sh = 1-shalo, shalo
+                      do nh = 1-nhalo, nhalo
+                         if( wh*eh <= 0 ) cycle
+                         if( sh*nh <= 0 ) cycle
+                         if( wh*sh <= 0 ) cycle
 
-                      local1(isd:ied+shift,jsd:jed+shift,:) = global1(isd:ied+shift,jsd:jed+shift,:,1)
-                      local2(isd:ied+shift,jsd:jed+shift,:) = global2(isd:ied+shift,jsd:jed+shift,:,1)
-                      x = 0.; y = 0.
-                      x(isc:iec+shift,jsc:jec+shift,:,1) = global1_all(isc:iec+shift,jsc:jec+shift,:,tile(1))       
-                      y(isc:iec+shift,jsc:jec+shift,:,1) = global2_all(isc:iec+shift,jsc:jec+shift,:,tile(1))    
-                      call fill_halo_zero(local1, wh, eh, sh, nh, shift, shift, isc, iec, jsc, jec, isd, ied, jsd, jed)  
-                      call fill_halo_zero(local2, wh, eh, sh, nh, shift, shift, isc, iec, jsc, jec, isd, ied, jsd, jed) 
+                         local1(isd:ied+shift,jsd:jed+shift,:) = global1(isd:ied+shift,jsd:jed+shift,:,1)
+                         local2(isd:ied+shift,jsd:jed+shift,:) = global2(isd:ied+shift,jsd:jed+shift,:,1)
+                         x = 0.; y = 0.
+                         x(isc:iec+shift,jsc:jec+shift,:,1) = global1_all(isc:iec+shift,jsc:jec+shift,:,tile(1))       
+                         y(isc:iec+shift,jsc:jec+shift,:,1) = global2_all(isc:iec+shift,jsc:jec+shift,:,tile(1))    
+                         call fill_halo_zero(local1, wh, eh, sh, nh, shift, shift, isc, iec, jsc, jec, isd, ied, jsd, jed)
+                         call fill_halo_zero(local2, wh, eh, sh, nh, shift, shift, isc, iec, jsc, jec, isd, ied, jsd, jed)
 
-                      write(type3,'(a,a,i2,a,i2,a,i2,a,i2)') trim(type2), ' with whalo = ', wh, &
-                           ', ehalo = ',eh, ', shalo = ', sh, ', nhalo = ', nh
-                      call mpp_update_domains( x,  y,  domain, flags=update_flags, gridtype=BGRID_NE, &
-                           whalo=wh, ehalo=eh, shalo=sh, nhalo=nh, name=type3)
-                      call compare_checksums( x(isd:ied+shift,jsd:jed+shift,:,1),  local1, trim(type3)//' X' )
-                      call compare_checksums( y(isd:ied+shift,jsd:jed+shift,:,1),  local2, trim(type3)//' Y' )
+                         write(type3,'(a,a,i2,a,i2,a,i2,a,i2)') trim(type2), ' with whalo = ', wh, &
+                              ', ehalo = ',eh, ', shalo = ', sh, ', nhalo = ', nh
+                         call mpp_update_domains( x,  y,  domain, flags=update_flags, gridtype=BGRID_NE, &
+                              whalo=wh, ehalo=eh, shalo=sh, nhalo=nh, name=type3)
+                         call compare_checksums( x(isd:ied+shift,jsd:jed+shift,:,1),  local1, trim(type3)//' X' )
+                         call compare_checksums( y(isd:ied+shift,jsd:jed+shift,:,1),  local2, trim(type3)//' Y' )
+                      end do
                    end do
                 end do
              end do
-          end do
-          deallocate(local1, local2)
-       end if
+             deallocate(local1, local2)
+          end if
+       endif
     end if
     !------------------------------------------------------------------
     !              vector update : CGRID_NE
@@ -1234,45 +1313,56 @@ contains
        call compare_checksums( y4(isd:ied,jsd:jed+shift,:,1), global2(isd:ied,jsd:jed+shift,:,1), type//' CGRID_NE Y4')
 
        !--- arbitrary halo updates ---------------------------------------
-       if(single_tile .or. four_tile .or. cubic_grid ) then
-          allocate(local1(isd:ied+shift,jsd:jed,      nz) )     
-          allocate(local2(isd:ied,      jsd:jed+shift,nz) )    
+       if(wide_halo_x ==0) then
+          if(single_tile .or. four_tile .or. cubic_grid ) then
+             allocate(local1(isd:ied+shift,jsd:jed,      nz) )     
+             allocate(local2(isd:ied,      jsd:jed+shift,nz) )    
 
-          do wh = 1-whalo, whalo
-             do eh = 1-ehalo, ehalo
-                do sh = 1-shalo, shalo
-                   do nh = 1-nhalo, nhalo
-                      if( wh*eh <= 0 ) cycle
-                      if( sh*nh <= 0 ) cycle
-                      if( wh*sh <= 0 ) cycle
-                      local1(isd:ied+shift,jsd:jed,      :) = global1(isd:ied+shift,jsd:jed,      :,1)
-                      local2(isd:ied,      jsd:jed+shift,:) = global2(isd:ied,      jsd:jed+shift,:,1)
-                      x = 0.; y = 0.
-                      x(isc:iec+shift,jsc:jec,      :,1) = global1_all(isc:iec+shift,jsc:jec,      :,tile(1))       
-                      y(isc:iec,      jsc:jec+shift,:,1) = global2_all(isc:iec,      jsc:jec+shift,:,tile(1))    
-                      call fill_halo_zero(local1, wh, eh, sh, nh, shift, 0, isc, iec, jsc, jec, isd, ied, jsd, jed)  
-                      call fill_halo_zero(local2, wh, eh, sh, nh, 0, shift, isc, iec, jsc, jec, isd, ied, jsd, jed) 
+             do wh = 1-whalo, whalo
+                do eh = 1-ehalo, ehalo
+                   do sh = 1-shalo, shalo
+                      do nh = 1-nhalo, nhalo
+                         if( wh*eh <= 0 ) cycle
+                         if( sh*nh <= 0 ) cycle
+                         if( wh*sh <= 0 ) cycle
+                         local1(isd:ied+shift,jsd:jed,      :) = global1(isd:ied+shift,jsd:jed,      :,1)
+                         local2(isd:ied,      jsd:jed+shift,:) = global2(isd:ied,      jsd:jed+shift,:,1)
+                         x = 0.; y = 0.
+                         x(isc:iec+shift,jsc:jec,      :,1) = global1_all(isc:iec+shift,jsc:jec,      :,tile(1))       
+                         y(isc:iec,      jsc:jec+shift,:,1) = global2_all(isc:iec,      jsc:jec+shift,:,tile(1))    
+                         call fill_halo_zero(local1, wh, eh, sh, nh, shift, 0, isc, iec, jsc, jec, isd, ied, jsd, jed)  
+                         call fill_halo_zero(local2, wh, eh, sh, nh, 0, shift, isc, iec, jsc, jec, isd, ied, jsd, jed) 
 
-                      write(type3,'(a,a,i2,a,i2,a,i2,a,i2)') trim(type), ' vector CGRID_NE with whalo = ', &
-                           wh, ', ehalo = ',eh, ', shalo = ', sh, ', nhalo = ', nh
-                      !          id = mpp_clock_id( trim(type3), flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-                      !          call mpp_clock_begin(id)
-                      call mpp_update_domains( x,  y,  domain, gridtype=CGRID_NE, whalo=wh, ehalo=eh, &
-                           shalo=sh, nhalo=nh, name=type3)
-                      !          call mpp_clock_end  (id)
-                      call compare_checksums( x(isd:ied+shift,jsd:jed, :,1),  local1, trim(type3)//' X' )
-                      call compare_checksums( y(isd:ied,jsd:jed+shift, :,1),  local2, trim(type3)//' Y' )
+                         write(type3,'(a,a,i2,a,i2,a,i2,a,i2)') trim(type), ' vector CGRID_NE with whalo = ', &
+                              wh, ', ehalo = ',eh, ', shalo = ', sh, ', nhalo = ', nh
+                         !          id = mpp_clock_id( trim(type3), flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+                         !          call mpp_clock_begin(id)
+                         call mpp_update_domains( x,  y,  domain, gridtype=CGRID_NE, whalo=wh, ehalo=eh, &
+                              shalo=sh, nhalo=nh, name=type3)
+                         !          call mpp_clock_end  (id)
+                         call compare_checksums( x(isd:ied+shift,jsd:jed, :,1),  local1, trim(type3)//' X' )
+                         call compare_checksums( y(isd:ied,jsd:jed+shift, :,1),  local2, trim(type3)//' Y' )
+                      end do
                    end do
                 end do
              end do
-          end do
-          deallocate(local1, local2)
-       end if
+             deallocate(local1, local2)
+          end if
+       endif
     end if
 
     deallocate(global1, global2, x, y, x1, x2, x3, x4, y1, y2, y3, y4, global1_all, global2_all)
     deallocate(layout2D, global_indices, pe_start, pe_end, tile1, tile2)
     deallocate(istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2 ) 
+
+    if(wide_halo_x > 0) then
+       whalo = whalo_save
+       ehalo = ehalo_save
+       shalo = shalo_save
+       nhalo = nhalo_save
+       nx    = nx_save
+       ny    = ny_save
+    endif
 
   end subroutine test_uniform_mosaic
 
@@ -3962,12 +4052,15 @@ contains
        global(1, ny/2+1+shift:ny-1+shift,   :) = -global(1, ny/2-1+shift:1+shift:-1, :)
        global(1, 1-shalo:shift,             :) = -global(1, ny-shalo+1:ny+shift,     :)
        global(1, ny+1+shift:ny+nhalo+shift, :) = -global(1, 1+shift:nhalo+shift,     :)
+       !--- the following will fix the +0/-0 problem on altix
+       if(whalo>0) global(1, shift, :) = 0.  !pole points must have 0 velocity
     else if(folded_east) then
        global(nx+shift, ny/2+shift, :) = 0. !pole points must have 0 velocity
        global(nx+shift, ny+shift,   :) = 0. !pole points must have 0 velocity
        global(nx+shift, ny/2+1+shift:ny-1+shift,   :) = -global(nx+shift, ny/2-1+shift:1+shift:-1, :)
        global(nx+shift, 1-shalo:shift,             :) = -global(nx+shift, ny-shalo+1:ny+shift,     :)
        global(nx+shift, ny+1+shift:ny+nhalo+shift, :) = -global(nx+shift, 1+shift:nhalo+shift,     :)
+       if(ehalo >0) global(nx+shift, shift, :) = 0.  !pole points must have 0 velocity       
     else
        global(nx/2+shift,                ny+shift,:) = 0.  !pole points must have 0 velocity
        global(nx+shift  ,                ny+shift,:) = 0.  !pole points must have 0 velocity

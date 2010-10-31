@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_misc.inc,v 18.0 2010/03/02 23:57:38 fms Exp $
+! $Id: mpp_io_misc.inc,v 17.0.4.2.4.1.2.1 2010/08/04 13:12:51 z1l Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -53,6 +53,9 @@
       call mpp_set_unit_range( 103, maxunits )
 
       !--- namelist 
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, mpp_io_nml, iostat=io_status)
+#else
       do unit_nml = unit_begin, unit_end
          inquire( unit_nml,OPENED=opened )
          if( .NOT.opened )exit
@@ -60,9 +63,18 @@
       open(unit_nml,file='input.nml')
       read(unit_nml,mpp_io_nml,iostat=io_status)
       close(unit_nml)
+#endif
       outunit = stdout(); logunit=stdlog()
       write(outunit, mpp_io_nml)
       write(logunit, mpp_io_nml)
+
+!--- check the deflate level, set deflate = 1 if deflate_level is greater than equal to 0
+      if(deflate_level .GE. 0) deflate = 1
+      if(deflate .NE. 0) then
+         if(deflate_level <0 .OR. deflate > 9) then
+            call mpp_error(FATAL, "mpp_io_mod(mpp_io_init): mpp_io_nml variable must be between 0 and 9 when set")
+         endif
+      endif
 
 !initialize default_field
       default_field%name = 'noname'

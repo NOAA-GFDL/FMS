@@ -14,6 +14,7 @@ use fms_mod,                only:  fms_init, mpp_pe, mpp_root_pe, &
 use time_manager_mod,       only:  time_manager_init, month_name, &
                                    get_date, time_type
 use constants_mod,          only:  constants_init, PI, RADIAN
+use mpp_mod,                only:  input_nml_file
 
 !-------------------------------------------------------------------
 
@@ -33,8 +34,8 @@ private
 !----------- ****** VERSION NUMBER ******* ---------------------------
 
 
-character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 17.0 2009/07/21 03:18:24 fms Exp $'
-character(len=128)  :: tag     =  '$Name: riga_201006 $'
+character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 17.0.4.1 2010/08/31 14:21:41 z1l Exp $'
+character(len=128)  :: tag     =  '$Name: riga_201012 $'
 
 
 
@@ -128,6 +129,9 @@ subroutine column_diagnostics_init
 !---------------------------------------------------------------------
 !    read namelist.
 !---------------------------------------------------------------------
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, column_diagnostics_nml, iostat=io)
+#else
       if (file_exist('input.nml')) then
         unit =  open_namelist_file ( )
         ierr=1; do while (ierr /= 0)
@@ -136,7 +140,7 @@ subroutine column_diagnostics_init
         enddo
 10      call close_file (unit)
       endif
- 
+#endif 
 !---------------------------------------------------------------------
 !    write version number and namelist to logfile.
 !---------------------------------------------------------------------

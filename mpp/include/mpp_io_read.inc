@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_read.inc,v 18.0 2010/03/02 23:57:40 fms Exp $
+! $Id: mpp_io_read.inc,v 18.0.4.1.2.1.2.1 2010/09/03 00:19:13 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -401,7 +401,7 @@
 ! every PE is eligible to call mpp_read_meta
 !
 !     integer, parameter :: MAX_DIMVALS = 100000
-      integer, parameter :: MAX_DIMVALS = 250000
+      integer, parameter :: MAX_DIMVALS = 1000000
       integer, intent(in) :: unit
       
       integer         :: ncid,ndim,nvar_total,natt,recdim,nv,nvar,len
@@ -409,7 +409,7 @@
       integer         :: type,nvdims,nvatts, dimid
       integer, allocatable, dimension(:) :: dimids
       type(axistype) , allocatable, dimension(:) :: Axis
-      character(len=128) :: name, attname, unlimname, attval
+      character(len=128) :: name, attname, unlimname, attval, text
       logical :: isdim
       
       integer(SHORT_KIND) :: i2vals(MAX_DIMVALS)
@@ -526,6 +526,12 @@
            error = NF_INQ_DIM(ncid,i,name,len);call netcdf_err( error, mpp_file(unit) )
            Axis(i)%name = name
            Axis(i)%len = len
+           if(len > MAX_DIMVALS) then
+              write(text,'(a)') len               
+              call mpp_error(FATAL, &
+                "mpp_io_mod(mpp_read_meta): one dimension length ('//trim(text)//') is "// &
+                "greater than MAX_DIMVALS, increase MAX_DIMVALS")
+           endif
         enddo
            
         nvar=0

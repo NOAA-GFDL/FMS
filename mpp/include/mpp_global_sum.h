@@ -55,7 +55,15 @@
        end do
        allocate( global2D( gxsize+ishift, gysize+jshift ) )
        global2D = 0.
-       call mpp_global_field( domain, field2D, global2D, position=position, tile_count=tile_count )
+
+       !call mpp_global_field( domain, field2D, global2D, position=position, tile_count=tile_count )
+       
+       if ( present( tile_count ) ) then
+           call mpp_global_field( domain, field2D, global2D, position=position, tile_count=tile_count )
+       else    
+           call mpp_global_field( domain, field2D, global2D, position=position )
+       endif
+       
        ioffset = domain%x(tile)%goffset*ishift; joffset = domain%y(tile)%goffset*jshift
        mygsum(tile) = sum(global2D(1:gxsize+ioffset,1:gysize+joffset))
        deallocate(global2D, field2d)

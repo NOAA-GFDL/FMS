@@ -39,6 +39,7 @@ module horiz_interp_type_mod
 
 
 use mpp_mod, only : mpp_send, mpp_recv, mpp_sync_self, mpp_error, FATAL
+use mpp_mod, only : mpp_pe, mpp_root_pe, mpp_npes
 
 implicit none
 private
@@ -107,6 +108,10 @@ contains
 
  real :: dsum, npts, buffer_real(3)
  integer :: pe, root_pe, npes, p, buffer_int(2)
+
+   pe = mpp_pe()
+   root_pe = mpp_root_pe()
+   npes = mpp_npes()
 
    dsum = 0.0
    miss = 0

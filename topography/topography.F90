@@ -37,6 +37,8 @@ use            fms_mod, only: file_exist, check_nml_error,               &
                               mpp_error
 use         fms_io_mod, only: read_data
 use      constants_mod, only: PI
+use            mpp_mod, only: input_nml_file
+
 implicit none
 private
 
@@ -113,8 +115,8 @@ end interface
 
 !-----------------------------------------------------------------------
 
- character(len=128) :: version = '$Id: topography.F90,v 17.0 2009/07/21 03:22:02 fms Exp $'
- character(len=128) :: tagname = '$Name: riga_201006 $'
+ character(len=128) :: version = '$Id: topography.F90,v 17.0.6.1 2010/08/31 14:29:10 z1l Exp $'
+ character(len=128) :: tagname = '$Name: riga_201012 $'
 
  logical :: module_is_initialized = .FALSE.
 
@@ -896,6 +898,9 @@ subroutine read_namelist
 
 !  read namelist
 
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, topography_nml, iostat=io)
+#else
    if ( file_exist('input.nml')) then
       unit = open_namelist_file ( )
       ierr=1; do while (ierr /= 0)
@@ -904,6 +909,7 @@ subroutine read_namelist
       enddo
  10   call close_file (unit)
    endif
+#endif
 
 !  write version and namelist to log file
 

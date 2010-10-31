@@ -46,7 +46,7 @@ MODULE diag_axis_mod
   CHARACTER(len=128) :: version =&
        & '$Id: diag_axis.F90,v 18.0.2.1 2010/03/03 14:05:46 sdu Exp $'
   CHARACTER(len=128) :: tagname =&
-       & '$Name: riga_201006 $'
+       & '$Name: riga_201012 $'
 
 CONTAINS
 

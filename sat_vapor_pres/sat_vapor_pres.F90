@@ -118,6 +118,7 @@ module sat_vapor_pres_mod
                             error_mesg, &
                             file_exist, check_nml_error
  use     mpp_io_mod, only:  mpp_close
+ use        mpp_mod, only: input_nml_file
  use  sat_vapor_pres_k_mod, only:  sat_vapor_pres_init_k, lookup_es_k, &
                                    lookup_des_k, lookup_es_des_k, &
                                    lookup_es2_k,  &
@@ -491,8 +492,8 @@ private
 !-----------------------------------------------------------------------
 !  cvs version and tag name
 
- character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 18.0 2010/03/02 23:58:23 fms Exp $'
- character(len=128) :: tagname = '$Name: riga_201006 $'
+ character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 18.0.4.1 2010/08/31 14:29:01 z1l Exp $'
+ character(len=128) :: tagname = '$Name: riga_201012 $'
 
  logical :: module_is_initialized = .false.
 
@@ -2205,6 +2206,9 @@ real,  intent(in),              optional :: hc
   if (module_is_initialized) return
 
 !---- read namelist input ----
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, sat_vapor_pres_nml, iostat=io)
+#else
   if (file_exist('input.nml')) then
      unit = open_namelist_file ( )
      ierr=1; do while (ierr /= 0)
@@ -2213,6 +2217,7 @@ real,  intent(in),              optional :: hc
      enddo
 10   call mpp_close (unit)
   endif
+#endif
 
 ! write version number and namelist to log file
   call write_version_number (version, tagname)

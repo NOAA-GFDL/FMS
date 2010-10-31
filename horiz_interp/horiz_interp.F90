@@ -217,8 +217,8 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
 ! </INTERFACE>
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: horiz_interp.F90,v 16.0 2008/07/30 22:45:42 fms Exp $'
- character(len=128) :: tagname = '$Name: riga_201006 $'
+ character(len=128) :: version = '$Id: horiz_interp.F90,v 16.0.8.1 2010/08/31 14:28:55 z1l Exp $'
+ character(len=128) :: tagname = '$Name: riga_201012 $'
  logical            :: module_is_initialized = .FALSE.
 !-----------------------------------------------------------------------
 
@@ -1246,6 +1246,7 @@ program horiz_interp_test
 use mpp_mod,          only : mpp_init, mpp_exit, mpp_error, FATAL, stdout, mpp_npes
 use mpp_mod,          only : mpp_clock_id, mpp_clock_begin, mpp_clock_end
 use mpp_mod,          only : mpp_pe, mpp_root_pe, NOTE, MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
+use mpp_mod,          only : input_nml_file
 use mpp_io_mod,       only : mpp_io_init, mpp_io_exit
 use mpp_domains_mod,  only : mpp_define_layout, mpp_define_domains, mpp_get_compute_domain
 use mpp_domains_mod,  only : mpp_domains_init, domain2d
@@ -1285,6 +1286,9 @@ implicit none
   call horiz_interp_init
 
   !--- read namelist
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, test_horiz_interp_nml, iostat=io)
+#else
   if (file_exist('input.nml')) then
      ierr=1
      nml_unit = open_namelist_file()
@@ -1294,6 +1298,7 @@ implicit none
      enddo
 10   call close_file(nml_unit)
   endif
+#endif
 
   !--- define domains
   call mpp_define_layout( (/1, ni_dst, 1, nj_dst/), mpp_npes(), layout)

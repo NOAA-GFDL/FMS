@@ -109,6 +109,7 @@ use       fms_mod,   only: file_exist, open_namelist_file, check_nml_error,  &
                            get_mosaic_tile_grid
 use mpp_mod,         only: mpp_npes, mpp_pe, mpp_root_pe, mpp_send, mpp_recv, &
                            mpp_sync_self, stdout, mpp_max
+use mpp_mod,         only: input_nml_file
 use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_compute_domains, &
                            Domain2d, mpp_global_sum, mpp_update_domains,    &
                            mpp_modify_domain, mpp_get_data_domain, XUPDATE, &
@@ -332,8 +333,8 @@ type xmap_type
 end type xmap_type
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: xgrid.F90,v 18.0 2010/03/02 23:55:46 fms Exp $'
- character(len=128) :: tagname = '$Name: riga_201006 $'
+ character(len=128) :: version = '$Id: xgrid.F90,v 18.0.10.1 2010/08/31 14:28:51 z1l Exp $'
+ character(len=128) :: tagname = '$Name: riga_201012 $'
 
  real, parameter                              :: EPS = 1.0e-10
  logical :: module_is_initialized = .FALSE.
@@ -383,6 +384,9 @@ subroutine xgrid_init(remap_method)
   if (module_is_initialized) return
   module_is_initialized = .TRUE.
 
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, xgrid_nml, iostat=io)
+#else
   if ( file_exist( 'input.nml' ) ) then
       unit = open_namelist_file ( )
       ierr = 1
@@ -393,6 +397,7 @@ subroutine xgrid_init(remap_method)
   10 continue
       call close_file ( unit )
   endif
+#endif
 
 !--------- write version number and namelist ------------------
   call write_version_number (version, tagname)
@@ -2300,6 +2305,7 @@ end module xgrid_mod
 program xgrid_test
 
   use mpp_mod,         only : mpp_pe, mpp_npes, mpp_error, FATAL
+  use mpp_mod,         only : input_nml_file
   use mpp_domains_mod, only : mpp_define_domains, mpp_define_layout, mpp_domains_exit
   use mpp_domains_mod, only : mpp_get_compute_domain, domain2d, mpp_domains_init
   use mpp_domains_mod, only : mpp_define_mosaic_pelist, mpp_define_mosaic, mpp_global_sum
@@ -2375,6 +2381,9 @@ implicit none
   pe       = mpp_pe()
   out_unit = stdout()
 
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, xgrid_test_nml, iostat=io)
+#else
  if (file_exist('input.nml')) then
    ierr=1
    nml_unit = open_namelist_file()
@@ -2384,6 +2393,7 @@ implicit none
    enddo
 10 call close_file(nml_unit)
  endif
+#endif
 
   if(field_exist(grid_file, "AREA_ATM" ) ) then
      allocate(atm_nx(1), atm_ny(1))

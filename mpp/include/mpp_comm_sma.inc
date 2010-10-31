@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_sma.inc,v 18.0 2010/03/02 23:56:57 fms Exp $
+! $Id: mpp_comm_sma.inc,v 17.0.2.1.4.1.2.4 2010/08/04 17:19:28 z1l Exp $
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -16,6 +16,7 @@ subroutine mpp_init( flags,localcomm )
   integer                       :: num_pes, len
   integer                       :: i, logunit
   logical                       :: opened, existed
+  integer                       :: unit_begin, unit_end, unit_nml, io_status
 #ifdef _CRAYT3E
   intrinsic my_pe
 #else
@@ -66,19 +67,42 @@ subroutine mpp_init( flags,localcomm )
   remote_data_loc(0:npes-1) = MPP_WAIT
   call mpp_set_stack_size(32768) !default initial value
 
+  call mpp_init_logfile()
+  call read_input_nml
+
+  !--- read namelist
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, mpp_nml, iostat=io_status)
+#else
+  unit_begin = 103
+  unit_end   = 512
+  do unit_nml = unit_begin, unit_end
+     inquire( unit_nml,OPENED=opened )
+     if( .NOT.opened )exit
+  end do
+
+  open(unit_nml,file='input.nml', iostat=io_status)
+  read(unit_nml,mpp_nml,iostat=io_status)
+  close(unit_nml)  
+#endif
+
 ! non-root pe messages written to other location than stdout()
-! 9 is reserved for etc_unit
-  etc_unit=9
-  inquire(unit=etc_unit,opened=opened)
-  if(opened) call mpp_error(FATAL,'Unit 9 is already in use (etc_unit) in mpp_comm_sma')
-  if (trim(etcfile) /= '/dev/null') then
-    write( etcfile,'(a,i6.6)' )trim(etcfile)//'.', pe
-  endif
-  inquire(file=etcfile, exist=existed)
-  if(existed) then
-     open( unit=etc_unit, file=trim(etcfile), status='REPLACE' )
+  if(etc_unit_is_stderr) then
+     etc_unit = stderr()
   else
-     open( unit=etc_unit, file=trim(etcfile) )
+     ! 9 is reserved for etc_unit
+     etc_unit=9
+     inquire(unit=etc_unit,opened=opened)
+     if(opened) call mpp_error(FATAL,'Unit 9 is already in use (etc_unit) in mpp_comm_sma')
+     if (trim(etcfile) /= '/dev/null') then
+        write( etcfile,'(a,i6.6)' )trim(etcfile)//'.', pe
+     endif
+     inquire(file=etcfile, exist=existed)
+     if(existed) then
+        open( unit=etc_unit, file=trim(etcfile), status='REPLACE' )
+     else
+        open( unit=etc_unit, file=trim(etcfile) )
+     endif
   endif
   !if optional argument logunit=stdout, write messages to stdout instead.
   !if specifying non-defaults, you must specify units not yet in use.
@@ -112,7 +136,6 @@ subroutine mpp_init( flags,localcomm )
   !          if( pe.NE.root_pe )open( unit=log_unit, file=trim(configfile), status='OLD' )
   !      end if
 
-  call mpp_init_logfile()
 
   !messages
   if( verbose )call mpp_error( NOTE, 'MPP_INIT: initializing MPP module...' )
@@ -126,6 +149,7 @@ logunit = stdlog()
      write( logunit, '(a,es12.4,a,i20,a)' ) &
           'Clock rolls over after ', max_ticks*tick_rate, ' sec (', max_ticks, ' ticks)'
   end if
+
   call mpp_clock_begin(clock0)
 
   return
@@ -273,6 +297,69 @@ end subroutine mpp_malloc
 !                BASIC MESSAGE PASSING ROUTINE: mpp_transmit                  !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                                                                             !
+!                BASIC MESSAGE PASSING ROUTINE: mpp_transmit                  !
+!                                                                             !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    subroutine mpp_broadcast_char(data, length, from_pe, pelist )
+      character(len=*), intent(inout) :: data(:)
+      integer, intent(in) :: length, from_pe
+      integer, intent(in), optional :: pelist(:)
+      integer :: n, i, from_rank, out_unit
+
+!pointer to remote data
+      character :: bdata(length)
+      pointer( ptr, bdata )
+      integer :: words
+      character(len=8) :: text
+
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'mpp_broadcast_text: You must first call mpp_init.' )
+      n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
+
+      if( debug )then
+          call SYSTEM_CLOCK(tick)
+          if(mpp_pe() == mpp_root_pe()) then
+            out_unit = stdout()
+            write( out_unit,'(a,i18,a,i5,a,2i5,2i8)' )&
+               'T=',tick, ' PE=',pe, 'mpp_broadcast_text begin: from_pe, length=', from_pe, length
+          endif
+      end if
+
+      if( .NOT.ANY(from_pe.EQ.peset(current_peset_num)%list) ) &
+           call mpp_error( FATAL, 'mpp_broadcast_text: broadcasting from invalid PE.' )
+
+      if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
+
+      ptr = LOC(mpp_stack)
+      words = size(bdata(:))*size(transfer(bdata(1),word))
+      if( words.GT.mpp_stack_size )then
+          write( text, '(i8)' )words
+          call mpp_error( FATAL, 'MPP_BROADCAST user stack overflow: call mpp_set_stack_size('//text//') from all PEs.' )
+      end if
+      mpp_stack_hwm = max( words, mpp_stack_hwm )
+      if( mpp_npes().GT.1 )then
+!dir$ IVDEP
+          do i = 1,length
+             bdata(i) = data(i)
+          end do
+          call mpp_sync(pelist) !eliminate?
+#ifdef _CRAYT90
+          call SHMEM_UDCFLUSH !invalidate data cache
+#endif
+          call SHMEM_BROADCAST_( bdata, bdata, length, from_pe, peset(n)%start, peset(n)%log2stride, peset(n)%count, sync )
+          call mpp_sync(pelist) !eliminate?
+!dir$ IVDEP
+          do i = 1,length
+             data(i) = bdata(i)
+          end do
+      end if
+
+      if( current_clock.NE.0 )call increment_current_clock( EVENT_BROADCAST, length )
+      return
+    end subroutine mpp_broadcast_char
+
 
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_real8

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_write.inc,v 18.0 2010/03/02 23:57:44 fms Exp $
+! $Id: mpp_io_write.inc,v 16.0.8.1.2.4.2.1.6.1.4.1.4.1 2010/01/27 23:29:50 z1l Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                            !
@@ -475,6 +475,12 @@
                   call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: only legal packing values are 1,2,4,8.' )
           end select
           call netcdf_err( error, mpp_file(unit), field=field )
+#ifndef use_netCDF3
+          if(shuffle .NE. 0 .OR. deflate .NE. 0) then
+             error = NF_DEF_VAR_DEFLATE(mpp_file(unit)%ncid, field%id, shuffle, deflate, deflate_level)
+             call netcdf_err( error, mpp_file(unit), field=field )
+          endif
+#endif
 #endif    
       else
           varnum = varnum + 1

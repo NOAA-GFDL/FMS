@@ -27,6 +27,8 @@ use  fms_mod, only: file_exist, open_namelist_file,  &
 
 use constants_mod, only: pi
 
+use mpp_mod,       only: input_nml_file
+
 implicit none
 private
 
@@ -71,8 +73,8 @@ public :: gaussian_topog_init, get_gaussian_topog
 
 !-----------------------------------------------------------------------
 
-character(len=128) :: version = '$Id: gaussian_topog.F90,v 13.0 2006/03/28 21:43:27 fms Exp $'
-character(len=128) :: tagname = '$Name: riga_201006 $'
+character(len=128) :: version = '$Id: gaussian_topog.F90,v 13.0.20.1 2010/08/31 14:29:10 z1l Exp $'
+character(len=128) :: tagname = '$Name: riga_201012 $'
 
 logical :: do_nml = .true.
 logical :: module_is_initialized = .FALSE.
@@ -246,6 +248,9 @@ subroutine read_namelist
 
 !  read namelist
 
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, gaussian_topog_nml, iostat=io)
+#else
    if ( file_exist('input.nml')) then
       unit = open_namelist_file ( )
       ierr=1; do while (ierr /= 0)
@@ -254,6 +259,7 @@ subroutine read_namelist
       enddo
  10   call close_file (unit)
    endif
+#endif
 
 !  write version and namelist to log file
 

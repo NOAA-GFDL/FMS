@@ -169,8 +169,14 @@ MODULE diag_manager_mod
        & OPERATOR(/), OPERATOR(+), get_time
   USE mpp_io_mod, ONLY: mpp_open, MPP_RDONLY, MPP_ASCII, mpp_close, mpp_get_field_name
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdlog, write_version_number,&
-       & file_exist, mpp_pe, open_namelist_file, check_nml_error, lowercase, stdout, mpp_error,&
+       & file_exist, mpp_pe, check_nml_error, lowercase, stdout, mpp_error,&
        & fms_error_handler
+#ifdef INTERNAL_FILE_NML
+  USE mpp_mod, ONLY: input_nml_file
+#else
+  USE fms_mod, ONLY: open_namelist_file, close_file
+#endif
+
   USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_sum, mpp_chksum, stdout
   USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, max_axes, get_axis_num
   USE diag_util_mod, ONLY: get_subfield_size, log_diag_field_info, update_bounds,&
@@ -207,9 +213,9 @@ MODULE diag_manager_mod
 
   ! version number of this module
   CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id: diag_manager.F90,v 18.0.2.10 2010/05/21 13:49:31 sdu Exp $'
+       & '$Id: diag_manager.F90,v 18.0.2.17.2.1 2010/09/02 20:13:30 sdu Exp $'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: riga_201006 $'  
+       & '$Name: riga_201012 $'  
 
   type(time_type) :: Time_end
 
@@ -1091,12 +1097,6 @@ CONTAINS
     CHARACTER(len=128) :: error_string, error_string1
     TYPE(time_type) :: dt ! time interval for diurnal output
 
-    IF ( PRESENT(err_msg) ) err_msg = ''
-    IF ( .NOT.module_is_initialized ) THEN
-       IF ( fms_error_handler('send_data_3d', 'diag_manager NOT initialized', err_msg) ) RETURN
-    END IF
-    err_msg_local = ''
-
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
        send_data_3d = .FALSE.
@@ -1104,6 +1104,12 @@ CONTAINS
     ELSE
        send_data_3d = .TRUE.
     END IF
+
+    IF ( PRESENT(err_msg) ) err_msg = ''
+    IF ( .NOT.module_is_initialized ) THEN
+       IF ( fms_error_handler('send_data_3d', 'diag_manager NOT initialized', err_msg) ) RETURN
+    END IF
+    err_msg_local = ''
 
     ! oor_mask is only used for checking out of range values.
     IF ( PRESENT(mask) ) THEN 
@@ -1567,7 +1573,7 @@ CONTAINS
                                IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. j <= l_end(2)+hj) THEN
                                   i1 = i-l_start(1)-hi+1 
                                   j1=  j-l_start(2)-hj+1 
-                                  IF ( field(i-is+1,j-js+1,k) /= missvalue ) THEN
+                                  IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
                                      output_fields(out_num)%buffer(i1,j1,k1,sample) =&
                                           & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
                                           & field(i-is+1+hi,j-js+1+hj,k) * weight1
@@ -2458,15 +2464,21 @@ CONTAINS
        END IF
     END IF
 
-    CALL mpp_open(iunit, 'input.nml', form=MPP_ASCII, action=MPP_RDONLY)
-    READ (iunit, diag_manager_nml, iostat=mystat)
-    IF ( mpp_pe() == mpp_root_pe() ) THEN 
-       WRITE (stdlog_unit, diag_manager_nml)
+#ifdef INTERNAL_FILE_NML
+    READ (input_nml_file, NML=diag_manager_nml, IOSTAT=mystat)
+#else
+    IF ( file_exist('input.nml') ) THEN
+       iunit = open_namelist_file()
+       READ (iunit, diag_manager_nml, iostat=mystat)
+       CALL close_file(iunit)
     END IF
+#endif
     IF ( mystat > 0 ) THEN
        IF ( fms_error_handler('diag_manager_init', 'Error reading diag_manager_nml', err_msg) ) RETURN
     END IF
-    CALL mpp_close(iunit)
+    IF ( mpp_pe() == mpp_root_pe() ) THEN 
+       WRITE (stdlog_unit, diag_manager_nml)
+    END IF
 
     ! Issue note about using the CMOR missing value.
     IF ( use_cmor ) THEN 
@@ -2890,8 +2902,13 @@ PROGRAM test
   USE mpp_mod, ONLY: mpp_pe, mpp_error, FATAL
   USE mpp_domains_mod, ONLY: domain2d, mpp_define_domains, mpp_get_compute_domain
   USE mpp_domains_mod, ONLY: mpp_define_io_domain, mpp_define_layout
-  USE fms_mod, ONLY: fms_init, fms_end, mpp_npes, file_exist, open_namelist_file, check_nml_error, close_file, open_file
+  USE fms_mod, ONLY: fms_init, fms_end, mpp_npes, file_exist, check_nml_error, open_file
   USE fms_mod, ONLY: error_mesg, FATAL, stdlog
+#ifdef INTERNAL_FILE_NML
+  USE mpp_mod, ONLY: input_nml_file
+#else
+  USE fms_mod, ONLY:  open_namelist_file, close_file
+#endif
   USE fms_io_mod, ONLY: fms_io_exit
   USE constants_mod, ONLY: constants_init, PI, RAD_TO_DEG
 
@@ -2947,6 +2964,10 @@ PROGRAM test
   CALL constants_init
   CALL set_calendar_type(JULIAN)
 
+#ifdef INTERNAL_FILE_NML
+  READ (input_nml_file, NML=test_diag_manager_nml, IOSTAT=io)
+  ierr = check_nml_error(io, 'test_diag_manager_nml')
+#else
   IF ( file_exist('input.nml') ) THEN
      ierr=1
      DO WHILE (ierr /= 0)
@@ -2955,6 +2976,7 @@ PROGRAM test
      END DO
 10   CALL close_file(nml_unit)
   END IF
+#endif
   WRITE (log_unit,test_diag_manager_nml)
 
   IF ( test_number == 12 ) THEN

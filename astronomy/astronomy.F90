@@ -28,6 +28,7 @@ use time_manager_mod,  only: time_type, set_time, get_time, &
                              operator(-), operator(+), &
                              operator( // ), operator(<)
 use constants_mod,     only: constants_init, PI
+use mpp_mod,           only: input_nml_file
 
 !--------------------------------------------------------------------
 
@@ -45,8 +46,8 @@ private
 !---------------------------------------------------------------------
 !----------- version number for this module --------------------------
 
-character(len=128)  :: version =  '$Id: astronomy.F90,v 17.0 2009/07/21 03:18:20 fms Exp $'
-character(len=128)  :: tagname =  '$Name: riga_201006 $'
+character(len=128)  :: version =  '$Id: astronomy.F90,v 17.0.10.1 2010/08/31 14:21:37 z1l Exp $'
+character(len=128)  :: tagname =  '$Name: riga_201012 $'
 
 
 !---------------------------------------------------------------------
@@ -271,6 +272,9 @@ real,   dimension(:,:), intent(in), optional   :: lonb
 !-----------------------------------------------------------------------
 !    read namelist.              
 !-----------------------------------------------------------------------
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, astronomy_nml, iostat=io)
+#else
       if ( file_exist('input.nml')) then
         unit =  open_namelist_file ( )
         ierr=1; do while (ierr /= 0)
@@ -279,7 +283,7 @@ real,   dimension(:,:), intent(in), optional   :: lonb
         end do                   
 10      call close_file (unit)   
       endif                      
-                                 
+#endif                                 
 !---------------------------------------------------------------------
 !    write version number and namelist to logfile.
 !---------------------------------------------------------------------

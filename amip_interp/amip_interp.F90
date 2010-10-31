@@ -75,6 +75,7 @@ use           fms_mod, only: file_exist, error_mesg, write_version_number,  &
 use        fms_io_mod, only: read_data
 use     constants_mod, only: TFREEZE, pi
 use      platform_mod, only: R4_KIND, I2_KIND
+use mpp_mod,           only: input_nml_file
 
 implicit none
 private
@@ -99,8 +100,8 @@ public i_sst, j_sst, sst_ncep, sst_anom, forecast_mode
 
 !  ---- version number -----
 
-character(len=128) :: version = '$Id: amip_interp.F90,v 18.0 2010/03/02 23:54:53 fms Exp $'
-character(len=128) :: tagname = '$Name: riga_201006 $'
+character(len=128) :: version = '$Id: amip_interp.F90,v 18.0.4.1 2010/08/31 14:21:36 z1l Exp $'
+character(len=128) :: tagname = '$Name: riga_201012 $'
 
    real, allocatable:: temp1(:,:), temp2(:,:)
 
@@ -754,6 +755,9 @@ endif
 
 !   ---- read namelist ----
 
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, amip_interp_nml, iostat=io)
+#else
     if ( file_exist('input.nml')) then
        unit = open_namelist_file( )
        ierr=1; do while (ierr /= 0)
@@ -762,6 +766,7 @@ endif
        enddo
   10   call close_file (unit)
     endif
+#endif
 
 !  ----- write namelist/version info -----
     call write_version_number (version, tagname)

@@ -5,6 +5,7 @@
 
  use mpp_mod,         only: mpp_pe, mpp_npes, mpp_root_pe, mpp_init, mpp_exit
  use mpp_mod,         only: stdout, mpp_error, FATAL, NOTE, mpp_chksum
+ use mpp_mod,         only: input_nml_file
  use mpp_domains_mod, only: domain2D, mpp_define_layout, mpp_define_mosaic
  use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_data_domain
  use mpp_domains_mod, only: mpp_domains_init, mpp_domains_exit
@@ -67,6 +68,9 @@
 
  call fms_io_init
 
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, test_fms_io_nml, iostat=io_status)
+#else
  if (file_exist('input.nml') )then
     call mpp_open(unit, 'input.nml',form=MPP_ASCII,action=MPP_RDONLY)
     read(unit,test_fms_io_nml,iostat=io_status)
@@ -76,6 +80,7 @@
   endif
     call mpp_close (unit)
  end if
+#endif
 
  write(stdout(), test_fms_io_nml )
   call mpp_domains_set_stack_size(stackmax)

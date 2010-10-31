@@ -43,8 +43,8 @@ module axis_utils_mod
   integer, parameter :: maxatts = 100
   real, parameter    :: epsln= 1.e-10
   real, parameter    :: fp5 = 0.5, f360 = 360.0
-  character(len=256) :: version = '$Id: axis_utils.F90,v 16.0 2008/07/30 22:44:47 fms Exp $'
-  character(len=256) :: tagname = '$Name: riga_201006 $'   
+  character(len=256) :: version = '$Id: axis_utils.F90,v 16.0.10.1 2010/08/31 14:21:39 z1l Exp $'
+  character(len=256) :: tagname = '$Name: riga_201012 $'   
 
   interface interp_1d
      module procedure interp_1d_1d
@@ -777,6 +777,7 @@ program test
 use fms_mod,       only : fms_init, file_exist, open_namelist_file, check_nml_error
 use fms_mod,       only : close_file
 use mpp_mod,       only : mpp_error, FATAL, stdout
+use mpp_mod,       only : input_nml_file
 use axis_utils_mod, only: interp_1d
 
 implicit none
@@ -830,6 +831,9 @@ integer           :: unit, ierr, io
 
 
   !---reading namelist 
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, test_axis_utils_nml, iostat=io)
+#else
   if(file_exist('input.nml')) then
     unit =  open_namelist_file()
        ierr=1
@@ -839,6 +843,7 @@ integer           :: unit, ierr, io
     enddo
  10    call close_file(unit)
   endif
+#endif
 
   if(n_src >MAXSIZE) call mpp_error(FATAL, 'test_axis_utils: nml n_src is greater than MAXSIZE')
   if(n_dst >MAXSIZE) call mpp_error(FATAL, 'test_axis_utils: nml n_dst is greater than MAXSIZE')

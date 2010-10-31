@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_nocomm.inc,v 18.0 2010/03/02 23:56:55 fms Exp $
+! $Id: mpp_comm_nocomm.inc,v 18.0.6.1 2010/08/31 14:28:57 z1l Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -14,6 +14,7 @@ subroutine mpp_init( flags,localcomm )
   integer, optional, intent(in) :: localcomm ! dummy here, used only in MPI
   integer                       :: my_pe, num_pes, len, i, logunit
   logical                       :: opened, existed
+  integer                       :: unit_begin, unit_end, unit_nml, io_status
 
   if( module_is_initialized )return
 
@@ -41,6 +42,25 @@ subroutine mpp_init( flags,localcomm )
      debug   = flags.EQ.MPP_DEBUG
      verbose = flags.EQ.MPP_VERBOSE .OR. debug
   end if
+
+  call mpp_init_logfile()
+  call read_input_nml
+
+  !--- read namelist
+#ifdef INTERNAL_FILE_NML
+  read (input_nml_file, mpp_nml, iostat=io_status)
+#else
+  unit_begin = 103
+  unit_end   = 512
+  do unit_nml = unit_begin, unit_end
+     inquire( unit_nml,OPENED=opened )
+     if( .NOT.opened )exit
+  end do
+
+  open(unit_nml,file='input.nml', iostat=io_status)
+  read(unit_nml,mpp_nml,iostat=io_status)
+  close(unit_nml)  
+#endif
 
 ! non-root pe messages written to other location than stdout()
 ! 9 is reserved for etc_unit
@@ -88,7 +108,6 @@ subroutine mpp_init( flags,localcomm )
   !          if( pe.NE.root_pe )open( unit=log_unit, file=trim(configfile), status='OLD' )
   !      end if
 
-  call mpp_init_logfile()
 
   !messages
   if( verbose )call mpp_error( NOTE, 'MPP_INIT: initializing MPP module...' )

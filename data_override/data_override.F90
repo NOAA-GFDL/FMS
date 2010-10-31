@@ -60,12 +60,13 @@ use platform_mod, only: r8_kind
 use constants_mod, only: PI
 use mpp_io_mod, only: axistype,mpp_close,mpp_open,mpp_get_axis_data,MPP_RDONLY,MPP_ASCII
 use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe,stdout,stdlog,mpp_root_pe, NOTE, mpp_min, mpp_max, mpp_chksum
+use mpp_mod, only : input_nml_file
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_type, &
      assignment(=), horiz_interp_del
 use time_interp_external_mod, only:time_interp_external_init, time_interp_external, &
      init_external_field, get_external_field_size
 use fms_io_mod, only: field_size, read_data, fms_io_init,get_mosaic_tile_grid
-use fms_mod, only: write_version_number, field_exist, lowercase, file_exist
+use fms_mod, only: write_version_number, field_exist, lowercase, file_exist, open_namelist_file, check_nml_error, close_file
 use axis_utils_mod, only: get_axis_bounds
 use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, NULL_DOMAIN2D,operator(.NE.),operator(.EQ.)
 use mpp_domains_mod, only : mpp_copy_domain, mpp_get_global_domain
@@ -77,8 +78,8 @@ use time_manager_mod, only: time_type
 implicit none
 private
 
-character(len=128) :: version = '$Id: data_override.F90,v 18.0 2010/03/02 23:55:11 fms Exp $'
-character(len=128) :: tagname = '$Name: riga_201006 $'
+character(len=128) :: version = '$Id: data_override.F90,v 18.0.4.1.2.1.2.2 2010/09/08 21:00:23 wfc Exp $'
+character(len=128) :: tagname = '$Name: riga_201012 $'
 
 type data_type_lima
    character(len=3)   :: gridname
@@ -175,21 +176,27 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
 ! </NOTE>
   character(len=128)    :: grid_file = 'INPUT/grid_spec.nc'
   integer               :: is,ie,js,je,count
-  integer               :: i, iunit, ntable, ntable_lima, ntable_new, unit,io_status 
+  integer               :: i, iunit, ntable, ntable_lima, ntable_new, unit,io_status, ierr
   character(len=256)    :: record
   type(data_type_lima)  :: data_entry_lima
   type(data_type)       :: data_entry
   logical               :: file_open
 
   debug_data_override = .false.
-  call mpp_open(iunit, 'input.nml',form=MPP_ASCII,action=MPP_RDONLY)
-  read(iunit,data_override_nml,iostat=io_status)
+
+#ifdef INTERNAL_FILE_NML
+  read (input_nml_file, data_override_nml, iostat=io_status)
+  ierr = check_nml_error(io_status, 'data_override_nml')
+#else
+  iunit = open_namelist_file ()
+  ierr=1; do while (ierr /= 0)
+  read  (iunit, nml=data_override_nml, iostat=io_status, end=10)
+  ierr = check_nml_error(io_status, 'data_override_nml')
+  enddo
+10 call close_file (iunit)
+#endif
   unit = stdlog()
   write(unit, data_override_nml)
-  if (io_status > 0) then
-     call mpp_error(FATAL,'data_override_init: Error reading data_override_nml')
-  endif
-  call mpp_close (iunit)
 
 !  if(module_is_initialized) return
 
@@ -917,11 +924,11 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
      endif
      call field_size(grid_file, xname, siz)
      nlon = siz(1); allocate(glon(nlon))
-     call read_data(grid_file, xname, glon)
+     call read_data(grid_file, xname, glon, no_domain = .true.)
 
      call field_size(grid_file, yname, siz)
      nlat = siz(1); allocate(glat(nlat))
-     call read_data(grid_file, yname, glat)
+     call read_data(grid_file, yname, glat, no_domain = .true.)
      call check_grid_sizes(trim(mod_name)//'_domain  ', domain, nlon, nlat)
 
      is = isc - isg + 1; ie = iec - isg + 1
@@ -1139,6 +1146,7 @@ end module data_override_mod
  ! Input data and path_names file for this program is in:
  ! /archive/pjp/unit_tests/test_data_override/lima/exp1
 
+ use           mpp_mod, only: input_nml_file
  use   mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_get_compute_domain, mpp_define_layout
  use           fms_mod, only: fms_init, fms_end, mpp_npes, file_exist, open_namelist_file, check_nml_error, close_file
  use           fms_mod, only: error_mesg, FATAL, file_exist, field_exist, field_size
@@ -1175,6 +1183,9 @@ end module data_override_mod
 
  rad_to_deg = 180./pi
 
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, test_data_override_nml, iostat=io)
+#else
  if (file_exist('input.nml')) then
    unit = open_namelist_file ( )
    ierr=1
@@ -1184,6 +1195,7 @@ end module data_override_mod
    enddo
 10 call close_file (unit)
  endif
+#endif
 
  if(field_exist(grid_file, "x_T" ) ) then
     call field_size(grid_file, 'x_T', siz)

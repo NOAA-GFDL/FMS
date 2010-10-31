@@ -121,7 +121,7 @@ use          mpp_mod, only:  mpp_error, NOTE, WARNING, FATAL,    &
                              mpp_set_stack_size,                 &
                              stdin, stdout, stderr, stdlog,      &
                              mpp_error_state, lowercase,         &
-                             uppercase
+                             uppercase, mpp_broadcast, input_nml_file
 
 use  mpp_domains_mod, only:  domain2D, mpp_define_domains, &
                              mpp_update_domains, GLOBAL_DATA_DOMAIN, &
@@ -271,8 +271,8 @@ integer, public :: clock_flag_default
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: fms.F90,v 17.0.10.1 2010/06/17 21:03:42 wfc Exp $'
-  character(len=128) :: tagname = '$Name: riga_201006 $'
+  character(len=128) :: version = '$Id: fms.F90,v 17.0.8.1.2.1.2.1 2010/08/31 14:28:53 z1l Exp $'
+  character(len=128) :: tagname = '$Name: riga_201012 $'
 
   logical :: module_is_initialized = .FALSE.
 
@@ -332,6 +332,9 @@ subroutine fms_init (localcomm )
 
     call nml_error_init  ! first initialize namelist iostat error codes
 
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, fms_nml, iostat=io)
+#else
     if (file_exist('input.nml')) then
        unit = open_namelist_file ( )
        ierr=1; do while (ierr /= 0)
@@ -340,6 +343,7 @@ subroutine fms_init (localcomm )
        enddo
  10    call mpp_close (unit)
     endif
+#endif
 
 !---- define mpp stack sizes if non-zero -----
 
@@ -657,6 +661,7 @@ subroutine nml_error_init
    real    ::  a=1.
    integer ::  b=1
    logical ::  c=.true.
+   integer ::  tmp(1)
    character(len=8) ::  d='testing'
    namelist /b_nml/  a,b,c,d
 
@@ -665,29 +670,37 @@ subroutine nml_error_init
 
 !     ---- create dummy namelist file that resembles actual ----
 !     ---- (each pe has own copy) ----
-      call mpp_open (unit, '_read_error.nml', form=MPP_ASCII,  &
-                     action=MPP_OVERWR, access=MPP_SEQUENTIAL, &
-                     threading=MPP_MULTI)
-!     ---- due to namelist bug this will not always work ---
-      write (unit, 10)
-  10  format ('    ', &
-             /' &a_nml  a=1.  /',    &
-             /'#------------------', &
-             /' &b_nml  a=5., b=0, c=.false., d=''test'',  &end')
-      call mpp_close (unit)
+      if(mpp_pe() == mpp_root_pe() ) then
+         call mpp_open (unit, '_read_error.nml', form=MPP_ASCII,  &
+              action=MPP_OVERWR, access=MPP_SEQUENTIAL, &
+              threading=MPP_SINGLE)
+         !     ---- due to namelist bug this will not always work ---
+         write (unit, 10)
+10       format ('    ', &
+              /' &a_nml  a=1.  /',    &
+              /'#------------------', &
+              /' &b_nml  a=5., b=0, c=.false., d=''test'',  &end')
+         call mpp_close (unit)
 
-!     ---- read namelist files and save error codes ----
-      call mpp_open (unit, '_read_error.nml', form=MPP_ASCII,  &
-                     action=MPP_RDONLY, access=MPP_SEQUENTIAL, &
-                     threading=MPP_MULTI)
-      ir=2; io=1; do
-         read  (unit, nml=b_nml, iostat=io, end=20)
-         if (io == 0) exit
-         ir=ir+1; nml_error_codes(ir)=io
-      enddo
-  20  call mpp_close (unit, action=MPP_DELETE)
+         !     ---- read namelist files and save error codes ----
+         call mpp_open (unit, '_read_error.nml', form=MPP_ASCII,  &
+              action=MPP_RDONLY, access=MPP_SEQUENTIAL, &
+              threading=MPP_SINGLE)
+         ir=2; io=1; do
+            read  (unit, nml=b_nml, iostat=io, end=20)
+            if (io == 0) exit
+            ir=ir+1; nml_error_codes(ir)=io
+         enddo
+20       call mpp_close (unit, action=MPP_DELETE)
+         num_nml_error_codes = ir
+         tmp(1) = num_nml_error_codes
+      endif
 
-      num_nml_error_codes = ir
+   
+      call mpp_broadcast(tmp,1,mpp_root_pe())
+      num_nml_error_codes = tmp(1)
+      call mpp_broadcast(nml_error_codes, num_nml_error_codes, mpp_root_pe())
+
 !del  if (mpp_pe() == mpp_root_pe()) &
 !del  print *, 'PE,nml_error_codes=',mpp_pe(), nml_error_codes(1:ir)
       do_nml_error_init = .false.

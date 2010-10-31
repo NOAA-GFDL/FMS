@@ -178,8 +178,8 @@ end interface
 
 !======================================================================
 
-character(len=128) :: version='$Id: time_manager.F90,v 18.0 2010/03/02 23:58:36 fms Exp $'
-character(len=128) :: tagname='$Name: riga_201006 $'
+character(len=128) :: version='$Id: time_manager.F90,v 18.0.4.1 2010/08/31 14:29:08 z1l Exp $'
+character(len=128) :: tagname='$Name: riga_201012 $'
 logical :: module_is_initialized = .false.
 
 !======================================================================
@@ -3375,6 +3375,7 @@ end module time_manager_mod
 
 #ifdef test_time_manager
  program test
+ use          mpp_mod, only: input_nml_file
  use          fms_mod, only: fms_init, fms_end, stderr
  use          fms_mod, only: open_namelist_file, check_nml_error, close_file, open_file
  use    constants_mod, only: constants_init, rseconds_per_day=>seconds_per_day
@@ -3413,6 +3414,9 @@ logical :: test17=.true.,test18=.true.,test19=.true.
  call fms_init
  call constants_init
 
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, test_nml, iostat=io)
+#else
  nmlunit = open_namelist_file()
  ierr=1
  do while (ierr /= 0)
@@ -3420,6 +3424,8 @@ logical :: test17=.true.,test18=.true.,test19=.true.
    ierr = check_nml_error (io, 'test_nml')
  enddo
  12 call close_file (nmlunit)
+#endif
+
  outunit = open_file(file='test_time_manager.out', form='formatted', action='write')
  errunit = stderr()
  call set_ticks_per_second(10)

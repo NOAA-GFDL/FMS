@@ -128,6 +128,7 @@ module mpp_domains_mod
   use mpp_mod,                only : mpp_clock_id, mpp_clock_begin, mpp_clock_end
   use mpp_mod,                only : mpp_max, mpp_min, mpp_sum, mpp_get_current_pelist, mpp_broadcast
   use mpp_mod,                only : mpp_sync, mpp_init, mpp_malloc, lowercase
+  use mpp_mod,                only : input_nml_file
   use mpp_memutils_mod,       only : mpp_memuse_begin, mpp_memuse_end
   use mpp_pset_mod, only: mpp_pset_init
   implicit none
@@ -167,6 +168,7 @@ module mpp_domains_mod
   public :: mpp_get_domain_name, mpp_get_io_domain_layout
   public :: mpp_copy_domain, mpp_set_domain_symmetry
   public :: mpp_get_update_pelist, mpp_get_update_size
+  public :: mpp_get_domain_npes
 
   !--- public interface from mpp_domains_reduce.h
   public :: mpp_global_field, mpp_global_max, mpp_global_min, mpp_global_sum
@@ -1744,9 +1746,9 @@ module mpp_domains_mod
 
   !--- version information variables
   character(len=128), public :: version= &
-       '$Id: mpp_domains.F90,v 18.0 2010/03/02 23:56:33 fms Exp $'
+       '$Id: mpp_domains.F90,v 16.0.6.2.2.1.2.1.2.2.4.4.2.1.4.1.2.1 2010/08/04 13:02:23 z1l Exp $'
   character(len=128), public :: tagname= &
-       '$Name: riga_201006 $'
+       '$Name: riga_201012 $'
 
 
 contains

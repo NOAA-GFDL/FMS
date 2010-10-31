@@ -202,6 +202,7 @@ private
   !--- public interface from mpp_comm.h ------------------------------
   public :: mpp_chksum, mpp_max, mpp_min, mpp_sum, mpp_transmit, mpp_send, mpp_recv
   public :: mpp_broadcast, mpp_malloc, mpp_init, mpp_exit
+  public :: mpp_gather
 #ifdef use_MPI_GSM
   public :: mpp_gsm_malloc, mpp_gsm_free
 #endif
@@ -635,6 +636,19 @@ private
   end interface
 
   !#####################################################################
+  ! <INTERFACE NAME="mpp_gather">
+  !  <OVERVIEW>
+  !    gather information onto root pe.
+  !  </OVERVIEW>
+  ! </INTERFACE>
+  interface mpp_gather
+     module procedure mpp_gather_int4_1d
+     module procedure mpp_gather_real4_1d
+     module procedure mpp_gather_real8_1d
+  end interface
+
+
+  !#####################################################################
 
   ! <INTERFACE NAME="mpp_transmit">
   !  <OVERVIEW>
@@ -737,14 +751,14 @@ private
      module procedure mpp_transmit_logical8_4d
      module procedure mpp_transmit_logical8_5d
 #endif
-#ifdef OVERLOAD_R4
+
      module procedure mpp_transmit_real4
      module procedure mpp_transmit_real4_scalar
      module procedure mpp_transmit_real4_2d
      module procedure mpp_transmit_real4_3d
      module procedure mpp_transmit_real4_4d
      module procedure mpp_transmit_real4_5d
-#endif
+
 #ifdef OVERLOAD_C4
      module procedure mpp_transmit_cmplx4
      module procedure mpp_transmit_cmplx4_scalar
@@ -795,14 +809,14 @@ private
      module procedure mpp_recv_logical8_4d
      module procedure mpp_recv_logical8_5d
 #endif
-#ifdef OVERLOAD_R4
+
      module procedure mpp_recv_real4
      module procedure mpp_recv_real4_scalar
      module procedure mpp_recv_real4_2d
      module procedure mpp_recv_real4_3d
      module procedure mpp_recv_real4_4d
      module procedure mpp_recv_real4_5d
-#endif
+
 #ifdef OVERLOAD_C4
      module procedure mpp_recv_cmplx4
      module procedure mpp_recv_cmplx4_scalar
@@ -853,14 +867,14 @@ private
      module procedure mpp_send_logical8_4d
      module procedure mpp_send_logical8_5d
 #endif
-#ifdef OVERLOAD_R4
+
      module procedure mpp_send_real4
      module procedure mpp_send_real4_scalar
      module procedure mpp_send_real4_2d
      module procedure mpp_send_real4_3d
      module procedure mpp_send_real4_4d
      module procedure mpp_send_real4_5d
-#endif
+
 #ifdef OVERLOAD_C4
      module procedure mpp_send_cmplx4
      module procedure mpp_send_cmplx4_scalar
@@ -916,6 +930,7 @@ private
   !   <INOUT NAME="data(*)"> </INOUT>
   ! </INTERFACE>
   interface mpp_broadcast
+     module procedure mpp_broadcast_char
      module procedure mpp_broadcast_real8
      module procedure mpp_broadcast_real8_scalar
      module procedure mpp_broadcast_real8_2d
@@ -944,14 +959,14 @@ private
      module procedure mpp_broadcast_logical8_4d
      module procedure mpp_broadcast_logical8_5d
 #endif
-#ifdef OVERLOAD_R4
+
      module procedure mpp_broadcast_real4
      module procedure mpp_broadcast_real4_scalar
      module procedure mpp_broadcast_real4_2d
      module procedure mpp_broadcast_real4_3d
      module procedure mpp_broadcast_real4_4d
      module procedure mpp_broadcast_real4_5d
-#endif
+
 #ifdef OVERLOAD_C4
      module procedure mpp_broadcast_cmplx4
      module procedure mpp_broadcast_cmplx4_scalar
@@ -1136,10 +1151,22 @@ private
   integer(INT_KIND)  :: word(1)
 #endif
 
+!***********************************************************************
+!            variables needed for include/read_input_nml.inc
+!
+! parameter defining length of character variables 
+  integer, parameter :: INPUT_STR_LENGTH = 256
+! public variable needed for reading input.nml from an internal file
+  character(len=INPUT_STR_LENGTH), dimension(:), allocatable, public :: input_nml_file
+!***********************************************************************
+
   character(len=128), public :: version= &
        '$Id mpp.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: riga_201006 $'
+       '$Name: riga_201012 $'
+
+  logical :: etc_unit_is_stderr = .false.
+  namelist /mpp_nml/ etc_unit_is_stderr
 
   contains
 #include <system_clock.h>

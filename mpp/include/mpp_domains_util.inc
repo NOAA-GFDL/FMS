@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_util.inc,v 18.0 2010/03/02 23:57:21 fms Exp $
+! $Id: mpp_domains_util.inc,v 18.0.4.1.2.1 2010/08/03 18:55:18 z1l Exp $
 
   ! <SUBROUTINE NAME="mpp_domains_set_stack_size">
   !  <OVERVIEW>
@@ -1260,6 +1260,17 @@ end subroutine mpp_get_domain_shift
   end function mpp_get_domain_name
 
   !#################################################################
+  function mpp_get_domain_npes(domain)
+     type(domain2d),    intent(in) :: domain
+     integer                       :: mpp_get_domain_npes  
+
+     mpp_get_domain_npes = size(domain%list(:))
+
+     return
+
+  end function mpp_get_domain_npes
+
+  !#################################################################
   function mpp_get_io_domain_layout(domain)
      type(domain2d),    intent(in) :: domain
      integer, dimension(2)         :: mpp_get_io_domain_layout
@@ -1308,11 +1319,14 @@ end subroutine mpp_get_domain_shift
     nrecv_y = overlap_y%nrecv
     rank_x = -1
     rank_y = -1
-    if(nrecv_x>0) rank_x = overlap_x%recv(1)%pe - domain%pe
-    if(nrecv_y>0) rank_y = overlap_y%recv(1)%pe - domain%pe    
-
-    if(rank_x .LE. 0) rank_x = rank_x + nlist
-    if(rank_y .LE. 0) rank_y = rank_y + nlist
+    if(nrecv_x>0) then
+       rank_x = overlap_x%recv(1)%pe - domain%pe
+       if(rank_x .LE. 0) rank_x = rank_x + nlist
+    endif
+    if(nrecv_y>0) then
+       rank_y = overlap_y%recv(1)%pe - domain%pe    
+       if(rank_y .LE. 0) rank_y = rank_y + nlist
+    endif
     get_rank_recv = max(rank_x, rank_y)
     ind_x = nrecv_x + 1
     ind_y = nrecv_y + 1

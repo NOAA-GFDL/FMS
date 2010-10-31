@@ -14,6 +14,7 @@ program test   !test various aspects of mpp_mod
   use mpp_mod, only : mpp_clock_id, mpp_clock_begin, mpp_clock_end, mpp_sync, mpp_malloc
   use mpp_mod, only : mpp_declare_pelist, mpp_set_current_pelist, mpp_set_stack_size
   use mpp_mod, only : mpp_broadcast, mpp_transmit, mpp_sum, mpp_max, mpp_chksum, ALL_PES
+  use mpp_mod, only : mpp_error, FATAL
 #ifdef use_MPI_GSM
   use mpp_mod, only : mpp_gsm_malloc, mpp_gsm_free
 #endif
@@ -38,6 +39,10 @@ program test   !test various aspects of mpp_mod
   pe = mpp_pe()
   npes = mpp_npes()
   root = mpp_root_pe()
+
+  ! first test broadcast
+  call test_broadcast()
+
   call SYSTEM_CLOCK( count_rate=ticks_per_sec )
   allocate( a(n), b(n) )
   id = mpp_clock_id( 'Random number' )
@@ -204,6 +209,47 @@ program test   !test various aspects of mpp_mod
   call mpp_exit()
 
 contains
+
+  !***********************************************
+  !currently only test the mpp_broadcast_char
+  subroutine test_broadcast()
+     integer, parameter :: ARRAYSIZE = 3
+     integer, parameter :: STRINGSIZE = 256
+     character(len=STRINGSIZE), dimension(ARRAYSIZE) :: textA, textB
+     integer :: n
+
+     textA(1) = "This is line 1 "
+     textA(2) = "Here comes the line 2 "
+     textA(3) = "Finally is line 3 "  
+     do n = 1, ARRAYSIZE  
+        textB(n) = TextA(n)
+     enddo
+
+     if(mpp_pe() .NE. mpp_root_pe()) then
+        do n =1, ARRAYSIZE
+           textA(n) = ""
+        enddo
+     endif
+
+     !--- comparing textA and textB. textA and textB are supposed to be different on pe other than root_pe
+     if(mpp_pe() == mpp_root_pe()) then
+        do n = 1, ARRAYSIZE         
+           if(textA(n) .NE. textB(n)) call mpp_error(FATAL, "test_broadcast: on root_pe, textA should equal textB")
+        enddo
+     else
+        do n = 1, ARRAYSIZE         
+           if(textA(n) == textB(n)) call mpp_error(FATAL, "test_broadcast: on root_pe, textA should not equal textB")
+        enddo 
+     endif
+     call mpp_broadcast(textA, STRINGSIZE, mpp_root_pe())
+     !--- after broadcast, textA and textB should be the same
+     do n = 1, ARRAYSIZE         
+        if(textA(n) .NE. textB(n)) call mpp_error(FATAL, "test_broadcast: after broadcast, textA should equal textB")
+     enddo
+
+     write(stdout(),*) "==> NOTE from test_broadcast: The test is succesful"
+
+  end subroutine test_broadcast
 
   subroutine test_shared_pointers(locd,n)
     integer(LONG_KIND), intent(in) :: locd

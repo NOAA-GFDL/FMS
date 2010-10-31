@@ -1,7 +1,7 @@
 #include <fms_platform.h>
 #include "fms_switches.h"
 
-! $Id: drifters_comm.F90,v 14.0 2007/03/15 22:38:45 fms Exp $
+! $Id: drifters_comm.F90,v 14.0.14.1 2010/08/31 14:28:49 z1l Exp $
 
 module drifters_comm_mod
 
@@ -11,7 +11,6 @@ module drifters_comm_mod
 #define _NULL_PE 0
 
 #else
-
 
   use mpp_mod,         only        : NULL_PE, FATAL, NOTE, mpp_error, mpp_pe, mpp_npes
   use mpp_mod,         only        : mpp_root_pe
@@ -752,6 +751,7 @@ program main
   character(len=128)  :: ermsg = ''
   integer :: ids(npmax)
   real    :: positions(nd, npmax), velocity(nd, npmax)
+  integer :: io_status
 !!$  integer :: stackmax=4000000
 
   namelist /drifters_comm_nml/ nx, ny, halox, haloy, u0, v0, dt, nt 
@@ -771,10 +771,14 @@ program main
   nt    = 10
 
   ! read input
+#ifdef INTERNAL_FILE_NML
+  read (input_nml_file, drifters_comm_nml, iostat=io_status)
+#else
   open(unit=1, file='input.nml', form='formatted')
   read(1, drifters_comm_nml)
   close(unit=1)
   if(mpp_pe()==0) write(*,drifters_comm_nml)
+#endif
 
   ! create global domain
   Lx = xmax - xmin

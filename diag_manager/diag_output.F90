@@ -13,7 +13,7 @@ MODULE diag_output_mod
        & MPP_NETCDF, MPP_MULTI, MPP_SINGLE
   USE mpp_domains_mod, ONLY: domain1d, domain2d, mpp_define_domains, mpp_get_pelist,&
        &  mpp_get_global_domain, mpp_get_compute_domains, null_domain1d, null_domain2d,&
-       & OPERATOR(/=), mpp_get_layout, OPERATOR(==)
+       & OPERATOR(.NE.), mpp_get_layout, OPERATOR(.EQ.)
   USE mpp_mod, ONLY: mpp_npes, mpp_pe
   USE diag_axis_mod, ONLY: diag_axis_init, get_diag_axis, get_axis_length,&
        & get_axis_global_length, get_domain1d, get_domain2d, get_axis_aux, get_tile_count
@@ -30,7 +30,7 @@ MODULE diag_output_mod
 
   TYPE(diag_global_att_type), SAVE :: diag_global_att
 
-  INTEGER, PARAMETER      :: NETCDF = 1
+  INTEGER, PARAMETER      :: NETCDF1 = 1
   INTEGER, PARAMETER      :: mxch  = 128
   INTEGER, PARAMETER      :: mxchl = 256
   INTEGER                 :: current_file_unit = -1
@@ -47,9 +47,9 @@ MODULE diag_output_mod
   LOGICAL :: module_is_initialized = .FALSE.
 
   CHARACTER(len=128), PRIVATE :: version= &
-       '$Id: diag_output.F90,v 17.0.8.1 2010/03/03 14:47:42 sdu Exp $'
+       '$Id: diag_output.F90,v 17.0.8.2 2010/08/03 18:00:39 sdu Exp $'
   CHARACTER(len=128), PRIVATE :: tagname= &
-       '$Name: riga_201006 $'
+       '$Name: riga_201012 $'
 
 CONTAINS
 
@@ -94,7 +94,7 @@ CONTAINS
    
     !---- set up output file ----
     SELECT CASE (FORMAT)
-    CASE (NETCDF)
+    CASE (NETCDF1)
        form      = MPP_NETCDF
        threading = MPP_MULTI
        fileset   = MPP_MULTI
@@ -109,7 +109,7 @@ CONTAINS
     END IF
 
     !---- open output file (return file_unit id) -----
-    IF ( domain == NULL_DOMAIN2D ) THEN
+    IF ( domain .EQ. NULL_DOMAIN2D ) THEN
        CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
             & threading=threading, fileset=fileset)
     ELSE
@@ -263,7 +263,7 @@ CONTAINS
        time_axis_flag (num_axis_in_file) = .FALSE.
 
        !  ---- write edges axis to file ----
-       IF ( Domain /= null_domain1d ) THEN
+       IF ( Domain .NE. null_domain1d ) THEN
           ! assume domain decomposition is irregular and loop through all prev and next
           ! domain pointers extracting domain extents.  Assume all pes are used in
           ! decomposition
@@ -560,7 +560,7 @@ CONTAINS
     END IF
 
     !---- output data ----
-    IF ( Field%Domain /= null_domain2d ) THEN
+    IF ( Field%Domain .NE. null_domain2d ) THEN
        CALL mpp_write(file_unit, Field%Field, Field%Domain, DATA, time, tile_count=Field%tile_count)
     ELSE
        CALL mpp_write(file_unit, Field%Field, DATA, time)

@@ -65,7 +65,7 @@ module oda_core_mod
   use fms_mod, only : file_exist,read_data
   use mpp_mod, only : mpp_error, FATAL, NOTE, mpp_sum, stdout,&
                       mpp_sync_self, mpp_pe,mpp_npes,mpp_root_pe,&
-                      mpp_broadcast
+                      mpp_broadcast, input_nml_file
   use mpp_domains_mod, only : mpp_get_compute_domain, mpp_get_data_domain, &
        domain2d, mpp_get_global_domain, mpp_update_domains
   use time_manager_mod, only : time_type, operator( <= ), operator( - ), &
@@ -911,11 +911,14 @@ module oda_core_mod
       
     integer :: ioun, ierr, io_status
     
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, oda_core_nml, iostat=io_status)
+#else
     ioun = open_namelist_file()
     read(ioun,nml=oda_core_nml,iostat = io_status)
     ierr = check_nml_error(io_status,'oda_core_nml')
     call close_file(ioun)      
-
+#endif
 
 !    allocate(nprof_in_comp_domain(0:mpp_npes()-1))
 !    nprof_in_comp_domain = 0

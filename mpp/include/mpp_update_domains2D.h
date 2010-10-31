@@ -147,8 +147,17 @@
                endif
             endif
             update => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, update_position)
-            call mpp_do_update( f_addrs(1:l_size,1:ntile), domain, update, d_type, ke, &
-                                b_addrs(1:l_size,1:ntile), bsize, flags)
+            
+            !call mpp_do_update( f_addrs(1:l_size,1:ntile), domain, update, d_type, ke, &
+            !                    b_addrs(1:l_size,1:ntile), bsize, flags)
+
+            if ( PRESENT ( flags ) ) then
+                call mpp_do_update( f_addrs(1:l_size,1:ntile), domain, update, d_type, ke, b_addrs(1:l_size,1:ntile), bsize, flags )
+            else
+                call mpp_do_update( f_addrs(1:l_size,1:ntile), domain, update, d_type, ke, b_addrs(1:l_size,1:ntile), bsize )
+            endif    
+                
+
          end if
          l_size=0; f_addrs=-9999; bsize=0; b_addrs=-9999; isize=0;  jsize=0;  ke=0
       endif

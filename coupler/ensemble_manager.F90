@@ -4,6 +4,7 @@ module ensemble_manager_mod
   use fms_mod, only : open_namelist_file,close_file,check_nml_error
   use mpp_mod, only : mpp_npes, stdout, stdlog, mpp_error, FATAL
   use mpp_mod, only : mpp_pe, mpp_declare_pelist
+  use mpp_mod, only : input_nml_file
   use fms_io_mod, only       : set_filename_appendix 
   use diag_manager_mod, only : set_diag_filename_appendix
 
@@ -36,9 +37,13 @@ contains
 
     namelist /ensemble_nml/ ensemble_size
 
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, ensemble_nml, iostat=io_status)
+#else
     ioun = open_namelist_file()
     read(ioun,nml=ensemble_nml,iostat = io_status)
     call close_file(ioun)
+#endif
 
     if(ensemble_size < 1) call mpp_error(FATAL, &
        'ensemble_manager_mod: ensemble_nml variable ensemble_size must be a positive integer')

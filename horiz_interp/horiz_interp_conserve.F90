@@ -24,7 +24,7 @@ module horiz_interp_conserve_mod
   !     where output data exists.
   ! </DESCRIPTION>
 
-  use mpp_mod,               only: mpp_send, mpp_recv, mpp_pe, mpp_root_pe
+  use mpp_mod,               only: mpp_send, mpp_recv, mpp_pe, mpp_root_pe, mpp_npes
   use mpp_mod,               only: mpp_error, FATAL,  mpp_sync_self 
   use fms_mod,               only: write_version_number
   use constants_mod,         only: PI
@@ -89,8 +89,8 @@ module horiz_interp_conserve_mod
 
   integer :: pe, root_pe
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_conserve.F90,v 16.0 2008/07/30 22:45:39 fms Exp $'
-  character(len=128) :: tagname = '$Name: riga_201006 $'
+  character(len=128) :: version = '$Id: horiz_interp_conserve.F90,v 16.0.6.1 2010/05/19 14:04:54 rab Exp $'
+  character(len=128) :: tagname = '$Name: riga_201012 $'
   logical            :: module_is_initialized = .FALSE.
 
 contains
@@ -812,6 +812,10 @@ contains
 
     integer :: pe, root_pe, npes, p, buffer_int(1)
     real    :: buffer_real(5)
+
+    pe = mpp_pe()
+    root_pe = mpp_root_pe()
+    npes = mpp_npes()
 
     ! sum data, data*area; and find min,max on each pe.
 

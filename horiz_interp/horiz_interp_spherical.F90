@@ -19,6 +19,7 @@ module horiz_interp_spherical_mod
 
   use mpp_mod,               only : mpp_error, FATAL, WARNING, stdout
   use mpp_mod,               only : mpp_root_pe, mpp_pe
+  use mpp_mod,               only : input_nml_file
   use fms_mod,               only : write_version_number, file_exist, close_file
   use fms_mod,               only : check_nml_error, open_namelist_file
   use constants_mod,         only : pi
@@ -59,8 +60,8 @@ module horiz_interp_spherical_mod
   namelist /horiz_interp_spherical_nml/ search_method
 
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_spherical.F90,v 14.0 2007/03/15 22:40:07 fms Exp $'
-  character(len=128) :: tagname = '$Name: riga_201006 $'
+  character(len=128) :: version = '$Id: horiz_interp_spherical.F90,v 14.0.16.1 2010/08/31 14:28:55 z1l Exp $'
+  character(len=128) :: tagname = '$Name: riga_201012 $'
   logical            :: module_is_initialized = .FALSE.
 
 contains
@@ -80,6 +81,9 @@ contains
 
     if(module_is_initialized) return
     call write_version_number (version, tagname)
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, horiz_interp_spherical_nml, iostat=io)
+#else
     if (file_exist('input.nml')) then
        unit = open_namelist_file ( )
        ierr=1; do while (ierr /= 0)
@@ -88,6 +92,7 @@ contains
     enddo
 10  call close_file (unit)
     endif
+#endif
 
  module_is_initialized = .true.
 

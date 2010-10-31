@@ -29,6 +29,7 @@ module time_interp_external_mod
 !</NAMELIST>
 
   use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe, stdout, stdlog, NOTE
+  use mpp_mod, only : input_nml_file
   use mpp_io_mod, only : mpp_open, mpp_get_atts, mpp_get_info, MPP_NETCDF, MPP_MULTI, MPP_SINGLE,&
        mpp_get_times, MPP_RDONLY, MPP_ASCII, default_axis,axistype,fieldtype,atttype, &
        mpp_get_axes, mpp_get_fields, mpp_read, default_field, mpp_close, &
@@ -41,7 +42,7 @@ module time_interp_external_mod
        mpp_get_global_domain, NULL_DOMAIN2D
   use time_interp_mod, only : time_interp
   use axis_utils_mod, only : get_axis_cart, get_axis_modulo, get_axis_modulo_times
-  use fms_mod, only : lowercase
+  use fms_mod, only : lowercase, open_namelist_file, check_nml_error, close_file
   use platform_mod, only: r8_kind
   use horiz_interp_mod, only : horiz_interp, horiz_interp_type
 
@@ -49,8 +50,8 @@ module time_interp_external_mod
   private
 
   character(len=128), private :: version= &
-   'CVS $Id: time_interp_external.F90,v 17.0 2009/07/21 03:21:49 fms Exp $'
-  character(len=128), private :: tagname='Tag $Name: riga_201006 $'
+   'CVS $Id: time_interp_external.F90,v 17.0.8.1.2.2 2010/09/08 21:00:16 wfc Exp $'
+  character(len=128), private :: tagname='Tag $Name: riga_201012 $'
 
   integer, parameter, private :: max_fields = 1, modulo_year= 0001,max_files= 1
   integer, parameter, private :: LINEAR_TIME_INTERP = 1 ! not used currently
@@ -116,7 +117,7 @@ module time_interp_external_mod
 !
     subroutine time_interp_external_init()
 
-      integer :: ioun, io_status, logunit
+      integer :: ioun, io_status, logunit, ierr
 
       namelist /time_interp_external_nml/ num_io_buffers, debug_this_module
 
@@ -128,14 +129,19 @@ module time_interp_external_mod
       write(logunit,'(/a/)') version
       write(logunit,'(/a/)') tagname
 
-      call mpp_open(ioun,'input.nml',action=MPP_RDONLY,form=MPP_ASCII)
-      read(ioun,time_interp_external_nml,iostat=io_status)
-      write(logunit,time_interp_external_nml)
-      if (io_status .gt. 0) then
-         call mpp_error(FATAL,'=>Error reading time_interp_external_nml')
-      endif
-      call mpp_close(ioun)
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, time_interp_external_nml, iostat=io_status)
+      ierr = check_nml_error(io_status, 'time_interp_external_nml')
+#else
+      ioun = open_namelist_file ()
+      ierr=1; do while (ierr /= 0)
+      read  (ioun, nml=time_interp_external_nml, iostat=io_status, end=10)
+      ierr = check_nml_error(io_status, 'time_interp_external_nml')
+      enddo
+10    call close_file (ioun)
+#endif
 
+      write(logunit,time_interp_external_nml)
       call realloc_fields(max_fields)
       call realloc_files(max_files)
 
@@ -1047,7 +1053,9 @@ end module time_interp_external_mod
 
 program test_time_interp_ext
 use constants_mod, only: constants_init
+use fms_mod,       only: open_namelist_file, check_nml_error
 use mpp_mod, only : mpp_init, mpp_exit, mpp_npes, stdout, stdlog, FATAL, mpp_error
+use mpp_mod, only : input_nml_file
 use mpp_io_mod, only : mpp_io_init, mpp_io_exit, mpp_open, MPP_RDONLY, MPP_ASCII, mpp_close, &
                        axistype, mpp_get_axis_data
 use mpp_domains_mod, only : mpp_domains_init, domain2d, mpp_define_layout, mpp_define_domains,&
@@ -1063,7 +1071,7 @@ implicit none
 
 
 
-integer :: id, i, io_status, unit
+integer :: id, i, io_status, unit, ierr
 character(len=128) :: filename, fieldname
 type(time_type) :: time
 real, allocatable, dimension(:,:,:) :: data_d, data_g
@@ -1093,15 +1101,20 @@ call time_interp_external_init
 call time_manager_init
 call horiz_interp_init
 
-call mpp_open(unit,'input.nml',action=MPP_RDONLY,form=MPP_ASCII)
-read(unit,test_time_interp_ext_nml,iostat=io_status)
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, test_time_interp_ext_nml, iostat=io_status)
+      ierr = check_nml_error(io_status, 'test_time_interp_ext_nml')
+#else
+      unit = open_namelist_file ()
+      ierr=1; do while (ierr /= 0)
+      read  (unit, nml=test_time_interp_ext_nml, iostat=io_status, end=10)
+      ierr = check_nml_error(io_status, 'test_time_interp_ext_nml')
+      enddo
+10    call close_file (unit)
+#endif
+
 outunit = stdlog()
 write(outunit,test_time_interp_ext_nml)
-if (io_status .gt. 0) then
-   call mpp_error(FATAL,'=>Error reading test_time_interp_ext_nml')
-endif
-call mpp_close(unit)
-
 
 select case (trim(cal_type))
 case ('julian')

@@ -37,6 +37,7 @@ use time_manager_mod, only: time_type, get_date, set_date, set_time, &
 use          fms_mod, only: write_version_number, &
                             error_mesg, FATAL, stdout, stdlog, &
                             open_namelist_file, close_file, check_nml_error
+use          mpp_mod, only: input_nml_file
 
 implicit none
 private
@@ -194,8 +195,8 @@ integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
    integer :: yrmod, momod, dymod
    logical :: mod_leapyear
 
-   character(len=128) :: version='$Id: time_interp.F90,v 18.0 2010/03/02 23:58:30 fms Exp $'
-   character(len=128) :: tagname='$Name: riga_201006 $'
+   character(len=128) :: version='$Id: time_interp.F90,v 18.0.4.1 2010/08/31 14:29:06 z1l Exp $'
+   character(len=128) :: tagname='$Name: riga_201012 $'
 
    logical :: module_is_initialized=.FALSE.
    logical :: perthlike_behavior=.FALSE.
@@ -210,6 +211,9 @@ contains
 
    if ( module_is_initialized ) return
 
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, time_interp_nml, iostat=io)
+#else
    namelist_unit = open_namelist_file()
    ierr=1
    do while (ierr /= 0)
@@ -217,6 +221,8 @@ contains
      ierr = check_nml_error (io, 'time_interp_nml')
    enddo
    20 call close_file (namelist_unit)
+#endif
+
    call write_version_number( version, tagname )
    logunit = stdlog()
    write(logunit,time_interp_nml)
