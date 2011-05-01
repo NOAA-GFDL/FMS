@@ -61,9 +61,9 @@ MODULE diag_grid_mod
 
   ! Parameters
   CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id: diag_grid.F90,v 18.0.2.6 2010/04/12 21:25:34 sdu Exp $'
+       & '$Id: diag_grid.F90,v 18.0.2.6.4.1 2011/03/25 21:55:47 Zhi.Liang Exp $'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: riga_201012 $'
+       & '$Name: riga_201104 $'
 
   ! Derived data types
   ! <PRIVATE>
@@ -235,7 +235,7 @@ CONTAINS
     IF ( ALLOCATED(yend) ) DEALLOCATE(yend)
 
     ! What is my PE
-    myPe = mpp_pe() + 1
+    myPe = mpp_pe() - mpp_root_pe() + 1
     
     ! Get the domain/pe layout, and allocate the [xy]begin|end arrays/pointers
     npes = mpp_npes()

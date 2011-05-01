@@ -167,6 +167,7 @@ module mpp_mod
   use mpp_parameter_mod, only : MAXPES, EVENT_WAIT, EVENT_ALLREDUCE, EVENT_BROADCAST
   use mpp_parameter_mod, only : EVENT_RECV, EVENT_SEND, MPP_READY, MPP_WAIT
   use mpp_parameter_mod, only : mpp_parameter_version=>version, mpp_parameter_tagname=>tagname
+  use mpp_parameter_mod, only : DEFAULT_TAG
   use mpp_data_mod,      only : stat, mpp_stack, ptr_stack, status, ptr_status, sync, ptr_sync  
   use mpp_data_mod,      only : mpp_from_pe, ptr_from, remote_data_loc, ptr_remote
   use mpp_data_mod,      only : mpp_data_version=>version, mpp_data_tagname=>tagname
@@ -190,7 +191,7 @@ private
   public :: MAXPES, EVENT_RECV, EVENT_SEND
 
   !--- public data from mpp_data_mod ------------------------------
-  public :: request
+!  public :: request
 
   !--- public interface from mpp_util.h ------------------------------
   public :: stdin, stdout, stderr, stdlog, lowercase, uppercase, mpp_error, mpp_error_state
@@ -645,6 +646,9 @@ private
      module procedure mpp_gather_int4_1d
      module procedure mpp_gather_real4_1d
      module procedure mpp_gather_real8_1d
+     module procedure mpp_gather_int4_1dv
+     module procedure mpp_gather_real4_1dv
+     module procedure mpp_gather_real8_1dv
   end interface
 
 
@@ -1103,7 +1107,10 @@ private
   integer              :: error
   integer              :: clock_num=0, num_clock_ids=0,current_clock=0, previous_clock(MAX_CLOCKS)=0
   real                 :: tick_rate
-  integer, allocatable :: request(:)
+
+  integer              :: cur_send_request = 0
+  integer              :: cur_recv_request = 0
+  integer, allocatable :: request_send(:)
   integer, allocatable :: request_recv(:)
 ! if you want to save the non-root PE information uncomment out the following line
 ! and comment out the assigment of etcfile to '/dev/null'
@@ -1142,7 +1149,6 @@ private
 
   integer            :: clock0    !measures total runtime from mpp_init to mpp_exit
   integer            :: mpp_stack_size=0, mpp_stack_hwm=0
-  integer            :: tag=1
   logical            :: verbose=.FALSE.
 #ifdef _CRAY
   integer(LONG_KIND) :: word(1)
@@ -1163,10 +1169,14 @@ private
   character(len=128), public :: version= &
        '$Id mpp.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: riga_201012 $'
+       '$Name: riga_201104 $'
+
+  integer, parameter :: MAX_REQUEST_MIN  = 10000
+  integer            :: request_multiply = 20
 
   logical :: etc_unit_is_stderr = .false.
-  namelist /mpp_nml/ etc_unit_is_stderr
+  integer :: max_request = 0
+  namelist /mpp_nml/ etc_unit_is_stderr, request_multiply
 
   contains
 #include <system_clock.h>

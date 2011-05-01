@@ -50,8 +50,8 @@ module time_interp_external_mod
   private
 
   character(len=128), private :: version= &
-   'CVS $Id: time_interp_external.F90,v 17.0.8.1.2.2 2010/09/08 21:00:16 wfc Exp $'
-  character(len=128), private :: tagname='Tag $Name: riga_201012 $'
+   'CVS $Id: time_interp_external.F90,v 17.0.8.1.2.2.2.1 2011/01/03 21:19:16 z1l Exp $'
+  character(len=128), private :: tagname='Tag $Name: riga_201104 $'
 
   integer, parameter, private :: max_fields = 1, modulo_year= 0001,max_files= 1
   integer, parameter, private :: LINEAR_TIME_INTERP = 1 ! not used currently
@@ -223,7 +223,7 @@ module time_interp_external_mod
       integer :: iscomp,iecomp,jscomp,jecomp,isglobal,ieglobal,jsglobal,jeglobal
       integer :: isdata,iedata,jsdata,jedata, dxsize, dysize,dxsize_max,dysize_max
       logical :: verb, transpose_xy,use_comp_domain1
-      real(KIND=r8_kind), dimension(:), allocatable :: tstamp, tstart, tend, tavg
+      real, dimension(:), allocatable :: tstamp, tstart, tend, tavg
       character(len=1) :: cart
       character(len=128) :: units, fld_units
       character(len=128) :: name, msg, calendar_type, timebeg, timeend

@@ -137,6 +137,21 @@
          if( overPtr%count == 0 )cycle
          call mpp_clock_begin(pack_clock)
          pos = buffer_pos
+         msgsize = 0
+         do n = 1, overPtr%count
+            dir = overPtr%dir(n)
+            if( send(dir) )  msgsize = msgsize + overPtr%msgsize(n)
+         enddo
+         if( msgsize.GT.0 )then
+            msgsize = msgsize*ke*l_size
+            mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, pos+msgsize )
+            if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
+               write( text,'(i8)' )mpp_domains_stack_hwm
+               call mpp_error( FATAL, 'MPP_START_UPDATE_DOMAINS: mpp_domains_stack overflow, ' // &
+                    'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.')
+            end if
+         end if
+
          do n = 1, overPtr%count
             dir = overPtr%dir(n)
             if( send(dir) ) then
@@ -215,12 +230,6 @@
          msgsize = pos - buffer_pos
          if( msgsize.GT.0 )then
             to_pe = overPtr%pe
-            mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, pos )
-            if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
-               write( text,'(i8)' )mpp_domains_stack_hwm
-               call mpp_error( FATAL, 'MPP_DO_UPDATE: mpp_domains_stack overflow, ' // &
-                    'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.')
-            end if
             call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
             buffer_pos = pos
          end if

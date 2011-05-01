@@ -28,6 +28,7 @@
 ! </SUBROUTINE>
     subroutine mpp_domains_init(flags)
       integer, intent(in), optional :: flags
+      integer                       :: n
 #ifdef use_libSMA
       integer                       :: l=0
 #endif
@@ -77,6 +78,20 @@
          call mpp_error(FATAL, "mpp_domains_init: debug_update_level should be 'none', 'fatal', 'warning', or 'note'") 
       end select
 
+      allocate(recv_pos_list(MAX_DOMAIN_FIELDS))
+      allocate(update_flags_list(MAX_DOMAIN_FIELDS))
+      allocate(update_position_list(MAX_DOMAIN_FIELDS))
+      allocate(update_gridtype_list(MAX_DOMAIN_FIELDS))
+      allocate(update_whalo_list(MAX_DOMAIN_FIELDS))
+      allocate(update_ehalo_list(MAX_DOMAIN_FIELDS))
+      allocate(update_shalo_list(MAX_DOMAIN_FIELDS))
+      allocate(update_nhalo_list(MAX_DOMAIN_FIELDS))
+      allocate(request_recv(MAX_DOMAIN_FIELDS))
+      do n = 1, MAX_DOMAIN_FIELDS
+         request_recv(n)%count = 0
+         request_recv(n)%request(:) = MPI_REQUEST_NULL
+      enddo
+      recv_pos_list = 0
       call mpp_domains_set_stack_size(32768) !default, pretty arbitrary
 #ifdef use_libSMA
       call mpp_malloc( ptr_info, 16, l )
@@ -87,12 +102,16 @@
       call mpp_define_null_domain(NULL_DOMAIN2d);
 
       if( domain_clocks_on )then
-          pack_clock      = mpp_clock_id( 'Halo pack' )
-          pack_loop_clock = mpp_clock_id( 'Halo pack loop' )
-          send_clock      = mpp_clock_id( 'Halo send' )
-          recv_clock      = mpp_clock_id( 'Halo recv' )
-          unpk_clock      = mpp_clock_id( 'Halo unpk' )
-          wait_clock      = mpp_clock_id( 'Halo wait' )
+          pack_clock          = mpp_clock_id( 'Halo pack' )
+          send_clock          = mpp_clock_id( 'Halo send' )
+          recv_clock          = mpp_clock_id( 'Halo recv' )
+          unpk_clock          = mpp_clock_id( 'Halo unpk' )
+          wait_clock          = mpp_clock_id( 'Halo wait' )
+          pack_clock_nonblock = mpp_clock_id( 'Halo pack nonblock' )
+          send_clock_nonblock = mpp_clock_id( 'Halo send nonblock' )
+          recv_clock_nonblock = mpp_clock_id( 'Halo recv nonblock' )
+          unpk_clock_nonblock = mpp_clock_id( 'Halo unpk nonblock' )
+          wait_clock_nonblock = mpp_clock_id( 'Halo wait nonblock' )
       end if
       return
     end subroutine mpp_domains_init
@@ -638,6 +657,249 @@
 #undef MPP_REDISTRIBUTE_5D_
 #define MPP_REDISTRIBUTE_5D_ mpp_redistribute_i4_5D
 #include <mpp_update_domains2D.h>
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                                                                             !
+!              MPP_START_UPDATE_DOMAINS and MPP_COMPLETE_UPDATE_DOMAINS:      !
+!              fill halos for 2D decomposition --- non-blocking               !
+!                                                                             !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+#undef VECTOR_FIELD_
+#define VECTOR_FIELD_
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(DOUBLE_KIND)
+#undef MPP_START_UPDATE_DOMAINS_2D_
+#define MPP_START_UPDATE_DOMAINS_2D_ mpp_start_update_domain2D_r8_2D
+#undef MPP_START_UPDATE_DOMAINS_3D_
+#define MPP_START_UPDATE_DOMAINS_3D_ mpp_start_update_domain2D_r8_3D
+#undef MPP_START_UPDATE_DOMAINS_4D_
+#define MPP_START_UPDATE_DOMAINS_4D_ mpp_start_update_domain2D_r8_4D
+#undef MPP_START_UPDATE_DOMAINS_5D_
+#define MPP_START_UPDATE_DOMAINS_5D_ mpp_start_update_domain2D_r8_5D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_2D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_2D_ mpp_complete_update_domain2D_r8_2D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_3D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_3D_ mpp_complete_update_domain2D_r8_3D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_4D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_4D_ mpp_complete_update_domain2D_r8_4D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_5D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_5D_ mpp_complete_update_domain2D_r8_5D
+#ifdef  VECTOR_FIELD_
+#undef MPP_START_UPDATE_DOMAINS_2D_V_
+#define MPP_START_UPDATE_DOMAINS_2D_V_ mpp_start_update_domain2D_r8_2Dv
+#undef MPP_START_UPDATE_DOMAINS_3D_V_
+#define MPP_START_UPDATE_DOMAINS_3D_V_ mpp_start_update_domain2D_r8_3Dv
+#undef MPP_START_UPDATE_DOMAINS_4D_V_
+#define MPP_START_UPDATE_DOMAINS_4D_V_ mpp_start_update_domain2D_r8_4Dv
+#undef MPP_START_UPDATE_DOMAINS_5D_V_
+#define MPP_START_UPDATE_DOMAINS_5D_V_ mpp_start_update_domain2D_r8_5Dv
+#undef MPP_COMPLETE_UPDATE_DOMAINS_2D_V_
+#define MPP_COMPLETE_UPDATE_DOMAINS_2D_V_ mpp_complete_update_domain2D_r8_2Dv
+#undef MPP_COMPLETE_UPDATE_DOMAINS_3D_V_
+#define MPP_COMPLETE_UPDATE_DOMAINS_3D_V_ mpp_complete_update_domain2D_r8_3Dv
+#undef MPP_COMPLETE_UPDATE_DOMAINS_4D_V_
+#define MPP_COMPLETE_UPDATE_DOMAINS_4D_V_ mpp_complete_update_domain2D_r8_4Dv
+#undef MPP_COMPLETE_UPDATE_DOMAINS_5D_V_
+#define MPP_COMPLETE_UPDATE_DOMAINS_5D_V_ mpp_complete_update_domain2D_r8_5Dv
+#endif
+#include <mpp_update_domains2D_nonblock.h>
+
+#ifdef OVERLOAD_C8
+#undef  VECTOR_FIELD_
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(DOUBLE_KIND)
+#undef MPP_START_UPDATE_DOMAINS_2D_
+#define MPP_START_UPDATE_DOMAINS_2D_ mpp_start_update_domain2D_c8_2D
+#undef MPP_START_UPDATE_DOMAINS_3D_
+#define MPP_START_UPDATE_DOMAINS_3D_ mpp_start_update_domain2D_c8_3D
+#undef MPP_START_UPDATE_DOMAINS_4D_
+#define MPP_START_UPDATE_DOMAINS_4D_ mpp_start_update_domain2D_c8_4D
+#undef MPP_START_UPDATE_DOMAINS_5D_
+#define MPP_START_UPDATE_DOMAINS_5D_ mpp_start_update_domain2D_c8_5D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_2D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_2D_ mpp_complete_update_domain2D_c8_2D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_3D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_3D_ mpp_complete_update_domain2D_c8_3D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_4D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_4D_ mpp_complete_update_domain2D_c8_4D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_5D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_5D_ mpp_complete_update_domain2D_c8_5D
+#include <mpp_update_domains2D_nonblock.h>
+#endif
+
+#ifndef no_8byte_integers
+#undef  VECTOR_FIELD_
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(LONG_KIND)
+#undef MPP_START_UPDATE_DOMAINS_2D_
+#define MPP_START_UPDATE_DOMAINS_2D_ mpp_start_update_domain2D_i8_2D
+#undef MPP_START_UPDATE_DOMAINS_3D_
+#define MPP_START_UPDATE_DOMAINS_3D_ mpp_start_update_domain2D_i8_3D
+#undef MPP_START_UPDATE_DOMAINS_4D_
+#define MPP_START_UPDATE_DOMAINS_4D_ mpp_start_update_domain2D_i8_4D
+#undef MPP_START_UPDATE_DOMAINS_5D_
+#define MPP_START_UPDATE_DOMAINS_5D_ mpp_start_update_domain2D_i8_5D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_2D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_2D_ mpp_complete_update_domain2D_i8_2D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_3D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_3D_ mpp_complete_update_domain2D_i8_3D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_4D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_4D_ mpp_complete_update_domain2D_i8_4D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_5D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_5D_ mpp_complete_update_domain2D_i8_5D
+#include <mpp_update_domains2D_nonblock.h>
+#endif
+
+#ifdef OVERLOAD_R4
+#undef VECTOR_FIELD_
+#define VECTOR_FIELD_
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(FLOAT_KIND)
+#undef MPP_START_UPDATE_DOMAINS_2D_
+#define MPP_START_UPDATE_DOMAINS_2D_ mpp_start_update_domain2D_r4_2D
+#undef MPP_START_UPDATE_DOMAINS_3D_
+#define MPP_START_UPDATE_DOMAINS_3D_ mpp_start_update_domain2D_r4_3D
+#undef MPP_START_UPDATE_DOMAINS_4D_
+#define MPP_START_UPDATE_DOMAINS_4D_ mpp_start_update_domain2D_r4_4D
+#undef MPP_START_UPDATE_DOMAINS_5D_
+#define MPP_START_UPDATE_DOMAINS_5D_ mpp_start_update_domain2D_r4_5D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_2D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_2D_ mpp_complete_update_domain2D_r4_2D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_3D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_3D_ mpp_complete_update_domain2D_r4_3D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_4D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_4D_ mpp_complete_update_domain2D_r4_4D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_5D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_5D_ mpp_complete_update_domain2D_r4_5D
+#ifdef  VECTOR_FIELD_
+#undef MPP_START_UPDATE_DOMAINS_2D_V_
+#define MPP_START_UPDATE_DOMAINS_2D_V_ mpp_start_update_domain2D_r4_2Dv
+#undef MPP_START_UPDATE_DOMAINS_3D_V_
+#define MPP_START_UPDATE_DOMAINS_3D_V_ mpp_start_update_domain2D_r4_3Dv
+#undef MPP_START_UPDATE_DOMAINS_4D_V_
+#define MPP_START_UPDATE_DOMAINS_4D_V_ mpp_start_update_domain2D_r4_4Dv
+#undef MPP_START_UPDATE_DOMAINS_5D_V_
+#define MPP_START_UPDATE_DOMAINS_5D_V_ mpp_start_update_domain2D_r4_5Dv
+#undef MPP_COMPLETE_UPDATE_DOMAINS_2D_V_
+#define MPP_COMPLETE_UPDATE_DOMAINS_2D_V_ mpp_complete_update_domain2D_r4_2Dv
+#undef MPP_COMPLETE_UPDATE_DOMAINS_3D_V_
+#define MPP_COMPLETE_UPDATE_DOMAINS_3D_V_ mpp_complete_update_domain2D_r4_3Dv
+#undef MPP_COMPLETE_UPDATE_DOMAINS_4D_V_
+#define MPP_COMPLETE_UPDATE_DOMAINS_4D_V_ mpp_complete_update_domain2D_r4_4Dv
+#undef MPP_COMPLETE_UPDATE_DOMAINS_5D_V_
+#define MPP_COMPLETE_UPDATE_DOMAINS_5D_V_ mpp_complete_update_domain2D_r4_5Dv
+#endif
+#include <mpp_update_domains2D_nonblock.h>
+#endif
+
+#ifdef OVERLOAD_C4
+#undef VECTOR_FIELD_
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(FLOAT_KIND)
+#undef MPP_START_UPDATE_DOMAINS_2D_
+#define MPP_START_UPDATE_DOMAINS_2D_ mpp_start_update_domain2D_c4_2D
+#undef MPP_START_UPDATE_DOMAINS_3D_
+#define MPP_START_UPDATE_DOMAINS_3D_ mpp_start_update_domain2D_c4_3D
+#undef MPP_START_UPDATE_DOMAINS_4D_
+#define MPP_START_UPDATE_DOMAINS_4D_ mpp_start_update_domain2D_c4_4D
+#undef MPP_START_UPDATE_DOMAINS_5D_
+#define MPP_START_UPDATE_DOMAINS_5D_ mpp_start_update_domain2D_c4_5D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_2D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_2D_ mpp_complete_update_domain2D_c4_2D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_3D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_3D_ mpp_complete_update_domain2D_c4_3D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_4D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_4D_ mpp_complete_update_domain2D_c4_4D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_5D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_5D_ mpp_complete_update_domain2D_c4_5D
+#include <mpp_update_domains2D_nonblock.h>
+#endif
+
+#undef VECTOR_FIELD_
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(INT_KIND)
+#undef MPP_START_UPDATE_DOMAINS_2D_
+#define MPP_START_UPDATE_DOMAINS_2D_ mpp_start_update_domain2D_i4_2D
+#undef MPP_START_UPDATE_DOMAINS_3D_
+#define MPP_START_UPDATE_DOMAINS_3D_ mpp_start_update_domain2D_i4_3D
+#undef MPP_START_UPDATE_DOMAINS_4D_
+#define MPP_START_UPDATE_DOMAINS_4D_ mpp_start_update_domain2D_i4_4D
+#undef MPP_START_UPDATE_DOMAINS_5D_
+#define MPP_START_UPDATE_DOMAINS_5D_ mpp_start_update_domain2D_i4_5D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_2D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_2D_ mpp_complete_update_domain2D_i4_2D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_3D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_3D_ mpp_complete_update_domain2D_i4_3D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_4D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_4D_ mpp_complete_update_domain2D_i4_4D
+#undef MPP_COMPLETE_UPDATE_DOMAINS_5D_
+#define MPP_COMPLETE_UPDATE_DOMAINS_5D_ mpp_complete_update_domain2D_i4_5D
+#include <mpp_update_domains2D_nonblock.h>
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                                                                   !
+!    mpp_start_do_update and mpp_complete_do_update                 !
+!    private routine. To be called in mpp_start_update_domains      !
+!    and mpp_complete_update_domains                                !
+!                                                                   !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(DOUBLE_KIND)
+#undef MPP_START_DO_UPDATE_3D_V_
+#define MPP_START_DO_UPDATE_3D_V_ mpp_start_do_update_r8_3Dv
+#undef MPP_COMPLETE_DO_UPDATE_3D_V_
+#define MPP_COMPLETE_DO_UPDATE_3D_V_ mpp_complete_do_update_r8_3Dv
+#include <mpp_do_update_nonblock.h>
+
+#ifdef OVERLOAD_C8
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(DOUBLE_KIND)
+#undef MPP_START_DO_UPDATE_3D_V_
+#define MPP_START_DO_UPDATE_3D_V_ mpp_start_do_update_c8_3Dv
+#undef MPP_COMPLETE_DO_UPDATE_3D_V_
+#define MPP_COMPLETE_DO_UPDATE_3D_V_ mpp_complete_do_update_c8_3Dv
+#include <mpp_do_update_nonblock.h>
+#endif
+
+#ifndef no_8byte_integers
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(LONG_KIND)
+#undef MPP_START_DO_UPDATE_3D_V_
+#define MPP_START_DO_UPDATE_3D_V_ mpp_start_do_update_i8_3Dv
+#undef MPP_COMPLETE_DO_UPDATE_3D_V_
+#define MPP_COMPLETE_DO_UPDATE_3D_V_ mpp_complete_do_update_i8_3Dv
+#include <mpp_do_update_nonblock.h>
+#endif
+
+#ifdef OVERLOAD_R4
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(FLOAT_KIND)
+#undef MPP_START_DO_UPDATE_3D_V_
+#define MPP_START_DO_UPDATE_3D_V_ mpp_start_do_update_r4_3Dv
+#undef MPP_COMPLETE_DO_UPDATE_3D_V_
+#define MPP_COMPLETE_DO_UPDATE_3D_V_ mpp_complete_do_update_r4_3Dv
+#include <mpp_do_update_nonblock.h>
+#endif
+
+#ifdef OVERLOAD_C4
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(FLOAT_KIND)
+#undef MPP_START_DO_UPDATE_3D_V_
+#define MPP_START_DO_UPDATE_3D_V_ mpp_start_do_update_c4_3Dv
+#undef MPP_COMPLETE_DO_UPDATE_3D_V_
+#define MPP_COMPLETE_DO_UPDATE_3D_V_ mpp_complete_do_update_c4_3Dv
+#include <mpp_do_update_nonblock.h>
+#endif
+
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(INT_KIND)
+#undef MPP_START_DO_UPDATE_3D_V_
+#define MPP_START_DO_UPDATE_3D_V_ mpp_start_do_update_i4_3Dv
+#undef MPP_COMPLETE_DO_UPDATE_3D_V_
+#define MPP_COMPLETE_DO_UPDATE_3D_V_ mpp_complete_do_update_i4_3Dv
+#include <mpp_do_update_nonblock.h>
 
 !*******************************************************
 #undef VECTOR_FIELD_

@@ -1,4 +1,12 @@
 module field_manager_mod
+#ifndef MAXFIELDS_ 
+#define MAXFIELDS_ 150
+#endif
+
+#ifndef MAXFIELDMETHODS_
+#define MAXFIELDMETHODS_ 150
+#endif
+
 !
 ! <CONTACT EMAIL="William.Cooke@noaa.gov"> William Cooke
 ! </CONTACT>
@@ -174,8 +182,8 @@ implicit none
 private
 
 
-character(len=128) :: version = '$Id: field_manager.F90,v 17.0 2009/07/21 03:19:13 fms Exp $'
-character(len=128) :: tagname = '$Name: riga_201012 $'
+character(len=128) :: version = '$Id: field_manager.F90,v 17.0.14.1 2010/12/09 19:08:46 sdu Exp $'
+character(len=128) :: tagname = '$Name: riga_201104 $'
 logical            :: module_is_initialized  = .false.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -447,8 +455,8 @@ integer,           parameter :: string_type       = 5
 integer,           parameter :: num_types         = 5
 integer,           parameter :: line_len          = 256
 integer,           parameter :: array_increment   = 10
-integer,           parameter :: MAX_FIELDS        = 150
-integer,           parameter :: MAX_FIELD_METHODS = 150
+integer,           parameter :: MAX_FIELDS        = MAXFIELDS_
+integer,           parameter :: MAX_FIELD_METHODS = MAXFIELDMETHODS_
 
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+

@@ -272,6 +272,30 @@
       do while (ind_x .LE. nsend_x .OR. ind_y .LE. nsend_y)
          call mpp_clock_begin(pack_clock)
          pos = buffer_pos
+         !--- make sure the domain stack size is big enough
+         msgsize = 0
+         if(cur_rank == rank_x) then
+            do n = 1, update_x%send(ind_x)%count
+               dir = update_x%send(ind_x)%dir(n)
+               if( send(dir) ) msgsize = msgsize +  update_x%send(ind_x)%msgsize(n)
+            enddo
+         endif
+         if(cur_rank == rank_y) then
+            do n = 1, update_y%send(ind_y)%count
+               dir = update_y%send(ind_y)%dir(n)
+               if( send(dir) ) msgsize = msgsize +  update_y%send(ind_y)%msgsize(n)
+            enddo
+         endif
+
+         if( msgsize.GT.0 )then
+            msgsize = msgsize*ke*l_size
+            mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, pos+msgsize )
+            if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
+               write( text,'(i8)' )mpp_domains_stack_hwm
+               call mpp_error( FATAL, 'MPP_DO_UPDATE_V: mpp_domains_stack overflow, ' // &
+                    'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.')
+            end if
+         end if
          select case( gridtype )
          case(BGRID_NE, BGRID_SW, AGRID)
             if(cur_rank == rank_x) then
@@ -865,12 +889,6 @@
          cur_rank = min(rank_x, rank_y)
          msgsize = pos - buffer_pos
          if( msgsize.GT.0 )then
-            mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, pos )
-            if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
-               write( text,'(i8)' )mpp_domains_stack_hwm
-               call mpp_error( FATAL, 'MPP_DO_UPDATE_V: mpp_domains_stack overflow, ' // &
-                    'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.')
-            end if
             call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
             buffer_pos = pos
          end if

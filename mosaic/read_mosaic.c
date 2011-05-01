@@ -235,10 +235,10 @@ void get_int_data(const char *file, const char *name, int *data)
 }; /* get_int_data */
 
 /*******************************************************************************
-   void get_double_data(const char *file, const char *name, double *data)
-   get double data of field with "name" from "file".
+   void get_var_data(const char *file, const char *name, double *data)
+   get var data of field with "name" from "file".
 ******************************************************************************/
-void get_double_data(const char *file, const char *name, double *data)
+void get_var_data(const char *file, const char *name, void *data)
 {
 
   int ncid, varid, status;  
@@ -254,8 +254,14 @@ void get_double_data(const char *file, const char *name, double *data)
   if(status != NC_NOERR) {
     sprintf(msg, "in getting varid of %s from file %s.", name, file);
     handle_netcdf_error(msg, status);
-  }     
+  }
+
+#ifdef OVERLOAD_R4
+  status = nc_get_var_float(ncid, varid, data);
+#else
   status = nc_get_var_double(ncid, varid, data);
+#endif
+
   if(status != NC_NOERR) {
     sprintf(msg, "in getting data of %s from file %s.", name, file);
     handle_netcdf_error(msg, status);
@@ -269,7 +275,7 @@ void get_double_data(const char *file, const char *name, double *data)
   error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
 #endif
   
-}; /* get_double_data */
+}; /* get_var_data */
 
 /******************************************************************************
    void get_var_text_att(const char *file, const char *name, const char *attname, char *att)
@@ -329,18 +335,30 @@ int read_mosaic_xgrid_size( const char *xgrid_file )
 
 /****************************************************************************/
 #ifndef __AIX
+#ifdef OVERLOAD_R4
+void read_mosaic_xgrid_order1_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, float *area )
+#else
 void read_mosaic_xgrid_order1_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area )
+#endif
 {
   read_mosaic_xgrid_order1(xgrid_file, i1, j1, i2, j2, area);
   
 };
 #endif
 
+#ifdef OVERLOAD_R4
+void read_mosaic_xgrid_order1(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, float *area )
+#else
 void read_mosaic_xgrid_order1(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area )
+#endif
 {
   int    ncells, n;
   int    *tile1_cell, *tile2_cell;
+#ifdef OVERLOAD_R4  
+  float garea;
+#else
   double garea;
+#endif
   
   ncells = get_dimlen(xgrid_file, "ncells");
 
@@ -348,7 +366,9 @@ void read_mosaic_xgrid_order1(const char *xgrid_file, int *i1, int *j1, int *i2,
   tile2_cell       = (int *)malloc(ncells*2*sizeof(int));
   get_int_data(xgrid_file, "tile1_cell", tile1_cell);
   get_int_data(xgrid_file, "tile2_cell", tile2_cell);
-  get_double_data(xgrid_file, "xgrid_area", area);
+
+  get_var_data(xgrid_file, "xgrid_area", area);
+
   garea = 4*M_PI*RADIUS*RADIUS;
   
   for(n=0; n<ncells; n++) {
@@ -367,20 +387,31 @@ void read_mosaic_xgrid_order1(const char *xgrid_file, int *i1, int *j1, int *i2,
 /* NOTE: di, dj is for tile1, */
 /****************************************************************************/
 #ifndef __AIX
+#ifdef OVERLOAD_R4
+void read_mosaic_xgrid_order2_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, float *area, float *di, float *dj )
+#else
 void read_mosaic_xgrid_order2_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, double *di, double *dj )
+#endif
 {
   read_mosaic_xgrid_order2(xgrid_file, i1, j1, i2, j2, area, di, dj);
   
 };
 #endif
-
+#ifdef OVERLOAD_R4
+void read_mosaic_xgrid_order2(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, float *area, float *di, float *dj )
+#else
 void read_mosaic_xgrid_order2(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, double *di, double *dj )
+#endif
+
 {
   int    ncells, n;
   int    *tile1_cell, *tile2_cell;
   double *tile1_distance;
+#ifdef OVERLOAD_R4
+  float garea;
+#else
   double garea;
-  
+#endif
   ncells = get_dimlen(xgrid_file, "ncells");
 
   tile1_cell       = (int    *)malloc(ncells*2*sizeof(int   ));
@@ -388,8 +419,9 @@ void read_mosaic_xgrid_order2(const char *xgrid_file, int *i1, int *j1, int *i2,
   tile1_distance   = (double *)malloc(ncells*2*sizeof(double));
   get_int_data(xgrid_file, "tile1_cell", tile1_cell);
   get_int_data(xgrid_file, "tile2_cell", tile2_cell);
-  get_double_data(xgrid_file, "xgrid_area", area);
-  get_double_data(xgrid_file, "tile1_distance", tile1_distance);
+  get_var_data(xgrid_file, "xgrid_area", area);
+  get_var_data(xgrid_file, "tile1_distance", tile1_distance);
+
   garea = 4*M_PI*RADIUS*RADIUS;
   
   for(n=0; n<ncells; n++) {
@@ -507,8 +539,9 @@ void read_mosaic_contact(const char *mosaic_file, int *tile1, int *tile2, int *i
   char **gridtiles;
 #define MAXVAR 40
   char pstring[MAXVAR][STRING];
-  int ntiles, ncontacts, n, m, l, nstr, found;
+  int ntiles, ncontacts, n, m, l, found;
   const int x_refine = 2, y_refine = 2;
+  unsigned int nstr;
   
   ntiles = get_dimlen(mosaic_file, "ntiles");
   gridtiles = (char **)malloc(ntiles*sizeof(char *));
@@ -521,7 +554,7 @@ void read_mosaic_contact(const char *mosaic_file, int *tile1, int *tile2, int *i
   for(n = 0; n < ncontacts; n++) {
     get_string_data_level(mosaic_file, "contacts", contacts, &n);
     /* parse the string contacts to get tile number */
-    tokenize( contacts, ":", STRING, MAXVAR, pstring, &nstr);
+    tokenize( contacts, ":", STRING, MAXVAR, (char *)pstring, &nstr);
     if(nstr != 4) error_handler("Error from read_mosaic: number of elements "
 				 "in contact seperated by :/:: should be 4");
     found = 0;
@@ -546,7 +579,7 @@ void read_mosaic_contact(const char *mosaic_file, int *tile1, int *tile2, int *i
 			     "in contact is not found in tile list");    
     get_string_data_level(mosaic_file, "contact_index", contacts, &n);
     /* parse the string to get contact index */
-    tokenize( contacts, ":,", STRING, MAXVAR, pstring, &nstr);
+    tokenize( contacts, ":,", STRING, MAXVAR, (char *)pstring, &nstr);
     if(nstr != 8) error_handler("Error from read_mosaic: number of elements "
 				 "in contact_index seperated by :/, should be 8");
     /* make sure the string is only composed of numbers */
@@ -679,7 +712,7 @@ void read_mosaic_grid_data(const char *mosaic_file, const char *name, int nx, in
 
   if( ni != nx*2 || nj != ny*2) error_handler("supergrid size should be double of the model grid size");
   tmp = (double *)malloc((ni+1)*(nj+1)*sizeof(double));
-  get_double_data( tilefile, name, tmp);
+  get_var_data( tilefile, name, tmp);
   nxp = nx + 1 - ioff;
   nyp = ny + 1 - joff;
   for(j=0; j<nyp; j++) for(i=0; i<nxp; i++) data[j*nxp+i] = tmp[(2*j+joff)*(ni+1)+2*i+ioff];

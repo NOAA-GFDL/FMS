@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_define.inc,v 18.0.6.2.2.1 2010/08/03 18:23:31 z1l Exp $
+! $Id: mpp_domains_define.inc,v 18.0.6.2.2.1.2.2.2.1 2011/03/24 19:13:39 Zhi.Liang Exp $
 
 
   ! <SUBROUTINE NAME="mpp_define_layout2D" INTERFACE="mpp_define_layout">
@@ -298,7 +298,8 @@
        pes(:) = pelist(:)
     else
        allocate( pes(0:mpp_npes()-1) )
-       pes(:) = (/ (i,i=0,mpp_npes()-1) /)
+       call mpp_get_current_pelist(pes)
+!       pes(:) = (/ (i,i=0,mpp_npes()-1) /)
     end if
 
     !get number of real domains: 1 mask domain per PE in pes
@@ -590,6 +591,10 @@
     integer              :: ibegin(0:layout(1)-1), iend(0:layout(1)-1)
     integer              :: jbegin(0:layout(2)-1), jend(0:layout(2)-1)
     character(len=8)     :: text
+    type(overlapSpec), pointer :: update=>NULL()
+    character(len=1)     :: position
+    integer              :: msgsize, l, p, is, ie, js, je, from_pe
+    integer, allocatable :: msg1(:), msg2(:)
 
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS2D: You must first call mpp_domains_init.' )
     if(PRESENT(name)) then
@@ -978,6 +983,67 @@
        end if
     end if
 
+    !--- check the send and recv size are matching.
+    !--- or ntiles>1 mosaic, 
+    !--- the check will be done in mpp_define_mosaic
+    if(debug_message_passing .and. domain%ntiles == 1 ) then
+       allocate(msg1(0:nlist-1), msg2(0:nlist-1) )
+       do p = 1, 4
+          msg1 = 0
+          msg2 = 0
+          select case(p)
+          case(1)
+             update=>domain%update_T
+             position = "T"
+          case(2)
+             update=>domain%update_C
+             position = "C"
+          case(3)
+             update=>domain%update_E
+             position = "E"
+          case(4)
+             update=>domain%update_N
+             position = "N"
+          end select
+          do m = 1, update%nrecv
+             msgsize = 0
+             do n = 1, update%recv(m)%count
+                is = update%recv(m)%is(n); ie = update%recv(m)%ie(n)
+                js = update%recv(m)%js(n); je = update%recv(m)%je(n)
+                msgsize = msgsize + (ie-is+1)*(je-js+1)
+             end do
+             from_pe = update%recv(m)%pe
+             l = from_pe-mpp_root_pe()
+             call mpp_recv( msg1(l), glen=1, from_pe=from_pe, block=.FALSE.)
+             msg2(l) = msgsize
+          enddo
+
+          do m = 1, update%nsend
+             msgsize = 0
+             do n = 1, update%send(m)%count
+                is = update%send(m)%is(n); ie = update%send(m)%ie(n)
+                js = update%send(m)%js(n); je = update%send(m)%je(n)
+                msgsize = msgsize + (ie-is+1)*(je-js+1)
+             end do
+             call mpp_send( msgsize, plen=1, to_pe=update%send(m)%pe)
+          enddo
+          call mpp_sync_self(check=EVENT_RECV)
+
+          do m = 0, nlist-1
+             if(msg1(m) .NE. msg2(m)) then
+                print*, "My pe = ", mpp_pe(), ",domain name =", trim(domain%name), ",at position=",position,",from pe=", &
+                     domain%list(m)%pe, ":send size = ", msg1(m), ", recv size = ", msg2(m)
+                call mpp_error(FATAL, "mpp_define_domains2D: mismatch on send and recv size")
+             endif
+          enddo
+          call mpp_sync_self()
+       enddo
+       write(stdout(),*)"NOTE from mpp_define_domains2D: message sizes are matched between send and recv for domain " &
+            //trim(domain%name)
+       deallocate(msg1, msg2)
+       update=>NULL()
+    endif
+
     !print out decomposition, this didn't consider maskmap.
     if( mpp_pe() .EQ. pes(0) .AND. PRESENT(name) )then
        write(*,*) trim(name)//' domain decomposition'
@@ -1040,6 +1106,10 @@
     integer, allocatable :: align1(:), align2(:), is1(:), ie1(:), js1(:), je1(:), is2(:), ie2(:), js2(:), je2(:)
     integer, allocatable :: isgList(:), iegList(:), jsgList(:), jegList(:)
     real,    allocatable :: refine1(:), refine2(:)
+    type(overlapSpec), pointer :: update=>NULL()
+    character(len=1)     :: position
+    integer              :: msgsize, l, p, is, ie, js, je, from_pe
+    integer, allocatable :: msg1(:), msg2(:)
 
     mosaic_defined = .true.
     !--- the size of first indice of global_indices must be 4.
@@ -1310,6 +1380,61 @@
        call check_overlap_pe_order(domain, domain%bound_E, trim(domain%name)//" bound_E")
        call check_overlap_pe_order(domain, domain%bound_N, trim(domain%name)//" bound_N")
     end if
+
+    !--- check the send and recv size are matching.
+    !--- currently only check T and C-cell. For ntiles>1 mosaic, 
+    !--- the check will be done in mpp_define_mosaic
+    if(debug_message_passing) then
+       allocate(msg1(0:nlist-1), msg2(0:nlist-1) )
+       do p = 1, 2
+          msg1 = 0
+          msg2 = 0
+          select case(p)
+          case(1)
+             update=>domain%update_T
+             position = "T"
+          case(2)
+             update=>domain%update_C
+             position = "C"
+          end select
+          do m = 1, update%nrecv
+             msgsize = 0
+             do n = 1, update%recv(m)%count
+                is = update%recv(m)%is(n); ie = update%recv(m)%ie(n)
+                js = update%recv(m)%js(n); je = update%recv(m)%je(n)
+                msgsize = msgsize + (ie-is+1)*(je-js+1)
+             end do
+             from_pe = update%recv(m)%pe
+             l = from_pe-mpp_root_pe()
+             call mpp_recv( msg1(l), glen=1, from_pe=from_pe, block=.FALSE.)
+             msg2(l) = msgsize
+          enddo
+
+          do m = 1, update%nsend
+             msgsize = 0
+             do n = 1, update%send(m)%count
+                is = update%send(m)%is(n); ie = update%send(m)%ie(n)
+                js = update%send(m)%js(n); je = update%send(m)%je(n)
+                msgsize = msgsize + (ie-is+1)*(je-js+1)
+             end do
+             call mpp_send( msgsize, plen=1, to_pe=update%send(m)%pe)
+          enddo
+          call mpp_sync_self(check=EVENT_RECV)
+
+          do m = 0, nlist-1
+             if(msg1(m) .NE. msg2(m)) then
+                print*, "My pe = ", mpp_pe(), ",domain name =", trim(domain%name), ",at position=",position,",from pe=", &
+                     domain%list(m)%pe, ":send size = ", msg1(m), ", recv size = ", msg2(m)
+                call mpp_error(FATAL, "mpp_define_mosaic: mismatch on send and recv size")
+             endif
+          enddo
+          call mpp_sync_self()
+       enddo
+       write(stdout(),*)"NOTE from mpp_define_mosaic: message sizes are matched between send and recv for domain " &
+            //trim(domain%name)//"(T and C-cell)"
+       deallocate(msg1, msg2)
+       update=>NULL()
+    endif
 
     !--- release memory
     deallocate(align1, align2, is1, ie1, js1, je1, is2, ie2, js2, je2  )
@@ -2517,7 +2642,6 @@
     integer,            intent(in   ) :: isg, ieg, dir, ioff
     logical,            intent(in   ) :: is_cyclic
     logical, optional,  intent(in   ) :: folded, symmetry
-    integer                           :: is1, ie1, is2, ie2, i
 
     call insert_update_overlap( overlap, domain%list(m)%pe,              &
             is, ie, js, je, isc, iec, jsc, jec, dir, reverse=folded, symmetry=symmetry)  
@@ -2638,7 +2762,7 @@
     integer,            intent(in   ) :: isd, ied, jsd, jed
     integer,            intent(in   ) :: isg, ieg, dir, ishift, position, ioff, middle
     logical, optional,  intent(in   ) :: symmetry
-    integer                           :: is1, ie1, is2, ie2, is3, ie3, i
+    integer                           :: is1, ie1, is2, ie2, is3, ie3
     integer                           :: isd1, ied1, isd2, ied2
 
     !--- consider at j = jeg for west edge.
@@ -7385,7 +7509,7 @@ end subroutine mpp_deallocate_domain2D
 
 subroutine deallocate_domain2D_local(domain)
 type(domain2D), intent(inout) :: domain
-integer :: i, nlist, ntileMe
+integer :: i, ntileMe
 
 ntileMe = size(domain%x(:))
 
@@ -7547,7 +7671,7 @@ subroutine allocate_update_overlap( overlap, count)
   allocate(overlap%jsMe        (count), overlap%jeMe    (count) )
   allocate(overlap%dir         (count), overlap%rotation(count) )
   allocate(overlap%is_refined  (count), overlap%index   (count) )
-  allocate(overlap%from_contact(count)                          )
+  allocate(overlap%from_contact(count), overlap%msgsize (count) )
   overlap%is_refined   = .FALSE.
   overlap%rotation     =  ZERO
   overlap%from_contact = .FALSE.
@@ -7640,6 +7764,7 @@ end subroutine allocate_update_overlap
     overlap%rotation    (count) = rotation
     overlap%from_contact(count) = from_contact
     overlap%is_refined  (count) = refined
+    overlap%msgsize     (count) = (ie-is+1)*(je-js+1)
 
   end subroutine insert_mosaic_update_overlap
 
@@ -7668,6 +7793,7 @@ subroutine deallocate_overlap_type( overlap)
   if(ASSOCIATED(overlap%is_refined)) deallocate(overlap%is_refined)
   if(ASSOCIATED(overlap%index)) deallocate(overlap%index)
   if(ASSOCIATED(overlap%from_contact)) deallocate(overlap%from_contact)
+  if(ASSOCIATED(overlap%msgsize)) deallocate(overlap%msgsize)
   overlap%count = 0
 
 end subroutine deallocate_overlap_type
@@ -7699,7 +7825,7 @@ subroutine add_update_overlap( overlap_out, overlap_in)
   type(overlap_type), intent(inout) :: overlap_out
   type(overlap_type), intent(in   ) :: overlap_in
   type(overlap_type)                :: overlap
-  integer                          :: count, count_in, count_out
+  integer                          :: count, count_in, count_out, n
 
   ! if overlap_out%count == 0, then just copy overlap_in to overlap_out
   count_in  = overlap_in %count
@@ -7750,6 +7876,7 @@ subroutine add_update_overlap( overlap_out, overlap_in)
      overlap_out%is_refined  (1:count_out) = overlap%is_refined  (1:count_out)
      overlap_out%index       (1:count_out) = overlap%index       (1:count_out)
      overlap_out%from_contact(1:count_out) = overlap%from_contact(1:count_out)        
+     overlap_out%msgsize     (1:count_out) = overlap%msgsize     (1:count_out)
      call deallocate_overlap_type(overlap)
   end if
   overlap_out%count                           = count
@@ -7768,6 +7895,11 @@ subroutine add_update_overlap( overlap_out, overlap_in)
   overlap_out%is_refined  (count_out+1:count) = overlap_in%is_refined  (1:count_in)
   overlap_out%index       (count_out+1:count) = overlap_in%index       (1:count_in)
   overlap_out%from_contact(count_out+1:count) = overlap_in%from_contact(1:count_in)
+
+  do n = count_out+1, count
+     overlap_out%msgsize(n) = (overlap_out%ie(n)-overlap_out%is(n)+1)*(overlap_out%je(n)-overlap_out%js(n)+1)
+  enddo
+
 
 end subroutine add_update_overlap
 

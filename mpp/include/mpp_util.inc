@@ -1201,7 +1201,7 @@ end function rarray_to_char
 
 ! version and tagging information
     character(len=128) :: version = '$Id: mpp_util.inc,v 18.0.4.1.2.1.2.1 2010/08/19 16:34:23 rab Exp $'
-    character(len=128) :: tagname = '$Name: riga_201012 $' 
+    character(len=128) :: tagname = '$Name: riga_201104 $' 
 
 !private variables
     character(len=INPUT_STR_LENGTH) :: str_tmp

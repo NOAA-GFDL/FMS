@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_misc.inc,v 17.0.4.2.4.1.2.1 2010/08/04 13:12:51 z1l Exp $
+! $Id: mpp_io_misc.inc,v 17.0.4.2.4.1.2.1.4.2 2011/02/04 17:19:16 Zhi.Liang Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -32,6 +32,8 @@
       integer                       :: unit_nml, io_status, iunit
       integer                       :: logunit, outunit, inunit, errunit
       logical                       :: opened
+      real(DOUBLE_KIND)             :: doubledata = 0
+      real                          :: realarray(4)
 
       if( module_is_initialized )return
 
@@ -75,6 +77,10 @@
             call mpp_error(FATAL, "mpp_io_mod(mpp_io_init): mpp_io_nml variable must be between 0 and 9 when set")
          endif
       endif
+
+! determine the pack_size
+      pack_size = size(transfer(doubledata, realarray))
+      if( pack_size .NE. 1 .AND. pack_size .NE. 2) call mpp_error(FATAL,'mpp_io_mod(mpp_io_init): pack_size should be 1 or 2')  
 
 !initialize default_field
       default_field%name = 'noname'

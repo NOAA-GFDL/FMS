@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_connect.inc,v 17.0.2.5.6.3.2.1 2010/08/04 12:56:48 z1l Exp $
+! $Id: mpp_io_connect.inc,v 17.0.2.5.6.3.2.1.4.1 2011/01/13 18:08:12 z1l Exp $
 
 ! <SUBROUTINE NAME="mpp_open">
 
@@ -792,7 +792,7 @@
     elseif((filesize(length:length)>='a'.AND.fsize(length:length)<='z').OR.(filesize(length:length)>='A' &
                 .AND.fsize(length:length)<='Z'))then
       number = filesize(1:tend)
-      READ(number, FMT='(I5)') size
+      READ(number, FMT='(I9)') size
       if (filesize(length:length) >= 'a' .AND. fsize(length:length) <= 'z') then
         filesize(length:length) = ACHAR ( ICHAR (filesize(length:length)) - 32)
       end if
@@ -806,7 +806,7 @@
         size = size
       end if
     else
-      READ(number, FMT='(I5)') size
+      READ(filesize, FMT='(I9)') size
     endif
 
       if (size .eq. 0) then

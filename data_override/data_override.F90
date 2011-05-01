@@ -78,8 +78,8 @@ use time_manager_mod, only: time_type
 implicit none
 private
 
-character(len=128) :: version = '$Id: data_override.F90,v 18.0.4.1.2.1.2.2 2010/09/08 21:00:23 wfc Exp $'
-character(len=128) :: tagname = '$Name: riga_201012 $'
+character(len=128) :: version = '$Id: data_override.F90,v 18.0.4.1.2.1.2.2.2.1 2011/01/03 21:19:12 z1l Exp $'
+character(len=128) :: tagname = '$Name: riga_201104 $'
 
 type data_type_lima
    character(len=3)   :: gridname
@@ -846,8 +846,8 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
 
   integer                                      :: i, j, siz(4)
   integer                                      :: nlon, nlat         ! size of global lon and lat
-  real(r8_kind), dimension(:,:,:), allocatable :: lon_vert, lat_vert !of OCN grid vertices
-  real(r8_kind), dimension(:),     allocatable :: glon, glat         ! lon and lat of 1-D grid of atm/lnd
+  real,          dimension(:,:,:), allocatable :: lon_vert, lat_vert !of OCN grid vertices
+  real,          dimension(:),     allocatable :: glon, glat         ! lon and lat of 1-D grid of atm/lnd
   logical                                      :: is_new_grid
   integer                                      :: is, ie, js, je
   integer                                      :: isd, ied, jsd, jed

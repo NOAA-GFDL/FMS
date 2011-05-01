@@ -47,7 +47,7 @@ private
 !----------- version number for this module --------------------------
 
 character(len=128)  :: version =  '$Id: astronomy.F90,v 17.0.10.1 2010/08/31 14:21:37 z1l Exp $'
-character(len=128)  :: tagname =  '$Name: riga_201012 $'
+character(len=128)  :: tagname =  '$Name: riga_201104 $'
 
 
 !---------------------------------------------------------------------

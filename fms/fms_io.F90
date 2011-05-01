@@ -349,9 +349,10 @@ logical           :: print_chksum        = .false.
        fileset_write, format, read_all_pe, iospec_ieee32,max_files_w,max_files_r, &
        read_data_bug, time_stamp_restart, print_chksum
 
+integer            :: pack_size  ! = 1 for double = 2 for float
 
-character(len=128) :: version = '$Id: fms_io.F90,v 17.0.2.2.4.1.2.1.2.1.2.1 2010/08/31 14:28:53 z1l Exp $'
-character(len=128) :: tagname = '$Name: riga_201012 $'
+character(len=128) :: version = '$Id: fms_io.F90,v 17.0.2.2.4.1.2.1.2.1.2.1.4.3.2.1 2011/02/04 21:54:20 z1l Exp $'
+character(len=128) :: tagname = '$Name: riga_201104 $'
 
 contains
 
@@ -396,7 +397,8 @@ subroutine fms_io_init()
     
   integer                            :: i, unit, io_status, logunit
   integer, allocatable, dimension(:) :: pelist
-
+  real(DOUBLE_KIND)                  :: doubledata = 0
+  real                               :: realarray(4)
 
   if (module_is_initialized) return
   call mpp_io_init()
@@ -417,6 +419,10 @@ subroutine fms_io_init()
     write (logunit,'(/,80("="),/(a))') trim(version), trim(tagname)
   end if
 ! take namelist options if present
+
+! determine packsize
+  pack_size = size(transfer(doubledata, realarray))
+  if( pack_size .NE. 1 .AND. pack_size .NE. 2) call mpp_error(FATAL,'=>fms_io_init: pack_size should be 1 or 2')
 
   select case (threading_read) 
   case ('multi')
@@ -489,7 +495,7 @@ subroutine fms_io_exit()
     integer                             :: num_x_axes, num_y_axes, num_z_axes
     integer                             :: unit
     real, dimension(max_axis_size)      :: axisdata
-    real(r8_kind)                       :: tlev  
+    real                                :: tlev  
     integer,        dimension(max_axes) :: id_x_axes, siz_x_axes
     integer,        dimension(max_axes) :: id_y_axes, siz_y_axes
     integer,        dimension(max_axes) :: id_z_axes, siz_z_axes
@@ -587,7 +593,7 @@ subroutine fms_io_exit()
           cur_var => files_write(i)%var(j)
           call mpp_write_meta(unit,cur_var%field, (/x_axes(cur_var%id_axes(1)), &
                y_axes(cur_var%id_axes(2)), z_axes(cur_var%id_axes(3)), t_axes/), cur_var%name, &
-               'none',cur_var%name,pack=1)
+               'none',cur_var%name,pack=pack_size)
        enddo
 
        ! write values for ndim of spatial axes
@@ -1140,7 +1146,7 @@ function register_restart_field_i1d(fileObj, filename, fieldname, data, domain, 
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_i1d): need to call fms_io_init')  
   call setup_one_field(fileObj, filename, fieldname, (/size(data,1), 1, 1, 1/), index_field, domain, &
-                       mandatory, no_domain=.true., scalar_or_1d=.true., position=position, tile_count=tile_count, &
+                       mandatory, no_domain=no_domain, scalar_or_1d=.true., position=position, tile_count=tile_count, &
                        data_default=data_default, longname=longname, units=units)
   fileObj%p1di(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 1
@@ -1502,6 +1508,7 @@ subroutine save_restart(fileObj, time_stamp, directory )
   integer,        dimension(max_axes) :: id_x_axes, siz_x_axes
   integer,        dimension(max_axes) :: id_y_axes, siz_y_axes
   integer,        dimension(max_axes) :: id_z_axes, siz_z_axes
+  integer,        dimension(max_axes) :: x_axes_indx, y_axes_indx, z_axes_indx
   type(axistype), dimension(max_axes) :: x_axes, y_axes, z_axes
   type(axistype)                      :: t_axes            
   integer                             :: num_var_axes
@@ -1511,8 +1518,9 @@ subroutine save_restart(fileObj, time_stamp, directory )
   integer                             :: naxes_x, naxes_y, naxes_z
   integer                             :: nfiles, i, j, k, l, siz, ind_dom
   logical                             :: domain_present
-  real(r8_kind)                       :: tlev  
+  real                                :: tlev  
   character(len=10)                   :: axisname  
+  integer                             :: meta_size
 
   real, allocatable, dimension(:,:,:) :: r3d
   real, allocatable, dimension(:,:)   :: r2d, global_r2d
@@ -1554,21 +1562,21 @@ subroutine save_restart(fileObj, time_stamp, directory )
   num_y_axes = unique_axes(fileObj, 2, id_y_axes, siz_y_axes, domain_y)
   num_z_axes = unique_axes(fileObj, 3, id_z_axes, siz_z_axes          )
   next_var = 1
-  size_in_file = 0
+  meta_size = 0
   do j = 1, num_x_axes
-     size_in_file = size_in_file + siz_x_axes(j)
+     meta_size = meta_size + siz_x_axes(j)
   end do
   do j = 1, num_y_axes
-     size_in_file = size_in_file + siz_y_axes(j)
+     meta_size = meta_size + siz_y_axes(j)
   end do
   do j = 1, num_z_axes
-     size_in_file = size_in_file + siz_z_axes(j)
+     meta_size = meta_size + siz_z_axes(j)
   end do
-  size_in_file = 8*(size_in_file*2+1000)
+  meta_size = 8*(meta_size*2+1000)
 
   do while (next_var <= fileObj%nvar )
      start_var = next_var
-
+     size_in_file = meta_size
      do j=start_var,fileObj%nvar
         cur_var => fileObj%var(j)
         var_sz = 8*cur_var%csiz(1)*cur_var%csiz(2)*cur_var%csiz(3)
@@ -1608,6 +1616,10 @@ subroutine save_restart(fileObj, time_stamp, directory )
 
      ! write_out x_axes
      naxes_x = 0
+     x_axes_indx = 0
+     y_axes_indx = 0
+     z_axes_indx = 0
+
      do j = 1, num_x_axes
         ! make sure this axis is used by some variable 
         do l=start_var,next_var-1
@@ -1615,16 +1627,17 @@ subroutine save_restart(fileObj, time_stamp, directory )
         end do
         if(l == next_var) cycle  
         naxes_x = naxes_x + 1
+        x_axes_indx(naxes_x) = j
         if (naxes_x < 10) then
            write(axisname,'(a,i1)') 'xaxis_',naxes_x
         else
            write(axisname,'(a,i2)') 'xaxis_',naxes_x
         endif
         if(id_x_axes(j) > 0) then
-           call mpp_write_meta(unit,x_axes(naxes_x),axisname,'none',axisname, &
+           call mpp_write_meta(unit,x_axes(j),axisname,'none',axisname, &
                 data=axisdata(1:siz_x_axes(j)),domain=domain_x(id_x_axes(j)),cartesian='X')
         else
-           call mpp_write_meta(unit,x_axes(naxes_x),axisname,'none',axisname, &
+           call mpp_write_meta(unit,x_axes(j),axisname,'none',axisname, &
                 data=axisdata(1:siz_x_axes(j)),cartesian='X')
         endif
      end do
@@ -1638,16 +1651,17 @@ subroutine save_restart(fileObj, time_stamp, directory )
         end do
         if(l == next_var) cycle  
         naxes_y = naxes_y + 1
+        y_axes_indx(naxes_y) = j
         if (naxes_y < 10) then
            write(axisname,'(a,i1)') 'yaxis_',naxes_y
         else
            write(axisname,'(a,i2)') 'yaxis_',naxes_y
         endif
         if(id_y_axes(j) > 0) then
-           call mpp_write_meta(unit,y_axes(naxes_y),axisname,'none',axisname, &
+           call mpp_write_meta(unit,y_axes(j),axisname,'none',axisname, &
                 data=axisdata(1:siz_y_axes(j)),domain=domain_y(id_y_axes(j)),cartesian='Y')
         else
-           call mpp_write_meta(unit,y_axes(naxes_y),axisname,'none',axisname, &
+           call mpp_write_meta(unit,y_axes(j),axisname,'none',axisname, &
                 data=axisdata(1:siz_y_axes(j)),cartesian='Y')
         endif
      end do
@@ -1661,12 +1675,13 @@ subroutine save_restart(fileObj, time_stamp, directory )
         end do
         if(l == next_var) cycle  
         naxes_z = naxes_z + 1
+        z_axes_indx(naxes_z) = j
         if (naxes_z < 10) then
            write(axisname,'(a,i1)') 'zaxis_',naxes_z
         else
            write(axisname,'(a,i2)') 'zaxis_',naxes_z
         endif
-        call mpp_write_meta(unit,z_axes(naxes_z),axisname,'none',axisname, &
+        call mpp_write_meta(unit,z_axes(j),axisname,'none',axisname, &
              data=axisdata(1:siz_z_axes(j)),cartesian='Z')
      end do
 
@@ -1709,18 +1724,18 @@ subroutine save_restart(fileObj, time_stamp, directory )
            end if
         end if
         call mpp_write_meta(unit,cur_var%field, var_axes(1:num_var_axes), cur_var%name, &
-                 cur_var%units,cur_var%longname,pack=1)
+                 cur_var%units,cur_var%longname,pack=pack_size)
      enddo
 
      ! write values for ndim of spatial axes
      do j = 1, naxes_x
-        call mpp_write(unit,x_axes(j))
+        call mpp_write(unit,x_axes(x_axes_indx(j)))
      enddo
      do j = 1, naxes_y
-        call mpp_write(unit,y_axes(j))
+        call mpp_write(unit,y_axes(y_axes_indx(j)))
      enddo
      do j = 1, naxes_z
-        call mpp_write(unit,z_axes(j))
+        call mpp_write(unit,z_axes(z_axes_indx(j)))
      enddo
 
      ! write data of each field
@@ -2535,7 +2550,12 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
         cur_var%je   = cur_var%js + cysize - 1;
         cur_var%gsiz(1)   = gxsize
         cur_var%gsiz(2)   = gysize
-        if(thread_w == MPP_MULTI) then
+        io_domain => mpp_get_io_domain(array_domain(domain_idx))
+        if(associated(io_domain)) then
+           call mpp_get_global_domain( io_domain, xsize=cxsize, ysize=cysize,tile_count=tile_count)
+           cur_var%csiz(1)   = cxsize
+           cur_var%csiz(2)   = cysize
+        else if(thread_w == MPP_MULTI) then
            call mpp_get_compute_domain(array_domain(domain_idx), xsize=cxsize,ysize=cysize,tile_count=tile_count)
            cur_var%csiz(1)   = cxsize
            cur_var%csiz(2)   = cysize

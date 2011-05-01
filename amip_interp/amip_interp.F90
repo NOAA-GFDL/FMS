@@ -101,7 +101,7 @@ public i_sst, j_sst, sst_ncep, sst_anom, forecast_mode
 !  ---- version number -----
 
 character(len=128) :: version = '$Id: amip_interp.F90,v 18.0.4.1 2010/08/31 14:21:36 z1l Exp $'
-character(len=128) :: tagname = '$Name: riga_201012 $'
+character(len=128) :: tagname = '$Name: riga_201104 $'
 
    real, allocatable:: temp1(:,:), temp2(:,:)
 

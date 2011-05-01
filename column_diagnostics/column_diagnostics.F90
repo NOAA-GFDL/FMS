@@ -35,7 +35,7 @@ private
 
 
 character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 17.0.4.1 2010/08/31 14:21:41 z1l Exp $'
-character(len=128)  :: tag     =  '$Name: riga_201012 $'
+character(len=128)  :: tag     =  '$Name: riga_201104 $'
 
 
 

@@ -179,7 +179,7 @@ end interface
 !======================================================================
 
 character(len=128) :: version='$Id: time_manager.F90,v 18.0.4.1 2010/08/31 14:29:08 z1l Exp $'
-character(len=128) :: tagname='$Name: riga_201012 $'
+character(len=128) :: tagname='$Name: riga_201104 $'
 logical :: module_is_initialized = .false.
 
 !======================================================================

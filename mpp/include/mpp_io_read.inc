@@ -1,12 +1,16 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_read.inc,v 18.0.4.1.2.1.2.1 2010/09/03 00:19:13 fms Exp $
+! $Id: mpp_io_read.inc,v 18.0.4.1.2.1.2.1.6.1.2.1 2011/02/04 21:56:58 z1l Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
 !                               MPP_READ                               !
 !                                                                      !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+#ifndef MAXDIMVALS_
+#define MAXDIMVALS_ 1000000
+#endif
 
 #undef MPP_READ_2DDECOMP_2D_
 #define MPP_READ_2DDECOMP_2D_ mpp_read_2ddecomp_r2d
@@ -401,7 +405,7 @@
 ! every PE is eligible to call mpp_read_meta
 !
 !     integer, parameter :: MAX_DIMVALS = 100000
-      integer, parameter :: MAX_DIMVALS = 1000000
+      integer, parameter :: MAX_DIMVALS = MAXDIMVALS_
       integer, intent(in) :: unit
       
       integer         :: ncid,ndim,nvar_total,natt,recdim,nv,nvar,len
@@ -856,7 +860,7 @@
       integer, intent(in) :: unit
       type(fieldtype), intent(in) :: field
       type(fieldtype), intent(in), dimension(:) :: fields
-      real(DOUBLE_KIND) , intent(inout), dimension(:) :: tstamp, tstart, tend, tavg
+      real, intent(inout), dimension(:) :: tstamp, tstart, tend, tavg
 !balaji: added because mpp_read can only read default reals
 !      when running with -r4 this will read a default real and then cast double
       real :: t_default_real

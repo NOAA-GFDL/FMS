@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_util.inc,v 18.0.4.1.2.1 2010/08/03 18:55:18 z1l Exp $
+! $Id: mpp_domains_util.inc,v 18.0.4.1.2.1.2.1 2010/11/02 14:05:54 z1l Exp $
 
   ! <SUBROUTINE NAME="mpp_domains_set_stack_size">
   !  <OVERVIEW>
@@ -27,9 +27,13 @@
     if( n.LE.mpp_domains_stack_size )return
 #ifdef use_libSMA
     call mpp_malloc( ptr_domains_stack, n, mpp_domains_stack_size )
+    call mpp_malloc( ptr_domains_stack_nonblock, n, mpp_domains_stack_size )
 #else
     if( allocated(mpp_domains_stack) )deallocate(mpp_domains_stack)
     allocate( mpp_domains_stack(n) )
+    if( allocated(mpp_domains_stack_nonblock) )deallocate(mpp_domains_stack_nonblock)
+    allocate( mpp_domains_stack_nonblock(n) )
+
     mpp_domains_stack_size = n
 #endif
     write( text,'(i8)' )n

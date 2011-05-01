@@ -272,7 +272,7 @@ integer, public :: clock_flag_default
 !  ---- version number -----
 
   character(len=128) :: version = '$Id: fms.F90,v 17.0.8.1.2.1.2.1 2010/08/31 14:28:53 z1l Exp $'
-  character(len=128) :: tagname = '$Name: riga_201012 $'
+  character(len=128) :: tagname = '$Name: riga_201104 $'
 
   logical :: module_is_initialized = .FALSE.
 

@@ -20,7 +20,6 @@ MODULE diag_output_mod
   USE diag_data_mod, ONLY: diag_fieldtype, diag_global_att_type 
   USE time_manager_mod, ONLY: get_calendar_type, valid_calendar_types
   USE fms_mod, ONLY: error_mesg, mpp_pe, write_version_number, FATAL
-  USE platform_mod, ONLY: r8_kind
 
   IMPLICIT NONE
 
@@ -47,9 +46,9 @@ MODULE diag_output_mod
   LOGICAL :: module_is_initialized = .FALSE.
 
   CHARACTER(len=128), PRIVATE :: version= &
-       '$Id: diag_output.F90,v 17.0.8.2 2010/08/03 18:00:39 sdu Exp $'
+       '$Id: diag_output.F90,v 17.0.8.3 2011/01/25 17:10:50 sdu Exp $'
   CHARACTER(len=128), PRIVATE :: tagname= &
-       '$Name: riga_201012 $'
+       '$Name: riga_201104 $'
 
 CONTAINS
 
@@ -81,7 +80,6 @@ CONTAINS
     LOGICAL         , INTENT(in)  :: all_scalar_or_1d
     TYPE(domain2d)  , INTENT(in)  :: domain
 
-    ! real(KIND=r8_kind), dimension(1) :: tdata
     INTEGER :: form, threading, fileset
     TYPE(diag_global_att_type) :: gAtt
 
@@ -545,12 +543,12 @@ CONTAINS
   !   <IN NAME="file_unit" TYPE="INTEGER">Output file unit number</IN>
   !   <INOUT NAME="field" TYPE="TYPE(diag_fieldtype)"></INOUT>
   !   <INOUT NAME="data" TYPE="REAL, DIMENSIONS(:,:,:,:)"></INOUT>
-  !   <IN NAME="time" TYPE="REAL(KIND=r8_kind), OPTIONAL"></IN>
+  !   <IN NAME="time" TYPE="REAL, OPTIONAL"></IN>
   SUBROUTINE diag_field_out(file_unit, Field, DATA, time)
     INTEGER, INTENT(in) :: file_unit
     TYPE(diag_fieldtype), INTENT(inout) :: Field
     REAL , INTENT(inout) :: data(:,:,:,:)
-    REAL(KIND=r8_kind), OPTIONAL, INTENT(in) :: time
+    REAL, OPTIONAL, INTENT(in) :: time
 
     !---- replace original missing value with (un)packed missing value ----
     !print *, 'PE,name,miss_pack_present=',mpp_pe(), &

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util_sma.inc,v 18.0 2010/03/02 23:58:11 fms Exp $
+! $Id: mpp_util_sma.inc,v 18.0.6.1 2011/01/19 00:20:54 Zhi.Liang Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -131,9 +131,12 @@ end function get_peset
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-subroutine mpp_sync( pelist)
+subroutine mpp_sync( pelist, check, request)
   !synchronize PEs in list
   integer, intent(in), optional :: pelist(:)
+  integer, intent(in), optional :: check
+  integer, intent(in), optional :: request(:)
+
   integer :: n
 
   call mpp_sync_self(pelist)

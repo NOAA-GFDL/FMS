@@ -3,7 +3,7 @@
       type(fieldtype), intent(in) :: field
       type(domain2D), intent(inout) :: domain
       MPP_TYPE_, intent(inout) :: data(:,:)
-      real(DOUBLE_KIND), intent(in), optional :: tstamp
+      real,              intent(in), optional :: tstamp
       integer,           intent(in), optional :: tile_count
       MPP_TYPE_,         intent(in), optional :: default_data
 
@@ -21,7 +21,7 @@
       type(fieldtype),   intent(in)           :: field
       type(domain2D),    intent(inout)        :: domain 
       MPP_TYPE_,         intent(inout)        :: data(:,:,:)
-      real(DOUBLE_KIND), intent(in), optional :: tstamp
+      real,              intent(in), optional :: tstamp
       integer,           intent(in), optional :: tile_count
       MPP_TYPE_,         intent(in), optional :: default_data
 
@@ -131,7 +131,7 @@
       type(fieldtype),   intent(in)           :: field
       type(domain2D),    intent(inout)        :: domain 
       MPP_TYPE_,         intent(inout)        :: data(:,:,:,:)
-      real(DOUBLE_KIND), intent(in), optional :: tstamp
+      real,              intent(in), optional :: tstamp
       integer,           intent(in), optional :: tile_count
 
 !cdata is used to store compute domain as contiguous data

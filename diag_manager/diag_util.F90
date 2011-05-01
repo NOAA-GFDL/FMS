@@ -30,7 +30,7 @@ MODULE diag_util_mod
        & time_unit_list, max_files, base_year, base_month, base_day, base_hour, base_minute,&
        & base_second, num_files, max_files, max_fields_per_file, max_out_per_in_field,&
        & max_input_fields,num_input_fields, max_output_fields, num_output_fields, coord_type,&
-       & mix_snapshot_average_fields, global_descriptor, CMOR_MISSING_VALUE, use_cmor
+       & mix_snapshot_average_fields, global_descriptor, CMOR_MISSING_VALUE, use_cmor, pack_size
   USE diag_axis_mod, ONLY  : get_diag_axis_data, get_axis_global_length, get_diag_axis_cart,&
        & get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, get_axis_aux,&
        & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name
@@ -57,9 +57,9 @@ MODULE diag_util_mod
        & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size, sync_file_times
 
   CHARACTER(len=128),PRIVATE  :: version =&
-       & '$Id: diag_util.F90,v 18.0.2.5 2010/05/10 16:31:52 sdu Exp $'
+       & '$Id: diag_util.F90,v 18.0.2.6 2011/01/25 17:13:32 sdu Exp $'
   CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name: riga_201012 $'
+       & '$Name: riga_201104 $'
 
 CONTAINS
 
@@ -1792,14 +1792,14 @@ CONTAINS
        time_axis_id(1) = files(file)%time_axis_id
        files(file)%f_avg_start = write_field_meta_data(files(file)%file_unit,&
             & avg_name // '_T1', time_axis_id, time_units,&
-            & "Start time for average period", pack=1)
+            & "Start time for average period", pack=pack_size)
        files(file)%f_avg_end = write_field_meta_data(files(file)%file_unit,&
             & avg_name // '_T2', time_axis_id, time_units,&
-            & "End time for average period", pack=1)
+            & "End time for average period", pack=pack_size)
        files(file)%f_avg_nitems = write_field_meta_data(files(file)%file_unit,&
             & avg_name // '_DT', time_axis_id,&
             & TRIM(time_unit_list(files(file)%time_units)),& 
-            & "Length of average period", pack=1)
+            & "Length of average period", pack=pack_size)
     END IF
 
     IF ( time_ops ) THEN
@@ -1812,7 +1812,7 @@ CONTAINS
        files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
             & TRIM(time_name)//'_bounds', (/time_bounds_id,time_axis_id/),&
             & TRIM(time_unit_list(files(file)%time_units)),&
-            & TRIM(time_name)//' axis boundaries', pack=1)      
+            & TRIM(time_name)//' axis boundaries', pack=pack_size)      
     END IF
     ! Let lower levels know that all meta data has been sent
     CALL done_meta_data(files(file)%file_unit)

@@ -1,5 +1,5 @@
 ! -*-f90-*-
-! $Id: mpp_util_mpi.inc,v 18.0 2010/03/02 23:58:07 fms Exp $
+! $Id: mpp_util_mpi.inc,v 18.0.4.1.2.1 2011/01/19 00:20:54 Zhi.Liang Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -162,32 +162,37 @@ end subroutine mpp_sync
   !this is to check if current PE's outstanding puts are complete
   !but we can't use shmem_fence because we are actually waiting for
   !a remote PE to complete its get
-subroutine mpp_sync_self( pelist, check )
+subroutine mpp_sync_self( pelist, check, request )
   integer, intent(in), optional :: pelist(:)
   integer, intent(in), optional :: check
+  integer, intent(in), optional :: request(:)
 
   integer                       :: i, m, n, stride, my_check
 
-  n = get_peset(pelist)
-
   if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
 
-  my_check = EVENT_SEND
-  if(present(check)) my_check = check
-  select case(my_check)
-  case(EVENT_SEND)
-     do m = 1,peset(n)%count
-        i = peset(n)%list(m)
-        if( request(i).NE.MPI_REQUEST_NULL )call MPI_WAIT( request(i), stat, error )
-     end do
-  case(EVENT_RECV)
-     do m = 1,peset(n)%count
-        i = peset(n)%list(m)
-        if( request_recv(i).NE.MPI_REQUEST_NULL )call MPI_WAIT( request_recv(i), stat, error )
-     end do    
-  case default
-     call mpp_error( FATAL, 'mpp_sync_self: The value of optional argument check should be EVENT_SEND or EVENT_RECV')
-  end select 
+  if(PRESENT(request)) then
+     do m = 1, size(request(:))
+        if(request(m) .NE.MPI_REQUEST_NULL )call MPI_WAIT(request(m), stat, error )
+     enddo
+  else
+     my_check = EVENT_SEND
+     if(present(check)) my_check = check
+     select case(my_check)
+     case(EVENT_SEND)
+        do m = 1,cur_send_request
+           if( request_send(m).NE.MPI_REQUEST_NULL )call MPI_WAIT( request_send(m), stat, error )
+        end do
+        cur_send_request = 0
+     case(EVENT_RECV)
+        do m = 1,cur_recv_request
+           if( request_recv(m).NE.MPI_REQUEST_NULL )call MPI_WAIT( request_recv(m), stat, error )
+        end do    
+        cur_recv_request = 0
+     case default
+        call mpp_error( FATAL, 'mpp_sync_self: The value of optional argument check should be EVENT_SEND or EVENT_RECV')
+     end select 
+  endif
   if( current_clock.NE.0 )call increment_current_clock(EVENT_WAIT)
   return
 end subroutine mpp_sync_self

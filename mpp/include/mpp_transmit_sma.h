@@ -4,7 +4,7 @@
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    subroutine MPP_TRANSMIT_( put_data, put_len, to_pe, get_data, get_len, from_pe, block )
+    subroutine MPP_TRANSMIT_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, recv_request )
 !a message-passing routine intended to be reminiscent equally of both MPI and SHMEM
 
 !put_data and get_data are contiguous MPP_TYPE_ arrays
@@ -27,6 +27,9 @@
       MPP_TYPE_, intent(in)  :: put_data(*)
       MPP_TYPE_, intent(out) :: get_data(*)
       logical, intent(in), optional :: block
+      integer, intent(in), optional :: tag
+      integer, intent(in), optional :: recv_request
+
 #include <mpp/shmem.fh>
       external shmem_ptr
 

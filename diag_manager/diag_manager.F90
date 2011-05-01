@@ -164,26 +164,24 @@ MODULE diag_manager_mod
   !   </DATA>
   ! </NAMELIST>
 
-  USE time_manager_mod, ONLY: set_time, set_date, OPERATOR(>=), OPERATOR(>), OPERATOR(<),&
-       & OPERATOR(==), OPERATOR(/=), time_type, month_name, get_calendar_type, NO_CALENDAR,&
-       & OPERATOR(/), OPERATOR(+), get_time
-  USE mpp_io_mod, ONLY: mpp_open, MPP_RDONLY, MPP_ASCII, mpp_close, mpp_get_field_name
-  USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdlog, write_version_number,&
-       & file_exist, mpp_pe, check_nml_error, lowercase, stdout, mpp_error,&
-       & fms_error_handler
+  USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
+       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+)
+  USE mpp_io_mod, ONLY: mpp_open, mpp_close
+  USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
+
 #ifdef INTERNAL_FILE_NML
   USE mpp_mod, ONLY: input_nml_file
 #else
   USE fms_mod, ONLY: open_namelist_file, close_file
 #endif
 
-  USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_sum, mpp_chksum, stdout
+  USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
+       & file_exist, fms_error_handler
   USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, max_axes, get_axis_num
   USE diag_util_mod, ONLY: get_subfield_size, log_diag_field_info, update_bounds,&
        & check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
-       & init_file, diag_time_inc, find_input_field, init_input_field, init_output_field,&
-       & diag_data_out, write_static, check_duplicate_output_fields, get_date_dif,&
-       & get_subfield_vert_size, sync_file_times
+       & diag_time_inc, find_input_field, init_input_field, init_output_field,&
+       & diag_data_out, write_static, get_date_dif, get_subfield_vert_size, sync_file_times
   USE diag_data_mod, ONLY: max_files, CMOR_MISSING_VALUE, DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, EVERY_TIME,&
        & END_OF_RUN, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, num_files,&
        & max_input_fields, max_output_fields, num_output_fields, EMPTY, FILL_VALUE, null_axis_id,&
@@ -191,8 +189,8 @@ MODULE diag_manager_mod
        & base_hour, base_minute, base_second, global_descriptor, coord_type, files, input_fields,&
        & output_fields, Time_zero, append_pelist_name, mix_snapshot_average_fields,&
        & first_send_data_call, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
-       & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
-       & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, filename_appendix
+       & diag_log_unit, time_unit_list, pelist_name, module_is_initialized, max_num_axis_sets,&
+       & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, filename_appendix, pack_size
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
@@ -213,9 +211,9 @@ MODULE diag_manager_mod
 
   ! version number of this module
   CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id: diag_manager.F90,v 18.0.2.17.2.1 2010/09/02 20:13:30 sdu Exp $'
+       & '$Id: diag_manager.F90,v 18.0.2.23 2011/02/10 15:02:47 sdu Exp $'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: riga_201012 $'  
+       & '$Name: riga_201104 $'  
 
   type(time_type) :: Time_end
 
@@ -2252,8 +2250,13 @@ CONTAINS
     logical            :: local_output, need_compute
     CHARACTER(len=128) :: error_string
 
-    IF(Time_end == Time_zero) CALL mpp_error(FATAL, "diag_manager_mod(diag_send_complete): "//&
-              & "diag_manager_set_time_end must be called before calling diag_send_complete")
+    IF ( Time_end == Time_zero ) THEN
+       ! <ERROR STATUS="FATAL">
+       !   diag_manager_set_time_end must be called before diag_send_complete
+       ! </ERROR>
+       CALL error_mesg('diag_manager_mod::diag_send_complete',&
+            & "diag_manager_set_time_end must be called before diag_send_complete", FATAL)
+    END IF
 
     DO file = 1, num_files
        freq = files(file)%output_freq
@@ -2424,11 +2427,15 @@ CONTAINS
     INTEGER, OPTIONAL, INTENT(IN) :: diag_model_subset
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
-    REAL(kind=FLOAT_KIND) :: foo
+    INTEGER, PARAMETER :: FltKind = FLOAT_KIND
+    INTEGER, PARAMETER :: DblKind = DOUBLE_KIND
     INTEGER :: diag_subset_output
-    INTEGER :: mystat, iunit
+    INTEGER :: mystat
     INTEGER, ALLOCATABLE, DIMENSION(:) :: pelist
     INTEGER :: stdlog_unit, stdout_unit
+#ifndef INTERNAL_FILE_NML
+    INTEGER :: nml_unit
+#endif
     CHARACTER(len=256) :: err_msg_local
 
     NAMELIST /diag_manager_nml/ append_pelist_name, mix_snapshot_average_fields, max_output_fields, &
@@ -2442,7 +2449,14 @@ CONTAINS
     ! Clear the err_msg variable if contains any residual information
     IF ( PRESENT(err_msg) ) err_msg = ''
 
-    min_value = HUGE(foo)
+    ! Determine pack_size from how many bytes a real value has (how compiled)
+    pack_size = SIZE(TRANSFER(0.0_DblKind, (/0.0, 0.0, 0.0, 0.0/)))
+    IF ( pack_size.NE.1 .AND. pack_size.NE.2 ) THEN
+       IF ( fms_error_handler('diag_manager_mod::diag_manager_init', 'unknown pack_size.  Must be 1, or 2.', err_msg) ) RETURN
+    END IF
+
+    ! Get min and max values for real(kind=FLOAT_KIND)
+    min_value = HUGE(0.0_FltKind)
     max_value = -min_value
 
     ! get stdlog and stdout unit number
@@ -2468,14 +2482,19 @@ CONTAINS
     READ (input_nml_file, NML=diag_manager_nml, IOSTAT=mystat)
 #else
     IF ( file_exist('input.nml') ) THEN
-       iunit = open_namelist_file()
-       READ (iunit, diag_manager_nml, iostat=mystat)
-       CALL close_file(iunit)
+       nml_unit = open_namelist_file()
+       READ (nml_unit, diag_manager_nml, iostat=mystat)
+       CALL close_file(nml_unit)
+    ELSE
+       ! Set mystat to an arbitrary positive number if input.nml does not exist.
+       mystat = 100
     END IF
 #endif
+    ! Check the status of reading the diag_manager_nml
     IF ( mystat > 0 ) THEN
        IF ( fms_error_handler('diag_manager_init', 'Error reading diag_manager_nml', err_msg) ) RETURN
     END IF
+
     IF ( mpp_pe() == mpp_root_pe() ) THEN 
        WRITE (stdlog_unit, diag_manager_nml)
     END IF
@@ -2498,9 +2517,12 @@ CONTAINS
     END IF
 
     IF ( mix_snapshot_average_fields ) THEN
-       IF ( mpp_pe() == mpp_root_pe() ) CALL mpp_error(WARNING,'Namelist '//&
-            & 'mix_snapshot_average_fields = .TRUE. will cause ERROR in time coordinates '//&
-            & 'of all time_averaged fields. Strongly recommend mix_snapshot_average_fields = .FALSE.')
+       IF ( mpp_pe() == mpp_root_pe() ) THEN 
+          CALL error_mesg('diag_manager_mod::diag_manager_init', 'Setting diag_manager_nml variable '//&
+               & 'mix_snapshot_average_fields = .TRUE. will cause ERRORS in the time coordinates '//&
+               & 'of all time averaged fields.  Strongly recommend setting mix_snapshot_average_fields '//&
+               & '= .FALSE.', WARNING)
+       END IF
     END IF
     ALLOCATE(output_fields(max_output_fields))
     ALLOCATE(input_fields(max_input_fields))
@@ -2902,12 +2924,12 @@ PROGRAM test
   USE mpp_mod, ONLY: mpp_pe, mpp_error, FATAL
   USE mpp_domains_mod, ONLY: domain2d, mpp_define_domains, mpp_get_compute_domain
   USE mpp_domains_mod, ONLY: mpp_define_io_domain, mpp_define_layout
-  USE fms_mod, ONLY: fms_init, fms_end, mpp_npes, file_exist, check_nml_error, open_file
+  USE fms_mod, ONLY: fms_init, fms_end, mpp_npes, file_exist, check_nml_error, close_file, open_file
   USE fms_mod, ONLY: error_mesg, FATAL, stdlog
 #ifdef INTERNAL_FILE_NML
   USE mpp_mod, ONLY: input_nml_file
 #else
-  USE fms_mod, ONLY:  open_namelist_file, close_file
+  USE fms_mod, ONLY:  open_namelist_file, 
 #endif
   USE fms_io_mod, ONLY: fms_io_exit
   USE constants_mod, ONLY: constants_init, PI, RAD_TO_DEG

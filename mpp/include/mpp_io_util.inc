@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_util.inc,v 18.0 2010/03/02 23:57:42 fms Exp $
+! $Id: mpp_io_util.inc,v 18.0.8.1 2011/01/03 16:38:34 z1l Exp $
 
 
   !#####################################################################
@@ -259,7 +259,7 @@
 !  copy time information from file and convert to time_type
 !
       integer, intent(in) :: unit
-      real(DOUBLE_KIND), intent(inout) :: time_values(:)
+      real, intent(inout) :: time_values(:)
 
       integer :: ntime,i
 

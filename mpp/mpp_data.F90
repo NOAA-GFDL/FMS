@@ -13,7 +13,7 @@ module mpp_data_mod
   character(len=128), public :: version= &
        '$Id mpp_data.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: riga_201012 $'
+       '$Name: riga_201104 $'
 
 #if defined(use_libSMA) || defined(use_MPI_SMA)
 #include <mpp/shmem.fh>
@@ -31,6 +31,7 @@ module mpp_data_mod
   !--- public data which is used by mpp_domains_mod. 
   !--- All othere modules should import these parameters from mpp_domains_mod. 
   public :: mpp_domains_stack, ptr_domains_stack
+  public :: mpp_domains_stack_nonblock, ptr_domains_stack_nonblock
 
   !-------------------------------------------------------------------------------!
   ! The following data included in the .inc file are diffrent for sma or mpi case !

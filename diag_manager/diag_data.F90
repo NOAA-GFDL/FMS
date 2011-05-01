@@ -511,9 +511,9 @@ MODULE diag_data_mod
   
   ! Private CHARACTER Arrays for the CVS version and tagname.
   CHARACTER(len=128),PRIVATE  :: version =&
-       & '$Id: diag_data.F90,v 18.0.2.8 2010/04/06 16:51:06 sdu Exp $'
+       & '$Id: diag_data.F90,v 18.0.2.9 2011/01/25 16:27:54 sdu Exp $'
   CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name: riga_201012 $'
+       & '$Name: riga_201104 $'
 
   ! <!-- Other public variables -->
   ! <DATA NAME="num_files" TYPE="INTEGER" DEFAULT="0">
@@ -585,6 +585,8 @@ MODULE diag_data_mod
 #else
   REAL :: FILL_VALUE = 9.9692099683868690e+36 
 #endif
+
+  INTEGER :: pack_size = 1 ! 1 for double and 2 for float
 
   ! <!-- REAL public variables -->
   ! <DATA NAME="EMPTY" TYPE="REAL" DEFAULT="0.0" />

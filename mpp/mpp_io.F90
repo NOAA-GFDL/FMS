@@ -816,11 +816,12 @@ type :: atttype
   type(atttype),save             :: default_att       !provided to users with default components
   type(filetype), allocatable    :: mpp_file(:)
 
+  integer :: pack_size ! = 1 when compiling with -r8 and = 2 when compiling with -r4.
 
   character(len=128) :: version= &
-       '$Id: mpp_io.F90,v 16.0.8.2.2.2.4.1.6.1.2.1.6.2.2.1 2010/08/04 13:10:12 z1l Exp $'
+       '$Id: mpp_io.F90,v 16.0.8.2.2.2.4.1.6.1.2.1.6.2.2.1.4.1 2011/01/03 15:38:07 z1l Exp $'
   character(len=128) :: tagname= &
-       '$Name: riga_201012 $'
+       '$Name: riga_201104 $'
 
 contains
 

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_mpi.inc,v 18.0.2.3.4.1.2.5 2010/08/04 17:19:27 z1l Exp $
+! $Id: mpp_comm_mpi.inc,v 18.0.2.3.4.1.2.5.4.5 2011/02/23 14:04:13 z1l Exp $
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -35,11 +35,6 @@
   call SHPALLOC( p_pSync, SHMEM_BARRIER_SYNC_SIZE, error, -1 )
   call SHMEM_BARRIER_ALL()
 #endif
-
-  allocate( request(0:npes-1) )
-  allocate( request_recv(0:npes-1) )
-  request(:) = MPI_REQUEST_NULL
-  request_recv(:) = MPI_REQUEST_NULL
 
   module_is_initialized = .TRUE.
 
@@ -106,6 +101,15 @@
         open( unit=etc_unit, file=trim(etcfile) )
      endif
   endif
+
+! max_request is set to maximum of npes * REQUEST_MULTIPLY ( default is 20) and MAX_REQUEST_MIN ( default 10000)
+  max_request = max(MAX_REQUEST_MIN, mpp_npes()*REQUEST_MULTIPLY)
+
+  allocate( request_send(max_request) )
+  allocate( request_recv(max_request) )
+  request_send(:) = MPI_REQUEST_NULL
+  request_recv(:) = MPI_REQUEST_NULL
+
   !if optional argument logunit=stdout, write messages to stdout instead.
   !if specifying non-defaults, you must specify units not yet in use.
   !      if( PRESENT(in) )then
@@ -177,6 +181,10 @@ subroutine mpp_exit()
      if( ANY(clocks(1:clock_num)%detailed) )then
         call sum_clock_data; call dump_clock_summary
      end if
+
+     call mpp_sync()
+     call FLUSH( out_unit )
+
      if( pe.EQ.root_pe )then
         write( out_unit,'(/a,i6,a)' ) 'Tabulating mpp_clock statistics across ', npes, ' PEs...'
         if( ANY(clocks(1:clock_num)%detailed) ) &
@@ -213,6 +221,7 @@ subroutine mpp_exit()
         if( .NOT.clocks(i)%detailed )cycle
         if( .NOT.ANY(peset(clocks(i)%peset_num)%list(:).EQ.pe) )cycle
         call mpp_set_current_pelist( peset(clocks(i)%peset_num)%list )
+        out_unit = stdout()
         do j = 1,MAX_EVENT_TYPES
            n = clocks(i)%events(j)%calls; nmax = n
            call mpp_max(nmax)
@@ -236,7 +245,10 @@ subroutine mpp_exit()
            end if
         end do
      end do
+
   end if
+
+  call FLUSH( out_unit )
 
 ! close down etc_unit: 9
   inquire(unit=etc_unit, opened=opened)
@@ -374,7 +386,7 @@ end subroutine mpp_gsm_free
          endif
       enddo
       lptr = LOC (data)
-      if( mpp_npes().GT.1 ) call MPI_BCAST( data, length*size(data(:)), MPI_CHAR, from_rank, peset(n)%id, error )
+      if( mpp_npes().GT.1 ) call MPI_BCAST( data, length*size(data(:)), MPI_CHARACTER, from_rank, peset(n)%id, error )
       if( current_clock.NE.0 )call increment_current_clock( EVENT_BROADCAST, length )
       return
     end subroutine mpp_broadcast_char
