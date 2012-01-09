@@ -23,17 +23,17 @@
 
 !caller is responsible for completion checks (mpp_sync_self) before and after
 
-      integer, intent(in) :: put_len, to_pe, get_len, from_pe
-      MPP_TYPE_, intent(in)  :: put_data(*)
-      MPP_TYPE_, intent(out) :: get_data(*)
-      logical, intent(in), optional :: block
-      integer, intent(in), optional :: tag
-      integer, intent(in), optional :: recv_request
+      integer,            intent(in) :: put_len, to_pe, get_len, from_pe
+      MPP_TYPE_,         intent(in)  :: put_data(*)
+      MPP_TYPE_,         intent(out) :: get_data(*)
+      logical, intent(in),  optional :: block
+      integer, intent(in),  optional :: tag
+      integer, intent(out), optional :: recv_request
 
 #include <mpp/shmem.fh>
       external shmem_ptr
 
-      integer :: i, outunit
+      integer :: i, outunit, errunit
       integer :: np
       integer(LONG_KIND) :: data_loc
 !pointer to remote data
@@ -48,6 +48,7 @@
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_TRANSMIT: You must first call mpp_init.' )
       if( to_pe.EQ.NULL_PE .AND. from_pe.EQ.NULL_PE )return
       
+      errunit = stderr()
       outunit = stdout()
       if( debug )then
           call SYSTEM_CLOCK(tick)
@@ -106,7 +107,7 @@
           call SHMEM_UDCFLUSH !invalidate data cache
 #endif
           if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
-          if( debug )write( stderr(),* )'pe, from_pe, remote_data_loc(from_pe)=', pe, from_pe, remote_data_loc(from_pe)
+          if( debug )write( errunit,* )'pe, from_pe, remote_data_loc(from_pe)=', pe, from_pe, remote_data_loc(from_pe)
           call SHMEM_INT8_WAIT( remote_data_loc(from_pe), MPP_WAIT )
           if( current_clock.NE.0 )call increment_current_clock(EVENT_WAIT)
           ptr_remote_data = remote_data_loc(from_pe)

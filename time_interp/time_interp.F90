@@ -195,8 +195,8 @@ integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
    integer :: yrmod, momod, dymod
    logical :: mod_leapyear
 
-   character(len=128) :: version='$Id: time_interp.F90,v 18.0.4.1 2010/08/31 14:29:06 z1l Exp $'
-   character(len=128) :: tagname='$Name: riga_201104 $'
+   character(len=128) :: version='$Id: time_interp.F90,v 19.0 2012/01/06 22:06:06 fms Exp $'
+   character(len=128) :: tagname='$Name: siena $'
 
    logical :: module_is_initialized=.FALSE.
    logical :: perthlike_behavior=.FALSE.
@@ -447,11 +447,12 @@ contains
 ! </SUBROUTINE>
 
 subroutine time_interp_modulo(Time, Time_beg, Time_end, Timelist, weight, index1, index2, &
-                              correct_leap_year_inconsistency)
+                              correct_leap_year_inconsistency, err_msg)
 type(time_type), intent(in)  :: Time, Time_beg, Time_end, Timelist(:)
 real           , intent(out) :: weight
 integer        , intent(out) :: index1, index2
 logical, intent(in), optional :: correct_leap_year_inconsistency
+character(len=*), intent(out), optional :: err_msg
   
   type(time_type) :: Period, T
   integer :: is, ie,i1,i2
@@ -464,11 +465,18 @@ logical, intent(in), optional :: correct_leap_year_inconsistency
   logical :: correct_lyr, calendar_has_leap_years, do_the_lyr_correction
 
   if ( .not. module_is_initialized ) call time_interp_init
+  if( present(err_msg) ) err_msg = ''
+
   stdoutunit = stdout()
   n = size(Timelist)
   
   if (Time_beg>=Time_end) then
-     call error_handler("end of the specified time loop interval must be later than its beginning")
+     if(present(err_msg)) then
+        err_msg = "end of the specified time loop interval must be later than its beginning"
+        return
+     else
+        call error_handler("end of the specified time loop interval must be later than its beginning")
+     endif
   endif
 
   calendar_has_leap_years = (get_calendar_type() == JULIAN .or. get_calendar_type() == GREGORIAN)
@@ -539,7 +547,12 @@ logical, intent(in), optional :: correct_leap_year_inconsistency
        call print_date(Timelist(n), 'Timelist(n)' )
      endif
      write(stdoutunit,*)'where n = size(Timelist) =',n
-     call error_handler('the entire time list is outside the specified time loop interval')
+     if(present(err_msg)) then
+        err_msg = 'the entire time list is outside the specified time loop interval'
+        return
+     else
+        call error_handler('the entire time list is outside the specified time loop interval')
+     endif
   endif
   
   call bisect(Timelist,Time_beg,index1=i1,index2=i2)
@@ -579,7 +592,12 @@ logical, intent(in), optional :: correct_leap_year_inconsistency
      endif
      write(stdoutunit,*)'where n = size(Timelist) =',n
      write(stdoutunit,*)'is =',is,'ie =',ie
-     call error_handler('error in calculation of time list bounds within the specified time loop interval')
+     if(present(err_msg)) then
+        err_msg = 'error in calculation of time list bounds within the specified time loop interval'
+        return
+     else
+        call error_handler('error in calculation of time list bounds within the specified time loop interval')
+     endif
   endif
   
   ! handle special cases:
@@ -645,16 +663,19 @@ end subroutine bisect
 !   <IN NAME="modtime" TYPE="integer" > </IN>
 ! </SUBROUTINE>
 
-subroutine time_interp_list ( Time, Timelist, weight, index1, index2, modtime )
+subroutine time_interp_list ( Time, Timelist, weight, index1, index2, modtime, err_msg )
 type(time_type)  , intent(in)  :: Time, Timelist(:)
 real             , intent(out) :: weight
 integer          , intent(out) :: index1, index2
 integer, optional, intent(in)  :: modtime
+character(len=*), intent(out), optional :: err_msg
 
 integer :: n, hr, mn, se, mtime
 type(time_type) :: T, Ts, Te, Td, Period, Time_mod
 
   if ( .not. module_is_initialized ) call time_interp_init
+
+  if( present(err_msg) ) err_msg = ''
 
   weight = 0.; index1 = 0; index2 = 0
   n = size(Timelist(:))
@@ -676,8 +697,14 @@ type(time_type) :: T, Ts, Te, Td, Period, Time_mod
          Period = set_time(0,days_in_year(Time_mod))
      case (MONTH)
        ! month length must be equal
-         if (days_in_month(Time_mod) /= days_in_month(Time)) &
-         call error_handler ('modulo months must have same length')
+         if (days_in_month(Time_mod) /= days_in_month(Time)) then
+            if(present(err_msg)) then
+               err_msg = 'modulo months must have same length'
+               return
+            else
+               call error_handler ('modulo months must have same length')
+            endif
+         endif 
          Period = set_time(0,days_in_month(Time_mod))
      case (DAY)
          Period = set_time(0,1)
@@ -702,7 +729,14 @@ type(time_type) :: T, Ts, Te, Td, Period, Time_mod
 
 ! Check that Timelist does not span a time interval greater than the modulo period
   if (mtime /= NONE) then
-     if (Td > Period) call error_handler ('period of list exceeds modulo period')
+     if (Td > Period) then
+        if(present(err_msg)) then
+           err_msg = 'period of list exceeds modulo period'
+           return
+        else
+           call error_handler ('period of list exceeds modulo period')
+        endif
+     endif
   endif
 
 ! time falls on start or between start and end list values
@@ -712,7 +746,14 @@ type(time_type) :: T, Ts, Te, Td, Period, Time_mod
 
 ! time falls before starting list value
   else if ( T < Ts ) then
-     if (mtime == NONE) call error_handler ('time before range of list')
+     if (mtime == NONE) then
+        if(present(err_msg)) then
+           err_msg = 'time before range of list'
+           return
+        else
+           call error_handler ('time before range of list')
+        endif
+     endif
      Td = Te-Ts
      weight = 1. - ((Ts-T) // (Period-Td))
      index1 = n
@@ -736,7 +777,14 @@ type(time_type) :: T, Ts, Te, Td, Period, Time_mod
 
 ! time falls after ending list value
   else if ( T > Te ) then
-     if (mtime == NONE) call error_handler ('time after range of list')
+     if (mtime == NONE) then
+        if(present(err_msg)) then
+           err_msg = 'time after range of list'
+           return
+        else
+           call error_handler ('time after range of list')
+        endif
+     endif
      Td = Te-Ts
      weight = (T-Te) // (Period-Td)
      index1 = n

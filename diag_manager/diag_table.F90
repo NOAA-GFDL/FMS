@@ -211,6 +211,7 @@ MODULE diag_table_mod
   !   A simple utility has been created to help discover
   ! </DESCRIPTION>
   USE mpp_io_mod, ONLY: mpp_open, MPP_RDONLY
+  USE mpp_mod, ONLY: read_ascii_file
   USE fms_mod, ONLY: fms_error_handler, error_mesg, file_exist, stdlog, mpp_pe, mpp_root_pe, FATAL, WARNING, lowercase, close_file
   USE time_manager_mod, ONLY: get_calendar_type, NO_CALENDAR, set_date, set_time, month_name, time_type
   USE constants_mod, ONLY: SECONDS_PER_HOUR, SECONDS_PER_MINUTE
@@ -332,9 +333,11 @@ CONTAINS
     INTEGER, INTENT(out), OPTIONAL, TARGET :: istat
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
-    INTEGER :: iunit !< The Fortran file unit number of the diag_table.
+    INTEGER, PARAMETER :: DT_LINE_LENGTH = 256
+
     INTEGER :: stdlog_unit !< Fortran file unit number for the stdlog file.
     INTEGER :: record_len !< String length of the diag_table line read in.
+    INTEGER :: num_lines !< Number of lines in diag_table
     INTEGER :: line_num !< Integer representation of the line number.
     INTEGER :: commentStart !< Index location of first '#' on line
     INTEGER :: diag_subset_output !< local value of diag_subset
@@ -345,8 +348,8 @@ CONTAINS
     CHARACTER(len=5) :: line_number !< String representation of the line number.
     CHARACTER(len=9) :: amonth !< Month name
     CHARACTER(len=256) :: record_line !< Current line from the diag_table.
-    CHARACTER(len=256) :: record_first !< Holds the first non-blank line after the global descriptor and the base date.
     CHARACTER(len=256) :: local_err_msg !< Sting to hold local error messages.
+    CHARACTER(len=DT_LINE_LENGTH), DIMENSION(:), ALLOCATABLE :: diag_table
 
     TYPE(file_description_type) :: temp_file
     TYPE(field_description_type) :: temp_field
@@ -369,14 +372,10 @@ CONTAINS
     ! get the stdlog unit number
     stdlog_unit = stdlog()
 
-    CALL open_diag_table(iunit, IOSTAT=mystat, ERR_MSG=local_err_msg)
-    IF ( mystat /= 0 ) THEN
-       pstat = mystat
-       IF ( fms_error_handler('diag_table_mod::parse_diag_table', TRIM(local_err_msg), err_msg) ) RETURN
-    END IF
+    call read_ascii_file('diag_table', DT_LINE_LENGTH, diag_table, num_lines)
     
     ! Read in the global file labeling string
-    READ (UNIT=iunit, FMT=*, IOSTAT=mystat) global_descriptor
+    READ (UNIT=diag_table(1), FMT=*, IOSTAT=mystat) global_descriptor
     IF ( mystat /= 0 ) THEN
        pstat = mystat
        IF ( fms_error_handler('diag_table_mod::parse_diag_table', 'Error reading the global descriptor from the diagnostic table.',&
@@ -384,7 +383,7 @@ CONTAINS
     END IF
     
     ! Read in the base date
-    READ (UNIT=iunit, FMT=*, IOSTAT=mystat) base_year, base_month, base_day, base_hour, base_minute, base_second
+    READ (UNIT=diag_table(2), FMT=*, IOSTAT=mystat) base_year, base_month, base_day, base_hour, base_minute, base_second
     IF ( mystat /= 0 ) THEN
        pstat = mystat
        IF ( fms_error_handler('diag_manager_init', 'Error reading the base date from the diagnostic table.', err_msg) ) RETURN
@@ -411,61 +410,14 @@ CONTAINS
             & base_hour, base_minute, base_second
     END IF
 
-
-    ! Begin the line counter.
-    ! Since Fortran doesn't have a simple way to keep track of line numbers, we need to
-    !   1) find the next non-blank line.
-    !   2) rewind the file.
-    !   3) search, while counting lines, for the same line found in (1), and
-    !   4) backspace one line (since it may be a file description line) and then continue the file parsing.
-    record_len = 0
-    DO WHILE ( record_len == 0 )
-       ! Find the next non-blank line.
-       ! Ignoring IOSTAT.  Using it only to keep program from terminating.
-       READ (UNIT=iunit, FMT='(A)', IOSTAT=mystat) record_first
-       IF ( mystat == 0 ) THEN 
-          record_len = LEN_TRIM(record_first)
-       ELSE 
-          IF ( mpp_pe() == mpp_root_pe() ) THEN
-             CALL error_mesg("diag_table_mod::parse_diag_table",&
-                  & "Problem reading diag_table, line numbers in errors may be incorrect.", WARNING)
-          END IF
-          EXIT
-       END IF
-    END DO
-    
-    REWIND(iunit)
-
-    ! Start line counter and look for matching line.
-    line_num = 0
-    record_line = ''
-    DO WHILE ( record_line /= record_first )
-       READ (UNIT=iunit, FMT='(A)', IOSTAT=mystat) record_line
-       IF ( mystat == 0 ) THEN 
-          line_num = line_num + 1
-       ELSE 
-          IF ( mpp_pe() == mpp_root_pe() ) THEN
-             CALL error_mesg("diag_table_mod::parse_diag_table",&
-                  & "Problem reading diag_table, line numbers in errors may be incorrect.", WARNING)
-          END IF
-          EXIT
-       END IF
-    END DO
-
-    ! Found matching line.  Backspace since this may actually be a file
-    ! description line.  Also, count back one.
-    BACKSPACE(iunit)
-    line_num = line_num - 1
-
     nfiles=0
     nfields=0
-    parser: DO WHILE ( mystat >= 0 )
+    parser: DO line_num=3, num_lines
        ! Read in the entire line from the file.
        ! If there is a read error, give a warning, and
        ! cycle the parser loop.
-       READ (iunit, FMT='(A)', IOSTAT=mystat) record_line
+       READ (diag_table(line_num), FMT='(A)', IOSTAT=mystat) record_line
        ! Increase line counter, and put in string for use in warning/error messages.
-       line_num = line_num + 1
        WRITE (line_number, '(I5)') line_num
 
        IF ( mystat > 0 ) THEN
@@ -541,7 +493,7 @@ CONTAINS
     END DO parser
 
     ! Close the diag_table file.
-    CALL close_diag_table(iunit)
+    deallocate(diag_table)
 
     ! check duplicate output_fields in the diag_table
     CALL check_duplicate_output_fields(ERR_MSG=local_err_msg)

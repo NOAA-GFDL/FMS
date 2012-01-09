@@ -26,27 +26,38 @@
 !receive domains saved here for unpacking
 !for non-blocking version, could be recomputed
       integer,    allocatable :: msg1(:), msg2(:)
-      logical :: send(8), recv(8)
+      logical :: send(8), recv(8), update_edge_only
       integer :: to_pe, from_pe, pos, msgsize
       integer :: n, l_size, l, m, i, j, k
       integer :: is, ie, js, je, tMe, dir
       integer :: start, start1, start2, index, is1, ie1, js1, je1, ni, nj, total
-      integer :: buffer_recv_size, nlist
+      integer :: buffer_recv_size, nlist, outunit
 
+      outunit = stdout()
       ptr = LOC(mpp_domains_stack)
       l_size = size(f_addrs,1)
 
       update_flags = XUPDATE+YUPDATE   !default
       if( PRESENT(flags) )update_flags = flags
 
+      update_edge_only = BTEST(update_flags, EDGEONLY)
       recv(1) = BTEST(update_flags,EAST)
       recv(3) = BTEST(update_flags,SOUTH)
       recv(5) = BTEST(update_flags,WEST)
       recv(7) = BTEST(update_flags,NORTH)
-      recv(2) = recv(1) .AND. recv(3)
-      recv(4) = recv(3) .AND. recv(5)
-      recv(6) = recv(5) .AND. recv(7)
-      recv(8) = recv(7) .AND. recv(1)
+      if( update_edge_only ) then
+         if( .NOT. (recv(1) .OR. recv(3) .OR. recv(5) .OR. recv(7)) ) then
+            recv(1) = .true.
+            recv(3) = .true.
+            recv(5) = .true.
+            recv(7) = .true.
+         endif
+      else
+         recv(2) = recv(1) .AND. recv(3)
+         recv(4) = recv(3) .AND. recv(5)
+         recv(6) = recv(5) .AND. recv(7)
+         recv(8) = recv(7) .AND. recv(1)
+      endif
       send    = recv
 
       if(debug_message_passing) then
@@ -94,7 +105,7 @@
             endif
          enddo
          call mpp_sync_self()
-         write(stdout(),*)"NOTE from mpp_do_update: message sizes are matched between send and recv for domain " &
+         write(outunit,*)"NOTE from mpp_do_update: message sizes are matched between send and recv for domain " &
                           //trim(domain%name)
          deallocate(msg1, msg2)
       endif

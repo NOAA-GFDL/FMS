@@ -1,16 +1,12 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_read.inc,v 18.0.4.1.2.1.2.1.6.1.2.1 2011/02/04 21:56:58 z1l Exp $
+! $Id: mpp_io_read.inc,v 19.0 2012/01/06 22:03:24 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
 !                               MPP_READ                               !
 !                                                                      !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-#ifndef MAXDIMVALS_
-#define MAXDIMVALS_ 1000000
-#endif
 
 #undef MPP_READ_2DDECOMP_2D_
 #define MPP_READ_2DDECOMP_2D_ mpp_read_2ddecomp_r2d
@@ -189,7 +185,7 @@
           start = 1
           do i = 1,size(field%axes(:))
              axsiz(i) = field%size(i)
-             if( field%axes(i)%did.EQ.field%time_axis_index )start(i) = tlevel
+             if( field%axes(i)%did.EQ.field%time_axis_index .AND. field%time_axis_index >0 )start(i) = tlevel
 
           end do
           if( PRESENT(domain) )then
@@ -300,6 +296,28 @@
 
     end subroutine mpp_read_region_r2D
 
+    subroutine mpp_read_region_r3D(unit, field, data, start, nread)
+      integer,         intent(in) :: unit
+      type(fieldtype), intent(in) :: field
+      real,         intent(inout) :: data(:,:,:)
+      integer,         intent(in) :: start(:), nread(:)
+
+      if(size(start(:)) .NE. 4 .OR. size(nread(:)) .NE. 4) call mpp_error(FATAL, &
+          "mpp_io_read.inc(mpp_read_region_r2D): size of start and nread must be 4")
+
+      if(size(data,1) .NE. nread(1) .OR. size(data,2) .NE. nread(2) .OR. size(data,3) .NE. nread(3) ) then
+         call mpp_error( FATAL, 'mpp_io_read.inc(mpp_read_block_r3D): size mismatch between data and nread')
+      endif
+      if(nread(4) .NE. 1) call mpp_error(FATAL, &
+          "mpp_io_read.inc(mpp_read_region_r3D): nread(4) must be 1")
+      call read_record_core(unit, field, nread(1)*nread(2)*nread(3), data, start, nread)
+
+      return
+
+
+    end subroutine mpp_read_region_r3D
+
+
     !--- Assume the text field is at most two-dimensional 
     !--- the level is always for the first dimension
     subroutine mpp_read_text( unit, field, data, level )
@@ -404,27 +422,19 @@
 !
 ! every PE is eligible to call mpp_read_meta
 !
-!     integer, parameter :: MAX_DIMVALS = 100000
-      integer, parameter :: MAX_DIMVALS = MAXDIMVALS_
       integer, intent(in) :: unit
       
       integer         :: ncid,ndim,nvar_total,natt,recdim,nv,nvar,len
-      integer :: error,i,j
-      integer         :: type,nvdims,nvatts, dimid
+      integer :: error, i, j, istat
+      integer         :: type, nvdims, nvatts, dimid
       integer, allocatable, dimension(:) :: dimids
-      type(axistype) , allocatable, dimension(:) :: Axis
-      character(len=128) :: name, attname, unlimname, attval, text
+      character(len=128) :: name, attname, unlimname, attval
       logical :: isdim
       
-      integer(SHORT_KIND) :: i2vals(MAX_DIMVALS)
-!#ifdef __sgi
-      integer(INT_KIND) :: ivals(MAX_DIMVALS)
-      real(FLOAT_KIND)  :: rvals(MAX_DIMVALS)
-!#else
-!      integer :: ivals(MAX_DIMVALS)
-!      real    :: rvals(MAX_DIMVALS)
-!#endif
-      real(DOUBLE_KIND) :: r8vals(MAX_DIMVALS)
+      integer(SHORT_KIND), allocatable :: i2vals(:)
+      integer(INT_KIND), allocatable :: ivals(:)
+      real(FLOAT_KIND), allocatable  :: rvals(:)
+      real(DOUBLE_KIND), allocatable :: r8vals(:)
       
 #ifdef use_netCDF
 
@@ -451,7 +461,6 @@
         endif
            
         allocate(mpp_file(unit)%Att(natt))
-        allocate(Axis(ndim))
         allocate(dimids(ndim))
         allocate(mpp_file(unit)%Axis(ndim))
         
@@ -461,7 +470,6 @@
 
 
         do i=1,ndim
-           Axis(i) = default_axis
            mpp_file(unit)%Axis(i) = default_axis
         enddo
            
@@ -497,29 +505,77 @@
 ! store integers in float arrays
 !
               case (NF_SHORT)
-                 allocate(mpp_file(unit)%Att(i)%fatt(len))
+                 allocate(mpp_file(unit)%Att(i)%fatt(len), STAT=istat)
+                 if ( istat .ne. 0 ) then
+                    write(text,'(A)') istat
+                    call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate mpp_file%Att%fatt, NF_SHORT case.  "//&
+                         & "STAT = "//trim(text))
+                 end if
+                 allocate(i2vals(len), STAT=istat)
+                 if ( istat .ne. 0 ) then
+                    write(text,'(A)') istat
+                    call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array i2vals.  STAT = "&
+                         & //trim(text))
+                 end if
                  error=NF_GET_ATT_INT2(ncid,NF_GLOBAL,name,i2vals)
                  call netcdf_err( error, mpp_file(unit), attr=mpp_file(unit)%att(i) )
                  if( verbose .and. pe == 0 )print *, 'GLOBAL ATT ',trim(name),' ',i2vals(1:len)
                  mpp_file(unit)%Att(i)%fatt(1:len)=i2vals(1:len)
+                 deallocate(i2vals)
               case (NF_INT)
-                 allocate(mpp_file(unit)%Att(i)%fatt(len))
+                 allocate(mpp_file(unit)%Att(i)%fatt(len), STAT=istat)
+                 if ( istat .ne. 0 ) then
+                    write(text,'(A)') istat
+                    call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate mpp_file%Att%fatt, NF_INT case.  "//&
+                         & "STAT = "//trim(text))
+                 end if
+                 allocate(ivals(len), STAT=istat)
+                 if ( istat .ne. 0 ) then
+                    write(text,'(A)') istat
+                    call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array ivals.  STAT = "&
+                         & //trim(text))
+                 end if
                  error=NF_GET_ATT_INT(ncid,NF_GLOBAL,name,ivals)
                  call netcdf_err( error, mpp_file(unit), attr=mpp_file(unit)%att(i) )
                  if( verbose .and. pe == 0 )print *, 'GLOBAL ATT ',trim(name),' ',ivals(1:len)
                  mpp_file(unit)%Att(i)%fatt(1:len)=ivals(1:len)
+                 deallocate(ivals)
               case (NF_FLOAT)
-                 allocate(mpp_file(unit)%Att(i)%fatt(len))
+                 allocate(mpp_file(unit)%Att(i)%fatt(len), STAT=istat)
+                 if ( istat .ne. 0 ) then
+                    write(text,'(A)') istat
+                    call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate mpp_file%Att%fatt, NF_FLOAT case.  "//&
+                         & "STAT = "//trim(text))
+                 end if
+                 allocate(rvals(len), STAT=istat)
+                 if ( istat .ne. 0 ) then
+                    write(text,'(A)') istat
+                    call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array rvals.  STAT = "&
+                         & //trim(text))
+                 end if
                  error=NF_GET_ATT_REAL(ncid,NF_GLOBAL,name,rvals)
                  call netcdf_err( error, mpp_file(unit), attr=mpp_file(unit)%att(i) )
                  mpp_file(unit)%Att(i)%fatt(1:len)=rvals(1:len)
                  if( verbose .and. pe == 0)print *, 'GLOBAL ATT ',trim(name),' ',mpp_file(unit)%Att(i)%fatt(1:len)
+                 deallocate(rvals)
               case (NF_DOUBLE)
-                 allocate(mpp_file(unit)%Att(i)%fatt(len))
+                 allocate(mpp_file(unit)%Att(i)%fatt(len), STAT=istat)
+                 if ( istat .ne. 0 ) then
+                    write(text,'(A)') istat
+                    call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate mpp_file%Att%fatt, NF_DOUBLE case.  "//&
+                         & "STAT = "//trim(text))
+                 end if
+                 allocate(r8vals(len), STAT=istat)
+                 if ( istat .ne. 0 ) then
+                    write(text,'(A)') istat
+                    call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array r8vals.  STAT = "&
+                         & //trim(text))
+                 end if
                  error=NF_GET_ATT_DOUBLE(ncid,NF_GLOBAL,name,r8vals)
                  call netcdf_err( error, mpp_file(unit), attr=mpp_file(unit)%att(i) )
                  mpp_file(unit)%Att(i)%fatt(1:len)=r8vals(1:len)
                  if( verbose .and. pe == 0)print *, 'GLOBAL ATT ',trim(name),' ',mpp_file(unit)%Att(i)%fatt(1:len)
+                 deallocate(r8vals)
            end select
                  
         enddo
@@ -528,14 +584,8 @@
 !
         do i=1,ndim
            error = NF_INQ_DIM(ncid,i,name,len);call netcdf_err( error, mpp_file(unit) )
-           Axis(i)%name = name
-           Axis(i)%len = len
-           if(len > MAX_DIMVALS) then
-              write(text,'(a)') len               
-              call mpp_error(FATAL, &
-                "mpp_io_mod(mpp_read_meta): one dimension length ('//trim(text)//') is "// &
-                "greater than MAX_DIMVALS, increase MAX_DIMVALS")
-           endif
+           mpp_file(unit)%Axis(i)%name = name
+           mpp_file(unit)%Axis(i)%len = len
         enddo
            
         nvar=0
@@ -543,7 +593,7 @@
            error=NF_INQ_VAR(ncid,i,name,type,nvdims,dimids,nvatts);call netcdf_err( error, mpp_file(unit) )
            isdim=.false.
            do j=1,ndim
-              if( trim(lowercase(name)).EQ.trim(lowercase(Axis(j)%name)) )isdim=.true.
+              if( trim(lowercase(name)).EQ.trim(lowercase(mpp_file(unit)%Axis(j)%name)) )isdim=.true.
            enddo
            if (.not.isdim) nvar=nvar+1
         enddo
@@ -561,55 +611,110 @@
            error=NF_INQ_VAR(ncid,i,name,type,nvdims,dimids,nvatts);call netcdf_err( error, mpp_file(unit) )
            isdim=.false.
            do j=1,ndim
-              if( trim(lowercase(name)).EQ.trim(lowercase(Axis(j)%name)) )isdim=.true.
+              if( trim(lowercase(name)).EQ.trim(lowercase(mpp_file(unit)%Axis(j)%name)) )isdim=.true.
            enddo
               
            if( isdim )then
               error=NF_INQ_DIMID(ncid,name,dimid);call netcdf_err( error, mpp_file(unit), string=' Axis='//name )
-              Axis(dimid)%type = type
-              Axis(dimid)%did = dimid
-              Axis(dimid)%id = i
-              Axis(dimid)%natt = nvatts
+              mpp_file(unit)%Axis(dimid)%type = type
+              mpp_file(unit)%Axis(dimid)%did = dimid
+              mpp_file(unit)%Axis(dimid)%id = i
+              mpp_file(unit)%Axis(dimid)%natt = nvatts
               ! get axis values
               if( i.NE.mpp_file(unit)%id )then   ! non-record dims
                  select case (type)
                  case (NF_INT)
-                    len=Axis(dimid)%len
-                    allocate(Axis(dimid)%data(len))
-                    error = NF_GET_VAR_INT(ncid,i,ivals);call netcdf_err( error, mpp_file(unit), axis(dimid) )
-                    Axis(dimid)%data(1:len)=ivals(1:len)
+                    len=mpp_file(unit)%Axis(dimid)%len
+                    allocate(mpp_file(unit)%Axis(dimid)%data(len), STAT=istat)
+                    if ( istat .ne. 0 ) then
+                       write(text,'(A)') istat
+                       call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate mpp_file%Axis%data, NF_INT case.  "//&
+                            & "STAT = "//trim(text))
+                    end if
+                    allocate(ivals(len), STAT=istat)
+                    if ( istat .ne. 0 ) then
+                       write(text,'(A)') istat
+                       call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array ivals.  STAT = "&
+                            & //trim(text))
+                    end if
+                    error = NF_GET_VAR_INT(ncid,i,ivals);call netcdf_err( error, mpp_file(unit), mpp_file(unit)%Axis(dimid) )
+                    mpp_file(unit)%Axis(dimid)%data(1:len)=ivals(1:len)
+                    deallocate(ivals)
                  case (NF_FLOAT)
-                    len=Axis(dimid)%len
-                    allocate(Axis(dimid)%data(len))
-                    error = NF_GET_VAR_REAL(ncid,i,rvals);call netcdf_err( error, mpp_file(unit), axis(dimid) )
-                    Axis(dimid)%data(1:len)=rvals(1:len)
+                    len=mpp_file(unit)%Axis(dimid)%len
+                    allocate(mpp_file(unit)%Axis(dimid)%data(len), STAT=istat)
+                    if ( istat .ne. 0 ) then
+                       write(text,'(A)') istat
+                       call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate mpp_file%Axis%data, "//&
+                            & "NF_FLOAT case.  STAT = "//trim(text))
+                    end if
+                    allocate(rvals(len), STAT=istat)
+                    if ( istat .ne. 0 ) then
+                       write(text,'(A)') istat
+                       call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array rvals.  STAT = "&
+                            & //trim(text))
+                    end if
+                    error = NF_GET_VAR_REAL(ncid,i,rvals);call netcdf_err( error, mpp_file(unit), mpp_file(unit)%Axis(dimid) )
+                    mpp_file(unit)%Axis(dimid)%data(1:len)=rvals(1:len)
+                    deallocate(rvals)
                  case (NF_DOUBLE)
-                    len=Axis(dimid)%len
-                    allocate(Axis(dimid)%data(len))
-                    error = NF_GET_VAR_DOUBLE(ncid,i,r8vals);call netcdf_err( error, mpp_file(unit), axis(dimid) )
-                    Axis(dimid)%data(1:len) = r8vals(1:len)
+                    len=mpp_file(unit)%Axis(dimid)%len
+                    allocate(mpp_file(unit)%Axis(dimid)%data(len), STAT=istat)
+                    if ( istat .ne. 0 ) then
+                       write(text,'(A)') istat
+                       call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate mpp_file%Axis%data, "//&
+                            & "NF_DOUBLE case.  STAT = "//trim(text))
+                    end if
+                    allocate(r8vals(len), STAT=istat)
+                    if ( istat .ne. 0 ) then
+                       write(text,'(A)') istat
+                       call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array r8vals.  STAT = "&
+                            & //trim(text))
+                    end if
+                    error = NF_GET_VAR_DOUBLE(ncid,i,r8vals);call netcdf_err( error, mpp_file(unit), mpp_file(unit)%Axis(dimid) )
+                    mpp_file(unit)%Axis(dimid)%data(1:len) = r8vals(1:len)
+                    deallocate(r8vals)
                  case default
                     call mpp_error( FATAL, 'Invalid data type for dimension' )
                  end select
              else   
                  len = mpp_file(unit)%time_level
-                 allocate(mpp_file(unit)%time_values(len))
+                 allocate(mpp_file(unit)%time_values(len), STAT=istat)
+                 if ( istat .ne. 0 ) then
+                    write(text,'(A)') istat
+                    call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate mpp_file%time_valuse.  STAT = "&
+                            & //trim(text))
+                 end if
                  select case (type)
                  case (NF_FLOAT)
-                    error = NF_GET_VAR_REAL(ncid,i,rvals);call netcdf_err( error, mpp_file(unit), axis(dimid) )
+                    allocate(rvals(len), STAT=istat)
+                    if ( istat .ne. 0 ) then
+                       write(text,'(A)') istat
+                       call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array rvals.  STAT = "&
+                            & //trim(text))
+                    end if
+                    error = NF_GET_VAR_REAL(ncid,i,rvals);call netcdf_err( error, mpp_file(unit), mpp_file(unit)%Axis(dimid) )
                     mpp_file(unit)%time_values(1:len) = rvals(1:len)
+                    deallocate(rvals)
                  case (NF_DOUBLE)
-                    error = NF_GET_VAR_DOUBLE(ncid,i,r8vals);call netcdf_err( error, mpp_file(unit), axis(dimid) )
+                    allocate(r8vals(len), STAT=istat)
+                    if ( istat .ne. 0 ) then
+                       write(text,'(A)') istat
+                       call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array r8vals.  STAT = "&
+                            & //trim(text))
+                    end if
+                    error = NF_GET_VAR_DOUBLE(ncid,i,r8vals);call netcdf_err( error, mpp_file(unit), mpp_file(unit)%Axis(dimid) )
                     mpp_file(unit)%time_values(1:len) = r8vals(1:len)
+                    deallocate(r8vals)
                  case default
                     call mpp_error( FATAL, 'Invalid data type for dimension' )
                  end select
               endif 
               ! assign dimension atts
-              if( nvatts.GT.0 )allocate(Axis(dimid)%Att(nvatts))
+              if( nvatts.GT.0 )allocate(mpp_file(unit)%Axis(dimid)%Att(nvatts))
               
               do j=1,nvatts
-                 Axis(dimid)%Att(j) = default_att
+                 mpp_file(unit)%Axis(dimid)%Att(j) = default_att
               enddo
                  
               do j=1,nvatts
@@ -617,92 +722,142 @@
                  error=NF_INQ_ATT(ncid,i,trim(attname),type,len)
                  call netcdf_err( error, mpp_file(unit), string=' Attribute='//attname )
                  
-                 Axis(dimid)%Att(j)%name = trim(attname)
-                 Axis(dimid)%Att(j)%type = type
-                 Axis(dimid)%Att(j)%len = len
+                 mpp_file(unit)%Axis(dimid)%Att(j)%name = trim(attname)
+                 mpp_file(unit)%Axis(dimid)%Att(j)%type = type
+                 mpp_file(unit)%Axis(dimid)%Att(j)%len = len
                  
                  select case (type)
                  case (NF_CHAR)
                     if (len.gt.512) call mpp_error(FATAL,'DIM ATT too long')
-                    error=NF_GET_ATT_TEXT(ncid,i,trim(attname),Axis(dimid)%Att(j)%catt);
-                    call netcdf_err( error, mpp_file(unit), attr=axis(dimid)%att(j) )
+                    error=NF_GET_ATT_TEXT(ncid,i,trim(attname),mpp_file(unit)%Axis(dimid)%Att(j)%catt);
+                    call netcdf_err( error, mpp_file(unit), attr=mpp_file(unit)%Axis(dimid)%att(j) )
                     if( verbose .and. pe == 0 ) &
-                         print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%catt(1:len)
+                         print *, 'AXIS ',trim(mpp_file(unit)%Axis(dimid)%name),' ATT ',trim(attname),' ',mpp_file(unit)%Axis(dimid)%Att(j)%catt(1:len)
                     ! store integers in float arrays
                     ! assume dimension data not packed
                  case (NF_SHORT)
-                    allocate(Axis(dimid)%Att(j)%fatt(len))
+                    allocate(mpp_file(unit)%Axis(dimid)%Att(j)%fatt(len), STAT=istat)
+                    if ( istat .ne. 0 ) then
+                       write(text,'(A)') istat
+                       call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate mpp_file%Axis%Att%fatt, "//&
+                            & "NF_SHORT CASE.  STAT = "//trim(text))
+                    end if
+                    allocate(i2vals(len), STAT=istat)
+                    if ( istat .ne. 0 ) then
+                       write(text,'(A)') istat
+                       call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array i2vals.  STAT = "&
+                            & //trim(text))
+                    end if
                     error=NF_GET_ATT_INT2(ncid,i,trim(attname),i2vals);
-                    call netcdf_err( error, mpp_file(unit), attr=axis(dimid)%att(j) )
-                    Axis(dimid)%Att(j)%fatt(1:len)=i2vals(1:len)
+                    call netcdf_err( error, mpp_file(unit), attr=mpp_file(unit)%Axis(dimid)%att(j) )
+                    mpp_file(unit)%Axis(dimid)%Att(j)%fatt(1:len)=i2vals(1:len)
                     if( verbose .and. pe == 0  ) &
-                         print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
+                         print *, 'AXIS ',trim(mpp_file(unit)%Axis(dimid)%name),' ATT ',trim(attname),' ',mpp_file(unit)&
+                         &%Axis(dimid)%Att(j)%fatt
+                    deallocate(i2vals)
                  case (NF_INT)
-                    allocate(Axis(dimid)%Att(j)%fatt(len))
+                    allocate(mpp_file(unit)%Axis(dimid)%Att(j)%fatt(len), STAT=istat)
+                    if ( istat .ne. 0 ) then
+                       write(text,'(A)') istat
+                       call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate mpp_file%Axis%Att%fatt, "//&
+                            & "NF_INT CASE.  STAT = "//trim(text))
+                    end if
+                    allocate(ivals(len), STAT=istat)
+                    if ( istat .ne. 0 ) then
+                       write(text,'(A)') istat
+                       call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array ivals.  STAT = "&
+                            & //trim(text))
+                    end if
                     error=NF_GET_ATT_INT(ncid,i,trim(attname),ivals);
-                    call netcdf_err( error, mpp_file(unit), attr=axis(dimid)%att(j) )
-                    Axis(dimid)%Att(j)%fatt(1:len)=ivals(1:len)
+                    call netcdf_err( error, mpp_file(unit), attr=mpp_file(unit)%Axis(dimid)%att(j) )
+                    mpp_file(unit)%Axis(dimid)%Att(j)%fatt(1:len)=ivals(1:len)
                     if( verbose .and. pe == 0  ) &
-                         print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
+                         print *, 'AXIS ',trim(mpp_file(unit)%Axis(dimid)%name),' ATT ',trim(attname),' ',&
+                         & mpp_file(unit)%Axis(dimid)%Att(j)%fatt
+                    deallocate(ivals)
                  case (NF_FLOAT)
-                    allocate(Axis(dimid)%Att(j)%fatt(len))
+                    allocate(mpp_file(unit)%Axis(dimid)%Att(j)%fatt(len), STAT=istat)
+                    if ( istat .ne. 0 ) then
+                       write(text,'(A)') istat
+                       call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate mpp_file%Axis%Att%fatt, "//&
+                            & "NF_FLOAT CASE.  STAT = "//trim(text))
+                    end if
+                    allocate(rvals(len), STAT=istat)
+                    if ( istat .ne. 0 ) then
+                       write(text,'(A)') istat
+                       call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array rvals.  STAT = "&
+                            & //trim(text))
+                    end if
                     error=NF_GET_ATT_REAL(ncid,i,trim(attname),rvals);
-                    call netcdf_err( error, mpp_file(unit), attr=axis(dimid)%att(j) )
-                    Axis(dimid)%Att(j)%fatt(1:len)=rvals(1:len)
+                    call netcdf_err( error, mpp_file(unit), attr=mpp_file(unit)%Axis(dimid)%att(j) )
+                    mpp_file(unit)%Axis(dimid)%Att(j)%fatt(1:len)=rvals(1:len)
                     if( verbose  .and. pe == 0 ) &
-                         print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
+                         print *, 'AXIS ',trim(mpp_file(unit)%Axis(dimid)%name),' ATT ',trim(attname),' ',&
+                         & mpp_file(unit)%Axis(dimid)%Att(j)%fatt
+                    deallocate(rvals)
                  case (NF_DOUBLE)
-                    allocate(Axis(dimid)%Att(j)%fatt(len))
+                    allocate(mpp_file(unit)%Axis(dimid)%Att(j)%fatt(len), STAT=istat)
+                    if ( istat .ne. 0 ) then
+                       write(text,'(A)') istat
+                       call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate mpp_file%Axis%Att%fatt, "//&
+                            & "NF_DOUBLE CASE.  STAT = "//trim(text))
+                    end if
+                    allocate(r8vals(len), STAT=istat)
+                    if ( istat .ne. 0 ) then
+                       write(text,'(A)') istat
+                       call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array r8vals.  STAT = "&
+                            & //trim(text))
+                    end if
                     error=NF_GET_ATT_DOUBLE(ncid,i,trim(attname),r8vals);
-                    call netcdf_err( error, mpp_file(unit), attr=axis(dimid)%att(j) )
-                    Axis(dimid)%Att(j)%fatt(1:len)=r8vals(1:len)
+                    call netcdf_err( error, mpp_file(unit), attr=mpp_file(unit)%Axis(dimid)%att(j) )
+                    mpp_file(unit)%Axis(dimid)%Att(j)%fatt(1:len)=r8vals(1:len)
                     if( verbose  .and. pe == 0 ) &
-                         print *, 'AXIS ',trim(Axis(dimid)%name),' ATT ',trim(attname),' ',Axis(dimid)%Att(j)%fatt
+                         print *, 'AXIS ',trim(mpp_file(unit)%Axis(dimid)%name),' ATT ',trim(attname),' ',&
+                         & mpp_file(unit)%Axis(dimid)%Att(j)%fatt
+                    deallocate(r8vals)
                  case default
                     call mpp_error( FATAL, 'Invalid data type for dimension at' )
                  end select
                  ! assign pre-defined axis attributes
                  select case(trim(attname))
                  case('long_name')
-                    Axis(dimid)%longname=Axis(dimid)%Att(j)%catt(1:len)
+                    mpp_file(unit)%Axis(dimid)%longname=mpp_file(unit)%Axis(dimid)%Att(j)%catt(1:len)
                  case('units')
-                    Axis(dimid)%units=Axis(dimid)%Att(j)%catt(1:len)
+                    mpp_file(unit)%Axis(dimid)%units=mpp_file(unit)%Axis(dimid)%Att(j)%catt(1:len)
                  case('cartesian_axis')
-                    Axis(dimid)%cartesian=Axis(dimid)%Att(j)%catt(1:len)
+                    mpp_file(unit)%Axis(dimid)%cartesian=mpp_file(unit)%Axis(dimid)%Att(j)%catt(1:len)
                  case('calendar')
-                    Axis(dimid)%calendar=Axis(dimid)%Att(j)%catt(1:len)
-                    Axis(dimid)%calendar = lowercase(cut0(Axis(dimid)%calendar))
-                    if (trim(Axis(dimid)%calendar) == 'none') &
-                         Axis(dimid)%calendar = 'no_calendar'
-                    if (trim(Axis(dimid)%calendar) == 'no_leap') &
-                         Axis(dimid)%calendar = 'noleap'
-                    if (trim(Axis(dimid)%calendar) == '365_days') &
-                         Axis(dimid)%calendar = '365_day'
-                    if (trim(Axis(dimid)%calendar) == '360_days') &
-                         Axis(dimid)%calendar = '360_day'
+                    mpp_file(unit)%Axis(dimid)%calendar=mpp_file(unit)%Axis(dimid)%Att(j)%catt(1:len)
+                    mpp_file(unit)%Axis(dimid)%calendar = lowercase(cut0(mpp_file(unit)%Axis(dimid)%calendar))
+                    if (trim(mpp_file(unit)%Axis(dimid)%calendar) == 'none') &
+                         mpp_file(unit)%Axis(dimid)%calendar = 'no_calendar'
+                    if (trim(mpp_file(unit)%Axis(dimid)%calendar) == 'no_leap') &
+                         mpp_file(unit)%Axis(dimid)%calendar = 'noleap'
+                    if (trim(mpp_file(unit)%Axis(dimid)%calendar) == '365_days') &
+                         mpp_file(unit)%Axis(dimid)%calendar = '365_day'
+                    if (trim(mpp_file(unit)%Axis(dimid)%calendar) == '360_days') &
+                         mpp_file(unit)%Axis(dimid)%calendar = '360_day'
                  case('calendar_type')
-                    Axis(dimid)%calendar=Axis(dimid)%Att(j)%catt(1:len)
-                    Axis(dimid)%calendar = lowercase(cut0(Axis(dimid)%calendar))
-                    if (trim(Axis(dimid)%calendar) == 'none') &
-                         Axis(dimid)%calendar = 'no_calendar'
-                    if (trim(Axis(dimid)%calendar) == 'no_leap') &
-                         Axis(dimid)%calendar = 'noleap'
-                    if (trim(Axis(dimid)%calendar) == '365_days') &
-                         Axis(dimid)%calendar = '365_day'
-                    if (trim(Axis(dimid)%calendar) == '360_days') &
-                         Axis(dimid)%calendar = '360_day'
+                    mpp_file(unit)%Axis(dimid)%calendar=mpp_file(unit)%Axis(dimid)%Att(j)%catt(1:len)
+                    mpp_file(unit)%Axis(dimid)%calendar = lowercase(cut0(mpp_file(unit)%Axis(dimid)%calendar))
+                    if (trim(mpp_file(unit)%Axis(dimid)%calendar) == 'none') &
+                         mpp_file(unit)%Axis(dimid)%calendar = 'no_calendar'
+                    if (trim(mpp_file(unit)%Axis(dimid)%calendar) == 'no_leap') &
+                         mpp_file(unit)%Axis(dimid)%calendar = 'noleap'
+                    if (trim(mpp_file(unit)%Axis(dimid)%calendar) == '365_days') &
+                         mpp_file(unit)%Axis(dimid)%calendar = '365_day'
+                    if (trim(mpp_file(unit)%Axis(dimid)%calendar) == '360_days') &
+                         mpp_file(unit)%Axis(dimid)%calendar = '360_day'
                  case('positive')
-                    attval = Axis(dimid)%Att(j)%catt(1:len)
+                    attval = mpp_file(unit)%Axis(dimid)%Att(j)%catt(1:len)
                     if( attval.eq.'down' )then
-                       Axis(dimid)%sense=-1
+                       mpp_file(unit)%Axis(dimid)%sense=-1
                     else if( attval.eq.'up' )then
-                       Axis(dimid)%sense=1
+                       mpp_file(unit)%Axis(dimid)%sense=1
                     endif
                  end select
                     
               enddo
-              ! store axis info in filetype
-              mpp_file(unit)%Axis(dimid) = Axis(dimid)
            endif
         enddo 
 ! assign variable info
@@ -714,7 +869,7 @@
 !
            isdim=.false.
            do j=1,ndim
-              if( trim(lowercase(name)).EQ.trim(lowercase(Axis(j)%name)) )isdim=.true.
+              if( trim(lowercase(name)).EQ.trim(lowercase(mpp_file(unit)%Axis(j)%name)) )isdim=.true.
            enddo
               
            if( .not.isdim )then
@@ -743,7 +898,7 @@
               mpp_file(unit)%Var(nv)%ndim = nvdims
               allocate(mpp_file(unit)%Var(nv)%axes(nvdims))
               do j=1,nvdims
-                 mpp_file(unit)%Var(nv)%axes(j) = Axis(dimids(j))
+                 mpp_file(unit)%Var(nv)%axes(j) = mpp_file(unit)%Axis(dimids(j))
               enddo
               allocate(mpp_file(unit)%Var(nv)%size(nvdims))
               
@@ -752,7 +907,7 @@
                     mpp_file(unit)%Var(nv)%time_axis_index = dimids(j)
                     mpp_file(unit)%Var(nv)%size(j)=1    ! dimid length set to 1 here for consistency w/ mpp_write
                  else
-                    mpp_file(unit)%Var(nv)%size(j)=Axis(dimids(j))%len
+                    mpp_file(unit)%Var(nv)%size(j)=mpp_file(unit)%Axis(dimids(j))%len
                  endif
               enddo 
 ! assign variable atts
@@ -779,33 +934,81 @@
                            print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%catt(1:len)
 ! store integers as float internally
                    case (NF_SHORT)
-                     allocate(mpp_file(unit)%Var(nv)%Att(j)%fatt(len))
+                     allocate(mpp_file(unit)%Var(nv)%Att(j)%fatt(len), STAT=istat)
+                     if ( istat .ne. 0 ) then
+                        write(text,'(A)') istat
+                        call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate mpp_file%Var%Att%fatt, "//&
+                             & "NF_SHORT CASE.  STAT = "//trim(text))
+                     end if
+                     allocate(i2vals(len), STAT=istat)
+                     if ( istat .ne. 0 ) then
+                        write(text,'(A)') istat
+                        call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array i2vals.  STAT = "&
+                             & //trim(text))
+                     end if
                      error=NF_GET_ATT_INT2(ncid,i,trim(attname),i2vals)
                      call netcdf_err( error, mpp_file(unit), field=mpp_file(unit)%var(nv), attr=mpp_file(unit)%var(nv)%att(j) )
                      mpp_file(unit)%Var(nv)%Att(j)%fatt(1:len)= i2vals(1:len)
                      if( verbose  .and. pe == 0 )&
                           print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
+                     deallocate(i2vals)
                    case (NF_INT)
-                     allocate(mpp_file(unit)%Var(nv)%Att(j)%fatt(len))
+                     allocate(mpp_file(unit)%Var(nv)%Att(j)%fatt(len), STAT=istat)
+                     if ( istat .ne. 0 ) then
+                        write(text,'(A)') istat
+                        call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate mpp_file%Var%Att%fatt, "//&
+                             & "NF_INT CASE.  STAT = "//trim(text))
+                     end if
+                     allocate(ivals(len), STAT=istat)
+                     if ( istat .ne. 0 ) then
+                        write(text,'(A)') istat
+                        call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array ivals.  STAT = "&
+                             & //trim(text))
+                     end if
                      error=NF_GET_ATT_INT(ncid,i,trim(attname),ivals)
                      call netcdf_err( error, mpp_file(unit), field=mpp_file(unit)%var(nv), attr=mpp_file(unit)%var(nv)%att(j) )
                      mpp_file(unit)%Var(nv)%Att(j)%fatt(1:len)=ivals(1:len)
                      if( verbose .and. pe == 0  )&
                           print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
+                     deallocate(ivals)
                    case (NF_FLOAT)
-                     allocate(mpp_file(unit)%Var(nv)%Att(j)%fatt(len))
+                     allocate(mpp_file(unit)%Var(nv)%Att(j)%fatt(len), STAT=istat)
+                     if ( istat .ne. 0 ) then
+                        write(text,'(A)') istat
+                        call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate mpp_file%Var%Att%fatt, "//&
+                             & "NF_FLOAT CASE.  STAT = "//trim(text))
+                     end if
+                     allocate(rvals(len), STAT=istat)
+                     if ( istat .ne. 0 ) then
+                        write(text,'(A)') istat
+                        call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array rvals.  STAT = "&
+                             & //trim(text))
+                     end if
                      error=NF_GET_ATT_REAL(ncid,i,trim(attname),rvals)
                      call netcdf_err( error, mpp_file(unit), field=mpp_file(unit)%var(nv), attr=mpp_file(unit)%var(nv)%att(j) )
                      mpp_file(unit)%Var(nv)%Att(j)%fatt(1:len)=rvals(1:len)
                      if( verbose  .and. pe == 0 )&
                           print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
+                     deallocate(rvals)
                    case (NF_DOUBLE)
-                     allocate(mpp_file(unit)%Var(nv)%Att(j)%fatt(len))
-                     error=NF_GET_ATT_DOUBLE(ncid,i,trim(attname),r8vals)
+                     allocate(mpp_file(unit)%Var(nv)%Att(j)%fatt(len), STAT=istat)
+                     if ( istat .ne. 0 ) then
+                        write(text,'(A)') istat
+                        call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate mpp_file%Var%Att%fatt, "//&
+                             & "NF_DOUBLE CASE.  STAT = "//trim(text))
+                     end if
+                     allocate(r8vals(len), STAT=istat)
+                     if ( istat .ne. 0 ) then
+                        write(text,'(A)') istat
+                        call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array r8vals.  STAT = "&
+                             & //trim(text))
+                     end if
+                      error=NF_GET_ATT_DOUBLE(ncid,i,trim(attname),r8vals)
                      call netcdf_err( error, mpp_file(unit), field=mpp_file(unit)%var(nv), attr=mpp_file(unit)%var(nv)%att(j) )
                      mpp_file(unit)%Var(nv)%Att(j)%fatt(1:len)=r8vals(1:len)
                      if( verbose .and. pe == 0  ) &
                           print *, 'Var ',nv,' ATT ',trim(attname),' ',mpp_file(unit)%Var(nv)%Att(j)%fatt
+                     deallocate(r8vals)
                    case default
                         call mpp_error( FATAL, 'Invalid data type for variable att' )
                  end select

@@ -62,12 +62,13 @@ use mpp_io_mod, only: axistype,mpp_close,mpp_open,mpp_get_axis_data,MPP_RDONLY,M
 use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe,stdout,stdlog,mpp_root_pe, NOTE, mpp_min, mpp_max, mpp_chksum
 use mpp_mod, only : input_nml_file
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_type, &
-     assignment(=), horiz_interp_del
+                             assignment(=), horiz_interp_del
 use time_interp_external_mod, only:time_interp_external_init, time_interp_external, &
-     init_external_field, get_external_field_size
+                                   init_external_field, get_external_field_size, &
+                                   NO_REGION, INSIDE_REGION, OUTSIDE_REGION, set_override_region
 use fms_io_mod, only: field_size, read_data, fms_io_init,get_mosaic_tile_grid
 use fms_mod, only: write_version_number, field_exist, lowercase, file_exist, open_namelist_file, check_nml_error, close_file
-use axis_utils_mod, only: get_axis_bounds
+use axis_utils_mod, only: get_axis_bounds, nearest_index
 use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, NULL_DOMAIN2D,operator(.NE.),operator(.EQ.)
 use mpp_domains_mod, only : mpp_copy_domain, mpp_get_global_domain
 use mpp_domains_mod, only : mpp_get_data_domain, mpp_set_compute_domain, mpp_set_data_domain
@@ -78,17 +79,8 @@ use time_manager_mod, only: time_type
 implicit none
 private
 
-character(len=128) :: version = '$Id: data_override.F90,v 18.0.4.1.2.1.2.2.2.1 2011/01/03 21:19:12 z1l Exp $'
-character(len=128) :: tagname = '$Name: riga_201104 $'
-
-type data_type_lima
-   character(len=3)   :: gridname
-   character(len=128) :: fieldname_code !fieldname used in user's code (model)
-   character(len=128) :: fieldname_file ! fieldname used in the netcdf data file
-   character(len=512) :: file_name   ! name of netCDF data file
-   logical            :: ongrid   ! true if data is on model's grid, false otherwise
-   real               :: factor ! For unit conversion, default=1, see OVERVIEW above
-end type data_type_lima
+character(len=128) :: version = '$Id: data_override.F90,v 19.0 2012/01/06 21:54:32 fms Exp $'
+character(len=128) :: tagname = '$Name: siena $'
 
 type data_type
    character(len=3)   :: gridname
@@ -97,7 +89,10 @@ type data_type
    character(len=512) :: file_name   ! name of netCDF data file
    character(len=128) :: interpol_method   ! interpolation method (default "bilinear")
    real               :: factor ! For unit conversion, default=1, see OVERVIEW above
+   real               :: lon_start, lon_end, lat_start, lat_end
+   integer            :: region_type   
 end type data_type
+
 
 type override_type
    character(len=3)        :: gridname  
@@ -178,9 +173,12 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
   integer               :: is,ie,js,je,count
   integer               :: i, iunit, ntable, ntable_lima, ntable_new, unit,io_status, ierr
   character(len=256)    :: record
-  type(data_type_lima)  :: data_entry_lima
-  type(data_type)       :: data_entry
   logical               :: file_open
+  logical               :: ongrid
+  character(len=128)    :: region, region_type
+
+
+  type(data_type)  :: data_entry
 
   debug_data_override = .false.
 
@@ -238,28 +236,81 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
     ntable = 0
     ntable_lima = 0
     ntable_new = 0
+
     do while (ntable <= max_table)
        read(iunit,'(a)',end=100) record
        if (record(1:1) == '#') cycle
        if (record(1:10) == '          ') cycle
        ntable=ntable+1 
-       if (index(lowercase(record), ".false.") .ne. 0 .or. index(lowercase(record), ".true.") .ne. 0 ) then   ! old format
+       if (index(lowercase(record), "inside_region") .ne. 0 .or. index(lowercase(record), "outside_region") .ne. 0) then
+          if(index(lowercase(record), ".false.") .ne. 0 .or. index(lowercase(record), ".true.") .ne. 0 ) then
+             ntable_lima = ntable_lima + 1
+             read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
+                                   data_entry%file_name, ongrid, data_entry%factor, region, region_type
+             if(ongrid) then
+                data_entry%interpol_method = 'none'
+             else
+                data_entry%interpol_method = 'bilinear'
+             endif
+          else
+             ntable_new=ntable_new+1
+             read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
+                                   data_entry%file_name, data_entry%interpol_method, data_entry%factor, region, region_type
+             if (data_entry%interpol_method == 'default') then
+                data_entry%interpol_method = default_table%interpol_method
+             endif
+             if (.not.(data_entry%interpol_method == 'default'  .or. &
+                  data_entry%interpol_method == 'bicubic'  .or. &
+                  data_entry%interpol_method == 'bilinear' .or. &
+                  data_entry%interpol_method == 'none')) then
+                unit = stdout()
+                write(unit,*)" gridname is ", trim(data_entry%gridname)
+                write(unit,*)" fieldname_code is ", trim(data_entry%fieldname_code)
+                write(unit,*)" fieldname_file is ", trim(data_entry%fieldname_file)
+                write(unit,*)" file_name is ", trim(data_entry%file_name)
+                write(unit,*)" factor is ", data_entry%factor 
+                write(unit,*)" interpol_method is ", trim(data_entry%interpol_method)
+                call mpp_error(FATAL, 'data_override_mod: invalid last entry in data_override_table, ' &
+                     //'its value should be "default", "bicubic", "bilinear" or "none" ') 
+             endif
+          endif
+          if( trim(region_type) == "inside_region" ) then
+             data_entry%region_type = INSIDE_REGION
+          else if( trim(region_type) == "outside_region" ) then
+             data_entry%region_type = OUTSIDE_REGION     
+          else
+             call mpp_error(FATAL, 'data_override_mod: region type should be inside_region or outside_region')
+          endif
+          if (data_entry%file_name == "") call mpp_error(FATAL, &
+              "data_override: filename not given in data_table when region_type is not NO_REGION")
+          if(data_entry%fieldname_file == "") call mpp_error(FATAL, &
+             "data_override: fieldname_file must be specified in data_table when region_type is not NO_REGION")
+          if( trim(data_entry%interpol_method) == 'none') call mpp_error(FATAL, &
+             "data_override(data_override_init): ongrid must be false when region_type is not NO_REGION")
+          read(region,*) data_entry%lon_start, data_entry%lon_end, data_entry%lat_start, data_entry%lat_end
+          !--- make sure data_entry%lon_end > data_entry%lon_start and data_entry%lat_end > data_entry%lat_start
+          if(data_entry%lon_end .LE. data_entry%lon_start) call mpp_error(FATAL, &
+             "data_override: lon_end should be greater than lon_start")
+          if(data_entry%lat_end .LE. data_entry%lat_start) call mpp_error(FATAL, &
+             "data_override: lat_end should be greater than lat_start")
+       else if (index(lowercase(record), ".false.") .ne. 0 .or. index(lowercase(record), ".true.") .ne. 0 ) then ! old format
           ntable_lima = ntable_lima + 1
-          read(record,*,err=99) data_entry_lima
-          data_entry%gridname       = data_entry_lima%gridname
-          data_entry%fieldname_code = data_entry_lima%fieldname_code
-          data_entry%fieldname_file = data_entry_lima%fieldname_file
-          data_entry%file_name      = data_entry_lima%file_name
-          data_entry%factor         = data_entry_lima%factor 
-          if(data_entry_lima%ongrid) then
+          read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
+                                   data_entry%file_name, ongrid, data_entry%factor
+          if(ongrid) then
              data_entry%interpol_method = 'none'
           else
              data_entry%interpol_method = 'bilinear'
           endif
+          data_entry%lon_start = 0.0
+          data_entry%lon_end   = -1.0
+          data_entry%lat_start = 0.0
+          data_entry%lat_end   = -1.0
+          data_entry%region_type = NO_REGION
        else                                      ! new format
           ntable_new=ntable_new+1
-          read(record,*,err=99) data_entry
-          data_entry%interpol_method = lowercase(data_entry%interpol_method) 
+          read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
+                                data_entry%file_name, data_entry%interpol_method, data_entry%factor
           if (data_entry%interpol_method == 'default') then
             data_entry%interpol_method = default_table%interpol_method
           endif
@@ -277,6 +328,11 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
              call mpp_error(FATAL, 'data_override_mod: invalid last entry in data_override_table, ' &
                                //'its value should be "default", "bicubic", "bilinear" or "none" ') 
           endif
+          data_entry%lon_start = 0.0
+          data_entry%lon_end   = -1.0
+          data_entry%lat_start = 0.0
+          data_entry%lat_end   = -1.0
+          data_entry%region_type = NO_REGION
        endif
        data_table(ntable) = data_entry
     enddo
@@ -501,23 +557,26 @@ end subroutine data_override_2d
 !   <IN NAME="data_index" TYPE="integer">
 !   </IN>
 subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,region2,data_index)
-  character(len=3), intent(in) :: gridname ! model grid ID
-  character(len=*), intent(in) :: fieldname_code ! field name as used in the model
+  character(len=3),   intent(in) :: gridname ! model grid ID
+  character(len=*),   intent(in) :: fieldname_code ! field name as used in the model
   logical, intent(out), optional :: override ! true if the field has been overriden succesfully
-  type(time_type), intent(in) :: time !(target) model time
-  real, intent(in), optional :: region1(4),region2(4) !lat and lon of regions where override is done
-!Note: region2 can not exist without region1. In other words, if only one region is specified, it
-! should be region1
-  integer, intent(in), optional :: data_index
-  real, dimension(:,:,:), intent(out) :: data1 !data returned by this call
-  real, dimension(:,:,:), allocatable :: data !temporary array for data
+  type(time_type),         intent(in) :: time !(target) model time
+  real,          intent(in), optional :: region1(4),region2(4) !lat and lon of regions where override is done
+                                                               !Note: region2 can not exist without region1. 
+                                                               !In other words, if only one region is specified, 
+                                                               !it should be region1
+  integer,          intent(in), optional :: data_index
+  real, dimension(:,:,:),    intent(inout) :: data1 !data returned by this call
+  real, dimension(:,:,:),    allocatable :: data !temporary array for data
+  logical, dimension(:,:,:), allocatable :: mask_out
+
   character(len=512) :: filename !file containing source data
   character(len=128) :: fieldname ! fieldname used in the data file
-  integer :: i,j
-  integer :: dims(4)
-  integer :: index1 ! field index in data_table
-  integer :: id_time !index for time interp in override array
-  integer :: axis_sizes(4)
+  integer            :: i,j
+  integer            :: dims(4)
+  integer            :: index1 ! field index in data_table
+  integer            :: id_time !index for time interp in override array
+  integer            :: axis_sizes(4)
   real, dimension(:),allocatable :: lon_in, lat_in !of the input (source) grid
   real, dimension(:,:), pointer :: lon_local =>NULL(), &
                                    lat_local =>NULL() !of output (target) grid cells
@@ -530,6 +589,7 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
   real :: factor
   integer, dimension(4) :: comp_domain = 0  ! istart,iend,jstart,jend for compute domain
   integer :: ilocal, jlocal, dxsize, dysize
+  integer :: istart, iend, jstart, jend
 
   use_comp_domain = .false.
   if(.not.module_is_initialized) &
@@ -553,12 +613,17 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
        return  ! NO override was performed
     endif
   endif
- 
+
   if(present(region2) .and. .not. present(region1)) &
        call mpp_error(FATAL,'data_override: region2 is specified without region1')
 
   fieldname = data_table(index1)%fieldname_file ! fieldname in netCDF data file
   factor = data_table(index1)%factor
+
+  if( data_table(index1)%region_type .NE. NO_REGION ) then
+     if(present(region1)) call mpp_error(FATAL, &
+         "data_override: region1 should not be present when region_type is not NO_REGION for field"//trim(fieldname_code))
+  endif 
 
   if(fieldname == "") then
      data1 = factor
@@ -605,6 +670,9 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
      override_array(curr_position)%comp_domain = comp_domain
 !4 get index for time interp   
      if(ongrid) then
+        if( data_table(index1)%region_type .NE. NO_REGION ) then
+           call mpp_error(FATAL,'data_override: ongrid must be false when region_type .NE. NO_REGION')
+        endif
         id_time = init_external_field(filename,fieldname,domain=domain,verbose=.false.,use_comp_domain=use_comp_domain)
         dims = get_external_field_size(id_time)
         override_array(curr_position)%dims = dims
@@ -636,9 +704,34 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
 !  lat and lon of the input grid (in degrees)
         call get_axis_bounds(axis_centers(1),axis_bounds(1), axis_centers)
         call get_axis_bounds(axis_centers(2),axis_bounds(2), axis_centers)
+
+!       Find the index of lon_start, lon_end, lat_start and lat_end in the input grid (nearest points)
+        if( data_table(index1)%region_type .NE. NO_REGION ) then
+           allocate( lon_in(axis_sizes(1)), lat_in(axis_sizes(2)) )
+           call mpp_get_axis_data(axis_centers(1), lon_in)
+           call mpp_get_axis_data(axis_centers(2), lat_in)
+           ! limit lon_start, lon_end are inside lon_in
+           !       lat_start, lat_end are inside lat_in
+           if( data_table(index1)%lon_start < lon_in(1) .OR. data_table(index1)%lon_start .GT. lon_in(axis_sizes(1))) &
+              call mpp_error(FATAL, "data_override: lon_start is outside lon_T")
+           if( data_table(index1)%lon_end < lon_in(1) .OR. data_table(index1)%lon_end .GT. lon_in(axis_sizes(1))) &
+              call mpp_error(FATAL, "data_override: lon_end is outside lon_T")
+           if( data_table(index1)%lat_start < lat_in(1) .OR. data_table(index1)%lat_start .GT. lat_in(axis_sizes(2))) &
+              call mpp_error(FATAL, "data_override: lat_start is outside lat_T")
+           if( data_table(index1)%lat_end < lat_in(1) .OR. data_table(index1)%lat_end .GT. lat_in(axis_sizes(2))) &
+              call mpp_error(FATAL, "data_override: lat_end is outside lat_T")
+           istart = nearest_index(data_table(index1)%lon_start, lon_in)
+           iend   = nearest_index(data_table(index1)%lon_end,   lon_in)
+           jstart = nearest_index(data_table(index1)%lat_start, lat_in)
+           jend   = nearest_index(data_table(index1)%lat_end,   lat_in)
+           call set_override_region(id_time, data_table(index1)%region_type, istart, iend, jstart, jend)
+           deallocate(lon_in, lat_in)
+        endif
+
         allocate(lon_in(axis_sizes(1)+1), lat_in(axis_sizes(2)+1))
         call mpp_get_axis_data(axis_bounds(1),lon_in)
         call mpp_get_axis_data(axis_bounds(2),lat_in)
+
 ! convert lon_in and lat_in from deg to radian
         lon_in = lon_in * deg_to_radian
         lat_in = lat_in * deg_to_radian
@@ -662,7 +755,8 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
   endif !if curr_position < 0
 
   allocate(data(comp_domain(1):comp_domain(2),comp_domain(3):comp_domain(4),size(data1,3)))
-  data = HUGE(1.0)
+!  data = HUGE(1.0)
+  data = data1
   ! Determine if  data in netCDF file is 2D or not  
   data_file_is_2D = .false.
   if((dims(3) == 1) .and. (size(data1,3)>1)) data_file_is_2D = .true. 
@@ -682,14 +776,38 @@ subroutine data_override_3d(gridname,fieldname_code,data1,time,override,region1,
   else  ! off grid case
 ! do time interp to get global data
      if(data_file_is_2D) then
-        call time_interp_external(id_time,time,data(:,:,1),verbose=.false.,horz_interp=override_array(curr_position)%horz_interp) 
-        data(:,:,1) = data(:,:,1)*factor
+        if( data_table(index1)%region_type == NO_REGION ) then
+           call time_interp_external(id_time,time,data(:,:,1),verbose=.false., &
+                   horz_interp=override_array(curr_position)%horz_interp)
+        data(:,:,1) = data(:,:,1)*factor   
+        else
+           allocate(mask_out(comp_domain(1):comp_domain(2),comp_domain(3):comp_domain(4),1))
+           call time_interp_external(id_time,time,data(:,:,1),verbose=.false., &
+                   horz_interp=override_array(curr_position)%horz_interp,      &
+                   mask_out   =mask_out(:,:,1))
+           where(mask_out(:,:,1))
+              data(:,:,1) = data(:,:,1)*factor
+           end where
+           deallocate(mask_out)
+        endif
         do i = 2, size(data,3)
            data(:,:,i) = data(:,:,1)
         enddo
      else
-        call time_interp_external(id_time,time,data,verbose=.false.,horz_interp=override_array(curr_position)%horz_interp)
-        data = data*factor
+        if( data_table(index1)%region_type == NO_REGION ) then
+           call time_interp_external(id_time,time,data,verbose=.false.,      &
+                horz_interp=override_array(curr_position)%horz_interp)
+           data = data*factor
+        else
+           allocate(mask_out(comp_domain(1):comp_domain(2),comp_domain(3):comp_domain(4),size(data1,3)))
+           call time_interp_external(id_time,time,data,verbose=.false.,      &
+                horz_interp=override_array(curr_position)%horz_interp,    &
+                mask_out   =mask_out)
+           where(mask_out)        
+              data = data*factor
+           end where
+           deallocate(mask_out)
+        endif
      endif
 
   endif
@@ -1173,8 +1291,9 @@ end module data_override_mod
  integer, dimension(2)             :: layout = (/0,0/)
  character(len=256)                :: solo_mosaic_file, tile_file
  character(len=128)                :: grid_file   = "INPUT/grid_spec.nc"
+ logical                           :: use_region1 = .true.
 
- namelist / test_data_override_nml / layout
+ namelist / test_data_override_nml / layout, use_region1
 
  call fms_init
  call constants_init
@@ -1263,7 +1382,11 @@ end module data_override_mod
 !call data_override('OCN','sst_obs',sst,Time,override=ov_sst, region1=(/-45., 45.,  90., 270./)) ! lima crashes with error message. lima_pjp works
 !call data_override('OCN','sst_obs',sst,Time,override=ov_sst, region1=(/-45., 45., -10.,-190./)) ! lima does no override.           lima_pjp works
 !call data_override('OCN','sst_obs',sst,Time,override=ov_sst, region1=(/ 65., 90.,-190., -10./)) ! lima crashes with error message. lima_pjp works
+if(use_region1) then
  call data_override('OCN','sst_obs',sst,Time,override=ov_sst, region1=(/ 72., 90.,-230.,  30./)) ! lima not tested.                 lima_pjp works
+else
+ call data_override('OCN','sst_obs',sst,Time,override=ov_sst)
+endif
 !call data_override('OCN','sst_obs',sst,Time,override=ov_sst, region1=(/-45., 45.,-190., -10./))
 !call data_override('OCN','sst_obs',sst,Time,override=ov_sst)
  call data_override('ICE', 'sic_obs', ice, Time, override=ov_ice)

@@ -29,15 +29,16 @@
       integer :: index, is1, ie1, js1, je1, ni, nj, total, start1, start, start2
 
       integer,    allocatable :: msg1(:), msg2(:)
-      logical :: send(8), recv(8)
+      logical :: send(8), recv(8), update_edge_only
       MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
       pointer(ptr,buffer )
       integer :: buffer_pos
       character(len=8) :: text
       integer :: buffer_recv_size, shift
       integer :: rank_x, rank_y, ind_x, ind_y, cur_rank
-      integer :: nsend_x, nsend_y, nrecv_x, nrecv_y
+      integer :: nsend_x, nsend_y, nrecv_x, nrecv_y, outunit
 
+      outunit = stdout()
       update_flags = XUPDATE+YUPDATE   !default
       if( PRESENT(flags) ) then 
           update_flags = flags
@@ -53,14 +54,25 @@
       if( BTEST(update_flags,NORTH) .AND. BTEST(domain%fold,NORTH) .AND. BTEST(gridtype,SOUTH) ) &
            call mpp_error( FATAL, 'MPP_DO_UPDATE_V: Incompatible grid offset and fold.' )
 
+      update_edge_only = BTEST(update_flags, EDGEONLY)
       recv(1) = BTEST(update_flags,EAST)
       recv(3) = BTEST(update_flags,SOUTH)
       recv(5) = BTEST(update_flags,WEST)
       recv(7) = BTEST(update_flags,NORTH)
-      recv(2) = recv(1) .AND. recv(3)
-      recv(4) = recv(3) .AND. recv(5)
-      recv(6) = recv(5) .AND. recv(7)
-      recv(8) = recv(7) .AND. recv(1)
+      if( update_edge_only ) then
+         if( .NOT. (recv(1) .OR. recv(3) .OR. recv(5) .OR. recv(7)) ) then
+            recv(1) = .true.
+            recv(3) = .true.
+            recv(5) = .true.
+            recv(7) = .true.
+         endif
+      else
+         recv(2) = recv(1) .AND. recv(3)
+         recv(4) = recv(3) .AND. recv(5)
+         recv(6) = recv(5) .AND. recv(7)
+         recv(8) = recv(7) .AND. recv(1)
+      endif
+
       send    = recv
 
       l_size = size(f_addrsx,1)
@@ -175,7 +187,7 @@
          enddo
 
          call mpp_sync_self()
-         write(stdout(),*)"NOTE from mpp_do_updateV: message sizes are matched between send and recv for domain " &
+         write(outunit,*)"NOTE from mpp_do_updateV: message sizes are matched between send and recv for domain " &
               //trim(domain%name)
          deallocate(msg1, msg2)
       endif
@@ -1132,7 +1144,7 @@
             ! other half may have the wrong sign
             !off west edge, when update north or west direction
             j = domain%y(1)%global%end+shift 
-            if ( BTEST(update_flags,NORTH) .OR. BTEST(update_flags,WEST) ) then
+            if ( recv(7) .OR. recv(5) ) then
                select case(gridtype)
                case(BGRID_NE)
                   if(domain%symmetry) then
@@ -1230,7 +1242,7 @@
             ! other half may have the wrong sign
             !off west edge, when update north or west direction
             j = domain%y(1)%global%begin
-            if ( BTEST(update_flags,SOUTH) .OR. BTEST(update_flags,WEST) ) then
+            if ( recv(3) .OR. recv(5) ) then
                select case(gridtype)
                case(BGRID_NE)
                   is = domain%x(1)%global%begin
@@ -1324,7 +1336,7 @@
             ! other half may have the wrong sign
             !off south edge, when update south or west direction
             i = domain%x(1)%global%begin
-            if ( BTEST(update_flags,SOUTH) .OR. BTEST(update_flags,WEST) ) then
+            if ( recv(3) .OR. recv(5) ) then
                select case(gridtype)
                case(BGRID_NE)
                   js = domain%y(1)%global%begin
@@ -1418,7 +1430,7 @@
             ! other half may have the wrong sign
             !off south edge, when update south or west direction
             i = domain%x(1)%global%end+shift
-            if ( BTEST(update_flags,SOUTH) .OR. BTEST(update_flags,EAST) ) then
+            if ( recv(3) .OR. recv(1) ) then
                select case(gridtype)
                case(BGRID_NE)
                   js = domain%y(1)%global%begin

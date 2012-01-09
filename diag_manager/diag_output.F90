@@ -17,7 +17,7 @@ MODULE diag_output_mod
   USE mpp_mod, ONLY: mpp_npes, mpp_pe
   USE diag_axis_mod, ONLY: diag_axis_init, get_diag_axis, get_axis_length,&
        & get_axis_global_length, get_domain1d, get_domain2d, get_axis_aux, get_tile_count
-  USE diag_data_mod, ONLY: diag_fieldtype, diag_global_att_type 
+  USE diag_data_mod, ONLY: diag_fieldtype, diag_global_att_type, CMOR_MISSING_VALUE
   USE time_manager_mod, ONLY: get_calendar_type, valid_calendar_types
   USE fms_mod, ONLY: error_mesg, mpp_pe, write_version_number, FATAL
 
@@ -46,9 +46,9 @@ MODULE diag_output_mod
   LOGICAL :: module_is_initialized = .FALSE.
 
   CHARACTER(len=128), PRIVATE :: version= &
-       '$Id: diag_output.F90,v 17.0.8.3 2011/01/25 17:10:50 sdu Exp $'
+       '$Id: diag_output.F90,v 19.0 2012/01/06 21:55:50 fms Exp $'
   CHARACTER(len=128), PRIVATE :: tagname= &
-       '$Name: riga_201104 $'
+       '$Name: siena $'
 
 CONTAINS
 
@@ -448,6 +448,7 @@ CONTAINS
                & name, units, long_name,&
                & RANGE(1), RANGE(2),&
                & missing=Field%miss_pack,&
+               & fill=Field%miss_pack,&
                & scale=scale, add=add, pack=ipack,&
                & time_method=time_method)
        ELSE
@@ -455,6 +456,8 @@ CONTAINS
                & Axis_types(axis_indices(1:num)),&
                & name, units,  long_name,&
                & RANGE(1), RANGE(2),&
+               & missing=CMOR_MISSING_VALUE,&
+               & fill=CMOR_MISSING_VALUE,&
                & scale=scale, add=add, pack=ipack,&
                & time_method=time_method)
        END IF
@@ -464,11 +467,14 @@ CONTAINS
                & Axis_types(axis_indices(1:num)),&
                & name, units, long_name,&
                & missing=Field%miss_pack,&
+               & fill=Field%miss_pack,&
                & pack=ipack, time_method=time_method)
        ELSE
           CALL mpp_write_meta(file_unit, Field%Field,&
                & Axis_types(axis_indices(1:num)),&
                & name, units, long_name,&
+               & missing=CMOR_MISSING_VALUE,&
+               & fill=CMOR_MISSING_VALUE,&
                & pack=ipack, time_method=time_method)
        END IF
     END IF

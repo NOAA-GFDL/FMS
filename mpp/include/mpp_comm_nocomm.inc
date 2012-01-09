@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_nocomm.inc,v 18.0.6.1 2010/08/31 14:28:57 z1l Exp $
+! $Id: mpp_comm_nocomm.inc,v 19.0 2012/01/06 22:00:41 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -245,6 +245,16 @@ end subroutine mpp_exit
     return
   end subroutine mpp_set_stack_size
 
+    subroutine mpp_broadcast_char(data, length, from_pe, pelist )
+      character(len=*), intent(inout) :: data(:)
+      integer, intent(in) :: length, from_pe
+      integer, intent(in), optional :: pelist(:)
+
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'mpp_broadcast_text: You must first call mpp_init.' )
+      return
+    end subroutine mpp_broadcast_char
+
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
 !                BASIC MESSAGE PASSING ROUTINE: mpp_transmit                  !
@@ -365,7 +375,6 @@ end subroutine mpp_exit
 #include <mpp_transmit_nocomm.h>
 #endif
 
-#ifdef OVERLOAD_R4
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_real4
 #undef MPP_TRANSMIT_SCALAR_
@@ -421,7 +430,6 @@ end subroutine mpp_exit
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
 #include <mpp_transmit_nocomm.h>
-#endif
 
 #ifdef OVERLOAD_C4
 #undef MPP_TRANSMIT_

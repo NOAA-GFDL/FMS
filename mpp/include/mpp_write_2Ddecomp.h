@@ -31,11 +31,12 @@
 !NEW: data may be on compute OR data domain
       logical :: data_has_halos, halos_are_global, x_is_global, y_is_global
       integer :: is, ie, js, je, isd, ied, jsd, jed, isg, ieg, jsg, jeg, ism, iem, jsm, jem
-      integer :: position
+      integer :: position, errunit
       type(domain2d), pointer :: io_domain=>NULL()
 
       call mpp_clock_begin(mpp_write_clock)
 
+      errunit = stderr()
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%valid )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
 
@@ -51,7 +52,7 @@
       else if( size(data,1).EQ.iem-ism+1 .AND. size(data,2).EQ.jem-jsm+1 )then
           data_has_halos = .TRUE.
       else
-          write( stderr(),'(a,10i5)' )'MPP_WRITE_2DDECOMP fails on field '//trim(field%name)// &
+          write( errunit,'(a,10i5)' )'MPP_WRITE_2DDECOMP fails on field '//trim(field%name)// &
                ': is,ie,js,je, ism,iem,jsm,jem, size(data,1), size(data,2)=', &
                is,ie,js,je, ism,iem,jsm,jem, size(data,1), size(data,2)
           call mpp_error( FATAL, 'MPP_WRITE: data must be either on compute domain or data domain.' )
@@ -140,9 +141,10 @@
 !NEW: data may be on compute OR data domain
       logical :: data_has_halos, halos_are_global, x_is_global, y_is_global
       integer :: is, ie, js, je, isd, ied, jsd, jed, isg, ieg, jsg, jeg, ism, iem, jsm, jem
-      integer :: position
+      integer :: position, errunit
       type(domain2d), pointer :: io_domain=>NULL()
 
+      errunit = stderr()
       call mpp_clock_begin(mpp_write_clock)
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
@@ -160,7 +162,7 @@
       else if( size(data,1).EQ.iem-ism+1 .AND. size(data,2).EQ.jem-jsm+1 )then
           data_has_halos = .TRUE.
       else
-          write( stderr(),'(a,10i5)' )'MPP_WRITE_2DDECOMP fails on field '//trim(field%name)// &
+          write( errunit,'(a,10i5)' )'MPP_WRITE_2DDECOMP fails on field '//trim(field%name)// &
                ': is,ie,js,je, ism,iem,jsm,jem, size(data,1), size(data,2)=', &
                is,ie,js,je, ism,iem,jsm,jem, size(data,1), size(data,2)
           call mpp_error( FATAL, 'MPP_WRITE: data must be either on compute domain or data domain.' )

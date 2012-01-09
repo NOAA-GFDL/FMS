@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_write.inc,v 16.0.8.1.2.4.2.1.6.1.4.1.4.1.4.1 2011/01/03 15:38:10 z1l Exp $
+! $Id: mpp_io_write.inc,v 19.0 2012/01/06 22:03:58 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                            !
@@ -450,12 +450,16 @@
 !attributes
       if( PRESENT(min) )field%min = min
       if( PRESENT(max) )field%max = max
-      if( PRESENT(missing) )field%missing = missing
-      if( PRESENT(fill) )field%fill = fill
       if( PRESENT(scale) )field%scale = scale
       if( PRESENT(add) )field%add = add
       if( PRESENT(standard_name)) field%standard_name = standard_name
-      
+      if( PRESENT(missing) ) field%missing = missing
+      if( PRESENT(fill) ) field%fill = fill
+
+      ! Issue warning if fill and missing are different
+      if ( (present(fill).and.present(missing)) .and. (field%missing .ne. field%fill) ) then
+         call mpp_error(WARNING, 'MPP_WRITE_META: NetCDF attributes _FillValue and missing_value should be equal.')
+      end if
 !pack is currently used only for netCDF
       field%pack = 2        !default write 32-bit floats
       if( PRESENT(pack) )field%pack = pack
@@ -527,22 +531,25 @@
               call mpp_write_meta( unit, field%id, 'valid_max', rval=a, pack=pack )
           end if
       end if  
-      if( PRESENT(missing) )then
-          if( field%pack.EQ.1 .OR. field%pack.EQ.2 )then
-              call mpp_write_meta( unit, field%id, 'missing_value', rval=field%missing, pack=pack )
-          else
-              a = nint((missing-add)/scale)
-              call mpp_write_meta( unit, field%id, 'missing_value', rval=a, pack=pack )
-          end if
-      end if  
-      if( PRESENT(fill) )then
-          if( field%pack.EQ.1 .OR. field%pack.EQ.2 )then
-              call mpp_write_meta( unit, field%id, '_FillValue', rval=field%missing, pack=pack )
-          else
-              a = nint((fill-add)/scale)
-              call mpp_write_meta( unit, field%id, '_FillValue', rval=a, pack=pack )
-          end if
-      end if  
+! write missing_value
+      if ( present(missing) ) then
+         if( field%pack.EQ.1 .OR. field%pack.EQ.2 )then
+            call mpp_write_meta( unit, field%id, 'missing_value', rval=field%missing, pack=pack )
+         else
+            a = nint((missing-add)/scale)
+            call mpp_write_meta( unit, field%id, 'missing_value', rval=a, pack=pack )
+         end if
+      end if
+! write _FillValue
+      if ( present(fill) ) then
+         if( field%pack.EQ.1 .OR. field%pack.EQ.2 )then
+            call mpp_write_meta( unit, field%id, '_FillValue', rval=field%fill, pack=pack )
+         else
+            a = nint((fill-add)/scale)
+            call mpp_write_meta( unit, field%id, '_FillValue', rval=a, pack=pack )
+         end if
+      end if
+
       if( field%pack.NE.1 .AND. field%pack.NE.2 )then
           call mpp_write_meta( unit, field%id, 'packing', ival=field%pack )
           if( PRESENT(scale) )call mpp_write_meta( unit, field%id, 'scale_factor',  rval=field%scale )

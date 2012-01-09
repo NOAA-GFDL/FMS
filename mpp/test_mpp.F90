@@ -32,6 +32,7 @@ program test   !test various aspects of mpp_mod
 #endif
   integer                         :: tick, tick0, ticks_per_sec, id
   integer                         :: pe, npes, root, i, j, k, l, m, n2, istat
+  integer                         :: out_unit
   real                            :: dt
 
   call mpp_init()
@@ -40,6 +41,7 @@ program test   !test various aspects of mpp_mod
   npes = mpp_npes()
   root = mpp_root_pe()
 
+  out_unit = stdout()
   ! first test broadcast
   call test_broadcast()
 
@@ -76,7 +78,7 @@ program test   !test various aspects of mpp_mod
      call SYSTEM_CLOCK(tick)
      dt = real(tick-tick0)/(npes*ticks_per_sec)
      dt = max( dt, epsilon(dt) )
-     if( pe.EQ.root )write( stdout(),'(/a,i8,f13.6,f8.2)' )'MPP_TRANSMIT length, time, bw(Mb/s)=', l, dt, l*8e-6/dt
+     if( pe.EQ.root )write( out_unit,'(/a,i8,f13.6,f8.2)' )'MPP_TRANSMIT length, time, bw(Mb/s)=', l, dt, l*8e-6/dt
 !#ifdef SGICRAY
 !     !--- shmem_put ----------------------------------------------------
 !     call mpp_sync()
@@ -115,7 +117,7 @@ program test   !test various aspects of mpp_mod
   call SYSTEM_CLOCK(tick)
   dt = real(tick-tick0)/ticks_per_sec
   dt = max( dt, epsilon(dt) )
-  if( pe.EQ.root )write( stdout(),'(a,2i6,f9.1,i8,f13.6,f8.2/)' ) &
+  if( pe.EQ.root )write( out_unit,'(a,2i6,f9.1,i8,f13.6,f8.2/)' ) &
        'mpp_sum: pe, npes, sum(pe+1), length, time, bw(Mb/s)=', pe, npes, a(1), n, dt, n*8e-6/dt
   call mpp_clock_end(id)
   !---------------------------------------------------------------------!
@@ -131,7 +133,7 @@ program test   !test various aspects of mpp_mod
   print *, 'pe, max(pe+1)=', pe, a(1)
   !pelist check
   call mpp_sync()
-  call flush(stdout(),istat)
+  call flush(out_unit,istat)
   if( npes.GE.2 )then
      if( pe.EQ.root )print *, 'Test of pelists: bcast, sum and max using PEs 0...npes-2 (excluding last PE)'
      call mpp_declare_pelist( (/(i,i=0,npes-2)/) )
@@ -247,7 +249,7 @@ contains
         if(textA(n) .NE. textB(n)) call mpp_error(FATAL, "test_broadcast: after broadcast, textA should equal textB")
      enddo
 
-     write(stdout(),*) "==> NOTE from test_broadcast: The test is succesful"
+     write(out_unit,*) "==> NOTE from test_broadcast: The test is succesful"
 
   end subroutine test_broadcast
 

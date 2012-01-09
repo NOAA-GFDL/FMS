@@ -43,8 +43,8 @@ module axis_utils_mod
   integer, parameter :: maxatts = 100
   real, parameter    :: epsln= 1.e-10
   real, parameter    :: fp5 = 0.5, f360 = 360.0
-  character(len=256) :: version = '$Id: axis_utils.F90,v 16.0.10.1 2010/08/31 14:21:39 z1l Exp $'
-  character(len=256) :: tagname = '$Name: riga_201104 $'   
+  character(len=256) :: version = '$Id: axis_utils.F90,v 19.0 2012/01/06 21:54:25 fms Exp $'
+  character(len=256) :: tagname = '$Name: siena $'   
 
   interface interp_1d
      module procedure interp_1d_1d

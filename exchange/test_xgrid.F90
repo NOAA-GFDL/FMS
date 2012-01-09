@@ -3,7 +3,7 @@
 
 program xgrid_test
 
-  use mpp_mod,         only : mpp_pe, mpp_npes, mpp_error, FATAL, mpp_chksum
+  use mpp_mod,         only : mpp_pe, mpp_npes, mpp_error, FATAL, mpp_chksum, mpp_min, mpp_max
   use mpp_mod,         only : mpp_clock_begin, mpp_clock_end, mpp_clock_id, MPP_CLOCK_SYNC
   use mpp_domains_mod, only : mpp_define_domains, mpp_define_layout, mpp_domains_exit
   use mpp_domains_mod, only : mpp_get_compute_domain, domain2d, mpp_domains_init
@@ -37,9 +37,13 @@ implicit none
   character(len=256) :: runoff_field_name  = "none"
   integer            :: num_iter           = 0 
   integer            :: nk_lnd = 1, nk_ocn = 1
+  integer            :: atm_layout(2) = (/0,0/)
+  integer            :: lnd_layout(2) = (/0,0/)
+  integer            :: ocn_layout(2) = (/0,0/)
+
 
   namelist /xgrid_test_nml/ atm_input_file, atm_field_name, runoff_input_file, runoff_field_name, num_iter, &
-                            nk_lnd, nk_ocn
+                            nk_lnd, nk_ocn, atm_layout, ocn_layout, lnd_layout
 
   integer              :: remap_method
   integer              :: pe, npes, ierr, nml_unit, io, n
@@ -65,13 +69,16 @@ implicit none
   real, allocatable    :: xc(:,:), yc(:,:)  ! on C-cell compute domain
   real, allocatable    :: tmpx(:,:), tmpy(:,:)
   real, allocatable    :: atm_data_in(:,:), atm_data_out(:,:)
+  real, allocatable    :: atm_data_out_1(:,:), atm_data_out_2(:,:), atm_data_out_3(:,:)
   real, allocatable    :: lnd_data_out(:,:,:), ocn_data_out(:,:,:)
   real, allocatable    :: runoff_data_in(:,:), runoff_data_out(:,:,:)
   real, allocatable    :: atm_area(:,:), lnd_area(:,:), ocn_area(:,:)
   real, allocatable    :: lnd_frac(:,:,:), ocn_frac(:,:,:)
-  real, allocatable    :: x_1(:), x_2(:)
+  real, allocatable    :: x_1(:), x_2(:), x_3(:), x_4(:)
   real                 :: sum_atm_in, sum_ocn_out, sum_lnd_out, sum_atm_out
   real                 :: sum_runoff_in, sum_runoff_out, tot
+  real                 :: min_atm_in, max_atm_in, min_atm_out, max_atm_out
+  real                 :: min_x, max_x
   logical              :: atm_input_file_exist, runoff_input_file_exist
   integer              :: npes_per_tile
   integer              :: id_put_side1_to_xgrid, id_get_side1_from_xgrid
@@ -105,24 +112,32 @@ implicit none
 10 call close_file(nml_unit)
  endif
 
+  ntile_atm = 1
+  ntile_ocn = 1
+  ntile_lnd = 1
+
   if(field_exist(grid_file, "AREA_ATM" ) ) then
      allocate(atm_nx(1), atm_ny(1))
      allocate(lnd_nx(1), lnd_ny(1))
      allocate(ocn_nx(1), ocn_ny(1))
-     allocate(layout(1,2))
      call field_size(grid_file, "AREA_ATM", siz )
      atm_nx = siz(1); atm_ny = siz(2)
      call field_size(grid_file, "AREA_OCN", siz )
      ocn_nx = siz(1); ocn_ny = siz(2)
      call field_size(grid_file, "AREA_LND", siz )
      lnd_nx = siz(1); lnd_ny = siz(2)
-     call mpp_define_layout( (/1,atm_nx,1,atm_ny/), npes, layout(1,:)) 
-     call mpp_define_domains( (/1,atm_nx,1,atm_ny/), layout(1,:), Atm_domain)
-     call mpp_define_layout( (/1,lnd_nx,1,lnd_ny/), npes, layout(1,:)) 
-     call mpp_define_domains( (/1,lnd_nx,1,lnd_ny/), layout(1,:), Lnd_domain) 
-     call mpp_define_layout( (/1,ocn_nx,1,ocn_ny/), npes, layout(1,:))
-     call mpp_define_domains( (/1,ocn_nx,1,ocn_ny/), layout(1,:), Ocn_domain)
-     deallocate(layout)
+     if( atm_layout(1)*atm_layout(2) .NE. npes ) then
+        call mpp_define_layout( (/1,atm_nx,1,atm_ny/), npes, atm_layout) 
+     endif
+     call mpp_define_domains( (/1,atm_nx,1,atm_ny/), atm_layout, Atm_domain, name="atmosphere")
+     if( lnd_layout(1)*lnd_layout(2) .NE. npes ) then
+        call mpp_define_layout( (/1,lnd_nx,1,lnd_ny/), npes, lnd_layout) 
+     endif
+     call mpp_define_domains( (/1,lnd_nx,1,lnd_ny/), lnd_layout, Lnd_domain, name="land") 
+     if( ocn_layout(1)*ocn_layout(2) .NE. npes ) then
+        call mpp_define_layout( (/1,ocn_nx,1,ocn_ny/), npes, ocn_layout)
+     endif
+     call mpp_define_domains( (/1,ocn_nx,1,ocn_ny/), ocn_layout, Ocn_domain, name="ocean")
   else if (field_exist(grid_file, "atm_mosaic" ) ) then
      !--- Get the mosaic data of each component model 
      call read_data(grid_file, 'atm_mosaic', atm_mosaic)
@@ -169,12 +184,16 @@ implicit none
         pe_start(n) = (n-1)*npes_per_tile
         pe_end(n)   = n*npes_per_tile - 1
         global_indices(:,n) = (/1, atm_nx(n), 1, atm_ny(n)/)
-        call mpp_define_layout( global_indices(:,n), pe_end(n)-pe_start(n)+1, layout(:,n))
+        if(atm_layout(1)*atm_layout(2) == npes_per_tile ) then
+           layout(:,n) = atm_layout(:)
+        else
+           call mpp_define_layout( global_indices(:,n), pe_end(n)-pe_start(n)+1, layout(:,n))
+        endif
      end do
  
      call mpp_define_mosaic(global_indices, layout, Atm_domain, ntile_atm, ncontact, tile1, tile2, &
                             istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,        &
-                            pe_start, pe_end, whalo=1, ehalo=1, shalo=1, nhalo=1)
+                            pe_start, pe_end, whalo=1, ehalo=1, shalo=1, nhalo=1, name="atmosphere")
      deallocate( pe_start, pe_end, global_indices, layout )
 
      allocate(pe_start(ntile_lnd), pe_end(ntile_lnd) )
@@ -184,13 +203,17 @@ implicit none
         pe_start(n) = (n-1)*npes_per_tile
         pe_end(n)   = n*npes_per_tile - 1
         global_indices(:,n) = (/1, lnd_nx(n), 1, lnd_ny(n)/)
-        call mpp_define_layout( global_indices(:,n), pe_end(n)-pe_start(n)+1, layout(:,n))
+        if(lnd_layout(1)*lnd_layout(2) == npes_per_tile ) then
+           layout(:,n) = lnd_layout(:)
+        else
+           call mpp_define_layout( global_indices(:,n), pe_end(n)-pe_start(n)+1, layout(:,n))
+        endif
      end do
 
      ncontact = 0 ! no update is needed for land and ocean model.
  
      call mpp_define_mosaic(global_indices, layout, Lnd_domain, ntile_lnd, ncontact, dummy, dummy, &
-                            dummy, dummy, dummy, dummy, dummy, dummy, dummy, dummy, pe_start, pe_end)
+                            dummy, dummy, dummy, dummy, dummy, dummy, dummy, dummy, pe_start, pe_end, name="land")
      deallocate( pe_start, pe_end, global_indices, layout )
 
      allocate(pe_start(ntile_ocn), pe_end(ntile_ocn) )
@@ -200,11 +223,15 @@ implicit none
         pe_start(n) = (n-1)*npes_per_tile
         pe_end(n)   = n*npes_per_tile - 1
         global_indices(:,n) = (/1, ocn_nx(n), 1, ocn_ny(n)/)
-        call mpp_define_layout( global_indices(:,n), pe_end(n)-pe_start(n)+1, layout(:,n))
+        if(ocn_layout(1)*ocn_layout(2) == npes_per_tile ) then
+           layout(:,n) = ocn_layout(:)
+        else
+           call mpp_define_layout( global_indices(:,n), pe_end(n)-pe_start(n)+1, layout(:,n))
+        endif
      end do
  
      call mpp_define_mosaic(global_indices, layout, Ocn_domain, ntile_ocn, ncontact, dummy, dummy, &
-                            dummy, dummy, dummy, dummy, dummy, dummy, dummy, dummy, pe_start, pe_end)
+                            dummy, dummy, dummy, dummy, dummy, dummy, dummy, dummy, pe_start, pe_end, name="ocean")
      deallocate( pe_start, pe_end, global_indices, layout )
   else
      call mpp_error(FATAL, 'test_xgrid:both AREA_ATM and atm_mosaic does not exist in '//trim(grid_file))
@@ -324,21 +351,54 @@ implicit none
      allocate(atm_data_out(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
      allocate(lnd_data_out(isc_lnd:iec_lnd, jsc_lnd:jec_lnd, nk_lnd) )
      allocate(ocn_data_out(isc_ocn:iec_ocn, jsc_ocn:jec_ocn, nk_ocn) )
+     allocate(atm_data_out_1(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
+     allocate(atm_data_out_2(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
+     allocate(atm_data_out_3(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
      nxgrid = max(xgrid_count(Xmap), 1)
      allocate(x_1(nxgrid), x_2(nxgrid))
+     allocate(x_3(nxgrid), x_4(nxgrid))
+     x_1 = 0
+     x_2 = 0
+     x_3 = 0
+     x_4 = 0
 
      atm_data_in  = 0
      atm_data_out = 0
      lnd_data_out = 0
      ocn_data_out = 0
+     atm_data_out_1 = 0
+     atm_data_out_2 = 0
+     atm_data_out_3 = 0
      ! test one time level should be sufficient
      call read_data(atm_input_file, atm_field_name, atm_data_in, atm_domain)
      call put_to_xgrid(atm_data_in, 'ATM', x_1, Xmap, remap_method=remap_method)
+     call put_to_xgrid(atm_data_in, 'ATM', x_2, Xmap, remap_method=remap_method, complete=.false.)
+     call put_to_xgrid(atm_data_in, 'ATM', x_3, Xmap, remap_method=remap_method, complete=.false.)
+     call put_to_xgrid(atm_data_in, 'ATM', x_4, Xmap, remap_method=remap_method, complete=.true.)
+     min_x = minval(x_1)
+     max_x = maxval(x_1)
+     !--- check make sure x_2, x_3 and x_4 are the same as x_1
+     if(ANY(x_1 .NE. x_2)) call mpp_error(FATAL,"test_xgrid: x_1 and x_2 are not equal")
+     if(ANY(x_1 .NE. x_3)) call mpp_error(FATAL,"test_xgrid: x_1 and x_3 are not equal")
+     if(ANY(x_1 .NE. x_4)) call mpp_error(FATAL,"test_xgrid: x_1 and x_4 are not equal")
+ 
+     deallocate(x_3,x_4)
+     x_2 = 0
      call get_from_xgrid(lnd_data_out, 'LND', x_1, xmap)
      call get_from_xgrid(ocn_data_out, 'OCN', x_1, xmap)
      call put_to_xgrid(lnd_data_out, 'LND', x_2, xmap)
      call put_to_xgrid(ocn_data_out, 'OCN', x_2, xmap)
      call get_from_xgrid(atm_data_out, 'ATM', x_2, xmap)
+     call get_from_xgrid(atm_data_out_1, 'ATM', x_2, xmap, complete=.false.)
+     call get_from_xgrid(atm_data_out_2, 'ATM', x_2, xmap, complete=.false.)
+     call get_from_xgrid(atm_data_out_3, 'ATM', x_2, xmap, complete=.true.)
+     if(ANY(atm_data_out .NE. atm_data_out_1)) &
+        call mpp_error(FATAL,"test_xgrid: atm_data_out and atm_data_out_1 are not equal")
+     if(ANY(atm_data_out .NE. atm_data_out_2)) &
+        call mpp_error(FATAL,"test_xgrid: atm_data_out and atm_data_out_2 are not equal")
+     if(ANY(atm_data_out .NE. atm_data_out_3)) &
+        call mpp_error(FATAL,"test_xgrid: atm_data_out and atm_data_out_3 are not equal")
+
      call write_data( atm_output_file, atm_field_name, atm_data_out, atm_domain)
      call write_data( lnd_output_file, atm_field_name, lnd_data_out, lnd_domain)
      call write_data( ocn_output_file, atm_field_name, ocn_data_out, ocn_domain)
@@ -356,6 +416,17 @@ implicit none
      call get_xmap_grid_area("LND", Xmap, lnd_area)
      call get_xmap_grid_area("OCN", Xmap, ocn_area)
 
+     min_atm_in   = minval(atm_data_in)
+     max_atm_in   = maxval(atm_data_in)
+     min_atm_out  = minval(atm_data_out)
+     max_atm_out  = maxval(atm_data_out)
+     call mpp_min(min_atm_in)
+     call mpp_max(max_atm_in)
+     call mpp_min(min_atm_out)
+     call mpp_max(max_atm_out)
+     call mpp_min(min_x)
+     call mpp_max(max_x)
+
      sum_atm_in  = mpp_global_sum(atm_domain, atm_area * atm_data_in)
      sum_lnd_out = 0
      do k = 1, nk_lnd
@@ -370,7 +441,16 @@ implicit none
      write(out_unit,*) "the global area sum of atmos input data is                    : ", sum_atm_in 
      write(out_unit,*) "the global area sum of atmos output data is                   : ", sum_atm_out
      write(out_unit,*) "the global area sum of land output data + ocean output data is: ", sum_lnd_out+sum_ocn_out
+     write(out_unit,*) "The min of atmos input   data is ", min_atm_in
+     write(out_unit,*) "The min of xgrid         data is ", min_x
+     write(out_unit,*) "The min of atmos output  data is ", min_atm_out
+     write(out_unit,*) "The max of atmos input   data is ", max_atm_in
+     write(out_unit,*) "The max of xgrid         data is ", max_x
+     write(out_unit,*) "The max of atmos output  data is ", max_atm_out
+
+
      deallocate(atm_area, lnd_area, ocn_area, atm_data_in, atm_data_out, lnd_data_out, ocn_data_out)
+     deallocate(atm_data_out_1, atm_data_out_2, atm_data_out_3)
      deallocate(x_1, x_2)
   else
      write(out_unit,*) "NOTE from test_xgrid ==> file "//trim(atm_input_file)//" does not exist, no check is done for real data sets."

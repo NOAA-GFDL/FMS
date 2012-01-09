@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_mpi.inc,v 18.0.2.3.4.1.2.5.4.5 2011/02/23 14:04:13 z1l Exp $
+! $Id: mpp_comm_mpi.inc,v 19.0 2012/01/06 22:00:39 fms Exp $
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -40,9 +40,13 @@
 
 
   !PEsets: make defaults illegal
+  allocate(peset(0:current_peset_max))
   peset(:)%count = -1
   peset(:)%id = -1
   peset(:)%group = -1
+  peset(:)%start = -1
+  peset(:)%log2stride = -1
+  peset(:)%name  = " "
   !0=single-PE, initialized so that count returns 1
   peset(0)%count = 1
   allocate( peset(0)%list(1) )

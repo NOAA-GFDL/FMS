@@ -176,7 +176,7 @@ MODULE diag_manager_mod
 #endif
 
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
-       & file_exist, fms_error_handler
+       & file_exist, fms_error_handler, check_nml_error
   USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, max_axes, get_axis_num
   USE diag_util_mod, ONLY: get_subfield_size, log_diag_field_info, update_bounds,&
        & check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
@@ -211,9 +211,9 @@ MODULE diag_manager_mod
 
   ! version number of this module
   CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id: diag_manager.F90,v 18.0.2.23 2011/02/10 15:02:47 sdu Exp $'
+       & '$Id: diag_manager.F90,v 19.0 2012/01/06 21:55:46 fms Exp $'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: riga_201104 $'  
+       & '$Name: siena $'  
 
   type(time_type) :: Time_end
 
@@ -1090,7 +1090,7 @@ CONTAINS
     LOGICAL :: reduced_k_range, local_output
     LOGICAL :: time_max, time_min
     LOGICAL :: missvalue_present
-    LOGICAL, DIMENSION(SIZE(field,1),SIZE(field,2),SIZE(field,3)) :: oor_mask
+    LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) :: oor_mask
     CHARACTER(len=256) :: err_msg_local
     CHARACTER(len=128) :: error_string, error_string1
     TYPE(time_type) :: dt ! time interval for diurnal output
@@ -1110,6 +1110,13 @@ CONTAINS
     err_msg_local = ''
 
     ! oor_mask is only used for checking out of range values.
+    ALLOCATE(oor_mask(SIZE(field,1),SIZE(field,2),SIZE(field,3)), STAT=status)
+    IF ( status .NE. 0 ) THEN
+       WRITE (err_msg_local, FMT='("Unable to allocate oor_mask(",I5,",",I5,",",I5"). (STAT: ",I5,")")')&
+            & SIZE(field,1), SIZE(field,2), SIZE(field,3), status
+       IF ( fms_error_handler('send_data_3d', err_msg_local, err_msg) ) RETURN
+    END IF
+
     IF ( PRESENT(mask) ) THEN 
        oor_mask = mask
     ELSE 
@@ -1130,18 +1137,30 @@ CONTAINS
     ! of presence/absence of is,ie,js,je. The checks below should catch improper combinations.
     IF ( PRESENT(ie_in) ) THEN
        IF ( .NOT.PRESENT(is_in) ) THEN
-          IF ( fms_error_handler('send_data_3d', 'ie_in present without is_in', err_msg) ) RETURN
+          IF ( fms_error_handler('send_data_3d', 'ie_in present without is_in', err_msg) ) THEN 
+             DEALLOCATE(oor_mask)
+             RETURN
+          END IF
        END IF
        IF ( PRESENT(js_in) .AND. .NOT.PRESENT(je_in) ) THEN
-          IF ( fms_error_handler('send_data_3d', 'is_in and ie_in present, but js_in present without je_in', err_msg) ) RETURN
+          IF ( fms_error_handler('send_data_3d', 'is_in and ie_in present, but js_in present without je_in', err_msg) ) THEN 
+             DEALLOCATE(oor_mask)
+             RETURN
+          END IF
        END IF
     END IF
     IF ( PRESENT(je_in) ) THEN
        IF ( .NOT.PRESENT(js_in) ) THEN
-          IF ( fms_error_handler('send_data_3d', 'je_in present without js_in', err_msg) ) RETURN
+          IF ( fms_error_handler('send_data_3d', 'je_in present without js_in', err_msg) ) THEN 
+             DEALLOCATE(oor_mask)
+             RETURN
+          END IF
        END IF
        IF ( PRESENT(is_in) .AND. .NOT.PRESENT(ie_in) ) THEN
-          IF ( fms_error_handler('send_data_3d', 'js_in and je_in present, but is_in present without ie_in', err_msg)) RETURN
+          IF ( fms_error_handler('send_data_3d', 'js_in and je_in present, but is_in present without ie_in', err_msg)) THEN 
+             DEALLOCATE(oor_mask)
+             RETURN
+          END IF
        END IF
     END IF
 
@@ -1163,11 +1182,17 @@ CONTAINS
     IF ( PRESENT(ke_in) ) ke = ke_in
     twohi = n1-(ie-is+1)
     IF ( MOD(twohi,2) /= 0 ) THEN
-       IF ( fms_error_handler('send_data_3d', 'non-symmetric halos in first dimension', err_msg) ) RETURN
+       IF ( fms_error_handler('send_data_3d', 'non-symmetric halos in first dimension', err_msg) ) THEN 
+          DEALLOCATE(oor_mask)
+          RETURN
+       END IF
     END IF
     twohj = n2-(je-js+1)
     IF ( MOD(twohj,2) /= 0 ) THEN
-       IF ( fms_error_handler('send_data_3d', 'non-symmetric halos in second dimension', err_msg) ) RETURN
+       IF ( fms_error_handler('send_data_3d', 'non-symmetric halos in second dimension', err_msg) ) THEN 
+          DEALLOCATE(oor_mask)
+          RETURN
+       END IF
     END IF
     hi = twohi/2
     hj = twohj/2
@@ -1199,6 +1224,7 @@ CONTAINS
     IF ( missvalue_present ) missvalue = input_fields(diag_field_id)%missing_value
 
     number_of_outputs = input_fields(diag_field_id)%num_output_fields
+    input_fields(diag_field_id)%numthreads = 1
 #if defined(_OPENMP)
     input_fields(diag_field_id)%numthreads = omp_get_num_threads()
 #endif
@@ -1315,7 +1341,10 @@ CONTAINS
                      & TRIM(input_fields(diag_field_id)%module_name),&
                      & TRIM(output_fields(out_num)%output_name)
                 IF ( fms_error_handler('send_data_3d', 'module/output_field '//TRIM(error_string)//&
-                     & ', time must be present when output frequency = EVERY_TIME', err_msg)) RETURN
+                     & ', time must be present when output frequency = EVERY_TIME', err_msg)) THEN 
+                   DEALLOCATE(oor_mask)
+                   RETURN
+                END IF
              END IF
           END IF
        END IF 
@@ -1324,7 +1353,10 @@ CONTAINS
                & TRIM(input_fields(diag_field_id)%module_name), &
                & TRIM(output_fields(out_num)%output_name)
           IF ( fms_error_handler('send_data_3d', 'module/output_field '//TRIM(error_string)//&
-               & ', time must be present for nonstatic field', err_msg)) RETURN
+               & ', time must be present for nonstatic field', err_msg)) THEN 
+             DEALLOCATE(oor_mask)
+             RETURN
+          END IF
        END IF
 
        ! Is it time to output for this field; CAREFUL ABOUT > vs >= HERE
@@ -1340,7 +1372,10 @@ CONTAINS
                            & TRIM(input_fields(diag_field_id)%module_name), &
                            & TRIM(output_fields(out_num)%output_name)
                       IF ( fms_error_handler('send_data_3d', 'module/output_field '//TRIM(error_string)//&
-                           & ' is skipped one time level in output data', err_msg)) RETURN
+                           & ' is skipped one time level in output data', err_msg)) THEN 
+                         DEALLOCATE(oor_mask)
+                         RETURN
+                      END IF
                    END IF
                 END IF
 
@@ -1348,7 +1383,10 @@ CONTAINS
                 IF(status == -1) THEN
                    IF ( mpp_pe() .EQ. mpp_root_pe() ) THEN
                       IF(fms_error_handler('send_data_3d','module/output_field '//TRIM(error_string)//&
-                           & ', write EMPTY buffer', err_msg)) RETURN
+                           & ', write EMPTY buffer', err_msg)) THEN 
+                         DEALLOCATE(oor_mask)
+                         RETURN
+                      END IF
                    END IF
                 END IF
              END IF  !time > output_fields(out_num)%next_output
@@ -1359,7 +1397,10 @@ CONTAINS
        IF ( .NOT.output_fields(out_num)%static .AND. .NOT.need_compute .AND. debug_diag_manager ) THEN
           CALL check_bounds_are_exact_dynamic(out_num, diag_field_id, Time, err_msg=err_msg_local)
           IF ( err_msg_local /= '' ) THEN
-             IF ( fms_error_handler('send_data', err_msg_local, err_msg) ) RETURN
+             IF ( fms_error_handler('send_data', err_msg_local, err_msg) ) THEN 
+                DEALLOCATE(oor_mask)
+                RETURN
+             END IF
           END IF
        END IF
  
@@ -1371,7 +1412,10 @@ CONTAINS
                      & TRIM(input_fields(diag_field_id)%module_name), &
                      & TRIM(output_fields(out_num)%output_name)   
                 IF ( fms_error_handler('send_data_3d', 'module/output_field '//TRIM(error_string)//&
-                     & ', regional output NOT supported with mask_variant', err_msg)) RETURN
+                     & ', regional output NOT supported with mask_variant', err_msg)) THEN 
+                   DEALLOCATE(oor_mask)
+                   RETURN
+                END IF
              END IF
 
              ! Should reduced_k_range data be supported with the mask_variant option   ?????
@@ -1382,7 +1426,10 @@ CONTAINS
                       CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                       CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                       IF ( err_msg_local /= '' ) THEN
-                         IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) RETURN
+                         IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                            DEALLOCATE(oor_mask)
+                            RETURN
+                         END IF
                       END IF
                    END IF
 
@@ -1421,14 +1468,20 @@ CONTAINS
                         & TRIM(input_fields(diag_field_id)%module_name), &
                         & TRIM(output_fields(out_num)%output_name)
                    IF ( fms_error_handler('send_data_3d', 'module/output_field '//TRIM(error_string)//&
-                        & ', variable mask but no missing value defined', err_msg)) RETURN
+                        & ', variable mask but no missing value defined', err_msg)) THEN 
+                      DEALLOCATE(oor_mask)
+                      RETURN
+                   END IF
                 END IF
              ELSE  ! no mask present
                 WRITE (error_string,'(a,"/",a)')&
                      & TRIM(input_fields(diag_field_id)%module_name), &
                      & TRIM(output_fields(out_num)%output_name)
                 IF(fms_error_handler('send_data_3d','module/output_field '//TRIM(error_string)//&
-                     & ', variable mask but no mask given', err_msg)) RETURN
+                     & ', variable mask but no mask given', err_msg)) THEN 
+                   DEALLOCATE(oor_mask)
+                   RETURN
+                END IF
              END IF
           ELSE ! mask_variant=false
              IF ( PRESENT(mask) ) THEN
@@ -1483,7 +1536,10 @@ CONTAINS
                          CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                          CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                          IF ( err_msg_local /= '' ) THEN
-                            IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) RETURN
+                            IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                               DEALLOCATE(oor_mask)
+                               RETURN
+                            END IF
                          END IF
                       END IF
                       DO k=ks, ke
@@ -1551,7 +1607,10 @@ CONTAINS
                          CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                          CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                          IF ( err_msg_local /= '') THEN
-                            IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) RETURN
+                            IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                               DEALLOCATE(oor_mask)
+                               RETURN
+                            END IF
                          END IF
                       END IF
                       output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
@@ -1646,7 +1705,10 @@ CONTAINS
                          CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                          CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                          IF ( err_msg_local /= '' ) THEN
-                            IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) RETURN
+                            IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                               DEALLOCATE(oor_mask)
+                               RETURN
+                            END IF
                          END IF
                       END IF
                       DO k=ks, ke
@@ -1711,7 +1773,10 @@ CONTAINS
                          CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                          CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                          IF ( err_msg_local /= '' ) THEN
-                            IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) RETURN
+                            IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                               DEALLOCATE(oor_mask)
+                               RETURN
+                            END IF
                          END IF
                       END IF
                       output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
@@ -1762,7 +1827,10 @@ CONTAINS
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) RETURN
+                      IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                         DEALLOCATE(oor_mask)
+                         RETURN
+                      END IF
                    END IF
                 END IF
                 WHERE ( mask(f1:f2,f3:f4,ks:ke) .AND.&
@@ -1796,7 +1864,10 @@ CONTAINS
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) RETURN
+                      IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                         DEALLOCATE(oor_mask)
+                         RETURN
+                      END IF
                    END IF
                 END IF
                 WHERE ( field(f1:f2,f3:f4,ks:ke) > output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) ) &
@@ -1834,7 +1905,10 @@ CONTAINS
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) RETURN
+                      IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                         DEALLOCATE(oor_mask)
+                         RETURN
+                      END IF
                    END IF
                 END IF
                 WHERE ( mask(f1:f2,f3:f4,ks:ke) .AND.&
@@ -1868,7 +1942,10 @@ CONTAINS
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) RETURN
+                      IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                         DEALLOCATE(oor_mask)
+                         RETURN
+                      END IF
                    END IF
                 END IF
                 WHERE ( field(f1:f2,f3:f4,ks:ke) < output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) )&
@@ -1898,7 +1975,10 @@ CONTAINS
                 CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                 CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                 IF ( err_msg_local /= '' ) THEN
-                   IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) RETURN
+                   IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                      DEALLOCATE(oor_mask)
+                      RETURN
+                   END IF
                 END IF
              END IF
              output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
@@ -1947,7 +2027,10 @@ CONTAINS
        IF ( output_fields(out_num)%static .AND. .NOT.need_compute .AND. debug_diag_manager ) THEN
           CALL check_bounds_are_exact_static(out_num, diag_field_id, err_msg=err_msg_local)
           IF ( err_msg_local /= '' ) THEN
-             IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg)) RETURN
+             IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg)) THEN 
+                DEALLOCATE(oor_mask)
+                RETURN
+             END IF
           END IF
        END IF
  
@@ -1992,6 +2075,8 @@ CONTAINS
        END IF
 
     END DO num_out_fields
+    
+    DEALLOCATE(oor_mask)
   END FUNCTION send_data_3d
   ! </FUNCTION>
 
@@ -2491,8 +2576,12 @@ CONTAINS
     END IF
 #endif
     ! Check the status of reading the diag_manager_nml
-    IF ( mystat > 0 ) THEN
-       IF ( fms_error_handler('diag_manager_init', 'Error reading diag_manager_nml', err_msg) ) RETURN
+    
+    IF ( check_nml_error(IOSTAT=mystat, NML_NAME='DIAG_MANAGER_NML') < 0 ) THEN
+       IF ( mpp_pe() == mpp_root_pe() ) THEN
+          CALL error_mesg('diag_manager_mod::diag_manager_init', 'DIAG_MANAGER_NML not found in input.nml.  Using defaults.',&
+               & WARNING)
+       END IF
     END IF
 
     IF ( mpp_pe() == mpp_root_pe() ) THEN 
@@ -2929,7 +3018,7 @@ PROGRAM test
 #ifdef INTERNAL_FILE_NML
   USE mpp_mod, ONLY: input_nml_file
 #else
-  USE fms_mod, ONLY:  open_namelist_file, 
+  USE fms_mod, ONLY:  open_namelist_file
 #endif
   USE fms_io_mod, ONLY: fms_io_exit
   USE constants_mod, ONLY: constants_init, PI, RAD_TO_DEG
@@ -2992,11 +3081,11 @@ PROGRAM test
 #else
   IF ( file_exist('input.nml') ) THEN
      ierr=1
-     DO WHILE (ierr /= 0)
-        READ(nml_unit, nml=test_diag_manager_nml, iostat=io, END=10)
+     DO WHILE (ierr > 0)
+        READ(nml_unit, nml=test_diag_manager_nml, iostat=io)
         ierr = check_nml_error(io, 'test_diag_manager_nml')
      END DO
-10   CALL close_file(nml_unit)
+     CALL close_file(nml_unit)
   END IF
 #endif
   WRITE (log_unit,test_diag_manager_nml)

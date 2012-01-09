@@ -22,12 +22,14 @@ subroutine MPP_DO_GET_BOUNDARY_3D_( f_addrs, domain, bound, b_addrs, bsize, ke, 
   integer                 :: i, j, k, l, m, n, index, buffer_recv_size
   integer                 :: is, ie, js, je, msgsize, l_size
   character(len=8)        :: text
+  integer                 :: outunit
 
   MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
 
   pointer( ptr, buffer )
   ptr = LOC(mpp_domains_stack)
 
+  outunit = stdout()
   l_size = size(f_addrs,1)
   recv(1) = BTEST(flags,EAST)
   recv(2) = BTEST(flags,SOUTH)
@@ -80,7 +82,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_( f_addrs, domain, bound, b_addrs, bsize, ke, 
          endif
       enddo
       call mpp_sync_self()
-      write(stdout(),*)"NOTE from mpp_do_get_boundary: message sizes are matched between send and recv for domain " &
+      write(outunit,*)"NOTE from mpp_do_get_boundary: message sizes are matched between send and recv for domain " &
                        //trim(domain%name)
       deallocate(msg1, msg2)
   endif
@@ -300,11 +302,13 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
   integer                 :: rank_x, rank_y, cur_rank, ind_x, ind_y
   integer                 :: nsend_x, nsend_y, nrecv_x, nrecv_y
   character(len=8)        :: text
+  integer                 :: outunit
 
   MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
   pointer( ptr, buffer )
   ptr = LOC(mpp_domains_stack)
 
+  outunit = stdout()
   l_size = size(f_addrsx,1)
   recv(1) = BTEST(flags,EAST)
   recv(2) = BTEST(flags,SOUTH)
@@ -421,7 +425,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
       enddo
 
       call mpp_sync_self()
-      write(stdout(),*)"NOTE from mpp_do_get_boundary_V: message sizes are matched between send and recv for domain " &
+      write(outunit,*)"NOTE from mpp_do_get_boundary_V: message sizes are matched between send and recv for domain " &
                        //trim(domain%name)
       deallocate(msg1, msg2)
   endif

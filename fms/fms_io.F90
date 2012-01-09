@@ -287,7 +287,6 @@ integer :: num_files_w = 0 ! number of currently opened files for writing
 integer :: num_domains = 0 ! number of domains in array_domain
 integer :: num_registered_files ! mumber of files registered by calling register_restart_file
 
-
 integer :: thread_r, thread_w, fset_w, form
 logical :: module_is_initialized = .FALSE.
 
@@ -344,15 +343,16 @@ integer           :: max_files_r         = 40
 logical           :: read_data_bug       = .false.
 logical           :: time_stamp_restart  = .true.
 logical           :: print_chksum        = .false.
+logical           :: show_open_namelist_file_warning = .false.
   namelist /fms_io_nml/ fms_netcdf_override, fms_netcdf_restart, &
        threading_read, threading_write, &
        fileset_write, format, read_all_pe, iospec_ieee32,max_files_w,max_files_r, &
-       read_data_bug, time_stamp_restart, print_chksum
+       read_data_bug, time_stamp_restart, print_chksum, show_open_namelist_file_warning
 
 integer            :: pack_size  ! = 1 for double = 2 for float
 
-character(len=128) :: version = '$Id: fms_io.F90,v 17.0.2.2.4.1.2.1.2.1.2.1.4.3.2.1 2011/02/04 21:54:20 z1l Exp $'
-character(len=128) :: tagname = '$Name: riga_201104 $'
+character(len=128) :: version = '$Id: fms_io.F90,v 19.0 2012/01/06 21:57:15 fms Exp $'
+character(len=128) :: tagname = '$Name: siena $'
 
 contains
 
@@ -4067,7 +4067,7 @@ function open_namelist_file (file) result (unit)
   integer :: unit
 
 #ifdef INTERNAL_FILE_NML
-  call mpp_error(WARNING, "fms_io_mod: open_namelist_file should not be called when INTERNAL_FILE_NML is defined")
+  if(show_open_namelist_file_warning) call mpp_error(WARNING, "fms_io_mod: open_namelist_file should not be called when INTERNAL_FILE_NML is defined")
 #endif
 
   if (.not.module_is_initialized) call fms_io_init ( )    

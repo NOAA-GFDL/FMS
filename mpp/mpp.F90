@@ -163,7 +163,7 @@ module mpp_mod
   use mpp_parameter_mod, only : NOTE, WARNING, FATAL, MPP_CLOCK_DETAILED,MPP_CLOCK_SYNC
   use mpp_parameter_mod, only : CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, CLOCK_MODULE_DRIVER
   use mpp_parameter_mod, only : CLOCK_MODULE, CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
-  use mpp_parameter_mod, only : MAX_EVENTS, MAX_BINS, MAX_EVENT_TYPES, PESET_MAX, MAX_CLOCKS
+  use mpp_parameter_mod, only : MAX_EVENTS, MAX_BINS, MAX_EVENT_TYPES, MAX_CLOCKS
   use mpp_parameter_mod, only : MAXPES, EVENT_WAIT, EVENT_ALLREDUCE, EVENT_BROADCAST
   use mpp_parameter_mod, only : EVENT_RECV, EVENT_SEND, MPP_READY, MPP_WAIT
   use mpp_parameter_mod, only : mpp_parameter_version=>version, mpp_parameter_tagname=>tagname
@@ -199,6 +199,7 @@ private
   public :: mpp_node, mpp_npes, mpp_root_pe, mpp_set_root_pe, mpp_declare_pelist
   public :: mpp_get_current_pelist, mpp_set_current_pelist, mpp_clock_begin, mpp_clock_end
   public :: mpp_clock_id, mpp_clock_set_grain, mpp_record_timing_data, get_unit
+  public :: read_ascii_file
 
   !--- public interface from mpp_comm.h ------------------------------
   public :: mpp_chksum, mpp_max, mpp_min, mpp_sum, mpp_transmit, mpp_send, mpp_recv
@@ -1089,7 +1090,9 @@ private
 !            module variables 
 !
 !***********************************************************************
-  type(communicator),save :: peset(0:PESET_MAX) !0 is a dummy used to hold single-PE "self" communicator
+  integer, parameter   :: PESET_MAX = 10000
+  integer              :: current_peset_max = 32
+  type(communicator), allocatable :: peset(:) ! Will be allocated starting from 0, 0 is a dummy used to hold single-PE "self" communicator
   logical              :: module_is_initialized = .false.
   logical              :: debug = .false.
   integer              :: npes=1, root_pe=0, pe=0
@@ -1157,6 +1160,8 @@ private
   integer(INT_KIND)  :: word(1)
 #endif
 
+  integer :: get_len_nocomm = 0 ! needed for mpp_transmit_nocomm.h
+
 !***********************************************************************
 !            variables needed for include/read_input_nml.inc
 !
@@ -1169,7 +1174,7 @@ private
   character(len=128), public :: version= &
        '$Id mpp.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: riga_201104 $'
+       '$Name: siena $'
 
   integer, parameter :: MAX_REQUEST_MIN  = 10000
   integer            :: request_multiply = 20

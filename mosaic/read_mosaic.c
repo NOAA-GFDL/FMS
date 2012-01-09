@@ -540,8 +540,8 @@ void read_mosaic_contact(const char *mosaic_file, int *tile1, int *tile2, int *i
 #define MAXVAR 40
   char pstring[MAXVAR][STRING];
   int ntiles, ncontacts, n, m, l, found;
-  const int x_refine = 2, y_refine = 2;
   unsigned int nstr;
+  const int x_refine = 2, y_refine = 2;
   
   ntiles = get_dimlen(mosaic_file, "ntiles");
   gridtiles = (char **)malloc(ntiles*sizeof(char *));
@@ -682,6 +682,13 @@ void read_mosaic_contact(const char *mosaic_file, int *tile1, int *tile2, int *i
     }
 
   }
+
+  for(m=0; m<ntiles; m++) {
+    free(gridtiles[m]);
+  }
+
+  free(gridtiles);
+ 
 
 }; /* read_mosaic_contact */
 

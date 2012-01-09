@@ -20,7 +20,7 @@
       integer :: l_size, l, i, j, k, is, ie, js, je, m, n
       integer :: pos, nlist, list, msgsize
       integer :: to_pe, from_pe, midpoint
-      integer :: tMe, dir
+      integer :: tMe, dir, outunit
       logical :: send(8), recv(8)
       MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
       pointer(ptr,buffer )
@@ -32,6 +32,7 @@
       type(boundary),    pointer :: check_x  => NULL()
       type(boundary),    pointer :: check_y  => NULL()
 
+      outunit = stdout()
       update_flags = XUPDATE+YUPDATE   !default
       if( PRESENT(flags) ) then 
           update_flags = flags
@@ -695,7 +696,7 @@
             buffer_pos = pos
          end if
          call mpp_clock_end(send_clock)
-         !     write(stdout(),*) 'Update send checksum=',mpp_chksum(rbuffer(buffer_pos))
+         !     write(outunit,*) 'Update send checksum=',mpp_chksum(rbuffer(buffer_pos))
       end do ! do list = 0,nlist-1
 
 !recv

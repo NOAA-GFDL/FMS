@@ -33,7 +33,7 @@ module time_interp_external_mod
   use mpp_io_mod, only : mpp_open, mpp_get_atts, mpp_get_info, MPP_NETCDF, MPP_MULTI, MPP_SINGLE,&
        mpp_get_times, MPP_RDONLY, MPP_ASCII, default_axis,axistype,fieldtype,atttype, &
        mpp_get_axes, mpp_get_fields, mpp_read, default_field, mpp_close, &
-       mpp_get_tavg_info, validtype, mpp_is_valid
+       mpp_get_tavg_info, validtype, mpp_is_valid, mpp_get_file_name
   use time_manager_mod, only : time_type, get_date, set_date, operator ( >= ) , operator ( + ) , days_in_month, &
                             operator( - ), operator ( / ) , days_in_year, increment_time, &
                             set_time, get_time, operator( > ), get_calendar_type, NO_CALENDAR
@@ -50,9 +50,10 @@ module time_interp_external_mod
   private
 
   character(len=128), private :: version= &
-   'CVS $Id: time_interp_external.F90,v 17.0.8.1.2.2.2.1 2011/01/03 21:19:16 z1l Exp $'
-  character(len=128), private :: tagname='Tag $Name: riga_201104 $'
+   'CVS $Id: time_interp_external.F90,v 19.0 2012/01/06 22:06:08 fms Exp $'
+  character(len=128), private :: tagname='Tag $Name: siena $'
 
+  integer, parameter, public  :: NO_REGION=0, INSIDE_REGION=1, OUTSIDE_REGION=2
   integer, parameter, private :: max_fields = 1, modulo_year= 0001,max_files= 1
   integer, parameter, private :: LINEAR_TIME_INTERP = 1 ! not used currently
   integer, parameter, public  :: SUCCESS = 0, ERR_FIELD_NOT_FOUND = 1
@@ -64,6 +65,7 @@ module time_interp_external_mod
 
   public init_external_field, time_interp_external, time_interp_external_init, &
        time_interp_external_exit, get_external_field_size, get_time_axis
+  public set_override_region
 
   private find_buf_index,&
          set_time_modulo
@@ -90,6 +92,8 @@ module time_interp_external_mod
      integer :: isc,iec,jsc,jec
      type(time_type) :: modulo_time_beg, modulo_time_end
      logical :: have_modulo_times, correct_leap_year_inconsistency
+     integer :: region_type
+     integer :: is_region, ie_region, js_region, je_region
   end type ext_fieldtype
 
   type, private :: filetype
@@ -198,7 +202,7 @@ module time_interp_external_mod
 
     function init_external_field(file,fieldname,format,threading,domain,desired_units,&
          verbose,axis_centers,axis_sizes,override,correct_leap_year_inconsistency,&
-         permit_calendar_conversion,use_comp_domain,ierr)
+         permit_calendar_conversion,use_comp_domain,ierr )
       
       character(len=*), intent(in)            :: file,fieldname
       integer, intent(in), optional           :: format, threading
@@ -208,16 +212,16 @@ module time_interp_external_mod
       type(axistype), intent(inout), optional :: axis_centers(4)
       integer, intent(inout), optional        :: axis_sizes(4)
       logical, intent(in), optional           :: override, correct_leap_year_inconsistency,&
-           permit_calendar_conversion,use_comp_domain
-      integer, intent(out), optional :: ierr
-      
+                                                 permit_calendar_conversion,use_comp_domain
+      integer,          intent(out), optional :: ierr
+
       integer :: init_external_field
       
       type(fieldtype), dimension(:), allocatable :: flds
       type(axistype), dimension(:), allocatable :: axes, fld_axes
       type(axistype) :: time_axis
       type(atttype), allocatable, dimension(:) :: global_atts
-      
+
       real(DOUBLE_KIND) :: slope, intercept
       integer :: form, thread, fset, unit,ndim,nvar,natt,ntime,i,j, outunit
       integer :: iscomp,iecomp,jscomp,jecomp,isglobal,ieglobal,jsglobal,jeglobal
@@ -255,6 +259,7 @@ module time_interp_external_mod
                & Please remove the desired_units argument from calls to &
                &this routine.')
       endif
+
       nfile = 0
       do i=1,num_files
          if(trim(opened_files(i)%filename) == trim(file)) then
@@ -328,6 +333,11 @@ module time_interp_external_mod
          field(num_fields)%iec = 1
          field(num_fields)%jsc = 1
          field(num_fields)%jec = 1
+         field(num_fields)%region_type = NO_REGION
+         field(num_fields)%is_region   = 0
+         field(num_fields)%ie_region   = -1
+         field(num_fields)%js_region   = 0
+         field(num_fields)%je_region   = -1
          if (PRESENT(domain)) then
             field(num_fields)%domain_present = .true.
             field(num_fields)%domain = domain
@@ -621,17 +631,18 @@ module time_interp_external_mod
 
     subroutine time_interp_external_3d(index, time, data, interp,verbose,horz_interp, mask_out)
 
-      integer, intent(in) :: index
-      type(time_type), intent(in) :: time
-      real, dimension(:,:,:), intent(inout) :: data
-      integer, intent(in), optional :: interp
-      logical, intent(in), optional :: verbose
-      type(horiz_interp_type),intent(in), optional :: horz_interp
+      integer,                    intent(in)           :: index
+      type(time_type),            intent(in)           :: time
+      real, dimension(:,:,:),  intent(inout)           :: data
+      integer,                    intent(in), optional :: interp
+      logical,                    intent(in), optional :: verbose
+      type(horiz_interp_type),    intent(in), optional :: horz_interp
       logical, dimension(:,:,:), intent(out), optional :: mask_out ! set to true where output data is valid 
-      
+
       integer :: nx, ny, nz, interp_method, t1, t2
       integer :: i1, i2, isc, iec, jsc, jec, mod_time, outunit
       integer :: yy, mm, dd, hh, min, ss
+      character(len=256) :: err_msg, filename
 
       integer :: isu, ieu, jsu, jeu 
           ! these are boundaries of the updated portion of the "data" argument
@@ -683,24 +694,40 @@ module time_interp_external_mod
          ! only one record in the file => time-independent field
          call load_record(field(index),1,horz_interp)
          i1 = find_buf_index(1,field(index)%ibuf)
-         where(field(index)%mask(isc:iec,jsc:jec,:,i1))
-             data(isu:ieu,jsu:jeu,:) = field(index)%data(isc:iec,jsc:jec,:,i1)
-         elsewhere
-             data(isu:ieu,jsu:jeu,:) = time_interp_missing !field(index)%missing? Balaji
-         end where
+         if( field(index)%region_type == NO_REGION ) then
+            where(field(index)%mask(isc:iec,jsc:jec,:,i1))
+               data(isu:ieu,jsu:jeu,:) = field(index)%data(isc:iec,jsc:jec,:,i1)
+            elsewhere
+               data(isu:ieu,jsu:jeu,:) = time_interp_missing !field(index)%missing? Balaji
+            end where
+         else
+            where(field(index)%mask(isc:iec,jsc:jec,:,i1))
+               data(isu:ieu,jsu:jeu,:) = field(index)%data(isc:iec,jsc:jec,:,i1)
+            end where
+         endif
          if(PRESENT(mask_out)) &
               mask_out(isu:ieu,jsu:jeu,:) = field(index)%mask(isc:iec,jsc:jec,:,i1)
       else
         if(field(index)%have_modulo_times) then
           call time_interp(time,field(index)%modulo_time_beg, field(index)%modulo_time_end, field(index)%time(:), &
-                          w2, t1, t2, field(index)%correct_leap_year_inconsistency)
+                          w2, t1, t2, field(index)%correct_leap_year_inconsistency, err_msg=err_msg)
+          if(err_msg .NE. '') then
+             filename = mpp_get_file_name(field(index)%unit)
+             call mpp_error(FATAL,"time_interp_external 1: "//trim(err_msg)//&
+                    ",file="//trim(filename)//",field="//trim(field(index)%name) )
+          endif      
         else
           if(field(index)%modulo_time) then
             mod_time=1
           else
             mod_time=0
           endif
-          call time_interp(time,field(index)%time(:),w2,t1,t2,modtime=mod_time)
+          call time_interp(time,field(index)%time(:),w2,t1,t2,modtime=mod_time, err_msg=err_msg)
+          if(err_msg .NE. '') then
+             filename = mpp_get_file_name(field(index)%unit)
+             call mpp_error(FATAL,"time_interp_external 2: "//trim(err_msg)//&
+                    ",file="//trim(filename)//",field="//trim(field(index)%name) )
+          endif     
         endif
          w1 = 1.0-w2
          if (verb) then
@@ -722,12 +749,19 @@ module time_interp_external_mod
             write(outunit,*) 'i1,i2= ',i1, i2
          endif
 
-         where(field(index)%mask(isc:iec,jsc:jec,:,i1).and.field(index)%mask(isc:iec,jsc:jec,:,i2))
-             data(isu:ieu,jsu:jeu,:) = field(index)%data(isc:iec,jsc:jec,:,i1)*w1 + &
-                  field(index)%data(isc:iec,jsc:jec,:,i2)*w2
-         elsewhere
-             data(isu:ieu,jsu:jeu,:) = time_interp_missing !field(index)%missing? Balaji
-         end where
+         if( field(index)%region_type == NO_REGION ) then
+            where(field(index)%mask(isc:iec,jsc:jec,:,i1).and.field(index)%mask(isc:iec,jsc:jec,:,i2))
+               data(isu:ieu,jsu:jeu,:) = field(index)%data(isc:iec,jsc:jec,:,i1)*w1 + &
+                    field(index)%data(isc:iec,jsc:jec,:,i2)*w2
+            elsewhere
+               data(isu:ieu,jsu:jeu,:) = time_interp_missing !field(index)%missing? Balaji
+            end where
+         else
+            where(field(index)%mask(isc:iec,jsc:jec,:,i1).and.field(index)%mask(isc:iec,jsc:jec,:,i2))
+               data(isu:ieu,jsu:jeu,:) = field(index)%data(isc:iec,jsc:jec,:,i1)*w1 + &
+                    field(index)%data(isc:iec,jsc:jec,:,i2)*w2
+            end where
+         endif
          if(PRESENT(mask_out)) &
               mask_out(isu:ieu,jsu:jeu,:) = &
                                         field(index)%mask(isc:iec,jsc:jec,:,i1).and.&
@@ -747,6 +781,7 @@ module time_interp_external_mod
       integer :: t1, t2, outunit
       integer :: i1, i2, mod_time
       integer :: yy, mm, dd, hh, min, ss
+      character(len=256) :: err_msg, filename
 
       real :: w1,w2
       logical :: verb
@@ -767,14 +802,24 @@ module time_interp_external_mod
       else
         if(field(index)%have_modulo_times) then
           call time_interp(time,field(index)%modulo_time_beg, field(index)%modulo_time_end, field(index)%time(:), &
-                          w2, t1, t2, field(index)%correct_leap_year_inconsistency)
+                          w2, t1, t2, field(index)%correct_leap_year_inconsistency, err_msg=err_msg)
+          if(err_msg .NE. '') then
+             filename = mpp_get_file_name(field(index)%unit)
+             call mpp_error(FATAL,"time_interp_external 3:"//trim(err_msg)//&
+                    ",file="//trim(filename)//",field="//trim(field(index)%name) )
+          endif    
         else
           if(field(index)%modulo_time) then
             mod_time=1
           else
             mod_time=0
           endif
-          call time_interp(time,field(index)%time(:),w2,t1,t2,modtime=mod_time)
+          call time_interp(time,field(index)%time(:),w2,t1,t2,modtime=mod_time, err_msg=err_msg)
+          if(err_msg .NE. '') then
+             filename = mpp_get_file_name(field(index)%unit)
+             call mpp_error(FATAL,"time_interp_external 4:"//trim(err_msg)// &
+                    ",file="//trim(filename)//",field="//trim(field(index)%name) )
+          endif     
         endif
          w1 = 1.0-w2
          if (verb) then
@@ -828,6 +873,7 @@ subroutine load_record(field, rec, interp)
   integer :: ib ! index in the array of input buffers
   integer :: isc,iec,jsc,jec ! boundaries of the domain
   integer :: outunit
+  integer :: is_region, ie_region, js_region, je_region, i, j
   real    :: mask_in(size(field%buf3d,1),size(field%buf3d,2),size(field%buf3d,3))
   real    :: mask_out(field%isc:field%iec,field%jsc:field%jec,size(field%buf3d,3))
 
@@ -838,6 +884,9 @@ subroutine load_record(field, rec, interp)
   else 
      isc=field%isc;iec=field%iec
      jsc=field%jsc;jec=field%jec
+     is_region = field%is_region; ie_region = field%ie_region
+     js_region = field%js_region; je_region = field%je_region
+
      if (field%domain_present.and..not.PRESENT(interp)) then
         if (debug_this_module) write(outunit,*) 'reading record with domain for field ',trim(field%name)
         call mpp_read(field%unit,field%field,field%domain,field%buf3d,rec)
@@ -855,11 +904,32 @@ subroutine load_record(field, rec, interp)
      if(PRESENT(interp)) then
         mask_in = 0.0
         where (mpp_is_valid(field%buf3d, field%valid)) mask_in = 1.0
+        if ( field%region_type .NE. NO_REGION ) then
+           if( ANY(mask_in == 0.0) ) then
+              call mpp_error(FATAL, "time_interp_external: mask_in should be all 1 when region_type is not NO_REGION")
+           endif
+           if( field%region_type == OUTSIDE_REGION) then
+              do j = js_region, je_region
+                 do i = is_region, ie_region
+                    mask_in(i,j,:) = 0.0
+                 enddo
+              enddo
+           else  ! field%region_choice == INSIDE_REGION
+              do j = 1, size(mask_in,2)
+                 do i = 1, size(mask_in,1)
+                    if( j<js_region .OR. j>je_region .OR. i<is_region .OR. i>ie_region ) mask_in(i,j,:) = 0.0
+                 enddo
+              enddo
+           endif
+        endif
         call horiz_interp(interp,field%buf3d,field%data(isc:iec,jsc:jec,:,ib), &
              mask_in=mask_in, &
              mask_out=mask_out)
         field%mask(isc:iec,jsc:jec,:,ib) = mask_out > 0
      else
+        if ( field%region_type .NE. NO_REGION ) then
+           call mpp_error(FATAL, "time_interp_external: region_type should be NO_REGION when interp is not present") 
+        endif
         field%data(isc:iec,jsc:jec,:,ib) = field%buf3d(isc:iec,jsc:jec,:)
         field%mask(isc:iec,jsc:jec,:,ib) = mpp_is_valid(field%data(isc:iec,jsc:jec,:,ib),field%valid)
      endif
@@ -871,6 +941,20 @@ subroutine load_record(field, rec, interp)
   
 end subroutine load_record
 
+! ============================================================================
+subroutine set_override_region(index, region_type, is_region, ie_region, js_region, je_region)
+   integer, intent(in) :: index, region_type
+   integer, intent(in) :: is_region, ie_region, js_region, je_region
+
+   field(index)%region_type = region_type
+   field(index)%is_region   = is_region
+   field(index)%ie_region   = ie_region
+   field(index)%js_region   = js_region   
+   field(index)%je_region   = je_region
+
+   return
+
+end subroutine set_override_region
 
 ! ============================================================================
 ! reallocates array of fields, increasing its size

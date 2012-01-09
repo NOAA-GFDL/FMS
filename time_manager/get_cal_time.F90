@@ -39,8 +39,8 @@ logical :: allow_calendar_conversion=.true.
 namelist / get_cal_time_nml / allow_calendar_conversion
 ! </NAMELIST>
 
-character(len=128) :: version='$Id: get_cal_time.F90,v 17.0.8.1 2010/08/31 14:29:08 z1l Exp $'
-character(len=128) :: tagname='$Name: riga_201104 $'
+character(len=128) :: version='$Id: get_cal_time.F90,v 19.0 2012/01/06 22:06:10 fms Exp $'
+character(len=128) :: tagname='$Name: siena $'
 
 contains
 !------------------------------------------------------------------------

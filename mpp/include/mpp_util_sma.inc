@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util_sma.inc,v 18.0.6.1 2011/01/19 00:20:54 Zhi.Liang Exp $
+! $Id: mpp_util_sma.inc,v 19.0 2012/01/06 22:05:21 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -98,7 +98,7 @@ function get_peset(pelist)
   end do
   !not found, so create new peset
   peset_num = peset_num + 1
-  if( peset_num.GE.PESET_MAX )call mpp_error( FATAL, 'GET_PESET: number of PE sets exceeds PESET_MAX.' )
+  if( peset_num > current_peset_max ) call expand_peset()
   i = peset_num             !shorthand
   !create list
   allocate( peset(i)%list(size(sorted(:))) )
@@ -131,11 +131,10 @@ end function get_peset
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-subroutine mpp_sync( pelist, check, request)
+subroutine mpp_sync( pelist, check)
   !synchronize PEs in list
   integer, intent(in), optional :: pelist(:)
   integer, intent(in), optional :: check
-  integer, intent(in), optional :: request(:)
 
   integer :: n
 
@@ -173,12 +172,13 @@ end subroutine mpp_sync
 !  </DESCRIPTION>
 !  <IN NAME="pelist" TYPE="integer" DIM="(:)"></IN>
 ! </SUBROUTINE>
-subroutine mpp_sync_self( pelist, check )
+subroutine mpp_sync_self( pelist, check, request )
   !this is to check if current PE's outstanding puts are complete
   !but we can't use shmem_fence because we are actually waiting for
   !a remote PE to complete its get
   integer, intent(in), optional :: pelist(:)
   integer, intent(in), optional :: check
+  integer, intent(inout), optional :: request(:)
 
   integer :: i, m, n, stride
 

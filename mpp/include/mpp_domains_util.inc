@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_util.inc,v 18.0.4.1.2.1.2.1 2010/11/02 14:05:54 z1l Exp $
+! $Id: mpp_domains_util.inc,v 19.0 2012/01/06 22:02:43 fms Exp $
 
   ! <SUBROUTINE NAME="mpp_domains_set_stack_size">
   !  <OVERVIEW>
@@ -403,10 +403,16 @@
 end subroutine mpp_get_compute_domains1D
 
 !#####################################################################
-subroutine mpp_get_compute_domains2D( domain, xbegin, xend, xsize, ybegin, yend, ysize )
+subroutine mpp_get_compute_domains2D( domain, xbegin, xend, xsize, ybegin, yend, ysize, position )
  type(domain2D),                   intent(in) :: domain
  integer, intent(out), optional, dimension(:) :: xbegin, xend, xsize, ybegin, yend, ysize
-integer :: i
+ integer, intent(in ), optional               :: position
+
+ integer :: i, ishift, jshift
+
+ call mpp_get_domain_shift( domain, ishift, jshift, position )
+
+
  if( .NOT.module_is_initialized ) &
       call mpp_error( FATAL, 'MPP_GET_COMPUTE_DOMAINS: must first call mpp_domains_init.' )
 
@@ -421,14 +427,14 @@ integer :: i
     if( size(xend(:)).NE.size(domain%list(:)) ) &
          call mpp_error( FATAL, 'MPP_GET_COMPUTE_DOMAINS: xend array size does not match domain.' )
     do i = 1, size(xend(:))
-       xend(i) = domain%list(i-1)%x(1)%compute%end
+       xend(i) = domain%list(i-1)%x(1)%compute%end + ishift
     end do
  end if
  if( PRESENT(xsize) )then
     if( size(xsize(:)).NE.size(domain%list(:)) ) &
          call mpp_error( FATAL, 'MPP_GET_COMPUTE_DOMAINS: xsize array size does not match domain.' )
     do i = 1, size(xsize(:))
-       xsize(i) = domain%list(i-1)%x(1)%compute%size
+       xsize(i) = domain%list(i-1)%x(1)%compute%size + ishift
     end do
  end if
  if( PRESENT(ybegin) )then
@@ -442,14 +448,14 @@ integer :: i
     if( size(yend(:)).NE.size(domain%list(:)) ) &
          call mpp_error( FATAL, 'MPP_GET_COMPUTE_DOMAINS: yend array size does not match domain.' )
     do i = 1, size(yend(:))
-       yend(i) = domain%list(i-1)%y(1)%compute%end
+       yend(i) = domain%list(i-1)%y(1)%compute%end + jshift
     end do
  end if
  if( PRESENT(ysize) )then
     if( size(ysize(:)).NE.size(domain%list(:)) ) &
          call mpp_error( FATAL, 'MPP_GET_COMPUTE_DOMAINS: ysize array size does not match domain.' )
     do i = 1, size(ysize(:))
-       ysize(i) = domain%list(i-1)%y(1)%compute%size
+       ysize(i) = domain%list(i-1)%y(1)%compute%size + jshift
     end do
  end if
  return
@@ -854,7 +860,7 @@ end subroutine mpp_get_domain_shift
   ! this routine found the domain has the same halo size with the input
   ! whalo, ehalo, 
   function search_update_overlap(domain, whalo, ehalo, shalo, nhalo, position)
-    type(domain2d),             intent(in) :: domain
+    type(domain2d),          intent(inout) :: domain
     integer,                    intent(in) :: whalo, ehalo, shalo, nhalo
     integer,                    intent(in) :: position
     type(overlapSpec),          pointer    :: search_update_overlap
@@ -1005,7 +1011,7 @@ end subroutine mpp_get_domain_shift
   !#######################################################################
   !--- the order of overlapping will be consistent with the unpack done in update_domains.
   function mpp_get_refine_overlap_number(domain, position, whalo, ehalo, shalo, nhalo, tile_count)
-     type(domain2d), intent(in)           :: domain
+     type(domain2d), intent(inout)        :: domain
      integer,        intent(in), optional :: position                   ! position of the cell, CENTER/EAST/NORTH/CORNER
      integer,        intent(in), optional :: whalo, ehalo, shalo, nhalo ! halo size to be updated
      integer,        intent(in), optional :: tile_count                ! tile number on current pe.
@@ -1032,7 +1038,7 @@ end subroutine mpp_get_domain_shift
   ! return overlap information for refined contact.
   subroutine mpp_get_mosaic_refine_overlap(domain, isMe, ieMe, jsMe, jeMe, isNbr, ieNbr, jsNbr, jeNbr, &
                                            dir, rotation, position, whalo, ehalo, shalo, nhalo, tile_count)
-     type(domain2d), intent(in)           :: domain
+     type(domain2d), intent(inout)        :: domain
      integer, dimension(:), intent(inout) :: isMe,  ieMe,  jsMe,  jeMe  ! index on current tile
      integer, dimension(:), intent(inout) :: isNbr, ieNbr, jsNbr, jeNbr ! index on neighbor tile
      integer, dimension(:), intent(inout) :: dir                        ! direction

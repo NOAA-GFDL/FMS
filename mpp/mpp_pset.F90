@@ -111,7 +111,7 @@ contains
     integer, intent(in), optional :: commID
 
     integer :: npes, my_commID
-    integer :: i, j, k, out_unit
+    integer :: i, j, k, out_unit, errunit
     integer, allocatable :: my_pelist(:), root_pelist(:)
 
     call mpp_init()
@@ -121,6 +121,7 @@ contains
     verbose=.TRUE.
 #endif
     out_unit = stdout()
+    errunit  = stderr()
     pe = mpp_pe()
     if(present(pelist)) then
        npes = size(pelist(:))
@@ -203,9 +204,9 @@ contains
     call mpp_declare_pelist(root_pelist)
 
     if( verbose )then
-        write( stderr(),'(a,4i6)' )'MPP_PSET_CREATE: pe, root, next, prev=', &
+        write( errunit,'(a,4i6)' )'MPP_PSET_CREATE: pe, root, next, prev=', &
              pe, pset%root_in_pset, pset%next_in_pset, pset%prev_in_pset
-        write( stderr(),* )'PE ', pe, ' pset=', pset%pset(:)
+        write( errunit,* )'PE ', pe, ' pset=', pset%pset(:)
         write( out_unit,* )'root pelist=', pset%root_pelist(:)
     end if
   end subroutine mpp_pset_create
@@ -497,6 +498,7 @@ contains
     type(mpp_pset_type), intent(in) :: pset
     character(len=*), intent(in) :: caller
     real, intent(in) :: array(:)
+    integer          :: errunit
 
 #ifdef PSET_DEBUG
     logical :: do_print
@@ -504,13 +506,14 @@ contains
 
     if( .NOT.pset%initialized )call mpp_error( FATAL, &
          'MPP_PSET_PRINT_CHKSUM: called with uninitialized PSET.' )
+    errunit = stderr()
 
     if( pset%root )then
         do_print = pe.EQ.mpp_root_pe() !set to T to print from all PEs
         call mpp_set_current_pelist(pset%root_pelist)
         chksum = mpp_chksum( array )
         if( do_print ) &
-             write( stderr(), '(a,z18)' )trim(caller)//' chksum=', chksum
+             write( errunit, '(a,z18)' )trim(caller)//' chksum=', chksum
     end if
     call mpp_set_current_pelist(pset%pelist)
 #endif

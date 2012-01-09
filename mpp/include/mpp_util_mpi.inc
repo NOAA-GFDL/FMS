@@ -1,5 +1,5 @@
 ! -*-f90-*-
-! $Id: mpp_util_mpi.inc,v 18.0.4.1.2.1 2011/01/19 00:20:54 Zhi.Liang Exp $
+! $Id: mpp_util_mpi.inc,v 19.0 2012/01/06 22:04:47 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -14,7 +14,7 @@ subroutine mpp_error_basic( errortype, errormsg )
   character(len=*), intent(in), optional :: errormsg
   character(len=256)                     :: text
   logical                                :: opened
-  integer                                :: istat, out_unit
+  integer                                :: istat, out_unit, errunit
 
   if( .NOT.module_is_initialized )call ABORT()
 
@@ -37,10 +37,11 @@ subroutine mpp_error_basic( errortype, errormsg )
   case(NOTE)
      write( out_unit,'(a)' )trim(text)
   case default
+     errunit = stderr()
 #ifdef __SX
-     write( stderr(), * )trim(text)
+     write( errunit, * )trim(text)
 #else
-     write( stderr(), '(/a/)' )trim(text)
+     write( errunit, '(/a/)' )trim(text)
 #endif
      write( out_unit,'(/a/)' )trim(text)
      if( errortype.EQ.FATAL .OR. warnings_are_fatal )then
@@ -64,7 +65,7 @@ end subroutine mpp_error_basic
 function get_peset(pelist)
   integer                       :: get_peset
   integer, intent(in), optional :: pelist(:)
-  integer                       :: group
+  integer                       :: group, errunit
   integer                       :: i, n, stride, l
   integer,          allocatable :: sorted(:)
   character(len=128) :: text
@@ -83,11 +84,12 @@ function get_peset(pelist)
 
   allocate( sorted(size(pelist(:))) )
   sorted = pelist 
-  if( debug )write( stderr(),* )'pelist=', pelist
+  errunit = stderr()
+  if( debug )write( errunit,* )'pelist=', pelist
 
   !find if this array matches any existing peset
   do i = 1,peset_num
-     if( debug )write( stderr(),'(a,3i6)' )'pe, i, peset_num=', pe, i, peset_num
+     if( debug )write( errunit,'(a,3i6)' )'pe, i, peset_num=', pe, i, peset_num
      if( size(sorted(:)).EQ.size(peset(i)%list(:)) )then
         if( ALL(sorted.EQ.peset(i)%list) )then
            deallocate(sorted)
@@ -97,7 +99,7 @@ function get_peset(pelist)
   end do
   !not found, so create new peset
   peset_num = peset_num + 1
-  if( peset_num.GE.PESET_MAX )call mpp_error( FATAL, 'GET_PESET: number of PE sets exceeds PESET_MAX.' )
+  if( peset_num > current_peset_max ) call expand_peset()
   i = peset_num             !shorthand
   !create list
   allocate( peset(i)%list(size(sorted(:))) )
@@ -165,7 +167,7 @@ end subroutine mpp_sync
 subroutine mpp_sync_self( pelist, check, request )
   integer, intent(in), optional :: pelist(:)
   integer, intent(in), optional :: check
-  integer, intent(in), optional :: request(:)
+  integer, intent(inout), optional :: request(:)
 
   integer                       :: i, m, n, stride, my_check
 

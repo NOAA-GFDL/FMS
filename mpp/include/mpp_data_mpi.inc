@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_data_mpi.inc,v 14.0.32.1 2010/11/02 14:05:53 z1l Exp $
+! $Id: mpp_data_mpi.inc,v 19.0 2012/01/06 22:00:45 fms Exp $
 
 !----------------------------------------------------------------!
 ! The following data is used in mpp_mod and its components       !

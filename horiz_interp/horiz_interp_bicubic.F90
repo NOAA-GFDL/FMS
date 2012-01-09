@@ -3,6 +3,8 @@ module horiz_interp_bicubic_mod
   use mpp_mod,               only: mpp_error, FATAL, stdout, mpp_pe, mpp_root_pe
   use fms_mod,               only: write_version_number
   use horiz_interp_type_mod, only: horiz_interp_type
+  use constants_mod,         only: PI
+
   
  implicit none
 
@@ -39,8 +41,8 @@ module horiz_interp_bicubic_mod
     module procedure horiz_interp_bicubic_new_1d_s
   end interface
 
-   character(len=128) :: version="$Id: horiz_interp_bicubic.F90,v 14.0 2007/03/15 22:39:52 fms Exp $"
-   character(len=128) :: tagname = '$Name: riga_201104 $'
+   character(len=128) :: version="$Id: horiz_interp_bicubic.F90,v 19.0 2012/01/06 21:57:52 fms Exp $"
+   character(len=128) :: tagname = '$Name: siena $'
    logical            :: module_is_initialized = .FALSE.
    integer            :: verbose_bicubic = 0
    
@@ -61,7 +63,8 @@ module horiz_interp_bicubic_mod
    
    
    real, save         :: missing = -1e33 
-   
+   real               :: tpi  
+ 
    interface fill_xy
       module procedure fill_xy
    end interface
@@ -83,6 +86,7 @@ module horiz_interp_bicubic_mod
      if(module_is_initialized) return
      call write_version_number (version, tagname)
      module_is_initialized = .true.
+     tpi = 2.0*PI
 
   end subroutine horiz_interp_bicubic_init
 
@@ -240,24 +244,47 @@ module horiz_interp_bicubic_mod
         do i=1,nlon_out
           yz  = lat_out(i,j)
           xz  = lon_out(i,j)
+
           jcl = 0
           jcu = 0
-          jcl = indl(Interp%lat_in, yz) 
-          jcu = indu(Interp%lat_in, yz)
+          if( yz .le. Interp%lat_in(1) ) then
+             jcl = 1
+             jcu = 1
+          else if( yz .ge. Interp%lat_in(nlat_in) ) then
+             jcl = nlat_in
+             jcu = nlat_in
+          else
+             jcl = indl(Interp%lat_in, yz) 
+             jcu = indu(Interp%lat_in, yz)
+          endif
+
           icl = 0
           icu = 0
-          icl = indl(Interp%lon_in, xz) 
-          icu = indu(Interp%lon_in, xz) 
+          !--- cyclic condition, do we need to use do while
+          if( xz .gt. Interp%lon_in(nlon_in) ) xz = xz - tpi
+          if( xz .le. Interp%lon_in(1) ) xz = xz + tpi
+          if( xz .ge. Interp%lon_in(nlon_in) ) then
+            icl = nlon_in
+            icu = 1
+            Interp%rat_x(i,j) = (xz - Interp%lon_in(icl))/(Interp%lon_in(icu) - Interp%lon_in(icl) + tpi)
+          else 
+            icl = indl(Interp%lon_in, xz) 
+            icu = indu(Interp%lon_in, xz) 
+            Interp%rat_x(i,j) = (xz - Interp%lon_in(icl))/(Interp%lon_in(icu) - Interp%lon_in(icl))
+          endif
           Interp%j_lat(i,j,1) = jcl
           Interp%j_lat(i,j,2) = jcu
           Interp%i_lon(i,j,1) = icl 
           Interp%i_lon(i,j,2) = icu 
-          Interp%rat_x(i,j) = (xz - Interp%lon_in(icl))/(Interp%lon_in(icu) - Interp%lon_in(icl))
-          Interp%rat_y(i,j) = (yz - Interp%lat_in(jcl))/(Interp%lat_in(jcu) - Interp%lat_in(jcl))
-          if(yz.gt.Interp%lat_in(jcu)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d_s: yf < ycl, no valid boundary point')
-          if(yz.lt.Interp%lat_in(jcl)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d_s: yf > ycu, no valid boundary point')
-          if(xz.gt.Interp%lon_in(icu)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d_s: xf < xcl, no valid boundary point')
-          if(xz.lt.Interp%lon_in(icl)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d_s: xf > xcu, no valid boundary point')
+          if(jcl == jcu) then
+             Interp%rat_y(i,j) = 0.0
+          else
+             Interp%rat_y(i,j) = (yz - Interp%lat_in(jcl))/(Interp%lat_in(jcu) - Interp%lat_in(jcl))
+          endif
+!          if(yz.gt.Interp%lat_in(jcu)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d_s: yf < ycl, no valid boundary point')
+!          if(yz.lt.Interp%lat_in(jcl)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d_s: yf > ycu, no valid boundary point')
+!          if(xz.gt.Interp%lon_in(icu)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d_s: xf < xcl, no valid boundary point')
+!          if(xz.lt.Interp%lon_in(icl)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d_s: xf > xcu, no valid boundary point')
         enddo
       enddo
   end subroutine horiz_interp_bicubic_new_1d_s
@@ -358,24 +385,47 @@ module horiz_interp_bicubic_mod
         yz  = lat_out(j)
         jcl = 0
         jcu = 0
-        jcl = indl(lat_in, yz) 
-        jcu = indu(lat_in, yz)
+        if( yz .le. lat_in(1) ) then
+           jcl = 1
+           jcu = 1
+        else if( yz .ge. lat_in(nlat_in) ) then
+           jcl = nlat_in
+           jcu = nlat_in
+        else
+           jcl = indl(lat_in, yz) 
+           jcu = indu(lat_in, yz)
+        endif
         do i=1,nlon_out
           xz = lon_out(i)
           icl = 0
           icu = 0
+         !--- cyclic condition, do we need to use do while
+          if( xz .gt. lon_in(nlon_in) ) xz = xz - tpi
+          if( xz .le. lon_in(1) ) xz = xz + tpi
+          if( xz .ge. lon_in(nlon_in) ) then
+            icl = nlon_in
+            icu = 1
+            Interp%rat_x(i,j) = (xz - Interp%lon_in(icl))/(Interp%lon_in(icu) - Interp%lon_in(icl) + tpi)
+          else 
+            icl = indl(lon_in, xz) 
+            icu = indu(lon_in, xz) 
+            Interp%rat_x(i,j) = (xz - Interp%lon_in(icl))/(Interp%lon_in(icu) - Interp%lon_in(icl))
+          endif
           icl = indl(lon_in, xz) 
           icu = indu(lon_in, xz) 
           Interp%j_lat(i,j,1) = jcl
           Interp%j_lat(i,j,2) = jcu
           Interp%i_lon(i,j,1) = icl 
           Interp%i_lon(i,j,2) = icu 
-          if(yz.gt.lat_in(jcu)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d: yf < ycl, no valid boundary point')
-          if(yz.lt.lat_in(jcl)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d: yf > ycu, no valid boundary point')
-          if(xz.gt.lon_in(icu)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d: xf < xcl, no valid boundary point')
-          if(xz.lt.lon_in(icl)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d: xf > xcu, no valid boundary point')
-          Interp%rat_x(i,j) = (xz - Interp%lon_in(icl))/(Interp%lon_in(icu) - Interp%lon_in(icl))
-          Interp%rat_y(i,j) = (yz - Interp%lat_in(jcl))/(Interp%lat_in(jcu) - Interp%lat_in(jcl))
+          if(jcl == jcu) then
+             Interp%rat_y(i,j) = 0.0
+          else
+             Interp%rat_y(i,j) = (yz - Interp%lat_in(jcl))/(Interp%lat_in(jcu) - Interp%lat_in(jcl))
+          endif
+!          if(yz.gt.lat_in(jcu)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d: yf < ycl, no valid boundary point')
+!          if(yz.lt.lat_in(jcl)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d: yf > ycu, no valid boundary point')
+!          if(xz.gt.lon_in(icu)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d: xf < xcl, no valid boundary point')
+!          if(xz.lt.lon_in(icl)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d: xf > xcu, no valid boundary point')
         enddo
       enddo
 
@@ -414,18 +464,27 @@ module horiz_interp_bicubic_mod
         jcu = Interp%j_lat(i,j,2)
         icl = Interp%i_lon(i,j,1)
         icu = Interp%i_lon(i,j,2)
-        iclp1 = min(icl+1,Interp%nlon_src)
+        if( icl > icu ) then
+          iclp1 = icu
+          icum1 = icl
+          xcl = Interp%lon_in(icl)
+          xcu = Interp%lon_in(icu)+tpi
+        else
+          iclp1 = min(icl+1,Interp%nlon_src)
+          icum1 = max(icu-1,1)
+          xcl = Interp%lon_in(icl)
+          xcu = Interp%lon_in(icu)
+        endif
         iclm1 = max(icl-1,1)
         icup1 = min(icu+1,Interp%nlon_src)
-        icum1 = max(icu-1,1)
         jclp1 = min(jcl+1,Interp%nlat_src)
         jclm1 = max(jcl-1,1)
         jcup1 = min(jcu+1,Interp%nlat_src)
         jcum1 = max(jcu-1,1)
         ycl = Interp%lat_in(jcl)
         ycu = Interp%lat_in(jcu)
-        xcl = Interp%lon_in(icl)
-        xcu = Interp%lon_in(icu)
+!        xcl = Interp%lon_in(icl)
+!        xcu = Interp%lon_in(icu)
         y(1)  =  data_in(icl,jcl)
         y(2)  =  data_in(icu,jcl)
         y(3)  =  data_in(icu,jcu)
@@ -471,8 +530,8 @@ module horiz_interp_bicubic_mod
       ansy1=0.
       do i=4,1,-1
         ansy=t*ansy+((c(i,4)*u+c(i,3))*u+c(i,2))*u+c(i,1)
-        ansy2=t*ansy2+(3.*c(i,4)*u+2.*c(i,3))*u+c(i,2)
-        ansy1=u*ansy1+(3.*c(4,i)*t+2.*c(3,i))*t+c(2,i)
+!        ansy2=t*ansy2+(3.*c(i,4)*u+2.*c(i,3))*u+c(i,2)
+!        ansy1=u*ansy1+(3.*c(4,i)*t+2.*c(3,i))*t+c(2,i)
       enddo
 !      ansy1=ansy1/(x1u-x1l) ! could be used for accuracy checks
 !      ansy2=ansy2/(x2u-x2l) ! could be used for accuracy checks
@@ -493,6 +552,7 @@ module horiz_interp_bicubic_mod
        10*0,-3,3,2*0,2,-2,2*0,-1,1,6*0,3,-3,2*0,-2,2,5*0,1,-2,1,0,-2,4,   &
       -2,0,1,-2,1,9*0,-1,2,-1,0,1,-2,1,10*0,1,-1,2*0,-1,1,6*0,-1,1,2*0,  &
        2,-2,2*0,-1,1/
+
       d1d2=d1*d2
       do i=1,4
         x(i)=y(i)

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_connect.inc,v 17.0.2.5.6.3.2.1.4.1 2011/01/13 18:08:12 z1l Exp $
+! $Id: mpp_io_connect.inc,v 19.0 2012/01/06 22:03:20 fms Exp $
 
 ! <SUBROUTINE NAME="mpp_open">
 
@@ -694,6 +694,7 @@
       integer, intent(in), optional :: action
       character(len=8) :: status
       logical :: collect
+      integer :: i, j
 
       call mpp_clock_begin(mpp_close_clock)      
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_CLOSE: must first call mpp_io_init.' )
@@ -730,6 +731,70 @@
 ! multi-threaded I/O if one PE does assign -R before another one has opened it.
 !      call ASSIGN( 'assign -R f:'//trim(mpp_file(unit)%name), error )
 #endif
+      if ( associated(mpp_file(unit)%Axis) ) then
+         do i=1, mpp_file(unit)%ndim
+            if ( associated(mpp_file(unit)%Axis(i)%data) ) then
+               deallocate(mpp_file(unit)%Axis(i)%data)
+               nullify(mpp_file(unit)%Axis(i)%data)
+            end if
+
+            if ( associated(mpp_file(unit)%Axis(i)%Att) ) then
+               do j=1, mpp_file(unit)%Axis(i)%natt
+                  if ( associated(mpp_file(unit)%Axis(i)%Att(j)%fatt) ) then
+                     deallocate(mpp_file(unit)%Axis(i)%Att(j)%fatt)
+                     nullify(mpp_file(unit)%Axis(i)%Att(j)%fatt)
+                  end if
+               end do
+               deallocate(mpp_file(unit)%Axis(i)%Att)
+               nullify(mpp_file(unit)%Axis(i)%Att)
+            end if
+         end do
+         deallocate(mpp_file(unit)%Axis)
+         nullify(mpp_file(unit)%Axis)
+      end if
+
+      if ( associated(mpp_file(unit)%var) ) then
+         do i=1, mpp_file(unit)%nvar
+            if ( associated(mpp_file(unit)%var(i)%Axes) ) then
+               ! Do not need to deallocate/nullify child pointers, handled above with mpp_file(unit)%Axis(:)%*
+               deallocate(mpp_file(unit)%var(i)%Axes)
+               nullify(mpp_file(unit)%var(i)%Axes)
+            end if
+            if ( associated(mpp_file(unit)%var(i)%size) ) then
+               deallocate(mpp_file(unit)%var(i)%size)
+               nullify(mpp_file(unit)%var(i)%size)
+            end if
+            if ( associated(mpp_file(unit)%var(i)%Att) ) then
+               do j=1, mpp_file(unit)%var(i)%natt
+                  if ( associated(mpp_file(unit)%var(i)%Att(j)%fatt) ) then
+                     deallocate(mpp_file(unit)%var(i)%Att(j)%fatt)
+                     nullify(mpp_file(unit)%var(i)%Att(j)%fatt)
+                  end if
+              end do
+               deallocate(mpp_file(unit)%var(i)%Att)
+               nullify(mpp_file(unit)%var(i)%Att)
+            end if
+         end do
+         deallocate(mpp_file(unit)%var)
+         nullify(mpp_file(unit)%var)
+      end if
+
+      if ( associated(mpp_file(unit)%att) ) then
+         do i=1, mpp_file(unit)%natt
+            if ( associated(mpp_file(unit)%att(i)%fatt) ) then
+               deallocate(mpp_file(unit)%att(i)%fatt)
+               nullify(mpp_file(unit)%att(i)%fatt)
+            end if
+         end do
+         deallocate(mpp_file(unit)%att)
+         nullify(mpp_file(unit)%att)
+      end if
+
+      if ( associated(mpp_file(unit)%time_values) ) then
+         deallocate(mpp_file(unit)%time_values)
+         nullify(mpp_file(unit)%time_values)
+      end if
+
       mpp_file(unit)%name = ' '
       mpp_file(unit)%action    = -1
       mpp_file(unit)%format    = -1

@@ -6,7 +6,7 @@
       integer, intent(in) :: length
       integer, intent(in), optional :: pelist(:)
       MPP_TYPE_, intent(inout) :: a(*)
-      integer :: n
+      integer :: n, errunit
       MPP_TYPE_ :: work(length)
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_SUM: You must first call mpp_init.' )
@@ -14,7 +14,10 @@
 
       if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
       if( verbose )call mpp_error( NOTE, 'MPP_SUM: using MPI_ALLREDUCE...' )
-      if( debug )write( stderr(),* )'pe, n, peset(n)%id=', pe, n, peset(n)%id
+      if( debug ) then
+          errunit = stderr()
+          write( errunit,* )'pe, n, peset(n)%id=', pe, n, peset(n)%id
+      endif
       call MPI_ALLREDUCE( a, work, length, MPI_TYPE_, MPI_SUM, peset(n)%id, error )
       a(1:length) = work(1:length)
       if( current_clock.NE.0 )call increment_current_clock( EVENT_ALLREDUCE, length*MPP_TYPE_BYTELEN_ )

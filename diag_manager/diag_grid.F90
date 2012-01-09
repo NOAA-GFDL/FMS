@@ -61,9 +61,9 @@ MODULE diag_grid_mod
 
   ! Parameters
   CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id: diag_grid.F90,v 18.0.2.6.4.1 2011/03/25 21:55:47 Zhi.Liang Exp $'
+       & '$Id: diag_grid.F90,v 19.0 2012/01/06 21:55:12 fms Exp $'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: riga_201104 $'
+       & '$Name: siena $'
 
   ! Derived data types
   ! <PRIVATE>
@@ -235,7 +235,7 @@ CONTAINS
     IF ( ALLOCATED(yend) ) DEALLOCATE(yend)
 
     ! What is my PE
-    myPe = mpp_pe() - mpp_root_pe() + 1
+    myPe = mpp_pe() -mpp_root_pe() + 1
     
     ! Get the domain/pe layout, and allocate the [xy]begin|end arrays/pointers
     npes = mpp_npes()
@@ -579,7 +579,6 @@ CONTAINS
     INTEGER, INTENT(out) :: iindex, jindex !< i/j indexes
 
     INTEGER  :: indexes(2)
-    INTEGER :: i, j
 
     IF ( .NOT. diag_grid_initialized )&
          & CALL error_mesg('diag_grid_mod::get_local_indexes2',&

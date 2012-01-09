@@ -357,7 +357,7 @@ private
   public :: mpp_get_att_type, mpp_get_att_name, mpp_get_att_real, mpp_get_att_char
   public :: mpp_get_att_real_scalar
   public :: mpp_get_file_name, mpp_file_is_opened 
-  public :: mpp_io_clock_on
+  public :: mpp_io_clock_on, mpp_get_time_axis, mpp_get_default_calendar
 
   !--- public interface from mpp_io_misc.h ----------------------
   public :: mpp_io_init, mpp_io_exit, netcdf_err, mpp_flush
@@ -552,6 +552,7 @@ type :: atttype
      module procedure mpp_read_r3D
      module procedure mpp_read_text
      module procedure mpp_read_region_r2D
+     module procedure mpp_read_region_r3D
   end interface
 
 !***********************************************************************
@@ -819,9 +820,9 @@ type :: atttype
   integer :: pack_size ! = 1 when compiling with -r8 and = 2 when compiling with -r4.
 
   character(len=128) :: version= &
-       '$Id: mpp_io.F90,v 16.0.8.2.2.2.4.1.6.1.2.1.6.2.2.1.4.1 2011/01/03 15:38:07 z1l Exp $'
+       '$Id: mpp_io.F90,v 19.0 2012/01/06 21:59:52 fms Exp $'
   character(len=128) :: tagname= &
-       '$Name: riga_201104 $'
+       '$Name: siena $'
 
 contains
 

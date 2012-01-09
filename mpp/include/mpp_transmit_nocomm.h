@@ -4,7 +4,7 @@
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    subroutine MPP_TRANSMIT_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag )
+    subroutine MPP_TRANSMIT_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, recv_request, send_request )
 !a message-passing routine intended to be reminiscent equally of both MPI and SHMEM
 
 !put_data and get_data are contiguous MPP_TYPE_ arrays
@@ -28,9 +28,14 @@
       MPP_TYPE_, intent(out) :: get_data(*)
       logical, intent(in), optional :: block
       integer, intent(in), optional :: tag
+      integer, intent(out), optional :: recv_request, send_request
 
       integer :: i, outunit
       MPP_TYPE_, allocatable, save :: local_data(:) !local copy used by non-parallel code (no SHMEM or MPI)
+      integer(LONG_KIND),     save :: get_data_addr=-9999
+      MPP_TYPE_                    :: get_data_local(get_len_nocomm)
+      pointer(ptr_get_data, get_data_local)
+
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_TRANSMIT: You must first call mpp_init.' )
       if( to_pe.EQ.NULL_PE .AND. from_pe.EQ.NULL_PE )return
@@ -46,10 +51,19 @@
       if( to_pe.GE.0 .AND. to_pe.LT.npes )then
           if( allocated(local_data) ) &
                call mpp_error( FATAL, 'MPP_TRANSMIT: local_data should have been deallocated by prior receive.' )
-          allocate( local_data(put_len) )
-          do i = 1,put_len
-             local_data(i) = put_data(i)
-          end do
+          if( get_len_nocomm > 0) then  ! pre-post recv
+             ptr_get_data = get_data_addr
+             do i = 1,get_len_nocomm
+                get_data_local(i) = put_data(i)
+             end do
+             get_len_nocomm = 0
+             get_data_addr = -9999
+          else
+             allocate( local_data(put_len) )
+             do i = 1,put_len
+                local_data(i) = put_data(i)
+             end do
+          endif
       else if( to_pe.EQ.ALL_PES )then !this is a broadcast from from_pe
           if( from_pe.LT.0 .OR. from_pe.GE.npes )call mpp_error( FATAL, 'MPP_TRANSMIT: broadcasting from invalid PE.' )
           if( put_len.GT.get_len )call mpp_error( FATAL, 'MPP_TRANSMIT: size mismatch between put_data and get_data.' )
@@ -72,13 +86,15 @@
 
 !do the get: for libSMA, a get means do a wait to ensure put on remote PE is complete
       if( from_pe.GE.0 .AND. from_pe.LT.npes )then
-          if( .NOT.allocated(local_data) ) &
-               call mpp_error( FATAL, 'MPP_TRANSMIT: local_data should have been allocated by prior send.' )
-          do i = 1,get_len
-             get_data(i) = local_data(i)
-          end do
-          deallocate(local_data)
-
+          if( .NOT.allocated(local_data) ) then
+             get_data_addr = LOC(get_data)
+             get_len_nocomm  = get_len
+          else
+             do i = 1,get_len
+                get_data(i) = local_data(i)
+             end do
+             deallocate(local_data)
+          endif
       else if( from_pe.EQ.ANY_PE )then
 
       else if( from_pe.EQ.ALL_PES )then

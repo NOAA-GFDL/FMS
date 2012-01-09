@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_define.inc,v 18.0.6.2.2.1.2.2.2.1 2011/03/24 19:13:39 Zhi.Liang Exp $
+! $Id: mpp_domains_define.inc,v 19.0 2012/01/06 22:02:39 fms Exp $
 
 
   ! <SUBROUTINE NAME="mpp_define_layout2D" INTERFACE="mpp_define_layout">
@@ -595,7 +595,9 @@
     character(len=1)     :: position
     integer              :: msgsize, l, p, is, ie, js, je, from_pe
     integer, allocatable :: msg1(:), msg2(:)
+    integer              :: outunit
 
+    outunit = stdout()
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS2D: You must first call mpp_domains_init.' )
     if(PRESENT(name)) then
        if(len_trim(name) > NAME_LENGTH) call mpp_error(FATAL,  &
@@ -728,6 +730,8 @@
           allocate( domain%list(i)%x(1), domain%list(i)%y(1), domain%list(i)%tile_id(1) )
        end do
     end if
+
+    domain%initialized = .true.
 
     start_pos = 0
     do n = 0, nlist-1
@@ -1038,7 +1042,7 @@
           enddo
           call mpp_sync_self()
        enddo
-       write(stdout(),*)"NOTE from mpp_define_domains2D: message sizes are matched between send and recv for domain " &
+       write(outunit,*)"NOTE from mpp_define_domains2D: message sizes are matched between send and recv for domain " &
             //trim(domain%name)
        deallocate(msg1, msg2)
        update=>NULL()
@@ -1110,7 +1114,9 @@
     character(len=1)     :: position
     integer              :: msgsize, l, p, is, ie, js, je, from_pe
     integer, allocatable :: msg1(:), msg2(:)
+    integer              :: outunit
 
+    outunit = stdout()
     mosaic_defined = .true.
     !--- the size of first indice of global_indices must be 4.
     if(size(global_indices, 1) .NE. 4) call mpp_error(FATAL, &
@@ -1211,6 +1217,7 @@
        end if
     end do
 
+    domain%initialized    = .true.
     domain%rotated_ninety = .FALSE.
     domain%ntiles         = num_tile      
     domain%max_ntile_pe   = maxval(ntile_per_pe)
@@ -1430,7 +1437,7 @@
           enddo
           call mpp_sync_self()
        enddo
-       write(stdout(),*)"NOTE from mpp_define_mosaic: message sizes are matched between send and recv for domain " &
+       write(outunit,*)"NOTE from mpp_define_mosaic: message sizes are matched between send and recv for domain " &
             //trim(domain%name)//"(T and C-cell)"
        deallocate(msg1, msg2)
        update=>NULL()

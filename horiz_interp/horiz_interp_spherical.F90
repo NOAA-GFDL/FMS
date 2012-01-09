@@ -60,8 +60,8 @@ module horiz_interp_spherical_mod
   namelist /horiz_interp_spherical_nml/ search_method
 
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_spherical.F90,v 14.0.16.1 2010/08/31 14:28:55 z1l Exp $'
-  character(len=128) :: tagname = '$Name: riga_201104 $'
+  character(len=128) :: version = '$Id: horiz_interp_spherical.F90,v 19.0 2012/01/06 21:58:27 fms Exp $'
+  character(len=128) :: tagname = '$Name: siena $'
   logical            :: module_is_initialized = .FALSE.
 
 contains

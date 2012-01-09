@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_sma.inc,v 17.0.2.1.4.1.2.4 2010/08/04 17:19:28 z1l Exp $
+! $Id: mpp_comm_sma.inc,v 19.0 2012/01/06 22:00:43 fms Exp $
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -32,9 +32,13 @@ subroutine mpp_init( flags,localcomm )
   module_is_initialized = .TRUE.
 
   !PEsets: make defaults illegal
+  allocate(peset(0:current_peset_max))
   peset(:)%count = -1
+  peset(:)%id = -1
+  peset(:)%group = -1
   peset(:)%start = -1
   peset(:)%log2stride = -1
+  peset(:)%name  = " "
   !0=single-PE, initialized so that count returns 1
   peset(0)%count = 1
   allocate( peset(0)%list(1) )

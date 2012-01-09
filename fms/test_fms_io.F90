@@ -60,6 +60,7 @@
  integer                       :: npes
 
  character(len=128) :: file_latlon, file_cubic
+ integer :: outunit
 
  call mpp_init
  npes = mpp_npes()
@@ -82,7 +83,8 @@
  end if
 #endif
 
- write(stdout(), test_fms_io_nml )
+ outunit = stdout()
+ write(outunit, test_fms_io_nml )
   call mpp_domains_set_stack_size(stackmax)
  !--- currently we assume at most two time level will be written to restart file.
  if(nt > 2) call mpp_error(FATAL, "test_fms_io: test_fms_io_nml variable nt should be no larger than 2")

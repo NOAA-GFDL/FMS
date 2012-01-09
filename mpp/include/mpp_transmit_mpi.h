@@ -4,7 +4,7 @@
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    subroutine MPP_TRANSMIT_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, recv_request )
+    subroutine MPP_TRANSMIT_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, recv_request, send_request )
 !a message-passing routine intended to be reminiscent equally of both MPI and SHMEM
 
 !put_data and get_data are contiguous MPP_TYPE_ arrays
@@ -26,9 +26,9 @@
       integer, intent(in) :: put_len, to_pe, get_len, from_pe
       MPP_TYPE_, intent(in)  :: put_data(*)
       MPP_TYPE_, intent(out) :: get_data(*)
-      logical, intent(in), optional :: block
-      integer, intent(in), optional :: tag
-      integer, intent(in), optional :: recv_request
+      logical, intent(in),  optional :: block
+      integer, intent(in),  optional :: tag
+      integer, intent(out), optional :: recv_request, send_request
       logical                       :: block_comm
       integer                       :: i, out_unit
       MPP_TYPE_, allocatable, save  :: local_data(:) !local copy used by non-parallel code (no SHMEM or MPI)
@@ -59,10 +59,14 @@
 !              if( debug )write( stderr(),* )'PE waiting for sending', pe, to_pe
 !              call MPI_WAIT( request(to_pe), stat, error )
 !          end if
-          cur_send_request = cur_send_request + 1
-          if( cur_send_request > max_request ) call mpp_error(FATAL, &
-             "MPP_TRANSMIT: cur_send_request is greater than max_request, increase mpp_nml request_multiply")
-          call MPI_ISEND( put_data, put_len, MPI_TYPE_, to_pe, comm_tag, mpp_comm_private, request_send(cur_send_request), error)
+          if(present(send_request)) then
+             call MPI_ISEND( put_data, put_len, MPI_TYPE_, to_pe, comm_tag, mpp_comm_private, send_request, error)
+          else
+             cur_send_request = cur_send_request + 1
+             if( cur_send_request > max_request ) call mpp_error(FATAL, &
+                "MPP_TRANSMIT: cur_send_request is greater than max_request, increase mpp_nml request_multiply")
+             call MPI_ISEND( put_data, put_len, MPI_TYPE_, to_pe, comm_tag, mpp_comm_private, request_send(cur_send_request), error)
+          endif
           if( current_clock.NE.0 )call increment_current_clock( EVENT_SEND, put_len*MPP_TYPE_BYTELEN_ )
       else if( to_pe.EQ.ALL_PES )then !this is a broadcast from from_pe
           if( from_pe.LT.0 .OR. from_pe.GE.npes )call mpp_error( FATAL, 'MPP_TRANSMIT: broadcasting from invalid PE.' )

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util_nocomm.inc,v 18.0 2010/03/02 23:58:09 fms Exp $
+! $Id: mpp_util_nocomm.inc,v 19.0 2012/01/06 22:04:49 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -87,9 +87,11 @@ end subroutine mpp_sync
   !this is to check if current PE's outstanding puts are complete
   !but we can't use shmem_fence because we are actually waiting for
   !a remote PE to complete its get
-subroutine mpp_sync_self( pelist, check )
+subroutine mpp_sync_self( pelist, check, request )
   integer, intent(in), optional :: pelist(:)
   integer, intent(in), optional :: check
+  integer, intent(inout), optional :: request(:)
+
   return
 end subroutine mpp_sync_self
 

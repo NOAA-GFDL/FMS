@@ -57,9 +57,9 @@ MODULE diag_util_mod
        & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size, sync_file_times
 
   CHARACTER(len=128),PRIVATE  :: version =&
-       & '$Id: diag_util.F90,v 18.0.2.6 2011/01/25 17:13:32 sdu Exp $'
+       & '$Id: diag_util.F90,v 19.0 2012/01/06 21:55:56 fms Exp $'
   CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name: riga_201104 $'
+       & '$Name: siena $'
 
 CONTAINS
 

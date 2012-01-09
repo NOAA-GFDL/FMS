@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_util.inc,v 18.0.8.1 2011/01/03 16:38:34 z1l Exp $
+! $Id: mpp_io_util.inc,v 19.0 2012/01/06 22:03:26 fms Exp $
 
 
   !#####################################################################
@@ -202,6 +202,8 @@
       return
    end subroutine mpp_get_fields
 
+
+
   !#####################################################################
     subroutine mpp_get_axes( unit, axes, time_axis )
 !
@@ -238,6 +240,28 @@
 
       return
    end subroutine mpp_get_axes
+
+  !#####################################################################
+    subroutine mpp_get_time_axis( unit, time_axis )
+      integer, intent(in) :: unit
+      type(axistype), intent(inout) :: time_axis
+
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_AXES: must first call mpp_io_init.' )
+      if( .NOT.mpp_file(unit)%opened )&
+           call mpp_error( FATAL, 'MPP_GET_AXES: invalid unit number, file '//trim(mpp_file(unit)%name))
+
+      time_axis = mpp_file(unit)%Axis(mpp_file(unit)%recdimid)
+
+      return
+   end subroutine mpp_get_time_axis
+
+  !####################################################################
+  function mpp_get_default_calendar( )
+     character(len=len(default_axis%calendar)) :: mpp_get_default_calendar
+    
+     mpp_get_default_calendar = default_axis%calendar
+
+  end function mpp_get_default_calendar
 
   !#####################################################################
 ! <SUBROUTINE NAME="mpp_get_times">

@@ -28,7 +28,9 @@
       integer :: buffer_recv_size
       integer :: rank_x, rank_y, ind_x, ind_y, cur_rank
       integer :: nsend_x, nsend_y, nrecv_x, nrecv_y
+      integer :: outunit
 
+      outunit = stdout()
       update_flags = XUPDATE+YUPDATE   !default
       if( PRESENT(flags) ) update_flags = flags
 
@@ -147,7 +149,7 @@
          enddo
 
          call mpp_sync_self()
-         write(stdout(),*)"NOTE from mpp_do_checkV: message sizes are matched between send and recv for domain " &
+         write(outunit,*)"NOTE from mpp_do_checkV: message sizes are matched between send and recv for domain " &
               //trim(domain%name)
          deallocate(msg1, msg2)
       endif

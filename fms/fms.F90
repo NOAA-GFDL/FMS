@@ -191,6 +191,16 @@ public :: CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, &
 !of course you can go and set the flag to SYNC or DETAILED by hand
 integer, public :: clock_flag_default
 
+! Namelist read error values
+  TYPE nml_errors_type
+     INTEGER :: multipleNMLSinFile
+     INTEGER :: badType1
+     INTEGER :: badType2
+     INTEGER :: missingVar
+  END TYPE nml_errors_type
+  TYPE(nml_errors_type), SAVE :: nml_errors
+
+
 !------ namelist interface -------
 !------ adjustable severity level for warnings ------
 
@@ -271,8 +281,8 @@ integer, public :: clock_flag_default
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: fms.F90,v 17.0.8.1.2.1.2.1 2010/08/31 14:28:53 z1l Exp $'
-  character(len=128) :: tagname = '$Name: riga_201104 $'
+  character(len=128) :: version = '$Id: fms.F90,v 19.0 2012/01/06 21:57:13 fms Exp $'
+  character(len=128) :: tagname = '$Name: siena $'
 
   logical :: module_is_initialized = .FALSE.
 
@@ -596,116 +606,150 @@ end subroutine fms_end
 !          if ( file_exist('input.nml') ) then
 !              unit = open_namelist_file ( )
 !              ierr=1
-!              do while (ierr /= 0)
-!                read  (unit, nml=moist_processes_nml, iostat=io, end=10)
+!              do while (ierr > 0)
+!                read  (unit, nml=moist_processes_nml, iostat=io)
 !                ierr = check_nml_error(io,'moist_processes_nml')
 !              enddo
-!        10    call close_file (unit)
+!              call close_file (unit)
 !          endif
 !       </PRE>
 !   </NOTE>
 
-!   <ERROR MSG="while reading namelist ...., iostat = ####" STATUS="FATAL">
-!     There was an error message reading the namelist specified. Carefully 
-!     examine all namelist variables for
-!     misspellings of type mismatches (e.g., integer vs. real).
+!   <ERROR MSG="Unknown error while reading namelist ...., (IOSTAT = ####)" STATUS="FATAL">
+!     There was an error reading the namelist specified. Carefully examine all namelist and variables 
+!     for anything incorrect (e.g. malformed, hidden characters).
+!   </ERROR>
+!   <ERROR MSG="Unknown namelist, or mistyped namelist variable in namelist ...., (IOSTAT = ####)" STATUS="FATAL">
+!     The name list given doesn't exist in the namelist file, or a variable in the namelist is mistyped or isn't a 
+!     namelist variable.
 !   </ERROR>
 
 ! used to check the iostat argument that is
 ! returned after reading a namelist
 ! see the online documentation for how this routine might be used
+  INTEGER FUNCTION check_nml_error(IOSTAT, NML_NAME)
+    INTEGER, INTENT(in) :: IOSTAT
+    CHARACTER(len=*), INTENT(in) :: NML_NAME
 
- function check_nml_error (iostat, nml_name) result (error_code)
+    CHARACTER(len=256) :: err_str
 
-  integer,          intent(in) :: iostat
-  character(len=*), intent(in) :: nml_name
-  integer   error_code, i
-  character(len=128) :: err_str
+    IF ( .NOT.module_is_initialized) CALL fms_init()
 
-   if (.not.module_is_initialized) call fms_init ( )
+    check_nml_error = IOSTAT
 
-   error_code = iostat
+    ! Return on valid IOSTAT values
+    IF ( IOSTAT <= 0 .OR. IOSTAT == nml_errors%multipleNMLSinFile ) RETURN
 
-   do i = 1, num_nml_error_codes
-        if (error_code == nml_error_codes(i)) return
-   enddo
-
-!  ------ fatal namelist error -------
-!  ------ only on root pe ----------------
-   if (mpp_pe() == mpp_root_pe()) then
-       write (err_str,*) 'while reading namelist ',  &
-                         trim(nml_name), ', iostat = ',error_code
-       call error_mesg ('check_nml_error in fms_mod', err_str, FATAL)
-       call error_mesg ('check_nml_error in fms_mod', err_str, FATAL)
-       call mpp_sync() ! In principal, this sync should not be necessary
-                       ! as mpp_error's call to MPI_ABORT and ABORT should
-                       ! kill all associated processes. Still...
-   else
-       call mpp_sync()
-   endif
-
-end function check_nml_error
+    ! Everything else is a FATAL
+    IF ( mpp_pe() == mpp_root_pe() ) THEN
+       IF ( (IOSTAT == nml_errors%badType1 .OR. IOSTAT == nml_errors%badType2) .OR. IOSTAT == nml_errors%missingVar ) THEN
+          WRITE (err_str,*) 'Unknown namelist, or mistyped namelist variable in namelist ',TRIM(NML_NAME),', (IOSTAT = ',IOSTAT,')'
+          CALL error_mesg ('check_nml_error in fms_mod', err_str, FATAL)
+          CALL mpp_sync()
+       ELSE
+          WRITE (err_str,*) 'Unknown error while reading namelist ',TRIM(NML_NAME),', (IOSTAT = ',IOSTAT,')'
+          CALL error_mesg ('check_nml_error in fms_mod', err_str, FATAL)
+          CALL mpp_sync()
+       END IF
+    ELSE 
+       CALL mpp_sync()
+    END IF
+  END FUNCTION check_nml_error
 ! </FUNCTION>
 
 !-----------------------------------------------------------------------
 !   private routine for initializing allowable error codes
 
-subroutine nml_error_init
+  SUBROUTINE nml_error_init
+    ! Determines the IOSTAT error value for some common Namelist errors.
+    ! Also checks if the compiler returns a non-zero status if there are 
+    ! multiple namelist records in a single file.
+    INTEGER, PARAMETER :: unit_begin = 20, unit_end = 1024
+    INTEGER :: fileunit, io_stat
+    INTEGER, DIMENSION(4) :: nml_iostats
+    LOGICAL :: opened
 
-! some compilers return non-zero iostat values while
-! reading through files with multiple namelist records
-! this routines "attempts" to identify the iostat values associated
-! with records not belonging to the requested namelist
+    ! Variables for sample namelists
+    INTEGER :: i1, i2
+    REAL :: r1, r2
+    LOGICAL :: l1
+    NAMELIST /a_nml/ i1, r1
+    NAMELIST /b_nml/ i2, r2, l1
+    NAMELIST /badType1_nml/ i1, r1
+    NAMELIST /badType2_nml/ i1, r1
+    NAMELIST /missingVar_nml/ i2, r2
 
-   integer  unit, io, ir
-   real    ::  a=1.
-   integer ::  b=1
-   logical ::  c=.true.
-   integer ::  tmp(1)
-   character(len=8) ::  d='testing'
-   namelist /b_nml/  a,b,c,d
+    ! Initialize the sample namelist variables
+    i1 = 1
+    i2 = 2
+    r1 = 1.0
+    r2 = 2.0
+    l1 = .FALSE.
 
-      nml_error_codes(1) = -1
-      nml_error_codes(2) = 0
+    ! Create a dummy namelist file
+    IF ( mpp_pe() == mpp_root_pe() ) THEN
+       ! Find a free file unit for a scratch file
+       file_opened: DO fileunit = unit_begin, unit_end
+          INQUIRE(UNIT=fileunit, OPENED=opened)
+          IF ( .NOT.opened ) EXIT file_opened
+       END DO file_opened
 
-!     ---- create dummy namelist file that resembles actual ----
-!     ---- (each pe has own copy) ----
-      if(mpp_pe() == mpp_root_pe() ) then
-         call mpp_open (unit, '_read_error.nml', form=MPP_ASCII,  &
-              action=MPP_OVERWR, access=MPP_SEQUENTIAL, &
-              threading=MPP_SINGLE)
-         !     ---- due to namelist bug this will not always work ---
-         write (unit, 10)
-10       format ('    ', &
-              /' &a_nml  a=1.  /',    &
-              /'#------------------', &
-              /' &b_nml  a=5., b=0, c=.false., d=''test'',  &end')
-         call mpp_close (unit)
+#if defined __PGI
+       OPEN (UNIT=fileunit, FILE='_read_error.nml', IOSTAT=io_stat)
+#else
+       OPEN (UNIT=fileunit, STATUS='SCRATCH', IOSTAT=io_stat)
+#endif
 
-         !     ---- read namelist files and save error codes ----
-         call mpp_open (unit, '_read_error.nml', form=MPP_ASCII,  &
-              action=MPP_RDONLY, access=MPP_SEQUENTIAL, &
-              threading=MPP_SINGLE)
-         ir=2; io=1; do
-            read  (unit, nml=b_nml, iostat=io, end=20)
-            if (io == 0) exit
-            ir=ir+1; nml_error_codes(ir)=io
-         enddo
-20       call mpp_close (unit, action=MPP_DELETE)
-         num_nml_error_codes = ir
-         tmp(1) = num_nml_error_codes
-      endif
+       ! Write sample namelist to the SCRATCH file.
+       WRITE (UNIT=fileunit, NML=a_nml, IOSTAT=io_stat)
+       WRITE (UNIT=fileunit, NML=b_nml, IOSTAT=io_stat)
+       WRITE (UNIT=fileunit, IOSTAT=io_stat, FMT='(/,"&badType1_nml  i1=1, r1=''bad'' /",/)')
+       WRITE (UNIT=fileunit, IOSTAT=io_stat, FMT='(/,"&badType2_nml  i1=1, r1=.true. /",/)')
+       WRITE (UNIT=fileunit, IOSTAT=io_stat, FMT='(/,"&missingVar_nml  i2=1, r2=1.0e0, l1=.true. /",/)')
 
-   
-      call mpp_broadcast(tmp,1,mpp_root_pe())
-      num_nml_error_codes = tmp(1)
-      call mpp_broadcast(nml_error_codes, num_nml_error_codes, mpp_root_pe())
+       ! Rewind for reading
+       REWIND(UNIT=fileunit)
 
-!del  if (mpp_pe() == mpp_root_pe()) &
-!del  print *, 'PE,nml_error_codes=',mpp_pe(), nml_error_codes(1:ir)
-      do_nml_error_init = .false.
+       ! Read the second namelist from the file -- check for namelist bug
+       READ (UNIT=fileunit, NML=b_nml, IOSTAT=nml_iostats(1))
+       REWIND(UNIT=fileunit)
 
-end subroutine nml_error_init
+       ! Read in bad type 1 --- Some compilers treat the string cast differently
+       READ (UNIT=fileunit, NML=badType1_nml, IOSTAT=nml_iostats(2))
+       REWIND(UNIT=fileunit)
+
+       ! Read in bad type 2
+       READ (UNIT=fileunit, NML=badType2_nml, IOSTAT=nml_iostats(3))
+       REWIND(UNIT=fileunit)
+
+       ! Read in missing variable/misstyped
+       READ (UNIT=fileunit, NML=missingVar_nml, IOSTAT=nml_iostats(4))
+
+       ! Done, close file
+       CLOSE (UNIT=fileunit)
+
+       ! Some compilers don't handle the type casting as well as we would like.
+       IF ( nml_iostats(2) * nml_iostats(3) .EQ. 0 ) THEN
+          IF ( nml_iostats(2) .NE. 0 .AND. nml_iostats(3) .EQ. 0 ) THEN
+             nml_iostats(3) = nml_iostats(2)
+          ELSE IF ( nml_iostats(2) .EQ. 0 .AND. nml_iostats(3) .NE.0 ) THEN
+             nml_iostats(2) = nml_iostats(3)
+          ELSE 
+             nml_iostats(2) = nml_iostats(4)
+             nml_iostats(2) = nml_iostats(4)
+          END IF
+       END IF
+    END IF
+
+    ! Broadcast nml_errors
+    CALL mpp_broadcast(nml_iostats,4,mpp_root_pe())
+    nml_errors%multipleNMLSinFile = nml_iostats(1)
+    nml_errors%badType1 = nml_iostats(2)
+    nml_errors%badType2 = nml_iostats(3)
+    nml_errors%missingVar = nml_iostats(4)
+
+    do_nml_error_init = .FALSE.
+  END SUBROUTINE nml_error_init
 
 !#######################################################################
 ! <SUBROUTINE NAME="write_version_number">

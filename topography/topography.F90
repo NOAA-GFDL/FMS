@@ -115,8 +115,8 @@ end interface
 
 !-----------------------------------------------------------------------
 
- character(len=128) :: version = '$Id: topography.F90,v 17.0.6.1 2010/08/31 14:29:10 z1l Exp $'
- character(len=128) :: tagname = '$Name: riga_201104 $'
+ character(len=128) :: version = '$Id: topography.F90,v 19.0 2012/01/06 22:06:16 fms Exp $'
+ character(len=128) :: tagname = '$Name: siena $'
 
  logical :: module_is_initialized = .FALSE.
 

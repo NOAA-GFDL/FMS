@@ -34,8 +34,8 @@ private
 !----------- ****** VERSION NUMBER ******* ---------------------------
 
 
-character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 17.0.4.1 2010/08/31 14:21:41 z1l Exp $'
-character(len=128)  :: tag     =  '$Name: riga_201104 $'
+character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 19.0 2012/01/06 21:54:27 fms Exp $'
+character(len=128)  :: tag     =  '$Name: siena $'
 
 
 

@@ -16,9 +16,10 @@
       integer :: to_pe, from_pe
       MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
       pointer( ptr, buffer )
-      integer :: buffer_pos, wordlen
+      integer :: buffer_pos, wordlen, errunit
 
 !fix ke
+      errunit = stderr()
       l_size = size(f_out(:))  ! equal to size(f_in(:))
       ke = d_comm%ke
       domain_in =>d_comm%domain_in; domain_out =>d_comm%domain_out
@@ -56,7 +57,7 @@
               end do
            end do
          end do
-         if( debug )write( stderr(),* )'PE', pe, ' to PE ', to_pe, 'is,ie,js,je=', is, ie, js, je
+         if( debug )write( errunit,* )'PE', pe, ' to PE ', to_pe, 'is,ie,js,je=', is, ie, js, je
          msgsize = pos - buffer_pos
          call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
          buffer_pos = pos
@@ -72,7 +73,7 @@
          from_pe = d_comm%cfrom_pe(list)
          is=d_comm%recvis(1,list); ie=d_comm%recvie(1,list)
          js=d_comm%recvjs(1,list); je=d_comm%recvje(1,list)
-         if( debug )write( stderr(),* )'PE', pe, ' from PE ', from_pe, 'is,ie,js,je=', is, ie, js, je
+         if( debug )write( errunit,* )'PE', pe, ' from PE ', from_pe, 'is,ie,js,je=', is, ie, js, je
          pos = buffer_pos
          do l=1,l_size  ! loop over number of in/out fields
            ptr_field_out = f_out(l)

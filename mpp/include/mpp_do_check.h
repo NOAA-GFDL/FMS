@@ -26,7 +26,9 @@
       integer :: n, l_size, l, m, i, j, k
       integer :: is, ie, js, je, tMe
       integer :: buffer_recv_size, nlist
+      integer :: outunit
 
+      outunit = stdout()
       ptr = LOC(mpp_domains_stack)
       l_size = size(f_addrs,1)
 
@@ -84,7 +86,7 @@
             endif
          enddo
          call mpp_sync_self()
-         write(stdout(),*)"NOTE from mpp_do_check: message sizes are matched between send and recv for domain " &
+         write(outunit,*)"NOTE from mpp_do_check: message sizes are matched between send and recv for domain " &
               //trim(domain%name)
          deallocate(msg1, msg2)
       endif
