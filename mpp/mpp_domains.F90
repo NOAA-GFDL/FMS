@@ -2452,7 +2452,7 @@ module mpp_domains_mod
   character(len=128), public :: version= &
        '$Id: mpp_domains.F90,v 19.0 2012/01/06 21:59:18 fms Exp $'
   character(len=128), public :: tagname= &
-       '$Name: siena $'
+       '$Name: siena_201202 $'
 
 
 contains

@@ -80,7 +80,7 @@ implicit none
 private
 
 character(len=128) :: version = '$Id: data_override.F90,v 19.0 2012/01/06 21:54:32 fms Exp $'
-character(len=128) :: tagname = '$Name: siena $'
+character(len=128) :: tagname = '$Name: siena_201202 $'
 
 type data_type
    character(len=3)   :: gridname

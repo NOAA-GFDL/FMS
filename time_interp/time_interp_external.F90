@@ -51,7 +51,7 @@ module time_interp_external_mod
 
   character(len=128), private :: version= &
    'CVS $Id: time_interp_external.F90,v 19.0 2012/01/06 22:06:08 fms Exp $'
-  character(len=128), private :: tagname='Tag $Name: siena $'
+  character(len=128), private :: tagname='Tag $Name: siena_201202 $'
 
   integer, parameter, public  :: NO_REGION=0, INSIDE_REGION=1, OUTSIDE_REGION=2
   integer, parameter, private :: max_fields = 1, modulo_year= 0001,max_files= 1
