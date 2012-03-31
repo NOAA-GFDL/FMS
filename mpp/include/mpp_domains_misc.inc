@@ -78,36 +78,11 @@
          call mpp_error(FATAL, "mpp_domains_init: debug_update_level should be 'none', 'fatal', 'warning', or 'note'") 
       end select
 
-      allocate(send_pos_list(MAX_NONBLOCK_UPDATE))
-      allocate(recv_pos_list(MAX_NONBLOCK_UPDATE))
-      allocate(send_msgsize_list(MAX_NONBLOCK_UPDATE))
-      allocate(recv_msgsize_list(MAX_NONBLOCK_UPDATE))      
-      allocate(update_flags_list(MAX_NONBLOCK_UPDATE))
-      allocate(update_position_list(MAX_NONBLOCK_UPDATE))
-      allocate(update_gridtype_list(MAX_NONBLOCK_UPDATE))
-      allocate(update_whalo_list(MAX_NONBLOCK_UPDATE))
-      allocate(update_ehalo_list(MAX_NONBLOCK_UPDATE))
-      allocate(update_shalo_list(MAX_NONBLOCK_UPDATE))
-      allocate(update_nhalo_list(MAX_NONBLOCK_UPDATE))
-      allocate(request_send(MAX_NONBLOCK_UPDATE))
-      allocate(request_recv(MAX_NONBLOCK_UPDATE))
+      allocate(nonblock_data(MAX_NONBLOCK_UPDATE))
+      
       do n = 1, MAX_NONBLOCK_UPDATE
-         request_recv(n)%count = 0
-         request_recv(n)%request(:) = MPI_REQUEST_NULL
-         request_send(n)%count = 0
-         request_send(n)%request(:) = MPI_REQUEST_NULL
+         call init_nonblock_type(nonblock_data(n))
       enddo
-      recv_pos_list = 0
-      send_pos_list = 0
-      recv_msgsize_list = 0
-      send_msgsize_list = 0
-      update_flags_list = 0
-      update_position_list = 0
-      update_gridtype_list = 0
-      update_whalo_list = 0
-      update_ehalo_list = 0
-      update_shalo_list = 0
-      update_nhalo_list = 0
 
       call mpp_domains_set_stack_size(32768) !default, pretty arbitrary
 #ifdef use_libSMA
@@ -137,6 +112,34 @@
       end if
       return
     end subroutine mpp_domains_init
+
+!#####################################################################
+subroutine init_nonblock_type( nonblock_obj )
+   type(nonblock_type), intent(inout) :: nonblock_obj
+
+
+   nonblock_obj%recv_pos           = 0
+   nonblock_obj%send_pos           = 0
+   nonblock_obj%recv_msgsize       = 0
+   nonblock_obj%send_msgsize       = 0
+   nonblock_obj%update_flags       = 0
+   nonblock_obj%update_position    = 0
+   nonblock_obj%update_gridtype    = 0
+   nonblock_obj%update_whalo       = 0
+   nonblock_obj%update_ehalo       = 0
+   nonblock_obj%update_shalo       = 0
+   nonblock_obj%update_nhalo       = 0
+   nonblock_obj%request_send_count = 0
+   nonblock_obj%request_recv_count = 0
+   nonblock_obj%request_send(:)    = MPI_REQUEST_NULL
+   nonblock_obj%request_recv(:)    = MPI_REQUEST_NULL
+   nonblock_obj%nfields            = 0
+   nonblock_obj%field_addrs(:)     = 0
+   nonblock_obj%field_addrs2(:)    = 0
+
+   return
+
+end subroutine init_nonblock_type
 
 !#####################################################################
 ! <SUBROUTINE NAME="mpp_domains_exit">

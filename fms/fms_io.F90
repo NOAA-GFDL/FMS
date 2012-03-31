@@ -352,7 +352,7 @@ logical           :: show_open_namelist_file_warning = .false.
 integer            :: pack_size  ! = 1 for double = 2 for float
 
 character(len=128) :: version = '$Id: fms_io.F90,v 19.0 2012/01/06 21:57:15 fms Exp $'
-character(len=128) :: tagname = '$Name: siena_201202 $'
+character(len=128) :: tagname = '$Name: siena_201203 $'
 
 contains
 

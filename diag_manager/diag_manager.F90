@@ -213,7 +213,7 @@ MODULE diag_manager_mod
   CHARACTER(len=128), PARAMETER :: version =&
        & '$Id: diag_manager.F90,v 19.0.2.3 2012/01/25 21:54:15 Zhi.Liang Exp $'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: siena_201202 $'  
+       & '$Name: siena_201203 $'  
 
   type(time_type) :: Time_end
 

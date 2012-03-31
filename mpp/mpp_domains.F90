@@ -440,12 +440,26 @@ module mpp_domains_mod
 
   integer, parameter :: MAX_REQUEST = 100
 
-  type request_type
-     integer                         :: count
-     integer, dimension(MAX_REQUEST) :: request
-  end type request_type
-
-
+  type nonblock_type
+     integer                         :: recv_pos
+     integer                         :: send_pos
+     integer                         :: recv_msgsize
+     integer                         :: send_msgsize
+     integer                         :: update_flags
+     integer                         :: update_position
+     integer                         :: update_gridtype
+     integer                         :: update_whalo
+     integer                         :: update_ehalo
+     integer                         :: update_shalo
+     integer                         :: update_nhalo
+     integer                         :: request_send_count
+     integer                         :: request_recv_count
+     integer, dimension(MAX_REQUEST) :: request_send
+     integer, dimension(MAX_REQUEST) :: request_recv
+     integer(LONG_KIND)              :: field_addrs(MAX_DOMAIN_FIELDS)
+     integer(LONG_KIND)              :: field_addrs2(MAX_DOMAIN_FIELDS)
+     integer                         :: nfields 
+  end type nonblock_type
 !#######################################################################
 
 !***********************************************************************
@@ -467,19 +481,7 @@ module mpp_domains_mod
   integer                         :: nonblock_buffer_pos = 0
   logical                         :: start_update = .true.
   logical                         :: complete_update = .false.
-  integer,            allocatable :: recv_pos_list(:)
-  integer,            allocatable :: send_pos_list(:)
-  integer,            allocatable :: recv_msgsize_list(:)
-  integer,            allocatable :: send_msgsize_list(:)
-  integer,            allocatable :: update_flags_list(:)
-  integer,            allocatable :: update_position_list(:)
-  integer,            allocatable :: update_gridtype_list(:)
-  integer,            allocatable :: update_whalo_list(:)
-  integer,            allocatable :: update_ehalo_list(:)
-  integer,            allocatable :: update_shalo_list(:)
-  integer,            allocatable :: update_nhalo_list(:)
-  type(request_type), allocatable :: request_recv(:)
-  type(request_type), allocatable :: request_send(:)
+  type(nonblock_type), allocatable :: nonblock_data(:)
   integer, parameter              :: MAX_NONBLOCK_UPDATE = 100
 
 
@@ -2450,9 +2452,9 @@ module mpp_domains_mod
 
   !--- version information variables
   character(len=128), public :: version= &
-       '$Id: mpp_domains.F90,v 19.0 2012/01/06 21:59:18 fms Exp $'
+       '$Id: mpp_domains.F90,v 19.0.2.1 2012/02/27 17:51:32 Zhi.Liang Exp $'
   character(len=128), public :: tagname= &
-       '$Name: siena_201202 $'
+       '$Name: siena_201203 $'
 
 
 contains

@@ -102,7 +102,7 @@ public i_sst, j_sst, sst_ncep, sst_anom, forecast_mode, use_ncep_sst
 !  ---- version number -----
 
 character(len=128) :: version = '$Id: amip_interp.F90,v 19.0 2012/01/06 21:54:21 fms Exp $'
-character(len=128) :: tagname = '$Name: siena_201202 $'
+character(len=128) :: tagname = '$Name: siena_201203 $'
 
    real, allocatable:: temp1(:,:), temp2(:,:)
 

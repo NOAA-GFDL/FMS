@@ -48,7 +48,7 @@ subroutine MPP_START_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, k
   ke_sum = sum(ke_list)
   ptr = LOC(mpp_domains_stack_nonblock)
 
-  buffer_pos = recv_pos_list(id_update)   
+  buffer_pos = nonblock_data(id_update)%recv_pos
 
   ! pre-postrecv
   do m = 1, update%nrecv
@@ -73,27 +73,27 @@ subroutine MPP_START_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, k
            call mpp_error( FATAL, 'MPP_START_DO_UPDATE: mpp_domains_stack overflow, '// &
                 'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
         end if
-        count = request_recv(id_update)%count + 1
+        count = nonblock_data(id_update)%request_recv_count + 1
         if( count > MAX_REQUEST ) then
            write( text,'(a,i8,a,i8)' ) 'recv request count =', count, ' greater than MAX_REQEUST =', MAX_REQUEST
            call mpp_error(FATAL,'MPP_START_DO_UPDATE: '//trim(text))
         endif
-        request_recv(id_update)%count = count
+        nonblock_data(id_update)%request_recv_count = count
         call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.FALSE., &
-             request=request_recv(id_update)%request(count))
+             tag=id_update, request=nonblock_data(id_update)%request_recv(count))
         buffer_pos = buffer_pos + msgsize
      end if
      call mpp_clock_end(recv_clock_nonblock)
   end do ! end do m = 1, update%nrecv  
 
-  msgsize = buffer_pos - recv_pos_list(id_update)
+  msgsize = buffer_pos - nonblock_data(id_update)%recv_pos
   if( reuse_id_update ) then
-     if(msgsize .NE. recv_msgsize_list(id_update)) then
+     if(msgsize .NE. nonblock_data(id_update)%recv_msgsize) then
         call mpp_error(FATAL,'MPP_START_DO_UPDATE: mismatch of recv msgsize for field '//trim(name) )
      endif
   else
-     recv_msgsize_list(id_update) = msgsize
-     send_pos_list(id_update) = buffer_pos
+     nonblock_data(id_update)%recv_msgsize = msgsize
+     nonblock_data(id_update)%send_pos = buffer_pos
      nonblock_buffer_pos = nonblock_buffer_pos + msgsize
   endif
 
@@ -200,27 +200,27 @@ subroutine MPP_START_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, k
      msgsize = pos - buffer_pos
      if( msgsize.GT.0 )then
         to_pe = overPtr%pe
-        count = request_send(id_update)%count + 1
+        count = nonblock_data(id_update)%request_send_count + 1
         if( count > MAX_REQUEST ) then
            write( text,'(a,i8,a,i8)' ) 'send request count =', count, ' greater than MAX_REQEUST =', MAX_REQUEST
            call mpp_error(FATAL,'MPP_START_DO_UPDATE: '//trim(text))
         endif
-        request_send(id_update)%count = count
+        nonblock_data(id_update)%request_send_count = count
         call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, &
-                       request=request_send(id_update)%request(count))
+                       tag=id_update, request=nonblock_data(id_update)%request_send(count))
         buffer_pos = pos
      end if
      call mpp_clock_end(send_clock_nonblock)
   end do ! end do ist = 0,nlist-1
 
-  msgsize = buffer_pos - send_pos_list(id_update)
+  msgsize = buffer_pos - nonblock_data(id_update)%send_pos
   if( reuse_id_update ) then
-     if(msgsize .NE. send_msgsize_list(id_update)) then
+     if(msgsize .NE. nonblock_data(id_update)%send_msgsize) then
         call mpp_error(FATAL,'MPP_START_DO_UPDATE: mismatch of send msgsize for field '//trim(name) )
      endif
   else
      nonblock_buffer_pos = nonblock_buffer_pos + msgsize
-     send_msgsize_list(id_update) = msgsize
+     nonblock_data(id_update)%send_msgsize = msgsize
   endif
   
   overPtr => NULL()
@@ -287,14 +287,16 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type
   l_size = size(f_addrs,1)
   ptr = LOC(mpp_domains_stack_nonblock)
 
-  if(request_recv(id_update)%count > 0) then
+  count = nonblock_data(id_update)%request_recv_count
+  if(count > 0) then
      call mpp_clock_begin(wait_clock_nonblock)
-     call mpp_sync_self(request=request_recv(id_update)%request(1:request_recv(id_update)%count))
+     call mpp_sync_self(request=nonblock_data(id_update)%request_recv(1:count))
      call mpp_clock_end(wait_clock_nonblock)
-     request_recv(id_update)%count = 0
+     nonblock_data(id_update)%request_recv_count = 0
+     nonblock_data(id_update)%request_recv(:)    = MPI_REQUEST_NULL
   endif 
 
-  buffer_pos = recv_pos_list(id_update) + recv_msgsize_list(id_update)
+  buffer_pos = nonblock_data(id_update)%recv_pos + nonblock_data(id_update)%recv_msgsize
   !--unpack the data
   call mpp_clock_begin(unpk_clock_nonblock)
   do m = update%nrecv, 1, -1
@@ -355,12 +357,16 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type
 
   call mpp_clock_end(unpk_clock_nonblock)
 
-  if(request_send(id_update)%count > 0) then
+  count = nonblock_data(id_update)%request_send_count
+  if(count > 0) then
      call mpp_clock_begin(wait_clock_nonblock)
-     call mpp_sync_self(request=request_send(id_update)%request(1:request_send(id_update)%count))
+     call mpp_sync_self(request=nonblock_data(id_update)%request_send(1:count))
      call mpp_clock_end(wait_clock_nonblock)
-     request_send(id_update)%count = 0
+     nonblock_data(id_update)%request_send_count = 0
+     nonblock_data(id_update)%request_send(:)    = MPI_REQUEST_NULL
   endif 
+  
+!  call init_nonblock_type(nonblock_data(id_update))
 
   return
 

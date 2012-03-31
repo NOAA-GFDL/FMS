@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_define.inc,v 19.0 2012/01/06 22:02:39 fms Exp $
+! $Id: mpp_domains_define.inc,v 19.0.2.1 2012/03/02 23:49:26 Zhi.Liang Exp $
 
 
   ! <SUBROUTINE NAME="mpp_define_layout2D" INTERFACE="mpp_define_layout">
@@ -594,7 +594,7 @@
     type(overlapSpec), pointer :: update=>NULL()
     character(len=1)     :: position
     integer              :: msgsize, l, p, is, ie, js, je, from_pe
-    integer, allocatable :: msg1(:), msg2(:)
+    integer, allocatable :: msg1(:), msg2(:), msg3(:)
     integer              :: outunit
 
     outunit = stdout()
@@ -991,7 +991,7 @@
     !--- or ntiles>1 mosaic, 
     !--- the check will be done in mpp_define_mosaic
     if(debug_message_passing .and. domain%ntiles == 1 ) then
-       allocate(msg1(0:nlist-1), msg2(0:nlist-1) )
+       allocate(msg1(0:nlist-1), msg2(0:nlist-1), msg3(0:nlist-1) )
        do p = 1, 4
           msg1 = 0
           msg2 = 0
@@ -1029,7 +1029,8 @@
                 js = update%send(m)%js(n); je = update%send(m)%je(n)
                 msgsize = msgsize + (ie-is+1)*(je-js+1)
              end do
-             call mpp_send( msgsize, plen=1, to_pe=update%send(m)%pe)
+             msg3(m) = msgsize
+             call mpp_send( msg3(m), plen=1, to_pe=update%send(m)%pe)
           enddo
           call mpp_sync_self(check=EVENT_RECV)
 
@@ -1044,7 +1045,7 @@
        enddo
        write(outunit,*)"NOTE from mpp_define_domains2D: message sizes are matched between send and recv for domain " &
             //trim(domain%name)
-       deallocate(msg1, msg2)
+       deallocate(msg1, msg2, msg3)
        update=>NULL()
     endif
 
@@ -1113,7 +1114,7 @@
     type(overlapSpec), pointer :: update=>NULL()
     character(len=1)     :: position
     integer              :: msgsize, l, p, is, ie, js, je, from_pe
-    integer, allocatable :: msg1(:), msg2(:)
+    integer, allocatable :: msg1(:), msg2(:), msg3(:)
     integer              :: outunit
 
     outunit = stdout()
@@ -1392,7 +1393,7 @@
     !--- currently only check T and C-cell. For ntiles>1 mosaic, 
     !--- the check will be done in mpp_define_mosaic
     if(debug_message_passing) then
-       allocate(msg1(0:nlist-1), msg2(0:nlist-1) )
+       allocate(msg1(0:nlist-1), msg2(0:nlist-1), msg3(0:nlist-1) )
        do p = 1, 2
           msg1 = 0
           msg2 = 0
@@ -1424,7 +1425,8 @@
                 js = update%send(m)%js(n); je = update%send(m)%je(n)
                 msgsize = msgsize + (ie-is+1)*(je-js+1)
              end do
-             call mpp_send( msgsize, plen=1, to_pe=update%send(m)%pe)
+             msg3(m) = msgsize
+             call mpp_send( msg3(m), plen=1, to_pe=update%send(m)%pe)
           enddo
           call mpp_sync_self(check=EVENT_RECV)
 

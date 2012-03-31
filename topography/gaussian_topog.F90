@@ -74,7 +74,7 @@ public :: gaussian_topog_init, get_gaussian_topog
 !-----------------------------------------------------------------------
 
 character(len=128) :: version = '$Id: gaussian_topog.F90,v 19.0 2012/01/06 22:06:14 fms Exp $'
-character(len=128) :: tagname = '$Name: siena_201202 $'
+character(len=128) :: tagname = '$Name: siena_201203 $'
 
 logical :: do_nml = .true.
 logical :: module_is_initialized = .FALSE.
