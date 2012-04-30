@@ -53,17 +53,17 @@ MODULE diag_grid_mod
   USE constants_mod, ONLY: DEG_TO_RAD, RAD_TO_DEG, RADIUS
   USE fms_mod, ONLY: write_version_number, error_mesg, WARNING, FATAL,&
        & mpp_pe
-  USE mpp_mod, ONLY: mpp_root_pe, mpp_npes, mpp_max
-  Use mpp_domains_mod, ONLY: domain2d, mpp_get_tile_id,&
+  USE mpp_mod, ONLY: mpp_root_pe, mpp_npes, mpp_max, mpp_min
+  USE mpp_domains_mod, ONLY: domain2d, mpp_get_tile_id,&
        & mpp_get_ntile_count, mpp_get_compute_domains
 
   IMPLICIT NONE
 
   ! Parameters
   CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id: diag_grid.F90,v 19.0 2012/01/06 21:55:12 fms Exp $'
+       & '$Id: diag_grid.F90,v 19.0.2.1 2012/03/26 20:14:34 sdu Exp $'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: siena_201203 $'
+       & '$Name: siena_201204 $'
 
   ! Derived data types
   ! <PRIVATE>
@@ -271,14 +271,8 @@ CONTAINS
     lonDim = SHAPE(glo_lon)
     IF (  (latDim(1) == lonDim(1)) .AND.&
          &(latDim(2) == lonDim(2)) ) THEN
-       IF ( tile(1) == 4 .OR. tile(1) == 5 ) THEN
-          ! These tiles need to be transposed.
-          i_dim = latDim(2)
-          j_dim = latDim(1)
-       ELSE 
-          i_dim = latDim(1)
-          j_dim = latDim(2)
-       END IF
+       i_dim = latDim(1)
+       j_dim = latDim(2)
     ELSE
        CALL error_mesg('diag_grid_mod::diag_grid_init',&
             &'glo_lat and glo_lon must be the same shape.', FATAL)
@@ -337,16 +331,14 @@ CONTAINS
     ! If we are on tile 4 or 5, we need to transpose the grid to get
     ! this to work.
     IF ( tile(1) == 4 .OR. tile(1) == 5 ) THEN
-       diag_global_grid%glo_lat = TRANSPOSE(glo_lat)
-       diag_global_grid%glo_lon = TRANSPOSE(glo_lon)
        diag_global_grid%aglo_lat = TRANSPOSE(aglo_lat)
        diag_global_grid%aglo_lon = TRANSPOSE(aglo_lon)
     ELSE
-       diag_global_grid%glo_lat = glo_lat
-       diag_global_grid%glo_lon = glo_lon
        diag_global_grid%aglo_lat = aglo_lat
        diag_global_grid%aglo_lon = aglo_lon
     END IF
+    diag_global_grid%glo_lat = glo_lat
+    diag_global_grid%glo_lon = glo_lon
     diag_global_grid%dimI = i_dim
     diag_global_grid%dimJ = j_dim
     diag_global_grid%adimI = ai_dim
@@ -463,8 +455,16 @@ CONTAINS
     INTEGER, INTENT(out) :: istart, jstart !< i/j start indexes
     INTEGER, INTENT(out) :: iend, jend !< i/j end indexes
 
-    INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: indexes
-    INTEGER :: myTile, ntiles, i, j
+    REAL, ALLOCATABLE, DIMENSION(:,:) :: delta_lat, delta_lon, grid_lon
+
+    REAL, DIMENSION(4) :: dists_lon, dists_lat
+    REAL :: lonEndAdj
+
+    INTEGER, ALLOCATABLE, DIMENSION(:,:) :: ijMin, ijMax
+    INTEGER :: myTile, ntiles, i, j, k, dimI, dimJ, istat
+    INTEGER :: count
+
+    LOGICAL :: onMyPe
 
     IF ( .NOT. diag_grid_initialized )&
          & CALL error_mesg('diag_grid_mod::get_local_indexes',&
@@ -474,11 +474,17 @@ CONTAINS
     myTile = diag_global_grid%tile_number
     ntiles = diag_global_grid%ntiles
 
-    ! Allocate the indexes array, and initialize to zero.  (Useful for
-    ! reduction later on.)
-    IF ( ALLOCATED(indexes) ) DEALLOCATE(indexes)
-    ALLOCATE(indexes(ntiles,4,2))
-    indexes = 0 
+    ! Arrays to home min/max for each tile
+    ALLOCATE(ijMin(ntiles,2), STAT=istat)
+    IF ( istat .NE. 0 )&
+         & CALL error_mesg('diag_grid_mod::get_local_indexes',&
+         &'Cannot allocate ijMin index array', FATAL)
+    ALLOCATE(ijMax(ntiles,2), STAT=istat)
+    IF ( istat .NE. 0 )&
+         & CALL error_mesg('diag_grid_mod::get_local_indexes',&
+         &'Cannot allocate ijMax index array', FATAL)
+    ijMin = 0
+    ijMax = 0
 
     ! There will be four points to define a region, find all four.
     ! Need to call the correct function depending on if the tile is a
@@ -488,63 +494,148 @@ CONTAINS
     IF ( latStart == latEnd .AND. lonStart == lonEnd ) THEN
        ! single point
        IF ( MOD(diag_global_grid%tile_number,3) == 0 ) THEN
-          indexes(myTile,1,:) = find_pole_index_agrid(latStart,lonStart)
-          indexes(myTile,2,:) = indexes(myTile,1,:)
-          indexes(myTile,3,:) = indexes(myTile,1,:)
-          indexes(myTile,4,:) = indexes(myTile,1,:)
+          ijMax(myTile,:) = find_pole_index_agrid(latStart,lonStart)
        ELSE
-          indexes(myTile,1,:) = find_equator_index_agrid(latStart,lonStart)
-          indexes(myTile,2,:) = indexes(myTile,1,:)
-          indexes(myTile,3,:) = indexes(myTile,1,:)
-          indexes(myTile,4,:) = indexes(myTile,1,:)
+          ijMax(myTile,:) = find_equator_index_agrid(latStart,lonStart)
        END IF
+
+       WHERE ( ijMax(:,1) .NE. 0 )
+          ijMax(:,1) = ijMax(:,1) + diag_global_grid%myXbegin - 1
+       END WHERE
+       WHERE ( ijMax(:,2) .NE. 0 )
+          ijMax(:,2) = ijMax(:,2) + diag_global_grid%myYbegin - 1
+       END WHERE
+       
+       DO j = 1, 6 ! Each tile.
+          CALL mpp_max(ijMax(j,1))
+          CALL mpp_max(ijMax(j,2))
+       END DO
+
+       ijMin = ijMax
     ELSE
        ! multi-point
-       IF ( MOD(diag_global_grid%tile_number,3) == 0 ) THEN
-          ! Pole tile
-          indexes(myTile,1,:) = find_pole_index(latStart, lonStart)
-          indexes(myTile,2,:) = find_pole_index(latStart, lonEnd)
-          indexes(myTile,3,:) = find_pole_index(latEnd, lonStart)
-          indexes(myTile,4,:) = find_pole_index(latEnd, lonEnd)
+       dimI = diag_global_grid%dimI
+       dimJ = diag_global_grid%dimJ
+       ! Build the delta array
+       ALLOCATE(delta_lat(dimI,dimJ), STAT=istat)
+       IF ( istat .NE. 0 )&
+            & CALL error_mesg('diag_grid_mod::get_local_indexes',&
+            &'Cannot allocate latitude delta array', FATAL)
+       ALLOCATE(delta_lon(dimI,dimJ), STAT=istat)
+       IF ( istat .NE. 0 )&
+            & CALL error_mesg('diag_grid_mod::get_local_indexes',&
+            &'Cannot allocate longitude delta array', FATAL)
+       DO j=1, dimJ
+          DO i=1, dimI
+             count = 0
+             dists_lon = 0
+             dists_lat = 0
+             IF ( i < dimI ) THEN
+                dists_lon(1) = ABS(diag_global_grid%glo_lon(i+1,j) - diag_global_grid%glo_lon(i,j))
+                dists_lat(1) = ABS(diag_global_grid%glo_lat(i+1,j) - diag_global_grid%glo_lat(i,j))
+                count = count+1
+             END IF
+             IF ( j < dimI ) THEN
+                dists_lon(2) = ABS(diag_global_grid%glo_lon(i,j+1) - diag_global_grid%glo_lon(i,j))
+                dists_lat(2) = ABS(diag_global_grid%glo_lat(i,j+1) - diag_global_grid%glo_lat(i,j))
+                count = count+1
+             END IF
+             IF ( i > 1 ) THEN
+                dists_lon(3) = ABS(diag_global_grid%glo_lon(i,j) - diag_global_grid%glo_lon(i-1,j))
+                dists_lat(3) = ABS(diag_global_grid%glo_lat(i,j) - diag_global_grid%glo_lat(i-1,j))
+                count = count+1
+             END IF
+             IF ( j > 1 ) THEN
+                dists_lon(4) = ABS(diag_global_grid%glo_lon(i,j) - diag_global_grid%glo_lon(i,j-1))
+                dists_lat(4) = ABS(diag_global_grid%glo_lat(i,j) - diag_global_grid%glo_lat(i,j-1))
+                count = count+1
+             END IF
+
+             ! Fix wrap around problem
+             DO k=1, 4
+                IF ( dists_lon(k) > 180.0 ) THEN
+                   dists_lon(k) = 360.0 - dists_lon(k)
+                END IF
+             END DO
+             delta_lon(i,j) = SUM(dists_lon)/count
+             delta_lat(i,j) = SUM(dists_lat)/count
+          END DO
+       END DO
+       
+       ijMin = HUGE(1)
+       ijMax = -HUGE(1)
+
+       ! Adjusted longitude array
+       ALLOCATE(grid_lon(dimI,dimJ), STAT=istat)
+       IF ( istat .NE. 0 )&
+            & CALL error_mesg('diag_grid_mod::get_local_indexes',&
+            &'Cannot allocate temporary longitude array', FATAL)
+       grid_lon = diag_global_grid%glo_lon
+
+       ! Make adjustments where required
+       IF ( lonStart > lonEnd ) THEN
+          WHERE ( grid_lon < lonStart )
+             grid_lon = grid_lon + 360.0
+          END WHERE
+          lonEndAdj = lonEnd + 360.0
        ELSE
-          indexes(myTile,1,:) = find_equator_index(latStart, lonStart)
-          indexes(myTile,2,:) = find_equator_index(latStart, lonEnd)
-          indexes(myTile,3,:) = find_equator_index(latEnd, lonStart)
-          indexes(myTile,4,:) = find_equator_index(latEnd, lonEnd)
+          lonEndAdj = lonEnd
+       END IF
+
+       DO j=1, dimJ-1
+          DO i=1, dimI-1
+             onMyPe = .false.
+             IF ( latStart-delta_lat(i,j) <= diag_global_grid%glo_lat(i,j) .AND.&
+                  & diag_global_grid%glo_lat(i,j) < latEnd+delta_lat(i,j) ) THEN
+                ! Short-cut for the poles
+                IF ( (ABS(latStart)-delta_lat(i,j) <= 90.0 .AND.&
+                     & 90.0 <= ABS(latEnd)+delta_lat(i,j)) .AND.&
+                     & ABS(diag_global_grid%glo_lat(i,j)) == 90.0 ) THEN
+                   onMyPe = .TRUE.
+                ELSE IF ( (lonStart-delta_lon(i,j) <= grid_lon(i,j) .AND.&
+                     & grid_lon(i,j) < lonEndAdj+delta_lon(i,j)) ) THEN
+                   onMyPe = .TRUE.
+                ELSE
+                   onMyPe = .FALSE.
+                END IF
+                IF ( onMyPe ) THEN
+                   ijMin(myTile,1) = MIN(ijMin(myTile,1),i + diag_global_grid%myXbegin - 1)
+                   ijMax(myTile,1) = MAX(ijMax(myTile,1),i + diag_global_grid%myXbegin - 1)
+                   ijMin(myTile,2) = MIN(ijMin(myTile,2),j + diag_global_grid%myYbegin - 1)
+                   ijMax(myTile,2) = MAX(ijMax(myTile,2),j + diag_global_grid%myYbegin - 1)
+                END IF
+             END IF
+          END DO
+       END DO
+       DEALLOCATE(delta_lon)
+       DEALLOCATE(delta_lat)
+       DEALLOCATE(grid_lon)
+
+       ! Global min/max reduce
+       DO i=1, ntiles
+          CALL mpp_min(ijMin(i,1))
+          CALL mpp_max(ijMax(i,1))
+          CALL mpp_min(ijMin(i,2))
+          CALL mpp_max(ijMax(i,2))
+       END DO
+
+       IF ( ijMin(myTile,1) == HUGE(1) .OR. ijMax(myTile,1) == -HUGE(1) ) THEN
+          ijMin(myTile,1) = 0
+          ijMax(myTile,1) = 0
+       END IF
+       IF ( ijMin(myTile,2) == HUGE(1) .OR. ijMax(myTile,2) == -HUGE(1) ) THEN
+          ijMin(myTile,2) = 0
+          ijMax(myTile,2) = 0
        END IF
     END IF
-    
-    WHERE ( indexes(:,:,1) .NE. 0 )
-       indexes(:,:,1) = indexes(:,:,1) + diag_global_grid%myXbegin - 1
-    END WHERE
-    WHERE ( indexes(:,:,2) .NE. 0 )
-       indexes(:,:,2) = indexes(:,:,2) + diag_global_grid%myYbegin - 1
-    END WHERE
-    
-    DO j = 1, 6 ! Each tile.
-       DO i = 1, 4
-          CALL mpp_max(indexes(j,i,1))
-          CALL mpp_max(indexes(j,i,2))
-       END DO
-    END DO
-    
-    ! Are there any indexes found on this tile?
-    ! Check if all points are on this tile
-    ! Works since the find index functions return 0 if not found.
-    IF (   PRODUCT(indexes(myTile,:,1)) /= 0 .OR.&
-         & PRODUCT(indexes(myTile,:,2)) /= 0  ) THEN
-       istart = MINVAL(indexes(myTile,:,1))
-       jstart = MINVAL(indexes(myTile,:,2))
-       iend = MAXVAL(indexes(myTile,:,1))
-       jend = MAXVAL(indexes(myTile,:,2))
-    ELSE
-       istart = 0
-       jstart = 0
-       iend = 0
-       jend = 0
-    END IF
 
-    DEALLOCATE(indexes)
+    istart = ijMin(myTile,1)
+    jstart = ijMin(myTile,2)
+    iend = ijMax(myTile,1)
+    jend = ijMax(myTile,2)
+
+    DEALLOCATE(ijMin)
+    DEALLOCATE(ijMax)
   END SUBROUTINE get_local_indexes
   ! </SUBROUTINE>
   
@@ -599,11 +690,11 @@ CONTAINS
 
     iindex = indexes(1)
     jindex = indexes(2)
-    if (iindex ==  diag_global_grid%adimI -1 .or.&
-        jindex ==  diag_global_grid%adimJ -1 ) then
+    IF (iindex ==  diag_global_grid%adimI -1 .OR.&
+        jindex ==  diag_global_grid%adimJ -1 ) THEN
       iindex = 0
       jindex = 0
-    endif
+    ENDIF
            
   END SUBROUTINE get_local_indexes2
   ! </SUBROUTINE>
@@ -660,351 +751,6 @@ CONTAINS
   ! </FUNCTION>
   ! </PRIVATE>
 
-  ! <PRIVATE>
-  ! <FUNCTION NAME="find_pole_index">
-  !   <OVERVIEW>
-  !     Return the closest index (i,j) to the given (lat,lon) point.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     PURE FUNCTION find_pole_index(lat, lon)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     This function searches a pole grid tile looking for the grid point
-  !     closest to the give (lat, lon) location, and returns the i
-  !     and j indexes of the point.
-  !   </DESCRIPTION>
-  !   <IN NAME="lat" TYPE="REAL">
-  !     Latitude location
-  !   </IN>
-  !   <IN NAME="lon" TYPE="REAL">
-  !     Longitude location
-  !   </IN>
-  !   <OUT NAME="find_pole_index" TYPE="INTEGER, DIMENSION(2)">
-  !     The (i, j) location of the closest grid to the given (lat,
-  !     lon) location.
-  !   </OUT>
-  PURE FUNCTION find_pole_index(lat, lon)
-    INTEGER, DIMENSION(2) :: find_pole_index
-    REAL, INTENT(in) :: lat, lon
-    
-    INTEGER :: indxI, indxJ !< Indexes to be returned.
-    INTEGER :: dimI, dimJ !< Size of the grid dimensions
-    INTEGER :: i,j !< Count indexes
-    INTEGER :: nearestCorner !< index of the nearest corner
-    INTEGER , DIMENSION(4,2) :: ijArray !< indexes of the cornerPts and pntDistances arrays
-    REAL :: llat, llon !< Corrected lat and lon location (if looking for pole point.)
-    REAL :: maxCtrDist !< maximum distance to the origPt to corner
-    REAL, DIMENSION(4) :: pntDistances !< distance from origPt to corner
-    REAL, DIMENSION(4,2) :: cornerPts !< Corner points using (lat,lon)
-    TYPE(point) :: origPt !< Original point
-    TYPE(point), DIMENSION(9) :: points !< xyz of 8 nearest neighbors
-    REAL, DIMENSION(9) :: distSqrd !< distance between origPt and points(:)
-
-    ! Set the inital fail values for indxI and indxJ
-    indxI = 0
-    indxJ = 0
-    
-    dimI = diag_global_grid%dimI
-    dimJ = diag_global_grid%dimJ
-
-    ! Since the poles have an non-unique longitude value, make a small correction if looking for one of the poles.
-    IF ( lat == 90.0 ) THEN
-       llat = lat - .1
-    ELSE IF ( lat == -90.0 ) THEN
-       llat = lat + .1
-    ELSE
-       llat = lat
-    END IF
-    llon = lon
-
-    iLoop: DO i=1, dimI-1
-       jLoop: DO j = 1, dimJ-1
-          ! Get the lat,lon for the four corner points.
-          cornerPts = RESHAPE( (/ diag_global_grid%glo_lat(i,  j),  diag_global_grid%glo_lon(i,  j),&
-               &                  diag_global_grid%glo_lat(i+1,j+1),diag_global_grid%glo_lon(i+1,j+1),&
-               &                  diag_global_grid%glo_lat(i+1,j),  diag_global_grid%glo_lon(i+1,j),&
-               &                  diag_global_grid%glo_lat(i,  j+1),diag_global_grid%glo_lon(i,  j+1) /),&
-               &               (/ 4, 2 /), ORDER=(/2,1/) )
-
-          ! Find the maximum half distance of the corner points
-          maxCtrDist = MAX(gCirDistance(cornerPts(1,1),cornerPts(1,2), cornerPts(2,1),cornerPts(2,2)),&
-               &           gCirDistance(cornerPts(3,1),cornerPts(3,2), cornerPts(4,1),cornerPts(4,2)))/2
-          ! Find the distance of the four corner points to the point of interest.
-          pntDistances = gCirDistance(cornerPts(:,1),cornerPts(:,2), llat,llon)
-
-          IF ( (MINVAL(pntDistances) <= maxCtrDist) .AND. (i*j.NE.0) ) THEN
-             ! Set up the i,j index array
-             ijArray = RESHAPE( (/ i, j, i+1, j+1, i+1, j, i, j+1 /), (/ 4, 2 /), ORDER=(/2,1/) )
-
-             ! the nearest point index
-             nearestCorner = MINLOC(pntDistances,1)
-
-             indxI = ijArray(nearestCorner,1)
-             indxJ = ijArray(nearestCorner,2)
-             
-             EXIT iLoop
-          END IF
-       END DO jLoop
-    END DO iLoop
-    
-          
-    ! Make sure we have indexes in the correct range
-    valid: IF (  (indxI <= 0 .OR. dimI < indxI) .OR. &
-         &       (indxJ <= 0 .OR. dimJ < indxJ) ) THEN
-       indxI = 0
-       indxJ = 0
-    ELSE ! indxI and indxJ are valid.
-       ! Since we are looking for the closest grid point to the
-       ! (lat,lon) point, we need to check the surrounding
-       ! points.  The indexes for the variable points are as follows
-       ! 
-       ! 1---4---7
-       ! |   |   |
-       ! 2---5---8
-       ! |   |   |
-       ! 3---6---9
-
-       ! The original point
-       origPt = latlon2xyz(lat,lon)
-
-       ! Set the 'default' values for points(:) x,y,z to some large
-       ! value.
-       DO i=1, 9
-          points(i)%x = 1.0e20
-          points(i)%y = 1.0e20
-          points(i)%z = 1.0e20
-       END DO
-
-       ! All the points around the i,j indexes
-       IF ( indxI > 1 ) THEN
-          points(1) = latlon2xyz(diag_global_grid%glo_lat(indxI-1,indxJ+1),&
-               &                 diag_global_grid%glo_lon(indxI-1,indxJ+1))
-          points(2) = latlon2xyz(diag_global_grid%glo_lat(indxI-1,indxJ),&
-               &                 diag_global_grid%glo_lon(indxI-1,indxJ))
-          IF ( indxJ > 1 ) THEN
-             points(3) = latlon2xyz(diag_global_grid%glo_lat(indxI-1,indxJ-1),&
-                  &                 diag_global_grid%glo_lon(indxI-1,indxJ-1))
-          END IF
-       END IF
-       points(4) = latlon2xyz(diag_global_grid%glo_lat(indxI,  indxJ+1),&
-            &                 diag_global_grid%glo_lon(indxI,  indxJ+1))
-       points(5) = latlon2xyz(diag_global_grid%glo_lat(indxI,  indxJ),&
-            &                 diag_global_grid%glo_lon(indxI,  indxJ))
-       IF ( indxJ > 1 ) THEN
-          points(6) = latlon2xyz(diag_global_grid%glo_lat(indxI,  indxJ-1),&
-               &                 diag_global_grid%glo_lon(indxI,  indxJ-1))
-       END IF
-       points(7) = latlon2xyz(diag_global_grid%glo_lat(indxI+1,indxJ+1),&
-            &                 diag_global_grid%glo_lon(indxI+1,indxJ+1))
-       points(8) = latlon2xyz(diag_global_grid%glo_lat(indxI+1,indxJ),&
-            &                 diag_global_grid%glo_lon(indxI+1,indxJ))
-       IF ( indxJ > 1 ) THEN
-          points(9) = latlon2xyz(diag_global_grid%glo_lat(indxI+1,indxJ-1),&
-               &                 diag_global_grid%glo_lon(indxI+1,indxJ-1))
-       END IF
-          
-       ! Calculate the distance squared between the points(:) and the origPt
-       distSqrd = distanceSqrd(origPt, points)
-
-       SELECT CASE (MINLOC(distSqrd,1))
-       CASE ( 1 )
-          indxI = indxI-1
-          indxJ = indxJ+1
-       CASE ( 2 )
-          indxI = indxI-1
-          indxJ = indxJ
-       CASE ( 3 )
-          indxI = indxI-1
-          indxJ = indxJ-1
-       CASE ( 4 )
-          indxI = indxI
-          indxJ = indxJ+1
-       CASE ( 5 )
-          indxI = indxI
-          indxJ = indxJ
-       CASE ( 6 )
-          indxI = indxI
-          indxJ = indxJ-1
-       CASE ( 7 )
-          indxI = indxI+1
-          indxJ = indxJ+1
-       CASE ( 8 )
-          indxI = indxI+1
-          indxJ = indxJ
-       CASE ( 9 )
-          indxI = indxI+1
-          indxJ = indxJ-1
-       CASE DEFAULT
-          indxI = 0
-          indxJ = 0
-       END SELECT
-    END IF valid
-    
-    ! Set the return value for the funtion
-    find_pole_index = (/indxI, indxJ/)
-  END FUNCTION find_pole_index
-  ! </FUNCTION>
-  ! </PRIVATE>
-  
-  ! <PRIVATE>
-  ! <FUNCTION NAME="find_equator_index">
-  !   <OVERVIEW>
-  !     Return the closest index (i,j) to the given (lat,lon) point.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     PURE FUNCTION find_equator_index(lat, lon)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     This function searches a equator grid tile looking for the grid point
-  !     closest to the give (lat, lon) location, and returns the i
-  !     and j indexes of the point.
-  !   </DESCRIPTION>
-  !   <IN NAME="lat" TYPE="REAL">
-  !     Latitude location
-  !   </IN>
-  !   <IN NAME="lon" TYPE="REAL">
-  !     Longitude location
-  !   </IN>
-  !   <OUT NAME="find_equator_index" TYPE="INTEGER, DIMENSION(2)">
-  !     The (i, j) location of the closest grid to the given (lat,
-  !     lon) location.
-  !   </OUT>
-  PURE FUNCTION find_equator_index(lat, lon)
-    INTEGER, DIMENSION(2) :: find_equator_index
-    REAL, INTENT(in) :: lat, lon
-    
-    INTEGER :: indxI, indxJ !< Indexes to be returned.
-    INTEGER :: indxI_tmp !< Hold the indxI value if on tile 3 or 4
-    INTEGER :: dimI, dimJ !< Size of the grid dimensions
-    INTEGER :: i,j !< Count indexes
-    INTEGER :: jstart, jend, nextj !< j counting variables
-    TYPE(point) :: origPt !< Original point
-    TYPE(point), DIMENSION(4) :: points !< xyz of 8 nearest neighbors
-    REAL, DIMENSION(4) :: distSqrd !< distance between origPt and points(:)
-
-    ! Set the inital fail values for indxI and indxJ
-    indxI = 0
-    indxJ = 0
-    
-    dimI = diag_global_grid%dimI
-    dimJ = diag_global_grid%dimJ
-
-    ! check to see if the 'fix' for the latitude index is needed
-    IF ( diag_global_grid%glo_lat(1,1) > &
-         &diag_global_grid%glo_lat(1,2) ) THEN
-       ! reverse the j search
-       jstart = dimJ
-       jend = 2
-       nextj = -1
-    ELSE
-       jstart = 1
-       jend = dimJ-1
-       nextJ = 1
-    END IF
-
-    ! find the I index
-    iLoop: DO i=1, dimI-1
-       IF (   diag_global_grid%glo_lon(i,1) >&
-            & diag_global_grid%glo_lon(i+1,1) ) THEN
-          ! We are at the 0 longitudal line
-          IF (   (diag_global_grid%glo_lon(i,1) <= lon .AND. lon <= 360) .OR.&
-               & (0 <= lon .AND. lon < diag_global_grid%glo_lon(i+1, 1)) ) THEN
-             indxI = i
-             EXIT iLoop
-          END IF
-       ELSEIF ( diag_global_grid%glo_lon(i,1) <= lon .AND.&
-            &   lon <= diag_global_grid%glo_lon(i+1,1) ) THEN
-          indxI = i
-          EXIT iLoop
-       END IF
-    END DO iLoop
-    
-    ! Find the J index
-    IF ( indxI > 0 ) THEN
-       jLoop: DO j=jstart, jend, nextj
-          IF (   diag_global_grid%glo_lat(indxI,j) <= lat .AND.&
-               & lat <= diag_global_grid%glo_lat(indxI,j+nextj) ) THEN
-             indxJ = j
-             EXIT jLoop
-          END IF
-       END DO jLoop
-    END IF
-
-    ! Make sure we have indexes in the correct range
-    valid: IF ( (indxI <= 0 .OR. dimI < indxI) .OR. &
-         &      (indxJ <= 0 .OR. dimJ < indxJ) ) THEN
-       indxI = 0
-       indxJ = 0
-    ELSE ! indxI and indxJ are valid.    
-       ! Since we are looking for the closest grid point to the
-       ! (lat,lon) point, we need to check the surrounding
-       ! points.  The indexes for the variable points are as follows
-       ! 
-       ! 1---3
-       ! |   |
-       ! 2---4
-
-       ! The original point
-       origPt = latlon2xyz(lat,lon)
-
-       ! Set the 'default' values for points(:) x,y,z to some large
-       ! value.
-       DO i=1, 4
-          points(i)%x = 1.0e20
-          points(i)%y = 1.0e20
-          points(i)%z = 1.0e20
-       END DO
-       
-       ! The original point
-       origPt = latlon2xyz(lat,lon)
-
-       points(1) = latlon2xyz(diag_global_grid%glo_lat(indxI,indxJ),&
-            &                 diag_global_grid%glo_lon(indxI,indxJ))
-       points(2) = latlon2xyz(diag_global_grid%glo_lat(indxI,indxJ+nextj),&
-            &                 diag_global_grid%glo_lon(indxI,indxJ+nextj))
-       points(3) = latlon2xyz(diag_global_grid%glo_lat(indxI+1,indxJ+nextj),&
-            &                 diag_global_grid%glo_lon(indxI+1,indxJ+nextj))
-       points(4) = latlon2xyz(diag_global_grid%glo_lat(indxI+1,indxJ),&
-            &                 diag_global_grid%glo_lon(indxI+1,indxJ))
-  
-       ! Find the distance between the original point and the four
-       ! grid points
-       distSqrd = distanceSqrd(origPt, points)  
-  
-       SELECT CASE (MINLOC(distSqrd,1))
-       CASE ( 1 )
-          indxI = indxI;
-          indxJ = indxJ;
-       CASE ( 2 )
-          indxI = indxI;
-          indxJ = indxJ+nextj;
-       CASE ( 3 )
-          indxI = indxI+1;
-          indxJ = indxJ+nextj;
-       CASE ( 4 )
-          indxI = indxI+1;
-          indxJ = indxJ;
-       CASE DEFAULT
-          indxI = 0;
-          indxJ = 0;
-       END SELECT
-
-       ! If we are on tile 3 or 4, then the indxI and indxJ are
-       ! reversed due to the transposed grids.
-       IF (   diag_global_grid%tile_number == 4 .OR.&
-            & diag_global_grid%tile_number == 5 ) THEN
-          indxI_tmp = indxI
-          indxI = indxJ
-          indxJ = indxI_tmp
-       END IF
-    END IF valid
-
-    ! Set the return value for the function
-    find_equator_index = (/indxI, indxJ/)
-  END FUNCTION find_equator_index
-  ! </FUNCTION>
-  ! </PRIVATE>
-  
   ! <PRIVATE>
   ! <FUNCTION NAME="find_pole_index_agrid">
   !   <OVERVIEW>

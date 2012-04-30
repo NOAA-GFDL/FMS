@@ -456,11 +456,11 @@ MODULE diag_data_mod
   !   </DATA>
   !   <DATA NAME="data" TYPE="REAL, DIMENSION(:), POINTER">
   !   </DATA>
-  !   <DATA NAME="start" TYPE="INTEGER, DIMENSION(max_subaxes)">
+  !   <DATA NAME="start" TYPE="INTEGER, DIMENSION(MAX_SUBAXES)">
   !   </DATA>
-  !   <DATA NAME="end" TYPE="INTEGER, DIMENSION(max_subaxes)">
+  !   <DATA NAME="end" TYPE="INTEGER, DIMENSION(MAX_SUBAXES)">
   !   </DATA>
-  !   <DATA NAME="subaxis_name" TYPE="CHARACTER(len=128), DIMENSION(max_subaxes)">
+  !   <DATA NAME="subaxis_name" TYPE="CHARACTER(len=128), DIMENSION(MAX_SUBAXES)">
   !   </DATA>
   !   <DATA NAME="length" TYPE="INTEGER">
   !   </DATA>
@@ -476,6 +476,8 @@ MODULE diag_data_mod
   !   </DATA>
   !   <DATA NAME="Domain2" TYPE="TYPE(domain2d)">
   !   </DATA>
+  !   <DATA NAME="subaxis_domain2" TYPE="TYPE(domain2d), dimension(MAX_SUBAXES)">
+  !   </DATA>
   !   <DATA NAME="aux" TYPE="CHARACTER(len=128)">
   !   </DATA>
   !   <DATA NAME="tile_count" TYPE="INTEGER">
@@ -485,12 +487,13 @@ MODULE diag_data_mod
      CHARACTER(len=256) :: units, long_name
      CHARACTER(len=1) :: cart_name
      REAL, DIMENSION(:), POINTER :: data
-     INTEGER, DIMENSION(max_subaxes) :: start
-     INTEGER, DIMENSION(max_subaxes) :: end
-     CHARACTER(len=128), DIMENSION(max_subaxes) :: subaxis_name
+     INTEGER, DIMENSION(MAX_SUBAXES) :: start
+     INTEGER, DIMENSION(MAX_SUBAXES) :: end
+     CHARACTER(len=128), DIMENSION(MAX_SUBAXES) :: subaxis_name
      INTEGER :: length, direction, edges, set, shift
      TYPE(domain1d) :: Domain
      TYPE(domain2d) :: Domain2
+     TYPE(domain2d), dimension(MAX_SUBAXES) :: subaxis_domain2
      CHARACTER(len=128) :: aux
      INTEGER :: tile_count
   END TYPE diag_axis_type
@@ -511,9 +514,9 @@ MODULE diag_data_mod
   
   ! Private CHARACTER Arrays for the CVS version and tagname.
   CHARACTER(len=128),PRIVATE  :: version =&
-       & '$Id: diag_data.F90,v 19.0 2012/01/06 21:55:08 fms Exp $'
+       & '$Id: diag_data.F90,v 19.0.2.2 2012/04/03 18:41:44 sdu Exp $'
   CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name: siena_201203 $'
+       & '$Name: siena_201204 $'
 
   ! <!-- Other public variables -->
   ! <DATA NAME="num_files" TYPE="INTEGER" DEFAULT="0">
@@ -570,6 +573,7 @@ MODULE diag_data_mod
   LOGICAL :: do_diag_field_log = .FALSE.
   LOGICAL :: write_bytes_in_file = .FALSE.
   LOGICAL :: debug_diag_manager = .FALSE.
+  LOGICAL :: conserve_water = .TRUE. ! Undocumented namelist to control flushing of output files.
   INTEGER :: max_num_axis_sets = 25
   LOGICAL :: use_cmor = .FALSE.
   LOGICAL :: issue_oor_warnings = .TRUE.

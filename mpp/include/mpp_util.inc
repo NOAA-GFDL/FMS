@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util.inc,v 19.0 2012/01/06 22:04:45 fms Exp $
+! $Id: mpp_util.inc,v 19.0.2.1 2012/04/13 16:25:53 sdu Exp $
 
 
 #ifdef use_libSMA
@@ -1261,21 +1261,24 @@ end function rarray_to_char
   subroutine read_input_nml
 
 ! version and tagging information
-    character(len=128) :: version = '$Id: mpp_util.inc,v 19.0 2012/01/06 22:04:45 fms Exp $'
-    character(len=128) :: tagname = '$Name: siena_201203 $' 
+    character(len=128) :: version = '$Id: mpp_util.inc,v 19.0.2.1 2012/04/13 16:25:53 sdu Exp $'
+    character(len=128) :: tagname = '$Name: siena_201204 $' 
 
 !private variables
     integer :: log_unit
+    integer :: num_lines, i
+
+    call read_ascii_file('input.nml', INPUT_STR_LENGTH, input_nml_file, num_lines=num_lines)
 
 ! write info logfile
     if (pe == root_pe) then
        log_unit = stdlog()
        write(log_unit,'(a)')  '========================================================================'
        write(log_unit,'(a)')  'READ_INPUT_NML: '//trim(version)//':'//trim(tagname)
+       do i = 1, num_lines
+          write(log_unit,*) trim(input_nml_file(i))
+       enddo
     end if
-
-    call read_ascii_file('input.nml', INPUT_STR_LENGTH, input_nml_file)
-
   end subroutine read_input_nml
 
   !-----------------------------------------------------------------------
@@ -1308,8 +1311,8 @@ end function rarray_to_char
     integer, intent(in), optional, dimension(:) :: PELIST
 
     ! version and tagging information
-    character(len=*), parameter :: VERSION = '$Id: mpp_util.inc,v 19.0 2012/01/06 22:04:45 fms Exp $'
-    character(len=*), parameter :: TAGNAME = '$Name: siena_201203 $' 
+    character(len=*), parameter :: VERSION = '$Id: mpp_util.inc,v 19.0.2.1 2012/04/13 16:25:53 sdu Exp $'
+    character(len=*), parameter :: TAGNAME = '$Name: siena_201204 $' 
 
     character(len=LENGTH) :: str_tmp
     character(len=5) :: text

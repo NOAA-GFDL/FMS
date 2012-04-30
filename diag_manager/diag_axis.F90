@@ -13,8 +13,8 @@ MODULE diag_axis_mod
   !   register_diag_field.
   ! </DESCRIPTION>
 
-  USE mpp_domains_mod, ONLY: domain1d, domain2d, mpp_get_compute_domain&
-       &, mpp_get_domain_components, null_domain1d, null_domain2d,&
+  USE mpp_domains_mod, ONLY: domain1d, domain2d, mpp_get_compute_domain,&
+       & mpp_get_domain_components, null_domain1d, null_domain2d,&
        & OPERATOR(.NE.), mpp_get_global_domain, mpp_get_domain_name
   USE fms_mod, ONLY: error_mesg, write_version_number, lowercase, uppercase, FATAL
   USE diag_data_mod, ONLY: diag_axis_type, max_subaxes, max_axes,&
@@ -33,9 +33,9 @@ MODULE diag_axis_mod
   ! Module variables
   ! Parameters
   CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id: diag_axis.F90,v 19.0 2012/01/06 21:54:34 fms Exp $'
+       & '$Id: diag_axis.F90,v 19.0.2.2 2012/04/13 16:27:46 sdu Exp $'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: siena_201203 $'
+       & '$Name: siena_201204 $'
 
   ! counter of number of axes defined
   INTEGER, DIMENSION(:), ALLOCATABLE :: num_subaxes
@@ -198,13 +198,13 @@ CONTAINS
     IF ( Axes(diag_axis_init)%cart_name == 'T' ) THEN 
        axlen = 0
     ELSE
-       axlen = SIZE(data(:))
+       axlen = SIZE(DATA(:))
     END IF
     ALLOCATE ( Axes(diag_axis_init)%data(1:axlen) )
 
     ! Initialize Axes(diag_axis_init)
     Axes(diag_axis_init)%name   = TRIM(name)
-    Axes(diag_axis_init)%data   = data(1:axlen)
+    Axes(diag_axis_init)%data   = DATA(1:axlen)
     Axes(diag_axis_init)%units  = units  
     Axes(diag_axis_init)%length = axlen
     Axes(diag_axis_init)%set    = set
@@ -330,18 +330,34 @@ CONTAINS
     TYPE(domain2d), INTENT(in), OPTIONAL  :: domain_2d
 
     INTEGER :: i, nsub_axis, direction
+    INTEGER :: xbegin, xend, ybegin, yend
+    INTEGER :: ad_xbegin, ad_xend, ad_ybegin, ad_yend
     CHARACTER(len=128) :: name, nsub_name   
     CHARACTER(len=128) :: units
     CHARACTER(len=128) :: cart_name
     CHARACTER(len=128) :: long_name
     CHARACTER(len=128) :: emsg
-    LOGICAL :: subaxis_set 
+    LOGICAL :: subaxis_set, hasDomain
 
-! there may be more than 1 subaxis on a parent axis, check for redundancy
+    ! there may be more than 1 subaxis on a parent axis, check for redundancy
     nsub_axis = 0
     subaxis_set = .FALSE.
+
+    IF ( PRESENT(domain_2d) ) THEN
+       hasDomain = .TRUE.
+       CALL mpp_get_compute_domain(domain_2d, xbegin, xend, ybegin, yend)
+    ELSE
+       hasDomain = .FALSE.
+    END IF
     sa_search: DO i = 1, num_subaxes(axis)
        IF ( start_indx == Axes(axis)%start(i) .AND. end_indx == Axes(axis)%end(i) ) THEN
+          IF ( hasDomain ) THEN
+             CALL mpp_get_compute_domain(Axes(axis)%subaxis_domain2(i), ad_xbegin, ad_xend, ad_ybegin, ad_yend)
+             IF ( .NOT.((xbegin == ad_xbegin .AND. xend == ad_xend) .AND.&
+                  & (ybegin == ad_ybegin .AND. yend == ad_yend)) ) THEN
+                CYCLE sa_search
+             END IF
+          END IF
           nsub_axis = i
           subaxis_set = .TRUE.    !subaxis already exists
           name = TRIM(Axes(axis)%subaxis_name(nsub_axis))
@@ -359,6 +375,7 @@ CONTAINS
        nsub_axis = num_subaxes(axis)
        Axes(axis)%start(nsub_axis) = start_indx
        Axes(axis)%end(nsub_axis)   = end_indx
+       if ( hasDomain ) Axes(axis)%subaxis_domain2(nsub_axis) = domain_2d
     END IF
   
     ! Create new name for the subaxis from name of parent axis
@@ -420,7 +437,7 @@ CONTAINS
   !     Array of coordinate values for this axis.
   !   </OUT>
   SUBROUTINE get_diag_axis(id, name, units, long_name, cart_name,&
-       & direction, edges, Domain, data)
+       & direction, edges, Domain, DATA)
     CHARACTER(len=*), INTENT(out) :: name, units, long_name, cart_name
     INTEGER, INTENT(in) :: id
     TYPE(domain1d), INTENT(out) :: Domain
@@ -435,11 +452,11 @@ CONTAINS
     direction = Axes(id)%direction
     edges     = Axes(id)%edges
     Domain    = Axes(id)%Domain
-    IF ( Axes(id)%length > SIZE(data(:)) ) THEN 
+    IF ( Axes(id)%length > SIZE(DATA(:)) ) THEN 
        ! <ERROR STATUS="FATAL">array data is too small.</ERROR>
        CALL error_mesg('diag_axis_mod::get_diag_axis', 'array data is too small', FATAL)
     ELSE
-       data(1:Axes(id)%length) = Axes(id)%data
+       DATA(1:Axes(id)%length) = Axes(id)%data
     END IF
   END SUBROUTINE get_diag_axis
   ! </SUBROUTINE>
@@ -482,11 +499,11 @@ CONTAINS
     REAL, DIMENSION(:), INTENT(out) :: DATA
 
     CALL valid_id_check(id, 'get_diag_axis_data')
-    IF (Axes(id)%length > SIZE(data(:))) THEN 
+    IF (Axes(id)%length > SIZE(DATA(:))) THEN 
        ! <ERROR STATUS="FATAL">array data is too small</ERROR>
        CALL error_mesg('diag_axis_mod::get_diag_axis_data', 'array data is too small', FATAL)
     ELSE
-       data(1:Axes(id)%length) = Axes(id)%data
+       DATA(1:Axes(id)%length) = Axes(id)%data
     END IF
   END SUBROUTINE get_diag_axis_data
   ! </SUBROUTINE>
@@ -822,7 +839,7 @@ CONTAINS
        !   Illegal value for axis used (value <VALUE>).
        ! </ERROR>
        WRITE (emsg, '(I2)') id
-       CALL error_mesg('diag_axis_mod::'//trim(routine_name),&
+       CALL error_mesg('diag_axis_mod::'//TRIM(routine_name),&
             & 'Illegal value for axis_id used (value '//TRIM(emsg)//').', FATAL)
     END IF
   END SUBROUTINE valid_id_check

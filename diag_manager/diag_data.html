@@ -1068,21 +1068,21 @@
 </dt>
 <dl> 
 <br>
-<span class="type">[INTEGER, DIMENSION(max_subaxes)]</span>
+<span class="type">[INTEGER, DIMENSION(MAX_SUBAXES)]</span>
 </dl>
 <dt>
 <tt>end</tt>
 </dt>
 <dl> 
 <br>
-<span class="type">[INTEGER, DIMENSION(max_subaxes)]</span>
+<span class="type">[INTEGER, DIMENSION(MAX_SUBAXES)]</span>
 </dl>
 <dt>
 <tt>subaxis_name</tt>
 </dt>
 <dl> 
 <br>
-<span class="type">[CHARACTER(len=128), DIMENSION(max_subaxes)]</span>
+<span class="type">[CHARACTER(len=128), DIMENSION(MAX_SUBAXES)]</span>
 </dl>
 <dt>
 <tt>length</tt>
@@ -1132,6 +1132,13 @@
 <dl> 
 <br>
 <span class="type">[TYPE(domain2d)]</span>
+</dl>
+<dt>
+<tt>subaxis_domain2</tt>
+</dt>
+<dl> 
+<br>
+<span class="type">[TYPE(domain2d), dimension(MAX_SUBAXES)]</span>
 </dl>
 <dt>
 <tt>aux</tt>

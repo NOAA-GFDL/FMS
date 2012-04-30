@@ -270,6 +270,10 @@ module memutils_mod
 !memuse is an external function: works on SGI
 !use #ifdef to generate equivalent on other platforms.
     integer :: memuse !default integer OK?
+    character(len=8)  :: walldate
+    character(len=10) :: walltime
+    character(len=5)  :: wallzone
+    integer           :: wallvalues(8)
 
     if( PRESENT(always) )then
         if( .NOT.always )return
@@ -286,9 +290,11 @@ module memutils_mod
     mmax = m; call mpp_max(mmax)
     mavg = m; call mpp_sum(mavg); mavg = mavg/mpp_npes()
     mstd = (m-mavg)**2; call mpp_sum(mstd); mstd = sqrt( mstd/mpp_npes() )
-    if( mpp_pe().EQ.mpp_root_pe() )write( mu,'(a64,4es11.3)' ) &
-         'Memuse(MB) at '//trim(text)//'=', mmin, mmax, mstd, mavg
-
+    if( mpp_pe().EQ.mpp_root_pe() ) then
+      call DATE_AND_TIME(walldate, walltime, wallzone, wallvalues)
+      write( mu,'(a84,4es11.3)' ) trim(walldate)//' '//trim(walltime)//&
+         ': Memuse(MB) at '//trim(text)//'=', mmin, mmax, mstd, mavg
+    endif
     return
   end subroutine print_memuse_stats
 

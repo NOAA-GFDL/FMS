@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_define.inc,v 19.0.2.1 2012/03/02 23:49:26 Zhi.Liang Exp $
+! $Id: mpp_domains_define.inc,v 19.0.2.1.2.1 2012/03/27 17:39:41 Seth.Underwood Exp $
 
 
   ! <SUBROUTINE NAME="mpp_define_layout2D" INTERFACE="mpp_define_layout">
@@ -7446,7 +7446,8 @@ if(present(whalo) .or. present(ehalo) .or. present(shalo) .or. present(nhalo) ) 
       yextent = domain_in%y(1)%list(:)%compute%size,                     &
       symmetry=domain_in%symmetry,                                       &
       maskmap = domain_in%pearray .NE. NULL_PE )
-
+ domain_out%ntiles = domain_in%ntiles
+ domain_out%tile_id = domain_in%tile_id
 else    
  call mpp_define_null_domain(domain_out)
  nlist = size(domain_in%list(:))
@@ -7457,6 +7458,8 @@ else
  enddo
  call mpp_modify_domain(domain_in%x(1), domain_out%x(1), isc, iec, isg, ieg)
  call mpp_modify_domain(domain_in%y(1), domain_out%y(1), jsc, jec, jsg, jeg)
+ domain_out%ntiles = domain_in%ntiles
+ domain_out%tile_id = domain_in%tile_id
 endif
 
 end subroutine mpp_modify_domain2D

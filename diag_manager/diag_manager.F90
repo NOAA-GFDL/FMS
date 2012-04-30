@@ -190,7 +190,8 @@ MODULE diag_manager_mod
        & output_fields, Time_zero, append_pelist_name, mix_snapshot_average_fields,&
        & first_send_data_call, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
        & diag_log_unit, time_unit_list, pelist_name, module_is_initialized, max_num_axis_sets,&
-       & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, filename_appendix, pack_size
+       & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, filename_appendix, pack_size,&
+       & conserve_water
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
@@ -211,9 +212,9 @@ MODULE diag_manager_mod
 
   ! version number of this module
   CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id: diag_manager.F90,v 19.0.2.3 2012/01/25 21:54:15 Zhi.Liang Exp $'
+       & '$Id: diag_manager.F90,v 19.0.4.5 2012/04/03 18:41:44 sdu Exp $'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: siena_201203 $'  
+       & '$Name: siena_201204 $'  
 
   type(time_type) :: Time_end
 
@@ -827,6 +828,7 @@ CONTAINS
              END IF
              output_fields(out_num)%region_elements = local_siz(1)*local_siz(2)*local_siz(3)
              output_fields(out_num)%total_elements = siz(1)*siz(2)*siz(3)
+             files(output_fields(out_num)%output_file)%local = .true.
           END IF
        ELSE ! the field is output globally
           ! size of output_fields equal size of input_fields 
@@ -983,11 +985,20 @@ CONTAINS
 
     IF ( PRESENT(rmask) ) WHERE (rmask < 0.5) mask_out(:, 1, 1) = .FALSE.
     IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
-       send_data_1d = send_data_3d(diag_field_id, field_out, time, is_in, 1, 1, mask_out,&
-            & ie_in=ie_in,weight=weight, err_msg=err_msg)
+       IF ( PRESENT(is_in) .OR. PRESENT(ie_in) ) THEN
+          send_data_1d = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=1, ks_in=1,&
+               & mask=mask_out, ie_in=ie_in, je_in=1, ke_in=1, weight=weight, err_msg=err_msg)
+       ELSE
+          send_data_1d = send_data_3d(diag_field_id, field_out, time, mask=mask_out,&
+               & weight=weight, err_msg=err_msg)
+       END IF
     ELSE
-       send_data_1d = send_data_3d(diag_field_id, field_out, time, is_in, 1, 1,&
-            & ie_in=ie_in, weight=weight, err_msg=err_msg)
+       IF ( PRESENT(is_in) .OR. PRESENT(ie_in) ) THEN
+          send_data_1d = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=1, ks_in=1,&
+               & ie_in=ie_in, je_in=1, ke_in=1, weight=weight, err_msg=err_msg)
+       ELSE
+          send_data_1d = send_data_3d(diag_field_id, field_out, time, weight=weight, err_msg=err_msg)
+       END IF
     END IF
   END FUNCTION send_data_1d
   ! </FUNCTION>
@@ -1038,11 +1049,11 @@ CONTAINS
     
     IF ( PRESENT(rmask) ) WHERE ( rmask < 0.5 ) mask_out(:, :, 1) = .FALSE.
     IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
-       send_data_2d = send_data_3d(diag_field_id, field_out, time, is_in, js_in, 1, mask_out,&
-            & ie_in=ie_in, je_in=je_in,weight=weight, err_msg=err_msg)
+       send_data_2d = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1, mask=mask_out,&
+            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
     ELSE
-       send_data_2d = send_data_3d(diag_field_id, field_out, time, is_in, js_in, 1, ie_in=ie_in,&
-            & je_in=je_in, weight=weight, err_msg=err_msg)
+       send_data_2d = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1,&
+            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
     END IF
   END FUNCTION send_data_2d
   ! </FUNCTION>
@@ -2751,7 +2762,7 @@ CONTAINS
     NAMELIST /diag_manager_nml/ append_pelist_name, mix_snapshot_average_fields, max_output_fields, &
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
-         & oor_warnings_fatal
+         & oor_warnings_fatal, conserve_water
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
