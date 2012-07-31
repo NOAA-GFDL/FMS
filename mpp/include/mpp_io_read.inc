@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_read.inc,v 19.0 2012/01/06 22:03:24 fms Exp $
+! $Id: mpp_io_read.inc,v 19.0.2.1 2012/05/07 02:19:08 z1l Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -679,36 +679,40 @@
                  end select
              else   
                  len = mpp_file(unit)%time_level
-                 allocate(mpp_file(unit)%time_values(len), STAT=istat)
-                 if ( istat .ne. 0 ) then
-                    write(text,'(A)') istat
-                    call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate mpp_file%time_valuse.  STAT = "&
-                            & //trim(text))
-                 end if
-                 select case (type)
-                 case (NF_FLOAT)
-                    allocate(rvals(len), STAT=istat)
+                 if( len > 0 ) then
+                    allocate(mpp_file(unit)%time_values(len), STAT=istat)
                     if ( istat .ne. 0 ) then
                        write(text,'(A)') istat
-                       call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array rvals.  STAT = "&
+                       call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate mpp_file%time_valuse.  STAT = "&
                             & //trim(text))
                     end if
-                    error = NF_GET_VAR_REAL(ncid,i,rvals);call netcdf_err( error, mpp_file(unit), mpp_file(unit)%Axis(dimid) )
-                    mpp_file(unit)%time_values(1:len) = rvals(1:len)
-                    deallocate(rvals)
-                 case (NF_DOUBLE)
-                    allocate(r8vals(len), STAT=istat)
-                    if ( istat .ne. 0 ) then
-                       write(text,'(A)') istat
-                       call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array r8vals.  STAT = "&
+                    select case (type)
+                    case (NF_FLOAT)
+                       allocate(rvals(len), STAT=istat)
+                       if ( istat .ne. 0 ) then
+                          write(text,'(A)') istat
+                          call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array rvals.  STAT = "&
+                               & //trim(text))
+                       end if
+                       error = NF_GET_VAR_REAL(ncid,i,rvals)
+                       call netcdf_err( error, mpp_file(unit), mpp_file(unit)%Axis(dimid) )
+                       mpp_file(unit)%time_values(1:len) = rvals(1:len)
+                       deallocate(rvals)
+                    case (NF_DOUBLE)
+                       allocate(r8vals(len), STAT=istat)
+                       if ( istat .ne. 0 ) then
+                          write(text,'(A)') istat
+                          call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array r8vals.  STAT = "&
                             & //trim(text))
-                    end if
-                    error = NF_GET_VAR_DOUBLE(ncid,i,r8vals);call netcdf_err( error, mpp_file(unit), mpp_file(unit)%Axis(dimid) )
-                    mpp_file(unit)%time_values(1:len) = r8vals(1:len)
-                    deallocate(r8vals)
-                 case default
-                    call mpp_error( FATAL, 'Invalid data type for dimension' )
-                 end select
+                       end if
+                       error = NF_GET_VAR_DOUBLE(ncid,i,r8vals)
+                       call netcdf_err( error, mpp_file(unit), mpp_file(unit)%Axis(dimid) )
+                       mpp_file(unit)%time_values(1:len) = r8vals(1:len)
+                       deallocate(r8vals)
+                    case default
+                       call mpp_error( FATAL, 'Invalid data type for dimension' )
+                    end select
+                 endif
               endif 
               ! assign dimension atts
               if( nvatts.GT.0 )allocate(mpp_file(unit)%Axis(dimid)%Att(nvatts))

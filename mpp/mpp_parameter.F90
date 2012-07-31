@@ -7,7 +7,7 @@ module mpp_parameter_mod
   character(len=128), public :: version= &
        '$Id mpp_parameter.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: siena_201204 $'
+       '$Name: siena_201207 $'
 
   !--- public paramters which is used by mpp_mod and its components. 
   !--- All othere modules should import these parameters from mpp_mod. 
@@ -17,6 +17,12 @@ module mpp_parameter_mod
   public :: CLOCK_MODULE, CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA, MAX_BINS
   public :: EVENT_ALLREDUCE, EVENT_BROADCAST, EVENT_RECV, EVENT_SEND, EVENT_WAIT
   public :: DEFAULT_TAG
+  public :: COMM_TAG_1,  COMM_TAG_2,  COMM_TAG_3,  COMM_TAG_4
+  public :: COMM_TAG_5,  COMM_TAG_6,  COMM_TAG_7,  COMM_TAG_8
+  public :: COMM_TAG_9,  COMM_TAG_10, COMM_TAG_11, COMM_TAG_12
+  public :: COMM_TAG_13, COMM_TAG_14, COMM_TAG_15, COMM_TAG_16
+  public :: COMM_TAG_17, COMM_TAG_18, COMM_TAG_19, COMM_TAG_20
+
 
   !--- public paramters which is used by mpp_domains_mod and its components. 
   !--- All othere modules should import these parameters from mpp_domains_mod. 
@@ -98,9 +104,16 @@ module mpp_parameter_mod
   integer, parameter :: MPP_SEQUENTIAL=300, MPP_DIRECT=301 !access
   integer, parameter :: MPP_SINGLE=400, MPP_MULTI=401      !threading, fileset
   integer, parameter :: MPP_DELETE=501, MPP_COLLECT=502    !action on close
-  integer, parameter :: NULLUNIT=-1                        !returned by PEs not participating in 
+  integer, parameter :: NULLUNIT=-1                        !returned by PEs not participating in    
                                                            !IO after a collective call with threading
                                                            !equal to MPP_SINGLE
+  !--- unique tag used in FMS
+  integer, parameter :: COMM_TAG_1  = 1,  COMM_TAG_2  = 2,  COMM_TAG_3  = 3,  COMM_TAG_4  = 4
+  integer, parameter :: COMM_TAG_5  = 5,  COMM_TAG_6  = 6,  COMM_TAG_7  = 7,  COMM_TAG_8  = 8
+  integer, parameter :: COMM_TAG_9  = 9,  COMM_TAG_10 = 10, COMM_TAG_11 = 11, COMM_TAG_12 = 12
+  integer, parameter :: COMM_TAG_13 = 13, COMM_TAG_14 = 14, COMM_TAG_15 = 15, COMM_TAG_16 = 16
+  integer, parameter :: COMM_TAG_17 = 17, COMM_TAG_18 = 18, COMM_TAG_19 = 19, COMM_TAG_20 = 20
+
   integer, parameter :: ROOT_GLOBAL = 9
   integer, parameter :: GLOBAL_ROOT_ONLY = 2**ROOT_GLOBAL 
   real(DOUBLE_KIND), parameter :: NULLTIME=-1.

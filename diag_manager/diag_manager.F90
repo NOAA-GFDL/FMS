@@ -212,9 +212,9 @@ MODULE diag_manager_mod
 
   ! version number of this module
   CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id: diag_manager.F90,v 19.0.4.5 2012/04/03 18:41:44 sdu Exp $'
+       & '$Id: diag_manager.F90,v 19.0.4.8 2012/05/21 14:06:11 Seth.Underwood Exp $'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: siena_201204 $'  
+       & '$Name: siena_201207 $'  
 
   type(time_type) :: Time_end
 
@@ -492,7 +492,7 @@ CONTAINS
        ! </ERROR>
        IF ( debug_diag_manager .OR. verbose1 ) THEN 
           IF ( mpp_pe() == mpp_root_pe() ) &
-               & CALL error_mesg ('register_diag_field', 'module/output_field '&
+               & CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
                &//TRIM(module_name)//'/'// TRIM(field_name)//' NOT found in diag_table',&
                & WARNING) 
        END IF
@@ -527,13 +527,13 @@ CONTAINS
           output_units = files(file_num)%output_units
           output_fields(ind)%next_output = diag_time_inc(init_time, freq, output_units, err_msg=msg)
           IF ( msg /= '' ) THEN
-             IF ( fms_error_handler('register_diag_field',&
+             IF ( fms_error_handler('diag_manager_mod::register_diag_field',&
                   & ' file='//TRIM(files(file_num)%name)//': '//TRIM(msg),err_msg)) RETURN
           END IF
           output_fields(ind)%next_next_output = &
                & diag_time_inc(output_fields(ind)%next_output, freq, output_units, err_msg=msg)
           IF ( msg /= '' ) THEN
-             IF ( fms_error_handler('register_diag_field',&
+             IF ( fms_error_handler('diag_manager_mod::register_diag_field',&
                   &' file='//TRIM(files(file_num)%name)//': '//TRIM(msg),err_msg) ) RETURN
           END IF
           IF ( debug_diag_manager .AND. mpp_pe() == mpp_root_pe() .AND. output_fields(ind)%local_output ) THEN
@@ -598,7 +598,7 @@ CONTAINS
     ! Fatal error if the module has not been initialized.
     IF ( .NOT.module_is_initialized ) THEN 
        ! <ERROR STATUS="FATAL">diag_manager has NOT been initialized</ERROR>
-       CALL error_mesg ('register_static_field', 'diag_manager has NOT been initialized', FATAL)
+       CALL error_mesg ('diag_manager_mod::register_static_field', 'diag_manager has NOT been initialized', FATAL)
     END IF
 
     ! Check if OPTIONAL parameters were passed in.
@@ -655,7 +655,7 @@ CONTAINS
           !   module/output_field <module_name>/<field_name> is not registered for tile_count = 1,
           !   should not register for tile_count > 1
           ! </ERROR>
-          CALL error_mesg ('register_diag_field', 'module/output_field '//trim(module_name)//'/'//&
+          CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '//trim(module_name)//'/'//&
            & TRIM(field_name)//' is not registered for tile_count = 1, should not register for tile_count > 1',&
            & FATAL)    
        END IF
@@ -696,6 +696,8 @@ CONTAINS
     input_fields(field)%register = .TRUE.
     ! set flag for mask: does it change with time?
     input_fields(field)%mask_variant = mask_variant1
+    ! Set flag for mask warning
+    input_fields(field)%issued_mask_ignore_warning = .FALSE.
 
     ! Check for more OPTIONAL parameters.
     IF ( PRESENT(long_name) ) THEN
@@ -1116,7 +1118,7 @@ CONTAINS
 
     IF ( PRESENT(err_msg) ) err_msg = ''
     IF ( .NOT.module_is_initialized ) THEN
-       IF ( fms_error_handler('send_data_3d', 'diag_manager NOT initialized', err_msg) ) RETURN
+       IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'diag_manager NOT initialized', err_msg) ) RETURN
     END IF
     err_msg_local = ''
 
@@ -1125,7 +1127,7 @@ CONTAINS
     IF ( status .NE. 0 ) THEN
        WRITE (err_msg_local, FMT='("Unable to allocate oor_mask(",I5,",",I5,",",I5"). (STAT: ",I5,")")')&
             & SIZE(field,1), SIZE(field,2), SIZE(field,3), status
-       IF ( fms_error_handler('send_data_3d', err_msg_local, err_msg) ) RETURN
+       IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) RETURN
     END IF
 
     IF ( PRESENT(mask) ) THEN 
@@ -1148,13 +1150,14 @@ CONTAINS
     ! of presence/absence of is,ie,js,je. The checks below should catch improper combinations.
     IF ( PRESENT(ie_in) ) THEN
        IF ( .NOT.PRESENT(is_in) ) THEN
-          IF ( fms_error_handler('send_data_3d', 'ie_in present without is_in', err_msg) ) THEN 
+          IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'ie_in present without is_in', err_msg) ) THEN 
              DEALLOCATE(oor_mask)
              RETURN
           END IF
        END IF
        IF ( PRESENT(js_in) .AND. .NOT.PRESENT(je_in) ) THEN
-          IF ( fms_error_handler('send_data_3d', 'is_in and ie_in present, but js_in present without je_in', err_msg) ) THEN 
+          IF ( fms_error_handler('diag_manager_modsend_data_3d',&
+               & 'is_in and ie_in present, but js_in present without je_in', err_msg) ) THEN 
              DEALLOCATE(oor_mask)
              RETURN
           END IF
@@ -1162,13 +1165,14 @@ CONTAINS
     END IF
     IF ( PRESENT(je_in) ) THEN
        IF ( .NOT.PRESENT(js_in) ) THEN
-          IF ( fms_error_handler('send_data_3d', 'je_in present without js_in', err_msg) ) THEN 
+          IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'je_in present without js_in', err_msg) ) THEN 
              DEALLOCATE(oor_mask)
              RETURN
           END IF
        END IF
        IF ( PRESENT(is_in) .AND. .NOT.PRESENT(ie_in) ) THEN
-          IF ( fms_error_handler('send_data_3d', 'js_in and je_in present, but is_in present without ie_in', err_msg)) THEN 
+          IF ( fms_error_handler('diag_manager_mod::send_data_3d',&
+               & 'js_in and je_in present, but is_in present without ie_in', err_msg)) THEN 
              DEALLOCATE(oor_mask)
              RETURN
           END IF
@@ -1193,14 +1197,14 @@ CONTAINS
     IF ( PRESENT(ke_in) ) ke = ke_in
     twohi = n1-(ie-is+1)
     IF ( MOD(twohi,2) /= 0 ) THEN
-       IF ( fms_error_handler('send_data_3d', 'non-symmetric halos in first dimension', err_msg) ) THEN 
+       IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'non-symmetric halos in first dimension', err_msg) ) THEN 
           DEALLOCATE(oor_mask)
           RETURN
        END IF
     END IF
     twohj = n2-(je-js+1)
     IF ( MOD(twohj,2) /= 0 ) THEN
-       IF ( fms_error_handler('send_data_3d', 'non-symmetric halos in second dimension', err_msg) ) THEN 
+       IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'non-symmetric halos in second dimension', err_msg) ) THEN 
           DEALLOCATE(oor_mask)
           RETURN
        END IF
@@ -1354,7 +1358,7 @@ CONTAINS
                 WRITE (error_string,'(a,"/",a)')&
                      & TRIM(input_fields(diag_field_id)%module_name),&
                      & TRIM(output_fields(out_num)%output_name)
-                IF ( fms_error_handler('send_data_3d', 'module/output_field '//TRIM(error_string)//&
+                IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
                      & ', time must be present when output frequency = EVERY_TIME', err_msg)) THEN 
                    DEALLOCATE(oor_mask)
                    RETURN
@@ -1366,7 +1370,7 @@ CONTAINS
           WRITE (error_string,'(a,"/",a)')&
                & TRIM(input_fields(diag_field_id)%module_name), &
                & TRIM(output_fields(out_num)%output_name)
-          IF ( fms_error_handler('send_data_3d', 'module/output_field '//TRIM(error_string)//&
+          IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
                & ', time must be present for nonstatic field', err_msg)) THEN 
              DEALLOCATE(oor_mask)
              RETURN
@@ -1385,7 +1389,7 @@ CONTAINS
                       WRITE (error_string,'(a,"/",a)')&
                            & TRIM(input_fields(diag_field_id)%module_name), &
                            & TRIM(output_fields(out_num)%output_name)
-                      IF ( fms_error_handler('send_data_3d', 'module/output_field '//TRIM(error_string)//&
+                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
                            & ' is skipped one time level in output data', err_msg)) THEN 
                          DEALLOCATE(oor_mask)
                          RETURN
@@ -1396,7 +1400,7 @@ CONTAINS
                 status = writing_field(out_num, .FALSE., error_string, time)
                 IF(status == -1) THEN
                    IF ( mpp_pe() .EQ. mpp_root_pe() ) THEN
-                      IF(fms_error_handler('send_data_3d','module/output_field '//TRIM(error_string)//&
+                      IF(fms_error_handler('diag_manager_mod::send_data_3d','module/output_field '//TRIM(error_string)//&
                            & ', write EMPTY buffer', err_msg)) THEN 
                          DEALLOCATE(oor_mask)
                          RETURN
@@ -1411,7 +1415,7 @@ CONTAINS
        IF ( .NOT.output_fields(out_num)%static .AND. .NOT.need_compute .AND. debug_diag_manager ) THEN
           CALL check_bounds_are_exact_dynamic(out_num, diag_field_id, Time, err_msg=err_msg_local)
           IF ( err_msg_local /= '' ) THEN
-             IF ( fms_error_handler('send_data', err_msg_local, err_msg) ) THEN 
+             IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN 
                 DEALLOCATE(oor_mask)
                 RETURN
              END IF
@@ -1425,7 +1429,7 @@ CONTAINS
                 WRITE (error_string,'(a,"/",a)')  &
                      & TRIM(input_fields(diag_field_id)%module_name), &
                      & TRIM(output_fields(out_num)%output_name)   
-                IF ( fms_error_handler('send_data_3d', 'module/output_field '//TRIM(error_string)//&
+                IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
                      & ', regional output NOT supported with mask_variant', err_msg)) THEN 
                    DEALLOCATE(oor_mask)
                    RETURN
@@ -1440,7 +1444,7 @@ CONTAINS
                       CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                       CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                       IF ( err_msg_local /= '' ) THEN
-                         IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN 
                             DEALLOCATE(oor_mask)
                             RETURN
                          END IF
@@ -1515,7 +1519,7 @@ CONTAINS
                    WRITE (error_string,'(a,"/",a)')&
                         & TRIM(input_fields(diag_field_id)%module_name), &
                         & TRIM(output_fields(out_num)%output_name)
-                   IF ( fms_error_handler('send_data_3d', 'module/output_field '//TRIM(error_string)//&
+                   IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
                         & ', variable mask but no missing value defined', err_msg)) THEN 
                       DEALLOCATE(oor_mask)
                       RETURN
@@ -1525,7 +1529,7 @@ CONTAINS
                 WRITE (error_string,'(a,"/",a)')&
                      & TRIM(input_fields(diag_field_id)%module_name), &
                      & TRIM(output_fields(out_num)%output_name)
-                IF(fms_error_handler('send_data_3d','module/output_field '//TRIM(error_string)//&
+                IF(fms_error_handler('diag_manager_mod::send_data_3d','module/output_field '//TRIM(error_string)//&
                      & ', variable mask but no mask given', err_msg)) THEN 
                    DEALLOCATE(oor_mask)
                    RETURN
@@ -1625,7 +1629,7 @@ CONTAINS
                          CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                          CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                          IF ( err_msg_local /= '' ) THEN
-                            IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                            IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN 
                                DEALLOCATE(oor_mask)
                                RETURN
                             END IF
@@ -1675,12 +1679,17 @@ CONTAINS
 !$OMP END CRITICAL 
 
                 ELSE ! missing value NOT present
-                   IF ( .NOT.ALL(mask(f1:f2,f3:f4,ks:ke)) .AND. mpp_pe() .EQ. mpp_root_pe() ) THEN
+                   IF (   (.NOT.ALL(mask(f1:f2,f3:f4,ks:ke)) .AND. mpp_pe() .EQ. mpp_root_pe()).AND.&
+                        &  .NOT.input_fields(diag_field_id)%issued_mask_ignore_warning ) THEN
                       ! <ERROR STATUS="WARNING">
-                      !   Mask will be ignored since missing values were not specified
+                      !   Mask will be ignored since missing values were not specified for field <field_name>
+                      !   in module <module_name>
                       ! </ERROR>
-                      CALL error_mesg('warning2 send_data_3d',&
-                           & 'Mask will be ignored since missing values were not specified',WARNING)
+                      CALL error_mesg('diag_manager_mod::send_data_3d',&
+                           & 'Mask will be ignored since missing values were not specified for field '//&
+                           & trim(input_fields(diag_field_id)%field_name)//' in module '//&
+                           & trim(input_fields(diag_field_id)%module_name), WARNING)
+                      input_fields(diag_field_id)%issued_mask_ignore_warning = .TRUE.
                    END IF
                    IF ( need_compute ) THEN                 
                       IF (numthreads>1 .AND. phys_window) then
@@ -1740,7 +1749,7 @@ CONTAINS
                          CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                          CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                          IF ( err_msg_local /= '') THEN
-                            IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                            IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN 
                                DEALLOCATE(oor_mask)
                                RETURN
                             END IF
@@ -1891,7 +1900,7 @@ CONTAINS
                          CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                          CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                          IF ( err_msg_local /= '' ) THEN
-                            IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                            IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN 
                                DEALLOCATE(oor_mask)
                                RETURN
                             END IF
@@ -1999,7 +2008,7 @@ CONTAINS
                          CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                          CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                          IF ( err_msg_local /= '' ) THEN
-                            IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                            IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN 
                                DEALLOCATE(oor_mask)
                                RETURN
                             END IF
@@ -2063,7 +2072,7 @@ CONTAINS
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN 
                          DEALLOCATE(oor_mask)
                          RETURN
                       END IF
@@ -2100,7 +2109,7 @@ CONTAINS
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN 
                          DEALLOCATE(oor_mask)
                          RETURN
                       END IF
@@ -2141,7 +2150,7 @@ CONTAINS
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN 
                          DEALLOCATE(oor_mask)
                          RETURN
                       END IF
@@ -2178,7 +2187,7 @@ CONTAINS
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN 
                          DEALLOCATE(oor_mask)
                          RETURN
                       END IF
@@ -2211,7 +2220,7 @@ CONTAINS
                 CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                 CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                 IF ( err_msg_local /= '' ) THEN
-                   IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg) ) THEN 
+                   IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN 
                       DEALLOCATE(oor_mask)
                       RETURN
                    END IF
@@ -2263,7 +2272,7 @@ CONTAINS
        IF ( output_fields(out_num)%static .AND. .NOT.need_compute .AND. debug_diag_manager ) THEN
           CALL check_bounds_are_exact_static(out_num, diag_field_id, err_msg=err_msg_local)
           IF ( err_msg_local /= '' ) THEN
-             IF ( fms_error_handler('send_data in diag_manager_mod', err_msg_local, err_msg)) THEN 
+             IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg)) THEN 
                 DEALLOCATE(oor_mask)
                 RETURN
              END IF
@@ -2605,7 +2614,7 @@ CONTAINS
                    WRITE (error_string,'(a,"/",a)')&
                         & TRIM(input_fields(in_num)%module_name), &
                         & TRIM(output_fields(out_num)%output_name)
-                   IF ( fms_error_handler('diag_send_complete', 'module/output_field '//TRIM(error_string)//&
+                   IF ( fms_error_handler('diag_manager_mod::diag_send_complete', 'module/output_field '//TRIM(error_string)//&
                         & ' is skipped one time level in output data', err_msg)) RETURN
                 END IF
              END IF
@@ -2613,7 +2622,7 @@ CONTAINS
              status = writing_field(out_num, .FALSE., error_string, next_time)
              IF ( status == -1 ) THEN
                 IF ( mpp_pe() .EQ. mpp_root_pe() ) THEN
-                   IF(fms_error_handler('diag_send_complete','module/output_field '//TRIM(error_string)//&
+                   IF(fms_error_handler('diag_manager_mod::diag_send_complete','module/output_field '//TRIM(error_string)//&
                         & ', write EMPTY buffer', err_msg)) RETURN
                 END IF
              END IF
@@ -2703,7 +2712,7 @@ CONTAINS
              !   level, maybe send_data never called
              ! </ERROR>
              IF ( mpp_pe() .EQ. mpp_root_pe() ) & 
-                  & CALL error_mesg('diag_manager_end, closing_file', 'module/output_field ' //&
+                  & CALL error_mesg('diag_manager_mod::closing_file', 'module/output_field ' //&
                   & TRIM(message)//', skip one time level, maybe send_data never called', WARNING)
           END IF
           
@@ -2747,6 +2756,8 @@ CONTAINS
   SUBROUTINE diag_manager_init(diag_model_subset, err_msg)
     INTEGER, OPTIONAL, INTENT(IN) :: diag_model_subset
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+
+    CHARACTER(len=*), PARAMETER :: SEP = '|'
 
     INTEGER, PARAMETER :: FltKind = FLOAT_KIND
     INTEGER, PARAMETER :: DblKind = DOUBLE_KIND
@@ -2795,7 +2806,7 @@ CONTAINS
        IF ( diag_model_subset >= DIAG_OTHER .AND. diag_model_subset <= DIAG_ALL ) THEN
           diag_subset_output = diag_model_subset
        ELSE
-          IF ( fms_error_handler('diag_manager_init', 'invalid value of diag_model_subset',err_msg) ) RETURN
+          IF ( fms_error_handler('diag_manager_mod::diag_manager_init', 'invalid value of diag_model_subset',err_msg) ) RETURN
        END IF
     END IF
 
@@ -2867,6 +2878,11 @@ CONTAINS
     ! open diag field log file
     IF ( do_diag_field_log ) THEN
        CALL mpp_open(diag_log_unit, 'diag_field_log.out', nohdrs=.TRUE.)
+       WRITE (diag_log_unit,'(777a)') &
+            & 'Module',        SEP, 'Field',          SEP, 'Long Name',    SEP,&
+            & 'Units',         SEP, 'Number of Axis', SEP, 'Time Axis',    SEP,&
+            & 'Missing Value', SEP, 'Min Value',      SEP, 'Max Value',    SEP,&
+            & 'AXES LIST'
     END IF
 
     module_is_initialized = .TRUE.
@@ -2891,7 +2907,7 @@ CONTAINS
     ! <ERROR STATUS="FATAL">
     !   MODULE has not been initialized
     ! </ERROR>
-    IF ( .NOT.module_is_initialized ) CALL error_mesg('get_base_time in diag_manager_mod', &
+    IF ( .NOT.module_is_initialized ) CALL error_mesg('diag_manager_mod::get_base_time', &
          & 'module has not been initialized', FATAL)
     get_base_time = base_time
   END FUNCTION get_base_time
@@ -2917,7 +2933,7 @@ CONTAINS
     INTEGER, INTENT(out) :: year, month, day, hour, minute, second
 
     ! <ERROR STATUS="FATAL">module has not been initialized</ERROR>
-    IF (.NOT.module_is_initialized) CALL error_mesg ('get_base_date in diag_manager_mod', &
+    IF (.NOT.module_is_initialized) CALL error_mesg ('diag_manager_mod::get_base_date', &
          & 'module has not been initialized', FATAL)
     year   = base_year
     month  = base_month

@@ -78,7 +78,7 @@
             end do
             from_pe = update%recv(m)%pe
             l = from_pe-mpp_root_pe()
-            call mpp_recv( msg1(l), glen=1, from_pe=from_pe, block=.FALSE.)
+            call mpp_recv( msg1(l), glen=1, from_pe=from_pe, block=.FALSE., tag=COMM_TAG_1 )
             msg2(l) = msgsize
          enddo
 
@@ -93,7 +93,7 @@
                   msgsize = msgsize + (ie-is+1)*(je-js+1)
                end if
             end do
-            call mpp_send( msgsize, plen=1, to_pe=overPtr%pe)
+            call mpp_send( msgsize, plen=1, to_pe=overPtr%pe, tag=COMM_TAG_1 )
          enddo
          call mpp_sync_self(check=EVENT_RECV)
 
@@ -135,7 +135,7 @@
                call mpp_error( FATAL, 'MPP_DO_UPDATE: mpp_domains_stack overflow, '// &
                     'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
             end if
-            call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.FALSE. )
+            call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.FALSE., tag=COMM_TAG_2 )
             buffer_pos = buffer_pos + msgsize
          end if
          call mpp_clock_end(recv_clock)
@@ -241,7 +241,7 @@
          msgsize = pos - buffer_pos
          if( msgsize.GT.0 )then
             to_pe = overPtr%pe
-            call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
+            call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_2 )
             buffer_pos = pos
          end if
          call mpp_clock_end(send_clock)

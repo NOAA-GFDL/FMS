@@ -61,9 +61,9 @@ MODULE diag_grid_mod
 
   ! Parameters
   CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id: diag_grid.F90,v 19.0.2.1 2012/03/26 20:14:34 sdu Exp $'
+       & '$Id: diag_grid.F90,v 19.0.2.2 2012/05/22 20:18:20 Seth.Underwood Exp $'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: siena_201204 $'
+       & '$Name: siena_201207 $'
 
   ! Derived data types
   ! <PRIVATE>
@@ -458,7 +458,7 @@ CONTAINS
     REAL, ALLOCATABLE, DIMENSION(:,:) :: delta_lat, delta_lon, grid_lon
 
     REAL, DIMENSION(4) :: dists_lon, dists_lat
-    REAL :: lonEndAdj
+    REAL :: lonEndAdj, my_lonStart, my_lonEnd
 
     INTEGER, ALLOCATABLE, DIMENSION(:,:) :: ijMin, ijMax
     INTEGER :: myTile, ntiles, i, j, k, dimI, dimJ, istat
@@ -486,17 +486,29 @@ CONTAINS
     ijMin = 0
     ijMax = 0
 
+    ! Make adjustment for negative longitude values
+    if ( lonStart < 0 ) then
+       my_lonStart = lonStart + 360
+    else
+       my_lonStart = lonStart
+    end if
+    if ( lonEnd < 0 ) then
+       my_lonEnd = lonEnd + 360
+    else
+       my_lonEnd = lonEnd
+    end if
+
     ! There will be four points to define a region, find all four.
     ! Need to call the correct function depending on if the tile is a
     ! pole tile or not.
     !
     ! Also, if looking for a single point, then use the a-grid
-    IF ( latStart == latEnd .AND. lonStart == lonEnd ) THEN
+    IF ( latStart == latEnd .AND. my_lonStart == my_lonEnd ) THEN
        ! single point
        IF ( MOD(diag_global_grid%tile_number,3) == 0 ) THEN
-          ijMax(myTile,:) = find_pole_index_agrid(latStart,lonStart)
+          ijMax(myTile,:) = find_pole_index_agrid(latStart,my_lonStart)
        ELSE
-          ijMax(myTile,:) = find_equator_index_agrid(latStart,lonStart)
+          ijMax(myTile,:) = find_equator_index_agrid(latStart,my_lonStart)
        END IF
 
        WHERE ( ijMax(:,1) .NE. 0 )
@@ -573,13 +585,13 @@ CONTAINS
        grid_lon = diag_global_grid%glo_lon
 
        ! Make adjustments where required
-       IF ( lonStart > lonEnd ) THEN
-          WHERE ( grid_lon < lonStart )
+       IF ( my_lonStart > my_lonEnd ) THEN
+          WHERE ( grid_lon < my_lonStart )
              grid_lon = grid_lon + 360.0
           END WHERE
-          lonEndAdj = lonEnd + 360.0
+          lonEndAdj = my_lonEnd + 360.0
        ELSE
-          lonEndAdj = lonEnd
+          lonEndAdj = my_lonEnd
        END IF
 
        DO j=1, dimJ-1
@@ -592,7 +604,7 @@ CONTAINS
                      & 90.0 <= ABS(latEnd)+delta_lat(i,j)) .AND.&
                      & ABS(diag_global_grid%glo_lat(i,j)) == 90.0 ) THEN
                    onMyPe = .TRUE.
-                ELSE IF ( (lonStart-delta_lon(i,j) <= grid_lon(i,j) .AND.&
+                ELSE IF ( (my_lonStart-delta_lon(i,j) <= grid_lon(i,j) .AND.&
                      & grid_lon(i,j) < lonEndAdj+delta_lon(i,j)) ) THEN
                    onMyPe = .TRUE.
                 ELSE

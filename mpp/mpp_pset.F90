@@ -13,7 +13,7 @@ module mpp_pset_mod
   use mpp_mod, only: mpp_pe, mpp_npes, mpp_root_pe, mpp_send, mpp_recv, &
        mpp_sync, mpp_error, FATAL, WARNING, stdout, stderr, mpp_chksum, &
        mpp_declare_pelist, mpp_get_current_pelist, mpp_set_current_pelist, &
-       mpp_init
+       mpp_init, COMM_TAG_1, COMM_TAG_2, COMM_TAG_3, mpp_sync_self
   implicit none
   private
 
@@ -77,6 +77,7 @@ module mpp_pset_mod
        mpp_pset_stack_push, mpp_pset_stack_reset, mpp_pset_print_chksum, &
        mpp_pset_delete, mpp_pset_root, mpp_pset_numroots, mpp_pset_init, &
        mpp_pset_get_root_pelist, mpp_pset_print_stack_chksum
+
 
 contains
   subroutine mpp_pset_init
@@ -235,7 +236,7 @@ contains
 
 !currently only wraps mpp_send
 !on some architectures, mangling might occur
-    call mpp_send( ptr, pe )
+    call mpp_send( ptr, pe, tag=COMM_TAG_1 )
   end subroutine mpp_send_ptr_scalar
 
   subroutine mpp_send_ptr_array( ptr, pe )
@@ -244,14 +245,14 @@ contains
 
 !currently only wraps mpp_send
 !on some architectures, mangling might occur
-    call mpp_send( ptr, size(ptr), pe )
+    call mpp_send( ptr, size(ptr), pe, tag=COMM_TAG_2 )
   end subroutine mpp_send_ptr_array
 
   subroutine mpp_recv_ptr_scalar( ptr, pe )
     integer(POINTER_KIND), intent(inout) :: ptr
     integer, intent(in) :: pe
 
-    call mpp_recv( ptr, pe )
+    call mpp_recv( ptr, pe, tag=COMM_TAG_1  )
     call mpp_translate_remote_ptr( ptr, pe )
     return
   end subroutine mpp_recv_ptr_scalar
@@ -261,7 +262,7 @@ contains
     integer, intent(in) :: pe
     integer :: i
 
-    call mpp_recv( ptr, size(ptr), pe )
+    call mpp_recv( ptr, size(ptr), pe, tag=COMM_TAG_2 )
     do i = 1, size(ptr)
        call mpp_translate_remote_ptr( ptr(i), pe )
     end do
@@ -334,10 +335,10 @@ contains
          'MPP_PSET_BROADCAST: called with uninitialized PSET.' )
     if( pset%root )then
         do i = 1,pset%npset-1
-           call mpp_send( a, pset%pset(i) )
+           call mpp_send( a, pset%pset(i), tag=COMM_TAG_3 )
         end do
     else
-        call mpp_recv( a, pset%root_in_pset )
+        call mpp_recv( a, pset%root_in_pset, tag=COMM_TAG_3 )
     end if
     call mpp_pset_sync(pset)
   end subroutine mpp_pset_broadcast
@@ -360,6 +361,7 @@ contains
     else
         call mpp_recv_ptr( ptr, pset%root_in_pset )
     end if
+    call mpp_sync_self()
   end subroutine mpp_pset_broadcast_ptr_scalar
 
   subroutine mpp_pset_broadcast_ptr_array(pset,ptr)
@@ -380,6 +382,8 @@ contains
     else
         call mpp_recv_ptr( ptr, pset%root_in_pset )
     end if
+    call mpp_sync_self()
+
   end subroutine mpp_pset_broadcast_ptr_array
 
   subroutine mpp_pset_check_ptr(pset,ptr)

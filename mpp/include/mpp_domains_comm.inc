@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_comm.inc,v 18.0 2010/03/02 23:57:13 fms Exp $
+! $Id: mpp_domains_comm.inc,v 18.0.24.1 2012/03/30 20:56:03 Zhi.Liang Exp $
 
 
     function mpp_redistribute_init_comm(domain_in,l_addrs_in, domain_out,l_addrs_out, &
@@ -20,7 +20,7 @@
       integer(LONG_KIND) :: domain_id
       integer :: m, list
       integer :: is, ie, js, je, ke, ioff, joff, list_size
-      integer :: isc, iec, jsc, jec
+      integer :: isc, iec, jsc, jec, mytile
       integer :: lsize,rsize,msgsize,to_pe,from_pe
       integer,           allocatable,dimension(:) :: isL, jsL
       integer(LONG_KIND),allocatable,dimension(:,:) :: slist_addr
@@ -94,10 +94,12 @@
 
       ioff = domain_in%x(1)%data%begin
       joff = domain_in%y(1)%data%begin
+      mytile = domain_in%tile_id(1)
 
       call mpp_get_compute_domain( domain_in, isc, iec, jsc, jec )
       do list = 0,lsize
          m = mod( domain_out%pos+list+lsize+1, lsize+1 )
+         if( mytile .NE. domain_out%list(m)%tile_id(1) ) cycle
          d_comm%cto_pe(list) = domain_out%list(m)%pe
          to_pe =  d_comm%cto_pe(list)
          is = domain_out%list(m)%x(1)%compute%begin
@@ -139,9 +141,11 @@
       d_comm%isizeR=0; d_comm%jsizeR=0
       d_comm%sendisR=0; d_comm%sendjsR=0
 
+      mytile = domain_out%tile_id(1)
       call mpp_get_compute_domain( domain_out, isc, iec, jsc, jec )
       do list = 0,rsize
          m = mod( domain_in%pos+rsize+1-list, rsize+1 )
+         if( mytile .NE. domain_in%list(m)%tile_id(1) ) cycle
          d_comm%cfrom_pe(list) = domain_in%list(m)%pe
          from_pe = d_comm%cfrom_pe(list)
          is = domain_in%list(m)%x(1)%compute%begin

@@ -40,6 +40,7 @@ module horiz_interp_type_mod
 
 use mpp_mod, only : mpp_send, mpp_recv, mpp_sync_self, mpp_error, FATAL
 use mpp_mod, only : mpp_pe, mpp_root_pe, mpp_npes
+use mpp_mod, only : COMM_TAG_1, COMM_TAG_2
 
 implicit none
 private
@@ -138,11 +139,11 @@ contains
    if(pe == root_pe) then
       do p = 1, npes - 1  ! root_pe receive data from other pe
       ! Force use of "scalar", integer pointer mpp interface
-         call mpp_recv(buffer_real(1),glen=3, from_pe=p+root_pe)
+         call mpp_recv(buffer_real(1),glen=3, from_pe=p+root_pe, tag=COMM_TAG_1)
          dsum = dsum + buffer_real(1)
          low  = min(low, buffer_real(2))
          high = max(high, buffer_real(3))
-         call mpp_recv(buffer_int(1), glen=2, from_pe=p+root_pe)
+         call mpp_recv(buffer_int(1), glen=2, from_pe=p+root_pe, tag=COMM_TAG_2)
          miss = miss + buffer_int(1)
          npts = npts + buffer_int(2)
       enddo         
@@ -156,10 +157,10 @@ contains
       buffer_real(2) = low
       buffer_real(3) = high
       ! Force use of "scalar", integer pointer mpp interface
-      call mpp_send(buffer_real(1),plen=3,to_pe=root_pe)
+      call mpp_send(buffer_real(1),plen=3,to_pe=root_pe, tag=COMM_TAG_1)
       buffer_int(1) = miss
       buffer_int(2) = npts
-      call mpp_send(buffer_int(1), plen=2, to_pe=root_pe)
+      call mpp_send(buffer_int(1), plen=2, to_pe=root_pe, tag=COMM_TAG_2)
     endif
 
     call mpp_sync_self()

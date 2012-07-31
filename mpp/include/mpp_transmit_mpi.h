@@ -33,6 +33,7 @@
       integer                       :: i, out_unit
       MPP_TYPE_, allocatable, save  :: local_data(:) !local copy used by non-parallel code (no SHMEM or MPI)
       integer                       :: comm_tag
+      integer                       :: rsize
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_TRANSMIT: You must first call mpp_init.' )
       if( to_pe.EQ.NULL_PE .AND. from_pe.EQ.NULL_PE )return
@@ -94,6 +95,10 @@
           if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
           if( block_comm ) then
              call MPI_RECV( get_data, get_len, MPI_TYPE_, from_pe, comm_tag, mpp_comm_private, stat, error )
+             call MPI_GET_COUNT( stat, MPI_TYPE_, rsize, error)
+             if(rsize .NE. get_len) then
+                call mpp_error(FATAL, "MPP_TRANSMIT: get_len does not match size of data received")
+             endif
           else
 !             if( request_recv(from_pe).NE.MPI_REQUEST_NULL )then !only one message from from_pe->pe in queue 
                 !              if( debug )write( stderr(),* )'PE waiting for receiving', pe, from_pe
@@ -108,6 +113,8 @@
                 "MPP_TRANSMIT: cur_recv_request is greater than max_request, increase mpp_nml request_multiply")             
                 call MPI_IRECV( get_data, get_len, MPI_TYPE_, from_pe, comm_tag, mpp_comm_private, &
                      request_recv(cur_recv_request), error ) 
+                size_recv(cur_recv_request) = get_len
+                type_recv(cur_recv_request) = MPI_TYPE_
              endif
           endif
           if( current_clock.NE.0 )call increment_current_clock( EVENT_RECV, get_len*MPP_TYPE_BYTELEN_ )

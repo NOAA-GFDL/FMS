@@ -1,5 +1,5 @@
 !FDOC_TAG_GFDL fdoc.pl generated xml skeleton
-! $Id: drifters.F90,v 17.0 2009/07/21 03:19:00 fms Exp $
+! $Id: drifters.F90,v 17.0.10.1 2012/03/20 13:03:22 z1l Exp $
 
 #include <fms_platform.h>
 #include "fms_switches.h"
@@ -110,7 +110,7 @@ module drifters_mod
   public :: drifters_print_checksums, drifters_save, drifters_write_restart, drifters_distribute
 
   integer, parameter, private :: MAX_STR_LEN = 128
-  character(len=MAX_STR_LEN), parameter, private :: version = '$Id: drifters.F90,v 17.0 2009/07/21 03:19:00 fms Exp $'
+  character(len=MAX_STR_LEN), parameter, private :: version = '$Id: drifters.F90,v 17.0.10.1 2012/03/20 13:03:22 z1l Exp $'
   real :: DRFT_EMPTY_ARRAY(0)
 
   type drifters_type
@@ -232,7 +232,7 @@ contains
     pe_str = '    '
     write(pe_str, '(i6)') _MPP_PE
     pe_str = adjustr(pe_str)
-    do i = 1, 4
+    do i = 1, 5
        if(pe_str(i:i)==' ') pe_str(i:i)='0'
     enddo
     call drifters_io_new(self%io, output_file//'.'//pe_str, nd, nf, ermesg)

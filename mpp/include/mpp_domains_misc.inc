@@ -131,6 +131,8 @@ subroutine init_nonblock_type( nonblock_obj )
    nonblock_obj%update_nhalo       = 0
    nonblock_obj%request_send_count = 0
    nonblock_obj%request_recv_count = 0
+   nonblock_obj%size_recv(:)       = 0
+   nonblock_obj%type_recv(:)       = 0
 #ifdef use_libMPI
    nonblock_obj%request_send(:)    = MPI_REQUEST_NULL
    nonblock_obj%request_recv(:)    = MPI_REQUEST_NULL
@@ -342,21 +344,21 @@ end subroutine init_nonblock_type
      enddo
 !  send the check bounds and data to the root pe
      ! Force use of "scalar", integer pointer mpp interface
-     call mpp_send(ibounds(1), plen=4, to_pe=pelist2(1))
-     call mpp_send(send_buffer(1),plen=im*jm, to_pe=pelist2(1))
+     call mpp_send(ibounds(1), plen=4, to_pe=pelist2(1), tag=COMM_TAG_1)
+     call mpp_send(send_buffer(1),plen=im*jm, to_pe=pelist2(1), tag=COMM_TAG_2)
      deallocate(send_buffer)
      
    else if(pelist2(1) == pe) then        ! receive data and compare
      do p = pelist1(1), pelist1(size(pelist1(:)))
      ! Force use of "scalar", integer pointer mpp interface
-        call mpp_recv(ibounds(1), glen=4,from_pe=p)
+        call mpp_recv(ibounds(1), glen=4,from_pe=p, tag=COMM_TAG_1)
         is = ibounds(1); ie = ibounds(2); js=ibounds(3); je=ibounds(4)
         im = ie-is+1; jm=je-js+1
         if(allocated(field1)) deallocate(field1)
         if(allocated(send_buffer)) deallocate(send_buffer)
         allocate(field1(is:ie,js:je),send_buffer(im*jm))
      ! Force use of "scalar", integer pointer mpp interface
-        call mpp_recv(send_buffer(1),glen=im*jm,from_pe=p)
+        call mpp_recv(send_buffer(1),glen=im*jm,from_pe=p, tag=COMM_TAG_2)
         l = 0
         
 !  compare here, the comparison criteria can be changed according to need
@@ -463,7 +465,7 @@ end subroutine init_nonblock_type
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    subroutine mpp_broadcast_domain( domain )
+    subroutine mpp_broadcast_domain_1( domain )
 !broadcast domain (useful only outside the context of its own pelist)
       type(domain2D), intent(inout) :: domain
       integer, allocatable :: pes(:)
@@ -475,7 +477,7 @@ end subroutine init_nonblock_type
 
       errunit = stderr()
       if( .NOT.module_is_initialized ) &
-                 call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN: You must first call mpp_domains_init.' ) 
+                 call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_1: You must first call mpp_domains_init.' ) 
       
 !get the current pelist
       allocate( pes(0:mpp_npes()-1) )
@@ -569,7 +571,129 @@ end subroutine init_nonblock_type
          end if
       end do 
 
-    end subroutine mpp_broadcast_domain
+    end subroutine mpp_broadcast_domain_1
+
+
+!##############################################################################
+    subroutine mpp_broadcast_domain_2( domain_in, domain_out )
+!broadcast domain (useful only outside the context of its own pelist)
+      type(domain2D), intent(in)    :: domain_in
+      type(domain2D), intent(inout) :: domain_out
+      integer, allocatable :: pes(:)
+      logical :: native         !true if I'm on the pelist of this domain
+      integer :: listsize, listpos
+      integer :: n
+      integer, dimension(12) :: msg, info         !pe and compute domain of each item in list
+      integer                :: errunit, npes_in, npes_out, pstart, pend
+
+      errunit = stderr()
+      if( .NOT.module_is_initialized ) &
+                 call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_2: You must first call mpp_domains_init.' )
+
+!get the current pelist
+      allocate( pes(0:mpp_npes()-1) )
+      call mpp_get_current_pelist(pes)
+
+! domain_in must be initialized
+      if( .not. ASSOCIATED(domain_in%list) ) then
+         call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_2: domain_in is not initialized')
+      endif
+      if( ASSOCIATED(domain_out%list) ) then
+         call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_2: domain_out is already initialized')
+      endif
+
+      npes_in = size(domain_in%list(:))
+      if( npes_in == mpp_npes() ) then
+         call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_2: size(domain_in%list(:)) == mpp_npes()')
+      endif
+      npes_out = mpp_npes() - npes_in
+
+!initialize domain_out%list and set null values in message
+      allocate( domain_out%list(0:npes_out-1) )
+      domain_out%pe = NULL_PE
+      domain_out%pos = -1
+      allocate(domain_out%x(1), domain_out%y(1), domain_out%tile_id(1))
+      do n = 0, npes_out-1
+         allocate(domain_out%list(n)%x(1), domain_out%list(n)%y(1), domain_out%list(n)%tile_id(1) )
+      end do
+      domain_out%x%compute%begin =  1
+      domain_out%x%compute%end   = -1
+      domain_out%y%compute%begin =  1
+      domain_out%y%compute%end   = -1
+      domain_out%x%global %begin = -1
+      domain_out%x%global %end   = -1
+      domain_out%y%global %begin = -1
+      domain_out%y%global %end   = -1
+      domain_out%tile_id         = -1
+      domain_out%whalo           = -1
+      domain_out%ehalo           = -1
+      domain_out%shalo           = -1
+      domain_out%nhalo           = -1
+      domain_out%symmetry        = .false.
+!initialize values in info
+      info(1) = domain_in%pe
+      call mpp_get_compute_domain( domain_in, info(2), info(3), info(4), info(5) )
+      info(6) = domain_in%tile_id(1)
+      info(7) = domain_in%whalo
+      info(8) = domain_in%ehalo
+      info(9) = domain_in%shalo
+      info(10)= domain_in%nhalo
+      if(domain_in%symmetry) then
+         info(11) = 1
+      else
+         info(11) = 0
+      endif
+      info(12) = domain_in%ntiles
+
+!broadcast your info across current pelist and unpack if needed
+      if( domain_in%list(0)%pe == mpp_root_pe() ) then
+          pstart = npes_in
+          pend   = mpp_npes()-1
+      else
+          pstart = 0
+          pend   = npes_out-1
+      endif
+      do n = 0,mpp_npes()-1
+         msg = info
+         if( mpp_pe().EQ.pes(n) .AND. debug )write( errunit,* )'PE ', mpp_pe(), 'broadcasting msg ', msg
+         call mpp_broadcast( msg, 12, pes(n) )
+         !--- pack if from other domain
+         if( n .GE. pstart .AND. n .LE. pend )then
+             listpos = n - pstart
+             domain_out%list(listpos)%pe = msg(1)
+             domain_out%list(listpos)%x%compute%begin = msg(2)
+             domain_out%list(listpos)%x%compute%end   = msg(3)
+             domain_out%list(listpos)%y%compute%begin = msg(4)
+             domain_out%list(listpos)%y%compute%end   = msg(5)
+             domain_out%list(listpos)%tile_id(1)      = msg(6)
+             if(domain_out%x(1)%global%begin < 0) then
+                domain_out%x(1)%global%begin = msg(2)
+                domain_out%x(1)%global%end   = msg(3)
+                domain_out%y(1)%global%begin = msg(4)
+                domain_out%y(1)%global%end   = msg(5)
+                domain_out%whalo             = msg(7)
+                domain_out%ehalo             = msg(8)
+                domain_out%shalo             = msg(9)
+                domain_out%nhalo             = msg(10)
+                if(msg(11) == 1) then
+                   domain_out%symmetry       = .true.
+                else
+                   domain_out%symmetry       = .false.
+                endif
+                domain_out%ntiles            = msg(12)
+             else
+                domain_out%x(1)%global%begin = min(domain_out%x(1)%global%begin, msg(2))
+                domain_out%x(1)%global%end   = max(domain_out%x(1)%global%end,   msg(3))
+                domain_out%y(1)%global%begin = min(domain_out%y(1)%global%begin, msg(4))
+                domain_out%y(1)%global%end   = max(domain_out%y(1)%global%end,   msg(5))
+             endif
+             if( debug )write( errunit,* )'PE ', mpp_pe(), 'received domain from PE ', msg(1), 'is,ie,js,je=', msg(2:5)
+         end if
+      end do
+
+    end subroutine mpp_broadcast_domain_2
+
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -920,6 +1044,8 @@ end subroutine init_nonblock_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_REAL8
 #undef MPP_START_DO_UPDATE_3D_
 #define MPP_START_DO_UPDATE_3D_ mpp_start_do_update_r8_3D
 #undef MPP_COMPLETE_DO_UPDATE_3D_
@@ -934,6 +1060,8 @@ end subroutine init_nonblock_type
 #ifdef OVERLOAD_C8
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_DOUBLE_COMPLEX
 #undef MPP_START_DO_UPDATE_3D_
 #define MPP_START_DO_UPDATE_3D_ mpp_start_do_update_c8_3D
 #undef MPP_COMPLETE_DO_UPDATE_3D_
@@ -944,6 +1072,8 @@ end subroutine init_nonblock_type
 #ifndef no_8byte_integers
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_INTEGER8
 #undef MPP_START_DO_UPDATE_3D_
 #define MPP_START_DO_UPDATE_3D_ mpp_start_do_update_i8_3D
 #undef MPP_COMPLETE_DO_UPDATE_3D_
@@ -954,6 +1084,8 @@ end subroutine init_nonblock_type
 #ifdef OVERLOAD_R4
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_REAL4
 #undef MPP_START_DO_UPDATE_3D_
 #define MPP_START_DO_UPDATE_3D_ mpp_start_do_update_r4_3D
 #undef MPP_COMPLETE_DO_UPDATE_3D_
@@ -969,6 +1101,8 @@ end subroutine init_nonblock_type
 #ifdef OVERLOAD_C4
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_COMPLEX
 #undef MPP_START_DO_UPDATE_3D_
 #define MPP_START_DO_UPDATE_3D_ mpp_start_do_update_c4_3D
 #undef MPP_COMPLETE_DO_UPDATE_3D_
@@ -978,6 +1112,8 @@ end subroutine init_nonblock_type
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_INTEGER4
 #undef MPP_START_DO_UPDATE_3D_
 #define MPP_START_DO_UPDATE_3D_ mpp_start_do_update_i4_3D
 #undef MPP_COMPLETE_DO_UPDATE_3D_

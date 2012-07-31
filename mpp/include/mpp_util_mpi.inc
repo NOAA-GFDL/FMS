@@ -1,5 +1,5 @@
 ! -*-f90-*-
-! $Id: mpp_util_mpi.inc,v 19.0 2012/01/06 22:04:47 fms Exp $
+! $Id: mpp_util_mpi.inc,v 19.0.2.1.2.1 2012/05/24 20:01:32 Zhi.Liang Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -106,7 +106,7 @@ function get_peset(pelist)
   peset(i)%list(:) = sorted(:)
   peset(i)%count = size(sorted(:))
 
-  call MPI_GROUP_INCL( peset(current_peset_num)%group, size(sorted(:)), sorted, peset(i)%group, error )
+  call MPI_GROUP_INCL( peset(current_peset_num)%group, size(sorted(:)), sorted-mpp_root_pe(), peset(i)%group, error )
   call MPI_COMM_CREATE( peset(current_peset_num)%id, peset(i)%group, peset(i)%id, error )
 #ifdef use_MPI_SMA
   n = size(sorted(:))
@@ -164,22 +164,53 @@ end subroutine mpp_sync
   !this is to check if current PE's outstanding puts are complete
   !but we can't use shmem_fence because we are actually waiting for
   !a remote PE to complete its get
-subroutine mpp_sync_self( pelist, check, request )
+subroutine mpp_sync_self( pelist, check, request, msg_size, msg_type)
   integer, intent(in), optional :: pelist(:)
   integer, intent(in), optional :: check
   integer, intent(inout), optional :: request(:)
+  integer, intent(in   ), optional :: msg_size(:)
+  integer, intent(in   ), optional :: msg_type(:)
 
-  integer                       :: i, m, n, stride, my_check
+  integer                       :: i, m, n, stride, my_check, rsize
 
   if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
+  my_check = EVENT_SEND
+  if(present(check)) my_check = check
+  if( my_check .NE. EVENT_SEND .AND. my_check .NE. EVENT_RECV ) then
+     call mpp_error( FATAL, 'mpp_sync_self: The value of optional argument check should be EVENT_SEND or EVENT_RECV')
+  endif
 
   if(PRESENT(request)) then
-     do m = 1, size(request(:))
-        if(request(m) .NE.MPI_REQUEST_NULL )call MPI_WAIT(request(m), stat, error )
-     enddo
+     if( .not. present(check) ) then
+        call mpp_error(FATAL, 'mpp_sync_self: check is not present when request is present')
+     endif
+     if( my_check == EVENT_RECV ) then
+        if( .not. present(msg_size) ) then
+           call mpp_error(FATAL, 'mpp_sync_self: msg_size is not present when request is present and it is EVENT_RECV')
+        endif
+        if( .not. present(msg_type) ) then
+           call mpp_error(FATAL, 'mpp_sync_self: msg_type is not present when request is present and it is EVENT_RECV')
+        endif
+        if(size(msg_size) .NE. size(request)) then
+           call mpp_error(FATAL, 'mpp_sync_self: dimension mismatch between msg_size and request')
+        endif
+        if(size(msg_type) .NE. size(request)) then
+           call mpp_error(FATAL, 'mpp_sync_self: dimension mismatch between msg_type and request')
+        endif
+
+        do m = 1, size(request(:))
+           call MPI_WAIT(request(m), stat, error )
+           call MPI_GET_COUNT(stat, msg_type(m), rsize, error)
+           if(msg_size(m) .NE. rsize) then
+                call mpp_error(FATAL, "mpp_sync_self: msg_size does not match size of data received")
+           endif
+        enddo
+     else
+        do m = 1, size(request(:))
+           if(request(m) .NE.MPI_REQUEST_NULL )call MPI_WAIT(request(m), stat, error )
+        enddo
+     endif
   else
-     my_check = EVENT_SEND
-     if(present(check)) my_check = check
      select case(my_check)
      case(EVENT_SEND)
         do m = 1,cur_send_request
@@ -188,11 +219,14 @@ subroutine mpp_sync_self( pelist, check, request )
         cur_send_request = 0
      case(EVENT_RECV)
         do m = 1,cur_recv_request
-           if( request_recv(m).NE.MPI_REQUEST_NULL )call MPI_WAIT( request_recv(m), stat, error )
+           call MPI_WAIT( request_recv(m), stat, error )
+           call MPI_GET_COUNT(stat, type_recv(m), rsize, error)
+           if(size_recv(m) .NE. rsize) then
+                call mpp_error(FATAL, "mpp_sync_self: size_recv does not match of data received")
+           endif
+           size_recv(m) = 0
         end do    
         cur_recv_request = 0
-     case default
-        call mpp_error( FATAL, 'mpp_sync_self: The value of optional argument check should be EVENT_SEND or EVENT_RECV')
      end select 
   endif
   if( current_clock.NE.0 )call increment_current_clock(EVENT_WAIT)

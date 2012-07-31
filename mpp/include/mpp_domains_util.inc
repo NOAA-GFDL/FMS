@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_util.inc,v 19.0 2012/01/06 22:02:43 fms Exp $
+! $Id: mpp_domains_util.inc,v 19.0.4.1 2012/05/11 14:54:02 Zhi.Liang Exp $
 
   ! <SUBROUTINE NAME="mpp_domains_set_stack_size">
   !  <OVERVIEW>
@@ -829,6 +829,17 @@ end subroutine mpp_get_domain_shift
   end function mpp_domain_is_symmetry
 
 !#######################################################################
+  function mpp_domain_is_initialized(domain)
+    type(domain2d), intent(in) :: domain
+    logical                    :: mpp_domain_is_initialized
+
+    mpp_domain_is_initialized = domain%initialized
+
+    return
+
+  end function mpp_domain_is_initialized
+
+!#######################################################################
   !--- private routine used only for mpp_update_domains. This routine will
   !--- compare whalo, ehalo, shalo, nhalo with the halo size when defining "domain"
   !--- to decide if update is needed. Also it check the sign of whalo, ehalo, shalo and nhalo.
@@ -1270,6 +1281,14 @@ end subroutine mpp_get_domain_shift
   end function mpp_get_domain_name
 
   !#################################################################
+  function mpp_get_domain_root_pe(domain)
+     type(domain2d),    intent(in) :: domain
+     integer                       :: mpp_get_domain_root_pe
+     
+     mpp_get_domain_root_pe = domain%list(0)%pe
+
+  end function mpp_get_domain_root_pe
+  !#################################################################
   function mpp_get_domain_npes(domain)
      type(domain2d),    intent(in) :: domain
      integer                       :: mpp_get_domain_npes  
@@ -1279,6 +1298,24 @@ end subroutine mpp_get_domain_shift
      return
 
   end function mpp_get_domain_npes
+
+  !################################################################
+  subroutine mpp_get_domain_pelist(domain, pelist)
+     type(domain2d),    intent(in) :: domain
+     integer,          intent(out) :: pelist(:)
+     integer :: p
+
+     if(size(pelist(:)) .NE. size(domain%list(:)) ) then
+        call mpp_error(FATAL, "mpp_get_domain_pelist: size(pelist(:)) .NE. size(domain%list(:)) ")
+     endif
+
+     do p = 0, size(domain%list(:))-1     
+        pelist(p+1) = domain%list(p)%pe 
+     enddo
+
+     return
+
+  end subroutine mpp_get_domain_pelist
 
   !#################################################################
   function mpp_get_io_domain_layout(domain)

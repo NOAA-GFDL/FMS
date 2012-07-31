@@ -94,6 +94,9 @@
 ! make contiguous array from compute domain
       m = 0
       if(global_on_this_pe) then
+         !z1l: initialize global = 0 to support mask domain
+         global = 0
+
          do k = 1, ke
             do j = jsc, jec
                do i = isc, iec
@@ -145,6 +148,7 @@
                    end do
                 end do
              end do
+             call mpp_sync_self()  !-ensure MPI_ISEND is done.
           end do
       else if( yonly )then
           nd = size(domain%y(1)%list(:))
@@ -168,19 +172,20 @@
                    end do
                 end do
              end do
+             call mpp_sync_self()  !-ensure MPI_ISEND is done.
           end do
       else
          tile_id = domain%tile_id(1)
          nd = size(domain%list(:))
          if(root_only) then
             if(domain%pe .NE. domain%tile_root_pe) then
-               call mpp_send( clocal(1), plen=nword_me, to_pe=domain%tile_root_pe )
+               call mpp_send( clocal(1), plen=nword_me, to_pe=domain%tile_root_pe, tag=COMM_TAG_1 )
             else
                do n = 1,nd-1
                   rpos = mod(domain%pos+n,nd)
                   if( domain%list(rpos)%tile_id(1) .NE. tile_id ) cycle
                   nwords = (domain%list(rpos)%x(1)%compute%size+ishift) * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
-                  call mpp_recv(cremote(1), glen=nwords, from_pe=domain%list(rpos)%pe )
+                  call mpp_recv(cremote(1), glen=nwords, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_1 )
                   m = 0
                   is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end+ishift
                   js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end+jshift
@@ -199,13 +204,13 @@
             do n = 1,nd-1
                lpos = mod(domain%pos+nd-n,nd)
                if( domain%list(lpos)%tile_id(1).NE. tile_id ) cycle ! global field only within tile
-               call mpp_send( clocal(1), plen=nword_me, to_pe=domain%list(lpos)%pe )
+               call mpp_send( clocal(1), plen=nword_me, to_pe=domain%list(lpos)%pe, tag=COMM_TAG_2 )
             end do
             do n = 1,nd-1
                rpos = mod(domain%pos+n,nd)
                if( domain%list(rpos)%tile_id(1) .NE. tile_id ) cycle ! global field only within tile
                nwords = (domain%list(rpos)%x(1)%compute%size+ishift) * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
-               call mpp_recv( cremote(1), glen=nwords, from_pe=domain%list(rpos)%pe )
+               call mpp_recv( cremote(1), glen=nwords, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_2 )
                m = 0
                is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end+ishift
                js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end+jshift

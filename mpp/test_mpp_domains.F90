@@ -25,7 +25,7 @@ program test
   use mpp_domains_mod, only : mpp_define_nest_domains, nest_domain_type
   use mpp_domains_mod, only : mpp_get_C2F_index, mpp_update_nest_fine
   use mpp_domains_mod, only : mpp_get_F2C_index, mpp_update_nest_coarse
-  use mpp_domains_mod, only : mpp_get_domain_shift, EDGEUPDATE
+  use mpp_domains_mod, only : mpp_get_domain_shift, EDGEUPDATE, mpp_deallocate_domain
   use mpp_memutils_mod, only : mpp_memuse_begin, mpp_memuse_end
 
   implicit none
@@ -47,9 +47,12 @@ program test
   logical :: test_interface = .true.
   logical :: test_nest_domain = .false.
   logical :: test_edge_update = .false.
+  logical :: test_cubic_grid_redistribute = .false.
   logical :: check_parallel = .FALSE.  ! when check_parallel set to false,
   logical :: test_get_nbr = .FALSE.
-                                     ! mpes should be equal to npes      
+  integer :: ensemble_size
+  integer :: layout_cubic(2) = (/0,0/)
+  integer :: layout_ensemble(2) = (/0,0/)
   logical :: do_sleep = .false.
   integer :: num_iter = 1
   integer :: num_fields = 4
@@ -71,7 +74,8 @@ program test
                                test_nest_domain, tile_fine, tile_coarse, istart_fine, iend_fine, &
                                jstart_fine, jend_fine, istart_coarse, iend_coarse, jstart_coarse, &
                                jend_coarse, extra_halo, npes_fine, npes_coarse, mix_2D_3D, test_get_nbr, &
-                               test_edge_update
+                               test_edge_update, test_cubic_grid_redistribute, ensemble_size, &
+                               layout_cubic, layout_ensemble
   integer :: i, j, k
   integer :: layout(2)
   integer :: id
@@ -149,6 +153,10 @@ program test
   if( test_performance) then
       call update_domains_performance('Folded-north')
       call update_domains_performance('Cubic-Grid')
+  endif
+
+  if( test_cubic_grid_redistribute ) then
+     call cubic_grid_redistribute()
   endif
 
   if( test_interface ) then
@@ -540,6 +548,174 @@ contains
     endif
     if(ALLOCATED(y))deallocate(y,y2,y3,y4,y5,y6)
   end subroutine test_redistribute
+
+  subroutine cubic_grid_redistribute
+
+     integer              :: npes, npes_per_ensemble, npes_per_tile
+     integer              :: ensemble_id, tile_id, ensemble_tile_id
+     integer              :: i, j, p, n, ntiles, my_root_pe
+     integer              :: isc_ens, iec_ens, jsc_ens, jec_ens
+     integer              :: isd_ens, ied_ens, jsd_ens, jed_ens
+     integer              :: isc, iec, jsc, jec
+     integer              :: isd, ied, jsd, jed
+     integer, allocatable :: my_ensemble_pelist(:), pe_start(:), pe_end(:)
+     integer, allocatable :: global_indices(:,:), layout2D(:,:)
+     real,    allocatable :: x(:,:,:,:), x_ens(:,:,:), y(:,:,:)
+     integer              :: layout(2)
+     type(domain2D)       :: domain
+     type(domain2D), allocatable :: domain_ensemble(:)  
+     character(len=128)   :: mesg
+
+     ! --- set up pelist
+     npes = mpp_npes()
+     if(mod(npes, ensemble_size) .NE. 0) call mpp_error(FATAL, &
+         "test_mpp_domains: npes is not divisible by ensemble_size")
+     npes_per_ensemble = npes/ensemble_size
+     allocate(my_ensemble_pelist(0:npes_per_ensemble-1))
+     ensemble_id = mpp_pe()/npes_per_ensemble + 1
+     do p = 0, npes_per_ensemble-1
+        my_ensemble_pelist(p) = (ensemble_id-1)*npes_per_ensemble + p
+     enddo
+
+     call mpp_declare_pelist(my_ensemble_pelist)
+
+     !--- define a mosaic use all the pelist
+     ntiles = 6
+
+
+     if( mod(npes, ntiles) .NE. 0 ) call mpp_error(FATAL, &
+          "test_mpp_domains: npes is not divisible by ntiles")
+
+     npes_per_tile = npes/ntiles
+     tile_id = mpp_pe()/npes_per_tile + 1
+     if( npes_per_tile == layout_cubic(1) * layout_cubic(2) ) then
+        layout = layout_cubic
+     else 
+        call mpp_define_layout( (/1,nx_cubic,1,ny_cubic/), npes_per_tile, layout )
+     endif
+     allocate(global_indices(4, ntiles))
+     allocate(layout2D(2, ntiles))
+     allocate(pe_start(ntiles), pe_end(ntiles))
+     do n = 1, ntiles
+       global_indices(:,n) = (/1,nx_cubic,1,ny_cubic/)
+       layout2D(:,n)         = layout
+     end do
+
+     do n = 1, ntiles
+        pe_start(n) = (n-1)*npes_per_tile
+        pe_end(n)   = n*npes_per_tile-1
+     end do
+
+     call define_cubic_mosaic("cubic_grid", domain, (/nx_cubic,nx_cubic,nx_cubic,nx_cubic,nx_cubic,nx_cubic/), &
+                              (/ny_cubic,ny_cubic,ny_cubic,ny_cubic,ny_cubic,ny_cubic/), &
+                                global_indices, layout2D, pe_start, pe_end )
+
+     allocate(domain_ensemble(ensemble_size))
+     !-- define domain for each ensemble
+     call mpp_set_current_pelist( my_ensemble_pelist )
+     if( mod(npes_per_ensemble, ntiles) .NE. 0 ) call mpp_error(FATAL, &
+          "test_mpp_domains: npes_per_ensemble is not divisible by ntiles")
+     npes_per_tile = npes_per_ensemble/ntiles
+     my_root_pe = my_ensemble_pelist(0)
+     ensemble_tile_id = (mpp_pe() - my_root_pe)/npes_per_tile + 1
+
+     if( npes_per_tile == layout_ensemble(1) * layout_ensemble(2) ) then
+        layout = layout_ensemble
+     else 
+        call mpp_define_layout( (/1,nx_cubic,1,ny_cubic/), npes_per_tile, layout )
+     endif
+     do n = 1, ntiles
+       global_indices(:,n) = (/1,nx_cubic,1,ny_cubic/)
+       layout2D(:,n)         = layout
+     end do
+
+     do n = 1, ntiles
+        pe_start(n) = my_root_pe + (n-1)*npes_per_tile
+        pe_end(n)   = my_root_pe + n*npes_per_tile-1
+     end do
+
+     call define_cubic_mosaic("cubic_grid", domain_ensemble(ensemble_id), (/nx_cubic,nx_cubic,nx_cubic,nx_cubic,nx_cubic,nx_cubic/), &
+                              (/ny_cubic,ny_cubic,ny_cubic,ny_cubic,ny_cubic,ny_cubic/), &
+                                global_indices, layout2D, pe_start, pe_end )     
+
+     call mpp_set_current_pelist()
+     do n = 1, ensemble_size
+        call mpp_broadcast_domain(domain_ensemble(n))
+     enddo     
+
+     call mpp_get_data_domain( domain_ensemble(ensemble_id), isd_ens, ied_ens, jsd_ens, jed_ens)
+     call mpp_get_compute_domain( domain_ensemble(ensemble_id), isc_ens, iec_ens, jsc_ens, jec_ens)
+     call mpp_get_data_domain( domain, isd, ied, jsd, jed)
+     call mpp_get_compute_domain( domain, isc, iec, jsc, jec)
+
+     allocate(x_ens(isd_ens:ied_ens, jsd_ens:jed_ens, nz))
+     allocate(x(isd:ied, jsd:jed, nz, ensemble_size))
+     allocate(y(isd:ied, jsd:jed, nz))     
+
+     x = 0
+     do k = 1, nz
+        do j = jsc_ens, jec_ens
+           do i = isc_ens, iec_ens
+              x_ens(i,j,k) = ensemble_id *1e6 + ensemble_tile_id*1e3 + i + j * 1.e-3 + k * 1.e-6
+           enddo
+        enddo
+     enddo
+     
+     do n = 1, ensemble_size
+        x = 0
+        call mpp_redistribute( domain_ensemble(n), x_ens, domain, x(:,:,:,n) )
+        y = 0
+        do k = 1, nz
+           do j = jsc, jec
+              do i = isc, iec
+                 y(i,j,k) = n *1e6 + tile_id*1e3 + i + j * 1.e-3 + k * 1.e-6
+              enddo
+           enddo
+        enddo
+       write(mesg,'(a,i)') "cubic_grid redistribute from ensemble", n
+        call compare_checksums( x(isc:iec,jsc:jec,:,n), y(isc:iec,jsc:jec,:), trim(mesg) )
+     enddo
+    
+     ! redistribute data to each ensemble.
+     deallocate(x,y,x_ens)
+     allocate(x(isd:ied, jsd:jed, nz, ensemble_size))
+     allocate(x_ens(isd_ens:ied_ens, jsd_ens:jed_ens, nz))
+     allocate(y(isd_ens:ied_ens, jsd_ens:jed_ens, nz))     
+     
+     y = 0
+     do k = 1, nz
+        do j = jsc, jec
+           do i = isc, iec
+              x(i,j,k,:) = i + j * 1.e-3 + k * 1.e-6
+           enddo
+        enddo
+     enddo
+
+     do n = 1, ensemble_size
+        x_ens = 0      
+        call mpp_redistribute(domain, x(:,:,:,n), domain_ensemble(n), x_ens)
+        y = 0
+        if( ensemble_id == n ) then
+           do k = 1, nz
+              do j = jsc_ens, jec_ens
+                 do i = isc_ens, iec_ens
+                    y(i,j,k) = i + j * 1.e-3 + k * 1.e-6
+                 enddo
+              enddo
+           enddo
+        endif
+        write(mesg,'(a,i)') "cubic_grid redistribute to ensemble", n
+        call compare_checksums( x_ens(isc_ens:iec_ens,jsc_ens:jec_ens,:), y(isc_ens:iec_ens,jsc_ens:jec_ens,:), trim(mesg) )
+     enddo
+
+     deallocate(x, y, x_ens)
+     call mpp_deallocate_domain(domain)
+     do n = 1, ensemble_size
+        call mpp_deallocate_domain(domain_ensemble(n))
+     enddo
+     deallocate(domain_ensemble)
+
+  end subroutine cubic_grid_redistribute
 
 
   subroutine test_uniform_mosaic( type )

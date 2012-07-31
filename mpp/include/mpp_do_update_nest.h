@@ -83,7 +83,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_(f_addrs, nest_domain, update, d_type, ke,
            call mpp_error( FATAL, 'MPP_DO_UPDATE_NEST_FINE_3D_: mpp_domains_stack overflow, '// &
                 'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
         end if
-        call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.FALSE. )
+        call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.FALSE., tag=COMM_TAG_1 )
         buffer_pos = buffer_pos + msgsize
      end if
      call mpp_clock_end(nest_recv_clock)
@@ -135,7 +135,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_(f_addrs, nest_domain, update, d_type, ke,
      msgsize = pos - buffer_pos
      if( msgsize.GT.0 )then
         to_pe = overPtr%pe
-        call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
+        call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_1 )
         buffer_pos = pos
      end if
      call mpp_clock_end(nest_send_clock)
@@ -275,7 +275,7 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_(f_addrs, nest_domain, update, d_type, k
            call mpp_error( FATAL, 'MPP_DO_UPDATE_NEST_COARSE_3D_: mpp_domains_stack overflow, '// &
                 'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
         end if
-        call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.FALSE. )
+        call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.FALSE., tag=COMM_TAG_2 )
         buffer_pos = buffer_pos + msgsize
      end if
      call mpp_clock_end(nest_recv_clock)
@@ -323,7 +323,7 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_(f_addrs, nest_domain, update, d_type, k
      msgsize = pos - buffer_pos
      if( msgsize.GT.0 )then
         to_pe = overPtr%pe
-        call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
+        call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_2 )
         buffer_pos = pos
      end if
      call mpp_clock_end(nest_send_clock)

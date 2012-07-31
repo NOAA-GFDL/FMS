@@ -1,5 +1,5 @@
 ! -*-f90-*-
-! $Id: mpp_define_nest_domains.inc,v 19.0 2012/01/06 22:01:20 fms Exp $
+! $Id: mpp_define_nest_domains.inc,v 19.0.4.1.2.1 2012/05/15 18:43:38 z1l Exp $
 
 
 !#############################################################################
@@ -58,7 +58,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain_fine, domain_coarse, tile
   ! since it is overlap contact, ie_fine > is_fine, je_fine > js_fine
   !                         and  ie_coarse>is_coarse, je_coarse>js_coarse
 
-  if( tile_fine .NE. 1 ) call mpp_error(FATAL, "mpp_define_nest_domains.inc: only support tile_fine = 1, contact developer")
+!  if( tile_fine .NE. 1 ) call mpp_error(FATAL, "mpp_define_nest_domains.inc: only support tile_fine = 1, contact developer")
 
   if( iend_fine .LE. istart_fine .OR. jend_fine .LE. jstart_fine ) then
     call mpp_error(FATAL, "mpp_define_nest_domains.inc: ie_fine <= is_fine or je_fine <= js_fine "// &
@@ -645,7 +645,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
           end do
           from_pe = overlap%recv(m)%pe
           l = from_pe-mpp_root_pe()
-          call mpp_recv( msg1(l), glen=1, from_pe=from_pe, block=.FALSE.)
+          call mpp_recv( msg1(l), glen=1, from_pe=from_pe, block=.FALSE., tag=COMM_TAG_1)
           msg2(l) = msgsize
        enddo
 
@@ -656,7 +656,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
              js = overlap%send(m)%js(n); je = overlap%send(m)%je(n)
              msgsize = msgsize + (ie-is+1)*(je-js+1)
           end do
-          call mpp_send( msgsize, plen=1, to_pe=overlap%send(m)%pe)
+          call mpp_send( msgsize, plen=1, to_pe=overlap%send(m)%pe, tag=COMM_TAG_1)
        enddo
        call mpp_sync_self(check=EVENT_RECV)
 
@@ -870,7 +870,7 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
          end do
          from_pe = overlap%recv(m)%pe
          l = from_pe-mpp_root_pe()
-         call mpp_recv( msg1(l), glen=1, from_pe=from_pe, block=.FALSE.)
+         call mpp_recv( msg1(l), glen=1, from_pe=from_pe, block=.FALSE., tag=COMM_TAG_2)
          msg2(l) = msgsize
       enddo
 
@@ -881,7 +881,7 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
             js = overlap%send(m)%js(n); je = overlap%send(m)%je(n)
             msgsize = msgsize + (ie-is+1)*(je-js+1)
          end do
-         call mpp_send( msgsize, plen=1, to_pe=overlap%send(m)%pe)
+         call mpp_send( msgsize, plen=1, to_pe=overlap%send(m)%pe, tag=COMM_TAG_2)
       enddo
       call mpp_sync_self(check=EVENT_RECV)
 

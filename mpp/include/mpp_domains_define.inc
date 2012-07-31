@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_define.inc,v 19.0.2.1.2.1 2012/03/27 17:39:41 Seth.Underwood Exp $
+! $Id: mpp_domains_define.inc,v 19.0.2.1.2.1.2.1.2.1 2012/05/15 19:02:00 z1l Exp $
 
 
   ! <SUBROUTINE NAME="mpp_define_layout2D" INTERFACE="mpp_define_layout">
@@ -433,7 +433,8 @@
     integer                       :: ipos, jpos, igroup, jgroup
     integer                       :: ipos_beg, ipos_end, jpos_beg, jpos_end
     integer                       :: whalo, ehalo, shalo, nhalo
-    integer                       :: npes_x, npes_y
+    integer                       :: npes_x, npes_y, ndivx, ndivy
+    integer, allocatable          :: posarray(:,:)
 
     if(io_layout(1) * io_layout(2) .LE. 0) then
        call mpp_error(NOTE,  &
@@ -459,9 +460,21 @@
     allocate(domain%io_domain)
     domain%io_layout = io_layout
     io_domain => domain%io_domain
+    ! Find how many processors are in the group with the consideration that some of the region maybe masked out.
     npes_x = layout(1)/io_layout(1)
     npes_y = layout(2)/io_layout(2)
-    npes_in_group = npes_x*npes_y
+    ipos = mod(domain%x(1)%pos, npes_x)
+    jpos = mod(domain%y(1)%pos, npes_y)
+    igroup  = domain%x(1)%pos/npes_x
+    jgroup  = domain%y(1)%pos/npes_y
+    ipos_beg = igroup*npes_x; ipos_end = ipos_beg + npes_x - 1
+    jpos_beg = jgroup*npes_y; jpos_end = jpos_beg + npes_y - 1
+    npes_in_group = 0
+    do j = jpos_beg, jpos_end
+       do i = ipos_beg, ipos_end
+          if(domain%pearray(i,j) .NE. NULL_PE) npes_in_group = npes_in_group+1
+       enddo
+    enddo
 
     io_domain%whalo    = domain%whalo
     io_domain%ehalo    = domain%ehalo
@@ -474,17 +487,26 @@
     do i = 0, npes_in_group-1
        allocate( io_domain%list(i)%x(1), io_domain%list(i)%y(1), io_domain%list(i)%tile_id(1) )
     enddo
-    ipos = mod(domain%x(1)%pos, npes_x)
-    jpos = mod(domain%y(1)%pos, npes_y)
-    igroup  = domain%x(1)%pos/npes_x
-    jgroup  = domain%y(1)%pos/npes_y
-    ipos_beg = igroup*npes_x; ipos_end = ipos_beg + npes_x - 1
-    jpos_beg = jgroup*npes_y; jpos_end = jpos_beg + npes_y - 1
+
+    ndivx = size(domain%pearray,1)
+    ndivy = size(domain%pearray,2)
+    allocate(posarray(0:ndivx-1, 0:ndivy-1))
+    n = 0
+    posarray = -1
+    do j = 0,ndivy-1
+       do i = 0,ndivx-1
+          if( domain%pearray(i,j) == NULL_PE) cycle    
+          posarray(i,j) = n
+          n = n + 1
+       enddo
+    enddo
+
     n = 0
     do j = jpos_beg, jpos_end
        do i = ipos_beg, ipos_end
+          if( domain%pearray(i,j) == NULL_PE) cycle
           io_domain%list(n)%pe = domain%pearray(i,j)
-          m = io_domain%list(n)%pe - mpp_root_pe()
+          m = posarray(i,j)
           io_domain%list(n)%x(1)%compute = domain%list(m)%x(1)%compute
           io_domain%list(n)%y(1)%compute = domain%list(m)%y(1)%compute
           igroup                         = domain%list(m)%x(1)%pos/npes_x
@@ -493,10 +515,16 @@
           n = n + 1
        enddo
     enddo
+    deallocate(posarray)
 
     allocate(io_domain%x(1), io_domain%y(1), io_domain%tile_id(1) )
     allocate(io_domain%x(1)%list(0:npes_x-1), io_domain%y(1)%list(0:npes_y-1) )
-    n    = jpos*npes_x + ipos
+    n = -1
+    do j = jpos_beg, jpos_beg+jpos
+       do i = ipos_beg, ipos_beg+ipos
+          if(domain%pearray(i,j) .NE. NULL_PE) n = n + 1
+       enddo
+    enddo
     io_domain%pos          = n
     io_domain%x(1)%compute = domain%x(1)%compute
     io_domain%x(1)%data    = domain%x(1)%data
@@ -504,12 +532,12 @@
     io_domain%y(1)%compute = domain%y(1)%compute
     io_domain%y(1)%data    = domain%y(1)%data
     io_domain%y(1)%memory  = domain%y(1)%memory
-    io_domain%x(1)%global%begin     = io_domain%list(0)%x(1)%compute%begin
-    io_domain%x(1)%global%end       = io_domain%list(npes_in_group-1)%x(1)%compute%end
+    io_domain%x(1)%global%begin     = domain%x(1)%list(ipos_beg)%compute%begin
+    io_domain%x(1)%global%end       = domain%x(1)%list(ipos_end)%compute%end
     io_domain%x(1)%global%size      = io_domain%x(1)%global%end - io_domain%x(1)%global%begin + 1
     io_domain%x(1)%global%max_size  = io_domain%x(1)%global%size
-    io_domain%y(1)%global%begin     = io_domain%list(0)%y(1)%compute%begin
-    io_domain%y(1)%global%end       = io_domain%list(npes_in_group-1)%y(1)%compute%end
+    io_domain%y(1)%global%begin     = domain%y(1)%list(jpos_beg)%compute%begin
+    io_domain%y(1)%global%end       = domain%y(1)%list(jpos_end)%compute%end
     io_domain%y(1)%global%size      = io_domain%y(1)%global%end - io_domain%y(1)%global%begin + 1
     io_domain%y(1)%global%max_size  = io_domain%y(1)%global%size
     io_domain%x(1)%pos     = ipos
@@ -1018,7 +1046,7 @@
              end do
              from_pe = update%recv(m)%pe
              l = from_pe-mpp_root_pe()
-             call mpp_recv( msg1(l), glen=1, from_pe=from_pe, block=.FALSE.)
+             call mpp_recv( msg1(l), glen=1, from_pe=from_pe, block=.FALSE., tag=COMM_TAG_1)
              msg2(l) = msgsize
           enddo
 
@@ -1030,7 +1058,7 @@
                 msgsize = msgsize + (ie-is+1)*(je-js+1)
              end do
              msg3(m) = msgsize
-             call mpp_send( msg3(m), plen=1, to_pe=update%send(m)%pe)
+             call mpp_send( msg3(m), plen=1, to_pe=update%send(m)%pe, tag=COMM_TAG_1)
           enddo
           call mpp_sync_self(check=EVENT_RECV)
 
@@ -1076,10 +1104,10 @@
 !??? how to specify pelist, we may use two dimensional variable pelist to represent.
 !z1l: We assume the tilelist are in always limited to 1, 2, ... num_tile. If we want 
 !     to remove this limitation, we need to add one more argument tilelist.
-  subroutine mpp_define_mosaic( global_indices, layout, domain, num_tile, num_contact, tile1, tile2, &
-                                istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2, pe_start,      &
-                                pe_end, pelist, whalo, ehalo, shalo, nhalo, xextent, yextent,                  &
-                                maskmap, name, memory_size, symmetry, xflags, yflags )
+  subroutine mpp_define_mosaic( global_indices, layout, domain, num_tile, num_contact, tile1, tile2,      &
+                                istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2, pe_start, &
+                                pe_end, pelist, whalo, ehalo, shalo, nhalo, xextent, yextent,             &
+                                maskmap, name, memory_size, symmetry, xflags, yflags, tile_id )
     integer,          intent(in)           :: global_indices(:,:)  ! The size of first indice is 4, (/ isg, ieg, jsg, jeg /)
                                                                    ! The size of second indice is number of tiles in mosaic.
     integer,          intent(in)           :: layout(:,:)
@@ -1101,12 +1129,14 @@
     integer,          intent(in), optional :: memory_size(2)
     logical,          intent(in), optional :: symmetry
     integer,          intent(in), optional :: xflags, yflags
+    integer,          intent(in), optional :: tile_id(:)           ! tile_id of each tile in the mosaic
 
     integer              :: n, m, ndivx, ndivy, nc, nlist, nt, pos, n1, n2
     integer              :: whalosz, ehalosz, shalosz, nhalosz, xhalosz, yhalosz, t1, t2, tile
     integer              :: flags_x, flags_y
     logical, allocatable :: mask(:,:)
     integer, allocatable :: pes(:), xext(:), yext(:), pelist_tile(:), ntile_per_pe(:), tile_count(:)
+    integer, allocatable :: tile_id_local(:)
     logical              :: is_symmetry
     integer, allocatable :: align1(:), align2(:), is1(:), ie1(:), js1(:), je1(:), is2(:), ie2(:), js2(:), je2(:)
     integer, allocatable :: isgList(:), iegList(:), jsgList(:), jegList(:)
@@ -1211,10 +1241,23 @@
 
     pe = mpp_pe()
     pos = 0
+    if( PRESENT(tile_id) ) then
+       if(size(tile_id(:)) .NE. num_tile) then
+          call mpp_error(FATAL, "mpp_domains_define.inc: size(tile_id) .NE. num_tile")
+       endif
+    endif
+    allocate(tile_id_local(num_tile))
+    do n = 1, num_tile
+       if(PRESENT(tile_id)) then
+          tile_id_local(n) = tile_id(n)
+       else
+          tile_id_local(n) = n
+       endif
+    enddo
     do n = 1, num_tile
        if( pe .GE. pe_start(n) .AND. pe .LE. pe_end(n)) then
           pos = pos + 1
-          domain%tile_id(pos) = n
+          domain%tile_id(pos) = tile_id_local(n)
        end if
     end do
 
@@ -1289,12 +1332,13 @@
           call mpp_define_domains(global_indices(:,n), layout(:,n), domain, pelist=pelist_tile, xflags = flags_x, &
                                   yflags = flags_y, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo,           &
                                   xextent=xext, yextent=yext, maskmap=mask, name=name, symmetry=is_symmetry,      &
-                                  memory_size = memory_size, is_mosaic = .true.)
+                                  memory_size = memory_size, is_mosaic = .true., tile_id=tile_id_local(n))
        else
           call mpp_define_domains(global_indices(:,n), layout(:,n), domain, pelist=pelist_tile,                   &
                                   whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, xextent=xext, yextent=yext, &
                                   maskmap=mask, name=name, symmetry=is_symmetry, memory_size = memory_size,       &
-                                  is_mosaic = .true., tile_count = tile_count(pe_start(n)), tile_id=n, complete = n==num_tile)
+                                  is_mosaic = .true., tile_count = tile_count(pe_start(n)), tile_id=tile_id_local(n),   &
+                                  complete = n==num_tile)
        end if
        deallocate(mask, xext, yext, pelist_tile)
     end do
@@ -1414,7 +1458,7 @@
              end do
              from_pe = update%recv(m)%pe
              l = from_pe-mpp_root_pe()
-             call mpp_recv( msg1(l), glen=1, from_pe=from_pe, block=.FALSE.)
+             call mpp_recv( msg1(l), glen=1, from_pe=from_pe, block=.FALSE., tag=COMM_TAG_2)
              msg2(l) = msgsize
           enddo
 
@@ -1426,7 +1470,7 @@
                 msgsize = msgsize + (ie-is+1)*(je-js+1)
              end do
              msg3(m) = msgsize
-             call mpp_send( msg3(m), plen=1, to_pe=update%send(m)%pe)
+             call mpp_send( msg3(m), plen=1, to_pe=update%send(m)%pe, tag=COMM_TAG_2)
           enddo
           call mpp_sync_self(check=EVENT_RECV)
 

@@ -26,6 +26,7 @@ module horiz_interp_conserve_mod
 
   use mpp_mod,               only: mpp_send, mpp_recv, mpp_pe, mpp_root_pe, mpp_npes
   use mpp_mod,               only: mpp_error, FATAL,  mpp_sync_self 
+  use mpp_mod,               only: COMM_TAG_1, COMM_TAG_2
   use fms_mod,               only: write_version_number
   use constants_mod,         only: PI
   use horiz_interp_type_mod, only: horiz_interp_type
@@ -89,8 +90,8 @@ module horiz_interp_conserve_mod
 
   integer :: pe, root_pe
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_conserve.F90,v 19.0 2012/01/06 21:57:55 fms Exp $'
-  character(len=128) :: tagname = '$Name: siena_201204 $'
+  character(len=128) :: version = '$Id: horiz_interp_conserve.F90,v 19.0.2.2 2012/05/14 19:31:27 Zhi.Liang Exp $'
+  character(len=128) :: tagname = '$Name: siena_201207 $'
   logical            :: module_is_initialized = .FALSE.
 
 contains
@@ -841,13 +842,13 @@ contains
     if(pe == root_pe) then
        do p = 1, npes - 1
           ! Force use of "scalar", integer pointer mpp interface
-          call mpp_recv(buffer_real(1),glen=5,from_pe=root_pe+p)
+          call mpp_recv(buffer_real(1),glen=5,from_pe=root_pe+p, tag=COMM_TAG_1)
           asum = asum + buffer_real(1)
           dsum = dsum + buffer_real(2)
           wsum = wsum + buffer_real(3)
           low  = min(low, buffer_real(4))
           high = max(high, buffer_real(5))
-          call mpp_recv(buffer_int(1),glen=1,from_pe=root_pe+p)
+          call mpp_recv(buffer_int(1),glen=1,from_pe=root_pe+p, tag=COMM_TAG_2)
           miss = miss + buffer_int(1)
        enddo
     else
@@ -857,9 +858,9 @@ contains
        buffer_real(4) = low
        buffer_real(5) = high
        ! Force use of "scalar", integer pointer mpp interface
-       call mpp_send(buffer_real(1),plen=5,to_pe=root_pe)
+       call mpp_send(buffer_real(1),plen=5,to_pe=root_pe, tag=COMM_TAG_1)
        buffer_int(1) = miss
-       call mpp_send(buffer_int(1),plen=1,to_pe=root_pe)
+       call mpp_send(buffer_int(1),plen=1,to_pe=root_pe, tag=COMM_TAG_2)
     endif
 
     call mpp_sync_self()   

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_util.inc,v 19.0 2012/01/06 22:03:26 fms Exp $
+! $Id: mpp_io_util.inc,v 19.0.2.1 2012/05/11 14:54:02 Zhi.Liang Exp $
 
 
   !#####################################################################
@@ -740,7 +740,7 @@
      character(len=*),  intent(in) :: fieldname, attname
      character(len=*), intent(out) :: attvalue 
      logical                       :: found_field,  found_att
-     integer                       :: i, j
+     integer                       :: i, j, length
 
      found_field = .false.
      found_att = .false.
@@ -750,9 +750,10 @@
            do j=1, size(mpp_file(unit)%Var(i)%Att(:))
               if( trim(mpp_file(unit)%Var(i)%Att(j)%name) == trim(attname) ) then
                  found_att = .true.
-                 if(len(attvalue) .LE. len_trim(mpp_file(unit)%Var(i)%Att(j)%catt) ) call mpp_error(FATAL, &
+                 length = mpp_file(unit)%Var(i)%Att(j)%len
+                 if(len(attvalue) .LE. length ) call mpp_error(FATAL, &
                       'mpp_io_util.inc: length of attvalue is less than the length of catt')
-                 attvalue = trim(mpp_file(unit)%Var(i)%Att(j)%catt)
+                 attvalue = trim(mpp_file(unit)%Var(i)%Att(j)%catt(1:length))
                  exit
               end if
            end do

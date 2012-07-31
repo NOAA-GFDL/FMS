@@ -34,7 +34,7 @@
          if( .NOT. d_comm%R_do_buf(list) )cycle
          from_pe = d_comm%cfrom_pe(list)
          msgsize = d_comm%R_msize(list)*l_size
-         call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.FALSE. )
+         call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.FALSE., tag=COMM_TAG_1 )
          buffer_pos = buffer_pos + msgsize
       enddo
 
@@ -59,7 +59,7 @@
          end do
          if( debug )write( errunit,* )'PE', pe, ' to PE ', to_pe, 'is,ie,js,je=', is, ie, js, je
          msgsize = pos - buffer_pos
-         call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe )
+         call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_1  )
          buffer_pos = pos
       end do
 

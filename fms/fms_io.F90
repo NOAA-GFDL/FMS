@@ -81,6 +81,10 @@ module fms_io_mod
 !    grid. For the multiple case, the filename appeared in the message will contain
 !    tile1 because the message is print out from root pe and on root pe the tile id is tile1. 
 ! </DATA>
+! <DATA NAME="debug_mask_list" TYPE="logical">
+!    set debug_mask_list (default is false) to true to print out mask_list reading from mask_table.
+! </DATA>
+
 !</NAMELIST>
 
 use mpp_io_mod,      only: mpp_open, mpp_close, mpp_io_init, mpp_io_exit, mpp_read, mpp_write
@@ -321,6 +325,7 @@ public  :: reset_field_name, reset_field_pointer
 private :: lookup_field_r, lookup_axis, unique_axes
 
 public  :: set_filename_appendix, get_instance_filename
+public  :: parse_mask_table
 character(len=32), save :: filename_appendix = ''
 
 !--- public interface ---
@@ -344,15 +349,17 @@ logical           :: read_data_bug       = .false.
 logical           :: time_stamp_restart  = .true.
 logical           :: print_chksum        = .false.
 logical           :: show_open_namelist_file_warning = .false.
+logical           :: debug_mask_list     = .false. 
   namelist /fms_io_nml/ fms_netcdf_override, fms_netcdf_restart, &
        threading_read, threading_write, &
        fileset_write, format, read_all_pe, iospec_ieee32,max_files_w,max_files_r, &
-       read_data_bug, time_stamp_restart, print_chksum, show_open_namelist_file_warning
+       read_data_bug, time_stamp_restart, print_chksum, show_open_namelist_file_warning, &
+       debug_mask_list
 
 integer            :: pack_size  ! = 1 for double = 2 for float
 
-character(len=128) :: version = '$Id: fms_io.F90,v 19.0 2012/01/06 21:57:15 fms Exp $'
-character(len=128) :: tagname = '$Name: siena_201204 $'
+character(len=128) :: version = '$Id: fms_io.F90,v 19.0.6.1.4.1 2012/05/15 18:36:14 z1l Exp $'
+character(len=128) :: tagname = '$Name: siena_201207 $'
 
 contains
 
@@ -1907,6 +1914,7 @@ subroutine restore_state_all(fileObj, directory)
   real, allocatable, dimension(:)     :: r1d  
   real                                :: r0d
   type(domain2d), pointer, save       :: io_domain=>NULL()
+  integer                             :: isc, iec, jsc, jec
 
   if (.not.associated(fileObj%var)) call mpp_error(FATAL, "fms_io(restore_state_all): " // &
       "restart_file_type data must be initialized by calling register_restart_field before using it")
@@ -2003,6 +2011,10 @@ subroutine restore_state_all(fileObj, directory)
 
      do j=1,fileObj%nvar
         cur_var => fileObj%var(j)
+        isc = cur_var%is
+        iec = cur_var%ie
+        jsc = cur_var%js
+        jec = cur_var%je
         domain_present = cur_var%domain_present
         domain_idx = cur_var%domain_idx
         do l=1, nvar
@@ -2032,13 +2044,13 @@ subroutine restore_state_all(fileObj, directory)
                        allocate(r2d(cur_var%siz(1), cur_var%siz(2)) )
                        r2d = 0
                        call mpp_read(unit(n), fields(l), array_domain(domain_idx), r2d, tlev)
-                       fileObj%p2di(k,j)%p = r2d
+                       fileObj%p2di(k,j)%p(isc:iec,jsc:jec) = r2d(isc:iec,jsc:jec)
                        deallocate(r2d)
                     else if( Associated(fileObj%p3di(k,j)%p) ) then
                        allocate(r3d(cur_var%siz(1), cur_var%siz(2), cur_var%siz(3)) )
                        r3d = 0
                        call mpp_read(unit(n), fields(l), array_domain(domain_idx), r3d, tlev)
-                       fileObj%p3di(k,j)%p = r3d
+                       fileObj%p3di(k,j)%p(isc:iec,jsc:jec,:) = r3d(isc:iec,jsc:jec,:) 
                        deallocate(r3d)
                     else
                        call mpp_error(FATAL, "fms_io(restore_state_all): domain is present for the field "//trim(varname)// &
@@ -2146,6 +2158,7 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
   real, allocatable, dimension(:)     :: r1d  
   real                                :: r0d
   type(domain2d), pointer, save       :: io_domain=>NULL()
+  integer                             :: isc, iec, jsc, jec
 
   if (.not.associated(fileObj%var)) call mpp_error(FATAL, "fms_io(restore_state_one_field): " // &
       "restart_file_type data must be initialized by calling register_restart_field before using it")
@@ -2238,6 +2251,10 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
         call mpp_get_atts(fields(l),name=varname)
         if (lowercase(trim(varname)) == lowercase(trim(cur_var%name))) then
            cur_var%initialized = .true.
+           isc = cur_var%is
+           iec = cur_var%ie
+           jsc = cur_var%js
+           jec = cur_var%je
            do k = 1, cur_var%siz(4)
               tlev = k
               if(domain_present) then        
@@ -2261,13 +2278,13 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
                     allocate(r2d(cur_var%siz(1), cur_var%siz(2)) )
                     r2d = 0
                     call mpp_read(unit(n), fields(l), array_domain(domain_idx), r2d, tlev)
-                    fileObj%p2di(k,j)%p = r2d
+                    fileObj%p2di(k,j)%p(isc:iec,jsc:jec) = r2d(isc:iec,jsc:jec) 
                     deallocate(r2d)
                  else if( Associated(fileObj%p3di(k,j)%p) ) then
                     allocate(r3d(cur_var%siz(1), cur_var%siz(2), cur_var%siz(3)) )
                     r3d = 0
                     call mpp_read(unit(n), fields(l), array_domain(domain_idx), r3d, tlev)
-                    fileObj%p3di(k,j)%p = r3d
+                    fileObj%p3di(k,j)%p(isc:iec,jsc:jec,:) = r3d(isc:iec,jsc:jec,:) 
                     deallocate(r3d)
                  else
                     call mpp_error(FATAL, "fms_io(restore_state_one_field): domain is present for the field "//trim(varname)// &
@@ -4596,9 +4613,10 @@ end subroutine get_axis_cart
     type(domain2D),   intent(in), optional, target :: domain
     integer,          intent(in), optional         :: tile_count 
     character(len=256)                             :: basefile, tilename
-    integer                                        :: lens, ntiles, ntileMe, tile
+    integer                                        :: lens, ntiles, ntileMe, tile, my_tile_id
     integer, dimension(:), allocatable             :: tile_id
     type(domain2d), pointer, save                  :: d_ptr =>NULL()
+    logical                                        :: domain_exist
 
     !--- deal with the situation that the file is alreday in the full name.
     lens = len_trim(file_in)
@@ -4621,25 +4639,34 @@ end subroutine get_axis_cart
     if(mpp_mosaic_defined())then
        !--- get the tile name
        ntiles = 1
+       my_tile_id = 1
+       domain_exist = .false.
        if(PRESENT(domain))then
+          domain_exist = .true.
           ntiles = mpp_get_ntile_count(domain)
           d_ptr => domain
        elseif (ASSOCIATED(Current_domain) .AND. .NOT. is_no_domain ) then
+          domain_exist = .true.
           ntiles = mpp_get_ntile_count(Current_domain)
           d_ptr => Current_domain
        endif
-       if(ntiles > 1 )then
+       
+       if(domain_exist) then
           ntileMe = mpp_get_current_ntile(d_ptr)
           allocate(tile_id(ntileMe))
           tile_id = mpp_get_tile_id(d_ptr)
           tile = 1
           if(present(tile_count)) tile = tile_count
-          tilename = 'tile'//string(tile_id(tile))
-          deallocate(tile_id)
+          my_tile_id = tile_id(tile)
+       endif
+
+       if(ntiles > 1 .or. my_tile_id > 1 )then
+          tilename = 'tile'//string(my_tile_id)
           if(index(basefile,'.'//trim(tilename),back=.true.) == 0)then
              basefile = trim(basefile)//'.'//trim(tilename);
           end if
        end if
+       if(allocated(tile_id)) deallocate(tile_id)
     endif
 
     file_out = trim(basefile)//'.nc'
@@ -5142,6 +5169,86 @@ subroutine get_instance_filename(name_in,name_out)
   end if
   
 end subroutine get_instance_filename
+
+
+!#######################################################################
+subroutine parse_mask_table(mask_table, maskmap, modelname)
+
+  character(len=*), intent(in) :: mask_table
+  logical,         intent(out) :: maskmap(:,:)
+  character(len=*), intent(in) :: modelname
+  integer                      :: nmask, layout(2)
+  integer, allocatable         :: mask_list(:,:)
+  integer                      :: unit, mystat, n, stdoutunit
+  character(len=128)           :: record
+
+  maskmap = .true.
+  nmask = 0
+  stdoutunit = stdout()
+  if( mpp_pe() == mpp_root_pe() ) then
+     call mpp_open(unit, mask_table, action=MPP_RDONLY)
+     read(unit, FMT=*, IOSTAT=mystat) nmask
+     if( mystat /= 0 ) call mpp_error(FATAL, &
+          "fms_io(parse_mask_table): Error reading nmask from file " //trim(mask_table))
+     write(stdoutunit,*)"parse_mask_table: Number of domain regions masked in ", trim(modelname), " = ", nmask
+     if( nmask > 0 ) then
+        !--- read layout from mask_table and confirm it matches the shape of maskmap
+        read(unit, FMT=*, IOSTAT=mystat) layout
+        if( mystat /= 0 ) call mpp_error(FATAL, &
+             "fms_io(parse_mask_talbe): Error reading layout from file " //trim(mask_table))
+        if( (layout(1) .NE. size(maskmap,1)) .OR. (layout(2) .NE. size(maskmap,2)) )then
+           write(stdoutunit,*)"layout=", layout, ", size(maskmap) = ", size(maskmap,1), size(maskmap,2)
+           call mpp_error(FATAL, "fms_io(parse_mask_table): layout in file "//trim(mask_table)// &
+                  "does not match size of maskmap for "//trim(modelname))
+        endif
+        !--- make sure mpp_npes() == layout(1)*layout(2) - nmask
+        if( mpp_npes() .NE. layout(1)*layout(2) - nmask ) call mpp_error(FATAL, &
+           "fms_io(parse_mask_table): mpp_npes() .NE. layout(1)*layout(2) - nmask for "//trim(modelname))
+      endif
+   endif
+
+   call mpp_broadcast(nmask, mpp_root_pe())
+
+   if(nmask==0) then
+      if( mpp_pe() == mpp_root_pe() ) call mpp_close(unit)
+      return
+   endif
+
+   allocate(mask_list(nmask,2))
+
+   if( mpp_pe() == mpp_root_pe() ) then
+     n = 0
+     do while( .true. )
+        read(unit,'(a)',end=999) record
+        if (record(1:1) == '#') cycle
+        if (record(1:10) == '          ') cycle
+        n = n + 1
+        if( n > nmask ) then
+           call mpp_error(FATAL, "fms_io(parse_mask_table): number of mask_list entry "// &
+                "is greater than nmask in file "//trim(mask_table) ) 
+        endif
+        read(record,*,err=888) mask_list(n,1), mask_list(n,2) 
+     enddo
+888  call mpp_error(FATAL, "fms_io(parse_mask_table):  Error in reading mask_list from file "//trim(mask_table))    
+
+999  continue
+     !--- make sure the number of entry for mask_list is nmask
+     if( n .NE. nmask) call mpp_error(FATAL, &
+        "fms_io(parse_mask_table): number of mask_list entry does not match nmask in file "//trim(mask_table)) 
+     call mpp_close(unit)
+  endif
+  
+  call mpp_broadcast(mask_list, 2*nmask, mpp_root_pe())
+  do n = 1, nmask
+     if(debug_mask_list) then
+       write(stdoutunit,*) "==>NOTE from parse_mask_table: ", trim(modelname), " mask_list = ", mask_list(n,1), mask_list(n,2)
+     endif
+     maskmap(mask_list(n,1),mask_list(n,2)) = .false.
+  enddo
+
+  deallocate(mask_list)
+
+end subroutine parse_mask_table
 
 end module fms_io_mod
 

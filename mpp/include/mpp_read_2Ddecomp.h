@@ -113,6 +113,7 @@
                  enddo
               enddo
               deallocate(gdata)
+              call mpp_sync_self() ! ensure MPI_ISEND is done.
           end if
       else if( data_has_halos )then
 ! for uniprocessor or multithreaded read

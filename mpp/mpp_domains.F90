@@ -137,6 +137,7 @@ module mpp_domains_mod
   use mpp_mod,                only : mpp_max, mpp_min, mpp_sum, mpp_get_current_pelist, mpp_broadcast
   use mpp_mod,                only : mpp_sync, mpp_init, mpp_malloc, lowercase
   use mpp_mod,                only : input_nml_file
+  use mpp_mod,                only : COMM_TAG_1, COMM_TAG_2, COMM_TAG_3, COMM_TAG_4
   use mpp_memutils_mod,       only : mpp_memuse_begin, mpp_memuse_end
   use mpp_pset_mod, only: mpp_pset_init
   implicit none
@@ -168,20 +169,20 @@ module mpp_domains_mod
   public :: mpp_domains_set_stack_size, mpp_get_compute_domain, mpp_get_compute_domains
   public :: mpp_get_data_domain, mpp_get_global_domain, mpp_get_domain_components
   public :: mpp_get_layout, mpp_get_pelist, operator(.EQ.), operator(.NE.) 
-  public :: mpp_domain_is_symmetry
+  public :: mpp_domain_is_symmetry, mpp_domain_is_initialized
   public :: mpp_get_neighbor_pe, mpp_nullify_domain_list
   public :: mpp_set_compute_domain, mpp_set_data_domain, mpp_set_global_domain
   public :: mpp_get_memory_domain, mpp_get_domain_shift, mpp_domain_is_tile_root_pe
   public :: mpp_get_tile_id, mpp_get_domain_extents, mpp_get_current_ntile, mpp_get_ntile_count
   public :: mpp_get_refine_overlap_number, mpp_get_mosaic_refine_overlap
   public :: mpp_get_tile_list
-  public :: mpp_get_tile_npes
+  public :: mpp_get_tile_npes, mpp_get_domain_root_pe
   public :: mpp_get_num_overlap, mpp_get_overlap
   public :: mpp_get_io_domain, mpp_get_domain_pe, mpp_get_domain_tile_root_pe
   public :: mpp_get_domain_name, mpp_get_io_domain_layout
   public :: mpp_copy_domain, mpp_set_domain_symmetry
   public :: mpp_get_update_pelist, mpp_get_update_size
-  public :: mpp_get_domain_npes
+  public :: mpp_get_domain_npes, mpp_get_domain_pelist
 
   !--- public interface from mpp_domains_reduce.h
   public :: mpp_global_field, mpp_global_max, mpp_global_min, mpp_global_sum
@@ -456,6 +457,8 @@ module mpp_domains_mod
      integer                         :: request_recv_count
      integer, dimension(MAX_REQUEST) :: request_send
      integer, dimension(MAX_REQUEST) :: request_recv
+     integer, dimension(MAX_REQUEST) :: size_recv
+     integer, dimension(MAX_REQUEST) :: type_recv
      integer(LONG_KIND)              :: field_addrs(MAX_DOMAIN_FIELDS)
      integer(LONG_KIND)              :: field_addrs2(MAX_DOMAIN_FIELDS)
      integer                         :: nfields 
@@ -1571,6 +1574,11 @@ module mpp_domains_mod
   end interface
 
 
+interface mpp_broadcast_domain
+  module procedure mpp_broadcast_domain_1
+  module procedure mpp_broadcast_domain_2
+end interface
+
 
 !--------------------------------------------------------------
 !bnc: for adjoint update
@@ -2452,9 +2460,9 @@ module mpp_domains_mod
 
   !--- version information variables
   character(len=128), public :: version= &
-       '$Id: mpp_domains.F90,v 19.0.2.1 2012/02/27 17:51:32 Zhi.Liang Exp $'
+       '$Id: mpp_domains.F90,v 19.0.2.1.2.3.2.1 2012/05/15 19:13:31 z1l Exp $'
   character(len=128), public :: tagname= &
-       '$Name: siena_201204 $'
+       '$Name: siena_201207 $'
 
 
 contains

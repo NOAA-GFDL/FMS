@@ -81,7 +81,7 @@
              if( mpp_domain_is_tile_root_pe(domain) ) then
                 do list = 1, nlist - 1
                    m = mod( domain%pos+list, nlist )
-                   call mpp_send( mygsum(1), plen=ntile, to_pe=domain%list(m)%pe )
+                   call mpp_send( mygsum(1), plen=ntile, to_pe=domain%list(m)%pe, tag=COMM_TAG_1 )
                 end do
              end if
              call mpp_sync_self()
@@ -89,7 +89,7 @@
              do list = 1, nlist - 1
                 m = mod( domain%pos+nlist-list, nlist )
                 if( domain%list(m)%pe == domain%list(m)%tile_root_pe ) then
-                    call mpp_recv( nbrgsum(1), glen=size(domain%list(m)%x(:)), from_pe=domain%list(m)%pe)
+                    call mpp_recv( nbrgsum(1), glen=size(domain%list(m)%x(:)), from_pe=domain%list(m)%pe, tag=COMM_TAG_1)
                     do n = 1, size(domain%list(m)%x(:))
                        gsum(domain%list(m)%tile_id(n)) = nbrgsum(n)
                     end do

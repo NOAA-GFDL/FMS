@@ -316,7 +316,7 @@ use mpp_parameter_mod,  only : MPP_DEBUG, MPP_VERBOSE, NULLUNIT, NULLTIME, ALL_P
 use mpp_parameter_mod,  only : CENTER, EAST, NORTH, CORNER
 use mpp_parameter_mod,  only : MAX_FILE_SIZE, GLOBAL_ROOT_ONLY, XUPDATE, YUPDATE
 use mpp_mod,            only : mpp_error, FATAL, WARNING, NOTE, stdin, stdout, stderr, stdlog
-use mpp_mod,            only : mpp_pe, mpp_root_pe, mpp_npes, lowercase, mpp_transmit
+use mpp_mod,            only : mpp_pe, mpp_root_pe, mpp_npes, lowercase, mpp_transmit, mpp_sync_self
 use mpp_mod,            only : mpp_init, mpp_sync, mpp_clock_id, mpp_clock_begin, mpp_clock_end
 use mpp_mod,            only : MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED, CLOCK_ROUTINE
 use mpp_mod,            only : input_nml_file
@@ -820,9 +820,9 @@ type :: atttype
   integer :: pack_size ! = 1 when compiling with -r8 and = 2 when compiling with -r4.
 
   character(len=128) :: version= &
-       '$Id: mpp_io.F90,v 19.0 2012/01/06 21:59:52 fms Exp $'
+       '$Id: mpp_io.F90,v 19.0.2.1 2012/05/09 18:28:56 Zhi.Liang Exp $'
   character(len=128) :: tagname= &
-       '$Name: siena_201204 $'
+       '$Name: siena_201207 $'
 
 contains
 

@@ -532,6 +532,43 @@ void read_mosaic_contact_(const char *mosaic_file, int *tile1, int *tile2, int *
 }
 #endif
 
+/* transfer the index from supergrid to model grid 
+   return 0 if istart = iend
+   otherwise return 1.
+*/
+
+int transfer_to_model_index(int istart_in, int iend_in, int *istart_out, int *iend_out, int refine_ratio)
+{
+
+   int type;
+
+   if( istart_in == iend_in ) {
+      type = 0;
+      istart_out[0] = (istart_in+1)/refine_ratio-1;
+      iend_out[0]  = istart_out[0];
+   }   
+   else {
+      type = 1;
+      if( iend_in > istart_in ) {
+        istart_out[0] = istart_in - 1;
+        iend_out[0]   = iend_in - refine_ratio;
+      }
+      else {
+        istart_out[0] = istart_in - refine_ratio;
+        iend_out[0]   = iend_in - 1;
+      }
+
+      if( istart_out[0]%refine_ratio || iend_out[0]%refine_ratio)
+         error_handler("Error from read_mosaic: mismatch between refine_ratio and istart_in/iend_in");
+      istart_out[0] /= refine_ratio;
+      iend_out[0]   /= refine_ratio;
+   }      
+
+   return type;
+
+}
+
+
 void read_mosaic_contact(const char *mosaic_file, int *tile1, int *tile2, int *istart1, int *iend1,
 			 int *jstart1, int *jend1, int *istart2, int *iend2, int *jstart2, int *jend2)
 {
@@ -542,7 +579,8 @@ void read_mosaic_contact(const char *mosaic_file, int *tile1, int *tile2, int *i
   int ntiles, ncontacts, n, m, l, found;
   unsigned int nstr;
   const int x_refine = 2, y_refine = 2;
-  
+  int i1_type, j1_type, i2_type, j2_type;  
+
   ntiles = get_dimlen(mosaic_file, "ntiles");
   gridtiles = (char **)malloc(ntiles*sizeof(char *));
   for(n=0; n<ntiles; n++) {
@@ -597,89 +635,16 @@ void read_mosaic_contact(const char *mosaic_file, int *tile1, int *tile2, int *i
     iend2[n]   = atoi(pstring[5]);
     jstart2[n] = atoi(pstring[6]);
     jend2[n]   = atoi(pstring[7]);
-    if(istart1[n] == iend1[n] ) {
-      istart1[n] = (istart1[n]+1)/x_refine-1;
-      iend1[n]   = istart1[n];
-      if( jend1[n] > jstart1[n] ) {
-	jstart1[n] -= 1;
-	jend1[n]   -= y_refine;
-      }
-      else if( jend1[n] < jstart1[n] ) {
-	jstart1[n] -= y_refine;
-	jend1[n]   -= 1;
-      }
-      else
-	error_handler("Error from read_mosaic_contact: jstart1 and jend1 should not be equal when istart1=iend1");
-
-      if(jstart1[n]%y_refine || jend1[n]%y_refine)
-	error_handler("Error from read_mosaic_contact: mismatch between y_refine and jstart1/jend1 when istart1=iend1");
-      jstart1[n] /= y_refine;
-      jend1[n]   /= y_refine;
-    }
-    else if( jstart1[n] == jend1[n] ) {
-      jstart1[n] = (jstart1[n]+1)/y_refine-1;
-      jend1[n]   = jstart1[n];      
-      if(iend1[n] > istart1[n] ) {
-	istart1[n] -= 1;
-	iend1[n]   -= x_refine;
-      }
-      else if(istart1[n] > iend1[n] ) {
-	istart1[n] -= x_refine;
-	iend1[n]   -= 1;	
-      }
-      else
-	error_handler("Error from read_mosaic_contact: istart1 and iend1 should not be equal when jstart1=jend1");
-      
-      if(istart1[n]%x_refine || iend1[n]%x_refine)
-	error_handler("Error from read_mosaic_contact: mismatch between x_refine and istart1/iend1 when jstart1=jend1");
-      istart1[n] /= x_refine;
-      iend1[n]   /= x_refine;
-    }
-    else {
-      error_handler("Error from read_mosaic_contact: only line contact is supported now, contact developer");
-    }
-    if(istart2[n] == iend2[n] ) {
-      istart2[n] = (istart2[n]+1)/x_refine-1;
-      iend2[n]   = istart2[n];
-      if( jend2[n] > jstart2[n] ) {
-	jstart2[n] -= 1;
-	jend2[n]   -= y_refine;
-      }
-      else if( jstart2[n] > jend2[n] ) {
-	jstart2[n] -= y_refine;
-	jend2[n]   -= 1;
-      }
-      else
-	error_handler("Error from read_mosaic_contact: jstart2 and jend2 should not be equal when istart2=iend2");
-      
-      if(jstart2[n]%y_refine || jend2[n]%y_refine )
-	error_handler("Error from read_mosaic_contact: mismatch between y_refine and jstart2/jend2 when istart2=iend2");
-
-      jstart2[n] /= y_refine;
-      jend2[n]   /= y_refine;
-    }
-    else if( jstart2[n] == jend2[n] ) {
-      jstart2[n] = (jstart2[n]+1)/y_refine-1;
-      jend2[n]   = jstart2[n];
-      if(iend2[n] > istart2[n] ) {
-	istart2[n] -= 1;
-	iend2[n]   -= x_refine;
-      }
-      else if(istart2[n] > iend2[n] ) {
-	istart2[n] -= x_refine;
-	iend2[n]   -= 1;
-      }
-      else
-	error_handler("Error from read_mosaic_contact: istart2 and iend2 should not be equal when jstart2=jend2");
-      
-      if(istart2[n]%x_refine || iend2[n]%x_refine)
-	error_handler("Error from read_mosaic_contact: mismatch between x_refine and istart2/iend2 when jstart2=jend2");
-      istart2[n] /= x_refine;
-      iend2[n]   /= x_refine;
-    }
-    else {
-      error_handler("Error from read_mosaic_contact: only line contact is supported now, contact developer");
-    }
+    i1_type = transfer_to_model_index(istart1[n], iend1[n], istart1+n, iend1+n, x_refine);
+    j1_type = transfer_to_model_index(jstart1[n], jend1[n], jstart1+n, jend1+n, y_refine);
+    i2_type = transfer_to_model_index(istart2[n], iend2[n], istart2+n, iend2+n, x_refine);
+    j2_type = transfer_to_model_index(jstart2[n], jend2[n], jstart2+n, jend2+n, y_refine);
+    if( i1_type == 0 && j1_type == 0 )
+      error_handler("Error from read_mosaic_contact:istart1==iend1 and jstart1==jend1");
+    if( i2_type == 0 && j2_type == 0 )
+      error_handler("Error from read_mosaic_contact:istart2==iend2 and jstart2==jend2");
+    if( i1_type + j1_type != i2_type + j2_type )
+      error_handler("Error from read_mosaic_contact: It is not a line or overlap contact");
 
   }
 

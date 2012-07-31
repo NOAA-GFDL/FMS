@@ -47,7 +47,8 @@ use mpp_io_mod,    only : mpp_open, MPP_RDONLY, MPP_ASCII, mpp_close,MPP_OVERWR,
 use fms_mod,       only : error_mesg, FATAL, WARNING, stdlog, write_version_number,&
                           mpp_pe, lowercase, stdout, close_file, open_namelist_file, check_nml_error
 use mpp_mod,       only : mpp_npes,  mpp_sync, mpp_root_pe, mpp_send, mpp_recv, mpp_max, &
-                          mpp_get_current_pelist, input_nml_file
+                          mpp_get_current_pelist, input_nml_file, &
+                          COMM_TAG_1, COMM_TAG_2, COMM_TAG_3, COMM_TAG_4
 use mpp_domains_mod,only: domain2d, mpp_get_compute_domain
 use diag_axis_mod, only : diag_axis_init
 use diag_output_mod,only:  write_axis_meta_data, write_field_meta_data,diag_fieldtype,done_meta_data
@@ -755,7 +756,7 @@ subroutine send_station_data_3d(field_id, data, time)
 
   if (time > output_fields(field_id)%next_output .and. freq /= END_OF_RUN) then  ! time to write out     
 ! ALL PEs, including root PE, must send data to root PE        
-     call mpp_send(output_fields(field_id)%num_station,plen=1,to_pe=mpp_root_pe())
+     call mpp_send(output_fields(field_id)%num_station,plen=1,to_pe=mpp_root_pe(),tag=COMM_TAG_1)
      if(output_fields(field_id)%num_station > 0) then
         call mpp_send(output_fields(field_id)%station_id(1),plen=size(output_fields(field_id)%station_id),&
              to_pe=mpp_root_pe())
@@ -770,7 +771,7 @@ subroutine send_station_data_3d(field_id, data, time)
 ! receive local data from all PEs 
      if(mpp_pe() == mpp_root_pe()) then
         do i = 1,size(pelist)           
-           call mpp_recv(local_num_stations,glen=1,from_pe=pelist(i))
+           call mpp_recv(local_num_stations,glen=1,from_pe=pelist(i),tag=COMM_TAG_1)
            if(local_num_stations> 0) then
               allocate(station_ids(local_num_stations))
               allocate(tmp_buffer(local_num_stations,output_fields(field_id)%nlevel))
@@ -898,12 +899,12 @@ subroutine station_data_end(time)
         if(.not. output_fields(field)%register) cycle
         if(time >= output_fields(field)%next_output .or. freq == END_OF_RUN) then
 ! ALL PEs, including root PE, must send data to root PE        
-           call mpp_send(output_fields(field)%num_station,plen=1,to_pe=mpp_root_pe())
+           call mpp_send(output_fields(field)%num_station,plen=1,to_pe=mpp_root_pe(),tag=COMM_TAG_2)
            if(output_fields(field)%num_station > 0) then
               call mpp_send(output_fields(field)%station_id(1),plen=size(output_fields(field)%station_id),&
-                   to_pe=mpp_root_pe())
+                   to_pe=mpp_root_pe(),tag=COMM_TAG_3)
               call mpp_send(output_fields(field)%buffer(1,1),plen=size(output_fields(field)%buffer),&
-                   to_pe=mpp_root_pe())
+                   to_pe=mpp_root_pe(),tag=COMM_TAG_4)
            endif
 ! get max_counter if the field is averaged
            if(output_fields(field)%time_average) then
@@ -913,12 +914,12 @@ subroutine station_data_end(time)
 ! only root PE receives local data from all PEs 
            if(mpp_pe() == mpp_root_pe()) then
               do pe = 1,size(pelist)           
-                 call mpp_recv(local_num_stations,glen=1,from_pe=pelist(pe))
+                 call mpp_recv(local_num_stations,glen=1,from_pe=pelist(pe),tag=COMM_TAG_2)
                  if(local_num_stations> 0) then
                     allocate(station_ids(local_num_stations))
                     allocate(tmp_buffer(local_num_stations,output_fields(field)%nlevel))
-                    call mpp_recv(station_ids(1), glen=size(station_ids), from_pe=pelist(pe))
-                    call mpp_recv(tmp_buffer(1,1),glen=size(tmp_buffer),from_pe=pelist(pe)) 
+                    call mpp_recv(station_ids(1), glen=size(station_ids), from_pe=pelist(pe),tag=COMM_TAG_3)
+                    call mpp_recv(tmp_buffer(1,1),glen=size(tmp_buffer),from_pe=pelist(pe),tag=COMM_TAG_4) 
                     do col = 1,local_num_stations
                        global_field%buffer(station_ids(col),:) = tmp_buffer(col,:)
                     enddo

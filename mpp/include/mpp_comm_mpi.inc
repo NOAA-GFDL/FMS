@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_mpi.inc,v 19.0 2012/01/06 22:00:39 fms Exp $
+! $Id: mpp_comm_mpi.inc,v 19.0.2.1 2012/05/08 17:45:39 Zhi.Liang Exp $
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -111,8 +111,12 @@
 
   allocate( request_send(max_request) )
   allocate( request_recv(max_request) )
+  allocate( size_recv(max_request) )
+  allocate( type_recv(max_request) )
   request_send(:) = MPI_REQUEST_NULL
   request_recv(:) = MPI_REQUEST_NULL
+  size_recv(:)    = 0
+  type_recv(:)    = 0
 
   !if optional argument logunit=stdout, write messages to stdout instead.
   !if specifying non-defaults, you must specify units not yet in use.

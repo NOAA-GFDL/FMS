@@ -168,6 +168,11 @@ module mpp_mod
   use mpp_parameter_mod, only : EVENT_RECV, EVENT_SEND, MPP_READY, MPP_WAIT
   use mpp_parameter_mod, only : mpp_parameter_version=>version, mpp_parameter_tagname=>tagname
   use mpp_parameter_mod, only : DEFAULT_TAG
+  use mpp_parameter_mod, only : COMM_TAG_1,  COMM_TAG_2,  COMM_TAG_3,  COMM_TAG_4
+  use mpp_parameter_mod, only : COMM_TAG_5,  COMM_TAG_6,  COMM_TAG_7,  COMM_TAG_8
+  use mpp_parameter_mod, only : COMM_TAG_9,  COMM_TAG_10, COMM_TAG_11, COMM_TAG_12
+  use mpp_parameter_mod, only : COMM_TAG_13, COMM_TAG_14, COMM_TAG_15, COMM_TAG_16
+  use mpp_parameter_mod, only : COMM_TAG_17, COMM_TAG_18, COMM_TAG_19, COMM_TAG_20
   use mpp_data_mod,      only : stat, mpp_stack, ptr_stack, status, ptr_status, sync, ptr_sync  
   use mpp_data_mod,      only : mpp_from_pe, ptr_from, remote_data_loc, ptr_remote
   use mpp_data_mod,      only : mpp_data_version=>version, mpp_data_tagname=>tagname
@@ -188,7 +193,13 @@ private
   public :: MPP_VERBOSE, MPP_DEBUG, ALL_PES, ANY_PE, NULL_PE, NOTE, WARNING, FATAL
   public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED, CLOCK_COMPONENT, CLOCK_SUBCOMPONENT
   public :: CLOCK_MODULE_DRIVER, CLOCK_MODULE, CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
-  public :: MAXPES, EVENT_RECV, EVENT_SEND
+  public :: MAXPES, EVENT_RECV, EVENT_SEND, INPUT_STR_LENGTH
+  public :: COMM_TAG_1,  COMM_TAG_2,  COMM_TAG_3,  COMM_TAG_4
+  public :: COMM_TAG_5,  COMM_TAG_6,  COMM_TAG_7,  COMM_TAG_8
+  public :: COMM_TAG_9,  COMM_TAG_10, COMM_TAG_11, COMM_TAG_12
+  public :: COMM_TAG_13, COMM_TAG_14, COMM_TAG_15, COMM_TAG_16
+  public :: COMM_TAG_17, COMM_TAG_18, COMM_TAG_19, COMM_TAG_20
+
 
   !--- public data from mpp_data_mod ------------------------------
 !  public :: request
@@ -1115,6 +1126,8 @@ private
   integer              :: cur_recv_request = 0
   integer, allocatable :: request_send(:)
   integer, allocatable :: request_recv(:)
+  integer, allocatable :: size_recv(:)
+  integer, allocatable :: type_recv(:)
 ! if you want to save the non-root PE information uncomment out the following line
 ! and comment out the assigment of etcfile to '/dev/null'
 #ifdef NO_DEV_NULL
@@ -1174,7 +1187,7 @@ private
   character(len=128), public :: version= &
        '$Id mpp.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: siena_201204 $'
+       '$Name: siena_201207 $'
 
   integer, parameter :: MAX_REQUEST_MIN  = 10000
   integer            :: request_multiply = 20

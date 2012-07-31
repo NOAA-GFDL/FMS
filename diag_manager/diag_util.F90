@@ -60,7 +60,7 @@ MODULE diag_util_mod
   CHARACTER(len=128),PRIVATE  :: version =&
        & '$Id: diag_util.F90,v 19.0.2.2 2012/04/03 18:41:44 sdu Exp $'
   CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name: siena_201204 $'
+       & '$Name: siena_201207 $'
 
 CONTAINS
 

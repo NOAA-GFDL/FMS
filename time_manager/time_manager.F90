@@ -179,7 +179,7 @@ end interface
 !======================================================================
 
 character(len=128) :: version='$Id: time_manager.F90,v 19.0 2012/01/06 22:06:12 fms Exp $'
-character(len=128) :: tagname='$Name: siena_201204 $'
+character(len=128) :: tagname='$Name: siena_201207 $'
 logical :: module_is_initialized = .false.
 
 !======================================================================

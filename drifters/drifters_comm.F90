@@ -1,7 +1,7 @@
 #include <fms_platform.h>
 #include "fms_switches.h"
 
-! $Id: drifters_comm.F90,v 19.0 2012/01/06 21:56:31 fms Exp $
+! $Id: drifters_comm.F90,v 19.0.2.2 2012/05/14 19:29:27 Zhi.Liang Exp $
 
 module drifters_comm_mod
 
@@ -15,6 +15,7 @@ module drifters_comm_mod
   use mpp_mod,         only        : NULL_PE, FATAL, NOTE, mpp_error, mpp_pe, mpp_npes
   use mpp_mod,         only        : mpp_root_pe
   use mpp_mod,         only        : mpp_send, mpp_recv, mpp_sync_self
+  use mpp_mod,         only        : COMM_TAG_1, COMM_TAG_2, COMM_TAG_3, COMM_TAG_4
   use mpp_domains_mod, only        : domain2D
   use mpp_domains_mod, only        : mpp_get_neighbor_pe, mpp_define_domains, mpp_get_layout
   use mpp_domains_mod, only        : mpp_get_compute_domain, mpp_get_data_domain
@@ -51,7 +52,6 @@ module drifters_comm_mod
      ! starting/ending pe, set this to a value /= 0 if running concurrently
      integer        :: pe_beg, pe_end
   end type drifters_comm_type
-
 
 contains
 
@@ -446,10 +446,10 @@ contains
 #else
        if(pe==m) then
           do k = self%pe_beg, self%pe_end
-             call mpp_send(table_send(k), plen=1, to_pe=k)
+             call mpp_send(table_send(k), plen=1, to_pe=k, tag=COMM_TAG_1)
           enddo
        endif
-       call mpp_recv(table_recv(m), glen=1, from_pe=m)    
+       call mpp_recv(table_recv(m), glen=1, from_pe=m, tag=COMM_TAG_1)    
 #endif
     enddo
 
@@ -467,10 +467,10 @@ contains
 #else
        if(pe==m) then
           do k = self%pe_beg, self%pe_end
-             call mpp_send(data_send(1,k), plen=nar_est*(1+nd), to_pe=k)
+             call mpp_send(data_send(1,k), plen=nar_est*(1+nd), to_pe=k, tag=COMM_TAG_2)
           enddo
        endif
-       call mpp_recv(data_recv(1,m), glen=nar_est*(1+nd), from_pe=m)           
+       call mpp_recv(data_recv(1,m), glen=nar_est*(1+nd), from_pe=m, tag=COMM_TAG_2)           
 #endif
     enddo
 
@@ -526,7 +526,7 @@ contains
 
 #ifndef _USE_MPI
     ! make sure unbuffered mpp_isend call returned before deallocating
-    call mpp_sync_self
+    call mpp_sync_self()
 #endif
 
     deallocate(ids_to_add)
@@ -631,10 +631,10 @@ contains
          &          root_pe, comm, ier)
     !!if(ier/=0) ermesg = 'drifters_write_restart: ERROR while gathering "npf"'
 #else
-    call mpp_send(npf, plen=1, to_pe=root_pe)
+    call mpp_send(npf, plen=1, to_pe=root_pe, tag=COMM_TAG_3)
     if(pe==root_pe) then
        do i = self%pe_beg, self%pe_end
-          call mpp_recv(nps(i), glen=1, from_pe=i)
+          call mpp_recv(nps(i), glen=1, from_pe=i, tag=COMM_TAG_3)
        enddo
     endif
 #endif
@@ -654,10 +654,10 @@ contains
          &          root_pe, comm, ier)
     !!if(ier/=0) ermesg = 'drifters_write_restart: ERROR while gathering "data"'
 #else
-    if(npf > 0) call mpp_send(data(1,1), plen=npf*(nd+3), to_pe=root_pe)
+    if(npf > 0) call mpp_send(data(1,1), plen=npf*(nd+3), to_pe=root_pe, tag=COMM_TAG_4)
     if(pe==root_pe) then
        do i = self%pe_beg, self%pe_end
-          if(nps(i) > 0) call mpp_recv(recvbuf(1, i), glen=nps(i)*(nd+3), from_pe=i)
+          if(nps(i) > 0) call mpp_recv(recvbuf(1, i), glen=nps(i)*(nd+3), from_pe=i, tag=COMM_TAG_4)
        enddo
     endif
 #endif
@@ -709,7 +709,7 @@ contains
     endif
 
 #ifndef _USE_MPI
-    call mpp_sync_self
+    call mpp_sync_self()
 #endif
     deallocate(nps    , stat=ier)
     deallocate(recvbuf, stat=ier)

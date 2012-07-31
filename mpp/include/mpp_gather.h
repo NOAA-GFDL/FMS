@@ -12,10 +12,10 @@ subroutine MPP_GATHER_1D_(sbuf, rbuf)
    if(pe == root_pe ) then
       rbuf(1:cnt) = sbuf
       do l = 1, nproc-1
-         call mpp_recv(rbuf(l*cnt+1), glen=cnt, from_pe=root_pe+l, block=.FALSE. )
+         call mpp_recv(rbuf(l*cnt+1), glen=cnt, from_pe=root_pe+l, block=.FALSE., tag=COMM_TAG_1 )
       enddo
    else
-      call mpp_send(sbuf(1), plen=cnt, to_pe=root_pe)
+      call mpp_send(sbuf(1), plen=cnt, to_pe=root_pe, tag=COMM_TAG_1)
    endif
 
    call mpp_sync_self(check=EVENT_RECV)
@@ -38,11 +38,11 @@ subroutine MPP_GATHER_1DV_(sbuf, ssize, rbuf, rsize)
       rbuf(1:ssize) = sbuf
       pos = ssize
       do l = 1, nproc-1
-         call mpp_recv(rbuf(pos+1), glen=rsize(l+1), from_pe=root_pe+l, block=.FALSE. )
+         call mpp_recv(rbuf(pos+1), glen=rsize(l+1), from_pe=root_pe+l, block=.FALSE., tag=COMM_TAG_2 )
          pos = pos + rsize(l+1)
       enddo
    else
-      call mpp_send(sbuf(1), plen=ssize, to_pe=root_pe)
+      call mpp_send(sbuf(1), plen=ssize, to_pe=root_pe, tag=COMM_TAG_2)
    endif
 
    call mpp_sync_self(check=EVENT_RECV)
