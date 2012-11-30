@@ -17,7 +17,7 @@ void handle_netcdf_error(const char *msg, int status )
 {
   char errmsg[512];
 
-  sprintf( errmsg, "%s: %s", msg, nc_strerror(status) );
+  sprintf( errmsg, "%s: %s", msg, (char *)nc_strerror(status) );
   error_handler(errmsg);
 
 }; /* handle_netcdf_error */
@@ -83,6 +83,8 @@ int get_dimlen(const char* file, const char *name)
   int ncid, dimid, status, len;
   size_t size;
   char msg[512];
+
+  len = 0;
 #ifdef use_netCDF  
   status = nc_open(file, NC_NOWRITE, &ncid);
   if(status != NC_NOERR) {
@@ -199,42 +201,6 @@ void get_string_data_level(const char *file, const char *name, char *data, const
 
 
 /*******************************************************************************
-   void get_int_data(const char *file, const char *name, int *data)
-   get int data of field with "name" from "file".
-******************************************************************************/
-void get_int_data(const char *file, const char *name, int *data)
-{
-  int ncid, varid, status;
-  char msg[512];
-
-#ifdef use_netCDF    
-  status = nc_open(file, NC_NOWRITE, &ncid);
-  if(status != NC_NOERR) {
-    sprintf(msg, "in opening file %s", file);
-    handle_netcdf_error(msg, status);
-  }
-  status = nc_inq_varid(ncid, name, &varid);
-  if(status != NC_NOERR) {
-    sprintf(msg, "in getting varid of %s from file %s.", name, file);
-    handle_netcdf_error(msg, status);
-  }     
-  status = nc_get_var_int(ncid, varid, data);
-  if(status != NC_NOERR) {
-    sprintf(msg, "in getting data of %s from file %s", name, file);
-    handle_netcdf_error(msg, status);
-  }
-  status = nc_close(ncid);
-  if(status != NC_NOERR) {
-    sprintf(msg, "in closing file %s.", file);
-    handle_netcdf_error(msg, status);
-  }  
-#else
-  error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
-#endif
-  
-}; /* get_int_data */
-
-/*******************************************************************************
    void get_var_data(const char *file, const char *name, double *data)
    get var data of field with "name" from "file".
 ******************************************************************************/
@@ -242,6 +208,7 @@ void get_var_data(const char *file, const char *name, void *data)
 {
 
   int ncid, varid, status;  
+  nc_type vartype;
   char msg[512];
 
 #ifdef use_netCDF    
@@ -256,12 +223,28 @@ void get_var_data(const char *file, const char *name, void *data)
     handle_netcdf_error(msg, status);
   }
 
+  status = nc_inq_vartype(ncid, varid, &vartype);
+  if(status != NC_NOERR) {
+    sprintf(msg, "get_var_data: in getting vartype of of %s in file %s ", name, file);
+    handle_netcdf_error(msg, status);
+  }
+
+  switch (vartype) {
+  case NC_DOUBLE:case NC_FLOAT:
 #ifdef OVERLOAD_R4
   status = nc_get_var_float(ncid, varid, data);
 #else
   status = nc_get_var_double(ncid, varid, data);
 #endif
-
+  break;
+  case NC_INT:
+    status = nc_get_var_int(ncid, varid, data);
+    break;
+  default:
+    sprintf(msg, "get_var_data: field %s in file %s has an invalid type, "
+            "the type should be NC_DOUBLE, NC_FLOAT or NC_INT", name, file);
+    error_handler(msg);
+  }
   if(status != NC_NOERR) {
     sprintf(msg, "in getting data of %s from file %s.", name, file);
     handle_netcdf_error(msg, status);
@@ -276,6 +259,67 @@ void get_var_data(const char *file, const char *name, void *data)
 #endif
   
 }; /* get_var_data */
+
+/*******************************************************************************
+   void get_var_data(const char *file, const char *name, double *data)
+   get var data of field with "name" from "file".
+******************************************************************************/
+void get_var_data_region(const char *file, const char *name, const size_t *start, const size_t *nread, void *data)
+{
+
+  int ncid, varid, status;  
+  nc_type vartype;
+  char msg[512];
+
+#ifdef use_netCDF    
+  status = nc_open(file, NC_NOWRITE, &ncid);
+  if(status != NC_NOERR) {
+    sprintf(msg, "get_var_data_region: in opening file %s", file);
+    handle_netcdf_error(msg, status);
+  }
+  status = nc_inq_varid(ncid, name, &varid);
+  if(status != NC_NOERR) {
+    sprintf(msg, "in getting varid of %s from file %s.", name, file);
+    handle_netcdf_error(msg, status);
+  }
+
+  status = nc_inq_vartype(ncid, varid, &vartype);
+  if(status != NC_NOERR) {
+    sprintf(msg, "get_var_data_region: in getting vartype of of %s in file %s ", name, file);
+    handle_netcdf_error(msg, status);
+  }
+
+  switch (vartype) {
+  case NC_DOUBLE:case NC_FLOAT:
+#ifdef OVERLOAD_R4
+    status = nc_get_vara_float(ncid, varid, start, nread, data);
+#else      
+    status = nc_get_vara_double(ncid, varid, start, nread, data);
+#endif
+    break;
+  case NC_INT:
+    status = nc_get_vara_int(ncid, varid, start, nread, data);
+    break;
+  default:
+    sprintf(msg, "get_var_data_region: field %s in file %s has an invalid type, "
+            "the type should be NC_DOUBLE, NC_FLOAT or NC_INT", name, file);
+    error_handler(msg);
+  }
+
+  if(status != NC_NOERR) {
+    sprintf(msg, "get_var_data_region: in getting data of %s from file %s.", name, file);
+    handle_netcdf_error(msg, status);
+  }
+  status = nc_close(ncid);
+  if(status != NC_NOERR) {
+    sprintf(msg, "get_var_data_region: in closing file %s.", file);
+    handle_netcdf_error(msg, status);
+  }  
+#else
+  error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
+#endif
+  
+}; /* get_var_data_region */
 
 /******************************************************************************
    void get_var_text_att(const char *file, const char *name, const char *attname, char *att)
@@ -364,10 +408,72 @@ void read_mosaic_xgrid_order1(const char *xgrid_file, int *i1, int *j1, int *i2,
 
   tile1_cell       = (int *)malloc(ncells*2*sizeof(int));
   tile2_cell       = (int *)malloc(ncells*2*sizeof(int));
-  get_int_data(xgrid_file, "tile1_cell", tile1_cell);
-  get_int_data(xgrid_file, "tile2_cell", tile2_cell);
+  get_var_data(xgrid_file, "tile1_cell", tile1_cell);
+  get_var_data(xgrid_file, "tile2_cell", tile2_cell);
 
   get_var_data(xgrid_file, "xgrid_area", area);
+
+  garea = 4*M_PI*RADIUS*RADIUS;
+  
+  for(n=0; n<ncells; n++) {
+    i1[n] = tile1_cell[n*2] - 1;
+    j1[n] = tile1_cell[n*2+1] - 1;
+    i2[n] = tile2_cell[n*2] - 1;
+    j2[n] = tile2_cell[n*2+1] - 1;
+    area[n] /= garea; /* rescale the exchange grid area to unit earth area */
+  }
+
+  free(tile1_cell);
+  free(tile2_cell);
+  
+}; /* read_mosaic_xgrid_order1 */
+
+
+#ifndef __AIX
+#ifdef OVERLOAD_R4
+void read_mosaic_xgrid_order1_region_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, float *area, int *isc, int *iec )
+#else
+void read_mosaic_xgrid_order1_region_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, int *isc, int *iec )
+#endif
+{
+  read_mosaic_xgrid_order1_region(xgrid_file, i1, j1, i2, j2, area, isc, iec);
+  
+};
+#endif
+
+#ifdef OVERLOAD_R4
+void read_mosaic_xgrid_order1_region(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, float *area, int *isc, int *iec )
+#else
+void read_mosaic_xgrid_order1_region(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, int *isc, int *iec )
+#endif
+{
+  int    ncells, n, i;
+  int    *tile1_cell, *tile2_cell;
+  size_t start[4], nread[4];
+#ifdef OVERLOAD_R4  
+  float garea;
+#else
+  double garea;
+#endif
+  
+  ncells = *iec-*isc+1;
+
+  tile1_cell       = (int *)malloc(ncells*2*sizeof(int));
+  tile2_cell       = (int *)malloc(ncells*2*sizeof(int));
+  for(i=0; i<4; i++) {
+    start[i] = 0; nread[i] = 1;
+  }
+
+  start[0] = *isc;
+  nread[0] = ncells;
+  nread[1] = 2;
+
+  get_var_data_region(xgrid_file, "tile1_cell", start, nread, tile1_cell);
+  get_var_data_region(xgrid_file, "tile2_cell", start, nread, tile2_cell);
+
+  nread[1] = 1;
+  
+  get_var_data_region(xgrid_file, "xgrid_area", start, nread, area);
 
   garea = 4*M_PI*RADIUS*RADIUS;
   
@@ -417,8 +523,8 @@ void read_mosaic_xgrid_order2(const char *xgrid_file, int *i1, int *j1, int *i2,
   tile1_cell       = (int    *)malloc(ncells*2*sizeof(int   ));
   tile2_cell       = (int    *)malloc(ncells*2*sizeof(int   ));
   tile1_distance   = (double *)malloc(ncells*2*sizeof(double));
-  get_int_data(xgrid_file, "tile1_cell", tile1_cell);
-  get_int_data(xgrid_file, "tile2_cell", tile2_cell);
+  get_var_data(xgrid_file, "tile1_cell", tile1_cell);
+  get_var_data(xgrid_file, "tile2_cell", tile2_cell);
   get_var_data(xgrid_file, "xgrid_area", area);
   get_var_data(xgrid_file, "tile1_distance", tile1_distance);
 

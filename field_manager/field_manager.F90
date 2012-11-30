@@ -182,8 +182,8 @@ implicit none
 private
 
 
-character(len=128) :: version = '$Id: field_manager.F90,v 19.0 2012/01/06 21:57:10 fms Exp $'
-character(len=128) :: tagname = '$Name: siena_201207 $'
+character(len=128) :: version = '$Id: field_manager.F90,v 19.0.6.1 2012/09/13 15:23:54 Seth.Underwood Exp $'
+character(len=128) :: tagname = '$Name: siena_201211 $'
 logical            :: module_is_initialized  = .false.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -463,12 +463,12 @@ integer,           parameter :: MAX_FIELD_METHODS = MAXFIELDMETHODS_
 !        Private type definitions
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-type, private :: field_type !{
+type, private :: field_mgr_type !{
   character(len=fm_field_name_len)                    :: field_type
   character(len=fm_string_len)                    :: field_name
   integer                                             :: model, num_methods
   type(method_type)                                   :: methods(MAX_FIELD_METHODS)
-end type field_type !}
+end type field_mgr_type !}
 
 type, private :: field_names_type !{
   character(len=fm_field_name_len)                    :: fld_type
@@ -503,7 +503,7 @@ end type field_def  !}
 !        Private types
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-type(field_type), private :: fields(MAX_FIELDS)
+type(field_mgr_type), private :: fields(MAX_FIELDS)
 
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+

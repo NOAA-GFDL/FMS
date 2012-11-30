@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_util.inc,v 19.0.4.1 2012/05/11 14:54:02 Zhi.Liang Exp $
+! $Id: mpp_domains_util.inc,v 19.0.4.1.2.1 2012/08/29 13:08:37 z1l Exp $
 
   ! <SUBROUTINE NAME="mpp_domains_set_stack_size">
   !  <OVERVIEW>
@@ -1109,6 +1109,73 @@ end subroutine mpp_get_domain_shift
     endif
 
   end function mpp_get_tile_npes
+
+  !########################################################################
+  ! get the processors list used on current tile.
+  subroutine mpp_get_tile_pelist(domain, pelist)
+    type(domain2d), intent(in)  :: domain
+    integer,      intent(inout) :: pelist(:)
+    integer                     :: npes_on_tile
+    integer                     :: i, tile, pos
+
+    npes_on_tile = mpp_get_tile_npes(domain)
+    if(size(pelist(:)) .NE. npes_on_tile) call mpp_error(FATAL, &
+           "mpp_domains_util.inc(mpp_get_tile_pelist): size(pelist) does not equal npes on current tile")
+    tile = domain%tile_id(1)
+    pos = 0
+    do i = 0, size(domain%list(:))-1
+       if(tile == domain%list(i)%tile_id(1)) then
+          pos = pos+1
+          pelist(pos) = domain%list(i)%pe
+       endif
+    enddo
+
+    return
+
+  end subroutine mpp_get_tile_pelist
+
+!#####################################################################
+subroutine mpp_get_tile_compute_domains( domain, xbegin, xend, ybegin, yend, position )
+ type(domain2D),         intent(in) :: domain
+ integer, intent(out), dimension(:) :: xbegin, xend, ybegin, yend
+ integer, intent(in ), optional     :: position
+
+ integer :: i, ishift, jshift
+ integer :: npes_on_tile, pos, tile
+
+ call mpp_get_domain_shift( domain, ishift, jshift, position )
+
+
+ if( .NOT.module_is_initialized ) &
+      call mpp_error( FATAL, 'mpp_get_compute_domains2D: must first call mpp_domains_init.' )
+
+ npes_on_tile = mpp_get_tile_npes(domain)
+ if(size(xbegin(:)) .NE. npes_on_tile) call mpp_error(FATAL, &
+       "mpp_domains_util.inc(mpp_get_compute_domains2D): size(xbegin) does not equal npes on current tile")
+ if(size(xend(:)) .NE. npes_on_tile) call mpp_error(FATAL, &
+       "mpp_domains_util.inc(mpp_get_compute_domains2D): size(xend) does not equal npes on current tile")
+ if(size(ybegin(:)) .NE. npes_on_tile) call mpp_error(FATAL, &
+       "mpp_domains_util.inc(mpp_get_compute_domains2D): size(ybegin) does not equal npes on current tile")
+ if(size(yend(:)) .NE. npes_on_tile) call mpp_error(FATAL, &
+       "mpp_domains_util.inc(mpp_get_compute_domains2D): size(yend) does not equal npes on current tile")
+
+ tile = domain%tile_id(1)
+ pos = 0
+ do i = 0, size(domain%list(:))-1
+    if(tile == domain%list(i)%tile_id(1)) then
+       pos = pos+1
+       xbegin(pos) = domain%list(i)%x(1)%compute%begin
+       xend  (pos) = domain%list(i)%x(1)%compute%end + ishift
+       ybegin(pos) = domain%list(i)%y(1)%compute%begin
+       yend  (pos) = domain%list(i)%y(1)%compute%end + jshift
+    endif
+ enddo
+
+ return
+
+end subroutine mpp_get_tile_compute_domains
+
+
 
   !#############################################################################
   function mpp_get_num_overlap(domain, action, p, position)

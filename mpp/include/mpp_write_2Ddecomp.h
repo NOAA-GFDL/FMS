@@ -73,11 +73,13 @@
               else
                   allocate( gdata(1,1,1))
               endif
-              if(PRESENT(default_data)) gdata = default_data
               if(global_field_on_root_pe) then
-                 call mpp_global_field( domain, data, gdata, position = position, flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY)
+                 call mpp_global_field( domain, data, gdata, position = position, &
+                                        flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY,   &
+                                        default_data=default_data)
               else
-                 call mpp_global_field( domain, data, gdata, position = position)
+                 call mpp_global_field( domain, data, gdata, position = position, &
+                                        default_data=default_data)
               endif
 !all non-0 PEs have passed their data to PE 0 and may now exit
               if(mpp_file(unit)%write_on_this_pe ) then
@@ -99,11 +101,13 @@
               else
                  allocate( gdata(1,1,1))
               endif
-              if(PRESENT(default_data)) gdata = default_data
               if(global_field_on_root_pe) then
-                 call mpp_global_field( io_domain, data, gdata, position = position, flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY)
+                 call mpp_global_field( io_domain, data, gdata, position = position, &
+                                        flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY,      &
+                                        default_data=default_data)
               else
-                 call mpp_global_field( io_domain, data, gdata, position = position)
+                 call mpp_global_field( io_domain, data, gdata, position = position, &
+                                        default_data=default_data)
               endif
               io_domain => NULL()
               if(mpp_file(unit)%write_on_this_pe ) then
@@ -126,7 +130,7 @@
       return
     end subroutine MPP_WRITE_2DDECOMP_3D_
 
-    subroutine MPP_WRITE_2DDECOMP_4D_( unit, field, domain, data, tstamp, tile_count)
+    subroutine MPP_WRITE_2DDECOMP_4D_( unit, field, domain, data, tstamp, tile_count, default_data)
 !mpp_write writes <data> which has the domain decomposition <domain>
       integer,           intent(in)           :: unit
       type(fieldtype),   intent(in)           :: field
@@ -134,6 +138,7 @@
       MPP_TYPE_,         intent(inout)        :: data(:,:,:,:)
       real,              intent(in), optional :: tstamp
       integer,           intent(in), optional :: tile_count
+      MPP_TYPE_,         intent(in), optional :: default_data
 
 !cdata is used to store compute domain as contiguous data
 !gdata is used to globalize data for multi-PE single-threaded I/O
@@ -184,9 +189,12 @@
                   allocate( gdata(1,1,1,1))
               endif
               if(global_field_on_root_pe) then
-                 call mpp_global_field( domain, data, gdata, position = position, flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY)
+                 call mpp_global_field( domain, data, gdata, position = position, &
+                                        flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY, &
+                                        default_data=default_data)
               else
-                 call mpp_global_field( domain, data, gdata, position = position)
+                 call mpp_global_field( domain, data, gdata, position = position, &
+                                        default_data=default_data)
               endif
 !all non-0 PEs have passed their data to PE 0 and may now exit
               if(mpp_file(unit)%write_on_this_pe ) then
@@ -209,9 +217,12 @@
                  allocate( gdata(1,1,1,1))
               endif
               if(global_field_on_root_pe) then
-                 call mpp_global_field( io_domain, data, gdata, position = position, flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY)
+                 call mpp_global_field( io_domain, data, gdata, position = position, &
+                                        flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY,      &
+                                        default_data=default_data)
               else
-                 call mpp_global_field( io_domain, data, gdata, position = position)
+                 call mpp_global_field( io_domain, data, gdata, position = position, &
+                                        default_data=default_data)
               endif
               io_domain => NULL()
               if(mpp_file(unit)%write_on_this_pe ) then

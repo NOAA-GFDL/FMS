@@ -35,7 +35,7 @@ MODULE diag_axis_mod
   CHARACTER(len=128), PARAMETER :: version =&
        & '$Id: diag_axis.F90,v 19.0.2.2 2012/04/13 16:27:46 sdu Exp $'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: siena_201207 $'
+       & '$Name: siena_201211 $'
 
   ! counter of number of axes defined
   INTEGER, DIMENSION(:), ALLOCATABLE :: num_subaxes

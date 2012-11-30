@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_read.inc,v 19.0.2.1 2012/05/07 02:19:08 z1l Exp $
+! $Id: mpp_io_read.inc,v 19.0.2.1.2.2 2012/10/03 18:38:15 William.Cooke Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -425,11 +425,14 @@
       integer, intent(in) :: unit
       
       integer         :: ncid,ndim,nvar_total,natt,recdim,nv,nvar,len
-      integer :: error, i, j, istat
+      integer :: error, i, j, istat, check_exist
       integer         :: type, nvdims, nvatts, dimid
       integer, allocatable, dimension(:) :: dimids
       character(len=128) :: name, attname, unlimname, attval
       logical :: isdim
+      integer(LONG_KIND) :: checksumf
+      character(len=64)  :: checksum_char
+      integer :: num_checksumf, last, is, k
       
       integer(SHORT_KIND), allocatable :: i2vals(:)
       integer(INT_KIND), allocatable :: ivals(:)
@@ -1033,6 +1036,24 @@
                     case('valid_range')
                        mpp_file(unit)%Var(nv)%min=mpp_file(unit)%Var(nv)%Att(j)%fatt(1)
                        mpp_file(unit)%Var(nv)%max=mpp_file(unit)%Var(nv)%Att(j)%fatt(2)
+                    case('checksum')
+                         checksum_char = mpp_file(unit)%Var(nv)%Att(j)%catt
+!                        Scan  checksum attribute for , delimiter. If found implies multiple time levels.
+                         checksumf = 0
+                         num_checksumf = 1
+                         
+                         last = len_trim(checksum_char)
+                         is = index (trim(checksum_char),",") ! A value of 0 implies only 1 checksum value
+                         do while ((is > 0) .and. (is < (last-15)))
+                           is = is + scan(checksum_char(is:last), "," ) ! move starting pointer after ","
+                           num_checksumf = num_checksumf + 1
+                         enddo
+                         is =1
+                         do k = 1, num_checksumf
+                           read (checksum_char(is:is+15),'(Z16)') checksumf
+                           mpp_file(unit)%Var(nv)%checksum(k) = checksumf
+                           is = is + 17 ! Move index past the ,
+                         enddo
                  end select
               enddo    
            endif 

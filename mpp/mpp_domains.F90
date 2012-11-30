@@ -176,7 +176,7 @@ module mpp_domains_mod
   public :: mpp_get_tile_id, mpp_get_domain_extents, mpp_get_current_ntile, mpp_get_ntile_count
   public :: mpp_get_refine_overlap_number, mpp_get_mosaic_refine_overlap
   public :: mpp_get_tile_list
-  public :: mpp_get_tile_npes, mpp_get_domain_root_pe
+  public :: mpp_get_tile_npes, mpp_get_domain_root_pe, mpp_get_tile_pelist, mpp_get_tile_compute_domains
   public :: mpp_get_num_overlap, mpp_get_overlap
   public :: mpp_get_io_domain, mpp_get_domain_pe, mpp_get_domain_tile_root_pe
   public :: mpp_get_domain_name, mpp_get_io_domain_layout
@@ -2460,9 +2460,9 @@ end interface
 
   !--- version information variables
   character(len=128), public :: version= &
-       '$Id: mpp_domains.F90,v 19.0.2.1.2.3.2.1 2012/05/15 19:13:31 z1l Exp $'
+       '$Id: mpp_domains.F90,v 19.0.2.1.2.3.2.1.2.1 2012/08/29 13:08:34 z1l Exp $'
   character(len=128), public :: tagname= &
-       '$Name: siena_201207 $'
+       '$Name: siena_201211 $'
 
 
 contains

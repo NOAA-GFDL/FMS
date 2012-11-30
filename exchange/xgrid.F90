@@ -387,7 +387,7 @@ end type xmap_type
 
 !-----------------------------------------------------------------------
  character(len=128) :: version = '$Id: xgrid.F90,v 19.0.2.2.4.3 2012/05/16 18:29:28 Zhi.Liang Exp $'
- character(len=128) :: tagname = '$Name: siena_201207 $'
+ character(len=128) :: tagname = '$Name: siena_201211 $'
 
  real, parameter                              :: EPS = 1.0e-10
  real, parameter                              :: LARGE_NUMBER = 1.e20

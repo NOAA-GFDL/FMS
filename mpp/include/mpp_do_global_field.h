@@ -1,4 +1,4 @@
-    subroutine MPP_DO_GLOBAL_FIELD_3D_( domain, local, global, tile, ishift, jshift, flags)
+    subroutine MPP_DO_GLOBAL_FIELD_3D_( domain, local, global, tile, ishift, jshift, flags, default_data)
 !get a global field from a local field
 !local field may be on compute OR data domain
       type(domain2D), intent(in)    :: domain
@@ -6,6 +6,7 @@
       integer, intent(in)           :: tile, ishift, jshift
       MPP_TYPE_, intent(out)        :: global(domain%x(tile)%global%begin:,domain%y(tile)%global%begin:,:)
       integer, intent(in), optional :: flags
+      MPP_TYPE_, intent(in), optional :: default_data
 
       integer :: i, j, k, m, n, nd, nwords, lpos, rpos, ioff, joff, from_pe, root_pe, tile_id
       integer :: ke, isc, iec, jsc, jec, is, ie, js, je, nword_me
@@ -95,7 +96,11 @@
       m = 0
       if(global_on_this_pe) then
          !z1l: initialize global = 0 to support mask domain
-         global = 0
+         if(PRESENT(default_data)) then
+            global = default_data
+         else
+            global = 0
+         endif
 
          do k = 1, ke
             do j = jsc, jec

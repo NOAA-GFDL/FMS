@@ -356,7 +356,7 @@ private
   public :: mpp_get_field_name, mpp_get_att_value, mpp_get_att_length
   public :: mpp_get_att_type, mpp_get_att_name, mpp_get_att_real, mpp_get_att_char
   public :: mpp_get_att_real_scalar
-  public :: mpp_get_file_name, mpp_file_is_opened 
+  public :: mpp_get_file_name, mpp_file_is_opened, mpp_attribute_exist 
   public :: mpp_io_clock_on, mpp_get_time_axis, mpp_get_default_calendar
 
   !--- public interface from mpp_io_misc.h ----------------------
@@ -413,6 +413,7 @@ type :: atttype
      character(len=128)      :: standard_name   ! CF standard name
      real                    :: min, max, missing, fill, scale, add
      integer                 :: pack
+     integer(LONG_KIND), dimension(3) :: checksum
      type(axistype), pointer :: axes(:) =>NULL() !axes associated with field size, time_axis_index redundantly 
                                         !hold info already contained in axes. it's clunky and inelegant, 
                                         !but required so that axes can be shared among multiple files
@@ -820,9 +821,9 @@ type :: atttype
   integer :: pack_size ! = 1 when compiling with -r8 and = 2 when compiling with -r4.
 
   character(len=128) :: version= &
-       '$Id: mpp_io.F90,v 19.0.2.1 2012/05/09 18:28:56 Zhi.Liang Exp $'
+       '$Id: mpp_io.F90,v 19.0.2.1.2.2 2012/10/03 18:38:14 William.Cooke Exp $'
   character(len=128) :: tagname= &
-       '$Name: siena_201207 $'
+       '$Name: siena_201211 $'
 
 contains
 

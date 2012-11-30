@@ -217,8 +217,8 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
 ! </INTERFACE>
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: horiz_interp.F90,v 19.0 2012/01/06 21:57:50 fms Exp $'
- character(len=128) :: tagname = '$Name: siena_201207 $'
+ character(len=128) :: version = '$Id: horiz_interp.F90,v 19.0.4.1 2012/08/23 18:33:29 Zhi.Liang Exp $'
+ character(len=128) :: tagname = '$Name: siena_201211 $'
  logical            :: module_is_initialized = .FALSE.
 !-----------------------------------------------------------------------
 
@@ -425,7 +425,7 @@ contains
    select case (trim(method))
    case ("conservative")
       Interp%interp_method = CONSERVE
-      !--- check to see if the source grid is regular lat-lon grid or not.
+      !--- check to see if the destination grid is regular lat-lon grid or not.
       if(PRESENT(is_latlon_out)) then
          dst_is_latlon = is_latlon_out
       else
@@ -444,6 +444,9 @@ contains
          call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
               verbose=verbose, mask_in=mask_in, mask_out=mask_out )
       end if
+   case ("conserve_great_circle")
+      call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
+              verbose=verbose, mask_in=mask_in, mask_out=mask_out, clip_method="conserve_great_circle" )
    case ("bilinear")
       Interp%interp_method = BILINEAR
       center = .false.
@@ -498,7 +501,7 @@ contains
            num_nbrs, max_dist, src_modulo)
       deallocate(lon_src, lat_src)
    case default
-      call mpp_error(FATAL,'interp_method should be conservative, bilinear, bicubic, spherical')
+      call mpp_error(FATAL,'interp_method should be conservative, bilinear, bicubic, spherical, conserve_great_circle')
    end select
 
    !-----------------------------------------------------------------------

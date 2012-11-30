@@ -36,8 +36,8 @@ public :: calc_mosaic_grid_area
 
 logical :: module_is_initialized = .true.
 ! version information varaible
- character(len=128) :: version = '$Id: mosaic.F90,v 15.0 2007/08/14 04:14:22 fms Exp $'
- character(len=128) :: tagname = '$Name: siena_201207 $'
+ character(len=128) :: version = '$Id: mosaic.F90,v 15.0.28.1 2012/03/14 18:54:19 Zhi.Liang Exp $'
+ character(len=128) :: tagname = '$Name: siena_201211 $'
 
 contains
 
@@ -124,11 +124,12 @@ end subroutine mosaic_init
 !   <INOUT NAME="area" TYPE="real, dimension(:)">
 !     area of the exchange grid. The area is scaled to represent unit earth area.
 !   </INOUT>
-  subroutine get_mosaic_xgrid(xgrid_file, i1, j1, i2, j2, area, di, dj)
+  subroutine get_mosaic_xgrid(xgrid_file, i1, j1, i2, j2, area, di, dj, istart, iend)
     character(len=*), intent(in) :: xgrid_file
     integer,       intent(inout) :: i1(:), j1(:), i2(:), j2(:)
     real,          intent(inout) :: area(:)
     real, optional,intent(inout) :: di(:), dj(:)
+    integer, optional,intent(in) :: istart, iend 
 
     character(len=len_trim(xgrid_file)+1) :: xfile
     integer :: n, strlen, nxgrid
@@ -143,10 +144,17 @@ end subroutine mosaic_init
     nxgrid = size(i1(:))
 
     if(PRESENT(di)) then
+       if( PRESENT(istart) .OR. PRESENT(iend) ) &
+          call mpp_error(FATAL, "mosaic_mod: istart and iend should not present when di is present, contact developer")
        if(.NOT. PRESENT(dj) ) call mpp_error(FATAL, "mosaic_mod: when di is present, dj should be present")
        call read_mosaic_xgrid_order2(xfile, i1, j1, i2, j2, area, di, dj)
     else
-       call read_mosaic_xgrid_order1(xfile, i1, j1, i2, j2, area)
+       if( PRESENT(istart) .AND. PRESENT(iend) ) then
+          if( iend-istart+1 .NE. nxgrid) call mpp_error(FATAL, "mosaic_mod: iend-istart+1 must equal size(i1)")
+          call read_mosaic_xgrid_order1_region(xfile, i1, j1, i2, j2, area, istart-1, iend-1) ! convert to c-index
+       else
+          call read_mosaic_xgrid_order1(xfile, i1, j1, i2, j2, area)
+       endif
     end if
 
     ! in C, programming, the starting index is 0, so need add 1 to the index.

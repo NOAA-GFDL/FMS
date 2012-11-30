@@ -208,9 +208,9 @@ private
   public :: stdin, stdout, stderr, stdlog, lowercase, uppercase, mpp_error, mpp_error_state
   public :: mpp_set_warn_level, mpp_sync, mpp_sync_self, mpp_set_stack_size, mpp_pe
   public :: mpp_node, mpp_npes, mpp_root_pe, mpp_set_root_pe, mpp_declare_pelist
-  public :: mpp_get_current_pelist, mpp_set_current_pelist, mpp_clock_begin, mpp_clock_end
+  public :: mpp_get_current_pelist, mpp_set_current_pelist, mpp_get_current_pelist_name
   public :: mpp_clock_id, mpp_clock_set_grain, mpp_record_timing_data, get_unit
-  public :: read_ascii_file
+  public :: read_ascii_file, read_input_nml, mpp_clock_begin, mpp_clock_end
 
   !--- public interface from mpp_comm.h ------------------------------
   public :: mpp_chksum, mpp_max, mpp_min, mpp_sum, mpp_transmit, mpp_send, mpp_recv
@@ -1176,7 +1176,7 @@ private
   integer :: get_len_nocomm = 0 ! needed for mpp_transmit_nocomm.h
 
 !***********************************************************************
-!            variables needed for include/read_input_nml.inc
+!  variables needed for subroutine read_input_nml (include/mpp_util.inc)
 !
 ! parameter defining length of character variables 
   integer, parameter :: INPUT_STR_LENGTH = 256
@@ -1187,7 +1187,7 @@ private
   character(len=128), public :: version= &
        '$Id mpp.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: siena_201207 $'
+       '$Name: siena_201211 $'
 
   integer, parameter :: MAX_REQUEST_MIN  = 10000
   integer            :: request_multiply = 20

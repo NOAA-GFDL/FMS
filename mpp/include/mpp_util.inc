@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util.inc,v 19.0.2.1 2012/04/13 16:25:53 sdu Exp $
+! $Id: mpp_util.inc,v 19.0.2.1.2.7 2012/07/19 19:23:25 Rusty.Benson Exp $
 
 
 #ifdef use_libSMA
@@ -554,6 +554,14 @@ end function rarray_to_char
     !      npes = mpp_npes()
     return
   end subroutine mpp_set_current_pelist
+
+  !#####################################################################
+  function mpp_get_current_pelist_name()
+   ! Simply return the current pelist name
+   character(len=len(peset(current_peset_num)%name)) :: mpp_get_current_pelist_name
+
+   mpp_get_current_pelist_name = peset(current_peset_num)%name
+  end function mpp_get_current_pelist_name
 
   !#####################################################################
     !this is created for use by mpp_define_domains within a pelist
@@ -1258,23 +1266,39 @@ end function rarray_to_char
 ! read(input_nml_file, nml=<name_nml>, iostat=status)
 !
 ! 
-  subroutine read_input_nml
+  subroutine read_input_nml()
 
 ! version and tagging information
-    character(len=128) :: version = '$Id: mpp_util.inc,v 19.0.2.1 2012/04/13 16:25:53 sdu Exp $'
-    character(len=128) :: tagname = '$Name: siena_201207 $' 
+    character(len=128) :: version = '$Id: mpp_util.inc,v 19.0.2.1.2.7 2012/07/19 19:23:25 Rusty.Benson Exp $'
+    character(len=128) :: tagname = '$Name: siena_201211 $' 
 
-!private variables
+! private variables
     integer :: log_unit
     integer :: num_lines, i
+    logical :: file_exist
+    character(len=32) :: pelist_name
+    character(len=128) :: filename
 
-    call read_ascii_file('input.nml', INPUT_STR_LENGTH, input_nml_file, num_lines=num_lines)
+! check the status of input_nml_file
+    if ( allocated(input_nml_file) ) then
+      deallocate(input_nml_file)
+    endif
+
+! the following code is necessary for using alternate namelist files (nests, stretched grids, etc)
+    pelist_name = mpp_get_current_pelist_name()
+    filename='input_'//trim(pelist_name)//'.nml'
+    inquire(FILE=filename, EXIST=file_exist)
+    if (.not. file_exist ) then
+       filename='input.nml'
+    endif
+    call read_ascii_file(filename, INPUT_STR_LENGTH, input_nml_file, num_lines=num_lines)
 
 ! write info logfile
     if (pe == root_pe) then
        log_unit = stdlog()
        write(log_unit,'(a)')  '========================================================================'
        write(log_unit,'(a)')  'READ_INPUT_NML: '//trim(version)//':'//trim(tagname)
+       write(log_unit,'(a)')  'READ_INPUT_NML: '//trim(filename)//' '
        do i = 1, num_lines
           write(log_unit,*) trim(input_nml_file(i))
        enddo
@@ -1311,8 +1335,8 @@ end function rarray_to_char
     integer, intent(in), optional, dimension(:) :: PELIST
 
     ! version and tagging information
-    character(len=*), parameter :: VERSION = '$Id: mpp_util.inc,v 19.0.2.1 2012/04/13 16:25:53 sdu Exp $'
-    character(len=*), parameter :: TAGNAME = '$Name: siena_201207 $' 
+    character(len=*), parameter :: VERSION = '$Id: mpp_util.inc,v 19.0.2.1.2.7 2012/07/19 19:23:25 Rusty.Benson Exp $'
+    character(len=*), parameter :: TAGNAME = '$Name: siena_201211 $' 
 
     character(len=LENGTH) :: str_tmp
     character(len=5) :: text

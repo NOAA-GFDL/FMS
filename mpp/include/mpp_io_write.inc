@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_write.inc,v 19.0 2012/01/06 22:03:58 fms Exp $
+! $Id: mpp_io_write.inc,v 19.0.2.3 2012/10/16 16:39:09 William.Cooke Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                            !
@@ -374,7 +374,7 @@
     end subroutine mpp_write_meta_axis
       
     subroutine mpp_write_meta_field( unit, field, axes, name, units, longname,&
-         min, max, missing, fill, scale, add, pack, time_method,standard_name)
+         min, max, missing, fill, scale, add, pack, time_method,standard_name, checksum)
 !define field: must have already called mpp_write_meta(axis) for each axis
       integer, intent(in) :: unit
       type(fieldtype), intent(inout) :: field
@@ -384,10 +384,12 @@
       integer, intent(in), optional :: pack
       character(len=*), intent(in), optional :: time_method
       character(len=*), intent(in), optional :: standard_name
+      integer(LONG_KIND), dimension(:), intent(in), optional :: checksum
 !this array is required because of f77 binding on netCDF interface
       integer, allocatable :: axis_id(:)
       real :: a, b
       integer :: i, istat, ishift, jshift
+      character(len=64) :: checksum_char
 
 !      call mpp_clock_begin(mpp_write_clock)
 
@@ -448,13 +450,15 @@
          end if
       end do 
 !attributes
-      if( PRESENT(min) )field%min = min
-      if( PRESENT(max) )field%max = max
-      if( PRESENT(scale) )field%scale = scale
-      if( PRESENT(add) )field%add = add
+      if( PRESENT(min) )          field%min           = min
+      if( PRESENT(max) )          field%max           = max
+      if( PRESENT(scale) )        field%scale         = scale
+      if( PRESENT(add) )          field%add           = add
       if( PRESENT(standard_name)) field%standard_name = standard_name
-      if( PRESENT(missing) ) field%missing = missing
-      if( PRESENT(fill) ) field%fill = fill
+      if( PRESENT(missing) )      field%missing       = missing
+      if( PRESENT(fill) )         field%fill          = fill
+      field%checksum      = 0
+      if( PRESENT(checksum) )     field%checksum(1:size(checksum)) = checksum(:)
 
       ! Issue warning if fill and missing are different
       if ( (present(fill).and.present(missing)) .and. (field%missing .ne. field%fill) ) then
@@ -554,6 +558,14 @@
           call mpp_write_meta( unit, field%id, 'packing', ival=field%pack )
           if( PRESENT(scale) )call mpp_write_meta( unit, field%id, 'scale_factor',  rval=field%scale )
           if( PRESENT(add)   )call mpp_write_meta( unit, field%id, 'add_offset',    rval=field%add   )
+      end if
+
+      if( present(checksum) )then
+          write (checksum_char,'(Z16)') field%checksum(1)
+          do i = 2,size(checksum)
+            write (checksum_char,'(a,Z16)') trim(checksum_char)//",",checksum(i)
+          enddo
+          call mpp_write_meta( unit, field%id, 'checksum', cval=checksum_char )
       end if
 
       if ( PRESENT(time_method) ) then

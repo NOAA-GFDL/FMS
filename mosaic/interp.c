@@ -1,3 +1,8 @@
+/*
+  Copyright 2011 NOAA Geophysical Fluid Dynamics Lab, Princeton, NJ
+  This program is distributed under the terms of the GNU General Public
+  License. See the file COPYING contained in this directory
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -254,7 +259,13 @@ void conserve_interp(int nx_src, int ny_src, int nx_dst, int ny_dst, const doubl
   dst_area   = (double *)malloc(nx_dst*ny_dst*sizeof(double));
   nxgrid = create_xgrid_2dx2d_order1(&nx_src, &ny_src, &nx_dst, &ny_dst, x_src, y_src, x_dst, y_dst, mask_src,
 	                       xgrid_i1, xgrid_j1, xgrid_i2, xgrid_j2, xgrid_area );
-  get_grid_area(&nx_dst, &ny_dst, x_dst, y_dst, dst_area);
+  /* The source grid may not cover the destination grid
+     so need to sum of exchange grid area to get dst_area
+     get_grid_area(&nx_dst, &ny_dst, x_dst, y_dst, dst_area);
+  */
+  for(n=0; n<nx_dst*ny_dst; n++) dst_area[n] = 0;
+  for(n=0; n<nxgrid; n++) dst_area[xgrid_j2[n]*nx_dst+xgrid_i2[n]] += xgrid_area[n];
+  
   area_frac = (double *)malloc(nxgrid*sizeof(double));
   for(n=0; n<nxgrid; n++) area_frac[n] = xgrid_area[n]/dst_area[xgrid_j2[n]*nx_dst+xgrid_i2[n]];
   
@@ -274,3 +285,42 @@ void conserve_interp(int nx_src, int ny_src, int nx_dst, int ny_dst, const doubl
   free(area_frac);
   
 }; /* conserve_interp */
+
+
+void linear_vertical_interp(int nx, int ny, int nk1, int nk2, const double *grid1, const double *grid2,
+			    double *data1, double *data2) 
+{
+  int n1, n2, i, n, k, l;
+  double w;
+
+  for(k=1; k<nk1; k++) {
+    if(grid1[k] <= grid1[k-1]) error_handler("interp.c: grid1 not monotonic");
+  }
+  for(k=1; k<nk2; k++) {
+    if(grid2[k] <= grid2[k-1]) error_handler("interp.c: grid2 not monotonic");
+  }
+  
+  if (grid1[0] > grid2[0] ) error_handler("interp.c: grid2 lies outside grid1");
+  if (grid1[nk1-1] < grid2[nk2-1] ) error_handler("interp.c: grid2 lies outside grid1");
+
+  for(k=0; k<nk2; k++) {    
+    n = nearest_index(grid2[k],grid1,nk1);
+    if (grid1[n] < grid2[k]) {
+      w = (grid2[k]-grid1[n])/(grid1[n+1]-grid1[n]);
+      for(l=0; l<nx*ny; l++) {
+	data2[k*nx*ny+l] = (1.-w)*data1[n*nx*ny+l] + w*data1[(n+1)*nx*ny+l];
+      }
+    }
+    else {
+      if(n==0)
+	for(l=0;l<nx*ny;l++) data2[k*nx*ny+l] = data1[n*nx*ny+l];
+      else {
+	w = (grid2[k]-grid1[n-1])/(grid1[n]-grid1[n-1]);
+	for(l=0; l<nx*ny; l++) {
+	  data2[k*nx*ny+l] = (1.-w)*data1[(n-1)*nx*ny+l] + w*data1[n*nx*ny+l];
+	}
+      }
+    }
+  }
+
+}

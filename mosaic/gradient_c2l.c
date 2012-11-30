@@ -170,6 +170,9 @@ void a2b_ord2(int nx, int ny, const double *qin, const double *edge_w, const dou
      for(i=istart; i<iend; i++) qout[ny*nxp+i] = edge_n[i]*q1[i] + (1 - edge_n[i])*q1[i+1];  
   }
   
+  free(q1);
+  free(q2);
+
 }; /* a2b_ord2 */
 
 

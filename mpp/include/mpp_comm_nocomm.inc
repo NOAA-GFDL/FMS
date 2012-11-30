@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_nocomm.inc,v 19.0 2012/01/06 22:00:41 fms Exp $
+! $Id: mpp_comm_nocomm.inc,v 19.0.4.1 2012/07/31 19:16:31 Zhi.Liang Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -20,6 +20,7 @@ subroutine mpp_init( flags,localcomm )
 
   module_is_initialized = .TRUE.
 
+  allocate(peset(0:0))
   !PEsets: make defaults illegal
   peset(:)%count = -1
   peset(:)%id = -1

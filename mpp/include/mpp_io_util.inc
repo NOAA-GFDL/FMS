@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_util.inc,v 19.0.2.1 2012/05/11 14:54:02 Zhi.Liang Exp $
+! $Id: mpp_io_util.inc,v 19.0.2.1.4.3 2012/10/03 18:38:15 William.Cooke Exp $
 
 
   !#####################################################################
@@ -75,22 +75,24 @@
    end subroutine mpp_get_global_atts
 
   !#####################################################################
-   subroutine mpp_get_field_atts(field, name, units, longname, min, max, missing, ndim, siz, axes, atts, valid, scale, add)
+   subroutine mpp_get_field_atts(field, name, units, longname, min, max, missing, ndim, siz, axes, atts, &
+                                 valid, scale, add, checksum)
 
-     type(fieldtype), intent(in) :: field
-     character(len=*), intent(out) , optional :: name, units
-     character(len=*), intent(out), optional :: longname
-     real,intent(out), optional :: min,max,missing
-     integer, intent(out), optional :: ndim
-     integer, intent(out), dimension(:), optional :: siz
-     type(validtype), intent(out), optional :: valid
-     real,            intent(out), optional :: scale
-     real,            intent(out), optional :: add
+     type(fieldtype),    intent(in)                            :: field
+     character(len=*),   intent(out),                 optional :: name, units
+     character(len=*),   intent(out),                 optional :: longname
+     real,               intent(out),                 optional :: min,max,missing
+     integer,            intent(out),                 optional :: ndim
+     integer,            intent(out),   dimension(:), optional :: siz
+     type(validtype),    intent(out),                 optional :: valid
+     real,               intent(out),                 optional :: scale
+     real,               intent(out),                 optional :: add
+     integer(LONG_KIND), intent(out),   dimension(:), optional :: checksum
 
-     type(atttype), intent(inout), optional, dimension(:) :: atts
-     type(axistype), intent(inout), optional, dimension(:) :: axes
+     type(atttype),      intent(inout), dimension(:), optional :: atts
+     type(axistype),     intent(inout), dimension(:), optional :: axes
 
-     integer :: n,m
+     integer :: n,m, check_exist
 
      if (PRESENT(name)) name = field%name
      if (PRESENT(units)) units = field%units
@@ -134,8 +136,13 @@
        call mpp_get_valid(field,valid)
      endif
 
-     if(PRESENT(scale)) scale = field%scale
-     if(present(add))   add   = field%add
+     if(PRESENT(scale))    scale    = field%scale
+     if(present(add))      add      = field%add
+     if(present(checksum)) then
+       checksum = 0
+       check_exist = mpp_find_att(field%Att(:),"checksum")
+       if ( check_exist >= 0 ) checksum = field%checksum
+     endif
 
      return
    end subroutine mpp_get_field_atts
@@ -509,6 +516,7 @@
 
      v%is_range = .true.
      v%min = -HUGE(v%min); v%max = HUGE(v%max)
+     if (f%natt == 0) return
      ! find indices of relevant attributes
      irange   = mpp_find_att(f%att,'valid_range')
      imin     = mpp_find_att(f%att,'valid_min')
@@ -522,7 +530,7 @@
      scale_T = 0
      iscale   = mpp_find_att(f%att,'scale_factor')
      if(iscale>0) scale_T = f%att(iscale)%type
-     iscale = mpp_find_att(f%att,'add_offest')
+     iscale = mpp_find_att(f%att,'add_offset')
      if(iscale>0) scale_T = max(scale_T,f%att(iscale)%type)
 
 
@@ -780,3 +788,14 @@
       return
 
    end function mpp_io_clock_on   
+
+
+   function mpp_attribute_exist(field,name)
+      integer                      :: mpp_attribute_exist
+      type(fieldtype),  intent(in) :: field ! The field that you are searching for the attribute.
+      character(len=*), intent(in) :: name ! name of the attributes
+
+      mpp_attribute_exist = mpp_find_att(field%Att(:),name)
+      
+   end function mpp_attribute_exist
+   

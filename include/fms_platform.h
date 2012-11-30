@@ -97,7 +97,7 @@
 #define NF_GET_ATT_REAL nf_get_att_double
 #endif
 
-#ifdef __CRAYXT_COMPUTE_LINUX_TARGET
+#if defined __CRAYXT_COMPUTE_LINUX_TARGET || defined __GFORTRAN__
 !Cray XT compilers do not support real*16 computation
 !also known as 128-bit or quad precision
 #define NO_QUAD_PRECISION

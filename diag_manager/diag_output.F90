@@ -46,9 +46,9 @@ MODULE diag_output_mod
   LOGICAL :: module_is_initialized = .FALSE.
 
   CHARACTER(len=128), PRIVATE :: version= &
-       '$Id: diag_output.F90,v 19.0 2012/01/06 21:55:50 fms Exp $'
+       '$Id: diag_output.F90,v 19.0.10.3 2012/10/19 19:01:31 Zhi.Liang Exp $'
   CHARACTER(len=128), PRIVATE :: tagname= &
-       '$Name: siena_201207 $'
+       '$Name: siena_201211 $'
 
 CONTAINS
 
@@ -565,7 +565,13 @@ CONTAINS
 
     !---- output data ----
     IF ( Field%Domain .NE. null_domain2d ) THEN
-       CALL mpp_write(file_unit, Field%Field, Field%Domain, DATA, time, tile_count=Field%tile_count)
+       IF( Field%miss_present ) THEN
+          CALL mpp_write(file_unit, Field%Field, Field%Domain, DATA, time, &
+                      tile_count=Field%tile_count, default_data=Field%miss_pack)
+       ELSE
+          CALL mpp_write(file_unit, Field%Field, Field%Domain, DATA, time, &
+                      tile_count=Field%tile_count, default_data=CMOR_MISSING_VALUE)
+       END IF
     ELSE
        CALL mpp_write(file_unit, Field%Field, DATA, time)
     END IF
