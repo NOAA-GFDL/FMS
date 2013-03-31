@@ -96,6 +96,8 @@ public  tracer_manager_init, &
         set_tracer_profile,  &
         register_tracers,    &
         get_number_tracers,  &
+        adjust_mass,         &
+        adjust_positive_def, &
         NO_TRACER,           &
         MAX_TRACER_FIELDS
 
@@ -106,7 +108,7 @@ end interface
 !-----------------------------------------------------------------------
 
 integer            :: num_tracer_fields = 0
-integer, parameter :: MAX_TRACER_FIELDS = 120
+integer, parameter :: MAX_TRACER_FIELDS = 150
 integer, parameter :: MAX_TRACER_METHOD = 20
 integer, parameter :: NO_TRACER         = 1-HUGE(1)
 integer, parameter :: NOTRACER          = -HUGE(1)
@@ -120,6 +122,10 @@ type, private ::  tracer_type
    integer                  :: num_methods, model, instances
    logical                  :: is_prognostic, instances_set
    logical                  :: needs_init
+!    Does tracer need mass or positive definite adjustment?
+!    (true by default for both)
+   logical                  :: needs_mass_adjust
+   logical                  :: needs_positive_adjust
 end type tracer_type
 
 type, private ::  tracer_name_type
@@ -136,8 +142,8 @@ end type inst_type
 type(tracer_type), save  :: tracers(MAX_TRACER_FIELDS)
 type(inst_type)  , save  :: instantiations(MAX_TRACER_FIELDS)
 
-character(len=128) :: version = '$Id: tracer_manager.F90,v 16.0 2008/07/30 22:48:11 fms Exp $'
-character(len=128) :: tagname = '$Name: siena_201211 $'
+character(len=128) :: version = '$Id: tracer_manager.F90,v 16.0.12.1 2013/02/26 19:24:51 William.Cooke Exp $'
+character(len=128) :: tagname = '$Name: siena_201303 $'
 logical            :: module_is_initialized = .false.
 
 logical            :: verbose_local
@@ -244,16 +250,28 @@ do n=1,nfields
    if (mod == model .and. type == 'tracer') then
          num_tracer_fields = num_tracer_fields + 1
          total_tracers(model) = total_tracers(model) + 1
-         TRACER_ARRAY(model,total_tracers(model))  = num_tracer_fields
 !   <ERROR MSG="MAX_TRACER_FIELDS exceeded" STATUS="FATAL">
 !     The maximum number of tracer fields has been exceeded.
 !   </ERROR>
          if(num_tracer_fields > MAX_TRACER_FIELDS) call mpp_error(FATAL,'tracer_manager_init: MAX_TRACER_FIELDS exceeded')
+         TRACER_ARRAY(model,total_tracers(model))  = num_tracer_fields
          tracers(num_tracer_fields)%model          = model
          tracers(num_tracer_fields)%tracer_name    = name
          tracers(num_tracer_fields)%tracer_units   = 'none'
          tracers(num_tracer_fields)%tracer_longname = tracers(num_tracer_fields)%tracer_name
          tracers(num_tracer_fields)%instances_set   = .FALSE.
+!        By default, tracers need mass and positive definite adjustments.
+!        We hardwire exceptions for compatibility with existing field_tables
+!        This should ideally be cleaned up.
+         tracers(num_tracer_fields)%needs_mass_adjust = .true.
+         tracers(num_tracer_fields)%needs_positive_adjust = .true.
+         if (name == 'cld_amt') then
+            tracers(num_tracer_fields)%needs_mass_adjust = .false.
+         endif
+         if (name == 'cld_amt' .or. name == 'liq_wat' .or. name == 'ice_wat') then
+            tracers(num_tracer_fields)%needs_positive_adjust = .false.
+         endif
+
          num_tracer_methods     = 0
          methods = default_method ! initialize methods array
          call get_field_methods(n,methods)
@@ -268,6 +286,14 @@ do n=1,nfields
                siz_inst = parse(methods(j)%method_name,"",instances)
                tracers(num_tracer_fields)%instances = instances
                tracers(num_tracer_fields)%instances_set   = .TRUE.
+            case ('adjust_mass')
+               if (methods(j)%method_name == "false") then
+                 tracers(num_tracer_fields)%needs_mass_adjust = .false.
+               endif
+            case ('adjust_positive_def')
+               if (methods(j)%method_name == "false") then
+                 tracers(num_tracer_fields)%needs_positive_adjust = .false.
+               endif
             case default
                num_tracer_methods = num_tracer_methods+1
 !               tracers(num_tracer_fields)%methods(num_tracer_methods) = methods(j)
@@ -1044,6 +1070,57 @@ check_if_prognostic = tracers(TRACER_ARRAY(model,n))%is_prognostic
 
 end function check_if_prognostic
 !</FUNCTION>
+
+! Does tracer need mass or positive definite adjustments?
+!#######################################################################
+! Function to check whether tracer should have its mass adjusted
+function adjust_mass(model, n, err_msg)
+
+integer, intent(in) :: model, n
+logical             :: adjust_mass
+character(len=*), intent(out), optional :: err_msg
+character(len=128) :: err_msg_local
+character(len=11) :: chn
+
+if(.not.module_is_initialized) call tracer_manager_init
+
+if (n < 1 .or. n > total_tracers(model)) then
+  write(chn, '(i11)') n
+  err_msg_local = ' Invalid tracer index.  Model name = '//trim(MODEL_NAMES(model))//',  Index='//trim(chn)
+  adjust_mass = .true.
+  if(error_handler('adjust_mass', err_msg_local, err_msg)) return
+endif
+
+!Convert local model index to tracer_manager index
+
+adjust_mass = tracers(TRACER_ARRAY(model,n))%needs_mass_adjust
+
+end function adjust_mass
+
+! Function to check whether tracer should be adjusted to remain positive definite
+function adjust_positive_def(model, n, err_msg)
+
+integer, intent(in) :: model, n
+logical             :: adjust_positive_def
+character(len=*), intent(out), optional :: err_msg
+character(len=128) :: err_msg_local
+character(len=11) :: chn
+
+if(.not.module_is_initialized) call tracer_manager_init
+
+if (n < 1 .or. n > total_tracers(model)) then
+  write(chn, '(i11)') n
+  err_msg_local = ' Invalid tracer index.  Model name = '//trim(MODEL_NAMES(model))//',  Index='//trim(chn)
+  adjust_positive_def = .true.
+  if(error_handler('adjust_positive_def', err_msg_local, err_msg)) return
+endif
+
+!Convert local model index to tracer_manager index
+
+adjust_positive_def = tracers(TRACER_ARRAY(model,n))%needs_positive_adjust
+
+end function adjust_positive_def
+
 !
 !#######################################################################
 !

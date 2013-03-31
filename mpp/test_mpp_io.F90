@@ -38,7 +38,7 @@ program test
   namelist / test_mpp_io_nml / nx, ny, nz, nt, halo, stackmax, stackmaxd, debug, file, iospec, &
                                ntiles_x, ntiles_y, layout, io_layout
 
-  integer        :: pe, npes
+  integer        :: pe, npes, io_status
   type(domain2D) :: domain
 
   integer            :: tks_per_sec
@@ -60,16 +60,24 @@ program test
   pe = mpp_pe()
   npes = mpp_npes()
 
+#ifdef INTERNAL_FILE_NML
+  read (input_nml_file, test_mpp_io_nml, status=io_status)
+#else
   do
      inquire( unit=unit, opened=opened )
      if( .NOT.opened )exit
      unit = unit + 1
      if( unit.EQ.100 )call mpp_error( FATAL, 'Unable to locate unit number.' )
   end do
-  open( unit=unit, status='OLD', file='input.nml', err=10 )
-  read( unit,test_mpp_io_nml )
+  open( unit=unit, file='input.nml', iostat=io_status)
+  read( unit,test_mpp_io_nml, iostat=io_status )
   close(unit)
-10 continue
+#endif
+
+      if (io_status > 0) then
+         call mpp_error(FATAL,'=>test_mpp_io: Error reading input.nml')
+      endif
+
 
   call SYSTEM_CLOCK( count_rate=tks_per_sec )
   if( debug )then

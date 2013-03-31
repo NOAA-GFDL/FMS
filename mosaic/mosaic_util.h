@@ -11,11 +11,13 @@
 #define max(a,b) (a>b ? a:b)
 #define SMALL_VALUE ( 1.e-10 )
 struct Node{
-  double x, y, z, u;
+  double x, y, z, u, u_clip;
   int intersect; /* indicate if this point is an intersection, 0 = no, 1= yes, 2=both intersect and vertices */ 
   int inbound;      /* -1 uninitialized, 0 coincident, 1 outbound, 2 inbound */
   int initialized; /* = 0 means empty list */
-  int isInside;   /* = 1 means one point is inside the other polygon */
+  int isInside;   /* = 1 means one point is inside the other polygon, 0 is not, -1 undecided. */
+  int subj_index; /* the index of subject point that an intersection follow. */
+  int clip_index; /* the index of clip point that an intersection follow */
   struct Node *Next;
 };
 
@@ -47,36 +49,39 @@ double * cross(const double *p1, const double *p2);
 double dot(const double *p1, const double *p2);
 int intersect_tri_with_line(const double *plane, const double *l1, const double *l2, double *p,
 			     double *t);
-int invert_matrix_3x3(double m[], double m_inv[]);
-void mult(double m[], double v[], double out_v[]);
+int invert_matrix_3x3(long double m[], long double m_inv[]);
+void mult(long double m[], long double v[], long double out_v[]);
+double metric(const double *p);
+int insidePolygon(struct Node *node, struct Node *list );
 
-double gridArea(struct Node *grid);
-
-void addBeg(struct Node *list, double x, double y, double z, int intersect, double u, int inbound);
-
-void addEnd(struct Node *list, double x, double y, double z, int intersect, double u, int inbound);
-
-int getInbound( struct Node node );
-int length(struct Node *list);
-struct Node *getNextNode(struct Node *list);
-struct Node *getNode(struct Node *list, struct Node inNode);
-int sameNode(struct Node node1, struct Node node2);
-void deleteNode(struct Node *list);
+void rewindList(void);
+struct Node *getNext();
 void initNode(struct Node *node);
-void copyNode(struct Node *node_out, struct Node node_in);
-void assignNode(struct Node *node, double x, double y, double z, int intersect, double u, int inbound);
-void removeNode(struct Node *list, struct Node nodeIn);
-void resetIntersectValue(struct Node *list );
+void addEnd(struct Node *list, double x, double y, double z, int intersect, double u, int inbound, int inside);
+int addIntersect(struct Node *list, double x, double y, double z, int intersect, double u1, double u2, 
+                int inbound, int is1, int ie1, int is2, int ie2);
+int length(struct Node *list);
+int samePoint(double x1, double y1, double z1, double x2, double y2, double z2);
+int sameNode(struct Node node1, struct Node node2);
 void addNode(struct Node *list, struct Node nodeIn);
+struct Node *getNode(struct Node *list, struct Node inNode);
+struct Node *getNextNode(struct Node *list);
+void copyNode(struct Node *node_out, struct Node node_in);
 void printNode(struct Node *list, char *str);
+int intersectInList(struct Node *list, double x, double y, double z);
 void insertAfter(struct Node *list, double x, double y, double z, int intersect, double u, int inbound,
 		 double x2, double y2, double z2);
+double gridArea(struct Node *grid);
 int isIntersect(struct Node node);
+int getInbound( struct Node node );
+struct Node *getLast(struct Node *list);
 int getFirstInbound( struct Node *list, struct Node *nodeOut);
 void getCoordinate(struct Node node, double *x, double *y, double *z);
-double metric(const double *p);
-int insidePolygon( double x1, double y1, double z1, int npts, double *x2, double *y2, double *z2);
-struct Node *getLast(struct Node *list);
+void getCoordinates(struct Node *node, double *p);
+void setCoordinate(struct Node *node, double x, double y, double z);
 void setInbound(struct Node *interList, struct Node *list);
 int isInside(struct Node *node);
+
+
+
 #endif

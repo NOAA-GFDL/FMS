@@ -307,7 +307,7 @@ logical :: module_is_initialized = .FALSE.
 character(len=32) :: pelist_name
 character(len=7)  :: pe_name
 character(len=128):: error_msg  
-
+logical           :: great_circle_algorithm=.FALSE.
   
 !------ private data, pointer to current 2d domain ------
 ! entrained from fms_mod.  This will be deprecated in the future.
@@ -336,6 +336,7 @@ private :: lookup_field_r, lookup_axis, unique_axes
 
 public  :: set_filename_appendix, get_instance_filename
 public  :: parse_mask_table
+public  :: get_great_circle_algorithm
 character(len=32), save :: filename_appendix = ''
 
 !--- public interface ---
@@ -369,8 +370,8 @@ logical           :: checksum_required   = .true.
 
 integer            :: pack_size  ! = 1 for double = 2 for float
 
-character(len=128) :: version = '$Id: fms_io.F90,v 19.0.6.1.4.1.2.4.4.3 2012/10/09 08:28:41 William.Cooke Exp $'
-character(len=128) :: tagname = '$Name: siena_201211 $'
+character(len=128) :: version = '$Id: fms_io.F90,v 19.0.6.1.4.1.2.4.4.3.2.3.2.1 2013/02/25 18:32:54 Zhi.Liang Exp $'
+character(len=128) :: tagname = '$Name: siena_201303 $'
 
 contains
 
@@ -417,12 +418,18 @@ subroutine fms_io_init()
   integer, allocatable, dimension(:) :: pelist
   real(DOUBLE_KIND)                  :: doubledata = 0
   real                               :: realarray(4)
+  character(len=256)                 :: grd_file, filename
+  logical                            :: is_mosaic_grid
+  character(len=4096)                :: attvalue
 
   if (module_is_initialized) return
   call mpp_io_init()
 
 #ifdef INTERNAL_FILE_NML
-      read (input_nml_file, fms_io_nml, iostat=io_status)
+  read (input_nml_file, fms_io_nml, iostat=io_status)
+  if (io_status > 0) then
+     call mpp_error(FATAL,'=>fms_io_init: Error reading input.nml')
+  endif
 #else
   call mpp_open(unit, 'input.nml',form=MPP_ASCII,action=MPP_RDONLY)
   read(unit,fms_io_nml,iostat=io_status)
@@ -495,8 +502,43 @@ subroutine fms_io_init()
   enddo
   !---- initialize module domain2d pointer ----
   nullify (Current_domain)
+
+  !This is set here instead of at the end of the routine to prevent the read_data call below from stopping the model
   module_is_initialized = .TRUE.
   
+  !--- read INPUT/grid_spec.nc to decide the value of great_circle_algorithm
+  !--- great_circle_algorithm could be true only for mosaic grid.
+  great_circle_algorithm = 0
+  grd_file = "INPUT/grid_spec.nc"
+
+  is_mosaic_grid = .FALSE.
+  if (file_exist(grd_file)) then
+     if(field_exist(grd_file, 'atm_mosaic_file')) then  ! coupled grid
+        is_mosaic_grid = .TRUE.
+     else if(field_exist(grd_file, "gridfiles")) then
+        call read_data(grd_file, "gridfiles", filename, level=1)
+        grd_file = 'INPUT/'//trim(filename)
+        is_mosaic_grid = .TRUE.
+     endif
+  endif
+
+  if(is_mosaic_grid) then
+     if( get_global_att_value(grd_file, "great_circle_algorithm", attvalue) ) then
+        if(trim(attvalue) == "TRUE") then
+           great_circle_algorithm = 1
+        else if(trim(attvalue) == "FALSE") then
+           great_circle_algorithm = 0
+        else
+           call mpp_error(FATAL, "fms_io(fms_io_init: value of global attribute great_circle_algorithm in file"// &
+             trim(grd_file)//" should be TRUE of FALSE")
+        endif
+     endif
+  endif
+
+  if(great_circle_algorithm .AND. (mpp_pe() == mpp_root_pe()) ) then
+     call mpp_error(NOTE,"fms_io_mod: great_circle algorithm will be used in the model run")
+  endif  
+
 end subroutine fms_io_init
 
 ! </SUBROUTINE>
@@ -2009,12 +2051,12 @@ subroutine restore_state_all(fileObj, directory)
      io_domain => mpp_get_io_domain(array_domain(domain_idx))
      if(associated(io_domain)) then
         tile_id = mpp_get_tile_id(io_domain)
-        if(mpp_npes() > 10000) then
-           write(filename, '(a,i6.6)' ) trim(restartpath)//'.', tile_id(1)
-        else
-           write(filename, '(a,i4.4)' ) trim(restartpath)//'.', tile_id(1)
-        endif
+        write(filename, '(a,i4.4)' ) trim(restartpath)//'.', tile_id(1)
         inquire (file=trim(filename), exist = fexist)
+        if( .NOT. fexist ) then
+           write(filename, '(a,i6.6)' ) trim(restartpath)//'.', tile_id(1)
+           inquire (file=trim(filename), exist = fexist)
+        endif
      endif
      io_domain => NULL()
   endif
@@ -2287,12 +2329,12 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
      io_domain => mpp_get_io_domain(array_domain(domain_idx))
      if(associated(io_domain)) then
         tile_id = mpp_get_tile_id(io_domain)
-        if(mpp_npes()>10000) then
-           write(filename, '(a,i6.6)' ) trim(restartpath)//'.', tile_id(1)
-        else
-           write(filename, '(a,i4.4)' ) trim(restartpath)//'.', tile_id(1)
-        endif
+        write(filename, '(a,i4.4)' ) trim(restartpath)//'.', tile_id(1)
         inquire (file=trim(filename), exist = fexist)
+        if( .NOT. fexist ) then
+           write(filename, '(a,i6.6)' ) trim(restartpath)//'.', tile_id(1)
+           inquire (file=trim(filename), exist = fexist)
+        endif
      endif
      io_domain=>NULL()
   endif
@@ -4960,12 +5002,12 @@ end subroutine get_axis_cart
        io_domain => mpp_get_io_domain(d_ptr)
        if(associated(io_domain)) then
           tile_id = mpp_get_tile_id(io_domain)       
-          if(mpp_npes()>10000) then
+          write(fname, '(a,i4.4)' ) trim(actual_file)//'.', tile_id(1)
+          inquire (file=trim(fname), exist=fexist)          
+          if(.not. fexist) then
              write(fname, '(a,i6.6)' ) trim(actual_file)//'.', tile_id(1)
-          else
-             write(fname, '(a,i4.4)' ) trim(actual_file)//'.', tile_id(1)
+             inquire (file=trim(fname), exist=fexist)
           endif
-          inquire (file=trim(fname), exist=fexist)
           if(fexist) io_domain_exist = .true.
        endif   
        io_domain=>NULL()
@@ -4988,9 +5030,33 @@ end subroutine get_axis_cart
     endif    
 
     !Perhaps the file has an ensemble instance appendix
-    call get_instance_filename(actual_file, actual_file)
-    inquire (file=trim(actual_file)//trim(pe_name), exist=fexist)  
-    if(.not. fexist) inquire (file=trim(actual_file)//'.nc'//trim(pe_name), exist=fexist)     
+    call get_instance_filename(orig_file, actual_file)
+    if(index(orig_file, '.nc', back=.true.) == 0) then
+       inquire (file=trim(actual_file), exist=fexist)
+       if(fexist) then
+          get_file_name = .true.
+          return
+       endif
+    endif 
+
+    call get_mosaic_tile_file(actual_file, actual_file, is_no_domain, domain, tile_count)
+    !--- check if the file is group redistribution.
+    if(ASSOCIATED(d_ptr)) then
+       io_domain => mpp_get_io_domain(d_ptr)
+       if(associated(io_domain)) then
+          tile_id = mpp_get_tile_id(io_domain)       
+          if(mpp_npes()>10000) then
+             write(fname, '(a,i6.6)' ) trim(actual_file)//'.', tile_id(1)
+          else
+             write(fname, '(a,i4.4)' ) trim(actual_file)//'.', tile_id(1)
+          endif
+          inquire (file=trim(fname), exist=fexist)
+          if(fexist) io_domain_exist = .true.
+       endif   
+       io_domain=>NULL()
+    endif 
+
+    if(.not. fexist) inquire (file=trim(actual_file)//trim(pe_name), exist=fexist)  
     if(fexist) then
        read_dist = .true. 
        d_ptr => NULL()
@@ -4998,7 +5064,6 @@ end subroutine get_axis_cart
        return
     endif    
     inquire (file=trim(actual_file), exist=fexist)
-          if(.not. fexist) inquire (file=trim(actual_file)//'.nc', exist=fexist)
     
     if(fexist) then
        d_ptr => NULL()
@@ -5391,6 +5456,17 @@ subroutine parse_mask_table(mask_table, maskmap, modelname)
   deallocate(mask_list)
 
 end subroutine parse_mask_table
+
+function get_great_circle_algorithm()
+   logical :: get_great_circle_algorithm
+
+   if(.NOT. module_is_initialized) call mpp_error(FATAL, &
+        "fms_io(use_great_circle_algorithm): fms_io_init is not called yet")
+
+   get_great_circle_algorithm = great_circle_algorithm
+
+end function get_great_circle_algorithm
+
 
 end module fms_io_mod
 

@@ -38,7 +38,7 @@ contains
   subroutine ensemble_manager_init()
 
 
-    integer :: i, io_status, ioun, npes
+    integer :: i, io_status, ioun, npes, ierr
 
     namelist /ensemble_nml/ ensemble_size
 
@@ -49,6 +49,7 @@ contains
     read(ioun,nml=ensemble_nml,iostat = io_status)
     call close_file(ioun)
 #endif
+    ierr = check_nml_error(io_status, 'ensemble_nml')
 
     if(ensemble_size < 1) call mpp_error(FATAL, &
        'ensemble_manager_mod: ensemble_nml variable ensemble_size must be a positive integer')

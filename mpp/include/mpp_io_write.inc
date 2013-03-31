@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_write.inc,v 19.0.2.3 2012/10/16 16:39:09 William.Cooke Exp $
+! $Id: mpp_io_write.inc,v 19.0.2.3.6.1 2013/01/09 14:30:19 Zhi.Liang Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                            !
@@ -962,7 +962,8 @@
           ptr1 = LOC(mpp_io_stack(1))
 !subdomain contains (/is,ie,js,je/)  
           if( PRESENT(domain) )then
-              subdomain(:) = (/ is, ie, js, je /)  ! ??? is, ie, js, je are never initialized.
+              call mpp_get_compute_domain(domain, is, ie, js, je)
+              subdomain(:) = (/ is, ie, js, je /)  
           else
               subdomain(:) = -1    ! -1 means use global value from axis metadata
           end if
@@ -1116,6 +1117,7 @@
           write( text, '(a,i4,a)' )'AXIS ', axis%id, ' size'
           if( ASSOCIATED(axis%data) )then !space axis
               if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
+                  call mpp_get_compute_domain(axis%domain, is, ie)
                   call write_attribute( unit, trim(text), ival=(/ie-is+1/) ) ! ??? is, ie is not initialized 
               else
                   call write_attribute( unit, trim(text), ival=(/size(axis%data(:))/) )

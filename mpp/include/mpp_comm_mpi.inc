@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_mpi.inc,v 19.0.2.1 2012/05/08 17:45:39 Zhi.Liang Exp $
+! $Id: mpp_comm_mpi.inc,v 19.0.2.1.6.1 2013/02/25 18:32:55 Zhi.Liang Exp $
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -85,6 +85,11 @@
   read(unit_nml,mpp_nml,iostat=io_status)
   close(unit_nml)  
 #endif
+
+  if (io_status > 0) then
+     call mpp_error(FATAL,'=>mpp_init: Error reading input.nml')
+  endif
+
 
 ! non-root pe messages written to other location than stdout()
 

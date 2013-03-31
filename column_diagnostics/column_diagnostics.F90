@@ -34,8 +34,8 @@ private
 !----------- ****** VERSION NUMBER ******* ---------------------------
 
 
-character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 19.0 2012/01/06 21:54:27 fms Exp $'
-character(len=128)  :: tag     =  '$Name: siena_201211 $'
+character(len=128)  :: version =  '$Id: column_diagnostics.F90,v 19.0.4.1 2013/02/25 18:32:53 Zhi.Liang Exp $'
+character(len=128)  :: tag     =  '$Name: siena_201303 $'
 
 
 
@@ -131,6 +131,7 @@ subroutine column_diagnostics_init
 !---------------------------------------------------------------------
 #ifdef INTERNAL_FILE_NML
       read (input_nml_file, column_diagnostics_nml, iostat=io)
+      ierr = check_nml_error (io, 'column_diagnostics_nml')
 #else
       if (file_exist('input.nml')) then
         unit =  open_namelist_file ( )

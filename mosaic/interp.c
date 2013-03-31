@@ -286,6 +286,59 @@ void conserve_interp(int nx_src, int ny_src, int nx_dst, int ny_dst, const doubl
   
 }; /* conserve_interp */
 
+/*------------------------------------------------------------------------------
+  void conserve_interp_great_circle()
+  conservative interpolation through exchange grid.
+  Currently only first order interpolation are implemented here.
+  great_circle algorithm is used for clipping and interpolation.
+  ----------------------------------------------------------------------------*/
+void conserve_interp_great_circle(int nx_src, int ny_src, int nx_dst, int ny_dst, const double *x_src,
+		     const double *y_src, const double *x_dst, const double *y_dst,
+		     const double *mask_src, const double *data_src, double *data_dst )
+{
+  int n, nxgrid;
+  int *xgrid_i1, *xgrid_j1, *xgrid_i2, *xgrid_j2;
+  double *xgrid_area, *dst_area, *area_frac, *xgrid_di, *xgrid_dj; 
+  
+  /* get the exchange grid between source and destination grid. */
+  xgrid_i1   = (int    *)malloc(MAXXGRID*sizeof(int));
+  xgrid_j1   = (int    *)malloc(MAXXGRID*sizeof(int));
+  xgrid_i2   = (int    *)malloc(MAXXGRID*sizeof(int));
+  xgrid_j2   = (int    *)malloc(MAXXGRID*sizeof(int));
+  xgrid_area = (double *)malloc(MAXXGRID*sizeof(double));
+  xgrid_di   = (double *)malloc(MAXXGRID*sizeof(double));
+  xgrid_dj   = (double *)malloc(MAXXGRID*sizeof(double));
+  dst_area   = (double *)malloc(nx_dst*ny_dst*sizeof(double));
+  nxgrid = create_xgrid_great_circle(&nx_src, &ny_src, &nx_dst, &ny_dst, x_src, y_src, x_dst, y_dst, mask_src,
+				     xgrid_i1, xgrid_j1, xgrid_i2, xgrid_j2, xgrid_area, xgrid_di, xgrid_dj );
+  /* The source grid may not cover the destination grid
+     so need to sum of exchange grid area to get dst_area
+     get_grid_area(&nx_dst, &ny_dst, x_dst, y_dst, dst_area);
+  */
+  for(n=0; n<nx_dst*ny_dst; n++) dst_area[n] = 0;
+  for(n=0; n<nxgrid; n++) dst_area[xgrid_j2[n]*nx_dst+xgrid_i2[n]] += xgrid_area[n];
+  
+  area_frac = (double *)malloc(nxgrid*sizeof(double));
+  for(n=0; n<nxgrid; n++) area_frac[n] = xgrid_area[n]/dst_area[xgrid_j2[n]*nx_dst+xgrid_i2[n]];
+  
+  for(n=0; n<nx_dst*ny_dst; n++) {
+    data_dst[n] = 0;
+  }
+  for(n=0; n<nxgrid; n++) {
+    data_dst[xgrid_j2[n]*nx_dst+xgrid_i2[n]] += data_src[xgrid_j1[n]*nx_src+xgrid_i1[n]]*area_frac[n];
+  }
+
+  free(xgrid_i1);
+  free(xgrid_j1);
+  free(xgrid_i2);
+  free(xgrid_j2);
+  free(xgrid_area);
+  free(dst_area);
+  free(area_frac);
+  
+}; /* conserve_interp_great_circle */
+
+
 
 void linear_vertical_interp(int nx, int ny, int nk1, int nk2, const double *grid1, const double *grid2,
 			    double *data1, double *data2) 

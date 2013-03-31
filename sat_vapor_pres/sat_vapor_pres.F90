@@ -492,8 +492,8 @@ private
 !-----------------------------------------------------------------------
 !  cvs version and tag name
 
- character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 19.0 2012/01/06 22:06:02 fms Exp $'
- character(len=128) :: tagname = '$Name: siena_201211 $'
+ character(len=128) :: version = '$Id: sat_vapor_pres.F90,v 19.0.4.1.2.1 2013/02/25 18:32:55 Zhi.Liang Exp $'
+ character(len=128) :: tagname = '$Name: siena_201303 $'
 
  logical :: module_is_initialized = .false.
 
@@ -2208,6 +2208,7 @@ real,  intent(in),              optional :: hc
 !---- read namelist input ----
 #ifdef INTERNAL_FILE_NML
       read (input_nml_file, sat_vapor_pres_nml, iostat=io)
+      ierr = check_nml_error(io,'sat_vapor_pres_nml')
 #else
   if (file_exist('input.nml')) then
      unit = open_namelist_file ( )
@@ -2225,7 +2226,7 @@ real,  intent(in),              optional :: hc
   if (mpp_pe() == mpp_root_pe()) write (unit, nml=sat_vapor_pres_nml)
 
   if(do_simple) then
-    tcmin = -350  
+    tcmin = -173
     tcmax =  350  
   endif
   nsize = (tcmax-tcmin)*esres+1 

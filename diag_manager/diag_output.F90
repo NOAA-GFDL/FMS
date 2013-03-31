@@ -46,9 +46,9 @@ MODULE diag_output_mod
   LOGICAL :: module_is_initialized = .FALSE.
 
   CHARACTER(len=128), PRIVATE :: version= &
-       '$Id: diag_output.F90,v 19.0.10.3 2012/10/19 19:01:31 Zhi.Liang Exp $'
+       '$Id: diag_output.F90,v 19.0.2.2 2013/02/21 21:33:34 Seth.Underwood Exp $'
   CHARACTER(len=128), PRIVATE :: tagname= &
-       '$Name: siena_201211 $'
+       '$Name: siena_201303 $'
 
 CONTAINS
 
@@ -145,7 +145,6 @@ CONTAINS
     LOGICAL, INTENT(in), OPTIONAL :: time_ops
 
     TYPE(domain1d)       :: Domain
-    TYPE(domain1d)       :: Edge_Domain
 
     CHARACTER(len=mxch)  :: axis_name, axis_units
     CHARACTER(len=mxchl) :: axis_long_name
@@ -279,11 +278,9 @@ CONTAINS
              IF ( ALLOCATED(pelist) ) DEALLOCATE(pelist)      
              ALLOCATE(pelist(0:ndivs-1))
              CALL mpp_get_pelist(Domain,pelist)
-             CALL mpp_define_domains((/gbegin,gend/),ndivs,Edge_Domain,&
-                  & pelist=pelist(0:ndivs-1), extent=axis_extent(0:ndivs-1))
              CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file),&
                   & axis_name, axis_units, axis_long_name, axis_cart_name,&
-                  & axis_direction, Edge_Domain,  DATA=axis_data)
+                  & axis_direction, Domain,  DATA=axis_data)
           END IF
        ELSE
           CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name, axis_units,&

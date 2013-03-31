@@ -386,8 +386,8 @@ type xmap_type
 end type xmap_type
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: xgrid.F90,v 19.0.2.2.4.3 2012/05/16 18:29:28 Zhi.Liang Exp $'
- character(len=128) :: tagname = '$Name: siena_201211 $'
+ character(len=128) :: version = '$Id: xgrid.F90,v 19.0.2.2.4.3.4.2.2.1 2013/02/25 18:32:54 Zhi.Liang Exp $'
+ character(len=128) :: tagname = '$Name: siena_201303 $'
 
  real, parameter                              :: EPS = 1.0e-10
  real, parameter                              :: LARGE_NUMBER = 1.e20
@@ -452,6 +452,7 @@ subroutine xgrid_init(remap_method)
 
 #ifdef INTERNAL_FILE_NML
       read (input_nml_file, xgrid_nml, iostat=io)
+      ierr = check_nml_error ( io, 'xgrid_nml' )
 #else
   if ( file_exist( 'input.nml' ) ) then
       unit = open_namelist_file ( )
@@ -866,8 +867,9 @@ logical,        intent(in)             :: use_higher_order
      do l=1,nxgrid2
         if (in_box(i2(l), j2(l), grid%is_me, grid%ie_me, grid%js_me, grid%je_me) ) then
            grid%size = grid%size + 1
-           /* exclude the area overlapped with parent grid */
-           if( tile1 .NE. tile_parent .OR. .NOT. in_box(i1(l), j1(l), is_parent, ie_parent, js_parent, je_parent) ) then 
+           ! exclude the area overlapped with parent grid 
+           if( grid1_id .NE. "ATM" .OR. tile1 .NE. tile_parent .OR.  &
+                   .NOT. in_box(i1(l), j1(l), is_parent, ie_parent, js_parent, je_parent) ) then 
               grid%area(i2(l),j2(l)) = grid%area(i2(l),j2(l))+area(l)
            endif
            do p=0,xmap%npes-1
@@ -1075,7 +1077,7 @@ subroutine get_grid(grid, grid_id, grid_file, grid_version)
      if(nlon .NE. grid%im .OR. nlat .NE. grid%jm) call error_mesg('xgrid_mod', &
          'grid size in tile_file does not match the global grid size', FATAL)
 
-     if( grid_id == 'LND' .or. grid_id == 'ATM') then
+     if( grid_id == 'LND' .or. grid_id == 'ATM' .or. grid_id == 'WAV' ) then
         isc2 = 2*grid%is_me-1; iec2 = 2*grid%ie_me+1
         jsc2 = 2*grid%js_me-1; jec2 = 2*grid%je_me+1
         allocate(tmpx(isc2:iec2, jsc2:jec2) )
@@ -1460,16 +1462,20 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
               xgrid_name = 'a'
            case( 'LND' )
               xgrid_name = 'l'
+           case( 'WAV' )
+              xgrid_name = 'w'
            case default 
-              call error_mesg('xgrid_mod', 'grid_ids(1) should be ATM or LND', FATAL)
+              call error_mesg('xgrid_mod', 'grid_ids(1) should be ATM or LND or WAV', FATAL)
            end select
            select case(grid_ids(g))
            case( 'LND' )
               xgrid_name = trim(xgrid_name)//'Xl_file'
            case( 'OCN' )
               xgrid_name = trim(xgrid_name)//'Xo_file'
+           case( 'WAV' )
+              xgrid_name = trim(xgrid_name)//'Xw_file'
            case default 
-              call error_mesg('xgrid_mod', 'grid_ids(g) should be LND or OCN', FATAL)
+              call error_mesg('xgrid_mod', 'grid_ids(g) should be LND or OCN or WAV', FATAL)
            end select       
            ! get the tile list for each mosaic
            call read_data(grid_file, lowercase(grid_ids(1))//'_mosaic_file', mosaic1) 
@@ -2342,7 +2348,8 @@ type (xmap_type), intent(inout) :: xmap
         tile1 = xmap%grids(g)%x(l)%tile
         ll = ll + 1
         overlap_with_nest = .false.
-        if( tile1 == tile_parent .AND. in_box(i1, j1, is_parent, ie_parent, js_parent, je_parent) ) overlap_with_nest = .true.
+        if( xmap%grids(1)%id == "ATM" .AND. tile1 == tile_parent .AND. &
+            in_box(i1, j1, is_parent, ie_parent, js_parent, je_parent) ) overlap_with_nest = .true.
         do k=1,xmap%grids(g)%km
            if (xmap%grids(g)%frac_area(i2,j2,k)/=0.0) then
               xmap%size_put1 = xmap%size_put1+1
@@ -3347,6 +3354,8 @@ integer, intent(in), optional :: remap_method
   grid1 => xmap%grids(1)
   conservation_check_side1 = 0.0
   if(grid1%tile_me .NE. tile_nest) conservation_check_side1(1) = sum(grid1%area*d)
+!  if(grid1%tile_me .NE. tile_parent .OR. grid1%id .NE. "ATM") &
+!      conservation_check_side1(1) = sum(grid1%area*d) 
 
   call put_to_xgrid (d, grid1%id, x_over, xmap, remap_method)    ! put from side 1
   do g=2,size(xmap%grids(:))
@@ -3363,6 +3372,9 @@ integer, intent(in), optional :: remap_method
   end do
   call get_from_xgrid(d1, grid1%id, x_back, xmap)  ! get onto side 1
   if(grid1%tile_me .NE. tile_nest) conservation_check_side1(3) = sum(grid1%area*d1)
+!  if(grid1%tile_me .NE. tile_parent .OR. grid1%id .NE. "ATM") &
+!     conservation_check_side1(3) = sum(grid1%area*d1)
+
   call mpp_sum(conservation_check_side1,3)
 
 end function conservation_check_side1

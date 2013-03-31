@@ -39,8 +39,8 @@ logical :: allow_calendar_conversion=.true.
 namelist / get_cal_time_nml / allow_calendar_conversion
 ! </NAMELIST>
 
-character(len=128) :: version='$Id: get_cal_time.F90,v 19.0 2012/01/06 22:06:10 fms Exp $'
-character(len=128) :: tagname='$Name: siena_201211 $'
+character(len=128) :: version='$Id: get_cal_time.F90,v 19.0.6.1 2013/02/14 20:35:28 pjp Exp $'
+character(len=128) :: tagname='$Name: siena_201303 $'
 
 contains
 !------------------------------------------------------------------------
@@ -166,7 +166,8 @@ logical :: permit_conversion_local
 
 if(.not.module_is_initialized) then
 #ifdef INTERNAL_FILE_NML
-      read (input_nml_file, get_cal_time_nml, iostat=io)
+    read (input_nml_file, get_cal_time_nml, iostat=io)
+    ierr = check_nml_error (io, 'get_cal_time_nml')
 #else
   namelist_unit = open_namelist_file()
   ierr=1

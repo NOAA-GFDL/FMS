@@ -75,13 +75,13 @@
  if (file_exist('input.nml') )then
     call mpp_open(unit, 'input.nml',form=MPP_ASCII,action=MPP_RDONLY)
     read(unit,test_fms_io_nml,iostat=io_status)
-
-    if (io_status > 0) then
-     call mpp_error(FATAL,'=>test_fms_io: Error reading test_fms_io_nml')
-  endif
     call mpp_close (unit)
  end if
 #endif
+  if (io_status > 0) then
+     call mpp_error(FATAL,'=>test_fms_io: Error reading test_fms_io_nml')
+  endif
+
 
  outunit = stdout()
  write(outunit, test_fms_io_nml )

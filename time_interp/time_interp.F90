@@ -195,8 +195,8 @@ integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
    integer :: yrmod, momod, dymod
    logical :: mod_leapyear
 
-   character(len=128) :: version='$Id: time_interp.F90,v 19.0 2012/01/06 22:06:06 fms Exp $'
-   character(len=128) :: tagname='$Name: siena_201211 $'
+   character(len=128) :: version='$Id: time_interp.F90,v 19.0.6.1 2013/02/25 18:32:55 Zhi.Liang Exp $'
+   character(len=128) :: tagname='$Name: siena_201303 $'
 
    logical :: module_is_initialized=.FALSE.
    logical :: perthlike_behavior=.FALSE.
@@ -213,6 +213,7 @@ contains
 
 #ifdef INTERNAL_FILE_NML
       read (input_nml_file, time_interp_nml, iostat=io)
+      ierr = check_nml_error (io, 'time_interp_nml')
 #else
    namelist_unit = open_namelist_file()
    ierr=1

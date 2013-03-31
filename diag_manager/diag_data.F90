@@ -51,9 +51,6 @@ MODULE diag_data_mod
   ! <DATA NAME="MAX_FIELDS_PER_FILE" TYPE="INTEGER, PARAMETER" DEFAULT="300">
   !   Maximum number of fields per file.
   ! </DATA>
-  ! <DATA NAME="MAX_OUT_PER_IN_FIELD" TYPE="INTEGER, PARAMETER" DEFAULT="150">
-  !   Maximum number of output_fields per input_field.
-  ! </DATA>
   ! <DATA NAME="DIAG_OTHER" TYPE="INTEGER, PARAMETER" DEFAULT="0" />
   ! <DATA NAME="DIAG_OCEAN" TYPE="INTEGER, PARAMETER" DEFAULT="1" />
   ! <DATA NAME="DIAG_ALL" TYPE="INTEGER, PARAMETER" DEFAULT="2" />
@@ -72,7 +69,6 @@ MODULE diag_data_mod
 
   ! Specify storage limits for fixed size tables used for pointers, etc.
   INTEGER, PARAMETER :: MAX_FIELDS_PER_FILE = 300 !< Maximum number of fields per file.
-  INTEGER, PARAMETER :: MAX_OUT_PER_IN_FIELD = 150 !< Maximum number of output_fields per input_field
   INTEGER, PARAMETER :: DIAG_OTHER = 0
   INTEGER, PARAMETER :: DIAG_OCEAN = 1
   INTEGER, PARAMETER :: DIAG_ALL   = 2
@@ -306,7 +302,7 @@ MODULE diag_data_mod
      LOGICAL :: missing_value_present, range_present
      REAL :: missing_value
      REAL, DIMENSION(2) :: range
-     INTEGER, DIMENSION(max_out_per_in_field) :: output_fields
+     INTEGER, _ALLOCATABLE, dimension(:) :: output_fields
      INTEGER :: num_output_fields
      INTEGER, DIMENSION(3) :: size
      LOGICAL :: static, register, mask_variant, local
@@ -515,9 +511,9 @@ MODULE diag_data_mod
   
   ! Private CHARACTER Arrays for the CVS version and tagname.
   CHARACTER(len=128),PRIVATE  :: version =&
-       & '$Id: diag_data.F90,v 19.0.2.3 2012/05/14 18:40:11 Seth.Underwood Exp $'
+       & '$Id: diag_data.F90,v 19.0.2.4 2012/10/16 17:47:32 Seth.Underwood Exp $'
   CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name: siena_201211 $'
+       & '$Name: siena_201303 $'
 
   ! <!-- Other public variables -->
   ! <DATA NAME="num_files" TYPE="INTEGER" DEFAULT="0">
@@ -547,6 +543,9 @@ MODULE diag_data_mod
   ! <DATA NAME="max_input_fields" TYPE="INTEGER" DEFAULT="300">
   !   Maximum number of input fields.  Increase via the diag_manager_nml namelist.
   ! </DATA>
+  ! <DATA NAME="MAX_OUT_PER_IN_FIELD" TYPE="INTEGER" DEFAULT="150">
+  !   Maximum number of output_fields per input_field.
+  ! </DATA>
   ! <DATA NAME="max_axes" TYPE="INTEGER" DEFAULT="60">
   !   Maximum number of independent axes.
   ! </DATA>
@@ -570,6 +569,7 @@ MODULE diag_data_mod
   INTEGER :: max_files = 31 !< Maximum number of output files allowed.  Increase via diag_manager_nml.
   INTEGER :: max_output_fields = 300 !< Maximum number of output fields.  Increase via diag_manager_nml.
   INTEGER :: max_input_fields = 300 !< Maximum number of input fields.  Increase via diag_manager_nml.
+  INTEGER :: MAX_OUT_PER_IN_FIELD = 150 !< Maximum number of output_fields per input_field.  Increase via diag_manager_nml.
   INTEGER :: max_axes = 60 !< Maximum number of independent axes.
   LOGICAL :: do_diag_field_log = .FALSE.
   LOGICAL :: write_bytes_in_file = .FALSE.

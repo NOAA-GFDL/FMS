@@ -119,6 +119,10 @@ implicit none
   pe       = mpp_pe()
   out_unit = stdout()
 
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, xgrid_test_nml, iostat=io)
+      ierr = check_nml_error(io, 'xgrid_test_nml')
+#else
   if (file_exist('input.nml')) then
      ierr=1
      nml_unit = open_namelist_file()
@@ -128,6 +132,7 @@ implicit none
      enddo
 10   call close_file(nml_unit)
   endif
+#endif
 
   !--- get ensemble size
   ens_siz = get_ensemble_size()   

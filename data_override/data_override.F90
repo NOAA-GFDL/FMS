@@ -80,8 +80,8 @@ use time_manager_mod, only: time_type
 implicit none
 private
 
-character(len=128) :: version = '$Id: data_override.F90,v 18.0.4.1.2.1.2.2.2.1.2.1.2.3 2012/04/20 18:08:09 Zhi.Liang Exp $'
-character(len=128) :: tagname = '$Name: siena_201211 $'
+character(len=128) :: version = '$Id: data_override.F90,v 18.0.4.1.2.1.2.2.2.1.2.1.2.3.6.1 2013/02/25 18:32:54 Zhi.Liang Exp $'
+character(len=128) :: tagname = '$Name: siena_201303 $'
 
 type data_type
    character(len=3)   :: gridname
@@ -1329,6 +1329,7 @@ end module data_override_mod
 
 #ifdef INTERNAL_FILE_NML
       read (input_nml_file, test_data_override_nml, iostat=io)
+      ierr = check_nml_error(io, 'test_data_override_nml')
 #else
  if (file_exist('input.nml')) then
    unit = open_namelist_file ( )

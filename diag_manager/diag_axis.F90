@@ -33,9 +33,9 @@ MODULE diag_axis_mod
   ! Module variables
   ! Parameters
   CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id: diag_axis.F90,v 19.0.2.2 2012/04/13 16:27:46 sdu Exp $'
+       & '$Id: diag_axis.F90,v 19.0.2.3 2013/01/24 16:04:08 sdu Exp $'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: siena_201211 $'
+       & '$Name: siena_201303 $'
 
   ! counter of number of axes defined
   INTEGER, DIMENSION(:), ALLOCATABLE :: num_subaxes
@@ -456,7 +456,7 @@ CONTAINS
        ! <ERROR STATUS="FATAL">array data is too small.</ERROR>
        CALL error_mesg('diag_axis_mod::get_diag_axis', 'array data is too small', FATAL)
     ELSE
-       DATA(1:Axes(id)%length) = Axes(id)%data
+       DATA(1:Axes(id)%length) = Axes(id)%data(1:Axes(id)%length)
     END IF
   END SUBROUTINE get_diag_axis
   ! </SUBROUTINE>

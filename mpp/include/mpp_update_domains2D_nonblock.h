@@ -721,7 +721,6 @@ function MPP_START_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype
         updatey => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_y)
 
         ke_max = maxval(ke_list(1:l_size,1:ntile))
-        ke_max = maxval(ke_list(1:l_size,1:ntile))
         if(exchange_uv) then
            call mpp_start_do_update(current_id, f_addrsx(1:l_size,1:ntile), f_addrsy(1:l_size,1:ntile), domain, &
                                     updatey, updatex, d_type, ke_max, ke_list(1:l_size,1:ntile), grid_offset_type, &

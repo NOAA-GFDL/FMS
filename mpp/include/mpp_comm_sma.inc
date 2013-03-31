@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_sma.inc,v 19.0 2012/01/06 22:00:43 fms Exp $
+! $Id: mpp_comm_sma.inc,v 19.0.6.1 2013/02/25 18:32:55 Zhi.Liang Exp $
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -89,6 +89,11 @@ subroutine mpp_init( flags,localcomm )
   read(unit_nml,mpp_nml,iostat=io_status)
   close(unit_nml)  
 #endif
+
+  if (io_status > 0) then
+     call mpp_error(FATAL,'=>mpp_init: Error reading input.nml')
+  endif
+
 
 ! non-root pe messages written to other location than stdout()
   if(etc_unit_is_stderr) then

@@ -14,14 +14,19 @@ subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, upda
   integer,             intent(in) :: flags
 
   !---local variable ------------------------------------------
-  integer            :: i, j, k, l, is, ie, js, je, n
+  integer            :: i, j, k, l, is, ie, js, je, n, m
   integer            :: pos, nlist, msgsize, tile, l_size
   integer            :: to_pe, from_pe, buffer_pos
-  integer            :: tMe, dir, count, ke_sum
+  integer            :: tMe, dir, ke_sum
   logical            :: send(8), recv(8), update_edge_only
   character(len=128) :: text
-  integer            :: rank_x, rank_y, ind_x, ind_y, cur_rank
-  integer            :: nsend_x, nsend_y, nrecv_x, nrecv_y
+  integer            :: ind_x, ind_y
+  integer            :: nsend, nrecv, sendsize, recvsize
+  integer            :: request
+  integer            :: ind_send_x(update_x%nsend+update_y%nsend), ind_send_y(update_x%nsend+update_y%nsend)
+  integer            :: ind_recv_x(update_x%nrecv+update_y%nrecv), ind_recv_y(update_x%nrecv+update_y%nrecv)
+  integer            :: from_pe_list(update_x%nrecv+update_y%nrecv), to_pe_list(update_x%nsend+update_y%nsend)
+  integer            :: start_pos_recv(update_x%nrecv+update_y%nrecv), start_pos_send(update_x%nsend+update_y%nsend)
   MPP_TYPE_          :: fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,ke_max)
   MPP_TYPE_          :: fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,ke_max)
   MPP_TYPE_          :: buffer(size(mpp_domains_stack_nonblock(:)))
@@ -56,147 +61,137 @@ subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, upda
   nlist  = size(domain%list(:))
   ptr    = LOC(mpp_domains_stack_nonblock)
 
-  !recv
-  nsend_x = update_x%nsend
-  nsend_y = update_y%nsend
-  nrecv_x = update_x%nrecv
-  nrecv_y = update_y%nrecv
-
-  !--- recv
-  cur_rank = get_rank_recv(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y) 
-
-  buffer_pos = nonblock_data(id_update)%recv_pos
-  call mpp_clock_begin(recv_clock_nonblock)
-  do while (ind_x .LE. nrecv_x .OR. ind_y .LE. nrecv_y)
-     msgsize = 0
-     select case(gridtype)
-     case(BGRID_NE, BGRID_SW, AGRID)
-        if(cur_rank == rank_x) then
-           from_pe = update_x%recv(ind_x)%pe
-           do n = 1, update_x%recv(ind_x)%count
-              dir = update_x%recv(ind_x)%dir(n)
-              if(recv(dir)) then
-                 msgsize = msgsize + update_x%recv(ind_x)%msgsize(n)
-              end if
-           end do
-           msgsize = msgsize*2
-           ind_x = ind_x+1
-           ind_y = ind_x
-           if(ind_x .LE. nrecv_x) then
-              rank_x = update_x%recv(ind_x)%pe - domain%pe 
-              if(rank_x .LE.0) rank_x = rank_x + nlist
-           else
-              rank_x = -1
-           endif
-           rank_y = rank_x
-        endif
-     case(CGRID_NE, CGRID_SW)
-        if(cur_rank == rank_x) then
-           from_pe = update_x%recv(ind_x)%pe
-           do n = 1, update_x%recv(ind_x)%count
-              dir = update_x%recv(ind_x)%dir(n)
-              if(recv(dir)) then
-                 msgsize = msgsize + update_x%recv(ind_x)%msgsize(n)
-              end if
-           end do
-           ind_x = ind_x+1
-           if(ind_x .LE. nrecv_x) then
-              rank_x = update_x%recv(ind_x)%pe - domain%pe 
-              if(rank_x .LE.0) rank_x = rank_x + nlist
-           else
-              rank_x = -1
-           endif
-        endif
-        if(cur_rank == rank_y) then
-           from_pe = update_y%recv(ind_y)%pe
-           do n = 1, update_y%recv(ind_y)%count
-              dir = update_y%recv(ind_y)%dir(n)
-              if(recv(dir)) then
-                 msgsize = msgsize + update_y%recv(ind_y)%msgsize(n)
-              end if
-           end do
-           ind_y = ind_y+1
-           if(ind_y .LE. nrecv_y) then
-              rank_y = update_y%recv(ind_y)%pe - domain%pe 
-              if(rank_y .LE.0) rank_y = rank_y + nlist
-           else
-              rank_y = -1
-           endif
-        endif
-     end select
-     cur_rank = max(rank_x, rank_y)
-     msgsize = msgsize*ke_sum
-
-     if( msgsize.GT.0 )then
-        mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, buffer_pos+msgsize )
-        if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
-           write( text,'(i8)' )mpp_domains_stack_hwm
-           call mpp_error( FATAL, 'MPP_START_DO_UPDATE_V: mpp_domains_stack overflow, '// &
-                'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
-        end if
-        count = nonblock_data(id_update)%request_recv_count + 1
-        if( count > MAX_REQUEST ) then
-           write( text,'(a,i8,a,i8)' ) 'request count =', count, ' greater than MAX_REQEUST =', MAX_REQUEST
-           call mpp_error(FATAL,'MPP_START_DO_UPDATE_V: '//trim(text))
-        endif
-        nonblock_data(id_update)%request_recv_count = count
-
-        call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.false., &
-                   tag=id_update, request=nonblock_data(id_update)%request_recv(count))
-        nonblock_data(id_update)%size_recv(count) = msgsize
-#ifdef use_libMPI
-        nonblock_data(id_update)%type_recv(count) = MPI_TYPE_
-#endif
-        buffer_pos = buffer_pos + msgsize
-     end if
-  end do
-  call mpp_clock_end(recv_clock_nonblock)
-  msgsize = buffer_pos - nonblock_data(id_update)%recv_pos
-  if( reuse_id_update ) then
-     if(msgsize .NE. nonblock_data(id_update)%recv_msgsize) then
-        call mpp_error(FATAL,'MPP_START_UPDATE_DOMAINS_V: mismatch of recv msgsize for field '//trim(name) )
-     endif
-  else
-     nonblock_data(id_update)%recv_msgsize = msgsize
-     nonblock_data(id_update)%send_pos = buffer_pos
-     nonblock_buffer_pos = nonblock_buffer_pos + msgsize
+  nrecv = get_vector_recv(domain, update_x, update_y, ind_recv_x, ind_recv_y, start_pos_recv, from_pe_list)
+  nsend = get_vector_send(domain, update_x, update_y, ind_send_x, ind_send_y, start_pos_send, to_pe_list)
+  if( nrecv > MAX_REQUEST  ) then
+     write( text,'(a,i8,a,i8)' ) 'nrecv =', nrecv, ' greater than MAX_REQEUST =', MAX_REQUEST
+     call mpp_error(FATAL,'MPP_START_DO_UPDATE_V: '//trim(text))
   endif
-
-  !--- send
-  cur_rank = get_rank_send(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y) 
-
-  do while (ind_x .LE. nsend_x .OR. ind_y .LE. nsend_y)
-     call mpp_clock_begin(pack_clock_nonblock)
-     pos = buffer_pos
-     !--- make sure the domain stack size is big enough
+  if( nsend > MAX_REQUEST ) then
+     write( text,'(a,i8,a,i8)' ) 'nsend =', nsend, ' greater than MAX_REQEUST =', MAX_REQUEST
+     call mpp_error(FATAL,'MPP_START_DO_UPDATE_V: '//trim(text))
+  endif
+  !--- make sure the domain stack size is big enough.
+  buffer_pos = nonblock_data(id_update)%recv_pos
+  recvsize = 0
+  do m = 1, nrecv
      msgsize = 0
-     if(cur_rank == rank_x) then
-        do n = 1, update_x%send(ind_x)%count
-           dir = update_x%send(ind_x)%dir(n)
-           if( send(dir) ) msgsize = msgsize +  update_x%send(ind_x)%msgsize(n)
-        enddo
+     nonblock_data(id_update)%size_recv(m) = 0
+     ind_x = ind_recv_x(m)
+     ind_y = ind_recv_y(m)
+     if(ind_x >= 0) then
+        do n = 1, update_x%recv(ind_x)%count
+           dir = update_x%recv(ind_x)%dir(n)
+           if(recv(dir)) then
+              msgsize = msgsize + update_x%recv(ind_x)%msgsize(n)
+           end if
+        end do
      endif
-     if(cur_rank == rank_y) then
-        do n = 1, update_y%send(ind_y)%count
-           dir = update_y%send(ind_y)%dir(n)
-           if( send(dir) ) msgsize = msgsize +  update_y%send(ind_y)%msgsize(n)
-        enddo
+     if(ind_y >= 0) then
+        do n = 1, update_y%recv(ind_y)%count
+           dir = update_y%recv(ind_y)%dir(n)
+           if(recv(dir)) then
+              msgsize = msgsize + update_y%recv(ind_y)%msgsize(n)
+           end if
+        end do
      endif
-
      if( msgsize.GT.0 )then
         msgsize = msgsize*ke_sum
-        mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, pos+msgsize )
-        if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
-           write( text,'(i8)' )mpp_domains_stack_hwm
-           call mpp_error( FATAL, 'MPP_START_DO_UPDATE_V: mpp_domains_stack overflow, ' // &
-                'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.')
-        end if
+        recvsize = recvsize + msgsize
+        nonblock_data(id_update)%size_recv(m) = msgsize
+        nonblock_data(id_update)%buffer_pos_recv(m) = buffer_pos
+        buffer_pos = buffer_pos + msgsize
      end if
+  end do   
+
+  sendsize = 0
+  do m = 1, nsend
+     msgsize = 0
+     ind_x = ind_send_x(m)
+     ind_y = ind_send_y(m)
+     if(ind_x >= 0) then
+        do n = 1, update_x%send(ind_x)%count
+           dir = update_x%send(ind_x)%dir(n)
+           if(send(dir)) then
+              msgsize = msgsize + update_x%send(ind_x)%msgsize(n)
+           end if
+        end do
+     endif
+     if(ind_y >= 0) then
+        do n = 1, update_y%send(ind_y)%count
+           dir = update_y%send(ind_y)%dir(n)
+           if(send(dir)) then
+              msgsize = msgsize + update_y%send(ind_y)%msgsize(n)
+           end if
+        end do
+     endif
+     if( msgsize.GT.0 )then
+        msgsize = msgsize*ke_sum
+        sendsize = sendsize + msgsize
+        nonblock_data(id_update)%buffer_pos_send(m) = buffer_pos
+        buffer_pos = buffer_pos + msgsize
+     end if
+  end do   
+
+  mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, &
+     nonblock_data(id_update)%recv_pos+recvsize+sendsize )
+  if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
+     write( text,'(i8)' )mpp_domains_stack_hwm
+     call mpp_error( FATAL, 'MPP_START_DO_UPDATE_V: mpp_domains_stack overflow, '// &
+          'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+  end if  
+
+  if( reuse_id_update ) then
+     if(recvsize .NE. nonblock_data(id_update)%recv_msgsize) then
+        call mpp_error(FATAL,'MPP_START_DO_UPDATE: mismatch of recv msgsize for field '//trim(name) )
+     endif
+     if(sendsize .NE. nonblock_data(id_update)%send_msgsize) then
+        call mpp_error(FATAL,'MPP_START_DO_UPDATE: mismatch of send msgsize for field '//trim(name) )
+     endif
+  else
+     nonblock_data(id_update)%recv_msgsize = recvsize
+     nonblock_data(id_update)%send_msgsize = sendsize
+     nonblock_data(id_update)%send_pos = nonblock_data(id_update)%recv_pos + recvsize
+     nonblock_buffer_pos = nonblock_buffer_pos + recvsize + sendsize
+  endif
+
+  !--- recv
+  call mpp_clock_begin(recv_clock_nonblock)
+  !$OMP parallel do schedule(dynamic) default(shared) private(msgsize,ind_x,ind_y,from_pe,dir,buffer_pos,request)  
+  do m = 1, nrecv
+     msgsize = nonblock_data(id_update)%size_recv(m)
+     from_pe = from_pe_list(m)
+     if( msgsize .GT. 0 )then
+        buffer_pos = nonblock_data(id_update)%buffer_pos_recv(m)
+!$OMP CRITICAL
+        call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.false., &
+                   tag=id_update, request=request)
+!$OMP END CRITICAL
+        nonblock_data(id_update)%request_recv(m) = request
+#ifdef use_libMPI
+        nonblock_data(id_update)%type_recv(m) = MPI_TYPE_
+#endif
+     end if
+  end do
+!$OMP end parallel do
+  call mpp_clock_end(recv_clock_nonblock)
+
+  !--- send
+
+  call mpp_clock_begin(send_pack_clock_nonblock)
+
+!$OMP parallel do schedule(dynamic) default(shared) private(ind_x,ind_y,to_pe,buffer_pos,pos,dir,tMe, &
+!$OMP          is,ie,js,je,ptr_fieldx,ptr_fieldy,msgsize,request)
+  do m = 1, nsend
+     ind_x = ind_send_x(m)
+     ind_y = ind_send_y(m)
+     to_pe = to_pe_list(m)
+     buffer_pos = nonblock_data(id_update)%buffer_pos_send(m)
+     pos = buffer_pos
      
      select case( gridtype )
      case(BGRID_NE, BGRID_SW, AGRID)
-        if(cur_rank == rank_x) then
-           to_pe = update_x%send(ind_x)%pe
+        if(ind_x >= 0) then
            do n = 1, update_x%send(ind_x)%count
               dir = update_x%send(ind_x)%dir(n)
               if( send(dir) ) then 
@@ -420,19 +415,9 @@ subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, upda
                  end if ! if( is_refined(n) )
               end if ! if( send(dir) ) 
            end do ! do n = 1, update_x%send(ind_x)%count
-           ind_x = ind_x+1
-           ind_y = ind_x
-           if(ind_x .LE. nsend_x) then
-              rank_x = update_x%send(ind_x)%pe - domain%pe 
-              if(rank_x .LT.0) rank_x = rank_x + nlist
-           else
-              rank_x = nlist+1
-           endif
-           rank_y = rank_x
         endif
      case(CGRID_NE, CGRID_SW)
-        if(cur_rank == rank_x) then
-           to_pe = update_x%send(ind_x)%pe
+        if(ind_x>=0) then
            do n = 1, update_x%send(ind_x)%count
               dir = update_x%send(ind_x)%dir(n)
               if( send(dir) ) then
@@ -597,16 +582,8 @@ subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, upda
                  end if
               end if
            end do
-           ind_x = ind_x+1
-           if(ind_x .LE. nsend_x) then
-              rank_x = update_x%send(ind_x)%pe - domain%pe 
-              if(rank_x .LT.0) rank_x = rank_x + nlist
-           else
-              rank_x = nlist+1 
-           endif
         endif
-        if(cur_rank == rank_y) then
-           to_pe = update_y%send(ind_y)%pe
+        if(ind_y>=0) then
            do n = 1, update_y%send(ind_y)%count
               dir = update_y%send(ind_y)%dir(n)
               if( send(dir) ) then
@@ -771,42 +748,21 @@ subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, upda
                  end if
               endif
            enddo
-           ind_y = ind_y+1
-           if(ind_y .LE. nsend_y) then
-              rank_y = update_y%send(ind_y)%pe - domain%pe 
-              if(rank_y .LT.0) rank_y = rank_y + nlist
-           else
-              rank_y = nlist+1
-           endif
         endif
      end select
-     call mpp_clock_end(pack_clock_nonblock)
-     call mpp_clock_begin(send_clock_nonblock)
-     cur_rank = min(rank_x, rank_y)
-     msgsize = pos - buffer_pos
-     if( msgsize.GT.0 )then
-        count = nonblock_data(id_update)%request_send_count + 1
-        if( count > MAX_REQUEST ) then
-           write( text,'(a,i8,a,i8)' ) 'send request count =', count, ' greater than MAX_REQEUST =', MAX_REQUEST
-           call mpp_error(FATAL,'MPP_START_DO_UPDATE_V: '//trim(text))
-        endif
-        nonblock_data(id_update)%request_send_count = count
-        call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, &
-                       tag=id_update, request=nonblock_data(id_update)%request_send(count) )
-        buffer_pos = pos
-     end if
-     call mpp_clock_end(send_clock_nonblock)
-  end do
 
-  msgsize = buffer_pos - nonblock_data(id_update)%send_pos
-  if( reuse_id_update ) then
-     if(msgsize .NE. nonblock_data(id_update)%send_msgsize) then
-        call mpp_error(FATAL,'MPP_START_DO_UPDATE_V: mismatch of send msgsize for field '//trim(name) )
-     endif
-  else
-     nonblock_buffer_pos = nonblock_buffer_pos + msgsize
-     nonblock_data(id_update)%send_msgsize = msgsize
-  endif
+     msgsize = pos - buffer_pos
+     if( msgsize .GT.0 )then
+!$OMP CRITICAL
+        call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, &
+                       tag=id_update, request=request )
+!$OMP END CRITICAL
+        nonblock_data(id_update)%request_send(m) = request
+     end if
+  end do
+!$OMP end parallel do
+
+  call mpp_clock_end(send_pack_clock_nonblock)
 
 
 end subroutine MPP_START_DO_UPDATE_3D_V_
@@ -842,13 +798,16 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
   MPP_TYPE_ :: recv_buffer(size(mpp_domains_stack_nonblock(:)))
   pointer( ptr, recv_buffer )
 
-  integer :: i, j, k, l, is, ie, js, je, n, ke_sum, l_size
+  integer :: i, j, k, l, is, ie, js, je, n, ke_sum, l_size, m
   integer :: pos, nlist, msgsize, tile, buffer_pos
-  integer :: rank_x, rank_y, ind_x, ind_y, cur_rank
+  integer :: ind_x, ind_y, nrecv, nsend
   integer :: index, is1, ie1, js1, je1, ni, nj, total, start1, start, start2
+  integer :: ind_recv_x(update_x%nrecv+update_y%nrecv), ind_recv_y(update_x%nrecv+update_y%nrecv)
+  integer :: start_pos_recv(update_x%nrecv+update_y%nrecv)
+  integer :: from_pe_list(update_x%nrecv+update_y%nrecv)
   logical :: recv(8), send(8), update_edge_only
   integer :: shift, midpoint
-  integer :: tMe, dir, count
+  integer :: tMe, dir
 
   update_edge_only = BTEST(flags, EDGEONLY)
   recv(1) = BTEST(flags,EAST)
@@ -876,32 +835,33 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
   nlist  = size(domain%list(:))
   ptr = LOC(mpp_domains_stack_nonblock)
 
-  buffer_pos = nonblock_data(id_update)%recv_pos + nonblock_data(id_update)%recv_msgsize
-  cur_rank = get_rank_unpack(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y) 
+  nrecv = get_vector_recv(domain, update_x, update_y, ind_recv_x, ind_recv_y, start_pos_recv, from_pe_list)
 
-  count = nonblock_data(id_update)%request_recv_count
-  if(count > 0) then
+  if(nrecv > 0) then
      call mpp_clock_begin(wait_clock_nonblock)
-     call mpp_sync_self(check=EVENT_RECV, request=nonblock_data(id_update)%request_recv(1:count), &
-                        msg_size=nonblock_data(id_update)%size_recv(1:count),                     &
-                        msg_type=nonblock_data(id_update)%type_recv(1:count) )
+     call mpp_sync_self(check=EVENT_RECV, request=nonblock_data(id_update)%request_recv(1:nrecv), &
+                        msg_size=nonblock_data(id_update)%size_recv(1:nrecv),                     &
+                        msg_type=nonblock_data(id_update)%type_recv(1:nrecv) )
      call mpp_clock_end(wait_clock_nonblock)
-     nonblock_data(id_update)%request_recv_count = 0
 #ifdef use_libMPI
      nonblock_data(id_update)%request_recv(:)    = MPI_REQUEST_NULL
 #else
      nonblock_data(id_update)%request_recv(:)    = 0
 #endif
-     nonblock_data(id_update)%size_recv(:)    = 0
      nonblock_data(id_update)%type_recv(:)    = 0
   endif 
 
-  do while (ind_x > 0 .OR. ind_y > 0)
-     call mpp_clock_begin(unpk_clock_nonblock)
+  call mpp_clock_begin(unpk_clock_nonblock)
+!$OMP parallel do schedule(dynamic) default(shared) private(ind_x,ind_y,buffer_pos,pos,dir,tMe,is,ie,js,je, &
+!$OMP          msgsize,index,is1,ie1,js1,je1,ni,nj,total,start,ptr_bufferx,ptr_buffery,start1,start2,ptr_fieldx,ptr_fieldy)
+  do m = nrecv,1,-1
+     ind_x = ind_recv_x(m)
+     ind_y = ind_recv_y(m)
+     buffer_pos = nonblock_data(id_update)%buffer_pos_recv(m)+nonblock_data(id_update)%size_recv(m) 
      pos = buffer_pos
      select case ( gridtype )
      case(BGRID_NE, BGRID_SW, AGRID)
-        if(cur_rank == rank_x) then
+        if(ind_x>=0) then
            do n = update_x%recv(ind_x)%count, 1, -1    
               dir = update_x%recv(ind_x)%dir(n)
               if( recv(dir) ) then
@@ -958,18 +918,9 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
                  end if
               end if ! end if( recv(dir) )
            end do  ! do dir=8,1,-1 
-           ind_x = ind_x-1
-           ind_y = ind_x
-           if(ind_x .GT. 0) then
-              rank_x = update_x%recv(ind_x)%pe - domain%pe 
-              if(rank_x .LE.0) rank_x = rank_x + nlist
-           else
-              rank_x = nlist+1
-           endif
-           rank_y = rank_x
         endif
      case(CGRID_NE, CGRID_SW)
-        if(cur_rank == rank_y) then
+        if(ind_y>=0) then
            do n = update_y%recv(ind_y)%count, 1, -1
 
               dir = update_y%recv(ind_y)%dir(n)
@@ -1023,15 +974,8 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
                  end if
               end if
            end do
-           ind_y = ind_y-1
-           if(ind_y .GT. 0) then
-              rank_y = update_y%recv(ind_y)%pe - domain%pe
-              if(rank_y .LE.0) rank_y = rank_y + nlist
-           else
-              rank_y = nlist+1
-           endif
         endif
-        if(cur_rank == rank_x) then
+        if(ind_x>=0) then
            do n = update_x%recv(ind_x)%count, 1, -1
               dir = update_x%recv(ind_x)%dir(n)
               if( recv(dir) ) then
@@ -1084,21 +1028,14 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
                  end if
               end if
            end do
-           ind_x = ind_x-1
-           if(ind_x .GT. 0) then
-              rank_x = update_x%recv(ind_x)%pe - domain%pe 
-              if(rank_x .LE.0) rank_x = rank_x + nlist
-           else
-              rank_x = nlist+1
-           endif
         endif
      end select
-     cur_rank = min(rank_x, rank_y)     
-     call mpp_clock_end(unpk_clock_nonblock)
   end do
-
+!$OMP end parallel do
+  call mpp_clock_end(unpk_clock_nonblock)
   ! ---northern boundary fold
   shift = 0
+  tMe = 1
   if(domain%symmetry) shift = 1
   if( BTEST(domain%fold,NORTH) .AND. (.NOT.BTEST(flags,SCALAR_BIT)) )then
      j = domain%y(1)%global%end+shift
@@ -1482,10 +1419,15 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
      end if
   end if
 
-  count = nonblock_data(id_update)%request_send_count
-  if(count > 0) then
+  
+  if(nrecv>0) then
+    nonblock_data(id_update)%size_recv(:) = 0
+  endif
+
+  nsend = update_x%nsend+update_y%nsend
+  if(nsend > 0) then
      call mpp_clock_begin(wait_clock_nonblock)
-     call mpp_sync_self(check=EVENT_SEND, request=nonblock_data(id_update)%request_send(1:count))
+     call mpp_sync_self(check=EVENT_SEND, request=nonblock_data(id_update)%request_send(1:nsend))
      call mpp_clock_end(wait_clock_nonblock)
      nonblock_data(id_update)%request_send_count = 0
 #ifdef use_libMPI

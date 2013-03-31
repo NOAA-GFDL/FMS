@@ -33,11 +33,12 @@ public :: get_mosaic_contact
 public :: get_mosaic_xgrid_size
 public :: get_mosaic_xgrid
 public :: calc_mosaic_grid_area
+public :: calc_mosaic_grid_great_circle_area
 
 logical :: module_is_initialized = .true.
 ! version information varaible
- character(len=128) :: version = '$Id: mosaic.F90,v 15.0.28.1 2012/03/14 18:54:19 Zhi.Liang Exp $'
- character(len=128) :: tagname = '$Name: siena_201211 $'
+ character(len=128) :: version = '$Id: mosaic.F90,v 15.0.28.1.2.1 2012/11/26 14:11:26 Zhi.Liang Exp $'
+ character(len=128) :: tagname = '$Name: siena_201303 $'
 
 contains
 
@@ -386,6 +387,48 @@ end subroutine mosaic_init
 
   end subroutine calc_mosaic_grid_area
   ! </SUBROUTINE>
+
+  !###############################################################################
+  ! <SUBROUTINE NAME="calc_mosaic_grid_great_circle_area">
+  !   <OVERVIEW>
+  !     calculate grid cell area using great cirlce algorithm
+  !   </OVERVIEW>
+  !   <DESCRIPTION>
+  !     calculate the grid cell area. The purpose of this routine is to make 
+  !     sure the consistency between model grid area and exchange grid area.
+  !   </DESCRIPTION>
+  !   <TEMPLATE>
+  !     call calc_mosaic_grid_great_circle_area(lon, lat, area)
+  !   </TEMPLATE>
+  !   <IN NAME="lon" TYPE="real, dimension(:,:)">
+  !     geographical longitude of grid cell vertices.
+  !   </IN>
+  !   <IN NAME="lat" TYPE="real, dimension(:,:)">
+  !     geographical latitude of grid cell vertices.
+  !   </IN>
+  !   <INOUT NAME="area" TYPE="real, dimension(:,:)">
+  !     grid cell area.
+  !   </INOUT>
+  subroutine calc_mosaic_grid_great_circle_area(lon, lat, area)
+     real, dimension(:,:), intent(in)    :: lon
+     real, dimension(:,:), intent(in)    :: lat
+     real, dimension(:,:), intent(inout) :: area
+     integer                             :: nlon, nlat
+     
+
+     nlon = size(area,1)
+     nlat = size(area,2)
+     ! make sure size of lon, lat and area are consitency
+     if( size(lon,1) .NE. nlon+1 .OR. size(lat,1) .NE. nlon+1 ) &
+        call mpp_error(FATAL, "mosaic_mod: size(lon,1) and size(lat,1) should equal to size(area,1)+1")
+     if( size(lon,2) .NE. nlat+1 .OR. size(lat,2) .NE. nlat+1 ) &
+        call mpp_error(FATAL, "mosaic_mod: size(lon,2) and size(lat,2) should equal to size(area,2)+1")
+
+     call get_grid_great_circle_area( nlon, nlat, lon, lat, area)
+
+  end subroutine calc_mosaic_grid_great_circle_area
+  ! </SUBROUTINE>
+
 
 end module mosaic_mod
 

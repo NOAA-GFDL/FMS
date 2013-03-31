@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_reduce.inc,v 18.0 2010/03/02 23:57:19 fms Exp $
+! $Id: mpp_domains_reduce.inc,v 18.0.26.1 2013/01/09 14:30:18 Zhi.Liang Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -912,9 +912,11 @@
 
 #undef MPP_DO_GLOBAL_FIELD_3D_
 #define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_l8_3d
+#define LOGICAL_VARIABLE
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(LONG_KIND)
 #include <mpp_do_global_field.h>                                    
+#undef LOGICAL_VARIABLE
 #endif
 
 #ifdef OVERLOAD_R4
@@ -941,7 +943,9 @@
 
 #undef MPP_DO_GLOBAL_FIELD_3D_
 #define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_l4_3d
+#define LOGICAL_VARIABLE
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(INT_KIND)
 #include <mpp_do_global_field.h>
+#undef LOGICAL_VARIABLE
 

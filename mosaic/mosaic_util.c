@@ -11,10 +11,10 @@
 #define HPI (0.5*M_PI)
 #define TPI (2.0*M_PI)
 #define TOLORENCE (1.e-6)
-#define EPSLN (1.e-10)
+#define EPSLN8 (1.e-8)
 #define EPSLN10 (1.e-10)
-
-
+#define EPSLN15 (1.e-15)
+#define EPSLN30 (1.e-30)
 /***********************************************************
     void error_handler(char *str)
     error handler: will print out error message and then abort
@@ -208,7 +208,7 @@ void xyz2latlon( int np, const double *x, const double *y, const double *z, doub
     yy /= dist;
     zz /= dist;
     
-    if ( fabs(xx)+fabs(yy)  < EPSLN ) 
+    if ( fabs(xx)+fabs(yy)  < EPSLN10 ) 
        lon[i] = 0;
      else
        lon[i] = atan2(yy, xx);
@@ -489,8 +489,12 @@ double great_circle_area(int n, const double *x, const double *y, const double *
 double spherical_angle(const double *v1, const double *v2, const double *v3)
 {
   double angle;
+#ifdef NO_QUAD_PRECISION  
   double px, py, pz, qx, qy, qz, ddd;
-
+#else
+  long double px, py, pz, qx, qy, qz, ddd;
+#endif
+  
   /* vector product between v1 and v2 */
   px = v1[1]*v2[2] - v1[2]*v2[1];
   py = v1[2]*v2[0] - v1[0]*v2[2];
@@ -499,22 +503,23 @@ double spherical_angle(const double *v1, const double *v2, const double *v3)
   qx = v1[1]*v3[2] - v1[2]*v3[1];
   qy = v1[2]*v3[0] - v1[0]*v3[2];
   qz = v1[0]*v3[1] - v1[1]*v3[0];
-    
+
   ddd = (px*px+py*py+pz*pz)*(qx*qx+qy*qy+qz*qz);
-  if ( ddd <= 0.0 )
+  if ( ddd <= 0.0 ) 
     angle = 0. ;
   else {
     ddd = (px*qx+py*qy+pz*qz) / sqrt(ddd);
-    if ( abs(ddd)>1.) {
-      angle = 2.*atan(1.0);    /* 0.5*pi */
+    if( fabs(ddd-1) < EPSLN30 ) ddd = 1;
+    if( fabs(ddd+1) < EPSLN30 ) ddd = -1;
+    if ( ddd>1. || ddd<-1. ) {
       /*FIX (lmh) to correctly handle co-linear points (angle near pi or 0) */
       if (ddd < 0.)
-	angle = 4.*atan(1.0); /*should be pi*/
-      else  
+	angle = M_PI;
+      else
 	angle = 0.;
     }
-    else 
-      angle = acos( ddd );
+    else
+      angle = acosl( ddd );
   }
   
   return angle;
@@ -583,19 +588,6 @@ void vect_cross(const double *p1, const double *p2, double *e )
     return cross products of 3D vectors: = P1 X P2
     -------------------------------------------------------------------*/
     
-double *cross(const double *p1, const double *p2)
-{
-  double *e=NULL;
-
-  e = (double *)malloc(3*sizeof(double));
-  e[0] = p1[1]*p2[2] - p1[2]*p2[1];
-  e[1] = p1[2]*p2[0] - p1[0]*p2[2];
-  e[2] = p1[0]*p2[1] - p1[1]*p2[0];
-
-  return e;
-  
-}; /* cross */
-
 double dot(const double *p1, const double *p2)
 {
 
@@ -661,11 +653,11 @@ void unit_vect_latlon(int size, const double *lon, const double *lat, double *vl
    NOTE: the intersection doesn't have to be inside the tri or line for this to return true
 */
 int intersect_tri_with_line(const double *plane, const double *l1, const double *l2, double *p,
-			     double *t) {
+			    double *t) {
 
-  double M[3*3], inv_M[3*3];
-  double V[3];
-  double X[3];
+  long double M[3*3], inv_M[3*3];
+  long double V[3];
+  long double X[3];
   int is_invert=0;
   
   const double *pnt0=plane;
@@ -701,7 +693,7 @@ int intersect_tri_with_line(const double *plane, const double *l1, const double 
 }
 
 
-void mult(double m[], double v[], double out_v[]) {
+void mult(long double m[], long double v[], long double out_v[]) {
 
   out_v[0]=m[0]*v[0]+m[1]*v[1]+m[2]*v[2];
   out_v[1]=m[3]*v[0]+m[4]*v[1]+m[5]*v[2];
@@ -711,17 +703,18 @@ void mult(double m[], double v[], double out_v[]) {
 
 
 /* returns 1 if matrix is inverted, 0 otherwise */
-int invert_matrix_3x3(double m[], double m_inv[]) {
+int invert_matrix_3x3(long double m[], long double m_inv[]) {
 
-  const double det =  m[0] * (m[4]*m[8] - m[5]*m[7])
+  
+  const long double det =  m[0] * (m[4]*m[8] - m[5]*m[7])
                      -m[1] * (m[3]*m[8] - m[5]*m[6])
                      +m[2] * (m[3]*m[7] - m[4]*m[6]);
 #ifdef test_invert_matrix_3x3
-  printf("det = %g\n", det);
+  printf("det = %Lf\n", det);
 #endif  
-  if (fabs(det) < EPSLN10 ) return 0;
+  if (fabs(det) < EPSLN15 ) return 0;
 
-  const double deti = 1.0/det;
+  const long double deti = 1.0/det;
 
   m_inv[0] = (m[4]*m[8] - m[5]*m[7]) * deti;
   m_inv[1] = (m[2]*m[7] - m[1]*m[8]) * deti;
@@ -738,17 +731,40 @@ int invert_matrix_3x3(double m[], double m_inv[]) {
   return 1;
 }
 
-void deleteNode(struct Node *list)
+#ifndef MAXNODELIST
+#define MAXNODELIST 100
+#endif
+
+struct Node *nodeList=NULL;
+int curListPos=0;
+
+void rewindList(void)
 {
-  struct Node *temp1=NULL, *temp2=NULL;
+  int n;
+
+  curListPos = 0;
+  if(!nodeList) nodeList = (struct Node *)malloc(MAXNODELIST*sizeof(struct Node));
+  for(n=0; n<MAXNODELIST; n++) initNode(nodeList+n);
   
-  temp1 = list->Next;
-  if( temp1 ) {
-    temp2 = temp1->Next;
-    free(temp1);
-    temp1 = temp2;
-  }
 }
+
+struct Node *getNext()
+{
+  struct Node *temp=NULL;
+  int n;
+  
+  if(!nodeList) {
+    nodeList = (struct Node *)malloc(MAXNODELIST*sizeof(struct Node));
+    for(n=0; n<MAXNODELIST; n++) initNode(nodeList+n);
+  }
+  
+  temp = nodeList+curListPos;
+  curListPos++;
+  if(curListPos > MAXNODELIST) error_handler("getNext: curListPos >= MAXNODELIST");
+  
+  return (temp);
+}
+
 
 void initNode(struct Node *node)
 {
@@ -764,20 +780,33 @@ void initNode(struct Node *node)
     
 }
   
-void addBeg(struct Node *list, double x, double y, double z, int intersect, double u, int inbound)
+void addEnd(struct Node *list, double x, double y, double z, int intersect, double u, int inbound, int inside)
 {
+
   struct Node *temp=NULL;
 
-  if(list == NULL) error_handler("addBeg: list is NULL");
+  if(list == NULL) error_handler("addEnd: list is NULL");
   
   if(list->initialized) {
-    temp = (struct Node *)malloc(sizeof(struct Node));
-    temp->Next = list;
+
+    /* (x,y,z) might already in the list when intersect is true and u=0 or 1 */
+      temp = list;
+      while (temp) {
+        if(samePoint(temp->x, temp->y, temp->z, x, y, z)) return;
+        temp=temp->Next;
+      }
+    temp = list;
+    while(temp->Next)  
+      temp=temp->Next;  
+  
+    /* Append at the end of the list.  */
+    temp->Next = getNext();
+    temp = temp->Next;
   }
-  else{
-    temp=list;
-    temp->Next=NULL;
+  else {
+    temp = list;
   }
+
   temp->x = x;
   temp->y = y;
   temp->z = z;
@@ -785,46 +814,67 @@ void addBeg(struct Node *list, double x, double y, double z, int intersect, doub
   temp->intersect = intersect;
   temp->inbound = inbound;
   temp->initialized=1;
-  temp->isInside = 0;
+  temp->isInside = inside;
 }
 
-void addEnd(struct Node *list, double x, double y, double z, int intersect, double u, int inbound)
+/* return 1 if the point (x,y,z) is added in the list, return 0 if it is already in the list */
+
+int addIntersect(struct Node *list, double x, double y, double z, int intersect, double u1, double u2, int inbound,
+		 int is1, int ie1, int is2, int ie2)
 {
 
-  struct Node *temp1=NULL, *temp2=NULL;
+  double u1_cur, u2_cur;
+  int    i1_cur, i2_cur;
+  struct Node *temp=NULL;
 
-  if(list == NULL) error_handler("addBeg: list is NULL");
+  if(list == NULL) error_handler("addEnd: list is NULL");
+
+  /* first check to make sure this point is not in the list */
+  u1_cur = u1;
+  i1_cur = is1;
+  u2_cur = u2;
+  i2_cur = is2;
+  if(u1_cur == 1) {
+    u1_cur = 0;
+    i1_cur = ie1;
+  }
+  if(u2_cur == 1) {
+    u2_cur = 0;
+    i2_cur = ie2;
+  }
   
   if(list->initialized) {
-    temp1 = (struct Node *)malloc(sizeof(struct Node));
-    /* (x,y,z) might already in the list */ 
-    temp2 = list;
-    while (temp2) {
-      if(fabs(temp2->x-x) <EPSLN10 && fabs(temp2->y-y) <EPSLN10 && fabs(temp2->z-z) <EPSLN10)
-	return;
-      temp2=temp2->Next;
+    temp = list;
+    while(temp) {
+      if( temp->u == u1_cur && temp->subj_index == i1_cur) return 0;
+      if( temp->u_clip == u2_cur && temp->clip_index == i2_cur) return 0;
+      if( !temp->Next ) break;
+      temp=temp->Next;
     }
-    temp2 = list;
-    while(temp2->Next != NULL)  
-      temp2=temp2->Next;  
-  
+    
     /* Append at the end of the list.  */
-    temp2->Next=temp1;
+    temp->Next = getNext();
+    temp = temp->Next;
   }
   else {
-    temp1 = list;
+    temp = list;
   }
 
-  temp1->x = x;
-  temp1->y = y;
-  temp1->z = z;
-  temp1->u = u;
-  temp1->intersect = intersect;
-  temp1->inbound = inbound;
-  temp1->Next = NULL;
-  temp1->initialized=1;
-  temp1->isInside = 0;
+  temp->x = x;
+  temp->y = y;
+  temp->z = z;
+  temp->intersect = intersect;
+  temp->inbound = inbound;
+  temp->initialized=1;
+  temp->isInside = 0;
+  temp->u = u1_cur;
+  temp->subj_index = i1_cur;
+  temp->u_clip = u2_cur;
+  temp->clip_index = i2_cur;
+  
+  return 1;
 }
+
 
 int length(struct Node *list)  
 {  
@@ -835,16 +885,27 @@ int length(struct Node *list)
   
    while(cur_ptr)  
    {
-     if(!cur_ptr->initialized) break;
+     if(cur_ptr->initialized ==0) break;
       cur_ptr=cur_ptr->Next;
       count++;  
    }  
    return(count);  
 }  
 
+/* two points are the same if there are close enough */
+int samePoint(double x1, double y1, double z1, double x2, double y2, double z2)
+{
+    if( fabs(x1-x2) > EPSLN10 || fabs(y1-y2) > EPSLN10 || fabs(z1-z2) > EPSLN10 )
+      return 0;
+    else
+      return 1;
+}
+
+  
+
 int sameNode(struct Node node1, struct Node node2)
 {
-  if( fabs(node1.x-node2.x)<EPSLN10 && fabs(node1.y-node2.y)<EPSLN10 && fabs(node1.z-node2.z)<EPSLN10 )
+  if( node1.x == node2.x && node1.y == node2.y && node1.z==node2.z )
     return 1;
   else
     return 0;
@@ -854,7 +915,7 @@ int sameNode(struct Node node1, struct Node node2)
 void addNode(struct Node *list, struct Node inNode)
 {
 
-  addEnd(list, inNode.x, inNode.y, inNode.z, inNode.intersect, inNode.u, inNode.inbound);
+  addEnd(list, inNode.x, inNode.y, inNode.z, inNode.intersect, inNode.u, inNode.inbound, inNode.isInside);
   
 }
 
@@ -903,74 +964,49 @@ void printNode(struct Node *list, char *str)
   if(str) printf("  %s \n", str);
   temp = list;
   while(temp) {
-    if(temp->initialized) {
-      printf(" (x, y, z, interset, inbound, isInside) = (%g,%g,%g,%d,%d,%d)\n",
-	     temp->x, temp->y, temp->z, temp->intersect, temp->inbound, temp->isInside);
-    }
+    if(temp->initialized ==0) break;
+    printf(" (x, y, z, interset, inbound, isInside) = (%19.15f,%19.15f,%19.15f,%d,%d,%d)\n",
+	   temp->x, temp->y, temp->z, temp->intersect, temp->inbound, temp->isInside);
     temp = temp->Next;
   }
   printf("\n");
 }
 
-int isHeadNode(struct Node *list, struct Node nodeIn)
+int intersectInList(struct Node *list, double x, double y, double z) 
 {
-  if(sameNode(*list, nodeIn))
+  struct Node *temp;
+  int found=0;
+  
+  temp = list;
+  found = 0;
+  while ( temp ) {
+    if( temp->x == x && temp->y == y && temp->z == z ) {
+      found = 1;
+      break;
+    }
+    temp=temp->Next;
+  }
+  if (!found) error_handler("intersectInList: point (x,y,z) is not found in the list");
+  if( temp->intersect == 2 )
     return 1;
   else
     return 0;
+
 }
   
-void removeNode(struct Node *list, struct Node nodeIn)
-{
-
-  struct Node *temp1=NULL;
-  struct Node *temp2=NULL;
-  int found=0;
-
-  if( isHeadNode(list, nodeIn) )
-    error_handler("removeNode: can not remove the head node of the list");
-  
-    /* search the list to find the point has the same value as nodeIn */
-  temp1 = list;
-  temp2 = list->Next;
-  found = 0;
-  while (temp2) {
-    if(sameNode(*temp2, nodeIn)) {
-      found = 1;
-      temp1->Next = temp2->Next;
-      free(temp2);
-      break;
-    }
-    temp1 = temp2;
-    temp2 = temp2->Next;
-  }
-  if(!found) error_handler("removeNode: nodeIn is not in the list");    
-}
-
 
 /* The following insert a intersection after non-intersect point (x2,y2,z2), if the point
    after (x2,y2,z2) is an intersection, if u is greater than the u value of the intersection,
    insert after, otherwise insert before
 */
-void insertAfter(struct Node *list, double x, double y, double z, int intersect, double u, int inbound,
+void insertIntersect(struct Node *list, double x, double y, double z, double u1, double u2, int inbound,
 		 double x2, double y2, double z2)
 {
   struct Node *temp1=NULL, *temp2=NULL;
   struct Node *temp;
+  double u_cur;
   int found=0;
-
-  /* (x,y,z) might in the list. Just set intersect to 2 to means both vertice and intersection */ 
-  temp2 = list;
-  while (temp2) {
-    if(fabs(temp2->x-x) <EPSLN10 && fabs(temp2->y-y) <EPSLN10 && fabs(temp2->z-z) <EPSLN10) {
-      if( temp2->intersect == 0) temp2->intersect = 2;
-      temp2->u = u;
-      return;
-    }	
-    temp2=temp2->Next;
-  }
-
-  
+    
   temp1 = list;
   found = 0;
   while ( temp1 ) {
@@ -980,11 +1016,41 @@ void insertAfter(struct Node *list, double x, double y, double z, int intersect,
     }
     temp1=temp1->Next;
   }
-  if (!found) error_handler("inserAfter: non-intersect point (x,y,z) is not found in the list");
+  if (!found) error_handler("inserAfter: point (x,y,z) is not found in the list");
+
+  /* when u = 0 or u = 1, set the grid point to be the intersection point to solve truncation error isuse */
+  u_cur = u1;
+  if(u1 == 1) {
+    u_cur = 0;
+    temp1 = temp1->Next;
+    if(!temp1) temp1 = list;
+  }
+  if(u_cur==0) {
+    temp1->intersect = 2; 
+    temp1->isInside = 1;
+    temp1->u = u_cur;
+    temp1->x = x;
+    temp1->y = y;
+    temp1->z = z;
+    return;
+  }
+
+  /* when u2 != 0 and u2 !=1, can decide if one end of the point is outside depending on inbound value */
+  if(u2 != 0 && u2 != 1) {
+    if(inbound == 1) { /* goes outside, then temp1->Next is an outside point */
+      temp2 = temp1->Next;
+      if(!temp2) temp2 = list;
+      temp2->isInside = 0;
+    }
+    else if(inbound ==2) { /* goes inside, then temp1 is an outside point */
+      temp1->isInside = 0;
+    }
+  }
+      
   temp2 = temp1->Next;
   while ( temp2 ) {
     if( temp2->intersect == 1 ) {
-      if( temp2->u > u ) {
+      if( temp2->u > u_cur ) {
 	break;
       }
     }
@@ -994,15 +1060,15 @@ void insertAfter(struct Node *list, double x, double y, double z, int intersect,
     temp2 = temp2->Next;
   }
 
-  /* insert after temp1 */
-  temp = (struct Node *)malloc(sizeof(struct Node));
+  /* assign value */
+  temp = getNext();
   temp->x = x;
   temp->y = y;
   temp->z = z;
-  temp->u = u;
-  temp->intersect = intersect;
+  temp->u = u_cur;
+  temp->intersect = 1;
   temp->inbound = inbound;
-  temp->isInside = 0;
+  temp->isInside = 1;
   temp->initialized = 1;
   temp1->Next = temp;
   temp->Next = temp2;
@@ -1037,16 +1103,6 @@ int isIntersect(struct Node node) {
 
 }
 
-void resetIntersectValue(struct Node *list ) {
-  struct Node *temp=NULL;
-  
-  temp = list;
-  while(temp) {
-    if(temp->intersect == 2) temp->intersect = 0;
-    temp=temp->Next;
-  }
-  
-}
 
 int getInbound( struct Node node )
 {
@@ -1095,90 +1151,121 @@ void getCoordinate(struct Node node, double *x, double *y, double *z)
 
 }
 
+void getCoordinates(struct Node *node, double *p)
+{
+
+
+  p[0] = node->x;
+  p[1] = node->y;
+  p[2] = node->z;
+
+}
+
+void setCoordinate(struct Node *node, double x, double y, double z)
+{
+
+
+  node->x = x;
+  node->y = y;
+  node->z = z;
+
+}
+
+/* set inbound value for the points in interList that has inbound =0,
+   this will also set some inbound value of the points in list1
+*/
+
 void setInbound(struct Node *interList, struct Node *list)
 {
 
-  struct Node *temp1=NULL, *temp2=NULL;
+  struct Node *temp1=NULL, *temp=NULL;
+  struct Node *temp1_prev=NULL, *temp1_next=NULL;
   int prev_is_inside, next_is_inside;
-  
+
   /* for each point in interList, search through list to decide the inbound value the interList point */
   /* For each inbound point, the prev node should be outside and the next is inside. */
   if(length(interList) == 0) return;
   
-  temp1 = interList;
-  
-  while(temp1) {
-    temp2 = list;
-    prev_is_inside = -1;
-    while(temp2) {
-      if(sameNode(*temp1, *temp2)) {
-	if( prev_is_inside == -1 ) { /* -1 means temp2 is the first element in list */
-	  temp2 = getLast(list);
-	  prev_is_inside = isInside(temp2);
+  temp = interList;
+
+  while(temp) {
+    if( !temp->inbound) {
+      /* search in grid1 to find the prev and next point of temp, when prev point is outside and next point is inside
+	 inbound = 2, else inbound = 1*/
+      temp1 = list;
+      temp1_prev = NULL;
+      temp1_next = NULL; 
+      while(temp1) {
+	if(sameNode(*temp1, *temp)) {
+	  if(!temp1_prev) temp1_prev = getLast(list);
+	  temp1_next = temp1->Next; 
+	  if(!temp1_next) temp1_next = list;
+	  break;
 	}
-	temp2 = temp2->Next;
-	if(temp2==NULL) temp2 = list;
-	next_is_inside = isInside(temp2);
-	if( !prev_is_inside && next_is_inside )
-	  temp1->inbound = 2;
-	else
-	  temp1->inbound = 1;
-	break;
+	temp1_prev = temp1;
+	temp1 = temp1->Next;
       }
-      prev_is_inside = isInside(temp2);
-      temp2 = temp2->Next;
+      if(!temp1_next) error_handler("Error from create_xgrid.c: temp is not in list1");
+      if( temp1_prev->isInside == 0 && temp1_next->isInside == 1)
+	temp->inbound = 2;   /* go inside */
+      else
+	temp->inbound = 1;
     }
-    if(prev_is_inside == -1) error_handler("mosaic_util.c: temp1 is not inside the list");
-    temp1 = temp1->Next;
+    temp=temp->Next;
   }
-  
 }
 
 int isInside(struct Node *node) {
-  if( node->isInside || node->intersect)
-    return 1;
-  else
-    return 0;
+
+  if(node->isInside == -1) error_handler("Error from mosaic_util.c: node->isInside is not set");
+  return(node->isInside);
+  
 }
 
-  
+/*  #define debug_test_create_xgrid */ 
 
-int insidePolygon( double x1, double y1, double z1, int npts, double *x2, double *y2, double *z2)
+/* check if node is inside polygon list or not */
+ int insidePolygon( struct Node *node, struct Node *list)
 {
-  int i, ip;
+  int i, ip, is_inside;
   double pnt0[3], pnt1[3], pnt2[3];
   double anglesum;
-  
+  struct Node *p1=NULL, *p2=NULL;  
+
   anglesum = 0;
 
-  pnt0[0] = x1;
-  pnt0[1] = y1;
-  pnt0[2] = z1;
-  
-  for (i=0;i<npts;i++) {
-    ip = (i+1)%npts;
-    pnt1[0] = x2[i];
-    pnt1[1] = y2[i];
-    pnt1[2] = z2[i];
-    pnt2[0] = x2[ip];
-    pnt2[1] = y2[ip];
-    pnt2[2] = z2[ip];
-    anglesum += spherical_angle(pnt0, pnt2, pnt1);
-  
-  }
-#ifdef debug_test_create_xgrid 
-  printf("anglesum is %g\n", anglesum);
-#endif
-  if( fabs(anglesum - 2*M_PI ) < EPSLN10 )
-    return 1;
-  else if( anglesum > 0 ) {/* The point maybe a vertice */
-    for (i=0;i<npts;i++) {
-      if( fabs(x2[i]-x1) < EPSLN10 && fabs(y2[i]-y1) < EPSLN10 && fabs(z2[i]-z1) < EPSLN10 )
-	return 1;
-    }
-    return 0;
-  }
-  else
-    return 0;
+  pnt0[0] = node->x;
+  pnt0[1] = node->y;
+  pnt0[2] = node->z;
 
+  p1 = list;
+  p2 = list->Next;
+  is_inside = 0;
+
+  
+  while(p1) {
+    pnt1[0] = p1->x;
+    pnt1[1] = p1->y;
+    pnt1[2] = p1->z;
+    pnt2[0] = p2->x;
+    pnt2[1] = p2->y;
+    pnt2[2] = p2->z;
+    if(samePoint(pnt0[0], pnt0[1], pnt0[2], pnt1[0], pnt1[1], pnt1[2])) return 1;     
+    anglesum += spherical_angle(pnt0, pnt2, pnt1);
+    p1 = p1->Next;
+    p2 = p2->Next;
+    if(p2==NULL)p2 = list;
+  }
+
+  if( fabs(anglesum - 2*M_PI) < EPSLN8 )
+    is_inside = 1;
+  else
+    is_inside = 0;
+
+#ifdef debug_test_create_xgrid 
+  printf("anglesum-2PI is %19.15f, is_inside = %d\n", anglesum- 2*M_PI, is_inside);
+#endif
+  
+  return is_inside;
+  
 }

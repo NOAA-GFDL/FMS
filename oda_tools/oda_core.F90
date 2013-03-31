@@ -913,6 +913,7 @@ module oda_core_mod
     
 #ifdef INTERNAL_FILE_NML
       read (input_nml_file, oda_core_nml, iostat=io_status)
+      ierr = check_nml_error(io_status,'oda_core_nml')
 #else
     ioun = open_namelist_file()
     read(ioun,nml=oda_core_nml,iostat = io_status)
@@ -1431,10 +1432,15 @@ end subroutine copy_obs_prof
     character(len=256) :: record
     type(obs_entry_type) :: tbl_entry
 
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, ocean_obs_nml, iostat=io_status)
+      ierr = check_nml_error(io_status,'ocean_obs_nml')
+#else
     ioun = open_namelist_file()
     read(ioun,nml=ocean_obs_nml,iostat = io_status)
     ierr = check_nml_error(io_status,'ocean_obs_nml')
     call close_file(ioun)    
+#endif
 
     time_window(:) = set_time(0,data_window)
 

@@ -243,6 +243,8 @@ module mpp_domains_mod
      private
      integer                  :: count = 0                 ! number of ovrelapping
      integer                  :: pe
+     integer                  :: start_pos                 ! start position in the buffer
+     integer                  :: totsize                   ! all message size
      integer ,        pointer :: msgsize(:)                ! overlapping msgsize to be sent or received
      integer,         pointer :: tileMe(:)       => NULL() ! my tile id for this overlap
      integer,         pointer :: tileNbr(:)      => NULL() ! neighbor tile id for this overlap
@@ -266,6 +268,7 @@ module mpp_domains_mod
      integer                     :: whalo, ehalo, shalo, nhalo ! halo size
      integer                     :: xbegin, xend, ybegin, yend
      integer                     :: nsend, nrecv
+     integer                     :: sendsize, recvsize
      type(overlap_type), pointer :: send(:) => NULL()
      type(overlap_type), pointer :: recv(:) => NULL()
      type(refineSpec),   pointer :: rSpec(:)=> NULL()
@@ -459,6 +462,8 @@ module mpp_domains_mod
      integer, dimension(MAX_REQUEST) :: request_recv
      integer, dimension(MAX_REQUEST) :: size_recv
      integer, dimension(MAX_REQUEST) :: type_recv
+     integer, dimension(MAX_REQUEST) :: buffer_pos_send
+     integer, dimension(MAX_REQUEST) :: buffer_pos_recv
      integer(LONG_KIND)              :: field_addrs(MAX_DOMAIN_FIELDS)
      integer(LONG_KIND)              :: field_addrs2(MAX_DOMAIN_FIELDS)
      integer                         :: nfields 
@@ -535,8 +540,8 @@ module mpp_domains_mod
   logical :: domain_clocks_on=.FALSE.
   integer :: send_clock=0, recv_clock=0, unpk_clock=0
   integer :: wait_clock=0, pack_clock=0
-  integer :: send_clock_nonblock=0, recv_clock_nonblock=0, unpk_clock_nonblock=0
-  integer :: wait_clock_nonblock=0, pack_clock_nonblock=0  
+  integer :: send_pack_clock_nonblock=0, recv_clock_nonblock=0, unpk_clock_nonblock=0
+  integer :: wait_clock_nonblock=0  
   integer :: nest_send_clock=0, nest_recv_clock=0, nest_unpk_clock=0
   integer :: nest_wait_clock=0, nest_pack_clock=0
 
@@ -2460,9 +2465,9 @@ end interface
 
   !--- version information variables
   character(len=128), public :: version= &
-       '$Id: mpp_domains.F90,v 19.0.2.1.2.3.2.1.2.1 2012/08/29 13:08:34 z1l Exp $'
+       '$Id: mpp_domains.F90,v 19.0.2.1.2.3.2.1.2.1.2.1.2.1 2013/02/24 19:44:26 Zhi.Liang Exp $'
   character(len=128), public :: tagname= &
-       '$Name: siena_201211 $'
+       '$Name: siena_201303 $'
 
 
 contains

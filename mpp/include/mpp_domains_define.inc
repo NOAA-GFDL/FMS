@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_define.inc,v 19.0.2.1.2.1.2.1.2.1 2012/05/15 19:02:00 z1l Exp $
+! $Id: mpp_domains_define.inc,v 19.0.2.1.2.1.2.1.2.1.2.2 2012/10/17 20:35:14 Zhi.Liang Exp $
 
 
   ! <SUBROUTINE NAME="mpp_define_layout2D" INTERFACE="mpp_define_layout">
@@ -1013,6 +1013,10 @@
           call set_bound_overlap( domain, EAST   )
           call set_bound_overlap( domain, NORTH  )
        end if
+       call set_domain_comm_inf(domain%update_T)
+       call set_domain_comm_inf(domain%update_E)
+       call set_domain_comm_inf(domain%update_C)
+       call set_domain_comm_inf(domain%update_N)
     end if
 
     !--- check the send and recv size are matching.
@@ -1057,8 +1061,9 @@
                 js = update%send(m)%js(n); je = update%send(m)%je(n)
                 msgsize = msgsize + (ie-is+1)*(je-js+1)
              end do
-             msg3(m) = msgsize
-             call mpp_send( msg3(m), plen=1, to_pe=update%send(m)%pe, tag=COMM_TAG_1)
+             l = update%send(m)%pe-mpp_root_pe()
+             msg3(l) = msgsize
+             call mpp_send( msg3(l), plen=1, to_pe=update%send(m)%pe, tag=COMM_TAG_1)
           enddo
           call mpp_sync_self(check=EVENT_RECV)
 
@@ -1088,6 +1093,7 @@
     endif
 
     deallocate( pes, pesall)
+
 
     return
   end subroutine mpp_define_domains2D
@@ -1397,6 +1403,12 @@
     call set_contact_point( domain, CORNER )
     call set_contact_point( domain, EAST   )
     call set_contact_point( domain, NORTH  )
+
+    call set_domain_comm_inf(domain%update_T)
+    call set_domain_comm_inf(domain%update_E)
+    call set_domain_comm_inf(domain%update_C)
+    call set_domain_comm_inf(domain%update_N)
+
 
     !--- goffset setting is needed for exact global sum
     do m = 1, size(domain%tile_id(:))
@@ -5102,6 +5114,8 @@
     if(allocated(recv)) deallocate(recv)
     ptrIn => NULL()
 
+    call  set_domain_comm_inf(overlap_out)
+
 
   end subroutine set_overlaps
 
@@ -8047,3 +8061,47 @@ subroutine check_overlap_pe_order(domain, overlap, name)
 
 
 end subroutine check_overlap_pe_order
+
+
+!###############################################################################
+subroutine set_domain_comm_inf(update)
+  type(overlapSpec), intent(inout) :: update 
+    
+  integer :: m, totsize, n
+
+
+     ! first set the send and recv size
+     update%sendsize = 0
+     update%recvsize = 0
+     do m = 1, update%nrecv
+        totsize = 0
+        do n = 1, update%recv(m)%count
+           totsize = totsize + update%recv(m)%msgsize(n)
+        enddo
+        update%recv(m)%totsize = totsize
+        if(m==1) then
+           update%recv(m)%start_pos = 0
+        else
+           update%recv(m)%start_pos = update%recv(m-1)%start_pos + update%recv(m-1)%totsize
+        endif
+        update%recvsize = update%recvsize + totsize
+     enddo
+
+     do m = 1, update%nsend
+        totsize = 0
+        do n = 1, update%send(m)%count
+           totsize = totsize + update%send(m)%msgsize(n)
+        enddo
+        update%send(m)%totsize = totsize
+        if(m==1) then
+           update%send(m)%start_pos = 0
+        else
+           update%send(m)%start_pos = update%send(m-1)%start_pos + update%send(m-1)%totsize
+        endif
+        update%sendsize = update%sendsize + totsize
+     enddo
+
+  return
+
+
+end subroutine set_domain_comm_inf

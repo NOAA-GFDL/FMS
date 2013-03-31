@@ -39,7 +39,7 @@ module horiz_interp_bilinear_mod
 
   !-----------------------------------------------------------------------
   character(len=128) :: version = '$Id: horiz_interp_bilinear.F90,v 14.0 2007/03/15 22:39:57 fms Exp $'
-  character(len=128) :: tagname = '$Name: siena_201211 $'
+  character(len=128) :: tagname = '$Name: siena_201303 $'
   logical            :: module_is_initialized = .FALSE.
 
 contains

@@ -73,8 +73,8 @@ public :: gaussian_topog_init, get_gaussian_topog
 
 !-----------------------------------------------------------------------
 
-character(len=128) :: version = '$Id: gaussian_topog.F90,v 19.0 2012/01/06 22:06:14 fms Exp $'
-character(len=128) :: tagname = '$Name: siena_201211 $'
+character(len=128) :: version = '$Id: gaussian_topog.F90,v 19.0.4.1 2013/02/14 20:35:29 pjp Exp $'
+character(len=128) :: tagname = '$Name: siena_201303 $'
 
 logical :: do_nml = .true.
 logical :: module_is_initialized = .FALSE.
@@ -250,6 +250,7 @@ subroutine read_namelist
 
 #ifdef INTERNAL_FILE_NML
       read (input_nml_file, gaussian_topog_nml, iostat=io)
+      ierr = check_nml_error(io,'gaussian_topog_nml')
 #else
    if ( file_exist('input.nml')) then
       unit = open_namelist_file ( )

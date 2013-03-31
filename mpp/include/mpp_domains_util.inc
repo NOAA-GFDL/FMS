@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_util.inc,v 19.0.4.1.2.1 2012/08/29 13:08:37 z1l Exp $
+! $Id: mpp_domains_util.inc,v 19.0.4.1.2.1.2.1 2012/10/15 13:02:47 Zhi.Liang Exp $
 
   ! <SUBROUTINE NAME="mpp_domains_set_stack_size">
   !  <OVERVIEW>
@@ -1450,6 +1450,139 @@ end subroutine mpp_get_tile_compute_domains
     endif
 
   end function get_rank_recv
+
+  function get_vector_recv(domain, update_x, update_y, ind_x, ind_y, start_pos, pelist)
+    type(domain2D),    intent(in) :: domain
+    type(overlapSpec), intent(in) :: update_x, update_y
+    integer,          intent(out) :: ind_x(:), ind_y(:)
+    integer,          intent(out) :: start_pos(:)
+    integer,          intent(out) :: pelist(:)
+    integer                       :: nlist, nrecv_x, nrecv_y, ntot, n
+    integer                       :: ix, iy, rank_x, rank_y, cur_pos
+    integer                       :: get_vector_recv
+
+    nlist = size(domain%list(:))
+    nrecv_x = update_x%nrecv
+    nrecv_y = update_y%nrecv
+ 
+    ntot = nrecv_x + nrecv_y
+
+    n  = 1
+    ix = 1
+    iy = 1
+    ind_x = -1
+    ind_y = -1
+    get_vector_recv = 0
+    cur_pos = 0
+    do while (n<=ntot)
+       if(ix <= nrecv_x ) then
+          rank_x = update_x%recv(ix)%pe-domain%pe
+          if(rank_x .LE. 0) rank_x = rank_x + nlist
+       else
+          rank_x = -1
+       endif
+       if(iy <= nrecv_y ) then
+          rank_y = update_y%recv(iy)%pe-domain%pe
+          if(rank_y .LE. 0) rank_y = rank_y + nlist
+       else
+          rank_y = -1
+       endif
+       get_vector_recv = get_vector_recv + 1
+       start_pos(get_vector_recv) = cur_pos
+       if( rank_x == rank_y ) then
+          n = n+2
+          ind_x (get_vector_recv) = ix
+          ind_y (get_vector_recv) = iy
+          cur_pos = cur_pos + update_x%recv(ix)%totsize + update_y%recv(iy)%totsize
+          pelist(get_vector_recv) = update_x%recv(ix)%pe
+          ix = ix + 1
+          iy = iy + 1
+       else if ( rank_x > rank_y ) then
+          n = n+1
+          ind_x (get_vector_recv) = ix
+          ind_y (get_vector_recv) = -1
+          cur_pos = cur_pos + update_x%recv(ix)%totsize
+          pelist(get_vector_recv) = update_x%recv(ix)%pe
+          ix = ix + 1
+       else if ( rank_y > rank_x ) then
+          n = n+1
+          ind_x (get_vector_recv) = -1
+          ind_y (get_vector_recv) = iy
+          cur_pos = cur_pos + update_y%recv(iy)%totsize
+          pelist(get_vector_recv) = update_y%recv(iy)%pe
+          iy = iy+1
+       endif
+    end do
+
+
+  end function get_vector_recv
+
+  function get_vector_send(domain, update_x, update_y, ind_x, ind_y, start_pos, pelist)
+    type(domain2D),    intent(in) :: domain
+    type(overlapSpec), intent(in) :: update_x, update_y
+    integer,          intent(out) :: ind_x(:), ind_y(:)
+    integer,          intent(out) :: start_pos(:)
+    integer,          intent(out) :: pelist(:)
+    integer                       :: nlist, nsend_x, nsend_y, ntot, n
+    integer                       :: ix, iy, rank_x, rank_y, cur_pos
+    integer                       :: get_vector_send
+
+    nlist = size(domain%list(:))
+    nsend_x = update_x%nsend
+    nsend_y = update_y%nsend
+ 
+    ntot = nsend_x + nsend_y
+    n  = 1
+    ix = 1
+    iy = 1
+    ind_x = -1
+    ind_y = -1
+    get_vector_send = 0
+    cur_pos = 0
+    do while (n<=ntot)
+       if(ix <= nsend_x ) then
+          rank_x = update_x%send(ix)%pe-domain%pe
+          if(rank_x .LT. 0) rank_x = rank_x + nlist
+       else
+          rank_x = nlist+1
+       endif
+       if(iy <= nsend_y ) then
+          rank_y = update_y%send(iy)%pe-domain%pe
+          if(rank_y .LT. 0) rank_y = rank_y + nlist
+       else
+          rank_y = nlist+1
+       endif
+       get_vector_send = get_vector_send + 1
+       start_pos(get_vector_send) = cur_pos
+
+       if( rank_x == rank_y ) then
+          n = n+2
+          ind_x  (get_vector_send) = ix
+          ind_y  (get_vector_send) = iy
+          cur_pos = cur_pos + update_x%send(ix)%totsize + update_y%send(iy)%totsize
+          pelist (get_vector_send) = update_x%send(ix)%pe
+          ix = ix + 1
+          iy = iy + 1
+       else if ( rank_x < rank_y ) then
+          n = n+1
+          ind_x  (get_vector_send) = ix
+          ind_y  (get_vector_send) = -1
+          cur_pos = cur_pos + update_x%send(ix)%totsize
+          pelist (get_vector_send) = update_x%send(ix)%pe
+          ix = ix + 1
+       else if ( rank_y < rank_x ) then
+          n = n+1
+          ind_x  (get_vector_send) = -1
+          ind_y  (get_vector_send) = iy
+          cur_pos = cur_pos + update_y%send(iy)%totsize
+          pelist (get_vector_send) = update_y%send(iy)%pe
+          iy = iy+1
+       endif
+    end do
+
+
+  end function get_vector_send
+
 
   !############################################################################  
   function get_rank_unpack(domain, overlap_x, overlap_y, rank_x, rank_y, ind_x, ind_y)

@@ -1,5 +1,5 @@
 ! -*-f90-*-
-! $Id: mpp_util_mpi.inc,v 19.0.2.1.2.1 2012/05/24 20:01:32 Zhi.Liang Exp $
+! $Id: mpp_util_mpi.inc,v 19.0.2.1.2.1.4.1 2013/02/22 19:12:51 Zhi.Liang Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -199,6 +199,7 @@ subroutine mpp_sync_self( pelist, check, request, msg_size, msg_type)
         endif
 
         do m = 1, size(request(:))
+           if( request(m) == MPI_REQUEST_NULL ) cycle
            call MPI_WAIT(request(m), stat, error )
            call MPI_GET_COUNT(stat, msg_type(m), rsize, error)
            if(msg_size(m) .NE. rsize) then

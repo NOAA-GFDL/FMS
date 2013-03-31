@@ -1,16 +1,17 @@
 module grid_mod
 
-use mpp_mod,         only : mpp_root_pe, mpp_pe, mpp_npes, mpp_send, mpp_recv, mpp_sync_self, EVENT_RECV
-use mpp_mod,         only : mpp_get_current_pelist
-use constants_mod,   only : PI, radius
-use fms_mod,         only : uppercase, lowercase, field_exist, field_size, read_data
-use fms_mod,         only : error_mesg, string, FATAL, NOTE
-use mosaic_mod,      only : get_mosaic_ntiles, get_mosaic_xgrid_size, get_mosaic_grid_sizes
-use mosaic_mod,      only : get_mosaic_xgrid, calc_mosaic_grid_area
-use mpp_domains_mod, only : domain2d, mpp_define_mosaic, mpp_get_compute_domain
-use mpp_domains_mod, only : mpp_get_global_domain, mpp_compute_extent, mpp_get_tile_npes
-use mpp_domains_mod, only : mpp_get_tile_compute_domains, mpp_get_tile_pelist
-use mosaic_mod,      only : get_mosaic_ncontacts, get_mosaic_contact
+use mpp_mod, only : mpp_root_pe
+use constants_mod, only : PI, radius
+use fms_mod, only : uppercase, lowercase, field_exist, field_size, read_data, &
+     error_mesg, string, FATAL, NOTE
+use fms_io_mod, only : get_great_circle_algorithm, get_global_att_value
+use mosaic_mod, only : get_mosaic_ntiles, get_mosaic_xgrid_size, get_mosaic_grid_sizes, &
+     get_mosaic_xgrid, calc_mosaic_grid_area, calc_mosaic_grid_great_circle_area
+
+! the following two use statement are only needed for define_cube_mosaic
+use mpp_domains_mod, only : domain2d, mpp_define_mosaic, mpp_get_compute_domain, &
+                            mpp_get_global_domain
+use mosaic_mod, only : get_mosaic_ncontacts, get_mosaic_contact
 
 implicit none;private
 
@@ -47,8 +48,8 @@ end interface
 ! ==== module constants ======================================================
 character(len=*), parameter :: &
      module_name = 'grid_mod', &
-     version     = '$Id: grid.F90,v 19.0.2.1.2.1 2012/08/30 19:55:22 z1l Exp $', &
-     tagname     = '$Name: siena_201211 $'
+     version     = '$Id: grid.F90,v 19.0.6.3.2.2 2013/02/28 16:58:46 Zhi.Liang Exp $', &
+     tagname     = '$Name: siena_201303 $'
 
 character(len=*), parameter :: &
      grid_dir  = 'INPUT/',     &      ! root directory for all grid files
@@ -63,11 +64,20 @@ integer, parameter :: &
 
 ! ==== module variables ======================================================
 integer :: grid_version = -1
+logical :: great_circle_algorithm = .FALSE.
+logical :: first_call = .TRUE.
+
 
 contains 
 
 function get_grid_version()
   integer :: get_grid_version
+
+  if(first_call) then
+     great_circle_algorithm = get_great_circle_algorithm()
+     first_call = .FALSE.
+  endif
+
   if(grid_version<0) then
     if(field_exist(grid_file, 'geolon_t')) then
        grid_version = VERSION_0 
@@ -193,7 +203,11 @@ subroutine get_grid_cell_area(component, tile, cellarea, domain)
      endif
      allocate(glonb(nlon+1,nlat+1),glatb(nlon+1,nlat+1))
      call get_grid_cell_vertices(component, tile, glonb, glatb, domain)
-     call calc_mosaic_grid_area(glonb*pi/180.0, glatb*pi/180.0, cellarea)
+     if (great_circle_algorithm) then
+        call calc_mosaic_grid_great_circle_area(glonb*pi/180.0, glatb*pi/180.0, cellarea)
+     else
+        call calc_mosaic_grid_area(glonb*pi/180.0, glatb*pi/180.0, cellarea)
+     end if
      deallocate(glonb,glatb)
   end select
 
@@ -219,20 +233,17 @@ subroutine get_grid_comp_area(component,tile,area,domain)
      xgrid_name, & ! name of the variable holding xgrid names
      tile_name,  & ! name of the tile
      xgrid_file, & ! name of the current xgrid file
-     mosaic_name   ! name of the mosaic
-  character(len=MAX_NAME)            :: varname1, varname2
-  integer                            :: is,ie,js,je ! boundaries of our domain
-  integer                            :: i0, j0 ! offsets for x and y, respectively
-  integer                            :: npes, isc, iec, nxgrid_local
-  integer                            :: pos, p, l
-  logical                            :: is_distribute
-  integer, allocatable, dimension(:) :: pelist, ibegin, iend
-  integer, allocatable, dimension(:) :: islist, ielist, jslist, jelist
-  integer, allocatable, dimension(:) :: nsend, nrecv
-  real,    allocatable, dimension(:) :: send_buffer, recv_buffer
-
-
-  npes = mpp_npes()
+     mosaic_name,& ! name of the mosaic
+     mosaic_file,&
+     tilefile 
+  character(len=4096)     :: attvalue
+  character(len=MAX_NAME), allocatable :: nest_tile_name(:)
+  character(len=MAX_NAME) :: varname1, varname2
+  integer :: is,ie,js,je ! boundaries of our domain
+  integer :: i0, j0 ! offsets for x and y, respectively
+  integer :: num_nest_tile, ntiles
+  logical :: is_nest
+  integer :: found_xgrid_files ! how many xgrid files we actually found in the grid spec
 
   select case (get_grid_version())
   case(VERSION_0,VERSION_1)
@@ -284,11 +295,32 @@ subroutine get_grid_comp_area(component,tile,area,domain)
         call error_mesg(module_name//'/get_grid_comp_area',&
         'size of the output argument "area" is not consistent with the domain',FATAL) 
 
+     ! find the nest tile 
+     call read_data(grid_file, 'atm_mosaic', mosaic_name)
+     call read_data(grid_file,'atm_mosaic_file',mosaic_file)
+     mosaic_file = grid_dir//trim(mosaic_file)
+     ntiles = get_mosaic_ntiles(trim(mosaic_file))   
+     allocate(nest_tile_name(ntiles))  
+     num_nest_tile = 0
+     do n = 1, ntiles
+        call read_data(mosaic_file, 'gridfiles', tilefile, level=n)        
+        tilefile = grid_dir//trim(tilefile)
+        if( get_global_att_value(tilefile, "nest_grid", attvalue) ) then
+           if(trim(attvalue) == "TRUE") then
+              num_nest_tile = num_nest_tile + 1
+              nest_tile_name(num_nest_tile) = trim(mosaic_name)//'_tile'//char(n+ichar('0'))
+           else if(trim(attvalue) .NE. "FALSE") then
+              call error_mesg(module_name//'/get_grid_comp_area', 'value of global attribute nest_grid in file'// &
+                   trim(tilefile)//' should be TRUE of FALSE', FATAL)
+           endif
+        end if
+     end do
      area(:,:) = 0
      if(field_exist(grid_file,xgrid_name)) then
         ! get the number of the exchange-grid files
         call field_size(grid_file,xgrid_name,siz)
         n_xgrid_files = siz(2)
+        found_xgrid_files = 0
         ! loop through all exchange grid files
         do n = 1, n_xgrid_files
            ! get the name of the current exchange grid file
@@ -298,114 +330,21 @@ subroutine get_grid_comp_area(component,tile,area,domain)
            if(n_xgrid_files>1) then
               if(index(xgrid_file,trim(tile_name))==0) cycle
            endif
+           found_xgrid_files = found_xgrid_files + 1
+           !---make sure the atmosphere grid is not a nested grid
+           is_nest = .false. 
+           do m = 1, num_nest_tile
+              if(index(xgrid_file, trim(nest_tile_name(m))) .NE. 0) then
+                 is_nest = .true.
+                 exit
+              end if
+           end do
+           if(is_nest) cycle 
+
            ! finally read the exchange grid
-           nxgrid = get_mosaic_xgrid_size(grid_dir//trim(xgrid_file))
-           if(nxgrid == 0) cycle
-           is_distribute=.false.
-           if( present(domain) ) then
-              npes = mpp_get_tile_npes(domain)
-              if( nxgrid > npes ) is_distribute=.true.
-           endif          
-           
-           if( is_distribute ) then
-              allocate(pelist(0:npes-1), ibegin(0:npes), iend(0:npes) )
-              call mpp_get_tile_pelist(domain, pelist)
-              call mpp_compute_extent(1, nxgrid, npes, ibegin, iend)
-              ! figure out how points on current processor.
-              isc =0; iec = 0
-              do p = 0, npes-1
-                 if( pelist(p) == mpp_pe() ) then
-                    isc = ibegin(p)
-                    iec = iend(p)
-                 endif
-              enddo
-              if(isc==0 .OR. iec==0) call error_mesg( &
-                 "grid_mod(get_grid_comp_area)", "current pe is not in pelist", FATAL)
-              deallocate(ibegin, iend)
-           else
-              isc = 1; iec = nxgrid
-           endif
-           nxgrid_local = iec-isc+1
-           allocate(i1(nxgrid_local), j1(nxgrid_local) )
-           allocate(i2(nxgrid_local), j2(nxgrid_local) )
-           allocate(xgrid_area(nxgrid_local))
-           call get_mosaic_xgrid(grid_dir//trim(xgrid_file), i1, j1, i2, j2, xgrid_area, &
-                                 istart=isc, iend=iec)
-
-           ! send the i2, j2 and xgrid_area to the correct processor.
-           if(is_distribute) then           
-              allocate(islist(0:npes-1), ielist(0:npes-1))
-              allocate(jslist(0:npes-1), jelist(0:npes-1))
-              call mpp_get_tile_compute_domains(domain, islist, ielist, jslist, jelist)
-              allocate(nsend(0:npes-1), nrecv(0:npes-1))
-              nsend = 0; nrecv = 0
-              allocate( send_buffer(nxgrid_local*3) )
-              pos = 0
-              do p = 0, npes - 1              
-                 do l = 1, nxgrid_local
-                    if( i2(l) .GE. islist(p) .AND. i2(l) .LE. ielist(p) .AND. &
-                        j2(l) .GE. jslist(p) .AND. j2(l) .LE. jelist(p) ) then
-                        nsend(p) = nsend(p) + 1
-                        send_buffer(pos+1) = i2(l)
-                        send_buffer(pos+2) = j2(l)
-                        send_buffer(pos+3) = xgrid_area(l)
-                        pos = pos + 3
-                    endif
-                 enddo
-              enddo
-
-              if(nxgrid_local .NE. sum(nsend)) call error_mesg( &
-                 "grid_mod(get_grid_comp_area)", "nxgrid_local .NE. sum(nsend)", FATAL)
-
-              !--- pre-post receiving.
-              do p = 0, npes - 1
-                 call mpp_recv( nrecv(p), glen=1, from_pe=pelist(p), block=.FALSE.)
-              enddo
-              
-              do p = 0, npes-1
-                 call mpp_send( nsend(p), plen=1, to_pe=pelist(p))
-              enddo
- 
-              call mpp_sync_self(check=EVENT_RECV)
-              call mpp_sync_self()
-              nxgrid = sum(nrecv)
-              if(nxgrid > 0) then
-                 deallocate(i2, j2, xgrid_area)
-                 allocate(i2(nxgrid), j2(nxgrid), xgrid_area(nxgrid))
-                 allocate(recv_buffer(nxgrid*3))
-              endif
-
-              !--- get the data
-              pos = 0
-              do p = 0,npes-1
-                 if(nrecv(p) == 0) cycle
-                 call mpp_recv(recv_buffer(pos+1), glen=nrecv(p)*3, from_pe=pelist(p), block=.FALSE.)
-                 pos = pos + nrecv(p)*3
-              enddo
-
-              pos = 0
-              do p = 0, npes-1
-                 if(nsend(p)==0) cycle
-                 call mpp_send( send_buffer(pos+1), plen=nsend(p)*3, to_pe=pelist(p))
-                 pos = pos + nsend(p)*3
-              enddo
-              call mpp_sync_self(check=EVENT_RECV)
-
-              !-- unpack the buffer           
-              pos = 0
-              do m = 1, nxgrid
-                 i2(m)         = recv_buffer(pos+1)
-                 j2(m)         = recv_buffer(pos+2)
-                 xgrid_area(m) = recv_buffer(pos+3)
-                 pos = pos + 3
-              enddo
-              call mpp_sync_self()
-
-              deallocate(pelist, islist, ielist, jslist, jelist, nsend, nrecv)
-              if(allocated(send_buffer)) deallocate(send_buffer)
-              if(allocated(recv_buffer)) deallocate(recv_buffer)
-           endif
-
+           nxgrid = get_mosaic_xgrid_size(grid_dir//xgrid_file)
+           allocate(i1(nxgrid), j1(nxgrid), i2(nxgrid), j2(nxgrid), xgrid_area(nxgrid))
+           call get_mosaic_xgrid(grid_dir//xgrid_file, i1, j1, i2, j2, xgrid_area)
            ! and sum the exchange grid areas
            do m = 1, nxgrid
               i = i2(m); j = j2(m)
@@ -413,13 +352,14 @@ subroutine get_grid_comp_area(component,tile,area,domain)
               if (j<js.or.j>je) cycle
               area(i+i0,j+j0) = area(i+i0,j+j0) + xgrid_area(m)
            end do
-           if(ALLOCATED(i1)) deallocate(i1)
-           if(ALLOCATED(j1)) deallocate(j1)
-           if(ALLOCATED(i2)) deallocate(i2)
-           if(ALLOCATED(j2)) deallocate(j2)
-           if(ALLOCATED(xgrid_area)) deallocate(xgrid_area)
+           deallocate(i1, j1, i2, j2, xgrid_area)
         enddo
+        if (found_xgrid_files == 0) &
+           call error_mesg('get_grid_comp_area', 'no xgrid files were found for component '& 
+                 //trim(component)//' (mosaic name is '//trim(mosaic_name)//')', FATAL)
+
      endif
+     deallocate(nest_tile_name)
   end select ! version
   ! convert area to m2
   area = area*4*PI*radius**2
@@ -439,7 +379,7 @@ subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
 
   integer                      :: nlon, nlat
   integer                      :: start(4), nread(4)
-  real, allocatable            :: tmp(:,:)
+  real, allocatable            :: tmp(:,:), x_vert_t(:,:,:), y_vert_t(:,:,:)
   character(len=MAX_FILE)      :: filename1, filename2
 
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
@@ -471,8 +411,22 @@ subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
         call read_data(grid_file, 'xb'//lowercase(component(1:1)), glonb, no_domain=.true.)
         call read_data(grid_file, 'yb'//lowercase(component(1:1)), glatb, no_domain=.true.)
      case('OCN')
-        call error_mesg(module_name//'/get_grid_cell_vertices_1D',&
-           'reading of OCN grid vertices from VERSION_1 grid specs is not implemented', FATAL)
+        allocate (x_vert_t(nlon,1,2), y_vert_t(1,nlat,2) ) 
+        start = 1; nread = 1
+        nread(1) = nlon; nread(2) = 1; start(3) = 1
+        call read_data(grid_file, "x_vert_T", x_vert_t(:,:,1), start, nread, no_domain=.TRUE.)
+        nread(1) = nlon; nread(2) = 1; start(3) = 2
+        call read_data(grid_file, "x_vert_T", x_vert_t(:,:,2), start, nread, no_domain=.TRUE.)
+
+        nread(1) = 1; nread(2) = nlat; start(3) = 1
+        call read_data(grid_file, "y_vert_T", y_vert_t(:,:,1), start, nread, no_domain=.TRUE.)
+        nread(1) = 1; nread(2) = nlat; start(3) = 4
+        call read_data(grid_file, "y_vert_T", y_vert_t(:,:,2), start, nread, no_domain=.TRUE.)
+        glonb(1:nlon) = x_vert_t(1:nlon,1,1)
+        glonb(nlon+1) = x_vert_t(nlon,1,2)
+        glatb(1:nlat) = y_vert_t(1,1:nlat,1)
+        glatb(nlat+1) = y_vert_t(1,nlat,2)
+        deallocate(x_vert_t, y_vert_t)
      end select
   case(VERSION_2)
      ! get the name of the mosaic file for the component
@@ -492,7 +446,7 @@ subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
 
      start = 1; nread = 1
      nread(2) = 2*nlat+1
-     call read_data(filename2, "y", tmp, start, nread, no_domain=.TRUE.)
+     call read_data(filename2, "x", tmp, start, nread, no_domain=.TRUE.)
      glatb(1:nlat+1) = tmp(1,1:2*nlat+1:2)
      deallocate(tmp)
   end select
@@ -563,20 +517,16 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
         enddo
         deallocate(buffer)
      case('OCN')
-        !!!!!! ERROR: this is not going to work when domain is present, because the size of the
-        ! domain is smaller by 1 then the size of the vertices array
         if (present(domain)) then
-           call mpp_get_global_domain(domain, xbegin=isg, ybegin=jsg)
-           start = 1
-           nread = 1
-           start(1) = is-isg+1; nread(1) = ie-is+2
-           start(2) = js-jsg+1; nread(2) = je-js+2
+           start = 1; nread = 1
+           start(1) = is; start(2) = js
+           nread(1) = ie-is+2; nread(2) = je-js+2
            call read_data(grid_file, 'geolon_vert_t', lonb, start, nread, no_domain=.true. )
            call read_data(grid_file, 'geolat_vert_t', latb, start, nread, no_domain=.true. )
-        else
-           call read_data(grid_file, 'geolon_vert_t', lonb, no_domain=.true. )
-           call read_data(grid_file, 'geolat_vert_t', latb, no_domain=.true. )
-        endif
+         else
+           call read_data(grid_file, 'geolon_vert_t', lonb, no_domain=.TRUE. )
+           call read_data(grid_file, 'geolat_vert_t', latb, no_domain=.TRUE. )
+         endif
      end select
   case(VERSION_1)
      select case(component)

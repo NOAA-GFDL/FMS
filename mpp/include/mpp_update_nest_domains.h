@@ -65,9 +65,9 @@ subroutine MPP_UPDATE_NEST_FINE_3D_(field, nest_domain, wbuffer, sbuffer, ebuffe
    integer          :: add_halo, update_flags, update_position
    integer          :: wbuffersz, ebuffersz, sbuffersz, nbuffersz
    integer          :: isize, jsize, ksize, l_size
-   integer, save    :: isize_save, jsize_save, ksize_save
-   integer          :: wbuffersz_save, ebuffersz_save, sbuffersz_save, nbuffersz_save
-   integer, save    :: add_halo_save, update_flags_save, update_position_save
+   integer, save    :: isize_save=0, jsize_save=0, ksize_save=0
+   integer          :: wbuffersz_save=0, ebuffersz_save=0, sbuffersz_save=0, nbuffersz_save=0
+   integer, save    :: add_halo_save=0, update_flags_save=0, update_position_save=0
    integer, save    :: list=0 
 
    add_halo = 0
@@ -227,10 +227,10 @@ subroutine MPP_UPDATE_NEST_COARSE_3D_(field, nest_domain, buffer, complete, posi
    logical          :: is_complete, set_mismatch
    integer          :: tile
    integer          :: update_position
-   integer          :: buffersz, buffersz_save
+   integer          :: buffersz, buffersz_save=0
    integer          :: isize, jsize, ksize, l_size
-   integer, save    :: isize_save, jsize_save, ksize_save
-   integer, save    :: update_position_save
+   integer, save    :: isize_save=0, jsize_save=0, ksize_save=0
+   integer, save    :: update_position_save=0
    integer, save    :: list=0 
 
    update_position = CENTER

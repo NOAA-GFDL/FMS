@@ -99,7 +99,11 @@
          if(PRESENT(default_data)) then
             global = default_data
          else
+#ifdef LOGICAL_VARIABLE
+            global = .false.
+#else
             global = 0
+#endif
          endif
 
          do k = 1, ke

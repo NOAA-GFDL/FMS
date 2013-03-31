@@ -58,9 +58,9 @@ MODULE diag_util_mod
        & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size, sync_file_times
 
   CHARACTER(len=128),PRIVATE  :: version =&
-       & '$Id: diag_util.F90,v 19.0.2.2 2012/04/03 18:41:44 sdu Exp $'
+       & '$Id: diag_util.F90,v 19.0.2.4 2012/10/16 17:47:32 Seth.Underwood Exp $'
   CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name: siena_201211 $'
+       & '$Name: siena_201303 $'
 
 CONTAINS
 
@@ -1310,12 +1310,12 @@ CONTAINS
     IF ( input_fields(in_num)%num_output_fields > max_out_per_in_field ) THEN
        ! <ERROR STATUS="FATAL">
        !   MAX_OUT_PER_IN_FIELD = <MAX_OUT_PER_IN_FIELD> exceeded for <module_name>/<field_name>, increase MAX_OUT_PER_IN_FIELD
-       !   in diag_data.F90.
+       !   in the diag_manager_nml namelist.
        ! </ERROR>
        WRITE (UNIT=error_msg,FMT=*) MAX_OUT_PER_IN_FIELD
        CALL error_mesg('diag_util_mod::init_output_field',&
         & 'MAX_OUT_PER_IN_FIELD exceeded for '//TRIM(module_name)//"/"//TRIM(field_name)//&
-        &', increase MAX_OUT_PER_IN_FIELD in diag_data.F90', FATAL)
+        &', increase MAX_OUT_PER_IN_FIELD in the diag_manager_nml namelist', FATAL)
     END IF
     input_fields(in_num)%output_fields(input_fields(in_num)%num_output_fields) = out_num
 
@@ -2058,7 +2058,7 @@ CONTAINS
     ! get file_unit, open new file and close curent file if necessary
     IF ( .NOT.static_write .OR. files(file)%file_unit < 0 ) CALL check_and_open(file, time, do_write)
     IF ( .NOT.do_write ) RETURN  ! no need to write data
-    CALL diag_field_out(files(file)%file_unit,output_fields(field)%f_type, dat, dif)
+    CALL diag_field_out(files(file)%file_unit, output_fields(field)%f_type, dat, dif)
     ! record number of bytes written to this file
     files(file)%bytes_written = files(file)%bytes_written +&
          & (SIZE(dat,1)*SIZE(dat,2)*SIZE(dat,3))*(8/output_fields(field)%pack)

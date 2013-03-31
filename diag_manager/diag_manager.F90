@@ -177,7 +177,7 @@ MODULE diag_manager_mod
 
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
        & file_exist, fms_error_handler, check_nml_error
-  USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, max_axes, get_axis_num
+  USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, get_axis_num
   USE diag_util_mod, ONLY: get_subfield_size, log_diag_field_info, update_bounds,&
        & check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
        & diag_time_inc, find_input_field, init_input_field, init_output_field,&
@@ -189,9 +189,9 @@ MODULE diag_manager_mod
        & base_hour, base_minute, base_second, global_descriptor, coord_type, files, input_fields,&
        & output_fields, Time_zero, append_pelist_name, mix_snapshot_average_fields,&
        & first_send_data_call, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
-       & diag_log_unit, time_unit_list, pelist_name, module_is_initialized, max_num_axis_sets,&
+       & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, filename_appendix, pack_size,&
-       & conserve_water
+       & max_out_per_in_field, conserve_water
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
@@ -212,9 +212,9 @@ MODULE diag_manager_mod
 
   ! version number of this module
   CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id: diag_manager.F90,v 19.0.4.8 2012/05/21 14:06:11 Seth.Underwood Exp $'
+       & '$Id: diag_manager.F90,v 19.0.4.11 2013/01/09 22:15:38 Seth.Underwood Exp $'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: siena_201211 $'  
+       & '$Name: siena_201303 $'  
 
   type(time_type) :: Time_end
 
@@ -254,18 +254,19 @@ MODULE diag_manager_mod
   !
   !     "ocean_mod","Vorticity","vorticity_local","file2","all",.false.,"0.5 53.5 -89.5 -28.5 -1 -1",2
   !
-  !     The format of region is "<TT>xbegin xend ybegin yend zbegin zend</TT>".
-  !     If it is a 2D field use (-1 -1) for (zbegin zend) as in the example
-  !     above. For a 3D field use (-1 -1) for (zbegin zend) when you want to
-  !     write the entire vertical extent, otherwise specify real coordinates.
-  !     The units used for region are the actual units used in grid_spec.nc
-  !     (for example degrees for lat, lon). a FATAL error will occur if the
-  !     region's boundaries are not found in grid_spec.nc.
+  !     The format of a region is "<TT>xbegin xend ybegin yend zbegin zend</TT>".
+  !     If it is a 2D field use (-1 -1) for (zbegin zend) as in the example above.
+  !     For a 3D field use (-1 -1) for (zbegin zend) when you want to write the
+  !     entire vertical extent, otherwise specify real coordinates.  The units
+  !     used for region are the actual units used in grid_spec.nc (for example
+  !     degrees for lat, lon).  <B><I>NOTE:</I></B> A FATAL error will occur if
+  !     the region's boundaries are not found in grid_spec.nc.
   !
-  !     Regional output on the cubed sphere is also supported.  To use regional output on the cubed sphere, first the grid
-  !     information needs to be sent to <TT>diag_manager_mod</TT> using the <LINK SRC="diag_grid.html#diag_grid_init"><TT>
-  !     diag_grid_init</TT></LINK> subroutine.  <B><I>NOTE:</I></B> Regions must be confined to a single tile.  Regions spanning
-  !     tiles will be ignored.  A future release will allow multi-tile regions.
+  !     Regional output on the cubed sphere grid is also supported.  To use regional
+  !     output on the cubed sphere grid, first the grid information needs to be sent to
+  !     <TT>diag_manager_mod</TT> using the <LINK
+  !     SRC="diag_grid.html#diag_grid_init"><TT> diag_grid_init</TT></LINK>
+  !     subroutine.
   ! 
   !     <B><I>NOTE:</I></B> When using regional output the files containing regional 
   !     outputs should be different from files containing global (default) output. 
@@ -276,17 +277,15 @@ MODULE diag_manager_mod
   !     Time averaging is supported in regional output.
   ! 
   !     Physical fields (written in "physics windows" of atmospheric code) are 
-  !     currently fully supported for regional outputs.
+  !     fully supported for regional outputs.
   !
-  !     Note of dimension of field in send_data
-  !
-  !     Most fields are defined in data_domain but used in compute domain. In 
-  !     <TT>send_data</TT> users can pass EITHER field in data domain OR field in 
-  !     compute domain. If data domain is used, users should also pass the starting and 
-  !     ending indices of compute domain (isc, iec ...). If compute domain is used no 
-  !     indices are needed. These indices are for determining halo exclusively. If 
-  !     users want to ouput the field partially they should use regional output as 
-  !     mentioned above.
+  !     <B><I>NOTE:</I></B> Most fields are defined in the data domain but use the
+  !     compute domain. In <TT>send_data</TT> the field can be passed in either
+  !     the data domain or in the compute domain.  If the data domain is used, the
+  !     start and end indicies of the compute domain (isc, iec, . . .) should be
+  !     passed.  If the compute domain is used no indices are needed.  The indices
+  !     are for determining halo exclusively.  If users want to output the field
+  !     partially they should use regional output as mentioned above.
   !
   !     Weight in Time averaging is now supported, each time level may have a
   !     different weight. The default of weight is 1.
@@ -723,7 +722,8 @@ CONTAINS
     
     IF ( PRESENT(range) ) THEN
        input_fields(field)%range = range
-       input_fields(field)%range_present = .TRUE.
+       ! don't use the range if it is not a valid range
+       input_fields(field)%range_present = range(2) .gt. range(1)
     ELSE
        input_fields(field)%range = (/ 1., 0. /)
        input_fields(field)%range_present = .FALSE.
@@ -2614,7 +2614,8 @@ CONTAINS
                    WRITE (error_string,'(a,"/",a)')&
                         & TRIM(input_fields(in_num)%module_name), &
                         & TRIM(output_fields(out_num)%output_name)
-                   IF ( fms_error_handler('diag_manager_mod::diag_send_complete', 'module/output_field '//TRIM(error_string)//&
+                   IF ( fms_error_handler('diag_send_complete',&
+                        & 'module/output_field '//TRIM(error_string)//&
                         & ' is skipped one time level in output data', err_msg)) RETURN
                 END IF
              END IF
@@ -2700,7 +2701,8 @@ CONTAINS
        IF ( .NOT.input_fields(input_num)%register ) CYCLE 
        freq = files(file)%output_freq
        IF ( freq /= END_OF_RUN .AND. files(file)%file_unit < 0 &
-            & .AND. ALL(output_fields(i)%num_elements(:) == 0) .AND. ALL(output_fields(i)%count_0d(:) == 0) ) CYCLE
+            & .AND. ALL(output_fields(i)%num_elements(:) == 0)&
+            & .AND. ALL(output_fields(i)%count_0d(:) == 0) ) CYCLE
        ! Is it time to output for this field; CAREFUL ABOUT >= vs > HERE
        ! For end should be >= because no more data is coming 
        IF ( time >= output_fields(i)%next_output .OR. freq == END_OF_RUN ) THEN
@@ -2714,16 +2716,16 @@ CONTAINS
              IF ( mpp_pe() .EQ. mpp_root_pe() ) & 
                   & CALL error_mesg('diag_manager_mod::closing_file', 'module/output_field ' //&
                   & TRIM(message)//', skip one time level, maybe send_data never called', WARNING)
+          ELSE
+             status = writing_field(i, .TRUE., message, time)
           END IF
-          
-          status = writing_field(i, .TRUE., message, time)
-
        ELSEIF ( .NOT.output_fields(i)%written_once ) THEN
           ! <ERROR STATUS="NOTE">
           !   <output_fields(i)%output_name) NOT available, check if output interval > runlength.
           !   NetCDF fill_values are written
           ! </ERROR>
-          CALL error_mesg('Potential error in diag_manager_end ',TRIM(output_fields(i)%output_name)//' NOT available,'//&
+          CALL error_mesg('Potential error in diag_manager_end ',&
+               & TRIM(output_fields(i)%output_name)//' NOT available,'//&
                & ' check if output interval > runlength. Netcdf fill_values are written', NOTE)
           output_fields(i)%buffer = FILL_VALUE
           CALL diag_data_out(file, i, output_fields(i)%buffer, time, .TRUE.)   
@@ -2735,7 +2737,8 @@ CONTAINS
     ! Write out the number of bytes of data saved to this file
     IF ( write_bytes_in_file ) THEN
        CALL mpp_sum (files(file)%bytes_written)
-       IF ( mpp_pe() == mpp_root_pe() ) WRITE (stdout_unit,'(a,i12,a,a)') 'Diag_Manager: ',files(file)%bytes_written, &
+       IF ( mpp_pe() == mpp_root_pe() )&
+            & WRITE (stdout_unit,'(a,i12,a,a)') 'Diag_Manager: ',files(file)%bytes_written, &
             & ' bytes of data written to file ',TRIM(files(file)%name)
     END IF
   END SUBROUTINE closing_file
@@ -2765,6 +2768,7 @@ CONTAINS
     INTEGER :: mystat
     INTEGER, ALLOCATABLE, DIMENSION(:) :: pelist
     INTEGER :: stdlog_unit, stdout_unit
+    integer :: j
 #ifndef INTERNAL_FILE_NML
     INTEGER :: nml_unit
 #endif
@@ -2773,7 +2777,7 @@ CONTAINS
     NAMELIST /diag_manager_nml/ append_pelist_name, mix_snapshot_average_fields, max_output_fields, &
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
-         & oor_warnings_fatal, conserve_water
+         & oor_warnings_fatal, max_out_per_in_field, conserve_water
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
@@ -2862,6 +2866,9 @@ CONTAINS
     END IF
     ALLOCATE(output_fields(max_output_fields))
     ALLOCATE(input_fields(max_input_fields))
+    do j = 1, max_input_fields
+      allocate(input_fields(j)%output_fields(MAX_OUT_PER_IN_FIELD))
+    enddo
     ALLOCATE(files(max_files))
     ALLOCATE(pelist(mpp_npes()))
     CALL mpp_get_current_pelist(pelist, pelist_name)

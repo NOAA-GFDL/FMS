@@ -60,8 +60,8 @@ module horiz_interp_spherical_mod
   namelist /horiz_interp_spherical_nml/ search_method
 
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_spherical.F90,v 19.0 2012/01/06 21:58:27 fms Exp $'
-  character(len=128) :: tagname = '$Name: siena_201211 $'
+  character(len=128) :: version = '$Id: horiz_interp_spherical.F90,v 19.0.4.1 2013/02/25 18:32:54 Zhi.Liang Exp $'
+  character(len=128) :: tagname = '$Name: siena_201303 $'
   logical            :: module_is_initialized = .FALSE.
 
 contains
@@ -83,6 +83,7 @@ contains
     call write_version_number (version, tagname)
 #ifdef INTERNAL_FILE_NML
       read (input_nml_file, horiz_interp_spherical_nml, iostat=io)
+      ierr = check_nml_error(io,'horiz_interp_spherical_nml') 
 #else
     if (file_exist('input.nml')) then
        unit = open_namelist_file ( )

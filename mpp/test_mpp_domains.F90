@@ -66,6 +66,7 @@ program test
   integer :: npes_fine   = 0
   integer :: extra_halo = 0
   logical :: mix_2D_3D = .false.
+  integer :: nthreads = 1
 
   namelist / test_mpp_domains_nml / nx, ny, nz, stackmax, debug, mpes, check_parallel, &
                                whalo, ehalo, shalo, nhalo, x_cyclic_offset, y_cyclic_offset, &
@@ -75,11 +76,12 @@ program test
                                jstart_fine, jend_fine, istart_coarse, iend_coarse, jstart_coarse, &
                                jend_coarse, extra_halo, npes_fine, npes_coarse, mix_2D_3D, test_get_nbr, &
                                test_edge_update, test_cubic_grid_redistribute, ensemble_size, &
-                               layout_cubic, layout_ensemble
+                               layout_cubic, layout_ensemble, nthreads
   integer :: i, j, k
   integer :: layout(2)
   integer :: id
-  integer :: outunit, errunit
+  integer :: outunit, errunit, io_status
+  integer :: get_cpu_affinity, base_cpu, omp_get_num_threads, omp_get_thread_num
 
   call mpp_memuse_begin()
   call mpp_init()
@@ -87,7 +89,7 @@ program test
   outunit = stdout()
   errunit = stderr()
 #ifdef INTERNAL_FILE_NML
-  read (input_nml_file, test_mpp_domains_nml) 
+  read (input_nml_file, test_mpp_domains_nml, status=io_status) 
 #else
   do
      inquire( unit=unit, opened=opened )
@@ -95,11 +97,15 @@ program test
      unit = unit + 1
      if( unit.EQ.100 )call mpp_error( FATAL, 'Unable to locate unit number.' )
   end do
-  open( unit=unit, status='OLD', file='input.nml', err=10 )
-  read( unit,test_mpp_domains_nml )
+  open( unit=unit, file='input.nml', iostat=io_status )
+  read( unit,test_mpp_domains_nml, iostat=io_status )
   close(unit)
-10 continue
 #endif
+
+      if (io_status > 0) then
+         call mpp_error(FATAL,'=>test_mpp_domains: Error reading input.nml')
+      endif
+
 
   select case(trim(warn_level))
   case("fatal")
@@ -119,6 +125,12 @@ program test
       call mpp_domains_init(MPP_DOMAIN_TIME)
   end if
   call mpp_domains_set_stack_size(stackmax)
+
+!$      call omp_set_num_threads(nthreads)
+!$      base_cpu = get_cpu_affinity()
+!$OMP PARALLEL
+!$        call set_cpu_affinity( base_cpu + omp_get_thread_num() )
+!$OMP END PARALLEL
   
   if( pe.EQ.mpp_root_pe() )print '(a,9i6)', 'npes, mpes, nx, ny, nz, whalo, ehalo, shalo, nhalo =', &
                            npes, mpes, nx, ny, nz, whalo, ehalo, shalo, nhalo
@@ -245,7 +257,7 @@ program test
   
 contains
   subroutine test_openmp()
-#ifdef _OPENMP
+#ifdef _OPENMP_TEST
     integer :: omp_get_num_thread, omp_get_max_threads, omp_get_thread_num
     real, allocatable :: a(:,:,:)
     type(domain2D) :: domain
@@ -536,8 +548,6 @@ contains
     dch =>NULL()
         
     call mpp_set_current_pelist()
-
-    call mpp_sync()
     
     deallocate(gcheck, global)
     if(ALLOCATED(pelist)) deallocate(pelist)
@@ -1790,10 +1800,11 @@ contains
 
   
     if(ntile_per_pe == 1) then
+       allocate( x1(ism:iem,jsm:jem,nz, num_fields) )
+       allocate( a1(ism:iem,jsm:jem,nz, num_fields) )
+       if(mix_2D_3D) allocate( a1_2D(ism:iem,jsm:jem,num_fields) )
+
        do n = 1, num_iter  
-          allocate( x1(ism:iem,jsm:jem,nz, num_fields) )
-          allocate( a1(ism:iem,jsm:jem,nz, num_fields) )
-          if(mix_2D_3D) allocate( a1_2D(ism:iem,jsm:jem,num_fields) )
           do l = 1, num_fields
              x1(:,:,:,l) = x_save(:,:,:,1)
              a1(:,:,:,l) = x_save(:,:,:,1)
@@ -1838,9 +1849,9 @@ contains
              call compare_checksums( x1(:,:,:,l), a1(:,:,:,l), type//' X'//text)
           enddo
           if(mix_2D_3D)call compare_checksums( x1(:,:,1,:), a1_2D(:,:,:), type//' X 2D')
-          deallocate(x1, a1)
-          if(mix_2D_3D) deallocate(a1_2D)
        enddo
+       deallocate(x1, a1)
+       if(mix_2D_3D) deallocate(a1_2D)
     endif
 
     call mpp_clock_begin(id_single)
@@ -1899,16 +1910,17 @@ contains
 
     id1 = mpp_clock_id( trim(type)//' BGRID group', flags=MPP_CLOCK_SYNC)
     id2 = mpp_clock_id( trim(type)//' BGRID group non-blocking', flags=MPP_CLOCK_SYNC)
-    do n = 1, num_iter    
-       if(ntile_per_pe == 1) then
-          allocate( x1(ism:iem+shift,jsm:jem+shift,nz,num_fields) )
-          allocate( y1(ism:iem+shift,jsm:jem+shift,nz,num_fields) )
-          allocate( a1(ism:iem+shift,jsm:jem+shift,nz,num_fields) )
-          allocate( b1(ism:iem+shift,jsm:jem+shift,nz,num_fields) )
-          if(mix_2D_3D) then
-             allocate( a1_2D(ism:iem+shift,jsm:jem+shift,num_fields) )
-             allocate( b1_2D(ism:iem+shift,jsm:jem+shift,num_fields) )
-          endif
+    if(ntile_per_pe == 1) then
+       allocate( x1(ism:iem+shift,jsm:jem+shift,nz,num_fields) )
+       allocate( y1(ism:iem+shift,jsm:jem+shift,nz,num_fields) )
+       allocate( a1(ism:iem+shift,jsm:jem+shift,nz,num_fields) )
+       allocate( b1(ism:iem+shift,jsm:jem+shift,nz,num_fields) )
+       if(mix_2D_3D) then
+          allocate( a1_2D(ism:iem+shift,jsm:jem+shift,num_fields) )
+          allocate( b1_2D(ism:iem+shift,jsm:jem+shift,num_fields) )
+       endif
+
+       do n = 1, num_iter    
           do l = 1, num_fields
              x1(:,:,:,l) = x_save(:,:,:,1)
              a1(:,:,:,l) = x_save(:,:,:,1)
@@ -1971,10 +1983,10 @@ contains
              call compare_checksums( x1(:,:,1,:), a1_2D(:,:,:), type//' BGRID X 2D')
              call compare_checksums( y1(:,:,1,:), b1_2D(:,:,:), type//' BGRID Y 2D')
           endif
-          deallocate(x1, y1, a1, b1)
-          if(mix_2D_3D) deallocate(a1_2D, b1_2D)
-       endif
-    enddo
+       enddo
+       deallocate(x1, y1, a1, b1)
+       if(mix_2D_3D) deallocate(a1_2D, b1_2D)
+    endif
 
     call mpp_clock_begin(id_single)
     call mpp_complete_update_domains(id_update_single, a, b, domain, gridtype=BGRID_NE)
@@ -1988,7 +2000,6 @@ contains
 
 
     deallocate(x, y, a, b, x_save, y_save)
-
     !------------------------------------------------------------------
     !              vector update : CGRID_NE, one extra point in each direction for cubic-grid
     !------------------------------------------------------------------
@@ -2038,16 +2049,17 @@ contains
     id1 = mpp_clock_id( trim(type)//' CGRID group', flags=MPP_CLOCK_SYNC )
     id2 = mpp_clock_id( trim(type)//' CGRID group non-blocking', flags=MPP_CLOCK_SYNC )
 
-    do n = 1, num_iter
-       if(ntile_per_pe == 1) then
-          allocate( x1(ism:iem+shift,jsm:jem      ,nz,num_fields) )
-          allocate( y1(ism:iem      ,jsm:jem+shift,nz,num_fields) )
-          allocate( a1(ism:iem+shift,jsm:jem      ,nz,num_fields) )
-          allocate( b1(ism:iem      ,jsm:jem+shift,nz,num_fields) )
-          if(mix_2D_3D) then
-             allocate( a1_2D(ism:iem+shift,jsm:jem      ,num_fields) )
-             allocate( b1_2D(ism:iem      ,jsm:jem+shift,num_fields) )
-          endif
+    if(ntile_per_pe == 1) then
+       allocate( x1(ism:iem+shift,jsm:jem      ,nz,num_fields) )
+       allocate( y1(ism:iem      ,jsm:jem+shift,nz,num_fields) )
+       allocate( a1(ism:iem+shift,jsm:jem      ,nz,num_fields) )
+       allocate( b1(ism:iem      ,jsm:jem+shift,nz,num_fields) )
+       if(mix_2D_3D) then
+          allocate( a1_2D(ism:iem+shift,jsm:jem      ,num_fields) )
+          allocate( b1_2D(ism:iem      ,jsm:jem+shift,num_fields) )
+       endif
+
+       do n = 1, num_iter
           do l = 1, num_fields
              x1(:,:,:,l) = x_save(:,:,:,1)
              a1(:,:,:,l) = x_save(:,:,:,1)
@@ -2090,7 +2102,7 @@ contains
           call mpp_clock_begin(id2)
           do l = 1, num_fields
              if(mix_2D_3D)call mpp_complete_update_domains(id_update, a1_2D(:,:,l), b1_2D(:,:,l), domain, &
-                   gridtype=CGRID_NE, complete=l==.false.)
+                   gridtype=CGRID_NE, complete=.false.)
              call mpp_complete_update_domains(id_update, a1(:,:,:,l), b1(:,:,:,l), domain, &
                    gridtype=CGRID_NE, complete=l==num_fields)
           enddo
@@ -2106,11 +2118,10 @@ contains
              call compare_checksums( x1(:,:,1,:), a1_2D(:,:,:), type//' BGRID X 2D')
              call compare_checksums( y1(:,:,1,:), b1_2D(:,:,:), type//' BGRID Y 2D')
           endif
-
-          deallocate(x1, y1, a1, b1)
-          if(mix_2D_3D) deallocate(a1_2D, b1_2D)
-       endif
-    enddo
+       enddo
+       deallocate(x1, y1, a1, b1)
+       if(mix_2D_3D) deallocate(a1_2D, b1_2D)
+    endif
 
     call mpp_clock_begin(id_single)
     call mpp_complete_update_domains(id_update_single, a, b, domain, gridtype=CGRID_NE)
@@ -4992,14 +5003,15 @@ contains
   !##################################################################################
   subroutine test_update_edge( type )
     character(len=*), intent(in) :: type
-    real, allocatable, dimension(:,:,:) :: x, x2
-    real, allocatable, dimension(:,:,:) :: y, y2
+    real, allocatable, dimension(:,:,:) :: x, x2, a
+    real, allocatable, dimension(:,:,:) :: y, y2, b
     type(domain2D) :: domain
     real,    allocatable :: global1(:,:,:), global2(:,:,:), global(:,:,:)
     logical, allocatable :: maskmap(:,:)
     integer              :: shift, i, xhalo, yhalo
     logical              :: is_symmetry, folded_south, folded_west, folded_east
     integer              :: is, ie, js, je, isd, ied, jsd, jed
+    integer              :: id_update
 
     allocate(global(1-whalo:nx+ehalo,1-shalo:ny+nhalo,nz) )
 
@@ -5043,6 +5055,7 @@ contains
     call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
     call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
     allocate( x (isd:ied,jsd:jed,nz) )
+    allocate( a (isd:ied,jsd:jed,nz) )
     allocate( x2 (isd:ied,jsd:jed,nz) )
     x2 (isd:ied,jsd:jed,:) = global(isd:ied,jsd:jed,:)
     call set_corner_zero(x2, isd, ied, jsd, jed, is, ie, js, je)
@@ -5058,9 +5071,15 @@ contains
     call compare_checksums( x, x2, type )
     deallocate(x2)
 
+    a = 0
+    a(is:ie,js:je,:) = global(is:ie,js:je,:)
+    id_update = mpp_start_update_domains( a, domain, flags=EDGEUPDATE)
+    call mpp_complete_update_domains(id_update, a, domain, flags=EDGEUPDATE)
+    call compare_checksums( x, a, type//" nonblock")
+
         !--- test vector update for FOLDED and MASKED case.
     if( type == 'Cyclic' ) then
-       deallocate(global, x)
+       deallocate(global, x, a)
        return       
     end if
 
@@ -5080,8 +5099,9 @@ contains
              end do
           end do
        end do
-       deallocate(x)
+       deallocate(x,a)
        allocate( x (isd:ied+1,jsd:jed+1,nz) )
+       allocate( a (isd:ied+1,jsd:jed+1,nz) )
     endif
 
     select case (type)
@@ -5095,15 +5115,22 @@ contains
     end select
 
     x = 0.
+    a = 0.
     x(is:ie+shift,js:je+shift,:) = global(is:ie+shift,js:je+shift,:)
+    a(is:ie+shift,js:je+shift,:) = global(is:ie+shift,js:je+shift,:)
     !set up y array
     allocate( y (isd:ied+shift,jsd:jed+shift,nz) )
+    allocate( b (isd:ied+shift,jsd:jed+shift,nz) )
+    b = x
     y = x
-
     id = mpp_clock_id( type//' vector BGRID_NE', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
     call mpp_clock_begin(id)
     call mpp_update_domains( x,  y, domain, flags=EDGEUPDATE, gridtype=BGRID_NE)
     call mpp_clock_end  (id)
+
+    !--nonblocking update
+    id_update = mpp_start_update_domains(a,b, domain, flags=EDGEUPDATE, gridtype=BGRID_NE)
+    call mpp_complete_update_domains(id_update, a,b, domain, flags=EDGEUPDATE, gridtype=BGRID_NE)
 
     !redundant points must be equal and opposite
 
@@ -5123,8 +5150,10 @@ contains
 
     call compare_checksums( x,  x2, type//' BGRID_NE X' )
     call compare_checksums( y,  x2, type//' BGRID_NE Y' )
+    call compare_checksums( a,  x2, type//' BGRID_NE X nonblock' )
+    call compare_checksums( b,  x2, type//' BGRID_NE Y nonblock' )
 
-    deallocate(global, x, y, x2)
+    deallocate(global, x, y, x2, a, b)
 
     !------------------------------------------------------------------
     !              vector update : CGRID_NE
@@ -5134,7 +5163,8 @@ contains
     allocate(global2(1-whalo:nx+ehalo, 1-shalo:ny+nhalo+shift, nz))
     allocate(x  (isd:ied+shift,jsd:jed,nz), y (isd:ied,jsd:jed+shift,nz) )
     allocate(x2 (isd:ied+shift,jsd:jed,nz), y2 (isd:ied,jsd:jed+shift,nz) ) 
-   
+    allocate(a  (isd:ied+shift,jsd:jed,nz), b (isd:ied,jsd:jed+shift,nz) )   
+
     global1 = 0.0
     global2 = 0.0
     do k = 1,nz
@@ -5174,11 +5204,18 @@ contains
     x = 0.; y = 0.
     x(is:ie+shift,js:je,      :) = global1(is:ie+shift,js:je,      :)
     y(is:ie      ,js:je+shift,:) = global2(is:ie,      js:je+shift,:)
+    a = 0.; b = 0.
+    a(is:ie+shift,js:je,      :) = global1(is:ie+shift,js:je,      :)
+    b(is:ie      ,js:je+shift,:) = global2(is:ie,      js:je+shift,:)
 
     id = mpp_clock_id( type//' vector CGRID_NE', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
     call mpp_clock_begin(id)
     call mpp_update_domains( x,  y, domain, flags=EDGEUPDATE, gridtype=CGRID_NE)
     call mpp_clock_end  (id)
+
+    !--nonblocking
+    id_update = mpp_start_update_domains( a,  b, domain, flags=EDGEUPDATE, gridtype=CGRID_NE)
+    call mpp_complete_update_domains(id_update, a,  b, domain, flags=EDGEUPDATE, gridtype=CGRID_NE)
 
     !redundant points must be equal and opposite
     global2(nx/2+1:nx,     ny+shift,:) = -global2(nx/2:1:-1, ny+shift,:)
@@ -5192,8 +5229,10 @@ contains
 
     call compare_checksums( x,  x2, type//' CGRID_NE X' )
     call compare_checksums( y,  y2, type//' CGRID_NE Y' )
+    call compare_checksums( a,  x2, type//' CGRID_NE X nonblock' )
+    call compare_checksums( b,  y2, type//' CGRID_NE Y nonblock' )
 
-    deallocate(global1, global2, x, y, x2, y2)
+    deallocate(global1, global2, x, y, x2, y2, a, b)
 
 
   end subroutine test_update_edge
