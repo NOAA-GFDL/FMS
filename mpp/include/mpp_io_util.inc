@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_util.inc,v 19.0.2.1.4.3 2012/10/03 18:38:15 William.Cooke Exp $
+! $Id: mpp_io_util.inc,v 19.0.2.1.4.3.4.2 2013/03/15 21:23:27 William.Cooke Exp $
 
 
   !#####################################################################
@@ -362,6 +362,27 @@
    end function mpp_get_axis_index
 
   !#####################################################################
+   function mpp_get_axis_by_name(unit,axisname)
+
+     integer          :: unit
+     character(len=*) :: axisname
+     type(axistype)   :: mpp_get_axis_by_name
+
+     integer :: n
+
+     mpp_get_axis_by_name = default_axis
+
+     do n=1,size(mpp_file(unit)%Axis(:))
+        if (lowercase(mpp_file(unit)%Axis(n)%name) == lowercase(axisname)) then
+           mpp_get_axis_by_name = mpp_file(unit)%Axis(n)
+           exit
+        endif
+     enddo
+
+     return
+   end function mpp_get_axis_by_name
+
+  !#####################################################################
    function mpp_get_field_size(field)
 
      type(fieldtype) :: field
@@ -376,6 +397,18 @@
 
      return
    end function mpp_get_field_size
+
+
+  !#####################################################################
+   function mpp_get_axis_length(axis)
+
+     type(axistype) :: axis
+     integer :: mpp_get_axis_length
+
+     mpp_get_axis_length = axis%len
+
+     return
+   end function mpp_get_axis_length
 
 
   !#####################################################################

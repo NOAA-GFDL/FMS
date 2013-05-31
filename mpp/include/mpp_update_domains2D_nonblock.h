@@ -727,7 +727,7 @@ function MPP_START_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype
                                     update_flags, reuse_id_update, field_name)
         else
            call mpp_start_do_update(current_id, f_addrsx(1:l_size,1:ntile), f_addrsy(1:l_size,1:ntile), domain, &
-                                    updatex, updatey, d_type, ke_max, ke_list(1:l_size,1:ntile), gridtype,    & 
+                                    updatex, updatey, d_type, ke_max, ke_list(1:l_size,1:ntile), grid_offset_type,    & 
                                     update_flags, reuse_id_update, field_name)
         endif
      endif

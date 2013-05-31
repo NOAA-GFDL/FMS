@@ -5,7 +5,6 @@ program xgrid_test
 
   use mpp_mod,         only : mpp_pe, mpp_npes, mpp_error, FATAL, mpp_chksum, mpp_min, mpp_max
   use mpp_mod,         only : mpp_set_current_pelist, mpp_declare_pelist
-  use mpp_mod,         only : mpp_clock_begin, mpp_clock_end, mpp_clock_id, MPP_CLOCK_SYNC
   use mpp_domains_mod, only : mpp_define_domains, mpp_define_layout, mpp_domains_exit
   use mpp_domains_mod, only : mpp_get_compute_domain, domain2d, mpp_domains_init
   use mpp_domains_mod, only : mpp_define_mosaic_pelist, mpp_define_mosaic, mpp_global_sum
@@ -93,7 +92,6 @@ implicit none
   integer              :: npes_per_tile
   integer              :: id_put_side1_to_xgrid, id_get_side1_from_xgrid
   integer              :: id_put_side2_to_xgrid, id_get_side2_from_xgrid
-  integer              :: id_setup_xmap
   integer              :: ens_siz(6), ensemble_size
   integer              :: atm_root_pe, lnd_root_pe, ocn_root_pe, ice_root_pe, atm_nest_root_pe
   integer              :: atm_global_npes, ntile_atm_global, ncontact_global
@@ -104,11 +102,6 @@ implicit none
   integer, allocatable :: tile_id(:)
 
   call fms_init
-  id_setup_xmap = mpp_clock_id("setup_xmap", flags=MPP_CLOCK_SYNC)
-  id_put_side1_to_xgrid = mpp_clock_id("put_side1_to_xgrid", flags=MPP_CLOCK_SYNC)
-  id_get_side1_from_xgrid = mpp_clock_id("get_side1_from_xgrid", flags=MPP_CLOCK_SYNC)
-  id_put_side2_to_xgrid = mpp_clock_id("put_side2_to_xgrid", flags=MPP_CLOCK_SYNC)
-  id_get_side2_from_xgrid = mpp_clock_id("get_side2_from_xgrid", flags=MPP_CLOCK_SYNC)
 
   call mpp_domains_init
 
@@ -446,10 +439,8 @@ implicit none
   call mpp_set_current_pelist()
 
   !--- conservation check is done in setup_xmap. 
-  call mpp_clock_begin(id_setup_xmap)
   call setup_xmap(Xmap, (/ 'ATM', 'OCN', 'LND' /), (/ Atm_domain, Ice_domain, Lnd_domain /), grid_file, atm_grid)
   call setup_xmap(Xmap_runoff, (/ 'LND', 'OCN'/), (/ Lnd_domain, Ice_domain/), grid_file )
-  call mpp_clock_end(id_setup_xmap)
   !--- set frac area if nk_lnd or nk_ocn is greater than 1.
   if(nk_lnd > 0 .AND. lnd_pe) then
     allocate(lnd_frac(isc_lnd:iec_lnd, jsc_lnd:jec_lnd, nk_lnd))
@@ -664,23 +655,15 @@ implicit none
      call get_xmap_grid_area("OCN", Xmap, ice_area)
      do n = 1, num_iter
         call random_number(atm_data_in)
-        call mpp_clock_begin(id_put_side1_to_xgrid)
         call put_to_xgrid(atm_data_in, 'ATM', x_1, Xmap, remap_method=remap_method)
-        call mpp_clock_end(id_put_side1_to_xgrid)
 
-        call mpp_clock_begin(id_get_side2_from_xgrid)
         call get_from_xgrid(lnd_data_out, 'LND', x_1, xmap)
         call get_from_xgrid(ice_data_out, 'OCN', x_1, xmap)
-        call mpp_clock_end(id_get_side2_from_xgrid)
 
-        call mpp_clock_begin(id_put_side2_to_xgrid)
         call put_to_xgrid(lnd_data_out, 'LND', x_2, xmap)
         call put_to_xgrid(ice_data_out, 'OCN', x_2, xmap)
-        call mpp_clock_end(id_put_side2_to_xgrid)
 
-        call mpp_clock_begin(id_get_side1_from_xgrid)
         call get_from_xgrid(atm_data_out, 'ATM', x_2, xmap)
-        call mpp_clock_end(id_get_side1_from_xgrid)
         sum_atm_in  = mpp_global_sum(atm_domain, atm_area * atm_data_in)
         sum_lnd_out = 0
         do k = 1, nk_lnd

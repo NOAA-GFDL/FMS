@@ -42,7 +42,7 @@ module horiz_interp_bicubic_mod
   end interface
 
    character(len=128) :: version="$Id: horiz_interp_bicubic.F90,v 19.0 2012/01/06 21:57:52 fms Exp $"
-   character(len=128) :: tagname = '$Name: siena_201303 $'
+   character(len=128) :: tagname = '$Name: siena_201305 $'
    logical            :: module_is_initialized = .FALSE.
    integer            :: verbose_bicubic = 0
    

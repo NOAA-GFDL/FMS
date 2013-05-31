@@ -245,7 +245,7 @@ module mpp_domains_mod
      integer                  :: pe
      integer                  :: start_pos                 ! start position in the buffer
      integer                  :: totsize                   ! all message size
-     integer ,        pointer :: msgsize(:)                ! overlapping msgsize to be sent or received
+     integer ,        pointer :: msgsize(:)      => NULL() ! overlapping msgsize to be sent or received
      integer,         pointer :: tileMe(:)       => NULL() ! my tile id for this overlap
      integer,         pointer :: tileNbr(:)      => NULL() ! neighbor tile id for this overlap
      integer,         pointer :: is(:)           => NULL() ! starting i-index 
@@ -2465,9 +2465,9 @@ end interface
 
   !--- version information variables
   character(len=128), public :: version= &
-       '$Id: mpp_domains.F90,v 19.0.2.1.2.3.2.1.2.1.2.1.2.1 2013/02/24 19:44:26 Zhi.Liang Exp $'
+       '$Id: mpp_domains.F90,v 19.0.2.1.2.3.2.1.2.1.2.1.2.1.2.1 2013/03/21 21:13:01 William.Cooke Exp $'
   character(len=128), public :: tagname= &
-       '$Name: siena_201303 $'
+       '$Name: siena_201305 $'
 
 
 contains

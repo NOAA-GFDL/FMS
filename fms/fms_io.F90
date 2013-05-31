@@ -308,7 +308,7 @@ character(len=32) :: pelist_name
 character(len=7)  :: pe_name
 character(len=128):: error_msg  
 logical           :: great_circle_algorithm=.FALSE.
-  
+
 !------ private data, pointer to current 2d domain ------
 ! entrained from fms_mod.  This will be deprecated in the future.
 type(domain2D), pointer, private :: Current_domain =>NULL()
@@ -370,8 +370,8 @@ logical           :: checksum_required   = .true.
 
 integer            :: pack_size  ! = 1 for double = 2 for float
 
-character(len=128) :: version = '$Id: fms_io.F90,v 19.0.6.1.4.1.2.4.4.3.2.3.2.1 2013/02/25 18:32:54 Zhi.Liang Exp $'
-character(len=128) :: tagname = '$Name: siena_201303 $'
+character(len=128) :: version = '$Id: fms_io.F90,v 19.0.6.1.4.1.2.4.4.3.2.3.2.1.2.3 2013/05/15 18:03:38 Seth.Underwood Exp $'
+character(len=128) :: tagname = '$Name: siena_201305 $'
 
 contains
 
@@ -508,7 +508,7 @@ subroutine fms_io_init()
   
   !--- read INPUT/grid_spec.nc to decide the value of great_circle_algorithm
   !--- great_circle_algorithm could be true only for mosaic grid.
-  great_circle_algorithm = 0
+  great_circle_algorithm = .false.
   grd_file = "INPUT/grid_spec.nc"
 
   is_mosaic_grid = .FALSE.
@@ -525,9 +525,9 @@ subroutine fms_io_init()
   if(is_mosaic_grid) then
      if( get_global_att_value(grd_file, "great_circle_algorithm", attvalue) ) then
         if(trim(attvalue) == "TRUE") then
-           great_circle_algorithm = 1
+           great_circle_algorithm = .true.
         else if(trim(attvalue) == "FALSE") then
-           great_circle_algorithm = 0
+           great_circle_algorithm = .false.
         else
            call mpp_error(FATAL, "fms_io(fms_io_init: value of global attribute great_circle_algorithm in file"// &
              trim(grd_file)//" should be TRUE of FALSE")
@@ -1559,6 +1559,7 @@ subroutine save_restart(fileObj, time_stamp, directory )
   !  (in)      time_stamp - character format of the time of this restart file.
   character(len=256) :: dir
   character(len=256) :: restartpath          ! The restart file path (dir/file).
+  character(len=258) :: restartpath_var      ! The restart file path for the current variable
   character(len=80)  :: restartname          ! The restart file name (no dir).
   character(len=8)   :: suffix               ! A suffix (like _2) that is appended to the name of files after the first.
   integer            :: var_sz, size_in_file ! The size in bytes of each variable and of the variables already in a file.
@@ -1643,6 +1644,7 @@ integer :: ishift, jshift, iadd, jadd
   do while (next_var <= fileObj%nvar )
      start_var = next_var
      size_in_file = meta_size
+     restartpath_var = restartpath
      do j=start_var,fileObj%nvar
         cur_var => fileObj%var(j)
         var_sz = 8*cur_var%csiz(1)*cur_var%csiz(2)*cur_var%csiz(3)
@@ -1667,16 +1669,16 @@ integer :: ishift, jshift, iadd, jadd
         !--- remove .nc from restartpath and attach suffix.
         siz = len_trim(restartpath)
         if(restartpath(siz-2:siz) == ".nc") then
-           restartpath = restartpath(1:siz-3)//trim(suffix)
+           restartpath_var = restartpath(1:siz-3)//trim(suffix)
         else      
-           restartpath = trim(restartpath) // trim(suffix)
+           restartpath_var = trim(restartpath) // trim(suffix)
         end if
      end if
      if( domain_present ) then
-        call mpp_open(unit,trim(restartpath),action=MPP_OVERWR,form=form,threading=thread_w,&
+        call mpp_open(unit,trim(restartpath_var),action=MPP_OVERWR,form=form,threading=thread_w,&
              fileset=fset_w, is_root_pe=fileObj%is_root_pe, domain=array_domain(fileObj%var(ind_dom)%domain_idx) )
      else  ! global data
-        call mpp_open(unit,trim(restartpath),action=MPP_OVERWR,form=form,threading=MPP_SINGLE,&
+        call mpp_open(unit,trim(restartpath_var),action=MPP_OVERWR,form=form,threading=MPP_SINGLE,&
              fileset=MPP_SINGLE, is_root_pe=fileObj%is_root_pe)
      end if
 
@@ -1798,6 +1800,15 @@ integer :: ishift, jshift, iadd, jadd
           call mpp_get_compute_domain(Current_domain, isc, iec, jsc, jec)
           call mpp_get_global_domain(Current_domain, isg, ieg, jsg, jeg)
           call mpp_get_domain_shift(Current_domain, ishift, jshift, cur_var%position)
+       else
+          iec = cur_var%ie
+          isc = cur_var%is
+          ieg = cur_var%ie
+          jec = cur_var%je
+          jsc = cur_var%js
+          jeg = cur_var%je
+          ishift = 0
+          jshift = 0
         endif
 !        call return_domain(domain)
         iadd = iec-isc ! Size of the i-dimension on this processor (-1 as it is an increment)
@@ -1825,7 +1836,7 @@ integer :: ishift, jshift, iadd, jadd
            else if ( Associated(fileObj%p3di(k,j)%p) ) then
               check_val(k) = mpp_chksum(fileObj%p3di(k,j)%p(cur_var%is:cur_var%is+iadd, cur_var%js:cur_var%js+jadd, :))
            else
-              call mpp_error(FATAL, "fms_io(write_chksum): There is no pointer associated with the data of  field "// &
+              call mpp_error(FATAL, "fms_io(save_restart): There is no pointer associated with the data of  field "// &
                    trim(cur_var%name)//" of file "//trim(fileObj%name) )
            end if
         enddo
@@ -1931,6 +1942,9 @@ subroutine write_chksum(fileObj, action)
   integer,                 intent(in)    :: action
   integer(LONG_KIND)                     :: data_chksum
   integer                                :: j, k, outunit
+  integer                                :: isc, iec, jsc, jec
+  integer                                :: isg, ieg, jsg, jeg
+  integer                                :: ishift, jshift, iadd, jadd
   type(var_type), pointer, save          :: cur_var=>NULL()
   character(len=32)                      :: routine_name
 
@@ -1944,6 +1958,30 @@ subroutine write_chksum(fileObj, action)
 
   do j=1,fileObj%nvar
      cur_var => fileObj%var(j)
+
+     if ( cur_var%domain_idx > 0) then
+        call mpp_get_compute_domain(array_domain(cur_var%domain_idx), isc, iec, jsc, jec)
+        call mpp_get_global_domain(array_domain(cur_var%domain_idx), isg, ieg, jsg, jeg)
+        call mpp_get_domain_shift(array_domain(cur_var%domain_idx), ishift, jshift, cur_var%position)
+     else if (ASSOCIATED(Current_domain)) then
+        call mpp_get_compute_domain(Current_domain, isc, iec, jsc, jec)
+        call mpp_get_global_domain(Current_domain, isg, ieg, jsg, jeg)
+        call mpp_get_domain_shift(Current_domain, ishift, jshift, cur_var%position)
+     else
+        iec = cur_var%ie
+        isc = cur_var%is
+        ieg = cur_var%ie
+        jec = cur_var%je
+        jsc = cur_var%js
+        jeg = cur_var%je
+        ishift = 0
+        jshift = 0
+     endif
+     iadd = iec-isc ! Size of the i-dimension on this processor (-1 as it is an increment)
+     jadd = jec-jsc ! Size of the j-dimension on this processor
+     if(iec == ieg) iadd = iadd + ishift
+     if(jec == jeg) jadd = jadd + jshift
+
      if(action == MPP_OVERWR .OR. (action == MPP_RDONLY .AND. cur_var%initialized) ) then 
         do k = 1, cur_var%siz(4)
            if ( Associated(fileObj%p0dr(k,j)%p) ) then
@@ -1951,17 +1989,17 @@ subroutine write_chksum(fileObj, action)
            else if ( Associated(fileObj%p1dr(k,j)%p) ) then
               data_chksum = mpp_chksum(fileObj%p1dr(k,j)%p, (/mpp_pe()/) )
            else if ( Associated(fileObj%p2dr(k,j)%p) ) then
-              data_chksum = mpp_chksum(fileObj%p2dr(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je) )
+              data_chksum = mpp_chksum(fileObj%p2dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd) )
            else if ( Associated(fileObj%p3dr(k,j)%p) ) then
-              data_chksum = mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je, :) )
+              data_chksum = mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :) )
            else if ( Associated(fileObj%p0di(k,j)%p) ) then
               data_chksum = fileObj%p0di(k,j)%p
            else if ( Associated(fileObj%p1di(k,j)%p) ) then
               data_chksum = mpp_chksum(fileObj%p1di(k,j)%p, (/mpp_pe()/) )
            else if ( Associated(fileObj%p2di(k,j)%p) ) then
-              data_chksum = mpp_chksum(fileObj%p2di(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je) )
+              data_chksum = mpp_chksum(fileObj%p2di(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd) )
            else if ( Associated(fileObj%p3di(k,j)%p) ) then
-              data_chksum = mpp_chksum(fileObj%p3di(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je, :))
+              data_chksum = mpp_chksum(fileObj%p3di(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :))
            else
               call mpp_error(FATAL, "fms_io(write_chksum): There is no pointer associated with the data of  field "// &
                    trim(cur_var%name)//" of file "//trim(fileObj%name) )
@@ -2016,6 +2054,8 @@ subroutine restore_state_all(fileObj, directory)
   real                                :: r0d
   type(domain2d), pointer, save       :: io_domain=>NULL()
   integer                             :: isc, iec, jsc, jec, check_exist
+  integer                             :: isg, ieg, jsg, jeg
+  integer                             :: ishift, jshift, iadd, jadd
   integer(LONG_KIND), dimension(3)    :: checksum_file
   integer(LONG_KIND)                  :: checksum_data
   logical                             :: is_there_a_checksum
@@ -2115,12 +2155,36 @@ subroutine restore_state_all(fileObj, directory)
 
      do j=1,fileObj%nvar
         cur_var => fileObj%var(j)
+        domain_present = cur_var%domain_present
+        domain_idx = cur_var%domain_idx
+
+        if ( cur_var%domain_idx > 0) then
+          call mpp_get_compute_domain(array_domain(cur_var%domain_idx), isc, iec, jsc, jec)
+          call mpp_get_global_domain(array_domain(cur_var%domain_idx), isg, ieg, jsg, jeg)
+          call mpp_get_domain_shift(array_domain(cur_var%domain_idx), ishift, jshift, cur_var%position)
+        else if (ASSOCIATED(Current_domain)) then
+          call mpp_get_compute_domain(Current_domain, isc, iec, jsc, jec)
+          call mpp_get_global_domain(Current_domain, isg, ieg, jsg, jeg)
+          call mpp_get_domain_shift(Current_domain, ishift, jshift, cur_var%position)
+       else
+          iec = cur_var%ie
+          isc = cur_var%is
+          ieg = cur_var%ie
+          jec = cur_var%je
+          jsc = cur_var%js
+          jeg = cur_var%je
+          ishift = 0
+          jshift = 0
+        endif
+        iadd = iec-isc ! Size of the i-dimension on this processor (-1 as it is an increment)
+        jadd = jec-jsc ! Size of the j-dimension on this processor
+        if(iec == ieg) iadd = iadd + ishift
+        if(jec == jeg) jadd = jadd + jshift
+
         isc = cur_var%is
         iec = cur_var%ie
         jsc = cur_var%js
         jec = cur_var%je
-        domain_present = cur_var%domain_present
-        domain_idx = cur_var%domain_idx
         do l=1, nvar
            call mpp_get_atts(fields(l),name=varname)
            if (lowercase(trim(varname)) == lowercase(trim(cur_var%name))) then
@@ -2146,11 +2210,11 @@ subroutine restore_state_all(fileObj, directory)
                     else if( Associated(fileObj%p2dr(k,j)%p) ) then
                        call mpp_read(unit(n), fields(l), array_domain(domain_idx), fileObj%p2dr(k,j)%p, tlev)
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p2dr(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je) )
+                         checksum_data = mpp_chksum(fileObj%p2dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd) )
                     else if( Associated(fileObj%p3dr(k,j)%p) ) then
                        call mpp_read(unit(n), fields(l), array_domain(domain_idx), fileObj%p3dr(k,j)%p, tlev)
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je, :) )
+                         checksum_data = mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :) )
                     else if( Associated(fileObj%p0di(k,j)%p) ) then
                        call mpp_read(unit(n), fields(l), r0d, tlev)
                        fileObj%p0di(k,j)%p = r0d
@@ -2167,7 +2231,7 @@ subroutine restore_state_all(fileObj, directory)
                        call mpp_read(unit(n), fields(l), array_domain(domain_idx), r2d, tlev)
                        fileObj%p2di(k,j)%p(isc:iec,jsc:jec) = r2d(isc:iec,jsc:jec)
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p2di(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je) )
+                         checksum_data = mpp_chksum(fileObj%p2di(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd) )
                        deallocate(r2d)
                     else if( Associated(fileObj%p3di(k,j)%p) ) then
                        allocate(r3d(cur_var%siz(1), cur_var%siz(2), cur_var%siz(3)) )
@@ -2175,7 +2239,7 @@ subroutine restore_state_all(fileObj, directory)
                        call mpp_read(unit(n), fields(l), array_domain(domain_idx), r3d, tlev)
                        fileObj%p3di(k,j)%p(isc:iec,jsc:jec,:) = r3d(isc:iec,jsc:jec,:) 
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p3di(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je, :))
+                         checksum_data = mpp_chksum(fileObj%p3di(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :))
                        deallocate(r3d)
                     else
                        call mpp_error(FATAL, "fms_io(restore_state_all): domain is present for the field "//trim(varname)// &
@@ -2191,11 +2255,11 @@ subroutine restore_state_all(fileObj, directory)
                     else if( Associated(fileObj%p2dr(k,j)%p) ) then
                        call mpp_read(unit(n), fields(l), fileObj%p2dr(k,j)%p, tlev)
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p2dr(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je) )
+                         checksum_data = mpp_chksum(fileObj%p2dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd) )
                     else if( Associated(fileObj%p3dr(k,j)%p) ) then
                        call mpp_read(unit(n), fields(l), fileObj%p3dr(k,j)%p, tlev)
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je, :) )
+                         checksum_data = mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :) )
                     else if( Associated(fileObj%p0di(k,j)%p) ) then
                        call mpp_read(unit(n), fields(l), r0d, tlev)
                        fileObj%p0di(k,j)%p = r0d
@@ -2212,7 +2276,7 @@ subroutine restore_state_all(fileObj, directory)
                        call mpp_read(unit(n), fields(l), r2d, tlev)                
                        fileObj%p2di(k,j)%p = r2d
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p2di(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je) )
+                         checksum_data = mpp_chksum(fileObj%p2di(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd) )
                        deallocate(r2d)
                     else if( Associated(fileObj%p3di(k,j)%p) ) then
                        allocate(r3d(cur_var%siz(1), cur_var%siz(2), cur_var%siz(3)) )
@@ -2220,7 +2284,7 @@ subroutine restore_state_all(fileObj, directory)
                        call mpp_read(unit(n), fields(l), r3d, tlev)                
                        fileObj%p3di(k,j)%p = r3d
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p3di(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je, :))
+                         checksum_data = mpp_chksum(fileObj%p3di(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :))
                        deallocate(r3d)
                     else
                        call mpp_error(FATAL, "fms_io(restore_state_all): There is no pointer "//&
@@ -2302,6 +2366,8 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
   real                                :: r0d
   type(domain2d), pointer, save       :: io_domain=>NULL()
   integer                             :: isc, iec, jsc, jec, check_exist
+  integer                             :: isg, ieg, jsg, jeg
+  integer                             :: ishift, jshift, iadd, jadd
   integer(LONG_KIND), dimension(3)    :: checksum_file ! There should be no more than 3 timelevels in a restart file.
   integer(LONG_KIND)                  :: checksum_data
   logical                             :: is_there_a_checksum
@@ -2314,6 +2380,29 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
   cur_var => fileObj%var(id_field)
   domain_present = cur_var%domain_present
   domain_idx = cur_var%domain_idx
+
+  if ( cur_var%domain_idx > 0) then
+     call mpp_get_compute_domain(array_domain(cur_var%domain_idx), isc, iec, jsc, jec)
+     call mpp_get_global_domain(array_domain(cur_var%domain_idx), isg, ieg, jsg, jeg)
+     call mpp_get_domain_shift(array_domain(cur_var%domain_idx), ishift, jshift, cur_var%position)
+  else if (ASSOCIATED(Current_domain)) then
+     call mpp_get_compute_domain(Current_domain, isc, iec, jsc, jec)
+     call mpp_get_global_domain(Current_domain, isg, ieg, jsg, jeg)
+     call mpp_get_domain_shift(Current_domain, ishift, jshift, cur_var%position)
+  else
+     iec = cur_var%ie
+     isc = cur_var%is
+     ieg = cur_var%ie
+     jec = cur_var%je
+     jsc = cur_var%js
+     jeg = cur_var%je
+     ishift = 0
+     jshift = 0
+  endif
+  iadd = iec-isc ! Size of the i-dimension on this processor (-1 as it is an increment)
+  jadd = jec-jsc ! Size of the j-dimension on this processor
+  if(iec == ieg) iadd = iadd + ishift
+  if(jec == jeg) jadd = jadd + jshift
 
   num_restart = 0
   nfile = 0
@@ -2419,10 +2508,12 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
                     if ( is_there_a_checksum ) checksum_data = mpp_chksum(fileObj%p1dr(k,j)%p, (/mpp_pe()/) )
                  else if( Associated(fileObj%p2dr(k,j)%p) ) then
                     call mpp_read(unit(n), fields(l), array_domain(domain_idx), fileObj%p2dr(k,j)%p, tlev)
-                    if ( is_there_a_checksum ) checksum_data = mpp_chksum(fileObj%p2dr(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je) )
+                    if ( is_there_a_checksum ) checksum_data =&
+                         & mpp_chksum(fileObj%p2dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd) )
                  else if( Associated(fileObj%p3dr(k,j)%p) ) then
                     call mpp_read(unit(n), fields(l), array_domain(domain_idx), fileObj%p3dr(k,j)%p, tlev)
-                    if ( is_there_a_checksum ) checksum_data = mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je, :) )
+                    if ( is_there_a_checksum ) checksum_data =&
+                         & mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :) )
                  else if( Associated(fileObj%p0di(k,j)%p) ) then
                     call mpp_read(unit(n), fields(l), r0d, tlev)
                     fileObj%p0di(k,j)%p = r0d
@@ -2438,14 +2529,16 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
                     r2d = 0
                     call mpp_read(unit(n), fields(l), array_domain(domain_idx), r2d, tlev)
                     fileObj%p2di(k,j)%p(isc:iec,jsc:jec) = r2d(isc:iec,jsc:jec) 
-                    if ( is_there_a_checksum ) checksum_data = mpp_chksum(fileObj%p2di(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je) )
+                    if ( is_there_a_checksum ) checksum_data =&
+                         & mpp_chksum(fileObj%p2di(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd) )
                     deallocate(r2d)
                  else if( Associated(fileObj%p3di(k,j)%p) ) then
                     allocate(r3d(cur_var%siz(1), cur_var%siz(2), cur_var%siz(3)) )
                     r3d = 0
                     call mpp_read(unit(n), fields(l), array_domain(domain_idx), r3d, tlev)
                     fileObj%p3di(k,j)%p(isc:iec,jsc:jec,:) = r3d(isc:iec,jsc:jec,:) 
-                    if ( is_there_a_checksum ) checksum_data = mpp_chksum(fileObj%p3di(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je, :))
+                    if ( is_there_a_checksum ) checksum_data =&
+                         & mpp_chksum(fileObj%p3di(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :))
                     deallocate(r3d)
                  else
                     call mpp_error(FATAL, "fms_io(restore_state_one_field): domain is present for the field "//trim(varname)// &
@@ -2460,10 +2553,12 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
                     if ( is_there_a_checksum ) checksum_data = mpp_chksum(fileObj%p1dr(k,j)%p, (/mpp_pe()/) )
                  else if( Associated(fileObj%p2dr(k,j)%p) ) then
                     call mpp_read(unit(n), fields(l), fileObj%p2dr(k,j)%p, tlev)
-                    if ( is_there_a_checksum ) checksum_data = mpp_chksum(fileObj%p2dr(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je) )
+                    if ( is_there_a_checksum ) checksum_data =&
+                         & mpp_chksum(fileObj%p2dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd) )
                  else if( Associated(fileObj%p3dr(k,j)%p) ) then
                     call mpp_read(unit(n), fields(l), fileObj%p3dr(k,j)%p, tlev)
-                    if ( is_there_a_checksum ) checksum_data = mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je, :) )
+                    if ( is_there_a_checksum ) checksum_data =&
+                         & mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :) )
                  else if( Associated(fileObj%p0di(k,j)%p) ) then
                     call mpp_read(unit(n), fields(l), r0d, tlev)
                     fileObj%p0di(k,j)%p = r0d
@@ -2479,14 +2574,16 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
                     r2d = 0
                     call mpp_read(unit(n), fields(l), r2d, tlev)                
                     fileObj%p2di(k,j)%p = r2d
-                    if ( is_there_a_checksum ) checksum_data = mpp_chksum(fileObj%p2di(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je) )
+                    if ( is_there_a_checksum ) checksum_data =&
+                         & mpp_chksum(fileObj%p2di(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd) )
                     deallocate(r2d)
                  else if( Associated(fileObj%p3di(k,j)%p) ) then
                     allocate(r3d(cur_var%siz(1), cur_var%siz(2), cur_var%siz(3)) )
                     r3d = 0
                     call mpp_read(unit(n), fields(l), r3d, tlev)                
                     fileObj%p3di(k,j)%p = r3d
-                    if ( is_there_a_checksum ) checksum_data = mpp_chksum(fileObj%p3di(k,j)%p(cur_var%is:cur_var%ie,cur_var%js:cur_var%je, :))
+                    if ( is_there_a_checksum ) checksum_data =&
+                         & mpp_chksum(fileObj%p3di(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :))
                     deallocate(r3d)
                  else
                     call mpp_error(FATAL, "fms_io(restore_state_one_field): There is no pointer "// &
@@ -2944,14 +3041,15 @@ subroutine field_size(filename, fieldname, siz, field_found, domain, no_domain )
   endif
 
   if(.not.found .AND. .not. is_no_domain) then
-     found_file =  get_file_name(filename, actual_file, read_dist, io_domain_exist, no_domain=.true.)
-     !--- when is_no_domain is true and file is not found, send out error message.
-     if(.NOT. found_file) call mpp_error(FATAL, 'fms_io_mod(field_size): file ' //trim(filename)// &
-          '(with the consideration of tile number) and corresponding distributed file are not found')  
-     call get_file_unit(actual_file, unit, nfile, read_dist, io_domain_exist, domain=domain)
-     call get_size(unit,fieldname,siz,found)
+    found_file =  get_file_name(filename, actual_file, read_dist, io_domain_exist, no_domain=.true.)
+    if(found_file) then
+      call get_file_unit(actual_file, unit, nfile, read_dist, io_domain_exist, domain=domain)
+      call get_size(unit,fieldname,siz,found)
+    endif
   endif
 
+! If field_found is present we assume that it is being checked on exit.
+! If not present and the field was not found, exit with a FATAL error.
   if( PRESENT(field_found) )then
      field_found = found
   else if (.not. found )then
@@ -3050,50 +3148,53 @@ end subroutine get_size
 !   </OUT>
 !=====================================================================================
 subroutine read_data_i3d_new(filename,fieldname,data,domain,timelevel, &
-                             no_domain,position, tile_count)
+                             no_domain,position, tile_count, is_compressed)
   character(len=*),           intent(in)   :: filename, fieldname
   integer, dimension(:,:,:), intent(inout) :: data ! 3 dimensional data    
   type(domain2d), intent(in),   optional   :: domain
   integer, intent(in),          optional   :: timelevel
-  logical, intent(in),          optional   :: no_domain 
+  logical, intent(in),          optional   :: no_domain
   integer, intent(in) ,         optional   :: position, tile_count
+  logical, intent(in),          optional   :: is_compressed
 
   real, dimension(size(data,1),size(data,2),size(data,3)) :: r_data
   r_data = 0
   call read_data_3d_new(filename,fieldname,r_data,domain,timelevel, &
-                        no_domain, .false., position, tile_count)
+                        no_domain, .false., position, tile_count, is_compressed)
   data = CEILING(r_data)
 end subroutine read_data_i3d_new
 
 subroutine read_data_i2d_new(filename,fieldname,data,domain,timelevel, &
-                             no_domain,position, tile_count)
+                             no_domain,position, tile_count, is_compressed)
   character(len=*),         intent(in)   :: filename, fieldname
   integer, dimension(:,:), intent(inout) :: data ! 2 dimensional data    
   type(domain2d), intent(in), optional   :: domain
   integer, intent(in),        optional   :: timelevel
   logical, intent(in),        optional   :: no_domain
   integer, intent(in) ,       optional   :: position, tile_count
+  logical, intent(in),        optional   :: is_compressed
   real, dimension(size(data,1),size(data,2)) :: r_data
 
   r_data = 0
   call read_data_2d_new(filename,fieldname,r_data,domain,timelevel, &
-                        no_domain, position, tile_count)
+                        no_domain, position, tile_count, is_compressed)
   data = CEILING(r_data)
 end subroutine read_data_i2d_new
 !.....................................................................
 subroutine read_data_i1d_new(filename,fieldname,data,domain,timelevel, &
-                             no_domain, tile_count)
+                             no_domain, tile_count, is_compressed)
   character(len=*), intent(in)           :: filename, fieldname
   integer, dimension(:), intent(inout)   :: data ! 1 dimensional data    
   type(domain2d), intent(in), optional   :: domain
   integer, intent(in) , optional         :: timelevel
-  logical, intent(in), optional          :: no_domain 
+  logical, intent(in), optional          :: no_domain
   integer, intent(in), optional          :: tile_count
+  logical, intent(in), optional          :: is_compressed
 
   real, dimension(size(data,1))        :: r_data
 
   call read_data_1d_new(filename,fieldname,r_data,domain,timelevel, &
-                        no_domain, tile_count)
+                        no_domain, tile_count, is_compressed)
   data = CEILING(r_data)
 end subroutine read_data_i1d_new
 !.....................................................................
@@ -3113,7 +3214,7 @@ subroutine read_data_iscalar_new(filename,fieldname,data,domain,timelevel, &
 end subroutine read_data_iscalar_new
 !=====================================================================================
 subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel, &
-      no_domain, scalar_or_1d, position, tile_count, is_2d)
+      no_domain, scalar_or_1d, position, tile_count, is_compressed)
   character(len=*),                  intent(in) :: filename, fieldname
   real, dimension(:,:,:),         intent(inout) :: data ! 3 dimensional data    
   type(domain2d), target, optional,  intent(in) :: domain
@@ -3121,7 +3222,7 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel, &
   logical,                optional,  intent(in) :: no_domain 
   logical,                optional,  intent(in) :: scalar_or_1d
   integer,                optional,  intent(in) :: position, tile_count
-  logical,                optional,  intent(in) :: is_2d
+  logical,                optional,  intent(in) :: is_compressed
 
   character(len=256)            :: fname
   integer                       :: unit, siz_in(4)
@@ -3134,6 +3235,7 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel, &
   integer                       :: ishift, jshift
   logical                       :: is_scalar_or_1d = .false.
   logical                       :: is_no_domain = .false.
+  logical                       :: compressed 
   logical                       :: read_dist, io_domain_exist, found_file
   type(domain2d), pointer, save :: d_ptr =>NULL()
   type(domain2d), pointer, save :: io_domain =>NULL()
@@ -3163,6 +3265,9 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel, &
   is_scalar_or_1d = .false.
   if(present(scalar_or_1d)) is_scalar_or_1d = scalar_or_1d
 
+  compressed = .false.
+  if(present(is_compressed)) compressed = is_compressed
+
   if(.not. PRESENT(domain) .and. .not. ASSOCIATED(Current_domain) ) is_no_domain = .true.
 
   found_file = get_file_name(filename, fname, read_dist, io_domain_exist, is_no_domain, domain,  tile_count)
@@ -3171,7 +3276,7 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel, &
   call get_file_unit(fname, unit, file_index, read_dist, io_domain_exist, domain=domain)
 
   siz_in(3) = size(data,3)
-  if(is_no_domain .or. .NOT. associated(d_ptr) .or. is_scalar_or_1d) then
+  if(is_no_domain .or. .NOT. associated(d_ptr) .or. is_scalar_or_1d .or. compressed) then
      gxsize = size(data,1)
      gysize = size(data,2)
   else if(read_dist) then
@@ -3224,7 +3329,7 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel, &
      endif
 
      
-     if(is_no_domain .OR. is_scalar_or_1d) then
+     if(is_no_domain .OR. is_scalar_or_1d .or. compressed) then
         if (files_read(file_index)%var(index_field)%is_dimvar) then
            call mpp_get_axis_data(files_read(file_index)%var(index_field)%axis,data(:,1,1))
         else
@@ -3243,13 +3348,14 @@ end subroutine read_data_3d_new
 
 !=====================================================================================
 subroutine read_data_2d_region(filename,fieldname,data,start,nread,domain, &
-                                 no_domain, tile_count)
+                                 no_domain, tile_count, is_compressed)
   character(len=*),                  intent(in) :: filename, fieldname
   real, dimension(:,:),           intent(inout) :: data ! 3 dimensional data    
   integer, dimension(:),             intent(in) :: start, nread
   type(domain2d), target,  optional, intent(in) :: domain
-  logical,                 optional, intent(in) :: no_domain 
+  logical,                 optional, intent(in) :: no_domain
   integer,                 optional, intent(in) :: tile_count
+  logical,                 optional, intent(in) :: is_compressed
   character(len=256)            :: fname
   integer                       :: unit, siz_in(4)
   integer                       :: file_index  ! index of the opened file in array files
@@ -3335,32 +3441,39 @@ end subroutine read_data_text
 !.............................................................. 
 ! </SUBROUTINE>
 subroutine read_data_2d_new(filename,fieldname,data,domain,timelevel,&
-      no_domain,position,tile_count)
+      no_domain,position,tile_count, is_compressed)
   character(len=*), intent(in)                 :: filename, fieldname
   real, dimension(:,:), intent(inout)          :: data     !2 dimensional data 
   real, dimension(size(data,1),size(data,2),1) :: data_3d
   type(domain2d), intent(in), optional         :: domain
   integer, intent(in) , optional               :: timelevel
-  logical, intent(in), optional                ::  no_domain
+  logical, intent(in), optional                :: no_domain
   integer, intent(in) , optional               :: position, tile_count
+  logical, intent(in), optional                :: is_compressed
+
   integer                                      :: isc,iec,jsc,jec,isd,ied,jsd,jed
-  integer :: isg,ieg,jsg,jeg
+  integer                                      :: isg,ieg,jsg,jeg
   integer                                      :: xsize_c,ysize_c,xsize_d,ysize_d
   integer                                      :: xsize_g,ysize_g, ishift, jshift
+  logical                                      :: compressed
 
 !#ifdef use_CRI_pointers
 !  pointer( p, data_3d )
 !  p = LOC(data)
 !#endif
-  call read_data_3d_new(filename,fieldname,data_3d,domain,timelevel,&
-        no_domain,.false., position,tile_count)
 
+  compressed= .false.
+  if (PRESENT(is_compressed)) compressed=is_compressed
+
+  call read_data_3d_new(filename,fieldname,data_3d,domain,timelevel,&
+        no_domain,.false., position,tile_count,is_compressed=compressed)
+  
   if(PRESENT(domain)) then
      call mpp_get_global_domain( domain,isg,ieg,jsg,jeg,xsize=xsize_g,ysize=ysize_g, tile_count=tile_count, position=position)
      call mpp_get_compute_domain( domain,isc,iec,jsc,jec,xsize=xsize_c,ysize=ysize_c, tile_count=tile_count, position=position)
      call mpp_get_data_domain( domain,isd,ied,jsd,jed,xsize=xsize_d,ysize=ysize_d, tile_count=tile_count, position=position)
      call mpp_get_domain_shift  (domain, ishift, jshift, position)
-     if((size(data,1)==xsize_c) .and. (size(data,2)==ysize_c)) then !on_comp_domain
+     if(((size(data,1)==xsize_c) .and. (size(data,2)==ysize_c)) .or. compressed) then !on_comp_domain
         data(:,:) = data_3d(:,:,1)
      else if((size(data,1)==xsize_d) .and. (size(data,2)==ysize_d)) then !on_data_domain
         data(isc-isd+1:iec-isd+1,jsc-jsd+1:jec-jsd+1) = data_3d(isc-isd+1:iec-isd+1,jsc-jsd+1:jec-jsd+1,1)
@@ -3377,21 +3490,22 @@ subroutine read_data_2d_new(filename,fieldname,data,domain,timelevel,&
 end subroutine read_data_2d_new
 !.....................................................................
 subroutine read_data_1d_new(filename,fieldname,data,domain,timelevel,&
-      no_domain, tile_count)
+      no_domain, tile_count, is_compressed)
   character(len=*), intent(in)           :: filename, fieldname
   real, dimension(:), intent(inout)      :: data     !1 dimensional data 
   real, dimension(size(data,1),1,1)      :: data_3d
   type(domain2d), intent(in), optional   :: domain
   integer, intent(in) , optional         :: timelevel
-  logical, intent(in), optional          ::  no_domain
+  logical, intent(in), optional          :: no_domain
   integer, intent(in), optional          :: tile_count
+  logical, intent(in), optional          :: is_compressed
 #ifdef use_CRI_pointers
   pointer( p, data_3d )
   p = LOC(data)
 #endif
 
   call read_data_3d_new(filename,fieldname,data_3d,domain,timelevel,&
-        no_domain=no_domain, scalar_or_1d=.true., tile_count=tile_count)
+        no_domain=no_domain, scalar_or_1d=.true., tile_count=tile_count, is_compressed=is_compressed)
 
 end subroutine read_data_1d_new
 !.....................................................................
@@ -3405,7 +3519,7 @@ subroutine read_data_scalar_new(filename,fieldname,data,domain,timelevel,&
   real, dimension(1,1,1)                 :: data_3d
   type(domain2d), intent(in), optional   :: domain
   integer, intent(in) , optional         :: timelevel
-  logical, intent(in), optional          ::  no_domain
+  logical, intent(in), optional          :: no_domain
   integer, intent(in), optional          :: tile_count
 
   if(present(no_domain)) then
@@ -5003,7 +5117,7 @@ end subroutine get_axis_cart
        if(associated(io_domain)) then
           tile_id = mpp_get_tile_id(io_domain)       
           write(fname, '(a,i4.4)' ) trim(actual_file)//'.', tile_id(1)
-          inquire (file=trim(fname), exist=fexist)          
+          inquire (file=trim(fname), exist=fexist)
           if(.not. fexist) then
              write(fname, '(a,i6.6)' ) trim(actual_file)//'.', tile_id(1)
              inquire (file=trim(fname), exist=fexist)
@@ -5200,8 +5314,8 @@ end subroutine get_axis_cart
        do i=1,ndim
           call mpp_get_atts(axes(i), name=name, len = siz_in(1)) 
           if (lowercase(trim(name)) == lowercase(trim(fieldname))) then
-             if(.not. is_no_domain) call mpp_error(FATAL, &
-                  'fms_io(get_field_id): the field is a dimension variable, no_domain should be true.')
+!             if(.not. is_no_domain) call mpp_error(FATAL, &
+!                  'fms_io(get_field_id): the field is a dimension variable, no_domain should be true.')
              files_read(index_file)%var(index_field)%is_dimvar = .true.
              files_read(index_file)%var(index_field)%name      = fieldname
              files_read(index_file)%var(index_field)%axis      = axes(i)

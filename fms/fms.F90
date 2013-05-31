@@ -281,8 +281,8 @@ integer, public :: clock_flag_default
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: fms.F90,v 19.0.6.1 2013/02/25 18:32:54 Zhi.Liang Exp $'
-  character(len=128) :: tagname = '$Name: siena_201303 $'
+  character(len=128) :: version = '$Id: fms.F90,v 19.0.6.1.4.1 2013/04/12 14:39:40 William.Cooke Exp $'
+  character(len=128) :: tagname = '$Name: siena_201305 $'
 
   logical :: module_is_initialized = .FALSE.
 
@@ -695,7 +695,7 @@ end subroutine fms_end
           IF ( .NOT.opened ) EXIT file_opened
        END DO file_opened
 
-#if defined __PGI
+#if defined(__PGI) || defined(_CRAYFTN)
        OPEN (UNIT=fileunit, FILE='_read_error.nml', IOSTAT=io_stat)
 #else
        OPEN (UNIT=fileunit, STATUS='SCRATCH', IOSTAT=io_stat)

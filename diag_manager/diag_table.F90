@@ -4,48 +4,37 @@ MODULE diag_table_mod
   ! </CONTACT>
   ! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/" />
   ! <OVERVIEW>
-  !   <TT>diag_table_mod</TT> is a set of subroutines use to parse out the data
-  !   from a <TT>diag_table</TT>.  This module will also setup the arrays required
-  !   to store the information by counting the number of input fields, output
-  !   files, and files.
+  !   <TT>diag_table_mod</TT> is a set of subroutines use to parse out the data from a <TT>diag_table</TT>.  This module
+  !   will also setup the arrays required to store the information by counting the number of input fields, output files, and
+  !   files.
   ! </OVERVIEW>
   ! <DESCRIPTION>
-  !   <TT>diag_table_mod</TT> parses the <TT>diag_table</TT> file, and sets up the
-  !   required arrays to hold the information needed for the
-  !   <TT>diag_manager_mod</TT> to correctly write out the model history files.
+  !   <TT>diag_table_mod</TT> parses the <TT>diag_table</TT> file, and sets up the required arrays to hold the information
+  !   needed for the <TT>diag_manager_mod</TT> to correctly write out the model history files.
   !
-  !   The <I>diagnostics table</I> file (<TT>diag_table</TT>) allows users to
-  !   specify sampling rates and the choice of fields at run time.  The
-  !   <TT>diag_table</TT> file consists of comma-separated ASCII values divided
-  !   into essentially three sections: <B>Global</B>, <B>File</B>, and
-  !   <B>Field</B> sections.  The <B>Global</B> section must be the first two
-  !   lines of the file, whereas the <B>File</B> and <B>Field</B> sections can be
-  !   intermixed to allow the file to be organized as desired.  Comments can be
-  !   added to the <TT>diag_table</TT> file by using the hash symbol (#).
+  !   The <I>diagnostics table</I> allows users to specify sampling rates and the choice of fields at run time.  The
+  !   <TT>diag_table</TT> file consists of comma-separated ASCII values.  The <TT>diag_table</TT> essentially has three sections:
+  !   <B>Global</B>, <B>File</B>, and <B>Field</B> sections.  The <B>Global</B> section must be the first two lines of the file,
+  !   whereas the <B>File</B> and <B>Field</B> sections can be inter mixed to allow the file to be organized as desired.
+  !   Comments can be added to the <TT>diag_table</TT> file by using the hash symbol (#) as the first character in the line.
   !
-  !   All errors in the <TT>diag_table</TT> will throw a <TT>FATAL</TT> error.  A
-  !   simple utility <TT>diag_table_chk</TT>has been added to the FRE tools suite
-  !   to check a <TT>diag_table</TT> for errors.  A brief usage statement can be
-  !   obtained by running <TT>diag_table_chk --help</TT>, and a man page like
-  !   description can be viewed by running <TT>perldoc diag_table_chk</TT>.
+  !   All errors in the <TT>diag_table</TT> will throw a <TT>FATAL</TT> error.  A simple utility <TT>diag_table_chk</TT>has been
+  !   added to the FRE tools suite to check a <TT>diag_table</TT> for errors.  A brief usage statement can be obtained by running
+  !   <TT>diag_table_chk --help</TT>, and a man page like description can views by running <TT>perldoc diag_table_chk</TT>.
   !
   !   Below is a description of the three sections.
   !   <OL>
   !     <LI>
-  !       <B>Global Section:</B> The first two lines of the <TT>diag_table</TT>
-  !       must contain the <I>title</I> and the <I>base date</I> of the experiment
-  !       respectively.  The <I>title</I> must be a Fortran CHARACTER string.  The
-  !       <I>base date</I> is the reference time used by the model, and must be
-  !       older than or equal to the model start time.  The <I>base date</I>
-  !       consists of six space-separated integers in the following format.<BR />
+  !       <B>Global Section:</B>  The first two lines of the <TT>diag_table</TT> must contain the <I>title</I> and the <I>base
+  !       date</I> of the experiment respectively.  The <I>title</I> must be a Fortran CHARACTER string.  The <I>base date</I>
+  !       is the reference time used for the time units, and must be greater than or equal to the model start time.
+  !       The <I>base date</I> consists of six space-separated integer in the following format.<BR />
   !       <TT><NOBR>year month day hour minute second</NOBR></TT><BR />
   !     </LI>
   !     <LI>
-  !       <B>File Section:</B> File lines contain 6 required and 5 optional fields
-  !       (optional fields are surrounded with square brackets ([])).  File lines
-  !       can be intermixed with the field lines, but the file must be defined
-  !       before any fields that are to be written to the file.  File lines have
-  !       the following format:<BR />
+  !       <B>File Section:</B> File lines contain 6 required and 5 optional fields (optional fields are surrounded with
+  !       square brackets ([]).  File lines can be intermixed with the field lines, but the file must be defined before any
+  !       fields that are to be written to the file.  File lines have the following format:<BR />
   !       <PRELN>
   !         "file_name", output_freq, "output_freq_units", file_format, "time_axis_units", "time_axis_name"
   !         [, new_file_freq, "new_file_freq_units"[, "start_time"[, file_duration, "file_duration_units"]]]
@@ -57,12 +46,10 @@ MODULE diag_table_mod
   !         <DD>
   !           Output file name without the trailing "<TT>.nc</TT>".
   !
-  !           A single file description can produce multiple files using special
-  !           time string suffix keywords.  This time string will append the time
-  !           strings to the base file name each time a new file is opened.  They
-  !           syntax for the time string suffix keywords are <TT>%#tt</TT> Where
-  !           <TT>#</TT> is a mandatory single digit number specifying the width
-  !           of the field, and <TT>tt</TT> can be as follows:
+  !           A single file description can produce multiple files using special time string suffix keywords.  This time string
+  !           will append the time strings to the base file name each time a new file is opened.  They syntax for the time string
+  !           suffix keywords are <TT>%#tt</TT> Where <TT>#</TT> is a mandatory single digit number specifying the width of the
+  !           field, and <TT>tt</TT> can be as follows:
   !           <NL>
   !             <LI><TT>yr</TT> <EN /> Years</LI>
   !             <LI><TT>mo</TT> <EN /> Months</LI>
@@ -71,12 +58,10 @@ MODULE diag_table_mod
   !             <LI><TT>mi</TT> <EN /> Minutes</LI>
   !             <LI><TT>sc</TT> <EN /> Seconds</LI>
   !           </NL>
-  !           Thus, a file name of <TT>file2_yr_dy%1yr%3dy</TT> will have a base
-  !           file name of <TT>file2_yr_dy_1_001</TT> if the file is created on
-  !           year 1 day 1 of the model run.  <B><I>NOTE:</I></B> The time suffix
-  !           keywords must be used if the optional fields <TT>new_file_freq</TT>
-  !           and <TT>new_file_freq_units</TT> are used, otherwise a
-  !           <TT>FATAL</TT> error will occur.
+  !           Thus, a file name of <TT>file2_yr_dy%1yr%3dy</TT> will have a base file name of <TT>file2_yr_dy_1_001</TT> if the
+  !           file is created on year 1 day 1 of the model run.  <B><I>NOTE:</I></B> The time suffix keywords must be used if the
+  !           optional fields <TT>new_file_freq</TT> and <TT>new_file_freq_units</TT> are used, otherwise a <TT>FATAL</TT> error
+  !           will occur.
   !         </DD>
   !
   !         <DT><TT>INTEGER :: output_freq</TT></DT>
@@ -89,74 +74,60 @@ MODULE diag_table_mod
   !         </DD>
   !         <DT><TT>CHARACTER(len=10) :: output_freq_units</TT></DT>
   !         <DD>
-  !           Time units for output.  Can be either <TT>years</TT>,
-  !           <TT>months</TT>, <TT>days</TT>, <TT>minutes</TT>, <TT>hours</TT>, or
-  !           <TT>seconds</TT>.
+  !           Time units for output.  Can be either <TT>years</TT>, <TT>months</TT>, <TT>days</TT>, <TT>minutes</TT>,
+  !           <TT>hours</TT>, or <TT>seconds</TT>.
   !         </DD>
   !         <DT><TT>INTEGER :: file_format</TT></DT>
   !         <DD>
-  !           Output file format.  Currently only the <LINK
-  !           SRC="http://www.unidata.ucar.edu/software/netcdf/">netCDF</LINK>
-  !           file format is supported.
+  !           Output file format.  Currently only the <I>netCDF</I> file format is supported.
   !           <NL>
   !             <LI><TT>= 1</TT> <EN /> netCDF</LI>
   !           </NL>
   !         </DD>
   !         <DT><TT>CHARACTER(len=10) :: time_axis_units</TT></DT>
   !         <DD>
-  !           Time units for the output file time axis.  Can be either
-  !           <TT>years</TT>, <TT>months</TT>, <TT>days</TT>, <TT>minutes</TT>,
-  !           <TT>hours</TT>, or <TT>seconds</TT>.
+  !           Time units for the output file time axis.  Can be either <TT>years</TT>, <TT>months</TT>, <TT>days</TT>,
+  !           <TT>minutes</TT>, <TT>hours</TT>, or <TT>seconds</TT>.
   !         </DD>
   !         <DT><TT>CHARACTER(len=128) :: time_axis_name</TT></DT>
   !         <DD>
-  !           Axis name for the output file time axis.  The character sting must
-  !           contain the string 'time'. (mixed upper and lowercase allowed.)
+  !           Axis name for the output file time axis.  The character sting must contain the string 'time'. (mixed upper and
+  !           lowercase allowed.)
   !         </DD>
   !         <DT><TT>INTEGER, OPTIONAL :: new_file_freq</TT></DT>
   !         <DD>
-  !           Frequency for closing the existing file, and creating a new file in
-  !           <TT>new_file_freq_units</TT>.
+  !           Frequency for closing the existing file, and creating a new file in <TT>new_file_freq_units</TT>.
   !         </DD>
   !         <DT><TT>CHARACTER(len=10), OPTIONAL :: new_file_freq_units</TT></DT>
   !         <DD>
-  !           Time units for creating a new file.  Can be either <TT>years</TT>,
-  !           <TT>months</TT>, <TT>days</TT>, <TT>minutes</TT>, <TT>hours</TT>, or
-  !           <TT>seconds</TT>.  <B><I>NOTE:</I></B> If the <TT>new_file_freq</TT>
-  !           field is present, then this field must also be present.
+  !           Time units for creating a new file.  Can be either <TT>years</TT>, <TT>months</TT>, <TT>days</TT>,
+  !           <TT>minutes</TT>, <TT>hours</TT>, or <TT>seconds</TT>.  <B><I>NOTE:</I></B> If the <TT>new_file_freq</TT> field is
+  !           present, then this field must also be present.
   !         </DD>
   !         <DT><TT>CHARACTER(len=25), OPTIONAL :: start_time</TT></DT>
   !         <DD>
-  !           Time to start the file for the first time.  The format of this
-  !           string is the same as the <I>global date</I>.  <B><I> NOTE:</I></B>
-  !           The <TT>new_file_freq</TT> and the <TT>new_file_freq_units</TT>
-  !           fields must be present to use this field.
+  !           Time to start the file for the first time.  The format of this string is the same as the <I>global date</I>.  <B><I>
+  !           NOTE:</I></B> The <TT>new_file_freq</TT> and the <TT>new_file_freq_units</TT> fields must be present to use this field.
   !         </DD>
   !         <DT><TT>INTEGER, OPTIONAL :: file_duration</TT></DT>
   !         <DD>
-  !           How long the file should receive data after the start time in
-  !           <TT>file_duration_units</TT>.  This optional field can only be used
-  !           if the <TT>start_time</TT> field is present.  If this field is
-  !           absent, then the file duration will be equal to the frequency for
-  !           creating new files.  <B><I>NOTE:</I></B> The
-  !           <TT>file_duration_units</TT> field must also be present if this
-  !           field is present.
+  !           How long file should receive data after start time in <TT>file_duration_units</TT>.  This optional field can only
+  !           be used if the <TT>start_time</TT> field is present.  If this field is absent, then the file duration will be equal
+  !           to the frequency for creating new files.  <B><I>NOTE:</I></B> The <TT>file_duration_units</TT> field must also be
+  !           present if this field is present.
   !         </DD>
   !         <DT><TT>CHARACTER(len=10), OPTIONAL :: file_duration_units</TT></DT>
   !         <DD>
-  !           File duration units.  Can be either <TT>years</TT>, <TT>months</TT>,
-  !           <TT>days</TT>, <TT>minutes</TT>, <TT>hours</TT>, or
-  !           <TT>seconds</TT>.  <B><I>NOTE:</I></B> If the <TT>file_duration</TT>
-  !           field is present, then this field must also be present.
+  !           File duration units. Can be either <TT>years</TT>, <TT>months</TT>, <TT>days</TT>,
+  !           <TT>minutes</TT>, <TT>hours</TT>, or <TT>seconds</TT>.  <B><I>NOTE:</I></B> If the <TT>file_duration</TT> field is
+  !           present, then this field must also be present.
   !         </DD>
   !       </DL>
   !     </LI>
   !     <LI>
-  !       <B>Field Section:</B> Field lines contain 8 fields.  Field lines can be
-  !       intermixed with file lines, but the file must be defined before any
-  !       fields that are to be written to the file.  Field line can contain
-  !       fields that are not written to any files.  The file name for these
-  !       fields is <TT>null</TT>.
+  !       <B>Field Section:</B> Field lines contain 8 fields.  Field lines can be intermixed with file lines, but the file must
+  !       be defined before any fields that are to be written to the file.  Fields line can contain fields that are not written
+  !       to any files.  The file name for these fields is <TT>null</TT>.
   !
   !       Field lines have the following format:<BR />
   !       <PRE>
@@ -165,63 +136,39 @@ MODULE diag_table_mod
   !       with the following descriptions.
   !       <DL>
   !         <DT><TT>CHARACTER(len=128) :: module_name</TT></DT>
-  !         <DD>
-  !           Module that contains the <TT>field_name</TT> variable.  (e.g.
-  !           <TT>atmos_mod</TT>, <TT>land_mod</TT>)
-  !         </DD>
+  !         <DD>Module that contains the <TT>field_name</TT> variable.  (e.g. <TT>atmos_mod</TT>, <TT>land_mod</TT>)</DD>
   !         <DT><TT>CHARACTER(len=128) :: field_name</TT></DT>
-  !         <DD>
-  !           Module variable name that has data to be written to file.
-  !         </DD>
+  !         <DD>Module variable name that has data to be written to file.</DD>
   !         <DT><TT>CHARACTER(len=128) :: output_name</TT></DT>
-  !         <DD>
-  !           Name of the field as written in <TT>file_name</TT>.
-  !         </DD>
+  !         <DD>Name of the field as written in <TT>file_name</TT>.</DD>
   !         <DT><TT>CHARACTER(len=128) :: file_name</TT></DT>
   !         <DD>
-  !           Name of the file where the field is to be written.
-  !           <B><I>NOTE:</I></B> The file <TT>file_name</TT> must be defined
-  !           first.
+  !           Name of the file where the field is to be written. <B><I>NOTE:</I></B> The file <TT>file_name</TT> must be
+  !           defined first.
   !         </DD>
   !         <DT><TT>CHARACTER(len=50) :: time_sampling</TT></DT>
   !         <DD>Currently not used.  Please use the string "all".</DD>
   !         <DT><TT>CHARACTER(len=50) :: reduction_method</TT></DT>
   !         <DD>
-  !           The data reduction method to perform prior to writing data to disk.
-  !           Valid options are (redundant names are separated with commas):
+  !           The data reduction method to perform prior to writing data to disk.  Valid options are (redundant names are
+  !           separated with commas):
   !           <DL>
   !             <DT><TT>.TRUE.</TT>, average</DT>
-  !             <DD>
-  !               Average from the last time written to the current time.
-  !             </DD>
+  !             <DD>Average from the last time written to the current time.</DD>
   !             <DT><TT>.FALSE.</TT>, none</DT>
-  !             <DD>
-  !               No reduction performed.  Write current time step value only.
-  !             </DD>
-  !             <DT>min</DT>
-  !             <DD>
-  !               Minimum value from last write to current time.
-  !             </DD>
-  !             <DT>max</DT>
-  !             <DD>
-  !               Maximum value from last write to current time.
-  !             </DD>
-  !             <DT>diurnal##</DT>
-  !             <DD>
-  !               ## diurnal cycle averages.  <TT>##</TT> is the number of equal
-  !               time intervals along the time of day axis.  For example,
-  !               <TT>diurnal24</TT> will create hourly diurnal cycle output.
-  !               Likewise, <TT>diurnal8</TT> is a 3-hourly diurnal cycle.
-  !             </DD>
+  !             <DD>No reduction performed.  Write current time step value only.</DD>
+  !             <DT>min</DT> <DD>Minimum value from last write to current time.</DD>
+  !             <DT>max</DT> <DD>Maximum value from last write to current time.</DD>
+  !             <DT>diurnal##</DT> <DD>## diurnal averages</DD>
   !           </DL>
   !         </DD>
   !         <DT><TT>CHARACTER(len=50) :: regional_section</TT></DT>
   !         <DD>
-  !           Bounds of the regional section to capture.  A value of <TT>none</TT>
-  !           indicates a global region.  The regional section has the following
-  !           format:<BR /> <TT>lat_min, lat_max, lon_min, lon_max, vert_min,
-  !           vert_max</TT><BR /> Use <TT>vert_min = -1</TT> and <TT>vert_max =
-  !           -1</TT> to get the entire vertical axis.
+  !           Bounds of the regional section to capture.  A value of <TT>none</TT> indicates a global region.  The regional
+  !           section has the following format:<BR />
+  !           <TT>lat_min, lat_max, lon_min, lon_max, vert_min, vert_max</TT><BR />
+  !           Use <TT>vert_min = -1</TT> and <TT>vert_max = -1</TT> to get the entire vertical axis.  <B><I>NOTE:</I></B>
+  !           Currently, the defined region <I>MUST</I> be confined to a single tile.
   !         </DD>
   !         <DT><TT>INTEGER :: packing</TT></DT>
   !         <DD>
@@ -264,7 +211,7 @@ MODULE diag_table_mod
   !   A simple utility has been created to help discover
   ! </DESCRIPTION>
   USE mpp_io_mod, ONLY: mpp_open, MPP_RDONLY
-  USE mpp_mod, ONLY: read_ascii_file
+  USE mpp_mod, ONLY: read_ascii_file, get_ascii_file_num_lines
   USE fms_mod, ONLY: fms_error_handler, error_mesg, file_exist, stdlog, mpp_pe, mpp_root_pe, FATAL, WARNING, lowercase, close_file
   USE time_manager_mod, ONLY: get_calendar_type, NO_CALENDAR, set_date, set_time, month_name, time_type
   USE constants_mod, ONLY: SECONDS_PER_HOUR, SECONDS_PER_MINUTE
@@ -427,8 +374,10 @@ CONTAINS
     
     ! get the stdlog unit number
     stdlog_unit = stdlog()
+    num_lines = get_ascii_file_num_lines('diag_table', DT_LINE_LENGTH)
+    allocate(diag_table(num_lines))
 
-    call read_ascii_file('diag_table', DT_LINE_LENGTH, diag_table, num_lines)
+    call read_ascii_file('diag_table', DT_LINE_LENGTH, diag_table)
     
     ! Read in the global file labeling string
     READ (UNIT=diag_table(1), FMT=*, IOSTAT=mystat) global_descriptor

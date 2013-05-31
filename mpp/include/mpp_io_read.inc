@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_read.inc,v 19.0.2.1.2.2 2012/10/03 18:38:15 William.Cooke Exp $
+! $Id: mpp_io_read.inc,v 19.0.2.1.2.2.4.1 2013/03/15 21:23:27 William.Cooke Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -855,6 +855,8 @@
                          mpp_file(unit)%Axis(dimid)%calendar = '365_day'
                     if (trim(mpp_file(unit)%Axis(dimid)%calendar) == '360_days') &
                          mpp_file(unit)%Axis(dimid)%calendar = '360_day'
+                 case('compress')
+                    mpp_file(unit)%Axis(dimid)%compressed=mpp_file(unit)%Axis(dimid)%Att(j)%catt(1:len)
                  case('positive')
                     attval = mpp_file(unit)%Axis(dimid)%Att(j)%catt(1:len)
                     if( attval.eq.'down' )then

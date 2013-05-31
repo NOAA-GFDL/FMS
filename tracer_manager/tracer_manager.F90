@@ -143,7 +143,7 @@ type(tracer_type), save  :: tracers(MAX_TRACER_FIELDS)
 type(inst_type)  , save  :: instantiations(MAX_TRACER_FIELDS)
 
 character(len=128) :: version = '$Id: tracer_manager.F90,v 16.0.12.1 2013/02/26 19:24:51 William.Cooke Exp $'
-character(len=128) :: tagname = '$Name: siena_201303 $'
+character(len=128) :: tagname = '$Name: siena_201305 $'
 logical            :: module_is_initialized = .false.
 
 logical            :: verbose_local

@@ -1038,8 +1038,14 @@ void insertIntersect(struct Node *list, double x, double y, double z, double u1,
   /* when u2 != 0 and u2 !=1, can decide if one end of the point is outside depending on inbound value */
   if(u2 != 0 && u2 != 1) {
     if(inbound == 1) { /* goes outside, then temp1->Next is an outside point */
+      /* find the next non-intersect point */
       temp2 = temp1->Next;
       if(!temp2) temp2 = list;
+      while(temp2->intersect) {
+         temp2=temp2->Next;
+         if(!temp2) temp2 = list;
+      }
+
       temp2->isInside = 0;
     }
     else if(inbound ==2) { /* goes inside, then temp1 is an outside point */
