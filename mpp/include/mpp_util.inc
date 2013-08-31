@@ -1270,7 +1270,7 @@ end function rarray_to_char
 
 ! version and tagging information
     character(len=128) :: version = '$Id: mpp_util.inc,v 19.0.2.1.2.7.4.1 2013/03/05 15:43:42 Zhi.Liang Exp $'
-    character(len=128) :: tagname = '$Name: siena_201305 $' 
+    character(len=128) :: tagname = '$Name: siena_201308 $' 
 
 ! private variables
     integer :: log_unit
@@ -1401,7 +1401,7 @@ end function rarray_to_char
 
     ! version and tagging information
     character(len=*), parameter :: VERSION = '$Id: mpp_util.inc,v 19.0.2.1.2.7.4.1 2013/03/05 15:43:42 Zhi.Liang Exp $'
-    character(len=*), parameter :: TAGNAME = '$Name: siena_201305 $' 
+    character(len=*), parameter :: TAGNAME = '$Name: siena_201308 $' 
 
     character(len=5) :: text
     logical :: file_exist

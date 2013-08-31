@@ -513,7 +513,7 @@ MODULE diag_data_mod
   CHARACTER(len=128),PRIVATE  :: version =&
        & '$Id: diag_data.F90,v 19.0.2.4 2012/10/16 17:47:32 Seth.Underwood Exp $'
   CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name: siena_201305 $'
+       & '$Name: siena_201308 $'
 
   ! <!-- Other public variables -->
   ! <DATA NAME="num_files" TYPE="INTEGER" DEFAULT="0">

@@ -49,7 +49,7 @@ end interface
 character(len=*), parameter :: &
      module_name = 'grid_mod', &
      version     = '$Id: grid.F90,v 19.0.6.3.2.2 2013/02/28 16:58:46 Zhi.Liang Exp $', &
-     tagname     = '$Name: siena_201305 $'
+     tagname     = '$Name: siena_201308 $'
 
 character(len=*), parameter :: &
      grid_dir  = 'INPUT/',     &      ! root directory for all grid files

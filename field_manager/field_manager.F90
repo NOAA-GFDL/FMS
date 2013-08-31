@@ -183,7 +183,7 @@ private
 
 
 character(len=128) :: version = '$Id: field_manager.F90,v 19.0.6.1 2012/09/13 15:23:54 Seth.Underwood Exp $'
-character(len=128) :: tagname = '$Name: siena_201305 $'
+character(len=128) :: tagname = '$Name: siena_201308 $'
 logical            :: module_is_initialized  = .false.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
