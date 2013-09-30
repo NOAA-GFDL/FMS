@@ -51,7 +51,7 @@ module time_interp_external_mod
 
   character(len=128), private :: version= &
    'CVS $Id: time_interp_external.F90,v 17.0.8.1.2.2.2.1.4.2.2.5 2012/04/20 18:08:09 Zhi.Liang Exp $'
-  character(len=128), private :: tagname='Tag $Name: siena_201308 $'
+  character(len=128), private :: tagname='Tag $Name: siena_201309 $'
 
   integer, parameter, public  :: NO_REGION=0, INSIDE_REGION=1, OUTSIDE_REGION=2
   integer, parameter, private :: modulo_year= 0001

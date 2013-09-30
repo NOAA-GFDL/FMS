@@ -371,7 +371,7 @@ logical           :: checksum_required   = .true.
 integer            :: pack_size  ! = 1 for double = 2 for float
 
 character(len=128) :: version = '$Id: fms_io.F90,v 19.0.6.1.4.1.2.4.4.3.2.3.2.1.2.3 2013/05/15 18:03:38 Seth.Underwood Exp $'
-character(len=128) :: tagname = '$Name: siena_201308 $'
+character(len=128) :: tagname = '$Name: siena_201309 $'
 
 contains
 

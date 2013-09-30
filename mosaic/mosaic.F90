@@ -38,7 +38,7 @@ public :: calc_mosaic_grid_great_circle_area
 logical :: module_is_initialized = .true.
 ! version information varaible
  character(len=128) :: version = '$Id: mosaic.F90,v 15.0.28.1.2.1 2012/11/26 14:11:26 Zhi.Liang Exp $'
- character(len=128) :: tagname = '$Name: siena_201308 $'
+ character(len=128) :: tagname = '$Name: siena_201309 $'
 
 contains
 

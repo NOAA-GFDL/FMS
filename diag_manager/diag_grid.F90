@@ -63,7 +63,7 @@ MODULE diag_grid_mod
   CHARACTER(len=128), PARAMETER :: version =&
        & '$Id: diag_grid.F90,v 19.0.2.2 2012/05/22 20:18:20 Seth.Underwood Exp $'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: siena_201308 $'
+       & '$Name: siena_201309 $'
 
   ! Derived data types
   ! <PRIVATE>

@@ -1,6 +1,12 @@
 module oda_types_mod
+#ifndef MAX_LEVS_FILE_
 #define MAX_LEVS_FILE_ 50
-  
+#endif
+
+#ifndef MAX_LINKS_
+#define MAX_LINKS_ 100
+#endif
+
 !============================================================
 ! This module contains type declarations and default values
 ! for oda modules.  
@@ -16,22 +22,45 @@ module oda_types_mod
 
   private
 
-! Controls record length for optimal storage  
-  integer, parameter, public :: max_levels_file=MAX_LEVS_FILE_
-! Maximum number of neighbors for QC or analysis
-  integer, parameter, public :: max_neighbors=100 ! for profiles
-! Maximum number of records per profile for storage   
-  integer, parameter, public :: max_links=100 ! for profiles  
-  
-! List of variables for ODA   
+  integer, parameter, public :: MAX_LEVELS_FILE = MAX_LEVS_FILE_ !< Controls record length for optimal storage  
+  integer, parameter, public :: MAX_NEIGHBORS = 100 !< Maximum number of neighbors for QC or analysis for profiles
+  integer, parameter, public :: MAX_LINKS = MAX_LINKS_ !< Maximum number of records per profile for storage for profiles  
 
-  real, parameter, public :: missing_value=-1.e20
-  
+  ! Additional Pramaeters needed for snz's ECDA
+  integer, parameter, public :: DROP_PROFILER = 10
+  integer, parameter, public :: MOORING = 20
+  integer, parameter, public :: SATELLITE = 30
+  integer, parameter, public :: DRIFTER = 40
+  integer, parameter, public :: SHIP = 50
+  integer, parameter, public :: UNKNOWN = 0
+  integer, parameter, public :: TAO = 1 !< moorings
+  integer, parameter, public :: PIRATA = 2 !< moorings
+  integer, parameter, public :: XBT = 1 !< station measurements
+  integer, parameter, public :: CTD = 2 !< station measurements
+  integer, parameter, public :: MBT = 3 !< station measurements
+  integer, parameter, public :: ARGO = 1
+
+  ! Codes for modeling error disttributions
+  integer, parameter, public :: COSSQ_LAT = 10
+
+  integer, save, public :: TEMP_ID = 1
+  integer, save, public :: SALT_ID = 2
+
+  ! List of variables for ODA   
+#ifndef ENABLE_ECDA
+  real, parameter, public :: MISSING_VALUE = -1.e20
+#else
+  !::sdu:: ECDA oda files need this value to different
+  real, parameter, public :: MISSING_VALUE = -1.e10
+#endif
+
   type, public :: forward_model_type
-     real, dimension(:,:,:,:), pointer :: wgt=>NULL() ! interpolation weights
+     real, dimension(:,:,:,:), pointer :: wgt ! interpolation weights
   end type forward_model_type
   
   type, public :: ocean_profile_type
+     integer :: variable !< variable ids are defined by the ocean_types module (e.g. TEMP_ID, SALT_ID)
+     integer :: inst_type !< instrument types are defined by platform class (e.g. MOORING, DROP, etc.) and instrument type (XBT, CDT, etc.)
      integer :: nvar
      real    :: project ! e.g. FGGE, COARE, ACCE, ...
      real    :: probe ! MBT, XBT, drifting buoy
@@ -47,21 +76,30 @@ module oda_types_mod
      logical :: accepted
      integer :: nlinks
      type(ocean_profile_type), pointer, dimension(:) :: next ! Large profiles are stored as linked list.
-     integer, dimension(max_neighbors) :: nbr_index
-     real, dimension(max_neighbors) :: nbr_dist ! distance in radians 
+     integer, dimension(MAX_NEIGHBORS) :: nbr_index
+     real, dimension(MAX_NEIGHBORS) :: nbr_dist ! distance in radians 
      real, dimension(:), pointer :: depth, data_t, data_s
-     integer, dimension(:), pointer :: flag_t ! level-by-level flags for temp
+     real, dimension(:), pointer :: data
+     integer, dimension(:), pointer :: flag_t
      integer, dimension(:), pointer :: flag_s ! level-by-level flags for salinity
+#ifndef ENABLE_ECDA
+     integer, dimension(:), pointer :: flag
+#else
+     !::sdu:: For now ECDA use flag as a logical, will likely change in future releases.
+     logical, dimension(:), pointer :: flag
+#endif
      real    :: temp_err, salt_err ! measurement error
-     real, dimension(:), pointer :: ms_t      ! ms temperature by level
-     real, dimension(:), pointer :: ms_s      ! ms salinity by level     
+     real, dimension(:), pointer :: ms_t ! ms temperature by level
+     real, dimension(:), pointer :: ms_s ! ms salinity by level  
+     real, dimension(:), pointer :: ms_inv
+     real, dimension(:), pointer :: ms
      type(time_type) :: time 
      integer         :: yyyy
      integer         :: mmdd
      type(time_type), pointer :: Model_time ! each profile can be associated with a first-guess field with an associated time and grid
-     type(grid_type), pointer :: Model_grid 
+     type(grid_type), pointer :: Model_grid
      real :: i_index, j_index ! model longitude and latitude indices respectively
-     real, dimension(:), pointer :: k_index     ! model depth indices
+     real, dimension(:), pointer :: k_index ! model depth indices
      type(forward_model_type) :: Forward_model  ! linear operation from model to observation
      type(time_type) :: tdiff      ! positive difference between model time and observation time
   end type ocean_profile_type
@@ -72,35 +110,57 @@ module oda_types_mod
      integer :: qc_flag, nobs
      logical :: is_gridded
      integer :: nlon, nlat
-     real, pointer, dimension(:) :: lat, lon
-     logical :: accepted     
-     real, pointer, dimension(:) :: data
-     real, dimension(:), pointer :: ms     =>NULL() 
-     real, dimension(:), pointer :: i_index=>NULL() , j_index=>NULL()  ! model indices
-     real, pointer, dimension(:,:) :: data2=>NULL() 
-     real, dimension(:,:), pointer :: ms2     =>NULL() 
-     real, dimension(:,:), pointer :: i_index2=>NULL() , j_index2=>NULL()  ! model indices
+     real, pointer, dimension(:) :: lat=>NULL(), lon=>NULL()
+     logical :: accepted
+     real, pointer, dimension(:) :: data => NULL()
+     real, dimension(:), pointer :: ms_inv => NULL()
+     real, dimension(:), pointer :: ms => NULL()
+     real, dimension(:), pointer :: i_index=>NULL(), j_index=>NULL() ! model indices
+     real, pointer, dimension(:,:) :: data2 => NULL()
+     real, dimension(:,:), pointer :: ms2 => NULL()
+     real, dimension(:,:), pointer :: i_index2=>NULL(), j_index2=>NULL() ! model indices
      real :: k_index          
      type(forward_model_type) :: Forward_model
      type(time_type) :: time
      integer :: yyyy
      integer :: mmdd
      character(len=8) :: wmo_id
-     type(time_type), pointer :: Model_time=>NULL() 
-     type(grid_type), pointer :: Model_grid=>NULL()    
+     type(time_type), pointer :: Model_time => NULL()
+     type(grid_type), pointer :: Model_grid => NULL()
      ! positive difference between current model time 
      ! and observation time
      type(time_type) :: tdiff
   end type ocean_surface_type
 
+  type, public :: da_flux_type
+     real, pointer, dimension(:,:) :: u_flux => NULL()
+     real, pointer, dimension(:,:) :: v_flux => NULL()
+     real, pointer, dimension(:,:) :: t_flux => NULL()
+     real, pointer, dimension(:,:) :: q_flux => NULL()
+     real, pointer, dimension(:,:) :: salt_flux => NULL()
+     real, pointer, dimension(:,:) :: lw_flux => NULL()
+     real, pointer, dimension(:,:) :: sw_flux_vis_dir => NULL()
+     real, pointer, dimension(:,:) :: sw_flux_vis_dif => NULL()
+     real, pointer, dimension(:,:) :: sw_flux_nir_dir => NULL() 
+     real, pointer, dimension(:,:) :: sw_flux_nir_dif => NULL()
+  end type da_flux_type
+
+  type, public :: ocn_obs_flag_type
+     logical :: use_prf_as_obs
+     logical :: use_ssh_as_obs
+     logical :: use_sst_as_obs
+     logical :: use_suv_as_obs
+     logical :: use_woa05_t
+     logical :: use_woa05_s
+  end type ocn_obs_flag_type
 
   type, public :: grid_type
-     real, pointer, dimension(:,:) :: x=>NULL() , y=>NULL() 
-     real, pointer, dimension(:,:) :: x_bound=>NULL() , y_bound=>NULL()      
-     real, pointer, dimension(:,:) :: dx=>NULL() , dy=>NULL() 
-     real, pointer, dimension(:) :: z=>NULL() , z_bound=>NULL() 
-     real, pointer, dimension(:) :: dz=>NULL() 
-     real, pointer, dimension(:,:,:) :: mask=>NULL()
+     real, pointer, dimension(:,:) :: x=>NULL(), y=>NULL()
+     real, pointer, dimension(:,:) :: x_bound=>NULL(), y_bound=>NULL()
+     real, pointer, dimension(:,:) :: dx=>NULL(), dy=>NULL()
+     real, pointer, dimension(:) :: z=>NULL(), z_bound=>NULL()
+     real, pointer, dimension(:) :: dz => NULL()
+     real, pointer, dimension(:,:,:) :: mask
      type(domain2d), pointer :: Dom ! FMS domain type
      logical :: cyclic
      integer :: ni, nj, nk
@@ -108,29 +168,33 @@ module oda_types_mod
 
   type, public :: field_type
      type(grid_type) :: grid
-     real, pointer, dimension(:,:,:) :: data=>NULL() 
+     real, pointer, dimension(:,:,:) :: data => NULL()
   end type field_type
 
 
   type, public :: field_dist_type_3d
      integer :: error_model
      character(len=32) :: name
-     type(grid_type), pointer :: grid=>NULL() 
-     real, pointer, dimension(:,:,:) :: ex=>NULL() , vr=>NULL()
-     real, pointer, dimension(:,:,:) :: obs_d=>NULL() ! obs minus expected value
+     type(grid_type), pointer :: grid => NULL()
+     real, pointer, dimension(:,:,:) :: ex=>NULL(), vr=>NULL()
+     real, pointer, dimension(:,:,:) :: obs_d => NULL()  ! obs minus expected value
   end type field_dist_type_3d
 
   type, public :: field_dist_type_2d
      integer :: error_model
      character(len=32) :: name
-     type(grid_type), pointer :: grid=>NULL() 
-     real, pointer, dimension(:,:) :: ex=>NULL() , vr=>NULL() 
+     type(grid_type), pointer :: grid => NULL()
+     real, pointer, dimension(:,:) :: ex=>NULL(), vr=>NULL()
   end type field_dist_type_2d
      
   type, public :: ocean_dist_type
      type(field_dist_type_3d) :: temp,salt,u,v
      type(field_dist_type_2d) :: eta
   end type ocean_dist_type
+
+  type, public :: obs_clim_type
+    real, pointer, dimension(:,:) :: sst_obs
+  end type obs_clim_type
 
   public init_obs
   
@@ -140,16 +204,7 @@ module oda_types_mod
   
   contains
 
-    subroutine oda_types_init()
-
-      use fms_mod, only : open_namelist_file, check_nml_error, close_file
-      
-
-    end subroutine oda_types_init
-
-
     subroutine init_obs_profile(profile)
-
       type(ocean_profile_type), intent(inout) :: profile
 
       profile%nvar = 0
@@ -166,27 +221,27 @@ module oda_types_mod
       profile%lat = -1.e10
       profile%lon = -1.e10
       profile%accepted = .true.
-      if (ASSOCIATED(profile%next)) deallocate(profile%next)
+      if (associated(profile%next)) deallocate(profile%next)
       profile%nlinks = 0
       profile%nbr_index(:) = -1
       profile%nbr_dist(:) = -1.0
-      if (ASSOCIATED(profile%depth)) deallocate(profile%depth)
-      if (ASSOCIATED(profile%data_t)) deallocate(profile%data_t)
-      if (ASSOCIATED(profile%data_s)) deallocate(profile%data_s)
-      if (ASSOCIATED(profile%flag_t)) deallocate(profile%flag_t)
-      if (ASSOCIATED(profile%flag_s)) deallocate(profile%flag_s)
-      if (ASSOCIATED(profile%ms_t)) deallocate(profile%ms_t)
-      if (ASSOCIATED(profile%ms_s)) deallocate(profile%ms_s)
+      if (associated(profile%depth)) deallocate(profile%depth)
+      if (associated(profile%data_t)) deallocate(profile%data_t)
+      if (associated(profile%data_s)) deallocate(profile%data_s)
+      if (associated(profile%flag_t)) deallocate(profile%flag_t)
+      if (associated(profile%flag_s)) deallocate(profile%flag_s)
+      if (associated(profile%ms_t)) deallocate(profile%ms_t)
+      if (associated(profile%ms_s)) deallocate(profile%ms_s)
       profile%temp_err = -1.0
       profile%salt_err = -1.0
       profile%time = set_time(0,0)
       profile%yyyy = 0
       profile%mmdd = 0      
-      if (ASSOCIATED(profile%model_time)) deallocate(profile%model_time)
-      if (ASSOCIATED(profile%model_grid)) deallocate(profile%model_grid)
+      if (associated(profile%model_time)) deallocate(profile%model_time)
+      if (associated(profile%model_grid)) deallocate(profile%model_grid)
       profile%i_index = -1
       profile%j_index = -1
-      if (ASSOCIATED(profile%k_index)) deallocate(profile%k_index)
+      if (associated(profile%k_index)) deallocate(profile%k_index)
       profile%tdiff = set_time(0,0)
 
       return
