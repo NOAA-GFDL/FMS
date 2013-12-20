@@ -285,6 +285,14 @@ interface query_initialized
    module procedure query_initialized_id
    module procedure query_initialized_name
    module procedure query_initialized_r2d
+   module procedure query_initialized_r3d
+end interface
+
+interface set_initialized
+   module procedure set_initialized_id
+   module procedure set_initialized_name
+   module procedure set_initialized_r2d
+   module procedure set_initialized_r3d
 end interface
 
 interface get_global_att_value
@@ -330,7 +338,7 @@ public  :: get_mosaic_tile_grid, get_mosaic_tile_file
 public  :: get_global_att_value, get_var_att_value
 public  :: file_exist, field_exist
 public  :: register_restart_field, save_restart, restore_state
-public  :: restart_file_type, query_initialized
+public  :: restart_file_type, query_initialized, set_initialized
 public  :: reset_field_name, reset_field_pointer
 private :: lookup_field_r, lookup_axis, unique_axes
 
@@ -370,8 +378,8 @@ logical           :: checksum_required   = .true.
 
 integer            :: pack_size  ! = 1 for double = 2 for float
 
-character(len=128) :: version = '$Id: fms_io.F90,v 19.0.6.1.4.1.2.4.4.3.2.3.2.1.2.3 2013/05/15 18:03:38 Seth.Underwood Exp $'
-character(len=128) :: tagname = '$Name: siena_201309 $'
+character(len=128) :: version = '$Id: fms_io.F90,v 20.0 2013/12/14 00:20:08 fms Exp $'
+character(len=128) :: tagname = '$Name: tikal $'
 
 contains
 
@@ -1107,6 +1115,7 @@ function register_restart_field_r2d(fileObj, filename, fieldname, data, domain, 
   integer,          optional, intent(in)         :: position, tile_count
   logical,          optional, intent(in)         :: mandatory
   character(len=*), optional, intent(in)         :: longname, units
+
   integer                                        :: index_field
   integer                                        :: register_restart_field_r2d
 
@@ -4282,16 +4291,14 @@ function query_initialized_name(fileObj, name)
   enddo
 ! Assume that you are going to initialize it now, so set flag to initialized if
 ! queried again.
-  if (m<=fileObj%nvar) then
-     fileObj%var(m)%initialized = .true.
-  else if(mpp_pe() == mpp_root_pe()) then
+  if ((m>fileObj%nvar) .and. (mpp_pe() == mpp_root_pe())) then
     call mpp_error(NOTE,"fms_io(query_initialized_name): Unknown restart variable "//name// &
                         " queried for initialization.")
   end if
 
 end function query_initialized_name
 
-
+!#########################################################################
 !   This function returns 1 if the field pointed to by f_ptr has
 ! initialized from a restart file, and 0 otherwise.  If f_ptr is
 ! NULL, it tests whether the entire restart file has been success-
@@ -4321,10 +4328,7 @@ function query_initialized_r2d(fileObj, f_ptr, name)
   enddo
   ! Assume that you are going to initialize it now, so set flag to initialized if
   ! queried again.
-  if (m<=fileObj%nvar) then
-     fileObj%var(m)%initialized = .true.
-  else
-     query_initialized_r2d = query_initialized_name(fileObj, name)
+  if (m>fileObj%nvar) then
      if (mpp_pe() == mpp_root_pe() ) call mpp_error(NOTE, "fms_io(query_initialized_r2d): Unable to find "// &
           trim(name)//" queried by pointer, "//"probably because of the suspect comparison of pointers by ASSOCIATED.")
      query_initialized_r2d = query_initialized_name(fileObj, name)
@@ -4335,6 +4339,205 @@ function query_initialized_r2d(fileObj, f_ptr, name)
   return
 
 end function query_initialized_r2d
+
+!#########################################################################
+!   This function returns 1 if the field pointed to by f_ptr has
+! initialized from a restart file, and 0 otherwise.  If f_ptr is
+! NULL, it tests whether the entire restart file has been success-
+! fully read.
+!
+! Arguments: f_ptr - A pointer to the field that is being queried.
+!  (in)      name - The name of the field that is being queried.
+!  (in)      CS - The control structure returned by a previous call to
+!                 restart_init.
+function query_initialized_r3d(fileObj, f_ptr, name)
+  type(restart_file_type),     intent(inout) :: fileObj 
+  real, dimension(:,:,:), target, intent(in) :: f_ptr
+  character(len=*),               intent(in) :: name
+
+  logical :: query_initialized_r3d
+  integer :: m
+
+  if (.not.associated(fileObj%var)) call mpp_error(FATAL, "fms_io(query_initialized_r3d): " // &
+      "restart_file_type data must be initialized by calling register_restart_field before using it")
+
+  query_initialized_r3d = .false.
+  do m=1, fileObj%nvar
+     if (ASSOCIATED(fileObj%p3dr(1,m)%p,f_ptr)) then
+        if (fileObj%var(m)%initialized) query_initialized_r3d = .true.
+        exit
+     endif
+  enddo
+  ! Assume that you are going to initialize it now, so set flag to initialized if
+  ! queried again.
+  if (m>fileObj%nvar) then
+     if (mpp_pe() == mpp_root_pe() ) call mpp_error(NOTE, "fms_io(query_initialized_r3d): Unable to find "// &
+          trim(name)//" queried by pointer, "//"probably because of the suspect comparison of pointers by ASSOCIATED.")
+     query_initialized_r3d = query_initialized_name(fileObj, name)
+     if (mpp_pe() == mpp_root_pe() .AND. query_initialized_r3d) call mpp_error(NOTE, &
+          "fms_io(query_initialized_r3d): "//trim(name)// " initialization confirmed by name.")
+  endif
+
+  return
+
+end function query_initialized_r3d
+
+
+!#########################################################################
+!   This function sets that a variable has been initialized for future queries. 
+!
+! Arguments: name - A pointer to the field whose initialization status is being set.
+!  (in)  fileObj - The control structure returned by a previous call to
+!                  register_restart_field
+subroutine set_initialized_id(fileObj, id, is_set)
+  type(restart_file_type), intent(inout) :: fileObj
+  integer         ,           intent(in) :: id
+  logical,          optional, intent(in) :: is_set
+
+  logical :: set_val
+  integer :: m
+
+  set_val = .true.
+  if (present(is_set)) set_val = is_set
+
+  if (.not.associated(fileObj%var)) call mpp_error(FATAL, "fms_io(set_initialized_id): " // &
+      "restart_file_type data must be initialized by calling set_restart_field before using it")
+
+  if(id < 1 .OR. id > fileObj%nvar) call mpp_error(FATAL, "fms_io(set_initialized_id): " // &
+      "argument id must be between 1 and nvar in the restart_file_type object")
+
+  fileObj%var(id)%initialized = set_val
+
+
+end subroutine set_initialized_id
+
+!#########################################################################
+!   This function sets that a variable has been initialized for future queries. 
+!
+! Arguments: name - A pointer to the field whose initialization status is being set.
+!  (in)  fileObj - The control structure returned by a previous call to
+!                  register_restart_field
+subroutine set_initialized_name(fileObj, name, is_set)
+  type(restart_file_type), intent(inout) :: fileObj
+  character(len=*),           intent(in) :: name
+  logical,          optional, intent(in) :: is_set
+
+  logical :: set_val
+  integer :: m
+
+  set_val = .true.
+  if (present(is_set)) set_val = is_set
+
+  if (.not.associated(fileObj%var)) call mpp_error(FATAL, "fms_io(set_initialized_name): " // &
+      "restart_file_type data must be initialized by calling set_restart_field before using it")
+
+  do m=1,fileObj%nvar
+    if (trim(name) == fileObj%var(m)%name) then
+      fileObj%var(m)%initialized = set_val
+      exit
+    endif
+  enddo
+
+  if (m>fileObj%nvar) then
+    call mpp_error(NOTE,"fms_io(set_initialized_name): Unknown restart variable "//name// &
+                        " attempted to set initialization.")
+  end if
+
+end subroutine set_initialized_name
+
+!#########################################################################
+!   This function sets that a variable has been initialized for future queries. 
+!
+! Arguments: name - A pointer to the field whose initialization status is being set.
+!  (in)  fileObj - The control structure returned by a previous call to
+!                  register_restart_field
+subroutine set_initialized_r2d(fileObj, f_ptr, name, is_set)
+  type(restart_file_type),   intent(inout) :: fileObj
+  real, dimension(:,:), target, intent(in) :: f_ptr
+  character(len=*),             intent(in) :: name
+  logical,          optional,   intent(in) :: is_set
+  logical :: set_val
+  integer :: m
+
+  set_val = .true.
+  if (present(is_set)) set_val = is_set
+
+  if (.not.associated(fileObj%var)) call mpp_error(FATAL, "fms_io(set_initialized_r2d): " // &
+      "restart_file_type data must be initialized by calling set_restart_field before using it")
+
+  do m=1, fileObj%nvar
+     if (ASSOCIATED(fileObj%p2dr(1,m)%p,f_ptr)) then
+        fileObj%var(m)%initialized = set_val
+        return
+     endif
+  enddo
+
+  if (m>fileObj%nvar .AND. mpp_pe() == mpp_root_pe() ) then
+    call mpp_error(NOTE,"fms_io(set_initialized_r2d): Unable to find "// &
+          trim(name)//" queried by pointer, "//"probably because of the suspect comparison of pointers by ASSOCIATED"// &
+                        " when attempting to set initialization.")
+  end if
+
+  do m=1,fileObj%nvar
+    if (trim(name) == fileObj%var(m)%name) then
+      fileObj%var(m)%initialized = set_val
+      return
+    endif
+  enddo
+
+  if (m>fileObj%nvar .AND. mpp_pe() == mpp_root_pe() ) then
+    call mpp_error(NOTE,"fms_io(set_initialized_r2d): Unknown restart variable "//name// &
+                        " attempted to set initialization.")
+  end if
+
+end subroutine set_initialized_r2d
+
+!#########################################################################
+!   This function sets that a variable has been initialized for future queries. 
+!
+! Arguments: name - A pointer to the field whose initialization status is being set.
+!  (in)  fileObj - The control structure returned by a previous call to
+!                  register_restart_field
+subroutine set_initialized_r3d(fileObj, f_ptr, name, is_set)
+  type(restart_file_type),     intent(inout) :: fileObj
+  real, dimension(:,:,:), target, intent(in) :: f_ptr
+  character(len=*),               intent(in) :: name
+  logical,          optional,     intent(in) :: is_set
+  logical :: set_val
+  integer :: m
+
+  set_val = .true.
+  if (present(is_set)) set_val = is_set
+
+  if (.not.associated(fileObj%var)) call mpp_error(FATAL, "fms_io(set_initialized_r3d): " // &
+      "restart_file_type data must be initialized by calling set_restart_field before using it")
+
+  do m=1, fileObj%nvar
+     if (ASSOCIATED(fileObj%p3dr(1,m)%p,f_ptr)) then
+        fileObj%var(m)%initialized = set_val
+        return
+     endif
+  enddo
+
+  if (m>fileObj%nvar .AND. mpp_pe() == mpp_root_pe() ) then
+    call mpp_error(NOTE,"fms_io(set_initialized_r3d): Unable to find "// &
+          trim(name)//" queried by pointer, "//"probably because of the suspect comparison of pointers by ASSOCIATED"//&
+                        " when attempting to set initialization.")
+  end if
+
+  do m=1,fileObj%nvar
+    if (trim(name) == fileObj%var(m)%name) then
+      fileObj%var(m)%initialized = set_val
+      return
+    endif
+  enddo
+
+  if (m>fileObj%nvar .AND. mpp_pe() == mpp_root_pe() ) then
+    call mpp_error(NOTE,"fms_io(set_initialized_r3d): Unknown restart variable "//name// &
+                        " attempted to set initialization.")
+  end if
+
+end subroutine set_initialized_r3d
 
 
 !#######################################################################

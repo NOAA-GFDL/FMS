@@ -204,7 +204,7 @@
           end if
       else if(mpp_file(unit)%io_domain_exist ) then
           if( halos_are_global )then
-              call mpp_update_domains( data, domain, position = position )
+              if(npes .GT. 1) call mpp_update_domains( data, domain, position = position )
               if(mpp_file(unit)%write_on_this_pe ) then
                  call write_record( unit, field, size(data(:,:,:,:)), data, tstamp)
               endif

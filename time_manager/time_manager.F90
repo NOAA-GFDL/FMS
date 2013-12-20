@@ -71,6 +71,8 @@ module time_manager_mod
 !    contains three PRIVATE variables: days, seconds and ticks.
 ! </DATA>
 
+#include <fms_platform.h>
+
 use constants_mod, only: rseconds_per_day=>seconds_per_day
 use fms_mod, only: error_mesg, FATAL, WARNING, write_version_number, stdout
 
@@ -178,8 +180,8 @@ end interface
 
 !======================================================================
 
-character(len=128) :: version='$Id: time_manager.F90,v 19.0.8.1 2013/02/14 20:35:29 pjp Exp $'
-character(len=128) :: tagname='$Name: siena_201309 $'
+character(len=128) :: version='$Id: time_manager.F90,v 20.0 2013/12/14 00:28:14 fms Exp $'
+character(len=128) :: tagname='$Name: tikal $'
 logical :: module_is_initialized = .false.
 
 !======================================================================
@@ -1230,7 +1232,7 @@ end subroutine time_assignment
 
 function time_type_to_real(time)
 
-double precision            :: time_type_to_real
+real(DOUBLE_KIND)           :: time_type_to_real
 type(time_type), intent(in) :: time
 
 if(.not.module_is_initialized) call time_manager_init

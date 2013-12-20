@@ -50,6 +50,7 @@ program test
   logical :: test_cubic_grid_redistribute = .false.
   logical :: check_parallel = .FALSE.  ! when check_parallel set to false,
   logical :: test_get_nbr = .FALSE.
+  logical :: test_boundary = .false.
   integer :: ensemble_size
   integer :: layout_cubic(2) = (/0,0/)
   integer :: layout_ensemble(2) = (/0,0/)
@@ -76,7 +77,7 @@ program test
                                jstart_fine, jend_fine, istart_coarse, iend_coarse, jstart_coarse, &
                                jend_coarse, extra_halo, npes_fine, npes_coarse, mix_2D_3D, test_get_nbr, &
                                test_edge_update, test_cubic_grid_redistribute, ensemble_size, &
-                               layout_cubic, layout_ensemble, nthreads
+                               layout_cubic, layout_ensemble, nthreads, test_boundary
   integer :: i, j, k
   integer :: layout(2)
   integer :: id
@@ -171,15 +172,18 @@ program test
      call cubic_grid_redistribute()
   endif
 
+  if(test_boundary) then
+      call test_get_boundary('Four-Tile')
+      call test_get_boundary('Cubic-Grid')
+      call test_get_boundary('Folded-north')
+  endif
+
   if( test_interface ) then
       call test_modify_domain()
 !!$      call test_cyclic_offset('x_cyclic_offset')
 !!$      call test_cyclic_offset('y_cyclic_offset')
 !!$      call test_cyclic_offset('torus_x_offset')
 !!$      call test_cyclic_offset('torus_y_offset')
-
-      call test_get_boundary('Four-Tile')
-      call test_get_boundary('Cubic-Grid')
       call test_uniform_mosaic('Single-Tile')
       call test_uniform_mosaic('Folded-north mosaic') ! one-tile tripolar grid
       call test_uniform_mosaic('Folded-north symmetry mosaic') ! one-tile tripolar grid
@@ -2315,6 +2319,38 @@ contains
 
   end subroutine fill_four_tile_bound
 
+
+  !################################################################################
+  subroutine fill_folded_north_bound(data_all, is, ie, js, je, ioff, joff, tile, &
+                                     sbound, wbound)
+    real, dimension(:,:,:),       intent(in)    :: data_all
+    integer,                        intent(in)    :: is, ie, js, je
+    integer,                        intent(in)    :: tile, ioff, joff
+    real, dimension(:,:), optional, intent(inout) :: sbound, wbound
+    integer                                       :: tw, te, ts, tn
+
+    if(tile .NE. 1) call mpp_error(FATAL, "fill_folded_north_bound: tile must be 1")
+
+    if(present(wbound)) then
+       if( is == 1 ) then
+          wbound(:,:) = data_all(nx+ioff, js:je+joff, :)
+       else
+          wbound(:,:) = data_all(is, js:je+joff, :)
+       end if
+    end if
+
+    if(present(sbound)) then
+       if( js == 1 ) then
+          sbound(:,:) = 0
+       else
+          sbound(:,:) = data_all(is:ie+ioff, js, :)
+       end if
+    end if
+
+    return
+
+  end subroutine fill_folded_north_bound
+
   !################################################################################
   subroutine fill_cubic_grid_bound(data1_all, data2_all, is, ie, js, je, ioff, joff, tile, sign1, sign2, &
                                    ebound, sbound, wbound, nbound )
@@ -3927,6 +3963,11 @@ contains
      real,    allocatable, dimension(:,:,:,:) :: global_all, global1_all, global2_all
      real,    allocatable, dimension(:,:,:,:) :: global, global1, global2
      real,    allocatable, dimension(:,:,:,:) :: x, x1, x2, y, y1, y2
+     logical    :: folded_north = .false.
+     integer    :: nx_save, ny_save
+
+     nx_save    = nx
+     ny_save    = ny
 
      !--- check the type
     select case(type)     
@@ -3936,11 +3977,11 @@ contains
     case ( 'Cubic-Grid' )
        ntiles = 6
        num_contact = 12
-       if( nx .NE. ny) then
-          call mpp_error(NOTE,'TEST_MPP_DOMAINS: for Cubic_grid mosaic, nx should equal ny, '//&
-                   'No test is done for Cubic-Grid mosaic. ' )
-          return
-       end if
+       nx = nx_cubic
+       ny = nx
+    case ( 'Folded-north' )
+       folded_north = .true.
+       ntiles = 1       
     case default
        call mpp_error(FATAL, 'TEST_MPP_DOMAINS: no such test: '//type)
     end select
@@ -3990,6 +4031,12 @@ contains
                                     layout2D, pe_start, pe_end, .true. )  
      case("Cubic-Grid")
         call define_cubic_mosaic(type, domain, ni, nj, global_indices, layout2D, pe_start, pe_end )
+     case("Folded-north")
+        call mpp_define_domains((/1,nx,1,ny/), layout, domain, &
+                          xflags=CYCLIC_GLOBAL_DOMAIN, yflags=FOLD_NORTH_EDGE, &
+                          whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
+                          symmetry=.true., name='tripolar' )
+
      end select
 
     !--- Test the get_boundary of the data at C-cell center. 
@@ -4028,17 +4075,34 @@ contains
     allocate(sbuffer2(iec-isc+2, nz, ntile_per_pe), nbuffer2(iec-isc+2, nz, ntile_per_pe))
     allocate(ebound(jec-jsc+2, nz, ntile_per_pe), wbound(jec-jsc+2, nz, ntile_per_pe))
     allocate(sbound(iec-isc+2, nz, ntile_per_pe), nbound(iec-isc+2, nz, ntile_per_pe))
+    ebound  = 0; ebuffer = 0; ebuffer1 = 0; ebuffer2 = 0
+    sbound  = 0; sbuffer = 0; sbuffer1 = 0; sbuffer2 = 0
+    wbound  = 0; wbuffer = 0; wbuffer1 = 0; wbuffer2 = 0
+    nbound  = 0; nbuffer = 0; nbuffer1 = 0; nbuffer2 = 0
+
     do n = 1, ntile_per_pe 
-       call mpp_get_boundary(x(:,:,:,n), domain, ebuffer=ebuffer(:,:,n), sbuffer=sbuffer(:,:,n), wbuffer=wbuffer(:,:,n), &
-                             nbuffer=nbuffer(:,:,n), position=CORNER, tile_count=n  )
+       if(folded_north) then
+          call mpp_get_boundary(x(:,:,:,n), domain, sbuffer=sbuffer(:,:,n), wbuffer=wbuffer(:,:,n), &
+                                position=CORNER, tile_count=n  )
+       else
+          call mpp_get_boundary(x(:,:,:,n), domain, ebuffer=ebuffer(:,:,n), sbuffer=sbuffer(:,:,n), wbuffer=wbuffer(:,:,n), &
+                                nbuffer=nbuffer(:,:,n), position=CORNER, tile_count=n  )
+       endif
     end do
 
     !--- multiple variable 
     do n = 1, ntile_per_pe 
-       call mpp_get_boundary(x1(:,:,:,n), domain, ebuffer=ebuffer1(:,:,n), sbuffer=sbuffer1(:,:,n), wbuffer=wbuffer1(:,:,n), &
-                             nbuffer=nbuffer1(:,:,n), position=CORNER, tile_count=n, complete = .false.  )
-       call mpp_get_boundary(x2(:,:,:,n), domain, ebuffer=ebuffer2(:,:,n), sbuffer=sbuffer2(:,:,n), wbuffer=wbuffer2(:,:,n), &
-                             nbuffer=nbuffer2(:,:,n), position=CORNER, tile_count=n, complete = .true.  )
+       if(folded_north) then
+          call mpp_get_boundary(x1(:,:,:,n), domain, sbuffer=sbuffer1(:,:,n), wbuffer=wbuffer1(:,:,n), &
+               position=CORNER, tile_count=n, complete = .false.  )
+          call mpp_get_boundary(x2(:,:,:,n), domain, sbuffer=sbuffer2(:,:,n), wbuffer=wbuffer2(:,:,n), &
+               position=CORNER, tile_count=n, complete = .true.  )
+       else
+          call mpp_get_boundary(x1(:,:,:,n), domain, ebuffer=ebuffer1(:,:,n), sbuffer=sbuffer1(:,:,n), wbuffer=wbuffer1(:,:,n), &
+               nbuffer=nbuffer1(:,:,n), position=CORNER, tile_count=n, complete = .false.  )
+          call mpp_get_boundary(x2(:,:,:,n), domain, ebuffer=ebuffer2(:,:,n), sbuffer=sbuffer2(:,:,n), wbuffer=wbuffer2(:,:,n), &
+               nbuffer=nbuffer2(:,:,n), position=CORNER, tile_count=n, complete = .true.  )
+       endif
     end do    
 
     !--- compare the buffer.
@@ -4053,20 +4117,27 @@ contains
           call fill_cubic_grid_bound(global_all, global_all, isc, iec, jsc, jec, 1, 1, &
                tile(n), 1, 1, ebound(:,:,n), sbound(:,:,n), wbound(:,:,n), nbound(:,:,n) )  
        end do
+    case("Folded-north")
+       do n = 1, ntile_per_pe
+          call fill_folded_north_bound(global_all(:,:,:,1), isc, iec, jsc, jec, 1, 1, &
+               tile(n), sbound(:,:,n), wbound(:,:,n) )  
+       end do       
     end select
 
-    call compare_checksums( ebound, ebuffer(:,:,:),  "east bound of "//trim(type) )
+    if(.not. folded_north) then
+       call compare_checksums( ebound, ebuffer(:,:,:),  "east bound of "//trim(type) )
+       call compare_checksums( nbound, nbuffer(:,:,:),  "north bound of "//trim(type) ) 
+       call compare_checksums( ebound, ebuffer1(:,:,:),  "east bound of "//trim(type)//" X1" ) 
+       call compare_checksums( nbound, nbuffer1(:,:,:),  "north bound of "//trim(type)//" X1" )
+       call compare_checksums( ebound*10, ebuffer2(:,:,:),  "east bound of "//trim(type)//" X2" )
+       call compare_checksums( nbound*10, nbuffer2(:,:,:),  "north bound of "//trim(type)//" X2" )
+    endif     
     call compare_checksums( sbound, sbuffer(:,:,:),  "south bound of "//trim(type) )
     call compare_checksums( wbound, wbuffer(:,:,:),  "west bound of "//trim(type) )
-    call compare_checksums( nbound, nbuffer(:,:,:),  "north bound of "//trim(type) )
-    call compare_checksums( ebound, ebuffer1(:,:,:),  "east bound of "//trim(type)//" X1" )
     call compare_checksums( sbound, sbuffer1(:,:,:),  "south bound of "//trim(type)//" X1" )
     call compare_checksums( wbound, wbuffer1(:,:,:),  "west bound of "//trim(type)//" X1" )
-    call compare_checksums( nbound, nbuffer1(:,:,:),  "north bound of "//trim(type)//" X1" )
-    call compare_checksums( ebound*10, ebuffer2(:,:,:),  "east bound of "//trim(type)//" X2" )
     call compare_checksums( sbound*10, sbuffer2(:,:,:),  "south bound of "//trim(type)//" X2" )
     call compare_checksums( wbound*10, wbuffer2(:,:,:),  "west bound of "//trim(type)//" X2" )
-    call compare_checksums( nbound*10, nbuffer2(:,:,:),  "north bound of "//trim(type)//" X2" )
 
     !--- release memory
     deallocate(global, global_all, x, x1, x2)
@@ -4128,23 +4199,46 @@ contains
     allocate(sbuffery2(iec-isc+2, nz, ntile_per_pe), nbuffery2(iec-isc+2, nz, ntile_per_pe))
     allocate(eboundy(jec-jsc+2, nz, ntile_per_pe), wboundy(jec-jsc+2, nz, ntile_per_pe))
     allocate(sboundy(iec-isc+2, nz, ntile_per_pe), nboundy(iec-isc+2, nz, ntile_per_pe))
+    eboundx  = 0; ebufferx = 0; ebufferx1 = 0; ebufferx2 = 0
+    sboundx  = 0; sbufferx = 0; sbufferx1 = 0; sbufferx2 = 0
+    wboundx  = 0; wbufferx = 0; wbufferx1 = 0; wbufferx2 = 0
+    nboundx  = 0; nbufferx = 0; nbufferx1 = 0; nbufferx2 = 0
+    eboundy  = 0; ebuffery = 0; ebuffery1 = 0; ebuffery2 = 0
+    sboundy  = 0; sbuffery = 0; sbuffery1 = 0; sbuffery2 = 0
+    wboundy  = 0; wbuffery = 0; wbuffery1 = 0; wbuffery2 = 0
+    nboundy  = 0; nbuffery = 0; nbuffery1 = 0; nbuffery2 = 0
+
 
     do n = 1, ntile_per_pe 
-       call mpp_get_boundary(x(:,:,:,n), y(:,:,:,n), domain, ebufferx=ebufferx(:,:,n), sbufferx=sbufferx(:,:,n), &
-                             wbufferx=wbufferx(:,:,n), nbufferx=nbufferx(:,:,n), ebuffery=ebuffery(:,:,n),       &
-                             sbuffery=sbuffery(:,:,n), wbuffery=wbuffery(:,:,n), nbuffery=nbuffery(:,:,n),       &
-                             gridtype=BGRID_NE, tile_count=n, flags = SCALAR_PAIR  )
+       if(folded_north) then
+          call mpp_get_boundary(x(:,:,:,n), y(:,:,:,n), domain, sbufferx=sbufferx(:,:,n), wbufferx=wbufferx(:,:,n), &
+               sbuffery=sbuffery(:,:,n), wbuffery=wbuffery(:,:,n), gridtype=BGRID_NE, tile_count=n, flags = SCALAR_PAIR  )
+       else
+          call mpp_get_boundary(x(:,:,:,n), y(:,:,:,n), domain, ebufferx=ebufferx(:,:,n), sbufferx=sbufferx(:,:,n), &
+               wbufferx=wbufferx(:,:,n), nbufferx=nbufferx(:,:,n), ebuffery=ebuffery(:,:,n),       &
+               sbuffery=sbuffery(:,:,n), wbuffery=wbuffery(:,:,n), nbuffery=nbuffery(:,:,n),       &
+               gridtype=BGRID_NE, tile_count=n, flags = SCALAR_PAIR  )          
+       endif
     end do
 
     do n = 1, ntile_per_pe 
-       call mpp_get_boundary(x1(:,:,:,n), y1(:,:,:,n), domain, ebufferx=ebufferx1(:,:,n), sbufferx=sbufferx1(:,:,n), &
-                             wbufferx=wbufferx1(:,:,n), nbufferx=nbufferx1(:,:,n), ebuffery=ebuffery1(:,:,n),       &
-                             sbuffery=sbuffery1(:,:,n), wbuffery=wbuffery1(:,:,n), nbuffery=nbuffery1(:,:,n),       &
-                             gridtype=BGRID_NE, tile_count=n, flags = SCALAR_PAIR, complete = .false.  )
-       call mpp_get_boundary(x2(:,:,:,n), y2(:,:,:,n), domain, ebufferx=ebufferx2(:,:,n), sbufferx=sbufferx2(:,:,n), &
-                             wbufferx=wbufferx2(:,:,n), nbufferx=nbufferx2(:,:,n), ebuffery=ebuffery2(:,:,n),       &
-                             sbuffery=sbuffery2(:,:,n), wbuffery=wbuffery2(:,:,n), nbuffery=nbuffery2(:,:,n),       &
-                             gridtype=BGRID_NE, tile_count=n, flags = SCALAR_PAIR, complete = .true.  )
+       if(folded_north) then
+          call mpp_get_boundary(x1(:,:,:,n), y1(:,:,:,n), domain, sbufferx=sbufferx1(:,:,n), wbufferx=wbufferx1(:,:,n), &
+               sbuffery=sbuffery1(:,:,n), wbuffery=wbuffery1(:,:,n),                           &
+               gridtype=BGRID_NE, tile_count=n, flags = SCALAR_PAIR, complete = .false.  )
+          call mpp_get_boundary(x2(:,:,:,n), y2(:,:,:,n), domain, sbufferx=sbufferx2(:,:,n), wbufferx=wbufferx2(:,:,n), &
+               sbuffery=sbuffery2(:,:,n), wbuffery=wbuffery2(:,:,n),       &
+               gridtype=BGRID_NE, tile_count=n, flags = SCALAR_PAIR, complete = .true.  )
+       else
+          call mpp_get_boundary(x1(:,:,:,n), y1(:,:,:,n), domain, ebufferx=ebufferx1(:,:,n), sbufferx=sbufferx1(:,:,n), &
+               wbufferx=wbufferx1(:,:,n), nbufferx=nbufferx1(:,:,n), ebuffery=ebuffery1(:,:,n),       &
+               sbuffery=sbuffery1(:,:,n), wbuffery=wbuffery1(:,:,n), nbuffery=nbuffery1(:,:,n),       &
+               gridtype=BGRID_NE, tile_count=n, flags = SCALAR_PAIR, complete = .false.  )
+          call mpp_get_boundary(x2(:,:,:,n), y2(:,:,:,n), domain, ebufferx=ebufferx2(:,:,n), sbufferx=sbufferx2(:,:,n), &
+               wbufferx=wbufferx2(:,:,n), nbufferx=nbufferx2(:,:,n), ebuffery=ebuffery2(:,:,n),       &
+               sbuffery=sbuffery2(:,:,n), wbuffery=wbuffery2(:,:,n), nbuffery=nbuffery2(:,:,n),       &
+               gridtype=BGRID_NE, tile_count=n, flags = SCALAR_PAIR, complete = .true.  )
+       endif
     end do
 
     !--- compare the buffer.
@@ -4163,24 +4257,34 @@ contains
           call fill_cubic_grid_bound(global2_all, global1_all, isc, iec, jsc, jec, 1, 1, &
                tile(n), 1, 1, eboundy(:,:,n), sboundy(:,:,n), wboundy(:,:,n), nboundy(:,:,n) )  
        end do
+    case("Folded-north")
+       do n = 1, ntile_per_pe
+          call fill_folded_north_bound(global1_all(:,:,:,1), isc, iec, jsc, jec, 1, 1, &
+               tile(n), sboundx(:,:,n), wboundx(:,:,n) )
+          call fill_folded_north_bound(global2_all(:,:,:,1), isc, iec, jsc, jec, 1, 1, &
+               tile(n), sboundy(:,:,n), wboundy(:,:,n) )  
+       end do       
     end select
 
-    call compare_checksums( eboundx, ebufferx(:,:,:),   "east bound of SCALAR_PAIR BGRID " //trim(type)//" X" )
+    if(.not. folded_north) then
+       call compare_checksums( eboundx, ebufferx(:,:,:),   "east bound of SCALAR_PAIR BGRID " //trim(type)//" X" )
+       call compare_checksums( nboundx, nbufferx(:,:,:),   "north bound of SCALAR_PAIR BGRID "//trim(type)//" X" )
+       call compare_checksums( eboundy, ebuffery(:,:,:),   "east bound of SCALAR_PAIR BGRID " //trim(type)//" Y" )
+       call compare_checksums( nboundy, nbuffery(:,:,:),   "north bound of SCALAR_PAIR BGRID "//trim(type)//" Y" )
+       call compare_checksums( eboundx, ebufferx1(:,:,:),  "east bound of SCALAR_PAIR BGRID " //trim(type)//" X1" )
+       call compare_checksums( nboundx, nbufferx1(:,:,:),  "north bound of SCALAR_PAIR BGRID "//trim(type)//" X1" )
+       call compare_checksums( eboundy, ebuffery1(:,:,:),  "east bound of SCALAR_PAIR BGRID " //trim(type)//" Y1" )
+       call compare_checksums( nboundy, nbuffery1(:,:,:),  "north bound of SCALAR_PAIR BGRID "//trim(type)//" Y1" )
+    endif
+
     call compare_checksums( sboundx, sbufferx(:,:,:),   "south bound of SCALAR_PAIR BGRID "//trim(type)//" X" )
     call compare_checksums( wboundx, wbufferx(:,:,:),   "west bound of SCALAR_PAIR BGRID " //trim(type)//" X" )
-    call compare_checksums( nboundx, nbufferx(:,:,:),   "north bound of SCALAR_PAIR BGRID "//trim(type)//" X" )
-    call compare_checksums( eboundy, ebuffery(:,:,:),   "east bound of SCALAR_PAIR BGRID " //trim(type)//" Y" )
     call compare_checksums( sboundy, sbuffery(:,:,:),   "south bound of SCALAR_PAIR BGRID "//trim(type)//" Y" )
     call compare_checksums( wboundy, wbuffery(:,:,:),   "west bound of SCALAR_PAIR BGRID " //trim(type)//" Y" )
-    call compare_checksums( nboundy, nbuffery(:,:,:),   "north bound of SCALAR_PAIR BGRID "//trim(type)//" Y" )
-    call compare_checksums( eboundx, ebufferx1(:,:,:),  "east bound of SCALAR_PAIR BGRID " //trim(type)//" X1" )
     call compare_checksums( sboundx, sbufferx1(:,:,:),  "south bound of SCALAR_PAIR BGRID "//trim(type)//" X1" )
     call compare_checksums( wboundx, wbufferx1(:,:,:),  "west bound of SCALAR_PAIR BGRID " //trim(type)//" X1" )
-    call compare_checksums( nboundx, nbufferx1(:,:,:),  "north bound of SCALAR_PAIR BGRID "//trim(type)//" X1" )
-    call compare_checksums( eboundy, ebuffery1(:,:,:),  "east bound of SCALAR_PAIR BGRID " //trim(type)//" Y1" )
     call compare_checksums( sboundy, sbuffery1(:,:,:),  "south bound of SCALAR_PAIR BGRID "//trim(type)//" Y1" )
     call compare_checksums( wboundy, wbuffery1(:,:,:),  "west bound of SCALAR_PAIR BGRID " //trim(type)//" Y1" )
-    call compare_checksums( nboundy, nbuffery1(:,:,:),  "north bound of SCALAR_PAIR BGRID "//trim(type)//" Y1" )
 
     select case(type)
     case("Four-Tile")
@@ -4197,16 +4301,93 @@ contains
           call fill_cubic_grid_bound(global2_all*10, global1_all*10, isc, iec, jsc, jec, 1, 1, &
                tile(n), 1, 1, eboundy(:,:,n), sboundy(:,:,n), wboundy(:,:,n), nboundy(:,:,n) )  
        end do
+    case("Folded-north")
+       do n = 1, ntile_per_pe
+          call fill_folded_north_bound(global1_all(:,:,:,1)*10, isc, iec, jsc, jec, 1, 1, &
+               tile(n), sboundx(:,:,n), wboundx(:,:,n) )
+          call fill_folded_north_bound(global2_all(:,:,:,1)*10, isc, iec, jsc, jec, 1, 1, &
+               tile(n), sboundy(:,:,n), wboundy(:,:,n) )  
+       end do       
     end select
 
-    call compare_checksums( eboundx, ebufferx2(:,:,:),  "east bound of SCALAR_PAIR BGRID " //trim(type)//" X2" )
+    if(.not. folded_north) then
+       call compare_checksums( eboundx, ebufferx2(:,:,:),  "east bound of SCALAR_PAIR BGRID " //trim(type)//" X2" )
+       call compare_checksums( nboundx, nbufferx2(:,:,:),  "north bound of SCALAR_PAIR BGRID "//trim(type)//" X2" )
+       call compare_checksums( eboundy, ebuffery2(:,:,:),  "east bound of SCALAR_PAIR BGRID " //trim(type)//" Y2" )
+       call compare_checksums( nboundy, nbuffery2(:,:,:),  "north bound of SCALAR_PAIR BGRID "//trim(type)//" Y2" )
+    endif
     call compare_checksums( sboundx, sbufferx2(:,:,:),  "south bound of SCALAR_PAIR BGRID "//trim(type)//" X2" )
     call compare_checksums( wboundx, wbufferx2(:,:,:),  "west bound of SCALAR_PAIR BGRID " //trim(type)//" X2" )
-    call compare_checksums( nboundx, nbufferx2(:,:,:),  "north bound of SCALAR_PAIR BGRID "//trim(type)//" X2" )
-    call compare_checksums( eboundy, ebuffery2(:,:,:),  "east bound of SCALAR_PAIR BGRID " //trim(type)//" Y2" )
     call compare_checksums( sboundy, sbuffery2(:,:,:),  "south bound of SCALAR_PAIR BGRID "//trim(type)//" Y2" )
     call compare_checksums( wboundy, wbuffery2(:,:,:),  "west bound of SCALAR_PAIR BGRID " //trim(type)//" Y2" )
-    call compare_checksums( nboundy, nbuffery2(:,:,:),  "north bound of SCALAR_PAIR BGRID "//trim(type)//" Y2" )
+
+    !-------------------------------------------------------------------------------------------
+    !
+    !             Test 2-D Vector BGRID
+    !
+    !-------------------------------------------------------------------------------------------
+    x = 0.; y = 0
+    eboundx  = 0; ebufferx = 0; ebufferx1 = 0; ebufferx2 = 0
+    sboundx  = 0; sbufferx = 0; sbufferx1 = 0; sbufferx2 = 0
+    wboundx  = 0; wbufferx = 0; wbufferx1 = 0; wbufferx2 = 0
+    nboundx  = 0; nbufferx = 0; nbufferx1 = 0; nbufferx2 = 0
+    eboundy  = 0; ebuffery = 0; ebuffery1 = 0; ebuffery2 = 0
+    sboundy  = 0; sbuffery = 0; sbuffery1 = 0; sbuffery2 = 0
+    wboundy  = 0; wbuffery = 0; wbuffery1 = 0; wbuffery2 = 0
+    nboundy  = 0; nbuffery = 0; nbuffery1 = 0; nbuffery2 = 0
+
+    x(isc:iec+1,jsc:jec+1,1,:) = global1(isc:iec+1,jsc:jec+1,1,:)
+    y(isc:iec+1,jsc:jec+1,1,:) = global2(isc:iec+1,jsc:jec+1,1,:)
+
+    do n = 1, ntile_per_pe 
+       if(folded_north) then
+          call mpp_get_boundary(x(:,:,1,n), y(:,:,1,n), domain, sbufferx=sbufferx(:,1,n), wbufferx=wbufferx(:,1,n), &
+               sbuffery=sbuffery(:,1,n), wbuffery=wbuffery(:,1,n), gridtype=BGRID_NE, tile_count=n)
+       else
+          call mpp_get_boundary(x(:,:,1,n), y(:,:,1,n), domain, ebufferx=ebufferx(:,1,n), sbufferx=sbufferx(:,1,n), &
+               wbufferx=wbufferx(:,1,n), nbufferx=nbufferx(:,1,n), ebuffery=ebuffery(:,1,n),       &
+               sbuffery=sbuffery(:,1,n), wbuffery=wbuffery(:,1,n), nbuffery=nbuffery(:,1,n),       &
+               gridtype=BGRID_NE, tile_count=n)          
+       endif
+    end do
+
+    !--- compare the buffer.
+    select case(type)
+    case("Four-Tile")
+       do n = 1, ntile_per_pe
+          call fill_four_tile_bound(global1_all, isc, iec, jsc, jec, 1, 1, &
+               tile(n), eboundx(:,:,n), sboundx(:,:,n), wboundx(:,:,n), nboundx(:,:,n) )  
+          call fill_four_tile_bound(global2_all, isc, iec, jsc, jec, 1, 1, &
+               tile(n), eboundy(:,:,n), sboundy(:,:,n), wboundy(:,:,n), nboundy(:,:,n) )  
+       end do
+    case("Cubic-Grid")
+       do n = 1, ntile_per_pe
+          call fill_cubic_grid_bound(global1_all, global2_all, isc, iec, jsc, jec, 1, 1, &
+               tile(n), 1, -1, eboundx(:,:,n), sboundx(:,:,n), wboundx(:,:,n), nboundx(:,:,n) )  
+          call fill_cubic_grid_bound(global2_all, global1_all, isc, iec, jsc, jec, 1, 1, &
+               tile(n), -1, 1, eboundy(:,:,n), sboundy(:,:,n), wboundy(:,:,n), nboundy(:,:,n) )  
+       end do
+    case("Folded-north")
+       do n = 1, ntile_per_pe
+          call fill_folded_north_bound(global1_all(:,:,:,1), isc, iec, jsc, jec, 1, 1, &
+               tile(n), sboundx(:,:,n), wboundx(:,:,n) )
+          call fill_folded_north_bound(global2_all(:,:,:,1), isc, iec, jsc, jec, 1, 1, &
+               tile(n), sboundy(:,:,n), wboundy(:,:,n) )  
+       end do       
+    end select
+
+    if(.not. folded_north) then
+       call compare_checksums( eboundx(:,1:1,:), ebufferx(:,1:1,:),   "east bound of 2-D BGRID " //trim(type)//" X" )
+       call compare_checksums( nboundx(:,1:1,:), nbufferx(:,1:1,:),   "north bound of 2-D BGRID "//trim(type)//" X" )
+       call compare_checksums( eboundy(:,1:1,:), ebuffery(:,1:1,:),   "east bound of 2-D BGRID " //trim(type)//" Y" )
+       call compare_checksums( nboundy(:,1:1,:), nbuffery(:,1:1,:),   "north bound of 2-D BGRID "//trim(type)//" Y" )
+    endif
+
+    call compare_checksums( sboundx(:,1:1,:), sbufferx(:,1:1,:),   "south bound of 2-D BGRID "//trim(type)//" X" )
+    call compare_checksums( wboundx(:,1:1,:), wbufferx(:,1:1,:),   "west bound of 2-D BGRID " //trim(type)//" X" )
+    call compare_checksums( sboundy(:,1:1,:), sbuffery(:,1:1,:),   "south bound of 2-D BGRID "//trim(type)//" Y" )
+    call compare_checksums( wboundy(:,1:1,:), wbuffery(:,1:1,:),   "west bound of 2-D BGRID " //trim(type)//" Y" )
+
 
     !--- release memory
     deallocate(global1, global1_all, global2, global2_all)
@@ -4275,19 +4456,38 @@ contains
     allocate(sbuffery2(iec-isc+1, nz, ntile_per_pe), nbuffery2(iec-isc+1, nz, ntile_per_pe))
     allocate(eboundx(jec-jsc+1, nz, ntile_per_pe), wboundx(jec-jsc+1, nz, ntile_per_pe))
     allocate(sboundy(iec-isc+1, nz, ntile_per_pe), nboundy(iec-isc+1, nz, ntile_per_pe))
+    eboundx  = 0; ebufferx = 0; ebufferx1 = 0; ebufferx2 = 0
+    wboundx  = 0; wbufferx = 0; wbufferx1 = 0; wbufferx2 = 0
+    sboundy  = 0; sbuffery = 0; sbuffery1 = 0; sbuffery2 = 0
+    nboundy  = 0; nbuffery = 0; nbuffery1 = 0; nbuffery2 = 0
+
 
     do n = 1, ntile_per_pe 
-       call mpp_get_boundary(x(:,:,:,n), y(:,:,:,n), domain, ebufferx=ebufferx(:,:,n), wbufferx=wbufferx(:,:,n), &
-                             sbuffery=sbuffery(:,:,n), nbuffery=nbuffery(:,:,n), gridtype=CGRID_NE, tile_count=n  )
+       if(folded_north) then
+          call mpp_get_boundary(x(:,:,:,n), y(:,:,:,n), domain, wbufferx=wbufferx(:,:,n), &
+               sbuffery=sbuffery(:,:,n), gridtype=CGRID_NE, tile_count=n  )
+       else
+          call mpp_get_boundary(x(:,:,:,n), y(:,:,:,n), domain, ebufferx=ebufferx(:,:,n), wbufferx=wbufferx(:,:,n), &
+               sbuffery=sbuffery(:,:,n), nbuffery=nbuffery(:,:,n), gridtype=CGRID_NE, tile_count=n  )
+       endif
     end do
 
     do n = 1, ntile_per_pe 
-       call mpp_get_boundary(x1(:,:,:,n), y1(:,:,:,n), domain, ebufferx=ebufferx1(:,:,n), wbufferx=wbufferx1(:,:,n), &
-                             sbuffery=sbuffery1(:,:,n), nbuffery=nbuffery1(:,:,n), gridtype=CGRID_NE, tile_count=n,  &
-                             complete = .false.  )
-       call mpp_get_boundary(x2(:,:,:,n), y2(:,:,:,n), domain, ebufferx=ebufferx2(:,:,n), wbufferx=wbufferx2(:,:,n), &
-                             sbuffery=sbuffery2(:,:,n), nbuffery=nbuffery2(:,:,n), gridtype=CGRID_NE, tile_count=n,  &
-                             complete = .true.  )
+       if( folded_north ) then
+          call mpp_get_boundary(x1(:,:,:,n), y1(:,:,:,n), domain, wbufferx=wbufferx1(:,:,n), &
+               sbuffery=sbuffery1(:,:,n), gridtype=CGRID_NE, tile_count=n,  &
+               complete = .false.  )
+          call mpp_get_boundary(x2(:,:,:,n), y2(:,:,:,n), domain, wbufferx=wbufferx2(:,:,n), &
+               sbuffery=sbuffery2(:,:,n), gridtype=CGRID_NE, tile_count=n,  &
+               complete = .true.  )
+       else
+          call mpp_get_boundary(x1(:,:,:,n), y1(:,:,:,n), domain, ebufferx=ebufferx1(:,:,n), wbufferx=wbufferx1(:,:,n), &
+               sbuffery=sbuffery1(:,:,n), nbuffery=nbuffery1(:,:,n), gridtype=CGRID_NE, tile_count=n,  &
+               complete = .false.  )
+          call mpp_get_boundary(x2(:,:,:,n), y2(:,:,:,n), domain, ebufferx=ebufferx2(:,:,n), wbufferx=wbufferx2(:,:,n), &
+               sbuffery=sbuffery2(:,:,n), nbuffery=nbuffery2(:,:,n), gridtype=CGRID_NE, tile_count=n,  &
+               complete = .true.  )
+       endif
     end do
 
     !--- compare the buffer.
@@ -4306,16 +4506,25 @@ contains
           call fill_cubic_grid_bound(global2_all, global1_all, isc, iec, jsc, jec, 0, 1, &
                tile(n), -1, 1, sbound=sboundy(:,:,n), nbound=nboundy(:,:,n) )  
        end do
+    case("Folded-north")
+       do n = 1, ntile_per_pe
+          call fill_folded_north_bound(global1_all(:,:,:,1), isc, iec, jsc, jec, 1, 1, &
+               tile(n), wbound=wboundx(:,:,n) )
+          call fill_folded_north_bound(global2_all(:,:,:,1), isc, iec, jsc, jec, 1, 1, &
+               tile(n), sbound=sboundy(:,:,n) )  
+       end do       
     end select
 
-    call compare_checksums( eboundx, ebufferx(:,:,:),   "east bound of CGRID " //trim(type)//" X" )
+    if(.not. folded_north) then
+       call compare_checksums( eboundx, ebufferx(:,:,:),   "east bound of CGRID " //trim(type)//" X" )
+       call compare_checksums( nboundy, nbuffery(:,:,:),   "north bound of CGRID "//trim(type)//" Y" )
+       call compare_checksums( eboundx, ebufferx1(:,:,:),  "east bound of CGRID " //trim(type)//" X1" )
+       call compare_checksums( nboundy, nbuffery1(:,:,:),  "north bound of CGRID "//trim(type)//" Y1" )
+    endif
     call compare_checksums( wboundx, wbufferx(:,:,:),   "west bound of CGRID " //trim(type)//" X" )
     call compare_checksums( sboundy, sbuffery(:,:,:),   "south bound of CGRID "//trim(type)//" Y" )
-    call compare_checksums( nboundy, nbuffery(:,:,:),   "north bound of CGRID "//trim(type)//" Y" )
-    call compare_checksums( eboundx, ebufferx1(:,:,:),  "east bound of CGRID " //trim(type)//" X1" )
     call compare_checksums( wboundx, wbufferx1(:,:,:),  "west bound of CGRID " //trim(type)//" X1" )
     call compare_checksums( sboundy, sbuffery1(:,:,:),  "south bound of CGRID "//trim(type)//" Y1" )
-    call compare_checksums( nboundy, nbuffery1(:,:,:),  "north bound of CGRID "//trim(type)//" Y1" )
 
     select case(type)
     case("Four-Tile")
@@ -4332,12 +4541,21 @@ contains
           call fill_cubic_grid_bound(global2_all*10, global1_all*10, isc, iec, jsc, jec, 0, 1, &
                tile(n), -1, 1, sbound=sboundy(:,:,n), nbound=nboundy(:,:,n) )  
        end do
+    case("Folded-north")
+       do n = 1, ntile_per_pe
+          call fill_folded_north_bound(global1_all(:,:,:,1)*10, isc, iec, jsc, jec, 1, 1, &
+               tile(n), wbound=wboundx(:,:,n) )
+          call fill_folded_north_bound(global2_all(:,:,:,1)*10, isc, iec, jsc, jec, 1, 1, &
+               tile(n), sbound=sboundy(:,:,n) )  
+       end do       
     end select
 
-    call compare_checksums( eboundx, ebufferx2(:,:,:),  "east bound of CGRID " //trim(type)//" X2" )
+    if(.not. folded_north) then
+       call compare_checksums( eboundx, ebufferx2(:,:,:),  "east bound of CGRID " //trim(type)//" X2" )
+       call compare_checksums( nboundy, nbuffery2(:,:,:),  "north bound of CGRID "//trim(type)//" Y2" )
+    endif
     call compare_checksums( wboundx, wbufferx2(:,:,:),  "west bound of CGRID " //trim(type)//" X2" )
     call compare_checksums( sboundy, sbuffery2(:,:,:),  "south bound of CGRID "//trim(type)//" Y2" )
-    call compare_checksums( nboundy, nbuffery2(:,:,:),  "north bound of CGRID "//trim(type)//" Y2" )
 
     !--- release memory
     deallocate(global1, global1_all, global2, global2_all)
@@ -4349,6 +4567,9 @@ contains
     deallocate(ebuffery1, sbuffery1, wbuffery1, nbuffery1)
     deallocate(ebuffery2, sbuffery2, wbuffery2, nbuffery2)
     deallocate(eboundx, sboundy, wboundx, nboundy )    
+
+    nx = nx_save
+    ny = ny_save
 
   end subroutine test_get_boundary
 

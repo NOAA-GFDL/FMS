@@ -1,12 +1,12 @@
+
 ! -*-f90-*- 
-subroutine MPP_DO_GET_BOUNDARY_3D_( f_addrs, domain, bound, b_addrs, bsize, ke, d_type, flags)
+subroutine MPP_DO_GET_BOUNDARY_3D_( f_addrs, domain, bound, b_addrs, bsize, ke, d_type)
   type(domain2D), intent(in)      :: domain
   type(overlapSpec),  intent(in)  :: bound
   integer(LONG_KIND), intent(in)  :: f_addrs(:,:)
   integer(LONG_KIND), intent(in)  :: b_addrs(:,:,:)
   integer,            intent(in)  :: bsize(:), ke
   MPP_TYPE_, intent(in)           :: d_type  ! creates unique interface
-  integer, intent(in)             :: flags
 
   MPP_TYPE_ :: field(bound%xbegin:bound%xend, bound%ybegin:bound%yend,ke)
   MPP_TYPE_ :: ebuffer(bsize(1), ke), sbuffer(bsize(2), ke), wbuffer(bsize(3), ke), nbuffer(bsize(4), ke)
@@ -20,7 +20,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_( f_addrs, domain, bound, b_addrs, bsize, ke, 
   logical                 :: recv(4), send(4)
   integer                 :: nlist, buffer_pos, pos, tMe, from_pe
   integer                 :: i, j, k, l, m, n, index, buffer_recv_size
-  integer                 :: is, ie, js, je, msgsize, l_size
+  integer                 :: is, ie, js, je, msgsize, l_size, num
   character(len=8)        :: text
   integer                 :: outunit
 
@@ -31,13 +31,52 @@ subroutine MPP_DO_GET_BOUNDARY_3D_( f_addrs, domain, bound, b_addrs, bsize, ke, 
 
   outunit = stdout()
   l_size = size(f_addrs,1)
-  recv(1) = BTEST(flags,EAST)
-  recv(2) = BTEST(flags,SOUTH)
-  recv(3) = BTEST(flags,WEST)
-  recv(4) = BTEST(flags,NORTH)
+
+  !---- determine recv(1) based on b_addrs ( east boundary )
+  num = count(b_addrs(1,:,1) == 0)
+  if( num == 0 ) then
+     recv(1) = .true.
+  else if( num == l_size ) then
+     recv(1) = .false.
+  else
+     if( num .NE. 0 )  call mpp_error(FATAL, &
+           "mpp_do_get_boundary: number of ebuffer with null address should be 0 or l_size")
+  endif
+
+  !---- determine recv(2) based on b_addrs ( south boundary )
+  num = count(b_addrs(2,:,1) == 0)
+  if( num == 0 ) then
+     recv(2) = .true.
+  else if( num == l_size ) then
+     recv(2) = .false.
+  else
+     if( num .NE. 0 )  call mpp_error(FATAL, &
+           "mpp_do_get_boundary: number of sbuffer with null address should be 0 or l_size")
+  endif
+
+  !---- determine recv(3) based on b_addrs ( west boundary )
+  num = count(b_addrs(3,:,1) == 0)
+  if( num == 0 ) then
+     recv(3) = .true.
+  else if( num == l_size ) then
+     recv(3) = .false.
+  else
+     if( num .NE. 0 )  call mpp_error(FATAL, &
+           "mpp_do_get_boundary: number of wbuffer with null address should be 0 or l_size")
+  endif
+
+  !---- determine recv(4) based on b_addrs ( north boundary )
+  num = count(b_addrs(4,:,1) == 0)
+  if( num == 0 ) then
+     recv(4) = .true.
+  else if( num == l_size ) then
+     recv(4) = .false.
+  else
+     if( num .NE. 0 )  call mpp_error(FATAL, &
+           "mpp_do_get_boundary: number of nbuffer with null address should be 0 or l_size")
+  endif
 
   send = recv
-
   nlist = size(domain%list(:))  
 
   if(debug_message_passing) then
@@ -295,12 +334,13 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
   pointer(ptr_nbuffery, nbuffery)
 
   integer,    allocatable :: msg1(:), msg2(:)
-  logical                 :: recv(4), send(4)
+  logical                 :: recvx(4), sendx(4)
+  logical                 :: recvy(4), sendy(4)
   integer                 :: nlist, buffer_pos, pos, tMe, m
   integer                 :: is, ie, js, je, msgsize, l_size, buffer_recv_size
   integer                 :: i, j, k, l, n, index, to_pe, from_pe
   integer                 :: rank_x, rank_y, cur_rank, ind_x, ind_y
-  integer                 :: nsend_x, nsend_y, nrecv_x, nrecv_y
+  integer                 :: nsend_x, nsend_y, nrecv_x, nrecv_y, num
   character(len=8)        :: text
   integer                 :: outunit
 
@@ -310,11 +350,96 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
 
   outunit = stdout()
   l_size = size(f_addrsx,1)
-  recv(1) = BTEST(flags,EAST)
-  recv(2) = BTEST(flags,SOUTH)
-  recv(3) = BTEST(flags,WEST)
-  recv(4) = BTEST(flags,NORTH)
-  send = recv
+  !---- determine recv(1) based on b_addrs ( east boundary )
+  num = count(b_addrsx(1,:,1) == 0)
+  if( num == 0 ) then
+     recvx(1) = .true.
+  else if( num == l_size ) then
+     recvx(1) = .false.
+  else
+     if( num .NE. 0 )  call mpp_error(FATAL, &
+           "mpp_do_get_boundary_V: number of ebufferx with null address should be 0 or l_size")
+  endif
+
+  !---- determine recv(2) based on b_addrs ( south boundary )
+  num = count(b_addrsx(2,:,1) == 0)
+  if( num == 0 ) then
+     recvx(2) = .true.
+  else if( num == l_size ) then
+     recvx(2) = .false.
+  else
+     if( num .NE. 0 )  call mpp_error(FATAL, &
+           "mpp_do_get_boundary_V: number of sbufferx with null address should be 0 or l_size")
+  endif
+
+  !---- determine recv(3) based on b_addrs ( west boundary )
+  num = count(b_addrsx(3,:,1) == 0)
+  if( num == 0 ) then
+     recvx(3) = .true.
+  else if( num == l_size ) then
+     recvx(3) = .false.
+  else
+     if( num .NE. 0 )  call mpp_error(FATAL, &
+           "mpp_do_get_boundary_V: number of wbufferx with null address should be 0 or l_size")
+  endif
+
+  !---- determine recv(4) based on b_addrs ( north boundary )
+  num = count(b_addrsx(4,:,1) == 0)
+  if( num == 0 ) then
+     recvx(4) = .true.
+  else if( num == l_size ) then
+     recvx(4) = .false.
+  else
+     if( num .NE. 0 )  call mpp_error(FATAL, &
+           "mpp_do_get_boundary_V: number of nbufferx with null address should be 0 or l_size")
+  endif
+
+  !---- determine recv(1) based on b_addrs ( east boundary )
+  num = count(b_addrsy(1,:,1) == 0)
+  if( num == 0 ) then
+     recvy(1) = .true.
+  else if( num == l_size ) then
+     recvy(1) = .false.
+  else
+     if( num .NE. 0 )  call mpp_error(FATAL, &
+           "mpp_do_get_boundary_V: number of ebuffery with null address should be 0 or l_size")
+  endif
+
+  !---- determine recv(2) based on b_addrs ( south boundary )
+  num = count(b_addrsy(2,:,1) == 0)
+  if( num == 0 ) then
+     recvy(2) = .true.
+  else if( num == l_size ) then
+     recvy(2) = .false.
+  else
+     if( num .NE. 0 )  call mpp_error(FATAL, &
+           "mpp_do_get_boundary_V: number of sbuffery with null address should be 0 or l_size")
+  endif
+
+  !---- determine recv(3) based on b_addrs ( west boundary )
+  num = count(b_addrsy(3,:,1) == 0)
+  if( num == 0 ) then
+     recvy(3) = .true.
+  else if( num == l_size ) then
+     recvy(3) = .false.
+  else
+     if( num .NE. 0 )  call mpp_error(FATAL, &
+           "mpp_do_get_boundary_V: number of wbuffery with null address should be 0 or l_size")
+  endif
+
+  !---- determine recv(4) based on b_addrs ( north boundary )
+  num = count(b_addrsy(4,:,1) == 0)
+  if( num == 0 ) then
+     recvy(4) = .true.
+  else if( num == l_size ) then
+     recvy(4) = .false.
+  else
+     if( num .NE. 0 )  call mpp_error(FATAL, &
+           "mpp_do_get_boundary_V: number of nbuffery with null address should be 0 or l_size")
+  endif
+
+  sendx = recvx
+  sendy = recvy
 
   nlist = size(domain%list(:))  
 
@@ -335,7 +460,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
         if(cur_rank == rank_x) then
            from_pe = boundx%recv(ind_x)%pe
            do n = 1, boundx%recv(ind_x)%count
-              if(recv(boundx%recv(ind_x)%dir(n))) then
+              if(recvx(boundx%recv(ind_x)%dir(n))) then
                  is = boundx%recv(ind_x)%is(n); ie = boundx%recv(ind_x)%ie(n)
                  js = boundx%recv(ind_x)%js(n); je = boundx%recv(ind_x)%je(n)
                  msgsize = msgsize + (ie-is+1)*(je-js+1)
@@ -353,7 +478,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
         if(cur_rank == rank_y) then
            from_pe = boundy%recv(ind_y)%pe
            do n = 1, boundy%recv(ind_y)%count
-              if(recv(boundy%recv(ind_y)%dir(n))) then
+              if(recvy(boundy%recv(ind_y)%dir(n))) then
                  is = boundy%recv(ind_y)%is(n); ie = boundy%recv(ind_y)%ie(n)
                  js = boundy%recv(ind_y)%js(n); je = boundy%recv(ind_y)%je(n)
                  msgsize = msgsize + (ie-is+1)*(je-js+1)
@@ -379,7 +504,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
         if(cur_rank == rank_x) then
            to_pe = boundx%send(ind_x)%pe
            do n = 1, boundx%send(ind_x)%count
-              if(send(boundx%send(ind_x)%dir(n))) then
+              if(sendx(boundx%send(ind_x)%dir(n))) then
                  is = boundx%send(ind_x)%is(n); ie = boundx%send(ind_x)%ie(n)
                  js = boundx%send(ind_x)%js(n); je = boundx%send(ind_x)%je(n)
                  msgsize = msgsize + (ie-is+1)*(je-js+1)
@@ -397,7 +522,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
         if(cur_rank == rank_y) then
            to_pe = boundy%send(ind_y)%pe
            do n = 1, boundy%send(ind_y)%count
-              if(send(boundy%send(ind_y)%dir(n))) then
+              if(sendy(boundy%send(ind_y)%dir(n))) then
                  is = boundy%send(ind_y)%is(n); ie = boundy%send(ind_y)%ie(n)
                  js = boundy%send(ind_y)%js(n); je = boundy%send(ind_y)%je(n)
                  msgsize = msgsize + (ie-is+1)*(je-js+1)
@@ -439,7 +564,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
      if(cur_rank == rank_x) then
         from_pe = boundx%recv(ind_x)%pe
         do n = 1, boundx%recv(ind_x)%count
-           if(recv(boundx%recv(ind_x)%dir(n))) then
+           if(recvx(boundx%recv(ind_x)%dir(n))) then
               is = boundx%recv(ind_x)%is(n); ie = boundx%recv(ind_x)%ie(n)
               js = boundx%recv(ind_x)%js(n); je = boundx%recv(ind_x)%je(n)
               msgsize = msgsize + (ie-is+1)*(je-js+1)
@@ -457,7 +582,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
      if(cur_rank == rank_y) then
         from_pe = boundy%recv(ind_y)%pe
         do n = 1, boundy%recv(ind_y)%count
-           if(recv(boundy%recv(ind_y)%dir(n))) then
+           if(recvy(boundy%recv(ind_y)%dir(n))) then
               is = boundy%recv(ind_y)%is(n); ie = boundy%recv(ind_y)%ie(n)
               js = boundy%recv(ind_y)%js(n); je = boundy%recv(ind_y)%je(n)
               msgsize = msgsize + (ie-is+1)*(je-js+1)
@@ -494,7 +619,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
      if(cur_rank == rank_x) then
         to_pe = boundx%send(ind_x)%pe
         do n = 1, boundx%send(ind_x)%count
-           if(send(boundx%send(ind_x)%dir(n))) then
+           if(sendx(boundx%send(ind_x)%dir(n))) then
               is = boundx%send(ind_x)%is(n); ie = boundx%send(ind_x)%ie(n)
               js = boundx%send(ind_x)%js(n); je = boundx%send(ind_x)%je(n)
               tMe = boundx%send(ind_x)%tileMe(n)
@@ -590,7 +715,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
      if(cur_rank == rank_y) then
         to_pe = boundy%send(ind_y)%pe
         do n = 1, boundy%send(ind_y)%count
-           if(send(boundy%send(ind_y)%dir(n))) then
+           if(sendy(boundy%send(ind_y)%dir(n))) then
               is = boundy%send(ind_y)%is(n); ie = boundy%send(ind_y)%ie(n)
               js = boundy%send(ind_y)%js(n); je = boundy%send(ind_y)%je(n)
               tMe = boundy%send(ind_y)%tileMe(n)
@@ -708,7 +833,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
   do while(ind_x >0 .OR. ind_y >0)
      if(cur_rank == rank_y) then
         do n = boundy%recv(ind_y)%count, 1, -1
-           if(recv(boundy%recv(ind_y)%dir(n))) then
+           if(recvy(boundy%recv(ind_y)%dir(n))) then
               is = boundy%recv(ind_y)%is(n); ie = boundy%recv(ind_y)%ie(n)
               js = boundy%recv(ind_y)%js(n); je = boundy%recv(ind_y)%je(n)
               msgsize = (ie-is+1)*(je-js+1)*ke*l_size
@@ -786,7 +911,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
 
      if(cur_rank == rank_x) then
         do n = boundx%recv(ind_x)%count, 1, -1
-           if(recv(boundx%recv(ind_x)%dir(n))) then
+           if(recvx(boundx%recv(ind_x)%dir(n))) then
               is = boundx%recv(ind_x)%is(n); ie = boundx%recv(ind_x)%ie(n)
               js = boundx%recv(ind_x)%js(n); je = boundx%recv(ind_x)%je(n)
               msgsize = (ie-is+1)*(je-js+1)*ke*l_size

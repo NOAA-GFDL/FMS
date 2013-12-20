@@ -197,6 +197,7 @@ integer, public :: clock_flag_default
      INTEGER :: badType1
      INTEGER :: badType2
      INTEGER :: missingVar
+     INTEGER :: NotInFile
   END TYPE nml_errors_type
   TYPE(nml_errors_type), SAVE :: nml_errors
 
@@ -281,8 +282,8 @@ integer, public :: clock_flag_default
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id: fms.F90,v 19.0.6.1.4.1 2013/04/12 14:39:40 William.Cooke Exp $'
-  character(len=128) :: tagname = '$Name: siena_201309 $'
+  character(len=128) :: version = '$Id: fms.F90,v 20.0 2013/12/14 00:20:05 fms Exp $'
+  character(len=128) :: tagname = '$Name: tikal $'
 
   logical :: module_is_initialized = .FALSE.
 
@@ -639,20 +640,18 @@ end subroutine fms_end
     check_nml_error = IOSTAT
 
     ! Return on valid IOSTAT values
-    IF ( IOSTAT <= 0 .OR. IOSTAT == nml_errors%multipleNMLSinFile ) RETURN
+    IF ( IOSTAT <= 0 .OR.&
+       & IOSTAT == nml_errors%multipleNMLSinFile .OR.&
+       & IOSTAT == nml_errors%NotInFile) RETURN
 
     ! Everything else is a FATAL
-    IF ( mpp_pe() == mpp_root_pe() ) THEN
-       IF ( (IOSTAT == nml_errors%badType1 .OR. IOSTAT == nml_errors%badType2) .OR. IOSTAT == nml_errors%missingVar ) THEN
-          WRITE (err_str,*) 'Unknown namelist, or mistyped namelist variable in namelist ',TRIM(NML_NAME),', (IOSTAT = ',IOSTAT,')'
-          CALL error_mesg ('check_nml_error in fms_mod', err_str, FATAL)
-          CALL mpp_sync()
-       ELSE
-          WRITE (err_str,*) 'Unknown error while reading namelist ',TRIM(NML_NAME),', (IOSTAT = ',IOSTAT,')'
-          CALL error_mesg ('check_nml_error in fms_mod', err_str, FATAL)
-          CALL mpp_sync()
-       END IF
-    ELSE 
+    IF ( (IOSTAT == nml_errors%badType1 .OR. IOSTAT == nml_errors%badType2) .OR. IOSTAT == nml_errors%missingVar ) THEN
+       WRITE (err_str,*) 'Unknown namelist, or mistyped namelist variable in namelist ',TRIM(NML_NAME),', (IOSTAT = ',IOSTAT,')'
+       CALL error_mesg ('check_nml_error in fms_mod', err_str, FATAL)
+       CALL mpp_sync()
+    ELSE
+       WRITE (err_str,*) 'Unknown error while reading namelist ',TRIM(NML_NAME),', (IOSTAT = ',IOSTAT,')'
+       CALL error_mesg ('check_nml_error in fms_mod', err_str, FATAL)
        CALL mpp_sync()
     END IF
   END FUNCTION check_nml_error
@@ -667,7 +666,7 @@ end subroutine fms_end
     ! multiple namelist records in a single file.
     INTEGER, PARAMETER :: unit_begin = 20, unit_end = 1024
     INTEGER :: fileunit, io_stat
-    INTEGER, DIMENSION(4) :: nml_iostats
+    INTEGER, DIMENSION(5) :: nml_iostats
     LOGICAL :: opened
 
     ! Variables for sample namelists
@@ -679,6 +678,7 @@ end subroutine fms_end
     NAMELIST /badType1_nml/ i1, r1
     NAMELIST /badType2_nml/ i1, r1
     NAMELIST /missingVar_nml/ i2, r2
+    NAMELIST /not_in_file_nml/ i2, r2
 
     ! Initialize the sample namelist variables
     i1 = 1
@@ -725,6 +725,10 @@ end subroutine fms_end
 
        ! Read in missing variable/misstyped
        READ (UNIT=fileunit, NML=missingVar_nml, IOSTAT=nml_iostats(4))
+       REWIND(UNIT=fileunit)
+
+       ! Code for namelist not in file
+       READ (UNIT=fileunit, NML=not_in_file_nml, IOSTAT=nml_iostats(5))
 
        ! Done, close file
        CLOSE (UNIT=fileunit)
@@ -743,11 +747,12 @@ end subroutine fms_end
     END IF
 
     ! Broadcast nml_errors
-    CALL mpp_broadcast(nml_iostats,4,mpp_root_pe())
+    CALL mpp_broadcast(nml_iostats,5,mpp_root_pe())
     nml_errors%multipleNMLSinFile = nml_iostats(1)
     nml_errors%badType1 = nml_iostats(2)
     nml_errors%badType2 = nml_iostats(3)
     nml_errors%missingVar = nml_iostats(4)
+    nml_errors%NotInFile = nml_iostats(5)
 
     do_nml_error_init = .FALSE.
   END SUBROUTINE nml_error_init

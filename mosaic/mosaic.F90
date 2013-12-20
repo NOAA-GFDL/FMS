@@ -34,11 +34,12 @@ public :: get_mosaic_xgrid_size
 public :: get_mosaic_xgrid
 public :: calc_mosaic_grid_area
 public :: calc_mosaic_grid_great_circle_area
+public :: is_inside_polygon
 
 logical :: module_is_initialized = .true.
 ! version information varaible
- character(len=128) :: version = '$Id: mosaic.F90,v 15.0.28.1.2.1 2012/11/26 14:11:26 Zhi.Liang Exp $'
- character(len=128) :: tagname = '$Name: siena_201309 $'
+ character(len=128) :: version = '$Id: mosaic.F90,v 20.0 2013/12/14 00:22:25 fms Exp $'
+ character(len=128) :: tagname = '$Name: tikal $'
 
 contains
 
@@ -429,6 +430,29 @@ end subroutine mosaic_init
   end subroutine calc_mosaic_grid_great_circle_area
   ! </SUBROUTINE>
 
+  !#####################################################################
+  ! This function check if a point (lon1,lat1) is inside a polygon (lon2(:), lat2(:))
+  ! lon1, lat1, lon2, lat2 are in radians.
+  function is_inside_polygon(lon1, lat1, lon2, lat2 )
+     real, intent(in) :: lon1, lat1
+     real, intent(in) :: lon2(:), lat2(:)
+     logical          :: is_inside_polygon
+     real, dimension(size(lon2(:))) :: x2, y2, z2
+     integer                        :: npts, isinside
+     integer                        :: inside_a_polygon
+
+     npts = size(lon2(:))
+
+     isinside = inside_a_polygon(lon1, lat1, npts, lon2, lat2)
+     if(isinside == 1) then
+        is_inside_polygon = .TRUE.
+     else
+        is_inside_polygon = .FALSE.
+     endif
+
+     return
+
+  end function is_inside_polygon
 
 end module mosaic_mod
 

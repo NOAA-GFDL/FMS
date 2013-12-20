@@ -53,7 +53,7 @@ program test
   type(fieldtype)    :: f
   type(domain1D)     :: xdom, ydom
   integer(LONG_KIND) :: rchk, chk
-  real(DOUBLE_KIND)                  :: doubledata
+  real(DOUBLE_KIND)                  :: doubledata = 0.0
   real                               :: realarray(4)
 
   call mpp_init() 

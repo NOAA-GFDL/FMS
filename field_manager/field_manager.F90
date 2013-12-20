@@ -182,8 +182,8 @@ implicit none
 private
 
 
-character(len=128) :: version = '$Id: field_manager.F90,v 19.0.6.1 2012/09/13 15:23:54 Seth.Underwood Exp $'
-character(len=128) :: tagname = '$Name: siena_201309 $'
+character(len=128) :: version = '$Id: field_manager.F90,v 20.0 2013/12/14 00:19:26 fms Exp $'
+character(len=128) :: tagname = '$Name: tikal $'
 logical            :: module_is_initialized  = .false.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+

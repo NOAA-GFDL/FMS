@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util_sma.inc,v 19.0 2012/01/06 22:05:21 fms Exp $
+! $Id: mpp_util_sma.inc,v 20.0 2013/12/14 00:27:41 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -13,7 +13,7 @@ subroutine mpp_error_basic( errortype, errormsg )
   !uses ABORT and FLUSH calls, may need to use cpp to rename
   integer, intent(in) :: errortype
   character(len=*), intent(in), optional :: errormsg
-  character(len=256) :: text
+  character(len=512) :: text
   logical :: opened
   integer :: istat, errunit, outunit
 

@@ -67,7 +67,7 @@ use time_interp_external_mod, only:time_interp_external_init, time_interp_extern
                                    init_external_field, get_external_field_size, &
                                    NO_REGION, INSIDE_REGION, OUTSIDE_REGION,     &
                                    set_override_region, reset_src_data_region
-use fms_io_mod, only: field_size, read_data, fms_io_init,get_mosaic_tile_grid
+use fms_io_mod, only: field_size, read_data, fms_io_init,get_mosaic_tile_grid, get_mosaic_tile_file
 use fms_mod, only: write_version_number, field_exist, lowercase, file_exist, open_namelist_file, check_nml_error, close_file
 use axis_utils_mod, only: get_axis_bounds, nearest_index
 use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, NULL_DOMAIN2D,operator(.NE.),operator(.EQ.)
@@ -80,8 +80,8 @@ use time_manager_mod, only: time_type
 implicit none
 private
 
-character(len=128) :: version = '$Id: data_override.F90,v 18.0.4.1.2.1.2.2.2.1.2.1.2.3.6.1 2013/02/25 18:32:54 Zhi.Liang Exp $'
-character(len=128) :: tagname = '$Name: siena_201309 $'
+character(len=128) :: version = '$Id: data_override.F90,v 20.0 2013/12/14 00:18:34 fms Exp $'
+character(len=128) :: tagname = '$Name: tikal $'
 
 type data_type
    character(len=3)   :: gridname
@@ -562,7 +562,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
   integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
   logical, dimension(:,:,:),   allocatable :: mask_out
 
-  character(len=512) :: filename !file containing source data
+  character(len=512) :: filename, filename2 !file containing source data
   character(len=128) :: fieldname ! fieldname used in the data file
   integer            :: i,j
   integer            :: dims(4)
@@ -588,6 +588,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
   logical :: need_compute
   real    :: lat_min, lat_max
   integer :: is_src, ie_src, js_src, je_src
+  logical :: exists
 
   use_comp_domain = .false.
   if(.not.module_is_initialized) &
@@ -688,6 +689,14 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
         if( data_table(index1)%region_type .NE. NO_REGION ) then
            call mpp_error(FATAL,'data_override: ongrid must be false when region_type .NE. NO_REGION')
         endif
+
+!  Allow on-grid data_overrides on cubed sphere grid
+        inquire(file=trim(filename),EXIST=exists)
+        if (.not. exists) then
+           call get_mosaic_tile_file(filename,filename2,.false.,domain)
+           filename = filename2
+        endif
+
         !--- we always only pass data on compute domain
         id_time = init_external_field(filename,fieldname,domain=domain,verbose=.false., &
                                       use_comp_domain=use_comp_domain, nwindows=nwindows)

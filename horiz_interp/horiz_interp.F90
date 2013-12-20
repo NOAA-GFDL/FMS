@@ -55,7 +55,10 @@ module horiz_interp_mod
 !-----------------------------------------------------------------------
 
 use fms_mod,                    only: write_version_number, fms_error_handler
-use mpp_mod,                    only: mpp_error, FATAL, stdout, mpp_min
+use fms_mod,                    only: file_exist, close_file
+use fms_mod,                    only: check_nml_error, open_namelist_file
+use mpp_mod,                    only: mpp_error, FATAL, stdout, stdlog, mpp_min
+use mpp_mod,                    only: input_nml_file, WARNING, mpp_pe, mpp_root_pe
 use constants_mod,              only: pi
 use horiz_interp_type_mod,      only: horiz_interp_type, assignment(=)
 use horiz_interp_type_mod,      only: CONSERVE, BILINEAR, SPHERICA, BICUBIC
@@ -216,9 +219,25 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
  end interface
 ! </INTERFACE>
 
+
+ !--- namelist interface
+ !<NAMELIST NAME="horiz_interp_nml">
+ ! <DATA NAME="reproduce_siena" TYPE="logical" DEFAULT=".FALSE." >
+ !   Set reproduce_siena = .true. to reproduce siena results. 
+ !   Set reproduce_siena = .false. to decrease truncation error 
+ !   in routine poly_area in file mosaic_util.c. The truncation error of
+ !   second order conservative remapping might be big for high resolution
+ !   grid.  
+ ! </DATA>
+ !</NAMELIST>
+
+ logical :: reproduce_siena = .false.
+
+ namelist /horiz_interp_nml/ reproduce_siena
+
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: horiz_interp.F90,v 19.0.4.3.2.1 2013/02/25 18:32:54 Zhi.Liang Exp $'
- character(len=128) :: tagname = '$Name: siena_201309 $'
+ character(len=128) :: version = '$Id: horiz_interp.F90,v 20.0 2013/12/14 00:20:17 fms Exp $'
+ character(len=128) :: tagname = '$Name: tikal $'
  logical            :: module_is_initialized = .FALSE.
 !-----------------------------------------------------------------------
 
@@ -234,9 +253,40 @@ contains
 !  </DESCRIPTION>
 
   subroutine horiz_interp_init
+  integer :: unit, ierr, io
 
   if(module_is_initialized) return
   call write_version_number (version, tagname)
+
+#ifdef INTERNAL_FILE_NML
+  read (input_nml_file, horiz_interp_nml, iostat=io)
+  ierr = check_nml_error(io,'horiz_interp_nml')
+#else
+  if (file_exist('input.nml')) then
+     unit = open_namelist_file ( )
+     ierr=1
+     do while (ierr /= 0)
+     read  (unit, nml=horiz_interp_nml, iostat=io, end=10)
+     ierr = check_nml_error(io,'horiz_interp_nml')  ! also initializes nml error codes
+     enddo
+10   call close_file (unit)
+  endif
+#endif
+  if (mpp_pe() == mpp_root_pe() ) then
+     unit = stdlog()
+     write (unit, nml=horiz_interp_nml)
+  endif
+
+  if( reproduce_siena ) then
+     if( mpp_pe() == mpp_root_pe() ) then
+        call mpp_error(WARNING, "horiz_interp_mod: You have overridden the default value of reproduce_siena " // &
+                             "and set it to .true. in horiz_interp_nml. This is a temporary workaround to " // &
+                             "allow for consistency in continuing experiments.  Please use the default " //&
+                             "value (.false.) as this option will be removed in a future release. ")
+     endif
+     call set_reproduce_siena_true( )
+  endif
+
   call horiz_interp_conserve_init
   call horiz_interp_bilinear_init
   call horiz_interp_bicubic_init

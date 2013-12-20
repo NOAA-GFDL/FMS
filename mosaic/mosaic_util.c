@@ -19,7 +19,21 @@
     void error_handler(char *str)
     error handler: will print out error message and then abort
 ***********************************************************/
+int reproduce_siena = 0;
 
+void set_reproduce_siena_true(void)
+{
+  reproduce_siena = 1;
+}
+
+#ifndef __AIX
+void set_reproduce_siena_true_(void)
+{
+  reproduce_siena = 1;
+}
+#endif
+
+  
 void error_handler(const char *msg)
 {
   fprintf(stderr, "FATAL Error: %s\n", msg );
@@ -263,13 +277,14 @@ double poly_area_dimensionless(const double x[], const double y[], int n)
     if ( fabs(lat1-lat2) < SMALL_VALUE) /* cheap area calculation along latitude */
       area -= dx*sin(0.5*(lat1+lat2));
     else {
-#ifdef fix_truncate      
-      dy = 0.5*(lat1-lat2);
-      dat = sin(dy)/dy;
-      area -= dx*sin(0.5*(lat1+lat2))*dat;
-#else
-      area += dx*(cos(lat1)-cos(lat2))/(lat1-lat2);
-#endif
+      if(reproduce_siena) {
+	area += dx*(cos(lat1)-cos(lat2))/(lat1-lat2);
+      }
+      else {
+	dy = 0.5*(lat1-lat2);
+	dat = sin(dy)/dy;
+	area -= dx*sin(0.5*(lat1+lat2))*dat;
+      }
     }
   }
   if(area < 0)
@@ -299,13 +314,14 @@ double poly_area(const double x[], const double y[], int n)
     if ( fabs(lat1-lat2) < SMALL_VALUE) /* cheap area calculation along latitude */
       area -= dx*sin(0.5*(lat1+lat2));
     else {
-#ifdef fix_truncate      
-      dy = 0.5*(lat1-lat2);
-      dat = sin(dy)/dy;
-      area -= dx*sin(0.5*(lat1+lat2))*dat;
-#else
-      area += dx*(cos(lat1)-cos(lat2))/(lat1-lat2);
-#endif
+      if(reproduce_siena) {
+	area += dx*(cos(lat1)-cos(lat2))/(lat1-lat2);
+      }
+      else {
+	dy = 0.5*(lat1-lat2);
+	dat = sin(dy)/dy;
+	area -= dx*sin(0.5*(lat1+lat2))*dat;
+      }
     }
   }
   if(area < 0)
@@ -1275,3 +1291,61 @@ int isInside(struct Node *node) {
   return is_inside;
   
 }
+
+int inside_a_polygon(double *lon1, double *lat1, int *npts, double *lon2, double *lat2)
+{
+
+  double x2[20], y2[20], z2[20];
+  double x1, y1, z1;
+  double min_x2, max_x2, min_y2, max_y2, min_z2, max_z2;
+  int isinside, i;
+
+  struct Node *grid1=NULL, *grid2=NULL;
+
+  /* first convert to cartesian grid */
+  latlon2xyz(*npts, lon2, lat2, x2, y2, z2);
+  latlon2xyz(1, lon1, lat1, &x1, &y1, &z1);
+
+  max_x2 = maxval_double(*npts, x2);
+  if(x1 >= max_x2+RANGE_CHECK_CRITERIA) return 0;
+  min_x2 = minval_double(*npts, x2);
+  if(min_x2 >= x1+RANGE_CHECK_CRITERIA) return 0;
+
+  max_y2 = maxval_double(*npts, y2);
+  if(y1 >= max_y2+RANGE_CHECK_CRITERIA) return 0;
+  min_y2 = minval_double(*npts, y2);
+  if(min_y2 >= y1+RANGE_CHECK_CRITERIA) return 0;
+
+  max_z2 = maxval_double(*npts, z2);
+  if(z1 >= max_z2+RANGE_CHECK_CRITERIA) return 0;
+  min_z2 = minval_double(*npts, z2);
+  if(min_z2 >= z1+RANGE_CHECK_CRITERIA) return 0;
+
+
+  /* add x2,y2,z2 to a Node */
+  rewindList();
+  grid1 = getNext();
+  grid2 = getNext();
+
+  addEnd(grid1, x1, y1, z1, 0, 0, 0, -1);
+  for(i=0; i<*npts; i++) addEnd(grid2, x2[i], y2[i], z2[i], 0, 0, 0, -1);
+
+  isinside = insidePolygon(grid1, grid2);
+
+  return isinside;
+
+}
+
+#ifndef __AIX
+int inside_a_polygon_(double *lon1, double *lat1, int *npts, double *lon2, double *lat2)
+{
+
+  int isinside;
+
+  isinside = inside_a_polygon(lon1, lat1, npts, lon2, lat2);
+
+  return isinside;
+
+}
+#endif
+

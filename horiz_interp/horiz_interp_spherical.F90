@@ -30,7 +30,7 @@ module horiz_interp_spherical_mod
 
 
   public :: horiz_interp_spherical_new, horiz_interp_spherical, horiz_interp_spherical_del
-  public :: horiz_interp_spherical_init
+  public :: horiz_interp_spherical_init, horiz_interp_spherical_wght
 
   integer, parameter :: max_neighbors = 400 
   real,    parameter :: max_dist_default = 0.1  ! radians
@@ -60,8 +60,8 @@ module horiz_interp_spherical_mod
   namelist /horiz_interp_spherical_nml/ search_method
 
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_spherical.F90,v 19.0.4.1 2013/02/25 18:32:54 Zhi.Liang Exp $'
-  character(len=128) :: tagname = '$Name: siena_201309 $'
+  character(len=128) :: version = '$Id: horiz_interp_spherical.F90,v 20.0 2013/12/14 00:20:28 fms Exp $'
+  character(len=128) :: tagname = '$Name: tikal $'
   logical            :: module_is_initialized = .FALSE.
 
 contains
@@ -480,6 +480,90 @@ end subroutine horiz_interp_spherical_init
 
     return
   end subroutine horiz_interp_spherical
+
+  ! </SUBROUTINE>
+  !#######################################################################
+  subroutine horiz_interp_spherical_wght( Interp, wt, verbose, mask_in, mask_out, missing_value)
+    type (horiz_interp_type), intent(in)        :: Interp
+    real, intent(out), dimension(:,:,:)         :: wt
+    integer, intent(in),               optional :: verbose
+    real, intent(in), dimension(:,:),  optional :: mask_in
+    real, intent(out), dimension(:,:), optional :: mask_out
+    real, intent(in),                  optional :: missing_value
+
+    !--- some local variables ----------------------------------------
+    real, dimension(Interp%nlon_src, Interp%nlat_src) :: mask_src
+    real, dimension(Interp%nlon_dst, Interp%nlat_dst) :: mask_dst
+    integer :: nlon_in, nlat_in, nlon_out, nlat_out, num_found
+    integer :: m, n, i, j, k, miss_in, miss_out, i1, i2, j1, j2, iverbose
+    real    :: min_in, max_in, avg_in, min_out, max_out, avg_out, sum
+    !-----------------------------------------------------------------
+
+    iverbose = 0;  if (present(verbose)) iverbose = verbose
+
+    nlon_in  = Interp%nlon_src; nlat_in  = Interp%nlat_src
+    nlon_out = Interp%nlon_dst; nlat_out = Interp%nlat_dst
+
+    mask_src = 1.0; mask_dst = 1.0
+    if(present(mask_in)) mask_src = mask_in
+
+    do n=1,nlat_out
+       do m=1,nlon_out
+          ! neighbors are sorted nearest to farthest
+          ! check nearest to see if it is a land point
+          num_found = Interp%num_found(m,n)
+
+          if (num_found > num_nbrs_default) then
+            print*,'pe=',mpp_pe(),'num_found=',num_found
+            num_found = num_nbrs_default
+          end if
+
+          if(num_found == 0 ) then
+             mask_dst(m,n) = 0.0
+          else
+             i1 = Interp%i_lon(m,n,1); j1 = Interp%j_lat(m,n,1)
+             if (mask_src(i1,j1) .lt. 0.5) then
+                mask_dst(m,n) = 0.0
+             endif
+
+             if(num_found .gt. 1 ) then
+                i2 = Interp%i_lon(m,n,2); j2 = Interp%j_lat(m,n,2)
+                ! compare first 2 nearest neighbors -- if they are nearly
+                ! equidistant then use this mask for robustness
+                if(abs(Interp%src_dist(m,n,2)-Interp%src_dist(m,n,1)) .lt. epsln) then
+                   if((mask_src(i1,j1) .lt. 0.5))  mask_dst(m,n) = 0.0
+                endif
+             endif
+
+             sum=0.0
+             do k=1, num_found
+                if(mask_src(Interp%i_lon(m,n,k),Interp%j_lat(m,n,k)) .lt. 0.5 ) then
+                   wt(m,n,k) = 0.0
+                else
+                   if (Interp%src_dist(m,n,k) <= epsln) then
+                      wt(m,n,k) = large
+                      sum = sum + large
+                   else if(Interp%src_dist(m,n,k) <= Interp%max_src_dist ) then
+                      wt(m,n,k) = 1.0/Interp%src_dist(m,n,k)
+                      sum = sum+wt(m,n,k)
+                   else
+                      wt(m,n,k) = 0.0
+                   endif
+                endif
+             enddo
+             if (sum > epsln) then
+                do k = 1, num_found
+                   wt(m,n,k) = wt(m,n,k)/sum
+                enddo
+             else
+                mask_dst(m,n) = 0.0
+             endif
+          endif
+       enddo
+    enddo
+
+    return
+  end subroutine horiz_interp_spherical_wght
   ! </SUBROUTINE>
 
   !#######################################################################

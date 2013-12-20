@@ -1678,18 +1678,18 @@ end subroutine init_nonblock_type
 #define MPP_GET_BOUNDARY_2D_ mpp_get_boundary_r8_2d
 #undef MPP_GET_BOUNDARY_3D_
 #define MPP_GET_BOUNDARY_3D_ mpp_get_boundary_r8_3d
-#undef MPP_GET_BOUNDARY_4D_
-#define MPP_GET_BOUNDARY_4D_ mpp_get_boundary_r8_4d
-#undef MPP_GET_BOUNDARY_5D_
-#define MPP_GET_BOUNDARY_5D_ mpp_get_boundary_r8_5d
+!#undef MPP_GET_BOUNDARY_4D_
+!#define MPP_GET_BOUNDARY_4D_ mpp_get_boundary_r8_4d
+!#undef MPP_GET_BOUNDARY_5D_
+!#define MPP_GET_BOUNDARY_5D_ mpp_get_boundary_r8_5d
 #undef MPP_GET_BOUNDARY_2D_V_
 #define MPP_GET_BOUNDARY_2D_V_ mpp_get_boundary_r8_2dv
 #undef MPP_GET_BOUNDARY_3D_V_
 #define MPP_GET_BOUNDARY_3D_V_ mpp_get_boundary_r8_3dv
-#undef MPP_GET_BOUNDARY_4D_V_
-#define MPP_GET_BOUNDARY_4D_V_ mpp_get_boundary_r8_4dv
-#undef MPP_GET_BOUNDARY_5D_V_
-#define MPP_GET_BOUNDARY_5D_V_ mpp_get_boundary_r8_5dv
+!#undef MPP_GET_BOUNDARY_4D_V_
+!#define MPP_GET_BOUNDARY_4D_V_ mpp_get_boundary_r8_4dv
+!#undef MPP_GET_BOUNDARY_5D_V_
+!#define MPP_GET_BOUNDARY_5D_V_ mpp_get_boundary_r8_5dv
 #include <mpp_get_boundary.h>
 
 #ifdef OVERLOAD_R4
@@ -1699,18 +1699,18 @@ end subroutine init_nonblock_type
 #define MPP_GET_BOUNDARY_2D_ mpp_get_boundary_r4_2d
 #undef MPP_GET_BOUNDARY_3D_
 #define MPP_GET_BOUNDARY_3D_ mpp_get_boundary_r4_3d
-#undef MPP_GET_BOUNDARY_4D_
-#define MPP_GET_BOUNDARY_4D_ mpp_get_boundary_r4_4d
-#undef MPP_GET_BOUNDARY_5D_
-#define MPP_GET_BOUNDARY_5D_ mpp_get_boundary_r4_5d
+!#undef MPP_GET_BOUNDARY_4D_
+!#define MPP_GET_BOUNDARY_4D_ mpp_get_boundary_r4_4d
+!#undef MPP_GET_BOUNDARY_5D_
+!#define MPP_GET_BOUNDARY_5D_ mpp_get_boundary_r4_5d
 #undef MPP_GET_BOUNDARY_2D_V_
 #define MPP_GET_BOUNDARY_2D_V_ mpp_get_boundary_r4_2dv
 #undef MPP_GET_BOUNDARY_3D_V_
 #define MPP_GET_BOUNDARY_3D_V_ mpp_get_boundary_r4_3dv
-#undef MPP_GET_BOUNDARY_4D_V_
-#define MPP_GET_BOUNDARY_4D_V_ mpp_get_boundary_r4_4dv
-#undef MPP_GET_BOUNDARY_5D_V_
-#define MPP_GET_BOUNDARY_5D_V_ mpp_get_boundary_r4_5dv
+!#undef MPP_GET_BOUNDARY_4D_V_
+!#define MPP_GET_BOUNDARY_4D_V_ mpp_get_boundary_r4_4dv
+!#undef MPP_GET_BOUNDARY_5D_V_
+!#define MPP_GET_BOUNDARY_5D_V_ mpp_get_boundary_r4_5dv
 #include <mpp_get_boundary.h>
 #endif
 

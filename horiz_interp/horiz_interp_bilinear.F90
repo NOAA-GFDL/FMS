@@ -39,8 +39,8 @@ module horiz_interp_bilinear_mod
   integer, parameter :: DUMMY = -999
 
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_bilinear.F90,v 14.0.26.1.2.1 2013/07/18 17:29:44 Seth.Underwood Exp $'
-  character(len=128) :: tagname = '$Name: siena_201309 $'
+  character(len=128) :: version = '$Id: horiz_interp_bilinear.F90,v 20.0 2013/12/14 00:20:22 fms Exp $'
+  character(len=128) :: tagname = '$Name: tikal $'
   logical            :: module_is_initialized = .FALSE.
 
 contains
@@ -436,11 +436,13 @@ contains
            ! x and y should be between 0 and 1.
            !! Added for ECDA 
            if(use_new_search) then
+             if (x < 0.0) x = 0.0 ! snz
+             if (y < 0.0) y = 0.0 ! snz
              if (x > 1.0) x = 1.0
              if (y > 1.0) y = 1.0
            endif 
            if( x>1 .or. x<0 .or. y>1 .or. y < 0) call mpp_error(FATAL, &
-               "horiz_interp_bilinear_mod: weight should be between 0 and 1")
+                "horiz_interp_bilinear_mod: weight should be between 0 and 1")
            Interp % wti(m,n,1)=1.0-x; Interp % wti(m,n,2)=x   
            Interp % wtj(m,n,1)=1.0-y; Interp % wtj(m,n,2)=y          
        enddo
@@ -887,7 +889,7 @@ contains
              if(no_crash) then
                 Interp % i_lon (m,n,1:2) = DUMMY
                 Interp % j_lat (m,n,1:2) = DUMMY
-		print*,'lon,lat=',lon,lat ! snz
+                print*,'lon,lat=',lon,lat ! snz
              else
                 call mpp_error(FATAL, &
                     'horiz_interp_bilinear_mod: the destination point is not inside the source grid' )

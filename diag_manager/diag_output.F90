@@ -46,9 +46,9 @@ MODULE diag_output_mod
   LOGICAL :: module_is_initialized = .FALSE.
 
   CHARACTER(len=128), PRIVATE :: version= &
-       '$Id: diag_output.F90,v 19.0.2.2 2013/02/21 21:33:34 Seth.Underwood Exp $'
+       '$Id: diag_output.F90,v 20.0 2013/12/14 00:18:52 fms Exp $'
   CHARACTER(len=128), PRIVATE :: tagname= &
-       '$Name: siena_201309 $'
+       '$Name: tikal $'
 
 CONTAINS
 

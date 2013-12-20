@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm_mpi.inc,v 19.0.2.1.6.1 2013/02/25 18:32:55 Zhi.Liang Exp $
+! $Id: mpp_comm_mpi.inc,v 20.0 2013/12/14 00:24:07 fms Exp $
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -90,6 +90,8 @@
      call mpp_error(FATAL,'=>mpp_init: Error reading input.nml')
   endif
 
+  if(sync_all_clocks .AND. mpp_pe()==mpp_root_pe() ) call mpp_error(NOTE, &
+     "mpp_mod: mpp_nml variable sync_all_clocks is set to .true., all clocks are synchronized in mpp_clock_begin.")
 
 ! non-root pe messages written to other location than stdout()
 

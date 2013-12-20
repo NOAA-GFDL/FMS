@@ -1,5 +1,5 @@
 ! -*-f90-*-
-! $Id: mpp_util_mpi.inc,v 19.0.2.1.2.1.4.1 2013/02/22 19:12:51 Zhi.Liang Exp $
+! $Id: mpp_util_mpi.inc,v 20.0 2013/12/14 00:27:37 fms Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -12,7 +12,7 @@ subroutine mpp_error_basic( errortype, errormsg )
   !uses ABORT and FLUSH calls, may need to use cpp to rename
   integer,                    intent(in) :: errortype
   character(len=*), intent(in), optional :: errormsg
-  character(len=256)                     :: text
+  character(len=512)                     :: text
   logical                                :: opened
   integer                                :: istat, out_unit, errunit
 
@@ -140,7 +140,7 @@ subroutine mpp_sync( pelist, do_self )
   integer                       :: n
 
   dself=.true.; if(PRESENT(do_self))dself=do_self
-  if(dself)call mpp_sync_self(pelist)
+!  if(dself)call mpp_sync_self(pelist)
 
   n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
 

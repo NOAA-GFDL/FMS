@@ -212,9 +212,9 @@ MODULE diag_manager_mod
 
   ! version number of this module
   CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id: diag_manager.F90,v 19.0.4.11 2013/01/09 22:15:38 Seth.Underwood Exp $'
+       & '$Id: diag_manager.F90,v 20.0 2013/12/14 00:18:48 fms Exp $'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: siena_201309 $'  
+       & '$Name: tikal $'  
 
   type(time_type) :: Time_end
 
@@ -1125,7 +1125,7 @@ CONTAINS
     ! oor_mask is only used for checking out of range values.
     ALLOCATE(oor_mask(SIZE(field,1),SIZE(field,2),SIZE(field,3)), STAT=status)
     IF ( status .NE. 0 ) THEN
-       WRITE (err_msg_local, FMT='("Unable to allocate oor_mask(",I5,",",I5,",",I5"). (STAT: ",I5,")")')&
+       WRITE (err_msg_local, FMT='("Unable to allocate oor_mask(",I5,",",I5,",",I5,"). (STAT: ",I5,")")')&
             & SIZE(field,1), SIZE(field,2), SIZE(field,3), status
        IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) RETURN
     END IF

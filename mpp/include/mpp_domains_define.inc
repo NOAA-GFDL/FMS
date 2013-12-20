@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_define.inc,v 19.0.2.1.2.1.2.1.2.1.2.2 2012/10/17 20:35:14 Zhi.Liang Exp $
+! $Id: mpp_domains_define.inc,v 20.0 2013/12/14 00:24:42 fms Exp $
 
 
   ! <SUBROUTINE NAME="mpp_define_layout2D" INTERFACE="mpp_define_layout">
@@ -6513,7 +6513,7 @@ end subroutine set_check_overlap
 subroutine set_bound_overlap( domain, position )
   type(domain2d), intent(inout) :: domain
   integer,        intent(in)    :: position
-  integer                       :: m, n, l, count, dr, tMe
+  integer                       :: m, n, l, count, dr, tMe, i
   integer, parameter            :: MAXCOUNT = 100
   integer, dimension(MAXCOUNT)  :: dir, rotation, is, ie, js, je, isMe, ieMe, jsMe, jeMe, tileMe
   integer, dimension(size(domain%x(:)), 4)           :: nrecvl
@@ -6523,9 +6523,15 @@ subroutine set_bound_overlap( domain, position )
   type(overlapSpec),   pointer   :: bound => NULL()
   integer                        :: nlist_send, nlist_recv, ishift, jshift
   integer                        :: ism, iem, jsm, jem, nsend, nrecv
+  integer                        :: isg, ieg, jsg, jeg, nlist, list
+  integer                        :: isc1, iec1, jsc1, jec1
+  integer                        :: isc2, iec2, jsc2, jec2
+  integer                        :: isd, ied, jsd, jed
+
 
   if( position == CENTER .OR. .NOT. domain%symmetry ) return
   call mpp_get_domain_shift(domain, ishift, jshift, position)
+  call mpp_get_global_domain(domain, isg, ieg, jsg, jeg, position=position)
   call mpp_get_memory_domain ( domain, ism, iem, jsm, jem )
 
   select case(position)
@@ -6558,86 +6564,155 @@ subroutine set_bound_overlap( domain, position )
      bound%recv(:)%count = 0
   endif
   !--- loop over the list of domains to find the boundary overlap for send
+  nlist = size(domain%list(:))
 
   nsend = 0
-  do m = 1, nlist_send
-     overlap => update%send(m)
-     if( overlap%count == 0 ) cycle
-     count = 0
-     do n = 1, overlap%count
-        if( (position == EAST .OR. position == CORNER) .AND. overlap%dir(n) == 1) then ! east
-           count=count+1
-           dir(count) = 1
-           rotation(count) = overlap%rotation(n)
-           tileMe(count)   = overlap%tileMe(n)
-           select case( rotation(count) ) 
-           case( ZERO ) ! W -> E
-              is(count) = overlap%is(n) - 1
-              ie(count) = is(count)
-              js(count) = overlap%js(n)
-              je(count) = overlap%je(n)
-           case( NINETY ) ! S -> E
-              is(count) = overlap%is(n)
-              ie(count) = overlap%ie(n)
-              js(count) = overlap%js(n) - 1
-              je(count) = js(count)
-           end select
-        end if
-        if( (position == NORTH .OR. position == CORNER) .AND. overlap%dir(n) == 3 ) then ! south
-           count=count+1
-           dir(count) = 2
-           rotation(count) = overlap%rotation(n)
-           tileMe(count)   = overlap%tileMe(n)
-           select case( rotation(count) ) 
-           case( ZERO ) ! N->S
-              is(count) = overlap%is(n)
-              ie(count) = overlap%ie(n)
-              js(count) = overlap%je(n) + 1
-              je(count) = js(count)
-           case( MINUS_NINETY ) ! E->S
-              is(count) = overlap%ie(n) + 1
-              ie(count) = is(count)
-              js(count) = overlap%js(n)
-              je(count) = overlap%je(n)
-           end select
-        end if
-        if( (position == EAST .OR. position == CORNER) .AND. overlap%dir(n) == 5 ) then ! west
-           count=count+1
-           dir(count) = 3
-           rotation(count) = overlap%rotation(n)
-           tileMe(count) = overlap%tileMe(n)
-           select case( rotation(count) ) 
-           case( ZERO ) ! E->W
-              is(count) = overlap%ie(n) + 1
-              ie(count) = is(count)
-              js(count) = overlap%js(n)
-              je(count) = overlap%je(n)
-           case( NINETY ) ! N->W
-              is(count) = overlap%is(n)
-              ie(count) = overlap%ie(n)
-              js(count) = overlap%je(n) + 1
-              je(count) = js(count)
-           end select
-        end if
-        if( (position == NORTH .OR. position == CORNER) .AND. overlap%dir(n) == 7 ) then ! north
-           count=count+1
-           dir(count) = 4
-           rotation(count) = overlap%rotation(n)
-           tileMe(count) = overlap%tileMe(n)
-           select case( rotation(count) ) 
-           case( ZERO ) ! S->N
-              is(count) = overlap%is(n)
-              ie(count) = overlap%ie(n)
-              js(count) = overlap%js(n) - 1
-              je(count) = js(count)
-           case( MINUS_NINETY ) ! W->N
-              is(count) = overlap%is(n) - 1
-              ie(count) = is(count)
-              js(count) = overlap%js(n)
-              je(count) = overlap%je(n)
-           end select
-        end if
-     end do ! do n =1, overlap%count
+  !--- will computing overlap for tripolar grid.
+  if( BTEST(domain%fold,NORTH) ) then
+     !--- currently only set up for west and south boundary.
+    !---south boundary
+     if( position == NORTH .OR. position == CORNER ) then
+        isc1 = domain%x(1)%compute%begin;      iec1 = domain%x(1)%compute%end +ishift
+        jsc1 = domain%y(1)%compute%end+jshift; jec1 = jsc1
+     endif
+     !--- west boundary
+     if( position == EAST .OR. position == CORNER ) then
+        isc2 = domain%x(1)%compute%end+ishift; iec2 = isc2
+        jsc2 = domain%y(1)%compute%begin;      jec2 = domain%y(1)%compute%end + jshift
+     endif
+
+     do list = 0,nlist-1
+        m = mod( domain%pos+list, nlist )
+        count = 0
+
+        !--- south boundary
+        if( position == NORTH .OR. position == CORNER ) then
+           isd = domain%list(m)%x(1)%compute%begin; ied = domain%list(m)%x(1)%compute%end + ishift
+           jsd = domain%list(m)%y(1)%compute%begin; jed = jsd
+           if( isc1 == isd .AND. iec1 == ied .AND. jsc1 == jsd) then
+              count = count + 1          
+              is(count) = isc1; ie(count) = iec1
+              js(count) = jsc1; je(count) = jec1
+              dir(count) = 2
+           endif
+        endif
+
+        !--- west boundary
+        if( position == EAST .OR. position == CORNER ) then
+           isd = domain%list(m)%x(1)%compute%begin; ied = isd
+           jsd = domain%list(m)%y(1)%compute%begin; jed = domain%list(m)%y(1)%compute%end + jshift
+           !--- cyclic in x-direction is assumed for folded-north
+           if(isd == isg) then
+              isd = ieg; ied = ieg
+           endif
+           if( isc2 == isd .AND. jsc2 == jsd .AND. jec2 == jed ) then
+              count = count + 1          
+              is(count) = isc2; ie(count) = iec2
+              js(count) = jsc2; je(count) = jec2
+              dir(count) = 3
+           endif
+        endif
+
+        if(count >0) then
+           nsend = nsend + 1
+           if(nsend > nlist_send) call mpp_error(FATAL, "set_bound_overlap: nsend > nlist_send")
+           bound%send(nsend)%count = count
+           bound%send(nsend)%pe    = domain%list(m)%pe
+           allocate(bound%send(nsend)%is(count),  bound%send(nsend)%ie(count) )
+           allocate(bound%send(nsend)%js(count),  bound%send(nsend)%je(count) )
+           allocate(bound%send(nsend)%dir(count), bound%send(nsend)%rotation(count) )
+           allocate(bound%send(nsend)%tileMe(count))
+           bound%send(nsend)%is(:)       = is(1:count)
+           bound%send(nsend)%ie(:)       = ie(1:count)
+           bound%send(nsend)%js(:)       = js(1:count)
+           bound%send(nsend)%je(:)       = je(1:count)
+           bound%send(nsend)%dir(:)      = dir(1:count)
+           bound%send(nsend)%tileMe(:)   = 1
+           bound%send(nsend)%rotation(:) = ZERO           
+        endif
+     enddo
+  else 
+     !--- The following did not consider wide halo case.
+     do m = 1, nlist_send
+        overlap => update%send(m)
+        if( overlap%count == 0 ) cycle
+        count = 0
+        do n = 1, overlap%count
+           !--- currently not support folded-north
+           if( overlap%rotation(n) == ONE_HUNDRED_EIGHTY ) cycle
+           if( (position == EAST .OR. position == CORNER) .AND. overlap%dir(n) == 1) then ! east
+              count=count+1
+              dir(count) = 1
+              rotation(count) = overlap%rotation(n)
+              tileMe(count)   = overlap%tileMe(n)
+              select case( rotation(count) ) 
+              case( ZERO ) ! W -> E
+                 is(count) = overlap%is(n) - 1
+                 ie(count) = is(count)
+                 js(count) = overlap%js(n)
+                 je(count) = overlap%je(n)
+              case( NINETY ) ! S -> E
+                 is(count) = overlap%is(n)
+                 ie(count) = overlap%ie(n)
+                 js(count) = overlap%js(n) - 1
+                 je(count) = js(count)
+              end select
+           end if
+           if( (position == NORTH .OR. position == CORNER) .AND. overlap%dir(n) == 3 ) then ! south
+              count=count+1
+              dir(count) = 2
+              rotation(count) = overlap%rotation(n)
+              tileMe(count)   = overlap%tileMe(n)
+              select case( rotation(count) ) 
+              case( ZERO ) ! N->S
+                 is(count) = overlap%is(n)
+                 ie(count) = overlap%ie(n)
+                 js(count) = overlap%je(n) + 1
+                 je(count) = js(count)
+              case( MINUS_NINETY ) ! E->S
+                 is(count) = overlap%ie(n) + 1
+                 ie(count) = is(count)
+                 js(count) = overlap%js(n)
+                 je(count) = overlap%je(n)
+              end select
+           end if
+           if( (position == EAST .OR. position == CORNER) .AND. overlap%dir(n) == 5 ) then ! west
+              count=count+1
+              dir(count) = 3
+              rotation(count) = overlap%rotation(n)
+              tileMe(count) = overlap%tileMe(n)
+              select case( rotation(count) ) 
+              case( ZERO ) ! E->W
+                 is(count) = overlap%ie(n) + 1
+                 ie(count) = is(count)
+                 js(count) = overlap%js(n)
+                 je(count) = overlap%je(n)
+              case( NINETY ) ! N->W
+                 is(count) = overlap%is(n)
+                 ie(count) = overlap%ie(n)
+                 js(count) = overlap%je(n) + 1
+                 je(count) = js(count)
+              end select
+           end if
+           if( (position == NORTH .OR. position == CORNER) .AND. overlap%dir(n) == 7 ) then ! north
+              count=count+1
+              dir(count) = 4
+              rotation(count) = overlap%rotation(n)
+              tileMe(count) = overlap%tileMe(n)
+              select case( rotation(count) ) 
+              case( ZERO ) ! S->N
+                 is(count) = overlap%is(n)
+                 ie(count) = overlap%ie(n)
+                 js(count) = overlap%js(n) - 1
+                 je(count) = js(count)
+              case( MINUS_NINETY ) ! W->N
+                 is(count) = overlap%is(n) - 1
+                 ie(count) = is(count)
+                 js(count) = overlap%js(n)
+                 je(count) = overlap%je(n)
+              end select
+           end if
+        end do ! do n =1, overlap%count
      if(count>0) then
         nsend = nsend + 1
         bound%send(nsend)%count = count
@@ -6655,201 +6730,296 @@ subroutine set_bound_overlap( domain, position )
         bound%send(nsend)%rotation(:) = rotation(1:count)
      end if
   end do ! end  do list = 0, nlist
+  endif
 
   !--- loop over the list of domains to find the boundary overlap for recv
   bound%nsend = nsend
   nrecvl(:,:) = 0    
   nrecv       = 0
-  
-  do m = 1, nlist_recv
-     overlap => update%recv(m)
-     if( overlap%count == 0 ) cycle
-     count = 0
-     do n = 1, overlap%count
-        if( (position == EAST .OR. position == CORNER) .AND. overlap%dir(n) == 1) then ! east
-           count=count+1
-           dir(count) = 1
-           rotation(count) = overlap%rotation(n)
-           isMe(count)     = overlap%isMe(n) - 1
-           ieMe(count) = isMe(count)
-           jsMe(count)     = overlap%jsMe(n)
-           jeMe(count)     = overlap%jeMe(n)
-           tileMe(count)   = overlap%tileMe(n)
-           if( overlap%is_refined(n)) then
-              select case( rotation(count) ) 
-              case( ZERO ) ! W -> E
+
+  !--- will computing overlap for tripolar grid.
+  if( BTEST(domain%fold,NORTH) ) then
+     tMe = 1
+     !--- currently only set up for west and south boundary.
+     !---south boundary
+     if( position == NORTH .OR. position == CORNER ) then
+        isc1 = domain%x(1)%compute%begin; iec1 = domain%x(1)%compute%end +ishift
+        jsc1 = domain%y(1)%compute%begin; jec1 = jsc1
+     endif
+     !--- west boundary
+     if( position == EAST .OR. position == CORNER ) then
+        isc2 = domain%x(1)%compute%begin; iec2 = isc2
+        jsc2 = domain%y(1)%compute%begin; jec2 = domain%y(1)%compute%end + jshift
+     endif
+
+     do list = 0,nlist-1
+        m = mod( domain%pos+nlist-list, nlist )
+        count = 0
+
+        !--- south boundary
+        if( position == NORTH .OR. position == CORNER ) then
+           isd = domain%list(m)%x(1)%compute%begin;      ied = domain%list(m)%x(1)%compute%end + ishift
+           jsd = domain%list(m)%y(1)%compute%end+jshift; jed = jsd
+           if( isc1 == isd .AND. iec1 == ied .AND. jsc1 == jsd) then
+              count = count + 1          
+              is(count) = isc1; ie(count) = iec1
+              js(count) = jsc1; je(count) = jec1
+              dir(count) = 2
+              nrecvl(tMe, 2) = nrecvl(tMe,2) + 1
+              islMe(tMe,2,nrecvl(tMe, 2)) = is(count)
+              ielMe(tMe,2,nrecvl(tMe, 2)) = ie(count)
+              jslMe(tMe,2,nrecvl(tMe, 2)) = js(count)
+              jelMe(tMe,2,nrecvl(tMe, 2)) = je(count)
+              isl  (tMe,2,nrecvl(tMe, 2)) = is(count)
+              iel  (tMe,2,nrecvl(tMe, 2)) = ie(count)
+              jsl  (tMe,2,nrecvl(tMe, 2)) = js(count)
+              jel  (tMe,2,nrecvl(tMe, 2)) = je(count)
+
+           endif
+        endif
+
+        !--- west boundary
+        if( position == EAST .OR. position == CORNER ) then
+           isd = domain%list(m)%x(1)%compute%end+ishift; ied = isd
+           jsd = domain%list(m)%y(1)%compute%begin;      jed = domain%list(m)%y(1)%compute%end + jshift
+           !--- cyclic in x-direction is assumed for folded-north
+           if(ied == ieg) then
+              isd = isg; ied = isg
+           endif
+           if( isc2 == isd .AND. jsc2 == jsd .AND. jec2 == jed ) then
+              count = count + 1          
+              is(count) = isc2; ie(count) = iec2
+              js(count) = jsc2; je(count) = jec2
+              dir(count) = 3
+              nrecvl(tMe, 3) = nrecvl(tMe,3) + 1
+              islMe(tMe,3,nrecvl(tMe, 3)) = is(count)
+              ielMe(tMe,3,nrecvl(tMe, 3)) = ie(count)
+              jslMe(tMe,3,nrecvl(tMe, 3)) = js(count)
+              jelMe(tMe,3,nrecvl(tMe, 3)) = je(count)
+              isl  (tMe,3,nrecvl(tMe, 3)) = is(count)
+              iel  (tMe,3,nrecvl(tMe, 3)) = ie(count)
+              jsl  (tMe,3,nrecvl(tMe, 3)) = js(count)
+              jel  (tMe,3,nrecvl(tMe, 3)) = je(count)
+           endif
+        endif
+
+        if(count >0) then
+           nrecv = nrecv + 1
+           if(nrecv > nlist_recv) call mpp_error(FATAL, "set_bound_overlap: nrecv > nlist_recv")
+           bound%recv(nrecv)%count = count
+           bound%recv(nrecv)%pe    = domain%list(m)%pe
+           allocate(bound%recv(nrecv)%isMe(count),   bound%recv(nrecv)%ieMe(count) )
+           allocate(bound%recv(nrecv)%jsMe(count),   bound%recv(nrecv)%jeMe(count) )
+           allocate(bound%recv(nrecv)%is(count),     bound%recv(nrecv)%ie(count) )
+           allocate(bound%recv(nrecv)%js(count),     bound%recv(nrecv)%je(count) )
+           allocate(bound%recv(nrecv)%dir(count),    bound%recv(nrecv)%index(count)  )
+           allocate(bound%recv(nrecv)%tileMe(count), bound%recv(nrecv)%rotation(count) )
+           bound%recv(nrecv)%is(:)       = is(1:count)
+           bound%recv(nrecv)%ie(:)       = ie(1:count)
+           bound%recv(nrecv)%js(:)       = js(1:count)
+           bound%recv(nrecv)%je(:)       = je(1:count)
+           bound%recv(nrecv)%isMe(:)     = is(1:count)
+           bound%recv(nrecv)%ieMe(:)     = ie(1:count)
+           bound%recv(nrecv)%jsMe(:)     = js(1:count)
+           bound%recv(nrecv)%jeMe(:)     = je(1:count)
+
+           bound%recv(nrecv)%dir(:)      = dir(1:count)
+           bound%recv(nrecv)%tileMe(:)   = 1
+           bound%recv(nrecv)%rotation(:) = ZERO           
+        endif
+     enddo
+  else 
+     do m = 1, nlist_recv
+        overlap => update%recv(m)
+        if( overlap%count == 0 ) cycle
+        count = 0
+        do n = 1, overlap%count
+           !--- currently not support folded-north
+           if( overlap%rotation(n) == ONE_HUNDRED_EIGHTY ) cycle
+           if( (position == EAST .OR. position == CORNER) .AND. overlap%dir(n) == 1) then ! east
+              count=count+1
+              dir(count) = 1
+              rotation(count) = overlap%rotation(n)
+              isMe(count)     = overlap%isMe(n) - 1
+              ieMe(count) = isMe(count)
+              jsMe(count)     = overlap%jsMe(n)
+              jeMe(count)     = overlap%jeMe(n)
+              tileMe(count)   = overlap%tileMe(n)
+              if( overlap%is_refined(n)) then
+                 select case( rotation(count) ) 
+                 case( ZERO ) ! W -> E
+                    is(count) = overlap%is(n) - 1
+                    ie(count) = is(count)
+                    js(count) = overlap%js(n)
+                    je(count) = overlap%je(n)
+                 case( NINETY ) ! S -> E
+                    is(count) = overlap%is(n)
+                    ie(count) = overlap%ie(n)
+                    js(count) = overlap%js(n) - 1
+                    je(count) = js(count)
+                 end select
+              else
                  is(count) = overlap%is(n) - 1
                  ie(count) = is(count)
                  js(count) = overlap%js(n)
                  je(count) = overlap%je(n)
-              case( NINETY ) ! S -> E
-                 is(count) = overlap%is(n)
-                 ie(count) = overlap%ie(n)
-                 js(count) = overlap%js(n) - 1
-                 je(count) = js(count)
-              end select
-           else
-              is(count) = overlap%is(n) - 1
-              ie(count) = is(count)
-              js(count) = overlap%js(n)
-              je(count) = overlap%je(n)
+              end if
+              tMe                        = tileMe(count)
+              nrecvl(tMe, 1) = nrecvl(tMe,1) + 1
+              islMe(tMe,1,nrecvl(tMe, 1)) = isMe(count)
+              ielMe(tMe,1,nrecvl(tMe, 1)) = ieMe(count)
+              jslMe(tMe,1,nrecvl(tMe, 1)) = jsMe(count)
+              jelMe(tMe,1,nrecvl(tMe, 1)) = jeMe(count)
+              isl  (tMe,1,nrecvl(tMe, 1)) = is  (count)
+              iel  (tMe,1,nrecvl(tMe, 1)) = ie  (count)
+              jsl  (tMe,1,nrecvl(tMe, 1)) = js  (count)
+              jel  (tMe,1,nrecvl(tMe, 1)) = je  (count)
            end if
-           tMe                        = tileMe(count)
-           nrecvl(tMe, 1) = nrecvl(tMe,1) + 1
-           islMe(tMe,1,nrecvl(tMe, 1)) = isMe(count)
-           ielMe(tMe,1,nrecvl(tMe, 1)) = ieMe(count)
-           jslMe(tMe,1,nrecvl(tMe, 1)) = jsMe(count)
-           jelMe(tMe,1,nrecvl(tMe, 1)) = jeMe(count)
-           isl  (tMe,1,nrecvl(tMe, 1)) = is  (count)
-           iel  (tMe,1,nrecvl(tMe, 1)) = ie  (count)
-           jsl  (tMe,1,nrecvl(tMe, 1)) = js  (count)
-           jel  (tMe,1,nrecvl(tMe, 1)) = je  (count)
-        end if
 
-        if( (position == NORTH .OR. position == CORNER) .AND. overlap%dir(n) == 3) then ! south
-           count=count+1
-           dir(count) = 2
-           rotation(count) = overlap%rotation(n)
-           isMe(count)     = overlap%isMe(n)
-           ieMe(count)     = overlap%ieMe(n)
-           jsMe(count)     = overlap%jeMe(n) + 1
-           jeMe(count) = jsMe(count)
-           tileMe(count)   = overlap%tileMe(n)
-           if( overlap%is_refined(n)) then
-              select case( rotation(count) ) 
-              case( ZERO ) ! N->S
-                 is(count) = overlap%is(n)
-                 ie(count) = overlap%ie(n)
-                 js(count) = overlap%je(n) + 1
-                 je(count) = js(count)
-              case( MINUS_NINETY ) ! E->S
-                 is(count) = overlap%ie(n) + 1
-                 ie(count) = is(count)
-                 js(count) = overlap%js(n)
-                 je(count) = overlap%je(n)
-              end select
-           else
-              is(count) = overlap%is(n)
-              ie(count) = overlap%ie(n)
-              js(count) = overlap%je(n) + 1
-              je(count) = js(count)
-           end if
-           tMe                        = tileMe(count)
-           nrecvl(tMe, 2) = nrecvl(tMe,2) + 1
-           islMe(tMe,2,nrecvl(tMe, 2)) = isMe(count)
-           ielMe(tMe,2,nrecvl(tMe, 2)) = ieMe(count)
-           jslMe(tMe,2,nrecvl(tMe, 2)) = jsMe(count)
-           jelMe(tMe,2,nrecvl(tMe, 2)) = jeMe(count)
-           isl  (tMe,2,nrecvl(tMe, 2)) = is  (count)
-           iel  (tMe,2,nrecvl(tMe, 2)) = ie  (count)
-           jsl  (tMe,2,nrecvl(tMe, 2)) = js  (count)
-           jel  (tMe,2,nrecvl(tMe, 2)) = je  (count)
-        end if
-
-        if( (position == EAST .OR. position == CORNER) .AND. overlap%dir(n) == 5) then ! west
-           count=count+1
-           dir(count) = 3
-           rotation(count) = overlap%rotation(n)
-           isMe(count)     = overlap%ieMe(n) + 1 
-           ieMe(count) = isMe(count)
-           jsMe(count)     = overlap%jsMe(n)
-           jeMe(count)     = overlap%jeMe(n)
-           tileMe(count)   = overlap%tileMe(n)
-           if( overlap%is_refined(n)) then
-              select case( rotation(count) ) 
-              case( ZERO ) ! E->W
-                 is(count) = overlap%ie(n) + 1
-                 ie(count) = is(count)
-                 js(count) = overlap%js(n)
-                 je(count) = overlap%je(n)
-              case( NINETY ) ! S -> E
+           if( (position == NORTH .OR. position == CORNER) .AND. overlap%dir(n) == 3) then ! south
+              count=count+1
+              dir(count) = 2
+              rotation(count) = overlap%rotation(n)
+              isMe(count)     = overlap%isMe(n)
+              ieMe(count)     = overlap%ieMe(n)
+              jsMe(count)     = overlap%jeMe(n) + 1
+              jeMe(count) = jsMe(count)
+              tileMe(count)   = overlap%tileMe(n)
+              if( overlap%is_refined(n)) then
+                 select case( rotation(count) ) 
+                 case( ZERO ) ! N->S
+                    is(count) = overlap%is(n)
+                    ie(count) = overlap%ie(n)
+                    js(count) = overlap%je(n) + 1
+                    je(count) = js(count)
+                 case( MINUS_NINETY ) ! E->S
+                    is(count) = overlap%ie(n) + 1
+                    ie(count) = is(count)
+                    js(count) = overlap%js(n)
+                    je(count) = overlap%je(n)
+                 end select
+              else
                  is(count) = overlap%is(n)
                  ie(count) = overlap%ie(n)
                  js(count) = overlap%je(n) + 1
                  je(count) = js(count)
-              end select
-           else
-              is(count) = overlap%ie(n) + 1
-              ie(count) = is(count)
-              js(count) = overlap%js(n)
-              je(count) = overlap%je(n)
+              end if
+              tMe                        = tileMe(count)
+              nrecvl(tMe, 2) = nrecvl(tMe,2) + 1
+              islMe(tMe,2,nrecvl(tMe, 2)) = isMe(count)
+              ielMe(tMe,2,nrecvl(tMe, 2)) = ieMe(count)
+              jslMe(tMe,2,nrecvl(tMe, 2)) = jsMe(count)
+              jelMe(tMe,2,nrecvl(tMe, 2)) = jeMe(count)
+              isl  (tMe,2,nrecvl(tMe, 2)) = is  (count)
+              iel  (tMe,2,nrecvl(tMe, 2)) = ie  (count)
+              jsl  (tMe,2,nrecvl(tMe, 2)) = js  (count)
+              jel  (tMe,2,nrecvl(tMe, 2)) = je  (count)
            end if
-           tMe                        = tileMe(count)
-           nrecvl(tMe, 3) = nrecvl(tMe,3) + 1
-           islMe(tMe,3,nrecvl(tMe, 3)) = isMe(count)
-           ielMe(tMe,3,nrecvl(tMe, 3)) = ieMe(count)
-           jslMe(tMe,3,nrecvl(tMe, 3)) = jsMe(count)
-           jelMe(tMe,3,nrecvl(tMe, 3)) = jeMe(count)
-           isl  (tMe,3,nrecvl(tMe, 3)) = is  (count)
-           iel  (tMe,3,nrecvl(tMe, 3)) = ie  (count)
-           jsl  (tMe,3,nrecvl(tMe, 3)) = js  (count)
-           jel  (tMe,3,nrecvl(tMe, 3)) = je  (count)
-        end if
 
-        if( (position == NORTH .OR. position == CORNER) .AND. overlap%dir(n) == 7) then ! north
-           count=count+1
-           dir(count) = 4
-           rotation(count) = overlap%rotation(n)
-           isMe(count)     = overlap%isMe(n)
-           ieMe(count)     = overlap%ieMe(n)
-           jsMe(count)     = overlap%jsMe(n) - 1
-           jeMe(count) = jsMe(count)
-           tileMe(count) = overlap%tileMe(n)
-           if( overlap%is_refined(n)) then
-              select case( rotation(count) ) 
-              case( ZERO ) ! S->N
+           if( (position == EAST .OR. position == CORNER) .AND. overlap%dir(n) == 5) then ! west
+              count=count+1
+              dir(count) = 3
+              rotation(count) = overlap%rotation(n)
+              isMe(count)     = overlap%ieMe(n) + 1 
+              ieMe(count) = isMe(count)
+              jsMe(count)     = overlap%jsMe(n)
+              jeMe(count)     = overlap%jeMe(n)
+              tileMe(count)   = overlap%tileMe(n)
+              if( overlap%is_refined(n)) then
+                 select case( rotation(count) ) 
+                 case( ZERO ) ! E->W
+                    is(count) = overlap%ie(n) + 1
+                    ie(count) = is(count)
+                    js(count) = overlap%js(n)
+                    je(count) = overlap%je(n)
+                 case( NINETY ) ! S -> E
+                    is(count) = overlap%is(n)
+                    ie(count) = overlap%ie(n)
+                    js(count) = overlap%je(n) + 1
+                    je(count) = js(count)
+                 end select
+              else
+                 is(count) = overlap%ie(n) + 1
+                 ie(count) = is(count)
+                 js(count) = overlap%js(n)
+                 je(count) = overlap%je(n)
+              end if
+              tMe                        = tileMe(count)
+              nrecvl(tMe, 3) = nrecvl(tMe,3) + 1
+              islMe(tMe,3,nrecvl(tMe, 3)) = isMe(count)
+              ielMe(tMe,3,nrecvl(tMe, 3)) = ieMe(count)
+              jslMe(tMe,3,nrecvl(tMe, 3)) = jsMe(count)
+              jelMe(tMe,3,nrecvl(tMe, 3)) = jeMe(count)
+              isl  (tMe,3,nrecvl(tMe, 3)) = is  (count)
+              iel  (tMe,3,nrecvl(tMe, 3)) = ie  (count)
+              jsl  (tMe,3,nrecvl(tMe, 3)) = js  (count)
+              jel  (tMe,3,nrecvl(tMe, 3)) = je  (count)
+           end if
+
+           if( (position == NORTH .OR. position == CORNER) .AND. overlap%dir(n) == 7) then ! north
+              count=count+1
+              dir(count) = 4
+              rotation(count) = overlap%rotation(n)
+              isMe(count)     = overlap%isMe(n)
+              ieMe(count)     = overlap%ieMe(n)
+              jsMe(count)     = overlap%jsMe(n) - 1
+              jeMe(count) = jsMe(count)
+              tileMe(count) = overlap%tileMe(n)
+              if( overlap%is_refined(n)) then
+                 select case( rotation(count) ) 
+                 case( ZERO ) ! S->N
+                    is(count) = overlap%is(n)
+                    ie(count) = overlap%ie(n)
+                    js(count) = overlap%js(n) - 1
+                    je(count) = js(count)
+                 case( MINUS_NINETY ) ! W->N
+                    is(count) = overlap%is(n) - 1
+                    ie(count) = is(count)
+                    js(count) = overlap%js(n)
+                    je(count) = overlap%je(n)
+                 end select
+              else
                  is(count) = overlap%is(n)
                  ie(count) = overlap%ie(n)
                  js(count) = overlap%js(n) - 1
                  je(count) = js(count)
-              case( MINUS_NINETY ) ! W->N
-                 is(count) = overlap%is(n) - 1
-                 ie(count) = is(count)
-                 js(count) = overlap%js(n)
-                 je(count) = overlap%je(n)
-              end select
-           else
-              is(count) = overlap%is(n)
-              ie(count) = overlap%ie(n)
-              js(count) = overlap%js(n) - 1
-              je(count) = js(count)
+              end if
+              tMe                        = tileMe(count)
+              nrecvl(tMe, 4) = nrecvl(tMe,4) + 1
+              islMe(tMe,4,nrecvl(tMe, 4)) = isMe(count)
+              ielMe(tMe,4,nrecvl(tMe, 4)) = ieMe(count)
+              jslMe(tMe,4,nrecvl(tMe, 4)) = jsMe(count)
+              jelMe(tMe,4,nrecvl(tMe, 4)) = jeMe(count)
+              isl  (tMe,4,nrecvl(tMe, 4)) = is  (count)
+              iel  (tMe,4,nrecvl(tMe, 4)) = ie  (count)
+              jsl  (tMe,4,nrecvl(tMe, 4)) = js  (count)
+              jel  (tMe,4,nrecvl(tMe, 4)) = je  (count)
            end if
-           tMe                        = tileMe(count)
-           nrecvl(tMe, 4) = nrecvl(tMe,4) + 1
-           islMe(tMe,4,nrecvl(tMe, 4)) = isMe(count)
-           ielMe(tMe,4,nrecvl(tMe, 4)) = ieMe(count)
-           jslMe(tMe,4,nrecvl(tMe, 4)) = jsMe(count)
-           jelMe(tMe,4,nrecvl(tMe, 4)) = jeMe(count)
-           isl  (tMe,4,nrecvl(tMe, 4)) = is  (count)
-           iel  (tMe,4,nrecvl(tMe, 4)) = ie  (count)
-           jsl  (tMe,4,nrecvl(tMe, 4)) = js  (count)
-           jel  (tMe,4,nrecvl(tMe, 4)) = je  (count)
+        end do ! do n = 1, overlap%count
+        if(count>0) then
+           nrecv = nrecv + 1
+           bound%recv(nrecv)%count = count
+           bound%recv(nrecv)%pe    = overlap%pe
+           allocate(bound%recv(nrecv)%isMe(count),   bound%recv(nrecv)%ieMe(count) )
+           allocate(bound%recv(nrecv)%jsMe(count),   bound%recv(nrecv)%jeMe(count) )
+           allocate(bound%recv(nrecv)%is(count),     bound%recv(nrecv)%ie(count) )
+           allocate(bound%recv(nrecv)%js(count),     bound%recv(nrecv)%je(count) )
+           allocate(bound%recv(nrecv)%dir(count),    bound%recv(nrecv)%index(count)  )
+           allocate(bound%recv(nrecv)%tileMe(count), bound%recv(nrecv)%rotation(count) )
+           bound%recv(nrecv)%isMe(:)     = isMe(1:count)
+           bound%recv(nrecv)%ieMe(:)     = ieMe(1:count)
+           bound%recv(nrecv)%jsMe(:)     = jsMe(1:count)
+           bound%recv(nrecv)%jeMe(:)     = jeMe(1:count)
+           bound%recv(nrecv)%is(:)       = is(1:count)
+           bound%recv(nrecv)%ie(:)       = ie(1:count)
+           bound%recv(nrecv)%js(:)       = js(1:count)
+           bound%recv(nrecv)%je(:)       = je(1:count)
+           bound%recv(nrecv)%dir(:)      = dir(1:count)
+           bound%recv(nrecv)%tileMe(:)   = tileMe(1:count)
+           bound%recv(nrecv)%rotation(:) = rotation(1:count)
         end if
-     end do ! do n = 1, overlap%count
-     if(count>0) then
-        nrecv = nrecv + 1
-        bound%recv(nrecv)%count = count
-        bound%recv(nrecv)%pe    = overlap%pe
-        allocate(bound%recv(nrecv)%isMe(count),   bound%recv(nrecv)%ieMe(count) )
-        allocate(bound%recv(nrecv)%jsMe(count),   bound%recv(nrecv)%jeMe(count) )
-        allocate(bound%recv(nrecv)%is(count),     bound%recv(nrecv)%ie(count) )
-        allocate(bound%recv(nrecv)%js(count),     bound%recv(nrecv)%je(count) )
-        allocate(bound%recv(nrecv)%dir(count),    bound%recv(nrecv)%index(count)  )
-        allocate(bound%recv(nrecv)%tileMe(count), bound%recv(nrecv)%rotation(count) )
-        bound%recv(nrecv)%isMe(:)     = isMe(1:count)
-        bound%recv(nrecv)%ieMe(:)     = ieMe(1:count)
-        bound%recv(nrecv)%jsMe(:)     = jsMe(1:count)
-        bound%recv(nrecv)%jeMe(:)     = jeMe(1:count)
-        bound%recv(nrecv)%is(:)       = is(1:count)
-        bound%recv(nrecv)%ie(:)       = ie(1:count)
-        bound%recv(nrecv)%js(:)       = js(1:count)
-        bound%recv(nrecv)%je(:)       = je(1:count)
-        bound%recv(nrecv)%dir(:)      = dir(1:count)
-        bound%recv(nrecv)%tileMe(:)   = tileMe(1:count)
-        bound%recv(nrecv)%rotation(:) = rotation(1:count)
-     end if
-  end do ! end  do list = 0, nlist
-
+     end do ! end  do list = 0, nlist
+  endif
   bound%nrecv = nrecv
 
   !--- find the boundary index for each contact within the east boundary
@@ -6875,6 +7045,7 @@ subroutine set_bound_overlap( domain, position )
         end do
      end do
   end do
+
 
 
 end subroutine set_bound_overlap

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_util.inc,v 19.0.4.1.2.1.2.1 2012/10/15 13:02:47 Zhi.Liang Exp $
+! $Id: mpp_domains_util.inc,v 20.0 2013/12/14 00:24:48 fms Exp $
 
   ! <SUBROUTINE NAME="mpp_domains_set_stack_size">
   !  <OVERVIEW>

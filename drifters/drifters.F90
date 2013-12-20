@@ -1,5 +1,5 @@
 !FDOC_TAG_GFDL fdoc.pl generated xml skeleton
-! $Id: drifters.F90,v 17.0.10.1 2012/03/20 13:03:22 z1l Exp $
+! $Id: drifters.F90,v 20.0 2013/12/14 00:19:02 fms Exp $
 
 #include <fms_platform.h>
 #include "fms_switches.h"
@@ -110,7 +110,7 @@ module drifters_mod
   public :: drifters_print_checksums, drifters_save, drifters_write_restart, drifters_distribute
 
   integer, parameter, private :: MAX_STR_LEN = 128
-  character(len=MAX_STR_LEN), parameter, private :: version = '$Id: drifters.F90,v 17.0.10.1 2012/03/20 13:03:22 z1l Exp $'
+  character(len=MAX_STR_LEN), parameter, private :: version = '$Id: drifters.F90,v 20.0 2013/12/14 00:19:02 fms Exp $'
   real :: DRFT_EMPTY_ARRAY(0)
 
   type drifters_type

@@ -28,7 +28,10 @@
       integer :: tMe, dir
       integer :: index, is1, ie1, js1, je1, ni, nj, total, start1, start, start2
 
-      integer,    allocatable :: msg1(:), msg2(:)
+      integer :: send_start_pos, nsend
+      integer :: send_msgsize(2*MAXLIST)
+      integer :: send_pe(2*MAXLIST)
+      integer, allocatable :: msg1(:), msg2(:)
       logical :: send(8), recv(8), update_edge_only
       MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
       pointer(ptr,buffer )
@@ -195,9 +198,8 @@
       !--- recv
       buffer_pos = 0
       cur_rank = get_rank_recv(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y) 
-
+      call mpp_clock_begin(recv_clock)
       do while (ind_x .LE. nrecv_x .OR. ind_y .LE. nrecv_y)
-         call mpp_clock_begin(recv_clock)
          msgsize = 0
          select case(gridtype)
          case(BGRID_NE, BGRID_SW, AGRID)
@@ -274,15 +276,16 @@
              call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.false., tag=COMM_TAG_2 )
              buffer_pos = buffer_pos + msgsize
          end if
-         call mpp_clock_end(recv_clock)
       end do
+      call mpp_clock_end(recv_clock)
       buffer_recv_size = buffer_pos
+      send_start_pos = buffer_pos
 
       !--- send
       cur_rank = get_rank_send(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y) 
-
+      nsend = 0
+      call mpp_clock_begin(pack_clock)
       do while (ind_x .LE. nsend_x .OR. ind_y .LE. nsend_y)
-         call mpp_clock_begin(pack_clock)
          pos = buffer_pos
          !--- make sure the domain stack size is big enough
          msgsize = 0
@@ -896,16 +899,24 @@
                endif
             endif
          end select
-         call mpp_clock_end(pack_clock)
-         call mpp_clock_begin(send_clock)
          cur_rank = min(rank_x, rank_y)
-         msgsize = pos - buffer_pos
+         nsend = nsend + 1
+         send_pe(nsend) = to_pe
+         send_msgsize(nsend) = pos - buffer_pos
+         buffer_pos = pos
+      end do
+
+      buffer_pos = send_start_pos
+      call mpp_clock_end(pack_clock)
+      call mpp_clock_begin(send_clock)
+      do m = 1, nsend
+         msgsize = send_msgsize(m)
          if( msgsize.GT.0 )then
-            call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_2 )
-            buffer_pos = pos
+            call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=send_pe(m), tag=COMM_TAG_2 )
+            buffer_pos = buffer_pos + msgsize
          end if
-         call mpp_clock_end(send_clock)
       end do 
+      call mpp_clock_end(send_clock)
 
 !unpack recv
 !unpack halos in reverse order
@@ -915,8 +926,8 @@
       buffer_pos = buffer_recv_size      
       cur_rank = get_rank_unpack(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y) 
 
+      call mpp_clock_begin(unpk_clock)
       do while (ind_x > 0 .OR. ind_y > 0)
-         call mpp_clock_begin(unpk_clock)
          pos = buffer_pos
          select case ( gridtype )
          case(BGRID_NE, BGRID_SW, AGRID)
@@ -1111,8 +1122,8 @@
             endif
          end select
          cur_rank = min(rank_x, rank_y)
-         call mpp_clock_end(unpk_clock)
       end do
+      call mpp_clock_end(unpk_clock)
 
      ! ---northern boundary fold
       shift = 0

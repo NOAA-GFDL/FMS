@@ -32,6 +32,9 @@
       integer :: is, ie, js, je, tMe, dir
       integer :: start, start1, start2, index, is1, ie1, js1, je1, ni, nj, total
       integer :: buffer_recv_size, nlist, outunit
+      integer :: send_start_pos
+      integer :: send_msgsize(MAXLIST)
+
 
       outunit = stdout()
       ptr = LOC(mpp_domains_stack)
@@ -111,11 +114,11 @@
       endif
 
       !recv
-      buffer_pos = 0  
+      buffer_pos = 0
+      call mpp_clock_begin(recv_clock)
       do m = 1, update%nrecv
          overPtr => update%recv(m)
          if( overPtr%count == 0 )cycle
-         call mpp_clock_begin(recv_clock)
          msgsize = 0
          do n = 1, overPtr%count
             dir = overPtr%dir(n)
@@ -138,15 +141,17 @@
             call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.FALSE., tag=COMM_TAG_2 )
             buffer_pos = buffer_pos + msgsize
          end if
-         call mpp_clock_end(recv_clock)
       end do ! end do m = 1, update%nrecv
-      buffer_recv_size = buffer_pos
+      call mpp_clock_end(recv_clock)
 
-      ! send
+      buffer_recv_size = buffer_pos
+      send_start_pos = buffer_pos
+      ! pack
+      call  mpp_clock_begin(pack_clock)
       do m = 1, update%nsend
+         send_msgsize(m) = 0
          overPtr => update%send(m)
          if( overPtr%count == 0 )cycle
-         call mpp_clock_begin(pack_clock)
          pos = buffer_pos
          msgsize = 0
          do n = 1, overPtr%count
@@ -235,17 +240,21 @@
                end if
             endif
          end do ! do n = 1, overPtr%count
+         send_msgsize(m) = pos-buffer_pos
+         buffer_pos = pos
+      end do ! end do m = 1, nsend
+      call mpp_clock_end(pack_clock)
 
-         call mpp_clock_end(pack_clock)
-         call mpp_clock_begin(send_clock)
-         msgsize = pos - buffer_pos
-         if( msgsize.GT.0 )then
-            to_pe = overPtr%pe
-            call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_2 )
-            buffer_pos = pos
-         end if
-         call mpp_clock_end(send_clock)
+      buffer_pos = send_start_pos
+      call mpp_clock_begin(send_clock)
+      do m = 1, update%nsend
+         msgsize = send_msgsize(m)
+         if(msgsize == 0) cycle
+         to_pe = update%send(m)%pe
+         call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_2 )
+         buffer_pos = buffer_pos + msgsize
       end do ! end do ist = 0,nlist-1
+      call mpp_clock_end(send_clock)
 
       !unpack recv
       !unpack halos in reverse order
@@ -255,10 +264,10 @@
       call mpp_clock_end(wait_clock)
       buffer_pos = buffer_recv_size      
 
+      call mpp_clock_begin(unpk_clock)
       do m = update%nrecv, 1, -1
          overPtr => update%recv(m)
          if( overPtr%count == 0 )cycle
-         call mpp_clock_begin(unpk_clock)
          pos = buffer_pos
          do n = overPtr%count, 1, -1
             dir = overPtr%dir(n)
@@ -308,8 +317,8 @@
                endif
             end if
          end do ! do n = 1, overPtr%count
-         call mpp_clock_end(unpk_clock)
       end do
+      call mpp_clock_end(unpk_clock)
 
       call mpp_clock_begin(wait_clock)
       call mpp_sync_self( )

@@ -36,7 +36,8 @@ use time_manager_mod, only: time_type, get_date, set_date, set_time, &
 
 use          fms_mod, only: write_version_number, &
                             error_mesg, FATAL, stdout, stdlog, &
-                            open_namelist_file, close_file, check_nml_error
+                            open_namelist_file, close_file, check_nml_error, &
+                            fms_error_handler
 use          mpp_mod, only: input_nml_file
 
 implicit none
@@ -195,8 +196,8 @@ integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
    integer :: yrmod, momod, dymod
    logical :: mod_leapyear
 
-   character(len=128) :: version='$Id: time_interp.F90,v 19.0.6.1 2013/02/25 18:32:55 Zhi.Liang Exp $'
-   character(len=128) :: tagname='$Name: siena_201309 $'
+   character(len=128) :: version='$Id: time_interp.F90,v 20.0 2013/12/14 00:28:05 fms Exp $'
+   character(len=128) :: tagname='$Name: tikal $'
 
    logical :: module_is_initialized=.FALSE.
    logical :: perthlike_behavior=.FALSE.
@@ -472,12 +473,8 @@ character(len=*), intent(out), optional :: err_msg
   n = size(Timelist)
   
   if (Time_beg>=Time_end) then
-     if(present(err_msg)) then
-        err_msg = "end of the specified time loop interval must be later than its beginning"
-        return
-     else
-        call error_handler("end of the specified time loop interval must be later than its beginning")
-     endif
+     if(fms_error_handler('time_interp_modulo', &
+     'end of the specified time loop interval must be later than its beginning',err_msg)) return
   endif
 
   calendar_has_leap_years = (get_calendar_type() == JULIAN .or. get_calendar_type() == GREGORIAN)
@@ -548,12 +545,8 @@ character(len=*), intent(out), optional :: err_msg
        call print_date(Timelist(n), 'Timelist(n)' )
      endif
      write(stdoutunit,*)'where n = size(Timelist) =',n
-     if(present(err_msg)) then
-        err_msg = 'the entire time list is outside the specified time loop interval'
-        return
-     else
-        call error_handler('the entire time list is outside the specified time loop interval')
-     endif
+     if(fms_error_handler('time_interp_modulo', &
+     'the entire time list is outside the specified time loop interval',err_msg)) return
   endif
   
   call bisect(Timelist,Time_beg,index1=i1,index2=i2)
@@ -593,12 +586,8 @@ character(len=*), intent(out), optional :: err_msg
      endif
      write(stdoutunit,*)'where n = size(Timelist) =',n
      write(stdoutunit,*)'is =',is,'ie =',ie
-     if(present(err_msg)) then
-        err_msg = 'error in calculation of time list bounds within the specified time loop interval'
-        return
-     else
-        call error_handler('error in calculation of time list bounds within the specified time loop interval')
-     endif
+     if(fms_error_handler('time_interp_modulo', &
+     'error in calculation of time list bounds within the specified time loop interval',err_msg)) return
   endif
   
   ! handle special cases:
@@ -699,18 +688,13 @@ type(time_type) :: T, Ts, Te, Td, Period, Time_mod
      case (MONTH)
        ! month length must be equal
          if (days_in_month(Time_mod) /= days_in_month(Time)) then
-            if(present(err_msg)) then
-               err_msg = 'modulo months must have same length'
-               return
-            else
-               call error_handler ('modulo months must have same length')
-            endif
+            if(fms_error_handler ('time_interp_list','modulo months must have same length',err_msg)) return
          endif 
          Period = set_time(0,days_in_month(Time_mod))
      case (DAY)
          Period = set_time(0,1)
      case default
-         call error_handler ('invalid value for argument modtime')
+         if(fms_error_handler ('time_interp_list','invalid value for argument modtime',err_msg)) return
   end select
 
 ! If modulo time is in effect and Timelist spans a time interval exactly equal to 
@@ -731,12 +715,7 @@ type(time_type) :: T, Ts, Te, Td, Period, Time_mod
 ! Check that Timelist does not span a time interval greater than the modulo period
   if (mtime /= NONE) then
      if (Td > Period) then
-        if(present(err_msg)) then
-           err_msg = 'period of list exceeds modulo period'
-           return
-        else
-           call error_handler ('period of list exceeds modulo period')
-        endif
+        if(fms_error_handler ('time_interp_list','period of list exceeds modulo period',err_msg)) return
      endif
   endif
 
@@ -748,12 +727,7 @@ type(time_type) :: T, Ts, Te, Td, Period, Time_mod
 ! time falls before starting list value
   else if ( T < Ts ) then
      if (mtime == NONE) then
-        if(present(err_msg)) then
-           err_msg = 'time before range of list'
-           return
-        else
-           call error_handler ('time before range of list')
-        endif
+        if(fms_error_handler ('time_interp_list','time before range of list',err_msg)) return
      endif
      Td = Te-Ts
      weight = 1. - ((Ts-T) // (Period-Td))
@@ -779,12 +753,7 @@ type(time_type) :: T, Ts, Te, Td, Period, Time_mod
 ! time falls after ending list value
   else if ( T > Te ) then
      if (mtime == NONE) then
-        if(present(err_msg)) then
-           err_msg = 'time after range of list'
-           return
-        else
-           call error_handler ('time after range of list')
-        endif
+        if(fms_error_handler ('time_interp_list','time after range of list',err_msg)) return
      endif
      Td = Te-Ts
      weight = (T-Te) // (Period-Td)

@@ -46,8 +46,8 @@ private
 !---------------------------------------------------------------------
 !----------- version number for this module --------------------------
 
-character(len=128)  :: version =  '$Id: astronomy.F90,v 19.0.2.1.2.1 2013/02/25 18:32:53 Zhi.Liang Exp $'
-character(len=128)  :: tagname =  '$Name: siena_201309 $'
+character(len=128)  :: version =  '$Id: astronomy.F90,v 20.0 2013/12/14 00:18:17 fms Exp $'
+character(len=128)  :: tagname =  '$Name: tikal $'
 
 
 !---------------------------------------------------------------------

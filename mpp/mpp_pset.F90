@@ -50,7 +50,9 @@ module mpp_pset_mod
 !public type
   type :: mpp_pset_type
      private
+#ifdef IBM_FIX
      sequence
+#endif
      integer :: npset !number of PSETs
      integer :: next_in_pset, prev_in_pset !next and prev PE in PSET (cyclic)
      integer :: root_in_pset !PE designated to be the root within PSET

@@ -401,8 +401,8 @@ type xmap_type
 end type xmap_type
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: xgrid.F90,v 19.0.2.2.4.3.4.2.2.1.2.3 2013/05/16 19:17:15 Zhi.Liang Exp $'
- character(len=128) :: tagname = '$Name: siena_201309 $'
+ character(len=128) :: version = '$Id: xgrid.F90,v 20.0 2013/12/14 00:19:20 fms Exp $'
+ character(len=128) :: tagname = '$Name: tikal $'
 
  real, parameter                              :: EPS = 1.0e-10
  real, parameter                              :: LARGE_NUMBER = 1.e20
@@ -570,7 +570,7 @@ logical,        intent(in)             :: use_higher_order
   logical                              :: is_distribute = .false.
   real,    allocatable,   dimension(:) :: scale
   real                                 :: garea
-  integer                              :: npes, isc, iec, nxgrid_local, pe
+  integer                              :: npes, isc, iec, nxgrid_local, pe, nxgrid_local_orig
   integer                              :: nxgrid1, nxgrid2, nset1, nset2, ndivs, cur_ind
   integer                              :: pos, nsend, nrecv, l1, l2, n, mypos, m
   integer                              :: start(4), nread(4)
@@ -616,11 +616,10 @@ logical,        intent(in)             :: use_higher_order
   end select
 
   !--- define a domain to read exchange grid.
-
   if(nxgrid > npes) then
      ndivs = npes
      if(nsubset >0 .AND. nsubset < npes) ndivs = nsubset     
-     call mpp_compute_extent( 1, nxgrid, ndivs, ibegin, iend)  
+     call mpp_compute_extent( 1, nxgrid, ndivs, ibegin, iend)
      if(npes == ndivs) then
         p = mpp_pe()-mpp_root_pe()
         isc = ibegin(p)
@@ -738,6 +737,7 @@ logical,        intent(in)             :: use_higher_order
 
      !---z1l: The following change is for the situation that some processor is masked out.
      !---loop through all the pe to see if side 1 and side of each exchange grid is on some processor
+     nxgrid_local_orig = nxgrid_local
      allocate(i1(isc:iec), j1(isc:iec), i2(isc:iec), j2(isc:iec), area(isc:iec) )
      if(use_higher_order) allocate(di(isc:iec), dj(isc:iec))
      pos = isc-1
@@ -778,10 +778,16 @@ logical,        intent(in)             :: use_higher_order
      deallocate(i1_tmp, i2_tmp, j1_tmp, j2_tmp, area_tmp)
      if(use_higher_order) deallocate( di_tmp, dj_tmp)
      iec = pos
-     nxgrid_local = iec - isc + 1
+     if(iec .GE. isc) then
+        nxgrid_local = iec - isc + 1
+     else
+        nxgrid_local = 0
+     endif
+
 
   else
      nxgrid_local = 0
+     nxgrid_local_orig = 0
   endif
 
   call mpp_clock_end(id_load_xgrid1)
@@ -847,10 +853,9 @@ logical,        intent(in)             :: use_higher_order
         call mpp_recv( ibuf2(1,p), glen=2, from_pe=pelist(p), block=.FALSE., tag=COMM_TAG_1)
      enddo
 
-!     call mpp_sync()
 
 
-     if(nxgrid_local>0) then
+     if(nxgrid_local_orig>0) then
         do n = 0, npes-1
            p = mod(mypos+n, npes)
            ibuf1(1,p) = nsend1(p)
@@ -860,7 +865,6 @@ logical,        intent(in)             :: use_higher_order
      endif
      call mpp_clock_end(id_load_xgrid2)
      call mpp_clock_begin(id_load_xgrid3)
-
 
      call mpp_sync_self(check=EVENT_RECV)
      call mpp_clock_end(id_load_xgrid3)
@@ -874,8 +878,6 @@ logical,        intent(in)             :: use_higher_order
         pos = pos + nrecv1(p)*nset1+nrecv2(p)*nset2  
      enddo
      call mpp_sync_self()
-
-!     call mpp_sync()
 
      !--- now get the data
      nxgrid1 = sum(nrecv1)
@@ -1538,7 +1540,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
      grid%jm = grid%nj
      call mpp_max(grid%ni)
      call mpp_max(grid%nj)
-     
+    
      grid%is_me => grid%is(xmap%me-xmap%root_pe); grid%ie_me => grid%ie(xmap%me-xmap%root_pe)
      grid%js_me => grid%js(xmap%me-xmap%root_pe); grid%je_me => grid%je(xmap%me-xmap%root_pe)
      grid%nxc_me = grid%ie_me - grid%is_me + 1
@@ -1787,8 +1789,11 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
   !--- The following will setup indx to be used in regen
   allocate(xmap%get1, xmap%put1)
   call mpp_clock_begin(id_set_comm)
+
   call set_comm_get1(xmap)
+
   call set_comm_put1(xmap)
+
   call mpp_clock_end(id_set_comm)
 
   call mpp_clock_begin(id_regen)
@@ -2489,7 +2494,7 @@ subroutine set_comm_put1(xmap)
      pos = 0
      buffer_pos = 0
      do m=0,npes-1
-        p = mod(mypos+m, npes)
+        p = mod(mypos+npes-m, npes)
         if(recv_size(p)>0) then
            pos = pos + 1
            allocate(comm%send(pos)%i(recv_size(p)))

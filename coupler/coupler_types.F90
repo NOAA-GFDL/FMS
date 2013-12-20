@@ -172,7 +172,7 @@ implicit none
 !
 !-----------------------------------------------------------------------
   character(len=128) :: version = '$Id: coupler_types.F90,v 18.0 2010/03/02 23:55:06 fms Exp $'
-  character(len=128) :: tag = '$Name: siena_201309 $'
+  character(len=128) :: tag = '$Name: tikal $'
 !-----------------------------------------------------------------------
 real, parameter :: bound_tol = 1e-7
 

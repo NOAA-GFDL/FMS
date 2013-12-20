@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util.inc,v 19.0.2.1.2.7.4.1 2013/03/05 15:43:42 Zhi.Liang Exp $
+! $Id: mpp_util.inc,v 20.0 2013/12/14 00:27:35 fms Exp $
 
 
 #ifdef use_libSMA
@@ -809,7 +809,7 @@ end function rarray_to_char
          call mpp_error( FATAL, 'MPP_CLOCK_BEGIN: cannot change pelist context of a clock.' )
     if( clocks(id)%is_on) call mpp_error(FATAL, 'MPP_CLOCK_BEGIN: mpp_clock_begin is called again '// &
                 'before calling mpp_clock_end for the clock '//trim(clocks(id)%name) )
-    if( clocks(id)%sync_on_begin )then
+    if( clocks(id)%sync_on_begin .OR. sync_all_clocks )then
        !do an untimed sync at the beginning of the clock
        !this puts all PEs in the current pelist on par, so that measurements begin together
        !ending time will be different, thus measuring load imbalance for this clock.
@@ -860,6 +860,21 @@ end function rarray_to_char
 !$OMP END MASTER
     return
   end subroutine mpp_clock_end
+
+ !#####################################################################
+  subroutine mpp_record_time_start()
+
+     mpp_record_timing_data = .TRUE.
+
+  end subroutine mpp_record_time_start
+
+  !#####################################################################
+  subroutine mpp_record_time_end()
+
+     mpp_record_timing_data = .FALSE.
+
+  end subroutine mpp_record_time_end
+
 
   !#####################################################################
   subroutine increment_current_clock( event_id, bytes )
@@ -1020,7 +1035,7 @@ end function rarray_to_char
 1000 format(a)
 1001 format(a,f8.2,a,f8.2,a,i6)
 1002 format(a)
-1003 format(a,i6,'    ','  ',f6.1,a,'    ',f7.3,'MB/sec')
+1003 format(a,i6,'    ','  ',f9.1,a,'    ',f9.2,'MB/sec')
 1004 format(a,i8,a,f9.2,a)
 1005 format(a,f9.2,a)
     return
@@ -1269,8 +1284,8 @@ end function rarray_to_char
   subroutine read_input_nml()
 
 ! version and tagging information
-    character(len=128) :: version = '$Id: mpp_util.inc,v 19.0.2.1.2.7.4.1 2013/03/05 15:43:42 Zhi.Liang Exp $'
-    character(len=128) :: tagname = '$Name: siena_201309 $' 
+    character(len=128) :: version = '$Id: mpp_util.inc,v 20.0 2013/12/14 00:27:35 fms Exp $'
+    character(len=128) :: tagname = '$Name: tikal $' 
 
 ! private variables
     integer :: log_unit
@@ -1400,8 +1415,8 @@ end function rarray_to_char
     integer, intent(in), optional,   dimension(:) :: PELIST
 
     ! version and tagging information
-    character(len=*), parameter :: VERSION = '$Id: mpp_util.inc,v 19.0.2.1.2.7.4.1 2013/03/05 15:43:42 Zhi.Liang Exp $'
-    character(len=*), parameter :: TAGNAME = '$Name: siena_201309 $' 
+    character(len=*), parameter :: VERSION = '$Id: mpp_util.inc,v 20.0 2013/12/14 00:27:35 fms Exp $'
+    character(len=*), parameter :: TAGNAME = '$Name: tikal $' 
 
     character(len=5) :: text
     logical :: file_exist

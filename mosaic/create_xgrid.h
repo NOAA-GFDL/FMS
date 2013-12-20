@@ -3,9 +3,6 @@
 #ifndef MAXXGRID
 #define MAXXGRID 1e6
 #endif
-#ifndef RANGE_CHECK_CRITERIA
-#define RANGE_CHECK_CRITERIA 0.05
-#endif
 
 #define MV 50
 /* this value is small compare to earth area */

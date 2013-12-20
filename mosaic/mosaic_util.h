@@ -7,6 +7,10 @@
 #ifndef MOSAIC_UTIL_H_
 #define MOSAIC_UTIL_H_
 
+#ifndef RANGE_CHECK_CRITERIA
+#define RANGE_CHECK_CRITERIA 0.05
+#endif
+
 #define min(a,b) (a<b ? a:b)
 #define max(a,b) (a>b ? a:b)
 #define SMALL_VALUE ( 1.e-10 )
@@ -53,6 +57,7 @@ int invert_matrix_3x3(long double m[], long double m_inv[]);
 void mult(long double m[], long double v[], long double out_v[]);
 double metric(const double *p);
 int insidePolygon(struct Node *node, struct Node *list );
+int inside_a_polygon( double *lon1, double *lat1, int *npts, double *lon2, double *lat2);
 
 void rewindList(void);
 struct Node *getNext();
@@ -81,7 +86,7 @@ void getCoordinates(struct Node *node, double *p);
 void setCoordinate(struct Node *node, double x, double y, double z);
 void setInbound(struct Node *interList, struct Node *list);
 int isInside(struct Node *node);
-
+void set_reproduce_siena_true(void);
 
 
 #endif
