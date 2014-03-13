@@ -497,7 +497,7 @@ subroutine MPP_GET_BOUNDARY_2D_V_(fieldx, fieldy, domain, ebufferx, sbufferx, wb
      if(ASSOCIATED(boundx) ) then
         call mpp_do_get_boundary(f_addrsx(1:l_size,1:ntile), f_addrsy(1:l_size,1:ntile), domain, boundx, boundy, &
              b_addrsx(:,1:l_size,1:ntile), b_addrsy(:,1:l_size,1:ntile), bsizex, &
-             bsizey, ksize, d_type, update_flags)
+             bsizey, ksize, d_type, update_flags, grid_offset_type)
      endif
      l_size=0; f_addrsx=-9999; f_addrsy=-9999; bsizex=0; bsizey=0; 
      b_addrsx=-9999; b_addrsy=-9999; isize=0;  jsize=0;  ksize=0
@@ -721,7 +721,7 @@ subroutine MPP_GET_BOUNDARY_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx, wb
      if(ASSOCIATED(boundx) ) then
         call mpp_do_get_boundary(f_addrsx(1:l_size,1:ntile), f_addrsy(1:l_size,1:ntile), domain, boundx, boundy, &
              b_addrsx(:,1:l_size,1:ntile), b_addrsy(:,1:l_size,1:ntile), bsizex, &
-             bsizey, ksize, d_type, update_flags)
+             bsizey, ksize, d_type, update_flags, grid_offset_type)
      endif
      l_size=0; f_addrsx=-9999; f_addrsy=-9999; bsizex=0; bsizey=0; 
      b_addrsx=-9999; b_addrsy=-9999; isize=0;  jsize=0;  ksize=0

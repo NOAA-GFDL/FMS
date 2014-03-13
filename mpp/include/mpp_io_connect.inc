@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_connect.inc,v 19.0 2012/01/06 22:03:20 fms Exp $
+! $Id: mpp_io_connect.inc,v 19.0.18.1 2014/02/07 00:34:44 Rusty.Benson Exp $
 
 ! <SUBROUTINE NAME="mpp_open">
 
@@ -179,7 +179,7 @@
       integer :: action_flag, form_flag, access_flag, threading_flag, fileset_flag, length
       integer :: nfiles, tile_id(1), io_layout(2)
       logical :: exists, on_root_pe, dist_file
-      logical :: write_on_this_pe, io_domain_exist
+      logical :: write_on_this_pe, read_on_this_pe, io_domain_exist
       integer :: ios, nc_pos     !position of .nc in file name
       type(axistype) :: unlim    !used by netCDF with mpp_append
       type(domain2d), pointer :: io_domain=>NULL()
@@ -232,13 +232,20 @@
       endif
 
       write_on_this_pe = .true.
-      if( threading_flag.EQ.MPP_SINGLE .AND. .NOT. on_root_pe ) write_on_this_pe = .false.
+      read_on_this_pe = .true.
+      if( threading_flag.EQ.MPP_SINGLE .AND. .NOT.on_root_pe ) then
+         write_on_this_pe = .false.
+         read_on_this_pe = .false.
+      endif
       if(form_flag == MPP_NETCDF .AND. action_flag .NE. MPP_RDONLY) then
          if(fileset_flag .EQ.MPP_SINGLE .AND.  threading_flag.EQ.MPP_MULTI) then
             call mpp_error(FATAL, "mpp_io_connect.inc(mpp_open): multiple thread and single "// &
                 "file writing/appending is not supported for netCDF file")
          endif
-         if( fileset_flag  .EQ.MPP_SINGLE .AND. .NOT. on_root_pe ) write_on_this_pe = .false.
+         if( fileset_flag.EQ.MPP_SINGLE .AND. .NOT.on_root_pe ) then
+            write_on_this_pe = .false.
+            read_on_this_pe = .false.
+         endif   
       endif   
    
       if( io_domain_exist) then
@@ -272,6 +279,7 @@
       end if
       mpp_file(unit)%valid            = .true.
       mpp_file(unit)%write_on_this_pe = write_on_this_pe
+      mpp_file(unit)%read_on_this_pe  = read_on_this_pe
       mpp_file(unit)%io_domain_exist  = io_domain_exist
       if( PRESENT(domain) ) then
          allocate(mpp_file(unit)%domain)

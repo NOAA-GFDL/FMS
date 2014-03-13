@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_read.inc,v 20.0 2013/12/14 00:26:38 fms Exp $
+! $Id: mpp_io_read.inc,v 20.0.10.1 2014/02/07 17:14:39 sdu Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -15,6 +15,15 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
 #include <mpp_read_2Ddecomp.h>
+
+#undef MPP_READ_COMPRESSED_1D_
+#define MPP_READ_COMPRESSED_1D_ mpp_read_compressed_r1d
+#undef MPP_READ_COMPRESSED_2D_
+#define MPP_READ_COMPRESSED_2D_ mpp_read_compressed_r2d
+#undef MPP_TYPE_
+#define MPP_TYPE_ real
+#include <mpp_read_compressed.h>
+
 
     subroutine read_record_core(unit, field, nwords, data, start, axsiz)
       integer,         intent(in)    :: unit
@@ -152,11 +161,11 @@
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'READ_RECORD: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'READ_RECORD: invalid unit number.' )
-      if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
+      if( .NOT.mpp_file(unit)%read_on_this_pe )return
 
       if( .NOT.mpp_file(unit)%initialized ) call mpp_error( FATAL, 'MPP_READ: must first call mpp_read_meta.' )
 
-      if( verbose )print '(a,2i3,2i5)', 'MPP_READ: PE, unit, %id, %time_level =',&
+      if( verbose )print '(a,2i6,2i5)', 'MPP_READ: PE, unit, %id, %time_level =',&
            pe, unit, mpp_file(unit)%id, tlevel
 
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
@@ -339,7 +348,7 @@
       lev = 1
       if(present(level)) lev = level
 
-      if( verbose )print '(a,2i3,2i5)', 'MPP_READ: PE, unit, %id, level =', pe, unit, mpp_file(unit)%id, lev
+      if( verbose )print '(a,2i6,2i5)', 'MPP_READ: PE, unit, %id, level =', pe, unit, mpp_file(unit)%id, lev
 
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
          start = 1

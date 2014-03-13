@@ -1,8 +1,8 @@
 module mpp_utilities_mod
 
 !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: mpp_utilities.F90,v 17.0 2009/07/21 03:21:23 fms Exp $'
-  character(len=128) :: tag = '$Name: tikal $'
+  character(len=128) :: version = '$Id: mpp_utilities.F90,v 17.0.40.1 2014/02/07 21:43:20 wfc Exp $'
+  character(len=128) :: tag = '$Name: tikal_201403 $'
 !-----------------------------------------------------------------------
 
   public :: mpp_array_global_min_max
@@ -73,14 +73,14 @@ subroutine mpp_array_global_min_max(in_array, tmask,isd,jsd,isc,iec,jsc,jec,nk, 
   end if
 
   ! use "fudge" to distinguish processors when tracer extreme is independent of processor
-  fudge = 1.0 + 1.e-12*mpp_pe() 
+  fudge = 1.0 + 1.e-12*real(mpp_pe() )
   tmax = tmax*fudge
   tmin = tmin*fudge
   if(tmax == 0.0) then 
-    tmax = tmax + 1.e-12*mpp_pe() 
+    tmax = tmax + 1.e-12*real(mpp_pe() )
   endif 
   if(tmin == 0.0) then 
-    tmin = tmin + 1.e-12*mpp_pe() 
+    tmin = tmin + 1.e-12*real(mpp_pe() )
   endif 
   
 
@@ -101,8 +101,8 @@ subroutine mpp_array_global_min_max(in_array, tmask,isd,jsd,isc,iec,jsc,jec,nk, 
   !
   !mpp_max trick
   !-999 on all current PE's
-  xgmax=-999; ygmax=-999; zgmax=-999
-  xgmin=-999; ygmin=-999; zgmin=-999
+  xgmax=-999.; ygmax=-999.; zgmax=-999.
+  xgmin=-999.; ygmin=-999.; zgmin=-999.
 
 
   !except when

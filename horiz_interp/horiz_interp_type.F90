@@ -147,7 +147,7 @@ contains
          miss = miss + buffer_int(1)
          npts = npts + buffer_int(2)
       enddo         
-      if(npts == 0) then
+      if(npts == 0.) then
          print*, 'Warning: no points is valid'
       else
          avg = dsum/real(npts)

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_domains_util.inc,v 20.0 2013/12/14 00:24:48 fms Exp $
+! $Id: mpp_domains_util.inc,v 20.0.2.1.2.1 2014/02/19 13:51:20 Zhi.Liang Exp $
 
   ! <SUBROUTINE NAME="mpp_domains_set_stack_size">
   !  <OVERVIEW>
@@ -1019,76 +1019,6 @@ end subroutine mpp_get_domain_shift
 
   end function mpp_domain_is_tile_root_pe
 
-  !#######################################################################
-  !--- the order of overlapping will be consistent with the unpack done in update_domains.
-  function mpp_get_refine_overlap_number(domain, position, whalo, ehalo, shalo, nhalo, tile_count)
-     type(domain2d), intent(inout)        :: domain
-     integer,        intent(in), optional :: position                   ! position of the cell, CENTER/EAST/NORTH/CORNER
-     integer,        intent(in), optional :: whalo, ehalo, shalo, nhalo ! halo size to be updated
-     integer,        intent(in), optional :: tile_count                ! tile number on current pe.
-     integer                              :: mpp_get_refine_overlap_number
-     type(overlapSpec), pointer           :: update => NULL()
-     integer                              :: tMe, whalosz, ehalosz, shalosz, nhalosz, pos
-
-     tMe = 1
-     if(present(tile_count)) tMe = tile_count
-     pos = CENTER;           if(present(position)) pos = position
-     whalosz = domain%whalo; if(present(whalo)) whalosz = whalo
-     ehalosz = domain%ehalo; if(present(ehalo)) ehalosz = ehalo
-     shalosz = domain%shalo; if(present(shalo)) shalosz = shalo
-     nhalosz = domain%nhalo; if(present(nhalo)) nhalosz = nhalo
-     update => search_update_overlap( domain, whalosz, ehalosz, shalosz, nhalosz, pos )
-     mpp_get_refine_overlap_number = update%rSpec(tMe)%count
-     update => NULL()
-
-     return    
- 
-  end function mpp_get_refine_overlap_number
-
-  !#######################################################################
-  ! return overlap information for refined contact.
-  subroutine mpp_get_mosaic_refine_overlap(domain, isMe, ieMe, jsMe, jeMe, isNbr, ieNbr, jsNbr, jeNbr, &
-                                           dir, rotation, position, whalo, ehalo, shalo, nhalo, tile_count)
-     type(domain2d), intent(inout)        :: domain
-     integer, dimension(:), intent(inout) :: isMe,  ieMe,  jsMe,  jeMe  ! index on current tile
-     integer, dimension(:), intent(inout) :: isNbr, ieNbr, jsNbr, jeNbr ! index on neighbor tile
-     integer, dimension(:), intent(inout) :: dir                        ! direction
-     integer, dimension(:), intent(inout) :: rotation                   ! rotation angle
-     integer, optional,     intent(in)    :: position                   ! position of the cell, CENTER/EAST/NORTH/CORNER
-     integer, optional,     intent(in)    :: whalo, ehalo, shalo, nhalo ! halo size to be updated
-     integer, optional,     intent(in)    :: tile_count                ! tile number on current pe.
-     type(overlapSpec), pointer           :: update => NULL()
-     integer                              :: tMe, count, whalosz, ehalosz, shalosz, nhalosz, pos
-
-     tMe = 1
-     if(present(tile_count)) tMe = tile_count
-     pos = CENTER;           if(present(position)) pos = position
-     whalosz = domain%whalo; if(present(whalo)) whalosz = whalo
-     ehalosz = domain%ehalo; if(present(ehalo)) ehalosz = ehalo
-     shalosz = domain%shalo; if(present(shalo)) shalosz = shalo
-     nhalosz = domain%nhalo; if(present(nhalo)) nhalosz = nhalo
-
-     update => search_update_overlap( domain, whalosz, ehalosz, shalosz, nhalosz, pos )
-     count = update%rSpec(tMe)%count
-     if(count>0) then
-        if(size(isMe(:)) < count) call mpp_error(FATAL, &
-           "mpp_domains_util.inc(mpp_get_mosaic_refine_overlap): size of isMe is less than the number of overlap")
-        isMe(1:count)      = update%rSpec(tMe)%isMe
-        ieMe(1:count)      = update%rSpec(tMe)%ieMe
-        jsMe(1:count)      = update%rSpec(tMe)%jsMe
-        jeMe(1:count)      = update%rSpec(tMe)%jeMe
-        isNbr(1:count)     = update%rSpec(tMe)%isNbr
-        ieNbr(1:count)     = update%rSpec(tMe)%ieNbr
-        jsNbr(1:count)     = update%rSpec(tMe)%jsNbr
-        jeNbr(1:count)     = update%rSpec(tMe)%jeNbr
-        dir  (1:count)     = update%rSpec(tMe)%dir
-        rotation(1:count)  = update%rSpec(tMe)%rotation
-     endif
-
-     return
-
-  end subroutine mpp_get_mosaic_refine_overlap
-
   !#########################################################################
   ! return number of processors used on current tile.
   function mpp_get_tile_npes(domain)
@@ -1613,6 +1543,22 @@ end subroutine mpp_get_tile_compute_domains
 
   end function get_rank_unpack
 
+  function get_mesgsize(overlap, do_dir)
+   type(overlap_type), intent(in) :: overlap
+   logical,            intent(in) :: do_dir(:)
+   integer                       :: get_mesgsize
+   integer                       :: n, dir
+
+   get_mesgsize = 0
+   do n = 1, overlap%count
+      dir = overlap%dir(n)
+      if(do_dir(dir)) then
+         get_mesgsize = get_mesgsize + overlap%msgsize(n)
+      end if
+   end do
+
+  end function get_mesgsize
+
   !#############################################################################
   subroutine mpp_set_domain_symmetry(domain, symmetry)
     type(domain2D), intent(inout) :: domain
@@ -1675,3 +1621,19 @@ end subroutine mpp_get_tile_compute_domains
      return
 
   end subroutine mpp_copy_domain2D
+
+
+!######################################################################
+  subroutine mpp_clear_group_update(group)
+     type(mpp_group_update_type), intent(inout) :: group
+
+     group%nscalar = 0
+     group%nvector = 0
+     group%nsend   = 0
+     group%nrecv   = 0
+     group%initialized = .false.
+     group%update_s => NULL()
+     group%update_x => NULL()
+     group%update_y => NULL()
+
+  end subroutine mpp_clear_group_update

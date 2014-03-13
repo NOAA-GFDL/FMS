@@ -643,8 +643,8 @@ module oda_core_mod
 ! NOTE: this only works for lat/lon grids. Lower left indices.           
 !       
            
-           ri0 = frac_index(lon, x_grid(isg-1:ieg+1)) - 1 
-           rj0 = frac_index(lat, y_grid(jsg-1:jeg+1)) - 1
+           ri0 = frac_index(lon, x_grid(isg-1:ieg+1)) - 1.
+           rj0 = frac_index(lat, y_grid(jsg-1:jeg+1)) - 1.
            i0 = floor(ri0)
            j0 = floor(rj0)
            Profiles(num_profiles)%i_index = ri0
@@ -1147,14 +1147,14 @@ module oda_core_mod
     end do
 
 
-    where(sum_wgt > 0)
+    where(sum_wgt > 0.0)
         model_t = model_t /sum_wgt
     elsewhere
         model_t = 0.0
     end where
 
     if (PRESENT(model_s)) then
-        where(sum_wgt > 0)
+        where(sum_wgt > 0.0)
             model_s = model_s /sum_wgt
         elsewhere
             model_s = 0.0
@@ -1366,7 +1366,7 @@ end subroutine copy_obs_prof
     
     do n=1,size(Obs)
        do k = 1, Obs(n)%levels
-          Ims = 1/Obs(n)%ms_t(k)
+          Ims = 1./Obs(n)%ms_t(k)
           if (Obs(n)%flag_t(k) .eq. 0) Obs(n)%data_t(k) = Ims*Obs(n)%data_t(k)
           if (ASSOCIATED(Obs(n)%data_s)) then
               Ims = 1/Obs(n)%ms_s(k)
@@ -1705,7 +1705,7 @@ end subroutine copy_obs_prof
            allocate(profiles(num_profiles)%flag_s(nlevels))
            profiles(num_profiles)%flag_s= 0
 
-           profiles(num_profiles)%probe = 0
+           profiles(num_profiles)%probe = 0.
            profiles(num_profiles)%levels = nlevels
            profiles(num_profiles)%lat = lat(i)
            profiles(num_profiles)%lon = lon(i)
@@ -1719,8 +1719,8 @@ end subroutine copy_obs_prof
 ! calculate interpolation coefficients (make sure to account for grid offsets here!)
 ! note that this only works for lat/lon grids
            
-           ri0 = frac_index(lon(i), x_grid(isg-1:ieg+1)) - 1 
-           rj0 = frac_index(lat(i), y_grid(jsg-1:jeg+1)) - 1
+           ri0 = frac_index(lon(i), x_grid(isg-1:ieg+1)) - 1.
+           rj0 = frac_index(lat(i), y_grid(jsg-1:jeg+1)) - 1.
            i0 = floor(ri0)
            j0 = floor(rj0)
            Profiles(num_profiles)%i_index = ri0
@@ -1818,13 +1818,13 @@ end subroutine copy_obs_prof
 
 
     profile%nvar = 0
-    profile%project=0
-    profile%probe=0
-    profile%ref_inst=0
+    profile%project=0.
+    profile%probe=0.
+    profile%ref_inst=0.
     profile%wod_cast_num=0
-    profile%fix_depth=0
-    profile%ocn_vehicle=0
-    profile%database_id=0
+    profile%fix_depth=0.
+    profile%ocn_vehicle=0.
+    profile%database_id=0.
     profile%levels=0
     profile%profile_flag=-1
     profile%profile_flag_s=-1

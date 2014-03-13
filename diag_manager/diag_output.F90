@@ -48,7 +48,7 @@ MODULE diag_output_mod
   CHARACTER(len=128), PRIVATE :: version= &
        '$Id: diag_output.F90,v 20.0 2013/12/14 00:18:52 fms Exp $'
   CHARACTER(len=128), PRIVATE :: tagname= &
-       '$Name: tikal $'
+       '$Name: tikal_201403 $'
 
 CONTAINS
 

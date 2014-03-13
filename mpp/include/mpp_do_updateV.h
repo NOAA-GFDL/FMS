@@ -1,37 +1,30 @@
 ! -*-f90-*- 
     subroutine MPP_DO_UPDATE_3D_V_(f_addrsx,f_addrsy, domain, update_x, update_y, &
-                                   d_type, ke, b_addrsx, b_addrsy, b_sizex, b_sizey, gridtype, flags)
+                                   d_type, ke, gridtype, flags)
 !updates data domain of 3D field whose computational domains have been computed
       integer(LONG_KIND),  intent(in)        :: f_addrsx(:,:), f_addrsy(:,:)
       type(domain2d),      intent(in)        :: domain
       type(overlapSpec),   intent(in)        :: update_x, update_y
       integer,             intent(in)        :: ke
       MPP_TYPE_, intent(in)                  :: d_type  ! creates unique interface
-      integer(LONG_KIND), intent(in)         :: b_addrsx(:,:), b_addrsy(:,:)
-      integer,            intent(in)         :: b_sizex, b_sizey
       integer, intent(in)                    :: gridtype
       integer, intent(in),          optional :: flags
 
       MPP_TYPE_ :: fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,ke)
       MPP_TYPE_ :: fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,ke)
-      MPP_TYPE_ :: bufferx(b_sizex)
-      MPP_TYPE_ :: buffery(b_sizey)
       pointer(ptr_fieldx, fieldx)
       pointer(ptr_fieldy, fieldy)
-      pointer(ptr_bufferx, bufferx)
-      pointer(ptr_buffery, buffery)
 
       integer :: update_flags
       integer :: l_size, l, i, j, k, is, ie, js, je, n, m
       integer :: pos, nlist, msgsize
       integer :: to_pe, from_pe, midpoint
       integer :: tMe, dir
-      integer :: index, is1, ie1, js1, je1, ni, nj, total, start1, start, start2
 
       integer :: send_start_pos, nsend
       integer :: send_msgsize(2*MAXLIST)
       integer :: send_pe(2*MAXLIST)
-      integer, allocatable :: msg1(:), msg2(:)
+      integer,    allocatable :: msg1(:), msg2(:)
       logical :: send(8), recv(8), update_edge_only
       MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
       pointer(ptr,buffer )
@@ -322,221 +315,112 @@
 
                      is = update_x%send(ind_x)%is(n); ie = update_x%send(ind_x)%ie(n)
                      js = update_x%send(ind_x)%js(n); je = update_x%send(ind_x)%je(n)
-                     if( update_x%send(ind_x)%is_refined(n) ) then
-                        select case( update_x%send(ind_x)%rotation(n) )
-                        case(ZERO)
+                     select case( update_x%send(ind_x)%rotation(n) )
+                     case(ZERO)
+                        do l=1,l_size  ! loop over number of fields
+                           ptr_fieldx = f_addrsx(l,tMe)
+                           ptr_fieldy = f_addrsy(l,tMe)
+                           do k = 1,ke
+                              do j = js, je
+                                 do i = is, ie
+                                    pos = pos + 2
+                                    buffer(pos-1) = fieldx(i,j,k)
+                                    buffer(pos)   = fieldy(i,j,k)
+                                 end do
+                              end do
+                           end do
+                        end do
+                     case( MINUS_NINETY ) 
+                        if( BTEST(update_flags,SCALAR_BIT) ) then
                            do l=1,l_size  ! loop over number of fields
                               ptr_fieldx = f_addrsx(l,tMe)
                               ptr_fieldy = f_addrsy(l,tMe)
                               do k = 1,ke
-                                 do j = js, je
-                                    do i = is, ie
+                                 do i = is, ie
+                                    do j = je, js, -1
                                        pos = pos + 2
-                                       buffer(pos-1) = fieldx(i,j,k)
-                                       buffer(pos)   = fieldy(i,j,k)
+                                       buffer(pos-1) = fieldy(i,j,k)
+                                       buffer(pos)   = fieldx(i,j,k)
                                     end do
                                  end do
                               end do
                            end do
-                        case(MINUS_NINETY)
-                           if( BTEST(update_flags,SCALAR_BIT) ) then
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l,tMe)
-                                 ptr_fieldy = f_addrsy(l,tMe)
-                                 do k = 1,ke
-                                    do j = js, je
-                                       do i = is, ie
-                                          pos = pos + 2
-                                          buffer(pos-1) =  fieldy(i,j,k)
-                                          buffer(pos)   =  fieldx(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end do
-                           else
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l,tMe)
-                                 ptr_fieldy = f_addrsy(l,tMe)
-                                 do k = 1,ke
-                                    do j = js, je
-                                       do i = is, ie
-                                          pos = pos + 2
-                                          buffer(pos-1) = -fieldy(i,j,k)
-                                          buffer(pos)   =  fieldx(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end do
-                           end if
-                        case(NINETY)
-                           if( BTEST(update_flags,SCALAR_BIT) ) then
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l,tMe)
-                                 ptr_fieldy = f_addrsy(l,tMe)
-                                 do k = 1,ke
-                                    do j = js, je
-                                       do i = is, ie
-                                          pos = pos + 2
-                                          buffer(pos-1) =  fieldy(i,j,k)
-                                          buffer(pos)   =  fieldx(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end do
-                           else
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l,tMe)
-                                 ptr_fieldy = f_addrsy(l,tMe)
-                                 do k = 1,ke
-                                    do j = js, je
-                                       do i = is, ie
-                                          pos = pos + 2
-                                          buffer(pos-1) =  fieldy(i,j,k)
-                                          buffer(pos)   = -fieldx(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end do
-                           end if
-                        case(ONE_HUNDRED_EIGHTY)
-                           if( BTEST(update_flags,SCALAR_BIT) ) then
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l,tMe)
-                                 ptr_fieldy = f_addrsy(l,tMe)
-                                 do k = 1,ke
-                                    do j = js, je
-                                       do i = is, ie
-                                          pos = pos + 2
-                                          buffer(pos-1) = fieldx(i,j,k)
-                                          buffer(pos)   = fieldy(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end do
-                           else
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l,tMe)
-                                 ptr_fieldy = f_addrsy(l,tMe)
-                                 do k = 1,ke
-                                    do j = js, je
-                                       do i = is, ie
-                                          pos = pos + 2
-                                          buffer(pos-1) = -fieldx(i,j,k)
-                                          buffer(pos)   = -fieldy(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end do
-                           end if
-                        end select  ! select case( rotation(n) )
-                     else   ! if( is_refined(n) )
-                        select case( update_x%send(ind_x)%rotation(n) )
-                        case(ZERO)
+                        else
                            do l=1,l_size  ! loop over number of fields
                               ptr_fieldx = f_addrsx(l,tMe)
                               ptr_fieldy = f_addrsy(l,tMe)
                               do k = 1,ke
-                                 do j = js, je
-                                    do i = is, ie
+                                 do i = is, ie
+                                    do j = je, js, -1
                                        pos = pos + 2
-                                       buffer(pos-1) = fieldx(i,j,k)
-                                       buffer(pos)   = fieldy(i,j,k)
+                                       buffer(pos-1) = -fieldy(i,j,k)
+                                       buffer(pos)   =  fieldx(i,j,k)
                                     end do
                                  end do
                               end do
                            end do
-                        case( MINUS_NINETY ) 
-                           if( BTEST(update_flags,SCALAR_BIT) ) then
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l,tMe)
-                                 ptr_fieldy = f_addrsy(l,tMe)
-                                 do k = 1,ke
-                                    do i = is, ie
-                                       do j = je, js, -1
-                                          pos = pos + 2
-                                          buffer(pos-1) = fieldy(i,j,k)
-                                          buffer(pos)   = fieldx(i,j,k)
-                                       end do
+                        end if
+                     case( NINETY )
+                        if( BTEST(update_flags,SCALAR_BIT) ) then
+                           do l=1,l_size  ! loop over number of fields
+                              ptr_fieldx = f_addrsx(l,tMe)
+                              ptr_fieldy = f_addrsy(l,tMe)
+                              do k = 1,ke
+                                 do i = ie, is, -1
+                                    do j = js, je
+                                       pos = pos + 2
+                                       buffer(pos-1) = fieldy(i,j,k)
+                                       buffer(pos)   = fieldx(i,j,k)
                                     end do
                                  end do
                               end do
-                           else
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l,tMe)
-                                 ptr_fieldy = f_addrsy(l,tMe)
-                                 do k = 1,ke
-                                    do i = is, ie
-                                       do j = je, js, -1
-                                          pos = pos + 2
-                                          buffer(pos-1) = -fieldy(i,j,k)
-                                          buffer(pos)   =  fieldx(i,j,k)
-                                       end do
+                           end do
+                        else
+                           do l=1,l_size  ! loop over number of fields
+                              ptr_fieldx = f_addrsx(l,tMe)
+                              ptr_fieldy = f_addrsy(l,tMe)
+                              do k = 1,ke
+                                 do i = ie, is, -1
+                                    do j = js, je
+                                       pos = pos + 2
+                                       buffer(pos-1) = fieldy(i,j,k)
+                                       buffer(pos)   = -fieldx(i,j,k)
                                     end do
                                  end do
                               end do
-                           end if
-                        case( NINETY )
-                           if( BTEST(update_flags,SCALAR_BIT) ) then
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l,tMe)
-                                 ptr_fieldy = f_addrsy(l,tMe)
-                                 do k = 1,ke
+                           end do
+                        end if
+                     case( ONE_HUNDRED_EIGHTY )
+                        if( BTEST(update_flags,SCALAR_BIT) ) then
+                           do l=1,l_size  ! loop over number of fields
+                              ptr_fieldx = f_addrsx(l,tMe)
+                              ptr_fieldy = f_addrsy(l,tMe)
+                              do k = 1,ke
+                                 do j = je, js, -1
                                     do i = ie, is, -1
-                                       do j = js, je
-                                          pos = pos + 2
-                                          buffer(pos-1) = fieldy(i,j,k)
-                                          buffer(pos)   = fieldx(i,j,k)
-                                       end do
+                                       pos = pos + 2
+                                       buffer(pos-1) =  fieldx(i,j,k)
+                                       buffer(pos)   =  fieldy(i,j,k)
                                     end do
                                  end do
                               end do
-                           else
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l,tMe)
-                                 ptr_fieldy = f_addrsy(l,tMe)
-                                 do k = 1,ke
+                           end do
+                        else
+                           do l=1,l_size  ! loop over number of fields
+                              ptr_fieldx = f_addrsx(l,tMe)
+                              ptr_fieldy = f_addrsy(l,tMe)
+                              do k = 1,ke
+                                 do j = je, js, -1
                                     do i = ie, is, -1
-                                       do j = js, je
-                                          pos = pos + 2
-                                          buffer(pos-1) = fieldy(i,j,k)
-                                          buffer(pos)   = -fieldx(i,j,k)
-                                       end do
+                                       pos = pos + 2
+                                       buffer(pos-1) =  -fieldx(i,j,k)
+                                       buffer(pos)   =  -fieldy(i,j,k)
                                     end do
                                  end do
                               end do
-                           end if
-                        case( ONE_HUNDRED_EIGHTY )
-                           if( BTEST(update_flags,SCALAR_BIT) ) then
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l,tMe)
-                                 ptr_fieldy = f_addrsy(l,tMe)
-                                 do k = 1,ke
-                                    do j = je, js, -1
-                                       do i = ie, is, -1
-                                          pos = pos + 2
-                                          buffer(pos-1) =  fieldx(i,j,k)
-                                          buffer(pos)   =  fieldy(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end do
-                           else
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l,tMe)
-                                 ptr_fieldy = f_addrsy(l,tMe)
-                                 do k = 1,ke
-                                    do j = je, js, -1
-                                       do i = ie, is, -1
-                                          pos = pos + 2
-                                          buffer(pos-1) =  -fieldx(i,j,k)
-                                          buffer(pos)   =  -fieldy(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end do
-                           end if
-                        end select ! select case( rotation(n) )
-                     end if ! if( is_refined(n) )
+                           end do
+                        end if
+                     end select ! select case( rotation(n) )
                   end if ! if( send(dir) ) 
                end do ! do n = 1, update_x%send(ind_x)%count
                ind_x = ind_x+1
@@ -558,162 +442,90 @@
                      tMe = update_x%send(ind_x)%tileMe(n)
                      is = update_x%send(ind_x)%is(n); ie = update_x%send(ind_x)%ie(n)
                      js = update_x%send(ind_x)%js(n); je = update_x%send(ind_x)%je(n)
-                     if( update_x%send(ind_x)%is_refined(n) ) then
-                        select case( update_x%send(ind_x)%rotation(n) )
-                        case(ZERO)
+                     select case( update_x%send(ind_x)%rotation(n) )
+                     case(ZERO)
+                        do l=1,l_size  ! loop over number of fields
+                           ptr_fieldx = f_addrsx(l, tMe)
+                           ptr_fieldy = f_addrsy(l, tMe)
+                           do k = 1,ke
+                              do j = js, je
+                                 do i = is, ie
+                                    pos = pos + 1
+                                    buffer(pos) = fieldx(i,j,k)
+                                 end do
+                              end do
+                           end do
+                        end do
+                     case(MINUS_NINETY)
+                        if( BTEST(update_flags,SCALAR_BIT) ) then
                            do l=1,l_size  ! loop over number of fields
                               ptr_fieldx = f_addrsx(l, tMe)
                               ptr_fieldy = f_addrsy(l, tMe)
                               do k = 1,ke
-                                 do j = js, je
-                                    do i = is, ie
-                                       pos = pos + 1
-                                       buffer(pos) = fieldx(i,j,k)
-                                    end do
-                                 end do
-                              end do
-                           end do
-                        case(MINUS_NINETY)
-                           if( BTEST(update_flags,SCALAR_BIT) ) then
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l, tMe)
-                                 ptr_fieldy = f_addrsy(l, tMe)
-                                 do k = 1,ke
-                                    do j = js, je
-                                       do i = is, ie
-                                          pos = pos + 1
-                                          buffer(pos) = fieldy(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end do
-                           else
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l, tMe)
-                                 ptr_fieldy = f_addrsy(l, tMe)
-                                 do k = 1,ke
-                                    do j = js, je
-                                       do i = is, ie
-                                          pos = pos + 1
-                                          buffer(pos) = -fieldy(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end do
-                           end if
-                        case(NINETY)
-                           do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l, tMe)
-                              ptr_fieldy = f_addrsy(l, tMe)
-                              do k = 1, ke
-                                 do j = js, je
-                                    do i = is, ie
+                                 do i = is, ie
+                                    do j = je, js, -1
                                        pos = pos + 1
                                        buffer(pos) = fieldy(i,j,k)
                                     end do
                                  end do
                               end do
                            end do
-                        case(ONE_HUNDRED_EIGHTY)
+                        else
                            do l=1,l_size  ! loop over number of fields
                               ptr_fieldx = f_addrsx(l, tMe)
                               ptr_fieldy = f_addrsy(l, tMe)
                               do k = 1,ke
+                                 do i = is, ie
+                                    do j = je, js, -1
+                                       pos = pos + 1
+                                       buffer(pos) = -fieldy(i,j,k)
+                                    end do
+                                 end do
+                              end do
+                           end do
+                        end if
+                     case(NINETY)
+                        do l=1,l_size  ! loop over number of fields
+                           ptr_fieldx = f_addrsx(l, tMe)
+                           ptr_fieldy = f_addrsy(l, tMe)
+                           do k = 1, ke
+                              do i = ie, is, -1
                                  do j = js, je
-                                    do i = is, ie
+                                    pos = pos + 1
+                                    buffer(pos) = fieldy(i,j,k)
+                                 end do
+                              end do
+                           end do
+                        end do
+                     case(ONE_HUNDRED_EIGHTY)
+                        if( BTEST(update_flags,SCALAR_BIT) ) then
+                           do l=1,l_size  ! loop over number of fields
+                              ptr_fieldx = f_addrsx(l, tMe)
+                              ptr_fieldy = f_addrsy(l, tMe)
+                              do k = 1,ke
+                                 do j = je, js, -1
+                                    do i = ie, is, -1
                                        pos = pos + 1
                                        buffer(pos) = fieldx(i,j,k)
                                     end do
                                  end do
                               end do
                            end do
-                        end select
-                     else
-                        select case( update_x%send(ind_x)%rotation(n) )
-                        case(ZERO)
+                        else
                            do l=1,l_size  ! loop over number of fields
                               ptr_fieldx = f_addrsx(l, tMe)
                               ptr_fieldy = f_addrsy(l, tMe)
                               do k = 1,ke
-                                 do j = js, je
-                                    do i = is, ie
+                                 do j = je, js, -1
+                                    do i = ie, is, -1
                                        pos = pos + 1
-                                       buffer(pos) = fieldx(i,j,k)
+                                       buffer(pos) = -fieldx(i,j,k)
                                     end do
                                  end do
                               end do
                            end do
-                        case(MINUS_NINETY)
-                           if( BTEST(update_flags,SCALAR_BIT) ) then
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l, tMe)
-                                 ptr_fieldy = f_addrsy(l, tMe)
-                                 do k = 1,ke
-                                    do i = is, ie
-                                       do j = je, js, -1
-                                          pos = pos + 1
-                                          buffer(pos) = fieldy(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end do
-                           else
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l, tMe)
-                                 ptr_fieldy = f_addrsy(l, tMe)
-                                 do k = 1,ke
-                                    do i = is, ie
-                                       do j = je, js, -1
-                                          pos = pos + 1
-                                          buffer(pos) = -fieldy(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end do
-                           end if
-                        case(NINETY)
-                           do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l, tMe)
-                              ptr_fieldy = f_addrsy(l, tMe)
-                              do k = 1, ke
-                                 do i = ie, is, -1
-                                    do j = js, je
-                                       pos = pos + 1
-                                       buffer(pos) = fieldy(i,j,k)
-                                    end do
-                                 end do
-                              end do
-                           end do
-                        case(ONE_HUNDRED_EIGHTY)
-                           if( BTEST(update_flags,SCALAR_BIT) ) then
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l, tMe)
-                                 ptr_fieldy = f_addrsy(l, tMe)
-                                 do k = 1,ke
-                                    do j = je, js, -1
-                                       do i = ie, is, -1
-                                          pos = pos + 1
-                                          buffer(pos) = fieldx(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end do
-                           else
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l, tMe)
-                                 ptr_fieldy = f_addrsy(l, tMe)
-                                 do k = 1,ke
-                                    do j = je, js, -1
-                                       do i = ie, is, -1
-                                          pos = pos + 1
-                                          buffer(pos) = -fieldx(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end do
-                           end if
-                        end select
-                     end if
+                        end if
+                     end select
                   end if
                end do
                ind_x = ind_x+1
@@ -732,162 +544,90 @@
                      tMe = update_y%send(ind_y)%tileMe(n)
                      is = update_y%send(ind_y)%is(n); ie = update_y%send(ind_y)%ie(n)
                      js = update_y%send(ind_y)%js(n); je = update_y%send(ind_y)%je(n)
-                     if( update_y%send(ind_y)%is_refined(n) ) then
-                        select case( update_y%send(ind_y)%rotation(n) )
-                        case(ZERO)
-                           do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l, tMe)
-                              ptr_fieldy = f_addrsy(l, tMe)
-                              do k = 1,ke
-                                 do j = js, je
-                                    do i = is, ie
-                                       pos = pos + 1
-                                       buffer(pos) = fieldy(i,j,k)
-                                    end do
-                                 end do
-                              end do
-                           end do
-                        case(MINUS_NINETY)
-                           do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l, tMe)
-                              ptr_fieldy = f_addrsy(l, tMe)
-                              do k = 1,ke
-                                 do j = js, je
-                                    do i = is, ie
-                                       pos = pos + 1
-                                       buffer(pos) = fieldx(i,j,k)
-                                    end do
-                                 end do
-                              end do
-                           end do
-                        case(NINETY)
-                           if( BTEST(update_flags,SCALAR_BIT) ) then
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l, tMe)
-                                 ptr_fieldy = f_addrsy(l, tMe)
-                                 do k = 1,ke
-                                    do j = js, je
-                                       do i = is, ie
-                                          pos = pos + 1
-                                          buffer(pos) = fieldx(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end do
-                           else
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l, tMe)
-                                 ptr_fieldy = f_addrsy(l, tMe)
-                                 do k = 1,ke
-                                    do j = js, je
-                                       do i = is, ie
-                                          pos = pos + 1
-                                          buffer(pos) = -fieldx(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end do
-                           end if
-                        case(ONE_HUNDRED_EIGHTY)
-                           do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l, tMe)
-                              ptr_fieldy = f_addrsy(l, tMe)
-                              do k = 1,ke
-                                 do j = js, je
-                                    do i = is, ie
-                                       pos = pos + 1
-                                       buffer(pos) = fieldy(i,j,k)
-                                    end do
-                                 end do
-                              end do
-                           end do
-                        end select
-                     else
-                        select case( update_y%send(ind_y)%rotation(n) )
-                        case(ZERO)
-                           do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l, tMe)
-                              ptr_fieldy = f_addrsy(l, tMe)
-                              do k = 1,ke
-                                 do j = js, je
-                                    do i = is, ie
-                                       pos = pos + 1
-                                       buffer(pos) = fieldy(i,j,k)
-                                    end do
-                                 end do
-                              end do
-                           end do
-                        case(MINUS_NINETY)
-                           do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l, tMe)
-                              ptr_fieldy = f_addrsy(l, tMe)
-                              do k = 1,ke
+                     select case( update_y%send(ind_y)%rotation(n) )
+                     case(ZERO)
+                        do l=1,l_size  ! loop over number of fields
+                           ptr_fieldx = f_addrsx(l, tMe)
+                           ptr_fieldy = f_addrsy(l, tMe)
+                           do k = 1,ke
+                              do j = js, je
                                  do i = is, ie
-                                    do j = je, js, -1
+                                    pos = pos + 1
+                                    buffer(pos) = fieldy(i,j,k)
+                                 end do
+                              end do
+                           end do
+                        end do
+                     case(MINUS_NINETY)
+                        do l=1,l_size  ! loop over number of fields
+                           ptr_fieldx = f_addrsx(l, tMe)
+                           ptr_fieldy = f_addrsy(l, tMe)
+                           do k = 1,ke
+                              do i = is, ie
+                                 do j = je, js, -1
+                                    pos = pos + 1
+                                    buffer(pos) = fieldx(i,j,k)
+                                 end do
+                              end do
+                           end do
+                        end do
+                     case(NINETY)
+                        if( BTEST(update_flags,SCALAR_BIT) ) then
+                           do l=1,l_size  ! loop over number of fields
+                              ptr_fieldx = f_addrsx(l, tMe)
+                              ptr_fieldy = f_addrsy(l, tMe)
+                              do k = 1,ke
+                                 do i = ie, is, -1
+                                    do j = js, je
                                        pos = pos + 1
                                        buffer(pos) = fieldx(i,j,k)
                                     end do
                                  end do
                               end do
                            end do
-                        case(NINETY)
-                           if( BTEST(update_flags,SCALAR_BIT) ) then
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l, tMe)
-                                 ptr_fieldy = f_addrsy(l, tMe)
-                                 do k = 1,ke
+                        else
+                           do l=1,l_size  ! loop over number of fields
+                              ptr_fieldx = f_addrsx(l, tMe)
+                              ptr_fieldy = f_addrsy(l, tMe)
+                              do k = 1,ke
+                                 do i = ie, is, -1
+                                    do j = js, je
+                                       pos = pos + 1
+                                       buffer(pos) = -fieldx(i,j,k)
+                                    end do
+                                 end do
+                              end do
+                           end do
+                        end if
+                     case(ONE_HUNDRED_EIGHTY)
+                        if( BTEST(update_flags,SCALAR_BIT) ) then
+                           do l=1,l_size  ! loop over number of fields
+                              ptr_fieldx = f_addrsx(l, tMe)
+                              ptr_fieldy = f_addrsy(l, tMe)
+                              do k = 1,ke
+                                 do j = je, js, -1
                                     do i = ie, is, -1
-                                       do j = js, je
-                                          pos = pos + 1
-                                          buffer(pos) = fieldx(i,j,k)
-                                       end do
+                                       pos = pos + 1
+                                       buffer(pos) = fieldy(i,j,k)
                                     end do
                                  end do
                               end do
-                           else
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l, tMe)
-                                 ptr_fieldy = f_addrsy(l, tMe)
-                                 do k = 1,ke
+                           end do
+                        else
+                           do l=1,l_size  ! loop over number of fields
+                              ptr_fieldx = f_addrsx(l, tMe)
+                              ptr_fieldy = f_addrsy(l, tMe)
+                              do k = 1,ke
+                                 do j = je, js, -1
                                     do i = ie, is, -1
-                                       do j = js, je
-                                          pos = pos + 1
-                                          buffer(pos) = -fieldx(i,j,k)
-                                       end do
+                                       pos = pos + 1
+                                       buffer(pos) = -fieldy(i,j,k)
                                     end do
                                  end do
                               end do
-                           end if
-                        case(ONE_HUNDRED_EIGHTY)
-                           if( BTEST(update_flags,SCALAR_BIT) ) then
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l, tMe)
-                                 ptr_fieldy = f_addrsy(l, tMe)
-                                 do k = 1,ke
-                                    do j = je, js, -1
-                                       do i = ie, is, -1
-                                          pos = pos + 1
-                                          buffer(pos) = fieldy(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end do
-                           else
-                              do l=1,l_size  ! loop over number of fields
-                                 ptr_fieldx = f_addrsx(l, tMe)
-                                 ptr_fieldy = f_addrsy(l, tMe)
-                                 do k = 1,ke
-                                    do j = je, js, -1
-                                       do i = ie, is, -1
-                                          pos = pos + 1
-                                          buffer(pos) = -fieldy(i,j,k)
-                                       end do
-                                    end do
-                                 end do
-                              end do
-                           end if
-                        end select
-                     end if
+                           end do
+                        end if
+                     end select
                   endif
                enddo
                ind_y = ind_y+1
@@ -941,50 +681,19 @@
                      msgsize = (ie-is+1)*(je-js+1)*ke*2*l_size
                      pos = buffer_pos - msgsize
                      buffer_pos = pos
-                     if(update_x%recv(ind_x)%is_refined(n)) then
-                        index = update_x%recv(ind_x)%index(n)
-                        is1 = update_x%rSpec(tMe)%isNbr(index); ie1 = update_x%rSpec(tMe)%ieNbr(index)
-                        js1 = update_x%rSpec(tMe)%jsNbr(index); je1 = update_x%rSpec(tMe)%jeNbr(index)
-                        ni = ie1 - is1 + 1
-                        nj = je1 - js1 + 1
-                        total = ni*nj
-                        start = (update_x%rSpec(tMe)%start(index)-1)*ke
-
-                        if(start+total*ke>b_sizex ) call mpp_error(FATAL, &
-                             "MPP_DO_UPDATE_V: b_size is less than the size of the data to be filled.")
-                        msgsize = ie - is + 1
-                        do l=1, l_size  ! loop over number of fields
-                           ptr_bufferx = b_addrsx(l, tMe)
-                           ptr_buffery = b_addrsy(l, tMe)
-                           start1 = start + (js-js1)*ni + is - is1 
-                           do k = 1, ke
-                              start2 = start1
-                              do j = js, je
-                                 do i = start2+1, start2+msgsize
-                                    pos = pos + 2
-                                    bufferx(i) = buffer(pos-1)
-                                    buffery(i) = buffer(pos)
-                                 end do
-                                 start2 = start2 + ni
-                              end do
-                              start1 = start1 + total
-                           end do
-                        end do
-                     else
-                        do l=1, l_size  ! loop over number of fields
-                           ptr_fieldx = f_addrsx(l, tMe)
-                           ptr_fieldy = f_addrsy(l, tMe)
-                           do k = 1,ke
-                              do j = js, je
-                                 do i = is, ie
-                                    pos = pos + 2
-                                    fieldx(i,j,k) = buffer(pos-1)
-                                    fieldy(i,j,k) = buffer(pos)
-                                 end do
+                     do l=1, l_size  ! loop over number of fields
+                        ptr_fieldx = f_addrsx(l, tMe)
+                        ptr_fieldy = f_addrsy(l, tMe)
+                        do k = 1,ke
+                           do j = js, je
+                              do i = is, ie
+                                 pos = pos + 2
+                                 fieldx(i,j,k) = buffer(pos-1)
+                                 fieldy(i,j,k) = buffer(pos)
                               end do
                            end do
                         end do
-                     end if
+                     end do
                   end if ! end if( recv(dir) )
                end do  ! do dir=8,1,-1 
                ind_x = ind_x-1
@@ -1008,47 +717,18 @@
                      msgsize = (ie-is+1)*(je-js+1)*ke*l_size
                      pos = buffer_pos - msgsize
                      buffer_pos = pos
-                     if(update_y%recv(ind_y)%is_refined(n)) then
-                        index = update_y%recv(ind_y)%index(n)
-                        is1 = update_y%rSpec(tMe)%isNbr(index); ie1 = update_y%rSpec(tMe)%ieNbr(index)
-                        js1 = update_y%rSpec(tMe)%jsNbr(index); je1 = update_y%rSpec(tMe)%jeNbr(index)
-                        ni = ie1 - is1 + 1
-                        nj = je1 - js1 + 1
-                        total = ni*nj
-                        start = (update_y%rSpec(tMe)%start(index)-1)*ke
-                        if(start+total*ke>b_sizex ) call mpp_error(FATAL, &
-                             "MPP_DO_UPDATE_V: b_size is less than the size of the data to be filled.")
-                        msgsize = ie - is + 1
-                        do l=1,l_size  ! loop over number of fields
-                           ptr_bufferx = b_addrsx(l, tMe)
-                           ptr_buffery = b_addrsy(l, tMe)  
-                           start1 = start + (js-js1)*ni + is - is1 
-                           do k = 1, ke
-                              start2 = start1
-                              do j = js, je
-                                 do i = start2+1, start2+msgsize
-                                    pos = pos + 1
-                                    buffery(i) = buffer(pos)
-                                 end do
-                                 start2 = start2 + ni
-                              end do
-                              start1 = start1 + total
-                           end do
-                        end do
-                     else
-                        do l=1,l_size  ! loop over number of fields
-                           ptr_fieldx = f_addrsx(l, tMe)
-                           ptr_fieldy = f_addrsy(l, tMe)
-                           do k = 1,ke
-                              do j = js, je
-                                 do i = is, ie
-                                    pos = pos + 1
-                                    fieldy(i,j,k) = buffer(pos)
-                                 end do
+                     do l=1,l_size  ! loop over number of fields
+                        ptr_fieldx = f_addrsx(l, tMe)
+                        ptr_fieldy = f_addrsy(l, tMe)
+                        do k = 1,ke
+                           do j = js, je
+                              do i = is, ie
+                                 pos = pos + 1
+                                 fieldy(i,j,k) = buffer(pos)
                               end do
                            end do
                         end do
-                     end if
+                     end do
                   end if
                end do
                ind_y = ind_y-1
@@ -1069,47 +749,18 @@
                      msgsize = (ie-is+1)*(je-js+1)*ke*l_size
                      pos = buffer_pos - msgsize
                      buffer_pos = pos
-                     if(update_x%recv(ind_x)%is_refined(n)) then
-                        index = update_x%recv(ind_x)%index(n)
-                        is1 = update_x%rSpec(tMe)%isNbr(index); ie1 = update_x%rSpec(tMe)%ieNbr(index)
-                        js1 = update_x%rSpec(tMe)%jsNbr(index); je1 = update_x%rSpec(tMe)%jeNbr(index)
-                        ni = ie1 - is1 + 1
-                        nj = je1 - js1 + 1
-                        total = ni*nj
-                        start = (update_x%rSpec(tMe)%start(index)-1)*ke
-                        if(start+total*ke>b_sizex ) call mpp_error(FATAL, &
-                             "MPP_DO_UPDATE_V: b_size is less than the size of the data to be filled.")
-                        msgsize = ie - is + 1
-                        do l=1,l_size  ! loop over number of fields
-                           ptr_bufferx = b_addrsx(l, tMe)
-                           ptr_buffery = b_addrsy(l, tMe)  
-                           start1 = start + (js-js1)*ni + is - is1 
-                           do k = 1, ke
-                              start2 = start1
-                              do j = js, je
-                                 do i = start2+1, start2+msgsize
-                                    pos = pos + 1
-                                    bufferx(i) = buffer(pos)
-                                 end do
-                                 start2 = start2 + ni
-                              end do
-                              start1 = start1 + total
-                           end do
-                        end do
-                     else
-                        do l=1,l_size  ! loop over number of fields
-                           ptr_fieldx = f_addrsx(l, tMe)
-                           ptr_fieldy = f_addrsy(l, tMe)
-                           do k = 1,ke
-                              do j = js, je
-                                 do i = is, ie
-                                    pos = pos + 1
-                                    fieldx(i,j,k) = buffer(pos)
-                                 end do
+                     do l=1,l_size  ! loop over number of fields
+                        ptr_fieldx = f_addrsx(l, tMe)
+                        ptr_fieldy = f_addrsy(l, tMe)
+                        do k = 1,ke
+                           do j = js, je
+                              do i = is, ie
+                                 pos = pos + 1
+                                 fieldx(i,j,k) = buffer(pos)
                               end do
                            end do
                         end do
-                     end if
+                     end do
                   end if
                end do
                ind_x = ind_x-1

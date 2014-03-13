@@ -44,7 +44,7 @@
       out_unit = stdout()
       if( debug )then
           call SYSTEM_CLOCK(tick)
-          write( out_unit,'(a,i18,a,i5,a,2i5,2i8)' )&
+          write( out_unit,'(a,i18,a,i6,a,2i6,2i8)' )&
                'T=',tick, ' PE=',pe, ' MPP_TRANSMIT begin: to_pe, from_pe, put_len, get_len=', to_pe, from_pe, put_len, get_len
       end if
 
@@ -131,7 +131,7 @@
 
       if( debug )then
           call SYSTEM_CLOCK(tick)
-          write( out_unit,'(a,i18,a,i5,a,2i5,2i8)' )&
+          write( out_unit,'(a,i18,a,i6,a,2i6,2i8)' )&
                'T=',tick, ' PE=',pe, ' MPP_TRANSMIT end: to_pe, from_pe, put_len, get_len=', to_pe, from_pe, put_len, get_len
       end if
       return
@@ -158,7 +158,7 @@
       out_unit = stdout()
       if( debug )then
           call SYSTEM_CLOCK(tick)
-          write( out_unit,'(a,i18,a,i5,a,2i5,2i8)' )&
+          write( out_unit,'(a,i18,a,i6,a,2i6,2i8)' )&
                'T=',tick, ' PE=',pe, ' MPP_BROADCAST begin: from_pe, length=', from_pe, length
       end if
 

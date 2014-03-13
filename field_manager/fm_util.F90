@@ -87,8 +87,8 @@ logical                         :: save_default_no_overwrite = .false.
 character(len=fm_path_name_len) :: save_current_list
 character(len=fm_path_name_len) :: save_path
 character(len=fm_path_name_len) :: save_name
-character(len=128) :: version = '$Id: fm_util.F90,v 17.0 2009/07/21 03:19:16 fms Exp $'
-character(len=128) :: tagname = '$Name: tikal $'
+character(len=128) :: version = '$Id: fm_util.F90,v 17.0.28.1 2014/02/07 21:52:09 wfc Exp $'
+character(len=128) :: tagname = '$Name: tikal_201403 $'
 
 !
 !        Interface definitions for overloaded routines
@@ -147,12 +147,6 @@ implicit none
 character(len=*), intent(in)          :: caller
 
 !
-!       Local parameters
-!
-
-character(len=48), parameter  :: sub_name = 'fm_util_set_caller'
-
-!
 !       Local variables
 !
 
@@ -197,12 +191,6 @@ implicit none
 !
 
 !
-!       Local parameters
-!
-
-character(len=48), parameter  :: sub_name = 'fm_util_reset_caller'
-
-!
 !       Local variables
 !
 
@@ -238,12 +226,6 @@ implicit none
 !
 
 character(len=*), intent(in)          :: good_name_list
-
-!
-!       Local parameters
-!
-
-character(len=48), parameter  :: sub_name = 'fm_util_set_good_name_list'
 
 !
 !       Local variables
@@ -286,12 +268,6 @@ implicit none
 !
 
 !
-!       Local parameters
-!
-
-character(len=48), parameter  :: sub_name = 'fm_util_reset_good_name_list'
-
-!
 !       Local variables
 !
 
@@ -327,12 +303,6 @@ implicit none
 !
 
 logical, intent(in)          :: no_overwrite
-
-!
-!       Local parameters
-!
-
-character(len=48), parameter  :: sub_name = 'fm_util_set_no_overwrite'
 
 !
 !       Local variables
@@ -373,12 +343,6 @@ implicit none
 !
 !       arguments
 !
-
-!
-!       Local parameters
-!
-
-character(len=48), parameter  :: sub_name = 'fm_util_reset_no_overwrite'
 
 !
 !       Local variables

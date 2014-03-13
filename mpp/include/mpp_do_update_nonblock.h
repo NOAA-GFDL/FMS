@@ -18,6 +18,7 @@ subroutine MPP_START_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, k
   logical                     :: send(8), recv(8), update_edge_only
   integer                     :: l_size, ke_sum, my_id_update
   integer                     :: request
+  integer                     :: send_msgsize(MAXLIST)
   character(len=128)          :: text
   MPP_TYPE_                   :: buffer(size(mpp_domains_stack_nonblock(:)))
   MPP_TYPE_                   :: field(update%xbegin:update%xend, update%ybegin:update%yend,ke_max)
@@ -123,16 +124,13 @@ subroutine MPP_START_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, k
 
   ! pre-postrecv
   call mpp_clock_begin(recv_clock_nonblock)
-!$OMP parallel do schedule(dynamic) default(shared) private(dir,from_pe,buffer_pos, request, msgsize)
   do m = 1, update%nrecv
      msgsize = nonblock_data(id_update)%size_recv(m)
      if( msgsize.GT.0 )then
         from_pe =  update%recv(m)%pe
         buffer_pos = nonblock_data(id_update)%buffer_pos_recv(m)
-!$OMP CRITICAL
         call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.FALSE., &
              tag=id_update, request=request)
-!$OMP END CRITICAL
         nonblock_data(id_update)%request_recv(m) = request
 
 #ifdef use_libMPI
@@ -140,7 +138,6 @@ subroutine MPP_START_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, k
 #endif
      end if
   end do ! end do m = 1, update%nrecv  
-!$OMP end parallel do
 
   call mpp_clock_end(recv_clock_nonblock)
 
@@ -149,8 +146,9 @@ subroutine MPP_START_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, k
 !$OMP parallel do schedule(dynamic) default(shared) private(buffer_pos,pos,dir,tMe,is,ie,js,je,ptr_field,to_pe, &
 !$OMP msgsize,request)
   do m = 1, update%nsend
+     send_msgsize(m) = 0
      if( update%send(m)%count == 0 )cycle
-  
+     
      buffer_pos = nonblock_data(id_update)%buffer_pos_send(m)
      pos = buffer_pos
 
@@ -160,10 +158,11 @@ subroutine MPP_START_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, k
            tMe = update%send(m)%tileMe(n)
            is = update%send(m)%is(n); ie = update%send(m)%ie(n)
            js = update%send(m)%js(n); je = update%send(m)%je(n)
-           if( update%send(m)%is_refined(n) ) then
+           select case( update%send(m)%rotation(n) )
+           case(ZERO)
               do l=1,l_size  ! loop over number of fields
                  ptr_field = f_addrs(l, tMe)
-                 do k = 1,ke_list(l,tMe)
+                 do k = 1,ke_list(l,tMe)  
                     do j = js, je
                        do i = is, ie
                           pos = pos + 1
@@ -172,75 +171,60 @@ subroutine MPP_START_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, k
                     end do
                  end do
               enddo
-           else
-              select case( update%send(m)%rotation(n) )
-              case(ZERO)
-                 do l=1,l_size  ! loop over number of fields
-                    ptr_field = f_addrs(l, tMe)
-                    do k = 1,ke_list(l,tMe)  
-                       do j = js, je
-                          do i = is, ie
-                             pos = pos + 1
-                             buffer(pos) = field(i,j,k)
-                          end do
-                       end do
-                    end do
-                 enddo
-              case( MINUS_NINETY ) 
-                 do l=1,l_size  ! loop over number of fields
-                    ptr_field = f_addrs(l, tMe)
-                    do k = 1,ke_list(l,tMe)  
-                       do i = is, ie
-                          do j = je, js, -1
-                             pos = pos + 1
-                             buffer(pos) = field(i,j,k)
-                          end do
-                       end do
-                    end do
-                 end do
-              case( NINETY ) 
-                 do l=1,l_size  ! loop over number of fields
-                    ptr_field = f_addrs(l, tMe)
-
-                    do k = 1,ke_list(l,tMe)  
-                       do i = ie, is, -1
-                          do j = js, je
-                             pos = pos + 1
-                             buffer(pos) = field(i,j,k)
-                          end do
-                       end do
-                    end do
-                 end do
-              case( ONE_HUNDRED_EIGHTY ) 
-                 do l=1,l_size  ! loop over number of fields
-                    ptr_field = f_addrs(l, tMe)
-
-                    do k = 1,ke_list(l,tMe)  
+           case( MINUS_NINETY ) 
+              do l=1,l_size  ! loop over number of fields
+                 ptr_field = f_addrs(l, tMe)
+                 do k = 1,ke_list(l,tMe)  
+                    do i = is, ie
                        do j = je, js, -1
-                          do i = ie, is, -1
-                             pos = pos + 1
-                             buffer(pos) = field(i,j,k)
-                          end do
+                          pos = pos + 1
+                          buffer(pos) = field(i,j,k)
                        end do
                     end do
                  end do
-              end select
-           end if
-        endif
-     end do ! do n = 1, update%send(m)%count
+              end do
+           case( NINETY ) 
+              do l=1,l_size  ! loop over number of fields
+                 ptr_field = f_addrs(l, tMe)
 
+                 do k = 1,ke_list(l,tMe)  
+                    do i = ie, is, -1
+                       do j = js, je
+                          pos = pos + 1
+                          buffer(pos) = field(i,j,k)
+                       end do
+                    end do
+                 end do
+              end do
+           case( ONE_HUNDRED_EIGHTY ) 
+              do l=1,l_size  ! loop over number of fields
+                 ptr_field = f_addrs(l, tMe)
+                 do k = 1,ke_list(l,tMe)  
+                    do j = je, js, -1
+                       do i = ie, is, -1
+                          pos = pos + 1
+                          buffer(pos) = field(i,j,k)
+                       end do
+                    end do
+                 end do
+              end do
+           end select
+       endif
+    end do ! do n = 1, update%send(m)%count
+    send_msgsize(m) = pos - buffer_pos
+ enddo
+ !$OMP end parallel do
 
-     msgsize = pos - buffer_pos
+  do m = 1, update%nsend
+    msgsize = send_msgsize(m)
      if( msgsize .GT.0 )then
+        buffer_pos = nonblock_data(id_update)%buffer_pos_send(m)
         to_pe = update%send(m)%pe
-!$OMP CRITICAL
-        call mpp_send( buffer(buffer_pos+1), plen= msgsize, to_pe=to_pe, &
+        call mpp_send( buffer(buffer_pos+1), plen=msgsize , to_pe=to_pe, &
                        tag=id_update, request=request)
-!$OMP END CRITICAL
         nonblock_data(id_update)%request_send(m) = request
      end if
   end do ! end do ist = 0,nlist-1
-!$OMP end parallel do
 
   call mpp_clock_end(send_pack_clock_nonblock)
 
@@ -251,8 +235,7 @@ end subroutine MPP_START_DO_UPDATE_3D_
 
 !###############################################################################
 
-subroutine MPP_COMPLETE_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, ke_max, ke_list, &
-                                      b_addrs, b_size, flags) 
+subroutine MPP_COMPLETE_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, ke_max, ke_list, flags) 
   integer,             intent(in) :: id_update
   integer(LONG_KIND),  intent(in) :: f_addrs(:,:)
   type(domain2d),      intent(in) :: domain
@@ -260,26 +243,19 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type
   integer,             intent(in) :: ke_max
   integer,             intent(in) :: ke_list(:,:)
   MPP_TYPE_,           intent(in) :: d_type  ! creates unique interface
-  integer(LONG_KIND),  intent(in) :: b_addrs(:,:)
-  integer,             intent(in) :: b_size
   integer,             intent(in) :: flags
 
   !--- local variables
-  integer                     :: i, j, k, m, n, l, dir, count, tMe
+  integer                     :: i, j, k, m, n, l, dir, count, tMe, tNbr
   integer                     :: buffer_pos, msgsize, from_pe, pos
   integer                     :: is, ie, js, je
-  integer                     :: start, start1, start2, index
-  integer                     :: is1, ie1, js1, je1, ni, nj, total
   logical                     :: send(8), recv(8), update_edge_only
   integer                     :: l_size, ke_sum, sendsize, recvsize
   character(len=128)          :: text
   MPP_TYPE_                   :: recv_buffer(size(mpp_domains_stack_nonblock(:)))
   MPP_TYPE_                   :: field(update%xbegin:update%xend, update%ybegin:update%yend,ke_max)
-  MPP_TYPE_                   :: buffer(b_size)
   pointer( ptr, recv_buffer )
   pointer(ptr_field, field)
-  pointer(ptr_buffer, buffer) 
-
 
   update_edge_only = BTEST(flags, EDGEONLY)
   recv(1) = BTEST(flags,EAST)
@@ -323,7 +299,7 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type
   !--unpack the data
   call mpp_clock_begin(unpk_clock_nonblock)
 !$OMP parallel do schedule(dynamic) default(shared) private(dir,buffer_pos,pos,tMe,is,ie,js,je,msgsize, &
-!$OMP          ptr_field, index,is1,ie1,js1,je1,total,start,ptr_buffer,start1,start2)
+!$OMP          ptr_field)
   do m = update%nrecv, 1, -1
      if( update%recv(m)%count == 0 )cycle
      buffer_pos = nonblock_data(id_update)%buffer_pos_recv(m) + nonblock_data(id_update)%size_recv(m)
@@ -338,44 +314,17 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type
            msgsize = (ie-is+1)*(je-js+1)*ke_sum
            pos = buffer_pos - msgsize
            buffer_pos = pos
-           if(update%recv(m)%is_refined(n)) then
-              index = update%recv(m)%index(n)
-              is1 = update%rSpec(tMe)%isNbr(index); ie1 = update%rSpec(tMe)%ieNbr(index)
-              js1 = update%rSpec(tMe)%jsNbr(index); je1 = update%rSpec(tMe)%jeNbr(index)
-              ni = ie1 - is1 + 1
-              nj = je1 - js1 + 1
-              total = ni*nj
-              start = (update%rSpec(tMe)%start(index)-1)*ke_max
-              if(start+total*ke_max>size(buffer) ) call mpp_error(FATAL, &
-                   "MPP_COMPETE_UPDATE_DOMAINS: size of buffer is less than the size of the data to be filled.")
-              msgsize = ie - is + 1
-              do l=1, l_size  ! loop over number of fields
-                 ptr_buffer = b_addrs(l, tMe)
-                 if(l==1) start = (update%rSpec(tMe)%start(index)-1)*ke_list(l,tMe)
-                 start1 = start + (js-js1)*ni + is - is1
-                 do k = 1, ke_list(l,tMe)
-                    start2 = start1
-                    do j = js, je
-                       buffer(start2+1:start2+msgsize) = recv_buffer(pos+1:pos+msgsize)
-                       start2 = start2 + ni
-                       pos   = pos + msgsize
-                    end do
-                    start1 = start1 + total
-                 end do
-              enddo
-           else
-              do l=1, l_size  ! loop over number of fields
-                 ptr_field = f_addrs(l, tMe)
-                 do k = 1,ke_list(l,tMe)
-                    do j = js, je
-                       do i = is, ie
-                          pos = pos + 1
-                          field(i,j,k) = recv_buffer(pos)
-                       end do
+           do l=1, l_size  ! loop over number of fields
+              ptr_field = f_addrs(l, tMe)
+              do k = 1,ke_list(l,tMe)
+                 do j = js, je
+                    do i = is, ie
+                       pos = pos + 1
+                       field(i,j,k) = recv_buffer(pos)
                     end do
                  end do
               end do
-           endif
+           end do
         end if
      end do ! do n = 1, update%recv(m)%count
   end do

@@ -1,4 +1,4 @@
-! $Id: drifters_core.F90,v 14.0 2007/03/15 22:38:50 fms Exp $
+! $Id: drifters_core.F90,v 14.0.28.1 2014/02/07 21:43:19 wfc Exp $
 !
 ! nf95 -r8 -g -I ~/regression/ia64/23-Jun-2005/CM2.1U_Control-1990_E1.k32pe/include/ -D_TEST_DRIFTERS -D_F95 quicksort.F90 drifters_core.F90
 
@@ -16,7 +16,7 @@ module drifters_core_mod
 
   ! Globals
   integer, parameter, private   :: MAX_STR_LEN = 128
-  character(MAX_STR_LEN), parameter, private :: version = '$Id: drifters_core.F90,v 14.0 2007/03/15 22:38:50 fms Exp $'
+  character(MAX_STR_LEN), parameter, private :: version = '$Id: drifters_core.F90,v 14.0.28.1 2014/02/07 21:43:19 wfc Exp $'
 
   type drifters_core_type
      ! Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new
@@ -49,7 +49,7 @@ contains
 
     allocate(self%positions(nd, npdim), stat=iflag)
     if(iflag/=0) ier = ier + 1
-    self%positions   = 0
+    self%positions   = 0.
 
     allocate(self%ids(npdim), stat=iflag)
     if(iflag/=0) ier = ier + 1
@@ -129,7 +129,7 @@ contains
 
     allocate(self%positions(self%nd, npdim), stat=iflag)
     allocate(self%ids(npdim), stat=iflag)
-    self%positions = 0
+    self%positions = 0.0
     ! default id numbers
     self%ids       = (/ (i, i=1,npdim) /)
     self%positions(:, 1:self%np) = positions

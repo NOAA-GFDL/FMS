@@ -1,5 +1,5 @@
 ! -*-f90-*-
-! $Id: mpp_util_mpi.inc,v 20.0 2013/12/14 00:27:37 fms Exp $
+! $Id: mpp_util_mpi.inc,v 20.0.2.1 2013/12/20 21:09:30 Zhi.Liang Exp $
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -29,7 +29,7 @@ subroutine mpp_error_basic( errortype, errormsg )
      text = 'WARNING: non-existent errortype (must be NOTE|WARNING|FATAL)'
   end select
 
-  if( npes.GT.1 )write( text,'(a,i5)' )trim(text)//' from PE', pe   !this is the mpp part
+  if( npes.GT.1 )write( text,'(a,i6)' )trim(text)//' from PE', pe   !this is the mpp part
   if( PRESENT(errormsg) )text = trim(text)//': '//trim(errormsg)
 
   out_unit = stdout()

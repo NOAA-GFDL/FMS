@@ -163,7 +163,7 @@ module mpp_domains_mod
   public :: NULL_DOMAIN1D, NULL_DOMAIN2D
 
   public :: domain_axis_spec, domain1D, domain2D, DomainCommunicator2D
-  public :: nest_domain_type
+  public :: nest_domain_type, mpp_group_update_type
 
   !--- public interface from mpp_domains_util.h
   public :: mpp_domains_set_stack_size, mpp_get_compute_domain, mpp_get_compute_domains
@@ -174,7 +174,6 @@ module mpp_domains_mod
   public :: mpp_set_compute_domain, mpp_set_data_domain, mpp_set_global_domain
   public :: mpp_get_memory_domain, mpp_get_domain_shift, mpp_domain_is_tile_root_pe
   public :: mpp_get_tile_id, mpp_get_domain_extents, mpp_get_current_ntile, mpp_get_ntile_count
-  public :: mpp_get_refine_overlap_number, mpp_get_mosaic_refine_overlap
   public :: mpp_get_tile_list
   public :: mpp_get_tile_npes, mpp_get_domain_root_pe, mpp_get_tile_pelist, mpp_get_tile_compute_domains
   public :: mpp_get_num_overlap, mpp_get_overlap
@@ -183,6 +182,7 @@ module mpp_domains_mod
   public :: mpp_copy_domain, mpp_set_domain_symmetry
   public :: mpp_get_update_pelist, mpp_get_update_size
   public :: mpp_get_domain_npes, mpp_get_domain_pelist
+  public :: mpp_clear_group_update
 
   !--- public interface from mpp_domains_reduce.h
   public :: mpp_global_field, mpp_global_max, mpp_global_min, mpp_global_sum
@@ -191,8 +191,8 @@ module mpp_domains_mod
   public :: mpp_broadcast_domain, mpp_domains_init, mpp_domains_exit, mpp_redistribute
   public :: mpp_update_domains, mpp_check_field
   public :: mpp_start_update_domains, mpp_complete_update_domains
+  public :: mpp_create_group_update, mpp_do_group_update
   public :: mpp_update_nest_fine, mpp_update_nest_coarse
-!  public :: mpp_update_domains_ad   ! bnc
   public :: mpp_get_boundary
   !--- public interface from mpp_domains_define.h
   public :: mpp_define_layout, mpp_define_domains, mpp_modify_domain, mpp_define_mosaic
@@ -205,7 +205,8 @@ module mpp_domains_mod
 
   integer, parameter :: NAME_LENGTH = 64
   integer, parameter :: MAXLIST = 24
- 
+  integer, parameter :: MAXOVERLAP = 100
+
   !--- data types used mpp_domains_mod.
   type domain_axis_spec        !type used to specify index limits along an axis of a domain
      private
@@ -252,13 +253,8 @@ module mpp_domains_mod
      integer,         pointer :: ie(:)           => NULL() ! ending   i-index 
      integer,         pointer :: js(:)           => NULL() ! starting j-index 
      integer,         pointer :: je(:)           => NULL() ! ending   j-index 
-     integer,         pointer :: isMe(:)         => NULL() ! starting i-index of my tile on current pe
-     integer,         pointer :: ieMe(:)         => NULL() ! ending   i-index of my tile on current pe
-     integer,         pointer :: jsMe(:)         => NULL() ! starting j-index of my tile on current pe
-     integer,         pointer :: jeMe(:)         => NULL() ! ending   j-index of my tile on current pe
      integer,         pointer :: dir(:)          => NULL() ! direction ( value 1,2,3,4 = E,S,W,N)
      integer,         pointer :: rotation(:)     => NULL() ! rotation angle.
-     logical,         pointer :: is_refined(:)   => NULL() ! indicate if the overlap is refined or not.
      integer,         pointer :: index(:)        => NULL() ! for refinement
      logical,         pointer :: from_contact(:) => NULL() ! indicate if the overlap is computed from define_contact_overlap
   end type overlap_type
@@ -271,31 +267,12 @@ module mpp_domains_mod
      integer                     :: sendsize, recvsize
      type(overlap_type), pointer :: send(:) => NULL()
      type(overlap_type), pointer :: recv(:) => NULL()
-     type(refineSpec),   pointer :: rSpec(:)=> NULL()
      type(overlapSpec),  pointer :: next
   end type overlapSpec
 
   type tile_type
      integer :: xbegin, xend, ybegin, yend
   end type tile_type
-
-  type refineSpec
-     private
-     integer          :: count                 ! number of ovrelapping
-     integer          :: total                 ! total number of points to be saved in buffer.
-     integer, pointer :: isMe(:)     => NULL() ! starting i-index on current pe and tile.
-     integer, pointer :: ieMe(:)     => NULL() ! ending i-index on current pe and tile.
-     integer, pointer :: jsMe(:)     => NULL() ! starting j-index on current pe and tile.
-     integer, pointer :: jeMe(:)     => NULL() ! ending j-index on current pe and tile.
-     integer, pointer :: isNbr(:)    => NULL() ! starting i-index on neighbor pe or tile
-     integer, pointer :: ieNbr(:)    => NULL() ! ending i-index on neighbor pe or tile
-     integer, pointer :: jsNbr(:)    => NULL() ! starting j-index on neighbor pe or tile
-     integer, pointer :: jeNbr(:)    => NULL() ! ending j-index on neighbor pe or tile
-     integer, pointer :: start(:)    => NULL() ! starting index in the buffer
-     integer, pointer :: end(:)      => NULL() ! ending index in the buffer
-     integer, pointer :: dir(:)      => NULL() ! direction 
-     integer, pointer :: rotation(:) => NULL() ! rotation angle.
-  end type refineSpec
 
 !domaintypes of higher rank can be constructed from type domain1D
 !typically we only need 1 and 2D, but could need higher (e.g 3D LES)
@@ -468,6 +445,47 @@ module mpp_domains_mod
      integer(LONG_KIND)              :: field_addrs2(MAX_DOMAIN_FIELDS)
      integer                         :: nfields 
   end type nonblock_type
+
+  type mpp_group_update_type
+     private
+     logical            :: initialized = .FALSE.
+     integer            :: nscalar = 0
+     integer            :: nvector = 0
+     integer            :: flags_s=0, flags_v=0
+     integer            :: whalo_s=0, ehalo_s=0, shalo_s=0, nhalo_s=0
+     integer            :: isize_s=0, jsize_s=0, ksize_s=1
+     integer            :: whalo_v=0, ehalo_v=0, shalo_v=0, nhalo_v=0
+     integer            :: isize_x=0, jsize_x=0, ksize_v=1
+     integer            :: isize_y=0, jsize_y=0
+     integer            :: position=0, gridtype=0
+     logical            :: recv_s(8), recv_v(8)
+     integer            :: is_s=0, ie_s=0, js_s=0, je_s=0
+     integer            :: is_x=0, ie_x=0, js_x=0, je_x=0
+     integer            :: is_y=0, ie_y=0, js_y=0, je_y=0
+     integer            :: nrecv=0, nsend=0
+     integer            :: from_pe(MAXOVERLAP)
+     integer            :: to_pe(MAXOVERLAP)
+     integer            :: recv_size(MAXOVERLAP)
+     integer            :: send_size(MAXOVERLAP)
+     integer            :: msgsize_recv(MAXOVERLAP)
+     integer            :: msgsize_send(MAXOVERLAP)
+     integer            :: buffer_pos_recv(MAXOVERLAP)
+     integer            :: buffer_pos_send(MAXOVERLAP)
+     integer            :: recv_ind_s(MAXOVERLAP)
+     integer            :: recv_ind_x(MAXOVERLAP)
+     integer            :: recv_ind_y(MAXOVERLAP)
+     integer            :: send_ind_s(MAXOVERLAP)
+     integer            :: send_ind_x(MAXOVERLAP)
+     integer            :: send_ind_y(MAXOVERLAP)
+     integer(LONG_KIND) :: addrs_s(MAX_DOMAIN_FIELDS)
+     integer(LONG_KIND) :: addrs_x(MAX_DOMAIN_FIELDS)
+     integer(LONG_KIND) :: addrs_y(MAX_DOMAIN_FIELDS)
+     type(overlapSpec), pointer :: update_s => NULL()
+     type(overlapSpec), pointer :: update_x => NULL()
+     type(overlapSpec), pointer :: update_y => NULL()
+
+  end type mpp_group_update_type
+
 !#######################################################################
 
 !***********************************************************************
@@ -532,8 +550,6 @@ module mpp_domains_mod
   !     integer(LONG_KIND), parameter :: KE_BASE=2**48
   integer(LONG_KIND), parameter :: KE_BASE=Z'0001000000000000'  ! Workaround for 64bit int init problem
 
-  integer, parameter :: MAXOVERLAP = 100 
-
   integer(LONG_KIND) :: domain_cnt=0
 
   !--- the following variables are used in mpp_domains_misc.h
@@ -544,6 +560,7 @@ module mpp_domains_mod
   integer :: wait_clock_nonblock=0  
   integer :: nest_send_clock=0, nest_recv_clock=0, nest_unpk_clock=0
   integer :: nest_wait_clock=0, nest_pack_clock=0
+  integer :: group_recv_clock=0, group_send_clock=0, group_pack_clock=0, group_unpk_clock=0, group_wait_clock=0
 
   !--- namelist interface
 ! <NAMELIST NAME="mpp_domains_nml">
@@ -1236,6 +1253,27 @@ module mpp_domains_mod
      module procedure mpp_complete_do_update_i4_3d
   end interface
 
+
+  interface mpp_create_group_update
+     module procedure mpp_create_group_update_r4_2d
+     module procedure mpp_create_group_update_r4_3d
+     module procedure mpp_create_group_update_r4_4d
+     module procedure mpp_create_group_update_r4_2dv
+     module procedure mpp_create_group_update_r4_3dv
+     module procedure mpp_create_group_update_r4_4dv
+     module procedure mpp_create_group_update_r8_2d
+     module procedure mpp_create_group_update_r8_3d
+     module procedure mpp_create_group_update_r8_4d
+     module procedure mpp_create_group_update_r8_2dv
+     module procedure mpp_create_group_update_r8_3dv
+     module procedure mpp_create_group_update_r8_4dv
+  end interface mpp_create_group_update
+
+  interface mpp_do_group_update
+     module procedure mpp_do_group_update_r4
+     module procedure mpp_do_group_update_r8
+  end interface mpp_do_group_update
+
   ! <INTERFACE NAME="mpp_define_nest_domains">
   !   <OVERVIEW>
   !     Set up a domain to pass data between coarse and fine grid of nested model.
@@ -1585,58 +1623,6 @@ interface mpp_broadcast_domain
 end interface
 
 
-!--------------------------------------------------------------
-!bnc: for adjoint update
-!--------------------------------------------------------------
-!!$  interface mpp_update_domains_ad
-!!$     module procedure mpp_update_domain2D_ad_r8_2d
-!!$     module procedure mpp_update_domain2D_ad_r8_3d
-!!$     module procedure mpp_update_domain2D_ad_r8_4d
-!!$     module procedure mpp_update_domain2D_ad_r8_5d
-!!$     module procedure mpp_update_domain2D_ad_r8_2dv
-!!$     module procedure mpp_update_domain2D_ad_r8_3dv
-!!$     module procedure mpp_update_domain2D_ad_r8_4dv
-!!$     module procedure mpp_update_domain2D_ad_r8_5dv
-!!$#ifdef OVERLOAD_C8
-!!$     module procedure mpp_update_domain2D_ad_c8_2d
-!!$     module procedure mpp_update_domain2D_ad_c8_3d
-!!$     module procedure mpp_update_domain2D_ad_c8_4d
-!!$     module procedure mpp_update_domain2D_ad_c8_5d
-!!$#endif
-!!$#ifndef no_8byte_integers
-!!$     module procedure mpp_update_domain2D_ad_i8_2d
-!!$     module procedure mpp_update_domain2D_ad_i8_3d
-!!$     module procedure mpp_update_domain2D_ad_i8_4d
-!!$     module procedure mpp_update_domain2D_ad_i8_5d
-!!$     module procedure mpp_update_domain2D_ad_l8_2d
-!!$     module procedure mpp_update_domain2D_ad_l8_3d
-!!$     module procedure mpp_update_domain2D_ad_l8_4d
-!!$     module procedure mpp_update_domain2D_ad_l8_5d
-!!$#endif
-!!$#ifdef OVERLOAD_R4
-!!$     module procedure mpp_update_domain2D_ad_r4_2d
-!!$     module procedure mpp_update_domain2D_ad_r4_3d
-!!$     module procedure mpp_update_domain2D_ad_r4_4d
-!!$     module procedure mpp_update_domain2D_ad_r4_5d
-!!$     module procedure mpp_update_domain2D_ad_r4_2dv
-!!$     module procedure mpp_update_domain2D_ad_r4_3dv
-!!$     module procedure mpp_update_domain2D_ad_r4_4dv
-!!$     module procedure mpp_update_domain2D_ad_r4_5dv
-!!$#endif
-!!$#ifdef OVERLOAD_C4
-!!$     module procedure mpp_update_domain2D_ad_c4_2d
-!!$     module procedure mpp_update_domain2D_ad_c4_3d
-!!$     module procedure mpp_update_domain2D_ad_c4_4d
-!!$     module procedure mpp_update_domain2D_ad_c4_5d
-!!$#endif
-!!$     module procedure mpp_update_domain2D_ad_i4_2d
-!!$     module procedure mpp_update_domain2D_ad_i4_3d
-!!$     module procedure mpp_update_domain2D_ad_i4_4d
-!!$     module procedure mpp_update_domain2D_ad_i4_5d
-!!$  end interface
-!bnc
-
-
   interface mpp_do_update
      module procedure mpp_do_update_r8_3d
      module procedure mpp_do_update_r8_3dv
@@ -1676,25 +1662,6 @@ end interface
   end interface
 
 
-!-------------------------------------------------------
-!bnc  for adjoint do_update
-!-------------------------------------------------------
-!!$  interface mpp_do_update_ad
-!!$     module procedure mpp_do_update_ad_r8_3d
-!!$     module procedure mpp_do_update_ad_r8_3dv
-!!$#ifdef OVERLOAD_C8
-!!$     module procedure mpp_do_update_ad_c8_3d
-!!$#endif
-!!$#ifndef no_8byte_integers
-!!$     module procedure mpp_do_update_ad_i8_3d
-!!$#endif
-!!$#ifdef OVERLOAD_R4
-!!$     module procedure mpp_do_update_ad_r4_3d
-!!$     module procedure mpp_do_update_ad_r4_3dv
-!!$#endif
-!!$#ifdef OVERLOAD_C4
-!!$     module procedure mpp_do_update_ad_c4_3d
-!!$#endif
 !!$     module procedure mpp_do_update_ad_i4_3d
 !!$  end interface
 !bnc
@@ -2465,9 +2432,9 @@ end interface
 
   !--- version information variables
   character(len=128), public :: version= &
-       '$Id: mpp_domains.F90,v 20.0 2013/12/14 00:22:42 fms Exp $'
+       '$Id: mpp_domains.F90,v 20.0.2.1.2.2 2014/02/19 16:40:33 Zhi.Liang Exp $'
   character(len=128), public :: tagname= &
-       '$Name: tikal $'
+       '$Name: tikal_201403 $'
 
 
 contains

@@ -513,7 +513,7 @@ MODULE diag_data_mod
   CHARACTER(len=128),PRIVATE  :: version =&
        & '$Id: diag_data.F90,v 20.0 2013/12/14 00:18:41 fms Exp $'
   CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name: tikal $'
+       & '$Name: tikal_201403 $'
 
   ! <!-- Other public variables -->
   ! <DATA NAME="num_files" TYPE="INTEGER" DEFAULT="0">

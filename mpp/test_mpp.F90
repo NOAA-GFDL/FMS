@@ -14,7 +14,8 @@ program test   !test various aspects of mpp_mod
   use mpp_mod, only : mpp_clock_id, mpp_clock_begin, mpp_clock_end, mpp_sync, mpp_malloc
   use mpp_mod, only : mpp_declare_pelist, mpp_set_current_pelist, mpp_set_stack_size
   use mpp_mod, only : mpp_broadcast, mpp_transmit, mpp_sum, mpp_max, mpp_chksum, ALL_PES
-  use mpp_mod, only : mpp_error, FATAL, mpp_sync_self
+  use mpp_mod, only : mpp_gather, mpp_error, FATAL, mpp_sync_self
+  use mpp_io_mod, only: mpp_io_init, mpp_flush
 #ifdef use_MPI_GSM
   use mpp_mod, only : mpp_gsm_malloc, mpp_gsm_free
 #endif
@@ -36,16 +37,24 @@ program test   !test various aspects of mpp_mod
   real                            :: dt
 
   call mpp_init()
+  call mpp_io_init()
   call mpp_set_stack_size(3145746)
   pe = mpp_pe()
   npes = mpp_npes()
   root = mpp_root_pe()
 
   out_unit = stdout()
+  call test_gather(npes,pe,root,out_unit)
+  call test_gatherV(npes,pe,root,out_unit)
+  call test_gather2DV(npes,pe,root,out_unit)
+
+  if(.false.) then
+
   ! first test broadcast
   call test_broadcast()
 
   call SYSTEM_CLOCK( count_rate=ticks_per_sec )
+
   allocate( a(n), b(n) )
   id = mpp_clock_id( 'Random number' )
   call mpp_clock_begin(id)
@@ -210,6 +219,8 @@ program test   !test various aspects of mpp_mod
   end if
 #endif
 #endif
+  endif  ! if(.false.)
+
   call mpp_exit()
 
 contains
@@ -254,6 +265,247 @@ contains
      write(out_unit,*) "==> NOTE from test_broadcast: The test is succesful"
 
   end subroutine test_broadcast
+
+  subroutine test_gather(npes,pe,root,out_unit)
+     integer, intent(in) :: npes,pe,root,out_unit
+
+     integer :: pelist(npes)
+     integer :: i
+     real :: rdata(npes)
+     real :: val
+
+     if(npes < 3)then
+       write(out_unit,*) "Minimum of 3 ranks required. Not testing gather; too few ranks."
+       return
+     endif
+     write(out_unit,*)
+
+     val = pe
+     rdata = -1.0
+     do i=1,npes
+       pelist(i) = i-1
+     enddo
+
+     call mpp_gather((/val/),rdata)
+     if(pe == root)then 
+       do i=1,npes
+        if(INT(rdata(i)) /= pelist(i))then
+           write(6,*) "Gathered data ",INT(rdata(i)), " NE reference ",pelist(i), "at i=",i
+           call mpp_error(FATAL, "Test gather uniform vector with global pelist failed")
+        endif
+       enddo
+     endif
+
+     call mpp_sync()
+     write(out_unit,*) "Test gather uniform vector with global pelist successful"
+
+     rdata = -1.0
+     if(ANY(pe == pelist(2:npes)))call mpp_gather((/val/),rdata(2:npes),pelist(2:npes))
+     if(pe == pelist(2))then
+       do i=2,npes
+        if(INT(rdata(i)) /= pelist(i))then
+           write(6,*) "Gathered data ",INT(rdata(i)), " NE reference ",pelist(i), "at i=",i
+           call mpp_error(FATAL, "Test gather uniform vector with reduced pelist failed")
+        endif
+       enddo
+     endif
+     call mpp_sync()
+     write(out_unit,*) "Test gather uniform vector with reduced pelist successful"
+
+  end subroutine test_gather
+
+
+  subroutine test_gatherV(npes,pe,root,out_unit)
+  implicit none
+     integer, intent(in) :: npes,pe,root,out_unit
+
+     integer :: pelist(npes),rsize(npes)
+     integer :: i,j,k,dsize,ssize
+     real,allocatable :: sdata(:), rdata(:), ref(:)
+
+     if(npes < 3)then
+       write(out_unit,*) "Minimum of 3 ranks required. Not testing gatherV; too few ranks."
+       return
+     elseif(npes > 9999)then
+       write(out_unit,*) "Maximum of 9999 ranks supported. Not testing gatherV; too many ranks."
+       return
+     endif
+     write(out_unit,*)
+
+     ssize = pe+1
+     allocate(sdata(ssize))
+     do i=1,ssize
+       sdata(i) = pe + 0.0001*i
+     enddo
+     do i=1,npes
+       pelist(i) = i-1
+       rsize(i) = i
+     enddo
+
+     dsize = sum(rsize)
+     allocate(rdata(dsize),ref(dsize))
+     rdata = -1.0
+     k=1
+     do j=1,npes
+       do i=1,rsize(j)
+          ref(k) = pelist(j) + 0.0001*i
+          k = k+1
+     enddo;enddo
+
+     call mpp_gather(sdata,ssize,rdata,rsize)
+ 
+     if(pe == root)then
+       k = 1
+       do j=1,npes
+         do i=1,rsize(j)
+           if(rdata(k) /= ref(k))then
+              write(6,*) "Gathered data ",rdata(k), " NE reference ",ref(k), "at k=",k
+              call mpp_error(FATAL, "Test gatherV global pelist failed")
+           endif
+           k = k+1
+       enddo;enddo
+     endif
+
+     call mpp_sync()
+     write(out_unit,*) "Test gatherV with global pelist successful"
+
+     rdata = -1.0
+     ref(1) = -1.0
+
+     if(ANY(pe == pelist(2:npes)))call mpp_gather(sdata,ssize,rdata(2:),rsize(2:),pelist(2:npes))
+
+     if(pe == pelist(2))then
+       k = 1
+       do j=1,npes
+         do i=1,rsize(j)
+           if(rdata(k) /= ref(k))then
+              write(6,*) "Gathered data ",rdata(k), " NE reference ",ref(k), "at k=",k
+              call mpp_error(FATAL, "Test gatherV with reduced pelist failed")
+           endif
+           k = k+1
+       enddo;enddo
+     endif
+     call mpp_sync()
+
+     write(out_unit,*) "Test gatherV with reduced pelist successful"
+     deallocate(sdata,rdata,ref)
+  end subroutine test_gatherV
+
+subroutine test_gather2DV(npes,pe,root,out_unit)
+  implicit none
+     integer, intent(in) :: npes,pe,root,out_unit
+
+     integer :: pelist(npes),rsize(npes)
+     integer :: pelist2(npes),rsize2(npes)
+     integer :: i,j,k,l,nz,ssize,nelems
+     real,allocatable,dimension(:,:) :: data, cdata, sbuff,rbuff
+     real,allocatable :: ref(:,:)
+     integer, parameter :: KSIZE=10
+
+     real :: sbuff1D(size(sbuff))
+     real :: rbuff1D(size(rbuff))
+     pointer(sptr,sbuff1D); pointer(rptr,rbuff1D)
+
+
+     if(npes < 3)then
+       write(out_unit,*) "Minimum of 3 ranks required. Not testing gather2DV; too few ranks."
+       return
+     elseif(npes > 9999)then
+       write(out_unit,*) "Maximum of 9999 ranks supported. Not testing gather2DV; too many ranks."
+       return
+     endif
+     write(out_unit,*)
+
+     ssize = pe+1
+     allocate(data(ssize,KSIZE))
+     do k=1,KSIZE; do i=1,ssize
+       data(i,k) = 10000.0*k + pe + 0.0001*i
+     enddo; enddo
+     do i=1,npes
+       pelist(i) = i-1
+       rsize(i) = i
+     enddo
+
+     nz = KSIZE
+     nelems = sum(rsize(:))
+
+     allocate(rbuff(nz,nelems)); rbuff = -1.0
+     allocate(ref(nelems,nz),cdata(nelems,nz))
+     ref = 0.0; cdata = 0.0
+     if(pe == root)then
+       do k=1,KSIZE
+       l=1
+       do j=1,npes
+         do i=1,rsize(j)
+            ref(l,k) = 10000.0*k + pelist(j) + 0.0001*i
+            l = l+1
+       enddo; enddo;enddo
+     endif
+     allocate(sbuff(nz,ssize))
+     ! this matrix inversion makes for easy gather to the IO root
+     ! and a clear, concise unpack
+     do j=1,ssize
+       do i=1,nz
+         sbuff(i,j) = data(j,i)
+     enddo; enddo
+
+  !  Note that the gatherV implied here is asymmetric; only root needs to know the vector of recv size
+     sptr = LOC(sbuff); rptr = LOC(rbuff)
+     call mpp_gather(sbuff1D,size(sbuff),rbuff1D,nz*rsize(:))
+
+     if(pe == root)then
+        do j=1,nz
+           do i=1,nelems
+             cdata(i,j) = rbuff(j,i)
+        enddo; enddo
+        do j=1,nz
+           do i=1,nelems
+            if(cdata(i,j) /= ref(i,j))then
+               write(6,*) "Gathered data ",cdata(i,j), " NE reference ",ref(i,j), "at i,j=",i,j
+               call mpp_error(FATAL, "Test gather2DV global pelist failed")
+            endif
+       enddo;enddo
+     endif
+
+     call mpp_sync()
+     write(out_unit,*) "Test gather2DV with global pelist successful"
+
+     do i=1,npes
+       pelist2(i) = pelist(npes-i+1) 
+       rsize2(i) = rsize(npes-i+1)
+     enddo
+
+     rbuff = -1.0
+     ref = 0.0; cdata = 0.0
+     if(pe == pelist2(1))then
+       do k=1,KSIZE
+       l=1
+       do j=1,npes
+         do i=1,rsize2(j)
+            ref(l,k) = 10000.0*k + pelist2(j) + 0.0001*i
+            l = l+1
+       enddo; enddo;enddo
+     endif
+
+     call mpp_gather(sbuff1D,size(sbuff),rbuff1D,nz*rsize2(:),pelist2)
+
+     if(pe == pelist2(1))then
+        do j=1,nz
+           do i=1,nelems
+             cdata(i,j) = rbuff(j,i)
+        enddo; enddo
+        do j=1,nz
+           do i=1,nelems
+            if(cdata(i,j) /= ref(i,j))then
+               write(6,*) "Gathered data ",cdata(i,j), " NE reference ",ref(i,j), "at i,j=",i,j
+               call mpp_error(FATAL, "Test gather2DV with reversed pelist failed")
+            endif
+       enddo;enddo
+     endif
+     call mpp_sync()
+     write(out_unit,*) "Test gather2DV with reversed pelist successful"
+     deallocate(data,sbuff,rbuff,cdata,ref)
+  end subroutine test_gather2DV
 
   subroutine test_shared_pointers(locd,n)
     integer(LONG_KIND), intent(in) :: locd

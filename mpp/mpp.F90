@@ -217,7 +217,7 @@ private
   !--- public interface from mpp_comm.h ------------------------------
   public :: mpp_chksum, mpp_max, mpp_min, mpp_sum, mpp_transmit, mpp_send, mpp_recv
   public :: mpp_broadcast, mpp_malloc, mpp_init, mpp_exit
-  public :: mpp_gather
+  public :: mpp_gather, mpp_scatter
 #ifdef use_MPI_GSM
   public :: mpp_gsm_malloc, mpp_gsm_free
 #endif
@@ -663,6 +663,27 @@ private
      module procedure mpp_gather_int4_1dv
      module procedure mpp_gather_real4_1dv
      module procedure mpp_gather_real8_1dv
+     module procedure mpp_gather_pelist_int4_2d
+     module procedure mpp_gather_pelist_int4_3d
+     module procedure mpp_gather_pelist_real4_2d
+     module procedure mpp_gather_pelist_real4_3d
+     module procedure mpp_gather_pelist_real8_2d
+     module procedure mpp_gather_pelist_real8_3d
+  end interface
+
+  !#####################################################################
+  ! <INTERFACE NAME="mpp_scatter">
+  !  <OVERVIEW>
+  !    gather information onto root pe.
+  !  </OVERVIEW>
+  ! </INTERFACE>
+  interface mpp_scatter
+     module procedure mpp_scatter_pelist_int4_2d
+     module procedure mpp_scatter_pelist_int4_3d
+     module procedure mpp_scatter_pelist_real4_2d
+     module procedure mpp_scatter_pelist_real4_3d
+     module procedure mpp_scatter_pelist_real8_2d
+     module procedure mpp_scatter_pelist_real8_3d
   end interface
 
 
@@ -1190,7 +1211,7 @@ private
   character(len=128), public :: version= &
        '$Id mpp.F90 $'
   character(len=128), public :: tagname= &
-       '$Name: tikal $'
+       '$Name: tikal_201403 $'
 
   integer, parameter :: MAX_REQUEST_MIN  = 10000
   integer            :: request_multiply = 20

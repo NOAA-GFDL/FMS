@@ -83,7 +83,7 @@ module oda_core_ecda_mod
 
   type(grid_type), pointer :: Grd
 
-  type(horiz_interp_type) :: Interp
+  type(horiz_interp_type), save :: Interp
 
   real, allocatable, dimension(:, :) :: x_grid, y_grid, x_grid_uv, y_grid_uv
   real :: lon_out(1, 1), lat_out(1, 1)

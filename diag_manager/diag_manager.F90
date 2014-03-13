@@ -214,7 +214,7 @@ MODULE diag_manager_mod
   CHARACTER(len=128), PARAMETER :: version =&
        & '$Id: diag_manager.F90,v 20.0 2013/12/14 00:18:48 fms Exp $'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: tikal $'  
+       & '$Name: tikal_201403 $'  
 
   type(time_type) :: Time_end
 

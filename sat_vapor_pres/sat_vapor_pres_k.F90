@@ -28,8 +28,8 @@
  implicit none
  private
 
- character(len=128), parameter :: version = '$Id: sat_vapor_pres_k.F90,v 18.0 2010/03/02 23:58:26 fms Exp $'
- character(len=128), parameter :: tagname = '$Name: tikal $'
+ character(len=128), parameter :: version = '$Id: sat_vapor_pres_k.F90,v 18.0.14.1 2014/02/07 21:43:20 wfc Exp $'
+ character(len=128), parameter :: tagname = '$Name: tikal_201403 $'
 
  public :: sat_vapor_pres_init_k
  public :: lookup_es_k
@@ -191,7 +191,7 @@
    endif
 
       table_siz = table_size
-      dtres = (tcmax - tcmin)/(table_size-1)
+      dtres = (tcmax - tcmin)/real(table_size-1)
       tminl = real(tcmin)+TFREEZE  ! minimum valid temp in table
       dtinvl = 1./dtres
       tepsl = .5*dtres
@@ -203,7 +203,7 @@
 ! To be able to compute tables for any temperature range and resolution,
 ! and at the same time exactly reproduce answers from memphis revision,
 ! it is necessary to compute ftact differently than it is in memphis.
-      tfact = 5*dtinvl
+      tfact = 5.0*dtinvl
 
       hdtinv = dtinvl*0.5
 
@@ -337,9 +337,9 @@
 !  see smithsonian meteorological tables page 350.
 
      if (tem(i) > -20.+TBASI) then
-         x = -7.90298*(TBASW/tem(i)-1) + 5.02808*log10(TBASW/tem(i)) &
-             -1.3816e-07*(10**((1-tem(i)/TBASW)*11.344)-1)        &
-             +8.1328e-03*(10**((TBASW/tem(i)-1)*(-3.49149))-1)    &
+         x = -7.90298*(TBASW/tem(i)-1.0) + 5.02808*log10(TBASW/tem(i)) &
+             -1.3816e-07*(10.0**((1.0-tem(i)/TBASW)*11.344)-1.0)        &
+             +8.1328e-03*(10.0**((TBASW/tem(i)-1.0)*(-3.49149))-1.0)    &
              +log10(ESBASW)
          esh2o = 10.**(x)
      else
@@ -379,9 +379,9 @@
 !  values over 100 c may not be valid
 !  see smithsonian meteorological tables page 350.
 
-         x = -7.90298*(TBASW/tem(i)-1) + 5.02808*log10(TBASW/tem(i)) &
-             -1.3816e-07*(10**((1-tem(i)/TBASW)*11.344)-1)        &
-             +8.1328e-03*(10**((TBASW/tem(i)-1)*(-3.49149))-1)    &
+         x = -7.90298*(TBASW/tem(i)-1.0) + 5.02808*log10(TBASW/tem(i)) &
+             -1.3816e-07*(10.0**((1.0-tem(i)/TBASW)*11.344)-1.0)        &
+             +8.1328e-03*(10.0**((TBASW/tem(i)-1.0)*(-3.49149))-1.0)    &
              +log10(ESBASW)
          esh2o = 10.**(x)
 
@@ -421,9 +421,9 @@
 !  values over 100 c may not be valid
 !  see smithsonian meteorological tables page 350.
 
-         x = -7.90298*(TBASW/tem(i)-1) + 5.02808*log10(TBASW/tem(i)) &
-             -1.3816e-07*(10**((1-tem(i)/TBASW)*11.344)-1)        &
-             +8.1328e-03*(10**((TBASW/tem(i)-1)*(-3.49149))-1)    &
+         x = -7.90298*(TBASW/tem(i)-1.0) + 5.02808*log10(TBASW/tem(i)) &
+             -1.3816e-07*(10.0**((1.0-tem(i)/TBASW)*11.344)-1.0)        &
+             +8.1328e-03*(10.0**((TBASW/tem(i)-1.0)*(-3.49149))-1.0)    &
              +log10(ESBASW)
          es(i) = 10.**(x)
      endif

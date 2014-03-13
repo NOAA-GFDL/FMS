@@ -309,7 +309,7 @@ end subroutine MPP_DO_GET_BOUNDARY_3D_
 
 
 subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy, b_addrsx, b_addrsy, &
-                                        bsizex, bsizey, ke, d_type, flags)
+                                        bsizex, bsizey, ke, d_type, flags, gridtype)
   type(domain2D),     intent(in)  :: domain
   type(overlapSpec),  intent(in)  :: boundx, boundy
   integer(LONG_KIND), intent(in)  :: f_addrsx(:,:), f_addrsy(:,:)
@@ -317,6 +317,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
   integer,            intent(in)  :: bsizex(:), bsizey(:), ke
   MPP_TYPE_, intent(in)           :: d_type  ! creates unique interface
   integer, intent(in)             :: flags
+  integer, intent(in)             :: gridtype
 
   MPP_TYPE_ :: fieldx(boundx%xbegin:boundx%xend, boundx%ybegin:boundx%yend,ke)
   MPP_TYPE_ :: fieldy(boundy%xbegin:boundy%xend, boundy%ybegin:boundy%yend,ke)
@@ -342,7 +343,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
   integer                 :: rank_x, rank_y, cur_rank, ind_x, ind_y
   integer                 :: nsend_x, nsend_y, nrecv_x, nrecv_y, num
   character(len=8)        :: text
-  integer                 :: outunit
+  integer                 :: outunit, shift, midpoint
 
   MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
   pointer( ptr, buffer )
@@ -988,6 +989,33 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
      endif
      cur_rank = min(rank_x, rank_y)
   end do
+
+  !--- domain always is symmetry
+  shift = 1
+  tMe = 1
+  if( BTEST(domain%fold,NORTH) .AND. (.NOT.BTEST(flags,SCALAR_BIT)) )then
+     j = domain%y(1)%global%end+shift
+     if( domain%y(1)%data%begin.LE.j .AND. j.LE.domain%y(1)%data%end+shift )then !fold is within domain
+        !poles set to 0: BGRID only
+        if( gridtype.EQ.BGRID_NE )then
+           midpoint = (domain%x(1)%global%begin+domain%x(1)%global%end-1+shift)/2
+           j  = domain%y(1)%global%end+shift - domain%y(1)%compute%begin + 1
+           is = domain%x(1)%global%begin; ie = domain%x(1)%global%end+shift
+           do i = is ,ie, midpoint
+              if( domain%x(1)%compute%begin == i )then
+                 do l=1,l_size
+                    ptr_wbufferx = b_addrsx(3, l, tMe)     
+                    ptr_wbuffery = b_addrsy(3, l, tMe)     
+                    do k = 1,ke
+                       wbufferx(j,k) = 0
+                       wbuffery(j,k) = 0
+                    end do
+                 end do
+              end if
+           end do
+        endif
+     endif
+  endif
 
   call mpp_sync_self( )
 

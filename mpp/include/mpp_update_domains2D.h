@@ -1,6 +1,6 @@
 ! -*-f90-*-
     subroutine MPP_UPDATE_DOMAINS_2D_( field, domain, flags, complete, position, &
-                                       whalo, ehalo, shalo, nhalo, name, tile_count, buffer)
+                                       whalo, ehalo, shalo, nhalo, name, tile_count)
 !updates data domain of 2D field whose computational domains have been computed
       MPP_TYPE_,        intent(inout)        :: field(:,:)
       type(domain2D),   intent(inout)        :: domain  
@@ -10,18 +10,17 @@
       integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
-      MPP_TYPE_,     intent(inout), optional :: buffer(:)
 
       MPP_TYPE_ :: field3D(size(field,1),size(field,2),1)
       pointer( ptr, field3D )
       ptr = LOC(field)
       call mpp_update_domains( field3D, domain, flags, complete, position, &
-                               whalo, ehalo, shalo, nhalo, name, tile_count, buffer )
+                               whalo, ehalo, shalo, nhalo, name, tile_count )
       return
     end subroutine MPP_UPDATE_DOMAINS_2D_
 
     subroutine MPP_UPDATE_DOMAINS_3D_( field, domain, flags, complete, position, &
-                                       whalo, ehalo, shalo, nhalo, name, tile_count, buffer )
+                                       whalo, ehalo, shalo, nhalo, name, tile_count)
 !updates data domain of 3D field whose computational domains have been computed
       MPP_TYPE_,        intent(inout)        :: field(:,:,:)
       type(domain2D),   intent(inout)        :: domain  
@@ -31,17 +30,15 @@
       integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo ! specify halo region to be updated.
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
-      MPP_TYPE_,     intent(inout), optional :: buffer(:)
 
       integer                 :: update_position, update_whalo, update_ehalo, update_shalo, update_nhalo, ntile
 
       integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),save :: f_addrs=-9999
-      integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrs=-9999
-      integer          :: tile, buffer_size, max_ntile
+      integer          :: tile, max_ntile
       character(len=3) :: text
       logical          :: set_mismatch, is_complete
       logical          :: do_update
-      integer, save    :: isize=0, jsize=0, ke=0, l_size=0, bsize=0, list=0
+      integer, save    :: isize=0, jsize=0, ke=0, l_size=0, list=0
       integer, save    :: pos, whalosz, ehalosz, shalosz, nhalosz
       MPP_TYPE_        :: d_type
       type(overlapSpec), pointer :: update => NULL()
@@ -107,17 +104,11 @@
          call mpp_error(FATAL,'MPP_UPDATE_3D: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
       endif
       f_addrs(list, tile) = LOC(field)
-      buffer_size = 0
-      if(present(buffer)) then
-         buffer_size = size(buffer(:))
-         b_addrs(list, tile) = LOC(buffer)
-      end if
       update_position = CENTER
       if(present(position)) update_position = position
       if(list == 1 .AND. tile == 1 )then
          isize=size(field,1); jsize=size(field,2); ke = size(field,3); pos = update_position
          whalosz = update_whalo; ehalosz = update_ehalo; shalosz = update_shalo; nhalosz = update_nhalo
-         bsize = buffer_size
       else
          set_mismatch = .false.
          set_mismatch = set_mismatch .OR. (isize /= size(field,1))
@@ -128,7 +119,6 @@
          set_mismatch = set_mismatch .OR. (update_ehalo /= ehalosz)
          set_mismatch = set_mismatch .OR. (update_shalo /= shalosz)
          set_mismatch = set_mismatch .OR. (update_nhalo /= nhalosz)
-         set_mismatch = set_mismatch .OR. (buffer_size  /= bsize)
          if(set_mismatch)then
             write( text,'(i2)' ) list
             call mpp_error(FATAL,'MPP_UPDATE_3D: Incompatible field at count '//text//' for group update.' )
@@ -152,21 +142,21 @@
             !                    b_addrs(1:l_size,1:ntile), bsize, flags)
 
             if ( PRESENT ( flags ) ) then
-                call mpp_do_update( f_addrs(1:l_size,1:ntile), domain, update, d_type, ke, b_addrs(1:l_size,1:ntile), bsize, flags )
+                call mpp_do_update( f_addrs(1:l_size,1:ntile), domain, update, d_type, ke, flags )
             else
-                call mpp_do_update( f_addrs(1:l_size,1:ntile), domain, update, d_type, ke, b_addrs(1:l_size,1:ntile), bsize )
+                call mpp_do_update( f_addrs(1:l_size,1:ntile), domain, update, d_type, ke )
             endif    
                 
 
          end if
-         l_size=0; f_addrs=-9999; bsize=0; b_addrs=-9999; isize=0;  jsize=0;  ke=0
+         l_size=0; f_addrs=-9999; isize=0;  jsize=0;  ke=0
       endif
       return
 
     end subroutine MPP_UPDATE_DOMAINS_3D_
 
     subroutine MPP_UPDATE_DOMAINS_4D_( field, domain, flags, complete, position, &
-                                       whalo, ehalo, shalo, nhalo, name, tile_count, buffer )
+                                       whalo, ehalo, shalo, nhalo, name, tile_count )
 !updates data domain of 4D field whose computational domains have been computed
       MPP_TYPE_,        intent(inout)        :: field(:,:,:,:)
       type(domain2D),   intent(inout)        :: domain  
@@ -176,18 +166,17 @@
       integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
-      MPP_TYPE_,     intent(inout), optional :: buffer(:)
 
       MPP_TYPE_ :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4))
       pointer( ptr, field3D )
       ptr = LOC(field)
       call mpp_update_domains( field3D, domain, flags, complete, position, &
-                               whalo, ehalo, shalo, nhalo, name, tile_count, buffer)
+                               whalo, ehalo, shalo, nhalo, name, tile_count)
       return
     end subroutine MPP_UPDATE_DOMAINS_4D_
 
     subroutine MPP_UPDATE_DOMAINS_5D_( field, domain, flags, complete, position, &
-                                       whalo, ehalo, shalo, nhalo, name, tile_count, buffer )
+                                       whalo, ehalo, shalo, nhalo, name, tile_count )
 !updates data domain of 5D field whose computational domains have been computed
       MPP_TYPE_,        intent(inout)        :: field(:,:,:,:,:)
       type(domain2D),   intent(inout)        :: domain  
@@ -197,14 +186,13 @@
       integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
-      MPP_TYPE_,     intent(inout), optional :: buffer(:)
 
       MPP_TYPE_ :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4)*size(field,5))
 
       pointer( ptr, field3D )
       ptr = LOC(field)
       call mpp_update_domains( field3D, domain, flags, complete, position, &
-                               whalo, ehalo, shalo, nhalo, name, tile_count, buffer )
+                               whalo, ehalo, shalo, nhalo, name, tile_count )
       return
     end subroutine MPP_UPDATE_DOMAINS_5D_
 
@@ -220,8 +208,8 @@
       type(DomainCommunicator2D),pointer,optional :: dc_handle
       pointer( ptr_in,  field3D_in  )
       pointer( ptr_out, field3D_out )
-      ptr_in  = LOC(field_in )
-      ptr_out = LOC(field_out)
+      if(domain_in%initialized) ptr_in  = LOC(field_in )
+      if(domain_out%initialized) ptr_out = LOC(field_out)
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, dc_handle, position )
 
       return
@@ -334,8 +322,8 @@
       type(DomainCommunicator2D),pointer,optional :: dc_handle
       pointer( ptr_in,  field3D_in  )
       pointer( ptr_out, field3D_out )
-      ptr_in  = LOC(field_in )
-      ptr_out = LOC(field_out)
+      if(domain_in%initialized) ptr_in  = LOC(field_in )
+      if(domain_out%initialized) ptr_out = LOC(field_out)
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, dc_handle, position  )
 
       return
@@ -354,8 +342,8 @@
       type(DomainCommunicator2D),pointer,optional :: dc_handle
       pointer( ptr_in,  field3D_in  )
       pointer( ptr_out, field3D_out )
-      ptr_in  = LOC(field_in )
-      ptr_out = LOC(field_out)
+      if(domain_in%initialized) ptr_in  = LOC(field_in )
+      if(domain_out%initialized) ptr_out = LOC(field_out)
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, dc_handle, position  )
 
       return
@@ -366,7 +354,7 @@
 !VECTOR_FIELD_ is set to false for MPP_TYPE_ integer.
 !vector fields
     subroutine MPP_UPDATE_DOMAINS_2D_V_( fieldx, fieldy, domain, flags, gridtype, complete, &
-                                         whalo, ehalo, shalo, nhalo, name, tile_count, bufferx, buffery)
+                                         whalo, ehalo, shalo, nhalo, name, tile_count)
 !updates data domain of 2D field whose computational domains have been computed
       MPP_TYPE_,        intent(inout)        :: fieldx(:,:), fieldy(:,:)
       type(domain2D),   intent(inout)        :: domain
@@ -375,7 +363,6 @@
       integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
-      MPP_TYPE_,     intent(inout), optional :: bufferx(:), buffery(:)
 
       MPP_TYPE_ :: field3Dx(size(fieldx,1),size(fieldx,2),1)
       MPP_TYPE_ :: field3Dy(size(fieldy,1),size(fieldy,2),1)
@@ -384,13 +371,13 @@
       ptrx = LOC(fieldx)
       ptry = LOC(fieldy)
       call mpp_update_domains( field3Dx, field3Dy, domain, flags, gridtype, complete, &
-                               whalo, ehalo, shalo, nhalo, name, tile_count, bufferx, buffery )
+                               whalo, ehalo, shalo, nhalo, name, tile_count)
       return
     end subroutine MPP_UPDATE_DOMAINS_2D_V_
 
 
     subroutine MPP_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype, complete, &
-                                         whalo, ehalo, shalo, nhalo, name, tile_count, bufferx, buffery )
+                                         whalo, ehalo, shalo, nhalo, name, tile_count)
 !updates data domain of 3D field whose computational domains have been computed
       MPP_TYPE_,        intent(inout)        :: fieldx(:,:,:), fieldy(:,:,:)
       type(domain2D),   intent(inout)        :: domain
@@ -399,19 +386,16 @@
       integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
-      MPP_TYPE_,     intent(inout), optional :: bufferx(:), buffery(:)
 
       integer                                :: update_whalo, update_ehalo, update_shalo, update_nhalo, ntile    
       integer                                :: grid_offset_type
       logical                                :: exchange_uv
         
       integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),save :: f_addrsx=-9999, f_addrsy=-9999
-      integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrsx=-9999, b_addrsy=-9999
       logical          :: do_update, is_complete
       integer, save    :: isize(2)=0,jsize(2)=0,ke=0,l_size=0, offset_type=0, list=0
       integer, save    :: whalosz, ehalosz, shalosz, nhalosz
-      integer, save    :: bsizex=1, bsizey=1
-      integer          :: bufferx_size, buffery_size, tile, max_ntile
+      integer          :: tile, max_ntile
       integer          :: position_x, position_y
       logical          :: set_mismatch
       character(len=3) :: text
@@ -490,20 +474,12 @@
 
       f_addrsx(list, tile) = LOC(fieldx)
       f_addrsy(list, tile) = LOC(fieldy)
-      bufferx_size = 1; buffery_size = 1
-      if(present(bufferx)) then
-         bufferx_size = size(bufferx(:))
-         buffery_size = size(buffery(:))
-         b_addrsx(list, tile) = LOC(bufferx)
-         b_addrsy(list, tile) = LOC(buffery)
-      end if
 
       if(list == 1 .AND. tile == 1)then
          isize(1)=size(fieldx,1); jsize(1)=size(fieldx,2); ke = size(fieldx,3)
          isize(2)=size(fieldy,1); jsize(2)=size(fieldy,2)
          offset_type = grid_offset_type
          whalosz = update_whalo; ehalosz = update_ehalo; shalosz = update_shalo; nhalosz = update_nhalo
-         bsizex = bufferx_size; bsizey = buffery_size
       else
          set_mismatch = .false.
          set_mismatch = set_mismatch .OR. (isize(1) /= size(fieldx,1))
@@ -517,8 +493,6 @@
          set_mismatch = set_mismatch .OR. (update_ehalo /= ehalosz)
          set_mismatch = set_mismatch .OR. (update_shalo /= shalosz)
          set_mismatch = set_mismatch .OR. (update_nhalo /= nhalosz)
-         set_mismatch = set_mismatch .OR. (bufferx_size  /= bsizex)
-         set_mismatch = set_mismatch .OR. (buffery_size  /= bsizey)
          if(set_mismatch)then
             write( text,'(i2)' ) list
             call mpp_error(FATAL,'MPP_UPDATE_3D_V: Incompatible field at count '//text//' for group vector update.' )
@@ -561,16 +535,13 @@
             updatey => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_y)
             if(exchange_uv) then
                call mpp_do_update(f_addrsx(1:l_size,1:ntile),f_addrsy(1:l_size,1:ntile), domain, updatey, updatex, &
-                    d_type,ke, b_addrsx(1:l_size,1:ntile), b_addrsy(1:l_size,1:ntile),                             &
-                    bsizex, bsizey, grid_offset_type, flags)
+                    d_type,ke, grid_offset_type, flags)
             else
                call mpp_do_update(f_addrsx(1:l_size,1:ntile),f_addrsy(1:l_size,1:ntile), domain, updatex, updatey, &
-                    d_type,ke, b_addrsx(1:l_size,1:ntile), b_addrsy(1:l_size,1:ntile),                             &
-                    bsizex, bsizey, grid_offset_type, flags)
+                    d_type,ke,grid_offset_type, flags)
             end if
          end if
          l_size=0; f_addrsx=-9999; f_addrsy=-9999; isize=0;  jsize=0;  ke=0
-         bsizex=1; b_addrsx=-9999; bsizey=1; b_addrsy=-9999;
       end if
 
       return
@@ -578,7 +549,7 @@
 
 
     subroutine MPP_UPDATE_DOMAINS_4D_V_( fieldx, fieldy, domain, flags, gridtype, complete, &
-                                         whalo, ehalo, shalo, nhalo, name, tile_count, bufferx, buffery )
+                                         whalo, ehalo, shalo, nhalo, name, tile_count )
 !updates data domain of 4D field whose computational domains have been computed
       MPP_TYPE_,        intent(inout)        :: fieldx(:,:,:,:), fieldy(:,:,:,:)
       type(domain2D),   intent(inout)        :: domain
@@ -587,7 +558,6 @@
       integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
-      MPP_TYPE_,     intent(inout), optional :: bufferx(:), buffery(:)
 
       MPP_TYPE_ :: field3Dx(size(fieldx,1),size(fieldx,2),size(fieldx,3)*size(fieldx,4))
       MPP_TYPE_ :: field3Dy(size(fieldy,1),size(fieldy,2),size(fieldy,3)*size(fieldy,4))
@@ -597,12 +567,12 @@
       ptrx = LOC(fieldx)
       ptry = LOC(fieldy)
       call mpp_update_domains( field3Dx, field3Dy, domain, flags, gridtype, complete, &
-                               whalo, ehalo, shalo, nhalo, name, tile_count, bufferx, buffery )
+                               whalo, ehalo, shalo, nhalo, name, tile_count)
       return
     end subroutine MPP_UPDATE_DOMAINS_4D_V_
 
     subroutine MPP_UPDATE_DOMAINS_5D_V_( fieldx, fieldy, domain, flags, gridtype, complete, &
-                                         whalo, ehalo, shalo, nhalo, name, tile_count, bufferx, buffery )
+                                         whalo, ehalo, shalo, nhalo, name, tile_count )
 !updates data domain of 5D field whose computational domains have been computed
       MPP_TYPE_,        intent(inout)        :: fieldx(:,:,:,:,:), fieldy(:,:,:,:,:)
       type(domain2D),   intent(inout)        :: domain
@@ -611,7 +581,6 @@
       integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
-      MPP_TYPE_,     intent(inout), optional :: bufferx(:), buffery(:)
 
       MPP_TYPE_ :: field3Dx(size(fieldx,1),size(fieldx,2),size(fieldx,3)*size(fieldx,4)*size(fieldx,5))
       MPP_TYPE_ :: field3Dy(size(fieldy,1),size(fieldy,2),size(fieldy,3)*size(fieldy,4)*size(fieldy,5))
@@ -620,7 +589,7 @@
       ptrx = LOC(fieldx)
       ptry = LOC(fieldy)
       call mpp_update_domains( field3Dx, field3Dy, domain, flags, gridtype, complete, &
-                               whalo, ehalo, shalo, nhalo, name, tile_count, bufferx, buffery )
+                               whalo, ehalo, shalo, nhalo, name, tile_count)
 
       return
     end subroutine MPP_UPDATE_DOMAINS_5D_V_

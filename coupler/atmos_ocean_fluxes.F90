@@ -188,8 +188,8 @@ character(len=48), parameter    :: mod_name = 'atmos_ocean_fluxes_mod'
 !----------------------------------------------------------------------
 !
 
-character(len=128) :: version = '$Id: atmos_ocean_fluxes.F90,v 18.0 2010/03/02 23:55:03 fms Exp $'
-character(len=128) :: tagname = '$Name: tikal $'
+character(len=128) :: version = '$Id: atmos_ocean_fluxes.F90,v 18.0.28.1 2014/02/07 21:55:48 wfc Exp $'
+character(len=128) :: tagname = '$Name: tikal_201403 $'
 
 !
 !-----------------------------------------------------------------------
@@ -408,12 +408,12 @@ else  !}{
         endif
       else
         if (implementation .eq. implementation_test) then
-	  long_err_msg = 'Undefined flux_type/implementation (flux_type given from field_table): '
-	  long_err_msg = long_err_msg // trim(flux_type_test) // '/implementation/' // trim(implementation_test)
+          long_err_msg = 'Undefined flux_type/implementation (flux_type given from field_table): '
+          long_err_msg = long_err_msg // trim(flux_type_test) // '/implementation/' // trim(implementation_test)
           call mpp_error(FATAL, trim(error_header) // long_err_msg)
         else
-	  long_err_msg = ' Undefined flux_type/implementation (both given from field_table): '
-	  long_err_msg = long_err_msg //  trim(flux_type_test) // '/implementation/' // trim(implementation_test)
+          long_err_msg = ' Undefined flux_type/implementation (both given from field_table): '
+          long_err_msg = long_err_msg //  trim(flux_type_test) // '/implementation/' // trim(implementation_test)
           call mpp_error(FATAL, trim(error_header) // long_err_msg)
         endif
       endif
@@ -968,10 +968,6 @@ real, intent(in), dimension(:)                  :: seawater
 character(len=64), parameter    :: sub_name = 'atmos_ocean_fluxes_calc'
 character(len=256), parameter   :: error_header =                               &
      '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
-character(len=256), parameter   :: warn_header =                                &
-     '==>Warning from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
-character(len=256), parameter   :: note_header =                                &
-     '==>Note from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
 
 !
 !-----------------------------------------------------------------------
@@ -1037,14 +1033,14 @@ do n = 1, gas_fluxes%num_bcs  !{
       if (gas_fluxes%bc(n)%implementation .eq. 'ocmip2') then  !}{
 
         do i = 1, length  !{
-          if (seawater(i) == 1) then  !{
+          if (seawater(i) == 1.) then  !{
             gas_fluxes%bc(n)%field(ind_kw)%values(i) = gas_fluxes%bc(n)%param(1) * gas_fields_atm%bc(n)%field(ind_u10)%values(i)**2
             cair(i) =                                                           &
                  gas_fields_ice%bc(n)%field(ind_alpha)%values(i) *              &
                  gas_fields_atm%bc(n)%field(ind_pCair)%values(i) *              &
                  gas_fields_atm%bc(n)%field(ind_psurf)%values(i) * gas_fluxes%bc(n)%param(2)
             gas_fluxes%bc(n)%field(ind_flux)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i) *                &
-                 sqrt(660 / (gas_fields_ice%bc(n)%field(ind_sc_no)%values(i) + epsln)) *                           &
+                 sqrt(660. / (gas_fields_ice%bc(n)%field(ind_sc_no)%values(i) + epsln)) *                           &
                  (gas_fields_ice%bc(n)%field(ind_csurf)%values(i) - cair(i))
             gas_fluxes%bc(n)%field(ind_deltap)%values(i) = (gas_fields_ice%bc(n)%field(ind_csurf)%values(i) - cair(i)) / &
                  (gas_fields_ice%bc(n)%field(ind_alpha)%values(i) * permeg + epsln)
@@ -1077,7 +1073,7 @@ do n = 1, gas_fluxes%num_bcs  !{
       if (gas_fluxes%bc(n)%implementation .eq. 'ocmip2_data') then  !{
 
         do i = 1, length  !{
-          if (seawater(i) == 1) then  !{
+          if (seawater(i) == 1.) then  !{
             kw(i) = gas_fluxes%bc(n)%param(1) * gas_fields_atm%bc(n)%field(ind_u10)%values(i)
             cair(i) =                                                           &
                  gas_fields_ice%bc(n)%field(ind_alpha)%values(i) *              &
@@ -1095,7 +1091,7 @@ do n = 1, gas_fluxes%num_bcs  !{
       elseif (gas_fluxes%bc(n)%implementation .eq. 'ocmip2') then  !}{
 
         do i = 1, length  !{
-          if (seawater(i) == 1) then  !{
+          if (seawater(i) == 1.) then  !{
             kw(i) = gas_fluxes%bc(n)%param(1) * gas_fields_atm%bc(n)%field(ind_u10)%values(i)**2
             cair(i) =                                                           &
                  gas_fields_ice%bc(n)%field(ind_alpha)%values(i) *              &
@@ -1113,7 +1109,7 @@ do n = 1, gas_fluxes%num_bcs  !{
       elseif (gas_fluxes%bc(n)%implementation .eq. 'linear') then  !}{
 
         do i = 1, length  !{
-          if (seawater(i) == 1) then  !{
+          if (seawater(i) == 1.) then  !{
             kw(i) = gas_fluxes%bc(n)%param(1) * max(0.0, gas_fields_atm%bc(n)%field(ind_u10)%values(i) - gas_fluxes%bc(n)%param(2))
             cair(i) =                                                           &
                  gas_fields_ice%bc(n)%field(ind_alpha)%values(i) *              &
@@ -1147,7 +1143,7 @@ do n = 1, gas_fluxes%num_bcs  !{
       if (gas_fluxes%bc(n)%implementation .eq. 'dry') then  !{
 
         do i = 1, length  !{
-          if (seawater(i) == 1) then  !{
+          if (seawater(i) == 1.) then  !{
             gas_fluxes%bc(n)%field(ind_flux)%values(i) =        &
                  gas_fields_atm%bc(n)%field(ind_deposition)%values(i) / gas_fluxes%bc(n)%param(1)
           else  !}{
@@ -1158,7 +1154,7 @@ do n = 1, gas_fluxes%num_bcs  !{
       elseif (gas_fluxes%bc(n)%implementation .eq. 'wet') then  !}{
 
         do i = 1, length  !{
-          if (seawater(i) == 1) then  !{
+          if (seawater(i) == 1.) then  !{
             gas_fluxes%bc(n)%field(ind_flux)%values(i) =        &
                  gas_fields_atm%bc(n)%field(ind_deposition)%values(i) / gas_fluxes%bc(n)%param(1)
           else  !}{
@@ -1186,7 +1182,7 @@ do n = 1, gas_fluxes%num_bcs  !{
       if (gas_fluxes%bc(n)%implementation .eq. 'river') then  !{
 
         do i = 1, length  !{
-          if (seawater(i) == 1) then  !{
+          if (seawater(i) == 1.) then  !{
             gas_fluxes%bc(n)%field(ind_flux)%values(i) =        &
                  gas_fields_atm%bc(n)%field(ind_deposition)%values(i) / gas_fluxes%bc(n)%param(1)
           else  !}{

@@ -171,8 +171,8 @@ use field_manager_mod, only: fm_field_name_len, fm_string_len, fm_dump_list
 implicit none
 !
 !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: coupler_types.F90,v 18.0 2010/03/02 23:55:06 fms Exp $'
-  character(len=128) :: tag = '$Name: tikal $'
+  character(len=128) :: version = '$Id: coupler_types.F90,v 18.0.28.1 2014/02/07 21:52:09 wfc Exp $'
+  character(len=128) :: tag = '$Name: tikal_201403 $'
 !-----------------------------------------------------------------------
 real, parameter :: bound_tol = 1e-7
 
@@ -253,7 +253,7 @@ type, public    :: coupler_3d_field_type  !{
   logical                                               :: use_atm_pressure
   logical                                               :: use_10m_wind_speed
   logical                                               :: pass_through_ice
-  real							:: mol_wt = 0.0
+  real                                                  :: mol_wt = 0.0
 end type coupler_3d_field_type
 
 type, public    :: coupler_3d_bc_type  !{
@@ -289,7 +289,7 @@ type, public    :: coupler_2d_field_type  !{
   logical                                               :: use_atm_pressure
   logical                                               :: use_10m_wind_speed
   logical                                               :: pass_through_ice
-  real							:: mol_wt = 0.0
+  real                                                  :: mol_wt = 0.0
 end type coupler_2d_field_type
 
 type, public    :: coupler_2d_bc_type  !{
@@ -325,7 +325,7 @@ type, public    :: coupler_1d_field_type  !{
   logical                                               :: use_atm_pressure
   logical                                               :: use_10m_wind_speed
   logical                                               :: pass_through_ice
-  real							:: mol_wt = 0.0
+  real                                                  :: mol_wt = 0.0
 end type coupler_1d_field_type
 
 type, public    :: coupler_1d_bc_type  !{
@@ -439,10 +439,6 @@ implicit none
 character(len=64), parameter    :: sub_name = 'coupler_types_init'
 character(len=256), parameter   :: error_header =                               &
      '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
-character(len=256), parameter   :: warn_header =                                &
-     '==>Warning from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
-character(len=256), parameter   :: note_header =                                &
-     '==>Note from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
 
 !
 !-----------------------------------------------------------------------
@@ -976,10 +972,6 @@ character(len=*), intent(in), optional  :: suffix
 character(len=64), parameter    :: sub_name = 'coupler_type_copy_1d_2d'
 character(len=256), parameter   :: error_header =                               &
      '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
-character(len=256), parameter   :: warn_header =                                &
-     '==>Warning from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
-character(len=256), parameter   :: note_header =                                &
-     '==>Note from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
 
 !
 !-----------------------------------------------------------------------
@@ -1156,10 +1148,6 @@ character(len=*), intent(in), optional  :: suffix
 character(len=64), parameter    :: sub_name = 'coupler_type_copy_1d_3d'
 character(len=256), parameter   :: error_header =                               &
      '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
-character(len=256), parameter   :: warn_header =                                &
-     '==>Warning from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
-character(len=256), parameter   :: note_header =                                &
-     '==>Note from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
 
 !
 !-----------------------------------------------------------------------

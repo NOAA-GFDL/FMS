@@ -58,9 +58,9 @@ MODULE diag_util_mod
        & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size, sync_file_times
 
   CHARACTER(len=128),PRIVATE  :: version =&
-       & '$Id: diag_util.F90,v 20.0 2013/12/14 00:18:58 fms Exp $'
+       & '$Id: diag_util.F90,v 20.0.2.1 2014/02/07 21:43:19 wfc Exp $'
   CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name: tikal $'
+       & '$Name: tikal_201403 $'
 
 CONTAINS
 
@@ -149,9 +149,9 @@ CONTAINS
              subaxis_y=global_lat(gstart_indx(i):gend_indx(i))
           CASE ('Z')
              ! <ERROR STATUS="FATAL">wrong values in vertical axis of region</ERROR>
-             IF ( start(i)*END(i)<0 ) CALL error_mesg('diag_util_mod::get_subfield_size',&
+             IF ( start(i)*END(i)<0. ) CALL error_mesg('diag_util_mod::get_subfield_size',&
                   & 'wrong values in vertical axis of region',FATAL)
-             IF ( start(i)>=0 .AND. END(i)>0 ) THEN 
+             IF ( start(i)>=0. .AND. END(i)>0. ) THEN 
                 ALLOCATE(global_depth(global_axis_size))
                 CALL get_diag_axis_data(axes(i),global_depth)
                 gstart_indx(i) = get_index(start(i),global_depth)
@@ -219,9 +219,9 @@ CONTAINS
           ! <ERROR STATUS="FATAL">
           !   wrong values in vertical axis of region
           ! </ERROR>
-          IF ( start(3)*END(3)<0 ) CALL error_mesg('diag_util_mod::get_subfield_size',&
+          IF ( start(3)*END(3)<0. ) CALL error_mesg('diag_util_mod::get_subfield_size',&
                & 'wrong values in vertical axis of region',FATAL)
-          IF ( start(3)>=0 .AND. END(3)>0 ) THEN 
+          IF ( start(3)>=0. .AND. END(3)>0. ) THEN 
              ALLOCATE(global_depth(global_axis_size))
              CALL get_diag_axis_data(axes(3),global_depth)
              gstart_indx(3) = get_index(start(3),global_depth)
@@ -399,9 +399,9 @@ CONTAINS
           output_fields(outnum)%output_grid%subaxes(i) = axes(i)
        CASE ('Z')
           ! <ERROR STATUS="FATAL">wrong values in vertical axis of region</ERROR>
-          IF( start(i)*END(i) < 0 ) CALL error_mesg('diag_util_mod::get_subfield_vert_size',&
+          IF( start(i)*END(i) < 0. ) CALL error_mesg('diag_util_mod::get_subfield_vert_size',&
                & 'wrong values in vertical axis of region',FATAL)
-          IF( start(i) >= 0 .AND. END(i) > 0 ) THEN 
+          IF( start(i) >= 0. .AND. END(i) > 0. ) THEN 
              ALLOCATE(global_depth(global_axis_size))
              CALL get_diag_axis_data(axes(i),global_depth)
              gstart_indx(i) = get_index(start(i),global_depth)

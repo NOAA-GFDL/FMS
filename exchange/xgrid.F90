@@ -117,7 +117,7 @@ use mpp_mod,         only: mpp_npes, mpp_pe, mpp_root_pe, mpp_send, mpp_recv, &
                            mpp_clock_begin, mpp_clock_end, MPP_CLOCK_SYNC,    &
                            COMM_TAG_1, COMM_TAG_2, COMM_TAG_3, COMM_TAG_4,    &
                            COMM_TAG_5, COMM_TAG_6, COMM_TAG_7, COMM_TAG_8,    &
-			   COMM_TAG_9, COMM_TAG_10
+                           COMM_TAG_9, COMM_TAG_10
 use mpp_mod,         only: input_nml_file, mpp_set_current_pelist, mpp_sum, mpp_sync        
 use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_compute_domains, &
                            Domain2d, mpp_global_sum, mpp_update_domains,    &
@@ -401,8 +401,8 @@ type xmap_type
 end type xmap_type
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: xgrid.F90,v 20.0 2013/12/14 00:19:20 fms Exp $'
- character(len=128) :: tagname = '$Name: tikal $'
+ character(len=128) :: version = '$Id: xgrid.F90,v 20.0.2.1 2014/02/07 21:43:19 wfc Exp $'
+ character(len=128) :: tagname = '$Name: tikal_201403 $'
 
  real, parameter                              :: EPS = 1.0e-10
  real, parameter                              :: LARGE_NUMBER = 1.e20
@@ -711,7 +711,7 @@ logical,        intent(in)             :: use_higher_order
         ! check the units of "xgrid_area 
         call get_var_att_value(grid_file, "xgrid_area", "units", attvalue)
         if( trim(attvalue) == 'm2' ) then
-           garea = 4*PI*RADIUS*RADIUS;
+           garea = 4.0*PI*RADIUS*RADIUS;
            area_tmp = tmp(:,1)/garea
         else if( trim(attvalue) == 'none' ) then
            area_tmp = tmp(:,1)
@@ -1003,7 +1003,7 @@ logical,        intent(in)             :: use_higher_order
         deallocate(x_local)
      else
         allocate( grid%x( grid%size ) )
-        grid%x%di = 0; grid%x%dj = 0
+        grid%x%di = 0.0; grid%x%dj = 0.0
      end if
   end if
 
@@ -1020,7 +1020,7 @@ logical,        intent(in)             :: use_higher_order
            if(scale_exist) then
               grid%x(ll)%scale = scale(l)
            else
-              grid%x(ll)%scale = 1
+              grid%x(ll)%scale = 1.0
            endif
            if(use_higher_order) then
               grid%x(ll)%di  = di(l)
@@ -1154,7 +1154,7 @@ logical,        intent(in)             :: use_higher_order
         deallocate(x_local)
      else
         allocate( grid%x_repro( grid%size_repro ) )
-        grid%x_repro%di = 0; grid%x_repro%dj = 0
+        grid%x_repro%di = 0.0; grid%x_repro%dj = 0.0
      end if
      do l=1,nxgrid1
         if (in_box(i1_side1(l),j1_side1(l), grid1%is_me,grid1%ie_me, grid1%js_me,grid1%je_me) ) then
@@ -1335,7 +1335,7 @@ subroutine get_area_elements(file, name, domain, data)
      call error_mesg('xgrid_mod', 'no field named '//trim(name)//' in grid file '//trim(file)// &
                      ' Will set data to negative values...', NOTE)
      ! area elements no present in grid_spec file, set to negative values....
-     data = -1
+     data = -1.0
   endif    
 
 end subroutine get_area_elements
@@ -1802,12 +1802,12 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
 
   call mpp_clock_begin(id_conservation_check)
 
-  xxx = conservation_check(grid1%area*0+1.0, grid1%id, xmap)
+  xxx = conservation_check(grid1%area*0.0+1.0, grid1%id, xmap)
   write(out_unit,* )"Checked data is array of constant 1"
   write(out_unit,* )grid1%id,'(',xmap%grids(:)%id,')=', xxx 
 
   do g=2,size(xmap%grids(:))
-     xxx = conservation_check(xmap%grids(g)%frac_area*0+1.0, xmap%grids(g)%id, xmap )
+     xxx = conservation_check(xmap%grids(g)%frac_area*0.0+1.0, xmap%grids(g)%id, xmap )
      write( out_unit,* )xmap%grids(g)%id,'(',xmap%grids(:)%id,')=', xxx 
   enddo
   ! create an random number 2d array
@@ -1894,7 +1894,7 @@ integer, allocatable, dimension(:) :: istart2, iend2, jstart2, jend2
     t2 = tile2(n);
     ! For nesting, the contact index of one tile must match its global domain 
     if( (nx(t1) .NE. nx1_contact .OR. ny(t1) .NE. ny1_contact ) .AND. &
-	(nx(t2) .NE. nx2_contact .OR. ny(t2) .NE. ny2_contact ) ) cycle
+        (nx(t2) .NE. nx2_contact .OR. ny(t2) .NE. ny2_contact ) ) cycle
     if(nx1_contact == nx2_contact .AND. ny1_contact == ny2_contact) then
       call error_mesg('xgrid_mod', 'There is no refinement for the overlapping region', FATAL)
     endif
@@ -3457,7 +3457,7 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
   !--- unpack the buffer
   do l = 1, lsize
      ptr_d = d_addrs(l)
-     d = 0
+     d = 0.0
   enddo
   !--- To bitwise reproduce old results, first copy the data onto its own pe.
 
@@ -3697,7 +3697,7 @@ integer, intent(in), optional :: remap_method
       endif
       call put_to_xgrid(d, grid_id, x_over, xmap)  ! put from this side 2
     else
-      call put_to_xgrid(0 * grid2%frac_area, grid2%id, x_over, xmap) ! zero rest
+      call put_to_xgrid(0.0 * grid2%frac_area, grid2%id, x_over, xmap) ! zero rest
     end if
   end do
 
@@ -3873,7 +3873,7 @@ subroutine stock_move_3d(from, to, grid_index, data, xmap, &
      return
   endif
 
-     from_dq = delta_t * 4*PI*radius**2 * sum( sum(xmap%grids(grid_index)%area * &
+     from_dq = delta_t * 4.0*PI*radius**2 * sum( sum(xmap%grids(grid_index)%area * &
           & sum(xmap%grids(grid_index)%frac_area * data, DIM=3), DIM=1))
      to_dq = from_dq
 
@@ -3884,8 +3884,8 @@ subroutine stock_move_3d(from, to, grid_index, data, xmap, &
   if(present(verbose).and.debug_stocks) then
      call mpp_sum(from_dq)
      call mpp_sum(to_dq)
-     from_dq = from_dq/(4*PI*radius**2)
-     to_dq   = to_dq  /(4*PI*radius**2)
+     from_dq = from_dq/(4.0*PI*radius**2)
+     to_dq   = to_dq  /(4.0*PI*radius**2)
      if(mpp_pe()==mpp_root_pe()) then
         write(stocks_file,'(a,es19.12,a,es19.12,a)') verbose, from_dq,' [*/m^2]'
      endif
@@ -3927,7 +3927,7 @@ subroutine stock_move_2d(from, to, grid_index, data, xmap, &
   if( .not. present(grid_index) .or. grid_index==1 ) then
 
      ! only makes sense if grid_index == 1
-     from_dq = delta_t * 4*PI*radius**2 * sum(sum(xmap%grids(1)%area * data, DIM=1))
+     from_dq = delta_t * 4.0*PI*radius**2 * sum(sum(xmap%grids(1)%area * data, DIM=1))
      to_dq = from_dq
 
   else
@@ -3944,8 +3944,8 @@ subroutine stock_move_2d(from, to, grid_index, data, xmap, &
   if(debug_stocks) then
      call mpp_sum(from_dq)
      call mpp_sum(to_dq)
-     from_dq = from_dq/(4*PI*radius**2)
-     to_dq   = to_dq  /(4*PI*radius**2)
+     from_dq = from_dq/(4.0*PI*radius**2)
+     to_dq   = to_dq  /(4.0*PI*radius**2)
      if(mpp_pe()==mpp_root_pe()) then
         write(stocks_file,'(a,es19.12,a,es19.12,a)') verbose, from_dq,' [*/m^2]'
      endif
@@ -3968,14 +3968,14 @@ subroutine stock_integrate_2d(data, xmap, delta_t, radius, res, ier)
   integer, intent(out)            :: ier
 
   ier = 0
-  res = 0
+  res = 0.0
 
   if(.not. associated(xmap%grids) ) then
      ier = 6
      return
   endif
 
-  res = delta_t * 4*PI*radius**2 * sum(sum(xmap%grids(1)%area * data, DIM=1))
+  res = delta_t * 4.0*PI*radius**2 * sum(sum(xmap%grids(1)%area * data, DIM=1))
 
 end subroutine stock_integrate_2d
 !#######################################################################
@@ -4026,7 +4026,7 @@ subroutine stock_print(stck, Time, comp_name, index, ref_value, radius, pelist)
 
   if(mpp_pe() == mpp_root_pe()) then
      ! normalize to 1 earth m^2
-     planet_area = 4*PI*radius**2
+     planet_area = 4.0*PI*radius**2
      f_value       = f_value     / planet_area
      c_value       = c_value     / planet_area
 

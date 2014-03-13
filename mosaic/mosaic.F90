@@ -39,7 +39,7 @@ public :: is_inside_polygon
 logical :: module_is_initialized = .true.
 ! version information varaible
  character(len=128) :: version = '$Id: mosaic.F90,v 20.0 2013/12/14 00:22:25 fms Exp $'
- character(len=128) :: tagname = '$Name: tikal $'
+ character(len=128) :: tagname = '$Name: tikal_201403 $'
 
 contains
 

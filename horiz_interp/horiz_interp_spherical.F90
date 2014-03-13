@@ -60,8 +60,8 @@ module horiz_interp_spherical_mod
   namelist /horiz_interp_spherical_nml/ search_method
 
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_spherical.F90,v 20.0 2013/12/14 00:20:28 fms Exp $'
-  character(len=128) :: tagname = '$Name: tikal $'
+  character(len=128) :: version = '$Id: horiz_interp_spherical.F90,v 20.0.4.1.2.1 2014/02/28 16:47:11 sdu Exp $'
+  character(len=128) :: tagname = '$Name: tikal_201403 $'
   logical            :: module_is_initialized = .FALSE.
 
 contains
@@ -172,10 +172,10 @@ end subroutine horiz_interp_spherical_init
     logical :: src_is_modulo
     real    :: min_theta_dst, max_theta_dst, min_phi_dst, max_phi_dst
     real    :: min_theta_src, max_theta_src, min_phi_src, max_phi_src 
-    integer, dimension(:),        allocatable        :: ilon, jlat
-    integer, dimension(:,:,:),    allocatable        :: map_src_add
-    integer, dimension(:,:),      allocatable        :: num_found
-    real, dimension(:,:,:),       allocatable        :: map_src_dist
+    integer :: map_src_add(size(lon_out,1),size(lon_out,2),max_neighbors)
+    real    :: map_src_dist(size(lon_out,1),size(lon_out,2),max_neighbors)
+    integer :: num_found(size(lon_out,1),size(lon_out,2))
+    integer :: ilon(max_neighbors), jlat(max_neighbors)
     real, dimension(size(lon_out,1),size(lon_out,2)) :: theta_dst, phi_dst
     real, dimension(size(lon_in,1)*size(lon_in,2))   :: theta_src, phi_src
 
@@ -248,16 +248,19 @@ end subroutine horiz_interp_spherical_init
        if (min_theta_dst < min_theta_src) print *, '=> WARNING : longitude of dest grid exceeds src'
        if (max_theta_dst > max_theta_src) print *, '=> WARNING : longitude of dest grid exceeds src'
     endif
-    allocate(map_src_add(map_dst_xsize,map_dst_ysize,max_neighbors),    &
-         map_src_dist(map_dst_xsize,map_dst_ysize,max_neighbors),   &
-         num_found(map_dst_xsize,map_dst_ysize),                    &
-         ilon(max_neighbors),jlat(max_neighbors)  )
 
     ! allocate memory to data type
-    allocate(Interp%i_lon(map_dst_xsize,map_dst_ysize,max_neighbors), &
-         Interp%j_lat(map_dst_xsize,map_dst_ysize,max_neighbors),     &
-         Interp%src_dist(map_dst_xsize,map_dst_ysize,max_neighbors),  &
-         Interp%num_found(map_dst_xsize,map_dst_ysize)       )
+    if(ASSOCIATED(Interp%i_lon)) then
+       if(size(Interp%i_lon,1) .NE. map_dst_xsize .OR.     &
+          size(Interp%i_lon,2) .NE. map_dst_ysize )  call mpp_error(FATAL, &
+          'horiz_interp_spherical_mod: size(Interp%i_lon(:),1) .NE. map_dst_xsize .OR. '// &
+          'size(Interp%i_lon(:),2) .NE. map_dst_ysize')
+    else
+       allocate(Interp%i_lon(map_dst_xsize,map_dst_ysize,max_neighbors), &
+            Interp%j_lat(map_dst_xsize,map_dst_ysize,max_neighbors),     &
+            Interp%src_dist(map_dst_xsize,map_dst_ysize,max_neighbors),  &
+            Interp%num_found(map_dst_xsize,map_dst_ysize)       )
+    endif
 
     map_src_add         = 0
     map_src_dist        = large
@@ -301,7 +304,6 @@ end subroutine horiz_interp_spherical_init
     Interp%nlon_src = map_src_xsize; Interp%nlat_src = map_src_ysize
     Interp%nlon_dst = map_dst_xsize; Interp%nlat_dst = map_dst_ysize
 
-    deallocate(map_src_add, map_src_dist, ilon, jlat)
     return
 
   end subroutine horiz_interp_spherical_new
@@ -945,8 +947,8 @@ end subroutine horiz_interp_spherical_init
     endif
   
     dot = cos(phi1)*cos(phi2)*cos(theta1-theta2) + sin(phi1)*sin(phi2)
-    if(dot > 1 ) dot = 1.
-    if(dot < -1) dot = -1
+    if(dot > 1. ) dot = 1.
+    if(dot < -1.) dot = -1.
     spherical_distance = acos(dot)
 
     return

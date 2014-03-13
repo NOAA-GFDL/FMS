@@ -61,9 +61,9 @@ MODULE diag_grid_mod
 
   ! Parameters
   CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id: diag_grid.F90,v 20.0 2013/12/14 00:18:45 fms Exp $'
+       & '$Id: diag_grid.F90,v 20.0.2.1 2014/02/07 21:43:19 wfc Exp $'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: tikal $'
+       & '$Name: tikal_201403 $'
 
   ! Derived data types
   ! <PRIVATE>
@@ -487,13 +487,13 @@ CONTAINS
     ijMax = 0
 
     ! Make adjustment for negative longitude values
-    if ( lonStart < 0 ) then
-       my_lonStart = lonStart + 360
+    if ( lonStart < 0. ) then
+       my_lonStart = lonStart + 360.
     else
        my_lonStart = lonStart
     end if
-    if ( lonEnd < 0 ) then
-       my_lonEnd = lonEnd + 360
+    if ( lonEnd < 0. ) then
+       my_lonEnd = lonEnd + 360.
     else
        my_lonEnd = lonEnd
     end if
@@ -540,8 +540,8 @@ CONTAINS
        DO j=1, dimJ
           DO i=1, dimI
              count = 0
-             dists_lon = 0
-             dists_lat = 0
+             dists_lon = 0.
+             dists_lat = 0.
              IF ( i < dimI ) THEN
                 dists_lon(1) = ABS(diag_global_grid%glo_lon(i+1,j) - diag_global_grid%glo_lon(i,j))
                 dists_lat(1) = ABS(diag_global_grid%glo_lat(i+1,j) - diag_global_grid%glo_lat(i,j))
@@ -569,8 +569,8 @@ CONTAINS
                    dists_lon(k) = 360.0 - dists_lon(k)
                 END IF
              END DO
-             delta_lon(i,j) = SUM(dists_lon)/count
-             delta_lat(i,j) = SUM(dists_lat)/count
+             delta_lon(i,j) = SUM(dists_lon)/real(count)
+             delta_lat(i,j) = SUM(dists_lat)/real(count)
           END DO
        END DO
        
@@ -1001,8 +1001,8 @@ CONTAINS
        IF (   diag_global_grid%aglo_lon(i,0) >&
             & diag_global_grid%aglo_lon(i+1,0) ) THEN
           ! We are at the 0 longitudal line
-          IF (   (diag_global_grid%aglo_lon(i,0) <= lon .AND. lon <= 360) .OR.&
-               & (0 <= lon .AND. lon < diag_global_grid%aglo_lon(i+1, 0)) ) THEN
+          IF (   (diag_global_grid%aglo_lon(i,0) <= lon .AND. lon <= 360.) .OR.&
+               & (0. <= lon .AND. lon < diag_global_grid%aglo_lon(i+1, 0)) ) THEN
              indxI = i
              EXIT iLoop
           END IF
@@ -1135,7 +1135,7 @@ CONTAINS
     ! are in the range [-90,90], but we need to have a radian range
     ! [0,pi], where 0 is at the north pole.  This is the reason for
     ! the subtraction from 90
-    theta = deg2rad(90-lat)
+    theta = deg2rad(90.-lat)
     phi = deg2rad(lon)
 
     ! Calculate the x,y,z point
@@ -1201,7 +1201,7 @@ CONTAINS
     deltaLambda = deg2rad(lon2-lon1)
     deltaTheta = deg2rad(lat2-lat1)
 
-    gCirDistance = RADIUS * 2 * ASIN(SQRT((SIN(deltaTheta/2))**2 + COS(theta1)*COS(theta2)*(SIN(deltaLambda/2))**2))
+    gCirDistance = RADIUS * 2. * ASIN(SQRT((SIN(deltaTheta/2.))**2 + COS(theta1)*COS(theta2)*(SIN(deltaLambda/2.))**2))
   END FUNCTION gCirDistance
   ! </FUNCTION>
 END MODULE diag_grid_mod

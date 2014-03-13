@@ -236,8 +236,8 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
  namelist /horiz_interp_nml/ reproduce_siena
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: horiz_interp.F90,v 20.0 2013/12/14 00:20:17 fms Exp $'
- character(len=128) :: tagname = '$Name: tikal $'
+ character(len=128) :: version = '$Id: horiz_interp.F90,v 19.0.4.3.2.1.6.4.2.1.2.1 2013/12/11 00:36:30 Zhi.Liang Exp $'
+ character(len=128) :: tagname = '$Name: tikal_201403 $'
  logical            :: module_is_initialized = .FALSE.
 !-----------------------------------------------------------------------
 
@@ -721,7 +721,8 @@ contains
 
 !<PUBLICROUTINE INTERFACE="horiz_interp"> 
  subroutine horiz_interp_base_2d ( Interp, data_in, data_out, verbose, &
-                                   mask_in, mask_out, missing_value, missing_permit, err_msg )
+                                   mask_in, mask_out, missing_value, missing_permit, &
+                                   err_msg, new_missing_handle )
 !</PUBLICROUTINE>
 !-----------------------------------------------------------------------
    type (horiz_interp_type), intent(in) :: Interp
@@ -733,6 +734,7 @@ contains
       real, intent(in),                   optional :: missing_value
       integer, intent(in),                optional :: missing_permit
    character(len=*), intent(out),         optional :: err_msg
+      logical, intent(in),                optional :: new_missing_handle
 !-----------------------------------------------------------------------
    if(present(err_msg)) err_msg = ''
    if(.not.Interp%I_am_initialized) then
@@ -744,7 +746,7 @@ contains
       call horiz_interp_conserve(Interp,data_in, data_out, verbose, mask_in, mask_out)
    case(BILINEAR)
       call horiz_interp_bilinear(Interp,data_in, data_out, verbose, mask_in, mask_out, &
-                             missing_value, missing_permit )
+                             missing_value, missing_permit, new_missing_handle )
    case(BICUBIC)
       call horiz_interp_bicubic(Interp,data_in, data_out, verbose, mask_in, mask_out, &
                              missing_value, missing_permit )

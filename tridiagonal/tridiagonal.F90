@@ -121,7 +121,7 @@ if(present(a)) then
   a(:,:,size(x,3)) = 0.0
 
   do  k= 2,size(x,3)
-    g(:,:,k) = 1/(b(:,:,k)+c(:,:,k)*e(:,:,k-1))
+    g(:,:,k) = 1.0/(b(:,:,k)+c(:,:,k)*e(:,:,k-1))
     e(:,:,k) = - a(:,:,k)*g(:,:,k)
   end do
   cc = c

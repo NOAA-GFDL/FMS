@@ -13,8 +13,8 @@ MODULE cloud_interpolator_mod
   public :: cld_ntrp_expand_index, cld_ntrp_contract_indices
 #endif
 
-character(128), parameter :: version = '$Id: cloud_interpolator.F90,v 14.0 2007/03/15 22:38:35 fms Exp $'
-real, parameter           :: tol = 10*epsilon(1.)
+character(128), parameter :: version = '$Id: cloud_interpolator.F90,v 14.0.28.1 2014/02/07 21:43:19 wfc Exp $'
+real, parameter           :: tol = 10.0*epsilon(1.)
 
 CONTAINS
 
@@ -77,7 +77,7 @@ CONTAINS
     real    basis
 
     ier = 0
-    f   = 0
+    f   = 0.
     nd   = size(ts)
     if(size(fvals) /= 2**nd) then
        ier = 1
@@ -85,10 +85,10 @@ CONTAINS
     endif
     
     do Ic = 0, 2**nd - 1
-       basis = 1
+       basis = 1.
        call cld_ntrp_expand_index(Ic, ie, iflag)
        do j = 1, nd
-          basis = basis * (  (1-ie(j))*(1.0-ts(j)) + ie(j)*ts(j) )
+          basis = basis * (  (1.0-real(ie(j)))*(1.0-ts(j)) + real(ie(j))*ts(j) )
        end do
        f = f + fvals(Ic)*basis
     end do
@@ -133,7 +133,7 @@ CONTAINS
        return
     endif
 
-    index = floor((n-1)*(x - axis_1)/(axis_n-axis_1)) + 1
+    index = floor(real(n-1)*(x - axis_1)/(axis_n-axis_1)) + 1
     index  = min(n-1, index)
     index1 = index+1
 
@@ -221,7 +221,7 @@ CONTAINS
     integer id, nt, nd, flat_index, Ic, iflag
     integer, dimension(size(nsizes)) :: cell_indices, node_indices
     ier = 0
-    fvals = 0
+    fvals = 0.
 
     nd = size(nsizes)
     if(nd /= size(indices)) then

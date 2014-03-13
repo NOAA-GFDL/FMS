@@ -39,8 +39,8 @@ module horiz_interp_bilinear_mod
   integer, parameter :: DUMMY = -999
 
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_bilinear.F90,v 20.0 2013/12/14 00:20:22 fms Exp $'
-  character(len=128) :: tagname = '$Name: tikal $'
+  character(len=128) :: version = '$Id: horiz_interp_bilinear.F90,v 20.0.2.1.2.1 2014/03/04 16:53:41 pjp Exp $'
+  character(len=128) :: tagname = '$Name: tikal_201403 $'
   logical            :: module_is_initialized = .FALSE.
 
 contains
@@ -396,7 +396,7 @@ contains
           a  = b2*c1-b1*c2
           b  = a1*b2-a2*b1+c1*d2-c2*d1+c2*lon-c1*lat
           c  = a2*lon-a1*lat+a1*d2-a2*d1
-          quadra = b*b-4*a*c
+          quadra = b*b-4.*a*c
           if(abs(quadra) < epsln) quadra = 0.0
           if(quadra < 0.0) call mpp_error(FATAL, &
                "horiz_interp_bilinear_mod: No solution existed for this quadratic equation")
@@ -441,7 +441,7 @@ contains
              if (x > 1.0) x = 1.0
              if (y > 1.0) y = 1.0
            endif 
-           if( x>1 .or. x<0 .or. y>1 .or. y < 0) call mpp_error(FATAL, &
+           if( x>1. .or. x<0. .or. y>1. .or. y < 0.) call mpp_error(FATAL, &
                 "horiz_interp_bilinear_mod: weight should be between 0 and 1")
            Interp % wti(m,n,1)=1.0-x; Interp % wti(m,n,2)=x   
            Interp % wtj(m,n,1)=1.0-y; Interp % wtj(m,n,2)=y          
@@ -958,7 +958,7 @@ contains
   !   </OUT>
 
   subroutine horiz_interp_bilinear ( Interp, data_in, data_out, verbose, mask_in,mask_out, &
-       missing_value, missing_permit)
+       missing_value, missing_permit, new_handle_missing )
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in)        :: Interp
     real, intent(in),  dimension(:,:)           :: data_in
@@ -968,6 +968,7 @@ contains
     real, intent(out), dimension(:,:), optional :: mask_out
     real, intent(in),                  optional :: missing_value
     integer, intent(in),               optional :: missing_permit
+    logical, intent(in),               optional :: new_handle_missing
     !-----------------------------------------------------------------------
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, n, m,         &
          is, ie, js, je, iverbose, max_missing, num_missing, &
@@ -975,6 +976,8 @@ contains
     real    :: dwtsum, wtsum, min_in, max_in, avg_in, &
          min_out, max_out, avg_out, wtw, wte, wts, wtn
     real    :: mask(size(data_in,1), size(data_in,2) )
+    logical :: set_to_missing, is_missing(4), new_handler
+    real    :: f1, f2, f3, f4, middle, w, s
 
     num_missing = 0
 
@@ -999,6 +1002,12 @@ contains
        max_missing = 0
     endif
 
+    if(present(new_handle_missing)) then
+       new_handler = new_handle_missing
+    else
+       new_handler = .false.
+    endif
+
     if(max_missing .gt. 3 .or. max_missing .lt. 0) call mpp_error(FATAL, &
          'horiz_interp_bilinear_mod: missing_permit should be between 0 and 3')
 
@@ -1008,60 +1017,217 @@ contains
     if (size(data_out,1) /= nlon_out .or. size(data_out,2) /= nlat_out) &
          call mpp_error(FATAL,'horiz_interp_bilinear_mod: size of output array incorrect')
 
-    do n = 1, nlat_out
-       do m = 1, nlon_out
-          is = Interp % i_lon (m,n,1); ie = Interp % i_lon (m,n,2)
-          js = Interp % j_lat (m,n,1); je = Interp % j_lat (m,n,2)
-          wtw = Interp % wti   (m,n,1)
-          wte = Interp % wti   (m,n,2)
-          wts = Interp % wtj   (m,n,1)
-          wtn = Interp % wtj   (m,n,2)
+    if(new_handler) then
+       if( .not. present(missing_value) )  call mpp_error(FATAL, &
+            "horiz_interp_bilinear_mod: misisng_value must be present when new_handle_missing is .true.")
+       if( present(mask_in) ) call mpp_error(FATAL, &
+            "horiz_interp_bilinear_mod: mask_in should not be present when new_handle_missing is .true.")
+       do n = 1, nlat_out
+          do m = 1, nlon_out
+             is = Interp % i_lon (m,n,1); ie = Interp % i_lon (m,n,2)
+             js = Interp % j_lat (m,n,1); je = Interp % j_lat (m,n,2)
+             wtw = Interp % wti   (m,n,1)
+             wte = Interp % wti   (m,n,2)
+             wts = Interp % wtj   (m,n,1)
+             wtn = Interp % wtj   (m,n,2)
 
-          if(present(missing_value) ) then
+             is_missing = .false.
              num_missing = 0
+             set_to_missing = .false.
              if(data_in(is,js) == missing_value) then
                 num_missing = num_missing+1
-                mask(is,js) = 0.0
+                is_missing(1) = .true.
+                if(wtw .GE. 0.5 .AND. wts .GE. 0.5) set_to_missing = .true.
              endif
+
              if(data_in(ie,js) == missing_value) then
                 num_missing = num_missing+1
-                mask(ie,js) = 0.0
+                is_missing(2) = .true.
+                if(wte .GE. 0.5 .AND. wts .GE. 0.5) set_to_missing = .true.
              endif
              if(data_in(ie,je) == missing_value) then
                 num_missing = num_missing+1
-                mask(ie,je) = 0.0
+                is_missing(3) = .true.
+                if(wte .GE. 0.5 .AND. wtn .GE. 0.5) set_to_missing = .true.
              endif
              if(data_in(is,je) == missing_value) then
                 num_missing = num_missing+1
-                mask(is,je) = 0.0
+                is_missing(4) = .true.
+                if(wtw .GE. 0.5 .AND. wtn .GE. 0.5) set_to_missing = .true.
              endif
-          endif
 
-          dwtsum = data_in(is,js)*mask(is,js)*wtw*wts &
-               + data_in(ie,js)*mask(ie,js)*wte*wts &
-               + data_in(ie,je)*mask(ie,je)*wte*wtn &
-               + data_in(is,je)*mask(is,je)*wtw*wtn 
-          wtsum  = mask(is,js)*wtw*wts + mask(ie,js)*wte*wts  &
-               + mask(ie,je)*wte*wtn + mask(is,je)*wtw*wtn
-
-          if(.not. present(mask_in) .and. .not. present(missing_value)) wtsum = 1.0
-
-          if(num_missing .gt. max_missing ) then
-             data_out(m,n) = missing_value
-             if(present(mask_out)) mask_out(m,n) = 0.0
-          else if(wtsum .lt. epsln) then 
-             if(present(missing_value)) then
+             if( num_missing == 4 .OR. set_to_missing ) then
                 data_out(m,n) = missing_value
-             else
-                data_out(m,n) = 0.0
+                if(present(mask_out)) mask_out(m,n) = 0.0
+                 cycle
+             else if(num_missing == 0) then
+                f1 = data_in(is,js)
+                f2 = data_in(ie,js)
+                f3 = data_in(ie,je)
+                f4 = data_in(is,je)
+                w = wtw
+                s = wts
+             else if(num_missing == 3) then  !--- three missing value 
+                if(.not. is_missing(1) ) then
+                   data_out(m,n) = data_in(is,js)
+                else if(.not. is_missing(2) ) then
+                   data_out(m,n) = data_in(ie,js)
+                else if(.not. is_missing(3) ) then
+                   data_out(m,n) = data_in(ie,je)
+                else if(.not. is_missing(4) ) then
+                   data_out(m,n) = data_in(is,je)
+                endif
+                if(present(mask_out) ) mask_out(m,n) = 1.0
+                cycle
+             else   !--- one or two missing value
+                if( num_missing == 1) then
+                   if( is_missing(1) .OR. is_missing(3) ) then
+                      middle = 0.5*(data_in(ie,js)+data_in(is,je))
+                   else
+                      middle = 0.5*(data_in(is,js)+data_in(ie,je))
+                   endif
+                else ! num_missing = 2
+                   if( is_missing(1) .AND. is_missing(2) ) then
+                      middle = 0.5*(data_in(ie,je)+data_in(is,je))
+                   else if( is_missing(1) .AND. is_missing(3) ) then
+                      middle = 0.5*(data_in(ie,js)+data_in(is,je))
+                   else if( is_missing(1) .AND. is_missing(4) ) then
+                      middle = 0.5*(data_in(ie,js)+data_in(ie,je))
+                   else if( is_missing(2) .AND. is_missing(3) ) then
+                      middle = 0.5*(data_in(is,js)+data_in(is,je))
+                   else if( is_missing(2) .AND. is_missing(4) ) then
+                      middle = 0.5*(data_in(is,js)+data_in(ie,je))
+                   else if( is_missing(3) .AND. is_missing(4) ) then
+                      middle = 0.5*(data_in(is,js)+data_in(ie,js))
+                   endif
+                endif
+
+                if( wtw .GE. 0.5 .AND. wts .GE. 0.5 ) then  ! zone 1
+                   w = 2.0*(wtw-0.5)
+                   s = 2.0*(wts-0.5)
+                   f1 = data_in(is,js)
+                   if(is_missing(2)) then
+                      f2 = f1
+                   else
+                      f2 = 0.5*(data_in(is,js)+data_in(ie,js))
+                   endif
+                   f3 = middle
+                   if(is_missing(4)) then
+                      f4 = f1
+                   else
+                      f4 = 0.5*(data_in(is,js)+data_in(is,je))
+                   endif
+                else if( wte .GE. 0.5 .AND. wts .GE. 0.5 ) then  ! zone 2
+                   w = 2.0*(1.0-wte)
+                   s = 2.0*(wts-0.5)
+                   f2 = data_in(ie,js)
+                   if(is_missing(1)) then
+                      f1 = f2
+                   else
+                      f1 = 0.5*(data_in(is,js)+data_in(ie,js))
+                   endif
+                   f4 = middle
+                   if(is_missing(3)) then
+                      f3 = f2
+                   else
+                      f3 = 0.5*(data_in(ie,js)+data_in(ie,je))
+                   endif
+                else if( wte .GE. 0.5 .AND. wtn .GE. 0.5 ) then  ! zone 3
+                   w = 2.0*(1.0-wte)
+                   s = 2.0*(1.0-wtn)
+                   f3 = data_in(ie,je)
+                   if(is_missing(2)) then
+                      f2 = f3
+                   else
+                      f2 = 0.5*(data_in(ie,js)+data_in(ie,je))
+                   endif
+                   f1 = middle
+                   if(is_missing(4)) then
+                      f4 = f3
+                   else
+                      f4 = 0.5*(data_in(ie,je)+data_in(is,je))
+                   endif
+                else if( wtw .GE. 0.5 .AND. wtn .GE. 0.5 ) then  ! zone 4
+                   w = 2.0*(wtw-0.5)
+                   s = 2.0*(1.0-wtn)
+                   f4 = data_in(is,je)
+                   if(is_missing(1)) then
+                      f1 = f4
+                   else
+                      f1 = 0.5*(data_in(is,js)+data_in(is,je))
+                   endif
+                   f2 = middle
+                   if(is_missing(3)) then
+                      f3 = f4
+                   else
+                      f3 = 0.5*(data_in(ie,je)+data_in(is,je))
+                   endif
+                else 
+                   call mpp_error(FATAL, &
+                      "horiz_interp_bilinear_mod: the point should be in one of the four zone")
+                endif
              endif
-             if(present(mask_out)) mask_out(m,n) = 0.0      
-          else
-             data_out(m,n) = dwtsum/wtsum
-             if(present(mask_out)) mask_out(m,n) = wtsum
-          endif
+
+             data_out(m,n) = f3 + (f4-f3)*w + (f2-f3)*s + ((f1-f2)+(f3-f4))*w*s 
+            if(present(mask_out)) mask_out(m,n) = 1.0
+          enddo
+       enddo       
+    else
+       do n = 1, nlat_out
+          do m = 1, nlon_out
+             is = Interp % i_lon (m,n,1); ie = Interp % i_lon (m,n,2)
+             js = Interp % j_lat (m,n,1); je = Interp % j_lat (m,n,2)
+             wtw = Interp % wti   (m,n,1)
+             wte = Interp % wti   (m,n,2)
+             wts = Interp % wtj   (m,n,1)
+             wtn = Interp % wtj   (m,n,2)
+
+             if(present(missing_value) ) then
+                num_missing = 0
+                if(data_in(is,js) == missing_value) then
+                   num_missing = num_missing+1
+                   mask(is,js) = 0.0
+                endif
+                if(data_in(ie,js) == missing_value) then
+                   num_missing = num_missing+1
+                   mask(ie,js) = 0.0
+                endif
+                if(data_in(ie,je) == missing_value) then
+                   num_missing = num_missing+1
+                   mask(ie,je) = 0.0
+                endif
+                if(data_in(is,je) == missing_value) then
+                   num_missing = num_missing+1
+                   mask(is,je) = 0.0
+                endif
+             endif
+
+             dwtsum = data_in(is,js)*mask(is,js)*wtw*wts &
+                  + data_in(ie,js)*mask(ie,js)*wte*wts &
+                  + data_in(ie,je)*mask(ie,je)*wte*wtn &
+                  + data_in(is,je)*mask(is,je)*wtw*wtn 
+             wtsum  = mask(is,js)*wtw*wts + mask(ie,js)*wte*wts  &
+                  + mask(ie,je)*wte*wtn + mask(is,je)*wtw*wtn
+
+             if(.not. present(mask_in) .and. .not. present(missing_value)) wtsum = 1.0
+
+             if(num_missing .gt. max_missing ) then
+                data_out(m,n) = missing_value
+                if(present(mask_out)) mask_out(m,n) = 0.0
+             else if(wtsum .lt. epsln) then 
+                if(present(missing_value)) then
+                   data_out(m,n) = missing_value
+                else
+                   data_out(m,n) = 0.0
+                endif
+                if(present(mask_out)) mask_out(m,n) = 0.0      
+             else
+                data_out(m,n) = dwtsum/wtsum
+                if(present(mask_out)) mask_out(m,n) = wtsum
+             endif
+          enddo
        enddo
-    enddo
+    endif
     !***********************************************************************
     ! compute statistics: minimum, maximum, and mean
     !-----------------------------------------------------------------------

@@ -46,8 +46,8 @@ private
 !---------------------------------------------------------------------
 !----------- version number for this module --------------------------
 
-character(len=128)  :: version =  '$Id: astronomy.F90,v 20.0 2013/12/14 00:18:17 fms Exp $'
-character(len=128)  :: tagname =  '$Name: tikal $'
+character(len=128)  :: version =  '$Id: astronomy.F90,v 20.0.2.1 2014/02/07 21:43:18 wfc Exp $'
+character(len=128)  :: tagname =  '$Name: tikal_201403 $'
 
 
 !---------------------------------------------------------------------
@@ -3153,7 +3153,7 @@ real, intent(in) :: ang
 !    its square (r_inv_squared) to the calling routine.
 !--------------------------------------------------------------------
       rad_per       = per*deg_to_rad
-      r             = (1 - ecc**2)/(1. + ecc*cos(ang - rad_per))
+      r             = (1. - ecc**2)/(1. + ecc*cos(ang - rad_per))
       r_inv_squared = r**(-2)
 
 

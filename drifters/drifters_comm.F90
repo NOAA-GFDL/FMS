@@ -1,7 +1,7 @@
 #include <fms_platform.h>
 #include "fms_switches.h"
 
-! $Id: drifters_comm.F90,v 20.0 2013/12/14 00:19:06 fms Exp $
+! $Id: drifters_comm.F90,v 20.0.2.1 2013/12/23 16:31:56 z1l Exp $
 
 module drifters_comm_mod
 
@@ -834,7 +834,7 @@ program main
      
      if(drfts%np > 0) then 
         do i=1,drfts%np
-           print '(a,i2,a,i3,a,i3,a, i3, a,2f10.6)', 'PE: ',pe, ' it=', it, ' np=', drfts%np, ' ip=', i, &
+           print '(a,i6,a,i3,a,i3,a, i3, a,2f10.6)', 'PE: ',pe, ' it=', it, ' np=', drfts%np, ' ip=', i, &
                 & ' x,y=', drfts%positions(1,i), drfts%positions(2,i)
         enddo
      endif

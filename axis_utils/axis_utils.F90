@@ -43,8 +43,8 @@ module axis_utils_mod
   integer, parameter :: maxatts = 100
   real, parameter    :: epsln= 1.e-10
   real, parameter    :: fp5 = 0.5, f360 = 360.0
-  character(len=256) :: version = '$Id: axis_utils.F90,v 20.0 2013/12/14 00:18:21 fms Exp $'
-  character(len=256) :: tagname = '$Name: tikal $'   
+  character(len=256) :: version = '$Id: axis_utils.F90,v 20.0.2.1 2014/02/07 21:43:18 wfc Exp $'
+  character(len=256) :: tagname = '$Name: tikal_201403 $'   
 
   interface interp_1d
      module procedure interp_1d_1d
@@ -621,7 +621,7 @@ contains
        h   = grid1(khi)-grid1(klo)
        a   = (grid1(khi) - grid2(k))/h
        b   = (grid2(k) - grid1(klo))/h
-       data2(k) = a*data1(klo) + b*data1(khi)+ ((a**3-a)*y2(klo) + (b**3-b)*y2(khi))*(h**2)/6
+       data2(k) = a*data1(klo) + b*data1(khi)+ ((a**3-a)*y2(klo) + (b**3-b)*y2(khi))*(h**2)/6.
     enddo
 
   end subroutine interp_1d_cubic_spline
