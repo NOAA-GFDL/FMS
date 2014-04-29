@@ -196,8 +196,8 @@ integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
    integer :: yrmod, momod, dymod
    logical :: mod_leapyear
 
-   character(len=128) :: version='$Id: time_interp.F90,v 20.0 2013/12/14 00:28:05 fms Exp $'
-   character(len=128) :: tagname='$Name: tikal_201403 $'
+   character(len=128) :: version='$Id$'
+   character(len=128) :: tagname='$Name$'
 
    logical :: module_is_initialized=.FALSE.
    logical :: perthlike_behavior=.FALSE.

@@ -1,4 +1,4 @@
-! $Id: drifters_input.F90,v 14.0 2007/03/15 22:38:53 fms Exp $
+! $Id$
 
 #include <fms_platform.h>
 
@@ -11,7 +11,7 @@ module drifters_input_mod
 
   ! Globals
   integer, parameter, private   :: MAX_STR_LEN = 128
-  character(MAX_STR_LEN), parameter, private :: version = '$Id: drifters_input.F90,v 14.0 2007/03/15 22:38:53 fms Exp $'
+  character(MAX_STR_LEN), parameter, private :: version = '$Id$'
   character, parameter, private :: SEPARATOR = ' '
 
   type drifters_input_type

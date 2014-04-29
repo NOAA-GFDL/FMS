@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-VERSION = "$Id: drifters_combine,v 13.0 2006/03/28 21:38:16 fms Exp $"
+VERSION = "$Id$"
 
 from Scientific.IO.NetCDF import NetCDFFile
 import sys

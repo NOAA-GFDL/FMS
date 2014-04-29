@@ -401,8 +401,8 @@ type xmap_type
 end type xmap_type
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: xgrid.F90,v 20.0.2.1 2014/02/07 21:43:19 wfc Exp $'
- character(len=128) :: tagname = '$Name: tikal_201403 $'
+ character(len=128) :: version = '$Id$'
+ character(len=128) :: tagname = '$Name$'
 
  real, parameter                              :: EPS = 1.0e-10
  real, parameter                              :: LARGE_NUMBER = 1.e20

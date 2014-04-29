@@ -4,13 +4,13 @@ MODULE diag_data_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>
-  
+
   ! <OVERVIEW>
   !   Type descriptions and global variables for the diag_manager modules.
   ! </OVERVIEW>
 
   ! <DESCRIPTION>
-  !   Notation: 
+  !   Notation:
   !   <DL>
   !     <DT>input field</DT>
   !     <DD>The data structure describing the field as
@@ -29,7 +29,7 @@ MODULE diag_data_mod
   !
   !   Each input field associated with one or several output fields via array of
   !   indices output_fields; each output field points to the single "parent" input
-  !   field with the input_field index, and to the output file with the output_file 
+  !   field with the input_field index, and to the output file with the output_file
   !   index
   ! </DESCRIPTION>
 
@@ -101,12 +101,12 @@ MODULE diag_data_mod
   !     ID returned from diag_subaxes_init of 3 subaces.
   !   </DATA>
   TYPE diag_grid
-     REAL, DIMENSION(3) :: start, END ! start and end coordinates (lat,lon,depth) of local domain to output   
+     REAL, DIMENSION(3) :: start, END ! start and end coordinates (lat,lon,depth) of local domain to output
      INTEGER, DIMENSION(3) :: l_start_indx, l_end_indx ! start and end indices at each LOCAL PE
      INTEGER, DIMENSION(3) :: subaxes ! id returned from diag_subaxes_init of 3 subaxes
   END TYPE diag_grid
   ! </TYPE>
-  
+
   ! <TYPE NAME="diag_fieldtype">
   !   <DESCRIPTION>
   !     Diagnostic field type
@@ -134,6 +134,39 @@ MODULE diag_data_mod
   END TYPE diag_fieldtype
   ! </TYPE>
 
+  ! <TYPE NAME="diag_atttype">
+  !   <DESCRIPTION>
+  !     Attribute type for diagnostic fields
+  !   </DESCRIPTION>
+  !   <DATA NAME="type">
+  !     Data type of attribute values (NF_INT, NF_FLOAT, NF_CHAR)
+  !   </DATA>
+  !   <DATA NAME="len">
+  !     Number of values in attribute, or if a character string then
+  !     length of the string.
+  !   </DATA>
+  !   <DATA NAME="name">
+  !     Name of the attribute
+  !   </DATA>
+  !   <DATA NAME="catt">
+  !     Character string to hold character value of attribute
+  !   </DATA>
+  !   <DATA NAME="fatt">
+  !     REAL array to hold value of REAL attributes.
+  !   </DATA>
+  !   <DATA NAME="iatt">
+  !     INTEGER array to hold value of INTEGER attributes.
+  !   </DATA>
+  type :: diag_atttype
+     INTEGER             :: type
+     INTEGER             :: len
+     CHARACTER(len=128)  :: name
+     CHARACTER(len=1280) :: catt
+     REAL, _ALLOCATABLE, DIMENSION(:)    :: fatt _NULL
+     INTEGER, _ALLOCATABLE, DIMENSION(:) :: iatt _NULL
+  end type diag_atttype
+  ! </TYPE>
+
   ! <TYPE NAME="coord_type">
   !   <DESCRIPTION>
   !     Define the region for field output.
@@ -159,7 +192,7 @@ MODULE diag_data_mod
      REAL :: zend
   END TYPE coord_type
   ! </TYPE>
-  
+
   ! <TYPE NAME="file_type">
   !   <DESCRIPTION>
   !     Type to define the diagnostic files that will be written as defined by the diagnostic table.
@@ -246,8 +279,8 @@ MODULE diag_data_mod
      TYPE(time_type) :: close_time !< Time file closed.  File does not allow data after close time
      TYPE(diag_fieldtype):: f_avg_start, f_avg_end, f_avg_nitems, f_bounds
   END TYPE file_type
-  ! </TYPE>  
-  
+  ! </TYPE>
+
   ! <TYPE NAME="input_field_type">
   !   <DESCRIPTION>
   !     Type to hold the input field description
@@ -294,15 +327,21 @@ MODULE diag_data_mod
   !   </DATA>
   !   <DATA NAME="local_coord" TYPE="TYPE(coord_type)">
   !   </DATA>
+  !   <DATA NAME="attributes" TYPE="TYPE(diag_atttype), DIMENSION(:)">
+  !     Array to hold user definable attributes
+  !   </DATA>
+  !   <DATA NAME="num_attributes" TYPE="INTEGER" >
+  !     Number of defined attibutes
+  !   </DATA>
   TYPE input_field_type
      CHARACTER(len=128) :: module_name, field_name, long_name, units, standard_name
      CHARACTER(len=64) :: interp_method
      INTEGER, DIMENSION(3) :: axes
-     INTEGER :: num_axes 
+     INTEGER :: num_axes
      LOGICAL :: missing_value_present, range_present
      REAL :: missing_value
      REAL, DIMENSION(2) :: range
-     INTEGER, _ALLOCATABLE, dimension(:) :: output_fields
+     INTEGER, _ALLOCATABLE, dimension(:) :: output_fields _NULL
      INTEGER :: num_output_fields
      INTEGER, DIMENSION(3) :: size
      LOGICAL :: static, register, mask_variant, local
@@ -311,6 +350,8 @@ MODULE diag_data_mod
      TYPE(coord_type) :: local_coord
      TYPE(time_type)  :: time
      LOGICAL :: issued_mask_ignore_warning
+     TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
+     INTEGER :: num_attributes
   END TYPE input_field_type
   ! </TYPE>
 
@@ -413,19 +454,19 @@ MODULE diag_data_mod
      LOGICAL :: time_min ! true if the output field is minimum over time interval
      LOGICAL :: time_ops ! true if any of time_min, time_max, or time_average is true
      INTEGER  :: pack
-     CHARACTER(len=50) :: time_method ! time method field from the input file 
+     CHARACTER(len=50) :: time_method ! time method field from the input file
      ! coordianes of the buffer and counter are (x, y, z, time-of-day)
      REAL, _ALLOCATABLE, DIMENSION(:,:,:,:) :: buffer _NULL
      REAL, _ALLOCATABLE, DIMENSION(:,:,:,:) :: counter _NULL
-     ! the following two counters are used in time-averaging for some 
-     ! combination of the field options. Their size is the length of the 
+     ! the following two counters are used in time-averaging for some
+     ! combination of the field options. Their size is the length of the
      ! diurnal axis; the counters must be tracked separately for each of
      ! the diurnal interval, becaus the number of time slices accumulated
      ! in each can be different, depending on time step and the number of
      ! diurnal samples.
      REAL, _ALLOCATABLE, DIMENSION(:)  :: count_0d
      INTEGER, _ALLOCATABLE, dimension(:) :: num_elements
-     
+
      TYPE(time_type) :: last_output, next_output, next_next_output
      TYPE(diag_fieldtype) :: f_type
      INTEGER, DIMENSION(4) :: axes
@@ -508,12 +549,12 @@ MODULE diag_data_mod
      CHARACTER(len=128)   :: tile_name='N/A'
   END TYPE diag_global_att_type
   ! </TYPE>
-  
+
   ! Private CHARACTER Arrays for the CVS version and tagname.
   CHARACTER(len=128),PRIVATE  :: version =&
-       & '$Id: diag_data.F90,v 20.0 2013/12/14 00:18:41 fms Exp $'
+       & '$Id$'
   CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name: tikal_201403 $'
+       & '$Name$'
 
   ! <!-- Other public variables -->
   ! <DATA NAME="num_files" TYPE="INTEGER" DEFAULT="0">
@@ -564,6 +605,9 @@ MODULE diag_data_mod
   !   Cause a fatal error if the output field has a value outside the
   !   given range for a variable.
   ! </DATA>
+  ! <DATA NAME="max_field_attributes" TYPE="INTEGER" DEFAULT="2">
+  !   Maximum number of user definable attributes per field.
+  ! </DATA>
   LOGICAL :: append_pelist_name = .FALSE.
   LOGICAL :: mix_snapshot_average_fields =.FALSE.
   INTEGER :: max_files = 31 !< Maximum number of output files allowed.  Increase via diag_manager_nml.
@@ -579,7 +623,7 @@ MODULE diag_data_mod
   LOGICAL :: use_cmor = .FALSE.
   LOGICAL :: issue_oor_warnings = .TRUE.
   LOGICAL :: oor_warnings_fatal = .FALSE.
-
+  INTEGER :: max_field_attributes = 2
   ! <!-- netCDF variable -->
   ! <DATA NAME="FILL_VALUE" TYPE="REAL" DEFAULT="NF90_FILL_REAL">
   !   Fill value used.  Value will be <TT>NF90_FILL_REAL</TT> if using the
@@ -588,7 +632,7 @@ MODULE diag_data_mod
 #ifdef use_netCDF
   REAL :: FILL_VALUE = NF_FILL_REAL  ! from file /usr/local/include/netcdf.inc
 #else
-  REAL :: FILL_VALUE = 9.9692099683868690e+36 
+  REAL :: FILL_VALUE = 9.9692099683868690e+36
 #endif
 
   INTEGER :: pack_size = 1 ! 1 for double and 2 for float
@@ -639,5 +683,5 @@ MODULE diag_data_mod
   CHARACTER(len=32), SAVE :: filename_appendix = ''
   CHARACTER(len=32) :: pelist_name
   INTEGER :: oor_warning = WARNING
-  
+
 END MODULE diag_data_mod

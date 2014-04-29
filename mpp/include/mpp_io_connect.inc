@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_connect.inc,v 19.0.18.1 2014/02/07 00:34:44 Rusty.Benson Exp $
+! $Id$
 
 ! <SUBROUTINE NAME="mpp_open">
 

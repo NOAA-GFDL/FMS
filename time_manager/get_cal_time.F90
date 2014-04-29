@@ -39,8 +39,8 @@ logical :: allow_calendar_conversion=.true.
 namelist / get_cal_time_nml / allow_calendar_conversion
 ! </NAMELIST>
 
-character(len=128) :: version='$Id: get_cal_time.F90,v 20.0 2013/12/14 00:28:11 fms Exp $'
-character(len=128) :: tagname='$Name: tikal_201403 $'
+character(len=128) :: version='$Id$'
+character(len=128) :: tagname='$Name$'
 
 contains
 !------------------------------------------------------------------------

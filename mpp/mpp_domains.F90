@@ -2432,9 +2432,9 @@ end interface
 
   !--- version information variables
   character(len=128), public :: version= &
-       '$Id: mpp_domains.F90,v 20.0.2.1.2.2 2014/02/19 16:40:33 Zhi.Liang Exp $'
+       '$Id$'
   character(len=128), public :: tagname= &
-       '$Name: tikal_201403 $'
+       '$Name$'
 
 
 contains

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_comm.inc,v 19.0.26.1 2014/02/07 17:02:20 sdu Exp $
+! $Id$
 
 #ifdef use_libSMA
 #include <mpp_comm_sma.inc>

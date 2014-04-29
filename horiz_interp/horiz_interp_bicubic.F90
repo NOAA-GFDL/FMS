@@ -41,8 +41,8 @@ module horiz_interp_bicubic_mod
     module procedure horiz_interp_bicubic_new_1d_s
   end interface
 
-   character(len=128) :: version="$Id: horiz_interp_bicubic.F90,v 19.0.14.1 2014/02/07 21:43:19 wfc Exp $"
-   character(len=128) :: tagname = '$Name: tikal_201403 $'
+   character(len=128) :: version="$Id$"
+   character(len=128) :: tagname = '$Name$'
    logical            :: module_is_initialized = .FALSE.
    integer            :: verbose_bicubic = 0
    
