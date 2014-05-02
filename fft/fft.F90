@@ -181,8 +181,8 @@ integer :: leng, leng1, leng2, lenc    ! related to transform size
 logical :: module_is_initialized=.false.
 
 !  cvs version and tag name
-character(len=128) :: version = '$Id: fft.F90,v 13.0 2006/03/28 21:38:54 fms Exp $'
-character(len=128) :: tagname = '$Name: tikal_201403 $'
+character(len=128) :: version = '$Id$'
+character(len=128) :: tagname = '$Name$'
 
 !-----------------------------------------------------------------------
 !

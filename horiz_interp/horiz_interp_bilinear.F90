@@ -39,8 +39,8 @@ module horiz_interp_bilinear_mod
   integer, parameter :: DUMMY = -999
 
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_bilinear.F90,v 20.0.2.1.2.1 2014/03/04 16:53:41 pjp Exp $'
-  character(len=128) :: tagname = '$Name: tikal_201403 $'
+  character(len=128) :: version = '$Id$'
+  character(len=128) :: tagname = '$Name$'
   logical            :: module_is_initialized = .FALSE.
 
 contains

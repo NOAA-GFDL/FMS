@@ -1,5 +1,5 @@
 ! -*-f90-*-
-! $Id: read_data_3d.inc,v 13.0 2006/03/28 21:39:21 fms Exp $
+! $Id$
 
    if((size(data,1)== ied-isd+1).and.(size(data,2)==jed-jsd+1)) then
      no_halo = .false.

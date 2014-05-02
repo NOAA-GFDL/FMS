@@ -58,9 +58,9 @@ MODULE diag_util_mod
        & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size, sync_file_times
 
   CHARACTER(len=128),PRIVATE  :: version =&
-       & '$Id: diag_util.F90,v 20.0.2.1 2014/02/07 21:43:19 wfc Exp $'
+       & '$Id$'
   CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name: tikal_201403 $'
+       & '$Name$'
 
 CONTAINS
 

@@ -33,9 +33,9 @@ MODULE diag_axis_mod
   ! Module variables
   ! Parameters
   CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id: diag_axis.F90,v 20.0 2013/12/14 00:18:37 fms Exp $'
+       & '$Id$'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: tikal_201403 $'
+       & '$Name$'
 
   ! counter of number of axes defined
   INTEGER, DIMENSION(:), ALLOCATABLE :: num_subaxes

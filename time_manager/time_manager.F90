@@ -180,8 +180,8 @@ end interface
 
 !======================================================================
 
-character(len=128) :: version='$Id: time_manager.F90,v 20.0 2013/12/14 00:28:14 fms Exp $'
-character(len=128) :: tagname='$Name: tikal_201403 $'
+character(len=128) :: version='$Id$'
+character(len=128) :: tagname='$Name$'
 logical :: module_is_initialized = .false.
 
 !======================================================================

@@ -1,7 +1,7 @@
 Drifters
 ========
 
-$Id: readme.txt,v 13.0 2006/03/28 21:38:43 fms Exp $
+$Id$
 
 Alexander.Pletzer@noaa.gov
 

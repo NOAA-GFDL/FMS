@@ -1,8 +1,8 @@
 module mpp_utilities_mod
 
 !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: mpp_utilities.F90,v 17.0.40.1 2014/02/07 21:43:20 wfc Exp $'
-  character(len=128) :: tag = '$Name: tikal_201403 $'
+  character(len=128) :: version = '$Id$'
+  character(len=128) :: tag = '$Name$'
 !-----------------------------------------------------------------------
 
   public :: mpp_array_global_min_max

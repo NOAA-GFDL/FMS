@@ -7,7 +7,7 @@ module stock_constants_mod
 
   implicit none
 
-  character(len=128), parameter :: version = '$Id: stock_constants.F90,v 17.0 2009/07/21 03:19:07 fms Exp $'
+  character(len=128), parameter :: version = '$Id$'
 
 
   integer,public,    parameter                :: NELEMS=3

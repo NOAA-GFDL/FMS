@@ -13,7 +13,7 @@ MODULE cloud_interpolator_mod
   public :: cld_ntrp_expand_index, cld_ntrp_contract_indices
 #endif
 
-character(128), parameter :: version = '$Id: cloud_interpolator.F90,v 14.0.28.1 2014/02/07 21:43:19 wfc Exp $'
+character(128), parameter :: version = '$Id$'
 real, parameter           :: tol = 10.0*epsilon(1.)
 
 CONTAINS
