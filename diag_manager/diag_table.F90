@@ -920,9 +920,10 @@ CONTAINS
     ! If using ensembles, then append the ensemble information
     ! Or add the optional suffix based on the pe list name if the
     ! append_pelist_name == .TRUE.
-    IF ( LEN_TRIM(filename_appendix) > 0 ) THEN 
-       fix_file_name(file_name_len+1:) = TRIM(filename_appendix)    
-    ELSE IF ( append_pelist_name ) THEN
+!!:sdu    IF ( LEN_TRIM(filename_appendix) > 0 ) THEN 
+!!:sdu       fix_file_name(file_name_len+1:) = TRIM(filename_appendix)    
+!!:sdu    ELSE IF ( append_pelist_name ) THEN
+    IF ( append_pelist_name ) THEN
        fix_file_name(file_name_len+1:) = TRIM(pelist_name)
     END IF
   END FUNCTION fix_file_name

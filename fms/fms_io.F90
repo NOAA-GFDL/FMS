@@ -6758,7 +6758,14 @@ end subroutine get_axis_cart
 
 subroutine set_filename_appendix(string_in)
   character(len=*) , intent(in) :: string_in
-  filename_appendix = trim(string_in)
+
+  integer :: index_num
+
+  ! Check if string has already been added
+  index_num = index(filename_appendix, string_in)
+  if ( index_num .le. 0 ) then
+     filename_appendix = trim(filename_appendix)//trim(string_in)
+  end if
 end subroutine set_filename_appendix
 
 subroutine get_instance_filename(name_in,name_out)
