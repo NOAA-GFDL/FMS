@@ -672,7 +672,6 @@ MODULE diag_data_mod
   ! <DATA NAME="diag_log_unit" TYPE="INTEGER" />
   ! <DATA NAME="time_unit_list" TYPE="CHARACTER(len=10), DIMENSION(6)"
   !       DEFAULT="(/'seconds   ', 'minutes   ', 'hours     ', 'days      ', 'months    ', 'years     '/)" />
-  ! <DATA NAME="filename_appendix" TYPE="CHARACTER(len=32)" DEFAULT="" />
   ! <DATA NAME="pelist_name" TYPE="CHARACTER(len=32)" />
   TYPE(time_type) :: time_zero
   LOGICAL :: first_send_data_call = .TRUE.
@@ -680,7 +679,6 @@ MODULE diag_data_mod
   INTEGER :: diag_log_unit
   CHARACTER(len=10), DIMENSION(6) :: time_unit_list = (/'seconds   ', 'minutes   ',&
        & 'hours     ', 'days      ', 'months    ', 'years     '/)
-  CHARACTER(len=32), SAVE :: filename_appendix = ''
   CHARACTER(len=32) :: pelist_name
   INTEGER :: oor_warning = WARNING
 

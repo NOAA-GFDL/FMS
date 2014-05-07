@@ -217,7 +217,7 @@ MODULE diag_table_mod
   USE constants_mod, ONLY: SECONDS_PER_HOUR, SECONDS_PER_MINUTE
   
   USE diag_data_mod, ONLY: global_descriptor, base_time, base_year, base_month, base_day, base_hour, base_minute, base_second,&
-       & DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, coord_type, append_pelist_name, pelist_name, filename_appendix
+       & DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, coord_type, append_pelist_name, pelist_name
   USE diag_util_mod, ONLY: init_file, check_duplicate_output_fields, init_input_field, init_output_field
 
   IMPLICIT NONE
@@ -894,8 +894,7 @@ CONTAINS
   !     PURE CHARACTER(len=128) FUNCTION fix_file_name(file_name_string)
   !   </TEMPLATE>
   !   <DESCRIPTION>
-  !     Removes any trailing '.nc' and appends to the file name additional information
-  !     depending on if we are running an ensemble, or requesting append_pelist_name.
+  !     Removes any trailing '.nc' and appends (if requested) append_pelist_name.
   !     
   !     Presently, the ensemble appendix will override the append_pelist_name variable.
   !   </DESCRIPTION>
@@ -917,12 +916,9 @@ CONTAINS
        END IF
     END IF
        
-    ! If using ensembles, then append the ensemble information
-    ! Or add the optional suffix based on the pe list name if the
+    ! Add the optional suffix based on the pe list name if the
     ! append_pelist_name == .TRUE.
-    IF ( LEN_TRIM(filename_appendix) > 0 ) THEN 
-       fix_file_name(file_name_len+1:) = TRIM(filename_appendix)    
-    ELSE IF ( append_pelist_name ) THEN
+    IF ( append_pelist_name ) THEN
        fix_file_name(file_name_len+1:) = TRIM(pelist_name)
     END IF
   END FUNCTION fix_file_name

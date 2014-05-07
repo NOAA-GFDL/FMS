@@ -110,7 +110,7 @@
           that are NOT written to any files. The file name in diag_table of
           these fields is <tt>null</tt>.</li>
      
-<li> By default, a field is output in its global grid.  The user can now
+<li> By default, a field is output in its global grid.  The user can now 
           output a field in a specified region.  See
           <a href="#send_data"><tt>send_data</tt></a> for more details.</li>
      
@@ -128,10 +128,10 @@
           
 <br>
 
-          From left to right we have:
+          From left to right we have: 
           <ul>
             
-<li>file name</li>
+<li>file name</li> 
             
 <li>output frequency</li>
             
@@ -225,7 +225,7 @@
 <dt>
 <a href="#send_data">send_data</a>:</dt>
 <dd>
-     Send data over to output fields.
+     Send data over to output fields. 
    </dd>
 <dt>
 <a href="#register_diag_field">register_diag_field</a>:</dt>
@@ -235,7 +235,7 @@
 <dt>
 <a href="#send_tile_averaged_data">send_tile_averaged_data</a>:</dt>
 <dd>
-      Send tile-averaged data over to output fields.
+      Send tile-averaged data over to output fields. 
     </dd>
 <dt>
 <a href="#diag_field_add_attribute">diag_field_add_attribute</a>:</dt>
@@ -270,7 +270,7 @@
 <dt>
 <a href="#get_base_time">get_base_time</a>:</dt>
 <dd>
-     Return base time for diagnostics.
+     Return base time for diagnostics. 
    </dd>
 <dt>
 <a href="#get_base_date">get_base_date</a>:</dt>
@@ -282,11 +282,6 @@
 <dd>
      Determine whether data is needed for the current model time step.
    </dd>
-<dt>
-<a href="#set_diag_filename_appendix">set_diag_filename_appendix</a>:</dt>
-<dd>
-   
-</dd>
 <dt>
 <a href="#init_diurnal_axis">init_diurnal_axis</a>:</dt>
 <dd>
@@ -329,11 +324,11 @@
      By default, a field will be written out entirely in its global grid.
      Users can also specify regions in which the field will be output. The
      region is specified in diag-table just before the end of output_field
-     replacing "none".
+     replacing "none". 
 
      For example, by default:
 
-     "ocean_mod","Vorticity","vorticity","file1","all",.false.,"none",2
+     "ocean_mod","Vorticity","vorticity","file1","all",.false.,"none",2 
 
      for regional output:
 
@@ -351,16 +346,16 @@
      output on the cubed sphere grid, first the grid information needs to be sent to
      <tt>diag_manager_mod</tt> using the <a href="diag_grid.html#diag_grid_init"><tt> diag_grid_init</tt></a>
      subroutine.
-
-     <b><i>NOTE:</i></b> When using regional output the files containing regional
-     outputs should be different from files containing global (default) output.
-     It is a FATAL error to have one file containing both regional and global
-     results. For maximum flexibility and independence from PE counts one file
+ 
+     <b><i>NOTE:</i></b> When using regional output the files containing regional 
+     outputs should be different from files containing global (default) output. 
+     It is a FATAL error to have one file containing both regional and global 
+     results. For maximum flexibility and independence from PE counts one file 
      should contain just one region.
-
+ 
      Time averaging is supported in regional output.
-
-     Physical fields (written in "physics windows" of atmospheric code) are
+ 
+     Physical fields (written in "physics windows" of atmospheric code) are 
      fully supported for regional outputs.
 
      <b><i>NOTE:</i></b> Most fields are defined in the data domain but use the
@@ -582,7 +577,7 @@
 </dt>
 <dd>
       
-<tt>send_tile_averaged_data</tt> is overloaded for 3D and 4D arrays.
+<tt>send_tile_averaged_data</tt> is overloaded for 3D and 4D arrays. 
       <tt>diag_field_id</tt> corresponds to the ID returned by previous call
       to <tt>register_diag_field</tt>. Logical masks can be used to mask out
       undefined and/or unused values.  Note that the dimension of output field
@@ -979,33 +974,6 @@
 </dl>
 </li>
 <li>
-<a name="set_diag_filename_appendix"></a>
-<h4>set_diag_filename_appendix</h4>
-<pre>SUBROUTINE <b>set_diag_filename_appendix</b> (string_in)</pre>
-<dl>
-<dt>
-<b>DESCRIPTION</b>
-</dt>
-<dd>
-   
-</dd>
-<br>
-<br>
-<dt>
-<b>INPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>string_in&nbsp;&nbsp;&nbsp;</tt></td><td>
-<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-</dl>
-</li>
-<li>
 <a name="init_diurnal_axis"></a>
 <h4>init_diurnal_axis</h4>
 <pre>INTEGER FUNCTION <b>init_diurnal_axis</b> (n_samples)</pre>
@@ -1363,7 +1331,7 @@
      Any module or program unit using <tt>diag_manager_mod</tt> must contain the line
      <pre>     use diag_manager_mod</pre>
      If netCDF output is desired, the cpp flag <tt>-Duse_netCDF</tt>
-     must be turned on.
+     must be turned on. 
    </dd>
 </dl>
 </div>
@@ -1377,7 +1345,7 @@
 <dl>
 <dt>-D<b>use_netCDF</b>
 </dt>
-<dd>
+<dd> 
      Used to write out <a href="http://www.unidata.ucar.edu/software/netcdf">NetCDF</a> files.
    </dd>
 <dt>-D<b>test_diag_manager</b>

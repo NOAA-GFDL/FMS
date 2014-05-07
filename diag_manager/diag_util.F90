@@ -48,6 +48,7 @@ MODULE diag_util_mod
        & OPERATOR(<), OPERATOR(>=), OPERATOR(<=)
   USE mpp_io_mod, ONLY : mpp_close
   USE mpp_mod, ONLY : mpp_npes
+  USE fms_io_mod, ONLY : get_instance_filename
   USE constants_mod, ONLY : SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
 
   IMPLICIT NONE
@@ -1578,6 +1579,11 @@ CONTAINS
     ELSE
        suffix = ' '
     END IF
+
+    ! Add ensemble ID to filename
+    fname=base_name
+    call get_instance_filename(fname, base_name)
+
     ! Add CVS tag as prefix of filename  (currently not implemented)
     !  i1 = INDEX(tagname,':') + 2
     !  i2 = len_trim(tagname) - 2
