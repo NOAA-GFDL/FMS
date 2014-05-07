@@ -6,7 +6,6 @@ module ensemble_manager_mod
   use mpp_mod, only : mpp_pe, mpp_declare_pelist
   use mpp_mod, only : input_nml_file
   use fms_io_mod, only       : set_filename_appendix 
-  use diag_manager_mod, only : set_diag_filename_appendix
 
   IMPLICIT NONE
 
@@ -358,9 +357,6 @@ contains
        write( text,'(a,i2.2)' ) 'ens_', ensemble_id    
        !Append ensemble_id to the restart filenames
        call set_filename_appendix(trim(text)) 
-       !Append ensemble_id to the diag_out filenames
-       write( text,'(a,i2.2)' ) '.ens_', ensemble_id    
-       call set_diag_filename_appendix(trim(text)) 
     endif   
     
   end subroutine ensemble_pelist_setup

@@ -190,7 +190,7 @@ MODULE diag_manager_mod
        & output_fields, Time_zero, append_pelist_name, mix_snapshot_average_fields,&
        & first_send_data_call, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
-       & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, filename_appendix, pack_size,&
+       & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, conserve_water
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
@@ -207,7 +207,6 @@ MODULE diag_manager_mod
        & set_diag_global_att
   ! Public interfaces from diag_grid_mod
   PUBLIC :: diag_grid_init, diag_grid_end
-  PUBLIC :: set_diag_filename_appendix
   PUBLIC :: diag_manager_set_time_end, diag_send_complete
 
   ! version number of this module
@@ -2990,22 +2989,6 @@ CONTAINS
     RETURN
   END FUNCTION need_data
   ! </FUNCTION>
-
-  ! <SUBROUTINE NAME="set_diag_filename_appendix">
-  !   <OVERVIEW>
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE set_diag_filename_appendix(string_in)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !   </DESCRIPTION>
-  !   <IN NAME="string_in" TYPE="CHARACTER(len=*)"></IN>
-  SUBROUTINE set_diag_filename_appendix(string_in)
-    CHARACTER(len=*) , INTENT(in) :: string_in
-    
-    filename_appendix = TRIM(string_in)
-  END SUBROUTINE set_diag_filename_appendix
-  ! </SUBROUTINE>
 
   ! <FUNCTION NAME="init_diurnal_axis">
   !   <OVERVIEW>
