@@ -3459,11 +3459,10 @@ END MODULE diag_manager_mod
 ! test_diag_manager
 ! 1 3 1 0 0 0
 ! #output files
-!  "diag_test2", 1, "months", 1, "days", "time",
+!  "diag_test2", 1, "days", 1, "days", "time",
 ! #output variables
-! # Test for output file name to be modified with appended string
-!  "test_diag_manager_mod", "dat2", "dat2_rms", "diag_test2", "all", "rms",   "none", 2,
-!  "test_diag_manager_mod", "dat2", "dat2",     "diag_test2", "all", .false., "none", 2,
+!  "test_diag_manager_mod", "dat2", "dat2_rms", "diag_test2", "all", "rms",  "none", 2,
+!  "test_diag_manager_mod", "dat2", "dat2",     "diag_test2", "all", .true., "none", 2,
 !--------------------------------------------------------------------------------------------------
 
 PROGRAM test
@@ -3479,15 +3478,15 @@ PROGRAM test
   ! may be triggered upon the call to diag_manager_init, register_diag_field or send_data.
   ! Because of this, the calls to all of those routines differ depending on the test.
 
-  USE mpp_mod, ONLY: mpp_pe, mpp_error, FATAL
+  USE mpp_mod, ONLY: mpp_pe, mpp_root_pe
   USE mpp_domains_mod, ONLY: domain2d, mpp_define_domains, mpp_get_compute_domain
   USE mpp_domains_mod, ONLY: mpp_define_io_domain, mpp_define_layout
-  USE fms_mod, ONLY: fms_init, fms_end, mpp_npes, file_exist, check_nml_error, close_file, open_file
-  USE fms_mod, ONLY: error_mesg, FATAL, stdlog
+  USE fms_mod, ONLY: fms_init, fms_end, mpp_npes, file_exist, check_nml_error, open_file
+  USE fms_mod, ONLY: error_mesg, FATAL, WARNING, stdlog
 #ifdef INTERNAL_FILE_NML
   USE mpp_mod, ONLY: input_nml_file
 #else
-  USE fms_mod, ONLY:  open_namelist_file
+  USE fms_mod, ONLY: open_namelist_file, close_file
 #endif
   USE fms_io_mod, ONLY: fms_io_exit
   USE constants_mod, ONLY: constants_init, PI, RAD_TO_DEG
@@ -3520,7 +3519,7 @@ PROGRAM test
   INTEGER :: id_phalf, id_pfull, id_bk
   INTEGER :: id_lon1, id_lonb1, id_latb1, id_lat1, id_dat1
   INTEGER :: id_lon2, id_lat2, id_dat2, id_dat2_2d, id_sol_con
-  INTEGER :: i, j, k, is1, ie1, js1, je1, nml_unit, io, ierr, log_unit, out_unit, m
+  INTEGER :: i, j, k, is1, ie1, js1, je1, nml_unit, ierr, log_unit, out_unit, m
   INTEGER :: is_in, ie_in, js_in, je_in
   INTEGER :: is2, ie2, js2, je2, hi=1, hj=1
   INTEGER :: nlon1, nlat1, nlon2, nlat2
@@ -3543,25 +3542,31 @@ PROGRAM test
                                    dt_step, months, days
 
   CALL fms_init
-  nml_unit = open_namelist_file()
   log_unit = stdlog()
   out_unit = open_file(file='test_diag_manager.out', form='formatted', threading='multi', action='write')
   CALL constants_init
   CALL set_calendar_type(JULIAN)
 
 #ifdef INTERNAL_FILE_NML
-  READ (input_nml_file, NML=test_diag_manager_nml, IOSTAT=io)
-  ierr = check_nml_error(io, 'test_diag_manager_nml')
+  READ (input_nml_file, NML=test_diag_manager_nml, IOSTAT=ierr)
 #else
   IF ( file_exist('input.nml') ) THEN
-     ierr=1
-     DO WHILE (ierr > 0)
-        READ(nml_unit, nml=test_diag_manager_nml, iostat=io)
-        ierr = check_nml_error(io, 'test_diag_manager_nml')
-     END DO
+     nml_unit = open_namelist_file()
+     READ(nml_unit, nml=test_diag_manager_nml, iostat=ierr)
      CALL close_file(nml_unit)
+  ELSE
+     ! Set ierr to an arbitrary positive number if input.nml does not exist.
+     ierr = 100
   END IF
 #endif
+  ! Check the status of reading the diag_manager_nml
+  IF ( check_nml_error(IOSTAT=ierr, NML_NAME='DIAG_MANAGER_NML') < 0 ) THEN
+     IF ( mpp_pe() == mpp_root_pe() ) THEN
+        CALL error_mesg('diag_manager_mod::diag_manager_init', 'TEST_DIAG_MANAGER_NML not found in input.nml.  Using defaults.',&
+             & WARNING)
+     END IF
+  END IF
+
   WRITE (log_unit,test_diag_manager_nml)
 
   IF ( test_number == 12 ) THEN
@@ -3628,6 +3633,7 @@ PROGRAM test
   ALLOCATE(dat2_2d(is2:ie2,js2:je2))
   ALLOCATE(dat2h(is2-hi:ie2+hi,js2-hj:je2+hj,nlev))
   dat2h = 0.
+  dat2 = 0.
   DO j=js2, je2
      DO i=is2, ie2
         dat2(i,j,1) = SIN(lon2(i))*COS(lat2(j))
