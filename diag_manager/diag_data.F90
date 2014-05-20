@@ -4,13 +4,13 @@ MODULE diag_data_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>
-  
+
   ! <OVERVIEW>
   !   Type descriptions and global variables for the diag_manager modules.
   ! </OVERVIEW>
 
   ! <DESCRIPTION>
-  !   Notation: 
+  !   Notation:
   !   <DL>
   !     <DT>input field</DT>
   !     <DD>The data structure describing the field as
@@ -29,7 +29,7 @@ MODULE diag_data_mod
   !
   !   Each input field associated with one or several output fields via array of
   !   indices output_fields; each output field points to the single "parent" input
-  !   field with the input_field index, and to the output file with the output_file 
+  !   field with the input_field index, and to the output file with the output_file
   !   index
   ! </DESCRIPTION>
 
@@ -101,12 +101,12 @@ MODULE diag_data_mod
   !     ID returned from diag_subaxes_init of 3 subaces.
   !   </DATA>
   TYPE diag_grid
-     REAL, DIMENSION(3) :: start, END ! start and end coordinates (lat,lon,depth) of local domain to output   
+     REAL, DIMENSION(3) :: start, END ! start and end coordinates (lat,lon,depth) of local domain to output
      INTEGER, DIMENSION(3) :: l_start_indx, l_end_indx ! start and end indices at each LOCAL PE
      INTEGER, DIMENSION(3) :: subaxes ! id returned from diag_subaxes_init of 3 subaxes
   END TYPE diag_grid
   ! </TYPE>
-  
+
   ! <TYPE NAME="diag_fieldtype">
   !   <DESCRIPTION>
   !     Diagnostic field type
@@ -159,7 +159,7 @@ MODULE diag_data_mod
      REAL :: zend
   END TYPE coord_type
   ! </TYPE>
-  
+
   ! <TYPE NAME="file_type">
   !   <DESCRIPTION>
   !     Type to define the diagnostic files that will be written as defined by the diagnostic table.
@@ -246,8 +246,8 @@ MODULE diag_data_mod
      TYPE(time_type) :: close_time !< Time file closed.  File does not allow data after close time
      TYPE(diag_fieldtype):: f_avg_start, f_avg_end, f_avg_nitems, f_bounds
   END TYPE file_type
-  ! </TYPE>  
-  
+  ! </TYPE>
+
   ! <TYPE NAME="input_field_type">
   !   <DESCRIPTION>
   !     Type to hold the input field description
@@ -298,7 +298,7 @@ MODULE diag_data_mod
      CHARACTER(len=128) :: module_name, field_name, long_name, units, standard_name
      CHARACTER(len=64) :: interp_method
      INTEGER, DIMENSION(3) :: axes
-     INTEGER :: num_axes 
+     INTEGER :: num_axes
      LOGICAL :: missing_value_present, range_present
      REAL :: missing_value
      REAL, DIMENSION(2) :: range
@@ -337,8 +337,11 @@ MODULE diag_data_mod
   !   <DATA NAME="time_average" TYPE="LOGICAL">
   !     .TRUE. if the output field is averaged over time interval.
   !   </DATA>
+  !   <DATA NAME="time_rms" TYPE="LOGICAL">
+  !     .TRUE. if the output field is the rms.  In this case, time_average will also be true.
+  !   </DATA>
   !   <DATA NAME="time_ops" TYPE="LOGICAL">
-  !     .TRUE. if any of time_min, time_max, or time_average is true
+  !     .TRUE. if any of time_min, time_max, time_rms, or time_average is true
   !   </DATA>
   !   <DATA NAME="pack" TYPE="INTEGER">
   !   </DATA>
@@ -408,24 +411,25 @@ MODULE diag_data_mod
      INTEGER :: output_file ! index of the output file in the table
      CHARACTER(len=128) :: output_name
      LOGICAL :: time_average ! true if the output field is averaged over time interval
+     LOGICAL :: time_rms ! true if the output field is the rms.  If true, then time_average is also
      LOGICAL :: static
      LOGICAL :: time_max ! true if the output field is maximum over time interval
      LOGICAL :: time_min ! true if the output field is minimum over time interval
-     LOGICAL :: time_ops ! true if any of time_min, time_max, or time_average is true
+     LOGICAL :: time_ops ! true if any of time_min, time_max, time_rms or time_average is true
      INTEGER  :: pack
-     CHARACTER(len=50) :: time_method ! time method field from the input file 
+     CHARACTER(len=50) :: time_method ! time method field from the input file
      ! coordianes of the buffer and counter are (x, y, z, time-of-day)
      REAL, _ALLOCATABLE, DIMENSION(:,:,:,:) :: buffer _NULL
      REAL, _ALLOCATABLE, DIMENSION(:,:,:,:) :: counter _NULL
-     ! the following two counters are used in time-averaging for some 
-     ! combination of the field options. Their size is the length of the 
+     ! the following two counters are used in time-averaging for some
+     ! combination of the field options. Their size is the length of the
      ! diurnal axis; the counters must be tracked separately for each of
      ! the diurnal interval, becaus the number of time slices accumulated
      ! in each can be different, depending on time step and the number of
      ! diurnal samples.
      REAL, _ALLOCATABLE, DIMENSION(:)  :: count_0d
      INTEGER, _ALLOCATABLE, dimension(:) :: num_elements
-     
+
      TYPE(time_type) :: last_output, next_output, next_next_output
      TYPE(diag_fieldtype) :: f_type
      INTEGER, DIMENSION(4) :: axes
@@ -508,7 +512,7 @@ MODULE diag_data_mod
      CHARACTER(len=128)   :: tile_name='N/A'
   END TYPE diag_global_att_type
   ! </TYPE>
-  
+
   ! Private CHARACTER Arrays for the CVS version and tagname.
   CHARACTER(len=128),PRIVATE  :: version =&
        & '$Id: diag_data.F90,v 20.0 2013/12/14 00:18:41 fms Exp $'
@@ -588,7 +592,7 @@ MODULE diag_data_mod
 #ifdef use_netCDF
   REAL :: FILL_VALUE = NF_FILL_REAL  ! from file /usr/local/include/netcdf.inc
 #else
-  REAL :: FILL_VALUE = 9.9692099683868690e+36 
+  REAL :: FILL_VALUE = 9.9692099683868690e+36
 #endif
 
   INTEGER :: pack_size = 1 ! 1 for double and 2 for float
@@ -639,5 +643,5 @@ MODULE diag_data_mod
   CHARACTER(len=32), SAVE :: filename_appendix = ''
   CHARACTER(len=32) :: pelist_name
   INTEGER :: oor_warning = WARNING
-  
+
 END MODULE diag_data_mod

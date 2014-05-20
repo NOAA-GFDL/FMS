@@ -3,13 +3,13 @@ MODULE diag_axis_mod
   !   Seth Underwood
   ! </CONTACT>
 
-  ! <OVERVIEW> <TT>diag_axis_mod</TT> is an integral part 
-  !   of diag_manager_mod. It helps to create axis IDs 
-  !   that are used in register_diag_field.  
+  ! <OVERVIEW> <TT>diag_axis_mod</TT> is an integral part
+  !   of diag_manager_mod. It helps to create axis IDs
+  !   that are used in register_diag_field.
   ! </OVERVIEW>
 
   ! <DESCRIPTION> Users first create axis ID by calling
-  !   diag_axis_init, then use this axis ID in 
+  !   diag_axis_init, then use this axis ID in
   !   register_diag_field.
   ! </DESCRIPTION>
 
@@ -95,7 +95,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: name
     REAL, DIMENSION(:), INTENT(in) :: DATA
     CHARACTER(len=*), INTENT(in) :: units
-    CHARACTER(len=*), INTENT(in) :: cart_name  
+    CHARACTER(len=*), INTENT(in) :: cart_name
     CHARACTER(len=*), INTENT(in), OPTIONAL :: long_name, set_name
     INTEGER, INTENT(in), OPTIONAL :: direction, edges
     TYPE(domain1d), INTENT(in), OPTIONAL :: Domain
@@ -118,7 +118,7 @@ CONTAINS
     ELSE
        tile = 1
     END IF
-    
+
     ! Allocate the axes
     IF (.NOT. ALLOCATED(Axis_sets)) ALLOCATE(Axis_sets(max_num_axis_sets))
     IF (.NOT. ALLOCATED(Axes)) ALLOCATE(Axes(max_axes))
@@ -174,7 +174,7 @@ CONTAINS
           END IF
        END IF
     END DO
-    
+
     !---- register axis ----
     num_def_axes = num_def_axes + 1
     ! <ERROR STATUS="FATAL">max_axes exceeded, increase it via diag_manager_nml</ERROR>
@@ -189,13 +189,13 @@ CONTAINS
          & TRIM(uppercase(cart_name)) == 'T' .OR.&
          & TRIM(uppercase(cart_name)) == 'N' ) THEN
        Axes(diag_axis_init)%cart_name = TRIM(uppercase(cart_name))
-    ELSE     
+    ELSE
        ! <ERROR STATUS="FATAL">Invalid cart_name name.</ERROR>
        CALL error_mesg('diag_axis_mod::diag_axis_init', 'Invalid cart_name name.', FATAL)
     END IF
 
     !---- allocate storage for coordinate values of axis ----
-    IF ( Axes(diag_axis_init)%cart_name == 'T' ) THEN 
+    IF ( Axes(diag_axis_init)%cart_name == 'T' ) THEN
        axlen = 0
     ELSE
        axlen = SIZE(DATA(:))
@@ -205,7 +205,7 @@ CONTAINS
     ! Initialize Axes(diag_axis_init)
     Axes(diag_axis_init)%name   = TRIM(name)
     Axes(diag_axis_init)%data   = DATA(1:axlen)
-    Axes(diag_axis_init)%units  = units  
+    Axes(diag_axis_init)%units  = units
     Axes(diag_axis_init)%length = axlen
     Axes(diag_axis_init)%set    = set
     ! start and end are used in subaxes information only
@@ -225,7 +225,7 @@ CONTAINS
     ELSE
        Axes(diag_axis_init)%aux = 'none'
     END IF
- 
+
     !---- axis direction (-1, 0, or +1) ----
     IF ( PRESENT(direction) )THEN
        IF ( ABS(direction) /= 1 .AND. direction /= 0 )&
@@ -257,11 +257,11 @@ CONTAINS
        IF ( Axes(diag_axis_init)%cart_name == 'X' ) Axes(diag_axis_init)%Domain = domain_x
        IF ( Axes(diag_axis_init)%cart_name == 'Y' ) Axes(diag_axis_init)%Domain = domain_y
     ELSE IF ( PRESENT(Domain)) THEN
-       !---- domain1d type ----     
+       !---- domain1d type ----
        Axes(diag_axis_init)%Domain2 = null_domain2d ! needed since not 2-D domain
        Axes(diag_axis_init)%Domain = Domain
     ELSE
-       Axes(diag_axis_init)%Domain2 = null_domain2d 
+       Axes(diag_axis_init)%Domain2 = null_domain2d
        Axes(diag_axis_init)%Domain = null_domain1d
     END IF
 
@@ -271,7 +271,7 @@ CONTAINS
        CALL mpp_get_compute_domain(Axes(diag_axis_init)%Domain, isc, iec)
        CALL mpp_get_global_domain(Axes(diag_axis_init)%Domain, isg, ieg)
        IF ( Axes(diag_axis_init)%length == ieg - isg + 2 ) THEN
-          Axes(diag_axis_init)%shift = 1 
+          Axes(diag_axis_init)%shift = 1
        END IF
     END IF
 
@@ -283,7 +283,7 @@ CONTAINS
           IF ( Axes(edges)%cart_name /= Axes(diag_axis_init)%cart_name) ierr=1
           IF ( Axes(edges)%length    /= Axes(diag_axis_init)%length+1 ) ierr=ierr+2
           IF ( Axes(edges)%set       /= Axes(diag_axis_init)%set      ) ierr=ierr+4
-          IF ( ierr > 0 )   THEN 
+          IF ( ierr > 0 )   THEN
              ! <ERROR STATUS="FATAL">Edges axis does not match axis (code <CODE>).</ERROR>
              WRITE (emsg,'("Edges axis does not match axis (code ",I1,").")') ierr
              CALL error_mesg('diag_axis_mod::diag_axis_init', emsg, FATAL)
@@ -312,7 +312,7 @@ CONTAINS
   !   <DESCRIPTION>
   !     Given the ID of a parent axis, create a subaxis and fill it with data,
   !     and return the ID of the corresponding subaxis.
-  !     
+  !
   !     The subaxis is defined on the parent axis from <TT>start_indx</TT>
   !     to <TT>end_indx</TT>.
   !   </DESCRIPTION>
@@ -326,13 +326,13 @@ CONTAINS
     INTEGER, INTENT(in) :: axis
     REAL, DIMENSION(:), INTENT(in) :: subdata
     INTEGER, INTENT(in) :: start_indx
-    INTEGER, INTENT(in) :: end_indx 
+    INTEGER, INTENT(in) :: end_indx
     TYPE(domain2d), INTENT(in), OPTIONAL  :: domain_2d
 
     INTEGER :: i, nsub_axis, direction
     INTEGER :: xbegin, xend, ybegin, yend
     INTEGER :: ad_xbegin, ad_xend, ad_ybegin, ad_yend
-    CHARACTER(len=128) :: name, nsub_name   
+    CHARACTER(len=128) :: name, nsub_name
     CHARACTER(len=128) :: units
     CHARACTER(len=128) :: cart_name
     CHARACTER(len=128) :: long_name
@@ -377,14 +377,14 @@ CONTAINS
        Axes(axis)%end(nsub_axis)   = end_indx
        if ( hasDomain ) Axes(axis)%subaxis_domain2(nsub_axis) = domain_2d
     END IF
-  
+
     ! Create new name for the subaxis from name of parent axis
-    ! If subaxis already exists, get the index and return       
+    ! If subaxis already exists, get the index and return
     IF(subaxis_set) THEN
        IF ( Axes(axis)%set > 0 ) THEN
-          diag_subaxes_init = get_axis_num(name, set_name=TRIM(Axis_sets(Axes(axis)%set)))     
+          diag_subaxes_init = get_axis_num(name, set_name=TRIM(Axis_sets(Axes(axis)%set)))
        ELSE
-          diag_subaxes_init = get_axis_num(name)    
+          diag_subaxes_init = get_axis_num(name)
        END IF
     ELSE
        ! get a new index for subaxis
@@ -406,7 +406,7 @@ CONTAINS
     END IF
   END FUNCTION diag_subaxes_init
   ! </FUNCTION>
-         
+
   ! <SUBROUTINE NAME="get_diag_axis">
   !   <OVERVIEW>
   !     Return information about the axis with index ID
@@ -452,7 +452,7 @@ CONTAINS
     direction = Axes(id)%direction
     edges     = Axes(id)%edges
     Domain    = Axes(id)%Domain
-    IF ( Axes(id)%length > SIZE(DATA(:)) ) THEN 
+    IF ( Axes(id)%length > SIZE(DATA(:)) ) THEN
        ! <ERROR STATUS="FATAL">array data is too small.</ERROR>
        CALL error_mesg('diag_axis_mod::get_diag_axis', 'array data is too small', FATAL)
     ELSE
@@ -499,7 +499,7 @@ CONTAINS
     REAL, DIMENSION(:), INTENT(out) :: DATA
 
     CALL valid_id_check(id, 'get_diag_axis_data')
-    IF (Axes(id)%length > SIZE(DATA(:))) THEN 
+    IF (Axes(id)%length > SIZE(DATA(:))) THEN
        ! <ERROR STATUS="FATAL">array data is too small</ERROR>
        CALL error_mesg('diag_axis_mod::get_diag_axis_data', 'array data is too small', FATAL)
     ELSE
@@ -564,7 +564,7 @@ CONTAINS
   INTEGER FUNCTION get_axis_length(id)
     INTEGER, INTENT(in) :: id
 
-    INTEGER :: length   
+    INTEGER :: length
 
     CALL valid_id_check(id, 'get_axis_length')
     IF ( Axes(id)%Domain .NE. null_domain1d ) THEN
@@ -634,7 +634,7 @@ CONTAINS
 
     INTEGER :: i, id, flag
 
-    IF ( SIZE(ids(:)) < 1 ) THEN 
+    IF ( SIZE(ids(:)) < 1 ) THEN
        ! <ERROR STATUS="FATAL">input argument has incorrect size.</ERROR>
        CALL error_mesg('diag_axis_mod::get_tile_count', 'input argument has incorrect size', FATAL)
     END IF
@@ -695,7 +695,7 @@ CONTAINS
 
     INTEGER :: i, id, flag
 
-    IF ( SIZE(ids(:)) < 1 ) THEN 
+    IF ( SIZE(ids(:)) < 1 ) THEN
        ! <ERROR STATUS="FATAL">input argument has incorrect size.</ERROR>
        CALL error_mesg('diag_axis_mod::get_domain2d', 'input argument has incorrect size', FATAL)
     END IF
@@ -729,14 +729,14 @@ CONTAINS
   !   </IN>
   !   <OUT NAME="ishift" TYPE="INTEGER">X shift value.</OUT>
   !   <OUT NAME="jshift" TYPE="INTEGER">Y shift value.</OUT>
-  SUBROUTINE get_axes_shift(ids, ishift, jshift) 
+  SUBROUTINE get_axes_shift(ids, ishift, jshift)
     INTEGER, DIMENSION(:), INTENT(in) :: ids
     INTEGER, INTENT(out) :: ishift, jshift
 
     INTEGER :: i, id
 
     !-- get the value of the shift.
-    ishift = 0 
+    ishift = 0
     jshift = 0
     DO i = 1, SIZE(ids(:))
        id = ids(i)
@@ -823,7 +823,7 @@ CONTAINS
   !     SUBROUTINE valid_id_check(id, routine_name)
   !   </TEMPLATE>
   !   <DESCRIPTION>
-  !     Check to see if the given axis id is a valid id.  If the axis id is invalid, 
+  !     Check to see if the given axis id is a valid id.  If the axis id is invalid,
   !     call a FATAL error.  If the ID is valid, just return.
   !   </DESCRIPTION>
   !   <IN NAME="id" TYPE="INTEGER">Axis id to check for validity</IN>

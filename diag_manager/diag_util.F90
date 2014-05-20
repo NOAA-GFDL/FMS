@@ -15,7 +15,7 @@ MODULE diag_util_mod
   ! <INFO>
   !   <FUTURE>
   !     Make an interface <TT>check_bounds_are_exact</TT> for the subroutines <TT>check_bounds_are_exact_static</TT> and
-  !     <TT>check_bounds_are_exact_dynamic</TT>. 
+  !     <TT>check_bounds_are_exact_dynamic</TT>.
   !     <PRE>
   !       INTERFACE check_bounds_are_exact
   !         MODULE PROCEDURE check_bounds_are_exact_static
@@ -72,7 +72,7 @@ CONTAINS
   !     SUBROUTINE get_subfield_size(axes, outnum)
   !   </TEMPLATE>
   !   <DESCRIPTION>
-  !     Get the size, start and end indices for <TT>output_fields(outnum)</TT>, then  
+  !     Get the size, start and end indices for <TT>output_fields(outnum)</TT>, then
   !     fill in <TT>output_fields(outnum)%output_grid%(start_indx, end_indx)</TT>
   !   </DESCRIPTION>
   !   <IN NAME="axes" TYPE="INTEGER, DIMENSION(:)">Axes of the <TT>input_field</TT>.</IN>
@@ -83,12 +83,12 @@ CONTAINS
 
     REAL, ALLOCATABLE   :: global_lat(:), global_lon(:), global_depth(:)
     INTEGER :: global_axis_size
-    INTEGER :: i,xbegin,xend,ybegin,yend,xbegin_l,xend_l,ybegin_l,yend_l 
+    INTEGER :: i,xbegin,xend,ybegin,yend,xbegin_l,xend_l,ybegin_l,yend_l
     CHARACTER(len=1) :: cart
     TYPE(domain2d) :: Domain2, Domain2_new
     TYPE(domain1d) :: Domain1, Domain1x, Domain1y
     REAL :: start(3), end(3) ! start and end coordinates in 3 axes
-    INTEGER :: gstart_indx(3), gend_indx(3) ! global start and end indices of output domain in 3 axes 
+    INTEGER :: gstart_indx(3), gend_indx(3) ! global start and end indices of output domain in 3 axes
     REAL, ALLOCATABLE :: subaxis_x(:), subaxis_y(:), subaxis_z(:) !containing local coordinates in x,y,z axes
     CHARACTER(len=128) :: msg
     INTEGER :: ishift, jshift
@@ -97,7 +97,7 @@ CONTAINS
     !initilization for local output
     ! initially out of (lat/lon/depth) range
     start = -1.e10
-    end = -1.e10 
+    end = -1.e10
     gstart_indx = -1
     gend_indx=-1
 
@@ -121,23 +121,23 @@ CONTAINS
                   & 'wrong order of axes, X should come first',FATAL)
              ALLOCATE(global_lon(global_axis_size))
              CALL get_diag_axis_data(axes(i),global_lon)
-             IF( INT( start(i)*END(i) ) == 1 ) THEN 
+             IF( INT( start(i)*END(i) ) == 1 ) THEN
                 gstart_indx(i) = 1
                 gend_indx(i) = global_axis_size
                 output_fields(outnum)%output_grid%subaxes(i) = axes(i)
-             ELSE 
+             ELSE
                 gstart_indx(i) = get_index(start(i),global_lon)
                 gend_indx(i) = get_index(END(i),global_lon)
              END IF
              ALLOCATE(subaxis_x(gstart_indx(i):gend_indx(i)))
-             subaxis_x=global_lon(gstart_indx(i):gend_indx(i))   
+             subaxis_x=global_lon(gstart_indx(i):gend_indx(i))
           CASE ('Y')
              ! <ERROR STATUS="FATAL">wrong order of axes, Y should come second.</ERROR>
              IF( i.NE.2 ) CALL error_mesg('diag_util_mod::get_subfield_size',&
                   & 'wrong order of axes, Y should come second',FATAL)
              ALLOCATE(global_lat(global_axis_size))
              CALL get_diag_axis_data(axes(i),global_lat)
-             IF( INT( start(i)*END(i) ) == 1 ) THEN 
+             IF( INT( start(i)*END(i) ) == 1 ) THEN
                 gstart_indx(i) = 1
                 gend_indx(i) = global_axis_size
                 output_fields(outnum)%output_grid%subaxes(i) = axes(i)
@@ -151,7 +151,7 @@ CONTAINS
              ! <ERROR STATUS="FATAL">wrong values in vertical axis of region</ERROR>
              IF ( start(i)*END(i)<0. ) CALL error_mesg('diag_util_mod::get_subfield_size',&
                   & 'wrong values in vertical axis of region',FATAL)
-             IF ( start(i)>=0. .AND. END(i)>0. ) THEN 
+             IF ( start(i)>=0. .AND. END(i)>0. ) THEN
                 ALLOCATE(global_depth(global_axis_size))
                 CALL get_diag_axis_data(axes(i),global_depth)
                 gstart_indx(i) = get_index(start(i),global_depth)
@@ -221,7 +221,7 @@ CONTAINS
           ! </ERROR>
           IF ( start(3)*END(3)<0. ) CALL error_mesg('diag_util_mod::get_subfield_size',&
                & 'wrong values in vertical axis of region',FATAL)
-          IF ( start(3)>=0. .AND. END(3)>0. ) THEN 
+          IF ( start(3)>=0. .AND. END(3)>0. ) THEN
              ALLOCATE(global_depth(global_axis_size))
              CALL get_diag_axis_data(axes(3),global_depth)
              gstart_indx(3) = get_index(start(3),global_depth)
@@ -229,7 +229,7 @@ CONTAINS
              gend_indx(3) = get_index(END(3),global_depth)
              IF( start(3) >= MAXVAL(global_depth) ) gstart_indx(3)= global_axis_size
              IF( END(3)   >= MAXVAL(global_depth) ) gend_indx(3)  = global_axis_size
-             
+
              ALLOCATE(subaxis_z(gstart_indx(3):gend_indx(3)))
              subaxis_z=global_depth(gstart_indx(3):gend_indx(3))
              output_fields(outnum)%output_grid%subaxes(3) =&
@@ -242,7 +242,7 @@ CONTAINS
           END IF
        END IF
     END IF
-    
+
     ! get domain and compute_domain(xbegin,xend,ybegin,yend)
     xbegin=-1
     xend=-1
@@ -254,7 +254,7 @@ CONTAINS
        CALL mpp_get_compute_domain(Domain2,xbegin,xend,ybegin,yend)
        CALL mpp_get_domain_components(Domain2, Domain1x, Domain1y)
     ELSE
-       DO i = 1, MIN(SIZE(axes(:)),2)    
+       DO i = 1, MIN(SIZE(axes(:)),2)
           Domain1 = get_domain1d(axes(i))
           IF ( Domain1 .NE. NULL_DOMAIN1D ) THEN
              CALL get_diag_axis_cart(axes(i),cart)
@@ -280,9 +280,9 @@ CONTAINS
 
     IF ( xbegin== -1 .OR. xend==-1 .OR. ybegin==-1 .OR. yend==-1 ) THEN
        ! <ERROR STATUS="FATAL">wrong compute domain indices</ERROR>
-       CALL error_mesg('diag_util_mod::get_subfield_size', 'wrong compute domain indices',FATAL)  
+       CALL error_mesg('diag_util_mod::get_subfield_size', 'wrong compute domain indices',FATAL)
     END IF
-      
+
     ! get the area containing BOTH compute domain AND local output area
     IF(gstart_indx(1)> xend .OR. xbegin > gend_indx(1)) THEN
        output_fields(outnum)%output_grid%l_start_indx(1) = -1
@@ -314,20 +314,20 @@ CONTAINS
        output_fields(outnum)%output_grid%subaxes(2) =&
             & diag_subaxes_init(axes(2),subaxis_y, gstart_indx(2),gend_indx(2),Domain2_new)
        DO i = 1, SIZE(axes(:))
-          IF(output_fields(outnum)%output_grid%subaxes(i) == -1) THEN  
+          IF(output_fields(outnum)%output_grid%subaxes(i) == -1) THEN
              ! <ERROR STATUS="FATAL">
              !   <output_fields(outnum)%output_name> error at i = <i>
              ! </ERROR>
              WRITE(msg,'(a,"/",I4)') 'at i = ',i
              CALL error_mesg('diag_util_mod::get_subfield_size '//TRIM(output_fields(outnum)%output_name),&
-                  'error '//TRIM(msg), FATAL)   
+                  'error '//TRIM(msg), FATAL)
           END IF
        END DO
 
        ! local start index should start from 1
-       output_fields(outnum)%output_grid%l_start_indx(1) = MAX(xbegin, gstart_indx(1)) - xbegin + 1   
+       output_fields(outnum)%output_grid%l_start_indx(1) = MAX(xbegin, gstart_indx(1)) - xbegin + 1
        output_fields(outnum)%output_grid%l_start_indx(2) = MAX(ybegin, gstart_indx(2)) - ybegin + 1
-       output_fields(outnum)%output_grid%l_end_indx(1) = MIN(xend, gend_indx(1)) - xbegin + 1 
+       output_fields(outnum)%output_grid%l_end_indx(1) = MIN(xend, gend_indx(1)) - xbegin + 1
        output_fields(outnum)%output_grid%l_end_indx(2) = MIN(yend, gend_indx(2)) - ybegin + 1
        IF ( SIZE(axes(:))>2 ) THEN
           output_fields(outnum)%output_grid%l_start_indx(3) = gstart_indx(3)
@@ -342,7 +342,7 @@ CONTAINS
 
   END SUBROUTINE get_subfield_size
   ! </SUBROUTINE>
-  
+
   ! <SUBROUTINE NAME="get_subfield_vert_size">
   !   <OVERVIEW>
   !     Get size, start and end indices for output fields.
@@ -364,21 +364,21 @@ CONTAINS
     REAL, ALLOCATABLE, DIMENSION(:) :: global_depth
     REAL, ALLOCATABLE, DIMENSION(:) :: subaxis_z !containing local coordinates in x,y,z axes
     INTEGER :: i, global_axis_size
-    INTEGER, DIMENSION(3) :: gstart_indx, gend_indx ! global start and end indices of output domain in 3 axes 
+    INTEGER, DIMENSION(3) :: gstart_indx, gend_indx ! global start and end indices of output domain in 3 axes
     CHARACTER(len=1) :: cart
     CHARACTER(len=128) :: msg
 
     !initilization for local output
     start = -1.e10
     end = -1.e10 ! initially out of (lat/lon/depth) range
-    gstart_indx = -1 
+    gstart_indx = -1
     gend_indx=-1
 
     ! get axis data (lat, lon, depth) and indices
     start= output_fields(outnum)%output_grid%start
     end = output_fields(outnum)%output_grid%end
 
-    DO i = 1, SIZE(axes(:))   
+    DO i = 1, SIZE(axes(:))
        global_axis_size = get_axis_global_length(axes(i))
        output_fields(outnum)%output_grid%subaxes(i) = -1
        CALL get_diag_axis_cart(axes(i), cart)
@@ -401,7 +401,7 @@ CONTAINS
           ! <ERROR STATUS="FATAL">wrong values in vertical axis of region</ERROR>
           IF( start(i)*END(i) < 0. ) CALL error_mesg('diag_util_mod::get_subfield_vert_size',&
                & 'wrong values in vertical axis of region',FATAL)
-          IF( start(i) >= 0. .AND. END(i) > 0. ) THEN 
+          IF( start(i) >= 0. .AND. END(i) > 0. ) THEN
              ALLOCATE(global_depth(global_axis_size))
              CALL get_diag_axis_data(axes(i),global_depth)
              gstart_indx(i) = get_index(start(i),global_depth)
@@ -456,7 +456,7 @@ CONTAINS
     END IF
   END SUBROUTINE get_subfield_vert_size
   ! </SUBROUTINE>
-  
+
   ! <PRIVATE>
   ! <FUNCTION NAME="get_index">
   !   <OVERVIEW>
@@ -483,13 +483,13 @@ CONTAINS
     DO i = 2, n-1
        IF( (array(i-1)<array(i).AND.array(i)>array(i+1)) .OR. (array(i-1)>array(i).AND.array(i)<array(i+1))) THEN
           ! <ERROR STATUS="FATAL">array NOT monotonously ordered</ERROR>
-          CALL error_mesg('diag_util_mod::get_index', 'array NOT monotonously ordered',FATAL) 
+          CALL error_mesg('diag_util_mod::get_index', 'array NOT monotonously ordered',FATAL)
        END IF
     END DO
     get_index = -1
     found = .FALSE.
-    ! search in increasing array 
-    DO i = 1, n-1                
+    ! search in increasing array
+    DO i = 1, n-1
        IF ( (array(i)<=number).AND.(array(i+1)>= number) ) THEN
           IF( number - array(i) <= array(i+1) - number ) THEN
              get_index = i
@@ -506,7 +506,7 @@ CONTAINS
        DO i = 1, n-1
           IF ( (array(i)>=number).AND.(array(i+1)<= number) ) THEN
              IF ( array(i)-number <= number-array(i+1) ) THEN
-                get_index = i 
+                get_index = i
                 found = .TRUE.
              ELSE
                 get_index = i+1
@@ -529,7 +529,7 @@ CONTAINS
           found = .FALSE.
        END IF
     END IF
-   
+
    ! if still not found, is it greater than the first element
    ! or less than the last element? (Decreasing Array)
     IF ( .NOT. found ) THEN
@@ -600,16 +600,16 @@ CONTAINS
 
     IF ( PRESENT(long_name) ) THEN
        lname  = TRIM(long_name)
-    ELSE 
+    ELSE
        lname  = ''
     END IF
-    
+
     IF ( PRESENT(units) ) THEN
        lunits = TRIM(units)
     ELSE
        lunits = ''
     END IF
- 
+
     WRITE (numaxis,'(i1)') SIZE(axes)
 
     IF (PRESENT(missing_value)) THEN
@@ -675,7 +675,7 @@ CONTAINS
   !   <IN NAME="upper_k" TYPE="INTEGER">Upper <TT>k</TT> bound.</IN>
   SUBROUTINE update_bounds(out_num, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k)
     INTEGER, INTENT(in) :: out_num, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k
-    
+
     output_fields(out_num)%imin = MIN(output_fields(out_num)%imin, lower_i)
     output_fields(out_num)%imax = MAX(output_fields(out_num)%imax, upper_i)
     output_fields(out_num)%jmin = MIN(output_fields(out_num)%jmin, lower_j)
@@ -890,7 +890,7 @@ CONTAINS
     output_fields(out_num)%jmin = VERY_LARGE_AXIS_LENGTH
     output_fields(out_num)%kmax = 0
     output_fields(out_num)%kmin = VERY_LARGE_AXIS_LENGTH
-    
+
   END SUBROUTINE check_bounds_are_exact_static
   ! </SUBROUTINE>
 
@@ -944,32 +944,32 @@ CONTAINS
             & in the namelist diag_manager_nml.', FATAL)
     END IF
 
-    IF ( PRESENT(new_file_freq) ) THEN 
+    IF ( PRESENT(new_file_freq) ) THEN
        new_file_freq1 = new_file_freq
-    ELSE 
+    ELSE
        new_file_freq1 = VERY_LARGE_FILE_FREQ
     END IF
-    
-    IF ( PRESENT(new_file_freq_units) ) THEN 
-       new_file_freq_units1 = new_file_freq_units 
+
+    IF ( PRESENT(new_file_freq_units) ) THEN
+       new_file_freq_units1 = new_file_freq_units
     ELSE IF ( get_calendar_type() == NO_CALENDAR ) THEN
        new_file_freq_units1 = DIAG_DAYS
-    ELSE 
+    ELSE
        new_file_freq_units1 = DIAG_YEARS
     END IF
-    
+
     IF ( PRESENT(file_duration) ) THEN
-       file_duration1 = file_duration 
+       file_duration1 = file_duration
     ELSE
        file_duration1 = new_file_freq1
     END IF
-    
-    IF ( PRESENT(file_duration_units) ) THEN 
+
+    IF ( PRESENT(file_duration_units) ) THEN
        file_duration_units1 = file_duration_units
-    ELSE 
+    ELSE
        file_duration_units1 = new_file_freq_units1
     END IF
-    
+
     files(num_files)%tile_count = tile_count
     files(num_files)%name = TRIM(name)
     files(num_files)%output_freq = output_freq
@@ -985,7 +985,7 @@ CONTAINS
     files(num_files)%new_file_freq_units = new_file_freq_units1
     files(num_files)%duration = file_duration1
     files(num_files)%duration_units = file_duration_units1
-    IF ( PRESENT(start_time) ) THEN 
+    IF ( PRESENT(start_time) ) THEN
        files(num_files)%start_time = start_time
     ELSE
        files(num_files)%start_time = base_time
@@ -1000,7 +1000,7 @@ CONTAINS
        CALL error_mesg('diag_util_mod::init_file', 'close time GREATER than next_open time, check file duration,&
             & file frequency in '//files(num_files)%name, FATAL)
     END IF
-    
+
     ! add time_axis_id and time_bounds_id here
     WRITE(time_units_str, 11) TRIM(time_unit_list(files(num_files)%time_units)), base_year,&
          & base_month, base_day, base_hour, base_minute, base_second
@@ -1132,7 +1132,7 @@ CONTAINS
        ELSE
           diag_time_inc = increment_date(time, output_freq, 0, 0, 0, 0, 0, err_msg=error_message_local)
        END IF
-    ELSE 
+    ELSE
        error_message_local = 'illegal output units'
     END IF
 
@@ -1196,7 +1196,7 @@ CONTAINS
     DO i = 1, num_input_fields
        IF(tile_count == input_fields(i)%tile_count .AND.&
             & TRIM(input_fields(i)%module_name) == TRIM(module_name) .AND.&
-            & lowercase(TRIM(input_fields(i)%field_name)) == lowercase(TRIM(field_name))) THEN 
+            & lowercase(TRIM(input_fields(i)%field_name)) == lowercase(TRIM(field_name))) THEN
           find_input_field = i
           RETURN
        END IF
@@ -1391,8 +1391,9 @@ CONTAINS
     ! Initialize all time method to false
     method_selected = 0
     output_fields(out_num)%time_average = .FALSE.
+    output_fields(out_num)%time_rms = .FALSE.
     output_fields(out_num)%time_min = .FALSE.
-    output_fields(out_num)%time_max = .FALSE. 
+    output_fields(out_num)%time_max = .FALSE.
     output_fields(out_num)%time_ops = .FALSE.
     output_fields(out_num)%written_once = .FALSE.
 
@@ -1427,6 +1428,11 @@ CONTAINS
           output_fields(out_num)%time_average = .TRUE.
           method_selected = method_selected+1
           t_method = 'mean'
+       CASE ( 'rms' )
+          output_fields(out_num)%time_average = .TRUE.
+          output_fields(out_num)%time_rms = .TRUE.
+          method_selected = method_selected+1
+          t_method = 'root_mean_square'
        CASE ( '.false.', 'none', 'point' )
           output_fields(out_num)%time_average = .FALSE.
           method_selected = method_selected+1
@@ -1437,17 +1443,17 @@ CONTAINS
           IF ( output_fields(out_num)%output_name(l1-2:l1) /= 'max' ) &
                output_fields(out_num)%output_name = TRIM(output_name)//'_max'
           method_selected = method_selected+1
-          t_method = 'max'        
+          t_method = 'max'
        CASE ( 'minimum', 'min' )
           output_fields(out_num)%time_min = .TRUE.
           l1 = LEN_TRIM(output_fields(out_num)%output_name)
           IF ( output_fields(out_num)%output_name(l1-2:l1) /= 'min' )&
                & output_fields(out_num)%output_name = TRIM(output_name)//'_min'
           method_selected = method_selected+1
-          t_method = 'min'        
+          t_method = 'min'
        END SELECT
     END IF
-    
+
     ! reconcile logical flags
     output_fields(out_num)%time_ops = output_fields(out_num)%time_min.OR.output_fields(out_num)%time_max&
          & .OR.output_fields(out_num)%time_average
@@ -1493,8 +1499,8 @@ CONTAINS
 
     output_fields(out_num)%time_method = TRIM(t_method)
 
-    ! allocate counters: NOTE that for simplicity we always allocate them, even 
-    ! if they are superceeded by 4D "counter" array. This isn't most memory 
+    ! allocate counters: NOTE that for simplicity we always allocate them, even
+    ! if they are superceeded by 4D "counter" array. This isn't most memory
     ! efficient, approach, but probably tolerable since they are so small anyway
     ALLOCATE(output_fields(out_num)%count_0d(output_fields(out_num)%n_diurnal_samples))
     ALLOCATE(output_fields(out_num)%num_elements(output_fields(out_num)%n_diurnal_samples))
@@ -1502,7 +1508,7 @@ CONTAINS
     output_fields(out_num)%num_elements(:) = 0
   END SUBROUTINE init_output_field
   ! </SUBROUTINE>
-  
+
   ! <PRIVATE>
   ! <SUBROUTINE NAME="opening_file">
   !   <OVERVIEW>
@@ -1519,10 +1525,10 @@ CONTAINS
   SUBROUTINE opening_file(file, time)
     ! WARNING: Assumes that all data structures are fully initialized
     INTEGER, INTENT(in) :: file
-    TYPE(time_type), INTENT(in) :: time  
+    TYPE(time_type), INTENT(in) :: time
 
     REAL, DIMENSION(2) :: DATA
-    INTEGER :: j, field_num, input_field_num, num_axes, k 
+    INTEGER :: j, field_num, input_field_num, num_axes, k
     INTEGER :: field_num1
     INTEGER :: position
     INTEGER :: dir, edges
@@ -1532,11 +1538,11 @@ CONTAINS
     ! size of this axes array must be at least max num. of
     ! axes per field + 2; the last two elements are for time
     ! and time bounds dimensions
-    INTEGER, DIMENSION(6) :: axes 
+    INTEGER, DIMENSION(6) :: axes
     LOGICAL :: time_ops, aux_present, match_aux_name
     LOGICAL :: all_scalar_or_1d
     CHARACTER(len=7) :: prefix
-    CHARACTER (len = 7) :: avg_name = 'average'
+    CHARACTER(len=7) :: avg_name = 'average'
     CHARACTER(len=128) :: time_units, timeb_units, avg, error_string, filename, aux_name,fieldname
     CHARACTER(len=128) :: suffix, base_name
     CHARACTER(len=32) :: time_name, timeb_name,time_longname, timeb_longname, cart_name
@@ -1549,7 +1555,7 @@ CONTAINS
     ! it's unlikely that a file starts with word "rregion", need to check anyway.
     IF ( LEN(files(file)%name) >=7 .AND. .NOT.files(file)%local ) THEN
        prefix = files(file)%name(1:7)
-       IF ( lowercase(prefix) == 'rregion' ) THEN 
+       IF ( lowercase(prefix) == 'rregion' ) THEN
           ! <ERROR STATUS="WARNING">
           !   file name should not start with word "rregion"
           ! </ERROR>
@@ -1557,7 +1563,7 @@ CONTAINS
                & 'file name should not start with word "rregion"', WARNING)
        END IF
     END IF
-    
+
     ! Here is where time_units string must be set up; time since base date
     WRITE (time_units, 11) TRIM(time_unit_list(files(file)%time_units)), base_year,&
          & base_month, base_day, base_hour, base_minute, base_second
@@ -1572,7 +1578,7 @@ CONTAINS
           !   filename <files(file)%name> does not contain % for time stamp string
           ! </ERROR>
           CALL error_mesg('diag_util_mod::opening_file',&
-               & 'file name '//TRIM(files(file)%name)//' does not contain % for time stamp string', FATAL) 
+               & 'file name '//TRIM(files(file)%name)//' does not contain % for time stamp string', FATAL)
        END IF
        suffix = get_time_string(files(file)%name, time)
     ELSE
@@ -1583,7 +1589,7 @@ CONTAINS
     !  i2 = len_trim(tagname) - 2
     !  if(i2 <=i1)  call error_mesg('diag_util opening_file','error in CVS tagname index',FATAL)
     !  prefix2 = tagname(i1:i2)//'_'
-    IF ( files(file)%local ) THEN      
+    IF ( files(file)%local ) THEN
        ! prepend "rregion" to all local files for post processing, the prefix will be removed in postprocessing
        filename = 'rregion'//TRIM(base_name)//TRIM(suffix)
     ELSE
@@ -1625,8 +1631,8 @@ CONTAINS
     END IF
 
     CALL diag_output_init(filename, files(file)%format, global_descriptor,&
-         & files(file)%file_unit, all_scalar_or_1d, domain2) 
-    files(file)%bytes_written = 0 
+         & files(file)%file_unit, all_scalar_or_1d, domain2)
+    files(file)%bytes_written = 0
     ! Does this file contain time_average fields?
     time_ops = .FALSE.
     DO j = 1, files(file)%num_fields
@@ -1649,7 +1655,7 @@ CONTAINS
              !   NOT registered
              ! </ERROR>
              CALL error_mesg('diag_util_mod::opening_file',&
-                  & 'module/field_name ('//TRIM(error_string)//') NOT registered', WARNING)  
+                  & 'module/field_name ('//TRIM(error_string)//') NOT registered', WARNING)
           END IF
           CYCLE
        END IF
@@ -1684,7 +1690,7 @@ CONTAINS
        CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 1), time_ops)
        IF ( time_ops ) THEN
           axes(num_axes + 2) = files(file)%time_bounds_id
-          CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 2))     
+          CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 2))
        END IF
     END DO
 
@@ -1721,7 +1727,7 @@ CONTAINS
        ! check if any field has the same name as aux_name
        IF ( aux_present .AND. .NOT.match_aux_name ) THEN
           fieldname = output_fields(field_num)%output_name
-          IF ( INDEX(aux_name, TRIM(fieldname)) > 0 ) match_aux_name = .TRUE.   
+          IF ( INDEX(aux_name, TRIM(fieldname)) > 0 ) match_aux_name = .TRUE.
        END IF
 
        ! Put the time axis in the axis field
@@ -1798,7 +1804,7 @@ CONTAINS
             & "End time for average period", pack=pack_size)
        files(file)%f_avg_nitems = write_field_meta_data(files(file)%file_unit,&
             & avg_name // '_DT', time_axis_id,&
-            & TRIM(time_unit_list(files(file)%time_units)),& 
+            & TRIM(time_unit_list(files(file)%time_units)),&
             & "Length of average period", pack=pack_size)
     END IF
 
@@ -1808,11 +1814,11 @@ CONTAINS
        CALL get_diag_axis( time_axis_id(1), time_name, time_units, time_longname,&
             & cart_name, dir, edges, Domain, DATA)
        CALL get_diag_axis( time_bounds_id(1), timeb_name, timeb_units, timeb_longname,&
-            & cart_name, dir, edges, Domain, DATA)     
+            & cart_name, dir, edges, Domain, DATA)
        files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
             & TRIM(time_name)//'_bounds', (/time_bounds_id,time_axis_id/),&
             & TRIM(time_unit_list(files(file)%time_units)),&
-            & TRIM(time_name)//' axis boundaries', pack=pack_size)      
+            & TRIM(time_name)//' axis boundaries', pack=pack_size)
     END IF
     ! Let lower levels know that all meta data has been sent
     CALL done_meta_data(files(file)%file_unit)
@@ -1827,7 +1833,7 @@ CONTAINS
   END SUBROUTINE opening_file
   ! </SUBROUTINE>
   ! </PRIVATE>
-  
+
   ! <PRIVATE>
   ! <FUNCTION NAME="get_time_string">
   !   <OVERVIEW>
@@ -1863,31 +1869,31 @@ CONTAINS
     len = LEN_TRIM(filename)
     first_percent = INDEX(filename, '%')
     filetail = filename(first_percent:len)
-    ! compute year string 
+    ! compute year string
     position = INDEX(filetail, 'yr')
     IF ( position > 0 ) THEN
        width = filetail(position-1:position-1)
        yr1_s = yr1
        format(7:9) = width//'.'//width
-       WRITE(yr, format) yr1_s   
+       WRITE(yr, format) yr1_s
        yr2 = 0
-    ELSE  
+    ELSE
        yr = ' '
        yr2 = yr1 - 1
     END IF
-    ! compute month string 
+    ! compute month string
     position = INDEX(filetail, 'mo')
-    IF ( position > 0 ) THEN   
+    IF ( position > 0 ) THEN
        width = filetail(position-1:position-1)
-       mo1_s = yr2*12 + mo1  
+       mo1_s = yr2*12 + mo1
        format(7:9) = width//'.'//width
        WRITE(mo, format) mo1_s
     ELSE
        mo = ' '
     END IF
-    ! compute day string        
+    ! compute day string
     IF ( LEN_TRIM(mo) > 0 ) THEN ! month present
-       dy1_s = dy1 
+       dy1_s = dy1
        dy2 = dy1_s - 1
     ELSE IF ( LEN_TRIM(yr) >0 )  THEN ! no month, year present
        ! compute julian day
@@ -1905,11 +1911,11 @@ CONTAINS
        dy2 = dy1_s - 1
     ELSE ! no month, no year
        CALL get_time(current_time, abs_sec, abs_day)
-       dy1_s = abs_day  
-       dy2 = dy1_s 
+       dy1_s = abs_day
+       dy2 = dy1_s
     END IF
     position = INDEX(filetail, 'dy')
-    IF ( position > 0 ) THEN 
+    IF ( position > 0 ) THEN
        width = filetail(position-1:position-1)
        FORMAT(7:9) = width//'.'//width
        WRITE(dy, FORMAT) dy1_s
@@ -2064,7 +2070,7 @@ CONTAINS
          & (SIZE(dat,1)*SIZE(dat,2)*SIZE(dat,3))*(8/output_fields(field)%pack)
     IF ( .NOT.output_fields(field)%written_once ) output_fields(field)%written_once = .TRUE.
     ! *** inserted this line because start_dif < 0 for static fields ***
-    IF ( .NOT.output_fields(field)%static ) THEN 
+    IF ( .NOT.output_fields(field)%static ) THEN
        start_dif = get_date_dif(output_fields(field)%last_output, base_time,files(file)%time_units)
        IF ( .NOT.mix_snapshot_average_fields ) THEN
           end_dif = get_date_dif(output_fields(field)%next_output, base_time, files(file)%time_units)
@@ -2089,7 +2095,7 @@ CONTAINS
              CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_nitems, dt_time(1:1,:,:,:), dif)
 
              ! Include boundary variable for CF compliance
-             CALL diag_field_out(files(file)%file_unit, files(file)%f_bounds, time_data(1:2,:,:,:), dif)         
+             CALL diag_field_out(files(file)%file_unit, files(file)%f_bounds, time_data(1:2,:,:,:), dif)
              EXIT
           END IF
        END IF
@@ -2131,7 +2137,7 @@ CONTAINS
     TYPE(time_type), INTENT(in) :: time
     LOGICAL, INTENT(out) :: do_write
 
-    IF ( time >= files(file)%start_time ) THEN 
+    IF ( time >= files(file)%start_time ) THEN
        IF ( files(file)%file_unit < 0 ) THEN ! need to open a new file
           CALL opening_file(file, time)
           do_write = .TRUE.
@@ -2139,16 +2145,16 @@ CONTAINS
           do_write = .TRUE.
           IF ( time > files(file)%close_time .AND. time < files(file)%next_open ) THEN
              do_write = .FALSE. ! file still open but receives NO MORE data
-          ELSE IF ( time > files(file)%next_open ) THEN ! need to close current file and open a new one 
+          ELSE IF ( time > files(file)%next_open ) THEN ! need to close current file and open a new one
              CALL write_static(file)  ! write all static fields and close this file
-             CALL opening_file(file, time)        
+             CALL opening_file(file, time)
              files(file)%start_time = files(file)%next_open
              files(file)%close_time =&
-                  & diag_time_inc(files(file)%start_time,files(file)%duration, files(file)%duration_units)  
+                  & diag_time_inc(files(file)%start_time,files(file)%duration, files(file)%duration_units)
              files(file)%next_open =&
                   & diag_time_inc(files(file)%next_open, files(file)%new_file_freq,&
                   & files(file)%new_file_freq_units)
-             IF ( files(file)%close_time > files(file)%next_open ) THEN 
+             IF ( files(file)%close_time > files(file)%next_open ) THEN
                 ! <ERROR STATUS="FATAL">
                 !   <file_name> has close time GREATER than next_open time,
                 !   check file duration and frequency
@@ -2191,7 +2197,7 @@ CONTAINS
        IF ( .NOT.output_fields(i)%static ) CYCLE
        CALL diag_data_out(file, i, output_fields(i)%buffer, files(file)%last_flush, .TRUE., .TRUE.)
     END DO
-    ! Close up this file   
+    ! Close up this file
     CALL mpp_close(files(file)%file_unit)
     files(file)%file_unit = -1
   END SUBROUTINE write_static
@@ -2218,7 +2224,7 @@ CONTAINS
 
     IF ( PRESENT(err_msg) ) err_msg=''
     ! Do the checking when more than 1 output_fileds present
-    IF ( num_output_fields <= 1 ) RETURN 
+    IF ( num_output_fields <= 1 ) RETURN
     err_msg_local = ''
 
     i_loop: DO i = 1, num_output_fields-1

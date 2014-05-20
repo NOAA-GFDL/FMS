@@ -3,8 +3,8 @@ MODULE diag_output_mod
   !   Seth Underwood
   ! </CONTACT>
 
-  ! <OVERVIEW> <TT>diag_output_mod</TT> is an integral part of 
-  !   <TT>diag_manager_mod</TT>. Its function is to write axis-meta-data, 
+  ! <OVERVIEW> <TT>diag_output_mod</TT> is an integral part of
+  !   <TT>diag_manager_mod</TT>. Its function is to write axis-meta-data,
   !   field-meta-data and field data
   ! </OVERVIEW>
 
@@ -36,10 +36,10 @@ MODULE diag_output_mod
   INTEGER, DIMENSION(2,2) :: max_range = RESHAPE((/ -32767, 32767, -127,   127 /),(/2,2/))
 !  DATA max_range / -32767, 32767, -127,   127 /
   INTEGER, DIMENSION(2)   :: missval = (/ -32768, -128 /)
-  
+
   INTEGER, PARAMETER      :: max_axis_num = 20
   INTEGER                 :: num_axis_in_file = 0
-  INTEGER, DIMENSION(max_axis_num) :: axis_in_file   
+  INTEGER, DIMENSION(max_axis_num) :: axis_in_file
   LOGICAL, DIMENSION(max_axis_num) :: time_axis_flag, edge_axis_flag
   TYPE(axistype), DIMENSION(max_axis_num), SAVE :: Axis_types
 
@@ -89,7 +89,7 @@ CONTAINS
        module_is_initialized = .TRUE.
     END IF
     CALL write_version_number( version, tagname )
-   
+
     !---- set up output file ----
     SELECT CASE (FORMAT)
     CASE (NETCDF1)
@@ -112,7 +112,7 @@ CONTAINS
             & threading=threading, fileset=fileset)
     ELSE
        CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
-            & threading=threading, fileset=fileset, domain=domain) 
+            & threading=threading, fileset=fileset, domain=domain)
     END IF
 
     !---- write global attributes ----
@@ -138,7 +138,7 @@ CONTAINS
   !   <IN NAME="file_unit" TYPE="INTEGER">File unit number</IN>
   !   <IN NAME="axes" TYPE="INTEGER, DIMENSION(:)">Array of axis ID's, including the time axis</IN>
   !   <IN NAME="time_ops" TYPE="LOGICAL, OPTIONAL">
-  !     .TRUE. if this file contains any min, max, or time_average
+  !     .TRUE. if this file contains any min, max, time_rms, or time_average
   !   </IN>
   SUBROUTINE write_axis_meta_data(file_unit, axes, time_ops)
     INTEGER, INTENT(in) :: file_unit, axes(:)
@@ -158,7 +158,7 @@ CONTAINS
     INTEGER              :: gbegin, gend, gsize, ndivs
     LOGICAL              :: time_ops1
 
-    IF ( PRESENT(time_ops) ) THEN 
+    IF ( PRESENT(time_ops) ) THEN
        time_ops1 = time_ops
     ELSE
        time_ops1 = .FALSE.
@@ -215,7 +215,7 @@ CONTAINS
        END IF
 
        !---- write additional attribute (calendar_type) for time axis ----
-       !---- NOTE: calendar attribute is compliant with CF convention 
+       !---- NOTE: calendar attribute is compliant with CF convention
        !---- http://www.cgd.ucar.edu/cms/eaton/netcdf/CF-current.htm#cal
        IF ( axis_cart_name == 'T' ) THEN
           time_axis_flag(num_axis_in_file) = .TRUE.
@@ -223,13 +223,13 @@ CONTAINS
           calendar = get_calendar_type()
           CALL mpp_write_meta(file_unit, id_time_axis, 'calendar_type', cval=TRIM(valid_calendar_types(calendar)))
           CALL mpp_write_meta(file_unit, id_time_axis, 'calendar', cval=TRIM(valid_calendar_types(calendar)))
-          IF ( time_ops1 ) THEN 
-             CALL mpp_write_meta( file_unit, id_time_axis, 'bounds', cval = TRIM(axis_name)//'_bounds')        
+          IF ( time_ops1 ) THEN
+             CALL mpp_write_meta( file_unit, id_time_axis, 'bounds', cval = TRIM(axis_name)//'_bounds')
           END IF
        ELSE
           time_axis_flag(num_axis_in_file) = .FALSE.
        END IF
-    
+
        DEALLOCATE(axis_data)
 
        !------------- write axis containing edge information ---------------
@@ -241,7 +241,7 @@ CONTAINS
        id_axis = axis_edges
        edges_index = get_axis_index(id_axis)
        IF ( edges_index > 0 ) CYCLE
-    
+
        !  ---- get data for axis edges ----
        length = get_axis_global_length ( id_axis )
        ALLOCATE(axis_data(length))
@@ -275,7 +275,7 @@ CONTAINS
              CALL mpp_get_compute_domains(Domain,size=axis_extent(0:ndivs-1))
              gend=gend+1
              axis_extent(ndivs-1)= axis_extent(ndivs-1)+1
-             IF ( ALLOCATED(pelist) ) DEALLOCATE(pelist)      
+             IF ( ALLOCATED(pelist) ) DEALLOCATE(pelist)
              ALLOCATE(pelist(0:ndivs-1))
              CALL mpp_get_pelist(Domain,pelist)
              CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file),&
@@ -350,12 +350,12 @@ CONTAINS
 
     !---- dummy checks ----
     coord_present = .FALSE.
-    IF( PRESENT(standard_name) ) THEN 
+    IF( PRESENT(standard_name) ) THEN
        standard_name2 = standard_name
     ELSE
        standard_name2 = 'none'
     END IF
-    
+
     num = SIZE(axes(:))
     ! <ERROR STATUS="FATAL">number of axes < 1</ERROR>
     IF ( num < 1 ) CALL error_mesg ( 'write_meta_data', 'number of axes < 1', FATAL)
@@ -379,7 +379,7 @@ CONTAINS
     END DO
 
     !  Create coordinate attribute
-    IF ( num >= 2 ) THEN     
+    IF ( num >= 2 ) THEN
        coord_att = ' '
        DO i = 1, num
           aux_axes(i) = get_axis_aux(axes(i))
@@ -403,7 +403,7 @@ CONTAINS
     ELSE
        ipack = 2
     END IF
-    
+
     !---- check range ----
     use_range = .FALSE.
     add = 0.0
@@ -495,7 +495,7 @@ CONTAINS
     !---- write attribute for interp_method ----
     IF( PRESENT(interp_method) ) THEN
        CALL mpp_write_meta ( file_unit, mpp_get_id(Field%Field),&
-            & 'interp_method', cval=TRIM(interp_method)) 
+            & 'interp_method', cval=TRIM(interp_method))
     END IF
 
     !---- get axis domain ----
@@ -514,12 +514,12 @@ CONTAINS
   !   </TEMPLATE>
   !   <DESCRIPTION>
   !     Writes axis data to file.  This subroutine is to be called once per file
-  !     after all <TT>write_meta_data</TT> calls, and before the first 
+  !     after all <TT>write_meta_data</TT> calls, and before the first
   !     <TT>diag_field_out</TT> call.
   !   </DESCRIPTION>
   !   <IN NAME="file_unit" TYPE="INTEGER">Output file unit number</IN>
   SUBROUTINE done_meta_data(file_unit)
-    INTEGER,  INTENT(in)  :: file_unit  
+    INTEGER,  INTENT(in)  :: file_unit
 
     INTEGER               :: i
 
@@ -657,14 +657,14 @@ CONTAINS
   !   <IN NAME="gridType" TYPE="CHARACTER(len=*)"></IN>
   !   <IN NAME="tileName" TYPE="CHARACTER(len=*)"></IN>
   SUBROUTINE set_diag_global_att(component, gridType, tileName)
-    CHARACTER(len=*),INTENT(in) :: component, gridType, tileName 
+    CHARACTER(len=*),INTENT(in) :: component, gridType, tileName
 
     ! The following two lines are set to remove compile time warnings
     ! about 'only used once'.
     CHARACTER(len=64) :: component_tmp
     component_tmp = component
     ! Don't know how to set these for specific component
-    ! Want to be able to say 
+    ! Want to be able to say
     ! if(output_file has component) then
     diag_global_att%grid_type = gridType
     diag_global_att%tile_name = tileName
@@ -673,4 +673,3 @@ CONTAINS
   ! </SUBROUTINE>
 
 END MODULE diag_output_mod
-
