@@ -113,8 +113,8 @@ MODULE diag_manager_mod
   !          <TT>.true.</TT> or <TT>.false.</TT> by "<TT>rms</TT>, <TT>max</TT>" or "<TT>min</TT>".  <B><I>Note:</I></B> Currently, max
   !          and min are not available for regional output.
   !
-  !          A diurnal average can also be requested using <TT>diurnal##</TT> where <TT>##</TT> are the number of diurnal
-  !          sections to average.</LI>
+  !          A diurnal average or the average of an integer power can also be requested using <TT>diurnal##</TT> or <TT>pow##</TT> where
+  !          <TT>##</TT> are the number of diurnal sections or integer power to average.</LI>
   !     <LI> <TT>standard_name</TT> is added as optional argument in <LINK SRC="#register_diag_field"><TT>register_diag_field</TT>
   !          </LINK>.</LI>
   !     <LI>When namelist variable <TT>debug_diag_manager = .true.</TT> array
@@ -1087,6 +1087,7 @@ CONTAINS
 
     REAL :: weight1
     REAL :: missvalue
+    INTEGER :: pow_value
     INTEGER :: ksr, ker
     INTEGER :: i, out_num, file_num, n1, n2, n3, number_of_outputs, ii,f1,f2,f3,f4
     INTEGER :: freq, units, is, js, ks, ie, je, ke, i1, j1,k1, j, k
@@ -1322,6 +1323,8 @@ CONTAINS
        ! Is this output field the rms?
        ! If so, then average is also .TRUE.
        time_rms = output_fields(out_num)%time_rms
+       ! Power value for rms or pow(x) calculations
+       pow_value = output_fields(out_num)%pow_value
        ! Looking for max and min value of this field over the sampling interval?
        time_max = output_fields(out_num)%time_max
        time_min = output_fields(out_num)%time_min
@@ -1460,11 +1463,10 @@ CONTAINS
                             DO j=js, je
                                DO i=is, ie
                                   IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                                     IF ( time_rms ) THEN
+                                     IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                             & field(i-is+1+hi, j-js+1+hj, k) * weight1 *&
-                                             & field(i-is+1+hi, j-js+1+hj, k) * weight1 ! Squared
+                                             & (field(i-is+1+hi, j-js+1+hj, k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
@@ -1481,11 +1483,10 @@ CONTAINS
                             DO j=js, je
                                DO i=is, ie
                                   IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                                     IF ( time_rms ) THEN
+                                     IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k)*weight1 *&
-                                             & field(i-is+1+hi,j-js+1+hj,k)*weight1 ! Squared
+                                             & (field(i-is+1+hi,j-js+1+hj,k)*weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
@@ -1506,11 +1507,10 @@ CONTAINS
                             DO j=js, je
                                DO i=is, ie
                                   IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                                     IF ( time_rms ) THEN
+                                     IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                             & field(i-is+1+hi, j-js+1+hj, k) * weight1 *&
-                                             & field(i-is+1+hi, j-js+1+hj, k) * weight1 ! Squared
+                                             & (field(i-is+1+hi, j-js+1+hj, k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
@@ -1527,11 +1527,10 @@ CONTAINS
                             DO j=js, je
                                DO i=is, ie
                                   IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                                     IF ( time_rms ) THEN
+                                     IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k)*weight1 *&
-                                             & field(i-is+1+hi,j-js+1+hj,k)*weight1 ! Squared
+                                             & (field(i-is+1+hi,j-js+1+hj,k)*weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
@@ -1579,11 +1578,10 @@ CONTAINS
                                      i1 = i-l_start(1)-hi+1
                                      j1=  j-l_start(2)-hj+1
                                      IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                                        IF ( time_rms ) THEN
+                                        IF ( pow_value /= 1 ) THEN
                                            output_fields(out_num)%buffer(i1,j1,k1,sample) =&
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                                                & field(i-is+1+hi,j-js+1+hj,k) * weight1 *&
-                                                & field(i-is+1+hi,j-js+1+hj,k) * weight1 ! Squared
+                                                & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                         ELSE
                                            output_fields(out_num)%buffer(i1,j1,k1,sample) =&
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
@@ -1606,11 +1604,10 @@ CONTAINS
                                      i1 = i-l_start(1)-hi+1
                                      j1=  j-l_start(2)-hj+1
                                      IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                                        IF ( time_rms ) THEN
+                                        IF ( pow_value /= 1 ) THEN
                                            output_fields(out_num)%buffer(i1,j1,k1,sample) =&
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                                                & field(i-is+1+hi,j-js+1+hj,k) * weight1 *&
-                                                & field(i-is+1+hi,j-js+1+hj,k) * weight1 ! Squared
+                                                & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                         ELSE
                                            output_fields(out_num)%buffer(i1,j1,k1,sample) =&
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
@@ -1642,11 +1639,10 @@ CONTAINS
                             DO j=js, je
                                DO i=is, ie
                                   IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
-                                     IF ( time_rms ) THEN
+                                     IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1 *&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1 ! Squared
+                                             & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
@@ -1665,11 +1661,10 @@ CONTAINS
                             DO j=js, je
                                DO i=is, ie
                                   IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
-                                     IF ( time_rms ) THEN
+                                     IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1 *&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1 ! Squared
+                                             & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
@@ -1699,11 +1694,10 @@ CONTAINS
                             DO j=js, je
                                DO i=is, ie
                                   IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
-                                     IF ( time_rms ) THEN
+                                     IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1 *&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1 ! Squared
+                                             & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
@@ -1721,11 +1715,10 @@ CONTAINS
                             DO j=js, je
                                DO i=is, ie
                                   IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
-                                     IF ( time_rms ) THEN
+                                     IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1 *&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                             & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
@@ -1771,10 +1764,9 @@ CONTAINS
                                IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. j <= l_end(2)+hj ) THEN
                                   i1 = i-l_start(1)-hi+1
                                   j1 =  j-l_start(2)-hj+1
-                                  IF ( time_rms ) THEN
+                                  IF ( pow_value /= 1 ) THEN
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample)+ &
-                                          & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1 *&
-                                          & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1 ! Squared
+                                          & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
                                   ELSE
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample)+ &
                                           & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
@@ -1789,10 +1781,9 @@ CONTAINS
                                IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. j <= l_end(2)+hj ) THEN
                                   i1 = i-l_start(1)-hi+1
                                   j1 =  j-l_start(2)-hj+1
-                                  IF ( time_rms ) THEN
+                                  IF ( pow_value /= 1 ) THEN
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample)+ &
-                                          & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1 *&
-                                          & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1 ! Squared
+                                          & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
                                   ELSE
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample)+ &
                                           & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
@@ -1817,11 +1808,10 @@ CONTAINS
                       IF (numthreads>1 .AND. phys_window) then
                          ksr= l_start(3)
                          ker= l_end(3)
-                         IF ( time_rms ) THEN
+                         IF ( pow_value /= 1 ) THEN
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
-                                 & field(f1:f2,f3:f4,ksr:ker)*weight1 *&
-                                 & field(f1:f2,f3:f4,ksr:ker)*weight1 ! Squared
+                                 & (field(f1:f2,f3:f4,ksr:ker)*weight1)**(pow_value)
                          ELSE
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
@@ -1831,11 +1821,10 @@ CONTAINS
 !$OMP CRITICAL
                          ksr= l_start(3)
                          ker= l_end(3)
-                         IF ( time_rms ) THEN
+                         IF ( pow_value /= 1 ) THEN
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
-                                 & field(f1:f2,f3:f4,ksr:ker)*weight1 *&
-                                 & field(f1:f2,f3:f4,ksr:ker)*weight1 ! Squared
+                                 & (field(f1:f2,f3:f4,ksr:ker)*weight1)**(pow_value)
                          ELSE
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
@@ -1855,11 +1844,10 @@ CONTAINS
                          END IF
                       END IF
                       IF (numthreads>1 .AND. phys_window) then
-                         IF ( time_rms ) THEN
+                         IF ( pow_value /= 1 ) THEN
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                                 & field(f1:f2,f3:f4,ks:ke)*weight1 *&
-                                 & field(f1:f2,f3:f4,ks:ke)*weight1 ! Squared
+                                 & (field(f1:f2,f3:f4,ks:ke)*weight1)**(pow_value)
                          ELSE
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
@@ -1867,11 +1855,10 @@ CONTAINS
                          END IF
                       ELSE
 !$OMP CRITICAL
-                         IF ( time_rms ) THEN
+                         IF ( pow_value /= 1 ) THEN
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                                 & field(f1:f2,f3:f4,ks:ke)*weight1 *&
-                                 & field(f1:f2,f3:f4,ks:ke)*weight1 ! Squared
+                                 & (field(f1:f2,f3:f4,ks:ke)*weight1)**(pow_value)
                          ELSE
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
@@ -1897,11 +1884,10 @@ CONTAINS
                                      i1 = i-l_start(1)-hi+1
                                      j1=  j-l_start(2)-hj+1
                                      IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
-                                        IF ( time_rms ) THEN
+                                        IF ( pow_value /= 1 ) THEN
                                            output_fields(out_num)%buffer(i1,j1,k1,sample) =&
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                                                & field(i-is+1+hi,j-js+1+hj,k) * weight1 *&
-                                                & field(i-is+1+hi,j-js+1+hj,k) * weight1 ! Squared
+                                                & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                         ELSE
                                            output_fields(out_num)%buffer(i1,j1,k1,sample) =&
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
@@ -1924,11 +1910,10 @@ CONTAINS
                                      i1 = i-l_start(1)-hi+1
                                      j1=  j-l_start(2)-hj+1
                                      IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
-                                        IF ( time_rms ) THEN
+                                        IF ( pow_value /= 1 ) THEN
                                            output_fields(out_num)%buffer(i1,j1,k1,sample) =&
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                                                & field(i-is+1+hi,j-js+1+hj,k) * weight1 *&
-                                                & field(i-is+1+hi,j-js+1+hj,k) * weight1 ! Squared
+                                                & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                         ELSE
                                            output_fields(out_num)%buffer(i1,j1,k1,sample) =&
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
@@ -1974,11 +1959,10 @@ CONTAINS
                             DO j=js, je
                                DO i=is, ie
                                   IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
-                                     IF ( time_rms ) THEN
+                                     IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1 *&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1 ! Squared
+                                             & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
@@ -1999,11 +1983,10 @@ CONTAINS
                             DO j=js, je
                                DO i=is, ie
                                   IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
-                                     IF ( time_rms ) THEN
+                                     IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1 *&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1 ! Squared
+                                             & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
@@ -2046,11 +2029,10 @@ CONTAINS
                             DO j=js, je
                                DO i=is, ie
                                   IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue )  THEN
-                                     IF ( time_rms ) THEN
+                                     IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1 *&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1 ! Squared
+                                             & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
@@ -2068,11 +2050,10 @@ CONTAINS
                             DO j=js, je
                                DO i=is, ie
                                   IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue )  THEN
-                                     IF ( time_rms ) THEN
+                                     IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1 *&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1 ! Squared
+                                             & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
@@ -2107,10 +2088,9 @@ CONTAINS
                                IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. j <= l_end(2)+hj ) THEN
                                   i1 = i-l_start(1)-hi+1
                                   j1=  j-l_start(2)-hj+1
-                                  IF ( time_rms ) THEN
+                                  IF ( pow_value /= 1 ) THEN
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample) +&
-                                          & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1 *&
-                                          & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1 ! Squared
+                                          & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
                                   ELSE
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample) +&
                                           & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
@@ -2125,10 +2105,9 @@ CONTAINS
                                IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. j <= l_end(2)+hj ) THEN
                                   i1 = i-l_start(1)-hi+1
                                   j1=  j-l_start(2)-hj+1
-                                  IF ( time_rms ) THEN
+                                  IF ( pow_value /= 1 ) THEN
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample) +&
-                                          & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1 *&
-                                          & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1 ! Squared
+                                          & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
                                   ELSE
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample) +&
                                           & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
@@ -2154,11 +2133,10 @@ CONTAINS
                       ksr= l_start(3)
                       ker= l_end(3)
                       IF( numthreads > 1 .AND. phys_window ) then
-                         IF ( time_rms ) THEN
+                         IF ( pow_value /= 1 ) THEN
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
-                                 & field(f1:f2,f3:f4,ksr:ker)*weight1 *&
-                                 & field(f1:f2,f3:f4,ksr:ker)*weight1 ! Squared
+                                 & (field(f1:f2,f3:f4,ksr:ker)*weight1)**(pow_value)
                          ELSE
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
@@ -2166,11 +2144,10 @@ CONTAINS
                          END IF
                       ELSE
 !$OMP CRITICAL
-                         IF ( time_rms ) THEN
+                         IF ( pow_value /= 1 ) THEN
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
-                                 & field(f1:f2,f3:f4,ksr:ker)*weight1 *&
-                                 & field(f1:f2,f3:f4,ksr:ker)*weight1 ! Squared
+                                 & (field(f1:f2,f3:f4,ksr:ker)*weight1)**(pow_value)
                          ELSE
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
@@ -2190,11 +2167,10 @@ CONTAINS
                          END IF
                       END IF
                       IF( numthreads > 1 .AND. phys_window ) then
-                         IF ( time_rms ) THEN
+                         IF ( pow_value /= 1 ) THEN
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                                 & field(f1:f2,f3:f4,ks:ke)*weight1 *&
-                                 & field(f1:f2,f3:f4,ks:ke)*weight1 ! Squared
+                                 & (field(f1:f2,f3:f4,ks:ke)*weight1)**(pow_value)
                          ELSE
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
@@ -2202,11 +2178,10 @@ CONTAINS
                          END IF
                       ELSE
 !$OMP CRITICAL
-                         IF ( time_rms ) THEN
+                         IF ( pow_value /= 1 ) THEN
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                                 & field(f1:f2,f3:f4,ks:ke)*weight1 *&
-                                 & field(f1:f2,f3:f4,ks:ke)*weight1 ! Squared
+                                 & (field(f1:f2,f3:f4,ks:ke)*weight1)**(pow_value)
                          ELSE
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&

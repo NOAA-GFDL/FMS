@@ -1277,6 +1277,7 @@ CONTAINS
     INTEGER :: out_num, in_num, file_num, file_num_tile1
     INTEGER :: num_fields, i, method_selected, l1
     INTEGER :: ioerror
+    REAL :: pow_value
     CHARACTER(len=128) :: error_msg
     CHARACTER(len=50) :: t_method
 
@@ -1375,6 +1376,7 @@ CONTAINS
     ! Enter the other data for this output field
     output_fields(out_num)%output_name = TRIM(output_name)
     output_fields(out_num)%pack = pack
+    output_fields(out_num)%pow_value = 1
     output_fields(out_num)%num_axes = 0
     output_fields(out_num)%total_elements = 0
     output_fields(out_num)%region_elements = 0
@@ -1422,6 +1424,20 @@ CONTAINS
        output_fields(out_num)%time_average = .TRUE.
        method_selected = method_selected+1
        t_method='mean'
+    ELSEIF ( INDEX(t_method,'pow') == 1 ) THEN
+       ! Get the integer number from the t_method
+       READ (UNIT=t_method(4:LEN_TRIM(t_method)), FMT=*, IOSTAT=ioerror) pow_value
+       IF ( ioerror /= 0 .OR. output_fields(out_num)%pow_value < 1  .OR. FLOOR(pow_value) /= CEILING(pow_value) ) THEN
+          ! <ERROR STATUS="FATAL">
+          !   Invalid power number in time operation "<t_method>".  Must be a positive integer.
+          ! </ERROR>
+          CALL error_mesg('diag_util_mod::init_output_field',&
+               & 'Invalid power number in time operation "'//TRIM(t_method)//'".  Must be a positive integer', FATAL)
+       END IF
+       output_fields(out_num)%pow_value = INT(pow_value)
+       output_fields(out_num)%time_average = .TRUE.
+       method_selected = method_selected+1
+       t_method = 'mean_pow('//t_method(4:LEN_TRIM(t_method))//')'
     ELSE
        SELECT CASE(TRIM(t_method))
        CASE ( '.true.', 'mean', 'average', 'avg' )
@@ -1431,6 +1447,7 @@ CONTAINS
        CASE ( 'rms' )
           output_fields(out_num)%time_average = .TRUE.
           output_fields(out_num)%time_rms = .TRUE.
+          output_fields(out_num)%pow_value = 2.0
           method_selected = method_selected+1
           t_method = 'root_mean_square'
        CASE ( '.false.', 'none', 'point' )

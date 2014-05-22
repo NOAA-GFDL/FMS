@@ -345,6 +345,9 @@ MODULE diag_data_mod
   !   </DATA>
   !   <DATA NAME="pack" TYPE="INTEGER">
   !   </DATA>
+  !   <DATA NAME="pow_value" TYPE="INTEGER">
+  !     Power to use When calculating the mean_pow(n)
+  !   </DATA>
   !   <DATA NAME="time_method" TYPE="CHARACTER(len=50)">
   !     Time method field from the input file
   !   </DATA>
@@ -417,6 +420,7 @@ MODULE diag_data_mod
      LOGICAL :: time_min ! true if the output field is minimum over time interval
      LOGICAL :: time_ops ! true if any of time_min, time_max, time_rms or time_average is true
      INTEGER  :: pack
+     INTEGER :: pow_value !< Power value to use for mean_pow(n) calculations
      CHARACTER(len=50) :: time_method ! time method field from the input file
      ! coordianes of the buffer and counter are (x, y, z, time-of-day)
      REAL, _ALLOCATABLE, DIMENSION(:,:,:,:) :: buffer _NULL
