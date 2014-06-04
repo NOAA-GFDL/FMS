@@ -3636,7 +3636,7 @@ PROGRAM test
 
   id_dat1 = register_diag_field('test_diag_manager_mod', 'dat1', (/id_lon1,id_lat1,id_pfull/), Time, 'sample data', 'K')
   call diag_field_add_attribute(id_dat1, 'real_att', 2.3)
-  call diag_field_add_attribute(id_dat2, 'real_att', (/ 2.3, 4.2 /))
+  call diag_field_add_attribute(id_dat1, 'cell_methods', 'area: avg')
   id_dat2 = register_diag_field('test_diag_manager_mod', 'dat2', (/id_lon2,id_lat2,id_pfull/), Time, 'sample data', 'K')
   call diag_field_add_attribute(id_dat2, 'string_att', 'a string')
   call diag_field_add_attribute(id_dat2, 'int_att', (/ 1, 2 /) )
