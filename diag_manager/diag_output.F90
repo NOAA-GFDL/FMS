@@ -512,7 +512,7 @@ CONTAINS
                    att_len = attributes(i)%len
                    IF ( TRIM(attributes(i)%name).EQ.'cell_methods' .AND. PRESENT(time_method) ) THEN
                       ! Append ",time: time_method" if time_method present
-                      att_str = attributes(i)%catt(1:attributes(i)%len)//',time: '//time_method
+                      att_str = attributes(i)%catt(1:attributes(i)%len)//' time: '//time_method
                       att_len = LEN_TRIM(att_str)
                    END IF
                    CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field), TRIM(attributes(i)%name),&
