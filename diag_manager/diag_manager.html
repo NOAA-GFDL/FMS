@@ -638,6 +638,10 @@
      Add an arbitrary attribute and value to the output variable.  Any number
      of attributes can be added to a given field.  All attribute addition must
      be done before first <tt>send_data</tt> call.
+
+     If a real or integer attribute is already defined, a FATAL error will be called.
+     If a character attribute is already defined, then it will be prepended to the
+     existing attribute value.
    </dd>
 <br>
 <br>
