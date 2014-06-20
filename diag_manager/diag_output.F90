@@ -340,19 +340,20 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: name, units, long_name
     REAL, OPTIONAL, INTENT(in) :: RANGE(2), mval
     INTEGER, OPTIONAL, INTENT(in) :: pack
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: avg_name, time_method,standard_name
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: avg_name, time_method, standard_name
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method
     TYPE(diag_atttype), DIMENSION(:), _ALLOCATABLE, OPTIONAL, INTENT(in) :: attributes
     INTEGER, OPTIONAL, INTENT(in) :: num_attributes
 
     CHARACTER(len=128) :: standard_name2
+    CHARACTER(len=1280) :: att_str
     TYPE(diag_fieldtype) :: Field
     LOGICAL :: coord_present
     CHARACTER(len=40) :: aux_axes(SIZE(axes))
     CHARACTER(len=160) :: coord_att
 
     REAL :: scale, add
-    INTEGER :: i, indexx, num, ipack, np
+    INTEGER :: i, indexx, num, ipack, np, att_len
     LOGICAL :: use_range
     INTEGER :: axis_indices(SIZE(axes))
 
@@ -507,8 +508,15 @@ CONTAINS
                    CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field), TRIM(attributes(i)%name),&
                         & rval=attributes(i)%fatt)
                 CASE (NF90_CHAR)
+                   att_str = attributes(i)%catt
+                   att_len = attributes(i)%len
+                   IF ( TRIM(attributes(i)%name).EQ.'cell_methods' .AND. PRESENT(time_method) ) THEN
+                      ! Append ",time: time_method" if time_method present
+                      att_str = attributes(i)%catt(1:attributes(i)%len)//' time: '//time_method
+                      att_len = LEN_TRIM(att_str)
+                   END IF
                    CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field), TRIM(attributes(i)%name),&
-                        & cval=attributes(i)%catt(1:attributes(i)%len))
+                        & cval=att_str(1:att_len))
                 CASE default
                    CALL error_mesg('diag_output_mod::write_field_meta_data', 'Invalid type for field attribute '&
                         &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
