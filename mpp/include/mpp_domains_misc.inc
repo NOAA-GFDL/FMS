@@ -122,7 +122,11 @@
           group_recv_clock     = mpp_clock_id( 'group recv' )
           group_unpk_clock     = mpp_clock_id( 'group unpk' )
           group_wait_clock     = mpp_clock_id( 'group wait' )
-
+          nonblock_group_pack_clock     = mpp_clock_id( 'nonblock group pack' )
+          nonblock_group_send_clock     = mpp_clock_id( 'nonblock group send' )
+          nonblock_group_recv_clock     = mpp_clock_id( 'nonblock group recv' )
+          nonblock_group_unpk_clock     = mpp_clock_id( 'nonblock group unpk' )
+          nonblock_group_wait_clock     = mpp_clock_id( 'nonblock group wait' )
       end if
       return
     end subroutine mpp_domains_init
@@ -1754,6 +1758,22 @@ end subroutine init_nonblock_type
 #define MPP_CREATE_GROUP_UPDATE_4D_V_ mpp_create_group_update_r8_4dv
 #undef MPP_DO_GROUP_UPDATE_
 #define MPP_DO_GROUP_UPDATE_ mpp_do_group_update_r8
+#undef MPP_START_GROUP_UPDATE_
+#define MPP_START_GROUP_UPDATE_ mpp_start_group_update_r8
+#undef MPP_COMPLETE_GROUP_UPDATE_
+#define MPP_COMPLETE_GROUP_UPDATE_ mpp_complete_group_update_r8
+#undef MPP_RESET_GROUP_UPDATE_FIELD_2D_
+#define MPP_RESET_GROUP_UPDATE_FIELD_2D_ mpp_reset_group_update_field_r8_2d
+#undef MPP_RESET_GROUP_UPDATE_FIELD_3D_
+#define MPP_RESET_GROUP_UPDATE_FIELD_3D_ mpp_reset_group_update_field_r8_3d
+#undef MPP_RESET_GROUP_UPDATE_FIELD_4D_
+#define MPP_RESET_GROUP_UPDATE_FIELD_4D_ mpp_reset_group_update_field_r8_4d
+#undef MPP_RESET_GROUP_UPDATE_FIELD_2D_V_
+#define MPP_RESET_GROUP_UPDATE_FIELD_2D_V_ mpp_reset_group_update_field_r8_2dv
+#undef MPP_RESET_GROUP_UPDATE_FIELD_3D_V_
+#define MPP_RESET_GROUP_UPDATE_FIELD_3D_V_ mpp_reset_group_update_field_r8_3dv
+#undef MPP_RESET_GROUP_UPDATE_FIELD_4D_V_
+#define MPP_RESET_GROUP_UPDATE_FIELD_4D_V_ mpp_reset_group_update_field_r8_4dv
 #include <mpp_group_update.h>
 
 #undef MPP_TYPE_
@@ -1772,4 +1792,20 @@ end subroutine init_nonblock_type
 #define MPP_CREATE_GROUP_UPDATE_4D_V_ mpp_create_group_update_r4_4dv
 #undef MPP_DO_GROUP_UPDATE_
 #define MPP_DO_GROUP_UPDATE_ mpp_do_group_update_r4
+#undef MPP_START_GROUP_UPDATE_
+#define MPP_START_GROUP_UPDATE_ mpp_start_group_update_r4
+#undef MPP_COMPLETE_GROUP_UPDATE_
+#define MPP_COMPLETE_GROUP_UPDATE_ mpp_complete_group_update_r4
+#undef MPP_RESET_GROUP_UPDATE_FIELD_2D_
+#define MPP_RESET_GROUP_UPDATE_FIELD_2D_ mpp_reset_group_update_field_r4_2d
+#undef MPP_RESET_GROUP_UPDATE_FIELD_3D_
+#define MPP_RESET_GROUP_UPDATE_FIELD_3D_ mpp_reset_group_update_field_r4_3d
+#undef MPP_RESET_GROUP_UPDATE_FIELD_4D_
+#define MPP_RESET_GROUP_UPDATE_FIELD_4D_ mpp_reset_group_update_field_r4_4d
+#undef MPP_RESET_GROUP_UPDATE_FIELD_2D_V_
+#define MPP_RESET_GROUP_UPDATE_FIELD_2D_V_ mpp_reset_group_update_field_r4_2dv
+#undef MPP_RESET_GROUP_UPDATE_FIELD_3D_V_
+#define MPP_RESET_GROUP_UPDATE_FIELD_3D_V_ mpp_reset_group_update_field_r4_3dv
+#undef MPP_RESET_GROUP_UPDATE_FIELD_4D_V_
+#define MPP_RESET_GROUP_UPDATE_FIELD_4D_V_ mpp_reset_group_update_field_r4_4dv
 #include <mpp_group_update.h>

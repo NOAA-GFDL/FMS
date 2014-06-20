@@ -183,6 +183,7 @@ module mpp_domains_mod
   public :: mpp_get_update_pelist, mpp_get_update_size
   public :: mpp_get_domain_npes, mpp_get_domain_pelist
   public :: mpp_clear_group_update
+  public :: mpp_group_update_initialized, mpp_group_update_is_set
 
   !--- public interface from mpp_domains_reduce.h
   public :: mpp_global_field, mpp_global_max, mpp_global_min, mpp_global_sum
@@ -192,6 +193,8 @@ module mpp_domains_mod
   public :: mpp_update_domains, mpp_check_field
   public :: mpp_start_update_domains, mpp_complete_update_domains
   public :: mpp_create_group_update, mpp_do_group_update
+  public :: mpp_start_group_update, mpp_complete_group_update
+  public :: mpp_reset_group_update_field
   public :: mpp_update_nest_fine, mpp_update_nest_coarse
   public :: mpp_get_boundary
   !--- public interface from mpp_domains_define.h
@@ -463,6 +466,8 @@ module mpp_domains_mod
      integer            :: is_x=0, ie_x=0, js_x=0, je_x=0
      integer            :: is_y=0, ie_y=0, js_y=0, je_y=0
      integer            :: nrecv=0, nsend=0
+     integer            :: reset_index_s = 0
+     integer            :: reset_index_v = 0
      integer            :: from_pe(MAXOVERLAP)
      integer            :: to_pe(MAXOVERLAP)
      integer            :: recv_size(MAXOVERLAP)
@@ -504,13 +509,15 @@ module mpp_domains_mod
   type(domain2D),save  :: NULL_DOMAIN2D
   integer              :: current_id_update = 0
   integer                         :: num_update = 0
+  integer                         :: num_nonblock_group_update = 0
   integer                         :: nonblock_buffer_pos = 0
   logical                         :: start_update = .true.
   logical                         :: complete_update = .false.
   type(nonblock_type), allocatable :: nonblock_data(:)
   integer, parameter              :: MAX_NONBLOCK_UPDATE = 100
 
-
+  integer                         :: group_update_buffer_pos = 0
+  logical                         :: complete_group_update_on = .false.
   !-------- The following variables are used in mpp_domains_comm.h
   
   integer, parameter :: MAX_ADDRS=512
@@ -561,6 +568,8 @@ module mpp_domains_mod
   integer :: nest_send_clock=0, nest_recv_clock=0, nest_unpk_clock=0
   integer :: nest_wait_clock=0, nest_pack_clock=0
   integer :: group_recv_clock=0, group_send_clock=0, group_pack_clock=0, group_unpk_clock=0, group_wait_clock=0
+  integer :: nonblock_group_recv_clock=0, nonblock_group_send_clock=0, nonblock_group_pack_clock=0
+  integer :: nonblock_group_unpk_clock=0, nonblock_group_wait_clock=0
 
   !--- namelist interface
 ! <NAMELIST NAME="mpp_domains_nml">
@@ -1273,6 +1282,31 @@ module mpp_domains_mod
      module procedure mpp_do_group_update_r4
      module procedure mpp_do_group_update_r8
   end interface mpp_do_group_update
+
+  interface mpp_start_group_update
+     module procedure mpp_start_group_update_r4
+     module procedure mpp_start_group_update_r8
+  end interface mpp_start_group_update
+
+  interface mpp_complete_group_update
+     module procedure mpp_complete_group_update_r4
+     module procedure mpp_complete_group_update_r8
+  end interface mpp_complete_group_update
+
+  interface mpp_reset_group_update_field
+     module procedure mpp_reset_group_update_field_r4_2d
+     module procedure mpp_reset_group_update_field_r4_3d
+     module procedure mpp_reset_group_update_field_r4_4d
+     module procedure mpp_reset_group_update_field_r4_2dv
+     module procedure mpp_reset_group_update_field_r4_3dv
+     module procedure mpp_reset_group_update_field_r4_4dv
+     module procedure mpp_reset_group_update_field_r8_2d
+     module procedure mpp_reset_group_update_field_r8_3d
+     module procedure mpp_reset_group_update_field_r8_4d
+     module procedure mpp_reset_group_update_field_r8_2dv
+     module procedure mpp_reset_group_update_field_r8_3dv
+     module procedure mpp_reset_group_update_field_r8_4dv
+  end interface mpp_reset_group_update_field
 
   ! <INTERFACE NAME="mpp_define_nest_domains">
   !   <OVERVIEW>
@@ -2432,9 +2466,9 @@ end interface
 
   !--- version information variables
   character(len=128), public :: version= &
-       '$Id: mpp_domains.F90,v 20.0.2.1.2.2 2014/02/19 16:40:33 Zhi.Liang Exp $'
+       '$Id$'
   character(len=128), public :: tagname= &
-       '$Name: tikal_201403 $'
+       '$Name$'
 
 
 contains

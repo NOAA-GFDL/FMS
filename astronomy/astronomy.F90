@@ -46,8 +46,8 @@ private
 !---------------------------------------------------------------------
 !----------- version number for this module --------------------------
 
-character(len=128)  :: version =  '$Id: astronomy.F90,v 20.0.2.1 2014/02/07 21:43:18 wfc Exp $'
-character(len=128)  :: tagname =  '$Name: tikal_201403 $'
+character(len=128)  :: version =  '$Id$'
+character(len=128)  :: tagname =  '$Name$'
 
 
 !---------------------------------------------------------------------
@@ -2989,9 +2989,9 @@ subroutine astronomy_end
 !----------------------------------------------------------------------
 !    check if the module has been initialized.
 !----------------------------------------------------------------------
-      if (.not. module_is_initialized)   &
-                call error_mesg ( 'astronomy_mod',  &
-                         ' module has not been initialized', FATAL)
+      if (.not. module_is_initialized)  return 
+!                call error_mesg ( 'astronomy_mod',  &
+!                         ' module has not been initialized', FATAL)
 
 !----------------------------------------------------------------------
 !    deallocate module variables.

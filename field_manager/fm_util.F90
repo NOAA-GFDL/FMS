@@ -87,8 +87,8 @@ logical                         :: save_default_no_overwrite = .false.
 character(len=fm_path_name_len) :: save_current_list
 character(len=fm_path_name_len) :: save_path
 character(len=fm_path_name_len) :: save_name
-character(len=128) :: version = '$Id: fm_util.F90,v 17.0.28.1 2014/02/07 21:52:09 wfc Exp $'
-character(len=128) :: tagname = '$Name: tikal_201403 $'
+character(len=128) :: version = '$Id$'
+character(len=128) :: tagname = '$Name$'
 
 !
 !        Interface definitions for overloaded routines

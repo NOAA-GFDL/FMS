@@ -212,9 +212,9 @@ MODULE diag_manager_mod
 
   ! version number of this module
   CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id: diag_manager.F90,v 20.0 2013/12/14 00:18:48 fms Exp $'
+       & '$Id$'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: tikal_201403 $'  
+       & '$Name$'  
 
   type(time_type) :: Time_end
 

@@ -61,9 +61,9 @@ MODULE diag_grid_mod
 
   ! Parameters
   CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id: diag_grid.F90,v 20.0.2.1 2014/02/07 21:43:19 wfc Exp $'
+       & '$Id$'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name: tikal_201403 $'
+       & '$Name$'
 
   ! Derived data types
   ! <PRIVATE>

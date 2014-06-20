@@ -41,7 +41,7 @@ module time_interp_external_mod
   use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, mpp_get_data_domain, &
        mpp_get_global_domain, NULL_DOMAIN2D
   use time_interp_mod, only : time_interp, time_interp_init
-  use axis_utils_mod, only : get_axis_cart, get_axis_modulo, get_axis_modulo_times
+  use axis_utils_mod, only : get_axis_cart, get_axis_modulo, get_axis_modulo_times, get_axis_bounds
   use fms_mod, only : lowercase, open_namelist_file, check_nml_error, close_file
   use platform_mod, only: r8_kind
   use horiz_interp_mod, only : horiz_interp, horiz_interp_type
@@ -50,8 +50,8 @@ module time_interp_external_mod
   private
 
   character(len=128), private :: version= &
-   'CVS $Id: time_interp_external.F90,v 20.0 2013/12/14 00:28:08 fms Exp $'
-  character(len=128), private :: tagname='Tag $Name: tikal_201403 $'
+   'CVS $Id$'
+  character(len=128), private :: tagname='Tag $Name$'
 
   integer, parameter, public  :: NO_REGION=0, INSIDE_REGION=1, OUTSIDE_REGION=2
   integer, parameter, private :: modulo_year= 0001
@@ -209,7 +209,7 @@ module time_interp_external_mod
 
     function init_external_field(file,fieldname,format,threading,domain,desired_units,&
          verbose,axis_centers,axis_sizes,override,correct_leap_year_inconsistency,&
-         permit_calendar_conversion,use_comp_domain,ierr, nwindows )
+         permit_calendar_conversion,use_comp_domain,ierr, nwindows, axis_bounds )
       
       character(len=*), intent(in)            :: file,fieldname
       integer, intent(in), optional           :: format, threading
@@ -222,6 +222,7 @@ module time_interp_external_mod
                                                  permit_calendar_conversion,use_comp_domain
       integer,          intent(out), optional :: ierr
       integer,          intent(in),  optional :: nwindows
+      type(axistype), intent(inout), optional :: axis_bounds(4)
 
       integer :: init_external_field
       
@@ -451,6 +452,14 @@ module time_interp_external_mod
          
          if (PRESENT(axis_sizes) .and. .not.PRESENT(override)) then
             axis_sizes = field(num_fields)%siz
+         endif
+
+         if (PRESENT(axis_bounds)) then
+           do j=1,size(field(num_fields)%axes)
+             if (field(num_fields)%siz(j) > 1) then
+               call get_axis_bounds(field(num_fields)%axes(j),axis_bounds(j),axes)
+             endif
+           enddo
          endif
          
          deallocate(fld_axes)

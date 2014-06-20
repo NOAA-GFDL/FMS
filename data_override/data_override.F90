@@ -80,8 +80,8 @@ use time_manager_mod, only: time_type
 implicit none
 private
 
-character(len=128) :: version = '$Id: data_override.F90,v 20.0 2013/12/14 00:18:34 fms Exp $'
-character(len=128) :: tagname = '$Name: tikal_201403 $'
+character(len=128) :: version = '$Id$'
+character(len=128) :: tagname = '$Name$'
 
 type data_type
    character(len=3)   :: gridname
@@ -707,7 +707,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
      else !ongrid=false
         id_time = init_external_field(filename,fieldname,domain=domain, axis_centers=axis_centers,&
              axis_sizes=axis_sizes, verbose=.false.,override=.true.,use_comp_domain=use_comp_domain, &
-             nwindows = nwindows)  
+             nwindows = nwindows, axis_bounds=axis_bounds)
         dims = get_external_field_size(id_time)
         override_array(curr_position)%dims = dims
         if(id_time<0) call mpp_error(FATAL,'data_override:field not found in init_external_field 2')
@@ -715,8 +715,6 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 
         !  get lon and lat of the input (source) grid, assuming that axis%data contains
         !  lat and lon of the input grid (in degrees)
-        call get_axis_bounds(axis_centers(1),axis_bounds(1), axis_centers)
-        call get_axis_bounds(axis_centers(2),axis_bounds(2), axis_centers)
 
         allocate(override_array(curr_position)%horz_interp(nwindows))
         allocate(override_array(curr_position)%lon_in(axis_sizes(1)+1))
@@ -911,6 +909,9 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
                    horz_interp=override_array(curr_position)%horz_interp(window_id), &
                    is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
            data(:,:,1) = data(:,:,1)*factor   
+           do i = 2, size(data,3)
+             data(:,:,i) = data(:,:,1)
+           enddo
         else
            allocate(mask_out(size(data,1), size(data,2),1))
            mask_out = .false.
@@ -919,13 +920,15 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
                    mask_out   =mask_out(:,:,1), &
                    is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
            where(mask_out(:,:,1))
-              data(:,:,1) = data(:,:,1)*factor
+             data(:,:,1) = data(:,:,1)*factor
            end where
+           do i = 2, size(data,3)
+             where(mask_out(:,:,1))
+               data(:,:,i) = data(:,:,1)
+             end where
+           enddo
            deallocate(mask_out)
         endif
-        do i = 2, size(data,3)
-           data(:,:,i) = data(:,:,1)
-        enddo
      else
         if( data_table(index1)%region_type == NO_REGION ) then
            call time_interp_external(id_time,time,data,verbose=.false.,      &
@@ -1284,9 +1287,6 @@ end module data_override_mod
 #ifdef test_data_override
 
  program test
-
- ! Input data and path_names file for this program is in:
- ! /archive/pjp/unit_tests/test_data_override/lima/exp1
 
  use           mpp_mod, only: input_nml_file, stdout, mpp_chksum
  use   mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_get_compute_domain, mpp_define_layout

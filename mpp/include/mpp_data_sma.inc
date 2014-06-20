@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_data_sma.inc,v 19.0 2012/01/06 22:01:19 fms Exp $
+! $Id$
 
 !----------------------------------------------------------------!
 ! The following data is used in mpp_mod and its components       !

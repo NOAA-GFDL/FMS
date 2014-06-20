@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_util.inc,v 20.0 2013/12/14 00:27:35 fms Exp $
+! $Id$
 
 
 #ifdef use_libSMA
@@ -1284,8 +1284,8 @@ end function rarray_to_char
   subroutine read_input_nml()
 
 ! version and tagging information
-    character(len=128) :: version = '$Id: mpp_util.inc,v 20.0 2013/12/14 00:27:35 fms Exp $'
-    character(len=128) :: tagname = '$Name: tikal_201403 $' 
+    character(len=128) :: version = '$Id$'
+    character(len=128) :: tagname = '$Name$' 
 
 ! private variables
     integer :: log_unit
@@ -1415,8 +1415,8 @@ end function rarray_to_char
     integer, intent(in), optional,   dimension(:) :: PELIST
 
     ! version and tagging information
-    character(len=*), parameter :: VERSION = '$Id: mpp_util.inc,v 20.0 2013/12/14 00:27:35 fms Exp $'
-    character(len=*), parameter :: TAGNAME = '$Name: tikal_201403 $' 
+    character(len=*), parameter :: VERSION = '$Id$'
+    character(len=*), parameter :: TAGNAME = '$Name$' 
 
     character(len=5) :: text
     logical :: file_exist

@@ -1,6 +1,6 @@
 
 ! -*-f90-*-
-! $Id: mpp_io_write.inc,v 20.0.8.2 2014/02/07 20:36:45 Seth.Underwood Exp $
+! $Id$
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                            !
@@ -333,7 +333,7 @@
 
 
 
-    subroutine mpp_write_meta_axis_r1d( unit, axis, name, units, longname, cartesian, sense, domain, data, min)
+    subroutine mpp_write_meta_axis_r1d( unit, axis, name, units, longname, cartesian, sense, domain, data, min, calendar)
 !load the values in an axistype (still need to call mpp_write)
 !write metadata attributes for axis
 !it is declared intent(inout) so you can nullify pointers in the incoming object if needed
@@ -346,6 +346,7 @@
       type(domain1D),   intent(in), optional :: domain
       real,             intent(in), optional :: data(:)
       real,             intent(in), optional :: min
+      character(len=*), intent(in), optional :: calendar
 
       integer :: is, ie, isg, ieg
       integer :: istat      
@@ -403,6 +404,7 @@
       axis%name     = name
       axis%units    = units
       axis%longname = longname
+      if( PRESENT(calendar)  ) axis%calendar  = calendar
       if( PRESENT(sense)     ) axis%sense     = sense
       if( PRESENT(data) )then
          if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. domain_exist ) then
@@ -467,6 +469,10 @@
 !write axis attributes
       call mpp_write_meta( unit, axis%id, 'long_name', cval=axis%longname) ; axis%natt = axis%natt + 1
       call mpp_write_meta( unit, axis%id, 'units',     cval=axis%units) ; axis%natt = axis%natt + 1
+      if( PRESENT(calendar) ) then
+        call mpp_write_meta( unit, axis%id, 'calendar', cval=axis%calendar)
+        axis%natt = axis%natt + 1
+      endif 
       if( PRESENT(cartesian) ) then
         call mpp_write_meta( unit, axis%id, 'cartesian_axis', cval=axis%cartesian)
         axis%natt = axis%natt + 1
@@ -626,9 +632,8 @@
 !           call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
            
 !pre-existing pointers need to be nullified
-      if( ASSOCIATED(field%axes) ) then
-         DEALLOCATE(field%axes, stat=istat)
-      endif
+      if( ASSOCIATED(field%axes) ) DEALLOCATE(field%axes, stat=istat)
+      if( ASSOCIATED(field%size) ) DEALLOCATE(field%size, stat=istat)
 !fill in field metadata
       field%name = name
       field%units = units
@@ -692,6 +697,7 @@
                   call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: only legal packing values are 1,2,4,8.' )
           end select
           call netcdf_err( error, mpp_file(unit), field=field )
+          deallocate(axis_id)
 #ifndef use_netCDF3
           if(shuffle .NE. 0 .OR. deflate .NE. 0) then
              error = NF_DEF_VAR_DEFLATE(mpp_file(unit)%ncid, field%id, shuffle, deflate, deflate_level)
@@ -1047,6 +1053,9 @@
       else
         call mpp_error( FATAL, 'MPP_WRITE_AXIS: No data associated with axis.' )
       endif
+
+      deallocate(field%axes(1)%data)
+      deallocate(field%axes,field%size)
 
       call mpp_clock_end(mpp_write_clock)
       return
@@ -1465,6 +1474,7 @@
               case default
                   call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: only legal packing values are 1,2,4,8.' )
           end select
+          deallocate( axis_id )
 #endif            
       else
           varnum = varnum + 1

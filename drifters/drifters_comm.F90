@@ -1,7 +1,7 @@
 #include <fms_platform.h>
 #include "fms_switches.h"
 
-! $Id: drifters_comm.F90,v 20.0.2.1 2013/12/23 16:31:56 z1l Exp $
+! $Id$
 
 module drifters_comm_mod
 

@@ -27,6 +27,8 @@ program test
   use mpp_domains_mod, only : mpp_get_domain_shift, EDGEUPDATE, mpp_deallocate_domain
   use mpp_domains_mod, only : mpp_group_update_type, mpp_create_group_update
   use mpp_domains_mod, only : mpp_do_group_update, mpp_clear_group_update
+  use mpp_domains_mod, only : mpp_start_group_update, mpp_complete_group_update
+  use mpp_domains_mod, only : WUPDATE, SUPDATE
   use mpp_memutils_mod, only : mpp_memuse_begin, mpp_memuse_end
 
   implicit none
@@ -2172,7 +2174,7 @@ contains
     real,    allocatable, dimension(:,:,:,:) :: x1, y1, x2, y2
     real,    allocatable, dimension(:,:,:,:) :: a1, a2
     real,    allocatable, dimension(:,:,:)   :: base
-    integer            :: id1, id2    
+    integer            :: id1, id2, id3   
     logical            :: folded_north
     logical            :: cubic_grid
     character(len=3)   :: text
@@ -2276,6 +2278,7 @@ contains
 
     id1 = mpp_clock_id( type//' group 2D', flags=MPP_CLOCK_SYNC )
     id2 = mpp_clock_id( type//' non-group 2D', flags=MPP_CLOCK_SYNC )
+    id3 = mpp_clock_id( type//' non-block group 2D', flags=MPP_CLOCK_SYNC )
 
     allocate( a1(ism:iem,      jsm:jem,       nz, num_fields) )  
     allocate( x1(ism:iem+shift,jsm:jem,       nz, num_fields) ) 
@@ -2295,6 +2298,40 @@ contains
        end do
     end do
 
+    !--- Test for partial direction update
+    do l =1, num_fields
+       call mpp_create_group_update(group_update, a1(:,:,:,l), domain, flags=WUPDATE+SUPDATE)
+    end do    
+
+    do l = 1, num_fields
+       a1(isc:iec,jsc:jec,:,l) = base(isc:iec,jsc:jec,:) + l*1e3
+       do k=1,nz
+          do i=isc-1,iec+1
+             a1(i,jsc-1,k,l) = 999;
+             a1(i,jec+1,k,l) = 999;
+          enddo
+          do j=jsc,jec
+             a1(isc-1,j,k,l) = 999
+             a1(iec+1,j,k,l) = 999
+          enddo
+       enddo
+    enddo
+    
+    a2 = a1
+    call mpp_do_group_update(group_update, domain, a1(isc,jsc,1,1))
+
+    do l = 1, num_fields
+       call mpp_update_domains( a2(:,:,:,l), domain, flags=WUPDATE+SUPDATE, complete=l==num_fields )
+    enddo
+
+    do l = 1, num_fields
+       write(text, '(i3.3)') l
+       call compare_checksums(a1(isd:ied,jsd:jed,:,l),a2(isd:ied,jsd:jed,:,l),type//' CENTER South West '//text)
+    enddo
+
+    call mpp_clear_group_update(group_update)
+
+    a1 = 0; x1 = 0; y1 = 0
     do l =1, num_fields
        call mpp_create_group_update(group_update, a1(:,:,:,l), domain)
        call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=CGRID_NE)
@@ -2328,6 +2365,27 @@ contains
           call compare_checksums(x1(isd:ied+shift,jsd:jed,      :,l),x2(isd:ied+shift,jsd:jed,      :,l),type//' CGRID X'//text)
           call compare_checksums(y1(isd:ied,      jsd:jed+shift,:,l),y2(isd:ied,      jsd:jed+shift,:,l),type//' CGRID Y'//text)
        enddo
+       a1 = 0; x1 = 0; y1 = 0
+       do l = 1, num_fields
+          a1(isc:iec,      jsc:jec,      :,l) = base(isc:iec,      jsc:jec,      :) + l*1e3
+          x1(isc:iec+shift,jsc:jec,      :,l) = base(isc:iec+shift,jsc:jec,      :) + l*1e3 + 1e6
+          y1(isc:iec,      jsc:jec+shift,:,l) = base(isc:iec,      jsc:jec+shift,:) + l*1e3 + 2*1e6
+       enddo
+       call mpp_clock_begin(id3)
+       call mpp_start_group_update(group_update, domain, a1(isc,jsc,1,1))
+       call mpp_complete_group_update(group_update, domain, a1(isc,jsc,1,1))
+       call mpp_clock_end  (id3)
+       !--- compare checksum
+       do l = 1, num_fields
+          write(text, '(i3.3)') l
+          call compare_checksums(a1(isd:ied,      jsd:jed,      :,l),a2(isd:ied,      jsd:jed,      :,l), &
+                                 type//' nonblock CENTER '//text)
+          call compare_checksums(x1(isd:ied+shift,jsd:jed,      :,l),x2(isd:ied+shift,jsd:jed,      :,l), &
+                                 type//' nonblock CGRID X'//text)
+          call compare_checksums(y1(isd:ied,      jsd:jed+shift,:,l),y2(isd:ied,      jsd:jed+shift,:,l), &
+                                 type//' nonblock CGRID Y'//text)
+       enddo
+
     enddo
 
     !--- test scalar 4-D variable
@@ -2352,6 +2410,23 @@ contains
        write(text, '(i3.3)') l
        call compare_checksums(a1(isd:ied, jsd:jed, :,l),a2(isd:ied, jsd:jed, :,l),type//' 4D CENTER '//text)
     enddo
+
+    a1 = 0
+    do l = 1, num_fields
+       a1(isc:iec,      jsc:jec,      :,l) = base(isc:iec,      jsc:jec,      :) + l*1e3
+    enddo
+    call mpp_clock_begin(id3)
+    call mpp_start_group_update(group_update, domain, a1(isc,jsc,1,1))
+    call mpp_complete_group_update(group_update, domain, a1(isc,jsc,1,1))
+    call mpp_clock_end  (id3)
+
+    !--- compare checksum
+    do l = 1, num_fields
+       write(text, '(i3.3)') l
+       call compare_checksums(a1(isd:ied, jsd:jed, :,l),a2(isd:ied, jsd:jed, :,l), &
+                              type//' nonblock 4D CENTER '//text)
+    enddo
+
 
 
     !--- test for BGRID.
@@ -2399,6 +2474,28 @@ contains
           call compare_checksums(x1(isd:ied+shift,jsd:jed+shift,:,l),x2(isd:ied+shift,jsd:jed+shift,:,l),type//' BGRID X'//text)
           call compare_checksums(y1(isd:ied+shift,jsd:jed+shift,:,l),y2(isd:ied+shift,jsd:jed+shift,:,l),type//' BGRID Y'//text)
        enddo
+
+       a1 = 0; x1 = 0; y1 = 0
+       do l = 1, num_fields
+          a1(isc:iec+shift,jsc:jec+shift,:,l) = base(isc:iec+shift,jsc:jec+shift,:) + l*1e3
+          x1(isc:iec+shift,jsc:jec+shift,:,l) = base(isc:iec+shift,jsc:jec+shift,:) + l*1e3 + 1e6
+          y1(isc:iec+shift,jsc:jec+shift,:,l) = base(isc:iec+shift,jsc:jec+shift,:) + l*1e3 + 2*1e6
+       enddo
+       call mpp_clock_begin(id3)
+       call mpp_start_group_update(group_update, domain, a1(isc,jsc,1,1))
+       call mpp_complete_group_update(group_update, domain, a1(isc,jsc,1,1))
+       call mpp_clock_end  (id3)
+       !--- compare checksum
+       do l = 1, num_fields
+          write(text, '(i3.3)') l
+          call compare_checksums(a1(isd:ied+shift,jsd:jed+shift,:,l),a2(isd:ied+shift,jsd:jed+shift,:,l), &
+                                 type//' nonblockCORNER '//text)
+          call compare_checksums(x1(isd:ied+shift,jsd:jed+shift,:,l),x2(isd:ied+shift,jsd:jed+shift,:,l), &
+                                 type//' nonblock BGRID X'//text)
+          call compare_checksums(y1(isd:ied+shift,jsd:jed+shift,:,l),y2(isd:ied+shift,jsd:jed+shift,:,l), &
+                                 type//' nonblock BGRID Y'//text)
+       enddo
+
     enddo 
 
     call mpp_clear_group_update(group_update)

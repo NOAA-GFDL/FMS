@@ -236,8 +236,8 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
  namelist /horiz_interp_nml/ reproduce_siena
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id: horiz_interp.F90,v 19.0.4.3.2.1.6.4.2.1.2.1 2013/12/11 00:36:30 Zhi.Liang Exp $'
- character(len=128) :: tagname = '$Name: tikal_201403 $'
+ character(len=128) :: version = '$Id$'
+ character(len=128) :: tagname = '$Name$'
  logical            :: module_is_initialized = .FALSE.
 !-----------------------------------------------------------------------
 

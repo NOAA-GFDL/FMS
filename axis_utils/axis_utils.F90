@@ -29,7 +29,7 @@ module axis_utils_mod
                         mpp_get_att_name, mpp_get_att_type, mpp_get_att_char, &
                         mpp_get_att_length
   use mpp_mod,    only: mpp_error, FATAL, stdout
-  use fms_mod,    only: lowercase, string_array_index  
+  use fms_mod,    only: lowercase, string_array_index, fms_error_handler
 
   implicit none
 
@@ -43,8 +43,8 @@ module axis_utils_mod
   integer, parameter :: maxatts = 100
   real, parameter    :: epsln= 1.e-10
   real, parameter    :: fp5 = 0.5, f360 = 360.0
-  character(len=256) :: version = '$Id: axis_utils.F90,v 20.0.2.1 2014/02/07 21:43:18 wfc Exp $'
-  character(len=256) :: tagname = '$Name: tikal_201403 $'   
+  character(len=256) :: version = '$Id$'
+  character(len=256) :: tagname = '$Name$'   
 
   interface interp_1d
      module procedure interp_1d_1d
@@ -125,17 +125,18 @@ contains
   end subroutine get_axis_cart
 
 
-  subroutine get_axis_bounds(axis,axis_bound,axes)
+  subroutine get_axis_bounds(axis,axis_bound,axes,bnd_name,err_msg)
 
     type(axistype), intent(in) :: axis
     type(axistype), intent(inout) :: axis_bound
     type(axistype), intent(in), dimension(:) :: axes
+    character(len=*), intent(out), optional :: bnd_name, err_msg
 
     type(atttype), dimension(:), allocatable :: att
     real, dimension(:), allocatable :: data, tmp
 
     integer :: i, len
-    character(len=128) :: bounds_name = 'none', name, units
+    character(len=128) :: bounds_name, name, units
     character(len=256) :: longname
     character(len=1) :: cartesian
 
@@ -144,16 +145,17 @@ contains
     att = default_att
     call mpp_get_atts(axis,atts=att)
 
+    bounds_name = 'none'
     do i=1,maxatts
        if (mpp_get_att_type(att(i)) == NF_CHAR) then
-          !            if (str_contains(att(i)%name,'bounds') .or. str_contains(att(i)%name,'edge')) then
           if (string_array_index('bounds',(/mpp_get_att_name(att(i))/)) .or. &
-              string_array_index('edge',(/mpp_get_att_name(att(i))/))) then
+              string_array_index('edge',(/mpp_get_att_name(att(i))/))   .or. &
+              string_array_index('edges',(/mpp_get_att_name(att(i))/))) then
              bounds_name = mpp_get_att_char(att(i))
           endif
        endif
     enddo
-
+    if(present(bnd_name)) bnd_name = trim(bounds_name)
     if (trim(bounds_name) /= 'none') then
        do i=1,size(axes(:))
           call mpp_get_atts(axes(i),name=name)
@@ -162,28 +164,32 @@ contains
           endif
        enddo
        call mpp_get_atts(axis_bound,len=len)
-       if (len < 1) call mpp_error(FATAL,'error locating boundary axis for '//bounds_name)
+       if (len < 1) then
+         if(fms_error_handler('get_axis_bounds','error locating boundary axis for '//trim(bounds_name), err_msg)) return
+       endif
     else
        call mpp_get_atts(axis,name=name,units=units,longname=longname,&
             cartesian=cartesian,len=len)
-       name = trim(name)//'_bounds'
-       longname = trim(longname)//' bounds'
-       allocate(tmp(len))
-       call mpp_get_axis_data(axis,tmp)
-       allocate(data(len+1))
-       do i=2,len
-          data(i)= tmp(i-1)+fp5*(tmp(i)-tmp(i-1))
-       enddo
-       data(1)= tmp(1)- fp5*(tmp(2)-tmp(1))
-       if (abs(data(1)) < epsln) data(1) = 0.0
-       data(len+1)= tmp(len)+ fp5*(tmp(len)-tmp(len-1))         
-       if (data(1) == 0.0) then
-          if (abs(data(len+1)-360.) > epsln) data(len+1)=360.0
-       endif
-       call mpp_modify_meta(axis_bound,name=name,units=units,longname=&
-            longname,cartesian=cartesian,data=data)
-       deallocate(tmp)
-       deallocate(data)
+       if (len > 1) then ! if len <= 1 then return with axis_bound equal to default_axis because the calculation below cannot be done.
+         name = trim(name)//'_bounds'
+         longname = trim(longname)//' bounds'
+         allocate(tmp(len))
+         call mpp_get_axis_data(axis,tmp)
+         allocate(data(len+1))
+         do i=2,len
+            data(i)= tmp(i-1)+fp5*(tmp(i)-tmp(i-1))
+         enddo
+         data(1)= tmp(1)- fp5*(tmp(2)-tmp(1))
+         if (abs(data(1)) < epsln) data(1) = 0.0
+         data(len+1)= tmp(len)+ fp5*(tmp(len)-tmp(len-1))         
+         if (data(1) == 0.0) then
+            if (abs(data(len+1)-360.) > epsln) data(len+1)=360.0
+         endif
+         call mpp_modify_meta(axis_bound,name=name,units=units,longname=&
+              longname,cartesian=cartesian,data=data)
+         deallocate(tmp)
+         deallocate(data)
+      endif
     endif
 
     return
