@@ -1145,9 +1145,6 @@ CONTAINS
     CHARACTER(len=128) :: error_string, error_string1
     TYPE(time_type) :: dt ! time interval for diurnal output
 
-    ! Set first_send_data_call to .FALSE.
-    first_send_data_call = .FALSE.
-
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
        send_data_3d = .FALSE.
@@ -1161,6 +1158,11 @@ CONTAINS
        IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'diag_manager NOT initialized', err_msg) ) RETURN
     END IF
     err_msg_local = ''
+
+    ! Set first_send_data_call to .FALSE. on first non-static field.
+    IF ( .NOT.input_fields(diag_field_id)%static .AND. first_send_data_call ) THEN
+       first_send_data_call = .FALSE.
+    END IF
 
     ! oor_mask is only used for checking out of range values.
     ALLOCATE(oor_mask(SIZE(field,1),SIZE(field,2),SIZE(field,3)), STAT=status)
