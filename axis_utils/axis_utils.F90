@@ -139,13 +139,18 @@ contains
     character(len=128) :: bounds_name, name, units
     character(len=256) :: longname
     character(len=1) :: cartesian
+    logical :: bounds_found
 
+    if(present(err_msg)) then
+      err_msg = ''
+    endif
     axis_bound = default_axis
     allocate(att(maxatts))
     att = default_att
     call mpp_get_atts(axis,atts=att)
 
     bounds_name = 'none'
+    bounds_found = .true. ! changed to .false. if not found
     do i=1,maxatts
        if (mpp_get_att_type(att(i)) == NF_CHAR) then
           if (string_array_index('bounds',(/mpp_get_att_name(att(i))/)) .or. &
@@ -156,7 +161,9 @@ contains
        endif
     enddo
     if(present(bnd_name)) bnd_name = trim(bounds_name)
-    if (trim(bounds_name) /= 'none') then
+    if (trim(bounds_name) == 'none') then
+       bounds_found = .false.
+    else
        do i=1,size(axes(:))
           call mpp_get_atts(axes(i),name=name)
           if (lowercase(trim(name)) == lowercase(trim(bounds_name))) then
@@ -165,9 +172,14 @@ contains
        enddo
        call mpp_get_atts(axis_bound,len=len)
        if (len < 1) then
-         if(fms_error_handler('get_axis_bounds','error locating boundary axis for '//trim(bounds_name), err_msg)) return
+         bounds_found = .false.
+         if(present(err_msg)) then
+           err_msg = 'error locating boundary axis for '//trim(bounds_name)
+         endif
        endif
-    else
+    endif
+
+    if(.not.bounds_found) then
        call mpp_get_atts(axis,name=name,units=units,longname=longname,&
             cartesian=cartesian,len=len)
        if (len > 1) then ! if len <= 1 then return with axis_bound equal to default_axis because the calculation below cannot be done.
