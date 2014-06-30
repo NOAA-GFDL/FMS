@@ -1625,7 +1625,7 @@ end subroutine mpp_get_tile_compute_domains
   !######################################################################
   subroutine set_group_update(group, domain)
      type(mpp_group_update_type), intent(inout) :: group  
-     type(domain2D),              intent(inout) :: domain   
+     type(domain2D),              intent(inout) :: domain
      integer   :: nscalar, nvector, nlist
      integer   :: nsend, nrecv, nsend_old, nrecv_old
      integer   :: nsend_s, nsend_x, nsend_y
@@ -1886,6 +1886,7 @@ end subroutine mpp_get_tile_compute_domains
                      'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
      end if
 
+     group%tot_msgsize = tot_recv_size+tot_send_size
 
 end subroutine set_group_update
 

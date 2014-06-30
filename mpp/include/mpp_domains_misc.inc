@@ -1744,6 +1744,8 @@ end subroutine init_nonblock_type
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_REAL8
 #undef MPP_CREATE_GROUP_UPDATE_2D_
 #define MPP_CREATE_GROUP_UPDATE_2D_ mpp_create_group_update_r8_2d
 #undef MPP_CREATE_GROUP_UPDATE_3D_
@@ -1778,6 +1780,8 @@ end subroutine init_nonblock_type
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_REAL4
 #undef MPP_CREATE_GROUP_UPDATE_2D_
 #define MPP_CREATE_GROUP_UPDATE_2D_ mpp_create_group_update_r4_2d
 #undef MPP_CREATE_GROUP_UPDATE_3D_
