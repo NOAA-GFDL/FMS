@@ -1046,7 +1046,7 @@
         field%axes(1)%data = axis%data
         call write_record( unit, field, axis%len, axis%data )
       elseif(ASSOCIATED(axis%idata))then
-        allocate( field%axes(1)%data(size(axis%data) ))
+        allocate( field%axes(1)%data(size(axis%idata) ))
         field%axes(1)%data = REAL(axis%idata)
         field%pack=4
         call write_record( unit, field, axis%len, REAL(axis%idata) )
