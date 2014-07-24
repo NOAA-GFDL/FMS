@@ -3270,7 +3270,7 @@ CONTAINS
     INTEGER, DIMENSION(:), INTENT(in), OPTIONAL :: ival !< Integer attribute value(s)
     REAL, DIMENSION(:), INTENT(in), OPTIONAL :: rval !< Real attribute value(s)
 
-    INTEGER :: istat, length, i, this_attribute, length1
+    INTEGER :: istat, length, i, this_attribute
 
     IF ( .NOT.first_send_data_call ) THEN
        ! Call error due to unable to add attribute after send_data called
