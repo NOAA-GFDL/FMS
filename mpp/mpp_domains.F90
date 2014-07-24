@@ -468,6 +468,7 @@ module mpp_domains_mod
      integer            :: nrecv=0, nsend=0
      integer            :: reset_index_s = 0
      integer            :: reset_index_v = 0
+     integer            :: tot_msgsize = 0
      integer            :: from_pe(MAXOVERLAP)
      integer            :: to_pe(MAXOVERLAP)
      integer            :: recv_size(MAXOVERLAP)
@@ -485,10 +486,13 @@ module mpp_domains_mod
      integer(LONG_KIND) :: addrs_s(MAX_DOMAIN_FIELDS)
      integer(LONG_KIND) :: addrs_x(MAX_DOMAIN_FIELDS)
      integer(LONG_KIND) :: addrs_y(MAX_DOMAIN_FIELDS)
+     integer            :: buffer_start_pos = -1
+     integer            :: request_send(MAX_REQUEST)
+     integer            :: request_recv(MAX_REQUEST)
+     integer            :: type_recv(MAX_REQUEST)
      type(overlapSpec), pointer :: update_s => NULL()
      type(overlapSpec), pointer :: update_x => NULL()
      type(overlapSpec), pointer :: update_y => NULL()
-
   end type mpp_group_update_type
 
 !#######################################################################
@@ -511,6 +515,7 @@ module mpp_domains_mod
   integer                         :: num_update = 0
   integer                         :: num_nonblock_group_update = 0
   integer                         :: nonblock_buffer_pos = 0
+  integer                         :: nonblock_group_buffer_pos = 0
   logical                         :: start_update = .true.
   logical                         :: complete_update = .false.
   type(nonblock_type), allocatable :: nonblock_data(:)

@@ -149,7 +149,7 @@
 
   !#####################################################################
    subroutine mpp_get_axis_atts( axis, name, units, longname, cartesian, &
-                           compressed, calendar, sense, len, natts, atts )
+                                 calendar, sense, len, natts, atts, compressed )
 
      type(axistype), intent(in) :: axis
      character(len=*), intent(out) , optional :: name, units

@@ -882,10 +882,11 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
 end subroutine MPP_DO_GROUP_UPDATE_
 
 
-subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type)
+subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
   type(mpp_group_update_type), intent(inout) :: group
   type(domain2D),              intent(inout) :: domain  
   MPP_TYPE_,                   intent(in)    :: d_type
+  logical,  optional,          intent(in)    :: reuse_buffer
 
   integer   :: nscalar, nvector
   integer   :: nsend, nrecv, flags_v
@@ -894,6 +895,7 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type)
   integer   :: ksize, is, ie, js, je
   integer   :: n, l, m, t, i, j, k, tk
   logical   :: send_s(8), send_v(8)
+  logical   :: reuse_buf_pos
   type(overlap_type), pointer :: overPtr => NULL()
 
   MPP_TYPE_ :: buffer(size(mpp_domains_stack_nonblock(:)))
@@ -920,8 +922,19 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type)
   group%reset_index_s = 0
   group%reset_index_v = 0
 
+  reuse_buf_pos = .FALSE.
+  if (PRESENT(reuse_buffer)) reuse_buf_pos = reuse_buffer
 
-  if(.not. group%initialized) call set_group_update(group,domain)
+  if (.not. group%initialized) then
+    call set_group_update(group,domain)
+  endif
+  if (.not. reuse_buf_pos) then
+     group%buffer_start_pos = nonblock_group_buffer_pos
+  else if( group%buffer_start_pos < 0 ) then
+     call mpp_error(FATAL, "MPP_START_GROUP_UPDATE: group%buffer_start_pos is not set")
+  endif
+  nonblock_group_buffer_pos = nonblock_group_buffer_pos + group%tot_msgsize
+
   nrecv = group%nrecv
   nsend = group%nsend
 
@@ -930,11 +943,6 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type)
   ! Make sure it is not in the middle of the old version of non-blocking halo update.
   if(num_update>0) call mpp_error(FATAL, "MPP_START_GROUP_UPDATE: can not be called in the middle of "// &
               "mpp_start_update_domains/mpp_complete_update_domains call")
-  if(complete_group_update_on) then
-     if(num_nonblock_group_update>0) call mpp_error(FATAL, &
-     'MPP_START_GROUP_UPDATE: mpp_start_group_update is called again before complete all the group update.')
-     complete_group_update_on = .false.
-  endif  
 
   num_nonblock_group_update = num_nonblock_group_update + 1
 
@@ -944,9 +952,12 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type)
      msgsize = group%recv_size(m)
      from_pe = group%from_pe(m)
      if( msgsize .GT. 0 )then
-        buffer_pos = group%buffer_pos_recv(m)
+        buffer_pos = group%buffer_pos_recv(m) + group%buffer_start_pos
         call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.false., &
-             tag=COMM_TAG_1)
+             tag=COMM_TAG_1, request=group%request_recv(m))
+#ifdef use_libMPI
+        group%type_recv(m) = MPI_TYPE_
+#endif
      end if
   end do
   call mpp_clock_end(nonblock_group_recv_clock)
@@ -961,7 +972,7 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type)
   do tk = 1, nsend*ksize
      t = (tk-1)/ksize + 1
      k = mod((tk-1), ksize) + 1
-     buffer_pos = group%buffer_pos_send(t)
+     buffer_pos = group%buffer_pos_send(t) + group%buffer_start_pos
      msgsize    = group%msgsize_send(t)
      pos  = buffer_pos + (k-1)*msgsize
      m = group%send_ind_s(t)
@@ -1180,9 +1191,10 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type)
   do t = 1, nsend  
      msgsize = group%send_size(t)
      if( msgsize .GT. 0 )then
-        buffer_pos = group%buffer_pos_send(t)
+        buffer_pos = group%buffer_pos_send(t) + group%buffer_start_pos
         to_pe = group%to_pe(t)
-        call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_1)
+        call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_1, &
+                       request=group%request_send(t))
      endif
   enddo
   call mpp_clock_end(nonblock_group_send_clock)
@@ -1232,7 +1244,8 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
 
   if(nrecv>0) then
      call mpp_clock_begin(nonblock_group_wait_clock)
-     call mpp_sync_self(check=EVENT_RECV)
+     call mpp_sync_self(check=EVENT_RECV, request=group%request_recv(1:nrecv), &
+                        msg_size=group%recv_size(1:nrecv), msg_type=group%type_recv(1:nrecv))
      call mpp_clock_end(nonblock_group_wait_clock)
   endif
 
@@ -1245,7 +1258,7 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
      t = (tk-1)/ksize + 1
      k = mod((tk-1), ksize) + 1
      msgsize = group%msgsize_recv(t)
-     buffer_pos = group%buffer_pos_recv(t) 
+     buffer_pos = group%buffer_pos_recv(t) + group%buffer_start_pos
      pos = buffer_pos + (k-1)*msgsize
 
      m = group%recv_ind_s(t)
@@ -1419,8 +1432,12 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
 
   if(nsend>0) then
      call mpp_clock_begin(nonblock_group_wait_clock)
-     call mpp_sync_self( )
+     call mpp_sync_self(check=EVENT_SEND, request=group%request_send(1:nsend) )
      call mpp_clock_end(nonblock_group_wait_clock)
+  endif
+
+  if( num_nonblock_group_update == 0) then
+     nonblock_group_buffer_pos   = 0
   endif
 
 end subroutine MPP_COMPLETE_GROUP_UPDATE_
