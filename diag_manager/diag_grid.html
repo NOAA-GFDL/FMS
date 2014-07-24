@@ -77,7 +77,7 @@
        
 </ul>
      
-</dd> 
+</dd>
    
 </dl>
  
@@ -102,7 +102,7 @@
 <a href="#diag_grid_init">diag_grid_init</a>:</dt>
 <dd>
      Send the global grid to the <tt>diag_manager_mod</tt> for
-     regional output. 
+     regional output.
    </dd>
 <dt>
 <a href="#diag_grid_end">diag_grid_end</a>:</dt>
@@ -118,9 +118,9 @@
 <dt>
 <a href="#get_local_indexes2">get_local_indexes2</a>:</dt>
 <dd>
-     Find the indices of the nearest grid point of the a-grid to the 
-     specified (lon,lat) location on the local PE. if desired point not 
-     within domain of local PE, return (0,0) as the indices. 
+     Find the indices of the nearest grid point of the a-grid to the
+     specified (lon,lat) location on the local PE. if desired point not
+     within domain of local PE, return (0,0) as the indices.
    </dd>
 <dt>
 <a href="#gCirDistance">gCirDistance</a>:</dt>
@@ -151,7 +151,7 @@
      longitude values for the entire global grid.  This procedure
      is the mechanism the models will use to share their grid with
      the diagnostic manager.
-     
+
      This procedure needs to be called after the grid is created,
      and before the first call to register the fields.
    </dd>
@@ -296,7 +296,7 @@
 <b>DESCRIPTION</b>
 </dt>
 <dd>
-     Given a specified location, find the nearest a-grid indices on 
+     Given a specified location, find the nearest a-grid indices on
      the local PE.
    </dd>
 <br>

@@ -157,6 +157,8 @@ MODULE diag_table_mod
   !             <DD>Average from the last time written to the current time.</DD>
   !             <DT><TT>.FALSE.</TT>, none</DT>
   !             <DD>No reduction performed.  Write current time step value only.</DD>
+  !             <DT>rms</DT> <DD>Calculate the root mean square from the last time written to the current time.</DD>
+  !             <DT>pow##</DT> <DD>Calculate the mean of the power ## from the last time written to the current time.</DD>
   !             <DT>min</DT> <DD>Minimum value from last write to current time.</DD>
   !             <DT>max</DT> <DD>Maximum value from last write to current time.</DD>
   !             <DT>diurnal##</DT> <DD>## diurnal averages</DD>

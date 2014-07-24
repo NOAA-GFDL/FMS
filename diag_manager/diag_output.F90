@@ -144,7 +144,7 @@ CONTAINS
   !   <IN NAME="file_unit" TYPE="INTEGER">File unit number</IN>
   !   <IN NAME="axes" TYPE="INTEGER, DIMENSION(:)">Array of axis ID's, including the time axis</IN>
   !   <IN NAME="time_ops" TYPE="LOGICAL, OPTIONAL">
-  !     .TRUE. if this file contains any min, max, or time_average
+  !     .TRUE. if this file contains any min, max, time_rms, or time_average
   !   </IN>
   SUBROUTINE write_axis_meta_data(file_unit, axes, time_ops)
     INTEGER, INTENT(in) :: file_unit, axes(:)

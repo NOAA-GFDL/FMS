@@ -1278,6 +1278,7 @@ CONTAINS
     INTEGER :: out_num, in_num, file_num, file_num_tile1
     INTEGER :: num_fields, i, method_selected, l1
     INTEGER :: ioerror
+    REAL :: pow_value
     CHARACTER(len=128) :: error_msg
     CHARACTER(len=50) :: t_method
 
@@ -1376,6 +1377,7 @@ CONTAINS
     ! Enter the other data for this output field
     output_fields(out_num)%output_name = TRIM(output_name)
     output_fields(out_num)%pack = pack
+    output_fields(out_num)%pow_value = 1
     output_fields(out_num)%num_axes = 0
     output_fields(out_num)%total_elements = 0
     output_fields(out_num)%region_elements = 0
@@ -1392,6 +1394,7 @@ CONTAINS
     ! Initialize all time method to false
     method_selected = 0
     output_fields(out_num)%time_average = .FALSE.
+    output_fields(out_num)%time_rms = .FALSE.
     output_fields(out_num)%time_min = .FALSE.
     output_fields(out_num)%time_max = .FALSE.
     output_fields(out_num)%time_ops = .FALSE.
@@ -1422,12 +1425,32 @@ CONTAINS
        output_fields(out_num)%time_average = .TRUE.
        method_selected = method_selected+1
        t_method='mean'
+    ELSEIF ( INDEX(t_method,'pow') == 1 ) THEN
+       ! Get the integer number from the t_method
+       READ (UNIT=t_method(4:LEN_TRIM(t_method)), FMT=*, IOSTAT=ioerror) pow_value
+       IF ( ioerror /= 0 .OR. output_fields(out_num)%pow_value < 1  .OR. FLOOR(pow_value) /= CEILING(pow_value) ) THEN
+          ! <ERROR STATUS="FATAL">
+          !   Invalid power number in time operation "<t_method>".  Must be a positive integer.
+          ! </ERROR>
+          CALL error_mesg('diag_util_mod::init_output_field',&
+               & 'Invalid power number in time operation "'//TRIM(t_method)//'".  Must be a positive integer', FATAL)
+       END IF
+       output_fields(out_num)%pow_value = INT(pow_value)
+       output_fields(out_num)%time_average = .TRUE.
+       method_selected = method_selected+1
+       t_method = 'mean_pow('//t_method(4:LEN_TRIM(t_method))//')'
     ELSE
        SELECT CASE(TRIM(t_method))
        CASE ( '.true.', 'mean', 'average', 'avg' )
           output_fields(out_num)%time_average = .TRUE.
           method_selected = method_selected+1
           t_method = 'mean'
+       CASE ( 'rms' )
+          output_fields(out_num)%time_average = .TRUE.
+          output_fields(out_num)%time_rms = .TRUE.
+          output_fields(out_num)%pow_value = 2.0
+          method_selected = method_selected+1
+          t_method = 'root_mean_square'
        CASE ( '.false.', 'none', 'point' )
           output_fields(out_num)%time_average = .FALSE.
           method_selected = method_selected+1
@@ -1537,7 +1560,7 @@ CONTAINS
     LOGICAL :: time_ops, aux_present, match_aux_name
     LOGICAL :: all_scalar_or_1d
     CHARACTER(len=7) :: prefix
-    CHARACTER (len = 7) :: avg_name = 'average'
+    CHARACTER(len=7) :: avg_name = 'average'
     CHARACTER(len=128) :: time_units, timeb_units, avg, error_string, filename, aux_name,fieldname
     CHARACTER(len=128) :: suffix, base_name
     CHARACTER(len=32) :: time_name, timeb_name,time_longname, timeb_longname, cart_name

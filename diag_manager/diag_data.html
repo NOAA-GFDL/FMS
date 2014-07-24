@@ -46,7 +46,7 @@
 <a name="DESCRIPTION"></a>
 <!-- BEGIN DESCRIPTION -->
 <div>
-   Notation:
+   Notation: 
    <dl>
      
 <dt>input field</dt>
@@ -70,7 +70,7 @@
 
    Each input field associated with one or several output fields via array of
    indices output_fields; each output field points to the single "parent" input
-   field with the input_field index, and to the output file with the output_file
+   field with the input_field index, and to the output file with the output_file 
    index
  </div>
 <br>
@@ -1043,10 +1043,18 @@
 <span class="type">[LOGICAL]</span>
 </dl>
 <dt>
+<tt>time_rms</tt>
+</dt>
+<dl>
+     .TRUE. if the output field is the rms.  In this case, time_average will also be true.
+   <br>
+<span class="type">[LOGICAL]</span>
+</dl>
+<dt>
 <tt>time_ops</tt>
 </dt>
 <dl>
-     .TRUE. if any of time_min, time_max, or time_average is true
+     .TRUE. if any of time_min, time_max, time_rms, or time_average is true
    <br>
 <span class="type">[LOGICAL]</span>
 </dl>
@@ -1056,6 +1064,14 @@
 <dl>
    
 <br>
+<span class="type">[INTEGER]</span>
+</dl>
+<dt>
+<tt>pow_value</tt>
+</dt>
+<dl>
+     Power to use When calculating the mean_pow(n)
+   <br>
 <span class="type">[INTEGER]</span>
 </dl>
 <dt>

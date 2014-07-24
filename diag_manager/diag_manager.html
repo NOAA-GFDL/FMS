@@ -110,7 +110,7 @@
           that are NOT written to any files. The file name in diag_table of
           these fields is <tt>null</tt>.</li>
      
-<li> By default, a field is output in its global grid.  The user can now 
+<li> By default, a field is output in its global grid.  The user can now
           output a field in a specified region.  See
           <a href="#send_data"><tt>send_data</tt></a> for more details.</li>
      
@@ -128,10 +128,10 @@
           
 <br>
 
-          From left to right we have: 
+          From left to right we have:
           <ul>
             
-<li>file name</li> 
+<li>file name</li>
             
 <li>output frequency</li>
             
@@ -182,13 +182,13 @@
           The namelist <b>default</b> value is <tt>mix_snapshot_average_fields=.false.</tt>
 </li>
      
-<li> Time average, Max and Min, and diurnal. In addition to time average users can also get then Max or Min value
+<li> Time average, Root Mean Square, Max and Min, and diurnal. In addition to time average users can also get then Root Mean Square, Max or Min value
           during the same interval of time as time average. For this purpose, in the diag table users must replace
-          <tt>.true.</tt> or <tt>.false.</tt> by "<tt>max</tt>" or "<tt>min</tt>".  <b><i>Note:</i></b> Currently, max
+          <tt>.true.</tt> or <tt>.false.</tt> by "<tt>rms</tt>, <tt>max</tt>" or "<tt>min</tt>".  <b><i>Note:</i></b> Currently, max
           and min are not available for regional output.
 
-          A diurnal average can also be requested using <tt>diurnal##</tt> where <tt>##</tt> are the number of diurnal
-          sections to average.</li>
+          A diurnal average or the average of an integer power can also be requested using <tt>diurnal##</tt> or <tt>pow##</tt> where
+          <tt>##</tt> are the number of diurnal sections or integer power to average.</li>
      
 <li> 
 <tt>standard_name</tt> is added as optional argument in <a href="#register_diag_field"><tt>register_diag_field</tt>
@@ -225,7 +225,7 @@
 <dt>
 <a href="#send_data">send_data</a>:</dt>
 <dd>
-     Send data over to output fields. 
+     Send data over to output fields.
    </dd>
 <dt>
 <a href="#register_diag_field">register_diag_field</a>:</dt>
@@ -235,7 +235,7 @@
 <dt>
 <a href="#send_tile_averaged_data">send_tile_averaged_data</a>:</dt>
 <dd>
-      Send tile-averaged data over to output fields. 
+      Send tile-averaged data over to output fields.
     </dd>
 <dt>
 <a href="#diag_field_add_attribute">diag_field_add_attribute</a>:</dt>
@@ -270,7 +270,7 @@
 <dt>
 <a href="#get_base_time">get_base_time</a>:</dt>
 <dd>
-     Return base time for diagnostics. 
+     Return base time for diagnostics.
    </dd>
 <dt>
 <a href="#get_base_date">get_base_date</a>:</dt>
@@ -324,11 +324,11 @@
      By default, a field will be written out entirely in its global grid.
      Users can also specify regions in which the field will be output. The
      region is specified in diag-table just before the end of output_field
-     replacing "none". 
+     replacing "none".
 
      For example, by default:
 
-     "ocean_mod","Vorticity","vorticity","file1","all",.false.,"none",2 
+     "ocean_mod","Vorticity","vorticity","file1","all",.false.,"none",2
 
      for regional output:
 
@@ -346,16 +346,16 @@
      output on the cubed sphere grid, first the grid information needs to be sent to
      <tt>diag_manager_mod</tt> using the <a href="diag_grid.html#diag_grid_init"><tt> diag_grid_init</tt></a>
      subroutine.
- 
-     <b><i>NOTE:</i></b> When using regional output the files containing regional 
-     outputs should be different from files containing global (default) output. 
-     It is a FATAL error to have one file containing both regional and global 
-     results. For maximum flexibility and independence from PE counts one file 
+
+     <b><i>NOTE:</i></b> When using regional output the files containing regional
+     outputs should be different from files containing global (default) output.
+     It is a FATAL error to have one file containing both regional and global
+     results. For maximum flexibility and independence from PE counts one file
      should contain just one region.
- 
+
      Time averaging is supported in regional output.
- 
-     Physical fields (written in "physics windows" of atmospheric code) are 
+
+     Physical fields (written in "physics windows" of atmospheric code) are
      fully supported for regional outputs.
 
      <b><i>NOTE:</i></b> Most fields are defined in the data domain but use the
@@ -577,7 +577,7 @@
 </dt>
 <dd>
       
-<tt>send_tile_averaged_data</tt> is overloaded for 3D and 4D arrays. 
+<tt>send_tile_averaged_data</tt> is overloaded for 3D and 4D arrays.
       <tt>diag_field_id</tt> corresponds to the ID returned by previous call
       to <tt>register_diag_field</tt>. Logical masks can be used to mask out
       undefined and/or unused values.  Note that the dimension of output field
@@ -1155,9 +1155,9 @@
 <span class="errmsg"></span>
 </dd>
 <dd>
-   module/output_field &lt;module_name&gt;/&lt;field_name&gt; registered AFTER first
-   send_data call, TOO LATE
- </dd>
+$       !   module/output_field &lt;module_name&gt;/&lt;field_name&gt; registered AFTER first
+$       !   send_data call, TOO LATE
+$       ! </dd>
 <dt>
 <b>WARNING in register_diag_field</b>
 </dt>
@@ -1335,7 +1335,7 @@
      Any module or program unit using <tt>diag_manager_mod</tt> must contain the line
      <pre>     use diag_manager_mod</pre>
      If netCDF output is desired, the cpp flag <tt>-Duse_netCDF</tt>
-     must be turned on. 
+     must be turned on.
    </dd>
 </dl>
 </div>
@@ -1349,7 +1349,7 @@
 <dl>
 <dt>-D<b>use_netCDF</b>
 </dt>
-<dd> 
+<dd>
      Used to write out <a href="http://www.unidata.ucar.edu/software/netcdf">NetCDF</a> files.
    </dd>
 <dt>-D<b>test_diag_manager</b>
