@@ -323,7 +323,7 @@ MODULE diag_manager_mod
   !   <TEMPLATE>
   !     INTEGER FUNCTION register_diag_field (module_name, field_name, axes, init_time,
   !           long_name, units, missing_value, range, mask_variant, standard_name,
-  !           verbose)
+  !           verbose, area, volume)
   !   </TEMPLATE>
   !   <DESCRIPTION>
   !      Return field index for subsequent calls to
@@ -352,6 +352,8 @@ MODULE diag_manager_mod
   !    <IN NAME="range" TYPE="REAL, DIMENSION(2)" />
   !    <IN NAME="mask_variant" TYPE="LOGICAL" />
   !    <IN NAME="standard_name" TYPE="CHARACTER(len=*)" />
+  !    <IN NAME="area" TYPE="INTEGER, OPTIONAL" />
+  !    <IN NAME="volume" TYPE="INTEGER, OPTIONAL" />
   INTERFACE register_diag_field
      MODULE PROCEDURE register_diag_field_scalar
      MODULE PROCEDURE register_diag_field_array
@@ -426,9 +428,12 @@ CONTAINS
   !   <IN NAME="mask_variant" TYPE="Not Applicable" />
   !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <IN NAME="do_not_log" TYPE="LOGICAL, OPTIONAL" />
+  !   <IN NAME="area" TYPE="INTEGER, OPTIONAL" />
+  !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL" />
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL" />
   INTEGER FUNCTION register_diag_field_scalar(module_name, field_name, init_time, &
-       & long_name, units, missing_value, range, standard_name, do_not_log, err_msg)
+       & long_name, units, missing_value, range, standard_name, do_not_log, err_msg,&
+       & area, volume)
     CHARACTER(len=*), INTENT(in) :: module_name, field_name
     TYPE(time_type), OPTIONAL, INTENT(in) :: init_time
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
@@ -436,11 +441,13 @@ CONTAINS
     REAL,  DIMENSION(2), OPTIONAL, INTENT(in) :: RANGE
     LOGICAL, OPTIONAL, INTENT(in) :: do_not_log ! if TRUE, field information is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg
+    INTEGER, OPTIONAL, INTENT(in) :: area, volume
 
     IF ( PRESENT(init_time) ) THEN
        register_diag_field_scalar = register_diag_field_array(module_name, field_name,&
             & (/null_axis_id/), init_time,long_name, units, missing_value, range, &
-            & standard_name=standard_name, do_not_log=do_not_log, err_msg=err_msg)
+            & standard_name=standard_name, do_not_log=do_not_log, err_msg=err_msg,&
+            & area=area, volume=volume)
     ELSE
        IF ( PRESENT(err_msg) ) err_msg = ''
        register_diag_field_scalar = register_static_field(module_name, field_name,&
@@ -462,12 +469,14 @@ CONTAINS
   !   <IN NAME="mask_variant" TYPE="LOGICAL, OPTIONAL" />
   !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <IN NAME="do_not_log" TYPE="LOGICAL, OPTIONAL" />
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <IN NAME="tile_count" TYPE="INTEGER, OPTIONAL" />
+  !   <IN NAME="area" TYPE="INTEGER, OPTIONAL">diag_field_id containing the cell area field</IN>
+  !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL">diag_field_id containing the cell volume field</IN>
+  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL" />
   INTEGER FUNCTION register_diag_field_array(module_name, field_name, axes, init_time, &
        & long_name, units, missing_value, range, mask_variant, standard_name, verbose,&
-       & do_not_log, err_msg, interp_method, tile_count)
+       & do_not_log, err_msg, interp_method, tile_count, area, volume)
     CHARACTER(len=*), INTENT(in) :: module_name, field_name
     INTEGER, INTENT(in) :: axes(:)
     TYPE(time_type), INTENT(in) :: init_time
@@ -478,6 +487,7 @@ CONTAINS
     CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method
     INTEGER, OPTIONAL, INTENT(in) :: tile_count
+    INTEGER, OPTIONAL, INTENT(in) :: area, volume
 
     INTEGER :: field, j, ind, file_num, freq
     INTEGER :: output_units
@@ -536,6 +546,23 @@ CONTAINS
     ELSE
        input_fields(register_diag_field_array)%static = .FALSE.
        field = register_diag_field_array
+
+       ! Check for the existence of the area/volume field(s)
+       IF ( PRESENT(area) ) THEN
+          IF ( area < 0 ) THEN
+             CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
+                  &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA measures field NOT found in diag_table',&
+                  & FATAL)
+          END IF
+       END IF
+       IF ( PRESENT(volume) ) THEN
+          IF ( volume < 0 ) THEN
+             CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
+                  &//TRIM(module_name)//'/'// TRIM(field_name)//' VOLUME measures field NOT found in diag_table',&
+                  & FATAL)
+          END IF
+       END IF
+
        IF ( PRESENT(standard_name) ) input_fields(field)%standard_name = standard_name
 
        DO j = 1, input_fields(field)%num_output_fields
@@ -582,6 +609,13 @@ CONTAINS
                   & ' will be output in region:'//TRIM(msg)
           END IF
        END DO
+    END IF
+
+    IF ( PRESENT(area) ) THEN
+       call diag_field_add_attribute(register_diag_field_array, 'cell_measures', 'area: something')
+    END IF
+    IF ( PRESENT(volume) ) THEN
+       call diag_field_add_attribute(register_diag_field_array, 'cell_measures', 'area: something_else')
     END IF
   END FUNCTION register_diag_field_array
   ! </FUNCTION>
@@ -3899,52 +3933,45 @@ PROGRAM test
      CALL set_filename_appendix('g01')
   END IF
   id_dat1 = register_diag_field('test_diag_manager_mod', 'dat1', (/id_lon1,id_lat1,id_pfull/), Time, 'sample data', 'K')
-  call diag_field_add_attribute(id_dat1, 'real_att', 2.3)
-  call diag_field_add_attribute(id_dat1, 'cell_methods', 'area: mean')
-  call diag_field_add_attribute(id_dat1, 'cell_methods', 'lon: mean')
-  id_dat2 = register_diag_field('test_diag_manager_mod', 'dat2', (/id_lon2,id_lat2,id_pfull/), Time, 'sample data', 'K')
-  call diag_field_add_attribute(id_dat2, 'string_att', 'a string')
-  call diag_field_add_attribute(id_dat2, 'int_att', (/ 1, 2 /) )
+  CALL diag_field_add_attribute(id_dat1, 'real_att', 2.3)
+  CALL diag_field_add_attribute(id_dat1, 'cell_methods', 'area: mean')
+  CALL diag_field_add_attribute(id_dat1, 'cell_methods', 'lon: mean')
+  IF ( test_number == 18 ) THEN
+     id_dat2 = register_diag_field('test_diag_manager_mod', 'dat2', (/id_lon2,id_lat2,id_pfull/), Time, 'sample data', 'K',&
+          & area=id_dat1, volume=id_dat1)
+  ELSE
+     id_dat2 = register_diag_field('test_diag_manager_mod', 'dat2', (/id_lon2,id_lat2,id_pfull/), Time, 'sample data', 'K')
+  END IF
+  CALL diag_field_add_attribute(id_dat2, 'string_att', 'a string')
+  CALL diag_field_add_attribute(id_dat2, 'int_att', (/ 1, 2 /) )
 
   id_sol_con = register_diag_field ('test_diag_manager_mod', 'solar_constant', Time, &
                   'solar constant', 'watts/m2')
 
-  if( dt_step == 0 ) call error_mesg ('test_diag_manager',&
+  IF ( dt_step == 0 ) CALL error_mesg ('test_diag_manager',&
        & 'dt_step is not set', FATAL)
 
   Time_step = set_time(dt_step,0)
   Time_start = Time
   Time_end = Time
-  do m = 1,months
-       Time_end = Time_end + set_time(0,days_in_month(Time_end))
-    end do
-    Time_end   = Time_end + set_time(0, days)
+  DO m = 1,months
+     Time_end = Time_end + set_time(0,days_in_month(Time_end))
+  END DO
+  Time_end   = Time_end + set_time(0, days)
   Run_length = Time_end - Time_start
   nstep = Run_length / Time_step
 
-  IF ( test_number == 17 ) THEN
+  IF ( test_number == 16 .OR. test_number == 17 .OR. test_number == 18 ) THEN
      !  1 window, no halos
+     IF ( id_dat1 > 0 ) used = send_data(id_dat1, dat1, Time, err_msg=err_msg)
      IF ( id_dat2 > 0 ) used = send_data(id_dat2, dat2, Time, err_msg=err_msg)
      Time = Time + set_time(0,1)
+     IF ( id_dat1 > 0 ) used = send_data(id_dat1, dat1, Time, err_msg=err_msg)
      IF ( id_dat2 > 0 ) used = send_data(id_dat2, dat2, Time, err_msg=err_msg)
      IF ( err_msg == '' ) THEN
-        WRITE (out_unit,'(a)') 'test 17 successful.'
+        WRITE (out_unit,'(a,I2,a)') 'test ',test_number,' successful.'
      ELSE
-        WRITE (out_unit,'(a)') 'test 17 failed: err_msg='//TRIM(err_msg)
-     END IF
-  END IF
-  !-- Test the ability to add an appendix to the filename
-  !-- Output file name should be
-
-  IF ( test_number == 16 ) THEN
-     !  1 window, no halos
-     IF ( id_dat2 > 0 ) used = send_data(id_dat2, dat2, Time, err_msg=err_msg)
-     Time = Time + set_time(0,1)
-     IF ( id_dat2 > 0 ) used = send_data(id_dat2, dat2, Time, err_msg=err_msg)
-     IF ( err_msg == '' ) THEN
-        WRITE (out_unit,'(a)') 'test 16 successful.'
-     ELSE
-        WRITE (out_unit,'(a)') 'test 16 fails: err_msg='//TRIM(err_msg)
+        WRITE (out_unit,'(a,I2,a)') 'test ',test_number,' failed: err_msg='//TRIM(err_msg)
      END IF
   END IF
 
