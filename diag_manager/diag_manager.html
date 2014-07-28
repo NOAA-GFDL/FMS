@@ -483,7 +483,7 @@
 <li>
 <a name="register_diag_field"></a>
 <h4>register_diag_field</h4>
-<pre>INTEGER FUNCTION <b>register_diag_field</b> (module_name, field_name, axes, init_time, long_name, units, missing_value, range, mask_variant, standard_name, verbose)</pre>
+<pre>INTEGER FUNCTION <b>register_diag_field</b> (module_name, field_name, axes, init_time, long_name, units, missing_value, range, mask_variant, standard_name, verbose, area, volume)</pre>
 <dl>
 <dt>
 <b>DESCRIPTION</b>
@@ -561,6 +561,16 @@
 <td valign="top" align="left"><tt>standard_name&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*), OPTIONAL]</span>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*), OPTIONAL]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>area&nbsp;&nbsp;&nbsp;</tt></td><td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, OPTIONAL]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, OPTIONAL]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>volume&nbsp;&nbsp;&nbsp;</tt></td><td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, OPTIONAL]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, OPTIONAL]</span></td>
 </tr>
 </table>
 </dd>

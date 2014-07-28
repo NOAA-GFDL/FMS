@@ -326,12 +326,6 @@ MODULE diag_data_mod
   !   </DATA>
   !   <DATA NAME="local_coord" TYPE="TYPE(coord_type)">
   !   </DATA>
-  !   <DATA NAME="attributes" TYPE="TYPE(diag_atttype), DIMENSION(:)">
-  !     Array to hold user definable attributes
-  !   </DATA>
-  !   <DATA NAME="num_attributes" TYPE="INTEGER" >
-  !     Number of defined attibutes
-  !   </DATA>
   TYPE input_field_type
      CHARACTER(len=128) :: module_name, field_name, long_name, units, standard_name
      CHARACTER(len=64) :: interp_method
@@ -349,8 +343,6 @@ MODULE diag_data_mod
      TYPE(coord_type) :: local_coord
      TYPE(time_type)  :: time
      LOGICAL :: issued_mask_ignore_warning
-     TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
-     INTEGER :: num_attributes
   END TYPE input_field_type
   ! </TYPE>
 
@@ -449,6 +441,12 @@ MODULE diag_data_mod
   !   </DATA>
   !   <DATA NAME="Time_of_prev_field_data" TYPE="TYPE(time_type)">
   !   </DATA>
+  !   <DATA NAME="attributes" TYPE="TYPE(diag_atttype), DIMENSION(:)">
+  !     Array to hold user definable attributes
+  !   </DATA>
+  !   <DATA NAME="num_attributes" TYPE="INTEGER" >
+  !     Number of defined attibutes
+  !   </DATA>
   TYPE output_field_type
      INTEGER :: input_field ! index of the corresponding input field in the table
      INTEGER :: output_file ! index of the output file in the table
@@ -484,6 +482,8 @@ MODULE diag_data_mod
      LOGICAL :: reduced_k_range
      INTEGER :: imin, imax, jmin, jmax, kmin, kmax
      TYPE(time_type) :: Time_of_prev_field_data
+     TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
+     INTEGER :: num_attributes
   END TYPE output_field_type
   ! </TYPE>
 

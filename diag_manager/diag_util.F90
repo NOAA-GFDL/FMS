@@ -1780,8 +1780,8 @@ CONTAINS
                   & time_method=output_fields(field_num)%time_method,&
                   & standard_name = input_fields(input_field_num)%standard_name,&
                   & interp_method = input_fields(input_field_num)%interp_method,&
-                  & attributes=input_fields(input_field_num)%attributes,&
-                  & num_attributes=input_fields(input_field_num)%num_attributes)
+                  & attributes=output_fields(field_num)%attributes,&
+                  & num_attributes=output_fields(field_num)%num_attributes)
           ELSE
              output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit,&
                   & output_fields(field_num)%output_name, axes(1:num_axes),&
@@ -1791,8 +1791,8 @@ CONTAINS
                   & input_fields(input_field_num)%missing_value, avg_name = avg,&
                   & time_method=output_fields(field_num)%time_method,&
                   & standard_name = input_fields(input_field_num)%standard_name,&
-                  & attributes=input_fields(input_field_num)%attributes,&
-                  & num_attributes=input_fields(input_field_num)%num_attributes)
+                  & attributes=output_fields(field_num)%attributes,&
+                  & num_attributes=output_fields(field_num)%num_attributes)
           END IF
           ! NEED TO TAKE CARE OF TIME AVERAGING INFO TOO BOTH CASES
        ELSE
@@ -1806,8 +1806,8 @@ CONTAINS
                   & time_method=output_fields(field_num)%time_method,&
                   & standard_name = input_fields(input_field_num)%standard_name,&
                   & interp_method = input_fields(input_field_num)%interp_method,&
-                  & attributes=input_fields(input_field_num)%attributes,&
-                  & num_attributes=input_fields(input_field_num)%num_attributes)
+                  & attributes=output_fields(field_num)%attributes,&
+                  & num_attributes=output_fields(field_num)%num_attributes)
           ELSE
              output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit,&
                   & output_fields(field_num)%output_name, axes(1:num_axes),&
@@ -1817,8 +1817,8 @@ CONTAINS
                   & avg_name = avg,&
                   & time_method=output_fields(field_num)%time_method,&
                   & standard_name = input_fields(input_field_num)%standard_name,&
-                  & attributes=input_fields(input_field_num)%attributes,&
-                  & num_attributes=input_fields(input_field_num)%num_attributes)
+                  & attributes=output_fields(field_num)%attributes,&
+                  & num_attributes=output_fields(field_num)%num_attributes)
           END IF
        END IF
     END DO
