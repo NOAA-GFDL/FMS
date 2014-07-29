@@ -148,13 +148,11 @@
    end subroutine mpp_get_field_atts
 
   !#####################################################################
-   subroutine mpp_get_axis_atts( axis, name, units, longname, cartesian, &
-                                 calendar, sense, len, natts, atts, compressed )
+   subroutine mpp_get_axis_atts( axis, name, units, longname, cartesian, calendar, sense, len, natts, atts )
 
      type(axistype), intent(in) :: axis
      character(len=*), intent(out) , optional :: name, units
-     character(len=*), intent(out), optional :: longname, cartesian
-     character(len=*), intent(out), optional :: compressed, calendar
+     character(len=*), intent(out), optional :: longname, cartesian,calendar
      integer,intent(out), optional :: sense, len , natts
      type(atttype), intent(inout), optional, dimension(:) :: atts
 
@@ -164,7 +162,6 @@
      if (PRESENT(units)) units = axis%units
      if (PRESENT(longname)) longname = axis%longname
      if (PRESENT(cartesian)) cartesian = axis%cartesian
-     if (PRESENT(compressed)) compressed = axis%compressed
      if (PRESENT(calendar)) calendar = axis%calendar
      if (PRESENT(sense)) sense = axis%sense
      if (PRESENT(len)) len = axis%len

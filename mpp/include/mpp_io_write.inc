@@ -333,7 +333,7 @@
 
 
 
-    subroutine mpp_write_meta_axis_r1d( unit, axis, name, units, longname, cartesian, sense, domain, data, min, calendar)
+    subroutine mpp_write_meta_axis_r1d( unit, axis, name, units, longname, cartesian, sense, domain, data, min)
 !load the values in an axistype (still need to call mpp_write)
 !write metadata attributes for axis
 !it is declared intent(inout) so you can nullify pointers in the incoming object if needed
@@ -346,7 +346,6 @@
       type(domain1D),   intent(in), optional :: domain
       real,             intent(in), optional :: data(:)
       real,             intent(in), optional :: min
-      character(len=*), intent(in), optional :: calendar
 
       integer :: is, ie, isg, ieg
       integer :: istat      
@@ -404,7 +403,6 @@
       axis%name     = name
       axis%units    = units
       axis%longname = longname
-      if( PRESENT(calendar)  ) axis%calendar  = calendar
       if( PRESENT(sense)     ) axis%sense     = sense
       if( PRESENT(data) )then
          if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. domain_exist ) then
@@ -469,10 +467,6 @@
 !write axis attributes
       call mpp_write_meta( unit, axis%id, 'long_name', cval=axis%longname) ; axis%natt = axis%natt + 1
       call mpp_write_meta( unit, axis%id, 'units',     cval=axis%units) ; axis%natt = axis%natt + 1
-      if( PRESENT(calendar) ) then
-        call mpp_write_meta( unit, axis%id, 'calendar', cval=axis%calendar)
-        axis%natt = axis%natt + 1
-      endif 
       if( PRESENT(cartesian) ) then
         call mpp_write_meta( unit, axis%id, 'cartesian_axis', cval=axis%cartesian)
         axis%natt = axis%natt + 1
