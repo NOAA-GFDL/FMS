@@ -2282,7 +2282,7 @@ CONTAINS
   END SUBROUTINE check_duplicate_output_fields
   ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="attribute_init"
+  ! <SUBROUTINE NAME="attribute_init">
   !   <OVERVIEW>
   !     Allocates the atttype in out_field
   !   </OVERVIEW>
@@ -2294,7 +2294,7 @@ CONTAINS
   !     in the subroutine call.
   !   </DESCRIPTION>
   !   <INOUT NAME="out_field" TYPE="TYPE(output_field_type)">output field to allocate memory for attribute</INOUT>
-  !   <OUT NAME="err_msg", TYPE="CHARACTER(len=*), OPTIONAL">Error message, passed back to calling function</OUT>
+  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">Error message, passed back to calling function</OUT>
   SUBROUTINE attribute_init(out_field, err_msg)
     TYPE(output_field_type), INTENT(inout) :: out_field
     CHARACTER(LEN=*), INTENT(out), OPTIONAL :: err_msg
@@ -2334,9 +2334,9 @@ CONTAINS
   !     with the <TT>prepend_value</TT>. <TT>err_msg</TT> indicates no duplicates found.
   !   </DESCRIPTION>
   !   <INOUT NAME="out_field" TYPE="TYPE(output_field_type)">output field that will get the attribute</INOUT>
-  !   <IN NAME="att_name", TYPE="CHARACTER(len=*)">Name of the attribute</IN>
-  !   <IN NAME="prepend_value", TYPE="CHARACTER(len=*)">Value to prepend</IN>
-  !   <OUT NAME="err_msg", TYPE="CHARACTER(len=*), OPTIONAL">Error message, passed back to calling routine</OUT>
+  !   <IN NAME="att_name" TYPE="CHARACTER(len=*)">Name of the attribute</IN>
+  !   <IN NAME="prepend_value" TYPE="CHARACTER(len=*)">Value to prepend</IN>
+  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">Error message, passed back to calling routine</OUT>
   SUBROUTINE prepend_attribute(out_field, att_name, prepend_value, err_msg)
     TYPE(output_field_type), INTENT(inout) :: out_field
     CHARACTER(len=*), INTENT(in) :: att_name, prepend_value
