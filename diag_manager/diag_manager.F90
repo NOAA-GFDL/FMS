@@ -184,7 +184,8 @@ MODULE diag_manager_mod
   USE diag_util_mod, ONLY: get_subfield_size, log_diag_field_info, update_bounds,&
        & check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
        & diag_time_inc, find_input_field, init_input_field, init_output_field,&
-       & diag_data_out, write_static, get_date_dif, get_subfield_vert_size, sync_file_times
+       & diag_data_out, write_static, get_date_dif, get_subfield_vert_size, sync_file_times,&
+       & prepend_attribute, attribute_init
   USE diag_data_mod, ONLY: max_files, CMOR_MISSING_VALUE, DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, EVERY_TIME,&
        & END_OF_RUN, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, num_files,&
        & max_input_fields, max_output_fields, num_output_fields, EMPTY, FILL_VALUE, null_axis_id,&
@@ -194,7 +195,7 @@ MODULE diag_manager_mod
        & first_send_data_call, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
-       & max_out_per_in_field, conserve_water, max_field_attributes
+       & max_out_per_in_field, conserve_water, max_field_attributes, output_field_type
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
@@ -490,9 +491,11 @@ CONTAINS
     INTEGER, OPTIONAL, INTENT(in) :: area, volume
 
     INTEGER :: field, j, ind, file_num, freq
+    INTEGER :: i, cm_ind, cm_file_num
     INTEGER :: output_units
     INTEGER :: stdout_unit
     LOGICAL :: mask_variant1, verbose1
+    LOGICAL :: cm_found
     CHARACTER(len=128) :: msg
 
     ! get stdout unit number
@@ -610,14 +613,37 @@ CONTAINS
           END IF
 
           ! Here is where we handle adding the cell_measures
+          IF ( PRESENT(area) ) THEN
+             IF ( get_related_field(area, output_fields(ind), cm_ind, cm_file_num) ) THEN
+                CALL prepend_attribute(output_fields(ind), 'cell_measures',&
+                     & 'area: '//TRIM(output_fields(cm_ind)%output_name))
+                IF ( cm_file_num.NE.file_num ) THEN
+                   ! Not in the same file, set the global attribute associated_files
+                   ! Should look like :associated_files = " output_name: output_file_name " ;
+                END IF
+             ELSE
+                CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
+                     &//TRIM(module_name)//'/'// TRIM(field_name)//&
+                     &' AREA measures field NOT in diag_table with correct output frequency.',&
+                     & FATAL)
+             END IF
+          END IF
+          IF ( PRESENT(volume) ) THEN
+             IF ( get_related_field(volume, output_fields(ind), cm_ind, cm_file_num) ) THEN
+                CALL prepend_attribute(output_fields(ind), 'cell_measures',&
+                     & 'volume: '//TRIM(output_fields(cm_ind)%output_name))
+                IF ( cm_file_num.NE.file_num ) THEN
+                   ! Not in the same file, set the global attribute associated_files
+                   ! Should look like :associated_files = " output_name: output_file_name " ;
+                END IF
+             ELSE
+                CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
+                     &//TRIM(module_name)//'/'// TRIM(field_name)//&
+                     &' VOLUME measures field NOT in diag_table with correct output frequency.',&
+                     & FATAL)
+             END IF
+          END IF
        END DO
-    END IF
-
-    IF ( PRESENT(area) ) THEN
-       call diag_field_add_attribute(register_diag_field_array, 'cell_measures', 'area: something')
-    END IF
-    IF ( PRESENT(volume) ) THEN
-       call diag_field_add_attribute(register_diag_field_array, 'cell_measures', 'volume: something_else')
     END IF
   END FUNCTION register_diag_field_array
   ! </FUNCTION>
@@ -981,6 +1007,56 @@ CONTAINS
        END DO
     END IF
   END FUNCTION register_static_field
+  ! </FUNCTION>
+
+  ! <FUNCTION NAME="send_data_0d" INTERFACE="send_data">
+  !   <OVERVIEW>
+  !     Finds the corresponding related output field and file
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     LOGICAL FUNCTION get_related_field(field, rel_field, out_field_id, out_file_id)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     Finds the corresponding related output field and file for a given input field
+  !   </DESCRIPTION>
+  !   <IN NAME="field" TYPE="INTEGER">input field ID to find the corresponding</IN>
+  !   <IN NAME="rel_field" TYPE="TYPE(output_field_type)">Output field that field must correspond to</IN>
+  !   <OUT NAME="out_field_id" TYPE="INTEGER">output_field index of related output field</OUT>
+  !   <OUT NAME="out_file_id" TYPE="INTEGER">file index of the out_field_id output field</OUT>
+  LOGICAL FUNCTION get_related_field(field, rel_field, out_field_id, out_file_id)
+    INTEGER, INTENT(in) :: field
+    TYPE(output_field_type), INTENT(in) :: rel_field
+    INTEGER, INTENT(out) :: out_field_id, out_file_id
+
+    INTEGER :: i, cm_ind, cm_file_num
+    INTEGER :: rel_file
+
+    ! Output file index of field to compare to
+    rel_file = rel_field%output_file
+
+    ! Default return values
+    out_field_id = -1
+    out_file_id = -1
+    get_related_field = .FALSE.
+
+    DO i = 1, input_fields(field)%num_output_fields
+       cm_ind = input_fields(field)%output_fields(i)
+       cm_file_num = output_fields(cm_ind)%output_file
+
+       ! If time_method, freq, output_units, next_output, and last_output the same, then
+       ! valid for cell_measures
+       IF ( files(cm_file_num)%output_freq.EQ.files(rel_file)%output_freq .AND.&
+            & files(cm_file_num)%output_units.EQ.files(cm_file_num)%output_units .AND.&
+            & output_fields(cm_ind)%time_method.EQ.rel_field%time_method .AND.&
+            & output_fields(cm_ind)%next_output.EQ.rel_field%next_output .AND.&
+            & output_fields(cm_ind)%last_output.EQ.rel_field%last_output ) THEN
+          get_related_field = .TRUE.
+          out_field_id = cm_ind
+          out_file_id = cm_file_num
+          EXIT
+       END IF
+    END DO
+  END FUNCTION get_related_field
   ! </FUNCTION>
 
   ! <FUNCTION NAME="send_data_0d" INTERFACE="send_data">
@@ -3305,6 +3381,7 @@ CONTAINS
     REAL, DIMENSION(:), INTENT(in), OPTIONAL :: rval !< Real attribute value(s)
 
     INTEGER :: istat, length, i, j, this_attribute, out_field
+    CHARACTER(len=1024) :: err_msg
 
     IF ( .NOT.first_send_data_call ) THEN
        ! Call error due to unable to add attribute after send_data called
@@ -3325,27 +3402,14 @@ CONTAINS
           out_field = input_fields(diag_field_id)%output_fields(j)
 
           ! Allocate memory for the attributes
-          IF ( .NOT.ALLOCATED(output_fields(out_field)%attributes) ) THEN
-             ALLOCATE(output_fields(out_field)%attributes(max_field_attributes), STAT=istat)
-             IF ( istat.NE.0 ) THEN
-                ! <ERROR STATUS="FATAL">
-                !   Unable to allocate memory for attribute <name> to module/input_field <module_name>/<field_name>
-                ! </ERROR>
-                CALL error_mesg('diag_manager_mod::diag_field_add_attribute', 'Unable to allocate memory for attribute "'&
-                     &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
-                     &//TRIM(input_fields(diag_field_id)%field_name)//'"', FATAL)
-             ELSE
-                ! Set equal to 0.  It will be increased below
-                output_fields(out_field)%num_attributes = 0
-             END IF
-          END IF
+          CALL attribute_init(output_fields(out_field))
 
           ! Check if attribute already exists
           this_attribute = 0
           DO i=1, output_fields(out_field)%num_attributes
              IF ( TRIM(output_fields(out_field)%attributes(i)%name) .EQ. TRIM(name) ) THEN
                 this_attribute = i
-                exit
+                EXIT
              END IF
           END DO
 
@@ -3371,110 +3435,99 @@ CONTAINS
              ! Defining a new attribute
              ! Increase the number of field attributes
              this_attribute = output_fields(out_field)%num_attributes + 1
-             output_fields(out_field)%num_attributes = this_attribute
-             ! Set name and type
-             output_fields(out_field)%attributes(this_attribute)%name = name
-             output_fields(out_field)%attributes(this_attribute)%type = type
-             ! Initialize catt to a blank string, as len_trim doesn't always work on an uninitialized string
-             output_fields(out_field)%attributes(this_attribute)%catt = ''
+             ! Checking to see if num_attributes == max_field_attributes, and return error message
+             IF ( this_attribute .GT. max_field_attributes ) THEN
+                ! <ERROR STATUS="FATAL">
+                !   Number of attributes exceeds max_field_attributes for attribute <name> to module/input_field <module_name>/<field_name>.
+                !   Increase diag_manager_nml:max_field_attributes.
+                ! </ERROR>
+                CALL error_mesg('diag_manager_mod::diag_field_add_attribute',&
+                     & 'Number of attributes exceeds max_field_attributes for attribute "'&
+                     &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
+                     &//TRIM(input_fields(diag_field_id)%field_name)//'".  Increase diag_manager_nml:max_field_attributes.',&
+                     & FATAL)
+             ELSE
+                output_fields(out_field)%num_attributes = this_attribute
+                ! Set name and type
+                output_fields(out_field)%attributes(this_attribute)%name = name
+                output_fields(out_field)%attributes(this_attribute)%type = type
+                ! Initialize catt to a blank string, as len_trim doesn't always work on an uninitialized string
+                output_fields(out_field)%attributes(this_attribute)%catt = ''
+             END IF
           END IF
 
-          ! Checking to see if num_attributes == max_field_attributes, and return error message
-          IF ( this_attribute .GT. max_field_attributes ) THEN
-             ! <ERROR STATUS="FATAL">
-             !   Number of attributes exceeds max_field_attributes for attribute <name> to module/input_field <module_name>/<field_name>.
-             !   Increase diag_manager_nml:max_field_attributes.
-             ! </ERROR>
-             CALL error_mesg('diag_manager_mod::diag_field_add_attribute',&
-                  & 'Number of attributes exceeds max_field_attributes for attribute "'&
-                  &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
-                  &//TRIM(input_fields(diag_field_id)%field_name)//'".  Increase diag_manager_nml:max_field_attributes.', FATAL)
-          ELSE
-             SELECT CASE (type)
-             CASE (NF90_INT)
-                IF ( .NOT.PRESENT(ival) ) THEN
-                   ! <ERROR STATUS="FATAL">
-                   !   Number type claims INTEGER, but ival not present for attribute <name> to module/input_field <module_name>/<field_name>.
-                   !   Contact the developers.
-                   ! </ERROR>
-                   CALL error_mesg('diag_manager_mod::diag_field_add_attribute',&
-                        & 'Attribute type claims INTEGER, but ival not present for attribute "'&
-                        &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
-                        &//TRIM(input_fields(diag_field_id)%field_name)//'". Contact then developers.', FATAL)
-                END IF
-                length = SIZE(ival)
-                ! Allocate iatt(:) to size of ival
-                ALLOCATE(output_fields(out_field)%attributes(this_attribute)%iatt(length), STAT=istat)
-                IF ( istat.NE.0 ) THEN
-                   ! <ERROR STATUS="FATAL">
-                   !   Unable to allocate iatt for attribute <name> to module/input_field <module_name>/<field_name>
-                   ! </ERROR>
-                   CALL error_mesg('diag_manager_mod::diag_field_add_attribute', 'Unable to allocate iatt for attribute "'&
-                        &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
-                        &//TRIM(input_fields(diag_field_id)%field_name)//'"', FATAL)
-                END IF
-                ! Set remaining fields
-                output_fields(out_field)%attributes(this_attribute)%len = length
-                output_fields(out_field)%attributes(this_attribute)%iatt = ival
-             CASE (NF90_FLOAT)
-                IF ( .NOT.PRESENT(rval) ) THEN
-                   ! <ERROR STATUS="FATAL">
-                   !   Attribute type claims READ, but rval not present for attribute <name> to module/input_field <module_name>/<field_name>.
-                   !   Contact the developers.
-                   ! </ERROR>
-                   CALL error_mesg('diag_manager_mod::diag_field_add_attribute',&
-                        & 'Attribute type claims REAL, but rval not present for attribute "'&
-                        &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
-                        &//TRIM(input_fields(diag_field_id)%field_name)//'". Contact the developers.', FATAL)
-                END IF
-                length = SIZE(rval)
-                ! Allocate iatt(:) to size of rval
-                ALLOCATE(output_fields(out_field)%attributes(this_attribute)%fatt(length), STAT=istat)
-                IF ( istat.NE.0 ) THEN
-                   ! <ERROR STATUS="FATAL">
-                   !   Unable to allocate fatt for attribute <name> to module/input_field <module_name>/<field_name>
-                   ! </ERROR>
-                   CALL error_mesg('diag_manager_mod::diag_field_add_attribute', 'Unable to allocate fatt for attribute "'&
-                        &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
-                        &//TRIM(input_fields(diag_field_id)%field_name)//'"', FATAL)
-                END IF
-                ! Set remaining fields
-                output_fields(out_field)%attributes(this_attribute)%len = length
-                output_fields(out_field)%attributes(this_attribute)%fatt = rval
-             CASE (NF90_CHAR)
-                IF ( .NOT.PRESENT(cval) ) THEN
-                   ! <ERROR STATUS="FATAL">
-                   !   Attribute type claims CHARACTER, but cval not present for attribute <name> to module/input_field <module_name>/<field_name>.
-                   !   Contact the developers.
-                   ! </ERROR>
-                   CALL error_mesg('diag_manager_mod::diag_field_add_attribute',&
-                        & 'Attribute type claims CHARACTER, but cval not present for attribute "'&
-                        &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
-                        &//TRIM(input_fields(diag_field_id)%field_name)//'". Contact the developers.', FATAL)
-                END IF
-                ! Check if new string length goes beyond the length of catt
-                length = LEN_TRIM(TRIM(cval)//" "//TRIM(output_fields(out_field)%attributes(this_attribute)%catt))
-                IF ( length.GT.LEN(output_fields(out_field)%attributes(this_attribute)%catt) ) THEN
-                   CALL error_mesg('diag_manager_mod::diag_field_add_attribute',&
-                        & 'Attribute "'//TRIM(name)//'" to module/input_field "'&
-                        &//TRIM(input_fields(diag_field_id)%module_name)//'/'&
-                        &//TRIM(input_fields(diag_field_id)%field_name)&
-                        &//'" length is longer than allowed. Contact the developers.', FATAL)
-                END IF
-                ! Set fields
-                output_fields(out_field)%attributes(this_attribute)%catt =&
-                     & TRIM(cval)//' '//TRIM(output_fields(out_field)%attributes(this_attribute)%catt)
-                output_fields(out_field)%attributes(this_attribute)%len = length
-             CASE default
+          SELECT CASE (type)
+          CASE (NF90_INT)
+             IF ( .NOT.PRESENT(ival) ) THEN
                 ! <ERROR STATUS="FATAL">
-                !   Unknown attribute type for attribute <name> to module/input_field <module_name>/<field_name>.
+                !   Number type claims INTEGER, but ival not present for attribute <name> to module/input_field <module_name>/<field_name>.
                 !   Contact the developers.
                 ! </ERROR>
-                CALL error_mesg('diag_manager_mod::diag_field_add_attribute', 'Unknown attribute type for attribute "'&
+                CALL error_mesg('diag_manager_mod::diag_field_add_attribute',&
+                     & 'Attribute type claims INTEGER, but ival not present for attribute "'&
+                     &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
+                     &//TRIM(input_fields(diag_field_id)%field_name)//'". Contact then developers.', FATAL)
+             END IF
+             length = SIZE(ival)
+             ! Allocate iatt(:) to size of ival
+             ALLOCATE(output_fields(out_field)%attributes(this_attribute)%iatt(length), STAT=istat)
+             IF ( istat.NE.0 ) THEN
+                ! <ERROR STATUS="FATAL">
+                !   Unable to allocate iatt for attribute <name> to module/input_field <module_name>/<field_name>
+                ! </ERROR>
+                CALL error_mesg('diag_manager_mod::diag_field_add_attribute', 'Unable to allocate iatt for attribute "'&
+                     &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
+                     &//TRIM(input_fields(diag_field_id)%field_name)//'"', FATAL)
+             END IF
+             ! Set remaining fields
+             output_fields(out_field)%attributes(this_attribute)%len = length
+             output_fields(out_field)%attributes(this_attribute)%iatt = ival
+          CASE (NF90_FLOAT)
+             IF ( .NOT.PRESENT(rval) ) THEN
+                ! <ERROR STATUS="FATAL">
+                !   Attribute type claims READ, but rval not present for attribute <name> to module/input_field <module_name>/<field_name>.
+                !   Contact the developers.
+                ! </ERROR>
+                CALL error_mesg('diag_manager_mod::diag_field_add_attribute',&
+                     & 'Attribute type claims REAL, but rval not present for attribute "'&
                      &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
                      &//TRIM(input_fields(diag_field_id)%field_name)//'". Contact the developers.', FATAL)
-             END SELECT
-          END IF
+             END IF
+             length = SIZE(rval)
+             ! Allocate iatt(:) to size of rval
+             ALLOCATE(output_fields(out_field)%attributes(this_attribute)%fatt(length), STAT=istat)
+             IF ( istat.NE.0 ) THEN
+                ! <ERROR STATUS="FATAL">
+                !   Unable to allocate fatt for attribute <name> to module/input_field <module_name>/<field_name>
+                ! </ERROR>
+                CALL error_mesg('diag_manager_mod::diag_field_add_attribute', 'Unable to allocate fatt for attribute "'&
+                     &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
+                     &//TRIM(input_fields(diag_field_id)%field_name)//'"', FATAL)
+             END IF
+             ! Set remaining fields
+             output_fields(out_field)%attributes(this_attribute)%len = length
+             output_fields(out_field)%attributes(this_attribute)%fatt = rval
+          CASE (NF90_CHAR)
+             IF ( .NOT.PRESENT(cval) ) THEN
+                ! <ERROR STATUS="FATAL">
+                !   Attribute type claims CHARACTER, but cval not present for attribute <name> to module/input_field <module_name>/<field_name>.
+                !   Contact the developers.
+                ! </ERROR>
+                CALL error_mesg('diag_manager_mod::diag_field_add_attribute',&
+                     & 'Attribute type claims CHARACTER, but cval not present for attribute "'&
+                     &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
+                     &//TRIM(input_fields(diag_field_id)%field_name)//'". Contact the developers.', FATAL)
+             END IF
+             CALL prepend_attribute(output_fields(out_field), TRIM(name), TRIM(cval))
+          CASE default
+             ! <ERROR STATUS="FATAL">
+             !   Unknown attribute type for attribute <name> to module/input_field <module_name>/<field_name>.
+             !   Contact the developers.
+             ! </ERROR>
+             CALL error_mesg('diag_manager_mod::diag_field_add_attribute', 'Unknown attribute type for attribute "'&
+                  &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
+                  &//TRIM(input_fields(diag_field_id)%field_name)//'". Contact the developers.', FATAL)
+          END SELECT
        END DO
     END IF
   END SUBROUTINE diag_field_attribute_init

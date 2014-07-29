@@ -31,7 +31,7 @@ MODULE diag_util_mod
        & base_second, num_files, max_files, max_fields_per_file, max_out_per_in_field,&
        & max_input_fields,num_input_fields, max_output_fields, num_output_fields, coord_type,&
        & mix_snapshot_average_fields, global_descriptor, CMOR_MISSING_VALUE, use_cmor, pack_size,&
-       & debug_diag_manager, conserve_water
+       & debug_diag_manager, conserve_water, output_field_type, max_field_attributes
   USE diag_axis_mod, ONLY  : get_diag_axis_data, get_axis_global_length, get_diag_axis_cart,&
        & get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, get_axis_aux,&
        & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name
@@ -51,12 +51,17 @@ MODULE diag_util_mod
   USE fms_io_mod, ONLY : get_instance_filename
   USE constants_mod, ONLY : SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
 
+#ifdef use_netCDF
+  USE netcdf, ONLY: NF90_CHAR
+#endif
+
   IMPLICIT NONE
   PRIVATE
   PUBLIC get_subfield_size, log_diag_field_info, update_bounds, check_out_of_bounds,&
        & check_bounds_are_exact_dynamic, check_bounds_are_exact_static, init_file, diag_time_inc,&
        & find_input_field, init_input_field, init_output_field, diag_data_out, write_static,&
-       & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size, sync_file_times
+       & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size, sync_file_times,&
+       & prepend_attribute, attribute_init
 
   CHARACTER(len=128),PRIVATE  :: version =&
        & '$Id$'
@@ -1524,6 +1529,7 @@ CONTAINS
     ALLOCATE(output_fields(out_num)%num_elements(output_fields(out_num)%n_diurnal_samples))
     output_fields(out_num)%count_0d(:) = 0
     output_fields(out_num)%num_elements(:) = 0
+    output_fields(out_num)%num_attributes = 0
   END SUBROUTINE init_output_field
   ! </SUBROUTINE>
 
@@ -2274,5 +2280,136 @@ CONTAINS
        IF ( fms_error_handler(' ERROR in diag_table',err_msg_local,err_msg) ) RETURN
     END IF
   END SUBROUTINE check_duplicate_output_fields
+  ! </SUBROUTINE>
+
+  ! <SUBROUTINE NAME="attribute_init"
+  !   <OVERVIEW>
+  !     Allocates the atttype in out_field
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE attribute_init(out_field, err_msg)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     Allocates memory in out_field for the attributes.  Will <TT>FATAL</TT> if err_msg is not included
+  !     in the subroutine call.
+  !   </DESCRIPTION>
+  !   <INOUT NAME="out_field" TYPE="TYPE(output_field_type)">output field to allocate memory for attribute</INOUT>
+  !   <OUT NAME="err_msg", TYPE="CHARACTER(len=*), OPTIONAL">Error message, passed back to calling function</OUT>
+  SUBROUTINE attribute_init(out_field, err_msg)
+    TYPE(output_field_type), INTENT(inout) :: out_field
+    CHARACTER(LEN=*), INTENT(out), OPTIONAL :: err_msg
+
+    INTEGER :: istat
+    CHARACTER(len=1024) :: err_msg_local
+    
+    ! Allocate memory for the attributes
+    IF ( .NOT.ALLOCATED(out_field%attributes) ) THEN
+       ALLOCATE(out_field%attributes(max_field_attributes), STAT=istat)
+       IF ( istat.NE.0 ) THEN
+          ! <ERROR STATUS="FATAL">
+          !   Unable to allocate memory for attribute <name> to module/input_field <module_name>/<field_name>
+          ! </ERROR>
+          IF ( fms_error_handler('Unable to allocate memory for attributes', err_msg_local, err_msg) ) THEN
+             RETURN
+          END IF
+       ELSE
+          ! Set equal to 0.  It will be increased when attributes added
+          out_field%num_attributes = 0
+       END IF
+    END IF
+  END SUBROUTINE attribute_init
+  ! </SUBROUTINE>
+
+  ! <SUBROUTINE NAME="prepend_attribute">
+  !   <OVERVIEW>
+  !     Prepends the attribute value to an already existing attribute.  If the
+  !     attribute isn't yet defined, then creates a new attribute
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE prepend_attribute(out_field, attribute, prepend_value)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     Checks if the attribute already exists in the <TT>out_field</TT>.  If it exists,
+  !     then prepend the <TT>prepend_value</TT>, otherwise, create the attribute
+  !     with the <TT>prepend_value</TT>. <TT>err_msg</TT> indicates no duplicates found.
+  !   </DESCRIPTION>
+  !   <INOUT NAME="out_field" TYPE="TYPE(output_field_type)">output field that will get the attribute</INOUT>
+  !   <IN NAME="att_name", TYPE="CHARACTER(len=*)">Name of the attribute</IN>
+  !   <IN NAME="prepend_value", TYPE="CHARACTER(len=*)">Value to prepend</IN>
+  !   <OUT NAME="err_msg", TYPE="CHARACTER(len=*), OPTIONAL">Error message, passed back to calling routine</OUT>
+  SUBROUTINE prepend_attribute(out_field, att_name, prepend_value, err_msg)
+    TYPE(output_field_type), INTENT(inout) :: out_field
+    CHARACTER(len=*), INTENT(in) :: att_name, prepend_value
+    CHARACTER(len=*), INTENT(out) , OPTIONAL :: err_msg
+
+    INTEGER :: length, i, this_attribute
+    CHARACTER(len=LEN(err_msg)) :: err_msg_local
+
+    ! Make sure the attributes for this out field have been initialized
+    CALL attribute_init(out_field, err_msg_local)
+    IF ( TRIM(err_msg_local) .NE. '' ) THEN
+       err_msg=err_msg_local
+       RETURN
+    END IF
+
+    ! Find if attribute exists
+    this_attribute = 0
+    DO i=1, out_field%num_attributes
+       IF ( TRIM(out_field%attributes(i)%name) .EQ. TRIM(att_name) ) THEN
+          this_attribute = i
+          EXIT
+       END IF
+    END DO
+
+    IF ( this_attribute > 0 ) THEN
+       IF ( out_field%attributes(this_attribute)%type .NE. NF90_CHAR ) THEN
+          ! <ERROR STATUS="FATAL">
+          !   Attribute <name> is not a character attribute.
+          ! </ERROR>
+          IF ( fms_error_handler('Attribute "'//TRIM(att_name)//'" is not a character attribute.',&
+               & err_msg_local, err_msg) ) THEN
+             RETURN
+          END IF
+       END IF
+    ELSE
+       ! Defining a new attribute
+       ! Increase the number of field attributes
+       this_attribute = out_field%num_attributes + 1
+       IF ( this_attribute .GT. max_field_attributes ) THEN
+          ! <ERROR STATUS="FATAL">
+          !   Number of attributes exceeds max_field_attributes for attribute <name>.
+          !   Increase diag_manager_nml:max_field_attributes.
+          ! </ERROR>
+          IF ( fms_error_handler('Number of attributes exceeds max_field_attributes for attribute "'&
+               &//TRIM(att_name)//'".  Increase diag_manager_nml:max_field_attributes.',&
+               & err_msg_local, err_msg) ) THEN
+             RETURN
+          END IF
+       ELSE
+          out_field%num_attributes = this_attribute
+          ! Set name and type
+          out_field%attributes(this_attribute)%name = att_name
+          out_field%attributes(this_attribute)%type = NF90_CHAR
+          ! Initialize catt to a blank string, as len_trim doesn't always work on an uninitialized string
+          out_field%attributes(this_attribute)%catt = ''
+       END IF
+    END IF
+
+    ! Check if new string length goes beyond the length of catt
+    length = LEN_TRIM(TRIM(prepend_value)//" "//TRIM(out_field%attributes(this_attribute)%catt))
+    IF ( length.GT.LEN(out_field%attributes(this_attribute)%catt) ) THEN
+       ! <ERROR STATUS="FATAL">
+       !   Prepend length for attribute <name> is longer than allowed.
+       ! </ERROR>
+       IF ( fms_error_handler('Prepend length for attribute "'//TRIM(att_name)&
+            &//'" is longer than allowed.', err_msg_local, err_msg) ) THEN
+          RETURN
+       END IF
+    END IF
+    ! Set fields
+    out_field%attributes(this_attribute)%catt =&
+         & TRIM(prepend_value)//' '//TRIM(out_field%attributes(this_attribute)%catt)
+    out_field%attributes(this_attribute)%len = length
+  END SUBROUTINE prepend_attribute
   ! </SUBROUTINE>
 END MODULE diag_util_mod
