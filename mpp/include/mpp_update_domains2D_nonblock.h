@@ -159,8 +159,10 @@ function MPP_START_UPDATE_DOMAINS_3D_( field, domain, flags, position, &
   end if
   
   if(do_update) then
-     num_update = num_update + 1
+    if(num_nonblock_group_update>0) call mpp_error(FATAL, "MPP_START_UPDATE_DOMAINS: "// &
+          " can not be called in the middle of mpp_start_group_update/mpp_complete_group_update call")
 
+     num_update = num_update + 1
      if( PRESENT(update_id) ) then
         if( update_id < 1 .OR. update_id > MAX_NONBLOCK_UPDATE ) then
            write( text,'(a,i8,a,i8)' ) 'optional argument update_id =', update_id, &
@@ -643,6 +645,8 @@ function MPP_START_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype
      list = 0
   end if
   if(do_update)then
+    if(num_nonblock_group_update>0) call mpp_error(FATAL, "MPP_START_UPDATE_DOMAINS_V: "// &       
+         " can not be called in the middle of mpp_start_group_update/mpp_complete_group_update call")
      num_update = num_update + 1
      if( PRESENT(update_id) ) then
         reuse_id_update = .true.

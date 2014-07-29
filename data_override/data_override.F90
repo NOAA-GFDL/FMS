@@ -911,6 +911,9 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
                    horz_interp=override_array(curr_position)%horz_interp(window_id), &
                    is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
            data(:,:,1) = data(:,:,1)*factor   
+           do i = 2, size(data,3)
+             data(:,:,i) = data(:,:,1)
+           enddo
         else
            allocate(mask_out(size(data,1), size(data,2),1))
            mask_out = .false.
@@ -921,11 +924,13 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
            where(mask_out(:,:,1))
               data(:,:,1) = data(:,:,1)*factor
            end where
+           do i = 2, size(data,3)
+              where(mask_out(:,:,1))
+                data(:,:,i) = data(:,:,1)
+              end where
+           enddo
            deallocate(mask_out)
         endif
-        do i = 2, size(data,3)
-           data(:,:,i) = data(:,:,1)
-        enddo
      else
         if( data_table(index1)%region_type == NO_REGION ) then
            call time_interp_external(id_time,time,data,verbose=.false.,      &

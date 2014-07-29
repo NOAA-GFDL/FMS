@@ -223,7 +223,7 @@ MODULE diag_manager_mod
   CHARACTER(len=128), PARAMETER :: version =&
        & '$Id$'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name$'
+       & '$Name$'  
 
   type(time_type) :: Time_end
 

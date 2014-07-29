@@ -381,28 +381,18 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   MPP_TYPE_,                   intent(in)    :: d_type
 
   integer   :: nscalar, nvector, nlist
-  integer   :: nsend, nrecv, flags_v, ntot, nsend_old, nrecv_old
-  integer   :: nsend_s, nsend_x, nsend_y
-  integer   :: nrecv_s, nrecv_x, nrecv_y
-  integer   :: update_buffer_pos, tot_recv_size, tot_send_size
-  integer   :: msgsize_s, msgsize_x, msgsize_y, msgsize
+  integer   :: nsend, nrecv, flags_v
+  integer   :: msgsize
   logical   :: recv_s(8), send_s(8), recv_v(8), send_v(8)
   integer   :: i_s, i_x, i_y, rank_s, rank_x, rank_y, rank
   integer   :: from_pe, to_pe, buffer_pos, pos, dir
   integer   :: ksize, is, ie, js, je
   integer   :: n, l, m, t, i, j, k, tk
   integer   :: shift, gridtype, midpoint
-  integer   :: ind_s(3*MAXOVERLAP), recv_ind_s(3*MAXOVERLAP), send_ind_s(3*MAXOVERLAP)
-  integer   :: ind_x(3*MAXOVERLAP), recv_ind_x(3*MAXOVERLAP), send_ind_x(3*MAXOVERLAP)
-  integer   :: ind_y(3*MAXOVERLAP), recv_ind_y(3*MAXOVERLAP), send_ind_y(3*MAXOVERLAP)
-  integer   :: pelist(3*MAXOVERLAP), from_pe_list(3*MAXOVERLAP), to_pe_list(3*MAXOVERLAP)
-  integer   :: recv_size(3*MAXOVERLAP), send_size(3*MAXOVERLAP)
-  integer   :: buffer_pos_recv(3*MAXOVERLAP), buffer_pos_send(3*MAXOVERLAP)
   character(len=8)            :: text
   type(overlap_type), pointer :: overPtr => NULL()
 
-  MPP_TYPE_ :: sbuffer(mpp_domains_stack_size)
-  MPP_TYPE_ :: rbuffer(mpp_domains_stack_size)
+  MPP_TYPE_ :: buffer(mpp_domains_stack_size)
   MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize_s)
   MPP_TYPE_ :: fieldx(group%is_x:group%ie_x,group%js_x:group%je_x, group%ksize_v)
   MPP_TYPE_ :: fieldy(group%is_y:group%ie_y,group%js_y:group%je_y, group%ksize_v)
@@ -438,229 +428,14 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
      send_v = recv_v
   end if
 
-  if(.not. group%initialized) then
-     group%initialized = .true.
-     nsend_s = 0; nsend_x = 0; nsend_y = 0
-     nrecv_s = 0; nrecv_x = 0; nrecv_y = 0
-     if(nscalar > 0) then
-         !--- This check could not be done because of memory domain
-!        if( group%isize_s .NE. (group%ie_s-group%is_s+1) .OR. group%jsize_s .NE. (group%je_s-group%js_s+1))  &
-!           call mpp_error(FATAL, "MPP_DO_GROUP_UPDATE: mismatch of size of the field and domain memory domain")
-        nsend_s = group%update_s%nsend
-        nrecv_s = group%update_s%nrecv
-     endif
+  !--- set reset_index_s and reset_index_v to 0 
+  group%reset_index_s = 0
+  group%reset_index_v = 0
 
-     if(nvector > 0) then
-        !--- This check could not be done because of memory domain
-!        if( group%isize_x .NE. (group%ie_x-group%is_x+1) .OR. group%jsize_x .NE. (group%je_x-group%js_x+1))  &
-!           call mpp_error(FATAL, "MPP_DO_GROUP_UPDATE: mismatch of size of the fieldx and domain memory domain")
-!        if( group%isize_y .NE. (group%ie_y-group%is_y+1) .OR. group%jsize_y .NE. (group%je_y-group%js_y+1))  &
-!           call mpp_error(FATAL, "MPP_DO_GROUP_UPDATE: mismatch of size of the fieldy and domain memory domain")
-        nsend_x = group%update_x%nsend
-        nrecv_x = group%update_x%nrecv
-        nsend_y = group%update_y%nsend
-        nrecv_y = group%update_y%nrecv
-     endif
+  if(.not. group%initialized) call set_group_update(group,domain)
 
-     !figure out message size for each processor.
-     ntot = nrecv_s + nrecv_x + nrecv_y
-     if(ntot > 3*MAXOVERLAP) call mpp_error(FATAL, "MPP_DO_GROUP_UPDATE: ntot is greater than 3*MAXOVERLAP")
-     n = 1
-     i_s = 1
-     i_x = 1
-     i_y = 1
-     ind_s = -1
-     ind_x = -1
-     ind_y = -1
-     nrecv = 0
-     do while(n<=ntot)
-        if( i_s <= nrecv_s ) then
-           rank_s = group%update_s%recv(i_s)%pe-domain%pe
-           if(rank_s .LE. 0) rank_s = rank_s + nlist
-        else
-           rank_s = -1
-        endif
-        if( i_x <= nrecv_x ) then
-           rank_x = group%update_x%recv(i_x)%pe-domain%pe
-           if(rank_x .LE. 0) rank_x = rank_x + nlist
-        else
-           rank_x = -1
-        endif
-        if( i_y <= nrecv_y ) then
-           rank_y = group%update_y%recv(i_y)%pe-domain%pe
-           if(rank_y .LE. 0) rank_y = rank_y + nlist
-        else
-           rank_y = -1
-        endif
-        nrecv = nrecv + 1   
-        rank = maxval((/rank_s, rank_x, rank_y/))
-        if(rank == rank_s) then
-           n = n + 1
-           ind_s(nrecv) = i_s
-           pelist(nrecv) = group%update_s%recv(i_s)%pe
-           i_s = i_s + 1
-        endif
-        if(rank == rank_x) then
-           n = n + 1
-           ind_x(nrecv) = i_x
-           pelist(nrecv) = group%update_x%recv(i_x)%pe
-           i_x = i_x + 1
-        endif
-        if(rank == rank_y) then
-           n = n + 1
-           ind_y(nrecv) = i_y
-           pelist(nrecv) = group%update_y%recv(i_y)%pe
-           i_y = i_y + 1
-        endif
-     enddo
-
-     nrecv_old = nrecv
-     nrecv     = 0
-     update_buffer_pos = 0
-     tot_recv_size = 0
-     do l = 1, nrecv_old
-        msgsize_s = 0
-        msgsize_x = 0
-        msgsize_y = 0
-        m = ind_s(l)
-        if(m>0) msgsize_s = get_mesgsize(group%update_s%recv(m), recv_s)*ksize*nscalar
-        m = ind_x(l)
-        if(m>0) msgsize_x = get_mesgsize(group%update_x%recv(m), recv_v)*ksize*nvector
-        m = ind_y(l)
-        if(m>0) msgsize_y = get_mesgsize(group%update_y%recv(m), recv_v)*ksize*nvector
-        msgsize = msgsize_s + msgsize_x + msgsize_y
-        if( msgsize.GT.0 )then
-           tot_recv_size = tot_recv_size + msgsize
-           nrecv = nrecv + 1
-           from_pe_list(nrecv) = pelist(l)
-           recv_ind_s(nrecv) = ind_s(l)
-           recv_ind_x(nrecv) = ind_x(l)
-           recv_ind_y(nrecv) = ind_y(l)
-           recv_size(nrecv) = msgsize
-           buffer_pos_recv(nrecv) = update_buffer_pos
-           update_buffer_pos = update_buffer_pos + msgsize
-        end if
-     end do
-
-     if(nrecv > MAXOVERLAP) then
-        call mpp_error(FATAL, "MPP_CREATE_GROUP_UPDATE: nrecv is greater than MAXOVERLAP, increase MAXOVERLAP")
-     endif
-     group%nrecv = nrecv
-     if(nrecv > 0) then
-        group%from_pe(1:nrecv) = from_pe_list(1:nrecv)
-        group%buffer_pos_recv(1:nrecv) = buffer_pos_recv(1:nrecv)
-        group%recv_size(1:nrecv) = recv_size(1:nrecv)
-        group%msgsize_recv(1:nrecv) = recv_size(1:nrecv)/ksize
-        group%recv_ind_s(1:nrecv) = ind_s(1:nrecv)
-        group%recv_ind_x(1:nrecv) = ind_x(1:nrecv)
-        group%recv_ind_y(1:nrecv) = ind_y(1:nrecv)
-     endif
-
-     !figure out message size for each processor.
-     ntot = nsend_s + nsend_x + nsend_y
-     n = 1
-     i_s = 1
-     i_x = 1
-     i_y = 1
-     ind_s = -1
-     ind_x = -1
-     ind_y = -1
-     nsend = 0
-     do while(n<=ntot)
-        if( i_s <= nsend_s ) then
-           rank_s = group%update_s%send(i_s)%pe-domain%pe
-           if(rank_s .LT. 0) rank_s = rank_s + nlist
-        else
-           rank_s = nlist+1
-        endif
-        if( i_x <= nsend_x ) then
-           rank_x = group%update_x%send(i_x)%pe-domain%pe
-           if(rank_x .LT. 0) rank_x = rank_x + nlist
-        else
-           rank_x = nlist+1
-        endif
-        if( i_y <= nsend_y ) then
-           rank_y = group%update_y%send(i_y)%pe-domain%pe
-           if(rank_y .LT. 0) rank_y = rank_y + nlist
-        else
-           rank_y = nlist+1
-        endif
-        nsend = nsend + 1   
-        rank = minval((/rank_s, rank_x, rank_y/))
-        if(rank == rank_s) then
-           n = n + 1
-           ind_s(nsend) = i_s
-           pelist(nsend) = group%update_s%send(i_s)%pe
-           i_s = i_s + 1
-        endif
-        if(rank == rank_x) then
-           n = n + 1
-           ind_x(nsend) = i_x
-           pelist(nsend) = group%update_x%send(i_x)%pe
-           i_x = i_x + 1
-        endif
-        if(rank == rank_y) then
-           n = n + 1
-           ind_y(nsend) = i_y
-           pelist(nsend) = group%update_y%send(i_y)%pe
-           i_y = i_y + 1
-        endif
-     enddo
-
-     nsend_old = nsend
-     nsend     = 0
-     update_buffer_pos = 0
-     tot_send_size = 0
-     do l = 1, nsend_old
-        msgsize_s = 0
-        msgsize_x = 0
-        msgsize_y = 0
-        m = ind_s(l)
-        if(m>0) msgsize_s = get_mesgsize(group%update_s%send(m), send_s)*ksize*nscalar
-        m = ind_x(l)
-        if(m>0) msgsize_x = get_mesgsize(group%update_x%send(m), send_v)*ksize*nvector
-        m = ind_y(l)
-        if(m>0) msgsize_y = get_mesgsize(group%update_y%send(m), send_v)*ksize*nvector
-        msgsize = msgsize_s + msgsize_x + msgsize_y
-        if( msgsize.GT.0 )then
-           tot_send_size = tot_send_size + msgsize
-           nsend = nsend + 1
-           send_size(nsend) = msgsize
-           buffer_pos_send(nsend) = update_buffer_pos
-           send_ind_s(nsend) = ind_s(l)
-           send_ind_x(nsend) = ind_x(l)
-           send_ind_y(nsend) = ind_y(l)
-           to_pe_list(nsend) = pelist(l)
-           update_buffer_pos = update_buffer_pos + msgsize
-        end if
-     end do
-
-     if(nsend > MAXOVERLAP) then
-        call mpp_error(FATAL, "MPP_CREATE_GROUP_UPDATE: nsend is greater than MAXOVERLAP, increase MAXOVERLAP")
-     endif
-     group%nsend = nsend
-     if(nsend > 0) then
-        group%to_pe(1:nsend) = to_pe_list(1:nsend)
-        group%buffer_pos_send(1:nsend) = buffer_pos_send(1:nsend)
-        group%send_size(1:nsend) = send_size(1:nsend)
-        group%msgsize_send(1:nsend) = send_size(1:nsend)/ksize
-        group%send_ind_s(1:nsend) = ind_s(1:nsend)
-        group%send_ind_x(1:nsend) = ind_x(1:nsend)
-        group%send_ind_y(1:nsend) = ind_y(1:nsend)
-     endif
-     !--- make sure the buffer is large enough
-     mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, tot_recv_size )
-     mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, tot_send_size )
-
-     if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
-        write( text,'(i8)' )mpp_domains_stack_hwm
-        call mpp_error( FATAL, 'MPP_DO_GROUP_UPDATE: mpp_domains_stack overflow, '// &
-                     'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
-     end if
-  else
-     nrecv = group%nrecv
-     nsend = group%nsend
-  endif
+  nrecv = group%nrecv
+  nsend = group%nsend
 
   !---pre-post receive.
   call mpp_clock_begin(group_recv_clock)
@@ -669,7 +444,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
      from_pe = group%from_pe(m)
      if( msgsize .GT. 0 )then
         buffer_pos = group%buffer_pos_recv(m)
-        call mpp_recv( rbuffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.false., &
+        call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.false., &
              tag=COMM_TAG_1)
      end if
   end do
@@ -703,7 +478,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                     do j = js, je
                        do i = is, ie
                           pos = pos + 1
-                          sbuffer(pos) = field(i,j,k)
+                          buffer(pos) = field(i,j,k)
                        end do
                     end do
                  enddo
@@ -713,7 +488,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                     do i = is, ie
                        do j = je, js, -1
                           pos = pos + 1
-                          sbuffer(pos) = field(i,j,k)
+                          buffer(pos) = field(i,j,k)
                        end do
                     end do
                  end do
@@ -723,7 +498,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                     do i = ie, is, -1
                        do j = js, je
                           pos = pos + 1
-                          sbuffer(pos) = field(i,j,k)
+                          buffer(pos) = field(i,j,k)
                        end do
                     end do
                  end do
@@ -733,7 +508,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                     do j = je, js, -1
                        do i = ie, is, -1
                           pos = pos + 1
-                          sbuffer(pos) = field(i,j,k)
+                          buffer(pos) = field(i,j,k)
                        end do
                     end do
                  end do
@@ -757,7 +532,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                     do j = js, je
                        do i = is, ie
                           pos = pos + 1
-                          sbuffer(pos) = fieldx(i,j,k)
+                          buffer(pos) = fieldx(i,j,k)
                        end do
                     end do
                  end do
@@ -768,7 +543,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                        do i = is, ie
                           do j = je, js, -1
                              pos = pos + 1
-                             sbuffer(pos) = fieldy(i,j,k)
+                             buffer(pos) = fieldy(i,j,k)
                           end do
                        end do
                     end do
@@ -778,7 +553,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                        do i = is, ie
                           do j = je, js, -1
                              pos = pos + 1
-                             sbuffer(pos) = -fieldy(i,j,k)
+                             buffer(pos) = -fieldy(i,j,k)
                           end do
                        end do
                     end do
@@ -789,7 +564,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                     do i = ie, is, -1
                        do j = js, je
                           pos = pos + 1
-                          sbuffer(pos) = fieldy(i,j,k)
+                          buffer(pos) = fieldy(i,j,k)
                        end do
                     end do
                  end do
@@ -800,7 +575,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                        do j = je, js, -1
                           do i = ie, is, -1
                              pos = pos + 1
-                             sbuffer(pos) =  fieldx(i,j,k)
+                             buffer(pos) =  fieldx(i,j,k)
                           end do
                        end do
                     end do
@@ -810,7 +585,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                        do j = je, js, -1
                           do i = ie, is, -1
                              pos = pos + 1
-                             sbuffer(pos) =  -fieldx(i,j,k)
+                             buffer(pos) =  -fieldx(i,j,k)
                           end do
                        end do
                     end do
@@ -835,7 +610,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                     do j = js, je
                        do i = is, ie
                           pos = pos + 1
-                          sbuffer(pos) = fieldy(i,j,k)
+                          buffer(pos) = fieldy(i,j,k)
                        end do
                     end do
                  end do
@@ -845,7 +620,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                     do i = is, ie
                        do j = je, js, -1
                           pos = pos + 1
-                          sbuffer(pos) = fieldx(i,j,k)
+                          buffer(pos) = fieldx(i,j,k)
                        end do
                     end do
                  end do
@@ -856,7 +631,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                        do i = ie, is, -1
                           do j = js, je
                              pos = pos + 1
-                             sbuffer(pos) = fieldx(i,j,k)
+                             buffer(pos) = fieldx(i,j,k)
                           end do
                        end do
                     end do
@@ -866,7 +641,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                        do i = ie, is, -1
                           do j = js, je
                              pos = pos + 1
-                             sbuffer(pos) = -fieldx(i,j,k)
+                             buffer(pos) = -fieldx(i,j,k)
                           end do
                        end do
                     end do
@@ -878,7 +653,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                        do j = je, js, -1
                           do i = ie, is, -1
                              pos = pos + 1
-                             sbuffer(pos) =  fieldy(i,j,k)
+                             buffer(pos) =  fieldy(i,j,k)
                           end do
                        end do
                     end do
@@ -888,7 +663,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                        do j = je, js, -1
                           do i = ie, is, -1
                              pos = pos + 1
-                             sbuffer(pos) =  -fieldy(i,j,k)
+                             buffer(pos) =  -fieldy(i,j,k)
                           end do
                        end do
                     end do
@@ -906,7 +681,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
      if( msgsize .GT. 0 )then
         buffer_pos = group%buffer_pos_send(t)
         to_pe = group%to_pe(t)
-        call mpp_send( sbuffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_1)
+        call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_1)
      endif
   enddo
   call mpp_clock_end(group_send_clock)
@@ -942,7 +717,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                  do j = js, je
                     do i = is, ie
                        pos = pos + 1
-                       field(i,j,k) = rbuffer(pos)
+                       field(i,j,k) = buffer(pos)
                     end do
                  end do
               end do
@@ -963,7 +738,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                  do j = js, je
                     do i = is, ie
                        pos = pos + 1
-                       fieldx(i,j,k) = rbuffer(pos)
+                       fieldx(i,j,k) = buffer(pos)
                     end do
                  end do
               end do
@@ -984,7 +759,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                  do j = js, je
                     do i = is, ie
                        pos = pos + 1
-                       fieldy(i,j,k) = rbuffer(pos)
+                       fieldy(i,j,k) = buffer(pos)
                     end do
                  end do
               end do
@@ -1105,5 +880,674 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   endif
 
 end subroutine MPP_DO_GROUP_UPDATE_
+
+
+subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
+  type(mpp_group_update_type), intent(inout) :: group
+  type(domain2D),              intent(inout) :: domain  
+  MPP_TYPE_,                   intent(in)    :: d_type
+  logical,  optional,          intent(in)    :: reuse_buffer
+
+  integer   :: nscalar, nvector
+  integer   :: nsend, nrecv, flags_v
+  integer   :: msgsize
+  integer   :: from_pe, to_pe, buffer_pos, pos, dir
+  integer   :: ksize, is, ie, js, je
+  integer   :: n, l, m, t, i, j, k, tk
+  logical   :: send_s(8), send_v(8)
+  logical   :: reuse_buf_pos
+  type(overlap_type), pointer :: overPtr => NULL()
+
+  MPP_TYPE_ :: buffer(size(mpp_domains_stack_nonblock(:)))
+  MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize_s)
+  MPP_TYPE_ :: fieldx(group%is_x:group%ie_x,group%js_x:group%je_x, group%ksize_v)
+  MPP_TYPE_ :: fieldy(group%is_y:group%ie_y,group%js_y:group%je_y, group%ksize_v)
+  pointer( ptr, buffer )
+  pointer(ptr_field, field)
+  pointer(ptr_fieldx, fieldx)
+  pointer(ptr_fieldy, fieldy)
+
+  nscalar = group%nscalar
+  nvector = group%nvector
+
+  if(nscalar > 0) send_s = group%recv_s
+  if(nvector > 0) send_v = group%recv_v
+  if(nscalar>0) then
+     ksize = group%ksize_s
+  else
+     ksize = group%ksize_v
+  endif
+
+  !--- set reset_index_s and reset_index_v to 0 
+  group%reset_index_s = 0
+  group%reset_index_v = 0
+
+  reuse_buf_pos = .FALSE.
+  if (PRESENT(reuse_buffer)) reuse_buf_pos = reuse_buffer
+
+  if (.not. group%initialized) then
+    call set_group_update(group,domain)
+  endif
+  if (.not. reuse_buf_pos) then
+     group%buffer_start_pos = nonblock_group_buffer_pos
+  else if( group%buffer_start_pos < 0 ) then
+     call mpp_error(FATAL, "MPP_START_GROUP_UPDATE: group%buffer_start_pos is not set")
+  endif
+  nonblock_group_buffer_pos = nonblock_group_buffer_pos + group%tot_msgsize
+
+  nrecv = group%nrecv
+  nsend = group%nsend
+
+  ptr = LOC(mpp_domains_stack_nonblock)
+
+  ! Make sure it is not in the middle of the old version of non-blocking halo update.
+  if(num_update>0) call mpp_error(FATAL, "MPP_START_GROUP_UPDATE: can not be called in the middle of "// &
+              "mpp_start_update_domains/mpp_complete_update_domains call")
+
+  num_nonblock_group_update = num_nonblock_group_update + 1
+
+  !---pre-post receive.
+  call mpp_clock_begin(nonblock_group_recv_clock)
+  do m = 1, nrecv
+     msgsize = group%recv_size(m)
+     from_pe = group%from_pe(m)
+     if( msgsize .GT. 0 )then
+        buffer_pos = group%buffer_pos_recv(m) + group%buffer_start_pos
+        call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.false., &
+             tag=COMM_TAG_1, request=group%request_recv(m))
+#ifdef use_libMPI
+        group%type_recv(m) = MPI_TYPE_
+#endif
+     end if
+  end do
+  call mpp_clock_end(nonblock_group_recv_clock)
+
+  flags_v = group%flags_v
+
+  call mpp_clock_begin(nonblock_group_pack_clock)
+  !pack the data
+  !$OMP parallel do schedule(dynamic) default(shared) private(t, k, buffer_pos, msgsize, pos, m, &
+  !$OMP                                                       overPtr, dir, is, ie, js, je,      &
+  !$OMP                                                       ptr_field, ptr_fieldx, ptr_fieldy )
+  do tk = 1, nsend*ksize
+     t = (tk-1)/ksize + 1
+     k = mod((tk-1), ksize) + 1
+     buffer_pos = group%buffer_pos_send(t) + group%buffer_start_pos
+     msgsize    = group%msgsize_send(t)
+     pos  = buffer_pos + (k-1)*msgsize
+     m = group%send_ind_s(t)
+     if( m > 0 ) then
+        overPtr => group%update_s%send(m)
+        do n = 1, overPtr%count
+           dir = overPtr%dir(n)
+           if( send_s(dir) ) then
+              is = overPtr%is(n); ie = overPtr%ie(n)
+              js = overPtr%js(n); je = overPtr%je(n)
+              select case( overPtr%rotation(n) )
+              case(ZERO)
+                 do l=1, group%nscalar  ! loop over number of fields
+                    ptr_field = group%addrs_s(l)
+                    do j = js, je
+                       do i = is, ie
+                          pos = pos + 1
+                          buffer(pos) = field(i,j,k)
+                       end do
+                    end do
+                 enddo
+              case( MINUS_NINETY )
+                 do l=1,group%nscalar  ! loop over number of fields
+                    ptr_field = group%addrs_s(l)
+                    do i = is, ie
+                       do j = je, js, -1
+                          pos = pos + 1
+                          buffer(pos) = field(i,j,k)
+                       end do
+                    end do
+                 end do
+              case( NINETY )
+                 do l=1,group%nscalar  ! loop over number of fields
+                    ptr_field = group%addrs_s(l)
+                    do i = ie, is, -1
+                       do j = js, je
+                          pos = pos + 1
+                          buffer(pos) = field(i,j,k)
+                       end do
+                    end do
+                 end do
+              case( ONE_HUNDRED_EIGHTY )
+                 do l=1,group%nscalar  ! loop over number of fields
+                    ptr_field = group%addrs_s(l)
+                    do j = je, js, -1
+                       do i = ie, is, -1
+                          pos = pos + 1
+                          buffer(pos) = field(i,j,k)
+                       end do
+                    end do
+                 end do
+              end select
+           endif
+        end do
+     endif
+
+     m = group%send_ind_x(t)
+     if( m > 0 ) then
+        overPtr => group%update_x%send(m)
+        do n = 1, overPtr%count
+           dir = overPtr%dir(n)
+           if( send_v(dir) ) then
+              is = overPtr%is(n); ie = overPtr%ie(n)
+              js = overPtr%js(n); je = overPtr%je(n)
+              select case( overPtr%rotation(n) )
+              case(ZERO)
+                 do l=1, nvector  ! loop over number of fields
+                    ptr_fieldx = group%addrs_x(l)
+                    do j = js, je
+                       do i = is, ie
+                          pos = pos + 1
+                          buffer(pos) = fieldx(i,j,k)
+                       end do
+                    end do
+                 end do
+              case( MINUS_NINETY )
+                 if( BTEST(group%flags_v,SCALAR_BIT) ) then
+                    do l=1,nvector  ! loop over number of fields
+                       ptr_fieldy = group%addrs_y(l)
+                       do i = is, ie
+                          do j = je, js, -1
+                             pos = pos + 1
+                             buffer(pos) = fieldy(i,j,k)
+                          end do
+                       end do
+                    end do
+                 else
+                    do l=1,nvector  ! loop over number of fields
+                       ptr_fieldy = group%addrs_y(l)
+                       do i = is, ie
+                          do j = je, js, -1
+                             pos = pos + 1
+                             buffer(pos) = -fieldy(i,j,k)
+                          end do
+                       end do
+                    end do
+                 end if
+              case( NINETY )
+                 do l=1, nvector  ! loop over number of fields
+                    ptr_fieldy = group%addrs_y(l)
+                    do i = ie, is, -1
+                       do j = js, je
+                          pos = pos + 1
+                          buffer(pos) = fieldy(i,j,k)
+                       end do
+                    end do
+                 end do
+              case( ONE_HUNDRED_EIGHTY )
+                 if( BTEST(group%flags_v,SCALAR_BIT) ) then
+                    do l=1,nvector  ! loop over number of fields
+                       ptr_fieldx = group%addrs_x(l)
+                       do j = je, js, -1
+                          do i = ie, is, -1
+                             pos = pos + 1
+                             buffer(pos) =  fieldx(i,j,k)
+                          end do
+                       end do
+                    end do
+                 else
+                    do l=1,nvector  ! loop over number of fields
+                       ptr_fieldx = group%addrs_x(l)
+                       do j = je, js, -1
+                          do i = ie, is, -1
+                             pos = pos + 1
+                             buffer(pos) =  -fieldx(i,j,k)
+                          end do
+                       end do
+                    end do
+                 end if
+              end select ! select case( rotation(n) )
+           end if ! if( send(dir) )
+        end do ! do n = 1, update_x%send(m)%count
+     endif
+
+     m = group%send_ind_y(t)
+     if( m > 0 ) then
+        overPtr => group%update_y%send(m)
+        do n = 1, overPtr%count
+           dir = overPtr%dir(n)
+           if( send_v(dir) ) then
+              is = overPtr%is(n); ie = overPtr%ie(n)
+              js = overPtr%js(n); je = overPtr%je(n)
+              select case( overPtr%rotation(n) )
+              case(ZERO)
+                 do l=1, nvector  ! loop over number of fields
+                    ptr_fieldy = group%addrs_y(l)
+                    do j = js, je
+                       do i = is, ie
+                          pos = pos + 1
+                          buffer(pos) = fieldy(i,j,k)
+                       end do
+                    end do
+                 end do
+              case( MINUS_NINETY )
+                 do l=1,nvector  ! loop over number of fields
+                    ptr_fieldx = group%addrs_x(l)
+                    do i = is, ie
+                       do j = je, js, -1
+                          pos = pos + 1
+                          buffer(pos) = fieldx(i,j,k)
+                       end do
+                    end do
+                 end do
+              case( NINETY )
+                 if( BTEST(group%flags_v,SCALAR_BIT) ) then
+                    do l=1, nvector  ! loop over number of fields
+                       ptr_fieldx = group%addrs_x(l)
+                       do i = ie, is, -1
+                          do j = js, je
+                             pos = pos + 1
+                             buffer(pos) = fieldx(i,j,k)
+                          end do
+                       end do
+                    end do
+                 else
+                    do l=1,nvector  ! loop over number of fields
+                       ptr_fieldx = group%addrs_x(l)
+                       do i = ie, is, -1
+                          do j = js, je
+                             pos = pos + 1
+                             buffer(pos) = -fieldx(i,j,k)
+                          end do
+                       end do
+                    end do
+                 end if
+              case( ONE_HUNDRED_EIGHTY )
+                 if( BTEST(group%flags_v,SCALAR_BIT) ) then
+                    do l=1,nvector  ! loop over number of fields
+                       ptr_fieldy = group%addrs_y(l)
+                       do j = je, js, -1
+                          do i = ie, is, -1
+                             pos = pos + 1
+                             buffer(pos) =  fieldy(i,j,k)
+                          end do
+                       end do
+                    end do
+                 else
+                    do l=1,nvector  ! loop over number of fields
+                       ptr_fieldy = group%addrs_y(l)
+                       do j = je, js, -1
+                          do i = ie, is, -1
+                             pos = pos + 1
+                             buffer(pos) =  -fieldy(i,j,k)
+                          end do
+                       end do
+                    end do
+                 end if
+              end select ! select case( rotation(n) )
+           end if ! if( send(dir) )
+        end do ! do n = 1, overptr%count
+     endif
+  enddo
+  call mpp_clock_end(nonblock_group_pack_clock)
+
+  call mpp_clock_begin(nonblock_group_send_clock)
+  do t = 1, nsend  
+     msgsize = group%send_size(t)
+     if( msgsize .GT. 0 )then
+        buffer_pos = group%buffer_pos_send(t) + group%buffer_start_pos
+        to_pe = group%to_pe(t)
+        call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_1, &
+                       request=group%request_send(t))
+     endif
+  enddo
+  call mpp_clock_end(nonblock_group_send_clock)
+
+end subroutine MPP_START_GROUP_UPDATE_
+
+subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
+  type(mpp_group_update_type), intent(inout) :: group
+  type(domain2D),              intent(inout) :: domain  
+  MPP_TYPE_,                   intent(in)    :: d_type
+
+  integer   :: nsend, nrecv, nscalar, nvector
+  integer   :: t, k, tk, buffer_pos, msgsize, pos, m, n, l
+  integer   :: is, ie, js, je, dir, ksize, i, j
+  logical   :: recv_s(8), recv_v(8)
+  integer   :: shift, gridtype, midpoint, flags_v
+  type(overlap_type), pointer :: overPtr => NULL()
+  MPP_TYPE_ :: buffer(size(mpp_domains_stack_nonblock(:)))
+  MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize_s)
+  MPP_TYPE_ :: fieldx(group%is_x:group%ie_x,group%js_x:group%je_x, group%ksize_v)
+  MPP_TYPE_ :: fieldy(group%is_y:group%ie_y,group%js_y:group%je_y, group%ksize_v)
+  pointer(ptr, buffer )
+  pointer(ptr_field, field)
+  pointer(ptr_fieldx, fieldx)
+  pointer(ptr_fieldy, fieldy)
+
+  gridtype = group%gridtype
+  flags_v = group%flags_v
+  nscalar = group%nscalar
+  nvector = group%nvector
+  nrecv = group%nrecv
+  nsend = group%nsend
+  if(nscalar>0) then
+     ksize = group%ksize_s
+  else
+     ksize = group%ksize_v
+  endif
+  if(nscalar > 0) recv_s = group%recv_s
+  if(nvector > 0) recv_v = group%recv_v
+
+  ptr = LOC(mpp_domains_stack_nonblock)
+
+  if(num_nonblock_group_update < 1) call mpp_error(FATAL, &
+    'mpp_start_group_update must be called before calling mpp_end_group_update')  
+  num_nonblock_group_update = num_nonblock_group_update - 1
+  complete_group_update_on = .true.
+
+  if(nrecv>0) then
+     call mpp_clock_begin(nonblock_group_wait_clock)
+     call mpp_sync_self(check=EVENT_RECV, request=group%request_recv(1:nrecv), &
+                        msg_size=group%recv_size(1:nrecv), msg_type=group%type_recv(1:nrecv))
+     call mpp_clock_end(nonblock_group_wait_clock)
+  endif
+
+  !---unpack the buffer
+  call mpp_clock_begin(nonblock_group_unpk_clock)
+  !$OMP parallel do schedule(dynamic) default(shared) private(t, k, buffer_pos, msgsize, pos, m, &
+  !$OMP                                                       overPtr, dir, is, ie, js, je,      &
+  !$OMP                                                       ptr_field, ptr_fieldx, ptr_fieldy )
+  do tk = 1, nrecv*ksize
+     t = (tk-1)/ksize + 1
+     k = mod((tk-1), ksize) + 1
+     msgsize = group%msgsize_recv(t)
+     buffer_pos = group%buffer_pos_recv(t) + group%buffer_start_pos
+     pos = buffer_pos + (k-1)*msgsize
+
+     m = group%recv_ind_s(t)
+     if( m > 0 ) then
+        overPtr => group%update_s%recv(m)
+        do n = 1, overPtr%count
+           dir = overPtr%dir(n)
+           if( recv_s(dir) ) then
+              is = overPtr%is(n); ie = overPtr%ie(n)
+              js = overPtr%js(n); je = overPtr%je(n)
+              do l=1,nscalar  ! loop over number of fields
+                 ptr_field = group%addrs_s(l)
+                 do j = js, je
+                    do i = is, ie
+                       pos = pos + 1
+                       field(i,j,k) = buffer(pos)
+                    end do
+                 end do
+              end do
+           end if
+        end do
+     end if
+
+     m = group%recv_ind_x(t)
+     if( m > 0 ) then
+        overPtr => group%update_x%recv(m)
+        do n = 1, overPtr%count
+           dir = overPtr%dir(n)
+           if( recv_v(dir) ) then
+              is = overPtr%is(n); ie = overPtr%ie(n)
+              js = overPtr%js(n); je = overPtr%je(n)
+              do l=1,nvector  ! loop over number of fields
+                 ptr_fieldx = group%addrs_x(l)
+                 do j = js, je
+                    do i = is, ie
+                       pos = pos + 1
+                       fieldx(i,j,k) = buffer(pos)
+                    end do
+                 end do
+              end do
+           endif
+        enddo
+     endif
+
+     m = group%recv_ind_y(t)
+     if( m > 0 ) then
+        overPtr => group%update_y%recv(m)
+        do n = 1, overPtr%count
+           dir = overPtr%dir(n)
+           if( recv_v(dir) ) then
+              is = overPtr%is(n); ie = overPtr%ie(n)
+              js = overPtr%js(n); je = overPtr%je(n)
+              do l=1,nvector  ! loop over number of fields
+                 ptr_fieldy = group%addrs_y(l)
+                 do j = js, je
+                    do i = is, ie
+                       pos = pos + 1
+                       fieldy(i,j,k) = buffer(pos)
+                    end do
+                 end do
+              end do
+           endif
+        enddo
+     endif
+  enddo
+  call mpp_clock_end(nonblock_group_unpk_clock)
+
+  ! ---northern boundary fold
+  shift = 0
+  if(domain%symmetry) shift = 1
+  if( nvector >0 .AND. BTEST(domain%fold,NORTH) .AND. (.NOT.BTEST(flags_v,SCALAR_BIT)) )then
+     j = domain%y(1)%global%end+shift
+     if( domain%y(1)%data%begin.LE.j .AND. j.LE.domain%y(1)%data%end+shift )then !fold is within domain
+        !poles set to 0: BGRID only
+        if( gridtype.EQ.BGRID_NE )then
+           midpoint = (domain%x(1)%global%begin+domain%x(1)%global%end-1+shift)/2
+           j  = domain%y(1)%global%end+shift
+           is = domain%x(1)%global%begin; ie = domain%x(1)%global%end+shift
+           if( .NOT. domain%symmetry ) is = is - 1
+           do i = is ,ie, midpoint
+              if( domain%x(1)%data%begin.LE.i .AND. i.LE. domain%x(1)%data%end+shift )then
+                 do l=1,nvector
+                    ptr_fieldx = group%addrs_x(l)
+                    ptr_fieldy = group%addrs_y(l)
+                    do k = 1,ksize
+                       fieldx(i,j,k) = 0.
+                       fieldy(i,j,k) = 0.
+                    end do
+                 end do
+              end if
+           end do
+        endif
+        ! the following code code block correct an error where the data in your halo coming from
+        ! other half may have the wrong sign
+        !off west edge, when update north or west direction
+        j = domain%y(1)%global%end+shift
+        if ( recv_v(7) .OR. recv_v(5) ) then
+           select case(gridtype)
+           case(BGRID_NE)
+              if(domain%symmetry) then
+                 is = domain%x(1)%global%begin
+              else
+                 is = domain%x(1)%global%begin - 1
+              end if
+              if( is.GT.domain%x(1)%data%begin )then
+
+                 if( 2*is-domain%x(1)%data%begin.GT.domain%x(1)%data%end+shift ) &
+                      call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north BGRID_NE west edge ubound error.' )
+                 do l=1,nvector
+                    ptr_fieldx = group%addrs_x(l)
+                    ptr_fieldy = group%addrs_y(l)
+                    do k = 1,ksize
+                       do i = domain%x(1)%data%begin,is-1
+                          fieldx(i,j,k) = fieldx(2*is-i,j,k)
+                          fieldy(i,j,k) = fieldy(2*is-i,j,k)
+                       end do
+                    end do
+                 end do
+              end if
+           case(CGRID_NE)
+              is = domain%x(1)%global%begin
+              if( is.GT.domain%x(1)%data%begin )then
+                 if( 2*is-domain%x(1)%data%begin-1.GT.domain%x(1)%data%end ) &
+                      call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
+                 do l=1,nvector
+                    ptr_fieldy = group%addrs_y(l)
+                    do k = 1,ksize
+                       do i = domain%x(1)%data%begin,is-1
+                          fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
+                       end do
+                    end do
+                 end do
+              end if
+           end select
+        end if
+        !off east edge
+        is = domain%x(1)%global%end
+        if(domain%x(1)%cyclic .AND. is.LT.domain%x(1)%data%end )then
+           ie = domain%x(1)%data%end
+           is = is + 1
+           select case(gridtype)
+           case(BGRID_NE)
+              is = is + shift
+              ie = ie + shift
+              do l=1,nvector
+                 ptr_fieldx = group%addrs_x(l)
+                 ptr_fieldy = group%addrs_y(l)
+                 do k = 1,ksize
+                    do i = is,ie
+                       fieldx(i,j,k) = -fieldx(i,j,k)
+                       fieldy(i,j,k) = -fieldy(i,j,k)
+                    end do
+                 end do
+              end do
+           case(CGRID_NE)
+              do l=1,nvector
+                 ptr_fieldy = group%addrs_y(l)
+                 do k = 1,ksize
+                    do i = is, ie
+                       fieldy(i,j,k) = -fieldy(i,j,k)
+                    end do
+                 end do
+              end do
+           end select
+        end if
+     end if
+  else if( BTEST(domain%fold,SOUTH) .OR. BTEST(domain%fold,WEST) .OR. BTEST(domain%fold,EAST) ) then
+     call mpp_error(FATAL, "MPP_COMPLETE_GROUP_UPDATE: this interface does not support folded_south, " // &
+          "folded_west of folded_east, contact developer")
+  endif
+
+  if(nsend>0) then
+     call mpp_clock_begin(nonblock_group_wait_clock)
+     call mpp_sync_self(check=EVENT_SEND, request=group%request_send(1:nsend) )
+     call mpp_clock_end(nonblock_group_wait_clock)
+  endif
+
+  if( num_nonblock_group_update == 0) then
+     nonblock_group_buffer_pos   = 0
+  endif
+
+end subroutine MPP_COMPLETE_GROUP_UPDATE_
+
+subroutine MPP_RESET_GROUP_UPDATE_FIELD_2D_(group, field)
+  type(mpp_group_update_type), intent(inout) :: group
+  MPP_TYPE_,                   intent(in)    :: field(:,:)
+
+  group%reset_index_s = group%reset_index_s + 1
+
+  if(group%reset_index_s > group%nscalar) &
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_2D_: group%reset_index_s > group%nscalar")
+  if(size(field,1) .NE. group%isize_s .OR. size(field,2) .NE. group%jsize_s .OR. group%ksize_s .NE. 1) &
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_2D_: size of field does not match the size stored in group") 
+
+  group%addrs_s(group%reset_index_s) = LOC(field)
+
+end subroutine MPP_RESET_GROUP_UPDATE_FIELD_2D_
+
+subroutine MPP_RESET_GROUP_UPDATE_FIELD_3D_(group, field)
+  type(mpp_group_update_type), intent(inout) :: group
+  MPP_TYPE_,                   intent(in)    :: field(:,:,:)
+
+  group%reset_index_s = group%reset_index_s + 1
+
+  if(group%reset_index_s > group%nscalar) &
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_3D_: group%reset_index_s > group%nscalar")
+  if(size(field,1) .NE. group%isize_s .OR. size(field,2) .NE. group%jsize_s .OR. size(field,3) .NE. group%ksize_s) &
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_3D_: size of field does not match the size stored in group") 
+
+  group%addrs_s(group%reset_index_s) = LOC(field)
+
+end subroutine MPP_RESET_GROUP_UPDATE_FIELD_3D_
+
+subroutine MPP_RESET_GROUP_UPDATE_FIELD_4D_(group, field)
+  type(mpp_group_update_type), intent(inout) :: group
+  MPP_TYPE_,                   intent(in)    :: field(:,:,:,:)
+
+  group%reset_index_s = group%reset_index_s + 1
+
+  if(group%reset_index_s > group%nscalar) &
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_4D_: group%reset_index_s > group%nscalar")
+  if(size(field,1) .NE. group%isize_s .OR. size(field,2) .NE. group%jsize_s .OR. &
+              size(field,3)*size(field,4) .NE. group%ksize_s) &
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_4D_: size of field does not match the size stored in group") 
+
+  group%addrs_s(group%reset_index_s) = LOC(field)
+
+end subroutine MPP_RESET_GROUP_UPDATE_FIELD_4D_
+
+
+subroutine MPP_RESET_GROUP_UPDATE_FIELD_2D_V_(group, fieldx, fieldy)
+  type(mpp_group_update_type), intent(inout) :: group
+  MPP_TYPE_,                   intent(in)    :: fieldx(:,:), fieldy(:,:)
+  integer :: indx
+
+  group%reset_index_v = group%reset_index_v + 1
+
+  if(group%reset_index_v > group%nvector) &
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_2D_V_: group%reset_index_v > group%nvector")
+  if(size(fieldx,1) .NE. group%isize_x .OR. size(fieldx,2) .NE. group%jsize_x .OR. group%ksize_v .NE. 1) &
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_2D_V_: size of fieldx does not match the size stored in group") 
+  if(size(fieldy,1) .NE. group%isize_y .OR. size(fieldy,2) .NE. group%jsize_y ) &
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_2D_V_: size of fieldy does not match the size stored in group") 
+
+  group%addrs_x(group%reset_index_v) = LOC(fieldx)
+  group%addrs_y(group%reset_index_v) = LOC(fieldy)
+
+end subroutine MPP_RESET_GROUP_UPDATE_FIELD_2D_V_
+
+
+subroutine MPP_RESET_GROUP_UPDATE_FIELD_3D_V_(group, fieldx, fieldy)
+  type(mpp_group_update_type), intent(inout) :: group
+  MPP_TYPE_,                   intent(in)    :: fieldx(:,:,:), fieldy(:,:,:)
+  integer :: indx
+
+  group%reset_index_v = group%reset_index_v + 1
+
+  if(group%reset_index_v > group%nvector) &
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_3D_V_: group%reset_index_v > group%nvector")
+  if(size(fieldx,1) .NE. group%isize_x .OR. size(fieldx,2) .NE. group%jsize_x .OR. size(fieldx,3) .NE. group%ksize_v) &
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_3D_V_: size of fieldx does not match the size stored in group") 
+  if(size(fieldy,1) .NE. group%isize_y .OR. size(fieldy,2) .NE. group%jsize_y .OR. size(fieldy,3) .NE. group%ksize_v) &
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_3D_V_: size of fieldy does not match the size stored in group") 
+
+  group%addrs_x(group%reset_index_v) = LOC(fieldx)
+  group%addrs_y(group%reset_index_v) = LOC(fieldy)
+
+end subroutine MPP_RESET_GROUP_UPDATE_FIELD_3D_V_
+
+
+subroutine MPP_RESET_GROUP_UPDATE_FIELD_4D_V_(group, fieldx, fieldy)
+  type(mpp_group_update_type), intent(inout) :: group
+  MPP_TYPE_,                   intent(in)    :: fieldx(:,:,:,:), fieldy(:,:,:,:)
+  integer :: indx
+
+  group%reset_index_v = group%reset_index_v + 1
+
+  if(group%reset_index_v > group%nvector) &
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_4D_V_: group%reset_index_v > group%nvector")
+  if(size(fieldx,1) .NE. group%isize_x .OR. size(fieldx,2) .NE. group%jsize_x .OR. &
+              size(fieldx,3)*size(fieldx,4) .NE. group%ksize_v) &
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_4D_V_: size of fieldx does not match the size stored in group") 
+  if(size(fieldy,1) .NE. group%isize_y .OR. size(fieldy,2) .NE. group%jsize_y .OR. &
+              size(fieldy,3)*size(fieldy,4) .NE. group%ksize_v) &
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_4D_V_: size of fieldy does not match the size stored in group") 
+
+  group%addrs_x(group%reset_index_v) = LOC(fieldx)
+  group%addrs_y(group%reset_index_v) = LOC(fieldy)
+
+end subroutine MPP_RESET_GROUP_UPDATE_FIELD_4D_V_
 
 

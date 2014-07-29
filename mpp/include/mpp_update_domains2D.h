@@ -208,6 +208,9 @@
       type(DomainCommunicator2D),pointer,optional :: dc_handle
       pointer( ptr_in,  field3D_in  )
       pointer( ptr_out, field3D_out )
+
+      ptr_in = 0
+      ptr_out = 0
       if(domain_in%initialized) ptr_in  = LOC(field_in )
       if(domain_out%initialized) ptr_out = LOC(field_out)
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, dc_handle, position )
@@ -322,6 +325,9 @@
       type(DomainCommunicator2D),pointer,optional :: dc_handle
       pointer( ptr_in,  field3D_in  )
       pointer( ptr_out, field3D_out )
+
+      ptr_in = 0
+      ptr_out = 0
       if(domain_in%initialized) ptr_in  = LOC(field_in )
       if(domain_out%initialized) ptr_out = LOC(field_out)
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, dc_handle, position  )
@@ -342,6 +348,9 @@
       type(DomainCommunicator2D),pointer,optional :: dc_handle
       pointer( ptr_in,  field3D_in  )
       pointer( ptr_out, field3D_out )
+
+      ptr_in = 0
+      ptr_out = 0
       if(domain_in%initialized) ptr_in  = LOC(field_in )
       if(domain_out%initialized) ptr_out = LOC(field_out)
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, dc_handle, position  )

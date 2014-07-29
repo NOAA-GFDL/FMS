@@ -2989,9 +2989,9 @@ subroutine astronomy_end
 !----------------------------------------------------------------------
 !    check if the module has been initialized.
 !----------------------------------------------------------------------
-      if (.not. module_is_initialized)   &
-                call error_mesg ( 'astronomy_mod',  &
-                         ' module has not been initialized', FATAL)
+      if (.not. module_is_initialized)  return 
+!                call error_mesg ( 'astronomy_mod',  &
+!                         ' module has not been initialized', FATAL)
 
 !----------------------------------------------------------------------
 !    deallocate module variables.

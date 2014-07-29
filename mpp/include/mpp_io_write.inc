@@ -626,9 +626,8 @@
 !           call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
            
 !pre-existing pointers need to be nullified
-      if( ASSOCIATED(field%axes) ) then
-         DEALLOCATE(field%axes, stat=istat)
-      endif
+      if( ASSOCIATED(field%axes) ) DEALLOCATE(field%axes, stat=istat)
+      if( ASSOCIATED(field%size) ) DEALLOCATE(field%size, stat=istat)
 !fill in field metadata
       field%name = name
       field%units = units
@@ -692,6 +691,7 @@
                   call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: only legal packing values are 1,2,4,8.' )
           end select
           call netcdf_err( error, mpp_file(unit), field=field )
+          deallocate(axis_id)
 #ifndef use_netCDF3
           if(shuffle .NE. 0 .OR. deflate .NE. 0) then
              error = NF_DEF_VAR_DEFLATE(mpp_file(unit)%ncid, field%id, shuffle, deflate, deflate_level)
@@ -1040,13 +1040,16 @@
         field%axes(1)%data = axis%data
         call write_record( unit, field, axis%len, axis%data )
       elseif(ASSOCIATED(axis%idata))then
-        allocate( field%axes(1)%data(size(axis%data) ))
+        allocate( field%axes(1)%data(size(axis%idata) ))
         field%axes(1)%data = REAL(axis%idata)
         field%pack=4
         call write_record( unit, field, axis%len, REAL(axis%idata) )
       else
         call mpp_error( FATAL, 'MPP_WRITE_AXIS: No data associated with axis.' )
       endif
+
+      deallocate(field%axes(1)%data)
+      deallocate(field%axes,field%size)
 
       call mpp_clock_end(mpp_write_clock)
       return
@@ -1465,6 +1468,7 @@
               case default
                   call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: only legal packing values are 1,2,4,8.' )
           end select
+          deallocate( axis_id )
 #endif            
       else
           varnum = varnum + 1
