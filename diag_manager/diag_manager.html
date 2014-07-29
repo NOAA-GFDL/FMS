@@ -657,13 +657,28 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>diag_field_id&nbsp;&nbsp;&nbsp;</tt></td><td></td>
+<td valign="top" align="left"><tt>diag_field_id&nbsp;&nbsp;&nbsp;</tt></td><td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>att_name&nbsp;&nbsp;&nbsp;</tt></td><td></td>
+<td valign="top" align="left"><tt>att_name&nbsp;&nbsp;&nbsp;</tt></td><td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>att_value&nbsp;&nbsp;&nbsp;</tt></td><td></td>
+<td valign="top" align="left"><tt>att_value&nbsp;&nbsp;&nbsp;</tt></td><td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL, DIMENSION(:)]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, DIMENSION(:)]</span></td>
 </tr>
 </table>
 </dd>
@@ -1143,6 +1158,14 @@
 </dt>
 <dl>
      Maximum number of user definable attributes per field.
+   <br>
+<span class="type">[INTEGER, default: 2]</span>
+</dl>
+<dt>
+<tt>max_file_attributes</tt>
+</dt>
+<dl>
+     Maximum number of user definable global attributes per file.
    <br>
 <span class="type">[INTEGER, default: 2]</span>
 </dl>

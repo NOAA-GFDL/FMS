@@ -66,6 +66,16 @@
 <div>
 <dl>
 <dt>
+<a href="#prepend_attribute">prepend_attribute</a>:</dt>
+<dd>
+     prepend a value to a string attribute in the output field or output file
+   </dd>
+<dt>
+<a href="#attribute_init">attribute_init</a>:</dt>
+<dd>
+     Allocates the atttype in out_file
+   </dd>
+<dt>
 <a href="#get_subfield_size">get_subfield_size</a>:</dt>
 <dd>
      Get the size, start, and end indices for output fields.
@@ -153,17 +163,6 @@
 <dd>
      Checks to see if <tt>output_name</tt> and <tt>output_file</tt> are unique in <tt>output_fields</tt>.
    </dd>
-<dt>
-<a href="#attribute_init">attribute_init</a>:</dt>
-<dd>
-     Allocates the atttype in out_field
-   </dd>
-<dt>
-<a href="#prepend_attribute">prepend_attribute</a>:</dt>
-<dd>
-     Prepends the attribute value to an already existing attribute.  If the
-     attribute isn't yet defined, then creates a new attribute
-   </dd>
 </dl>
 </div>
 <br>
@@ -173,6 +172,86 @@
 <h4>PUBLIC ROUTINES</h4>
 <!-- BEGIN PUBLIC ROUTINES -->
 <ol type="a">
+<li>
+<a name="prepend_attribute"></a>
+<h4>prepend_attribute</h4>
+<pre>SUBROUTINE <b>prepend_attribute</b> (output_field, att_name, att_value) SUBROUTINE prepend_attribute(output_file, att_name, att_value)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>
+     Prepend a character string to a character attribute for a give field, or to a global attribute
+     in a give file.
+   </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>output_field&nbsp;&nbsp;&nbsp;</tt></td><td></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>output_file&nbsp;&nbsp;&nbsp;</tt></td><td></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>att_name&nbsp;&nbsp;&nbsp;</tt></td><td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>att_value&nbsp;&nbsp;&nbsp;</tt></td><td></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="attribute_init"></a>
+<h4>attribute_init</h4>
+<pre>SUBROUTINE <b>attribute_init</b> (out_file, err_msg)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>
+     Allocates memory in out_file for the attributes.  Will <tt>FATAL</tt> if err_msg is not included
+     in the subroutine call.
+   </dd>
+<br>
+<br>
+<dt>
+<b>INPUT/OUTPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>out_field&nbsp;&nbsp;&nbsp;</tt></td><td>output field to allocate memory for attribute<br>&nbsp;&nbsp;&nbsp;<span class="type">[TYPE(output_field_type)]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>out_file&nbsp;&nbsp;&nbsp;</tt></td><td>output file to allocate memory for attribute<br>&nbsp;&nbsp;&nbsp;<span class="type">[TYPE(file_type)]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+<dt>
+<b>OUTPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>err_msg&nbsp;&nbsp;&nbsp;</tt></td><td>Error message, passed back to calling function<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*), OPTIONAL]</span>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*), OPTIONAL]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
 <li>
 <a name="get_subfield_size"></a>
 <h4>get_subfield_size</h4>
@@ -881,97 +960,6 @@
 <br>
 </dl>
 </li>
-<li>
-<a name="attribute_init"></a>
-<h4>attribute_init</h4>
-<pre>SUBROUTINE <b>attribute_init</b> (out_field, err_msg)</pre>
-<dl>
-<dt>
-<b>DESCRIPTION</b>
-</dt>
-<dd>
-     Allocates memory in out_field for the attributes.  Will <tt>FATAL</tt> if err_msg is not included
-     in the subroutine call.
-   </dd>
-<br>
-<br>
-<dt>
-<b>INPUT/OUTPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>out_field&nbsp;&nbsp;&nbsp;</tt></td><td>output field to allocate memory for attribute<br>&nbsp;&nbsp;&nbsp;<span class="type">[TYPE(output_field_type)]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-<dt>
-<b>OUTPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>err_msg&nbsp;&nbsp;&nbsp;</tt></td><td>Error message, passed back to calling function<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*), OPTIONAL]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-</dl>
-</li>
-<li>
-<a name="prepend_attribute"></a>
-<h4>prepend_attribute</h4>
-<pre>SUBROUTINE <b>prepend_attribute</b> (out_field, attribute, prepend_value)</pre>
-<dl>
-<dt>
-<b>DESCRIPTION</b>
-</dt>
-<dd>
-     Checks if the attribute already exists in the <tt>out_field</tt>.  If it exists,
-     then prepend the <tt>prepend_value</tt>, otherwise, create the attribute
-     with the <tt>prepend_value</tt>. <tt>err_msg</tt> indicates no duplicates found.
-   </dd>
-<br>
-<br>
-<dt>
-<b>INPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>att_name&nbsp;&nbsp;&nbsp;</tt></td><td>Name of the attribute<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span></td>
-</tr>
-<tr>
-<td valign="top" align="left"><tt>prepend_value&nbsp;&nbsp;&nbsp;</tt></td><td>Value to prepend<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-<dt>
-<b>INPUT/OUTPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>out_field&nbsp;&nbsp;&nbsp;</tt></td><td>output field that will get the attribute<br>&nbsp;&nbsp;&nbsp;<span class="type">[TYPE(output_field_type)]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-<dt>
-<b>OUTPUT</b>
-</dt>
-<dd>
-<table border="0">
-<tr>
-<td valign="top" align="left"><tt>err_msg&nbsp;&nbsp;&nbsp;</tt></td><td>Error message, passed back to calling routine<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*), OPTIONAL]</span></td>
-</tr>
-</table>
-</dd>
-<br>
-</dl>
-</li>
 </ol>
 <!-- END PUBLIC ROUTINES -->
 <a name="PUBLIC TYPES"></a>
@@ -1292,6 +1280,43 @@
 <dd>
    Number of attributes exceeds max_field_attributes for attribute &lt;name&gt;.
    Increase diag_manager_nml:max_field_attributes.
+ </dd>
+<dt>
+<b>FATAL in prepend_attribute</b>
+</dt>
+<dd>
+<span class="errmsg"></span>
+</dd>
+<dd>
+   Prepend length for attribute &lt;name&gt; is longer than allowed.
+ </dd>
+<dt>
+<b>FATAL in attribute_init</b>
+</dt>
+<dd>
+<span class="errmsg"></span>
+</dd>
+<dd>
+   Unable to allocate memory for file attributes
+ </dd>
+<dt>
+<b>FATAL in prepend_attribute</b>
+</dt>
+<dd>
+<span class="errmsg"></span>
+</dd>
+<dd>
+   Attribute &lt;name&gt; is not a character attribute.
+ </dd>
+<dt>
+<b>FATAL in prepend_attribute</b>
+</dt>
+<dd>
+<span class="errmsg"></span>
+</dd>
+<dd>
+   Number of attributes exceeds max_file_attributes for attribute &lt;name&gt;.
+   Increase diag_manager_nml:max_file_attributes.
  </dd>
 <dt>
 <b>FATAL in prepend_attribute</b>

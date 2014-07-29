@@ -254,6 +254,12 @@ MODULE diag_data_mod
   !   </DATA>
   !   <DATA NAME="f_bounds" TYPE="TYPE(diag_fieldtype)">
   !   </DATA>
+  !   <DATA NAME="attributes" TYPE="TYPE(diag_atttype), DIMENSION(:)">
+  !     Array to hold user definable attributes
+  !   </DATA>
+  !   <DATA NAME="num_attributes" TYPE="INTEGER" >
+  !     Number of defined attibutes
+  !   </DATA>
   TYPE file_type
      CHARACTER(len=128) :: name !< Name of the output file.
      CHARACTER(len=128) :: long_name
@@ -277,6 +283,8 @@ MODULE diag_data_mod
      TYPE(time_type) :: start_time !< Time file opened.
      TYPE(time_type) :: close_time !< Time file closed.  File does not allow data after close time
      TYPE(diag_fieldtype):: f_avg_start, f_avg_end, f_avg_nitems, f_bounds
+     TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
+     INTEGER :: num_attributes
   END TYPE file_type
   ! </TYPE>  
   
@@ -615,6 +623,9 @@ MODULE diag_data_mod
   ! <DATA NAME="max_field_attributes" TYPE="INTEGER" DEFAULT="2">
   !   Maximum number of user definable attributes per field.
   ! </DATA>
+  ! <DATA NAME="max_file_attributes" TYPE="INTEGER" DEFAULT="2">
+  !   Maximum number of user definable global attributes per file.
+  ! </DATA>
   LOGICAL :: append_pelist_name = .FALSE.
   LOGICAL :: mix_snapshot_average_fields =.FALSE.
   INTEGER :: max_files = 31 !< Maximum number of output files allowed.  Increase via diag_manager_nml.
@@ -632,6 +643,7 @@ MODULE diag_data_mod
   LOGICAL :: oor_warnings_fatal = .FALSE.
 
   INTEGER :: max_field_attributes = 2
+  INTEGER :: max_file_attributes = 2
   ! <!-- netCDF variable -->
   ! <DATA NAME="FILL_VALUE" TYPE="REAL" DEFAULT="NF90_FILL_REAL">
   !   Fill value used.  Value will be <TT>NF90_FILL_REAL</TT> if using the

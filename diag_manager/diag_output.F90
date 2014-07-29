@@ -79,14 +79,15 @@ CONTAINS
   !   <IN NAME="all_scalar_or_1d" TYPE="LOGICAL" />
   !   <IN NAME="domain" TYPE="TYPE(domain2d)" />
   SUBROUTINE diag_output_init(file_name, FORMAT, file_title, file_unit,&
-       & all_scalar_or_1d, domain)
+       & all_scalar_or_1d, domain, attributes)
     CHARACTER(len=*), INTENT(in)  :: file_name, file_title
     INTEGER         , INTENT(in)  :: FORMAT
     INTEGER         , INTENT(out) :: file_unit
     LOGICAL         , INTENT(in)  :: all_scalar_or_1d
     TYPE(domain2d)  , INTENT(in)  :: domain
+    TYPE(diag_atttype), INTENT(in), DIMENSION(:), OPTIONAL :: attributes
 
-    INTEGER :: form, threading, fileset
+    INTEGER :: form, threading, fileset, i
     TYPE(diag_global_att_type) :: gAtt
 
     !---- initialize mpp_io ----
@@ -126,6 +127,25 @@ CONTAINS
        CALL mpp_write_meta(file_unit, 'title', cval=TRIM(file_title))
     END IF
 
+    IF ( PRESENT(attributes) ) THEN
+       DO i=1, SIZE(attributes)
+          SELECT CASE (attributes(i)%type)
+          CASE (NF90_INT)
+             CALL mpp_write_meta(file_unit, TRIM(attributes(i)%name), ival=attributes(i)%iatt)
+          CASE (NF90_FLOAT)
+             CALL mpp_write_meta(file_unit, TRIM(attributes(i)%name), rval=attributes(i)%fatt)
+          CASE (NF90_CHAR)
+             CALL mpp_write_meta(file_unit, TRIM(attributes(i)%name), cval=TRIM(attributes(i)%catt))
+          CASE default
+             ! <ERROR STATUS="FATAL">
+             !   Unknown attribute type for attribute <name> to module/input_field <module_name>/<field_name>.
+             !   Contact the developers.
+             ! </ERROR>
+             CALL error_mesg('diag_output_mod::diag_output_init', 'Unknown attribute type for global attribute "'&
+                  &//TRIM(attributes(i)%name)//'" in file "'//TRIM(file_name)//'". Contact the developers.', FATAL)
+          END SELECT
+       END DO
+    END IF
     !---- write grid type (mosaic or regular)
     CALL get_diag_global_att(gAtt)
     CALL mpp_write_meta(file_unit, 'grid_type', cval=TRIM(gAtt%grid_type))

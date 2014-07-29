@@ -235,6 +235,11 @@
    </td>
 </tr>
 <tr>
+<td> max_file_attributes  </td><td> INTEGER  </td><td> 2  </td><td> ---  </td><td> 
+   Maximum number of user definable global attributes per file.
+   </td>
+</tr>
+<tr>
 <td> FILL_VALUE  </td><td> REAL  </td><td> NF90_FILL_REAL  </td><td> ---  </td><td> 
    Fill value used.  Value will be  if using the
    netCDF module, otherwise will be 9.9692099683868690e+36.
@@ -775,6 +780,22 @@
    
 <br>
 <span class="type">[TYPE(diag_fieldtype)]</span>
+</dl>
+<dt>
+<tt>attributes</tt>
+</dt>
+<dl>
+     Array to hold user definable attributes
+   <br>
+<span class="type">[TYPE(diag_atttype), DIMENSION(:)]</span>
+</dl>
+<dt>
+<tt>num_attributes</tt>
+</dt>
+<dl>
+     Number of defined attibutes
+   <br>
+<span class="type">[INTEGER]</span>
 </dl>
 </dl>
 </div>

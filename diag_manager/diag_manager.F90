@@ -165,6 +165,9 @@ MODULE diag_manager_mod
   !   <DATA NAME="max_field_attributes" TYPE="INTEGER" DEFAULT="2">
   !     Maximum number of user definable attributes per field.
   !   </DATA>
+  !   <DATA NAME="max_file_attributes" TYPE="INTEGER" DEFAULT="2">
+  !     Maximum number of user definable global attributes per file.
+  !   </DATA>
   ! </NAMELIST>
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
@@ -195,7 +198,7 @@ MODULE diag_manager_mod
        & first_send_data_call, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
-       & max_out_per_in_field, conserve_water, max_field_attributes, output_field_type
+       & max_out_per_in_field, conserve_water, max_field_attributes, output_field_type, max_file_attributes
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
@@ -620,6 +623,10 @@ CONTAINS
                 IF ( cm_file_num.NE.file_num ) THEN
                    ! Not in the same file, set the global attribute associated_files
                    ! Should look like :associated_files = " output_name: output_file_name " ;
+                   ! Need to append *.nc as files()%name does not include this.
+                   CALL prepend_attribute(files(file_num), 'associated_files',&
+                        & TRIM(output_fields(cm_ind)%output_name)//': '//&
+                        & TRIM(files(cm_file_num)%name)//'.nc')
                 END IF
              ELSE
                 CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
@@ -3105,7 +3112,7 @@ CONTAINS
     NAMELIST /diag_manager_nml/ append_pelist_name, mix_snapshot_average_fields, max_output_fields, &
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
-         & oor_warnings_fatal, max_out_per_in_field, conserve_water, max_field_attributes
+         & oor_warnings_fatal, max_out_per_in_field, conserve_water, max_field_attributes, max_file_attributes
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
@@ -3532,6 +3539,10 @@ CONTAINS
     END IF
   END SUBROUTINE diag_field_attribute_init
 
+  ! <SUBROUTINE NAME="diag_field_add_attribute_scalar_r" INTERFACE="diag_field_add_attribute">
+  !   <IN NAME="diag_field_id" TYPE="INTEGER" />
+  !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
+  !   <IN NAME="att_value" TYPE="REAL" />
   SUBROUTINE diag_field_add_attribute_scalar_r(diag_field_id, att_name, att_value)
     INTEGER, INTENT(in) :: diag_field_id
     CHARACTER(len=*), INTENT(in) :: att_name
@@ -3539,7 +3550,12 @@ CONTAINS
 
     CALL diag_field_add_attribute_r1d(diag_field_id, att_name, (/ att_value /))
   END SUBROUTINE diag_field_add_attribute_scalar_r
+  ! </SUBROUTINE>
 
+  ! <SUBROUTINE NAME="diag_field_add_attribute_scalar_i" INTERFACE="diag_field_add_attribute">
+  !   <IN NAME="diag_field_id" TYPE="INTEGER" />
+  !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
+  !   <IN NAME="att_value" TYPE="INTEGER" />
   SUBROUTINE diag_field_add_attribute_scalar_i(diag_field_id, att_name, att_value)
     INTEGER, INTENT(in) :: diag_field_id
     CHARACTER(len=*), INTENT(in) :: att_name
@@ -3547,7 +3563,12 @@ CONTAINS
 
     CALL diag_field_add_attribute_i1d(diag_field_id, att_name, (/ att_value /))
   END SUBROUTINE diag_field_add_attribute_scalar_i
+  ! </SUBROUTINE>
 
+  ! <SUBROUTINE NAME="diag_field_add_attribute_scalar_c" INTERFACE="diag_field_add_attribute">
+  !   <IN NAME="diag_field_id" TYPE="INTEGER" />
+  !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
+  !   <IN NAME="att_value" TYPE="CHARACTER(len=*)" />
   SUBROUTINE diag_field_add_attribute_scalar_c(diag_field_id, att_name, att_value)
     INTEGER, INTENT(in) :: diag_field_id
     CHARACTER(len=*), INTENT(in) :: att_name
@@ -3555,7 +3576,12 @@ CONTAINS
 
     CALL diag_field_attribute_init(diag_field_id, att_name, NF90_CHAR, cval=att_value)
   END SUBROUTINE diag_field_add_attribute_scalar_c
+  ! </SUBROUTINE>
 
+  ! <SUBROUTINE NAME="diag_field_add_attribute_r1d" INTERFACE="diag_field_add_attribute">
+  !   <IN NAME="diag_field_id" TYPE="INTEGER" />
+  !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
+  !   <IN NAME="att_value" TYPE="REAL, DIMENSION(:)" />
   SUBROUTINE diag_field_add_attribute_r1d(diag_field_id, att_name, att_value)
     INTEGER, INTENT(in) :: diag_field_id
     CHARACTER(len=*), INTENT(in) :: att_name
@@ -3566,7 +3592,12 @@ CONTAINS
 
     CALL diag_field_attribute_init(diag_field_id, att_name, NF90_FLOAT, rval=att_value)
   END SUBROUTINE diag_field_add_attribute_r1d
+  ! </SUBROUTINE>
 
+  ! <SUBROUTINE NAME="diag_field_add_attribute_i1d" INTERFACE="diag_field_add_attribute">
+  !   <IN NAME="diag_field_id" TYPE="INTEGER" />
+  !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
+  !   <IN NAME="att_value" TYPE="INTEGER, DIMENSION(:)" />
   SUBROUTINE diag_field_add_attribute_i1d(diag_field_id, att_name, att_value)
     INTEGER, INTENT(in) :: diag_field_id
     CHARACTER(len=*), INTENT(in) :: att_name
@@ -3574,6 +3605,7 @@ CONTAINS
 
     CALL diag_field_attribute_init(diag_field_id, att_name, NF90_INT, ival=att_value)
   END SUBROUTINE diag_field_add_attribute_i1d
+  ! </SUBROUTINE>
 END MODULE diag_manager_mod
 
 ! <INFO>
