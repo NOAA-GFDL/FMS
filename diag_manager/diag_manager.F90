@@ -569,6 +569,16 @@ CONTAINS
           END IF
        END IF
 
+       ! Verify that area and volume do not point to the same variable
+       IF ( PRESENT(volume).AND.PRESENT(area) ) THEN
+          IF ( area.EQ.volume ) THEN
+             CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
+                  &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA and VOLUME CANNOT be the same variable.&
+                  & Contact the developers.',&
+                  & FATAL)
+          END IF
+       END IF
+
        IF ( PRESENT(standard_name) ) input_fields(field)%standard_name = standard_name
 
        DO j = 1, input_fields(field)%num_output_fields
@@ -642,6 +652,9 @@ CONTAINS
                 IF ( cm_file_num.NE.file_num ) THEN
                    ! Not in the same file, set the global attribute associated_files
                    ! Should look like :associated_files = " output_name: output_file_name " ;
+                   CALL prepend_attribute(files(file_num), 'associated_files',&
+                        & TRIM(output_fields(cm_ind)%output_name)//': '//&
+                        & TRIM(files(cm_file_num)%name)//'.nc')
                 END IF
              ELSE
                 CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
@@ -1629,9 +1642,9 @@ CONTAINS
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
                                              & (field(i-is+1+hi, j-js+1+hj, k) * weight1)**(pow_value)
                                      ELSE
-                                     output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                                          & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                          & field(i-is+1+hi, j-js+1+hj, k) * weight1
+                                        output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
+                                             & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
+                                             & field(i-is+1+hi, j-js+1+hj, k) * weight1
                                      END IF
                                      output_fields(out_num)%counter(i-hi,j-hj,k1,sample) =&
                                           & output_fields(out_num)%counter(i-hi,j-hj,k1,sample) + weight1
@@ -1649,12 +1662,12 @@ CONTAINS
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
                                              & (field(i-is+1+hi,j-js+1+hj,k)*weight1)**(pow_value)
                                      ELSE
-                                     output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
-                                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                          & field(i-is+1+hi,j-js+1+hj,k)*weight1
-                                     output_fields(out_num)%counter(i-hi,j-hj,k,sample) =&
-                                          &output_fields(out_num)%counter(i-hi,j-hj,k,sample) + weight1
-                                  END IF
+                                        output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
+                                             & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
+                                             & field(i-is+1+hi,j-js+1+hj,k)*weight1
+                                        output_fields(out_num)%counter(i-hi,j-hj,k,sample) =&
+                                             &output_fields(out_num)%counter(i-hi,j-hj,k,sample) + weight1
+                                     END IF
                                   END IF
                                END DO
                             END DO
@@ -1673,9 +1686,9 @@ CONTAINS
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
                                              & (field(i-is+1+hi, j-js+1+hj, k) * weight1)**(pow_value)
                                      ELSE
-                                     output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                                          & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                          & field(i-is+1+hi, j-js+1+hj, k) * weight1
+                                        output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
+                                             & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
+                                             & field(i-is+1+hi, j-js+1+hj, k) * weight1
                                      END IF
                                      output_fields(out_num)%counter(i-hi,j-hj,k1,sample) =&
                                           & output_fields(out_num)%counter(i-hi,j-hj,k1,sample) + weight1
@@ -1693,9 +1706,9 @@ CONTAINS
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
                                              & (field(i-is+1+hi,j-js+1+hj,k)*weight1)**(pow_value)
                                      ELSE
-                                     output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
-                                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                          & field(i-is+1+hi,j-js+1+hj,k)*weight1
+                                        output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
+                                             & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
+                                             & field(i-is+1+hi,j-js+1+hj,k)*weight1
                                      END IF
                                      output_fields(out_num)%counter(i-hi,j-hj,k,sample) =&
                                           &output_fields(out_num)%counter(i-hi,j-hj,k,sample) + weight1
@@ -1744,9 +1757,9 @@ CONTAINS
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
                                                 & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                         ELSE
-                                        output_fields(out_num)%buffer(i1,j1,k1,sample) =&
-                                             & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                           output_fields(out_num)%buffer(i1,j1,k1,sample) =&
+                                                & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
+                                                & field(i-is+1+hi,j-js+1+hj,k) * weight1
                                         END IF
                                      ELSE
                                         output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
@@ -1770,9 +1783,9 @@ CONTAINS
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
                                                 & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                         ELSE
-                                        output_fields(out_num)%buffer(i1,j1,k1,sample) =&
-                                             & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                           output_fields(out_num)%buffer(i1,j1,k1,sample) =&
+                                                & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
+                                                & field(i-is+1+hi,j-js+1+hj,k) * weight1
                                         END IF
                                      ELSE
                                         output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
@@ -1805,9 +1818,9 @@ CONTAINS
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
                                              & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
-                                     output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                                          & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                          & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                        output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
+                                             & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
+                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
                                      END IF
                                   ELSE
                                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
@@ -1827,9 +1840,9 @@ CONTAINS
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
                                              & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
-                                     output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                                          & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                          & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                        output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
+                                             & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
+                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
                                      END IF
                                   ELSE
                                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
@@ -1860,9 +1873,9 @@ CONTAINS
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
                                              & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
-                                     output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
-                                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                          & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                        output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
+                                             & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
+                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
                                      END IF
                                   ELSE
                                      output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
@@ -1881,9 +1894,9 @@ CONTAINS
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
                                              & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
-                                     output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
-                                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                          & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                        output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
+                                             & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
+                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
                                      END IF
                                   ELSE
                                      output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
@@ -1929,8 +1942,8 @@ CONTAINS
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample)+ &
                                           & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
                                   ELSE
-                                  output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample)+ &
-                                       & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
+                                     output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample)+ &
+                                          & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
                                END IF
                                END IF
                             END DO
@@ -1946,8 +1959,8 @@ CONTAINS
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample)+ &
                                           & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
                                   ELSE
-                                  output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample)+ &
-                                       & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
+                                     output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample)+ &
+                                          & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
                                END IF
                                END IF
                             END DO
@@ -1970,7 +1983,7 @@ CONTAINS
                          ksr= l_start(3)
                          ker= l_end(3)
                          IF ( pow_value /= 1 ) THEN
-                         output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
+                            output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
                                  & (field(f1:f2,f3:f4,ksr:ker)*weight1)**(pow_value)
                          ELSE
@@ -1983,7 +1996,7 @@ CONTAINS
                          ksr= l_start(3)
                          ker= l_end(3)
                          IF ( pow_value /= 1 ) THEN
-                         output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
+                            output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
                                  & (field(f1:f2,f3:f4,ksr:ker)*weight1)**(pow_value)
                          ELSE
@@ -2006,7 +2019,7 @@ CONTAINS
                       END IF
                       IF (numthreads>1 .AND. phys_window) then
                          IF ( pow_value /= 1 ) THEN
-                         output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
+                            output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
                                  & (field(f1:f2,f3:f4,ks:ke)*weight1)**(pow_value)
                          ELSE
@@ -2017,7 +2030,7 @@ CONTAINS
                       ELSE
 !$OMP CRITICAL
                          IF ( pow_value /= 1 ) THEN
-                         output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
+                            output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
                                  & (field(f1:f2,f3:f4,ks:ke)*weight1)**(pow_value)
                          ELSE
@@ -2050,9 +2063,9 @@ CONTAINS
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
                                                 & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                         ELSE
-                                        output_fields(out_num)%buffer(i1,j1,k1,sample) =&
-                                             & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                           output_fields(out_num)%buffer(i1,j1,k1,sample) =&
+                                                & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
+                                                & field(i-is+1+hi,j-js+1+hj,k) * weight1
                                         END IF
                                      ELSE
                                         output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
@@ -2076,9 +2089,9 @@ CONTAINS
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
                                                 & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                         ELSE
-                                        output_fields(out_num)%buffer(i1,j1,k1,sample) =&
-                                             & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                           output_fields(out_num)%buffer(i1,j1,k1,sample) =&
+                                                & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
+                                                & field(i-is+1+hi,j-js+1+hj,k) * weight1
                                         END IF
                                      ELSE
                                         output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
@@ -2125,9 +2138,9 @@ CONTAINS
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
                                              & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
-                                     output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                                          & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                          & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                        output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
+                                             & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
+                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
                                      END IF
                                   ELSE
                                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) = missvalue
@@ -2149,9 +2162,9 @@ CONTAINS
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
                                              & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
-                                     output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                                          & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                          & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                        output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
+                                             & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
+                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
                                      END IF
                                   ELSE
                                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) = missvalue
@@ -2195,9 +2208,9 @@ CONTAINS
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
                                              & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
-                                     output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
-                                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                          & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                        output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
+                                             & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
+                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
                                      END IF
                                   ELSE
                                      output_fields(out_num)%buffer(i-hi,j-hj,k,sample) = missvalue
@@ -2216,9 +2229,9 @@ CONTAINS
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
                                              & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
-                                     output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
-                                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                          & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                        output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
+                                             & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
+                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
                                      END IF
                                   ELSE
                                      output_fields(out_num)%buffer(i-hi,j-hj,k,sample) = missvalue
@@ -2253,8 +2266,8 @@ CONTAINS
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample) +&
                                           & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
                                   ELSE
-                                  output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample) +&
-                                       & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
+                                     output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample) +&
+                                          & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
                                END IF
                                END IF
                             END DO
@@ -2270,8 +2283,8 @@ CONTAINS
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample) +&
                                           & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
                                   ELSE
-                                  output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample) +&
-                                       & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
+                                     output_fields(out_num)%buffer(i1,j1,:,sample)= output_fields(out_num)%buffer(i1,j1,:,sample) +&
+                                          & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
                                END IF
                                END IF
                             END DO
@@ -2299,9 +2312,9 @@ CONTAINS
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
                                  & (field(f1:f2,f3:f4,ksr:ker)*weight1)**(pow_value)
                          ELSE
-                         output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
-                              & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
-                              & field(f1:f2,f3:f4,ksr:ker)*weight1
+                            output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
+                                 & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
+                                 & field(f1:f2,f3:f4,ksr:ker)*weight1
                          END IF
                       ELSE
 !$OMP CRITICAL
@@ -2310,9 +2323,9 @@ CONTAINS
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
                                  & (field(f1:f2,f3:f4,ksr:ker)*weight1)**(pow_value)
                          ELSE
-                         output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
-                              & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
-                              & field(f1:f2,f3:f4,ksr:ker)*weight1
+                            output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
+                                 & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
+                                 & field(f1:f2,f3:f4,ksr:ker)*weight1
                          END IF
 !$OMP END CRITICAL
                       END IF
@@ -2333,9 +2346,9 @@ CONTAINS
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
                                  & (field(f1:f2,f3:f4,ks:ke)*weight1)**(pow_value)
                          ELSE
-                         output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
-                              & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                              & field(f1:f2,f3:f4,ks:ke)*weight1
+                            output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
+                                 & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
+                                 & field(f1:f2,f3:f4,ks:ke)*weight1
                          END IF
                       ELSE
 !$OMP CRITICAL
@@ -2344,9 +2357,9 @@ CONTAINS
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
                                  & (field(f1:f2,f3:f4,ks:ke)*weight1)**(pow_value)
                          ELSE
-                         output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
-                              & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                              & field(f1:f2,f3:f4,ks:ke)*weight1
+                            output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
+                                 & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
+                                 & field(f1:f2,f3:f4,ks:ke)*weight1
                          END IF
 !$OMP END CRITICAL
                       END IF
@@ -3876,7 +3889,7 @@ PROGRAM test
   REAL :: dp, surf_press=1.e5
   INTEGER :: id_phalf, id_pfull, id_bk
   INTEGER :: id_lon1, id_lonb1, id_latb1, id_lat1, id_dat1
-  INTEGER :: id_lon2, id_lat2, id_dat2, id_dat2_2d, id_sol_con
+  INTEGER :: id_lon2, id_lat2, id_dat2, id_dat2_2d, id_sol_con, id_dat2h
   INTEGER :: i, j, k, is1, ie1, js1, je1, nml_unit, ierr, log_unit, out_unit, m
   INTEGER :: is_in, ie_in, js_in, je_in
   INTEGER :: is2, ie2, js2, je2, hi=1, hj=1
@@ -4024,18 +4037,16 @@ PROGRAM test
      CALL set_filename_appendix('g01')
   END IF
   id_dat1 = register_diag_field('test_diag_manager_mod', 'dat1', (/id_lon1,id_lat1,id_pfull/), Time, 'sample data', 'K')
-  CALL diag_field_add_attribute(id_dat1, 'real_att', 2.3)
-  CALL diag_field_add_attribute(id_dat1, 'cell_methods', 'area: mean')
-  CALL diag_field_add_attribute(id_dat1, 'cell_methods', 'lon: mean')
   IF ( test_number == 18 ) THEN
-     id_dat2 = register_diag_field('test_diag_manager_mod', 'dat2', (/id_lon2,id_lat2,id_pfull/), Time, 'sample data', 'K',&
-          & area=id_dat1, volume=id_dat1)
-  ELSE
-     id_dat2 = register_diag_field('test_diag_manager_mod', 'dat2', (/id_lon2,id_lat2,id_pfull/), Time, 'sample data', 'K')
+     CALL diag_field_add_attribute(id_dat1, 'real_att', 2.3)
+     CALL diag_field_add_attribute(id_dat1, 'cell_methods', 'area: mean')
+     CALL diag_field_add_attribute(id_dat1, 'cell_methods', 'lon: mean')
   END IF
-  CALL diag_field_add_attribute(id_dat2, 'string_att', 'a string')
-  CALL diag_field_add_attribute(id_dat2, 'int_att', (/ 1, 2 /) )
-
+  id_dat2 = register_diag_field('test_diag_manager_mod', 'dat2', (/id_lon2,id_lat2,id_pfull/), Time, 'sample data', 'K')
+  IF ( test_number == 18 ) THEN
+     CALL diag_field_add_attribute(id_dat2, 'interp_method', 'none')
+     CALL diag_field_add_attribute(id_dat2, 'int_att', (/ 1, 2 /) )
+  END IF
   id_sol_con = register_diag_field ('test_diag_manager_mod', 'solar_constant', Time, &
                   'solar constant', 'watts/m2')
 
@@ -4052,18 +4063,33 @@ PROGRAM test
   Run_length = Time_end - Time_start
   nstep = Run_length / Time_step
 
+  IF ( test_number == 18 ) THEN
+     id_dat2h = register_diag_field('test_mod', 'dat2h', (/id_lon2,id_lat2,id_pfull/), Time, 'sample data', 'K',&
+          & volume=id_dat1, area=id_dat2, err_msg=err_msg)
+     IF ( err_msg /= '' .OR. id_dat2h <= 0 ) THEN
+        CALL error_mesg ('test_diag_manager',&
+             & 'Unexpected error registering dat2h '//err_msg, FATAL)
+     END IF
+  END IF
+
+  IF ( test_number == 19 ) THEN
+     id_dat2h = register_diag_field('test_mod', 'dat2h', (/id_lon2,id_lat2,id_pfull/), Time, 'sample data', 'K',&
+          & volume=id_dat1, area=id_dat1, err_msg=err_msg)
+     IF ( err_msg /= '' .OR. id_dat2h <= 0 ) THEN
+        CALL error_mesg ('test_diag_manager',&
+             & 'Expected error registering dat2h '//err_msg, FATAL)
+     END IF
+  END IF
+
   IF ( test_number == 16 .OR. test_number == 17 .OR. test_number == 18 ) THEN
      !  1 window, no halos
      IF ( id_dat1 > 0 ) used = send_data(id_dat1, dat1, Time, err_msg=err_msg)
      IF ( id_dat2 > 0 ) used = send_data(id_dat2, dat2, Time, err_msg=err_msg)
+     IF ( id_dat2h > 0 ) used = send_data(id_dat2h, dat2h, Time, is_in=is_in, js_in=js_in, ie_in=ie_in, je_in=je_in, err_msg=err_msg)
      Time = Time + set_time(0,1)
      IF ( id_dat1 > 0 ) used = send_data(id_dat1, dat1, Time, err_msg=err_msg)
      IF ( id_dat2 > 0 ) used = send_data(id_dat2, dat2, Time, err_msg=err_msg)
-     IF ( err_msg == '' ) THEN
-        WRITE (out_unit,'(a,I2,a)') 'test ',test_number,' successful.'
-     ELSE
-        WRITE (out_unit,'(a,I2,a)') 'test ',test_number,' failed: err_msg='//TRIM(err_msg)
-     END IF
+     IF ( id_dat2h > 0 ) used = send_data(id_dat2h, dat2h, Time, is_in=is_in, js_in=js_in, ie_in=ie_in, je_in=je_in, err_msg=err_msg)
   END IF
 
   !-- The following is used to test openMP
