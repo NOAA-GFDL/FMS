@@ -2444,21 +2444,24 @@ CONTAINS
        END IF
     END IF
 
-    ! Check if new string length goes beyond the length of catt
-    length = LEN_TRIM(TRIM(prepend_value)//" "//TRIM(out_field%attributes(this_attribute)%catt))
-    IF ( length.GT.LEN(out_field%attributes(this_attribute)%catt) ) THEN
-       ! <ERROR STATUS="FATAL">
-       !   Prepend length for attribute <name> is longer than allowed.
-       ! </ERROR>
-       IF ( fms_error_handler('Prepend length for attribute "'//TRIM(att_name)&
-            &//'" is longer than allowed.', err_msg_local, err_msg) ) THEN
-          RETURN
+    ! Check if string is already included, and return if found
+    IF ( INDEX(TRIM(out_field%attributes(this_attribute)%catt), TRIM(prepend_value)).EQ.0 ) THEN
+       ! Check if new string length goes beyond the length of catt
+       length = LEN_TRIM(TRIM(prepend_value)//" "//TRIM(out_field%attributes(this_attribute)%catt))
+       IF ( length.GT.LEN(out_field%attributes(this_attribute)%catt) ) THEN
+          ! <ERROR STATUS="FATAL">
+          !   Prepend length for attribute <name> is longer than allowed.
+          ! </ERROR>
+          IF ( fms_error_handler('Prepend length for attribute "'//TRIM(att_name)&
+               &//'" is longer than allowed.', err_msg_local, err_msg) ) THEN
+             RETURN
+          END IF
        END IF
+       ! Set fields
+       out_field%attributes(this_attribute)%catt =&
+            & TRIM(prepend_value)//' '//TRIM(out_field%attributes(this_attribute)%catt)
+       out_field%attributes(this_attribute)%len = length
     END IF
-    ! Set fields
-    out_field%attributes(this_attribute)%catt =&
-         & TRIM(prepend_value)//' '//TRIM(out_field%attributes(this_attribute)%catt)
-    out_field%attributes(this_attribute)%len = length
   END SUBROUTINE prepend_attribute_field
   ! </SUBROUTINE>
 
@@ -2575,21 +2578,24 @@ CONTAINS
        END IF
     END IF
 
-    ! Check if new string length goes beyond the length of catt
-    length = LEN_TRIM(TRIM(prepend_value)//" "//TRIM(out_file%attributes(this_attribute)%catt))
-    IF ( length.GT.LEN(out_file%attributes(this_attribute)%catt) ) THEN
-       ! <ERROR STATUS="FATAL">
-       !   Prepend length for attribute <name> is longer than allowed.
-       ! </ERROR>
-       IF ( fms_error_handler('Prepend length for attribute "'//TRIM(att_name)&
-            &//'" is longer than allowed.', err_msg_local, err_msg) ) THEN
-          RETURN
+    ! Only add string only if not already defined
+    IF ( INDEX(TRIM(out_file%attributes(this_attribute)%catt), TRIM(prepend_value)).EQ.0 ) THEN
+       ! Check if new string length goes beyond the length of catt
+       length = LEN_TRIM(TRIM(prepend_value)//" "//TRIM(out_file%attributes(this_attribute)%catt))
+       IF ( length.GT.LEN(out_file%attributes(this_attribute)%catt) ) THEN
+          ! <ERROR STATUS="FATAL">
+          !   Prepend length for attribute <name> is longer than allowed.
+          ! </ERROR>
+          IF ( fms_error_handler('Prepend length for attribute "'//TRIM(att_name)&
+               &//'" is longer than allowed.', err_msg_local, err_msg) ) THEN
+             RETURN
+          END IF
        END IF
+       ! Set files
+       out_file%attributes(this_attribute)%catt =&
+            & TRIM(prepend_value)//' '//TRIM(out_file%attributes(this_attribute)%catt)
+       out_file%attributes(this_attribute)%len = length
     END IF
-    ! Set files
-    out_file%attributes(this_attribute)%catt =&
-         & TRIM(prepend_value)//' '//TRIM(out_file%attributes(this_attribute)%catt)
-    out_file%attributes(this_attribute)%len = length
   END SUBROUTINE prepend_attribute_file
   ! </SUBROUTINE>
 END MODULE diag_util_mod

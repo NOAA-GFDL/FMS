@@ -223,7 +223,7 @@ MODULE diag_manager_mod
   CHARACTER(len=128), PARAMETER :: version =&
        & '$Id$'
   CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name$'  
+       & '$Name$'
 
   type(time_type) :: Time_end
 
@@ -625,44 +625,14 @@ CONTAINS
                   & ' will be output in region:'//TRIM(msg)
           END IF
 
-          ! Here is where we handle adding the cell_measures
-          IF ( PRESENT(area) ) THEN
-             IF ( get_related_field(area, output_fields(ind), cm_ind, cm_file_num) ) THEN
-                CALL prepend_attribute(output_fields(ind), 'cell_measures',&
-                     & 'area: '//TRIM(output_fields(cm_ind)%output_name))
-                IF ( cm_file_num.NE.file_num ) THEN
-                   ! Not in the same file, set the global attribute associated_files
-                   ! Should look like :associated_files = " output_name: output_file_name " ;
-                   ! Need to append *.nc as files()%name does not include this.
-                   CALL prepend_attribute(files(file_num), 'associated_files',&
-                        & TRIM(output_fields(cm_ind)%output_name)//': '//&
-                        & TRIM(files(cm_file_num)%name)//'.nc')
-                END IF
-             ELSE
-                CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
-                     &//TRIM(module_name)//'/'// TRIM(field_name)//&
-                     &' AREA measures field NOT in diag_table with correct output frequency.',&
-                     & FATAL)
-             END IF
+          ! Set the cell_measures attribute in the out file
+          CALL init_field_cell_measures(output_fields(ind), area=area, volume=volume, err_msg=err_msg)
+          IF ( LEN_TRIM(err_msg).GT.0 ) THEN
+             CALL error_mesg ('diag_manager_mod::register_diag_field',&
+                  & TRIM(err_msg)//' for module/field '//TRIM(module_name)//'/'//TRIM(field_name),&
+                  & FATAL)
           END IF
-          IF ( PRESENT(volume) ) THEN
-             IF ( get_related_field(volume, output_fields(ind), cm_ind, cm_file_num) ) THEN
-                CALL prepend_attribute(output_fields(ind), 'cell_measures',&
-                     & 'volume: '//TRIM(output_fields(cm_ind)%output_name))
-                IF ( cm_file_num.NE.file_num ) THEN
-                   ! Not in the same file, set the global attribute associated_files
-                   ! Should look like :associated_files = " output_name: output_file_name " ;
-                   CALL prepend_attribute(files(file_num), 'associated_files',&
-                        & TRIM(output_fields(cm_ind)%output_name)//': '//&
-                        & TRIM(files(cm_file_num)%name)//'.nc')
-                END IF
-             ELSE
-                CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
-                     &//TRIM(module_name)//'/'// TRIM(field_name)//&
-                     &' VOLUME measures field NOT in diag_table with correct output frequency.',&
-                     & FATAL)
-             END IF
-          END IF
+
        END DO
     END IF
   END FUNCTION register_diag_field_array
@@ -693,9 +663,11 @@ CONTAINS
   !   <IN NAME="do_not_log" TYPE="LOGICAL, OPTIONAL" DEFAULT=".TRUE."/>
   !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIOANL" />
   !   <IN NAME="tile_count" TYPE="INTEGER, OPTIONAL" />
+  !   <IN NAME="area" TYPE="INTEGER, OPTIONAL">Field ID for the area field associated with this field</IN>
+  !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL">Field ID for the volume field associated with this field</IN>
   INTEGER FUNCTION register_static_field(module_name, field_name, axes, long_name, units,&
        & missing_value, range, mask_variant, standard_name, DYNAMIC, do_not_log, interp_method,&
-       & tile_count)
+       & tile_count, area, volume)
     CHARACTER(len=*), INTENT(in) :: module_name, field_name
     INTEGER, DIMENSION(:), INTENT(in) :: axes
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
@@ -705,7 +677,7 @@ CONTAINS
     LOGICAL, OPTIONAL, INTENT(in) :: DYNAMIC
     LOGICAL, OPTIONAL, INTENT(in) :: do_not_log ! if TRUE, field information is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method
-    INTEGER,          OPTIONAL, INTENT(in) :: tile_count
+    INTEGER,          OPTIONAL, INTENT(in) :: tile_count, area, volume
 
     REAL :: missing_value_use
     INTEGER :: field, num_axes, j, out_num, k
@@ -809,6 +781,32 @@ CONTAINS
        ! </ERROR>
        CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '//trim(module_name)//'/'//&
             & TRIM(field_name)//' ALREADY registered, should not register twice', FATAL)
+    END IF
+
+    ! Check for the existence of the area/volume field(s)
+    IF ( PRESENT(area) ) THEN
+       IF ( area < 0 ) THEN
+          CALL error_mesg ('diag_manager_mod::register_static_field', 'module/output_field '&
+               &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA measures field NOT found in diag_table',&
+               & FATAL)
+       END IF
+    END IF
+    IF ( PRESENT(volume) ) THEN
+       IF ( volume < 0 ) THEN
+          CALL error_mesg ('diag_manager_mod::register_static_field', 'module/output_field '&
+               &//TRIM(module_name)//'/'// TRIM(field_name)//' VOLUME measures field NOT found in diag_table',&
+               & FATAL)
+       END IF
+    END IF
+
+    ! Verify that area and volume do not point to the same variable
+    IF ( PRESENT(volume).AND.PRESENT(area) ) THEN
+       IF ( area.EQ.volume ) THEN
+          CALL error_mesg ('diag_manager_mod::register_static_field', 'module/output_field '&
+               &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA and VOLUME CANNOT be the same variable.&
+               & Contact the developers.',&
+               & FATAL)
+       END IF
     END IF
 
     ! Set flag that this field was registered
@@ -1014,6 +1012,14 @@ CONTAINS
 
        ! Initialize a time variable used in an error check
        output_fields(out_num)%Time_of_prev_field_data = Time_zero
+
+       ! Set the cell_measures attribute in the out file
+       CALL init_field_cell_measures(output_fields(out_num), area=area, volume=volume, err_msg=msg)
+       IF ( LEN_TRIM(msg).GT.0 ) THEN
+          CALL error_mesg ('diag_manager_mod::register_static_field',&
+               & TRIM(msg)//' for module/field '//TRIM(module_name)//'/'//TRIM(field_name),&
+               & FATAL)
+       END IF
     END DO
 
     IF ( input_fields(field)%mask_variant ) THEN
@@ -1063,13 +1069,14 @@ CONTAINS
        cm_ind = input_fields(field)%output_fields(i)
        cm_file_num = output_fields(cm_ind)%output_file
 
-       ! If time_method, freq, output_units, next_output, and last_output the same, then
-       ! valid for cell_measures
-       IF ( files(cm_file_num)%output_freq.EQ.files(rel_file)%output_freq .AND.&
+       ! If time_method, freq, output_units, next_output, and last_output the same, or
+       ! the output_field is static then valid for cell_measures
+       IF ( ( files(cm_file_num)%output_freq.EQ.files(rel_file)%output_freq .AND.&
             & files(cm_file_num)%output_units.EQ.files(cm_file_num)%output_units .AND.&
             & output_fields(cm_ind)%time_method.EQ.rel_field%time_method .AND.&
             & output_fields(cm_ind)%next_output.EQ.rel_field%next_output .AND.&
-            & output_fields(cm_ind)%last_output.EQ.rel_field%last_output ) THEN
+            & output_fields(cm_ind)%last_output.EQ.rel_field%last_output ).OR.&
+            & output_fields(cm_ind)%static.OR.rel_field%static ) THEN
           get_related_field = .TRUE.
           out_field_id = cm_ind
           out_file_id = cm_file_num
@@ -1078,6 +1085,88 @@ CONTAINS
     END DO
   END FUNCTION get_related_field
   ! </FUNCTION>
+
+  ! <SUBROUTINE NAME="init_field_cell_measures">
+  !   <OVERVIEW>
+  !     If needed, add cell_measures and associated_file attribute to out field/file
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE init_field_call_measure(ouput_field, area, volume, err_msg)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     If needed, add cell_measures and associated_file attribute to out field/file
+  !   </DESCRIPTION>
+  !   <INOUT NAME="output_field" TYPE="TYPE(output_field_type)">Output field that needs the cell_measures</INOUT>
+  !   <IN NAME="area" TYPE="INTEGER, OPTIONAL">Field ID for area</IN>
+  !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL">Field ID for volume</IN>
+  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"> </OUT>
+  SUBROUTINE init_field_cell_measures(output_field, area, volume, err_msg)
+    TYPE(output_field_type), INTENT(inout) :: output_field
+    INTEGER, INTENT(in), OPTIONAL :: area, volume
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+
+    INTEGER :: cm_ind, cm_file_num, file_num
+
+    IF ( PRESENT(err_msg) ) THEN
+       err_msg = ''
+    END IF
+
+    ! Verify that area/volume are defined (.gt.0
+    IF ( PRESENT(area) ) THEN
+       IF ( area.LE.0 ) THEN
+          IF ( fms_error_handler('diag_manager_mod::init_field_cell_measure',&
+               & 'AREA field not in diag_table', err_msg) ) RETURN
+       END IF
+    END IF
+
+    IF ( PRESENT(volume) ) THEN
+       IF ( volume.LE.0 ) THEN
+          IF ( fms_error_handler('diag_manager_mod::init_field_cell_measure',&
+               & 'VOLUME field not in diag_table', err_msg) ) RETURN
+       END IF
+    END IF
+
+    ! Get the file number that the output_field will be written to
+    file_num = output_field%output_file
+
+    ! Take care of the cell_measures attribute
+    IF ( PRESENT(area) ) THEN
+       IF ( get_related_field(area, output_field, cm_ind, cm_file_num) ) THEN
+          CALL prepend_attribute(output_field, 'cell_measures',&
+               & 'area: '//TRIM(output_fields(cm_ind)%output_name))
+          IF ( cm_file_num.NE.file_num ) THEN
+             ! Not in the same file, set the global attribute associated_files
+             ! Should look like :associated_files = " output_name: output_file_name " ;
+             ! Need to append *.nc as files()%name does not include this.
+             CALL prepend_attribute(files(file_num), 'associated_files',&
+                  & TRIM(output_fields(cm_ind)%output_name)//': '//&
+                  & TRIM(files(cm_file_num)%name)//'.nc')
+          END IF
+       ELSE
+          IF ( fms_error_handler('diag_manager_mod::init_field_cell_measures',&
+               & 'AREA measures field NOT in diag_table with correct output frequency', err_msg) ) RETURN
+       END IF
+    END IF
+
+
+    IF ( PRESENT(volume) ) THEN
+       IF ( get_related_field(volume, output_field, cm_ind, cm_file_num) ) THEN
+          CALL prepend_attribute(output_field, 'cell_measures',&
+               & 'volume: '//TRIM(output_fields(cm_ind)%output_name))
+          IF ( cm_file_num.NE.file_num ) THEN
+             ! Not in the same file, set the global attribute associated_files
+             ! Should look like :associated_files = " output_name: output_file_name " ;
+             CALL prepend_attribute(files(file_num), 'associated_files',&
+                  & TRIM(output_fields(cm_ind)%output_name)//': '//&
+                  & TRIM(files(cm_file_num)%name)//'.nc')
+          END IF
+       ELSE
+          IF ( fms_error_handler('diag_manager_mod::init_field_cell_measures',&
+               & 'VOLUME measures field NOT in diag_table with correct output frequency', err_msg) ) RETURN
+       END IF
+    END IF
+  END SUBROUTINE init_field_cell_measures
+  ! </SUBROUTINE>
 
   ! <FUNCTION NAME="send_data_0d" INTERFACE="send_data">
   !   <IN NAME="diag_field_id" TYPE="INTEGER"> </IN>
