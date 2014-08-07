@@ -171,7 +171,7 @@ MODULE diag_manager_mod
   ! </NAMELIST>
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
-       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+)
+       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), get_date
   USE mpp_io_mod, ONLY: mpp_open, mpp_close
   USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
 
@@ -1106,6 +1106,8 @@ CONTAINS
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
     INTEGER :: cm_ind, cm_file_num, file_num
+    INTEGER :: year, month, day, hour, minute, second
+    CHARACTER(len=8) :: start_date
 
     IF ( PRESENT(err_msg) ) THEN
        err_msg = ''
@@ -1129,6 +1131,10 @@ CONTAINS
     ! Get the file number that the output_field will be written to
     file_num = output_field%output_file
 
+    ! Create the date_string
+    call get_date(files(file_num)%start_time, year, month, day, hour, minute,second)
+    write (start_date, '(1I4.4, 2I2.2)') year, month, day
+
     ! Take care of the cell_measures attribute
     IF ( PRESENT(area) ) THEN
        IF ( get_related_field(area, output_field, cm_ind, cm_file_num) ) THEN
@@ -1140,7 +1146,7 @@ CONTAINS
              ! Need to append *.nc as files()%name does not include this.
              CALL prepend_attribute(files(file_num), 'associated_files',&
                   & TRIM(output_fields(cm_ind)%output_name)//': '//&
-                  & TRIM(files(cm_file_num)%name)//'.nc')
+                  & start_date//'.'//TRIM(files(cm_file_num)%name)//'.nc')
           END IF
        ELSE
           IF ( fms_error_handler('diag_manager_mod::init_field_cell_measures',&
@@ -1158,7 +1164,7 @@ CONTAINS
              ! Should look like :associated_files = " output_name: output_file_name " ;
              CALL prepend_attribute(files(file_num), 'associated_files',&
                   & TRIM(output_fields(cm_ind)%output_name)//': '//&
-                  & TRIM(files(cm_file_num)%name)//'.nc')
+                  & start_date//'.'//TRIM(files(cm_file_num)%name)//'.nc')
           END IF
        ELSE
           IF ( fms_error_handler('diag_manager_mod::init_field_cell_measures',&
