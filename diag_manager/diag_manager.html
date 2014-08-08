@@ -248,6 +248,11 @@
      Register Static Field.
    </dd>
 <dt>
+<a href="#init_field_cell_measures">init_field_cell_measures</a>:</dt>
+<dd>
+     If needed, add cell_measures and associated_file attribute to out field/file
+   </dd>
+<dt>
 <a href="#average_tiles">average_tiles</a>:</dt>
 <dd>
    
@@ -754,6 +759,66 @@
 <tr>
 <td valign="top" align="left"><tt>tile_count&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, OPTIONAL]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>area&nbsp;&nbsp;&nbsp;</tt></td><td>Field ID for the area field associated with this field<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, OPTIONAL]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>volume&nbsp;&nbsp;&nbsp;</tt></td><td>Field ID for the volume field associated with this field<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, OPTIONAL]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="init_field_cell_measures"></a>
+<h4>init_field_cell_measures</h4>
+<pre> 
+<b>init_field_cell_measures</b> 
+</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>
+     If needed, add cell_measures and associated_file attribute to out field/file
+   </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>area&nbsp;&nbsp;&nbsp;</tt></td><td>Field ID for area<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, OPTIONAL]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>volume&nbsp;&nbsp;&nbsp;</tt></td><td>Field ID for volume<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, OPTIONAL]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+<dt>
+<b>INPUT/OUTPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>output_field&nbsp;&nbsp;&nbsp;</tt></td><td>Output field that needs the cell_measures<br>&nbsp;&nbsp;&nbsp;<span class="type">[TYPE(output_field_type)]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+<dt>
+<b>OUTPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>err_msg&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*), OPTIONAL]</span></td>
 </tr>
 </table>
 </dd>

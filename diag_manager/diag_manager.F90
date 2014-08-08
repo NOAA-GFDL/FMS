@@ -1065,24 +1065,44 @@ CONTAINS
     out_file_id = -1
     get_related_field = .FALSE.
 
+    ! First check if any fields are in the same file as rel_field
     DO i = 1, input_fields(field)%num_output_fields
        cm_ind = input_fields(field)%output_fields(i)
        cm_file_num = output_fields(cm_ind)%output_file
 
-       ! If time_method, freq, output_units, next_output, and last_output the same, or
-       ! the output_field is static then valid for cell_measures
-       IF ( ( files(cm_file_num)%output_freq.EQ.files(rel_file)%output_freq .AND.&
-            & files(cm_file_num)%output_units.EQ.files(cm_file_num)%output_units .AND.&
-            & output_fields(cm_ind)%time_method.EQ.rel_field%time_method .AND.&
+       IF ( cm_file_num.EQ.rel_file.AND.&
+            & (( output_fields(cm_ind)%time_method.EQ.rel_field%time_method .AND.&
             & output_fields(cm_ind)%next_output.EQ.rel_field%next_output .AND.&
             & output_fields(cm_ind)%last_output.EQ.rel_field%last_output ).OR.&
-            & output_fields(cm_ind)%static.OR.rel_field%static ) THEN
+            & ( output_fields(cm_ind)%static.OR.rel_field%static )) ) THEN
           get_related_field = .TRUE.
           out_field_id = cm_ind
           out_file_id = cm_file_num
           EXIT
        END IF
     END DO
+
+    ! Now look for the field in a different file
+    IF ( .NOT.get_related_field ) THEN
+       DO i = 1, input_fields(field)%num_output_fields
+          cm_ind = input_fields(field)%output_fields(i)
+          cm_file_num = output_fields(cm_ind)%output_file
+
+          ! If time_method, freq, output_units, next_output, and last_output the same, or
+          ! the output_field is static then valid for cell_measures
+          IF ( ( files(cm_file_num)%output_freq.EQ.files(rel_file)%output_freq .AND.&
+               & files(cm_file_num)%output_units.EQ.files(cm_file_num)%output_units .AND.&
+               & output_fields(cm_ind)%time_method.EQ.rel_field%time_method .AND.&
+               & output_fields(cm_ind)%next_output.EQ.rel_field%next_output .AND.&
+               & output_fields(cm_ind)%last_output.EQ.rel_field%last_output ).OR.&
+               & output_fields(cm_ind)%static.OR.rel_field%static ) THEN
+             get_related_field = .TRUE.
+             out_field_id = cm_ind
+             out_file_id = cm_file_num
+             EXIT
+          END IF
+       END DO
+    END IF
   END FUNCTION get_related_field
   ! </FUNCTION>
 
@@ -4137,10 +4157,12 @@ PROGRAM test
      CALL diag_field_add_attribute(id_dat1, 'cell_methods', 'area: mean')
      CALL diag_field_add_attribute(id_dat1, 'cell_methods', 'lon: mean')
   END IF
-  id_dat2 = register_diag_field('test_diag_manager_mod', 'dat2', (/id_lon2,id_lat2,id_pfull/), Time, 'sample data', 'K')
-  IF ( test_number == 18 ) THEN
+  IF ( test_number == 18 .OR. test_number == 19 ) THEN
+     id_dat2 = register_diag_field('test_diag_manager_mod', 'dat2', (/id_lon1,id_lat1,id_pfull/), Time, 'sample data', 'K')
      CALL diag_field_add_attribute(id_dat2, 'interp_method', 'none')
      CALL diag_field_add_attribute(id_dat2, 'int_att', (/ 1, 2 /) )
+  ELSE
+     id_dat2 = register_diag_field('test_diag_manager_mod', 'dat2', (/id_lon2,id_lat2,id_pfull/), Time, 'sample data', 'K')
   END IF
   id_sol_con = register_diag_field ('test_diag_manager_mod', 'solar_constant', Time, &
                   'solar constant', 'watts/m2')
@@ -4159,16 +4181,14 @@ PROGRAM test
   nstep = Run_length / Time_step
 
   IF ( test_number == 18 ) THEN
-     id_dat2h = register_diag_field('test_mod', 'dat2h', (/id_lon2,id_lat2,id_pfull/), Time, 'sample data', 'K',&
+     id_dat2h = register_diag_field('test_mod', 'dat2h', (/id_lon1,id_lat1,id_pfull/), Time, 'sample data', 'K',&
           & volume=id_dat1, area=id_dat2, err_msg=err_msg)
      IF ( err_msg /= '' .OR. id_dat2h <= 0 ) THEN
         CALL error_mesg ('test_diag_manager',&
              & 'Unexpected error registering dat2h '//err_msg, FATAL)
      END IF
-  END IF
-
-  IF ( test_number == 19 ) THEN
-     id_dat2h = register_diag_field('test_mod', 'dat2h', (/id_lon2,id_lat2,id_pfull/), Time, 'sample data', 'K',&
+  ELSE IF ( test_number == 19 ) THEN
+     id_dat2h = register_diag_field('test_mod', 'dat2h', (/id_lon1,id_lat1,id_pfull/), Time, 'sample data', 'K',&
           & volume=id_dat1, area=id_dat1, err_msg=err_msg)
      IF ( err_msg /= '' .OR. id_dat2h <= 0 ) THEN
         CALL error_mesg ('test_diag_manager',&
@@ -4179,11 +4199,11 @@ PROGRAM test
   IF ( test_number == 16 .OR. test_number == 17 .OR. test_number == 18 ) THEN
      !  1 window, no halos
      IF ( id_dat1 > 0 ) used = send_data(id_dat1, dat1, Time, err_msg=err_msg)
-     IF ( id_dat2 > 0 ) used = send_data(id_dat2, dat2, Time, err_msg=err_msg)
+     IF ( id_dat2 > 0 ) used = send_data(id_dat2, dat1, Time, err_msg=err_msg)
      IF ( id_dat2h > 0 ) used = send_data(id_dat2h, dat2h, Time, is_in=is_in, js_in=js_in, ie_in=ie_in, je_in=je_in, err_msg=err_msg)
      Time = Time + set_time(0,1)
      IF ( id_dat1 > 0 ) used = send_data(id_dat1, dat1, Time, err_msg=err_msg)
-     IF ( id_dat2 > 0 ) used = send_data(id_dat2, dat2, Time, err_msg=err_msg)
+     IF ( id_dat2 > 0 ) used = send_data(id_dat2, dat1, Time, err_msg=err_msg)
      IF ( id_dat2h > 0 ) used = send_data(id_dat2h, dat2h, Time, is_in=is_in, js_in=js_in, ie_in=ie_in, je_in=je_in, err_msg=err_msg)
   END IF
 
