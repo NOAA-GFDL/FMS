@@ -168,6 +168,10 @@ MODULE diag_manager_mod
   !   <DATA NAME="max_file_attributes" TYPE="INTEGER" DEFAULT="2">
   !     Maximum number of user definable global attributes per file.
   !   </DATA>
+  !   <DATA NAME="prepend_date" TYPE="LOGICAL" DEFAULT=".FALSE.">
+  !     If <TT>.TRUE.</TT> then prepend the file start date to the output file.  Note: This was usually done by FRE after the
+  !     model run.
+  !   </DATA>
   ! </NAMELIST>
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
@@ -198,7 +202,8 @@ MODULE diag_manager_mod
        & first_send_data_call, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
-       & max_out_per_in_field, conserve_water, max_field_attributes, output_field_type, max_file_attributes
+       & max_out_per_in_field, conserve_water, max_field_attributes, output_field_type, max_file_attributes,&
+       & prepend_date
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
@@ -1152,7 +1157,7 @@ CONTAINS
     file_num = output_field%output_file
 
     ! Create the date_string
-    call get_date(files(file_num)%start_time, year, month, day, hour, minute,second)
+    call get_date(files(file_num)%start_time, year, month, day, hour, minute, second)
     write (start_date, '(1I4.4, 2I2.2)') year, month, day
 
     ! Take care of the cell_measures attribute
@@ -3240,7 +3245,8 @@ CONTAINS
     NAMELIST /diag_manager_nml/ append_pelist_name, mix_snapshot_average_fields, max_output_fields, &
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
-         & oor_warnings_fatal, max_out_per_in_field, conserve_water, max_field_attributes, max_file_attributes
+         & oor_warnings_fatal, max_out_per_in_field, conserve_water, max_field_attributes, max_file_attributes,&
+         & prepend_date
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
