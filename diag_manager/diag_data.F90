@@ -626,7 +626,7 @@ MODULE diag_data_mod
   ! <DATA NAME="max_file_attributes" TYPE="INTEGER" DEFAULT="2">
   !   Maximum number of user definable global attributes per file.
   ! </DATA>
-  ! <DATA NAME="prepend_date" TYPE="LOGICAL" DEFAULT=".FALSE.">
+  ! <DATA NAME="prepend_date" TYPE="LOGICAL" DEFAULT=".TRUE.">
   !   Indicates if the file start date will be prepended to the file name.  This was usually done by FRE after the model run.
   ! </DATA>
   LOGICAL :: append_pelist_name = .FALSE.
@@ -647,7 +647,7 @@ MODULE diag_data_mod
 
   INTEGER :: max_field_attributes = 2
   INTEGER :: max_file_attributes = 2
-  LOGICAL :: prepend_date = .FALSE.
+  LOGICAL :: prepend_date = .TRUE.
   ! <!-- netCDF variable -->
   ! <DATA NAME="FILL_VALUE" TYPE="REAL" DEFAULT="NF90_FILL_REAL">
   !   Fill value used.  Value will be <TT>NF90_FILL_REAL</TT> if using the

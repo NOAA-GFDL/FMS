@@ -1132,7 +1132,7 @@ CONTAINS
 
     INTEGER :: cm_ind, cm_file_num, file_num
     INTEGER :: year, month, day, hour, minute, second
-    CHARACTER(len=8) :: start_date
+    CHARACTER(len=9) :: date_prefix
 
     IF ( PRESENT(err_msg) ) THEN
        err_msg = ''
@@ -1157,8 +1157,12 @@ CONTAINS
     file_num = output_field%output_file
 
     ! Create the date_string
-    call get_date(files(file_num)%start_time, year, month, day, hour, minute, second)
-    write (start_date, '(1I4.4, 2I2.2)') year, month, day
+    IF ( prepend_date ) THEN
+       call get_date(files(file_num)%start_time, year, month, day, hour, minute, second)
+       write (date_prefix, '(1I4.4, 2I2.2,".")') year, month, day
+    ELSE
+       date_prefix=''
+    END IF
 
     ! Take care of the cell_measures attribute
     IF ( PRESENT(area) ) THEN
@@ -1171,7 +1175,7 @@ CONTAINS
              ! Need to append *.nc as files()%name does not include this.
              CALL prepend_attribute(files(file_num), 'associated_files',&
                   & TRIM(output_fields(cm_ind)%output_name)//': '//&
-                  & start_date//'.'//TRIM(files(cm_file_num)%name)//'.nc')
+                  & TRIM(date_prefix)//TRIM(files(cm_file_num)%name)//'.nc')
           END IF
        ELSE
           IF ( fms_error_handler('diag_manager_mod::init_field_cell_measures',&
@@ -1189,7 +1193,7 @@ CONTAINS
              ! Should look like :associated_files = " output_name: output_file_name " ;
              CALL prepend_attribute(files(file_num), 'associated_files',&
                   & TRIM(output_fields(cm_ind)%output_name)//': '//&
-                  & start_date//'.'//TRIM(files(cm_file_num)%name)//'.nc')
+                  & TRIM(date_prefix)//TRIM(files(cm_file_num)%name)//'.nc')
           END IF
        ELSE
           IF ( fms_error_handler('diag_manager_mod::init_field_cell_measures',&
