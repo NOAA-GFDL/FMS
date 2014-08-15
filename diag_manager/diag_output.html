@@ -24,7 +24,9 @@
 <a name="HEADER"></a>
 <!-- BEGIN HEADER -->
 <div>
-<b>Contact:&nbsp;</b><a href="mailto:seth.underwood@noaa.gov">   Seth Underwood </a>
+<b>Contact:&nbsp;</b><a href="mailto:seth.underwood@noaa.gov">
+   Seth Underwood
+ </a>
 <br>
 <b>Reviewers:&nbsp;</b>
 <br>
@@ -38,8 +40,10 @@
 <h4>OVERVIEW</h4>
 <!-- BEGIN OVERVIEW -->
 <p class="text"> 
-<tt>diag_output_mod</tt>   is an integral part of <tt>diag_manager_mod</tt>. Its function is to write axis-meta-data, 
-   field-meta-data and field data </p>
+<tt>diag_output_mod</tt> is an integral part of 
+   <tt>diag_manager_mod</tt>. Its function is to write axis-meta-data, 
+   field-meta-data and field data
+ </p>
 <!-- END OVERVIEW -->
 <a name="DESCRIPTION"></a>
 <!-- BEGIN DESCRIPTION -->
@@ -62,31 +66,49 @@
 <dl>
 <dt>
 <a href="#diag_output_init">diag_output_init</a>:</dt>
-<dd>   Registers the time axis and opens the output file. </dd>
+<dd>
+     Registers the time axis and opens the output file.
+   </dd>
 <dt>
 <a href="#write_axis_meta_data">write_axis_meta_data</a>:</dt>
-<dd>   Write the axes meta data to file. </dd>
+<dd>
+     Write the axes meta data to file.
+   </dd>
 <dt>
 <a href="#write_field_meta_data">write_field_meta_data</a>:</dt>
-<dd>   Write the field meta data to file. </dd>
+<dd>
+     Write the field meta data to file.
+   </dd>
 <dt>
 <a href="#done_meta_data">done_meta_data</a>:</dt>
-<dd>   Writes axis data to file. </dd>
+<dd>
+     Writes axis data to file.
+   </dd>
 <dt>
 <a href="#diag_field_out">diag_field_out</a>:</dt>
-<dd>   Writes field data to an output file. </dd>
+<dd>
+     Writes field data to an output file.
+   </dd>
 <dt>
 <a href="#diag_flush">diag_flush</a>:</dt>
-<dd>   Flush buffer and insure data is not lost. </dd>
+<dd>
+     Flush buffer and insure data is not lost.
+   </dd>
 <dt>
 <a href="#get_axis_index">get_axis_index</a>:</dt>
-<dd>   Return the axis index number. </dd>
+<dd>
+     Return the axis index number.
+   </dd>
 <dt>
 <a href="#get_diag_global_att">get_diag_global_att</a>:</dt>
-<dd>   Return the global attribute type. </dd>
+<dd>
+     Return the global attribute type.
+   </dd>
 <dt>
 <a href="#set_diag_global_att">set_diag_global_att</a>:</dt>
-<dd>   Set the global attribute type. </dd>
+<dd>
+     Set the global attribute type.
+   </dd>
 </dl>
 </div>
 <br>
@@ -104,7 +126,9 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   Registers the time axis, and opens the file for output. </dd>
+<dd>
+     Registers the time axis, and opens the file for output.
+   </dd>
 <br>
 <br>
 <dt>
@@ -138,7 +162,10 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>file_unit&nbsp;&nbsp;&nbsp;</tt></td><td>   File unit number assigned to the output file.  Needed for subsuquent calls to <tt>diag_output_mod</tt> 
+<td valign="top" align="left"><tt>file_unit&nbsp;&nbsp;&nbsp;</tt></td><td>
+     File unit number assigned to the output file.  Needed for subsuquent calls to
+     <tt>diag_output_mod</tt>
+   
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
 </tr>
 </table>
@@ -169,7 +196,9 @@
 <td valign="top" align="left"><tt>axes&nbsp;&nbsp;&nbsp;</tt></td><td>Array of axis ID's, including the time axis<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, DIMENSION(:)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>time_ops&nbsp;&nbsp;&nbsp;</tt></td><td>   .TRUE. if this file contains any min, max, or time_average <br>&nbsp;&nbsp;&nbsp;<span class="type">[LOGICAL, OPTIONAL]</span></td>
+<td valign="top" align="left"><tt>time_ops&nbsp;&nbsp;&nbsp;</tt></td><td>
+     .TRUE. if this file contains any min, max, or time_average
+   <br>&nbsp;&nbsp;&nbsp;<span class="type">[LOGICAL, OPTIONAL]</span></td>
 </tr>
 </table>
 </dd>
@@ -184,7 +213,9 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   The meta data for the field is written to the file indicated by file_unit </dd>
+<dd>
+     The meta data for the field is written to the file indicated by file_unit
+   </dd>
 <br>
 <br>
 <dt>
@@ -208,25 +239,39 @@
 <td valign="top" align="left"><tt>long_name&nbsp;&nbsp;&nbsp;</tt></td><td>Field's long name<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>range&nbsp;&nbsp;&nbsp;</tt></td><td>   Valid range (min, max).  If min &gt; max, the range will be ignored <br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL, DIMENSION(2), OPTIONAL]</span></td>
+<td valign="top" align="left"><tt>range&nbsp;&nbsp;&nbsp;</tt></td><td>
+     Valid range (min, max).  If min &gt; max, the range will be ignored
+   <br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL, DIMENSION(2), OPTIONAL]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>pack&nbsp;&nbsp;&nbsp;</tt></td><td>   Packing flag.  Only valid when range specified.  Valid values: <ul> 
-<li>   1 = 64bit </li> 
-<li>   2 = 32bit </li> 
-<li>   4 = 16bit </li> 
-<li>   8 =  8bit </li> 
-</ul> 
+<td valign="top" align="left"><tt>pack&nbsp;&nbsp;&nbsp;</tt></td><td>
+     Packing flag.  Only valid when range specified.  Valid values:
+     <ul>
+       
+<li> 1 = 64bit </li>
+       
+<li> 2 = 32bit </li>
+       
+<li> 4 = 16bit </li>
+       
+<li> 8 =  8bit </li>
+     
+</ul>
+   
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, OPTIONAL]&nbsp;[Default: 2]</span></td>
 </tr>
 <tr>
 <td valign="top" align="left"><tt>mval&nbsp;&nbsp;&nbsp;</tt></td><td>Missing value, must be within valid range<br>&nbsp;&nbsp;&nbsp;<span class="type">[REAL, OPTIONAL]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>avg_name&nbsp;&nbsp;&nbsp;</tt></td><td>   Name of variable containing time averaging info <br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*), OPTIONAL]</span></td>
+<td valign="top" align="left"><tt>avg_name&nbsp;&nbsp;&nbsp;</tt></td><td>
+     Name of variable containing time averaging info
+   <br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*), OPTIONAL]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>time_method&nbsp;&nbsp;&nbsp;</tt></td><td>   Name of transformation applied to the time-varying data, i.e. "avg", "min", "max" <br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*), OPTIONAL]</span></td>
+<td valign="top" align="left"><tt>time_method&nbsp;&nbsp;&nbsp;</tt></td><td>
+     Name of transformation applied to the time-varying data, i.e. "avg", "min", "max"
+   <br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*), OPTIONAL]</span></td>
 </tr>
 <tr>
 <td valign="top" align="left"><tt>standard_name&nbsp;&nbsp;&nbsp;</tt></td><td>Standard name of field<br>&nbsp;&nbsp;&nbsp;<span class="type">[CHARACTER(len=*), OPTIONAL]</span></td>
@@ -248,8 +293,11 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   Writes axis data to file.  This subroutine is to be called once per file
-   after all <tt>write_meta_data</tt>   calls, and before the first <tt>diag_field_out</tt>   call. </dd>
+<dd>
+     Writes axis data to file.  This subroutine is to be called once per file
+     after all <tt>write_meta_data</tt> calls, and before the first 
+     <tt>diag_field_out</tt> call.
+   </dd>
 <br>
 <br>
 <dt>
@@ -273,7 +321,9 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   Writes field data to an output file. </dd>
+<dd>
+     Writes field data to an output file.
+   </dd>
 <br>
 <br>
 <dt>
@@ -318,8 +368,10 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   This subroutine can be called periodically to flush the buffer, and
-   insure that data is not lost if the execution fails. </dd>
+<dd>
+     This subroutine can be called periodically to flush the buffer, and
+     insure that data is not lost if the execution fails.
+   </dd>
 <br>
 <br>
 <dt>
@@ -343,7 +395,9 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   Return the axis index number. </dd>
+<dd>
+     Return the axis index number.
+   </dd>
 <br>
 <br>
 <dt>
@@ -369,7 +423,9 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   Return the global attribute type. </dd>
+<dd>
+     Return the global attribute type.
+   </dd>
 <br>
 <br>
 <dt>
@@ -395,7 +451,9 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   Set the global attribute type. </dd>
+<dd>
+     Set the global attribute type.
+   </dd>
 <br>
 <br>
 <dt>
