@@ -58,9 +58,9 @@ MODULE diag_util_mod
        & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size, sync_file_times
 
   CHARACTER(len=128),PRIVATE  :: version =&
-       & '$Id$'
+       & '$Id: $'
   CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name$'
+       & '$Name: $'
 
 CONTAINS
 
@@ -121,7 +121,7 @@ CONTAINS
                   & 'wrong order of axes, X should come first',FATAL)
              ALLOCATE(global_lon(global_axis_size))
              CALL get_diag_axis_data(axes(i),global_lon)
-             IF( INT( start(i)*END(i) ) == 1 ) THEN 
+             IF( INT(start(i)) == -1 .AND. INT(end(i)) == -1 ) THEN 
                 gstart_indx(i) = 1
                 gend_indx(i) = global_axis_size
                 output_fields(outnum)%output_grid%subaxes(i) = axes(i)
@@ -137,7 +137,7 @@ CONTAINS
                   & 'wrong order of axes, Y should come second',FATAL)
              ALLOCATE(global_lat(global_axis_size))
              CALL get_diag_axis_data(axes(i),global_lat)
-             IF( INT( start(i)*END(i) ) == 1 ) THEN 
+             IF( INT(start(i)) == -1 .AND. INT(END(i)) == -1 ) THEN 
                 gstart_indx(i) = 1
                 gend_indx(i) = global_axis_size
                 output_fields(outnum)%output_grid%subaxes(i) = axes(i)
@@ -1457,8 +1457,8 @@ CONTAINS
     IF ( PRESENT(local_coord) ) THEN
        input_fields(in_num)%local = .TRUE.
        input_fields(in_num)%local_coord = local_coord
-       IF ( INT(local_coord%xbegin * local_coord%xbegin) == 1 .AND.&
-            & INT(local_coord%ybegin * local_coord%ybegin) ==1 ) THEN
+       IF ( INT(local_coord%xbegin) ==  -1 .AND. INT(local_coord%xend) == -1 .AND.&
+            & INT(local_coord%ybegin) == -1 .AND. INT(local_coord%yend) == -1 ) THEN
           output_fields(out_num)%local_output = .FALSE.
           output_fields(out_num)%need_compute = .FALSE.
           output_fields(out_num)%reduced_k_range = .TRUE.
