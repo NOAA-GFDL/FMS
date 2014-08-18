@@ -172,6 +172,10 @@ MODULE diag_manager_mod
   !     If <TT>.TRUE.</TT> then prepend the file start date to the output file.  Note: This was usually done by FRE after the
   !     model run.
   !   </DATA>
+  !   <DATA NAME="region_out_use_alt_value" TYPE="LOGICAL" DEFAULT=".TRUE.">
+  !     Will determine which value to use when checking a regional output if the region is the full axis or a sub-axis.
+  !     The values are defined as <TT>GLO_REG_VAL</TT> (-999) and <TT>GLO_REG_VAL_ALT</TT> (-1) in <TT>diag_data_mod</TT>.
+  !   </DATA>
   ! </NAMELIST>
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
@@ -202,8 +206,8 @@ MODULE diag_manager_mod
        & first_send_data_call, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
-       & max_out_per_in_field, conserve_water, max_field_attributes, output_field_type, max_file_attributes,&
-       & prepend_date
+       & max_out_per_in_field, conserve_water, region_out_use_alt_value, max_field_attributes, output_field_type,&
+       & max_file_attributes, prepend_date
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
@@ -528,21 +532,16 @@ CONTAINS
          & long_name, units, missing_value, range, mask_variant1, standard_name=standard_name,&
          & DYNAMIC=.TRUE., do_not_log=do_not_log, interp_method=interp_method, tile_count=tile_count)
 
-    ! The following lines are commented out as they have not been included in the code prior to now,
-    ! and there are a lot of send_data calls before register_diag_field calls.  A method to do this safely
-    ! needs to be developed.
-    !
-    ! One method would be to have the first_send_data call to be set per field.
-!!$    IF ( .NOT.first_send_data_call ) THEN
-!!$       ! <ERROR STATUS="WARNING">
-!!$       !   module/output_field <module_name>/<field_name> registered AFTER first
-!!$       !   send_data call, TOO LATE
-!!$       ! </ERROR>
-!!$       IF ( mpp_pe() == mpp_root_pe() ) &
-!!$            & CALL  error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
-!!$            &//TRIM(module_name)//'/'// TRIM(field_name)//&
-!!$            &' registered AFTER first send_data call, TOO LATE', WARNING)
-!!$    END IF
+    IF ( .NOT.first_send_data_call ) THEN
+       ! <ERROR STATUS="WARNING">
+       !   module/output_field <module_name>/<field_name> registered AFTER first
+       !   send_data call, TOO LATE
+       ! </ERROR>
+       IF ( mpp_pe() == mpp_root_pe() ) &
+            & CALL  error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
+            &//TRIM(module_name)//'/'// TRIM(field_name)//&
+            &' registered AFTER first send_data call, TOO LATE', WARNING)
+    END IF
 
     IF ( register_diag_field_array < 0 ) THEN
        ! <ERROR STATUS="WARNING">
@@ -1416,10 +1415,14 @@ CONTAINS
        IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'diag_manager NOT initialized', err_msg) ) RETURN
     END IF
     err_msg_local = ''
+    ! The following lines are commented out as they have not been included in the code prior to now,
+    ! and there are a lot of send_data calls before register_diag_field calls.  A method to do this safely
+    ! needs to be developed.
+    !
     ! Set first_send_data_call to .FALSE. on first non-static field.
-    IF ( .NOT.input_fields(diag_field_id)%static .AND. first_send_data_call ) THEN
-       first_send_data_call = .FALSE.
-    END IF
+!!$    IF ( .NOT.input_fields(diag_field_id)%static .AND. first_send_data_call ) THEN
+!!$       first_send_data_call = .FALSE.
+!!$    END IF
 
     ! oor_mask is only used for checking out of range values.
     ALLOCATE(oor_mask(SIZE(field,1),SIZE(field,2),SIZE(field,3)), STAT=status)
@@ -3249,8 +3252,8 @@ CONTAINS
     NAMELIST /diag_manager_nml/ append_pelist_name, mix_snapshot_average_fields, max_output_fields, &
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
-         & oor_warnings_fatal, max_out_per_in_field, conserve_water, max_field_attributes, max_file_attributes,&
-         & prepend_date
+         & oor_warnings_fatal, max_out_per_in_field, conserve_water, region_out_use_alt_value, max_field_attributes,&
+         & max_file_attributes, prepend_date
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
@@ -3463,7 +3466,6 @@ CONTAINS
     RETURN
   END FUNCTION need_data
   ! </FUNCTION>
-
 
   ! <FUNCTION NAME="init_diurnal_axis">
   !   <OVERVIEW>

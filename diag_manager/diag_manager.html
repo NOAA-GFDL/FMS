@@ -1243,6 +1243,15 @@
    <br>
 <span class="type">[LOGICAL, default: .FALSE.]</span>
 </dl>
+<dt>
+<tt>region_out_use_alt_value</tt>
+</dt>
+<dl>
+     Will determine which value to use when checking a regional output if the region is the full axis or a sub-axis.
+     The values are defined as <tt>GLO_REG_VAL</tt> (-999) and <tt>GLO_REG_VAL_ALT</tt> (-1) in <tt>diag_data_mod</tt>.
+   <br>
+<span class="type">[LOGICAL, default: .TRUE.]</span>
+</dl>
 </dl>
 </div>
 </div>
@@ -1263,9 +1272,9 @@
 <span class="errmsg"></span>
 </dd>
 <dd>
-$       !   module/output_field &lt;module_name&gt;/&lt;field_name&gt; registered AFTER first
-$       !   send_data call, TOO LATE
-$       ! </dd>
+   module/output_field &lt;module_name&gt;/&lt;field_name&gt; registered AFTER first
+   send_data call, TOO LATE
+ </dd>
 <dt>
 <b>WARNING in register_diag_field</b>
 </dt>

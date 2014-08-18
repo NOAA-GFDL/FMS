@@ -46,7 +46,7 @@
 <a name="DESCRIPTION"></a>
 <!-- BEGIN DESCRIPTION -->
 <div>
-   Notation: 
+   Notation:
    <dl>
      
 <dt>input field</dt>
@@ -70,7 +70,7 @@
 
    Each input field associated with one or several output fields via array of
    indices output_fields; each output field points to the single "parent" input
-   field with the input_field index, and to the output file with the output_file 
+   field with the input_field index, and to the output file with the output_file
    index
  </div>
 <br>
@@ -152,6 +152,16 @@
 <td> CMOR_MISSING_VALUE  </td><td> REAL, PARAMETER  </td><td> 1.0e20  </td><td> ---  </td><td> ---  </td>
 </tr>
 <tr>
+<td> GLO_REG_VAL  </td><td> INTEGER, PARAMETER  </td><td> -999  </td><td> ---  </td><td> 
+   Value used in the region specification of the diag_table to indicate to use the full axis instead of a sub-axis
+   </td>
+</tr>
+<tr>
+<td> GLO_REG_VAL_ALT  </td><td> INTEGER, PARAMETER  </td><td> -1  </td><td> ---  </td><td> 
+   Alternate value used in the region specification of the diag_table to indicate to use the full axis instead of a sub-axis
+   </td>
+</tr>
+<tr>
 <td> num_files  </td><td> INTEGER  </td><td> 0  </td><td> ---  </td><td> 
    Number of output files currenly in use by the diag_manager.
    </td>
@@ -191,7 +201,7 @@
    </td>
 </tr>
 <tr>
-<td> MAX_OUT_PER_IN_FIELD  </td><td> INTEGER  </td><td> 150  </td><td> ---  </td><td> 
+<td> max_out_per_in_field  </td><td> INTEGER  </td><td> 150  </td><td> ---  </td><td> 
    Maximum number of output_fields per input_field.
    </td>
 </tr>
@@ -218,13 +228,13 @@
    </td>
 </tr>
 <tr>
-<td> ISSUE_OOR_WARNINGS  </td><td> LOGICAL  </td><td> .TRUE.  </td><td> ---  </td><td> 
+<td> issue_oor_warnings  </td><td> LOGICAL  </td><td> .TRUE.  </td><td> ---  </td><td> 
    Issue warnings if the output field has values outside the given
    range for a variable.
    </td>
 </tr>
 <tr>
-<td> OOR_WARNINGS_FATAL  </td><td> LOGICAL  </td><td> .FALSE.  </td><td> ---  </td><td> 
+<td> oor_warnings_fatal  </td><td> LOGICAL  </td><td> .FALSE.  </td><td> ---  </td><td> 
    Cause a fatal error if the output field has a value outside the
    given range for a variable.
    </td>
@@ -242,6 +252,12 @@
 <tr>
 <td> prepend_date  </td><td> LOGICAL  </td><td> .TRUE.  </td><td> ---  </td><td> 
    Indicates if the file start date will be prepended to the file name.  This was usually done by FRE after the model run.
+   </td>
+</tr>
+<tr>
+<td> region_out_use_alt_value  </td><td> LOGICAL  </td><td> .TRUE.  </td><td> ---  </td><td> 
+   Will determine which value to use when checking a regional output if the region is the full axis or a sub-axis.
+   The values are defined as  (-999) and  (-1) in .
    </td>
 </tr>
 <tr>

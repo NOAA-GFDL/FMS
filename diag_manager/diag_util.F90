@@ -32,7 +32,7 @@ MODULE diag_util_mod
        & max_input_fields,num_input_fields, max_output_fields, num_output_fields, coord_type,&
        & mix_snapshot_average_fields, global_descriptor, CMOR_MISSING_VALUE, use_cmor, pack_size,&
        & debug_diag_manager, conserve_water, output_field_type, max_field_attributes, max_file_attributes,&
-       & file_type, prepend_date
+       & file_type, prepend_date, region_out_use_alt_value, GLO_REG_VAL, GLO_REG_VAL_ALT
   USE diag_axis_mod, ONLY  : get_diag_axis_data, get_axis_global_length, get_diag_axis_cart,&
        & get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, get_axis_aux,&
        & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name
@@ -141,6 +141,7 @@ CONTAINS
     REAL, ALLOCATABLE :: subaxis_x(:), subaxis_y(:), subaxis_z(:) !containing local coordinates in x,y,z axes
     CHARACTER(len=128) :: msg
     INTEGER :: ishift, jshift
+    INTEGER :: grv !< Value used to determine if the region defined in the diag_table is for the whole axis, or a sub-axis
     CHARACTER(len=128), DIMENSION(2) :: axis_domain_name
 
     !initilization for local output
@@ -148,7 +149,14 @@ CONTAINS
     start = -1.e10
     end = -1.e10
     gstart_indx = -1
-    gend_indx=-1
+    gend_indx = -1
+
+    ! get the value to compare to determine if writing full axis data
+    IF ( region_out_use_alt_value ) THEN
+       grv = GLO_REG_VAL_ALT
+    ELSE
+       grv = GLO_REG_VAL
+    END IF
 
     ! get axis data (lat, lon, depth) and indices
     start = output_fields(outnum)%output_grid%start
@@ -170,7 +178,7 @@ CONTAINS
                   & 'wrong order of axes, X should come first',FATAL)
              ALLOCATE(global_lon(global_axis_size))
              CALL get_diag_axis_data(axes(i),global_lon)
-             IF( INT(start(i)) == -1 .AND. INT(end(i)) == -1 ) THEN 
+             IF( INT(start(i)) == grv .AND. INT(end(i)) == grv ) THEN
                 gstart_indx(i) = 1
                 gend_indx(i) = global_axis_size
                 output_fields(outnum)%output_grid%subaxes(i) = axes(i)
@@ -186,7 +194,7 @@ CONTAINS
                   & 'wrong order of axes, Y should come second',FATAL)
              ALLOCATE(global_lat(global_axis_size))
              CALL get_diag_axis_data(axes(i),global_lat)
-             IF( INT(start(i)) == -1 .AND. INT(END(i)) == -1 ) THEN 
+             IF( INT(start(i)) == grv .AND. INT(END(i)) == grv ) THEN
                 gstart_indx(i) = 1
                 gend_indx(i) = global_axis_size
                 output_fields(outnum)%output_grid%subaxes(i) = axes(i)
@@ -225,7 +233,7 @@ CONTAINS
        END DO
 
        DO i = 1, SIZE(axes(:))
-          IF( gstart_indx(i) == -1 .OR. gend_indx(i) == -1 ) THEN
+          IF ( gstart_indx(i) == -1 .OR. gend_indx(i) == -1 ) THEN
              ! <ERROR STATUS="FATAL">
              !   can not find gstart_indx/gend_indx for <output_fields(outnum)%output_name>,
              !   check region bounds for axis <i>.
@@ -293,14 +301,14 @@ CONTAINS
     END IF
 
     ! get domain and compute_domain(xbegin,xend,ybegin,yend)
-    xbegin=-1
-    xend=-1
-    ybegin=-1
-    yend=-1
+    xbegin = -1
+    xend = -1
+    ybegin = -1
+    yend = -1
 
     Domain2 = get_domain2d(axes)
     IF ( Domain2 .NE. NULL_DOMAIN2D ) THEN
-       CALL mpp_get_compute_domain(Domain2,xbegin,xend,ybegin,yend)
+       CALL mpp_get_compute_domain(Domain2, xbegin, xend, ybegin, yend)
        CALL mpp_get_domain_components(Domain2, Domain1x, Domain1y)
     ELSE
        DO i = 1, MIN(SIZE(axes(:)),2)
@@ -327,17 +335,17 @@ CONTAINS
     xend = xend+ishift
     yend = yend+jshift
 
-    IF ( xbegin== -1 .OR. xend==-1 .OR. ybegin==-1 .OR. yend==-1 ) THEN
+    IF ( xbegin == -1 .OR. xend == -1 .OR. ybegin == -1 .OR. yend == -1 ) THEN
        ! <ERROR STATUS="FATAL">wrong compute domain indices</ERROR>
        CALL error_mesg('diag_util_mod::get_subfield_size', 'wrong compute domain indices',FATAL)
     END IF
 
     ! get the area containing BOTH compute domain AND local output area
-    IF(gstart_indx(1)> xend .OR. xbegin > gend_indx(1)) THEN
+    IF( gstart_indx(1) > xend .OR. xbegin > gend_indx(1) ) THEN
        output_fields(outnum)%output_grid%l_start_indx(1) = -1
        output_fields(outnum)%output_grid%l_end_indx(1) = -1
        output_fields(outnum)%need_compute = .FALSE. ! not involved
-    ELSEIF (gstart_indx(2)> yend .OR. ybegin > gend_indx(2)) THEN
+    ELSEIF ( gstart_indx(2) > yend .OR. ybegin > gend_indx(2) ) THEN
        output_fields(outnum)%output_grid%l_start_indx(2) = -1
        output_fields(outnum)%output_grid%l_end_indx(2) = -1
        output_fields(outnum)%need_compute = .FALSE. ! not involved
@@ -363,7 +371,7 @@ CONTAINS
        output_fields(outnum)%output_grid%subaxes(2) =&
             & diag_subaxes_init(axes(2),subaxis_y, gstart_indx(2),gend_indx(2),Domain2_new)
        DO i = 1, SIZE(axes(:))
-          IF(output_fields(outnum)%output_grid%subaxes(i) == -1) THEN
+          IF ( output_fields(outnum)%output_grid%subaxes(i) == -1 ) THEN
              ! <ERROR STATUS="FATAL">
              !   <output_fields(outnum)%output_name> error at i = <i>
              ! </ERROR>
@@ -388,7 +396,6 @@ CONTAINS
     END IF
     IF ( ALLOCATED(subaxis_x) ) DEALLOCATE(subaxis_x, global_lon)
     IF ( ALLOCATED(subaxis_y) ) DEALLOCATE(subaxis_y, global_lat)
-
   END SUBROUTINE get_subfield_size
   ! </SUBROUTINE>
 
@@ -480,7 +487,7 @@ CONTAINS
     END DO
 
     DO i = 1,SIZE(axes(:))
-       IF ( gstart_indx(i)== -1 .OR. gend_indx(i)== -1 ) THEN
+       IF ( gstart_indx(i) == -1 .OR. gend_indx(i) == -1 ) THEN
           ! <ERROR STATUS="FATAL">
           !   can not find gstart_indx/gend_indx for <output_fields(outnum)%output_name>
           !   check region bounds for axis
@@ -567,11 +574,13 @@ CONTAINS
     END IF
     ! if still not found, is it less than the first element
     ! or greater than last element? (Increasing Array)
+    ! But it must be within 2x the axis spacing
+    ! i.e. array(1)-(array(3)-array(1)).LT.number .AND. or 2*array(1)-array(3).LT.number
     IF ( .NOT. found ) THEN
-       IF ( array(1).GT.number ) THEN
+       IF ( 2*array(1)-array(3).LT.number .AND. number.LT.array(1) ) THEN
           get_index = 1
           found = .TRUE.
-       ELSE IF ( array(n).LT.number ) THEN
+       ELSE IF ( array(n).LT.number .AND. number.LT.2*array(n)-array(n-2) ) THEN
           get_index = n
           found = .TRUE.
        ELSE
@@ -579,13 +588,14 @@ CONTAINS
        END IF
     END IF
 
-   ! if still not found, is it greater than the first element
-   ! or less than the last element? (Decreasing Array)
+    ! if still not found, is it greater than the first element
+    ! or less than the last element? (Decreasing Array)
+    ! But it must be within 2x the axis spacing (see above)
     IF ( .NOT. found ) THEN
-       IF ( array(1).LT.number ) THEN
+       IF ( 2*array(1)-array(3).GT.number .AND. number.GT.array(1) ) THEN
           get_index = 1
           found = .TRUE.
-       ELSE IF ( array(n).GT.number ) THEN
+       ELSE IF ( array(n).GT.number .AND. number.GT.2*array(n)-array(n-2) ) THEN
           get_index = n
           found = .TRUE.
        ELSE
@@ -1327,8 +1337,18 @@ CONTAINS
     INTEGER :: num_fields, i, method_selected, l1
     INTEGER :: ioerror
     REAL :: pow_value
+    INTEGER :: grv !< Value used to determine if the region defined in the diag_table is for the whole axis, or a sub-axis
     CHARACTER(len=128) :: error_msg
     CHARACTER(len=50) :: t_method
+
+    ! Value to use to determine if a region is to be output on the full axis, or sub-axis
+    ! get the value to compare to determine if writing full axis data
+    IF ( region_out_use_alt_value ) THEN
+       grv = GLO_REG_VAL_ALT
+    ELSE
+       grv = GLO_REG_VAL
+    END IF
+
 
     ! Get a number for this output field
     num_output_fields = num_output_fields + 1
@@ -1529,8 +1549,8 @@ CONTAINS
     IF ( PRESENT(local_coord) ) THEN
        input_fields(in_num)%local = .TRUE.
        input_fields(in_num)%local_coord = local_coord
-       IF ( INT(local_coord%xbegin) ==  -1 .AND. INT(local_coord%xend) == -1 .AND.&
-            & INT(local_coord%ybegin) == -1 .AND. INT(local_coord%yend) == -1 ) THEN
+       IF ( INT(local_coord%xbegin) ==  grv .AND. INT(local_coord%xend) == grv .AND.&
+            & INT(local_coord%ybegin) == grv .AND. INT(local_coord%yend) == grv ) THEN
           output_fields(out_num)%local_output = .FALSE.
           output_fields(out_num)%need_compute = .FALSE.
           output_fields(out_num)%reduced_k_range = .TRUE.
@@ -2360,7 +2380,7 @@ CONTAINS
 
     INTEGER :: istat
     CHARACTER(len=1024) :: err_msg_local
-    
+
     ! Allocate memory for the attributes
     IF ( .NOT.ALLOCATED(out_field%attributes) ) THEN
        ALLOCATE(out_field%attributes(max_field_attributes), STAT=istat)
@@ -2494,7 +2514,7 @@ CONTAINS
 
     INTEGER :: istat
     CHARACTER(len=1024) :: err_msg_local
-    
+
     ! Allocate memory for the attributes
     IF ( .NOT.ALLOCATED(out_file%attributes) ) THEN
        ALLOCATE(out_file%attributes(max_field_attributes), STAT=istat)
