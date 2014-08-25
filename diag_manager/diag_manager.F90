@@ -223,7 +223,7 @@ MODULE diag_manager_mod
        & register_diag_field, register_static_field, diag_axis_init, get_base_time, get_base_date,&
        & need_data, average_tiles, DIAG_ALL, DIAG_OCEAN, DIAG_OTHER, get_date_dif, DIAG_SECONDS,&
        & DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, get_diag_global_att,&
-       & set_diag_global_att, diag_field_add_attribute
+       & set_diag_global_att, diag_field_add_attribute, diag_field_add_cell_measures
   ! Public interfaces from diag_grid_mod
   PUBLIC :: diag_grid_init, diag_grid_end
   PUBLIC :: diag_manager_set_time_end, diag_send_complete
@@ -3745,6 +3745,39 @@ CONTAINS
 
     CALL diag_field_attribute_init(diag_field_id, att_name, NF90_INT, ival=att_value)
   END SUBROUTINE diag_field_add_attribute_i1d
+  ! </SUBROUTINE>
+
+  ! <SUBROUTINE NAME="diag_field_add_cell_measures">
+  !   <OVERVIEW>
+  !     Add the cell_measures attribute to a diag out field
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE diag_field_add_cell_measures(diag_field_id, area, volume)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     Add the cell_measures attribute to a give diag field.  This is useful if the 
+  !     area/volume fields for the diagnostic field are defined in another module after
+  !     the diag_field.
+  !   </DESCRIPTION>
+  !   <IN NAME="diag_field_id" TYPE="INTEGER" />
+  !   <IN NAME="area" TYPE="INTEGER, OPTIONAL" />
+  !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL" />
+  SUBROUTINE diag_field_add_cell_measures(diag_field_id, area, volume)
+    INTEGER, INTENT(in) :: diag_field_id
+    INTEGER, INTENT(in), OPTIONAL :: area, volume ! diag ids of area or volume
+
+    integer :: j, ind
+
+    IF ( .NOT.PRESENT(area) .AND. .NOT.present(volume) ) THEN
+       CALL ERROR_MESG('diag_manager_mod::diag_field_add_cell_measures', &
+       & 'either area or volume arguments must be present', FATAL )
+    END IF
+
+    DO j=1, input_fields(diag_field_id)%num_output_fields
+       ind = input_fields(diag_field_id)%output_fields(j)
+       CALL init_field_cell_measures(output_fields(ind), area=area, volume=volume)
+    END DO
+  END SUBROUTINE diag_field_add_cell_measures
   ! </SUBROUTINE>
 END MODULE diag_manager_mod
 

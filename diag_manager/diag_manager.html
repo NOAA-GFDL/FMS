@@ -292,6 +292,11 @@
 <dd>
      Finds or initializes a diurnal time axis and returns its' ID.
    </dd>
+<dt>
+<a href="#diag_field_add_cell_measures">diag_field_add_cell_measures</a>:</dt>
+<dd>
+     Add the cell_measures attribute to a diag out field
+   </dd>
 </dl>
 </div>
 <br>
@@ -1090,6 +1095,43 @@
 <table border="0">
 <tr>
 <td valign="top" align="left"><tt>n_samples&nbsp;&nbsp;&nbsp;</tt></td><td>Number of intervals during the day<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="diag_field_add_cell_measures"></a>
+<h4>diag_field_add_cell_measures</h4>
+<pre>SUBROUTINE <b>diag_field_add_cell_measures</b> (diag_field_id, area, volume)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>
+     Add the cell_measures attribute to a give diag field.  This is useful if the 
+     area/volume fields for the diagnostic field are defined in another module after
+     the diag_field.
+   </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>diag_field_id&nbsp;&nbsp;&nbsp;</tt></td><td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>area&nbsp;&nbsp;&nbsp;</tt></td><td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, OPTIONAL]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>volume&nbsp;&nbsp;&nbsp;</tt></td><td>
+<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, OPTIONAL]</span></td>
 </tr>
 </table>
 </dd>
