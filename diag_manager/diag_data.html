@@ -984,6 +984,22 @@
 <span class="type">[LOGICAL]</span>
 </dl>
 <dt>
+<tt>numthreads</tt>
+</dt>
+<dl>
+   
+<br>
+<span class="type">[INTEGER]</span>
+</dl>
+<dt>
+<tt>active_omp_level</tt>
+</dt>
+<dl>
+     The current level of OpenMP nesting
+   <br>
+<span class="type">[INTEGER]</span>
+</dl>
+<dt>
 <tt>tile_count</tt>
 </dt>
 <dl>
@@ -998,6 +1014,24 @@
    
 <br>
 <span class="type">[TYPE(coord_type)]</span>
+</dl>
+<dt>
+<tt>time</tt>
+</dt>
+<dl>
+   
+<br>
+<span class="type">[TYPE(time_type)]</span>
+</dl>
+<dt>
+<tt>issued_mask_ignore_warning</tt>
+</dt>
+<dl>
+     Indicates if the mask_ignore_warning has been issued for this input
+     field.  Once .TRUE. the warning message is suppressed on all subsequent
+     send_data calls.
+   <br>
+<span class="type">[LOGICAL]</span>
 </dl>
 </dl>
 </div>

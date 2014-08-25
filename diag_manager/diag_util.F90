@@ -1302,6 +1302,7 @@ CONTAINS
     input_fields(num_input_fields)%standard_name = 'none'
     input_fields(num_input_fields)%tile_count = tile_count
     input_fields(num_input_fields)%numthreads = 1
+    input_fields(num_input_fields)%active_omp_level = 0
     input_fields(num_input_fields)%time = time_zero
   END SUBROUTINE init_input_field
   ! </SUBROUTINE>

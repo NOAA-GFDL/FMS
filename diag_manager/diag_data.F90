@@ -337,9 +337,21 @@ MODULE diag_data_mod
   !   </DATA>
   !   <DATA NAME="local" TYPE="LOGICAL">
   !   </DATA>
+  !   <DATA NAME="numthreads" TYPE="INTEGER">
+  !   </DATA>
+  !   <DATA NAME="active_omp_level" TYPE="INTEGER">
+  !     The current level of OpenMP nesting
+  !   </DATA>
   !   <DATA NAME="tile_count" TYPE="INTEGER">
   !   </DATA>
   !   <DATA NAME="local_coord" TYPE="TYPE(coord_type)">
+  !   </DATA>
+  !   <DATA NAME="time" TYPE="TYPE(time_type)">
+  !   </DATA>
+  !   <DATA NAME="issued_mask_ignore_warning" TYPE="LOGICAL">
+  !     Indicates if the mask_ignore_warning has been issued for this input
+  !     field.  Once .TRUE. the warning message is suppressed on all subsequent
+  !     send_data calls.
   !   </DATA>
   TYPE input_field_type
      CHARACTER(len=128) :: module_name, field_name, long_name, units, standard_name
@@ -354,6 +366,7 @@ MODULE diag_data_mod
      INTEGER, DIMENSION(3) :: size
      LOGICAL :: static, register, mask_variant, local
      INTEGER :: numthreads
+     INTEGER :: active_omp_level
      INTEGER :: tile_count
      TYPE(coord_type) :: local_coord
      TYPE(time_type)  :: time

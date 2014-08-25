@@ -1390,8 +1390,10 @@ CONTAINS
     INTEGER :: day,second,tick ! components of the current date
     INTEGER :: status
     INTEGER :: numthreads
+    INTEGER :: active_omp_level
 #if defined(_OPENMP)
     INTEGER :: omp_get_num_threads !< OMP function
+    INTEGER :: omp_get_level !< OMP function
 #endif
     LOGICAL :: average, phys_window, need_compute
     LOGICAL :: reduced_k_range, local_output
@@ -1543,10 +1545,13 @@ CONTAINS
     number_of_outputs = input_fields(diag_field_id)%num_output_fields
 !$OMP CRITICAL
     input_fields(diag_field_id)%numthreads = 1
+    active_omp_level=0
 #if defined(_OPENMP)
     input_fields(diag_field_id)%numthreads = omp_get_num_threads()
+    input_fields(diag_field_id)%active_omp_level = omp_get_level()
 #endif
     numthreads = input_fields(diag_field_id)%numthreads
+    active_omp_level = input_fields(diag_field_id)%active_omp_level
 !$OMP END CRITICAL
 
     if(present(time)) input_fields(diag_field_id)%time = time
@@ -1686,8 +1691,8 @@ CONTAINS
 
        ! Is it time to output for this field; CAREFUL ABOUT > vs >= HERE
        !--- The fields send out within openmp parallel region will be written out in
-       !--- diag_send_complete.
-       IF ( numthreads == 1) then
+       !--- diag_send_complete. 
+       IF ( (numthreads == 1) .AND. (active_omp_level.LE.1) ) then
           IF ( .NOT.output_fields(out_num)%static .AND. freq /= END_OF_RUN ) THEN
              IF ( time > output_fields(out_num)%next_output ) THEN
                 ! A non-static field that has skipped a time level is an error
@@ -3069,7 +3074,7 @@ CONTAINS
           out_num = files(file)%fields(j) !this is position of output_field in array output_fields
           in_num = output_fields(out_num)%input_field
 
-          IF ( input_fields(in_num)%numthreads == 1 ) CYCLE
+          IF ( (input_fields(in_num)%numthreads == 1) .AND. (input_fields(in_num)%active_omp_level.LE.1) ) CYCLE
           IF ( output_fields(out_num)%static .OR. freq == END_OF_RUN ) CYCLE
           time = input_fields(in_num)%time
           IF ( time >= time_end ) CYCLE
