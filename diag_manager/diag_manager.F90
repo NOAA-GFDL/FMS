@@ -3773,15 +3773,17 @@ CONTAINS
 
     integer :: j, ind
 
-    IF ( .NOT.PRESENT(area) .AND. .NOT.present(volume) ) THEN
-       CALL ERROR_MESG('diag_manager_mod::diag_field_add_cell_measures', &
-       & 'either area or volume arguments must be present', FATAL )
-    END IF
+    IF ( diag_field_id.GT.0 ) THEN
+       IF ( .NOT.PRESENT(area) .AND. .NOT.present(volume) ) THEN
+          CALL ERROR_MESG('diag_manager_mod::diag_field_add_cell_measures', &
+               & 'either area or volume arguments must be present', FATAL )
+       END IF
 
-    DO j=1, input_fields(diag_field_id)%num_output_fields
-       ind = input_fields(diag_field_id)%output_fields(j)
-       CALL init_field_cell_measures(output_fields(ind), area=area, volume=volume)
-    END DO
+       DO j=1, input_fields(diag_field_id)%num_output_fields
+          ind = input_fields(diag_field_id)%output_fields(j)
+          CALL init_field_cell_measures(output_fields(ind), area=area, volume=volume)
+       END DO
+    END IF
   END SUBROUTINE diag_field_add_cell_measures
   ! </SUBROUTINE>
 END MODULE diag_manager_mod
@@ -4034,6 +4036,7 @@ PROGRAM test
   USE diag_manager_mod, ONLY: diag_manager_init, send_data, diag_axis_init, diag_manager_end
   USE diag_manager_mod, ONLY: register_static_field, register_diag_field, diag_send_complete
   USE diag_manager_mod, ONLY: diag_manager_set_time_end, diag_field_add_attribute
+  USE diag_manager_mod, ONLY: diag_field_add_cell_measures
 
   IMPLICIT NONE
 
@@ -4050,11 +4053,12 @@ PROGRAM test
   REAL, ALLOCATABLE, DIMENSION(:,:,:) :: dat1, dat1h
   REAL, ALLOCATABLE, DIMENSION(:,:,:) :: dat2, dat2h
   REAL, ALLOCATABLE, DIMENSION(:,:) :: dat2_2d
-  real    :: solar_constant = 1600
-  REAL :: dp, surf_press=1.e5
+  REAL :: solar_constant = 1600
+  REAL :: surf_press = 1.e5
+  REAL :: dp
   INTEGER :: id_phalf, id_pfull, id_bk
   INTEGER :: id_lon1, id_lonb1, id_latb1, id_lat1, id_dat1
-  INTEGER :: id_lon2, id_lat2, id_dat2, id_dat2_2d, id_sol_con, id_dat2h
+  INTEGER :: id_lon2, id_lat2, id_dat2, id_dat2_2d, id_sol_con, id_dat2h, id_dat2h_2
   INTEGER :: i, j, k, is1, ie1, js1, je1, nml_unit, ierr, log_unit, out_unit, m
   INTEGER :: is_in, ie_in, js_in, je_in
   INTEGER :: is2, ie2, js2, je2, hi=1, hj=1
@@ -4237,6 +4241,9 @@ PROGRAM test
         CALL error_mesg ('test_diag_manager',&
              & 'Unexpected error registering dat2h '//err_msg, FATAL)
      END IF
+     id_dat2h_2 = register_diag_field('test_mod', 'dat2h_2', (/id_lon1,id_lat1,id_pfull/), Time, 'sample data', 'K',&
+          & err_msg=err_msg)
+     CALL diag_field_add_cell_measures(id_dat2h_2, area=id_dat2, volume=id_dat1)
   ELSE IF ( test_number == 19 ) THEN
      id_dat2h = register_diag_field('test_mod', 'dat2h', (/id_lon1,id_lat1,id_pfull/), Time, 'sample data', 'K',&
           & volume=id_dat1, area=id_dat1, err_msg=err_msg)
@@ -4247,14 +4254,20 @@ PROGRAM test
   END IF
 
   IF ( test_number == 16 .OR. test_number == 17 .OR. test_number == 18 ) THEN
-     !  1 window, no halos
+     is_in = 1
+     js_in = 1
+     ie_in = nlon
+     je_in = nlat
+
      IF ( id_dat1 > 0 ) used = send_data(id_dat1, dat1, Time, err_msg=err_msg)
      IF ( id_dat2 > 0 ) used = send_data(id_dat2, dat1, Time, err_msg=err_msg)
      IF ( id_dat2h > 0 ) used = send_data(id_dat2h, dat2h, Time, is_in=is_in, js_in=js_in, ie_in=ie_in, je_in=je_in, err_msg=err_msg)
+     IF ( id_dat2h_2 > 0 ) used = send_data(id_dat2h_2, dat2h, Time, is_in=is_in, js_in=js_in, ie_in=ie_in, je_in=je_in, err_msg=err_msg)
      Time = Time + set_time(0,1)
      IF ( id_dat1 > 0 ) used = send_data(id_dat1, dat1, Time, err_msg=err_msg)
      IF ( id_dat2 > 0 ) used = send_data(id_dat2, dat1, Time, err_msg=err_msg)
      IF ( id_dat2h > 0 ) used = send_data(id_dat2h, dat2h, Time, is_in=is_in, js_in=js_in, ie_in=ie_in, je_in=je_in, err_msg=err_msg)
+     IF ( id_dat2h_2 > 0 ) used = send_data(id_dat2h_2, dat2h, Time, is_in=is_in, js_in=js_in, ie_in=ie_in, je_in=je_in, err_msg=err_msg)
   END IF
 
   !-- The following is used to test openMP
