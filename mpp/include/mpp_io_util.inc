@@ -153,7 +153,8 @@
 
      type(axistype), intent(in) :: axis
      character(len=*), intent(out) , optional :: name, units
-     character(len=*), intent(out), optional :: longname, cartesian,calendar
+     character(len=*), intent(out), optional :: longname, cartesian
+     character(len=*), intent(out), optional :: compressed, calendar
      integer,intent(out), optional :: sense, len , natts
      type(atttype), intent(inout), optional, dimension(:) :: atts
 
@@ -163,6 +164,7 @@
      if (PRESENT(units)) units = axis%units
      if (PRESENT(longname)) longname = axis%longname
      if (PRESENT(cartesian)) cartesian = axis%cartesian
+     if (PRESENT(compressed)) compressed = axis%compressed
      if (PRESENT(calendar)) calendar = axis%calendar
      if (PRESENT(sense)) sense = axis%sense
      if (PRESENT(len)) len = axis%len
