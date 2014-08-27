@@ -31,9 +31,11 @@
  integer :: layout_latlon(2) = (/0,0/)  
  integer :: io_layout(2) = (/0,0/) ! set ndivs_x and ndivs_y to divide each tile into io_layout(1)*io_layout(2)
                                    ! group and write out data from the root pe of each group.
+ logical :: read_only = .False.
 
  namelist /test_fms_io_nml/ sizex_latlon_grid, sizey_latlon_grid, size_cubic_grid, &
-                            nz, nt, halo, num_step, stackmax, do_write, layout_cubic, layout_latlon, io_layout
+                            nz, nt, halo, num_step, stackmax, do_write, layout_cubic, layout_latlon, io_layout, &
+                            read_only
 
  integer           :: unit, io_status, step
  character(len=20) :: time_stamp
@@ -305,9 +307,9 @@ contains
     !--- test register_restart_field, save_restart, restore_state
 
     id_restart = register_restart_field(restart_data, file, "data1_r3d", storage%data1_r3d_read(:,:,:,1), &
-                                domain, longname="first data_r3d",units="none")
+                                domain, longname="first data_r3d",units="none", read_only=read_only)
     id_restart = register_restart_field(restart_data, file, "data1_r3d", storage%data1_r3d_read(:,:,:,2), &
-                                domain, longname="first data_r3d",units="none")
+                                domain, longname="first data_r3d",units="none", read_only=read_only)
     id_restart = register_restart_field(restart_data, file, "data2_r3d", storage%data2_r3d_read(:,:,:,1), &
                                 storage%data2_r3d_read(:,:,:,2), &
                                 domain, longname="second data_i3d", units="none")
@@ -321,20 +323,20 @@ contains
                                 domain, longname="second data_i3d", units="none")
 
     id_restart = register_restart_field(restart_data, file, "data1_r2d", storage%data1_r2d_read(:,:,  1), &
-                                domain, longname="first data_r2d",units="none")
+                                domain, longname="first data_r2d",units="none", read_only=read_only)
     id_restart = register_restart_field(restart_data, file, "data1_r2d", storage%data1_r2d_read(:,:,  2), &
-                                domain, longname="first data_r2d",units="none")
+                                domain, longname="first data_r2d",units="none", read_only=read_only)
     id_restart = register_restart_field(restart_data, file, "data2_r2d", storage%data2_r2d_read(:,:,  1), &
                                 storage%data2_r2d_read(:,:,2), &
                                 domain, longname="second data_i2d", units="none")
 
     id_restart = register_restart_field(restart_data, file, "data1_i2d", storage%data1_i2d_read(:,:,  1), &
-                                domain, longname="first data_i2d",units="none")
+                                domain, longname="first data_i2d",units="none", read_only=read_only)
     id_restart = register_restart_field(restart_data, file, "data1_i2d", storage%data1_i2d_read(:,:,  2), &
-                                domain, longname="first data_i2d",units="none")
+                                domain, longname="first data_i2d",units="none", read_only=read_only)
     id_restart = register_restart_field(restart_data, file, "data2_i2d", storage%data2_i2d_read(:,:,  1), &
                                 storage%data2_i2d_read(:,:,2), &
-                                domain, longname="second data_i2d", units="none")
+                                domain, longname="second data_i2d", units="none", read_only=read_only)
 
     id_restart = register_restart_field(restart_data, file, "data1_r1d", storage%data1_r1d_read(:,    1), &
                                 domain, longname="first data_r1d",units="none")
@@ -345,18 +347,18 @@ contains
                                 domain, longname="second data_i1d", units="none")
 
     id_restart = register_restart_field(restart_data, file, "data1_i1d", storage%data1_i1d_read(:,    1), &
-                                domain, longname="first data_i1d",units="none")
+                                domain, longname="first data_i1d",units="none", read_only=read_only)
     id_restart = register_restart_field(restart_data, file, "data1_i1d", storage%data1_i1d_read(:,    2), &
-                                domain, longname="first data_i1d",units="none")
+                                domain, longname="first data_i1d",units="none", read_only=read_only)
     id_restart = register_restart_field(restart_data, file, "data2_i1d", storage%data2_i1d_read(:,    1), &
                                 storage%data2_i1d_read(:,  2), &
                                 domain, longname="second data_i1d", units="none")
 
 
     id_restart = register_restart_field(restart_data, file, "data1_r0d", storage%data1_r0d_read(      1), &
-                                domain, longname="first data_r0d",units="none")
+                                domain, longname="first data_r0d",units="none", read_only=read_only)
     id_restart = register_restart_field(restart_data, file, "data1_r0d", storage%data1_r0d_read(      2), &
-                                domain, longname="first data_r0d",units="none")
+                                domain, longname="first data_r0d",units="none", read_only=read_only)
     id_restart = register_restart_field(restart_data, file, "data2_r0d", storage%data2_r0d_read(      1), &
                                 storage%data2_r0d_read(    2), &
                                 domain, longname="second data_i0d", units="none")
