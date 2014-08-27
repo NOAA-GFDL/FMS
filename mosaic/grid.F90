@@ -446,7 +446,7 @@ subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
 
      start = 1; nread = 1
      nread(2) = 2*nlat+1
-     call read_data(filename2, "x", tmp, start, nread, no_domain=.TRUE.)
+     call read_data(filename2, "y", tmp, start, nread, no_domain=.TRUE.)
      glatb(1:nlat+1) = tmp(1,1:2*nlat+1:2)
      deallocate(tmp)
   end select

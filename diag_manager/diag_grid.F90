@@ -31,7 +31,7 @@ MODULE diag_grid_mod
   !         <LI>Single point region in Cubed Sphere</LI>
   !         <LI>Single tile regions in the cubed sphere</LI>
   !       </UL>
-  !     </DD> 
+  !     </DD>
   !   </DL>
   ! </DESCRIPTION>
 
@@ -178,7 +178,7 @@ CONTAINS
   ! <SUBROUTINE NAME="diag_grid_init">
   !   <OVERVIEW>
   !     Send the global grid to the <TT>diag_manager_mod</TT> for
-  !     regional output. 
+  !     regional output.
   !   </OVERVIEW>
   !   <TEMPLATE>
   !     SUBROUTINE diag_grid_init(domain, glo_lat, glo_lon, aglo_lat, aglo_lon)
@@ -190,7 +190,7 @@ CONTAINS
   !     longitude values for the entire global grid.  This procedure
   !     is the mechanism the models will use to share their grid with
   !     the diagnostic manager.
-  !     
+  !
   !     This procedure needs to be called after the grid is created,
   !     and before the first call to register the fields.
   !   </DESCRIPTION>
@@ -236,7 +236,7 @@ CONTAINS
 
     ! What is my PE
     myPe = mpp_pe() -mpp_root_pe() + 1
-    
+
     ! Get the domain/pe layout, and allocate the [xy]begin|end arrays/pointers
     npes = mpp_npes()
     ALLOCATE(xbegin(npes), &
@@ -248,11 +248,11 @@ CONTAINS
             &'Could not allocate memory for the compute grid indices&
             &.', FATAL)
     END IF
-    
+
     ! Get tile information
     ntiles = mpp_get_ntile_count(domain)
     tile = mpp_get_tile_id(domain)
-    
+
     ! Number of PEs per tile
     npesPerTile = npes / ntiles
     diag_global_grid%peEnd = npesPerTile * tile(1)
@@ -295,7 +295,7 @@ CONTAINS
        CALL error_mesg('diag_grid_mod::diag_grid_init',&
             & "a-grid's glo_lat and glo_lon must be the same shape.", FATAL)
     END IF
-    
+
     ! Allocate the grid arrays
     IF (   _ALLOCATED(diag_global_grid%glo_lat) .OR.&
          & _ALLOCATED(diag_global_grid%glo_lon) ) THEN
@@ -325,7 +325,7 @@ CONTAINS
                &'Could not allocate memory for the global a-grid', FATAL)
        END IF
     END IF
-    
+
     ! Set the values for diag_global_grid
 
     ! If we are on tile 4 or 5, we need to transpose the grid to get
@@ -371,7 +371,7 @@ CONTAINS
   !     this procedure can be called to free up memory.
   !   </DESCRIPTION>
   SUBROUTINE diag_grid_end()
-    
+
     IF ( diag_grid_initialized ) THEN
        ! De-allocate grid
        IF ( _ALLOCATED(diag_global_grid%glo_lat) ) THEN
@@ -380,7 +380,7 @@ CONTAINS
           CALL error_mesg('diag_grid_mod::diag_grid_end',&
                &'diag_global_grid%glo_lat was not allocated.', WARNING)
        END IF
-       
+
        IF ( _ALLOCATED(diag_global_grid%glo_lon) ) THEN
           DEALLOCATE(diag_global_grid%glo_lon)
        ELSE IF ( mpp_pe() == mpp_root_pe() ) THEN
@@ -394,14 +394,14 @@ CONTAINS
           CALL error_mesg('diag_grid_mod::diag_grid_end',&
                &'diag_global_grid%aglo_lat was not allocated.', WARNING)
        END IF
-       
+
        IF ( _ALLOCATED(diag_global_grid%aglo_lon) ) THEN
           DEALLOCATE(diag_global_grid%aglo_lon)
        ELSE IF ( mpp_pe() == mpp_root_pe() ) THEN
           CALL error_mesg('diag_grid_mod::diag_grid_end',&
                &'diag_global_grid%aglo_lon was not allocated.', WARNING)
        END IF
-       
+
        diag_grid_initialized = .FALSE.
     END IF
   END SUBROUTINE diag_grid_end
@@ -470,7 +470,7 @@ CONTAINS
          & CALL error_mesg('diag_grid_mod::get_local_indexes',&
          &'Module not initialized, first initialze module with a call &
          &to diag_grid_init', FATAL)
-    
+
     myTile = diag_global_grid%tile_number
     ntiles = diag_global_grid%ntiles
 
@@ -517,7 +517,7 @@ CONTAINS
        WHERE ( ijMax(:,2) .NE. 0 )
           ijMax(:,2) = ijMax(:,2) + diag_global_grid%myYbegin - 1
        END WHERE
-       
+
        DO j = 1, 6 ! Each tile.
           CALL mpp_max(ijMax(j,1))
           CALL mpp_max(ijMax(j,2))
@@ -573,7 +573,7 @@ CONTAINS
              delta_lat(i,j) = SUM(dists_lat)/real(count)
           END DO
        END DO
-       
+
        ijMin = HUGE(1)
        ijMax = -HUGE(1)
 
@@ -650,18 +650,18 @@ CONTAINS
     DEALLOCATE(ijMax)
   END SUBROUTINE get_local_indexes
   ! </SUBROUTINE>
-  
+
   ! <SUBROUTINE NAME="get_local_indexes2">
   !   <OVERVIEW>
-  !     Find the indices of the nearest grid point of the a-grid to the 
-  !     specified (lon,lat) location on the local PE. if desired point not 
-  !     within domain of local PE, return (0,0) as the indices. 
+  !     Find the indices of the nearest grid point of the a-grid to the
+  !     specified (lon,lat) location on the local PE. if desired point not
+  !     within domain of local PE, return (0,0) as the indices.
   !   </OVERVIEW>
   !   <TEMPLATE>
   !     SUBROUTINE get_local_indexes2 (lat, lon, iindex, jindex)
   !   </TEMPLATE>
   !   <DESCRIPTION>
-  !     Given a specified location, find the nearest a-grid indices on 
+  !     Given a specified location, find the nearest a-grid indices on
   !     the local PE.
   !   </DESCRIPTION>
   !   <IN NAME="lat" TYPE="REAL">
@@ -678,7 +678,7 @@ CONTAINS
   !     The local index on the local PE in the 'j' direction.
   !   </OUT>
   SUBROUTINE get_local_indexes2(lat, lon, iindex, jindex)
-    REAL, INTENT(in) :: lat, lon !< lat/lon location    
+    REAL, INTENT(in) :: lat, lon !< lat/lon location
     INTEGER, INTENT(out) :: iindex, jindex !< i/j indexes
 
     INTEGER  :: indexes(2)
@@ -687,8 +687,8 @@ CONTAINS
          & CALL error_mesg('diag_grid_mod::get_local_indexes2',&
          &'Module not initialized, first initialze module with a call &
          &to diag_grid_init', FATAL)
-    
-    indexes = 0 
+
+    indexes = 0
 
     IF ( MOD(diag_global_grid%tile_number,3) == 0 ) THEN
        IF ( lat > 30.0 .AND. diag_global_grid%tile_number == 3 ) THEN
@@ -707,7 +707,7 @@ CONTAINS
       iindex = 0
       jindex = 0
     ENDIF
-           
+
   END SUBROUTINE get_local_indexes2
   ! </SUBROUTINE>
 
@@ -789,7 +789,7 @@ CONTAINS
   PURE FUNCTION find_pole_index_agrid(lat, lon)
     INTEGER, DIMENSION(2) :: find_pole_index_agrid
     REAL, INTENT(in) :: lat, lon
-    
+
     INTEGER :: indxI, indxJ !< Indexes to be returned.
     INTEGER :: dimI, dimJ !< Size of the grid dimensions
     INTEGER :: i,j !< Count indexes
@@ -806,7 +806,7 @@ CONTAINS
     ! Set the inital fail values for indxI and indxJ
     indxI = 0
     indxJ = 0
-    
+
     dimI = diag_global_grid%adimI
     dimJ = diag_global_grid%adimJ
 
@@ -845,13 +845,13 @@ CONTAINS
 
              indxI = ijArray(nearestCorner,1)
              indxJ = ijArray(nearestCorner,2)
-             
+
              EXIT iLoop
           END IF
        END DO jLoop
     END DO iLoop
-    
-          
+
+
     ! Make sure we have indexes in the correct range
     valid: IF (  (indxI <= 0 .OR. dimI-1 <= indxI) .OR. &
          &       (indxJ <= 0 .OR. dimJ-1 <= indxJ) ) THEN
@@ -861,7 +861,7 @@ CONTAINS
        ! Since we are looking for the closest grid point to the
        ! (lat,lon) point, we need to check the surrounding
        ! points.  The indexes for the variable points are as follows
-       ! 
+       !
        ! 1---4---7
        ! |   |   |
        ! 2---5---8
@@ -896,7 +896,7 @@ CONTAINS
        points(9) = latlon2xyz(diag_global_grid%aglo_lat(indxI+1,indxJ-1),&
             &                 diag_global_grid%aglo_lon(indxI+1,indxJ-1))
 
-          
+
        ! Calculate the distance squared between the points(:) and the origPt
        distSqrd = distanceSqrd(origPt, points)
 
@@ -933,7 +933,7 @@ CONTAINS
           indxJ = 0
        END SELECT
     END IF valid
-    
+
     ! Set the return value for the funtion
     find_pole_index_agrid = (/indxI, indxJ/)
   END FUNCTION find_pole_index_agrid
@@ -966,7 +966,7 @@ CONTAINS
   PURE FUNCTION find_equator_index_agrid(lat, lon)
     INTEGER, DIMENSION(2) :: find_equator_index_agrid
     REAL, INTENT(in) :: lat, lon
-    
+
     INTEGER :: indxI, indxJ !< Indexes to be returned.
     INTEGER :: indxI_tmp !< Hold the indxI value if on tile 3 or 4
     INTEGER :: dimI, dimJ !< Size of the grid dimensions
@@ -979,7 +979,7 @@ CONTAINS
     ! Set the inital fail values for indxI and indxJ
     indxI = 0
     indxJ = 0
-    
+
     dimI = diag_global_grid%adimI
     dimJ = diag_global_grid%adimJ
 
@@ -1012,7 +1012,7 @@ CONTAINS
           EXIT iLoop
        END IF
     END DO iLoop
-    
+
     ! Find the J index
     IF ( indxI > 0 ) THEN
        jLoop: DO j=jstart, jend, nextj
@@ -1029,11 +1029,11 @@ CONTAINS
          &      (indxJ <= 0 .OR. dimJ-1 < indxJ) ) THEN
        indxI = 0
        indxJ = 0
-    ELSE ! indxI and indxJ are valid.    
+    ELSE ! indxI and indxJ are valid.
        ! Since we are looking for the closest grid point to the
        ! (lat,lon) point, we need to check the surrounding
        ! points.  The indexes for the variable points are as follows
-       ! 
+       !
        ! 1---3
        ! |   |
        ! 2---4
@@ -1048,7 +1048,7 @@ CONTAINS
           points(i)%y = 1.0e20
           points(i)%z = 1.0e20
        END DO
-       
+
        ! The original point
        origPt = latlon2xyz(lat,lon)
 
@@ -1060,11 +1060,11 @@ CONTAINS
             &                 diag_global_grid%aglo_lon(indxI+1,indxJ+nextj))
        points(4) = latlon2xyz(diag_global_grid%aglo_lat(indxI+1,indxJ),&
             &                 diag_global_grid%aglo_lon(indxI+1,indxJ))
-  
+
        ! Find the distance between the original point and the four
        ! grid points
-       distSqrd = distanceSqrd(origPt, points)  
-  
+       distSqrd = distanceSqrd(origPt, points)
+
        SELECT CASE (MINLOC(distSqrd,1))
        CASE ( 1 )
           indxI = indxI;

@@ -358,6 +358,7 @@ private
   public :: mpp_get_att_real_scalar, mpp_get_axis_length
   public :: mpp_get_file_name, mpp_file_is_opened, mpp_attribute_exist 
   public :: mpp_io_clock_on, mpp_get_time_axis, mpp_get_default_calendar
+  public :: mpp_get_dimension_length
 
   !--- public interface from mpp_io_misc.h ----------------------
   public :: mpp_io_init, mpp_io_exit, netcdf_err, mpp_flush
