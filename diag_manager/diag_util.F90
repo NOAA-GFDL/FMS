@@ -1,3 +1,5 @@
+#include <fms_platform.h>
+
 MODULE diag_util_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
@@ -1733,7 +1735,7 @@ CONTAINS
        END IF
     END IF
 
-    IF ( ALLOCATED(files(file)%attributes) ) THEN
+    IF ( _ALLOCATED(files(file)%attributes) ) THEN
        CALL diag_output_init(filename, files(file)%format, global_descriptor,&
             & files(file)%file_unit, all_scalar_or_1d, domain2,&
             & attributes=files(file)%attributes(1:files(file)%num_attributes))
@@ -2383,7 +2385,7 @@ CONTAINS
     CHARACTER(len=1024) :: err_msg_local
 
     ! Allocate memory for the attributes
-    IF ( .NOT.ALLOCATED(out_field%attributes) ) THEN
+    IF ( .NOT._ALLOCATED(out_field%attributes) ) THEN
        ALLOCATE(out_field%attributes(max_field_attributes), STAT=istat)
        IF ( istat.NE.0 ) THEN
           ! <ERROR STATUS="FATAL">
@@ -2517,7 +2519,7 @@ CONTAINS
     CHARACTER(len=1024) :: err_msg_local
 
     ! Allocate memory for the attributes
-    IF ( .NOT.ALLOCATED(out_file%attributes) ) THEN
+    IF ( .NOT._ALLOCATED(out_file%attributes) ) THEN
        ALLOCATE(out_file%attributes(max_field_attributes), STAT=istat)
        IF ( istat.NE.0 ) THEN
           ! <ERROR STATUS="FATAL">
