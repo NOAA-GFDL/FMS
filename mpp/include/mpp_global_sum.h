@@ -103,7 +103,7 @@
        ioffset = domain%x(tile)%loffset*ishift; joffset = domain%y(tile)%loffset*jshift
        mygsum(tile) = sum( field(is+ioff:ie+ioff+ioffset, js+joff:je+joff+joffset MPP_EXTRA_INDICES_) )
        if(tile == ntile) then
-          MPP_GLOBAL_SUM_ = sum(mygsum)
+          MPP_GLOBAL_SUM_ = sum(mygsum(1:ntile))
           call mpp_sum( MPP_GLOBAL_SUM_, domain%list(:)%pe )
        end if
     end if
