@@ -552,10 +552,12 @@ type :: atttype
   interface mpp_read
      module procedure mpp_read_2ddecomp_r2d
      module procedure mpp_read_2ddecomp_r3d
+     module procedure mpp_read_2ddecomp_r4d
      module procedure mpp_read_r0D
      module procedure mpp_read_r1D
      module procedure mpp_read_r2D
      module procedure mpp_read_r3D
+     module procedure mpp_read_r4D
      module procedure mpp_read_text
      module procedure mpp_read_region_r2D
      module procedure mpp_read_region_r3D

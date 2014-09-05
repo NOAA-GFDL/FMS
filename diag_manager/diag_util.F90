@@ -1,3 +1,5 @@
+#include <fms_platform.h>
+
 MODULE diag_util_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
@@ -1733,7 +1735,7 @@ CONTAINS
        END IF
     END IF
 
-    IF ( ALLOCATED(files(file)%attributes) ) THEN
+    IF ( _ALLOCATED(files(file)%attributes) ) THEN
        CALL diag_output_init(filename, files(file)%format, global_descriptor,&
             & files(file)%file_unit, all_scalar_or_1d, domain2,&
             & attributes=files(file)%attributes(1:files(file)%num_attributes))
@@ -2380,16 +2382,19 @@ CONTAINS
     CHARACTER(LEN=*), INTENT(out), OPTIONAL :: err_msg
 
     INTEGER :: istat
-    CHARACTER(len=1024) :: err_msg_local
+    
+    ! Need to initialize err_msg if present
+    IF ( PRESENT(err_msg) ) err_msg = ''
 
     ! Allocate memory for the attributes
-    IF ( .NOT.ALLOCATED(out_field%attributes) ) THEN
+    IF ( .NOT._ALLOCATED(out_field%attributes) ) THEN
        ALLOCATE(out_field%attributes(max_field_attributes), STAT=istat)
        IF ( istat.NE.0 ) THEN
           ! <ERROR STATUS="FATAL">
           !   Unable to allocate memory for attribute <name> to module/input_field <module_name>/<field_name>
           ! </ERROR>
-          IF ( fms_error_handler('Unable to allocate memory for attributes', err_msg_local, err_msg) ) THEN
+          IF ( fms_error_handler('diag_util_mod::attribute_init_field',&
+               & 'Unable to allocate memory for attributes', err_msg) ) THEN
              RETURN
           END IF
        ELSE
@@ -2423,13 +2428,18 @@ CONTAINS
     CHARACTER(len=*), INTENT(out) , OPTIONAL :: err_msg
 
     INTEGER :: length, i, this_attribute
-    CHARACTER(len=LEN(err_msg)) :: err_msg_local
+    CHARACTER(len=512) :: err_msg_local
+
+    ! Initialize string characters
+    err_msg_local=''
+    IF ( PRESENT(err_msg) ) err_msg = ''
 
     ! Make sure the attributes for this out field have been initialized
     CALL attribute_init_field(out_field, err_msg_local)
     IF ( TRIM(err_msg_local) .NE. '' ) THEN
-       err_msg=err_msg_local
-       RETURN
+       IF ( fms_error_handler('diag_util_mod::prepend_attribute_field', TRIM(err_msg_local), err_msg) ) THEN
+          RETURN
+       END IF
     END IF
 
     ! Find if attribute exists
@@ -2446,8 +2456,9 @@ CONTAINS
           ! <ERROR STATUS="FATAL">
           !   Attribute <name> is not a character attribute.
           ! </ERROR>
-          IF ( fms_error_handler('Attribute "'//TRIM(att_name)//'" is not a character attribute.',&
-               & err_msg_local, err_msg) ) THEN
+          IF ( fms_error_handler('diag_util_mod::prepend_attribute_field', &
+               & 'Attribute "'//TRIM(att_name)//'" is not a character attribute.',&
+               & err_msg) ) THEN
              RETURN
           END IF
        END IF
@@ -2460,9 +2471,10 @@ CONTAINS
           !   Number of attributes exceeds max_field_attributes for attribute <name>.
           !   Increase diag_manager_nml:max_field_attributes.
           ! </ERROR>
-          IF ( fms_error_handler('Number of attributes exceeds max_field_attributes for attribute "'&
-               &//TRIM(att_name)//'".  Increase diag_manager_nml:max_field_attributes.',&
-               & err_msg_local, err_msg) ) THEN
+          IF ( fms_error_handler('diag_util_mod::prepend_attribute_field',&
+               & 'Number of attributes exceeds max_field_attributes for attribute "'&
+               & //TRIM(att_name)//'".  Increase diag_manager_nml:max_field_attributes.',&
+               & err_msg) ) THEN
              RETURN
           END IF
        ELSE
@@ -2483,8 +2495,9 @@ CONTAINS
           ! <ERROR STATUS="FATAL">
           !   Prepend length for attribute <name> is longer than allowed.
           ! </ERROR>
-          IF ( fms_error_handler('Prepend length for attribute "'//TRIM(att_name)&
-               &//'" is longer than allowed.', err_msg_local, err_msg) ) THEN
+          IF ( fms_error_handler('diag_util_mod::prepend_attribute_field',&
+               & 'Prepend length for attribute "'//TRIM(att_name)//'" is longer than allowed.',&
+               & err_msg) ) THEN
              RETURN
           END IF
        END IF
@@ -2514,16 +2527,18 @@ CONTAINS
     CHARACTER(LEN=*), INTENT(out), OPTIONAL :: err_msg
 
     INTEGER :: istat
-    CHARACTER(len=1024) :: err_msg_local
+
+    ! Initialize err_msg
+    IF ( PRESENT(err_msg) ) err_msg = ''
 
     ! Allocate memory for the attributes
-    IF ( .NOT.ALLOCATED(out_file%attributes) ) THEN
+    IF ( .NOT._ALLOCATED(out_file%attributes) ) THEN
        ALLOCATE(out_file%attributes(max_field_attributes), STAT=istat)
        IF ( istat.NE.0 ) THEN
           ! <ERROR STATUS="FATAL">
           !   Unable to allocate memory for file attributes
           ! </ERROR>
-          IF ( fms_error_handler('Unable to allocate memory for file attributes', err_msg_local, err_msg) ) THEN
+          IF ( fms_error_handler('diag_util_mod::attribute_init_file', 'Unable to allocate memory for file attributes', err_msg) ) THEN
              RETURN
           END IF
        ELSE
@@ -2557,13 +2572,18 @@ CONTAINS
     CHARACTER(len=*), INTENT(out) , OPTIONAL :: err_msg
 
     INTEGER :: length, i, this_attribute
-    CHARACTER(len=LEN(err_msg)) :: err_msg_local
+    CHARACTER(len=512) :: err_msg_local
+
+    ! Initialize string variables
+    err_msg_local = ''
+    IF ( PRESENT(err_msg) ) err_msg = ''
 
     ! Make sure the attributes for this out file have been initialized
     CALL attribute_init_file(out_file, err_msg_local)
     IF ( TRIM(err_msg_local) .NE. '' ) THEN
-       err_msg=err_msg_local
-       RETURN
+       IF ( fms_error_handler('diag_util_mod::prepend_attribute_file', TRIM(err_msg_local), err_msg) ) THEN
+          RETURN
+       END IF
     END IF
 
     ! Find if attribute exists
@@ -2580,8 +2600,9 @@ CONTAINS
           ! <ERROR STATUS="FATAL">
           !   Attribute <name> is not a character attribute.
           ! </ERROR>
-          IF ( fms_error_handler('Attribute "'//TRIM(att_name)//'" is not a character attribute.',&
-               & err_msg_local, err_msg) ) THEN
+          IF ( fms_error_handler('diag_util_mod::prepend_attribute_file',&
+               & 'Attribute "'//TRIM(att_name)//'" is not a character attribute.',&
+               & err_msg) ) THEN
              RETURN
           END IF
        END IF
@@ -2594,9 +2615,10 @@ CONTAINS
           !   Number of attributes exceeds max_file_attributes for attribute <name>.
           !   Increase diag_manager_nml:max_file_attributes.
           ! </ERROR>
-          IF ( fms_error_handler('Number of attributes exceeds max_file_attributes for attribute "'&
+          IF ( fms_error_handler('diag_util_mod::prepend_attribute_file',&
+               & 'Number of attributes exceeds max_file_attributes for attribute "'&
                &//TRIM(att_name)//'".  Increase diag_manager_nml:max_file_attributes.',&
-               & err_msg_local, err_msg) ) THEN
+               & err_msg) ) THEN
              RETURN
           END IF
        ELSE
@@ -2617,8 +2639,9 @@ CONTAINS
           ! <ERROR STATUS="FATAL">
           !   Prepend length for attribute <name> is longer than allowed.
           ! </ERROR>
-          IF ( fms_error_handler('Prepend length for attribute "'//TRIM(att_name)&
-               &//'" is longer than allowed.', err_msg_local, err_msg) ) THEN
+          IF ( fms_error_handler('diag_util_mod::prepend_attribute_file',&
+               & 'Prepend length for attribute "'//TRIM(att_name)//'" is longer than allowed.',&
+               & err_msg) ) THEN
              RETURN
           END IF
        END IF
