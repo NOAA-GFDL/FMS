@@ -178,11 +178,10 @@ type var_type
    type(axistype)                         :: axis
    integer                                :: position
    integer                                :: ndim
-   integer                                :: siz(4)      ! X/Y/Z/T extent of fields (data domain
+   integer                                :: siz(5)      ! X/Y/Z/T/A extent of fields (data domain
                                                          ! size for distributed writes;global size for reads)
-   integer                                :: gsiz(4)     ! global X/Y/Z/T extent of fields
-   integer                                :: csiz(4)     ! actual data size in the file
-   integer                                :: id_axes(3)  ! store index for x/y/z axistype.
+   integer                                :: gsiz(4)     ! global X/Y/Z/A extent of fields
+   integer                                :: id_axes(4)  ! store index for x/y/z/a axistype.
    logical                                :: initialized ! indicate if the field is read or not in routine save_state.
    logical                                :: mandatory   ! indicate if the field is mandatory to be when restart.
    integer                                :: is, ie, js, je  ! index of the data in compute domain
@@ -208,6 +207,10 @@ end type Ptr2Dr
 type Ptr3Dr
    real, dimension(:,:,:), pointer :: p => NULL()
 end type Ptr3Dr
+
+type Ptr4Dr
+   real, dimension(:,:,:,:), pointer :: p => NULL()
+end type Ptr4Dr
 
 type Ptr0Di
    integer,                   pointer :: p => NULL()
@@ -239,6 +242,7 @@ type restart_file_type
    type(Ptr1Dr),   dimension(:,:), pointer  :: p1dr => NULL()
    type(Ptr2Dr),   dimension(:,:), pointer  :: p2dr => NULL()
    type(Ptr3Dr),   dimension(:,:), pointer  :: p3dr => NULL()
+   type(Ptr4Dr),   dimension(:,:), pointer  :: p4dr => NULL()
    type(Ptr0Di),   dimension(:,:), pointer  :: p0di => NULL()
    type(Ptr1Di),   dimension(:,:), pointer  :: p1di => NULL()
    type(Ptr2Di),   dimension(:,:), pointer  :: p2di => NULL()
@@ -293,6 +297,7 @@ interface register_restart_field
    module procedure register_restart_field_r1d
    module procedure register_restart_field_r2d
    module procedure register_restart_field_r3d
+   module procedure register_restart_field_r4d
    module procedure register_restart_field_i0d
    module procedure register_restart_field_i1d
    module procedure register_restart_field_i2d
@@ -319,6 +324,7 @@ interface reset_field_pointer
    module procedure reset_field_pointer_r1d
    module procedure reset_field_pointer_r2d
    module procedure reset_field_pointer_r3d
+   module procedure reset_field_pointer_r4d
    module procedure reset_field_pointer_i0d
    module procedure reset_field_pointer_i1d
    module procedure reset_field_pointer_i2d
@@ -343,6 +349,7 @@ interface query_initialized
    module procedure query_initialized_name
    module procedure query_initialized_r2d
    module procedure query_initialized_r3d
+   module procedure query_initialized_r4d
 end interface
 
 interface set_initialized
@@ -350,6 +357,7 @@ interface set_initialized
    module procedure set_initialized_name
    module procedure set_initialized_r2d
    module procedure set_initialized_r3d
+   module procedure set_initialized_r4d
 end interface
 
 interface get_global_att_value
@@ -980,6 +988,7 @@ subroutine write_data_3d_new(filename, fieldname, data, domain, no_domain, scala
      do i = 1, max_fields
         cur_file%var(i)%name           = 'none'
         cur_file%var(i)%domain_present = .false.
+        cur_file%var(i)%read_only      = .false.
         cur_file%var(i)%write_on_this_pe = .false.
         cur_file%var(i)%domain_idx     = -1
         cur_file%var(i)%is_dimvar      = .false.
@@ -1373,6 +1382,40 @@ function register_restart_field_r3d(fileObj, filename, fieldname, data, domain, 
   return
 
 end function register_restart_field_r3d
+
+
+!-------------------------------------------------------------------------------
+!
+!   The routine will register a 4-D real restart file field with one time level
+!
+!-------------------------------------------------------------------------------
+function register_restart_field_r4d(fileObj, filename, fieldname, data, domain, mandatory, &
+                             no_domain, position, tile_count, data_default, longname, units, read_only)
+  type(restart_file_type),   intent(inout)         :: fileObj
+  character(len=*),             intent(in)         :: filename, fieldname
+  real,     dimension(:,:,:,:), intent(in), target :: data
+  type(domain2d),   optional,   intent(in), target :: domain
+  real,             optional,   intent(in)         :: data_default
+  logical,          optional,   intent(in)         :: no_domain
+  integer,          optional,   intent(in)         :: position, tile_count
+  logical,          optional,   intent(in)         :: mandatory
+  character(len=*), optional,   intent(in)         :: longname, units
+  logical,          optional,   intent(in)         :: read_only
+  integer                                          :: index_field
+  integer                                          :: register_restart_field_r4d
+
+  if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_r4d): need to call fms_io_init')
+  call setup_one_field(fileObj, filename, fieldname, (/size(data,1), size(data,2), size(data,3), 1, size(data,4)/), &
+                       index_field, domain, mandatory, no_domain, .false., &
+                       position, tile_count, data_default, longname, units, read_only=read_only)
+  fileObj%p4dr(fileObj%var(index_field)%siz(4), index_field)%p => data
+  fileObj%var(index_field)%ndim = 4
+  register_restart_field_r4d = index_field
+
+  return
+
+end function register_restart_field_r4d
+
 
 !-------------------------------------------------------------------------------
 !
@@ -2097,6 +2140,9 @@ subroutine save_compressed_restart(fileObj,restartpath)
            num_var_axes = 3
            var_axes(3) = t_axis
         endif
+     else
+      call mpp_error(FATAL, "fms_io(save_compressed_restart): "//trim(cur_var%name)//" in file "// &
+         trim(fileObj%name)//" has more than two dimension (not including time level)")        
      endif
 
      cpack = pack_size  ! Default size of real
@@ -2216,14 +2262,15 @@ subroutine save_default_restart(fileObj,restartpath)
   integer,        dimension(max_axes) :: id_x_axes, siz_x_axes
   integer,        dimension(max_axes) :: id_y_axes, siz_y_axes
   integer,        dimension(max_axes) :: id_z_axes, siz_z_axes
-  integer,        dimension(max_axes) :: x_axes_indx, y_axes_indx, z_axes_indx
-  type(axistype), dimension(max_axes) :: x_axes, y_axes, z_axes
+  integer,        dimension(max_axes) :: id_a_axes, siz_a_axes
+  integer,        dimension(max_axes) :: x_axes_indx, y_axes_indx, z_axes_indx, a_axes_indx
+  type(axistype), dimension(max_axes) :: x_axes, y_axes, z_axes, a_axes
   type(axistype)                      :: t_axes
   integer                             :: num_var_axes
-  type(axistype), dimension(4)        :: var_axes
+  type(axistype), dimension(5)        :: var_axes
   type(var_type), pointer, save       :: cur_var=>NULL()
-  integer                             :: num_x_axes, num_y_axes, num_z_axes
-  integer                             :: naxes_x, naxes_y, naxes_z
+  integer                             :: num_x_axes, num_y_axes, num_z_axes, num_a_axes
+  integer                             :: naxes_x, naxes_y, naxes_z, naxes_a
   integer                             :: i, j, k, l, siz, ind_dom
   logical                             :: domain_present
   real                                :: tlev
@@ -2263,6 +2310,7 @@ integer :: ishift, jshift, iadd, jadd
   num_x_axes = unique_axes(fileObj, 1, id_x_axes, siz_x_axes, domain_x)
   num_y_axes = unique_axes(fileObj, 2, id_y_axes, siz_y_axes, domain_y)
   num_z_axes = unique_axes(fileObj, 3, id_z_axes, siz_z_axes          )
+  num_a_axes = unique_axes(fileObj, 4, id_a_axes, siz_a_axes          )
 
   if( domain_present ) then
      call mpp_open(unit,trim(restartpath),action=MPP_OVERWR,form=form,threading=thread_w,&
@@ -2276,6 +2324,7 @@ integer :: ishift, jshift, iadd, jadd
   x_axes_indx = 0
   y_axes_indx = 0
   z_axes_indx = 0
+  a_axes_indx = 0
 
   ! write_out x_axes
   do j = 1, num_x_axes
@@ -2284,6 +2333,7 @@ integer :: ishift, jshift, iadd, jadd
         if(fileObj%var(l)%read_only) cycle
         if( fileObj%var(l)%id_axes(1) == j ) exit
      end do
+     if( l > fileObj%nvar ) cycle
      naxes_x = naxes_x + 1
      x_axes_indx(naxes_x) = j
      if (naxes_x < 10) then
@@ -2308,6 +2358,7 @@ integer :: ishift, jshift, iadd, jadd
         if(fileObj%var(l)%read_only) cycle
         if( fileObj%var(l)%id_axes(2) == j ) exit
      end do
+     if( l > fileObj%nvar ) cycle
      naxes_y = naxes_y + 1
      y_axes_indx(naxes_y) = j
      if (naxes_y < 10) then
@@ -2332,6 +2383,7 @@ integer :: ishift, jshift, iadd, jadd
         if(fileObj%var(l)%read_only) cycle
         if( fileObj%var(l)%id_axes(3) == j ) exit
      end do
+     if( l > fileObj%nvar ) cycle
      naxes_z = naxes_z + 1
      z_axes_indx(naxes_z) = j
      if (naxes_z < 10) then
@@ -2341,6 +2393,26 @@ integer :: ishift, jshift, iadd, jadd
      endif
      call mpp_write_meta(unit,z_axes(j),axisname,'none',axisname, &
           data=axisdata(1:siz_z_axes(j)),cartesian='Z')
+  end do
+
+  ! write out a_axes
+  naxes_a = 0
+  do j = 1, num_a_axes
+     ! make sure this axis is used by some variable
+     do l=1,fileObj%nvar
+        if(fileObj%var(l)%read_only) cycle
+        if( fileObj%var(l)%id_axes(4) == j ) exit
+     end do
+     if( l > fileObj%nvar ) cycle
+     naxes_a = naxes_a + 1
+     a_axes_indx(naxes_a) = j
+     if (naxes_a < 10) then
+        write(axisname,'(a,i1)') 'aaxis_',naxes_a
+     else
+        write(axisname,'(a,i2)') 'aaxis_',naxes_a
+     endif
+     call mpp_write_meta(unit,a_axes(j),axisname,'none',axisname, &
+          data=axisdata(1:siz_a_axes(j)),cartesian='N')
   end do
 
   ! write out time axis
@@ -2381,6 +2453,16 @@ integer :: ishift, jshift, iadd, jadd
            num_var_axes = 4
            var_axes(4) = t_axes
         end if
+     else if(cur_var%ndim == 4) then
+        num_var_axes = 4
+        var_axes(1) = x_axes(cur_var%id_axes(1))
+        var_axes(2) = y_axes(cur_var%id_axes(2))
+        var_axes(3) = z_axes(cur_var%id_axes(3))
+        var_axes(4) = a_axes(cur_var%id_axes(4))
+        if(cur_var%siz(4) == fileObj%max_ntime) then
+           num_var_axes = 5
+           var_axes(5) = t_axes
+        end if
      end if
 
      if ( cur_var%domain_idx > 0) then
@@ -2417,6 +2499,8 @@ integer :: ishift, jshift, iadd, jadd
            check_val(k) = mpp_chksum(fileObj%p2dr(k,j)%p(cur_var%is:cur_var%is+iadd, cur_var%js:cur_var%js+jadd) )
         else if ( Associated(fileObj%p3dr(k,j)%p) ) then
            check_val(k) = mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%is+iadd, cur_var%js:cur_var%js+jadd, :) )
+        else if ( Associated(fileObj%p4dr(k,j)%p) ) then
+           check_val(k) = mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd, cur_var%js:cur_var%js+jadd, :, :) )
         else if ( Associated(fileObj%p0di(k,j)%p) ) then
            check_val(k) = fileObj%p0di(k,j)%p
         else if ( Associated(fileObj%p1di(k,j)%p) ) then
@@ -2446,6 +2530,10 @@ integer :: ishift, jshift, iadd, jadd
      call mpp_write(unit,z_axes(z_axes_indx(j)))
   enddo
 
+  do j = 1, naxes_a
+     call mpp_write(unit,a_axes(a_axes_indx(j)))
+  enddo
+
   ! write data of each field
   do k = 1, fileObj%max_ntime
      do j=1,fileObj%nvar
@@ -2461,6 +2549,9 @@ integer :: ishift, jshift, iadd, jadd
                                 default_data=cur_var%default_data)
               else if( Associated(fileObj%p3dr(k,j)%p) ) then
                  call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), fileObj%p3dr(k,j)%p, tlev, &
+                                default_data=cur_var%default_data)
+              else if( Associated(fileObj%p4dr(k,j)%p) ) then
+                 call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), fileObj%p4dr(k,j)%p, tlev, &
                                 default_data=cur_var%default_data)
               else if( Associated(fileObj%p2di(k,j)%p) ) then
                  allocate(r2d(cur_var%siz(1), cur_var%siz(2)) )
@@ -2489,6 +2580,8 @@ integer :: ishift, jshift, iadd, jadd
                  call mpp_write(unit, cur_var%field, fileObj%p2dr(k,j)%p, tlev)
               else if ( Associated(fileObj%p3dr(k,j)%p) ) then
                  call mpp_write(unit, cur_var%field, fileObj%p3dr(k,j)%p, tlev)
+              else if ( Associated(fileObj%p4dr(k,j)%p) ) then
+                 call mpp_write(unit, cur_var%field, fileObj%p4dr(k,j)%p, tlev)
               else if ( Associated(fileObj%p0di(k,j)%p) ) then
                  r0d =  fileObj%p0di(k,j)%p
                  call mpp_write(unit, cur_var%field, r0d,                  tlev)
@@ -2601,6 +2694,7 @@ subroutine save_restart_border (fileObj, time_stamp, directory)
       if(fileObj%var(l)%read_only) cycle
       if (fileObj%var(l)%id_axes(1) == j) exit
     end do
+    if( l > fileObj%nvar ) cycle  
     naxes_x = naxes_x + 1
     x_axes_indx(naxes_x) = j
     if (naxes_x < 10) then
@@ -2620,6 +2714,7 @@ subroutine save_restart_border (fileObj, time_stamp, directory)
       if(fileObj%var(l)%read_only) cycle
       if (fileObj%var(l)%id_axes(2) == j) exit
     end do
+    if( l > fileObj%nvar ) cycle
     naxes_y = naxes_y + 1
     y_axes_indx(naxes_y) = j
     if (naxes_y < 10) then
@@ -2639,6 +2734,7 @@ subroutine save_restart_border (fileObj, time_stamp, directory)
       if(fileObj%var(l)%read_only) cycle
       if (fileObj%var(l)%id_axes(3) == j) exit
     end do
+    if( l > fileObj%nvar ) cycle
     naxes_z = naxes_z + 1
     z_axes_indx(naxes_z) = j
     if (naxes_z < 10) then
@@ -2679,6 +2775,9 @@ subroutine save_restart_border (fileObj, time_stamp, directory)
         num_var_axes = 4
         var_axes(4) = t_axes
       end if
+    else
+      call mpp_error(FATAL, "fms_io(save_restart_border): "//trim(cur_var%name)//" in file "// &
+         trim(fileObj%name)//" has more than three dimension (not including time level)")      
     end if
    
 ! cycle the loop for pes not a member of the current pelist
@@ -3007,6 +3106,8 @@ subroutine write_chksum(fileObj, action)
               data_chksum = mpp_chksum(fileObj%p2dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd) )
            else if ( Associated(fileObj%p3dr(k,j)%p) ) then
               data_chksum = mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :) )
+           else if ( Associated(fileObj%p4dr(k,j)%p) ) then
+              data_chksum = mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :, :) )
            else if ( Associated(fileObj%p0di(k,j)%p) ) then
               data_chksum = fileObj%p0di(k,j)%p
            else if ( Associated(fileObj%p1di(k,j)%p) ) then
@@ -3230,6 +3331,10 @@ subroutine restore_state_all(fileObj, directory)
                        call mpp_read(unit(n), fields(l), array_domain(domain_idx), fileObj%p3dr(k,j)%p, tlev)
                        if ( is_there_a_checksum ) &
                          checksum_data = mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :) )
+                    else if( Associated(fileObj%p4dr(k,j)%p) ) then
+                       call mpp_read(unit(n), fields(l), array_domain(domain_idx), fileObj%p4dr(k,j)%p, tlev)
+                       if ( is_there_a_checksum ) &
+                         checksum_data = mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd,:,:))
                     else if( Associated(fileObj%p0di(k,j)%p) ) then
                        call mpp_read(unit(n), fields(l), r0d, tlev)
                        fileObj%p0di(k,j)%p = r0d
@@ -3275,6 +3380,10 @@ subroutine restore_state_all(fileObj, directory)
                        call mpp_read(unit(n), fields(l), fileObj%p3dr(k,j)%p, tlev)
                        if ( is_there_a_checksum ) &
                          checksum_data = mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :) )
+                    else if( Associated(fileObj%p4dr(k,j)%p) ) then
+                       call mpp_read(unit(n), fields(l), fileObj%p4dr(k,j)%p, tlev)
+                       if ( is_there_a_checksum ) &
+                         checksum_data = mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd,:,:))
                     else if( Associated(fileObj%p0di(k,j)%p) ) then
                        call mpp_read(unit(n), fields(l), r0d, tlev)
                        fileObj%p0di(k,j)%p = r0d
@@ -3529,6 +3638,10 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
                     call mpp_read(unit(n), fields(l), array_domain(domain_idx), fileObj%p3dr(k,j)%p, tlev)
                     if ( is_there_a_checksum ) checksum_data =&
                          & mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :) )
+                 else if( Associated(fileObj%p4dr(k,j)%p) ) then
+                    call mpp_read(unit(n), fields(l), array_domain(domain_idx), fileObj%p4dr(k,j)%p, tlev)
+                    if ( is_there_a_checksum ) checksum_data =&
+                         & mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :,:) )
                  else if( Associated(fileObj%p0di(k,j)%p) ) then
                     call mpp_read(unit(n), fields(l), r0d, tlev)
                     fileObj%p0di(k,j)%p = r0d
@@ -3574,6 +3687,10 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
                     call mpp_read(unit(n), fields(l), fileObj%p3dr(k,j)%p, tlev)
                     if ( is_there_a_checksum ) checksum_data =&
                          & mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :) )
+                 else if( Associated(fileObj%p4dr(k,j)%p) ) then
+                    call mpp_read(unit(n), fields(l), fileObj%p4dr(k,j)%p, tlev)
+                    if ( is_there_a_checksum ) checksum_data =&
+                         & mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :, :) )
                  else if( Associated(fileObj%p0di(k,j)%p) ) then
                     call mpp_read(unit(n), fields(l), r0d, tlev)
                     fileObj%p0di(k,j)%p = r0d
@@ -3668,7 +3785,7 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
   type(domain2d), pointer, save   :: d_ptr   =>NULL()
   type(var_type), pointer, save   :: cur_var =>NULL()
   type(domain2d), pointer, save   :: io_domain =>NULL()
-  integer                         :: length
+  integer                         :: length, n_field_siz
 
   if(ANY(field_siz < 1)) then
      call mpp_error(FATAL, "fms_io(setup_one_field): each entry of field_size should be a positive integer")
@@ -3730,6 +3847,7 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
      allocate(fileObj%p1dr(MAX_TIME_LEVEL_REGISTER, max_fields))
      allocate(fileObj%p2dr(MAX_TIME_LEVEL_REGISTER, max_fields))
      allocate(fileObj%p3dr(MAX_TIME_LEVEL_REGISTER, max_fields))
+     allocate(fileObj%p4dr(MAX_TIME_LEVEL_REGISTER, max_fields))
      allocate(fileObj%p0di(MAX_TIME_LEVEL_REGISTER, max_fields))
      allocate(fileObj%p1di(MAX_TIME_LEVEL_REGISTER, max_fields))
      allocate(fileObj%p2di(MAX_TIME_LEVEL_REGISTER, max_fields))
@@ -3801,9 +3919,10 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
      endif
      index_field =  fileObj%nvar
      cur_var   => fileObj%var(index_field)
-     cur_var%siz(:)  = field_siz(:)
+     n_field_siz = size(field_siz(:))
+     cur_var%siz(1:n_field_siz)  = field_siz(1:n_field_siz)
      cur_var%gsiz(3) = field_siz(3)
-     cur_var%csiz(3) = field_siz(3)
+     if(n_field_siz == 5) cur_var%gsiz(4) = field_siz(5)
      cur_var%name = fieldname
      cur_var%default_data = default_data
      if(present(mandatory)) cur_var%mandatory = mandatory
@@ -3859,23 +3978,9 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
         cur_var%je   = cur_var%js + cysize - 1;
         cur_var%gsiz(1)   = gxsize
         cur_var%gsiz(2)   = gysize
-        io_domain => mpp_get_io_domain(array_domain(domain_idx))
-        if(associated(io_domain)) then
-           call mpp_get_global_domain( io_domain, xsize=cxsize, ysize=cysize,tile_count=tile_count)
-           cur_var%csiz(1)   = cxsize
-           cur_var%csiz(2)   = cysize
-        else if(thread_w == MPP_MULTI) then
-           call mpp_get_compute_domain(array_domain(domain_idx), xsize=cxsize,ysize=cysize,tile_count=tile_count)
-           cur_var%csiz(1)   = cxsize
-           cur_var%csiz(2)   = cysize
-        else
-           cur_var%csiz(1)   = cur_var%gsiz(1)
-           cur_var%csiz(2)   = cur_var%gsiz(2)
-        end if
      else
         cur_var%domain_present=.false.
         cur_var%gsiz(1:2) = field_siz(1:2)
-        cur_var%csiz(1:2) = field_siz(1:2)
      endif
   end if
 
@@ -4452,7 +4557,7 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel, &
 
   if ((thread_r == MPP_MULTI).or.(mpp_pe()==mpp_root_pe())) then
      call get_field_id(unit, file_index, fieldname, index_field, is_no_domain, .false. )
-     siz_in = files_read(file_index)%var(index_field)%siz
+     siz_in(1:4) = files_read(file_index)%var(index_field)%siz(1:4)
      if(files_read(file_index)%var(index_field)%is_dimvar ) then
         if (.not. read_dist) then
            if (siz_in(1) /= gxsize) &
@@ -4612,7 +4717,7 @@ subroutine read_data_2d_region(filename,fieldname,data,start,nread,domain, &
 
   if ((thread_r == MPP_MULTI).or.(mpp_pe()==mpp_root_pe())) then
      call get_field_id(unit, file_index, fieldname, index_field, is_no_domain, .false. )
-     siz_in = files_read(file_index)%var(index_field)%siz
+     siz_in(1:4) = files_read(file_index)%var(index_field)%siz(1:4)
      if(files_read(file_index)%var(index_field)%is_dimvar) then
         call mpp_error(FATAL, 'fms_io_mod(read_data_2d_region): the field should not be a dimension variable')
      endif
@@ -4769,7 +4874,7 @@ function unique_axes(file, index, id_axes, siz_axes, dom)
 
   unique_axes=0
 
-  if(index <0 .OR. index > 3) call mpp_error(FATAL,"unique_axes(fms_io_mod): index should be 1, 2 or 3")
+  if(index <0 .OR. index > 4) call mpp_error(FATAL,"unique_axes(fms_io_mod): index should be 1, 2, 3 or 4")
 
   do i = 1, file%nvar
      cur_var => file%var(i)
@@ -5194,6 +5299,28 @@ end subroutine reset_field_pointer_r3d
 
 !#######################################################################
 
+subroutine reset_field_pointer_r4d(fileObj, id_field, data)
+  type(restart_file_type),   intent(inout)      :: fileObj
+  integer,                   intent(in)         :: id_field
+  real, dimension(:,:,:,:),  intent(in), target :: data
+
+  if (.not.associated(fileObj%var)) call mpp_error(FATAL, "fms_io(reset_field_pointer_r4d): " // &
+      "restart_file_type data must be initialized by calling register_restart_field before using it")
+
+  if(id_field < 0 .OR. id_field > fileObj%nvar) call mpp_error(FATAL, &
+         "fms_io(reset_field_pointer_r4d): id_field should be positive integer and "// &
+         "no larger than number of fields in the file "//trim(fileObj%name) )
+  if(fileObj%var(id_field)%siz(4) .NE. 1) call mpp_error(FATAL, &
+         "fms_io(reset_field_pointer_r4d): one-level reset_field_pointer is called, but "//&
+         "field "//trim(fileObj%var(id_field)%name)//" of file "//trim(fileObj%name)//" is not one level" )
+
+  fileObj%p4dr(1, id_field)%p => data
+
+end subroutine reset_field_pointer_r4d
+
+
+!#######################################################################
+
 subroutine reset_field_pointer_i0d(fileObj, id_field, data)
   type(restart_file_type), intent(inout)      :: fileObj
   integer,                 intent(in)         :: id_field
@@ -5597,6 +5724,48 @@ end function query_initialized_r3d
 
 
 !#########################################################################
+!   This function returns 1 if the field pointed to by f_ptr has
+! initialized from a restart file, and 0 otherwise.  If f_ptr is
+! NULL, it tests whether the entire restart file has been success-
+! fully read.
+!
+! Arguments: f_ptr - A pointer to the field that is being queried.
+!  (in)      name - The name of the field that is being queried.
+!  (in)      CS - The control structure returned by a previous call to
+!                 restart_init.
+function query_initialized_r4d(fileObj, f_ptr, name)
+  type(restart_file_type),       intent(inout) :: fileObj
+  real, dimension(:,:,:,:), target, intent(in) :: f_ptr
+  character(len=*),                 intent(in) :: name
+
+  logical :: query_initialized_r4d
+  integer :: m
+
+  if (.not.associated(fileObj%var)) call mpp_error(FATAL, "fms_io(query_initialized_r4d): " // &
+      "restart_file_type data must be initialized by calling register_restart_field before using it")
+
+  query_initialized_r4d = .false.
+  do m=1, fileObj%nvar
+     if (ASSOCIATED(fileObj%p4dr(1,m)%p,f_ptr)) then
+        if (fileObj%var(m)%initialized) query_initialized_r4d = .true.
+        exit
+     endif
+  enddo
+  ! Assume that you are going to initialize it now, so set flag to initialized if
+  ! queried again.
+  if (m>fileObj%nvar) then
+     if (mpp_pe() == mpp_root_pe() ) call mpp_error(NOTE, "fms_io(query_initialized_r4d): Unable to find "// &
+          trim(name)//" queried by pointer, "//"probably because of the suspect comparison of pointers by ASSOCIATED.")
+     query_initialized_r4d = query_initialized_name(fileObj, name)
+     if (mpp_pe() == mpp_root_pe() .AND. query_initialized_r4d) call mpp_error(NOTE, &
+          "fms_io(query_initialized_r4d): "//trim(name)// " initialization confirmed by name.")
+  endif
+
+  return
+
+end function query_initialized_r4d
+
+!#########################################################################
 !   This function sets that a variable has been initialized for future queries.
 !
 ! Arguments: name - A pointer to the field whose initialization status is being set.
@@ -5752,6 +5921,53 @@ subroutine set_initialized_r3d(fileObj, f_ptr, name, is_set)
 
 end subroutine set_initialized_r3d
 
+
+!#########################################################################
+!   This function sets that a variable has been initialized for future queries.
+!
+! Arguments: name - A pointer to the field whose initialization status is being set.
+!  (in)  fileObj - The control structure returned by a previous call to
+!                  register_restart_field
+subroutine set_initialized_r4d(fileObj, f_ptr, name, is_set)
+  type(restart_file_type),       intent(inout) :: fileObj
+  real, dimension(:,:,:,:), target, intent(in) :: f_ptr
+  character(len=*),                 intent(in) :: name
+  logical,          optional,       intent(in) :: is_set
+  logical :: set_val
+  integer :: m
+
+  set_val = .true.
+  if (present(is_set)) set_val = is_set
+
+  if (.not.associated(fileObj%var)) call mpp_error(FATAL, "fms_io(set_initialized_r4d): " // &
+      "restart_file_type data must be initialized by calling set_restart_field before using it")
+
+  do m=1, fileObj%nvar
+     if (ASSOCIATED(fileObj%p4dr(1,m)%p,f_ptr)) then
+        fileObj%var(m)%initialized = set_val
+        return
+     endif
+  enddo
+
+  if (m>fileObj%nvar .AND. mpp_pe() == mpp_root_pe() ) then
+    call mpp_error(NOTE,"fms_io(set_initialized_r4d): Unable to find "// &
+          trim(name)//" queried by pointer, "//"probably because of the suspect comparison of pointers by ASSOCIATED"//&
+                        " when attempting to set initialization.")
+  end if
+
+  do m=1,fileObj%nvar
+    if (trim(name) == fileObj%var(m)%name) then
+      fileObj%var(m)%initialized = set_val
+      return
+    endif
+  enddo
+
+  if (m>fileObj%nvar .AND. mpp_pe() == mpp_root_pe() ) then
+    call mpp_error(NOTE,"fms_io(set_initialized_r4d): Unknown restart variable "//name// &
+                        " attempted to set initialization.")
+  end if
+
+end subroutine set_initialized_r4d
 
 !#######################################################################
 !#######################################################################
@@ -6705,6 +6921,8 @@ end subroutine get_axis_cart
 
     do i=1, nvar
        call mpp_get_atts(fields(i),name=name,ndim=var_dim,siz=siz_in)
+       if(var_dim .GT. 4) call mpp_error(FATAL, 'fms_io(get_field_id): number of dimension of field '// &
+                trim(name)//' in file '//trim(files_read(index_file)%name)//' should not be greater than 4')
        if (lowercase(trim(name)) == lowercase(trim(fieldname))) then ! found the variable
           if(var_dim .lt.3) then
              do j=var_dim+1,3
@@ -6713,8 +6931,8 @@ end subroutine get_axis_cart
           endif
           files_read(index_file)%var(index_field)%name    = fieldname
           files_read(index_file)%var(index_field)%field   = fields(i)
-          files_read(index_file)%var(index_field)%siz(:)  = siz_in
-          files_read(index_file)%var(index_field)%gsiz(:) = siz_in
+          files_read(index_file)%var(index_field)%siz(1:4)  = siz_in(1:4)
+          files_read(index_file)%var(index_field)%gsiz(1:3) = siz_in(1:3)
           return
        endif
     enddo
@@ -6735,8 +6953,8 @@ end subroutine get_axis_cart
              files_read(index_file)%var(index_field)%is_dimvar = .true.
              files_read(index_file)%var(index_field)%name      = fieldname
              files_read(index_file)%var(index_field)%axis      = axes(i)
-             files_read(index_file)%var(index_field)%siz(:)    = siz_in
-             files_read(index_file)%var(index_field)%gsiz(:)   = siz_in
+             files_read(index_file)%var(index_field)%siz(1:4)    = siz_in(1:4)
+             files_read(index_file)%var(index_field)%gsiz(1:3)   = siz_in(1:3)
              return
           endif
        enddo
@@ -6894,6 +7112,7 @@ subroutine set_filename_appendix(string_in)
   if ( index_num .le. 0 ) then
      filename_appendix = trim(filename_appendix)//trim(string_in)
   end if
+
 end subroutine set_filename_appendix
 
 subroutine get_instance_filename(name_in,name_out)

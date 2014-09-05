@@ -12,6 +12,8 @@
 #define MPP_READ_2DDECOMP_2D_ mpp_read_2ddecomp_r2d
 #undef MPP_READ_2DDECOMP_3D_
 #define MPP_READ_2DDECOMP_3D_ mpp_read_2ddecomp_r3d
+#undef MPP_READ_2DDECOMP_4D_
+#define MPP_READ_2DDECOMP_4D_ mpp_read_2ddecomp_r4d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
 #include <mpp_read_2Ddecomp.h>
@@ -237,6 +239,21 @@
 
       return
     end subroutine read_record
+
+! <SUBROUTINE NAME="mpp_read_r4D" INTERFACE="mpp_read">
+!   <IN NAME="unit" TYPE="integer"></IN>
+!   <IN NAME="field" TYPE="type(fieldtype)"></IN>
+!   <INOUT NAME="data" TYPE="real" DIM="(:,:,:,:)"></INOUT>
+!   <IN NAME="tindex" TYPE="integer"></IN>
+! </SUBROUTINE>
+    subroutine mpp_read_r4D( unit, field, data, tindex)
+      integer, intent(in) :: unit
+      type(fieldtype), intent(in) :: field
+      real, intent(inout) :: data(:,:,:,:)
+      integer, intent(in), optional :: tindex
+
+      call read_record( unit, field, size(data(:,:,:,:)), data, tindex )
+    end subroutine mpp_read_r4D
 
 
 ! <SUBROUTINE NAME="mpp_read_r3D" INTERFACE="mpp_read">

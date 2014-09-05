@@ -22,6 +22,7 @@
  integer :: sizey_latlon_grid = 90
  integer :: size_cubic_grid = 48
  integer :: nz = 10, nt = 2, halo = 1
+ integer :: nl = 5
  integer :: stackmax =4000000
  integer :: num_step = 4 ! number of time steps to run, this is used for intermediate run.
                          ! set num_step = 0 for no intermediate run.
@@ -35,20 +36,21 @@
 
  namelist /test_fms_io_nml/ sizex_latlon_grid, sizey_latlon_grid, size_cubic_grid, &
                             nz, nt, halo, num_step, stackmax, do_write, layout_cubic, layout_latlon, io_layout, &
-                            read_only
+                            read_only, nl
 
  integer           :: unit, io_status, step
  character(len=20) :: time_stamp
 
  type data_storage_type
-    real,    allocatable, dimension(:,:,:,:) :: data1_r3d, data2_r3d, data1_r3d_read, data2_r3d_read
-    real,    allocatable, dimension(:,:,:)   :: data1_r2d, data2_r2d, data1_r2d_read, data2_r2d_read
-    real,    allocatable, dimension(:,:)     :: data1_r1d, data2_r1d, data1_r1d_read, data2_r1d_read
-    real,    allocatable, dimension(:)       :: data1_r0d, data2_r0d, data1_r0d_read, data2_r0d_read
-    integer, allocatable, dimension(:,:,:,:) :: data1_i3d, data2_i3d, data1_i3d_read, data2_i3d_read
-    integer, allocatable, dimension(:,:,:)   :: data1_i2d, data2_i2d, data1_i2d_read, data2_i2d_read
-    integer, allocatable, dimension(:,:)     :: data1_i1d, data2_i1d, data1_i1d_read, data2_i1d_read
-    integer, allocatable, dimension(:)       :: data1_i0d, data2_i0d, data1_i0d_read, data2_i0d_read
+    real,    allocatable, dimension(:,:,:,:,:) :: data1_r4d, data2_r4d, data1_r4d_read, data2_r4d_read
+    real,    allocatable, dimension(:,:,:,:)   :: data1_r3d, data2_r3d, data1_r3d_read, data2_r3d_read
+    real,    allocatable, dimension(:,:,:)     :: data1_r2d, data2_r2d, data1_r2d_read, data2_r2d_read
+    real,    allocatable, dimension(:,:)       :: data1_r1d, data2_r1d, data1_r1d_read, data2_r1d_read
+    real,    allocatable, dimension(:)         :: data1_r0d, data2_r0d, data1_r0d_read, data2_r0d_read
+    integer, allocatable, dimension(:,:,:,:)   :: data1_i3d, data2_i3d, data1_i3d_read, data2_i3d_read
+    integer, allocatable, dimension(:,:,:)     :: data1_i2d, data2_i2d, data1_i2d_read, data2_i2d_read
+    integer, allocatable, dimension(:,:)       :: data1_i1d, data2_i1d, data1_i1d_read, data2_i1d_read
+    integer, allocatable, dimension(:)         :: data1_i0d, data2_i0d, data1_i0d_read, data2_i0d_read
  end type data_storage_type
  
  type(data_storage_type), save :: latlon_data
@@ -101,11 +103,11 @@
 
  if(file_exist('INPUT/'//trim(file_latlon), domain_latlon)) then
     call restore_state(restart_latlon)
-    call compare_restart("latlon_grid save_restore", latlon_data)
+    call compare_restart("latlon_grid save_restore", latlon_data, .true.)
  end if
  if(file_exist('INPUT/'//trim(file_cubic), domain_cubic) ) then
     call restore_state(restart_cubic)
-    call compare_restart("cubic_grid save_restore", cubic_data)
+    call compare_restart("cubic_grid save_restore", cubic_data, .true. )
  end if
  
  !---copy data
@@ -151,7 +153,7 @@ contains
     integer, dimension(1)                    :: tile1, tile2
     integer, dimension(1)                    :: istart1, iend1, jstart1, jend1
     integer, dimension(1)                    :: istart2, iend2, jstart2, jend2
-    integer                                  :: i, j, k, nx, ny
+    integer                                  :: i, j, k, nx, ny, l
     integer                                  :: isc, iec, jsc, jec
     integer                                  :: isd, ied, jsd, jed
     integer                                  :: id_restart
@@ -207,6 +209,10 @@ contains
 
     allocate(storage%data1_r3d(isd:ied, jsd:jed, nz, nt), storage%data1_r3d_read(isd:ied, jsd:jed, nz, nt) )
     allocate(storage%data2_r3d(isd:ied, jsd:jed, nz, nt), storage%data2_r3d_read(isd:ied, jsd:jed, nz, nt) )
+    allocate(storage%data1_r4d(isd:ied, jsd:jed, nz, nl, nt) )
+    allocate(storage%data1_r4d_read(isd:ied, jsd:jed, nz, nl, nt) )
+    allocate(storage%data2_r4d(isd:ied, jsd:jed, nz, nl, nt) )
+    allocate(storage%data2_r4d_read(isd:ied, jsd:jed, nz, nl, nt) )
     allocate(storage%data1_i3d(isd:ied, jsd:jed, nz, nt), storage%data1_i3d_read(isd:ied, jsd:jed, nz, nt) )
     allocate(storage%data2_i3d(isd:ied, jsd:jed, nz, nt), storage%data2_i3d_read(isd:ied, jsd:jed, nz, nt) )
     allocate(storage%data1_r2d(isd:ied, jsd:jed,     nt), storage%data1_r2d_read(isd:ied, jsd:jed,     nt) )
@@ -230,11 +236,22 @@ contains
     storage%data1_i1d = 0; storage%data1_i1d_read = 0; storage%data2_i1d = 0; storage%data2_i1d_read = 0
     storage%data1_r0d = 0; storage%data1_r0d_read = 0; storage%data2_r0d = 0; storage%data2_r0d_read = 0
     storage%data1_i0d = 0; storage%data1_i0d_read = 0; storage%data2_i0d = 0; storage%data2_i0d_read = 0
+    storage%data1_r4d = 0; storage%data1_r4d_read = 0; storage%data2_r4d = 0; storage%data2_r4d_read = 0
     do n = 1, nt
        storage%data1_r0d(n) =  tile + n*1e-3
        storage%data2_r0d(n) = -tile - n*1e-3
        storage%data1_i0d(n) =  tile*1e3 + n
        storage%data2_i0d(n) = -tile*1e3 - n
+       do l = 1, nl
+          do k = 1, nz
+             do j = jsc, jec
+                do i = isc, iec
+                   storage%data1_r4d(i,j,k,l,n) =  l*1e9 + tile*1e6 + n*1e3 + k + i*1e-3 + j*1e-6;
+                   storage%data2_r4d(i,j,k,l,n) =  -l*1e9 - tile*1e6 - n*1e3 + k - i*1e-3 - j*1e-6;
+                enddo
+             enddo
+          enddo
+       enddo
        do k = 1, nz
           storage%data1_r1d(k,n) =   tile*1e3 + n + k*1e-3
           storage%data2_r1d(k,n) =  -tile*1e3 - n - k*1e-3
@@ -278,7 +295,7 @@ contains
           call read_data(file_r, "data1_i0d", storage%data1_i0d_read(      n), domain, timelevel = n )
           call read_data(file_r, "data2_i0d", storage%data2_i0d_read(      n), domain, timelevel = n )
        end do
-       call compare_restart(type//" read_write", storage)
+       call compare_restart(type//" read_write", storage, .false.)
     end if
 
 
@@ -313,6 +330,13 @@ contains
     id_restart = register_restart_field(restart_data, file, "data2_r3d", storage%data2_r3d_read(:,:,:,1), &
                                 storage%data2_r3d_read(:,:,:,2), &
                                 domain, longname="second data_i3d", units="none")
+
+    id_restart = register_restart_field(restart_data, file, "data1_r4d", storage%data1_r4d_read(:,:,:,:,1), &
+                                domain, longname="first data_r4d",units="none")
+    id_restart = register_restart_field(restart_data, file, "data1_r4d", storage%data1_r4d_read(:,:,:,:,2), &
+                                domain, longname="first data_r4d",units="none")
+    id_restart = register_restart_field(restart_data, file, "data2_r4d", storage%data2_r4d_read(:,:,:,:,1), &
+                                domain, longname="second data_r4d",units="none")
 
     id_restart = register_restart_field(restart_data, file, "data1_i3d", storage%data1_i3d_read(:,:,:,1), &
                                 domain, longname="first data_i3d",units="none")
@@ -373,10 +397,15 @@ contains
 
   end subroutine setup_test_restart
 
-  subroutine compare_restart(type, storage)
+  subroutine compare_restart(type, storage, compare_r4d)
     character(len=*), intent(in)             :: type
     type(data_storage_type), intent(inout)   :: storage
+    logical,                 intent(in   )   :: compare_r4d
 
+       if(compare_r4d) then   
+          call compare_data_r5d(storage%data1_r4d, storage%data1_r4d_read, type//" data1_r4d")
+          call compare_data_r5d(storage%data2_r4d(:,:,:,:,1:1), storage%data2_r4d_read(:,:,:,:,1:1), type//" data2_r4d")
+       endif
        call compare_data_r4d(storage%data1_r3d, storage%data1_r3d_read, type//" data1_r3d")
        call compare_data_r4d(storage%data2_r3d, storage%data2_r3d_read, type//" data2_r3d")
        call compare_data_i4d(storage%data1_i3d, storage%data1_i3d_read, type//" data1_i3d")
@@ -407,11 +436,13 @@ contains
     deallocate(storage%data1_i1d, storage%data2_i1d, storage%data1_i1d_read, storage%data2_i1d_read)
     deallocate(storage%data1_r0d, storage%data2_r0d, storage%data1_r0d_read, storage%data2_r0d_read)
     deallocate(storage%data1_i0d, storage%data2_i0d, storage%data1_i0d_read, storage%data2_i0d_read)
+    deallocate(storage%data1_r4d, storage%data2_r4d, storage%data1_r4d_read, storage%data2_r4d_read)
 
   end subroutine release_storage_memory
 
   subroutine copy_restart_data(storage)
     type(data_storage_type), intent(inout)   :: storage
+    integer :: n, l
 
     storage%data1_r3d_read = storage%data1_r3d; storage%data2_r3d_read = storage%data2_r3d
     storage%data1_i3d_read = storage%data1_i3d; storage%data2_i3d_read = storage%data2_i3d
@@ -421,10 +452,51 @@ contains
     storage%data1_i1d_read = storage%data1_i1d; storage%data2_i1d_read = storage%data2_i1d
     storage%data1_r0d_read = storage%data1_r0d; storage%data2_r0d_read = storage%data2_r0d
     storage%data1_i0d_read = storage%data1_i0d; storage%data2_i0d_read = storage%data2_i0d
+    storage%data1_r4d_read = storage%data1_r4d; storage%data2_r4d_read = storage%data2_r4d
 
     return
 
   end subroutine copy_restart_data
+
+  subroutine compare_data_r5d( a, b, string )
+    real, intent(in), dimension(:,:,:,:,:) :: a, b
+    character(len=*), intent(in)         :: string
+    integer(LONG_KIND)                   :: sum1, sum2
+    integer                              :: i, j, k, l, n
+    integer, parameter                   :: stdunit = 6
+
+    if(size(a,1) .ne. size(b,1) .or. size(a,2) .ne. size(b,2) .or. size(a,3) .ne. size(b,3) &
+      .or. size(a,4) .ne. size(b,4) .or. size(a,5) .ne. size(b,5) ) &
+         call mpp_error(FATAL,'compare_data_r5d: size of a and b does not match')
+    do n = 1, size(a,5)
+       do l = 1, size(a,4)
+          do k = 1, size(a,3)
+             do j = 1, size(a,2)
+                do i = 1, size(a,1)
+                   if(a(i,j,k,l,n) .ne. b(i,j,k,l,n)) then
+                      write(stdunit,'(a,i3,a,i3,a,i3,a,i3,a,i3,a,i3,a,f18.6,a,f18.6)')" at pe ", mpp_pe(), &
+                           ", at point (",i,", ", j, ", ", k, ", ", l, ", ", n, "), a = ", a(i,j,k,l,n), ",&
+                           b = ", b(i,j,k,l,n)
+                      call mpp_error(FATAL, trim(string)//': point by point comparison are not OK.')
+                   endif
+                enddo
+             enddo
+          enddo
+       enddo
+    enddo
+    sum1 = mpp_chksum( a, (/mpp_pe()/) )
+    sum2 = mpp_chksum( b, (/mpp_pe()/) )
+
+    if( sum1.EQ.sum2 )then
+       if( mpp_pe() .EQ. mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )
+       !--- in some case, even though checksum agree, the two arrays 
+       !    actually are different, like comparing (1.1,-1.2) with (-1.1,1.2)
+       !--- hence we need to check the value point by point.
+    else
+       call mpp_error( FATAL, trim(string)//': chksums are not OK.' )
+    end if
+  end subroutine compare_data_r5d
+
 
   subroutine compare_data_r4d( a, b, string )
     real, intent(in), dimension(:,:,:,:) :: a, b
@@ -441,7 +513,7 @@ contains
           do j = 1, size(a,2)
              do i = 1, size(a,1)
                 if(a(i,j,k,l) .ne. b(i,j,k,l)) then
-                   write(stdunit,'(a,i3,a,i3,a,i3,a,i3,a,i3,a,f18.9,a,f18.9)')" at pe ", mpp_pe(), &
+                   write(stdunit,'(a,i3,a,i3,a,i3,a,i3,a,i3,a,f18.6,a,f18.6)')" at pe ", mpp_pe(), &
                         ", at point (",i,", ", j, ", ", k, ", ", l, "), a = ", a(i,j,k,l), ", b = ", b(i,j,k,l)
                    call mpp_error(FATAL, trim(string)//': point by point comparison are not OK.')
                 endif
@@ -535,7 +607,7 @@ contains
     do l = 1, size(a,2)
        do i = 1, size(a,1)
           if(a(i,l) .ne. b(i,l)) then
-             write(stdunit,'(a,i3,a,i3,a,i3,a,f16.9,a,f16.9)')" at pe ", mpp_pe(), &
+             write(stdunit,'(a,i3,a,i3,a,i3,a,f16.6,a,f16.6)')" at pe ", mpp_pe(), &
                   ", at point (",i, ", ", l, "), a = ", a(i,l), ", b = ", b(i,l)
              call mpp_error(FATAL, trim(string)//': point by point comparison are not OK.')
           endif
@@ -578,7 +650,7 @@ contains
 
     do l = 1, size(a(:))
        if(a(l) .ne. b(l)) then
-          write(stdunit,'(a,i3,a,i3,a,f16.9,a,f16.9)')" at pe ", mpp_pe(), &
+          write(stdunit,'(a,i3,a,i3,a,f16.6,a,f16.6)')" at pe ", mpp_pe(), &
                ", at point (",l, "), a = ", a(l), ", b = ", b(l)
           call mpp_error(FATAL, trim(string)//': point by point comparison are not OK.')
        endif
