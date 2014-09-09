@@ -139,10 +139,11 @@ end subroutine mosaic_init
     integer                            :: start(4), nread(4)    
     integer                            :: nxgrid, n
     real                               :: garea
+    real                               :: get_global_area;
 
     nxgrid = size(i1(:))
     start(:) = 1; nread(:) = 1
-    garea = 4*PI*RADIUS*RADIUS;
+    garea = get_global_area();
 
     call read_data(xgrid_file, 'xgrid_area', area, no_domain=.TRUE.)
 

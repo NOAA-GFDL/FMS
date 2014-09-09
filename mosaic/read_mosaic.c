@@ -375,6 +375,35 @@ int read_mosaic_xgrid_size( const char *xgrid_file )
   return ncells;
 }
 
+#ifdef OVERLOAD_R4
+float get_global_area(void) 
+{
+  float garea;
+#else
+double get_global_area(void) 
+{
+  double garea;
+#endif
+  garea = 4*M_PI*RADIUS*RADIUS;
+
+  return garea;
+};
+
+#ifndef __AIX
+#ifdef OVERLOAD_R4
+float get_global_area_(void)
+{
+  float garea;
+#else
+double get_global_area_(void)
+{
+  double garea;
+#endif
+  garea = 4*M_PI*RADIUS*RADIUS;
+
+  return garea;
+};
+#endif
 
 
 /****************************************************************************/
