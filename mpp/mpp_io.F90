@@ -355,7 +355,7 @@ private
   public :: mpp_io_set_stack_size, mpp_get_field_index, mpp_get_axis_index
   public :: mpp_get_field_name, mpp_get_att_value, mpp_get_att_length
   public :: mpp_get_att_type, mpp_get_att_name, mpp_get_att_real, mpp_get_att_char
-  public :: mpp_get_att_real_scalar, mpp_get_axis_length
+  public :: mpp_get_att_real_scalar, mpp_get_axis_length, mpp_is_dist_ioroot
   public :: mpp_get_file_name, mpp_file_is_opened, mpp_attribute_exist 
   public :: mpp_io_clock_on, mpp_get_time_axis, mpp_get_default_calendar
   public :: mpp_get_dimension_length
@@ -368,7 +368,7 @@ private
 
   !--- public interface from mpp_io_read.h ---------------------
   public :: mpp_read, mpp_read_meta, mpp_get_tavg_info
-  public :: mpp_read_compressed, mpp_write_compressed
+  public :: mpp_read_compressed, mpp_write_compressed, mpp_read_distributed_ascii, mpp_write_unlimited_axis
 
   !--- public interface from mpp_io_switch.h ---------------------
   public :: mpp_open, mpp_close
@@ -561,10 +561,45 @@ type :: atttype
      module procedure mpp_read_region_r3D
   end interface
 
+!***********************************************************************
+!
+!      public interfaces from mpp_io_read_distributed_ascii.inc
+!
+!***********************************************************************
+! <INTERFACE NAME="mpp_read_distributed_ascii">
+!   <OVERVIEW>
+!     Read from an opened, ascii file, translating data to the desired format
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     These routines are part of the mpp_read family. It is intended to 
+!     provide a general purpose, distributed, list directed read
+!  </DESCRIPTION>
+!   <TEMPLATE>
+!     call mpp_read_distributed_ascii(unit,fmt,ssize,data,iostat)
+!   </TEMPLATE>
+!  <IN NAME="unit"></IN>
+!  <IN NAME="fmt"></IN>
+!  <IN NAME="ssize"></IN>
+!  <INOUT NAME="data"></IN>
+!  <OUT NAME="iostat">
+!  </IN>
+!  <NOTE>
+!     <TT>mpp_read_distributed_ascii</TT>
+!     The stripe size must be greater than or equal to 1. The stripe
+!     size does not have to be a common denominator of the number of
+!     MPI ranks.
+!  </NOTE>
+! </INTERFACE>
+  interface mpp_read_distributed_ascii
+     module procedure mpp_read_distributed_ascii_r1d
+     module procedure mpp_read_distributed_ascii_i1d
+     module procedure mpp_read_distributed_ascii_a1d
+  end interface
+
 
 !***********************************************************************
 !
-!      public interface from mpp_io_read.h
+!      public interfaces from mpp_io_read_compressed.h
 !
 !***********************************************************************
 ! <INTERFACE NAME="mpp_read_compressed">
@@ -578,7 +613,7 @@ type :: atttype
 !     the need for the rank 2 treatment.
 !  </DESCRIPTION>
 !   <TEMPLATE>
-!     call mpp_read( unit, field, domain, data, time_index )
+!     call mpp_read_compressed( unit, field, domain, data, time_index )
 !   </TEMPLATE>
 !  <IN NAME="unit"></IN>
 !  <IN NAME="field"></IN>
@@ -719,6 +754,7 @@ type :: atttype
      module procedure mpp_write_meta_scalar_i
      module procedure mpp_write_meta_axis_r1d
      module procedure mpp_write_meta_axis_i1d
+     module procedure mpp_write_meta_axis_unlimited
      module procedure mpp_write_meta_field
      module procedure mpp_write_meta_global
      module procedure mpp_write_meta_global_scalar_r
@@ -834,7 +870,7 @@ type :: atttype
 !***********************************************************************
 ! <INTERFACE NAME="mpp_write_compressed">
 !   <OVERVIEW>
-!     Read from an opened, sparse data, compressed file (e.g. land_model)
+!     Write to an opened, sparse data, compressed file (e.g. land_model)
 !   </OVERVIEW>
 !   <DESCRIPTION>
 !     These routines are similar to mpp_write except that they are 
@@ -843,13 +879,13 @@ type :: atttype
 !     Hence the need for the rank 2 treatment.
 !  </DESCRIPTION>
 !   <TEMPLATE>
-!     call mpp_write( unit, field, domain, data, nelems, tstamp, default_data )
+!     call mpp_write(unit, field, domain, data, nelems_io, tstamp, default_data )
 !   </TEMPLATE>
 !  <IN NAME="unit"></IN>
 !  <IN NAME="field"></IN>
 !  <IN NAME="domain"></IN>
 !  <INOUT NAME="data"></INOUT>
-!  <IN NAME="nelems">
+!  <IN NAME="nelems_io">
 !    <TT>nelems</TT> is a vector containing the number of elements expected
 !    from each member of the io_domain. It MUST have the same order as
 !    the io_domain pelist.
@@ -875,6 +911,40 @@ type :: atttype
      module procedure mpp_write_compressed_r1d
      module procedure mpp_write_compressed_r2d
   end interface mpp_write_compressed
+
+!***********************************************************************
+! <INTERFACE NAME="mpp_write_unlimited_axis">
+!   <OVERVIEW>
+!     Write to an opened file along the unlimited axis (e.g. icebergs)
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     These routines are similar to mpp_write except that they are 
+!     designed to handle data written along the unlimited axis that
+!     is not time (e.g. icebergs).
+!  </DESCRIPTION>
+!   <TEMPLATE>
+!     call mpp_write(unit, field, domain, data, nelems_io)
+!   </TEMPLATE>
+!  <IN NAME="unit"></IN>
+!  <IN NAME="field"></IN>
+!  <IN NAME="domain"></IN>
+!  <INOUT NAME="data"></INOUT>
+!  <IN NAME="nelems">
+!    <TT>nelems</TT> is a vector containing the number of elements expected
+!    from each member of the io_domain. It MUST have the same order as
+!    the io_domain pelist.
+!  </IN>
+!  <NOTE>
+!     <TT>mpp_write_meta</TT> must be called prior to calling 
+!     <TT>mpp_write_unlimited_axis.</TT>
+!     Since in general, the vector is distributed across the io-domain
+!     The write expects the io_domain to be defined.
+!  </NOTE>
+! </INTERFACE>
+  interface mpp_write_unlimited_axis
+     module procedure mpp_write_unlimited_axis_r1d
+  end interface mpp_write_unlimited_axis
+
 
 !***********************************************************************
 ! <INTERFACE NAME="mpp_def_dim">

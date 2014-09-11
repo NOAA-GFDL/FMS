@@ -863,3 +863,51 @@
       
    end function mpp_attribute_exist
    
+!#######################################################################
+subroutine mpp_dist_io_pelist(ssize,pelist)
+  integer,              intent(in)  :: ssize   ! Stripe size for dist read
+  integer, allocatable, intent(out) :: pelist(:)
+  integer :: i, lsize, ioroot
+  logical :: is_ioroot=.false.
+
+  ! Did you make a mistake?
+  if(ssize < 1) call mpp_error(FATAL,'mpp_dist_io_pelist: I/O stripe size < 1')
+
+  is_ioroot = mpp_is_dist_ioroot(ssize,ioroot=ioroot,lsize=lsize)
+
+  ! Did I make a mistake?
+  if(lsize < 1) call mpp_error(FATAL,'mpp_dist_io_pelist: size of pelist < 1')
+
+  allocate(pelist(lsize))
+  do i=1,lsize
+    pelist(i) = ioroot + i - 1
+  enddo
+end subroutine mpp_dist_io_pelist
+
+!#######################################################################
+logical function mpp_is_dist_ioroot(ssize,ioroot,lsize)
+  integer, intent(in)  :: ssize   ! Dist io set size
+  integer, intent(out), optional :: ioroot, lsize
+  integer :: pe, npes, mypos, maxpe, d_ioroot, d_lsize, last_ioroot
+
+  if(ssize < 1) call mpp_error(FATAL,'mpp_is_dist_ioroot: I/O stripe size < 1')
+
+  mpp_is_dist_ioroot = .false.
+  d_lsize = ssize
+  pe = mpp_pe()
+  mypos = modulo(pe,ssize)      ! Which PE am I in the io group?
+  d_ioroot = pe - mypos         ! What is the io root for the group?
+  npes = mpp_npes()
+  maxpe = min(d_ioroot+ssize,npes) - 1  ! Handle end case
+  d_lsize = maxpe - d_ioroot + 1
+  if(mod(npes,ssize) == 1)then  ! Ensure there are no sets with 1 member
+    last_ioroot = (npes-1) - ssize
+    if(pe >= last_ioroot) then
+       d_ioroot = last_ioroot
+       d_lsize = ssize + 1
+    endif
+  endif
+  if(pe == d_ioroot) mpp_is_dist_ioroot = .true.
+  if(PRESENT(ioroot)) ioroot = d_ioroot
+  if(PRESENT(lsize)) lsize = d_lsize
+end function mpp_is_dist_ioroot
