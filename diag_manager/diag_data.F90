@@ -4,13 +4,13 @@ MODULE diag_data_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>
-  
+
   ! <OVERVIEW>
   !   Type descriptions and global variables for the diag_manager modules.
   ! </OVERVIEW>
 
   ! <DESCRIPTION>
-  !   Notation: 
+  !   Notation:
   !   <DL>
   !     <DT>input field</DT>
   !     <DD>The data structure describing the field as
@@ -29,7 +29,7 @@ MODULE diag_data_mod
   !
   !   Each input field associated with one or several output fields via array of
   !   indices output_fields; each output field points to the single "parent" input
-  !   field with the input_field index, and to the output file with the output_file 
+  !   field with the input_field index, and to the output file with the output_file
   !   index
   ! </DESCRIPTION>
 
@@ -66,7 +66,12 @@ MODULE diag_data_mod
   ! <DATA NAME="DIAG_YEARS" TYPE="INTEGER, PARAMETER" DEFAULT="6" />
   ! <DATA NAME="MAX_SUBAXES" TYPE="INTEGER, PARAMETER" DEFAULT="10" />
   ! <DATA NAME="CMOR_MISSING_VALUE" TYPE="REAL, PARAMETER" DEFAULT="1.0e20" />
-
+  ! <DATA NAME="GLO_REG_VAL" TYPE="INTEGER, PARAMETER" DEFAULT="-999">
+  !   Value used in the region specification of the diag_table to indicate to use the full axis instead of a sub-axis
+  ! </DATA>
+  ! <DATA NAME="GLO_REG_VAL_ALT" TYPE="INTEGER, PARAMETER" DEFAULT="-1">
+  !   Alternate value used in the region specification of the diag_table to indicate to use the full axis instead of a sub-axis
+  ! </DATA>
   ! Specify storage limits for fixed size tables used for pointers, etc.
   INTEGER, PARAMETER :: MAX_FIELDS_PER_FILE = 300 !< Maximum number of fields per file.
   INTEGER, PARAMETER :: DIAG_OTHER = 0
@@ -79,6 +84,8 @@ MODULE diag_data_mod
   INTEGER, PARAMETER :: DIAG_SECONDS = 1, DIAG_MINUTES = 2, DIAG_HOURS = 3
   INTEGER, PARAMETER :: DIAG_DAYS = 4, DIAG_MONTHS = 5, DIAG_YEARS = 6
   INTEGER, PARAMETER :: MAX_SUBAXES = 10
+  INTEGER, PARAMETER :: GLO_REG_VAL = -999
+  INTEGER, PARAMETER :: GLO_REG_VAL_ALT = -1
   REAL, PARAMETER :: CMOR_MISSING_VALUE = 1.0e20 !< CMOR standard missing value
 
   ! <TYPE NAME="diag_grid">
@@ -101,12 +108,12 @@ MODULE diag_data_mod
   !     ID returned from diag_subaxes_init of 3 subaces.
   !   </DATA>
   TYPE diag_grid
-     REAL, DIMENSION(3) :: start, END ! start and end coordinates (lat,lon,depth) of local domain to output   
+     REAL, DIMENSION(3) :: start, END ! start and end coordinates (lat,lon,depth) of local domain to output
      INTEGER, DIMENSION(3) :: l_start_indx, l_end_indx ! start and end indices at each LOCAL PE
      INTEGER, DIMENSION(3) :: subaxes ! id returned from diag_subaxes_init of 3 subaxes
   END TYPE diag_grid
   ! </TYPE>
-  
+
   ! <TYPE NAME="diag_fieldtype">
   !   <DESCRIPTION>
   !     Diagnostic field type
@@ -134,6 +141,38 @@ MODULE diag_data_mod
   END TYPE diag_fieldtype
   ! </TYPE>
 
+  ! <TYPE NAME="diag_atttype">
+  !   <DESCRIPTION>
+  !     Attribute type for diagnostic fields
+  !   </DESCRIPTION>
+  !   <DATA NAME="type">
+  !     Data type of attribute values (NF_INT, NF_FLOAT, NF_CHAR)
+  !   </DATA>
+  !   <DATA NAME="len">
+  !     Number of values in attribute, or if a character string then
+  !     length of the string.
+  !   </DATA>
+  !   <DATA NAME="name">
+  !     Name of the attribute
+  !   </DATA>
+  !   <DATA NAME="catt">
+  !     Character string to hold character value of attribute
+  !   </DATA>
+  !   <DATA NAME="fatt">
+  !     REAL array to hold value of REAL attributes.
+  !   </DATA>
+  !   <DATA NAME="iatt">
+  !     INTEGER array to hold value of INTEGER attributes.
+  !   </DATA>
+  type :: diag_atttype
+     INTEGER             :: type
+     INTEGER             :: len
+     CHARACTER(len=128)  :: name
+     CHARACTER(len=1280) :: catt
+     REAL, _ALLOCATABLE, DIMENSION(:)    :: fatt _NULL
+     INTEGER, _ALLOCATABLE, DIMENSION(:) :: iatt _NULL
+  end type diag_atttype
+  ! </TYPE>
   ! <TYPE NAME="coord_type">
   !   <DESCRIPTION>
   !     Define the region for field output.
@@ -159,7 +198,7 @@ MODULE diag_data_mod
      REAL :: zend
   END TYPE coord_type
   ! </TYPE>
-  
+
   ! <TYPE NAME="file_type">
   !   <DESCRIPTION>
   !     Type to define the diagnostic files that will be written as defined by the diagnostic table.
@@ -222,6 +261,12 @@ MODULE diag_data_mod
   !   </DATA>
   !   <DATA NAME="f_bounds" TYPE="TYPE(diag_fieldtype)">
   !   </DATA>
+  !   <DATA NAME="attributes" TYPE="TYPE(diag_atttype), DIMENSION(:)">
+  !     Array to hold user definable attributes
+  !   </DATA>
+  !   <DATA NAME="num_attributes" TYPE="INTEGER" >
+  !     Number of defined attibutes
+  !   </DATA>
   TYPE file_type
      CHARACTER(len=128) :: name !< Name of the output file.
      CHARACTER(len=128) :: long_name
@@ -245,9 +290,11 @@ MODULE diag_data_mod
      TYPE(time_type) :: start_time !< Time file opened.
      TYPE(time_type) :: close_time !< Time file closed.  File does not allow data after close time
      TYPE(diag_fieldtype):: f_avg_start, f_avg_end, f_avg_nitems, f_bounds
+     TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
+     INTEGER :: num_attributes
   END TYPE file_type
-  ! </TYPE>  
-  
+  ! </TYPE>
+
   ! <TYPE NAME="input_field_type">
   !   <DESCRIPTION>
   !     Type to hold the input field description
@@ -290,23 +337,36 @@ MODULE diag_data_mod
   !   </DATA>
   !   <DATA NAME="local" TYPE="LOGICAL">
   !   </DATA>
+  !   <DATA NAME="numthreads" TYPE="INTEGER">
+  !   </DATA>
+  !   <DATA NAME="active_omp_level" TYPE="INTEGER">
+  !     The current level of OpenMP nesting
+  !   </DATA>
   !   <DATA NAME="tile_count" TYPE="INTEGER">
   !   </DATA>
   !   <DATA NAME="local_coord" TYPE="TYPE(coord_type)">
+  !   </DATA>
+  !   <DATA NAME="time" TYPE="TYPE(time_type)">
+  !   </DATA>
+  !   <DATA NAME="issued_mask_ignore_warning" TYPE="LOGICAL">
+  !     Indicates if the mask_ignore_warning has been issued for this input
+  !     field.  Once .TRUE. the warning message is suppressed on all subsequent
+  !     send_data calls.
   !   </DATA>
   TYPE input_field_type
      CHARACTER(len=128) :: module_name, field_name, long_name, units, standard_name
      CHARACTER(len=64) :: interp_method
      INTEGER, DIMENSION(3) :: axes
-     INTEGER :: num_axes 
+     INTEGER :: num_axes
      LOGICAL :: missing_value_present, range_present
      REAL :: missing_value
      REAL, DIMENSION(2) :: range
-     INTEGER, _ALLOCATABLE, dimension(:) :: output_fields
+     INTEGER, _ALLOCATABLE, dimension(:) :: output_fields _NULL
      INTEGER :: num_output_fields
      INTEGER, DIMENSION(3) :: size
      LOGICAL :: static, register, mask_variant, local
      INTEGER :: numthreads
+     INTEGER :: active_omp_level
      INTEGER :: tile_count
      TYPE(coord_type) :: local_coord
      TYPE(time_type)  :: time
@@ -337,10 +397,16 @@ MODULE diag_data_mod
   !   <DATA NAME="time_average" TYPE="LOGICAL">
   !     .TRUE. if the output field is averaged over time interval.
   !   </DATA>
+  !   <DATA NAME="time_rms" TYPE="LOGICAL">
+  !     .TRUE. if the output field is the rms.  In this case, time_average will also be true.
+  !   </DATA>
   !   <DATA NAME="time_ops" TYPE="LOGICAL">
-  !     .TRUE. if any of time_min, time_max, or time_average is true
+  !     .TRUE. if any of time_min, time_max, time_rms, or time_average is true
   !   </DATA>
   !   <DATA NAME="pack" TYPE="INTEGER">
+  !   </DATA>
+  !   <DATA NAME="pow_value" TYPE="INTEGER">
+  !     Power to use When calculating the mean_pow(n)
   !   </DATA>
   !   <DATA NAME="time_method" TYPE="CHARACTER(len=50)">
   !     Time method field from the input file
@@ -403,29 +469,37 @@ MODULE diag_data_mod
   !   </DATA>
   !   <DATA NAME="Time_of_prev_field_data" TYPE="TYPE(time_type)">
   !   </DATA>
+  !   <DATA NAME="attributes" TYPE="TYPE(diag_atttype), DIMENSION(:)">
+  !     Array to hold user definable attributes
+  !   </DATA>
+  !   <DATA NAME="num_attributes" TYPE="INTEGER" >
+  !     Number of defined attibutes
+  !   </DATA>
   TYPE output_field_type
      INTEGER :: input_field ! index of the corresponding input field in the table
      INTEGER :: output_file ! index of the output file in the table
      CHARACTER(len=128) :: output_name
      LOGICAL :: time_average ! true if the output field is averaged over time interval
+     LOGICAL :: time_rms ! true if the output field is the rms.  If true, then time_average is also
      LOGICAL :: static
      LOGICAL :: time_max ! true if the output field is maximum over time interval
      LOGICAL :: time_min ! true if the output field is minimum over time interval
-     LOGICAL :: time_ops ! true if any of time_min, time_max, or time_average is true
+     LOGICAL :: time_ops ! true if any of time_min, time_max, time_rms or time_average is true
      INTEGER  :: pack
-     CHARACTER(len=50) :: time_method ! time method field from the input file 
+     INTEGER :: pow_value !< Power value to use for mean_pow(n) calculations
+     CHARACTER(len=50) :: time_method ! time method field from the input file
      ! coordianes of the buffer and counter are (x, y, z, time-of-day)
      REAL, _ALLOCATABLE, DIMENSION(:,:,:,:) :: buffer _NULL
      REAL, _ALLOCATABLE, DIMENSION(:,:,:,:) :: counter _NULL
-     ! the following two counters are used in time-averaging for some 
-     ! combination of the field options. Their size is the length of the 
+     ! the following two counters are used in time-averaging for some
+     ! combination of the field options. Their size is the length of the
      ! diurnal axis; the counters must be tracked separately for each of
      ! the diurnal interval, becaus the number of time slices accumulated
      ! in each can be different, depending on time step and the number of
      ! diurnal samples.
      REAL, _ALLOCATABLE, DIMENSION(:)  :: count_0d
      INTEGER, _ALLOCATABLE, dimension(:) :: num_elements
-     
+
      TYPE(time_type) :: last_output, next_output, next_next_output
      TYPE(diag_fieldtype) :: f_type
      INTEGER, DIMENSION(4) :: axes
@@ -436,6 +510,8 @@ MODULE diag_data_mod
      LOGICAL :: reduced_k_range
      INTEGER :: imin, imax, jmin, jmax, kmin, kmax
      TYPE(time_type) :: Time_of_prev_field_data
+     TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
+     INTEGER :: num_attributes
   END TYPE output_field_type
   ! </TYPE>
 
@@ -508,7 +584,7 @@ MODULE diag_data_mod
      CHARACTER(len=128)   :: tile_name='N/A'
   END TYPE diag_global_att_type
   ! </TYPE>
-  
+
   ! Private CHARACTER Arrays for the CVS version and tagname.
   CHARACTER(len=128),PRIVATE  :: version =&
        & '$Id$'
@@ -543,7 +619,7 @@ MODULE diag_data_mod
   ! <DATA NAME="max_input_fields" TYPE="INTEGER" DEFAULT="300">
   !   Maximum number of input fields.  Increase via the diag_manager_nml namelist.
   ! </DATA>
-  ! <DATA NAME="MAX_OUT_PER_IN_FIELD" TYPE="INTEGER" DEFAULT="150">
+  ! <DATA NAME="max_out_per_in_field" TYPE="INTEGER" DEFAULT="150">
   !   Maximum number of output_fields per input_field.
   ! </DATA>
   ! <DATA NAME="max_axes" TYPE="INTEGER" DEFAULT="60">
@@ -556,20 +632,33 @@ MODULE diag_data_mod
   ! <DATA NAME="use_cmor" TYPE="LOGICAL" DEFAULT=".FALSE.">
   !   Indicates if we should overwrite the MISSING_VALUE to use the CMOR missing value.
   ! </DATA>
-  ! <DATA NAME="ISSUE_OOR_WARNINGS" TYPE="LOGICAL" DEFAULT=".TRUE.">
+  ! <DATA NAME="issue_oor_warnings" TYPE="LOGICAL" DEFAULT=".TRUE.">
   !   Issue warnings if the output field has values outside the given
   !   range for a variable.
   ! </DATA>
-  ! <DATA NAME="OOR_WARNINGS_FATAL" TYPE="LOGICAL" DEFAULT=".FALSE.">
+  ! <DATA NAME="oor_warnings_fatal" TYPE="LOGICAL" DEFAULT=".FALSE.">
   !   Cause a fatal error if the output field has a value outside the
   !   given range for a variable.
+  ! </DATA>
+  ! <DATA NAME="max_field_attributes" TYPE="INTEGER" DEFAULT="2">
+  !   Maximum number of user definable attributes per field.
+  ! </DATA>
+  ! <DATA NAME="max_file_attributes" TYPE="INTEGER" DEFAULT="2">
+  !   Maximum number of user definable global attributes per file.
+  ! </DATA>
+  ! <DATA NAME="prepend_date" TYPE="LOGICAL" DEFAULT=".FALSE.">
+  !   Indicates if the file start date will be prepended to the file name.  This was usually done by FRE after the model run.
+  ! </DATA>
+  ! <DATA NAME="region_out_use_alt_value" TYPE="LOGICAL" DEFAULT=".TRUE.">
+  !   Will determine which value to use when checking a regional output if the region is the full axis or a sub-axis.
+  !   The values are defined as <TT>GLO_REG_VAL</TT> (-999) and <TT>GLO_REG_VAL_ALT</TT> (-1) in <TT>diag_data_mod</TT>.
   ! </DATA>
   LOGICAL :: append_pelist_name = .FALSE.
   LOGICAL :: mix_snapshot_average_fields =.FALSE.
   INTEGER :: max_files = 31 !< Maximum number of output files allowed.  Increase via diag_manager_nml.
   INTEGER :: max_output_fields = 300 !< Maximum number of output fields.  Increase via diag_manager_nml.
   INTEGER :: max_input_fields = 300 !< Maximum number of input fields.  Increase via diag_manager_nml.
-  INTEGER :: MAX_OUT_PER_IN_FIELD = 150 !< Maximum number of output_fields per input_field.  Increase via diag_manager_nml.
+  INTEGER :: max_out_per_in_field = 150 !< Maximum number of output_fields per input_field.  Increase via diag_manager_nml.
   INTEGER :: max_axes = 60 !< Maximum number of independent axes.
   LOGICAL :: do_diag_field_log = .FALSE.
   LOGICAL :: write_bytes_in_file = .FALSE.
@@ -579,7 +668,11 @@ MODULE diag_data_mod
   LOGICAL :: use_cmor = .FALSE.
   LOGICAL :: issue_oor_warnings = .TRUE.
   LOGICAL :: oor_warnings_fatal = .FALSE.
+  LOGICAL :: region_out_use_alt_value = .TRUE.
 
+  INTEGER :: max_field_attributes = 2
+  INTEGER :: max_file_attributes = 2
+  LOGICAL :: prepend_date = .FALSE.
   ! <!-- netCDF variable -->
   ! <DATA NAME="FILL_VALUE" TYPE="REAL" DEFAULT="NF90_FILL_REAL">
   !   Fill value used.  Value will be <TT>NF90_FILL_REAL</TT> if using the
@@ -588,7 +681,7 @@ MODULE diag_data_mod
 #ifdef use_netCDF
   REAL :: FILL_VALUE = NF_FILL_REAL  ! from file /usr/local/include/netcdf.inc
 #else
-  REAL :: FILL_VALUE = 9.9692099683868690e+36 
+  REAL :: FILL_VALUE = 9.9692099683868690e+36
 #endif
 
   INTEGER :: pack_size = 1 ! 1 for double and 2 for float
@@ -628,7 +721,6 @@ MODULE diag_data_mod
   ! <DATA NAME="diag_log_unit" TYPE="INTEGER" />
   ! <DATA NAME="time_unit_list" TYPE="CHARACTER(len=10), DIMENSION(6)"
   !       DEFAULT="(/'seconds   ', 'minutes   ', 'hours     ', 'days      ', 'months    ', 'years     '/)" />
-  ! <DATA NAME="filename_appendix" TYPE="CHARACTER(len=32)" DEFAULT="" />
   ! <DATA NAME="pelist_name" TYPE="CHARACTER(len=32)" />
   TYPE(time_type) :: time_zero
   LOGICAL :: first_send_data_call = .TRUE.
@@ -636,8 +728,7 @@ MODULE diag_data_mod
   INTEGER :: diag_log_unit
   CHARACTER(len=10), DIMENSION(6) :: time_unit_list = (/'seconds   ', 'minutes   ',&
        & 'hours     ', 'days      ', 'months    ', 'years     '/)
-  CHARACTER(len=32), SAVE :: filename_appendix = ''
   CHARACTER(len=32) :: pelist_name
   INTEGER :: oor_warning = WARNING
-  
+
 END MODULE diag_data_mod

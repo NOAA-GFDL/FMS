@@ -1,10 +1,12 @@
+#include <fms_platform.h>
+
 MODULE diag_output_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>
 
-  ! <OVERVIEW> <TT>diag_output_mod</TT> is an integral part of 
-  !   <TT>diag_manager_mod</TT>. Its function is to write axis-meta-data, 
+  ! <OVERVIEW> <TT>diag_output_mod</TT> is an integral part of
+  !   <TT>diag_manager_mod</TT>. Its function is to write axis-meta-data,
   !   field-meta-data and field data
   ! </OVERVIEW>
 
@@ -17,9 +19,13 @@ MODULE diag_output_mod
   USE mpp_mod, ONLY: mpp_npes, mpp_pe
   USE diag_axis_mod, ONLY: diag_axis_init, get_diag_axis, get_axis_length,&
        & get_axis_global_length, get_domain1d, get_domain2d, get_axis_aux, get_tile_count
-  USE diag_data_mod, ONLY: diag_fieldtype, diag_global_att_type, CMOR_MISSING_VALUE
+  USE diag_data_mod, ONLY: diag_fieldtype, diag_global_att_type, CMOR_MISSING_VALUE, diag_atttype
   USE time_manager_mod, ONLY: get_calendar_type, valid_calendar_types
   USE fms_mod, ONLY: error_mesg, mpp_pe, write_version_number, FATAL
+
+#ifdef use_netCDF
+  USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
+#endif
 
   IMPLICIT NONE
 
@@ -36,10 +42,10 @@ MODULE diag_output_mod
   INTEGER, DIMENSION(2,2) :: max_range = RESHAPE((/ -32767, 32767, -127,   127 /),(/2,2/))
 !  DATA max_range / -32767, 32767, -127,   127 /
   INTEGER, DIMENSION(2)   :: missval = (/ -32768, -128 /)
-  
+
   INTEGER, PARAMETER      :: max_axis_num = 20
   INTEGER                 :: num_axis_in_file = 0
-  INTEGER, DIMENSION(max_axis_num) :: axis_in_file   
+  INTEGER, DIMENSION(max_axis_num) :: axis_in_file
   LOGICAL, DIMENSION(max_axis_num) :: time_axis_flag, edge_axis_flag
   TYPE(axistype), DIMENSION(max_axis_num), SAVE :: Axis_types
 
@@ -73,14 +79,15 @@ CONTAINS
   !   <IN NAME="all_scalar_or_1d" TYPE="LOGICAL" />
   !   <IN NAME="domain" TYPE="TYPE(domain2d)" />
   SUBROUTINE diag_output_init(file_name, FORMAT, file_title, file_unit,&
-       & all_scalar_or_1d, domain)
+       & all_scalar_or_1d, domain, attributes)
     CHARACTER(len=*), INTENT(in)  :: file_name, file_title
     INTEGER         , INTENT(in)  :: FORMAT
     INTEGER         , INTENT(out) :: file_unit
     LOGICAL         , INTENT(in)  :: all_scalar_or_1d
     TYPE(domain2d)  , INTENT(in)  :: domain
+    TYPE(diag_atttype), INTENT(in), DIMENSION(:), OPTIONAL :: attributes
 
-    INTEGER :: form, threading, fileset
+    INTEGER :: form, threading, fileset, i
     TYPE(diag_global_att_type) :: gAtt
 
     !---- initialize mpp_io ----
@@ -89,7 +96,7 @@ CONTAINS
        module_is_initialized = .TRUE.
     END IF
     CALL write_version_number( version, tagname )
-   
+
     !---- set up output file ----
     SELECT CASE (FORMAT)
     CASE (NETCDF1)
@@ -112,7 +119,7 @@ CONTAINS
             & threading=threading, fileset=fileset)
     ELSE
        CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
-            & threading=threading, fileset=fileset, domain=domain) 
+            & threading=threading, fileset=fileset, domain=domain)
     END IF
 
     !---- write global attributes ----
@@ -120,6 +127,25 @@ CONTAINS
        CALL mpp_write_meta(file_unit, 'title', cval=TRIM(file_title))
     END IF
 
+    IF ( PRESENT(attributes) ) THEN
+       DO i=1, SIZE(attributes)
+          SELECT CASE (attributes(i)%type)
+          CASE (NF90_INT)
+             CALL mpp_write_meta(file_unit, TRIM(attributes(i)%name), ival=attributes(i)%iatt)
+          CASE (NF90_FLOAT)
+             CALL mpp_write_meta(file_unit, TRIM(attributes(i)%name), rval=attributes(i)%fatt)
+          CASE (NF90_CHAR)
+             CALL mpp_write_meta(file_unit, TRIM(attributes(i)%name), cval=TRIM(attributes(i)%catt))
+          CASE default
+             ! <ERROR STATUS="FATAL">
+             !   Unknown attribute type for attribute <name> to module/input_field <module_name>/<field_name>.
+             !   Contact the developers.
+             ! </ERROR>
+             CALL error_mesg('diag_output_mod::diag_output_init', 'Unknown attribute type for global attribute "'&
+                  &//TRIM(attributes(i)%name)//'" in file "'//TRIM(file_name)//'". Contact the developers.', FATAL)
+          END SELECT
+       END DO
+    END IF
     !---- write grid type (mosaic or regular)
     CALL get_diag_global_att(gAtt)
     CALL mpp_write_meta(file_unit, 'grid_type', cval=TRIM(gAtt%grid_type))
@@ -138,7 +164,7 @@ CONTAINS
   !   <IN NAME="file_unit" TYPE="INTEGER">File unit number</IN>
   !   <IN NAME="axes" TYPE="INTEGER, DIMENSION(:)">Array of axis ID's, including the time axis</IN>
   !   <IN NAME="time_ops" TYPE="LOGICAL, OPTIONAL">
-  !     .TRUE. if this file contains any min, max, or time_average
+  !     .TRUE. if this file contains any min, max, time_rms, or time_average
   !   </IN>
   SUBROUTINE write_axis_meta_data(file_unit, axes, time_ops)
     INTEGER, INTENT(in) :: file_unit, axes(:)
@@ -158,7 +184,7 @@ CONTAINS
     INTEGER              :: gbegin, gend, gsize, ndivs
     LOGICAL              :: time_ops1
 
-    IF ( PRESENT(time_ops) ) THEN 
+    IF ( PRESENT(time_ops) ) THEN
        time_ops1 = time_ops
     ELSE
        time_ops1 = .FALSE.
@@ -215,7 +241,7 @@ CONTAINS
        END IF
 
        !---- write additional attribute (calendar_type) for time axis ----
-       !---- NOTE: calendar attribute is compliant with CF convention 
+       !---- NOTE: calendar attribute is compliant with CF convention
        !---- http://www.cgd.ucar.edu/cms/eaton/netcdf/CF-current.htm#cal
        IF ( axis_cart_name == 'T' ) THEN
           time_axis_flag(num_axis_in_file) = .TRUE.
@@ -223,13 +249,13 @@ CONTAINS
           calendar = get_calendar_type()
           CALL mpp_write_meta(file_unit, id_time_axis, 'calendar_type', cval=TRIM(valid_calendar_types(calendar)))
           CALL mpp_write_meta(file_unit, id_time_axis, 'calendar', cval=TRIM(valid_calendar_types(calendar)))
-          IF ( time_ops1 ) THEN 
-             CALL mpp_write_meta( file_unit, id_time_axis, 'bounds', cval = TRIM(axis_name)//'_bounds')        
+          IF ( time_ops1 ) THEN
+             CALL mpp_write_meta( file_unit, id_time_axis, 'bounds', cval = TRIM(axis_name)//'_bounds')
           END IF
        ELSE
           time_axis_flag(num_axis_in_file) = .FALSE.
        END IF
-    
+
        DEALLOCATE(axis_data)
 
        !------------- write axis containing edge information ---------------
@@ -241,7 +267,7 @@ CONTAINS
        id_axis = axis_edges
        edges_index = get_axis_index(id_axis)
        IF ( edges_index > 0 ) CYCLE
-    
+
        !  ---- get data for axis edges ----
        length = get_axis_global_length ( id_axis )
        ALLOCATE(axis_data(length))
@@ -275,7 +301,7 @@ CONTAINS
              CALL mpp_get_compute_domains(Domain,size=axis_extent(0:ndivs-1))
              gend=gend+1
              axis_extent(ndivs-1)= axis_extent(ndivs-1)+1
-             IF ( ALLOCATED(pelist) ) DEALLOCATE(pelist)      
+             IF ( ALLOCATED(pelist) ) DEALLOCATE(pelist)
              ALLOCATE(pelist(0:ndivs-1))
              CALL mpp_get_pelist(Domain,pelist)
              CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file),&
@@ -328,34 +354,37 @@ CONTAINS
   !   </IN>
   !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL">Standard name of field</IN>
   !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIONAL" />
-  FUNCTION write_field_meta_data ( file_unit, name, axes, units, long_name, range, pack,&
-       & mval, avg_name, time_method,standard_name,interp_method) result ( Field )
+  FUNCTION write_field_meta_data ( file_unit, name, axes, units, long_name, range, pack, mval,&
+       & avg_name, time_method, standard_name, interp_method, attributes, num_attributes) result ( Field )
     INTEGER, INTENT(in) :: file_unit, axes(:)
     CHARACTER(len=*), INTENT(in) :: name, units, long_name
     REAL, OPTIONAL, INTENT(in) :: RANGE(2), mval
     INTEGER, OPTIONAL, INTENT(in) :: pack
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: avg_name, time_method,standard_name
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: avg_name, time_method, standard_name
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method
+    TYPE(diag_atttype), DIMENSION(:), _ALLOCATABLE, OPTIONAL, INTENT(in) :: attributes
+    INTEGER, OPTIONAL, INTENT(in) :: num_attributes
 
     CHARACTER(len=128) :: standard_name2
+    CHARACTER(len=1280) :: att_str
     TYPE(diag_fieldtype) :: Field
     LOGICAL :: coord_present
     CHARACTER(len=40) :: aux_axes(SIZE(axes))
     CHARACTER(len=160) :: coord_att
 
     REAL :: scale, add
-    INTEGER :: i, indexx, num, ipack, np
+    INTEGER :: i, indexx, num, ipack, np, att_len
     LOGICAL :: use_range
     INTEGER :: axis_indices(SIZE(axes))
 
     !---- dummy checks ----
     coord_present = .FALSE.
-    IF( PRESENT(standard_name) ) THEN 
+    IF( PRESENT(standard_name) ) THEN
        standard_name2 = standard_name
     ELSE
        standard_name2 = 'none'
     END IF
-    
+
     num = SIZE(axes(:))
     ! <ERROR STATUS="FATAL">number of axes < 1</ERROR>
     IF ( num < 1 ) CALL error_mesg ( 'write_meta_data', 'number of axes < 1', FATAL)
@@ -379,7 +408,7 @@ CONTAINS
     END DO
 
     !  Create coordinate attribute
-    IF ( num >= 2 ) THEN     
+    IF ( num >= 2 ) THEN
        coord_att = ' '
        DO i = 1, num
           aux_axes(i) = get_axis_aux(axes(i))
@@ -403,7 +432,7 @@ CONTAINS
     ELSE
        ipack = 2
     END IF
-    
+
     !---- check range ----
     use_range = .FALSE.
     add = 0.0
@@ -476,6 +505,68 @@ CONTAINS
        END IF
     END IF
 
+    !---- write user defined attributes -----
+    IF ( PRESENT(num_attributes) ) THEN
+       IF ( PRESENT(attributes) ) THEN
+          IF ( num_attributes .GT. 0 .AND. _ALLOCATED(attributes) ) THEN
+             DO i = 1, num_attributes
+                SELECT CASE (attributes(i)%type)
+                CASE (NF90_INT)
+                   IF ( .NOT._ALLOCATED(attributes(i)%iatt) ) THEN
+                      CALL error_mesg('diag_output_mod::write_field_meta_data',&
+                           & 'Integer attribute type indicated, but array not allocated for attribute '&
+                           &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
+                   END IF
+                   CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field), TRIM(attributes(i)%name),&
+                        & ival=attributes(i)%iatt)
+                CASE (NF90_FLOAT)
+                   IF ( .NOT._ALLOCATED(attributes(i)%fatt) ) THEN
+                      CALL error_mesg('diag_output_mod::write_field_meta_data',&
+                           & 'Real attribute type indicated, but array not allocated for attribute '&
+                           &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
+                   END IF
+                   CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field), TRIM(attributes(i)%name),&
+                        & rval=attributes(i)%fatt)
+                CASE (NF90_CHAR)
+                   att_str = attributes(i)%catt
+                   att_len = attributes(i)%len
+                   IF ( TRIM(attributes(i)%name).EQ.'cell_methods' .AND. PRESENT(time_method) ) THEN
+                      ! Append ",time: time_method" if time_method present
+                      att_str = attributes(i)%catt(1:attributes(i)%len)//' time: '//time_method
+                      att_len = LEN_TRIM(att_str)
+                   END IF
+                   CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field), TRIM(attributes(i)%name),&
+                        & cval=att_str(1:att_len))
+                CASE default
+                   CALL error_mesg('diag_output_mod::write_field_meta_data', 'Invalid type for field attribute '&
+                        &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
+                END SELECT
+             END DO
+          ELSE
+             ! Catch some bad cases
+             IF ( num_attributes .GT. 0 .AND. .NOT._ALLOCATED(attributes) ) THEN
+                CALL error_mesg('diag_output_mod::write_field_meta_data',&
+                     & 'num_attributes > 0 but attributes is not allocated for attribute '&
+                     &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
+             ELSE IF ( num_attributes .EQ. 0 .AND. _ALLOCATED(attributes) ) THEN
+                CALL error_mesg('diag_output_mod::write_field_meta_data',&
+                     & 'num_attributes == 0 but attributes is allocated for attribute '&
+                     &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
+             END IF
+          END IF
+       ELSE
+          ! More edge error cases
+          CALL error_mesg('diag_output_mod::write_field_meta_data',&
+               & 'num_attributes present but attributes missing for attribute '&
+               &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
+       END IF
+    ELSE IF ( PRESENT(attributes) ) THEN
+       CALL error_mesg('diag_output_mod::write_field_meta_data',&
+            & 'attributes present but num_attributes missing for attribute '&
+            &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
+    END IF
+
+
     !---- write additional attribute for time averaging -----
     IF ( PRESENT(avg_name) ) THEN
        IF ( avg_name(1:1) /= ' ' ) THEN
@@ -495,7 +586,7 @@ CONTAINS
     !---- write attribute for interp_method ----
     IF( PRESENT(interp_method) ) THEN
        CALL mpp_write_meta ( file_unit, mpp_get_id(Field%Field),&
-            & 'interp_method', cval=TRIM(interp_method)) 
+            & 'interp_method', cval=TRIM(interp_method))
     END IF
 
     !---- get axis domain ----
@@ -514,12 +605,12 @@ CONTAINS
   !   </TEMPLATE>
   !   <DESCRIPTION>
   !     Writes axis data to file.  This subroutine is to be called once per file
-  !     after all <TT>write_meta_data</TT> calls, and before the first 
+  !     after all <TT>write_meta_data</TT> calls, and before the first
   !     <TT>diag_field_out</TT> call.
   !   </DESCRIPTION>
   !   <IN NAME="file_unit" TYPE="INTEGER">Output file unit number</IN>
   SUBROUTINE done_meta_data(file_unit)
-    INTEGER,  INTENT(in)  :: file_unit  
+    INTEGER,  INTENT(in)  :: file_unit
 
     INTEGER               :: i
 
@@ -657,14 +748,14 @@ CONTAINS
   !   <IN NAME="gridType" TYPE="CHARACTER(len=*)"></IN>
   !   <IN NAME="tileName" TYPE="CHARACTER(len=*)"></IN>
   SUBROUTINE set_diag_global_att(component, gridType, tileName)
-    CHARACTER(len=*),INTENT(in) :: component, gridType, tileName 
+    CHARACTER(len=*),INTENT(in) :: component, gridType, tileName
 
     ! The following two lines are set to remove compile time warnings
     ! about 'only used once'.
     CHARACTER(len=64) :: component_tmp
     component_tmp = component
     ! Don't know how to set these for specific component
-    ! Want to be able to say 
+    ! Want to be able to say
     ! if(output_file has component) then
     diag_global_att%grid_type = gridType
     diag_global_att%tile_name = tileName
@@ -673,4 +764,3 @@ CONTAINS
   ! </SUBROUTINE>
 
 END MODULE diag_output_mod
-

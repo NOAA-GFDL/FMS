@@ -125,9 +125,8 @@ MODULE diag_table_mod
   !       </DL>
   !     </LI>
   !     <LI>
-  !       <B>Field Section:</B> Field lines contain 8 fields.  Field lines can be intermixed with file lines, but the file must
-  !       be defined before any fields that are to be written to the file.  Fields line can contain fields that are not written
-  !       to any files.  The file name for these fields is <TT>null</TT>.
+  !       <B>Field Section:</B> Field lines contain 8 fields.  Field lines can be intermixed with file lines.  Fields line can contain
+  !       fields that are not written to any files.  The file name for these fields is <TT>null</TT>.
   !
   !       Field lines have the following format:<BR />
   !       <PRE>
@@ -157,6 +156,8 @@ MODULE diag_table_mod
   !             <DD>Average from the last time written to the current time.</DD>
   !             <DT><TT>.FALSE.</TT>, none</DT>
   !             <DD>No reduction performed.  Write current time step value only.</DD>
+  !             <DT>rms</DT> <DD>Calculate the root mean square from the last time written to the current time.</DD>
+  !             <DT>pow##</DT> <DD>Calculate the mean of the power ## from the last time written to the current time.</DD>
   !             <DT>min</DT> <DD>Minimum value from last write to current time.</DD>
   !             <DT>max</DT> <DD>Maximum value from last write to current time.</DD>
   !             <DT>diurnal##</DT> <DD>## diurnal averages</DD>
@@ -215,27 +216,27 @@ MODULE diag_table_mod
   USE fms_mod, ONLY: fms_error_handler, error_mesg, file_exist, stdlog, mpp_pe, mpp_root_pe, FATAL, WARNING, lowercase, close_file
   USE time_manager_mod, ONLY: get_calendar_type, NO_CALENDAR, set_date, set_time, month_name, time_type
   USE constants_mod, ONLY: SECONDS_PER_HOUR, SECONDS_PER_MINUTE
-  
+
   USE diag_data_mod, ONLY: global_descriptor, base_time, base_year, base_month, base_day, base_hour, base_minute, base_second,&
-       & DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, coord_type, append_pelist_name, pelist_name, filename_appendix
+       & DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, coord_type, append_pelist_name, pelist_name
   USE diag_util_mod, ONLY: init_file, check_duplicate_output_fields, init_input_field, init_output_field
 
   IMPLICIT NONE
 
   PRIVATE
   PUBLIC :: parse_diag_table
-  
+
   TYPE field_description_type
      CHARACTER(len=128) :: module_name, field_name, output_name, file_name
      CHARACTER(len=50) :: time_sampling
-     CHARACTER(len=50) :: time_method   
+     CHARACTER(len=50) :: time_method
      CHARACTER(len=50) :: spatial_ops
      TYPE(coord_type) :: regional_coords
      INTEGER :: pack
   END TYPE field_description_type
 
   TYPE file_description_type
-     INTEGER :: output_freq 
+     INTEGER :: output_freq
      INTEGER :: file_format
      INTEGER :: new_file_freq
      INTEGER :: file_duration
@@ -257,7 +258,7 @@ MODULE diag_table_mod
   CHARACTER(len=*), PARAMETER :: UNALLOWED_ALL = UNALLOWED_QTE//","
 
 CONTAINS
-  
+
   ! <SUBROUTINE NAME="parse_diag_table">
   !   <OVERVIEW>
   !     Parse the <TT>diag_table</TT> in preparation for diagnostic output.
@@ -345,6 +346,7 @@ CONTAINS
     INTEGER :: commentStart !< Index location of first '#' on line
     INTEGER :: diag_subset_output !< local value of diag_subset
     INTEGER :: nfields, nfiles !< Number of fields and files.  Not used yet.
+    INTEGER :: npass !< number of passes done while parsing the diag_table (1 for files, 2 for fields)
     INTEGER, TARGET :: mystat !< variable to hold return status of function/subroutine calls.
     INTEGER, POINTER :: pstat !< pointer that points to istat if preset, otherwise, points to mystat.
 
@@ -368,17 +370,17 @@ CONTAINS
 
     IF ( PRESENT(diag_subset) ) THEN
        diag_subset_output = diag_subset
-    ELSE 
+    ELSE
        diag_subset_output = DIAG_ALL
     END IF
-    
+
     ! get the stdlog unit number
     stdlog_unit = stdlog()
     num_lines = get_ascii_file_num_lines('diag_table', DT_LINE_LENGTH)
     allocate(diag_table(num_lines))
 
     call read_ascii_file('diag_table', DT_LINE_LENGTH, diag_table)
-    
+
     ! Read in the global file labeling string
     READ (UNIT=diag_table(1), FMT=*, IOSTAT=mystat) global_descriptor
     IF ( mystat /= 0 ) THEN
@@ -386,14 +388,14 @@ CONTAINS
        IF ( fms_error_handler('diag_table_mod::parse_diag_table', 'Error reading the global descriptor from the diagnostic table.',&
             & err_msg) ) RETURN
     END IF
-    
+
     ! Read in the base date
     READ (UNIT=diag_table(2), FMT=*, IOSTAT=mystat) base_year, base_month, base_day, base_hour, base_minute, base_second
     IF ( mystat /= 0 ) THEN
        pstat = mystat
        IF ( fms_error_handler('diag_manager_init', 'Error reading the base date from the diagnostic table.', err_msg) ) RETURN
     END IF
-    
+
     ! Set up the time type for base time
     IF ( get_calendar_type() /= NO_CALENDAR ) THEN
        IF ( base_year==0 .OR. base_month==0 .OR. base_day==0 ) THEN
@@ -417,88 +419,94 @@ CONTAINS
 
     nfiles=0
     nfields=0
-    parser: DO line_num=3, num_lines
-       ! Read in the entire line from the file.
-       ! If there is a read error, give a warning, and
-       ! cycle the parser loop.
-       READ (diag_table(line_num), FMT='(A)', IOSTAT=mystat) record_line
-       ! Increase line counter, and put in string for use in warning/error messages.
-       WRITE (line_number, '(I5)') line_num
+    pass: DO npass = 1, 2
+       parser: DO line_num=3, num_lines
+          ! Read in the entire line from the file.
+          ! If there is a read error, give a warning, and
+          ! cycle the parser loop.
+          READ (diag_table(line_num), FMT='(A)', IOSTAT=mystat) record_line
+          ! Increase line counter, and put in string for use in warning/error messages.
+          WRITE (line_number, '(I5)') line_num
 
-       IF ( mystat > 0 ) THEN
-          IF ( mpp_pe() == mpp_root_pe() ) &
-               & CALL error_mesg("diag_table_mod::parse_diag_table",&
-               & "Problem reading the diag_table (line:" //line_number//").", FATAL)
-          CYCLE parser
-       ELSE IF ( mystat < 0 ) THEN
-          EXIT parser
-       END IF
-       
-       ! How long is the read in string?
-       record_len = LEN_TRIM(record_line)
-
-       ! ignore blank lines and  lines with comments only (comment marker '#')
-       commentStart = INDEX(record_line,'#')
-       IF ( commentStart .NE. 0 ) record_line = record_line(1:commentStart-1)
-       IF ( LEN_TRIM(record_line) == 0 .OR. record_len == 0 ) CYCLE parser
-
-       init: IF ( is_a_file(TRIM(record_line)) ) THEN
-          temp_file = parse_file_line(LINE=record_line, ISTAT=mystat, ERR_MSG=local_err_msg)
-          
-          IF ( mystat > 0 ) THEN 
-             CALL error_mesg("diag_table_mod::parse_diag_table",&
-                  & TRIM(local_err_msg)//" (line:" //TRIM(line_number)//").", FATAL)
-          ELSE IF ( mystat < 0 ) THEN
-             IF ( mpp_pe() == mpp_root_pe() )&
+          IF ( mystat > 0 ) THEN
+             IF ( mpp_pe() == mpp_root_pe() ) &
                   & CALL error_mesg("diag_table_mod::parse_diag_table",&
-                  & TRIM(local_err_msg)//" (line: "//TRIM(line_number)//").", WARNING)
+                  & "Problem reading the diag_table (line:" //line_number//").", FATAL)
              CYCLE parser
-          ELSE IF ( (diag_subset_output == DIAG_OTHER .AND. VERIFY('ocean', lowercase(temp_file%file_name)) == 0).OR.&
-               &    (diag_subset_output == DIAG_OCEAN .AND. VERIFY('ocean', lowercase(temp_file%file_name)) /= 0) ) THEN
-             CYCLE parser
-          ELSE IF ( temp_file%new_file_freq > 0 ) THEN ! Call the init_file subroutine.  The '1' is for the tile_count
-             CALL init_file(temp_file%file_name, temp_file%output_freq, temp_file%iOutput_freq_units, temp_file%file_format,&
-                  & temp_file%iTime_units, temp_file%long_name, 1, temp_file%new_file_freq, temp_file%iNew_file_freq_units,&
-                  & temp_file%start_time, temp_file%file_duration, temp_file%iFile_duration_units)
-          ELSE
-             CALL init_file(temp_file%file_name, temp_file%output_freq, temp_file%iOutput_freq_units, temp_file%file_format,&
-                  & temp_file%iTime_units, temp_file%long_name, 1)
-          END IF
-          
-          ! Increment number of files
-          nfiles = nfiles + 1
-       ELSE ! We have a field.
-          temp_field = parse_field_line(LINE=record_line, ISTAT=mystat, ERR_MSG=local_err_msg)
-
-          ! Check for errors, then initialize the input and output field
-          IF (  mystat > 0 ) THEN
-             CALL error_mesg("diag_table_mod::parse_diag_table",&
-                  & TRIM(local_err_msg)//" (line: "//TRIM(line_number)//").",FATAL)
           ELSE IF ( mystat < 0 ) THEN
-             IF ( mpp_pe() == mpp_root_pe() )&
-                  & CALL error_mesg("diag_table_mod::Parse_diag_table",&
-                  & TRIM(local_err_msg)//" (line: "//TRIM(line_number)//").",WARNING)
-             CYCLE parser
-          ELSE IF ( (diag_subset_output == DIAG_OTHER .AND. VERIFY('ocean', lowercase(temp_field%file_name)) == 0).OR.&
-               &    (diag_subset_output == DIAG_OCEAN .AND. VERIFY('ocean', lowercase(temp_field%file_name)) /= 0) ) THEN 
-             CYCLE parser
-          ELSE IF ( lowercase(TRIM(temp_field%spatial_ops)) == 'none' ) THEN
-             CALL init_input_field(temp_field%module_name, temp_field%field_name, 1)
-             CALL init_output_field(temp_field%module_name, temp_field%field_name, temp_field%output_name, temp_field%file_name,&
-                  & temp_field%time_method, temp_field%pack, 1)
-          ELSE 
-             CALL init_input_field(temp_field%module_name, temp_field%field_name, 1)
-             CALL init_output_field(temp_field%module_name, temp_field%field_name, temp_field%output_name, temp_field%file_name,&
-                  & temp_field%time_method, temp_field%pack, 1, temp_field%regional_coords)
+             EXIT parser
           END IF
 
-          ! Increment number of fields
-          nfields = nfields + 1
-       END IF init
-    END DO parser
+          ! How long is the read in string?
+          record_len = LEN_TRIM(record_line)
+
+          ! ignore blank lines and  lines with comments only (comment marker '#')
+          commentStart = INDEX(record_line,'#')
+          IF ( commentStart .NE. 0 ) record_line = record_line(1:commentStart-1)
+          IF ( LEN_TRIM(record_line) == 0 .OR. record_len == 0 ) CYCLE parser
+
+          init: IF ( npass == 1 ) THEN ! Checking for files only
+             IF ( is_a_file(TRIM(record_line)) ) THEN
+                temp_file = parse_file_line(LINE=record_line, ISTAT=mystat, ERR_MSG=local_err_msg)
+
+                IF ( mystat > 0 ) THEN
+                   CALL error_mesg("diag_table_mod::parse_diag_table",&
+                        & TRIM(local_err_msg)//" (line:" //TRIM(line_number)//").", FATAL)
+                ELSE IF ( mystat < 0 ) THEN
+                   IF ( mpp_pe() == mpp_root_pe() )&
+                        & CALL error_mesg("diag_table_mod::parse_diag_table",&
+                        & TRIM(local_err_msg)//" (line: "//TRIM(line_number)//").", WARNING)
+                   CYCLE parser
+                ELSE IF ( (diag_subset_output == DIAG_OTHER .AND. VERIFY('ocean', lowercase(temp_file%file_name)) == 0).OR.&
+                     &    (diag_subset_output == DIAG_OCEAN .AND. VERIFY('ocean', lowercase(temp_file%file_name)) /= 0) ) THEN
+                   CYCLE parser
+                ELSE IF ( temp_file%new_file_freq > 0 ) THEN ! Call the init_file subroutine.  The '1' is for the tile_count
+                   CALL init_file(temp_file%file_name, temp_file%output_freq, temp_file%iOutput_freq_units, temp_file%file_format,&
+                        & temp_file%iTime_units, temp_file%long_name, 1, temp_file%new_file_freq, temp_file%iNew_file_freq_units,&
+                        & temp_file%start_time, temp_file%file_duration, temp_file%iFile_duration_units)
+                ELSE
+                   CALL init_file(temp_file%file_name, temp_file%output_freq, temp_file%iOutput_freq_units, temp_file%file_format,&
+                        & temp_file%iTime_units, temp_file%long_name, 1)
+                END IF
+
+                ! Increment number of files
+                nfiles = nfiles + 1
+             END IF
+          ELSE ! Looking for fields
+             IF ( .NOT.is_a_file(TRIM(record_line)) ) THEN
+                temp_field = parse_field_line(LINE=record_line, ISTAT=mystat, ERR_MSG=local_err_msg)
+
+                ! Check for errors, then initialize the input and output field
+                IF (  mystat > 0 ) THEN
+                   CALL error_mesg("diag_table_mod::parse_diag_table",&
+                        & TRIM(local_err_msg)//" (line: "//TRIM(line_number)//").",FATAL)
+                ELSE IF ( mystat < 0 ) THEN
+                   IF ( mpp_pe() == mpp_root_pe() )&
+                        & CALL error_mesg("diag_table_mod::Parse_diag_table",&
+                        & TRIM(local_err_msg)//" (line: "//TRIM(line_number)//").",WARNING)
+                   CYCLE parser
+                ELSE IF ( (diag_subset_output == DIAG_OTHER .AND. VERIFY('ocean', lowercase(temp_field%file_name)) == 0).OR.&
+                     &    (diag_subset_output == DIAG_OCEAN .AND. VERIFY('ocean', lowercase(temp_field%file_name)) /= 0) ) THEN
+                   CYCLE parser
+                ELSE IF ( lowercase(TRIM(temp_field%spatial_ops)) == 'none' ) THEN
+                   CALL init_input_field(temp_field%module_name, temp_field%field_name, 1)
+                   CALL init_output_field(temp_field%module_name, temp_field%field_name, temp_field%output_name, temp_field%file_name,&
+                        & temp_field%time_method, temp_field%pack, 1)
+                ELSE
+                   CALL init_input_field(temp_field%module_name, temp_field%field_name, 1)
+                   CALL init_output_field(temp_field%module_name, temp_field%field_name, temp_field%output_name, temp_field%file_name,&
+                        & temp_field%time_method, temp_field%pack, 1, temp_field%regional_coords)
+                END IF
+
+                ! Increment number of fields
+                nfields = nfields + 1
+             END IF
+          END IF init
+       END DO parser
+    END DO pass
 
     ! Close the diag_table file.
-    deallocate(diag_table)
+    DEALLOCATE(diag_table)
 
     ! check duplicate output_fields in the diag_table
     CALL check_duplicate_output_fields(ERR_MSG=local_err_msg)
@@ -538,15 +546,15 @@ CONTAINS
 
     IF ( PRESENT(iostat) ) THEN
        pstat => iostat
-    ELSE 
+    ELSE
        pstat => mystat
     END IF
-    
+
     IF ( .NOT.file_exist('diag_table') ) THEN
        pstat = 1
        IF ( fms_error_handler('diag_table_mod::open_diag_table',&
             & 'diag_table file does not exist.', err_msg) ) RETURN
-    ELSE 
+    ELSE
        pstat = 0
     END IF
 
@@ -668,7 +676,7 @@ CONTAINS
             & 'Unallowed character in file_duration_units in the diag_table.', err_msg) ) RETURN
     END IF
 
-            
+
     ! Fix the file name
     parse_file_line%file_name = fix_file_name(TRIM(parse_file_line%file_name))
 
@@ -678,7 +686,7 @@ CONTAINS
        IF ( fms_error_handler('diag_table_mod::parse_file_line', 'Invalid file format for file description in the diag_table.',&
             & err_msg) ) RETURN
     END IF
-    
+
     ! check for known units
     parse_file_line%iTime_units = find_unit_ivalue(parse_file_line%time_units)
     parse_file_line%iOutput_freq_units = find_unit_ivalue(parse_file_line%output_freq_units)
@@ -715,7 +723,7 @@ CONTAINS
     new_file_freq_present: IF ( parse_file_line%new_file_freq > 0 ) THEN ! New file frequency present.
        IF ( LEN_TRIM(parse_file_line%start_time_s) > 0 ) THEN ! start time present
           READ (parse_file_line%start_time_s, FMT=*, IOSTAT=mystat) year, month, day, hour, minute, second
-          IF ( mystat /= 0 ) THEN 
+          IF ( mystat /= 0 ) THEN
              pstat = 1
              IF ( fms_error_handler('diag_table_mod::parse_file_line',&
                   & 'Invalid start time in the file description in diag_table.', err_msg) ) RETURN
@@ -831,7 +839,7 @@ CONTAINS
        IF ( fms_error_handler('diag_table_mod::parse_field_line',&
             & 'Packing is out of range for the field description in diag_table.', err_msg) ) RETURN
     END IF
-    
+
     IF ( lowercase(TRIM(parse_field_line%spatial_ops)) /= 'none' ) THEN
        READ (parse_field_line%spatial_ops, FMT=*, IOSTAT=mystat) parse_field_line%regional_coords
        IF ( mystat /= 0 ) THEN
@@ -860,7 +868,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: line
 
     CHARACTER(len=5) :: first
-    INTEGER :: second 
+    INTEGER :: second
     INTEGER :: mystat !< IO status from read
 
 #if defined __PATHSCALE__ || defined _CRAYFTN
@@ -894,9 +902,8 @@ CONTAINS
   !     PURE CHARACTER(len=128) FUNCTION fix_file_name(file_name_string)
   !   </TEMPLATE>
   !   <DESCRIPTION>
-  !     Removes any trailing '.nc' and appends to the file name additional information
-  !     depending on if we are running an ensemble, or requesting append_pelist_name.
-  !     
+  !     Removes any trailing '.nc' and appends (if requested) append_pelist_name.
+  !
   !     Presently, the ensemble appendix will override the append_pelist_name variable.
   !   </DESCRIPTION>
   !   <IN NAME="file_name_string" TYPE="CHARACTER(len=*)">String containing the file name from the <TT>diag_table</TT>.</IN>
@@ -910,19 +917,16 @@ CONTAINS
     file_name_len = LEN_TRIM(file_name_string)
 
     ! Remove trailing '.nc' from the file_name, and append suffixes
-    IF ( file_name_len > 2 ) THEN 
+    IF ( file_name_len > 2 ) THEN
        IF ( file_name_string(file_name_len-2:file_name_len) == '.nc' ) THEN
           fix_file_name = file_name_string(1:file_name_len-3)
           file_name_len = file_name_len - 3
        END IF
     END IF
-       
-    ! If using ensembles, then append the ensemble information
-    ! Or add the optional suffix based on the pe list name if the
+
+    ! Add the optional suffix based on the pe list name if the
     ! append_pelist_name == .TRUE.
-    IF ( LEN_TRIM(filename_appendix) > 0 ) THEN 
-       fix_file_name(file_name_len+1:) = TRIM(filename_appendix)    
-    ELSE IF ( append_pelist_name ) THEN
+    IF ( append_pelist_name ) THEN
        fix_file_name(file_name_len+1:) = TRIM(pelist_name)
     END IF
   END FUNCTION fix_file_name
@@ -962,7 +966,7 @@ CONTAINS
        find_unit_ivalue = 3
     CASE ('days')
        find_unit_ivalue = 4
-    CASE ('months') 
+    CASE ('months')
        find_unit_ivalue = 5
     CASE ('years')
        find_unit_ivalue = 6
@@ -991,4 +995,3 @@ CONTAINS
   ! </SUBROUTINE>
   ! </PRIVATE>
 END MODULE diag_table_mod
-
