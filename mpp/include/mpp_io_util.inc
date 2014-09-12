@@ -149,7 +149,7 @@
 
   !#####################################################################
    subroutine mpp_get_axis_atts( axis, name, units, longname, cartesian, &
-                           compressed, calendar, sense, len, natts, atts )
+                                 calendar, sense, len, natts, atts, compressed )
 
      type(axistype), intent(in) :: axis
      character(len=*), intent(out) , optional :: name, units
@@ -252,34 +252,34 @@
    end subroutine mpp_get_axes
 
   !#####################################################################
-  function mpp_get_dimension_length(unit, dimname, found)
-    integer,           intent(in)  :: unit
-    character(len=*),  intent(in)  :: dimname
-    logical, optional, intent(out) :: found
-    integer                        :: mpp_get_dimension_length
-    logical                        :: found_dim
-    integer                        :: i
-
-
-    if( .NOT.module_is_initialized ) &
-      call mpp_error( FATAL, 'mpp_get_dimension_length: must first call mpp_io_init.' )
-    if( .NOT.mpp_file(unit)%opened )& 
-      call mpp_error( FATAL, 'mpp_get_dimension_length: invalid unit number, file '//trim(mpp_file(unit)%name))
-    found_dim = .false.
-    mpp_get_dimension_length = -1
-    do i = 1, mpp_file(unit)%ndim
-       if(trim(dimname) == trim(mpp_file(unit)%Axis(i)%name)) then
-         mpp_get_dimension_length = mpp_file(unit)%Axis(i)%len
-         found_dim = .true.
-         exit
-       endif
-    enddo
-
-    if(present(found)) found = found_dim
-
-  end function mpp_get_dimension_length
-
-  !#####################################################################
+   function mpp_get_dimension_length(unit, dimname, found)
+     integer,           intent(in)  :: unit
+     character(len=*),  intent(in)  :: dimname
+     logical, optional, intent(out) :: found
+     integer                        :: mpp_get_dimension_length
+     logical                        :: found_dim
+     integer                        :: i
+ 
+ 
+     if( .NOT.module_is_initialized ) &
+       call mpp_error( FATAL, 'mpp_get_dimension_length: must first call mpp_io_init.' )
+     if( .NOT.mpp_file(unit)%opened )& 
+       call mpp_error( FATAL, 'mpp_get_dimension_length: invalid unit number, file '//trim(mpp_file(unit)%name))
+     found_dim = .false.
+     mpp_get_dimension_length = -1
+     do i = 1, mpp_file(unit)%ndim
+        if(trim(dimname) == trim(mpp_file(unit)%Axis(i)%name)) then
+          mpp_get_dimension_length = mpp_file(unit)%Axis(i)%len
+          found_dim = .true.
+          exit
+        endif
+     enddo
+ 
+     if(present(found)) found = found_dim
+ 
+   end function mpp_get_dimension_length
+ 
+   !#####################################################################
     subroutine mpp_get_time_axis( unit, time_axis )
       integer, intent(in) :: unit
       type(axistype), intent(inout) :: time_axis

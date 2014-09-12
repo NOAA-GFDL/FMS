@@ -140,7 +140,7 @@ subroutine mpp_sync( pelist, do_self )
   integer                       :: n
 
   dself=.true.; if(PRESENT(do_self))dself=do_self
-!  if(dself)call mpp_sync_self(pelist)
+  if(dself .and. .not. sync_all_clocks )call mpp_sync_self(pelist)
 
   n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
 

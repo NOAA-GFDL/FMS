@@ -142,7 +142,8 @@ integer, parameter, private :: YIDX=2
 integer, parameter, private :: CIDX=3
 integer, parameter, private :: ZIDX=4
 integer, parameter, private :: HIDX=5
-integer, parameter, private :: NIDX=5
+integer, parameter, private :: TIDX=6
+integer, parameter, private :: NIDX=6
 
 type ax_type
    private
@@ -153,6 +154,7 @@ type ax_type
    character(len=256) :: compressed
    character(len=128) :: dimlen_name
    character(len=128) :: dimlen_lname
+   character(len=128) :: calendar
    integer            :: sense              !Orientation of z axis definition
    integer            :: dimlen             !max dim of elements across global domain
    real               :: min             !valid min for real axis data
@@ -1108,7 +1110,7 @@ end subroutine write_data_3d_new
 !   This routine will register an integer restart file axis
 !
 !-------------------------------------------------------------------------------
-subroutine register_restart_axis_r1d(fileObj,filename,fieldname,data,cartesian,units,longname,sense,min)
+subroutine register_restart_axis_r1d(fileObj,filename,fieldname,data,cartesian,units,longname,sense,min,calendar)
   type(restart_file_type),    intent(inout)      :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
   real,                       intent(in), target :: data(:)
@@ -1116,6 +1118,7 @@ subroutine register_restart_axis_r1d(fileObj,filename,fieldname,data,cartesian,u
   character(len=*), optional, intent(in)         :: units, longname
   integer,          optional, intent(in)         :: sense
   real,             optional, intent(in)         :: min !valid min for real axis data
+  character(len=*), optional, intent(in)         :: calendar
 
   integer :: idx
 
@@ -1129,6 +1132,8 @@ subroutine register_restart_axis_r1d(fileObj,filename,fieldname,data,cartesian,u
       idx = YIDX
     case('Z')
       idx = ZIDX
+    case('T')
+      idx = TIDX
     case default
       call mpp_error(FATAL,'fms_io(register_restart_axis_r1d): Axis must be one of X,Y or Z ' // &
                                                            'but has value '//trim(cartesian))
@@ -1144,6 +1149,9 @@ subroutine register_restart_axis_r1d(fileObj,filename,fieldname,data,cartesian,u
   if(PRESENT(units)) fileObj%axes(idx)%units = units
   if(PRESENT(longname)) fileObj%axes(idx)%longname = longname
   if(PRESENT(min)) fileObj%axes(idx)%min = min
+  if(idx == TIDX) then
+     if(PRESENT(calendar)) fileObj%axes(idx)%calendar = trim(calendar)
+  endif
   if(PRESENT(sense)) then
      if(idx /= ZIDX) call mpp_error(FATAL,'fms_io(register_restart_axis_r1d): Only the Z axis may define sense; ' // &
                                     'Axis = '//trim(cartesian))
@@ -1940,13 +1948,15 @@ end function register_restart_region_r3d
 !  through register_restart_field
 !
 !-------------------------------------------------------------------------------
-subroutine save_restart(fileObj, time_stamp, directory)
+subroutine save_restart(fileObj, time_stamp, directory, append, time_level)
   type(restart_file_type), intent(inout) :: fileObj
   character(len=*), intent(in), optional :: directory
   character(len=*), intent(in), optional :: time_stamp
   ! Arguments:
   !  (in)      directory  - The directory where the restart file goes.
   !  (in)      time_stamp - character format of the time of this restart file.
+  logical, intent(in), optional :: append
+  real,    intent(in), optional :: time_level
   character(len=256) :: dir
   character(len=80)  :: restartname          ! The restart file name (no dir).
   character(len=336) :: restartpath          ! The restart file path (dir/file).
@@ -1979,7 +1989,7 @@ subroutine save_restart(fileObj, time_stamp, directory)
   if(fileObj%is_compressed .AND. ALLOCATED(fileObj%axes)) then
      ! fileObj%axes must also be allocated if the file contains compressed axes
      ! But will this always be true in the future?
-     call save_compressed_restart(fileObj,restartpath)
+     call save_compressed_restart(fileObj,restartpath,append,time_level)
   else
      call save_default_restart(fileObj,restartpath)
   endif
@@ -2012,9 +2022,30 @@ end function all_field_read_only
 !
 !-------------------------------------------------------------------------------
 
-subroutine save_compressed_restart(fileObj,restartpath)
+subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
   type(restart_file_type), intent(inout),target :: fileObj
   character(len=336)                     :: restartpath ! The restart file path (dir/file).
+
+  ! Optional arguments:
+
+  ! If neither append or time_level is present:
+  !   routine writes both meta data and field data.
+
+  ! If append is present and append=.true.:
+  !   Only field data is written.
+  !   The field data is appended to a new time level.
+  !   time_level must also be present and it must be >= 0.0
+  !   The value of time_level is written as a new value of the time axis data.
+
+  ! If time_level is present and time_level < 0.0:
+  !   A new file is opened and only the meta data is written.
+
+  ! If append is present and append=.false.:
+  !   Behaves the same was as if it were not present. That is, meta data is
+  !   written and whether or not field data is written is determined time_level.
+
+  logical, intent(in), optional :: append
+  real,    intent(in), optional :: time_level
 
   integer            :: unit                 ! The mpp unit of the open file.
   type(axistype)                      :: x_axis, y_axis, z_axis
@@ -2023,14 +2054,14 @@ subroutine save_compressed_restart(fileObj,restartpath)
   logical                             :: naxis_z=.false.
   type(axistype), dimension(4)        :: var_axes
   type(var_type), pointer, save       :: cur_var=>NULL()
-  integer                             :: i, j, k, l, num_var_axes, cpack, idx
+  integer                             :: i, j, k, l, num_var_axes, cpack, idx, mpp_action
   real                                :: tlev
   real, allocatable, dimension(:,:)   :: r2d
   real, allocatable, dimension(:)     :: r1d
   real                                :: r0d
   integer(LONG_KIND), allocatable, dimension(:)    :: check_val
   character(len=256)                  :: checksum_char
-  logical                             :: domain_present
+  logical                             :: domain_present, write_meta_data, write_field_data
   logical                             :: c_axis_defined, h_axis_defined
   type(domain2d), pointer :: domain =>NULL()
   type(ax_type),  pointer :: axis   =>NULL()
@@ -2047,201 +2078,244 @@ subroutine save_compressed_restart(fileObj,restartpath)
      domain =>fileObj%axes(HIDX)%domain
   endif
 
-  call mpp_open(unit,trim(restartpath),action=MPP_OVERWR,form=form,threading=thread_w,&
+  if(present(append)) then
+    if(append .and. .not.present(time_level)) then
+      call mpp_error(FATAL, 'fms_io(save_compressed_restart): time_level must be present when append=.true.'// &
+                    ' for file '//trim(fileObj%name))
+    endif
+  endif
+
+  mpp_action = MPP_OVERWR
+  write_meta_data  = .true.
+  if(present(append)) then
+    if(append) then
+      mpp_action = MPP_APPEND
+      write_meta_data = .false. ! Assuming meta data is already written when routine is called to append to field data.
+      if(time_level < 0.0) then
+        call mpp_error(FATAL, 'fms_io(save_compressed_restart): time_level cannot be negative when append is .true.'// &
+                      ' for file '//trim(fileObj%name))
+      endif
+    endif
+  endif
+
+  write_field_data = .true.
+  if(present(time_level)) then
+    write_field_data = time_level >= 0.0 ! Using negative value of time_level as a flag that there is no valid field data to write.
+  endif
+
+  call mpp_open(unit,trim(restartpath),action=mpp_action,form=form,threading=thread_w,&
           fileset=fset_w, is_root_pe=fileObj%is_root_pe, domain=domain)
 
-  ! User has defined axes and these are assumed to be unique
-  ! Unfortunately it has proven difficult to write a generalized form because
-  ! of the variations possible across all of the axes
-  ! Currently support only 1 user defined axis of each type
-  ! In fact, this config is specifically designed to support the land model
-  ! sparse, compressed tile data
-  axis => fileobj%axes(XIDX)
-  if(.not. ASSOCIATED(axis)) call mpp_error(FATAL, "fms_io(save_compressed_restart): "// &
+  if(write_meta_data) then
+    ! User has defined axes and these are assumed to be unique
+    ! Unfortunately it has proven difficult to write a generalized form because
+    ! of the variations possible across all of the axes
+    ! Currently support only 1 user defined axis of each type
+    ! In fact, this config is specifically designed to support the land model
+    ! sparse, compressed tile data
+    axis => fileobj%axes(XIDX)
+    if(.not. ASSOCIATED(axis)) call mpp_error(FATAL, "fms_io(save_compressed_restart): "// &
                 " The X axis has not been defined for "// &
                 " file "//trim(fileObj%name) )
-  call mpp_write_meta(unit,x_axis,axis%name,axis%units,axis%longname,data=axis%data,cartesian='X')
+    call mpp_write_meta(unit,x_axis,axis%name,axis%units,axis%longname,data=axis%data,cartesian='X')
 
-  axis => fileobj%axes(YIDX)
-  if(.not. ASSOCIATED(axis)) call mpp_error(FATAL, "fms_io(save_compressed_restart): "// &
+    axis => fileobj%axes(YIDX)
+    if(.not. ASSOCIATED(axis)) call mpp_error(FATAL, "fms_io(save_compressed_restart): "// &
                 " The Y axis has not been defined for "// &
                 " file "//trim(fileObj%name) )
-  call mpp_write_meta(unit,y_axis,axis%name,axis%units,axis%longname,data=axis%data,cartesian='Y')
+    call mpp_write_meta(unit,y_axis,axis%name,axis%units,axis%longname,data=axis%data,cartesian='Y')
 
-  axis => fileobj%axes(ZIDX)
-  naxis_z = .false.
-  if(ASSOCIATED(axis%data))then
-     call mpp_write_meta(unit,z_axis,axis%name,axis%units,axis%longname, &
-          data=axis%data,cartesian='Z')
-     naxis_z = .true.
-  endif
+    axis => fileobj%axes(ZIDX)
+    naxis_z = .false.
+    if(ASSOCIATED(axis%data))then
+       call mpp_write_meta(unit,z_axis,axis%name,axis%units,axis%longname, &
+            data=axis%data,cartesian='Z')
+       naxis_z = .true.
+    endif
 
-  ! The compressed axis
-  axis => fileObj%axes(CIDX)
-  if(ALLOCATED(axis%idx)) then
-     call mpp_def_dim(unit,trim(axis%dimlen_name),axis%dimlen,trim(axis%dimlen_lname), (/(i,i=1,axis%dimlen)/))
-     call mpp_write_meta(unit,c_axis,axis%name,axis%units,axis%longname, &
+    ! The compressed axis
+    axis => fileObj%axes(CIDX)
+    if(ALLOCATED(axis%idx)) then
+       call mpp_def_dim(unit,trim(axis%dimlen_name),axis%dimlen,trim(axis%dimlen_lname), (/(i,i=1,axis%dimlen)/))
+       call mpp_write_meta(unit,c_axis,axis%name,axis%units,axis%longname, &
+                           data=axis%idx,compressed=axis%compressed,min=axis%imin)
+       c_axis_defined = .TRUE.
+    else
+       c_axis_defined = .FALSE.
+    endif
+
+    axis => fileObj%axes(HIDX)
+    if (ALLOCATED(axis%idx)) then
+       call mpp_def_dim(unit,trim(axis%dimlen_name),axis%dimlen,trim(axis%dimlen_lname), (/(i,i=1,axis%dimlen)/))
+       call mpp_write_meta(unit,h_axis,axis%name,axis%units,axis%longname, &
                          data=axis%idx,compressed=axis%compressed,min=axis%imin)
-     c_axis_defined = .TRUE.
-  else
-     c_axis_defined = .FALSE.
+       h_axis_defined = .TRUE.
+    else
+       h_axis_defined = .FALSE.
+    endif
+
+    ! write out time axis
+    axis => fileobj%axes(TIDX)
+    if(ASSOCIATED(axis%data))then
+       call mpp_write_meta(unit,t_axis, axis%name, units=axis%units, longname=axis%longname, cartesian='T', calendar=axis%calendar)
+    else
+       call mpp_write_meta(unit,t_axis, 'Time','time level','Time',cartesian='T')
+    endif
+
+    ! write metadata for fields
+    do j = 1,fileObj%nvar
+       cur_var => fileObj%var(j)
+       if(cur_var%read_only) cycle
+       if(cur_var%siz(4) > 1 .AND. cur_var%siz(4) .NE. fileObj%max_ntime ) call mpp_error(FATAL, &
+        "fms_io(save_restart): "//trim(cur_var%name)//" in file "//trim(fileObj%name)// &
+        " has more than one time level, but number of time level is not equal to max_ntime")
+
+       select case (trim(cur_var%compressed_axis))
+       case ('C')
+          comp_axis = c_axis
+       case ('H')
+          comp_axis = h_axis
+       case default
+          if (ALLOCATED(fileObj%axes(CIDX)%idx)) then
+             comp_axis = c_axis
+          else
+             comp_axis = h_axis
+          endif
+       end select
+
+       if(cur_var%ndim == 0) then
+          num_var_axes = 1
+          var_axes(1) = t_axis
+       elseif(cur_var%ndim == 1) then
+          num_var_axes = 1
+          var_axes(1) = comp_axis
+          if(cur_var%siz(4) == fileObj%max_ntime) then
+             num_var_axes = 2
+             var_axes(2) = t_axis
+          endif
+       elseif(cur_var%ndim == 2) then
+          num_var_axes = 2
+          var_axes(1) = comp_axis
+          var_axes(2) = z_axis
+          if(cur_var%siz(4) == fileObj%max_ntime) then
+             num_var_axes = 3
+             var_axes(3) = t_axis
+          endif
+       else
+        call mpp_error(FATAL, "fms_io(save_compressed_restart): "//trim(cur_var%name)//" in file "// &
+           trim(fileObj%name)//" has more than two dimension (not including time level)")        
+       endif
+
+       cpack = pack_size  ! Default size of real
+       allocate(check_val(max(1,cur_var%siz(4))))
+       do k = 1, cur_var%siz(4)
+          if ( Associated(fileObj%p0dr(k,j)%p) ) then
+             check_val(k) = mpp_chksum(fileObj%p0dr(k,j)%p, (/mpp_pe()/) )
+          else if ( Associated(fileObj%p1dr(k,j)%p) ) then
+             check_val(k) = mpp_chksum(fileObj%p1dr(k,j)%p(:))
+          else if ( Associated(fileObj%p2dr(k,j)%p) ) then
+             check_val(k) = mpp_chksum(fileObj%p2dr(k,j)%p(:,:))
+          else if ( Associated(fileObj%p3dr(k,j)%p) ) then
+             call mpp_error(FATAL, "fms_io(save_compressed_restart): real 3D restart fields are not currently supported"// &
+                  trim(cur_var%name)//" of file "//trim(fileObj%name) )
+          else if ( Associated(fileObj%p0di(k,j)%p) ) then
+             check_val(k) = fileObj%p0di(k,j)%p
+             cpack = 0  ! Write data as integer*4
+          else if ( Associated(fileObj%p1di(k,j)%p) ) then
+             ! Fill values are -HUGE(i4) which don't behave as desired for checksum algorithm
+             check_val(k) = mpp_chksum(INT(fileObj%p1di(k,j)%p(:),8))
+             cpack = 0  ! Write data as integer*4
+          else if ( Associated(fileObj%p2di(k,j)%p) ) then
+             check_val(k) = mpp_chksum(INT(fileObj%p2di(k,j)%p(:,:),8))
+             cpack = 0  ! Write data as integer*4
+          else if ( Associated(fileObj%p3di(k,j)%p) ) then
+             call mpp_error(FATAL, "fms_io(save_compressed_restart): integer 3D restart fields are not currently supported"// &
+                  trim(cur_var%name)//" of file "//trim(fileObj%name) )
+          else
+             call mpp_error(FATAL, "fms_io(save_restart): There is no pointer associated with the data of field "// &
+                  trim(cur_var%name)//" of file "//trim(fileObj%name) )
+          end if
+       enddo
+       if(write_field_data) then ! Write checksums only if valid field data exists
+         call mpp_write_meta(unit,cur_var%field, var_axes(1:num_var_axes), cur_var%name, &
+                cur_var%units,cur_var%longname,pack=cpack,checksum=check_val)
+       else
+          call mpp_write_meta(unit,cur_var%field, var_axes(1:num_var_axes), cur_var%name, &
+                 cur_var%units,cur_var%longname,pack=cpack)
+       endif
+       deallocate(check_val)
+    enddo
+
+    ! write values for ndim of spatial and compressed axes
+    call mpp_write(unit,x_axis)
+    call mpp_write(unit,y_axis)
+    if (c_axis_defined) call mpp_write(unit,c_axis)
+    if (h_axis_defined) call mpp_write(unit,h_axis)
+    if(naxis_z) call mpp_write(unit,z_axis)
+
+  endif ! End of section to write meta data. Write meta data only if not appending.
+
+  if(write_field_data) then
+    ! write data of each field
+    do k = 1, fileObj%max_ntime
+       if(present(time_level)) then
+          tlev = time_level
+       else
+          tlev = k
+       endif
+       do j=1,fileObj%nvar
+          cur_var => fileObj%var(j)
+          if(cur_var%read_only) cycle
+
+          select case (trim(cur_var%compressed_axis))
+          case ('C')
+             idx = CIDX
+          case ('H')
+             idx = HIDX
+          case default
+             if (ALLOCATED(fileObj%axes(CIDX)%idx)) then
+                idx = CIDX
+             else
+                idx = HIDX
+             endif
+          end select
+
+          ! If some fields only have one time level, we do not need to write the second level, just keep
+          ! the data missing.
+          if(k <= cur_var%siz(4)) then
+             if ( Associated(fileObj%p0dr(k,j)%p) ) then
+                call mpp_write(unit, cur_var%field, fileObj%p0dr(k,j)%p, tlev)
+             elseif ( Associated(fileObj%p1dr(k,j)%p) ) then
+                call mpp_write_compressed(unit, cur_var%field, domain, fileObj%p1dr(k,j)%p, &
+                     fileObj%axes(idx)%nelems(:), tstamp=tlev, default_data=cur_var%default_data)
+             elseif ( Associated(fileObj%p2dr(k,j)%p) ) then
+                call mpp_write_compressed(unit, cur_var%field, domain, fileObj%p2dr(k,j)%p, &
+                     fileObj%axes(idx)%nelems(:), tstamp=tlev, default_data=cur_var%default_data)
+             elseif ( Associated(fileObj%p0di(k,j)%p) ) then
+                r0d =  fileObj%p0di(k,j)%p
+                call mpp_write(unit, cur_var%field, r0d, tlev)
+             elseif ( Associated(fileObj%p1di(k,j)%p) ) then
+                allocate(r1d(cur_var%siz(1)) )
+                r1d = fileObj%p1di(k,j)%p
+                call mpp_write_compressed(unit, cur_var%field, domain, r1d, &
+                     fileObj%axes(idx)%nelems(:), tstamp=tlev, default_data=cur_var%default_data)
+                deallocate(r1d)
+             elseif ( Associated(fileObj%p2di(k,j)%p) ) then
+                allocate(r2d(cur_var%siz(1), cur_var%siz(2)) )
+                r2d = fileObj%p2di(k,j)%p
+                call mpp_write_compressed(unit, cur_var%field, domain, r2d, &
+                     fileObj%axes(idx)%nelems(:), tstamp=tlev, default_data=cur_var%default_data)
+                deallocate(r2d)
+             else
+                call mpp_error(FATAL, "fms_io(save_restart): There is no pointer associated with the data of field "// &
+                       trim(cur_var%name)//" of file "//trim(fileObj%name) )
+             endif
+          endif
+       enddo ! end j loop
+    enddo ! end k loop
+    cur_var =>NULL()
   endif
-
-  axis => fileObj%axes(HIDX)
-  if (ALLOCATED(axis%idx)) then
-     call mpp_def_dim(unit,trim(axis%dimlen_name),axis%dimlen,trim(axis%dimlen_lname), (/(i,i=1,axis%dimlen)/))
-     call mpp_write_meta(unit,h_axis,axis%name,axis%units,axis%longname, &
-                         data=axis%idx,compressed=axis%compressed,min=axis%imin)
-     h_axis_defined = .TRUE.
-  else
-     h_axis_defined = .FALSE.
-  endif
-
-  ! write out time axis
-  call mpp_write_meta(unit,t_axis,&
-       'Time','time level','Time',cartesian='T')
-
-  ! write metadata for fields
-  do j = 1,fileObj%nvar
-     cur_var => fileObj%var(j)
-     if(cur_var%read_only) cycle
-     if(cur_var%siz(4) > 1 .AND. cur_var%siz(4) .NE. fileObj%max_ntime ) call mpp_error(FATAL, &
-      "fms_io(save_restart): "//trim(cur_var%name)//" in file "//trim(fileObj%name)// &
-      " has more than one time level, but number of time level is not equal to max_ntime")
-
-     select case (trim(cur_var%compressed_axis))
-     case ('C')
-        comp_axis = c_axis
-     case ('H')
-        comp_axis = h_axis
-     case default
-        if (ALLOCATED(fileObj%axes(CIDX)%idx)) then
-           comp_axis = c_axis
-        else
-           comp_axis = h_axis
-        endif
-     end select
-
-     if(cur_var%ndim == 0) then
-        num_var_axes = 1
-        var_axes(1) = t_axis
-     elseif(cur_var%ndim == 1) then
-        num_var_axes = 1
-        var_axes(1) = comp_axis
-        if(cur_var%siz(4) == fileObj%max_ntime) then
-           num_var_axes = 2
-           var_axes(2) = t_axis
-        endif
-     elseif(cur_var%ndim == 2) then
-        num_var_axes = 2
-        var_axes(1) = comp_axis
-        var_axes(2) = z_axis
-        if(cur_var%siz(4) == fileObj%max_ntime) then
-           num_var_axes = 3
-           var_axes(3) = t_axis
-        endif
-     else
-      call mpp_error(FATAL, "fms_io(save_compressed_restart): "//trim(cur_var%name)//" in file "// &
-         trim(fileObj%name)//" has more than two dimension (not including time level)")        
-     endif
-
-     cpack = pack_size  ! Default size of real
-     allocate(check_val(max(1,cur_var%siz(4))))
-     do k = 1, cur_var%siz(4)
-        if ( Associated(fileObj%p0dr(k,j)%p) ) then
-           check_val(k) = mpp_chksum(fileObj%p0dr(k,j)%p, (/mpp_pe()/) )
-        else if ( Associated(fileObj%p1dr(k,j)%p) ) then
-           check_val(k) = mpp_chksum(fileObj%p1dr(k,j)%p(:))
-        else if ( Associated(fileObj%p2dr(k,j)%p) ) then
-           check_val(k) = mpp_chksum(fileObj%p2dr(k,j)%p(:,:))
-        else if ( Associated(fileObj%p3dr(k,j)%p) ) then
-           call mpp_error(FATAL, "fms_io(save_compressed_restart): real 3D restart fields are not currently supported"// &
-                trim(cur_var%name)//" of file "//trim(fileObj%name) )
-        else if ( Associated(fileObj%p0di(k,j)%p) ) then
-           check_val(k) = fileObj%p0di(k,j)%p
-           cpack = 0  ! Write data as integer*4
-        else if ( Associated(fileObj%p1di(k,j)%p) ) then
-           ! Fill values are -HUGE(i4) which don't behave as desired for checksum algorithm
-           check_val(k) = mpp_chksum(INT(fileObj%p1di(k,j)%p(:),8))
-           cpack = 0  ! Write data as integer*4
-        else if ( Associated(fileObj%p2di(k,j)%p) ) then
-           check_val(k) = mpp_chksum(INT(fileObj%p2di(k,j)%p(:,:),8))
-           cpack = 0  ! Write data as integer*4
-        else if ( Associated(fileObj%p3di(k,j)%p) ) then
-           call mpp_error(FATAL, "fms_io(save_compressed_restart): integer 3D restart fields are not currently supported"// &
-                trim(cur_var%name)//" of file "//trim(fileObj%name) )
-        else
-           call mpp_error(FATAL, "fms_io(save_restart): There is no pointer associated with the data of field "// &
-                trim(cur_var%name)//" of file "//trim(fileObj%name) )
-        end if
-     enddo
-     call mpp_write_meta(unit,cur_var%field, var_axes(1:num_var_axes), cur_var%name, &
-              cur_var%units,cur_var%longname,pack=cpack,checksum=check_val)
-     deallocate(check_val)
-  enddo
-
-  ! write values for ndim of spatial and compressed axes
-  call mpp_write(unit,x_axis)
-  call mpp_write(unit,y_axis)
-  if (c_axis_defined) call mpp_write(unit,c_axis)
-  if (h_axis_defined) call mpp_write(unit,h_axis)
-  if(naxis_z) call mpp_write(unit,z_axis)
-
-  ! write data of each field
-  do k = 1, fileObj%max_ntime
-     do j=1,fileObj%nvar
-        cur_var => fileObj%var(j)
-        if(cur_var%read_only) cycle
-        tlev=k
-
-        select case (trim(cur_var%compressed_axis))
-        case ('C')
-           idx = CIDX
-        case ('H')
-           idx = HIDX
-        case default
-           if (ALLOCATED(fileObj%axes(CIDX)%idx)) then
-              idx = CIDX
-           else
-              idx = HIDX
-           endif
-        end select
-
-        ! If some fields only have one time level, we do not need to write the second level, just keep
-        ! the data missing.
-        if(k <= cur_var%siz(4)) then
-           if ( Associated(fileObj%p0dr(k,j)%p) ) then
-              call mpp_write(unit, cur_var%field, fileObj%p0dr(k,j)%p, tlev)
-           elseif ( Associated(fileObj%p1dr(k,j)%p) ) then
-              call mpp_write_compressed(unit, cur_var%field, domain, fileObj%p1dr(k,j)%p, &
-                   fileObj%axes(idx)%nelems(:), tstamp=tlev, default_data=cur_var%default_data)
-           elseif ( Associated(fileObj%p2dr(k,j)%p) ) then
-              call mpp_write_compressed(unit, cur_var%field, domain, fileObj%p2dr(k,j)%p, &
-                   fileObj%axes(idx)%nelems(:), tstamp=tlev, default_data=cur_var%default_data)
-           elseif ( Associated(fileObj%p0di(k,j)%p) ) then
-              r0d =  fileObj%p0di(k,j)%p
-              call mpp_write(unit, cur_var%field, r0d, tlev)
-           elseif ( Associated(fileObj%p1di(k,j)%p) ) then
-              allocate(r1d(cur_var%siz(1)) )
-              r1d = fileObj%p1di(k,j)%p
-              call mpp_write_compressed(unit, cur_var%field, domain, r1d, &
-                   fileObj%axes(idx)%nelems(:), tstamp=tlev, default_data=cur_var%default_data)
-              deallocate(r1d)
-           elseif ( Associated(fileObj%p2di(k,j)%p) ) then
-              allocate(r2d(cur_var%siz(1), cur_var%siz(2)) )
-              r2d = fileObj%p2di(k,j)%p
-              call mpp_write_compressed(unit, cur_var%field, domain, r2d, &
-                   fileObj%axes(idx)%nelems(:), tstamp=tlev, default_data=cur_var%default_data)
-              deallocate(r2d)
-           else
-              call mpp_error(FATAL, "fms_io(save_restart): There is no pointer associated with the data of field "// &
-                     trim(cur_var%name)//" of file "//trim(fileObj%name) )
-           endif
-        endif
-     enddo ! end j loop
-  enddo ! end k loop
   call mpp_close(unit)
-  cur_var =>NULL()
 end subroutine save_compressed_restart
 
 !-------------------------------------------------------------------------------
@@ -4660,6 +4734,9 @@ subroutine read_compressed_2d(filename,fieldname,data,domain,timelevel)
   endif
 
   found_file = get_file_name(filename, fname, read_dist, io_domain_exist, domain=d_ptr)
+  if(.not. found_file) then
+     found_file = get_file_name(filename, fname, read_dist, io_domain_exist, no_domain=.true. )
+  endif
   if(.not.found_file) call mpp_error(FATAL, 'fms_io_mod(read_compressed_2d): file ' //trim(filename)// &
           '(with the consideration of tile number) and corresponding distributed file are not found')
   call get_file_unit(fname, unit, file_index, read_dist, io_domain_exist, domain=d_ptr)
@@ -6759,7 +6836,7 @@ end subroutine get_axis_cart
        io_domain=>NULL()
     endif
 
-    if(.not. fexist) inquire (file=trim(actual_file)//trim(pe_name), exist=fexist)
+    if(.not. fexist ) inquire (file=trim(actual_file)//trim(pe_name), exist=fexist)
 
     if(fexist) then
        read_dist = .true.
