@@ -2207,43 +2207,45 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
        endif
 
        cpack = pack_size  ! Default size of real
-       allocate(check_val(max(1,cur_var%siz(4))))
-       do k = 1, cur_var%siz(4)
-          if ( Associated(fileObj%p0dr(k,j)%p) ) then
-             check_val(k) = mpp_chksum(fileObj%p0dr(k,j)%p, (/mpp_pe()/) )
-          else if ( Associated(fileObj%p1dr(k,j)%p) ) then
-             check_val(k) = mpp_chksum(fileObj%p1dr(k,j)%p(:))
-          else if ( Associated(fileObj%p2dr(k,j)%p) ) then
-             check_val(k) = mpp_chksum(fileObj%p2dr(k,j)%p(:,:))
-          else if ( Associated(fileObj%p3dr(k,j)%p) ) then
-             call mpp_error(FATAL, "fms_io(save_compressed_restart): real 3D restart fields are not currently supported"// &
-                  trim(cur_var%name)//" of file "//trim(fileObj%name) )
-          else if ( Associated(fileObj%p0di(k,j)%p) ) then
-             check_val(k) = fileObj%p0di(k,j)%p
-             cpack = 0  ! Write data as integer*4
-          else if ( Associated(fileObj%p1di(k,j)%p) ) then
+! The chksum could not reproduce when running on different processor count. So commenting out now.
+! Also the chksum of compressed data is not read.
+!       allocate(check_val(max(1,cur_var%siz(4))))
+!       do k = 1, cur_var%siz(4)
+!          if ( Associated(fileObj%p0dr(k,j)%p) ) then
+!             check_val(k) = mpp_chksum(fileObj%p0dr(k,j)%p, (/mpp_pe()/) )
+!          else if ( Associated(fileObj%p1dr(k,j)%p) ) then
+!             check_val(k) = mpp_chksum(fileObj%p1dr(k,j)%p(:))
+!          else if ( Associated(fileObj%p2dr(k,j)%p) ) then
+!             check_val(k) = mpp_chksum(fileObj%p2dr(k,j)%p(:,:))
+!          else if ( Associated(fileObj%p3dr(k,j)%p) ) then
+!             call mpp_error(FATAL, "fms_io(save_compressed_restart): real 3D restart fields are not currently supported"// &
+!                  trim(cur_var%name)//" of file "//trim(fileObj%name) )
+!          else if ( Associated(fileObj%p0di(k,j)%p) ) then
+!             check_val(k) = fileObj%p0di(k,j)%p
+!             cpack = 0  ! Write data as integer*4
+!          else if ( Associated(fileObj%p1di(k,j)%p) ) then
              ! Fill values are -HUGE(i4) which don't behave as desired for checksum algorithm
-             check_val(k) = mpp_chksum(INT(fileObj%p1di(k,j)%p(:),8))
-             cpack = 0  ! Write data as integer*4
-          else if ( Associated(fileObj%p2di(k,j)%p) ) then
-             check_val(k) = mpp_chksum(INT(fileObj%p2di(k,j)%p(:,:),8))
-             cpack = 0  ! Write data as integer*4
-          else if ( Associated(fileObj%p3di(k,j)%p) ) then
-             call mpp_error(FATAL, "fms_io(save_compressed_restart): integer 3D restart fields are not currently supported"// &
-                  trim(cur_var%name)//" of file "//trim(fileObj%name) )
-          else
-             call mpp_error(FATAL, "fms_io(save_restart): There is no pointer associated with the data of field "// &
-                  trim(cur_var%name)//" of file "//trim(fileObj%name) )
-          end if
-       enddo
-       if(write_field_data) then ! Write checksums only if valid field data exists
-         call mpp_write_meta(unit,cur_var%field, var_axes(1:num_var_axes), cur_var%name, &
-                cur_var%units,cur_var%longname,pack=cpack,checksum=check_val)
-       else
+!             check_val(k) = mpp_chksum(INT(fileObj%p1di(k,j)%p(:),8))
+!             cpack = 0  ! Write data as integer*4
+!          else if ( Associated(fileObj%p2di(k,j)%p) ) then
+!             check_val(k) = mpp_chksum(INT(fileObj%p2di(k,j)%p(:,:),8))
+!             cpack = 0  ! Write data as integer*4
+!          else if ( Associated(fileObj%p3di(k,j)%p) ) then
+!             call mpp_error(FATAL, "fms_io(save_compressed_restart): integer 3D restart fields are not currently supported"// &
+!                  trim(cur_var%name)//" of file "//trim(fileObj%name) )
+!          else
+!             call mpp_error(FATAL, "fms_io(save_restart): There is no pointer associated with the data of field "// &
+!                  trim(cur_var%name)//" of file "//trim(fileObj%name) )
+!          end if
+!       enddo
+!       if(write_field_data) then ! Write checksums only if valid field data exists
+!         call mpp_write_meta(unit,cur_var%field, var_axes(1:num_var_axes), cur_var%name, &
+!                cur_var%units,cur_var%longname,pack=cpack,checksum=check_val)
+!       else
           call mpp_write_meta(unit,cur_var%field, var_axes(1:num_var_axes), cur_var%name, &
                  cur_var%units,cur_var%longname,pack=cpack)
-       endif
-       deallocate(check_val)
+!       endif
+!       deallocate(check_val)
     enddo
 
     ! write values for ndim of spatial and compressed axes
