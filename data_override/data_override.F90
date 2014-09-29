@@ -371,27 +371,27 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
  if(file_open) call mpp_error(FATAL, trim(grid_file)//' already opened')
 
  if(field_exist(grid_file, "x_T" ) .OR. field_exist(grid_file, "geolon_t" ) ) then
-    if (atm_on) then
+    if (atm_on .and. .not. allocated(lon_local_atm) ) then
        call mpp_get_compute_domain( atm_domain,is,ie,js,je) 
        allocate(lon_local_atm(is:ie,js:je), lat_local_atm(is:ie,js:je))
        call get_grid_version_1(grid_file, 'atm', atm_domain, is, ie, js, je, lon_local_atm, lat_local_atm, &
             min_glo_lon_atm, max_glo_lon_atm )
     endif
-    if (ocn_on) then
+    if (ocn_on .and. .not. allocated(lon_local_ocn) ) then
        call mpp_get_compute_domain( ocn_domain,is,ie,js,je) 
        allocate(lon_local_ocn(is:ie,js:je), lat_local_ocn(is:ie,js:je))
        call get_grid_version_1(grid_file, 'ocn', ocn_domain, is, ie, js, je, lon_local_ocn, lat_local_ocn, &
             min_glo_lon_ocn, max_glo_lon_ocn )
     endif
 
-    if (lnd_on) then
+    if (lnd_on .and. .not. allocated(lon_local_lnd) ) then
        call mpp_get_compute_domain( lnd_domain,is,ie,js,je) 
        allocate(lon_local_lnd(is:ie,js:je), lat_local_lnd(is:ie,js:je))
        call get_grid_version_1(grid_file, 'lnd', lnd_domain, is, ie, js, je, lon_local_lnd, lat_local_lnd, &
             min_glo_lon_lnd, max_glo_lon_lnd )
     endif
 
-    if (ice_on) then
+    if (ice_on .and. .not. allocated(lon_local_ice) ) then
        call mpp_get_compute_domain( ice_domain,is,ie,js,je) 
        allocate(lon_local_ice(is:ie,js:je), lat_local_ice(is:ie,js:je))
        call get_grid_version_1(grid_file, 'ice', ice_domain, is, ie, js, je, lon_local_ice, lat_local_ice, &
@@ -406,28 +406,28 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
        if(count .NE. 1) call mpp_error(FATAL, 'data_override_mod: the grid file is a solo mosaic, ' // &
             'one and only one of atm_on, lnd_on or ice_on/ocn_on should be true')
     endif
-   if (atm_on) then
+   if (atm_on .and. .not. allocated(lon_local_atm) ) then
        call mpp_get_compute_domain(atm_domain,is,ie,js,je) 
        allocate(lon_local_atm(is:ie,js:je), lat_local_atm(is:ie,js:je))
        call get_grid_version_2(grid_file, 'atm', atm_domain, is, ie, js, je, lon_local_atm, lat_local_atm, &
             min_glo_lon_atm, max_glo_lon_atm )
     endif
 
-    if (ocn_on) then
+    if (ocn_on .and. .not. allocated(lon_local_ocn) ) then
        call mpp_get_compute_domain( ocn_domain,is,ie,js,je) 
        allocate(lon_local_ocn(is:ie,js:je), lat_local_ocn(is:ie,js:je))
        call get_grid_version_2(grid_file, 'ocn', ocn_domain, is, ie, js, je, lon_local_ocn, lat_local_ocn, &
             min_glo_lon_ocn, max_glo_lon_ocn )
     endif
 
-    if (lnd_on) then
+    if (lnd_on .and. .not. allocated(lon_local_lnd) ) then
        call mpp_get_compute_domain( lnd_domain,is,ie,js,je) 
        allocate(lon_local_lnd(is:ie,js:je), lat_local_lnd(is:ie,js:je))
        call get_grid_version_2(grid_file, 'lnd', lnd_domain, is, ie, js, je, lon_local_lnd, lat_local_lnd, &
             min_glo_lon_lnd, max_glo_lon_lnd )
     endif
 
-    if (ice_on) then
+    if (ice_on .and. .not. allocated(lon_local_ice) ) then
        call mpp_get_compute_domain( ice_domain,is,ie,js,je) 
        allocate(lon_local_ice(is:ie,js:je), lat_local_ice(is:ie,js:je))
        call get_grid_version_2(grid_file, 'ocn', ice_domain, is, ie, js, je, lon_local_ice, lat_local_ice, &
@@ -1386,6 +1386,7 @@ end module data_override_mod
 
 
  call mpp_define_domains( (/1,nlon,1,nlat/), layout, Domain, name='test_data_override')
+ call data_override_init(Ice_domain_in=Domain, Ocean_domain_in=Domain)
  call data_override_init(Ice_domain_in=Domain, Ocean_domain_in=Domain)
  call mpp_get_compute_domain(Domain, is, ie, js, je)
  call get_grid

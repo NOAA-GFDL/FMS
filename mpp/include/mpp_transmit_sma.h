@@ -62,20 +62,20 @@
 #ifdef _CRAYT90
           call SHMEM_UDCFLUSH !invalidate data cache
 #endif
-          if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
+          if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)
           call SHMEM_INT8_WAIT( status(to_pe), MPP_WAIT )
           status(to_pe) = MPP_WAIT !prohibit puts to to_pe until it has retrieved this message
-          if( current_clock.NE.0 )call increment_current_clock(EVENT_WAIT)
+          if( debug .and. (current_clock.NE.0) )call increment_current_clock(EVENT_WAIT)
 #ifdef __ia64
           data_loc = shmem_ptr(put_data,pe)
 !          write(0,*)'pe, data_loc, loc(put_data)=', pe, data_loc, loc(put_data)
 #else
           data_loc = LOC(put_data)
 #endif
-          if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
+          if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)
           call SHMEM_INTEGER_PUT( mpp_from_pe, pe, 1, to_pe )
           call SHMEM_PUT8( remote_data_loc(pe), data_loc, 1, to_pe )
-          if( current_clock.NE.0 )call increment_current_clock( EVENT_SEND, put_len*MPP_TYPE_BYTELEN_ )
+          if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_SEND, put_len*MPP_TYPE_BYTELEN_ )
       else if( to_pe.EQ.ALL_PES )then !this is a broadcast from from_pe
           if( from_pe.LT.0 .OR. from_pe.GE.npes )call mpp_error( FATAL, 'MPP_TRANSMIT: broadcasting from invalid PE.' )
           if( put_len.GT.get_len )call mpp_error( FATAL, 'MPP_TRANSMIT: size mismatch between put_data and get_data.' )
@@ -92,10 +92,10 @@
 
       else if( to_pe.EQ.ANY_PE )then !we don't have a destination to do puts to, so only do gets
           if( from_pe.LT.0 .OR. from_pe.GE.npes )call mpp_error( FATAL, 'MPP_TRANSMIT: invalid from_pe along with to_pe=ANY_PE.' )
-          if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
+          if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)
           call SHMEM_GET_( get_data, put_data, get_len, from_pe )
           call SHMEM_PUT8( status(pe), MPP_READY, 1, from_pe ) !tell from_pe that you have retrieved this message
-          if( current_clock.NE.0 )call increment_current_clock( EVENT_RECV, get_len*MPP_TYPE_BYTELEN_ )
+          if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_RECV, get_len*MPP_TYPE_BYTELEN_ )
           return
       else if( to_pe.NE.NULL_PE )then  !no other valid cases except NULL_PE
           call mpp_error( FATAL, 'MPP_TRANSMIT: invalid to_pe.' )
@@ -106,14 +106,14 @@
 #ifdef _CRAYT90
           call SHMEM_UDCFLUSH !invalidate data cache
 #endif
-          if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
+          if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)
           if( debug )write( errunit,* )'pe, from_pe, remote_data_loc(from_pe)=', pe, from_pe, remote_data_loc(from_pe)
           call SHMEM_INT8_WAIT( remote_data_loc(from_pe), MPP_WAIT )
-          if( current_clock.NE.0 )call increment_current_clock(EVENT_WAIT)
+          if( debug .and. (current_clock.NE.0) )call increment_current_clock(EVENT_WAIT)
           ptr_remote_data = remote_data_loc(from_pe)
           remote_data_loc(from_pe) = MPP_WAIT !reset
 !          call SHMEM_PUT8( status(pe), MPP_READY, 1, from_pe ) !tell from_pe we have retrieved the location
-          if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
+          if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)
 #if defined(CRAYPVP) || defined(sgi_mipspro) || defined(__ia64)
 !since we have the pointer to remote data, just retrieve it with a simple copy
           if( LOC(get_data).NE.LOC(remote_data) )then
@@ -128,7 +128,7 @@
           call SHMEM_GET_( get_data, remote_data, get_len, from_pe )
 #endif
           call SHMEM_PUT8( status(pe), MPP_READY, 1, from_pe ) !tell from_pe we have retrieved the location
-          if( current_clock.NE.0 )call increment_current_clock( EVENT_RECV, get_len*MPP_TYPE_BYTELEN_ )
+          if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_RECV, get_len*MPP_TYPE_BYTELEN_ )
 
       else if( from_pe.EQ.ANY_PE )then
 #ifdef _CRAYT90
@@ -137,15 +137,15 @@
 !since we don't know which PE is sending us data, we wait for remote PE to send us its ID
 !this is only required for !CRAYPVP  && !sgi_mipspro, but is done there too, so that we can send put_is_done back.
           call shmem_integer_wait( mpp_from_pe, ANY_PE )
-          if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
+          if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)
           call SHMEM_INT8_WAIT( remote_data_loc(mpp_from_pe), MPP_WAIT )
-          if( current_clock.NE.0 )call increment_current_clock(EVENT_WAIT)
+          if( debug .and. (current_clock.NE.0) )call increment_current_clock(EVENT_WAIT)
           ptr_remote_data = remote_data_loc(mpp_from_pe)
           remote_data_loc(mpp_from_pe) = MPP_WAIT !reset
           call SHMEM_PUT8( status(pe), MPP_READY, 1, mpp_from_pe ) !tell mpp_from_pe we have retrieved the location
 #if defined(CRAYPVP) || defined(sgi_mipspro) || defined(__ia64)
 !since we have the pointer to remote data, just retrieve it with a simple copy
-          if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
+          if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)
           if( LOC(get_data).NE.LOC(remote_data) )then
 !dir$ IVDEP
               do i = 1,get_len
@@ -155,7 +155,7 @@
 #else
           call SHMEM_GET_( get_data, remote_data, get_len, mpp_from_pe )
 #endif
-          if( current_clock.NE.0 )call increment_current_clock( EVENT_RECV, get_len*MPP_TYPE_BYTELEN_ )
+          if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_RECV, get_len*MPP_TYPE_BYTELEN_ )
           mpp_from_pe = ANY_PE   !reset
       else if( from_pe.EQ.ALL_PES )then
           call mpp_error( FATAL, 'MPP_TRANSMIT: from_pe=ALL_PES has ambiguous meaning, and hence is not implemented.' )
@@ -208,7 +208,7 @@
       if( .NOT.ANY(from_pe.EQ.peset(current_peset_num)%list) ) &
            call mpp_error( FATAL, 'MPP_BROADCAST: broadcasting from invalid PE.' )
 
-      if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
+      if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)
       ptr = LOC(mpp_stack)
       words = size(bdata(:))*size(transfer(bdata(1),word))
       if( words.GT.mpp_stack_size )then
@@ -232,7 +232,7 @@
              data(i) = bdata(i)
           end do
       end if
-      if( current_clock.NE.0 )call increment_current_clock( EVENT_BROADCAST, length*MPP_TYPE_BYTELEN_ )
+      if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_BROADCAST, length*MPP_TYPE_BYTELEN_ )
       return
     end subroutine MPP_BROADCAST_
 

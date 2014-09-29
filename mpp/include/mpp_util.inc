@@ -816,10 +816,12 @@ end function rarray_to_char
        call mpp_sync()
     end if
 
-    num_clock_ids = num_clock_ids+1
-    if(num_clock_ids > MAX_CLOCKS)call mpp_error(FATAL,'MPP_CLOCK_BEGIN: max num previous_clock exceeded.' )
-    previous_clock(num_clock_ids) = current_clock
-    current_clock = id
+    if (debug) then
+      num_clock_ids = num_clock_ids+1
+      if(num_clock_ids > MAX_CLOCKS)call mpp_error(FATAL,'MPP_CLOCK_BEGIN: max num previous_clock exceeded.' )
+      previous_clock(num_clock_ids) = current_clock
+      current_clock = id
+    endif
     call SYSTEM_CLOCK( clocks(id)%tick )
     clocks(id)%is_on = .true.
 !$OMP END MASTER
@@ -851,11 +853,11 @@ end function rarray_to_char
        call mpp_error( WARNING, 'MPP_CLOCK_END: Clock rollover, assumed single roll.' )
     end if
     clocks(id)%total_ticks = clocks(id)%total_ticks + delta
-    if(num_clock_ids < 1)then
-       call mpp_error(FATAL,'MPP_CLOCK_END: min num previous_clock < 1.' )
+    if (debug) then
+      if(num_clock_ids < 1) call mpp_error(NOTE,'MPP_CLOCK_END: min num previous_clock < 1.' )
+      current_clock = previous_clock(num_clock_ids)
+      num_clock_ids = num_clock_ids-1
     endif
-    current_clock = previous_clock(num_clock_ids)
-    num_clock_ids = num_clock_ids-1
     clocks(id)%is_on = .false.
 !$OMP END MASTER
     return
@@ -885,7 +887,7 @@ end function rarray_to_char
     integer                       :: errunit
 
     if( .not. mpp_record_timing_data )return
-    if( current_clock.EQ.0 )return
+    if( .not.debug .or. (current_clock.EQ.0) )return
     if( current_clock.LT.0 .OR. current_clock.GT.clock_num )call mpp_error( FATAL, 'MPP_CLOCK_BEGIN: invalid current_clock.' )
     if( .NOT.clocks(current_clock)%detailed )return
     call SYSTEM_CLOCK(end_tick)
