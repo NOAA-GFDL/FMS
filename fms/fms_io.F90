@@ -39,23 +39,10 @@ module fms_io_mod
 ! because default values of both flags are .true., the default behavior of the entire model is
 ! to use netCDF IO mode. To turn off netCDF restart, simply set fms_netcdf_restart to .false.
 !
-! Fei.Liu@noaa.gov
-! 05222006
-! Read distributed files in NetCDF is available. Details can be found in read_data_3d_new
-! <PRE>
-!threading_read='multi', threading_write='multi', fileset_write='multi' (default)
-!threading_read='multi', threading_write='single', fileset_write='single'
-! </PRE>
 !</DESCRIPTION>
 ! <NAMELIST NAME="fms_io_nml">
 ! <DATA NAME="threading_read" TYPE="character">
 ! threading_read can be 'single' or 'multi'
-! </DATA>
-! <DATA NAME="threading_write" TYPE="character">
-! threading_write can be 'single' or 'multi'
-! </DATA>
-! <DATA NAME="fileset_write" TYPE="character">
-! fileset_write can be 'single' or 'multi'
 ! </DATA>
 ! <DATA NAME="fms_netcdf_override" TYPE="logical">
 !   .true. : fms_netcdf_restart overrides individual do_netcdf_restart value (default behavior)
@@ -111,7 +98,7 @@ use mpp_domains_mod, only: domain2d, domain1d, NULL_DOMAIN1D, NULL_DOMAIN2D, ope
 use mpp_domains_mod, only: CENTER, EAST, WEST, NORTH, SOUTH, CORNER
 use mpp_domains_mod, only: mpp_get_domain_components, mpp_get_compute_domain, mpp_get_data_domain
 use mpp_domains_mod, only: mpp_get_domain_shift, mpp_get_global_domain, mpp_global_field, mpp_domain_is_tile_root_pe
-use mpp_domains_mod, only: mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined
+use mpp_domains_mod, only: mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id
 use mpp_domains_mod, only: mpp_get_pelist, mpp_get_io_domain, mpp_get_domain_npes
 use mpp_mod,         only: mpp_error, FATAL, NOTE, WARNING, mpp_pe, mpp_root_pe, mpp_npes, stdlog, stdout
 use mpp_mod,         only: mpp_broadcast, ALL_PES, mpp_chksum, mpp_get_current_pelist, mpp_npes, lowercase
@@ -376,11 +363,9 @@ integer :: num_files_w = 0 ! number of currently opened files for writing
 integer :: num_domains = 0 ! number of domains in array_domain
 integer :: num_registered_files ! mumber of files registered by calling register_restart_file
 
-integer :: thread_r, thread_w, fset_w, form
+integer :: thread_r, form
 logical :: module_is_initialized = .FALSE.
 
-character(len=32) :: pelist_name
-character(len=7)  :: pe_name
 character(len=128):: error_msg
 logical           :: great_circle_algorithm=.FALSE.
 
@@ -425,8 +410,6 @@ end interface
 logical           :: fms_netcdf_override = .true.
 logical           :: fms_netcdf_restart  = .true.
 character(len=32) :: threading_read      = 'multi'
-character(len=32) :: threading_write     = 'multi'
-character(len=32) :: fileset_write       = 'multi'
 character(len=32) :: format              = 'netcdf'
 logical           :: read_all_pe         = .TRUE.
 character(len=64) :: iospec_ieee32       = '-N ieee_32'
@@ -439,8 +422,7 @@ logical           :: show_open_namelist_file_warning = .false.
 logical           :: debug_mask_list     = .false.
 logical           :: checksum_required   = .true.
   namelist /fms_io_nml/ fms_netcdf_override, fms_netcdf_restart, &
-       threading_read, threading_write, &
-       fileset_write, format, read_all_pe, iospec_ieee32,max_files_w,max_files_r, &
+       threading_read, format, read_all_pe, iospec_ieee32,max_files_w,max_files_r, &
        read_data_bug, time_stamp_restart, print_chksum, show_open_namelist_file_warning, &
        debug_mask_list, checksum_required
 
@@ -535,24 +517,6 @@ subroutine fms_io_init()
   end select
 ! take namelist options if present
 
-  select case (fileset_write)
-  case ('multi')
-     fset_w = MPP_MULTI
-  case ('single')
-     fset_w = MPP_SINGLE
-  case default
-     call mpp_error(FATAL,'fms_io_init: fileset_write should be multi/single but you chose'//trim(fileset_write))
-  end select
-
-  select case (threading_write)
-  case ('multi')
-     thread_w = MPP_MULTI
-  case ('single')
-     thread_w = MPP_SINGLE
-  case default
-     call mpp_error(FATAL,'fms_io_init: threading_write should be multi/single but you chose'//trim(threading_write))
-  end select
-
   select case(format)
   case ('netcdf')
      form=MPP_NETCDF
@@ -563,15 +527,6 @@ subroutine fms_io_init()
 ! Initially allocate  files_write and files_read
   allocate(files_write(max_files_w),files_read(max_files_r))
   allocate(registered_file(max_files_w))
-
-  allocate(pelist(mpp_npes()))
-  call mpp_get_current_pelist(pelist,pelist_name)
-  if(mpp_npes()>10000) then
-     write(pe_name,'(a,i6.6)' )'.', mpp_pe()
-  else
-     write(pe_name,'(a,i4.4)' )'.', mpp_pe()
-  endif
-  deallocate(pelist)
 
   do i = 1, max_domains
      array_domain(i) = NULL_DOMAIN2D
@@ -672,8 +627,8 @@ subroutine fms_io_exit()
        num_z_axes = unique_axes(files_write(i), 3, id_z_axes, siz_z_axes          )
 
        if( domain_present ) then
-          call mpp_open(unit,trim(filename),action=MPP_OVERWR,form=form,threading=thread_w,&
-               fileset=fset_w, is_root_pe=files_write(i)%is_root_pe, domain=array_domain(files_write(i)%var(j)%domain_idx))
+          call mpp_open(unit,trim(filename),action=MPP_OVERWR,form=form, &
+               is_root_pe=files_write(i)%is_root_pe, domain=array_domain(files_write(i)%var(j)%domain_idx))
        else  ! global data
           call mpp_open(unit,trim(filename),action=MPP_OVERWR,form=form,threading=MPP_SINGLE,&
                fileset=MPP_SINGLE, is_root_pe=files_write(i)%is_root_pe)
@@ -760,8 +715,7 @@ subroutine fms_io_exit()
              if(cur_var%domain_present) then
                 call mpp_write(unit, cur_var%field,array_domain(cur_var%domain_idx), cur_var%buffer(:,:,:,kk), tlev, &
                                default_data=cur_var%default_data)
-             else if (thread_w == MPP_MULTI .or. cur_var%write_on_this_pe .OR. &
-                      (files_write(i)%is_root_pe.and.thread_w == MPP_SINGLE)) then
+             else if (cur_var%write_on_this_pe) then
                 call mpp_write(unit, cur_var%field, cur_var%buffer(:,:,:,kk), tlev)
              end if
           enddo ! end j loop
@@ -1043,6 +997,8 @@ subroutine write_data_3d_new(filename, fieldname, data, domain, no_domain, scala
            if(mpp_domain_is_tile_root_pe(io_domain)) cur_var%write_on_this_pe = .true.
         endif
      endif
+     !--- always write out from root pe
+     if( cur_file%is_root_pe ) cur_var%write_on_this_pe = .true.
 
      if(ASSOCIATED(d_ptr) .AND. .NOT. is_scalar_or_1d)then
         cur_var%domain_present = .true.
@@ -2103,8 +2059,8 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
     write_field_data = time_level >= 0.0 ! Using negative value of time_level as a flag that there is no valid field data to write.
   endif
 
-  call mpp_open(unit,trim(restartpath),action=mpp_action,form=form,threading=thread_w,&
-          fileset=fset_w, is_root_pe=fileObj%is_root_pe, domain=domain)
+  call mpp_open(unit,trim(restartpath),action=mpp_action,form=form, &
+          is_root_pe=fileObj%is_root_pe, domain=domain)
 
   if(write_meta_data) then
     ! User has defined axes and these are assumed to be unique
@@ -2389,8 +2345,8 @@ integer :: ishift, jshift, iadd, jadd
   num_a_axes = unique_axes(fileObj, 4, id_a_axes, siz_a_axes          )
 
   if( domain_present ) then
-     call mpp_open(unit,trim(restartpath),action=MPP_OVERWR,form=form,threading=thread_w,&
-          fileset=fset_w, is_root_pe=fileObj%is_root_pe, domain=array_domain(fileObj%var(ind_dom)%domain_idx) )
+     call mpp_open(unit,trim(restartpath),action=MPP_OVERWR,form=form,&
+          is_root_pe=fileObj%is_root_pe, domain=array_domain(fileObj%var(ind_dom)%domain_idx) )
   else  ! global data
      call mpp_open(unit,trim(restartpath),action=MPP_OVERWR,form=form,threading=MPP_SINGLE,&
           fileset=MPP_SINGLE, is_root_pe=fileObj%is_root_pe)
@@ -2642,12 +2598,11 @@ integer :: ishift, jshift, iadd, jadd
                                 default_data=cur_var%default_data)
                  deallocate(r3d)
               else
-                 call mpp_error(FATAL, "fms_io(save_restart): domain is present and thread_w  "// &
-                      "is MPP_MULTI, field "//trim(cur_var%name)//" of file "//trim(fileObj%name)// &
+                 call mpp_error(FATAL, "fms_io(save_restart): domain is present, "// &
+                      "field "//trim(cur_var%name)//" of file "//trim(fileObj%name)// &
                       ", but none of p2dr, p3dr, p2di and p3di is associated")
               end if
-           else if (thread_w == MPP_MULTI .or. cur_var%write_on_this_pe .or. &
-                    (fileObj%is_root_pe.and.thread_w == MPP_SINGLE)) then
+           else if (cur_var%write_on_this_pe) then
               if ( Associated(fileObj%p0dr(k,j)%p) ) then
                  call mpp_write(unit, cur_var%field, fileObj%p0dr(k,j)%p, tlev)
               else if ( Associated(fileObj%p1dr(k,j)%p) ) then
@@ -3277,9 +3232,8 @@ subroutine restore_state_all(fileObj, directory)
 
   !--- first open all the restart files
   !--- NOTE: For distributed restart file, we are assuming there is only one file exist.
-
-  inquire (file=trim(restartpath)//trim(pe_name), exist=fexist)
-  if(.NOT. fexist .and. domain_present) then
+  fexist = .FALSE.
+  if(domain_present) then
      io_domain => mpp_get_io_domain(array_domain(domain_idx))
      if(associated(io_domain)) then
         tile_id = mpp_get_tile_id(io_domain)
@@ -3294,13 +3248,9 @@ subroutine restore_state_all(fileObj, directory)
   endif
   if(fexist) then
      nfile = 1
-     if(domain_present) then
-        call mpp_open(unit(nfile), trim(restartpath), form=form,action=MPP_RDONLY,threading=thread_r, &
-             fileset=MPP_MULTI, domain=array_domain(domain_idx) )
-     else
-        call mpp_open(unit(nfile), trim(restartpath), form=form,action=MPP_RDONLY,threading=thread_r, &
-             fileset=MPP_MULTI)
-     endif
+     !--- domain_present is true
+     call mpp_open(unit(nfile), trim(restartpath), form=form,action=MPP_RDONLY, &
+           threading=MPP_MULTI, domain=array_domain(domain_idx) )
   else
      do while(.true.)
         if (num_restart < 10) then
@@ -3324,7 +3274,7 @@ subroutine restore_state_all(fileObj, directory)
            nfile = nfile + 1
            if(nfile > max_split_file) call mpp_error(FATAL, &
                 "fms_io(restore_state_all): nfile is larger than max_split_file, increase max_split_file")
-           call mpp_open(unit(nfile), trim(filepath), form=form,action=MPP_RDONLY,threading=thread_r, &
+           call mpp_open(unit(nfile), trim(filepath), form=form,action=MPP_RDONLY,threading=MPP_MULTI, &
                 fileset=MPP_SINGLE)
         else
            exit
@@ -3613,8 +3563,8 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
   end if
   !--- first open all the restart files
   !--- NOTE: For distributed restart file, we are assuming there is only one file exist.
-  inquire (file=trim(restartpath)//trim(pe_name), exist=fexist)
-  if(.NOT. fexist .and. domain_present) then
+  fexist = .FALSE.
+  if(domain_present) then
      io_domain => mpp_get_io_domain(array_domain(domain_idx))
      if(associated(io_domain)) then
         tile_id = mpp_get_tile_id(io_domain)
@@ -3630,13 +3580,9 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
 
   if(fexist) then
      nfile = 1
-     if(domain_present) then
-        call mpp_open(unit(nfile), trim(restartpath), form=form,action=MPP_RDONLY,threading=thread_r, &
-             fileset=MPP_MULTI, domain=array_domain(domain_idx) )
-     else
-        call mpp_open(unit(nfile), trim(restartpath), form=form,action=MPP_RDONLY,threading=thread_r, &
-             fileset=MPP_MULTI)
-     endif
+     !--- domain_present is true here.
+     call mpp_open(unit(nfile), trim(restartpath), form=form,action=MPP_RDONLY, &
+             threading=MPP_MULTI, domain=array_domain(domain_idx) )
   else
      do while(.true.)
         if (num_restart < 10) then
@@ -3660,7 +3606,7 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
            nfile = nfile + 1
            if(nfile > max_split_file) call mpp_error(FATAL, &
                 "fms_io(restore_state_one_field): nfile is larger than max_split_file, increase max_split_file")
-           call mpp_open(unit(nfile), trim(filepath), form=form,action=MPP_RDONLY,threading=thread_r, &
+           call mpp_open(unit(nfile), trim(filepath), form=form,action=MPP_RDONLY,threading=MPP_MULTI, &
                 fileset=MPP_SINGLE)
         else
            exit
@@ -4019,6 +3965,8 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
            if(mpp_domain_is_tile_root_pe(io_domain)) cur_var%write_on_this_pe = .true.
         endif
      endif
+     !--- always write out from root pe
+     if( fileObj%is_root_pe ) cur_var%write_on_this_pe = .true.
 
      if(ASSOCIATED(d_ptr) .AND. .NOT. is_scalar_or_1d ) then
         cur_var%domain_present = .true.
@@ -4572,9 +4520,6 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel, &
 ! read disttributed files is used when reading restart files that are NOT mppnccombined. In this
 ! case PE 0 will read file_res.nc.0000, PE 1 will read file_res.nc.0001 and so forth.
 !
-! namelist to be used with read_dist_files: threading_read=multi,
-! threading_write=multi, fileset_write=multi.
-
 ! Initialize files to default values
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(read_data_3d_new):  module not initialized')
   is_no_domain = .false.
@@ -4631,37 +4576,35 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel, &
      tlev = 1
   endif
 
-  if ((thread_r == MPP_MULTI).or.(mpp_pe()==mpp_root_pe())) then
-     call get_field_id(unit, file_index, fieldname, index_field, is_no_domain, .false. )
-     siz_in(1:4) = files_read(file_index)%var(index_field)%siz(1:4)
-     if(files_read(file_index)%var(index_field)%is_dimvar ) then
-        if (.not. read_dist) then
-           if (siz_in(1) /= gxsize) &
-                call mpp_error(FATAL,'fms_io(read_data_3d_new), field '//trim(fieldname)// &
-                ' in file '//trim(filename)//' field size mismatch 2')
-        endif
-     else
-        if (siz_in(1) /= gxsize .or. siz_in(2) /= gysize .or. siz_in(3) /= size(data,3)) then
-           PRINT *, gxsize, gysize, size(data, 3), siz_in(1), siz_in(2), siz_in(3)
-           call mpp_error(FATAL,'fms_io(read_data_3d_new), field '//trim(fieldname)// &
-                ' in file '//trim(filename)//': field size mismatch 1')
-        endif
-     end if
-     if ( tlev < 1 .or. files_read(file_index)%max_ntime < tlev)  then
-        write(error_msg,'(I5,"/",I5)') tlev, files_read(file_index)%max_ntime
-        call mpp_error(FATAL,'fms_io(read_data_3d_new): time level out of range, time level/max_time_level=' &
-             //trim(error_msg)//' in field/file: '//trim(fieldname)//'/'//trim(filename))
+  call get_field_id(unit, file_index, fieldname, index_field, is_no_domain, .false. )
+  siz_in(1:4) = files_read(file_index)%var(index_field)%siz(1:4)
+  if(files_read(file_index)%var(index_field)%is_dimvar ) then
+     if (.not. read_dist) then
+        if (siz_in(1) /= gxsize) &
+             call mpp_error(FATAL,'fms_io(read_data_3d_new), field '//trim(fieldname)// &
+             ' in file '//trim(filename)//' field size mismatch 2')
      endif
+  else
+     if (siz_in(1) /= gxsize .or. siz_in(2) /= gysize .or. siz_in(3) /= size(data,3)) then
+        PRINT *, gxsize, gysize, size(data, 3), siz_in(1), siz_in(2), siz_in(3)
+        call mpp_error(FATAL,'fms_io(read_data_3d_new), field '//trim(fieldname)// &
+             ' in file '//trim(filename)//': field size mismatch 1')
+     endif
+  end if
+  if ( tlev < 1 .or. files_read(file_index)%max_ntime < tlev)  then
+     write(error_msg,'(I5,"/",I5)') tlev, files_read(file_index)%max_ntime
+     call mpp_error(FATAL,'fms_io(read_data_3d_new): time level out of range, time level/max_time_level=' &
+          //trim(error_msg)//' in field/file: '//trim(fieldname)//'/'//trim(filename))
+  endif
 
-     if(is_no_domain .OR. is_scalar_or_1d) then
-        if (files_read(file_index)%var(index_field)%is_dimvar) then
-           call mpp_get_axis_data(files_read(file_index)%var(index_field)%axis,data(:,1,1))
-        else
-           call mpp_read(unit,files_read(file_index)%var(index_field)%field,data(:,:,:),tlev)
-        endif
+  if(is_no_domain .OR. is_scalar_or_1d) then
+     if (files_read(file_index)%var(index_field)%is_dimvar) then
+        call mpp_get_axis_data(files_read(file_index)%var(index_field)%axis,data(:,1,1))
      else
-        call mpp_read(unit,files_read(file_index)%var(index_field)%field,d_ptr,data,tlev,tile_count)
+        call mpp_read(unit,files_read(file_index)%var(index_field)%field,data(:,:,:),tlev)
      endif
+  else
+     call mpp_read(unit,files_read(file_index)%var(index_field)%field,d_ptr,data,tlev,tile_count)
   endif
 
   d_ptr =>NULL()
@@ -4794,14 +4737,12 @@ subroutine read_data_2d_region(filename,fieldname,data,start,nread,domain, &
   call get_file_unit(fname, unit, file_index, read_dist, io_domain_exist, domain=domain)
 
 
-  if ((thread_r == MPP_MULTI).or.(mpp_pe()==mpp_root_pe())) then
-     call get_field_id(unit, file_index, fieldname, index_field, is_no_domain, .false. )
-     siz_in(1:4) = files_read(file_index)%var(index_field)%siz(1:4)
-     if(files_read(file_index)%var(index_field)%is_dimvar) then
-        call mpp_error(FATAL, 'fms_io_mod(read_data_2d_region): the field should not be a dimension variable')
-     endif
-     call mpp_read(unit,files_read(file_index)%var(index_field)%field,data,start, nread)
+  call get_field_id(unit, file_index, fieldname, index_field, is_no_domain, .false. )
+  siz_in(1:4) = files_read(file_index)%var(index_field)%siz(1:4)
+  if(files_read(file_index)%var(index_field)%is_dimvar) then
+     call mpp_error(FATAL, 'fms_io_mod(read_data_2d_region): the field should not be a dimension variable')
   endif
+  call mpp_read(unit,files_read(file_index)%var(index_field)%field,data,start, nread)
 
   d_ptr =>NULL()
 
@@ -4835,17 +4776,15 @@ subroutine read_data_text(filename,fieldname,data,level)
   call get_file_unit(fname, unit, file_index, read_dist, io_domain_exist )
 
 ! Get info of this file and field
-  if ((thread_r == MPP_MULTI).or.(mpp_pe()==mpp_root_pe())) then
-     call get_field_id(unit, file_index, fieldname, index_field, .true., .true. )
+  call get_field_id(unit, file_index, fieldname, index_field, .true., .true. )
 
-     if ( lev < 1 .or. lev > files_read(file_index)%var(index_field)%siz(1) )  then
-        write(error_msg,'(I5,"/",I5)') lev, files_read(file_index)%var(index_field)%siz(1)
-        call mpp_error(FATAL,'fms_io(read_data_text): text level out of range, level/max_level=' &
-             //trim(error_msg)//' in field/file: '//trim(fieldname)//'/'//trim(filename))
-     endif
-
-     call mpp_read(unit,files_read(file_index)%var(index_field)%field,data, level=level)
+  if ( lev < 1 .or. lev > files_read(file_index)%var(index_field)%siz(1) )  then
+     write(error_msg,'(I5,"/",I5)') lev, files_read(file_index)%var(index_field)%siz(1)
+     call mpp_error(FATAL,'fms_io(read_data_text): text level out of range, level/max_level=' &
+          //trim(error_msg)//' in field/file: '//trim(fieldname)//'/'//trim(filename))
   endif
+
+  call mpp_read(unit,files_read(file_index)%var(index_field)%field,data, level=level)
   return
 end subroutine read_data_text
 !..............................................................
@@ -6627,15 +6566,6 @@ end subroutine get_axis_cart
     type(domain2d), pointer, save                  :: d_ptr =>NULL()
     logical                                        :: domain_exist
 
-    !--- deal with the situation that the file is alreday in the full name.
-    lens = len_trim(file_in)
-    if(lens > 8) then
-       if(file_in(lens-7:lens) == '.nc'//trim(pe_name) ) then
-         file_out = file_in
-         return
-        endif
-    endif
-
     if(index(file_in, '.nc', back=.true.)==0) then
        basefile = trim(file_in)
     else
@@ -6645,38 +6575,36 @@ end subroutine get_axis_cart
        basefile = file_in(1:lens-3)
     end if
 
-    if(mpp_mosaic_defined())then
-       !--- get the tile name
-       ntiles = 1
-       my_tile_id = 1
-       domain_exist = .false.
-       if(PRESENT(domain))then
-          domain_exist = .true.
-          ntiles = mpp_get_ntile_count(domain)
-          d_ptr => domain
-       elseif (ASSOCIATED(Current_domain) .AND. .NOT. is_no_domain ) then
-          domain_exist = .true.
-          ntiles = mpp_get_ntile_count(Current_domain)
-          d_ptr => Current_domain
-       endif
-
-       if(domain_exist) then
-          ntileMe = mpp_get_current_ntile(d_ptr)
-          allocate(tile_id(ntileMe))
-          tile_id = mpp_get_tile_id(d_ptr)
-          tile = 1
-          if(present(tile_count)) tile = tile_count
-          my_tile_id = tile_id(tile)
-       endif
-
-       if(ntiles > 1 .or. my_tile_id > 1 )then
-          tilename = 'tile'//string(my_tile_id)
-          if(index(basefile,'.'//trim(tilename),back=.true.) == 0)then
-             basefile = trim(basefile)//'.'//trim(tilename);
-          end if
-       end if
-       if(allocated(tile_id)) deallocate(tile_id)
+    !--- get the tile name
+    ntiles = 1
+    my_tile_id = 1
+    domain_exist = .false.
+    if(PRESENT(domain))then
+       domain_exist = .true.
+       ntiles = mpp_get_ntile_count(domain)
+       d_ptr => domain
+    elseif (ASSOCIATED(Current_domain) .AND. .NOT. is_no_domain ) then
+       domain_exist = .true.
+       ntiles = mpp_get_ntile_count(Current_domain)
+       d_ptr => Current_domain
     endif
+
+    if(domain_exist) then
+       ntileMe = mpp_get_current_ntile(d_ptr)
+       allocate(tile_id(ntileMe))
+       tile_id = mpp_get_tile_id(d_ptr)
+       tile = 1
+       if(present(tile_count)) tile = tile_count
+       my_tile_id = tile_id(tile)
+    endif
+
+    if(ntiles > 1 .or. my_tile_id > 1 )then
+       tilename = 'tile'//string(my_tile_id)
+       if(index(basefile,'.'//trim(tilename),back=.true.) == 0)then
+          basefile = trim(basefile)//'.'//trim(tilename);
+       end if
+    end if
+    if(allocated(tile_id)) deallocate(tile_id)
 
     file_out = trim(basefile)//'.nc'
 
@@ -6838,8 +6766,6 @@ end subroutine get_axis_cart
        io_domain=>NULL()
     endif
 
-    if(.not. fexist ) inquire (file=trim(actual_file)//trim(pe_name), exist=fexist)
-
     if(fexist) then
        read_dist = .true.
        d_ptr => NULL()
@@ -6855,45 +6781,47 @@ end subroutine get_axis_cart
     endif
 
     !Perhaps the file has an ensemble instance appendix
-    call get_instance_filename(orig_file, actual_file)
-    if(index(orig_file, '.nc', back=.true.) == 0) then
-       inquire (file=trim(actual_file), exist=fexist)
+    if(len_trim(filename_appendix) > 0) then
+       call get_instance_filename(orig_file, actual_file)
+       if(index(orig_file, '.nc', back=.true.) == 0) then
+          inquire (file=trim(actual_file), exist=fexist)
+          if(fexist) then
+             get_file_name = .true.
+             return
+          endif
+       endif
+
+       call get_mosaic_tile_file(actual_file, actual_file, is_no_domain, domain, tile_count)
+       !--- check if the file is group redistribution.
+       if(ASSOCIATED(d_ptr)) then
+          io_domain => mpp_get_io_domain(d_ptr)
+          if(associated(io_domain)) then
+             tile_id = mpp_get_tile_id(io_domain)
+             if(mpp_npes()>10000) then
+                write(fname, '(a,i6.6)' ) trim(actual_file)//'.', tile_id(1)
+             else
+                write(fname, '(a,i4.4)' ) trim(actual_file)//'.', tile_id(1)
+             endif
+             inquire (file=trim(fname), exist=fexist)
+             if(fexist) io_domain_exist = .true.
+          endif
+          io_domain=>NULL()
+       endif
+
        if(fexist) then
+          read_dist = .true.
+          d_ptr => NULL()
           get_file_name = .true.
           return
        endif
-    endif
 
-    call get_mosaic_tile_file(actual_file, actual_file, is_no_domain, domain, tile_count)
-    !--- check if the file is group redistribution.
-    if(ASSOCIATED(d_ptr)) then
-       io_domain => mpp_get_io_domain(d_ptr)
-       if(associated(io_domain)) then
-          tile_id = mpp_get_tile_id(io_domain)
-          if(mpp_npes()>10000) then
-             write(fname, '(a,i6.6)' ) trim(actual_file)//'.', tile_id(1)
-          else
-             write(fname, '(a,i4.4)' ) trim(actual_file)//'.', tile_id(1)
-          endif
-          inquire (file=trim(fname), exist=fexist)
-          if(fexist) io_domain_exist = .true.
+       inquire (file=trim(actual_file), exist=fexist)
+
+       if(fexist) then
+          d_ptr => NULL()
+          get_file_name = .true.
+          return
        endif
-       io_domain=>NULL()
-    endif
-
-    if(.not. fexist) inquire (file=trim(actual_file)//trim(pe_name), exist=fexist)
-    if(fexist) then
-       read_dist = .true.
-       d_ptr => NULL()
-       get_file_name = .true.
-       return
-    endif
-    inquire (file=trim(actual_file), exist=fexist)
-
-    if(fexist) then
-       d_ptr => NULL()
-       get_file_name = .true.
-       return
     endif
 
   end function get_file_name
@@ -6924,10 +6852,6 @@ end subroutine get_axis_cart
     if(num_files_r == max_files_r) &  ! need to have bigger max_files_r
          call mpp_error(FATAL,'fms_io(get_file_unit): max_files_r exceeded, increase it via fms_io_nml')
     num_files_r=num_files_r + 1
-    if (read_dist .and. thread_r == MPP_SINGLE) then
-       call mpp_error(FATAL,'fms_io(get_file_unit): single-threaded read from distributed fileset not allowed' &
-            //'change threading_read to MULTI')
-    endif
     if(read_dist) then
        if(io_domain_exist) then
           if(present(domain)) then
@@ -6941,11 +6865,11 @@ end subroutine get_axis_cart
                    'either domain is present or current_domain is associated')
           endif
        else
-          call mpp_open(unit,trim(filename),form=form,action=MPP_RDONLY,threading=thread_r, &
+          call mpp_open(unit,trim(filename),form=form,action=MPP_RDONLY,threading=MPP_MULTI, &
             fileset=MPP_MULTI)
        endif
     else
-       call mpp_open(unit,trim(filename),form=form,action=MPP_RDONLY,threading=thread_r, &
+       call mpp_open(unit,trim(filename),form=form,action=MPP_RDONLY,threading=MPP_MULTI, &
             fileset=MPP_SINGLE)
     end if
     files_read(num_files_r)%name = trim(filename)
