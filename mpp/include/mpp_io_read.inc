@@ -26,6 +26,7 @@
 #define MPP_TYPE_ real
 #include <mpp_read_compressed.h>
 
+#include <mpp_read_distributed_ascii.inc>
 
     subroutine read_record_core(unit, field, nwords, data, start, axsiz)
       integer,         intent(in)    :: unit
@@ -568,6 +569,8 @@
                  call netcdf_err( error, mpp_file(unit), attr=mpp_file(unit)%att(i) )
                  if( verbose .and. pe == 0 )print *, 'GLOBAL ATT ',trim(name),' ',ivals(1:len)
                  mpp_file(unit)%Att(i)%fatt(1:len)=ivals(1:len)
+                 if(lowercase(trim(name)) == 'time_axis' .and. ivals(1)==0) &
+                        mpp_file(unit)%time_level = -1 ! This file is an unlimited axis restart
                  deallocate(ivals)
               case (NF_FLOAT)
                  allocate(mpp_file(unit)%Att(i)%fatt(len), STAT=istat)
@@ -938,7 +941,7 @@
               allocate(mpp_file(unit)%Var(nv)%size(nvdims))
               
               do j=1,nvdims
-                 if( dimids(j).eq.mpp_file(unit)%recdimid )then
+                 if(dimids(j).eq.mpp_file(unit)%recdimid  .and. mpp_file(unit)%time_level/=-1)then
                     mpp_file(unit)%Var(nv)%time_axis_index = dimids(j)
                     mpp_file(unit)%Var(nv)%size(j)=1    ! dimid length set to 1 here for consistency w/ mpp_write
                  else
