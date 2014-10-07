@@ -4898,7 +4898,6 @@ subroutine read_compressed_2d(filename,fieldname,data,domain,timelevel)
   character(len=256)            :: fname
   integer                       :: unit, siz_in(4)
   integer                       :: file_index  ! index of the opened file in array files
-  integer                       :: tlev=1
   integer                       :: index_field ! position of the fieldname in the list of variables
   logical                       :: read_dist, io_domain_exist, found_file
   type(domain2d), pointer, save :: d_ptr =>NULL()
