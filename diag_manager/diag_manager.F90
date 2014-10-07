@@ -4063,6 +4063,7 @@ PROGRAM test
   USE diag_manager_mod, ONLY: register_static_field, register_diag_field, diag_send_complete
   USE diag_manager_mod, ONLY: diag_manager_set_time_end, diag_field_add_attribute
   USE diag_manager_mod, ONLY: diag_field_add_cell_measures
+  USE diag_manager_mod, ONLY: get_diag_field_id, DIAG_FIELD_NOT_FOUND
 
   IMPLICIT NONE
 
@@ -4085,6 +4086,7 @@ PROGRAM test
   INTEGER :: id_phalf, id_pfull, id_bk
   INTEGER :: id_lon1, id_lonb1, id_latb1, id_lat1, id_dat1
   INTEGER :: id_lon2, id_lat2, id_dat2, id_dat2_2d, id_sol_con, id_dat2h, id_dat2h_2
+  INTEGER :: id_dat2_got, id_none_got
   INTEGER :: i, j, k, is1, ie1, js1, je1, nml_unit, ierr, log_unit, out_unit, m
   INTEGER :: is_in, ie_in, js_in, je_in
   INTEGER :: is2, ie2, js2, je2, hi=1, hj=1
@@ -4246,6 +4248,22 @@ PROGRAM test
   END IF
   id_sol_con = register_diag_field ('test_diag_manager_mod', 'solar_constant', Time, &
                   'solar constant', 'watts/m2')
+
+  IF ( test_number == 20 ) THEN
+     id_dat2_got = get_diag_field_id('test_diag_manager_mod', 'dat2')
+     IF ( id_dat2_got == id_dat2 ) THEN
+        WRITE (out_unit,'(a)') 'test20.1 Passes, id_dat2.EQ.id_dat2_got'
+     ELSE
+        WRITE (out_unit,'(a)') 'test20.1 Failed, id_dat2.NE.id_dat2_got'
+     END IF
+
+     id_none_got = get_diag_field_id('no_mod', 'no_var')
+     IF ( id_none_got == DIAG_FIELD_NOT_FOUND ) THEN
+        write (out_unit,'(a)') 'test20.2 Passes, id_none_got.EQ.DIAG_FIELD_NOT_FOUND'
+     ELSE
+        write (out_unit,'(a)') 'test20.2 Failed, id_none_got.NE.DIAG_FIELD_NOT_FOUND'
+     END IF
+  END IF
 
   IF ( dt_step == 0 ) CALL error_mesg ('test_diag_manager',&
        & 'dt_step is not set', FATAL)
