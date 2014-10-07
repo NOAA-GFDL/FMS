@@ -136,10 +136,14 @@ integer, parameter, private :: NIDX=7
 
 type meta_type
   type(meta_type), pointer :: prev=>null(), next=>null()
-  character(len=:),allocatable  :: name
+!!$ Gfortran on gaea does not yet support deferred length character strings
+!!$  character(len=:),allocatable  :: name
+  character(len=256)   :: name
   real,    allocatable :: rval(:)
   integer, allocatable :: ival(:)
-  character(len=:), allocatable :: cval
+!!$ Gfortran on gaea does not yet support deferred length character strings
+!!$  character(len=:), allocatable :: cval
+  character(len=256)   :: cval
 end type meta_type
 
 type ax_type
@@ -1285,10 +1289,14 @@ subroutine free_restart_type(fileObj)
      enddo
      do while(associated(this))  ! Deallocate from the last element to the first
        this_p =>this%prev
-       deallocate(this%name)
+!!$ Gfortran on gaea does not yet support deferred length character strings
+!!$       deallocate(this%name)
+       this%name=''  ! Remove this line when Gfortran supports deferred length character strings
        if(allocated(this%rval)) deallocate(this%rval)
        if(allocated(this%ival)) deallocate(this%ival)
-       if(allocated(this%cval)) deallocate(this%cval)
+!!$ Gfortran on gaea does not yet support deferred length character strings
+!!$       if(allocated(this%cval)) deallocate(this%cval)
+       this%cval=''  ! Remove this line when Gfortran supports deferred length character strings
        deallocate(this)
        this =>this_p
      enddo
@@ -1322,13 +1330,17 @@ subroutine set_meta_global(fileObj, name, rval, ival, cval)
   endif
 
 ! Per mpp_write_meta_global, only one type of data can be associated with the metadata
-  allocate(character(len(name)) :: this%name); this%name = name
+!!$ Gfortran on gaea does not yet support deferred length character strings
+!!$  allocate(character(len(name)) :: this%name); this%name = name
+  this%name = name  ! Remove this line when Gfortran supports deferred length character stings
   if(present(rval))then
      allocate(this%rval(size(rval))); this%rval=rval
   elseif(present(ival))then
      allocate(this%ival(size(ival))); this%ival=ival
   elseif(present(cval))then
-     allocate(character(len(cval)) :: this%cval); this%cval=cval
+!!$ Gfortran on gaea does not yet support deferred length character strings
+!!$     allocate(character(len(cval)) :: this%cval); this%cval = cval
+     this%cval=cval  ! Remove this line when Gfortran supports deferred length character stings
   endif
 end subroutine set_meta_global
 
@@ -1349,7 +1361,9 @@ subroutine write_meta_global(unit,fileObj)
         call mpp_write_meta(unit,this%name,rval=this%rval)
      elseif(allocated(this%ival))then
         call mpp_write_meta(unit,this%name,ival=this%ival)
-     elseif(allocated(this%cval))then
+!!$ Gfortran on gaea does not yet support deferred length character strings
+!!$     elseif(allocated(this%cval))then
+     elseif(len_trim(this%cval).GT.0)then  ! Remove this line when Gfortran supports deferred length character stings
         call mpp_write_meta(unit,this%name,cval=this%cval)
      else
         call mpp_write_meta(unit,this%name)
@@ -2448,7 +2462,7 @@ subroutine save_unlimited_axis_restart(fileObj,restartpath)
   type(ax_type),  pointer :: axis   =>NULL()
 
 
-  if (.not.ALLOCATED(fileObj%axes(UIDX))) then
+  if (.not.ALLOCATED(fileObj%axes)) then
      call mpp_error(FATAL, "fms_io(save_unlimited_axis_restart): An unlimited axis has "// &
           "not been defined for file "//trim(fileObj%name))
   endif
