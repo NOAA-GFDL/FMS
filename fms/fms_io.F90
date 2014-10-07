@@ -236,8 +236,8 @@ type restart_file_type
    character(len=128)                       :: name
    integer                                  :: nvar, natt, max_ntime
    logical                                  :: is_root_pe
-   logical                                  :: is_compressed
-   logical                                  :: unlimited_axis
+   logical                                  :: is_compressed = .FALSE.
+   logical                                  :: unlimited_axis = .FALSE.
    integer                                  :: tile_count
    type(ax_type),  allocatable              :: axes(:)  ! Currently define X,Y,Compressed, unlimited and maybe Z
    type(meta_type),                pointer  :: first =>NULL() ! pointer to first additional global metadata element
@@ -2462,7 +2462,7 @@ subroutine save_unlimited_axis_restart(fileObj,restartpath)
   type(ax_type),  pointer :: axis   =>NULL()
 
 
-  if (.not.ALLOCATED(fileObj%axes)) then
+  if ( .NOT.fileObj%unlimited_axis ) then
      call mpp_error(FATAL, "fms_io(save_unlimited_axis_restart): An unlimited axis has "// &
           "not been defined for file "//trim(fileObj%name))
   endif
