@@ -136,10 +136,14 @@ integer, parameter, private :: NIDX=7
 
 type meta_type
   type(meta_type), pointer :: prev=>null(), next=>null()
-  character(len=:),allocatable  :: name
+!!$ Gfortran on gaea does not yet support deferred length character strings
+!!$  character(len=:),allocatable  :: name
+  character(len=256)   :: name
   real,    allocatable :: rval(:)
   integer, allocatable :: ival(:)
-  character(len=:), allocatable :: cval
+!!$ Gfortran on gaea does not yet support deferred length character strings
+!!$  character(len=:), allocatable :: cval
+  character(len=256)   :: cval
 end type meta_type
 
 type ax_type
@@ -169,7 +173,6 @@ type var_type
    character(len=128)                     :: units
    real, dimension(:,:,:,:), _ALLOCATABLE :: buffer _NULL
    logical                                :: domain_present
-   logical                                :: write_on_this_pe
    integer                                :: domain_idx
    logical                                :: is_dimvar
    logical                                :: read_only
@@ -233,8 +236,8 @@ type restart_file_type
    character(len=128)                       :: name
    integer                                  :: nvar, natt, max_ntime
    logical                                  :: is_root_pe
-   logical                                  :: is_compressed
-   logical                                  :: unlimited_axis
+   logical                                  :: is_compressed = .FALSE.
+   logical                                  :: unlimited_axis = .FALSE.
    integer                                  :: tile_count
    type(ax_type),  allocatable              :: axes(:)  ! Currently define X,Y,Compressed, unlimited and maybe Z
    type(meta_type),                pointer  :: first =>NULL() ! pointer to first additional global metadata element
@@ -621,6 +624,8 @@ subroutine fms_io_exit()
     character(len=256)                  :: filename
     character(len=10)                   :: axisname
     logical                             :: domain_present
+    logical                             :: write_on_this_pe
+    type(domain2d), pointer :: io_domain =>NULL()
 
     if( .NOT.module_is_initialized )return !make sure it's only called once per PE
 
@@ -657,6 +662,16 @@ subroutine fms_io_exit()
           call mpp_open(unit,trim(filename),action=MPP_OVERWR,form=form,threading=MPP_SINGLE,&
                fileset=MPP_SINGLE, is_root_pe=files_write(i)%is_root_pe)
        end if
+
+       write_on_this_pe = .false.
+       if(domain_present) then
+          io_domain => mpp_get_io_domain(array_domain(files_write(i)%var(j)%domain_idx))
+          if(associated(io_domain)) then
+             if(mpp_domain_is_tile_root_pe(io_domain)) write_on_this_pe = .true.
+          endif
+       endif
+       !--- always write out from root pe
+       if( files_write(i)%is_root_pe ) write_on_this_pe = .true.
 
        do j = 1, num_x_axes
          if (j < 10) then
@@ -739,7 +754,7 @@ subroutine fms_io_exit()
              if(cur_var%domain_present) then
                 call mpp_write(unit, cur_var%field,array_domain(cur_var%domain_idx), cur_var%buffer(:,:,:,kk), tlev, &
                                default_data=cur_var%default_data)
-             else if (cur_var%write_on_this_pe) then
+             else if (write_on_this_pe) then
                 call mpp_write(unit, cur_var%field, cur_var%buffer(:,:,:,kk), tlev)
              end if
           enddo ! end j loop
@@ -878,7 +893,6 @@ subroutine write_data_3d_new(filename, fieldname, data, domain, no_domain, scala
   type(domain2d), pointer, save   :: d_ptr   =>NULL()
   type(var_type), pointer, save   :: cur_var =>NULL()
   type(restart_file_type), pointer, save :: cur_file =>NULL()
-  type(domain2d), pointer,save            :: io_domain=>NULL()
 
 ! Initialize files to default values
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(write_data_3d_new): need to call fms_io_init')
@@ -969,7 +983,6 @@ subroutine write_data_3d_new(filename, fieldname, data, domain, no_domain, scala
         cur_file%var(i)%name           = 'none'
         cur_file%var(i)%domain_present = .false.
         cur_file%var(i)%read_only      = .false.
-        cur_file%var(i)%write_on_this_pe = .false.
         cur_file%var(i)%domain_idx     = -1
         cur_file%var(i)%is_dimvar      = .false.
         cur_file%var(i)%position       = CENTER
@@ -1014,15 +1027,6 @@ subroutine write_data_3d_new(filename, fieldname, data, domain, no_domain, scala
      cur_var%default_data = default_data
      cur_var%ndim = 3
      if(present(position)) cur_var%position = position
-
-     if(ASSOCIATED(d_ptr)) then
-        io_domain => mpp_get_io_domain(d_ptr)
-        if(associated(io_domain)) then
-           if(mpp_domain_is_tile_root_pe(io_domain)) cur_var%write_on_this_pe = .true.
-        endif
-     endif
-     !--- always write out from root pe
-     if( cur_file%is_root_pe ) cur_var%write_on_this_pe = .true.
 
      if(ASSOCIATED(d_ptr) .AND. .NOT. is_scalar_or_1d)then
         cur_var%domain_present = .true.
@@ -1285,10 +1289,14 @@ subroutine free_restart_type(fileObj)
      enddo
      do while(associated(this))  ! Deallocate from the last element to the first
        this_p =>this%prev
-       deallocate(this%name)
+!!$ Gfortran on gaea does not yet support deferred length character strings
+!!$       deallocate(this%name)
+       this%name=''  ! Remove this line when Gfortran supports deferred length character strings
        if(allocated(this%rval)) deallocate(this%rval)
        if(allocated(this%ival)) deallocate(this%ival)
-       if(allocated(this%cval)) deallocate(this%cval)
+!!$ Gfortran on gaea does not yet support deferred length character strings
+!!$       if(allocated(this%cval)) deallocate(this%cval)
+       this%cval=''  ! Remove this line when Gfortran supports deferred length character strings
        deallocate(this)
        this =>this_p
      enddo
@@ -1322,13 +1330,17 @@ subroutine set_meta_global(fileObj, name, rval, ival, cval)
   endif
 
 ! Per mpp_write_meta_global, only one type of data can be associated with the metadata
-  allocate(character(len(name)) :: this%name); this%name = name
+!!$ Gfortran on gaea does not yet support deferred length character strings
+!!$  allocate(character(len(name)) :: this%name); this%name = name
+  this%name = name  ! Remove this line when Gfortran supports deferred length character stings
   if(present(rval))then
      allocate(this%rval(size(rval))); this%rval=rval
   elseif(present(ival))then
      allocate(this%ival(size(ival))); this%ival=ival
   elseif(present(cval))then
-     allocate(character(len(cval)) :: this%cval); this%cval=cval
+!!$ Gfortran on gaea does not yet support deferred length character strings
+!!$     allocate(character(len(cval)) :: this%cval); this%cval = cval
+     this%cval=cval  ! Remove this line when Gfortran supports deferred length character stings
   endif
 end subroutine set_meta_global
 
@@ -1349,7 +1361,9 @@ subroutine write_meta_global(unit,fileObj)
         call mpp_write_meta(unit,this%name,rval=this%rval)
      elseif(allocated(this%ival))then
         call mpp_write_meta(unit,this%name,ival=this%ival)
-     elseif(allocated(this%cval))then
+!!$ Gfortran on gaea does not yet support deferred length character strings
+!!$     elseif(allocated(this%cval))then
+     elseif(len_trim(this%cval).GT.0)then  ! Remove this line when Gfortran supports deferred length character stings
         call mpp_write_meta(unit,this%name,cval=this%cval)
      else
         call mpp_write_meta(unit,this%name)
@@ -2448,7 +2462,7 @@ subroutine save_unlimited_axis_restart(fileObj,restartpath)
   type(ax_type),  pointer :: axis   =>NULL()
 
 
-  if (.not.ALLOCATED(fileObj%axes(UIDX))) then
+  if ( .NOT.fileObj%unlimited_axis ) then
      call mpp_error(FATAL, "fms_io(save_unlimited_axis_restart): An unlimited axis has "// &
           "not been defined for file "//trim(fileObj%name))
   endif
@@ -2551,9 +2565,11 @@ subroutine save_default_restart(fileObj,restartpath)
   real                                :: r0d
   integer(LONG_KIND), allocatable, dimension(:)    :: check_val
   character(len=256)                  :: checksum_char
-integer :: isc, iec, jsc, jec
-integer :: isg, ieg, jsg, jeg
-integer :: ishift, jshift, iadd, jadd
+  integer :: isc, iec, jsc, jec
+  integer :: isg, ieg, jsg, jeg
+  integer :: ishift, jshift, iadd, jadd
+  logical :: write_on_this_pe
+  type(domain2d), pointer :: io_domain =>NULL()
 
   if (.not.associated(fileObj%var)) call mpp_error(FATAL, "fms_io(save_restart): " // &
       "restart_file_type data must be initialized by calling register_restart_field before using it")
@@ -2579,6 +2595,16 @@ integer :: ishift, jshift, iadd, jadd
   num_z_axes = unique_axes(fileObj, 3, id_z_axes, siz_z_axes          )
   num_a_axes = unique_axes(fileObj, 4, id_a_axes, siz_a_axes          )
 
+  write_on_this_pe = .false.
+  if(domain_present) then
+     io_domain => mpp_get_io_domain(array_domain(fileObj%var(ind_dom)%domain_idx))
+     if(associated(io_domain)) then
+       if(mpp_domain_is_tile_root_pe(io_domain)) write_on_this_pe = .true.
+     endif
+  endif
+  !--- always write out from root pe
+  if( fileObj%is_root_pe ) write_on_this_pe = .true.
+  
   if( domain_present ) then
      call mpp_open(unit,trim(restartpath),action=MPP_OVERWR,form=form,&
           is_root_pe=fileObj%is_root_pe, domain=array_domain(fileObj%var(ind_dom)%domain_idx) )
@@ -2837,7 +2863,7 @@ integer :: ishift, jshift, iadd, jadd
                       "field "//trim(cur_var%name)//" of file "//trim(fileObj%name)// &
                       ", but none of p2dr, p3dr, p2di and p3di is associated")
               end if
-           else if (cur_var%write_on_this_pe) then
+           else if (write_on_this_pe) then
               if ( Associated(fileObj%p0dr(k,j)%p) ) then
                  call mpp_write(unit, cur_var%field, fileObj%p0dr(k,j)%p, tlev)
               else if ( Associated(fileObj%p1dr(k,j)%p) ) then
@@ -4041,7 +4067,6 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
   character(len=256)              :: fname, filename2, append_string
   type(domain2d), pointer, save   :: d_ptr   =>NULL()
   type(var_type), pointer, save   :: cur_var =>NULL()
-  type(domain2d), pointer, save   :: io_domain =>NULL()
   integer                         :: length, n_field_siz
 
   if(ANY(field_siz < 0)) then
@@ -4130,7 +4155,6 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
      do i = 1, max_fields
         fileObj%var(i)%name           = 'none'
         fileObj%var(i)%domain_present = .false.
-        fileObj%var(i)%write_on_this_pe = .false.
         fileObj%var(i)%domain_idx     = -1
         fileObj%var(i)%is_dimvar      = .false.
         fileObj%var(i)%position       = CENTER
@@ -4194,14 +4218,6 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
      if(present(compressed_axis)) cur_var%compressed_axis = compressed_axis
      cur_var%is = 1; cur_var%ie =  cur_var%siz(1)
      cur_var%js = 1; cur_var%je =  cur_var%siz(2)
-     if(ASSOCIATED(d_ptr)) then
-        io_domain => mpp_get_io_domain(d_ptr)
-        if(associated(io_domain)) then
-           if(mpp_domain_is_tile_root_pe(io_domain)) cur_var%write_on_this_pe = .true.
-        endif
-     endif
-     !--- always write out from root pe
-     if( fileObj%is_root_pe ) cur_var%write_on_this_pe = .true.
 
      if(ASSOCIATED(d_ptr) .AND. .NOT. is_scalar_or_1d ) then
         cur_var%domain_present = .true.
@@ -4896,7 +4912,6 @@ subroutine read_compressed_2d(filename,fieldname,data,domain,timelevel)
   character(len=256)            :: fname
   integer                       :: unit, siz_in(4)
   integer                       :: file_index  ! index of the opened file in array files
-  integer                       :: tlev=1
   integer                       :: index_field ! position of the fieldname in the list of variables
   logical                       :: read_dist, io_domain_exist, found_file
   type(domain2d), pointer, save :: d_ptr =>NULL()
