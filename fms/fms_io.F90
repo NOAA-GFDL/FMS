@@ -4062,6 +4062,7 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
   integer                         :: cxsize, cysize
   integer                         :: dxsize, dysize
   real                            :: default_data
+  logical                         :: found = .false.
   logical                         :: is_no_domain = .false.
   logical                         :: is_scalar_or_1d = .false.
   character(len=256)              :: fname, filename2, append_string
@@ -4135,12 +4136,21 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
      allocate(fileObj%p2di(MAX_TIME_LEVEL_REGISTER, max_fields))
      allocate(fileObj%p3di(MAX_TIME_LEVEL_REGISTER, max_fields))
      !--- make sure fname is not used in other restart_file_type object.
+     found = .false.
      do i = 1, num_registered_files
-        if(trim(fname) == trim(registered_file(i)) ) call mpp_error(WARNING, &
-          'fms_io(setup_one_field): '//trim(fname)//' is already registered with other restart_file_type data')
+        if(trim(fname) == trim(registered_file(i)) ) then
+           call mpp_error(WARNING, &
+             'fms_io(setup_one_field): '//trim(fname)//' is already registered with other restart_file_type data')
+           found = .true.
+           exit
+        endif
      end do
-     num_registered_files = num_registered_files + 1
-     registered_file(num_registered_files) = trim(fname)
+     if( .not. found ) then
+        num_registered_files = num_registered_files + 1
+        if( num_registered_files > max_files_w ) call mpp_error(WARNING, &
+            'fms_io(setup_one_field): num_registered_files > max_files_w, increase fms_io_nml max_files_w')
+        registered_file(num_registered_files) = trim(fname)
+     endif
      fileObj%name = trim(fname)
      fileObj%tile_count=1
      if(present(tile_count)) fileObj%tile_count = tile_count
