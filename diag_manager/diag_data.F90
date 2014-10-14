@@ -72,6 +72,9 @@ MODULE diag_data_mod
   ! <DATA NAME="GLO_REG_VAL_ALT" TYPE="INTEGER, PARAMETER" DEFAULT="-1">
   !   Alternate value used in the region specification of the diag_table to indicate to use the full axis instead of a sub-axis
   ! </DATA>
+  ! <DATA NAME="DIAG_FIELD_NOT_FOUND" TYPE="INTEGER, PARAMETER" DEFAULT="-1">
+  !   Return value for a diag_field that isn't found in the diag_table
+  ! </DATA>
   ! Specify storage limits for fixed size tables used for pointers, etc.
   INTEGER, PARAMETER :: MAX_FIELDS_PER_FILE = 300 !< Maximum number of fields per file.
   INTEGER, PARAMETER :: DIAG_OTHER = 0
@@ -87,6 +90,7 @@ MODULE diag_data_mod
   INTEGER, PARAMETER :: GLO_REG_VAL = -999
   INTEGER, PARAMETER :: GLO_REG_VAL_ALT = -1
   REAL, PARAMETER :: CMOR_MISSING_VALUE = 1.0e20 !< CMOR standard missing value
+  INTEGER, PARAMETER :: DIAG_FIELD_NOT_FOUND = -1
 
   ! <TYPE NAME="diag_grid">
   !   <DESCRIPTION>

@@ -207,7 +207,7 @@ MODULE diag_manager_mod
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, conserve_water, region_out_use_alt_value, max_field_attributes, output_field_type,&
-       & max_file_attributes, prepend_date
+       & max_file_attributes, prepend_date, DIAG_FIELD_NOT_FOUND
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
@@ -223,17 +223,20 @@ MODULE diag_manager_mod
        & register_diag_field, register_static_field, diag_axis_init, get_base_time, get_base_date,&
        & need_data, average_tiles, DIAG_ALL, DIAG_OCEAN, DIAG_OTHER, get_date_dif, DIAG_SECONDS,&
        & DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, get_diag_global_att,&
-       & set_diag_global_att, diag_field_add_attribute, diag_field_add_cell_measures
+       & set_diag_global_att, diag_field_add_attribute, diag_field_add_cell_measures,&
+       & get_diag_field_id
   ! Public interfaces from diag_grid_mod
   PUBLIC :: diag_grid_init, diag_grid_end
   PUBLIC :: diag_manager_set_time_end, diag_send_complete
+  ! Public interfaces from diag_data_mod
+  PUBLIC :: DIAG_FIELD_NOT_FOUND
 
   ! version number of this module
   CHARACTER(len=128), PARAMETER :: version =&
        & '$Id$'
   CHARACTER(len=128), PARAMETER :: tagname =&
        & '$Name$'
-
+  
   type(time_type) :: Time_end
 
   ! <INTERFACE NAME="send_data">
@@ -1039,7 +1042,30 @@ CONTAINS
   END FUNCTION register_static_field
   ! </FUNCTION>
 
-  ! <FUNCTION NAME="send_data_0d" INTERFACE="send_data">
+  ! <FUNCTION NAME="get_diag_field_id">
+  !  <OVERVIEW>
+  !    Return the diagnostic field ID of a given variable.
+  !  </OVERVIEW>
+  !  <TEMPLATE>
+  !    INTEGER FUNCTION get_diag_field_id(module_name, field_name)
+  !  </TEMPLATE>
+  !  <DESCRIPTION>
+  !    get_diag_field_id will return the ID returned during the register_diag_field call.  If
+  !    the variable is not in the diag_table, then the value "DIAG_FIELD_NOT_FOUND" will be
+  !    returned.
+  !  </DESCRIPTION>
+  !  <IN NAME="module_name" TYPE="CHARACTER(len=*)">Module name that registered the variable</IN>
+  !  <IN NAME="field_name" TYPE="CHARACTER(len=*)">Variable name</IN>
+  INTEGER FUNCTION get_diag_field_id(module_name, field_name)
+    CHARACTER(len=*), INTENT(in) :: module_name, field_name
+
+    ! find_input_field will return DIAG_FIELD_NOT_FOUND if the field is not
+    ! included in the diag_table
+    get_diag_field_id = find_input_field(module_name, field_name, tile_count=1)
+  END FUNCTION get_diag_field_id
+  ! </FUNCTION>
+
+  ! <FUNCTION NAME="get_related_field">
   !   <OVERVIEW>
   !     Finds the corresponding related output field and file
   !   </OVERVIEW>
@@ -4031,12 +4057,13 @@ PROGRAM test
 
   USE time_manager_mod, ONLY: time_type, set_calendar_type, set_date, decrement_date, OPERATOR(+), set_time
   USE time_manager_mod, ONLY: NOLEAP, JULIAN, GREGORIAN, THIRTY_DAY_MONTHS, OPERATOR(*), assignment(=)
-  use time_manager_mod, only: operator(+), operator(-), operator(/), days_in_month
+  use time_manager_mod, ONLY: OPERATOR(+), OPERATOR(-), OPERATOR(/), days_in_month
 
   USE diag_manager_mod, ONLY: diag_manager_init, send_data, diag_axis_init, diag_manager_end
   USE diag_manager_mod, ONLY: register_static_field, register_diag_field, diag_send_complete
   USE diag_manager_mod, ONLY: diag_manager_set_time_end, diag_field_add_attribute
   USE diag_manager_mod, ONLY: diag_field_add_cell_measures
+  USE diag_manager_mod, ONLY: get_diag_field_id, DIAG_FIELD_NOT_FOUND
 
   IMPLICIT NONE
 
@@ -4059,6 +4086,7 @@ PROGRAM test
   INTEGER :: id_phalf, id_pfull, id_bk
   INTEGER :: id_lon1, id_lonb1, id_latb1, id_lat1, id_dat1
   INTEGER :: id_lon2, id_lat2, id_dat2, id_dat2_2d, id_sol_con, id_dat2h, id_dat2h_2
+  INTEGER :: id_dat2_got, id_none_got
   INTEGER :: i, j, k, is1, ie1, js1, je1, nml_unit, ierr, log_unit, out_unit, m
   INTEGER :: is_in, ie_in, js_in, je_in
   INTEGER :: is2, ie2, js2, je2, hi=1, hj=1
@@ -4071,11 +4099,11 @@ PROGRAM test
   TYPE(time_type) :: Time, Time_step, Time_end, Time_start, Run_length
   LOGICAL :: used, test_successful
   CHARACTER(len=256) :: err_msg
-  integer :: omp_get_num_threads
+  INTEGER :: omp_get_num_threads
 
-  integer :: nyc1, n, jsw, jew, isw, iew
-  integer :: numthreads=1, ny_per_thread, idthread
-  integer :: months=0, days=0, dt_step=0
+  INTEGER :: nyc1, n, jsw, jew, isw, iew
+  INTEGER :: numthreads=1, ny_per_thread, idthread
+  INTEGER :: months=0, days=0, dt_step=0
 
 
   NAMELIST /test_diag_manager_nml/ layout, test_number, nlon, nlat, nlev, io_layout, numthreads, &
@@ -4220,6 +4248,22 @@ PROGRAM test
   END IF
   id_sol_con = register_diag_field ('test_diag_manager_mod', 'solar_constant', Time, &
                   'solar constant', 'watts/m2')
+
+  IF ( test_number == 20 ) THEN
+     id_dat2_got = get_diag_field_id('test_diag_manager_mod', 'dat2')
+     IF ( id_dat2_got == id_dat2 ) THEN
+        WRITE (out_unit,'(a)') 'test20.1 Passes, id_dat2.EQ.id_dat2_got'
+     ELSE
+        WRITE (out_unit,'(a)') 'test20.1 Failed, id_dat2.NE.id_dat2_got'
+     END IF
+
+     id_none_got = get_diag_field_id('no_mod', 'no_var')
+     IF ( id_none_got == DIAG_FIELD_NOT_FOUND ) THEN
+        write (out_unit,'(a)') 'test20.2 Passes, id_none_got.EQ.DIAG_FIELD_NOT_FOUND'
+     ELSE
+        write (out_unit,'(a)') 'test20.2 Failed, id_none_got.NE.DIAG_FIELD_NOT_FOUND'
+     END IF
+  END IF
 
   IF ( dt_step == 0 ) CALL error_mesg ('test_diag_manager',&
        & 'dt_step is not set', FATAL)
