@@ -273,6 +273,7 @@ end interface
 
 interface read_distributed
    module procedure read_distributed_r1D
+   module procedure read_distributed_r3D
    module procedure read_distributed_r5D
    module procedure read_distributed_i1D
    module procedure read_distributed_iscalar
@@ -4995,6 +4996,21 @@ subroutine read_distributed_iscalar(unit,fmt,iostat,data)
   ptr = LOC(data)
   call read_distributed(unit,fmt,iostat,idata)
 end subroutine read_distributed_iscalar
+
+!.....................................................................
+subroutine read_distributed_r3D(unit,fmt,iostat,data)
+  integer, intent(in)               :: unit
+  character(*), intent(in)          :: fmt
+  integer, intent(out)              :: iostat
+  real, dimension(:,:,:), intent(inout) :: data
+
+  real :: data1D(size(data))
+  pointer(ptr,data1D)
+
+  if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(read_distributed_r5D):  module not initialized')
+  ptr = LOC(data)
+  call read_distributed(unit,fmt,iostat,data1D)
+end subroutine read_distributed_r3D
 
 !.....................................................................
 subroutine read_distributed_r5D(unit,fmt,iostat,data)
