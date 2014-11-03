@@ -564,14 +564,16 @@ CONTAINS
        IF ( PRESENT(area) ) THEN
           IF ( area < 0 ) THEN
              CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
-                  &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA measures field NOT found in diag_table',&
+                  &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA measures field NOT found in diag_table.&
+                  & Contact the model liaison.',&
                   & FATAL)
           END IF
        END IF
        IF ( PRESENT(volume) ) THEN
           IF ( volume < 0 ) THEN
              CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
-                  &//TRIM(module_name)//'/'// TRIM(field_name)//' VOLUME measures field NOT found in diag_table',&
+                  &//TRIM(module_name)//'/'// TRIM(field_name)//' VOLUME measures field NOT found in diag_table.&
+                  & Contact the model liaison.',&
                   & FATAL)
           END IF
        END IF
@@ -794,14 +796,16 @@ CONTAINS
     IF ( PRESENT(area) ) THEN
        IF ( area < 0 ) THEN
           CALL error_mesg ('diag_manager_mod::register_static_field', 'module/output_field '&
-               &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA measures field NOT found in diag_table',&
+               &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA measures field NOT found in diag_table.&
+               & Contact the model liaison.n',&
                & FATAL)
        END IF
     END IF
     IF ( PRESENT(volume) ) THEN
        IF ( volume < 0 ) THEN
           CALL error_mesg ('diag_manager_mod::register_static_field', 'module/output_field '&
-               &//TRIM(module_name)//'/'// TRIM(field_name)//' VOLUME measures field NOT found in diag_table',&
+               &//TRIM(module_name)//'/'// TRIM(field_name)//' VOLUME measures field NOT found in diag_table&
+               & Contact the model liaison.',&
                & FATAL)
        END IF
     END IF
