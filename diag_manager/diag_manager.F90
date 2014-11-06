@@ -1105,7 +1105,7 @@ CONTAINS
        cm_file_num = output_fields(cm_ind)%output_file
 
        IF ( cm_file_num.EQ.rel_file.AND.&
-            & (( output_fields(cm_ind)%time_ops.EQ.rel_field%time_ops .AND.&
+            & (( output_fields(cm_ind)%time_ops.EQV.rel_field%time_ops .AND.&
             & output_fields(cm_ind)%next_output.EQ.rel_field%next_output .AND.&
             & output_fields(cm_ind)%last_output.EQ.rel_field%last_output ).OR.&
             & ( output_fields(cm_ind)%static.OR.rel_field%static )) ) THEN
@@ -1126,7 +1126,7 @@ CONTAINS
           ! the output_field is static then valid for cell_measures
           IF ( ( files(cm_file_num)%output_freq.EQ.files(rel_file)%output_freq .AND.&
                & files(cm_file_num)%output_units.EQ.files(cm_file_num)%output_units .AND.&
-               & output_fields(cm_ind)%time_ops.EQ.rel_field%time_ops .AND.&
+               & output_fields(cm_ind)%time_ops.EQV.rel_field%time_ops .AND.&
                & output_fields(cm_ind)%next_output.EQ.rel_field%next_output .AND.&
                & output_fields(cm_ind)%last_output.EQ.rel_field%last_output ).OR.&
                & output_fields(cm_ind)%static.OR.rel_field%static ) THEN
