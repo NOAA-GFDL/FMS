@@ -560,6 +560,17 @@ CONTAINS
        input_fields(register_diag_field_array)%static = .FALSE.
        field = register_diag_field_array
 
+
+       ! Verify that area and volume do not point to the same variable
+       IF ( PRESENT(volume).AND.PRESENT(area) ) THEN
+          IF ( area.EQ.volume ) THEN
+             CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
+                  &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA and VOLUME CANNOT be the same variable.&
+                  & Contact the developers.',&
+                  & FATAL)
+          END IF
+       END IF
+
        ! Check for the existence of the area/volume field(s)
        IF ( PRESENT(area) ) THEN
           IF ( area < 0 ) THEN
@@ -574,16 +585,6 @@ CONTAINS
              CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
                   &//TRIM(module_name)//'/'// TRIM(field_name)//' VOLUME measures field NOT found in diag_table.&
                   & Contact the model liaison.',&
-                  & FATAL)
-          END IF
-       END IF
-
-       ! Verify that area and volume do not point to the same variable
-       IF ( PRESENT(volume).AND.PRESENT(area) ) THEN
-          IF ( area.EQ.volume ) THEN
-             CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
-                  &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA and VOLUME CANNOT be the same variable.&
-                  & Contact the developers.',&
                   & FATAL)
           END IF
        END IF
@@ -792,6 +793,16 @@ CONTAINS
             & TRIM(field_name)//' ALREADY registered, should not register twice', FATAL)
     END IF
 
+    ! Verify that area and volume do not point to the same variable
+    IF ( PRESENT(volume).AND.PRESENT(area) ) THEN
+       IF ( area.EQ.volume ) THEN
+          CALL error_mesg ('diag_manager_mod::register_static_field', 'module/output_field '&
+               &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA and VOLUME CANNOT be the same variable.&
+               & Contact the developers.',&
+               & FATAL)
+       END IF
+    END IF
+
     ! Check for the existence of the area/volume field(s)
     IF ( PRESENT(area) ) THEN
        IF ( area < 0 ) THEN
@@ -806,16 +817,6 @@ CONTAINS
           CALL error_mesg ('diag_manager_mod::register_static_field', 'module/output_field '&
                &//TRIM(module_name)//'/'// TRIM(field_name)//' VOLUME measures field NOT found in diag_table&
                & Contact the model liaison.',&
-               & FATAL)
-       END IF
-    END IF
-
-    ! Verify that area and volume do not point to the same variable
-    IF ( PRESENT(volume).AND.PRESENT(area) ) THEN
-       IF ( area.EQ.volume ) THEN
-          CALL error_mesg ('diag_manager_mod::register_static_field', 'module/output_field '&
-               &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA and VOLUME CANNOT be the same variable.&
-               & Contact the developers.',&
                & FATAL)
        END IF
     END IF
@@ -1105,10 +1106,10 @@ CONTAINS
        cm_file_num = output_fields(cm_ind)%output_file
 
        IF ( cm_file_num.EQ.rel_file.AND.&
-            & (( output_fields(cm_ind)%time_ops.EQV.rel_field%time_ops .AND.&
-            & output_fields(cm_ind)%next_output.EQ.rel_field%next_output .AND.&
-            & output_fields(cm_ind)%last_output.EQ.rel_field%last_output ).OR.&
-            & ( output_fields(cm_ind)%static.OR.rel_field%static )) ) THEN
+            & (( (output_fields(cm_ind)%time_ops.EQV.rel_field%time_ops) .AND.&
+            & (output_fields(cm_ind)%next_output.EQ.rel_field%next_output) .AND.&
+            & (output_fields(cm_ind)%last_output.EQ.rel_field%last_output) ).OR.&
+            & (output_fields(cm_ind)%static.OR.rel_field%static) ) ) THEN
           get_related_field = .TRUE.
           out_field_id = cm_ind
           out_file_id = cm_file_num
@@ -1124,12 +1125,12 @@ CONTAINS
 
           ! If time_method, freq, output_units, next_output, and last_output the same, or
           ! the output_field is static then valid for cell_measures
-          IF ( ( files(cm_file_num)%output_freq.EQ.files(rel_file)%output_freq .AND.&
-               & files(cm_file_num)%output_units.EQ.files(cm_file_num)%output_units .AND.&
-               & output_fields(cm_ind)%time_ops.EQV.rel_field%time_ops .AND.&
-               & output_fields(cm_ind)%next_output.EQ.rel_field%next_output .AND.&
-               & output_fields(cm_ind)%last_output.EQ.rel_field%last_output ).OR.&
-               & output_fields(cm_ind)%static.OR.rel_field%static ) THEN
+          IF ( ( (files(cm_file_num)%output_freq.EQ.files(rel_file)%output_freq) .AND.&
+               & (files(cm_file_num)%output_units.EQ.files(rel_file)%output_units) .AND.&
+               & (output_fields(cm_ind)%time_ops.EQV.rel_field%time_ops) .AND.&
+               & (output_fields(cm_ind)%next_output.EQ.rel_field%next_output) .AND.&
+               & (output_fields(cm_ind)%last_output.EQ.rel_field%last_output) ).OR.&
+               & ( output_fields(cm_ind)%static.OR.rel_field%static ) ) THEN
              get_related_field = .TRUE.
              out_field_id = cm_ind
              out_file_id = cm_file_num
