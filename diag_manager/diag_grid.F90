@@ -547,7 +547,7 @@ CONTAINS
                 dists_lat(1) = ABS(diag_global_grid%glo_lat(i+1,j) - diag_global_grid%glo_lat(i,j))
                 count = count+1
              END IF
-             IF ( j < dimI ) THEN
+             IF ( j < dimJ ) THEN
                 dists_lon(2) = ABS(diag_global_grid%glo_lon(i,j+1) - diag_global_grid%glo_lon(i,j))
                 dists_lat(2) = ABS(diag_global_grid%glo_lat(i,j+1) - diag_global_grid%glo_lat(i,j))
                 count = count+1
