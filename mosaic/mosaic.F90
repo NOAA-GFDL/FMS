@@ -127,56 +127,32 @@ end subroutine mosaic_init
 !   <INOUT NAME="area" TYPE="real, dimension(:)">
 !     area of the exchange grid. The area is scaled to represent unit earth area.
 !   </INOUT>
-  subroutine get_mosaic_xgrid(xgrid_file, i1, j1, i2, j2, area, di, dj, istart, iend)
+  subroutine get_mosaic_xgrid(xgrid_file, i1, j1, i2, j2, area)
     character(len=*), intent(in) :: xgrid_file
     integer,       intent(inout) :: i1(:), j1(:), i2(:), j2(:)
     real,          intent(inout) :: area(:)
-    real, optional,intent(inout) :: di(:), dj(:)
-    integer, optional,intent(in) :: istart, iend 
 
-    real,    dimension(2, size(i1(:))) :: tile1_cell, tile2_cell
-    real,    dimension(2, size(i1(:))) :: tile1_distance
-    integer                            :: start(4), nread(4)    
-    integer                            :: nxgrid, n
-    real                               :: garea
-    real                               :: get_global_area;
+    character(len=len_trim(xgrid_file)+1) :: xfile
+    integer :: n, strlen, nxgrid
 
+    !---- transfer to C-stype string
+    strlen = len_trim(xgrid_file)
+    xfile(1:strlen) = xgrid_file(1:strlen)
+    strlen = strlen+1
+    xfile(strlen:strlen) = CHAR(0)
+
+    !--- order 2 xgrid will be implemented later 
     nxgrid = size(i1(:))
-    start(:) = 1; nread(:) = 1
-    garea = get_global_area();
 
-    call read_data(xgrid_file, 'xgrid_area', area, no_domain=.TRUE.)
+    call read_mosaic_xgrid_order1(xfile, i1, j1, i2, j2, area)
 
-    start(1) = 1; nread(1) = 2
-    if(present(istart) .AND. present(iend)) then
-      start(2) = istart; nread(2) = iend - istart + 1
-    else
-      start(2) = 1;  nread(2) = nxgrid
-    endif    
-
-    call read_data(xgrid_file, 'tile1_cell', tile1_cell, start, nread, no_domain=.TRUE.)
-    call read_data(xgrid_file, 'tile2_cell', tile2_cell, start, nread, no_domain=.TRUE.)
-
-     do n = 1, nxgrid
-       i1(n) = tile1_cell(1,n) 
-       j1(n) = tile1_cell(2,n)
-       i2(n) = tile2_cell(1,n) 
-       j2(n) = tile2_cell(2,n)
-       area(n) = area(n)/garea
+    ! in C, programming, the starting index is 0, so need add 1 to the index.
+    do n = 1, nxgrid
+       i1(n) = i1(n) + 1
+       j1(n) = j1(n) + 1
+       i2(n) = i2(n) + 1
+       j2(n) = j2(n) + 1
     end do
-    
-    if(PRESENT(di)) then
-      if(.NOT. PRESENT(dj) ) call mpp_error(FATAL, "mosaic_mod: when di is present, dj should be present")
-      call read_data(xgrid_file, 'tile1_distance', tile1_distance, start, nread, no_domain=.TRUE.)
-      do n = 1, nxgrid
-         di(n) = tile1_distance(1,n)
-         dj(n) = tile1_distance(2,n)
-      enddo
-    endif
-
-
-    return
-
   end subroutine get_mosaic_xgrid
 ! </SUBROUTINE>
 
@@ -263,25 +239,16 @@ end subroutine mosaic_init
     character(len=*),         intent(in) :: mosaic_file
     integer, dimension(:), intent(inout) :: nx, ny
 
-    character(len=MAX_FILE) :: gridfile
-    integer                 :: ntiles, n    
+    character(len=len_trim(mosaic_file)+1) :: mfile    
+    integer                                :: strlen
 
-    ntiles = get_mosaic_ntiles(mosaic_file)
-    if(ntiles .NE. size(nx(:)) .OR. ntiles .NE. size(ny(:)) ) then
-      call mpp_error(FATAL, "get_mosaic_grid_sizes: size of nx/ny does not equal to ntiles")
-    endif
-    do n = 1, ntiles
-      call read_data(mosaic_file, 'gridfiles', gridfile, level=n)
-      gridfile = grid_dir//trim(gridfile)
-      nx(n) = dimension_size(gridfile, "nx")
-      ny(n) = dimension_size(gridfile, "ny")
-      if(mod(nx(n),x_refine) .NE. 0) call mpp_error(FATAL, "get_mosaic_grid_sizes: nx is not divided by x_refine");
-      if(mod(ny(n),y_refine) .NE. 0) call mpp_error(FATAL, "get_mosaic_grid_sizes: ny is not divided by y_refine");
-      nx(n) = nx(n)/x_refine;
-      ny(n) = ny(n)/y_refine;
-    enddo
+    !---- transfer to C-stype string
+    strlen = len_trim(mosaic_file)
+    mfile(1:strlen) = mosaic_file(1:strlen)
+    strlen = strlen+1
+    mfile(strlen:strlen) = CHAR(0)
 
-    return
+    call read_mosaic_grid_sizes(mfile, nx, ny)
 
   end subroutine get_mosaic_grid_sizes
 ! </SUBROUTINE>
