@@ -492,13 +492,13 @@ MODULE diag_data_mod
      INTEGER  :: pack
      INTEGER :: pow_value !< Power value to use for mean_pow(n) calculations
      CHARACTER(len=50) :: time_method ! time method field from the input file
-     ! coordianes of the buffer and counter are (x, y, z, time-of-day)
+     ! coordinates of the buffer and counter are (x, y, z, time-of-day)
      REAL, _ALLOCATABLE, DIMENSION(:,:,:,:) :: buffer _NULL
      REAL, _ALLOCATABLE, DIMENSION(:,:,:,:) :: counter _NULL
      ! the following two counters are used in time-averaging for some
      ! combination of the field options. Their size is the length of the
      ! diurnal axis; the counters must be tracked separately for each of
-     ! the diurnal interval, becaus the number of time slices accumulated
+     ! the diurnal interval, because the number of time slices accumulated
      ! in each can be different, depending on time step and the number of
      ! diurnal samples.
      REAL, _ALLOCATABLE, DIMENSION(:)  :: count_0d
