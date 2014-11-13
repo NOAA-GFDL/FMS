@@ -1172,14 +1172,16 @@ CONTAINS
     IF ( PRESENT(area) ) THEN
        IF ( area.LE.0 ) THEN
           IF ( fms_error_handler('diag_manager_mod::init_field_cell_measure',&
-               & 'AREA field not in diag_table', err_msg) ) RETURN
+               & 'AREA field not in diag_table for field '//TRIM(input_fields(output_field%input_field)%module_name)//&
+               & '/'//TRIM(input_fields(output_field%input_field)%field_name), err_msg) ) RETURN
        END IF
     END IF
 
     IF ( PRESENT(volume) ) THEN
        IF ( volume.LE.0 ) THEN
           IF ( fms_error_handler('diag_manager_mod::init_field_cell_measure',&
-               & 'VOLUME field not in diag_table', err_msg) ) RETURN
+               & 'VOLUME field not in diag_table for field '//TRIM(input_fields(output_field%input_field)%module_name)//&
+               & '/'//TRIM(input_fields(output_field%input_field)%field_name), err_msg) ) RETURN
        END IF
     END IF
 
