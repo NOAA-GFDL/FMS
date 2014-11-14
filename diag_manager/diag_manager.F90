@@ -1211,7 +1211,11 @@ CONTAINS
           END IF
        ELSE
           IF ( fms_error_handler('diag_manager_mod::init_field_cell_measures',&
-               & 'AREA measures field NOT in diag_table with correct output frequency', err_msg) ) RETURN
+               & 'AREA measures field "'//TRIM(input_fields(area)%module_name)//'/'//&
+               & TRIM(input_fields(area)%field_name)//&
+               & '" NOT in diag_table with correct output frequency for field '//&
+               & TRIM(input_fields(output_field%input_field)%module_name)//&
+               & '/'//TRIM(input_fields(output_field%input_field)%field_name), err_msg) ) RETURN
        END IF
     END IF
 
@@ -1229,7 +1233,11 @@ CONTAINS
           END IF
        ELSE
           IF ( fms_error_handler('diag_manager_mod::init_field_cell_measures',&
-               & 'VOLUME measures field NOT in diag_table with correct output frequency', err_msg) ) RETURN
+               & 'VOLUME measures field "'//TRIM(input_fields(volume)%module_name)//'/'//&
+               & TRIM(input_fields(volume)%field_name)//&
+               & '" NOT in diag_table with correct output frequency for field '//&
+               & TRIM(input_fields(output_field%input_field)%module_name)//&
+               & '/'//TRIM(input_fields(output_field%input_field)%field_name), err_msg) ) RETURN
        END IF
     END IF
   END SUBROUTINE init_field_cell_measures
@@ -3397,7 +3405,7 @@ CONTAINS
     files(:)%bytes_written = 0
 
     ! open diag field log file
-    IF ( do_diag_field_log ) THEN
+    IF ( do_diag_field_log.AND.mpp_pe().EQ.mpp_root_pe() ) THEN
        CALL mpp_open(diag_log_unit, 'diag_field_log.out', nohdrs=.TRUE.)
        WRITE (diag_log_unit,'(777a)') &
             & 'Module',        SEP, 'Field',          SEP, 'Long Name',    SEP,&
