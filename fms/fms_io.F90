@@ -148,14 +148,14 @@ end type meta_type
 
 type ax_type
    private
-   character(len=128) :: name
-   character(len=128) :: units
-   character(len=128) :: longname
-   character(len=8)   :: cartesian
-   character(len=256) :: compressed
-   character(len=128) :: dimlen_name
-   character(len=128) :: dimlen_lname
-   character(len=128) :: calendar
+   character(len=128) :: name = ''
+   character(len=128) :: units = ''
+   character(len=128) :: longname = ''
+   character(len=8)   :: cartesian = ''
+   character(len=256) :: compressed = ''
+   character(len=128) :: dimlen_name = ''
+   character(len=128) :: dimlen_lname = ''
+   character(len=128) :: calendar = ''
    integer            :: sense              !Orientation of z axis definition
    integer            :: dimlen             !max dim of elements across global domain
    real               :: min             !valid min for real axis data
