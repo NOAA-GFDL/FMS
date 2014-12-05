@@ -46,7 +46,6 @@ MODULE diag_data_mod
 
   PUBLIC
 
-
   ! <!-- PARAMETERS for diag_data.F90 -->
   ! <DATA NAME="MAX_FIELDS_PER_FILE" TYPE="INTEGER, PARAMETER" DEFAULT="300">
   !   Maximum number of fields per file.
@@ -698,6 +697,10 @@ MODULE diag_data_mod
   REAL :: MAX_VALUE, MIN_VALUE
 
   ! <!-- Global data for all files -->
+  ! <DATA NAME="diag_init_time" TYPE="TYPE(time_type)">
+  !   Time diag_manager_init called.  If init_time not included in
+  !   diag_manager_init call, then same as base_time
+  ! </DATA>
   ! <DATA NAME="base_time" TYPE="TYPE(time_type)" />
   ! <DATA NAME="base_year" TYPE="INTEGER" />
   ! <DATA NAME="base_month" TYPE="INTEGER" />
@@ -706,6 +709,7 @@ MODULE diag_data_mod
   ! <DATA NAME="base_minute" TYPE="INTEGER" />
   ! <DATA NAME="base_second" TYPE="INTEGER" />
   ! <DATA NAME="global_descriptor" TYPE="CHARACTER(len=256)" />
+  TYPE(time_type) :: diag_init_time
   TYPE(time_type) :: base_time
   INTEGER :: base_year, base_month, base_day, base_hour, base_minute, base_second
   CHARACTER(len = 256):: global_descriptor
