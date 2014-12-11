@@ -1126,12 +1126,14 @@ CONTAINS
 
           ! If time_method, freq, output_units, next_output, and last_output the same, or
           ! the output_field is static then valid for cell_measures
-          IF ( ( (files(cm_file_num)%output_freq.EQ.files(rel_file)%output_freq) .AND.&
-               & (files(cm_file_num)%output_units.EQ.files(rel_file)%output_units) .AND.&
-               & (output_fields(cm_ind)%time_ops.EQV.rel_field%time_ops) .AND.&
-               & (output_fields(cm_ind)%next_output.EQ.rel_field%next_output) .AND.&
-               & (output_fields(cm_ind)%last_output.EQ.rel_field%last_output) ).OR.&
-               & ( output_fields(cm_ind)%static.OR.rel_field%static ) ) THEN
+!!$ For now, only static fields can be in an external file
+!!$          IF ( ( (files(cm_file_num)%output_freq.EQ.files(rel_file)%output_freq) .AND.&
+!!$               & (files(cm_file_num)%output_units.EQ.files(rel_file)%output_units) .AND.&
+!!$               & (output_fields(cm_ind)%time_ops.EQV.rel_field%time_ops) .AND.&
+!!$               & (output_fields(cm_ind)%next_output.EQ.rel_field%next_output) .AND.&
+!!$               & (output_fields(cm_ind)%last_output.EQ.rel_field%last_output) ).OR.&
+!!$               & ( output_fields(cm_ind)%static.OR.rel_field%static ) ) THEN
+          IF ( output_fields(cm_ind)%static.OR.rel_field%static ) THEN
              get_related_field = .TRUE.
              out_field_id = cm_ind
              out_file_id = cm_file_num
