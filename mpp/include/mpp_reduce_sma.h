@@ -13,7 +13,7 @@
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_REDUCE: You must first call mpp_init.' )
       n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
 
-      if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
+      if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)
 !allocate space from the stack for pwrk and b
       ptr = LOC(mpp_stack)
       words = size(work(:))*size(transfer(work(1),word))
@@ -27,6 +27,6 @@
       call SHMEM_REDUCE_( work, work, 1, peset(n)%start, peset(n)%log2stride, peset(n)%count, work(2), sync )
       call mpp_sync(pelist)
       a = work(1)
-      if( current_clock.NE.0 )call increment_current_clock( EVENT_ALLREDUCE, MPP_TYPE_BYTELEN_ )
+      if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_ALLREDUCE, MPP_TYPE_BYTELEN_ )
       return
     end subroutine MPP_REDUCE_

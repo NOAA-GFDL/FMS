@@ -140,11 +140,11 @@ subroutine mpp_sync( pelist, do_self )
   integer                       :: n
 
   dself=.true.; if(PRESENT(do_self))dself=do_self
-  if(dself .and. .not. sync_all_clocks )call mpp_sync_self(pelist)
+!  if(dself)call mpp_sync_self(pelist)
 
   n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
 
-  if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
+  if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)
 #ifdef use_MPI_SMA
   if( n.EQ.world_peset_num )then
      call SHMEM_BARRIER_ALL() !special call is faster
@@ -155,7 +155,7 @@ subroutine mpp_sync( pelist, do_self )
   call MPI_BARRIER( peset(n)%id, error )
 #endif
 
-  if( current_clock.NE.0 )call increment_current_clock(EVENT_WAIT)
+  if( debug .and. (current_clock.NE.0) )call increment_current_clock(EVENT_WAIT)
 
   return
 end subroutine mpp_sync
@@ -173,7 +173,7 @@ subroutine mpp_sync_self( pelist, check, request, msg_size, msg_type)
 
   integer                       :: i, m, n, stride, my_check, rsize
 
-  if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
+  if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)
   my_check = EVENT_SEND
   if(present(check)) my_check = check
   if( my_check .NE. EVENT_SEND .AND. my_check .NE. EVENT_RECV ) then
@@ -230,7 +230,7 @@ subroutine mpp_sync_self( pelist, check, request, msg_size, msg_type)
         cur_recv_request = 0
      end select 
   endif
-  if( current_clock.NE.0 )call increment_current_clock(EVENT_WAIT)
+  if( debug .and. (current_clock.NE.0) )call increment_current_clock(EVENT_WAIT)
   return
 end subroutine mpp_sync_self
 

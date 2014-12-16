@@ -168,8 +168,9 @@ MODULE diag_manager_mod
   !   <DATA NAME="max_file_attributes" TYPE="INTEGER" DEFAULT="2">
   !     Maximum number of user definable global attributes per file.
   !   </DATA>
-  !   <DATA NAME="prepend_date" TYPE="LOGICAL" DEFAULT=".FALSE.">
-  !     If <TT>.TRUE.</TT> then prepend the file start date to the output file.  Note: This was usually done by FRE after the
+  !   <DATA NAME="prepend_date" TYPE="LOGICAL" DEFAULT=".TRUE.">
+  !     If <TT>.TRUE.</TT> then prepend the file start date to the output file.  <TT>.TRUE.</TT> is only supported if the
+  !      diag_manager_init routine is called with the optional time_init parameter.  Note: This was usually done by FRE after the
   !     model run.
   !   </DATA>
   !   <DATA NAME="region_out_use_alt_value" TYPE="LOGICAL" DEFAULT=".TRUE.">
@@ -179,7 +180,7 @@ MODULE diag_manager_mod
   ! </NAMELIST>
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
-       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), get_date
+       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date
   USE mpp_io_mod, ONLY: mpp_open, mpp_close
   USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
 
@@ -207,7 +208,7 @@ MODULE diag_manager_mod
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, conserve_water, region_out_use_alt_value, max_field_attributes, output_field_type,&
-       & max_file_attributes, prepend_date
+       & max_file_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
@@ -223,10 +224,13 @@ MODULE diag_manager_mod
        & register_diag_field, register_static_field, diag_axis_init, get_base_time, get_base_date,&
        & need_data, average_tiles, DIAG_ALL, DIAG_OCEAN, DIAG_OTHER, get_date_dif, DIAG_SECONDS,&
        & DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, get_diag_global_att,&
-       & set_diag_global_att, diag_field_add_attribute, diag_field_add_cell_measures
+       & set_diag_global_att, diag_field_add_attribute, diag_field_add_cell_measures,&
+       & get_diag_field_id
   ! Public interfaces from diag_grid_mod
   PUBLIC :: diag_grid_init, diag_grid_end
   PUBLIC :: diag_manager_set_time_end, diag_send_complete
+  ! Public interfaces from diag_data_mod
+  PUBLIC :: DIAG_FIELD_NOT_FOUND
 
   ! version number of this module
   CHARACTER(len=128), PARAMETER :: version =&
@@ -557,21 +561,6 @@ CONTAINS
        input_fields(register_diag_field_array)%static = .FALSE.
        field = register_diag_field_array
 
-       ! Check for the existence of the area/volume field(s)
-       IF ( PRESENT(area) ) THEN
-          IF ( area < 0 ) THEN
-             CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
-                  &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA measures field NOT found in diag_table',&
-                  & FATAL)
-          END IF
-       END IF
-       IF ( PRESENT(volume) ) THEN
-          IF ( volume < 0 ) THEN
-             CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
-                  &//TRIM(module_name)//'/'// TRIM(field_name)//' VOLUME measures field NOT found in diag_table',&
-                  & FATAL)
-          END IF
-       END IF
 
        ! Verify that area and volume do not point to the same variable
        IF ( PRESENT(volume).AND.PRESENT(area) ) THEN
@@ -579,6 +568,24 @@ CONTAINS
              CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
                   &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA and VOLUME CANNOT be the same variable.&
                   & Contact the developers.',&
+                  & FATAL)
+          END IF
+       END IF
+
+       ! Check for the existence of the area/volume field(s)
+       IF ( PRESENT(area) ) THEN
+          IF ( area < 0 ) THEN
+             CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
+                  &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA measures field NOT found in diag_table.&
+                  & Contact the model liaison.',&
+                  & FATAL)
+          END IF
+       END IF
+       IF ( PRESENT(volume) ) THEN
+          IF ( volume < 0 ) THEN
+             CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
+                  &//TRIM(module_name)//'/'// TRIM(field_name)//' VOLUME measures field NOT found in diag_table.&
+                  & Contact the model liaison.',&
                   & FATAL)
           END IF
        END IF
@@ -787,28 +794,30 @@ CONTAINS
             & TRIM(field_name)//' ALREADY registered, should not register twice', FATAL)
     END IF
 
-    ! Check for the existence of the area/volume field(s)
-    IF ( PRESENT(area) ) THEN
-       IF ( area < 0 ) THEN
-          CALL error_mesg ('diag_manager_mod::register_static_field', 'module/output_field '&
-               &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA measures field NOT found in diag_table',&
-               & FATAL)
-       END IF
-    END IF
-    IF ( PRESENT(volume) ) THEN
-       IF ( volume < 0 ) THEN
-          CALL error_mesg ('diag_manager_mod::register_static_field', 'module/output_field '&
-               &//TRIM(module_name)//'/'// TRIM(field_name)//' VOLUME measures field NOT found in diag_table',&
-               & FATAL)
-       END IF
-    END IF
-
     ! Verify that area and volume do not point to the same variable
     IF ( PRESENT(volume).AND.PRESENT(area) ) THEN
        IF ( area.EQ.volume ) THEN
           CALL error_mesg ('diag_manager_mod::register_static_field', 'module/output_field '&
                &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA and VOLUME CANNOT be the same variable.&
                & Contact the developers.',&
+               & FATAL)
+       END IF
+    END IF
+
+    ! Check for the existence of the area/volume field(s)
+    IF ( PRESENT(area) ) THEN
+       IF ( area < 0 ) THEN
+          CALL error_mesg ('diag_manager_mod::register_static_field', 'module/output_field '&
+               &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA measures field NOT found in diag_table.&
+               & Contact the model liaison.n',&
+               & FATAL)
+       END IF
+    END IF
+    IF ( PRESENT(volume) ) THEN
+       IF ( volume < 0 ) THEN
+          CALL error_mesg ('diag_manager_mod::register_static_field', 'module/output_field '&
+               &//TRIM(module_name)//'/'// TRIM(field_name)//' VOLUME measures field NOT found in diag_table&
+               & Contact the model liaison.',&
                & FATAL)
        END IF
     END IF
@@ -1039,7 +1048,30 @@ CONTAINS
   END FUNCTION register_static_field
   ! </FUNCTION>
 
-  ! <FUNCTION NAME="send_data_0d" INTERFACE="send_data">
+  ! <FUNCTION NAME="get_diag_field_id">
+  !  <OVERVIEW>
+  !    Return the diagnostic field ID of a given variable.
+  !  </OVERVIEW>
+  !  <TEMPLATE>
+  !    INTEGER FUNCTION get_diag_field_id(module_name, field_name)
+  !  </TEMPLATE>
+  !  <DESCRIPTION>
+  !    get_diag_field_id will return the ID returned during the register_diag_field call.  If
+  !    the variable is not in the diag_table, then the value "DIAG_FIELD_NOT_FOUND" will be
+  !    returned.
+  !  </DESCRIPTION>
+  !  <IN NAME="module_name" TYPE="CHARACTER(len=*)">Module name that registered the variable</IN>
+  !  <IN NAME="field_name" TYPE="CHARACTER(len=*)">Variable name</IN>
+  INTEGER FUNCTION get_diag_field_id(module_name, field_name)
+    CHARACTER(len=*), INTENT(in) :: module_name, field_name
+
+    ! find_input_field will return DIAG_FIELD_NOT_FOUND if the field is not
+    ! included in the diag_table
+    get_diag_field_id = find_input_field(module_name, field_name, tile_count=1)
+  END FUNCTION get_diag_field_id
+  ! </FUNCTION>
+
+  ! <FUNCTION NAME="get_related_field">
   !   <OVERVIEW>
   !     Finds the corresponding related output field and file
   !   </OVERVIEW>
@@ -1075,10 +1107,10 @@ CONTAINS
        cm_file_num = output_fields(cm_ind)%output_file
 
        IF ( cm_file_num.EQ.rel_file.AND.&
-            & (( output_fields(cm_ind)%time_method.EQ.rel_field%time_method .AND.&
-            & output_fields(cm_ind)%next_output.EQ.rel_field%next_output .AND.&
-            & output_fields(cm_ind)%last_output.EQ.rel_field%last_output ).OR.&
-            & ( output_fields(cm_ind)%static.OR.rel_field%static )) ) THEN
+            & (( (output_fields(cm_ind)%time_ops.EQV.rel_field%time_ops) .AND.&
+            & (output_fields(cm_ind)%next_output.EQ.rel_field%next_output) .AND.&
+            & (output_fields(cm_ind)%last_output.EQ.rel_field%last_output) ).OR.&
+            & (output_fields(cm_ind)%static.OR.rel_field%static) ) ) THEN
           get_related_field = .TRUE.
           out_field_id = cm_ind
           out_file_id = cm_file_num
@@ -1094,12 +1126,14 @@ CONTAINS
 
           ! If time_method, freq, output_units, next_output, and last_output the same, or
           ! the output_field is static then valid for cell_measures
-          IF ( ( files(cm_file_num)%output_freq.EQ.files(rel_file)%output_freq .AND.&
-               & files(cm_file_num)%output_units.EQ.files(cm_file_num)%output_units .AND.&
-               & output_fields(cm_ind)%time_method.EQ.rel_field%time_method .AND.&
-               & output_fields(cm_ind)%next_output.EQ.rel_field%next_output .AND.&
-               & output_fields(cm_ind)%last_output.EQ.rel_field%last_output ).OR.&
-               & output_fields(cm_ind)%static.OR.rel_field%static ) THEN
+!!$ For now, only static fields can be in an external file
+!!$          IF ( ( (files(cm_file_num)%output_freq.EQ.files(rel_file)%output_freq) .AND.&
+!!$               & (files(cm_file_num)%output_units.EQ.files(rel_file)%output_units) .AND.&
+!!$               & (output_fields(cm_ind)%time_ops.EQV.rel_field%time_ops) .AND.&
+!!$               & (output_fields(cm_ind)%next_output.EQ.rel_field%next_output) .AND.&
+!!$               & (output_fields(cm_ind)%last_output.EQ.rel_field%last_output) ).OR.&
+!!$               & ( output_fields(cm_ind)%static.OR.rel_field%static ) ) THEN
+          IF ( output_fields(cm_ind)%static.OR.rel_field%static ) THEN
              get_related_field = .TRUE.
              out_field_id = cm_ind
              out_file_id = cm_file_num
@@ -1141,14 +1175,16 @@ CONTAINS
     IF ( PRESENT(area) ) THEN
        IF ( area.LE.0 ) THEN
           IF ( fms_error_handler('diag_manager_mod::init_field_cell_measure',&
-               & 'AREA field not in diag_table', err_msg) ) RETURN
+               & 'AREA field not in diag_table for field '//TRIM(input_fields(output_field%input_field)%module_name)//&
+               & '/'//TRIM(input_fields(output_field%input_field)%field_name), err_msg) ) RETURN
        END IF
     END IF
 
     IF ( PRESENT(volume) ) THEN
        IF ( volume.LE.0 ) THEN
           IF ( fms_error_handler('diag_manager_mod::init_field_cell_measure',&
-               & 'VOLUME field not in diag_table', err_msg) ) RETURN
+               & 'VOLUME field not in diag_table for field '//TRIM(input_fields(output_field%input_field)%module_name)//&
+               & '/'//TRIM(input_fields(output_field%input_field)%field_name), err_msg) ) RETURN
        END IF
     END IF
 
@@ -1157,7 +1193,7 @@ CONTAINS
 
     ! Create the date_string
     IF ( prepend_date ) THEN
-       call get_date(files(file_num)%start_time, year, month, day, hour, minute, second)
+       call get_date(diag_init_time, year, month, day, hour, minute, second)
        write (date_prefix, '(1I4.4, 2I2.2,".")') year, month, day
     ELSE
        date_prefix=''
@@ -1178,7 +1214,11 @@ CONTAINS
           END IF
        ELSE
           IF ( fms_error_handler('diag_manager_mod::init_field_cell_measures',&
-               & 'AREA measures field NOT in diag_table with correct output frequency', err_msg) ) RETURN
+               & 'AREA measures field "'//TRIM(input_fields(area)%module_name)//'/'//&
+               & TRIM(input_fields(area)%field_name)//&
+               & '" NOT in diag_table with correct output frequency for field '//&
+               & TRIM(input_fields(output_field%input_field)%module_name)//&
+               & '/'//TRIM(input_fields(output_field%input_field)%field_name), err_msg) ) RETURN
        END IF
     END IF
 
@@ -1196,7 +1236,11 @@ CONTAINS
           END IF
        ELSE
           IF ( fms_error_handler('diag_manager_mod::init_field_cell_measures',&
-               & 'VOLUME measures field NOT in diag_table with correct output frequency', err_msg) ) RETURN
+               & 'VOLUME measures field "'//TRIM(input_fields(volume)%module_name)//'/'//&
+               & TRIM(input_fields(volume)%field_name)//&
+               & '" NOT in diag_table with correct output frequency for field '//&
+               & TRIM(input_fields(output_field%input_field)%module_name)//&
+               & '/'//TRIM(input_fields(output_field%input_field)%field_name), err_msg) ) RETURN
        END IF
     END IF
   END SUBROUTINE init_field_cell_measures
@@ -1691,7 +1735,7 @@ CONTAINS
 
        ! Is it time to output for this field; CAREFUL ABOUT > vs >= HERE
        !--- The fields send out within openmp parallel region will be written out in
-       !--- diag_send_complete. 
+       !--- diag_send_complete.
        IF ( (numthreads == 1) .AND. (active_omp_level.LE.1) ) then
           IF ( .NOT.output_fields(out_num)%static .AND. freq /= END_OF_RUN ) THEN
              IF ( time > output_fields(out_num)%next_output ) THEN
@@ -3235,9 +3279,11 @@ CONTAINS
   !     Open and read diag_table. Select fields and files for diagnostic output.
   !   </DESCRIPTION>
   !   <IN NAME="diag_model_subset" TYPE="INTEGER, OPTIONAL"></IN>
+  !   <IN NAME="time_init" TYPE="INTEGER, DIMENSION(6), OPTIONAL">Model time diag_manager initialized</IN>
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"></OUT>
-  SUBROUTINE diag_manager_init(diag_model_subset, err_msg)
+  SUBROUTINE diag_manager_init(diag_model_subset, time_init, err_msg)
     INTEGER, OPTIONAL, INTENT(IN) :: diag_model_subset
+    INTEGER, DIMENSION(6), OPTIONAL, INTENT(IN) :: time_init
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
     CHARACTER(len=*), PARAMETER :: SEP = '|'
@@ -3347,12 +3393,25 @@ CONTAINS
     END IF
     ALLOCATE(output_fields(max_output_fields))
     ALLOCATE(input_fields(max_input_fields))
-    do j = 1, max_input_fields
-      allocate(input_fields(j)%output_fields(MAX_OUT_PER_IN_FIELD))
-    enddo
+    DO j = 1, max_input_fields
+      ALLOCATE(input_fields(j)%output_fields(MAX_OUT_PER_IN_FIELD))
+    END DO
     ALLOCATE(files(max_files))
     ALLOCATE(pelist(mpp_npes()))
     CALL mpp_get_current_pelist(pelist, pelist_name)
+
+    ! set the diag_init_time if time_init present.  Otherwise, set it to base_time
+    IF ( PRESENT(time_init) ) THEN
+       diag_init_time = set_date(time_init(1), time_init(2), time_init(3), time_init(4),&
+            & time_init(5), time_init(6))
+    ELSE
+       diag_init_time = base_time
+       IF ( prepend_date .EQV. .TRUE. ) THEN
+          CALL error_mesg('diag_manager_mod::diag_manager_init',&
+               & 'prepend_date only supported when diag_manager_init is called with time_init present.', NOTE)
+          prepend_date = .FALSE.
+       END IF
+    END IF
 
     CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
     IF ( mystat /= 0 ) THEN
@@ -3364,7 +3423,7 @@ CONTAINS
     files(:)%bytes_written = 0
 
     ! open diag field log file
-    IF ( do_diag_field_log ) THEN
+    IF ( do_diag_field_log.AND.mpp_pe().EQ.mpp_root_pe() ) THEN
        CALL mpp_open(diag_log_unit, 'diag_field_log.out', nohdrs=.TRUE.)
        WRITE (diag_log_unit,'(777a)') &
             & 'Module',        SEP, 'Field',          SEP, 'Long Name',    SEP,&
@@ -3760,7 +3819,7 @@ CONTAINS
   !     SUBROUTINE diag_field_add_cell_measures(diag_field_id, area, volume)
   !   </TEMPLATE>
   !   <DESCRIPTION>
-  !     Add the cell_measures attribute to a give diag field.  This is useful if the 
+  !     Add the cell_measures attribute to a give diag field.  This is useful if the
   !     area/volume fields for the diagnostic field are defined in another module after
   !     the diag_field.
   !   </DESCRIPTION>
@@ -4031,12 +4090,13 @@ PROGRAM test
 
   USE time_manager_mod, ONLY: time_type, set_calendar_type, set_date, decrement_date, OPERATOR(+), set_time
   USE time_manager_mod, ONLY: NOLEAP, JULIAN, GREGORIAN, THIRTY_DAY_MONTHS, OPERATOR(*), assignment(=)
-  use time_manager_mod, only: operator(+), operator(-), operator(/), days_in_month
+  use time_manager_mod, ONLY: OPERATOR(+), OPERATOR(-), OPERATOR(/), days_in_month
 
   USE diag_manager_mod, ONLY: diag_manager_init, send_data, diag_axis_init, diag_manager_end
   USE diag_manager_mod, ONLY: register_static_field, register_diag_field, diag_send_complete
   USE diag_manager_mod, ONLY: diag_manager_set_time_end, diag_field_add_attribute
   USE diag_manager_mod, ONLY: diag_field_add_cell_measures
+  USE diag_manager_mod, ONLY: get_diag_field_id, DIAG_FIELD_NOT_FOUND
 
   IMPLICIT NONE
 
@@ -4059,6 +4119,7 @@ PROGRAM test
   INTEGER :: id_phalf, id_pfull, id_bk
   INTEGER :: id_lon1, id_lonb1, id_latb1, id_lat1, id_dat1
   INTEGER :: id_lon2, id_lat2, id_dat2, id_dat2_2d, id_sol_con, id_dat2h, id_dat2h_2
+  INTEGER :: id_dat2_got, id_none_got
   INTEGER :: i, j, k, is1, ie1, js1, je1, nml_unit, ierr, log_unit, out_unit, m
   INTEGER :: is_in, ie_in, js_in, je_in
   INTEGER :: is2, ie2, js2, je2, hi=1, hj=1
@@ -4071,11 +4132,11 @@ PROGRAM test
   TYPE(time_type) :: Time, Time_step, Time_end, Time_start, Run_length
   LOGICAL :: used, test_successful
   CHARACTER(len=256) :: err_msg
-  integer :: omp_get_num_threads
+  INTEGER :: omp_get_num_threads
 
-  integer :: nyc1, n, jsw, jew, isw, iew
-  integer :: numthreads=1, ny_per_thread, idthread
-  integer :: months=0, days=0, dt_step=0
+  INTEGER :: nyc1, n, jsw, jew, isw, iew
+  INTEGER :: numthreads=1, ny_per_thread, idthread
+  INTEGER :: months=0, days=0, dt_step=0
 
 
   NAMELIST /test_diag_manager_nml/ layout, test_number, nlon, nlat, nlev, io_layout, numthreads, &
@@ -4220,6 +4281,22 @@ PROGRAM test
   END IF
   id_sol_con = register_diag_field ('test_diag_manager_mod', 'solar_constant', Time, &
                   'solar constant', 'watts/m2')
+
+  IF ( test_number == 20 ) THEN
+     id_dat2_got = get_diag_field_id('test_diag_manager_mod', 'dat2')
+     IF ( id_dat2_got == id_dat2 ) THEN
+        WRITE (out_unit,'(a)') 'test20.1 Passes, id_dat2.EQ.id_dat2_got'
+     ELSE
+        WRITE (out_unit,'(a)') 'test20.1 Failed, id_dat2.NE.id_dat2_got'
+     END IF
+
+     id_none_got = get_diag_field_id('no_mod', 'no_var')
+     IF ( id_none_got == DIAG_FIELD_NOT_FOUND ) THEN
+        write (out_unit,'(a)') 'test20.2 Passes, id_none_got.EQ.DIAG_FIELD_NOT_FOUND'
+     ELSE
+        write (out_unit,'(a)') 'test20.2 Failed, id_none_got.NE.DIAG_FIELD_NOT_FOUND'
+     END IF
+  END IF
 
   IF ( dt_step == 0 ) CALL error_mesg ('test_diag_manager',&
        & 'dt_step is not set', FATAL)

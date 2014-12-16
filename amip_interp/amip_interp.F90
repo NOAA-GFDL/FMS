@@ -63,6 +63,12 @@ use  time_interp_mod, only: time_interp, fraction_of_year
 use time_manager_mod, only: time_type, operator(+), operator(>), &
                              get_date, set_time, set_date
 
+! add by JHC
+use get_cal_time_mod, only: get_cal_time
+use mpp_io_mod, only : mpp_open, mpp_read, MPP_RDONLY, MPP_NETCDF, & 
+                       MPP_MULTI, MPP_SINGLE, mpp_close, mpp_get_times
+! end add by JHC
+
 use  horiz_interp_mod, only: horiz_interp_init, horiz_interp,  &
                              horiz_interp_new, horiz_interp_del, &
                              horiz_interp_type, assignment(=)
@@ -72,7 +78,7 @@ use           fms_mod, only: file_exist, error_mesg, write_version_number,  &
                              open_namelist_file, open_ieee32_file,          &
                              mpp_pe, close_file, lowercase, mpp_root_pe,    &
                              NOTE, mpp_error, fms_error_handler
-use        fms_io_mod, only: read_data
+use        fms_io_mod, only: read_data, field_size ! add by JHC     
 use     constants_mod, only: TFREEZE, pi
 use      platform_mod, only: R4_KIND, I2_KIND
 use mpp_mod,           only: input_nml_file
@@ -105,7 +111,9 @@ character(len=128) :: version = '$Id$'
 character(len=128) :: tagname = '$Name$'
 
    real, allocatable:: temp1(:,:), temp2(:,:)
-
+! add by JHC
+   real, allocatable, dimension(:,:) :: tempamip
+! end add by JHC
 !-----------------------------------------------------------------------
 !------ private defined data type --------
 
@@ -216,7 +224,7 @@ end interface
 ! </DATA>
 type amip_interp_type
    private
-   type (horiz_interp_type) :: Hintrp
+   type (horiz_interp_type) :: Hintrp, Hintrp2 ! add by JHC
    real, pointer            ::    data1(:,:) =>NULL(), &
                                   data2(:,:) =>NULL()
    type (date_type)         ::    Date1,       Date2
@@ -316,6 +324,8 @@ end type
                                            !      'reynolds_eof'
                                            !      'reynolds_oi'
                                            !      'hurrell'
+                                           ! add by JHC:  
+                                           !      'daily', when "use_daily=.T."
 
  character(len=16) :: date_out_of_range = 'fail'  !  use 'fail'
                                                   !      'initclimo'
@@ -338,6 +348,12 @@ end type
 !global temperature perturbation used for sensitivity experiments
  real :: sst_pert = 0.
 
+! add by JHC
+ character(len=6) :: sst_pert_type = 'fixed'  ! use 'random' or 'fixed'
+ logical :: do_sst_pert = .false. 
+ logical :: use_daily = .false. ! if '.true.', give 'data_set = 'daily''
+! end add by JHC
+
 ! SJL: During nudging:   use_ncep_sst = .T.;  no_anom_sst = .T.
 !      during forecast:  use_ncep_sst = .T.;  no_anom_sst = .F.
 ! For seasonal forecast: use_ncep_ice = .F.
@@ -350,7 +366,11 @@ end type
  namelist /amip_interp_nml/ use_ncep_sst, no_anom_sst, use_ncep_ice,  tice_crit, &
                             interp_oi_sst, data_set, date_out_of_range,          &
                             use_zonal, teq, tdif, tann, tlag, amip_date,         &
-                            sst_pert, verbose, i_sst, j_sst, forecast_mode
+                            ! add by JHC
+                            sst_pert, sst_pert_type, do_sst_pert,                &
+                            use_daily,                                           &
+                            ! end add by JHC
+                            verbose, i_sst, j_sst, forecast_mode
 ! </NAMELIST>
 
 
@@ -365,7 +385,9 @@ contains
 !   <INOUT NAME="Interp" TYPE="amip_interp_type"> </INOUT>
 ! </SUBROUTINE>
 
-subroutine get_amip_sst (Time, Interp, sst, err_msg)
+! modified by JHC
+subroutine get_amip_sst (Time, Interp, sst, err_msg, lon_model, lat_model)
+!subroutine get_amip_sst (Time, Interp, sst, err_msg)
 
    type (time_type),         intent(in)    :: Time
    type (amip_interp_type),  intent(inout) :: Interp
@@ -380,6 +402,22 @@ subroutine get_amip_sst (Time, Interp, sst, err_msg)
 
     type(time_type) :: Amip_Time
     integer :: tod(3),dum
+
+! add by JHC
+    real,    intent(in), dimension(:,:), optional :: lon_model, lat_model
+    real :: pert
+    integer :: i, j, mobs_sst, nobs_sst 
+    integer :: jhctod(6)
+    type (time_type) :: Udate
+    character(len=4) :: yyyy
+    integer :: nrecords, ierr, k, yr, mo, dy
+    integer :: siz(4)
+    integer, dimension(:), allocatable :: ryr, rmo, rdy
+    character(len=30) :: time_unit
+    real, dimension(:), allocatable :: timeval
+    character(len=maxc) :: ncfilename
+! end add by JHC
+
 
     if(present(err_msg)) err_msg = ''
     if(.not.Interp%I_am_initialized) then
@@ -398,106 +436,241 @@ subroutine get_amip_sst (Time, Interp, sst, err_msg)
        Amip_Time = Time
     endif
 
- if ( .not. allocated(temp1) ) allocate (temp1(mobs,nobs))
- if ( .not. allocated(temp2) ) allocate (temp2(mobs,nobs))
-       
-if (use_zonal) then
-   call zonal_sst (Amip_Time, sice, temp1)
-   call horiz_interp ( Interp%Hintrp, temp1, sst )
-else
+! add by JHC
+if ( .not.use_daily ) then 
+! end add by JHC
+
+   if ( .not. allocated(temp1) ) allocate (temp1(mobs,nobs))
+   if ( .not. allocated(temp2) ) allocate (temp2(mobs,nobs))
+
+   if (use_zonal) then
+      call zonal_sst (Amip_Time, sice, temp1)
+      call horiz_interp ( Interp%Hintrp, temp1, sst )
+   else
 
 !-----------------------------------------------------------------------
 !---------- get new observed sea surface temperature -------------------
 
 ! ---- time interpolation for months -----
-   call time_interp (Amip_Time, fmonth, year1, year2, month1, month2)
+     call time_interp (Amip_Time, fmonth, year1, year2, month1, month2)
 ! ---- force climatology ----
-   if (Interp % use_climo) then
-       year1=0; year2=0
-   endif
-   if (Interp % use_annual) then
-        year1=0;  year2=0
-       month1=0; month2=0
-   endif
+     if (Interp % use_climo) then
+         year1=0; year2=0
+     endif
+     if (Interp % use_annual) then
+          year1=0;  year2=0
+         month1=0; month2=0
+     endif
 ! ---------------------------
 
-   Date1 = date_type( year1, month1, 0 )
-   Date2 = date_type( year2, month2, 0 )
+     Date1 = date_type( year1, month1, 0 )
+     Date2 = date_type( year2, month2, 0 )
 
 !  -- open/rewind file --
-   unit = -1
+     unit = -1
 !-----------------------------------------------------------------------
 
 
-    if (Date1 /= Interp % Date1) then
+      if (Date1 /= Interp % Date1) then
 !       ---- use Date2 for Date1 ----
-        if (Date1 == Interp % Date2) then
-            Interp % Date1 = Interp % Date2
-            Interp % data1 = Interp % data2
-            temp1(:,:) = temp2(:,:)   ! SJL BUG fix: June 24, 2011
-        else
-            call read_record ('sst', Date1, Udate1, temp1)
-            if ( use_ncep_sst .and. (.not. no_anom_sst) ) then
-                 temp1(:,:) = temp1(:,:) + sst_anom(:,:)
-            endif
-            call horiz_interp ( Interp%Hintrp, temp1, Interp%data1 )
-            call clip_data ('sst', Interp%data1)
-            Interp % Date1 = Date1
-        endif
-    endif
+          if (Date1 == Interp % Date2) then
+              Interp % Date1 = Interp % Date2
+              Interp % data1 = Interp % data2
+              temp1(:,:) = temp2(:,:)   ! SJL BUG fix: June 24, 2011
+          else
+              call read_record ('sst', Date1, Udate1, temp1)
+              if ( use_ncep_sst .and. (.not. no_anom_sst) ) then
+                   temp1(:,:) = temp1(:,:) + sst_anom(:,:)
+              endif
+              call horiz_interp ( Interp%Hintrp, temp1, Interp%data1 )
+              call clip_data ('sst', Interp%data1)
+             Interp % Date1 = Date1
+          endif
+      endif
 
 !-----------------------------------------------------------------------
 
-    if (Date2 /= Interp % Date2) then
-        call read_record ('sst', Date2, Udate2, temp2)
-        if ( use_ncep_sst .and. (.not. no_anom_sst) ) then
-             temp2(:,:) = temp2(:,:) + sst_anom(:,:)
-        endif
-        call horiz_interp ( Interp%Hintrp, temp2, Interp%data2 )
-        call clip_data ('sst', Interp%data2)
-        Interp % Date2 = Date2
-    endif
+      if (Date2 /= Interp % Date2) then
+          call read_record ('sst', Date2, Udate2, temp2)
+          if ( use_ncep_sst .and. (.not. no_anom_sst) ) then
+               temp2(:,:) = temp2(:,:) + sst_anom(:,:)
+          endif
+          call horiz_interp ( Interp%Hintrp, temp2, Interp%data2 )
+          call clip_data ('sst', Interp%data2)
+          Interp % Date2 = Date2
+      endif
 
 !   ---- if the unit was opened, close it and print dates ----
 
-      if (unit /= -1) then
-         call close_file (unit)
-         if (verbose > 0 .and. mpp_pe() == 0)         &
-                               call print_dates (Amip_Time,   &
-                                Interp % Date1, Udate1,  &
-                                Interp % Date2, Udate2, fmonth)
-      endif
+        if (unit /= -1) then
+           call close_file (unit)
+           if (verbose > 0 .and. mpp_pe() == 0)         &
+                                 call print_dates (Amip_Time,   &
+                                  Interp % Date1, Udate1,  &
+                                  Interp % Date2, Udate2, fmonth)
+        endif
 
 !-----------------------------------------------------------------------
 !---------- time interpolation (between months) of sst's ---------------
 !-----------------------------------------------------------------------
-  sst = Interp % data1 + fmonth * (Interp % data2 - Interp % data1)
+    sst = Interp % data1 + fmonth * (Interp % data2 - Interp % data1)
 
 !-------------------------------------------------------------------------------
 ! SJL mods for NWP and TCSF ---
 !      Nudging runs: (Note: NCEP SST updated only every 6-hr)
 !      Compute SST anomaly from global SST datasets for subsequent forecast runs
 !-------------------------------------------------------------------------------
-  if ( use_ncep_sst .and. no_anom_sst ) then
-       sst_anom(:,:) = sst_ncep(:,:) - (temp1(:,:) + fmonth*(temp2(:,:) - temp1(:,:)) )
-       call horiz_interp ( Interp%Hintrp, sst_ncep, sst )
-       call clip_data ('sst', sst)
+    if ( use_ncep_sst .and. no_anom_sst ) then
+         sst_anom(:,:) = sst_ncep(:,:) - (temp1(:,:) + fmonth*(temp2(:,:) - temp1(:,:)) )
+         call horiz_interp ( Interp%Hintrp, sst_ncep, sst )
+         call clip_data ('sst', sst)
+    endif
+
+!!! DEBUG CODE
+!          call get_date(Amip_Time,jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6))
+!          if (mpp_pe() == 0) then 
+!             write (*,200) 'JHC: use_daily = F, AMIP_Time: ',jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6)
+!             write (*,300) 'JHC: use_daily = F, interped SST: ', sst(1,1),sst(5,5),sst(10,10)
+!          endif
+!!! END DEBUG CODE
+
+
   endif
 
+! add by JHC
+else
+    call get_date(Amip_Time,jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6))
+     if (mpp_pe() == mpp_root_pe()) write(*,200) 'amip_interp_mod: use_daily = T, Amip_Time = ',jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6) 
+ 
+    yr = jhctod(1); mo = jhctod(2); dy = jhctod(3)
+   
+    write (yyyy,'(i4)') jhctod(1)
+
+    file_name_sst = 'INPUT/' // 'sst.day.mean.'//yyyy//'.v2.nc'
+    ncfilename = trim(file_name_sst)
+    time_unit = 'days since 1978-01-01 00:00:00'
+
+    mobs_sst = 1440;  nobs_sst = 720 
+ 
+    call set_sst_grid_edges_daily(mobs_sst, nobs_sst)
+    call horiz_interp_new ( Interp%Hintrp2, lon_bnd, lat_bnd, &
+                             lon_model, lat_model, interp_method="bilinear" )
+
+
+    if ( (.NOT. file_exist(ncfilename))  ) call mpp_error ('amip_interp_mod', &
+             'cannot find daily SST input data file: '//trim(ncfilename), NOTE)
+
+    if (file_exist(ncfilename)) then
+        if (mpp_pe() == mpp_root_pe()) call mpp_error ('amip_interp_mod', &
+             'Reading NetCDF formatted daily SST from: '//trim(ncfilename), NOTE)
+
+        call field_size(ncfilename, 'TIME', siz)
+        nrecords = siz (1)
+        if (nrecords < 1) call mpp_error('amip_interp_mod', &
+                           'Invalid number of SST records in daily SST data file: '//trim(ncfilename), FATAL)
+        allocate(timeval(nrecords), ryr(nrecords), rmo(nrecords), rdy(nrecords))
+
+        call mpp_open( unit, ncfilename, MPP_RDONLY, MPP_NETCDF, MPP_MULTI, MPP_SINGLE )
+        call mpp_get_times(unit, timeval)
+        call mpp_close(unit)
+
+!!! DEBUG CODE
+!          if (mpp_pe() == 0) then 
+!             print *, 'JHC: nrecords = ', nrecords
+!             print *, 'JHC: TIME = ', timeval
+!          endif
+!!! END DEBUG CODE
+
+        ierr = 1
+        do k = 1, nrecords
+
+          Udate = get_cal_time (timeval(k), time_unit, 'julian')
+          call get_date(Udate,jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6))
+          ryr(k) = jhctod(1); rmo(k) = jhctod(2); rdy(k) = jhctod(3)
+
+          if ( yr == ryr(k) .and. mo == rmo(k) .and. dy == rdy (k) ) ierr = 0
+          if (ierr==0) exit
+
+        enddo
+!!! DEBUG CODE
+             if (mpp_pe() == 0) then 
+             print *, 'JHC: k =', k 
+             print *, 'JHC: ryr(k) rmo(k) rdy(k)',ryr(k), rmo(k), rdy(k) 
+             print *, 'JHC:  yr     mo     dy   ',yr, mo, dy 
+          endif
+!!! END DEBUG CODE
+        if (ierr .ne. 0) call mpp_error('amip_interp_mod', &
+                         'Model time is out of range not in SST data: '//trim(ncfilename), FATAL)
+    endif ! if(file_exist(ncfilename))
+     
+
+   !---- read NETCDF data ----
+     if ( .not. allocated(tempamip) ) allocate (tempamip(mobs_sst,nobs_sst))
+
+     if (file_exist(ncfilename)) then
+          call read_data(ncfilename, 'SST', tempamip, timelevel=k, no_domain=.true.)
+          tempamip = tempamip + TFREEZE
+
+!!! DEBUG CODE
+!          if (mpp_pe() == 0) then 
+!             print*, 'JHC: TFREEZE = ', TFREEZE
+!             print*, lbound(sst)
+!             print*, ubound(sst)
+!             print*, lbound(tempamip)
+!             print*, ubound(tempamip)
+!             write(*,300) 'JHC: tempamip : ', tempamip(100,100), tempamip(200,200), tempamip(300,300)
+!          endif
+!!! END DEBUG CODE
+
+          call horiz_interp ( Interp%Hintrp2, tempamip, sst )
+          call clip_data ('sst', sst)
+
+     endif 
+
+!!! DEBUG CODE
+!          if (mpp_pe() == 400) then 
+!             write(*,300)'JHC: use_daily = T, daily SST: ', sst(1,1),sst(5,5),sst(10,10)
+!             print *,'JHC: use_daily = T, daily SST: ', sst
+!          endif
+!!! END DEBUG CODE
+
+200 format(a35, 6(i5,1x))
+300 format(a35, 3(f7.3,2x))
 
 endif
+! end add by JHC
 
-! add on non-zero sea surface temperature perturbation (namelist option)
-! this perturbation may be useful in accessing model sensitivities
+! add by JHC: add on non-zero sea surface temperature perturbation (namelist option)
+!             This perturbation may be useful in accessing model sensitivities
 
-   if ( abs(sst_pert) > 0.0001 ) then
-      sst = sst + sst_pert
-   endif
+ if ( do_sst_pert ) then
+      
+      if ( trim(sst_pert_type) == 'fixed' ) then
+          sst = sst + sst_pert
+      else if ( trim(sst_pert_type) == 'random' ) then
+          call random_seed()
+!!! DEBUG CODE
+!    	  if (mpp_pe() == 0) then
+!             print*, 'mobs = ', mobs	
+!             print*, 'nobs = ', nobs	
+!             print*, lbound(sst)
+!             print*, ubound(sst)
+!          endif
+!!! END DEBUG CODE
+          do i = 1, size(sst,1)
+          do j = 1, size(sst,2)
+             call random_number(pert)
+             sst (i,j) = sst (i,j) + sst_pert*((pert-0.5)*2)
+          end do
+          end do
+      endif
 
+  endif
+! end add by JHC
+   
 !-----------------------------------------------------------------------
 
  end subroutine get_amip_sst
-
 
 
 !#######################################################################
@@ -820,7 +993,17 @@ endif
         tice_crit_k = 271.38
         if (mpp_pe() == 0) &
         call error_mesg ('amip_interp_init', 'using HURRELL sst', NOTE)
-        Date_end = date_type( 2001, 12, 0 )
+        Date_end = date_type( 2011, 8, 16 ) ! updated by JHC
+! add by JHC
+    else if (lowercase(trim(data_set)) == 'daily') then
+        file_name_sst = 'INPUT/' // 'hurrell_sst.data'
+        file_name_ice = 'INPUT/' // 'hurrell_ice.data'
+        mobs = 360;  nobs = 180 
+        call set_sst_grid_edges_oi
+        if (mpp_pe() == 0) &
+        call error_mesg ('amip_interp_init', 'using AVHRR daily sst', NOTE)
+        Date_end = date_type( 2011, 8, 16 )
+! end add by JHC
     else if (lowercase(trim(data_set)) == 'reynolds_eof') then
         file_name_sst = 'INPUT/' // 'reynolds_sst.data'
         file_name_ice = 'INPUT/' // 'reynolds_sst.data'
@@ -938,12 +1121,15 @@ endif
    end subroutine set_sst_grid_edges_amip1
 
 !#######################################################################
-
    subroutine set_sst_grid_edges_oi
 
    integer :: i, j
    real    :: hpie, dlon, dlat, wb, sb
 
+! add by JHC
+      if(allocated(lon_bnd))       deallocate(lon_bnd)
+      if(allocated(lat_bnd))       deallocate(lat_bnd)
+! end add by JHC
       allocate ( lon_bnd(mobs+1), lat_bnd(nobs+1) )
 
 ! ---- compute grid edges (do only once) -----
@@ -964,6 +1150,37 @@ endif
       enddo
 
    end subroutine set_sst_grid_edges_oi
+!#######################################################################
+! add by JHC
+   subroutine set_sst_grid_edges_daily(mobs_sst, nobs_sst)
+
+   integer :: i, j, mobs_sst, nobs_sst
+   real    :: hpie, dlon, dlat, wb, sb
+
+      if(allocated(lon_bnd))       deallocate(lon_bnd)
+      if(allocated(lat_bnd))       deallocate(lat_bnd)
+      allocate ( lon_bnd(mobs_sst+1), lat_bnd(nobs_sst+1) )
+
+! ---- compute grid edges (do only once) -----
+
+      hpie = 0.5*pi
+
+      dlon = 4.*hpie/float(mobs_sst);  wb = 0.0
+          lon_bnd(1) = wb
+      do i = 2, mobs_sst+1
+          lon_bnd(i) = wb + dlon * float(i-1)
+      enddo
+          lon_bnd(mobs_sst+1) = lon_bnd(1) + 4.*hpie
+
+      dlat = 2.*hpie/float(nobs_sst);  sb = -hpie
+      lat_bnd(1) = sb;  lat_bnd(nobs_sst+1) = hpie
+      do j = 2, nobs_sst
+          lat_bnd(j) = sb + dlat * float(j-1)
+      enddo
+
+   end subroutine set_sst_grid_edges_daily
+! end add by JHC
+!#######################################################################
 
 
    subroutine a2a_bilinear(nx, ny, dat1, n1, n2, dat2)
@@ -1192,7 +1409,8 @@ endif
      else if(type(1:3) == 'ice') then
         ncfilename = trim(file_name_ice)//'.nc'
         if (lowercase(trim(data_set)) == 'amip2' .or. &
-            lowercase(trim(data_set)) == 'hurrell') ncfieldname = 'ice'
+            lowercase(trim(data_set)) == 'hurrell' .or. & 
+            lowercase(trim(data_set)) == 'daily') ncfieldname = 'ice' ! modified by JHC
      endif
 
     !---- make sure IEEE format file is open ----

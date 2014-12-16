@@ -225,12 +225,6 @@
          if(associated(io_domain)) io_domain_exist = .true.
       endif
 
-      !--- when io_domain_exist, will ignore the threading_flag and fileset_flag.
-      if(io_domain_exist .AND. PRESENT(fileset) ) then
-         call mpp_error(NOTE, "mpp_io_connect.inc(mpp_open): io_domain exists for domain "// &
-            trim(mpp_get_domain_name(domain))//", optional argument fileset will be ignored")
-      endif
-
       write_on_this_pe = .true.
       read_on_this_pe = .true.
       if( threading_flag.EQ.MPP_SINGLE .AND. .NOT.on_root_pe ) then

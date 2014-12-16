@@ -118,7 +118,7 @@ use mpp_mod,         only: mpp_npes, mpp_pe, mpp_root_pe, mpp_send, mpp_recv, &
                            COMM_TAG_1, COMM_TAG_2, COMM_TAG_3, COMM_TAG_4,    &
                            COMM_TAG_5, COMM_TAG_6, COMM_TAG_7, COMM_TAG_8,    &
                            COMM_TAG_9, COMM_TAG_10
-use mpp_mod,         only: input_nml_file, mpp_set_current_pelist, mpp_sum, mpp_sync        
+use mpp_mod,         only: input_nml_file, mpp_set_current_pelist, mpp_sum, mpp_sync
 use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_compute_domains, &
                            Domain2d, mpp_global_sum, mpp_update_domains,    &
                            mpp_modify_domain, mpp_get_data_domain, XUPDATE, &
@@ -268,6 +268,7 @@ end interface
 
 type xcell_type
   integer :: i1, j1, i2, j2 ! indices of cell in model arrays on both sides
+  integer :: recv_pos       ! position in the receive buffer.
   integer :: pe             ! other side pe that has this cell
   integer :: tile           ! tile index of side 1 mosaic.
   real    :: area           ! geographic area of exchange cell
@@ -346,11 +347,13 @@ type overlap_type
    integer          :: count
    integer          :: pe
    integer          :: buffer_pos
-   integer, pointer :: i(:)  =>NULL()
-   integer, pointer :: j(:)  =>NULL()
-   integer, pointer :: tile(:)  =>NULL()
-   real,    pointer :: di(:) =>NULL()
-   real,    pointer :: dj(:) =>NULL()
+   integer, _ALLOCATABLE :: i(:) _NULL
+   integer, _ALLOCATABLE :: j(:) _NULL
+   integer, _ALLOCATABLE :: g(:) _NULL
+   integer, _ALLOCATABLE :: xLoc(:) _NULL
+   integer, _ALLOCATABLE :: tile(:) _NULL
+   real,    _ALLOCATABLE :: di(:) _NULL
+   real,    _ALLOCATABLE :: dj(:) _NULL
 end type overlap_type
 
 type comm_type
@@ -398,6 +401,7 @@ type xmap_type
   integer, pointer, dimension(:) :: ind_put1 =>NULL() ! indx for side1 put and side 2get.
   type(comm_type), pointer       :: put1 =>NULL()      ! for put_1_to_xgrid
   type(comm_type), pointer       :: get1 =>NULL()      ! for get_1_from_xgrid
+  type(comm_type), pointer       :: get1_repro =>NULL()! for get_1_from_xgrid_repro
 end type xmap_type
 
 !-----------------------------------------------------------------------
@@ -410,6 +414,7 @@ end type xmap_type
  integer :: id_put_1_to_xgrid_order_1 = 0
  integer :: id_put_1_to_xgrid_order_2 = 0
  integer :: id_get_1_from_xgrid = 0
+ integer :: id_get_1_from_xgrid_repro = 0
  integer :: id_get_2_from_xgrid = 0
  integer :: id_put_2_to_xgrid = 0
  integer :: id_setup_xmap = 0
@@ -518,6 +523,7 @@ subroutine xgrid_init(remap_method)
      id_put_1_to_xgrid_order_1 = mpp_clock_id("put_1_to_xgrid_order_1", flags=MPP_CLOCK_SYNC)
      id_put_1_to_xgrid_order_2 = mpp_clock_id("put_1_to_xgrid_order_2", flags=MPP_CLOCK_SYNC)
      id_get_1_from_xgrid       = mpp_clock_id("get_1_from_xgrid", flags=MPP_CLOCK_SYNC) 
+     id_get_1_from_xgrid_repro = mpp_clock_id("get_1_from_xgrid_repro", flags=MPP_CLOCK_SYNC)
      id_get_2_from_xgrid       = mpp_clock_id("get_2_from_xgrid", flags=MPP_CLOCK_SYNC) 
      id_put_2_to_xgrid         = mpp_clock_id("put_2_to_xgrid", flags=MPP_CLOCK_SYNC) 
      id_setup_xmap             = mpp_clock_id("setup_xmap", flags=MPP_CLOCK_SYNC) 
@@ -1794,6 +1800,11 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
 
   call set_comm_put1(xmap)
 
+  if(make_exchange_reproduce) then
+    allocate(xmap%get1_repro)
+    call set_comm_get1_repro(xmap)
+  endif
+
   call mpp_clock_end(id_set_comm)
 
   call mpp_clock_begin(id_regen)
@@ -1937,7 +1948,102 @@ integer, allocatable, dimension(:) :: istart2, iend2, jstart2, jend2
   
 end function get_nest_contact
 
+!#######################################################################
+subroutine set_comm_get1_repro(xmap)
+  type (xmap_type), intent(inout) :: xmap
+  integer, dimension(xmap%npes) :: pe_ind, cnt
+  integer, dimension(0:xmap%npes-1) :: send_ind, recv_ind, pl
+  integer :: npes, nsend, nrecv, mypos
+  integer :: m, p, pos, n, g, l
+  type(comm_type), pointer, save :: comm => NULL()
 
+  comm => xmap%get1_repro
+  npes = xmap%npes
+
+  nrecv = 0
+  mypos = mpp_pe() - mpp_root_pe()
+  do m=0,npes-1 
+    p = mod(mypos+npes-m, npes)
+    if( xmap%recv_count_repro(p) > 0 ) then
+      nrecv = nrecv + 1
+      pe_ind(nrecv) = p
+    endif
+  enddo
+
+  comm%nrecv = nrecv
+  if( nrecv > 0 ) then
+    allocate(comm%recv(nrecv))
+    pos = 0
+    do n = 1, nrecv
+      p = pe_ind(n)
+      comm%recv(n)%count = xmap%recv_count_repro(p)
+      comm%recv(n)%pe = p + xmap%root_pe
+      comm%recv(n)%buffer_pos = pos 
+      pos = pos + comm%recv(n)%count
+    enddo
+  endif
+
+
+  ! send information
+  nsend = 0
+  mypos = mpp_pe() - mpp_root_pe()
+  do m=0,xmap%npes-1 
+    p = mod(mypos+m, npes)
+    if( xmap%send_count_repro(p) > 0 ) then
+      nsend = nsend + 1
+      pe_ind(nsend) = p
+      send_ind(p) = nsend
+    endif
+  enddo
+
+  comm%nsend = nsend
+  if( nsend > 0 ) then
+     allocate(comm%send(nsend))
+     pos = 0
+     cnt(:) = 0
+     do n = 1, nsend
+        p = pe_ind(n)
+        comm%send(n)%count = xmap%send_count_repro(p)
+        comm%send(n)%pe = p + xmap%root_pe 
+        comm%send(n)%buffer_pos = pos
+        pos = pos + comm%send(n)%count
+        allocate(comm%send(n)%i(comm%send(n)%count))
+        allocate(comm%send(n)%j(comm%send(n)%count))
+        allocate(comm%send(n)%g(comm%send(n)%count))
+        allocate(comm%send(n)%xLoc(comm%send(n)%count))
+     enddo
+
+     do g=2,size(xmap%grids(:))
+        do l=1,xmap%grids(g)%size ! index into this side 2 grid's patterns
+           p = xmap%grids(g)%x(l)%pe-xmap%root_pe 
+           n = send_ind(p)
+           cnt(n) = cnt(n) + 1
+           pos = cnt(n)
+           comm%send(n)%i(pos) = xmap%grids(g)%x(l)%i2
+           comm%send(n)%j(pos) = xmap%grids(g)%x(l)%j2
+           comm%send(n)%g(pos) = g
+        enddo
+     enddo
+     !--- make sure the count is correct
+     do n = 1, nsend
+        if( comm%send(n)%count .NE. cnt(n) ) call error_mesg('xgrid_mod', &
+             'comm%send(n)%count .NE. cnt(n)', FATAL)
+     enddo
+   endif
+
+   !--- set up the recv_pos for unpack the data.
+   pl(:) = 1
+   do g=2,size(xmap%grids(:))
+      do l=1,xmap%grids(g)%size_repro ! index into side1 grid's patterns
+         p = xmap%grids(g)%x_repro(l)%pe-xmap%root_pe
+         xmap%grids(g)%x_repro(l)%recv_pos = pl(p)
+         pl(p) = pl(p) + 1
+      end do
+   end do
+
+
+
+end subroutine set_comm_get1_repro
 
 !#######################################################################
 subroutine set_comm_get1(xmap)
@@ -2075,37 +2181,10 @@ subroutine set_comm_get1(xmap)
      enddo
   endif
 
-
   mypos = mpp_pe()-mpp_root_pe()
-!  do n = 0, npes-1
-!     p = mod(mypos+npes-n, npes)
-!     call mpp_recv(recv_size(p), glen=1, from_pe=pelist(p), block=.false., tag=COMM_TAG_3)
-!  enddo
-
-  !--- send data
-!  do n = 0, npes-1
-!     p = mod(mypos+n, npes)
-!     call mpp_send(send_size(p), plen=1, to_pe=pelist(p), tag=COMM_TAG_3)
-!  enddo
-
-!  call mpp_sync_self(check=EVENT_RECV)
-!  call mpp_sync_self()
-
-!  call mpp_sync()
-  
-!  do p = 0, npes-1
-        
-!     if(recv_size(p) .NE. xmap%your2my1_size(p)) then
-!        print*, "My = ", mpp_pe(), p, recv_size(p), xmap%your2my1_size(p)
-!          call error_mesg("xgrid_mod", &
-!             "recv_size(p) .NE. xmap%your2my1_size(p)", FATAL)
-!     endif
-!  end do
  
+  ! send/recv for get_1_from_xgrid_recv
   recv_size(:) = xmap%your2my1_size(:)
-
-
-  !--- set up for send for get_1_from_xgrid, also is recv for put_1_to_xgrid
   nsend = count( send_size> 0)  
   comm%nsend = nsend
   if(nsend>0) then
@@ -2191,7 +2270,7 @@ subroutine set_comm_get1(xmap)
      do p = 0, npes-1
         recv_buffer_pos(p) = buffer_pos
         buffer_pos = buffer_pos +  recv_size(p)
-     enddo      
+     enddo
      pos = 0
      buffer_pos = 0        
      do m=0,npes-1
@@ -2235,8 +2314,8 @@ subroutine set_comm_get1(xmap)
         endif
      enddo
   endif
-
   call mpp_sync_self()
+
   if(allocated(send_buf) ) deallocate(send_buf)
   if(allocated(recv_buf) ) deallocate(recv_buf)
   if(allocated(pelist)   ) deallocate(pelist)
@@ -2544,6 +2623,9 @@ type (xmap_type), intent(inout) :: xmap
   integer              :: tile1
   integer              :: ll
   logical              :: overlap_with_nest
+  integer              :: cnt(xmap%get1%nsend)
+  integer              :: i,j,n,xloc,pos,nsend,m,npes, mypos
+  integer              :: send_ind(0:xmap%npes-1)
 
   max_size = 0
 
@@ -2652,6 +2734,34 @@ type (xmap_type), intent(inout) :: xmap
      end do
      xmap%grids(g)%last_get = xmap%size_get2
   end do
+
+  !---set up information for get_1_from_xgrid_repro
+  if(make_exchange_reproduce .AND. xmap%get1_repro%nsend >0) then
+     xloc = 0
+     nsend = 0
+     npes = xmap%npes
+     mypos = mpp_pe() - mpp_root_pe()
+     cnt(:) = 0
+     do m=0,npes-1 
+        p = mod(mypos+m, npes)
+        if( xmap%send_count_repro(p) > 0 ) then
+          nsend = nsend + 1
+          send_ind(p) = nsend
+        endif
+     enddo
+     do g=2,size(xmap%grids(:))
+        do l=1,xmap%grids(g)%size ! index into this side 2 grid's patterns
+           i = xmap%grids(g)%x(l)%i2
+           j = xmap%grids(g)%x(l)%j2
+           p = xmap%grids(g)%x(l)%pe-xmap%root_pe 
+           n = send_ind(p) 
+           cnt(n) = cnt(n) + 1
+           pos = cnt(n) 
+           xmap%get1_repro%send(n)%xLoc(pos) = xloc
+           xloc = xloc + count(xmap%grids(g)%frac_area(i,j,:)/=0.0)
+        enddo
+     enddo
+  endif
 
 end subroutine regen
 
@@ -3134,6 +3244,8 @@ subroutine put_1_to_xgrid_order_1(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
      end do
   else
      start_pos = 0
+!$OMP parallel do default(none) shared(lsize,x_addrs,comm,recv_buffer,xmap) &
+!$OMP                          private(ptr_x,count,ibegin,istart,iend,pos,unpack_buffer)
      do l = 1, lsize
         ptr_x = x_addrs(l)
         do p = 1, comm%nrecv
@@ -3183,7 +3295,7 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
   real                            :: recv_buffer(xmap%put1%recvsize*lsize*3)
   real                            :: send_buffer(xmap%put1%sendsize*lsize*3)
   real                            :: unpack_buffer(xmap%put1%recvsize*3)
-
+  logical                         :: on_west_edge, on_east_edge, on_south_edge, on_north_edge
   real, dimension(isize, jsize)   :: d
   real, dimension(xsize)          :: x
   pointer(ptr_d, d)
@@ -3197,26 +3309,34 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
   isd = grid1%isd_me
   jsd = grid1%jsd_me
 
-  tmp = LARGE_NUMBER
+!$OMP parallel do default(none) shared(lsize,tmp,d_addrs,isize,jsize) private(ptr_d)
   do l = 1, lsize
+     tmp(:,:,l) = LARGE_NUMBER
      ptr_d = d_addrs(l)
      tmp(1:isize,1:jsize,l) = d(:,:)
   enddo
 
   if(grid1%is_latlon) then
      call mpp_update_domains(tmp,grid1%domain_with_halo)
+!$OMP parallel do default(none) shared(lsize,tmp,grid1,is,ie,js,je,isd,jsd,tmpx,tmpy)
      do l = 1, lsize
         tmpy(:,:,l) = grad_merid_latlon(tmp(:,:,l), grid1%lat, is, ie, js, je, isd, jsd)
         tmpx(:,:,l) = grad_zonal_latlon(tmp(:,:,l), grid1%lon, grid1%lat, is, ie, js, je, isd, jsd)
      enddo
   else
      call mpp_update_domains(tmp,grid1%domain)
+     on_west_edge  = (is==1)
+     on_east_edge  = (ie==grid1%im)
+     on_south_edge = (js==1)
+     on_north_edge = (je==grid1%jm)
+!$OMP parallel do default(none) shared(lsize,tmp,grid1,tmpx,tmpy, &
+!$OMP                                  on_west_edge,on_east_edge,on_south_edge,on_north_edge)
      do l = 1, lsize
-        call gradient_cubic(tmp(:,:,l), xmap%grids(1)%box%dx, xmap%grids(1)%box%dy, xmap%grids(1)%box%area, &
-                            xmap%grids(1)%box%edge_w, xmap%grids(1)%box%edge_e, xmap%grids(1)%box%edge_s,   &
-                            xmap%grids(1)%box%edge_n, xmap%grids(1)%box%en1, xmap%grids(1)%box%en2,         &
-                            xmap%grids(1)%box%vlon, xmap%grids(1)%box%vlat, tmpx(:,:,l), tmpy(:,:,l),       &
-                            is==1, ie==grid1%im, js==1, je==grid1%jm)
+        call gradient_cubic(tmp(:,:,l), grid1%box%dx, grid1%box%dy, grid1%box%area,   &
+                            grid1%box%edge_w, grid1%box%edge_e, grid1%box%edge_s,     &
+                            grid1%box%edge_n, grid1%box%en1, grid1%box%en2,           &
+                            grid1%box%vlon, grid1%box%vlat, tmpx(:,:,l), tmpy(:,:,l), &
+                            on_west_edge, on_east_edge, on_south_edge, on_north_edge)
      enddo
   end if     
 
@@ -3236,6 +3356,7 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
 
   !--- compute d_bar_max and d_bar_min.
   if(monotonic_exchange) then
+!$OMP parallel do default(none) shared(lsize,isize,jsize,d_bar_max,d_bar_min,d_max,d_min,tmp)
      do l = 1, lsize
         do j = 1, jsize
            do i = 1, isize
@@ -3352,11 +3473,14 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
   else
      if( lsize == 1) then
         ptr_x = x_addrs(1)
+!$OMP parallel do default(none) shared(xmap,recv_buffer,ptr_x) private(pos)
         do l=1,xmap%size_put1
            pos = xmap%x1_put(l)%pos
            x(l) = recv_buffer(3*pos-2) + recv_buffer(3*pos-1)*xmap%x1_put(l)%dj + recv_buffer(3*pos)*xmap%x1_put(l)%di
         end do
      else
+!$OMP parallel do default(none) shared(lsize,comm,xmap,recv_buffer,x_addrs) &
+!$OMP                          private(ptr_x,pos,ibegin,istart,iend,count,unpack_buffer)
         do l = 1, lsize
            ptr_x = x_addrs(l)
            pos = 0
@@ -3415,7 +3539,6 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
   comm => xmap%get1
   grid1 => xmap%grids(1)
 
-
   do p = 1, comm%nrecv
      recv => comm%recv(p)
      msgsize = recv%count*lsize
@@ -3424,6 +3547,7 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
   enddo
 
   dg = 0.0;
+!$OMP parallel do default(none) shared(lsize,xmap,dg,x_addrs) private(dgp,ptr_x)
   do l = 1, lsize
      ptr_x = x_addrs(l)
      do i=1,xmap%size
@@ -3431,6 +3555,7 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
         dgp =  dgp + xmap%x1(i)%area*x(i)
      enddo
   enddo
+
 
   !--- send the data
   buffer_pos = 0
@@ -3464,9 +3589,12 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
   do p = 1, comm%nrecv
      recv => comm%recv(p)
      count = recv%count
-     pos = recv%buffer_pos*lsize
+     buffer_pos = recv%buffer_pos*lsize
      if( recv%pe == xmap%me ) then
+!$OMP parallel do default(none) shared(lsize,recv,recv_buffer,buffer_pos,d_addrs,count) &
+!$OMP                          private(ptr_d,i,j,pos)
         do l = 1, lsize
+           pos = buffer_pos + (l-1)*count
            ptr_d = d_addrs(l)
            do n = 1,count
               i = recv%i(n)
@@ -3486,8 +3614,11 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
      if( recv%pe == xmap%me ) then
         cycle
      endif
-     pos = recv%buffer_pos*lsize
+     buffer_pos = recv%buffer_pos*lsize
+!$OMP parallel do default(none) shared(lsize,recv,recv_buffer,buffer_pos,d_addrs) &
+!$OMP                          private(ptr_d,i,j,pos)
      do l = 1, lsize
+        pos = buffer_pos + (l-1)*recv%count
         ptr_d = d_addrs(l)
         do n = 1, recv%count
            i = recv%i(n)
@@ -3501,6 +3632,7 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
   !
   ! normalize with side 1 grid cell areas
   !
+!$OMP parallel do default(none) shared(lsize,d_addrs,grid1) private(ptr_d)
   do l = 1, lsize
      ptr_d = d_addrs(l)
      d = d * grid1%area_inv
@@ -3518,66 +3650,64 @@ subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
   type (xmap_type),              intent(inout) :: xmap
   integer,                          intent(in) :: xsize, lsize
 
-  real,    dimension(:), allocatable :: x_psum
-  integer, dimension(:), allocatable :: pe_psum
-  integer                            :: l1, l2, l3, g, i, j, k, p, l
-  integer,  dimension(0:xmap%npes-1) :: pl
-  type (grid_type),    pointer, save :: grid =>NULL()
+  integer                            :: g, i, j, k, p, l, n, l2, m, l3
+  integer                            :: msgsize, buffer_pos, pos
+  type (grid_type), pointer, save :: grid =>NULL()
+  type(comm_type),  pointer, save :: comm => NULL()
+  type(overlap_type), pointer, save  :: send => NULL()
+  type(overlap_type), pointer, save  :: recv => NULL()
+    integer,  dimension(0:xmap%npes-1) :: pl, ml
   real                               :: recv_buffer(xmap%recv_count_repro_tot*lsize)
   real                               :: send_buffer(xmap%send_count_repro_tot*lsize)
-  real                               :: unpack_buffer(xmap%get1%recvsize)
   real                               :: d(xmap%grids(1)%is_me:xmap%grids(1)%ie_me, &
                                           xmap%grids(1)%js_me:xmap%grids(1)%je_me)
   real, dimension(xsize)             :: x
   pointer(ptr_d, d)
   pointer(ptr_x, x)
 
+  call mpp_clock_begin(id_get_1_from_xgrid_repro)
+  comm => xmap%get1_repro
   !--- pre-post receiving
-  l2 = 0;
-  do p=0,xmap%npes-1
-    l1 = l2 + 1
-    l2 = l2 + xmap%recv_count_repro(p)*lsize
-    if (xmap%recv_count_repro(p)>0) then ! can receive from myself
-      ! Force use of "scalar", integer pointer mpp interface.
-      call mpp_recv(recv_buffer(l1), glen=l2-l1+1, from_pe=p+xmap%root_pe, block=.false., tag=COMM_TAG_10);
-      pl(p) = l1
-    end if
-  end do
-
-  allocate ( x_psum  (xmap%send_count_repro_tot*lsize) )
-  allocate ( pe_psum (xmap%send_count_repro_tot*lsize) )
-  x_psum = 0.0
-  l1 = 0 ! index into partition summed exchange grid variable
-  do l = 1, lsize
-     l2 = 0 ! index into exchange grid variable
-     ptr_x = x_addrs(l)
-     do g=2,size(xmap%grids(:))
-        do l3=1,xmap%grids(g)%size ! index into this side 2 grid's patterns
-           l1 = l1 + 1
-           do k=1,xmap%grids(g)%km
-              i = xmap%grids(g)%x(l3)%i2
-              j = xmap%grids(g)%x(l3)%j2
-              if (xmap%grids(g)%frac_area(i,j,k)/=0.0) then
-                 l2 = l2 + 1
-                 x_psum (l1) = x_psum(l1) + xmap%x1(l2)%area * x(l2)
-                 pe_psum(l1) = xmap%grids(g)%x(l3)%pe
-              end if
-           end do
-        end do
-     end do
+  do p = 1, comm%nrecv
+     recv => comm%recv(p)
+     msgsize = recv%count*lsize
+     buffer_pos = recv%buffer_pos*lsize
+     call mpp_recv(recv_buffer(buffer_pos+1), glen=msgsize, from_pe = recv%pe, block=.false., tag=COMM_TAG_10)
+     n = recv%pe -xmap%root_pe
+     pl(n) = buffer_pos 
+     ml(n) = recv%count
   enddo
-  l2 = 0;
 
-  do p=0,xmap%npes-1
-    l1 = l2 + 1
-    l2 = l2 + xmap%send_count_repro(p)*lsize
-    if (xmap%send_count_repro(p)>0) then ! can send to myself
-      send_buffer(l1:l2) = pack(x_psum, pe_psum==p+xmap%root_pe)
-      ! Force use of "scalar", integer pointer mpp interface.
-      call mpp_send(send_buffer(l1), plen=l2-l1+1, to_pe=p+xmap%root_pe, tag=COMM_TAG_10);
-    end if
-  end do
-  deallocate ( x_psum, pe_psum)
+  !pack the data
+  send_buffer(:) = 0.0
+!$OMP parallel do default(none) shared(lsize,x_addrs,comm,xmap,send_buffer) &
+!$OMP                          private(ptr_x,i,j,g,l2,pos,send)
+  do p = 1, comm%nsend
+     pos = comm%send(p)%buffer_pos*lsize
+     send => comm%send(p)
+     do l = 1,lsize
+        ptr_x = x_addrs(l)
+        do n = 1, send%count
+           i = send%i(n)
+           j = send%j(n)
+           g = send%g(n)
+           l2 = send%xloc(n)
+           pos = pos + 1
+           do k =1, xmap%grids(g)%km
+             if(xmap%grids(g)%frac_area(i,j,k)/=0.0) then
+              l2 = l2+1
+              send_buffer(pos) = send_buffer(pos) + xmap%x1(l2)%area *x(l2)
+             endif
+           enddo
+         enddo
+      enddo
+   enddo
+
+  do p =1, comm%nsend
+     buffer_pos = comm%send(p)%buffer_pos*lsize
+     msgsize = comm%send(p)%count*lsize
+     call mpp_send(send_buffer(buffer_pos+1), plen=msgsize, to_pe=comm%send(p)%pe, tag=COMM_TAG_10)
+  enddo
 
   do l = 1, lsize
      ptr_d = d_addrs(l)
@@ -3586,8 +3716,9 @@ subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
 
   call mpp_sync_self(check=EVENT_RECV)
 
-
-  do l = 1, lsize  
+!$OMP parallel do default(none) shared(lsize,d_addrs,xmap,recv_buffer,pl,ml) &
+!$OMP                          private(ptr_d,grid,i,j,p,pos)
+  do l = 1, lsize
      ptr_d = d_addrs(l)
      do g=2,size(xmap%grids(:))
         grid => xmap%grids(g)
@@ -3595,8 +3726,8 @@ subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
            i = grid%x_repro(l3)%i1
            j = grid%x_repro(l3)%j1
            p = grid%x_repro(l3)%pe-xmap%root_pe
-           d(i,j) = d(i,j) + recv_buffer(pl(p))
-           pl(p) = pl(p) + 1
+           pos = pl(p) + (l-1)*ml(p) + grid%x_repro(l3)%recv_pos
+           d(i,j) = d(i,j) + recv_buffer(pos)
         end do
      end do
      ! normalize with side 1 grid cell areas
@@ -3604,6 +3735,8 @@ subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
   enddo
 
   call mpp_sync_self()       
+
+  call mpp_clock_end(id_get_1_from_xgrid_repro)
 
 end subroutine get_1_from_xgrid_repro
 

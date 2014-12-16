@@ -897,6 +897,7 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
   logical   :: send_s(8), send_v(8)
   logical   :: reuse_buf_pos
   type(overlap_type), pointer :: overPtr => NULL()
+  character(len=8)            :: text
 
   MPP_TYPE_ :: buffer(size(mpp_domains_stack_nonblock(:)))
   MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize_s)
@@ -928,12 +929,20 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
   if (.not. group%initialized) then
     call set_group_update(group,domain)
   endif
+
   if (.not. reuse_buf_pos) then
      group%buffer_start_pos = nonblock_group_buffer_pos
+     nonblock_group_buffer_pos = nonblock_group_buffer_pos + group%tot_msgsize
+     mpp_domains_stack_hwm = nonblock_group_buffer_pos + 1    
+     if( mpp_domains_stack_hwm .GT. mpp_domains_stack_size )then
+        write( text,'(i8)' )mpp_domains_stack_hwm
+        call mpp_error( FATAL, 'set_group_update: mpp_domains_stack overflow, '// &
+                     'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+     end if
+
   else if( group%buffer_start_pos < 0 ) then
      call mpp_error(FATAL, "MPP_START_GROUP_UPDATE: group%buffer_start_pos is not set")
   endif
-  nonblock_group_buffer_pos = nonblock_group_buffer_pos + group%tot_msgsize
 
   nrecv = group%nrecv
   nsend = group%nsend
