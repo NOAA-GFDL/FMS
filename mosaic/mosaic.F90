@@ -132,27 +132,28 @@ end subroutine mosaic_init
     integer,       intent(inout) :: i1(:), j1(:), i2(:), j2(:)
     real,          intent(inout) :: area(:)
 
-    character(len=len_trim(xgrid_file)+1) :: xfile
-    integer :: n, strlen, nxgrid
+    real,    dimension(2, size(i1(:))) :: tile1_cell, tile2_cell
+    integer                            :: nxgrid, n
+    real                               :: garea
+    real                               :: get_global_area;
 
-    !---- transfer to C-stype string
-    strlen = len_trim(xgrid_file)
-    xfile(1:strlen) = xgrid_file(1:strlen)
-    strlen = strlen+1
-    xfile(strlen:strlen) = CHAR(0)
-
-    !--- order 2 xgrid will be implemented later 
     nxgrid = size(i1(:))
+    garea = get_global_area();
 
-    call read_mosaic_xgrid_order1(xfile, i1, j1, i2, j2, area)
+    call read_data(xgrid_file, 'xgrid_area', area, no_domain=.TRUE.)
+    call read_data(xgrid_file, 'tile1_cell', tile1_cell, no_domain=.TRUE.)
+    call read_data(xgrid_file, 'tile2_cell', tile2_cell, no_domain=.TRUE.)
 
-    ! in C, programming, the starting index is 0, so need add 1 to the index.
-    do n = 1, nxgrid
-       i1(n) = i1(n) + 1
-       j1(n) = j1(n) + 1
-       i2(n) = i2(n) + 1
-       j2(n) = j2(n) + 1
+     do n = 1, nxgrid
+       i1(n) = tile1_cell(1,n) 
+       j1(n) = tile1_cell(2,n)
+       i2(n) = tile2_cell(1,n) 
+       j2(n) = tile2_cell(2,n)
+       area(n) = area(n)/garea
     end do
+    
+    return
+
   end subroutine get_mosaic_xgrid
 ! </SUBROUTINE>
 
@@ -239,16 +240,25 @@ end subroutine mosaic_init
     character(len=*),         intent(in) :: mosaic_file
     integer, dimension(:), intent(inout) :: nx, ny
 
-    character(len=len_trim(mosaic_file)+1) :: mfile    
-    integer                                :: strlen
+    character(len=MAX_FILE) :: gridfile
+    integer                 :: ntiles, n    
 
-    !---- transfer to C-stype string
-    strlen = len_trim(mosaic_file)
-    mfile(1:strlen) = mosaic_file(1:strlen)
-    strlen = strlen+1
-    mfile(strlen:strlen) = CHAR(0)
+    ntiles = get_mosaic_ntiles(mosaic_file)
+    if(ntiles .NE. size(nx(:)) .OR. ntiles .NE. size(ny(:)) ) then
+      call mpp_error(FATAL, "get_mosaic_grid_sizes: size of nx/ny does not equal to ntiles")
+    endif
+    do n = 1, ntiles
+      call read_data(mosaic_file, 'gridfiles', gridfile, level=n)
+      gridfile = grid_dir//trim(gridfile)
+      nx(n) = dimension_size(gridfile, "nx")
+      ny(n) = dimension_size(gridfile, "ny")
+      if(mod(nx(n),x_refine) .NE. 0) call mpp_error(FATAL, "get_mosaic_grid_sizes: nx is not divided by x_refine");
+      if(mod(ny(n),y_refine) .NE. 0) call mpp_error(FATAL, "get_mosaic_grid_sizes: ny is not divided by y_refine");
+      nx(n) = nx(n)/x_refine;
+      ny(n) = ny(n)/y_refine;
+    enddo
 
-    call read_mosaic_grid_sizes(mfile, nx, ny)
+    return
 
   end subroutine get_mosaic_grid_sizes
 ! </SUBROUTINE>
