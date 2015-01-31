@@ -27,7 +27,7 @@ real :: realnumber
   ! Missing Value
 
   real, public, parameter :: xmissing= -9e+33        ! default missing value
-  real, public, parameter :: real_missing= -9e+33    ! default missing value for REAL
+  real, public, parameter :: real_missing= xmissing  ! default missing value for REAL
   integer, public, parameter :: int_missing= -99999  ! default missing value for INTEGER  
   
 
