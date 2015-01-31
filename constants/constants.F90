@@ -19,10 +19,17 @@ module constants_mod
 implicit none
 private
 
-character(len=128) :: version='$Id$'
-character(len=128) :: tagname='$Name$'
+character(len=128) :: version='$Id: constants.F90,v 17.0 2009/07/21 03:18:26 fms Exp $'
+character(len=128) :: tagname='$Name: tikal_201403 $'
 !dummy variable to use in HUGE initializations
 real :: realnumber
+
+  ! Missing Value
+
+  real, public, parameter :: xmissing= -9e+33        ! default missing value
+  real, public, parameter :: real_missing= -9e+33    ! default missing value for REAL
+  integer, public, parameter :: int_missing= -99999  ! default missing value for INTEGER  
+  
 
 !------------ physical constants ---------------
 ! <DATA NAME="RADIUS" UNITS="m" TYPE="real" DEFAULT="6371.e3">
