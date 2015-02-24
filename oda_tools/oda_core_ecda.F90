@@ -669,37 +669,40 @@ contains
        if ( profile_time > time_start .and. profile_time < time_end ) data_in_period = .true.
        if ( (data_in_period .and. data_is_local) .and. (.NOT.localize_data) ) then ! localize
 
-          if (isd_filt >= 1 .and. ied_filt <= ieg) then
-            if (lon >= x_grid(isd_filt,jsd_flt0) .and.&
-               & lon <= x_grid(ied_filt-1,jsd_flt0) .and.&
-               & lat >= y_grid(isd_filt,jsd_flt0) .and.&
-               & lat <=  y_grid(ied_filt-1,jed_flt0-1)) then
+          if (isd_filt < 1 .and. ied_filt > ieg) then
+             ! filter domain is a full x band
+             if (lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
+                  lat >= y_grid(1,jsd_flt0) .and. lat <= y_grid(ieg-1,jsd_flt0)) then
+                prof_in_filt_domain = .true.
+             end if
+          else if (isd_filt >= 1 .and. ied_filt <= ieg) then
+             ! Interior filter domain
+            if (lon >= x_grid(isd_filt,jsd_flt0) .and. lon <= x_grid(ied_filt-1,jsd_flt0) .and.&
+               & lat >= y_grid(isd_filt,jsd_flt0) .and. lat <=  y_grid(ied_filt-1,jed_flt0-1)) then
                 prof_in_filt_domain = .true.
             end if
-          end if
-          if (isd_filt < 1) then
-            isd_flt0 = isd_filt + ieg
-            if ( lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ied_filt-1,jsd_flt0) .and.&
-                  & lat >= y_grid(1,jsd_flt0) .and. lat <=  y_grid(ied_filt-1,jed_flt0-1) ) then
+          else if (isd_filt < 1 .and. ied_filt <= ieg) then
+             ! lhs filter domain
+             isd_flt0 = isd_filt + ieg
+             if ((lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ied_filt-1,jsd_flt0) .and.&
+                  & lat >= y_grid(1,jsd_flt0) .and. lat <=  y_grid(ied_filt-1,jed_flt0-1)).or.&
+                  & (lon >= x_grid(isd_flt0,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
+                  & lat >= y_grid(isd_flt0,jsd_flt0) .and. lat <=  y_grid(ieg-1,jed_flt0-1))) then
                 prof_in_filt_domain = .true.
-            end if
-            if ( lon >= x_grid(isd_flt0,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
-                  & lat >= y_grid(isd_flt0,jsd_flt0) .and. lat <=  y_grid(ieg-1,jed_flt0-1) ) then
-                prof_in_filt_domain = .true.
-            end if
-          end if
-          if (ied_filt > ieg) then
-            ied_flt0 = ied_filt - ieg
-            if ( lon >= x_grid(isd_filt,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
+             end if
+          else if (isd_filt >= 1 .and. ied_filt > ieg) then
+             ! rhs filter domain
+             ied_flt0 = ied_filt - ieg
+             if ( lon >= x_grid(isd_filt,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
                   & lat >= y_grid(isd_filt,jsd_flt0) .and. lat <=  y_grid(ieg-1,jed_flt0-1) ) then
                 prof_in_filt_domain = .true.
-            end if
-            if (ied_flt0-1 > 1) then
-            if ( lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ied_flt0-1,jsd_flt0) .and.&
-                  & lat >= y_grid(1,jsd_flt0) .and. lat <=  y_grid(ied_flt0-1,jed_flt0-1) ) then
-                prof_in_filt_domain = .true.
-            end if
-            end if
+             end if
+             if (ied_flt0-1 > 1) then
+                if ( lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ied_flt0-1,jsd_flt0) .and.&
+                     & lat >= y_grid(1,jsd_flt0) .and. lat <=  y_grid(ied_flt0-1,jed_flt0-1) ) then
+                   prof_in_filt_domain = .true.
+                end if
+             end if
           end if
 
           if ( var_id == TEMP_ID .and. flag_t == 0.0 ) then
@@ -939,7 +942,7 @@ contains
              if (i0 < 1 .or. j0 < 1) then
                 Profiles(num_profiles)%accepted = .false.
              end if
-             if( i0 < isd_filt .or. i0 > ied_filt .or. j0 < jsd_filt .or. j0 > jed_filt ) then
+             if( i0 < isd_filt .or. i0 >= ied_filt .or. j0 < jsd_filt .or. j0 >= jed_filt ) then
                 Profiles(num_profiles)%accepted = .false.
              end if
 
@@ -1288,37 +1291,40 @@ contains
        if ( profile_time > time_start .and. profile_time < time_end ) data_in_period = .true.
        if ( (data_in_period .and. data_is_local) .and. (.NOT.localize_data) ) then
 
-          if (isd_filt >= 1 .and. ied_filt <= ieg) then
-            if (lon >= x_grid(isd_filt,jsd_flt0) .and.&
-               & lon <= x_grid(ied_filt-1,jsd_flt0) .and.&
-               & lat >= y_grid(isd_filt,jsd_flt0) .and.&
-               & lat <=  y_grid(ied_filt-1,jed_flt0-1)) then
+          if (isd_filt < 1 .and. ied_filt > ieg) then
+             ! filter domain is a full x band
+             if (lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
+                  lat >= y_grid(1,jsd_flt0) .and. lat <= y_grid(ieg-1,jsd_flt0)) then
+                prof_in_filt_domain = .true.
+             end if
+          else if (isd_filt >= 1 .and. ied_filt <= ieg) then
+             ! Interior filter domain
+            if (lon >= x_grid(isd_filt,jsd_flt0) .and. lon <= x_grid(ied_filt-1,jsd_flt0) .and.&
+               & lat >= y_grid(isd_filt,jsd_flt0) .and. lat <=  y_grid(ied_filt-1,jed_flt0-1)) then
                 prof_in_filt_domain = .true.
             end if
-          end if
-          if (isd_filt < 1) then
-            isd_flt0 = isd_filt + ieg
-            if ( lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ied_filt-1,jsd_flt0) .and.&
-                  & lat >= y_grid(1,jsd_flt0) .and. lat <=  y_grid(ied_filt-1,jed_flt0-1) ) then
+          else if (isd_filt < 1 .and. ied_filt <= ieg) then
+             ! lhs filter domain
+             isd_flt0 = isd_filt + ieg
+             if ((lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ied_filt-1,jsd_flt0) .and.&
+                  & lat >= y_grid(1,jsd_flt0) .and. lat <=  y_grid(ied_filt-1,jed_flt0-1)).or.&
+                  & (lon >= x_grid(isd_flt0,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
+                  & lat >= y_grid(isd_flt0,jsd_flt0) .and. lat <=  y_grid(ieg-1,jed_flt0-1))) then
                 prof_in_filt_domain = .true.
-            end if
-            if ( lon >= x_grid(isd_flt0,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
-                  & lat >= y_grid(isd_flt0,jsd_flt0) .and. lat <=  y_grid(ieg-1,jed_flt0-1) ) then
-                prof_in_filt_domain = .true.
-            end if
-          end if
-          if (ied_filt > ieg) then
-            ied_flt0 = ied_filt - ieg
-            if ( lon >= x_grid(isd_filt,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
+             end if
+          else if (isd_filt >= 1 .and. ied_filt > ieg) then
+             ! rhs filter domain
+             ied_flt0 = ied_filt - ieg
+             if ( lon >= x_grid(isd_filt,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
                   & lat >= y_grid(isd_filt,jsd_flt0) .and. lat <=  y_grid(ieg-1,jed_flt0-1) ) then
                 prof_in_filt_domain = .true.
-            end if
-            if (ied_flt0-1 > 1) then
-            if ( lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ied_flt0-1,jsd_flt0) .and.&
-                  & lat >= y_grid(1,jsd_flt0) .and. lat <=  y_grid(ied_flt0-1,jed_flt0-1) ) then
-                prof_in_filt_domain = .true.
-            end if
-            end if
+             end if
+             if (ied_flt0-1 > 1) then
+                if ( lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ied_flt0-1,jsd_flt0) .and.&
+                     & lat >= y_grid(1,jsd_flt0) .and. lat <=  y_grid(ied_flt0-1,jed_flt0-1) ) then
+                   prof_in_filt_domain = .true.
+                end if
+             end if
           end if
 
           if ( var_id == TEMP_ID ) then
@@ -1543,7 +1549,7 @@ contains
            if ( i0 < 1 .or. j0 < 1 ) then
               Profiles(num_profiles)%accepted = .false.
            end if
-           if ( i0 < isd_filt .or. i0 > ied_filt .or. j0 < jsd_filt .or. j0 > jed_filt ) then
+           if ( i0 < isd_filt .or. i0 >= ied_filt .or. j0 < jsd_filt .or. j0 >= jed_filt ) then
               Profiles(num_profiles)%accepted = .false.
            end if
 
@@ -2185,37 +2191,40 @@ contains
           if ( abs(lat) >= 20.0 .and. (mod(i,4) /= 0 .or. mod(j,4) /= 0) ) data_is_local = .false.
           if ( abs(lat) >= 60.0 .and. (mod(i,6) /= 0 .or. mod(j,6) /= 0) ) data_is_local = .false.
 
-          if (isd_filt >= 1 .and. ied_filt <= ieg) then
-            if (lon >= x_grid(isd_filt,jsd_flt0) .and.&
-               & lon <= x_grid(ied_filt-1,jsd_flt0) .and.&
-               & lat >= y_grid(isd_filt,jsd_flt0) .and.&
-               & lat <=  y_grid(ied_filt-1,jed_flt0-1)) then
+          if (isd_filt < 1 .and. ied_filt > ieg) then
+             ! filter domain is a full x band
+             if (lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
+                  lat >= y_grid(1,jsd_flt0) .and. lat <= y_grid(ieg-1,jsd_flt0)) then
+                prof_in_filt_domain = .true.
+             end if
+          else if (isd_filt >= 1 .and. ied_filt <= ieg) then
+             ! Interior filter domain
+            if (lon >= x_grid(isd_filt,jsd_flt0) .and. lon <= x_grid(ied_filt-1,jsd_flt0) .and.&
+               & lat >= y_grid(isd_filt,jsd_flt0) .and. lat <=  y_grid(ied_filt-1,jed_flt0-1)) then
                 prof_in_filt_domain = .true.
             end if
-          end if
-          if (isd_filt < 1) then
-            isd_flt0 = isd_filt + ieg
-            if ( lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ied_filt-1,jsd_flt0) .and.&
-                  & lat >= y_grid(1,jsd_flt0) .and. lat <=  y_grid(ied_filt-1,jed_flt0-1) ) then
+          else if (isd_filt < 1 .and. ied_filt <= ieg) then
+             ! lhs filter domain
+             isd_flt0 = isd_filt + ieg
+             if ((lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ied_filt-1,jsd_flt0) .and.&
+                  & lat >= y_grid(1,jsd_flt0) .and. lat <=  y_grid(ied_filt-1,jed_flt0-1)).or.&
+                  & (lon >= x_grid(isd_flt0,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
+                  & lat >= y_grid(isd_flt0,jsd_flt0) .and. lat <=  y_grid(ieg-1,jed_flt0-1))) then
                 prof_in_filt_domain = .true.
-            end if
-            if ( lon >= x_grid(isd_flt0,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
-                  & lat >= y_grid(isd_flt0,jsd_flt0) .and. lat <=  y_grid(ieg-1,jed_flt0-1) ) then
-                prof_in_filt_domain = .true.
-            end if
-          end if
-          if (ied_filt > ieg) then
-            ied_flt0 = ied_filt - ieg
-            if ( lon >= x_grid(isd_filt,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
+             end if
+          else if (isd_filt >= 1 .and. ied_filt > ieg) then
+             ! rhs filter domain
+             ied_flt0 = ied_filt - ieg
+             if ( lon >= x_grid(isd_filt,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
                   & lat >= y_grid(isd_filt,jsd_flt0) .and. lat <=  y_grid(ieg-1,jed_flt0-1) ) then
                 prof_in_filt_domain = .true.
-            end if
-            if (ied_flt0-1 > 1) then
-            if ( lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ied_flt0-1,jsd_flt0) .and.&
-                  & lat >= y_grid(1,jsd_flt0) .and. lat <=  y_grid(ied_flt0-1,jed_flt0-1) ) then
-                prof_in_filt_domain = .true.
-            end if
-            end if
+             end if
+             if (ied_flt0-1 > 1) then
+                if ( lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ied_flt0-1,jsd_flt0) .and.&
+                     & lat >= y_grid(1,jsd_flt0) .and. lat <=  y_grid(ied_flt0-1,jed_flt0-1) ) then
+                   prof_in_filt_domain = .true.
+                end if
+             end if
           end if
 
           if ( data_is_local .and. (.NOT.localize_data) ) then ! global index
@@ -2334,7 +2343,7 @@ contains
              if ( i0 < 1 .or. j0 < 1 ) then
                 Profiles(num_profiles)%accepted = .false.
              end if
-             if ( i0 < isd_filt .or. i0 > ied_filt .or. j0 < jsd_filt .or. j0 > jed_filt ) then
+             if ( i0 < isd_filt .or. i0 >= ied_filt .or. j0 < jsd_filt .or. j0 >= jed_filt ) then
                 Profiles(num_profiles)%accepted = .false.
              end if
 
@@ -2540,37 +2549,40 @@ contains
           if ( abs(lat) >= 20.0 .and. (mod(i,4) /= 0 .or. mod(j,4) /= 0) ) data_is_local = .false.
           if ( abs(lat) >= 60.0 .and. (mod(i,6) /= 0 .or. mod(j,6) /= 0) ) data_is_local = .false.
 
-          if (isd_filt >= 1 .and. ied_filt <= ieg) then
-            if (lon >= x_grid(isd_filt,jsd_flt0) .and.&
-               & lon <= x_grid(ied_filt-1,jsd_flt0) .and.&
-               & lat >= y_grid(isd_filt,jsd_flt0) .and.&
-               & lat <=  y_grid(ied_filt-1,jed_flt0-1)) then
+          if (isd_filt < 1 .and. ied_filt > ieg) then
+             ! filter domain is a full x band
+             if (lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
+                  lat >= y_grid(1,jsd_flt0) .and. lat <= y_grid(ieg-1,jsd_flt0)) then
+                prof_in_filt_domain = .true.
+             end if
+          else if (isd_filt >= 1 .and. ied_filt <= ieg) then
+             ! Interior filter domain
+            if (lon >= x_grid(isd_filt,jsd_flt0) .and. lon <= x_grid(ied_filt-1,jsd_flt0) .and.&
+               & lat >= y_grid(isd_filt,jsd_flt0) .and. lat <=  y_grid(ied_filt-1,jed_flt0-1)) then
                 prof_in_filt_domain = .true.
             end if
-          end if
-          if (isd_filt < 1) then
-            isd_flt0 = isd_filt + ieg
-            if ( lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ied_filt-1,jsd_flt0) .and.&
-                  & lat >= y_grid(1,jsd_flt0) .and. lat <=  y_grid(ied_filt-1,jed_flt0-1) ) then
+          else if (isd_filt < 1 .and. ied_filt <= ieg) then
+             ! lhs filter domain
+             isd_flt0 = isd_filt + ieg
+             if ((lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ied_filt-1,jsd_flt0) .and.&
+                  & lat >= y_grid(1,jsd_flt0) .and. lat <=  y_grid(ied_filt-1,jed_flt0-1)).or.&
+                  & (lon >= x_grid(isd_flt0,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
+                  & lat >= y_grid(isd_flt0,jsd_flt0) .and. lat <=  y_grid(ieg-1,jed_flt0-1))) then
                 prof_in_filt_domain = .true.
-            end if
-            if ( lon >= x_grid(isd_flt0,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
-                  & lat >= y_grid(isd_flt0,jsd_flt0) .and. lat <=  y_grid(ieg-1,jed_flt0-1) ) then
-                prof_in_filt_domain = .true.
-            end if
-          end if
-          if (ied_filt > ieg) then
-            ied_flt0 = ied_filt - ieg
-            if ( lon >= x_grid(isd_filt,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
+             end if
+          else if (isd_filt >= 1 .and. ied_filt > ieg) then
+             ! rhs filter domain
+             ied_flt0 = ied_filt - ieg
+             if ( lon >= x_grid(isd_filt,jsd_flt0) .and. lon <= x_grid(ieg-1,jsd_flt0) .and.&
                   & lat >= y_grid(isd_filt,jsd_flt0) .and. lat <=  y_grid(ieg-1,jed_flt0-1) ) then
                 prof_in_filt_domain = .true.
-            end if
-            if (ied_flt0-1 > 1) then
-            if ( lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ied_flt0-1,jsd_flt0) .and.&
-                  & lat >= y_grid(1,jsd_flt0) .and. lat <=  y_grid(ied_flt0-1,jed_flt0-1) ) then
-                prof_in_filt_domain = .true.
-            end if
-            end if
+             end if
+             if (ied_flt0-1 > 1) then
+                if ( lon >= x_grid(1,jsd_flt0) .and. lon <= x_grid(ied_flt0-1,jsd_flt0) .and.&
+                     & lat >= y_grid(1,jsd_flt0) .and. lat <=  y_grid(ied_flt0-1,jed_flt0-1) ) then
+                   prof_in_filt_domain = .true.
+                end if
+             end if
           end if
 
           if ( data_is_local .and. (.NOT.localize_data) ) then ! global index
@@ -2689,7 +2701,7 @@ contains
              if ( i0 < 1 .or. j0 < 1 ) then
                 Profiles(num_profiles)%accepted = .false.
              end if
-             if ( i0 < isd_filt .or. i0 > ied_filt .or. j0 < jsd_filt .or. j0 > jed_filt ) then
+             if ( i0 < isd_filt .or. i0 >= ied_filt .or. j0 < jsd_filt .or. j0 >= jed_filt ) then
                 Profiles(num_profiles)%accepted = .false.
              end if
 
