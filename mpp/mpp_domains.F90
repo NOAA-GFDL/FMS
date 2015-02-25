@@ -209,6 +209,10 @@ module mpp_domains_mod
   integer, parameter :: NAME_LENGTH = 64
   integer, parameter :: MAXLIST = 24
   integer, parameter :: MAXOVERLAP = 100
+  integer, parameter :: FIELD_S = 0
+  integer, parameter :: FIELD_X = 1
+  integer, parameter :: FIELD_Y = 2
+
 
   !--- data types used mpp_domains_mod.
   type domain_axis_spec        !type used to specify index limits along an axis of a domain
@@ -452,6 +456,7 @@ module mpp_domains_mod
   type mpp_group_update_type
      private
      logical            :: initialized = .FALSE.
+     logical            :: k_loop_inside = .TRUE.
      integer            :: nscalar = 0
      integer            :: nvector = 0
      integer            :: flags_s=0, flags_v=0
@@ -466,6 +471,7 @@ module mpp_domains_mod
      integer            :: is_x=0, ie_x=0, js_x=0, je_x=0
      integer            :: is_y=0, ie_y=0, js_y=0, je_y=0
      integer            :: nrecv=0, nsend=0
+     integer            :: npack=0, nunpack=0
      integer            :: reset_index_s = 0
      integer            :: reset_index_v = 0
      integer            :: tot_msgsize = 0
@@ -473,16 +479,24 @@ module mpp_domains_mod
      integer            :: to_pe(MAXOVERLAP)
      integer            :: recv_size(MAXOVERLAP)
      integer            :: send_size(MAXOVERLAP)
-     integer            :: msgsize_recv(MAXOVERLAP)
-     integer            :: msgsize_send(MAXOVERLAP)
      integer            :: buffer_pos_recv(MAXOVERLAP)
      integer            :: buffer_pos_send(MAXOVERLAP)
-     integer            :: recv_ind_s(MAXOVERLAP)
-     integer            :: recv_ind_x(MAXOVERLAP)
-     integer            :: recv_ind_y(MAXOVERLAP)
-     integer            :: send_ind_s(MAXOVERLAP)
-     integer            :: send_ind_x(MAXOVERLAP)
-     integer            :: send_ind_y(MAXOVERLAP)
+     integer            :: pack_type(MAXOVERLAP)
+     integer            :: pack_buffer_pos(MAXOVERLAP)
+     integer            :: pack_rotation(MAXOVERLAP)
+     integer            :: pack_size(MAXOVERLAP)
+     integer            :: pack_is(MAXOVERLAP)
+     integer            :: pack_ie(MAXOVERLAP)
+     integer            :: pack_js(MAXOVERLAP)
+     integer            :: pack_je(MAXOVERLAP)
+     integer            :: unpack_type(MAXOVERLAP)
+     integer            :: unpack_buffer_pos(MAXOVERLAP)
+     integer            :: unpack_rotation(MAXOVERLAP)
+     integer            :: unpack_size(MAXOVERLAP)
+     integer            :: unpack_is(MAXOVERLAP)
+     integer            :: unpack_ie(MAXOVERLAP)
+     integer            :: unpack_js(MAXOVERLAP)
+     integer            :: unpack_je(MAXOVERLAP)
      integer(LONG_KIND) :: addrs_s(MAX_DOMAIN_FIELDS)
      integer(LONG_KIND) :: addrs_x(MAX_DOMAIN_FIELDS)
      integer(LONG_KIND) :: addrs_y(MAX_DOMAIN_FIELDS)
@@ -490,9 +504,6 @@ module mpp_domains_mod
      integer            :: request_send(MAX_REQUEST)
      integer            :: request_recv(MAX_REQUEST)
      integer            :: type_recv(MAX_REQUEST)
-     type(overlapSpec), pointer :: update_s => NULL()
-     type(overlapSpec), pointer :: update_x => NULL()
-     type(overlapSpec), pointer :: update_y => NULL()
   end type mpp_group_update_type
 
 !#######################################################################
@@ -586,10 +597,16 @@ module mpp_domains_mod
 !     processor/tile when updating doamin for symmetric domain and check the consistency on the north
 !     folded edge. 
 !   </DATA>
+!   <DATA NAME="nthread_control_loop" TYPE="integer"  DEFAULT="4">
+!     Determine the loop order for packing and unpacking. When number of threads is greater than nthread_control_loop,
+!     k-loop will be moved outside and combined with number of pack and unpack. When number of threads is less 
+!     than or equal to nthread_control_loop, k-loop is moved inside but still outside of j,i loop.
+!   </DATA>
 ! </NAMELIST>
   character(len=32) :: debug_update_domain = "none"
   logical           :: debug_message_passing = .false.
-  namelist /mpp_domains_nml/ debug_update_domain, domain_clocks_on, debug_message_passing
+  integer           :: nthread_control_loop = 4
+  namelist /mpp_domains_nml/ debug_update_domain, domain_clocks_on, debug_message_passing, nthread_control_loop
 
   !***********************************************************************
 

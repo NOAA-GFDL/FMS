@@ -2363,7 +2363,6 @@ contains
        call mpp_clear_group_update(group_update)
     endif
     !--- Test for CGRID
-
     a1 = 0; x1 = 0; y1 = 0
     do l =1, num_fields
        call mpp_create_group_update(group_update, a1(:,:,:,l), domain)
@@ -2424,42 +2423,42 @@ contains
     call mpp_clear_group_update(group_update)
 
     !--- The following is to test overlapping start and complete
-    do l =1, num_fields
-       call mpp_create_group_update(update_list(l), a1(:,:,:,l), domain)
-       call mpp_create_group_update(update_list(l), x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=CGRID_NE)
-    end do
+    if( num_fields > 1 ) then
+       do l =1, num_fields
+          call mpp_create_group_update(update_list(l), a1(:,:,:,l), domain)
+          call mpp_create_group_update(update_list(l), x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=CGRID_NE)
+       end do
 
-    do n = 1, num_iter
+       do n = 1, num_iter
 
-       a1 = 0; x1 = 0; y1 = 0
-       do l = 1, num_fields
-          a1(isc:iec,      jsc:jec,      :,l) = base(isc:iec,      jsc:jec,      :) + l*1e3
-          x1(isc:iec+shift,jsc:jec,      :,l) = base(isc:iec+shift,jsc:jec,      :) + l*1e3 + 1e6
-          y1(isc:iec,      jsc:jec+shift,:,l) = base(isc:iec,      jsc:jec+shift,:) + l*1e3 + 2*1e6
-       enddo
-       do l = 1, num_fields-1
-          call mpp_start_group_update(update_list(l), domain, a1(isc,jsc,1,1))
-       enddo
+          a1 = 0; x1 = 0; y1 = 0
+          do l = 1, num_fields
+             a1(isc:iec,      jsc:jec,      :,l) = base(isc:iec,      jsc:jec,      :) + l*1e3
+             x1(isc:iec+shift,jsc:jec,      :,l) = base(isc:iec+shift,jsc:jec,      :) + l*1e3 + 1e6
+             y1(isc:iec,      jsc:jec+shift,:,l) = base(isc:iec,      jsc:jec+shift,:) + l*1e3 + 2*1e6
+          enddo
+          do l = 1, num_fields-1
+             call mpp_start_group_update(update_list(l), domain, a1(isc,jsc,1,1))
+          enddo
 
-       if(num_fields > 1) then
           call mpp_complete_group_update(update_list(1), domain, a1(isc,jsc,1,1))
-       endif
-       call mpp_start_group_update(update_list(num_fields), domain, a1(isc,jsc,1,1))
-       do l = 2, num_fields
-         call mpp_complete_group_update(update_list(l), domain, a1(isc,jsc,1,1))
-       enddo
-       !--- compare checksum
-       do l = 1, num_fields
-          write(text, '(i3.3)') l
-          call compare_checksums(a1(isd:ied,      jsd:jed,      :,l),a2(isd:ied,      jsd:jed,      :,l), &
-                                 type//' multiple nonblock CENTER '//text)
-          call compare_checksums(x1(isd:ied+shift,jsd:jed,      :,l),x2(isd:ied+shift,jsd:jed,      :,l), &
-                                 type//' multiple nonblock CGRID X'//text)
-          call compare_checksums(y1(isd:ied,      jsd:jed+shift,:,l),y2(isd:ied,      jsd:jed+shift,:,l), &
-                                 type//' multiple nonblock CGRID Y'//text)
-       enddo
+          call mpp_start_group_update(update_list(num_fields), domain, a1(isc,jsc,1,1))
+          do l = 2, num_fields
+             call mpp_complete_group_update(update_list(l), domain, a1(isc,jsc,1,1))
+          enddo
+          !--- compare checksum
+          do l = 1, num_fields
+             write(text, '(i3.3)') l
+             call compare_checksums(a1(isd:ied,      jsd:jed,      :,l),a2(isd:ied,      jsd:jed,      :,l), &
+                                    type//' multiple nonblock CENTER '//text)
+             call compare_checksums(x1(isd:ied+shift,jsd:jed,      :,l),x2(isd:ied+shift,jsd:jed,      :,l), &
+                                    type//' multiple nonblock CGRID X'//text)
+             call compare_checksums(y1(isd:ied,      jsd:jed+shift,:,l),y2(isd:ied,      jsd:jed+shift,:,l), &
+                                    type//' multiple nonblock CGRID Y'//text)
+          enddo
 
-    enddo
+       enddo
+    endif
 
     do l =1, num_fields
       call mpp_clear_group_update(update_list(l))
