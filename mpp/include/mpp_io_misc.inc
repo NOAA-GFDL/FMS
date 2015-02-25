@@ -110,6 +110,7 @@
       default_axis%units = 'nounits'
       default_axis%longname = 'noname'
       default_axis%cartesian = 'none'
+      default_axis%compressed = 'unspecified'
       default_axis%calendar = 'unspecified'
       default_axis%sense = 0
       default_axis%len = -1

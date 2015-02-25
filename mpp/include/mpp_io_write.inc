@@ -333,7 +333,7 @@
 
 
 
-    subroutine mpp_write_meta_axis_r1d( unit, axis, name, units, longname, cartesian, sense, domain, data, min)
+    subroutine mpp_write_meta_axis_r1d( unit, axis, name, units, longname, cartesian, sense, domain, data, min, calendar)
 !load the values in an axistype (still need to call mpp_write)
 !write metadata attributes for axis
 !it is declared intent(inout) so you can nullify pointers in the incoming object if needed
@@ -346,6 +346,7 @@
       type(domain1D),   intent(in), optional :: domain
       real,             intent(in), optional :: data(:)
       real,             intent(in), optional :: min
+      character(len=*), intent(in), optional :: calendar
 
       integer :: is, ie, isg, ieg
       integer :: istat      
@@ -403,6 +404,7 @@
       axis%name     = name
       axis%units    = units
       axis%longname = longname
+      if( PRESENT(calendar)  ) axis%calendar  = calendar
       if( PRESENT(sense)     ) axis%sense     = sense
       if( PRESENT(data) )then
          if( mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. domain_exist ) then
@@ -467,6 +469,10 @@
 !write axis attributes
       call mpp_write_meta( unit, axis%id, 'long_name', cval=axis%longname) ; axis%natt = axis%natt + 1
       call mpp_write_meta( unit, axis%id, 'units',     cval=axis%units) ; axis%natt = axis%natt + 1
+      if( PRESENT(calendar) ) then
+        call mpp_write_meta( unit, axis%id, 'calendar', cval=axis%calendar)
+        axis%natt = axis%natt + 1
+      endif 
       if( PRESENT(cartesian) ) then
         call mpp_write_meta( unit, axis%id, 'cartesian_axis', cval=axis%cartesian)
         axis%natt = axis%natt + 1
@@ -499,7 +505,7 @@
       return
     end subroutine mpp_write_meta_axis_r1d
 
-    subroutine mpp_write_meta_axis_i1d( unit, axis, name, units, longname, data, min, compressed)
+    subroutine mpp_write_meta_axis_i1d(unit, axis, name, units, longname, data, min, compressed)
 !load the values in an axistype (still need to call mpp_write)
 !write metadata attributes for axis
 !it is declared intent(inout) so you can nullify pointers in the incoming object if needed
@@ -565,6 +571,67 @@
 !      call mpp_clock_end(mpp_write_clock)           
       return
     end subroutine mpp_write_meta_axis_i1d
+
+
+    subroutine mpp_write_meta_axis_unlimited(unit, axis, name, data, unlimited, units, longname)
+!load the values in an axistype (still need to call mpp_write)
+!write metadata attributes for axis
+!it is declared intent(inout) so you can nullify pointers in the incoming object if needed
+!the f90 standard doesn't guarantee that intent(out) on a type guarantees that its pointer components will be unassociated
+      integer,          intent(in)           :: unit
+      type(axistype),   intent(inout)        :: axis
+      character(len=*), intent(in)           :: name
+      integer,          intent(in)           :: data  ! Number of elements to be written
+      logical,          intent(in)           :: unlimited  ! Provides unique arg signature
+      character(len=*), intent(in), optional :: units, longname
+
+      integer :: istat      
+      logical :: domain_exist
+      type(domain2d), pointer :: io_domain => NULL()
+
+!      call mpp_clock_begin(mpp_write_clock)
+      if( .NOT.module_is_initialized    )call mpp_error( FATAL, 'MPP_WRITE_META_I1D: must first call mpp_io_init.' )
+      if( .NOT. mpp_file(unit)%write_on_this_pe) then
+!         call mpp_clock_end(mpp_write_clock)
+         return
+      endif
+      if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
+      if( mpp_file(unit)%initialized ) &
+           call mpp_error( FATAL, 'MPP_WRITE_META_I1D: cannot write metadata to file after an mpp_write.' )
+
+!load axistype
+      axis%name     = name
+      if(present(units)) axis%units    = units
+      if(present(longname)) axis%longname = longname
+      axis%len = 1
+      allocate(axis%idata(1))
+      axis%idata = data
+!write metadata
+      if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
+          error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, NF_UNLIMITED, axis%did )
+          call netcdf_err( error, mpp_file(unit), axis )
+          error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_INT, 0, axis%did, axis%id )
+          call netcdf_err( error, mpp_file(unit), axis )
+      else
+          call mpp_error( FATAL, 'MPP_WRITE_META_AXIS_UNLIMITED: Only netCDF format is currently supported.' )
+      end if  
+!write axis attributes
+      if(present(longname)) then
+         call mpp_write_meta(unit,axis%id,'long_name',cval=axis%longname); axis%natt=axis%natt+1
+      endif
+      if(present(units)) then
+         call mpp_write_meta(unit,axis%id,'units',     cval=axis%units); axis%natt=axis%natt+1
+      endif
+      if( verbose )print '(a,2i6,x,a,2i3)', &
+          'MPP_WRITE_META_UNLIMITED: Wrote axis metadata, pe, unit, axis%name, axis%id, axis%did=', &
+           pe, unit, trim(axis%name), axis%id, axis%did
+      
+      mpp_file(unit)%ndim = max(1,mpp_file(unit)%ndim + 1)
+
+!      call mpp_clock_end(mpp_write_clock)           
+      return
+    end subroutine mpp_write_meta_axis_unlimited
+
 
     subroutine mpp_write_meta_field( unit, field, axes, name, units, longname,&
          min, max, missing, fill, scale, add, pack, time_method,standard_name, checksum)
@@ -960,6 +1027,12 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
 #include <mpp_write_compressed.h>
+
+#undef MPP_WRITE_UNLIMITED_AXIS_1D_
+#define MPP_WRITE_UNLIMITED_AXIS_1D_ mpp_write_unlimited_axis_r1d
+#undef MPP_TYPE_
+#define MPP_TYPE_ real
+#include <mpp_write_unlimited_axis.h>
 
 #undef MPP_WRITE_
 #define MPP_WRITE_ mpp_write_r0D

@@ -797,37 +797,37 @@ CONTAINS
     IF ( SCAN(parse_field_line%module_name, UNALLOWED_ALL) > 0 ) THEN
        pstat = 1
        IF ( fms_error_handler('diag_table_mod::parse_field_line',&
-            & 'Unallowed Unallowed character in module_name in the diag_table.', err_msg) ) RETURN
+            & 'Unallowed character in module_name in the diag_table.', err_msg) ) RETURN
     END IF
     IF ( SCAN(parse_field_line%field_name, UNALLOWED_ALL) > 0 ) THEN
        pstat = 1
        IF ( fms_error_handler('diag_table_mod::parse_field_line',&
-            & 'Unallowed Unallowed character in field_name in the diag_table.', err_msg) ) RETURN
+            & 'Unallowed character in field_name in the diag_table.', err_msg) ) RETURN
     END IF
     IF ( SCAN(parse_field_line%output_name, UNALLOWED_ALL) > 0 ) THEN
        pstat = 1
        IF ( fms_error_handler('diag_table_mod::parse_field_line',&
-            & 'Unallowed Unallowed character in output_name in the diag_table.', err_msg) ) RETURN
+            & 'Unallowed character in output_name in the diag_table.', err_msg) ) RETURN
     END IF
     IF ( SCAN(parse_field_line%file_name, UNALLOWED_ALL) > 0 ) THEN
        pstat = 1
        IF ( fms_error_handler('diag_table_mod::parse_field_line',&
-            & 'Unallowed Unallowed character in file_name in the diag_table.', err_msg) ) RETURN
+            & 'Unallowed character in file_name in the diag_table.', err_msg) ) RETURN
     END IF
     IF ( SCAN(parse_field_line%time_sampling, UNALLOWED_ALL) > 0 ) THEN
        pstat = 1
        IF ( fms_error_handler('diag_table_mod::parse_field_line',&
-            & 'Unallowed Unallowed character in time_sampling in the diag_table.', err_msg) ) RETURN
+            & 'Unallowed character in time_sampling in the diag_table.', err_msg) ) RETURN
     END IF
     IF ( SCAN(parse_field_line%time_method, UNALLOWED_ALL) > 0 ) THEN
        pstat = 1
        IF ( fms_error_handler('diag_table_mod::parse_field_line',&
-            & 'Unallowed Unallowed character in time_method in the diag_table.', err_msg) ) RETURN
+            & 'Unallowed character in time_method in the diag_table.', err_msg) ) RETURN
     END IF
     IF ( SCAN(parse_field_line%spatial_ops, UNALLOWED_QTE) > 0 ) THEN
        pstat = 1
        IF ( fms_error_handler('diag_table_mod::parse_field_line',&
-            & 'Unallowed Unallowed character in spatial_ops in the diag_table.', err_msg) ) RETURN
+            & 'Unallowed character in spatial_ops in the diag_table.', err_msg) ) RETURN
     END IF
 
     ! Fix the file name

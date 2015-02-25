@@ -16,7 +16,7 @@
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_SUM: You must first call mpp_init.' )
       n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
 
-      if( current_clock.NE.0 )call SYSTEM_CLOCK(start_tick)
+      if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)
 !allocate space from the stack for pwrk and b
       ptr = LOC(mpp_stack)
       words = size(work(:))*size(transfer(work(1),word))
@@ -29,7 +29,7 @@
       call mpp_sync(pelist)
       call SHMEM_SUM_( work, work, length, peset(n)%start, peset(n)%log2stride, peset(n)%count, work(length+1), sync )
       a(1:length) = work(1:length)
-      if( current_clock.NE.0 )call increment_current_clock( EVENT_ALLREDUCE, length*MPP_TYPE_BYTELEN_ )
+      if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_ALLREDUCE, length*MPP_TYPE_BYTELEN_ )
       return
     end subroutine MPP_SUM_
 
