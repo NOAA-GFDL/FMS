@@ -104,7 +104,7 @@ use mpp_domains_mod, only: mpp_get_pelist, mpp_get_io_domain, mpp_get_domain_npe
 use mpp_mod,         only: mpp_error, FATAL, NOTE, WARNING, mpp_pe, mpp_root_pe, mpp_npes, stdlog, stdout
 use mpp_mod,         only: mpp_broadcast, ALL_PES, mpp_chksum, mpp_get_current_pelist, mpp_npes, lowercase
 use mpp_mod,         only: input_nml_file, mpp_get_current_pelist_name, uppercase
-use mpp_mod,         only: mpp_gather, mpp_scatter
+use mpp_mod,         only: mpp_gather, mpp_scatter, mpp_send, mpp_recv, mpp_sync_self, COMM_TAG_1, EVENT_RECV
 
 use platform_mod, only: r8_kind
 
@@ -385,6 +385,11 @@ interface get_var_att_value
   module procedure get_var_att_value_text
 end interface
 
+interface parse_mask_table
+  module procedure parse_mask_table_2d
+  module procedure parse_mask_table_3d
+end interface
+
 integer :: num_files_r = 0 ! number of currently opened files for reading
 integer :: num_files_w = 0 ! number of currently opened files for writing
 integer :: num_domains = 0 ! number of domains in array_domain
@@ -414,7 +419,7 @@ public  :: open_namelist_file, open_restart_file, open_ieee32_file, close_file
 public  :: set_domain, nullify_domain, get_domain_decomp, return_domain
 public  :: open_file, open_direct_file
 public  :: get_restart_io_mode, get_tile_string, string
-public  :: get_mosaic_tile_grid, get_mosaic_tile_file
+public  :: get_mosaic_tile_grid, get_mosaic_tile_file, get_file_name
 public  :: get_global_att_value, get_var_att_value
 public  :: file_exist, field_exist
 public  :: register_restart_field, register_restart_axis, save_restart, restore_state
@@ -4564,7 +4569,7 @@ subroutine get_field_size(filename, fieldname, siz, field_found, domain, no_doma
   type(domain2d), intent(in), optional, target :: domain
   logical,       intent(in),  optional         :: no_domain
 
-  integer :: npes
+  integer :: npes, p
   integer, allocatable :: pelist(:)
   logical :: found
   type(domain2d), pointer :: domain_in =>NULL()
@@ -4590,7 +4595,19 @@ subroutine get_field_size(filename, fieldname, siz, field_found, domain, no_doma
      call field_size(filename, fieldname, siz, found, domain, no_domain)
      if(.not. found) siz(:) = -1
   endif
-  call mpp_broadcast(siz,size(siz),pelist(1),pelist)
+  !--- z1l replace mpp_broadcast with mpp_send/mpp_recv to avoid hang in calling MPI_COMM_CREATE
+  !---     because size(pelist) might be different for different rank.
+  !--- prepost receive
+  if( mpp_pe() == pelist(1) ) then
+     do p = 2, npes
+        call mpp_send(siz(1), plen=size(siz(:)), to_pe=pelist(p), tag=COMM_TAG_1)
+     enddo
+     call mpp_sync_self()
+  else
+     call mpp_recv(siz(1), glen=size(siz(:)), from_pe=pelist(1), block=.false., tag=COMM_TAG_1)
+     call mpp_sync_self(check=EVENT_RECV)
+  endif
+
   found = .true.
   if(siz(1) == -1) found=.false.
 
@@ -4878,49 +4895,56 @@ end subroutine read_data_3d_new
 
 
 !=====================================================================================
-subroutine read_compressed_i1d(filename,fieldname,data,domain,timelevel)
+subroutine read_compressed_i1d(filename,fieldname,data,domain,timelevel,start,nread,threading)
   character(len=*), intent(in)           :: filename, fieldname
   integer, dimension(:), intent(inout)   :: data ! 1 dimensional data
   type(domain2d), intent(in), optional   :: domain
   integer, intent(in) , optional         :: timelevel
+  integer, intent(in) , optional         :: start(:), nread(:)
+  integer, intent(in) , optional         :: threading
   real, dimension(size(data))        :: r_data
 
   r_data = 0.0
-  call read_compressed_1d(filename,fieldname,r_data,domain,timelevel)
+  call read_compressed_1d(filename,fieldname,r_data,domain,timelevel,start,nread,threading)
   data = CEILING(r_data)
 end subroutine read_compressed_i1d
 !.....................................................................
-subroutine read_compressed_i2d(filename,fieldname,data,domain,timelevel)
+subroutine read_compressed_i2d(filename,fieldname,data,domain,timelevel,start,nread,threading)
   character(len=*),         intent(in)   :: filename, fieldname
   integer, dimension(:,:), intent(inout) :: data ! 2 dimensional data
   type(domain2d), intent(in), optional   :: domain
   integer, intent(in),        optional   :: timelevel
+  integer, intent(in) , optional         :: start(:), nread(:)
+  integer, intent(in) , optional         :: threading
   real, dimension(size(data,1),size(data,2)) :: r_data
 
   r_data = 0.0
-  call read_compressed_2d(filename,fieldname,r_data,domain,timelevel)
+  call read_compressed_2d(filename,fieldname,r_data,domain,timelevel,start,nread,threading)
   data = CEILING(r_data)
 end subroutine read_compressed_i2d
 !.....................................................................
-subroutine read_compressed_1d(filename,fieldname,data,domain,timelevel)
+subroutine read_compressed_1d(filename,fieldname,data,domain,timelevel,start,nread,threading)
   character(len=*), intent(in)           :: filename, fieldname
   real, dimension(:), intent(inout)      :: data     !1 dimensional data
   real, dimension(size(data,1),1)        :: data_2d
   type(domain2d), intent(in), optional   :: domain
   integer, intent(in) , optional         :: timelevel
+  integer, intent(in) , optional         :: start(:), nread(:)
+  integer, intent(in) , optional         :: threading
 #ifdef use_CRI_pointers
   pointer( p, data_2d )
   p = LOC(data)
 #endif
-  call read_compressed_2d(filename,fieldname,data_2d,domain,timelevel)
+  call read_compressed_2d(filename,fieldname,data_2d,domain,timelevel,start,nread,threading)
 end subroutine read_compressed_1d
 !.....................................................................
-subroutine read_compressed_2d(filename,fieldname,data,domain,timelevel)
+subroutine read_compressed_2d(filename,fieldname,data,domain,timelevel,start,nread,threading)
   character(len=*), intent(in)           :: filename, fieldname
   real, dimension(:,:), intent(inout)    :: data     !2 dimensional data
-  real, dimension(size(data,1),1)        :: data_2d
   type(domain2d), target, optional, intent(in) :: domain
   integer, intent(in) , optional         :: timelevel
+  integer, intent(in) , optional         :: start(:), nread(:)
+  integer, intent(in) , optional         :: threading
 
   character(len=256)            :: fname
   integer                       :: unit, siz_in(4)
@@ -4953,7 +4977,7 @@ subroutine read_compressed_2d(filename,fieldname,data,domain,timelevel)
   if (files_read(file_index)%var(index_field)%is_dimvar) then
      call mpp_get_axis_data(files_read(file_index)%var(index_field)%axis,data(:,1))
   else
-     call mpp_read_compressed(unit,files_read(file_index)%var(index_field)%field,d_ptr,data,timelevel)
+     call mpp_read_compressed(unit,files_read(file_index)%var(index_field)%field,d_ptr,data,timelevel,start,nread,threading)
   endif
   d_ptr =>NULL()
 end subroutine read_compressed_2d
@@ -7490,9 +7514,8 @@ subroutine get_instance_filename(name_in,name_out)
 
 end subroutine get_instance_filename
 
-
 !#######################################################################
-subroutine parse_mask_table(mask_table, maskmap, modelname)
+subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
 
   character(len=*), intent(in) :: mask_table
   logical,         intent(out) :: maskmap(:,:)
@@ -7509,21 +7532,21 @@ subroutine parse_mask_table(mask_table, maskmap, modelname)
      call mpp_open(unit, mask_table, action=MPP_RDONLY)
      read(unit, FMT=*, IOSTAT=mystat) nmask
      if( mystat /= 0 ) call mpp_error(FATAL, &
-          "fms_io(parse_mask_table): Error reading nmask from file " //trim(mask_table))
+          "fms_io(parse_mask_table_2d): Error reading nmask from file " //trim(mask_table))
      write(stdoutunit,*)"parse_mask_table: Number of domain regions masked in ", trim(modelname), " = ", nmask
      if( nmask > 0 ) then
         !--- read layout from mask_table and confirm it matches the shape of maskmap
         read(unit, FMT=*, IOSTAT=mystat) layout
         if( mystat /= 0 ) call mpp_error(FATAL, &
-             "fms_io(parse_mask_talbe): Error reading layout from file " //trim(mask_table))
+             "fms_io(parse_mask_talbe_2d): Error reading layout from file " //trim(mask_table))
         if( (layout(1) .NE. size(maskmap,1)) .OR. (layout(2) .NE. size(maskmap,2)) )then
            write(stdoutunit,*)"layout=", layout, ", size(maskmap) = ", size(maskmap,1), size(maskmap,2)
-           call mpp_error(FATAL, "fms_io(parse_mask_table): layout in file "//trim(mask_table)// &
+           call mpp_error(FATAL, "fms_io(parse_mask_table_2d): layout in file "//trim(mask_table)// &
                   "does not match size of maskmap for "//trim(modelname))
         endif
         !--- make sure mpp_npes() == layout(1)*layout(2) - nmask
         if( mpp_npes() .NE. layout(1)*layout(2) - nmask ) call mpp_error(FATAL, &
-           "fms_io(parse_mask_table): mpp_npes() .NE. layout(1)*layout(2) - nmask for "//trim(modelname))
+           "fms_io(parse_mask_table_2d): mpp_npes() .NE. layout(1)*layout(2) - nmask for "//trim(modelname))
       endif
    endif
 
@@ -7544,31 +7567,121 @@ subroutine parse_mask_table(mask_table, maskmap, modelname)
         if (record(1:10) == '          ') cycle
         n = n + 1
         if( n > nmask ) then
-           call mpp_error(FATAL, "fms_io(parse_mask_table): number of mask_list entry "// &
+           call mpp_error(FATAL, "fms_io(parse_mask_table_2d): number of mask_list entry "// &
                 "is greater than nmask in file "//trim(mask_table) )
         endif
         read(record,*,err=888) mask_list(n,1), mask_list(n,2)
      enddo
-888  call mpp_error(FATAL, "fms_io(parse_mask_table):  Error in reading mask_list from file "//trim(mask_table))
+888  call mpp_error(FATAL, "fms_io(parse_mask_table_2d):  Error in reading mask_list from file "//trim(mask_table))
 
 999  continue
      !--- make sure the number of entry for mask_list is nmask
      if( n .NE. nmask) call mpp_error(FATAL, &
-        "fms_io(parse_mask_table): number of mask_list entry does not match nmask in file "//trim(mask_table))
+        "fms_io(parse_mask_table_2d): number of mask_list entry does not match nmask in file "//trim(mask_table))
      call mpp_close(unit)
   endif
 
   call mpp_broadcast(mask_list, 2*nmask, mpp_root_pe())
   do n = 1, nmask
      if(debug_mask_list) then
-       write(stdoutunit,*) "==>NOTE from parse_mask_table: ", trim(modelname), " mask_list = ", mask_list(n,1), mask_list(n,2)
+       write(stdoutunit,*) "==>NOTE from parse_mask_table_2d: ", trim(modelname), " mask_list = ", mask_list(n,1), mask_list(n,2)
      endif
      maskmap(mask_list(n,1),mask_list(n,2)) = .false.
   enddo
 
   deallocate(mask_list)
 
-end subroutine parse_mask_table
+end subroutine parse_mask_table_2d
+
+
+!#######################################################################
+subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
+
+  character(len=*), intent(in) :: mask_table
+  logical,         intent(out) :: maskmap(:,:,:)
+  character(len=*), intent(in) :: modelname
+  integer                      :: nmask, layout(2)
+  integer, allocatable         :: mask_list(:,:)
+  integer                      :: unit, mystat, n, stdoutunit, ntiles
+  character(len=128)           :: record
+
+  maskmap = .true.
+  nmask = 0
+  stdoutunit = stdout()
+  if( mpp_pe() == mpp_root_pe() ) then
+     call mpp_open(unit, mask_table, action=MPP_RDONLY)
+     read(unit, FMT=*, IOSTAT=mystat) nmask
+     if( mystat /= 0 ) call mpp_error(FATAL, &
+          "fms_io(parse_mask_table_3d): Error reading nmask from file " //trim(mask_table))
+     write(stdoutunit,*)"parse_mask_table: Number of domain regions masked in ", trim(modelname), " = ", nmask
+     if( nmask > 0 ) then
+        !--- read layout from mask_table and confirm it matches the shape of maskmap
+        read(unit, FMT=*, IOSTAT=mystat) layout(1), layout(2), ntiles
+        if( mystat /= 0 ) call mpp_error(FATAL, &
+             "fms_io(parse_mask_talbe_3d): Error reading layout from file " //trim(mask_table))
+        if( (layout(1) .NE. size(maskmap,1)) .OR. (layout(2) .NE. size(maskmap,2)) )then
+           write(stdoutunit,*)"layout=", layout, ", size(maskmap) = ", size(maskmap,1), size(maskmap,2)
+           call mpp_error(FATAL, "fms_io(parse_mask_table_3d): layout in file "//trim(mask_table)// &
+                  "does not match size of maskmap for "//trim(modelname))
+        endif
+        if( ntiles .NE. size(maskmap,3) ) then
+           write(stdoutunit,*)"ntiles=", ntiles, ", size(maskmap,3) = ", size(maskmap,3)
+           call mpp_error(FATAL, "fms_io(parse_mask_table_3d): ntiles in file "//trim(mask_table)// &
+                  "does not match size of maskmap for "//trim(modelname))
+        endif
+        !--- make sure mpp_npes() == layout(1)*layout(2) - nmask
+        if( mpp_npes() .NE. layout(1)*layout(2)*ntiles - nmask ) then
+           print*, "layout=", layout, nmask, mpp_npes()
+           call mpp_error(FATAL, &
+              "fms_io(parse_mask_table_3d): mpp_npes() .NE. layout(1)*layout(2) - nmask for "//trim(modelname))
+        endif
+      endif
+   endif
+
+   call mpp_broadcast(nmask, mpp_root_pe())
+
+   if(nmask==0) then
+      if( mpp_pe() == mpp_root_pe() ) call mpp_close(unit)
+      return
+   endif
+
+   allocate(mask_list(nmask,3))
+
+   if( mpp_pe() == mpp_root_pe() ) then
+     n = 0
+     do while( .true. )
+        read(unit,'(a)',end=999) record
+        if (record(1:1) == '#') cycle
+        if (record(1:10) == '          ') cycle
+        n = n + 1
+        if( n > nmask ) then
+           call mpp_error(FATAL, "fms_io(parse_mask_table_3d): number of mask_list entry "// &
+                "is greater than nmask in file "//trim(mask_table) )
+        endif
+        read(record,*,err=888) mask_list(n,1), mask_list(n,2), mask_list(n,3)
+     enddo
+888  call mpp_error(FATAL, "fms_io(parse_mask_table_3d):  Error in reading mask_list from file "//trim(mask_table))
+
+999  continue
+     !--- make sure the number of entry for mask_list is nmask
+     if( n .NE. nmask) call mpp_error(FATAL, &
+        "fms_io(parse_mask_table_3d): number of mask_list entry does not match nmask in file "//trim(mask_table))
+     call mpp_close(unit)
+  endif
+
+  call mpp_broadcast(mask_list, 3*nmask, mpp_root_pe())
+  do n = 1, nmask
+     if(debug_mask_list) then
+       write(stdoutunit,*) "==>NOTE from parse_mask_table_3d: ", trim(modelname), " mask_list = ", &
+                           mask_list(n,1), mask_list(n,2), mask_list(n,3)
+     endif
+     maskmap(mask_list(n,1),mask_list(n,2),mask_list(n,3)) = .false.
+  enddo
+
+  deallocate(mask_list)
+
+end subroutine parse_mask_table_3d
+
 
 function get_great_circle_algorithm()
    logical :: get_great_circle_algorithm

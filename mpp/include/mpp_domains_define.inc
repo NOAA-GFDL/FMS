@@ -517,7 +517,7 @@
     ndivx = size(domain%pearray,1)
     ndivy = size(domain%pearray,2)
     allocate(posarray(0:ndivx-1, 0:ndivy-1))
-    n = 0
+    n = domain%tile_root_pe - mpp_root_pe()
     posarray = -1
     do j = 0,ndivy-1
        do i = 0,ndivx-1
