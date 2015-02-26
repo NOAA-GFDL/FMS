@@ -16,6 +16,10 @@ program test
   use mpp_io_mod,      only : mpp_get_info, mpp_get_axes, mpp_get_fields, mpp_get_times
   use mpp_io_mod,      only : mpp_read, mpp_io_exit
 
+#ifdef INTERNAL_FILE_NML
+  USE mpp_mod, ONLY: input_nml_file
+#endif
+
   implicit none
 
 #ifdef use_netCDF
@@ -61,7 +65,7 @@ program test
   npes = mpp_npes()
 
 #ifdef INTERNAL_FILE_NML
-  read (input_nml_file, test_mpp_io_nml, status=io_status)
+  read (input_nml_file, test_mpp_io_nml, iostat=io_status)
 #else
   do
      inquire( unit=unit, opened=opened )
