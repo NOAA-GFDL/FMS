@@ -27,7 +27,7 @@ module axis_utils_mod
   use mpp_io_mod, only: axistype, atttype, default_axis, default_att,         &
                         mpp_get_atts, mpp_get_axis_data, mpp_modify_meta,     &
                         mpp_get_att_name, mpp_get_att_type, mpp_get_att_char, &
-                        mpp_get_att_length
+                        mpp_get_att_length, mpp_get_axis_bounds
   use mpp_mod,    only: mpp_error, FATAL, stdout
   use fms_mod,    only: lowercase, string_array_index, fms_error_handler
 
@@ -132,11 +132,10 @@ contains
     type(axistype), intent(in), dimension(:) :: axes
     character(len=*), intent(out), optional :: bnd_name, err_msg
 
-    type(atttype), dimension(:), allocatable :: att
     real, dimension(:), allocatable :: data, tmp
 
     integer :: i, len
-    character(len=128) :: bounds_name, name, units
+    character(len=128) :: name, units
     character(len=256) :: longname
     character(len=1) :: cartesian
     logical :: bounds_found
@@ -145,65 +144,36 @@ contains
       err_msg = ''
     endif
     axis_bound = default_axis
-    allocate(att(maxatts))
-    att = default_att
-    call mpp_get_atts(axis,atts=att)
+    call mpp_get_atts(axis,units=units,longname=longname,&
+            cartesian=cartesian, len=len)
+    if(len .LE. 0) return
+    allocate(data(len+1))
 
-    bounds_name = 'none'
-    bounds_found = .true. ! changed to .false. if not found
-    do i=1,maxatts
-       if (mpp_get_att_type(att(i)) == NF_CHAR) then
-          if (string_array_index('bounds',(/mpp_get_att_name(att(i))/)) .or. &
-              string_array_index('edge',(/mpp_get_att_name(att(i))/))   .or. &
-              string_array_index('edges',(/mpp_get_att_name(att(i))/))) then
-             bounds_name = mpp_get_att_char(att(i))
-          endif
-       endif
-    enddo
-    if(present(bnd_name)) bnd_name = trim(bounds_name)
-    if (trim(bounds_name) == 'none') then
-       bounds_found = .false.
-    else
-       do i=1,size(axes(:))
-          call mpp_get_atts(axes(i),name=name)
-          if (lowercase(trim(name)) == lowercase(trim(bounds_name))) then
-             axis_bound = axes(i)
-          endif
+    bounds_found = mpp_get_axis_bounds(axis, data, name=name)
+    longname = trim(longname)//' bounds'
+
+    if(.not.bounds_found .and. len>1 ) then
+       ! The following calculation can not be done for len=1
+       call mpp_get_atts(axis,name=name)
+       name = trim(name)//'_bounds'
+       allocate(tmp(len))
+       call mpp_get_axis_data(axis,tmp)
+       do i=2,len
+          data(i)= tmp(i-1)+fp5*(tmp(i)-tmp(i-1))
        enddo
-       call mpp_get_atts(axis_bound,len=len)
-       if (len < 1) then
-         bounds_found = .false.
-         if(present(err_msg)) then
-           call mpp_get_atts(axis,name=name)
-           err_msg = 'error locating boundary axis '//trim(bounds_name)//' for axis '//trim(name)
-         endif
+       data(1)= tmp(1)- fp5*(tmp(2)-tmp(1))
+       if (abs(data(1)) < epsln) data(1) = 0.0
+       data(len+1)= tmp(len)+ fp5*(tmp(len)-tmp(len-1))         
+       if (data(1) == 0.0) then
+          if (abs(data(len+1)-360.) > epsln) data(len+1)=360.0
        endif
     endif
-
-    if(.not.bounds_found) then
-       call mpp_get_atts(axis,name=name,units=units,longname=longname,&
-            cartesian=cartesian,len=len)
-       if (len > 1) then ! if len <= 1 then return with axis_bound equal to default_axis because the calculation below cannot be done.
-         name = trim(name)//'_bounds'
-         longname = trim(longname)//' bounds'
-         allocate(tmp(len))
-         call mpp_get_axis_data(axis,tmp)
-         allocate(data(len+1))
-         do i=2,len
-            data(i)= tmp(i-1)+fp5*(tmp(i)-tmp(i-1))
-         enddo
-         data(1)= tmp(1)- fp5*(tmp(2)-tmp(1))
-         if (abs(data(1)) < epsln) data(1) = 0.0
-         data(len+1)= tmp(len)+ fp5*(tmp(len)-tmp(len-1))         
-         if (data(1) == 0.0) then
-            if (abs(data(len+1)-360.) > epsln) data(len+1)=360.0
-         endif
-         call mpp_modify_meta(axis_bound,name=name,units=units,longname=&
-              longname,cartesian=cartesian,data=data)
-         deallocate(tmp)
-         deallocate(data)
-      endif
+    if(bounds_found .OR. len>1) then
+       call mpp_modify_meta(axis_bound,name=name,units=units,longname=&
+                 longname,cartesian=cartesian,data=data)
     endif
+    if(allocated(tmp)) deallocate(tmp)
+    deallocate(data)
 
     return
   end subroutine get_axis_bounds
