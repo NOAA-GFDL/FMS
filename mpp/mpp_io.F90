@@ -320,6 +320,7 @@ use mpp_mod,            only : mpp_pe, mpp_root_pe, mpp_npes, lowercase, mpp_tra
 use mpp_mod,            only : mpp_init, mpp_sync, mpp_clock_id, mpp_clock_begin, mpp_clock_end
 use mpp_mod,            only : MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED, CLOCK_ROUTINE
 use mpp_mod,            only : input_nml_file, mpp_gather, mpp_broadcast
+use mpp_mod,            only : mpp_send, mpp_recv, mpp_sync_self, EVENT_RECV, COMM_TAG_1
 use mpp_domains_mod,    only : domain1d, domain2d, NULL_DOMAIN1D, mpp_domains_init
 use mpp_domains_mod,    only : mpp_get_global_domain, mpp_get_compute_domain
 use mpp_domains_mod,    only : mpp_get_data_domain, mpp_get_memory_domain, mpp_get_pelist

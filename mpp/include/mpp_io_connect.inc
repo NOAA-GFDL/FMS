@@ -176,6 +176,7 @@
 
       character(len=16)  :: act, acc, for, pos
       character(len=128) :: mesg
+      character(len=256) :: text2
       integer :: action_flag, form_flag, access_flag, threading_flag, fileset_flag, length
       integer :: nfiles, tile_id(1), io_layout(2)
       logical :: exists, on_root_pe, dist_file
@@ -293,10 +294,18 @@
             fileset_flag = MPP_MULTI
             threading_flag = MPP_MULTI
             tile_id = mpp_get_tile_id(io_domain)
-            if(mpp_npes() > 10000) then 
-               write( text,'(a,i6.6)' )trim(text)//'.', tile_id(1)
-            else
-               write( text,'(a,i4.4)' )trim(text)//'.', tile_id(1)
+            text2 = trim(text)
+            if(tile_id(1) .GE. 10000) call mpp_error(FATAL, 'mpp_open: tile_id should be less than 10000 when io_domain exist')
+            write( text,'(a,i4.4)' )trim(text)//'.', tile_id(1)
+            if( action_flag == MPP_RDONLY ) then
+               inquire(file=trim(text),EXIST=exists)
+               if(.not. exists) then
+                  write( text2,'(a,i6.6)' )trim(text2)//'.', tile_id(1)
+                  inquire(file=trim(text2),EXIST=exists)
+                  if(.not.exists) call mpp_error(FATAL, 'mpp_open: neither '// &
+                                  trim(text)//' nor '//trim(text2)//' exist and io domain exist')
+                  text = trim(text2)
+               endif
             endif
          else
             fileset_flag   = MPP_SINGLE

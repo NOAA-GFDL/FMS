@@ -125,7 +125,7 @@
     end subroutine read_record_core
 
 
-    subroutine read_record( unit, field, nwords, data, time_level, domain, position, tile_count )
+    subroutine read_record( unit, field, nwords, data, time_level, domain, position, tile_count, start_in, axsiz_in )
 !routine that is finally called by all mpp_read routines to perform the read
 !a non-netCDF record contains:
 !      field ID
@@ -148,6 +148,7 @@
       integer,        intent(in),    optional :: time_level
       type(domain2D), intent(in),    optional :: domain
       integer,        intent(in),    optional :: position, tile_count
+      integer,        intent(in),    optional :: start_in(:), axsiz_in(:)
       integer, dimension(size(field%axes(:))) :: start, axsiz
 
       integer :: tlevel !,subdomain(4)
@@ -167,11 +168,22 @@
       if( .NOT.mpp_file(unit)%read_on_this_pe )return
 
       if( .NOT.mpp_file(unit)%initialized ) call mpp_error( FATAL, 'MPP_READ: must first call mpp_read_meta.' )
+      if( mpp_file(unit)%format .NE. MPP_NETCDF ) call mpp_error( FATAL, 'Currently dont support non-NetCDF mpp read' )
+
+      if (.not.PRESENT(time_level)) then
+          tlevel = 0
+      else
+          tlevel = time_level
+      endif
 
       if( verbose )print '(a,2i6,2i5)', 'MPP_READ: PE, unit, %id, %time_level =',&
            pe, unit, mpp_file(unit)%id, tlevel
-
-      if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
+      if( PRESENT(start_in) .AND. PRESENT(axsiz_in) ) then
+         if(size(start(:)) > size(start_in(:)) )call mpp_error( FATAL, 'MPP_READ: size(start_in) < size(start)')
+         if(size(axsiz(:)) > size(axsiz_in(:)) )call mpp_error( FATAL, 'MPP_READ: size(axsiz_in) < size(axsiz)')
+         start(:) = start_in(1:size(start(:)))
+         axsiz(:) = axsiz_in(1:size(axsiz(:)))
+      else
 !define netCDF data block to be read:
 !  time axis: START = time level
 !             AXSIZ = 1
@@ -228,15 +240,10 @@
                  io_domain => NULL()
               end if
           end if  
-              
-          if( verbose )print '(a,2i6,i6,12i4)', 'READ_RECORD: PE, unit, nwords, start, axsiz=', pe, unit, nwords, start, axsiz
+      endif        
+      if( verbose )print '(a,2i6,i6,12i4)', 'READ_RECORD: PE, unit, nwords, start, axsiz=', pe, unit, nwords, start, axsiz
 
-          call read_record_core(unit, field, nwords, data, start, axsiz)
-      else                      !non-netCDF
-!subdomain contains (/is,ie,js,je/)
-          call mpp_error( FATAL, 'Currently dont support non-NetCDF mpp read' )
-          
-      end if
+      call read_record_core(unit, field, nwords, data, start, axsiz)
 
       return
     end subroutine read_record
