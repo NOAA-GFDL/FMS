@@ -1841,9 +1841,9 @@ CONTAINS
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
                                              & field(i-is+1+hi,j-js+1+hj,k)*weight1
-                                        output_fields(out_num)%counter(i-hi,j-hj,k,sample) =&
-                                             &output_fields(out_num)%counter(i-hi,j-hj,k,sample) + weight1
                                      END IF
+                                     output_fields(out_num)%counter(i-hi,j-hj,k,sample) =&
+                                          &output_fields(out_num)%counter(i-hi,j-hj,k,sample) + weight1
                                   END IF
                                END DO
                             END DO
