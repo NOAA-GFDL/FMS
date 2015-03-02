@@ -173,6 +173,7 @@ module mpp_mod
   use mpp_parameter_mod, only : COMM_TAG_9,  COMM_TAG_10, COMM_TAG_11, COMM_TAG_12
   use mpp_parameter_mod, only : COMM_TAG_13, COMM_TAG_14, COMM_TAG_15, COMM_TAG_16
   use mpp_parameter_mod, only : COMM_TAG_17, COMM_TAG_18, COMM_TAG_19, COMM_TAG_20
+  use mpp_parameter_mod, only : MPP_FILL_INT,MPP_FILL_DOUBLE
   use mpp_data_mod,      only : stat, mpp_stack, ptr_stack, status, ptr_status, sync, ptr_sync  
   use mpp_data_mod,      only : mpp_from_pe, ptr_from, remote_data_loc, ptr_remote
   use mpp_data_mod,      only : mpp_data_version=>version, mpp_data_tagname=>tagname
@@ -199,7 +200,7 @@ private
   public :: COMM_TAG_9,  COMM_TAG_10, COMM_TAG_11, COMM_TAG_12
   public :: COMM_TAG_13, COMM_TAG_14, COMM_TAG_15, COMM_TAG_16
   public :: COMM_TAG_17, COMM_TAG_18, COMM_TAG_19, COMM_TAG_20
-
+  public :: MPP_FILL_INT,MPP_FILL_DOUBLE
 
   !--- public data from mpp_data_mod ------------------------------
 !  public :: request
@@ -1082,11 +1083,24 @@ private
      module procedure mpp_chksum_i8_2d
      module procedure mpp_chksum_i8_3d
      module procedure mpp_chksum_i8_4d
+     module procedure mpp_chksum_i8_5d
+     module procedure mpp_chksum_i8_1d_rmask
+     module procedure mpp_chksum_i8_2d_rmask
+     module procedure mpp_chksum_i8_3d_rmask
+     module procedure mpp_chksum_i8_4d_rmask
+     module procedure mpp_chksum_i8_5d_rmask
+
 #endif
      module procedure mpp_chksum_i4_1d
      module procedure mpp_chksum_i4_2d
      module procedure mpp_chksum_i4_3d
      module procedure mpp_chksum_i4_4d
+     module procedure mpp_chksum_i4_5d
+     module procedure mpp_chksum_i4_1d_rmask
+     module procedure mpp_chksum_i4_2d_rmask
+     module procedure mpp_chksum_i4_3d_rmask
+     module procedure mpp_chksum_i4_4d_rmask
+     module procedure mpp_chksum_i4_5d_rmask
      module procedure mpp_chksum_r8_0d
      module procedure mpp_chksum_r8_1d
      module procedure mpp_chksum_r8_2d

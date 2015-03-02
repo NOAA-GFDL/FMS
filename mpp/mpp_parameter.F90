@@ -22,7 +22,7 @@ module mpp_parameter_mod
   public :: COMM_TAG_9,  COMM_TAG_10, COMM_TAG_11, COMM_TAG_12
   public :: COMM_TAG_13, COMM_TAG_14, COMM_TAG_15, COMM_TAG_16
   public :: COMM_TAG_17, COMM_TAG_18, COMM_TAG_19, COMM_TAG_20
-
+  public :: MPP_FILL_INT,MPP_FILL_DOUBLE
 
   !--- public paramters which is used by mpp_domains_mod and its components. 
   !--- All othere modules should import these parameters from mpp_domains_mod. 
@@ -52,6 +52,10 @@ module mpp_parameter_mod
   integer, parameter :: EVENT_ALLREDUCE=1, EVENT_BROADCAST=2, EVENT_RECV=3, EVENT_SEND=4, EVENT_WAIT=5
   integer, parameter :: MPP_CLOCK_SYNC=1, MPP_CLOCK_DETAILED=2
   integer            :: DEFAULT_TAG = 1
+  !--- implimented to centralize _FILL_ values for land_model.F90 into mpp_mod
+  !------- instead of multiple includes of netcdf.inc and manual assignments
+  integer, parameter :: MPP_FILL_INT =-2147483647               !NF_FILL_INT
+  real,    parameter :: MPP_FILL_DOUBLE= 9.9692099683868690e+36 !NF_FILL_DOUBLE
   !--- predefined clock granularities, but you can use any integer
   !--- using CLOCK_LOOP and above may distort coarser-grain measurements
   integer, parameter :: CLOCK_COMPONENT=1      !component level, e.g model, exchange
