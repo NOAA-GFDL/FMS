@@ -162,12 +162,13 @@
       return
     end subroutine mpp_write_meta_global_scalar_r
       
-    subroutine mpp_write_meta_global_scalar_i( unit, name, ival )
+    subroutine mpp_write_meta_global_scalar_i( unit, name, ival, pack )
       integer, intent(in) :: unit
       character(len=*), intent(in) :: name
       integer, intent(in) :: ival
+      integer, intent(in), optional :: pack
       
-      call mpp_write_meta_global( unit, name, ival=(/ival/) )
+      call mpp_write_meta_global( unit, name, ival=(/ival/), pack=pack )
       return
     end subroutine mpp_write_meta_global_scalar_i
       
@@ -213,12 +214,13 @@
       return
     end subroutine mpp_write_meta_scalar_r
       
-    subroutine mpp_write_meta_scalar_i( unit, id, name, ival )
+    subroutine mpp_write_meta_scalar_i( unit, id, name, ival,pack )
       integer, intent(in) :: unit, id
       character(len=*), intent(in) :: name
       integer, intent(in) :: ival
+      integer, intent(in), optional :: pack
       
-      call mpp_write_meta( unit, id, name, ival=(/ival/) )
+      call mpp_write_meta( unit, id, name, ival=(/ival/),pack=pack )
       return
     end subroutine mpp_write_meta_scalar_i
       
@@ -816,6 +818,22 @@
       if ( present(fill) ) then
          if( field%pack.EQ.1 .OR. field%pack.EQ.2 )then
             call mpp_write_meta( unit, field%id, '_FillValue', rval=field%fill, pack=pack )
+         else if (field%pack==0) then ! some safety checks for integer fills
+            if ( present(scale).OR.present(add) ) then
+               call mpp_error(FATAL,"add,scale not currently implimented for pack=0 int handling, try reals instead.")
+            else
+               if (KIND(field%fill)==DOUBLE_KIND) then
+                  !! check if type safe cast
+                  if ( field%fill /= TRANSFER( IBITS( TRANSFER(field%fill,INT(0,DOUBLE_KIND)) ,0 , BIT_SIZE(INT(0,INT_KIND))) , field%fill ) ) then
+                     call mpp_error(FATAL,"mpp_io(mpp_io_write.inc): For pack=0, fill and data should both be safely castable"// &
+                          "to NF_INT type, _FillValue was actually using more precision than INT_KIND, cannot safely cast.")
+                  end if  
+               else if (KIND(field%fill)/=INT_KIND) then
+                  call mpp_error(FATAL,"mpp_io(mpp_io_write.inc): Unexpected KIND of fill, use either 4, or 8 byte KIND.")
+               end if
+               !! then safe to write ival _FillValue and pack
+               call mpp_write_meta( unit, field%id, '_FillValue', ival=TRANSFER( field%fill, INT(0,INT_KIND)), pack=pack )
+            end if                     
          else
             a = nint((fill-add)/scale)
             call mpp_write_meta( unit, field%id, '_FillValue', rval=a, pack=pack )
@@ -897,9 +915,20 @@
       integer, allocatable :: rval_i(:)
 #ifdef use_netCDF
       if( PRESENT(rval) )then
-!pack is only meaningful for FP numbers
+!pack was only meaningful for FP numbers, but is now extended by the ival branch of this routine
           if( PRESENT(pack) )then
-              if( pack.EQ.1 )then
+             if( pack== 0 ) then !! here be dragons, use ival branch!...
+                if( KIND(rval).EQ.DOUBLE_KIND )then
+                   call mpp_error( FATAL, &
+                        'WRITE_ATTRIBUTE_NETCDF: attempting to write internal NF_INT, currently int32, as double.' )
+                   error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_DOUBLE, size(rval(:)), rval )
+                else if( KIND(rval).EQ.FLOAT_KIND )then
+                   call mpp_error( FATAL, &
+                        'WRITE_ATTRIBUTE_NETCDF: attempting to write internal NF_INT, currently int32, as float.' )
+                   error = NF_PUT_ATT_REAL  ( mpp_file(unit)%ncid, id, name, NF_DOUBLE, size(rval(:)), rval )
+                end if
+                call netcdf_err( error, mpp_file(unit), string=' Attribute='//name )
+             else if( pack.EQ.1 )then
                   if( KIND(rval).EQ.DOUBLE_KIND )then
                       error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_DOUBLE, size(rval(:)), rval )
                   else if( KIND(rval).EQ.FLOAT_KIND )then
@@ -948,8 +977,20 @@
               call netcdf_err( error, mpp_file(unit), string=' Attribute='//name )
           end if
       else if( PRESENT(ival) )then
+          if( PRESENT(pack) ) then
+             if (pack ==0) then
+                if (KIND(ival).EQ.LONG_KIND ) then
+                   call mpp_error(FATAL,'only use NF_INTs with pack=0 for now')
+                end if
+                error = NF_PUT_ATT_INT( mpp_file(unit)%ncid, id, name, NF_INT, size(ival(:)), ival ) !!XXX int32_t..
+                call netcdf_err( error, mpp_file(unit), string=' Attribute='//name )
+             else
+                call mpp_error( FATAL, 'WRITE_ATTRIBUTE_NETCDF: only implimented ints when pack=0, else use reals.' )
+             endif
+          else
           error = NF_PUT_ATT_INT ( mpp_file(unit)%ncid, id, name, NF_INT, size(ival(:)), ival )
           call netcdf_err( error, mpp_file(unit), string=' Attribute='//name )
+          end if
       else if( present(cval) )then
           error = NF_PUT_ATT_TEXT( mpp_file(unit)%ncid, id, name, len_trim(cval), cval )
           call netcdf_err( error, mpp_file(unit), string=' Attribute='//name )
