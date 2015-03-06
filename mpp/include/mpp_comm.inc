@@ -13,6 +13,8 @@
 #ifndef no_8byte_integers
 #undef MPP_CHKSUM_INT_
 #define MPP_CHKSUM_INT_ mpp_chksum_i8_1d
+#undef MPP_CHKSUM_INT_RMASK_
+#define MPP_CHKSUM_INT_RMASK_ mpp_chksum_i8_1d_rmask
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
 #undef MPP_RANK_
@@ -21,6 +23,8 @@
 
 #undef MPP_CHKSUM_INT_
 #define MPP_CHKSUM_INT_ mpp_chksum_i8_2d
+#undef MPP_CHKSUM_INT_RMASK_
+#define MPP_CHKSUM_INT_RMASK_ mpp_chksum_i8_2d_rmask
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
 #undef MPP_RANK_
@@ -29,6 +33,8 @@
 
 #undef MPP_CHKSUM_INT_
 #define MPP_CHKSUM_INT_ mpp_chksum_i8_3d
+#undef MPP_CHKSUM_INT_RMASK_
+#define MPP_CHKSUM_INT_RMASK_ mpp_chksum_i8_3d_rmask
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
 #undef MPP_RANK_
@@ -37,6 +43,8 @@
 
 #undef MPP_CHKSUM_INT_
 #define MPP_CHKSUM_INT_ mpp_chksum_i8_4d
+#undef MPP_CHKSUM_INT_RMASK_
+#define MPP_CHKSUM_INT_RMASK_ mpp_chksum_i8_4d_rmask
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
 #undef MPP_RANK_
@@ -45,6 +53,8 @@
 
 #undef MPP_CHKSUM_INT_
 #define MPP_CHKSUM_INT_ mpp_chksum_i8_5d
+#undef MPP_CHKSUM_INT_RMASK_
+#define MPP_CHKSUM_INT_RMASK_ mpp_chksum_i8_5d_rmask
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
 #undef MPP_RANK_
@@ -54,6 +64,8 @@
 
 #undef MPP_CHKSUM_INT_
 #define MPP_CHKSUM_INT_ mpp_chksum_i4_1d
+#undef MPP_CHKSUM_INT_RMASK_
+#define MPP_CHKSUM_INT_RMASK_ mpp_chksum_i4_1d_rmask
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
 #undef MPP_RANK_
@@ -62,6 +74,8 @@
 
 #undef MPP_CHKSUM_INT_
 #define MPP_CHKSUM_INT_ mpp_chksum_i4_2d
+#undef MPP_CHKSUM_INT_RMASK_
+#define MPP_CHKSUM_INT_RMASK_ mpp_chksum_i4_2d_rmask
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
 #undef MPP_RANK_
@@ -70,6 +84,8 @@
 
 #undef MPP_CHKSUM_INT_
 #define MPP_CHKSUM_INT_ mpp_chksum_i4_3d
+#undef MPP_CHKSUM_INT_RMASK_
+#define MPP_CHKSUM_INT_RMASK_ mpp_chksum_i4_3d_rmask
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
 #undef MPP_RANK_
@@ -78,6 +94,8 @@
 
 #undef MPP_CHKSUM_INT_
 #define MPP_CHKSUM_INT_ mpp_chksum_i4_4d
+#undef MPP_CHKSUM_INT_RMASK_
+#define MPP_CHKSUM_INT_RMASK_ mpp_chksum_i4_4d_rmask
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
 #undef MPP_RANK_
@@ -86,6 +104,8 @@
 
 #undef MPP_CHKSUM_INT_
 #define MPP_CHKSUM_INT_ mpp_chksum_i4_5d
+#undef MPP_CHKSUM_INT_RMASK_
+#define MPP_CHKSUM_INT_RMASK_ mpp_chksum_i4_5d_rmask
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
 #undef MPP_RANK_

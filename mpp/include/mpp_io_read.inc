@@ -125,7 +125,7 @@
     end subroutine read_record_core
 
 
-    subroutine read_record( unit, field, nwords, data, time_level, domain, position, tile_count )
+    subroutine read_record( unit, field, nwords, data, time_level, domain, position, tile_count, start_in, axsiz_in )
 !routine that is finally called by all mpp_read routines to perform the read
 !a non-netCDF record contains:
 !      field ID
@@ -148,6 +148,7 @@
       integer,        intent(in),    optional :: time_level
       type(domain2D), intent(in),    optional :: domain
       integer,        intent(in),    optional :: position, tile_count
+      integer,        intent(in),    optional :: start_in(:), axsiz_in(:)
       integer, dimension(size(field%axes(:))) :: start, axsiz
 
       integer :: tlevel !,subdomain(4)
@@ -167,11 +168,22 @@
       if( .NOT.mpp_file(unit)%read_on_this_pe )return
 
       if( .NOT.mpp_file(unit)%initialized ) call mpp_error( FATAL, 'MPP_READ: must first call mpp_read_meta.' )
+      if( mpp_file(unit)%format .NE. MPP_NETCDF ) call mpp_error( FATAL, 'Currently dont support non-NetCDF mpp read' )
+
+      if (.not.PRESENT(time_level)) then
+          tlevel = 0
+      else
+          tlevel = time_level
+      endif
 
       if( verbose )print '(a,2i6,2i5)', 'MPP_READ: PE, unit, %id, %time_level =',&
            pe, unit, mpp_file(unit)%id, tlevel
-
-      if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
+      if( PRESENT(start_in) .AND. PRESENT(axsiz_in) ) then
+         if(size(start(:)) > size(start_in(:)) )call mpp_error( FATAL, 'MPP_READ: size(start_in) < size(start)')
+         if(size(axsiz(:)) > size(axsiz_in(:)) )call mpp_error( FATAL, 'MPP_READ: size(axsiz_in) < size(axsiz)')
+         start(:) = start_in(1:size(start(:)))
+         axsiz(:) = axsiz_in(1:size(axsiz(:)))
+      else
 !define netCDF data block to be read:
 !  time axis: START = time level
 !             AXSIZ = 1
@@ -228,15 +240,10 @@
                  io_domain => NULL()
               end if
           end if  
-              
-          if( verbose )print '(a,2i6,i6,12i4)', 'READ_RECORD: PE, unit, nwords, start, axsiz=', pe, unit, nwords, start, axsiz
+      endif        
+      if( verbose )print '(a,2i6,i6,12i4)', 'READ_RECORD: PE, unit, nwords, start, axsiz=', pe, unit, nwords, start, axsiz
 
-          call read_record_core(unit, field, nwords, data, start, axsiz)
-      else                      !non-netCDF
-!subdomain contains (/is,ie,js,je/)
-          call mpp_error( FATAL, 'Currently dont support non-NetCDF mpp read' )
-          
-      end if
+      call read_record_core(unit, field, nwords, data, start, axsiz)
 
       return
     end subroutine read_record
@@ -455,8 +462,8 @@
       integer :: error, i, j, istat, check_exist
       integer         :: type, nvdims, nvatts, dimid
       integer, allocatable, dimension(:) :: dimids
-      character(len=128) :: name, attname, unlimname, attval
-      logical :: isdim
+      character(len=128) :: name, attname, unlimname, attval, bounds_name
+      logical :: isdim, found_bounds
       integer(LONG_KIND) :: checksumf
       character(len=64)  :: checksum_char
       integer :: num_checksumf, last, is, k
@@ -465,7 +472,7 @@
       integer(INT_KIND), allocatable :: ivals(:)
       real(FLOAT_KIND), allocatable  :: rvals(:)
       real(DOUBLE_KIND), allocatable :: r8vals(:)
-      
+
 #ifdef use_netCDF
 
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
@@ -898,6 +905,106 @@
               enddo
            endif
         enddo 
+
+        ! assign axis bounds
+        do j = 1, mpp_file(unit)%ndim
+           if(.not. associated(mpp_file(unit)%Axis(j)%data)) cycle
+           len = size(mpp_file(unit)%Axis(j)%data(:))
+           allocate(mpp_file(unit)%Axis(j)%data_bounds(len+1))
+           mpp_file(unit)%Axis(j)%name_bounds = 'none'
+           bounds_name = 'none'
+           found_bounds = .false.
+           do i = 1, mpp_file(unit)%Axis(j)%natt
+              if(trim(mpp_file(unit)%Axis(j)%Att(i)%name) == 'bounds' .OR. &
+                   trim(mpp_file(unit)%Axis(j)%Att(i)%name) == 'edges' ) then
+                 bounds_name = mpp_file(unit)%Axis(j)%Att(i)%catt
+                 found_bounds = .true.
+                 exit 
+              endif
+           enddo
+           !-- loop through all the fields to locate bounds_name
+           if( found_bounds ) then
+              found_bounds = .false.
+              do i = 1, mpp_file(unit)%ndim
+                 if(.not. associated(mpp_file(unit)%Axis(i)%data)) cycle
+                 if(trim(mpp_file(unit)%Axis(i)%name) == trim(bounds_name)) then
+                    found_bounds = .true.
+                    if(size(mpp_file(unit)%Axis(i)%data(:)) .NE. len+1) &
+                         call mpp_error(FATAL, "mpp_read_meta: improperly size bounds for field "// &
+                            trim(bounds_name)//" in file "// trim(mpp_file(unit)%name) )
+                    mpp_file(unit)%Axis(j)%data_bounds(:) = mpp_file(unit)%Axis(i)%data(:)
+                    exit
+                 endif
+              enddo
+              if( .not. found_bounds ) then
+                 do i=1, nvar_total
+                    error=NF_INQ_VAR(ncid,i,name,type,nvdims,dimids,nvatts);call netcdf_err( error, mpp_file(unit) )
+                    if(trim(name) == trim(bounds_name)) then
+                       found_bounds = .true.
+                       if(nvdims .NE. 2) &
+                            call mpp_error(FATAL, "mpp_read_meta: field "//trim(bounds_name)//" in file "//&
+                              trim(mpp_file(unit)%name)//" must be 2-D field")
+                       if(mpp_file(unit)%Axis(dimids(1))%len .NE. 2) &
+                            call mpp_error(FATAL, "mpp_read_meta: first dimension size of field "// &
+                            trim(mpp_file(unit)%Var(i)%name)//" from file "//trim(mpp_file(unit)%name)// &
+                            " must be 2")
+                       if(mpp_file(unit)%Axis(dimids(2))%len .NE. len) &
+                            call mpp_error(FATAL, "mpp_read_meta: second dimension size of field "// &
+                            trim(mpp_file(unit)%Var(i)%name)//" from file "//trim(mpp_file(unit)%name)// &
+                            " is not correct")
+                       select case (type)
+                       case (NF_INT)
+                          allocate(ivals(2*len), STAT=istat)
+                          if ( istat .ne. 0 ) then
+                             write(text,'(A)') istat
+                             call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate array ivals."//&
+                                  "  STAT = "//trim(text))
+                          end if            
+                          error = NF_GET_VAR_INT(ncid,i,ivals)
+                          call netcdf_err( error, mpp_file(unit), string=" Field="//trim(bounds_name) )
+                          mpp_file(unit)%Axis(j)%data_bounds(1:len) =ivals(1:(2*len-1):2)
+                          mpp_file(unit)%Axis(j)%data_bounds(len+1) = ivals(2*len)
+                          deallocate(ivals)
+                       case (NF_FLOAT)
+                          allocate(rvals(2*len), STAT=istat)
+                          if ( istat .ne. 0 ) then
+                             write(text,'(A)') istat
+                             call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate array rvals. "// &
+                                  "  STAT = "//trim(text))
+                          end if            
+                          error = NF_GET_VAR_REAL(ncid,i,rvals)
+                          call netcdf_err( error, mpp_file(unit), string=" Field="//trim(bounds_name) )
+                          mpp_file(unit)%Axis(j)%data_bounds(1:len) =rvals(1:(2*len-1):2)
+                          mpp_file(unit)%Axis(j)%data_bounds(len+1) = rvals(2*len)
+                          deallocate(rvals)
+                       case (NF_DOUBLE)
+                          allocate(r8vals(2*len), STAT=istat)
+                          if ( istat .ne. 0 ) then
+                             write(text,'(A)') istat
+                             call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate array r8vals. "//&
+                                  "  STAT = "//trim(text))
+                          end if            
+                          error = NF_GET_VAR_DOUBLE(ncid,i,r8vals)
+                          call netcdf_err( error, mpp_file(unit), string=" Field="//trim(bounds_name) )
+                          mpp_file(unit)%Axis(j)%data_bounds(1:len) =r8vals(1:(2*len-1):2)
+                          mpp_file(unit)%Axis(j)%data_bounds(len+1) = r8vals(2*len)
+                          deallocate(r8vals)
+                       case default
+                          call mpp_error( FATAL, 'mpp_io_mod(mpp_read_meta): Invalid data type for dimension' )
+                       end select
+                       exit
+                    endif
+                 enddo
+              endif
+           endif
+           if (found_bounds) then
+              mpp_file(unit)%Axis(j)%name_bounds = trim(bounds_name)
+           else
+              deallocate(mpp_file(unit)%Axis(j)%data_bounds)
+              mpp_file(unit)%Axis(j)%data_bounds =>NULL()
+           endif
+        enddo
+
 ! assign variable info
         nv = 0
         do i=1, nvar_total
@@ -1062,8 +1169,12 @@
                        mpp_file(unit)%Var(nv)%missing=mpp_file(unit)%Var(nv)%Att(j)%fatt(1)
                     case('missing_value')
                        mpp_file(unit)%Var(nv)%missing=mpp_file(unit)%Var(nv)%Att(j)%fatt(1)
+                    case('_FillValue')                       
+                       mpp_file(unit)%Var(nv)%fill=mpp_file(unit)%Var(nv)%Att(j)%fatt(1)
                     case('add_offset')
                        mpp_file(unit)%Var(nv)%add=mpp_file(unit)%Var(nv)%Att(j)%fatt(1)
+                    case('packing')
+                       mpp_file(unit)%Var(nv)%pack=mpp_file(unit)%Var(nv)%Att(j)%fatt(1)
                     case('valid_range')
                        mpp_file(unit)%Var(nv)%min=mpp_file(unit)%Var(nv)%Att(j)%fatt(1)
                        mpp_file(unit)%Var(nv)%max=mpp_file(unit)%Var(nv)%Att(j)%fatt(2)
@@ -1092,7 +1203,7 @@
       else 
         call mpp_error( FATAL,  'MPP READ CURRENTLY DOES NOT SUPPORT NON-NETCDF' )
       endif
-        
+
       mpp_file(unit)%initialized = .TRUE.
 #else 
       call mpp_error( FATAL, 'MPP_READ currently requires use_netCDF option' )

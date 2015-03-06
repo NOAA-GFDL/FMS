@@ -320,6 +320,7 @@ use mpp_mod,            only : mpp_pe, mpp_root_pe, mpp_npes, lowercase, mpp_tra
 use mpp_mod,            only : mpp_init, mpp_sync, mpp_clock_id, mpp_clock_begin, mpp_clock_end
 use mpp_mod,            only : MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED, CLOCK_ROUTINE
 use mpp_mod,            only : input_nml_file, mpp_gather, mpp_broadcast
+use mpp_mod,            only : mpp_send, mpp_recv, mpp_sync_self, EVENT_RECV, COMM_TAG_1
 use mpp_domains_mod,    only : domain1d, domain2d, NULL_DOMAIN1D, mpp_domains_init
 use mpp_domains_mod,    only : mpp_get_global_domain, mpp_get_compute_domain
 use mpp_domains_mod,    only : mpp_get_data_domain, mpp_get_memory_domain, mpp_get_pelist
@@ -328,6 +329,8 @@ use mpp_domains_mod,    only : operator( .NE. ), mpp_get_domain_shift
 use mpp_domains_mod,    only : mpp_get_io_domain, mpp_domain_is_tile_root_pe, mpp_get_domain_tile_root_pe
 use mpp_domains_mod,    only : mpp_get_tile_id, mpp_get_tile_npes, mpp_get_io_domain_layout
 use mpp_domains_mod,    only : mpp_get_domain_name, mpp_get_domain_npes
+use mpp_parameter_mod,  only : MPP_FILL_DOUBLE,MPP_FILL_INT
+use mpp_mod,            only : mpp_chksum
 
 implicit none
 private
@@ -358,7 +361,7 @@ private
   public :: mpp_get_att_real_scalar, mpp_get_axis_length, mpp_is_dist_ioroot
   public :: mpp_get_file_name, mpp_file_is_opened, mpp_attribute_exist 
   public :: mpp_io_clock_on, mpp_get_time_axis, mpp_get_default_calendar
-  public :: mpp_get_dimension_length
+  public :: mpp_get_dimension_length, mpp_get_axis_bounds
 
   !--- public interface from mpp_io_misc.h ----------------------
   public :: mpp_io_init, mpp_io_exit, netcdf_err, mpp_flush
@@ -388,6 +391,7 @@ type :: atttype
   type :: axistype
      private
      character(len=128) :: name
+     character(len=128) :: name_bounds
      character(len=128) :: units
      character(len=256) :: longname
      character(len=8)   :: cartesian
@@ -396,6 +400,7 @@ type :: atttype
      integer            :: sense, len          !+/-1, depth or height?
      type(domain1D)     :: domain              !if pointer is associated, it is a distributed data axis
      real, pointer      :: data(:) =>NULL()    !axis values (not used if time axis)
+     real, pointer      :: data_bounds(:) =>NULL()    !axis bounds values
      integer, pointer   :: idata(:) =>NULL()   !compressed axis valuesi
      integer            :: id, did, type, natt !id is the "variable ID", did is the "dimension ID": 
                                                !netCDF requires 2 IDs for axes
