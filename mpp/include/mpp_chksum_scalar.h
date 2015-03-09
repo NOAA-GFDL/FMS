@@ -7,7 +7,7 @@ function MPP_CHKSUM_( var, pelist, mask_val )
       integer(LONG_KIND) :: MPP_CHKSUM_
       MPP_TYPE_, intent(in) :: var
       integer, intent(in), optional :: pelist(:)
-  integer(KIND(MPP_TYPE_)) :: mold(1)
+      integer(sizeof(var)) :: mold(1)
   MPP_TYPE_, intent(in), optional :: mask_val
       pointer( p, mold )
 
