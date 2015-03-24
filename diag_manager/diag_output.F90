@@ -116,10 +116,10 @@ CONTAINS
     !---- open output file (return file_unit id) -----
     IF ( domain .EQ. NULL_DOMAIN2D ) THEN
        CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
-	    & threading=threading, fileset=fileset)
+            & threading=threading, fileset=fileset)
     ELSE
        CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
-	    & threading=threading, fileset=fileset, domain=domain)
+            & threading=threading, fileset=fileset, domain=domain)
     END IF
 
     !---- write global attributes ----
@@ -129,21 +129,21 @@ CONTAINS
 
     IF ( PRESENT(attributes) ) THEN
        DO i=1, SIZE(attributes)
-	  SELECT CASE (attributes(i)%type)
-	  CASE (NF90_INT)
-	     CALL mpp_write_meta(file_unit, TRIM(attributes(i)%name), ival=attributes(i)%iatt)
-	  CASE (NF90_FLOAT)
-	     CALL mpp_write_meta(file_unit, TRIM(attributes(i)%name), rval=attributes(i)%fatt)
-	  CASE (NF90_CHAR)
-	     CALL mpp_write_meta(file_unit, TRIM(attributes(i)%name), cval=TRIM(attributes(i)%catt))
-	  CASE default
-	     ! <ERROR STATUS="FATAL">
-	     !   Unknown attribute type for attribute <name> to module/input_field <module_name>/<field_name>.
-	     !   Contact the developers.
-	     ! </ERROR>
-	     CALL error_mesg('diag_output_mod::diag_output_init', 'Unknown attribute type for global attribute "'&
-		  &//TRIM(attributes(i)%name)//'" in file "'//TRIM(file_name)//'". Contact the developers.', FATAL)
-	  END SELECT
+          SELECT CASE (attributes(i)%type)
+          CASE (NF90_INT)
+             CALL mpp_write_meta(file_unit, TRIM(attributes(i)%name), ival=attributes(i)%iatt)
+          CASE (NF90_FLOAT)
+             CALL mpp_write_meta(file_unit, TRIM(attributes(i)%name), rval=attributes(i)%fatt)
+          CASE (NF90_CHAR)
+             CALL mpp_write_meta(file_unit, TRIM(attributes(i)%name), cval=TRIM(attributes(i)%catt))
+          CASE default
+             ! <ERROR STATUS="FATAL">
+             !   Unknown attribute type for attribute <name> to module/input_field <module_name>/<field_name>.
+             !   Contact the developers.
+             ! </ERROR>
+             CALL error_mesg('diag_output_mod::diag_output_init', 'Unknown attribute type for global attribute "'&
+                  &//TRIM(attributes(i)%name)//'" in file "'//TRIM(file_name)//'". Contact the developers.', FATAL)
+          END SELECT
        END DO
     END IF
     !---- write grid type (mosaic or regular)
@@ -200,7 +200,7 @@ CONTAINS
 
     ! <ERROR STATUS="FATAL">writing meta data out-of-order to different files.</ERROR>
     IF ( file_unit /= current_file_unit ) CALL error_mesg('write_axis_meta_data',&
-	 & 'writing meta data out-of-order to different files.', FATAL)
+         & 'writing meta data out-of-order to different files.', FATAL)
 
     !---- check all axes ----
     !---- write axis meta data for new axes ----
@@ -219,41 +219,41 @@ CONTAINS
        ALLOCATE(axis_data(length))
 
        CALL get_diag_axis(id_axis, axis_name, axis_units, axis_long_name,&
-	    & axis_cart_name, axis_direction, axis_edges, Domain, axis_data)
+            & axis_cart_name, axis_direction, axis_edges, Domain, axis_data)
 
        IF ( Domain .NE. null_domain1d ) THEN
-	  IF ( length > 0 ) THEN
-	     CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file),&
-		  & axis_name, axis_units, axis_long_name, axis_cart_name,&
-		  & axis_direction, Domain, axis_data )
-	  ELSE
-	     CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
-		  & axis_units, axis_long_name, axis_cart_name, axis_direction, Domain)
-	  END IF
+          IF ( length > 0 ) THEN
+             CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file),&
+                  & axis_name, axis_units, axis_long_name, axis_cart_name,&
+                  & axis_direction, Domain, axis_data )
+          ELSE
+             CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
+                  & axis_units, axis_long_name, axis_cart_name, axis_direction, Domain)
+          END IF
        ELSE
-	  IF ( length > 0 ) THEN
-	     CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
-		  & axis_units, axis_long_name, axis_cart_name, axis_direction, DATA=axis_data)
-	  ELSE
-	     CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
-		  & axis_units, axis_long_name, axis_cart_name, axis_direction)
-	  END IF
+          IF ( length > 0 ) THEN
+             CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
+                  & axis_units, axis_long_name, axis_cart_name, axis_direction, DATA=axis_data)
+          ELSE
+             CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
+                  & axis_units, axis_long_name, axis_cart_name, axis_direction)
+          END IF
        END IF
 
        !---- write additional attribute (calendar_type) for time axis ----
        !---- NOTE: calendar attribute is compliant with CF convention
        !---- http://www.cgd.ucar.edu/cms/eaton/netcdf/CF-current.htm#cal
        IF ( axis_cart_name == 'T' ) THEN
-	  time_axis_flag(num_axis_in_file) = .TRUE.
-	  id_time_axis = mpp_get_id(Axis_types(num_axis_in_file))
-	  calendar = get_calendar_type()
-	  CALL mpp_write_meta(file_unit, id_time_axis, 'calendar_type', cval=TRIM(valid_calendar_types(calendar)))
-	  CALL mpp_write_meta(file_unit, id_time_axis, 'calendar', cval=TRIM(valid_calendar_types(calendar)))
-	  IF ( time_ops1 ) THEN
-	     CALL mpp_write_meta( file_unit, id_time_axis, 'bounds', cval = TRIM(axis_name)//'_bounds')
-	  END IF
+          time_axis_flag(num_axis_in_file) = .TRUE.
+          id_time_axis = mpp_get_id(Axis_types(num_axis_in_file))
+          calendar = get_calendar_type()
+          CALL mpp_write_meta(file_unit, id_time_axis, 'calendar_type', cval=TRIM(valid_calendar_types(calendar)))
+          CALL mpp_write_meta(file_unit, id_time_axis, 'calendar', cval=TRIM(valid_calendar_types(calendar)))
+          IF ( time_ops1 ) THEN
+             CALL mpp_write_meta( file_unit, id_time_axis, 'bounds', cval = TRIM(axis_name)//'_bounds')
+          END IF
        ELSE
-	  time_axis_flag(num_axis_in_file) = .FALSE.
+          time_axis_flag(num_axis_in_file) = .FALSE.
        END IF
 
        DEALLOCATE(axis_data)
@@ -272,11 +272,11 @@ CONTAINS
        length = get_axis_global_length ( id_axis )
        ALLOCATE(axis_data(length))
        CALL get_diag_axis(id_axis, axis_name, axis_units, axis_long_name, axis_cart_name,&
-	    & axis_direction, axis_edges, Domain, axis_data )
+            & axis_direction, axis_edges, Domain, axis_data )
 
        !  ---- write edges attribute to original axis ----
        CALL mpp_write_meta(file_unit, mpp_get_id(Axis_types(num_axis_in_file)),&
-	    & 'edges', cval=axis_name )
+            & 'edges', cval=axis_name )
 
        !  ---- add edges index to axis list ----
        !  ---- assume this is not a time axis ----
@@ -287,30 +287,30 @@ CONTAINS
 
        !  ---- write edges axis to file ----
        IF ( Domain .NE. null_domain1d ) THEN
-	  ! assume domain decomposition is irregular and loop through all prev and next
-	  ! domain pointers extracting domain extents.  Assume all pes are used in
-	  ! decomposition
-	  CALL mpp_get_global_domain(Domain, begin=gbegin, END=gend, size=gsize)
-	  CALL mpp_get_layout(Domain, ndivs)
-	  IF ( ndivs .EQ. 1 ) THEN
-	     CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
-		  & axis_units, axis_long_name, axis_cart_name, axis_direction, DATA=axis_data )
-	  ELSE
-	     IF ( ALLOCATED(axis_extent) ) DEALLOCATE(axis_extent)
-	     ALLOCATE(axis_extent(0:ndivs-1))
-	     CALL mpp_get_compute_domains(Domain,size=axis_extent(0:ndivs-1))
-	     gend=gend+1
-	     axis_extent(ndivs-1)= axis_extent(ndivs-1)+1
-	     IF ( ALLOCATED(pelist) ) DEALLOCATE(pelist)
-	     ALLOCATE(pelist(0:ndivs-1))
-	     CALL mpp_get_pelist(Domain,pelist)
-	     CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file),&
-		  & axis_name, axis_units, axis_long_name, axis_cart_name,&
-		  & axis_direction, Domain,  DATA=axis_data)
-	  END IF
+          ! assume domain decomposition is irregular and loop through all prev and next
+          ! domain pointers extracting domain extents.  Assume all pes are used in
+          ! decomposition
+          CALL mpp_get_global_domain(Domain, begin=gbegin, END=gend, size=gsize)
+          CALL mpp_get_layout(Domain, ndivs)
+          IF ( ndivs .EQ. 1 ) THEN
+             CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
+                  & axis_units, axis_long_name, axis_cart_name, axis_direction, DATA=axis_data )
+          ELSE
+             IF ( ALLOCATED(axis_extent) ) DEALLOCATE(axis_extent)
+             ALLOCATE(axis_extent(0:ndivs-1))
+             CALL mpp_get_compute_domains(Domain,size=axis_extent(0:ndivs-1))
+             gend=gend+1
+             axis_extent(ndivs-1)= axis_extent(ndivs-1)+1
+             IF ( ALLOCATED(pelist) ) DEALLOCATE(pelist)
+             ALLOCATE(pelist(0:ndivs-1))
+             CALL mpp_get_pelist(Domain,pelist)
+             CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file),&
+                  & axis_name, axis_units, axis_long_name, axis_cart_name,&
+                  & axis_direction, Domain,  DATA=axis_data)
+          END IF
        ELSE
-	  CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name, axis_units,&
-	       & axis_long_name, axis_cart_name, axis_direction, DATA=axis_data)
+          CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name, axis_units,&
+               & axis_long_name, axis_cart_name, axis_direction, DATA=axis_data)
        END IF
        DEALLOCATE (axis_data)
     END DO
@@ -390,7 +390,7 @@ CONTAINS
     IF ( num < 1 ) CALL error_mesg ( 'write_meta_data', 'number of axes < 1', FATAL)
     ! <ERROR STATUS="FATAL">writing meta data out-of-order to different files</ERROR>
     IF ( file_unit /= current_file_unit ) CALL error_mesg ( 'write_meta_data',  &
-	 & 'writing meta data out-of-order to different files', FATAL)
+         & 'writing meta data out-of-order to different files', FATAL)
 
 
     !---- check all axes for this field ----
@@ -399,11 +399,11 @@ CONTAINS
        indexx = get_axis_index(axes(i))
        !---- point to existing axistype -----
        IF ( indexx > 0 ) THEN
-	  axis_indices(i) = indexx
+          axis_indices(i) = indexx
        ELSE
-	  ! <ERROR STATUS="FATAL">axis data not written for field</ERROR>
-	  CALL error_mesg ('write_field_meta_data',&
-	       & 'axis data not written for field '//TRIM(name), FATAL)
+          ! <ERROR STATUS="FATAL">axis data not written for field</ERROR>
+          CALL error_mesg ('write_field_meta_data',&
+               & 'axis data not written for field '//TRIM(name), FATAL)
        END IF
     END DO
 
@@ -411,15 +411,15 @@ CONTAINS
     IF ( num >= 2 ) THEN
        coord_att = ' '
        DO i = 1, num
-	  aux_axes(i) = get_axis_aux(axes(i))
-	  IF( TRIM(aux_axes(i)) /= 'none' ) THEN
-	     IF(LEN_TRIM(coord_att) == 0) THEN
-		coord_att = TRIM(aux_axes(i))
-	     ELSE
-		coord_att = TRIM(coord_att)// ' '//TRIM(aux_axes(i))
-	     ENDIF
-	     coord_present = .TRUE.
-	  END IF
+          aux_axes(i) = get_axis_aux(axes(i))
+          IF( TRIM(aux_axes(i)) /= 'none' ) THEN
+             IF(LEN_TRIM(coord_att) == 0) THEN
+                coord_att = TRIM(aux_axes(i))
+             ELSE
+                coord_att = TRIM(coord_att)// ' '//TRIM(aux_axes(i))
+             ENDIF
+             coord_present = .TRUE.
+          END IF
        END DO
     END IF
 
@@ -439,13 +439,13 @@ CONTAINS
     scale = 1.0
     IF ( PRESENT(range) ) THEN
        IF ( RANGE(2) > RANGE(1) ) THEN
-	  use_range = .TRUE.
-	  !---- set packing parameters ----
-	  IF ( ipack > 2 ) THEN
-	     np = ipack/4
-	     add = 0.5*(RANGE(1)+RANGE(2))
-	     scale = (RANGE(2)-RANGE(1)) / real(max_range(2,np)-max_range(1,np))
-	  END IF
+          use_range = .TRUE.
+          !---- set packing parameters ----
+          IF ( ipack > 2 ) THEN
+             np = ipack/4
+             add = 0.5*(RANGE(1)+RANGE(2))
+             scale = (RANGE(2)-RANGE(1)) / real(max_range(2,np)-max_range(1,np))
+          END IF
        END IF
     END IF
 
@@ -454,12 +454,12 @@ CONTAINS
        Field%miss = mval
        Field%miss_present = .TRUE.
        IF ( ipack > 2 ) THEN
-	  np = ipack/4
-	  Field%miss_pack = REAL(missval(np))*scale+add
-	  Field%miss_pack_present = .TRUE.
+          np = ipack/4
+          Field%miss_pack = REAL(missval(np))*scale+add
+          Field%miss_pack_present = .TRUE.
        ELSE
-	  Field%miss_pack = mval
-	  Field%miss_pack_present = .FALSE.
+          Field%miss_pack = mval
+          Field%miss_pack_present = .FALSE.
        END IF
     ELSE
        Field%miss_present = .FALSE.
@@ -469,124 +469,124 @@ CONTAINS
     !------ write meta data and return fieldtype -------
     IF ( use_range ) THEN
        IF ( Field%miss_present ) THEN
-	  CALL mpp_write_meta(file_unit, Field%Field,&
-	       & Axis_types(axis_indices(1:num)),&
-	       & name, units, long_name,&
-	       & RANGE(1), RANGE(2),&
-	       & missing=Field%miss_pack,&
-	       & fill=Field%miss_pack,&
-	       & scale=scale, add=add, pack=ipack,&
-	       & time_method=time_method)
+          CALL mpp_write_meta(file_unit, Field%Field,&
+               & Axis_types(axis_indices(1:num)),&
+               & name, units, long_name,&
+               & RANGE(1), RANGE(2),&
+               & missing=Field%miss_pack,&
+               & fill=Field%miss_pack,&
+               & scale=scale, add=add, pack=ipack,&
+               & time_method=time_method)
        ELSE
-	  CALL mpp_write_meta(file_unit, Field%Field,&
-	       & Axis_types(axis_indices(1:num)),&
-	       & name, units,  long_name,&
-	       & RANGE(1), RANGE(2),&
-	       & missing=CMOR_MISSING_VALUE,&
-	       & fill=CMOR_MISSING_VALUE,&
-	       & scale=scale, add=add, pack=ipack,&
-	       & time_method=time_method)
+          CALL mpp_write_meta(file_unit, Field%Field,&
+               & Axis_types(axis_indices(1:num)),&
+               & name, units,  long_name,&
+               & RANGE(1), RANGE(2),&
+               & missing=CMOR_MISSING_VALUE,&
+               & fill=CMOR_MISSING_VALUE,&
+               & scale=scale, add=add, pack=ipack,&
+               & time_method=time_method)
        END IF
     ELSE
        IF ( Field%miss_present ) THEN
-	  CALL mpp_write_meta(file_unit, Field%Field,&
-	       & Axis_types(axis_indices(1:num)),&
-	       & name, units, long_name,&
-	       & missing=Field%miss_pack,&
-	       & fill=Field%miss_pack,&
-	       & pack=ipack, time_method=time_method)
+          CALL mpp_write_meta(file_unit, Field%Field,&
+               & Axis_types(axis_indices(1:num)),&
+               & name, units, long_name,&
+               & missing=Field%miss_pack,&
+               & fill=Field%miss_pack,&
+               & pack=ipack, time_method=time_method)
        ELSE
-	  CALL mpp_write_meta(file_unit, Field%Field,&
-	       & Axis_types(axis_indices(1:num)),&
-	       & name, units, long_name,&
-	       & missing=CMOR_MISSING_VALUE,&
-	       & fill=CMOR_MISSING_VALUE,&
-	       & pack=ipack, time_method=time_method)
+          CALL mpp_write_meta(file_unit, Field%Field,&
+               & Axis_types(axis_indices(1:num)),&
+               & name, units, long_name,&
+               & missing=CMOR_MISSING_VALUE,&
+               & fill=CMOR_MISSING_VALUE,&
+               & pack=ipack, time_method=time_method)
        END IF
     END IF
 
     !---- write user defined attributes -----
     IF ( PRESENT(num_attributes) ) THEN
        IF ( PRESENT(attributes) ) THEN
-	  IF ( num_attributes .GT. 0 .AND. _ALLOCATED(attributes) ) THEN
-	     DO i = 1, num_attributes
-		SELECT CASE (attributes(i)%type)
-		CASE (NF90_INT)
-		   IF ( .NOT._ALLOCATED(attributes(i)%iatt) ) THEN
-		      CALL error_mesg('diag_output_mod::write_field_meta_data',&
-			   & 'Integer attribute type indicated, but array not allocated for attribute '&
-			   &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
-		   END IF
-		   CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field), TRIM(attributes(i)%name),&
-			& ival=attributes(i)%iatt)
-		CASE (NF90_FLOAT)
-		   IF ( .NOT._ALLOCATED(attributes(i)%fatt) ) THEN
-		      CALL error_mesg('diag_output_mod::write_field_meta_data',&
-			   & 'Real attribute type indicated, but array not allocated for attribute '&
-			   &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
-		   END IF
-		   CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field), TRIM(attributes(i)%name),&
-			& rval=attributes(i)%fatt)
-		CASE (NF90_CHAR)
-		   att_str = attributes(i)%catt
-		   att_len = attributes(i)%len
-		   IF ( TRIM(attributes(i)%name).EQ.'cell_methods' .AND. PRESENT(time_method) ) THEN
-		      ! Append ",time: time_method" if time_method present
-		      att_str = attributes(i)%catt(1:attributes(i)%len)//' time: '//time_method
-		      att_len = LEN_TRIM(att_str)
-		   END IF
-		   CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field), TRIM(attributes(i)%name),&
-			& cval=att_str(1:att_len))
-		CASE default
-		   CALL error_mesg('diag_output_mod::write_field_meta_data', 'Invalid type for field attribute '&
-			&//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
-		END SELECT
-	     END DO
-	  ELSE
-	     ! Catch some bad cases
-	     IF ( num_attributes .GT. 0 .AND. .NOT._ALLOCATED(attributes) ) THEN
-		CALL error_mesg('diag_output_mod::write_field_meta_data',&
-		     & 'num_attributes > 0 but attributes is not allocated for attribute '&
-		     &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
-	     ELSE IF ( num_attributes .EQ. 0 .AND. _ALLOCATED(attributes) ) THEN
-		CALL error_mesg('diag_output_mod::write_field_meta_data',&
-		     & 'num_attributes == 0 but attributes is allocated for attribute '&
-		     &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
-	     END IF
-	  END IF
+          IF ( num_attributes .GT. 0 .AND. _ALLOCATED(attributes) ) THEN
+             DO i = 1, num_attributes
+                SELECT CASE (attributes(i)%type)
+                CASE (NF90_INT)
+                   IF ( .NOT._ALLOCATED(attributes(i)%iatt) ) THEN
+                      CALL error_mesg('diag_output_mod::write_field_meta_data',&
+                           & 'Integer attribute type indicated, but array not allocated for attribute '&
+                           &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
+                   END IF
+                   CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field), TRIM(attributes(i)%name),&
+                        & ival=attributes(i)%iatt)
+                CASE (NF90_FLOAT)
+                   IF ( .NOT._ALLOCATED(attributes(i)%fatt) ) THEN
+                      CALL error_mesg('diag_output_mod::write_field_meta_data',&
+                           & 'Real attribute type indicated, but array not allocated for attribute '&
+                           &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
+                   END IF
+                   CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field), TRIM(attributes(i)%name),&
+                        & rval=attributes(i)%fatt)
+                CASE (NF90_CHAR)
+                   att_str = attributes(i)%catt
+                   att_len = attributes(i)%len
+                   IF ( TRIM(attributes(i)%name).EQ.'cell_methods' .AND. PRESENT(time_method) ) THEN
+                      ! Append ",time: time_method" if time_method present
+                      att_str = attributes(i)%catt(1:attributes(i)%len)//' time: '//time_method
+                      att_len = LEN_TRIM(att_str)
+                   END IF
+                   CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field), TRIM(attributes(i)%name),&
+                        & cval=att_str(1:att_len))
+                CASE default
+                   CALL error_mesg('diag_output_mod::write_field_meta_data', 'Invalid type for field attribute '&
+                        &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
+                END SELECT
+             END DO
+          ELSE
+             ! Catch some bad cases
+             IF ( num_attributes .GT. 0 .AND. .NOT._ALLOCATED(attributes) ) THEN
+                CALL error_mesg('diag_output_mod::write_field_meta_data',&
+                     & 'num_attributes > 0 but attributes is not allocated for attribute '&
+                     &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
+             ELSE IF ( num_attributes .EQ. 0 .AND. _ALLOCATED(attributes) ) THEN
+                CALL error_mesg('diag_output_mod::write_field_meta_data',&
+                     & 'num_attributes == 0 but attributes is allocated for attribute '&
+                     &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
+             END IF
+          END IF
        ELSE
-	  ! More edge error cases
-	  CALL error_mesg('diag_output_mod::write_field_meta_data',&
-	       & 'num_attributes present but attributes missing for attribute '&
-	       &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
+          ! More edge error cases
+          CALL error_mesg('diag_output_mod::write_field_meta_data',&
+               & 'num_attributes present but attributes missing for attribute '&
+               &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
        END IF
     ELSE IF ( PRESENT(attributes) ) THEN
        CALL error_mesg('diag_output_mod::write_field_meta_data',&
-	    & 'attributes present but num_attributes missing for attribute '&
-	    &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
+            & 'attributes present but num_attributes missing for attribute '&
+            &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
     END IF
 
 
     !---- write additional attribute for time averaging -----
     IF ( PRESENT(avg_name) ) THEN
        IF ( avg_name(1:1) /= ' ' ) THEN
-	  CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field),&
-	     & 'time_avg_info',&
-	     & cval=trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT')
+          CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field),&
+             & 'time_avg_info',&
+             & cval=trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT')
        END IF
     END IF
 
     ! write coordinates attribute for CF compliance
     IF ( coord_present ) &
-	 CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field),&
-	 & 'coordinates', cval=TRIM(coord_att))
+         CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field),&
+         & 'coordinates', cval=TRIM(coord_att))
     IF ( TRIM(standard_name2) /= 'none' ) CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field),&
-	 & 'standard_name', cval=TRIM(standard_name2))
+         & 'standard_name', cval=TRIM(standard_name2))
 
     !---- write attribute for interp_method ----
     IF( PRESENT(interp_method) ) THEN
        CALL mpp_write_meta ( file_unit, mpp_get_id(Field%Field),&
-	    & 'interp_method', cval=TRIM(interp_method))
+            & 'interp_method', cval=TRIM(interp_method))
     END IF
 
     !---- get axis domain ----
@@ -654,11 +654,11 @@ CONTAINS
     !---- output data ----
     IF ( Field%Domain .NE. null_domain2d ) THEN
        IF( Field%miss_present ) THEN
-	  CALL mpp_write(file_unit, Field%Field, Field%Domain, DATA, time, &
-		      tile_count=Field%tile_count, default_data=Field%miss_pack)
+          CALL mpp_write(file_unit, Field%Field, Field%Domain, DATA, time, &
+                      tile_count=Field%tile_count, default_data=Field%miss_pack)
        ELSE
-	  CALL mpp_write(file_unit, Field%Field, Field%Domain, DATA, time, &
-		      tile_count=Field%tile_count, default_data=CMOR_MISSING_VALUE)
+          CALL mpp_write(file_unit, Field%Field, Field%Domain, DATA, time, &
+                      tile_count=Field%tile_count, default_data=CMOR_MISSING_VALUE)
        END IF
     ELSE
        CALL mpp_write(file_unit, Field%Field, DATA, time)
@@ -709,8 +709,8 @@ CONTAINS
     index = 0
     DO i = 1, num_axis_in_file
        IF ( num == axis_in_file(i) ) THEN
-	  index = i
-	  EXIT
+          index = i
+          EXIT
        END IF
     END DO
   END FUNCTION get_axis_index
