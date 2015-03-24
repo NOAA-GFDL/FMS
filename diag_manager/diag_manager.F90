@@ -1165,7 +1165,7 @@ CONTAINS
 
     INTEGER :: cm_ind, cm_file_num, file_num
     INTEGER :: year, month, day, hour, minute, second
-    CHARACTER(len=9) :: date_prefix
+    CHARACTER(len=25) :: date_prefix
 
     IF ( PRESENT(err_msg) ) THEN
        err_msg = ''
@@ -1194,7 +1194,8 @@ CONTAINS
     ! Create the date_string
     IF ( prepend_date ) THEN
        call get_date(diag_init_time, year, month, day, hour, minute, second)
-       write (date_prefix, '(1I4.4, 2I2.2,".")') year, month, day
+       write (date_prefix, '(1I20.4, 2I2.2,".")') year, month, day
+       date_prefix=adjustl(date_prefix)
     ELSE
        date_prefix=''
     END IF
