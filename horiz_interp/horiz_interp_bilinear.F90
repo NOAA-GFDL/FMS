@@ -39,8 +39,8 @@ module horiz_interp_bilinear_mod
   integer, parameter :: DUMMY = -999
 
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id: horiz_interp_bilinear.F90,v 14.0.26.1.2.2.2.1 2013/12/11 00:36:30 Zhi.Liang Exp $'
-  character(len=128) :: tagname = '$Name: tikal_missing_z1l $'
+  character(len=128) :: version = '$Id$'
+  character(len=128) :: tagname = '$Name$'
   logical            :: module_is_initialized = .FALSE.
 
 contains
@@ -396,7 +396,7 @@ contains
           a  = b2*c1-b1*c2
           b  = a1*b2-a2*b1+c1*d2-c2*d1+c2*lon-c1*lat
           c  = a2*lon-a1*lat+a1*d2-a2*d1
-          quadra = b*b-4*a*c
+          quadra = b*b-4.*a*c
           if(abs(quadra) < epsln) quadra = 0.0
           if(quadra < 0.0) call mpp_error(FATAL, &
                "horiz_interp_bilinear_mod: No solution existed for this quadratic equation")
@@ -441,7 +441,7 @@ contains
              if (x > 1.0) x = 1.0
              if (y > 1.0) y = 1.0
            endif 
-           if( x>1 .or. x<0 .or. y>1 .or. y < 0) call mpp_error(FATAL, &
+           if( x>1. .or. x<0. .or. y>1. .or. y < 0.) call mpp_error(FATAL, &
                 "horiz_interp_bilinear_mod: weight should be between 0 and 1")
            Interp % wti(m,n,1)=1.0-x; Interp % wti(m,n,2)=x   
            Interp % wtj(m,n,1)=1.0-y; Interp % wtj(m,n,2)=y          
@@ -734,8 +734,6 @@ contains
     real                                   :: polyx(4), polyy(4)
     real                                   :: min_lon, min_lat, max_lon, max_lat    
 
-    integer, parameter :: step_div=8
-    
     tpi = 2.0*pi
     nlon_in  = size(lon_in,1) ; nlat_in  = size(lat_in,2)
     nlon_out = size(lon_out,1); nlat_out = size(lon_out,2)
@@ -743,8 +741,8 @@ contains
     lon_min = minval(lon_in);
     lon_max = maxval(lon_in);
 
-    max_step = min(nlon_in,nlat_in)/step_div ! can be adjusted if needed
-    allocate(ilon(step_div*max_step), jlat(step_div*max_step) )
+    max_step = min(nlon_in,nlat_in)/2 ! can be adjusted if needed
+    allocate(ilon(8*max_step), jlat(8*max_step) )
 
     do n = 1, nlat_out
        do m = 1, nlon_out
