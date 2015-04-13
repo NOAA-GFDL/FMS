@@ -859,7 +859,11 @@
       type(fieldtype),  intent(in) :: field ! The field that you are searching for the attribute.
       character(len=*), intent(in) :: name ! name of the attributes
 
-      mpp_attribute_exist = mpp_find_att(field%Att(:),name)
+      if(field%natt > 0) then
+         mpp_attribute_exist = mpp_find_att(field%Att(:),name)
+      else
+         mpp_attribute_exist = .false.
+      endif
 
    end function mpp_attribute_exist
 

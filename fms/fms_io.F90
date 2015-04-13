@@ -148,14 +148,14 @@ end type meta_type
 
 type ax_type
    private
-   character(len=128) :: name
-   character(len=128) :: units
-   character(len=128) :: longname
-   character(len=8)   :: cartesian
-   character(len=256) :: compressed
-   character(len=128) :: dimlen_name
-   character(len=128) :: dimlen_lname
-   character(len=128) :: calendar
+   character(len=128) :: name = ''
+   character(len=128) :: units = ''
+   character(len=128) :: longname = ''
+   character(len=8)   :: cartesian = ''
+   character(len=256) :: compressed = ''
+   character(len=128) :: dimlen_name = ''
+   character(len=128) :: dimlen_lname = ''
+   character(len=128) :: calendar = ''
    integer            :: sense              !Orientation of z axis definition
    integer            :: dimlen             !max dim of elements across global domain
    real               :: min             !valid min for real axis data
@@ -168,14 +168,14 @@ end type ax_type
 
 type var_type
    private
-   character(len=128)                     :: name
-   character(len=128)                     :: longname
-   character(len=128)                     :: units
+   character(len=128)                     :: name = ''
+   character(len=128)                     :: longname = ''
+   character(len=128)                     :: units = ''
    real, dimension(:,:,:,:), _ALLOCATABLE :: buffer _NULL
-   logical                                :: domain_present
-   integer                                :: domain_idx
-   logical                                :: is_dimvar
-   logical                                :: read_only
+   logical                                :: domain_present = .FALSE.
+   integer                                :: domain_idx = -1
+   logical                                :: is_dimvar = .FALSE.
+   logical                                :: read_only = .FALSE.
    type(fieldtype)                        :: field
    type(axistype)                         :: axis
    integer                                :: position
@@ -233,12 +233,14 @@ end type Ptr3Di
 type restart_file_type
    private
    integer                                  :: unit = -1 ! mpp_io unit for netcdf file
-   character(len=128)                       :: name
-   integer                                  :: nvar, natt, max_ntime
-   logical                                  :: is_root_pe
+   character(len=128)                       :: name = ''
+   integer                                  :: nvar = 0
+   integer                                  :: natt = 0
+   integer                                  :: max_ntime = 0
+   logical                                  :: is_root_pe = .FALSE.
    logical                                  :: is_compressed = .FALSE.
    logical                                  :: unlimited_axis = .FALSE.
-   integer                                  :: tile_count
+   integer                                  :: tile_count = 1
    type(ax_type),  allocatable              :: axes(:)  ! Currently define X,Y,Compressed, unlimited and maybe Z
    type(meta_type),                pointer  :: first =>NULL() ! pointer to first additional global metadata element
    type(var_type), dimension(:),   pointer  :: var  => NULL()

@@ -168,8 +168,9 @@ MODULE diag_manager_mod
   !   <DATA NAME="max_file_attributes" TYPE="INTEGER" DEFAULT="2">
   !     Maximum number of user definable global attributes per file.
   !   </DATA>
-  !   <DATA NAME="prepend_date" TYPE="LOGICAL" DEFAULT=".FALSE.">
-  !     If <TT>.TRUE.</TT> then prepend the file start date to the output file.  Note: This was usually done by FRE after the
+  !   <DATA NAME="prepend_date" TYPE="LOGICAL" DEFAULT=".TRUE.">
+  !     If <TT>.TRUE.</TT> then prepend the file start date to the output file.  <TT>.TRUE.</TT> is only supported if the
+  !      diag_manager_init routine is called with the optional time_init parameter.  Note: This was usually done by FRE after the
   !     model run.
   !   </DATA>
   !   <DATA NAME="region_out_use_alt_value" TYPE="LOGICAL" DEFAULT=".TRUE.">
@@ -179,7 +180,7 @@ MODULE diag_manager_mod
   ! </NAMELIST>
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
-       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), get_date
+       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date
   USE mpp_io_mod, ONLY: mpp_open, mpp_close
   USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
 
@@ -207,7 +208,7 @@ MODULE diag_manager_mod
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, conserve_water, region_out_use_alt_value, max_field_attributes, output_field_type,&
-       & max_file_attributes, prepend_date, DIAG_FIELD_NOT_FOUND
+       & max_file_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
@@ -236,7 +237,7 @@ MODULE diag_manager_mod
        & '$Id$'
   CHARACTER(len=128), PARAMETER :: tagname =&
        & '$Name$'
-  
+
   type(time_type) :: Time_end
 
   ! <INTERFACE NAME="send_data">
@@ -1125,12 +1126,14 @@ CONTAINS
 
           ! If time_method, freq, output_units, next_output, and last_output the same, or
           ! the output_field is static then valid for cell_measures
-          IF ( ( (files(cm_file_num)%output_freq.EQ.files(rel_file)%output_freq) .AND.&
-               & (files(cm_file_num)%output_units.EQ.files(rel_file)%output_units) .AND.&
-               & (output_fields(cm_ind)%time_ops.EQV.rel_field%time_ops) .AND.&
-               & (output_fields(cm_ind)%next_output.EQ.rel_field%next_output) .AND.&
-               & (output_fields(cm_ind)%last_output.EQ.rel_field%last_output) ).OR.&
-               & ( output_fields(cm_ind)%static.OR.rel_field%static ) ) THEN
+!!$ For now, only static fields can be in an external file
+!!$          IF ( ( (files(cm_file_num)%output_freq.EQ.files(rel_file)%output_freq) .AND.&
+!!$               & (files(cm_file_num)%output_units.EQ.files(rel_file)%output_units) .AND.&
+!!$               & (output_fields(cm_ind)%time_ops.EQV.rel_field%time_ops) .AND.&
+!!$               & (output_fields(cm_ind)%next_output.EQ.rel_field%next_output) .AND.&
+!!$               & (output_fields(cm_ind)%last_output.EQ.rel_field%last_output) ).OR.&
+!!$               & ( output_fields(cm_ind)%static.OR.rel_field%static ) ) THEN
+          IF ( output_fields(cm_ind)%static.OR.rel_field%static ) THEN
              get_related_field = .TRUE.
              out_field_id = cm_ind
              out_file_id = cm_file_num
@@ -1190,7 +1193,7 @@ CONTAINS
 
     ! Create the date_string
     IF ( prepend_date ) THEN
-       call get_date(files(file_num)%start_time, year, month, day, hour, minute, second)
+       call get_date(diag_init_time, year, month, day, hour, minute, second)
        write (date_prefix, '(1I4.4, 2I2.2,".")') year, month, day
     ELSE
        date_prefix=''
@@ -1732,7 +1735,7 @@ CONTAINS
 
        ! Is it time to output for this field; CAREFUL ABOUT > vs >= HERE
        !--- The fields send out within openmp parallel region will be written out in
-       !--- diag_send_complete. 
+       !--- diag_send_complete.
        IF ( (numthreads == 1) .AND. (active_omp_level.LE.1) ) then
           IF ( .NOT.output_fields(out_num)%static .AND. freq /= END_OF_RUN ) THEN
              IF ( time > output_fields(out_num)%next_output ) THEN
@@ -3276,9 +3279,11 @@ CONTAINS
   !     Open and read diag_table. Select fields and files for diagnostic output.
   !   </DESCRIPTION>
   !   <IN NAME="diag_model_subset" TYPE="INTEGER, OPTIONAL"></IN>
+  !   <IN NAME="time_init" TYPE="INTEGER, DIMENSION(6), OPTIONAL">Model time diag_manager initialized</IN>
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"></OUT>
-  SUBROUTINE diag_manager_init(diag_model_subset, err_msg)
+  SUBROUTINE diag_manager_init(diag_model_subset, time_init, err_msg)
     INTEGER, OPTIONAL, INTENT(IN) :: diag_model_subset
+    INTEGER, DIMENSION(6), OPTIONAL, INTENT(IN) :: time_init
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
     CHARACTER(len=*), PARAMETER :: SEP = '|'
@@ -3388,12 +3393,25 @@ CONTAINS
     END IF
     ALLOCATE(output_fields(max_output_fields))
     ALLOCATE(input_fields(max_input_fields))
-    do j = 1, max_input_fields
-      allocate(input_fields(j)%output_fields(MAX_OUT_PER_IN_FIELD))
-    enddo
+    DO j = 1, max_input_fields
+      ALLOCATE(input_fields(j)%output_fields(MAX_OUT_PER_IN_FIELD))
+    END DO
     ALLOCATE(files(max_files))
     ALLOCATE(pelist(mpp_npes()))
     CALL mpp_get_current_pelist(pelist, pelist_name)
+
+    ! set the diag_init_time if time_init present.  Otherwise, set it to base_time
+    IF ( PRESENT(time_init) ) THEN
+       diag_init_time = set_date(time_init(1), time_init(2), time_init(3), time_init(4),&
+            & time_init(5), time_init(6))
+    ELSE
+       diag_init_time = base_time
+       IF ( prepend_date .EQV. .TRUE. ) THEN
+          CALL error_mesg('diag_manager_mod::diag_manager_init',&
+               & 'prepend_date only supported when diag_manager_init is called with time_init present.', NOTE)
+          prepend_date = .FALSE.
+       END IF
+    END IF
 
     CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
     IF ( mystat /= 0 ) THEN
@@ -3801,7 +3819,7 @@ CONTAINS
   !     SUBROUTINE diag_field_add_cell_measures(diag_field_id, area, volume)
   !   </TEMPLATE>
   !   <DESCRIPTION>
-  !     Add the cell_measures attribute to a give diag field.  This is useful if the 
+  !     Add the cell_measures attribute to a give diag field.  This is useful if the
   !     area/volume fields for the diagnostic field are defined in another module after
   !     the diag_field.
   !   </DESCRIPTION>
