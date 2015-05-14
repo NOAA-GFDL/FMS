@@ -122,7 +122,7 @@ module mpp_domains_mod
   use mpp_parameter_mod,      only : FOLD_WEST_EDGE, FOLD_EAST_EDGE, FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE
   use mpp_parameter_mod,      only : WUPDATE, EUPDATE, SUPDATE, NUPDATE, XUPDATE, YUPDATE
   use mpp_parameter_mod,      only : NON_BITWISE_EXACT_SUM, BITWISE_EXACT_SUM, MPP_DOMAIN_TIME
-  use mpp_parameter_mod,      only : CENTER, CORNER, SCALAR_PAIR, SCALAR_BIT
+  use mpp_parameter_mod,      only : CENTER, CORNER, SCALAR_PAIR, SCALAR_BIT, BITWISE_EFP_SUM
   use mpp_parameter_mod,      only : NORTH, NORTH_EAST, EAST, SOUTH_EAST
   use mpp_parameter_mod,      only : SOUTH, SOUTH_WEST, WEST, NORTH_WEST
   use mpp_parameter_mod,      only : MAX_DOMAIN_FIELDS, NULL_PE, DOMAIN_ID_BASE
@@ -139,7 +139,8 @@ module mpp_domains_mod
   use mpp_mod,                only : input_nml_file
   use mpp_mod,                only : COMM_TAG_1, COMM_TAG_2, COMM_TAG_3, COMM_TAG_4
   use mpp_memutils_mod,       only : mpp_memuse_begin, mpp_memuse_end
-  use mpp_pset_mod, only: mpp_pset_init
+  use mpp_pset_mod,           only : mpp_pset_init
+  use mpp_efp_mod,            only : mpp_reproducing_sum
   implicit none
   private
 
@@ -152,7 +153,7 @@ module mpp_domains_mod
   public :: GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, BGRID_NE, BGRID_SW, CGRID_NE, CGRID_SW
   public :: DGRID_NE, DGRID_SW, FOLD_WEST_EDGE, FOLD_EAST_EDGE, FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE
   public :: WUPDATE, EUPDATE, SUPDATE, NUPDATE, XUPDATE, YUPDATE
-  public :: NON_BITWISE_EXACT_SUM, BITWISE_EXACT_SUM, MPP_DOMAIN_TIME
+  public :: NON_BITWISE_EXACT_SUM, BITWISE_EXACT_SUM, MPP_DOMAIN_TIME, BITWISE_EFP_SUM
   public :: CENTER, CORNER, SCALAR_PAIR
   public :: NORTH, NORTH_EAST, EAST, SOUTH_EAST
   public :: SOUTH, SOUTH_WEST, WEST, NORTH_WEST
@@ -597,6 +598,9 @@ module mpp_domains_mod
 !     processor/tile when updating doamin for symmetric domain and check the consistency on the north
 !     folded edge. 
 !   </DATA>
+!   <DATA NAME="efp_sum_overflow_check" TYPE="logical" DEFAULT=".FALSE.">
+!     Set true to always do overflow_check when doing EFP bitwise mpp_global_sum. 
+!   </DATA>
 !   <DATA NAME="nthread_control_loop" TYPE="integer"  DEFAULT="4">
 !     Determine the loop order for packing and unpacking. When number of threads is greater than nthread_control_loop,
 !     k-loop will be moved outside and combined with number of pack and unpack. When number of threads is less 
@@ -606,7 +610,9 @@ module mpp_domains_mod
   character(len=32) :: debug_update_domain = "none"
   logical           :: debug_message_passing = .false.
   integer           :: nthread_control_loop = 4
-  namelist /mpp_domains_nml/ debug_update_domain, domain_clocks_on, debug_message_passing, nthread_control_loop
+  logical           :: efp_sum_overflow_check = .false.
+  namelist /mpp_domains_nml/ debug_update_domain, domain_clocks_on, debug_message_passing, nthread_control_loop, &
+                             efp_sum_overflow_check
 
   !***********************************************************************
 
@@ -2107,34 +2113,12 @@ end interface
      module procedure mpp_global_sum_r8_3d
      module procedure mpp_global_sum_r8_4d
      module procedure mpp_global_sum_r8_5d
-#ifdef OVERLOAD_C8
-     module procedure mpp_global_sum_c8_2d
-     module procedure mpp_global_sum_c8_3d
-     module procedure mpp_global_sum_c8_4d
-     module procedure mpp_global_sum_c8_5d
-#endif
 #ifdef OVERLOAD_R4
      module procedure mpp_global_sum_r4_2d
      module procedure mpp_global_sum_r4_3d
      module procedure mpp_global_sum_r4_4d
      module procedure mpp_global_sum_r4_5d
 #endif
-#ifdef OVERLOAD_C4
-     module procedure mpp_global_sum_c4_2d
-     module procedure mpp_global_sum_c4_3d
-     module procedure mpp_global_sum_c4_4d
-     module procedure mpp_global_sum_c4_5d
-#endif
-#ifndef no_8byte_integers
-     module procedure mpp_global_sum_i8_2d
-     module procedure mpp_global_sum_i8_3d
-     module procedure mpp_global_sum_i8_4d
-     module procedure mpp_global_sum_i8_5d
-#endif
-     module procedure mpp_global_sum_i4_2d
-     module procedure mpp_global_sum_i4_3d
-     module procedure mpp_global_sum_i4_4d
-     module procedure mpp_global_sum_i4_5d
   end interface
 
 !gag
@@ -2143,73 +2127,14 @@ end interface
      module procedure mpp_global_sum_tl_r8_3d
      module procedure mpp_global_sum_tl_r8_4d
      module procedure mpp_global_sum_tl_r8_5d
-#ifdef OVERLOAD_C8
-     module procedure mpp_global_sum_tl_c8_2d
-     module procedure mpp_global_sum_tl_c8_3d
-     module procedure mpp_global_sum_tl_c8_4d
-     module procedure mpp_global_sum_tl_c8_5d
-#endif
 #ifdef OVERLOAD_R4
      module procedure mpp_global_sum_tl_r4_2d
      module procedure mpp_global_sum_tl_r4_3d
      module procedure mpp_global_sum_tl_r4_4d
      module procedure mpp_global_sum_tl_r4_5d
 #endif
-#ifdef OVERLOAD_C4
-     module procedure mpp_global_sum_tl_c4_2d
-     module procedure mpp_global_sum_tl_c4_3d
-     module procedure mpp_global_sum_tl_c4_4d
-     module procedure mpp_global_sum_tl_c4_5d
-#endif
-#ifndef no_8byte_integers
-     module procedure mpp_global_sum_tl_i8_2d
-     module procedure mpp_global_sum_tl_i8_3d
-     module procedure mpp_global_sum_tl_i8_4d
-     module procedure mpp_global_sum_tl_i8_5d
-#endif
-     module procedure mpp_global_sum_tl_i4_2d
-     module procedure mpp_global_sum_tl_i4_3d
-     module procedure mpp_global_sum_tl_i4_4d
-     module procedure mpp_global_sum_tl_i4_5d
   end interface
 !gag
-
-!bnc
-!!$  interface mpp_global_sum_ad
-!!$     module procedure mpp_global_sum_ad_r8_2d
-!!$     module procedure mpp_global_sum_ad_r8_3d
-!!$     module procedure mpp_global_sum_ad_r8_4d
-!!$     module procedure mpp_global_sum_ad_r8_5d
-!!$#ifdef OVERLOAD_C8
-!!$     module procedure mpp_global_sum_ad_c8_2d
-!!$     module procedure mpp_global_sum_ad_c8_3d
-!!$     module procedure mpp_global_sum_ad_c8_4d
-!!$     module procedure mpp_global_sum_ad_c8_5d
-!!$#endif
-!!$#ifdef OVERLOAD_R4
-!!$     module procedure mpp_global_sum_ad_r4_2d
-!!$     module procedure mpp_global_sum_ad_r4_3d
-!!$     module procedure mpp_global_sum_ad_r4_4d
-!!$     module procedure mpp_global_sum_ad_r4_5d
-!!$#endif
-!!$#ifdef OVERLOAD_C4
-!!$     module procedure mpp_global_sum_ad_c4_2d
-!!$     module procedure mpp_global_sum_ad_c4_3d
-!!$     module procedure mpp_global_sum_ad_c4_4d
-!!$     module procedure mpp_global_sum_ad_c4_5d
-!!$#endif
-!!$#ifndef no_8byte_integers
-!!$     module procedure mpp_global_sum_ad_i8_2d
-!!$     module procedure mpp_global_sum_ad_i8_3d
-!!$     module procedure mpp_global_sum_ad_i8_4d
-!!$     module procedure mpp_global_sum_ad_i8_5d
-!!$#endif
-!!$     module procedure mpp_global_sum_ad_i4_2d
-!!$     module procedure mpp_global_sum_ad_i4_3d
-!!$     module procedure mpp_global_sum_ad_i4_4d
-!!$     module procedure mpp_global_sum_ad_i4_5d
-!!$  end interface
-!bnc
 
 !***********************************************************************
 !
