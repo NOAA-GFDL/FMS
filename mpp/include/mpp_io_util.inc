@@ -874,7 +874,7 @@
 
 
    function mpp_attribute_exist(field,name)
-      integer                      :: mpp_attribute_exist
+      logical                      :: mpp_attribute_exist
       type(fieldtype),  intent(in) :: field ! The field that you are searching for the attribute.
       character(len=*), intent(in) :: name ! name of the attributes
 
