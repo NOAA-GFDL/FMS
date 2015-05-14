@@ -733,8 +733,13 @@
                           call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array rvals.  STAT = "&
                                & //trim(text))
                        end if
-                       error = NF_GET_VAR_REAL(ncid,i,rvals)
-                       call netcdf_err( error, mpp_file(unit), mpp_file(unit)%Axis(dimid) )
+                       !z1l read from root pe and broadcast to other processor. 
+                       !In the future we will modify the code if there is performance issue for very high MPI ranks.
+                       if(mpp_pe()==mpp_root_pe()) then
+                          error = NF_GET_VAR_REAL(ncid,i,rvals)
+                          call netcdf_err( error, mpp_file(unit), mpp_file(unit)%Axis(dimid) )
+                       endif
+                       call mpp_broadcast(rvals, len, mpp_root_pe())
                        mpp_file(unit)%time_values(1:len) = rvals(1:len)
                        deallocate(rvals)
                     case (NF_DOUBLE)
@@ -744,8 +749,13 @@
                           call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array r8vals.  STAT = "&
                             & //trim(text))
                        end if
-                       error = NF_GET_VAR_DOUBLE(ncid,i,r8vals)
-                       call netcdf_err( error, mpp_file(unit), mpp_file(unit)%Axis(dimid) )
+                       !z1l read from root pe and broadcast to other processor. 
+                       !In the future we will modify the code if there is performance issue for very high MPI ranks.
+                       if(mpp_pe()==mpp_root_pe()) then
+                         error = NF_GET_VAR_DOUBLE(ncid,i,r8vals)
+                         call netcdf_err( error, mpp_file(unit), mpp_file(unit)%Axis(dimid) )
+                       endif
+                       call mpp_broadcast(r8vals, len, mpp_root_pe())
                        mpp_file(unit)%time_values(1:len) = r8vals(1:len)
                        deallocate(r8vals)
                     case default
