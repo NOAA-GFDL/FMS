@@ -49,11 +49,10 @@ implicit none
   integer            :: ocn_npes = 0
   integer            :: atm_nest_npes = 0
   logical            :: concurrent = .false.
-  logical            :: concurrent_land_ice = .false.
 
   namelist /xgrid_test_nml/ atm_input_file, atm_field_name, runoff_input_file, runoff_field_name, num_iter, &
                             nk_lnd, nk_ice, atm_layout, ice_layout, lnd_layout, atm_nest_layout, &
-                            atm_nest_npes, atm_npes, lnd_npes, ice_npes, concurrent_land_ice
+                            atm_nest_npes, atm_npes, lnd_npes, ice_npes
 
   integer              :: remap_method
   integer              :: pe, npes, ierr, nml_unit, io, n
@@ -153,7 +152,7 @@ implicit none
   concurrent = .false.
 
   call ensemble_pelist_setup(concurrent, atm_npes, ocn_npes, lnd_npes, ice_npes, &
-                             concurrent_land_ice, atm_pelist, ocn_pelist, lnd_pelist, ice_pelist)
+                             atm_pelist, ocn_pelist, lnd_pelist, ice_pelist)
  
   if(atm_nest_npes > 0) then
     atm_global_npes = atm_npes - atm_nest_npes
