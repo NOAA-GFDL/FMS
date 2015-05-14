@@ -105,7 +105,6 @@ use mpp_mod,         only: mpp_error, FATAL, NOTE, WARNING, mpp_pe, mpp_root_pe,
 use mpp_mod,         only: mpp_broadcast, ALL_PES, mpp_chksum, mpp_get_current_pelist, mpp_npes, lowercase
 use mpp_mod,         only: input_nml_file, mpp_get_current_pelist_name, uppercase
 use mpp_mod,         only: mpp_gather, mpp_scatter, mpp_send, mpp_recv, mpp_sync_self, COMM_TAG_1, EVENT_RECV
-use mpp_mod,	     only: MPP_FILL_DOUBLE,MPP_FILL_INT
 
 use platform_mod, only: r8_kind
 
@@ -821,7 +820,7 @@ subroutine write_data_i3d_new(filename, fieldname, data, domain,                
   integer, intent(in), optional :: position, tile_count, data_default
   real :: default_data
 
-  default_data = TRANSFER(MPP_FILL_INT,default_data)
+  default_data = 0
   if(present(data_default)) default_data = real(data_default)
 
   call write_data_3d_new(filename, fieldname, real(data), domain,  &
@@ -838,7 +837,7 @@ subroutine write_data_i2d_new(filename, fieldname, data, domain, &
   integer, intent(in), optional :: position, tile_count, data_default
   real :: default_data
 
-  default_data = TRANSFER(MPP_FILL_INT,default_data)
+  default_data = 0
   if(present(data_default)) default_data = real(data_default)
   call write_data_2d_new(filename, fieldname, real(data), domain, &
                          no_domain, position, tile_count, data_default=default_data)
@@ -854,7 +853,7 @@ subroutine write_data_i1d_new(filename, fieldname, data, domain, &
   integer, intent(in), optional :: tile_count, data_default
   real :: default_data
 
-  default_data = TRANSFER(MPP_FILL_INT,default_data)
+  default_data = 0
   if(present(data_default)) default_data = real(data_default)
   call write_data_1d_new(filename, fieldname, real(data), domain, &
                          no_domain, tile_count, data_default=default_data)
@@ -869,7 +868,7 @@ subroutine write_data_iscalar_new(filename, fieldname, data, domain, &
   integer, intent(in), optional :: tile_count, data_default
   real :: default_data
 
-  default_data = TRANSFER(MPP_FILL_INT,default_data)
+  default_data = 0
   if(present(data_default)) default_data = real(data_default)
   call write_data_scalar_new(filename, fieldname, real(data), domain, &
                              no_domain, tile_count, data_default=default_data)
@@ -910,7 +909,7 @@ subroutine write_data_3d_new(filename, fieldname, data, domain, no_domain, scala
   if(PRESENT(data_default))then
      default_data=data_default
   else
-     default_data=MPP_FILL_DOUBLE
+     default_data=0.
   endif
 
   if(present(tile_count) .AND. .not. present(domain)) call mpp_error(FATAL, &
@@ -1562,7 +1561,7 @@ function register_restart_field_i0d(fileObj, filename, fieldname, data, domain, 
   character(len=*),           intent(in)         :: filename, fieldname
   integer,                    intent(in), target :: data
   type(domain2d),   optional, intent(in), target :: domain
-  integer,             optional, intent(in)      :: data_default
+  real,             optional, intent(in)         :: data_default
   integer,          optional, intent(in)         :: position, tile_count
   logical,          optional, intent(in)         :: mandatory
   logical,          optional, intent(in)         :: no_domain
@@ -1570,18 +1569,11 @@ function register_restart_field_i0d(fileObj, filename, fieldname, data, domain, 
   logical,          optional, intent(in)         :: read_only
   integer                                        :: index_field
   integer                                        :: register_restart_field_i0d
-  real                                           :: data_default_r
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_i0d): need to call fms_io_init')
-
-  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i0d): data_default and data different KIND()')
-  data_default_r = TRANSFER(MPP_FILL_INT,data_default_r) 
-  if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
-
   call setup_one_field(fileObj, filename, fieldname, (/1, 1, 1, 1/), index_field, domain, &
                        mandatory, no_domain=no_domain, scalar_or_1d=.true., position=position, tile_count=tile_count, &
-                          data_default=data_default_r, longname=longname, units=units, read_only=read_only)
-  
+                       data_default=data_default, longname=longname, units=units, read_only=read_only)
   fileObj%p0di(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 0
   register_restart_field_i0d = index_field
@@ -1602,7 +1594,7 @@ function register_restart_field_i1d(fileObj, filename, fieldname, data, domain, 
   character(len=*),           intent(in)         :: filename, fieldname
   integer, dimension(:),      intent(in), target :: data
   type(domain2d),   optional, intent(in), target :: domain
-  integer,          optional, intent(in)         :: data_default
+  real,             optional, intent(in)         :: data_default
   integer,          optional, intent(in)         :: position, tile_count
   logical,          optional, intent(in)         :: mandatory
   logical,          optional, intent(in)         :: no_domain
@@ -1610,17 +1602,11 @@ function register_restart_field_i1d(fileObj, filename, fieldname, data, domain, 
   logical,          optional, intent(in)         :: read_only
   integer                                        :: index_field
   integer                                        :: register_restart_field_i1d
-  real                                           :: data_default_r
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_i1d): need to call fms_io_init')
-
-  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i1d): data_default and data different KIND()')
-  data_default_r = TRANSFER(MPP_FILL_INT,data_default_r) 
-  if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
-
   call setup_one_field(fileObj, filename, fieldname, (/size(data,1), 1, 1, 1/), index_field, domain, &
                        mandatory, no_domain=no_domain, scalar_or_1d=.true., position=position, tile_count=tile_count, &
-                       data_default=data_default_r, longname=longname, units=units, compressed_axis=compressed_axis, &
+                       data_default=data_default, longname=longname, units=units, compressed_axis=compressed_axis, &
                        read_only=read_only)
   fileObj%p1di(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 1
@@ -1643,7 +1629,7 @@ function register_restart_field_i2d(fileObj, filename, fieldname, data, domain, 
   character(len=*),           intent(in)         :: filename, fieldname
   integer,  dimension(:,:),   intent(in), target :: data
   type(domain2d),   optional, intent(in), target :: domain
-  integer,          optional, intent(in)         :: data_default
+  real,             optional, intent(in)         :: data_default
   logical,          optional, intent(in)         :: no_domain
   logical,          optional, intent(in)         :: compressed
   integer,          optional, intent(in)         :: position, tile_count
@@ -1653,19 +1639,13 @@ function register_restart_field_i2d(fileObj, filename, fieldname, data, domain, 
   logical                                        :: is_compressed
   integer                                        :: index_field
   integer                                        :: register_restart_field_i2d
-  real                                           :: data_default_r
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_i2d): need to call fms_io_init')
   is_compressed = .false.
   if(present(compressed)) is_compressed=compressed
-
-  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i2d): data_default and data different KIND()')
-  data_default_r = TRANSFER(MPP_FILL_INT,data_default_r) 
-  if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
-  
   call setup_one_field(fileObj, filename, fieldname, (/size(data,1), size(data,2), 1, 1/), &
                        index_field, domain, mandatory, no_domain, is_compressed, &
-                       position, tile_count, data_default_r, longname, units, compressed_axis, &
+                       position, tile_count, data_default, longname, units, compressed_axis, &
                        read_only=read_only)
   fileObj%p2di(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 2
@@ -1686,7 +1666,7 @@ function register_restart_field_i3d(fileObj, filename, fieldname, data, domain, 
   character(len=*),           intent(in)         :: filename, fieldname
   integer,  dimension(:,:,:), intent(in), target :: data
   type(domain2d),   optional, intent(in), target :: domain
-  integer,             optional, intent(in)         :: data_default
+  real,             optional, intent(in)         :: data_default
   logical,          optional, intent(in)         :: no_domain
   integer,          optional, intent(in)         :: position, tile_count
   logical,          optional, intent(in)         :: mandatory
@@ -1694,17 +1674,11 @@ function register_restart_field_i3d(fileObj, filename, fieldname, data, domain, 
   logical,          optional, intent(in)         :: read_only
   integer                                        :: index_field
   integer                                        :: register_restart_field_i3d
-  real                                           :: data_default_r
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_i3d): need to call fms_io_init')
-
-  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i3d): data_default and data different KIND()')
-  data_default_r = TRANSFER(MPP_FILL_INT,data_default_r) 
-  if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
-  
   call setup_one_field(fileObj, filename, fieldname, (/size(data,1), size(data,2), size(data,3), 1/), &
                        index_field, domain, mandatory, no_domain, .false., &
-                       position, tile_count, data_default_r, longname, units, read_only=read_only)
+                       position, tile_count, data_default, longname, units, read_only=read_only)
   fileObj%p3di(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 3
   register_restart_field_i3d = index_field
@@ -2363,11 +2337,11 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
         allocate(check_val(max(1,cur_var%siz(4))))
         do k = 1, cur_var%siz(4)
            if ( Associated(fileObj%p0dr(k,j)%p) ) then
-              check_val(k) = mpp_chksum(fileObj%p0dr(k,j)%p, (/mpp_pe()/), mask_val=cur_var%default_data)
+              check_val(k) = mpp_chksum(fileObj%p0dr(k,j)%p, (/mpp_pe()/) )
            else if ( Associated(fileObj%p1dr(k,j)%p) ) then
-              check_val(k) = mpp_chksum(fileObj%p1dr(k,j)%p(:), mask_val=cur_var%default_data)
+              check_val(k) = mpp_chksum(fileObj%p1dr(k,j)%p(:))
            else if ( Associated(fileObj%p2dr(k,j)%p) ) then
-              check_val(k) = mpp_chksum(fileObj%p2dr(k,j)%p(:,:), mask_val=cur_var%default_data)
+              check_val(k) = mpp_chksum(fileObj%p2dr(k,j)%p(:,:))
            else if ( Associated(fileObj%p3dr(k,j)%p) ) then
               call mpp_error(FATAL, "fms_io(save_compressed_restart): real 3D restart fields are not currently supported"// &
                    trim(cur_var%name)//" of file "//trim(fileObj%name) )
@@ -2375,10 +2349,11 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
               check_val(k) = fileObj%p0di(k,j)%p
               cpack = 0  ! Write data as integer*4
            else if ( Associated(fileObj%p1di(k,j)%p) ) then
-              check_val(k) = mpp_chksum(fileObj%p1di(k,j)%p(:), mask_val=cur_var%default_data)
+             ! Fill values are -HUGE(i4) which don't behave as desired for checksum algorithm
+              check_val(k) = mpp_chksum(INT(fileObj%p1di(k,j)%p(:),8))
               cpack = 0  ! Write data as integer*4
            else if ( Associated(fileObj%p2di(k,j)%p) ) then
-              check_val(k) = mpp_chksum(fileObj%p2di(k,j)%p(:,:), mask_val=cur_var%default_data)
+              check_val(k) = mpp_chksum(INT(fileObj%p2di(k,j)%p(:,:),8))
               cpack = 0  ! Write data as integer*4
            else if ( Associated(fileObj%p3di(k,j)%p) ) then
               call mpp_error(FATAL, "fms_io(save_compressed_restart): integer 3D restart fields are not currently supported"// &
@@ -2390,13 +2365,13 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
         enddo
 ! The chksum could not reproduce when running on different processor count. So commenting out now.
 ! Also the chksum of compressed data is not read.
-       if(write_field_data) then ! Write checksums only if valid field data exists
+!       if(write_field_data) then ! Write checksums only if valid field data exists
+!         call mpp_write_meta(unit,cur_var%field, var_axes(1:num_var_axes), cur_var%name, &
+!                cur_var%units,cur_var%longname,pack=cpack,checksum=check_val)
+!       else
           call mpp_write_meta(unit,cur_var%field, var_axes(1:num_var_axes), cur_var%name, &
-                cur_var%units,cur_var%longname,pack=cpack,checksum=check_val,fill=cur_var%default_data)
-       else
-          call mpp_write_meta(unit,cur_var%field, var_axes(1:num_var_axes), cur_var%name, &
-                 cur_var%units,cur_var%longname,pack=cpack,fill=cur_var%default_data)
-       endif
+                 cur_var%units,cur_var%longname,pack=cpack)
+!       endif
         deallocate(check_val)
     enddo
 
@@ -4110,7 +4085,7 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
   if(PRESENT(data_default))then
      default_data=data_default
   else
-     default_data = MPP_FILL_DOUBLE
+     default_data=0.
   endif
 
   if(present(tile_count) .AND. .not. present(domain)) call mpp_error(FATAL, &

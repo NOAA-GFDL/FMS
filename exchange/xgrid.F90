@@ -1432,6 +1432,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
   character(len=256),     allocatable :: tile1_list(:), tile2_list(:)
   integer                             :: npes, npes2
   integer,                allocatable :: pelist(:)
+  integer                             :: pstart, pend
   type(domain2d), save                :: domain2
   logical :: use_higher_order = .false.
 
@@ -1514,16 +1515,17 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
                               xsize=grid%nxd_me, ysize=grid%nyd_me)
      call mpp_get_global_domain(grid%domain, xsize=grid%ni, ysize=grid%nj)
 
-     if( grid%root_pe == xmap%root_pe ) then
-        call mpp_get_compute_domains(grid%domain,  xbegin=grid%is(0:npes-1), xend=grid%ie(0:npes-1), &
-                                     ybegin=grid%js(0:npes-1), yend=grid%je(0:npes-1) )
-        call mpp_get_tile_list(grid%domain, grid%tile(0:npes-1))
+     if( grid%root_pe == xmap%root_pe .OR. grid%id .NE. 'ATM' ) then
+        pstart = grid%root_pe; pend = grid%root_pe + npes - 1
+        call mpp_get_compute_domains(grid%domain,  xbegin=grid%is(pstart:pend), xend=grid%ie(pstart:pend), &
+                                     ybegin=grid%js(pstart:pend), yend=grid%je(pstart:pend) )
+        call mpp_get_tile_list(grid%domain, grid%tile(pstart:pend))
         if( xmap%npes > npes .AND. g == 1 .AND. grid_ids(1) == 'ATM' ) then
            call mpp_get_compute_domains(domain2, xbegin=grid%is(npes:xmap%npes-1), xend=grid%ie(npes:xmap%npes-1), &
                                         ybegin=grid%js(npes:xmap%npes-1), yend=grid%je(npes:xmap%npes-1) )
            call mpp_get_tile_list(domain2, grid%tile(npes:xmap%npes-1))
         endif
-     else
+     else ! for nested atmos domain
         npes2 = xmap%npes-npes
         call mpp_get_compute_domains(domain2,  xbegin=grid%is(0:npes2-1), xend=grid%ie(0:npes2-1), &
                                      ybegin=grid%js(0:npes2-1), yend=grid%je(0:npes2-1) )
@@ -1537,7 +1539,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
      endif
      npes = grid%npes
      if(  g == 1 .AND. grid_ids(1) == 'ATM' ) npes = xmap%npes
-     do p = 0, npes-1
+     do p = grid%root_pe, grid%root_pe+npes-1
         if(grid%tile(p) > grid%ntile .or. grid%tile(p) < 1) call error_mesg('xgrid_mod', &
                  'tile id should between 1 and ntile', FATAL)
      end do
