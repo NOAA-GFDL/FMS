@@ -75,7 +75,9 @@
       enddo; enddo
 
    !  Note that the gatherV implied here is asymmetric; only root needs to know the vector of recv size
-      sptr = LOC(sbuff); rptr = LOC(rbuff)
+      sptr = LOC(sbuff)
+      rptr = 0
+      if(mpp_file(unit)%write_on_this_pe ) rptr = LOC(rbuff)
       call mpp_gather(sbuff1D,size(sbuff),rbuff1D,nz*nelems_io(:),pelist)
 
       if(mpp_file(unit)%write_on_this_pe ) then

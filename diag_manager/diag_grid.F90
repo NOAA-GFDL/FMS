@@ -343,7 +343,17 @@ CONTAINS
     diag_global_grid%dimJ = j_dim
     diag_global_grid%adimI = ai_dim
     diag_global_grid%adimJ = aj_dim
-    diag_global_grid%tile_number = tile(1)
+    !--- For the nested model, the nested region only has 1 tile ( ntiles = 1) but 
+    !--- the tile_id is 7 for the nested region. In the routine get_local_indexes,
+    !--- local variables ijMin and ijMax have dimesnion (ntiles) and will access
+    !--- ijMin(diag_global_grid%tile_number,:). For the nested region, ntiles = 1 and 
+    !--- diag_global_grid%tile_number = 7 will cause out of bounds. So need to
+    !--- set diag_global_grid%tile_number = 1 when ntiles = 1 for the nested model.
+    if(ntiles == 1) then
+       diag_global_grid%tile_number = 1
+    else
+       diag_global_grid%tile_number = tile(1)
+    endif
     diag_global_grid%ntiles = ntiles
     diag_global_grid%myXbegin = xbegin(myPe)
     diag_global_grid%myYbegin = ybegin(myPe)

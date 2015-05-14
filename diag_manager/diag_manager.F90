@@ -1165,7 +1165,7 @@ CONTAINS
 
     INTEGER :: cm_ind, cm_file_num, file_num
     INTEGER :: year, month, day, hour, minute, second
-    CHARACTER(len=9) :: date_prefix
+    CHARACTER(len=25) :: date_prefix
 
     IF ( PRESENT(err_msg) ) THEN
        err_msg = ''
@@ -1194,7 +1194,8 @@ CONTAINS
     ! Create the date_string
     IF ( prepend_date ) THEN
        call get_date(diag_init_time, year, month, day, hour, minute, second)
-       write (date_prefix, '(1I4.4, 2I2.2,".")') year, month, day
+       write (date_prefix, '(1I20.4, 2I2.2,".")') year, month, day
+       date_prefix=adjustl(date_prefix)
     ELSE
        date_prefix=''
     END IF
@@ -1841,9 +1842,9 @@ CONTAINS
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
                                              & field(i-is+1+hi,j-js+1+hj,k)*weight1
-                                        output_fields(out_num)%counter(i-hi,j-hj,k,sample) =&
-                                             &output_fields(out_num)%counter(i-hi,j-hj,k,sample) + weight1
                                      END IF
+                                     output_fields(out_num)%counter(i-hi,j-hj,k,sample) =&
+                                          &output_fields(out_num)%counter(i-hi,j-hj,k,sample) + weight1
                                   END IF
                                END DO
                             END DO
@@ -4141,6 +4142,25 @@ PROGRAM test
 
   NAMELIST /test_diag_manager_nml/ layout, test_number, nlon, nlat, nlev, io_layout, numthreads, &
                                    dt_step, months, days
+
+  ! Initialize all id* vars to be -1
+  id_phalf = -1
+  id_pfull = -1
+  id_bk = -1
+  id_lon1 = -1
+  id_lonb1 = -1
+  id_latb1 = -1
+  id_lat1 = -1
+  id_dat1 = -1
+  id_lon2 = -1
+  id_lat2 = -1
+  id_dat2 = -1
+  id_dat2_2d = -1
+  id_sol_con = -1
+  id_dat2h = -1
+  id_dat2h_2 = -1
+  id_dat2_got = -1
+  id_none_got = -1
 
   CALL fms_init
   log_unit = stdlog()

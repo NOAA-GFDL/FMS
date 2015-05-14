@@ -1635,16 +1635,52 @@ end subroutine mpp_get_tile_compute_domains
      logical   :: recv_s(8), send_s(8), recv_v(8), send_v(8)
      integer   :: ntot, n, l, m, ksize
      integer   :: i_s, i_x, i_y, rank_s, rank_x, rank_y, rank
-     integer   :: ind_s(3*MAXOVERLAP), recv_ind_s(3*MAXOVERLAP), send_ind_s(3*MAXOVERLAP)
-     integer   :: ind_x(3*MAXOVERLAP), recv_ind_x(3*MAXOVERLAP), send_ind_x(3*MAXOVERLAP)
-     integer   :: ind_y(3*MAXOVERLAP), recv_ind_y(3*MAXOVERLAP), send_ind_y(3*MAXOVERLAP)
-     integer   :: pelist(3*MAXOVERLAP), from_pe_list(3*MAXOVERLAP), to_pe_list(3*MAXOVERLAP)
+     integer   :: ind_s(3*MAXOVERLAP)
+     integer   :: ind_x(3*MAXOVERLAP)
+     integer   :: ind_y(3*MAXOVERLAP)
+     integer   :: pelist(3*MAXOVERLAP), to_pe_list(3*MAXOVERLAP)
      integer   :: buffer_pos_recv(3*MAXOVERLAP), buffer_pos_send(3*MAXOVERLAP)
      integer   :: recv_size(3*MAXOVERLAP), send_size(3*MAXOVERLAP)
+     integer   :: position_x, position_y, npack, nunpack, dir
+     integer   :: pack_buffer_pos, unpack_buffer_pos
+     integer   :: omp_get_num_threads, nthreads
      character(len=8)            :: text
+     type(overlap_type), pointer :: overPtr => NULL()
+     type(overlapSpec), pointer  :: update_s => NULL()
+     type(overlapSpec), pointer  :: update_x => NULL()
+     type(overlapSpec), pointer  :: update_y => NULL()
 
      nscalar = group%nscalar
      nvector = group%nvector
+
+     !--- get the overlap data type
+     select case(group%gridtype)
+     case (AGRID)
+        position_x = CENTER
+        position_y = CENTER
+     case (BGRID_NE, BGRID_SW)
+        position_x = CORNER
+        position_y = CORNER
+     case (CGRID_NE, CGRID_SW)
+        position_x = EAST
+        position_y = NORTH
+     case (DGRID_NE, DGRID_SW)
+        position_x = NORTH
+        position_y = EAST
+     case default
+        call mpp_error(FATAL, "set_group_update: invalid value of gridtype")
+     end select
+     if(nscalar>0) then
+        update_s => search_update_overlap(domain, group%whalo_s, group%ehalo_s, &
+             group%shalo_s, group%nhalo_s, group%position)
+     endif
+     if(nvector>0) then
+        update_x => search_update_overlap(domain, group%whalo_v, group%ehalo_v, &
+             group%shalo_v, group%nhalo_v, position_x)
+        update_y => search_update_overlap(domain, group%whalo_v, group%ehalo_v, &
+             group%shalo_v, group%nhalo_v, position_y)
+     endif
+
      if(nscalar > 0) then
         recv_s = group%recv_s
         send_s = recv_s
@@ -1657,12 +1693,13 @@ end subroutine mpp_get_tile_compute_domains
      group%initialized = .true.
      nsend_s = 0; nsend_x = 0; nsend_y = 0
      nrecv_s = 0; nrecv_x = 0; nrecv_y = 0
+
      if(nscalar > 0) then
          !--- This check could not be done because of memory domain
 !        if( group%isize_s .NE. (group%ie_s-group%is_s+1) .OR. group%jsize_s .NE. (group%je_s-group%js_s+1))  &
 !           call mpp_error(FATAL, "set_group_update: mismatch of size of the field and domain memory domain")
-        nsend_s = group%update_s%nsend
-        nrecv_s = group%update_s%nrecv
+        nsend_s = update_s%nsend
+        nrecv_s = update_s%nrecv
      endif
 
      !--- ksize_s must equal ksize_v
@@ -1679,6 +1716,15 @@ end subroutine mpp_get_tile_compute_domains
         call mpp_error(FATAL, "set_group_update: nscalar and nvector are all 0")
      endif
 
+    nthreads = 1
+!$OMP PARALLEL
+!$   nthreads = omp_get_num_threads()
+!$OMP END PARALLEL
+     if( nthreads > nthread_control_loop ) then
+        group%k_loop_inside = .FALSE.
+     else
+        group%k_loop_inside = .TRUE.
+     endif
 
      if(nvector > 0) then
         !--- This check could not be done because of memory domain
@@ -1686,10 +1732,10 @@ end subroutine mpp_get_tile_compute_domains
 !           call mpp_error(FATAL, "set_group_update: mismatch of size of the fieldx and domain memory domain")
 !        if( group%isize_y .NE. (group%ie_y-group%is_y+1) .OR. group%jsize_y .NE. (group%je_y-group%js_y+1))  &
 !           call mpp_error(FATAL, "set_group_update: mismatch of size of the fieldy and domain memory domain")
-        nsend_x = group%update_x%nsend
-        nrecv_x = group%update_x%nrecv
-        nsend_y = group%update_y%nsend
-        nrecv_y = group%update_y%nrecv
+        nsend_x = update_x%nsend
+        nrecv_x = update_x%nrecv
+        nsend_y = update_y%nsend
+        nrecv_y = update_y%nrecv
      endif
 
      !figure out message size for each processor.
@@ -1705,19 +1751,19 @@ end subroutine mpp_get_tile_compute_domains
      nrecv = 0
      do while(n<=ntot)
         if( i_s <= nrecv_s ) then
-           rank_s = group%update_s%recv(i_s)%pe-domain%pe
+           rank_s = update_s%recv(i_s)%pe-domain%pe
            if(rank_s .LE. 0) rank_s = rank_s + nlist
         else
            rank_s = -1
         endif
         if( i_x <= nrecv_x ) then
-           rank_x = group%update_x%recv(i_x)%pe-domain%pe
+           rank_x = update_x%recv(i_x)%pe-domain%pe
            if(rank_x .LE. 0) rank_x = rank_x + nlist
         else
            rank_x = -1
         endif
         if( i_y <= nrecv_y ) then
-           rank_y = group%update_y%recv(i_y)%pe-domain%pe
+           rank_y = update_y%recv(i_y)%pe-domain%pe
            if(rank_y .LE. 0) rank_y = rank_y + nlist
         else
            rank_y = -1
@@ -1727,19 +1773,19 @@ end subroutine mpp_get_tile_compute_domains
         if(rank == rank_s) then
            n = n + 1
            ind_s(nrecv) = i_s
-           pelist(nrecv) = group%update_s%recv(i_s)%pe
+           pelist(nrecv) = update_s%recv(i_s)%pe
            i_s = i_s + 1
         endif
         if(rank == rank_x) then
            n = n + 1
            ind_x(nrecv) = i_x
-           pelist(nrecv) = group%update_x%recv(i_x)%pe
+           pelist(nrecv) = update_x%recv(i_x)%pe
            i_x = i_x + 1
         endif
         if(rank == rank_y) then
            n = n + 1
            ind_y(nrecv) = i_y
-           pelist(nrecv) = group%update_y%recv(i_y)%pe
+           pelist(nrecv) = update_y%recv(i_y)%pe
            i_y = i_y + 1
         endif
      enddo
@@ -1748,43 +1794,107 @@ end subroutine mpp_get_tile_compute_domains
      nrecv     = 0
      update_buffer_pos = 0
      tot_recv_size = 0
+
+     !--- setup for recv
      do l = 1, nrecv_old
         msgsize_s = 0
         msgsize_x = 0
         msgsize_y = 0
         m = ind_s(l)
-        if(m>0) msgsize_s = get_mesgsize(group%update_s%recv(m), recv_s)*ksize*nscalar
+        if(m>0) msgsize_s = get_mesgsize(update_s%recv(m), recv_s)*ksize*nscalar
         m = ind_x(l)
-        if(m>0) msgsize_x = get_mesgsize(group%update_x%recv(m), recv_v)*ksize*nvector
+        if(m>0) msgsize_x = get_mesgsize(update_x%recv(m), recv_v)*ksize*nvector
         m = ind_y(l)
-        if(m>0) msgsize_y = get_mesgsize(group%update_y%recv(m), recv_v)*ksize*nvector
+        if(m>0) msgsize_y = get_mesgsize(update_y%recv(m), recv_v)*ksize*nvector
         msgsize = msgsize_s + msgsize_x + msgsize_y
         if( msgsize.GT.0 )then
            tot_recv_size = tot_recv_size + msgsize
            nrecv = nrecv + 1
-           from_pe_list(nrecv) = pelist(l)
-           recv_ind_s(nrecv) = ind_s(l)
-           recv_ind_x(nrecv) = ind_x(l)
-           recv_ind_y(nrecv) = ind_y(l)
-           recv_size(nrecv) = msgsize
-           buffer_pos_recv(nrecv) = update_buffer_pos
+           if(nrecv > MAXOVERLAP) then
+              call mpp_error(FATAL, "set_group_update: nrecv is greater than MAXOVERLAP, increase MAXOVERLAP")
+           endif
+           group%from_pe(nrecv) = pelist(l)
+           group%recv_size(nrecv) = msgsize
+           group%buffer_pos_recv(nrecv) = update_buffer_pos
            update_buffer_pos = update_buffer_pos + msgsize
         end if
      end do
-
-     if(nrecv > MAXOVERLAP) then
-        call mpp_error(FATAL, "set_group_update: nrecv is greater than MAXOVERLAP, increase MAXOVERLAP")
-     endif
      group%nrecv = nrecv
-     if(nrecv > 0) then
-        group%from_pe(1:nrecv) = from_pe_list(1:nrecv)
-        group%buffer_pos_recv(1:nrecv) = buffer_pos_recv(1:nrecv)
-        group%recv_size(1:nrecv) = recv_size(1:nrecv)
-        group%msgsize_recv(1:nrecv) = recv_size(1:nrecv)/ksize
-        group%recv_ind_s(1:nrecv) = recv_ind_s(1:nrecv)
-        group%recv_ind_x(1:nrecv) = recv_ind_x(1:nrecv)
-        group%recv_ind_y(1:nrecv) = recv_ind_y(1:nrecv)
-     endif
+
+     !--- setup for unpack
+     nunpack = 0
+     unpack_buffer_pos = 0
+     do l = 1, nrecv_old
+        m = ind_s(l)
+        if(m>0) then
+           overptr => update_s%recv(m)
+           do n = 1, overptr%count
+              dir = overptr%dir(n)
+              if(recv_s(dir)) then
+                 nunpack = nunpack + 1
+                 if(nunpack > MAXOVERLAP) call mpp_error(FATAL,  &
+                   "set_group_update: nunpack is greater than MAXOVERLAP, increase MAXOVERLAP 1")
+                 group%unpack_type(nunpack) = FIELD_S
+                 group%unpack_buffer_pos(nunpack) = unpack_buffer_pos
+                 group%unpack_rotation(nunpack) = overptr%rotation(n) 
+                 group%unpack_is(nunpack) = overptr%is(n)
+                 group%unpack_ie(nunpack) = overptr%ie(n)
+                 group%unpack_js(nunpack) = overptr%js(n)
+                 group%unpack_je(nunpack) = overptr%je(n) 
+                 group%unpack_size(nunpack) = overptr%msgsize(n)*nscalar
+                 unpack_buffer_pos = unpack_buffer_pos + group%unpack_size(nunpack)*ksize
+              end if
+           end do   
+        end if
+
+        m = ind_x(l)
+        if(m>0) then
+           overptr => update_x%recv(m)
+           do n = 1, overptr%count
+              dir = overptr%dir(n)
+              if(recv_v(dir)) then
+                 nunpack = nunpack + 1
+                 if(nunpack > MAXOVERLAP) call mpp_error(FATAL,  &
+                   "set_group_update: nunpack is greater than MAXOVERLAP, increase MAXOVERLAP 2")
+                 group%unpack_type(nunpack) = FIELD_X
+                 group%unpack_buffer_pos(nunpack) = unpack_buffer_pos
+                 group%unpack_rotation(nunpack) = overptr%rotation(n) 
+                 group%unpack_is(nunpack) = overptr%is(n)
+                 group%unpack_ie(nunpack) = overptr%ie(n)
+                 group%unpack_js(nunpack) = overptr%js(n)
+                 group%unpack_je(nunpack) = overptr%je(n) 
+                 group%unpack_size(nunpack) = overptr%msgsize(n)*nvector
+                 unpack_buffer_pos = unpack_buffer_pos + group%unpack_size(nunpack)*ksize
+              end if
+           end do   
+        end if
+
+        m = ind_y(l)
+        if(m>0) then
+           overptr => update_y%recv(m)
+           do n = 1, overptr%count
+              dir = overptr%dir(n)
+              if(recv_v(dir)) then
+                 nunpack = nunpack + 1
+                 if(nunpack > MAXOVERLAP) call mpp_error(FATAL,  &
+                   "set_group_update: nunpack is greater than MAXOVERLAP, increase MAXOVERLAP 3")
+                 group%unpack_type(nunpack) = FIELD_Y
+                 group%unpack_buffer_pos(nunpack) = unpack_buffer_pos
+                 group%unpack_rotation(nunpack) = overptr%rotation(n) 
+                 group%unpack_is(nunpack) = overptr%is(n)
+                 group%unpack_ie(nunpack) = overptr%ie(n)
+                 group%unpack_js(nunpack) = overptr%js(n)
+                 group%unpack_je(nunpack) = overptr%je(n) 
+                 group%unpack_size(nunpack) = overptr%msgsize(n)*nvector
+                 unpack_buffer_pos = unpack_buffer_pos + group%unpack_size(nunpack)*ksize
+              end if
+           end do   
+        end if
+     end do
+     group%nunpack = nunpack
+
+     if(update_buffer_pos .NE. unpack_buffer_pos ) call mpp_error(FATAL,  &
+                   "set_group_update: update_buffer_pos .NE. unpack_buffer_pos")
 
      !figure out message size for each processor.
      ntot = nsend_s + nsend_x + nsend_y
@@ -1798,19 +1908,19 @@ end subroutine mpp_get_tile_compute_domains
      nsend = 0
      do while(n<=ntot)
         if( i_s <= nsend_s ) then
-           rank_s = group%update_s%send(i_s)%pe-domain%pe
+           rank_s = update_s%send(i_s)%pe-domain%pe
            if(rank_s .LT. 0) rank_s = rank_s + nlist
         else
            rank_s = nlist+1
         endif
         if( i_x <= nsend_x ) then
-           rank_x = group%update_x%send(i_x)%pe-domain%pe
+           rank_x = update_x%send(i_x)%pe-domain%pe
            if(rank_x .LT. 0) rank_x = rank_x + nlist
         else
            rank_x = nlist+1
         endif
         if( i_y <= nsend_y ) then
-           rank_y = group%update_y%send(i_y)%pe-domain%pe
+           rank_y = update_y%send(i_y)%pe-domain%pe
            if(rank_y .LT. 0) rank_y = rank_y + nlist
         else
            rank_y = nlist+1
@@ -1820,19 +1930,19 @@ end subroutine mpp_get_tile_compute_domains
         if(rank == rank_s) then
            n = n + 1
            ind_s(nsend) = i_s
-           pelist(nsend) = group%update_s%send(i_s)%pe
+           pelist(nsend) = update_s%send(i_s)%pe
            i_s = i_s + 1
         endif
         if(rank == rank_x) then
            n = n + 1
            ind_x(nsend) = i_x
-           pelist(nsend) = group%update_x%send(i_x)%pe
+           pelist(nsend) = update_x%send(i_x)%pe
            i_x = i_x + 1
         endif
         if(rank == rank_y) then
            n = n + 1
            ind_y(nsend) = i_y
-           pelist(nsend) = group%update_y%send(i_y)%pe
+           pelist(nsend) = update_y%send(i_y)%pe
            i_y = i_y + 1
         endif
      enddo
@@ -1845,38 +1955,101 @@ end subroutine mpp_get_tile_compute_domains
         msgsize_x = 0
         msgsize_y = 0
         m = ind_s(l)
-        if(m>0) msgsize_s = get_mesgsize(group%update_s%send(m), send_s)*ksize*nscalar
+        if(m>0) msgsize_s = get_mesgsize(update_s%send(m), send_s)*ksize*nscalar
         m = ind_x(l)
-        if(m>0) msgsize_x = get_mesgsize(group%update_x%send(m), send_v)*ksize*nvector
+        if(m>0) msgsize_x = get_mesgsize(update_x%send(m), send_v)*ksize*nvector
         m = ind_y(l)
-        if(m>0) msgsize_y = get_mesgsize(group%update_y%send(m), send_v)*ksize*nvector
+        if(m>0) msgsize_y = get_mesgsize(update_y%send(m), send_v)*ksize*nvector
         msgsize = msgsize_s + msgsize_x + msgsize_y
         if( msgsize.GT.0 )then
            tot_send_size = tot_send_size + msgsize
            nsend = nsend + 1
+           if(nsend > MAXOVERLAP) then
+              call mpp_error(FATAL, "set_group_update: nsend is greater than MAXOVERLAP, increase MAXOVERLAP")
+           endif
            send_size(nsend) = msgsize
-           buffer_pos_send(nsend) = update_buffer_pos
-           send_ind_s(nsend) = ind_s(l)
-           send_ind_x(nsend) = ind_x(l)
-           send_ind_y(nsend) = ind_y(l)
-           to_pe_list(nsend) = pelist(l)
+           group%to_pe(nsend) = pelist(l)
+           group%buffer_pos_send(nsend) = update_buffer_pos
+           group%send_size(nsend) = msgsize
            update_buffer_pos = update_buffer_pos + msgsize
         end if
      end do
-
-     if(nsend > MAXOVERLAP) then
-        call mpp_error(FATAL, "set_group_update: nsend is greater than MAXOVERLAP, increase MAXOVERLAP")
-     endif
      group%nsend = nsend
-     if(nsend > 0) then
-        group%to_pe(1:nsend) = to_pe_list(1:nsend)
-        group%buffer_pos_send(1:nsend) = buffer_pos_send(1:nsend)
-        group%send_size(1:nsend) = send_size(1:nsend)
-        group%msgsize_send(1:nsend) = send_size(1:nsend)/ksize
-        group%send_ind_s(1:nsend) = send_ind_s(1:nsend)
-        group%send_ind_x(1:nsend) = send_ind_x(1:nsend)
-        group%send_ind_y(1:nsend) = send_ind_y(1:nsend)
-     endif
+
+     !--- setup for pack
+     npack = 0
+     pack_buffer_pos = unpack_buffer_pos
+     do l = 1, nsend_old
+        m = ind_s(l)
+        if(m>0) then
+           overptr => update_s%send(m)
+           do n = 1, overptr%count
+              dir = overptr%dir(n)
+              if(send_s(dir)) then
+                 npack = npack + 1
+                 if(npack > MAXOVERLAP) call mpp_error(FATAL,  &
+                   "set_group_update: npack is greater than MAXOVERLAP, increase MAXOVERLAP 1")
+                 group%pack_type(npack) = FIELD_S
+                 group%pack_buffer_pos(npack) = pack_buffer_pos
+                 group%pack_rotation(npack) = overptr%rotation(n) 
+                 group%pack_is(npack) = overptr%is(n)
+                 group%pack_ie(npack) = overptr%ie(n)
+                 group%pack_js(npack) = overptr%js(n)
+                 group%pack_je(npack) = overptr%je(n) 
+                 group%pack_size(npack) = overptr%msgsize(n)*nscalar
+                 pack_buffer_pos = pack_buffer_pos + group%pack_size(npack)*ksize
+              end if
+           end do   
+        end if
+
+        m = ind_x(l)
+        if(m>0) then
+           overptr => update_x%send(m)
+           do n = 1, overptr%count
+              dir = overptr%dir(n)
+              if(send_v(dir)) then
+                 npack = npack + 1
+                 if(npack > MAXOVERLAP) call mpp_error(FATAL,  &
+                   "set_group_update: npack is greater than MAXOVERLAP, increase MAXOVERLAP 2")
+                 group%pack_type(npack) = FIELD_X
+                 group%pack_buffer_pos(npack) = pack_buffer_pos
+                 group%pack_rotation(npack) = overptr%rotation(n) 
+                 group%pack_is(npack) = overptr%is(n)
+                 group%pack_ie(npack) = overptr%ie(n)
+                 group%pack_js(npack) = overptr%js(n)
+                 group%pack_je(npack) = overptr%je(n) 
+                 group%pack_size(npack) = overptr%msgsize(n)*nvector
+                 pack_buffer_pos = pack_buffer_pos + group%pack_size(npack)*ksize
+              end if
+           end do   
+        end if
+
+        m = ind_y(l)
+        if(m>0) then
+           overptr => update_y%send(m)
+           do n = 1, overptr%count
+              dir = overptr%dir(n)
+              if(send_v(dir)) then
+                 npack = npack + 1
+                 if(npack > MAXOVERLAP) call mpp_error(FATAL,  &
+                   "set_group_update: npack is greater than MAXOVERLAP, increase MAXOVERLAP 3")
+                 group%pack_type(npack) = FIELD_Y
+                 group%pack_buffer_pos(npack) = pack_buffer_pos
+                 group%pack_rotation(npack) = overptr%rotation(n) 
+                 group%pack_is(npack) = overptr%is(n)
+                 group%pack_ie(npack) = overptr%ie(n)
+                 group%pack_js(npack) = overptr%js(n)
+                 group%pack_je(npack) = overptr%je(n) 
+                 group%pack_size(npack) = overptr%msgsize(n)*nvector
+                 pack_buffer_pos = pack_buffer_pos + group%pack_size(npack)*ksize
+              end if
+           end do   
+        end if
+     end do
+     group%npack = npack
+     if(update_buffer_pos .NE. pack_buffer_pos ) call mpp_error(FATAL,  &
+                   "set_group_update: update_buffer_pos .NE. pack_buffer_pos")
+
      !--- make sure the buffer is large enough
      mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, tot_recv_size+tot_send_size )
 
@@ -1899,10 +2072,9 @@ end subroutine set_group_update
      group%nvector = 0
      group%nsend   = 0
      group%nrecv   = 0
+     group%npack   = 0
+     group%nunpack = 0
      group%initialized = .false.
-     group%update_s => NULL()
-     group%update_x => NULL()
-     group%update_y => NULL()
 
   end subroutine mpp_clear_group_update
 

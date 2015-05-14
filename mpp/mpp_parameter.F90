@@ -16,20 +16,21 @@ module mpp_parameter_mod
   public :: MPP_CLOCK_DETAILED, CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, CLOCK_MODULE_DRIVER
   public :: CLOCK_MODULE, CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA, MAX_BINS
   public :: EVENT_ALLREDUCE, EVENT_BROADCAST, EVENT_RECV, EVENT_SEND, EVENT_WAIT
+  public :: EVENT_ALLTOALL
   public :: DEFAULT_TAG
   public :: COMM_TAG_1,  COMM_TAG_2,  COMM_TAG_3,  COMM_TAG_4
   public :: COMM_TAG_5,  COMM_TAG_6,  COMM_TAG_7,  COMM_TAG_8
   public :: COMM_TAG_9,  COMM_TAG_10, COMM_TAG_11, COMM_TAG_12
   public :: COMM_TAG_13, COMM_TAG_14, COMM_TAG_15, COMM_TAG_16
   public :: COMM_TAG_17, COMM_TAG_18, COMM_TAG_19, COMM_TAG_20
-
+  public :: MPP_FILL_INT,MPP_FILL_DOUBLE
 
   !--- public paramters which is used by mpp_domains_mod and its components. 
   !--- All othere modules should import these parameters from mpp_domains_mod. 
   public :: GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, BGRID_NE, BGRID_SW, CGRID_NE, CGRID_SW
   public :: DGRID_NE, DGRID_SW, FOLD_WEST_EDGE, FOLD_EAST_EDGE, FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE
   public :: WUPDATE, EUPDATE, SUPDATE, NUPDATE, XUPDATE, YUPDATE, BITWISE_EXACT_SUM, NON_BITWISE_EXACT_SUM
-  public :: MPP_DOMAIN_TIME, WEST, EAST, SOUTH, NORTH, SCALAR_BIT, SCALAR_PAIR
+  public :: MPP_DOMAIN_TIME, WEST, EAST, SOUTH, NORTH, SCALAR_BIT, SCALAR_PAIR, BITWISE_EFP_SUM
   public :: NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST
   public :: AGRID, GLOBAL, CYCLIC, DOMAIN_ID_BASE, CENTER, CORNER
   public :: MAX_DOMAIN_FIELDS, MAX_TILES
@@ -50,8 +51,13 @@ module mpp_parameter_mod
   integer, parameter :: NOTE=0, WARNING=1, FATAL=2
   integer, parameter :: MAX_CLOCKS=400, MAX_EVENT_TYPES=5, MAX_EVENTS=40000
   integer, parameter :: EVENT_ALLREDUCE=1, EVENT_BROADCAST=2, EVENT_RECV=3, EVENT_SEND=4, EVENT_WAIT=5
+  integer, parameter :: EVENT_ALLTOALL=6
   integer, parameter :: MPP_CLOCK_SYNC=1, MPP_CLOCK_DETAILED=2
   integer            :: DEFAULT_TAG = 1
+  !--- implimented to centralize _FILL_ values for land_model.F90 into mpp_mod
+  !------- instead of multiple includes of netcdf.inc and manual assignments
+  integer, parameter :: MPP_FILL_INT =-2147483647               !NF_FILL_INT
+  real,    parameter :: MPP_FILL_DOUBLE= 9.9692099683868690e+36 !NF_FILL_DOUBLE
   !--- predefined clock granularities, but you can use any integer
   !--- using CLOCK_LOOP and above may distort coarser-grain measurements
   integer, parameter :: CLOCK_COMPONENT=1      !component level, e.g model, exchange
@@ -94,6 +100,7 @@ module mpp_parameter_mod
   integer(LONG_KIND), parameter :: DOMAIN_ID_BASE=Z'0000000100000000' ! Workaround for 64bit init problem
   integer, parameter :: NON_BITWISE_EXACT_SUM=0
   integer, parameter :: BITWISE_EXACT_SUM=1
+  integer, parameter :: BITWISE_EFP_SUM=2
   integer, parameter :: MPP_DOMAIN_TIME=MPP_DEBUG+1
   integer, parameter :: MAX_DOMAIN_FIELDS=100
   integer, parameter :: MAX_TILES=100
