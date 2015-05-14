@@ -235,6 +235,7 @@ type restart_file_type
    private
    integer                                  :: unit = -1 ! mpp_io unit for netcdf file
    character(len=128)                       :: name = ''
+   integer                                  :: register_id = 0
    integer                                  :: nvar = 0
    integer                                  :: natt = 0
    integer                                  :: max_ntime = 0
@@ -394,7 +395,7 @@ end interface
 integer :: num_files_r = 0 ! number of currently opened files for reading
 integer :: num_files_w = 0 ! number of currently opened files for writing
 integer :: num_domains = 0 ! number of domains in array_domain
-integer :: num_registered_files ! mumber of files registered by calling register_restart_file
+integer :: num_registered_files = 0 ! mumber of files registered by calling register_restart_file
 
 integer :: thread_r, form
 logical :: module_is_initialized = .FALSE.
@@ -1274,7 +1275,24 @@ subroutine free_restart_type(fileObj)
   type(restart_file_type), intent(inout)      :: fileObj
   type(meta_type),pointer                :: this
   type(meta_type),pointer                :: this_p
+  integer :: id, n
 
+  !--- remove file name from registered_file
+  id = fileObj%register_id
+  if( id > num_registered_files .OR. id < 1 ) then
+     print*, " register_id = ", id, " and num_registered_files = ", num_registered_files
+     call mpp_error(FATAL, &
+        'fms_io(free_restart_type): fileObj%register_id should be between 1 and num_registered_files')
+  endif
+  if( trim(fileObj%name) .NE. trim(registered_file(id)) ) &
+     call mpp_error(FATAL, 'fms_io(free_restart_type): fileObj%name .NE. registered_file(id)')
+  do n = id+1, num_registered_files
+     registered_file(n-1) = trim(registered_file(n))
+  enddo
+  registered_file(num_registered_files) = ''
+  num_registered_files = num_registered_files - 1
+
+  fileObj%register_id = 0
   fileObj%unit = -1
   fileObj%name = ''
   fileObj%nvar = -1
@@ -4098,7 +4116,6 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
   integer                         :: cxsize, cysize
   integer                         :: dxsize, dysize
   real                            :: default_data
-  logical                         :: found = .false.
   logical                         :: is_no_domain = .false.
   logical                         :: is_scalar_or_1d = .false.
   character(len=256)              :: fname, filename2, append_string
@@ -4172,21 +4189,18 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
      allocate(fileObj%p2di(MAX_TIME_LEVEL_REGISTER, max_fields))
      allocate(fileObj%p3di(MAX_TIME_LEVEL_REGISTER, max_fields))
      !--- make sure fname is not used in other restart_file_type object.
-     found = .false.
      do i = 1, num_registered_files
         if(trim(fname) == trim(registered_file(i)) ) then
-           call mpp_error(WARNING, &
+           call mpp_error(NOTE, &
              'fms_io(setup_one_field): '//trim(fname)//' is already registered with other restart_file_type data')
-           found = .true.
            exit
         endif
      end do
-     if( .not. found ) then
-        num_registered_files = num_registered_files + 1
-        if( num_registered_files > max_files_w ) call mpp_error(WARNING, &
-            'fms_io(setup_one_field): num_registered_files > max_files_w, increase fms_io_nml max_files_w')
-        registered_file(num_registered_files) = trim(fname)
-     endif
+     num_registered_files = num_registered_files + 1
+     if( num_registered_files > max_files_w ) call mpp_error(WARNING, &
+         'fms_io(setup_one_field): num_registered_files > max_files_w, increase fms_io_nml max_files_w')
+     registered_file(num_registered_files) = trim(fname)
+     fileObj%register_id = num_registered_files
      fileObj%name = trim(fname)
      fileObj%tile_count=1
      if(present(tile_count)) fileObj%tile_count = tile_count
