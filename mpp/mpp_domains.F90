@@ -2119,6 +2119,16 @@ end interface
      module procedure mpp_global_sum_r4_4d
      module procedure mpp_global_sum_r4_5d
 #endif
+#ifndef no_8byte_integers
+     module procedure mpp_global_sum_i8_2d
+     module procedure mpp_global_sum_i8_3d
+     module procedure mpp_global_sum_i8_4d
+     module procedure mpp_global_sum_i8_5d
+#endif
+     module procedure mpp_global_sum_i4_2d
+     module procedure mpp_global_sum_i4_3d
+     module procedure mpp_global_sum_i4_4d
+     module procedure mpp_global_sum_i4_5d
   end interface
 
 !gag

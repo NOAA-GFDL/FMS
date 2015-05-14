@@ -879,7 +879,7 @@
       character(len=*), intent(in) :: name ! name of the attributes
 
       if(field%natt > 0) then
-         mpp_attribute_exist = mpp_find_att(field%Att(:),name)
+         mpp_attribute_exist = ( mpp_find_att(field%Att(:),name) > 0 )
       else
          mpp_attribute_exist = .false.
       endif
