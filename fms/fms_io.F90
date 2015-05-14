@@ -3250,7 +3250,8 @@ subroutine restore_state_border(fileObj, directory)
   integer                             :: j, n, l, k, unit
   real, allocatable, dimension(:,:,:) :: r3d
   real, allocatable, dimension(:,:)   :: r2d
-  integer                             :: isc, iec, jsc, jec, check_exist
+  integer                             :: isc, iec, jsc, jec 
+  logical                             :: check_exist
   integer                             :: i1, i2, j1, j2
   integer                             :: ishift, jshift, i_add, j_add
   integer                             :: i_glob, j_glob, k_glob
@@ -3308,7 +3309,7 @@ subroutine restore_state_border(fileObj, directory)
         check_exist = mpp_attribute_exist(fields(l),"checksum")
         checksum_file = 0
         is_there_a_checksum = .false.
-        if ( check_exist > 0 ) then
+        if ( check_exist  ) then
           call mpp_get_atts(fields(l),checksum=checksum_file)
           is_there_a_checksum = .true.
         endif
@@ -3494,7 +3495,8 @@ subroutine restore_state_all(fileObj, directory)
   real, allocatable, dimension(:)     :: r1d
   real                                :: r0d
   type(domain2d), pointer, save       :: io_domain=>NULL()
-  integer                             :: isc, iec, jsc, jec, check_exist
+  integer                             :: isc, iec, jsc, jec
+  logical                             :: check_exist
   integer                             :: isg, ieg, jsg, jeg
   integer                             :: ishift, jshift, iadd, jadd
   integer(LONG_KIND), dimension(3)    :: checksum_file
@@ -3628,7 +3630,7 @@ subroutine restore_state_all(fileObj, directory)
               check_exist = mpp_attribute_exist(fields(l),"checksum")
               checksum_file = 0
               is_there_a_checksum = .false.
-              if ( check_exist > 0 ) then
+              if ( check_exist ) then
                 call mpp_get_atts(fields(l),checksum=checksum_file)
                 is_there_a_checksum = .true.
               endif
@@ -3809,7 +3811,8 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
   real, allocatable, dimension(:)     :: r1d
   real                                :: r0d
   type(domain2d), pointer, save       :: io_domain=>NULL()
-  integer                             :: isc, iec, jsc, jec, check_exist
+  integer                             :: isc, iec, jsc, jec
+  logical                             :: check_exist
   integer                             :: isg, ieg, jsg, jeg
   integer                             :: ishift, jshift, iadd, jadd
   integer(LONG_KIND), dimension(3)    :: checksum_file ! There should be no more than 3 timelevels in a restart file.
@@ -3928,7 +3931,7 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
            check_exist = mpp_attribute_exist(fields(l),"checksum")
            checksum_file = 0
            is_there_a_checksum = .false.
-           if ( check_exist > 0 ) then
+           if ( check_exist ) then
              call mpp_get_atts(fields(l),checksum=checksum_file)
              is_there_a_checksum = .true.
            endif
@@ -6424,7 +6427,7 @@ function open_namelist_file (file) result (unit)
   else
 !  the following code is necessary for using alternate namelist files (nests, stretched grids, etc)
      pelist_name = mpp_get_current_pelist_name()
-     if ( file_exist('input_'//trim(pelist_name)//'.nml') ) then
+     if ( file_exist('input_'//trim(pelist_name)//'.nml', no_domain=.true.) ) then
         filename='input_'//trim(pelist_name)//'.nml'
      else
         filename='input.nml'
@@ -7128,11 +7131,6 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
     is_no_domain=.false.
     if(PRESENT(no_domain)) is_no_domain = no_domain
 
-    if(present(domain)) then
-       d_ptr => domain
-    elseif (ASSOCIATED(Current_domain) .AND. .NOT. is_no_domain ) then
-       d_ptr => Current_domain
-    endif
 
     fexist          = .false.
     read_dist       = .false.
@@ -7148,6 +7146,13 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
           return
        endif
     endif
+
+    if(present(domain)) then
+       d_ptr => domain
+    elseif (ASSOCIATED(Current_domain) .AND. .NOT. is_no_domain ) then
+       d_ptr => Current_domain
+    endif
+
 
     !JWD:  This is likely a temporary fix. Since fms_io needs to know tile_count,
     !JWD:  I just don't see how the physics can remain "tile neutral"
@@ -7189,6 +7194,7 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
        if(index(orig_file, '.nc', back=.true.) == 0) then
           inquire (file=trim(actual_file), exist=fexist)
           if(fexist) then
+             d_ptr => NULL()
              get_file_name = .true.
              return
           endif
