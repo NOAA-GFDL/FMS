@@ -105,7 +105,7 @@ use mpp_mod,         only: mpp_error, FATAL, NOTE, WARNING, mpp_pe, mpp_root_pe,
 use mpp_mod,         only: mpp_broadcast, ALL_PES, mpp_chksum, mpp_get_current_pelist, mpp_npes, lowercase
 use mpp_mod,         only: input_nml_file, mpp_get_current_pelist_name, uppercase
 use mpp_mod,         only: mpp_gather, mpp_scatter, mpp_send, mpp_recv, mpp_sync_self, COMM_TAG_1, EVENT_RECV
-use mpp_mod,	     only: MPP_FILL_DOUBLE,MPP_FILL_INT
+use mpp_mod,         only: MPP_FILL_DOUBLE,MPP_FILL_INT
 
 use platform_mod, only: r8_kind
 
@@ -188,7 +188,7 @@ type var_type
    logical                                :: initialized ! indicate if the field is read or not in routine save_state.
    logical                                :: mandatory   ! indicate if the field is mandatory to be when restart.
    integer                                :: is, ie, js, je  ! index of the data in compute domain
-   real                                   :: default_data 
+   real                                   :: default_data
    character(len=8)                       :: compressed_axis !< If on a compressed axis, which axis
    integer, dimension(:), allocatable     :: pelist
    integer                                :: ishift, jshift ! can be used to shift indices when no_domain=T
@@ -1188,7 +1188,7 @@ subroutine register_restart_axis_i1d(fileObj,filename,fieldname,data,compressed,
      call mpp_error(FATAL,'fms_io(register_restart_axis_r1d): Axis must be one of C or H ' // &
           'but has value '//trim(compressed_axis))
   end select
-  
+
   if(.not. ALLOCATED(fileObj%axes)) allocate(fileObj%axes(NIDX))
   if(ALLOCATED(fileObj%axes(idx)%idx)) &
                  call mpp_error(FATAL,'fms_io(register_restart_axis_i1d): Compressed axis ' //&
@@ -1593,13 +1593,13 @@ function register_restart_field_i0d(fileObj, filename, fieldname, data, domain, 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_i0d): need to call fms_io_init')
 
   if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i0d): data_default and data different KIND()')
-  data_default_r = TRANSFER(MPP_FILL_INT,data_default_r) 
+  data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
   if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
 
   call setup_one_field(fileObj, filename, fieldname, (/1, 1, 1, 1/), index_field, domain, &
                        mandatory, no_domain=no_domain, scalar_or_1d=.true., position=position, tile_count=tile_count, &
                           data_default=data_default_r, longname=longname, units=units, read_only=read_only)
-  
+
   fileObj%p0di(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 0
   register_restart_field_i0d = index_field
@@ -1633,7 +1633,7 @@ function register_restart_field_i1d(fileObj, filename, fieldname, data, domain, 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_i1d): need to call fms_io_init')
 
   if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i1d): data_default and data different KIND()')
-  data_default_r = TRANSFER(MPP_FILL_INT,data_default_r) 
+  data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
   if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
 
   call setup_one_field(fileObj, filename, fieldname, (/size(data,1), 1, 1, 1/), index_field, domain, &
@@ -1678,9 +1678,9 @@ function register_restart_field_i2d(fileObj, filename, fieldname, data, domain, 
   if(present(compressed)) is_compressed=compressed
 
   if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i2d): data_default and data different KIND()')
-  data_default_r = TRANSFER(MPP_FILL_INT,data_default_r) 
+  data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
   if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
-  
+
   call setup_one_field(fileObj, filename, fieldname, (/size(data,1), size(data,2), 1, 1/), &
                        index_field, domain, mandatory, no_domain, is_compressed, &
                        position, tile_count, data_default_r, longname, units, compressed_axis, &
@@ -1717,9 +1717,9 @@ function register_restart_field_i3d(fileObj, filename, fieldname, data, domain, 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_i3d): need to call fms_io_init')
 
   if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i3d): data_default and data different KIND()')
-  data_default_r = TRANSFER(MPP_FILL_INT,data_default_r) 
+  data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
   if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
-  
+
   call setup_one_field(fileObj, filename, fieldname, (/size(data,1), size(data,2), size(data,3), 1/), &
                        index_field, domain, mandatory, no_domain, .false., &
                        position, tile_count, data_default_r, longname, units, read_only=read_only)
@@ -2113,7 +2113,7 @@ end function register_restart_region_r3d
 
 !-------------------------------------------------------------------------------
 !
-!  saves all registered variables to restart files. Those variables are set 
+!  saves all registered variables to restart files. Those variables are set
 !  through register_restart_field
 !
 !-------------------------------------------------------------------------------
@@ -2374,7 +2374,7 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
           endif
        else
         call mpp_error(FATAL, "fms_io(save_compressed_restart): "//trim(cur_var%name)//" in file "// &
-           trim(fileObj%name)//" has more than two dimension (not including time level)")        
+           trim(fileObj%name)//" has more than two dimension (not including time level)")
        endif
 
        cpack = pack_size  ! Default size of real
@@ -2655,7 +2655,7 @@ subroutine save_default_restart(fileObj,restartpath)
   endif
   !--- always write out from root pe
   if( fileObj%is_root_pe ) write_on_this_pe = .true.
-  
+
   if( domain_present ) then
      call mpp_open(unit,trim(restartpath),action=MPP_OVERWR,form=form,&
           is_root_pe=fileObj%is_root_pe, domain=array_domain(fileObj%var(ind_dom)%domain_idx) )
@@ -2956,7 +2956,7 @@ subroutine save_default_restart(fileObj,restartpath)
 end subroutine save_default_restart
 !-------------------------------------------------------------------------------
 !
-!  saves all registered border/halo variables to restart files. Those variables 
+!  saves all registered border/halo variables to restart files. Those variables
 !  are set through register_restart_field (region option)
 !
 !-------------------------------------------------------------------------------
@@ -3037,7 +3037,7 @@ subroutine save_restart_border (fileObj, time_stamp, directory)
       if(fileObj%var(l)%read_only) cycle
       if (fileObj%var(l)%id_axes(1) == j) exit
     end do
-    if( l > fileObj%nvar ) cycle  
+    if( l > fileObj%nvar ) cycle
     naxes_x = naxes_x + 1
     x_axes_indx(naxes_x) = j
     if (naxes_x < 10) then
@@ -3120,9 +3120,9 @@ subroutine save_restart_border (fileObj, time_stamp, directory)
       end if
     else
       call mpp_error(FATAL, "fms_io(save_restart_border): "//trim(cur_var%name)//" in file "// &
-         trim(fileObj%name)//" has more than three dimension (not including time level)")      
+         trim(fileObj%name)//" has more than three dimension (not including time level)")
     end if
-   
+
 ! cycle the loop for pes not a member of the current pelist
     if (.not.ANY(mpp_pe().eq.cur_var%pelist(:))) cycle
 
@@ -3151,8 +3151,8 @@ subroutine save_restart_border (fileObj, time_stamp, directory)
           i_glob = cur_var%gsiz(1)
           j_glob = cur_var%gsiz(2)
           if (fileObj%is_root_pe) allocate(r2d(i_glob, j_glob))
-          call mpp_gather(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, cur_var%pelist, & 
-                          fileObj%p2dr(k,j)%p(i1:i2,j1:j2), & 
+          call mpp_gather(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, cur_var%pelist, &
+                          fileObj%p2dr(k,j)%p(i1:i2,j1:j2), &
                           r2d, fileObj%is_root_pe)
           check_val(k) = mpp_chksum(r2d, (/mpp_pe()/))
           if (allocated(r2d)) deallocate(r2d)
@@ -3214,7 +3214,7 @@ subroutine save_restart_border (fileObj, time_stamp, directory)
           i_glob = cur_var%gsiz(1)
           j_glob = cur_var%gsiz(2)
           if (fileObj%is_root_pe) allocate(r2d(i_glob, j_glob))
-          call mpp_gather(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, cur_var%pelist, & 
+          call mpp_gather(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, cur_var%pelist, &
                           fileObj%p2dr(k,j)%p(i1:i2,j1:j2),   r2d, fileObj%is_root_pe)
           call mpp_write(unit, cur_var%field, r2d, tlev)
           if (allocated(r2d)) deallocate(r2d)
@@ -3246,18 +3246,18 @@ end subroutine save_restart_border
 
 !-------------------------------------------------------------------------------
 !
-!  restores all registered border/halo variables to restart files. Those 
+!  restores all registered border/halo variables to restart files. Those
 !  variables are set through register_restart_field (region option)
 !
 !-------------------------------------------------------------------------------
 subroutine restore_state_border(fileObj, directory)
   type(restart_file_type), intent(inout)       :: fileObj
   character(len=*),      intent(in), optional  :: directory
-! Arguments: 
+! Arguments:
 !  (in)      directory - The directory where the restart or save
 !                        files should be found. The default is 'INPUT'
-  character(len=128) :: dir    
-  character(len=256) :: restartpath ! The restart file path (dir/file). 
+  character(len=128) :: dir
+  character(len=256) :: restartpath ! The restart file path (dir/file).
   character(len=200) :: filepath    ! The path (dir/file) to the file being opened.
   character(len=80)  :: varname     ! A variable's name.
   character(len=256) :: mesg        ! Message to be constructed for checksum error.
@@ -3268,7 +3268,7 @@ subroutine restore_state_border(fileObj, directory)
   integer                             :: j, n, l, k, unit
   real, allocatable, dimension(:,:,:) :: r3d
   real, allocatable, dimension(:,:)   :: r2d
-  integer                             :: isc, iec, jsc, jec 
+  integer                             :: isc, iec, jsc, jec
   logical                             :: check_exist
   integer                             :: i1, i2, j1, j2
   integer                             :: ishift, jshift, i_add, j_add

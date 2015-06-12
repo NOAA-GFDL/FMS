@@ -1,5 +1,5 @@
     subroutine MPP_READ_COMPRESSED_1D_(unit, field, domain, data, tindex)
-      integer, intent(in) :: unit 
+      integer, intent(in) :: unit
       type(fieldtype), intent(in) :: field
       type(domain2D),  intent(in) :: domain
       MPP_TYPE_, intent(inout) :: data(:)
@@ -41,12 +41,12 @@
          call read_record(unit,field,size(data(:,:)),data,tindex,start_in=start, axsiz_in=nread)
       else if( threading_flag == MPP_SINGLE ) then
 
-         io_domain=>mpp_get_io_domain(domain) 
+         io_domain=>mpp_get_io_domain(domain)
          if(.not. ASSOCIATED(io_domain)) call mpp_error( FATAL, 'MPP_READ_COMPRESSED_2D_: io_domain must be defined.' )
          npes = mpp_get_domain_npes(io_domain)
          allocate(pelist(npes))
          call mpp_get_pelist(io_domain,pelist)
-         
+
          if(mpp_pe() == pelist(1)) call read_record(unit,field,size(data(:,:)),data,tindex,start_in=start, axsiz_in=nread)
 
          !--- z1l replace mpp_broadcast with mpp_send/mpp_recv to avoid hang in calling MPI_COMM_CREATE
@@ -70,15 +70,15 @@
       compute_chksum = .FALSE.
       if (ANY(field%checksum /= default_field%checksum) ) compute_chksum = .TRUE.
 
-      if (compute_chksum) then 
-         if (field%type==NF_INT) then 
+      if (compute_chksum) then
+         if (field%type==NF_INT) then
             if (CEILING(field%fill) /= MPP_FILL_INT ) then
-               call mpp_error(NOTE,"During mpp_io(read_compressed) int field "//trim(field%name)// & 
-							 " found integer fill /= MPP_FILL_INT. Confirm this is what you want.")
-               chk = mpp_chksum( ceiling(data), mask_val=field%fill)  
+               call mpp_error(NOTE,"During mpp_io(read_compressed) int field "//trim(field%name)// &
+                                                         " found integer fill /= MPP_FILL_INT. Confirm this is what you want.")
+               chk = mpp_chksum( ceiling(data), mask_val=field%fill)
             else
-               chk = mpp_chksum( ceiling(data), mask_val=CEILING(field%fill) )  
-            end if    
+               chk = mpp_chksum( ceiling(data), mask_val=CEILING(field%fill) )
+            end if
          else !!real
             chk = mpp_chksum(data,mask_val=field%fill)
          end if
