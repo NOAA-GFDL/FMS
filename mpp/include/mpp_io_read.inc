@@ -21,6 +21,8 @@
 #define MPP_READ_COMPRESSED_1D_ mpp_read_compressed_r1d
 #undef MPP_READ_COMPRESSED_2D_
 #define MPP_READ_COMPRESSED_2D_ mpp_read_compressed_r2d
+#undef MPP_READ_COMPRESSED_3D_
+#define MPP_READ_COMPRESSED_3D_ mpp_read_compressed_r3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
 #include <mpp_read_compressed.h>

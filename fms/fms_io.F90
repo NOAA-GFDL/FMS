@@ -133,7 +133,8 @@ integer, parameter, private :: ZIDX=4
 integer, parameter, private :: HIDX=5
 integer, parameter, private :: TIDX=6
 integer, parameter, private :: UIDX=7
-integer, parameter, private :: NIDX=7
+integer, parameter, private :: CCIDX=8
+integer, parameter, private :: NIDX=8
 
 type meta_type
   type(meta_type), pointer :: prev=>null(), next=>null()
@@ -291,6 +292,7 @@ interface read_compressed
    module procedure read_compressed_i2d
    module procedure read_compressed_1d
    module procedure read_compressed_2d
+   module procedure read_compressed_3d
 end interface read_compressed
 
 interface write_data
@@ -1128,8 +1130,10 @@ subroutine register_restart_axis_r1d(fileObj,filename,fieldname,data,cartesian,u
       idx = ZIDX
     case('T')
       idx = TIDX
+    case('CC')
+      idx = CCIDX
     case default
-      call mpp_error(FATAL,'fms_io(register_restart_axis_r1d): Axis must be one of X,Y or Z ' // &
+      call mpp_error(FATAL,'fms_io(register_restart_axis_r1d): Axis must be one of X,Y,Z,T or CC ' // &
                                                            'but has value '//trim(cartesian))
   end select
   if(.not. ALLOCATED(fileObj%axes)) allocate(fileObj%axes(NIDX))
@@ -1509,7 +1513,8 @@ end function register_restart_field_r2d
 !
 !-------------------------------------------------------------------------------
 function register_restart_field_r3d(fileObj, filename, fieldname, data, domain, mandatory, &
-                             no_domain, position, tile_count, data_default, longname, units, read_only)
+                             no_domain, position, tile_count, data_default, longname, units, read_only, &
+                             compressed, compressed_axis)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
   real,     dimension(:,:,:), intent(in), target :: data
@@ -1518,15 +1523,22 @@ function register_restart_field_r3d(fileObj, filename, fieldname, data, domain, 
   logical,          optional, intent(in)         :: no_domain
   integer,          optional, intent(in)         :: position, tile_count
   logical,          optional, intent(in)         :: mandatory
-  character(len=*), optional, intent(in)         :: longname, units
+  character(len=*), optional, intent(in)         :: longname, units, compressed_axis
   logical,          optional, intent(in)         :: read_only
+  logical,          optional, intent(in)         :: compressed
+  logical                                        :: is_compressed
   integer                                        :: index_field
   integer                                        :: register_restart_field_r3d
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_r3d): need to call fms_io_init')
+  if(present(compressed)) then
+    is_compressed=compressed
+  else
+    is_compressed = .false.
+  endif
   call setup_one_field(fileObj, filename, fieldname, (/size(data,1), size(data,2), size(data,3), 1/), &
-                       index_field, domain, mandatory, no_domain, .false., &
-                       position, tile_count, data_default, longname, units, read_only=read_only)
+                       index_field, domain, mandatory, no_domain, is_compressed, &
+                       position, tile_count, data_default, longname, units, compressed_axis, read_only=read_only)
   fileObj%p3dr(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 3
   register_restart_field_r3d = index_field
@@ -2213,13 +2225,13 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
 
   ! If append is present and append=.false.:
   !   Behaves the same was as if it were not present. That is, meta data is
-  !   written and whether or not field data is written is determined time_level.
+  !   written and whether or not field data is written is determined by time_level.
 
   logical, intent(in), optional :: append
   real,    intent(in), optional :: time_level
 
   integer            :: unit                 ! The mpp unit of the open file.
-  type(axistype)                      :: x_axis, y_axis, z_axis
+  type(axistype)                      :: x_axis, y_axis, z_axis, CC_axis, other_axis
   type(axistype)                      :: t_axis, c_axis, h_axis  ! time & sparse compressed vector axes
   type(axistype)                      :: comp_axis
   logical                             :: naxis_z=.false.
@@ -2233,7 +2245,7 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
   integer(LONG_KIND), allocatable, dimension(:)    :: check_val
   character(len=256)                  :: checksum_char
   logical                             :: domain_present, write_meta_data, write_field_data
-  logical                             :: c_axis_defined, h_axis_defined
+  logical                             :: c_axis_defined, h_axis_defined, CC_axis_defined
   type(domain2d), pointer :: domain =>NULL()
   type(ax_type),  pointer :: axis   =>NULL()
 
@@ -2304,6 +2316,14 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
        naxis_z = .true.
     endif
 
+    axis => fileobj%axes(CCIDX)
+    if(ASSOCIATED(axis%data))then
+       call mpp_write_meta(unit,CC_axis,axis%name,axis%units,axis%longname,data=axis%data,cartesian='CC')
+       CC_axis_defined = .TRUE.
+    else
+       CC_axis_defined = .FALSE.
+    endif
+
     ! The compressed axis
     axis => fileObj%axes(CIDX)
     if(ALLOCATED(axis%idx)) then
@@ -2344,11 +2364,16 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
        select case (trim(cur_var%compressed_axis))
        case ('C')
           comp_axis = c_axis
+          other_axis = z_axis
+       case ('C_CC')
+          comp_axis = c_axis
+          other_axis = CC_axis
        case ('H')
           comp_axis = h_axis
        case default
           if (ALLOCATED(fileObj%axes(CIDX)%idx)) then
              comp_axis = c_axis
+             other_axis = z_axis
           else
              comp_axis = h_axis
           endif
@@ -2367,14 +2392,23 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
        elseif(cur_var%ndim == 2) then
           num_var_axes = 2
           var_axes(1) = comp_axis
-          var_axes(2) = z_axis
+          var_axes(2) = other_axis
           if(cur_var%siz(4) == fileObj%max_ntime) then
              num_var_axes = 3
              var_axes(3) = t_axis
           endif
+       elseif(cur_var%ndim == 3) then
+          num_var_axes = 3
+          var_axes(1) = comp_axis
+          var_axes(2) = z_axis
+          var_axes(3) = CC_axis
+          if(cur_var%siz(4) == fileObj%max_ntime) then
+             num_var_axes = 4
+             var_axes(4) = t_axis
+          endif
        else
         call mpp_error(FATAL, "fms_io(save_compressed_restart): "//trim(cur_var%name)//" in file "// &
-           trim(fileObj%name)//" has more than two dimension (not including time level)")
+           trim(fileObj%name)//" has more than three dimensions (not including time level)")
        endif
 
        cpack = pack_size  ! Default size of real
@@ -2387,8 +2421,7 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
            else if ( Associated(fileObj%p2dr(k,j)%p) ) then
               check_val(k) = mpp_chksum(fileObj%p2dr(k,j)%p(:,:), mask_val=cur_var%default_data)
            else if ( Associated(fileObj%p3dr(k,j)%p) ) then
-              call mpp_error(FATAL, "fms_io(save_compressed_restart): real 3D restart fields are not currently supported"// &
-                   trim(cur_var%name)//" of file "//trim(fileObj%name) )
+              check_val(k) = mpp_chksum(fileObj%p3dr(k,j)%p(:,:,:))
            else if ( Associated(fileObj%p0di(k,j)%p) ) then
               check_val(k) = fileObj%p0di(k,j)%p
               cpack = 0  ! Write data as integer*4
@@ -2423,6 +2456,7 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
     call mpp_write(unit,y_axis)
     if (c_axis_defined) call mpp_write(unit,c_axis)
     if (h_axis_defined) call mpp_write(unit,h_axis)
+    if (CC_axis_defined) call mpp_write(unit,CC_axis)
     if(naxis_z) call mpp_write(unit,z_axis)
 
   endif ! End of section to write meta data. Write meta data only if not appending.
@@ -2462,6 +2496,9 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
                      fileObj%axes(idx)%nelems(:), tstamp=tlev, default_data=cur_var%default_data)
              elseif ( Associated(fileObj%p2dr(k,j)%p) ) then
                 call mpp_write_compressed(unit, cur_var%field, domain, fileObj%p2dr(k,j)%p, &
+                     fileObj%axes(idx)%nelems(:), tstamp=tlev, default_data=cur_var%default_data)
+             elseif ( Associated(fileObj%p3dr(k,j)%p) ) then
+                call mpp_write_compressed(unit, cur_var%field, domain, fileObj%p3dr(k,j)%p, &
                      fileObj%axes(idx)%nelems(:), tstamp=tlev, default_data=cur_var%default_data)
              elseif ( Associated(fileObj%p0di(k,j)%p) ) then
                 r0d =  fileObj%p0di(k,j)%p
@@ -5023,6 +5060,48 @@ subroutine read_compressed_2d(filename,fieldname,data,domain,timelevel,start,nre
   endif
   d_ptr =>NULL()
 end subroutine read_compressed_2d
+
+!.....................................................................
+subroutine read_compressed_3d(filename,fieldname,data,domain,timelevel)
+  character(len=*), intent(in)           :: filename, fieldname
+  real, dimension(:,:,:), intent(inout)  :: data     !3 dimensional data
+  type(domain2d), target, optional, intent(in) :: domain
+  integer, intent(in) , optional         :: timelevel
+
+  character(len=256)            :: fname
+  integer                       :: unit
+  integer                       :: file_index  ! index of the opened file in array files
+  integer                       :: index_field ! position of the fieldname in the list of variables
+  logical                       :: read_dist, io_domain_exist, found_file
+  type(domain2d), pointer, save :: d_ptr =>NULL()
+  type(domain2d), pointer, save :: io_domain =>NULL()
+
+! Initialize files to default values
+  if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(read_compressed_3d):  module not initialized')
+
+  if(PRESENT(domain))then
+     d_ptr => domain
+  elseif (ASSOCIATED(Current_domain)) then
+     d_ptr => Current_domain
+  else
+     call mpp_error(FATAL,'fms_io(read_compressed_3d): Domain must be an argument or set by set_domain()')
+  endif
+
+  found_file = get_file_name(filename, fname, read_dist, io_domain_exist, domain=d_ptr)
+  if(.not. found_file) then
+     found_file = get_file_name(filename, fname, read_dist, io_domain_exist, no_domain=.true. )
+  endif
+  if(.not.found_file) call mpp_error(FATAL, 'fms_io_mod(read_compressed_3d): file ' //trim(filename)// &
+          '(with the consideration of tile number) and corresponding distributed file are not found')
+  call get_file_unit(fname, unit, file_index, read_dist, io_domain_exist, domain=d_ptr)
+  call get_field_id(unit, file_index, fieldname, index_field, .false., .false. )
+
+  if (files_read(file_index)%var(index_field)%is_dimvar) then
+     call mpp_get_axis_data(files_read(file_index)%var(index_field)%axis,data(:,1,1))
+  else
+  endif
+  d_ptr =>NULL()
+end subroutine read_compressed_3d
 
 !.....................................................................
 subroutine read_distributed_a1D(unit,fmt,iostat,data)

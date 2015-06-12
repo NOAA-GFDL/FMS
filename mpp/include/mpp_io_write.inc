@@ -1064,6 +1064,8 @@
 #define MPP_WRITE_COMPRESSED_1D_ mpp_write_compressed_r1d
 #undef MPP_WRITE_COMPRESSED_2D_
 #define MPP_WRITE_COMPRESSED_2D_ mpp_write_compressed_r2d
+#undef MPP_WRITE_COMPRESSED_3D_
+#define MPP_WRITE_COMPRESSED_3D_ mpp_write_compressed_r3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
 #include <mpp_write_compressed.h>
