@@ -1,4 +1,3 @@
-
 ! -*-f90-*-
 ! $Id$
 
@@ -22,6 +21,8 @@
 #define MPP_READ_COMPRESSED_1D_ mpp_read_compressed_r1d
 #undef MPP_READ_COMPRESSED_2D_
 #define MPP_READ_COMPRESSED_2D_ mpp_read_compressed_r2d
+#undef MPP_READ_COMPRESSED_3D_
+#define MPP_READ_COMPRESSED_3D_ mpp_read_compressed_r3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
 #include <mpp_read_compressed.h>
@@ -33,7 +34,7 @@
       type(fieldtype), intent(in)    :: field
       integer,         intent(in)    :: nwords
       real,            intent(inout) :: data(nwords)
-      integer,         intent(in)    :: start(:), axsiz(:) 
+      integer,         intent(in)    :: start(:), axsiz(:)
 
       integer(SHORT_KIND) :: i2vals(nwords)
 !rab used in conjunction with transfer intrinsic to determine size of a variable
@@ -118,7 +119,7 @@
              case default
                 call mpp_error( FATAL, 'MPP_READ: invalid pack value' )
           end select
-#else 
+#else
       call mpp_error( FATAL, 'MPP_READ currently requires use_netCDF option' )
 #endif
 
@@ -152,7 +153,7 @@
       integer, dimension(size(field%axes(:))) :: start, axsiz
 
       integer :: tlevel !,subdomain(4)
-      
+
 
       integer :: i, error, is, ie, js, je, isg, ieg, jsg, jeg
       type(domain2d), pointer :: io_domain=>NULL()
@@ -224,11 +225,11 @@
                  else   !--- z1l fix a problem related obc when npes = 1
                     if( ie-is+1.NE.ieg-isg+1 )then
                        start(1) = is - isg + 1
-                       axsiz(1) = ie - is + 1 
+                       axsiz(1) = ie - is + 1
                     end if
                     if( je-js+1.NE.jeg-jsg+1 )then
                        start(2) = js - jsg + 1
-                       axsiz(2) = je - js + 1 
+                       axsiz(2) = je - js + 1
                     end if
                  end if
               else if( mpp_file(unit)%io_domain_exist ) then
@@ -239,8 +240,8 @@
                  start(2) = js - jsg + 1
                  io_domain => NULL()
               end if
-          end if  
-      endif        
+          end if
+      endif
       if( verbose )print '(a,2i6,i6,12i4)', 'READ_RECORD: PE, unit, nwords, start, axsiz=', pe, unit, nwords, start, axsiz
 
       call read_record_core(unit, field, nwords, data, start, axsiz)
@@ -275,35 +276,35 @@
       type(fieldtype), intent(in) :: field
       real, intent(inout) :: data(:,:,:)
       integer, intent(in), optional :: tindex
-      
+
       call read_record( unit, field, size(data(:,:,:)), data, tindex )
     end subroutine mpp_read_r3D
-      
+
     subroutine mpp_read_r2D( unit, field, data, tindex )
       integer, intent(in) :: unit
       type(fieldtype), intent(in) :: field
       real, intent(inout) :: data(:,:)
       integer, intent(in), optional :: tindex
-      
+
       call read_record( unit, field, size(data(:,:)), data, tindex )
     end subroutine mpp_read_r2D
-      
+
     subroutine mpp_read_r1D( unit, field, data, tindex )
       integer, intent(in) :: unit
       type(fieldtype), intent(in) :: field
       real, intent(inout) :: data(:)
       integer, intent(in), optional :: tindex
-      
+
       call read_record( unit, field, size(data(:)), data, tindex )
     end subroutine mpp_read_r1D
-      
+
     subroutine mpp_read_r0D( unit, field, data, tindex )
       integer, intent(in) :: unit
       type(fieldtype), intent(in) :: field
       real, intent(inout) :: data
       integer, intent(in), optional :: tindex
       real, dimension(1) :: data_tmp
-      
+
       data_tmp(1)=data
       call read_record( unit, field, 1, data_tmp, tindex )
       data=data_tmp(1)
@@ -323,7 +324,7 @@
       endif
       if(nread(3) .NE. 1 .OR. nread(4) .NE. 1) call mpp_error(FATAL, &
           "mpp_io_read.inc(mpp_read_region_r2D): nread(3) and nread(4) must be 1")
-      call read_record_core(unit, field, nread(1)*nread(2), data, start, nread)      
+      call read_record_core(unit, field, nread(1)*nread(2), data, start, nread)
 
       return
 
@@ -352,7 +353,7 @@
     end subroutine mpp_read_region_r3D
 
 
-    !--- Assume the text field is at most two-dimensional 
+    !--- Assume the text field is at most two-dimensional
     !--- the level is always for the first dimension
     subroutine mpp_read_text( unit, field, data, level )
       integer,             intent(in) :: unit
@@ -395,13 +396,13 @@
          end select
 
          if( verbose )print '(a,2i6,i6,12i4)', 'mpp_read_text: PE, unit, nwords, start, axsiz=', pe, unit, len(data), start, axsiz
-          
+
           select case (field%type)
              case(NF_CHAR)
                 if(field%ndim==1) then
-                   error = NF_GET_VAR_TEXT(mpp_file(unit)%ncid, field%id, text) 
+                   error = NF_GET_VAR_TEXT(mpp_file(unit)%ncid, field%id, text)
                 else
-                   error = NF_GET_VARA_TEXT(mpp_file(unit)%ncid, field%id, start, axsiz, text) 
+                   error = NF_GET_VARA_TEXT(mpp_file(unit)%ncid, field%id, start, axsiz, text)
                 end if
                 call netcdf_err( error, mpp_file(unit), field=field )
                 do n = 1, len_trim(text)
@@ -414,9 +415,9 @@
           end select
       else                      !non-netCDF
           call mpp_error( FATAL, 'Currently dont support non-NetCDF mpp read' )
-          
+
       end if
-#else 
+#else
       call mpp_error( FATAL, 'mpp_read_text currently requires use_netCDF option' )
 #endif
       return
@@ -448,7 +449,7 @@
 !   </NOTE>
 ! </SUBROUTINE>
     subroutine mpp_read_meta(unit)
-!   
+!
 ! read file attributes including dimension and variable attributes
 ! and store in filetype structure.  All of the file information
 ! with the exception of the (variable) data is stored.  Attributes
@@ -457,7 +458,7 @@
 ! every PE is eligible to call mpp_read_meta
 !
       integer, intent(in) :: unit
-      
+
       integer         :: ncid,ndim,nvar_total,natt,recdim,nv,nvar,len
       integer :: error, i, j, istat, check_exist
       integer         :: type, nvdims, nvatts, dimid
@@ -467,7 +468,7 @@
       integer(LONG_KIND) :: checksumf
       character(len=64)  :: checksum_char
       integer :: num_checksumf, last, is, k
-      
+
       integer(SHORT_KIND), allocatable :: i2vals(:)
       integer(INT_KIND), allocatable :: ivals(:)
       real(FLOAT_KIND), allocatable  :: rvals(:)
@@ -479,12 +480,12 @@
         ncid = mpp_file(unit)%ncid
         error = NF_INQ(ncid,ndim, nvar_total,&
                       natt, recdim);call netcdf_err( error, mpp_file(unit) )
-                      
-                      
+
+
         mpp_file(unit)%ndim = ndim
         mpp_file(unit)%natt = natt
         mpp_file(unit)%recdimid = recdim
-!       
+!
 ! if no recdim exists, recdimid = -1
 ! variable id of unlimdim and length
 !
@@ -496,12 +497,12 @@
         else
            mpp_file(unit)%time_level = -1 ! set to zero so mpp_get_info returns ntime=0 if no time axis present
         endif
-           
+
         allocate(mpp_file(unit)%Att(natt))
         allocate(dimids(ndim))
         allocate(mpp_file(unit)%Axis(ndim))
-        
-!       
+
+!
 ! initialize fieldtype and axis type
 !
 
@@ -509,12 +510,12 @@
         do i=1,ndim
            mpp_file(unit)%Axis(i) = default_axis
         enddo
-           
+
         do i=1,natt
            mpp_file(unit)%Att(i) = default_att
         enddo
-           
-!       
+
+!
 ! assign global attributes
 !
         do i=1,natt
@@ -523,7 +524,7 @@
            mpp_file(unit)%Att(i)%name = name
            mpp_file(unit)%Att(i)%len = len
            mpp_file(unit)%Att(i)%type = type
-!          
+!
 !  allocate space for att data and assign
 !
            select case (type)
@@ -538,7 +539,7 @@
                      call netcdf_err( error, mpp_file(unit), attr=mpp_file(unit)%att(i) )
                      if (verbose.and.pe == 0) print *, 'GLOBAL ATT ',trim(name),' ',mpp_file(unit)%Att(i)%catt(1:len)
                  endif
-!                    
+!
 ! store integers in float arrays
 !
               case (NF_SHORT)
@@ -616,9 +617,9 @@
                  if( verbose .and. pe == 0)print *, 'GLOBAL ATT ',trim(name),' ',mpp_file(unit)%Att(i)%fatt(1:len)
                  deallocate(r8vals)
            end select
-                 
+
         enddo
-!       
+!
 ! assign dimension name and length
 !
         do i=1,ndim
@@ -626,7 +627,7 @@
            mpp_file(unit)%Axis(i)%name = name
            mpp_file(unit)%Axis(i)%len = len
         enddo
-           
+
         nvar=0
         do i=1, nvar_total
            error=NF_INQ_VAR(ncid,i,name,type,nvdims,dimids,nvatts);call netcdf_err( error, mpp_file(unit) )
@@ -638,12 +639,12 @@
         enddo
         mpp_file(unit)%nvar = nvar
         allocate(mpp_file(unit)%Var(nvar))
-        
+
         do i=1,nvar
            mpp_file(unit)%Var(i) = default_field
         enddo
-           
-!       
+
+!
 ! assign dimension info
 !
         do i=1, nvar_total
@@ -652,7 +653,7 @@
            do j=1,ndim
               if( trim(lowercase(name)).EQ.trim(lowercase(mpp_file(unit)%Axis(j)%name)) )isdim=.true.
            enddo
-              
+
            if( isdim )then
               error=NF_INQ_DIMID(ncid,name,dimid);call netcdf_err( error, mpp_file(unit), string=' Axis='//name )
               mpp_file(unit)%Axis(dimid)%type = type
@@ -716,7 +717,7 @@
                  case default
                     call mpp_error( FATAL, 'Invalid data type for dimension' )
                  end select
-             else   
+             else
                  len = mpp_file(unit)%time_level
                  if( len > 0 ) then
                     allocate(mpp_file(unit)%time_values(len), STAT=istat)
@@ -733,7 +734,7 @@
                           call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array rvals.  STAT = "&
                                & //trim(text))
                        end if
-                       !z1l read from root pe and broadcast to other processor. 
+                       !z1l read from root pe and broadcast to other processor.
                        !In the future we will modify the code if there is performance issue for very high MPI ranks.
                        if(mpp_pe()==mpp_root_pe()) then
                           error = NF_GET_VAR_REAL(ncid,i,rvals)
@@ -749,7 +750,7 @@
                           call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate temporary array r8vals.  STAT = "&
                             & //trim(text))
                        end if
-                       !z1l read from root pe and broadcast to other processor. 
+                       !z1l read from root pe and broadcast to other processor.
                        !In the future we will modify the code if there is performance issue for very high MPI ranks.
                        if(mpp_pe()==mpp_root_pe()) then
                          error = NF_GET_VAR_DOUBLE(ncid,i,r8vals)
@@ -762,23 +763,23 @@
                        call mpp_error( FATAL, 'Invalid data type for dimension' )
                     end select
                  endif
-              endif 
+              endif
               ! assign dimension atts
               if( nvatts.GT.0 )allocate(mpp_file(unit)%Axis(dimid)%Att(nvatts))
-              
+
               do j=1,nvatts
                  mpp_file(unit)%Axis(dimid)%Att(j) = default_att
               enddo
-                 
+
               do j=1,nvatts
                  error=NF_INQ_ATTNAME(ncid,i,j,attname);call netcdf_err( error, mpp_file(unit) )
                  error=NF_INQ_ATT(ncid,i,trim(attname),type,len)
                  call netcdf_err( error, mpp_file(unit), string=' Attribute='//attname )
-                 
+
                  mpp_file(unit)%Axis(dimid)%Att(j)%name = trim(attname)
                  mpp_file(unit)%Axis(dimid)%Att(j)%type = type
                  mpp_file(unit)%Axis(dimid)%Att(j)%len = len
-                 
+
                  select case (type)
                  case (NF_CHAR)
                     if (len.gt.512) call mpp_error(FATAL,'DIM ATT too long')
@@ -911,10 +912,10 @@
                        mpp_file(unit)%Axis(dimid)%sense=1
                     endif
                  end select
-                    
+
               enddo
            endif
-        enddo 
+        enddo
 
         ! assign axis bounds
         do j = 1, mpp_file(unit)%ndim
@@ -929,7 +930,7 @@
                    trim(mpp_file(unit)%Axis(j)%Att(i)%name) == 'edges' ) then
                  bounds_name = mpp_file(unit)%Axis(j)%Att(i)%catt
                  found_bounds = .true.
-                 exit 
+                 exit
               endif
            enddo
            !-- loop through all the fields to locate bounds_name
@@ -969,7 +970,7 @@
                              write(text,'(A)') istat
                              call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate array ivals."//&
                                   "  STAT = "//trim(text))
-                          end if            
+                          end if
                           error = NF_GET_VAR_INT(ncid,i,ivals)
                           call netcdf_err( error, mpp_file(unit), string=" Field="//trim(bounds_name) )
                           mpp_file(unit)%Axis(j)%data_bounds(1:len) =ivals(1:(2*len-1):2)
@@ -981,7 +982,7 @@
                              write(text,'(A)') istat
                              call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate array rvals. "// &
                                   "  STAT = "//trim(text))
-                          end if            
+                          end if
                           error = NF_GET_VAR_REAL(ncid,i,rvals)
                           call netcdf_err( error, mpp_file(unit), string=" Field="//trim(bounds_name) )
                           mpp_file(unit)%Axis(j)%data_bounds(1:len) =rvals(1:(2*len-1):2)
@@ -993,7 +994,7 @@
                              write(text,'(A)') istat
                              call mpp_error(FATAL, "mpp_io_mod(mpp_read_meta): Unable to allocate array r8vals. "//&
                                   "  STAT = "//trim(text))
-                          end if            
+                          end if
                           error = NF_GET_VAR_DOUBLE(ncid,i,r8vals)
                           call netcdf_err( error, mpp_file(unit), string=" Field="//trim(bounds_name) )
                           mpp_file(unit)%Axis(j)%data_bounds(1:len) =r8vals(1:(2*len-1):2)
@@ -1019,14 +1020,14 @@
         nv = 0
         do i=1, nvar_total
            error=NF_INQ_VAR(ncid,i,name,type,nvdims,dimids,nvatts);call netcdf_err( error, mpp_file(unit) )
-!          
+!
 ! is this a dimension variable?
 !
            isdim=.false.
            do j=1,ndim
               if( trim(lowercase(name)).EQ.trim(lowercase(mpp_file(unit)%Axis(j)%name)) )isdim=.true.
            enddo
-              
+
            if( .not.isdim )then
 ! for non-dimension variables
               nv=nv+1; if( nv.GT.mpp_file(unit)%nvar )call mpp_error( FATAL, 'variable index exceeds number of defined variables' )
@@ -1056,7 +1057,7 @@
                  mpp_file(unit)%Var(nv)%axes(j) = mpp_file(unit)%Axis(dimids(j))
               enddo
               allocate(mpp_file(unit)%Var(nv)%size(nvdims))
-              
+
               do j=1,nvdims
                  if(dimids(j).eq.mpp_file(unit)%recdimid  .and. mpp_file(unit)%time_level/=-1)then
                     mpp_file(unit)%Var(nv)%time_axis_index = dimids(j)
@@ -1064,14 +1065,14 @@
                  else
                     mpp_file(unit)%Var(nv)%size(j)=mpp_file(unit)%Axis(dimids(j))%len
                  endif
-              enddo 
+              enddo
 ! assign variable atts
               if( nvatts.GT.0 )allocate(mpp_file(unit)%Var(nv)%Att(nvatts))
-              
+
               do j=1,nvatts
                  mpp_file(unit)%Var(nv)%Att(j) = default_att
               enddo
-                 
+
               do j=1,nvatts
                  error=NF_INQ_ATTNAME(ncid,i,j,attname);call netcdf_err( error, mpp_file(unit), field=mpp_file(unit)%Var(nv) )
                  error=NF_INQ_ATT(ncid,i,attname,type,len)
@@ -1079,7 +1080,7 @@
                  mpp_file(unit)%Var(nv)%Att(j)%name = trim(attname)
                  mpp_file(unit)%Var(nv)%Att(j)%type = type
                  mpp_file(unit)%Var(nv)%Att(j)%len = len
-                 
+
                  select case (type)
                    case (NF_CHAR)
                      if (len.gt.512) call mpp_error(FATAL,'VAR ATT too long')
@@ -1179,7 +1180,7 @@
                        mpp_file(unit)%Var(nv)%missing=mpp_file(unit)%Var(nv)%Att(j)%fatt(1)
                     case('missing_value')
                        mpp_file(unit)%Var(nv)%missing=mpp_file(unit)%Var(nv)%Att(j)%fatt(1)
-                    case('_FillValue')                       
+                    case('_FillValue')
                        mpp_file(unit)%Var(nv)%fill=mpp_file(unit)%Var(nv)%Att(j)%fatt(1)
                     case('add_offset')
                        mpp_file(unit)%Var(nv)%add=mpp_file(unit)%Var(nv)%Att(j)%fatt(1)
@@ -1193,7 +1194,7 @@
 !                        Scan  checksum attribute for , delimiter. If found implies multiple time levels.
                          checksumf = 0
                          num_checksumf = 1
-                         
+
                          last = len_trim(checksum_char)
                          is = index (trim(checksum_char),",") ! A value of 0 implies only 1 checksum value
                          do while ((is > 0) .and. (is < (last-15)))
@@ -1207,15 +1208,15 @@
                            is = is + 17 ! Move index past the ,
                          enddo
                  end select
-              enddo    
-           endif 
+              enddo
+           endif
         enddo   ! end variable loop
-      else 
+      else
         call mpp_error( FATAL,  'MPP READ CURRENTLY DOES NOT SUPPORT NON-NETCDF' )
       endif
 
       mpp_file(unit)%initialized = .TRUE.
-#else 
+#else
       call mpp_error( FATAL, 'MPP_READ currently requires use_netCDF option' )
 #endif
       return
@@ -1254,14 +1255,14 @@
 
       if (size(tstamp,1) /= size(tstart,1)) call mpp_error(FATAL,&
             'size mismatch in mpp_get_tavg_info')
-     
+
       if ((size(tstart,1) /= size(tend,1)) .OR. (size(tstart,1) /= size(tavg,1))) then
           call mpp_error(FATAL,'size mismatch in mpp_get_tavg_info')
       endif
-      
+
       tstart = tstamp
       tend = tstamp
-      
+
       tavg_info_exists = .false.
 
 #ifdef use_netCDF
@@ -1270,10 +1271,10 @@
              if (field%Att(n)%name(1:13) == 'time_avg_info') then
                  tavg_info_exists = .true.
                  exit
-             endif   
-         endif    
+             endif
+         endif
       enddo
-#endif   
+#endif
       if (tavg_info_exists) then
           do n = 1, size(fields(:))
              if (trim(fields(n)%name) == 'average_T1') then
@@ -1281,27 +1282,23 @@
                     call mpp_read(unit, fields(n),t_default_real, m)
                     tstart(m) = t_default_real
                  enddo
-             endif  
+             endif
              if (trim(fields(n)%name) == 'average_T2') then
                  do m = 1, size(tend(:))
                     call mpp_read(unit, fields(n),t_default_real, m)
                     tend(m) = t_default_real
                  enddo
-             endif  
+             endif
              if (trim(fields(n)%name) == 'average_DT') then
                  do m = 1, size(tavg(:))
                     call mpp_read(unit, fields(n),t_default_real, m)
                     tavg(m) = t_default_real
                  enddo
-             endif  
-          enddo  
-             
+             endif
+          enddo
+
       end if
       return
     end subroutine mpp_get_tavg_info
 
 !#######################################################################
-
-
-
-
