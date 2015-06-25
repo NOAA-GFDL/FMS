@@ -441,6 +441,25 @@
      return
    end function mpp_get_axis_length
 
+  !#####################################################################
+  function mpp_get_axis_bounds(axis, data, name)
+     type(axistype), intent(in) :: axis
+     real, dimension(:), intent(out) :: data
+     character(len=*), optional, intent(out) :: name
+     logical                         :: mpp_get_axis_bounds
+
+     if (size(data(:)).lt.axis%len+1)&
+          call mpp_error(FATAL,'MPP_GET_AXIS_BOUNDS: data array not large enough, axis '//trim(axis%name))
+     if (.NOT.ASSOCIATED(axis%data_bounds)) then
+        mpp_get_axis_bounds = .false.
+     else
+        mpp_get_axis_bounds = .true.
+        data(1:axis%len+1) = axis%data_bounds(:)
+     endif
+     if(present(name)) name = trim(axis%name_bounds)
+
+     return
+  end function mpp_get_axis_bounds
 
   !#####################################################################
    subroutine mpp_get_axis_data( axis, data )
@@ -855,12 +874,12 @@
 
 
    function mpp_attribute_exist(field,name)
-      integer                      :: mpp_attribute_exist
+      logical                      :: mpp_attribute_exist
       type(fieldtype),  intent(in) :: field ! The field that you are searching for the attribute.
       character(len=*), intent(in) :: name ! name of the attributes
 
       if(field%natt > 0) then
-         mpp_attribute_exist = mpp_find_att(field%Att(:),name)
+         mpp_attribute_exist = ( mpp_find_att(field%Att(:),name) > 0 )
       else
          mpp_attribute_exist = .false.
       endif

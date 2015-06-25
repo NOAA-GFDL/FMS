@@ -70,11 +70,13 @@ subroutine MPP_GATHER_1DV_(sbuf, ssize, rbuf, rsize, pelist)
       rbuf(1:ssize) = sbuf(:)
       pos = ssize
       do l = 2, nproc
-         call mpp_recv(rbuf(pos+1), glen=rsize(l), from_pe=pelist2(l), block=.FALSE., tag=COMM_TAG_2 )
-         pos = pos + rsize(l)
+         if(rsize(l) >0) then
+            call mpp_recv(rbuf(pos+1), glen=rsize(l), from_pe=pelist2(l), block=.FALSE., tag=COMM_TAG_2 )
+            pos = pos + rsize(l)
+         endif
       enddo
    else
-      call mpp_send(sbuf(1), plen=ssize, to_pe=op_root, tag=COMM_TAG_2)
+      if(ssize>0) call mpp_send(sbuf(1), plen=ssize, to_pe=op_root, tag=COMM_TAG_2)
    endif
 
    call mpp_sync_self(check=EVENT_RECV)
