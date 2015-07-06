@@ -862,7 +862,7 @@ CONTAINS
     END IF
 
     IF ( PRESENT(interp_method) ) THEN
-       IF ( TRIM(interp_method) .NE. 'conserve_order1' ) THEN
+       IF ( TRIM(interp_method) .NE. 'conserve_order1' .AND. TRIM(interp_method) .NE. 'none' ) THEN
           ! <ERROR STATUS="FATAL">
           !   when registering module/output_field <module_name>/<field_name> then optional
           !   argument interp_method = <interp_method>, but it should be "conserve_order1"
