@@ -5099,6 +5099,7 @@ subroutine read_compressed_3d(filename,fieldname,data,domain,timelevel)
   if (files_read(file_index)%var(index_field)%is_dimvar) then
      call mpp_get_axis_data(files_read(file_index)%var(index_field)%axis,data(:,1,1))
   else
+     call mpp_read_compressed(unit,files_read(file_index)%var(index_field)%field,d_ptr,data,timelevel)
   endif
   d_ptr =>NULL()
 end subroutine read_compressed_3d
