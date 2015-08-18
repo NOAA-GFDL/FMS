@@ -1,10 +1,11 @@
-  function MPP_GLOBAL_SUM_( domain, field, flags, position, tile_count )
+  function MPP_GLOBAL_SUM_( domain, field, flags, position, tile_count, overflow_check)
     MPP_TYPE_ :: MPP_GLOBAL_SUM_
     type(domain2D), intent(in) :: domain
     MPP_TYPE_, intent(in) :: field(:,: MPP_EXTRA_INDICES_ )
     integer, intent(in), optional :: flags
     integer, intent(in), optional :: position
     integer, intent(in), optional :: tile_count
+    logical, intent(in), optional :: overflow_check
 
     MPP_TYPE_, dimension(:,:),       allocatable :: field2D
     MPP_TYPE_, dimension(:,:),       allocatable :: global2D
@@ -99,6 +100,27 @@
              MPP_GLOBAL_SUM_ = sum(gsum(1:domain%ntiles))
           end if
        end if
+    else if ( global_flag == BITWISE_EFP_SUM )then
+#ifdef DO_EFP_SUM_
+       !this is bitwise across different PE counts using EFP sum
+       if( ntile > 1 ) then 
+          call mpp_error( FATAL, 'MPP_GLOBAL_SUM_: multiple tile per pe is not supported for BITWISE_EFP_SUM')
+       endif
+       allocate( field2D (isc:iec,jsc:jec) )
+       do j = jsc, jec
+          do i = isc, iec
+             field2D(i,j) = sum( field(i+ioff:i+ioff,j+joff:j+joff MPP_EXTRA_INDICES_) )
+          end do
+       end do
+       !--- using efp sum.
+       if(efp_sum_overflow_check) then
+          MPP_GLOBAL_SUM_ = mpp_reproducing_sum(field2D, overflow_check=.true.)
+       else
+          MPP_GLOBAL_SUM_ = mpp_reproducing_sum(field2D, overflow_check=overflow_check)
+       endif
+#else
+        call mpp_error( FATAL, 'MPP_GLOBAL_SUM_: BITWISE_EFP_SUM is only implemented for real number, contact developer') 
+#endif
     else  !this is not bitwise-exact across different PE counts
        ioffset = domain%x(tile)%loffset*ishift; joffset = domain%y(tile)%loffset*jshift
        mygsum(tile) = sum( field(is+ioff:ie+ioff+ioffset, js+joff:je+joff+joffset MPP_EXTRA_INDICES_) )

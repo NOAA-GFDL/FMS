@@ -62,6 +62,9 @@ integer, parameter :: &
      VERSION_1 = 1,   &
      VERSION_2 = 2
 
+integer, parameter :: BUFSIZE = 1048576  ! This is used to control memory usage in get_grid_comp_area
+                                         ! We may change this to a namelist variable is needed.
+
 ! ==== module variables ======================================================
 integer :: grid_version = -1
 logical :: great_circle_algorithm = .FALSE.
@@ -244,6 +247,7 @@ subroutine get_grid_comp_area(component,tile,area,domain)
   integer :: num_nest_tile, ntiles
   logical :: is_nest
   integer :: found_xgrid_files ! how many xgrid files we actually found in the grid spec
+  integer :: ibegin, iend, bsize, l
 
   select case (get_grid_version())
   case(VERSION_0,VERSION_1)
@@ -343,15 +347,26 @@ subroutine get_grid_comp_area(component,tile,area,domain)
 
            ! finally read the exchange grid
            nxgrid = get_mosaic_xgrid_size(grid_dir//xgrid_file)
-           allocate(i1(nxgrid), j1(nxgrid), i2(nxgrid), j2(nxgrid), xgrid_area(nxgrid))
-           call get_mosaic_xgrid(grid_dir//xgrid_file, i1, j1, i2, j2, xgrid_area)
-           ! and sum the exchange grid areas
-           do m = 1, nxgrid
-              i = i2(m); j = j2(m)
-              if (i<is.or.i>ie) cycle
-              if (j<js.or.j>je) cycle
-              area(i+i0,j+j0) = area(i+i0,j+j0) + xgrid_area(m)
-           end do
+           if(nxgrid < BUFSIZE) then
+              allocate(i1(nxgrid), j1(nxgrid), i2(nxgrid), j2(nxgrid), xgrid_area(nxgrid))
+           else
+              allocate(i1(BUFSIZE), j1(BUFSIZE), i2(BUFSIZE), j2(BUFSIZE), xgrid_area(BUFSIZE))
+           endif
+           ibegin = 1
+           do l = 1,nxgrid,BUFSIZE
+              bsize = min(BUFSIZE, nxgrid-l+1)
+              iend = ibegin + bsize - 1
+              call get_mosaic_xgrid(grid_dir//xgrid_file, i1(1:bsize), j1(1:bsize), i2(1:bsize), j2(1:bsize), &
+                                    xgrid_area(1:bsize), ibegin, iend)
+              ! and sum the exchange grid areas
+              do m = 1, bsize
+                 i = i2(m); j = j2(m)
+                 if (i<is.or.i>ie) cycle
+                 if (j<js.or.j>je) cycle
+                 area(i+i0,j+j0) = area(i+i0,j+j0) + xgrid_area(m)
+              end do
+              ibegin = iend + 1
+           enddo
            deallocate(i1, j1, i2, j2, xgrid_area)
         enddo
         if (found_xgrid_files == 0) &
@@ -821,11 +836,12 @@ end subroutine get_grid_cell_centers_2D
 ! domain for current processor
 ! ============================================================================
 ! this subroutine probably does not belong in the grid_mod 
-subroutine define_cube_mosaic ( component, domain, layout, halo )
+subroutine define_cube_mosaic ( component, domain, layout, halo, maskmap )
   character(len=*) , intent(in)    :: component
   type(domain2d)   , intent(inout) :: domain
   integer          , intent(in)    :: layout(2)
   integer, optional, intent(in)    :: halo 
+  logical, optional, intent(in)    :: maskmap(:,:,:)
 
   ! ---- local constants
   
@@ -835,7 +851,7 @@ subroutine define_cube_mosaic ( component, domain, layout, halo )
   integer :: ntiles     ! number of tiles
   integer :: ncontacts  ! number of contacts between mosaic tiles
   integer :: n
-  integer :: ng         ! halo size
+  integer :: ng, pe_pos, npes         ! halo size
   integer, allocatable :: nlon(:), nlat(:), global_indices(:,:)
   integer, allocatable :: pe_start(:), pe_end(:), layout_2d(:,:)
   integer, allocatable :: tile1(:),tile2(:)
@@ -849,11 +865,18 @@ subroutine define_cube_mosaic ( component, domain, layout, halo )
   allocate(layout_2d(2,ntiles))
   call get_grid_size(component,nlon,nlat)
 
+  pe_pos = mpp_root_pe()
   do n = 1, ntiles
      global_indices(:,n) = (/ 1, nlon(n), 1, nlat(n) /)
      layout_2d     (:,n) = layout
-     pe_start        (n) = mpp_root_pe() + (n-1)*layout(1)*layout(2)
-     pe_end          (n) = mpp_root_pe() +     n*layout(1)*layout(2) - 1
+     if(present(maskmap)) then
+        npes = count(maskmap(:,:,n))
+     else
+        npes = layout(1)*layout(2)
+     endif
+     pe_start(n) = pe_pos
+     pe_end  (n) = pe_pos + npes - 1
+     pe_pos      = pe_end(n) + 1
   enddo
 
   varname=trim(lowercase(component))//'_mosaic_file'
@@ -877,6 +900,7 @@ subroutine define_cube_mosaic ( component, domain, layout, halo )
        is2, ie2, js2, je2, &
        pe_start=pe_start, pe_end=pe_end, symmetry=.true.,  &
        shalo = ng, nhalo = ng, whalo = ng, ehalo = ng,     &
+       maskmap = maskmap,                                  &
        name = trim(component)//'Cubic-Sphere Grid' )
 
   deallocate(nlon,nlat,global_indices,pe_start,pe_end,layout_2d)

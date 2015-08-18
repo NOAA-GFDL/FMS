@@ -122,7 +122,7 @@ module mpp_domains_mod
   use mpp_parameter_mod,      only : FOLD_WEST_EDGE, FOLD_EAST_EDGE, FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE
   use mpp_parameter_mod,      only : WUPDATE, EUPDATE, SUPDATE, NUPDATE, XUPDATE, YUPDATE
   use mpp_parameter_mod,      only : NON_BITWISE_EXACT_SUM, BITWISE_EXACT_SUM, MPP_DOMAIN_TIME
-  use mpp_parameter_mod,      only : CENTER, CORNER, SCALAR_PAIR, SCALAR_BIT
+  use mpp_parameter_mod,      only : CENTER, CORNER, SCALAR_PAIR, SCALAR_BIT, BITWISE_EFP_SUM
   use mpp_parameter_mod,      only : NORTH, NORTH_EAST, EAST, SOUTH_EAST
   use mpp_parameter_mod,      only : SOUTH, SOUTH_WEST, WEST, NORTH_WEST
   use mpp_parameter_mod,      only : MAX_DOMAIN_FIELDS, NULL_PE, DOMAIN_ID_BASE
@@ -139,7 +139,8 @@ module mpp_domains_mod
   use mpp_mod,                only : input_nml_file
   use mpp_mod,                only : COMM_TAG_1, COMM_TAG_2, COMM_TAG_3, COMM_TAG_4
   use mpp_memutils_mod,       only : mpp_memuse_begin, mpp_memuse_end
-  use mpp_pset_mod, only: mpp_pset_init
+  use mpp_pset_mod,           only : mpp_pset_init
+  use mpp_efp_mod,            only : mpp_reproducing_sum
   implicit none
   private
 
@@ -152,7 +153,7 @@ module mpp_domains_mod
   public :: GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, BGRID_NE, BGRID_SW, CGRID_NE, CGRID_SW
   public :: DGRID_NE, DGRID_SW, FOLD_WEST_EDGE, FOLD_EAST_EDGE, FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE
   public :: WUPDATE, EUPDATE, SUPDATE, NUPDATE, XUPDATE, YUPDATE
-  public :: NON_BITWISE_EXACT_SUM, BITWISE_EXACT_SUM, MPP_DOMAIN_TIME
+  public :: NON_BITWISE_EXACT_SUM, BITWISE_EXACT_SUM, MPP_DOMAIN_TIME, BITWISE_EFP_SUM
   public :: CENTER, CORNER, SCALAR_PAIR
   public :: NORTH, NORTH_EAST, EAST, SOUTH_EAST
   public :: SOUTH, SOUTH_WEST, WEST, NORTH_WEST
@@ -209,6 +210,10 @@ module mpp_domains_mod
   integer, parameter :: NAME_LENGTH = 64
   integer, parameter :: MAXLIST = 24
   integer, parameter :: MAXOVERLAP = 100
+  integer, parameter :: FIELD_S = 0
+  integer, parameter :: FIELD_X = 1
+  integer, parameter :: FIELD_Y = 2
+
 
   !--- data types used mpp_domains_mod.
   type domain_axis_spec        !type used to specify index limits along an axis of a domain
@@ -452,6 +457,7 @@ module mpp_domains_mod
   type mpp_group_update_type
      private
      logical            :: initialized = .FALSE.
+     logical            :: k_loop_inside = .TRUE.
      integer            :: nscalar = 0
      integer            :: nvector = 0
      integer            :: flags_s=0, flags_v=0
@@ -466,6 +472,7 @@ module mpp_domains_mod
      integer            :: is_x=0, ie_x=0, js_x=0, je_x=0
      integer            :: is_y=0, ie_y=0, js_y=0, je_y=0
      integer            :: nrecv=0, nsend=0
+     integer            :: npack=0, nunpack=0
      integer            :: reset_index_s = 0
      integer            :: reset_index_v = 0
      integer            :: tot_msgsize = 0
@@ -473,16 +480,24 @@ module mpp_domains_mod
      integer            :: to_pe(MAXOVERLAP)
      integer            :: recv_size(MAXOVERLAP)
      integer            :: send_size(MAXOVERLAP)
-     integer            :: msgsize_recv(MAXOVERLAP)
-     integer            :: msgsize_send(MAXOVERLAP)
      integer            :: buffer_pos_recv(MAXOVERLAP)
      integer            :: buffer_pos_send(MAXOVERLAP)
-     integer            :: recv_ind_s(MAXOVERLAP)
-     integer            :: recv_ind_x(MAXOVERLAP)
-     integer            :: recv_ind_y(MAXOVERLAP)
-     integer            :: send_ind_s(MAXOVERLAP)
-     integer            :: send_ind_x(MAXOVERLAP)
-     integer            :: send_ind_y(MAXOVERLAP)
+     integer            :: pack_type(MAXOVERLAP)
+     integer            :: pack_buffer_pos(MAXOVERLAP)
+     integer            :: pack_rotation(MAXOVERLAP)
+     integer            :: pack_size(MAXOVERLAP)
+     integer            :: pack_is(MAXOVERLAP)
+     integer            :: pack_ie(MAXOVERLAP)
+     integer            :: pack_js(MAXOVERLAP)
+     integer            :: pack_je(MAXOVERLAP)
+     integer            :: unpack_type(MAXOVERLAP)
+     integer            :: unpack_buffer_pos(MAXOVERLAP)
+     integer            :: unpack_rotation(MAXOVERLAP)
+     integer            :: unpack_size(MAXOVERLAP)
+     integer            :: unpack_is(MAXOVERLAP)
+     integer            :: unpack_ie(MAXOVERLAP)
+     integer            :: unpack_js(MAXOVERLAP)
+     integer            :: unpack_je(MAXOVERLAP)
      integer(LONG_KIND) :: addrs_s(MAX_DOMAIN_FIELDS)
      integer(LONG_KIND) :: addrs_x(MAX_DOMAIN_FIELDS)
      integer(LONG_KIND) :: addrs_y(MAX_DOMAIN_FIELDS)
@@ -490,9 +505,6 @@ module mpp_domains_mod
      integer            :: request_send(MAX_REQUEST)
      integer            :: request_recv(MAX_REQUEST)
      integer            :: type_recv(MAX_REQUEST)
-     type(overlapSpec), pointer :: update_s => NULL()
-     type(overlapSpec), pointer :: update_x => NULL()
-     type(overlapSpec), pointer :: update_y => NULL()
   end type mpp_group_update_type
 
 !#######################################################################
@@ -586,10 +598,21 @@ module mpp_domains_mod
 !     processor/tile when updating doamin for symmetric domain and check the consistency on the north
 !     folded edge. 
 !   </DATA>
+!   <DATA NAME="efp_sum_overflow_check" TYPE="logical" DEFAULT=".FALSE.">
+!     Set true to always do overflow_check when doing EFP bitwise mpp_global_sum. 
+!   </DATA>
+!   <DATA NAME="nthread_control_loop" TYPE="integer"  DEFAULT="4">
+!     Determine the loop order for packing and unpacking. When number of threads is greater than nthread_control_loop,
+!     k-loop will be moved outside and combined with number of pack and unpack. When number of threads is less 
+!     than or equal to nthread_control_loop, k-loop is moved inside but still outside of j,i loop.
+!   </DATA>
 ! </NAMELIST>
   character(len=32) :: debug_update_domain = "none"
   logical           :: debug_message_passing = .false.
-  namelist /mpp_domains_nml/ debug_update_domain, domain_clocks_on, debug_message_passing
+  integer           :: nthread_control_loop = 4
+  logical           :: efp_sum_overflow_check = .false.
+  namelist /mpp_domains_nml/ debug_update_domain, domain_clocks_on, debug_message_passing, nthread_control_loop, &
+                             efp_sum_overflow_check
 
   !***********************************************************************
 
@@ -2090,23 +2113,11 @@ end interface
      module procedure mpp_global_sum_r8_3d
      module procedure mpp_global_sum_r8_4d
      module procedure mpp_global_sum_r8_5d
-#ifdef OVERLOAD_C8
-     module procedure mpp_global_sum_c8_2d
-     module procedure mpp_global_sum_c8_3d
-     module procedure mpp_global_sum_c8_4d
-     module procedure mpp_global_sum_c8_5d
-#endif
 #ifdef OVERLOAD_R4
      module procedure mpp_global_sum_r4_2d
      module procedure mpp_global_sum_r4_3d
      module procedure mpp_global_sum_r4_4d
      module procedure mpp_global_sum_r4_5d
-#endif
-#ifdef OVERLOAD_C4
-     module procedure mpp_global_sum_c4_2d
-     module procedure mpp_global_sum_c4_3d
-     module procedure mpp_global_sum_c4_4d
-     module procedure mpp_global_sum_c4_5d
 #endif
 #ifndef no_8byte_integers
      module procedure mpp_global_sum_i8_2d
@@ -2126,73 +2137,14 @@ end interface
      module procedure mpp_global_sum_tl_r8_3d
      module procedure mpp_global_sum_tl_r8_4d
      module procedure mpp_global_sum_tl_r8_5d
-#ifdef OVERLOAD_C8
-     module procedure mpp_global_sum_tl_c8_2d
-     module procedure mpp_global_sum_tl_c8_3d
-     module procedure mpp_global_sum_tl_c8_4d
-     module procedure mpp_global_sum_tl_c8_5d
-#endif
 #ifdef OVERLOAD_R4
      module procedure mpp_global_sum_tl_r4_2d
      module procedure mpp_global_sum_tl_r4_3d
      module procedure mpp_global_sum_tl_r4_4d
      module procedure mpp_global_sum_tl_r4_5d
 #endif
-#ifdef OVERLOAD_C4
-     module procedure mpp_global_sum_tl_c4_2d
-     module procedure mpp_global_sum_tl_c4_3d
-     module procedure mpp_global_sum_tl_c4_4d
-     module procedure mpp_global_sum_tl_c4_5d
-#endif
-#ifndef no_8byte_integers
-     module procedure mpp_global_sum_tl_i8_2d
-     module procedure mpp_global_sum_tl_i8_3d
-     module procedure mpp_global_sum_tl_i8_4d
-     module procedure mpp_global_sum_tl_i8_5d
-#endif
-     module procedure mpp_global_sum_tl_i4_2d
-     module procedure mpp_global_sum_tl_i4_3d
-     module procedure mpp_global_sum_tl_i4_4d
-     module procedure mpp_global_sum_tl_i4_5d
   end interface
 !gag
-
-!bnc
-!!$  interface mpp_global_sum_ad
-!!$     module procedure mpp_global_sum_ad_r8_2d
-!!$     module procedure mpp_global_sum_ad_r8_3d
-!!$     module procedure mpp_global_sum_ad_r8_4d
-!!$     module procedure mpp_global_sum_ad_r8_5d
-!!$#ifdef OVERLOAD_C8
-!!$     module procedure mpp_global_sum_ad_c8_2d
-!!$     module procedure mpp_global_sum_ad_c8_3d
-!!$     module procedure mpp_global_sum_ad_c8_4d
-!!$     module procedure mpp_global_sum_ad_c8_5d
-!!$#endif
-!!$#ifdef OVERLOAD_R4
-!!$     module procedure mpp_global_sum_ad_r4_2d
-!!$     module procedure mpp_global_sum_ad_r4_3d
-!!$     module procedure mpp_global_sum_ad_r4_4d
-!!$     module procedure mpp_global_sum_ad_r4_5d
-!!$#endif
-!!$#ifdef OVERLOAD_C4
-!!$     module procedure mpp_global_sum_ad_c4_2d
-!!$     module procedure mpp_global_sum_ad_c4_3d
-!!$     module procedure mpp_global_sum_ad_c4_4d
-!!$     module procedure mpp_global_sum_ad_c4_5d
-!!$#endif
-!!$#ifndef no_8byte_integers
-!!$     module procedure mpp_global_sum_ad_i8_2d
-!!$     module procedure mpp_global_sum_ad_i8_3d
-!!$     module procedure mpp_global_sum_ad_i8_4d
-!!$     module procedure mpp_global_sum_ad_i8_5d
-!!$#endif
-!!$     module procedure mpp_global_sum_ad_i4_2d
-!!$     module procedure mpp_global_sum_ad_i4_3d
-!!$     module procedure mpp_global_sum_ad_i4_4d
-!!$     module procedure mpp_global_sum_ad_i4_5d
-!!$  end interface
-!bnc
 
 !***********************************************************************
 !

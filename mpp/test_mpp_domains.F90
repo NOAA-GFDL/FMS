@@ -10,7 +10,7 @@ program test
   use mpp_domains_mod, only : GLOBAL_DATA_DOMAIN, BITWISE_EXACT_SUM, BGRID_NE, CGRID_NE, DGRID_NE
   use mpp_domains_mod, only : FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE, FOLD_WEST_EDGE, FOLD_EAST_EDGE
   use mpp_domains_mod, only : MPP_DOMAIN_TIME, CYCLIC_GLOBAL_DOMAIN, NUPDATE,EUPDATE, XUPDATE, YUPDATE, SCALAR_PAIR
-  use mpp_domains_mod, only : domain1D, domain2D, DomainCommunicator2D
+  use mpp_domains_mod, only : domain1D, domain2D, DomainCommunicator2D, BITWISE_EFP_SUM
   use mpp_domains_mod, only : mpp_get_compute_domain, mpp_get_data_domain, mpp_domains_set_stack_size
   use mpp_domains_mod, only : mpp_global_field, mpp_global_sum, mpp_global_max, mpp_global_min
   use mpp_domains_mod, only : mpp_domains_init, mpp_domains_exit, mpp_broadcast_domain
@@ -55,6 +55,7 @@ program test
   logical :: check_parallel = .FALSE.  ! when check_parallel set to false,
   logical :: test_get_nbr = .FALSE.
   logical :: test_boundary = .false.
+  logical :: test_global_sum = .false.
   integer :: ensemble_size
   integer :: layout_cubic(2) = (/0,0/)
   integer :: layout_tripolar(2) = (/0,0/)
@@ -83,7 +84,7 @@ program test
                                jend_coarse, extra_halo, npes_fine, npes_coarse, mix_2D_3D, test_get_nbr, &
                                test_edge_update, test_cubic_grid_redistribute, ensemble_size, &
                                layout_cubic, layout_ensemble, nthreads, test_boundary, &
-                               layout_tripolar, test_group
+                               layout_tripolar, test_group, test_global_sum
   integer :: i, j, k
   integer :: layout(2)
   integer :: id
@@ -172,6 +173,10 @@ program test
   if( test_performance) then
       call update_domains_performance('Folded-north')
       call update_domains_performance('Cubic-Grid')
+  endif
+
+  if( test_global_sum ) then
+      call test_mpp_global_sum('Folded-north')
   endif
 
   if( test_cubic_grid_redistribute ) then
@@ -2158,6 +2163,226 @@ contains
 
 
   !###############################################################
+  subroutine test_mpp_global_sum( type )
+    character(len=*), intent(in) :: type
+
+    type(domain2D) :: domain
+    integer        :: num_contact, ntiles, npes_per_tile
+    integer        :: i, j, k, l, n, shift
+    integer        :: isc, iec, jsc, jec, isd, ied, jsd, jed
+    integer        :: ism, iem, jsm, jem
+
+    integer, allocatable, dimension(:)       :: pe_start, pe_end, tile1, tile2
+    integer, allocatable, dimension(:)       :: istart1, iend1, jstart1, jend1
+    integer, allocatable, dimension(:)       :: istart2, iend2, jstart2, jend2
+    integer, allocatable, dimension(:,:)     :: layout2D, global_indices
+    real,    allocatable, dimension(:,:,:)   :: data_3D
+    real,    allocatable, dimension(:,:)     :: data_2D
+
+    integer(kind=8)    :: mold
+    logical            :: folded_north, cubic_grid 
+    character(len=3)   :: text
+    integer            :: nx_save, ny_save
+    integer            :: id1, id2, id3, id4
+    real               :: gsum1, gsum2, gsum3, gsum4
+
+    folded_north       = .false.
+    cubic_grid         = .false.
+
+    nx_save = nx
+    ny_save = ny
+    !--- check the type
+    select case(type)
+    case ( 'Folded-north' )
+       ntiles = 1
+       shift = 0
+       num_contact = 2
+       folded_north = .true.
+       npes_per_tile = npes
+       if(layout_tripolar(1)*layout_tripolar(2) == npes ) then
+          layout = layout_tripolar
+       else
+          call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
+       endif      
+    case ( 'Cubic-Grid' )
+       if( nx_cubic == 0 ) then
+          call mpp_error(NOTE,'test_group_update: for Cubic_grid mosaic, nx_cubic is zero, '//&
+               'No test is done for Cubic-Grid mosaic. ' )
+          return
+       endif
+       if( nx_cubic .NE. ny_cubic ) then
+          call mpp_error(NOTE,'test_group_update: for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, '//&
+               'No test is done for Cubic-Grid mosaic. ' )
+          return
+       endif
+       shift = 1
+       nx = nx_cubic
+       ny = ny_cubic
+       ntiles = 6
+       num_contact = 12
+       cubic_grid = .true.
+       if( mod(npes, ntiles) == 0 ) then
+          npes_per_tile = npes/ntiles
+          write(outunit,*)'NOTE from test_mpp_global_sum ==> For Mosaic "', trim(type), &
+               '", each tile will be distributed over ', npes_per_tile, ' processors.'
+       else
+          call mpp_error(NOTE,'test_group_update: npes should be multiple of ntiles No test is done for '//trim(type))
+          return
+       endif
+       if(layout_cubic(1)*layout_cubic(2) == npes_per_tile) then
+          layout = layout_cubic
+       else
+          call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
+       endif
+    case default
+       call mpp_error(FATAL, 'test_mpp_global_sum: no such test: '//type)
+    end select
+
+    allocate(layout2D(2,ntiles), global_indices(4,ntiles), pe_start(ntiles), pe_end(ntiles) )
+    do n = 1, ntiles
+       pe_start(n) = (n-1)*npes_per_tile
+       pe_end(n)   = n*npes_per_tile-1
+    end do
+
+    do n = 1, ntiles
+       global_indices(:,n) = (/1,nx,1,ny/)
+       layout2D(:,n)         = layout
+    end do
+
+    allocate(tile1(num_contact), tile2(num_contact) )
+    allocate(istart1(num_contact), iend1(num_contact), jstart1(num_contact), jend1(num_contact) ) 
+    allocate(istart2(num_contact), iend2(num_contact), jstart2(num_contact), jend2(num_contact) ) 
+
+    !--- define domain
+    if(folded_north) then
+       !--- Contact line 1, between tile 1 (EAST) and tile 1 (WEST)  --- cyclic
+       tile1(1) = 1; tile2(1) = 1
+       istart1(1) = nx; iend1(1) = nx; jstart1(1) = 1;  jend1(1) = ny
+       istart2(1) = 1;  iend2(1) = 1;  jstart2(1) = 1;  jend2(1) = ny
+       !--- Contact line 2, between tile 1 (NORTH) and tile 1 (NORTH)  --- folded-north-edge
+       tile1(2) = 1; tile2(2) = 1
+       istart1(2) = 1;  iend1(2) = nx/2;   jstart1(2) = ny;  jend1(2) = ny
+       istart2(2) = nx; iend2(2) = nx/2+1; jstart2(2) = ny;  jend2(2) = ny
+       call mpp_define_mosaic(global_indices, layout2D, domain, ntiles, num_contact, tile1, tile2, &
+            istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,      &
+            pe_start, pe_end, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
+            name = type, symmetry = .false.  )
+    else if( cubic_grid ) then
+       call define_cubic_mosaic(type, domain, (/nx,nx,nx,nx,nx,nx/), (/ny,ny,ny,ny,ny,ny/), &
+            global_indices, layout2D, pe_start, pe_end )
+    endif
+
+    !--- setup data
+    call mpp_get_compute_domain( domain, isc, iec, jsc, jec )
+    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+
+    allocate(data_2d(isd:ied,jsd:jed))
+    allocate(data_3d(isd:ied,jsd:jed,nz))
+
+    do k = 1, nz
+       do j = jsd, jed
+          do i = isd, ied
+             data_3d(i,j,k) =  k*1e3 + i + j*1e-3      
+          enddo
+       enddo
+    enddo
+
+    do j = jsd, jed
+       do i = isd, ied
+          data_2d(i,j) =  i*1e3 + j*1e-3      
+       enddo
+    enddo
+
+    id1 = mpp_clock_id( type//' bitwise sum 3D', flags=MPP_CLOCK_SYNC )
+    id2 = mpp_clock_id( type//' EFP sum 3D', flags=MPP_CLOCK_SYNC )
+    id3 = mpp_clock_id( type//' EFP sum 3D check', flags=MPP_CLOCK_SYNC )
+    id4 = mpp_clock_id( type//' non-bitwise sum 3D', flags=MPP_CLOCK_SYNC )
+ 
+    call mpp_clock_begin(id1)
+    do n = 1, num_iter
+       gsum1 = mpp_global_sum(domain, data_3d, flags=BITWISE_EXACT_SUM)
+    enddo
+    call mpp_clock_end(id1)
+
+    call mpp_clock_begin(id2)
+    do n = 1, num_iter
+       gsum2 = mpp_global_sum(domain, data_3d, flags=BITWISE_EFP_SUM)
+    enddo
+    call mpp_clock_end(id2)
+
+    call mpp_clock_begin(id3)
+    do n = 1, num_iter
+       gsum3 = mpp_global_sum(domain, data_3d, flags=BITWISE_EFP_SUM, overflow_check=.true. )
+    enddo
+    call mpp_clock_end(id3)
+
+    call mpp_clock_begin(id4)
+    do n = 1, num_iter
+       gsum4= mpp_global_sum(domain, data_3d)
+    enddo
+    call mpp_clock_end(id4)
+ 
+    write(outunit, *) " ********************************************************************************"
+    write(outunit, *) " global sum for "//type//' bitwise exact sum 3D = ', gsum1
+    write(outunit, *) " global sum for "//type//' bitwise EFP sum 3D = ', gsum2
+    write(outunit, *) " global sum for "//type//' bitwise EFP sum 3D with overflow_check = ', gsum3
+    write(outunit, *) " global sum for "//type//' non-bitwise sum 3D = ', gsum4
+    write(outunit, *) " "
+    write(outunit, *) " chksum for "//type//' bitwise exact sum 3D = ', transfer(gsum1, mold)
+    write(outunit, *) " chksum for "//type//' bitwise EFP sum 3D = ', transfer(gsum2, mold)
+    write(outunit, *) " chksum for "//type//' bitwise EFP sum 3D with overflow_check = ', transfer(gsum3, mold)
+    write(outunit, *) " chksum for "//type//' non-bitwise sum 3D = ', transfer(gsum4, mold)
+    write(outunit, *) " ********************************************************************************"
+
+    id1 = mpp_clock_id( type//' bitwise sum 2D', flags=MPP_CLOCK_SYNC )
+    id2 = mpp_clock_id( type//' EFP sum 2D', flags=MPP_CLOCK_SYNC )
+    id3 = mpp_clock_id( type//' EFP sum 2D check', flags=MPP_CLOCK_SYNC )
+    id4 = mpp_clock_id( type//' non-bitwise sum 2D', flags=MPP_CLOCK_SYNC )
+
+    call mpp_clock_begin(id1)
+    do n = 1, num_iter
+       gsum1 = mpp_global_sum(domain, data_2d, flags=BITWISE_EXACT_SUM)
+    enddo
+    call mpp_clock_end(id1)
+
+    call mpp_clock_begin(id2)
+    do n = 1, num_iter
+       gsum2 = mpp_global_sum(domain, data_2d, flags=BITWISE_EFP_SUM)
+    enddo
+    call mpp_clock_end(id2)
+
+    call mpp_clock_begin(id3)
+    do n = 1, num_iter
+       gsum3 = mpp_global_sum(domain, data_2d, flags=BITWISE_EFP_SUM, overflow_check=.true. )
+    enddo
+    call mpp_clock_end(id3)
+
+    call mpp_clock_begin(id4)
+    do n = 1, num_iter
+       gsum4= mpp_global_sum(domain, data_2d)
+    enddo
+    call mpp_clock_end(id4)
+  
+    write(outunit, *) " ********************************************************************************"
+    write(outunit, *) " global sum for "//type//' bitwise exact sum 2D = ', gsum1
+    write(outunit, *) " global sum for "//type//' bitwise EFP sum 2D = ', gsum2
+    write(outunit, *) " global sum for "//type//' bitwise EFP sum 2D with overflow_check = ', gsum3
+    write(outunit, *) " global sum for "//type//' non-bitwise sum 2D = ', gsum4
+    write(outunit, *) " "
+    write(outunit, *) " chksum for "//type//' bitwise exact sum 2D = ', transfer(gsum1, mold)
+    write(outunit, *) " chksum for "//type//' bitwise EFP sum 2D = ', transfer(gsum2, mold)
+    write(outunit, *) " chksum for "//type//' bitwise EFP sum 2D with overflow_check = ', transfer(gsum3, mold)
+    write(outunit, *) " chksum for "//type//' non-bitwise sum 2D = ', transfer(gsum4, mold)
+    write(outunit, *) " ********************************************************************************"
+
+
+
+    nx = nx_save
+    ny = ny_save
+
+  end subroutine test_mpp_global_sum
+
+  !###############################################################
   subroutine test_group_update( type )
     character(len=*), intent(in) :: type
 
@@ -2363,7 +2588,6 @@ contains
        call mpp_clear_group_update(group_update)
     endif
     !--- Test for CGRID
-
     a1 = 0; x1 = 0; y1 = 0
     do l =1, num_fields
        call mpp_create_group_update(group_update, a1(:,:,:,l), domain)
@@ -2424,42 +2648,42 @@ contains
     call mpp_clear_group_update(group_update)
 
     !--- The following is to test overlapping start and complete
-    do l =1, num_fields
-       call mpp_create_group_update(update_list(l), a1(:,:,:,l), domain)
-       call mpp_create_group_update(update_list(l), x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=CGRID_NE)
-    end do
+    if( num_fields > 1 ) then
+       do l =1, num_fields
+          call mpp_create_group_update(update_list(l), a1(:,:,:,l), domain)
+          call mpp_create_group_update(update_list(l), x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=CGRID_NE)
+       end do
 
-    do n = 1, num_iter
+       do n = 1, num_iter
 
-       a1 = 0; x1 = 0; y1 = 0
-       do l = 1, num_fields
-          a1(isc:iec,      jsc:jec,      :,l) = base(isc:iec,      jsc:jec,      :) + l*1e3
-          x1(isc:iec+shift,jsc:jec,      :,l) = base(isc:iec+shift,jsc:jec,      :) + l*1e3 + 1e6
-          y1(isc:iec,      jsc:jec+shift,:,l) = base(isc:iec,      jsc:jec+shift,:) + l*1e3 + 2*1e6
-       enddo
-       do l = 1, num_fields-1
-          call mpp_start_group_update(update_list(l), domain, a1(isc,jsc,1,1))
-       enddo
+          a1 = 0; x1 = 0; y1 = 0
+          do l = 1, num_fields
+             a1(isc:iec,      jsc:jec,      :,l) = base(isc:iec,      jsc:jec,      :) + l*1e3
+             x1(isc:iec+shift,jsc:jec,      :,l) = base(isc:iec+shift,jsc:jec,      :) + l*1e3 + 1e6
+             y1(isc:iec,      jsc:jec+shift,:,l) = base(isc:iec,      jsc:jec+shift,:) + l*1e3 + 2*1e6
+          enddo
+          do l = 1, num_fields-1
+             call mpp_start_group_update(update_list(l), domain, a1(isc,jsc,1,1))
+          enddo
 
-       if(num_fields > 1) then
           call mpp_complete_group_update(update_list(1), domain, a1(isc,jsc,1,1))
-       endif
-       call mpp_start_group_update(update_list(num_fields), domain, a1(isc,jsc,1,1))
-       do l = 2, num_fields
-         call mpp_complete_group_update(update_list(l), domain, a1(isc,jsc,1,1))
-       enddo
-       !--- compare checksum
-       do l = 1, num_fields
-          write(text, '(i3.3)') l
-          call compare_checksums(a1(isd:ied,      jsd:jed,      :,l),a2(isd:ied,      jsd:jed,      :,l), &
-                                 type//' multiple nonblock CENTER '//text)
-          call compare_checksums(x1(isd:ied+shift,jsd:jed,      :,l),x2(isd:ied+shift,jsd:jed,      :,l), &
-                                 type//' multiple nonblock CGRID X'//text)
-          call compare_checksums(y1(isd:ied,      jsd:jed+shift,:,l),y2(isd:ied,      jsd:jed+shift,:,l), &
-                                 type//' multiple nonblock CGRID Y'//text)
-       enddo
+          call mpp_start_group_update(update_list(num_fields), domain, a1(isc,jsc,1,1))
+          do l = 2, num_fields
+             call mpp_complete_group_update(update_list(l), domain, a1(isc,jsc,1,1))
+          enddo
+          !--- compare checksum
+          do l = 1, num_fields
+             write(text, '(i3.3)') l
+             call compare_checksums(a1(isd:ied,      jsd:jed,      :,l),a2(isd:ied,      jsd:jed,      :,l), &
+                                    type//' multiple nonblock CENTER '//text)
+             call compare_checksums(x1(isd:ied+shift,jsd:jed,      :,l),x2(isd:ied+shift,jsd:jed,      :,l), &
+                                    type//' multiple nonblock CGRID X'//text)
+             call compare_checksums(y1(isd:ied,      jsd:jed+shift,:,l),y2(isd:ied,      jsd:jed+shift,:,l), &
+                                    type//' multiple nonblock CGRID Y'//text)
+          enddo
 
-    enddo
+       enddo
+    endif
 
     do l =1, num_fields
       call mpp_clear_group_update(update_list(l))
