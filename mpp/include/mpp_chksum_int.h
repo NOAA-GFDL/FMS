@@ -35,7 +35,7 @@ function MPP_CHKSUM_INT_RMASK_( var, pelist, mask_val )
 
   if ( KIND(mask_val) == KIND(var)) then !sameKind
      !cast to MPP_TYPE_
-     tmpVarP = TRANSFER(mask_val , tmpVarP)
+     mask_val_bitcastToVarKind = TRANSFER(mask_val , mask_val_bitcastToVarKind)
   else ! KIND of mask_val and var are different
     !check to see if can lossless cast to the precision KIND of var and back
     tmpVarP  = REAL( mask_val , KIND=KIND(var) ) ! cast to precision of var
