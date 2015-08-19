@@ -43,7 +43,7 @@ function MPP_CHKSUM_INT_RMASK_( var, pelist, mask_val )
 
     if (  tmpMaskP == mask_val ) then !safeCast
        !We can use cast of mask_val
-       tmpVarP=TRANSFER( tmpVarP , mask_val_bitcastToVarKind )
+       mask_val_bitcastToVarKind = TRANSFER( tmpVarP , mask_val_bitcastToVarKind )
     else 
       ! construct detailed errStr
       errStr = "mpp_chksum: mpp_chksum_i" 
