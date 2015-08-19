@@ -56,8 +56,9 @@ module mpp_parameter_mod
   integer            :: DEFAULT_TAG = 1
   !--- implimented to centralize _FILL_ values for land_model.F90 into mpp_mod
   !------- instead of multiple includes of netcdf.inc and manual assignments
-  integer, parameter :: MPP_FILL_INT =-2147483647               !NF_FILL_INT
-  real,    parameter :: MPP_FILL_DOUBLE= 9.9692099683868690e+36 !NF_FILL_DOUBLE
+  integer(INT_KIND) , parameter :: MPP_FILL_INT    = -2147483647            !NF_FILL_INT
+  real(DOUBLE_KIND) , parameter :: MPP_FILL_DOUBLE = 9.9692099683868690e+36 !NF_FILL_DOUBLE
+  real(FLOAT_KIND)  , parameter :: MPP_FILL_FLOAT  = 9.9692099683868690e+36 !NF_FILL_DOUBLE
   !--- predefined clock granularities, but you can use any integer
   !--- using CLOCK_LOOP and above may distort coarser-grain measurements
   integer, parameter :: CLOCK_COMPONENT=1      !component level, e.g model, exchange
