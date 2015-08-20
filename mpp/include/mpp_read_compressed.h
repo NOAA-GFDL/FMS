@@ -74,7 +74,7 @@
          if (field%type==NF_INT) then
             if (CEILING(field%fill,KIND=4) /= MPP_FILL_INT ) then
                call mpp_error(NOTE,"During mpp_io(mpp_read_compressed_2d) int field "//trim(field%name)// &
-                                                         " found fill /= MPP_FILL_. Confirm this is what you want.")
+                                                         " found fill /= MPP_FILL_. Passing it along... Confirm this is what you want.")
                chk = mpp_chksum( ceiling(data), mask_val=field%fill)
             else ! use MPP_FILL_INT
                chk = mpp_chksum( ceiling(data), mask_val=MPP_FILL_INT )
@@ -83,13 +83,13 @@
 	    chk = mpp_chksum(data,mask_val=field%fill)
          end if
 	 !!compare
-	 if ( mpp_pe() == mpp_root_pe() ) then 
-             print '(A,Z16)', "mpp_read_compressed_2d chksum: "//trim(field%name)//" = ", chk
-         else
-            print '(A,Z16,A,Z16)', "mpp_read_compressed_2d chksum: "//trim(field%name)//" : ",  chk, "/=", field%checksum(1)
-         end if
+	 if ( mpp_pe() == mpp_root_pe() ) print '(A,Z16)', "mpp_read_compressed_2d chksum: "//trim(field%name)//" = ", chk
 	 !! discuss making fatal after testing/review to match other routines.
-	 if (chk /= field%checksum(1) ) call mpp_error(NOTE,"mpp_read_compressed_2d chksum: "//trim(field%name)//" failed!")
+	 if (chk /= field%checksum(1) ) then
+            print '(A,Z16)', "stored checksum: "//trim(field%name)//" = ", field%checksum(1)
+            call mpp_error(NOTE,"mpp_read_compressed_2d chksum: "//trim(field%name)//" failed!")
+         end if 
+
       end if
 
       call mpp_clock_end(mpp_read_clock)
@@ -157,7 +157,7 @@
 	 if (field%type==NF_INT) then
 	    if (CEILING(field%fill,KIND=4) /= MPP_FILL_INT ) then
 	       call mpp_error(NOTE,"During mpp_io(mpp_read_compressed_3d) int field "//trim(field%name)// &
-							 " found fill /= MPP_FILL_. Confirm this is what you want.")
+							 " found fill /= MPP_FILL_. Passing along.. Confirm this is what you want.")
 	       chk = mpp_chksum( ceiling(data), mask_val=field%fill)
 	    else ! use MPP_FILL_INT
 	       chk = mpp_chksum( ceiling(data), mask_val=MPP_FILL_INT )
@@ -166,13 +166,12 @@
             chk = mpp_chksum(data,mask_val=field%fill)
          end if
          !!compare
-         if (mpp_pe()==mpp_root_pe()) then
-            print '(A,Z16)', "mpp_read_compressed_3d chksum: "//trim(field%name)//" = ",  chk
-         else
-            print '(A,Z16,A,Z16)', "mpp_read_compressed_3d chksum: "//trim(field%name)//" = ",  chk, "/=", field%checksum(1)
-         end if
+         if (mpp_pe()==mpp_root_pe()) print '(A,Z16)', "mpp_read_compressed_3d chksum: "//trim(field%name)//" = ",  chk
          !! discuss making fatal after testing/review to match other routines.
-         if (chk /= field%checksum(1) ) call mpp_error(NOTE,"mpp_read_compressed_3d chksum: "//trim(field%name)//" failed!")
+         if (chk /= field%checksum(1) ) then 
+            print '(A,Z16)', "stored chksum: "//trim(field%name)//" = ", field%checksum(1)
+            call mpp_error(NOTE,"mpp_read_compressed_3d chksum: "//trim(field%name)//" failed!")
+         end if
       end if
 
       call mpp_clock_end(mpp_read_clock)
