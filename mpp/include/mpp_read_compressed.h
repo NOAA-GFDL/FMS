@@ -86,7 +86,7 @@
 	 if ( mpp_pe() == mpp_root_pe() ) print '(A,Z16)', "mpp_read_compressed_2d chksum: "//trim(field%name)//" = ", chk
 	 !! discuss making fatal after testing/review to match other routines.
 	 if (chk /= field%checksum(1) ) then
-            print '(A,Z16)', "stored checksum: "//trim(field%name)//" = ", field%checksum(1)
+            if ( mpp_pe() == mpp_root_pe() ) print '(A,Z16)', "stored checksum: "//trim(field%name)//" = ", field%checksum(1)
             call mpp_error(NOTE,"mpp_read_compressed_2d chksum: "//trim(field%name)//" failed!")
          end if 
 
@@ -169,7 +169,7 @@
          if (mpp_pe()==mpp_root_pe()) print '(A,Z16)', "mpp_read_compressed_3d chksum: "//trim(field%name)//" = ",  chk
          !! discuss making fatal after testing/review to match other routines.
          if (chk /= field%checksum(1) ) then 
-            print '(A,Z16)', "stored chksum: "//trim(field%name)//" = ", field%checksum(1)
+            if ( mpp_pe() == mpp_root_pe() ) print '(A,Z16)', "stored chksum: "//trim(field%name)//" = ", field%checksum(1)
             call mpp_error(NOTE,"mpp_read_compressed_3d chksum: "//trim(field%name)//" failed!")
          end if
       end if
