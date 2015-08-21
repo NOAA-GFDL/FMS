@@ -313,9 +313,9 @@
          endif
       else if( fileset_flag.EQ.MPP_MULTI ) then
          if(mpp_npes() > 10000) then
-            write( text,'(a,i6.6)' )trim(text)//'.', pe
+            write( text,'(a,i6.6)' )trim(text)//'.', pe-mpp_root_pe()
          else
-            write( text,'(a,i4.4)' )trim(text)//'.', pe
+            write( text,'(a,i4.4)' )trim(text)//'.', pe-mpp_root_pe()
          endif
       endif
       mpp_file(unit)%name = text
