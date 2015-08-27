@@ -23,7 +23,7 @@ module mpp_parameter_mod
   public :: COMM_TAG_9,  COMM_TAG_10, COMM_TAG_11, COMM_TAG_12
   public :: COMM_TAG_13, COMM_TAG_14, COMM_TAG_15, COMM_TAG_16
   public :: COMM_TAG_17, COMM_TAG_18, COMM_TAG_19, COMM_TAG_20
-  public :: MPP_FILL_INT, MPP_FILL_FLOAT, MPP_FILL_DOUBLE
+  public :: MPP_FILL_INT,MPP_FILL_DOUBLE
 
   !--- public paramters which is used by mpp_domains_mod and its components. 
   !--- All othere modules should import these parameters from mpp_domains_mod. 
@@ -56,9 +56,8 @@ module mpp_parameter_mod
   integer            :: DEFAULT_TAG = 1
   !--- implimented to centralize _FILL_ values for land_model.F90 into mpp_mod
   !------- instead of multiple includes of netcdf.inc and manual assignments
-  integer(INT_KIND) , parameter :: MPP_FILL_INT    = -2147483647            !NF_FILL_INT
-  real(DOUBLE_KIND) , parameter :: MPP_FILL_DOUBLE = 9.9692099683868690e+36 !NF_FILL_DOUBLE
-  real(FLOAT_KIND)  , parameter :: MPP_FILL_FLOAT  = 9.9692099683868690e+36 !NF_FILL_DOUBLE
+  integer, parameter :: MPP_FILL_INT =-2147483647               !NF_FILL_INT
+  real,    parameter :: MPP_FILL_DOUBLE= 9.9692099683868690e+36 !NF_FILL_DOUBLE
   !--- predefined clock granularities, but you can use any integer
   !--- using CLOCK_LOOP and above may distort coarser-grain measurements
   integer, parameter :: CLOCK_COMPONENT=1      !component level, e.g model, exchange
@@ -103,8 +102,8 @@ module mpp_parameter_mod
   integer, parameter :: BITWISE_EXACT_SUM=1
   integer, parameter :: BITWISE_EFP_SUM=2
   integer, parameter :: MPP_DOMAIN_TIME=MPP_DEBUG+1
-  integer, parameter :: MAX_DOMAIN_FIELDS=20
-  integer, parameter :: MAX_TILES=10
+  integer, parameter :: MAX_DOMAIN_FIELDS=100
+  integer, parameter :: MAX_TILES=100
 
   !--- The following paramters are used by mpp_io_mod and its components.
   integer, parameter :: MPP_WRONLY=100, MPP_RDONLY=101, MPP_APPEND=102, MPP_OVERWR=103 !action on open

@@ -26,40 +26,26 @@ function MPP_CHKSUM_INT_RMASK_( var, pelist, mask_val )
   MPP_TYPE_, intent(in) :: var MPP_RANK_
   integer, optional :: pelist(:)
   real, intent(in) :: mask_val
-  real(KIND(var)) :: tmpVarP
-  real(KIND(mask_val)) :: tmpMaskP
-  integer(KIND(var)) :: mask_val_bitcastToVarKind
-  character(LEN=1) :: tmpStr1,tmpStr2,tmpStr3
-  character(LEN=32) :: tmpStr4
-  character(LEN=256) :: errStr
+  integer(KIND(var))::tmpVarP
+  integer(KIND(mask_val)) :: tmpFullP,tmpZeroMasked
 
-  if ( KIND(mask_val) == KIND(var)) then !sameKind
+
+  if ( KIND(mask_val) == KIND(var)) then
+     !same numBytes
      !cast to MPP_TYPE_
-     mask_val_bitcastToVarKind = TRANSFER(mask_val , mask_val_bitcastToVarKind)
-  else ! KIND of mask_val and var are different
-    !check to see if can lossless cast to the precision KIND of var and back
-    tmpVarP  = REAL( mask_val , KIND=KIND(var) ) ! cast to precision of var
-    tmpMaskP = REAL( tmpVarP  , KIND=KIND(mask_val) ) !cast back to precision of mask_val
+     tmpVarP = TRANSFER(mask_val , tmpVarP)
+  else if (KIND(mask_val) /=  KIND(var) ) then
+     !check if still safe to duck type to lower precision
+     tmpFullP = TRANSFER(mask_val,tmpFullP ) ! transfer bits to int mold of same numBytes
+     tmpZeroMasked = IBITS(tmpFullP,0,BIT_SIZE(tmpVarP))
+     if (tmpFullP /= tmpZeroMasked ) then
+        !as an int, mask_val is actually /using/ higher bits than var, and so not a valid mask...
+        call mpp_error(FATAL, "mpp_chksum_int.h was called with real mask_val, and mask_val can not be safely cast to int type of var (nonzero high bits).")
+     end if
+     tmpVarP = INT(tmpFullP, KIND(var) ) ! attempt cast of mask_val as int down to the int precision of var, could do transfer...
+  end if
 
-    if (  tmpMaskP == mask_val ) then !safeCast
-       !We can use cast of mask_val
-       mask_val_bitcastToVarKind = TRANSFER( tmpVarP , mask_val_bitcastToVarKind )
-    else 
-      ! construct detailed errStr
-      errStr = "mpp_chksum: mpp_chksum_i" 
-      write(unit=tmpStr1,fmt="(I1)") KIND(var) 
-      write(unit=tmpstr2,fmt="(I1)") SIZE(SHAPE(var))
-      errStr = errStr // tmpStr1 // "_" // tmpstr2 // "d_rmask passed int var with REAL(" 
-      write(unit=tmpstr3,fmt="(I1)") KIND(mask_val) 
-      errStr = errStr // tmpstr3 // ") mask_val="
-      write(unit=tmpstr4,fmt=*) mask_val
-      errStr = errStr // trim(tmpstr4) // ", mask cannot be safely cast. Check _FillValue and mask_val. Hint: Try MPP_FILL_{INT,FLOAT,DOUBLE}."
-      call mpp_error(FATAL, trim(errStr) )
-    end if ! safeCast
-  end if ! sameKind
-
-  ! proceed as integer checksum using bitcast mask_val
-  MPP_CHKSUM_INT_RMASK_ = mpp_chksum(var,pelist,mask_val=mask_val_bitcastToVarKind)
+  MPP_CHKSUM_INT_RMASK_ = mpp_chksum(var,pelist,mask_val=tmpVarP)
 
   return
 
