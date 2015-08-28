@@ -36,25 +36,25 @@ function MPP_CHKSUM_INT_RMASK_( var, pelist, mask_val )
   character(LEN=256) :: errStr
 
 
-  ! typically should catch real "default_fill"
-  if (mask_val == MPP_FILL_DOUBLE .OR. mask_val == MPP_FILL_FLOAT) then
+  ! typically should catch real "default_fill" .OR. mask_val == MPP_FILL_FLOAT
+  if (mask_val == MPP_FILL_DOUBLE ) then
      !use MPP_FILL_INT
      imask_val = MPP_FILL_INT
   else if ( CEILING(mask_val,INT_KIND) == MPP_FILL_INT ) then
      ! NETCDF fill values proveide CEILING(MPP_FILL_{FLOAT,DOUBLE},kind=4byte)=MPP_FILL_INT
      imask_val = MPP_FILL_INT
   else if ( KIND(mask_val) == KIND(var) ) then
-     ! same size see if previously ducktyped via transfer
+     ! same size see if previously ducktyped integere via transfer
      itmpVarP(1) = TRANSFER(mask_val , itmpVarP(1))
-     if ( itmpVarP(1) == MPP_FILL_INT .OR. CEILING(itmpVarP(1),INT_KIND) == MPP_FILL_INT) imask_val = MPP_FILL_INT
+     if ( itmpVarP(1) == MPP_FILL_INT ) imask_val = MPP_FILL_INT
   else if ( KIND(mask_val)==DOUBLE_KIND .AND. KIND(var)==INT_KIND ) then
      itmpVarP = TRANSFER(mask_val, itmpVarP)
      ! did we pack int fill
-     if ( ANY(itmpVarP == MPP_FILL_INT ) .OR. ANY(CEILING(itmpVarP,INT_KIND) == MPP_FILL_INT)) then
+     if ( ANY(itmpVarP == MPP_FILL_INT ) .OR. ANY( itmpVarP == CEILING(MPP_FILL_DOUBLE,LONG_KIND) ) ) then
         imask_val = MPP_FILL_INT
      else ! did we pack real fill
         rtmpVarP = TRANSFER(mask_val, rtmpVarP)
-        if ( ANY(rtmpVarP == MPP_FILL_FLOAT ) .OR. ANY(CEILING(rtmpVarP,INT_KIND) == MPP_FILL_INT) ) then
+        if ( ANY(rtmpVarP == MPP_FILL_DOUBLE ) .OR. ANY(CEILING(rtmpVarP,INT_KIND) == MPP_FILL_INT) ) then
            imask_val = MPP_FILL_INT
         end if
      end if
