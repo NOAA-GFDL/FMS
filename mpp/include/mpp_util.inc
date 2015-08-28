@@ -83,6 +83,12 @@
     integer :: stdlog,istat
     logical :: opened
     character(len=11) :: this_pe
+!$  logical           :: omp_in_parallel    
+
+!$  if( omp_in_parallel() ) then
+!$     call mpp_error(FATAL, 'STDLOG: is called inside a OMP parallel region')
+!$  endif
+
     if( pe.EQ.root_pe )then
        write(this_pe,'(a,i6.6,a)') '.',pe,'.out'
        inquire( file=trim(configfile)//this_pe, opened=opened )
