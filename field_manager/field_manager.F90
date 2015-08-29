@@ -217,7 +217,9 @@ public :: fm_get_value_logical !   as above (overloaded function)
 public :: fm_get_value_real    !   as above (overloaded function)
 public :: fm_get_value_string  !   as above (overloaded function)
 public :: fm_intersection      ! (lists, num_lists) return fm_array_list pointer
+public :: fm_init_loop         ! (list, iter)
 public :: fm_loop_over_list    ! (list, name, type, index) return success
+                               ! (iter, name, type, index) return success
 public :: fm_new_list          ! (list [, create] [, keep]) return index
 public :: fm_new_value         ! (entry, value [, create] [, index]) return index !! generic
 public :: fm_new_value_integer !   as above (overloaded function)
@@ -386,6 +388,11 @@ type, public :: method_type_very_short
 end type
 ! </TYPE> NAME="method_type_very_short"
 
+! iterator over the field manager list
+type, public :: fm_list_iter_type
+   type(field_def), pointer    :: ptr => NULL()  ! pointer to the current field
+end type fm_list_iter_type
+
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        Public types
@@ -429,6 +436,11 @@ interface  fm_get_value  !{
   module procedure  fm_get_value_real
   module procedure  fm_get_value_string
 end interface  !}
+
+interface fm_loop_over_list
+  module procedure  fm_loop_over_list_new
+  module procedure  fm_loop_over_list_old
+end interface
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        Private parameters
@@ -3980,7 +3992,7 @@ end function fm_intersection  !}
 !     success = fm_loop_over_list(list, name, field_type, index)
 !   </TEMPLATE>
 !
-function  fm_loop_over_list(list, name, field_type, index)        &
+function  fm_loop_over_list_old(list, name, field_type, index)        &
           result (success)  !{
 !   <OUT NAME="success" TYPE="logical">
 !     A flag to indicate whether the function operated with (FALSE) or 
@@ -4103,8 +4115,51 @@ function  set_list_stuff()                                                &
 end function  set_list_stuff  !}
 ! </FUNCTION> NAME="set_list_stuff"
 
-end function  fm_loop_over_list  !}
+end function  fm_loop_over_list_old
 ! </FUNCTION> NAME="fm_loop_over_list"
+
+!#######################################################################
+! given a name of the list, prepares an iterator over the list content.
+! If the name of the given list is blank, then the current list is used
+subroutine fm_init_loop(loop_list, iter)
+  character(len=*)       , intent(in)  :: loop_list ! name of the list to iterate over
+  type(fm_list_iter_type), intent(out) :: iter     ! loop iterator
+  
+  if (.not.module_is_initialized) call initialize
+  
+  if (loop_list==' ') then ! looping over current list
+     iter%ptr => current_list_p%first_field
+  else
+     iter%ptr => find_list(loop_list,current_list_p,.false.)
+     if (associated(iter%ptr)) iter%ptr => iter%ptr%first_field
+  endif
+end subroutine fm_init_loop
+
+!#######################################################################
+! given a list iterator, returns information about curren list element
+! and advances the iterator to the next list element. At the end of the 
+! list, returns FALSE
+function fm_loop_over_list_new(iter, name, field_type, index) &
+         result (success) ; logical success
+  type (fm_list_iter_type), intent(inout) :: iter ! list iterator
+  character(len=*), intent(out) :: name       ! name of the current list item
+  character(len=*), intent(out) :: field_type ! type of the field
+  integer         , intent(out) :: index      ! index in the list
+
+  if (.not.module_is_initialized) call initialize
+  if (associated(iter%ptr)) then
+     name       = iter%ptr%name
+     field_type = field_type_name(iter%ptr%field_type)
+     index      = iter%ptr%index
+     success    = .TRUE.
+     iter%ptr => iter%ptr%next
+  else
+     name       = ' '
+     field_type = ' '
+     index      = 0
+     success    = .FALSE.
+  endif
+end function fm_loop_over_list_new
 
 !#######################################################################
 !#######################################################################
