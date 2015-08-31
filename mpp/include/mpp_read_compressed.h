@@ -86,6 +86,7 @@
 	 !!compare
 	 if ( mpp_pe() == mpp_root_pe() ) print '(A,Z16)', "mpp_read_compressed_2d chksum: "//trim(field%name)//" = ", chk
 	 !! discuss making fatal after testing/review to match other routines.
+         !Need to do some nword-counting/digging, this should be if ( chk /= field%checksum /= 0 ) as it was at ulm_201505
          if ( MOD(chk, field%checksum(1)) /= 0 ) then
 	    if ( mpp_pe() == mpp_root_pe() ) print '(A,Z16)', "stored checksum: "//trim(field%name)//" = ", field%checksum(1)
 	    if ( print_chksum) call mpp_error(NOTE,"mpp_read_compressed_2d chksum: "//trim(field%name)//" failed!")
