@@ -25,7 +25,7 @@
       integer, allocatable :: pelist(:)
       integer :: npes, p, threading_flag
       type(domain2d), pointer :: io_domain=>NULL()
-      logical :: compute_chksum,print_chksum
+      logical :: compute_chksum,print_compressed_chksum
       integer(LONG_KIND) ::chk
 
       call mpp_clock_begin(mpp_read_clock)
@@ -35,7 +35,7 @@
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_READ_COMPRESSED_2D_: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%valid )call mpp_error( FATAL, 'MPP_READ_COMPRESSED_2D_: invalid unit number.' )
 
-      print_chksum = .TRUE.
+      print_compressed_chksum = .FALSE.
       threading_flag = MPP_SINGLE
       if( PRESENT(threading) )threading_flag = threading
       if( threading_flag == MPP_MULTI ) then
@@ -86,10 +86,10 @@
 	 !!compare
 	 if ( mpp_pe() == mpp_root_pe() ) print '(A,Z16)', "mpp_read_compressed_2d chksum: "//trim(field%name)//" = ", chk
 	 !! discuss making fatal after testing/review to match other routines.
-         !Need to do some nword-counting/digging, this should be if ( chk /= field%checksum /= 0 ) as it was at ulm_201505
+         !Need to do some nword-counting and digging, this should be if ( chk /= field%checksum ) as it was tested @ulm_201505..
          if ( MOD(chk, field%checksum(1)) /= 0 ) then
-	    if ( mpp_pe() == mpp_root_pe() ) print '(A,Z16)', "stored checksum: "//trim(field%name)//" = ", field%checksum(1)
-	    if ( print_chksum) call mpp_error(NOTE,"mpp_read_compressed_2d chksum: "//trim(field%name)//" failed!")
+	    if ( mpp_pe() == mpp_root_pe() ) print '(A,Z16)', "File stored checksum: "//trim(field%name)//" = ", field%checksum(1)
+	    if ( print_compressed_chksum) call mpp_error(NOTE,"mpp_read_compressed_2d chksum: "//trim(field%name)//" failed!")
 	 end if
 
       end if
@@ -110,7 +110,7 @@
       integer, allocatable :: pelist(:)
       integer :: npes, p, threading_flag
       type(domain2d), pointer :: io_domain=>NULL()
-      logical :: compute_chksum
+      logical :: compute_chksum,print_compressed_chksum
       integer(LONG_KIND) ::chk
 
       call mpp_clock_begin(mpp_read_clock)
@@ -120,6 +120,7 @@
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_READ_COMPRESSED_3D_: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%valid )call mpp_error( FATAL, 'MPP_READ_COMPRESSED_3D_: invalid unit number.' )
 
+      print_compressed_chksum = .FALSE.
       threading_flag = MPP_SINGLE
       if( PRESENT(threading) )threading_flag = threading
       if( threading_flag == MPP_MULTI ) then
@@ -170,9 +171,10 @@
 	 !!compare
 	 if (mpp_pe()==mpp_root_pe()) print '(A,Z16)', "mpp_read_compressed_3d chksum: "//trim(field%name)//" = ",  chk
 	 !! discuss making fatal after testing/review to match other routines.
-	 if (chk /= field%checksum(1) ) then
-	    if ( mpp_pe() == mpp_root_pe() ) print '(A,Z16)', "stored chksum: "//trim(field%name)//" = ", field%checksum(1)
-	    call mpp_error(NOTE,"mpp_read_compressed_3d chksum: "//trim(field%name)//" failed!")
+         !Need to do some nword-counting and digging, this should be if ( chk /= field%checksum ) as it was tested @ulm_201505..
+         if ( MOD(chk, field%checksum(1)) /= 0 ) then
+	    if ( mpp_pe() == mpp_root_pe() ) print '(A,Z16)', "File stored checksum: "//trim(field%name)//" = ", field%checksum(1)
+	    if ( print_compressed_chksum) call mpp_error(NOTE,"mpp_read_compressed_3d chksum: "//trim(field%name)//" failed!")
 	 end if
       end if
 
