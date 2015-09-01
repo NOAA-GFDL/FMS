@@ -2736,7 +2736,8 @@ type (xmap_type), intent(inout) :: xmap
   end do
 
   !---set up information for get_1_from_xgrid_repro
-  if(make_exchange_reproduce .AND. xmap%get1_repro%nsend >0) then
+  if (make_exchange_reproduce) then
+  if (xmap%get1_repro%nsend > 0) then
      xloc = 0
      nsend = 0
      npes = xmap%npes
@@ -2761,6 +2762,7 @@ type (xmap_type), intent(inout) :: xmap
            xloc = xloc + count(xmap%grids(g)%frac_area(i,j,:)/=0.0)
         enddo
      enddo
+  endif
   endif
 
 end subroutine regen
