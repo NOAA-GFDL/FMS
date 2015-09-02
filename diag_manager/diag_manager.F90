@@ -180,7 +180,8 @@ MODULE diag_manager_mod
   ! </NAMELIST>
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
-       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date
+       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
+       & get_ticks_per_second
   USE mpp_io_mod, ONLY: mpp_open, mpp_close
   USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
 
@@ -213,7 +214,7 @@ MODULE diag_manager_mod
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
-  USE constants_mod, ONLY: SECONDS_PER_HOUR, SECONDS_PER_MINUTE
+  USE constants_mod, ONLY: SECONDS_PER_DAY
 
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
@@ -862,7 +863,7 @@ CONTAINS
     END IF
 
     IF ( PRESENT(interp_method) ) THEN
-       IF ( TRIM(interp_method) .NE. 'conserve_order1' ) THEN
+       IF ( TRIM(interp_method) .NE. 'conserve_order1' .AND. TRIM(interp_method) .NE. 'none' ) THEN
           ! <ERROR STATUS="FATAL">
           !   when registering module/output_field <module_name>/<field_name> then optional
           !   argument interp_method = <interp_method>, but it should be "conserve_order1"
@@ -1484,7 +1485,6 @@ CONTAINS
     LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) :: oor_mask
     CHARACTER(len=256) :: err_msg_local
     CHARACTER(len=128) :: error_string, error_string1
-    TYPE(time_type) :: dt ! time interval for diurnal output
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
@@ -1730,9 +1730,8 @@ CONTAINS
        ! compute the diurnal index
        sample = 1
        IF ( PRESENT(time) ) THEN
-          dt = set_time(0,1)/output_fields(out_num)%n_diurnal_samples ! our time interval
           CALL get_time(time,second,day,tick) ! current date
-          sample = set_time(second,0,tick)/dt + 1
+          sample = floor((second+real(tick)/get_ticks_per_second())*output_fields(out_num)%n_diurnal_samples/SECONDS_PER_DAY) + 1
        END IF
 
        ! Get the vertical layer start and end index.

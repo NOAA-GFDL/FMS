@@ -259,6 +259,7 @@ type restart_file_type
 end type restart_file_type
 
 interface read_data
+   module procedure read_data_4d_new
    module procedure read_data_3d_new
    module procedure read_data_2d_new
    module procedure read_data_1d_new
@@ -296,6 +297,7 @@ interface read_compressed
 end interface read_compressed
 
 interface write_data
+   module procedure write_data_4d_new
    module procedure write_data_3d_new
    module procedure write_data_2d_new
    module procedure write_data_1d_new
@@ -4361,6 +4363,30 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
 
 end subroutine setup_one_field
 
+!.....................................................................
+subroutine write_data_4d_new(filename, fieldname, data, domain,    &
+                             no_domain, position,tile_count, data_default)
+
+  character(len=*), intent(in)                 :: filename, fieldname
+  real, dimension(:,:,:,:), intent(in)         :: data
+  real, dimension(size(data,1),size(data,2),size(data,3)*size(data,4)) :: data_3d
+  real, intent(in), optional                   :: data_default
+  type(domain2d), intent(in), optional         :: domain
+  logical, intent(in), optional                :: no_domain
+  integer, intent(in), optional                :: position, tile_count
+  integer                                      :: i, k, l
+
+  if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(write_data_4d_new):need to call fms_io_init first')
+  i = 0
+  do l = 1, size(data,4) ; do k = 1, size(data,3)
+     i = i + 1
+     data_3d(:,:,i) = data(:,:,k,l)
+  enddo ; enddo
+
+  call write_data_3d_new(filename, fieldname, data_3d, domain, &
+                         no_domain, .false., position, tile_count, data_default)
+
+end subroutine write_data_4d_new
 
 !.....................................................................
 subroutine write_data_2d_new(filename, fieldname, data, domain,    &
@@ -5099,6 +5125,7 @@ subroutine read_compressed_3d(filename,fieldname,data,domain,timelevel)
   if (files_read(file_index)%var(index_field)%is_dimvar) then
      call mpp_get_axis_data(files_read(file_index)%var(index_field)%axis,data(:,1,1))
   else
+     call mpp_read_compressed(unit,files_read(file_index)%var(index_field)%field,d_ptr,data,timelevel)
   endif
   d_ptr =>NULL()
 end subroutine read_compressed_3d
@@ -5274,6 +5301,68 @@ subroutine read_data_text(filename,fieldname,data,level)
 end subroutine read_data_text
 !..............................................................
 ! </SUBROUTINE>
+
+subroutine read_data_4d_new(filename,fieldname,data,domain,timelevel,&
+                            no_domain,position,tile_count)
+  character(len=*), intent(in)                 :: filename, fieldname
+  real, dimension(:,:,:,:), intent(inout)      :: data     !2 dimensional data
+  real, dimension(size(data,1),size(data,2),size(data,3)*size(data,4)) :: data_3d
+  type(domain2d), intent(in), optional         :: domain
+  integer, intent(in) , optional               :: timelevel
+  logical, intent(in), optional                :: no_domain
+  integer, intent(in) , optional               :: position, tile_count
+
+  integer                                      :: i, k, l
+  integer                                      :: isc,iec,jsc,jec,isd,ied,jsd,jed
+  integer                                      :: isg,ieg,jsg,jeg
+  integer                                      :: xsize_c,ysize_c,xsize_d,ysize_d
+  integer                                      :: xsize_g,ysize_g, ishift, jshift
+
+!#ifdef use_CRI_pointers
+!  pointer( p, data_3d )
+!  p = LOC(data)
+!#endif
+
+  call read_data_3d_new(filename,fieldname,data_3d,domain,timelevel,&
+                        no_domain,.false., position,tile_count)
+
+  if(PRESENT(domain)) then
+     call mpp_get_global_domain( domain,isg,ieg,jsg,jeg,xsize=xsize_g,ysize=ysize_g, tile_count=tile_count, position=position)
+     call mpp_get_compute_domain( domain,isc,iec,jsc,jec,xsize=xsize_c,ysize=ysize_c, tile_count=tile_count, position=position)
+     call mpp_get_data_domain( domain,isd,ied,jsd,jed,xsize=xsize_d,ysize=ysize_d, tile_count=tile_count, position=position)
+     call mpp_get_domain_shift  (domain, ishift, jshift, position)
+     if(((size(data,1)==xsize_c) .and. (size(data,2)==ysize_c))) then !on_comp_domain
+        i = 0
+        do l = 1, size(data,4) ; do k = 1, size(data,3)
+           i = i + 1
+           data(:,:,k,l) = data_3d(:,:,i)
+        enddo ; enddo
+     else if((size(data,1)==xsize_d) .and. (size(data,2)==ysize_d)) then !on_data_domain
+        i = 0
+        do l = 1, size(data,4) ; do k = 1, size(data,3)
+           i = i + 1
+           data(isc-isd+1:iec-isd+1,jsc-jsd+1:jec-jsd+1,k,l) = data_3d(isc-isd+1:iec-isd+1,jsc-jsd+1:jec-jsd+1,i)
+        enddo ; enddo
+     else if((size(data,1)==xsize_g) .and. (size(data,2)==ysize_g)) then !on_global_domain
+        i = 0
+        do l = 1, size(data,4) ; do k = 1, size(data,3)
+           i = i + 1
+           data(:,:,k,l) = data_3d(:,:,i)
+        enddo ; enddo
+     else
+        call mpp_error(FATAL,'error in read_data_4d_new, field '//trim(fieldname)// &
+                      ' in file '//trim(filename)//' data must be in compute or data domain')
+     endif
+  else
+     i = 0
+     do l = 1, size(data,4) ; do k = 1, size(data,3)
+        i = i + 1
+        data(:,:,k,l) = data_3d(:,:,i)
+     enddo ; enddo
+  endif
+
+end subroutine read_data_4d_new
+
 subroutine read_data_2d_new(filename,fieldname,data,domain,timelevel,&
                             no_domain,position,tile_count)
   character(len=*), intent(in)                 :: filename, fieldname

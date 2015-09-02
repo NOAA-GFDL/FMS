@@ -111,8 +111,8 @@
 
       data = 0 !! zero out data so other tiles do not contribute junk to chksum
 
-      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_READ_COMPRESSED_2D_: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(unit)%valid )call mpp_error( FATAL, 'MPP_READ_COMPRESSED_2D_: invalid unit number.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_READ_COMPRESSED_3D_: must first call mpp_io_init.' )
+      if( .NOT.mpp_file(unit)%valid )call mpp_error( FATAL, 'MPP_READ_COMPRESSED_3D_: invalid unit number.' )
 
       threading_flag = MPP_SINGLE
       if( PRESENT(threading) )threading_flag = threading
@@ -121,7 +121,7 @@
       else if( threading_flag == MPP_SINGLE ) then
 
 	 io_domain=>mpp_get_io_domain(domain)
-	 if(.not. ASSOCIATED(io_domain)) call mpp_error( FATAL, 'MPP_READ_COMPRESSED_2D_: io_domain must be defined.' )
+	 if(.not. ASSOCIATED(io_domain)) call mpp_error( FATAL, 'MPP_READ_COMPRESSED_3D_: io_domain must be defined.' )
 	 npes = mpp_get_domain_npes(io_domain)
 	 allocate(pelist(npes))
 	 call mpp_get_pelist(io_domain,pelist)
@@ -143,7 +143,7 @@
 
 	 deallocate(pelist)
       else
-	 call mpp_error( FATAL, 'MPP_READ_COMPRESSED_2D_: threading should be MPP_SINGLE or MPP_MULTI')
+	 call mpp_error( FATAL, 'MPP_READ_COMPRESSED_3D_: threading should be MPP_SINGLE or MPP_MULTI')
       endif
 
       compute_chksum = .FALSE.

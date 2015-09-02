@@ -19,17 +19,17 @@ integer, parameter :: NUMINT = 6   ! The number of long integers to use to repre
                                    ! a real number.
 
 integer(LONG_KIND), parameter :: prec=2_8**NUMBIT ! The precision of each integer.
-real(DOUBLE_KIND), parameter :: r_prec=2.0**NUMBIT  ! A real version of prec.
-real(DOUBLE_KIND), parameter :: I_prec=1.0/(2.0**NUMBIT) ! The inverse of prec.
+real(DOUBLE_KIND), parameter :: r_prec=2.0_8**NUMBIT  ! A real version of prec.
+real(DOUBLE_KIND), parameter :: I_prec=1.0_8/(2.0_8**NUMBIT) ! The inverse of prec.
 integer, parameter :: max_count_prec=2**(63-NUMBIT)-1
                               ! The number of values that can be added together
                               ! with the current value of prec before there will
                               ! be roundoff problems.
 
 real(DOUBLE_KIND), parameter, dimension(NUMINT) :: &
-  pr = (/ r_prec**2, r_prec, 1.0, 1.0/r_prec, 1.0/r_prec**2, 1.0/r_prec**3 /)
+  pr = (/ r_prec**2, r_prec, 1.0_8, 1.0_8/r_prec, 1.0_8/r_prec**2, 1.0_8/r_prec**3 /)
 real(DOUBLE_KIND), parameter, dimension(NUMINT) :: &
-  I_pr = (/ 1.0/r_prec**2, 1.0/r_prec, 1.0, r_prec, r_prec**2, r_prec**3 /)
+  I_pr = (/ 1.0_8/r_prec**2, 1.0_8/r_prec, 1.0_8, r_prec, r_prec**2, r_prec**3 /)
 
 logical :: overflow_error = .false., NaN_error = .false.
 logical :: debug = .false.    ! Making this true enables debugging output.
