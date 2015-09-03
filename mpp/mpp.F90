@@ -1198,6 +1198,8 @@ private
   integer :: in_unit=5, out_unit=6, err_unit=0
 #endif
 
+  integer :: stdout_unit
+
   !--- variables used in mpp_util.h
   type(Summary_Struct) :: clock_summary(MAX_CLOCKS)
   logical              :: warnings_are_fatal = .FALSE.

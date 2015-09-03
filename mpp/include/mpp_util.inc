@@ -92,7 +92,7 @@
 !       This will be a cicular call. 
 
 !$  if( omp_in_parallel() ) then
-!$OMP critical
+!$OMP single
 !$      errunit = stderr()
 !$      write( errunit,'(/a/)' ) 'FATAL: STDLOG: is called inside a OMP parallel region'
 #ifdef sgi_mipspro
@@ -103,7 +103,7 @@
 #else
 !$      call ABORT()
 #endif
-!$OMP end critical
+!$OMP end single
 !$  endif
 
     if( pe.EQ.root_pe )then
