@@ -103,7 +103,7 @@ module mpp_parameter_mod
   integer, parameter :: BITWISE_EXACT_SUM=1
   integer, parameter :: BITWISE_EFP_SUM=2
   integer, parameter :: MPP_DOMAIN_TIME=MPP_DEBUG+1
-  integer, parameter :: MAX_DOMAIN_FIELDS=20
+  integer, parameter :: MAX_DOMAIN_FIELDS=100
   integer, parameter :: MAX_TILES=10
 
   !--- The following paramters are used by mpp_io_mod and its components.
