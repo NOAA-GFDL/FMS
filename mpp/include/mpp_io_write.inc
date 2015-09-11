@@ -823,21 +823,25 @@
             else
                if (KIND(field%fill)==DOUBLE_KIND) then
                   if (CEILING(field%fill,KIND=INT_KIND)== MPP_FILL_INT) then
-                     !MPP_FILL_DOUBLE found
-                     call mpp_error(NOTE,"mpp_io(mpp_io_write.inc): When pack=0, fill and data should be registered as same TYPE(KIND)."// &
-                          "Found default field%fill=MPP_FILL_DOUBLE for an INT_KIND field. Defaulting to MPP_FILL_INT.")
+                     !MPP_FILL_DOUBLE found for INT_KIND field (determined by pack==0), use MPP_FILL_INT 
                      call mpp_write_meta( unit, field%id, '_FillValue', ival=MPP_FILL_INT, pack=pack )                  
                   end if
                else if (KIND(field%fill)==INT_KIND) then
+                  !if fill is MPP_FILL_FLOAT (also catches demotions via REAL(MPP_FILL_DOUBLE,REAL_KIND)) 
+                  ! or fill is bitstring transfer of MPP_FILL_INT
+                  ! for INT_KIND field (determined by pack==0), use MPP_FILL_INT 
                   if (CEILING(field%fill,KIND=INT_KIND)== MPP_FILL_INT .OR. TRANSFER(field%fill,MPP_FILL_INT)==MPP_FILL_INT ) then
                      call mpp_write_meta( unit, field%id, '_FillValue', ival=MPP_FILL_INT, pack=pack )
                   else
-                     call mpp_error(NOTE,"mpp_io(mpp_io_write.inc): When pack=0, fill and data should be registered as same TYPE(KIND)."// &
-                          "Found default field%fill is float for an INT_KIND field. Bit transfering your fill.... ")
+                     ! The fill is not recognized, attempts bit transfer, but we should fix any of these at origination, not here...
+                     call mpp_error(NOTE,"mpp_io(mpp_io_write.inc): Pack=0 is for INT_KIND data.  Fill and Data should be registered as same TYPE(KIND),"// &
+                          "either by register_restart_field_* or default. Supplied field%fill is a REAL_KIND that is not a mapping to a MPP_FILL_ value." // &
+                          "Supplied fill will be bit transfered. Use an MPP_FILL_ to rid this Note, or discuss with FMS justification to support this fill.")
                      call mpp_write_meta( unit, field%id, '_FillValue', ival=TRANSFER( field%fill, INT(0,INT_KIND)), pack=pack )
                   end if
                else
-                  call mpp_error(FATAL,"mpp_io(mpp_io_write.inc): Unexpected KIND of fill, use either 4, or 8 byte KIND.")
+                  call mpp_error(FATAL,"mpp_io(mpp_io_write.inc): Unexpected KIND of fill." // &
+                       " Use either MPP_FILL_{INT,FLOAT,DOUBLE} matching type(kind) of field.")
                end if
             end if
          else
