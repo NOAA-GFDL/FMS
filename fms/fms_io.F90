@@ -1906,7 +1906,8 @@ function register_restart_field_i0d_2level(fileObj, filename, fieldname, data1, 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_i0d_2level): need to call fms_io_init')
 
-  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i0d_2level): data_default and data different KIND()')
+  if (KIND(data_default)/=KIND(data1)) call mpp_error(FATAL,'fms_io(register_restart_field_i0d_2level): data_default and data1 different KIND()')
+  if (KIND(data_default)/=KIND(data2)) call mpp_error(FATAL,'fms_io(register_restart_field_i0d_2level): data_default and data2 different KIND()')
   data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
   if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
 
@@ -1946,7 +1947,8 @@ function register_restart_field_i1d_2level(fileObj, filename, fieldname, data1, 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_i1d_2level): need to call fms_io_init')
 
-  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i1d_2level): data_default and data different KIND()')
+  if (KIND(data_default)/=KIND(data1)) call mpp_error(FATAL,'fms_io(register_restart_field_i1d_2level): data_default and data1 different KIND()')
+  if (KIND(data_default)/=KIND(data2)) call mpp_error(FATAL,'fms_io(register_restart_field_i1d_2level): data_default and data2 different KIND()')
   data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
   if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
 
@@ -1986,7 +1988,8 @@ function register_restart_field_i2d_2level(fileObj, filename, fieldname, data1, 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_i2d_2level): need to call fms_io_init')
 
-  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i2d_2level): data_default and data different KIND()')
+  if (KIND(data_default)/=KIND(data1)) call mpp_error(FATAL,'fms_io(register_restart_field_i2d_2level): data_default and data1 different KIND()')
+  if (KIND(data_default)/=KIND(data2)) call mpp_error(FATAL,'fms_io(register_restart_field_i2d_2level): data_default and data2 different KIND()')
   data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
   if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
 
@@ -2026,7 +2029,8 @@ function register_restart_field_i3d_2level(fileObj, filename, fieldname, data1, 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_i3d_2level): need to call fms_io_init')
 
-  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i3d_2level): data_default and data different KIND()')
+  if (KIND(data_default)/=KIND(data1)) call mpp_error(FATAL,'fms_io(register_restart_field_i3d_2level): data_default and data1 different KIND()')
+  if (KIND(data_default)/=KIND(data2)) call mpp_error(FATAL,'fms_io(register_restart_field_i3d_2level): data_default and data2 different KIND()')
   data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
   if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
 
