@@ -1893,7 +1893,7 @@ function register_restart_field_i0d_2level(fileObj, filename, fieldname, data1, 
   character(len=*),           intent(in)         :: filename, fieldname
   integer,                    intent(in), target :: data1, data2
   type(domain2d),   optional, intent(in), target :: domain
-  real,             optional, intent(in)         :: data_default
+  integer,          optional, intent(in)         :: data_default
   integer,          optional, intent(in)         :: position, tile_count
   logical,          optional, intent(in)         :: mandatory
   logical,          optional, intent(in)         :: no_domain
@@ -1901,12 +1901,18 @@ function register_restart_field_i0d_2level(fileObj, filename, fieldname, data1, 
   logical,          optional, intent(in)         :: read_only
   integer                                        :: index_field
   integer                                        :: register_restart_field_i0d_2level
+  real                                           :: data_default_r
 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_i0d_2level): need to call fms_io_init')
+
+  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i0d_2level): data_default and data different KIND()')
+  data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
+  if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
+
   call setup_one_field(fileObj, filename, fieldname, (/1, 1, 1, 2/), index_field, domain, &
                        mandatory, no_domain=no_domain, scalar_or_1d=.true., position=position, tile_count=tile_count, &
-                       data_default=data_default, longname=longname, units=units, read_only=read_only)
+                       data_default=data_default_r, longname=longname, units=units, read_only=read_only)
   fileObj%p0di(1, index_field)%p => data1
   fileObj%p0di(2, index_field)%p => data2
   fileObj%var(index_field)%ndim = 0
@@ -1927,7 +1933,7 @@ function register_restart_field_i1d_2level(fileObj, filename, fieldname, data1, 
   character(len=*),           intent(in)         :: filename, fieldname
   integer,  dimension(:),     intent(in), target :: data1, data2
   type(domain2d),   optional, intent(in), target :: domain
-  real,             optional, intent(in)         :: data_default
+  integer,          optional, intent(in)         :: data_default
   integer,          optional, intent(in)         :: position, tile_count
   logical,          optional, intent(in)         :: mandatory
   logical,          optional, intent(in)         :: no_domain
@@ -1935,12 +1941,18 @@ function register_restart_field_i1d_2level(fileObj, filename, fieldname, data1, 
   logical,          optional, intent(in)         :: read_only
   integer                                        :: index_field
   integer                                        :: register_restart_field_i1d_2level
+  real                                           :: data_default_r
 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_i1d_2level): need to call fms_io_init')
+
+  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i1d_2level): data_default and data different KIND()')
+  data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
+  if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
+
   call setup_one_field(fileObj, filename, fieldname, (/size(data1,1), 1, 1, 2/), index_field, domain, &
                        mandatory, no_domain=no_domain, scalar_or_1d=.true., position=position, tile_count=tile_count, &
-                       data_default=data_default, longname=longname, units=units, read_only=read_only)
+                       data_default=data_default_r, longname=longname, units=units, read_only=read_only)
   fileObj%p1di(1, index_field)%p => data1
   fileObj%p1di(2, index_field)%p => data2
   fileObj%var(index_field)%ndim = 1
@@ -1952,7 +1964,7 @@ end function register_restart_field_i1d_2level
 
 !-------------------------------------------------------------------------------
 !
-!   The routine will register a 3-D integer restart file field with two time level
+!   The routine will register a 2-D integer restart file field with two time level
 !
 !-------------------------------------------------------------------------------
 function register_restart_field_i2d_2level(fileObj, filename, fieldname, data1, data2, domain, mandatory, &
@@ -1961,7 +1973,7 @@ function register_restart_field_i2d_2level(fileObj, filename, fieldname, data1, 
   character(len=*),           intent(in)         :: filename, fieldname
   integer,  dimension(:,:),   intent(in), target :: data1, data2
   type(domain2d),   optional, intent(in), target :: domain
-  real,             optional, intent(in)         :: data_default
+  integer,          optional, intent(in)         :: data_default
   logical,          optional, intent(in)         :: no_domain
   integer,          optional, intent(in)         :: position, tile_count
   logical,          optional, intent(in)         :: mandatory
@@ -1969,12 +1981,18 @@ function register_restart_field_i2d_2level(fileObj, filename, fieldname, data1, 
   logical,          optional, intent(in)         :: read_only
   integer                                        :: index_field
   integer                                        :: register_restart_field_i2d_2level
+  real                                           :: data_default_r
 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_i2d_2level): need to call fms_io_init')
+
+  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i2d_2level): data_default and data different KIND()')
+  data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
+  if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
+
   call setup_one_field(fileObj, filename, fieldname, (/size(data1,1), size(data1,2), 1, 2/), &
                        index_field, domain, mandatory, no_domain, .false., &
-                       position, tile_count, data_default, longname, units, read_only=read_only)
+                       position, tile_count, data_default_r, longname, units, read_only=read_only)
   fileObj%p2di(1, index_field)%p => data1
   fileObj%p2di(2, index_field)%p => data2
   fileObj%var(index_field)%ndim = 2
@@ -1995,7 +2013,7 @@ function register_restart_field_i3d_2level(fileObj, filename, fieldname, data1, 
   character(len=*),           intent(in)         :: filename, fieldname
   integer,  dimension(:,:,:), intent(in), target :: data1, data2
   type(domain2d),   optional, intent(in), target :: domain
-  real,             optional, intent(in)         :: data_default
+  integer,          optional, intent(in)         :: data_default
   logical,          optional, intent(in)         :: no_domain
   integer,          optional, intent(in)         :: position, tile_count
   logical,          optional, intent(in)         :: mandatory
@@ -2003,12 +2021,18 @@ function register_restart_field_i3d_2level(fileObj, filename, fieldname, data1, 
   logical,          optional, intent(in)         :: read_only
   integer                                        :: index_field
   integer                                        :: register_restart_field_i3d_2level
+  real                                           :: data_default_r
 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_i3d_2level): need to call fms_io_init')
+
+  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i3d_2level): data_default and data different KIND()')
+  data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
+  if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
+
   call setup_one_field(fileObj, filename, fieldname, (/size(data1,1), size(data1,2), size(data1,3), 2/), &
                        index_field, domain, mandatory, no_domain, .false., &
-                       position, tile_count, data_default, longname, units, read_only=read_only)
+                       position, tile_count, data_default_r, longname, units, read_only=read_only)
   fileObj%p3di(1, index_field)%p => data1
   fileObj%p3di(2, index_field)%p => data2
   fileObj%var(index_field)%ndim = 3
