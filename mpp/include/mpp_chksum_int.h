@@ -31,11 +31,10 @@ function MPP_CHKSUM_INT_RMASK_( var, pelist, mask_val )
   real(KIND(var))::rtmpVarP(2)
   !high fidelity error message
   character(LEN=1) :: tmpStr1,tmpStr2,tmpStr3
-  character(LEN=32) :: tmpStr4
+  character(LEN=32) :: tmpStr4,tmpStr5
   character(LEN=512) :: errStr
 
-
-! Primary Logic: These are the "expected" branches.
+! Primary Logic: These first two are the "expected" branches.
 !! These all resolve to MPP_FILL_INT
   !!Should catch real "default_fill"(MPP_FILL_DOUBLE), .OR. mask_val == MPP_FILL_FLOAT
   if (mask_val == MPP_FILL_DOUBLE ) then !this is FMS variable default fill, and is the crutch supporting nonregistered...
@@ -72,15 +71,31 @@ function MPP_CHKSUM_INT_RMASK_( var, pelist, mask_val )
         end if
      end if
 ! according to the Walpiri, there should be no third logic, it represent too many, ie low class corner cases..
-! so here be dragons, we should not be doing either of these things, but someone will try, and we are going to help them
+! so here be dragons, we should not be doing either of these things, but someone will try,
+! and we are going to help them by giving detail
   !! r4 mask, i8 var
   else if ( KIND(mask_val)==FLOAT_KIND .AND. KIND(var)==LONG_KIND ) then
-     call mpp_error(WARNING, "mpp_chksum was called with a var(LONG_KIND) and mask_val(FLOAT_KIND) // &
-          and supported MPP_FILL_ parameters were not found. MPP will continue using CEILING(mask_val,LONG_KING);// &
-          to support possible legacy code. Please contact your FMS liason if you need help //&
-          using MPP_FILL_ along with explicit KINDs to make this message go away. THIS WILL BE FATAL IN THE FUTURE!")
-     imask_val = CEILING(mask_val,KIND=LONG_KIND)
-  else !
+     !!!MPP_FILL_ would have been caught in the Primary Logic tests,
+     ! construct detailed errStr
+     errStr = "mpp_chksum: mpp_chksum_i"
+     write(unit=tmpStr1,fmt="(I1)") KIND(var)
+     write(unit=tmpStr2,fmt="(I1)") SIZE(SHAPE(var))
+     errStr = errStr // tmpStr1 // "_" // tmpStr2 // "d_rmask passed int var with REAL("
+     write(unit=tmpStr3,fmt="(I1)") KIND(mask_val)
+     errStr = errStr // tmpStr3 // ") mask_val="
+     write(unit=tmpStr4,fmt=*) mask_val
+
+     imask_val = CEILING(mask_val,LONG_KIND)
+
+     write(unit=tmpStr5,fmt=*) imask_val
+     errStr = errStr // trim(tmpStr4) // "has been called in a strange way; supported MPP_FILL_ not found." //&
+          "Check your KINDS, _FillValue, pack and mask_val for correctness. "// &
+           "MPP will continue using CEILING(mask_val,LONG_KING)="// trim(tmpStr5) // &
+           ".Hint: Using defaults, or explicit MPP_FILL_{INT,FLOAT,DOUBLE} instead of custom values should avoid this." //&
+           "THIS WILL BE FATAL IN THE FUTURE!"
+     call mpp_error(WARNING, trim(errStr) )
+
+  else
      ! construct detailed errStr
       errStr = "mpp_chksum: mpp_chksum_i"
       write(unit=tmpStr1,fmt="(I1)") KIND(var)
