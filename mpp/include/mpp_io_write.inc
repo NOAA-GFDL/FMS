@@ -821,17 +821,6 @@
             if ( present(scale).OR.present(add) ) then
                call mpp_error(FATAL,"add,scale not currently implimented for pack=0 int handling, try reals instead.")
             else 
-!                if (KIND(field%fill)==INT_KIND) then
-!                   call mpp_write_meta( unit, field%id, '_FillValue', ival=TRANSFER( field%fill, INT(0,INT_KIND)), pack=pack )
-!                else ! not INT_KIND
-!                   if ( field%fill == MPP_FILL_DOUBLE .OR. CEILING(field%fill,INT_KIND) == MPP_FILL_INT) then
-!                      !found MPP_FILL_
-!                      call mpp_write_meta( unit, field%id, '_FillValue', ival=TRANSFER( MPP_FILL_INT, MOLD=MPP_FILL_INT), pack=pack )
-!                   else
-!                      !or croak
-!                      call mpp_error(FATAL,"mpp_io(mpp_io_write.inc): Unsupported fill passed for INT_KIND data, use defaults or MPP_FILL_.")
-!                   end if
-!                end if
                ! Trust No One
                call mpp_write_meta( unit, field%id, '_FillValue', ival=MPP_FILL_INT, pack=pack )
             end if
