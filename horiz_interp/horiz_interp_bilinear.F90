@@ -474,8 +474,8 @@ contains
     lon_min = minval(lon_in);
     lon_max = maxval(lon_in);
 
-    max_step = min(nlon_in,nlat_in)/2 ! can be adjusted if needed
-    allocate(ilon(8*max_step), jlat(8*max_step) )
+    max_step = max(nlon_in,nlat_in) ! can be adjusted if needed
+    allocate(ilon(5*max_step), jlat(5*max_step) )
 
     do n = 1, nlat_out
        do m = 1, nlon_out
@@ -652,8 +652,21 @@ contains
              enddo
           endif
           if(.not.found) then
+              print *,'lon,lat=',lon*180./PI,lat*180./PI
+              print *,'npts=',npts
+              print *,'is,ie= ',istart,iend
+              print *,'js,je= ',jstart,jend              
+              print *,'lon_in(is,js)=',lon_in(istart,jstart)*180./PI
+              print *,'lon_in(ie,js)=',lon_in(iend,jstart)*180./PI
+              print *,'lat_in(is,js)=',lat_in(istart,jstart)*180./PI
+              print *,'lat_in(ie,js)=',lat_in(iend,jstart)*180./PI
+              print *,'lon_in(is,je)=',lon_in(istart,jend)*180./PI
+              print *,'lon_in(ie,je)=',lon_in(iend,jend)*180./PI
+              print *,'lat_in(is,je)=',lat_in(istart,jend)*180./PI
+              print *,'lat_in(ie,je)=',lat_in(iend,jend)*180./PI                  
+              
              call mpp_error(FATAL, &
-                  'horiz_interp_bilinear_mod: the destination point is not inside the source grid' )
+                  'find_neighbor: the destination point is not inside the source grid' )
           endif
        enddo
     enddo
@@ -715,6 +728,8 @@ contains
     real                                   :: polyx(4), polyy(4)
     real                                   :: min_lon, min_lat, max_lon, max_lat    
 
+    integer, parameter :: step_div=8
+    
     tpi = 2.0*pi
     nlon_in  = size(lon_in,1) ; nlat_in  = size(lat_in,2)
     nlon_out = size(lon_out,1); nlat_out = size(lon_out,2)
@@ -722,8 +737,8 @@ contains
     lon_min = minval(lon_in);
     lon_max = maxval(lon_in);
 
-    max_step = min(nlon_in,nlat_in)/2 ! can be adjusted if needed
-    allocate(ilon(8*max_step), jlat(8*max_step) )
+    max_step = min(nlon_in,nlat_in)/step_div ! can be adjusted if needed
+    allocate(ilon(step_div*max_step), jlat(step_div*max_step) )
 
     do n = 1, nlat_out
        do m = 1, nlon_out
