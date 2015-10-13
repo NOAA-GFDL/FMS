@@ -494,6 +494,12 @@ contains
              call mpp_error(FATAL,'horiz_interp_bilinear_mod: ' //&
                   'when input grid is not modulo, output grid should locate inside input grid')
           endif
+          
+!          if(lon .lt. lon_min .or. lon .gt. lon_max ) then
+!              print *,'lon_min,lon_max=',lon_min*180./PI,lon_max*180./PI
+!              print *,'lon= ',lon*180./PI
+!          endif
+         
           !--- search for the surrounding four points locatioon.
           if(m==1 .and. n==1) then
              J_LOOP: do j = 1, nlat_in-1
@@ -902,12 +908,13 @@ contains
           endif
           if(.not.found) then
              if(no_crash) then
-                Interp % i_lon (m,n,1:2) = DUMMY
-                Interp % j_lat (m,n,1:2) = DUMMY
-                print*,'lon,lat=',lon,lat ! snz
+!                Interp % i_lon (m,n,1:2) = Interp % i_lon (m-1,n,1:2)
+!                Interp % j_lat (m,n,1:2) = Interp % j_lat (m-1,n,1:2)
+                print *,'is,js=',is,js,lon_in(is,js)*180./PI,lat_in(is,js)*180./PI
+                print *,'lon,lat=',lon*180./PI,lat*180./PI ! snz
              else
                 call mpp_error(FATAL, &
-                    'horiz_interp_bilinear_mod: the destination point is not inside the source grid' )
+                    'find_neighbor_new: the destination point is not inside the source grid' )
              endif
           endif
        enddo
