@@ -820,18 +820,9 @@
          else if (field%pack==0) then ! some safety checks for integer fills
             if ( present(scale).OR.present(add) ) then
                call mpp_error(FATAL,"add,scale not currently implimented for pack=0 int handling, try reals instead.")
-            else
-               if (KIND(field%fill)==DOUBLE_KIND) then
-                  !! check if type safe cast
-                  if ( field%fill /= TRANSFER( IBITS( TRANSFER(field%fill,INT(0,DOUBLE_KIND)) ,0 , BIT_SIZE(INT(0,INT_KIND))) , field%fill ) ) then
-                     call mpp_error(FATAL,"mpp_io(mpp_io_write.inc): For pack=0, fill and data should both be safely castable"// &
-                          "to NF_INT type, _FillValue was actually using more precision than INT_KIND, cannot safely cast.")
-                  end if
-               else if (KIND(field%fill)/=INT_KIND) then
-                  call mpp_error(FATAL,"mpp_io(mpp_io_write.inc): Unexpected KIND of fill, use either 4, or 8 byte KIND.")
-               end if
-               !! then safe to write ival _FillValue and pack
-               call mpp_write_meta( unit, field%id, '_FillValue', ival=TRANSFER( field%fill, INT(0,INT_KIND)), pack=pack )
+            else 
+               ! Trust No One
+               call mpp_write_meta( unit, field%id, '_FillValue', ival=MPP_FILL_INT, pack=pack )
             end if
          else
             a = nint((fill-add)/scale)

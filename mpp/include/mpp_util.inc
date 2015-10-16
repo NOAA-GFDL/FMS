@@ -83,6 +83,29 @@
     integer :: stdlog,istat
     logical :: opened
     character(len=11) :: this_pe
+!$  logical           :: omp_in_parallel    
+!$  integer           :: errunit
+
+
+!NOTES: We can not use mpp_error to handle the error because mpp_error
+!       will call stdout and stdout will call stdlog for non-root-pe.
+!       This will be a cicular call. 
+
+!$  if( omp_in_parallel() ) then
+!$OMP single
+!$      errunit = stderr()
+!$      write( errunit,'(/a/)' ) 'FATAL: STDLOG: is called inside a OMP parallel region'
+#ifdef sgi_mipspro
+!$      call TRACE_BACK_STACK_AND_PRINT()
+#endif
+#ifdef use_libMPI
+!$      call MPI_ABORT( MPI_COMM_WORLD, 1, error )
+#else
+!$      call ABORT()
+#endif
+!$OMP end single
+!$  endif
+
     if( pe.EQ.root_pe )then
        write(this_pe,'(a,i6.6,a)') '.',pe,'.out'
        inquire( file=trim(configfile)//this_pe, opened=opened )

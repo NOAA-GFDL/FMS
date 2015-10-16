@@ -3,7 +3,7 @@ function MPP_CHKSUM_INT_( var, pelist, mask_val )
       MPP_TYPE_, intent(in) :: var MPP_RANK_
       integer, optional :: pelist(:)
   MPP_TYPE_, intent(in), optional :: mask_val
-  
+
   if ( PRESENT(mask_val) ) then
      !PACK on var/=mask_val ignores values in var
      !equiv to setting those values=0, but on sparse arrays
@@ -26,40 +26,60 @@ function MPP_CHKSUM_INT_RMASK_( var, pelist, mask_val )
   MPP_TYPE_, intent(in) :: var MPP_RANK_
   integer, optional :: pelist(:)
   real, intent(in) :: mask_val
-  real(KIND(var)) :: tmpVarP
-  real(KIND(mask_val)) :: tmpMaskP
-  integer(KIND(var)) :: mask_val_bitcastToVarKind
+  integer(KIND(var))::imask_val
+  integer(INT_KIND)::i4tmp(2)=0
+  real(FLOAT_KIND)::r4tmp(2)=0
+  integer(LONG_KIND) :: i8tmp=0
+  !high fidelity error message
   character(LEN=1) :: tmpStr1,tmpStr2,tmpStr3
-  character(LEN=32) :: tmpStr4
-  character(LEN=256) :: errStr
+  character(LEN=32) :: tmpStr4,tmpStr5
+  character(LEN=512) :: errStr
 
-  if ( KIND(mask_val) == KIND(var)) then !sameKind
-     !cast to MPP_TYPE_
-     mask_val_bitcastToVarKind = TRANSFER(mask_val , mask_val_bitcastToVarKind)
-  else ! KIND of mask_val and var are different
-    !check to see if can lossless cast to the precision KIND of var and back
-    tmpVarP  = REAL( mask_val , KIND=KIND(var) ) ! cast to precision of var
-    tmpMaskP = REAL( tmpVarP  , KIND=KIND(mask_val) ) !cast back to precision of mask_val
+! Primary Logic: These first two are the "expected" branches.
+!! These all resolve to MPP_FILL_INT
+  !!Should catch real "default_fill"(MPP_FILL_DOUBLE)
+  if (mask_val == MPP_FILL_DOUBLE ) then !this is FMS variable field default fill
+     ! we've packed an MPP_FILL_
+     imask_val = MPP_FILL_INT     
+  !!! Current NETCDF fill values (AKA MPP_FILL_*) designed towards CEILING(MPP_FILL_{FLOAT,DOUBLE},kind=4byte)=MPP_FILL_INT
+  else if ( CEILING(mask_val,INT_KIND) == MPP_FILL_INT ) then
+     ! we've also packed an MPP_FILL_
+     imask_val = MPP_FILL_INT
+! Secondary Logic:
+!! We've done something dangerous
+  else
+     i8tmp = TRANSFER(mask_val , i8tmp )
+     i4tmp = TRANSFER(mask_val , i4tmp )
+     r4tmp = TRANSFER(mask_val , r4tmp )
+     if ( i8tmp == MPP_FILL_INT ) then
+        ! we've packed an MPP_FILL_
+        imask_val = MPP_FILL_INT
+     else if ( ANY(i4tmp == MPP_FILL_INT) ) then
+        ! we've packed an MPP_FILL_
+        imask_val = MPP_FILL_INT
+     else if ( ANY(r4tmp == MPP_FILL_DOUBLE) ) then
+        ! we've packed an MPP_FILL_
+        imask_val = MPP_FILL_INT        
+     else
+        ! we have no idea what this is
+        ! construct detailed errStr
+        errStr = "mpp_chksum: mpp_chksum_i"
+        write(unit=tmpStr1,fmt="(I1)") KIND(var)
+        write(unit=tmpstr2,fmt="(I1)") SIZE(SHAPE(var))
+        errStr = errStr // tmpStr1 // "_" // tmpstr2 // "d_rmask passed int var with REAL("
+        write(unit=tmpstr3,fmt="(I1)") KIND(mask_val)
+        errStr = errStr // tmpstr3 // ") mask_val="
+        write(unit=tmpstr4,fmt=*) mask_val
+        errStr = errStr // trim(tmpstr4) // "has been called with these strange values. Check your KINDS, _FillValue, pack and mask_val. // &
+             Hint: Try being explicit and using MPP_FILL_{INT,FLOAT,DOUBLE}. Continuing by using the default MPP_FILL_INT. // &
+             THIS WILL BE FATAL IN THE FUTURE!"
+        call mpp_error(WARNING, trim(errStr) )
 
-    if (  tmpMaskP == mask_val ) then !safeCast
-       !We can use cast of mask_val
-       mask_val_bitcastToVarKind = TRANSFER( tmpVarP , mask_val_bitcastToVarKind )
-    else 
-      ! construct detailed errStr
-      errStr = "mpp_chksum: mpp_chksum_i" 
-      write(unit=tmpStr1,fmt="(I1)") KIND(var) 
-      write(unit=tmpstr2,fmt="(I1)") SIZE(SHAPE(var))
-      errStr = errStr // tmpStr1 // "_" // tmpstr2 // "d_rmask passed int var with REAL(" 
-      write(unit=tmpstr3,fmt="(I1)") KIND(mask_val) 
-      errStr = errStr // tmpstr3 // ") mask_val="
-      write(unit=tmpstr4,fmt=*) mask_val
-      errStr = errStr // trim(tmpstr4) // ", mask cannot be safely cast. Check _FillValue and mask_val. Hint: Try MPP_FILL_{INT,FLOAT,DOUBLE}."
-      call mpp_error(FATAL, trim(errStr) )
-    end if ! safeCast
-  end if ! sameKind
+        imask_val = MPP_FILL_INT
+     end if
+  end if
 
-  ! proceed as integer checksum using bitcast mask_val
-  MPP_CHKSUM_INT_RMASK_ = mpp_chksum(var,pelist,mask_val=mask_val_bitcastToVarKind)
+  MPP_CHKSUM_INT_RMASK_ = mpp_chksum(var,pelist,mask_val=imask_val)
 
   return
 

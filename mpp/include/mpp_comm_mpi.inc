@@ -173,6 +173,8 @@
      write( iunit,'(/a)' )'MPP module '//trim(mpp_data_version)//trim(mpp_data_tagname)
   end if
 
+  stdout_unit = stdout()
+
   call mpp_clock_begin(clock0)
 
   return
@@ -383,8 +385,7 @@ end subroutine mpp_gsm_free
       if( debug )then
           call SYSTEM_CLOCK(tick)
           if(mpp_pe() == mpp_root_pe()) then
-            out_unit = stdout()
-            write( out_unit,'(a,i18,a,i5,a,2i5,2i8)' )&
+            write( stdout_unit,'(a,i18,a,i5,a,2i5,2i8)' )&
                'T=',tick, ' PE=',pe, 'mpp_broadcast_text begin: from_pe, length=', from_pe, length
           endif
       end if
