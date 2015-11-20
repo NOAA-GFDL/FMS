@@ -2422,11 +2422,8 @@ end interface
   end interface  
 
   ! Include variable "version" to be written to log file.
-#ifdef _FILE_VERSION
-  character(len=*), parameter, public :: version = _FILE_VERSION
-#else
-  character(len=*), parameter, public :: version = 'unknown'
-#endif
+#include<file_version.h>
+  public version
 
 
 contains

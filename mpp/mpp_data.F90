@@ -11,11 +11,8 @@ module mpp_data_mod
   private
 
 ! Include variable "version" to be written to log file.
-#ifdef _FILE_VERSION
-  character(len=*), parameter, public :: version = _FILE_VERSION
-#else
-  character(len=*), parameter, public :: version = 'unknown'
-#endif
+#include<file_version.h>
+  public version
 
 #if defined(use_libSMA) || defined(use_MPI_SMA)
 #include <mpp/shmem.fh>

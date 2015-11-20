@@ -1244,11 +1244,8 @@ private
 !***********************************************************************
 
 ! Include variable "version" to be written to log file.
-#ifdef _FILE_VERSION
-  character(len=*), parameter, public :: version = _FILE_VERSION
-#else
-  character(len=*), parameter, public :: version = 'unknown'
-#endif
+#include<file_version.h>
+  public version
 
   integer, parameter :: MAX_REQUEST_MIN  = 10000
   integer            :: request_multiply = 20
