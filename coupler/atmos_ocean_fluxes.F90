@@ -188,8 +188,8 @@ character(len=48), parameter    :: mod_name = 'atmos_ocean_fluxes_mod'
 !----------------------------------------------------------------------
 !
 
-character(len=128) :: version = '$Id$'
-character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
 !
 !-----------------------------------------------------------------------

@@ -408,8 +408,8 @@ type xmap_type
 end type xmap_type
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id$'
- character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
  real, parameter                              :: EPS = 1.0e-10
  real, parameter                              :: LARGE_NUMBER = 1.e20
@@ -494,7 +494,7 @@ subroutine xgrid_init(remap_method)
 #endif
 
 !--------- write version number and namelist ------------------
-  call write_version_number (version, tagname)
+  call write_version_number("XGRID_MOD", version)
 
   unit = stdlog ( )
   out_unit = stdout()

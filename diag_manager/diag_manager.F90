@@ -235,11 +235,9 @@ MODULE diag_manager_mod
   PUBLIC :: DIAG_FIELD_NOT_FOUND
 
   ! version number of this module
-  CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id$'
-  CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name$'
-
+  ! Include variable "version" to be written to log file.
+#include<file_version.h>
+  
   type(time_type) :: Time_end
 
   ! <INTERFACE NAME="send_data">
@@ -3364,7 +3362,7 @@ CONTAINS
     stdout_unit = stdout()
 
     ! version number to logfile
-    CALL write_version_number(version, tagname)
+    CALL write_version_number("DIAG_MANAGER_MOD", version)
 
     Time_zero = set_time(0,0)
     !--- initialize time_end to time_zero

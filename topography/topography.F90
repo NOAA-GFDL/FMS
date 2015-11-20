@@ -115,8 +115,8 @@ end interface
 
 !-----------------------------------------------------------------------
 
- character(len=128) :: version = '$Id$'
- character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
  logical :: module_is_initialized = .FALSE.
 
@@ -130,7 +130,7 @@ end interface
 
      if ( module_is_initialized ) return
 
-     call write_version_number (version,tagname)
+     call write_version_number("TOPOGRAPHY_MOD", version)
      call read_namelist
      module_is_initialized = .TRUE.
 

@@ -236,8 +236,8 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
  namelist /horiz_interp_nml/ reproduce_siena
 
 !-----------------------------------------------------------------------
- character(len=128) :: version = '$Id$'
- character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
  logical            :: module_is_initialized = .FALSE.
 !-----------------------------------------------------------------------
 
@@ -246,17 +246,17 @@ contains
 !#######################################################################
 !  <SUBROUTINE NAME="horiz_interp_init">
 !  <OVERVIEW>
-!     writes version number and tag name to logfile.out
+!     writes version number to logfile.out
 !  </OVERVIEW>
 !  <DESCRIPTION>       
-!     writes version number and tag name to logfile.out
+!     writes version number to logfile.out
 !  </DESCRIPTION>
 
   subroutine horiz_interp_init
   integer :: unit, ierr, io
 
   if(module_is_initialized) return
-  call write_version_number (version, tagname)
+  call write_version_number("HORIZ_INTERP_MOD", version)
 
 #ifdef INTERNAL_FILE_NML
   read (input_nml_file, horiz_interp_nml, iostat=io)

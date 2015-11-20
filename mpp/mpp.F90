@@ -167,7 +167,7 @@ module mpp_mod
   use mpp_parameter_mod, only : MAXPES, EVENT_WAIT, EVENT_ALLREDUCE, EVENT_BROADCAST
   use mpp_parameter_mod, only : EVENT_ALLTOALL
   use mpp_parameter_mod, only : EVENT_RECV, EVENT_SEND, MPP_READY, MPP_WAIT
-  use mpp_parameter_mod, only : mpp_parameter_version=>version, mpp_parameter_tagname=>tagname
+  use mpp_parameter_mod, only : mpp_parameter_version=>version
   use mpp_parameter_mod, only : DEFAULT_TAG
   use mpp_parameter_mod, only : COMM_TAG_1,  COMM_TAG_2,  COMM_TAG_3,  COMM_TAG_4
   use mpp_parameter_mod, only : COMM_TAG_5,  COMM_TAG_6,  COMM_TAG_7,  COMM_TAG_8
@@ -177,7 +177,7 @@ module mpp_mod
   use mpp_parameter_mod, only : MPP_FILL_INT,MPP_FILL_DOUBLE
   use mpp_data_mod,      only : stat, mpp_stack, ptr_stack, status, ptr_status, sync, ptr_sync  
   use mpp_data_mod,      only : mpp_from_pe, ptr_from, remote_data_loc, ptr_remote
-  use mpp_data_mod,      only : mpp_data_version=>version, mpp_data_tagname=>tagname
+  use mpp_data_mod,      only : mpp_data_version=>version
 
 implicit none
 private
@@ -1243,10 +1243,12 @@ private
   logical :: read_ascii_file_on = .FALSE.
 !***********************************************************************
 
-  character(len=128), public :: version= &
-       '$Id mpp.F90 $'
-  character(len=128), public :: tagname= &
-       '$Name$'
+! Include variable "version" to be written to log file.
+#ifdef _FILE_VERSION
+  character(len=*), parameter, public :: version = _FILE_VERSION
+#else
+  character(len=*), parameter, public :: version = 'unknown'
+#endif
 
   integer, parameter :: MAX_REQUEST_MIN  = 10000
   integer            :: request_multiply = 20

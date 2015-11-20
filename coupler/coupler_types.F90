@@ -171,8 +171,8 @@ use field_manager_mod, only: fm_field_name_len, fm_string_len, fm_dump_list
 implicit none
 !
 !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id$'
-  character(len=128) :: tag = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 !-----------------------------------------------------------------------
 real, parameter :: bound_tol = 1e-7
 

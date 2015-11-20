@@ -1,5 +1,4 @@
 ! -*-f90-*-
-! $Id$
 
 subroutine drifters_set_field_XXX(self, index_field, x, y, &
 #if _DIMS >= 3

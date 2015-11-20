@@ -1,6 +1,4 @@
-
 ! -*-f90-*-
-! $Id$
 
 ! <SUBROUTINE NAME="mpp_open">
 

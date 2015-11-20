@@ -43,8 +43,8 @@ module axis_utils_mod
   integer, parameter :: maxatts = 100
   real, parameter    :: epsln= 1.e-10
   real, parameter    :: fp5 = 0.5, f360 = 360.0
-  character(len=256) :: version = '$Id$'
-  character(len=256) :: tagname = '$Name$'   
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
   interface interp_1d
      module procedure interp_1d_1d

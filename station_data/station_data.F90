@@ -76,8 +76,8 @@ character (len=10)  :: time_unit_list(6) = (/'seconds   ', 'minutes   ', &
      'hours     ', 'days      ', 'months    ', 'years     '/)
 integer, parameter  :: EVERY_TIME =  0
 integer, parameter  :: END_OF_RUN = -1
-character(len=128)  :: version = ''
-character(len=128)  :: tagname = ''  
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 character(len=256)  :: global_descriptor
 character (len = 7) :: avg_name = 'average'
 integer             :: total_pe
@@ -288,7 +288,7 @@ namelist /station_data_nml/ max_output_fields, max_stations,init_verbose
 94  continue
     call close_file(iunit)
     call check_duplicate_output_fields
-    call write_version_number (version, tagname)
+    call write_version_number ("STATION_DATA_MOD", version)
     module_is_initialized = .true.
     return
 99  continue

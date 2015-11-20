@@ -145,7 +145,7 @@ use fms_io_mod, only : fms_io_init, fms_io_exit, field_size, &
                        get_mosaic_tile_file, get_global_att_value, file_exist, field_exist
 
 use memutils_mod, only: print_memuse_stats, memutils_init
-use constants_mod, only: constants_version=>version, constants_tagname=>tagname !pjp: PI not computed
+use constants_mod, only: constants_version=>version !pjp: PI not computed
 
 
 implicit none
@@ -283,8 +283,8 @@ integer, public :: clock_flag_default
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id$'
-  character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
   logical :: module_is_initialized = .FALSE.
 
@@ -413,7 +413,7 @@ subroutine fms_init (localcomm )
 
 !--- write version info and namelist to logfile ---
 
-    call write_version_number (version, tagname)
+    call write_version_number("FMS_MOD", version)
     if (mpp_pe() == mpp_root_pe()) then
       unit = stdlog()
       write (unit, nml=fms_nml)
@@ -423,7 +423,7 @@ subroutine fms_init (localcomm )
     call memutils_init( print_memory_usage )
     call print_memuse_stats('fms_init')
 
-    call write_version_number (constants_version,constants_tagname)
+    call write_version_number("CONSTANTS_MOD", constants_version)
 
 end subroutine fms_init
 ! </SUBROUTINE>

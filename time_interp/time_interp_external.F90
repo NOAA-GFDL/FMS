@@ -28,6 +28,7 @@ module time_interp_external_mod
 ! </DATA>
 !</NAMELIST>
 
+  use fms_mod, only : write_version_number
   use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe, stdout, stdlog, NOTE
   use mpp_mod, only : input_nml_file
   use mpp_io_mod, only : mpp_open, mpp_get_atts, mpp_get_info, MPP_NETCDF, MPP_MULTI, MPP_SINGLE,&
@@ -49,9 +50,8 @@ module time_interp_external_mod
   implicit none
   private
 
-  character(len=128), private :: version= &
-   'CVS $Id$'
-  character(len=128), private :: tagname='Tag $Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
   integer, parameter, public  :: NO_REGION=0, INSIDE_REGION=1, OUTSIDE_REGION=2
   integer, parameter, private :: modulo_year= 0001
@@ -139,8 +139,7 @@ module time_interp_external_mod
       
       logunit = stdlog()
       outunit = stdout()
-      write(logunit,'(/a/)') version
-      write(logunit,'(/a/)') tagname
+      call write_version_number("TIME_INTERP_EXTERNAL_MOD", version)
 
 #ifdef INTERNAL_FILE_NML
       read (input_nml_file, time_interp_external_nml, iostat=io_status)

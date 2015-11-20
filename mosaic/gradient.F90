@@ -24,8 +24,8 @@ private
 public :: gradient_cubic
 public :: calc_cubic_grid_info
 
-character(len=128) :: version = '$Id$'
-character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
 contains
 

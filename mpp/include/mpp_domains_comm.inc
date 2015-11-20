@@ -1,6 +1,4 @@
-
 ! -*-f90-*-
-! $Id$
 
 
     function mpp_redistribute_init_comm(domain_in,l_addrs_in, domain_out,l_addrs_out, &

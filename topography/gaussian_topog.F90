@@ -73,8 +73,8 @@ public :: gaussian_topog_init, get_gaussian_topog
 
 !-----------------------------------------------------------------------
 
-character(len=128) :: version = '$Id$'
-character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
 logical :: do_nml = .true.
 logical :: module_is_initialized = .FALSE.
@@ -120,7 +120,7 @@ real, intent(out) :: zsurf(:,:)
 integer :: n
 
   if (.not.module_is_initialized) then
-     call write_version_number( version, tagname )
+     call write_version_number("GAUSSIAN_TOPOG_MOD", version)
   endif
 
   if(any(shape(zsurf) /= (/size(lon(:)),size(lat(:))/))) then

@@ -142,8 +142,9 @@ end type inst_type
 type(tracer_type), save  :: tracers(MAX_TRACER_FIELDS)
 type(inst_type)  , save  :: instantiations(MAX_TRACER_FIELDS)
 
-character(len=128) :: version = '$Id$'
-character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
+
 logical            :: module_is_initialized = .false.
 
 logical            :: verbose_local
@@ -160,7 +161,7 @@ contains
 !      It is included only for backward compatability.
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!     This routine writes the version and tagname to the logfile and 
+!     This routine writes the version to the logfile and 
 !     sets the module initialization flag.
 !   </DESCRIPTION>
 !   <TEMPLATE>
@@ -172,7 +173,7 @@ integer :: model, num_tracers, num_prog, num_diag
   if(module_is_initialized) return
   module_is_initialized = .TRUE.
 
-  call write_version_number (version, tagname)
+  call write_version_number ("TRACER_MANAGER_MOD", version)
   call field_manager_init()
   TRACER_ARRAY = NOTRACER
   do model=1,NUM_MODELS 

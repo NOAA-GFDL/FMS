@@ -80,8 +80,8 @@ use time_manager_mod, only: time_type
 implicit none
 private
 
-character(len=128) :: version = '$Id$'
-character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
 type data_type
    character(len=3)   :: gridname
@@ -224,7 +224,7 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
     radian_to_deg = 180./PI
     deg_to_radian = PI/180.
 
-    call write_version_number (version, tagname)
+    call write_version_number("DATA_OVERRIDE_MOD", version)
 
 !  Initialize user-provided data table  
     default_table%gridname = 'none'

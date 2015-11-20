@@ -7,8 +7,8 @@ module stock_constants_mod
 
   implicit none
 
-  character(len=128), parameter :: version = '$Id$'
-
+  ! Include variable "version" to be written to log file.
+#include<file_version.h>
 
   integer,public,    parameter                :: NELEMS=3
   integer,           parameter                :: NELEMS_report=3

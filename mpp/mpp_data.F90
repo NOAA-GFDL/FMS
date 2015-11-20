@@ -10,10 +10,12 @@ module mpp_data_mod
   implicit none
   private
 
-  character(len=128), public :: version= &
-       '$Id mpp_data.F90 $'
-  character(len=128), public :: tagname= &
-       '$Name$'
+! Include variable "version" to be written to log file.
+#ifdef _FILE_VERSION
+  character(len=*), parameter, public :: version = _FILE_VERSION
+#else
+  character(len=*), parameter, public :: version = 'unknown'
+#endif
 
 #if defined(use_libSMA) || defined(use_MPI_SMA)
 #include <mpp/shmem.fh>

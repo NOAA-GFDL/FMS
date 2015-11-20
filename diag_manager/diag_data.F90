@@ -588,11 +588,8 @@ MODULE diag_data_mod
   END TYPE diag_global_att_type
   ! </TYPE>
 
-  ! Private CHARACTER Arrays for the CVS version and tagname.
-  CHARACTER(len=128),PRIVATE  :: version =&
-       & '$Id$'
-  CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
   ! <!-- Other public variables -->
   ! <DATA NAME="num_files" TYPE="INTEGER" DEFAULT="0">

@@ -109,11 +109,9 @@ MODULE diag_util_mod
   END INTERFACE attribute_init
   ! </INTERFACE>
 
-  CHARACTER(len=128),PRIVATE  :: version =&
-       & '$Id$'
-  CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name$'
-
+  ! Include variable "version" to be written to log file.
+#include<file_version.h>
+  
 CONTAINS
 
   ! <SUBROUTINE NAME="get_subfield_size">
@@ -1682,11 +1680,6 @@ CONTAINS
     fname=base_name
     call get_instance_filename(fname, base_name)
 
-    ! Add CVS tag as prefix of filename  (currently not implemented)
-    !  i1 = INDEX(tagname,':') + 2
-    !  i2 = len_trim(tagname) - 2
-    !  if(i2 <=i1)  call error_mesg('diag_util opening_file','error in CVS tagname index',FATAL)
-    !  prefix2 = tagname(i1:i2)//'_'
     IF ( files(file)%local ) THEN
        ! prepend "rregion" to all local files for post processing, the prefix will be removed in postprocessing
        filename = 'rregion'//TRIM(base_name)//TRIM(suffix)

@@ -28,8 +28,8 @@
  implicit none
  private
 
- character(len=128), parameter :: version = '$Id$'
- character(len=128), parameter :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
  public :: sat_vapor_pres_init_k
  public :: lookup_es_k
