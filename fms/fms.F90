@@ -142,7 +142,8 @@ use fms_io_mod, only : fms_io_init, fms_io_exit, field_size, &
                        open_namelist_file, open_restart_file, open_ieee32_file, close_file, &
                        set_domain, get_domain_decomp, nullify_domain, &
                        open_file, open_direct_file, string, get_mosaic_tile_grid, &
-                       get_mosaic_tile_file, get_global_att_value, file_exist, field_exist
+                       get_mosaic_tile_file, get_global_att_value, file_exist, field_exist, &
+                       write_version_number
 
 use memutils_mod, only: print_memuse_stats, memutils_init
 use constants_mod, only: constants_version=>version !pjp: PI not computed
@@ -169,7 +170,9 @@ public :: get_mosaic_tile_grid, get_mosaic_tile_file
 
 ! miscellaneous i/o routines
 public :: file_exist, check_nml_error, field_exist,     &
-          write_version_number, error_mesg, fms_error_handler
+          error_mesg, fms_error_handler
+! i/o routines from fms_io
+public :: write_version_number
 
 ! miscellaneous utilities (non i/o)
 public :: lowercase, uppercase, string,        &
@@ -757,68 +760,6 @@ end subroutine fms_end
 
     do_nml_error_init = .FALSE.
   END SUBROUTINE nml_error_init
-
-!#######################################################################
-! <SUBROUTINE NAME="write_version_number">
-
-!   <OVERVIEW>
-!     Prints to the log file (or a specified unit) the (cvs) version id string and
-!     (cvs) tag name.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Prints to the log file (stdlog) or a specified unit the (cvs) version id string
-!      and (cvs) tag name.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!    call write_version_number ( version [, tag, unit] )
-!   </TEMPLATE>
-
-!   <IN NAME="version" TYPE="character(len=*)">
-!    string that contains routine name and version number.
-!   </IN>
-!   <IN NAME="tag" TYPE="character(len=*)">
-!    The tag/name string, this is usually the Name string
-!    returned by CVS when checking out the code.
-!   </IN>
-!   <IN NAME="unit" TYPE="integer">
-!    The Fortran unit number of an open formatted file. If this unit number 
-!    is not supplied the log file unit number is used (stdlog). 
-!   </IN>
-! prints module version number to the log file of specified unit number
-
- subroutine write_version_number (version, tag, unit)
-
-!   in:  version = string that contains routine name and version number
-!
-!   optional in:
-!        tag = cvs tag name that code was checked out with
-!        unit    = alternate unit number to direct output  
-!                  (default: unit=stdlog)
-
-   character(len=*), intent(in) :: version
-   character(len=*), intent(in), optional :: tag 
-   integer,          intent(in), optional :: unit 
-
-   integer :: logunit 
-
-   if (.not.module_is_initialized) call fms_init ( )
-
-     logunit = stdlog()
-     if (present(unit)) then
-         logunit = unit
-     else    
-       ! only allow stdlog messages on root pe
-         if ( mpp_pe() /= mpp_root_pe() ) return
-     endif   
-
-     if (present(tag)) then
-         write (logunit,'(/,80("="),/(a))') trim(version), trim(tag)
-     else    
-         write (logunit,'(/,80("="),/(a))') trim(version)
-     endif   
-
- end subroutine write_version_number
-! </SUBROUTINE>
 
 !#######################################################################
 
