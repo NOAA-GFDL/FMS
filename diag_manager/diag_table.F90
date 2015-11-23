@@ -152,7 +152,7 @@ MODULE diag_table_mod
   !           The data reduction method to perform prior to writing data to disk.  Valid options are (redundant names are
   !           separated with commas):
   !           <DL>
-  !             <DT><TT>.TRUE.</TT>, average</DT>
+  !             <DT><TT>.TRUE.</TT>, average, avg, mean</DT>
   !             <DD>Average from the last time written to the current time.</DD>
   !             <DT><TT>.FALSE.</TT>, none</DT>
   !             <DD>No reduction performed.  Write current time step value only.</DD>
