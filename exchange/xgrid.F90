@@ -114,6 +114,7 @@ use     fms_io_mod,  only: get_var_att_value
 use mpp_mod,         only: mpp_npes, mpp_pe, mpp_root_pe, mpp_send, mpp_recv, &
                            mpp_sync_self, stdout, mpp_max, EVENT_RECV,        &
                            mpp_get_current_pelist, mpp_clock_id, mpp_min,     &
+                           mpp_alltoall,                                      &
                            mpp_clock_begin, mpp_clock_end, MPP_CLOCK_SYNC,    &
                            COMM_TAG_1, COMM_TAG_2, COMM_TAG_3, COMM_TAG_4,    &
                            COMM_TAG_5, COMM_TAG_6, COMM_TAG_7, COMM_TAG_8,    &
@@ -175,6 +176,16 @@ integer, parameter :: MAX_FIELDS         = 80
 !     information. The purpose of this namelist is to improve performance of setup_xmap when running
 !     on highr processor count and solve receiving size mismatch issue on high processor count.
 !     Try to set nsubset = mpp_npes/MPI_rank_per_node.
+!
+!     This parameter is not used when `collective_setup` is enabled.
+!   </DATA>
+!   <DATA NAME="collective_setup" TYPE="logical" DEFAULT=".true.">
+!    Use the MPI_Alltoall collectives in place of point-to-point operations
+!    during the xgrid setup.  This parameter can resolve potential issues
+!    related to large numbers of messages, such as model hangs.  It also shows
+!    improved performance at higher PE counts.
+!
+!    When enabled, the `nsubset` parameter is ignored.
 !   </DATA>
 logical :: make_exchange_reproduce = .false. ! exactly same on different # PEs
 logical :: xgrid_log = .false. 
@@ -183,8 +194,10 @@ logical :: debug_stocks = .false.
 logical :: xgrid_clocks_on = .false.
 logical :: monotonic_exchange = .false.
 integer :: nsubset = 0 ! 0 means mpp_npes()
-namelist /xgrid_nml/ make_exchange_reproduce, interp_method, debug_stocks, xgrid_log, xgrid_clocks_on, &
-                     monotonic_exchange, nsubset
+logical :: collective_setup = .true.
+namelist /xgrid_nml/ &
+    make_exchange_reproduce, interp_method, debug_stocks, xgrid_log, &
+    xgrid_clocks_on, monotonic_exchange, nsubset, collective_setup
 ! </NAMELIST>
 logical :: init = .true.
 integer :: remapping_method
@@ -585,6 +598,7 @@ logical,        intent(in)             :: use_higher_order
   integer, dimension(0:xmap%npes-1)    :: pelist
   logical, dimension(0:xmap%npes-1)    :: subset_rootpe
   integer, dimension(0:xmap%npes-1)    :: nsend1, nsend2, nrecv1, nrecv2
+  integer, dimension(0:xmap%npes-1)    :: send_cnt, recv_cnt
   integer, dimension(0:xmap%npes-1)    :: send_buffer_pos, recv_buffer_pos
   integer, dimension(0:xmap%npes-1)    :: ibegin, iend, pebegin, peend
   integer, dimension(2,0:xmap%npes-1)  :: ibuf1, ibuf2
@@ -853,58 +867,79 @@ logical,        intent(in)             :: use_higher_order
 
      !--- send the size of the data on side 1 to be sent over.
 
-     do n = 0, npes-1
-        p = mod(mypos+npes-n, npes)
-        if(.not. subset_rootpe(p)) cycle
-        call mpp_recv( ibuf2(1,p), glen=2, from_pe=pelist(p), block=.FALSE., tag=COMM_TAG_1)
-     enddo
-
-
-
-     if(nxgrid_local_orig>0) then
+     if (collective_setup) then
+        call mpp_alltoall(nsend1, nrecv1)
+        call mpp_alltoall(nsend2, nrecv2)
+     else
         do n = 0, npes-1
-           p = mod(mypos+n, npes)
-           ibuf1(1,p) = nsend1(p)
-           ibuf1(2,p) = nsend2(p)
-           call mpp_send( ibuf1(1, p), plen=2, to_pe=pelist(p), tag=COMM_TAG_1)
+           p = mod(mypos+npes-n, npes)
+           if(.not. subset_rootpe(p)) cycle
+           call mpp_recv( ibuf2(1,p), glen=2, from_pe=pelist(p), block=.FALSE., tag=COMM_TAG_1)
         enddo
-     endif
-     call mpp_clock_end(id_load_xgrid2)
-     call mpp_clock_begin(id_load_xgrid3)
 
-     call mpp_sync_self(check=EVENT_RECV)
-     call mpp_clock_end(id_load_xgrid3)
-     call mpp_clock_begin(id_load_xgrid4)
+        if(nxgrid_local_orig>0) then
+           do n = 0, npes-1
+              p = mod(mypos+n, npes)
+              ibuf1(1,p) = nsend1(p)
+              ibuf1(2,p) = nsend2(p)
+              call mpp_send( ibuf1(1, p), plen=2, to_pe=pelist(p), tag=COMM_TAG_1)
+           enddo
+        endif
+        call mpp_clock_end(id_load_xgrid2)
+        call mpp_clock_begin(id_load_xgrid3)
+
+        call mpp_sync_self(check=EVENT_RECV)
+        call mpp_clock_end(id_load_xgrid3)
+        call mpp_clock_begin(id_load_xgrid4)
+
+        do p = 0, npes-1
+           nrecv1(p) = ibuf2(1,p)
+           nrecv2(p) = ibuf2(2,p)
+        enddo
+        call mpp_sync_self()
+     endif
 
      pos = 0
-     do p = 0, npes-1
+     do p = 0, npes - 1
         recv_buffer_pos(p) = pos
-        nrecv1(p) = ibuf2(1,p)
-        nrecv2(p) = ibuf2(2,p)  
-        pos = pos + nrecv1(p)*nset1+nrecv2(p)*nset2  
-     enddo
+        pos = pos + nrecv1(p) * nset1 + nrecv2(p) * nset2
+     end do
+
      call mpp_sync_self()
 
      !--- now get the data
      nxgrid1 = sum(nrecv1)
      nxgrid2 = sum(nrecv2)
      if(nxgrid1>0 .OR. nxgrid2>0) allocate(recv_buffer(nxgrid1*nset1+nxgrid2*nset2))
-     do n = 0, npes-1
-        p = mod(mypos+npes-n, npes)
-        nrecv = nrecv1(p)*nset1+nrecv2(p)*nset2
-        if(nrecv==0) cycle
-        pos = recv_buffer_pos(p)
-        call mpp_recv(recv_buffer(pos+1), glen=nrecv, from_pe=pelist(p), block=.FALSE., tag=COMM_TAG_2)
-     enddo
 
-     do n = 0, npes-1
-        p = mod(mypos+n, npes)
-        nsend = nsend1(p)*nset1 + nsend2(p)*nset2 
-        if(nsend==0) cycle
-        pos = send_buffer_pos(p)
-        call mpp_send( send_buffer(pos+1), plen=nsend, to_pe=pelist(p), tag=COMM_TAG_2)
-     enddo
-     call mpp_sync_self(check=EVENT_RECV)
+     if (collective_setup) then
+        ! Construct the send and receive counters
+        send_cnt(:) = nset1 * nsend1(:) + nset2 * nsend2(:)
+        recv_cnt(:) = nset1 * nrecv1(:) + nset2 * nrecv2(:)
+
+        call mpp_alltoall(send_buffer, send_cnt, send_buffer_pos, &
+                          recv_buffer, recv_cnt, recv_buffer_pos)
+     else
+        do n = 0, npes-1
+           p = mod(mypos+npes-n, npes)
+           nrecv = nrecv1(p)*nset1+nrecv2(p)*nset2
+           if(nrecv==0) cycle
+           pos = recv_buffer_pos(p)
+           call mpp_recv(recv_buffer(pos+1), glen=nrecv, from_pe=pelist(p), &
+                         block=.FALSE., tag=COMM_TAG_2)
+        end do
+
+        do n = 0, npes-1
+           p = mod(mypos+n, npes)
+           nsend = nsend1(p)*nset1 + nsend2(p)*nset2
+           if(nsend==0) cycle
+           pos = send_buffer_pos(p)
+           call mpp_send(send_buffer(pos+1), plen=nsend, to_pe=pelist(p), &
+                         tag=COMM_TAG_2)
+        end do
+        call mpp_sync_self(check=EVENT_RECV)
+     end if
+
      !--- unpack buffer.
      if( nxgrid_local>0) then
         deallocate(i1,j1,i2,j2,area)
