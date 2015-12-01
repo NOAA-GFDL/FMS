@@ -448,7 +448,7 @@
 !     <TT>mpp_read_meta</TT> must be called prior to <TT>mpp_read</TT>.
 !   </NOTE>
 ! </SUBROUTINE>
-    subroutine mpp_read_meta(unit)
+    subroutine mpp_read_meta(unit, read_time)
 !
 ! read file attributes including dimension and variable attributes
 ! and store in filetype structure.  All of the file information
@@ -458,13 +458,14 @@
 ! every PE is eligible to call mpp_read_meta
 !
       integer, intent(in) :: unit
-
+      logical, intent(in), optional :: read_time ! read_time is set to false when file action is appending or writing.
+                                                 ! This is temporary fix for MOM6 reopen_file issue.
       integer         :: ncid,ndim,nvar_total,natt,recdim,nv,nvar,len
       integer :: error, i, j, istat, check_exist
       integer         :: type, nvdims, nvatts, dimid
       integer, allocatable, dimension(:) :: dimids
       character(len=128) :: name, attname, unlimname, attval, bounds_name
-      logical :: isdim, found_bounds
+      logical :: isdim, found_bounds, get_time_info
       integer(LONG_KIND) :: checksumf
       character(len=64)  :: checksum_char
       integer :: num_checksumf, last, is, k
@@ -473,6 +474,9 @@
       integer(INT_KIND), allocatable :: ivals(:)
       real(FLOAT_KIND), allocatable  :: rvals(:)
       real(DOUBLE_KIND), allocatable :: r8vals(:)
+
+      get_time_info = .TRUE.
+      if(present(read_time)) get_time_info = read_time
 
 #ifdef use_netCDF
 
@@ -717,7 +721,7 @@
                  case default
                     call mpp_error( FATAL, 'Invalid data type for dimension' )
                  end select
-             else
+             else if(get_time_info) then
                  len = mpp_file(unit)%time_level
                  if( len > 0 ) then
                     allocate(mpp_file(unit)%time_values(len), STAT=istat)
