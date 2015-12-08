@@ -199,7 +199,7 @@ MODULE diag_manager_mod
        & check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
        & diag_time_inc, find_input_field, init_input_field, init_output_field,&
        & diag_data_out, write_static, get_date_dif, get_subfield_vert_size, sync_file_times,&
-       & prepend_attribute, attribute_init
+       & prepend_attribute, attribute_init, diag_util_init
   USE diag_data_mod, ONLY: max_files, CMOR_MISSING_VALUE, DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, EVERY_TIME,&
        & END_OF_RUN, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, num_files,&
        & max_input_fields, max_output_fields, num_output_fields, EMPTY, FILL_VALUE, null_axis_id,&
@@ -210,7 +210,7 @@ MODULE diag_manager_mod
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, conserve_water, region_out_use_alt_value, max_field_attributes, output_field_type,&
-       & max_file_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time
+       & max_file_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
@@ -3346,6 +3346,11 @@ CONTAINS
 
     ! Clear the err_msg variable if contains any residual information
     IF ( PRESENT(err_msg) ) err_msg = ''
+
+    ! Initialize diag_util_mod and diag_data_mod
+    ! These init routine only write out the version number to the log file
+    call diag_util_init()
+    call diag_data_init()
 
     ! Determine pack_size from how many bytes a real value has (how compiled)
     pack_size = SIZE(TRANSFER(0.0_DblKind, (/0.0, 0.0, 0.0, 0.0/)))

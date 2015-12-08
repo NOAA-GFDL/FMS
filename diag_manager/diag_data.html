@@ -30,7 +30,7 @@
 <br>
 <b>Reviewers:&nbsp;</b>
 <br>
-<b>Change History:&nbsp;</b><a href="http://cobweb.gfdl.noaa.gov/fms-cgi-bin/viewcvs/FMS/shared/diag_manager">WebCVS Log</a>
+<b>Change History:&nbsp;</b><a href="http://cobweb.gfdl.noaa.gov/fms-cgi-bin/viewcvs">WebCVS Log home</a>
 <br>
 <br>
 </div>
@@ -88,7 +88,13 @@
 <hr>
 <h4>PUBLIC INTERFACE</h4>
 <div>
-<dl></dl>
+<dl>
+<dt>
+<a href="#diag_data_init">diag_data_init</a>:</dt>
+<dd>
+     Write the version number of this file
+   </dd>
+</dl>
 </div>
 <br>
 <!-- END PUBLIC INTERFACE -->
@@ -255,8 +261,10 @@
    </td>
 </tr>
 <tr>
-<td> prepend_date  </td><td> LOGICAL  </td><td> .FALSE.  </td><td> ---  </td><td> 
-   Indicates if the file start date will be prepended to the file name.  This was usually done by FRE after the model run.
+<td> prepend_date  </td><td> LOGICAL  </td><td> .TRUE.  </td><td> ---  </td><td> 
+   Indicates if the file start date will be prepended to the file name.   is
+   only supported if the diag_manager_init routine is called with the optional time_init parameter.
+   This was usually done by FRE after the model run.
    </td>
 </tr>
 <tr>
@@ -279,6 +287,12 @@
 </tr>
 <tr>
 <td> MIN_VALUE  </td><td> REAL  </td><td> ---  </td><td> ---  </td><td> ---  </td>
+</tr>
+<tr>
+<td> diag_init_time  </td><td> TYPE(time_type)  </td><td> ---  </td><td> ---  </td><td> 
+   Time diag_manager_init called.  If init_time not included in
+   diag_manager_init call, then same as base_time
+   </td>
 </tr>
 <tr>
 <td> base_time  </td><td> TYPE(time_type)  </td><td> ---  </td><td> ---  </td><td> ---  </td>
@@ -320,7 +334,9 @@
 <td> first_send_data_call  </td><td> LOGICAL  </td><td> .TRUE.  </td><td> ---  </td><td> ---  </td>
 </tr>
 <tr>
-<td> module_is_initialized  </td><td> LOGICAL  </td><td> .FALSE.  </td><td> ---  </td><td> ---  </td>
+<td> module_is_initialized  </td><td> LOGICAL  </td><td> .FALSE.  </td><td> ---  </td><td> 
+   Indicate if diag_manager has been initialized
+   </td>
 </tr>
 <tr>
 <td> diag_log_unit  </td><td> INTEGER  </td><td> ---  </td><td> ---  </td><td> ---  </td>
@@ -339,7 +355,25 @@
 <hr>
 <h4>PUBLIC ROUTINES</h4>
 <!-- BEGIN PUBLIC ROUTINES -->
-<ol type="a"></ol>
+<ol type="a">
+<li>
+<a name="diag_data_init"></a>
+<h4>diag_data_init</h4>
+<pre> 
+<b>diag_data_init</b> 
+</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>
+     Write the version number of this file to the log file.
+   </dd>
+<br>
+<br>
+</dl>
+</li>
+</ol>
 <!-- END PUBLIC ROUTINES -->
 <a name="PUBLIC TYPES"></a>
 <!-- BEGIN PUBLIC TYPES -->

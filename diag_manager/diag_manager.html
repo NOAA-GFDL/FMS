@@ -37,7 +37,7 @@
 <br>
 <b>Reviewers:&nbsp;</b>
 <br>
-<b>Change History:&nbsp;</b><a href="http://cobweb.gfdl.noaa.gov/fms-cgi-bin/viewcvs/FMS/shared/diag_manager">WebCVS Log</a>
+<b>Change History:&nbsp;</b><a href="http://cobweb.gfdl.noaa.gov/fms-cgi-bin/viewcvs">WebCVS Log home</a>
 <br>
 <br>
 </div>
@@ -213,7 +213,7 @@
 <h4>OTHER MODULES USED</h4>
 <!-- BEGIN OTHER MODULES USED -->
 <div>
-<pre>time_manager_mod<br>      mpp_io_mod<br>         mpp_mod<br>         fms_mod<br>   diag_axis_mod<br>   diag_util_mod<br>   diag_data_mod<br>  diag_table_mod<br> diag_output_mod<br>   diag_grid_mod<br>   constants_mod<br>          netcdf</pre>
+<pre>time_manager_mod<br>      mpp_io_mod<br>         mpp_mod<br>         fms_mod<br>      fms_io_mod<br>   diag_axis_mod<br>   diag_util_mod<br>   diag_data_mod<br>  diag_table_mod<br> diag_output_mod<br>   diag_grid_mod<br>   constants_mod<br>          netcdf</pre>
 </div>
 <!-- END OTHER MODULES USED -->
 <!-- BEGIN PUBLIC INTERFACE -->
@@ -1042,6 +1042,9 @@
 <td valign="top" align="left"><tt>diag_model_subset&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, OPTIONAL]</span></td>
 </tr>
+<tr>
+<td valign="top" align="left"><tt>time_init&nbsp;&nbsp;&nbsp;</tt></td><td>Model time diag_manager initialized<br>&nbsp;&nbsp;&nbsp;<span class="type">[INTEGER, DIMENSION(6), OPTIONAL]</span></td>
+</tr>
 </table>
 </dd>
 <br>
@@ -1193,7 +1196,7 @@
 <b>DESCRIPTION</b>
 </dt>
 <dd>
-     Add the cell_measures attribute to a give diag field.  This is useful if the 
+     Add the cell_measures attribute to a give diag field.  This is useful if the
      area/volume fields for the diagnostic field are defined in another module after
      the diag_field.
    </dd>
@@ -1363,10 +1366,11 @@
 <tt>prepend_date</tt>
 </dt>
 <dl>
-     If <tt>.TRUE.</tt> then prepend the file start date to the output file.  Note: This was usually done by FRE after the
+     If <tt>.TRUE.</tt> then prepend the file start date to the output file.  <tt>.TRUE.</tt> is only supported if the
+      diag_manager_init routine is called with the optional time_init parameter.  Note: This was usually done by FRE after the
      model run.
    <br>
-<span class="type">[LOGICAL, default: .FALSE.]</span>
+<span class="type">[LOGICAL, default: .TRUE.]</span>
 </dl>
 <dt>
 <tt>region_out_use_alt_value</tt>

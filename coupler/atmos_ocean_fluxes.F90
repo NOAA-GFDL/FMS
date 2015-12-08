@@ -77,6 +77,7 @@ module  atmos_ocean_fluxes_mod  !{
 !
 
 use mpp_mod,           only: stdout, stdlog, mpp_error, FATAL, mpp_sum, mpp_npes
+use fms_mod,           only: write_version_number
 
 use coupler_types_mod, only: coupler_1d_bc_type
 use coupler_types_mod, only: ind_alpha, ind_csurf, ind_sc_no
@@ -616,6 +617,11 @@ if (initialized) then  !{
   return
 
 endif  !}
+
+!
+!       Write out the version of the file to the log file
+!
+call write_version_number(trim(mod_name), version)
 
 initialized = .true.
 outunit = stdout()
