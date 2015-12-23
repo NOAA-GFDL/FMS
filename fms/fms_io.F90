@@ -4520,6 +4520,43 @@ subroutine field_size(filename, fieldname, siz, field_found, domain, no_domain )
   return
 end subroutine field_size
 ! </SUBROUTINE>
+subroutine file_unit(filename, found_file, unit, domain, no_domain)
+
+  character(len=*), intent(in)                 :: filename
+  logical,          intent(out)                :: found_file
+  integer,          intent(out)                :: unit
+  type(domain2d), intent(in), optional, target :: domain
+  logical,       intent(in),  optional         :: no_domain
+
+  integer                              :: nfile
+  character(len=256)                   :: actual_file
+  logical                              :: read_dist, io_domain_exist, is_no_domain
+
+
+  is_no_domain = .false.
+  if(present(no_domain)) is_no_domain = no_domain
+
+!--- first need to get the filename, when is_no_domain is true, only check file without tile
+!--- if is_no_domain is false, first check no_domain=.false., then check no_domain = .true.
+  found_file = get_file_name(filename, actual_file, read_dist, io_domain_exist, no_domain=is_no_domain, &
+                             domain=domain)
+
+  !--- when is_no_domain is true and file is not found, send out error message.
+  if(is_no_domain .AND. .NOT. found_file) call mpp_error(FATAL, &
+         'fms_io_mod(field_size): file '//trim(filename)//' and corresponding distributed file are not found')
+
+  if(found_file) then
+     call get_file_unit(actual_file, unit, nfile, read_dist, io_domain_exist, domain=domain)
+  else if(.not. is_no_domain) then
+    found_file =  get_file_name(filename, actual_file, read_dist, io_domain_exist, no_domain=.true.)
+    if(found_file) then
+      call get_file_unit(actual_file, unit, nfile, read_dist, io_domain_exist, domain=domain)
+    endif
+  endif
+
+
+  return
+end subroutine file_unit
 
 !.....................................................................
 ! <SUBROUTINE NAME="dimension_size">
@@ -4611,9 +4648,9 @@ subroutine get_field_size(filename, fieldname, siz, field_found, domain, no_doma
   type(domain2d), intent(in), optional, target :: domain
   logical,       intent(in),  optional         :: no_domain
 
-  integer :: npes, p
+  integer :: npes, p, unit
   integer, allocatable :: pelist(:)
-  logical :: found
+  logical :: found, found_file
   type(domain2d), pointer :: domain_in =>NULL()
   type(domain2d), pointer :: io_domain =>NULL()
 
@@ -4633,8 +4670,11 @@ subroutine get_field_size(filename, fieldname, siz, field_found, domain, no_doma
   allocate(pelist(npes))
   call mpp_get_pelist(io_domain,pelist)
 
+  call file_unit(filename, found_file, unit, domain, no_domain)
+
   if(mpp_pe() == pelist(1)) then
-     call field_size(filename, fieldname, siz, found, domain, no_domain)
+     found=.false.
+     if(found_file) call get_size(unit,fieldname,siz,found)
      if(.not. found) siz(:) = -1
   endif
   !--- z1l replace mpp_broadcast with mpp_send/mpp_recv to avoid hang in calling MPI_COMM_CREATE
@@ -4658,8 +4698,7 @@ subroutine get_field_size(filename, fieldname, siz, field_found, domain, no_doma
   if( PRESENT(field_found) )then
      field_found = found
   else if (.not. found )then
-  ! Force the error to be trapped with the correct file name
-     if(mpp_pe() == pelist(1)) call field_size(filename, fieldname, siz, domain=domain, no_domain=no_domain)
+      call mpp_error(FATAL, 'fms_io(field_size): field '//trim(fieldname)//' NOT found in file '//trim(filename))
   endif
 end subroutine get_field_size
 ! </SUBROUTINE>
