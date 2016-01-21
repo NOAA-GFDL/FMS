@@ -180,7 +180,8 @@ MODULE diag_manager_mod
   ! </NAMELIST>
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
-       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date
+       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
+       & get_ticks_per_second
   USE mpp_io_mod, ONLY: mpp_open, mpp_close
   USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
 
@@ -191,8 +192,9 @@ MODULE diag_manager_mod
 #endif
 
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
-       & file_exist, fms_error_handler, check_nml_error
-  USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, get_axis_num
+       & file_exist, fms_error_handler, check_nml_error, get_mosaic_tile_file
+  USE fms_io_mod, ONLY: get_instance_filename
+  USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, get_axis_num, get_domain2d, get_tile_count
   USE diag_util_mod, ONLY: get_subfield_size, log_diag_field_info, update_bounds,&
        & check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
        & diag_time_inc, find_input_field, init_input_field, init_output_field,&
@@ -212,7 +214,7 @@ MODULE diag_manager_mod
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
-  USE constants_mod, ONLY: SECONDS_PER_HOUR, SECONDS_PER_MINUTE
+  USE constants_mod, ONLY: SECONDS_PER_DAY
 
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
@@ -861,7 +863,7 @@ CONTAINS
     END IF
 
     IF ( PRESENT(interp_method) ) THEN
-       IF ( TRIM(interp_method) .NE. 'conserve_order1' ) THEN
+       IF ( TRIM(interp_method) .NE. 'conserve_order1' .AND. TRIM(interp_method) .NE. 'none' ) THEN
           ! <ERROR STATUS="FATAL">
           !   when registering module/output_field <module_name>/<field_name> then optional
           !   argument interp_method = <interp_method>, but it should be "conserve_order1"
@@ -1164,8 +1166,6 @@ CONTAINS
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
     INTEGER :: cm_ind, cm_file_num, file_num
-    INTEGER :: year, month, day, hour, minute, second
-    CHARACTER(len=25) :: date_prefix
 
     IF ( PRESENT(err_msg) ) THEN
        err_msg = ''
@@ -1191,15 +1191,6 @@ CONTAINS
     ! Get the file number that the output_field will be written to
     file_num = output_field%output_file
 
-    ! Create the date_string
-    IF ( prepend_date ) THEN
-       call get_date(diag_init_time, year, month, day, hour, minute, second)
-       write (date_prefix, '(1I20.4, 2I2.2,".")') year, month, day
-       date_prefix=adjustl(date_prefix)
-    ELSE
-       date_prefix=''
-    END IF
-
     ! Take care of the cell_measures attribute
     IF ( PRESENT(area) ) THEN
        IF ( get_related_field(area, output_field, cm_ind, cm_file_num) ) THEN
@@ -1207,11 +1198,7 @@ CONTAINS
                & 'area: '//TRIM(output_fields(cm_ind)%output_name))
           IF ( cm_file_num.NE.file_num ) THEN
              ! Not in the same file, set the global attribute associated_files
-             ! Should look like :associated_files = " output_name: output_file_name " ;
-             ! Need to append *.nc as files()%name does not include this.
-             CALL prepend_attribute(files(file_num), 'associated_files',&
-                  & TRIM(output_fields(cm_ind)%output_name)//': '//&
-                  & TRIM(date_prefix)//TRIM(files(cm_file_num)%name)//'.nc')
+             CALL add_associated_files(file_num, cm_file_num, cm_ind)
           END IF
        ELSE
           IF ( fms_error_handler('diag_manager_mod::init_field_cell_measures',&
@@ -1230,10 +1217,7 @@ CONTAINS
                & 'volume: '//TRIM(output_fields(cm_ind)%output_name))
           IF ( cm_file_num.NE.file_num ) THEN
              ! Not in the same file, set the global attribute associated_files
-             ! Should look like :associated_files = " output_name: output_file_name " ;
-             CALL prepend_attribute(files(file_num), 'associated_files',&
-                  & TRIM(output_fields(cm_ind)%output_name)//': '//&
-                  & TRIM(date_prefix)//TRIM(files(cm_file_num)%name)//'.nc')
+             CALL add_associated_files(file_num, cm_file_num, cm_ind)
           END IF
        ELSE
           IF ( fms_error_handler('diag_manager_mod::init_field_cell_measures',&
@@ -1246,6 +1230,60 @@ CONTAINS
     END IF
   END SUBROUTINE init_field_cell_measures
   ! </SUBROUTINE>
+
+  !> \brief Add to the associated files attribute
+  !!
+  !! \throw FATAL, "Length of asso_file_name is not long enough to hold the associated file name."
+  !!     The length of character array asso_file_name is not long enough to hold the full file name
+  !!     of the associated_file.  Please contact the developer to increase the length of the  variable.
+  SUBROUTINE add_associated_files(file_num, cm_file_num, cm_ind)
+    INTEGER, intent(in) :: file_num !< File number that needs the associated_files attribute
+    INTEGER, intent(in) :: cm_file_num !< file number that contains the associated field
+    INTEGER, intent(in) :: cm_ind !< index of the output_field in the associated file
+
+    INTEGER :: year, month, day, hour, minute, second
+    INTEGER :: num_axes
+    CHARACTER(len=25) :: date_prefix
+    CHARACTER(len=256) :: asso_file_name
+
+    ! Create the date_string
+    IF ( prepend_date ) THEN
+       CALL get_date(diag_init_time, year, month, day, hour, minute, second)
+       WRITE (date_prefix, '(1I20.4, 2I2.2,".")') year, month, day
+       date_prefix=ADJUSTL(date_prefix)
+    ELSE
+       date_prefix=''
+    END IF
+
+    ! Get the base file name
+    ! Verify asso_file_name is long enough to hold the file name,
+    ! plus 17 for the additional '.ens_??.tile?.nc' (and a null character)
+    IF ( LEN_TRIM(files(cm_file_num)%name)+17 > LEN(asso_file_name) ) THEN
+       CALL error_mesg ('diag_manager_mod::add_associated_files',&
+            & 'Length of asso_file_name is not long enough to hold the associated file name. '&
+            & //'Contact the developer', FATAL)
+    ELSE
+       asso_file_name = TRIM(files(cm_file_num)%name)
+    END IF
+    
+    ! Add the ensemble number string into the file name
+    ! As frepp does not have native support for multiple ensemble runs
+    ! this will not be done.  However, the code is left here for the time
+    ! frepp does.
+    !CALL get_instance_filename(TRIM(asso_file_name), asso_file_name)
+    
+    ! Get the file name with the tile number (if required)
+    num_axes = output_fields(cm_ind)%num_axes
+    CALL get_mosaic_tile_file(TRIM(asso_file_name), asso_file_name,&
+         & is_no_domain=.FALSE.,&
+         & domain=get_domain2d(output_fields(cm_ind)%axes(1:num_axes)),&
+         & tile_count=get_tile_count(output_fields(cm_ind)%axes(1:num_axes)))
+
+    ! Should look like :associated_files = " output_name: output_file_name " ;
+    CALL prepend_attribute(files(file_num), 'associated_files',&
+         & TRIM(output_fields(cm_ind)%output_name)//': '//&
+         & TRIM(date_prefix)//TRIM(asso_file_name))
+  END SUBROUTINE add_associated_files
 
   ! <FUNCTION NAME="send_data_0d" INTERFACE="send_data">
   !   <IN NAME="diag_field_id" TYPE="INTEGER"> </IN>
@@ -1447,7 +1485,6 @@ CONTAINS
     LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) :: oor_mask
     CHARACTER(len=256) :: err_msg_local
     CHARACTER(len=128) :: error_string, error_string1
-    TYPE(time_type) :: dt ! time interval for diurnal output
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
@@ -1693,9 +1730,8 @@ CONTAINS
        ! compute the diurnal index
        sample = 1
        IF ( PRESENT(time) ) THEN
-          dt = set_time(0,1)/output_fields(out_num)%n_diurnal_samples ! our time interval
           CALL get_time(time,second,day,tick) ! current date
-          sample = set_time(second,0,tick)/dt + 1
+          sample = floor((second+real(tick)/get_ticks_per_second())*output_fields(out_num)%n_diurnal_samples/SECONDS_PER_DAY) + 1
        END IF
 
        ! Get the vertical layer start and end index.

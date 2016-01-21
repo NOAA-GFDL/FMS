@@ -126,6 +126,8 @@ subroutine mpp_init( flags,localcomm )
      write( logunit, '(a23,es12.4,a6,i20,a7)' ) &
           'Clock rolls over after ', max_ticks*tick_rate, ' sec (', max_ticks, ' ticks)'
   end if
+
+  stdoutunit = stdout()
   call mpp_clock_begin(clock0)
 
   return

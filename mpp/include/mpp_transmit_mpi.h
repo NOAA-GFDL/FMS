@@ -30,7 +30,7 @@
       integer, intent(in),  optional :: tag
       integer, intent(out), optional :: recv_request, send_request
       logical                       :: block_comm
-      integer                       :: i, out_unit
+      integer                       :: i 
       MPP_TYPE_, allocatable, save  :: local_data(:) !local copy used by non-parallel code (no SHMEM or MPI)
       integer                       :: comm_tag
       integer                       :: rsize
@@ -41,10 +41,9 @@
       block_comm = .true.
       if(PRESENT(block)) block_comm = block
 
-      out_unit = stdout()
       if( debug )then
           call SYSTEM_CLOCK(tick)
-          write( out_unit,'(a,i18,a,i6,a,2i6,2i8)' )&
+          write( stdout_unit,'(a,i18,a,i6,a,2i6,2i8)' )&
                'T=',tick, ' PE=',pe, ' MPP_TRANSMIT begin: to_pe, from_pe, put_len, get_len=', to_pe, from_pe, put_len, get_len
       end if
 
@@ -131,7 +130,7 @@
 
       if( debug )then
           call SYSTEM_CLOCK(tick)
-          write( out_unit,'(a,i18,a,i6,a,2i6,2i8)' )&
+          write( stdout_unit,'(a,i18,a,i6,a,2i6,2i8)' )&
                'T=',tick, ' PE=',pe, ' MPP_TRANSMIT end: to_pe, from_pe, put_len, get_len=', to_pe, from_pe, put_len, get_len
       end if
       return
@@ -150,15 +149,14 @@
       MPP_TYPE_, intent(inout) :: data(*)
       integer, intent(in) :: length, from_pe
       integer, intent(in), optional :: pelist(:)
-      integer :: n, i, from_rank, out_unit
+      integer :: n, i, from_rank, stdout_unit
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_BROADCAST: You must first call mpp_init.' )
       n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
 
-      out_unit = stdout()
       if( debug )then
           call SYSTEM_CLOCK(tick)
-          write( out_unit,'(a,i18,a,i6,a,2i6,2i8)' )&
+          write( stdout_unit,'(a,i18,a,i6,a,2i6,2i8)' )&
                'T=',tick, ' PE=',pe, ' MPP_BROADCAST begin: from_pe, length=', from_pe, length
       end if
 

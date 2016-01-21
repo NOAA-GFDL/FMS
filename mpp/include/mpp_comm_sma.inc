@@ -159,6 +159,8 @@ logunit = stdlog()
           'Clock rolls over after ', max_ticks*tick_rate, ' sec (', max_ticks, ' ticks)'
   end if
 
+  stdoutunit = stdout()
+
   call mpp_clock_begin(clock0)
 
   return
