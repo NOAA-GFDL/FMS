@@ -210,7 +210,7 @@
           start = 1
           do i = 1,size(field%axes(:))
              axsiz(i) = field%size(i)
-             if( field%axes(i)%did.EQ.field%time_axis_index .AND. field%time_axis_index >0 )start(i) = tlevel
+             if( i .EQ. field%time_axis_index )start(i) = tlevel
 
           end do
           if( PRESENT(domain) )then
