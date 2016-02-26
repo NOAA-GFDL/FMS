@@ -30,12 +30,13 @@
 
       call mpp_clock_begin(mpp_read_clock)
 
-      data = 0 !! zero out data so other tiles do not contribute junk to chksum
-
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_READ_COMPRESSED_2D_: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%valid )call mpp_error( FATAL, 'MPP_READ_COMPRESSED_2D_: invalid unit number.' )
 
       print_compressed_chksum = .FALSE.
+
+    if(size(data) > 0) then
+      data = 0 !! zero out data so other tiles do not contribute junk to chksum
       threading_flag = MPP_SINGLE
       if( PRESENT(threading) )threading_flag = threading
       if( threading_flag == MPP_MULTI ) then
@@ -67,19 +68,20 @@
       else
 	 call mpp_error( FATAL, 'MPP_READ_COMPRESSED_2D_: threading should be MPP_SINGLE or MPP_MULTI')
       endif
+    endif
 
       compute_chksum = .FALSE.
       if (ANY(field%checksum /= default_field%checksum) ) compute_chksum = .TRUE.
 
       if (compute_chksum) then
 	 if (field%type==NF_INT) then
-	    if (CEILING(field%fill,KIND=INT_KIND) /= MPP_FILL_INT ) then
+            if (field%fill == MPP_FILL_DOUBLE .or. field%fill == real(MPP_FILL_INT) ) then
+               chk = mpp_chksum( ceiling(data), mask_val=MPP_FILL_INT )
+            else
 	       call mpp_error(NOTE,"During mpp_io(mpp_read_compressed_2d) int field "//trim(field%name)// &
 			      " found fill. Icebergs, or code using defaults can safely ignore. "// &
 			      " If manually overriding compressed restart fills, confirm this is what you want.")
 	       chk = mpp_chksum( ceiling(data), mask_val=field%fill)
-	    else ! use MPP_FILL_INT
-	       chk = mpp_chksum( ceiling(data), mask_val=MPP_FILL_INT )
 	    end if
 	 else !!real data
 	    chk = mpp_chksum(data,mask_val=field%fill)
@@ -163,13 +165,13 @@
 
       if (compute_chksum) then
 	 if (field%type==NF_INT) then
-	    if (CEILING(field%fill,KIND=4) /= MPP_FILL_INT ) then
+	    if (field%fill == MPP_FILL_DOUBLE .or. field%fill == real(MPP_FILL_INT) ) then
+               chk = mpp_chksum( ceiling(data), mask_val=MPP_FILL_INT )
+            else 
 	       call mpp_error(NOTE,"During mpp_io(mpp_read_compressed_3d) int field "//trim(field%name)// &
 			      " found fill. Icebergs, or code using defaults can safely ignore. "// &
 			      " If manually overriding compressed restart fills, confirm this is what you want.")
 	       chk = mpp_chksum( ceiling(data), mask_val=field%fill)
-	    else ! use MPP_FILL_INT
-	       chk = mpp_chksum( ceiling(data), mask_val=MPP_FILL_INT )
 	    end if
 	 else !!real
 	    chk = mpp_chksum(data,mask_val=field%fill)
