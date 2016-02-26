@@ -1016,10 +1016,8 @@ type :: atttype
 
   integer :: pack_size ! = 1 when compiling with -r8 and = 2 when compiling with -r4.
 
-  character(len=128) :: version= &
-       '$Id$'
-  character(len=128) :: tagname= &
-       '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
 contains
 

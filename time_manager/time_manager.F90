@@ -180,8 +180,8 @@ end interface
 
 !======================================================================
 
-character(len=128) :: version='$Id$'
-character(len=128) :: tagname='$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 logical :: module_is_initialized = .false.
 
 !======================================================================
@@ -3090,7 +3090,7 @@ subroutine time_manager_init ( )
 
   if (module_is_initialized) return  ! silent return if already called
 
-  call write_version_number (version, tagname)
+  call write_version_number("TIME_MANAGER_MOD", version)
   module_is_initialized = .true.
 
 end subroutine time_manager_init

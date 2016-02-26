@@ -1,6 +1,4 @@
-
 ! -*-f90-*-
-! $Id$
 
 
 #ifdef use_libSMA
@@ -1308,9 +1306,8 @@ end function rarray_to_char
 ! 
   subroutine read_input_nml()
 
-! version and tagging information
-    character(len=128) :: version = '$Id$'
-    character(len=128) :: tagname = '$Name$' 
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
 ! private variables
     integer :: log_unit
@@ -1339,7 +1336,7 @@ end function rarray_to_char
     if (pe == root_pe) then
        log_unit = stdlog()
        write(log_unit,'(a)')  '========================================================================'
-       write(log_unit,'(a)')  'READ_INPUT_NML: '//trim(version)//':'//trim(tagname)
+       write(log_unit,'(a)')  'READ_INPUT_NML: '//trim(version)
        write(log_unit,'(a)')  'READ_INPUT_NML: '//trim(filename)//' '
        do i = 1, num_lines
           write(log_unit,*) trim(input_nml_file(i))
@@ -1439,9 +1436,8 @@ end function rarray_to_char
     character(len=*), intent(inout), dimension(:) :: Content
     integer, intent(in), optional,   dimension(:) :: PELIST
 
-    ! version and tagging information
-    character(len=*), parameter :: VERSION = '$Id$'
-    character(len=*), parameter :: TAGNAME = '$Name$' 
+    ! Include variable "version" to be written to log file.
+#include<file_version.h>    ! version and tagging information
 
     character(len=5) :: text
     logical :: file_exist
@@ -1462,7 +1458,7 @@ end function rarray_to_char
        ! write info logfile
        log_unit = stdlog()
        write(log_unit,'(a)')  '========================================================================'
-       write(log_unit,'(a)')  'READ_ASCII_FILE: '//trim(VERSION)//':'//trim(TAGNAME)
+       write(log_unit,'(a)')  'READ_ASCII_FILE: '//trim(version)
        write(log_unit,'(a)')  'READ_ASCII_FILE: File: '//trim(FILENAME)
 
        inquire(FILE=FILENAME, EXIST=file_exist)

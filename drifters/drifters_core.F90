@@ -1,4 +1,3 @@
-! $Id$
 !
 ! nf95 -r8 -g -I ~/regression/ia64/23-Jun-2005/CM2.1U_Control-1990_E1.k32pe/include/ -D_TEST_DRIFTERS -D_F95 quicksort.F90 drifters_core.F90
 
@@ -16,7 +15,8 @@ module drifters_core_mod
 
   ! Globals
   integer, parameter, private   :: MAX_STR_LEN = 128
-  character(MAX_STR_LEN), parameter, private :: version = '$Id$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
   type drifters_core_type
      ! Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new

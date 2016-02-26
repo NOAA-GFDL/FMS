@@ -91,8 +91,8 @@ module horiz_interp_conserve_mod
 
   integer :: pe, root_pe
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id$'
-  character(len=128) :: tagname = '$Name$'
+  ! Include variable "version" to be written to log file.
+#include<file_version.h>
   logical            :: module_is_initialized = .FALSE.
 
   logical         :: great_circle_algorithm = .false.
@@ -102,16 +102,16 @@ contains
   !#######################################################################
   !  <SUBROUTINE NAME="horiz_interp_conserve_init">
   !  <OVERVIEW>
-  !     writes version number and tag name to logfile.out
+  !     writes version number to logfile.out
   !  </OVERVIEW>
   !  <DESCRIPTION>       
-  !     writes version number and tag name to logfile.out
+  !     writes version number to logfile.out
   !  </DESCRIPTION>
 
   subroutine horiz_interp_conserve_init
 
     if(module_is_initialized) return
-    call write_version_number (version, tagname)
+    call write_version_number("HORIZ_INTERP_CONSERVE_MOD", version)
 
     great_circle_algorithm = get_great_circle_algorithm()
 

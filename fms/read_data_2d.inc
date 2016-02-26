@@ -1,5 +1,4 @@
 ! -*-f90-*-
-! $Id$
 
 
    if((size(data,1)== ied-isd+1).and.(size(data,2)==jed-jsd+1)) then

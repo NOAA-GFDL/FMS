@@ -1,6 +1,4 @@
-
 ! -*-f90-*-
-! $Id$
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -162,15 +160,15 @@
   iunit = stdlog()  ! workaround for lf95.
   if( verbose )call mpp_error( NOTE, 'MPP_INIT: initializing MPP module...' )
   if( pe.EQ.root_pe )then
-     write( iunit,'(/a)' )'MPP module '//trim(version)//trim(tagname)
+     write( iunit,'(/a)' )'MPP module '//trim(version)
      write( iunit,'(a,i6)' )'MPP started with NPES=', npes
      write( iunit,'(a)' )'Using MPI library for message passing...'
      write( iunit, '(a,es12.4,a,i10,a)' ) &
           'Realtime clock resolution=', tick_rate, ' sec (', ticks_per_sec, ' ticks/sec)'
      write( iunit, '(a,es12.4,a,i20,a)' ) &
           'Clock rolls over after ', max_ticks*tick_rate, ' sec (', max_ticks, ' ticks)'
-     write( iunit,'(/a)' )'MPP module '//trim(mpp_parameter_version)//trim(mpp_parameter_tagname)
-     write( iunit,'(/a)' )'MPP module '//trim(mpp_data_version)//trim(mpp_data_tagname)
+     write( iunit,'(/a)' )'MPP Parameter module '//trim(mpp_parameter_version)
+     write( iunit,'(/a)' )'MPP Data module '//trim(mpp_data_version)
   end if
 
   stdout_unit = stdout()

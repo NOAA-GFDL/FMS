@@ -490,10 +490,8 @@ private
    module procedure show_all_bad_0d, show_all_bad_1d, show_all_bad_2d, show_all_bad_3d
  end interface
 !-----------------------------------------------------------------------
-!  cvs version and tag name
-
- character(len=128) :: version = '$Id$'
- character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
  logical :: module_is_initialized = .false.
 
@@ -2313,7 +2311,7 @@ real,  intent(in),              optional :: hc
 #endif
 
 ! write version number and namelist to log file
-  call write_version_number (version, tagname)
+  call write_version_number("SAT_VAPOR_PRES_MOD", version)
   unit = stdlog()
   stdoutunit = stdout()
   if (mpp_pe() == mpp_root_pe()) write (unit, nml=sat_vapor_pres_nml)

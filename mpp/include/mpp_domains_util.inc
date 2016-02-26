@@ -1,6 +1,4 @@
-
 ! -*-f90-*-
-! $Id$
 
   ! <SUBROUTINE NAME="mpp_domains_set_stack_size">
   !  <OVERVIEW>

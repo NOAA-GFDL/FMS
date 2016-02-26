@@ -47,9 +47,10 @@ end interface
 
 ! ==== module constants ======================================================
 character(len=*), parameter :: &
-     module_name = 'grid_mod', &
-     version     = '$Id$', &
-     tagname     = '$Name$'
+     module_name = 'grid_mod'
+
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
 character(len=*), parameter :: &
      grid_dir  = 'INPUT/',     &      ! root directory for all grid files

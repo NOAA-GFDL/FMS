@@ -19,8 +19,13 @@ module constants_mod
 implicit none
 private
 
-character(len=128) :: version='$Id$'
-character(len=128) :: tagname='$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
+!-----------------------------------------------------------------------
+! version is public so that write_version_number can be called for constants_mod
+! by fms_init
+public :: version
+
 !dummy variable to use in HUGE initializations
 real :: realnumber
 
@@ -217,10 +222,6 @@ real, public, parameter :: RADIAN  = RAD_TO_DEG
 real, public, parameter :: C2DBARS = 1.e-4
 real, public, parameter :: KELVIN  = 273.15
 real, public, parameter :: EPSLN   = 1.0e-40
-!-----------------------------------------------------------------------
-! version and tagname published
-! so that write_version_number can be called for constants_mod by fms_init
-public :: version, tagname
 !-----------------------------------------------------------------------
 public :: constants_init
 
