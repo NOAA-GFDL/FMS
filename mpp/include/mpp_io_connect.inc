@@ -513,7 +513,7 @@
               if( verbose )print '(a,i6,i16,i4)', 'MPP_OPEN: append to existing netCDF file: pe, ncid, time_axis_id=',&
                    pe, mpp_file(unit)%ncid, mpp_file(unit)%id
               mpp_file(unit)%format=form_flag ! need this for mpp_read
-!              call mpp_read_meta(unit)
+              call mpp_read_meta(unit, read_time=.FALSE.)
           else if( action_flag.EQ.MPP_RDONLY )then
                inquire(file=trim(mpp_file(unit)%name),EXIST=exists)
               if (.NOT.exists) call mpp_error(FATAL,'MPP_OPEN:'&
@@ -522,7 +522,7 @@
               if( verbose )print '(a,i6,i16,i4)', 'MPP_OPEN: opening existing netCDF file: pe, ncid, time_axis_id=',&
                    pe, mpp_file(unit)%ncid, mpp_file(unit)%id
               mpp_file(unit)%format=form_flag ! need this for mpp_read
-              call mpp_read_meta(unit)
+              call mpp_read_meta(unit, read_time=.TRUE.)
           end if
           mpp_file(unit)%opened = .TRUE.
 #elif use_LARGEFILE
@@ -553,7 +553,7 @@
               if( verbose )print '(a,i6,i16,i4)', 'MPP_OPEN: append to existing netCDF file: pe, ncid, time_axis_id=',&
                    pe, mpp_file(unit)%ncid, mpp_file(unit)%id
               mpp_file(unit)%format=form_flag ! need this for mpp_read
-!              call mpp_read_meta(unit)
+              call mpp_read_meta(unit, read_time=.FALSE.)
           else if( action_flag.EQ.MPP_RDONLY )then
                inquire(file=trim(mpp_file(unit)%name),EXIST=exists)
               if (.NOT.exists) call mpp_error(FATAL,'MPP_OPEN:'&
@@ -562,7 +562,7 @@
               if( verbose )print '(a,i6,i16,i4)', 'MPP_OPEN: opening existing netCDF file: pe, ncid, time_axis_id=',&
                    pe, mpp_file(unit)%ncid, mpp_file(unit)%id
               mpp_file(unit)%format=form_flag ! need this for mpp_read
-              call mpp_read_meta(unit)
+              call mpp_read_meta(unit, read_time=.TRUE.)
           end if
           mpp_file(unit)%opened = .TRUE.
 #else
@@ -593,7 +593,7 @@
               if( verbose )print '(a,i6,i16,i4)', 'MPP_OPEN: append to existing netCDF file: pe, ncid, time_axis_id=',&
                    pe, mpp_file(unit)%ncid, mpp_file(unit)%id
               mpp_file(unit)%format=form_flag ! need this for mpp_read
-!              call mpp_read_meta(unit)
+              call mpp_read_meta(unit, read_time=.FALSE.)
           else if( action_flag.EQ.MPP_RDONLY )then
                inquire(file=trim(mpp_file(unit)%name),EXIST=exists)
               if (.NOT.exists) call mpp_error(FATAL,'MPP_OPEN:'&
@@ -602,7 +602,7 @@
               if( verbose )print '(a,i6,i16,i4)', 'MPP_OPEN: opening existing netCDF file: pe, ncid, time_axis_id=',&
                    pe, mpp_file(unit)%ncid, mpp_file(unit)%id
               mpp_file(unit)%format=form_flag ! need this for mpp_read
-              call mpp_read_meta(unit)
+              call mpp_read_meta(unit, read_time=.TRUE.)
           end if
           mpp_file(unit)%opened = .TRUE.
 
