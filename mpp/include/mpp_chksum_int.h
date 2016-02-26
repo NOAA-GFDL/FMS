@@ -71,8 +71,8 @@ function MPP_CHKSUM_INT_RMASK_( var, pelist, mask_val )
         errStr = errStr // tmpstr3 // ") mask_val="
         write(unit=tmpstr4,fmt=*) mask_val
         errStr = errStr // trim(tmpstr4) // "has been called with these strange values. Check your KINDS, _FillValue, pack and mask_val. // &
-             Hint: Try being explicit and using MPP_FILL_{INT,FLOAT,DOUBLE}. Continuing by using the default MPP_FILL_INT. // &
-             THIS WILL BE FATAL IN THE FUTURE!"
+            & Hint: Try being explicit and using MPP_FILL_{INT,FLOAT,DOUBLE}. Continuing by using the default MPP_FILL_INT. // &
+            & THIS WILL BE FATAL IN THE FUTURE!"
         call mpp_error(WARNING, trim(errStr) )
 
         imask_val = MPP_FILL_INT
