@@ -231,6 +231,7 @@ MODULE diag_manager_mod
   ! Public interfaces from diag_grid_mod
   PUBLIC :: diag_grid_init, diag_grid_end
   PUBLIC :: diag_manager_set_time_end, diag_send_complete
+  PUBLIC :: diag_send_complete_extra
   ! Public interfaces from diag_data_mod
   PUBLIC :: DIAG_FIELD_NOT_FOUND
 
@@ -332,6 +333,10 @@ MODULE diag_manager_mod
      MODULE PROCEDURE send_data_1d
      MODULE PROCEDURE send_data_2d
      MODULE PROCEDURE send_data_3d
+#ifdef OVERLOAD_R4
+     MODULE PROCEDURE send_data_2d_r8
+     MODULE PROCEDURE send_data_3d_r8
+#endif
   END INTERFACE
   ! </INTERFACE>
 
@@ -1435,6 +1440,92 @@ CONTAINS
     END IF
   END FUNCTION send_data_2d
   ! </FUNCTION>
+
+#ifdef OVERLOAD_R4
+  ! <FUNCTION NAME="send_data_2d_r8" INTERFACE="send_data">
+  LOGICAL FUNCTION send_data_2d_r8(diag_field_id, field, time, is_in, js_in, &
+       & mask, rmask, ie_in, je_in, weight, err_msg)
+    INTEGER, INTENT(in) :: diag_field_id
+    REAL(kind=8), INTENT(in), DIMENSION(:,:) :: field
+    REAL, INTENT(in), OPTIONAL :: weight
+    TYPE (time_type), INTENT(in), OPTIONAL :: time
+    INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ie_in, je_in
+    LOGICAL, INTENT(in), DIMENSION(:,:), OPTIONAL :: mask
+    REAL, INTENT(in), DIMENSION(:,:),OPTIONAL :: rmask
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+
+    REAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) :: field_out
+    LOGICAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) ::  mask_out
+
+    ! If diag_field_id is < 0 it means that this field is not registered, simply return
+    IF ( diag_field_id <= 0 ) THEN
+       send_data_2d_r8 = .FALSE.
+       RETURN
+    END IF
+
+    ! First copy the data to a three d array with last element 1
+    field_out(:, :, 1) = field
+
+    ! Default values for mask
+    IF ( PRESENT(mask) ) THEN
+       mask_out(:, :, 1) = mask
+    ELSE
+       mask_out = .TRUE.
+    END IF
+
+    IF ( PRESENT(rmask) ) WHERE ( rmask < 0.5 ) mask_out(:, :, 1) = .FALSE.
+    IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
+       send_data_2d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1, mask=mask_out,&
+            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
+    ELSE
+       send_data_2d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1,&
+            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
+    END IF
+  END FUNCTION send_data_2d_r8
+  ! </FUNCTION>
+
+  ! <FUNCTION NAME="send_data_3d_r8" INTERFACE="send_data">
+  LOGICAL FUNCTION send_data_3d_r8(diag_field_id, field, time, is_in, js_in, &
+       & mask, rmask, ie_in, je_in, weight, err_msg)
+    INTEGER, INTENT(in) :: diag_field_id
+    REAL(kind=8), INTENT(in), DIMENSION(:,:,:) :: field
+    REAL, INTENT(in), OPTIONAL :: weight
+    TYPE (time_type), INTENT(in), OPTIONAL :: time
+    INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ie_in, je_in
+    LOGICAL, INTENT(in), DIMENSION(:,:,:), OPTIONAL :: mask
+    REAL, INTENT(in), DIMENSION(:,:,:),OPTIONAL :: rmask
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+
+    REAL, DIMENSION(SIZE(field,1),SIZE(field,2),size(field,3)) :: field_out
+    LOGICAL, DIMENSION(SIZE(field,1),SIZE(field,2),size(field,3)) ::  mask_out
+
+    ! If diag_field_id is < 0 it means that this field is not registered, simply return
+    IF ( diag_field_id <= 0 ) THEN
+       send_data_3d_r8 = .FALSE.
+       RETURN
+    END IF
+
+    ! First copy the data to a three d array with last element 1
+    field_out = field
+
+    ! Default values for mask
+    IF ( PRESENT(mask) ) THEN
+       mask_out = mask
+    ELSE
+       mask_out = .TRUE.
+    END IF
+
+    IF ( PRESENT(rmask) ) WHERE ( rmask < 0.5 ) mask_out = .FALSE.
+    IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
+       send_data_3d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1, mask=mask_out,&
+            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
+    ELSE
+       send_data_3d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1,&
+            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
+    END IF
+  END FUNCTION send_data_3d_r8
+  ! </FUNCTION>
+#endif OVERLOAD_R4
 
   ! <FUNCTION NAME="send_data_3d" INTERFACE="send_data">
   !   <IN NAME="diag_field_id" TYPE="INTEGER"> </IN>
@@ -3130,6 +3221,28 @@ CONTAINS
     Time_end = Time_end_in
 
   END SUBROUTINE diag_manager_set_time_end
+
+  !-----------------------------------------------------------------------
+  SUBROUTINE diag_send_complete_extra(time) 
+    TYPE (time_type), INTENT(in) :: time
+    !--- local variables
+    integer :: file, j, freq, in_num, file_num, out_num
+
+    DO file = 1, num_files
+      freq = files(file)%output_freq
+      IF (freq == 0) then
+        DO j = 1, files(file)%num_fields
+          out_num = files(file)%fields(j)
+          in_num = output_fields(out_num)%input_field
+          IF ( (input_fields(in_num)%numthreads == 1) .AND.&
+               & (input_fields(in_num)%active_omp_level.LE.1) ) CYCLE
+          file_num = output_fields(out_num)%output_file
+          CALL diag_data_out(file_num, out_num, &
+               & output_fields(out_num)%buffer, time)
+        END DO
+      END IF
+    END DO
+  END SUBROUTINE diag_send_complete_extra
 
   !-----------------------------------------------------------------------
   SUBROUTINE diag_send_complete(time_step, err_msg)
