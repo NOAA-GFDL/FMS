@@ -240,7 +240,7 @@ MODULE diag_manager_mod
   ! version number of this module
   ! Include variable "version" to be written to log file.
 #include<file_version.h>
-  
+
   type(time_type) :: Time_end
 
   ! <INTERFACE NAME="send_data">
@@ -1270,13 +1270,13 @@ CONTAINS
     ELSE
        asso_file_name = TRIM(files(cm_file_num)%name)
     END IF
-    
+
     ! Add the ensemble number string into the file name
     ! As frepp does not have native support for multiple ensemble runs
     ! this will not be done.  However, the code is left here for the time
     ! frepp does.
     !CALL get_instance_filename(TRIM(asso_file_name), asso_file_name)
-    
+
     ! Get the file name with the tile number (if required)
     num_axes = output_fields(cm_ind)%num_axes
     CALL get_mosaic_tile_file(TRIM(asso_file_name), asso_file_name,&
@@ -3223,7 +3223,7 @@ CONTAINS
   END SUBROUTINE diag_manager_set_time_end
 
   !-----------------------------------------------------------------------
-  SUBROUTINE diag_send_complete_extra(time) 
+  SUBROUTINE diag_send_complete_extra(time)
     TYPE (time_type), INTENT(in) :: time
     !--- local variables
     integer :: file, j, freq, in_num, file_num, out_num

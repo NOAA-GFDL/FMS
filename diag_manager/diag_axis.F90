@@ -59,7 +59,7 @@ MODULE diag_axis_mod
   !     Add a attribute to the diag axis
   !   </OVERVIEW>
   !   <TEMPLATE>
-  !     SUBROUTINE diag_axis_add_attribute(diag_field_id, att_name, att_value, pack)
+  !     SUBROUTINE diag_axis_add_attribute(diag_field_id, att_name, att_value)
   !   </TEMPLATE>
   !   <DESCRIPTION>
   !     Add an arbitrary attribute and value to the diagnostic axis.  Any number
@@ -480,7 +480,7 @@ CONTAINS
     TYPE(diag_atttype), ALLOCATABLE, DIMENSION(:), INTENT(out), OPTIONAL :: attributes
 
     INTEGER :: i, j, istat
-    
+
     CALL valid_id_check(id, 'get_diag_axis')
     name      = Axes(id)%name
     units     = Axes(id)%units

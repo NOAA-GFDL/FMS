@@ -186,7 +186,7 @@ CONTAINS
 
     ! Make sure err_msg is initialized
     err_msg = ''
-    
+
     IF ( PRESENT(time_ops) ) THEN
        time_ops1 = time_ops
     ELSE
@@ -281,7 +281,7 @@ CONTAINS
           END DO
           DEALLOCATE(attributes)
        END IF
-       
+
        !------------- write axis containing edge information ---------------
 
        !  --- this axis has no edges -----
@@ -415,11 +415,15 @@ CONTAINS
     LOGICAL :: coord_present
     CHARACTER(len=40) :: aux_axes(SIZE(axes))
     CHARACTER(len=160) :: coord_att
+    CHARACTER(len=1024) :: err_msg
 
     REAL :: scale, add
     INTEGER :: i, indexx, num, ipack, np, att_len
     LOGICAL :: use_range
     INTEGER :: axis_indices(SIZE(axes))
+
+    !---- Initialize err_msg to bank ----
+    err_msg = ''
 
     !---- dummy checks ----
     coord_present = .FALSE.
@@ -553,39 +557,11 @@ CONTAINS
     IF ( PRESENT(num_attributes) ) THEN
        IF ( PRESENT(attributes) ) THEN
           IF ( num_attributes .GT. 0 .AND. _ALLOCATED(attributes) ) THEN
-             DO i = 1, num_attributes
-                SELECT CASE (attributes(i)%type)
-                CASE (NF90_INT)
-                   IF ( .NOT._ALLOCATED(attributes(i)%iatt) ) THEN
-                      CALL error_mesg('diag_output_mod::write_field_meta_data',&
-                           & 'Integer attribute type indicated, but array not allocated for attribute '&
-                           &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
-                   END IF
-                   CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field), TRIM(attributes(i)%name),&
-                        & ival=attributes(i)%iatt)
-                CASE (NF90_FLOAT)
-                   IF ( .NOT._ALLOCATED(attributes(i)%fatt) ) THEN
-                      CALL error_mesg('diag_output_mod::write_field_meta_data',&
-                           & 'Real attribute type indicated, but array not allocated for attribute '&
-                           &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
-                   END IF
-                   CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field), TRIM(attributes(i)%name),&
-                        & rval=attributes(i)%fatt)
-                CASE (NF90_CHAR)
-                   att_str = attributes(i)%catt
-                   att_len = attributes(i)%len
-                   IF ( TRIM(attributes(i)%name).EQ.'cell_methods' .AND. PRESENT(time_method) ) THEN
-                      ! Append ",time: time_method" if time_method present
-                      att_str = attributes(i)%catt(1:attributes(i)%len)//' time: '//time_method
-                      att_len = LEN_TRIM(att_str)
-                   END IF
-                   CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field), TRIM(attributes(i)%name),&
-                        & cval=att_str(1:att_len))
-                CASE default
-                   CALL error_mesg('diag_output_mod::write_field_meta_data', 'Invalid type for field attribute '&
-                        &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
-                END SELECT
-             END DO
+             CALL write_attribute_meta(file_unit, mpp_get_id(Field%Field), num_attributes, attributes, time_method, err_msg)
+             IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
+                CALL error_mesg('diag_output_mod::write_field_meta_data',&
+                     & TRIM(err_msg)//" Contact the developers.", FATAL)
+             END IF
           ELSE
              ! Catch some bad cases
              IF ( num_attributes .GT. 0 .AND. .NOT._ALLOCATED(attributes) ) THEN
@@ -656,7 +632,7 @@ CONTAINS
 
     ! Clear err_msg if present
     IF ( PRESENT(err_msg) ) err_msg = ''
-    
+
     DO i = 1, num_attributes
        SELECT CASE (attributes(i)%type)
        CASE (NF90_INT)
