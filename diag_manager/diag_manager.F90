@@ -194,7 +194,8 @@ MODULE diag_manager_mod
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
        & file_exist, fms_error_handler, check_nml_error, get_mosaic_tile_file
   USE fms_io_mod, ONLY: get_instance_filename
-  USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, get_axis_num, get_domain2d, get_tile_count
+  USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, get_axis_num, get_domain2d, get_tile_count,&
+       & diag_axis_add_attribute
   USE diag_util_mod, ONLY: get_subfield_size, log_diag_field_info, update_bounds,&
        & check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
        & diag_time_inc, find_input_field, init_input_field, init_output_field,&
@@ -219,6 +220,7 @@ MODULE diag_manager_mod
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
 #endif
+
   IMPLICIT NONE
 
   PRIVATE
@@ -227,7 +229,7 @@ MODULE diag_manager_mod
        & need_data, average_tiles, DIAG_ALL, DIAG_OCEAN, DIAG_OTHER, get_date_dif, DIAG_SECONDS,&
        & DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, get_diag_global_att,&
        & set_diag_global_att, diag_field_add_attribute, diag_field_add_cell_measures,&
-       & get_diag_field_id
+       & get_diag_field_id, diag_axis_add_attribute
   ! Public interfaces from diag_grid_mod
   PUBLIC :: diag_grid_init, diag_grid_end
   PUBLIC :: diag_manager_set_time_end, diag_send_complete
@@ -4247,7 +4249,7 @@ PROGRAM test
 
   USE diag_manager_mod, ONLY: diag_manager_init, send_data, diag_axis_init, diag_manager_end
   USE diag_manager_mod, ONLY: register_static_field, register_diag_field, diag_send_complete
-  USE diag_manager_mod, ONLY: diag_manager_set_time_end, diag_field_add_attribute
+  USE diag_manager_mod, ONLY: diag_manager_set_time_end, diag_field_add_attribute, diag_axis_add_attribute
   USE diag_manager_mod, ONLY: diag_field_add_cell_measures
   USE diag_manager_mod, ONLY: get_diag_field_id, DIAG_FIELD_NOT_FOUND
 
@@ -4428,6 +4430,13 @@ PROGRAM test
   id_lon2 = diag_axis_init('lon2',  RAD_TO_DEG*lon_global2,  'degrees_E', 'x', long_name='longitude', Domain2=Domain2)
   id_lat2 = diag_axis_init('lat2',  RAD_TO_DEG*lat_global2,  'degrees_N', 'y', long_name='latitude',  Domain2=Domain2)
 
+  IF ( test_number == 21 ) THEN
+     ! Testing addition of axis attributes
+     CALL diag_axis_add_attribute(id_lon1, 'real_att', 2.3)
+     CALL diag_axis_add_attribute(id_lat1, 'int_att', (/ 2, 3 /))
+     CALL diag_axis_add_attribute(id_pfull, 'char_att', 'Some string')
+  END IF
+
   IF ( test_number == 14 ) THEN
      Time = set_date(1990,1,29,0,0,0)
   ELSE
@@ -4502,7 +4511,7 @@ PROGRAM test
      END IF
   END IF
 
-  IF ( test_number == 16 .OR. test_number == 17 .OR. test_number == 18 ) THEN
+  IF ( test_number == 16 .OR. test_number == 17 .OR. test_number == 18 .OR. test_number == 21 ) THEN
      is_in = 1
      js_in = 1
      ie_in = nlon
