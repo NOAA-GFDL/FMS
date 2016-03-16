@@ -1034,7 +1034,7 @@ CONTAINS
              CALL error_mesg('diag_manager_mod::diag_axis_add_attribute',&
                   & 'Attribute type claims INTEGER, but ival not present for attribute "'&
                   & //TRIM(name)//'" for axis "'//TRIM(Axes(diag_axis_id)%name)&
-                  & //'". Contact then developers.', FATAL)
+                  & //'". Contact the developers.', FATAL)
           END IF
           length = SIZE(ival)
           ! Allocate iatt(:) to size of ival

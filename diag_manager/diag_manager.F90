@@ -4252,6 +4252,7 @@ PROGRAM test
   USE diag_manager_mod, ONLY: diag_manager_set_time_end, diag_field_add_attribute, diag_axis_add_attribute
   USE diag_manager_mod, ONLY: diag_field_add_cell_measures
   USE diag_manager_mod, ONLY: get_diag_field_id, DIAG_FIELD_NOT_FOUND
+  USE diag_axis_mod, ONLY: get_axis_num
 
   IMPLICIT NONE
 
@@ -4293,11 +4294,15 @@ PROGRAM test
   INTEGER :: numthreads=1, ny_per_thread, idthread
   INTEGER :: months=0, days=0, dt_step=0
 
+  ! Variables needed for test 22
+  INTEGER :: id_nv
+
 
   NAMELIST /test_diag_manager_nml/ layout, test_number, nlon, nlat, nlev, io_layout, numthreads, &
                                    dt_step, months, days
 
   ! Initialize all id* vars to be -1
+  id_nv = -1
   id_phalf = -1
   id_pfull = -1
   id_bk = -1
@@ -4430,6 +4435,16 @@ PROGRAM test
   id_lon2 = diag_axis_init('lon2',  RAD_TO_DEG*lon_global2,  'degrees_E', 'x', long_name='longitude', Domain2=Domain2)
   id_lat2 = diag_axis_init('lat2',  RAD_TO_DEG*lat_global2,  'degrees_N', 'y', long_name='latitude',  Domain2=Domain2)
 
+  IF ( test_number == 22 ) THEN
+     ! Can we get the 'nv' axis ID?
+     id_nv = get_axis_num('nv', 'nv')
+     IF ( id_nv .GT. 0 ) THEN
+        write (out_unit,'(a)') 'test22.1 Passes: id_nv has a positive value'
+     ELSE
+        write (out_unit,'(a)') 'test22.1 Failed: id_nv does not have a positive value'
+     END IF
+  END IF
+
   IF ( test_number == 21 ) THEN
      ! Testing addition of axis attributes
      CALL diag_axis_add_attribute(id_lon1, 'real_att', 2.3)
@@ -4511,7 +4526,7 @@ PROGRAM test
      END IF
   END IF
 
-  IF ( test_number == 16 .OR. test_number == 17 .OR. test_number == 18 .OR. test_number == 21 ) THEN
+  IF ( test_number == 16 .OR. test_number == 17 .OR. test_number == 18 .OR. test_number == 21 .OR. test_number == 22 ) THEN
      is_in = 1
      js_in = 1
      ie_in = nlon

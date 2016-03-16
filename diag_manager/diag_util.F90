@@ -1093,7 +1093,7 @@ CONTAINS
          & TRIM(long_name) , set_name=TRIM(name) )
     !---- register axis for storing time boundaries
     files(num_files)%time_bounds_id = diag_axis_init( 'nv',(/1.,2./),'none','N','vertex number',&
-         & set_name=TRIM(name))
+         & set_name='nv')
   END SUBROUTINE init_file
   ! </SUBROUTINE>
 
