@@ -4295,7 +4295,7 @@ PROGRAM test
   INTEGER :: months=0, days=0, dt_step=0
 
   ! Variables needed for test 22
-  INTEGER :: id_nv
+  INTEGER :: id_nv, id_nv_init
 
 
   NAMELIST /test_diag_manager_nml/ layout, test_number, nlon, nlat, nlev, io_layout, numthreads, &
@@ -4303,6 +4303,7 @@ PROGRAM test
 
   ! Initialize all id* vars to be -1
   id_nv = -1
+  id_nv_init = -1
   id_phalf = -1
   id_pfull = -1
   id_bk = -1
@@ -4442,6 +4443,14 @@ PROGRAM test
         write (out_unit,'(a)') 'test22.1 Passes: id_nv has a positive value'
      ELSE
         write (out_unit,'(a)') 'test22.1 Failed: id_nv does not have a positive value'
+     END IF
+
+     ! Can I call diag_axis_init on 'nv' again, and get the same ID back?
+     id_nv_init = diag_axis_init( 'nv',(/1.,2./),'none','N','vertex number', set_name='nv')
+     IF ( id_nv_init .EQ. id_nv ) THEN
+        write (out_unit,'(a)') 'test22.2 Passes: Can call diag_axis_init on "nv" and get same ID'
+     ELSE
+        write (out_unit,'(a)') 'test22.2 Failed: Cannot call diag_axis_init on "nv" and get same ID'
      END IF
   END IF
 
