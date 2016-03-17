@@ -1,6 +1,4 @@
-
 ! -*-f90-*-
-! $Id$
 
 
 #ifdef use_libSMA
@@ -83,6 +81,29 @@
     integer :: stdlog,istat
     logical :: opened
     character(len=11) :: this_pe
+!$  logical           :: omp_in_parallel    
+!$  integer           :: errunit
+
+
+!NOTES: We can not use mpp_error to handle the error because mpp_error
+!       will call stdout and stdout will call stdlog for non-root-pe.
+!       This will be a cicular call. 
+
+!$  if( omp_in_parallel() ) then
+!$OMP single
+!$      errunit = stderr()
+!$      write( errunit,'(/a/)' ) 'FATAL: STDLOG: is called inside a OMP parallel region'
+#ifdef sgi_mipspro
+!$      call TRACE_BACK_STACK_AND_PRINT()
+#endif
+#ifdef use_libMPI
+!$      call MPI_ABORT( MPI_COMM_WORLD, 1, error )
+#else
+!$      call ABORT()
+#endif
+!$OMP end single
+!$  endif
+
     if( pe.EQ.root_pe )then
        write(this_pe,'(a,i6.6,a)') '.',pe,'.out'
        inquire( file=trim(configfile)//this_pe, opened=opened )
@@ -1285,9 +1306,8 @@ end function rarray_to_char
 ! 
   subroutine read_input_nml()
 
-! version and tagging information
-    character(len=128) :: version = '$Id$'
-    character(len=128) :: tagname = '$Name$' 
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
 ! private variables
     integer :: log_unit
@@ -1316,7 +1336,7 @@ end function rarray_to_char
     if (pe == root_pe) then
        log_unit = stdlog()
        write(log_unit,'(a)')  '========================================================================'
-       write(log_unit,'(a)')  'READ_INPUT_NML: '//trim(version)//':'//trim(tagname)
+       write(log_unit,'(a)')  'READ_INPUT_NML: '//trim(version)
        write(log_unit,'(a)')  'READ_INPUT_NML: '//trim(filename)//' '
        do i = 1, num_lines
           write(log_unit,*) trim(input_nml_file(i))
@@ -1416,9 +1436,8 @@ end function rarray_to_char
     character(len=*), intent(inout), dimension(:) :: Content
     integer, intent(in), optional,   dimension(:) :: PELIST
 
-    ! version and tagging information
-    character(len=*), parameter :: VERSION = '$Id$'
-    character(len=*), parameter :: TAGNAME = '$Name$' 
+    ! Include variable "version" to be written to log file.
+#include<file_version.h>    ! version and tagging information
 
     character(len=5) :: text
     logical :: file_exist
@@ -1439,7 +1458,7 @@ end function rarray_to_char
        ! write info logfile
        log_unit = stdlog()
        write(log_unit,'(a)')  '========================================================================'
-       write(log_unit,'(a)')  'READ_ASCII_FILE: '//trim(VERSION)//':'//trim(TAGNAME)
+       write(log_unit,'(a)')  'READ_ASCII_FILE: '//trim(version)
        write(log_unit,'(a)')  'READ_ASCII_FILE: File: '//trim(FILENAME)
 
        inquire(FILE=FILENAME, EXIST=file_exist)

@@ -609,7 +609,7 @@ module mpp_domains_mod
 ! </NAMELIST>
   character(len=32) :: debug_update_domain = "none"
   logical           :: debug_message_passing = .false.
-  integer           :: nthread_control_loop = 4
+  integer           :: nthread_control_loop = 8
   logical           :: efp_sum_overflow_check = .false.
   namelist /mpp_domains_nml/ debug_update_domain, domain_clocks_on, debug_message_passing, nthread_control_loop, &
                              efp_sum_overflow_check
@@ -2421,11 +2421,9 @@ end interface
      module procedure nullify_domain2d_list
   end interface  
 
-  !--- version information variables
-  character(len=128), public :: version= &
-       '$Id$'
-  character(len=128), public :: tagname= &
-       '$Name$'
+  ! Include variable "version" to be written to log file.
+#include<file_version.h>
+  public version
 
 
 contains

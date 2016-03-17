@@ -1,14 +1,15 @@
 module stock_constants_mod
 
   use mpp_mod, only : mpp_pe, mpp_root_pe, mpp_sum
+  use fms_mod, only : write_version_number
   use time_manager_mod, only : time_type, get_time
   use time_manager_mod, only : operator(+), operator(-)
   use diag_manager_mod, only : register_diag_field,send_data
 
   implicit none
 
-  character(len=128), parameter :: version = '$Id$'
-
+  ! Include variable "version" to be written to log file.
+#include<file_version.h>
 
   integer,public,    parameter                :: NELEMS=3
   integer,           parameter                :: NELEMS_report=3
@@ -57,6 +58,9 @@ contains
     character(len=80) :: formatString,space
     integer :: i,s
     real, dimension(NELEMS) :: val_atm, val_lnd, val_ice, val_ocn
+
+    ! Write the version of this file to the log file
+    call write_version_number('STOCK_CONSTANTS_MOD', version)
 
     do i = 1, NELEMS_report
        val_atm(i) = Atm_stock(i)%q_start

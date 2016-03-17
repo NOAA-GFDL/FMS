@@ -1,5 +1,4 @@
 ! -*-f90-*-
-! $Id$
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -210,7 +209,7 @@
           start = 1
           do i = 1,size(field%axes(:))
              axsiz(i) = field%size(i)
-             if( field%axes(i)%did.EQ.field%time_axis_index .AND. field%time_axis_index >0 )start(i) = tlevel
+             if( i .EQ. field%time_axis_index )start(i) = tlevel
 
           end do
           if( PRESENT(domain) )then
@@ -448,7 +447,7 @@
 !     <TT>mpp_read_meta</TT> must be called prior to <TT>mpp_read</TT>.
 !   </NOTE>
 ! </SUBROUTINE>
-    subroutine mpp_read_meta(unit)
+    subroutine mpp_read_meta(unit, read_time)
 !
 ! read file attributes including dimension and variable attributes
 ! and store in filetype structure.  All of the file information
@@ -458,13 +457,14 @@
 ! every PE is eligible to call mpp_read_meta
 !
       integer, intent(in) :: unit
-
+      logical, intent(in), optional :: read_time ! read_time is set to false when file action is appending or writing.
+                                                 ! This is temporary fix for MOM6 reopen_file issue.
       integer         :: ncid,ndim,nvar_total,natt,recdim,nv,nvar,len
       integer :: error, i, j, istat, check_exist
       integer         :: type, nvdims, nvatts, dimid
       integer, allocatable, dimension(:) :: dimids
       character(len=128) :: name, attname, unlimname, attval, bounds_name
-      logical :: isdim, found_bounds
+      logical :: isdim, found_bounds, get_time_info
       integer(LONG_KIND) :: checksumf
       character(len=64)  :: checksum_char
       integer :: num_checksumf, last, is, k
@@ -473,6 +473,9 @@
       integer(INT_KIND), allocatable :: ivals(:)
       real(FLOAT_KIND), allocatable  :: rvals(:)
       real(DOUBLE_KIND), allocatable :: r8vals(:)
+
+      get_time_info = .TRUE.
+      if(present(read_time)) get_time_info = read_time
 
 #ifdef use_netCDF
 
@@ -717,7 +720,7 @@
                  case default
                     call mpp_error( FATAL, 'Invalid data type for dimension' )
                  end select
-             else
+             else if(get_time_info) then
                  len = mpp_file(unit)%time_level
                  if( len > 0 ) then
                     allocate(mpp_file(unit)%time_values(len), STAT=istat)
@@ -1060,7 +1063,8 @@
 
               do j=1,nvdims
                  if(dimids(j).eq.mpp_file(unit)%recdimid  .and. mpp_file(unit)%time_level/=-1)then
-                    mpp_file(unit)%Var(nv)%time_axis_index = dimids(j)
+                    mpp_file(unit)%Var(nv)%time_axis_index = j   !dimids(j). z1l: Should be j. 
+                                                                 !This will cause problem when appending to existed file.
                     mpp_file(unit)%Var(nv)%size(j)=1    ! dimid length set to 1 here for consistency w/ mpp_write
                  else
                     mpp_file(unit)%Var(nv)%size(j)=mpp_file(unit)%Axis(dimids(j))%len

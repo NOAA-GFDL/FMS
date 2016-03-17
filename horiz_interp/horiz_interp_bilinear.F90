@@ -39,8 +39,8 @@ module horiz_interp_bilinear_mod
   integer, parameter :: DUMMY = -999
 
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id$'
-  character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
   logical            :: module_is_initialized = .FALSE.
 
 contains
@@ -48,16 +48,16 @@ contains
   !#######################################################################
   !  <SUBROUTINE NAME="horiz_interp_bilinear_init">
   !  <OVERVIEW>
-  !     writes version number and tag name to logfile.out
+  !     writes version number to logfile.out
   !  </OVERVIEW>
   !  <DESCRIPTION>       
-  !     writes version number and tag name to logfile.out
+  !     writes version number to logfile.out
   !  </DESCRIPTION>
 
   subroutine horiz_interp_bilinear_init
 
     if(module_is_initialized) return
-    call write_version_number (version, tagname)
+    call write_version_number("HORIZ_INTERP_BILINEAR_MOD", version)
     module_is_initialized = .true.
 
   end subroutine horiz_interp_bilinear_init
@@ -474,8 +474,8 @@ contains
     lon_min = minval(lon_in);
     lon_max = maxval(lon_in);
 
-    max_step = min(nlon_in,nlat_in)/2 ! can be adjusted if needed
-    allocate(ilon(8*max_step), jlat(8*max_step) )
+    max_step = max(nlon_in,nlat_in) ! can be adjusted if needed
+    allocate(ilon(5*max_step), jlat(5*max_step) )
 
     do n = 1, nlat_out
        do m = 1, nlon_out
@@ -555,7 +555,7 @@ contains
                    jlat(1) = js
                 else
                    npts = 0
-                   !--- bottom and top boundary
+                   !--- bottom boundary
                    jstart = max(js-step,1)
                    jend   = min(js+step,nlat_in)
 
@@ -576,9 +576,6 @@ contains
                       npts       = npts + 1
                       ilon(npts) = i
                       jlat(npts) = jstart
-                      npts       = npts + 1
-                      ilon(npts) = i
-                      jlat(npts) = jend                         
                    enddo
 
                    !--- right and left boundary -----------------------------------------------
@@ -593,7 +590,7 @@ contains
                    endif
                    do l = -step, step
                       j = js+l
-                         if( j < 1 .or. j > nlat_in) cycle
+                         if( j < 1 .or. j > nlat_in .or. j==jstart .or. j==jend) cycle
                          npts = npts+1
                          ilon(npts) = istart
                          jlat(npts) = j
@@ -601,6 +598,29 @@ contains
                          ilon(npts) = iend
                          jlat(npts) = j
                   end do
+
+                   !--- top boundary
+
+                   do l = -step, step
+                      i = is+l
+                      if(src_modulo)then
+                         if( i < 1) then
+                            i = i + nlon_in
+                         else if (i > nlon_in) then
+                            i = i - nlon_in
+                         endif
+                         if( i < 1 .or. i > nlon_in) call mpp_error(FATAL, &
+                              'horiz_interp_bilinear_mod: max_step is too big, decrease max_step' )
+                      else
+                         if( i < 1 .or. i > nlon_in) cycle
+                      endif
+
+                      npts       = npts + 1
+                      ilon(npts) = i
+                      jlat(npts) = jend
+                   enddo
+
+
                 end if
 
                 !--- find the surrouding points             
@@ -652,8 +672,21 @@ contains
              enddo
           endif
           if(.not.found) then
+              print *,'lon,lat=',lon*180./PI,lat*180./PI
+              print *,'npts=',npts
+              print *,'is,ie= ',istart,iend
+              print *,'js,je= ',jstart,jend              
+              print *,'lon_in(is,js)=',lon_in(istart,jstart)*180./PI
+              print *,'lon_in(ie,js)=',lon_in(iend,jstart)*180./PI
+              print *,'lat_in(is,js)=',lat_in(istart,jstart)*180./PI
+              print *,'lat_in(ie,js)=',lat_in(iend,jstart)*180./PI
+              print *,'lon_in(is,je)=',lon_in(istart,jend)*180./PI
+              print *,'lon_in(ie,je)=',lon_in(iend,jend)*180./PI
+              print *,'lat_in(is,je)=',lat_in(istart,jend)*180./PI
+              print *,'lat_in(ie,je)=',lat_in(iend,jend)*180./PI                  
+              
              call mpp_error(FATAL, &
-                  'horiz_interp_bilinear_mod: the destination point is not inside the source grid' )
+                  'find_neighbor: the destination point is not inside the source grid' )
           endif
        enddo
     enddo
@@ -715,6 +748,8 @@ contains
     real                                   :: polyx(4), polyy(4)
     real                                   :: min_lon, min_lat, max_lon, max_lat    
 
+    integer, parameter :: step_div=8
+    
     tpi = 2.0*pi
     nlon_in  = size(lon_in,1) ; nlat_in  = size(lat_in,2)
     nlon_out = size(lon_out,1); nlat_out = size(lon_out,2)
@@ -722,8 +757,8 @@ contains
     lon_min = minval(lon_in);
     lon_max = maxval(lon_in);
 
-    max_step = min(nlon_in,nlat_in)/2 ! can be adjusted if needed
-    allocate(ilon(8*max_step), jlat(8*max_step) )
+    max_step = min(nlon_in,nlat_in)/step_div ! can be adjusted if needed
+    allocate(ilon(step_div*max_step), jlat(step_div*max_step) )
 
     do n = 1, nlat_out
        do m = 1, nlon_out

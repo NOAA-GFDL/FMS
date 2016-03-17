@@ -1,6 +1,4 @@
-
 ! -*-f90-*-
-! $Id$
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -118,7 +116,7 @@ subroutine mpp_init( flags,localcomm )
   if( verbose )call mpp_error( NOTE, 'MPP_INIT: initializing MPP module...' )
   if( pe.EQ.root_pe )then
      logunit = stdlog()
-     write( logunit,'(/a)' )'MPP module '//trim(version)//trim(tagname)
+     write( logunit,'(/a)' )'MPP module '//trim(version)
      write( logunit,'(a,i6)' )'MPP started with NPES=', npes
      write( logunit,'(a)' )'Using no library for message passing...'
      write( logunit, '(a26,es12.4,a6,i10,a11)' ) &
@@ -126,6 +124,8 @@ subroutine mpp_init( flags,localcomm )
      write( logunit, '(a23,es12.4,a6,i20,a7)' ) &
           'Clock rolls over after ', max_ticks*tick_rate, ' sec (', max_ticks, ' ticks)'
   end if
+
+  stdoutunit = stdout()
   call mpp_clock_begin(clock0)
 
   return
