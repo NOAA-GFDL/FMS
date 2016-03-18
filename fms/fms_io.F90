@@ -1534,7 +1534,7 @@ end function register_restart_field_r2d
 !-------------------------------------------------------------------------------
 function register_restart_field_r3d(fileObj, filename, fieldname, data, domain, mandatory, &
                              no_domain, position, tile_count, data_default, longname, units, read_only, &
-                                    compressed, compressed_axis, restart_owns_data)
+                             compressed, compressed_axis, restart_owns_data)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
   real,     dimension(:,:,:), intent(in), target :: data
