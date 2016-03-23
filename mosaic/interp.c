@@ -33,7 +33,7 @@ void cubic_spline_sp(int size1, int size2, const double *grid1, const double *gr
                   double *data2 )
 {
   double *delta=NULL, *d=NULL, *dh=NULL, *b=NULL, *c = NULL;
-  double h, h2, s, w1, w2, p;
+  double s, w1, w2, p;
   int i, k, n, klo, khi, kmax;
 
   for(i=1; i<size1; i++) {
@@ -99,8 +99,6 @@ End slopes
   b = (double *)malloc((size1-1)*sizeof(double));
   c = (double *)malloc((size1-1)*sizeof(double));
   for (k=0; k<size1-1; k++) {
-    h   = dh[k];
-    h2  = h*h;
     c[k]   = (3.0*delta[k]-2.0*d[k]-d[k+1])/dh[k];
     b[k]   = (d[k]-2.0*delta[k]+d[k+1])/(dh[k]*dh[k]);
   }
