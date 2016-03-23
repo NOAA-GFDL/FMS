@@ -4,10 +4,6 @@
 #include "mosaic_util.h"
 #include "gradient_c2l.h"
 #include <stdio.h>
-void a2b_ord2(int nx, int ny, const double *qin, const double *edge_w, const double *edge_e,
-	      const double *edge_s, const double *edge_n, double *qout,
-	      int on_west_edge, int on_east_edge, int on_south_edge, int on_north_edge);
-
 
 /*------------------------------------------------------------------------------
   Routine to compute gradient terms for SCRIP:
@@ -44,7 +40,7 @@ void grad_c2l(const int *nlon, const int *nlat, const double *pin, const double 
 {
 
   double *pb, *pdx, *pdy, *grad3;
-  int nx, ny, nxp, nyp, i, j, m0, m1, m2, n;
+  int nx, ny, nxp, nyp, i, j, m0, m1, n;
 
   nx    = *nlon;
   ny    = *nlat;
@@ -96,7 +92,7 @@ void grad_c2l(const int *nlon, const int *nlat, const double *pin, const double 
   free(pdy);
   free(grad3);
   
-}; /* grad_c2l */
+} /* grad_c2l */
 
 /*------------------------------------------------------------------------------
   qin:  A-grid field, size (nx+2, ny+2)
@@ -148,32 +144,48 @@ void a2b_ord2(int nx, int ny, const double *qin, const double *edge_w, const dou
   
   /* West Edges */
   if(on_west_edge) {
-    for(j=jstart; j<=jend; j++) q2[j] = 0.5*(qin[j*(nx+2)] + qin[j*(nx+2)+1]);
-    for(j=jstart; j<jend; j++) qout[j*nxp] = edge_w[j]*q2[j] + (1-edge_w[j])*q2[j+1];
+    for(j=jstart; j<=jend; j++){
+      q2[j] = 0.5*(qin[j*(nx+2)] + qin[j*(nx+2)+1]);
+    }
+    for(j=jstart; j<jend; j++){
+      qout[j*nxp] = edge_w[j]*q2[j] + (1-edge_w[j])*q2[j+1];
+    }
   }
   
   /* East Edges */
   if(on_east_edge) {  
-    for(j=jstart; j<=jend; j++)q2[j] = 0.5*(qin[j*(nx+2)+nx] + qin[j*(nx+2)+nxp]);
-    for(j=jstart; j<jend; j++) qout[j*nxp+nx] = edge_e[j]*q2[j] + (1-edge_e[j])*q2[j+1];
+    for(j=jstart; j<=jend; j++){
+      q2[j] = 0.5*(qin[j*(nx+2)+nx] + qin[j*(nx+2)+nxp]);
+    }
+    for(j=jstart; j<jend; j++){
+      qout[j*nxp+nx] = edge_e[j]*q2[j] + (1-edge_e[j])*q2[j+1];
+    }
   }
   
   /* south edge */
   if(on_south_edge) {  
-    for(i=istart; i<=iend; i++) q1[i] = 0.5*(qin[i] + qin[(nx+2)+i]);
-    for(i=istart; i<iend; i++) qout[i] = edge_s[i]*q1[i] + (1 - edge_s[i])*q1[i+1];
+    for(i=istart; i<=iend; i++){
+      q1[i] = 0.5*(qin[i] + qin[(nx+2)+i]);
+    }
+    for(i=istart; i<iend; i++){
+      qout[i] = edge_s[i]*q1[i] + (1 - edge_s[i])*q1[i+1];
+    }
   }
   
   /* north edge */
   if(on_north_edge) {  
-     for(i=istart; i<=iend; i++) q1[i] = 0.5*(qin[ny*(nx+2)+i] + qin[nyp*(nx+2)+i]);
-     for(i=istart; i<iend; i++) qout[ny*nxp+i] = edge_n[i]*q1[i] + (1 - edge_n[i])*q1[i+1];  
+    for(i=istart; i<=iend; i++){
+      q1[i] = 0.5*(qin[ny*(nx+2)+i] + qin[nyp*(nx+2)+i]);
+    }
+    for(i=istart; i<iend; i++){
+      qout[ny*nxp+i] = edge_n[i]*q1[i] + (1 - edge_n[i])*q1[i+1];
+    }
   }
   
   free(q1);
   free(q2);
 
-}; /* a2b_ord2 */
+} /* a2b_ord2 */
 
 
 void get_edge(int nx, int ny, const double *lont, const double *latt,
@@ -291,7 +303,7 @@ void get_edge(int nx, int ny, const double *lont, const double *latt,
   free(px);
   free(py);
   
-}; /* get_edge */
+} /* get_edge */
 
 void mid_pt_sphere(const double *p1, const double *p2, double *pm)
 {
