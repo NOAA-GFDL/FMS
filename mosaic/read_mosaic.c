@@ -20,7 +20,7 @@ void handle_netcdf_error(const char *msg, int status )
   sprintf( errmsg, "%s: %s", msg, (char *)nc_strerror(status) );
   error_handler(errmsg);
 
-}; /* handle_netcdf_error */
+} /* handle_netcdf_error */
 
 /***************************************************************************
   void get_file_dir(const char *file, char *dir)
@@ -45,7 +45,7 @@ void get_file_dir(const char *file, char *dir)
   }
   dir[len] = 0;
 
-}; /* get_file_dir */
+} /* get_file_dir */
 
 
 int field_exist(const char* file, const char *name)
@@ -76,7 +76,7 @@ int field_exist(const char* file, const char *name)
 
 #endif
   return 0; 
-}; /* field_exist */
+} /* field_exist */
 
 int get_dimlen(const char* file, const char *name)
 {
@@ -120,7 +120,7 @@ int get_dimlen(const char* file, const char *name)
   
   return len;
   
-}; /* get_dimlen */
+} /* get_dimlen */
 
 /*******************************************************************************
    void get_string_data(const char *file, const char *name, char *data)
@@ -156,13 +156,13 @@ void get_string_data(const char *file, const char *name, char *data)
   error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
 #endif
   
-}; /* get_string_data */
+} /* get_string_data */
 
 /*******************************************************************************
    void get_string_data_level(const char *file, const char *name, const size_t *start, const size_t *nread, char *data)
    get string data of field with "name" from "file".
 ******************************************************************************/
-void get_string_data_level(const char *file, const char *name, char *data, const int *level)
+void get_string_data_level(const char *file, const char *name, char *data, const unsigned int *level)
 {
   int ncid, varid, status, i;
   size_t start[4], nread[4];
@@ -197,7 +197,7 @@ void get_string_data_level(const char *file, const char *name, char *data, const
   error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
 #endif
   
-}; /* get_string_data_level */
+} /* get_string_data_level */
 
 
 /*******************************************************************************
@@ -258,7 +258,7 @@ void get_var_data(const char *file, const char *name, void *data)
   error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
 #endif
   
-}; /* get_var_data */
+} /* get_var_data */
 
 /*******************************************************************************
    void get_var_data(const char *file, const char *name, double *data)
@@ -319,7 +319,7 @@ void get_var_data_region(const char *file, const char *name, const size_t *start
   error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
 #endif
   
-}; /* get_var_data_region */
+} /* get_var_data_region */
 
 /******************************************************************************
    void get_var_text_att(const char *file, const char *name, const char *attname, char *att)
@@ -355,7 +355,7 @@ void get_var_text_att(const char *file, const char *name, const char *attname, c
   error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
 #endif
   
-}; /* get_var_text_att */
+} /* get_var_text_att */
 
 /***********************************************************************
   return number of overlapping cells.
@@ -387,7 +387,7 @@ double get_global_area(void)
   garea = 4*M_PI*RADIUS*RADIUS;
 
   return garea;
-};
+}
 
 #ifndef __AIX
 #ifdef OVERLOAD_R4
@@ -402,7 +402,7 @@ double get_global_area_(void)
   garea = 4*M_PI*RADIUS*RADIUS;
 
   return garea;
-};
+}
 #endif
 
 
@@ -416,7 +416,7 @@ void read_mosaic_xgrid_order1_(const char *xgrid_file, int *i1, int *j1, int *i2
 {
   read_mosaic_xgrid_order1(xgrid_file, i1, j1, i2, j2, area);
   
-};
+}
 #endif
 
 #ifdef OVERLOAD_R4
@@ -455,7 +455,7 @@ void read_mosaic_xgrid_order1(const char *xgrid_file, int *i1, int *j1, int *i2,
   free(tile1_cell);
   free(tile2_cell);
   
-}; /* read_mosaic_xgrid_order1 */
+} /* read_mosaic_xgrid_order1 */
 
 
 #ifndef __AIX
@@ -467,7 +467,7 @@ void read_mosaic_xgrid_order1_region_(const char *xgrid_file, int *i1, int *j1, 
 {
   read_mosaic_xgrid_order1_region(xgrid_file, i1, j1, i2, j2, area, isc, iec);
   
-};
+}
 #endif
 
 #ifdef OVERLOAD_R4
@@ -517,7 +517,7 @@ void read_mosaic_xgrid_order1_region(const char *xgrid_file, int *i1, int *j1, i
   free(tile1_cell);
   free(tile2_cell);
   
-}; /* read_mosaic_xgrid_order1 */
+} /* read_mosaic_xgrid_order1 */
 
 /* NOTE: di, dj is for tile1, */
 /****************************************************************************/
@@ -530,7 +530,7 @@ void read_mosaic_xgrid_order2_(const char *xgrid_file, int *i1, int *j1, int *i2
 {
   read_mosaic_xgrid_order2(xgrid_file, i1, j1, i2, j2, area, di, dj);
   
-};
+}
 #endif
 #ifdef OVERLOAD_R4
 void read_mosaic_xgrid_order2(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, float *area, float *di, float *dj )
@@ -573,7 +573,7 @@ void read_mosaic_xgrid_order2(const char *xgrid_file, int *i1, int *j1, int *i2,
   free(tile2_cell);
   free(tile1_distance);
   
-}; /* read_mosaic_xgrid_order2 */
+} /* read_mosaic_xgrid_order2 */
 
 /******************************************************************************
   int read_mosaic_ntiles(const char *mosaic_file)
@@ -594,7 +594,7 @@ int read_mosaic_ntiles(const char *mosaic_file)
 
   return ntiles;
   
-}; /* read_mosaic_ntiles */
+} /* read_mosaic_ntiles */
 
 /******************************************************************************
   int read_mosaic_ncontacts(const char *mosaic_file)
@@ -618,7 +618,7 @@ int read_mosaic_ncontacts(const char *mosaic_file)
   
   return ncontacts;
   
-}; /* read_mosaic_ncontacts */
+} /* read_mosaic_ncontacts */
 
 
 /*****************************************************************************
@@ -634,7 +634,7 @@ void read_mosaic_grid_sizes_(const char *mosaic_file, int *nx, int *ny)
 #endif
 void read_mosaic_grid_sizes(const char *mosaic_file, int *nx, int *ny)
 {
-  int ntiles, n;
+  unsigned int ntiles, n;
   char gridfile[STRING], tilefile[2*STRING];
   char dir[STRING];
   const int x_refine = 2, y_refine = 2;
@@ -652,7 +652,7 @@ void read_mosaic_grid_sizes(const char *mosaic_file, int *nx, int *ny)
     ny[n] /= y_refine;
   }
   
-}; /* read_mosaic_grid_sizes */
+} /* read_mosaic_grid_sizes */
   
 
 /******************************************************************************
@@ -711,8 +711,7 @@ void read_mosaic_contact(const char *mosaic_file, int *tile1, int *tile2, int *i
   char **gridtiles;
 #define MAXVAR 40
   char pstring[MAXVAR][STRING];
-  int ntiles, ncontacts, n, m, l, found;
-  unsigned int nstr;
+  unsigned int nstr, ntiles, ncontacts, n, m, l, found;
   const int x_refine = 2, y_refine = 2;
   int i1_type, j1_type, i2_type, j2_type;  
 
@@ -756,10 +755,12 @@ void read_mosaic_contact(const char *mosaic_file, int *tile1, int *tile2, int *i
     if(nstr != 8) error_handler("Error from read_mosaic: number of elements "
 				 "in contact_index seperated by :/, should be 8");
     /* make sure the string is only composed of numbers */
-    for(m=0; m<nstr; m++) for(l=0; l<strlen(pstring[m]); l++) {
-      if(pstring[m][l] > '9' ||  pstring[m][l] < '0' ) {
-	error_handler("Error from read_mosaic: some of the character in "
-		      "contact_indices except token is not digit number");
+    for(m=0; m<nstr; m++){
+      for(l=0; l<strlen(pstring[m]); l++){
+        if(pstring[m][l] > '9' ||  pstring[m][l] < '0' ) {
+          error_handler("Error from read_mosaic: some of the character in "
+                        "contact_indices except token is not digit number");
+        }
       }
     }
     istart1[n] = atoi(pstring[0]);
@@ -790,7 +791,7 @@ void read_mosaic_contact(const char *mosaic_file, int *tile1, int *tile2, int *i
   free(gridtiles);
  
 
-}; /* read_mosaic_contact */
+} /* read_mosaic_contact */
 
 
 /******************************************************************************
@@ -803,7 +804,7 @@ void read_mosaic_contact(const char *mosaic_file, int *tile1, int *tile2, int *i
   ioff=1 and joff=1 for T-cell
 ******************************************************************************/
 void read_mosaic_grid_data(const char *mosaic_file, const char *name, int nx, int ny,
-                           double *data, int level, int ioff, int joff)
+                           double *data, unsigned int level, int ioff, int joff)
 {
   char   tilefile[STRING], gridfile[STRING], dir[STRING];
   double *tmp;
@@ -825,6 +826,6 @@ void read_mosaic_grid_data(const char *mosaic_file, const char *name, int nx, in
   for(j=0; j<nyp; j++) for(i=0; i<nxp; i++) data[j*nxp+i] = tmp[(2*j+joff)*(ni+1)+2*i+ioff];
   free(tmp);
    
-}; /* read_mosaic_grid_data */
+} /* read_mosaic_grid_data */
 
 

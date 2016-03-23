@@ -14,6 +14,7 @@
 #define min(a,b) (a<b ? a:b)
 #define max(a,b) (a>b ? a:b)
 #define SMALL_VALUE ( 1.e-10 )
+
 struct Node{
   double x, y, z, u, u_clip;
   int intersect; /* indicate if this point is an intersection, 0 = no, 1= yes, 2=both intersect and vertices */ 
@@ -45,6 +46,10 @@ void xyz2latlon(int size, const double *x, const double *y, const double *z, dou
 double box_area(double ll_lon, double ll_lat, double ur_lon, double ur_lat);
 
 double poly_area(const double lon[], const double lat[], int n);
+
+int delete_vtx(double x[], double y[], int n, int n_del);
+
+int insert_vtx(double x[], double y[], int n, int n_ins, double lon_in, double lat_in);
 
 double poly_area_dimensionless(const double lon[], const double lat[], int n);
 
@@ -87,7 +92,6 @@ int insidePolygon(struct Node *node, struct Node *list );
 
 int inside_a_polygon( double *lon1, double *lat1, int *npts, double *lon2, double *lat2);
 
-
 void rewindList(void);
 
 struct Node *getNext();
@@ -117,6 +121,9 @@ void printNode(struct Node *list, char *str);
 
 int intersectInList(struct Node *list, double x, double y, double z);
 
+void insertIntersect(struct Node *list, double x, double y, double z, double u1, double u2, int inbound,
+                     double x2, double y2, double z2);
+
 void insertAfter(struct Node *list, double x, double y, double z, int intersect, double u, int inbound,
 		 double x2, double y2, double z2);
 
@@ -142,5 +149,11 @@ int isInside(struct Node *node);
 
 void set_reproduce_siena_true(void);
 
+#ifndef __AIX
 
+void set_reproduce_siena_true_(void);
+
+int inside_a_polygon_(double *lon1, double *lat1, int *npts, double *lon2, double *lat2);
+
+#endif
 #endif
