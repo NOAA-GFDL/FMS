@@ -80,7 +80,7 @@ End slopes
      d[0] = 0.0;
   }
   else {
-     if ( delta[0]*delta[1] < 0.0 && abs(d[0]) > abs(3.0*delta[0])) {
+     if ( delta[0]*delta[1] < 0.0 && fabs(d[0]) > fabs(3.0*delta[0])) {
         d[0]=3.0*delta[0];
      }
   }
@@ -90,7 +90,7 @@ End slopes
      d[kmax] = 0.0;
   }
   else {
-     if ( delta[kmax-1]*delta[kmax-2] < 0.0 && abs(d[kmax]) > abs(3.0*delta[kmax-1])) {
+     if ( delta[kmax-1]*delta[kmax-2] < 0.0 && fabs(d[kmax]) > fabs(3.0*delta[kmax-1])) {
         d[kmax]=3.0*delta[kmax-1];
      }
   }

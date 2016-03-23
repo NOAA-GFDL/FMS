@@ -719,9 +719,9 @@ int intersect_tri_with_line(const double *plane, const double *l1, const double 
   mult(inv_M, V, X);
 
   /* Get answer out */
-  *t=X[0];
-  p[0]=X[1];
-  p[1]=X[2];
+  *t=((double)X[0]);
+  p[0]=((double)X[1]);
+  p[1]=((double)X[2]);
 
   return 1;
 }
