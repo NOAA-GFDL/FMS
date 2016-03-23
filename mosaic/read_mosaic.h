@@ -32,7 +32,7 @@ void read_mosaic_xgrid_order1(const char *xgrid_file, int *i1, int *j1, int *i2,
 
 void read_mosaic_xgrid_order1_region(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, float *area, int *isc, int *iec );
 
-void read_mosaic_xgrid_order2(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, 
+void read_mosaic_xgrid_order2(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2,
                               float *area, float *di, float *dj );
 
 float get_global_area(void);
@@ -43,7 +43,7 @@ void read_mosaic_xgrid_order1(const char *xgrid_file, int *i1, int *j1, int *i2,
 
 void read_mosaic_xgrid_order1_region(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, int *isc, int *iec );
 
-void read_mosaic_xgrid_order2(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, 
+void read_mosaic_xgrid_order2(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2,
                               double *area, double *di, double *dj );
 
 double get_global_area(void);
@@ -57,7 +57,7 @@ int read_mosaic_ncontacts(const char *mosaic_file);
 void read_mosaic_grid_sizes(const char *mosaic_file, int *nx, int *ny);
 
 void read_mosaic_contact(const char *mosaic_file, int *tile1, int *tile2, int *istart1, int *iend1,
-			 int *jstart1, int *jend1, int *istart2, int *iend2, int *jstart2, int *jend2);
+                         int *jstart1, int *jend1, int *istart2, int *iend2, int *jstart2, int *jend2);
 
 int transfer_to_model_index(int istart_in, int iend_in, int *istart_out, int *iend_out, int refine_ratio);
 
