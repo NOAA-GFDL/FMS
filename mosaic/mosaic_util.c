@@ -525,8 +525,28 @@ double spherical_angle(const double *v1, const double *v2, const double *v3)
   double angle;
 #ifdef NO_QUAD_PRECISION  
   double px, py, pz, qx, qy, qz, ddd;
+  #ifndef SQRT_
+    #define SQRT_ sqrt
+  #else
+    #error "SQRT_ Previously Defined"
+  #endif  /* SQRT_ */
+  #ifndef ABS_
+    #define ABS_ fabsl
+  #else
+    #error "ABS_ Previously Defined"
+  #endif  /* ABS_ */
 #else
   long double px, py, pz, qx, qy, qz, ddd;
+  #ifndef SQRT_
+    #define SQRT_ sqrtl
+  #else
+    #error "SQRT_ Previously Defined"
+  #endif  /* SQRT_ */
+  #ifndef ABS_
+    #define ABS_ fabs
+  #else
+    #error "ABS_ Previously Defined"
+  #endif  /* ABS_ */
 #endif
   
   /* vector product between v1 and v2 */
@@ -542,9 +562,9 @@ double spherical_angle(const double *v1, const double *v2, const double *v3)
   if ( ddd <= 0.0 ) 
     angle = 0. ;
   else {
-    ddd = (px*qx+py*qy+pz*qz) / sqrt(ddd);
-    if( fabs(ddd-1) < EPSLN30 ) ddd = 1;
-    if( fabs(ddd+1) < EPSLN30 ) ddd = -1;
+    ddd = (px*qx+py*qy+pz*qz) / SQRT_(ddd);
+    if( ABS_(ddd-1) < EPSLN30 ) ddd = 1;
+    if( ABS_(ddd+1) < EPSLN30 ) ddd = -1;
     if ( ddd>1. || ddd<-1. ) {
       /*FIX (lmh) to correctly handle co-linear points (angle near pi or 0) */
       if (ddd < 0.)
@@ -553,7 +573,7 @@ double spherical_angle(const double *v1, const double *v2, const double *v3)
 	angle = 0.;
     }
     else
-      angle = acosl( ddd );
+      angle = ((double)acosl( ddd ));
   }
   
   return angle;
@@ -746,7 +766,7 @@ int invert_matrix_3x3(long double m[], long double m_inv[]) {
 #ifdef test_invert_matrix_3x3
   printf("det = %Lf\n", det);
 #endif  
-  if (fabs(det) < EPSLN15 ) return 0;
+  if (fabsl(det) < EPSLN15 ) return 0;
 
   const long double deti = 1.0/det;
 
