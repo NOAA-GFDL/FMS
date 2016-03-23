@@ -23,6 +23,11 @@ int get_maxxgrid(void)
   return MAXXGRID;
 }
 
+int get_maxxgrid_(void)
+{
+  return get_maxxgrid();
+}
+
 
 /*******************************************************************************
 void get_grid_area(const int *nlon, const int *nlat, const double *lon, const double *lat, const double *area)
