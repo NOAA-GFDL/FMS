@@ -7,6 +7,14 @@
 #define MV 50
 /* this value is small compare to earth area */
 
+double grid_box_radius(const double *x, const double *y, const double *z, int n);
+double dist_between_boxes(const double *x1, const double *y1, const double *z1, int n1,
+			  const double *x2, const double *y2, const double *z2, int n2);
+int inside_edge(double x0, double y0, double x1, double y1, double x, double y);
+int line_intersect_2D_3D(double *a1, double *a2, double *q1, double *q2, double *q3,
+		         double *intersect, double *u_a, double *u_q, int *inbound);
+
+
 double poly_ctrlon(const double lon[], const double lat[], int n, double clon);
 double poly_ctrlat(const double lon[], const double lat[], int n);
 double box_ctrlon(double ll_lon, double ll_lat, double ur_lon, double ur_lat, double clon);
@@ -25,18 +33,33 @@ int create_xgrid_1dx2d_order1(const int *nlon_in, const int *nlat_in, const int 
 			      const double *lat_in, const double *lon_out, const double *lat_out,
 			      const double *mask_in, int *i_in, int *j_in, int *i_out,
 			      int *j_out, double *xgrid_area);
+int create_xgrid_1dx2d_order1_(const int *nlon_in, const int *nlat_in, const int *nlon_out, const int *nlat_out,
+			       const double *lon_in, const double *lat_in, const double *lon_out, const double *lat_out,
+			       const double *mask_in, int *i_in, int *j_in, int *i_out, int *j_out, double *xgrid_area);
 int create_xgrid_1dx2d_order2(const int *nlon_in, const int *nlat_in, const int *nlon_out, const int *nlat_out,
 			      const double *lon_in, const double *lat_in, const double *lon_out, const double *lat_out,
 			      const double *mask_in, int *i_in, int *j_in, int *i_out, int *j_out,
 			      double *xgrid_area, double *xgrid_clon, double *xgrid_clat);
+int create_xgrid_1dx2d_order2_(const int *nlon_in, const int *nlat_in, const int *nlon_out, const int *nlat_out,
+			       const double *lon_in, const double *lat_in, const double *lon_out, const double *lat_out,
+			       const double *mask_in, int *i_in, int *j_in, int *i_out, int *j_out,
+			       double *xgrid_area, double *xgrid_clon, double *xgrid_clat);
 int create_xgrid_2dx1d_order1(const int *nlon_in, const int *nlat_in, const int *nlon_out, const int *nlat_out, const double *lon_in,
 			      const double *lat_in, const double *lon_out, const double *lat_out,
 			      const double *mask_in, int *i_in, int *j_in, int *i_out,
 			      int *j_out, double *xgrid_area);
+int create_xgrid_2dx1d_order1_(const int *nlon_in, const int *nlat_in, const int *nlon_out, const int *nlat_out,
+			       const double *lon_in, const double *lat_in, const double *lon_out, const double *lat_out,
+			       const double *mask_in, int *i_in, int *j_in, int *i_out,
+			       int *j_out, double *xgrid_area);
 int create_xgrid_2dx1d_order2(const int *nlon_in, const int *nlat_in, const int *nlon_out, const int *nlat_out,
 			      const double *lon_in, const double *lat_in, const double *lon_out, const double *lat_out,
 			      const double *mask_in, int *i_in, int *j_in, int *i_out, int *j_out,
 			      double *xgrid_area, double *xgrid_clon, double *xgrid_clat);
+int create_xgrid_2dx1d_order2_(const int *nlon_in, const int *nlat_in, const int *nlon_out, const int *nlat_out,
+			       const double *lon_in, const double *lat_in, const double *lon_out, const double *lat_out,
+			       const double *mask_in, int *i_in, int *j_in, int *i_out, int *j_out,
+			       double *xgrid_area, double *xgrid_clon, double *xgrid_clat);
 int create_xgrid_2dx2d_order1(const int *nlon_in, const int *nlat_in, const int *nlon_out, const int *nlat_out,
 			      const double *lon_in, const double *lat_in, const double *lon_out, const double *lat_out,
 			      const double *mask_in, int *i_in, int *j_in, int *i_out,
@@ -52,5 +75,18 @@ int create_xgrid_great_circle(const int *nlon_in, const int *nlat_in, const int 
 			      const double *lon_in, const double *lat_in, const double *lon_out, const double *lat_out,
 			      const double *mask_in, int *i_in, int *j_in, int *i_out, int *j_out,
 			      double *xgrid_area, double *xgrid_clon, double *xgrid_clat);
+
+#ifndef __AIX
+void get_grid_area_(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area);
+void get_grid_great_circle_area_(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area)
+int create_xgrid_2dx2d_order1_(const int *nlon_in, const int *nlat_in, const int *nlon_out, const int *nlat_out,
+			       const double *lon_in, const double *lat_in, const double *lon_out, const double *lat_out,
+			       const double *mask_in, int *i_in, int *j_in, int *i_out,
+			       int *j_out, double *xgrid_area);
+int create_xgrid_2dx2d_order2_(const int *nlon_in, const int *nlat_in, const int *nlon_out, const int *nlat_out,
+			       const double *lon_in, const double *lat_in, const double *lon_out, const double *lat_out,
+			       const double *mask_in, int *i_in, int *j_in, int *i_out, int *j_out,
+			       double *xgrid_area, double *xgrid_clon, double *xgrid_clat);
+#endif
 
 #endif
