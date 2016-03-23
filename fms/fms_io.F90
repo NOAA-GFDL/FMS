@@ -437,6 +437,7 @@ public  :: reset_field_name, reset_field_pointer
 private :: lookup_field_r, lookup_axis, unique_axes
 public  :: dimension_size
 public  :: set_filename_appendix, get_instance_filename
+public  :: get_filename_appendix, nullify_filename_appendix
 public  :: parse_mask_table
 public  :: get_great_circle_algorithm
 public  :: write_version_number
@@ -7812,6 +7813,23 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
 
  end function field_exist
 ! </FUNCTION>
+
+
+subroutine get_filename_appendix(string_out)
+  character(len=*) , intent(out) :: string_out
+
+  string_out = trim(filename_appendix)
+
+
+end subroutine get_filename_appendix
+
+
+subroutine nullify_filename_appendix()
+
+  filename_appendix = ''
+
+end subroutine nullify_filename_appendix
+
 
 subroutine set_filename_appendix(string_in)
   character(len=*) , intent(in) :: string_in
