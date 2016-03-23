@@ -127,7 +127,7 @@ End slopes
   free(dh);
   free(delta);
 
-};/* cubic spline sp */
+}/* cubic spline sp */
 
 
 /*********************************************************************
@@ -232,7 +232,7 @@ void cubic_spline(int size1, int size2, const double *grid1, const double *grid2
   free(y2);
   free(u);
   
-};/* cubic spline */
+}/* cubic spline */
 
 
 /*------------------------------------------------------------------------------
@@ -282,7 +282,7 @@ void conserve_interp(int nx_src, int ny_src, int nx_dst, int ny_dst, const doubl
   free(dst_area);
   free(area_frac);
   
-}; /* conserve_interp */
+} /* conserve_interp */
 
 /*------------------------------------------------------------------------------
   void conserve_interp_great_circle()
@@ -334,7 +334,7 @@ void conserve_interp_great_circle(int nx_src, int ny_src, int nx_dst, int ny_dst
   free(dst_area);
   free(area_frac);
   
-}; /* conserve_interp_great_circle */
+} /* conserve_interp_great_circle */
 
 
 
