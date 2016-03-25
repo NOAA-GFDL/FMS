@@ -66,13 +66,20 @@ subroutine MPP_GATHER_1DV_(sbuf, ssize, rbuf, rsize, pelist)
 
 
    !--- pre-post receiving
-   pos = 1
-   do l = 1, nproc   ! include op_root to simplify logic
-      if(rsize(l) == 0) cycle  ! avoid ranks with no data
-      call mpp_recv(rbuf(pos), glen=rsize(l), from_pe=pelist2(l), block=.FALSE., tag=COMM_TAG_2 )
-      pos = pos + rsize(l)
-   enddo
-   if(ssize>0) call mpp_send(sbuf(1), plen=ssize, to_pe=op_root, tag=COMM_TAG_2)  !  avoid ranks with no data
+   if (pe .eq. op_root) then
+       pos = 1
+       do l = 1,nproc   ! include op_root to simplify logic
+           if (rsize(l) == 0) then
+               cycle  ! avoid ranks with no data
+           endif
+           call mpp_recv(rbuf(pos),glen=rsize(l),from_pe=pelist2(l), &
+                         block=.FALSE.,tag=COMM_TAG_2)
+           pos = pos + rsize(l)
+       enddo
+   endif
+   if (ssize .gt. 0) then
+       call mpp_send(sbuf(1),plen=ssize,to_pe=op_root,tag=COMM_TAG_2) !avoid ranks with no data
+   endif
 
    call mpp_sync_self(check=EVENT_RECV)
    call mpp_sync_self()
