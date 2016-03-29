@@ -14,7 +14,7 @@ program test
   use mpp_io_mod,      only : MPP_RDONLY, mpp_open, MPP_OVERWR, MPP_ASCII, MPP_SINGLE
   use mpp_io_mod,      only : MPP_NETCDF, MPP_MULTI, mpp_get_atts, mpp_write, mpp_close
   use mpp_io_mod,      only : mpp_get_info, mpp_get_axes, mpp_get_fields, mpp_get_times
-  use mpp_io_mod,      only : mpp_read, mpp_io_exit
+  use mpp_io_mod,      only : mpp_read, mpp_io_exit, MPP_APPEND
 
 #ifdef INTERNAL_FILE_NML
   USE mpp_mod, ONLY: input_nml_file
@@ -102,6 +102,8 @@ program test
 ! determine the pack_size
   pack_size = size(transfer(doubledata, realarray))
   if( pack_size .NE. 1 .AND. pack_size .NE. 2) call mpp_error(FATAL,'test_mpp_io: pack_size should be 1 or 2')  
+
+  call test_netcdf_io_append()
 
   if(ntiles_x == 1 .and. ntiles_y == 1 .and. io_layout(1) == 1 .and. io_layout(2) == 1) then
      call test_netcdf_io('Simple')
@@ -359,6 +361,52 @@ program test
   deallocate( rdata, gdata, data)
 
   end subroutine test_netcdf_io
+
+  subroutine test_netcdf_io_append
+  integer :: ndim, nvar, natt, ntime
+  integer :: is, ie, js, je, isd, ied, jsd, jed, ism, iem, jsm, jem
+  integer :: position, msize(2), ioff, joff, nxg, nyg
+  logical :: symmetry
+  real :: data
+  type(fieldtype),        allocatable :: vars(:)
+
+!netCDF distributed write
+  if( pe.EQ.mpp_root_pe() )print *, 'netCDF single thread write'
+  call mpp_open( unit, "timestats.nc", action=MPP_OVERWR, &
+                 form=MPP_NETCDF, threading=MPP_SINGLE, fileset=MPP_SINGLE )
+  call mpp_write_meta( unit, t, 'T', 'sec', 'Time', 'T' )
+  call mpp_write_meta( unit, f, (/t/), 'Data', 'metres', 'Random data', pack=pack_size )
+  do i = 0,nt-1
+     time = i*1.
+     data = i*3.0
+     call mpp_write( unit, f, data, time )
+  end do
+  call mpp_close(unit)
+  
+!--- append
+  if( pe.EQ.mpp_root_pe() )print *, 'netCDF single thread append'
+  call mpp_open( unit, "timestats.nc", action=MPP_APPEND, &
+                 form=MPP_NETCDF, threading=MPP_SINGLE, fileset=MPP_SINGLE )
+  allocate(vars(1))
+  if(pe.EQ.mpp_root_pe() ) then
+    call mpp_get_info(unit, ndim, nvar, natt, ntime)
+
+    if (nvar /= 1) then
+       call mpp_error(FATAL, "test_netcdf_io_append: nvar should be 1")     
+    endif
+    call mpp_get_fields(unit,vars(1:nvar))
+  endif
+
+    do i = nt,2*nt-1
+      time = i*1.
+      data = i*3.0
+      call mpp_write( unit, vars(1), data, time )
+    end do
+    call mpp_close(unit)
+    deallocate(vars)
+
+
+  end subroutine test_netcdf_io_append
 
 
   subroutine test_netcdf_io_mosaic(type, layout, ntiles_x, ntiles_y, io_layout)

@@ -166,13 +166,14 @@ module coupler_types_mod  !{
 !                                    'mol/m^3'
 !
 
+use fms_mod,           only: write_version_number
 use field_manager_mod, only: fm_field_name_len, fm_string_len, fm_dump_list
 
 implicit none
 !
 !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id$'
-  character(len=128) :: tag = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 !-----------------------------------------------------------------------
 real, parameter :: bound_tol = 1e-7
 
@@ -463,6 +464,10 @@ if (module_is_initialized) then  !{
   return
 endif  !}
 
+!
+!       Write out the version of the file to the log file
+!
+call write_version_number(trim(mod_name), version)
 !
 !       Set other defaults for the fm_util_set_value routines
 !

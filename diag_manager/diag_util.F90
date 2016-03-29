@@ -26,7 +26,7 @@ MODULE diag_util_mod
   !     </PRE>
   !   </FUTURE>
   ! </INFO>
-  USE diag_data_mod, ONLY  : output_fields, input_fields, files, do_diag_field_log, diag_log_unit,&
+  USE diag_data_mod, ONLY: output_fields, input_fields, files, do_diag_field_log, diag_log_unit,&
        & VERY_LARGE_AXIS_LENGTH, time_zero, VERY_LARGE_FILE_FREQ, END_OF_RUN, EVERY_TIME,&
        & DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, base_time,&
        & time_unit_list, max_files, base_year, base_month, base_day, base_hour, base_minute,&
@@ -36,24 +36,25 @@ MODULE diag_util_mod
        & debug_diag_manager, conserve_water, output_field_type, max_field_attributes, max_file_attributes,&
        & file_type, prepend_date, region_out_use_alt_value, GLO_REG_VAL, GLO_REG_VAL_ALT,&
        & DIAG_FIELD_NOT_FOUND, diag_init_time
-  USE diag_axis_mod, ONLY  : get_diag_axis_data, get_axis_global_length, get_diag_axis_cart,&
+  USE diag_axis_mod, ONLY: get_diag_axis_data, get_axis_global_length, get_diag_axis_cart,&
        & get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, get_axis_aux,&
        & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name
   USE diag_output_mod, ONLY: diag_flush, diag_field_out, diag_output_init, write_axis_meta_data,&
        & write_field_meta_data, done_meta_data
   USE diag_grid_mod, ONLY: get_local_indexes
-  USE fms_mod, ONLY        : error_mesg, FATAL, WARNING, mpp_pe, mpp_root_pe, lowercase, fms_error_handler
-  USE fms_io_mod, ONLY     : get_tile_string, return_domain, string
-  USE mpp_domains_mod,ONLY : domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
+  USE fms_mod, ONLY: error_mesg, FATAL, WARNING, mpp_pe, mpp_root_pe, lowercase, fms_error_handler,&
+       & write_version_number
+  USE fms_io_mod, ONLY: get_tile_string, return_domain, string, get_instance_filename
+  USE mpp_domains_mod,ONLY: domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
        & OPERATOR(.NE.), OPERATOR(.EQ.), mpp_modify_domain, mpp_get_domain_components,&
        & mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, mpp_get_tile_npes
   USE time_manager_mod,ONLY: time_type, OPERATOR(==), OPERATOR(>), NO_CALENDAR, increment_date,&
        & increment_time, get_calendar_type, get_date, get_time, leap_year, OPERATOR(-),&
        & OPERATOR(<), OPERATOR(>=), OPERATOR(<=)
-  USE mpp_io_mod, ONLY : mpp_close
-  USE mpp_mod, ONLY : mpp_npes
-  USE fms_io_mod, ONLY : get_instance_filename
-  USE constants_mod, ONLY : SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
+  USE mpp_io_mod, ONLY: mpp_close
+  USE mpp_mod, ONLY: mpp_npes
+  USE fms_io_mod, ONLY: get_instance_filename
+  USE constants_mod, ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
 
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_CHAR
@@ -65,7 +66,7 @@ MODULE diag_util_mod
        & check_bounds_are_exact_dynamic, check_bounds_are_exact_static, init_file, diag_time_inc,&
        & find_input_field, init_input_field, init_output_field, diag_data_out, write_static,&
        & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size, sync_file_times,&
-       & prepend_attribute, attribute_init
+       & prepend_attribute, attribute_init, diag_util_init
 
   ! <INTERFACE NAME="prepend_attribute">
   !   <OVERVIEW>
@@ -109,13 +110,34 @@ MODULE diag_util_mod
   END INTERFACE attribute_init
   ! </INTERFACE>
 
-  CHARACTER(len=128),PRIVATE  :: version =&
-       & '$Id$'
-  CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name$'
+  ! Include variable "version" to be written to log file.
+#include<file_version.h>
+
+  LOGICAL :: module_initialized = .FALSE.
+  
 
 CONTAINS
 
+  ! <SUBROUTINE NAME="diag_util_init">
+  !   <OVERVIEW>
+  !     Write the version number of this file
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE diag_util_init
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     Write the version number of this file to the log file.
+  !   </DESCRIPTION>
+  SUBROUTINE diag_util_init()
+    IF (module_initialized) THEN
+       RETURN
+    END IF
+
+    ! Write version number out to log file
+    call write_version_number("DIAG_UTIL_MOD", version)
+  END SUBROUTINE diag_util_init
+  ! </SUBROUTINE>
+  
   ! <SUBROUTINE NAME="get_subfield_size">
   !   <OVERVIEW>
   !     Get the size, start, and end indices for output fields.
@@ -1682,11 +1704,6 @@ CONTAINS
     fname=base_name
     call get_instance_filename(fname, base_name)
 
-    ! Add CVS tag as prefix of filename  (currently not implemented)
-    !  i1 = INDEX(tagname,':') + 2
-    !  i2 = len_trim(tagname) - 2
-    !  if(i2 <=i1)  call error_mesg('diag_util opening_file','error in CVS tagname index',FATAL)
-    !  prefix2 = tagname(i1:i2)//'_'
     IF ( files(file)%local ) THEN
        ! prepend "rregion" to all local files for post processing, the prefix will be removed in postprocessing
        filename = 'rregion'//TRIM(base_name)//TRIM(suffix)

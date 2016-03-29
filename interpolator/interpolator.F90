@@ -99,9 +99,8 @@ interface interp_weighted_scalar
    module procedure interp_weighted_scalar_1D
    module procedure interp_weighted_scalar_2D
 end interface interp_weighted_scalar
-character(len=128) :: version = &
-'$Id: interpolator.F90,v 21.0 2014/12/15 21:47:05 fms Exp $'
-character(len=128) :: tagname = '$Name: ulm $'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 logical            :: module_is_initialized = .false.
 logical            :: clim_diag_initialized = .false.
 
@@ -1044,7 +1043,7 @@ endif
 
 module_is_initialized = .true.
 
-call write_version_number (version, tagname)
+call write_version_number("INTERPOLATOR_MOD", version)
 
 end subroutine interpolator_init
 

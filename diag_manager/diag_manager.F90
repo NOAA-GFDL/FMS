@@ -199,7 +199,7 @@ MODULE diag_manager_mod
        & check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
        & diag_time_inc, find_input_field, init_input_field, init_output_field,&
        & diag_data_out, write_static, get_date_dif, get_subfield_vert_size, sync_file_times,&
-       & prepend_attribute, attribute_init
+       & prepend_attribute, attribute_init, diag_util_init
   USE diag_data_mod, ONLY: max_files, CMOR_MISSING_VALUE, DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, EVERY_TIME,&
        & END_OF_RUN, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, num_files,&
        & max_input_fields, max_output_fields, num_output_fields, EMPTY, FILL_VALUE, null_axis_id,&
@@ -210,7 +210,7 @@ MODULE diag_manager_mod
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, conserve_water, region_out_use_alt_value, max_field_attributes, output_field_type,&
-       & max_file_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time
+       & max_file_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
@@ -231,15 +231,14 @@ MODULE diag_manager_mod
   ! Public interfaces from diag_grid_mod
   PUBLIC :: diag_grid_init, diag_grid_end
   PUBLIC :: diag_manager_set_time_end, diag_send_complete
+  PUBLIC :: diag_send_complete_extra
   ! Public interfaces from diag_data_mod
   PUBLIC :: DIAG_FIELD_NOT_FOUND
 
   ! version number of this module
-  CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id$'
-  CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name$'
-
+  ! Include variable "version" to be written to log file.
+#include<file_version.h>
+  
   type(time_type) :: Time_end
 
   ! <INTERFACE NAME="send_data">
@@ -332,6 +331,10 @@ MODULE diag_manager_mod
      MODULE PROCEDURE send_data_1d
      MODULE PROCEDURE send_data_2d
      MODULE PROCEDURE send_data_3d
+#ifdef OVERLOAD_R4
+     MODULE PROCEDURE send_data_2d_r8
+     MODULE PROCEDURE send_data_3d_r8
+#endif
   END INTERFACE
   ! </INTERFACE>
 
@@ -1435,6 +1438,92 @@ CONTAINS
     END IF
   END FUNCTION send_data_2d
   ! </FUNCTION>
+
+#ifdef OVERLOAD_R4
+  ! <FUNCTION NAME="send_data_2d_r8" INTERFACE="send_data">
+  LOGICAL FUNCTION send_data_2d_r8(diag_field_id, field, time, is_in, js_in, &
+       & mask, rmask, ie_in, je_in, weight, err_msg)
+    INTEGER, INTENT(in) :: diag_field_id
+    REAL(kind=8), INTENT(in), DIMENSION(:,:) :: field
+    REAL, INTENT(in), OPTIONAL :: weight
+    TYPE (time_type), INTENT(in), OPTIONAL :: time
+    INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ie_in, je_in
+    LOGICAL, INTENT(in), DIMENSION(:,:), OPTIONAL :: mask
+    REAL, INTENT(in), DIMENSION(:,:),OPTIONAL :: rmask
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+
+    REAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) :: field_out
+    LOGICAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) ::  mask_out
+
+    ! If diag_field_id is < 0 it means that this field is not registered, simply return
+    IF ( diag_field_id <= 0 ) THEN
+       send_data_2d_r8 = .FALSE.
+       RETURN
+    END IF
+
+    ! First copy the data to a three d array with last element 1
+    field_out(:, :, 1) = field
+
+    ! Default values for mask
+    IF ( PRESENT(mask) ) THEN
+       mask_out(:, :, 1) = mask
+    ELSE
+       mask_out = .TRUE.
+    END IF
+
+    IF ( PRESENT(rmask) ) WHERE ( rmask < 0.5 ) mask_out(:, :, 1) = .FALSE.
+    IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
+       send_data_2d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1, mask=mask_out,&
+            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
+    ELSE
+       send_data_2d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1,&
+            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
+    END IF
+  END FUNCTION send_data_2d_r8
+  ! </FUNCTION>
+
+  ! <FUNCTION NAME="send_data_3d_r8" INTERFACE="send_data">
+  LOGICAL FUNCTION send_data_3d_r8(diag_field_id, field, time, is_in, js_in, &
+       & mask, rmask, ie_in, je_in, weight, err_msg)
+    INTEGER, INTENT(in) :: diag_field_id
+    REAL(kind=8), INTENT(in), DIMENSION(:,:,:) :: field
+    REAL, INTENT(in), OPTIONAL :: weight
+    TYPE (time_type), INTENT(in), OPTIONAL :: time
+    INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ie_in, je_in
+    LOGICAL, INTENT(in), DIMENSION(:,:,:), OPTIONAL :: mask
+    REAL, INTENT(in), DIMENSION(:,:,:),OPTIONAL :: rmask
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+
+    REAL, DIMENSION(SIZE(field,1),SIZE(field,2),size(field,3)) :: field_out
+    LOGICAL, DIMENSION(SIZE(field,1),SIZE(field,2),size(field,3)) ::  mask_out
+
+    ! If diag_field_id is < 0 it means that this field is not registered, simply return
+    IF ( diag_field_id <= 0 ) THEN
+       send_data_3d_r8 = .FALSE.
+       RETURN
+    END IF
+
+    ! First copy the data to a three d array with last element 1
+    field_out = field
+
+    ! Default values for mask
+    IF ( PRESENT(mask) ) THEN
+       mask_out = mask
+    ELSE
+       mask_out = .TRUE.
+    END IF
+
+    IF ( PRESENT(rmask) ) WHERE ( rmask < 0.5 ) mask_out = .FALSE.
+    IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
+       send_data_3d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1, mask=mask_out,&
+            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
+    ELSE
+       send_data_3d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1,&
+            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
+    END IF
+  END FUNCTION send_data_3d_r8
+  ! </FUNCTION>
+#endif OVERLOAD_R4
 
   ! <FUNCTION NAME="send_data_3d" INTERFACE="send_data">
   !   <IN NAME="diag_field_id" TYPE="INTEGER"> </IN>
@@ -3132,6 +3221,28 @@ CONTAINS
   END SUBROUTINE diag_manager_set_time_end
 
   !-----------------------------------------------------------------------
+  SUBROUTINE diag_send_complete_extra(time) 
+    TYPE (time_type), INTENT(in) :: time
+    !--- local variables
+    integer :: file, j, freq, in_num, file_num, out_num
+
+    DO file = 1, num_files
+      freq = files(file)%output_freq
+      IF (freq == 0) then
+        DO j = 1, files(file)%num_fields
+          out_num = files(file)%fields(j)
+          in_num = output_fields(out_num)%input_field
+          IF ( (input_fields(in_num)%numthreads == 1) .AND.&
+               & (input_fields(in_num)%active_omp_level.LE.1) ) CYCLE
+          file_num = output_fields(out_num)%output_file
+          CALL diag_data_out(file_num, out_num, &
+               & output_fields(out_num)%buffer, time)
+        END DO
+      END IF
+    END DO
+  END SUBROUTINE diag_send_complete_extra
+
+  !-----------------------------------------------------------------------
   SUBROUTINE diag_send_complete(time_step, err_msg)
     TYPE (time_type), INTENT(in)           :: time_step
     character(len=*), INTENT(out), optional :: err_msg
@@ -3349,6 +3460,11 @@ CONTAINS
     ! Clear the err_msg variable if contains any residual information
     IF ( PRESENT(err_msg) ) err_msg = ''
 
+    ! Initialize diag_util_mod and diag_data_mod
+    ! These init routine only write out the version number to the log file
+    call diag_util_init()
+    call diag_data_init()
+
     ! Determine pack_size from how many bytes a real value has (how compiled)
     pack_size = SIZE(TRANSFER(0.0_DblKind, (/0.0, 0.0, 0.0, 0.0/)))
     IF ( pack_size.NE.1 .AND. pack_size.NE.2 ) THEN
@@ -3364,7 +3480,7 @@ CONTAINS
     stdout_unit = stdout()
 
     ! version number to logfile
-    CALL write_version_number(version, tagname)
+    CALL write_version_number("DIAG_MANAGER_MOD", version)
 
     Time_zero = set_time(0,0)
     !--- initialize time_end to time_zero

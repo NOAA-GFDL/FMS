@@ -1,5 +1,4 @@
 !FDOC_TAG_GFDL fdoc.pl generated xml skeleton
-! $Id$
 
 #include <fms_platform.h>
 #include "fms_switches.h"
@@ -110,7 +109,8 @@ module drifters_mod
   public :: drifters_print_checksums, drifters_save, drifters_write_restart, drifters_distribute
 
   integer, parameter, private :: MAX_STR_LEN = 128
-  character(len=MAX_STR_LEN), parameter, private :: version = '$Id$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
   real :: DRFT_EMPTY_ARRAY(0)
 
   type drifters_type

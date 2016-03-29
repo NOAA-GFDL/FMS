@@ -196,8 +196,8 @@ integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
    integer :: yrmod, momod, dymod
    logical :: mod_leapyear
 
-   character(len=128) :: version='$Id$'
-   character(len=128) :: tagname='$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
    logical :: module_is_initialized=.FALSE.
    logical :: perthlike_behavior=.FALSE.
@@ -225,7 +225,7 @@ contains
    20 call close_file (namelist_unit)
 #endif
 
-   call write_version_number( version, tagname )
+   call write_version_number("TIME_INTERP_MOD", version)
    logunit = stdlog()
    write(logunit,time_interp_nml)
 

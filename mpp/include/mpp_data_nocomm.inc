@@ -1,6 +1,4 @@
-
 ! -*-f90-*-
-! $Id$
 
 !----------------------------------------------------------------!
 ! The following data is used in mpp_mod and its components       !

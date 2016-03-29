@@ -4,10 +4,9 @@ module mpp_parameter_mod
   implicit none
   private
 
-  character(len=128), public :: version= &
-       '$Id mpp_parameter.F90 $'
-  character(len=128), public :: tagname= &
-       '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
+  public version
 
   !--- public paramters which is used by mpp_mod and its components. 
   !--- All othere modules should import these parameters from mpp_mod. 

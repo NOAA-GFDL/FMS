@@ -60,10 +60,8 @@ MODULE diag_grid_mod
   IMPLICIT NONE
 
   ! Parameters
-  CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id$'
-  CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name$'
+  ! Include variable "version" to be written to log file.
+#include<file_version.h>
 
   ! Derived data types
   ! <PRIVATE>
@@ -224,8 +222,8 @@ CONTAINS
     INTEGER :: myPe, npes, npesPerTile
     INTEGER, ALLOCATABLE, DIMENSION(:) :: xbegin, xend, ybegin, yend
 
-    ! Write the version and tagname to the logfile
-    CALL write_version_number(version, tagname)
+    ! Write the file version to the logfile
+    CALL write_version_number("DIAG_GRID_MOD", version)
 
     ! Verify all allocatable / pointers for diag_global_grid hare not
     ! allocated / associated.

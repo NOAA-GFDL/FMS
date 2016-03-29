@@ -107,8 +107,8 @@ public i_sst, j_sst, sst_ncep, sst_anom, forecast_mode, use_ncep_sst
 
 !  ---- version number -----
 
-character(len=128) :: version = '$Id$'
-character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
    real, allocatable:: temp1(:,:), temp2(:,:)
 ! add by JHC
@@ -945,7 +945,7 @@ endif
 #endif
 
 !  ----- write namelist/version info -----
-    call write_version_number (version, tagname)
+    call write_version_number("AMIP_INTERP_MOD", version)
 
     unit = stdlog ( )
     if (mpp_pe() == 0) then

@@ -2421,11 +2421,9 @@ end interface
      module procedure nullify_domain2d_list
   end interface  
 
-  !--- version information variables
-  character(len=128), public :: version= &
-       '$Id$'
-  character(len=128), public :: tagname= &
-       '$Name$'
+  ! Include variable "version" to be written to log file.
+#include<file_version.h>
+  public version
 
 
 contains

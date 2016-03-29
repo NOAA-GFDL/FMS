@@ -439,6 +439,7 @@ public  :: dimension_size
 public  :: set_filename_appendix, get_instance_filename
 public  :: parse_mask_table
 public  :: get_great_circle_algorithm
+public  :: write_version_number
 character(len=32), save :: filename_appendix = ''
 
 !--- public interface ---
@@ -470,8 +471,8 @@ logical           :: checksum_required   = .true.
 
 integer            :: pack_size  ! = 1 for double = 2 for float
 
-character(len=128) :: version = '$Id$'
-character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
 contains
 
@@ -539,10 +540,6 @@ subroutine fms_io_init()
   call mpp_close (unit)
 #endif
 
-  if (mpp_pe() == mpp_root_pe()) then
-    logunit = stdlog() ; write(logunit, fms_io_nml)
-    write (logunit,'(/,80("="),/(a))') trim(version), trim(tagname)
-  end if
 ! take namelist options if present
 
 ! determine packsize
@@ -578,6 +575,9 @@ subroutine fms_io_init()
 
   !This is set here instead of at the end of the routine to prevent the read_data call below from stopping the model
   module_is_initialized = .TRUE.
+
+  ! Record the version number in the log file
+  call write_version_number("FMS_IO_MOD", version)
 
   !--- read INPUT/grid_spec.nc to decide the value of great_circle_algorithm
   !--- great_circle_algorithm could be true only for mosaic grid.
@@ -8023,5 +8023,66 @@ function get_great_circle_algorithm()
 
 end function get_great_circle_algorithm
 
+!#######################################################################
+! <SUBROUTINE NAME="write_version_number">
+
+!   <OVERVIEW>
+!     Prints to the log file (or a specified unit) the (cvs) version id string and
+!     (cvs) tag name.
+!   </OVERVIEW>
+!   <DESCRIPTION>
+!     Prints to the log file (stdlog) or a specified unit the (cvs) version id string
+!      and (cvs) tag name.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+!    call write_version_number ( version [, tag, unit] )
+!   </TEMPLATE>
+
+!   <IN NAME="version" TYPE="character(len=*)">
+!    string that contains routine name and version number.
+!   </IN>
+!   <IN NAME="tag" TYPE="character(len=*)">
+!    The tag/name string, this is usually the Name string
+!    returned by CVS when checking out the code.
+!   </IN>
+!   <IN NAME="unit" TYPE="integer">
+!    The Fortran unit number of an open formatted file. If this unit number
+!    is not supplied the log file unit number is used (stdlog).
+!   </IN>
+! prints module version number to the log file of specified unit number
+
+subroutine write_version_number (version, tag, unit)
+
+!   in:  version = string that contains routine name and version number
+!
+!   optional in:
+!        tag = cvs tag name that code was checked out with
+!        unit    = alternate unit number to direct output
+!                  (default: unit=stdlog)
+
+   character(len=*), intent(in) :: version
+   character(len=*), intent(in), optional :: tag
+   integer,          intent(in), optional :: unit
+
+   integer :: logunit
+
+   if (.not.module_is_initialized) call fms_io_init ( )
+
+     logunit = stdlog()
+     if (present(unit)) then
+         logunit = unit
+     else
+       ! only allow stdlog messages on root pe
+         if ( mpp_pe() /= mpp_root_pe() ) return
+     endif
+
+     if (present(tag)) then
+         write (logunit,'(/,80("="),/(a))') trim(version), trim(tag)
+     else
+         write (logunit,'(/,80("="),/(a))') trim(version)
+     endif
+
+end subroutine write_version_number
+! </SUBROUTINE>
 
 end module fms_io_mod

@@ -1,5 +1,4 @@
 ! -*-f90-*-
-! $Id$
 
 subroutine drifters_compute_k_XXX(self, positions, u, v, &
 #if _DIMS >= 3

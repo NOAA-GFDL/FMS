@@ -41,8 +41,8 @@ module horiz_interp_bicubic_mod
     module procedure horiz_interp_bicubic_new_1d_s
   end interface
 
-   character(len=128) :: version="$Id$"
-   character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
    logical            :: module_is_initialized = .FALSE.
    integer            :: verbose_bicubic = 0
    
@@ -75,16 +75,16 @@ module horiz_interp_bicubic_mod
   !#######################################################################
   !  <SUBROUTINE NAME="horiz_interp_bicubic_init">
   !  <OVERVIEW>
-  !     writes version number and tag name to logfile.out
+  !     writes version number to logfile.out
   !  </OVERVIEW>
   !  <DESCRIPTION>       
-  !     writes version number and tag name to logfile.out
+  !     writes version number to logfile.out
   !  </DESCRIPTION>
 
   subroutine horiz_interp_bicubic_init
 
      if(module_is_initialized) return
-     call write_version_number (version, tagname)
+     call write_version_number("HORIZ_INTERP_BICUBIC_MOD", version)
      module_is_initialized = .true.
      tpi = 2.0*PI
 

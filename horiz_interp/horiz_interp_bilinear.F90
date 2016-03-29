@@ -39,8 +39,8 @@ module horiz_interp_bilinear_mod
   integer, parameter :: DUMMY = -999
 
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id$'
-  character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
   logical            :: module_is_initialized = .FALSE.
 
 contains
@@ -48,16 +48,16 @@ contains
   !#######################################################################
   !  <SUBROUTINE NAME="horiz_interp_bilinear_init">
   !  <OVERVIEW>
-  !     writes version number and tag name to logfile.out
+  !     writes version number to logfile.out
   !  </OVERVIEW>
   !  <DESCRIPTION>       
-  !     writes version number and tag name to logfile.out
+  !     writes version number to logfile.out
   !  </DESCRIPTION>
 
   subroutine horiz_interp_bilinear_init
 
     if(module_is_initialized) return
-    call write_version_number (version, tagname)
+    call write_version_number("HORIZ_INTERP_BILINEAR_MOD", version)
     module_is_initialized = .true.
 
   end subroutine horiz_interp_bilinear_init
@@ -555,7 +555,7 @@ contains
                    jlat(1) = js
                 else
                    npts = 0
-                   !--- bottom and top boundary
+                   !--- bottom boundary
                    jstart = max(js-step,1)
                    jend   = min(js+step,nlat_in)
 
@@ -576,9 +576,6 @@ contains
                       npts       = npts + 1
                       ilon(npts) = i
                       jlat(npts) = jstart
-                      npts       = npts + 1
-                      ilon(npts) = i
-                      jlat(npts) = jend                         
                    enddo
 
                    !--- right and left boundary -----------------------------------------------
@@ -593,7 +590,7 @@ contains
                    endif
                    do l = -step, step
                       j = js+l
-                         if( j < 1 .or. j > nlat_in) cycle
+                         if( j < 1 .or. j > nlat_in .or. j==jstart .or. j==jend) cycle
                          npts = npts+1
                          ilon(npts) = istart
                          jlat(npts) = j
@@ -601,6 +598,29 @@ contains
                          ilon(npts) = iend
                          jlat(npts) = j
                   end do
+
+                   !--- top boundary
+
+                   do l = -step, step
+                      i = is+l
+                      if(src_modulo)then
+                         if( i < 1) then
+                            i = i + nlon_in
+                         else if (i > nlon_in) then
+                            i = i - nlon_in
+                         endif
+                         if( i < 1 .or. i > nlon_in) call mpp_error(FATAL, &
+                              'horiz_interp_bilinear_mod: max_step is too big, decrease max_step' )
+                      else
+                         if( i < 1 .or. i > nlon_in) cycle
+                      endif
+
+                      npts       = npts + 1
+                      ilon(npts) = i
+                      jlat(npts) = jend
+                   enddo
+
+
                 end if
 
                 !--- find the surrouding points             

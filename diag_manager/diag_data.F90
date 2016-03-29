@@ -34,9 +34,9 @@ MODULE diag_data_mod
   ! </DESCRIPTION>
 
   USE time_manager_mod, ONLY: time_type
-  USE mpp_domains_mod,  ONLY: domain1d, domain2d
-  USE mpp_io_mod,       ONLY: fieldtype
-  USE fms_mod, ONLY: WARNING
+  USE mpp_domains_mod, ONLY: domain1d, domain2d
+  USE mpp_io_mod, ONLY: fieldtype
+  USE fms_mod, ONLY: WARNING, write_version_number
 #ifdef use_netCDF
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
@@ -588,11 +588,8 @@ MODULE diag_data_mod
   END TYPE diag_global_att_type
   ! </TYPE>
 
-  ! Private CHARACTER Arrays for the CVS version and tagname.
-  CHARACTER(len=128),PRIVATE  :: version =&
-       & '$Id$'
-  CHARACTER(len=128),PRIVATE  :: tagname =&
-       & '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
   ! <!-- Other public variables -->
   ! <DATA NAME="num_files" TYPE="INTEGER" DEFAULT="0">
@@ -727,7 +724,9 @@ MODULE diag_data_mod
   ! <!-- Even More Variables -->
   ! <DATA NAME="time_zero" TYPE="TYPE(time_type)" />
   ! <DATA NAME="first_send_data_call" TYPE="LOGICAL" DEFAULT=".TRUE." />
-  ! <DATA NAME="module_is_initialized" TYPE="LOGICAL" DEFAULT=".FALSE." />
+  ! <DATA NAME="module_is_initialized" TYPE="LOGICAL" DEFAULT=".FALSE.">
+  !   Indicate if diag_manager has been initialized
+  ! </DATA>
   ! <DATA NAME="diag_log_unit" TYPE="INTEGER" />
   ! <DATA NAME="time_unit_list" TYPE="CHARACTER(len=10), DIMENSION(6)"
   !       DEFAULT="(/'seconds   ', 'minutes   ', 'hours     ', 'days      ', 'months    ', 'years     '/)" />
@@ -741,4 +740,25 @@ MODULE diag_data_mod
   CHARACTER(len=32) :: pelist_name
   INTEGER :: oor_warning = WARNING
 
+CONTAINS
+
+  ! <SUBROUTINE NAME="diag_data_init">
+  !   <OVERVIEW>
+  !     Write the version number of this file
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE diag_util_init
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     Write the version number of this file to the log file.
+  !   </DESCRIPTION>
+  SUBROUTINE diag_data_init()
+    IF (module_is_initialized) THEN
+       RETURN
+    END IF
+
+    ! Write version number out to log file
+    call write_version_number("DIAG_DATA_MOD", version)
+  END SUBROUTINE diag_data_init
+  ! </SUBROUTINE>
 END MODULE diag_data_mod

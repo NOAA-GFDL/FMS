@@ -87,8 +87,8 @@ logical                         :: save_default_no_overwrite = .false.
 character(len=fm_path_name_len) :: save_current_list
 character(len=fm_path_name_len) :: save_path
 character(len=fm_path_name_len) :: save_name
-character(len=128) :: version = '$Id$'
-character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
 !
 !        Interface definitions for overloaded routines
