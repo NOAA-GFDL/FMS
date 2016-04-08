@@ -554,9 +554,12 @@ end function aof_set_coupler_flux  !}
 !
 
 subroutine atmos_ocean_fluxes_init(gas_fluxes, gas_fields_atm, gas_fields_ice)  !{
-
-implicit none
-
+#ifdef __APPLE__
+! This directive is needed for compilation with -O2 using ifort 15.0.3 20150408 (Mac OSX)
+! because otherwise the model crashes with error "malloc: pointer being freed was not allocated" 
+! at the end of this subroutine.
+!DIR$ OPTIMIZE:0
+#endif
 !
 !-----------------------------------------------------------------------
 !     arguments
