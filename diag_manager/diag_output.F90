@@ -21,7 +21,7 @@ MODULE diag_output_mod
        & get_axis_global_length, get_domain1d, get_domain2d, get_axis_aux, get_tile_count
   USE diag_data_mod, ONLY: diag_fieldtype, diag_global_att_type, CMOR_MISSING_VALUE, diag_atttype
   USE time_manager_mod, ONLY: get_calendar_type, valid_calendar_types
-  USE fms_mod, ONLY: error_mesg, mpp_pe, write_version_number, FATAL
+  USE fms_mod, ONLY: error_mesg, mpp_pe, write_version_number, fms_error_handler, FATAL
 
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
@@ -176,11 +176,16 @@ CONTAINS
     INTEGER              :: axis_direction, axis_edges
     REAL, ALLOCATABLE    :: axis_data(:)
     INTEGER, ALLOCATABLE :: axis_extent(:), pelist(:)
-
+    INTEGER              :: num_attributes
+    TYPE(diag_atttype), DIMENSION(:), ALLOCATABLE :: attributes
     INTEGER              :: calendar, id_axis, id_time_axis
-    INTEGER              :: i, index, num, length, edges_index
+    INTEGER              :: i, j, index, num, length, edges_index
     INTEGER              :: gbegin, gend, gsize, ndivs
     LOGICAL              :: time_ops1
+    CHARACTER(len=2048)  :: err_msg
+
+    ! Make sure err_msg is initialized
+    err_msg = ''
 
     IF ( PRESENT(time_ops) ) THEN
        time_ops1 = time_ops
@@ -217,7 +222,8 @@ CONTAINS
        ALLOCATE(axis_data(length))
 
        CALL get_diag_axis(id_axis, axis_name, axis_units, axis_long_name,&
-            & axis_cart_name, axis_direction, axis_edges, Domain, axis_data)
+            & axis_cart_name, axis_direction, axis_edges, Domain, axis_data,&
+            & num_attributes, attributes)
 
        IF ( Domain .NE. null_domain1d ) THEN
           IF ( length > 0 ) THEN
@@ -238,6 +244,13 @@ CONTAINS
           END IF
        END IF
 
+       ! Write axis attributes
+       id_axis = mpp_get_id(Axis_types(num_axis_in_file))
+       CALL write_attribute_meta(file_unit, id_axis, num_attributes, attributes, err_msg)
+       IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
+          CALL error_mesg('diag_output_mod::write_axis_meta_data', TRIM(err_msg), FATAL)
+       END IF
+
        !---- write additional attribute (calendar_type) for time axis ----
        !---- NOTE: calendar attribute is compliant with CF convention
        !---- http://www.cgd.ucar.edu/cms/eaton/netcdf/CF-current.htm#cal
@@ -256,6 +269,19 @@ CONTAINS
 
        DEALLOCATE(axis_data)
 
+       ! Deallocate attributes
+       IF ( ALLOCATED(attributes) ) THEN
+          DO j=1, num_attributes
+             IF ( ALLOCATED(attributes(j)%fatt ) ) THEN
+                DEALLOCATE(attributes(j)%fatt)
+             END IF
+             IF ( ALLOCATED(attributes(j)%iatt ) ) THEN
+                DEALLOCATE(attributes(j)%iatt)
+             END IF
+          END DO
+          DEALLOCATE(attributes)
+       END IF
+
        !------------- write axis containing edge information ---------------
 
        !  --- this axis has no edges -----
@@ -270,7 +296,7 @@ CONTAINS
        length = get_axis_global_length ( id_axis )
        ALLOCATE(axis_data(length))
        CALL get_diag_axis(id_axis, axis_name, axis_units, axis_long_name, axis_cart_name,&
-            & axis_direction, axis_edges, Domain, axis_data )
+            & axis_direction, axis_edges, Domain, axis_data, num_attributes, attributes)
 
        !  ---- write edges attribute to original axis ----
        CALL mpp_write_meta(file_unit, mpp_get_id(Axis_types(num_axis_in_file)),&
@@ -310,7 +336,27 @@ CONTAINS
           CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name, axis_units,&
                & axis_long_name, axis_cart_name, axis_direction, DATA=axis_data)
        END IF
+
+       ! Write edge axis attributes
+       id_axis = mpp_get_id(Axis_types(num_axis_in_file))
+       CALL write_attribute_meta(file_unit, id_axis, num_attributes, attributes, err_msg)
+       IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
+          CALL error_mesg('diag_output_mod::write_axis_meta_data', TRIM(err_msg), FATAL)
+       END IF
+
        DEALLOCATE (axis_data)
+       ! Deallocate attributes
+       IF ( ALLOCATED(attributes) ) THEN
+          DO j=1, num_attributes
+             IF ( ALLOCATED(attributes(j)%fatt ) ) THEN
+                DEALLOCATE(attributes(j)%fatt)
+             END IF
+             IF ( ALLOCATED(attributes(j)%iatt ) ) THEN
+                DEALLOCATE(attributes(j)%iatt)
+             END IF
+          END DO
+          DEALLOCATE(attributes)
+       END IF
     END DO
   END SUBROUTINE write_axis_meta_data
   ! </SUBROUTINE>
@@ -369,11 +415,15 @@ CONTAINS
     LOGICAL :: coord_present
     CHARACTER(len=40) :: aux_axes(SIZE(axes))
     CHARACTER(len=160) :: coord_att
+    CHARACTER(len=1024) :: err_msg
 
     REAL :: scale, add
     INTEGER :: i, indexx, num, ipack, np, att_len
     LOGICAL :: use_range
     INTEGER :: axis_indices(SIZE(axes))
+
+    !---- Initialize err_msg to bank ----
+    err_msg = ''
 
     !---- dummy checks ----
     coord_present = .FALSE.
@@ -507,39 +557,11 @@ CONTAINS
     IF ( PRESENT(num_attributes) ) THEN
        IF ( PRESENT(attributes) ) THEN
           IF ( num_attributes .GT. 0 .AND. _ALLOCATED(attributes) ) THEN
-             DO i = 1, num_attributes
-                SELECT CASE (attributes(i)%type)
-                CASE (NF90_INT)
-                   IF ( .NOT._ALLOCATED(attributes(i)%iatt) ) THEN
-                      CALL error_mesg('diag_output_mod::write_field_meta_data',&
-                           & 'Integer attribute type indicated, but array not allocated for attribute '&
-                           &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
-                   END IF
-                   CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field), TRIM(attributes(i)%name),&
-                        & ival=attributes(i)%iatt)
-                CASE (NF90_FLOAT)
-                   IF ( .NOT._ALLOCATED(attributes(i)%fatt) ) THEN
-                      CALL error_mesg('diag_output_mod::write_field_meta_data',&
-                           & 'Real attribute type indicated, but array not allocated for attribute '&
-                           &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
-                   END IF
-                   CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field), TRIM(attributes(i)%name),&
-                        & rval=attributes(i)%fatt)
-                CASE (NF90_CHAR)
-                   att_str = attributes(i)%catt
-                   att_len = attributes(i)%len
-                   IF ( TRIM(attributes(i)%name).EQ.'cell_methods' .AND. PRESENT(time_method) ) THEN
-                      ! Append ",time: time_method" if time_method present
-                      att_str = attributes(i)%catt(1:attributes(i)%len)//' time: '//time_method
-                      att_len = LEN_TRIM(att_str)
-                   END IF
-                   CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field), TRIM(attributes(i)%name),&
-                        & cval=att_str(1:att_len))
-                CASE default
-                   CALL error_mesg('diag_output_mod::write_field_meta_data', 'Invalid type for field attribute '&
-                        &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
-                END SELECT
-             END DO
+             CALL write_attribute_meta(file_unit, mpp_get_id(Field%Field), num_attributes, attributes, time_method, err_msg)
+             IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
+                CALL error_mesg('diag_output_mod::write_field_meta_data',&
+                     & TRIM(err_msg)//" Contact the developers.", FATAL)
+             END IF
           ELSE
              ! Catch some bad cases
              IF ( num_attributes .GT. 0 .AND. .NOT._ALLOCATED(attributes) ) THEN
@@ -593,6 +615,64 @@ CONTAINS
 
   END FUNCTION write_field_meta_data
   ! </FUNCTION>
+
+  !> \brief Write out attribute meta data to file
+  !!
+  !! Write out the attribute meta data to file, for field and axes
+  SUBROUTINE write_attribute_meta(file_unit, id, num_attributes, attributes, time_method, err_msg)
+    INTEGER, INTENT(in) :: file_unit !< File unit number
+    INTEGER, INTENT(in) :: id !< ID of field, file, axis to get attribute meta data
+    INTEGER, INTENT(in) :: num_attributes !< Number of attributes to write
+    TYPE(diag_atttype), DIMENSION(:), INTENT(in) :: attributes !< Array of attributes
+    CHARACTER(len=*), INTENT(in), OPTIONAL :: time_method !< To include in cell_methods attribute if present
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg !< Return error message
+
+    INTEGER :: i, att_len
+    CHARACTER(len=1280) :: att_str
+
+    ! Clear err_msg if present
+    IF ( PRESENT(err_msg) ) err_msg = ''
+
+    DO i = 1, num_attributes
+       SELECT CASE (attributes(i)%type)
+       CASE (NF90_INT)
+          IF ( .NOT._ALLOCATED(attributes(i)%iatt) ) THEN
+             IF ( fms_error_handler('diag_output_mod::write_attribute_meta',&
+                  & 'Integer attribute type indicated, but array not allocated for attribute '&
+                  &//TRIM(attributes(i)%name)//'.', err_msg) ) THEN
+                RETURN
+             END IF
+          END IF
+          CALL mpp_write_meta(file_unit, id, TRIM(attributes(i)%name),&
+               & ival=attributes(i)%iatt)
+       CASE (NF90_FLOAT)
+          IF ( .NOT._ALLOCATED(attributes(i)%fatt) ) THEN
+             IF ( fms_error_handler('diag_output_mod::write_attribute_meta',&
+                  & 'Real attribute type indicated, but array not allocated for attribute '&
+                  &//TRIM(attributes(i)%name)//'.', err_msg) ) THEN
+                RETURN
+             END IF
+          END IF
+          CALL mpp_write_meta(file_unit, id, TRIM(attributes(i)%name),&
+               & rval=attributes(i)%fatt)
+       CASE (NF90_CHAR)
+          att_str = attributes(i)%catt
+          att_len = attributes(i)%len
+          IF ( TRIM(attributes(i)%name).EQ.'cell_methods' .AND. PRESENT(time_method) ) THEN
+             ! Append ",time: time_method" if time_method present
+             att_str = attributes(i)%catt(1:attributes(i)%len)//' time: '//time_method
+             att_len = LEN_TRIM(att_str)
+          END IF
+          CALL mpp_write_meta(file_unit, id, TRIM(attributes(i)%name),&
+               & cval=att_str(1:att_len))
+       CASE default
+          IF ( fms_error_handler('diag_output_mod::write_attribute_meta', 'Invalid type for attribute '&
+               &//TRIM(attributes(i)%name)//'.', err_msg) ) THEN
+             RETURN
+          END IF
+       END SELECT
+    END DO
+  END SUBROUTINE write_attribute_meta
 
   ! <SUBROUTINE NAME="done_meta_data">
   !   <OVERVIEW>

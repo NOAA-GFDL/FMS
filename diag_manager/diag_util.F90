@@ -114,7 +114,7 @@ MODULE diag_util_mod
 #include<file_version.h>
 
   LOGICAL :: module_initialized = .FALSE.
-  
+
 
 CONTAINS
 
@@ -137,7 +137,7 @@ CONTAINS
     call write_version_number("DIAG_UTIL_MOD", version)
   END SUBROUTINE diag_util_init
   ! </SUBROUTINE>
-  
+
   ! <SUBROUTINE NAME="get_subfield_size">
   !   <OVERVIEW>
   !     Get the size, start, and end indices for output fields.

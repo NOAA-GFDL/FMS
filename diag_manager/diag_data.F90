@@ -558,6 +558,12 @@ MODULE diag_data_mod
   !   </DATA>
   !   <DATA NAME="tile_count" TYPE="INTEGER">
   !   </DATA>
+  !   <DATA NAME="attributes" TYPE="TYPE(diag_atttype), DIMENSION(:)">
+  !     Array to hold user definable attributes
+  !   </DATA>
+  !   <DATA NAME="num_attributes" TYPE="INTEGER" >
+  !     Number of defined attibutes
+  !   </DATA>
   TYPE diag_axis_type
      CHARACTER(len=128) :: name
      CHARACTER(len=256) :: units, long_name
@@ -572,6 +578,8 @@ MODULE diag_data_mod
      TYPE(domain2d), dimension(MAX_SUBAXES) :: subaxis_domain2
      CHARACTER(len=128) :: aux
      INTEGER :: tile_count
+     TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
+     INTEGER :: num_attributes
   END TYPE diag_axis_type
   ! </TYPE>
 
@@ -646,6 +654,9 @@ MODULE diag_data_mod
   ! <DATA NAME="max_file_attributes" TYPE="INTEGER" DEFAULT="2">
   !   Maximum number of user definable global attributes per file.
   ! </DATA>
+  ! <DATA NAME="max_axis_attributes" TYPE="INTEGER" DEFAULT="2">
+  !   Maximum number of user definable attributes per axis.
+  ! </DATA>
   ! <DATA NAME="prepend_date" TYPE="LOGICAL" DEFAULT=".TRUE.">
   !   Indicates if the file start date will be prepended to the file name.  <TT>.TRUE.</TT> is
   !   only supported if the diag_manager_init routine is called with the optional time_init parameter.
@@ -672,8 +683,9 @@ MODULE diag_data_mod
   LOGICAL :: oor_warnings_fatal = .FALSE.
   LOGICAL :: region_out_use_alt_value = .TRUE.
 
-  INTEGER :: max_field_attributes = 2
-  INTEGER :: max_file_attributes = 2
+  INTEGER :: max_field_attributes = 2 !< Maximum number of user definable attributes per field.
+  INTEGER :: max_file_attributes = 2 !< Maximum number of user definable global attributes per file.
+  INTEGER :: max_axis_attributes = 2 !< Maximum number of user definable attributes per axis.
   LOGICAL :: prepend_date = .TRUE.
   ! <!-- netCDF variable -->
   ! <DATA NAME="FILL_VALUE" TYPE="REAL" DEFAULT="NF90_FILL_REAL">
