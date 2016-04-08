@@ -211,7 +211,7 @@ MODULE diag_manager_mod
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, conserve_water, region_out_use_alt_value, max_field_attributes, output_field_type,&
-       & max_file_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init
+       & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
@@ -3454,7 +3454,7 @@ CONTAINS
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
          & oor_warnings_fatal, max_out_per_in_field, conserve_water, region_out_use_alt_value, max_field_attributes,&
-         & max_file_attributes, prepend_date
+         & max_file_attributes, max_axis_attributes, prepend_date
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
@@ -4252,6 +4252,7 @@ PROGRAM test
   USE diag_manager_mod, ONLY: diag_manager_set_time_end, diag_field_add_attribute, diag_axis_add_attribute
   USE diag_manager_mod, ONLY: diag_field_add_cell_measures
   USE diag_manager_mod, ONLY: get_diag_field_id, DIAG_FIELD_NOT_FOUND
+  USE diag_axis_mod, ONLY: get_axis_num
 
   IMPLICIT NONE
 
@@ -4293,11 +4294,16 @@ PROGRAM test
   INTEGER :: numthreads=1, ny_per_thread, idthread
   INTEGER :: months=0, days=0, dt_step=0
 
+  ! Variables needed for test 22
+  INTEGER :: id_nv, id_nv_init
+
 
   NAMELIST /test_diag_manager_nml/ layout, test_number, nlon, nlat, nlev, io_layout, numthreads, &
                                    dt_step, months, days
 
   ! Initialize all id* vars to be -1
+  id_nv = -1
+  id_nv_init = -1
   id_phalf = -1
   id_pfull = -1
   id_bk = -1
@@ -4430,6 +4436,24 @@ PROGRAM test
   id_lon2 = diag_axis_init('lon2',  RAD_TO_DEG*lon_global2,  'degrees_E', 'x', long_name='longitude', Domain2=Domain2)
   id_lat2 = diag_axis_init('lat2',  RAD_TO_DEG*lat_global2,  'degrees_N', 'y', long_name='latitude',  Domain2=Domain2)
 
+  IF ( test_number == 22 ) THEN
+     ! Can we get the 'nv' axis ID?
+     id_nv = get_axis_num('nv', 'nv')
+     IF ( id_nv .GT. 0 ) THEN
+        write (out_unit,'(a)') 'test22.1 Passes: id_nv has a positive value'
+     ELSE
+        write (out_unit,'(a)') 'test22.1 Failed: id_nv does not have a positive value'
+     END IF
+
+     ! Can I call diag_axis_init on 'nv' again, and get the same ID back?
+     id_nv_init = diag_axis_init( 'nv',(/1.,2./),'none','N','vertex number', set_name='nv')
+     IF ( id_nv_init .EQ. id_nv ) THEN
+        write (out_unit,'(a)') 'test22.2 Passes: Can call diag_axis_init on "nv" and get same ID'
+     ELSE
+        write (out_unit,'(a)') 'test22.2 Failed: Cannot call diag_axis_init on "nv" and get same ID'
+     END IF
+  END IF
+
   IF ( test_number == 21 ) THEN
      ! Testing addition of axis attributes
      CALL diag_axis_add_attribute(id_lon1, 'real_att', 2.3)
@@ -4511,7 +4535,7 @@ PROGRAM test
      END IF
   END IF
 
-  IF ( test_number == 16 .OR. test_number == 17 .OR. test_number == 18 .OR. test_number == 21 ) THEN
+  IF ( test_number == 16 .OR. test_number == 17 .OR. test_number == 18 .OR. test_number == 21 .OR. test_number == 22 ) THEN
      is_in = 1
      js_in = 1
      ie_in = nlon

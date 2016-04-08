@@ -59,7 +59,7 @@ MODULE diag_axis_mod
   !     Add a attribute to the diag axis
   !   </OVERVIEW>
   !   <TEMPLATE>
-  !     SUBROUTINE diag_axis_add_attribute(diag_field_id, att_name, att_value)
+  !     SUBROUTINE diag_axis_add_attribute(diag_axis_id, att_name, att_value)
   !   </TEMPLATE>
   !   <DESCRIPTION>
   !     Add an arbitrary attribute and value to the diagnostic axis.  Any number
@@ -70,7 +70,7 @@ MODULE diag_axis_mod
   !     If a character attribute is already defined, then it will be prepended to the
   !     existing attribute value.
   !   </DESCRIPTION>
-  !   <IN NAME="diag_field_id" TYPE="INTEGER" />
+  !   <IN NAME="diag_axis_id" TYPE="INTEGER" />
   !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
   !   <IN NAME="att_value" TYPE="REAL|INTEGER|CHARACTER(len=*)" />
   INTERFACE diag_axis_add_attribute
@@ -1034,7 +1034,7 @@ CONTAINS
              CALL error_mesg('diag_manager_mod::diag_axis_add_attribute',&
                   & 'Attribute type claims INTEGER, but ival not present for attribute "'&
                   & //TRIM(name)//'" for axis "'//TRIM(Axes(diag_axis_id)%name)&
-                  & //'". Contact then developers.', FATAL)
+                  & //'". Contact the developers.', FATAL)
           END IF
           length = SIZE(ival)
           ! Allocate iatt(:) to size of ival
