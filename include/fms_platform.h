@@ -49,7 +49,7 @@
 #endif
 
 !most compilers support Cray pointers
-!if you find a compiler that doesn't, #undef this inside a suitable #ifdef
+!if you find a compiler that doesnt, #undef this inside a suitable #ifdef
 #define use_CRI_pointers
 
 !values of kind: double and long are 8-byte, float and int are 4-byte
@@ -79,7 +79,7 @@
 #endif
 
 #ifdef sgi_generic
-!this is for the Edinburgh n32/o32 compiler, which won't accept 8-byte ints at any price
+!this is for the Edinburgh n32/o32 compiler, which wont accept 8-byte ints at any price
 #define no_8byte_integers
 #define LONG_KIND 4
 #endif
