@@ -1,6 +1,4 @@
-
 ! -*-f90-*-
-! $Id$
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -160,7 +158,6 @@
       if( pe.EQ.mpp_root_pe() )then
           iunit = stdlog()  ! PGI compiler does not like stdlog() doing I/O within write call
           write( iunit,'(/a)' )'MPP_IO module '//trim(version)
-          write( iunit,'( a)' )'MPP_IO module '//trim(tagname)
 #ifdef use_netCDF
           text = NF_INQ_LIBVERS()
           write( iunit,'(/a)' )'Using netCDF library version '//trim(text)

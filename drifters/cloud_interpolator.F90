@@ -13,7 +13,8 @@ MODULE cloud_interpolator_mod
   public :: cld_ntrp_expand_index, cld_ntrp_contract_indices
 #endif
 
-character(128), parameter :: version = '$Id$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 real, parameter           :: tol = 10.0*epsilon(1.)
 
 CONTAINS

@@ -60,8 +60,8 @@ module horiz_interp_spherical_mod
   namelist /horiz_interp_spherical_nml/ search_method
 
   !-----------------------------------------------------------------------
-  character(len=128) :: version = '$Id$'
-  character(len=128) :: tagname = '$Name$'
+  ! Include variable "version" to be written to log file.
+#include<file_version.h>
   logical            :: module_is_initialized = .FALSE.
 
 contains
@@ -69,10 +69,10 @@ contains
   !#######################################################################
   !  <SUBROUTINE NAME="horiz_interp_spherical_init">
   !  <OVERVIEW>
-  !     writes version number and tag name to logfile.out
+  !     writes version number to logfile.out
   !  </OVERVIEW>
   !  <DESCRIPTION>       
-  !     writes version number and tag name to logfile.out
+  !     writes version number to logfile.out
   !  </DESCRIPTION>
 
   subroutine horiz_interp_spherical_init
@@ -80,7 +80,7 @@ contains
 
 
     if(module_is_initialized) return
-    call write_version_number (version, tagname)
+    call write_version_number("horiz_interp_spherical_mod", version)
 #ifdef INTERNAL_FILE_NML
       read (input_nml_file, horiz_interp_spherical_nml, iostat=io)
       ierr = check_nml_error(io,'horiz_interp_spherical_nml') 

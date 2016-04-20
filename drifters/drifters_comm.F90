@@ -1,8 +1,6 @@
 #include <fms_platform.h>
 #include "fms_switches.h"
 
-! $Id$
-
 module drifters_comm_mod
 
 #ifdef _SERIAL

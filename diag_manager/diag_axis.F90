@@ -32,10 +32,8 @@ MODULE diag_axis_mod
 
   ! Module variables
   ! Parameters
-  CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id$'
-  CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name$'
+  ! Include variable "version" to be written to log file.
+#include<file_version.h>
 
   ! counter of number of axes defined
   INTEGER, DIMENSION(:), ALLOCATABLE :: num_subaxes
@@ -110,7 +108,7 @@ CONTAINS
     CHARACTER(len=128) :: emsg
 
     IF ( .NOT.module_is_initialized ) THEN
-       CALL write_version_number( version, tagname )
+       CALL write_version_number("DIAG_AXIS_MOD", version)
     ENDIF
 
     IF ( PRESENT(tile_count)) THEN

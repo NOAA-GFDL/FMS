@@ -1,6 +1,4 @@
-
 ! -*-f90-*-
-! $Id$
 
 #ifdef use_libSMA
 #include <mpp_comm_sma.inc>

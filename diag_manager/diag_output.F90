@@ -51,10 +51,8 @@ MODULE diag_output_mod
 
   LOGICAL :: module_is_initialized = .FALSE.
 
-  CHARACTER(len=128), PRIVATE :: version= &
-       '$Id$'
-  CHARACTER(len=128), PRIVATE :: tagname= &
-       '$Name$'
+  ! Include variable "version" to be written to log file.
+#include<file_version.h>
 
 CONTAINS
 
@@ -95,7 +93,7 @@ CONTAINS
        CALL mpp_io_init ()
        module_is_initialized = .TRUE.
     END IF
-    CALL write_version_number( version, tagname )
+    CALL write_version_number("DIAG_OUTPUT_MOD", version)
 
     !---- set up output file ----
     SELECT CASE (FORMAT)

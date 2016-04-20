@@ -180,9 +180,8 @@ integer :: leng, leng1, leng2, lenc    ! related to transform size
 
 logical :: module_is_initialized=.false.
 
-!  cvs version and tag name
-character(len=128) :: version = '$Id$'
-character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
 !-----------------------------------------------------------------------
 !
@@ -845,9 +844,9 @@ contains
       if (module_is_initialized) &
       call error_handler ('fft_init', 'attempted to reinitialize fft')
 
-!  write version and tag name to log file
+!  write file version to log file
    if (do_log) then
-      call write_version_number (version, tagname)
+      call write_version_number("FFT_MOD", version)
       do_log = .false.
    endif
 

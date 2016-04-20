@@ -1,6 +1,4 @@
-
 ! -*-f90-*-
-! $Id$
 
 
   ! <SUBROUTINE NAME="mpp_define_layout2D" INTERFACE="mpp_define_layout">

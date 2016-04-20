@@ -490,10 +490,8 @@ private
    module procedure show_all_bad_0d, show_all_bad_1d, show_all_bad_2d, show_all_bad_3d
  end interface
 !-----------------------------------------------------------------------
-!  cvs version and tag name
-
- character(len=128) :: version = '$Id$'
- character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
  logical :: module_is_initialized = .false.
 
@@ -512,6 +510,7 @@ private
  integer :: nsize  ! (tcmax-tcmin)*esres+1    !  lookup table size
  integer :: nlim   ! nsize-1
 
+ integer :: stdoutunit=0
 !-----------------------------------------------------------------------
 !  variables needed by temp_check
  real :: tmin, dtinv, teps
@@ -546,7 +545,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_local
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es_k(temp, esat, nbad)
 
@@ -577,7 +578,9 @@ contains
  integer :: nbad
 !-----------------------------------------------
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es_k(temp, esat, nbad)
 
@@ -611,7 +614,9 @@ contains
  integer :: nbad
 !-----------------------------------------------
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es_k(temp, esat, nbad)
 
@@ -644,7 +649,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_tmp
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es_k(temp, esat, nbad)
 
@@ -675,7 +682,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_local
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es2_k(temp, esat, nbad)
 
@@ -706,7 +715,9 @@ contains
  integer :: nbad
 !-----------------------------------------------
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es2_k(temp, esat, nbad)
 
@@ -740,7 +751,9 @@ contains
  integer :: nbad
 !-----------------------------------------------
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es2_k(temp, esat, nbad)
 
@@ -773,7 +786,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_tmp
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es2_k(temp, esat, nbad)
 
@@ -804,7 +819,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_local
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es3_k(temp, esat, nbad)
 
@@ -835,7 +852,9 @@ contains
  integer :: nbad
 !-----------------------------------------------
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es3_k(temp, esat, nbad)
 
@@ -869,7 +888,9 @@ contains
  integer :: nbad
 !-----------------------------------------------
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es3_k(temp, esat, nbad)
 
@@ -902,7 +923,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_tmp
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es3_k(temp, esat, nbad)
 
@@ -936,7 +959,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_local
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_des_k( temp, desat, nbad)
 
@@ -967,7 +992,10 @@ contains
  integer :: nbad
 !-----------------------------------------------
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
+
    if(present(err_msg)) err_msg=''
 
    call lookup_des_k(temp, desat, nbad)
@@ -1001,8 +1029,10 @@ contains
  integer :: nbad
 !-----------------------------------------------
    
-   if (.not.module_is_initialized) call sat_vapor_pres_init
-   
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
+
    call lookup_des_k(temp, desat, nbad)
 
    if ( nbad == 0 ) then
@@ -1032,7 +1062,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_tmp
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_des_k( temp, desat, nbad )
 
@@ -1062,7 +1094,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_local
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_des2_k( temp, desat, nbad)
 
@@ -1093,7 +1127,10 @@ contains
  integer :: nbad
 !-----------------------------------------------
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
+
    if(present(err_msg)) err_msg=''
 
    call lookup_des2_k(temp, desat, nbad)
@@ -1127,8 +1164,10 @@ contains
  integer :: nbad
 !-----------------------------------------------
    
-   if (.not.module_is_initialized) call sat_vapor_pres_init
-   
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
+
    call lookup_des2_k(temp, desat, nbad)
 
    if ( nbad == 0 ) then
@@ -1158,7 +1197,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_tmp
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_des2_k( temp, desat, nbad )
 
@@ -1188,7 +1229,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_local
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_des3_k( temp, desat, nbad)
 
@@ -1219,7 +1262,10 @@ contains
  integer :: nbad
 !-----------------------------------------------
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
+
    if(present(err_msg)) err_msg=''
 
    call lookup_des3_k(temp, desat, nbad)
@@ -1253,8 +1299,10 @@ contains
  integer :: nbad
 !-----------------------------------------------
    
-   if (.not.module_is_initialized) call sat_vapor_pres_init
-   
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
+
    call lookup_des3_k(temp, desat, nbad)
 
    if ( nbad == 0 ) then
@@ -1284,7 +1332,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_tmp
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_des3_k( temp, desat, nbad )
 
@@ -1318,7 +1368,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_local
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es_des_k(temp, esat, desat, nbad)
 
@@ -1349,7 +1401,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_local
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es_des_k(temp, esat, desat, nbad)
 
@@ -1381,7 +1435,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_local
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es_des_k(temp, esat, desat, nbad)
 
@@ -1413,7 +1469,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_local
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es_des_k(temp, esat, desat, nbad)
 
@@ -1446,7 +1504,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_local
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es2_des2_k(temp, esat, desat, nbad)
 
@@ -1477,7 +1537,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_local
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es2_des2_k(temp, esat, desat, nbad)
 
@@ -1509,7 +1571,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_local
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es2_des2_k(temp, esat, desat, nbad)
 
@@ -1541,7 +1605,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_local
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es2_des2_k(temp, esat, desat, nbad)
 
@@ -1575,7 +1641,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_local
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es3_des3_k(temp, esat, desat, nbad)
 
@@ -1606,7 +1674,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_local
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es3_des3_k(temp, esat, desat, nbad)
 
@@ -1638,7 +1708,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_local
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es3_des3_k(temp, esat, desat, nbad)
 
@@ -1670,7 +1742,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_local
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    call lookup_es3_des3_k(temp, esat, desat, nbad)
 
@@ -1711,7 +1785,9 @@ contains
  integer :: nbad
  character(len=128) :: err_msg_tmp
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    if (present(es_over_liq)) then
      if (.not. (construct_table_wrt_liq)) then
@@ -1768,7 +1844,9 @@ real,  intent(in),              optional :: hc
  integer :: nbad
  character(len=128) :: err_msg_tmp
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    if (present(es_over_liq)) then
      if (.not. (construct_table_wrt_liq)) then
@@ -1828,7 +1906,9 @@ real,  intent(in),              optional :: hc
  integer :: nbad
  character(len=128) :: err_msg_tmp
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    if (present(es_over_liq)) then
      if (.not. (construct_table_wrt_liq)) then
@@ -1887,7 +1967,9 @@ real,  intent(in),              optional :: hc
  integer :: nbad
  character(len=128) :: err_msg_tmp
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    if (present(es_over_liq)) then
      if (.not. (construct_table_wrt_liq)) then
@@ -1947,7 +2029,9 @@ real,  intent(in),              optional :: hc
  integer :: nbad
  character(len=128) :: err_msg_tmp
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    if (present(es_over_liq)) then
      if (.not. (construct_table_wrt_liq)) then
@@ -2005,7 +2089,9 @@ real,  intent(in),              optional :: hc
  integer :: nbad
  character(len=128) :: err_msg_tmp
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    if (present(es_over_liq)) then
      if (.not. (construct_table_wrt_liq)) then
@@ -2065,7 +2151,9 @@ real,  intent(in),              optional :: hc
  integer :: nbad
  character(len=128) :: err_msg_tmp
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    if (present(es_over_liq)) then
      if (.not. (construct_table_wrt_liq)) then
@@ -2125,7 +2213,9 @@ real,  intent(in),              optional :: hc
  integer :: nbad
  character(len=128) :: err_msg_tmp
 
-   if (.not.module_is_initialized) call sat_vapor_pres_init
+   if (.not.module_is_initialized) then
+      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
+   endif
 
    if (present(es_over_liq)) then
      if (.not. (construct_table_wrt_liq)) then
@@ -2221,8 +2311,9 @@ real,  intent(in),              optional :: hc
 #endif
 
 ! write version number and namelist to log file
-  call write_version_number (version, tagname)
+  call write_version_number("SAT_VAPOR_PRES_MOD", version)
   unit = stdlog()
+  stdoutunit = stdout()
   if (mpp_pe() == mpp_root_pe()) write (unit, nml=sat_vapor_pres_nml)
 
   if(do_simple) then
@@ -2357,7 +2448,7 @@ end subroutine sat_vapor_pres_init
  real   , intent(in) :: temp(:)
  integer :: i, unit
 
-   unit = stdout()
+   unit = stdoutunit
    write(unit,*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i:i)),i=1,size(temp,1))
 
  end subroutine temp_check_1d
@@ -2368,7 +2459,7 @@ end subroutine sat_vapor_pres_init
  real   , intent(in) :: temp(:,:)
  integer :: i, j, unit
 
-   unit = stdout()
+   unit = stdoutunit
    write(unit,*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i,:)),i=1,size(temp,1))
    write(unit,*) 'Bad temperatures (dimension 2): ', (check_1d(temp(:,j)),j=1,size(temp,2))
 
@@ -2380,7 +2471,7 @@ end subroutine sat_vapor_pres_init
  real, intent(in)  :: temp(:,:,:)
  integer :: i, j, k, unit
 
-   unit = stdout()
+   unit = stdoutunit
    write(unit,*) 'Bad temperatures (dimension 1): ', (check_2d(temp(i,:,:)),i=1,size(temp,1))
    write(unit,*) 'Bad temperatures (dimension 2): ', (check_2d(temp(:,j,:)),j=1,size(temp,2))
    write(unit,*) 'Bad temperatures (dimension 3): ', (check_2d(temp(:,:,k)),k=1,size(temp,3))
@@ -2393,7 +2484,7 @@ subroutine show_all_bad_0d ( temp )
  real   , intent(in) :: temp
  integer :: ind, unit
 
- unit = stdout()
+ unit = stdoutunit
  ind = int(dtinv*(temp-tmin+teps))
  if (ind < 0 .or. ind > nlim) then
    write(unit,'(a,e10.3,a,i6)') 'Bad temperature=',temp,' pe=',mpp_pe()
@@ -2407,7 +2498,7 @@ subroutine show_all_bad_0d ( temp )
  real   , intent(in) :: temp(:)
  integer :: i, ind, unit
 
- unit = stdout()
+ unit = stdoutunit
  do i=1,size(temp)
    ind = int(dtinv*(temp(i)-tmin+teps))
    if (ind < 0 .or. ind > nlim) then
@@ -2423,7 +2514,7 @@ subroutine show_all_bad_0d ( temp )
  real   , intent(in) :: temp(:,:)
  integer :: i, j, ind, unit
 
- unit = stdout()
+ unit = stdoutunit
  do j=1,size(temp,2)
  do i=1,size(temp,1)
    ind = int(dtinv*(temp(i,j)-tmin+teps))
@@ -2441,7 +2532,7 @@ subroutine show_all_bad_0d ( temp )
  real, intent(in)  :: temp(:,:,:)
  integer :: i, j, k, ind, unit
 
- unit = stdout()
+ unit = stdoutunit
  do k=1,size(temp,3)
  do j=1,size(temp,2)
  do i=1,size(temp,1)

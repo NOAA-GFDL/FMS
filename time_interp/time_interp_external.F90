@@ -28,6 +28,7 @@ module time_interp_external_mod
 ! </DATA>
 !</NAMELIST>
 
+  use fms_mod, only : write_version_number
   use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe, stdout, stdlog, NOTE
   use mpp_mod, only : input_nml_file
   use mpp_io_mod, only : mpp_open, mpp_get_atts, mpp_get_info, MPP_NETCDF, MPP_MULTI, MPP_SINGLE,&
@@ -49,9 +50,8 @@ module time_interp_external_mod
   implicit none
   private
 
-  character(len=128), private :: version= &
-   'CVS $Id$'
-  character(len=128), private :: tagname='Tag $Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
   integer, parameter, public  :: NO_REGION=0, INSIDE_REGION=1, OUTSIDE_REGION=2
   integer, parameter, private :: modulo_year= 0001
@@ -112,6 +112,8 @@ module time_interp_external_mod
      module procedure time_interp_external_3d
   end interface
 
+  integer :: outunit
+
   type(ext_fieldtype), save, private, pointer :: field(:) => NULL()
   type(filetype),      save, private, pointer :: opened_files(:) => NULL()
 !Balaji: really should use field%missing
@@ -136,8 +138,8 @@ module time_interp_external_mod
       if(module_initialized) return
       
       logunit = stdlog()
-      write(logunit,'(/a/)') version
-      write(logunit,'(/a/)') tagname
+      outunit = stdout()
+      call write_version_number("TIME_INTERP_EXTERNAL_MOD", version)
 
 #ifdef INTERNAL_FILE_NML
       read (input_nml_file, time_interp_external_nml, iostat=io_status)
@@ -231,7 +233,7 @@ module time_interp_external_mod
       type(atttype), allocatable, dimension(:) :: global_atts
 
       real(DOUBLE_KIND) :: slope, intercept
-      integer :: form, thread, fset, unit,ndim,nvar,natt,ntime,i,j, outunit
+      integer :: form, thread, fset, unit,ndim,nvar,natt,ntime,i,j
       integer :: iscomp,iecomp,jscomp,jecomp,isglobal,ieglobal,jsglobal,jeglobal
       integer :: isdata,iedata,jsdata,jedata, dxsize, dysize,dxsize_max,dysize_max
       logical :: verb, transpose_xy,use_comp_domain1
@@ -330,7 +332,6 @@ module time_interp_external_mod
       init_external_field = -1
       nfields_orig = num_fields
 
-      outunit = stdout()
       do i=1,nvar
          call mpp_get_atts(flds(i),name=name,units=fld_units,ndim=ndim,siz=siz_in)
          call mpp_get_tavg_info(unit,flds(i),flds,tstamp,tstart,tend,tavg)
@@ -683,7 +684,7 @@ module time_interp_external_mod
       integer,                    intent(in), optional :: window_id
 
       integer :: nx, ny, nz, interp_method, t1, t2
-      integer :: i1, i2, isc, iec, jsc, jec, mod_time, outunit
+      integer :: i1, i2, isc, iec, jsc, jec, mod_time
       integer :: yy, mm, dd, hh, min, ss
       character(len=256) :: err_msg, filename
 
@@ -700,7 +701,6 @@ module time_interp_external_mod
       nx = size(data,1)
       ny = size(data,2)
       nz = size(data,3)
-      outunit = stdout()
 
       interp_method = LINEAR_TIME_INTERP
       if (PRESENT(interp)) interp_method = interp
@@ -836,7 +836,7 @@ module time_interp_external_mod
       real, intent(inout) :: data
       logical, intent(in), optional :: verbose
       
-      integer :: t1, t2, outunit
+      integer :: t1, t2
       integer :: i1, i2, mod_time
       integer :: yy, mm, dd, hh, min, ss
       character(len=256) :: err_msg, filename
@@ -844,7 +844,6 @@ module time_interp_external_mod
       real :: w1,w2
       logical :: verb
 
-      outunit = stdout()
       verb=.false.
       if (PRESENT(verbose)) verb=verbose
       if (debug_this_module) verb = .true.
@@ -932,7 +931,6 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
   ! ---- local vars 
   integer :: ib ! index in the array of input buffers
   integer :: isw,iew,jsw,jew ! boundaries of the domain on each window
-  integer :: outunit
   integer :: is_region, ie_region, js_region, je_region, i, j, n
   integer :: start(4), nread(4)
   logical :: need_compute
@@ -942,7 +940,6 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
 
   window_id = 1
   if( PRESENT(window_id_in) ) window_id = window_id_in
-  outunit = stdout()
   need_compute = .true.  
 
 !$OMP CRITICAL
@@ -1041,10 +1038,8 @@ subroutine load_record_0d(field, rec)
   integer            ,     intent(in)           :: rec    ! record number
   ! ---- local vars 
   integer :: ib ! index in the array of input buffers
-  integer :: outunit
   integer :: start(4), nread(4)
 
-  outunit = stdout()
   ib = find_buf_index(rec,field%ibuf)
 
   if(ib>0) then
