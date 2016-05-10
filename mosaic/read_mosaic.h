@@ -62,7 +62,7 @@ void read_mosaic_contact(const char *mosaic_file, int *tile1, int *tile2, int *i
 int transfer_to_model_index(int istart_in, int iend_in, int *istart_out, int *iend_out, int refine_ratio);
 
 void read_mosaic_grid_data(const char *mosaic_file, const char *name, int nx, int ny,
-                           double *data, int level, int ioff, int joff);
+                           double *data, unsigned int level, int ioff, int joff);
 
 
 #ifndef __AIX
