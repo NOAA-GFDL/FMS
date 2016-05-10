@@ -1667,17 +1667,6 @@ CONTAINS
 
     aux_present = .FALSE.
     match_aux_name = .FALSE.
-    ! it's unlikely that a file starts with word "rregion", need to check anyway.
-    IF ( LEN(files(file)%name) >=7 .AND. .NOT.files(file)%local ) THEN
-       prefix = files(file)%name(1:7)
-       IF ( lowercase(prefix) == 'rregion' ) THEN
-          ! <ERROR STATUS="WARNING">
-          !   file name should not start with word "rregion"
-          ! </ERROR>
-          IF ( mpp_pe() == mpp_root_pe() ) CALL error_mesg('diag_util_mod::opening_file',&
-               & 'file name should not start with word "rregion"', WARNING)
-       END IF
-    END IF
 
     ! Here is where time_units string must be set up; time since base date
     WRITE (time_units, 11) TRIM(time_unit_list(files(file)%time_units)), base_year,&
@@ -1704,13 +1693,8 @@ CONTAINS
     fname=base_name
     call get_instance_filename(fname, base_name)
 
-    IF ( files(file)%local ) THEN
-       ! prepend "rregion" to all local files for post processing, the prefix will be removed in postprocessing
-       filename = 'rregion'//TRIM(base_name)//TRIM(suffix)
-    ELSE
-       ! filename = trim(prefix2)//trim(base_name)//trim(suffix)
-       filename = TRIM(base_name)//TRIM(suffix)
-    END IF
+    ! Set the filename
+    filename = TRIM(base_name)//TRIM(suffix)
 
     ! prepend the file start date if prepend_date == .TRUE.
     IF ( prepend_date ) THEN
