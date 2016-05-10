@@ -272,10 +272,10 @@ CONTAINS
        ! Deallocate attributes
        IF ( ALLOCATED(attributes) ) THEN
           DO j=1, num_attributes
-             IF ( ALLOCATED(attributes(j)%fatt ) ) THEN
+             IF ( _ALLOCATED(attributes(j)%fatt ) ) THEN
                 DEALLOCATE(attributes(j)%fatt)
              END IF
-             IF ( ALLOCATED(attributes(j)%iatt ) ) THEN
+             IF ( _ALLOCATED(attributes(j)%iatt ) ) THEN
                 DEALLOCATE(attributes(j)%iatt)
              END IF
           END DO
