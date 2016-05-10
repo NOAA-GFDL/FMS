@@ -3788,7 +3788,7 @@ CONTAINS
                   & 'Attribute "'//TRIM(name)//'" already defined for module/input_field "'&
                   &//TRIM(input_fields(diag_field_id)%module_name)//'/'&
                   &//TRIM(input_fields(diag_field_id)%field_name)//'".  Contact the developers.', FATAL)
-          ELSE IF ( this_attribute.NE.0 .AND. type.EQ.NF90_CHAR ) THEN
+          ELSE IF ( this_attribute.NE.0 .AND. type.EQ.NF90_CHAR .AND. debug_diag_manager ) THEN
              ! <ERROR STATUS="NOTE">
              !   Attribute <name> already defined for module/input_field <module_name>/<field_name>.
              !   Prepending.
