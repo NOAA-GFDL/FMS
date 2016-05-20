@@ -3797,7 +3797,7 @@ CONTAINS
                   & 'Attribute "'//TRIM(name)//'" already defined for module/input_field "'&
                   &//TRIM(input_fields(diag_field_id)%module_name)//'/'&
                   &//TRIM(input_fields(diag_field_id)%field_name)//'".  Prepending.', NOTE)
-          ELSE
+          ELSE IF ( this_attribute.EQ.0 ) THEN
              ! Defining a new attribute
              ! Increase the number of field attributes
              this_attribute = output_fields(out_field)%num_attributes + 1
