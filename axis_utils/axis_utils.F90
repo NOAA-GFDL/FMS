@@ -156,7 +156,7 @@ contains
     if(.not.bounds_found .and. len>1 ) then
        ! The following calculation can not be done for len=1
        call mpp_get_atts(axis,name=name)
-       name = trim(name)//'_bounds'
+       name = trim(name)//'_bnds'
        allocate(tmp(len))
        call mpp_get_axis_data(axis,tmp)
        do i=2,len
