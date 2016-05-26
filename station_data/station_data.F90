@@ -702,7 +702,7 @@ subroutine opening_file(file)
           time_units,"Length of average period", pack=1)  
     files(file)%f_avg_nitems = diag_field%Field
 
-    diag_field=write_field_meta_data(files(file)%file_unit, 'Time_bounds', (/time_bounds_id,time_axis_id/), &
+    diag_field=write_field_meta_data(files(file)%file_unit, 'Time_bnds', (/time_bounds_id,time_axis_id/), &
            trim(time_unit_list(files(file)%time_units)), &
            'Time axis boundaries', pack=1) 
      files(file)%f_bounds =  diag_field%Field

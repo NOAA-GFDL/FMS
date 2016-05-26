@@ -1937,7 +1937,7 @@ CONTAINS
        CALL get_diag_axis( time_bounds_id(1), timeb_name, timeb_units, timeb_longname,&
             & cart_name, dir, edges, Domain, DATA)
        files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
-            & TRIM(time_name)//'_bounds', (/time_bounds_id,time_axis_id/),&
+            & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
             & TRIM(time_unit_list(files(file)%time_units)),&
             & TRIM(time_name)//' axis boundaries', pack=pack_size)
     END IF
