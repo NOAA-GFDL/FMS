@@ -1525,7 +1525,7 @@ CONTAINS
     END IF
   END FUNCTION send_data_3d_r8
   ! </FUNCTION>
-#endif OVERLOAD_R4
+#endif
 
   ! <FUNCTION NAME="send_data_3d" INTERFACE="send_data">
   !   <IN NAME="diag_field_id" TYPE="INTEGER"> </IN>
