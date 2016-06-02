@@ -7446,6 +7446,7 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
     logical                       :: fexist, is_no_domain
     integer                       :: tile_id(1)
     character(len=256)            :: fname
+    character(len=LEN(orig_file)) :: actual_file_tmp
 
     is_no_domain=.false.
     if(PRESENT(no_domain)) is_no_domain = no_domain
@@ -7519,7 +7520,10 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
           endif
        endif
 
-       call get_mosaic_tile_file(actual_file, actual_file, is_no_domain, domain, tile_count)
+       ! Set actual_file to tmp for passing to get_mosaic_tile_file
+       actual_file_tmp = actual_file
+       call get_mosaic_tile_file(actual_file_tmp, actual_file_tmp, is_no_domain, domain, tile_count)
+
        !--- check if the file is group redistribution.
        if(ASSOCIATED(d_ptr)) then
           io_domain => mpp_get_io_domain(d_ptr)
