@@ -7446,7 +7446,7 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
     logical                       :: fexist, is_no_domain
     integer                       :: tile_id(1)
     character(len=256)            :: fname
-    character(len=LEN(acutal_file)) :: actual_file_tmp
+    character(len=512)            :: actual_file_tmp
 
     is_no_domain=.false.
     if(PRESENT(no_domain)) is_no_domain = no_domain
