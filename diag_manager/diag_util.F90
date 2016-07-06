@@ -1491,6 +1491,7 @@ CONTAINS
     output_fields(out_num)%time_rms = .FALSE.
     output_fields(out_num)%time_min = .FALSE.
     output_fields(out_num)%time_max = .FALSE.
+    output_fields(out_num)%time_sum = .FALSE.
     output_fields(out_num)%time_ops = .FALSE.
     output_fields(out_num)%written_once = .FALSE.
 
@@ -1566,6 +1567,8 @@ CONTAINS
        CASE ( 'sum', 'cumsum' )
           output_fields(out_num)%time_sum = .TRUE.
           l1 = LEN_TRIM(output_fields(out_num)%output_name)
+          IF ( output_fields(out_num)%output_name(l1-2:l1) /= 'sum' )&
+               & output_fields(out_num)%output_name = TRIM(output_name)//'_sum'
           method_selected = method_selected+1
           t_method = 'sum'
        END SELECT
