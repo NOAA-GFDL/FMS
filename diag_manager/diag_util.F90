@@ -1563,12 +1563,17 @@ CONTAINS
                & output_fields(out_num)%output_name = TRIM(output_name)//'_min'
           method_selected = method_selected+1
           t_method = 'min'
+       CASE ( 'sum', 'cumsum' )
+          output_fields(out_num)%time_sum = .TRUE.
+          l1 = LEN_TRIM(output_fields(out_num)%output_name)
+          method_selected = method_selected+1
+          t_method = 'sum'
        END SELECT
     END IF
 
     ! reconcile logical flags
     output_fields(out_num)%time_ops = output_fields(out_num)%time_min.OR.output_fields(out_num)%time_max&
-         & .OR.output_fields(out_num)%time_average
+         & .OR.output_fields(out_num)%time_average .OR.output_fields(out_num)%time_average
 
     output_fields(out_num)%phys_window = .FALSE.
     ! need to initialize grid_type = -1(start, end, l_start_indx,l_end_indx etc...)
