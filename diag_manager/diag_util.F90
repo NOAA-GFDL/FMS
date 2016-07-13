@@ -1576,7 +1576,7 @@ CONTAINS
 
     ! reconcile logical flags
     output_fields(out_num)%time_ops = output_fields(out_num)%time_min.OR.output_fields(out_num)%time_max&
-         & .OR.output_fields(out_num)%time_average .OR.output_fields(out_num)%time_average
+         & .OR.output_fields(out_num)%time_average .OR. output_fields(out_num)%time_sum
 
     output_fields(out_num)%phys_window = .FALSE.
     ! need to initialize grid_type = -1(start, end, l_start_indx,l_end_indx etc...)
