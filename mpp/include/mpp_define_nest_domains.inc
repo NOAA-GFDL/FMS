@@ -149,6 +149,10 @@ subroutine mpp_define_nest_domains(nest_domain, domain_fine, domain_coarse, tile
   nest_domain%domain_coarse => domain_coarse
 
   allocate( nest_domain%C2F_T, nest_domain%C2F_C, nest_domain%C2F_E, nest_domain%C2F_N )
+  nest_domain%C2F_T%next => NULL()
+  nest_domain%C2F_C%next => NULL()
+  nest_domain%C2F_N%next => NULL()
+  nest_domain%C2F_E%next => NULL()
   allocate( nest_domain%F2C_T, nest_domain%F2C_C, nest_domain%F2C_E, nest_domain%F2C_N )
 
   call compute_overlap_fine_to_coarse(nest_domain, nest_domain%F2C_T, CENTER, trim(nest_domain%name)//" T-cell")
