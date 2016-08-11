@@ -1297,7 +1297,7 @@ end subroutine check_message_size
 
 !These directives are a work-around for a bug in the CCE compiler, which
 !causes a segmentation fault when the compiler attempts to vectorize a
-!loop containing an optional argument.
+!loop containing an optional argument (when -g is included).
 
 !DIR$ NOVECTOR
     do n = 1, num_tile

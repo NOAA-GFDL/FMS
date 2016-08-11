@@ -177,10 +177,6 @@ contains
     if(allocated(tmp)) deallocate(tmp)
     deallocate(data)
 
-!   if (present(bnd_name)) then
-!       bnd_name = ''
-!   endif
-
     return
   end subroutine get_axis_bounds
 

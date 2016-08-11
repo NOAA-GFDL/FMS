@@ -434,10 +434,6 @@ contains
     !-----------------------------------------------------------------------
     Interp%I_am_initialized = .true.
 
-!   if (present(mask_out)) then
-!       mask_out = 0.0
-!   endif
-
   end subroutine horiz_interp_new_1d
 !  </SUBROUTINE>
 

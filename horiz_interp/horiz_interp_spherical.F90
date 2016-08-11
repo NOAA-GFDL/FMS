@@ -564,10 +564,6 @@ end subroutine horiz_interp_spherical_init
        enddo
     enddo
 
-!   if (present(mask_out)) then
-!       mask_out = 0.0
-!   endif
-
     return
   end subroutine horiz_interp_spherical_wght
   ! </SUBROUTINE>

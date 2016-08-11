@@ -504,9 +504,6 @@
 !currently will write to stdout: don't know how to trap and return as string to iospec
       call ASSIGN( 'assign -V f:'//trim(mpp_file(unit)%name), error )
 #endif
-
-!     iospec = ''
-
       return
     end subroutine mpp_get_iospec
 
