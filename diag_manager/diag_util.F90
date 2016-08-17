@@ -114,7 +114,7 @@ MODULE diag_util_mod
 #include<file_version.h>
 
   LOGICAL :: module_initialized = .FALSE.
-  
+
 
 CONTAINS
 
@@ -137,7 +137,7 @@ CONTAINS
     call write_version_number("DIAG_UTIL_MOD", version)
   END SUBROUTINE diag_util_init
   ! </SUBROUTINE>
-  
+
   ! <SUBROUTINE NAME="get_subfield_size">
   !   <OVERVIEW>
   !     Get the size, start, and end indices for output fields.
@@ -1093,7 +1093,7 @@ CONTAINS
          & TRIM(long_name) , set_name=TRIM(name) )
     !---- register axis for storing time boundaries
     files(num_files)%time_bounds_id = diag_axis_init( 'nv',(/1.,2./),'none','N','vertex number',&
-         & set_name=TRIM(name))
+         & set_name='nv')
   END SUBROUTINE init_file
   ! </SUBROUTINE>
 
@@ -1667,17 +1667,6 @@ CONTAINS
 
     aux_present = .FALSE.
     match_aux_name = .FALSE.
-    ! it's unlikely that a file starts with word "rregion", need to check anyway.
-    IF ( LEN(files(file)%name) >=7 .AND. .NOT.files(file)%local ) THEN
-       prefix = files(file)%name(1:7)
-       IF ( lowercase(prefix) == 'rregion' ) THEN
-          ! <ERROR STATUS="WARNING">
-          !   file name should not start with word "rregion"
-          ! </ERROR>
-          IF ( mpp_pe() == mpp_root_pe() ) CALL error_mesg('diag_util_mod::opening_file',&
-               & 'file name should not start with word "rregion"', WARNING)
-       END IF
-    END IF
 
     ! Here is where time_units string must be set up; time since base date
     WRITE (time_units, 11) TRIM(time_unit_list(files(file)%time_units)), base_year,&
@@ -1704,13 +1693,8 @@ CONTAINS
     fname=base_name
     call get_instance_filename(fname, base_name)
 
-    IF ( files(file)%local ) THEN
-       ! prepend "rregion" to all local files for post processing, the prefix will be removed in postprocessing
-       filename = 'rregion'//TRIM(base_name)//TRIM(suffix)
-    ELSE
-       ! filename = trim(prefix2)//trim(base_name)//trim(suffix)
-       filename = TRIM(base_name)//TRIM(suffix)
-    END IF
+    ! Set the filename
+    filename = TRIM(base_name)//TRIM(suffix)
 
     ! prepend the file start date if prepend_date == .TRUE.
     IF ( prepend_date ) THEN
@@ -1953,7 +1937,7 @@ CONTAINS
        CALL get_diag_axis( time_bounds_id(1), timeb_name, timeb_units, timeb_longname,&
             & cart_name, dir, edges, Domain, DATA)
        files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
-            & TRIM(time_name)//'_bounds', (/time_bounds_id,time_axis_id/),&
+            & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
             & TRIM(time_unit_list(files(file)%time_units)),&
             & TRIM(time_name)//' axis boundaries', pack=pack_size)
     END IF

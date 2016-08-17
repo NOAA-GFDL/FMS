@@ -401,7 +401,7 @@ subroutine get_amip_sst (Time, Interp, sst, err_msg, lon_model, lat_model)
     type (date_type) :: Date1, Date2, Udate1, Udate2
 
     type(time_type) :: Amip_Time
-    integer :: tod(3),dum
+    integer :: tod(3),dum(3)
 
 ! add by JHC
     real,    intent(in), dimension(:,:), optional :: lon_model, lat_model
@@ -430,7 +430,7 @@ subroutine get_amip_sst (Time, Interp, sst, err_msg, lon_model, lat_model)
     if ( use_ncep_sst .and. forecast_mode ) no_anom_sst = .false.
 
     if (all(amip_date>0)) then
-       call get_date(Time,dum,dum,dum,tod(1),tod(2),tod(3))
+       call get_date(Time,dum(1),dum(2),dum(3),tod(1),tod(2),tod(3))
        Amip_Time = set_date(amip_date(1),amip_date(2),amip_date(3),tod(1),tod(2),tod(3))
     else
        Amip_Time = Time
@@ -694,7 +694,7 @@ subroutine get_amip_ice (Time, Interp, ice, err_msg)
     type (date_type) :: Date1, Date2, Udate1, Udate2
 
     type(time_type) :: Amip_Time
-    integer :: tod(3),dum
+    integer :: tod(3),dum(3)
 
     if(present(err_msg)) err_msg = ''
     if(.not.Interp%I_am_initialized) then
@@ -707,7 +707,7 @@ subroutine get_amip_ice (Time, Interp, ice, err_msg)
 
     if (any(amip_date>0)) then
 
-       call get_date(Time,dum,dum,dum,tod(1),tod(2),tod(3))
+       call get_date(Time,dum(1),dum(2),dum(3),tod(1),tod(2),tod(3))
 
        Amip_Time = set_date(amip_date(1),amip_date(2),amip_date(3),tod(1),tod(2),tod(3))
 

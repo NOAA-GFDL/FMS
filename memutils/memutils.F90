@@ -281,7 +281,7 @@ module memutils_mod
         if( .NOT.print_memory_usage )return
     end if
     mu = stderr(); if( PRESENT(unit) )mu = unit
-#if defined(__sgi) || defined(__aix) || defined(__SX)
+#if defined(__sgi) || defined(__aix) || defined(__SX) || defined(__APPLE__)
     m = memuse()*1e-3
 #else
     call mem_dump(m)
