@@ -131,7 +131,8 @@ contains
     type(axistype), intent(in) :: axis
     type(axistype), intent(inout) :: axis_bound
     type(axistype), intent(in), dimension(:) :: axes
-    character(len=*), intent(out), optional :: bnd_name, err_msg
+    character(len=*), intent(inout), optional :: bnd_name
+    character(len=*), intent(out), optional :: err_msg
 
     real, dimension(:), allocatable :: data, tmp
 

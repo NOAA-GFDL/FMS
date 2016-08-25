@@ -904,7 +904,7 @@ end subroutine mpp_get_domain_shift
        else
           search_update_overlap => search_update_overlap%next
        end if
- 
+  
     end do
 
     update_ref => NULL()

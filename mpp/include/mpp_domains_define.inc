@@ -990,6 +990,10 @@
        domain%whalo = whalosz; domain%ehalo = ehalosz
        domain%shalo = shalosz; domain%nhalo = nhalosz
        allocate(domain%update_T, domain%update_E, domain%update_C, domain%update_N)
+       domain%update_T%next => NULL()
+       domain%update_E%next => NULL()
+       domain%update_C%next => NULL()
+       domain%update_N%next => NULL()
        allocate(domain%check_E,  domain%check_C,  domain%check_N )
        domain%update_T%nsend = 0
        domain%update_T%nrecv = 0
@@ -1290,6 +1294,12 @@ end subroutine check_message_size
        endif
     endif
     allocate(tile_id_local(num_tile))
+
+!These directives are a work-around for a bug in the CCE compiler, which
+!causes a segmentation fault when the compiler attempts to vectorize a
+!loop containing an optional argument (when -g is included).
+
+!DIR$ NOVECTOR
     do n = 1, num_tile
        if(PRESENT(tile_id)) then
           tile_id_local(n) = tile_id(n)
@@ -1297,6 +1307,8 @@ end subroutine check_message_size
           tile_id_local(n) = n
        endif
     enddo
+!DIR$ VECTOR
+
     do n = 1, num_tile
        if( pe .GE. pe_start(n) .AND. pe .LE. pe_end(n)) then
           pos = pos + 1

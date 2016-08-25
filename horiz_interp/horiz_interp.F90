@@ -322,7 +322,7 @@ contains
     logical, intent(in),                 optional :: src_modulo
     logical, intent(in),                 optional :: grid_at_center
     real, intent(in), dimension(:,:),    optional :: mask_in  ! dummy
-    real, intent(out),dimension(:,:),    optional :: mask_out ! dummy
+    real, intent(inout),dimension(:,:),  optional :: mask_out ! dummy
     !-----------------------------------------------------------------------
     real, dimension(:,:), allocatable :: lon_src, lat_src, lon_dst, lat_dst
     real, dimension(:),   allocatable :: lon_src_1d, lat_src_1d, lon_dst_1d, lat_dst_1d
