@@ -685,7 +685,7 @@ MODULE diag_data_mod
 
   INTEGER :: max_field_attributes = 2 !< Maximum number of user definable attributes per field.
   INTEGER :: max_file_attributes = 2 !< Maximum number of user definable global attributes per file.
-  INTEGER :: max_axis_attributes = 2 !< Maximum number of user definable attributes per axis.
+  INTEGER :: max_axis_attributes = 4 !< Maximum number of user definable attributes per axis.
   LOGICAL :: prepend_date = .TRUE.
   ! <!-- netCDF variable -->
   ! <DATA NAME="FILL_VALUE" TYPE="REAL" DEFAULT="NF90_FILL_REAL">
