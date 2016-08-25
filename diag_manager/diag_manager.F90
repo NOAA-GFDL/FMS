@@ -1485,13 +1485,13 @@ CONTAINS
   ! </FUNCTION>
 
   ! <FUNCTION NAME="send_data_3d_r8" INTERFACE="send_data">
-  LOGICAL FUNCTION send_data_3d_r8(diag_field_id, field, time, is_in, js_in, &
-       & mask, rmask, ie_in, je_in, weight, err_msg)
+  LOGICAL FUNCTION send_data_3d_r8(diag_field_id, field, time, is_in, js_in, ks_in, &
+             & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
     REAL(kind=8), INTENT(in), DIMENSION(:,:,:) :: field
     REAL, INTENT(in), OPTIONAL :: weight
     TYPE (time_type), INTENT(in), OPTIONAL :: time
-    INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ie_in, je_in
+    INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
     LOGICAL, INTENT(in), DIMENSION(:,:,:), OPTIONAL :: mask
     REAL, INTENT(in), DIMENSION(:,:,:),OPTIONAL :: rmask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
@@ -1517,11 +1517,11 @@ CONTAINS
 
     IF ( PRESENT(rmask) ) WHERE ( rmask < 0.5 ) mask_out = .FALSE.
     IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
-       send_data_3d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1, mask=mask_out,&
-            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
+       send_data_3d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=ks_in, mask=mask_out,&
+            & ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
     ELSE
-       send_data_3d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1,&
-            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
+       send_data_3d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=ks_in,&
+            & ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
     END IF
   END FUNCTION send_data_3d_r8
   ! </FUNCTION>
