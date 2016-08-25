@@ -487,6 +487,7 @@ MODULE diag_data_mod
      LOGICAL :: static
      LOGICAL :: time_max ! true if the output field is maximum over time interval
      LOGICAL :: time_min ! true if the output field is minimum over time interval
+     LOGICAL :: time_sum ! true if the output field is summed over time interval
      LOGICAL :: time_ops ! true if any of time_min, time_max, time_rms or time_average is true
      INTEGER  :: pack
      INTEGER :: pow_value !< Power value to use for mean_pow(n) calculations
