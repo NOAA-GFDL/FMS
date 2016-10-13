@@ -493,7 +493,10 @@ CONTAINS
   !   <IN NAME="mask_variant" TYPE="LOGICAL, OPTIONAL" />
   !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <IN NAME="do_not_log" TYPE="LOGICAL, OPTIONAL" />
-  !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIONAL" />
+  !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIONAL">
+  !     The interp method to be used when regridding the field in post-processing.
+  !     Valid options are "conserve_order1", "conserve_order2", and "none".
+  !   </IN>
   !   <IN NAME="tile_count" TYPE="INTEGER, OPTIONAL" />
   !   <IN NAME="area" TYPE="INTEGER, OPTIONAL">diag_field_id containing the cell area field</IN>
   !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL">diag_field_id containing the cell volume field</IN>
@@ -679,7 +682,10 @@ CONTAINS
   !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <IN NAME="dynamic" TYPE="LOGICAL, OPTIONAL" DEFAULT=".FALSE."/>
   !   <IN NAME="do_not_log" TYPE="LOGICAL, OPTIONAL" DEFAULT=".TRUE."/>
-  !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIOANL" />
+  !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIOANL">
+  !     The interp method to be used when regridding the field in post-processing.
+  !     Valid options are "conserve_order1", "conserve_order2", and "none".
+  !   </IN>
   !   <IN NAME="tile_count" TYPE="INTEGER, OPTIONAL" />
   !   <IN NAME="area" TYPE="INTEGER, OPTIONAL">Field ID for the area field associated with this field</IN>
   !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL">Field ID for the volume field associated with this field</IN>
@@ -868,15 +874,18 @@ CONTAINS
     END IF
 
     IF ( PRESENT(interp_method) ) THEN
-       IF ( TRIM(interp_method) .NE. 'conserve_order1' .AND. TRIM(interp_method) .NE. 'none' ) THEN
+       IF ( TRIM(interp_method) .NE. 'conserve_order1' .AND.&
+            & TRIM(interp_method) .NE. 'conserve_order2' .AND.&
+            & TRIM(interp_method) .NE. 'none' ) THEN
           ! <ERROR STATUS="FATAL">
           !   when registering module/output_field <module_name>/<field_name> then optional
-          !   argument interp_method = <interp_method>, but it should be "conserve_order1"
+          !   argument interp_method = <interp_method>, but it should be "conserve_order1",
+          !   "conserve_order2", or "none"
           ! </ERROR>
           CALL error_mesg ('diag_manager_mod::register_diag_field',&
                & 'when registering module/output_field '//TRIM(module_name)//'/'//&
                & TRIM(field_name)//', the optional argument interp_method = '//TRIM(interp_method)//&
-               & ', but it should be "conserve_order1"', FATAL)
+               & ', but it should be "conserve_order1", "conserve_order2", or "none"', FATAL)
        END IF
        input_fields(field)%interp_method = TRIM(interp_method)
     ELSE
