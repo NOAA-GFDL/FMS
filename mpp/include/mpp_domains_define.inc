@@ -713,7 +713,14 @@
     !--- the position of current pe is changed due to mosaic, because  pes 
     !--- is only part of the pelist in mosaic (pesall). We assume the pe 
     !--- distribution are contious in mosaic.
-    pos = mpp_pe() - mpp_root_pe()
+    pos = -1
+    do n = 0, size(pesall(:))-1
+       if(pesall(n) == mpp_pe() ) then
+          pos = n
+          exit
+       endif
+    enddo
+    if(pos<0) call  mpp_error(FATAL, 'MPP_DEFINE_DOMAINS2D: mpp_pe() is not in the pesall list')
 
     domain%symmetry = .FALSE.
     if(present(symmetry)) domain%symmetry = symmetry
@@ -7993,34 +8000,49 @@ subroutine check_overlap_pe_order(domain, overlap, name)
   type(domain2d),    intent(in) :: domain
   type(overlapSpec), intent(in) :: overlap
   character(len=*),  intent(in) :: name
-  integer                       :: nlist, m
-  integer                       :: pos1, pos2
-
-  nlist = size(domain%list(:))
+  integer                       :: m
+  integer                       :: pe1, pe2
 
   do m = 2, overlap%nsend
-     pos1 = overlap%send(m-1)%pe - domain%pe
-     if(pos1 .LT.0) pos1 = pos1 + nlist
-     pos2 = overlap%send(m)%pe - domain%pe
-     if(pos2 .LT.0) pos2 = pos2 + nlist
-     if(pos2 .LE. pos1) then
-        print*, trim(name)//" at pe = ", domain%pe, &
-                ": send pe is ", overlap%send(m-1)%pe, overlap%send(m)%pe
+     pe1 = overlap%send(m-1)%pe
+     pe2 = overlap%send(m)%pe
+     !-- when p1 == domain%pe, pe2 could be any value except domain%pe
+     if( pe2 == domain%pe ) then
+        print*, trim(name)//" at pe = ", domain%pe, ": send pe is ", pe1, pe2
         call mpp_error(FATAL, &
-             "mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for send")
+             "mpp_domains_define.inc(check_overlap_pe_order): send pe2 can not equal to domain%pe")
+     else if( (pe1 > domain%pe .AND. pe2 > domain%pe) .OR. (pe1 < domain%pe .AND. pe2 < domain%pe)) then
+        if( pe2 < pe1 ) then
+           print*, trim(name)//" at pe = ", domain%pe, ": send pe is ", pe1, pe2
+           call mpp_error(FATAL, &
+             "mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for send 1")
+        endif
+     else if ( pe2 > domain%pe .AND. pe1 < domain%pe ) then
+        print*, trim(name)//" at pe = ", domain%pe, ": send pe is ", pe1, pe2
+        call mpp_error(FATAL, &
+             "mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for send 2")
      endif
   enddo
 
 
   do m = 2, overlap%nrecv
-     pos1 = overlap%recv(m-1)%pe - domain%pe
-     if(pos1 .LE.0) pos1 = pos1 + nlist
-     pos2 = overlap%recv(m)%pe - domain%pe
-     if(pos2 .LE.0) pos2 = pos2 + nlist
-     if(pos2 .GE. pos1) then
-        print*, trim(name)//" at pe = ", domain%pe, ": recv pe is ", overlap%recv(m-1)%pe, overlap%recv(m)%pe
+     pe1 = overlap%recv(m-1)%pe
+     pe2 = overlap%recv(m)%pe
+     !-- when p1 == domain%pe, pe2 could be any value except domain%pe
+     if( pe2 == domain%pe ) then
+        print*, trim(name)//" at pe = ", domain%pe, ": recv pe is ", pe1, pe2
         call mpp_error(FATAL, &
-             "mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for recv")
+             "mpp_domains_define.inc(check_overlap_pe_order): recv pe2 can not equal to domain%pe")
+     else if( (pe1 > domain%pe .AND. pe2 > domain%pe) .OR. (pe1 < domain%pe .AND. pe2 < domain%pe)) then
+        if( pe2 > pe1 ) then
+           print*, trim(name)//" at pe = ", domain%pe, ": recv pe is ", pe1, pe2
+           call mpp_error(FATAL, &
+             "mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for recv 1")
+        endif
+     else if ( pe2 < domain%pe .AND. pe1 > domain%pe ) then
+        print*, trim(name)//" at pe = ", domain%pe, ": recv pe is ", pe1, pe2
+        call mpp_error(FATAL, &
+             "mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for recv 2")
      endif
   enddo
 
