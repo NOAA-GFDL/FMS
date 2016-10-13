@@ -211,7 +211,7 @@ module time_interp_external_mod
 
     function init_external_field(file,fieldname,format,threading,domain,desired_units,&
          verbose,axis_centers,axis_sizes,override,correct_leap_year_inconsistency,&
-         permit_calendar_conversion,use_comp_domain,ierr, nwindows )
+         permit_calendar_conversion,use_comp_domain,ierr, nwindows, ignore_axis_atts )
       
       character(len=*), intent(in)            :: file,fieldname
       integer, intent(in), optional           :: format, threading
@@ -224,6 +224,8 @@ module time_interp_external_mod
                                                  permit_calendar_conversion,use_comp_domain
       integer,          intent(out), optional :: ierr
       integer,          intent(in),  optional :: nwindows
+      logical, optional                       :: ignore_axis_atts
+      
 
       integer :: init_external_field
       
@@ -239,6 +241,7 @@ module time_interp_external_mod
       logical :: verb, transpose_xy,use_comp_domain1
       real, dimension(:), allocatable :: tstamp, tstart, tend, tavg
       character(len=1) :: cart
+      character(len=1), dimension(4) :: cart_dir      
       character(len=128) :: units, fld_units
       character(len=128) :: name, msg, calendar_type, timebeg, timeend
       integer :: siz(4), siz_in(4), gxsize, gysize,gxsize_max, gysize_max
@@ -246,9 +249,14 @@ module time_interp_external_mod
       integer :: yr, mon, day, hr, minu, sec
       integer :: len, nfile, nfields_orig, nbuf, nx,ny
       integer :: numwindows
+      logical :: ignore_axatts
+      
 
       if (.not. module_initialized) call mpp_error(FATAL,'Must call time_interp_external_init first')
       if(present(ierr)) ierr = SUCCESS
+      ignore_axatts=.false.
+      cart_dir(1)='X';cart_dir(2)='Y';cart_dir(3)='Z';cart_dir(4)='T'
+      if(present(ignore_axis_atts)) ignore_axatts = ignore_axis_atts
       use_comp_domain1 = .false.
       if(PRESENT(use_comp_domain)) use_comp_domain1 = use_comp_domain
       form=MPP_NETCDF
@@ -386,10 +394,12 @@ module time_interp_external_mod
             cart = 'N'
             call get_axis_cart(fld_axes(j), cart)
             call mpp_get_atts(fld_axes(j),len=len)
-            if (cart == 'N') then
+            if (cart == 'N' .and. .not. ignore_axatts) then
                write(msg,'(a,"/",a)')  trim(file),trim(fieldname)
                call mpp_error(FATAL,'file/field '//trim(msg)// &
                     ' couldnt recognize axis atts in time_interp_external')
+            else if (cart == 'N' .and. ignore_axatts) then
+               cart = cart_dir(j)
             endif
             select case (cart)
             case ('X')
