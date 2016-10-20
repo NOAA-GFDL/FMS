@@ -1004,9 +1004,10 @@ type :: atttype
   integer            :: shuffle = 0
   integer            :: deflate = 0
   integer            :: deflate_level = -1
+  logical            :: cf_compliance = .false.
 
   namelist /mpp_io_nml/header_buffer_val, global_field_on_root_pe, io_clocks_on, &
-                       shuffle, deflate_level
+                       shuffle, deflate_level, cf_compliance
 
   real(DOUBLE_KIND), allocatable :: mpp_io_stack(:)
   type(axistype),save            :: default_axis      !provided to users with default components

@@ -468,14 +468,27 @@
       end if
 !write axis attributes
       call mpp_write_meta( unit, axis%id, 'long_name', cval=axis%longname) ; axis%natt = axis%natt + 1
-      call mpp_write_meta( unit, axis%id, 'units',     cval=axis%units) ; axis%natt = axis%natt + 1
+      if (lowercase(trim(axis%units)).ne.'none' .OR. .NOT.cf_compliance) then
+        call mpp_write_meta( unit, axis%id, 'units',     cval=axis%units) ; axis%natt = axis%natt + 1
+      endif
       if( PRESENT(calendar) ) then
-        call mpp_write_meta( unit, axis%id, 'calendar', cval=axis%calendar)
+        if (.NOT.cf_compliance) then
+          call mpp_write_meta( unit, axis%id, 'calendar', cval=axis%calendar)
+        else
+          call mpp_write_meta( unit, axis%id, 'calendar', cval=lowercase(axis%calendar))
+        endif
         axis%natt = axis%natt + 1
       endif
       if( PRESENT(cartesian) ) then
-        call mpp_write_meta( unit, axis%id, 'cartesian_axis', cval=axis%cartesian)
-        axis%natt = axis%natt + 1
+        if (.NOT.cf_compliance) then
+          call mpp_write_meta( unit, axis%id, 'cartesian_axis', cval=axis%cartesian)
+          axis%natt = axis%natt + 1
+        else
+          if (trim(axis%cartesian).ne.'N') then
+            call mpp_write_meta( unit, axis%id, 'axis', cval=axis%cartesian)
+            axis%natt = axis%natt + 1
+          endif
+        endif
       endif
       if( PRESENT(sense) )then
           if( sense.EQ.-1 )then
@@ -554,7 +567,9 @@
       end if
 !write axis attributes
       call mpp_write_meta( unit, axis%id, 'long_name', cval=axis%longname) ; axis%natt = axis%natt + 1
-      call mpp_write_meta( unit, axis%id, 'units',     cval=axis%units) ; axis%natt = axis%natt + 1
+      if (lowercase(trim(axis%units)).ne.'none' .OR. .NOT.cf_compliance) then
+        call mpp_write_meta( unit, axis%id, 'units',     cval=axis%units) ; axis%natt = axis%natt + 1
+      endif
       if( PRESENT(compressed) ) then
         call mpp_write_meta( unit, axis%id, 'compress', cval=axis%compressed)
         axis%natt = axis%natt + 1
@@ -620,7 +635,9 @@
          call mpp_write_meta(unit,axis%id,'long_name',cval=axis%longname); axis%natt=axis%natt+1
       endif
       if(present(units)) then
-         call mpp_write_meta(unit,axis%id,'units',     cval=axis%units); axis%natt=axis%natt+1
+         if (lowercase(trim(axis%units)).ne.'none' .OR. .NOT.cf_compliance) then
+           call mpp_write_meta(unit,axis%id,'units',     cval=axis%units); axis%natt=axis%natt+1
+         endif
       endif
       if( verbose )print '(a,2i6,x,a,2i3)', &
           'MPP_WRITE_META_UNLIMITED: Wrote axis metadata, pe, unit, axis%name, axis%id, axis%did=', &
@@ -778,7 +795,9 @@
       end if
 !write field attributes: these names follow netCDF conventions
       call mpp_write_meta( unit, field%id, 'long_name', cval=field%longname)
-      call mpp_write_meta( unit, field%id, 'units',     cval=field%units)
+      if (lowercase(trim(field%units)).ne.'none' .OR. .NOT.cf_compliance) then
+        call mpp_write_meta( unit, field%id, 'units',     cval=field%units)
+      endif
 !all real attributes must be written as packed
       if( PRESENT(min) .AND. PRESENT(max) )then
           if( field%pack.EQ.1 .OR. field%pack.EQ.2 )then
@@ -1588,7 +1607,9 @@
       end if
 !write field attributes: these names follow netCDF conventions
       call mpp_write_meta( unit, field%id, 'long_name', cval=field%longname )
-      call mpp_write_meta( unit, field%id, 'units',     cval=field%units    )
+      if (lowercase(trim(field%units)).ne.'none' .OR. .NOT.cf_compliance) then
+        call mpp_write_meta( unit, field%id, 'units',     cval=field%units    )
+      endif
 !all real attributes must be written as packed
       if( (field%min.NE.default_field%min) .AND. (field%max.NE.default_field%max) )then
           if( field%pack.EQ.1 .OR. field%pack.EQ.2 )then
