@@ -1000,7 +1000,11 @@
           call netcdf_err( error, mpp_file(unit), string=' Attribute='//name )
           end if
       else if( present(cval) )then
-          error = NF_PUT_ATT_TEXT( mpp_file(unit)%ncid, id, name, len_trim(cval), cval )
+          if (.NOT.cf_compliance .or. trim(name).NE.'calendar') then
+            error = NF_PUT_ATT_TEXT( mpp_file(unit)%ncid, id, name, len_trim(cval), cval )
+          else
+            error = NF_PUT_ATT_TEXT( mpp_file(unit)%ncid, id, name, len_trim(cval), lowercase(cval) )
+          endif
           call netcdf_err( error, mpp_file(unit), string=' Attribute='//name )
       else
           call mpp_error( FATAL, 'WRITE_ATTRIBUTE_NETCDF: one of rval, ival, cval must be present.' )

@@ -1938,8 +1938,7 @@ CONTAINS
             & cart_name, dir, edges, Domain, DATA)
        files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
             & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
-            & TRIM(time_unit_list(files(file)%time_units)),&
-            & TRIM(time_name)//' axis boundaries', pack=pack_size)
+            & time_units, TRIM(time_name)//' axis boundaries', pack=pack_size)
     END IF
     ! Let lower levels know that all meta data has been sent
     CALL done_meta_data(files(file)%file_unit)
