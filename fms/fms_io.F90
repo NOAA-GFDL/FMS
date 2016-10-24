@@ -101,6 +101,7 @@ use mpp_domains_mod, only: mpp_get_domain_components, mpp_get_compute_domain, mp
 use mpp_domains_mod, only: mpp_get_domain_shift, mpp_get_global_domain, mpp_global_field, mpp_domain_is_tile_root_pe
 use mpp_domains_mod, only: mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id
 use mpp_domains_mod, only: mpp_get_pelist, mpp_get_io_domain, mpp_get_domain_npes
+use mpp_domains_mod, only: domainUG, mpp_pass_SG_to_UG, mpp_get_UG_domain_ntiles, mpp_get_UG_domain_tile_id
 use mpp_mod,         only: mpp_error, FATAL, NOTE, WARNING, mpp_pe, mpp_root_pe, mpp_npes, stdlog, stdout
 use mpp_mod,         only: mpp_broadcast, ALL_PES, mpp_chksum, mpp_get_current_pelist, mpp_npes, lowercase
 use mpp_mod,         only: input_nml_file, mpp_get_current_pelist_name, uppercase
@@ -263,6 +264,7 @@ interface read_data
    module procedure read_data_4d_new
    module procedure read_data_3d_new
    module procedure read_data_2d_new
+   module procedure read_data_2d_UG
    module procedure read_data_1d_new
    module procedure read_data_scalar_new
    module procedure read_data_i3d_new
@@ -397,6 +399,12 @@ interface parse_mask_table
   module procedure parse_mask_table_2d
   module procedure parse_mask_table_3d
 end interface
+
+interface get_mosaic_tile_file
+  module procedure get_mosaic_tile_file_sg
+  module procedure get_mosaic_tile_file_ug
+end interface
+
 
 integer :: num_files_r = 0 ! number of currently opened files for reading
 integer :: num_files_w = 0 ! number of currently opened files for writing
@@ -5500,6 +5508,23 @@ subroutine read_data_4d_new(filename,fieldname,data,domain,timelevel,&
 
 end subroutine read_data_4d_new
 
+subroutine read_data_2d_UG(filename,fieldname,data,SG_domain,UG_domain,timelevel)
+  character(len=*), intent(in)                 :: filename, fieldname
+  real, dimension(:), intent(inout)            :: data     !2 dimensional data
+  type(domain2d), intent(in)                   :: SG_domain
+  type(domainUG), intent(in)                   :: UG_domain
+  integer, intent(in) , optional               :: timelevel
+  real, dimension(:,:), allocatable            :: data_2d
+  integer :: is, ie, js, je  
+
+  call mpp_get_compute_domain(SG_domain, is, ie, js, je)
+  allocate(data_2d(is:ie,js:je))
+  call read_data_2d_new(filename,fieldname,data_2d, SG_domain, timelevel)
+  call mpp_pass_SG_to_UG(UG_domain, data_2d, data)
+  deallocate(data_2d)
+
+end subroutine read_data_2d_UG
+
 subroutine read_data_2d_new(filename,fieldname,data,domain,timelevel,&
                             no_domain,position,tile_count)
   character(len=*), intent(in)                 :: filename, fieldname
@@ -7279,7 +7304,7 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
 
 
   !#####################################################################
-  subroutine get_mosaic_tile_file(file_in, file_out, is_no_domain, domain, tile_count)
+  subroutine get_mosaic_tile_file_sg(file_in, file_out, is_no_domain, domain, tile_count)
     character(len=*), intent(in)                   :: file_in
     character(len=*), intent(out)                  :: file_out
     logical,          intent(in)                   :: is_no_domain
@@ -7335,7 +7360,43 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
 
     d_ptr =>NULL()
 
-  end subroutine get_mosaic_tile_file
+  end subroutine get_mosaic_tile_file_sg
+
+  subroutine get_mosaic_tile_file_ug(file_in, file_out, domain)
+    character(len=*), intent(in)                   :: file_in
+    character(len=*), intent(out)                  :: file_out
+    type(domainUG),   intent(in), optional         :: domain
+    character(len=256)                             :: basefile, tilename
+    integer                                        :: lens, ntiles, my_tile_id
+
+    if(index(file_in, '.nc', back=.true.)==0) then
+       basefile = trim(file_in)
+    else
+       lens = len_trim(file_in)
+       if(file_in(lens-2:lens) .NE. '.nc') call mpp_error(FATAL, &
+            'fms_io_mod: .nc should be at the end of file '//trim(file_in))
+       basefile = file_in(1:lens-3)
+    end if
+
+    !--- get the tile name
+    ntiles = 1
+    my_tile_id = 1
+    if(PRESENT(domain))then
+       ntiles = mpp_get_UG_domain_ntiles(domain)
+       my_tile_id = mpp_get_UG_domain_tile_id(domain)
+    endif
+
+    if(ntiles > 1 .or. my_tile_id > 1 )then
+       tilename = 'tile'//string(my_tile_id)
+       if(index(basefile,'.'//trim(tilename),back=.true.) == 0)then
+          basefile = trim(basefile)//'.'//trim(tilename);
+       end if
+    end if
+
+    file_out = trim(basefile)//'.nc'
+
+  end subroutine get_mosaic_tile_file_ug
+
 
   !#############################################################################
   subroutine get_mosaic_tile_grid(grid_file, mosaic_file, domain, tile_count)
