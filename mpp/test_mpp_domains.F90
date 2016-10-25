@@ -29,7 +29,7 @@ program test
   use mpp_domains_mod, only : mpp_do_group_update, mpp_clear_group_update
   use mpp_domains_mod, only : mpp_start_group_update, mpp_complete_group_update
   use mpp_domains_mod, only : WUPDATE, SUPDATE, mpp_get_compute_domains
-  use mpp_domains_mod, only : unstruct_domain, mpp_define_unstruct_domain, mpp_get_UG_domain_tile_id
+  use mpp_domains_mod, only : domainUG, mpp_define_unstruct_domain, mpp_get_UG_domain_tile_id
   use mpp_domains_mod, only : mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
   use mpp_memutils_mod, only : mpp_memuse_begin, mpp_memuse_end
 
@@ -2833,13 +2833,13 @@ end subroutine test_group_update
     character(len=*), intent(in) :: type
 
     type(domain2D) :: SG_domain
-    type(unstruct_domain) :: UG_domain
+    type(domainUG) :: UG_domain
     integer        :: num_contact, ntiles, npes_per_tile
     integer        :: i, j, k, l, n, shift
     integer        :: isc, iec, jsc, jec, isd, ied, jsd, jed
     integer        :: ism, iem, jsm, jem
 
-    integer, allocatable, dimension(:)       :: pe_start, pe_end, npts_tile, grid_index
+    integer, allocatable, dimension(:)       :: pe_start, pe_end, npts_tile, grid_index, ntiles_grid
     integer, allocatable, dimension(:,:)     :: layout2D, global_indices
     real,    allocatable, dimension(:,:)     :: x1, x2
     real,    allocatable, dimension(:,:,:)   :: a1, a2, gdata
@@ -2969,9 +2969,11 @@ end subroutine test_group_update
        allocate(grid_index(ntotal_land))
     endif
     call mpp_broadcast(grid_index, ntotal_land, mpp_root_pe())
-
+    
+    allocate(ntiles_grid(ntotal_land))
+    ntiles_grid = 1
    !--- define the unstructured grid domain
-    call mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, mpp_npes(), 1, grid_index, name="LAND unstruct")
+    call mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, ntiles_grid, mpp_npes(), 1, grid_index, name="LAND unstruct")
     call mpp_get_UG_compute_domain(UG_domain, istart, iend)
 
     !--- figure out lmask according to grid_index
