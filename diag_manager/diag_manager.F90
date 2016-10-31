@@ -215,6 +215,7 @@ MODULE diag_manager_mod
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
+  USE diag_manifest_mod, ONLY: write_diag_manifest
   USE constants_mod, ONLY: SECONDS_PER_DAY
 
 #ifdef use_netCDF
@@ -3500,6 +3501,9 @@ CONTAINS
     ! Now it's time to output static fields
     CALL write_static(file)
 
+    !::sdu:: Write the manifest file here
+    CALL write_diag_manifest(file)
+    
     ! Write out the number of bytes of data saved to this file
     IF ( write_bytes_in_file ) THEN
        CALL mpp_sum (files(file)%bytes_written)
