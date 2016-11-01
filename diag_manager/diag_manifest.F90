@@ -2,17 +2,16 @@ MODULE diag_manifest_mod
 
   USE diag_data_mod, ONLY: files,&  ! TYPE(file_type) --- diagnostic files
        & output_fields,& ! TYPE(output_field_type) --- field  in diagnostic file
-       & input_fields ! TYPE(input_field_type) --- field from diag_table
-  USE mpp_io_mod, ONLY: mpp_open,&
-       & MPP_OVERWR,&
-       & MPP_ASCII,&
-       & MPP_SEQUENTIAL,&
-       & MPP_SINGLE, &
-       & mpp_close
+       & input_fields,& ! TYPE(input_field_type) --- field from diag_table
+       & prepend_date,& ! LOGICAL --- indicates if the date should be prepended to files
+       & diag_init_time ! TYPE(time_type) -- model time when diag_manager initialized
   USE mpp_mod, ONLY: mpp_pe,&
-       & mpp_root_pe
+       & mpp_root_pe,&
+       & get_unit ! Get a good file unit value
   USE fms_mod, ONLY: error_mesg,&
        & WARNING
+  USE fms_io_mod, ONLY: get_filename_appendix
+  USE time_manager_mod, ONLY: get_date
 
   IMPLICIT NONE
 
@@ -52,20 +51,38 @@ CONTAINS
 
     INTEGER :: file_unit, ios
     INTEGER :: num_static, num_temporal
+    INTEGER :: year, month, day, hour, minute, second
     TYPE(manifest_fields_type) :: static_fields
     TYPE(manifest_fields_type) :: temporal_fields
-
     CHARACTER(len=128) :: maniFileName
+    CHARACTER(len=32) :: filename_appendix !< to hold file name appendix from fms_io
+    CHARACTER(len=24) :: start_date !< String to hold init time of diag_manager
+    
+    ! Used to determine if the ensemble number.  filename_appendix will contain an
+    ! the string ens_ if running with multiple ensembles.  If running only one
+    ! ensemble, then filename_appendix will not contain that string.
+    CALL get_filename_appendix(filename_appendix)
 
-    ! This entire routine should only be called by the rootPE
-    IF ( mpp_pe() .EQ. mpp_root_pe() ) THEN
+
+    ! This entire routine should only be called by the rootPE, and only from ens_01
+    ! If running a single ensemble, filename_appendix will not contain the string ens_
+!$OMP MASTER
+    IF ( mpp_pe() .EQ. mpp_root_pe() .AND.&
+         & (INDEX(filename_appendix,'ens_').EQ.0 .OR. INDEX(filename_appendix,'ens_01').GT.0) ) THEN
        ! Get the file name.
        !
        ! May need to worry about tile count files(file)%tile_count may have that
        ! information Also need to verify ensembles.  May be better to not use
        ! tile/ensemble as all should have the same data.
        maniFileName = TRIM(files(file)%name)//".mfst"
+       ! prepend the file start date if prepend_date == .TRUE.
+       IF ( prepend_date ) THEN
+          call get_date(diag_init_time, year, month, day, hour, minute, second)
+          write (start_date, '(1I20.4, 2I2.2)') year, month, day
 
+          maniFileName = TRIM(adjustl(start_date))//'.'//TRIM(maniFileName)
+       END IF
+       
        static_fields = get_diagnostic_fields(file, static=.TRUE.)
        temporal_fields = get_diagnostic_fields(file, static=.FALSE.)
 
@@ -75,6 +92,8 @@ CONTAINS
        
        ! Open the file for writing, but only if we have something to write
        IF ( num_static + num_temporal .GT. 0 ) THEN
+          ! Get a free Fortran file unit number
+          file_unit = get_unit()
           ! Not using mpp_open, as this routine forces to only write from the root
           ! PE, and each root PE should have its own set of files to write.
           OPEN(UNIT=file_unit, FILE=TRIM(maniFileName), ACCESS='SEQUENTIAL', FORM='FORMATTED',&
@@ -98,6 +117,7 @@ CONTAINS
           END IF
        END IF
     END IF
+!$OMP END MASTER 
   END SUBROUTINE write_diag_manifest
 
   ! PRIVATE routines
