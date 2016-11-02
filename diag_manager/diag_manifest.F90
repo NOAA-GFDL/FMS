@@ -1,3 +1,22 @@
+!> \author Seth Underwood <Seth.Underwood@noaa.gov>
+!!
+!! \brief diag_manifest_mod writes out a manifest file for each diagnostic output
+!!        file defined in the diag_table file.
+!!
+!!  diag_manifest_mod writes a JSON formatted manifest file for each diagnostic
+!!  file defined in the diag_table file.  The manifest file contains basic
+!!  information about each field.  Although, this manifest file is for use in the
+!!  future Chaco release of the FMS Runtime Environment (FRE), others may find the
+!!  information in this file useful.
+!!
+!!  Although some FMS components write diagnostic files separated by tiles
+!!  (Cubed-sphere atmosphere), and some models are run with multiple ensembles the
+!!  only one manifest file will be written for each.  That is, although an
+!!  atmos_cubed_sphere component may write `atmos_month.tile[1-6].nc`, only one
+!!  manifest file `atmos_month.mfst` will be written.  This was done as
+!!  diag_manager_mod does not allow a tile or ensemble to write out a different
+!!  set of diagnostics.  All tiles, and ensemble members read the same diag_table
+!!  file.
 MODULE diag_manifest_mod
 
   USE diag_data_mod, ONLY: files,&  ! TYPE(file_type) --- diagnostic files
@@ -15,11 +34,19 @@ MODULE diag_manifest_mod
 
   IMPLICIT NONE
 
+  !> \brief Assignment operator for TYPE(manifest_field_type)
+  !!
+  !! Allow the TYPE(manifest_field_type) to be assigned properly.  In most cases,
+  !! this shouldn't be needed, but it is added here just in case some compiler
+  !! just doesn't want to do the correct thing.
   INTERFACE ASSIGNMENT(=)
      MODULE PROCEDURE manifest_field_type_assign
   END INTERFACE ASSIGNMENT(=)
   
-  ! Some type to hold data for manifest
+  !> \brief A type to hold the data required for the manifest file.
+  !!
+  !! The data collected in this type is directly from the other types used in
+  !! diag_manager, namely: output_fields and input_fields.
   TYPE manifest_field_type
      CHARACTER(len=128) :: output_name !< output field name in diagnostic file (from diag_table)
      CHARACTER(len=128) :: module_name !< model module that has this field
@@ -29,15 +56,20 @@ MODULE diag_manifest_mod
      INTEGER :: nDim !< number of dimensions
   END TYPE manifest_field_type
 
+  !> \brief A type to hold all the fields by dimension size
+  !!
+  !! The fields in the manifest file are separated by the number of axis
+  !! dimensions (minus the time dimension).  This type is to facilitate this
+  !! separation.
   TYPE manifest_fields_type
-     INTEGER :: num_1d = 0
-     INTEGER :: num_2d = 0
-     INTEGER :: num_3d = 0
-     INTEGER :: num_4d = 0
-     TYPE(manifest_field_type), DIMENSION(:), ALLOCATABLE :: fields_1d
-     TYPE(manifest_field_type), DIMENSION(:), ALLOCATABLE :: fields_2d
-     TYPE(manifest_field_type), DIMENSION(:), ALLOCATABLE :: fields_3d
-     TYPE(manifest_field_type), DIMENSION(:), ALLOCATABLE :: fields_4d
+     INTEGER :: num_1d = 0 !< Number of 1D fields in fields_1d
+     INTEGER :: num_2d = 0 !< Number of 2D fields in fields_2d
+     INTEGER :: num_3d = 0 !< Number of 3D fields in fields_3d
+     INTEGER :: num_4d = 0 !< Number of 4D fields in fields_4d
+     TYPE(manifest_field_type), DIMENSION(:), ALLOCATABLE :: fields_1d !< Array of 1D fields
+     TYPE(manifest_field_type), DIMENSION(:), ALLOCATABLE :: fields_2d !< Array of 2D fields
+     TYPE(manifest_field_type), DIMENSION(:), ALLOCATABLE :: fields_3d !< Array of 3D fields
+     TYPE(manifest_field_type), DIMENSION(:), ALLOCATABLE :: fields_4d !< Array of 4D fields
   END TYPE manifest_fields_type
   
   PRIVATE
@@ -46,15 +78,19 @@ MODULE diag_manifest_mod
 CONTAINS
 
   ! PUBLIC routines
+  !> \brief Public routine that will start the writing of the manifest file.
+  !!
+  !! This routine is written in such a way that only the root MPI process and the
+  !! master OpenMP thread will attempt to write the file.
   SUBROUTINE write_diag_manifest(file)
     INTEGER, INTENT(in) :: file
 
-    INTEGER :: file_unit, ios
-    INTEGER :: num_static, num_temporal
-    INTEGER :: year, month, day, hour, minute, second
-    TYPE(manifest_fields_type) :: static_fields
-    TYPE(manifest_fields_type) :: temporal_fields
-    CHARACTER(len=128) :: maniFileName
+    INTEGER :: file_unit, ios !< Fortran file unit, and status of file open
+    INTEGER :: num_static, num_temporal !< Used to know if any fields are recorded
+    INTEGER :: year, month, day, hour, minute, second !< to hold data on current model time.
+    TYPE(manifest_fields_type) :: static_fields !< Type to hold all static fields
+    TYPE(manifest_fields_type) :: temporal_fields !< Type to hold all non-static fields
+    CHARACTER(len=128) :: maniFileName !< Manifest file name
     CHARACTER(len=32) :: filename_appendix !< to hold file name appendix from fms_io
     CHARACTER(len=24) :: start_date !< String to hold init time of diag_manager
     
@@ -62,7 +98,6 @@ CONTAINS
     ! the string ens_ if running with multiple ensembles.  If running only one
     ! ensemble, then filename_appendix will not contain that string.
     CALL get_filename_appendix(filename_appendix)
-
 
     ! This entire routine should only be called by the rootPE, and only from ens_01
     ! If running a single ensemble, filename_appendix will not contain the string ens_
@@ -121,9 +156,12 @@ CONTAINS
   END SUBROUTINE write_diag_manifest
 
   ! PRIVATE routines
+  !> \brief Allow ASSIGNMENT(=) operator to work on TYPE(manifest_field_type)
+  !!
+  !! Simply assign the type on the rhs to the type on the lhs of the `=`.
   SUBROUTINE manifest_field_type_assign(lhs,rhs)
-    TYPE(manifest_field_type), INTENT(out) :: lhs
-    TYPE(manifest_field_type), INTENT(in) :: rhs
+    TYPE(manifest_field_type), INTENT(out) :: lhs !< lhs, target
+    TYPE(manifest_field_type), INTENT(in) :: rhs !< rhs, source
 
     lhs%output_name = rhs%output_name
     lhs%module_name = rhs%module_name
@@ -133,9 +171,10 @@ CONTAINS
     lhs%nDim = rhs%nDim
   END SUBROUTINE manifest_field_type_assign
 
+  !> \brief Write the JSON format of the field object.
   SUBROUTINE write_fields(unit, fields)
-    INTEGER, INTENT(in) :: unit
-    TYPE(manifest_field_type), DIMENSION(:), INTENT(in) :: fields
+    INTEGER, INTENT(in) :: unit !< File unit number.  File should already be opened.
+    TYPE(manifest_field_type), DIMENSION(:), INTENT(in) :: fields !< Array of fields to write
 
     INTEGER :: i
     CHARACTER(LEN=*), PARAMETER :: FMT_FLD = "(12X,'""',A,'""',': {')"
@@ -158,10 +197,12 @@ CONTAINS
     END DO
   END SUBROUTINE write_fields
 
+  !> \brief Write the JSON format of the static/temporal object.
   SUBROUTINE write_manifest(unit, fields, static)
-    INTEGER, INTENT(in) :: unit
-    TYPE(manifest_fields_type), INTENT(in) :: fields
-    LOGICAL, INTENT(in) :: static
+    INTEGER, INTENT(in) :: unit !< File unit number.  File should already be opened.
+    TYPE(manifest_fields_type), INTENT(in) :: fields !< All fields to be written to manifest file
+    LOGICAL, INTENT(in) :: static !< Indicate if the fields in the fields array
+                                  !! are static or non-static fields
 
     CHARACTER(len=*), PARAMETER :: FMT_DIM = "(8X,'""',A2,'""',': {')"
     CHARACTER(len=*), PARAMETER :: FMT_STA = "(4X,'""',A6,'""',': {')"
@@ -201,7 +242,9 @@ CONTAINS
        WRITE (unit,'(4X,A1)') '}'
     END IF
   END SUBROUTINE write_manifest
-  
+
+  !> \brief Extract the diagnostic fields, and collect the information about the
+  !! fields.
   TYPE(manifest_fields_type) FUNCTION get_diagnostic_fields(file, static)
     INTEGER, INTENT(in) :: file !< diagnostic file, as defined by diag_manager_mod
     LOGICAL, INTENT(in) :: static !< Indicates if looking for static or non-static
