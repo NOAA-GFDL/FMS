@@ -205,9 +205,9 @@ CONTAINS
   TYPE(manifest_fields_type) FUNCTION get_diagnostic_fields(file, static)
     INTEGER, INTENT(in) :: file !< diagnostic file, as defined by diag_manager_mod
     LOGICAL, INTENT(in) :: static !< Indicates if looking for static or non-static
-                                  ! fields.  .TRUE. indicates looking only for
-                                  ! static files.  .FALSE. indicates looking only
-                                  ! for non-static fields.
+                                  !! fields.  .TRUE. indicates looking only for
+                                  !! static files.  .FALSE. indicates looking only
+                                  !! for non-static fields.
     
     INTEGER :: i, j, o
     INTEGER :: istat
