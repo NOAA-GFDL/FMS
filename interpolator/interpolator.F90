@@ -1065,7 +1065,13 @@ endif
 
 module_is_initialized = .true.
 
+!---------------------------------------------------------------------
+!    write version number and namelist to logfile.
+!---------------------------------------------------------------------
 call write_version_number("INTERPOLATOR_MOD", version)
+
+      if (mpp_pe() == mpp_root_pe() ) &
+                          write (stdlog(), nml=interpolator_nml)
 
 end subroutine interpolator_init
 
