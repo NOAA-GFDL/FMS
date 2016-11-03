@@ -155,10 +155,29 @@ CONTAINS
           END IF
        END IF
     END IF
-!$OMP END MASTER 
+!$OMP END MASTER
+    ! Free up memory used
+    CALL destroy_manifest_fields_type(static_fields)
+    CALL destroy_manifest_fields_type(temporal_fields)
   END SUBROUTINE write_diag_manifest
 
   ! PRIVATE routines
+  !> \brief De-allocate arrays used in the manifest_fields_type
+  SUBROUTINE destroy_manifest_fields_type(manifest_fields)
+    TYPE(manifest_fields_type), INTENT(inout) :: manifest_fields
+
+    ! Set all num_?d to 0
+    manifest_fields%num_1d = 0
+    manifest_fields%num_2d = 0
+    manifest_fields%num_3d = 0
+    manifest_fields%num_4d = 0
+    ! De-allocate the arrays
+    IF ( ALLOCATED(manifest_fields%fields_1d) ) DEALLOCATE(manifest_fields%fields_1d)
+    IF ( ALLOCATED(manifest_fields%fields_2d) ) DEALLOCATE(manifest_fields%fields_2d)
+    IF ( ALLOCATED(manifest_fields%fields_3d) ) DEALLOCATE(manifest_fields%fields_3d)
+    IF ( ALLOCATED(manifest_fields%fields_4d) ) DEALLOCATE(manifest_fields%fields_4d)
+  END SUBROUTINE destroy_manifest_fields_type
+
   !> \brief Allow ASSIGNMENT(=) operator to work on TYPE(manifest_field_type)
   !!
   !! Simply assign the type on the rhs to the type on the lhs of the `=`.
