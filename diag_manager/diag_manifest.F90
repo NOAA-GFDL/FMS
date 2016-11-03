@@ -26,7 +26,9 @@ MODULE diag_manifest_mod
        & diag_init_time ! TYPE(time_type) -- model time when diag_manager initialized
   USE mpp_mod, ONLY: mpp_pe,&
        & mpp_root_pe,&
-       & get_unit ! Get a good file unit value
+       & get_unit,& ! Get a good file unit value
+       & mpp_npes,& ! Get number of PEs in pelist
+       & mpp_gather
   USE fms_mod, ONLY: error_mesg,&
        & WARNING
   USE fms_io_mod, ONLY: get_filename_appendix
@@ -99,32 +101,33 @@ CONTAINS
     ! ensemble, then filename_appendix will not contain that string.
     CALL get_filename_appendix(filename_appendix)
 
-    ! This entire routine should only be called by the rootPE, and only from ens_01
-    ! If running a single ensemble, filename_appendix will not contain the string ens_
+    ! Get the file name.  Do not need to worry about tiles or ensembles.  Only
+    ! writing one manifest file per history file defined in diag_table.
+    maniFileName = TRIM(files(file)%name)//".mfst"
+    ! prepend the file start date if prepend_date == .TRUE.
+    IF ( prepend_date ) THEN
+       call get_date(diag_init_time, year, month, day, hour, minute, second)
+       write (start_date, '(1I20.4, 2I2.2)') year, month, day
+       
+       maniFileName = TRIM(adjustl(start_date))//'.'//TRIM(maniFileName)
+    END IF
+
+    ! Extract static and non-static fields data
+    static_fields = get_diagnostic_fields(file, static=.TRUE.)
+    temporal_fields = get_diagnostic_fields(file, static=.FALSE.)
+    
+    ! Get the number of fields to write to manifest file
+    ! Need to gather data from all PEs for the component/pelist
+    num_static = static_fields%num_1d + static_fields%num_2d + static_fields%num_3d + static_fields%num_4d
+    num_temporal = temporal_fields%num_1d + temporal_fields%num_2d + temporal_fields%num_3d + temporal_fields%num_4d
+       
+    ! This bulk of this routine should only be called by the rootPE, and only from
+    ! ens_01 If running a single ensemble, filename_appendix will not contain the
+    ! string ens_
+
 !$OMP MASTER
     IF ( mpp_pe() .EQ. mpp_root_pe() .AND.&
          & (INDEX(filename_appendix,'ens_').EQ.0 .OR. INDEX(filename_appendix,'ens_01').GT.0) ) THEN
-       ! Get the file name.
-       !
-       ! May need to worry about tile count files(file)%tile_count may have that
-       ! information Also need to verify ensembles.  May be better to not use
-       ! tile/ensemble as all should have the same data.
-       maniFileName = TRIM(files(file)%name)//".mfst"
-       ! prepend the file start date if prepend_date == .TRUE.
-       IF ( prepend_date ) THEN
-          call get_date(diag_init_time, year, month, day, hour, minute, second)
-          write (start_date, '(1I20.4, 2I2.2)') year, month, day
-
-          maniFileName = TRIM(adjustl(start_date))//'.'//TRIM(maniFileName)
-       END IF
-       
-       static_fields = get_diagnostic_fields(file, static=.TRUE.)
-       temporal_fields = get_diagnostic_fields(file, static=.FALSE.)
-
-       ! Get the number of fields to write to manifest file
-       num_static = static_fields%num_1d + static_fields%num_2d + static_fields%num_3d + static_fields%num_4d
-       num_temporal = temporal_fields%num_1d + temporal_fields%num_2d + temporal_fields%num_3d + temporal_fields%num_4d
-       
        ! Open the file for writing, but only if we have something to write
        IF ( num_static + num_temporal .GT. 0 ) THEN
           ! Get a free Fortran file unit number
@@ -256,101 +259,121 @@ CONTAINS
     INTEGER :: istat
     TYPE(manifest_field_type) :: maniField
     CHARACTER(len=128) :: maniFileName
+    LOGICAL, DIMENSION(:), ALLOCATABLE :: data_written !< Array to indicate if
+                                                       !! field was written to file
 
+    ! manifest file name
     maniFileName = TRIM(files(file)%name)//".mfst"
-    
-    DO j=1, files(file)%num_fields
-       o = files(file)%fields(j) ! Position of this field in output_fields array
-       IF ( output_fields(o)%written_once .AND. (static.EQV.output_fields(o)%static) ) THEN
-          ! output field was written to file, and is static/non-static, whichever was requested
-          ! Gather the information to record it.
-          i = output_fields(o)%input_field ! Position of the input fields associated with this output_field
-             
-          ! this is information I currently know we want to save, and where it is:
-          maniField%output_name = output_fields(o)%output_name
-          maniField%module_name = input_fields(i)%module_name
-          maniField%input_name = input_fields(i)%field_name
-          IF ( output_fields(o)%static ) THEN
-             ! Static fields MUST have a time_method of .false.
-             maniField%time_method = ".false."
-          ELSE
-             maniField%time_method = output_fields(o)%time_method
-          END IF
-          maniField%packing = output_fields(o)%pack
-          maniField%nDim = output_fields(o)%num_axes
 
-          ! Now that we have the information about the field, add to type based on dimensions of field
-          SELECT CASE (maniField%nDim)
-          CASE (1)
-             get_diagnostic_fields%num_1d = get_diagnostic_fields%num_1d + 1
-             IF ( .NOT.ALLOCATED(get_diagnostic_fields%fields_1d) ) THEN
-                ! Allocate to the max number of fields
-                ALLOCATE(get_diagnostic_fields%fields_1d(files(file)%num_fields), STAT=istat)
-                IF ( istat.NE.0 ) THEN
-                   CALL error_mesg('diag_manifest_mod::get_diagnostic_fields',&
-                        & 'Unable to allocate 1d array for manifest file "'//TRIM(maniFileName)//'".  Manifest incomplete.',&
-                        & WARNING)
-                   ! Resetting count to 0 to keep from writing out
-                   get_diagnostic_fields%num_1d = 0
-                   CYCLE
+    ALLOCATE(data_written(mpp_npes()), STAT=istat)
+    IF ( istat.NE.0 ) THEN
+       CALL error_mesg('diag_manifest_mod::get_diagnostic_fields',&
+            & 'Unable to allocate array to determine if field written to file.  No manifest file will be created.',&
+            & WARNING)
+       ! Set all num_?d to 0, to verify they are set
+       get_diagnostic_fields%num_1d = 0
+       get_diagnostic_fields%num_2d = 0
+       get_diagnostic_fields%num_3d = 0
+       get_diagnostic_fields%num_4d = 0
+    ELSE
+       DO j=1, files(file)%num_fields
+          o = files(file)%fields(j) ! Position of this field in output_fields array
+          ! Determine if any PE has written file
+          CALL mpp_gather((/output_fields(o)%written_once/), data_written)
+          
+          IF ( ANY(data_written) .AND. (static.EQV.output_fields(o)%static) ) THEN
+             ! output field was written to file, and is static/non-static, whichever was requested
+             ! Gather the information to record it.
+             i = output_fields(o)%input_field ! Position of the input fields associated with this output_field
+             
+             ! this is information I currently know we want to save, and where it is:
+             maniField%output_name = output_fields(o)%output_name
+             maniField%module_name = input_fields(i)%module_name
+             maniField%input_name = input_fields(i)%field_name
+             IF ( output_fields(o)%static ) THEN
+                ! Static fields MUST have a time_method of .false.
+                maniField%time_method = ".false."
+             ELSE
+                maniField%time_method = output_fields(o)%time_method
+             END IF
+             maniField%packing = output_fields(o)%pack
+             maniField%nDim = output_fields(o)%num_axes
+
+             ! Now that we have the information about the field, add to type based on dimensions of field
+             SELECT CASE (maniField%nDim)
+             CASE (1)
+                get_diagnostic_fields%num_1d = get_diagnostic_fields%num_1d + 1
+                IF ( .NOT.ALLOCATED(get_diagnostic_fields%fields_1d) ) THEN
+                   ! Allocate to the max number of fields
+                   ALLOCATE(get_diagnostic_fields%fields_1d(files(file)%num_fields), STAT=istat)
+                   IF ( istat.NE.0 ) THEN
+                      CALL error_mesg('diag_manifest_mod::get_diagnostic_fields',&
+                           & 'Unable to allocate 1d array for manifest file "'//TRIM(maniFileName)//'".  Manifest incomplete.',&
+                           & WARNING)
+                      ! Resetting count to 0 to keep from writing out
+                      get_diagnostic_fields%num_1d = 0
+                      CYCLE
+                   END IF
                 END IF
-             END IF
-             IF ( ALLOCATED(get_diagnostic_fields%fields_1d) ) THEN
-                get_diagnostic_fields%fields_1d(get_diagnostic_fields%num_1d) = maniField
-             END IF
-          CASE (2)
-             get_diagnostic_fields%num_2d = get_diagnostic_fields%num_2d + 1
-             IF ( .NOT.ALLOCATED(get_diagnostic_fields%fields_2d) ) THEN
-                ! Allocate to the max number of fields
-                ALLOCATE(get_diagnostic_fields%fields_2d(files(file)%num_fields), STAT=istat)
-                IF ( istat.NE.0 ) THEN
-                   CALL error_mesg('diag_manifest_mod::get_diagnostic_fields',&
-                        & 'Unable to allocate 2d array for manifest file "'//TRIM(maniFileName)//'".  Manifest incomplete.',&
-                        & WARNING)
-                   ! Resetting count to 0 to keep from writing out
-                   get_diagnostic_fields%num_2d = 0
-                   CYCLE
+                IF ( ALLOCATED(get_diagnostic_fields%fields_1d) ) THEN
+                   get_diagnostic_fields%fields_1d(get_diagnostic_fields%num_1d) = maniField
                 END IF
-             END IF
-             IF ( ALLOCATED(get_diagnostic_fields%fields_2d) ) THEN
-                get_diagnostic_fields%fields_2d(get_diagnostic_fields%num_2d) = maniField
-             END IF
-          CASE (3)
-             get_diagnostic_fields%num_3d = get_diagnostic_fields%num_3d + 1
-             IF ( .NOT.ALLOCATED(get_diagnostic_fields%fields_3d) ) THEN
-                ! Allocate to the max number of fields
-                ALLOCATE(get_diagnostic_fields%fields_3d(files(file)%num_fields), STAT=istat)
-                IF ( istat.NE.0 ) THEN
-                   CALL error_mesg('diag_manifest_mod::get_diagnostic_fields',&
-                        & 'Unable to allocate 3d array for manifest file "'//TRIM(maniFileName)//'".  Manifest incomplete.',&
-                        & WARNING)
-                   ! Resetting count to 0 to keep from writing out
-                   get_diagnostic_fields%num_3d = 0
-                   CYCLE
+             CASE (2)
+                get_diagnostic_fields%num_2d = get_diagnostic_fields%num_2d + 1
+                IF ( .NOT.ALLOCATED(get_diagnostic_fields%fields_2d) ) THEN
+                   ! Allocate to the max number of fields
+                   ALLOCATE(get_diagnostic_fields%fields_2d(files(file)%num_fields), STAT=istat)
+                   IF ( istat.NE.0 ) THEN
+                      CALL error_mesg('diag_manifest_mod::get_diagnostic_fields',&
+                           & 'Unable to allocate 2d array for manifest file "'//TRIM(maniFileName)//'".  Manifest incomplete.',&
+                           & WARNING)
+                      ! Resetting count to 0 to keep from writing out
+                      get_diagnostic_fields%num_2d = 0
+                      CYCLE
+                   END IF
                 END IF
-             END IF
-             IF ( ALLOCATED(get_diagnostic_fields%fields_3d) ) THEN
-                get_diagnostic_fields%fields_3d(get_diagnostic_fields%num_3d) = maniField
-             END IF
-          CASE (4)
-             get_diagnostic_fields%num_4d = get_diagnostic_fields%num_4d + 1
-             IF ( .NOT.ALLOCATED(get_diagnostic_fields%fields_4d) ) THEN
-                ! Allocate to the max number of fields
-                ALLOCATE(get_diagnostic_fields%fields_4d(files(file)%num_fields), STAT=istat)
-                IF ( istat.NE.0 ) THEN
-                   CALL error_mesg('diag_manifest_mod::get_diagnostic_fields',&
-                        & 'Unable to allocate 4d array for manifest file "'//TRIM(maniFileName)//'".  Manifest incomplete.',&
-                        & WARNING)
-                   ! Resetting count to 0 to keep from writing out
-                   get_diagnostic_fields%num_4d = 0
-                   CYCLE
+                IF ( ALLOCATED(get_diagnostic_fields%fields_2d) ) THEN
+                   get_diagnostic_fields%fields_2d(get_diagnostic_fields%num_2d) = maniField
                 END IF
-             END IF
-             IF ( ALLOCATED(get_diagnostic_fields%fields_4d) ) THEN
-                get_diagnostic_fields%fields_4d(get_diagnostic_fields%num_4d) = maniField
-             END IF
-          END SELECT
-       END IF
-    END DO
+             CASE (3)
+                get_diagnostic_fields%num_3d = get_diagnostic_fields%num_3d + 1
+                IF ( .NOT.ALLOCATED(get_diagnostic_fields%fields_3d) ) THEN
+                   ! Allocate to the max number of fields
+                   ALLOCATE(get_diagnostic_fields%fields_3d(files(file)%num_fields), STAT=istat)
+                   IF ( istat.NE.0 ) THEN
+                      CALL error_mesg('diag_manifest_mod::get_diagnostic_fields',&
+                           & 'Unable to allocate 3d array for manifest file "'//TRIM(maniFileName)//'".  Manifest incomplete.',&
+                           & WARNING)
+                      ! Resetting count to 0 to keep from writing out
+                      get_diagnostic_fields%num_3d = 0
+                      CYCLE
+                   END IF
+                END IF
+                IF ( ALLOCATED(get_diagnostic_fields%fields_3d) ) THEN
+                   get_diagnostic_fields%fields_3d(get_diagnostic_fields%num_3d) = maniField
+                END IF
+             CASE (4)
+                get_diagnostic_fields%num_4d = get_diagnostic_fields%num_4d + 1
+                IF ( .NOT.ALLOCATED(get_diagnostic_fields%fields_4d) ) THEN
+                   ! Allocate to the max number of fields
+                   ALLOCATE(get_diagnostic_fields%fields_4d(files(file)%num_fields), STAT=istat)
+                   IF ( istat.NE.0 ) THEN
+                      CALL error_mesg('diag_manifest_mod::get_diagnostic_fields',&
+                           & 'Unable to allocate 4d array for manifest file "'//TRIM(maniFileName)//'".  Manifest incomplete.',&
+                           & WARNING)
+                      ! Resetting count to 0 to keep from writing out
+                      get_diagnostic_fields%num_4d = 0
+                      CYCLE
+                   END IF
+                END IF
+                IF ( ALLOCATED(get_diagnostic_fields%fields_4d) ) THEN
+                   get_diagnostic_fields%fields_4d(get_diagnostic_fields%num_4d) = maniField
+                END IF
+             END SELECT
+          END IF
+       END DO
+    END IF
+    ! Clean up allocated arrays
+    IF (ALLOCATED(data_written)) DEALLOCATE(data_written)
   END FUNCTION get_diagnostic_fields
 END MODULE diag_manifest_mod
