@@ -1873,7 +1873,7 @@ enddo
 
 if (found) then
   if (hinterp_id(j) > 0 ) then
-       result = send_data(hinterp_id(j),col_data(:,:,i),Time)
+       result = send_data(hinterp_id(j),col_data(:,:,i),Time,is_in=istart,js_in=jstart)
   endif
 endif
 
@@ -2280,7 +2280,7 @@ enddo
 
 if (found) then
   if (hinterp_id(j) > 0 ) then
-       result = send_data(hinterp_id(j),col_data,Time)
+       result = send_data(hinterp_id(j),col_data,Time,is_in=istart,js_in=jstart)
   endif
 endif
 
@@ -2678,7 +2678,7 @@ enddo
 
 if (found) then
   if (hinterp_id(j) > 0 ) then
-       result = send_data(hinterp_id(j),hinterp_data,Time)
+       result = send_data(hinterp_id(j),hinterp_data,Time,is_in=istart,js_in=jstart)
   endif
 endif
 

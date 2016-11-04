@@ -1437,7 +1437,7 @@ end function rarray_to_char
     integer, intent(in), optional,   dimension(:) :: PELIST
 
     ! Include variable "version" to be written to log file.
-#include<file_version.h>    ! version and tagging information
+#include<file_version.h>
 
     character(len=5) :: text
     logical :: file_exist

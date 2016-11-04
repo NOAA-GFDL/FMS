@@ -194,7 +194,8 @@ MODULE diag_manager_mod
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
        & file_exist, fms_error_handler, check_nml_error, get_mosaic_tile_file
   USE fms_io_mod, ONLY: get_instance_filename
-  USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, get_axis_num, get_domain2d, get_tile_count
+  USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, get_axis_num, get_domain2d, get_tile_count,&
+       & diag_axis_add_attribute
   USE diag_util_mod, ONLY: get_subfield_size, log_diag_field_info, update_bounds,&
        & check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
        & diag_time_inc, find_input_field, init_input_field, init_output_field,&
@@ -210,7 +211,7 @@ MODULE diag_manager_mod
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, conserve_water, region_out_use_alt_value, max_field_attributes, output_field_type,&
-       & max_file_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init
+       & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
@@ -219,6 +220,7 @@ MODULE diag_manager_mod
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
 #endif
+
   IMPLICIT NONE
 
   PRIVATE
@@ -227,7 +229,7 @@ MODULE diag_manager_mod
        & need_data, average_tiles, DIAG_ALL, DIAG_OCEAN, DIAG_OTHER, get_date_dif, DIAG_SECONDS,&
        & DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, get_diag_global_att,&
        & set_diag_global_att, diag_field_add_attribute, diag_field_add_cell_measures,&
-       & get_diag_field_id
+       & get_diag_field_id, diag_axis_add_attribute
   ! Public interfaces from diag_grid_mod
   PUBLIC :: diag_grid_init, diag_grid_end
   PUBLIC :: diag_manager_set_time_end, diag_send_complete
@@ -238,7 +240,7 @@ MODULE diag_manager_mod
   ! version number of this module
   ! Include variable "version" to be written to log file.
 #include<file_version.h>
-  
+
   type(time_type) :: Time_end
 
   ! <INTERFACE NAME="send_data">
@@ -1268,13 +1270,13 @@ CONTAINS
     ELSE
        asso_file_name = TRIM(files(cm_file_num)%name)
     END IF
-    
+
     ! Add the ensemble number string into the file name
     ! As frepp does not have native support for multiple ensemble runs
     ! this will not be done.  However, the code is left here for the time
     ! frepp does.
     !CALL get_instance_filename(TRIM(asso_file_name), asso_file_name)
-    
+
     ! Get the file name with the tile number (if required)
     num_axes = output_fields(cm_ind)%num_axes
     CALL get_mosaic_tile_file(TRIM(asso_file_name), asso_file_name,&
@@ -1523,7 +1525,7 @@ CONTAINS
     END IF
   END FUNCTION send_data_3d_r8
   ! </FUNCTION>
-#endif OVERLOAD_R4
+#endif
 
   ! <FUNCTION NAME="send_data_3d" INTERFACE="send_data">
   !   <IN NAME="diag_field_id" TYPE="INTEGER"> </IN>
@@ -3221,7 +3223,7 @@ CONTAINS
   END SUBROUTINE diag_manager_set_time_end
 
   !-----------------------------------------------------------------------
-  SUBROUTINE diag_send_complete_extra(time) 
+  SUBROUTINE diag_send_complete_extra(time)
     TYPE (time_type), INTENT(in) :: time
     !--- local variables
     integer :: file, j, freq, in_num, file_num, out_num
@@ -3452,7 +3454,7 @@ CONTAINS
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
          & oor_warnings_fatal, max_out_per_in_field, conserve_water, region_out_use_alt_value, max_field_attributes,&
-         & max_file_attributes, prepend_date
+         & max_file_attributes, max_axis_attributes, prepend_date
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
@@ -3786,7 +3788,7 @@ CONTAINS
                   & 'Attribute "'//TRIM(name)//'" already defined for module/input_field "'&
                   &//TRIM(input_fields(diag_field_id)%module_name)//'/'&
                   &//TRIM(input_fields(diag_field_id)%field_name)//'".  Contact the developers.', FATAL)
-          ELSE IF ( this_attribute.NE.0 .AND. type.EQ.NF90_CHAR ) THEN
+          ELSE IF ( this_attribute.NE.0 .AND. type.EQ.NF90_CHAR .AND. debug_diag_manager ) THEN
              ! <ERROR STATUS="NOTE">
              !   Attribute <name> already defined for module/input_field <module_name>/<field_name>.
              !   Prepending.
@@ -3795,7 +3797,7 @@ CONTAINS
                   & 'Attribute "'//TRIM(name)//'" already defined for module/input_field "'&
                   &//TRIM(input_fields(diag_field_id)%module_name)//'/'&
                   &//TRIM(input_fields(diag_field_id)%field_name)//'".  Prepending.', NOTE)
-          ELSE
+          ELSE IF ( this_attribute.EQ.0 ) THEN
              ! Defining a new attribute
              ! Increase the number of field attributes
              this_attribute = output_fields(out_field)%num_attributes + 1
@@ -4247,9 +4249,10 @@ PROGRAM test
 
   USE diag_manager_mod, ONLY: diag_manager_init, send_data, diag_axis_init, diag_manager_end
   USE diag_manager_mod, ONLY: register_static_field, register_diag_field, diag_send_complete
-  USE diag_manager_mod, ONLY: diag_manager_set_time_end, diag_field_add_attribute
+  USE diag_manager_mod, ONLY: diag_manager_set_time_end, diag_field_add_attribute, diag_axis_add_attribute
   USE diag_manager_mod, ONLY: diag_field_add_cell_measures
   USE diag_manager_mod, ONLY: get_diag_field_id, DIAG_FIELD_NOT_FOUND
+  USE diag_axis_mod, ONLY: get_axis_num
 
   IMPLICIT NONE
 
@@ -4291,11 +4294,16 @@ PROGRAM test
   INTEGER :: numthreads=1, ny_per_thread, idthread
   INTEGER :: months=0, days=0, dt_step=0
 
+  ! Variables needed for test 22
+  INTEGER :: id_nv, id_nv_init
+
 
   NAMELIST /test_diag_manager_nml/ layout, test_number, nlon, nlat, nlev, io_layout, numthreads, &
                                    dt_step, months, days
 
   ! Initialize all id* vars to be -1
+  id_nv = -1
+  id_nv_init = -1
   id_phalf = -1
   id_pfull = -1
   id_bk = -1
@@ -4428,6 +4436,31 @@ PROGRAM test
   id_lon2 = diag_axis_init('lon2',  RAD_TO_DEG*lon_global2,  'degrees_E', 'x', long_name='longitude', Domain2=Domain2)
   id_lat2 = diag_axis_init('lat2',  RAD_TO_DEG*lat_global2,  'degrees_N', 'y', long_name='latitude',  Domain2=Domain2)
 
+  IF ( test_number == 22 ) THEN
+     ! Can we get the 'nv' axis ID?
+     id_nv = get_axis_num('nv', 'nv')
+     IF ( id_nv .GT. 0 ) THEN
+        write (out_unit,'(a)') 'test22.1 Passes: id_nv has a positive value'
+     ELSE
+        write (out_unit,'(a)') 'test22.1 Failed: id_nv does not have a positive value'
+     END IF
+
+     ! Can I call diag_axis_init on 'nv' again, and get the same ID back?
+     id_nv_init = diag_axis_init( 'nv',(/1.,2./),'none','N','vertex number', set_name='nv')
+     IF ( id_nv_init .EQ. id_nv ) THEN
+        write (out_unit,'(a)') 'test22.2 Passes: Can call diag_axis_init on "nv" and get same ID'
+     ELSE
+        write (out_unit,'(a)') 'test22.2 Failed: Cannot call diag_axis_init on "nv" and get same ID'
+     END IF
+  END IF
+
+  IF ( test_number == 21 ) THEN
+     ! Testing addition of axis attributes
+     CALL diag_axis_add_attribute(id_lon1, 'real_att', 2.3)
+     CALL diag_axis_add_attribute(id_lat1, 'int_att', (/ 2, 3 /))
+     CALL diag_axis_add_attribute(id_pfull, 'char_att', 'Some string')
+  END IF
+
   IF ( test_number == 14 ) THEN
      Time = set_date(1990,1,29,0,0,0)
   ELSE
@@ -4502,7 +4535,7 @@ PROGRAM test
      END IF
   END IF
 
-  IF ( test_number == 16 .OR. test_number == 17 .OR. test_number == 18 ) THEN
+  IF ( test_number == 16 .OR. test_number == 17 .OR. test_number == 18 .OR. test_number == 21 .OR. test_number == 22 ) THEN
      is_in = 1
      js_in = 1
      ie_in = nlon

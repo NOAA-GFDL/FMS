@@ -438,6 +438,7 @@ public  :: reset_field_name, reset_field_pointer
 private :: lookup_field_r, lookup_axis, unique_axes
 public  :: dimension_size
 public  :: set_filename_appendix, get_instance_filename
+public  :: get_filename_appendix, nullify_filename_appendix
 public  :: parse_mask_table
 public  :: get_great_circle_algorithm
 public  :: write_version_number
@@ -7445,6 +7446,7 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
     logical                       :: fexist, is_no_domain
     integer                       :: tile_id(1)
     character(len=256)            :: fname
+    character(len=512)            :: actual_file_tmp
 
     is_no_domain=.false.
     if(PRESENT(no_domain)) is_no_domain = no_domain
@@ -7518,7 +7520,10 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
           endif
        endif
 
-       call get_mosaic_tile_file(actual_file, actual_file, is_no_domain, domain, tile_count)
+       ! Set actual_file to tmp for passing to get_mosaic_tile_file
+       actual_file_tmp = actual_file
+       call get_mosaic_tile_file(actual_file_tmp, actual_file, is_no_domain, domain, tile_count)
+
        !--- check if the file is group redistribution.
        if(ASSOCIATED(d_ptr)) then
           io_domain => mpp_get_io_domain(d_ptr)
@@ -7831,6 +7836,23 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
 
  end function field_exist
 ! </FUNCTION>
+
+
+subroutine get_filename_appendix(string_out)
+  character(len=*) , intent(out) :: string_out
+
+  string_out = trim(filename_appendix)
+
+
+end subroutine get_filename_appendix
+
+
+subroutine nullify_filename_appendix()
+
+  filename_appendix = ''
+
+end subroutine nullify_filename_appendix
+
 
 subroutine set_filename_appendix(string_in)
   character(len=*) , intent(in) :: string_in
