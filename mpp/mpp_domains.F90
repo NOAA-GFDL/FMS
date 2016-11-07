@@ -209,7 +209,8 @@ module mpp_domains_mod
   public :: mpp_define_unstruct_domain, domainUG, mpp_get_UG_io_domain
   public :: mpp_get_UG_domain_npes, mpp_get_UG_compute_domain, mpp_get_UG_domain_tile_id
   public :: mpp_get_UG_domain_pelist, mpp_get_ug_domain_grid_index
-  public :: mpp_get_UG_domain_ntiles
+  public :: mpp_get_UG_domain_ntiles, mpp_get_UG_global_domain
+  public :: mpp_global_field_ug
 
   !--- public interface from mpp_define_domains.inc
   public :: mpp_define_nest_domains, mpp_get_C2F_index, mpp_get_F2C_index
@@ -225,7 +226,7 @@ module mpp_domains_mod
   !--- data types used mpp_domains_mod.
   type unstruct_axis_spec
      private
-     integer :: begin, end, size
+     integer :: begin, end, size, max_size
      integer :: begin_index, end_index
   end type unstruct_axis_spec
 
@@ -2065,6 +2066,30 @@ end interface
      module procedure mpp_do_global_field2D_i4_3d
      module procedure mpp_do_global_field2D_l4_3d
   end interface
+
+  interface mpp_global_field_ug
+     module procedure mpp_global_field2D_ug_r8_2d
+     module procedure mpp_global_field2D_ug_r8_3d
+     module procedure mpp_global_field2D_ug_r8_4d
+     module procedure mpp_global_field2D_ug_r8_5d
+#ifndef no_8byte_integers
+     module procedure mpp_global_field2D_ug_i8_2d
+     module procedure mpp_global_field2D_ug_i8_3d
+     module procedure mpp_global_field2D_ug_i8_4d
+     module procedure mpp_global_field2D_ug_i8_5d
+#endif
+#ifdef OVERLOAD_R4
+     module procedure mpp_global_field2D_ug_r4_2d
+     module procedure mpp_global_field2D_ug_r4_3d
+     module procedure mpp_global_field2D_ug_r4_4d
+     module procedure mpp_global_field2D_ug_r4_5d
+#endif
+     module procedure mpp_global_field2D_ug_i4_2d
+     module procedure mpp_global_field2D_ug_i4_3d
+     module procedure mpp_global_field2D_ug_i4_4d
+     module procedure mpp_global_field2D_ug_i4_5d
+  end interface
+
 
 ! <INTERFACE NAME="mpp_global_max">
 !  <OVERVIEW>

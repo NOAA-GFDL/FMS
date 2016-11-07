@@ -116,6 +116,7 @@
         UG_domain%list(p)%compute%begin = ibegin(p)
         UG_domain%list(p)%compute%end = iend(p)
         UG_domain%list(p)%compute%size = UG_domain%list(p)%compute%end - UG_domain%list(p)%compute%begin + 1
+        UG_domain%list(p)%compute%max_size = 0
         UG_domain%list(p)%pos = p
         UG_domain%list(p)%pe = p + mpp_root_pe()
         pos = 0
@@ -139,9 +140,11 @@
      p = pe_start(UG_domain%tile_id)
      UG_domain%tile_root_pe = UG_domain%list(p)%pe
      UG_domain%compute = UG_domain%list(pos)%compute
+     UG_domain%compute%max_size = MAXVAL( UG_domain%list(:)%compute%size )
      UG_domain%global%begin = 1
      UG_domain%global%end   = npts_tile(UG_domain%tile_id)
      UG_domain%global%size  = UG_domain%global%end - UG_domain%global%begin + 1
+     UG_domain%global%max_size = -1   ! currently this is not supposed to be used.
      pos = 0
      do n = 1, UG_domain%tile_id-1
         pos = pos + npts_tile(n)
@@ -374,6 +377,17 @@ return
   end subroutine mpp_get_UG_compute_domain
 
   !#####################################################################
+  subroutine mpp_get_UG_global_domain( domain, begin, end, size)
+    type(domainUG),  intent(in) :: domain
+    integer, intent(out), optional :: begin, end, size
+
+    if( PRESENT(begin)     )begin     = domain%global%begin
+    if( PRESENT(end)       )end       = domain%global%end
+    if( PRESENT(size)      )size      = domain%global%size
+    return
+  end subroutine mpp_get_UG_global_domain
+
+  !#####################################################################
   function mpp_get_UG_domain_ntiles(domain)
     type(domainUG),  intent(in) :: domain
     integer :: mpp_get_UG_domain_ntiles
@@ -464,5 +478,58 @@ return
 #undef mpp_pass_UG_to_SG_3D_
 #define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_l4_3d
 #include <mpp_unstruct_pass_data.h>
+
+#undef MPP_GLOBAL_FIELD_UG_2D_
+#define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_r8_2d
+#undef MPP_GLOBAL_FIELD_UG_3D_
+#define MPP_GLOBAL_FIELD_UG_3D_ mpp_global_field2D_ug_r8_3d
+#undef MPP_GLOBAL_FIELD_UG_4D_
+#define MPP_GLOBAL_FIELD_UG_4D_ mpp_global_field2D_ug_r8_4d
+#undef MPP_GLOBAL_FIELD_UG_5D_
+#define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_r8_5d
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(DOUBLE_KIND)
+#include <mpp_global_field_ug.h>
+
+#ifndef no_8byte_integers
+#undef MPP_GLOBAL_FIELD_UG_2D_
+#define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_i8_2d
+#undef MPP_GLOBAL_FIELD_UG_3D_
+#define MPP_GLOBAL_FIELD_UG_3D_ mpp_global_field2D_ug_i8_3d
+#undef MPP_GLOBAL_FIELD_UG_4D_
+#define MPP_GLOBAL_FIELD_UG_4D_ mpp_global_field2D_ug_i8_4d
+#undef MPP_GLOBAL_FIELD_UG_5D_
+#define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_i8_5d
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(LONG_KIND)
+#include <mpp_global_field_ug.h>
+#endif
+
+#ifdef OVERLOAD_R4
+#undef MPP_GLOBAL_FIELD_UG_2D_
+#define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_r4_2d
+#undef MPP_GLOBAL_FIELD_UG_3D_
+#define MPP_GLOBAL_FIELD_UG_3D_ mpp_global_field2D_ug_r4_3d
+#undef MPP_GLOBAL_FIELD_UG_4D_
+#define MPP_GLOBAL_FIELD_UG_4D_ mpp_global_field2D_ug_r4_4d
+#undef MPP_GLOBAL_FIELD_UG_5D_
+#define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_r4_5d
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(FLOAT_KIND)
+#include <mpp_global_field_ug.h>
+#endif
+
+#undef MPP_GLOBAL_FIELD_UG_2D_
+#define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_i4_2d
+#undef MPP_GLOBAL_FIELD_UG_3D_
+#define MPP_GLOBAL_FIELD_UG_3D_ mpp_global_field2D_ug_i4_3d
+#undef MPP_GLOBAL_FIELD_UG_4D_
+#define MPP_GLOBAL_FIELD_UG_4D_ mpp_global_field2D_ug_i4_4d
+#undef MPP_GLOBAL_FIELD_UG_5D_
+#define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_i4_5d
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(INT_KIND)
+#include <mpp_global_field_ug.h>
+
 
 

@@ -31,6 +31,7 @@ program test
   use mpp_domains_mod, only : WUPDATE, SUPDATE, mpp_get_compute_domains
   use mpp_domains_mod, only : domainUG, mpp_define_unstruct_domain, mpp_get_UG_domain_tile_id
   use mpp_domains_mod, only : mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
+  use mpp_domains_mod, only : mpp_get_ug_global_domain, mpp_global_field_ug
   use mpp_memutils_mod, only : mpp_memuse_begin, mpp_memuse_end
 
   implicit none
@@ -2837,11 +2838,11 @@ end subroutine test_group_update
     integer        :: num_contact, ntiles, npes_per_tile
     integer        :: i, j, k, l, n, shift
     integer        :: isc, iec, jsc, jec, isd, ied, jsd, jed
-    integer        :: ism, iem, jsm, jem
+    integer        :: ism, iem, jsm, jem, lsg, leg
 
     integer, allocatable, dimension(:)       :: pe_start, pe_end, npts_tile, grid_index, ntiles_grid
     integer, allocatable, dimension(:,:)     :: layout2D, global_indices
-    real,    allocatable, dimension(:,:)     :: x1, x2
+    real,    allocatable, dimension(:,:)     :: x1, x2, g1, g2
     real,    allocatable, dimension(:,:,:)   :: a1, a2, gdata
     real,    allocatable, dimension(:,:)     :: rmask
     real,    allocatable, dimension(:)       :: frac_crit
@@ -2950,17 +2951,6 @@ end subroutine test_group_update
              enddo
           enddo
        enddo
-!       do n = 0, mpp_npes()-1
-!          tile = n/npes_per_tile + 1
-!          do j = jsl(n), jel(n)
-!             do i = isl(n), iel(n)
-!                if(lmask(i,j,tile)) then
-!                   l = l + 1
-!                   grid_index(l) = (j-1)*nx+i
-!                endif
-!             enddo
-!          enddo
-!       enddo
        deallocate(rmask, isl, iel, jsl, jel)
     endif
     call mpp_broadcast(npts_tile, ntiles, mpp_root_pe())
@@ -3161,6 +3151,32 @@ end subroutine test_group_update
     call compare_checksums(a1,a2,type//' UG2SG 3-D data domain')
     deallocate(a1,a2,x1,x2)
 
+    !----------------------------------------------------------------
+    !    test mpp_global_field_ug
+    !----------------------------------------------------------------
+    call mpp_get_UG_global_domain(UG_domain, lsg, leg)
+    tile = mpp_get_UG_domain_tile_id(UG_domain)
+    allocate(g1(lsg:leg,nz), g2(lsg:leg,nz), x1(istart:iend,nz))
+    g1 = 0
+    g2 = 0
+    x1 = 0
+    do k = 1, nz
+       do l = lsg, leg
+          g1(l,k) = tile*1e6 + l + k*1.e-3
+       enddo
+       do l = istart, iend
+          x1(l,k) = g1(l,k)
+       enddo
+    enddo
+
+    call mpp_global_field_ug(UG_domain, x1, g2)
+    call compare_checksums_2D(g1,g2,type//' global_field_ug 3-D')
+   
+    g2 = 0.0
+    call mpp_global_field_ug(UG_domain, x1(:,1), g2(:,1))
+    call compare_checksums_2D(g1(:,1:1),g2(:,1:1),type//' global_field_ug 2-D')
+    
+    deallocate(g1,g2,x1)
 
   end subroutine test_unstruct_update
 
