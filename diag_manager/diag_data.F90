@@ -34,7 +34,7 @@ MODULE diag_data_mod
   ! </DESCRIPTION>
 
   USE time_manager_mod, ONLY: time_type
-  USE mpp_domains_mod, ONLY: domain1d, domain2d
+  USE mpp_domains_mod, ONLY: domain1d, domain2d, domainUG
   USE mpp_io_mod, ONLY: fieldtype
   USE fms_mod, ONLY: WARNING, write_version_number
 #ifdef use_netCDF
@@ -577,6 +577,7 @@ MODULE diag_data_mod
      TYPE(domain1d) :: Domain
      TYPE(domain2d) :: Domain2
      TYPE(domain2d), dimension(MAX_SUBAXES) :: subaxis_domain2
+     type(domainUG) :: DomainUG
      CHARACTER(len=128) :: aux
      INTEGER :: tile_count
      TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
