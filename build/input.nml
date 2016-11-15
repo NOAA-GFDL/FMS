@@ -1,3 +1,14 @@
+&test_diag_manager_nml
+layout=1,1 
+test_number=17,  
+io_layout=1,1
+numthreads=1, 
+dt_step=1, 
+months=1, 
+days=0
+
+/
+
  &aer_ccn_act_nml
          sul_concen = 0.3
          low_concen = 0.5

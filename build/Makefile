@@ -6,7 +6,7 @@ BUILDROOT = ./
 
 CPPDEFS = -DINTERNAL_FILE_NML -g -traceback -Duse_libMPI -Duse_netCDF -D_FILE_VERSION="`git-version-string $<`"
 
-OTHERFLAGS = -Dtest_diag_manager
+#OTHERFLAGS = -Dtest_diag_manager
 
 MK_TEMPLATE = /ncrc/home2/fms/local/opt/fre-commands/bronx-11/site/ncrc3/intel.mk
 include $(MK_TEMPLATE)
