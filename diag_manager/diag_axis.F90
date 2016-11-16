@@ -15,7 +15,7 @@ MODULE diag_axis_mod
   !   register_diag_field.
   ! </DESCRIPTION>
 
-  USE mpp_domains_mod, ONLY: domain1d, domain2d, mpp_get_compute_domain,&
+  USE mpp_domains_mod, ONLY: domainUG, domain1d, domain2d, mpp_get_compute_domain,&
        & mpp_get_domain_components, null_domain1d, null_domain2d,&
        & OPERATOR(.NE.), mpp_get_global_domain, mpp_get_domain_name
   USE fms_mod, ONLY: error_mesg, write_version_number, lowercase, uppercase,&
@@ -124,7 +124,7 @@ CONTAINS
   !   </IN>
   !   <IN NAME="tile_count" TYPE="INTEGER, OPTIONAL" />
   INTEGER FUNCTION diag_axis_init(name, DATA, units, cart_name, long_name, direction,&
-       & set_name, edges, Domain, Domain2, aux, tile_count)
+       & set_name, edges, Domain, Domain2, DomainU, aux, tile_count)
     CHARACTER(len=*), INTENT(in) :: name
     REAL, DIMENSION(:), INTENT(in) :: DATA
     CHARACTER(len=*), INTENT(in) :: units
@@ -133,6 +133,7 @@ CONTAINS
     INTEGER, INTENT(in), OPTIONAL :: direction, edges
     TYPE(domain1d), INTENT(in), OPTIONAL :: Domain
     TYPE(domain2d), INTENT(in), OPTIONAL :: Domain2
+    TYPE(domainUG), INTENT(in), OPTIONAL :: DomainU
     CHARACTER(len=*), INTENT(in), OPTIONAL :: aux
     INTEGER, INTENT(in), OPTIONAL :: tile_count
 
@@ -220,6 +221,7 @@ CONTAINS
          & TRIM(uppercase(cart_name)) == 'Y' .OR.&
          & TRIM(uppercase(cart_name)) == 'Z' .OR.&
          & TRIM(uppercase(cart_name)) == 'T' .OR.&
+         & TRIM(uppercase(cart_name)) == 'U' .OR.&
          & TRIM(uppercase(cart_name)) == 'N' ) THEN
        Axes(diag_axis_init)%cart_name = TRIM(uppercase(cart_name))
     ELSE
@@ -270,8 +272,13 @@ CONTAINS
        Axes(diag_axis_init)%direction = 0
     END IF
 
+    !---- Handle the DomainU check
+    IF (present(DomainU) .AND. (PRESENT(Domain2) .OR. PRESENT(Domain)) ) THEN
+       ! <ERROR STATUS="FATAL">Presence of DomainU and another Domain at the same time is prohibited</ERROR>
+       CALL error_mesg('diag_axis_mod::diag_axis_init',&
+            & 'Presence of DomainU and another Domain at the same time is prohibited', FATAL)
     !---- domain2d type ----
-    IF ( PRESENT(Domain2) .AND. PRESENT(Domain)) THEN
+    ELSE IF ( PRESENT(Domain2) .AND. PRESENT(Domain)) THEN
        ! <ERROR STATUS="FATAL">Presence of both Domain and Domain2 at the same time is prohibited</ERROR>
        CALL error_mesg('diag_axis_mod::diag_axis_init',&
             & 'Presence of both Domain and Domain2 at the same time is prohibited', FATAL)
@@ -279,8 +286,11 @@ CONTAINS
        IF ( Axes(diag_axis_init)%cart_name /= 'X' .AND. Axes(diag_axis_init)%cart_name /= 'Y') THEN
           ! <ERROR STATUS="FATAL">Domain must not be present for an axis which is not in the X or Y direction.</ERROR>
           CALL error_mesg('diag_axis_mod::diag_axis_init',&
-               & 'Domain must not be present for an axis which is not in the X or Y direction', FATAL)
+               & 'A Structured Domain must not be present for an axis which is not in the X or Y direction', FATAL)
        END IF
+    ELSE IF (present(DomainU) .AND. Axes(diag_axis_init)%cart_name /= 'U') THEN
+          CALL error_mesg('diag_axis_mod::diag_axis_init',&
+               & 'In the unstructured domain, the axis cart_name must be U', FATAL)
     END IF
 
     Axes(diag_axis_init)%tile_count = tile
@@ -290,13 +300,20 @@ CONTAINS
        CALL mpp_get_domain_components(Domain2, domain_x, domain_y, tile_count=tile_count)
        IF ( Axes(diag_axis_init)%cart_name == 'X' ) Axes(diag_axis_init)%Domain = domain_x
        IF ( Axes(diag_axis_init)%cart_name == 'Y' ) Axes(diag_axis_init)%Domain = domain_y
+!!!       Axes(diag_axis_init)%DomainUG = null_DomainUG
     ELSE IF ( PRESENT(Domain)) THEN
        !---- domain1d type ----
        Axes(diag_axis_init)%Domain2 = null_domain2d ! needed since not 2-D domain
        Axes(diag_axis_init)%Domain = Domain
+!!!       Axes(diag_axis_init)%DomainUG = null_DomainUG
+    ELSE IF (present(DomainU)) THEN
+       Axes(diag_axis_init)%Domain2 = null_domain2d
+       Axes(diag_axis_init)%Domain = null_domain1d
+       Axes(diag_axis_init)%DomainUG = DomainU
     ELSE
        Axes(diag_axis_init)%Domain2 = null_domain2d
        Axes(diag_axis_init)%Domain = null_domain1d
+!!!       Axes(diag_axis_init)%DomainU = null_domainUG
     END IF
 
 
