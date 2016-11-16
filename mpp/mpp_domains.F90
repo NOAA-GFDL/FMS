@@ -210,7 +210,8 @@ module mpp_domains_mod
   public :: mpp_get_UG_domain_npes, mpp_get_UG_compute_domain, mpp_get_UG_domain_tile_id
   public :: mpp_get_UG_domain_pelist, mpp_get_ug_domain_grid_index
   public :: mpp_get_UG_domain_ntiles, mpp_get_UG_global_domain
-  public :: mpp_global_field_ug
+  public :: mpp_global_field_ug, mpp_get_ug_domain_tile_list, mpp_get_UG_compute_domains
+  public :: mpp_define_null_UG_domain, NULL_DOMAINUG
 
   !--- public interface from mpp_define_domains.inc
   public :: mpp_define_nest_domains, mpp_get_C2F_index, mpp_get_F2C_index
@@ -576,6 +577,7 @@ module mpp_domains_mod
   integer              :: mpp_domains_stack_hwm=0
   type(domain1D),save  :: NULL_DOMAIN1D
   type(domain2D),save  :: NULL_DOMAIN2D
+  type(domainUG),save  :: NULL_DOMAINUG
   integer              :: current_id_update = 0
   integer                         :: num_update = 0
   integer                         :: num_nonblock_group_update = 0

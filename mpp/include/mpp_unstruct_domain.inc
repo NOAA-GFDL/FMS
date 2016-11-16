@@ -388,6 +388,30 @@ return
   end subroutine mpp_get_UG_global_domain
 
   !#####################################################################
+  subroutine mpp_get_UG_compute_domains( domain, begin, end, size )
+    type(domainUG),                   intent(in) :: domain
+    integer, intent(out), optional, dimension(:) :: begin, end, size
+
+    !we use shape instead of size for error checks because size is used as an argument
+    if( PRESENT(begin) )then
+       if( any(shape(begin).NE.shape(domain%list)) ) &
+            call mpp_error( FATAL, 'mpp_get_UG_compute_domains: begin array size does not match domain.' )
+       begin(:) = domain%list(:)%compute%begin
+    end if
+    if( PRESENT(end) )then
+       if( any(shape(end).NE.shape(domain%list)) ) &
+            call mpp_error( FATAL, 'mpp_get_UG_compute_domains: end array size does not match domain.' )
+            end(:) = domain%list(:)%compute%end
+    end if
+    if( PRESENT(size) )then
+       if( any(shape(size).NE.shape(domain%list)) ) &
+           call mpp_error( FATAL, 'mpp_get_UG_compute_domains: size array size does not match domain.' )
+           size(:) = domain%list(:)%compute%size
+    end if
+    return
+  end subroutine mpp_get_UG_compute_domains
+
+  !#####################################################################
   function mpp_get_UG_domain_ntiles(domain)
     type(domainUG),  intent(in) :: domain
     integer :: mpp_get_UG_domain_ntiles
@@ -396,6 +420,19 @@ return
     return
   end function mpp_get_UG_domain_ntiles
 
+  !#######################################################################
+  subroutine mpp_get_ug_domain_tile_list(domain, tiles)
+     type(domainUG), intent(in) :: domain
+     integer,     intent(inout) :: tiles(:)
+     integer                    :: i
+
+     if( size(tiles(:)).NE.size(domain%list(:)) ) &
+         call mpp_error( FATAL, 'mpp_get_ug_domain_tile_list: tiles array size does not match domain.' )
+     do i = 1, size(tiles(:))
+        tiles(i) = domain%list(i-1)%tile_id
+     end do
+
+  end subroutine mpp_get_ug_domain_tile_list
 
   !#####################################################################
   function mpp_get_UG_domain_tile_id(domain)
@@ -442,6 +479,21 @@ return
      return
 
   end subroutine mpp_get_UG_domain_grid_index
+
+  !###################################################################
+  subroutine mpp_define_null_UG_domain(domain)
+     type(domainUG), intent(inout) :: domain
+
+     domain%global%begin  = -1; domain%global%end  = -1; domain%global%size = 0
+     domain%compute%begin = -1; domain%compute%end = -1; domain%compute%size = 0
+     domain%pe = NULL_PE
+     domain%ntiles = -1
+     domain%pos = -1
+     domain%tile_id = -1
+     domain%tile_root_pe = -1
+
+  end subroutine mpp_define_null_UG_domain
+
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
