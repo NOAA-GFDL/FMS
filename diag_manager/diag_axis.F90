@@ -821,6 +821,31 @@ CONTAINS
        END IF
     END DO
   END FUNCTION get_domain2d
+
+  ! <FUNCTION NAME="get_domainUG">
+  !   <OVERVIEW>
+  !     Return the UG domain.
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     TYPE(domainUG) FUNCTION get_domainUG(id)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     Retrun the 1D domain for the axis ID given.
+  !   </DESCRIPTION>
+  !   <IN NAME="id" TYPE="INTEGER">Axis ID</IN>
+  TYPE(domainUG) FUNCTION get_domainUG(id)
+    INTEGER, INTENT(in) :: id
+
+    CALL valid_id_check(id, 'get_domainUG')
+!!! Fix when NULL_DOMAINUG is added
+!    IF (Axes(id)%DomainU .NE. NULL_DOMAINUG) THEN
+       get_domainUG = Axes(id)%DomainUG
+!    ELSE
+!       get_domainUG = NULL_DOMAINUG
+!    ENDIF
+  END FUNCTION get_domainUG
+
+
   ! </FUNCTION>
 
   ! <SUBROUTINE NAME="get_axes_shift">
