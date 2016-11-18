@@ -101,6 +101,7 @@
 !NULL_DOMAIN is a domaintype that can be used to initialize to undef
       call mpp_define_null_domain(NULL_DOMAIN1d);
       call mpp_define_null_domain(NULL_DOMAIN2d);
+      call mpp_define_null_UG_domain(NULL_DOMAINUG)
 
       if( domain_clocks_on )then
           pack_clock          = mpp_clock_id( 'Halo pack' )
