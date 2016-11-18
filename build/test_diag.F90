@@ -4,7 +4,10 @@ use mpp_mod
 use time_manager_mod
 use diag_manager_mod!, only:register_diag_field,send_data
 use mpp_domains_mod
-
+ USE constants_mod
+ USE diag_axis_mod
+  USE fms_mod
+  USE fms_io_mod
 implicit none
 
 integer :: nx = 128
@@ -15,7 +18,7 @@ real :: x(128)
 real :: y(128)
 
 real, dimension (128,128) :: twod
-real, dimension (128) :: oned
+real, dimension (:),allocatable :: oned
 real :: zerod
 
 integer :: oned_axes(1)
@@ -36,6 +39,7 @@ endtype diag_info
 type(time_type) :: time
 type(diag_info) :: rh
 type(diag_info) :: shflx 
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
@@ -82,7 +86,7 @@ type(diag_info) :: shflx
   logical :: test_unstruct = .false.
   integer :: nthreads = 1
   integer ::  j, k
-  integer :: layout(2)
+!  integer :: layout(2)
   integer :: id
   integer :: outunit, errunit, io_status
   integer :: get_cpu_affinity, base_cpu, omp_get_num_threads, omp_get_thread_num
@@ -111,7 +115,48 @@ type(diag_info) :: shflx
     integer            :: nx_save, ny_save, tile
     integer            :: ntotal_land, istart, iend, pos
     integer :: pe, npes
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  INTEGER :: nlon1, nlat1, nlon2, nlat2
+  INTEGER, DIMENSION(2) :: layout = (/0,0/)
+  INTEGER :: test_number=1
+  INTEGER :: nlon=18, nlat=18, nlev=2
+  INTEGER :: io_layout(2) = (/0,0/)
+  INTEGER :: nstep = 2
+  TYPE(time_type) ::  Time_step, Time_end, Time_start, Run_length
+  LOGICAL :: used, test_successful
+  CHARACTER(len=256) :: err_msg
 
+  INTEGER :: nyc1, jsw, jew, isw, iew
+  INTEGER :: numthreads=1, ny_per_thread, idthread
+  INTEGER :: months=0, days=0, dt_step=0
+integer :: ierr,nml_unit, log_unit, out_unit 
+ INTEGER :: id_dat2
+  NAMELIST /test_diag_manager_nml/ layout, test_number, nlon, nlat, nlev, io_layout, numthreads, &
+                                   dt_step, months, days
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!Initialize stuff
+  CALL fms_init
+  log_unit = stdlog()
+  out_unit = stdout()
+  CALL constants_init
+  CALL set_calendar_type(JULIAN)
+#ifdef INTERNAL_FILE_NML
+  READ (input_nml_file, NML=test_diag_manager_nml, IOSTAT=ierr)
+#else
+  IF ( file_exist('input.nml') ) THEN
+     nml_unit = open_namelist_file()
+     READ(nml_unit, nml=test_diag_manager_nml, iostat=ierr)
+     CALL close_file(nml_unit)
+  ELSE
+     ! Set ierr to an arbitrary positive number if input.nml does not exist.
+     ierr = 100
+  END IF
+#endif
+  WRITE (out_unit,test_diag_manager_nml)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! SET UP THE UNSTRUCTURED GRID
 call mpp_init()
 
   pe = mpp_pe()
@@ -426,9 +471,8 @@ call mpp_init()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 450 write(6,*) "Looks like we made it.  Look how far we've come, Baby"
-write (6,*)UG_domain%compute%size 
 zerod = 123.4
-oned = 111.1
+!oned = 111.1
 twod = 222.2
 do i=1,nx
 x(i) = real(ii)
@@ -451,35 +495,46 @@ enddo
 
 
 write (6,*) "Beginning test."
-
+write(6,*) "MPP_INIT CALLED"
  call mpp_init()
- if ( mpp_pe() == mpp_root_pe() ) write (6,*) "init diag"
 
+if ( mpp_pe() == mpp_root_pe() ) write (6,*) "init diag"
  time =  set_time(0, 0, 1, err)
 write (6,*) err
  if ( mpp_pe() == mpp_root_pe() ) write (6,*) tf
-
  call diag_manager_init()
 !  if ( mpp_pe() == mpp_root_pe() ) 
-write (6,*) "init x-axis"
+!write (6,*) "init x-axis"
   !     INTEGER FUNCTION diag_axis_init(name, data, units, cart_name, long_name,
   !           direction, set_name, edges, Domain, Domain2, aux, tile_count)
- ix = diag_axis_init("lon",x,"num","X","x-direction")
-
- iy = diag_axis_init("lat",y,"num","Y","y-direction")
-
-
- oned_axes(1)=ix
- twod_axes(1)=ix
+! ix = diag_axis_init("lon",x,"num","X","x-direction")
+!
+! iy = diag_axis_init("lat",y,"num","Y","y-direction")
+!
+ iy = diag_axis_init("uns",y,"num","U","unstrctured grid",domainU=UG_domain)
+! oned_axes(1)=ix
+! twod_axes(1)=ix
 ! twod_axes(1)=iy
 
 
 ! if ( mpp_pe() == mpp_root_pe() ) 
-write (6,*) "ix = ", ix
+!write (6,*) "ix = ", ix
 write (6,*) "iy = ", iy
 
+  id_dat2 = register_diag_field('test_diag_manager_mod', 'dat2', (/iy/), Time, 'sample data', 'K')
+  ix      = register_diag_field('test_diag_manager_mod', 'dat2_rms', (/iy/), Time, 'sample data', 'K')
+allocate ( oned(size(y,dim=1)) )
+oned=111.1
+ time =  set_time(0, 0, 1, err)
+  used = send_data(id_dat2, oned, Time, err_msg=err_msg)
+  used = send_data(ix, oned, Time, err_msg=err_msg)
+ time =  set_time(1, 0, 1, err)
+  used = send_data(id_dat2, oned, Time, err_msg=err_msg)
+  used = send_data(ix, oned, Time, err_msg=err_msg)
 
-  rh%id = register_diag_field ("flux", "rh_ref") !> Returns the field index to be used in subsequent calls to send_data
+ write (6,*) "SEND_DATA_ER",err_msg,used
+
+!  rh%id = register_diag_field ("test_diag_manager_mod", "dat2") !> Returns the field index to be used in subsequent calls to send_data
                                               !! Is used as diag_field_id
 !  shflx%id = register_diag_field (trim(shflx%modd) , trim(shflx%varname), oned_axes,time)
 
@@ -487,12 +542,13 @@ write (6,*) "iy = ", iy
 ! diag_result = send_data(diag_field_id,zerod,time)
 !  diag_result = send_data(diag_field_id,zerod)
 
- if ( mpp_pe() == mpp_root_pe() ) write (6,*) "The result of register (field index) is ",rh%id
+ if ( mpp_pe() == mpp_root_pe() ) write (6,*) "The result of register (field index) is ",id_dat2
 ! ii =  get_diag_field_id("flux", "shflx")
 !  if ( mpp_pe() == mpp_root_pe() ) write (6,*) "The result of get_diag_field_id is ",ii
 
 
 ! write(6,*) send_data(rh%id,zerod)
-
+    call diag_manager_end (Time)
+    call fms_end()
 write (6,*) "End test."
 end program test_diag
