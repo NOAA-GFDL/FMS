@@ -13,7 +13,8 @@ use mpp_mod,           only : mpp_error, &
                               mpp_exit,  &
                               mpp_npes,  &
                               WARNING,   &
-                              NOTE
+                              NOTE,      &
+                              input_nml_file
 use mpp_io_mod,        only : mpp_open,          &
                               mpp_close,         &
                               mpp_get_times,     &
@@ -43,7 +44,9 @@ use diag_manager_mod,  only : diag_manager_init, get_base_time, &
                               diag_axis_init
 use fms_mod,           only : lowercase, write_version_number, &
                               fms_init, &
-                              file_exist, mpp_root_pe, stdlog
+                              file_exist, mpp_root_pe, stdlog, &
+                              open_namelist_file, close_file,  &
+                              check_nml_error
 use horiz_interp_mod,  only : horiz_interp_type, &
                               horiz_interp_new,  &
                               horiz_interp_init, &
@@ -327,6 +330,25 @@ if (.not. module_is_initialized) then
   call fms_init
   call diag_manager_init
   call horiz_interp_init
+
+!--------------------------------------------------------------------
+! namelist input
+!--------------------------------------------------------------------
+
+  if(file_exist('input.nml')) then
+#ifdef INTERNAL_FILE_NML
+      read (input_nml_file, nml=interpolator_nml, iostat=io)
+      ierr = check_nml_error(io,'interpolator_nml')
+#else
+      unit = open_namelist_file('input.nml')
+      ierr=1; do while (ierr /= 0)
+      read(unit, nml = interpolator_nml, iostat=io, end=10)
+      ierr = check_nml_error (io, 'interpolator_nml')
+      end do
+10    call close_file(unit)
+#endif
+  end if
+
 endif
 
 clim_type%separate_time_vary_calc = .false.
@@ -1043,7 +1065,13 @@ endif
 
 module_is_initialized = .true.
 
+!---------------------------------------------------------------------
+!    write version number and namelist to logfile.
+!---------------------------------------------------------------------
 call write_version_number("INTERPOLATOR_MOD", version)
+
+      if (mpp_pe() == mpp_root_pe() ) &
+                          write (stdlog(), nml=interpolator_nml)
 
 end subroutine interpolator_init
 
