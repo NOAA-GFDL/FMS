@@ -16,7 +16,7 @@ MODULE diag_axis_mod
   ! </DESCRIPTION>
 
   USE mpp_domains_mod, ONLY: domainUG, domain1d, domain2d, mpp_get_compute_domain,&
-       & mpp_get_domain_components, null_domain1d, null_domain2d,&
+       & mpp_get_domain_components, null_domain1d, null_domain2d, null_domainUG,&
        & OPERATOR(.NE.), mpp_get_global_domain, mpp_get_domain_name
   USE fms_mod, ONLY: error_mesg, write_version_number, lowercase, uppercase,&
        & fms_error_handler, FATAL, NOTE
@@ -300,12 +300,12 @@ CONTAINS
        CALL mpp_get_domain_components(Domain2, domain_x, domain_y, tile_count=tile_count)
        IF ( Axes(diag_axis_init)%cart_name == 'X' ) Axes(diag_axis_init)%Domain = domain_x
        IF ( Axes(diag_axis_init)%cart_name == 'Y' ) Axes(diag_axis_init)%Domain = domain_y
-!!!       Axes(diag_axis_init)%DomainUG = null_DomainUG
+       Axes(diag_axis_init)%DomainUG = null_DomainUG
     ELSE IF ( PRESENT(Domain)) THEN
        !---- domain1d type ----
        Axes(diag_axis_init)%Domain2 = null_domain2d ! needed since not 2-D domain
        Axes(diag_axis_init)%Domain = Domain
-!!!       Axes(diag_axis_init)%DomainUG = null_DomainUG
+       Axes(diag_axis_init)%DomainUG = null_DomainUG
     ELSE IF (present(DomainU)) THEN
        Axes(diag_axis_init)%Domain2 = null_domain2d
        Axes(diag_axis_init)%Domain = null_domain1d
@@ -313,7 +313,7 @@ CONTAINS
     ELSE
        Axes(diag_axis_init)%Domain2 = null_domain2d
        Axes(diag_axis_init)%Domain = null_domain1d
-!!!       Axes(diag_axis_init)%DomainU = null_domainUG
+       Axes(diag_axis_init)%DomainUG = null_domainUG
     END IF
 
 
@@ -837,8 +837,7 @@ CONTAINS
     INTEGER, INTENT(in) :: id
 
     CALL valid_id_check(id, 'get_domainUG')
-!!! Fix when NULL_DOMAINUG is added
-!    IF (Axes(id)%DomainU .NE. NULL_DOMAINUG) THEN
+!    IF (Axes(id)%DomainUG .NE. NULL_DOMAINUG) THEN
        get_domainUG = Axes(id)%DomainUG
 !    ELSE
 !       get_domainUG = NULL_DOMAINUG
