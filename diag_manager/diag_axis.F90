@@ -34,8 +34,8 @@ MODULE diag_axis_mod
        & get_axis_length, get_axis_global_length, diag_subaxes_init,&
        & get_diag_axis_cart, get_diag_axis_data, max_axes, get_axis_aux,&
        & get_tile_count, get_axes_shift, get_diag_axis_name,&
-       & get_axis_num, get_diag_axis_domain_name, diag_axis_add_attribute
-
+       & get_axis_num, get_diag_axis_domain_name, diag_axis_add_attribute,&
+       & get_domainUG
 
   ! Module variables
   ! Parameters
@@ -315,7 +315,6 @@ CONTAINS
        Axes(diag_axis_init)%Domain = null_domain1d
        Axes(diag_axis_init)%DomainUG = null_domainUG
     END IF
-
 
     !--- set up the shift value for x-y axis
     IF ( Axes(diag_axis_init)%Domain .NE. null_domain1d ) THEN
