@@ -15,6 +15,7 @@ MODULE diag_output_mod
        & MPP_NETCDF, MPP_MULTI, MPP_SINGLE
   USE mpp_domains_mod, ONLY: domain1d, domain2d, mpp_define_domains, mpp_get_pelist,&
        &  mpp_get_global_domain, mpp_get_compute_domains, null_domain1d, null_domain2d,&
+       & domainUG, null_domainUG,&
        & OPERATOR(.NE.), mpp_get_layout, OPERATOR(.EQ.)
   USE mpp_mod, ONLY: mpp_npes, mpp_pe
   USE diag_axis_mod, ONLY: diag_axis_init, get_diag_axis, get_axis_length,&
@@ -77,13 +78,14 @@ CONTAINS
   !   <IN NAME="all_scalar_or_1d" TYPE="LOGICAL" />
   !   <IN NAME="domain" TYPE="TYPE(domain2d)" />
   SUBROUTINE diag_output_init(file_name, FORMAT, file_title, file_unit,&
-       & all_scalar_or_1d, domain, attributes)
+       & all_scalar_or_1d, domain, domainU, attributes)
     CHARACTER(len=*), INTENT(in)  :: file_name, file_title
     INTEGER         , INTENT(in)  :: FORMAT
     INTEGER         , INTENT(out) :: file_unit
     LOGICAL         , INTENT(in)  :: all_scalar_or_1d
     TYPE(domain2d)  , INTENT(in)  :: domain
     TYPE(diag_atttype), INTENT(in), DIMENSION(:), OPTIONAL :: attributes
+    TYPE(domainUG), INTENT(in)    :: domainU
 
     INTEGER :: form, threading, fileset, i
     TYPE(diag_global_att_type) :: gAtt

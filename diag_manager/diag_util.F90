@@ -38,7 +38,7 @@ MODULE diag_util_mod
        & DIAG_FIELD_NOT_FOUND, diag_init_time
   USE diag_axis_mod, ONLY: get_diag_axis_data, get_axis_global_length, get_diag_axis_cart,&
        & get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, get_axis_aux,&
-       & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name
+       & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name, get_domainUG
   USE diag_output_mod, ONLY: diag_flush, diag_field_out, diag_output_init, write_axis_meta_data,&
        & write_field_meta_data, done_meta_data
   USE diag_grid_mod, ONLY: get_local_indexes
@@ -47,7 +47,8 @@ MODULE diag_util_mod
   USE fms_io_mod, ONLY: get_tile_string, return_domain, string, get_instance_filename
   USE mpp_domains_mod,ONLY: domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
        & OPERATOR(.NE.), OPERATOR(.EQ.), mpp_modify_domain, mpp_get_domain_components,&
-       & mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, mpp_get_tile_npes
+       & mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, mpp_get_tile_npes,&
+       & domainUG, null_domainUG
   USE time_manager_mod,ONLY: time_type, OPERATOR(==), OPERATOR(>), NO_CALENDAR, increment_date,&
        & increment_time, get_calendar_type, get_date, get_time, leap_year, OPERATOR(-),&
        & OPERATOR(<), OPERATOR(>=), OPERATOR(<=)
@@ -1672,6 +1673,8 @@ CONTAINS
     CHARACTER(len=24) :: start_date
     TYPE(domain1d) :: domain
     TYPE(domain2d) :: domain2
+    TYPE(domainUG) :: domainU
+
 
     aux_present = .FALSE.
     match_aux_name = .FALSE.
@@ -1715,6 +1718,7 @@ CONTAINS
     ! Loop through all fields with this file to output axes
     ! JWD: This is a klooge; need something more robust
     domain2 = NULL_DOMAIN2D
+    domainU = NULL_DOMAINUG
     all_scalar_or_1d = .TRUE.
     DO j = 1, files(file)%num_fields
        field_num = files(file)%fields(j)
@@ -1724,8 +1728,11 @@ CONTAINS
           all_scalar_or_1d = .FALSE.
           domain2 = get_domain2d ( output_fields(field_num)%axes(1:num_axes) )
           IF ( domain2 .NE. NULL_DOMAIN2D ) EXIT
+       ELSEIF (num_axes == 1) THEN
+          domainU = get_domainUG ( output_fields(field_num)%axes(num_axes) )
        END IF
     END DO
+
     IF( .NOT.all_scalar_or_1d ) THEN
        IF ( domain2 .EQ. NULL_DOMAIN2D ) CALL return_domain(domain2)
        IF ( domain2 .EQ. NULL_DOMAIN2D ) THEN
@@ -1747,11 +1754,11 @@ CONTAINS
 
     IF ( _ALLOCATED(files(file)%attributes) ) THEN
        CALL diag_output_init(filename, files(file)%format, global_descriptor,&
-            & files(file)%file_unit, all_scalar_or_1d, domain2,&
+            & files(file)%file_unit, all_scalar_or_1d, domain2, domainU,&
             & attributes=files(file)%attributes(1:files(file)%num_attributes))
     ELSE
        CALL diag_output_init(filename, files(file)%format, global_descriptor,&
-            & files(file)%file_unit, all_scalar_or_1d, domain2)
+            & files(file)%file_unit, all_scalar_or_1d, domain2,domainU)
     END IF
     files(file)%bytes_written = 0
     ! Does this file contain time_average fields?
