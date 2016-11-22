@@ -473,7 +473,7 @@ CONTAINS
   !   <OUT NAME="units" TYPE="CHARACTER(len=*)">Units for axis</OUT>
   !   <OUT NAME="long_name" TYPE="CHARACTER(len=*)">Long name for axis</OUT>
   !   <OUT NAME="cart_name" TYPE="CHARACTER(len=*)">
-  !     Cartesian axis ("x", "y", "z", "t").
+  !     Cartesian axis ("x", "y", "z", "t", "u").
   !   </OUT>
   !   <OUT NAME="direction" TYPE="INTEGER">
   !     Direction of data. (See <TT>diag_axis_init</TT> for a description of
@@ -483,14 +483,16 @@ CONTAINS
   !     Axis ID for the previously defined "edges axis".
   !   </OUT>
   !   <OUT NAME="Domain" TYPE="TYPE(domain1d)" />
+  !   <OUT NAME="DomainU" TYPE="TYPE(domainUG)" />
   !   <OUT NAME="data" TYPE="REAL, DIMENSION(:)">
   !     Array of coordinate values for this axis.
   !   </OUT>
   SUBROUTINE get_diag_axis(id, name, units, long_name, cart_name,&
-       & direction, edges, Domain, DATA, num_attributes, attributes)
+       & direction, edges, Domain, DomainU, DATA, num_attributes, attributes)
     CHARACTER(len=*), INTENT(out) :: name, units, long_name, cart_name
     INTEGER, INTENT(in) :: id
     TYPE(domain1d), INTENT(out) :: Domain
+    TYPE(domainUG), INTENT(out) :: DomainU
     INTEGER, INTENT(out) :: direction, edges
     REAL, DIMENSION(:), INTENT(out) :: DATA
     INTEGER, INTENT(out), OPTIONAL :: num_attributes
@@ -506,6 +508,7 @@ CONTAINS
     direction = Axes(id)%direction
     edges     = Axes(id)%edges
     Domain    = Axes(id)%Domain
+    DomainU   = Axes(id)%DomainUG
     IF ( Axes(id)%length > SIZE(DATA(:)) ) THEN
        ! <ERROR STATUS="FATAL">array data is too small.</ERROR>
        CALL error_mesg('diag_axis_mod::get_diag_axis', 'array data is too small', FATAL)
