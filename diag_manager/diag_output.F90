@@ -77,6 +77,7 @@ CONTAINS
   !   </OUT>
   !   <IN NAME="all_scalar_or_1d" TYPE="LOGICAL" />
   !   <IN NAME="domain" TYPE="TYPE(domain2d)" />
+  !   <IN NAME="domainU" TYPE="TYPE(domainUG)" />The unstructure domain </IN>
   SUBROUTINE diag_output_init(file_name, FORMAT, file_title, file_unit,&
        & all_scalar_or_1d, domain, domainU, attributes)
     CHARACTER(len=*), INTENT(in)  :: file_name, file_title
@@ -172,6 +173,8 @@ CONTAINS
 
     TYPE(domain1d)       :: Domain
 
+    TYPE(domainUG)       :: domainU
+
     CHARACTER(len=mxch)  :: axis_name, axis_units
     CHARACTER(len=mxchl) :: axis_long_name
     CHARACTER(len=1)     :: axis_cart_name
@@ -224,7 +227,7 @@ CONTAINS
        ALLOCATE(axis_data(length))
 
        CALL get_diag_axis(id_axis, axis_name, axis_units, axis_long_name,&
-            & axis_cart_name, axis_direction, axis_edges, Domain, axis_data,&
+            & axis_cart_name, axis_direction, axis_edges, Domain, DomainU, axis_data,&
             & num_attributes, attributes)
 
        IF ( Domain .NE. null_domain1d ) THEN
@@ -235,6 +238,15 @@ CONTAINS
           ELSE
              CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
                   & axis_units, axis_long_name, axis_cart_name, axis_direction, Domain)
+          END IF
+       ELSEIF ( DomainU .NE. null_domainUG ) THEN !Add unstructured grid
+          IF ( length > 0 ) THEN
+             CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file),&
+                  & axis_name, axis_units, axis_long_name, axis_cart_name,&
+                  & axis_direction, Domain, axis_data, DomainU=DomainU )
+          ELSE
+             CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
+                  & axis_units, axis_long_name, axis_cart_name, axis_direction, Domain, DomainU=DomainU)
           END IF
        ELSE
           IF ( length > 0 ) THEN
