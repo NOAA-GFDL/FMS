@@ -494,6 +494,51 @@ return
 
   end subroutine mpp_define_null_UG_domain
 
+  !###################################################################
+  !> Overload the .eq. for UG
+  function mpp_domainUG_eq( a, b )
+    logical                    :: mpp_domainUG_eq
+    type(domainUG), intent(in) :: a, b
+    logical                    :: areAssociated
+
+    mpp_domainUG_eq = ( a%compute%begin.EQ.b%compute%begin .AND. &
+         a%compute%end  .EQ.b%compute%end   .AND. &
+         a%global%begin .EQ.b%global%begin  .AND. &
+         a%global%end   .EQ.b%global%end    .AND. &
+         a%SG2UG%nsend  .EQ.b%SG2UG%nsend   .AND. &
+         a%SG2UG%nrecv  .EQ.b%SG2UG%nrecv   .AND. &    
+         a%UG2SG%nsend  .EQ.b%UG2SG%nsend   .AND. &    
+         a%UG2SG%nrecv  .EQ.b%UG2SG%nrecv   .AND. &
+    )
+    
+    if (mpp_domainUG_eq) mpp_domainUG_eq = ASSOCIATED(a%SG_domain) .AND. ASSOCIATED(b%SG_domain)
+    areAssociated = ASSOCIATED(a%SG_domain)
+   if (areAssociated .AND. mpp_domainUG_eq) then
+    if (mpp_domainUG_eq) mpp_domainUG_eq = size(a%SG_domain%x(:)) .EQ. size(b%SG_domain%x(:))
+    nt = size(a%x(:))
+    do n = 1, nt
+       if(mpp_domain2d_eq) mpp_domain2D_eq = a%x(n).EQ.b%x(n) .AND. a%y(n).EQ.b%y(n)
+    end do
+   endif
+
+    !compare pelists
+          if( mpp_domainUG_eq )mpp_domainUG_eq = ASSOCIATED(a%list) .AND. ASSOCIATED(b%list)
+          if( mpp_domainUG_eq )mpp_domainUG_eq = size(a%list(:)).EQ.size(b%list(:))
+          if( mpp_domainUG_eq )mpp_domainUG_eq = ALL(a%list%pe.EQ.b%list%pe)
+
+    return
+  end function mpp_domainUG_eq
+
+  !> Overload the .ne. for UG
+  function mpp_domainUG_ne( a, b )
+    logical                    :: mpp_domainUG_ne
+    type(domainUG), intent(in) :: a, b
+
+    mpp_domainUG_ne = .NOT. ( a.EQ.b )
+    return
+  end function mpp_domainUG_ne
+
+
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
