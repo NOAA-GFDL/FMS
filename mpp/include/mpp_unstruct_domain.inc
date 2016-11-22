@@ -500,6 +500,7 @@ return
     logical                    :: mpp_domainUG_eq
     type(domainUG), intent(in) :: a, b
     logical                    :: areAssociated
+    integer                    :: n, nt
 
     mpp_domainUG_eq = ( a%compute%begin.EQ.b%compute%begin .AND. &
          a%compute%end  .EQ.b%compute%end   .AND. &
@@ -508,7 +509,7 @@ return
          a%SG2UG%nsend  .EQ.b%SG2UG%nsend   .AND. &
          a%SG2UG%nrecv  .EQ.b%SG2UG%nrecv   .AND. &    
          a%UG2SG%nsend  .EQ.b%UG2SG%nsend   .AND. &    
-         a%UG2SG%nrecv  .EQ.b%UG2SG%nrecv   .AND. &
+         a%UG2SG%nrecv  .EQ.b%UG2SG%nrecv         &
     )
     
     if (mpp_domainUG_eq) mpp_domainUG_eq = ASSOCIATED(a%SG_domain) .AND. ASSOCIATED(b%SG_domain)
