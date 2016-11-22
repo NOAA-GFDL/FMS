@@ -1948,9 +1948,9 @@ CONTAINS
        time_axis_id(1) = files(file)%time_axis_id
        time_bounds_id(1) = files(file)%time_bounds_id
        CALL get_diag_axis( time_axis_id(1), time_name, time_units, time_longname,&
-            & cart_name, dir, edges, Domain, DATA)
+            & cart_name, dir, edges, Domain, domainU, DATA)
        CALL get_diag_axis( time_bounds_id(1), timeb_name, timeb_units, timeb_longname,&
-            & cart_name, dir, edges, Domain, DATA)
+            & cart_name, dir, edges, Domain, domainU, DATA)
        files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
             & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
             & TRIM(time_unit_list(files(file)%time_units)),&

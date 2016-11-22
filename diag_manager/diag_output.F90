@@ -239,15 +239,6 @@ CONTAINS
              CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
                   & axis_units, axis_long_name, axis_cart_name, axis_direction, Domain)
           END IF
-       ELSEIF ( DomainU .NE. null_domainUG ) THEN !Add unstructured grid
-          IF ( length > 0 ) THEN
-             CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file),&
-                  & axis_name, axis_units, axis_long_name, axis_cart_name,&
-                  & axis_direction, Domain, axis_data, DomainU=DomainU )
-          ELSE
-             CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
-                  & axis_units, axis_long_name, axis_cart_name, axis_direction, Domain, DomainU=DomainU)
-          END IF
        ELSE
           IF ( length > 0 ) THEN
              CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
@@ -310,7 +301,7 @@ CONTAINS
        length = get_axis_global_length ( id_axis )
        ALLOCATE(axis_data(length))
        CALL get_diag_axis(id_axis, axis_name, axis_units, axis_long_name, axis_cart_name,&
-            & axis_direction, axis_edges, Domain, axis_data, num_attributes, attributes)
+            & axis_direction, axis_edges, Domain, DomainU, axis_data, num_attributes, attributes)
 
        !  ---- write edges attribute to original axis ----
        CALL mpp_write_meta(file_unit, mpp_get_id(Axis_types(num_axis_in_file)),&
