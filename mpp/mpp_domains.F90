@@ -216,6 +216,14 @@ module mpp_domains_mod
   !--- public interface from mpp_define_domains.inc
   public :: mpp_define_nest_domains, mpp_get_C2F_index, mpp_get_F2C_index
 
+!----------
+!ug support
+  public :: mpp_domain_UG_is_tile_root_pe
+  public :: mpp_deallocate_domainUG
+  public :: mpp_get_io_domain_UG_layout
+  public :: mpp_compare_UG_domains
+!----------
+
   integer, parameter :: NAME_LENGTH = 64
   integer, parameter :: MAXLIST = 24
   integer, parameter :: MAXOVERLAP = 100
@@ -268,6 +276,12 @@ module mpp_domains_mod
      integer :: ntiles
      integer :: tile_id
      integer :: tile_root_pe
+
+!----------
+!ug support
+     integer(INT_KIND) :: io_layout
+!----------
+
   end type domainUG
 
   type domain_axis_spec        !type used to specify index limits along an axis of a domain
