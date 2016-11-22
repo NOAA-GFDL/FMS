@@ -2301,11 +2301,13 @@ end interface
   interface operator(.EQ.)
      module procedure mpp_domain1D_eq
      module procedure mpp_domain2D_eq
+     module procedure mpp_domainUG_eq
   end interface
 
   interface operator(.NE.)
      module procedure mpp_domain1D_ne
      module procedure mpp_domain2D_ne
+     module procedure mpp_domainUG_ne
   end interface
 
   ! <INTERFACE NAME="mpp_get_compute_domain">
