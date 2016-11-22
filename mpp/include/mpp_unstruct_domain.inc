@@ -516,16 +516,17 @@ return
     areAssociated = ASSOCIATED(a%SG_domain)
    if (areAssociated .AND. mpp_domainUG_eq) then
     if (mpp_domainUG_eq) mpp_domainUG_eq = size(a%SG_domain%x(:)) .EQ. size(b%SG_domain%x(:))
-    nt = size(a%x(:))
+    nt = size(a%SG_domain%x(:))
     do n = 1, nt
-       if(mpp_domain2d_eq) mpp_domain2D_eq = a%x(n).EQ.b%x(n) .AND. a%y(n).EQ.b%y(n)
+       if(mpp_domain2d_eq) mpp_domain2D_eq = a%SG_domain%x(n).EQ.b%SG_domain%x(n) .AND.& 
+                                             a%SG_domain%y(n).EQ.b%SG_domain%y(n)
     end do
    endif
 
     !compare pelists
           if( mpp_domainUG_eq )mpp_domainUG_eq = ASSOCIATED(a%list) .AND. ASSOCIATED(b%list)
           if( mpp_domainUG_eq )mpp_domainUG_eq = size(a%list(:)).EQ.size(b%list(:))
-          if( mpp_domainUG_eq )mpp_domainUG_eq = ALL(a%list%pe.EQ.b%list%pe)
+          if( mpp_domainUG_eq )mpp_domainUG_eq = ALL(a%listi(:)%pe.EQ.b%list(:)%pe)
 
     return
   end function mpp_domainUG_eq
