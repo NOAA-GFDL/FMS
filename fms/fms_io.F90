@@ -110,6 +110,25 @@ use mpp_mod,         only: MPP_FILL_DOUBLE,MPP_FILL_INT
 
 use platform_mod, only: r8_kind
 
+!----------
+!ug support
+use mpp_domains_mod, only: mpp_get_UG_io_domain
+use mpp_domains_mod, only: mpp_compare_UG_domains
+use mpp_domains_mod, only: mpp_domain_UG_is_tile_root_pe
+use mpp_domains_mod, only: mpp_get_UG_global_domain
+use mpp_domains_mod, only: mpp_get_UG_compute_domain
+use mpp_domains_mod, only: NULL_DOMAINUG
+use mpp_domains_mod, only: mpp_get_UG_domain_npes
+use mpp_domains_mod, only: mpp_get_UG_domain_pelist
+use mpp_io_mod,      only: mpp_io_unstructured_write_r_1D
+use mpp_io_mod,      only: mpp_io_unstructured_write_r_2D
+use mpp_io_mod,      only: mpp_io_unstructured_write_r_3D
+use mpp_io_mod,      only: mpp_get_axis_length
+use mpp_io_mod,      only: mpp_io_unstructured_read_r_1D
+use mpp_io_mod,      only: mpp_io_unstructured_read_r_2D
+use mpp_io_mod,      only: mpp_io_unstructured_read_r_3D
+!----------
+
 implicit none
 private
 
@@ -135,7 +154,12 @@ integer, parameter, private :: HIDX=5
 integer, parameter, private :: TIDX=6
 integer, parameter, private :: UIDX=7
 integer, parameter, private :: CCIDX=8
-integer, parameter, private :: NIDX=8
+
+!----------
+!ug support
+integer(INT_KIND),parameter,private :: UNSTRUCTURED_GRID_INDEX = 9
+integer,parameter,private           :: NIDX = 9
+!----------
 
 type meta_type
   type(meta_type), pointer :: prev=>null(), next=>null()
@@ -167,6 +191,13 @@ type ax_type
    integer,allocatable :: nelems(:)      !num elements for each rank in io domain
    real, pointer      :: data(:) =>NULL()    !real axis values (not used if time axis)
    type(domain2d),pointer :: domain =>NULL() ! domain associated with compressed axis
+
+!----------
+!ug support
+   integer(INT_KIND),dimension(:),allocatable :: unstructured_axis_data !<An array holding the data for the unstructured axis.
+   type(domainUG),pointer                     :: domain_ug => null()    !<A pointer to an unstructured mpp domain.
+!----------
+
 end type ax_type
 
 type var_type
@@ -196,6 +227,14 @@ type var_type
    integer, dimension(:), allocatable     :: pelist
    integer                                :: ishift, jshift ! can be used to shift indices when no_domain=T
    integer                                :: x_halo, y_halo ! can be used to indicate halo size when no_domain=T
+
+!----------
+!ug support
+    integer(INT_KIND) :: domain_UG_index = -1                !<Unstructured domain index in the domain_UG_array module array.
+    logical(INT_KIND) :: registered_with_domain_UG = .false. !<Flag telling if the field with registered with an unstructured domain.
+    logical(INT_KIND) :: domain_UG_scalar = .false.          !<Flag telling if the field is a scalar field associated with an unstructured domain.
+!----------
+
 end type var_type
 
 type Ptr0Dr
@@ -484,6 +523,25 @@ integer            :: pack_size  ! = 1 for double = 2 for float
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
+!----------
+!ug support
+
+!Private module variables.  Remove these when this module is rewritten.
+type(domainUG),dimension(max_domains) :: domain_UG_array
+integer(INT_KIND)                     :: domain_UG_array_size = 0
+
+public :: fms_io_unstructured_register_restart_axis
+public :: fms_io_unstructured_register_restart_field_r_0d
+public :: fms_io_unstructured_register_restart_field_r_1d
+public :: fms_io_unstructured_register_restart_field_r_2d
+public :: fms_io_unstructured_register_restart_field_r_3d
+public :: fms_io_unstructured_register_restart_field_i_0d
+public :: fms_io_unstructured_register_restart_field_i_1d
+public :: fms_io_unstructured_register_restart_field_i_2d
+public :: fms_io_unstructured_save_restart
+public :: fms_io_unstructured_restore_state
+!----------
+
 contains
 
 ! <SUBROUTINE NAME="get_restart_io_mode">
@@ -580,6 +638,14 @@ subroutine fms_io_init()
   do i = 1, max_domains
      array_domain(i) = NULL_DOMAIN2D
   enddo
+
+!----------
+!ug support
+  do i = 1,max_domains
+      domain_UG_array(i) = NULL_DOMAINUG
+  enddo
+!----------
+
   !---- initialize module domain2d pointer ----
   nullify (Current_domain)
 
@@ -1152,7 +1218,10 @@ subroutine register_restart_axis_r1d(fileObj,filename,fieldname,data,cartesian,u
   if(.not. ALLOCATED(fileObj%axes)) allocate(fileObj%axes(NIDX))
   if(ASSOCIATED(fileObj%axes(idx)%data)) &
        call mpp_error(FATAL,'fms_io(register_restart_axis_r1d): '//trim(cartesian)//' axis has already been defined')
-  fileObj%name = filename
+
+ !Why do we do this?
+! fileObj%name = filename
+
   fileObj%axes(idx)%name = fieldname
   fileObj%axes(idx)%data =>data
   fileObj%axes(idx)%cartesian = cartesian
@@ -1210,7 +1279,10 @@ subroutine register_restart_axis_i1d(fileObj,filename,fieldname,data,compressed,
   if(ALLOCATED(fileObj%axes(idx)%idx)) &
                  call mpp_error(FATAL,'fms_io(register_restart_axis_i1d): Compressed axis ' //&
                  trim(compressed_axis) // ' has already been defined')
-  fileObj%name = filename
+
+ !Why do we do this?
+! fileObj%name = filename
+
   fileObj%is_compressed = .true.
   fileObj%unlimited_axis = .false.
   fileObj%axes(idx)%name = fieldname
@@ -1262,7 +1334,10 @@ subroutine register_restart_axis_unlimited(fileObj,filename,fieldname,nelem,unit
   if(.not. ALLOCATED(fileObj%axes)) allocate(fileObj%axes(NIDX))
   if(ALLOCATED(fileObj%axes(idx)%idx)) &
                call mpp_error(FATAL,'fms_io(register_restart_axis_unlimited): Unlimited axis has already been defined')
-  fileObj%name = filename
+
+ !Why do we do this?
+! fileObj%name = filename
+
   fileObj%is_compressed = .false.
   fileObj%unlimited_axis = .true.
   fileObj%axes(idx)%name = fieldname
@@ -8186,5 +8261,20 @@ subroutine write_version_number (version, tag, unit)
 
 end subroutine write_version_number
 ! </SUBROUTINE>
+
+!----------
+!ug support
+#include<fms_io_unstructured_get_file_unit.inc>
+#include<fms_io_unstructured_get_file_name.inc>
+#include<fms_io_unstructured_file_unit.inc>
+#include<fms_io_unstructured_file_exist.inc>
+#include<fms_io_unstructured_field_exist.inc>
+#include<fms_io_unstructured_lookup_domain.inc>
+#include<fms_io_unstructured_setup_one_field.inc>
+#include<fms_io_unstructured_register_restart_field.inc>
+#include<fms_io_unstructured_register_restart_axis.inc>
+#include<fms_io_unstructured_save_restart.inc>
+#include<fms_io_unstructured_restore_state.inc>
+!----------
 
 end module fms_io_mod
