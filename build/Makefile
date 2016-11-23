@@ -579,7 +579,8 @@ libfms.a: $(OBJ)
 	$(AR) $(ARFLAGS) libfms.a $(OBJ)
 
 prog:
-	ftn -i4 -r8 test_diag.F90 -B./ -openmp  -L/opt/intel/composer_xe_2015.2.164/15.0/2.164/lib/intel64 -lifcoremt -lnetcdf -L./ -lfms -o zzz.exe
+	ftn -i4 -r8 -g -traceback -O0 -I$(SRCROOT)shared/include test_unstructured_io_plus_diag.F90 -B./ -openmp  -L/opt/intel/composer_xe_2015.2.164/15.0/2.164/lib/intel64 -lifcoremt -lnetcdf -L./ -lfms -o zzz.exe
+#test_diag.F90 -B./ -openmp  -L/opt/intel/composer_xe_2015.2.164/15.0/2.164/lib/intel64 -lifcoremt -lnetcdf -L./ -lfms -o zzz.exe
 
 diag_test:
 	ftn -i4 -r8 -B./ -openmp  -L/opt/intel/composer_xe_2015.2.164/15.0/2.164/lib/intel64 -lifcoremt -lnetcdf -L./ -lfms -o zzz.exe
