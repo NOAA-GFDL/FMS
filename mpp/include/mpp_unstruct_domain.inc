@@ -168,6 +168,11 @@
         ngroup = CEILING(real(ndivs_tile(tile_id))/ npes_io_group)
      endif
 
+!----------
+!ug support
+     UG_domain%io_layout = ngroup
+!----------
+
      call mpp_compute_extent(1, ndivs_tile(tile_id), ngroup, ibegin(1:ngroup), iend(1:ngroup))
      my_pos = UG_domain%pe - UG_domain%tile_root_pe + 1
      do n = 1, ngroup
@@ -630,5 +635,8 @@ return
 #define MPP_TYPE_ integer(INT_KIND)
 #include <mpp_global_field_ug.h>
 
-
+!----------
+!ug support
+#include <ug_support.inc>
+!----------
 
