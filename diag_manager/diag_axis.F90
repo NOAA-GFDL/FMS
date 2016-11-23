@@ -224,6 +224,7 @@ CONTAINS
          & TRIM(uppercase(cart_name)) == 'U' .OR.&
          & TRIM(uppercase(cart_name)) == 'N' ) THEN
        Axes(diag_axis_init)%cart_name = TRIM(uppercase(cart_name))
+write(6,*) Axes(diag_axis_init)%cart_name,diag_axis_init
     ELSE
        ! <ERROR STATUS="FATAL">Invalid cart_name name.</ERROR>
        CALL error_mesg('diag_axis_mod::diag_axis_init', 'Invalid cart_name name.', FATAL)
@@ -863,21 +864,22 @@ CONTAINS
     LOGICAL :: XorY=.false. !> \paran XorY set to true if X or Y is found as a cart_name
     LOGICAL :: UG=.false. !> \param UG get to true if U is found as a cart_name
     INTEGER :: n !> \param n Looping index
-    CALL valid_id_check(id, 'axis_compatible_check')
+    
     if (size(id) == 1) then 
           return !> If there is only 1 axis ID, then this routine should return
     endif
      do n=1,size(id) !> Check for the cart_name of the axis
-          if (Axes(i)%cart_name == 'X' .OR. Axes(i)%cart_name == 'Y' ) XorY=.true.
-          if (Axes(i)%cart_name == 'U') UG = .true.
+          CALL valid_id_check(id(n), 'axis_compatible_check')
+          if (Axes(id(n))%cart_name == 'X' .OR. Axes(id(n))%cart_name == 'Y' ) XorY=.true.
+          if (Axes(id(n))%cart_name == 'U') UG = .true.
      enddo
      IF (UG .and. XorY) then !> If U and (X or Y) are found, return a fatal
-          if (present(varname))
-           call error_mesg('axis_compatible_check',"Can not use an unstructure grid with a "//&
-                          &"horizontal carteian coordinate for the field "//trim(varname),FATAL)
+          if (present(varname)) then
+           call error_mesg('axis_compatible_check',"Can not use an unstructured grid with a "//&
+                          &"horizontal cartesian coordinate for the field "//trim(varname),FATAL)
           else
-           call error_mesg('axis_compatible_check',"Can not use an unstructure grid with a horizontal cartesian coordinate",&
-                          &FATAL)
+           call error_mesg('axis_compatible_check',"Can not use an unstructured grid with a horizontal "//&
+                           &"cartesian coordinate",FATAL)
           endif
      ENDIF
           

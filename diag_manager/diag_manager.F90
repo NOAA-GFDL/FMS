@@ -195,7 +195,7 @@ MODULE diag_manager_mod
        & file_exist, fms_error_handler, check_nml_error, get_mosaic_tile_file
   USE fms_io_mod, ONLY: get_instance_filename
   USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, get_axis_num, get_domain2d, get_tile_count,&
-       & diag_axis_add_attribute
+       & diag_axis_add_attribute, axis_compatible_check
   USE diag_util_mod, ONLY: get_subfield_size, log_diag_field_info, update_bounds,&
        & check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
        & diag_time_inc, find_input_field, init_input_field, init_output_field,&
@@ -541,7 +541,8 @@ CONTAINS
     END IF
 
     IF ( PRESENT(err_msg) ) err_msg = ''
-
+!> Check that the axes are compatable with eachother
+     CALL axis_compatible_check(axes,field_name)
     ! Call register static, then set static back to false
     register_diag_field_array = register_static_field(module_name, field_name, axes,&
          & long_name, units, missing_value, range, mask_variant1, standard_name=standard_name,&
