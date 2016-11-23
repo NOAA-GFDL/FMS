@@ -120,13 +120,9 @@ use mpp_domains_mod, only: mpp_get_UG_compute_domain
 use mpp_domains_mod, only: NULL_DOMAINUG
 use mpp_domains_mod, only: mpp_get_UG_domain_npes
 use mpp_domains_mod, only: mpp_get_UG_domain_pelist
-use mpp_io_mod,      only: mpp_io_unstructured_write_r_1D
-use mpp_io_mod,      only: mpp_io_unstructured_write_r_2D
-use mpp_io_mod,      only: mpp_io_unstructured_write_r_3D
+use mpp_io_mod,      only: mpp_io_unstructured_write
 use mpp_io_mod,      only: mpp_get_axis_length
-use mpp_io_mod,      only: mpp_io_unstructured_read_r_1D
-use mpp_io_mod,      only: mpp_io_unstructured_read_r_2D
-use mpp_io_mod,      only: mpp_io_unstructured_read_r_3D
+use mpp_io_mod,      only: mpp_io_unstructured_read
 !----------
 
 implicit none
