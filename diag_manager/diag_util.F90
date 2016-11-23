@@ -48,13 +48,13 @@ MODULE diag_util_mod
   USE mpp_domains_mod,ONLY: domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
        & OPERATOR(.NE.), OPERATOR(.EQ.), mpp_modify_domain, mpp_get_domain_components,&
        & mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, mpp_get_tile_npes,&
-       & domainUG, null_domainUG
+       & domainUG, null_domainUG 
   USE time_manager_mod,ONLY: time_type, OPERATOR(==), OPERATOR(>), NO_CALENDAR, increment_date,&
        & increment_time, get_calendar_type, get_date, get_time, leap_year, OPERATOR(-),&
        & OPERATOR(<), OPERATOR(>=), OPERATOR(<=)
   USE mpp_io_mod, ONLY: mpp_close
   USE mpp_mod, ONLY: mpp_npes
-  USE fms_io_mod, ONLY: get_instance_filename
+  USE fms_io_mod, ONLY: get_instance_filename, get_mosaic_tile_file_ug
   USE constants_mod, ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
 
 #ifdef use_netCDF
@@ -1727,6 +1727,7 @@ CONTAINS
        IF ( num_axes > 1 ) THEN
           all_scalar_or_1d = .FALSE.
           domain2 = get_domain2d ( output_fields(field_num)%axes(1:num_axes) )
+          domainU = get_domainUG ( output_fields(field_num)%axes(1) )
           IF ( domain2 .NE. NULL_DOMAIN2D ) EXIT
        ELSEIF (num_axes == 1) THEN
           domainU = get_domainUG ( output_fields(field_num)%axes(num_axes) )
@@ -1734,14 +1735,19 @@ CONTAINS
     END DO
 
     IF( .NOT.all_scalar_or_1d ) THEN
-       IF ( domain2 .EQ. NULL_DOMAIN2D ) CALL return_domain(domain2)
-       IF ( domain2 .EQ. NULL_DOMAIN2D ) THEN
-          ! <ERROR STATUS="FATAL">
-          !   Domain not defined through set_domain interface; cannot retrieve tile info
-          ! </ERROR>
-          CALL error_mesg('diag_util_mod::opening_file',&
-               & 'Domain not defined through set_domain interface; cannot retrieve tile info', FATAL)
-       END IF
+       IF (domainU .ne. null_domainUG .AND. domain2 .ne. null_domain2D) &
+           & CALL error_mesg('diag_util_mod::opening_file',&
+                & 'Domain2 and DomainU are somehow both set.', FATAL)
+
+       ELSEIF ( domainU .eq. null_domainUG) then
+        IF ( domain2 .EQ. NULL_DOMAIN2D ) CALL return_domain(domain2)
+        IF ( domain2 .EQ. NULL_DOMAIN2D ) THEN
+           ! <ERROR STATUS="FATAL">
+           !   Domain not defined through set_domain interface; cannot retrieve tile info
+           ! </ERROR>
+           CALL error_mesg('diag_util_mod::opening_file',&
+                & 'Domain not defined through set_domain interface; cannot retrieve tile info', FATAL)
+        END IF
        IF ( mpp_get_ntile_count(domain2) > 1 ) THEN
           ntileMe = mpp_get_current_ntile(domain2)
           ALLOCATE(tile_id(ntileMe))
@@ -1749,8 +1755,22 @@ CONTAINS
           fname = TRIM(filename)
           CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(files(file)%tile_count))
           DEALLOCATE(tile_id)
-       END IF
+      END IF
     END IF
+  
+    IF ( domainU .ne. null_domainUG) then
+!          ntileMe = mpp_get_UG_current_ntile(domainU)
+!          ALLOCATE(tile_id(ntileMe))
+!          tile_id = mpp_get_UG_tile_id(domainU)
+!          fname = TRIM(filename)
+!           ntiles = mpp_get_UG_domain_ntiles(domainU)
+!           my_tile_id = mpp_get_UG_domain_tile_id(domainU)
+!          CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(files(file)%tile_count))
+!          DEALLOCATE(tile_id)
+          fname = TRIM(filename)
+          CALL get_mosaic_tile_file_ug(fname,filename,domainU)
+write (6,*)filename
+    ENDIF
 
     IF ( _ALLOCATED(files(file)%attributes) ) THEN
        CALL diag_output_init(filename, files(file)%format, global_descriptor,&
