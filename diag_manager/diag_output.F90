@@ -114,6 +114,12 @@ CONTAINS
        fileset   = MPP_SINGLE
     END IF
 
+    
+!> Check to make sure that only domain2D or domainUG is used.  If both are not null, then FATAL
+    if (domain .NE. NULL_DOMAIN2D .AND. domainU .NE. NULL_DOMAINUG)&
+          & CALL error_mesg('diag_output_init', "Domain2D and DomainUG can not be used at the same time in "//&
+          & trim(file_name), FATAL)
+
     !---- open output file (return file_unit id) -----
     IF ( domain .EQ. NULL_DOMAIN2D ) THEN
        CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
