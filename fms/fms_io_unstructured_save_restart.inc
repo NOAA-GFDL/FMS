@@ -540,7 +540,7 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
                                                        cur_var%field, &
                                                        domain, &
                                                        fileObj%p1dr(k,j)%p, &
-                                                       fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
+                                                       nelems_io_in=fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
                                                        tstamp=tlev, &
                                                        default_data=cur_var%default_data)
                     elseif (associated(fileObj%p2dr(k,j)%p)) then
@@ -556,7 +556,7 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
                                                        cur_var%field, &
                                                        domain, &
                                                        fileObj%p2dr(k,j)%p, &
-                                                       fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
+                                                       nelems_io_in=fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
                                                        tstamp=tlev, &
                                                        default_data=cur_var%default_data)
                     elseif (associated(fileObj%p3dr(k,j)%p)) then
@@ -580,7 +580,7 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
                                                        cur_var%field, &
                                                        domain, &
                                                        fileObj%p3dr(k,j)%p, &
-                                                       fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
+                                                       nelems_io_in=fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
                                                        tstamp=tlev, &
                                                        default_data=cur_var%default_data)
                     elseif (associated(fileObj%p0di(k,j)%p)) then
@@ -596,7 +596,7 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
                                                        cur_var%field, &
                                                        domain, &
                                                        r1d, &
-                                                       fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
+                                                       nelems_io_in=fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
                                                        tstamp=tlev, &
                                                        default_data=cur_var%default_data)
                         deallocate(r1d)
@@ -615,7 +615,7 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
                                                        cur_var%field, &
                                                        domain, &
                                                        r2d, &
-                                                       fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
+                                                       nelems_io_in=fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
                                                        tstamp=tlev, &
                                                        default_data=cur_var%default_data)
                         deallocate(r2d)
