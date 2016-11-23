@@ -125,8 +125,8 @@ CONTAINS
        CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
             & threading=threading, fileset=fileset, domain=domain)
     ELSEif (domainU .NE. NULL_DOMAINUG) THEN
-       CALL        CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
-            & threading=threading, fileset=fileset, domainUG=domainU)
+       CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
+            & threading=threading, fileset=fileset, domain_UG=domainU)
     ELSE
        CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
             & threading=threading, fileset=fileset)
