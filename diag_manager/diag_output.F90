@@ -12,7 +12,7 @@ MODULE diag_output_mod
 
   USE mpp_io_mod, ONLY: axistype, fieldtype, mpp_io_init, mpp_open,  mpp_write_meta,&
        & mpp_write, mpp_flush, mpp_close, mpp_get_id, MPP_WRONLY, MPP_OVERWR,&
-       & MPP_NETCDF, MPP_MULTI, MPP_SINGLE
+       & MPP_NETCDF, MPP_MULTI, MPP_SINGLE, mpp_io_unstructured_write
   USE mpp_domains_mod, ONLY: domain1d, domain2d, mpp_define_domains, mpp_get_pelist,&
        &  mpp_get_global_domain, mpp_get_compute_domains, null_domain1d, null_domain2d,&
        & domainUG, null_domainUG,&
@@ -754,6 +754,15 @@ CONTAINS
           CALL mpp_write(file_unit, Field%Field, Field%Domain, DATA, time, &
                       tile_count=Field%tile_count, default_data=CMOR_MISSING_VALUE)
        END IF
+    ELSEIF ( Field%DomainU .NE. null_domainUG ) THEN
+       IF( Field%miss_present ) THEN
+          CALL mpp_io_unstructured_write(file_unit, Field%Field, Field%DomainU, DATA, tstamp=time, &
+                       default_data=Field%miss_pack)
+       ELSE
+          CALL mpp_io_unstructured_write(file_unit, Field%Field, Field%DomainU, DATA, tstamp=time, &
+                       default_data=CMOR_MISSING_VALUE)
+       END IF
+
     ELSE
        CALL mpp_write(file_unit, Field%Field, DATA, time)
     END IF
