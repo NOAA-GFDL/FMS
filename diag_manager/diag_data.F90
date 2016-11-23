@@ -138,6 +138,7 @@ MODULE diag_data_mod
   TYPE diag_fieldtype
      TYPE(fieldtype) :: Field
      TYPE(domain2d) :: Domain
+     TYPE(domainUG) :: DomainU
      REAL :: miss, miss_pack
      LOGICAL :: miss_present, miss_pack_present
      INTEGER :: tile_count

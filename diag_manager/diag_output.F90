@@ -19,7 +19,8 @@ MODULE diag_output_mod
        & OPERATOR(.NE.), mpp_get_layout, OPERATOR(.EQ.)
   USE mpp_mod, ONLY: mpp_npes, mpp_pe
   USE diag_axis_mod, ONLY: diag_axis_init, get_diag_axis, get_axis_length,&
-       & get_axis_global_length, get_domain1d, get_domain2d, get_axis_aux, get_tile_count
+       & get_axis_global_length, get_domain1d, get_domain2d, get_axis_aux, get_tile_count,&
+       & get_domainUG
   USE diag_data_mod, ONLY: diag_fieldtype, diag_global_att_type, CMOR_MISSING_VALUE, diag_atttype
   USE time_manager_mod, ONLY: get_calendar_type, valid_calendar_types
   USE fms_mod, ONLY: error_mesg, mpp_pe, write_version_number, fms_error_handler, FATAL
@@ -626,6 +627,7 @@ CONTAINS
     !---- get axis domain ----
     Field%Domain = get_domain2d ( axes )
     Field%tile_count = get_tile_count ( axes )
+    Field%DomainU = get_domainUG ( axes(1) )
 
   END FUNCTION write_field_meta_data
   ! </FUNCTION>
