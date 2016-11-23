@@ -35,7 +35,7 @@ MODULE diag_axis_mod
        & get_diag_axis_cart, get_diag_axis_data, max_axes, get_axis_aux,&
        & get_tile_count, get_axes_shift, get_diag_axis_name,&
        & get_axis_num, get_diag_axis_domain_name, diag_axis_add_attribute,&
-       & get_domainUG
+       & get_domainUG, axis_compatible_check
 
   ! Module variables
   ! Parameters
@@ -845,6 +845,43 @@ CONTAINS
 !       get_domainUG = NULL_DOMAINUG
 !    ENDIF
   END FUNCTION get_domainUG
+
+  ! <SUBROUTINE NAME="axis_compatible_check">
+  !   <OVERVIEW>
+  !     Checks if the axes are compatible
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     INTEGER FUNCTION axis_compatible_check(id)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     Checks if the axes are compatible 
+  !   </DESCRIPTION>
+  !   <IN NAME="id" TYPE="INTEGER">Axis ID</IN>
+  SUBROUTINE axis_compatible_check(id,varname)
+    INTEGER, INTENT(in), DIMENSION(:) :: id !<The array of axis IDs
+    CHARACTER(*), INTENT(IN), OPTIONAL :: varname !< The name of the variable
+    LOGICAL :: XorY=.false. !> \paran XorY set to true if X or Y is found as a cart_name
+    LOGICAL :: UG=.false. !> \param UG get to true if U is found as a cart_name
+    INTEGER :: n !> \param n Looping index
+    CALL valid_id_check(id, 'axis_compatible_check')
+    if (size(id) == 1) then 
+          return !> If there is only 1 axis ID, then this routine should return
+    endif
+     do n=1,size(id) !> Check for the cart_name of the axis
+          if (Axes(i)%cart_name == 'X' .OR. Axes(i)%cart_name == 'Y' ) XorY=.true.
+          if (Axes(i)%cart_name == 'U') UG = .true.
+     enddo
+     IF (UG .and. XorY) then !> If U and (X or Y) are found, return a fatal
+          if (present(varname))
+           call error_mesg('axis_compatible_check',"Can not use an unstructure grid with a "//&
+                          &"horizontal carteian coordinate for the field "//trim(varname),FATAL)
+          else
+           call error_mesg('axis_compatible_check',"Can not use an unstructure grid with a horizontal cartesian coordinate",&
+                          &FATAL)
+          endif
+     ENDIF
+          
+  END SUBROUTINE axis_compatible_check
 
 
   ! </FUNCTION>
