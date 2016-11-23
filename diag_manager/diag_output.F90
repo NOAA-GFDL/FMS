@@ -121,12 +121,15 @@ CONTAINS
           & trim(file_name), FATAL)
 
     !---- open output file (return file_unit id) -----
-    IF ( domain .EQ. NULL_DOMAIN2D ) THEN
-       CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
-            & threading=threading, fileset=fileset)
-    ELSE
+    IF ( domain .NE. NULL_DOMAIN2D ) THEN
        CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
             & threading=threading, fileset=fileset, domain=domain)
+    ELSEif (domainU .NE. NULL_DOMAINUG) THEN
+       CALL        CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
+            & threading=threading, fileset=fileset, domainUG=domainU)
+    ELSE
+       CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
+            & threading=threading, fileset=fileset)
     END IF
 
     !---- write global attributes ----
