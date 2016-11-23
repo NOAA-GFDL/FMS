@@ -505,7 +505,6 @@ return
     logical                    :: mpp_domainUG_eq
     type(domainUG), intent(in) :: a, b
     logical                    :: areAssociated
-    integer                    :: n, nt
 
     mpp_domainUG_eq = ( a%compute%begin.EQ.b%compute%begin .AND. &
          a%compute%end  .EQ.b%compute%end   .AND. &
@@ -520,18 +519,7 @@ return
     if (mpp_domainUG_eq) mpp_domainUG_eq = ASSOCIATED(a%SG_domain) .AND. ASSOCIATED(b%SG_domain)
     areAssociated = ASSOCIATED(a%SG_domain)
    if (areAssociated .AND. mpp_domainUG_eq) then
-    if (mpp_domainUG_eq) mpp_domainUG_eq = size(a%SG_domain%x(:)) .EQ. size(b%SG_domain%x(:))
-    nt = size(a%SG_domain%x(:))
-    do n = 1, nt
-       if(mpp_domainUG_eq) mpp_domainUG_eq = a%SG_domain%x(n).EQ.b%SG_domain%x(n) .AND.& 
-                                             a%SG_domain%y(n).EQ.b%SG_domain%y(n)
-    end do
-   endif
-
-    !compare pelists
-          if( mpp_domainUG_eq )mpp_domainUG_eq = ASSOCIATED(a%list) .AND. ASSOCIATED(b%list)
-          if( mpp_domainUG_eq )mpp_domainUG_eq = size(a%list(:)).EQ.size(b%list(:))
-          if( mpp_domainUG_eq )mpp_domainUG_eq = ALL(a%list(:)%pe.EQ.b%list(:)%pe)
+       if(mpp_domainUG_eq) mpp_domainUG_eq = mpp_domain_eq (a%SG_domain , b%SG_domain) 
 
     return
   end function mpp_domainUG_eq
