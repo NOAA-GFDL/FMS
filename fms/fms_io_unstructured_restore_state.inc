@@ -400,31 +400,31 @@ subroutine fms_io_unstructured_restore_state(fileObj, &
                                                        mask_val=cur_var%default_data)
                         endif
                     elseif (associated(fileObj%p1dr(k,j)%p)) then
-                        call mpp_io_unstructured_read_r_1D(funit, &
-                                                           fields(l), &
-                                                           domain, &
-                                                           fileObj%p1dr(k,j)%p, &
-                                                           tindex=tlev)
+                        call mpp_io_unstructured_read(funit, &
+                                                      fields(l), &
+                                                      domain, &
+                                                      fileObj%p1dr(k,j)%p, &
+                                                      tindex=tlev)
                         if (is_there_a_checksum) then
                             checksum_data = mpp_chksum(fileObj%p1dr(k,j)%p, &
                                                        mask_val=cur_var%default_data)
                         endif
                     elseif (associated(fileObj%p2dr(k,j)%p)) then
-                        call mpp_io_unstructured_read_r_2D(funit, &
-                                                           fields(l), &
-                                                           domain, &
-                                                           fileObj%p2dr(k,j)%p, &
-                                                           tindex=tlev)
+                        call mpp_io_unstructured_read(funit, &
+                                                      fields(l), &
+                                                      domain, &
+                                                      fileObj%p2dr(k,j)%p, &
+                                                      tindex=tlev)
                         if (is_there_a_checksum) then
                             checksum_data = mpp_chksum(fileObj%p2dr(k,j)%p, &
                                                        mask_val=cur_var%default_data)
                         endif
                     elseif (associated(fileObj%p3dr(k,j)%p)) then
-                        call mpp_io_unstructured_read_r_3D(funit, &
-                                                           fields(l), &
-                                                           domain, &
-                                                           fileObj%p3dr(k,j)%p, &
-                                                           tindex=tlev)
+                        call mpp_io_unstructured_read(funit, &
+                                                      fields(l), &
+                                                      domain, &
+                                                      fileObj%p3dr(k,j)%p, &
+                                                      tindex=tlev)
                         if (is_there_a_checksum) then
                             checksum_data = mpp_chksum(fileObj%p3dr(k,j)%p, &
                                                        mask_val=cur_var%default_data)
@@ -442,11 +442,11 @@ subroutine fms_io_unstructured_restore_state(fileObj, &
                     elseif (associated(fileObj%p1di(k,j)%p)) then
                         allocate(r1d(cur_var%siz(1)))
                         r1d = 0
-                        call mpp_io_unstructured_read_r_1D(funit, &
-                                                           fields(l), &
-                                                           domain, &
-                                                           r1d, &
-                                                           tindex=tlev)
+                        call mpp_io_unstructured_read(funit, &
+                                                      fields(l), &
+                                                      domain, &
+                                                      r1d, &
+                                                      tindex=tlev)
                         fileObj%p1di(k,j)%p = int(r1d)
                         if (is_there_a_checksum) then
                             checksum_data = mpp_chksum(fileObj%p1di(k,j)%p, &
@@ -456,11 +456,11 @@ subroutine fms_io_unstructured_restore_state(fileObj, &
                     elseif (associated(fileObj%p2di(k,j)%p)) then
                         allocate(r2d(cur_var%siz(1),cur_var%siz(2)))
                         r2d = 0
-                        call mpp_io_unstructured_read_r_2D(funit, &
-                                                           fields(l), &
-                                                           domain, &
-                                                           r2d, &
-                                                           tindex=tlev)
+                        call mpp_io_unstructured_read(funit, &
+                                                      fields(l), &
+                                                      domain, &
+                                                      r2d, &
+                                                      tindex=tlev)
                         fileObj%p2di(k,j)%p = int(r2d)
                         if (is_there_a_checksum) then
                             checksum_data = mpp_chksum(fileObj%p2di(k,j)%p, &

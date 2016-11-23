@@ -536,13 +536,13 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
                                        fileObj%p0dr(k,j)%p, &
                                        tlev)
                     elseif (associated(fileObj%p1dr(k,j)%p)) then
-                        call mpp_io_unstructured_write_r_1D(funit, &
-                                                            cur_var%field, &
-                                                            domain, &
-                                                            fileObj%p1dr(k,j)%p, &
-                                                            fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
-                                                            tstamp=tlev, &
-                                                            default_data=cur_var%default_data)
+                        call mpp_io_unstructured_write(funit, &
+                                                       cur_var%field, &
+                                                       domain, &
+                                                       fileObj%p1dr(k,j)%p, &
+                                                       fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
+                                                       tstamp=tlev, &
+                                                       default_data=cur_var%default_data)
                     elseif (associated(fileObj%p2dr(k,j)%p)) then
                         if (.not. z_axis_defined) then
                             call mpp_error(FATAL, &
@@ -552,13 +552,13 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
                                            //"a z-axis must be registered to the" &
                                            //" restart file "//trim(fileObj%name))
                         endif
-                        call mpp_io_unstructured_write_r_2D(funit, &
-                                                            cur_var%field, &
-                                                            domain, &
-                                                            fileObj%p2dr(k,j)%p, &
-                                                            fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
-                                                            tstamp=tlev, &
-                                                            default_data=cur_var%default_data)
+                        call mpp_io_unstructured_write(funit, &
+                                                       cur_var%field, &
+                                                       domain, &
+                                                       fileObj%p2dr(k,j)%p, &
+                                                       fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
+                                                       tstamp=tlev, &
+                                                       default_data=cur_var%default_data)
                     elseif (associated(fileObj%p3dr(k,j)%p)) then
                         if (.not. z_axis_defined) then
                             call mpp_error(FATAL, &
@@ -576,13 +576,13 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
                                            //"a cc-axis must be registered to the" &
                                            //" restart file "//trim(fileObj%name))
                         endif
-                        call mpp_io_unstructured_write_r_3D(funit, &
-                                                            cur_var%field, &
-                                                            domain, &
-                                                            fileObj%p3dr(k,j)%p, &
-                                                            fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
-                                                            tstamp=tlev, &
-                                                            default_data=cur_var%default_data)
+                        call mpp_io_unstructured_write(funit, &
+                                                       cur_var%field, &
+                                                       domain, &
+                                                       fileObj%p3dr(k,j)%p, &
+                                                       fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
+                                                       tstamp=tlev, &
+                                                       default_data=cur_var%default_data)
                     elseif (associated(fileObj%p0di(k,j)%p)) then
                         r0d =  real(fileObj%p0di(k,j)%p)
                         call mpp_write(funit, &
@@ -592,13 +592,13 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
                     elseif (associated(fileObj%p1di(k,j)%p)) then
                         allocate(r1d(cur_var%siz(1)))
                         r1d = real(fileObj%p1di(k,j)%p)
-                        call mpp_io_unstructured_write_r_1D(funit, &
-                                                            cur_var%field, &
-                                                            domain, &
-                                                            r1d, &
-                                                            fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
-                                                            tstamp=tlev, &
-                                                            default_data=cur_var%default_data)
+                        call mpp_io_unstructured_write(funit, &
+                                                       cur_var%field, &
+                                                       domain, &
+                                                       r1d, &
+                                                       fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
+                                                       tstamp=tlev, &
+                                                       default_data=cur_var%default_data)
                         deallocate(r1d)
                     elseif (associated(fileObj%p2di(k,j)%p)) then
                         if (.not. z_axis_defined) then
@@ -611,13 +611,13 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
                         endif
                         allocate(r2d(cur_var%siz(1),cur_var%siz(2)))
                         r2d = real(fileObj%p2di(k,j)%p)
-                        call mpp_io_unstructured_write_r_2D(funit, &
-                                                            cur_var%field, &
-                                                            domain, &
-                                                            r2d, &
-                                                            fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
-                                                            tstamp=tlev, &
-                                                            default_data=cur_var%default_data)
+                        call mpp_io_unstructured_write(funit, &
+                                                       cur_var%field, &
+                                                       domain, &
+                                                       r2d, &
+                                                       fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
+                                                       tstamp=tlev, &
+                                                       default_data=cur_var%default_data)
                         deallocate(r2d)
                     else
                         call mpp_error(FATAL, &

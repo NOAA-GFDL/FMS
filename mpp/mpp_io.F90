@@ -1038,12 +1038,20 @@ type :: atttype
 
 !----------
 !ug support
-public :: mpp_io_unstructured_write_r_1D
-public :: mpp_io_unstructured_write_r_2D
-public :: mpp_io_unstructured_write_r_3D
-public :: mpp_io_unstructured_read_r_1D
-public :: mpp_io_unstructured_read_r_2D
-public :: mpp_io_unstructured_read_r_3D
+public :: mpp_io_unstructured_write
+public :: mpp_io_unstructured_read
+
+interface mpp_io_unstructured_write
+    module procedure mpp_io_unstructured_write_r_1D
+    module procedure mpp_io_unstructured_write_r_2D
+    module procedure mpp_io_unstructured_write_r_3D
+end interface mpp_io_unstructured_write
+
+interface mpp_io_unstructured_read
+    module procedure mpp_io_unstructured_read_r_1D
+    module procedure mpp_io_unstructured_read_r_2D
+    module procedure mpp_io_unstructured_read_r_3D
+end interface mpp_io_unstructured_read
 !----------
 
 contains
