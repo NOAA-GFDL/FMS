@@ -435,7 +435,7 @@ public  :: open_namelist_file, open_restart_file, open_ieee32_file, close_file
 public  :: set_domain, nullify_domain, get_domain_decomp, return_domain
 public  :: open_file, open_direct_file
 public  :: get_restart_io_mode, get_tile_string, string
-public  :: get_mosaic_tile_grid, get_mosaic_tile_file, get_file_name
+public  :: get_mosaic_tile_grid, get_mosaic_tile_file, get_file_name, get_mosaic_tile_file_ug
 public  :: get_global_att_value, get_var_att_value
 public  :: file_exist, field_exist
 public  :: register_restart_field, register_restart_axis, save_restart, restore_state
