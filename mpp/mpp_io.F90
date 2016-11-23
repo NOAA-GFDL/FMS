@@ -1045,6 +1045,7 @@ interface mpp_io_unstructured_write
     module procedure mpp_io_unstructured_write_r_1D
     module procedure mpp_io_unstructured_write_r_2D
     module procedure mpp_io_unstructured_write_r_3D
+    module procedure mpp_io_unstructured_write_r_4D
 end interface mpp_io_unstructured_write
 
 interface mpp_io_unstructured_read
