@@ -514,8 +514,8 @@ return
     if (mpp_domainUG_eq) mpp_domainUG_eq = ASSOCIATED(a%SG_domain) .AND. ASSOCIATED(b%SG_domain)
     areAssociated = ASSOCIATED(a%SG_domain)
    if (areAssociated .AND. mpp_domainUG_eq) then
-       if(mpp_domainUG_eq) mpp_domainUG_eq = mpp_domain_eq (a%SG_domain , b%SG_domain) 
-
+       if(mpp_domainUG_eq) mpp_domainUG_eq = mpp_domain2D_eq (a%SG_domain , b%SG_domain) 
+   endif
     return
   end function mpp_domainUG_eq
 
