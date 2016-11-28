@@ -1769,7 +1769,6 @@ CONTAINS
 !          DEALLOCATE(tile_id)
           fname = TRIM(filename)
           CALL get_mosaic_tile_file_ug(fname,filename,domainU)
-write (6,*)filename
     ENDIF
 
     IF ( _ALLOCATED(files(file)%attributes) ) THEN

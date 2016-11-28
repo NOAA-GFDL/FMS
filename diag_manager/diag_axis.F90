@@ -224,7 +224,6 @@ CONTAINS
          & TRIM(uppercase(cart_name)) == 'U' .OR.&
          & TRIM(uppercase(cart_name)) == 'N' ) THEN
        Axes(diag_axis_init)%cart_name = TRIM(uppercase(cart_name))
-write(6,*) Axes(diag_axis_init)%cart_name,diag_axis_init
     ELSE
        ! <ERROR STATUS="FATAL">Invalid cart_name name.</ERROR>
        CALL error_mesg('diag_axis_mod::diag_axis_init', 'Invalid cart_name name.', FATAL)
@@ -840,11 +839,11 @@ write(6,*) Axes(diag_axis_init)%cart_name,diag_axis_init
     INTEGER, INTENT(in) :: id
 
     CALL valid_id_check(id, 'get_domainUG')
-!    IF (Axes(id)%DomainUG .NE. NULL_DOMAINUG) THEN
+    IF (Axes(id)%DomainUG .NE. NULL_DOMAINUG) THEN
        get_domainUG = Axes(id)%DomainUG
-!    ELSE
-!       get_domainUG = NULL_DOMAINUG
-!    ENDIF
+    ELSE
+       get_domainUG = NULL_DOMAINUG
+    ENDIF
   END FUNCTION get_domainUG
 
   ! <SUBROUTINE NAME="axis_compatible_check">
