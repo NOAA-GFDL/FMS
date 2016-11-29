@@ -4427,7 +4427,7 @@ PROGRAM test
 
   NAMELIST /test_diag_manager_nml/ layout, test_number, nlon, nlat, nlev, io_layout, numthreads, &
                                    dt_step, months, days
-
+  NAMELIST /utest_nml/nx,ny,nz,nt,ntiles_x,ntiles_y
   ! Initialize all id* vars to be -1
   id_nv = -1
   id_nv_init = -1
@@ -4457,10 +4457,12 @@ PROGRAM test
   npes = mpp_npes()
 #ifdef INTERNAL_FILE_NML
   READ (input_nml_file, NML=test_diag_manager_nml, IOSTAT=ierr)
+  READ (input_nml_file, NML=utest_nml, IOSTAT=ierr)
 #else
   IF ( file_exist('input.nml') ) THEN
      nml_unit = open_namelist_file()
      READ(nml_unit, nml=test_diag_manager_nml, iostat=ierr)
+     READ(nml_unit, nml=utest_nml, iostat=ierr)
      CALL close_file(nml_unit)
   ELSE
      ! Set ierr to an arbitrary positive number if input.nml does not exist.
@@ -5210,14 +5212,15 @@ CONTAINS
         character(len=256)                             :: unstructured_int_1D_field_name             !<Name for an unstructured integer 1D field.
         integer,dimension(:),allocatable               :: unstructured_int_1D_field_data             !<Data for an unstructured integer 1D field.
         character(len=256)                             :: unstructured_int_2D_field_name             !<Name for an unstructured integer 2D field.
+        character(len=100)                             :: unstructured_1d_alt                       !<Name of the unstrucutred 1D field if L>1
         integer,dimension(:,:),allocatable             :: unstructured_int_2D_field_data             !<Data for an unstructured integer 2D field.
-       integer(INT_KIND)                              :: unstructured_axis_diag_id                  !<Id returned for the unstructured axis by diag_axis_init.
-       integer(INT_KIND)                              :: x_axis_diag_id                             !<Id returned for the x-axis by diag_axis_init.
+       integer(INT_KIND),allocatable,dimension(:)      :: unstructured_axis_diag_id                  !<Id returned for the unstructured axis by diag_axis_init.
+       integer(INT_KIND)                               :: x_axis_diag_id                             !<Id returned for the x-axis by diag_axis_init.
 !       integer(INT_KIND)                              :: y_axis_diag_id                             !<Id returned for the y-axis by diag_axis_init.
        integer(INT_KIND)                              :: z_axis_diag_id                             !<Id returned for the z-axis by diag_axis_init.
        integer(INT_KIND)                              :: rsf_diag_id                                !<Id returned for a real scalar field associated with the unstructured grid by
                                 !!register_diag_field.
-       integer(INT_KIND)                              :: rsf_diag_1d_id                             !<Id returned for a real 1D array  field associated with the unstructured grid by                                                                                                     !!register_diag_field.
+       integer(INT_KIND),allocatable,dimension(:)     :: rsf_diag_1d_id                             !<Id returned for a real 1D array  field associated with the unstructured grid by                                                                                                     !!register_diag_field.
        integer(INT_KIND)                              :: rsf_diag_2d_id                             !<Id returned for a real 2D array  field associated with the unstructured grid by                                                                                                     !!register_diag_field.
         integer(INT_KIND)                              :: num_diag_time_steps                        !<Number of timesteps (to simulate the model running).
         type(time_type)                                :: diag_time_start                            !<Starting time for the test.
@@ -5226,7 +5229,7 @@ CONTAINS
 
         integer(INT_KIND)                              :: i                                          !<Loop variable.
         integer(INT_KIND)                              :: j                                          !<Loop variable.
-        integer(INT_KIND)                              :: k                                          !<Loop variable.
+        integer(INT_KIND)                              :: k,l=1                                          !<Loop variable.
         integer(INT_KIND)                              :: p                                          !<Counting variable.
 
        !Needed to define the 2D structured domain but never used.
@@ -5241,6 +5244,8 @@ CONTAINS
         integer(INT_KIND),dimension(20) :: iend2
         integer(INT_KIND),dimension(20) :: jstart2
         integer(INT_KIND),dimension(20) :: jend2
+
+        integer(INT_KIND),dimension(3)  :: npes_io_group
 
        !Print out a message that the test is starting.
         if (mpp_pe() .eq. mpp_root_pe()) then
@@ -5420,21 +5425,6 @@ CONTAINS
                            //" domain.")
         endif
 
-       !Define the number of "I/O tile factor".  The number of ranks that
-       !participate in I/O for a tile is equal to: 
-       !
-       ! num_io_ranks_on_a_tile = num_ranks_on_the_tile / "I/O tile factor".
-       !
-       !so for:
-       !
-       ! io_tile_factor = 1, all of the ranks on a tile participate in the I/O
-       ! io_tile_factor = 2, 1/2 of the ranks on a tile participate in the I/O
-       ! io_tile_factor = 3, 1/3 of the ranks on a tile participate in the I/O
-       ! ...
-       ! io_tile_factor = 0 is a special case where only one rank participates
-       !                  in the I/O for a tile.
-        io_tile_factor = 1
-
        !Define an array used to map grid points from the "structured" 2D grid
        !to the "unstructured" 1D grid.  The mapping goes as follows (fortran
        !ording so first index is fastest):
@@ -5454,6 +5444,43 @@ CONTAINS
                 enddo
             enddo
         enddo
+       !Define the number of "I/O tile factor".  The number of ranks that
+       !participate in I/O for a tile is equal to: 
+       !
+       ! num_io_ranks_on_a_tile = num_ranks_on_the_tile / "I/O tile factor".
+       !
+       !so for:
+       !
+       ! io_tile_factor = 1, all of the ranks on a tile participate in the I/O
+       ! io_tile_factor = 2, 1/2 of the ranks on a tile participate in the I/O
+       ! io_tile_factor = 3, 1/3 of the ranks on a tile participate in the I/O
+       ! ...
+       ! io_tile_factor = 0 is a special case where only one rank participates
+       !                  in the I/O for a tile.
+        io_tile_factor = 1
+allocate(unstructured_axis_diag_id(1))
+allocate(rsf_diag_1d_id(1))
+#ifdef iotestc3
+npes_io_group=(/1,16,32/)
+deallocate(unstructured_axis_diag_id)
+deallocate(rsf_diag_1d_id)
+allocate(unstructured_axis_diag_id(3))
+allocate(rsf_diag_1d_id(3))
+c3loop: do l=1,3
+ io_tile_factor = npes_io_group(l)
+ if (mpp_pe() == mpp_root_pe()) write (6,'(a,i2)')"Using npes_io_group = ",npes_io_group(l)
+#endif
+
+#ifdef iotestc4
+npes_io_group=(/1,18,36/)
+deallocate(unstructured_axis_diag_id)
+deallocate(rsf_diag_1d_id)
+allocate(unstructured_axis_diag_id(3))
+allocate(rsf_diag_1d_id(3))
+c4loop: do l=1,3
+ io_tile_factor = npes_io_group(l)
+ if (mpp_pe() == mpp_root_pe()) write (6,'(a,i2)')"Using npes_io_group = ",npes_io_group(l)
+#endif
 
        !Define the "unstructured" domain decomposition.
         call mpp_define_unstruct_domain(domain_ug, &
@@ -5473,23 +5500,36 @@ CONTAINS
        !be each rank's unstructured compute domain (I think, because a gather
        !is performed by the root of each I/O domain pelist.
         call mpp_get_UG_compute_domain(domain_ug,size=unstructured_axis_data_size)
-        allocate(unstructured_axis_data(unstructured_axis_data_size))
+        if(.not.allocated(unstructured_axis_data))allocate(unstructured_axis_data(unstructured_axis_data_size))
         call mpp_get_UG_domain_grid_index(domain_ug,unstructured_axis_data)
 !write(6,*)unstructured_axis_data
        !Initialize the "unstructured" axis for the diagnostics.
         unstructured_axis_name = "ug_axis"
-        unstructured_axis_diag_id = diag_axis_init(trim(unstructured_axis_name), &
+#ifdef iotestc3
+        write(unstructured_axis_name,'(a,I0)')"ug_axis",l
+#endif
+#ifdef iotestc4
+        write(unstructured_axis_name,'(a,I0)')"ug_axis",l
+#endif
+
+        unstructured_axis_diag_id(l) = diag_axis_init(trim(unstructured_axis_name), &
                                                    real(unstructured_axis_data), &
                                                    "none", &
                                                    "U", &
                                                    long_name="mapping indices", &
                                                    domainU=domain_ug)
+#ifdef iotestc4
+enddo c4loop
+#endif
+#ifdef iotestc3
+enddo c3loop
+#endif
 
 !write(6,*) "ID U",unstructured_axis_diag_id
        !Add the x-, y-, and z-axes to the restart file.  Until a bug in
        !the code is resolved, I must register the unstructured axis first.
        !Also initialize the axes for the diagnostics.
-        allocate(x_axis_data(nx))
+        if (.not.allocated(x_axis_data)) allocate(x_axis_data(nx))
         do i = 1,nx
             x_axis_data(i) = real((i-1)*360.0/nx)
         enddo
@@ -5499,7 +5539,7 @@ CONTAINS
                                        "X", &
                                        long_name="longitude")
 
-        allocate(y_axis_data(ny))
+        if (.not.allocated(y_axis_data))allocate(y_axis_data(ny))
         do i = 1,ny
             y_axis_data(i) = real((i-1)*180.0/ny)
         enddo
@@ -5509,7 +5549,7 @@ CONTAINS
 !                                       "Y", &
 !                                       long_name="latitude")
 
-        allocate(z_axis_data(nz))
+        if (.not.allocated(z_axis_data))allocate(z_axis_data(nz))
         do i = 1,nz
             z_axis_data(i) = real(i*5.0)
         enddo
@@ -5519,29 +5559,30 @@ CONTAINS
                                        "Z", &
                                        long_name="dont look down")
 !write (6,*) z_axis_diag_id
+
        !Define some reference test data.
 
        !real scalar field.
-        unstructured_real_scalar_field_data_ref = 1234.5678
+        unstructured_real_scalar_field_data_ref = 1234.5678*real(l)
 
        !real 1D field.
-        allocate(unstructured_real_1D_field_data_ref(unstructured_axis_data_size))
+        if (.not.allocated(unstructured_real_1D_field_data_ref)) allocate(unstructured_real_1D_field_data_ref(unstructured_axis_data_size))
         do i = 1,unstructured_axis_data_size
-            unstructured_real_1D_field_data_ref(i) = real(i) - 1.1111111
+            unstructured_real_1D_field_data_ref(i) = real(i) - 1.1111111*real(l)
         enddo
 
        !real 2D field.
-        allocate(unstructured_real_2D_field_data_ref(unstructured_axis_data_size,nz))
+        if (.not.allocated(unstructured_real_2D_field_data_ref)) allocate(unstructured_real_2D_field_data_ref(unstructured_axis_data_size,nz))
         do j = 1,nz
             do i = 1,unstructured_axis_data_size
                 unstructured_real_2D_field_data_ref(i,j) = -1.0*real((j-1)* &
                                                            unstructured_axis_data_size+i) &
-                                                           + 1.1111111
+                                                           + 1.1111111*real(l)
             enddo
         enddo
 
        !real 3D field.
-!       allocate(unstructured_real_3D_field_data_ref(unstructured_axis_data_size,nz,cc_axis_size))
+!       if(.not.allocated(unstructured_real_3D_field_data_ref) allocate(unstructured_real_3D_field_data_ref(unstructured_axis_data_size,nz,cc_axis_size))
 !       do k = 1,cc_axis_size
 !           do j = 1,nz
 !               do i = 1,unstructured_axis_data_size
@@ -5554,19 +5595,19 @@ CONTAINS
 !       enddo
 
        !integer scalar field.
-        unstructured_int_scalar_field_data_ref = 7654321
+        unstructured_int_scalar_field_data_ref = 7654321*L
 
        !integer 1D field.
-        allocate(unstructured_int_1D_field_data_ref(unstructured_axis_data_size))
+        if (.not.allocated(unstructured_int_1D_field_data_ref)) allocate(unstructured_int_1D_field_data_ref(unstructured_axis_data_size))
         do i = 1,unstructured_axis_data_size
-            unstructured_int_1D_field_data_ref(i) = i - 8
+            unstructured_int_1D_field_data_ref(i) = i - 8*l
         enddo
 
        !integer 2D field.
-        allocate(unstructured_int_2D_field_data_ref(unstructured_axis_data_size,nz))
+        if (.not.allocated(unstructured_int_2D_field_data_ref)) allocate(unstructured_int_2D_field_data_ref(unstructured_axis_data_size,nz))
         do j = 1,nz
             do i = 1,unstructured_axis_data_size
-                unstructured_int_2D_field_data_ref(i,j) = -1*((j-1)*unstructured_axis_data_size+i) + 2
+                unstructured_int_2D_field_data_ref(i,j) = -1*((j-1)*unstructured_axis_data_size+i) + 2*L
             enddo
         enddo
 
@@ -5574,35 +5615,46 @@ CONTAINS
        !diagnostic.
         unstructured_real_scalar_field_name = "unstructured_real_scalar_field_1"
         unstructured_real_scalar_field_data = unstructured_real_scalar_field_data_ref
+l=SIZE(unstructured_axis_diag_id)
        rsf_diag_id = register_diag_field("UG_unit_test", &
                                          "unstructured_real_scalar_field_data", &
                                          init_time=diag_time, &
                                          long_name="rsf_diag_1", &
                                          units="ergs")
-
-       rsf_diag_1d_id = register_diag_field("UG_unit_test", &
+       rsf_diag_1d_id(1) = register_diag_field("UG_unit_test", &
                                          "unstructured_real_1D_field_data", &
-                                         (/unstructured_axis_diag_id/),&
+                                         (/unstructured_axis_diag_id(1)/),&
                                          init_time=diag_time, &
                                          long_name="ONE_D_ARRAY", &
                                          units="ergs")
 
        rsf_diag_2d_id = register_diag_field("UG_unit_test", &
                                          "unstructured_real_2D_field_data", &
-                                         (/unstructured_axis_diag_id, z_axis_diag_id/),&
+                                         (/unstructured_axis_diag_id(1), z_axis_diag_id/),&
                                          init_time=diag_time, &
-                                         long_name="ONE_D_ARRAY", &
+                                         long_name="TWO_D_ARRAY", &
                                          units="ergs")
+
+IF (l .NE. 1) THEN
+  do l=2,3
+   write(unstructured_1d_alt,'(a,I0)') "unstructured_real_1D",L
+   rsf_diag_1d_id(L) = register_diag_field ("UG_unit_test", trim(unstructured_1d_alt),&
+                                          (/unstructured_axis_diag_id(L)/),&
+                                           init_time=diag_time, &
+                                           long_name="OTHER"//trim(unstructured_1d_alt), &
+                                           units="kg")
+  enddo
+ENDIF !L.ne.1
        !Add a real 1D field to the restart file.  This field is of the form:
        !field = field(unstructured).
         unstructured_real_1D_field_name = "unstructured_real_1D_field_1"
-        allocate(unstructured_real_1D_field_data(unstructured_axis_data_size))
+        if (.not.allocated(unstructured_real_1D_field_data)) allocate(unstructured_real_1D_field_data(unstructured_axis_data_size))
         unstructured_real_1D_field_data = unstructured_real_1D_field_data_ref
 
        !Add a real 2D field to the restart file.  This field is of the form:
        !field = field(unstructured,z).
         unstructured_real_2D_field_name = "unstructured_real_2D_field_1"
-       allocate(unstructured_real_2D_field_data(unstructured_axis_data_size,nz))
+       if (.not.allocated(unstructured_real_2D_field_data)) allocate(unstructured_real_2D_field_data(unstructured_axis_data_size,nz))
        unstructured_real_2D_field_data = unstructured_real_2D_field_data_ref
 !       allocate(unstructured_real_2D_field_data(unstructured_axis_data_size,nx))
 !       unstructured_real_2D_field_data = 1 
@@ -5610,7 +5662,7 @@ CONTAINS
        !Add a real 3D field to the restart file.  This field is of the form:
        !field = field(unstructured,z,cc).
 !       unstructured_real_3D_field_name = "unstructured_real_3D_field_1"
-!       allocate(unstructured_real_3D_field_data(unstructured_axis_data_size,nz,cc_axis_size))
+!       if (.not.allocated(unstructured_real_3D_field_data)) allocate(unstructured_real_3D_field_data(unstructured_axis_data_size,nz,cc_axis_size))
 !       unstructured_real_3D_field_data = unstructured_real_3D_field_data_ref
 
        !Add an integer scalar field to the restart file.
@@ -5620,13 +5672,13 @@ CONTAINS
        !Add an integer 1D field to the restart file.  This field is of the
        !from: field = field(unstructured).
         unstructured_int_1D_field_name = "unstructured_int_1D_field_1"
-        allocate(unstructured_int_1D_field_data(unstructured_axis_data_size))
+        if (.not.allocated(unstructured_int_1D_field_data)) allocate(unstructured_int_1D_field_data(unstructured_axis_data_size))
         unstructured_int_1D_field_data = unstructured_int_1D_field_data_ref
 
        !Add an integer 2D field to the restart file.  This field is of the
        !form: field = field(unstructured,z).
         unstructured_int_2D_field_name = "unstructured_int_2D_field_1"
-        allocate(unstructured_int_2D_field_data(unstructured_axis_data_size,nz))
+        if (.not.allocated(unstructured_int_2D_field_data)) allocate(unstructured_int_2D_field_data(unstructured_axis_data_size,nz))
         unstructured_int_2D_field_data = unstructured_int_2D_field_data_ref
 
        !Simulate the model timesteps, so that diagnostics may be written
@@ -5645,19 +5697,27 @@ CONTAINS
             unstructured_real_scalar_field_data = unstructured_real_scalar_field_data_ref
 
            !Update the data.
+        
            if (rsf_diag_id .gt. 0) then
                used = send_data(rsf_diag_id, &
                                 unstructured_real_scalar_field_data, &
                                 diag_time)
            endif
-          used = send_data(rsf_diag_1d_id, &
+         IF (SIZE(rsf_diag_1d_id) == 1) THEN 
+          used = send_data(rsf_diag_1d_id(1), &
                                 unstructured_real_1D_field_data, &
                                 diag_time)
+         ELSE
+          DO L=1,3
+           used = send_data(rsf_diag_1d_id(L), &
+                                unstructured_real_1D_field_data, &
+                                diag_time)
+          ENDDO
+         ENDIF
           used = send_data(rsf_diag_2d_id, &
                                 unstructured_real_2D_field_data, &
                                 diag_time)
         enddo
-
        !Deallocate the unstructured domain.
         call mpp_sync()
 !       call mpp_deallocate_domainUG(domain_ug)
@@ -5689,6 +5749,8 @@ CONTAINS
         deallocate(unstructured_int_1D_field_data)
         deallocate(unstructured_int_2D_field_data)
 
+
+
        !Print out a message that the test is done.
         call mpp_sync()
         if (mpp_pe() .eq. mpp_root_pe()) then
@@ -5698,6 +5760,7 @@ CONTAINS
             write(output_unit,*) "----------------------------------------/>"
             write(output_unit,*)
         endif
+
 
         return
   END SUBROUTINE unstruct_test
