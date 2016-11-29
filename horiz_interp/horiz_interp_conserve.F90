@@ -644,7 +644,6 @@ contains
     !  --- error checking ---
     if (size(data_in,1) /= Interp%nlon_src .or. size(data_in,2) /= Interp%nlat_src) &
          call mpp_error(FATAL, 'horiz_interp_conserve_mod: size of input array incorrect')
-
     if (size(data_out,1) /= Interp%nlon_dst .or. size(data_out,2) /= Interp%nlat_dst) &
          call mpp_error(FATAL, 'horiz_interp_conserve_mod: size of output array incorrect')
 

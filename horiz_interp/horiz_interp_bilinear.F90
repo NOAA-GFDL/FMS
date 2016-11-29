@@ -300,11 +300,11 @@ contains
     ! make sure lon and lat has the same dimension
     if(size(lon_out,1) /= size(lat_out,1) .or. size(lon_out,2) /= size(lat_out,2) ) &
          call mpp_error(FATAL,'horiz_interp_bilinear_mod: when using bilinear ' // &
-         'interplation, the output grids should be geographical grids')    
+         'interpolation, the output grids should be geographical grids')    
 
     if(size(lon_in,1) /= size(lat_in,1) .or. size(lon_in,2) /= size(lat_in,2) ) &
          call mpp_error(FATAL,'horiz_interp_bilinear_mod: when using bilinear '// &
-         'interplation, the input grids should be geographical grids')  
+         'interpolation, the input grids should be geographical grids')  
 
     !--- get the grid size 
     nlon_in  = size(lon_in,1) ; nlat_in  = size(lat_in,2)

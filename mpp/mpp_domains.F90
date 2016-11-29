@@ -212,6 +212,7 @@ module mpp_domains_mod
   public :: mpp_get_UG_domain_ntiles, mpp_get_UG_global_domain
   public :: mpp_global_field_ug, mpp_get_ug_domain_tile_list, mpp_get_UG_compute_domains
   public :: mpp_define_null_UG_domain, NULL_DOMAINUG
+  public :: mpp_get_UG_SG_domain
 
   !--- public interface from mpp_define_domains.inc
   public :: mpp_define_nest_domains, mpp_get_C2F_index, mpp_get_F2C_index
