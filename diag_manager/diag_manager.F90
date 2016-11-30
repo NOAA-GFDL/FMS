@@ -4314,6 +4314,21 @@ END MODULE diag_manager_mod
 !  "test_diag_manager_mod", "dat2", "dat2_rms", "diag_test2", "all", "rms",  "none", 2,
 !  "test_diag_manager_mod", "dat2", "dat2",     "diag_test2", "all", .true., "none", 2,
 !--------------------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------------------
+!> diag_table for test 100 (unstructured grid)
+!!
+!!test_unstructured_grid_diag_manager
+!!1990 1 1 0 0 0
+!!#output files
+!!"unstructured_diag_test", 1, "days", 1, "days", "time",
+!!#output variables
+!!"UG_unit_test", "unstructured_real_scalar_field_data", "rsf_diag_1", "unstructured_diag_test", "all", .TRUE., "none", 1,
+!!"UG_unit_test", "unstructured_real_1D_field_data", "unstructured_real_1D_field_data", "unstructured_diag_test", "all", .TRUE., "none", 1,
+!!"UG_unit_test", "unstructured_real_2D_field_data", "unstructured_real_2D_field_data", "unstructured_diag_test", "all", .TRUE., "none", 1,
+!!"UG_unit_test", "unstructured_real_1D2", "unstructured_real_1D2", "unstructured_diag_test", "all", .TRUE., "none", 1,
+!!"UG_unit_test", "unstructured_real_1D3", "unstructured_real_1D3", "unstructured_diag_test", "all", .TRUE., "none", 1,
+!! \note unstructured_real_1D2 and unstructured_real_1D3 are only needed if compiling with -Diotestc3 or -Diotestc4
+!--------------------------------------------------------------------------------------------------
 PROGRAM test
   ! This program runs only one of many possible tests with each execution.
   ! Each test ends with an intentional fatal error.
@@ -4457,12 +4472,12 @@ PROGRAM test
   npes = mpp_npes()
 #ifdef INTERNAL_FILE_NML
   READ (input_nml_file, NML=test_diag_manager_nml, IOSTAT=ierr)
-  READ (input_nml_file, NML=utest_nml, IOSTAT=ierr)
+  READ (input_nml_file, NML=utest_nml, IOSTAT=i)
 #else
   IF ( file_exist('input.nml') ) THEN
      nml_unit = open_namelist_file()
      READ(nml_unit, nml=test_diag_manager_nml, iostat=ierr)
-     READ(nml_unit, nml=utest_nml, iostat=ierr)
+     READ(nml_unit, nml=utest_nml, iostat=i)
      CALL close_file(nml_unit)
   ELSE
      ! Set ierr to an arbitrary positive number if input.nml does not exist.
@@ -4517,7 +4532,7 @@ if (test_number == 100) then
                              nt
         write(output_unit,*) "Halo width (# of grid points):                  ", &
                              halo
-        write(output_unit,*) "Using NEW domaintypes and calls..."
+        write(output_unit,*) "Using Unstructured domaintypes and calls..."
     endif
 
    !Add a suffix to the test file.
