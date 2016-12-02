@@ -196,7 +196,7 @@
 
 !----------
 !ug support
-      type(domainUG),pointer :: io_domain_ug
+      type(domainUG),pointer :: io_domain_ug 
       integer(INT_KIND)      :: io_layout_ug
       integer(INT_KIND)      :: tile_id_ug
 !----------
@@ -795,9 +795,12 @@
      !<Nullify local pointers.
       if (associated(io_domain)) then
           io_domain => NULL()
-      elseif (associated(io_domain_ug)) then
-          io_domain_ug => null()
+      endif     
+     if (present(domain_ug)) then
+      if (associated(io_domain_ug)) then
+          nullify(io_domain_ug)
       endif
+     endif
 !----------
 
       call mpp_clock_end(mpp_open_clock)              
