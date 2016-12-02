@@ -4543,8 +4543,8 @@ if (test_number == 100) then
 
    !Set the diag_time variable to be 01/01/1990 at 00:00:00 (midnight).
     call set_calendar_type(JULIAN)
-    diag_time = set_date(1990,1,1,0,0,0)
-   CALL unstruct_test (nx, ny, nz, npes, ntiles_x, 2, diag_time) 
+    time = set_date(1990,1,1,0,0,0)
+   CALL unstruct_test (nx, ny, nz, npes, ntiles_x, 2, time) 
 else
 !!!!!! ALL OTHER TESTS !!!!!!
   IF ( test_number == 12 ) THEN
@@ -5144,6 +5144,7 @@ CONTAINS
     lonb = lonb_global(is:ie+1)
     latb = latb_global(js:je+1)
   END SUBROUTINE compute_grid
+
   SUBROUTINE unstruct_test(nx, ny, nz, npes, num_domain_tiles_x, num_domain_tiles_y, diag_time)
         use, intrinsic :: iso_fortran_env, only: output_unit
         use mpp_parameter_mod,             only: FATAL
@@ -5231,8 +5232,11 @@ CONTAINS
         integer,dimension(:,:),allocatable             :: unstructured_int_2D_field_data             !<Data for an unstructured integer 2D field.
        integer(INT_KIND),allocatable,dimension(:)      :: unstructured_axis_diag_id                  !<Id returned for the unstructured axis by diag_axis_init.
        integer(INT_KIND)                               :: x_axis_diag_id                             !<Id returned for the x-axis by diag_axis_init.
-!       integer(INT_KIND)                              :: y_axis_diag_id                             !<Id returned for the y-axis by diag_axis_init.
+       integer(INT_KIND)                              :: y_axis_diag_id                             !<Id returned for the y-axis by diag_axis_init.
        integer(INT_KIND)                              :: z_axis_diag_id                             !<Id returned for the z-axis by diag_axis_init.
+       real,allocatable,dimension(:) :: lat, lon
+       integer(INT_KIND)             :: idlat
+       integer(INT_KIND)                              :: idlon
        integer(INT_KIND)                              :: rsf_diag_id                                !<Id returned for a real scalar field associated with the unstructured grid by
                                 !!register_diag_field.
        integer(INT_KIND),allocatable,dimension(:)     :: rsf_diag_1d_id                             !<Id returned for a real 1D array  field associated with the unstructured grid by                                                                                                     !!register_diag_field.
@@ -5546,9 +5550,9 @@ enddo c3loop
        !Also initialize the axes for the diagnostics.
         if (.not.allocated(x_axis_data)) allocate(x_axis_data(nx))
         do i = 1,nx
-            x_axis_data(i) = real((i-1)*360.0/nx)
+            x_axis_data(i) = real(i)
         enddo
-       x_axis_diag_id = diag_axis_init("lon", &
+       x_axis_diag_id = diag_axis_init("grid_xt", &
                                        x_axis_data, &
                                        "degrees", &
                                        "X", &
@@ -5556,13 +5560,13 @@ enddo c3loop
 
         if (.not.allocated(y_axis_data))allocate(y_axis_data(ny))
         do i = 1,ny
-            y_axis_data(i) = real((i-1)*180.0/ny)
+            y_axis_data(i) = real(i)
         enddo
-!       y_axis_diag_id = diag_axis_init("lat", &
-!                                       y_axis_data, &
-!                                       "degrees", &
-!                                       "Y", &
-!                                       long_name="latitude")
+       y_axis_diag_id = diag_axis_init("grid_yt", &
+                                       y_axis_data, &
+                                       "degrees", &
+                                       "Y", &
+                                       long_name="latitude")
 
         if (.not.allocated(z_axis_data))allocate(z_axis_data(nz))
         do i = 1,nz
@@ -5626,11 +5630,34 @@ enddo c3loop
             enddo
         enddo
 
+     !> Latitude and Longitude 
+     allocate(lat(ny),lon(nx))
+     do i=1,nx
+          lon(i) = real(i)*360.0/real(nx)
+     enddo
+     do j=1,ny
+          lat(j) = real(j)*180.8/real(ny)
+     enddo
+
        !Add a real scalar field to the restart file.  Initialize it as a
        !diagnostic.
         unstructured_real_scalar_field_name = "unstructured_real_scalar_field_1"
         unstructured_real_scalar_field_data = unstructured_real_scalar_field_data_ref
+
+       idlat = register_diag_field("UG_unit_test", &
+                                         "lat", &
+                                         (/y_axis_diag_id/),&
+                                         init_time=diag_time, &
+                                         long_name="S-N latitude", &
+                                         units="degrees")
+       idlon = register_diag_field("UG_unit_test", &
+                                         "lon", &
+                                         (/x_axis_diag_id/),&
+                                         init_time=diag_time, &
+                                         long_name="E-W longitude", &
+                                         units="degrees")
 l=SIZE(unstructured_axis_diag_id)
+
        rsf_diag_id = register_diag_field("UG_unit_test", &
                                          "unstructured_real_scalar_field_data", &
                                          init_time=diag_time, &
@@ -5701,6 +5728,8 @@ ENDIF !L.ne.1
         num_diag_time_steps = 10
         diag_time_step = set_time(12*3600)
         diag_time_start = diag_time
+! used = send_data(idlat,lat,diag_time)
+! used = send_data(idlon,lon,diag_time)
         do i = 1,num_diag_time_steps
 
            !Update the current time.
@@ -5711,8 +5740,7 @@ ENDIF !L.ne.1
                                                       real(1)
             unstructured_real_scalar_field_data = unstructured_real_scalar_field_data_ref
 
-           !Update the data.
-        
+           !Update the data. 
            if (rsf_diag_id .gt. 0) then
                used = send_data(rsf_diag_id, &
                                 unstructured_real_scalar_field_data, &
@@ -5732,6 +5760,9 @@ ENDIF !L.ne.1
           used = send_data(rsf_diag_2d_id, &
                                 unstructured_real_2D_field_data, &
                                 diag_time)
+ used = send_data(idlat,lat,diag_time)
+ used = send_data(idlon,lon,diag_time)
+
         enddo
        !Deallocate the unstructured domain.
         call mpp_sync()
