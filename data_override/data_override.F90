@@ -148,6 +148,11 @@ interface data_override
      module procedure data_override_3d
 end interface
 
+interface data_override_UG
+     module procedure data_override_UG_1d
+     module procedure data_override_UG_2d
+end interface
+
 public :: data_override_init, data_override, data_override_UG
 
 contains
@@ -1097,15 +1102,12 @@ subroutine data_override_0d(gridname,fieldname_code,data,time,override,data_inde
 end subroutine data_override_0d
 ! </SUBROUTINE>
 
-subroutine data_override_UG(gridname,fieldname,data_UG,time,override, is_in, ie_in, js_in, je_in, &
-                            use_mpp_pass_in)
+subroutine data_override_UG_1d(gridname,fieldname,data,time,override)
   character(len=3),   intent(in) :: gridname ! model grid ID
   character(len=*),   intent(in) :: fieldname ! field to override
-  real, dimension(:), intent(inout) :: data_UG !data returned by this call
+  real, dimension(:), intent(inout) :: data !data returned by this call
   type(time_type),    intent(in) :: time !  model time
   logical, intent(out), optional :: override ! true if the field has been overriden succesfully
-  integer, optional,  intent(in) :: is_in, ie_in, js_in, je_in
-  logical, intent(in),  optional :: use_mpp_pass_in
 !  real, dimension(size(data_2D,1),size(data_2D,2),1) :: data_3D
   real, dimension(:,:,:), allocatable ::  data_3D
   real, dimension(:,:),   allocatable ::  data_SG
@@ -1126,32 +1128,28 @@ subroutine data_override_UG(gridname,fieldname,data_UG,time,override, is_in, ie_
   enddo
   if(index1 .eq. -1) return  ! NO override was performed
 
+  call get_domainUG(gridname,UG_domain,comp_domain)  
+  allocate(data_SG(comp_domain(1):comp_domain(2),comp_domain(3):comp_domain(4)))
+  call mpp_pass_UG_to_SG(UG_domain, data(:), data_SG(:,:))
+  
+  allocate(data_3D(size(data_SG,1),size(data_SG,2),1))
+  data_3D(:,:,1) = data_SG(:,:)
+  call data_override_3d(gridname,fieldname,data_3D,time,override)    
 
-  if(PRESENT(use_mpp_pass_in)) use_mpp_pass = use_mpp_pass_in
-  !Use mpp_pass routines to accomplish data_override
-  if(use_mpp_pass) then
-     call get_domainUG(gridname,UG_domain,comp_domain)  
-     allocate(data_SG(comp_domain(1):comp_domain(2),comp_domain(3):comp_domain(4)))
-     call mpp_pass_UG_to_SG(UG_domain, data_UG(:), data_SG(:,:))
-     
-     allocate(data_3D(size(data_SG,1),size(data_SG,2),1))
-     data_3D(:,:,1) = data_SG(:,:)
-     call data_override_3d(gridname,fieldname,data_3D,time,override,data_index=index1,&
-          is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in)
-     
-     data_SG(:,:) = data_3D(:,:,1)
-     
-     call mpp_pass_SG_to_UG(UG_domain, data_SG(:,:), data_UG(:))
-     
-     deallocate(data_3D,data_SG)
-  else
-     call mpp_error(FATAL,'data_override_UG: direct UG override is not supported yet. ')
-     !This is too involved. It needs modification of time_interp as well as horiz_interp.
-     !I do not see the benefit of doing that unless we can demonstrate the above transformations 
-     !cause a performance hit.
-  endif
+  call mpp_pass_SG_to_UG(UG_domain, data_3D(:,:,1), data(:))
+  
+  deallocate(data_3D,data_SG)
 
-end subroutine data_override_UG
+end subroutine data_override_UG_1d
+
+subroutine data_override_UG_2d(gridname,fieldname,data,time,override)
+  character(len=3),     intent(in) :: gridname ! model grid ID
+  character(len=*),     intent(in) :: fieldname ! field to override
+  real, dimension(:,:), intent(inout) :: data !data returned by this call
+  type(time_type),      intent(in) :: time !  model time
+  logical, intent(out), optional :: override ! true if the field has been overriden succesfully
+
+end subroutine data_override_UG_2d
 
 !===============================================================================================
 
