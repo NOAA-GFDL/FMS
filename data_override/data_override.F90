@@ -74,7 +74,7 @@ use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, NULL_DOMAIN2D,oper
 use mpp_domains_mod, only : mpp_copy_domain, mpp_get_global_domain
 use mpp_domains_mod, only : mpp_get_data_domain, mpp_set_compute_domain, mpp_set_data_domain
 use mpp_domains_mod, only : mpp_set_global_domain, mpp_deallocate_domain
-use mpp_domains_mod, only : domainUG, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG, mpp_get_UG_SG_domain, NULL_DOMAINUG
+use mpp_domains_mod, only : domainUG, mpp_pass_SG_to_UG, mpp_get_UG_SG_domain, NULL_DOMAINUG
 
 use time_manager_mod, only: time_type
 
@@ -1146,7 +1146,6 @@ subroutine data_override_UG_2d(gridname,fieldname,data,time,override)
 
   call get_domainUG(gridname,UG_domain,comp_domain)  
   allocate(data_SG(comp_domain(1):comp_domain(2),comp_domain(3):comp_domain(4),size(data,2)))
-  call mpp_pass_UG_to_SG(UG_domain, data(:,:), data_SG(:,:,:))
 
   call data_override_3d(gridname,fieldname,data_SG,time,override)    
 
