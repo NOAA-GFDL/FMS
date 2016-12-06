@@ -1108,14 +1108,30 @@ subroutine data_override_UG_1d(gridname,fieldname,data,time,override)
   real, dimension(:), intent(inout) :: data !data returned by this call
   type(time_type),    intent(in) :: time !  model time
   logical, intent(out), optional :: override ! true if the field has been overriden succesfully
-!  real, dimension(size(data_2D,1),size(data_2D,2),1) :: data_3D
-  real, dimension(:,:,:), allocatable ::  data_3D
-  real, dimension(:,:),   allocatable ::  data_SG
+  !local vars
+  real, dimension(:,:),   allocatable ::  data_2D
+
+  allocate(data_2D(size(data,1),1))
+  data_2D(:,1) = data
+  call data_override_UG_2d(gridname,fieldname,data_2D,time,override)
+     
+  data(:) = data_2D(:,1)
+  deallocate(data_2D)
+
+end subroutine data_override_UG_1d
+
+subroutine data_override_UG_2d(gridname,fieldname,data,time,override)
+  character(len=3),     intent(in) :: gridname ! model grid ID
+  character(len=*),     intent(in) :: fieldname ! field to override
+  real, dimension(:,:), intent(inout) :: data !data returned by this call
+  type(time_type),      intent(in) :: time !  model time
+  logical, intent(out), optional :: override ! true if the field has been overriden succesfully
+  !local vars
+  real, dimension(:,:,:), allocatable ::  data_SG
   type(domainUG) :: UG_domain
   integer       :: index1
   integer       :: i
   integer, dimension(4) :: comp_domain = 0  ! istart,iend,jstart,jend for compute domain
-  logical :: use_mpp_pass = .TRUE.
 
 !1  Look  for the data file in data_table 
   if(PRESENT(override)) override = .false.
@@ -1129,25 +1145,14 @@ subroutine data_override_UG_1d(gridname,fieldname,data,time,override)
   if(index1 .eq. -1) return  ! NO override was performed
 
   call get_domainUG(gridname,UG_domain,comp_domain)  
-  allocate(data_SG(comp_domain(1):comp_domain(2),comp_domain(3):comp_domain(4)))
-  call mpp_pass_UG_to_SG(UG_domain, data(:), data_SG(:,:))
+  allocate(data_SG(comp_domain(1):comp_domain(2),comp_domain(3):comp_domain(4),size(data,2)))
+  call mpp_pass_UG_to_SG(UG_domain, data(:,:), data_SG(:,:,:))
+
+  call data_override_3d(gridname,fieldname,data_SG,time,override)    
+
+  call mpp_pass_SG_to_UG(UG_domain, data_SG(:,:,:), data(:,:))
   
-  allocate(data_3D(size(data_SG,1),size(data_SG,2),1))
-  data_3D(:,:,1) = data_SG(:,:)
-  call data_override_3d(gridname,fieldname,data_3D,time,override)    
-
-  call mpp_pass_SG_to_UG(UG_domain, data_3D(:,:,1), data(:))
-  
-  deallocate(data_3D,data_SG)
-
-end subroutine data_override_UG_1d
-
-subroutine data_override_UG_2d(gridname,fieldname,data,time,override)
-  character(len=3),     intent(in) :: gridname ! model grid ID
-  character(len=*),     intent(in) :: fieldname ! field to override
-  real, dimension(:,:), intent(inout) :: data !data returned by this call
-  type(time_type),      intent(in) :: time !  model time
-  logical, intent(out), optional :: override ! true if the field has been overriden succesfully
+  deallocate(data_SG)
 
 end subroutine data_override_UG_2d
 
@@ -1908,17 +1913,17 @@ contains
     enddo
 
     !--- set up data
-    allocate(gdata(nx,ny,ntiles))
-    gdata = -999
-    do n = 1, ntiles
-       do j = 1, ny
-          do i = 1, nx
-             if(lmask(i,j,n)) then
-                gdata(i,j,n) = n*1.e+3 + i + j*1.e-3
-             endif
-          end do
-       end do
-    end do
+!    allocate(gdata(nx,ny,ntiles))
+!    gdata = -999
+!    do n = 1, ntiles
+!       do j = 1, ny
+!          do i = 1, nx
+!             if(lmask(i,j,n)) then
+!                gdata(i,j,n) = n*1.e+3 + i + j*1.e-3
+!             endif
+!          end do
+!       end do
+!    end do
 
     !--- test the 2-D data is on computing domain
     allocate( a1(isc:iec, jsc:jec,1), a2(isc:iec,jsc:jec,1 ) )
@@ -1927,14 +1932,15 @@ contains
     tile = mpp_pe()/npes_per_tile + 1
     do j = jsc, jec
        do i = isc, iec
-          a1(i,j,1) = gdata(i,j,tile)
+!          a1(i,j,1) = gdata(i,j,tile)
           msk(i,j,1) = lmask(i,j,tile)
        enddo
     enddo
-
+    !First override the test SG data from file/field
     call data_override_init(Land_domain_in=SG_domain)
     call data_override('LND','sst_obs',a1(:,:,1),Time)
 
+    !Create the test UG data
     a2 = -9999
     !For this test on non-Land points a2 must match a1
     do j = jsc, jec
@@ -1943,186 +1949,82 @@ contains
        enddo
     enddo
 
-    write(mpp_pe()+1000,*) "npts_tile = "
-    write(mpp_pe()+1000,*) npts_tile
-    write(mpp_pe()+1000,*) "a1 = ", isc, iec, jsc, jec
-    do j = jsc, jec
-       write(mpp_pe()+1000,*) a1(:,j,1)
-    enddo
-
     allocate(x1(istart:iend,1), x2(istart:iend,1))
     x1 = -99999
     x2 = -999999
     !--- fill the value of x2
-    tile = mpp_get_UG_domain_tile_id(UG_domain)
-    pos = 0
-    do n = 1, tile-1
-       pos = pos + npts_tile(n)
-    enddo
-    do l = istart, iend
-       i = mod((grid_index(pos+l)-1), nx) + 1
-       j = (grid_index(pos+l)-1)/nx + 1
-       x2(l,1) = gdata(i,j,tile)     
-    enddo
 
+    !Now override the test UG data from the same file/field
     call data_override_init(Land_domainUG_in=UG_domain)
     call data_override_UG('LND','sst_obs',x2(:,1),Time)
 
+    !Ensure you get the same UG data from the SG data
     call mpp_pass_SG_to_UG(UG_domain, a1(:,:,1), x1(:,1))
     call compare_checksums_2D(x1, x2, type//' SG2UG 2-D compute domain')
-    call mpp_pass_UG_to_SG(UG_domain, x1(:,1), a2(:,:,1))
 
+    !Ensure you get the same SG data from the UG data if you transform back
+    call mpp_pass_UG_to_SG(UG_domain, x1(:,1), a2(:,:,1))
     call compare_checksums(a1(:,:,1:1),a2(:,:,1:1),type//' UG2SG 2-D compute domain')
+
     deallocate(a1,a2,x1,x2)
    
     !--- test the 3-D data is on computing domain
     allocate( a1(isc:iec, jsc:jec,nz), a2(isc:iec,jsc:jec,nz ) )
     
-    tile = mpp_pe()/npes_per_tile + 1
+!    tile = mpp_pe()/npes_per_tile + 1
+!    do k = 1, nz
+!       do j = jsc, jec
+!          do i = isc, iec
+!             a1(i,j,k) = gdata(i,j,tile) 
+!             if(a1(i,j,k) .NE. -999) a1(i,j,k) = a1(i,j,k) + k*1.e-6
+!          enddo
+!       enddo
+!    enddo
+
+    !First override the test SG data from file/field
+    call data_override_init(Land_domain_in=SG_domain)
+    call data_override('LND','sst_obs',a1,Time)
+
+    a2 = -999
+    !For this test on non-Land points a2 must match a1
     do k = 1, nz
-       do j = jsc, jec
-          do i = isc, iec
-             a1(i,j,k) = gdata(i,j,tile) 
-             if(a1(i,j,k) .NE. -999) a1(i,j,k) = a1(i,j,k) + k*1.e-6
-          enddo
+    do j = jsc, jec
+       do i = isc, iec
+          if(.NOT. msk(i,j,1)) a2(i,j,k)=a1(i,j,k)
        enddo
     enddo
-    a2 = -999
+    enddo
 
     allocate(x1(istart:iend,nz), x2(istart:iend,nz))
     x1 = -999
     x2 = -999
     !--- fill the value of x2
-    tile = mpp_get_UG_domain_tile_id(UG_domain)
-    pos = 0
-    do n = 1, tile-1
-       pos = pos + npts_tile(n)
-    enddo
-    do l = istart, iend
-       i = mod((grid_index(pos+l)-1), nx) + 1
-       j = (grid_index(pos+l)-1)/nx + 1
-       do k = 1, nz
-          x2(l,k) = gdata(i,j,tile) + k*1.e-6
-       enddo     
-    enddo
+ !   tile = mpp_get_UG_domain_tile_id(UG_domain)
+ !   pos = 0
+ !   do n = 1, tile-1
+ !      pos = pos + npts_tile(n)
+ !   enddo
+ !   do l = istart, iend
+ !      i = mod((grid_index(pos+l)-1), nx) + 1
+ !      j = (grid_index(pos+l)-1)/nx + 1
+ !      do k = 1, nz
+ !         x2(l,k) = gdata(i,j,tile) + k*1.e-6
+ !      enddo     
+ !   enddo
 
+    !Now override the test UG data from the same file/field
+    call data_override_init(Land_domainUG_in=UG_domain)
+    call data_override_UG('LND','sst_obs',x2,Time)
+
+    !Ensure you get the same UG data from the SG data
     call mpp_pass_SG_to_UG(UG_domain, a1, x1)
     call compare_checksums_2D(x1, x2, type//' SG2UG 3-D compute domain')
-    write(mpp_pe()+1000,*) "x1 = ", istart, iend
+    !Ensure you get the same SG data from the UG data if you transform back
     call mpp_pass_UG_to_SG(UG_domain, x1, a2)
-
     call compare_checksums(a1,a2,type//' UG2SG 3-D compute domain')
     deallocate(a1,a2,x1,x2)
 
-    !--- test the 2-D data is on data domain
-    allocate( a1(isd:ied, jsd:jed,1), a2(isd:ied,jsd:jed,1 ) )
-    a1 = -999; a2 = -999    
 
-    tile = mpp_pe()/npes_per_tile + 1
-    do j = jsc, jec
-       do i = isc, iec
-          a1(i,j,1) = gdata(i,j,tile)
-       enddo
-    enddo
-    a2 = -999
-    write(mpp_pe()+1000,*) "npts_tile = "
-    write(mpp_pe()+1000,*) npts_tile
-
-    allocate(x1(istart:iend,1), x2(istart:iend,1))
-    x1 = -999
-    x2 = -999
-    !--- fill the value of x2
-    tile = mpp_get_UG_domain_tile_id(UG_domain)
-    pos = 0
-    do n = 1, tile-1
-       pos = pos + npts_tile(n)
-    enddo
-    do l = istart, iend
-       i = mod((grid_index(pos+l)-1), nx) + 1
-       j = (grid_index(pos+l)-1)/nx + 1
-       x2(l,1) = gdata(i,j,tile)     
-    enddo
-
-    call mpp_pass_SG_to_UG(UG_domain, a1(:,:,1), x1(:,1))
-    call compare_checksums_2D(x1, x2, type//' SG2UG 2-D data domain')
-    write(mpp_pe()+1000,*) "x1 = ", istart, iend
-    write(mpp_pe()+1000,*) x1
-    call mpp_pass_UG_to_SG(UG_domain, x1(:,1), a2(:,:,1))
-
-    call compare_checksums(a1(:,:,1:1),a2(:,:,1:1),type//' UG2SG 2-D data domain')
-    deallocate(a1,a2,x1,x2)
-   
-    !--- test the 3-D data is on computing domain
-    allocate( a1(isd:ied, jsd:jed,nz), a2(isd:ied,jsd:jed,nz ) )
-    a1 = -999; a2 = -999    
-
-    tile = mpp_pe()/npes_per_tile + 1
-    do k = 1, nz
-       do j = jsc, jec
-          do i = isc, iec
-             a1(i,j,k) = gdata(i,j,tile) 
-             if(a1(i,j,k) .NE. -999) a1(i,j,k) = a1(i,j,k) + k*1.e-6
-          enddo
-       enddo
-    enddo
-    a2 = -999
-    write(mpp_pe()+1000,*) "npts_tile = "
-    write(mpp_pe()+1000,*) npts_tile
-    do j = jsc, jec
-       write(mpp_pe()+1000,*) a1(:,j,1)
-    enddo
-
-    allocate(x1(istart:iend,nz), x2(istart:iend,nz))
-    x1 = -999
-    x2 = -999
-    !--- fill the value of x2
-    tile = mpp_get_UG_domain_tile_id(UG_domain)
-    pos = 0
-    do n = 1, tile-1
-       pos = pos + npts_tile(n)
-    enddo
-    do l = istart, iend
-       i = mod((grid_index(pos+l)-1), nx) + 1
-       j = (grid_index(pos+l)-1)/nx + 1
-       do k = 1, nz
-          x2(l,k) = gdata(i,j,tile) + k*1.e-6
-       enddo     
-    enddo
-
-    call mpp_pass_SG_to_UG(UG_domain, a1, x1)
-    call compare_checksums_2D(x1, x2, type//' SG2UG 3-D data domain')
-    write(mpp_pe()+1000,*) "x1 = ", istart, iend
-    call mpp_pass_UG_to_SG(UG_domain, x1, a2)
-
-    call compare_checksums(a1,a2,type//' UG2SG 3-D data domain')
-    deallocate(a1,a2,x1,x2)
-
-    !----------------------------------------------------------------
-    !    test mpp_global_field_ug
-    !----------------------------------------------------------------
-    call mpp_get_UG_global_domain(UG_domain, lsg, leg)
-    tile = mpp_get_UG_domain_tile_id(UG_domain)
-    allocate(g1(lsg:leg,nz), g2(lsg:leg,nz), x1(istart:iend,nz))
-    g1 = 0
-    g2 = 0
-    x1 = 0
-    do k = 1, nz
-       do l = lsg, leg
-          g1(l,k) = tile*1e6 + l + k*1.e-3
-       enddo
-       do l = istart, iend
-          x1(l,k) = g1(l,k)
-       enddo
-    enddo
-
-    call mpp_global_field_ug(UG_domain, x1, g2)
-    call compare_checksums_2D(g1,g2,type//' global_field_ug 3-D')
-   
-    g2 = 0.0
-    call mpp_global_field_ug(UG_domain, x1(:,1), g2(:,1))
-    call compare_checksums_2D(g1(:,1:1),g2(:,1:1),type//' global_field_ug 2-D')
-    
-    deallocate(g1,g2,x1)
   end subroutine test_unstruct_grid
 
   subroutine compare_checksums( a, b, string )
