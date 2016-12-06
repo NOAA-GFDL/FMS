@@ -4419,7 +4419,7 @@ PROGRAM test
     integer(INT_KIND)              :: nt = 2                               !<Total number of time grid points.
     integer(INT_KIND)              :: halo = 2                             !<Number of grid points in the halo???
     integer(INT_KIND)              :: ntiles_x = 1                         !<Number of tiles in the x-direction (A 2D grid of tiles is used in this test.)
-    integer(INT_KIND)              :: ntiles_y = 1                         !<Number of tiles in the y-direction (A 2D grid of tiles is used in this test.)
+    integer(INT_KIND)              :: ntiles_y = 2                         !<Number of tiles in the y-direction (A 2D grid of tiles is used in this test.)
     integer(INT_KIND)              :: total_num_tiles                      !<The total number of tiles for the run (= ntiles_x*ntiles_y)
     integer(INT_KIND)              :: stackmax = 1500000                   !<Default size to which the mpp stack will be set.
     integer(INT_KIND)              :: stackmaxd = 500000                   !<Default size to which the mpp_domains stack will be set.
@@ -5162,7 +5162,7 @@ CONTAINS
                                                  mpp_get_UG_compute_domain, &
                                                  mpp_get_UG_domain_grid_index, &
                                                  mpp_get_UG_domain_ntiles
-        use diag_axis_mod,                 only: diag_axis_init
+        use diag_axis_mod,                 only: diag_axis_init, diag_axis_add_attribute
         use diag_manager_mod,              only: register_diag_field, &
                                                  send_data
         use time_manager_mod,              only: time_type, &
@@ -5537,6 +5537,7 @@ c4loop: do l=1,3
                                                    "U", &
                                                    long_name="mapping indices", &
                                                    domainU=domain_ug)
+   call diag_axis_add_attribute(unstructured_axis_diag_id(l),'compress','grid_xt grid_yt') 
 #ifdef iotestc4
 enddo c4loop
 #endif
@@ -5644,18 +5645,22 @@ enddo c3loop
         unstructured_real_scalar_field_name = "unstructured_real_scalar_field_1"
         unstructured_real_scalar_field_data = unstructured_real_scalar_field_data_ref
 
-       idlat = register_diag_field("UG_unit_test", &
-                                         "lat", &
-                                         (/y_axis_diag_id/),&
-                                         init_time=diag_time, &
-                                         long_name="S-N latitude", &
-                                         units="degrees")
-       idlon = register_diag_field("UG_unit_test", &
-                                         "lon", &
-                                         (/x_axis_diag_id/),&
-                                         init_time=diag_time, &
-                                         long_name="E-W longitude", &
-                                         units="degrees")
+!       idlat = register_diag_field("UG_unit_test", &
+!                                         "lat", &
+!                                         (/y_axis_diag_id/),&
+!                                         init_time=diag_time, &
+!                                         long_name="S-N latitude", &
+!                                         units="degrees")
+
+
+
+
+!       idlon = register_diag_field("UG_unit_test", &
+!                                         "lon", &
+!                                         (/x_axis_diag_id/),&
+!                                         init_time=diag_time, &
+!                                         long_name="E-W longitude", &
+!                                         units="degrees")
 l=SIZE(unstructured_axis_diag_id)
 
        rsf_diag_id = register_diag_field("UG_unit_test", &
@@ -5676,6 +5681,14 @@ l=SIZE(unstructured_axis_diag_id)
                                          init_time=diag_time, &
                                          long_name="TWO_D_ARRAY", &
                                          units="ergs")
+
+!       idlat = register_diag_field("UG_unit_test", &
+!                                         "lat", &
+!                                         (/y_axis_diag_id/),&
+!                                         init_time=diag_time, &
+!                                         long_name="S-N latitude", &
+!                                         units="degrees")
+
 
 IF (l .NE. 1) THEN
   do l=2,3
@@ -5725,7 +5738,7 @@ ENDIF !L.ne.1
 
        !Simulate the model timesteps, so that diagnostics may be written
        !out.
-        num_diag_time_steps = 10
+        num_diag_time_steps = 2
         diag_time_step = set_time(12*3600)
         diag_time_start = diag_time
 ! used = send_data(idlat,lat,diag_time)
@@ -5760,8 +5773,8 @@ ENDIF !L.ne.1
           used = send_data(rsf_diag_2d_id, &
                                 unstructured_real_2D_field_data, &
                                 diag_time)
- used = send_data(idlat,lat,diag_time)
- used = send_data(idlon,lon,diag_time)
+! used = send_data(idlat,lat,diag_time)
+! used = send_data(idlon,lon,diag_time)
 
         enddo
        !Deallocate the unstructured domain.
