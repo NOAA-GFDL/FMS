@@ -1730,7 +1730,9 @@ CONTAINS
           domainU = get_domainUG ( output_fields(field_num)%axes(1) )
           IF ( domain2 .NE. NULL_DOMAIN2D ) EXIT
        ELSEIF (num_axes == 1) THEN
-          domainU = get_domainUG ( output_fields(field_num)%axes(num_axes) )
+          if (domainU .EQ. null_domainUG) then
+               domainU = get_domainUG ( output_fields(field_num)%axes(num_axes) )
+          endif
        END IF
     END DO
 
@@ -1757,7 +1759,6 @@ CONTAINS
           DEALLOCATE(tile_id)
       END IF
     END IF
-  
     IF ( domainU .ne. null_domainUG) then
 !          ntileMe = mpp_get_UG_current_ntile(domainU)
 !          ALLOCATE(tile_id(ntileMe))
@@ -1770,7 +1771,6 @@ CONTAINS
           fname = TRIM(filename)
           CALL get_mosaic_tile_file_ug(fname,filename,domainU)
     ENDIF
-
     IF ( _ALLOCATED(files(file)%attributes) ) THEN
        CALL diag_output_init(filename, files(file)%format, global_descriptor,&
             & files(file)%file_unit, all_scalar_or_1d, domain2, domainU,&
