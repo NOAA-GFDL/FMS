@@ -284,4 +284,4 @@
    !! simply returns this number.
    integer function mpp_get_maxunits()
       mpp_get_maxunits = maxunits
-   end integer function mpp_get_maxunits
+   end function mpp_get_maxunits

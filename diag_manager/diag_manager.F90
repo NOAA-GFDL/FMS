@@ -3535,7 +3535,7 @@ CONTAINS
        WRITE (err_msg_local,'(A,I6,A,I6,A,I6)') "DIAG_MANAGER_NML variable 'max_files' (",max_files,") is larger than '",&
             & mpp_get_maxunits(),"'.  Forcing 'max_files' to be ",mpp_get_maxunits(),"."
        CALL error_mesg('diag_manager_mod::diag_managet_init', TRIM(err_msg_local), NOTE)
-       max_files = mpp_get_maxunits
+       max_files = mpp_get_maxunits()
     END IF
 
     ! How to handle Out of Range Warnings.
