@@ -358,6 +358,17 @@ return
   end subroutine compute_overlap_UG2SG
 
   !####################################################################
+  subroutine mpp_get_UG_SG_domain(UG_domain,SG_domain)
+     type(domainUG),   intent(inout) :: UG_domain
+     type(domain2d),   pointer       :: SG_domain
+
+     SG_domain => UG_domain%SG_domain
+
+     return
+
+  end subroutine mpp_get_UG_SG_domain
+
+  !####################################################################
   function mpp_get_UG_io_domain(domain)
      type(domainUG), intent(in) :: domain
      type(domainUG), pointer    :: mpp_get_UG_io_domain
