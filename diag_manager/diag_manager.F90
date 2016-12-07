@@ -5476,7 +5476,7 @@ CONTAINS
        ! ...
        ! io_tile_factor = 0 is a special case where only one rank participates
        !                  in the I/O for a tile.
-        io_tile_factor = 1
+        io_tile_factor = 1 
 allocate(unstructured_axis_diag_id(1))
 allocate(rsf_diag_1d_id(1))
 #ifdef iotestc3
@@ -5520,8 +5520,9 @@ c4loop: do l=1,3
        !is performed by the root of each I/O domain pelist.
         call mpp_get_UG_compute_domain(domain_ug,size=unstructured_axis_data_size)
         if(.not.allocated(unstructured_axis_data))allocate(unstructured_axis_data(unstructured_axis_data_size))
+!! THIS IS A PROBLEM !!
         call mpp_get_UG_domain_grid_index(domain_ug,unstructured_axis_data)
-!write(6,*)unstructured_axis_data
+!write(6,*)"ID:",mpp_pe()," DATA: ",unstructured_axis_data
        !Initialize the "unstructured" axis for the diagnostics.
         unstructured_axis_name = "ug_axis"
 #ifdef iotestc3
@@ -5550,19 +5551,33 @@ enddo c3loop
        !the code is resolved, I must register the unstructured axis first.
        !Also initialize the axes for the diagnostics.
         if (.not.allocated(x_axis_data)) allocate(x_axis_data(nx))
-        do i = 1,nx
-            x_axis_data(i) = real(i)
+        if (.not.allocated(y_axis_data))allocate(y_axis_data(ny/4))
+!! ASSUMES 4 PEs!!!
+ if (mpp_pe() > 4) call error_mesg("Diag_test_unstruct","Only 4 PEs please",fatal)
+     do i=1,nx
+          x_axis_data(i) = real(i)
+     enddo
+     if (mod(mpp_pe(),2).eq.0) then
+        do j = 1,ny/4
+            y_axis_data(j) = real(j)
         enddo
+      
+     else
+        do j = 1,ny/4
+            y_axis_data(j) = real(j+ny/4)
+        enddo
+     endif
+
        x_axis_diag_id = diag_axis_init("grid_xt", &
                                        x_axis_data, &
                                        "degrees", &
                                        "X", &
                                        long_name="longitude")
 
-        if (.not.allocated(y_axis_data))allocate(y_axis_data(ny))
-        do i = 1,ny
-            y_axis_data(i) = real(i)
-        enddo
+!        if (.not.allocated(y_axis_data))allocate(y_axis_data(ny))
+!        do i = 1,ny
+!            y_axis_data(i) = real(i)
+!        enddo
        y_axis_diag_id = diag_axis_init("grid_yt", &
                                        y_axis_data, &
                                        "degrees", &
@@ -5632,11 +5647,11 @@ enddo c3loop
         enddo
 
      !> Latitude and Longitude 
-     allocate(lat(ny),lon(nx))
+     allocate(lat(ny/4),lon(nx))
      do i=1,nx
           lon(i) = real(i)*360.0/real(nx)
      enddo
-     do j=1,ny
+     do j=1,ny/4
           lat(j) = real(j)*180.8/real(ny)
      enddo
 
@@ -5645,22 +5660,12 @@ enddo c3loop
         unstructured_real_scalar_field_name = "unstructured_real_scalar_field_1"
         unstructured_real_scalar_field_data = unstructured_real_scalar_field_data_ref
 
-!       idlat = register_diag_field("UG_unit_test", &
-!                                         "lat", &
-!                                         (/y_axis_diag_id/),&
-!                                         init_time=diag_time, &
-!                                         long_name="S-N latitude", &
-!                                         units="degrees")
-
-
-
-
-!       idlon = register_diag_field("UG_unit_test", &
-!                                         "lon", &
-!                                         (/x_axis_diag_id/),&
-!                                         init_time=diag_time, &
-!                                         long_name="E-W longitude", &
-!                                         units="degrees")
+       idlon = register_diag_field("UG_unit_test", &
+                                         "lon", &
+                                         (/x_axis_diag_id/),&
+                                         init_time=diag_time, &
+                                         long_name="E-W longitude", &
+                                         units="degrees")
 l=SIZE(unstructured_axis_diag_id)
 
        rsf_diag_id = register_diag_field("UG_unit_test", &
@@ -5682,12 +5687,12 @@ l=SIZE(unstructured_axis_diag_id)
                                          long_name="TWO_D_ARRAY", &
                                          units="ergs")
 
-!       idlat = register_diag_field("UG_unit_test", &
-!                                         "lat", &
-!                                         (/y_axis_diag_id/),&
-!                                         init_time=diag_time, &
-!                                         long_name="S-N latitude", &
-!                                         units="degrees")
+       idlat = register_diag_field("UG_unit_test", &
+                                         "lat", &
+                                         (/y_axis_diag_id/),&
+                                         init_time=diag_time, &
+                                         long_name="S-N latitude", &
+                                         units="degrees")
 
 
 IF (l .NE. 1) THEN
@@ -5773,8 +5778,8 @@ ENDIF !L.ne.1
           used = send_data(rsf_diag_2d_id, &
                                 unstructured_real_2D_field_data, &
                                 diag_time)
-! used = send_data(idlat,lat,diag_time)
-! used = send_data(idlon,lon,diag_time)
+ used = send_data(idlat,lat,diag_time)
+ used = send_data(idlon,lon,diag_time)
 
         enddo
        !Deallocate the unstructured domain.
