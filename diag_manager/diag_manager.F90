@@ -3503,7 +3503,7 @@ CONTAINS
 
     !::sdu:: Write the manifest file here
     CALL write_diag_manifest(file)
-    
+
     ! Write out the number of bytes of data saved to this file
     IF ( write_bytes_in_file ) THEN
        CALL mpp_sum (files(file)%bytes_written)
