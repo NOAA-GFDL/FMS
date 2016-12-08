@@ -182,7 +182,7 @@ MODULE diag_manager_mod
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
        & get_ticks_per_second
-  USE mpp_io_mod, ONLY: mpp_open, mpp_close
+  USE mpp_io_mod, ONLY: mpp_open, mpp_close, mpp_get_maxunits
   USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
 
 #ifdef INTERNAL_FILE_NML
@@ -3622,6 +3622,16 @@ CONTAINS
        err_msg_local = ''
        WRITE (err_msg_local,'(ES8.1E2)') CMOR_MISSING_VALUE
        CALL error_mesg('diag_manager_mod::diag_manager_init', 'Using CMOR missing value ('//TRIM(err_msg_local)//').', NOTE)
+    END IF
+
+    ! Issue note if attempting to set diag_manager_nml::max_files larger than
+    ! mpp_get_maxunits() -- Default is 1024 set in mpp_io.F90
+    IF ( max_files .GT. mpp_get_maxunits() ) THEN
+       err_msg_local = ''
+       WRITE (err_msg_local,'(A,I6,A,I6,A,I6)') "DIAG_MANAGER_NML variable 'max_files' (",max_files,") is larger than '",&
+            & mpp_get_maxunits(),"'.  Forcing 'max_files' to be ",mpp_get_maxunits(),"."
+       CALL error_mesg('diag_manager_mod::diag_managet_init', TRIM(err_msg_local), NOTE)
+       max_files = mpp_get_maxunits()
     END IF
 
     ! How to handle Out of Range Warnings.
