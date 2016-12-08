@@ -1553,14 +1553,14 @@ CONTAINS
        CASE ( 'maximum', 'max' )
           output_fields(out_num)%time_max = .TRUE.
           l1 = LEN_TRIM(output_fields(out_num)%output_name)
-          IF ( output_fields(out_num)%output_name(l1-2:l1) /= 'max' ) &
+          IF ( lowercase(trim(adjustl(output_fields(out_num)%output_name(l1-2:l1)))) /= 'max' ) &
                output_fields(out_num)%output_name = TRIM(output_name)//'_max'
           method_selected = method_selected+1
           t_method = 'max'
        CASE ( 'minimum', 'min' )
           output_fields(out_num)%time_min = .TRUE.
           l1 = LEN_TRIM(output_fields(out_num)%output_name)
-          IF ( output_fields(out_num)%output_name(l1-2:l1) /= 'min' )&
+          IF ( lowercase(trim(adjustl(output_fields(out_num)%output_name(l1-2:l1)))) /= 'min' )&
                & output_fields(out_num)%output_name = TRIM(output_name)//'_min'
           method_selected = method_selected+1
           t_method = 'min'
