@@ -45,12 +45,17 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
     integer(INT_KIND)                           :: funit             !<The file unit returned by mpp_open.
     type(ax_type),pointer                       :: axis              !<A pointer to an fms_io_axis_type.
     type(axistype)                              :: x_axis            !<An mpp_io_axis_type, used to write the x-axis to the restart file.
+    logical(INT_KIND)                           :: x_axis_defined    !<Flag telling whether or not a x-axis has been define for the inputted restart object.
     type(axistype)                              :: y_axis            !<An mpp_io_axis_type, used to write the y-axis to the restart file.
+    logical(INT_KIND)                           :: y_axis_defined    !<Flag telling whether or not a y-axis has been define for the inputted restart object.
     type(axistype)                              :: z_axis            !<An mpp_io_axis_type, used to write the z-axis to the restart file.
     logical(INT_KIND)                           :: z_axis_defined    !<Flag telling whether or not a z-axis has been define for the inputted restart object.
     type(axistype)                              :: cc_axis           !<An mpp_io_axis_type, used to write the cc-axis (???) to the restart file.
     logical(INT_KIND)                           :: cc_axis_defined   !<Flag telling whether or not a cc-axis (???) has been define for the inputted restart object.
-    type(axistype)                              :: unstructured_axis !<An mpp_io_axis_type, used to write the unstructured axis to the restart file.
+    type(axistype)                              :: c_axis            !<An mpp_io_axis_type, used to write the compressed c-axis (???) to the restart file.
+    logical(INT_KIND)                           :: c_axis_defined    !<Flag telling whether or not a compressed c-axis (???) has been define for the inputted restart object.
+    type(axistype)                              :: h_axis            !<An mpp_io_axis_type, used to write the compressed h-axis (???) to the restart file.
+    logical(INT_KIND)                           :: h_axis_defined    !<Flag telling whether or not a compressed h-axis (???) has been define for the inputted restart object.
     type(axistype)                              :: t_axis            !<An mpp_io_axis_type, used to write the t-axis to the restart file.
     type(var_type),pointer                      :: cur_var           !<A pointer to an fms_io_field_type.
     integer(INT_KIND)                           :: num_var_axes      !<Number of dimensions for a field.
@@ -78,72 +83,86 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
         return
     endif
 
-   !Make sure that an unstructured axis has been registered to this restart
-   !object.  Also make sure that a x- and y-axis are registered, since these
-   !will be needed to convert from the unstructured domain back to the
-   !structured domain later.  Make sure that no "compressed" axes were
-   !registered to the restart object.
+   !Make sure that at least one axis was registered to the restart object.
     if (.not. allocated(fileObj%axes)) then
         call mpp_error(FATAL, &
                        "fms_io_unstructured_save_restart: there are no" &
                        //" registered axes for the file "//trim(fileObj%name))
     endif
-    if (.not. allocated(fileObj%axes(UNSTRUCTURED_GRID_INDEX)%unstructured_axis_data)) then
-        call mpp_error(FATAL, &
-                       "fms_io_unstructured_save_restart: an unstructured" &
-                       //" axis was not registered for the file " &
-                       //trim(fileObj%name))
-    endif
-    if (.not. associated(fileObj%axes(XIDX)%data)) then
-        call mpp_error(FATAL, &
-                       "fms_io_unstructured_save_restart: a x-axis was not" &
-                       //" registered for the file "//trim(fileObj%name))
-    endif
-    if (.not. associated(fileObj%axes(YIDX)%data)) then
-        call mpp_error(FATAL, &
-                       "fms_io_unstructured_save_restart: a y-axis was not" &
-                       //" registered for the file "//trim(fileObj%name))
-    endif
-    if (allocated(fileObj%axes(CIDX)%idx) .or. &
-        allocated(fileObj%axes(HIDX)%idx)) then
-        call mpp_error(FATAL, &
-                       "fms_io_unstructured_save_restart: the restart file " &
-                       //trim(fileObj%name)//" cannot contain both a" &
-                       //" compressed and an unstructured axis.")
-    endif
 
-   !Point to the unstructured domain associated with the unstructured axis.
+   !Make sure that all registered axes are associated with the same
+   !unstructured domain.
     domain => null()
-    domain => fileObj%axes(UNSTRUCTURED_GRID_INDEX)%domain_ug
-
-   !Make sure that all fields are associated with the correct domain.
-    do j = 1,fileObj%nvar
-       !Make sure that all fields in the restart object have been registered
-       !with an unstructured mpp domain.
-        if (.not. fileObj%var(j)%registered_with_domain_UG) then
-             call mpp_error(FATAL, &
-                            "fms_io_unstructured_save_restart:" &
-                            //" the field "//trim(fileObj%var(j)%name) &
-                            //" in the file "//trim(fileObj%name) &
-                            //" was not registered with an unstructured" &
-                            //" mpp domain.")
-        endif
-
-       !For non-scalar fields, make sure that the unstructured domain with
-       !which they were registered matches the domain associated with the
-       !unstructured axis.
-        if (.not. fileObj%var(j)%domain_UG_scalar) then
-            if (.not. mpp_compare_UG_domains(domain, &
-                                             domain_UG_array(fileObj%var(j)%domain_UG_index))) then
-                call mpp_error(FATAL, &
-                               "fms_io_unstructured_save_restart:" &
-                               //" the unstructured domain associated with" &
-                               //" field "//trim(fileObj%var(j)%name) &
-                               //" in the file "//trim(fileObj%name) &
-                               //" does not match the unstructured domain" &
-                               //" associated with the registered" &
-                               //" unstructured axis.")
+    do j = 1,size(fileObj%axes)
+        if (j .eq. CIDX .or. j .eq. HIDX .or. j .eq. UIDX) then
+            if (allocated(fileObj%axes(j)%idx)) then
+                if (.not. associated(fileObj%axes(j)%domain_ug)) then
+                    call mpp_error(FATAL, &
+                                   "fms_io_unstructured_save_restart:" &
+                                   //" the axis "//trim(fileObj%axes(j)%name) &
+                                   //" in the file "//trim(fileObj%name) &
+                                   //" was not registered with an unstructured" &
+                                   //" mpp domain.")
+                endif
+                if (associated(domain)) then
+                    if (.not. mpp_compare_UG_domains(domain, &
+                                                     fileObj%axes(j)%domain_ug)) then
+                        call mpp_error(FATAL, &
+                                       "fms_io_unstructured_save_restart:" &
+                                       //" two axes registered to same" &
+                                       //" restart file are associated with" &
+                                       //" different unstructured mpp domains.")
+                    endif
+                else
+                    domain => fileObj%axes(j)%domain_ug
+                endif
             endif
+        else
+            if (associated(fileObj%axes(j)%data)) then
+                if (.not. associated(fileObj%axes(j)%domain_ug)) then
+                    call mpp_error(FATAL, &
+                                   "fms_io_unstructured_save_restart:" &
+                                   //" the axis "//trim(fileObj%axes(j)%name) &
+                                   //" in the file "//trim(fileObj%name) &
+                                   //" was not registered with an unstructured" &
+                                   //" mpp domain.")
+                endif
+                if (associated(domain)) then
+                    if (.not. mpp_compare_UG_domains(domain, &
+                                                     fileObj%axes(j)%domain_ug)) then
+                        call mpp_error(FATAL, &
+                                       "fms_io_unstructured_save_restart:" &
+                                       //" two axes registered to same" &
+                                       //" restart file are associated with" &
+                                       //" different unstructured mpp domains.")
+                    endif
+                else
+                    domain => fileObj%axes(j)%domain_ug
+                endif
+            endif
+        endif
+    enddo
+
+   !Make sure that all registered fields are associated with the same
+   !unstructured domain that all axes were registered with.
+    do j = 1,fileObj%nvar
+        if (.not. associated(fileObj%var(j)%domain_ug)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_save_restart:" &
+                           //" the field "//trim(fileObj%var(j)%name) &
+                           //" in the file "//trim(fileObj%name) &
+                           //" was not registered with an unstructured" &
+                           //" mpp domain.")
+        endif
+        if (.not. mpp_compare_UG_domains(domain, &
+                                         fileObj%var(j)%domain_ug)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_save_restart:" &
+                           //" the unstructured domain associated with" &
+                           //" field "//trim(fileObj%var(j)%name) &
+                           //" in the file "//trim(fileObj%name) &
+                           //" does not match the unstructured domain" &
+                           //" associated with the registered axes.")
         endif
     enddo
 
@@ -231,27 +250,39 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
     cur_var => null()
     if (write_meta_data) then
 
-       !Write out the metadata for the x-axis to the restart file.
-        axis => fileObj%axes(XIDX)
-        call mpp_write_meta(funit, &
-                            x_axis, &
-                            axis%name, &
-                            axis%units, &
-                            axis%longname, &
-                            data=axis%data, &
-                            cartesian="X")
-        axis => null()
+       !If it is registered, then write out the metadata for the x-axis
+       !to the restart file.
+        if (associated(fileObj%axes(XIDX)%data)) then
+            axis => fileObj%axes(XIDX)
+            call mpp_write_meta(funit, &
+                                x_axis, &
+                                axis%name, &
+                                axis%units, &
+                                axis%longname, &
+                                data=axis%data, &
+                                cartesian="X")
+            axis => null()
+            x_axis_defined = .true.
+        else
+            x_axis_defined = .false.
+        endif
 
-       !Write out the metadata for the y-axis to the restart file.
-        axis => fileObj%axes(YIDX)
-        call mpp_write_meta(funit, &
-                            y_axis, &
-                            axis%name, &
-                            axis%units, &
-                            axis%longname, &
-                            data=axis%data, &
-                            cartesian="Y")
-        axis => null()
+       !If it is registered, then write out the metadata for the y-axis
+       !to the restart file.
+        if (associated(fileObj%axes(YIDX)%data)) then
+            axis => fileObj%axes(YIDX)
+            call mpp_write_meta(funit, &
+                                y_axis, &
+                                axis%name, &
+                                axis%units, &
+                                axis%longname, &
+                                data=axis%data, &
+                                cartesian="Y")
+            axis => null()
+            y_axis_defined = .true.
+        else
+            y_axis_defined = .false.
+        endif
 
        !If it is registered, then write out the metadata for the z-axis
        !to the restart file.
@@ -287,16 +318,41 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
             cc_axis_defined = .false.
         endif
 
-       !Write out the unstructured axis to the restart file.
-        axis => fileObj%axes(UNSTRUCTURED_GRID_INDEX)
-        call mpp_write_meta(funit, &
-                            unstructured_axis, &
-                            axis%name, &
-                            axis%units, &
-                            axis%longname, &
-                            axis%unstructured_axis_data, &
-                            compressed="U")
-        axis => null()
+       !If it is registered, then write out the metadata for the compressed
+       !c-axis to the restart file.
+        if (allocated(fileObj%axes(CIDX)%idx)) then
+            axis => fileObj%axes(CIDX)
+            call mpp_write_meta(funit, &
+                                c_axis, &
+                                axis%name, &
+                                axis%units, &
+                                axis%longname, &
+                                data=axis%idx, &
+                                compressed=axis%compressed, &
+                                min=axis%imin)
+            axis => null()
+            c_axis_defined = .true.
+        else
+            c_axis_defined = .false.
+        endif
+
+       !If it is registered, then write out the metadata for the compressed
+       !h-axis to the restart file.
+        if (allocated(fileObj%axes(HIDX)%idx)) then
+            axis => fileObj%axes(HIDX)
+            call mpp_write_meta(funit, &
+                                h_axis, &
+                                axis%name, &
+                                axis%units, &
+                                axis%longname, &
+                                data=axis%idx, &
+                                compressed=axis%compressed, &
+                                min=axis%imin)
+            axis => null()
+            h_axis_defined = .true.
+        else
+            h_axis_defined = .false.
+        endif
 
        !Write out the time axis to the restart file.
         if (associated(fileObj%axes(TIDX)%data)) then
@@ -338,76 +394,43 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
                                //trim(cur_var%name)//" in file " &
                                //trim(fileObj%name)//" has more than one" &
                                //" time level, but the number of time levels" &
-                               //" is not equal to max_ntime")
+                               //" is not equal to max_ntime.")
             endif
 
-           !Determine the dimensions for the field.
+           !Determine the dimensions for the field.  For a scalar field foo,
+           !it is assumed that foo = foo(t).  For non-scalar fields, time
+           !maybe added as the last dimension.
             if (cur_var%ndim .eq. 0) then
-               !For a scalar field foo, it is assumed foo = foo(t)
                 num_var_axes = 1
                 var_axes(1) = t_axis
-            elseif (cur_var%ndim .eq. 1) then
-               !For a 1D field foo, it is assumed foo = foo(unstructured) or
-               !foo = foo(unstructured,t)
-                num_var_axes = 1
-                var_axes(1) = unstructured_axis
-                if (cur_var%siz(4) .eq. fileObj%max_ntime) then
-                    num_var_axes = 2
-                    var_axes(2) = t_axis
-                endif
-            elseif (cur_var%ndim .eq. 2) then
-               !For a 2D field foo, it is assumed foo = foo(unstructured,z) or
-               !foo = foo(unstructured,z,t).  Make sure that a z-axis has
-               !been registered to the restart object.
-                if (.not. z_axis_defined) then
-                    call mpp_error(FATAL, &
-                                   "fms_io_unstructured_save_restart:" &
-                                   //" two-dimensional field " &
-                                   //trim(cur_var%name)//" requires that" &
-                                   //"a z-axis must be registered to the" &
-                                   //" restart file "//trim(fileObj%name))
-                endif
-                num_var_axes = 2
-                var_axes(1) = unstructured_axis
-                var_axes(2) = z_axis
-                if (cur_var%siz(4) .eq. fileObj%max_ntime) then
-                    num_var_axes = 3
-                    var_axes(3) = t_axis
-                endif
-            elseif(cur_var%ndim .eq. 3) then
-               !For a 3D field foo, it is assumed foo = foo(unstructured,z,cc)
-               !or foo = foo(unstructured,z,cc,t)
-                if (.not. z_axis_defined) then
-                    call mpp_error(FATAL, &
-                                   "fms_io_unstructured_save_restart:" &
-                                   //" three-dimensional field " &
-                                   //trim(cur_var%name)//" requires that" &
-                                   //"a z-axis must be registered to the" &
-                                   //" restart file "//trim(fileObj%name))
-                endif
-                if (.not. cc_axis_defined) then
-                    call mpp_error(FATAL, &
-                                   "fms_io_unstructured_save_restart:" &
-                                   //" three-dimensional field " &
-                                   //trim(cur_var%name)//" requires that" &
-                                   //"a cc-axis must be registered to the" &
-                                   //" restart file "//trim(fileObj%name))
-                endif
-                num_var_axes = 3
-                var_axes(1) = unstructured_axis
-                var_axes(2) = z_axis
-                var_axes(3) = cc_axis
-                if (cur_var%siz(4) .eq. fileObj%max_ntime) then
-                    num_var_axes = 4
-                    var_axes(4) = t_axis
-                endif
             else
-               !For dimension and higher fields are currently not allowed.
-                call mpp_error(FATAL, &
-                               "fms_io_unstructured_save_restart): " &
-                               //trim(cur_var%name)//" in file " &
-                               //trim(fileObj%name)//" has more than three" &
-                               //" dimensions (not including time level)")
+                num_var_axes = cur_var%ndim
+                do k = 1,cur_var%ndim
+                    select case (cur_var%field_dimension_order(k))
+                        case (XIDX)
+                            var_axes(k) = x_axis
+                        case (YIDX)
+                            var_axes(k) = y_axis
+                        case (ZIDX)
+                            var_axes(k) = z_axis
+                        case (CCIDX)
+                            var_axes(k) = cc_axis
+                        case (CIDX)
+                            var_axes(k) = c_axis
+                        case (HIDX)
+                            var_axes(k) = h_axis
+                        case default
+                            call mpp_error(FATAL, &
+                                           "fms_io_unstructured_save_restart:" &
+                                           //" unsupported dimension type for" &
+                                           //" field "//trim(cur_var%name) &
+                                           //" in file "//trim(fileObj%name))
+                    end select
+                enddo
+                if (cur_var%siz(4) .eq. fileObj%max_ntime) then
+                    num_var_axes = num_var_axes + 1
+                    var_axes(num_var_axes) = t_axis
+                endif
             endif
 
            !Get the "pack size" for default real types, where
@@ -487,19 +510,29 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
         enddo
 
        !Write the axis data to the restart file.
-        call mpp_write(funit, &
-                       x_axis)
-        call mpp_write(funit, &
-                       y_axis)
-        call mpp_write(funit, &
-                       unstructured_axis)
-        if (z_axis_defined) then
+        if (x_axis_defined) then
             call mpp_write(funit, &
-                           z_axis)
+                           x_axis)
+        endif
+        if (y_axis_defined) then
+            call mpp_write(funit, &
+                           y_axis)
+        endif
+        if (c_axis_defined) then
+            call mpp_write(funit, &
+                           c_axis)
+        endif
+        if (h_axis_defined) then
+            call mpp_write(funit, &
+                           h_axis)
         endif
         if (cc_axis_defined) then
             call mpp_write(funit, &
                            cc_axis)
+        endif
+        if (z_axis_defined) then
+            call mpp_write(funit, &
+                           z_axis)
         endif
     endif
 
@@ -540,82 +573,50 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
                                                        cur_var%field, &
                                                        domain, &
                                                        fileObj%p1dr(k,j)%p, &
-                                                       nelems_io_in=fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
+                                                       fileObj%axes(cur_var%field_dimension_order(1))%nelems, &
                                                        tstamp=tlev, &
                                                        default_data=cur_var%default_data)
                     elseif (associated(fileObj%p2dr(k,j)%p)) then
-                        if (.not. z_axis_defined) then
-                            call mpp_error(FATAL, &
-                                           "fms_io_unstructured_save_restart:" &
-                                           //" two-dimensional field " &
-                                           //trim(cur_var%name)//" requires that" &
-                                           //"a z-axis must be registered to the" &
-                                           //" restart file "//trim(fileObj%name))
-                        endif
                         call mpp_io_unstructured_write(funit, &
                                                        cur_var%field, &
                                                        domain, &
                                                        fileObj%p2dr(k,j)%p, &
-                                                       nelems_io_in=fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
+                                                       fileObj%axes(cur_var%field_dimension_order(1))%nelems, &
                                                        tstamp=tlev, &
                                                        default_data=cur_var%default_data)
                     elseif (associated(fileObj%p3dr(k,j)%p)) then
-                        if (.not. z_axis_defined) then
-                            call mpp_error(FATAL, &
-                                           "fms_io_unstructured_save_restart:" &
-                                           //" three-dimensional field " &
-                                           //trim(cur_var%name)//" requires that" &
-                                           //"a z-axis must be registered to the" &
-                                           //" restart file "//trim(fileObj%name))
-                        endif
-                        if (.not. cc_axis_defined) then
-                            call mpp_error(FATAL, &
-                                           "fms_io_unstructured_save_restart:" &
-                                           //" three-dimensional field " &
-                                           //trim(cur_var%name)//" requires that" &
-                                           //"a cc-axis must be registered to the" &
-                                           //" restart file "//trim(fileObj%name))
-                        endif
                         call mpp_io_unstructured_write(funit, &
                                                        cur_var%field, &
                                                        domain, &
                                                        fileObj%p3dr(k,j)%p, &
-                                                       nelems_io_in=fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
+                                                       fileObj%axes(cur_var%field_dimension_order(1))%nelems, &
                                                        tstamp=tlev, &
                                                        default_data=cur_var%default_data)
                     elseif (associated(fileObj%p0di(k,j)%p)) then
-                        r0d =  real(fileObj%p0di(k,j)%p)
+                        r0d = real(fileObj%p0di(k,j)%p)
                         call mpp_write(funit, &
                                        cur_var%field, &
                                        r0d, &
                                        tlev)
                     elseif (associated(fileObj%p1di(k,j)%p)) then
-                        allocate(r1d(cur_var%siz(1)))
+                        allocate(r1d(size(fileObj%p1di(k,j)%p,1)))
                         r1d = real(fileObj%p1di(k,j)%p)
                         call mpp_io_unstructured_write(funit, &
                                                        cur_var%field, &
                                                        domain, &
                                                        r1d, &
-                                                       nelems_io_in=fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
+                                                       fileObj%axes(cur_var%field_dimension_order(1))%nelems, &
                                                        tstamp=tlev, &
                                                        default_data=cur_var%default_data)
                         deallocate(r1d)
                     elseif (associated(fileObj%p2di(k,j)%p)) then
-                        if (.not. z_axis_defined) then
-                            call mpp_error(FATAL, &
-                                           "fms_io_unstructured_save_restart:" &
-                                           //" two-dimensional field " &
-                                           //trim(cur_var%name)//" requires that" &
-                                           //"a z-axis must be registered to the" &
-                                           //" restart file "//trim(fileObj%name))
-                        endif
-                        allocate(r2d(cur_var%siz(1),cur_var%siz(2)))
+                        allocate(r2d(size(fileObj%p2di(k,j)%p,1),size(fileObj%p2di(k,j)%p,2)))
                         r2d = real(fileObj%p2di(k,j)%p)
                         call mpp_io_unstructured_write(funit, &
                                                        cur_var%field, &
                                                        domain, &
                                                        r2d, &
-                                                       nelems_io_in=fileObj%axes(UNSTRUCTURED_GRID_INDEX)%nelems, &
+                                                       fileObj%axes(cur_var%field_dimension_order(1))%nelems, &
                                                        tstamp=tlev, &
                                                        default_data=cur_var%default_data)
                         deallocate(r2d)
@@ -628,9 +629,9 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
                                        //trim(fileObj%name))
                     endif
                 endif
+                cur_var => null()
             enddo
         enddo
-        cur_var => null()
     endif
 
    !Close the restart file.

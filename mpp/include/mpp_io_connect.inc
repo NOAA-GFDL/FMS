@@ -162,12 +162,10 @@
     subroutine mpp_open( unit, file, action, form, access, threading, &
                          fileset, iospec, nohdrs, recl,               &
                          iostat, is_root_pe, domain, &
-
 !----------
 !ug support
                          domain_ug)
 !----------
-
       integer,         intent(out)           :: unit   
       character(len=*), intent(in)           :: file
       integer,          intent(in), optional :: action, form, access 
@@ -177,12 +175,10 @@
       integer,         intent(out), optional :: iostat
       logical,          intent(in), optional :: is_root_pe      
       type(domain2d),   intent(in), optional :: domain
-
 !----------
 !ug support
       type(domainUG),target,intent(in),optional :: domain_ug
 !----------
-
       character(len=16)  :: act, acc, for, pos
       character(len=128) :: mesg
       character(len=256) :: text2
@@ -196,11 +192,12 @@
 
 !----------
 !ug support
-      type(domainUG),pointer :: io_domain_ug
-      integer(INT_KIND)      :: io_layout_ug
-      integer(INT_KIND)      :: tile_id_ug
+      type(domainUG),pointer                     :: io_domain_ug
+      integer(INT_KIND)                          :: io_layout_ug
+      integer(INT_KIND)                          :: tile_id_ug
+      integer(INT_KIND)                          :: io_domain_ug_npes
+      integer(INT_KIND),dimension(:),allocatable :: pelist
 !----------
-
       integer*8                             :: lenp
       integer                               :: comm
       integer                               :: info, ierror
@@ -214,12 +211,15 @@
       
 !----------
 !ug support
-     !<Only allow one type of mpp domain.
+     !Only allow one type of mpp domain.
       if (present(domain) .and. present(domain_ug)) then
           call mpp_error(FATAL, &
                          "mpp_open: domain and domain_ug cannot both be" &
                          //" present in the same mpp_open call.")
       endif
+
+     !Null initialize the unstructured I/O domain pointer.
+      io_domain_ug => null()
 !----------
      
       call mpp_clock_begin(mpp_open_clock)
@@ -253,7 +253,6 @@
 !----------
 !ug support
       elseif (present(domain_ug)) then
-          io_domain_ug => null()
           io_domain_ug => mpp_get_UG_io_domain(domain_ug)
           io_domain_exist = .true.
 !----------
@@ -285,6 +284,16 @@
              ! in this case, only write out from the root_pe of io_domain.
               write_on_this_pe = mpp_domain_is_tile_root_pe(io_domain)
           elseif (associated(io_domain_ug)) then
+!             io_domain_ug_npes = mpp_get_UG_domain_npes(io_domain_ug)
+!             allocate(pelist(io_domain_ug_npes))
+!             call mpp_get_UG_domain_pelist(io_domain_ug, &
+!                                           pelist)
+!             if (mpp_pe() .eq. pelist(1)) then
+!                 write_on_this_pe = .true.
+!             else
+!                 write_on_this_pe = .false.
+!             endif
+!             deallocate(pelist)
               write_on_this_pe = mpp_domain_UG_is_tile_root_pe(io_domain_ug)
           endif
 !----------
