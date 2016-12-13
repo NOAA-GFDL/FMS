@@ -406,6 +406,7 @@ MODULE diag_manager_mod
   !    <IN NAME="time" TYPE="TYPE(time_type)" DIM="(:,:,:)" />
   !    <IN NAME="mask" TYPE="LOGICAL" DIM="(:,:,:)" />
   INTERFACE send_tile_averaged_data
+     MODULE PROCEDURE send_tile_averaged_data1d
      MODULE PROCEDURE send_tile_averaged_data2d
      MODULE PROCEDURE send_tile_averaged_data3d
   END INTERFACE
