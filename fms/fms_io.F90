@@ -125,6 +125,7 @@ use mpp_domains_mod,   only: mpp_get_UG_domain_pelist
 use mpp_io_mod,        only: mpp_io_unstructured_write
 use mpp_io_mod,        only: mpp_get_axis_length
 use mpp_io_mod,        only: mpp_io_unstructured_read
+use mpp_io_mod,        only: mpp_file_is_opened
 !----------
 
 implicit none

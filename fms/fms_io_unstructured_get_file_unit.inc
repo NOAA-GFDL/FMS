@@ -20,15 +20,23 @@ subroutine fms_io_unstructured_get_file_unit(filename, &
    !Local variables
     integer(INT_KIND) :: i !<Loop variable.
 
-   !Check if the file exists in the "files_read" module array.  This implies
-   !that the file has already been opened.  If the file is found in the
-   !array, return its array index and file unit.
+   !Check if the file exists in the "files_read" module array.  If the file
+   !is found in the array, this implies that the file was opened at some
+   !point.  If the file is still open, then return.  If not, then throw a
+   !fatal error.
    !num_files_r is a module variable.
    !files_read is a module variable.
     do i = 1,num_files_r
         if (trim(files_read(i)%name) .eq. trim(filename)) then
             index_file = i
             funit = files_read(index_file)%unit
+            if (.not. mpp_file_is_opened(funit)) then
+                call mpp_error(FATAL, &
+                               "fms_io_unstructured_get_file_unit:" &
+                               //" the file "//trim(filename) &
+                               //" was previously opened, but is not" &
+                               //" currently open.")
+            endif
             return
         endif
     enddo
@@ -40,15 +48,18 @@ subroutine fms_io_unstructured_get_file_unit(filename, &
         call mpp_error(FATAL, &
                        "fms_io_unstructured_get_file_unit: the number of" &
                        //" files currently open for reading exceeds" &
-                       //" max_files_r.  Pleaes increase this value via the" &
-                       //" fms_io_nml namelist.")
+                       //" max_files_r.  Pleaes increase this value via" &
+                       //" the fms_io_nml namelist.")
     endif
 
-   !Open the inputted file and add it to the "files_read" array.
-   !form is a module variable. (This should be renamed because it matches
-   !                            a fortran keyword.)
-   !max_files is a module variable.
+   !Store the filename and initialize an array for the file fields.
     num_files_r = num_files_r + 1
+    files_read(num_files_r)%name = trim(filename)
+    allocate(files_read(num_files_r)%var(max_fields))
+    files_read(num_files_r)%nvar = 0
+    index_file = num_files_r
+
+   !Open the file.
     if (read_dist) then
         call mpp_open(funit, &
                       trim(filename), &
@@ -65,10 +76,8 @@ subroutine fms_io_unstructured_get_file_unit(filename, &
                       threading=MPP_MULTI, &
                       fileset=MPP_SINGLE)
     endif
-    files_read(num_files_r)%name = trim(filename)
-    allocate(files_read(num_files_r)%var(max_fields))
-    files_read(num_files_r)%nvar = 0
-    index_file = num_files_r
+
+   !Store the file unit returned by mpp_open.
     files_read(index_file)%unit = funit
 
     return
