@@ -3061,6 +3061,74 @@ CONTAINS
   END FUNCTION send_data_3d
   ! </FUNCTION>
 
+  ! <FUNCTION NAME="send_tile_averaged_data1d" INTERFACE="send_tile_averaged_data">
+  !   <IN NAME="diag_field_id" TYPE="INTEGER"></IN>
+  !   <IN NAME="field" TYPE="REAL, DIMENSION(:,:,:)"></IN>
+  !   <IN NAME="area" TYPE="REAL, DIMENSION(:,:,:)">  </IN>
+  !   <IN NAME="time" TYPE="TYPE(time_type)">  </IN>
+  !   <IN NAME="mask" TYPE="LOGICAL, DIMENSION(:,:,:), OPTIONAL"></IN>
+  LOGICAL FUNCTION send_tile_averaged_data1d ( id, field, area, time, mask )
+    INTEGER, INTENT(in) :: id  ! id od the diagnostic field
+    REAL, INTENT(in) :: field(:,:) ! field to average and send
+    REAL, INTENT(in) :: area (:,:) ! area of tiles (== averaging weights), arbitrary units
+    TYPE(time_type), INTENT(in)  :: time ! current time
+    LOGICAL, INTENT(in),OPTIONAL :: mask (:,:) ! land mask
+
+    REAL, DIMENSION(SIZE(field,1)) :: out(SIZE(field,1))
+
+    CALL average_tiles1d (id, field, area, mask, out)
+    send_tile_averaged_data1d = send_data(id, out, time=time, mask=ANY(mask,DIM=2))
+  END FUNCTION send_tile_averaged_data1d
+  ! <SUBROUTINE NAME="average_tiles1d">
+  !   <OVERVIEW>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE average_tiles1d(diag_field_id, x, area, mask, out)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <IN NAME="diag_field_id" TYPE="INTEGER"></IN>
+  !   <IN NAME="x" TYPE="REAL, DIMENSION(:,:)">(ug_index, tile) field to average</IN>
+  !   <IN NAME="area" TYPE="REAL, DIMENSION(:,:,:)">(ug_index, tile) fractional area</IN>
+  !   <IN NAME="mask" TYPE="LOGICAL, DIMENSION(:,:,:)">(ug_index, tile) land mask</IN>
+  !   <OUT NAME="out" TYPE="REAL, DIMENSION(:,:)">(ug_index) result of averaging</OUT>
+  SUBROUTINE average_tiles1d(diag_field_id, x, area, mask, out)
+    INTEGER, INTENT(in) :: diag_field_id
+    REAL, DIMENSION(:,:), INTENT(in) :: x
+    REAL, DIMENSION(:,:), INTENT(in) :: area
+    LOGICAL, DIMENSION(:,:), INTENT(in) :: mask
+    REAL, DIMENSION(:), INTENT(out) :: out
+
+    INTEGER  :: it ! iterator over tile number
+    REAL, DIMENSION(SIZE(x,1)) :: s ! area accumulator
+    REAL :: local_missing_value
+
+    ! Initialize local_missing_value
+    IF ( input_fields(diag_field_id)%missing_value_present ) THEN
+       local_missing_value = input_fields(diag_field_id)%missing_value
+    ELSE
+       local_missing_value = 0.0
+    END IF
+
+    ! Initialize s and out to zero.
+    s(:) = 0.0
+    out(:) = 0.0
+
+    DO it = 1, SIZE(area,dim=2)
+       WHERE ( mask(:,it) )
+          out(:) = out(:) + x(:,it)*area(:,it)
+          s(:) = s(:) + area(:,it)
+       END WHERE
+    END DO
+
+    WHERE ( s(:) > 0 )
+       out(:) = out(:)/s(:)
+    ELSEWHERE
+       out(:) = local_missing_value
+    END WHERE
+  END SUBROUTINE average_tiles1d
+
+
   ! <FUNCTION NAME="send_tile_averaged_data2d" INTERFACE="send_tile_averaged_data">
   !   <IN NAME="diag_field_id" TYPE="INTEGER"></IN>
   !   <IN NAME="field" TYPE="REAL, DIMENSION(:,:,:)"></IN>
