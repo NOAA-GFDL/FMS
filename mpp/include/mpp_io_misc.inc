@@ -285,3 +285,8 @@
    integer function mpp_get_maxunits()
       mpp_get_maxunits = maxunits
    end function mpp_get_maxunits
+
+    logical function do_cf_compliance()
+      do_cf_compliance = cf_compliance
+    end function do_cf_compliance
+
