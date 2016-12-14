@@ -195,8 +195,6 @@
       type(domainUG),pointer                     :: io_domain_ug
       integer(INT_KIND)                          :: io_layout_ug
       integer(INT_KIND)                          :: tile_id_ug
-      integer(INT_KIND)                          :: io_domain_ug_npes
-      integer(INT_KIND),dimension(:),allocatable :: pelist
 !----------
       integer*8                             :: lenp
       integer                               :: comm
@@ -284,16 +282,6 @@
              ! in this case, only write out from the root_pe of io_domain.
               write_on_this_pe = mpp_domain_is_tile_root_pe(io_domain)
           elseif (associated(io_domain_ug)) then
-!             io_domain_ug_npes = mpp_get_UG_domain_npes(io_domain_ug)
-!             allocate(pelist(io_domain_ug_npes))
-!             call mpp_get_UG_domain_pelist(io_domain_ug, &
-!                                           pelist)
-!             if (mpp_pe() .eq. pelist(1)) then
-!                 write_on_this_pe = .true.
-!             else
-!                 write_on_this_pe = .false.
-!             endif
-!             deallocate(pelist)
               write_on_this_pe = mpp_domain_UG_is_tile_root_pe(io_domain_ug)
           endif
 !----------
@@ -804,7 +792,8 @@
      !<Nullify local pointers.
       if (associated(io_domain)) then
           io_domain => NULL()
-      elseif (associated(io_domain_ug)) then
+      endif
+      if (associated(io_domain_ug)) then
           io_domain_ug => null()
       endif
 !----------

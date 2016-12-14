@@ -10,7 +10,6 @@ subroutine fms_io_unstructured_setup_one_field(fileObj, &
                                                field_dimension_sizes, &
                                                index_field, &
                                                domain, &
-                                               use_domain_indices, &
                                                mandatory, &
                                                data_default, &
                                                longname, &
@@ -26,7 +25,6 @@ subroutine fms_io_unstructured_setup_one_field(fileObj, &
     integer(INT_KIND),dimension(NIDX),intent(in) :: field_dimension_sizes !<Array of sizes of the dimensions of the inputted field.
     integer(INT_KIND),intent(out)                :: index_field           !<Index of the inputted field in the fileObj%var array.
     type(domainUG),intent(in),target             :: domain                !<An unstructured mpp domain.
-    logical(INT_KIND),intent(in)                 :: use_domain_indices    !<Flag teling if the inputed field will use the domain's starting and ending indices.
     logical(INT_KIND),intent(in),optional        :: mandatory             !<Flag telling if the field is mandatory for the restart.
     real,intent(in),optional                     :: data_default          !<A default value for the data.
     character(len=*),intent(in),optional         :: longname              !<A more descriptive name of the field.
@@ -43,11 +41,6 @@ subroutine fms_io_unstructured_setup_one_field(fileObj, &
     type(var_type),pointer :: cur_var         !<A convenience pointer.
     integer(INT_KIND)      :: i               !<Loop variable.
     character(len=256)     :: error_msg       !<An error message string.
-!   integer(INT_KIND)      :: n_field_siz     !<Equal to size(field_dimension_sizes)
-!   integer(INT_KIND)      :: counter         !<Counting variable.
-!   integer(INT_KIND)      :: domain_index    !<Index of the inputted unstructured domain in the domain_UG_array module array.
-!   integer(INT_KIND)      :: global_size     !<Size of the global domain for the inputted unstructured domain.
-!   integer(INT_KIND)      :: compute_size    !<Size of the compute domain for the inputted unstructured domain.
 
    !Make sure that the field does not have more than five dimensions.
     if (size(field_dimension_order) .gt. 5) then
@@ -196,7 +189,6 @@ subroutine fms_io_unstructured_setup_one_field(fileObj, &
             fileObj%var(i)%jshift = -1
             fileObj%var(i)%x_halo = -1
             fileObj%var(i)%y_halo = -1
-!           fileObj%var(i)%domain_UG_index = -1
             fileObj%var(i)%field_dimension_order(:) = -1
             fileObj%var(i)%field_dimension_sizes(:) = -1
         enddo
@@ -305,84 +297,6 @@ subroutine fms_io_unstructured_setup_one_field(fileObj, &
         endif
         if (present(units)) then
             cur_var%units = units
-        endif
-
-       !Set the value of the flag which tells if domain indices are used for
-       !the field. For now, passing in a value of true will return a fatal
-       !error.
-        cur_var%use_domain_UG_indices = use_domain_indices
-
-        if (cur_var%use_domain_UG_indices) then
-
-           !Not currently supported.
-            call mpp_error(FATAL, &
-                           "fms_io_unstructured_setup_one_field:" &
-                           //" currently restart fields are not on the" &
-                           //" unstructured domain, only diagnostic fields" &
-                           //" are.")
-
-           !Copy in the dimension sizes of the data domain (siz, used for
-           !writes), and of the global domain (gsiz, used for reads).
-!           n_field_siz = size(field_dimension_order)
-!           counter = 1
-!           do i = 1,n_field_siz
-!               if (field_dimension_order(i) .ne. TIDX) then
-!                   if (counter .eq. 4) then
-!                       counter = counter + 1
-!                   endif
-!                   cur_var%siz(counter) = field_dimension_sizes(field_dimension_order(i))
-!                   counter = counter + 1
-!               endif
-!           enddo
-!           counter = 1
-!           do i = 1,n_field_siz
-!               if (field_dimension_order(i) .ne. TIDX) then
-!                   cur_var%gsiz(counter) = field_dimension_sizes(field_dimension_order(i))
-!                   counter = counter + 1
-!               endif
-!           enddo
-
-           !Set the starting and ending indices for the unstructured axis
-           !compute domain.  The js and je indices are not used with the
-           !unstructured gridso they are set to -1.
-!           cur_var%is = 1
-!           cur_var%ie = cur_var%siz(1)
-!           cur_var%js = -1
-!           cur_var%je = -1
-
-           !Find the index of the domain in the domain_UG_array module array.
-           !If it does not exist in the array, then add it.
-!           domain_index = fms_io_unstructured_lookup_domain(domain)
-!           if (domain_index .eq. -1) then
-!               domain_UG_array_size = domain_UG_array_size + 1
-!               if (domain_UG_array_size .gt. max_domains) then
-!                   call mpp_error(FATAL, &
-!                                  "fms_io_unstructured_setup_one_field:" &
-!                                  //" the number of unstructured grids has" &
-!                                  //" exceeded max_domains.")
-!               endif
-!               domain_index = domain_UG_array_size
-!               domain_UG_array(domain_index) = domain
-!           endif
-!           cur_var%domain_UG_index = domain_index
-
-           !Adjust the starting and ending indices of cur_var to match
-           !the global and compute domains for the unstructured domain.
-!           call mpp_get_UG_global_domain(domain_UG_array(domain_index), &
-!                                         size=global_size)
-!           call mpp_get_UG_compute_domain(domain_UG_array(domain_index), &
-!                                          size=compute_size)
-!           if (cur_var%siz(1) .ne. global_size .and. cur_var%siz(1) .ne. &
-!               compute_size) then
-!               call mpp_error(FATAL, &
-!                              "fms_io_unstructured_setup_one_field:" &
-!                              //" the field should exist on either the" &
-!                              //" compute or global domain.")
-!           endif
-!           cur_var%is = 1 + (cur_var%siz(1) - compute_size)/2
-!           cur_var%ie = cur_var%is + compute_size - 1;
-!           cur_var%gsiz(1) = global_size
-
         endif
     endif
 

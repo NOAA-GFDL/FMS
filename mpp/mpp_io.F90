@@ -340,7 +340,6 @@ use mpp_domains_mod, only: domainUG, &
                            mpp_get_UG_domain_tile_id, &
                            mpp_get_UG_domain_npes, &
                            mpp_get_io_domain_UG_layout, &
-                           mpp_get_UG_global_domain, &
                            mpp_get_UG_compute_domain, &
                            mpp_get_UG_domain_pelist
 !----------

@@ -96,7 +96,6 @@ function fms_io_unstructured_register_restart_field_r_0d(fileObj, &
                                              field_dimension_sizes, &
                                              index_field, &
                                              domain, &
-                                             .false., &
                                              mandatory=mandatory, &
                                              data_default=data_default, &
                                              longname=longname, &
@@ -213,7 +212,6 @@ function fms_io_unstructured_register_restart_field_r_1d(fileObj, &
                                              field_dimension_sizes, &
                                              index_field, &
                                              domain, &
-                                             .false., &
                                              mandatory=mandatory, &
                                              data_default=data_default, &
                                              longname=longname, &
@@ -371,7 +369,6 @@ function fms_io_unstructured_register_restart_field_r_2d(fileObj, &
                                              field_dimension_sizes, &
                                              index_field, &
                                              domain, &
-                                             .false., &
                                              mandatory=mandatory, &
                                              data_default=data_default, &
                                              longname=longname, &
@@ -559,7 +556,6 @@ function fms_io_unstructured_register_restart_field_r_3d(fileObj, &
                                              field_dimension_sizes, &
                                              index_field, &
                                              domain, &
-                                             .false., &
                                              mandatory=mandatory, &
                                              data_default=data_default, &
                                              longname=longname, &
@@ -670,7 +666,6 @@ function fms_io_unstructured_register_restart_field_i_0d(fileObj, &
                                              field_dimension_sizes, &
                                              index_field, &
                                              domain, &
-                                             .false., &
                                              mandatory=mandatory, &
                                              data_default=data_default, &
                                              longname=longname, &
@@ -787,7 +782,6 @@ function fms_io_unstructured_register_restart_field_i_1d(fileObj, &
                                              field_dimension_sizes, &
                                              index_field, &
                                              domain, &
-                                             .false., &
                                              mandatory=mandatory, &
                                              data_default=data_default, &
                                              longname=longname, &
@@ -945,7 +939,6 @@ function fms_io_unstructured_register_restart_field_i_2d(fileObj, &
                                              field_dimension_sizes, &
                                              index_field, &
                                              domain, &
-                                             .false., &
                                              mandatory=mandatory, &
                                              data_default=data_default, &
                                              longname=longname, &
