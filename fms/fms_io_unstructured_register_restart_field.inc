@@ -32,7 +32,13 @@ function fms_io_unstructured_register_restart_field_r_0d(fileObj, &
     integer(INT_KIND)                     :: restart_index     !<Index of the inputted field in the fileObj%var array.
 
    !Local variables
-    integer(INT_KIND) :: index_field !<Index of the inputted field in the fileObj%var array.
+    type(domainUG),pointer                     :: io_domain             !<Pointer to an unstructured I/O domain.
+    integer(INT_KIND)                          :: io_domain_npes        !<The number of ranks in the unstructured I/O domain pelist.
+    integer(INT_KIND),dimension(:),allocatable :: pelist                !<A pelist.
+    real,dimension(:),allocatable              :: fdata_per_rank        !<Array used to gather the scalar field values.
+    integer(INT_KIND)                          :: index_field           !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND),dimension(NIDX)          :: field_dimension_sizes !<Array of dimension sizes for the field.
+    integer(INT_KIND),dimension(1)             :: field_dimension_order !<Array telling the ordering of the dimensions for the field.
 
    !Make sure that the module has been initialized.
     if (.not. module_is_initialized) then
@@ -41,32 +47,56 @@ function fms_io_unstructured_register_restart_field_r_0d(fileObj, &
                        //" you must first call fms_io_init")
     endif
 
-   !Make sure that an unstructured axis has been registered to the restart
-   !object.  This is needed to determine the name of the restart file.
-    if (.not. allocated(fileObj%axes)) then
-        call mpp_error(FATAL, &
-                       "fms_io_unstructured_register_restart_field_r_0d:" &
-                       //" no axes have been registered for the restart" &
-                       //" object.")
-    else
-        if (.not. allocated(fileObj%axes(UNSTRUCTURED_GRID_INDEX)%unstructured_axis_data)) then
+   !Make sure that the value of the scalar field is same across all ranks
+   !in an I/O domain pelist.
+    io_domain => null()
+    io_domain => mpp_get_UG_io_domain(domain)
+    io_domain_npes = mpp_get_UG_domain_npes(io_domain)
+    allocate(pelist(io_domain_npes))
+    call mpp_get_UG_domain_pelist(io_domain, &
+                                   pelist)
+    allocate(fdata_per_rank(io_domain_npes))
+    fdata_per_rank = 0.0
+    call mpp_gather((/fdata_0d/), &
+                    fdata_per_rank, &
+                    pelist)
+    if (mpp_pe() .eq. pelist(1)) then
+        if (maxval(fdata_per_rank) .ne. fdata_0d .or. &
+            minval(fdata_per_rank) .ne. fdata_0d) then
             call mpp_error(FATAL, &
                            "fms_io_unstructured_register_restart_field_r_0d:" &
-                           //" no unstructured axis has been registered for" &
-                           //" the restart object "//trim(fileObj%name))
+                           //" the scalar field data is not consistent across" &
+                           //" all ranks in the I/O domain pelist.")
         endif
     endif
+    io_domain => null()
+    deallocate(pelist)
+    deallocate(fdata_per_rank)
+
+   !Set the dimension sizes for the field.  These correspond to:
+   !field_dimension_sizes(XIDX) = x-dimension size
+   !field_dimension_sizes(YIDX) = y-dimension size
+   !field_dimension_sizes(CIDX) = c-dimension size
+   !field_dimension_sizes(ZIDX) = z-dimension size
+   !field_dimension_sizes(HIDX) = h-dimension size
+   !field_dimension_sizes(TIDX) = t-dimension size
+   !field_dimension_sizes(UIDX) = u-dimension size
+   !field_dimension_sizes(CCIDX) = cc-dimension size
+    field_dimension_sizes = 1
+
+   !Set the ordering of the dimensions for the field.
+    field_dimension_order(1) = TIDX
 
    !Add a field to a restart object (restart_file_type).  Get the index of the
    !inputted field in the fileObj%var array.
     call fms_io_unstructured_setup_one_field(fileObj, &
                                              filename, &
                                              fieldname, &
-                                             (/1,1,1,1/), &
+                                             field_dimension_order, &
+                                             field_dimension_sizes, &
                                              index_field, &
                                              domain, &
                                              mandatory=mandatory, &
-                                             is_scalar_field=.true., &
                                              data_default=data_default, &
                                              longname=longname, &
                                              units=units, &
@@ -89,6 +119,7 @@ function fms_io_unstructured_register_restart_field_r_1d(fileObj, &
                                                          filename, &
                                                          fieldname, &
                                                          fdata_1d, &
+                                                         fdata_1d_axes, &
                                                          domain, &
                                                          mandatory, &
                                                          data_default, &
@@ -103,6 +134,7 @@ function fms_io_unstructured_register_restart_field_r_1d(fileObj, &
     character(len=*),intent(in)           :: filename          !<The name of a file.
     character(len=*),intent(in)           :: fieldname         !<The name of a field.
     real,dimension(:),intent(in),target   :: fdata_1d          !<Some data.
+    integer(INT_KIND),dimension(1)        :: fdata_1d_axes     !<An array describing the axes for the data.
     type(domainUG),intent(in),target      :: domain            !<An unstructured mpp_domain.
     logical,intent(in),optional           :: mandatory         !<Flag telling if the field is mandatory for the restart.
     real,intent(in),optional              :: data_default      !<A default value for the data.
@@ -113,7 +145,8 @@ function fms_io_unstructured_register_restart_field_r_1d(fileObj, &
     integer(INT_KIND)                     :: restart_index     !<Index of the inputted field in the fileObj%var array.
 
    !Local variables
-    integer(INT_KIND) :: index_field !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !<Array of dimension sizes for the field.
 
    !Make sure that the module has been initialized.
     if (.not. module_is_initialized) then
@@ -122,30 +155,52 @@ function fms_io_unstructured_register_restart_field_r_1d(fileObj, &
                        //" you must first call fms_io_init")
     endif
 
-   !One-dimensional fields (foo) are assumed to be functions of the
-   !unstructured axis (foo = foo(unstructured)).  Make sure that an
-   !unstructured axis has been registered to the restart object.
+   !Make sure that at least one axis was registered to the restart object.
     if (.not. allocated(fileObj%axes)) then
         call mpp_error(FATAL, &
                        "fms_io_unstructured_register_restart_field_r_1d:" &
                        //" no axes have been registered for the restart" &
                        //" object.")
-    else
-        if (.not. allocated(fileObj%axes(UNSTRUCTURED_GRID_INDEX)%unstructured_axis_data)) then
-            call mpp_error(FATAL, &
-                           "fms_io_unstructured_register_restart_field_r_1d:" &
-                           //" no unstructured axis has been registered for" &
-                           //" the restart object "//trim(fileObj%name))
-        endif
     endif
 
-   !Make sure that the inputted data is the same size as the registered axis.
-    if (size(fileObj%axes(UNSTRUCTURED_GRID_INDEX)%unstructured_axis_data) &
-        .ne. size(fdata_1d)) then
+   !Make sure that the first dimension of the field is a "compressed" axis,
+   !and that it corresponds to an axis that has been registered to the
+   !restart object.
+    field_dimension_sizes = 1
+    if (fdata_1d_axes(1) .eq. CIDX) then
+        if (.not. allocated(fileObj%axes(CIDX)%idx)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_1d:" &
+                           //" a compressed c-axis was not registered" &
+                           //" to the restart object.")
+        endif
+        if (size(fdata_1d,1) .ne. fileObj%axes(CIDX)%nelems_for_current_rank) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_1d:" &
+                           //" the size of the input data does not" &
+                           //" match the size of the registered" &
+                           //" compressed c-axis.")
+        endif
+        field_dimension_sizes(CIDX) = size(fdata_1d,1)
+    elseif (fdata_1d_axes(1) .eq. HIDX) then
+        if (.not. allocated(fileObj%axes(HIDX)%idx)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_1d:" &
+                           //" a compressed h-axis was not registered" &
+                           //" to the restart object.")
+        endif
+        if (size(fdata_1d,1) .ne. fileObj%axes(HIDX)%nelems_for_current_rank) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_1d:" &
+                           //" the size of the input data does not" &
+                           //" match the size of the registered" &
+                           //" compressed h-axis.")
+        endif
+        field_dimension_sizes(HIDX) = size(fdata_1d,1)
+    else
         call mpp_error(FATAL, &
                        "fms_io_unstructured_register_restart_field_r_1d:" &
-                       //" the inputted data size does not match the size" &
-                       //" of the registered unstructured axis.")
+                       //" One dimensional fields must be compressed.")
     endif
 
    !Add a field to a restart object (restart_file_type).  Get the index of the
@@ -153,11 +208,11 @@ function fms_io_unstructured_register_restart_field_r_1d(fileObj, &
     call fms_io_unstructured_setup_one_field(fileObj, &
                                              filename, &
                                              fieldname, &
-                                             (/size(fdata_1d,1),1,1,1/), &
+                                             fdata_1d_axes, &
+                                             field_dimension_sizes, &
                                              index_field, &
                                              domain, &
                                              mandatory=mandatory, &
-                                             is_scalar_field=.false., &
                                              data_default=data_default, &
                                              longname=longname, &
                                              units=units, &
@@ -181,6 +236,7 @@ function fms_io_unstructured_register_restart_field_r_2d(fileObj, &
                                                          filename, &
                                                          fieldname, &
                                                          fdata_2d, &
+                                                         fdata_2d_axes, &
                                                          domain, &
                                                          mandatory, &
                                                          data_default, &
@@ -195,6 +251,7 @@ function fms_io_unstructured_register_restart_field_r_2d(fileObj, &
     character(len=*),intent(in)           :: filename          !<The name of a file.
     character(len=*),intent(in)           :: fieldname         !<The name of a field.
     real,dimension(:,:),intent(in),target :: fdata_2d          !<Some data.
+    integer(INT_KIND),dimension(2)        :: fdata_2d_axes     !<An array describing the axes for the data.
     type(domainUG),intent(in),target      :: domain            !<An unstructured mpp_domain.
     logical,intent(in),optional           :: mandatory         !<Flag telling if the field is mandatory for the restart.
     real,intent(in),optional              :: data_default      !<A default value for the data.
@@ -205,7 +262,8 @@ function fms_io_unstructured_register_restart_field_r_2d(fileObj, &
     integer(INT_KIND)                     :: restart_index     !<Index of the inputted field in the fileObj%var array.
 
    !Local variables
-    integer(INT_KIND) :: index_field !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !<Array of dimension sizes for the field.
 
    !Make sure that the module has been initialized.
     if (.not. module_is_initialized) then
@@ -214,43 +272,92 @@ function fms_io_unstructured_register_restart_field_r_2d(fileObj, &
                        //" you must first call fms_io_init")
     endif
 
-   !Two-dimensional fields (foo) are assumed to be functions of the
-   !unstructured axis and the z-axis (foo = foo(unstructured,z)).  Make sure
-   !that an unstructured axis and a z-axis have been registered to the
-   !restart object.
+   !Make sure that at least one axis was registered to the restart object.
     if (.not. allocated(fileObj%axes)) then
         call mpp_error(FATAL, &
                        "fms_io_unstructured_register_restart_field_r_2d:" &
                        //" no axes have been registered for the restart" &
                        //" object.")
-    else
-        if (.not. allocated(fileObj%axes(UNSTRUCTURED_GRID_INDEX)%unstructured_axis_data)) then
+    endif
+
+   !Make sure that the first dimension of the field is a "compressed" axis,
+   !and that it corresponds to an axis that has been registered to the
+   !restart object.
+    field_dimension_sizes = 1
+    if (fdata_2d_axes(1) .eq. CIDX) then
+        if (.not. allocated(fileObj%axes(CIDX)%idx)) then
             call mpp_error(FATAL, &
                            "fms_io_unstructured_register_restart_field_r_2d:" &
-                           //" no unstructured axis has been registered for" &
-                           //" the restart object "//trim(fileObj%name))
+                           //" a compressed c-axis was not registered" &
+                           //" to the restart object.")
         endif
+        if (size(fdata_2d,1) .ne. fileObj%axes(CIDX)%nelems_for_current_rank) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_2d:" &
+                           //" the size of the input data does not" &
+                           //" match the size of the registered" &
+                           //" compressed c-axis.")
+        endif
+        field_dimension_sizes(CIDX) = size(fdata_2d,1)
+    elseif (fdata_2d_axes(1) .eq. HIDX) then
+        if (.not. allocated(fileObj%axes(HIDX)%idx)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_2d:" &
+                           //" a compressed h-axis was not registered" &
+                           //" to the restart object.")
+        endif
+        if (size(fdata_2d,1) .ne. fileObj%axes(HIDX)%nelems_for_current_rank) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_2d:" &
+                           //" the size of the input data does not" &
+                           //" match the size of the registered" &
+                           //" compressed h-axis.")
+        endif
+        field_dimension_sizes(HIDX) = size(fdata_2d,1)
+    else
+        call mpp_error(FATAL, &
+                       "fms_io_unstructured_register_restart_field_r_2d:" &
+                       //" The first dimension of the field must be a" &
+                       //" compressed dimension.")
+    endif
+
+   !Make sure that the second dimension of the inputted field corresponds to
+   !either a registered z- or cc-axis.
+    if (fdata_2d_axes(2) .eq. ZIDX) then
         if (.not. associated(fileObj%axes(ZIDX)%data)) then
             call mpp_error(FATAL, &
                            "fms_io_unstructured_register_restart_field_r_2d:" &
-                           //" no z-axis has been registered for" &
-                           //" the restart object "//trim(fileObj%name))
+                           //" a z-axis was not registered to the" &
+                           //" restart object.")
         endif
-    endif
-
-   !Make sure that the inputted data is the same size as the registered axes.
-    if (size(fileObj%axes(UNSTRUCTURED_GRID_INDEX)%unstructured_axis_data) &
-        .ne. size(fdata_2d,1)) then
+        if (size(fdata_2d,2) .ne. size(fileObj%axes(ZIDX)%data)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_2d:" &
+                           //" the size of the input data does not" &
+                           //" match the size of the registered" &
+                           //" z-axis.")
+        endif
+        field_dimension_sizes(ZIDX) = size(fdata_2d,2)
+    elseif (fdata_2d_axes(2) .eq. CCIDX) then
+        if (.not. associated(fileObj%axes(CCIDX)%data)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_2d:" &
+                           //" a cc-axis was not registered to the" &
+                           //" restart object.")
+        endif
+        if (size(fdata_2d,2) .ne. size(fileObj%axes(CCIDX)%data)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_2d:" &
+                           //" the size of the input data does not" &
+                           //" match the size of the registered" &
+                           //" cc-axis.")
+        endif
+        field_dimension_sizes(CCIDX) = size(fdata_2d,2)
+    else
         call mpp_error(FATAL, &
                        "fms_io_unstructured_register_restart_field_r_2d:" &
-                       //" the inputted data size does not match the size" &
-                       //" of the registered unstructured axis.")
-    endif
-    if (size(fileObj%axes(ZIDX)%data) .ne. size(fdata_2d,2)) then
-        call mpp_error(FATAL, &
-                       "fms_io_unstructured_register_restart_field_r_2d:" &
-                       //" the inputted data size does not match the size" &
-                       //" of the registered z-axis.")
+                       //" unsupported axis parameter for the second" &
+                       //" dimension of the field.")
     endif
 
    !Add a field to a restart object (restart_file_type).  Get the index of the
@@ -258,11 +365,11 @@ function fms_io_unstructured_register_restart_field_r_2d(fileObj, &
     call fms_io_unstructured_setup_one_field(fileObj, &
                                              filename, &
                                              fieldname, &
-                                             (/size(fdata_2d,1),size(fdata_2d,2),1,1/), &
+                                             fdata_2d_axes, &
+                                             field_dimension_sizes, &
                                              index_field, &
                                              domain, &
                                              mandatory=mandatory, &
-                                             is_scalar_field=.false., &
                                              data_default=data_default, &
                                              longname=longname, &
                                              units=units, &
@@ -287,6 +394,7 @@ function fms_io_unstructured_register_restart_field_r_3d(fileObj, &
                                                          filename, &
                                                          fieldname, &
                                                          fdata_3d, &
+                                                         fdata_3d_axes, &
                                                          domain, &
                                                          mandatory, &
                                                          data_default, &
@@ -301,6 +409,7 @@ function fms_io_unstructured_register_restart_field_r_3d(fileObj, &
     character(len=*),intent(in)             :: filename          !<The name of a file.
     character(len=*),intent(in)             :: fieldname         !<The name of a field.
     real,dimension(:,:,:),intent(in),target :: fdata_3d          !<Some data.
+    integer(INT_KIND),dimension(3)          :: fdata_3d_axes     !<An array describing the axes for the data.
     type(domainUG),intent(in),target        :: domain            !<An unstructured mpp_domain.
     logical,intent(in),optional             :: mandatory         !<Flag telling if the field is mandatory for the restart.
     real,intent(in),optional                :: data_default      !<A default value for the data.
@@ -311,7 +420,8 @@ function fms_io_unstructured_register_restart_field_r_3d(fileObj, &
     integer(INT_KIND)                       :: restart_index     !<Index of the inputted field in the fileObj%var array.
 
    !Local variables
-    integer(INT_KIND) :: index_field !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !<Array of dimension sizes for the field.
 
    !Make sure that the module has been initialized.
     if (.not. module_is_initialized) then
@@ -320,55 +430,121 @@ function fms_io_unstructured_register_restart_field_r_3d(fileObj, &
                        //" you must first call fms_io_init")
     endif
 
-   !Three-dimensional fields (foo) are assumed to be functions of the
-   !unstructured axis, z-axis, and cc-axis (foo = foo(unstructured,z,cc)).
-   !Make sure that an unstructured axis, z-axis, and cc-axis have been
-   !registered to the restart object.
+   !Make sure that at least one axis was registered to the restart object.
     if (.not. allocated(fileObj%axes)) then
         call mpp_error(FATAL, &
                        "fms_io_unstructured_register_restart_field_r_3d:" &
                        //" no axes have been registered for the restart" &
                        //" object.")
-    else
-        if (.not. allocated(fileObj%axes(UNSTRUCTURED_GRID_INDEX)%unstructured_axis_data)) then
-            call mpp_error(FATAL, &
-                           "fms_io_unstructured_register_restart_field_r_3d:" &
-                           //" no unstructured axis has been registered for" &
-                           //" the restart object "//trim(fileObj%name))
-        endif
-        if (.not. associated(fileObj%axes(ZIDX)%data)) then
-            call mpp_error(FATAL, &
-                           "fms_io_unstructured_register_restart_field_r_3d:" &
-                           //" no z-axis has been registered for" &
-                           //" the restart object "//trim(fileObj%name))
-        endif
-        if (.not. associated(fileObj%axes(CCIDX)%data)) then
-            call mpp_error(FATAL, &
-                           "fms_io_unstructured_register_restart_field_r_3d:" &
-                           //" no cc-axis has been registered for" &
-                           //" the restart object "//trim(fileObj%name))
-        endif
     endif
 
-   !Make sure that the inputted data is the same size as the registered axes.
-    if (size(fileObj%axes(UNSTRUCTURED_GRID_INDEX)%unstructured_axis_data) &
-        .ne. size(fdata_3d,1)) then
+   !Make sure that the first dimension of the field is a "compressed" axis,
+   !and that it corresponds to an axis that has been registered to the
+   !restart object.
+    field_dimension_sizes = 1
+    if (fdata_3d_axes(1) .eq. CIDX) then
+        if (.not. allocated(fileObj%axes(CIDX)%idx)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_3d:" &
+                           //" a compressed c-axis was not registered" &
+                           //" to the restart object.")
+        endif
+        if (size(fdata_3d,1) .ne. fileObj%axes(CIDX)%nelems_for_current_rank) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_3d:" &
+                           //" the size of the input data does not" &
+                           //" match the size of the registered" &
+                           //" compressed c-axis.")
+        endif
+        field_dimension_sizes(CIDX) = size(fdata_3d,1)
+    elseif (fdata_3d_axes(1) .eq. HIDX) then
+        if (.not. allocated(fileObj%axes(HIDX)%idx)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_3d:" &
+                           //" a compressed h-axis was not registered" &
+                           //" to the restart object.")
+        endif
+        if (size(fdata_3d,1) .ne. fileObj%axes(HIDX)%nelems_for_current_rank) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_3d:" &
+                           //" the size of the input data does not" &
+                           //" match the size of the registered" &
+                           //" compressed h-axis.")
+        endif
+        field_dimension_sizes(HIDX) = size(fdata_3d,1)
+    else
         call mpp_error(FATAL, &
                        "fms_io_unstructured_register_restart_field_r_3d:" &
-                       //" the inputted data size does not match the size" &
-                       //" of the registered unstructured axis.")
+                       //" The first dimension of the field must be a" &
+                       //" compressed dimension.")
     endif
-    if (size(fileObj%axes(ZIDX)%data) .ne. size(fdata_3d,2)) then
+
+   !Make sure that the second and third dimensions of the inputted field
+   !corresponds to some combination of registered z- and cc-axes.
+    if (.not. associated(fileObj%axes(ZIDX)%data)) then
         call mpp_error(FATAL, &
                        "fms_io_unstructured_register_restart_field_r_3d:" &
-                       //" the inputted data size does not match the size" &
-                       //" of the registered z-axis.")
+                       //" a z-axis was not registered to the" &
+                       //" restart object.")
     endif
-    if (size(fileObj%axes(CCIDX)%data) .ne. size(fdata_3d,3)) then
+    if (.not. associated(fileObj%axes(CCIDX)%data)) then
         call mpp_error(FATAL, &
                        "fms_io_unstructured_register_restart_field_r_3d:" &
-                       //" the inputted data size does not match the size" &
-                       //" of the registered cc-axis.")
+                       //" a cc-axis was not registered to the" &
+                       //" restart object.")
+    endif
+    if (fdata_3d_axes(2) .eq. ZIDX) then
+        if (size(fdata_3d,2) .ne. size(fileObj%axes(ZIDX)%data)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_3d:" &
+                           //" the size of the input data does not" &
+                           //" match the size of the registered" &
+                           //" z-axis.")
+        endif
+        field_dimension_sizes(ZIDX) = size(fdata_3d,2)
+        if (fdata_3d_axes(3) .ne. CCIDX) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_3d:" &
+                           //" unsupported axis parameter for the third" &
+                           //" dimension of the field.")
+        elseif (size(fdata_3d,3) .ne. size(fileObj%axes(CCIDX)%data)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_3d:" &
+                           //" the size of the input data does not" &
+                           //" match the size of the registered" &
+                           //" cc-axis.")
+
+        else
+            field_dimension_sizes(CCIDX) = size(fdata_3d,3)
+        endif
+    elseif (fdata_3d_axes(2) .eq. CCIDX) then
+        if (size(fdata_3d,2) .ne. size(fileObj%axes(CCIDX)%data)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_3d:" &
+                           //" the size of the input data does not" &
+                           //" match the size of the registered" &
+                           //" cc-axis.")
+        endif
+        field_dimension_sizes(CCIDX) = size(fdata_3d,2)
+        if (fdata_3d_axes(3) .ne. ZIDX) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_3d:" &
+                           //" unsupported axis parameter for the third" &
+                           //" dimension of the field.")
+        elseif (size(fdata_3d,3) .ne. size(fileObj%axes(ZIDX)%data)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_r_3d:" &
+                           //" the size of the input data does not" &
+                           //" match the size of the registered" &
+                           //" z-axis.")
+        else
+            field_dimension_sizes(ZIDX) = size(fdata_3d,3)
+        endif
+    else
+        call mpp_error(FATAL, &
+                       "fms_io_unstructured_register_restart_field_r_3d:" &
+                       //" unsupported axis parameter for the second" &
+                       //" dimension of the field.")
     endif
 
    !Add a field to a restart object (restart_file_type).  Get the index of the
@@ -376,11 +552,11 @@ function fms_io_unstructured_register_restart_field_r_3d(fileObj, &
     call fms_io_unstructured_setup_one_field(fileObj, &
                                              filename, &
                                              fieldname, &
-                                             (/size(fdata_3d,1),size(fdata_3d,2),size(fdata_3d,3),1/), &
+                                             fdata_3d_axes, &
+                                             field_dimension_sizes, &
                                              index_field, &
                                              domain, &
                                              mandatory=mandatory, &
-                                             is_scalar_field=.false., &
                                              data_default=data_default, &
                                              longname=longname, &
                                              units=units, &
@@ -426,7 +602,13 @@ function fms_io_unstructured_register_restart_field_i_0d(fileObj, &
     integer(INT_KIND)                     :: restart_index     !<Index of the inputted field in the fileObj%var array.
 
    !Local variables
-    integer(INT_KIND) :: index_field !<Index of the inputted field in the fileObj%var array.
+    type(domainUG),pointer                     :: io_domain             !<Pointer to an unstructured I/O domain.
+    integer(INT_KIND)                          :: io_domain_npes        !<The number of ranks in the unstructured I/O domain pelist.
+    integer(INT_KIND),dimension(:),allocatable :: pelist                !<A pelist.
+    integer,dimension(:),allocatable           :: fdata_per_rank        !<Array used to gather the scalar field values.
+    integer(INT_KIND)                          :: index_field           !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND),dimension(NIDX)          :: field_dimension_sizes !<Array of dimension sizes for the field.
+    integer(INT_KIND),dimension(1)             :: field_dimension_order !<Array telling the ordering of the dimensions for the field.
 
    !Make sure that the module has been initialized.
     if (.not. module_is_initialized) then
@@ -435,32 +617,56 @@ function fms_io_unstructured_register_restart_field_i_0d(fileObj, &
                        //" you must first call fms_io_init")
     endif
 
-   !Make sure that an unstructured axis has been registered to the restart
-   !object.  This is needed to determine the name of the restart file.
-    if (.not. allocated(fileObj%axes)) then
-        call mpp_error(FATAL, &
-                       "fms_io_unstructured_register_restart_field_i_0d:" &
-                       //" no axes have been registered for the restart" &
-                       //" object.")
-    else
-        if (.not. allocated(fileObj%axes(UNSTRUCTURED_GRID_INDEX)%unstructured_axis_data)) then
+   !Make sure that the value of the scalar field is same across all ranks
+   !in an I/O domain pelist.
+    io_domain => null()
+    io_domain => mpp_get_UG_io_domain(domain)
+    io_domain_npes = mpp_get_UG_domain_npes(io_domain)
+    allocate(pelist(io_domain_npes))
+    call mpp_get_UG_domain_pelist(io_domain, &
+                                   pelist)
+    allocate(fdata_per_rank(io_domain_npes))
+    fdata_per_rank = 0.0
+    call mpp_gather((/fdata_0d/), &
+                    fdata_per_rank, &
+                    pelist)
+    if (mpp_pe() .eq. pelist(1)) then
+        if (maxval(fdata_per_rank) .ne. fdata_0d .or. &
+            minval(fdata_per_rank) .ne. fdata_0d) then
             call mpp_error(FATAL, &
                            "fms_io_unstructured_register_restart_field_i_0d:" &
-                           //" no unstructured axis has been registered for" &
-                           //" the restart object "//trim(fileObj%name))
+                           //" the scalar field data is not consistent across" &
+                           //" all ranks in the I/O domain pelist.")
         endif
     endif
+    io_domain => null()
+    deallocate(pelist)
+    deallocate(fdata_per_rank)
+
+   !Set the dimension sizes for the field.  These correspond to:
+   !field_dimension_sizes(XIDX) = x-dimension size
+   !field_dimension_sizes(YIDX) = y-dimension size
+   !field_dimension_sizes(CIDX) = c-dimension size
+   !field_dimension_sizes(ZIDX) = z-dimension size
+   !field_dimension_sizes(HIDX) = h-dimension size
+   !field_dimension_sizes(TIDX) = t-dimension size
+   !field_dimension_sizes(UIDX) = u-dimension size
+   !field_dimension_sizes(CCIDX) = cc-dimension size
+    field_dimension_sizes = 1
+
+   !Set the ordering of the dimensions for the field.
+    field_dimension_order(1) = TIDX
 
    !Add a field to a restart object (restart_file_type).  Get the index of the
    !inputted field in the fileObj%var array.
     call fms_io_unstructured_setup_one_field(fileObj, &
                                              filename, &
                                              fieldname, &
-                                             (/1,1,1,1/), &
+                                             field_dimension_order, &
+                                             field_dimension_sizes, &
                                              index_field, &
                                              domain, &
                                              mandatory=mandatory, &
-                                             is_scalar_field=.true., &
                                              data_default=data_default, &
                                              longname=longname, &
                                              units=units, &
@@ -483,6 +689,7 @@ function fms_io_unstructured_register_restart_field_i_1d(fileObj, &
                                                          filename, &
                                                          fieldname, &
                                                          fdata_1d, &
+                                                         fdata_1d_axes, &
                                                          domain, &
                                                          mandatory, &
                                                          data_default, &
@@ -497,6 +704,7 @@ function fms_io_unstructured_register_restart_field_i_1d(fileObj, &
     character(len=*),intent(in)            :: filename          !<The name of a file.
     character(len=*),intent(in)            :: fieldname         !<The name of a field.
     integer,dimension(:),intent(in),target :: fdata_1d          !<Some data.
+    integer(INT_KIND),dimension(1)         :: fdata_1d_axes     !<An array describing the axes for the data.
     type(domainUG),intent(in),target       :: domain            !<An unstructured mpp_domain.
     logical,intent(in),optional            :: mandatory         !<Flag telling if the field is mandatory for the restart.
     real,intent(in),optional               :: data_default      !<A default value for the data.
@@ -507,7 +715,8 @@ function fms_io_unstructured_register_restart_field_i_1d(fileObj, &
     integer(INT_KIND)                      :: restart_index     !<Index of the inputted field in the fileObj%var array.
 
    !Local variables
-    integer(INT_KIND) :: index_field !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !<Array of dimension sizes for the field.
 
    !Make sure that the module has been initialized.
     if (.not. module_is_initialized) then
@@ -516,30 +725,52 @@ function fms_io_unstructured_register_restart_field_i_1d(fileObj, &
                        //" you must first call fms_io_init")
     endif
 
-   !One-dimensional fields (foo) are assumed to be functions of the
-   !unstructured axis (foo = foo(unstructured)).  Make sure that an
-   !unstructured axis has been registered to the restart object.
+   !Make sure that at least one axis was registered to the restart object.
     if (.not. allocated(fileObj%axes)) then
         call mpp_error(FATAL, &
                        "fms_io_unstructured_register_restart_field_i_1d:" &
                        //" no axes have been registered for the restart" &
                        //" object.")
-    else
-        if (.not. allocated(fileObj%axes(UNSTRUCTURED_GRID_INDEX)%unstructured_axis_data)) then
-            call mpp_error(FATAL, &
-                           "fms_io_unstructured_register_restart_field_i_1d:" &
-                           //" no unstructured axis has been registered for" &
-                           //" the restart object "//trim(fileObj%name))
-        endif
     endif
 
-   !Make sure that the inputted data is the same size as the registered axis.
-    if (size(fileObj%axes(UNSTRUCTURED_GRID_INDEX)%unstructured_axis_data) &
-        .ne. size(fdata_1d)) then
+   !Make sure that the first dimension of the field is a "compressed" axis,
+   !and that it corresponds to an axis that has been registered to the
+   !restart object.
+    field_dimension_sizes = 1
+    if (fdata_1d_axes(1) .eq. CIDX) then
+        if (.not. allocated(fileObj%axes(CIDX)%idx)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_i_1d:" &
+                           //" a compressed c-axis was not registered" &
+                           //" to the restart object.")
+        endif
+        if (size(fdata_1d,1) .ne. fileObj%axes(CIDX)%nelems_for_current_rank) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_i_1d:" &
+                           //" the size of the input data does not" &
+                           //" match the size of the registered" &
+                           //" compressed c-axis.")
+        endif
+        field_dimension_sizes(CIDX) = size(fdata_1d,1)
+    elseif (fdata_1d_axes(1) .eq. HIDX) then
+        if (.not. allocated(fileObj%axes(HIDX)%idx)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_i_1d:" &
+                           //" a compressed h-axis was not registered" &
+                           //" to the restart object.")
+        endif
+        if (size(fdata_1d,1) .ne. fileObj%axes(HIDX)%nelems_for_current_rank) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_i_1d:" &
+                           //" the size of the input data does not" &
+                           //" match the size of the registered" &
+                           //" compressed h-axis.")
+        endif
+        field_dimension_sizes(HIDX) = size(fdata_1d,1)
+    else
         call mpp_error(FATAL, &
                        "fms_io_unstructured_register_restart_field_i_1d:" &
-                       //" the inputted data size does not match the size" &
-                       //" of the registered unstructured axis.")
+                       //" One dimensional fields must be compressed.")
     endif
 
    !Add a field to a restart object (restart_file_type).  Get the index of the
@@ -547,11 +778,11 @@ function fms_io_unstructured_register_restart_field_i_1d(fileObj, &
     call fms_io_unstructured_setup_one_field(fileObj, &
                                              filename, &
                                              fieldname, &
-                                             (/size(fdata_1d,1),1,1,1/), &
+                                             fdata_1d_axes, &
+                                             field_dimension_sizes, &
                                              index_field, &
                                              domain, &
                                              mandatory=mandatory, &
-                                             is_scalar_field=.false., &
                                              data_default=data_default, &
                                              longname=longname, &
                                              units=units, &
@@ -575,6 +806,7 @@ function fms_io_unstructured_register_restart_field_i_2d(fileObj, &
                                                          filename, &
                                                          fieldname, &
                                                          fdata_2d, &
+                                                         fdata_2d_axes, &
                                                          domain, &
                                                          mandatory, &
                                                          data_default, &
@@ -589,6 +821,7 @@ function fms_io_unstructured_register_restart_field_i_2d(fileObj, &
     character(len=*),intent(in)              :: filename          !<The name of a file.
     character(len=*),intent(in)              :: fieldname         !<The name of a field.
     integer,dimension(:,:),intent(in),target :: fdata_2d          !<Some data.
+    integer(INT_KIND),dimension(2)           :: fdata_2d_axes     !<An array describing the axes for the data.
     type(domainUG),intent(in),target         :: domain            !<An unstructured mpp_domain.
     logical,intent(in),optional              :: mandatory         !<Flag telling if the field is mandatory for the restart.
     real,intent(in),optional                 :: data_default      !<A default value for the data.
@@ -599,7 +832,8 @@ function fms_io_unstructured_register_restart_field_i_2d(fileObj, &
     integer(INT_KIND)                        :: restart_index     !<Index of the inputted field in the fileObj%var array.
 
    !Local variables
-    integer(INT_KIND) :: index_field !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !<Array of dimension sizes for the field.
 
    !Make sure that the module has been initialized.
     if (.not. module_is_initialized) then
@@ -608,43 +842,92 @@ function fms_io_unstructured_register_restart_field_i_2d(fileObj, &
                        //" you must first call fms_io_init")
     endif
 
-   !Two-dimensional fields (foo) are assumed to be functions of the
-   !unstructured axis and the z-axis (foo = foo(unstructured,z)).  Make sure
-   !that an unstructured axis and a z-axis have been registered to the
-   !restart object.
+   !Make sure that at least one axis was registered to the restart object.
     if (.not. allocated(fileObj%axes)) then
         call mpp_error(FATAL, &
                        "fms_io_unstructured_register_restart_field_i_2d:" &
                        //" no axes have been registered for the restart" &
                        //" object.")
-    else
-        if (.not. allocated(fileObj%axes(UNSTRUCTURED_GRID_INDEX)%unstructured_axis_data)) then
+    endif
+
+   !Make sure that the first dimension of the field is a "compressed" axis,
+   !and that it corresponds to an axis that has been registered to the
+   !restart object.
+    field_dimension_sizes = 1
+    if (fdata_2d_axes(1) .eq. CIDX) then
+        if (.not. allocated(fileObj%axes(CIDX)%idx)) then
             call mpp_error(FATAL, &
                            "fms_io_unstructured_register_restart_field_i_2d:" &
-                           //" no unstructured axis has been registered for" &
-                           //" the restart object "//trim(fileObj%name))
+                           //" a compressed c-axis was not registered" &
+                           //" to the restart object.")
         endif
+        if (size(fdata_2d,1) .ne. fileObj%axes(CIDX)%nelems_for_current_rank) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_i_2d:" &
+                           //" the size of the input data does not" &
+                           //" match the size of the registered" &
+                           //" compressed c-axis.")
+        endif
+        field_dimension_sizes(CIDX) = size(fdata_2d,1)
+    elseif (fdata_2d_axes(1) .eq. HIDX) then
+        if (.not. allocated(fileObj%axes(HIDX)%idx)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_i_2d:" &
+                           //" a compressed h-axis was not registered" &
+                           //" to the restart object.")
+        endif
+        if (size(fdata_2d,1) .ne. fileObj%axes(HIDX)%nelems_for_current_rank) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_i_2d:" &
+                           //" the size of the input data does not" &
+                           //" match the size of the registered" &
+                           //" compressed h-axis.")
+        endif
+        field_dimension_sizes(HIDX) = size(fdata_2d,1)
+    else
+        call mpp_error(FATAL, &
+                       "fms_io_unstructured_register_restart_field_i_2d:" &
+                       //" The first dimension of the field must be a" &
+                       //" compressed dimension.")
+    endif
+
+   !Make sure that the second dimension of the inputted field corresponds to
+   !either a registered z- or cc-axis.
+    if (fdata_2d_axes(2) .eq. ZIDX) then
         if (.not. associated(fileObj%axes(ZIDX)%data)) then
             call mpp_error(FATAL, &
                            "fms_io_unstructured_register_restart_field_i_2d:" &
-                           //" no z-axis has been registered for" &
-                           //" the restart object "//trim(fileObj%name))
+                           //" a z-axis was not registered to the" &
+                           //" restart object.")
         endif
-    endif
-
-   !Make sure that the inputted data is the same size as the registered axes.
-    if (size(fileObj%axes(UNSTRUCTURED_GRID_INDEX)%unstructured_axis_data) &
-        .ne. size(fdata_2d,1)) then
+        if (size(fdata_2d,2) .ne. size(fileObj%axes(ZIDX)%data)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_i_2d:" &
+                           //" the size of the input data does not" &
+                           //" match the size of the registered" &
+                           //" z-axis.")
+        endif
+        field_dimension_sizes(ZIDX) = size(fdata_2d,2)
+    elseif (fdata_2d_axes(2) .eq. CCIDX) then
+        if (.not. associated(fileObj%axes(CCIDX)%data)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_i_2d:" &
+                           //" a cc-axis was not registered to the" &
+                           //" restart object.")
+        endif
+        if (size(fdata_2d,2) .ne. size(fileObj%axes(CCIDX)%data)) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_register_restart_field_i_2d:" &
+                           //" the size of the input data does not" &
+                           //" match the size of the registered" &
+                           //" cc-axis.")
+        endif
+        field_dimension_sizes(CCIDX) = size(fdata_2d,2)
+    else
         call mpp_error(FATAL, &
                        "fms_io_unstructured_register_restart_field_i_2d:" &
-                       //" the inputted data size does not match the size" &
-                       //" of the registered unstructured axis.")
-    endif
-    if (size(fileObj%axes(ZIDX)%data) .ne. size(fdata_2d,2)) then
-        call mpp_error(FATAL, &
-                       "fms_io_unstructured_register_restart_field_i_2d:" &
-                       //" the inputted data size does not match the size" &
-                       //" of the registered z-axis.")
+                       //" unsupported axis parameter for the second" &
+                       //" dimension of the field.")
     endif
 
    !Add a field to a restart object (restart_file_type).  Get the index of the
@@ -652,11 +935,11 @@ function fms_io_unstructured_register_restart_field_i_2d(fileObj, &
     call fms_io_unstructured_setup_one_field(fileObj, &
                                              filename, &
                                              fieldname, &
-                                             (/size(fdata_2d,1),size(fdata_2d,2),1,1/), &
+                                             fdata_2d_axes, &
+                                             field_dimension_sizes, &
                                              index_field, &
                                              domain, &
                                              mandatory=mandatory, &
-                                             is_scalar_field=.false., &
                                              data_default=data_default, &
                                              longname=longname, &
                                              units=units, &

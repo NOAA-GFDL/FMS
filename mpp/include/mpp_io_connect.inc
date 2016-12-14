@@ -162,12 +162,10 @@
     subroutine mpp_open( unit, file, action, form, access, threading, &
                          fileset, iospec, nohdrs, recl,               &
                          iostat, is_root_pe, domain, &
-
 !----------
 !ug support
                          domain_ug)
 !----------
-
       integer,         intent(out)           :: unit   
       character(len=*), intent(in)           :: file
       integer,          intent(in), optional :: action, form, access 
@@ -177,12 +175,10 @@
       integer,         intent(out), optional :: iostat
       logical,          intent(in), optional :: is_root_pe      
       type(domain2d),   intent(in), optional :: domain
-
 !----------
 !ug support
       type(domainUG),target,intent(in),optional :: domain_ug
 !----------
-
       character(len=16)  :: act, acc, for, pos
       character(len=128) :: mesg
       character(len=256) :: text2
@@ -200,7 +196,6 @@
       integer(INT_KIND)      :: io_layout_ug
       integer(INT_KIND)      :: tile_id_ug
 !----------
-
       integer*8                             :: lenp
       integer                               :: comm
       integer                               :: info, ierror
@@ -214,12 +209,15 @@
       
 !----------
 !ug support
-     !<Only allow one type of mpp domain.
+     !Only allow one type of mpp domain.
       if (present(domain) .and. present(domain_ug)) then
           call mpp_error(FATAL, &
                          "mpp_open: domain and domain_ug cannot both be" &
                          //" present in the same mpp_open call.")
       endif
+
+     !Null initialize the unstructured I/O domain pointer.
+      io_domain_ug => null()
 !----------
      
       call mpp_clock_begin(mpp_open_clock)
@@ -253,7 +251,6 @@
 !----------
 !ug support
       elseif (present(domain_ug)) then
-          io_domain_ug => null()
           io_domain_ug => mpp_get_UG_io_domain(domain_ug)
           io_domain_exist = .true.
 !----------
@@ -795,12 +792,10 @@
      !<Nullify local pointers.
       if (associated(io_domain)) then
           io_domain => NULL()
-      endif     
-     if (present(domain_ug)) then
-      if (associated(io_domain_ug)) then
-          nullify(io_domain_ug)
       endif
-     endif
+      if (associated(io_domain_ug)) then
+          io_domain_ug => null()
+      endif
 !----------
 
       call mpp_clock_end(mpp_open_clock)              

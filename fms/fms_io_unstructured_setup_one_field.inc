@@ -6,11 +6,11 @@
 subroutine fms_io_unstructured_setup_one_field(fileObj, &
                                                filename, &
                                                fieldname, &
+                                               field_dimension_order, &
                                                field_dimension_sizes, &
                                                index_field, &
                                                domain, &
                                                mandatory, &
-                                               is_scalar_field, &
                                                data_default, &
                                                longname, &
                                                units, &
@@ -18,19 +18,19 @@ subroutine fms_io_unstructured_setup_one_field(fileObj, &
                                                owns_data)
 
    !Inputs/Outputs
-    type(restart_file_type),intent(inout)     :: fileObj                 !<A restart object.
-    character(len=*),intent(in)               :: filename                !<The name of the restart file.
-    character(len=*),intent(in)               :: fieldname               !<The name of a field.
-    integer(INT_KIND),dimension(:),intent(in) :: field_dimension_sizes   !<Array of sizes of the dimensions of the inputted field.
-    integer(INT_KIND),intent(out)             :: index_field             !<Index of the inputted field in the fileObj%var array.
-    type(domainUG),intent(in)                 :: domain                  !<An unstructured mpp domain.
-    logical(INT_KIND),intent(in),optional     :: mandatory               !<Flag telling if the field is mandatory for the restart.
-    logical(INT_KIND),intent(in),optional     :: is_scalar_field         !<Flag teling if the inputed field is a scalar field.
-    real,intent(in),optional                  :: data_default            !<A default value for the data.
-    character(len=*),intent(in),optional      :: longname                !<A more descriptive name of the field.
-    character(len=*),intent(in),optional      :: units                   !<Units for the field.
-    logical(INT_KIND),intent(in),optional     :: read_only               !<Tells whether or not the variable will be written to the restart file.
-    logical(INT_KIND),intent(in),optional     :: owns_data               !<Tells if the data will be deallocated when the restart object is deallocated.
+    type(restart_file_type),intent(inout)        :: fileObj               !<A restart object.
+    character(len=*),intent(in)                  :: filename              !<The name of the restart file.
+    character(len=*),intent(in)                  :: fieldname             !<The name of a field.
+    integer(INT_KIND),dimension(:),intent(in)    :: field_dimension_order !<Array telling the ordering of the dimensions for the field.
+    integer(INT_KIND),dimension(NIDX),intent(in) :: field_dimension_sizes !<Array of sizes of the dimensions of the inputted field.
+    integer(INT_KIND),intent(out)                :: index_field           !<Index of the inputted field in the fileObj%var array.
+    type(domainUG),intent(in),target             :: domain                !<An unstructured mpp domain.
+    logical(INT_KIND),intent(in),optional        :: mandatory             !<Flag telling if the field is mandatory for the restart.
+    real,intent(in),optional                     :: data_default          !<A default value for the data.
+    character(len=*),intent(in),optional         :: longname              !<A more descriptive name of the field.
+    character(len=*),intent(in),optional         :: units                 !<Units for the field.
+    logical(INT_KIND),intent(in),optional        :: read_only             !<Tells whether or not the variable will be written to the restart file.
+    logical(INT_KIND),intent(in),optional        :: owns_data             !<Tells if the data will be deallocated when the restart object is deallocated.
 
    !Local variables
     real(DOUBLE_KIND)      :: default_data    !<The "default" data value.  This defaults to MPP_FILL_DOUBLE. Shouldn't this be a real(DOUBLE_KIND)?
@@ -41,24 +41,16 @@ subroutine fms_io_unstructured_setup_one_field(fileObj, &
     type(var_type),pointer :: cur_var         !<A convenience pointer.
     integer(INT_KIND)      :: i               !<Loop variable.
     character(len=256)     :: error_msg       !<An error message string.
-    integer(INT_KIND)      :: n_field_siz     !<Equal to size(field_dimension_sizes)
-    integer(INT_KIND)      :: domain_index    !<Index of the inputted unstructured domain in the domain_UG_array module array.
-    integer(INT_KIND)      :: global_size     !<Size of the global domain for the inputted unstructured domain.
-    integer(INT_KIND)      :: compute_size    !<Size of the compute domain for the inputted unstructured domain.
 
-   !Make sure that valid dimension sizes were passed in. The
-   !array should be structured as such:
-   !field_dimension_sizes(1) = unsturctured dimension size of the data domain.
-   !field_dimension_sizes(2) = size of an extra dimension of the data domain.
-   !field_dimension_sizes(3) = z-dimension size of the data domain.
-   !field_dimension_sizes(4) = t-dimension size of the data domain.
-   !field_dimension_sizes(5) = size of another extra dimension of the data domain.
-    if (size(field_dimension_sizes) .gt. 5) then
+   !Make sure that the field does not have more than five dimensions.
+    if (size(field_dimension_order) .gt. 5) then
         call mpp_error(FATAL, &
                        "fms_io_unstructured_setup_one_field:" &
-                       //" the field_dimension_sizes array cannot have" &
-                       //" more than 5 elements.")
+                       //" the inputted field cannot contain more than" &
+                       //" five dimensions.")
     endif
+
+   !Make sure that each dimension size is greater than zero.
     if (any(field_dimension_sizes .lt. 0)) then
         call mpp_error(FATAL, &
                        "fms_io_unstructured_setup_one_field:" &
@@ -140,14 +132,14 @@ subroutine fms_io_unstructured_setup_one_field(fileObj, &
         allocate(fileObj%p3di(MAX_TIME_LEVEL_REGISTER,max_fields))
 
        !Make sure that the restart file name is not currently being used by
-       !an other restart objects.  Should this be fatal?
+       !an other restart objects.  Shouldn't this be fatal?
        !num_registered files is a module variable.
         do i = 1,num_registered_files
             if (trim(fname) .eq. trim(registered_file(i))) then
                 call mpp_error(FATAL, &
                                "fms_io_unstructured_setup_one_field: " &
                                //trim(fname)//" is already registered with" &
-                               //" another restart_file_type data")
+                               //" another restart_file_type data.")
                 exit
             endif
         enddo
@@ -161,14 +153,14 @@ subroutine fms_io_unstructured_setup_one_field(fileObj, &
                            "fms_io_unstructured_setup_one_field:" &
                            //" the number of registered files is greater" &
                            //" than max_files_w.  Please increase" &
-                           //" max_files_w in the fms_io_nml namelist")
+                           //" max_files_w in the fms_io_nml namelist.")
         endif
         registered_file(num_registered_files) = trim(fname)
 
        !Set values for the restart object.
        !max_fields is a module variable.
         fileObj%register_id = num_registered_files
-        fileObj%max_ntime = field_dimension_sizes(4)
+        fileObj%max_ntime = field_dimension_sizes(TIDX)
         fileObj%is_root_pe = mpp_domain_UG_is_tile_root_pe(domain)
         fileObj%nvar = 0
         do i = 1,max_fields
@@ -197,7 +189,8 @@ subroutine fms_io_unstructured_setup_one_field(fileObj, &
             fileObj%var(i)%jshift = -1
             fileObj%var(i)%x_halo = -1
             fileObj%var(i)%y_halo = -1
-            fileObj%var(i)%domain_UG_index = -1
+            fileObj%var(i)%field_dimension_order(:) = -1
+            fileObj%var(i)%field_dimension_sizes(:) = -1
         enddo
     endif
 
@@ -218,12 +211,28 @@ subroutine fms_io_unstructured_setup_one_field(fileObj, &
         cur_var => null()
         cur_var => fileObj%var(index_field)
 
+       !Make sure tha the inputted array describing the ordering of the
+       !dimensions for the field matches the dimension ordering for the
+       !found field.
+        do i = 1,size(field_dimension_order)
+            if (field_dimension_order(i) .ne. cur_var%field_dimension_order(i)) then
+                call mpp_error(FATAL, &
+                               "fms_io_unstructured_setup_one_field:" &
+                               //" field dimension ordering mismatch for " &
+                               //trim(fieldname)//" of file "//trim(filename))
+            endif
+        enddo
+
        !Make sure that the array of field dimension sizes matches the
        !dimension sizes of the found field for all dimensions except the
        !time level.
-        if (cur_var%siz(1) .ne. field_dimension_sizes(1) .or. &
-            cur_var%siz(2) .ne. field_dimension_sizes(2) .or. &
-            cur_var%siz(3) .ne. field_dimension_sizes(3)) then
+        if (cur_var%field_dimension_sizes(XIDX) .ne. field_dimension_sizes(XIDX) .or. &
+            cur_var%field_dimension_sizes(YIDX) .ne. field_dimension_sizes(YIDX) .or. &
+            cur_var%field_dimension_sizes(CIDX) .ne. field_dimension_sizes(CIDX) .or. &
+            cur_var%field_dimension_sizes(ZIDX) .ne. field_dimension_sizes(ZIDX) .or. &
+            cur_var%field_dimension_sizes(HIDX) .ne. field_dimension_sizes(HIDX) .or. &
+            cur_var%field_dimension_sizes(UIDX) .ne. field_dimension_sizes(UIDX) .or. &
+            cur_var%field_dimension_sizes(CCIDX) .ne. field_dimension_sizes(CCIDX)) then
             call mpp_error(FATAL, &
                            "fms_io_unstructured_setup_one_field:" &
                            //" field dimension size mismatch for field " &
@@ -231,7 +240,7 @@ subroutine fms_io_unstructured_setup_one_field(fileObj, &
         endif
 
        !Update the time level.
-        cur_var%siz(4) = cur_var%siz(4) + field_dimension_sizes(4)
+        cur_var%siz(4) = cur_var%siz(4) + field_dimension_sizes(TIDX)
         if (fileObj%max_ntime .lt. cur_var%siz(4)) then
             fileObj%max_ntime = cur_var%siz(4)
         endif
@@ -258,16 +267,16 @@ subroutine fms_io_unstructured_setup_one_field(fileObj, &
         cur_var => null()
         cur_var => fileObj%var(index_field)
 
+       !Point to the inputted unstructured domain.
+        cur_var%domain_ug => domain
+
        !Copy in the dimension sizes of the data domain (siz, used for
        !writes), and of the global domain (gsiz, used for reads).
-        cur_var%registered_with_domain_UG = .true.
-        n_field_siz = size(field_dimension_sizes)
-        cur_var%siz(1:n_field_siz) = field_dimension_sizes(1:n_field_siz)
-        cur_var%gsiz(2) = field_dimension_sizes(2)
-        cur_var%gsiz(3) = field_dimension_sizes(3)
-        if (n_field_siz .eq. 5) then
-            cur_var%gsiz(4) = field_dimension_sizes(5)
-        endif
+        cur_var%field_dimension_sizes = field_dimension_sizes
+        do i = 1,size(field_dimension_order)
+            cur_var%field_dimension_order(i) = field_dimension_order(i)
+        enddo
+        cur_var%siz(4) = field_dimension_sizes(TIDX)
 
        !Copy in the rest of the data.
         cur_var%name = fieldname
@@ -288,61 +297,6 @@ subroutine fms_io_unstructured_setup_one_field(fileObj, &
         endif
         if (present(units)) then
             cur_var%units = units
-        endif
-
-       !Set the starting and ending indices for the unstructured axis compute
-       !domain.  The js and je indices are not used with the unstructured grid,
-       !so they are set to -1.
-        cur_var%is = 1
-        cur_var%ie = cur_var%siz(1)
-        cur_var%js = -1
-        cur_var%je = -1
-
-       !Set the value of the domain_UG_scalar flag.  This defaults to false.
-        cur_var%domain_UG_scalar = .false.
-        if (present(is_scalar_field)) then
-            cur_var%domain_UG_scalar = is_scalar_field
-        endif
-
-       !Modify the vales of cur_var%is and cur_var%ie if necessary.
-        if (.not. cur_var%domain_UG_scalar) then
-            cur_var%domain_present = .true.
-
-           !Find the index of the domain in the domain_UG_array module array.
-           !If it does not exist in the array, then add it.
-            domain_index = fms_io_unstructured_lookup_domain(domain)
-            if (domain_index .eq. -1) then
-                domain_UG_array_size = domain_UG_array_size + 1
-                if (domain_UG_array_size .gt. max_domains) then
-                    call mpp_error(FATAL, &
-                                   "fms_io_unstructured_setup_one_field:" &
-                                   //" the number of unstructured grids has" &
-                                   //" exceeded max_domains.")
-                endif
-                domain_index = domain_UG_array_size
-                domain_UG_array(domain_index) = domain
-            endif
-            cur_var%domain_UG_index = domain_index
-
-           !Adjust the starting and ending indices of cur_var to match
-           !the global and compute domains for the unstructured domain.
-            call mpp_get_UG_global_domain(domain_UG_array(domain_index), &
-                                          size=global_size)
-            call mpp_get_UG_compute_domain(domain_UG_array(domain_index), &
-                                           size=compute_size)
-            if (cur_var%siz(1) .ne. global_size .and. cur_var%siz(1) .ne. &
-                compute_size) then
-                call mpp_error(FATAL, &
-                               "fms_io_unstructured_setup_one_field:" &
-                               //" the field should exist on either the" &
-                               //" compute or global domain.")
-            endif
-            cur_var%is = 1 + (cur_var%siz(1) - compute_size)/2
-            cur_var%ie = cur_var%is + compute_size - 1;
-            cur_var%gsiz(1) = global_size
-        else
-            cur_var%domain_present = .false.
-            cur_var%gsiz(1) = field_dimension_sizes(1)
         endif
     endif
 

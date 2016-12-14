@@ -112,17 +112,15 @@ use platform_mod, only: r8_kind
 
 !----------
 !ug support
-use mpp_domains_mod, only: mpp_get_UG_io_domain
-use mpp_domains_mod, only: mpp_compare_UG_domains
-use mpp_domains_mod, only: mpp_domain_UG_is_tile_root_pe
-use mpp_domains_mod, only: mpp_get_UG_global_domain
-use mpp_domains_mod, only: mpp_get_UG_compute_domain
-use mpp_domains_mod, only: NULL_DOMAINUG
-use mpp_domains_mod, only: mpp_get_UG_domain_npes
-use mpp_domains_mod, only: mpp_get_UG_domain_pelist
-use mpp_io_mod,      only: mpp_io_unstructured_write
-use mpp_io_mod,      only: mpp_get_axis_length
-use mpp_io_mod,      only: mpp_io_unstructured_read
+use mpp_parameter_mod, only: COMM_TAG_2
+use mpp_domains_mod,   only: mpp_get_UG_io_domain
+use mpp_domains_mod,   only: mpp_compare_UG_domains
+use mpp_domains_mod,   only: mpp_domain_UG_is_tile_root_pe
+use mpp_domains_mod,   only: mpp_get_UG_domain_npes
+use mpp_domains_mod,   only: mpp_get_UG_domain_pelist
+use mpp_io_mod,        only: mpp_io_unstructured_write
+use mpp_io_mod,        only: mpp_io_unstructured_read
+use mpp_io_mod,        only: mpp_file_is_opened
 !----------
 
 implicit none
@@ -142,20 +140,20 @@ integer, parameter          :: max_axis_size=10000
 ! This is done so the user may define the axes
 ! in any order but a check can be performed
 ! to ensure no registration of duplicate axis
-integer, parameter, private :: XIDX=1
-integer, parameter, private :: YIDX=2
-integer, parameter, private :: CIDX=3
-integer, parameter, private :: ZIDX=4
-integer, parameter, private :: HIDX=5
-integer, parameter, private :: TIDX=6
-integer, parameter, private :: UIDX=7
-integer, parameter, private :: CCIDX=8
 
 !----------
 !ug support
-integer(INT_KIND),parameter,private :: UNSTRUCTURED_GRID_INDEX = 9
-integer,parameter,private           :: NIDX = 9
-!----------
+integer(INT_KIND),parameter,public :: XIDX = 1
+integer(INT_KIND),parameter,public :: YIDX = 2
+integer(INT_KIND),parameter,public :: CIDX = 3
+integer(INT_KIND),parameter,public :: ZIDX = 4
+integer(INT_KIND),parameter,public :: HIDX = 5
+integer(INT_KIND),parameter,public :: TIDX = 6
+integer(INT_KIND),parameter,public :: UIDX = 7
+integer(INT_KIND),parameter,public :: CCIDX = 8
+!---------
+
+integer, parameter, private :: NIDX=8
 
 type meta_type
   type(meta_type), pointer :: prev=>null(), next=>null()
@@ -190,8 +188,8 @@ type ax_type
 
 !----------
 !ug support
-   integer(INT_KIND),dimension(:),allocatable :: unstructured_axis_data !<An array holding the data for the unstructured axis.
-   type(domainUG),pointer                     :: domain_ug => null()    !<A pointer to an unstructured mpp domain.
+   type(domainUG),pointer :: domain_ug => null()     !<A pointer to an unstructured mpp domain.
+   integer(INT_KIND)      :: nelems_for_current_rank !<The number of grid points registered to the current rank (used for error checking).
 !----------
 
 end type ax_type
@@ -226,9 +224,9 @@ type var_type
 
 !----------
 !ug support
-    integer(INT_KIND) :: domain_UG_index = -1                !<Unstructured domain index in the domain_UG_array module array.
-    logical(INT_KIND) :: registered_with_domain_UG = .false. !<Flag telling if the field with registered with an unstructured domain.
-    logical(INT_KIND) :: domain_UG_scalar = .false.          !<Flag telling if the field is a scalar field associated with an unstructured domain.
+    type(domainUG),pointer            :: domain_ug => null()   !<A pointer to an unstructured mpp domain.
+    integer(INT_KIND),dimension(5)    :: field_dimension_order !<Array telling the ordering of the dimensions for the field.
+    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !<Array of sizes of the dimensions for the field.
 !----------
 
 end type var_type
@@ -521,21 +519,36 @@ integer            :: pack_size  ! = 1 for double = 2 for float
 
 !----------
 !ug support
-
-!Private module variables.  Remove these when this module is rewritten.
-type(domainUG),dimension(max_domains) :: domain_UG_array
-integer(INT_KIND)                     :: domain_UG_array_size = 0
-
 public :: fms_io_unstructured_register_restart_axis
-public :: fms_io_unstructured_register_restart_field_r_0d
-public :: fms_io_unstructured_register_restart_field_r_1d
-public :: fms_io_unstructured_register_restart_field_r_2d
-public :: fms_io_unstructured_register_restart_field_r_3d
-public :: fms_io_unstructured_register_restart_field_i_0d
-public :: fms_io_unstructured_register_restart_field_i_1d
-public :: fms_io_unstructured_register_restart_field_i_2d
+public :: fms_io_unstructured_register_restart_field
 public :: fms_io_unstructured_save_restart
-public :: fms_io_unstructured_restore_state
+public :: fms_io_unstructured_read
+public :: fms_io_unstructured_get_field_size
+public :: fms_io_unstructured_file_unit
+
+interface fms_io_unstructured_register_restart_axis
+    module procedure fms_io_unstructured_register_restart_axis_r1D
+    module procedure fms_io_unstructured_register_restart_axis_i1D
+    module procedure fms_io_unstructured_register_restart_axis_u
+end interface fms_io_unstructured_register_restart_axis
+
+interface fms_io_unstructured_register_restart_field
+    module procedure fms_io_unstructured_register_restart_field_r_0d
+    module procedure fms_io_unstructured_register_restart_field_r_1d
+    module procedure fms_io_unstructured_register_restart_field_r_2d
+    module procedure fms_io_unstructured_register_restart_field_r_3d
+    module procedure fms_io_unstructured_register_restart_field_i_0d
+    module procedure fms_io_unstructured_register_restart_field_i_1d
+    module procedure fms_io_unstructured_register_restart_field_i_2d
+end interface fms_io_unstructured_register_restart_field
+
+interface fms_io_unstructured_read
+    module procedure fms_io_unstructured_read_r_1D
+    module procedure fms_io_unstructured_read_r_2D
+    module procedure fms_io_unstructured_read_r_3D
+    module procedure fms_io_unstructured_read_i_1D
+    module procedure fms_io_unstructured_read_i_2D
+end interface fms_io_unstructured_read
 !----------
 
 contains
@@ -634,13 +647,6 @@ subroutine fms_io_init()
   do i = 1, max_domains
      array_domain(i) = NULL_DOMAIN2D
   enddo
-
-!----------
-!ug support
-  do i = 1,max_domains
-      domain_UG_array(i) = NULL_DOMAINUG
-  enddo
-!----------
 
   !---- initialize module domain2d pointer ----
   nullify (Current_domain)
@@ -8260,17 +8266,15 @@ end subroutine write_version_number
 
 !----------
 !ug support
-#include<fms_io_unstructured_get_file_unit.inc>
-#include<fms_io_unstructured_get_file_name.inc>
-#include<fms_io_unstructured_file_unit.inc>
-#include<fms_io_unstructured_file_exist.inc>
-#include<fms_io_unstructured_field_exist.inc>
-#include<fms_io_unstructured_lookup_domain.inc>
-#include<fms_io_unstructured_setup_one_field.inc>
-#include<fms_io_unstructured_register_restart_field.inc>
-#include<fms_io_unstructured_register_restart_axis.inc>
-#include<fms_io_unstructured_save_restart.inc>
-#include<fms_io_unstructured_restore_state.inc>
+#include <fms_io_unstructured_register_restart_axis.inc>
+#include <fms_io_unstructured_setup_one_field.inc>
+#include <fms_io_unstructured_register_restart_field.inc>
+#include <fms_io_unstructured_save_restart.inc>
+#include <fms_io_unstructured_read.inc>
+#include <fms_io_unstructured_get_file_name.inc>
+#include <fms_io_unstructured_get_file_unit.inc>
+#include <fms_io_unstructured_file_unit.inc>
+#include <fms_io_unstructured_get_field_size.inc>
 !----------
 
 end module fms_io_mod

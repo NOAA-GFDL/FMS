@@ -117,19 +117,57 @@ function mpp_compare_UG_domains(domain1, &
     type(domainUG),intent(in) :: domain2 !<An unstructured mpp domain.
     logical(INT_KIND)         :: domains_are_equal
 
-    domains_are_equal = .false.
-
-    if (domain1%SG_domain .eq. domain2%SG_domain .and. &
-        size(domain1%list) .eq. size(domain2%list) .and. &
-        domain1%pe .eq. domain2%pe .and. &
-        domain1%pos .eq. domain2%pos .and. &
-        domain1%ntiles .eq. domain2%ntiles .and. &
-        domain1%tile_id .eq. domain2%tile_id .and. &
-        domain1%tile_root_pe .eq. domain2%tile_root_pe .and. &
-        domain1%io_layout .eq. domain2%io_layout .and. &
-        size(domain1%grid_index) .eq. size(domain2%grid_index)) then
-        domains_are_equal = .true.
+    if (associated(domain1%SG_domain) .and. associated(domain2%SG_domain)) then
+        if (domain1%SG_domain .ne. domain2%SG_domain) then
+            domains_are_equal = .false.
+            return
+        endif
+    elseif (associated(domain1%SG_domain) .and. .not. &
+            associated(domain2%SG_domain)) then
+        domains_are_equal = .false.
+        return
+    elseif (.not. associated(domain1%SG_domain) .and. &
+            associated(domain2%SG_domain)) then
+        domains_are_equal = .false.
+        return
     endif
+
+    if (associated(domain1%list) .and. associated(domain2%list)) then
+        if (size(domain1%list) .ne. size(domain2%list)) then
+            domains_are_equal = .false.
+            return
+        endif
+    elseif (associated(domain1%list) .and. .not. associated(domain2%list)) then
+        domains_are_equal = .false.
+        return
+    elseif (.not. associated(domain1%list) .and. associated(domain2%list)) then
+        domains_are_equal = .false.
+        return
+    endif
+
+    if (associated(domain1%grid_index) .and. associated(domain2%grid_index)) then
+        if (size(domain1%grid_index) .ne. size(domain2%grid_index)) then
+            domains_are_equal = .false.
+            return
+        endif
+    elseif (associated(domain1%grid_index) .and. .not. associated(domain2%grid_index)) then
+        domains_are_equal = .false.
+        return
+    elseif (.not. associated(domain1%grid_index) .and. associated(domain2%grid_index)) then
+        domains_are_equal = .false.
+        return
+    endif
+
+    if (domain1%pe .ne. domain2%pe .or. &
+        domain1%pos .ne. domain2%pos .or. &
+        domain1%ntiles .ne. domain2%ntiles .or. &
+        domain1%tile_id .ne. domain2%tile_id .or. &
+        domain1%tile_root_pe .ne. domain2%tile_root_pe) then
+        domains_are_equal = .false.
+        return
+    endif
+
+    domains_are_equal = .true.
 
     return
 end function mpp_compare_UG_domains
