@@ -5620,22 +5620,22 @@ enddo c3loop
        !the code is resolved, I must register the unstructured axis first.
        !Also initialize the axes for the diagnostics.
         if (.not.allocated(x_axis_data)) allocate(x_axis_data(nx))
-        if (.not.allocated(y_axis_data))allocate(y_axis_data(ny/4))
+!        if (.not.allocated(y_axis_data))allocate(y_axis_data(ny))
 !! ASSUMES 4 PEs!!!
- if (mpp_pe() > 4) call error_mesg("Diag_test_unstruct","Only 4 PEs please",fatal)
+! if (mpp_pe() > 4) call error_mesg("Diag_test_unstruct","Only 4 PEs please",fatal)
      do i=1,nx
           x_axis_data(i) = real(i)
      enddo
-     if (mod(mpp_pe(),2).eq.0) then
-        do j = 1,ny/4
-            y_axis_data(j) = real(j)
-        enddo
-      
-     else
-        do j = 1,ny/4
-            y_axis_data(j) = real(j+ny/4)
-        enddo
-     endif
+!     if (mod(mpp_pe(),2).eq.0) then
+!        do j = 1,ny/4
+!            y_axis_data(j) = real(j)
+!        enddo
+!      
+!     else
+!        do j = 1,ny/4
+!            y_axis_data(j) = real(j+ny/4)
+!        enddo
+!     endif
 
        x_axis_diag_id = diag_axis_init("grid_xt", &
                                        x_axis_data, &
@@ -5643,10 +5643,10 @@ enddo c3loop
                                        "X", &
                                        long_name="longitude")
 
-!        if (.not.allocated(y_axis_data))allocate(y_axis_data(ny))
-!        do i = 1,ny
-!            y_axis_data(i) = real(i)
-!        enddo
+        if (.not.allocated(y_axis_data))allocate(y_axis_data(ny/num_domain_tiles_y))
+        do i = 1,ny/num_domain_tiles_y
+            y_axis_data(i) = real(i)
+        enddo
        y_axis_diag_id = diag_axis_init("grid_yt", &
                                        y_axis_data, &
                                        "degrees", &
@@ -5716,11 +5716,11 @@ enddo c3loop
         enddo
 
      !> Latitude and Longitude 
-     allocate(lat(ny/4),lon(nx))
+     allocate(lat(ny/num_domain_tiles_y),lon(nx))
      do i=1,nx
           lon(i) = real(i)*360.0/real(nx)
      enddo
-     do j=1,ny/4
+     do j=1,ny/num_domain_tiles_y
           lat(j) = real(j)*180.8/real(ny)
      enddo
 
@@ -5749,12 +5749,12 @@ l=SIZE(unstructured_axis_diag_id)
                                          long_name="ONE_D_ARRAY", &
                                          units="ergs")
 
-       rsf_diag_2d_id = register_diag_field("UG_unit_test", &
-                                         "unstructured_real_2D_field_data", &
-                                         (/unstructured_axis_diag_id(1), z_axis_diag_id/),&
-                                         init_time=diag_time, &
-                                         long_name="TWO_D_ARRAY", &
-                                         units="ergs")
+!       rsf_diag_2d_id = register_diag_field("UG_unit_test", &
+!                                         "unstructured_real_2D_field_data", &
+!                                         (/unstructured_axis_diag_id(1), z_axis_diag_id/),&
+!                                         init_time=diag_time, &
+!                                         long_name="TWO_D_ARRAY", &
+!                                         units="ergs")
 
        idlat = register_diag_field("UG_unit_test", &
                                          "lat", &
@@ -5812,7 +5812,7 @@ ENDIF !L.ne.1
 
        !Simulate the model timesteps, so that diagnostics may be written
        !out.
-        num_diag_time_steps = 2
+        num_diag_time_steps = 4
         diag_time_step = set_time(12*3600)
         diag_time_start = diag_time
 ! used = send_data(idlat,lat,diag_time)
@@ -5844,9 +5844,9 @@ ENDIF !L.ne.1
                                 diag_time)
           ENDDO
          ENDIF
-          used = send_data(rsf_diag_2d_id, &
-                                unstructured_real_2D_field_data, &
-                                diag_time)
+!          used = send_data(rsf_diag_2d_id, &
+!                                unstructured_real_2D_field_data, &
+!                                diag_time)
  used = send_data(idlat,lat,diag_time)
  used = send_data(idlon,lon,diag_time)
 
