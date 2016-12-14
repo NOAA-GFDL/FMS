@@ -277,4 +277,6 @@
       return
     end subroutine mpp_flush
 
-
+    logical function do_cf_compliance()
+      do_cf_compliance = cf_compliance
+    end function do_cf_compliance
