@@ -1368,8 +1368,8 @@ contains
             call fms_io_unstructured_get_field_size("RESTART/"//trim(restart_file_name), &
                                                     real_scalar_field_name, &
                                                     field_dimension_sizes, &
-                                                    field_found_in_file, &
-                                                    unstructured_domain)
+                                                    unstructured_domain, &
+                                                    field_found_in_file)
             if (.not. field_found_in_file) then
                 call mpp_error(FATAL, &
                                "test 1: field "//trim(real_scalar_field_name) &
@@ -1407,8 +1407,8 @@ contains
             call fms_io_unstructured_get_field_size("RESTART/"//trim(restart_file_name), &
                                                     compressed_c_real_1D_field_name, &
                                                     field_dimension_sizes, &
-                                                    field_found_in_file, &
-                                                    unstructured_domain)
+                                                    unstructured_domain, &
+                                                    field_found_in_file)
             if (.not. field_found_in_file) then
                 call mpp_error(FATAL, &
                                "test 1: field "//trim(compressed_c_real_1D_field_name) &
@@ -1466,8 +1466,8 @@ contains
             call fms_io_unstructured_get_field_size("RESTART/"//trim(restart_file_name), &
                                                     compressed_h_real_1D_field_name, &
                                                     field_dimension_sizes, &
-                                                    field_found_in_file, &
-                                                    unstructured_domain)
+                                                    unstructured_domain, &
+                                                    field_found_in_file)
             if (.not. field_found_in_file) then
                 call mpp_error(FATAL, &
                                "test 1: field "//trim(compressed_h_real_1D_field_name) &
@@ -1525,8 +1525,8 @@ contains
             call fms_io_unstructured_get_field_size("RESTART/"//trim(restart_file_name), &
                                                     compressed_c_z_real_2D_field_name, &
                                                     field_dimension_sizes, &
-                                                    field_found_in_file, &
-                                                    unstructured_domain)
+                                                    unstructured_domain, &
+                                                    field_found_in_file)
             if (.not. field_found_in_file) then
                 call mpp_error(FATAL, &
                                "test 1: field "//trim(compressed_c_z_real_2D_field_name) &
@@ -1587,8 +1587,8 @@ contains
             call fms_io_unstructured_get_field_size("RESTART/"//trim(restart_file_name), &
                                                     compressed_h_z_real_2D_field_name, &
                                                     field_dimension_sizes, &
-                                                    field_found_in_file, &
-                                                    unstructured_domain)
+                                                    unstructured_domain, &
+                                                    field_found_in_file)
             if (.not. field_found_in_file) then
                 call mpp_error(FATAL, &
                                "test 1: field "//trim(compressed_h_z_real_2D_field_name) &
@@ -1649,8 +1649,8 @@ contains
             call fms_io_unstructured_get_field_size("RESTART/"//trim(restart_file_name), &
                                                     compressed_c_cc_real_2D_field_name, &
                                                     field_dimension_sizes, &
-                                                    field_found_in_file, &
-                                                    unstructured_domain)
+                                                    unstructured_domain, &
+                                                    field_found_in_file)
             if (.not. field_found_in_file) then
                 call mpp_error(FATAL, &
                                "test 1: field "//trim(compressed_c_cc_real_2D_field_name) &
@@ -1711,8 +1711,8 @@ contains
             call fms_io_unstructured_get_field_size("RESTART/"//trim(restart_file_name), &
                                                     compressed_h_cc_real_2D_field_name, &
                                                     field_dimension_sizes, &
-                                                    field_found_in_file, &
-                                                    unstructured_domain)
+                                                    unstructured_domain, &
+                                                    field_found_in_file)
             if (.not. field_found_in_file) then
                 call mpp_error(FATAL, &
                                "test 1: field "//trim(compressed_h_cc_real_2D_field_name) &
@@ -1773,8 +1773,8 @@ contains
             call fms_io_unstructured_get_field_size("RESTART/"//trim(restart_file_name), &
                                                     compressed_c_z_cc_real_3D_field_name, &
                                                     field_dimension_sizes, &
-                                                    field_found_in_file, &
-                                                    unstructured_domain)
+                                                    unstructured_domain, &
+                                                    field_found_in_file)
             if (.not. field_found_in_file) then
                 call mpp_error(FATAL, &
                                "test 1: field "//trim(compressed_c_z_cc_real_3D_field_name) &
@@ -1838,8 +1838,8 @@ contains
             call fms_io_unstructured_get_field_size("RESTART/"//trim(restart_file_name), &
                                                     compressed_h_z_cc_real_3D_field_name, &
                                                     field_dimension_sizes, &
-                                                    field_found_in_file, &
-                                                    unstructured_domain)
+                                                    unstructured_domain, &
+                                                    field_found_in_file)
             if (.not. field_found_in_file) then
                 call mpp_error(FATAL, &
                                "test 1: field "//trim(compressed_h_z_cc_real_3D_field_name) &
@@ -1903,8 +1903,8 @@ contains
             call fms_io_unstructured_get_field_size("RESTART/"//trim(restart_file_name), &
                                                     compressed_c_cc_z_real_3D_field_name, &
                                                     field_dimension_sizes, &
-                                                    field_found_in_file, &
-                                                    unstructured_domain)
+                                                    unstructured_domain, &
+                                                    field_found_in_file)
             if (.not. field_found_in_file) then
                 call mpp_error(FATAL, &
                                "test 1: field "//trim(compressed_c_cc_z_real_3D_field_name) &
@@ -1968,8 +1968,8 @@ contains
             call fms_io_unstructured_get_field_size("RESTART/"//trim(restart_file_name), &
                                                     compressed_h_cc_z_real_3D_field_name, &
                                                     field_dimension_sizes, &
-                                                    field_found_in_file, &
-                                                    unstructured_domain)
+                                                    unstructured_domain, &
+                                                    field_found_in_file)
             if (.not. field_found_in_file) then
                 call mpp_error(FATAL, &
                                "test 1: field "//trim(compressed_h_cc_z_real_3D_field_name) &
@@ -2033,8 +2033,8 @@ contains
             call fms_io_unstructured_get_field_size("RESTART/"//trim(restart_file_name), &
                                                     int_scalar_field_name, &
                                                     field_dimension_sizes, &
-                                                    field_found_in_file, &
-                                                    unstructured_domain)
+                                                    unstructured_domain, &
+                                                    field_found_in_file)
             if (.not. field_found_in_file) then
                 call mpp_error(FATAL, &
                                "test 1: field "//trim(int_scalar_field_name) &
@@ -2072,8 +2072,8 @@ contains
             call fms_io_unstructured_get_field_size("RESTART/"//trim(restart_file_name), &
                                                     compressed_c_int_1D_field_name, &
                                                     field_dimension_sizes, &
-                                                    field_found_in_file, &
-                                                    unstructured_domain)
+                                                    unstructured_domain, &
+                                                    field_found_in_file)
             if (.not. field_found_in_file) then
                 call mpp_error(FATAL, &
                                "test 1: field "//trim(compressed_c_int_1D_field_name) &
@@ -2131,8 +2131,8 @@ contains
             call fms_io_unstructured_get_field_size("RESTART/"//trim(restart_file_name), &
                                                     compressed_h_int_1D_field_name, &
                                                     field_dimension_sizes, &
-                                                    field_found_in_file, &
-                                                    unstructured_domain)
+                                                    unstructured_domain, &
+                                                    field_found_in_file)
             if (.not. field_found_in_file) then
                 call mpp_error(FATAL, &
                                "test 1: field "//trim(compressed_h_int_1D_field_name) &
@@ -2190,8 +2190,8 @@ contains
             call fms_io_unstructured_get_field_size("RESTART/"//trim(restart_file_name), &
                                                     compressed_c_z_int_2D_field_name, &
                                                     field_dimension_sizes, &
-                                                    field_found_in_file, &
-                                                    unstructured_domain)
+                                                    unstructured_domain, &
+                                                    field_found_in_file)
             if (.not. field_found_in_file) then
                 call mpp_error(FATAL, &
                                "test 1: field "//trim(compressed_c_z_int_2D_field_name) &
@@ -2252,8 +2252,8 @@ contains
             call fms_io_unstructured_get_field_size("RESTART/"//trim(restart_file_name), &
                                                     compressed_h_z_int_2D_field_name, &
                                                     field_dimension_sizes, &
-                                                    field_found_in_file, &
-                                                    unstructured_domain)
+                                                    unstructured_domain, &
+                                                    field_found_in_file)
             if (.not. field_found_in_file) then
                 call mpp_error(FATAL, &
                                "test 1: field "//trim(compressed_h_z_int_2D_field_name) &
@@ -2314,8 +2314,8 @@ contains
             call fms_io_unstructured_get_field_size("RESTART/"//trim(restart_file_name), &
                                                     compressed_c_cc_int_2D_field_name, &
                                                     field_dimension_sizes, &
-                                                    field_found_in_file, &
-                                                    unstructured_domain)
+                                                    unstructured_domain, &
+                                                    field_found_in_file)
             if (.not. field_found_in_file) then
                 call mpp_error(FATAL, &
                                "test 1: field "//trim(compressed_c_cc_int_2D_field_name) &
@@ -2376,8 +2376,8 @@ contains
             call fms_io_unstructured_get_field_size("RESTART/"//trim(restart_file_name), &
                                                     compressed_h_cc_int_2D_field_name, &
                                                     field_dimension_sizes, &
-                                                    field_found_in_file, &
-                                                    unstructured_domain)
+                                                    unstructured_domain, &
+                                                    field_found_in_file)
             if (.not. field_found_in_file) then
                 call mpp_error(FATAL, &
                                "test 1: field "//trim(compressed_h_cc_int_2D_field_name) &

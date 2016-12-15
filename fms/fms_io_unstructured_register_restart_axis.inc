@@ -13,18 +13,20 @@ subroutine fms_io_unstructured_register_restart_axis_r1D(fileObj, &
                                                          units, &
                                                          longname, &
                                                          sense, &
-                                                         fmin)
+                                                         fmin, &
+                                                         calendar)
    !Inputs/Outputs
-    type(restart_file_type),intent(inout)            :: fileObj   !<A restart object.
-    character(len=*),intent(in)                      :: filename  !<A name of a file.
-    character(len=*),intent(in)                      :: fieldname !<A name for the axis field.
-    real,dimension(:),intent(in),target              :: fdata     !<Data for the axis.
-    character(len=*),intent(in)                      :: cartesian !<String indicating which cartesian axis this is (i.e. X, Y, Z).
-    type(domainUG),intent(in),target                 :: domain    !<An unustructured mpp domain.
-    character(len=*),intent(in),optional             :: units     !<Units for the axis.
-    character(len=*),intent(in),optional             :: longname  !<A more descriptive name for the axis.
-    integer(INT_KIND),intent(in),optional            :: sense     !<Positive direction.
-    real,intent(in),optional                         :: fmin      !<Minimum value for this axis.
+    type(restart_file_type),intent(inout) :: fileObj   !<A restart object.
+    character(len=*),intent(in)           :: filename  !<A name of a file.
+    character(len=*),intent(in)           :: fieldname !<A name for the axis field.
+    real,dimension(:),intent(in),target   :: fdata     !<Data for the axis.
+    character(len=*),intent(in)           :: cartesian !<String indicating which cartesian axis this is (i.e. X, Y, Z).
+    type(domainUG),intent(in),target      :: domain    !<An unustructured mpp domain.
+    character(len=*),intent(in),optional  :: units     !<Units for the axis.
+    character(len=*),intent(in),optional  :: longname  !<A more descriptive name for the axis.
+    integer(INT_KIND),intent(in),optional :: sense     !<Positive direction.
+    real,intent(in),optional              :: fmin      !<Minimum value for this axis.
+    character(len=*),intent(in),optional  :: calendar  !<Type of calendar (only for time axis.)
 
    !Local variables
     integer(INT_KIND)                          :: input_filename_length !<The length of the trimmed input filename.
@@ -106,8 +108,8 @@ subroutine fms_io_unstructured_register_restart_axis_r1D(fileObj, &
             axis_index = YIDX
         case ("Z")
             axis_index = ZIDX
-!       case ("T")
-!           axis_index = TIDX
+        case ("T")
+            axis_index = TIDX
         case ("CC")
             axis_index = CCIDX
         case default
@@ -204,6 +206,11 @@ subroutine fms_io_unstructured_register_restart_axis_r1D(fileObj, &
         fileObj%axes(axis_index)%min = fmin
     else
         fileObj%axes(axis_index)%min = 0
+    endif
+
+   !Store the calendar for the axis.  This is only done for the time dimension.
+    if (axis_index .eq. TIDX) then
+        fileObj%axes(axis_index)%calendar = trim(calendar)
     endif
 
     return
