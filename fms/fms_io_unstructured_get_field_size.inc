@@ -6,15 +6,15 @@
 subroutine fms_io_unstructured_get_field_size(filename, &
                                               fieldname, &
                                               field_dimension_sizes, &
-                                              field_found, &
-                                              domain)
+                                              domain, &
+                                              field_found)
 
    !Inputs/Outputs
     character(len=*),intent(in)        :: filename              !<The name of a file.
     character(len=*),intent(in)        :: fieldname             !<The name of a field in the input file.
     integer,dimension(:),intent(inout) :: field_dimension_sizes !<Array of dimension sizes for the inputted field.
+    type(domainUG),intent(in)          :: domain                !<An unstructured mpp domain associated with the input file.
     logical,intent(out),optional       :: field_found           !<Flag telling if the inputted field was found in the inputted file.
-    type(domainUG),intent(in),optional :: domain                !<An unstructured mpp domain associated with the input file.
 
    !Local variables
     type(domainUG),pointer                     :: io_domain       !<Pointer to the unstructured I/O domain.
