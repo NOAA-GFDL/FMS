@@ -307,7 +307,9 @@
 ! </DESCRIPTION>
 
 module mpp_io_mod
+
 #include <fms_platform.h>
+#define _MAX_FILE_UNITS 1024
 
 use mpp_parameter_mod,  only : MPP_WRONLY, MPP_RDONLY, MPP_APPEND, MPP_OVERWR, MPP_ASCII
 use mpp_parameter_mod,  only : MPP_IEEE32, MPP_NATIVE, MPP_NETCDF, MPP_SEQUENTIAL
@@ -364,7 +366,7 @@ private
   public :: mpp_get_dimension_length, mpp_get_axis_bounds
 
   !--- public interface from mpp_io_misc.h ----------------------
-  public :: mpp_io_init, mpp_io_exit, netcdf_err, mpp_flush
+  public :: mpp_io_init, mpp_io_exit, netcdf_err, mpp_flush, mpp_get_maxunits
 
   !--- public interface from mpp_io_write.h ---------------------
   public :: mpp_write, mpp_write_meta, mpp_copy_meta, mpp_modify_meta, mpp_write_axis_data, mpp_def_dim

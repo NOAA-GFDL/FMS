@@ -44,7 +44,7 @@ MODULE diag_manifest_mod
   INTERFACE ASSIGNMENT(=)
      MODULE PROCEDURE manifest_field_type_assign
   END INTERFACE ASSIGNMENT(=)
-  
+
   !> \brief A type to hold the data required for the manifest file.
   !!
   !! The data collected in this type is directly from the other types used in
@@ -73,10 +73,10 @@ MODULE diag_manifest_mod
      TYPE(manifest_field_type), DIMENSION(:), ALLOCATABLE :: fields_3d !< Array of 3D fields
      TYPE(manifest_field_type), DIMENSION(:), ALLOCATABLE :: fields_4d !< Array of 4D fields
   END TYPE manifest_fields_type
-  
+
   PRIVATE
   PUBLIC :: write_diag_manifest
-  
+
 CONTAINS
 
   ! PUBLIC routines
@@ -95,7 +95,7 @@ CONTAINS
     CHARACTER(len=128) :: maniFileName !< Manifest file name
     CHARACTER(len=32) :: filename_appendix !< to hold file name appendix from fms_io
     CHARACTER(len=24) :: start_date !< String to hold init time of diag_manager
-    
+
     ! Used to determine if the ensemble number.  filename_appendix will contain an
     ! the string ens_ if running with multiple ensembles.  If running only one
     ! ensemble, then filename_appendix will not contain that string.
@@ -108,19 +108,19 @@ CONTAINS
     IF ( prepend_date ) THEN
        call get_date(diag_init_time, year, month, day, hour, minute, second)
        write (start_date, '(1I20.4, 2I2.2)') year, month, day
-       
+
        maniFileName = TRIM(adjustl(start_date))//'.'//TRIM(maniFileName)
     END IF
 
     ! Extract static and non-static fields data
     static_fields = get_diagnostic_fields(file, static=.TRUE.)
     temporal_fields = get_diagnostic_fields(file, static=.FALSE.)
-    
+
     ! Get the number of fields to write to manifest file
     ! Need to gather data from all PEs for the component/pelist
     num_static = static_fields%num_1d + static_fields%num_2d + static_fields%num_3d + static_fields%num_4d
     num_temporal = temporal_fields%num_1d + temporal_fields%num_2d + temporal_fields%num_3d + temporal_fields%num_4d
-       
+
     ! This bulk of this routine should only be called by the rootPE, and only from
     ! ens_01 If running a single ensemble, filename_appendix will not contain the
     ! string ens_
@@ -204,7 +204,7 @@ CONTAINS
     CHARACTER(LEN=*), PARAMETER :: FMT_MOD = "(16X,'""module"":','""',A,'"",')"
     CHARACTER(LEN=*), PARAMETER :: FMT_PAK = "(16X,'""packing"":',I1,',')"
     CHARACTER(LEN=*), PARAMETER :: FMT_TAV = "(16X,'""time_averaging"":','""',A,'""')"
-    
+
     DO i=1, SIZE(fields)
        WRITE (unit,FMT_FLD) TRIM(fields(i)%output_name)
        WRITE (unit,FMT_MOF) TRIM(fields(i)%input_name)
@@ -229,7 +229,7 @@ CONTAINS
     CHARACTER(len=*), PARAMETER :: FMT_DIM = "(8X,'""',A2,'""',': {')"
     CHARACTER(len=*), PARAMETER :: FMT_STA = "(4X,'""',A6,'""',': {')"
     CHARACTER(len=*), PARAMETER :: FMT_TEM = "(4X,'""',A8,'""',': {')"
-    
+
     ! Static / Temporal
     IF ( static ) THEN
        WRITE (unit,FMT_STA) 'Static'
@@ -273,7 +273,7 @@ CONTAINS
                                   !! fields.  .TRUE. indicates looking only for
                                   !! static files.  .FALSE. indicates looking only
                                   !! for non-static fields.
-    
+
     INTEGER :: i, j, o
     INTEGER :: istat
     TYPE(manifest_field_type) :: maniField
@@ -298,13 +298,24 @@ CONTAINS
        DO j=1, files(file)%num_fields
           o = files(file)%fields(j) ! Position of this field in output_fields array
           ! Determine if any PE has written file
-          CALL mpp_gather((/output_fields(o)%written_once/), data_written)
-          
+
+          ! This is a hack for now.  A future version will use a more elaborate
+          ! fix.
+          IF ( output_fields(o)%local_output ) THEN
+             ! Field is only written for specific regions.  Need to mpp_gather to
+             ! know if written on any PE other than root_pe -- as only the root_pe
+             ! will write the manifest file
+             CALL mpp_gather((/output_fields(o)%written_once/), data_written)
+          ELSE
+             ! Assuming root_pe was involved in writing of the field --- if written
+             data_written = output_fields(o)%written_once
+          END IF
+
           IF ( ANY(data_written) .AND. (static.EQV.output_fields(o)%static) ) THEN
              ! output field was written to file, and is static/non-static, whichever was requested
              ! Gather the information to record it.
              i = output_fields(o)%input_field ! Position of the input fields associated with this output_field
-             
+
              ! this is information I currently know we want to save, and where it is:
              maniField%output_name = output_fields(o)%output_name
              maniField%module_name = input_fields(i)%module_name
