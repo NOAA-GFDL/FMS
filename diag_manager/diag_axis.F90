@@ -246,6 +246,7 @@ CONTAINS
     Axes(diag_axis_init)%end = -1
     Axes(diag_axis_init)%subaxis_name = ""
     Axes(diag_axis_init)%shift = 0
+    Axes(diag_axis_init)%num_attributes = 0
 
     IF ( PRESENT(long_name) ) THEN
        Axes(diag_axis_init)%long_name = long_name
