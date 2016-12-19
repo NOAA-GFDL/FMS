@@ -188,11 +188,11 @@
       logical :: write_on_this_pe, read_on_this_pe, io_domain_exist
       integer :: ios, nc_pos     !position of .nc in file name
       type(axistype) :: unlim    !used by netCDF with mpp_append
-      type(domain2d), pointer :: io_domain=>NULL()
 
 !----------
 !ug support
-      type(domainUG),pointer :: io_domain_ug 
+      type(domain2d),pointer :: io_domain
+      type(domainUG),pointer :: io_domain_ug
       integer(INT_KIND)      :: io_layout_ug
       integer(INT_KIND)      :: tile_id_ug
 !----------
@@ -217,6 +217,7 @@
       endif
 
      !Null initialize the unstructured I/O domain pointer.
+      io_domain => null()
       io_domain_ug => null()
 !----------
      
