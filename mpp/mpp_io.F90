@@ -366,7 +366,7 @@ private
   public :: mpp_get_dimension_length, mpp_get_axis_bounds
 
   !--- public interface from mpp_io_misc.h ----------------------
-  public :: mpp_io_init, mpp_io_exit, netcdf_err, mpp_flush, mpp_get_maxunits
+  public :: mpp_io_init, mpp_io_exit, netcdf_err, mpp_flush, mpp_get_maxunits, do_cf_compliance
 
   !--- public interface from mpp_io_write.h ---------------------
   public :: mpp_write, mpp_write_meta, mpp_copy_meta, mpp_modify_meta, mpp_write_axis_data, mpp_def_dim
@@ -1006,9 +1006,10 @@ type :: atttype
   integer            :: shuffle = 0
   integer            :: deflate = 0
   integer            :: deflate_level = -1
+  logical            :: cf_compliance = .false.
 
   namelist /mpp_io_nml/header_buffer_val, global_field_on_root_pe, io_clocks_on, &
-                       shuffle, deflate_level
+                       shuffle, deflate_level, cf_compliance
 
   real(DOUBLE_KIND), allocatable :: mpp_io_stack(:)
   type(axistype),save            :: default_axis      !provided to users with default components

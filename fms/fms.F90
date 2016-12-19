@@ -135,7 +135,8 @@ use       mpp_io_mod, only:  mpp_io_init, mpp_open, mpp_close,         &
                        MPP_RDONLY, MPP_WRONLY, MPP_APPEND, MPP_OVERWR, &
                        MPP_SEQUENTIAL, MPP_DIRECT,                     &
                        MPP_SINGLE, MPP_MULTI, MPP_DELETE, mpp_io_exit, &
-                       fieldtype, mpp_get_atts, mpp_get_info, mpp_get_fields
+                       fieldtype, mpp_get_atts, mpp_get_info, mpp_get_fields, &
+                       do_cf_compliance
 
 use fms_io_mod, only : fms_io_init, fms_io_exit, field_size, &
                        read_data, write_data, read_compressed, read_distributed, &
@@ -189,6 +190,8 @@ public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
 public :: CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, &
           CLOCK_MODULE_DRIVER, CLOCK_MODULE,   &
           CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
+! public mpp-io interfaces
+public :: do_cf_compliance
 
 !Balaji
 !this is published by fms and applied to any initialized clocks
