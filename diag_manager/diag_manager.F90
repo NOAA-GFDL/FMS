@@ -3572,7 +3572,7 @@ CONTAINS
     CALL write_static(file)
 
     !::sdu:: Write the manifest file here
-    CALL write_diag_manifest(file)
+     CALL write_diag_manifest(file)
     
     ! Write out the number of bytes of data saved to this file
     IF ( write_bytes_in_file ) THEN
@@ -5545,7 +5545,7 @@ CONTAINS
        ! ...
        ! io_tile_factor = 0 is a special case where only one rank participates
        !                  in the I/O for a tile.
-        io_tile_factor = 1 
+        io_tile_factor = 16 
 allocate(unstructured_axis_diag_id(1))
 allocate(rsf_diag_1d_id(1))
 #ifdef iotestc3
@@ -5657,7 +5657,7 @@ enddo c3loop
         do i = 1,nz
             z_axis_data(i) = real(i*5.0)
         enddo
-       z_axis_diag_id = diag_axis_init("height", &
+       z_axis_diag_id = diag_axis_init("zfull", &
                                        z_axis_data, &
                                        "km", &
                                        "Z", &
@@ -5672,16 +5672,17 @@ enddo c3loop
        !real 1D field.
         if (.not.allocated(unstructured_real_1D_field_data_ref)) allocate(unstructured_real_1D_field_data_ref(unstructured_axis_data_size))
         do i = 1,unstructured_axis_data_size
-            unstructured_real_1D_field_data_ref(i) = real(i) - 1.1111111*real(l)
+            unstructured_real_1D_field_data_ref(i) = real(i) *real(i)+0.1*(mpp_pe()+1)
         enddo
 
        !real 2D field.
         if (.not.allocated(unstructured_real_2D_field_data_ref)) allocate(unstructured_real_2D_field_data_ref(unstructured_axis_data_size,nz))
         do j = 1,nz
             do i = 1,unstructured_axis_data_size
-                unstructured_real_2D_field_data_ref(i,j) = -1.0*real((j-1)* &
-                                                           unstructured_axis_data_size+i) &
-                                                           + 1.1111111*real(l)
+                unstructured_real_2D_field_data_ref(i,j) = real(j)+0.1*(mpp_pe()+1.0)
+                                                           !-1.0*real((j-1)* &
+                                                           !unstructured_axis_data_size+i) &
+                                                           !+ 1.1111111*real(l)
             enddo
         enddo
 
@@ -5749,12 +5750,12 @@ l=SIZE(unstructured_axis_diag_id)
                                          long_name="ONE_D_ARRAY", &
                                          units="ergs")
 
-!       rsf_diag_2d_id = register_diag_field("UG_unit_test", &
-!                                         "unstructured_real_2D_field_data", &
-!                                         (/unstructured_axis_diag_id(1), z_axis_diag_id/),&
-!                                         init_time=diag_time, &
-!                                         long_name="TWO_D_ARRAY", &
-!                                         units="ergs")
+       rsf_diag_2d_id = register_diag_field("UG_unit_test", &
+                                         "unstructured_real_2D_field_data", &
+                                         (/unstructured_axis_diag_id(1), z_axis_diag_id/),&
+                                         init_time=diag_time, &
+                                         long_name="TWO_D_ARRAY", &
+                                         units="ergs")
 
        idlat = register_diag_field("UG_unit_test", &
                                          "lat", &
@@ -5844,9 +5845,9 @@ ENDIF !L.ne.1
                                 diag_time)
           ENDDO
          ENDIF
-!          used = send_data(rsf_diag_2d_id, &
-!                                unstructured_real_2D_field_data, &
-!                                diag_time)
+          used = send_data(rsf_diag_2d_id, &
+                                unstructured_real_2D_field_data, &
+                                diag_time)
  used = send_data(idlat,lat,diag_time)
  used = send_data(idlon,lon,diag_time)
 
