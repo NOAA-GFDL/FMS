@@ -1737,28 +1737,31 @@ CONTAINS
     END DO
 
     IF( .NOT.all_scalar_or_1d ) THEN
-       IF (domainU .ne. null_domainUG .AND. domain2 .ne. null_domain2D) &
-           & CALL error_mesg('diag_util_mod::opening_file',&
-                & 'Domain2 and DomainU are somehow both set.', FATAL)
-
-       ELSEIF ( domainU .eq. null_domainUG) then
-        IF ( domain2 .EQ. NULL_DOMAIN2D ) CALL return_domain(domain2)
-        IF ( domain2 .EQ. NULL_DOMAIN2D ) THEN
-           ! <ERROR STATUS="FATAL">
-           !   Domain not defined through set_domain interface; cannot retrieve tile info
-           ! </ERROR>
-           CALL error_mesg('diag_util_mod::opening_file',&
-                & 'Domain not defined through set_domain interface; cannot retrieve tile info', FATAL)
-        END IF
-       IF ( mpp_get_ntile_count(domain2) > 1 ) THEN
-          ntileMe = mpp_get_current_ntile(domain2)
-          ALLOCATE(tile_id(ntileMe))
-          tile_id = mpp_get_tile_id(domain2)
-          fname = TRIM(filename)
-          CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(files(file)%tile_count))
-          DEALLOCATE(tile_id)
-      END IF
-    END IF
+        IF (domainU .ne. null_domainUG .AND. domain2 .ne. null_domain2D) then
+            CALL error_mesg('diag_util_mod::opening_file',&
+                            'Domain2 and DomainU are somehow both set.', FATAL)
+        ELSEIF ( domainU .eq. null_domainUG) then
+            IF ( domain2 .EQ. NULL_DOMAIN2D ) then
+                CALL return_domain(domain2)
+            endif
+            IF ( domain2 .EQ. NULL_DOMAIN2D ) THEN
+               ! <ERROR STATUS="FATAL">
+               !   Domain not defined through set_domain interface; cannot retrieve tile info
+               ! </ERROR>
+                CALL error_mesg('diag_util_mod::opening_file',&
+                                'Domain not defined through set_domain interface;' &
+                                //' cannot retrieve tile info',FATAL)
+            ENDIF
+            IF ( mpp_get_ntile_count(domain2) > 1 ) THEN
+                ntileMe = mpp_get_current_ntile(domain2)
+                ALLOCATE(tile_id(ntileMe))
+                tile_id = mpp_get_tile_id(domain2)
+                fname = TRIM(filename)
+                CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(files(file)%tile_count))
+                DEALLOCATE(tile_id)
+            ENDIF
+        endif
+    ENDIF
     IF ( domainU .ne. null_domainUG) then
 !          ntileMe = mpp_get_UG_current_ntile(domainU)
 !          ALLOCATE(tile_id(ntileMe))
