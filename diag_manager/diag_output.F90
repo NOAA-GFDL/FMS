@@ -29,6 +29,12 @@ MODULE diag_output_mod
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
 #endif
 
+  use mpp_domains_mod, only: mpp_get_UG_io_domain
+  use mpp_domains_mod, only: mpp_get_UG_domain_npes
+  use mpp_domains_mod, only: mpp_get_UG_domain_pelist
+  use mpp_mod,         only: mpp_gather
+  use mpp_mod,         only: uppercase
+
   IMPLICIT NONE
 
   PRIVATE
@@ -198,6 +204,11 @@ CONTAINS
     INTEGER              :: gbegin, gend, gsize, ndivs
     LOGICAL              :: time_ops1
     CHARACTER(len=2048)  :: err_msg
+    type(domainUG),pointer                     :: io_domain
+    integer(INT_KIND)                          :: io_domain_npes
+    integer(INT_KIND),dimension(:),allocatable :: io_pelist
+    integer(INT_KIND),dimension(:),allocatable :: unstruct_axis_sizes
+    real,dimension(:),allocatable              :: unstruct_axis_data
 
     ! Make sure err_msg is initialized
     err_msg = ''
@@ -251,8 +262,57 @@ CONTAINS
           END IF
        ELSE
           IF ( length > 0 ) THEN
-             CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
+
+            !For an unstructured dimension, only the root rank of the io_domain
+            !pelist will perform the wirte, so a gather of the unstructured
+            !axis size and axis data is required.
+             if (uppercase(trim(axis_cart_name)) .eq. "U") then
+                 if (DomainU .eq. null_domainUG) then
+                     call error_mesg("diag_output_mod::write_axis_meta_data", &
+                                     "A non-nul domainUG is required to" &
+                                     //" write unstructured axis metadata.", &
+                                     FATAL)
+                 endif
+                 io_domain => null()
+                 io_domain => mpp_get_UG_io_domain(DomainU)
+                 io_domain_npes = mpp_get_UG_domain_npes(io_domain)
+                 allocate(io_pelist(io_domain_npes))
+                 call mpp_get_UG_domain_pelist(io_domain, &
+                                               io_pelist)
+                 allocate(unstruct_axis_sizes(io_domain_npes))
+                 unstruct_axis_sizes = 0
+                 call mpp_gather((/size(axis_data)/), &
+                                 unstruct_axis_sizes, &
+                                 io_pelist)
+                 if (mpp_pe() .eq. io_pelist(1)) then
+                     allocate(unstruct_axis_data(sum(unstruct_axis_sizes)))
+                 else
+                     allocate(unstruct_axis_data(1))
+                 endif
+                 unstruct_axis_data = 0.0
+                 call mpp_gather(axis_data, &
+                                 size(axis_data), &
+                                 unstruct_axis_data, &
+                                 unstruct_axis_sizes, &
+                                 io_pelist)
+                 call mpp_write_meta(file_unit, &
+                                     Axis_types(num_axis_in_file), &
+                                     axis_name, &
+                                     axis_units, &
+                                     axis_long_name, &
+                                     axis_cart_name, &
+                                     axis_direction, &
+                                     data=unstruct_axis_data)
+                 deallocate(io_pelist)
+                 deallocate(unstruct_axis_sizes)
+                 deallocate(unstruct_axis_data)
+                 io_domain => null()
+
+             else
+                 CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
                   & axis_units, axis_long_name, axis_cart_name, axis_direction, DATA=axis_data)
+             endif
+
           ELSE
              CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
                   & axis_units, axis_long_name, axis_cart_name, axis_direction)
