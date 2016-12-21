@@ -4394,9 +4394,6 @@ END MODULE diag_manager_mod
 !!"UG_unit_test", "unstructured_real_scalar_field_data", "rsf_diag_1", "unstructured_diag_test", "all", .TRUE., "none", 1,
 !!"UG_unit_test", "unstructured_real_1D_field_data", "unstructured_real_1D_field_data", "unstructured_diag_test", "all", .TRUE., "none", 1,
 !!"UG_unit_test", "unstructured_real_2D_field_data", "unstructured_real_2D_field_data", "unstructured_diag_test", "all", .TRUE., "none", 1,
-!!"UG_unit_test", "unstructured_real_1D2", "unstructured_real_1D2", "unstructured_diag_test", "all", .TRUE., "none", 1,
-!!"UG_unit_test", "unstructured_real_1D3", "unstructured_real_1D3", "unstructured_diag_test", "all", .TRUE., "none", 1,
-!! \note unstructured_real_1D2 and unstructured_real_1D3 are only needed if compiling with -Diotestc3 or -Diotestc4
 !--------------------------------------------------------------------------------------------------
 PROGRAM test
   ! This program runs only one of many possible tests with each execution.
@@ -4486,6 +4483,7 @@ PROGRAM test
     integer(INT_KIND)              :: ny = 8                               !<Total number of grid points in the y-dimension (latitude?)
     integer(INT_KIND)              :: nz = 2                               !<Total number of grid points in the z-dimension (height)
     integer(INT_KIND)              :: nt = 2                               !<Total number of time grid points.
+    integer(INT_KIND)              :: io_tile_factor = 1                   !< The IO tile factor
     integer(INT_KIND)              :: halo = 2                             !<Number of grid points in the halo???
     integer(INT_KIND)              :: ntiles_x = 1                         !<Number of tiles in the x-direction (A 2D grid of tiles is used in this test.)
     integer(INT_KIND)              :: ntiles_y = 2                         !<Number of tiles in the y-direction (A 2D grid of tiles is used in this test.)
@@ -4511,7 +4509,7 @@ PROGRAM test
 
   NAMELIST /test_diag_manager_nml/ layout, test_number, nlon, nlat, nlev, io_layout, numthreads, &
                                    dt_step, months, days
-  NAMELIST /utest_nml/nx,ny,nz,nt,ntiles_x,ntiles_y
+  NAMELIST /utest_nml/nx,ny,nz,nt,ntiles_x,ntiles_y,io_tile_factor
   ! Initialize all id* vars to be -1
   id_nv = -1
   id_nv_init = -1
@@ -4613,7 +4611,7 @@ if (test_number == 100) then
    !Set the diag_time variable to be 01/01/1990 at 00:00:00 (midnight).
     call set_calendar_type(JULIAN)
     time = set_date(1990,1,1,0,0,0)
-   CALL unstruct_test (nx, ny, nz, npes, ntiles_x, 2, time) 
+   CALL unstruct_test (nx, ny, nz, npes, ntiles_x, 2, time,io_tile_factor) 
 else
 !!!!!! ALL OTHER TESTS !!!!!!
   IF ( test_number == 12 ) THEN
@@ -5214,7 +5212,7 @@ CONTAINS
     latb = latb_global(js:je+1)
   END SUBROUTINE compute_grid
 
-  SUBROUTINE unstruct_test(nx, ny, nz, npes, num_domain_tiles_x, num_domain_tiles_y, diag_time)
+  SUBROUTINE unstruct_test(nx, ny, nz, npes, num_domain_tiles_x, num_domain_tiles_y, diag_time,io_tile_factor)
         use, intrinsic :: iso_fortran_env, only: output_unit
         use mpp_parameter_mod,             only: FATAL
         use mpp_mod,                       only: mpp_error, &
@@ -5248,6 +5246,7 @@ CONTAINS
         integer(INT_KIND),intent(in)  :: num_domain_tiles_x !<The total number of domain tiles in the x-dimension for the 2D structured domain in this test.
         integer(INT_KIND),intent(in)  :: num_domain_tiles_y !<The total number of domain tiles in the y-dimension for the 2D structured domain in this test.
         type(time_type),intent(inout) :: diag_time          !<Time for diag_manager.
+        integer(INT_KIND),intent(in)  :: io_tile_factor     !<I/O tile factor.  See below.
 
        !Local variables
         integer(INT_KIND)                              :: num_domain_tiles                           !<The total number of domain tiles for the 2D structured domain in this test.
@@ -5268,7 +5267,6 @@ CONTAINS
         integer(INT_KIND)                              :: num_non_masked_grid_points                 !<Total number of non-masked grid points for the 2D structured domain.
         integer(INT_KIND),dimension(:),allocatable     :: num_land_tiles_per_non_masked_grid_point   !<Number of land tiles per non-masked grid point for the 2D structured domain.
         integer(INT_KIND)                              :: num_ranks_using_unstructured_grid          !<Number of ranks using the unstructured domain.
-        integer(INT_KIND)                              :: io_tile_factor                             !<I/O tile factor.  See below.
         integer(INT_KIND),dimension(:),allocatable     :: unstructured_grid_point_index_map          !<Array that maps indices between the 2D structured and unstructured domains.
         type(domainUG)                                 :: domain_ug                                  !<An unstructured mpp domain.
         integer(INT_KIND),dimension(:),allocatable     :: unstructured_axis_data                     !<Data that is registered to the restart file for the unstructured axis.
@@ -5532,43 +5530,23 @@ CONTAINS
                 enddo
             enddo
         enddo
-       !Define the number of "I/O tile factor".  The number of ranks that
-       !participate in I/O for a tile is equal to: 
-       !
-       ! num_io_ranks_on_a_tile = num_ranks_on_the_tile / "I/O tile factor".
-       !
-       !so for:
-       !
-       ! io_tile_factor = 1, all of the ranks on a tile participate in the I/O
-       ! io_tile_factor = 2, 1/2 of the ranks on a tile participate in the I/O
-       ! io_tile_factor = 3, 1/3 of the ranks on a tile participate in the I/O
-       ! ...
-       ! io_tile_factor = 0 is a special case where only one rank participates
-       !                  in the I/O for a tile.
-        io_tile_factor = 16 
+       !> Set in namelist is "I/O tile factor".  The number of ranks that
+       !! participate in I/O for a tile is equal to: 
+       !!
+       !! num_io_ranks_on_a_tile = num_ranks_on_the_tile / "I/O tile factor".
+       !!
+       !!so for:
+       !!
+       !! io_tile_factor = 1, all of the ranks on a tile participate in the I/O
+       !! io_tile_factor = 2, 1/2 of the ranks on a tile participate in the I/O
+       !! io_tile_factor = 3, 1/3 of the ranks on a tile participate in the I/O
+       !! ...
+       !! io_tile_factor = 0 is a special case where only one rank participates
+       !!                  in the I/O for a tile.
+       !! io_tile_factor = 1
+if (mpp_pe() == mpp_root_pe()) write(6,*) "IO_TILE_FACTOR is ",io_tile_factor
 allocate(unstructured_axis_diag_id(1))
 allocate(rsf_diag_1d_id(1))
-#ifdef iotestc3
-npes_io_group=(/1,16,32/)
-deallocate(unstructured_axis_diag_id)
-deallocate(rsf_diag_1d_id)
-allocate(unstructured_axis_diag_id(3))
-allocate(rsf_diag_1d_id(3))
-c3loop: do l=1,3
- io_tile_factor = npes_io_group(l)
- if (mpp_pe() == mpp_root_pe()) write (6,'(a,i2)')"Using npes_io_group = ",npes_io_group(l)
-#endif
-
-#ifdef iotestc4
-npes_io_group=(/1,18,36/)
-deallocate(unstructured_axis_diag_id)
-deallocate(rsf_diag_1d_id)
-allocate(unstructured_axis_diag_id(3))
-allocate(rsf_diag_1d_id(3))
-c4loop: do l=1,3
- io_tile_factor = npes_io_group(l)
- if (mpp_pe() == mpp_root_pe()) write (6,'(a,i2)')"Using npes_io_group = ",npes_io_group(l)
-#endif
 
        !Define the "unstructured" domain decomposition.
         call mpp_define_unstruct_domain(domain_ug, &
@@ -5594,12 +5572,6 @@ c4loop: do l=1,3
 !write(6,*)"ID:",mpp_pe()," DATA: ",unstructured_axis_data
        !Initialize the "unstructured" axis for the diagnostics.
         unstructured_axis_name = "ug_axis"
-#ifdef iotestc3
-        write(unstructured_axis_name,'(a,I0)')"ug_axis",l
-#endif
-#ifdef iotestc4
-        write(unstructured_axis_name,'(a,I0)')"ug_axis",l
-#endif
 
         unstructured_axis_diag_id(l) = diag_axis_init(trim(unstructured_axis_name), &
                                                    real(unstructured_axis_data), &
@@ -5608,12 +5580,6 @@ c4loop: do l=1,3
                                                    long_name="mapping indices", &
                                                    domainU=domain_ug)
    call diag_axis_add_attribute(unstructured_axis_diag_id(l),'compress','grid_xt grid_yt') 
-#ifdef iotestc4
-enddo c4loop
-#endif
-#ifdef iotestc3
-enddo c3loop
-#endif
 
 !write(6,*) "ID U",unstructured_axis_diag_id
        !Add the x-, y-, and z-axes to the restart file.  Until a bug in
