@@ -2496,7 +2496,7 @@ CONTAINS
                          DO j=f3, f4
                             DO i=f1, f2
                                IF ( field(i,j,k) /= missvalue ) THEN
-                                  output_fields(out_num)%count_0d = output_fields(out_num)%count_0d + weight1
+                                  output_fields(out_num)%count_0d(sample) = output_fields(out_num)%count_0d(sample) + weight1
                                   EXIT outer3
                                END IF
                             END DO
@@ -2688,7 +2688,7 @@ CONTAINS
              END IF ! if mask present
           END IF  !if mask_variant
 !$OMP CRITICAL
-          IF ( .NOT.need_compute )&
+          IF ( .NOT.need_compute .AND. .NOT.reduced_k_range )&
                & output_fields(out_num)%num_elements(sample) =&
                & output_fields(out_num)%num_elements(sample) + (ie-is+1)*(je-js+1)*(ke-ks+1)
           IF ( reduced_k_range ) &
