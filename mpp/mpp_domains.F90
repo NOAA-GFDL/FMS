@@ -211,8 +211,8 @@ module mpp_domains_mod
   public :: mpp_get_UG_domain_pelist, mpp_get_ug_domain_grid_index
   public :: mpp_get_UG_domain_ntiles, mpp_get_UG_global_domain
   public :: mpp_global_field_ug, mpp_get_ug_domain_tile_list, mpp_get_UG_compute_domains
-  public :: mpp_define_null_UG_domain, NULL_DOMAINUG
-  public :: mpp_get_UG_SG_domain
+  public :: mpp_define_null_UG_domain, NULL_DOMAINUG, mpp_get_UG_domains_index
+  public :: mpp_get_UG_SG_domain, mpp_get_UG_domain_tile_pe_inf
 
   !--- public interface from mpp_define_domains.inc
   public :: mpp_define_nest_domains, mpp_get_C2F_index, mpp_get_F2C_index
@@ -269,6 +269,7 @@ module mpp_domains_mod
      integer :: ntiles
      integer :: tile_id
      integer :: tile_root_pe
+     integer :: tile_npes
   end type domainUG
 
   type domain_axis_spec        !type used to specify index limits along an axis of a domain
@@ -1738,6 +1739,7 @@ module mpp_domains_mod
 interface mpp_broadcast_domain
   module procedure mpp_broadcast_domain_1
   module procedure mpp_broadcast_domain_2
+  module procedure mpp_broadcast_domain_ug
 end interface
 
 

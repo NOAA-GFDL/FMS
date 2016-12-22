@@ -139,6 +139,7 @@
      UG_domain%tile_id = UG_domain%list(pos)%tile_id
      p = pe_start(UG_domain%tile_id)
      UG_domain%tile_root_pe = UG_domain%list(p)%pe
+     UG_domain%tile_npes = pe_end(UG_domain%tile_id) - pe_start(UG_domain%tile_id) + 1
      UG_domain%compute = UG_domain%list(pos)%compute
      UG_domain%compute%max_size = MAXVAL( UG_domain%list(:)%compute%size )
      UG_domain%global%begin = 1
@@ -423,6 +424,21 @@ return
   end subroutine mpp_get_UG_compute_domains
 
   !#####################################################################
+  subroutine mpp_get_UG_domains_index( domain, begin, end)
+    type(domainUG),         intent(in) :: domain
+    integer, intent(out), dimension(:) :: begin, end
+
+    !we use shape instead of size for error checks because size is used as an argument
+    if( any(shape(begin).NE.shape(domain%list)) ) &
+         call mpp_error( FATAL, 'mpp_get_UG_compute_domains: begin array size does not match domain.' )
+    begin(:) = domain%list(:)%compute%begin_index
+    if( any(shape(end).NE.shape(domain%list)) ) &
+         call mpp_error( FATAL, 'mpp_get_UG_compute_domains: end array size does not match domain.' )
+         end(:) = domain%list(:)%compute%end_index
+    return
+  end subroutine mpp_get_UG_domains_index
+
+  !#####################################################################
   function mpp_get_UG_domain_ntiles(domain)
     type(domainUG),  intent(in) :: domain
     integer :: mpp_get_UG_domain_ntiles
@@ -478,6 +494,25 @@ return
 
   end subroutine mpp_get_UG_domain_pelist
 
+  !###################################################################
+  subroutine mpp_get_UG_domain_tile_pe_inf( domain, root_pe, npes, pelist)
+     type(domainUG),     intent(in) :: domain
+     integer, optional, intent(out) :: root_pe, npes
+     integer, optional, intent(out) :: pelist(:)
+
+     if(present(root_pe)) root_pe = domain%tile_root_pe
+     if(present(npes)) root_pe = domain%tile_npes
+
+     if(present(pelist)) then
+        if( size(pelist(:)).NE. domain%tile_npes ) &
+           call mpp_error( FATAL, 'mpp_get_UG_domain_tile_pe_inf: pelist array size does not match domain.' )
+        pelist(:) = domain%list(domain%pos:domain%pos+domain%tile_npes-1)%pe
+     endif
+     return
+
+  end subroutine mpp_get_UG_domain_tile_pe_inf
+
+
   !####################################################################
   subroutine mpp_get_UG_domain_grid_index( domain, grid_index)
      type(domainUG), intent(in) :: domain
@@ -504,6 +539,75 @@ return
      domain%tile_root_pe = -1
 
   end subroutine mpp_define_null_UG_domain
+
+!##############################################################################
+    subroutine mpp_broadcast_domain_ug( domain )
+!broadcast domain (useful only outside the context of its own pelist)
+      type(domainUG), intent(inout) :: domain
+      integer, allocatable :: pes(:)
+      logical :: native         !true if I'm on the pelist of this domain
+      integer :: listsize, listpos
+      integer :: n
+      integer, dimension(5) :: msg, info         !pe and compute domain of each item in list
+      integer                :: errunit
+
+      errunit = stderr()
+      if( .NOT.module_is_initialized ) &
+                 call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_ug: You must first call mpp_domains_init.' )
+
+!get the current pelist
+      allocate( pes(0:mpp_npes()-1) )
+      call mpp_get_current_pelist(pes)
+
+!am I part of this domain?
+      native = ASSOCIATED(domain%list)
+
+!set local list size
+      if( native )then
+          listsize = size(domain%list(:))
+      else
+          listsize = 0
+      end if
+      call mpp_max(listsize)
+
+      if( .NOT.native )then
+!initialize domain%list and set null values in message
+          allocate( domain%list(0:listsize-1) )
+          domain%pe = NULL_PE
+          domain%pos = -1
+          domain%ntiles = -1
+          domain%compute%begin =  1
+          domain%compute%end   = -1
+          domain%global %begin = -1
+          domain%global %end   = -1
+          domain%tile_id       = -1
+          domain%tile_root_pe  = -1
+      end if
+!initialize values in info
+      info(1) = domain%pe
+      info(2) = domain%pos
+      info(3) = domain%tile_id
+      call mpp_get_UG_compute_domain( domain, info(4), info(5))
+!broadcast your info across current pelist and unpack if needed
+      listpos = 0
+      do n = 0,mpp_npes()-1
+         msg = info
+         if( mpp_pe().EQ.pes(n) .AND. debug )write( errunit,* )'PE ', mpp_pe(), 'broadcasting msg ', msg
+         call mpp_broadcast( msg, 5, pes(n) )
+!no need to unpack message if native
+!no need to unpack message from non-native PE
+         if( .NOT.native .AND. msg(1).NE.NULL_PE )then
+             domain%list(listpos)%pe            = msg(1)
+             domain%list(listpos)%pos           = msg(2)
+             domain%list(listpos)%tile_id       = msg(3)
+             domain%list(listpos)%compute%begin = msg(4)
+             domain%list(listpos)%compute%end   = msg(5)
+             listpos = listpos + 1
+             if( debug )write( errunit,* )'PE ', mpp_pe(), 'received domain from PE ', msg(1), 'ls,le=', msg(4:5)
+         end if
+      end do
+
+    end subroutine mpp_broadcast_domain_ug
 
 
 #undef MPP_TYPE_
