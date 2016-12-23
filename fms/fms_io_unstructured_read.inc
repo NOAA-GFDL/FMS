@@ -2,6 +2,57 @@
 !ug support
 
 !------------------------------------------------------------------------------
+!>Read in a scalar field from a file associated with an unstructured mpp
+!!domain.
+subroutine fms_io_unstructured_read_r_scalar(filename, &
+                                             fieldname, &
+                                             fdata, &
+                                             domain, &
+                                             timelevel, &
+                                             start, &
+                                             nread, &
+                                             threading)
+
+   !Inputs/Outputs
+    character(len=*),intent(in)              :: filename  !<The name of a file.
+    character(len=*),intent(in)              :: fieldname !<The name of field in the input file.
+    real,intent(inout)                       :: fdata     !<Data to be read in from the file.
+    type(domainUG),intent(in)                :: domain    !<Unstructured mpp domain associated with the input file.
+    integer,intent(in),optional              :: timelevel !<Time level at which the data is read in.
+    integer,dimension(:),intent(in),optional :: start     !<NetCDF "Corner" indices for the data.
+    integer,dimension(:),intent(in),optional :: nread     !<NetCDF "edge lengths" for the data.
+    integer,intent(in),optional              :: threading !<Threading flag.
+
+   !Local variables
+    real,dimension(1) :: tmp    !<Dummy variable.
+    integer           :: tlevel !<Dummy variable.
+
+   !Use the 1D case.
+    if (present(timelevel)) then
+        if (tlevel .le. 0) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_read_r_scalar:" &
+                           //" the inputted time level must be at" &
+                           //" least one.")
+        endif
+        tlevel = timelevel
+    else
+        tlevel = 1
+    endif
+    call fms_io_unstructured_read_r_1D(filename, &
+                                       fieldname, &
+                                       tmp, &
+                                       domain, &
+                                       tlevel, &
+                                       start, &
+                                       nread, &
+                                       threading)
+    fdata = tmp(1)
+
+    return
+end subroutine fms_io_unstructured_read_r_scalar
+
+!------------------------------------------------------------------------------
 !>Read in a one dimensional "compressed" field from a file associated with
 !!an unstructured mpp domain.
 subroutine fms_io_unstructured_read_r_1D(filename, &
@@ -261,6 +312,57 @@ subroutine fms_io_unstructured_read_r_3D(filename, &
 
     return
 end subroutine fms_io_unstructured_read_r_3D
+
+!------------------------------------------------------------------------------
+!>Read in a scalar field from a file associated with an unstructured mpp
+!!domain.
+subroutine fms_io_unstructured_read_i_scalar(filename, &
+                                             fieldname, &
+                                             fdata, &
+                                             domain, &
+                                             timelevel, &
+                                             start, &
+                                             nread, &
+                                             threading)
+
+   !Inputs/Outputs
+    character(len=*),intent(in)              :: filename  !<The name of a file.
+    character(len=*),intent(in)              :: fieldname !<The name of field in the input file.
+    integer,intent(inout)                    :: fdata     !<Data to be read in from the file.
+    type(domainUG),intent(in)                :: domain    !<Unstructured mpp domain associated with the input file.
+    integer,intent(in),optional              :: timelevel !<Time level at which the data is read in.
+    integer,dimension(:),intent(in),optional :: start     !<NetCDF "Corner" indices for the data.
+    integer,dimension(:),intent(in),optional :: nread     !<NetCDF "edge lengths" for the data.
+    integer,intent(in),optional              :: threading !<Threading flag.
+
+   !Local variables
+    real,dimension(1) :: tmp    !<Dummy variable.
+    integer           :: tlevel !<Dummy variable.
+
+   !Read in the data.
+    if (present(timelevel)) then
+        if (tlevel .le. 0) then
+            call mpp_error(FATAL, &
+                           "fms_io_unstructured_read_i_scalar:" &
+                           //" the inputted time level must be at" &
+                           //" least one.")
+        endif
+        tlevel = timelevel
+    else
+        tlevel = 1
+    endif
+    call fms_io_unstructured_read_r_1D(filename, &
+                                       fieldname, &
+                                       tmp, &
+                                       domain, &
+                                       tlevel, &
+                                       start, &
+                                       nread, &
+                                       threading)
+    fdata = ceiling(tmp(1))
+
+    return
+end subroutine fms_io_unstructured_read_i_scalar
 
 !------------------------------------------------------------------------------
 !>Read in a one dimensional "compressed" field from a file associated with
