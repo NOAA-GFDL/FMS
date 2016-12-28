@@ -1195,8 +1195,6 @@
       pointer( ptr1, data_r4)
       pointer( ptr2, packed_data)
 
-      if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
-
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%write_on_this_pe) return
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
@@ -1239,7 +1237,6 @@
            pe, unit, mpp_file(unit)%id, mpp_file(unit)%time_level, mpp_file(unit)%time
 
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
-          ptr2 = LOC(mpp_io_stack(1))
 !define netCDF data block to be written:
 !  time axis: START = time level
 !             AXSIZ = 1
@@ -1280,6 +1277,8 @@
               end if
           end if
           if( field%pack == 0 )then
+              if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
+              ptr2 = LOC(mpp_io_stack(1))
               packed_data = CEILING(data)
               error = NF_PUT_VARA_INT   ( mpp_file(unit)%ncid, field%id, start, axsiz, packed_data )
           elseif( field%pack.GT.0 .and. field%pack.LE.2 )then
@@ -1289,13 +1288,14 @@
                   error = NF_PUT_VARA_REAL  ( mpp_file(unit)%ncid, field%id, start, axsiz, data )
               end if
           else              !convert to integer using scale and add: no error check on packed data representation
+              if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
+              ptr2 = LOC(mpp_io_stack(1))
               packed_data = nint((data-field%add)/field%scale)
               error = NF_PUT_VARA_INT   ( mpp_file(unit)%ncid, field%id, start, axsiz, packed_data )
           end if
           call netcdf_err( error, mpp_file(unit), field=field )
 #endif
       else                      !non-netCDF
-          ptr1 = LOC(mpp_io_stack(1))
 !subdomain contains (/is,ie,js,je/)
           if( PRESENT(domain) )then
               call mpp_get_compute_domain(domain, is, ie, js, je)
@@ -1310,6 +1310,8 @@
               if( mpp_file(unit)%access.EQ.MPP_SEQUENTIAL )then
 #ifdef __sgi
                   if( mpp_file(unit)%format.EQ.MPP_IEEE32 )then
+                      if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
+                      ptr1 = LOC(mpp_io_stack(1))
                       data_r4 = data !IEEE conversion layer on SGI until assign -N ieee_32 is supported
                       write(unit)field%id, subdomain, time_level, time, data_r4
                   else
@@ -1321,6 +1323,8 @@
               else                  !MPP_DIRECT
 #ifdef __sgi
                   if( mpp_file(unit)%format.EQ.MPP_IEEE32 )then
+                      if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
+                      ptr1 = LOC(mpp_io_stack(1))
                       data_r4 = data !IEEE conversion layer on SGI until assign -N ieee_32 is supported
                       write( unit, rec=mpp_file(unit)%record )field%id, subdomain, time_level, time, data_r4
                   else

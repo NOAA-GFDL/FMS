@@ -110,6 +110,19 @@ use mpp_mod,         only: MPP_FILL_DOUBLE,MPP_FILL_INT
 
 use platform_mod, only: r8_kind
 
+!----------
+!ug support
+use mpp_parameter_mod, only: COMM_TAG_2
+use mpp_domains_mod,   only: mpp_get_UG_io_domain
+use mpp_domains_mod,   only: mpp_compare_UG_domains
+use mpp_domains_mod,   only: mpp_domain_UG_is_tile_root_pe
+use mpp_domains_mod,   only: mpp_get_UG_domain_npes
+use mpp_domains_mod,   only: mpp_get_UG_domain_pelist
+use mpp_io_mod,        only: mpp_io_unstructured_write
+use mpp_io_mod,        only: mpp_io_unstructured_read
+use mpp_io_mod,        only: mpp_file_is_opened
+!----------
+
 implicit none
 private
 
@@ -127,14 +140,19 @@ integer, parameter          :: max_axis_size=10000
 ! This is done so the user may define the axes
 ! in any order but a check can be performed
 ! to ensure no registration of duplicate axis
-integer, parameter, private :: XIDX=1
-integer, parameter, private :: YIDX=2
-integer, parameter, private :: CIDX=3
-integer, parameter, private :: ZIDX=4
-integer, parameter, private :: HIDX=5
-integer, parameter, private :: TIDX=6
-integer, parameter, private :: UIDX=7
-integer, parameter, private :: CCIDX=8
+
+!----------
+!ug support
+integer(INT_KIND),parameter,public :: XIDX = 1
+integer(INT_KIND),parameter,public :: YIDX = 2
+integer(INT_KIND),parameter,public :: CIDX = 3
+integer(INT_KIND),parameter,public :: ZIDX = 4
+integer(INT_KIND),parameter,public :: HIDX = 5
+integer(INT_KIND),parameter,public :: TIDX = 6
+integer(INT_KIND),parameter,public :: UIDX = 7
+integer(INT_KIND),parameter,public :: CCIDX = 8
+!---------
+
 integer, parameter, private :: NIDX=8
 
 type meta_type
@@ -167,6 +185,13 @@ type ax_type
    integer,allocatable :: nelems(:)      !num elements for each rank in io domain
    real, pointer      :: data(:) =>NULL()    !real axis values (not used if time axis)
    type(domain2d),pointer :: domain =>NULL() ! domain associated with compressed axis
+
+!----------
+!ug support
+   type(domainUG),pointer :: domain_ug => null()     !<A pointer to an unstructured mpp domain.
+   integer(INT_KIND)      :: nelems_for_current_rank !<The number of grid points registered to the current rank (used for error checking).
+!----------
+
 end type ax_type
 
 type var_type
@@ -196,6 +221,14 @@ type var_type
    integer, dimension(:), allocatable     :: pelist
    integer                                :: ishift, jshift ! can be used to shift indices when no_domain=T
    integer                                :: x_halo, y_halo ! can be used to indicate halo size when no_domain=T
+
+!----------
+!ug support
+    type(domainUG),pointer            :: domain_ug => null()   !<A pointer to an unstructured mpp domain.
+    integer(INT_KIND),dimension(5)    :: field_dimension_order !<Array telling the ordering of the dimensions for the field.
+    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !<Array of sizes of the dimensions for the field.
+!----------
+
 end type var_type
 
 type Ptr0Dr
@@ -484,6 +517,43 @@ integer            :: pack_size  ! = 1 for double = 2 for float
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
+!----------
+!ug support
+public :: fms_io_unstructured_register_restart_axis
+public :: fms_io_unstructured_register_restart_field
+public :: fms_io_unstructured_save_restart
+public :: fms_io_unstructured_read
+public :: fms_io_unstructured_get_field_size
+public :: fms_io_unstructured_file_unit
+public :: fms_io_unstructured_field_exist
+
+interface fms_io_unstructured_register_restart_axis
+    module procedure fms_io_unstructured_register_restart_axis_r1D
+    module procedure fms_io_unstructured_register_restart_axis_i1D
+    module procedure fms_io_unstructured_register_restart_axis_u
+end interface fms_io_unstructured_register_restart_axis
+
+interface fms_io_unstructured_register_restart_field
+    module procedure fms_io_unstructured_register_restart_field_r_0d
+    module procedure fms_io_unstructured_register_restart_field_r_1d
+    module procedure fms_io_unstructured_register_restart_field_r_2d
+    module procedure fms_io_unstructured_register_restart_field_r_3d
+    module procedure fms_io_unstructured_register_restart_field_i_0d
+    module procedure fms_io_unstructured_register_restart_field_i_1d
+    module procedure fms_io_unstructured_register_restart_field_i_2d
+end interface fms_io_unstructured_register_restart_field
+
+interface fms_io_unstructured_read
+    module procedure fms_io_unstructured_read_r_scalar
+    module procedure fms_io_unstructured_read_r_1D
+    module procedure fms_io_unstructured_read_r_2D
+    module procedure fms_io_unstructured_read_r_3D
+    module procedure fms_io_unstructured_read_i_scalar
+    module procedure fms_io_unstructured_read_i_1D
+    module procedure fms_io_unstructured_read_i_2D
+end interface fms_io_unstructured_read
+!----------
+
 contains
 
 ! <SUBROUTINE NAME="get_restart_io_mode">
@@ -580,6 +650,7 @@ subroutine fms_io_init()
   do i = 1, max_domains
      array_domain(i) = NULL_DOMAIN2D
   enddo
+
   !---- initialize module domain2d pointer ----
   nullify (Current_domain)
 
@@ -1152,7 +1223,10 @@ subroutine register_restart_axis_r1d(fileObj,filename,fieldname,data,cartesian,u
   if(.not. ALLOCATED(fileObj%axes)) allocate(fileObj%axes(NIDX))
   if(ASSOCIATED(fileObj%axes(idx)%data)) &
        call mpp_error(FATAL,'fms_io(register_restart_axis_r1d): '//trim(cartesian)//' axis has already been defined')
-  fileObj%name = filename
+
+ !Why do we do this?
+! fileObj%name = filename
+
   fileObj%axes(idx)%name = fieldname
   fileObj%axes(idx)%data =>data
   fileObj%axes(idx)%cartesian = cartesian
@@ -1210,7 +1284,10 @@ subroutine register_restart_axis_i1d(fileObj,filename,fieldname,data,compressed,
   if(ALLOCATED(fileObj%axes(idx)%idx)) &
                  call mpp_error(FATAL,'fms_io(register_restart_axis_i1d): Compressed axis ' //&
                  trim(compressed_axis) // ' has already been defined')
-  fileObj%name = filename
+
+ !Why do we do this?
+! fileObj%name = filename
+
   fileObj%is_compressed = .true.
   fileObj%unlimited_axis = .false.
   fileObj%axes(idx)%name = fieldname
@@ -1262,7 +1339,10 @@ subroutine register_restart_axis_unlimited(fileObj,filename,fieldname,nelem,unit
   if(.not. ALLOCATED(fileObj%axes)) allocate(fileObj%axes(NIDX))
   if(ALLOCATED(fileObj%axes(idx)%idx)) &
                call mpp_error(FATAL,'fms_io(register_restart_axis_unlimited): Unlimited axis has already been defined')
-  fileObj%name = filename
+
+ !Why do we do this?
+! fileObj%name = filename
+
   fileObj%is_compressed = .false.
   fileObj%unlimited_axis = .true.
   fileObj%axes(idx)%name = fieldname
@@ -8186,5 +8266,19 @@ subroutine write_version_number (version, tag, unit)
 
 end subroutine write_version_number
 ! </SUBROUTINE>
+
+!----------
+!ug support
+#include <fms_io_unstructured_register_restart_axis.inc>
+#include <fms_io_unstructured_setup_one_field.inc>
+#include <fms_io_unstructured_register_restart_field.inc>
+#include <fms_io_unstructured_save_restart.inc>
+#include <fms_io_unstructured_read.inc>
+#include <fms_io_unstructured_get_file_name.inc>
+#include <fms_io_unstructured_get_file_unit.inc>
+#include <fms_io_unstructured_file_unit.inc>
+#include <fms_io_unstructured_get_field_size.inc>
+#include <fms_io_unstructured_field_exist.inc>
+!----------
 
 end module fms_io_mod
