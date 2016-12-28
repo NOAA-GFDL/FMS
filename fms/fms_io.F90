@@ -525,6 +525,7 @@ public :: fms_io_unstructured_save_restart
 public :: fms_io_unstructured_read
 public :: fms_io_unstructured_get_field_size
 public :: fms_io_unstructured_file_unit
+public :: fms_io_unstructured_field_exist
 
 interface fms_io_unstructured_register_restart_axis
     module procedure fms_io_unstructured_register_restart_axis_r1D
@@ -543,9 +544,11 @@ interface fms_io_unstructured_register_restart_field
 end interface fms_io_unstructured_register_restart_field
 
 interface fms_io_unstructured_read
+    module procedure fms_io_unstructured_read_r_scalar
     module procedure fms_io_unstructured_read_r_1D
     module procedure fms_io_unstructured_read_r_2D
     module procedure fms_io_unstructured_read_r_3D
+    module procedure fms_io_unstructured_read_i_scalar
     module procedure fms_io_unstructured_read_i_1D
     module procedure fms_io_unstructured_read_i_2D
 end interface fms_io_unstructured_read
@@ -8275,6 +8278,7 @@ end subroutine write_version_number
 #include <fms_io_unstructured_get_file_unit.inc>
 #include <fms_io_unstructured_file_unit.inc>
 #include <fms_io_unstructured_get_field_size.inc>
+#include <fms_io_unstructured_field_exist.inc>
 !----------
 
 end module fms_io_mod

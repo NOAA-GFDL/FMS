@@ -66,6 +66,7 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
     real                                        :: r0d               !<Used to convert a scalar integer field into a scalar real field.
     real,dimension(:),allocatable               :: r1d               !<Used to convert a 1D integer field into a 1D real field.
     real,dimension(:,:),allocatable             :: r2d               !<Used to convert a 2D integer field into a 2D real field.
+    integer(INT_KIND)                           :: i                 !<Loop variable.
     integer(INT_KIND)                           :: j                 !<Loop variable.
     integer(INT_KIND)                           :: k                 !<Loop variable.
 
@@ -322,6 +323,11 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
        !c-axis to the restart file.
         if (allocated(fileObj%axes(CIDX)%idx)) then
             axis => fileObj%axes(CIDX)
+            call mpp_def_dim(funit, &
+                             trim(axis%dimlen_name), &
+                             axis%dimlen, &
+                             trim(axis%dimlen_lname), &
+                             (/(i,i=1,axis%dimlen)/))
             call mpp_write_meta(funit, &
                                 c_axis, &
                                 axis%name, &
@@ -340,6 +346,11 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
        !h-axis to the restart file.
         if (allocated(fileObj%axes(HIDX)%idx)) then
             axis => fileObj%axes(HIDX)
+            call mpp_def_dim(funit, &
+                             trim(axis%dimlen_name), &
+                             axis%dimlen, &
+                             trim(axis%dimlen_lname), &
+                             (/(i,i=1,axis%dimlen)/))
             call mpp_write_meta(funit, &
                                 h_axis, &
                                 axis%name, &
