@@ -860,10 +860,12 @@ CONTAINS
   SUBROUTINE axis_compatible_check(id,varname)
     INTEGER, INTENT(in), DIMENSION(:) :: id !<The array of axis IDs
     CHARACTER(*), INTENT(IN), OPTIONAL :: varname !< The name of the variable
-    LOGICAL :: XorY=.false. !> \paran XorY set to true if X or Y is found as a cart_name
-    LOGICAL :: UG=.false. !> \param UG get to true if U is found as a cart_name
+    LOGICAL :: XorY !> \paran XorY set to true if X or Y is found as a cart_name
+    LOGICAL :: UG !> \param UG get to true if U is found as a cart_name
     INTEGER :: n !> \param n Looping index
     
+    XorY = .false.
+    UG = .false.
     if (size(id) == 1) then 
           return !> If there is only 1 axis ID, then this routine should return
     endif
