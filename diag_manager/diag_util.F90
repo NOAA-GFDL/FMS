@@ -449,6 +449,10 @@ CONTAINS
     INTEGER, DIMENSION(3) :: gstart_indx, gend_indx ! global start and end indices of output domain in 3 axes
     CHARACTER(len=1) :: cart
     CHARACTER(len=128) :: msg
+!----------
+!ug support
+    integer :: vert_dim_num
+!----------
 
     !initilization for local output
     start = -1.e10
@@ -460,6 +464,10 @@ CONTAINS
     start= output_fields(outnum)%output_grid%start
     end = output_fields(outnum)%output_grid%end
 
+!----------
+!ug support
+    vert_dim_num = 3
+!----------
     DO i = 1, SIZE(axes(:))
        global_axis_size = get_axis_global_length(axes(i))
        output_fields(outnum)%output_grid%subaxes(i) = -1
@@ -479,6 +487,19 @@ CONTAINS
           gstart_indx(i) = 1
           gend_indx(i) = global_axis_size
           output_fields(outnum)%output_grid%subaxes(i) = axes(i)
+!----------
+!ug support
+       case ("U")
+           if (i .ne. 1) then
+               call error_mesg("diag_util_mod::get_subfield_vert_size", &
+                               "the unstructured axis must be the first dimension.", &
+                               FATAL)
+           endif
+           gstart_indx(i) = 1
+           gend_indx(i) = global_axis_size
+           output_fields(outnum)%output_grid%subaxes(i) = axes(i)
+           vert_dim_num = 2
+!----------
        CASE ('Z')
           ! <ERROR STATUS="FATAL">wrong values in vertical axis of region</ERROR>
           IF( start(i)*END(i) < 0. ) CALL error_mesg('diag_util_mod::get_subfield_vert_size',&
@@ -503,8 +524,14 @@ CONTAINS
              gend_indx(i) = global_axis_size
              output_fields(outnum)%output_grid%subaxes(i) = axes(i)
              ! <ERROR STATUS="FATAL">i should equal 3 for z axis</ERROR>
-             IF( i /= 3 ) CALL error_mesg('diag_util_mod::get_subfield_vert_size',&
-                  & 'i should equal 3 for z axis', FATAL)
+!----------
+!ug support
+             if (i .ne. vert_dim_num) then
+                 call error_mesg("diag_util_mod::get_subfield_vert_size",&
+                                 "i should equal vert_dim_num for z axis", &
+                                 FATAL)
+             endif
+!----------
           END IF
        CASE default
           ! <ERROR STATUS="FATAL">Wrong axis_cart</ERROR>
