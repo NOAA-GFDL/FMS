@@ -25,7 +25,7 @@
 module data_override_mod
 !
 ! <CONTACT EMAIL="Zhi.Liang@noaa.gov">
-! G.T. Nong
+! Z. Liang
 ! </CONTACT>
 !
 ! <CONTACT EMAIL="Matthew.Harrison@noaa.gov">
@@ -153,7 +153,8 @@ interface data_override_UG
      module procedure data_override_UG_2d
 end interface
 
-public :: data_override_init, data_override, data_override_UG
+public :: data_override_init, data_override, data_override_unset_domains
+public :: data_override_UG
 
 contains
 !===============================================================================================
@@ -453,6 +454,68 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
 end subroutine data_override_init
 ! </SUBROUTINE>
 !===============================================================================================
+
+!===============================================================================================
+! <SUBROUTINE NAME="data_override_unset_domain">
+!   <DESCRIPTION>
+! Unset domains that had previously been set for use by data_override.
+!   </DESCRIPTION>
+!   <TEMPLATE>
+! call data_override_unset_domain
+!   </TEMPLATE>
+subroutine data_override_unset_domains(unset_Atm, unset_Ocean, &
+                                      unset_Ice, unset_Land, must_be_set)
+  logical, intent(in), optional :: unset_Atm, unset_Ocean, unset_Ice, unset_Land
+  logical, intent(in), optional :: must_be_set
+
+! <NOTE>
+! This subroutine deallocates any data override domains that have been set.
+! </NOTE>
+  logical :: fail_if_not_set
+
+  fail_if_not_set = .true. ; if (present(must_be_set)) fail_if_not_set = must_be_set
+
+  if (.not.module_is_initialized) call mpp_error(FATAL, &
+     "data_override_unset_domains called with an unititialized data_override module.")
+
+  if (PRESENT(unset_Atm)) then ; if (unset_Atm) then
+    if (fail_if_not_set .and. .not.atm_on) call mpp_error(FATAL, &
+      "data_override_unset_domains attempted to work on an Atm_domain that had not been set.")
+    atm_domain = NULL_DOMAIN2D
+    atm_on = .false.
+    if (allocated(lon_local_atm)) deallocate(lon_local_atm)
+    if (allocated(lat_local_atm)) deallocate(lat_local_atm)
+  endif ; endif
+  if (PRESENT(unset_Ocean)) then ; if (unset_Ocean) then
+    if (fail_if_not_set .and. .not.ocn_on) call mpp_error(FATAL, &
+      "data_override_unset_domains attempted to work on an Ocn_domain that had not been set.")
+    ocn_domain = NULL_DOMAIN2D
+    ocn_on = .false.
+    if (allocated(lon_local_ocn)) deallocate(lon_local_ocn)
+    if (allocated(lat_local_ocn)) deallocate(lat_local_ocn)
+  endif ; endif
+  if (PRESENT(unset_Land)) then ; if (unset_Land) then
+    if (fail_if_not_set .and. .not.lnd_on) call mpp_error(FATAL, &
+      "data_override_unset_domains attempted to work on a Land_domain that had not been set.")
+    lnd_domain = NULL_DOMAIN2D
+    lnd_on = .false.
+    if (allocated(lon_local_lnd)) deallocate(lon_local_lnd)
+    if (allocated(lat_local_lnd)) deallocate(lat_local_lnd)
+  endif ; endif
+  if (PRESENT(unset_Ice)) then ; if (unset_Ice) then
+    if (fail_if_not_set .and. .not.ice_on) call mpp_error(FATAL, &
+      "data_override_unset_domains attempted to work on an Ice_domain that had not been set.")
+    ice_domain = NULL_DOMAIN2D
+    ice_on = .false.
+    if (allocated(lon_local_ice)) deallocate(lon_local_ice)
+    if (allocated(lat_local_ice)) deallocate(lat_local_ice)
+  endif ; endif
+
+end subroutine data_override_unset_domains
+! </SUBROUTINE>
+!===============================================================================================
+
+
 subroutine check_grid_sizes(domain_name, Domain, nlon, nlat)
 character(len=12), intent(in) :: domain_name
 type (domain2d),   intent(in) :: Domain

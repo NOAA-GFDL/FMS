@@ -43,7 +43,7 @@ MODULE diag_util_mod
        & write_field_meta_data, done_meta_data
   USE diag_grid_mod, ONLY: get_local_indexes
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, mpp_pe, mpp_root_pe, lowercase, fms_error_handler,&
-       & write_version_number
+       & write_version_number, do_cf_compliance
   USE fms_io_mod, ONLY: get_tile_string, return_domain, string, get_instance_filename
   USE mpp_domains_mod,ONLY: domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
        & OPERATOR(.NE.), OPERATOR(.EQ.), mpp_modify_domain, mpp_get_domain_components,&
@@ -1581,14 +1581,14 @@ CONTAINS
        CASE ( 'maximum', 'max' )
           output_fields(out_num)%time_max = .TRUE.
           l1 = LEN_TRIM(output_fields(out_num)%output_name)
-          IF ( output_fields(out_num)%output_name(l1-2:l1) /= 'max' ) &
+          IF ( lowercase(trim(adjustl(output_fields(out_num)%output_name(l1-2:l1)))) /= 'max' ) &
                output_fields(out_num)%output_name = TRIM(output_name)//'_max'
           method_selected = method_selected+1
           t_method = 'max'
        CASE ( 'minimum', 'min' )
           output_fields(out_num)%time_min = .TRUE.
           l1 = LEN_TRIM(output_fields(out_num)%output_name)
-          IF ( output_fields(out_num)%output_name(l1-2:l1) /= 'min' )&
+          IF ( lowercase(trim(adjustl(output_fields(out_num)%output_name(l1-2:l1)))) /= 'min' )&
                & output_fields(out_num)%output_name = TRIM(output_name)//'_min'
           method_selected = method_selected+1
           t_method = 'min'
@@ -2000,10 +2000,17 @@ CONTAINS
             & cart_name, dir, edges, Domain, domainU, DATA)
        CALL get_diag_axis( time_bounds_id(1), timeb_name, timeb_units, timeb_longname,&
             & cart_name, dir, edges, Domain, domainU, DATA)
-       files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
-            & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
-            & TRIM(time_unit_list(files(file)%time_units)),&
-            & TRIM(time_name)//' axis boundaries', pack=pack_size)
+       IF ( do_cf_compliance() ) THEN
+          ! CF Compliance requires the unit on the _bnds axis is the same as 'time'
+          files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
+               & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
+               & TRIM(time_unit_list(files(file)%time_units)),&
+               & TRIM(time_name)//' axis boundaries', pack=pack_size)
+       ELSE
+          files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
+               & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
+               & time_units, TRIM(time_name)//' axis boundaries', pack=pack_size)
+       END IF
     END IF
     ! Let lower levels know that all meta data has been sent
     CALL done_meta_data(files(file)%file_unit)
