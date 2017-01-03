@@ -34,7 +34,7 @@ MODULE diag_data_mod
   ! </DESCRIPTION>
 
   USE time_manager_mod, ONLY: time_type
-  USE mpp_domains_mod, ONLY: domain1d, domain2d
+  USE mpp_domains_mod, ONLY: domain1d, domain2d, domainUG
   USE mpp_io_mod, ONLY: fieldtype
   USE fms_mod, ONLY: WARNING, write_version_number
 #ifdef use_netCDF
@@ -138,6 +138,7 @@ MODULE diag_data_mod
   TYPE diag_fieldtype
      TYPE(fieldtype) :: Field
      TYPE(domain2d) :: Domain
+     TYPE(domainUG) :: DomainU
      REAL :: miss, miss_pack
      LOGICAL :: miss_present, miss_pack_present
      INTEGER :: tile_count
@@ -295,6 +296,11 @@ MODULE diag_data_mod
      TYPE(diag_fieldtype):: f_avg_start, f_avg_end, f_avg_nitems, f_bounds
      TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
      INTEGER :: num_attributes
+!----------
+!ug support
+     logical(INT_KIND) :: use_domainUG = .false.
+     logical(INT_KIND) :: use_domain2D = .false.
+!----------
   END TYPE file_type
   ! </TYPE>
 
@@ -577,6 +583,7 @@ MODULE diag_data_mod
      TYPE(domain1d) :: Domain
      TYPE(domain2d) :: Domain2
      TYPE(domain2d), dimension(MAX_SUBAXES) :: subaxis_domain2
+     type(domainUG) :: DomainUG
      CHARACTER(len=128) :: aux
      INTEGER :: tile_count
      TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL

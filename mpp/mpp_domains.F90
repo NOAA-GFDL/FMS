@@ -222,7 +222,6 @@ module mpp_domains_mod
   public :: mpp_domain_UG_is_tile_root_pe
   public :: mpp_deallocate_domainUG
   public :: mpp_get_io_domain_UG_layout
-  public :: mpp_compare_UG_domains
 !----------
 
   integer, parameter :: NAME_LENGTH = 64
@@ -2313,11 +2312,13 @@ end interface
   interface operator(.EQ.)
      module procedure mpp_domain1D_eq
      module procedure mpp_domain2D_eq
+     module procedure mpp_domainUG_eq
   end interface
 
   interface operator(.NE.)
      module procedure mpp_domain1D_ne
      module procedure mpp_domain2D_ne
+     module procedure mpp_domainUG_ne
   end interface
 
   ! <INTERFACE NAME="mpp_get_compute_domain">

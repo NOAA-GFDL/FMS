@@ -710,70 +710,38 @@ subroutine mpp_deallocate_domainUG(domain)
     return
 end subroutine mpp_deallocate_domainUG
 
-function mpp_compare_UG_domains(domain1, &
-                                domain2) &
-                                result(domains_are_equal)
+  !###################################################################
+  !> Overload the .eq. for UG
+  function mpp_domainUG_eq( a, b )
+    logical                    :: mpp_domainUG_eq
+    type(domainUG), intent(in) :: a, b
+    logical                    :: areAssociated
 
-   !Inputs/Outputs
-    type(domainUG),intent(in) :: domain1 !<An unstructured mpp domain.
-    type(domainUG),intent(in) :: domain2 !<An unstructured mpp domain.
-    logical(INT_KIND)         :: domains_are_equal
-
-    if (associated(domain1%SG_domain) .and. associated(domain2%SG_domain)) then
-        if (domain1%SG_domain .ne. domain2%SG_domain) then
-            domains_are_equal = .false.
-            return
-        endif
-    elseif (associated(domain1%SG_domain) .and. .not. &
-            associated(domain2%SG_domain)) then
-        domains_are_equal = .false.
-        return
-    elseif (.not. associated(domain1%SG_domain) .and. &
-            associated(domain2%SG_domain)) then
-        domains_are_equal = .false.
-        return
-    endif
-
-    if (associated(domain1%list) .and. associated(domain2%list)) then
-        if (size(domain1%list) .ne. size(domain2%list)) then
-            domains_are_equal = .false.
-            return
-        endif
-    elseif (associated(domain1%list) .and. .not. associated(domain2%list)) then
-        domains_are_equal = .false.
-        return
-    elseif (.not. associated(domain1%list) .and. associated(domain2%list)) then
-        domains_are_equal = .false.
-        return
-    endif
-
-    if (associated(domain1%grid_index) .and. associated(domain2%grid_index)) then
-        if (size(domain1%grid_index) .ne. size(domain2%grid_index)) then
-            domains_are_equal = .false.
-            return
-        endif
-    elseif (associated(domain1%grid_index) .and. .not. associated(domain2%grid_index)) then
-        domains_are_equal = .false.
-        return
-    elseif (.not. associated(domain1%grid_index) .and. associated(domain2%grid_index)) then
-        domains_are_equal = .false.
-        return
-    endif
-
-    if (domain1%pe .ne. domain2%pe .or. &
-        domain1%pos .ne. domain2%pos .or. &
-        domain1%ntiles .ne. domain2%ntiles .or. &
-        domain1%tile_id .ne. domain2%tile_id .or. &
-        domain1%tile_root_pe .ne. domain2%tile_root_pe) then
-        domains_are_equal = .false.
-        return
-    endif
-
-    domains_are_equal = .true.
-
+    mpp_domainUG_eq = ( a%compute%begin.EQ.b%compute%begin .AND. &
+         a%compute%end  .EQ.b%compute%end   .AND. &
+         a%global%begin .EQ.b%global%begin  .AND. &
+         a%global%end   .EQ.b%global%end    .AND. &
+         a%SG2UG%nsend  .EQ.b%SG2UG%nsend   .AND. &
+         a%SG2UG%nrecv  .EQ.b%SG2UG%nrecv   .AND. &    
+         a%UG2SG%nsend  .EQ.b%UG2SG%nsend   .AND. &    
+         a%UG2SG%nrecv  .EQ.b%UG2SG%nrecv         &
+    )
+    
+    areAssociated = ASSOCIATED(a%SG_domain) .AND. ASSOCIATED(b%SG_domain)
+   if (areAssociated .AND. mpp_domainUG_eq) then
+       mpp_domainUG_eq = mpp_domain2D_eq (a%SG_domain , b%SG_domain) 
+   endif
     return
-end function mpp_compare_UG_domains
+  end function mpp_domainUG_eq
 
+  !> Overload the .ne. for UG
+  function mpp_domainUG_ne( a, b )
+    logical                    :: mpp_domainUG_ne
+    type(domainUG), intent(in) :: a, b
+
+    mpp_domainUG_ne = .NOT. ( a.EQ.b )
+    return
+  end function mpp_domainUG_ne
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
