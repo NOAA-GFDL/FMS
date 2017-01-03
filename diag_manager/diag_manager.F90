@@ -222,6 +222,12 @@ MODULE diag_manager_mod
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
 #endif
 
+!----------
+!ug support
+  use diag_axis_mod, only: DIAG_AXIS_2DDOMAIN
+  use diag_axis_mod, only: DIAG_AXIS_UGDOMAIN
+!----------
+
   IMPLICIT NONE
 
   PRIVATE
@@ -525,6 +531,10 @@ CONTAINS
     LOGICAL :: mask_variant1, verbose1
     LOGICAL :: cm_found
     CHARACTER(len=128) :: msg
+!----------
+!ug support
+    integer :: domain_type
+!----------
 
     ! get stdout unit number
     stdout_unit = stdout()
@@ -542,8 +552,13 @@ CONTAINS
     END IF
 
     IF ( PRESENT(err_msg) ) err_msg = ''
-!> Check that the axes are compatable with eachother
-     CALL axis_compatible_check(axes,field_name)
+
+!----------
+!ug support
+   !Check that the axes are compatable with eachother
+    domain_type = axis_compatible_check(axes,field_name)
+!----------
+
     ! Call register static, then set static back to false
     register_diag_field_array = register_static_field(module_name, field_name, axes,&
          & long_name, units, missing_value, range, mask_variant1, standard_name=standard_name,&
@@ -618,6 +633,35 @@ CONTAINS
                 files(file_num)%local = .TRUE.
              END IF
           END IF
+
+!----------
+!ug support
+         !Check that the domain associated with the inputted field matches
+         !the domain associated output files to which it will be written.
+          if (domain_type .eq. DIAG_AXIS_2DDOMAIN) then
+              if (files(file_num)%use_domainUG) then
+                  call error_mesg("diag_manager_mod::register_diag_field", &
+                                  "Diagnostics living on a structured grid" &
+                                  //" and an unstructured grid cannot exist" &
+                                  //" in the same file (" &
+                                  //trim(files(file_num)%name)//")", &
+                                  FATAL)
+              elseif (.not. files(file_num)%use_domain2D) then
+                  files(file_num)%use_domain2D = .true.
+              endif
+          elseif (domain_type .eq. DIAG_AXIS_UGDOMAIN) then
+              if (files(file_num)%use_domain2D) then
+                  call error_mesg("diag_manager_mod::register_diag_field", &
+                                  "Diagnostics living on a structured grid" &
+                                  //" and an unstructured grid cannot exist" &
+                                  //" in the same file (" &
+                                  //trim(files(file_num)%name)//")", &
+                                  FATAL)
+              elseif (.not. files(file_num)%use_domainUG) then
+                  files(file_num)%use_domainUG = .true.
+              endif
+          endif
+!----------
 
           ! Need to sync start_time of file with init time of model
           ! and close_time calculated with the duration of the file.

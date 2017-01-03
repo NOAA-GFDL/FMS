@@ -42,6 +42,13 @@ MODULE diag_axis_mod
   ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
+!----------
+!ug support
+  integer(INT_KIND),parameter,public :: DIAG_AXIS_NODOMAIN = 0
+  integer(INT_KIND),parameter,public :: DIAG_AXIS_2DDOMAIN = 1
+  integer(INT_KIND),parameter,public :: DIAG_AXIS_UGDOMAIN = 2
+!----------
+
   ! counter of number of axes defined
   INTEGER, DIMENSION(:), ALLOCATABLE :: num_subaxes
   INTEGER :: num_def_axes = 0
@@ -857,33 +864,85 @@ CONTAINS
   !     Checks if the axes are compatible 
   !   </DESCRIPTION>
   !   <IN NAME="id" TYPE="INTEGER">Axis ID</IN>
-  SUBROUTINE axis_compatible_check(id,varname)
-    INTEGER, INTENT(in), DIMENSION(:) :: id !<The array of axis IDs
-    CHARACTER(*), INTENT(IN), OPTIONAL :: varname !< The name of the variable
-    LOGICAL :: XorY=.false. !> \paran XorY set to true if X or Y is found as a cart_name
-    LOGICAL :: UG=.false. !> \param UG get to true if U is found as a cart_name
-    INTEGER :: n !> \param n Looping index
-    
-    if (size(id) == 1) then 
-          return !> If there is only 1 axis ID, then this routine should return
-    endif
-     do n=1,size(id) !> Check for the cart_name of the axis
-          CALL valid_id_check(id(n), 'axis_compatible_check')
-          if (Axes(id(n))%cart_name == 'X' .OR. Axes(id(n))%cart_name == 'Y' ) XorY=.true.
-          if (Axes(id(n))%cart_name == 'U') UG = .true.
-     enddo
-     IF (UG .and. XorY) then !> If U and (X or Y) are found, return a fatal
-          if (present(varname)) then
-           call error_mesg('axis_compatible_check',"Can not use an unstructured grid with a "//&
-                          &"horizontal cartesian coordinate for the field "//trim(varname),FATAL)
-          else
-           call error_mesg('axis_compatible_check',"Can not use an unstructured grid with a horizontal "//&
-                           &"cartesian coordinate",FATAL)
-          endif
-     ENDIF
-          
-  END SUBROUTINE axis_compatible_check
+!----------
+!ug support
+  function axis_compatible_check(id,varname) result(domain_type)
 
+   !Inputs/Outputs
+    integer,dimension(:),intent(in)  :: id          !<The array of axis IDs
+    character(*),intent(in),optional :: varname     !<The name of the variable
+    integer(INT_KIND)                :: domain_type !<DIAG_AXIS_NODOMAIN = no domain.
+                                                    !<DIAG_AXIS_2DDOMAIN = structured domain.
+                                                    !<DIAG_AXIS_UGDOMAIN = unstructured domain.
+
+   !Local variables
+    logical :: XorY          !<XorY set to true if X or Y is found as a cart_name.
+    logical :: UG            !<UG set to true if U is found as a cart_name.
+    integer :: n             !<Looping index.
+    logical :: uses_domain2D !<True if an axis is associated with a 2D domain.
+    logical :: uses_domainUG !<True if an axis is associated with an unstructured domain.
+
+   !Initialize flags.
+    XorY = .false.
+    UG = .false.
+    uses_domain2D = .false.
+    uses_domainUG = .false.
+
+   !Make sure that valid set of axes was passed, and determine the domain-type
+   !associated with the axes.
+    do n = 1,size(id)
+        call valid_id_check(id(n), &
+                            "axis_compatible_check")
+        if (Axes(id(n))%cart_name .eq. "X" .or. &
+            Axes(id(n))%cart_name .eq. "Y") then
+            XorY = .true.
+        elseif (Axes(id(n))%cart_name .eq. "U") then
+            UG = .true.
+        endif
+        if (Axes(id(n))%Domain2 .ne. null_domain2d) then
+            uses_domain2D = .true.
+        elseif (Axes(id(n))%DomainUG .ne. null_domainUG) then
+            uses_domainUG = .true.
+        endif
+    enddo
+    if (UG .and. XorY) then
+        if (present(varname)) then
+            call error_mesg("axis_compatible_check", &
+                            "Can not use an unstructured grid with a "// &
+                            "horizontal cartesian coordinate for the field " &
+                            //trim(varname), &
+                            FATAL)
+        else
+            call error_mesg("axis_compatible_check", &
+                            "Can not use an unstructured grid with a horizontal "// &
+                            "cartesian coordinate", &
+                            FATAL)
+        endif
+    endif
+    if (uses_domain2D .and. uses_domainUG) then
+        if (present(varname)) then
+            call error_mesg("axis_compatible_check", &
+                            "Can not use an unstructured grid with a"// &
+                            "structured grid for the field "//trim(varname), &
+                            FATAL)
+        else
+            call error_mesg("axis_compatible_check", &
+                            "Can not use an unstructured grid with a"// &
+                            "structured grid.", &
+                            FATAL)
+        endif
+    endif
+    if (uses_domain2D) then
+        domain_type = DIAG_AXIS_2DDOMAIN
+    elseif (uses_domainUG) then
+        domain_type = DIAG_AXIS_UGDOMAIN
+    else
+        domain_type = DIAG_AXIS_NODOMAIN
+    endif
+
+    return
+  end function axis_compatible_check
+!----------
 
   ! </FUNCTION>
 

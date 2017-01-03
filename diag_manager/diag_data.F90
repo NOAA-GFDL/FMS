@@ -296,6 +296,11 @@ MODULE diag_data_mod
      TYPE(diag_fieldtype):: f_avg_start, f_avg_end, f_avg_nitems, f_bounds
      TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
      INTEGER :: num_attributes
+!----------
+!ug support
+     logical(INT_KIND) :: use_domainUG = .false.
+     logical(INT_KIND) :: use_domain2D = .false.
+!----------
   END TYPE file_type
   ! </TYPE>
 
