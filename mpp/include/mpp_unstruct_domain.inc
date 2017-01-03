@@ -171,6 +171,7 @@
 
 !----------
 !ug support
+     UG_domain%npes_io_group = npes_io_group
      UG_domain%io_layout = ngroup
 !----------
 
@@ -715,7 +716,28 @@ end subroutine mpp_deallocate_domainUG
   function mpp_domainUG_eq( a, b )
     logical                    :: mpp_domainUG_eq
     type(domainUG), intent(in) :: a, b
-    logical                    :: areAssociated
+
+    if (associated(a%SG_domain) .and. associated(b%SG_domain)) then
+        if (a%SG_domain .ne. b%SG_domain) then
+            mpp_domainUG_eq = .false.
+            return
+        endif
+    elseif (associated(a%SG_domain) .and. .not. associated(b%SG_domain)) then
+        mpp_domainUG_eq = .false.
+        return
+    elseif (.not. associated(a%SG_domain) .and. associated(b%SG_domain)) then
+        mpp_domainUG_eq = .false.
+        return
+    endif
+
+    mpp_domainUG_eq = (a%npes_io_group .EQ. b%npes_io_group) .AND. &
+                      (a%pos .EQ. b%pos)                     .AND. &
+                      (a%ntiles .EQ. b%ntiles)               .AND. &
+                      (a%tile_id .EQ. b%tile_id)             .AND. &
+                      (a%tile_npes .EQ. b%tile_npes)         .AND. &
+                      (a%tile_root_pe .EQ. b%tile_root_pe) 
+
+    if(.not. mpp_domainUG_eq) return
 
     mpp_domainUG_eq = ( a%compute%begin.EQ.b%compute%begin .AND. &
          a%compute%end  .EQ.b%compute%end   .AND. &
@@ -727,10 +749,6 @@ end subroutine mpp_deallocate_domainUG
          a%UG2SG%nrecv  .EQ.b%UG2SG%nrecv         &
     )
     
-    areAssociated = ASSOCIATED(a%SG_domain) .AND. ASSOCIATED(b%SG_domain)
-   if (areAssociated .AND. mpp_domainUG_eq) then
-       mpp_domainUG_eq = mpp_domain2D_eq (a%SG_domain , b%SG_domain) 
-   endif
     return
   end function mpp_domainUG_eq
 

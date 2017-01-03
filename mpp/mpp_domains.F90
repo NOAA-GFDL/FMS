@@ -277,6 +277,7 @@ module mpp_domains_mod
      integer :: tile_id
      integer :: tile_root_pe
      integer :: tile_npes
+     integer :: npes_io_group
      integer(INT_KIND) :: io_layout
   end type domainUG
 

@@ -106,8 +106,7 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
                                    //" mpp domain.")
                 endif
                 if (associated(domain)) then
-                    if (.not. mpp_compare_UG_domains(domain, &
-                                                     fileObj%axes(j)%domain_ug)) then
+                    if (.not. (domain .EQ. fileObj%axes(j)%domain_ug)) then
                         call mpp_error(FATAL, &
                                        "fms_io_unstructured_save_restart:" &
                                        //" two axes registered to same" &
@@ -129,8 +128,7 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
                                    //" mpp domain.")
                 endif
                 if (associated(domain)) then
-                    if (.not. mpp_compare_UG_domains(domain, &
-                                                     fileObj%axes(j)%domain_ug)) then
+                    if (.not. (domain .EQ. fileObj%axes(j)%domain_ug)) then
                         call mpp_error(FATAL, &
                                        "fms_io_unstructured_save_restart:" &
                                        //" two axes registered to same" &
@@ -155,8 +153,7 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
                            //" was not registered with an unstructured" &
                            //" mpp domain.")
         endif
-        if (.not. mpp_compare_UG_domains(domain, &
-                                         fileObj%var(j)%domain_ug)) then
+        if (.not. (domain .EQ. fileObj%var(j)%domain_ug)) then
             call mpp_error(FATAL, &
                            "fms_io_unstructured_save_restart:" &
                            //" the unstructured domain associated with" &

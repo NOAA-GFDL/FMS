@@ -114,7 +114,6 @@ use platform_mod, only: r8_kind
 !ug support
 use mpp_parameter_mod, only: COMM_TAG_2
 use mpp_domains_mod,   only: mpp_get_UG_io_domain
-use mpp_domains_mod,   only: mpp_compare_UG_domains
 use mpp_domains_mod,   only: mpp_domain_UG_is_tile_root_pe
 use mpp_domains_mod,   only: mpp_get_UG_domain_npes
 use mpp_domains_mod,   only: mpp_get_UG_domain_pelist
