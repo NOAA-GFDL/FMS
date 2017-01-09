@@ -474,7 +474,8 @@ CONTAINS
   !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL">Standard name of field</IN>
   !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIONAL" />
   FUNCTION write_field_meta_data ( file_unit, name, axes, units, long_name, range, pack, mval,&
-       & avg_name, time_method, standard_name, interp_method, attributes, num_attributes) result ( Field )
+       & avg_name, time_method, standard_name, interp_method, attributes, num_attributes,     &
+       & use_UGdomain) result ( Field )
     INTEGER, INTENT(in) :: file_unit, axes(:)
     CHARACTER(len=*), INTENT(in) :: name, units, long_name
     REAL, OPTIONAL, INTENT(in) :: RANGE(2), mval
@@ -483,6 +484,7 @@ CONTAINS
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method
     TYPE(diag_atttype), DIMENSION(:), _ALLOCATABLE, OPTIONAL, INTENT(in) :: attributes
     INTEGER, OPTIONAL, INTENT(in) :: num_attributes
+    LOGICAL, OPTIONAL, INTENT(in) :: use_UGdomain
 
     CHARACTER(len=128) :: standard_name2
     CHARACTER(len=1280) :: att_str
@@ -496,6 +498,7 @@ CONTAINS
     INTEGER :: i, indexx, num, ipack, np, att_len
     LOGICAL :: use_range
     INTEGER :: axis_indices(SIZE(axes))
+    logical :: use_UGdomain_local
 
     !---- Initialize err_msg to bank ----
     err_msg = ''
@@ -507,6 +510,9 @@ CONTAINS
     ELSE
        standard_name2 = 'none'
     END IF
+
+    use_UGdomain_local = .false.
+    if(present(use_UGdomain)) use_UGdomain_local = use_UGdomain
 
     num = SIZE(axes(:))
     ! <ERROR STATUS="FATAL">number of axes < 1</ERROR>
@@ -531,7 +537,7 @@ CONTAINS
     END DO
 
     !  Create coordinate attribute
-    IF ( num >= 2 ) THEN
+    IF ( num >= 2 .OR. (num==1 .and. use_UGdomain_local) ) THEN
        coord_att = ' '
        DO i = 1, num
           aux_axes(i) = get_axis_aux(axes(i))

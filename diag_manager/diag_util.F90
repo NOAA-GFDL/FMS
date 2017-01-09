@@ -1936,7 +1936,8 @@ CONTAINS
                   & standard_name = input_fields(input_field_num)%standard_name,&
                   & interp_method = input_fields(input_field_num)%interp_method,&
                   & attributes=output_fields(field_num)%attributes,&
-                  & num_attributes=output_fields(field_num)%num_attributes)
+                  & num_attributes=output_fields(field_num)%num_attributes,&
+                  & use_UGdomain=files(file)%use_domainUG)
           ELSE
              output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit,&
                   & output_fields(field_num)%output_name, axes(1:num_axes),&
@@ -1947,7 +1948,8 @@ CONTAINS
                   & time_method=output_fields(field_num)%time_method,&
                   & standard_name = input_fields(input_field_num)%standard_name,&
                   & attributes=output_fields(field_num)%attributes,&
-                  & num_attributes=output_fields(field_num)%num_attributes)
+                  & num_attributes=output_fields(field_num)%num_attributes,&
+                  & use_UGdomain=files(file)%use_domainUG)
           END IF
           ! NEED TO TAKE CARE OF TIME AVERAGING INFO TOO BOTH CASES
        ELSE
@@ -1962,7 +1964,8 @@ CONTAINS
                   & standard_name = input_fields(input_field_num)%standard_name,&
                   & interp_method = input_fields(input_field_num)%interp_method,&
                   & attributes=output_fields(field_num)%attributes,&
-                  & num_attributes=output_fields(field_num)%num_attributes)
+                  & num_attributes=output_fields(field_num)%num_attributes,&
+                  & use_UGdomain=files(file)%use_domainUG)
           ELSE
              output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit,&
                   & output_fields(field_num)%output_name, axes(1:num_axes),&
@@ -1973,7 +1976,8 @@ CONTAINS
                   & time_method=output_fields(field_num)%time_method,&
                   & standard_name = input_fields(input_field_num)%standard_name,&
                   & attributes=output_fields(field_num)%attributes,&
-                  & num_attributes=output_fields(field_num)%num_attributes)
+                  & num_attributes=output_fields(field_num)%num_attributes,&
+                  & use_UGdomain=files(file)%use_domainUG)
           END IF
        END IF
     END DO

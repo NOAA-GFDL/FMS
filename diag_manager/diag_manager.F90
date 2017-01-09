@@ -537,10 +537,6 @@ CONTAINS
     LOGICAL :: mask_variant1, verbose1
     LOGICAL :: cm_found
     CHARACTER(len=128) :: msg
-!----------
-!ug support
-    integer :: domain_type
-!----------
 
     ! get stdout unit number
     stdout_unit = stdout()
@@ -558,12 +554,6 @@ CONTAINS
     END IF
 
     IF ( PRESENT(err_msg) ) err_msg = ''
-
-!----------
-!ug support
-   !Check that the axes are compatable with eachother
-    domain_type = axis_compatible_check(axes,field_name)
-!----------
 
     ! Call register static, then set static back to false
     register_diag_field_array = register_static_field(module_name, field_name, axes,&
@@ -639,35 +629,6 @@ CONTAINS
                 files(file_num)%local = .TRUE.
              END IF
           END IF
-
-!----------
-!ug support
-         !Check that the domain associated with the inputted field matches
-         !the domain associated output files to which it will be written.
-          if (domain_type .eq. DIAG_AXIS_2DDOMAIN) then
-              if (files(file_num)%use_domainUG) then
-                  call error_mesg("diag_manager_mod::register_diag_field", &
-                                  "Diagnostics living on a structured grid" &
-                                  //" and an unstructured grid cannot exist" &
-                                  //" in the same file (" &
-                                  //trim(files(file_num)%name)//")", &
-                                  FATAL)
-              elseif (.not. files(file_num)%use_domain2D) then
-                  files(file_num)%use_domain2D = .true.
-              endif
-          elseif (domain_type .eq. DIAG_AXIS_UGDOMAIN) then
-              if (files(file_num)%use_domain2D) then
-                  call error_mesg("diag_manager_mod::register_diag_field", &
-                                  "Diagnostics living on a structured grid" &
-                                  //" and an unstructured grid cannot exist" &
-                                  //" in the same file (" &
-                                  //trim(files(file_num)%name)//")", &
-                                  FATAL)
-              elseif (.not. files(file_num)%use_domainUG) then
-                  files(file_num)%use_domainUG = .true.
-              endif
-          endif
-!----------
 
           ! Need to sync start_time of file with init time of model
           ! and close_time calculated with the duration of the file.
@@ -764,10 +725,7 @@ CONTAINS
     INTEGER :: tile, file_num
     LOGICAL :: mask_variant1, dynamic1, allow_log
     CHARACTER(len=128) :: msg
-!----------
-!ug support
-    integer :: domain_type
-!----------
+    INTEGER :: domain_type
 
     ! Fatal error if the module has not been initialized.
     IF ( .NOT.module_is_initialized ) THEN
@@ -807,6 +765,9 @@ CONTAINS
     ELSE
        allow_log = .TRUE.
     END IF
+
+   !Check that the axes are compatable with eachother
+    domain_type = axis_compatible_check(axes,field_name)
 
     ! Namelist do_diag_field_log is by default false.  Thus to log the
     ! registration of the data field, but the OPTIONAL parameter
@@ -973,9 +934,6 @@ CONTAINS
        input_fields(field)%size(j) = siz(j)
     END DO
 
-   !Determine the domain type associated with the axes.
-    domain_type = axis_compatible_check(axes,field_name)
-
     local_siz = 1
     local_start = 1
     local_end= 1
@@ -995,6 +953,35 @@ CONTAINS
        ! reset the number of diurnal samples to 1 if the field is static (and, therefore,
        ! doesn't vary diurnally)
        IF ( .NOT.dynamic1 ) output_fields(out_num)%n_diurnal_samples = 1
+
+       !Check that the domain associated with the inputted field matches
+       !the domain associated output files to which it will be written.
+       file_num = output_fields(out_num)%output_file
+       if (domain_type .eq. DIAG_AXIS_2DDOMAIN) then
+           if (files(file_num)%use_domainUG) then
+               call error_mesg("diag_manager_mod::register_static_field", &
+                               "Diagnostics living on a structured grid" &
+                               //" and an unstructured grid cannot exist" &
+                               //" in the same file (" &
+                               //trim(files(file_num)%name)//")", &
+                               FATAL)
+           elseif (.not. files(file_num)%use_domain2D) then
+               files(file_num)%use_domain2D = .true.
+           endif
+       elseif (domain_type .eq. DIAG_AXIS_UGDOMAIN) then
+           if (files(file_num)%use_domain2D) then
+               call error_mesg("diag_manager_mod::register_static_field", &
+                               "Diagnostics living on a structured grid" &
+                               //" and an unstructured grid cannot exist" &
+                               //" in the same file (" &
+                               //trim(files(file_num)%name)//")", &
+                               FATAL)
+           elseif (.not. files(file_num)%use_domainUG) then
+               files(file_num)%use_domainUG = .true.
+           endif
+       endif
+
+
        !  if local_output (size of output_fields does NOT equal size of input_fields)
        IF ( output_fields(out_num)%reduced_k_range ) THEN
           CALL get_subfield_vert_size(axes, out_num)
