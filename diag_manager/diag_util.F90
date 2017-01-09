@@ -499,6 +499,8 @@ CONTAINS
            gend_indx(i) = global_axis_size
            output_fields(outnum)%output_grid%subaxes(i) = axes(i)
            vert_dim_num = 2
+           start(vert_dim_num) = start(3)
+           end(vert_dim_num) = end(3)
 !----------
        CASE ('Z')
           ! <ERROR STATUS="FATAL">wrong values in vertical axis of region</ERROR>
