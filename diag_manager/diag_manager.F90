@@ -764,6 +764,10 @@ CONTAINS
     INTEGER :: tile, file_num
     LOGICAL :: mask_variant1, dynamic1, allow_log
     CHARACTER(len=128) :: msg
+!----------
+!ug support
+    integer :: domain_type
+!----------
 
     ! Fatal error if the module has not been initialized.
     IF ( .NOT.module_is_initialized ) THEN
@@ -969,6 +973,9 @@ CONTAINS
        input_fields(field)%size(j) = siz(j)
     END DO
 
+   !Determine the domain type associated with the axes.
+    domain_type = axis_compatible_check(axes,field_name)
+
     local_siz = 1
     local_start = 1
     local_end= 1
@@ -992,12 +999,25 @@ CONTAINS
        IF ( output_fields(out_num)%reduced_k_range ) THEN
           CALL get_subfield_vert_size(axes, out_num)
 
-          local_start(3) = output_fields(out_num)%output_grid%l_start_indx(3)
-          local_end(3)   = output_fields(out_num)%output_grid%l_end_indx(3)
-          local_siz(3)   = local_end(3) - local_start(3) +1
-
-          ALLOCATE(output_fields(out_num)%buffer(siz(1), siz(2), local_siz(3),&
-               & output_fields(out_num)%n_diurnal_samples))
+!----------
+!ug support
+          if (domain_type .eq. DIAG_AXIS_UGDOMAIN) then
+              local_start(2) = output_fields(out_num)%output_grid%l_start_indx(2)
+              local_end(2) = output_fields(out_num)%output_grid%l_end_indx(2)
+              local_siz(2) = local_end(2) - local_start(2) + 1
+              allocate(output_fields(out_num)%buffer(siz(1),local_siz(2),local_siz(3), &
+                                                     output_fields(out_num)%n_diurnal_samples))
+              output_fields(out_num)%region_elements = siz(1)*local_siz(2)*local_siz(3)
+          else
+              local_start(3) = output_fields(out_num)%output_grid%l_start_indx(3)
+              local_end(3) = output_fields(out_num)%output_grid%l_end_indx(3)
+              local_siz(3) = local_end(3) - local_start(3) + 1
+              allocate(output_fields(out_num)%buffer(siz(1),siz(2),local_siz(3), &
+                                                     output_fields(out_num)%n_diurnal_samples))
+              output_fields(out_num)%region_elements = siz(1)*siz(2)*local_siz(3)
+          endif
+          output_fields(out_num)%total_elements = siz(1)*siz(2)*siz(3)
+!----------
 
           IF ( output_fields(out_num)%time_max ) THEN
              output_fields(out_num)%buffer = MAX_VALUE
@@ -1006,8 +1026,6 @@ CONTAINS
           ELSE
              output_fields(out_num)%buffer = EMPTY
           END IF
-          output_fields(out_num)%region_elements = siz(1)*siz(2)*local_siz(3)
-          output_fields(out_num)%total_elements  = siz(1)*siz(2)*siz(3)
        ELSE IF ( output_fields(out_num)%local_output ) THEN
           IF ( SIZE(axes(:)) .LE. 1 ) THEN
              ! <ERROR STATUS="FATAL">axes of <field_name> must >= 2 for local output</ERROR>
@@ -1091,7 +1109,14 @@ CONTAINS
        END IF
 
        IF ( output_fields(out_num)%reduced_k_range ) THEN
-          output_fields(out_num)%axes(3) = output_fields(out_num)%output_grid%subaxes(3)
+!----------
+!ug support
+          if (domain_type .eq. DIAG_AXIS_UGDOMAIN) then
+              output_fields(out_num)%axes(2) = output_fields(out_num)%output_grid%subaxes(2)
+          else
+              output_fields(out_num)%axes(3) = output_fields(out_num)%output_grid%subaxes(3)
+          endif
+!----------
        END IF
 
        ! Initialize a time variable used in an error check

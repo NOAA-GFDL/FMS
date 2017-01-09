@@ -503,6 +503,14 @@ CONTAINS
            end(vert_dim_num) = end(3)
 !----------
        CASE ('Z')
+!----------
+!ug support
+          if (i .ne. vert_dim_num) then
+              call error_mesg("diag_util_mod::get_subfield_vert_size",&
+                              "i should equal vert_dim_num for z axis", &
+                              FATAL)
+          endif
+!----------
           ! <ERROR STATUS="FATAL">wrong values in vertical axis of region</ERROR>
           IF( start(i)*END(i) < 0. ) CALL error_mesg('diag_util_mod::get_subfield_vert_size',&
                & 'wrong values in vertical axis of region',FATAL)
@@ -518,22 +526,13 @@ CONTAINS
 
              ALLOCATE(subaxis_z(gstart_indx(i):gend_indx(i)))
              subaxis_z=global_depth(gstart_indx(i):gend_indx(i))
-             output_fields(outnum)%output_grid%subaxes(i) =&
-                  & diag_subaxes_init(axes(i),subaxis_z, gstart_indx(i),gend_indx(i))
+             output_fields(outnum)%output_grid%subaxes(i) = &
+                    diag_subaxes_init(axes(i),subaxis_z, gstart_indx(i),gend_indx(i))
              DEALLOCATE(subaxis_z,global_depth)
           ELSE !   vertical axis is the same as global vertical axis
              gstart_indx(i) = 1
              gend_indx(i) = global_axis_size
              output_fields(outnum)%output_grid%subaxes(i) = axes(i)
-             ! <ERROR STATUS="FATAL">i should equal 3 for z axis</ERROR>
-!----------
-!ug support
-             if (i .ne. vert_dim_num) then
-                 call error_mesg("diag_util_mod::get_subfield_vert_size",&
-                                 "i should equal vert_dim_num for z axis", &
-                                 FATAL)
-             endif
-!----------
           END IF
        CASE default
           ! <ERROR STATUS="FATAL">Wrong axis_cart</ERROR>
