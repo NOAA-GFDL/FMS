@@ -522,6 +522,10 @@ MODULE diag_data_mod
      TYPE(time_type) :: Time_of_prev_field_data
      TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
      INTEGER :: num_attributes
+!----------
+!ug support
+     logical :: reduced_k_unstruct = .false.
+!----------
   END TYPE output_field_type
   ! </TYPE>
 
