@@ -988,13 +988,17 @@ CONTAINS
 
 !----------
 !ug support
+         !Send_data requires that the reduced k dimension be the 3rd dimension
+         !of the buffer, so set it to be the correct size.  If the diagnostic
+         !is unstructured, set the second dimension of the buffer to be 1.
           if (domain_type .eq. DIAG_AXIS_UGDOMAIN) then
               local_start(2) = output_fields(out_num)%output_grid%l_start_indx(2)
               local_end(2) = output_fields(out_num)%output_grid%l_end_indx(2)
               local_siz(2) = local_end(2) - local_start(2) + 1
-              allocate(output_fields(out_num)%buffer(siz(1),local_siz(2),local_siz(3), &
+              allocate(output_fields(out_num)%buffer(siz(1),1,local_siz(2), &
                                                      output_fields(out_num)%n_diurnal_samples))
-              output_fields(out_num)%region_elements = siz(1)*local_siz(2)*local_siz(3)
+              output_fields(out_num)%region_elements = siz(1)*local_siz(2)
+              output_fields(out_num)%reduced_k_unstruct = .true.
           else
               local_start(3) = output_fields(out_num)%output_grid%l_start_indx(3)
               local_end(3) = output_fields(out_num)%output_grid%l_end_indx(3)
@@ -1002,6 +1006,7 @@ CONTAINS
               allocate(output_fields(out_num)%buffer(siz(1),siz(2),local_siz(3), &
                                                      output_fields(out_num)%n_diurnal_samples))
               output_fields(out_num)%region_elements = siz(1)*siz(2)*local_siz(3)
+              output_fields(out_num)%reduced_k_unstruct = .false.
           endif
           output_fields(out_num)%total_elements = siz(1)*siz(2)*siz(3)
 !----------
@@ -1127,8 +1132,20 @@ CONTAINS
        DO j = 1, input_fields(field)%num_output_fields
           out_num = input_fields(field)%output_fields(j)
           IF(output_fields(out_num)%time_average) THEN
-             ALLOCATE(output_fields(out_num)%counter(siz(1), siz(2), siz(3),&
-                  & output_fields(out_num)%n_diurnal_samples))
+!----------
+!ug support
+             !Send_data requires that the reduced k dimension be the 3rd dimension
+             !of the counter array, so set it to be the correct size.  If the diagnostic
+             !is unstructured, set the second dimension of the counter array to be 1.
+              if (output_fields(out_num)%reduced_k_range .and. &
+                  domain_type .eq. DIAG_AXIS_UGDOMAIN) then
+                  allocate(output_fields(out_num)%counter(siz(1),1,local_siz(2), &
+                                                          output_fields(out_num)%n_diurnal_samples))
+              else
+                  allocate(output_fields(out_num)%counter(siz(1),siz(2),siz(3), &
+                                                          output_fields(out_num)%n_diurnal_samples))
+              endif
+!----------
              output_fields(out_num)%counter = 0.0
           END IF
        END DO
@@ -1910,8 +1927,18 @@ CONTAINS
 
        ! Get the vertical layer start and end index.
        IF ( reduced_k_range ) THEN
-          l_start(3) = output_fields(out_num)%output_grid%l_start_indx(3)
-          l_end(3) = output_fields(out_num)%output_grid%l_end_indx(3)
+!----------
+!ug support
+           if (output_fields(out_num)%reduced_k_unstruct) then
+               js = 1
+               je = 1
+               hj = 0
+               l_start(3) = output_fields(out_num)%output_grid%l_start_indx(2)
+               l_end(3) = output_fields(out_num)%output_grid%l_end_indx(2)
+           endif
+           l_start(3) = output_fields(out_num)%output_grid%l_start_indx(3)
+           l_end(3) = output_fields(out_num)%output_grid%l_end_indx(3)
+!----------
        END IF
        ksr= l_start(3)
        ker= l_end(3)
