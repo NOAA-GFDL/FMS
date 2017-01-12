@@ -1611,8 +1611,7 @@ function register_restart_field_r2d8(fileObj, filename, fieldname, data, domain,
   logical,          optional, intent(in)         :: compressed
   integer,          optional, intent(in)         :: position, tile_count
   logical,          optional, intent(in)         :: mandatory
-  character(len=*), optional, intent(in)         :: longname, units,
-compressed_axis
+  character(len=*), optional, intent(in)         :: longname, units, compressed_axis
   logical,          optional, intent(in)         :: read_only
   logical,          optional, intent(in)         :: restart_owns_data
   logical                                        :: is_compressed
