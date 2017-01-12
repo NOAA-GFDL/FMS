@@ -1064,7 +1064,7 @@
 !                                                                      !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #undef WRITE_RECORD_
-#define WRITE_RECORD_ write_record_r4
+#define WRITE_RECORD_ write_record_default
 #undef MPP_WRITE_2DDECOMP_2D_
 #define MPP_WRITE_2DDECOMP_2D_ mpp_write_2ddecomp_r2d
 #undef MPP_WRITE_2DDECOMP_3D_
@@ -1112,7 +1112,7 @@
 #undef MPP_RANK_
 #define MPP_RANK_ !
 #undef MPP_WRITE_RECORD_
-#define MPP_WRITE_RECORD_ call write_record_r4( unit, field, 1, (/data/), tstamp)
+#define MPP_WRITE_RECORD_ call write_record_default( unit, field, 1, (/data/), tstamp)
 #include <mpp_write.h>
 
 #undef MPP_WRITE_
@@ -1120,7 +1120,7 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
 #undef MPP_WRITE_RECORD_
-#define MPP_WRITE_RECORD_ call write_record_r4( unit, field, size(data(:)), data, tstamp)
+#define MPP_WRITE_RECORD_ call write_record_default( unit, field, size(data(:)), data, tstamp)
 #undef MPP_RANK_
 #define MPP_RANK_ (:)
 #include <mpp_write.h>
@@ -1130,7 +1130,7 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
 #undef MPP_WRITE_RECORD_
-#define MPP_WRITE_RECORD_ call write_record_r4( unit, field, size(data(:,:)), data, tstamp )
+#define MPP_WRITE_RECORD_ call write_record_default( unit, field, size(data(:,:)), data, tstamp )
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:)
 #include <mpp_write.h>
@@ -1140,7 +1140,7 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
 #undef MPP_WRITE_RECORD_
-#define MPP_WRITE_RECORD_ call write_record_r4( unit, field, size(data(:,:,:)), data, tstamp)
+#define MPP_WRITE_RECORD_ call write_record_default( unit, field, size(data(:,:,:)), data, tstamp)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:)
 #include <mpp_write.h>
@@ -1150,7 +1150,7 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
 #undef MPP_WRITE_RECORD_
-#define MPP_WRITE_RECORD_ call write_record_r4( unit, field, size(data(:,:,:,:)), data, tstamp)
+#define MPP_WRITE_RECORD_ call write_record_default( unit, field, size(data(:,:,:,:)), data, tstamp)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:,:)
 #include <mpp_write.h>

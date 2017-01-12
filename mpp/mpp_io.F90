@@ -874,7 +874,7 @@ type :: atttype
 
 
   interface write_record
-     module procedure write_record_r4
+     module procedure write_record_default
 #ifdef OVERLOAD_R4
      module procedure write_record_r8
 #endif
