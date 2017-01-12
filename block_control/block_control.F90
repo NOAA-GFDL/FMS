@@ -5,6 +5,11 @@ use mpp_mod,         only: mpp_error, NOTE, FATAL
 use mpp_domains_mod, only: mpp_compute_extent
 
  public block_control_type
+
+ type ix_type
+   integer, dimension(:,:), _ALLOCATABLE :: ix _NULL
+ end type ix_type
+
  type block_control_type
    integer :: nx_block, ny_block
    integer :: nblks
@@ -14,6 +19,7 @@ use mpp_domains_mod, only: mpp_compute_extent
                                           ibe _NULL, &
                                           jbs _NULL, &
                                           jbe _NULL
+   type(ix_type), dimension(:), _ALLOCATABLE :: ix _NULL
  end type block_control_type
 
 public :: define_blocks
@@ -36,7 +42,7 @@ contains
     integer, dimension(nx_block) :: i1, i2
     integer, dimension(ny_block) :: j1, j2
     character(len=132) :: text
-    integer :: i, j, nblks
+    integer :: i, j, nblks, ii, jj
 
     if (message) then
       if ((mod(iec-isc+1,nx_block) .ne. 0) .or. (mod(jec-jsc+1,ny_block) .ne. 0)) then
@@ -72,7 +78,8 @@ contains
          allocate (Block%ibs(nblks), &
                    Block%ibe(nblks), &
                    Block%jbs(nblks), &
-                   Block%jbe(nblks))
+                   Block%jbe(nblks), &
+                   Block%ix(nblks) )
 
     blocks=0
     do j = 1, ny_block
@@ -82,6 +89,14 @@ contains
         Block%jbs(blocks) = j1(j)
         Block%ibe(blocks) = i2(i)
         Block%jbe(blocks) = j2(j)
+        allocate(Block%ix(blocks)%ix(i1(i):i2(i),j1(j):j2(j)) )
+        ix = 0
+        do jj = j1(j), j2(j)
+          do ii = i1(i), i2(i)
+            ix = ix+1
+            Block%ix(blocks)%ix(ii,jj) = ix
+          enddo
+        enddo
       enddo
     enddo
 
