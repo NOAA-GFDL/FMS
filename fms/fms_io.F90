@@ -1307,14 +1307,15 @@ subroutine free_restart_type(fileObj)
   integer :: id, n, j, k
 
   !--- remove file name from registered_file
-  id = fileObj%register_id
-  if( id > num_registered_files .OR. id < 1 ) then
-     print*, " register_id = ", id, " and num_registered_files = ", num_registered_files
-     call mpp_error(FATAL, &
-        'fms_io(free_restart_type): fileObj%register_id should be between 1 and num_registered_files')
-  endif
-  if( trim(fileObj%name) .NE. trim(registered_file(id)) ) &
-     call mpp_error(FATAL, 'fms_io(free_restart_type): fileObj%name .NE. registered_file(id)')
+  id = 0
+  do n = 1, num_registered_files
+     if( trim(fileObj%name) == trim(registered_file(n)) ) then
+        id = n
+        exit
+     endif
+  enddo
+  if( id < 0) &
+     call mpp_error(FATAL, 'fms_io(free_restart_type): fileObj%name is not found in registered_files')
   do n = id+1, num_registered_files
      registered_file(n-1) = trim(registered_file(n))
   enddo
