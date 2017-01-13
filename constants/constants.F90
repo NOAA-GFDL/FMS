@@ -1,6 +1,8 @@
 
 module constants_mod
 
+use platform_mod, only: r8_kind
+
 ! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
 !   Bruce Wyman
 ! </CONTACT>
@@ -216,7 +218,7 @@ real, public, parameter :: ALOGMIN     = -50.0
 real, public, parameter :: STEFAN  = 5.6734e-8 
 real, public, parameter :: VONKARM = 0.40     
 real, public, parameter :: PI      = 3.14159265358979323846
-real(DOUBLE_KIND), public, parameter :: PI_8  = 3.14159265358979323846d0
+real(r8_kind), public, parameter :: PI_8  = 3.14159265358979323846_r8_kind
 real, public, parameter :: RAD_TO_DEG=180./PI
 real, public, parameter :: DEG_TO_RAD=PI/180.
 real, public, parameter :: RADIAN  = RAD_TO_DEG
