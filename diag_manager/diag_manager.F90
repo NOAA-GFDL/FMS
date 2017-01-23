@@ -211,7 +211,8 @@ MODULE diag_manager_mod
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, conserve_water, region_out_use_alt_value, max_field_attributes, output_field_type,&
-       & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init
+       & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init,&
+       & write_manifest_file
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
@@ -3665,7 +3666,9 @@ CONTAINS
     CALL write_static(file)
 
     !::sdu:: Write the manifest file here
-    CALL write_diag_manifest(file)
+    IF ( write_manifest_file ) THEN
+       CALL write_diag_manifest(file)
+    END IF
 
     ! Write out the number of bytes of data saved to this file
     IF ( write_bytes_in_file ) THEN
@@ -3713,7 +3716,7 @@ CONTAINS
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
          & oor_warnings_fatal, max_out_per_in_field, conserve_water, region_out_use_alt_value, max_field_attributes,&
-         & max_file_attributes, max_axis_attributes, prepend_date
+         & max_file_attributes, max_axis_attributes, prepend_date, write_manifest_file
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
@@ -3791,7 +3794,7 @@ CONTAINS
     ! mpp_get_maxunits() -- Default is 1024 set in mpp_io.F90
     IF ( max_files .GT. mpp_get_maxunits() ) THEN
        err_msg_local = ''
-       WRITE (err_msg_local,'(A,I6,A,I6,A,I6)') "DIAG_MANAGER_NML variable 'max_files' (",max_files,") is larger than '",&
+       WRITE (err_msg_local,'(A,I6,A,I6,A,I6,A)') "DIAG_MANAGER_NML variable 'max_files' (",max_files,") is larger than '",&
             & mpp_get_maxunits(),"'.  Forcing 'max_files' to be ",mpp_get_maxunits(),"."
        CALL error_mesg('diag_manager_mod::diag_managet_init', TRIM(err_msg_local), NOTE)
        max_files = mpp_get_maxunits()
