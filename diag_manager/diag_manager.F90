@@ -182,7 +182,7 @@ MODULE diag_manager_mod
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
        & get_ticks_per_second
-  USE mpp_io_mod, ONLY: mpp_open, mpp_close
+  USE mpp_io_mod, ONLY: mpp_open, mpp_close, mpp_get_maxunits
   USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
 
 #ifdef INTERNAL_FILE_NML
@@ -192,7 +192,7 @@ MODULE diag_manager_mod
 #endif
 
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
-       & file_exist, fms_error_handler, check_nml_error, get_mosaic_tile_file
+       & file_exist, fms_error_handler, check_nml_error, get_mosaic_tile_file, lowercase
   USE fms_io_mod, ONLY: get_instance_filename
   USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, get_axis_num, get_domain2d, get_tile_count,&
        & diag_axis_add_attribute
@@ -211,10 +211,12 @@ MODULE diag_manager_mod
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, conserve_water, region_out_use_alt_value, max_field_attributes, output_field_type,&
-       & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init
+       & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init,&
+       & write_manifest_file
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
+  USE diag_manifest_mod, ONLY: write_diag_manifest
   USE constants_mod, ONLY: SECONDS_PER_DAY
 
 #ifdef use_netCDF
@@ -347,7 +349,7 @@ MODULE diag_manager_mod
   !   <TEMPLATE>
   !     INTEGER FUNCTION register_diag_field (module_name, field_name, axes, init_time,
   !           long_name, units, missing_value, range, mask_variant, standard_name,
-  !           verbose, area, volume)
+  !           verbose, area, volume, realm)
   !   </TEMPLATE>
   !   <DESCRIPTION>
   !      Return field index for subsequent calls to
@@ -378,6 +380,7 @@ MODULE diag_manager_mod
   !    <IN NAME="standard_name" TYPE="CHARACTER(len=*)" />
   !    <IN NAME="area" TYPE="INTEGER, OPTIONAL" />
   !    <IN NAME="volume" TYPE="INTEGER, OPTIONAL" />
+  !    <IN NAME="realm" TYPE="CHARACTER(len=*), OPTIONAL" />
   INTERFACE register_diag_field
      MODULE PROCEDURE register_diag_field_scalar
      MODULE PROCEDURE register_diag_field_array
@@ -454,10 +457,11 @@ CONTAINS
   !   <IN NAME="do_not_log" TYPE="LOGICAL, OPTIONAL" />
   !   <IN NAME="area" TYPE="INTEGER, OPTIONAL" />
   !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL" />
+  !   <IN NAME="realm" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL" />
   INTEGER FUNCTION register_diag_field_scalar(module_name, field_name, init_time, &
        & long_name, units, missing_value, range, standard_name, do_not_log, err_msg,&
-       & area, volume)
+       & area, volume, realm)
     CHARACTER(len=*), INTENT(in) :: module_name, field_name
     TYPE(time_type), OPTIONAL, INTENT(in) :: init_time
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
@@ -466,17 +470,19 @@ CONTAINS
     LOGICAL, OPTIONAL, INTENT(in) :: do_not_log ! if TRUE, field information is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg
     INTEGER, OPTIONAL, INTENT(in) :: area, volume
+    CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
+
+    IF ( PRESENT(err_msg) ) err_msg = ''
 
     IF ( PRESENT(init_time) ) THEN
        register_diag_field_scalar = register_diag_field_array(module_name, field_name,&
             & (/null_axis_id/), init_time,long_name, units, missing_value, range, &
             & standard_name=standard_name, do_not_log=do_not_log, err_msg=err_msg,&
-            & area=area, volume=volume)
+            & area=area, volume=volume, realm=realm)
     ELSE
-       IF ( PRESENT(err_msg) ) err_msg = ''
        register_diag_field_scalar = register_static_field(module_name, field_name,&
             & (/null_axis_id/),long_name, units, missing_value, range,&
-            & standard_name=standard_name, do_not_log=do_not_log)
+            & standard_name=standard_name, do_not_log=do_not_log, realm=realm)
     END IF
   END FUNCTION register_diag_field_scalar
   ! </FUNCTION>
@@ -493,14 +499,18 @@ CONTAINS
   !   <IN NAME="mask_variant" TYPE="LOGICAL, OPTIONAL" />
   !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <IN NAME="do_not_log" TYPE="LOGICAL, OPTIONAL" />
-  !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIONAL" />
+  !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIONAL">
+  !     The interp method to be used when regridding the field in post-processing.
+  !     Valid options are "conserve_order1", "conserve_order2", and "none".
+  !   </IN>
   !   <IN NAME="tile_count" TYPE="INTEGER, OPTIONAL" />
   !   <IN NAME="area" TYPE="INTEGER, OPTIONAL">diag_field_id containing the cell area field</IN>
   !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL">diag_field_id containing the cell volume field</IN>
+  !   <IN NAME="realm" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL" />
   INTEGER FUNCTION register_diag_field_array(module_name, field_name, axes, init_time, &
        & long_name, units, missing_value, range, mask_variant, standard_name, verbose,&
-       & do_not_log, err_msg, interp_method, tile_count, area, volume)
+       & do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
     CHARACTER(len=*), INTENT(in) :: module_name, field_name
     INTEGER, INTENT(in) :: axes(:)
     TYPE(time_type), INTENT(in) :: init_time
@@ -512,6 +522,7 @@ CONTAINS
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method
     INTEGER, OPTIONAL, INTENT(in) :: tile_count
     INTEGER, OPTIONAL, INTENT(in) :: area, volume
+    CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
 
     INTEGER :: field, j, ind, file_num, freq
     INTEGER :: i, cm_ind, cm_file_num
@@ -541,7 +552,7 @@ CONTAINS
     ! Call register static, then set static back to false
     register_diag_field_array = register_static_field(module_name, field_name, axes,&
          & long_name, units, missing_value, range, mask_variant1, standard_name=standard_name,&
-         & DYNAMIC=.TRUE., do_not_log=do_not_log, interp_method=interp_method, tile_count=tile_count)
+         & DYNAMIC=.TRUE., do_not_log=do_not_log, interp_method=interp_method, tile_count=tile_count, realm=realm)
 
     IF ( .NOT.first_send_data_call ) THEN
        ! <ERROR STATUS="WARNING">
@@ -663,7 +674,7 @@ CONTAINS
   !   <TEMPLATE>
   !     INTEGER FUNCTION register_static_field(module_name, field_name, axes,
   !       long_name, units, missing_value, range, mask_variant, standard_name,
-  !       dynamic, do_not_log, interp_method, tile_count)
+  !       dynamic, do_not_log, interp_method, tile_count, area, volume, realm)
   !   </TEMPLATE>
   !   <DESCRIPTION>
   !     Return field index for subsequent call to send_data.
@@ -679,13 +690,17 @@ CONTAINS
   !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <IN NAME="dynamic" TYPE="LOGICAL, OPTIONAL" DEFAULT=".FALSE."/>
   !   <IN NAME="do_not_log" TYPE="LOGICAL, OPTIONAL" DEFAULT=".TRUE."/>
-  !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIOANL" />
+  !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIOANL">
+  !     The interp method to be used when regridding the field in post-processing.
+  !     Valid options are "conserve_order1", "conserve_order2", and "none".
+  !   </IN>
   !   <IN NAME="tile_count" TYPE="INTEGER, OPTIONAL" />
   !   <IN NAME="area" TYPE="INTEGER, OPTIONAL">Field ID for the area field associated with this field</IN>
   !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL">Field ID for the volume field associated with this field</IN>
+  !   <IN NAME="realm" TYPE="CHARACTER(len=*), OPTIONAL" />
   INTEGER FUNCTION register_static_field(module_name, field_name, axes, long_name, units,&
        & missing_value, range, mask_variant, standard_name, DYNAMIC, do_not_log, interp_method,&
-       & tile_count, area, volume)
+       & tile_count, area, volume, realm)
     CHARACTER(len=*), INTENT(in) :: module_name, field_name
     INTEGER, DIMENSION(:), INTENT(in) :: axes
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
@@ -696,6 +711,7 @@ CONTAINS
     LOGICAL, OPTIONAL, INTENT(in) :: do_not_log ! if TRUE, field information is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method
     INTEGER,          OPTIONAL, INTENT(in) :: tile_count, area, volume
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm !< String to set as the value to the modeling_realm attribute
 
     REAL :: missing_value_use
     INTEGER :: field, num_axes, j, out_num, k
@@ -868,15 +884,18 @@ CONTAINS
     END IF
 
     IF ( PRESENT(interp_method) ) THEN
-       IF ( TRIM(interp_method) .NE. 'conserve_order1' .AND. TRIM(interp_method) .NE. 'none' ) THEN
+       IF ( TRIM(interp_method) .NE. 'conserve_order1' .AND.&
+            & TRIM(interp_method) .NE. 'conserve_order2' .AND.&
+            & TRIM(interp_method) .NE. 'none' ) THEN
           ! <ERROR STATUS="FATAL">
           !   when registering module/output_field <module_name>/<field_name> then optional
-          !   argument interp_method = <interp_method>, but it should be "conserve_order1"
+          !   argument interp_method = <interp_method>, but it should be "conserve_order1",
+          !   "conserve_order2", or "none"
           ! </ERROR>
           CALL error_mesg ('diag_manager_mod::register_diag_field',&
                & 'when registering module/output_field '//TRIM(module_name)//'/'//&
                & TRIM(field_name)//', the optional argument interp_method = '//TRIM(interp_method)//&
-               & ', but it should be "conserve_order1"', FATAL)
+               & ', but it should be "conserve_order1", "conserve_order2", or "none"', FATAL)
        END IF
        input_fields(field)%interp_method = TRIM(interp_method)
     ELSE
@@ -1039,6 +1058,11 @@ CONTAINS
           CALL error_mesg ('diag_manager_mod::register_static_field',&
                & TRIM(msg)//' for module/field '//TRIM(module_name)//'/'//TRIM(field_name),&
                & FATAL)
+       END IF
+
+       ! Add the modeling_realm attribute
+       IF ( PRESENT(realm) ) THEN
+          CALL prepend_attribute(output_fields(out_num), 'modeling_realm', lowercase(TRIM(realm)))
        END IF
     END DO
 
@@ -1485,13 +1509,13 @@ CONTAINS
   ! </FUNCTION>
 
   ! <FUNCTION NAME="send_data_3d_r8" INTERFACE="send_data">
-  LOGICAL FUNCTION send_data_3d_r8(diag_field_id, field, time, is_in, js_in, &
-       & mask, rmask, ie_in, je_in, weight, err_msg)
+  LOGICAL FUNCTION send_data_3d_r8(diag_field_id, field, time, is_in, js_in, ks_in, &
+             & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
     REAL(kind=8), INTENT(in), DIMENSION(:,:,:) :: field
     REAL, INTENT(in), OPTIONAL :: weight
     TYPE (time_type), INTENT(in), OPTIONAL :: time
-    INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ie_in, je_in
+    INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
     LOGICAL, INTENT(in), DIMENSION(:,:,:), OPTIONAL :: mask
     REAL, INTENT(in), DIMENSION(:,:,:),OPTIONAL :: rmask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
@@ -1517,11 +1541,11 @@ CONTAINS
 
     IF ( PRESENT(rmask) ) WHERE ( rmask < 0.5 ) mask_out = .FALSE.
     IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
-       send_data_3d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1, mask=mask_out,&
-            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
+       send_data_3d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=ks_in, mask=mask_out,&
+            & ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
     ELSE
-       send_data_3d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1,&
-            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
+       send_data_3d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=ks_in,&
+            & ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
     END IF
   END FUNCTION send_data_3d_r8
   ! </FUNCTION>
@@ -1571,7 +1595,7 @@ CONTAINS
 #endif
     LOGICAL :: average, phys_window, need_compute
     LOGICAL :: reduced_k_range, local_output
-    LOGICAL :: time_max, time_min, time_rms
+    LOGICAL :: time_max, time_min, time_rms, time_sum
     LOGICAL :: missvalue_present
     LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) :: oor_mask
     CHARACTER(len=256) :: err_msg_local
@@ -1807,6 +1831,8 @@ CONTAINS
        ! Looking for max and min value of this field over the sampling interval?
        time_max = output_fields(out_num)%time_max
        time_min = output_fields(out_num)%time_min
+       ! Sum output over time interval
+       time_sum = output_fields(out_num)%time_sum
        IF ( output_fields(out_num)%total_elements > SIZE(field(f1:f2,f3:f4,ks:ke)) ) THEN
           output_fields(out_num)%phys_window = .TRUE.
        ELSE
@@ -2484,7 +2510,7 @@ CONTAINS
                          DO j=f3, f4
                             DO i=f1, f2
                                IF ( field(i,j,k) /= missvalue ) THEN
-                                  output_fields(out_num)%count_0d = output_fields(out_num)%count_0d + weight1
+                                  output_fields(out_num)%count_0d(sample) = output_fields(out_num)%count_0d(sample) + weight1
                                   EXIT outer3
                                END IF
                             END DO
@@ -2676,7 +2702,7 @@ CONTAINS
              END IF ! if mask present
           END IF  !if mask_variant
 !$OMP CRITICAL
-          IF ( .NOT.need_compute )&
+          IF ( .NOT.need_compute .AND. .NOT.reduced_k_range )&
                & output_fields(out_num)%num_elements(sample) =&
                & output_fields(out_num)%num_elements(sample) + (ie-is+1)*(je-js+1)*(ke-ks+1)
           IF ( reduced_k_range ) &
@@ -2840,7 +2866,88 @@ CONTAINS
              END IF
           END IF
           output_fields(out_num)%count_0d(sample) = 1
-       ELSE  ! ( not average, not min, max)
+       ELSE IF ( time_sum ) THEN
+          IF ( PRESENT(mask) ) THEN
+             IF ( need_compute ) THEN
+                DO k = l_start(3), l_end(3)
+                   k1 = k - l_start(3) + 1
+                   DO j = js, je
+                      DO i = is, ie
+                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. j <= l_end(2)+hj ) THEN
+                            i1 = i-l_start(1)-hi+1
+                            j1 =  j-l_start(2)-hj+1
+                            IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
+                               output_fields(out_num)%buffer(i1,j1,k1,sample) = &
+                                    output_fields(out_num)%buffer(i1,j1,k1,sample) + &
+                                    field(i-is+1+hi,j-js+1+hj,k)
+                            END IF
+                         END IF
+                      END DO
+                   END DO
+                END DO
+                ! Minimum time value with masking
+             ELSE IF ( reduced_k_range ) THEN
+                ksr= l_start(3)
+                ker= l_end(3)
+                output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = &
+                     &   output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
+                     &   field(f1:f2,f3:f4,ksr:ker)
+             ELSE
+                IF ( debug_diag_manager ) THEN
+                   CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                   CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                   IF ( err_msg_local /= '' ) THEN
+                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                         DEALLOCATE(oor_mask)
+                         RETURN
+                      END IF
+                   END IF
+                END IF
+                WHERE ( mask(f1:f2,f3:f4,ks:ke) ) &
+                     & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = &
+                     &  output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) + &
+                     &  field(f1:f2,f3:f4,ks:ke)
+             END IF
+          ELSE
+             IF ( need_compute ) THEN
+                DO k = l_start(3), l_end(3)
+                   k1 = k - l_start(3) + 1
+                   DO j = js, je
+                      DO i = is, ie
+                         IF ( l_start(1)+hi <=i.AND.i<=l_end(1)+hi.AND.l_start(2)+hj<=j.AND.j<=l_end(2)+hj) THEN
+                            i1 = i-l_start(1)-hi+1
+                            j1=  j-l_start(2)-hj+1
+                            output_fields(out_num)%buffer(i1,j1,k1,sample) = &
+                               &    output_fields(out_num)%buffer(i1,j1,k1,sample) + &
+                               &    field(i-is+1+hi,j-js+1+hj,k)
+                         END IF
+                      END DO
+                   END DO
+                END DO
+             ELSE IF ( reduced_k_range ) THEN
+                ksr= l_start(3)
+                ker= l_end(3)
+                output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = &
+                     &  output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
+                     &  field(f1:f2,f3:f4,ksr:ker)
+             ELSE
+                IF ( debug_diag_manager ) THEN
+                   CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                   CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                   IF ( err_msg_local /= '' ) THEN
+                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                         DEALLOCATE(oor_mask)
+                         RETURN
+                      END IF
+                   END IF
+                END IF
+                output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = &
+                &    output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) + &
+                &    field(f1:f2,f3:f4,ks:ke)
+             END IF
+          END IF
+          output_fields(out_num)%count_0d(sample) = 1
+       ELSE  ! ( not average, not min, not max, not sum )
           output_fields(out_num)%count_0d(sample) = 1
           IF ( need_compute ) THEN
              DO j = js, je
@@ -3408,6 +3515,11 @@ CONTAINS
     ! Now it's time to output static fields
     CALL write_static(file)
 
+    !::sdu:: Write the manifest file here
+    IF ( write_manifest_file ) THEN
+       CALL write_diag_manifest(file)
+    END IF
+
     ! Write out the number of bytes of data saved to this file
     IF ( write_bytes_in_file ) THEN
        CALL mpp_sum (files(file)%bytes_written)
@@ -3454,7 +3566,7 @@ CONTAINS
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
          & oor_warnings_fatal, max_out_per_in_field, conserve_water, region_out_use_alt_value, max_field_attributes,&
-         & max_file_attributes, max_axis_attributes, prepend_date
+         & max_file_attributes, max_axis_attributes, prepend_date, write_manifest_file
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
@@ -3528,6 +3640,16 @@ CONTAINS
        CALL error_mesg('diag_manager_mod::diag_manager_init', 'Using CMOR missing value ('//TRIM(err_msg_local)//').', NOTE)
     END IF
 
+    ! Issue note if attempting to set diag_manager_nml::max_files larger than
+    ! mpp_get_maxunits() -- Default is 1024 set in mpp_io.F90
+    IF ( max_files .GT. mpp_get_maxunits() ) THEN
+       err_msg_local = ''
+       WRITE (err_msg_local,'(A,I6,A,I6,A,I6,A)') "DIAG_MANAGER_NML variable 'max_files' (",max_files,") is larger than '",&
+            & mpp_get_maxunits(),"'.  Forcing 'max_files' to be ",mpp_get_maxunits(),"."
+       CALL error_mesg('diag_manager_mod::diag_managet_init', TRIM(err_msg_local), NOTE)
+       max_files = mpp_get_maxunits()
+    END IF
+
     ! How to handle Out of Range Warnings.
     IF ( oor_warnings_fatal ) THEN
        oor_warning = FATAL
@@ -3589,7 +3711,7 @@ CONTAINS
 
     module_is_initialized = .TRUE.
     ! create axis_id for scalars here
-    null_axis_id = diag_axis_init('scalar_axis', (/0./), 'none', 'X', 'none')
+    null_axis_id = diag_axis_init('scalar_axis', (/0./), 'none', 'N', 'none')
     RETURN
   END SUBROUTINE diag_manager_init
   ! </SUBROUTINE>
@@ -3740,8 +3862,8 @@ CONTAINS
 
   SUBROUTINE diag_field_attribute_init(diag_field_id, name, type, cval, ival, rval)
     INTEGER, INTENT(in) :: diag_field_id !< input field ID, obtained from diag_manager_mod::register_diag_field.
-    CHARACTER(len=*) :: name !< Name of the attribute
-    INTEGER, INTENT(in) :: type !< NetCDF type (NF_FLOAT, NF_INT, NF_CHAR)
+    CHARACTER(len=*), INTENT(in) :: name !< Name of the attribute
+    INTEGER, INTENT(in) :: type !< NetCDF type (NF90_FLOAT, NF90_INT, NF90_CHAR)
     CHARACTER(len=*), INTENT(in), OPTIONAL :: cval !< Character string attribute value
     INTEGER, DIMENSION(:), INTENT(in), OPTIONAL :: ival !< Integer attribute value(s)
     REAL, DIMENSION(:), INTENT(in), OPTIONAL :: rval !< Real attribute value(s)
@@ -4518,7 +4640,7 @@ PROGRAM test
 
   IF ( test_number == 18 ) THEN
      id_dat2h = register_diag_field('test_mod', 'dat2h', (/id_lon1,id_lat1,id_pfull/), Time, 'sample data', 'K',&
-          & volume=id_dat1, area=id_dat2, err_msg=err_msg)
+          & volume=id_dat1, area=id_dat2, realm='myRealm', err_msg=err_msg)
      IF ( err_msg /= '' .OR. id_dat2h <= 0 ) THEN
         CALL error_mesg ('test_diag_manager',&
              & 'Unexpected error registering dat2h '//err_msg, FATAL)

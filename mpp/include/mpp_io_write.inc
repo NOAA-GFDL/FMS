@@ -468,14 +468,27 @@
       end if
 !write axis attributes
       call mpp_write_meta( unit, axis%id, 'long_name', cval=axis%longname) ; axis%natt = axis%natt + 1
-      call mpp_write_meta( unit, axis%id, 'units',     cval=axis%units) ; axis%natt = axis%natt + 1
+      if (lowercase(trim(axis%units)).ne.'none' .OR. .NOT.cf_compliance) then
+        call mpp_write_meta( unit, axis%id, 'units',     cval=axis%units) ; axis%natt = axis%natt + 1
+      endif
       if( PRESENT(calendar) ) then
-        call mpp_write_meta( unit, axis%id, 'calendar', cval=axis%calendar)
+        if (.NOT.cf_compliance) then
+          call mpp_write_meta( unit, axis%id, 'calendar', cval=axis%calendar)
+        else
+          call mpp_write_meta( unit, axis%id, 'calendar', cval=lowercase(axis%calendar))
+        endif
         axis%natt = axis%natt + 1
       endif
       if( PRESENT(cartesian) ) then
-        call mpp_write_meta( unit, axis%id, 'cartesian_axis', cval=axis%cartesian)
-        axis%natt = axis%natt + 1
+        if (.NOT.cf_compliance) then
+          call mpp_write_meta( unit, axis%id, 'cartesian_axis', cval=axis%cartesian)
+          axis%natt = axis%natt + 1
+        else
+          if (trim(axis%cartesian).ne.'N') then
+            call mpp_write_meta( unit, axis%id, 'axis', cval=axis%cartesian)
+            axis%natt = axis%natt + 1
+          endif
+        endif
       endif
       if( PRESENT(sense) )then
           if( sense.EQ.-1 )then
@@ -554,7 +567,9 @@
       end if
 !write axis attributes
       call mpp_write_meta( unit, axis%id, 'long_name', cval=axis%longname) ; axis%natt = axis%natt + 1
-      call mpp_write_meta( unit, axis%id, 'units',     cval=axis%units) ; axis%natt = axis%natt + 1
+      if (lowercase(trim(axis%units)).ne.'none' .OR. .NOT.cf_compliance) then
+        call mpp_write_meta( unit, axis%id, 'units',     cval=axis%units) ; axis%natt = axis%natt + 1
+      endif
       if( PRESENT(compressed) ) then
         call mpp_write_meta( unit, axis%id, 'compress', cval=axis%compressed)
         axis%natt = axis%natt + 1
@@ -620,7 +635,9 @@
          call mpp_write_meta(unit,axis%id,'long_name',cval=axis%longname); axis%natt=axis%natt+1
       endif
       if(present(units)) then
-         call mpp_write_meta(unit,axis%id,'units',     cval=axis%units); axis%natt=axis%natt+1
+         if (lowercase(trim(axis%units)).ne.'none' .OR. .NOT.cf_compliance) then
+           call mpp_write_meta(unit,axis%id,'units',     cval=axis%units); axis%natt=axis%natt+1
+         endif
       endif
       if( verbose )print '(a,2i6,x,a,2i3)', &
           'MPP_WRITE_META_UNLIMITED: Wrote axis metadata, pe, unit, axis%name, axis%id, axis%did=', &
@@ -778,7 +795,9 @@
       end if
 !write field attributes: these names follow netCDF conventions
       call mpp_write_meta( unit, field%id, 'long_name', cval=field%longname)
-      call mpp_write_meta( unit, field%id, 'units',     cval=field%units)
+      if (lowercase(trim(field%units)).ne.'none' .OR. .NOT.cf_compliance) then
+        call mpp_write_meta( unit, field%id, 'units',     cval=field%units)
+      endif
 !all real attributes must be written as packed
       if( PRESENT(min) .AND. PRESENT(max) )then
           if( field%pack.EQ.1 .OR. field%pack.EQ.2 )then
@@ -981,7 +1000,11 @@
           call netcdf_err( error, mpp_file(unit), string=' Attribute='//name )
           end if
       else if( present(cval) )then
-          error = NF_PUT_ATT_TEXT( mpp_file(unit)%ncid, id, name, len_trim(cval), cval )
+          if (.NOT.cf_compliance .or. trim(name).NE.'calendar') then
+            error = NF_PUT_ATT_TEXT( mpp_file(unit)%ncid, id, name, len_trim(cval), cval )
+          else
+            error = NF_PUT_ATT_TEXT( mpp_file(unit)%ncid, id, name, len_trim(cval), lowercase(cval) )
+          endif
           call netcdf_err( error, mpp_file(unit), string=' Attribute='//name )
       else
           call mpp_error( FATAL, 'WRITE_ATTRIBUTE_NETCDF: one of rval, ival, cval must be present.' )
@@ -1195,8 +1218,6 @@
       pointer( ptr1, data_r4)
       pointer( ptr2, packed_data)
 
-      if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
-
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%write_on_this_pe) return
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
@@ -1239,7 +1260,6 @@
            pe, unit, mpp_file(unit)%id, mpp_file(unit)%time_level, mpp_file(unit)%time
 
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
-          ptr2 = LOC(mpp_io_stack(1))
 !define netCDF data block to be written:
 !  time axis: START = time level
 !             AXSIZ = 1
@@ -1280,6 +1300,8 @@
               end if
           end if
           if( field%pack == 0 )then
+              if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
+              ptr2 = LOC(mpp_io_stack(1))
               packed_data = CEILING(data)
               error = NF_PUT_VARA_INT   ( mpp_file(unit)%ncid, field%id, start, axsiz, packed_data )
           elseif( field%pack.GT.0 .and. field%pack.LE.2 )then
@@ -1289,13 +1311,14 @@
                   error = NF_PUT_VARA_REAL  ( mpp_file(unit)%ncid, field%id, start, axsiz, data )
               end if
           else              !convert to integer using scale and add: no error check on packed data representation
+              if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
+              ptr2 = LOC(mpp_io_stack(1))
               packed_data = nint((data-field%add)/field%scale)
               error = NF_PUT_VARA_INT   ( mpp_file(unit)%ncid, field%id, start, axsiz, packed_data )
           end if
           call netcdf_err( error, mpp_file(unit), field=field )
 #endif
       else                      !non-netCDF
-          ptr1 = LOC(mpp_io_stack(1))
 !subdomain contains (/is,ie,js,je/)
           if( PRESENT(domain) )then
               call mpp_get_compute_domain(domain, is, ie, js, je)
@@ -1310,6 +1333,8 @@
               if( mpp_file(unit)%access.EQ.MPP_SEQUENTIAL )then
 #ifdef __sgi
                   if( mpp_file(unit)%format.EQ.MPP_IEEE32 )then
+                      if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
+                      ptr1 = LOC(mpp_io_stack(1))
                       data_r4 = data !IEEE conversion layer on SGI until assign -N ieee_32 is supported
                       write(unit)field%id, subdomain, time_level, time, data_r4
                   else
@@ -1321,6 +1346,8 @@
               else                  !MPP_DIRECT
 #ifdef __sgi
                   if( mpp_file(unit)%format.EQ.MPP_IEEE32 )then
+                      if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
+                      ptr1 = LOC(mpp_io_stack(1))
                       data_r4 = data !IEEE conversion layer on SGI until assign -N ieee_32 is supported
                       write( unit, rec=mpp_file(unit)%record )field%id, subdomain, time_level, time, data_r4
                   else
@@ -1588,7 +1615,9 @@
       end if
 !write field attributes: these names follow netCDF conventions
       call mpp_write_meta( unit, field%id, 'long_name', cval=field%longname )
-      call mpp_write_meta( unit, field%id, 'units',     cval=field%units    )
+      if (lowercase(trim(field%units)).ne.'none' .OR. .NOT.cf_compliance) then
+        call mpp_write_meta( unit, field%id, 'units',     cval=field%units    )
+      endif
 !all real attributes must be written as packed
       if( (field%min.NE.default_field%min) .AND. (field%max.NE.default_field%max) )then
           if( field%pack.EQ.1 .OR. field%pack.EQ.2 )then

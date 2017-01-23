@@ -487,6 +487,7 @@ MODULE diag_data_mod
      LOGICAL :: static
      LOGICAL :: time_max ! true if the output field is maximum over time interval
      LOGICAL :: time_min ! true if the output field is minimum over time interval
+     LOGICAL :: time_sum ! true if the output field is summed over time interval
      LOGICAL :: time_ops ! true if any of time_min, time_max, time_rms or time_average is true
      INTEGER  :: pack
      INTEGER :: pow_value !< Power value to use for mean_pow(n) calculations
@@ -685,8 +686,11 @@ MODULE diag_data_mod
 
   INTEGER :: max_field_attributes = 2 !< Maximum number of user definable attributes per field.
   INTEGER :: max_file_attributes = 2 !< Maximum number of user definable global attributes per file.
-  INTEGER :: max_axis_attributes = 2 !< Maximum number of user definable attributes per axis.
-  LOGICAL :: prepend_date = .TRUE.
+  INTEGER :: max_axis_attributes = 4 !< Maximum number of user definable attributes per axis.
+  LOGICAL :: prepend_date = .TRUE. !< Should the history file have the start date prepended to the file name
+  LOGICAL :: write_manifest_file = .FALSE. !< Indicates if the manifest file should be written.  If writing many
+                                           !! regional files, then the termination time may increase causing job to time out.
+
   ! <!-- netCDF variable -->
   ! <DATA NAME="FILL_VALUE" TYPE="REAL" DEFAULT="NF90_FILL_REAL">
   !   Fill value used.  Value will be <TT>NF90_FILL_REAL</TT> if using the
