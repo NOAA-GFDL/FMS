@@ -457,7 +457,7 @@ do i = 1, ndim
       call mpp_get_axis_data(axes(i),clim_type%levs)
       clim_type%level_type = PRESSURE
   ! Convert to Pa
-      if( lowercase(trim(adjustl(chomp(units)))) == "mb" .or. lowercase(trim(adjustl(chomp(units)))) == "hPa") then
+      if( lowercase(trim(adjustl(chomp(units)))) == "mb" .or. lowercase(trim(adjustl(chomp(units)))) == "hpa") then
          clim_type%levs = clim_type%levs * 100.
       end if
 ! define the direction of the vertical data axis
@@ -483,7 +483,7 @@ do i = 1, ndim
       call mpp_get_axis_data(axes(i),clim_type%halflevs)
       clim_type%level_type = PRESSURE
   ! Convert to Pa
-      if( lowercase(trim(adjustl(chomp(units)))) == "mb" .or. lowercase(trim(adjustl(chomp(units)))) == "hPa") then
+      if( lowercase(trim(adjustl(chomp(units)))) == "mb" .or. lowercase(trim(adjustl(chomp(units)))) == "hpa") then
          clim_type%halflevs = clim_type%halflevs * 100.
       end if
 ! define the direction of the vertical data axis
