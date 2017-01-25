@@ -340,7 +340,7 @@ module mpp_domains_mod
      integer                     :: sendsize, recvsize
      type(overlap_type), pointer :: send(:) => NULL()
      type(overlap_type), pointer :: recv(:) => NULL()
-     type(overlapSpec),  pointer :: next
+     type(overlapSpec),  pointer :: next => NULL()
   end type overlapSpec
 
   type tile_type
@@ -416,7 +416,7 @@ module mpp_domains_mod
      integer                     :: extra_halo
      type(overlap_type), pointer :: send(:) => NULL()
      type(overlap_type), pointer :: recv(:) => NULL()
-     type(nestSpec),     pointer :: next
+     type(nestSpec),     pointer :: next => NULL()
 
   end type nestSpec
 
