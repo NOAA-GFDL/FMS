@@ -40,6 +40,7 @@ int get_cpu_affinity(void)
     }
   }
 
+  if (last_cpu != -1) {return (first_cpu);}
   return (last_cpu == -1) ? first_cpu : -1;
 }
 
