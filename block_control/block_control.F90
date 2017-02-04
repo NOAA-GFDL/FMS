@@ -10,19 +10,32 @@ use mpp_domains_mod, only: mpp_compute_extent
    integer, dimension(:,:), _ALLOCATABLE :: ix _NULL
  end type ix_type
 
+ type pk_type
+   integer, dimension(:), _ALLOCATABLE :: ii _NULL
+   integer, dimension(:), _ALLOCATABLE :: jj _NULL
+ end type pk_type
+
  type block_control_type
-   integer :: nx_block, ny_block
-   integer :: nblks
-   integer :: isc, iec, jsc, jec
-   integer :: npz
-   integer, dimension(:), _ALLOCATABLE :: ibs _NULL, &
-                                          ibe _NULL, &
+   integer :: nx_block, ny_block  ! blocking factor using mpp-style decomposition
+   integer :: nblks               ! number of blocks cover MPI domain
+   integer :: isc, iec, jsc, jec  ! MPI domain global extents
+   integer :: npz                 ! vertical extent
+   integer, dimension(:), _ALLOCATABLE :: ibs _NULL, &  ! block extents for mpp-style 
+                                          ibe _NULL, &  ! decompositions
                                           jbs _NULL, &
                                           jbe _NULL
-   type(ix_type), dimension(:), _ALLOCATABLE :: ix _NULL
+   type(ix_type), dimension(:), _ALLOCATABLE :: ix _NULL ! dereference packed index from global index
+   !--- packed blocking fields
+   integer, pointer :: blksz(:) => null()   ! number of points in each individual block
+                                            ! blocks are not required to be uniforom in size
+   integer, pointer :: blkno(:,:) => null() ! dereference block number using global indices
+   integer, dimension(:,:), _ALLOCATABLE :: ixp _NULL ! dereference packed index from global indices
+                                                      ! must be used in conjuction with blkno
+   type(pk_type), dimension(;), _ALLOCATABLE :: index _NULL ! dereference global indices from
+                                                            ! block/ixp combo
  end type block_control_type
 
-public :: define_blocks
+public :: define_blocks, define_blocks_packed
 
 contains
 
@@ -101,5 +114,72 @@ contains
     enddo
 
   end subroutine define_blocks
+
+!-------------------------------------------------------------------------
+! creates and populates a data type which is used for defining the
+! sub-blocks of the MPI-domain to enhance OpenMP and memory performance
+!
+! uses a packed concept
+!---------------------------------------------------------------------
+  subroutine define_blocks_packed (component, isc, iec, jsc, jec, kpts, blksz, message)
+    character(len=*),         intent(in)    :: component
+    type(block_control_type), intent(inout) :: Block
+    integer,                  intent(in)    :: isc, iec, jsc, jec, kpts, blksz
+    logical,                  intent(inout) :: message
+!--- local variables
+    integer :: nblks, lblksz, tot_pts, ii, jj,  nb, ix
+    character(len=132) :: text
+
+    tot_pts = (iec - isc + 1) * (jec - jsc + 1)
+    nblks = celing(tot_pts/blksz)
+
+    if (message) then
+      if (mod(tot_pts,blksz) .ne. 0) then
+        write( text,'(a,a,2i4,a,i4,a,i4)' ) trim(component),'define_blocks_packed: domain (',&
+             (iec-isc+1), (jec-jsc+1),') is not an even divisor with definition (',&
+             blksz,') - blocks will not be uniform with a remainder of ',mod(tot_pts,blksz)
+        call mpp_error( NOTE, trim(text) )
+      endif
+      message = .false.
+    endif
+
+    Block%isc   = isc
+    Block%iec   = iec
+    Block%jsc   = jsc
+    Block%iec   = jec
+    Block%npz   = npz
+    Block%nblks = nblks
+    if (.not. ALLOCATED(Block%blksz)) &
+      allocate (Block%blksz(nblks), &
+                Block%blkno(isc:iec,jsc:jec), &
+                Block%index(nb)%ix(isc:iec,jsc:jec))
+
+!--- set up blocks
+    do nb = 1, nblks
+      lblksz = blksz
+      if (nb .EQ. nblks) lblksz = tot_pts - (nb-1) * blksz
+      Block%blksz(nb) = lblksz
+      allocate (Block%index(nb)%ii(lblksz), &
+                Block%index(nb)%jj(lblksz), &
+    enddo
+
+!--- set up packed indices
+    nb = 1
+    ix = 0
+    do jj = jsc, jec
+      do ii = isc, iec
+        ix = ix + 1
+        if (ix .GT. blksz) then
+          ix = 1
+          nb = nb + 1
+        endif
+        Block%ixp(ii,jj) = ix
+        Block%iblkno(ii,jj) = nb
+        Block%index(nb)%ii(ix) = ii
+        Block%index(nb)%jj(ix) = jj
+      enddo
+    enddo
+
+  end subroutine define_block_packed
 
 end module block_control_mod
