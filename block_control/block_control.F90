@@ -31,7 +31,7 @@ use mpp_domains_mod, only: mpp_compute_extent
    integer, pointer :: blkno(:,:) => null() ! dereference block number using global indices
    integer, dimension(:,:), _ALLOCATABLE :: ixp _NULL ! dereference packed index from global indices
                                                       ! must be used in conjuction with blkno
-   type(pk_type), dimension(;), _ALLOCATABLE :: index _NULL ! dereference global indices from
+   type(pk_type), dimension(:), _ALLOCATABLE :: index _NULL ! dereference global indices from
                                                             ! block/ixp combo
  end type block_control_type
 
@@ -42,7 +42,7 @@ contains
 !----------------------------------------------------------------------
 ! set up "blocks" used for OpenMP threading of column-based
 ! calculations using rad_n[x/y]xblock from coupler_nml
-!---------------------------------------------------------------------
+!----------------------------------------------------------------------
   subroutine define_blocks (component, Block, isc, iec, jsc, jec, kpts, &
                             nx_block, ny_block, message)
     character(len=*),         intent(in)    :: component
@@ -115,13 +115,14 @@ contains
 
   end subroutine define_blocks
 
-!-------------------------------------------------------------------------
+!----------------------------------------------------------------------
 ! creates and populates a data type which is used for defining the
 ! sub-blocks of the MPI-domain to enhance OpenMP and memory performance
 !
 ! uses a packed concept
-!---------------------------------------------------------------------
-  subroutine define_blocks_packed (component, isc, iec, jsc, jec, kpts, blksz, message)
+!----------------------------------------------------------------------
+  subroutine define_blocks_packed (component, Block, isc, iec, jsc, jec, &
+                                   kpts, blksz, message)
     character(len=*),         intent(in)    :: component
     type(block_control_type), intent(inout) :: Block
     integer,                  intent(in)    :: isc, iec, jsc, jec, kpts, blksz
@@ -131,7 +132,11 @@ contains
     character(len=132) :: text
 
     tot_pts = (iec - isc + 1) * (jec - jsc + 1)
-    nblks = celing(tot_pts/blksz)
+    if (mod(tot_pts,blksz) .eq. 0) then
+      nblks = tot_pts/blksz
+    else
+      nblks = ceiling(real(tot_pts)/real(blksz))
+    endif
 
     if (message) then
       if (mod(tot_pts,blksz) .ne. 0) then
@@ -149,10 +154,11 @@ contains
     Block%iec   = jec
     Block%npz   = npz
     Block%nblks = nblks
-    if (.not. ALLOCATED(Block%blksz)) &
+    if (.not. _ALLOCATED(Block%blksz)) &
       allocate (Block%blksz(nblks), &
+                Block%index(nblks), &
                 Block%blkno(isc:iec,jsc:jec), &
-                Block%index(nb)%ix(isc:iec,jsc:jec))
+                Block%ixp(isc:iec,jsc:jec))
 
 !--- set up blocks
     do nb = 1, nblks
@@ -160,7 +166,7 @@ contains
       if (nb .EQ. nblks) lblksz = tot_pts - (nb-1) * blksz
       Block%blksz(nb) = lblksz
       allocate (Block%index(nb)%ii(lblksz), &
-                Block%index(nb)%jj(lblksz), &
+                Block%index(nb)%jj(lblksz))
     enddo
 
 !--- set up packed indices
@@ -174,12 +180,12 @@ contains
           nb = nb + 1
         endif
         Block%ixp(ii,jj) = ix
-        Block%iblkno(ii,jj) = nb
+        Block%blkno(ii,jj) = nb
         Block%index(nb)%ii(ix) = ii
         Block%index(nb)%jj(ix) = jj
       enddo
     enddo
 
-  end subroutine define_block_packed
+  end subroutine define_blocks_packed
 
 end module block_control_mod
