@@ -20,17 +20,17 @@ use mpp_domains_mod, only: mpp_compute_extent
    integer :: nblks               ! number of blocks cover MPI domain
    integer :: isc, iec, jsc, jec  ! MPI domain global extents
    integer :: npz                 ! vertical extent
-   integer, dimension(:), _ALLOCATABLE :: ibs _NULL, &  ! block extents for mpp-style 
-                                          ibe _NULL, &  ! decompositions
-                                          jbs _NULL, &
-                                          jbe _NULL
-   type(ix_type), dimension(:), _ALLOCATABLE :: ix _NULL ! dereference packed index from global index
+   integer, dimension(:),       _ALLOCATABLE :: ibs   _NULL, &  ! block extents for mpp-style 
+                                                ibe   _NULL, &  ! decompositions
+                                                jbs   _NULL, &
+                                                jbe   _NULL
+   type(ix_type), dimension(:), _ALLOCATABLE :: ix    _NULL ! dereference packed index from global index
    !--- packed blocking fields
-   integer, pointer :: blksz(:) => null()   ! number of points in each individual block
-                                            ! blocks are not required to be uniforom in size
-   integer, pointer :: blkno(:,:) => null() ! dereference block number using global indices
-   integer, dimension(:,:), _ALLOCATABLE :: ixp _NULL ! dereference packed index from global indices
-                                                      ! must be used in conjuction with blkno
+   integer, dimension(:),       _ALLOCATABLE :: blksz _NULL ! number of points in each individual block
+                                                            ! blocks are not required to be uniforom in size
+   integer, dimension(:,:),     _ALLOCATABLE :: blkno _NULL ! dereference block number using global indices
+   integer, dimension(:,:),     _ALLOCATABLE :: ixp   _NULL ! dereference packed index from global indices
+                                                            ! must be used in conjuction with blkno
    type(pk_type), dimension(:), _ALLOCATABLE :: index _NULL ! dereference global indices from
                                                             ! block/ixp combo
  end type block_control_type
