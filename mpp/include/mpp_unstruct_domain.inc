@@ -235,9 +235,9 @@
      end_index = UG_domain%compute%end_index
      pos = 0
      recv_cnt = 0
-     index_list = -1
      allocate(index_list(UG_domain%compute%size))
      allocate(send_buffer(UG_domain%compute%size))
+     index_list = -1
      do n = 0, nlist-1
         if(SG_domain%list(n)%tile_id(1) .NE. tile_id) cycle
         isc = SG_domain%list(n)%x(1)%compute%begin; iec = SG_domain%list(n)%x(1)%compute%end

@@ -866,8 +866,10 @@ end subroutine mpp_gsm_free
 !            GLOBAL REDUCTION ROUTINES: mpp_max, mpp_sum, mpp_min             !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#undef MPP_REDUCE_
-#define MPP_REDUCE_ mpp_max_real8
+#undef MPP_REDUCE_0D_
+#define MPP_REDUCE_0D_ mpp_max_real8_0d
+#undef MPP_REDUCE_1D_
+#define MPP_REDUCE_1D_ mpp_max_real8_1d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #undef MPP_TYPE_BYTELEN_
@@ -879,8 +881,10 @@ end subroutine mpp_gsm_free
 #include <mpp_reduce_mpi.h>
 
 #ifdef OVERLOAD_R4
-#undef MPP_REDUCE_
-#define MPP_REDUCE_ mpp_max_real4
+#undef MPP_REDUCE_0D_
+#define MPP_REDUCE_0D_ mpp_max_real4_0d
+#undef MPP_REDUCE_1D_
+#define MPP_REDUCE_1D_ mpp_max_real4_1d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #undef MPP_TYPE_BYTELEN_
@@ -893,8 +897,10 @@ end subroutine mpp_gsm_free
 #endif
 
 #ifndef no_8byte_integers
-#undef MPP_REDUCE_
-#define MPP_REDUCE_ mpp_max_int8
+#undef MPP_REDUCE_0D_
+#define MPP_REDUCE_0D_ mpp_max_int8_0d
+#undef MPP_REDUCE_1D_
+#define MPP_REDUCE_1D_ mpp_max_int8_1d
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
 #undef MPP_TYPE_BYTELEN_
@@ -906,8 +912,10 @@ end subroutine mpp_gsm_free
 #include <mpp_reduce_mpi.h>
 #endif
 
-#undef MPP_REDUCE_
-#define MPP_REDUCE_ mpp_max_int4
+#undef MPP_REDUCE_0D_
+#define MPP_REDUCE_0D_ mpp_max_int4_0d
+#undef MPP_REDUCE_1D_
+#define MPP_REDUCE_1D_ mpp_max_int4_1d
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
 #undef MPP_TYPE_BYTELEN_
@@ -918,8 +926,10 @@ end subroutine mpp_gsm_free
 #define MPI_REDUCE_ MPI_MAX
 #include <mpp_reduce_mpi.h>
 
-#undef MPP_REDUCE_
-#define MPP_REDUCE_ mpp_min_real8
+#undef MPP_REDUCE_0D_
+#define MPP_REDUCE_0D_ mpp_min_real8_0d
+#undef MPP_REDUCE_1D_
+#define MPP_REDUCE_1D_ mpp_min_real8_1d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #undef MPP_TYPE_BYTELEN_
@@ -931,8 +941,10 @@ end subroutine mpp_gsm_free
 #include <mpp_reduce_mpi.h>
 
 #ifdef OVERLOAD_R4
-#undef MPP_REDUCE_
-#define MPP_REDUCE_ mpp_min_real4
+#undef MPP_REDUCE_0D_
+#define MPP_REDUCE_0D_ mpp_min_real4_0d
+#undef MPP_REDUCE_1D_
+#define MPP_REDUCE_1D_ mpp_min_real4_1d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #undef MPP_TYPE_BYTELEN_
@@ -945,8 +957,10 @@ end subroutine mpp_gsm_free
 #endif
 
 #ifndef no_8byte_integers
-#undef MPP_REDUCE_
-#define MPP_REDUCE_ mpp_min_int8
+#undef MPP_REDUCE_0D_
+#define MPP_REDUCE_0D_ mpp_min_int8_0d
+#undef MPP_REDUCE_1D_
+#define MPP_REDUCE_1D_ mpp_min_int8_1d
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
 #undef MPP_TYPE_BYTELEN_
@@ -957,9 +971,11 @@ end subroutine mpp_gsm_free
 #define MPI_REDUCE_ MPI_MIN
 #include <mpp_reduce_mpi.h>
 #endif       
-             
-#undef MPP_REDUCE_
-#define MPP_REDUCE_ mpp_min_int4
+
+#undef MPP_REDUCE_0D_
+#define MPP_REDUCE_0D_ mpp_min_int4_0d
+#undef MPP_REDUCE_1D_
+#define MPP_REDUCE_1D_ mpp_min_int4_1d             
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
 #undef MPP_TYPE_BYTELEN_
