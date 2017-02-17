@@ -2009,12 +2009,12 @@ CONTAINS
           ! CF Compliance requires the unit on the _bnds axis is the same as 'time'
           files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
                & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
-               & TRIM(time_unit_list(files(file)%time_units)),&
-               & TRIM(time_name)//' axis boundaries', pack=pack_size)
+               & time_units, TRIM(time_name)//' axis boundaries', pack=pack_size)
        ELSE
           files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
                & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
-               & time_units, TRIM(time_name)//' axis boundaries', pack=pack_size)
+               & TRIM(time_unit_list(files(file)%time_units)),&
+               & TRIM(time_name)//' axis boundaries', pack=pack_size)
        END IF
     END IF
     ! Let lower levels know that all meta data has been sent
