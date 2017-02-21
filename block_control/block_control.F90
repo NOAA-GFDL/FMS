@@ -132,10 +132,14 @@ contains
     character(len=132) :: text
 
     tot_pts = (iec - isc + 1) * (jec - jsc + 1)
-    if (mod(tot_pts,blksz) .eq. 0) then
-      nblks = tot_pts/blksz
+    if (blksz < 0) then
+      nblks = 1
     else
-      nblks = ceiling(real(tot_pts)/real(blksz))
+      if (mod(tot_pts,blksz) .eq. 0) then
+        nblks = tot_pts/blksz
+      else
+        nblks = ceiling(real(tot_pts)/real(blksz))
+      endif
     endif
 
     if (message) then
