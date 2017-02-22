@@ -54,7 +54,7 @@ contains
     integer :: blocks
     integer, dimension(nx_block) :: i1, i2
     integer, dimension(ny_block) :: j1, j2
-    character(len=132) :: text
+    character(len=256) :: text
     integer :: i, j, nblks, ii, jj
 
     if (message) then
@@ -125,15 +125,17 @@ contains
                                    kpts, blksz, message)
     character(len=*),         intent(in)    :: component
     type(block_control_type), intent(inout) :: Block
-    integer,                  intent(in)    :: isc, iec, jsc, jec, kpts, blksz
+    integer,                  intent(in)    :: isc, iec, jsc, jec, kpts
+    integer,                  intent(inout) :: blksz
     logical,                  intent(inout) :: message
 !--- local variables
     integer :: nblks, lblksz, tot_pts, ii, jj,  nb, ix
-    character(len=132) :: text
+    character(len=256) :: text
 
     tot_pts = (iec - isc + 1) * (jec - jsc + 1)
     if (blksz < 0) then
       nblks = 1
+      blksz = tot_pts
     else
       if (mod(tot_pts,blksz) .eq. 0) then
         nblks = tot_pts/blksz
