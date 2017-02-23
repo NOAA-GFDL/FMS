@@ -734,6 +734,11 @@ CONTAINS
        CALL error_mesg ('diag_manager_mod::register_static_field', 'diag_manager has NOT been initialized', FATAL)
     END IF
 
+    register_static_field = find_input_field(module_name, field_name, 1)
+    field = register_static_field
+    ! Negative index returned if this field was not found in the diag_table.
+    IF ( register_static_field < 0 ) RETURN
+
     ! Check if OPTIONAL parameters were passed in.
     IF ( PRESENT(missing_value) ) THEN
        IF ( use_cmor ) THEN
@@ -779,11 +784,6 @@ CONTAINS
             & long_name, units, missing_value=missing_value, range=range, &
             & DYNAMIC=dynamic1)
     END IF
-
-    register_static_field = find_input_field(module_name, field_name, 1)
-    field = register_static_field
-    ! Negative index returned if this field was not found in the diag_table.
-    IF ( register_static_field < 0 ) RETURN
 
     IF ( tile > 1 ) THEN
        IF ( .NOT.input_fields(field)%register ) THEN

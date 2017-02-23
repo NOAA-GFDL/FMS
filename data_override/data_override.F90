@@ -1172,14 +1172,31 @@ subroutine data_override_UG_1d(gridname,fieldname,data,time,override)
   type(time_type),    intent(in) :: time !  model time
   logical, intent(out), optional :: override ! true if the field has been overriden succesfully
   !local vars
-  real, dimension(:,:),   allocatable ::  data_2D
+  real, dimension(:,:), allocatable ::  data_SG
+  type(domainUG) :: UG_domain
+  integer       :: index1
+  integer       :: i
+  integer, dimension(4) :: comp_domain = 0  ! istart,iend,jstart,jend for compute domain
 
-  allocate(data_2D(size(data,1),1))
-  data_2D(:,1) = data
-  call data_override_UG_2d(gridname,fieldname,data_2D,time,override)
-     
-  data(:) = data_2D(:,1)
-  deallocate(data_2D)
+  !1  Look  for the data file in data_table 
+  if(PRESENT(override)) override = .false.
+  index1 = -1
+  do i = 1, table_size
+     if( trim(gridname) /= trim(data_table(i)%gridname)) cycle
+     if( trim(fieldname) /= trim(data_table(i)%fieldname_code)) cycle
+     index1 = i                               ! field found        
+     exit
+  enddo
+  if(index1 .eq. -1) return  ! NO override was performed
+
+  call get_domainUG(gridname,UG_domain,comp_domain)
+  allocate(data_SG(comp_domain(1):comp_domain(2),comp_domain(3):comp_domain(4)))
+
+  call data_override_2d(gridname,fieldname,data_SG,time,override)
+
+  call mpp_pass_SG_to_UG(UG_domain, data_SG(:,:), data(:))
+
+  deallocate(data_SG)
 
 end subroutine data_override_UG_1d
 
@@ -1191,9 +1208,10 @@ subroutine data_override_UG_2d(gridname,fieldname,data,time,override)
   logical, intent(out), optional :: override ! true if the field has been overriden succesfully
   !local vars
   real, dimension(:,:,:), allocatable ::  data_SG
+  real, dimension(:,:),   allocatable ::  data_UG
   type(domainUG) :: UG_domain
   integer       :: index1
-  integer       :: i
+  integer       :: i, nlevel, nlevel_max
   integer, dimension(4) :: comp_domain = 0  ! istart,iend,jstart,jend for compute domain
 
 !1  Look  for the data file in data_table 
@@ -1207,14 +1225,20 @@ subroutine data_override_UG_2d(gridname,fieldname,data,time,override)
   enddo
   if(index1 .eq. -1) return  ! NO override was performed
 
+  nlevel = size(data,2)
+  nlevel_max = nlevel
+  call mpp_max(nlevel_max)
+
   call get_domainUG(gridname,UG_domain,comp_domain)  
-  allocate(data_SG(comp_domain(1):comp_domain(2),comp_domain(3):comp_domain(4),size(data,2)))
+  allocate(data_SG(comp_domain(1):comp_domain(2),comp_domain(3):comp_domain(4),nlevel_max))
+  allocate(data_UG(size(data,1), nlevel_max))
+  data_SG = 0.0
+  call data_override_3d(gridname,fieldname,data_SG(:,:,1:nlevel),time,override)    
 
-  call data_override_3d(gridname,fieldname,data_SG,time,override)    
+  call mpp_pass_SG_to_UG(UG_domain, data_SG(:,:,:), data_UG(:,:))
+  data(:,1:nlevel) = data_UG(:,1:nlevel)  
 
-  call mpp_pass_SG_to_UG(UG_domain, data_SG(:,:,:), data(:,:))
-  
-  deallocate(data_SG)
+  deallocate(data_SG, data_UG)
 
 end subroutine data_override_UG_2d
 
