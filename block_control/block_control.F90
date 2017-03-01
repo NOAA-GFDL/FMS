@@ -1,7 +1,7 @@
 module block_control_mod
 #include <fms_platform.h>
 
-use mpp_mod,         only: mpp_error, NOTE, FATAL
+use mpp_mod,         only: mpp_error, NOTE, WARNING, FATAL
 use mpp_domains_mod, only: mpp_compute_extent
 
  public block_control_type
@@ -62,7 +62,7 @@ contains
         write( text,'(a,a,2i4,a,2i4,a)' ) trim(component),'define_blocks: domain (',&
              (iec-isc+1), (jec-jsc+1),') is not an even divisor with definition (',&
              nx_block, ny_block,') - blocks will not be uniform'
-        call mpp_error( NOTE, trim(text) )
+        call mpp_error (WARNING, trim(text))
       endif
       message = .false.
     endif
@@ -149,7 +149,7 @@ contains
         write( text,'(a,a,2i4,a,i4,a,i4)' ) trim(component),'define_blocks_packed: domain (',&
              (iec-isc+1), (jec-jsc+1),') is not an even divisor with definition (',&
              blksz,') - blocks will not be uniform with a remainder of ',mod(tot_pts,blksz)
-        call mpp_error( NOTE, trim(text) )
+        call mpp_error (WARNING, trim(text))
       endif
       message = .false.
     endif
