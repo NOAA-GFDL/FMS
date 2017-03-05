@@ -215,6 +215,7 @@ real, public, parameter :: ALOGMIN     = -50.0
 
 real, public, parameter :: STEFAN  = 5.6734e-8 
 real, public, parameter :: VONKARM = 0.40     
+real, public, parameter :: PI_8    = 3.14159265358979323846d0
 real, public, parameter :: PI      = 3.14159265358979323846
 real, public, parameter :: RAD_TO_DEG=180./PI
 real, public, parameter :: DEG_TO_RAD=PI/180.
