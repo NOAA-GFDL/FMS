@@ -38,7 +38,7 @@ MODULE diag_util_mod
        & DIAG_FIELD_NOT_FOUND, diag_init_time
   USE diag_axis_mod, ONLY: get_diag_axis_data, get_axis_global_length, get_diag_axis_cart,&
        & get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, get_axis_aux,&
-       & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name
+       & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name, get_domainUG
   USE diag_output_mod, ONLY: diag_flush, diag_field_out, diag_output_init, write_axis_meta_data,&
        & write_field_meta_data, done_meta_data
   USE diag_grid_mod, ONLY: get_local_indexes
@@ -47,13 +47,14 @@ MODULE diag_util_mod
   USE fms_io_mod, ONLY: get_tile_string, return_domain, string, get_instance_filename
   USE mpp_domains_mod,ONLY: domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
        & OPERATOR(.NE.), OPERATOR(.EQ.), mpp_modify_domain, mpp_get_domain_components,&
-       & mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, mpp_get_tile_npes
+       & mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, mpp_get_tile_npes,&
+       & domainUG, null_domainUG 
   USE time_manager_mod,ONLY: time_type, OPERATOR(==), OPERATOR(>), NO_CALENDAR, increment_date,&
        & increment_time, get_calendar_type, get_date, get_time, leap_year, OPERATOR(-),&
        & OPERATOR(<), OPERATOR(>=), OPERATOR(<=)
   USE mpp_io_mod, ONLY: mpp_close
   USE mpp_mod, ONLY: mpp_npes
-  USE fms_io_mod, ONLY: get_instance_filename
+  USE fms_io_mod, ONLY: get_instance_filename, get_mosaic_tile_file_ug
   USE constants_mod, ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
 
 #ifdef use_netCDF
@@ -448,6 +449,10 @@ CONTAINS
     INTEGER, DIMENSION(3) :: gstart_indx, gend_indx ! global start and end indices of output domain in 3 axes
     CHARACTER(len=1) :: cart
     CHARACTER(len=128) :: msg
+!----------
+!ug support
+    integer :: vert_dim_num
+!----------
 
     !initilization for local output
     start = -1.e10
@@ -459,6 +464,10 @@ CONTAINS
     start= output_fields(outnum)%output_grid%start
     end = output_fields(outnum)%output_grid%end
 
+!----------
+!ug support
+    vert_dim_num = 3
+!----------
     DO i = 1, SIZE(axes(:))
        global_axis_size = get_axis_global_length(axes(i))
        output_fields(outnum)%output_grid%subaxes(i) = -1
@@ -478,7 +487,30 @@ CONTAINS
           gstart_indx(i) = 1
           gend_indx(i) = global_axis_size
           output_fields(outnum)%output_grid%subaxes(i) = axes(i)
+!----------
+!ug support
+       case ("U")
+           if (i .ne. 1) then
+               call error_mesg("diag_util_mod::get_subfield_vert_size", &
+                               "the unstructured axis must be the first dimension.", &
+                               FATAL)
+           endif
+           gstart_indx(i) = 1
+           gend_indx(i) = global_axis_size
+           output_fields(outnum)%output_grid%subaxes(i) = axes(i)
+           vert_dim_num = 2
+           start(vert_dim_num) = start(3)
+           end(vert_dim_num) = end(3)
+!----------
        CASE ('Z')
+!----------
+!ug support
+          if (i .ne. vert_dim_num) then
+              call error_mesg("diag_util_mod::get_subfield_vert_size",&
+                              "i should equal vert_dim_num for z axis", &
+                              FATAL)
+          endif
+!----------
           ! <ERROR STATUS="FATAL">wrong values in vertical axis of region</ERROR>
           IF( start(i)*END(i) < 0. ) CALL error_mesg('diag_util_mod::get_subfield_vert_size',&
                & 'wrong values in vertical axis of region',FATAL)
@@ -494,16 +526,13 @@ CONTAINS
 
              ALLOCATE(subaxis_z(gstart_indx(i):gend_indx(i)))
              subaxis_z=global_depth(gstart_indx(i):gend_indx(i))
-             output_fields(outnum)%output_grid%subaxes(i) =&
-                  & diag_subaxes_init(axes(i),subaxis_z, gstart_indx(i),gend_indx(i))
+             output_fields(outnum)%output_grid%subaxes(i) = &
+                    diag_subaxes_init(axes(i),subaxis_z, gstart_indx(i),gend_indx(i))
              DEALLOCATE(subaxis_z,global_depth)
           ELSE !   vertical axis is the same as global vertical axis
              gstart_indx(i) = 1
              gend_indx(i) = global_axis_size
              output_fields(outnum)%output_grid%subaxes(i) = axes(i)
-             ! <ERROR STATUS="FATAL">i should equal 3 for z axis</ERROR>
-             IF( i /= 3 ) CALL error_mesg('diag_util_mod::get_subfield_vert_size',&
-                  & 'i should equal 3 for z axis', FATAL)
           END IF
        CASE default
           ! <ERROR STATUS="FATAL">Wrong axis_cart</ERROR>
@@ -1672,6 +1701,8 @@ CONTAINS
     CHARACTER(len=24) :: start_date
     TYPE(domain1d) :: domain
     TYPE(domain2d) :: domain2
+    TYPE(domainUG) :: domainU
+
 
     aux_present = .FALSE.
     match_aux_name = .FALSE.
@@ -1715,6 +1746,7 @@ CONTAINS
     ! Loop through all fields with this file to output axes
     ! JWD: This is a klooge; need something more robust
     domain2 = NULL_DOMAIN2D
+    domainU = NULL_DOMAINUG
     all_scalar_or_1d = .TRUE.
     DO j = 1, files(file)%num_fields
        field_num = files(file)%fields(j)
@@ -1723,35 +1755,60 @@ CONTAINS
        IF ( num_axes > 1 ) THEN
           all_scalar_or_1d = .FALSE.
           domain2 = get_domain2d ( output_fields(field_num)%axes(1:num_axes) )
+          domainU = get_domainUG ( output_fields(field_num)%axes(1) )
           IF ( domain2 .NE. NULL_DOMAIN2D ) EXIT
+       ELSEIF (num_axes == 1) THEN
+          if (domainU .EQ. null_domainUG) then
+               domainU = get_domainUG ( output_fields(field_num)%axes(num_axes) )
+          endif
        END IF
     END DO
-    IF( .NOT.all_scalar_or_1d ) THEN
-       IF ( domain2 .EQ. NULL_DOMAIN2D ) CALL return_domain(domain2)
-       IF ( domain2 .EQ. NULL_DOMAIN2D ) THEN
-          ! <ERROR STATUS="FATAL">
-          !   Domain not defined through set_domain interface; cannot retrieve tile info
-          ! </ERROR>
-          CALL error_mesg('diag_util_mod::opening_file',&
-               & 'Domain not defined through set_domain interface; cannot retrieve tile info', FATAL)
-       END IF
-       IF ( mpp_get_ntile_count(domain2) > 1 ) THEN
-          ntileMe = mpp_get_current_ntile(domain2)
-          ALLOCATE(tile_id(ntileMe))
-          tile_id = mpp_get_tile_id(domain2)
-          fname = TRIM(filename)
-          CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(files(file)%tile_count))
-          DEALLOCATE(tile_id)
-       END IF
-    END IF
 
+    IF( .NOT.all_scalar_or_1d ) THEN
+        IF (domainU .ne. null_domainUG .AND. domain2 .ne. null_domain2D) then
+            CALL error_mesg('diag_util_mod::opening_file',&
+                            'Domain2 and DomainU are somehow both set.', FATAL)
+        ELSEIF ( domainU .eq. null_domainUG) then
+            IF ( domain2 .EQ. NULL_DOMAIN2D ) then
+                CALL return_domain(domain2)
+            endif
+            IF ( domain2 .EQ. NULL_DOMAIN2D ) THEN
+               ! <ERROR STATUS="FATAL">
+               !   Domain not defined through set_domain interface; cannot retrieve tile info
+               ! </ERROR>
+                CALL error_mesg('diag_util_mod::opening_file',&
+                                'Domain not defined through set_domain interface;' &
+                                //' cannot retrieve tile info',FATAL)
+            ENDIF
+            IF ( mpp_get_ntile_count(domain2) > 1 ) THEN
+                ntileMe = mpp_get_current_ntile(domain2)
+                ALLOCATE(tile_id(ntileMe))
+                tile_id = mpp_get_tile_id(domain2)
+                fname = TRIM(filename)
+                CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(files(file)%tile_count))
+                DEALLOCATE(tile_id)
+            ENDIF
+        endif
+    ENDIF
+    IF ( domainU .ne. null_domainUG) then
+!          ntileMe = mpp_get_UG_current_ntile(domainU)
+!          ALLOCATE(tile_id(ntileMe))
+!          tile_id = mpp_get_UG_tile_id(domainU)
+!          fname = TRIM(filename)
+!           ntiles = mpp_get_UG_domain_ntiles(domainU)
+!           my_tile_id = mpp_get_UG_domain_tile_id(domainU)
+!          CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(files(file)%tile_count))
+!          DEALLOCATE(tile_id)
+          fname = TRIM(filename)
+          CALL get_mosaic_tile_file_ug(fname,filename,domainU)
+    ENDIF
     IF ( _ALLOCATED(files(file)%attributes) ) THEN
        CALL diag_output_init(filename, files(file)%format, global_descriptor,&
-            & files(file)%file_unit, all_scalar_or_1d, domain2,&
+            & files(file)%file_unit, all_scalar_or_1d, domain2, domainU,&
             & attributes=files(file)%attributes(1:files(file)%num_attributes))
     ELSE
        CALL diag_output_init(filename, files(file)%format, global_descriptor,&
-            & files(file)%file_unit, all_scalar_or_1d, domain2)
+            & files(file)%file_unit, all_scalar_or_1d, domain2,domainU)
     END IF
     files(file)%bytes_written = 0
     ! Does this file contain time_average fields?
@@ -1879,7 +1936,8 @@ CONTAINS
                   & standard_name = input_fields(input_field_num)%standard_name,&
                   & interp_method = input_fields(input_field_num)%interp_method,&
                   & attributes=output_fields(field_num)%attributes,&
-                  & num_attributes=output_fields(field_num)%num_attributes)
+                  & num_attributes=output_fields(field_num)%num_attributes,&
+                  & use_UGdomain=files(file)%use_domainUG)
           ELSE
              output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit,&
                   & output_fields(field_num)%output_name, axes(1:num_axes),&
@@ -1890,7 +1948,8 @@ CONTAINS
                   & time_method=output_fields(field_num)%time_method,&
                   & standard_name = input_fields(input_field_num)%standard_name,&
                   & attributes=output_fields(field_num)%attributes,&
-                  & num_attributes=output_fields(field_num)%num_attributes)
+                  & num_attributes=output_fields(field_num)%num_attributes,&
+                  & use_UGdomain=files(file)%use_domainUG)
           END IF
           ! NEED TO TAKE CARE OF TIME AVERAGING INFO TOO BOTH CASES
        ELSE
@@ -1905,7 +1964,8 @@ CONTAINS
                   & standard_name = input_fields(input_field_num)%standard_name,&
                   & interp_method = input_fields(input_field_num)%interp_method,&
                   & attributes=output_fields(field_num)%attributes,&
-                  & num_attributes=output_fields(field_num)%num_attributes)
+                  & num_attributes=output_fields(field_num)%num_attributes,&
+                  & use_UGdomain=files(file)%use_domainUG)
           ELSE
              output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit,&
                   & output_fields(field_num)%output_name, axes(1:num_axes),&
@@ -1916,7 +1976,8 @@ CONTAINS
                   & time_method=output_fields(field_num)%time_method,&
                   & standard_name = input_fields(input_field_num)%standard_name,&
                   & attributes=output_fields(field_num)%attributes,&
-                  & num_attributes=output_fields(field_num)%num_attributes)
+                  & num_attributes=output_fields(field_num)%num_attributes,&
+                  & use_UGdomain=files(file)%use_domainUG)
           END IF
        END IF
     END DO
@@ -1941,19 +2002,19 @@ CONTAINS
        time_axis_id(1) = files(file)%time_axis_id
        time_bounds_id(1) = files(file)%time_bounds_id
        CALL get_diag_axis( time_axis_id(1), time_name, time_units, time_longname,&
-            & cart_name, dir, edges, Domain, DATA)
+            & cart_name, dir, edges, Domain, domainU, DATA)
        CALL get_diag_axis( time_bounds_id(1), timeb_name, timeb_units, timeb_longname,&
-            & cart_name, dir, edges, Domain, DATA)
+            & cart_name, dir, edges, Domain, domainU, DATA)
        IF ( do_cf_compliance() ) THEN
           ! CF Compliance requires the unit on the _bnds axis is the same as 'time'
           files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
                & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
-               & TRIM(time_unit_list(files(file)%time_units)),&
-               & TRIM(time_name)//' axis boundaries', pack=pack_size)
+               & time_units, TRIM(time_name)//' axis boundaries', pack=pack_size)
        ELSE
           files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
                & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
-               & time_units, TRIM(time_name)//' axis boundaries', pack=pack_size)
+               & TRIM(time_unit_list(files(file)%time_units)),&
+               & TRIM(time_name)//' axis boundaries', pack=pack_size)
        END IF
     END IF
     ! Let lower levels know that all meta data has been sent

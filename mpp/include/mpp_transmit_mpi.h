@@ -96,6 +96,7 @@
              call MPI_RECV( get_data, get_len, MPI_TYPE_, from_pe, comm_tag, mpp_comm_private, stat, error )
              call MPI_GET_COUNT( stat, MPI_TYPE_, rsize, error)
              if(rsize .NE. get_len) then
+                print*, "rsize, get_len=", rsize, get_len, mpp_pe(), from_pe
                 call mpp_error(FATAL, "MPP_TRANSMIT: get_len does not match size of data received")
              endif
           else

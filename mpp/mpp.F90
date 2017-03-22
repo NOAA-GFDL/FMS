@@ -550,25 +550,33 @@ private
   ! </INTERFACE>
 
   interface mpp_max
-     module procedure mpp_max_real8
+     module procedure mpp_max_real8_0d
+     module procedure mpp_max_real8_1d
 #ifndef no_8byte_integers
-     module procedure mpp_max_int8
+     module procedure mpp_max_int8_0d
+     module procedure mpp_max_int8_1d
 #endif
 #ifdef OVERLOAD_R4
-     module procedure mpp_max_real4
+     module procedure mpp_max_real4_0d
+     module procedure mpp_max_real4_1d
 #endif
-     module procedure mpp_max_int4
+     module procedure mpp_max_int4_0d
+     module procedure mpp_max_int4_1d
   end interface
 
   interface mpp_min
-     module procedure mpp_min_real8
+     module procedure mpp_min_real8_0d
+     module procedure mpp_min_real8_1d
 #ifndef no_8byte_integers
-     module procedure mpp_min_int8
+     module procedure mpp_min_int8_0d
+     module procedure mpp_min_int8_1d
 #endif
 #ifdef OVERLOAD_R4
-     module procedure mpp_min_real4
+     module procedure mpp_min_real4_0d
+     module procedure mpp_min_real4_1d
 #endif
-     module procedure mpp_min_int4
+     module procedure mpp_min_int4_0d
+     module procedure mpp_min_int4_1d
   end interface
 
 
