@@ -457,7 +457,7 @@ do i = 1, ndim
       call mpp_get_axis_data(axes(i),clim_type%levs)
       clim_type%level_type = PRESSURE
   ! Convert to Pa
-      if( lowercase(trim(adjustl(chomp(units)))) == "mb" .or. lowercase(trim(adjustl(chomp(units)))) == "hpa") then
+      if( trim(adjustl(lowercase(chomp(units)))) == "mb" .or. trim(adjustl(lowercase(chomp(units)))) == "hpa") then
          clim_type%levs = clim_type%levs * 100.
       end if
 ! define the direction of the vertical data axis
@@ -483,7 +483,7 @@ do i = 1, ndim
       call mpp_get_axis_data(axes(i),clim_type%halflevs)
       clim_type%level_type = PRESSURE
   ! Convert to Pa
-      if( lowercase(trim(adjustl(chomp(units)))) == "mb" .or. lowercase(trim(adjustl(chomp(units)))) == "hpa") then
+      if( trim(adjustl(lowercase(chomp(units)))) == "mb" .or. trim(adjustl(lowercase(chomp(units)))) == "hpa") then
          clim_type%halflevs = clim_type%halflevs * 100.
       end if
 ! define the direction of the vertical data axis
@@ -565,9 +565,9 @@ do i = 1, ndim
 !    base_time based on the netcdf info.
 !----------------------------------------------------------------------
         if ( (model_calendar == JULIAN .and.   &
-              lowercase(trim(adjustl(file_calendar))) == 'julian')  .or. &
-              (model_calendar == NOLEAP .and.   &
-               lowercase(trim(adjustl(file_calendar))) == 'noleap') )  then
+             & trim(adjustl(lowercase(file_calendar))) == 'julian')  .or. &
+             & (model_calendar == NOLEAP .and.   &
+             & trim(adjustl(lowercase(file_calendar))) == 'noleap') )  then
           call mpp_error (NOTE, 'interpolator_mod: Model and file&
                     & calendars are the same for file ' //   &
                     & trim(file_name) // '; no calendar conversion  &
@@ -575,21 +575,21 @@ do i = 1, ndim
           base_time = set_date (fileyr, filemon, fileday, filehr, &
                                 filemin,filesec)
         else if ( (model_calendar == JULIAN .and.   &
-                   lowercase(trim(adjustl(file_calendar))) == 'noleap')) then  
+             & trim(adjustl(lowercase(file_calendar))) == 'noleap')) then  
           call mpp_error (NOTE, 'interpolator_mod: Using julian &
                             &model calendar and noleap file calendar&
                             & for file ' // trim(file_name) //   &
                             &'; calendar conversion needed')
           base_time = set_date_no_leap (fileyr, filemon, fileday,  &
-                                        filehr, filemin, filesec)
+               & filehr, filemin, filesec)
         else if ( (model_calendar == NOLEAP .and.   &
-                   lowercase(trim(adjustl(file_calendar))) == 'julian')) then  
+             & trim(adjustl(lowercase(file_calendar))) == 'julian')) then  
           call mpp_error (NOTE, 'interpolator_mod: Using noleap &
                             &model calendar and julian file calendar&
                             & for file ' // trim(file_name) //  &
                             &'; calendar conversion needed')
           base_time = set_date_julian (fileyr, filemon, fileday,  &
-                                       filehr, filemin, filesec)
+               & filehr, filemin, filesec)
         else
           call mpp_error (FATAL , 'interpolator_mod: Model and file&
                & calendars ( ' // trim(file_calendar) // ' ) differ  &
@@ -663,9 +663,9 @@ do i = 1, ndim
 !    "real" time.
 !--------------------------------------------------------------------
             if ( (model_calendar == JULIAN .and.   &
-                  lowercase(trim(adjustl(file_calendar))) == 'julian')  .or. &
-                 (model_calendar == NOLEAP .and.   &
-                  lowercase(trim(adjustl(file_calendar))) == 'noleap') )  then
+                 & trim(adjustl(lowercase(file_calendar))) == 'julian')  .or. &
+                 & (model_calendar == NOLEAP .and.   &
+                 & trim(adjustl(lowercase(file_calendar))) == 'noleap') )  then
 
 !---------------------------------------------------------------------
 !    no calendar conversion needed.
@@ -679,7 +679,7 @@ do i = 1, ndim
 !    convert file times from noleap to julian.
 !---------------------------------------------------------------------
             else if ( (model_calendar == JULIAN .and.   &
-                       lowercase(trim(adjustl(file_calendar))) == 'noleap')) then  
+                 & trim(adjustl(lowercase(file_calendar))) == 'noleap')) then  
               Noleap_time = set_time (0, INT(time_in(n))) + base_time
               call get_date_no_leap (Noleap_time, yr, mo, dy, hr,  &
                                      mn, sc)
@@ -701,7 +701,7 @@ do i = 1, ndim
 !    convert file times from julian to noleap.
 !---------------------------------------------------------------------
             else if ( (model_calendar == NOLEAP .and.   &
-                       lowercase(trim(adjustl(file_calendar))) == 'julian')) then  
+                 & trim(adjustl(lowercase(file_calendar))) == 'julian')) then  
               Julian_time = set_time (0, INT(time_in(n))) + base_time
               call get_date_julian (Julian_time, yr, mo, dy, hr, mn, sc)
               clim_type%time_slice(n) = set_date_no_leap (yr, mo, dy, &
@@ -960,7 +960,7 @@ if(present(data_names)) then
       NAME_PRESENT = .FALSE.
       do i=1,nvar
          call mpp_get_atts(varfields(i),name=name,ndim=ndim,units=units)
-         if( lowercase(trim(adjustl(name))) == lowercase(trim(adjustl(data_names(j)))) ) then
+         if( trim(adjustl(lowercase(name))) == trim(adjustl(lowercase(data_names(j)))) ) then
             units=chomp(units)
             if (mpp_pe() == 0 ) write(*,*) 'Initializing src field : ',trim(name)
             clim_type%field_name(j) = name
@@ -1599,7 +1599,7 @@ jend = jstart - 1 + size(interp_data,2)
 
   do i= 1,size(clim_type%field_name(:))
 !!++lwh
-   if ( lowercase(trim(adjustl(field_name))) == lowercase(trim(adjustl(clim_type%field_name(i)))) ) then
+   if ( trim(adjustl(lowercase(field_name))) == trim(adjustl(lowercase(clim_type%field_name(i)))) ) then
 !--lwh
     found_field=.true.
     exit 
@@ -1893,7 +1893,7 @@ end select
      do i= 1, size(clim_type%field_name(:))
 found = .false.
 do j = 1,size(climo_diag_name(:))
-  if (lowercase(trim(adjustl(climo_diag_name(j)))) .eq. lowercase(trim(adjustl(clim_type%field_name(i))))) then
+  if ( trim(adjustl(lowercase(climo_diag_name(j)))) .eq. trim(adjustl(lowercase(clim_type%field_name(i))))) then
     found = .true.
     exit
   endif
@@ -2029,7 +2029,7 @@ jend = jstart - 1 + size(interp_data,2)
 
 do i= 1,size(clim_type%field_name(:))
 !++lwh
-  if ( lowercase(trim(adjustl(field_name))) == lowercase(trim(adjustl(clim_type%field_name(i)))) ) then
+  if ( trim(adjustl(lowercase(field_name))) == trim(adjustl(lowercase(clim_type%field_name(i)))) ) then
 !--lwh
     found_field=.true.
     if(present(clim_units)) then
@@ -2300,7 +2300,7 @@ end select
 
 found = .false.
 do j = 1,size(climo_diag_name(:))
-  if (lowercase(trim(adjustl(climo_diag_name(j)))) .eq. lowercase(trim(adjustl(clim_type%field_name(i))))) then
+  if ( trim(adjustl(lowercase(climo_diag_name(j)))) .eq. trim(adjustl(lowercase(clim_type%field_name(i))))) then
     found = .true.
     exit
   endif
@@ -2424,7 +2424,7 @@ jend = jstart - 1 + size(interp_data,2)
 
 do i= 1,size(clim_type%field_name(:))
 !++lwh
-  if ( lowercase(trim(adjustl(field_name))) == lowercase(trim(adjustl(clim_type%field_name(i)))) ) then
+  if ( trim(adjustl(lowercase(field_name))) == trim(adjustl(lowercase(clim_type%field_name(i)))) ) then
 !--lwh
 
     found_field=.true.
@@ -2698,7 +2698,7 @@ end select
 
 found = .false.
 do j = 1,size(climo_diag_name(:))
-  if (lowercase(trim(adjustl(climo_diag_name(j)))) .eq. lowercase(trim(adjustl(clim_type%field_name(i))))) then
+  if (trim(adjustl(lowercase(climo_diag_name(j)))) .eq. trim(adjustl(lowercase(clim_type%field_name(i))))) then
     found = .true.
     exit
   endif
@@ -2781,7 +2781,7 @@ if (present(js)) jstart = js
 jend = jstart - 1 + size(interp_data,2)
 
 do i= 1,size(clim_type%field_name(:))
-  if ( lowercase(trim(adjustl(field_name))) == lowercase(trim(adjustl(clim_type%field_name(i)))) ) then
+  if ( trim(adjustl(lowercase(field_name))) == trim(adjustl(lowercase(clim_type%field_name(i)))) ) then
     found_field=.true.
     exit 
   endif
@@ -2914,7 +2914,7 @@ if (present(js)) jstart = js
 jend = jstart - 1 + size(interp_data,2)
 
 do i= 1,size(clim_type%field_name(:))
-  if ( lowercase(trim(adjustl(field_name))) == lowercase(trim(adjustl(clim_type%field_name(i)))) ) then
+  if ( trim(adjustl(lowercase(field_name))) == trim(adjustl(lowercase(clim_type%field_name(i)))) ) then
     found_field=.true.
     if(present(clim_units)) then
       call mpp_get_atts(clim_type%field_type(i),units=clim_units)
@@ -3029,7 +3029,7 @@ if (present(js)) jstart = js
 jend = jstart - 1 + size(interp_data,2)
 
 do i= 1,size(clim_type%field_name(:))
-  if ( lowercase(trim(adjustl(field_name))) == lowercase(trim(adjustl(clim_type%field_name(i)))) ) then
+  if ( trim(adjustl(lowercase(field_name))) == trim(adjustl(lowercase(clim_type%field_name(i)))) ) then
 
     found_field=.true.
 
@@ -3228,7 +3228,7 @@ logical :: result, found
 
 found = .false.
 do j = 1,size(climo_diag_name(:))
-  if (lowercase(trim(adjustl(climo_diag_name(j)))) .eq. lowercase(trim(adjustl(clim_type%field_name(i))))) then
+  if (trim(adjustl(lowercase(climo_diag_name(j)))) .eq. trim(adjustl(lowercase(clim_type%field_name(i))))) then
       found = .true.
       exit
   endif
@@ -3660,7 +3660,7 @@ call get_anthro_sulfate(aerosol,model_time,p_half,names(i),model_data,clim_units
 
       col_data(iscomp:iecomp,jscomp:jecomp)=0.0
       do k=1,level
-        if (lowercase(trim(adjustl(units))) .eq. 'kg/m^2') then
+        if (trim(adjustl(lowercase(units))) .eq. 'kg/m^2') then
            col_data(iscomp:iecomp,jscomp:jecomp)= col_data(iscomp:iecomp,jscomp:jecomp)+ &
               model_data(iscomp:iecomp,jscomp:jecomp,k)
         else
