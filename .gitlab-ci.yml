@@ -295,7 +295,7 @@ build:ncrc4:gnu:debug:
     - module load cray-hdf5
     - list_paths -o pathnames_fms .
     - mkmf -m Makefile -p libfms_${myBuild}.a -t $FRE_COMMANDS_HOME/site/$FRE_SYSTEM_SITE/gnu.mk -c "$CPPFLAGS" -Iinclude -Impp/include pathnames_fms
-    - make OPENMP=Y DEBUG=Y libfms_${myBuild}.a
+    - make DEBUG=Y libfms_${myBuild}.a
   artifacts:
     paths:
       - libfms_${myBuild}.a
