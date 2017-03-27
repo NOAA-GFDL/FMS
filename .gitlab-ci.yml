@@ -521,6 +521,7 @@ build:theia:intel16:debug:
   tags:
     - theia
   variables:
+    PROJECT_DIR: /scratch4/GFDL/gfdlscr
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML"
     myBuild: theia_intel16_debug
   script:
@@ -545,6 +546,7 @@ build:theia:intel16:repro:
   tags:
     - theia
   variables:
+    PROJECT_DIR: /scratch4/GFDL/gfdlscr
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML"
     myBuild: theia_intel16_repro
   script:
@@ -569,6 +571,7 @@ build:theia:intel16:prod:
   tags:
     - theia
   variables:
+    PROJECT_DIR: /scratch4/GFDL/gfdlscr
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML"
     myBuild: theia_intel16_prod
   script:
