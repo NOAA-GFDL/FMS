@@ -28,7 +28,7 @@ before_script:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 # **********************************************************************
 # GFDL Workstation
@@ -57,7 +57,7 @@ build:gfdl-ws:intel15:debug:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 build:gfdl-ws:intel15:repro:
   stage: build
@@ -81,7 +81,7 @@ build:gfdl-ws:intel15:repro:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 build:gfdl-ws:intel15:prod:
   stage: build
@@ -93,7 +93,7 @@ build:gfdl-ws:intel15:prod:
   script:
     - source /usr/local/Modules/default/init/bash
     - module load fre/bronx-11
-    - module rm netcdf	
+    - module rm netcdf
     - module load intel_compilers/15.0.0
     - module load netcdf_private/4.3.2
     - module load netcdf-fortran/4.4.1
@@ -104,7 +104,7 @@ build:gfdl-ws:intel15:prod:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 # **********************************************************************
 # NCRC3
@@ -133,7 +133,7 @@ build:ncrc3:intel16:debug:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 build:ncrc3:intel16:repro:
   stage: build
@@ -157,7 +157,7 @@ build:ncrc3:intel16:repro:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 build:ncrc3:intel16:prod:
   stage: build
@@ -181,7 +181,7 @@ build:ncrc3:intel16:prod:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 # **********************************************************************
 # NCRC4
@@ -210,7 +210,7 @@ build:ncrc4:intel16:debug:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 build:ncrc4:intel16:repro:
   stage: build
@@ -234,7 +234,7 @@ build:ncrc4:intel16:repro:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 build:ncrc4:intel16:prod:
   stage: build
@@ -258,7 +258,7 @@ build:ncrc4:intel16:prod:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 # **********************************************************************
 # NCRC4
@@ -287,7 +287,7 @@ build:ncrc4:gnu:debug:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 build:ncrc4:gnu:repro:
   stage: build
@@ -311,7 +311,7 @@ build:ncrc4:gnu:repro:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 build:ncrc4:gnu:prod:
   stage: build
@@ -335,7 +335,7 @@ build:ncrc4:gnu:prod:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 # **********************************************************************
 # NCRC4
@@ -364,7 +364,7 @@ build:ncrc4:pgi:debug:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 build:ncrc4:pgi:repro:
   stage: build
@@ -388,7 +388,7 @@ build:ncrc4:pgi:repro:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 build:ncrc4:pgi:prod:
   stage: build
@@ -412,7 +412,7 @@ build:ncrc4:pgi:prod:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 # **********************************************************************
 # NCRC4
@@ -441,7 +441,7 @@ build:ncrc4:cce:debug:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 build:ncrc4:cce:repro:
   stage: build
@@ -465,7 +465,7 @@ build:ncrc4:cce:repro:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 build:ncrc4:cce:prod:
   stage: build
@@ -489,7 +489,7 @@ build:ncrc4:cce:prod:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 # **********************************************************************
 # theia
@@ -518,7 +518,7 @@ build:theia:intel16:debug:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 build:theia:intel16:repro:
   stage: build
@@ -542,7 +542,7 @@ build:theia:intel16:repro:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
 
 build:theia:intel16:prod:
   stage: build
@@ -566,4 +566,4 @@ build:theia:intel16:prod:
   artifacts:
     paths:
       - libfms_${myBuild}.a
-      - *.mod
+      - ./*.mod
