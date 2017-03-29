@@ -28,7 +28,7 @@ program test
   use mpp_domains_mod, only : mpp_group_update_type, mpp_create_group_update
   use mpp_domains_mod, only : mpp_do_group_update, mpp_clear_group_update
   use mpp_domains_mod, only : mpp_start_group_update, mpp_complete_group_update
-  use mpp_domains_mod, only : WUPDATE, SUPDATE, mpp_get_compute_domains
+  use mpp_domains_mod, only : WUPDATE, SUPDATE, mpp_get_compute_domains, NONSYMEDGEUPDATE
   use mpp_domains_mod, only : domainUG, mpp_define_unstruct_domain, mpp_get_UG_domain_tile_id
   use mpp_domains_mod, only : mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
   use mpp_domains_mod, only : mpp_get_ug_global_domain, mpp_global_field_ug
@@ -53,13 +53,14 @@ program test
   logical :: test_interface = .true.
   logical :: test_nest_domain = .false.
   logical :: test_edge_update = .false.
+  logical :: test_nonsym_edge = .false.
   logical :: test_group = .false.
   logical :: test_cubic_grid_redistribute = .false.
   logical :: check_parallel = .FALSE.  ! when check_parallel set to false,
   logical :: test_get_nbr = .FALSE.
   logical :: test_boundary = .false.
   logical :: test_global_sum = .false.
-  integer :: ensemble_size
+  integer :: ensemble_size = 1
   integer :: layout_cubic(2) = (/0,0/)
   integer :: layout_tripolar(2) = (/0,0/)
   integer :: layout_ensemble(2) = (/0,0/)
@@ -89,7 +90,8 @@ program test
                                jend_coarse, extra_halo, npes_fine, npes_coarse, mix_2D_3D, test_get_nbr, &
                                test_edge_update, test_cubic_grid_redistribute, ensemble_size, &
                                layout_cubic, layout_ensemble, nthreads, test_boundary, &
-                               layout_tripolar, test_group, test_global_sum, test_subset, test_unstruct
+                               layout_tripolar, test_group, test_global_sum, test_subset, test_unstruct, &
+                               test_nonsym_edge
   integer :: i, j, k
   integer :: layout(2)
   integer :: id
@@ -179,6 +181,12 @@ program test
       call test_update_edge( 'Folded-north' ) !includes vector field test
       call test_update_edge( 'Folded-north symmetry' )
   endif
+
+  if( test_nonsym_edge ) then
+      call test_update_nonsym_edge( 'Folded-north' ) !includes vector field test
+      call test_update_nonsym_edge( 'Folded-north symmetry' )
+  endif
+
   if( test_performance) then
       call update_domains_performance('Folded-north')
       call update_domains_performance('Cubic-Grid')
@@ -5708,6 +5716,126 @@ end subroutine test_group_update
 
 
   end subroutine test_update_edge
+
+
+  !##################################################################################
+  subroutine test_update_nonsym_edge( type )
+    character(len=*), intent(in) :: type
+    real, allocatable, dimension(:,:,:) :: x, x2
+    real, allocatable, dimension(:,:,:) :: y, y2
+    type(domain2D) :: domain
+    real,    allocatable :: global1(:,:,:), global2(:,:,:)
+    integer              :: shift, i, xhalo, yhalo
+    logical              :: is_symmetry
+    integer              :: is, ie, js, je, isd, ied, jsd, jed
+    type(mpp_group_update_type) :: group_update    
+
+    if(index(type, 'symmetry') == 0) then
+       shift = 0
+       is_symmetry = .false.
+    else
+       shift = 1
+       is_symmetry = .true.
+    end if
+    select case(type)
+    case( 'Folded-north', 'Folded-north symmetry' )
+        call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
+        call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo,   &
+             shalo=shalo, nhalo=nhalo, xflags=CYCLIC_GLOBAL_DOMAIN, yflags=FOLD_NORTH_EDGE, &
+             name=type, symmetry = is_symmetry  )
+    case default
+        call mpp_error( FATAL, 'test_update_edge: no such test: '//type )
+    end select
+        
+    call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
+    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+
+    !------------------------------------------------------------------
+    !              vector update : CGRID_NE
+    !------------------------------------------------------------------
+    !--- global1 is x-component and global2 is y-component
+    allocate(global1(1-whalo:nx+ehalo+shift, 1-shalo:ny+nhalo, nz))
+    allocate(global2(1-whalo:nx+ehalo, 1-shalo:ny+nhalo+shift, nz))
+    allocate(x  (isd:ied+shift,jsd:jed,nz), y (isd:ied,jsd:jed+shift,nz) )
+    allocate(x2 (isd:ied+shift,jsd:jed,nz), y2 (isd:ied,jsd:jed+shift,nz) ) 
+
+    global1 = 0.0
+    global2 = 0.0
+    do k = 1,nz
+       do j = 1,ny
+          do i = 1,nx+shift
+             global1(i,j,k) = k + i*1e-3 + j*1e-6
+          end do
+       end do
+       do j = 1,ny+shift
+          do i = 1,nx
+             global2(i,j,k) = k + i*1e-3 + j*1e-6
+          end do
+       end do
+    end do
+
+    select case (type)
+    case ('Folded-north')
+       !fill in folded north edge, cyclic east and west edge
+       call fill_folded_north_halo(global1, 1, 0, 0, 0, -1)
+       call fill_folded_north_halo(global2, 0, 1, 0, 0, -1)
+       !--- set the corner to 0
+       global1(1-whalo:0,     1-shalo:0,     :) = 0
+       global1(1-whalo:0,     ny+1:ny+nhalo, :) = 0
+       global1(nx+1:nx+ehalo, 1-shalo:0,     :) = 0
+       global1(nx+1:nx+ehalo, ny+1:ny+nhalo, :) = 0
+       global2(1-whalo:0,     1-shalo:0,     :) = 0
+       global2(1-whalo:0,     ny+1:ny+nhalo, :) = 0
+       global2(nx+1:nx+ehalo, 1-shalo:0,     :) = 0
+       global2(nx+1:nx+ehalo, ny+1:ny+nhalo, :) = 0
+    case ('Folded-north symmetry')
+       call fill_folded_north_halo(global1, 1, 0, 1, 0, -1)
+       call fill_folded_north_halo(global2, 0, 1, 0, 1, -1)
+    case default
+        call mpp_error( FATAL, 'TEST_MPP_DOMAINS: no such test: '//type )
+    end select
+
+    !redundant points must be equal and opposite
+    global2(nx/2+1:nx,     ny+shift,:) = -global2(nx/2:1:-1, ny+shift,:)
+    global2(1-whalo:0,     ny+shift,:) = -global2(nx-whalo+1:nx, ny+shift,:)
+!    global2(nx+1:nx+ehalo, ny+shift,:) = -global2(1:ehalo,       ny+shift,:)
+
+    x2 = 0.0; y2 = 0.0
+    if(is_symmetry) then
+       x2(isd:ie+shift,jsd:je,:) = global1(isd:ie+shift,jsd:je,:)
+       y2(isd:ie,jsd:je+shift,:) = global2(isd:ie,jsd:je+shift,:)
+    else
+       x2(isd:ie+shift,js:je,:) = global1(isd:ie+shift,js:je,:)
+       y2(is:ie,jsd:je+shift,:) = global2(is:ie,jsd:je+shift,:)
+    endif
+
+    x = 0.; y = 0.
+    x(is:ie+shift,js:je,      :) = global1(is:ie+shift,js:je,      :)
+    y(is:ie      ,js:je+shift,:) = global2(is:ie,      js:je+shift,:)
+
+    call mpp_create_group_update(group_update, x, y, domain, gridtype=CGRID_NE, &
+                                 flags=WUPDATE+SUPDATE+NONSYMEDGEUPDATE, whalo=1, ehalo=1, shalo=1, nhalo=1)
+    call mpp_do_group_update(group_update, domain, x(is,js,1))
+
+    call compare_checksums( x,  x2, type//' CGRID_NE X' )
+    call compare_checksums( y,  y2, type//' CGRID_NE Y' )
+
+    call mpp_sync()
+
+    x = 0.; y = 0.
+    x(is:ie+shift,js:je,      :) = global1(is:ie+shift,js:je,      :)
+    y(is:ie      ,js:je+shift,:) = global2(is:ie,      js:je+shift,:)
+    call mpp_start_group_update(group_update, domain, x(is,js,1))
+    call mpp_complete_group_update(group_update, domain, x(is,js,1))
+
+    call compare_checksums( x,  x2, type//' CGRID_NE X nonblock' )
+    call compare_checksums( y,  y2, type//' CGRID_NE Y nonblock' )
+
+    deallocate(global1, global2, x, y, x2, y2)
+    call mpp_clear_group_update(group_update)
+
+  end subroutine test_update_nonsym_edge
+
 
   !##################################################################################
   subroutine test_cyclic_offset( type )

@@ -135,6 +135,7 @@ subroutine mpp_io_unstructured_read_r_1D(funit, &
 
    !If necessary, compute a check-sum of the read-in data.
     if (compute_chksum) then
+#ifdef use_netCDF
         if (field%type .eq. NF_INT) then
             if (field%fill .eq. MPP_FILL_DOUBLE .or. field%fill .eq. &
                 real(MPP_FILL_INT)) then
@@ -156,7 +157,7 @@ subroutine mpp_io_unstructured_read_r_1D(funit, &
             chk = mpp_chksum(fdata, &
                              mask_val=field%fill)
         endif
-
+#endif
        !Print out the computed check-sum for the field.  This feature is
        !currently turned off.  Uncomment the following lines to turn it
        !back on.
@@ -314,6 +315,7 @@ subroutine mpp_io_unstructured_read_r_2D(funit, &
 
    !If necessary, compute a check-sum of the read-in data.
     if (compute_chksum) then
+#ifdef use_netCDF
         if (field%type .eq. NF_INT) then
             if (field%fill .eq. MPP_FILL_DOUBLE .or. field%fill .eq. &
                 real(MPP_FILL_INT)) then
@@ -335,7 +337,7 @@ subroutine mpp_io_unstructured_read_r_2D(funit, &
             chk = mpp_chksum(fdata, &
                              mask_val=field%fill)
         endif
-
+#endif
        !Print out the computed check-sum for the field.  This feature is
        !currently turned off.  Uncomment the following lines to turn it
        !back on.
@@ -493,6 +495,7 @@ subroutine mpp_io_unstructured_read_r_3D(funit, &
 
    !If necessary, compute a check-sum of the read-in data.
     if (compute_chksum) then
+#ifdef use_netCDF
         if (field%type .eq. NF_INT) then
             if (field%fill .eq. MPP_FILL_DOUBLE .or. field%fill .eq. &
                 real(MPP_FILL_INT)) then
@@ -514,7 +517,7 @@ subroutine mpp_io_unstructured_read_r_3D(funit, &
             chk = mpp_chksum(fdata, &
                              mask_val=field%fill)
         endif
-
+#endif
        !Print out the computed check-sum for the field.  This feature is
        !currently turned off.  Uncomment the following lines to turn it
        !back on.
