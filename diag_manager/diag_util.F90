@@ -1,4 +1,4 @@
-#include <fms_platform.h>
+s#include <fms_platform.h>
 
 MODULE diag_util_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
@@ -33,7 +33,7 @@ MODULE diag_util_mod
        & base_second, num_files, max_files, max_fields_per_file, max_out_per_in_field,&
        & max_input_fields,num_input_fields, max_output_fields, num_output_fields, coord_type,&
        & mix_snapshot_average_fields, global_descriptor, CMOR_MISSING_VALUE, use_cmor, pack_size,&
-       & debug_diag_manager, conserve_water, output_field_type, max_field_attributes, max_file_attributes,&
+       & debug_diag_manager, flush_nc_files, output_field_type, max_field_attributes, max_file_attributes,&
        & file_type, prepend_date, region_out_use_alt_value, GLO_REG_VAL, GLO_REG_VAL_ALT,&
        & DIAG_FIELD_NOT_FOUND, diag_init_time
   USE diag_axis_mod, ONLY: get_diag_axis_data, get_axis_global_length, get_diag_axis_cart,&
@@ -2316,7 +2316,7 @@ CONTAINS
           files(file)%last_flush = time
        END IF
     ELSE
-       IF ( time > files(file)%last_flush .AND. (.NOT.conserve_water.OR.debug_diag_manager) ) THEN
+       IF ( time > files(file)%last_flush .AND. (flush_nc_files.OR.debug_diag_manager) ) THEN
           CALL diag_flush(files(file)%file_unit)
           files(file)%last_flush = time
        END IF
