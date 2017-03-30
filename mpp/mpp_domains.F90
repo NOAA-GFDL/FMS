@@ -129,6 +129,7 @@ module mpp_domains_mod
   use mpp_parameter_mod,      only : ZERO, NINETY, MINUS_NINETY, ONE_HUNDRED_EIGHTY, MAX_TILES
   use mpp_parameter_mod,      only : EVENT_SEND, EVENT_RECV, ROOT_GLOBAL
   use mpp_parameter_mod,      only : NONBLOCK_UPDATE_TAG, EDGEONLY, EDGEUPDATE
+  use mpp_parameter_mod,      only : NONSYMEDGE, NONSYMEDGEUPDATE
   use mpp_data_mod,           only : mpp_domains_stack, ptr_domains_stack
   use mpp_data_mod,           only : mpp_domains_stack_nonblock, ptr_domains_stack_nonblock
   use mpp_mod,                only : mpp_pe, mpp_root_pe, mpp_npes, mpp_error, FATAL, WARNING, NOTE
@@ -158,7 +159,7 @@ module mpp_domains_mod
   public :: NORTH, NORTH_EAST, EAST, SOUTH_EAST
   public :: SOUTH, SOUTH_WEST, WEST, NORTH_WEST
   public :: ZERO, NINETY, MINUS_NINETY, ONE_HUNDRED_EIGHTY 
-  public :: EDGEUPDATE
+  public :: EDGEUPDATE, NONSYMEDGEUPDATE
 
   !--- public data imported from mpp_data_mod
   public :: NULL_DOMAIN1D, NULL_DOMAIN2D
@@ -523,6 +524,7 @@ module mpp_domains_mod
      private
      logical            :: initialized = .FALSE.
      logical            :: k_loop_inside = .TRUE.
+     logical            :: nonsym_edge = .FALSE.
      integer            :: nscalar = 0
      integer            :: nvector = 0
      integer            :: flags_s=0, flags_v=0
@@ -532,7 +534,7 @@ module mpp_domains_mod
      integer            :: isize_x=0, jsize_x=0, ksize_v=1
      integer            :: isize_y=0, jsize_y=0
      integer            :: position=0, gridtype=0
-     logical            :: recv_s(8), recv_v(8)
+     logical            :: recv_s(8), recv_x(8), recv_y(8)
      integer            :: is_s=0, ie_s=0, js_s=0, je_s=0
      integer            :: is_x=0, ie_x=0, js_x=0, je_x=0
      integer            :: is_y=0, ie_y=0, js_y=0, je_y=0

@@ -1780,14 +1780,16 @@ CONTAINS
                                 'Domain not defined through set_domain interface;' &
                                 //' cannot retrieve tile info',FATAL)
             ENDIF
+            ntileMe = mpp_get_current_ntile(domain2)
+            ALLOCATE(tile_id(ntileMe))
+            tile_id = mpp_get_tile_id(domain2)
+            fname = TRIM(filename)
             IF ( mpp_get_ntile_count(domain2) > 1 ) THEN
-                ntileMe = mpp_get_current_ntile(domain2)
-                ALLOCATE(tile_id(ntileMe))
-                tile_id = mpp_get_tile_id(domain2)
-                fname = TRIM(filename)
-                CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(files(file)%tile_count))
-                DEALLOCATE(tile_id)
-            ENDIF
+               CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(files(file)%tile_count))
+            else if( tile_id(1) > 1 ) then
+               CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(1))
+            endif
+            DEALLOCATE(tile_id)
         endif
     ENDIF
     IF ( domainU .ne. null_domainUG) then
