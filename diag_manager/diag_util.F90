@@ -1395,6 +1395,7 @@ CONTAINS
     INTEGER :: grv !< Value used to determine if the region defined in the diag_table is for the whole axis, or a sub-axis
     CHARACTER(len=128) :: error_msg
     CHARACTER(len=50) :: t_method
+    character(len=256) :: tmp_name
 
     ! Value to use to determine if a region is to be output on the full axis, or sub-axis
     ! get the value to compare to determine if writing full axis data
@@ -1582,15 +1583,23 @@ CONTAINS
        CASE ( 'maximum', 'max' )
           output_fields(out_num)%time_max = .TRUE.
           l1 = LEN_TRIM(output_fields(out_num)%output_name)
-          IF ( lowercase(trim(adjustl(output_fields(out_num)%output_name(l1-2:l1)))) /= 'max' ) &
-               output_fields(out_num)%output_name = TRIM(output_name)//'_max'
+          if (l1 .ge. 3) then
+              tmp_name = trim(adjustl(output_fields(out_num)%output_name(l1-2:l1)))
+              IF (lowercase(trim(tmp_name)) /= 'max' ) then
+                  output_fields(out_num)%output_name = TRIM(output_name)//'_max'
+               endif
+          endif
           method_selected = method_selected+1
           t_method = 'max'
        CASE ( 'minimum', 'min' )
           output_fields(out_num)%time_min = .TRUE.
           l1 = LEN_TRIM(output_fields(out_num)%output_name)
-          IF ( lowercase(trim(adjustl(output_fields(out_num)%output_name(l1-2:l1)))) /= 'min' )&
-               & output_fields(out_num)%output_name = TRIM(output_name)//'_min'
+          if (l1 .ge. 3) then
+              tmp_name = trim(adjustl(output_fields(out_num)%output_name(l1-2:l1)))
+              IF (lowercase(trim(tmp_name)) /= 'min' ) then
+                  output_fields(out_num)%output_name = TRIM(output_name)//'_min'
+              endif
+          endif
           method_selected = method_selected+1
           t_method = 'min'
        CASE ( 'sum', 'cumsum' )
