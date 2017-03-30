@@ -33,7 +33,7 @@ MODULE diag_util_mod
        & base_second, num_files, max_files, max_fields_per_file, max_out_per_in_field,&
        & max_input_fields,num_input_fields, max_output_fields, num_output_fields, coord_type,&
        & mix_snapshot_average_fields, global_descriptor, CMOR_MISSING_VALUE, use_cmor, pack_size,&
-       & debug_diag_manager, conserve_water, output_field_type, max_field_attributes, max_file_attributes,&
+       & debug_diag_manager, flush_nc_files, output_field_type, max_field_attributes, max_file_attributes,&
        & file_type, prepend_date, region_out_use_alt_value, GLO_REG_VAL, GLO_REG_VAL_ALT,&
        & DIAG_FIELD_NOT_FOUND, diag_init_time
   USE diag_axis_mod, ONLY: get_diag_axis_data, get_axis_global_length, get_diag_axis_cart,&
@@ -1395,6 +1395,7 @@ CONTAINS
     INTEGER :: grv !< Value used to determine if the region defined in the diag_table is for the whole axis, or a sub-axis
     CHARACTER(len=128) :: error_msg
     CHARACTER(len=50) :: t_method
+    character(len=256) :: tmp_name
 
     ! Value to use to determine if a region is to be output on the full axis, or sub-axis
     ! get the value to compare to determine if writing full axis data
@@ -1582,15 +1583,23 @@ CONTAINS
        CASE ( 'maximum', 'max' )
           output_fields(out_num)%time_max = .TRUE.
           l1 = LEN_TRIM(output_fields(out_num)%output_name)
-          IF ( lowercase(trim(adjustl(output_fields(out_num)%output_name(l1-2:l1)))) /= 'max' ) &
-               output_fields(out_num)%output_name = TRIM(output_name)//'_max'
+          if (l1 .ge. 3) then
+              tmp_name = trim(adjustl(output_fields(out_num)%output_name(l1-2:l1)))
+              IF (lowercase(trim(tmp_name)) /= 'max' ) then
+                  output_fields(out_num)%output_name = TRIM(output_name)//'_max'
+               endif
+          endif
           method_selected = method_selected+1
           t_method = 'max'
        CASE ( 'minimum', 'min' )
           output_fields(out_num)%time_min = .TRUE.
           l1 = LEN_TRIM(output_fields(out_num)%output_name)
-          IF ( lowercase(trim(adjustl(output_fields(out_num)%output_name(l1-2:l1)))) /= 'min' )&
-               & output_fields(out_num)%output_name = TRIM(output_name)//'_min'
+          if (l1 .ge. 3) then
+              tmp_name = trim(adjustl(output_fields(out_num)%output_name(l1-2:l1)))
+              IF (lowercase(trim(tmp_name)) /= 'min' ) then
+                  output_fields(out_num)%output_name = TRIM(output_name)//'_min'
+              endif
+          endif
           method_selected = method_selected+1
           t_method = 'min'
        CASE ( 'sum', 'cumsum' )
@@ -1780,14 +1789,16 @@ CONTAINS
                                 'Domain not defined through set_domain interface;' &
                                 //' cannot retrieve tile info',FATAL)
             ENDIF
+            ntileMe = mpp_get_current_ntile(domain2)
+            ALLOCATE(tile_id(ntileMe))
+            tile_id = mpp_get_tile_id(domain2)
+            fname = TRIM(filename)
             IF ( mpp_get_ntile_count(domain2) > 1 ) THEN
-                ntileMe = mpp_get_current_ntile(domain2)
-                ALLOCATE(tile_id(ntileMe))
-                tile_id = mpp_get_tile_id(domain2)
-                fname = TRIM(filename)
-                CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(files(file)%tile_count))
-                DEALLOCATE(tile_id)
-            ENDIF
+               CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(files(file)%tile_count))
+            else if( tile_id(1) > 1 ) then
+               CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(1))
+            endif
+            DEALLOCATE(tile_id)
         endif
     ENDIF
     IF ( domainU .ne. null_domainUG) then
@@ -2305,7 +2316,7 @@ CONTAINS
           files(file)%last_flush = time
        END IF
     ELSE
-       IF ( time > files(file)%last_flush .AND. (.NOT.conserve_water.OR.debug_diag_manager) ) THEN
+       IF ( time > files(file)%last_flush .AND. (flush_nc_files.OR.debug_diag_manager) ) THEN
           CALL diag_flush(files(file)%file_unit)
           files(file)%last_flush = time
        END IF

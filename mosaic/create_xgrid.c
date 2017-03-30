@@ -4,6 +4,9 @@
 #include "mosaic_util.h"
 #include "create_xgrid.h"
 #include "constant.h"
+#if defined(_OPENMP)
+#include <omp.h>
+#endif
 
 #define AREA_RATIO_THRESH (1.e-6)
 #define MASK_THRESH       (0.5)

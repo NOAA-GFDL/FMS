@@ -557,6 +557,7 @@
       allocate(axis%idata(axis%len))
        axis%idata = data
 !write metadata
+#ifdef use_netCDF
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
           error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, axis%len, axis%did )
           call netcdf_err( error, mpp_file(unit), axis )
@@ -565,6 +566,7 @@
       else
           call mpp_error( FATAL, 'MPP_WRITE_META_AXIS_I1D: Only netCDF format is currently supported.' )
       end if
+#endif
 !write axis attributes
       call mpp_write_meta( unit, axis%id, 'long_name', cval=axis%longname) ; axis%natt = axis%natt + 1
       if (lowercase(trim(axis%units)).ne.'none' .OR. .NOT.cf_compliance) then
@@ -622,6 +624,7 @@
       allocate(axis%idata(1))
       axis%idata = data
 !write metadata
+#ifdef use_netCDF
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
           error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, NF_UNLIMITED, axis%did )
           call netcdf_err( error, mpp_file(unit), axis )
@@ -630,6 +633,7 @@
       else
           call mpp_error( FATAL, 'MPP_WRITE_META_AXIS_UNLIMITED: Only netCDF format is currently supported.' )
       end if
+#endif
 !write axis attributes
       if(present(longname)) then
          call mpp_write_meta(unit,axis%id,'long_name',cval=axis%longname); axis%natt=axis%natt+1
