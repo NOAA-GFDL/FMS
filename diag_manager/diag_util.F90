@@ -1,4 +1,4 @@
-s#include <fms_platform.h>
+#include <fms_platform.h>
 
 MODULE diag_util_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
