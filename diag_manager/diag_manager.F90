@@ -210,7 +210,7 @@ MODULE diag_manager_mod
        & first_send_data_call, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
-       & max_out_per_in_field, conserve_water, region_out_use_alt_value, max_field_attributes, output_field_type,&
+       & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
        & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init,&
        & write_manifest_file
   USE diag_table_mod, ONLY: parse_diag_table
@@ -3715,7 +3715,7 @@ CONTAINS
     NAMELIST /diag_manager_nml/ append_pelist_name, mix_snapshot_average_fields, max_output_fields, &
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
-         & oor_warnings_fatal, max_out_per_in_field, conserve_water, region_out_use_alt_value, max_field_attributes,&
+         & oor_warnings_fatal, max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes,&
          & max_file_attributes, max_axis_attributes, prepend_date, write_manifest_file
 
     ! If the module was already initialized do nothing

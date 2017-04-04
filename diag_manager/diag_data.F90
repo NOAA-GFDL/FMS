@@ -647,6 +647,12 @@ MODULE diag_data_mod
   ! </DATA>
   ! <DATA NAME="do_diag_field_log" TYPE="LOGICAL" DEFAULT=".FALSE." />
   ! <DATA NAME="write_bytes_in_file" TYPE="LOGICAL" DEFAULT=".FALSE." />
+  ! <DATA NAME="flush_nc_files" TYPE="LOGICAL" DEFAULT=".FALSE.">
+  !   Indicate if diag_manager should force the flush of the netCDF diagnostic
+  !   files to disk Note: changing this to .TRUE. can greatly reduce the model
+  !   performance as at each write to the netCDF diagnostic file, the model must
+  !   wait until the flush to disk finishes.
+  ! </DATA>
   ! <DATA NAME="debug_diag_manager" TYPE="LOGICAL" DEFAULT=".FALSE." />
   ! <DATA NAME="max_num_axis_sets" TYPE="INTEGER" DEFAULT="25" />
   ! <DATA NAME="use_cmor" TYPE="LOGICAL" DEFAULT=".FALSE.">
@@ -688,7 +694,12 @@ MODULE diag_data_mod
   LOGICAL :: do_diag_field_log = .FALSE.
   LOGICAL :: write_bytes_in_file = .FALSE.
   LOGICAL :: debug_diag_manager = .FALSE.
-  LOGICAL :: conserve_water = .TRUE. ! Undocumented namelist to control flushing of output files.
+  LOGICAL :: flush_nc_files = .FALSE. !< Control if diag_manager will force a
+                                      !! flush of the netCDF file on each write.
+                                      !! Note: changing this to .TRUE. can greatly
+                                      !! reduce the performance of the model, as the
+                                      !! model must wait until the flush to disk has
+                                      !! completed.
   INTEGER :: max_num_axis_sets = 25
   LOGICAL :: use_cmor = .FALSE.
   LOGICAL :: issue_oor_warnings = .TRUE.
