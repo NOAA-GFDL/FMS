@@ -149,7 +149,7 @@ function mpp_reproducing_sum_r8_2d(array, isr, ier, jsr, jer, EFP_sum, reproduci
       if (err > 0) then ; do n=1,NUMINT ; ints_sum(n) = 0 ; enddo ; endif
     else
       if (NaN_error) then
-        call mpp_error(FATAL, "NaN in input field of mpp_reproducing_sum(_2d).")
+        call mpp_error(FATAL, "NaN in input field of mpp_reproducing_sum(_2d), this indicates numerical instability")
       endif
       if (abs(max_mag_term) >= prec_error*pr(1)) then
         write(mesg, '(ES13.5)') max_mag_term
@@ -301,7 +301,8 @@ function mpp_reproducing_sum_r8_3d(array, isr, ier, jsr, jer, sums, EFP_sum, err
       if (NaN_error) err = err+2
       if (err > 0) then ; do k=1,ke ; do n=1,NUMINT ; ints_sums(n,k) = 0 ; enddo ; enddo ; endif
     else
-      if (NaN_error) call mpp_error(FATAL, "NaN in input field of mpp_reproducing_sum(_3d).")
+      if (NaN_error) call mpp_error(FATAL, &
+             "NaN in input field of mpp_reproducing_sum(_3d), this indicates numerical instability")
       if (abs(max_mag_term) >= prec_error*pr(1)) then
         write(mesg, '(ES13.5)') max_mag_term
         call mpp_error(FATAL,"Overflow in mpp_reproducing_sum(_3d) conversion of "//trim(mesg))
@@ -359,7 +360,8 @@ function mpp_reproducing_sum_r8_3d(array, isr, ier, jsr, jer, sums, EFP_sum, err
       if (NaN_error) err = err+2
       if (err > 0) then ; do n=1,NUMINT ; ints_sum(n) = 0 ; enddo ; endif
     else
-      if (NaN_error) call mpp_error(FATAL, "NaN in input field of mpp_reproducing_sum(_3d).")
+      if (NaN_error) call mpp_error(FATAL, &
+          "NaN in input field of mpp_reproducing_sum(_3d), this indicates numerical instability")
       if (abs(max_mag_term) >= prec_error*pr(1)) then
         write(mesg, '(ES13.5)') max_mag_term
         call mpp_error(FATAL,"Overflow in mpp_reproducing_sum(_3d) conversion of "//trim(mesg))

@@ -60,6 +60,7 @@ program test
   logical :: test_get_nbr = .FALSE.
   logical :: test_boundary = .false.
   logical :: test_global_sum = .false.
+  logical :: test_halosize_performance = .false.
   integer :: ensemble_size = 1
   integer :: layout_cubic(2) = (/0,0/)
   integer :: layout_tripolar(2) = (/0,0/)
@@ -91,7 +92,7 @@ program test
                                test_edge_update, test_cubic_grid_redistribute, ensemble_size, &
                                layout_cubic, layout_ensemble, nthreads, test_boundary, &
                                layout_tripolar, test_group, test_global_sum, test_subset, test_unstruct, &
-                               test_nonsym_edge
+                               test_nonsym_edge, test_halosize_performance
   integer :: i, j, k
   integer :: layout(2)
   integer :: id
@@ -174,6 +175,12 @@ program test
 
   if(test_subset) then
       call test_subset_update()
+  endif
+
+  if( test_halosize_performance ) then
+     call test_halosize_update( 'Folded-north' )
+     call test_halosize_update( 'Folded-north symmetry' )
+     call test_halosize_update( 'Cubic-Grid' )
   endif
 
   if( test_edge_update ) then
@@ -2637,12 +2644,14 @@ contains
        call mpp_clock_end(id2)
 
        !--- compare checksum
+       if( n == num_iter ) then
        do l = 1, num_fields
           write(text, '(i3.3)') l
           call compare_checksums(a1(isd:ied,      jsd:jed,      :,l),a2(isd:ied,      jsd:jed,      :,l),type//' CENTER '//text)
           call compare_checksums(x1(isd:ied+shift,jsd:jed,      :,l),x2(isd:ied+shift,jsd:jed,      :,l),type//' CGRID X'//text)
           call compare_checksums(y1(isd:ied,      jsd:jed+shift,:,l),y2(isd:ied,      jsd:jed+shift,:,l),type//' CGRID Y'//text)
        enddo
+       endif
        a1 = 0; x1 = 0; y1 = 0
        do l = 1, num_fields
           a1(isc:iec,      jsc:jec,      :,l) = base(isc:iec,      jsc:jec,      :) + l*1e3
@@ -2654,6 +2663,7 @@ contains
        call mpp_complete_group_update(group_update, domain, a1(isc,jsc,1,1))
        call mpp_clock_end  (id3)
        !--- compare checksum
+       if( n == num_iter ) then
        do l = 1, num_fields
           write(text, '(i3.3)') l
           call compare_checksums(a1(isd:ied,      jsd:jed,      :,l),a2(isd:ied,      jsd:jed,      :,l), &
@@ -2663,7 +2673,7 @@ contains
           call compare_checksums(y1(isd:ied,      jsd:jed+shift,:,l),y2(isd:ied,      jsd:jed+shift,:,l), &
                                  type//' nonblock CGRID Y'//text)
        enddo
-
+       endif
     enddo
 
     call mpp_clear_group_update(group_update)
@@ -2693,6 +2703,7 @@ contains
              call mpp_complete_group_update(update_list(l), domain, a1(isc,jsc,1,1))
           enddo
           !--- compare checksum
+          if( n == num_iter ) then
           do l = 1, num_fields
              write(text, '(i3.3)') l
              call compare_checksums(a1(isd:ied,      jsd:jed,      :,l),a2(isd:ied,      jsd:jed,      :,l), &
@@ -2702,7 +2713,7 @@ contains
              call compare_checksums(y1(isd:ied,      jsd:jed+shift,:,l),y2(isd:ied,      jsd:jed+shift,:,l), &
                                     type//' multiple nonblock CGRID Y'//text)
           enddo
-
+          endif
        enddo
     endif
 
@@ -2790,12 +2801,14 @@ contains
        call mpp_clock_end(id2)
 
        !--- compare checksum
+       if( n == num_iter ) then
        do l = 1, num_fields
           write(text, '(i3.3)') l
           call compare_checksums(a1(isd:ied+shift,jsd:jed+shift,:,l),a2(isd:ied+shift,jsd:jed+shift,:,l),type//' CORNER '//text)
           call compare_checksums(x1(isd:ied+shift,jsd:jed+shift,:,l),x2(isd:ied+shift,jsd:jed+shift,:,l),type//' BGRID X'//text)
           call compare_checksums(y1(isd:ied+shift,jsd:jed+shift,:,l),y2(isd:ied+shift,jsd:jed+shift,:,l),type//' BGRID Y'//text)
        enddo
+       endif
 
        a1 = 0; x1 = 0; y1 = 0
        do l = 1, num_fields
@@ -2808,6 +2821,7 @@ contains
        call mpp_complete_group_update(group_update, domain, a1(isc,jsc,1,1))
        call mpp_clock_end  (id3)
        !--- compare checksum
+       if( n == num_iter ) then
        do l = 1, num_fields
           write(text, '(i3.3)') l
           call compare_checksums(a1(isd:ied+shift,jsd:jed+shift,:,l),a2(isd:ied+shift,jsd:jed+shift,:,l), &
@@ -2817,7 +2831,7 @@ contains
           call compare_checksums(y1(isd:ied+shift,jsd:jed+shift,:,l),y2(isd:ied+shift,jsd:jed+shift,:,l), &
                                  type//' nonblock BGRID Y'//text)
        enddo
-
+       endif
     enddo 
 
     call mpp_clear_group_update(group_update)
@@ -2836,6 +2850,368 @@ contains
     call mpp_deallocate_domain(domain)
 
 end subroutine test_group_update
+
+
+  !###############################################################
+  !--- This will test scalar and CGRID performance between halo=1 and halo=3
+  subroutine test_halosize_update( type )
+    character(len=*), intent(in) :: type
+
+    type(domain2D) :: domain
+    integer        :: ntiles, npes_per_tile
+    integer        :: i, j, k, l, n, shift
+    integer        :: isc, iec, jsc, jec, isd, ied, jsd, jed
+    integer        :: ism, iem, jsm, jem
+
+    integer, allocatable, dimension(:)       :: pe_start, pe_end
+    integer, allocatable, dimension(:,:)     :: layout2D, global_indices
+    real,    allocatable, dimension(:,:,:,:) :: x1, y1, x2, y2
+    real,    allocatable, dimension(:,:,:,:) :: a1, a2
+    real,    allocatable, dimension(:,:,:,:) :: base, global_all, global
+    real,    allocatable, dimension(:,:,:,:) :: base1, global1_all, global1
+    real,    allocatable, dimension(:,:,:,:) :: base2, global2_all, global2
+
+    integer            :: id1, id2, id3   
+    logical            :: folded_north
+    logical            :: cubic_grid, is_symmetry
+    character(len=3)   :: text
+    character(len=1)   :: halostr
+    integer            :: nx_save, ny_save
+    integer            :: mytile
+    type(mpp_group_update_type) :: group_update1, group_update2
+    type(mpp_group_update_type), allocatable :: update_list(:)
+
+    if(whalo .ne. ehalo .or. whalo .ne. shalo .or. whalo .ne. nhalo) then
+       call mpp_error(FATAL,"test_mpp_domains: whalo, ehalo, shalo, nhalo must be the same when test_halosize_performance=true")
+    endif
+
+    folded_north       = .false.
+    cubic_grid         = .false.
+
+    nx_save = nx
+    ny_save = ny
+    !--- check the type
+    select case(type)
+    case ( 'Folded-north', 'Folded-north symmetry' )
+       ntiles = 1
+       mytile = 1
+       folded_north = .true.
+       npes_per_tile = npes
+       if(layout_tripolar(1)*layout_tripolar(2) == npes ) then
+          layout = layout_tripolar
+       else
+          call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
+       endif     
+       if(index(type, 'symmetry') == 0) then
+          is_symmetry = .false.
+       else
+          is_symmetry = .true.
+       end if
+    case ( 'Cubic-Grid' )
+       is_symmetry = .true.
+       if( nx_cubic == 0 ) then
+          call mpp_error(NOTE,'test_halosize_update: for Cubic_grid mosaic, nx_cubic is zero, '//&
+               'No test is done for Cubic-Grid mosaic. ' )
+          return
+       endif
+       if( nx_cubic .NE. ny_cubic ) then
+          call mpp_error(NOTE,'test_halosize_update: for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, '//&
+               'No test is done for Cubic-Grid mosaic. ' )
+          return
+       endif
+       nx = nx_cubic
+       ny = ny_cubic
+       ntiles = 6
+       if( mod(npes, ntiles) .ne. 0 ) then
+          call mpp_error(NOTE,'test_halosize_update: npes is not divisible by ntiles, no test is done for '//trim(type) )
+          return
+       endif
+       npes_per_tile = npes/ntiles
+       mytile = mpp_pe()/npes_per_tile + 1
+       cubic_grid = .true.
+       if(layout_cubic(1)*layout_cubic(2) == npes_per_tile) then
+          layout = layout_cubic
+       else
+          call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
+       endif
+    case default
+       call mpp_error(FATAL, 'test_group_update: no such test: '//type)
+    end select
+
+    shift = 0
+    if(is_symmetry) shift = 1
+
+    !--- define domain
+    if(folded_north) then
+        call mpp_define_domains((/1,nx,1,ny/), layout, domain, &
+                          xflags=CYCLIC_GLOBAL_DOMAIN, yflags=FOLD_NORTH_EDGE, &
+                          whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
+                          symmetry=is_symmetry, name=type )
+    else if( cubic_grid ) then
+       allocate(layout2D(2,ntiles), global_indices(4,ntiles), pe_start(ntiles), pe_end(ntiles) )
+       do n = 1, ntiles
+          pe_start(n) = (n-1)*npes_per_tile
+          pe_end(n)   = n*npes_per_tile-1
+       end do
+
+       do n = 1, ntiles
+          global_indices(:,n) = (/1,nx,1,ny/)
+          layout2D(:,n)         = layout
+       end do
+
+       call define_cubic_mosaic(type, domain, (/nx,nx,nx,nx,nx,nx/), (/ny,ny,ny,ny,ny,ny/), &
+            global_indices, layout2D, pe_start, pe_end, use_memsize=.false.)
+       deallocate(pe_start, pe_end)
+       deallocate(layout2D, global_indices)
+    endif
+
+    !--- setup data
+    call mpp_get_compute_domain( domain, isc, iec, jsc, jec )
+    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+    
+    if(num_fields<1) then
+       call mpp_error(FATAL, "test_mpp_domains: num_fields must be a positive integer")
+    endif
+
+    !--- scalar update
+    write(halostr,'(I1)') whalo
+    id1 = mpp_clock_id( type//' halo='//halostr//' scalar', flags=MPP_CLOCK_SYNC )
+    id2 = mpp_clock_id( type//' halo=1 scalar', flags=MPP_CLOCK_SYNC )
+
+    allocate( a1(isd:ied,      jsd:jed,       nz, num_fields) )  
+    allocate( a2(isd:ied,      jsd:jed,       nz, num_fields) )
+    allocate(base(isc:iec, jsc:jec, nz, num_fields))
+    allocate(global_all(1:nx,1:ny,nz,ntiles) )   
+    allocate(global(1-whalo:nx+ehalo, 1-shalo:ny+nhalo, nz, num_fields))
+
+    do n = 1, ntiles
+       do k = 1, nz
+          do j = 1, ny
+             do i = 1, nx
+                global_all(i,j,k,n) = n + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+             end do
+          end do
+       end do
+    end do
+    global = 0.0
+    do l = 1, num_fields
+       global(1:nx,1:ny,:,l) = global_all(:,:,:,mytile)
+    enddo
+
+    base(isc:iec,jsc:jec,:,:) = global(isc:iec,jsc:jec,:,:)
+
+    !--- fill up the value at halo points
+    do l = 1, num_fields
+       if(folded_north) then
+          call fill_folded_north_halo(global(:,:,:,l), 0, 0, 0, 0, 1)
+       else if(cubic_grid) then
+          call fill_cubic_grid_halo(global(:,:,:,l), global_all, global_all, mytile, 0, 0, 1, 1 )
+       endif
+    enddo
+    a1 = 0.0
+    a2(isd:ied,jsd:jed,:,:) = global(isd:ied,jsd:jed,:,:)
+
+    do l =1, num_fields
+       call mpp_create_group_update(group_update1, a1(:,:,:,l), domain)
+    end do    
+    do l =1, num_fields
+       call mpp_create_group_update(group_update2, a1(:,:,:,l), domain, whalo=1, ehalo=1, shalo=1, nhalo=1)
+    end do    
+
+    do n = 1, num_iter  
+       a1 = 0.0
+       a1(isc:iec,jsc:jec,:,:) = base(isc:iec,jsc:jec,:,:) 
+
+       call mpp_clock_begin(id1)
+       call mpp_do_group_update(group_update1, domain, a1(isc,jsc,1,1))
+       call mpp_clock_end(id1)
+       if(n==num_iter) then
+          do l = 1, num_fields
+             write(text, '(i3.3)') l
+             call compare_checksums(a1(:,:,:,l),a2(:,:,:,l),type//' halo='//halostr//' scalar'//text)
+          enddo
+       endif
+    enddo
+
+    !--- make sure mpp_start_group_update/mpp_complete_group_update is OK
+    a1 = 0.0
+    a1(isc:iec,jsc:jec,:,:) = base(isc:iec,jsc:jec,:,:)
+
+    call mpp_start_group_update(group_update1, domain, a1(isc,jsc,1,1))
+    call mpp_complete_group_update(group_update1, domain, a1(isc,jsc,1,1))
+    do l = 1, num_fields
+       write(text, '(i3.3)') l
+       call compare_checksums(a1(:,:,:,l),a2(:,:,:,l),type//'nonblock halo='//halostr//' scalar'//text)
+    enddo
+
+
+    a2 = 0
+    a2(isc-1:iec+1,jsc-1:jec+1,:,:) = global(isc-1:iec+1,jsc-1:jec+1,:,:)
+
+    do n = 1, num_iter  
+       a1 = 0.0
+       a1(isc:iec,jsc:jec,:,:) = base(isc:iec,jsc:jec,:,:)
+       call mpp_clock_begin(id2)
+       call mpp_do_group_update(group_update2, domain, a1(isc,jsc,1,1))
+       call mpp_clock_end(id2)
+       if(n==num_iter) then
+          do l = 1, num_fields
+             write(text, '(i3.3)') l
+             call compare_checksums(a1(:,:,:,l),a2(:,:,:,l),type//' halo=1 scalar'//text)
+          enddo
+       endif
+    enddo
+
+    a1 = 0.0
+    a1(isc:iec,jsc:jec,:,:) = base(isc:iec,jsc:jec,:,:)
+    call mpp_start_group_update(group_update2, domain, a1(isc,jsc,1,1))
+    call mpp_complete_group_update(group_update2, domain, a1(isc,jsc,1,1))
+    do l = 1, num_fields
+       write(text, '(i3.3)') l
+       call compare_checksums(a1(:,:,:,l),a2(:,:,:,l),type//' nonblock halo=1 scalar'//text)
+    enddo
+
+    call mpp_clear_group_update(group_update1)
+    call mpp_clear_group_update(group_update2)
+    deallocate(a1,a2,global,global_all,base)
+  
+    !--- CGRID vector update -------------------------
+    id1 = mpp_clock_id( type//' halo='//halostr//' CGRID', flags=MPP_CLOCK_SYNC )
+    id2 = mpp_clock_id( type//' halo=1 CGRID', flags=MPP_CLOCK_SYNC )
+
+    allocate( x1(isd:ied+shift,jsd:jed,       nz, num_fields) ) 
+    allocate( y1(isd:ied,      jsd:jed+shift, nz, num_fields) ) 
+    allocate( x2(isd:ied+shift,jsd:jed,       nz, num_fields) )
+    allocate( y2(isd:ied,      jsd:jed+shift, nz, num_fields) )
+    allocate(base1(isc:iec+shift, jsc:jec, nz, num_fields))
+    allocate(base2(isc:iec, jsc:jec+shift, nz, num_fields))
+    allocate(global1_all(1:nx+shift,1:ny,nz,ntiles) )
+    allocate(global2_all(1:nx,1:ny+shift,nz,ntiles) )  
+    allocate(global1(1-whalo:nx+ehalo+shift, 1-shalo:ny+nhalo, nz, num_fields))
+    allocate(global2(1-whalo:nx+ehalo, 1-shalo:ny+nhalo+shift, nz, num_fields))
+    do l = 1, ntiles
+       do k = 1, nz
+          do j = 1, ny
+             do i = 1, nx+shift
+                global1_all(i,j,k,l) = 1.0e3 + l + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+             end do
+          end do
+          do j = 1, ny+shift
+             do i = 1, nx
+                global2_all(i,j,k,l) = 2.0e3 + l + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+             end do
+          end do
+       end do
+    end do
+
+    global1 = 0.0; global2 = 0.0
+    do l = 1, num_fields
+       global1(1:nx+shift,1:ny,:,l) = global1_all(1:nx+shift,1:ny,:,mytile)
+       global2(1:nx,1:ny+shift,:,l) = global2_all(1:nx,1:ny+shift,:,mytile)
+    end do
+
+   if(folded_north) then
+      do l = 1, num_fields
+         call fill_folded_north_halo(global1(:,:,:,l), 1, 0, shift, 0, -1)
+         call fill_folded_north_halo(global2(:,:,:,l), 0, 1, 0, shift, -1)
+      enddo
+   endif
+
+    base1(isc:iec+shift,jsc:jec,:,:) = global1(isc:iec+shift,jsc:jec,:,:)
+    base2(isc:iec,jsc:jec+shift,:,:) = global2(isc:iec,jsc:jec+shift,:,:)
+
+    if(folded_north) then
+       !redundant points must be equal and opposite for tripolar grid
+        global2(nx/2+1:nx,     ny+shift,:,:) = -global2(nx/2:1:-1, ny+shift,:,:)
+        global2(1-whalo:0,     ny+shift,:,:) = -global2(nx-whalo+1:nx, ny+shift,:,:)
+        global2(nx+1:nx+ehalo, ny+shift,:,:) = -global2(1:ehalo,       ny+shift,:,:)
+    else if(cubic_grid) then
+       do l = 1, num_fields
+          call fill_cubic_grid_halo(global1(:,:,:,l), global1_all, global2_all, mytile, 1, 0, 1, -1 )
+          call fill_cubic_grid_halo(global2(:,:,:,l), global2_all, global1_all, mytile, 0, 1, -1, 1 )
+       enddo
+    endif
+
+    x1 = 0; y1 = 0
+    do l =1, num_fields
+       call mpp_create_group_update(group_update1, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=CGRID_NE)
+    end do
+    do l =1, num_fields
+       call mpp_create_group_update(group_update2, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=CGRID_NE, &
+            whalo=1, ehalo=1, shalo=1, nhalo=1 )
+    end do
+
+    x2(:,:,:,:) = global1(isd:ied+shift,jsd:jed,:,:)
+    y2(:,:,:,:) = global2(isd:ied,jsd:jed+shift,:,:)
+
+    do n = 1, num_iter  
+       x1 = 0.0; y1 = 0.0
+       x1(isc:iec+shift,jsc:jec,      :,:) = base1(isc:iec+shift,jsc:jec,      :,:) 
+       y1(isc:iec,      jsc:jec+shift,:,:) = base2(isc:iec,      jsc:jec+shift,:,:) 
+       call mpp_clock_begin(id1)
+       call mpp_do_group_update(group_update1, domain, x1(isc,jsc,1,1))
+       call mpp_clock_end(id1)
+       if(n==num_iter) then
+          do l = 1, num_fields
+             write(text, '(i3.3)') l
+             call compare_checksums(x1(:,:,:,l),x2(:,:,:,l),type//' halo='//halostr//' CGRID X'//text)
+             call compare_checksums(y1(:,:,:,l),y2(:,:,:,l),type//' halo='//halostr//' CGRID Y'//text)
+          enddo
+       endif
+    enddo
+
+    !--- make sure non-blocking call is OK
+    x1 = 0.0; y1 = 0.0
+    x1(isc:iec+shift,jsc:jec,      :,:) = base1(isc:iec+shift,jsc:jec,      :,:)
+    y1(isc:iec,      jsc:jec+shift,:,:) = base2(isc:iec,      jsc:jec+shift,:,:)
+    call mpp_start_group_update(group_update1, domain, x1(isc,jsc,1,1))
+    call mpp_complete_group_update(group_update1, domain, x1(isc,jsc,1,1))
+    do l = 1, num_fields
+       write(text, '(i3.3)') l
+       call compare_checksums(x1(:,:,:,l),x2(:,:,:,l),type//' nonblock halo='//halostr//' CGRID X'//text)
+       call compare_checksums(y1(:,:,:,l),y2(:,:,:,l),type//' nonblock halo='//halostr//' CGRID Y'//text)
+    enddo
+
+    x2 = 0; y2 = 0
+    x2(isc-1:iec+1+shift,jsc-1:jec+1,:,:) = global1(isc-1:iec+1+shift,jsc-1:jec+1,:,:)
+    y2(isc-1:iec+1,jsc-1:jec+1+shift,:,:) = global2(isc-1:iec+1,jsc-1:jec+1+shift,:,:)
+
+    do n = 1, num_iter  
+       x1 = 0.0; y1 = 0.0
+       x1(isc:iec+shift,jsc:jec,      :,:) = base1(isc:iec+shift,jsc:jec,      :,:) 
+       y1(isc:iec,      jsc:jec+shift,:,:) = base2(isc:iec,      jsc:jec+shift,:,:) 
+       call mpp_clock_begin(id2)
+       call mpp_do_group_update(group_update2, domain, x1(isc,jsc,1,1))
+       call mpp_clock_end(id2)
+       if(n==num_iter) then
+          do l = 1, num_fields
+             write(text, '(i3.3)') l
+             call compare_checksums(x1(:,:,:,l),x2(:,:,:,l),type//' halo=1 CGRID X'//text)
+             call compare_checksums(y1(:,:,:,l),y2(:,:,:,l),type//' halo=1 CGRID Y'//text)
+          enddo
+       endif
+    enddo
+
+    x1 = 0.0; y1 = 0.0
+    x1(isc:iec+shift,jsc:jec,      :,:) = base1(isc:iec+shift,jsc:jec,      :,:)
+    y1(isc:iec,      jsc:jec+shift,:,:) = base2(isc:iec,      jsc:jec+shift,:,:)
+    call mpp_start_group_update(group_update2, domain, x1(isc,jsc,1,1))
+    call mpp_complete_group_update(group_update2, domain, x1(isc,jsc,1,1))
+    do l = 1, num_fields
+       write(text, '(i3.3)') l
+       call compare_checksums(x1(:,:,:,l),x2(:,:,:,l),type//' nonblock halo=1 CGRID X'//text)
+       call compare_checksums(y1(:,:,:,l),y2(:,:,:,l),type//' nonblock halo=1 CGRID Y'//text)
+    enddo
+
+    call mpp_clear_group_update(group_update1)
+    call mpp_clear_group_update(group_update2)
+
+    deallocate(x1, y1, global1, global2)
+    deallocate(x2, y2, global1_all, global2_all)
+    deallocate(base1, base2)
+    call mpp_deallocate_domain(domain)
+
+end subroutine test_halosize_update
 
   !###############################################################
   subroutine test_unstruct_update( type )
@@ -4841,16 +5217,20 @@ end subroutine test_group_update
 
   !#######################################################################################
   !--- define mosaic domain for cubic grid
-  subroutine define_cubic_mosaic(type, domain, ni, nj, global_indices, layout, pe_start, pe_end)
+  subroutine define_cubic_mosaic(type, domain, ni, nj, global_indices, layout, pe_start, pe_end, use_memsize)
     character(len=*), intent(in)  :: type
     type(domain2d), intent(inout) :: domain
     integer,        intent(in)    :: global_indices(:,:), layout(:,:)
     integer,        intent(in)    :: ni(:), nj(:)
     integer,        intent(in)    :: pe_start(:), pe_end(:)
+    logical, optional, intent(in) :: use_memsize
     integer, dimension(12)        :: istart1, iend1, jstart1, jend1, tile1
     integer, dimension(12)        :: istart2, iend2, jstart2, jend2, tile2
     integer                       :: ntiles, num_contact, msize(2)
+    logical                       :: use_memsize_local
 
+    use_memsize_local = .true.
+    if(present(use_memsize)) use_memsize_local = use_memsize
 
     ntiles = 6
     num_contact = 12
@@ -4916,11 +5296,19 @@ end subroutine test_group_update
     istart1(12) = ni(5); iend1(12) = ni(5); jstart1(12) = 1;     jend1(12) = nj(5)
     istart2(12) = 1;     iend2(12) = 1;     jstart2(12) = 1;     jend2(12) = nj(6)
     msize(1) = maxval(ni(:)/layout(1,:)) + whalo + ehalo + 1 ! make sure memory domain size is no smaller than
-    msize(2) = maxval(nj(:)/layout(2,:)) + shalo + nhalo + 1 ! data domain size       
-    call mpp_define_mosaic(global_indices, layout, domain, ntiles, num_contact, tile1, tile2, &
+    msize(2) = maxval(nj(:)/layout(2,:)) + shalo + nhalo + 1 ! data domain size
+
+    if(use_memsize_local) then
+       call mpp_define_mosaic(global_indices, layout, domain, ntiles, num_contact, tile1, tile2, &
          istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,      &
          pe_start, pe_end, symmetry = .true., whalo=whalo, ehalo=ehalo,   &
-         shalo=shalo, nhalo=nhalo, name = trim(type), memory_size = msize  )  
+         shalo=shalo, nhalo=nhalo, name = trim(type), memory_size = msize  )
+    else
+       call mpp_define_mosaic(global_indices, layout, domain, ntiles, num_contact, tile1, tile2, &
+         istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,      &
+         pe_start, pe_end, symmetry = .true., whalo=whalo, ehalo=ehalo,   &
+         shalo=shalo, nhalo=nhalo, name = trim(type) )
+    endif
 
     return 
 

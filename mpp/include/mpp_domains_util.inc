@@ -874,16 +874,23 @@ end subroutine mpp_get_domain_shift
     integer,                    intent(in) :: position
     type(overlapSpec),          pointer    :: search_update_overlap
     type(overlapSpec),          pointer    :: update_ref
+    type(overlapSpec), pointer :: check => NULL()
+    integer :: ishift, jshift, shift
 
+    shift = 0; if(domain%symmetry) shift = 1
     select case(position)
     case (CENTER)
        update_ref => domain%update_T
+       ishift = 0; jshift = 0
     case (CORNER)
        update_ref => domain%update_C
+       ishift = shift; jshift = shift
     case (NORTH)
        update_ref => domain%update_N
+       ishift = 0; jshift = shift
     case (EAST)
        update_ref => domain%update_E
+       ishift = shift; jshift = 0
     case default
        call mpp_error(FATAL,"mpp_domains_util.inc(search_update_overlap): position should be CENTER|CORNER|EAST|NORTH")
     end select
@@ -899,7 +906,12 @@ end subroutine mpp_get_domain_shift
        if(.NOT. ASSOCIATED(search_update_overlap%next)) then
           allocate(search_update_overlap%next)
           search_update_overlap => search_update_overlap%next
-          call set_overlaps(domain, update_ref, search_update_overlap, whalo, ehalo, shalo, nhalo )
+          if(domain%fold .NE. 0) then
+             call compute_overlaps(domain, position, search_update_overlap, check, &
+                                   ishift, jshift, 0, 0, whalo, ehalo, shalo, nhalo)
+          else
+             call set_overlaps(domain, update_ref, search_update_overlap, whalo, ehalo, shalo, nhalo )
+          endif
           exit
        else
           search_update_overlap => search_update_overlap%next
