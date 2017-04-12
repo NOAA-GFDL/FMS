@@ -1497,19 +1497,19 @@ CONTAINS
     enddo
 
     if (iatt == 0) call error_mesg(tag, &
-       'attempt to get compression dimensions from axis "'//trim(axis%name)//'" which is not compressed (does not have "compress" attributes).', FATAL)
+       'attempt to get compression dimensions from axis "'//trim(axis%name)//&
+       '" which is not compressed (does not have "compress" attributes).', FATAL)
 !     if (axis%attributes(iatt)%type/=NF_CHAR) call error_mesg(tag, &
 !        'attempt to get compression dimensions from axis "'//trim(axis%name)//'" but the attribute "compress" has incorrect type.', FATAL)
 
     ! parse the "compress" attribute
-    associate(catt=>axis%attributes(iatt)%catt)
     ! calculate the number of compression axes
     space = .TRUE.; n=0
-    do k = 1, len(catt)
-       if (space.and.catt(k:k)/=' ') then
+    do k = 1, len(axis%attributes(iatt)%catt)
+       if (space.and.(axis%attributes(iatt)%catt(k:k)/=' ')) then
           n = n+1
        endif
-       space = (catt(k:k)==' ')
+       space = (axis%attributes(iatt)%catt(k:k)==' ')
     enddo
 
     allocate(r(n))
@@ -1518,17 +1518,17 @@ CONTAINS
     ! dimension last)
     k2 = 0
     do k = n, 1, -1
-       do k1 = k2+1, len(catt)
-          if (catt(k1:k1)/=' ') exit
+       do k1 = k2+1, len(axis%attributes(iatt)%catt)
+          if (axis%attributes(iatt)%catt(k1:k1)/=' ') exit
        enddo
-       do k2 = k1+1, len(catt)
-          if (catt(k2:k2)==' ') exit
+       do k2 = k1+1, len(axis%attributes(iatt)%catt)
+          if (axis%attributes(iatt)%catt(k2:k2)==' ') exit
        enddo
-       r(k) = get_axis_num(catt(k1:k2),Axis_sets(axis%set))
+       r(k) = get_axis_num(axis%attributes(iatt)%catt(k1:k2),Axis_sets(axis%set))
        if (r(k)<=0) call error_mesg(tag, &
-           'compression dimension "'//trim(catt(k1:k2))//'" not found among the axes of set "'//trim(Axis_sets(axis%set))//'".', FATAL)
+           'compression dimension "'//trim(axis%attributes(iatt)%catt(k1:k2))//&
+           '" not found among the axes of set "'//trim(Axis_sets(axis%set))//'".', FATAL)
     enddo
-    end associate ! catt
     end associate ! axis
   end subroutine get_compressed_axes_ids
 END MODULE diag_axis_mod
