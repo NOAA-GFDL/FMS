@@ -1499,8 +1499,9 @@ CONTAINS
     if (iatt == 0) call error_mesg(tag, &
        'attempt to get compression dimensions from axis "'//trim(axis%name)//&
        '" which is not compressed (does not have "compress" attributes).', FATAL)
-!     if (axis%attributes(iatt)%type/=NF_CHAR) call error_mesg(tag, &
-!        'attempt to get compression dimensions from axis "'//trim(axis%name)//'" but the attribute "compress" has incorrect type.', FATAL)
+    if (axis%attributes(iatt)%type/=NF90_CHAR) call error_mesg(tag, &
+       'attempt to get compression dimensions from axis "'//trim(axis%name)//&
+       '" but the axis attribute "compress" has incorrect type.', FATAL)
 
     ! parse the "compress" attribute
     ! calculate the number of compression axes
