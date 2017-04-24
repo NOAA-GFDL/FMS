@@ -5016,6 +5016,8 @@ end subroutine check_message_size
        do n = 1, nsend
           call add_update_overlap(overlap_out%send(n), send(n) )
        enddo
+    else
+       overlap_out%nsend = 0
     endif
 
     !--------------------------------------------------
@@ -5103,6 +5105,8 @@ end subroutine check_message_size
        do n = 1, nrecv
           call add_update_overlap(overlap_out%recv(n), recv(n) )
        enddo
+    else
+       overlap_out%nrecv = 0
     endif
 
     call deallocate_overlap_type(overlap)
