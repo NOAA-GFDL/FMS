@@ -133,6 +133,12 @@
         UG_domain%list(p)%compute%end_index = maxval(grid_index(is:ie))
      enddo
 
+     !--- write out domain decomposition from root pe
+     if(mpp_pe() == mpp_root_pe() .and. present(name)) then
+        write(stdout(),*) "unstruct domain name = ", trim(name)
+        write(stdout(),*) UG_domain%list(:)%compute%size
+     endif
+
      pos = mpp_pe() - mpp_root_pe() 
      UG_domain%pe = mpp_pe()
      UG_domain%pos = pos
@@ -424,7 +430,7 @@ return
     if( PRESENT(size) )then
        if( any(shape(size).NE.shape(domain%list)) ) &
            call mpp_error( FATAL, 'mpp_get_UG_compute_domains: size array size does not match domain.' )
-           size(:) = domain%list(:)%compute%size
+       size(:) = domain%list(:)%compute%size
     end if
     return
   end subroutine mpp_get_UG_compute_domains
