@@ -65,6 +65,7 @@ real, public, parameter :: ALOGMIN     = -50.0 !< Minimum value allowed as argum
 
 real, public, parameter :: STEFAN  = 5.6734e-8 !< Stefan-Boltzmann constant [W/m^2/deg^4]
 real, public, parameter :: VONKARM = 0.40 !< Von Karman constant [dimensionless]
+real, public, parameter :: PI_8    = 3.14159265358979323846d0 !< Ratio of circle circumference to diameter [N/A] (REAL(KIND=8))
 real, public, parameter :: PI      = 3.14159265358979323846 !< Ratio of circle circumference to diameter [N/A]
 real, public, parameter :: RAD_TO_DEG=180./PI !< Degrees per radian [deg/rad]
 real, public, parameter :: DEG_TO_RAD=PI/180. !< Radians per degree [rad/deg]
