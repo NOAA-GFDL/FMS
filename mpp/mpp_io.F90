@@ -327,7 +327,7 @@ use mpp_domains_mod,    only : domain1d, domain2d, NULL_DOMAIN1D, mpp_domains_in
 use mpp_domains_mod,    only : mpp_get_global_domain, mpp_get_compute_domain
 use mpp_domains_mod,    only : mpp_get_data_domain, mpp_get_memory_domain, mpp_get_pelist
 use mpp_domains_mod,    only : mpp_update_domains, mpp_global_field, mpp_domain_is_symmetry
-use mpp_domains_mod,    only : operator( .NE. ), mpp_get_domain_shift
+use mpp_domains_mod,    only : operator( .NE. ), mpp_get_domain_shift, mpp_get_UG_compute_domains
 use mpp_domains_mod,    only : mpp_get_io_domain, mpp_domain_is_tile_root_pe, mpp_get_domain_tile_root_pe
 use mpp_domains_mod,    only : mpp_get_tile_id, mpp_get_tile_npes, mpp_get_io_domain_layout
 use mpp_domains_mod,    only : mpp_get_domain_name, mpp_get_domain_npes
