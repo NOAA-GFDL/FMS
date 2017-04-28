@@ -1,81 +1,77 @@
 ! ----------------------------------------------------------------
-!                   GNU General Public License                        
-! This file is a part of MOM.                                                                 
-!                                                                      
-! MOM is free software; you can redistribute it and/or modify it and  
-! are expected to follow the terms of the GNU General Public License  
-! as published by the Free Software Foundation; either version 2 of   
-! the License, or (at your option) any later version.                 
-!                                                                      
-! MOM is distributed in the hope that it will be useful, but WITHOUT    
-! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY  
-! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public    
-! License for more details.                                           
-!                                                                      
-! For the full text of the GNU General Public License,                
-! write to: Free Software Foundation, Inc.,                           
-!           675 Mass Ave, Cambridge, MA 02139, USA.                   
-! or see:   http://www.gnu.org/licenses/gpl.html                      
+!                   GNU General Public License
+! This file is a part of MOM.
+!
+! MOM is free software; you can redistribute it and/or modify it and
+! are expected to follow the terms of the GNU General Public License
+! as published by the Free Software Foundation; either version 2 of
+! the License, or (at your option) any later version.
+!
+! MOM is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! For the full text of the GNU General Public License,
+! write to: Free Software Foundation, Inc.,
+!           675 Mass Ave, Cambridge, MA 02139, USA.
+! or see:   http://www.gnu.org/licenses/gpl.html
 !-----------------------------------------------------------------------
 !
-! 
-!<CONTACT EMAIL="Richard.Slater@noaa.gov"> Richard D. Slater
-!</CONTACT>
-!
-!<REVIEWER EMAIL="John.Dunne@noaa.gov"> John P. Dunne
-!</REVIEWER>
-!
-!<OVERVIEW>
-! Ocean Carbon Model Intercomparison Study II: Gas exchange coupler
-!</OVERVIEW>
-!
-!<DESCRIPTION>
-!       Implementation of routines to solve the gas fluxes at the
-!       ocean surface for a coupled model
-!       as outlined in the Biotic-HOWTO documentation,
-!       revision 1.7, 1999/10/05.
-!</DESCRIPTION>
-!
-! <REFERENCE>
-! http://www.ipsl.jussieu.fr/OCMIP/phase2/simulations/Biotic/HOWTO-Biotic.html
-! </REFERENCE>
-!
-
-!
-!------------------------------------------------------------------
-!
-!       Module atmos_ocean_fluxes_mod
-!
-!       This module will take fields from an atmospheric and an
-!       oceanic model and calculate ocean surface fluxes for
-!       CO2, O2, CFC-11 or CFC-12 as outlined in the various
-!       HOWTO documents at the OCMIP2 website. Multiple instances
-!       of a given tracer may be given, resulting in multiple
-!       surface fluxes. Additionally, data may be overridden at
-!       the individual fields, or fluxes. This could be used in
-!       the absence of an atmospheric or oceanic model.
-!
-!------------------------------------------------------------------
-!
-
+!> \author Richard Slater <Richard.Slater@noaa.gov>
+!! \author John Dunne <John.Dunne@noaa.gov>
+!!
+!! \brief Ocean Carbon Model Intercomparison Study II: Gas exchange coupler.
+!! Implementation of routines to solve the gas fluxes at the
+!! ocean surface for a coupled model as outlined in the Biotic-HOWTO
+!! documentation, revision 1.7, 1999/10/05.
+!!
+!! \link http://www.ipsl.jussieu.fr/OCMIP/phase2/simulations/Biotic/HOWTO-Biotic.html \endlink
+!!
+!! This module will take fields from an atmospheric and an
+!! oceanic model and calculate ocean surface fluxes for
+!! CO2, O2, CFC-11 or CFC-12 as outlined in the various
+!! HOWTO documents at the OCMIP2 website. Multiple instances
+!! of a given tracer may be given, resulting in multiple
+!! surface fluxes. Additionally, data may be overridden at
+!! the individual fields, or fluxes. This could be used in
+!! the absence of an atmospheric or oceanic model.
 module  atmos_ocean_fluxes_mod  !{
 
-!
-!------------------------------------------------------------------
-!
-!       Global definitions
-!
-!------------------------------------------------------------------
-!
-
-!
-!----------------------------------------------------------------------
-!
-!       Modules
-!
-!----------------------------------------------------------------------
-!
-
+!! Modules Included:
+!!
+!! <table>
+!!   <tr>
+!!     <th>Module Name</th>
+!!     <th>Functions Included</th>
+!!   </tr>
+!!   <tr>
+!!     <td>mpp_mod</td>
+!!     <td>stdout, stdlog, mpp_error, FATAL, mpp_sum, mpp_npes</td>
+!!   </tr>
+!!   <tr>
+!!     <td>fms_mod</td>
+!!     <td>write_version_number</td>
+!!   </tr>
+!!   <tr>
+!!     <td>coupler_types_mod</td>
+!!     <td>coupler_1d_bc_type, ind_alpha, ind_csurf, ind_sc_no, ind_pcair, ind_u10, ind_psurf,
+!!         ind_deposition, ind_runoff, ind_flux, ind_deltap, ind_kw</td>
+!!   </tr>
+!!   <tr>
+!!     <td>field_manager_mod</td>
+!!     <td>fm_path_name_len, fm_string_len, fm_exists, fm_get_index, fm_new_list, fm_get_current_list,
+!!         fm_change_list, fm_field_name_len, fm_type_name_len, fm_dump_list, fm_loop_over_list</td>
+!!   </tr>
+!!   <tr>
+!!     <td>fm_util_mod</td>
+!!     <td>fm_util_default_caller, fm_util_get_length, fm_util_set_value, fm_util_set_good_name_list,
+!!         fm_util_set_no_overwrite, fm_util_set_caller, fm_util_reset_good_name_list,
+!!         fm_util_reset_no_overwrite, fm_util_reset_caller, fm_util_get_string_array,
+!!         fm_util_check_for_bad_fields, fm_util_get_string, fm_util_get_real_array, fm_util_get_real,
+!!         fm_util_get_integer, fm_util_get_logical, fm_util_get_logical_array</td>
+!!   </tr>
+!! </table>
 use mpp_mod,           only: stdout, stdlog, mpp_error, FATAL, mpp_sum, mpp_npes
 use fms_mod,           only: write_version_number
 
@@ -202,14 +198,31 @@ character(len=48), parameter    :: mod_name = 'atmos_ocean_fluxes_mod'
 
 contains
 
-
-!#######################################################################
-! <FUNCTION NAME="aof_set_coupler_flux">
-!
-! <DESCRIPTION>
-! Set the values for a coupler flux and return its index (0 on error)
-! </DESCRIPTION>
-!
+!> \brief Set the values for a coupler flux and return its index (0 on error)
+!!
+!! \throw FATAL, "Empty name given"
+!!     Name is empty
+!! \throw FATAL, "Could not get coupler flux"
+!!     coupler_index is less than 1
+!! \throw FATAL, "Could not set coupler flux"
+!!     coupler_index is less than 1
+!! \throw FATAL, "Could not get the current list"
+!!     Current list is empty
+!! \throw FATAL, "Could not change to the new list"
+!!     fm_change_list(coupler_list) returns false
+!! \throw FATAL, "Blank flux_type given"
+!!     flux_type or implementation is empty
+!! \throw FATAL, "Undefined flux_type given from field_table"
+!! \throw FATAL, "Undefined flux_type given as argument to the subroutine"
+!! \throw FATAL, "Undefined flux_type/implementation (implementation given from field_table)"
+!!     flux_type does not equal flux_type_test
+!! \throw FATAL, "Undefined flux_type/implementation (flux_type given from field_table)"
+!! \throw FATAL, "Undefined flux_type/implementation (both given from field_table)"
+!! \throw FATAL, "Undefined flux_type/implementation given as argument to the subroutine"
+!! \throw NOTE, "Number of parameters provided for [variable] does not match the number of parameters required"
+!!     Mismatch between parameter input and the parameters being replaced
+!! \throw FATAL, "Could not change back to [current_list]"
+!! \throw FATAL, "Empty [name] list"
 function aof_set_coupler_flux(name, flux_type, implementation, atm_tr_index, param, flag,       &
      mol_wt, ice_restart_file, ocean_restart_file, units, caller)           &
          result (coupler_index)  !{
@@ -226,17 +239,17 @@ integer :: coupler_index
 !       arguments
 !
 
-character(len=*), intent(in)                            :: name
-character(len=*), intent(in)                            :: flux_type
-character(len=*), intent(in)                            :: implementation
-integer, intent(in), optional                           :: atm_tr_index
-real, intent(in), dimension(:), optional                :: param
-logical, intent(in), dimension(:), optional             :: flag
-real, intent(in), optional                              :: mol_wt
-character(len=*), intent(in), optional                  :: ice_restart_file
-character(len=*), intent(in), optional                  :: ocean_restart_file
-character(len=*), intent(in), optional                  :: units
-character(len=*), intent(in), optional                  :: caller
+character(len=*), intent(in)                            :: name !< name
+character(len=*), intent(in)                            :: flux_type !< flux_type
+character(len=*), intent(in)                            :: implementation !< implementation
+integer, intent(in), optional                           :: atm_tr_index !< atm_tr_index
+real, intent(in), dimension(:), optional                :: param !< param
+logical, intent(in), dimension(:), optional             :: flag !< flag
+real, intent(in), optional                              :: mol_wt !< mol_wt
+character(len=*), intent(in), optional                  :: ice_restart_file !< ice_restart_file
+character(len=*), intent(in), optional                  :: ocean_restart_file !< ocean_restart_file
+character(len=*), intent(in), optional                  :: units !< units
+character(len=*), intent(in), optional                  :: caller !< caller
 
 !
 !       Local parameters
@@ -265,7 +278,7 @@ character(len=fm_string_len), pointer, dimension(:)     :: good_list => NULL()
 character(len=256)                                      :: long_err_msg
 
 !
-!       set the caller string and headers
+!>       Set the caller string and headers.
 !
 
 if (present(caller)) then  !{
@@ -282,7 +295,7 @@ note_header = '==>Note from ' // trim(mod_name) //     &
               '(' // trim(sub_name) // ')' // trim(caller_str) // ':'
 
 !
-!       check that a name is given (fatal if not)
+!>       Check that a name is given (fatal if not).
 !
 
 if (name .eq. ' ') then  !{
@@ -293,17 +306,17 @@ write (outunit,*)
 write (outunit,*) trim(note_header), ' Processing coupler fluxes ', trim(name)
 
 !
-!       define the coupler list name
+!>       Define the coupler list name.
 !
 
 coupler_list = '/coupler_mod/fluxes/' // trim(name)
 
 !
-!       Check whether a flux has already been set for this name, and if so, return
-!       the index for it (this is because the fluxes may be defined in both the atmosphere
-!       and ocean models) (check whether the good_list list exists, since this will
-!       indicate that this routine has already been called, and not just that
-!       the field table input has this list defined)
+!>       Check whether a flux has already been set for this name, and if so, return
+!!       the index for it (this is because the fluxes may be defined in both the atmosphere
+!!       and ocean models) (check whether the good_list list exists, since this will
+!!       indicate that this routine has already been called, and not just that
+!!       the field table input has this list defined)
 !
 
 if (fm_exists('/coupler_mod/GOOD/fluxes/' // trim(name) // '/good_list')) then  !{
@@ -315,10 +328,10 @@ if (fm_exists('/coupler_mod/GOOD/fluxes/' // trim(name) // '/good_list')) then  
   endif  !}
 
 !
-!       allow atm_tr_index to be set here, since it will only be set from atmospheric
-!       PEs, and the atmospheric routines call this routine last, thus overwriting the
-!       current value is safe (furthermore, this is not a value which could have any meaningful
-!       value set from the run script.
+!>       Allow atm_tr_index to be set here, since it will only be set from atmospheric
+!!       PEs, and the atmospheric routines call this routine last, thus overwriting the
+!!       current value is safe (furthermore, this is not a value which could have any meaningful
+!!       value set from the run script.
 !
 
   if (present(atm_tr_index)) then  !{
@@ -330,7 +343,7 @@ if (fm_exists('/coupler_mod/GOOD/fluxes/' // trim(name) // '/good_list')) then  
 endif  !}
 
 !
-!       Set a new coupler flux and get its index
+!>       Set a new coupler flux and get its index.
 !
 
 coupler_index = fm_new_list(coupler_list)
@@ -339,7 +352,7 @@ if (coupler_index .le. 0) then  !{
 endif  !}
 
 !
-!       Change to the new list, first saving the current list
+!>       Change to the new list, first saving the current list.
 !
 
 current_list = fm_get_current_list()
@@ -352,22 +365,22 @@ if (.not. fm_change_list(coupler_list)) then  !{
 endif  !}
 
 !
-!       Set the array in which to save the valid names for this list,
-!       used later for a consistency check. This is used in the fm_util_set_value
-!       routines to make the list of valid values
+!>       Set the array in which to save the valid names for this list,
+!!       used later for a consistency check. This is used in the fm_util_set_value
+!!       routines to make the list of valid values.
 !
 
 call fm_util_set_good_name_list('/coupler_mod/GOOD/fluxes/' // trim(name) // '/good_list')
 
 !
-!       Set other defaults for the fm_util_set_value routines
+!>       Set other defaults for the fm_util_set_value routines.
 !
 
 call fm_util_set_no_overwrite(.true.)
 call fm_util_set_caller(caller_str)
 
 !
-!       Set various values to given values, or to defaults if not given
+!>       Set various values to given values, or to defaults if not given.
 !
 
 if (flux_type .eq. ' ') then  !{
@@ -376,8 +389,8 @@ else  !}{
   if (fm_exists('/coupler_mod/types/' // trim(flux_type))) then  !{
     call fm_util_set_value('flux_type', flux_type)
 !
-!       check that the flux_type that we will use (possibly given from the field_table)
-!       is defined
+!>       Check that the flux_type that we will use (possibly given from the field_table)
+!!       is defined.
 !
     flux_type_test = fm_util_get_string('flux_type', scalar = .true.)
     if (.not. fm_exists('/coupler_mod/types/' // trim(flux_type_test))) then  !{
@@ -394,8 +407,8 @@ else  !}{
   if (fm_exists('/coupler_mod/types/' // trim(flux_type) // '/implementation/' // trim(implementation))) then  !{
     call fm_util_set_value('implementation', implementation)
 !
-!       check that the flux_type/implementation that we will use
-!       (both possibly given from the field_table) is defined
+!>       Check that the flux_type/implementation that we will use
+!!       (both possibly given from the field_table) is defined
 !
     implementation_test = fm_util_get_string('implementation', scalar = .true.)
     if (.not. fm_exists('/coupler_mod/types/' // trim(flux_type_test) //  '/implementation/' // trim(implementation_test))) then  !{
@@ -508,7 +521,7 @@ do n = 1, fm_util_get_length(trim(flux_list) // 'ice/name')  !{
 enddo  !} n
 
 !
-!       Reset the defaults for the fm_util_set_value calls
+!>       Reset the defaults for the fm_util_set_value calls.
 !
 
 call fm_util_reset_good_name_list
@@ -516,7 +529,7 @@ call fm_util_reset_no_overwrite
 call fm_util_reset_caller
 
 !
-!       Change back to the saved current list
+!>       Change back to the saved current list.
 !
 
 if (.not. fm_change_list(current_list)) then  !{
@@ -524,7 +537,7 @@ if (.not. fm_change_list(current_list)) then  !{
 endif  !}
 
 !
-!       Check for any errors in the number of fields in this list
+!>       Check for any errors in the number of fields in this list.
 !
 
 if (caller_str .eq. ' ') then  !{
@@ -542,21 +555,36 @@ endif  !}
 return
 
 end function aof_set_coupler_flux  !}
-! </FUNCTION> NAME="aof_set_coupler_flux"
 
 
-!#######################################################################
-! <SUBROUTINE NAME="atmos_ocean_fluxes_init">
-!
-! <DESCRIPTION>
-!     Initialize gas flux structures
-! </DESCRIPTION>
-!
-
+!> \brief Initialize gas flux structures
+!!
+!! \throw FATAL, "Could not get number of fluxes"
+!!     Number of gas fluxes is not a valid number
+!! \throw NOTE, "No gas fluxes"
+!!     No gas fluxes were found
+!! \throw NOTE, "Processing [gas_fluxes%num_bcs] gas fluxes"
+!!     Gas fluxes were found
+!! \throw FATAL, "[name] is not a list"
+!!     name needs to be a list, or typ is incorrectly defined
+!! \throw FATAL, "Flux index, [ind] does not match array index, [n] for [name]"
+!! \throw FATAL, "Problem changing to [name]"
+!! \throw FATAL, "Undefined flux_type given for [name]: [gas_fluxes%bc(n)%flux_type]"
+!! \throw FATAL, "Undefined implementation given for [name]: [gas_fluxes%bc(n)%flux_type]/implementation/[gas_fluxes%bc(n)%implementation]"
+!! \throw FATAL, "No param for [name]: need [num_parameters]"
+!! \throw FATAL, "Wrong number of param for [name]: [size(gas_fluxes%bc(n)%param(:))] given, need [num_parameters]"
+!! \throw FATAL, "No params needed for [name] but has size of [size(gas_fluxes%bc(n)%param(:))]"
+!! \throw FATAL, "Num_parameters is negative for [name]: [num_parameters]"
+!! \throw FATAL, "No flag for [name]: need [num_flags]"
+!! \throw FATAL, "Wrong number of flag for [name]: [size(gas_fluxes%bc(n)%flag(:))] given, need [num_flags]"
+!! \throw FATAL, "No flags needed for [name] but has size of [size(gas_fluxes%bc(n)%flag(:))]"
+!! \throw FATAL, "Num_flags is negative for [name]: [num_flags]"
+!! \throw FATAL, "Problem dumping fluxes tracer tree"
+!! \throw FATAL, "Number of fluxes does not match across the processors: [gas_fluxes%num_bcs] fluxes"
 subroutine atmos_ocean_fluxes_init(gas_fluxes, gas_fields_atm, gas_fields_ice)  !{
 #ifdef __APPLE__
 ! This directive is needed for compilation with -O2 using ifort 15.0.3 20150408 (Mac OSX)
-! because otherwise the model crashes with error "malloc: pointer being freed was not allocated" 
+! because otherwise the model crashes with error "malloc: pointer being freed was not allocated"
 ! at the end of this subroutine.
 !DIR$ OPTIMIZE:0
 #endif
@@ -566,9 +594,9 @@ subroutine atmos_ocean_fluxes_init(gas_fluxes, gas_fields_atm, gas_fields_ice)  
 !-----------------------------------------------------------------------
 !
 
-type(coupler_1d_bc_type), intent(inout) :: gas_fluxes
-type(coupler_1d_bc_type), intent(inout) :: gas_fields_atm
-type(coupler_1d_bc_type), intent(inout) :: gas_fields_ice
+type(coupler_1d_bc_type), intent(inout) :: gas_fluxes !< gas_fluxes
+type(coupler_1d_bc_type), intent(inout) :: gas_fields_atm !< gas_fields_atm
+type(coupler_1d_bc_type), intent(inout) :: gas_fields_ice !< gas_fields_ice
 
 !
 !-----------------------------------------------------------------------
@@ -622,7 +650,7 @@ if (initialized) then  !{
 endif  !}
 
 !
-!       Write out the version of the file to the log file
+!>       Write out the version of the file to the log file.
 !
 call write_version_number(trim(mod_name), version)
 
@@ -637,14 +665,14 @@ outunit = stdout()
 caller_str = trim(mod_name) // '(' // trim(sub_name) // ')'
 
 !
-!       Set other defaults for the fm_util_set_value routines
+!>       Set other defaults for the fm_util_set_value routines.
 !
 
 call fm_util_set_no_overwrite(.true.)
 call fm_util_set_caller(caller_str)
 
 !
-!       determine the number of flux fields
+!>       Determine the number of flux fields.
 !
 
 gas_fluxes%num_bcs = fm_util_get_length('/coupler_mod/fluxes/')
@@ -670,16 +698,16 @@ allocate (gas_fields_atm%bc(gas_fields_atm%num_bcs))
 allocate (gas_fields_ice%bc(gas_fields_ice%num_bcs))
 
 !
-!       loop over the input fields, setting the values in the flux_type
+!>       Loop over the input fields, setting the values in the flux_type.
 !
 
 n = 0
 do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))  !{
-   
+
   if (typ .ne. 'list') then  !{
-       
+
     call mpp_error(FATAL, trim(error_header) // ' ' // trim(name) // ' is not a list')
-       
+
   else  !}{
 
     n = n + 1  ! increment the array index
@@ -690,7 +718,7 @@ do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))  !{
     endif  !}
 
 !
-!       Change list to the new flux
+!>       Change list to the new flux.
 !
 
     if (.not. fm_change_list('/coupler_mod/fluxes/' // trim(name))) then  !{
@@ -698,7 +726,7 @@ do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))  !{
     endif  !}
 
 !
-!       save and check the flux_type
+!>       Save and check the flux_type.
 !
 
     gas_fluxes%bc(n)%flux_type = fm_util_get_string('flux_type', scalar = .true.)
@@ -710,7 +738,7 @@ do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))  !{
     gas_fields_ice%bc(n)%flux_type = gas_fluxes%bc(n)%flux_type
 
 !
-!       save and check the implementation
+!>       Save and check the implementation.
 !
 
     gas_fluxes%bc(n)%implementation = fm_util_get_string('implementation', scalar = .true.)
@@ -724,7 +752,7 @@ do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))  !{
     gas_fields_ice%bc(n)%implementation = gas_fluxes%bc(n)%implementation
 
 !
-!       set the flux list name
+!>       Set the flux list name.
 !
 
     flux_list = '/coupler_mod/types/' // trim(gas_fluxes%bc(n)%flux_type) // '/'
@@ -741,7 +769,7 @@ do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))  !{
     allocate (gas_fields_ice%bc(n)%field(gas_fields_ice%bc(n)%num_fields))
 
 !
-!       save the name and generate unique field names for Flux, Ice and Atm
+!>       Save the name and generate unique field names for Flux, Ice and Atm.
 !
 
     gas_fluxes%bc(n)%name = name
@@ -766,7 +794,7 @@ do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))  !{
     enddo  !} m
 
 !
-!       save the units
+!>       Save the units.
 !
 
     do m = 1, fm_util_get_length(trim(flux_list) // 'flux/name')  !{
@@ -783,7 +811,7 @@ do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))  !{
     enddo  !} m
 
 !
-!       save the long names
+!>       Save the long names.
 !
 
     do m = 1, fm_util_get_length(trim(flux_list) // 'flux/name')  !{
@@ -803,13 +831,13 @@ do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))  !{
     enddo  !} m
 
 !
-!       save the atm_tr_index
+!>       Save the atm_tr_index.
 !
 
     gas_fluxes%bc(n)%atm_tr_index = fm_util_get_integer('atm_tr_index', scalar = .true.)
 
 !
-!       save the molecular weight
+!>       Save the molecular weight.
 !
 
     gas_fluxes%bc(n)%mol_wt = fm_util_get_real('mol_wt', scalar = .true.)
@@ -817,7 +845,7 @@ do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))  !{
     gas_fields_ice%bc(n)%mol_wt = gas_fluxes%bc(n)%mol_wt
 
 !
-!       save the ice_restart_file
+!>       Save the ice_restart_file.
 !
 
     gas_fluxes%bc(n)%ice_restart_file = fm_util_get_string('ice_restart_file', scalar = .true.)
@@ -825,7 +853,7 @@ do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))  !{
     gas_fields_ice%bc(n)%ice_restart_file = gas_fluxes%bc(n)%ice_restart_file
 
 !
-!       save the ocean_restart_file
+!>       Save the ocean_restart_file.
 !
 
     gas_fluxes%bc(n)%ocean_restart_file = fm_util_get_string('ocean_restart_file', scalar = .true.)
@@ -833,19 +861,19 @@ do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))  !{
     gas_fields_ice%bc(n)%ocean_restart_file = gas_fluxes%bc(n)%ocean_restart_file
 
 !
-!       save the params
+!>       Save the params.
 !
 
     gas_fluxes%bc(n)%param => fm_util_get_real_array('param')
 
 !
-!       save the flags
+!>       Save the flags.
 !
 
     gas_fluxes%bc(n)%flag => fm_util_get_logical_array('flag')
 
 !
-!       Perform some integrity checks
+!>       Perform some integrity checks.
 !
 
     num_parameters = fm_util_get_integer(trim(flux_list) // 'implementation/' //        &
@@ -887,7 +915,7 @@ do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))  !{
     endif  !}
 
 !
-!       set some flags for this flux_type
+!>       Set some flags for this flux_type.
 !
 
     gas_fluxes%bc(n)%use_atm_pressure = fm_util_get_logical(trim(flux_list) // '/use_atm_pressure')
@@ -913,9 +941,9 @@ if (.not. fm_dump_list('/coupler_mod/fluxes', recursive = .true.)) then  !{
 endif  !}
 
 !
-!       Check that the number of fluxes is the same on all processors
-!       If they are, then the sum of the number of fluxes across all processors
-!       should equal to the number of fluxes on each processor times the number of processors
+!>       Check that the number of fluxes is the same on all processors
+!!       If they are, then the sum of the number of fluxes across all processors
+!!       should equal to the number of fluxes on each processor times the number of processors
 !
 
 total_fluxes = gas_fluxes%num_bcs
@@ -927,7 +955,7 @@ if (total_fluxes .ne. mpp_npes() * gas_fluxes%num_bcs) then  !{
 endif  !}
 
 !
-!       Reset the defaults for the fm_util_set_value calls
+!>       Reset the defaults for the fm_util_set_value calls.
 !
 
 call fm_util_reset_no_overwrite
@@ -935,17 +963,16 @@ call fm_util_reset_caller
 
 return
 end subroutine  atmos_ocean_fluxes_init  !}
-! </SUBROUTINE> NAME="atmos_ocean_fluxes_init"
 
 
-!#######################################################################
-! <SUBROUTINE NAME="atmos_ocean_fluxes_calc">
-!
-! <DESCRIPTION>
-!     Calculate the ocean gas fluxes. Units should be mol/m^2/s, upward flux is positive.
-! </DESCRIPTION>
-!
-
+!> \brief Calculate the ocean gas fluxes. Units should be mol/m^2/s, upward flux is positive.
+!!
+!! \throw FATAL, "Number of gas fluxes not zero"
+!! \throw FATAL, "Lengths of flux fields do not match"
+!! \throw FATAL, "Unknown implementation ([implementation]) for [name]"
+!! \throw FATAL, "Lengths of flux fields do not match"
+!! \throw FATAL, "Bad parameter ([gas_fluxes%bc(n)%param(1)]) for land_sea_runoff for [name]"
+!! \throw FATAL, "Unknown flux type ([flux_type]) for [name]"
 subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice,      &
      gas_fluxes, seawater)  !{
 
@@ -963,10 +990,10 @@ implicit none
 !-----------------------------------------------------------------------
 !
 
-type(coupler_1d_bc_type), intent(in)            :: gas_fields_atm
-type(coupler_1d_bc_type), intent(in)            :: gas_fields_ice
-type(coupler_1d_bc_type), intent(inout)         :: gas_fluxes
-real, intent(in), dimension(:)                  :: seawater
+type(coupler_1d_bc_type), intent(in)            :: gas_fields_atm !< gas_fields_atm
+type(coupler_1d_bc_type), intent(in)            :: gas_fields_ice !< gas_fields_ice
+type(coupler_1d_bc_type), intent(inout)         :: gas_fluxes !< gas_fluxes
+real, intent(in), dimension(:)                  :: seawater !< seawater
 
 !
 !-----------------------------------------------------------------------
@@ -1132,7 +1159,7 @@ do n = 1, gas_fluxes%num_bcs  !{
             kw(i) = 0.0
           endif  !}
         enddo  !} i
-    
+
       else  !}{
 
         call mpp_error(FATAL, ' Unknown implementation (' // trim(gas_fluxes%bc(n)%implementation) //    &
@@ -1140,9 +1167,9 @@ do n = 1, gas_fluxes%num_bcs  !{
 
       endif  !}
     elseif (gas_fluxes%bc(n)%flux_type .eq. 'air_sea_deposition') then  !}{
- 
+
      cycle !air_sea_deposition is done in another subroutine
-      
+
     elseif (gas_fluxes%bc(n)%flux_type .eq. 'land_sea_runoff') then  !}{
 
       if (gas_fluxes%bc(n)%param(1) .le. 0.0) then
@@ -1177,7 +1204,7 @@ do n = 1, gas_fluxes%num_bcs  !{
            ') for ' // trim(gas_fluxes%bc(n)%name))
 
     endif  !}
-      
+
   endif  !}
 
 enddo  !} n
@@ -1189,8 +1216,12 @@ endif
 
 return
 end subroutine  atmos_ocean_fluxes_calc  !}
-! </SUBROUTINE> NAME="atmos_ocean_fluxes_calc"
 
+!> \brief atmos_ocean_dep_fluxes_calc
+!!
+!! \throw FATAL, "Number of gas fluxes not zero"
+!! \throw FATAL, "atmos_ocean_dep_fluxes_calc: Bad parameter ([gas_fluxes%bc(n)%param(1)]) for air_sea_deposition for [gas_fluxes%bc(n)%name]"
+!! \throw FATAL, "atmos_ocean_dep_fluxes_calc: Unknown implementation ([gas_fluxes%bc(n)%implementation] for [gas_fluxes%bc(n)%name]"
 subroutine atmos_ocean_dep_fluxes_calc(gas_fields_atm, gas_fields_ice,      &
      gas_fluxes, seawater)  !{
 
@@ -1208,10 +1239,10 @@ implicit none
 !-----------------------------------------------------------------------
 !
 
-type(coupler_1d_bc_type), intent(in)            :: gas_fields_atm
-type(coupler_1d_bc_type), intent(in)            :: gas_fields_ice
-type(coupler_1d_bc_type), intent(inout)         :: gas_fluxes
-real, intent(in), dimension(:)                  :: seawater
+type(coupler_1d_bc_type), intent(in)            :: gas_fields_atm !< gas_fields_atm
+type(coupler_1d_bc_type), intent(in)            :: gas_fields_ice !< gas_fields_ice
+type(coupler_1d_bc_type), intent(inout)         :: gas_fluxes !< gas_fluxes
+real, intent(in), dimension(:)                  :: seawater !< seawater
 
 !
 !-----------------------------------------------------------------------
@@ -1304,7 +1335,7 @@ do n = 1, gas_fluxes%num_bcs  !{
             gas_fluxes%bc(n)%field(ind_flux)%values(i) = 0.0
           endif  !}
         enddo  !} i
-    
+
       else  !}{
 
         call mpp_error(FATAL, 'atmos_ocean_dep_fluxes_calc: Unknown implementation ('&
@@ -1314,10 +1345,10 @@ do n = 1, gas_fluxes%num_bcs  !{
 
     else  !}{
 
-      cycle 
+      cycle
 
     endif  !}
-      
+
   endif  !}
 
 enddo  !} n

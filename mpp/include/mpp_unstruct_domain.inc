@@ -132,7 +132,7 @@
         UG_domain%list(p)%compute%begin_index = minval(grid_index(is:ie))
         UG_domain%list(p)%compute%end_index = maxval(grid_index(is:ie))
      enddo
- 
+
      !--- write out domain decomposition from root pe
      if(mpp_pe() == mpp_root_pe() .and. present(name)) then
         write(stdout(),*) "unstruct domain name = ", trim(name)

@@ -49,7 +49,7 @@ MODULE diag_util_mod
   USE mpp_domains_mod,ONLY: domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
        & OPERATOR(.NE.), OPERATOR(.EQ.), mpp_modify_domain, mpp_get_domain_components,&
        & mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, mpp_get_tile_npes,&
-       & domainUG, null_domainUG 
+       & domainUG, null_domainUG
   USE time_manager_mod,ONLY: time_type, OPERATOR(==), OPERATOR(>), NO_CALENDAR, increment_date,&
        & increment_time, get_calendar_type, get_date, get_time, leap_year, OPERATOR(-),&
        & OPERATOR(<), OPERATOR(>=), OPERATOR(<=)
@@ -1892,7 +1892,7 @@ CONTAINS
              DEALLOCATE(axesc)
           ENDIF
        ENDDO
-       
+
     END DO
 
     ! Looking for the first NON-static field in a file

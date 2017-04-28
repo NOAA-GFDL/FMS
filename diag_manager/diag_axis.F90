@@ -862,7 +862,7 @@ CONTAINS
   !     INTEGER FUNCTION axis_compatible_check(id)
   !   </TEMPLATE>
   !   <DESCRIPTION>
-  !     Checks if the axes are compatible 
+  !     Checks if the axes are compatible
   !   </DESCRIPTION>
   !   <IN NAME="id" TYPE="INTEGER">Axis ID</IN>
 !----------
@@ -1451,7 +1451,7 @@ CONTAINS
     END IF
   END SUBROUTINE prepend_attribute_axis
   ! </SUBROUTINE>
-  
+
   ! given an axis, returns TRUE if the axis uses compression-by-gathering: that is, if
   ! this is an axis for fields on unstructured grid
   logical function axis_is_compressed(id)
@@ -1472,7 +1472,7 @@ CONTAINS
   end function axis_is_compressed
 
 
-  ! given an index of compressed-by-gathering axis, return an array of axes used in 
+  ! given an index of compressed-by-gathering axis, return an array of axes used in
   ! compression. It is a fatal error to call it on axis that is not compressed
   subroutine get_compressed_axes_ids(id, r)
     integer, intent(in)  :: id
@@ -1480,7 +1480,7 @@ CONTAINS
 
     integer iatt, k, k1, k2, n
     logical :: space
-    
+
     character(*), parameter :: tag = 'get_compressed_axes_ids'
 
     CALL valid_id_check(id, tag)
@@ -1515,7 +1515,7 @@ CONTAINS
 
     allocate(r(n))
     ! make array of compression axes indices. Go from the last to the first to get the
-    ! array in FORTRAN order: they are listed in "compress" attribute  C order (fastest 
+    ! array in FORTRAN order: they are listed in "compress" attribute  C order (fastest
     ! dimension last)
     k2 = 0
     do k = n, 1, -1
