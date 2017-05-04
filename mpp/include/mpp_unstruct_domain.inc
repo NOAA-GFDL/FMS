@@ -181,16 +181,16 @@
      UG_domain%io_layout = ngroup
 !----------
 
-     call mpp_compute_extent(1, ndivs_tile(tile_id), ngroup, ibegin(1:ngroup), iend(1:ngroup))
+     call mpp_compute_extent(1, ndivs_tile(tile_id), ngroup, ibegin(0:ngroup-1), iend(0:ngroup-1))
      my_pos = UG_domain%pe - UG_domain%tile_root_pe + 1
-     do n = 1, ngroup
+     do n = 0, ngroup-1
         if( my_pos .GE. ibegin(n) .AND. my_pos .LE. iend(n) ) then
            group_id = n
            exit
         endif
      enddo
      
-     UG_domain%io_domain%tile_id            = group_id
+     UG_domain%io_domain%tile_id            = group_id+1
      UG_domain%io_domain%compute            = UG_domain%compute
      UG_domain%io_domain%pe                 = UG_domain%pe
      UG_domain%io_domain%pos                = my_pos - ibegin(group_id) + 1
@@ -210,7 +210,7 @@
         UG_domain%io_domain%list(n)%compute = UG_domain%list(pos)%compute
         UG_domain%io_domain%list(n)%pos = n
         UG_domain%io_domain%list(n)%pe = UG_domain%list(pos)%pe
-        UG_domain%io_domain%list(n)%tile_id = group_id
+        UG_domain%io_domain%list(n)%tile_id = group_id+1
      enddo    
  
      call compute_overlap_SG2UG(UG_domain, SG_domain)

@@ -90,6 +90,7 @@
     if( mpp_domain2D_eq )mpp_domain2D_eq = size(a%list(:)).EQ.size(b%list(:))
     if( mpp_domain2D_eq )mpp_domain2D_eq = ALL(a%list%pe.EQ.b%list%pe)
     if( mpp_domain2D_eq )mpp_domain2D_eq = ALL(a%io_layout .EQ. b%io_layout)
+    if( mpp_domain2D_eq )mpp_domain2D_eq = a%symmetry .eqv. b%symmetry
 
     return
   end function mpp_domain2D_eq
