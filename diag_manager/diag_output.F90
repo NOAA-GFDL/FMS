@@ -102,8 +102,8 @@ CONTAINS
     IF ( .NOT.module_is_initialized ) THEN
        CALL mpp_io_init ()
        module_is_initialized = .TRUE.
+       CALL write_version_number("DIAG_OUTPUT_MOD", version)
     END IF
-    CALL write_version_number("DIAG_OUTPUT_MOD", version)
 
     !---- set up output file ----
     SELECT CASE (FORMAT)

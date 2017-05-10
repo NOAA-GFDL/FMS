@@ -734,11 +734,6 @@ CONTAINS
        CALL error_mesg ('diag_manager_mod::register_static_field', 'diag_manager has NOT been initialized', FATAL)
     END IF
 
-    register_static_field = find_input_field(module_name, field_name, 1)
-    field = register_static_field
-    ! Negative index returned if this field was not found in the diag_table.
-    IF ( register_static_field < 0 ) RETURN
-
     ! Check if OPTIONAL parameters were passed in.
     IF ( PRESENT(missing_value) ) THEN
        IF ( use_cmor ) THEN
@@ -772,9 +767,6 @@ CONTAINS
        allow_log = .TRUE.
     END IF
 
-   !Check that the axes are compatable with eachother
-    domain_type = axis_compatible_check(axes,field_name)
-
     ! Namelist do_diag_field_log is by default false.  Thus to log the
     ! registration of the data field, but the OPTIONAL parameter
     ! do_not_log == .FALSE. and the namelist variable
@@ -784,6 +776,14 @@ CONTAINS
             & long_name, units, missing_value=missing_value, range=range, &
             & DYNAMIC=dynamic1)
     END IF
+
+    register_static_field = find_input_field(module_name, field_name, 1)
+    field = register_static_field
+    ! Negative index returned if this field was not found in the diag_table.
+    IF ( register_static_field < 0 ) RETURN
+
+    ! Check that the axes are compatible with each other
+    domain_type = axis_compatible_check(axes,field_name)
 
     IF ( tile > 1 ) THEN
        IF ( .NOT.input_fields(field)%register ) THEN
