@@ -38,11 +38,11 @@ MODULE diag_util_mod
        & DIAG_FIELD_NOT_FOUND, diag_init_time
   USE diag_axis_mod, ONLY: get_diag_axis_data, get_axis_global_length, get_diag_axis_cart,&
        & get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, get_axis_aux,&
-       & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name, get_domainUG
+       & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name, get_domainUG, get_axis_reqfld
   USE diag_output_mod, ONLY: diag_flush, diag_field_out, diag_output_init, write_axis_meta_data,&
        & write_field_meta_data, done_meta_data
   USE diag_grid_mod, ONLY: get_local_indexes
-  USE fms_mod, ONLY: error_mesg, FATAL, WARNING, mpp_pe, mpp_root_pe, lowercase, fms_error_handler,&
+  USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, mpp_pe, mpp_root_pe, lowercase, fms_error_handler,&
        & write_version_number, do_cf_compliance
   USE fms_io_mod, ONLY: get_tile_string, return_domain, string, get_instance_filename
   USE mpp_domains_mod,ONLY: domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
@@ -1699,11 +1699,11 @@ CONTAINS
     ! axes per field + 2; the last two elements are for time
     ! and time bounds dimensions
     INTEGER, DIMENSION(6) :: axes
-    LOGICAL :: time_ops, aux_present, match_aux_name
+    LOGICAL :: time_ops, aux_present, match_aux_name, req_present, match_req_fields
     LOGICAL :: all_scalar_or_1d
     CHARACTER(len=7) :: prefix
     CHARACTER(len=7) :: avg_name = 'average'
-    CHARACTER(len=128) :: time_units, timeb_units, avg, error_string, filename, aux_name,fieldname
+    CHARACTER(len=128) :: time_units, timeb_units, avg, error_string, filename, aux_name, req_fields, fieldname
     CHARACTER(len=128) :: suffix, base_name
     CHARACTER(len=32) :: time_name, timeb_name,time_longname, timeb_longname, cart_name
     CHARACTER(len=256) :: fname
@@ -1711,10 +1711,13 @@ CONTAINS
     TYPE(domain1d) :: domain
     TYPE(domain2d) :: domain2
     TYPE(domainUG) :: domainU
+    INTEGER :: is, ie, last, ind
 
 
     aux_present = .FALSE.
     match_aux_name = .FALSE.
+    req_present = .FALSE.
+    match_req_fields = .FALSE.
 
     ! Here is where time_units string must be set up; time since base date
     WRITE (time_units, 11) TRIM(time_unit_list(files(file)%time_units)), base_year,&
@@ -1874,6 +1877,18 @@ CONTAINS
              END IF
           END DO
        END IF
+       ! check if required fields are present in any axes
+       IF ( .NOT.req_present ) THEN
+          DO k = 1, num_axes
+             req_fields = get_axis_reqfld(axes(k))
+             IF ( TRIM(req_fields) /= 'none' ) THEN
+                CALL error_mesg('diag_util_mod::opening_file','required fields found: '//&
+                               &TRIM(req_fields)//' in file '//TRIM(files(file)%name),NOTE)
+                req_present = .TRUE.
+                EXIT
+             END IF
+          END DO
+       END IF
 
        axes(num_axes + 1) = files(file)%time_axis_id
        CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 1), time_ops)
@@ -1917,6 +1932,23 @@ CONTAINS
        IF ( aux_present .AND. .NOT.match_aux_name ) THEN
           fieldname = output_fields(field_num)%output_name
           IF ( INDEX(aux_name, TRIM(fieldname)) > 0 ) match_aux_name = .TRUE.
+       END IF
+       ! check if any field has the same name as req_fields
+       IF ( req_present .AND. .NOT.match_req_fields ) THEN
+          fieldname = output_fields(field_num)%output_name
+          is = 1; last = len_trim(req_fields)
+          DO
+            ind = index(req_fields(is:last),' ')
+            IF (ind .eq. 0) ind = last-is+2
+            ie = is+(ind-2)
+            if (req_fields(is:ie) .EQ. trim(fieldname)) then
+              match_req_fields = .TRUE.
+             !CALL error_mesg('diag_util_mod::opening_file','matched required field: '//TRIM(fieldname),NOTE)
+              EXIT
+            END IF
+            is = is+ind
+            if (is .GT. last) EXIT
+          END DO
        END IF
 
        ! Put the time axis in the axis field
@@ -2037,6 +2069,15 @@ CONTAINS
        ! </ERROR>
        IF ( mpp_pe() == mpp_root_pe() ) CALL error_mesg('diag_util_mod::opening_file',&
             &'one axis has auxiliary but the corresponding field is NOT found in file '//TRIM(files(file)%name), WARNING)
+    END IF
+    IF( req_present .AND. .NOT.match_req_fields ) THEN
+       ! <ERROR STATUS="FATAL">
+       !   one axis has required fields but the corresponding field is NOT
+       !   found in file <file_name>
+       ! </ERROR>
+       IF ( mpp_pe() == mpp_root_pe() ) CALL error_mesg('diag_util_mod::opening_file',&
+                  &'one axis has required fields ('//trim(req_fields)//') but the '// &
+                  &'corresponding fields are NOT found in file '//TRIM(files(file)%name), FATAL)
     END IF
   END SUBROUTINE opening_file
   ! </SUBROUTINE>
