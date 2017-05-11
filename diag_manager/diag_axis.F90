@@ -35,7 +35,8 @@ MODULE diag_axis_mod
        & get_diag_axis_cart, get_diag_axis_data, max_axes, get_axis_aux,&
        & get_tile_count, get_axes_shift, get_diag_axis_name,&
        & get_axis_num, get_diag_axis_domain_name, diag_axis_add_attribute,&
-       & get_domainUG, axis_compatible_check
+       & get_domainUG, axis_compatible_check, axis_is_compressed, &
+       & get_compressed_axes_ids
 
   ! Module variables
   ! Parameters
@@ -861,7 +862,7 @@ CONTAINS
   !     INTEGER FUNCTION axis_compatible_check(id)
   !   </TEMPLATE>
   !   <DESCRIPTION>
-  !     Checks if the axes are compatible 
+  !     Checks if the axes are compatible
   !   </DESCRIPTION>
   !   <IN NAME="id" TYPE="INTEGER">Axis ID</IN>
 !----------
@@ -1450,4 +1451,85 @@ CONTAINS
     END IF
   END SUBROUTINE prepend_attribute_axis
   ! </SUBROUTINE>
+
+  ! given an axis, returns TRUE if the axis uses compression-by-gathering: that is, if
+  ! this is an axis for fields on unstructured grid
+  logical function axis_is_compressed(id)
+    integer, intent(in) :: id
+
+    integer :: i
+
+    CALL valid_id_check(id, 'axis_is_compressed')
+
+    axis_is_compressed = .FALSE.
+    if (.not._ALLOCATED(Axes(id)%attributes)) return
+    do i = 1, Axes(id)%num_attributes
+       if (trim(Axes(id)%attributes(i)%name)=='compress') then
+          axis_is_compressed = .TRUE.
+          return
+       endif
+    enddo
+  end function axis_is_compressed
+
+
+  ! given an index of compressed-by-gathering axis, return an array of axes used in
+  ! compression. It is a fatal error to call it on axis that is not compressed
+  subroutine get_compressed_axes_ids(id, r)
+    integer, intent(in)  :: id
+    integer, intent(out), allocatable :: r(:)
+
+    integer iatt, k, k1, k2, n
+    logical :: space
+
+    character(*), parameter :: tag = 'get_compressed_axes_ids'
+
+    CALL valid_id_check(id, tag)
+
+    associate (axis=>Axes(id))
+    if (.not._ALLOCATED(axis%attributes)) call error_mesg(tag, &
+       'attempt to get compression dimensions from axis "'//trim(axis%name)//'" which is not compressed (does not have any attributes)', FATAL)
+
+    iatt = 0
+    do k = 1,axis%num_attributes
+       if (trim(axis%attributes(k)%name)=='compress') then
+          iatt = k; exit ! from loop
+       endif
+    enddo
+
+    if (iatt == 0) call error_mesg(tag, &
+       'attempt to get compression dimensions from axis "'//trim(axis%name)//&
+       '" which is not compressed (does not have "compress" attributes).', FATAL)
+    if (axis%attributes(iatt)%type/=NF90_CHAR) call error_mesg(tag, &
+       'attempt to get compression dimensions from axis "'//trim(axis%name)//&
+       '" but the axis attribute "compress" has incorrect type.', FATAL)
+
+    ! parse the "compress" attribute
+    ! calculate the number of compression axes
+    space = .TRUE.; n=0
+    do k = 1, len(axis%attributes(iatt)%catt)
+       if (space.and.(axis%attributes(iatt)%catt(k:k)/=' ')) then
+          n = n+1
+       endif
+       space = (axis%attributes(iatt)%catt(k:k)==' ')
+    enddo
+
+    allocate(r(n))
+    ! make array of compression axes indices. Go from the last to the first to get the
+    ! array in FORTRAN order: they are listed in "compress" attribute  C order (fastest
+    ! dimension last)
+    k2 = 0
+    do k = n, 1, -1
+       do k1 = k2+1, len(axis%attributes(iatt)%catt)
+          if (axis%attributes(iatt)%catt(k1:k1)/=' ') exit
+       enddo
+       do k2 = k1+1, len(axis%attributes(iatt)%catt)
+          if (axis%attributes(iatt)%catt(k2:k2)==' ') exit
+       enddo
+       r(k) = get_axis_num(axis%attributes(iatt)%catt(k1:k2),Axis_sets(axis%set))
+       if (r(k)<=0) call error_mesg(tag, &
+           'compression dimension "'//trim(axis%attributes(iatt)%catt(k1:k2))//&
+           '" not found among the axes of set "'//trim(Axis_sets(axis%set))//'".', FATAL)
+    enddo
+    end associate ! axis
+  end subroutine get_compressed_axes_ids
 END MODULE diag_axis_mod

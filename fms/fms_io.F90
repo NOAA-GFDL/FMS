@@ -1148,7 +1148,7 @@ subroutine write_data_3d_new(filename, fieldname, data, domain, no_domain, scala
         endif
         if( (cur_var%siz(1) .NE. cxsize .AND. cur_var%siz(1) .NE. dxsize ) .OR. &
             (cur_var%siz(2) .NE. cysize .AND. cur_var%siz(2) .NE. dysize ) ) then
-            call mpp_error(FATAL, 'fms_io(write_data_3d_new): data should be on either computer domain '//&
+            call mpp_error(FATAL, 'fms_io(write_data_3d_new): data should be on either compute domain '//&
               'or data domain when domain is present for field '//trim(fieldname)//' of file '//trim(filename) )
         end if
         cur_var%gsiz(1)   = gxsize
@@ -4481,7 +4481,7 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
         endif
         if( (cur_var%siz(1) .NE. cxsize .AND. cur_var%siz(1) .NE. dxsize ) .OR. &
             (cur_var%siz(2) .NE. cysize .AND. cur_var%siz(2) .NE. dysize ) ) then
-            call mpp_error(FATAL, 'fms_io(setup_one_field): data should be on either computer domain '//&
+            call mpp_error(FATAL, 'fms_io(setup_one_field): data should be on either compute domain '//&
               'or data domain when domain is present for field '//trim(fieldname)//' of file '//trim(filename) )
         end if
         cur_var%is   = 1 + (cur_var%siz(1) - cxsize)/2
@@ -5127,7 +5127,7 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel, &
      call mpp_get_domain_shift  (d_ptr, ishift, jshift, position)
      if( (size(data,1) .NE. cxsize .AND. size(data,1) .NE. dxsize) .OR. &
          (size(data,2) .NE. cysize .AND. size(data,2) .NE. dysize) )then
-       call mpp_error(FATAL,'fms_io(read_data_3d_new): data should be on either computer domain '//&
+       call mpp_error(FATAL,'fms_io(read_data_3d_new): data should be on either compute domain '//&
                             'or data domain when domain is present. '//&
                             'shape(data)=',shape(data),'  cxsize,cysize,dxsize,dysize=',(/cxsize,cysize,dxsize,dysize/))
      end if

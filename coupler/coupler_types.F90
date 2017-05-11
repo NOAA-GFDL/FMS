@@ -1,42 +1,31 @@
 module coupler_types_mod  !{
 !-----------------------------------------------------------------------
-!                   GNU General Public License                        
-! This file is a part of MOM.                                                                 
-!                                                                      
-! MOM is free software; you can redistribute it and/or modify it and  
-! are expected to follow the terms of the GNU General Public License  
-! as published by the Free Software Foundation; either version 2 of   
-! the License, or (at your option) any later version.                 
-!                                                                      
-! MOM is distributed in the hope that it will be useful, but WITHOUT    
-! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY  
-! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public    
-! License for more details.                                           
-!                                                                      
-! For the full text of the GNU General Public License,                
-! write to: Free Software Foundation, Inc.,                           
-!           675 Mass Ave, Cambridge, MA 02139, USA.                   
-! or see:   http://www.gnu.org/licenses/gpl.html                      
+!                   GNU General Public License
+! This file is a part of MOM.
+!
+! MOM is free software; you can redistribute it and/or modify it and
+! are expected to follow the terms of the GNU General Public License
+! as published by the Free Software Foundation; either version 2 of
+! the License, or (at your option) any later version.
+!
+! MOM is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! For the full text of the GNU General Public License,
+! write to: Free Software Foundation, Inc.,
+!           675 Mass Ave, Cambridge, MA 02139, USA.
+! or see:   http://www.gnu.org/licenses/gpl.html
 !-----------------------------------------------------------------------
 !
-!<CONTACT EMAIL="Richard.Slater@noaa.gov">
-! Richard D. Slater 
-!</CONTACT>
-!
-! <REVIEWER EMAIL="John.Dunne@noaa.gov">
-! John Dunne
-! </REVIEWER>
-!
-!<OVERVIEW>
-! This module contains type declarations for the coupler.
-!</OVERVIEW>
-!
-!<DESCRIPTION>
-! This module contains type declarations for the coupler.
-!</DESCRIPTION>
-!
+!> \brief This module contains type declarations for the coupler.
+!!
+!! \author Richard Slater <Richard.Slater@noaa.gov>
+!! \author John Dunne <John.Dunne@noaa.gov>
 
-!
+! wut iz this even
+
 ! /coupler_mod/
 !              types/
 !                    air_sea_gas_flux_generic/
@@ -166,6 +155,24 @@ module coupler_types_mod  !{
 !                                    'mol/m^3'
 !
 
+! /wut
+
+!! Modules Included:
+!!
+!! <table>
+!!   <tr>
+!!     <th>Module Name</th>
+!!     <th>Functions Included</th>
+!!   </tr>
+!!   <tr>
+!!     <td>fms_mod</td>
+!!     <td>write_version_number</td>
+!!   </tr>
+!!   <tr>
+!!     <td>field_manager_mod</td>
+!!     <td>fm_field_name_len, fm_string_len, fm_dump_list</td>
+!!   </tr>
+!! </table>
 use fms_mod,           only: write_version_number
 use field_manager_mod, only: fm_field_name_len, fm_string_len, fm_dump_list
 
@@ -231,35 +238,35 @@ character(len=48), parameter                    :: mod_name = 'coupler_types_mod
 !
 
 type, public    :: coupler_3d_values_type
-  character(len=fm_field_name_len)                      :: name = ' '
-  real, pointer, dimension(:,:,:)                       :: values => NULL()
-  logical                                               :: mean = .true.
-  logical                                               :: override = .false.
-  integer                                               :: id_diag = 0
-  character(len=fm_string_len)                          :: long_name = ' '
-  character(len=fm_string_len)                          :: units = ' '
+  character(len=fm_field_name_len)                      :: name = ' ' !< name
+  real, pointer, dimension(:,:,:)                       :: values => NULL() !< values
+  logical                                               :: mean = .true. !< mean
+  logical                                               :: override = .false. !< override
+  integer                                               :: id_diag = 0 !< id_diag
+  character(len=fm_string_len)                          :: long_name = ' ' !< long_name
+  character(len=fm_string_len)                          :: units = ' ' !< units
 end type coupler_3d_values_type
 
 type, public    :: coupler_3d_field_type  !{
-  character(len=fm_field_name_len)                      :: name = ' '
-  integer                                               :: num_fields = 0
-  type(coupler_3d_values_type), pointer, dimension(:)   :: field => NULL()
-  character(len=fm_string_len)                          :: flux_type = ' '
-  character(len=fm_string_len)                          :: implementation = ' '
-  real, pointer, dimension(:)                           :: param => NULL()
-  logical, pointer, dimension(:)                        :: flag => NULL()
-  integer                                               :: atm_tr_index = 0
-  character(len=fm_string_len)                          :: ice_restart_file = ' '
-  character(len=fm_string_len)                          :: ocean_restart_file = ' '
-  logical                                               :: use_atm_pressure
-  logical                                               :: use_10m_wind_speed
-  logical                                               :: pass_through_ice
-  real                                                  :: mol_wt = 0.0
+  character(len=fm_field_name_len)                      :: name = ' ' !< name
+  integer                                               :: num_fields = 0 !< num_fields
+  type(coupler_3d_values_type), pointer, dimension(:)   :: field => NULL() !< field
+  character(len=fm_string_len)                          :: flux_type = ' ' !< flux_type
+  character(len=fm_string_len)                          :: implementation = ' ' !< implementation
+  real, pointer, dimension(:)                           :: param => NULL() !< param
+  logical, pointer, dimension(:)                        :: flag => NULL() !< flag
+  integer                                               :: atm_tr_index = 0 !< atm_tr_index
+  character(len=fm_string_len)                          :: ice_restart_file = ' ' !< ice_restart_file
+  character(len=fm_string_len)                          :: ocean_restart_file = ' ' !< ocean_restart_file
+  logical                                               :: use_atm_pressure !< use_atm_pressure
+  logical                                               :: use_10m_wind_speed !< use_10m_wind_speed
+  logical                                               :: pass_through_ice !< pass_through_ice
+  real                                                  :: mol_wt = 0.0 !< mol_wt
 end type coupler_3d_field_type
 
 type, public    :: coupler_3d_bc_type  !{
-  integer                                               :: num_bcs = 0
-  type(coupler_3d_field_type), pointer, dimension(:)    :: bc => NULL()
+  integer                                               :: num_bcs = 0 !< num_bcs
+  type(coupler_3d_field_type), pointer, dimension(:)    :: bc => NULL() !< bc
 end type coupler_3d_bc_type
 
 !
@@ -267,35 +274,35 @@ end type coupler_3d_bc_type
 !
 
 type, public    :: coupler_2d_values_type
-  character(len=fm_field_name_len)                      :: name = ' '
-  real, pointer, dimension(:,:)                         :: values => NULL()
-  logical                                               :: mean = .true.
-  logical                                               :: override = .false.
-  integer                                               :: id_diag = 0
-  character(len=fm_string_len)                          :: long_name = ' '
-  character(len=fm_string_len)                          :: units = ' '
+  character(len=fm_field_name_len)                      :: name = ' ' !< name
+  real, pointer, dimension(:,:)                         :: values => NULL() !< values
+  logical                                               :: mean = .true. !< mean
+  logical                                               :: override = .false. !< override
+  integer                                               :: id_diag = 0 !< id_diag
+  character(len=fm_string_len)                          :: long_name = ' ' !< long_name
+  character(len=fm_string_len)                          :: units = ' ' !< units
 end type coupler_2d_values_type
 
 type, public    :: coupler_2d_field_type  !{
-  character(len=fm_field_name_len)                      :: name = ' '
-  integer                                               :: num_fields = 0
-  type(coupler_2d_values_type), pointer, dimension(:)   :: field => NULL()
-  character(len=fm_string_len)                          :: flux_type = ' '
-  character(len=fm_string_len)                          :: implementation = ' '
-  real, pointer, dimension(:)                           :: param => NULL()
-  logical, pointer, dimension(:)                        :: flag => NULL()
-  integer                                               :: atm_tr_index = 0
-  character(len=fm_string_len)                          :: ice_restart_file = ' '
-  character(len=fm_string_len)                          :: ocean_restart_file = ' '
-  logical                                               :: use_atm_pressure
-  logical                                               :: use_10m_wind_speed
-  logical                                               :: pass_through_ice
-  real                                                  :: mol_wt = 0.0
+  character(len=fm_field_name_len)                      :: name = ' ' !< name
+  integer                                               :: num_fields = 0 !< num_fields
+  type(coupler_2d_values_type), pointer, dimension(:)   :: field => NULL() !< field
+  character(len=fm_string_len)                          :: flux_type = ' ' !< flux_type
+  character(len=fm_string_len)                          :: implementation = ' ' !< implementation
+  real, pointer, dimension(:)                           :: param => NULL() !< param
+  logical, pointer, dimension(:)                        :: flag => NULL() !< flag
+  integer                                               :: atm_tr_index = 0 !< atm_tr_index
+  character(len=fm_string_len)                          :: ice_restart_file = ' ' !< ice_restart_file
+  character(len=fm_string_len)                          :: ocean_restart_file = ' ' !< ocean_restart_file
+  logical                                               :: use_atm_pressure !< use_atm_pressure
+  logical                                               :: use_10m_wind_speed !< use_10m_wind_speed
+  logical                                               :: pass_through_ice !< pass_through_ice
+  real                                                  :: mol_wt = 0.0 !< mol_wt
 end type coupler_2d_field_type
 
 type, public    :: coupler_2d_bc_type  !{
-  integer                                               :: num_bcs = 0
-  type(coupler_2d_field_type), pointer, dimension(:)    :: bc => NULL()
+  integer                                               :: num_bcs = 0 !< num_bcs
+  type(coupler_2d_field_type), pointer, dimension(:)    :: bc => NULL() !< bc
 end type coupler_2d_bc_type
 
 !
@@ -303,35 +310,35 @@ end type coupler_2d_bc_type
 !
 
 type, public    :: coupler_1d_values_type
-  character(len=fm_field_name_len)                      :: name = ' '
-  real, pointer, dimension(:)                           :: values => NULL()
-  logical                                               :: mean = .true.
-  logical                                               :: override = .false.
-  integer                                               :: id_diag = 0
-  character(len=fm_string_len)                          :: long_name = ' '
-  character(len=fm_string_len)                          :: units = ' '
+  character(len=fm_field_name_len)                      :: name = ' ' !< name
+  real, pointer, dimension(:)                           :: values => NULL() !< values
+  logical                                               :: mean = .true. !< mean
+  logical                                               :: override = .false. !< override
+  integer                                               :: id_diag = 0 !< id_diag
+  character(len=fm_string_len)                          :: long_name = ' ' !< long_name
+  character(len=fm_string_len)                          :: units = ' ' !< units
 end type coupler_1d_values_type
 
 type, public    :: coupler_1d_field_type  !{
-  character(len=fm_field_name_len)                      :: name = ' '
-  integer                                               :: num_fields = 0
-  type(coupler_1d_values_type), pointer, dimension(:)   :: field => NULL()
-  character(len=fm_string_len)                          :: flux_type = ' '
-  character(len=fm_string_len)                          :: implementation = ' '
-  real, pointer, dimension(:)                           :: param => NULL()
-  logical, pointer, dimension(:)                        :: flag => NULL()
-  integer                                               :: atm_tr_index = 0
-  character(len=fm_string_len)                          :: ice_restart_file = ' '
-  character(len=fm_string_len)                          :: ocean_restart_file = ' '
-  logical                                               :: use_atm_pressure
-  logical                                               :: use_10m_wind_speed
-  logical                                               :: pass_through_ice
-  real                                                  :: mol_wt = 0.0
+  character(len=fm_field_name_len)                      :: name = ' ' !< name
+  integer                                               :: num_fields = 0 !< num_fields
+  type(coupler_1d_values_type), pointer, dimension(:)   :: field => NULL() !< field
+  character(len=fm_string_len)                          :: flux_type = ' ' !< flux_type
+  character(len=fm_string_len)                          :: implementation = ' ' !< implementation
+  real, pointer, dimension(:)                           :: param => NULL() !< param
+  logical, pointer, dimension(:)                        :: flag => NULL() !< flag
+  integer                                               :: atm_tr_index = 0 !< atm_tr_index
+  character(len=fm_string_len)                          :: ice_restart_file = ' ' !< ice_restart_file
+  character(len=fm_string_len)                          :: ocean_restart_file = ' ' !< ocean_restart_file
+  logical                                               :: use_atm_pressure !< use_atm_pressure
+  logical                                               :: use_10m_wind_speed !< use_10m_wind_speed
+  logical                                               :: pass_through_ice !< pass_through_ice
+  real                                                  :: mol_wt = 0.0 !< mol_wt
 end type coupler_1d_field_type
 
 type, public    :: coupler_1d_bc_type  !{
-  integer                                               :: num_bcs = 0
-  type(coupler_1d_field_type), pointer, dimension(:)    :: bc => NULL()
+  integer                                               :: num_bcs = 0 !< num_bcs
+  type(coupler_1d_field_type), pointer, dimension(:)    :: bc => NULL() !< bc
 end type coupler_1d_bc_type
 
 !
@@ -350,17 +357,17 @@ end type coupler_1d_bc_type
 !----------------------------------------------------------------------
 !
 
-integer, public :: ind_u10
-integer, public :: ind_psurf
-integer, public :: ind_pcair
-integer, public :: ind_csurf
-integer, public :: ind_alpha
-integer, public :: ind_sc_no
-integer, public :: ind_flux
-integer, public :: ind_deltap
-integer, public :: ind_kw
-integer, public :: ind_deposition
-integer, public :: ind_runoff
+integer, public :: ind_u10 !< ind_u10
+integer, public :: ind_psurf !< ind_psurf
+integer, public :: ind_pcair !< ind_pcair
+integer, public :: ind_csurf !< ind_csurf
+integer, public :: ind_alpha !< ind_alpha
+integer, public :: ind_sc_no !< ind_sc_no
+integer, public :: ind_flux !< ind_flux
+integer, public :: ind_deltap !< ind_deltap
+integer, public :: ind_kw !< ind_kw
+integer, public :: ind_deposition !< ind_deposition
+integer, public :: ind_runoff !< ind_runoff
 
 !
 !----------------------------------------------------------------------
@@ -397,18 +404,43 @@ contains
 
 
 !#######################################################################
-! <SUBROUTINE NAME="coupler_types_init">
-!  <OVERVIEW>
-!   Initialize the coupler types
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!   Initialize the coupler types
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!   call coupler_tpyes_init
-!  </TEMPLATE>
-!
-
+!> \brief Initialize the coupler types
+!!
+!! \throw FATAL, "Could not set the \"coupler_mod\" list"
+!! \throw FATAL, "Could not set the \"GOOD\" list"
+!! \throw FATAL, "Could not set the \"/coupler_mod/fluxes\" list"
+!! \throw FATAL, "Could not set the \"/coupler_mod/types\" list"
+!! \throw FATAL, "Could not change to \"/coupler_mod/types\""
+!! \throw FATAL, "Could not set the \"air_sea_gas_flux_generic\" list"
+!! \throw FATAL, "Could not set the \"air_sea_gas_flux_generic\" list"
+!! \throw FATAL, "Could not set the \"air_sea_gas_flux_generic/implementation\" list"
+!! \throw FATAL, "Could not set the \"air_sea_gas_flux_generic/implementation/ocmip2\" list"
+!! \throw FATAL, "Could not set the \"air_sea_gas_flux_generic/atm\" list"
+!! \throw FATAL, "Could not set the \"air_sea_gas_flux_generic/ice\" list"
+!! \throw FATAL, "Could not set the \"air_sea_gas_flux_generic/flux\" list"
+!! \throw FATAL, "Could not set the \"air_sea_gas_flux\" list"
+!! \throw FATAL, "Could not set the \"air_sea_gas_flux/implementation\" list"
+!! \throw FATAL, "Could not set the \"air_sea_gas_flux/implementation/ocmip2\" list"
+!! \throw FATAL, "Could not set the \"air_sea_gas_flux/implementation/ocmip2_data\" list"
+!! \throw FATAL, "Could not set the \"air_sea_gas_flux/implementation/linear\" list"
+!! \throw FATAL, "Could not set the \"air_sea_gas_flux/atm\" list"
+!! \throw FATAL, "Could not set the \"air_sea_gas_flux/ice\" list"
+!! \throw FATAL, "Could not set the \"air_sea_gas_flux/flux\" list"
+!! \throw FATAL, "Could not set the \"air_sea_deposition\" list"
+!! \throw FATAL, "Could not set the \"air_sea_deposition/implementation\" list"
+!! \throw FATAL, "Could not set the \"air_sea_deposition/implementation/dry\" list"
+!! \throw FATAL, "Could not set the \"air_sea_deposition/implementation/wet\" list"
+!! \throw FATAL, "Could not set the \"air_sea_deposition/atm\" list"
+!! \throw FATAL, "Could not set the \"air_sea_deposition/ice\" list"
+!! \throw FATAL, "Could not set the \"air_sea_deposition/flux\" list"
+!! \throw FATAL, "Could not set the \"land_sea_runoff\" list"
+!! \throw FATAL, "Could not set the \"land_sea_runoff/implementation\" list"
+!! \throw FATAL, "Could not set the \"land_sea_runoff/implementation/river\" list"
+!! \throw FATAL, "Could not set the \"land_sea_runoff/atm\" list"
+!! \throw FATAL, "Could not set the \"land_sea_runoff/ice\" list"
+!! \throw FATAL, "Could not set the \"land_sea_runoff/flux\" list"
+!! \throw FATAL, "Could not change to \"/\""
+!! \throw FATAL, "Problem dumping /coupler_mod/types tree"
 subroutine coupler_types_init
 
 !
@@ -416,7 +448,27 @@ subroutine coupler_types_init
 !     modules
 !-----------------------------------------------------------------------
 !
-
+!! Modules Included:
+!!
+!! <table>
+!!   <tr>
+!!     <th>Module Name</th>
+!!     <th>Functions Included</th>
+!!   </tr>
+!!   <tr>
+!!     <td>mpp_mod</td>
+!!     <td>stdout, mpp_error, FATAL</td>
+!!   </tr>
+!!   <tr>
+!!     <td>fm_util_mod</td>
+!!     <td>fm_util_set_value, fm_util_set_no_overwrite, fm_util_set_caller,
+!!         fm_util_reset_no_overwrite, fm_util_reset_caller</td>
+!!   </tr>
+!!   <tr>
+!!     <td>field_manager_mod</td>
+!!     <td>fm_new_list, fm_change_list</td>
+!!   </tr>
+!! </table>
 use mpp_mod,           only: stdout, mpp_error, FATAL
 use fm_util_mod,       only: fm_util_set_value, fm_util_set_no_overwrite
 use fm_util_mod,       only: fm_util_set_caller, fm_util_reset_no_overwrite
@@ -465,18 +517,18 @@ if (module_is_initialized) then  !{
 endif  !}
 
 !
-!       Write out the version of the file to the log file
+!>       Write out the version of the file to the log file.
 !
 call write_version_number(trim(mod_name), version)
 !
-!       Set other defaults for the fm_util_set_value routines
+!>       Set other defaults for the fm_util_set_value routines.
 !
 
 call fm_util_set_no_overwrite(.true.)
 call fm_util_set_caller(sub_name)
 
 !
-!       Be sure that the various lists and fields are defined in the field manager tree
+!>       Be sure that the various lists and fields are defined in the field manager tree.
 !
 
 if (fm_new_list('/coupler_mod') .le. 0) then  !{
@@ -499,7 +551,7 @@ endif  !}
 call fm_util_set_value('/coupler_mod/GOOD/good_coupler_mod_list', 'types', append = .true.)
 
 !
-!       change to the "/coupler_mod/types" list
+!>       Change to the "/coupler_mod/types" list.
 !
 
 if (.not. fm_change_list('/coupler_mod/types')) then  !{
@@ -507,36 +559,34 @@ if (.not. fm_change_list('/coupler_mod/types')) then  !{
 endif  !}
 
 !
-!       Define the air_sea_gas_flux_generic type
+!>       Define the air_sea_gas_flux_generic type and add it.
 !
-
-!       add the new type
 
 if (fm_new_list('air_sea_gas_flux_generic') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic" list')
 endif  !}
 
-!       add the implementation list
+!>       Add the implementation list.
 
 if (fm_new_list('air_sea_gas_flux_generic/implementation') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/implementation" list')
 endif  !}
 
-!       add the names of the different implementations
+!       Add the names of the different implementations.
 
 if (fm_new_list('air_sea_gas_flux_generic/implementation/ocmip2') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/implementation/ocmip2" list')
 endif  !}
 call fm_util_set_value('air_sea_gas_flux_generic/implementation/ocmip2/num_parameters', 2)
 
-!       add some scalar quantaties
+!>       Add some scalar quantaties.
 
 call fm_util_set_value('air_sea_gas_flux_generic/num_flags', 0)
 call fm_util_set_value('air_sea_gas_flux_generic/use_atm_pressure', .true.)
 call fm_util_set_value('air_sea_gas_flux_generic/use_10m_wind_speed', .true.)
 call fm_util_set_value('air_sea_gas_flux_generic/pass_through_ice', .false.)
 
-!       add required fields that will come from the atmosphere model
+!>       Add required fields that will come from the atmosphere model.
 
 if (fm_new_list('air_sea_gas_flux_generic/atm') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/atm" list')
@@ -562,7 +612,7 @@ call fm_util_set_value('air_sea_gas_flux_generic/atm/name',      'psurf',       
 call fm_util_set_value('air_sea_gas_flux_generic/atm/long_name', 'Surface atmospheric pressure', index = ind_psurf)
 call fm_util_set_value('air_sea_gas_flux_generic/atm/units',     'Pa',                           index = ind_psurf)
 
-!       add required fields that will come from the ice model
+!>       Add required fields that will come from the ice model.
 
 if (fm_new_list('air_sea_gas_flux_generic/ice') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/ice" list')
@@ -588,7 +638,7 @@ call fm_util_set_value('air_sea_gas_flux_generic/ice/name',      'sc_no',       
 call fm_util_set_value('air_sea_gas_flux_generic/ice/long_name', 'Schmidt number', index = ind_sc_no)
 call fm_util_set_value('air_sea_gas_flux_generic/ice/units',     'dimensionless',                                       index = ind_sc_no)
 
-!       add the flux output field(s)
+!>       Add the flux output field(s).
 
 if (fm_new_list('air_sea_gas_flux_generic/flux') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/flux" list')
@@ -615,22 +665,20 @@ call fm_util_set_value('air_sea_gas_flux_generic/flux/long_name', 'Piston veloci
 call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'm/s',    index = ind_kw)
 
 !
-!       Define the air_sea_gas_flux type
+!>       Define the air_sea_gas_flux type and add it.
 !
-
-!       add the new type
 
 if (fm_new_list('air_sea_gas_flux') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux" list')
 endif  !}
 
-!       add the implementation list
+!>       Add the implementation list.
 
 if (fm_new_list('air_sea_gas_flux/implementation') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux/implementation" list')
 endif  !}
 
-!       add the names of the different implementations
+!>       Add the names of the different implementations.
 
 if (fm_new_list('air_sea_gas_flux/implementation/ocmip2') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux/implementation/ocmip2" list')
@@ -645,14 +693,14 @@ if (fm_new_list('air_sea_gas_flux/implementation/linear') .le. 0) then  !{
 endif  !}
 call fm_util_set_value('air_sea_gas_flux/implementation/linear/num_parameters', 3)
 
-!       add some scalar quantaties
+!>       Add some scalar quantaties.
 
 call fm_util_set_value('air_sea_gas_flux/num_flags', 0)
 call fm_util_set_value('air_sea_gas_flux/use_atm_pressure', .true.)
 call fm_util_set_value('air_sea_gas_flux/use_10m_wind_speed', .true.)
 call fm_util_set_value('air_sea_gas_flux/pass_through_ice', .false.)
 
-!       add required fields that will come from the atmosphere model
+!>       Add required fields that will come from the atmosphere model.
 
 if (fm_new_list('air_sea_gas_flux/atm') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux/atm" list')
@@ -678,7 +726,7 @@ call fm_util_set_value('air_sea_gas_flux/atm/name',      'psurf',               
 call fm_util_set_value('air_sea_gas_flux/atm/long_name', 'Surface atmospheric pressure', index = ind_psurf)
 call fm_util_set_value('air_sea_gas_flux/atm/units',     'Pa',                           index = ind_psurf)
 
-!       add required fields that will come from the ice model
+!>       Add required fields that will come from the ice model.
 
 if (fm_new_list('air_sea_gas_flux/ice') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux/ice" list')
@@ -698,7 +746,7 @@ call fm_util_set_value('air_sea_gas_flux/ice/name',      'csurf',               
 call fm_util_set_value('air_sea_gas_flux/ice/long_name', 'Ocean concentration times Schmidt number term', index = ind_csurf)
 call fm_util_set_value('air_sea_gas_flux/ice/units',     'mol/m^3',                                       index = ind_csurf)
 
-!       add the flux output field(s)
+!>       Add the flux output field(s).
 
 if (fm_new_list('air_sea_gas_flux/flux') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux/flux" list')
@@ -713,22 +761,20 @@ call fm_util_set_value('air_sea_gas_flux/flux/long_name', 'Surface flux', index 
 call fm_util_set_value('air_sea_gas_flux/flux/units',     'mol/m^2/s',    index = ind_flux)
 
 !
-!       Define the air_sea_deposition type
+!>       Define the air_sea_deposition type and add it.
 !
-
-!       add the new type
 
 if (fm_new_list('air_sea_deposition') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_deposition" list')
 endif  !}
 
-!       add the implementation list
+!>       Add the implementation list.
 
 if (fm_new_list('air_sea_deposition/implementation') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_deposition/implementation" list')
 endif  !}
 
-!       add the names of the different implementations
+!>       Add the names of the different implementations.
 
 if (fm_new_list('air_sea_deposition/implementation/dry') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_deposition/implementation/dry" list')
@@ -739,14 +785,14 @@ if (fm_new_list('air_sea_deposition/implementation/wet') .le. 0) then  !{
 endif  !}
 call fm_util_set_value('air_sea_deposition/implementation/wet/num_parameters', 1)
 
-!       add some scalar quantaties
+!>       Add some scalar quantaties.
 
 call fm_util_set_value('air_sea_deposition/num_flags', 0)
 call fm_util_set_value('air_sea_deposition/use_atm_pressure', .false.)
 call fm_util_set_value('air_sea_deposition/use_10m_wind_speed', .false.)
 call fm_util_set_value('air_sea_deposition/pass_through_ice', .true.)
 
-!       add required fields that will come from the atmosphere model
+!>       Add required fields that will come from the atmosphere model.
 
 if (fm_new_list('air_sea_deposition/atm') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_deposition/atm" list')
@@ -760,7 +806,7 @@ call fm_util_set_value('air_sea_deposition/atm/name',      'deposition',        
 call fm_util_set_value('air_sea_deposition/atm/long_name', 'Atmospheric deposition', index = ind_deposition)
 call fm_util_set_value('air_sea_deposition/atm/units',     'kg/m^2/s',               index = ind_deposition)
 
-!       add required fields that will come from the ice model
+!>       Add required fields that will come from the ice model.
 
 if (fm_new_list('air_sea_deposition/ice') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_deposition/ice" list')
@@ -772,7 +818,7 @@ call fm_util_set_value('air_sea_deposition/ice/name',      ' ', index = 0)
 call fm_util_set_value('air_sea_deposition/ice/long_name', ' ', index = 0)
 call fm_util_set_value('air_sea_deposition/ice/units',     ' ', index = 0)
 
-!       add the flux output field(s)
+!>       Add the flux output field(s).
 
 if (fm_new_list('air_sea_deposition/flux') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_deposition/flux" list')
@@ -787,36 +833,34 @@ call fm_util_set_value('air_sea_deposition/flux/long_name', 'Surface deposition'
 call fm_util_set_value('air_sea_deposition/flux/units',     'mol/m^2/s',          index = ind_flux)
 
 !
-!       Define the land_sea_runoff type
+!>       Define the land_sea_runoff type and add it.
 !
-
-!       add the new type
 
 if (fm_new_list('land_sea_runoff') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "land_sea_runoff" list')
 endif  !}
 
-!       add the implementation list
+!>       Add the implementation list.
 
 if (fm_new_list('land_sea_runoff/implementation') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "land_sea_runoff/implementation" list')
 endif  !}
 
-!       add the names of the different implementations
+!>       Add the names of the different implementations.
 
 if (fm_new_list('land_sea_runoff/implementation/river') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "land_sea_runoff/implementation/river" list')
 endif  !}
 call fm_util_set_value('land_sea_runoff/implementation/river/num_parameters', 1)
 
-!       add some scalar quantaties
+!>       Add some scalar quantaties.
 
 call fm_util_set_value('land_sea_runoff/num_flags', 0)
 call fm_util_set_value('land_sea_runoff/use_atm_pressure', .false.)
 call fm_util_set_value('land_sea_runoff/use_10m_wind_speed', .false.)
 call fm_util_set_value('land_sea_runoff/pass_through_ice', .true.)
 
-!       add required fields that will come from the land model (the array name is still called "atm")
+!>       Add required fields that will come from the land model (the array name is still called "atm").
 
 if (fm_new_list('land_sea_runoff/atm') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "land_sea_runoff/atm" list')
@@ -830,7 +874,7 @@ call fm_util_set_value('land_sea_runoff/atm/name',      'runoff',               
 call fm_util_set_value('land_sea_runoff/atm/long_name', 'Concentration in land runoff', index = ind_runoff)
 call fm_util_set_value('land_sea_runoff/atm/units',     'mol/m^3',                      index = ind_runoff)
 
-!       add required fields that will come from the ice model
+!>       Add required fields that will come from the ice model.
 
 if (fm_new_list('land_sea_runoff/ice') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "land_sea_runoff/ice" list')
@@ -842,7 +886,7 @@ call fm_util_set_value('land_sea_runoff/ice/name',      ' ', index = 0)
 call fm_util_set_value('land_sea_runoff/ice/long_name', ' ', index = 0)
 call fm_util_set_value('land_sea_runoff/ice/units',     ' ', index = 0)
 
-!       add the flux output field(s)
+!>       Add the flux output field(s).
 
 if (fm_new_list('land_sea_runoff/flux') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "land_sea_runoff/flux" list')
@@ -857,7 +901,7 @@ call fm_util_set_value('land_sea_runoff/flux/long_name', 'Concentration in land 
 call fm_util_set_value('land_sea_runoff/flux/units',     'mol/m^3',                      index = ind_flux)
 
 !
-!       change back to root list
+!>       Change back to root list.
 !
 
 if (.not. fm_change_list('/')) then  !{
@@ -865,7 +909,7 @@ if (.not. fm_change_list('/')) then  !{
 endif  !}
 
 !
-!       Reset the defaults for the fm_util_set_value calls
+!>       Reset the defaults for the fm_util_set_value calls.
 !
 
 call fm_util_reset_no_overwrite
@@ -874,7 +918,7 @@ call fm_util_reset_caller
 module_is_initialized = .true.
 
 !
-!       Dump the coupler_mod types list
+!>       Dump the coupler_mod types list.
 !
 outunit = stdout()
 write (outunit,*)
@@ -886,56 +930,17 @@ endif  !}
 return
 
 end subroutine  coupler_types_init  !}
-! </SUBROUTINE> NAME="coupler_types_init"
-
 
 
 !#######################################################################
-! <SUBROUTINE NAME="coupler_type_copy_1d_2d">
-!  <OVERVIEW>
-!   Copy fields from one coupler type to another.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!   Copy fields from one coupler type to another.
-!   Specific version for generic coupler_type_copy.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!   call coupler_type_copy(var_in, var_out, is, ie, js, je,     &
-!        diag_name, axes, time, suffix = 'something')
-!		
-!  </TEMPLATE>
-!  <IN NAME="var_in" TYPE="coupler_1d_bc_type">
-!   variable to copy information from
-!  </IN>
-!  <IN NAME="var_out" TYPE="coupler_2d_bc_type">
-!   variable to copy information to
-!  </IN>
-!  <IN NAME="is" TYPE="integer">
-!   lower bound of first dimension
-!  </IN>
-!  <IN NAME="ie" TYPE="integer">
-!   upper bound of first dimension
-!  </IN>
-!  <IN NAME="js" TYPE="integer">
-!   lower bound of second dimension
-!  </IN>
-!  <IN NAME="je" TYPE="integer">
-!   upper bound of second dimension
-!  </IN>
-!  <IN NAME="diag_name" TYPE="character">
-!   name for diagnostic file--if blank, then don't register the fields
-!  </IN>
-!  <IN NAME="axes" TYPE="integer">
-!   array of axes identifiers for diagnostic variable registration
-!  </IN>
-!  <IN NAME="time" TYPE="time_type">
-!   model time variable for registering diagnostic field
-!  </IN>
-!  <IN NAME="suffix" TYPE="character">
-!   optional suffix to make the name identifier unique
-!  </IN>
-!
-
+!> \brief Copy fields from one coupler type to another. 1-D to 2-D version for generic coupler_type_copy.
+!!
+!! Template:
+!!
+!! ~~~~~~~~~~{.f90}
+!!   call coupler_type_copy(var_in, var_out, is, ie, js, je, kd, &
+!!        diag_name, axes, time, suffix = 'something')
+!! ~~~~~~~~~~
 subroutine coupler_type_copy_1d_2d(var_in, var_out, is, ie, js, je,     &
      diag_name, axes, time, suffix)  !{
 
@@ -957,17 +962,17 @@ implicit none
 !-----------------------------------------------------------------------
 !
 
-type(coupler_1d_bc_type), intent(in)    :: var_in
-type(coupler_2d_bc_type), intent(inout) :: var_out
-integer, intent(in)                     :: is
-integer, intent(in)                     :: ie
-integer, intent(in)                     :: js
-integer, intent(in)                     :: je
-character(len=*), intent(in)            :: diag_name
-integer, dimension(:), intent(in)       :: axes
-type(time_type), intent(in)             :: time
-character(len=*), intent(in), optional  :: suffix
- 
+type(coupler_1d_bc_type), intent(in)    :: var_in !< variable to copy information from
+type(coupler_2d_bc_type), intent(inout) :: var_out !< variable to copy information to
+integer, intent(in)                     :: is !< lower bound of first dimension
+integer, intent(in)                     :: ie !< upper bound of first dimension
+integer, intent(in)                     :: js !< lower bound of second dimension
+integer, intent(in)                     :: je !< upper bound of second dimension
+character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
+type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
+character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
+
 !
 !-----------------------------------------------------------------------
 !     local parameters
@@ -1001,7 +1006,7 @@ integer                 :: n
 if (var_out%num_bcs .ne. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
 endif  !}
-  
+
 var_out%num_bcs = var_in%num_bcs
 
 !
@@ -1059,58 +1064,23 @@ endif  !}
 return
 
 end subroutine  coupler_type_copy_1d_2d  !}
-! </SUBROUTINE> NAME="coupler_type_copy_1d_2d
 
 
 !#######################################################################
-! <SUBROUTINE NAME="coupler_type_copy_1d_3d">
-!  <OVERVIEW>
-!   Copy fields from one coupler type to another.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!   Copy fields from one coupler type to another.
-!   Specific version for generic coupler_type_copy.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!   call coupler_type_copy(var_in, var_out, is, ie, js, je, kd, &
-!        diag_name, axes, time, suffix = 'something')
-!		
-!  </TEMPLATE>
-!  <IN NAME="var_in" TYPE="coupler_1d_bc_type">
-!   variable to copy information from
-!  </IN>
-!  <IN NAME="var_out" TYPE="coupler_3d_bc_type">
-!   variable to copy information to
-!  </IN>
-!  <IN NAME="is" TYPE="integer">
-!   lower bound of first dimension
-!  </IN>
-!  <IN NAME="ie" TYPE="integer">
-!   upper bound of first dimension
-!  </IN>
-!  <IN NAME="js" TYPE="integer">
-!   lower bound of second dimension
-!  </IN>
-!  <IN NAME="je" TYPE="integer">
-!   upper bound of second dimension
-!  </IN>
-!  <IN NAME="kd" TYPE="integer">
-!   third dimension
-!  </IN>
-!  <IN NAME="diag_name" TYPE="character">
-!   name for diagnostic file--if blank, then don't register the fields
-!  </IN>
-!  <IN NAME="axes" TYPE="integer">
-!   array of axes identifiers for diagnostic variable registration
-!  </IN>
-!  <IN NAME="time" TYPE="time_type">
-!   model time variable for registering diagnostic field
-!  </IN>
-!  <IN NAME="suffix" TYPE="character">
-!   optional suffix to make the name identifier unique
-!  </IN>
-!
-
+!> \brief Copy fields from one coupler type to another. 1-D to 3-D version for generic coupler_type_copy.
+!!
+!! Template:
+!!
+!! ~~~~~~~~~~{.f90}
+!!   call coupler_type_copy(var_in, var_out, is, ie, js, je, kd, &
+!!        diag_name, axes, time, suffix = 'something')
+!! ~~~~~~~~~~
+!!
+!! \throw FATAL, "Number of output fields is non-zero"
+!! \throw FATAL, "var_out%bc already associated"
+!! \throw FATAL, "var_out%bc([n])%field already associated"
+!! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
+!! \throw FATAL, "axes less than 3 elements"
 subroutine coupler_type_copy_1d_3d(var_in, var_out, is, ie, js, je, kd, &
      diag_name, axes, time, suffix)  !{
 
@@ -1131,19 +1101,18 @@ implicit none
 !     arguments
 !-----------------------------------------------------------------------
 !
+type(coupler_1d_bc_type), intent(in)    :: var_in !< variable to copy information from
+type(coupler_3d_bc_type), intent(inout) :: var_out !< variable to copy information to
+integer, intent(in)                     :: is !< lower bound of first dimension
+integer, intent(in)                     :: ie !< upper bound of first dimension
+integer, intent(in)                     :: js !< lower bound of second dimension
+integer, intent(in)                     :: je !< upper bound of second dimension
+integer, intent(in)                     :: kd !< third dimension
+character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
+type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
+character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
 
-type(coupler_1d_bc_type), intent(in)    :: var_in
-type(coupler_3d_bc_type), intent(inout) :: var_out
-integer, intent(in)                     :: is
-integer, intent(in)                     :: ie
-integer, intent(in)                     :: js
-integer, intent(in)                     :: je
-integer, intent(in)                     :: kd
-character(len=*), intent(in)            :: diag_name
-integer, dimension(:), intent(in)       :: axes
-type(time_type), intent(in)             :: time
-character(len=*), intent(in), optional  :: suffix
- 
 !
 !-----------------------------------------------------------------------
 !     local parameters
@@ -1177,7 +1146,7 @@ integer                 :: n
 if (var_out%num_bcs .ne. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
 endif  !}
-  
+
 var_out%num_bcs = var_in%num_bcs
 
 !
@@ -1235,6 +1204,5 @@ endif  !}
 return
 
 end subroutine  coupler_type_copy_1d_3d  !}
-! </SUBROUTINE> NAME="coupler_type_copy_1d_3d
 
 end module coupler_types_mod  !}
