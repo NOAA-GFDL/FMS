@@ -563,65 +563,15 @@ subroutine mpp_io_unstructured_write_r_4D(funit, &
     else
         allocate(nelems_io(io_domain_npes))
         nelems_io = 0
-        call mpp_get_UG_compute_domain(domain, &
-                                       size=compute_size)
-        if (compute_size .ne. size(fdata,1)) then
-            call mpp_error(FATAL, &
-                           "mpp_io_unstructured_write_compressed_r_4D:" &
-                           //" the size of the data does not match the" &
-                           //" the size of the unstructured compute domain.")
-        endif
-        call mpp_gather((/compute_size/), &
-                        nelems_io, &
-                        pelist)
+        call mpp_get_UG_compute_domains(io_domain, &
+                                       size=nelems_io)
     endif
 
    !The number of data elements in the non-unstructured dimensions are
    !required to be the same for all ranks.  Perform gathers to check this.
-    allocate(dim_size_gather(io_domain_npes))
-    dim_size_gather = 0
     size_fdata_dim_2 = size(fdata,2)
-    call mpp_gather((/size_fdata_dim_2/), &
-                    dim_size_gather, &
-                    pelist)
-    if (mpp_pe() .eq. pelist(1)) then
-        if (maxloc(dim_size_gather,1) .ne. minloc(dim_size_gather,1)) then
-            call mpp_error(FATAL, &
-                           "mpp_io_unstructured_write_compressed_r_4D:" &
-                           //" all ranks in the io_domain must have the same" &
-                           //" number of data elements in the z-dimension" &
-                           //" (size(data,2)).")
-        endif
-    endif
-    dim_size_gather = 0
     size_fdata_dim_3 = size(fdata,3)
-    call mpp_gather((/size_fdata_dim_3/), &
-                    dim_size_gather, &
-                    pelist)
-    if (mpp_pe() .eq. pelist(1)) then
-        if (maxloc(dim_size_gather,1) .ne. minloc(dim_size_gather,1)) then
-            call mpp_error(FATAL, &
-                           "mpp_io_unstructured_write_compressed_r_4D:" &
-                           //" all ranks in the io_domain must have the same" &
-                           //" number of data elements in the cc-dimension" &
-                           //" (size(data,3)).")
-        endif
-    endif
-    dim_size_gather = 0
     size_fdata_dim_4 = size(fdata,4)
-    call mpp_gather((/size_fdata_dim_4/), &
-                    dim_size_gather, &
-                    pelist)
-    if (mpp_pe() .eq. pelist(1)) then
-        if (maxloc(dim_size_gather,1) .ne. minloc(dim_size_gather,1)) then
-            call mpp_error(FATAL, &
-                           "mpp_io_unstructured_write_compressed_r_4D:" &
-                           //" all ranks in the io_domain must have the same" &
-                           //" number of data elements in the t-dimension" &
-                           //" (size(data,4)).")
-        endif
-    endif
-    deallocate(dim_size_gather)
 
    !Allocate arrays which will be used to gather the data to be written
    !onto the root rank of the pelist.

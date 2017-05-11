@@ -38,7 +38,8 @@ MODULE diag_util_mod
        & DIAG_FIELD_NOT_FOUND, diag_init_time
   USE diag_axis_mod, ONLY: get_diag_axis_data, get_axis_global_length, get_diag_axis_cart,&
        & get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, get_axis_aux,&
-       & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name, get_domainUG, get_axis_reqfld
+       & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name, get_domainUG, &
+       & get_axis_reqfld, axis_is_compressed, get_compressed_axes_ids
   USE diag_output_mod, ONLY: diag_flush, diag_field_out, diag_output_init, write_axis_meta_data,&
        & write_field_meta_data, done_meta_data
   USE diag_grid_mod, ONLY: get_local_indexes
@@ -48,7 +49,7 @@ MODULE diag_util_mod
   USE mpp_domains_mod,ONLY: domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
        & OPERATOR(.NE.), OPERATOR(.EQ.), mpp_modify_domain, mpp_get_domain_components,&
        & mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, mpp_get_tile_npes,&
-       & domainUG, null_domainUG 
+       & domainUG, null_domainUG
   USE time_manager_mod,ONLY: time_type, OPERATOR(==), OPERATOR(>), NO_CALENDAR, increment_date,&
        & increment_time, get_calendar_type, get_date, get_time, leap_year, OPERATOR(-),&
        & OPERATOR(<), OPERATOR(>=), OPERATOR(<=)
@@ -1680,7 +1681,7 @@ CONTAINS
   !     Open file for output, and write the meta data.  <BB>Warning:</BB> Assumes all data structures have been fully initialized.
   !   </DESCRIPTION>
   !   <IN NAME="file" TYPE="INTEGER">File ID.</IN>
-  !   <IN NAME="tile" TYPE="TYPE(time_type)">Tile number.</IN>
+  !   <IN NAME="tile" TYPE="TYPE(time_type)">Time for the file time stamp</IN>
   SUBROUTINE opening_file(file, time)
     ! WARNING: Assumes that all data structures are fully initialized
     INTEGER, INTENT(in) :: file
@@ -1699,6 +1700,7 @@ CONTAINS
     ! axes per field + 2; the last two elements are for time
     ! and time bounds dimensions
     INTEGER, DIMENSION(6) :: axes
+    INTEGER, ALLOCATABLE  :: axesc(:) ! indices if compressed axes associated with the field
     LOGICAL :: time_ops, aux_present, match_aux_name, req_present, match_req_fields
     LOGICAL :: all_scalar_or_1d
     CHARACTER(len=7) :: prefix
@@ -1896,6 +1898,16 @@ CONTAINS
           axes(num_axes + 2) = files(file)%time_bounds_id
           CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 2))
        END IF
+       ! write metadata for axes used  in compression-by-gathering, e.g. for unstructured
+       ! grid
+       DO k = 1, num_axes
+          IF (axis_is_compressed(axes(k))) THEN
+             CALL get_compressed_axes_ids(axes(k), axesc) ! returns allocatable array
+             CALL write_axis_meta_data(files(file)%file_unit, axesc)
+             DEALLOCATE(axesc)
+          ENDIF
+       ENDDO
+
     END DO
 
     ! Looking for the first NON-static field in a file

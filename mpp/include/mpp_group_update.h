@@ -405,7 +405,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   integer   :: ksize, is, ie, js, je
   integer   :: n, l, m, i, j, k, buffer_start_pos, nk
   integer   :: shift, gridtype, midpoint
-  integer   :: npack, nunpack, rotation
+  integer   :: npack, nunpack, rotation, isd
   character(len=8)            :: text
 
   MPP_TYPE_ :: buffer(mpp_domains_stack_size)
@@ -549,13 +549,14 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
               end if
            case(CGRID_NE)
               is = domain%x(1)%global%begin
-              if( is.GT.domain%x(1)%data%begin )then
+              isd = domain%x(1)%compute%begin - group%whalo_v
+              if( is.GT.isd )then
                  if( 2*is-domain%x(1)%data%begin-1.GT.domain%x(1)%data%end ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
                  do l=1,nvector
                     ptr_fieldy = group%addrs_y(l)
                     do k = 1,ksize
-                       do i = domain%x(1)%data%begin,is-1
+                       do i = isd,is-1
                           fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
                        end do
                     end do
@@ -566,7 +567,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
         !off east edge
         is = domain%x(1)%global%end
         if(domain%x(1)%cyclic .AND. is.LT.domain%x(1)%data%end )then
-           ie = domain%x(1)%data%end
+           ie = domain%x(1)%compute%end+group%ehalo_v
            is = is + 1
            select case(gridtype)
            case(BGRID_NE)
@@ -725,7 +726,7 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   integer   :: k, buffer_pos, msgsize, pos, m, n, l
   integer   :: is, ie, js, je, dir, ksize, i, j
   integer   :: shift, gridtype, midpoint, flags_v
-  integer   :: nunpack, rotation, buffer_start_pos, nk
+  integer   :: nunpack, rotation, buffer_start_pos, nk, isd
   logical   :: recv_y(8)
   MPP_TYPE_ :: buffer(size(mpp_domains_stack_nonblock(:)))
   MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize_s)
@@ -824,13 +825,14 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
               end if
            case(CGRID_NE)
               is = domain%x(1)%global%begin
-              if( is.GT.domain%x(1)%data%begin )then
+              isd = domain%x(1)%compute%begin - group%whalo_v
+              if( is.GT.isd)then
                  if( 2*is-domain%x(1)%data%begin-1.GT.domain%x(1)%data%end ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
                  do l=1,nvector
                     ptr_fieldy = group%addrs_y(l)
                     do k = 1,ksize
-                       do i = domain%x(1)%data%begin,is-1
+                       do i = isd,is-1
                           fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
                        end do
                     end do
@@ -841,7 +843,7 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
         !off east edge
         is = domain%x(1)%global%end
         if(domain%x(1)%cyclic .AND. is.LT.domain%x(1)%data%end )then
-           ie = domain%x(1)%data%end
+           ie = domain%x(1)%compute%end+group%ehalo_v
            is = is + 1
            select case(gridtype)
            case(BGRID_NE)

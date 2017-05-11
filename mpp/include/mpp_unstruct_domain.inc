@@ -133,6 +133,12 @@
         UG_domain%list(p)%compute%end_index = maxval(grid_index(is:ie))
      enddo
 
+     !--- write out domain decomposition from root pe
+     if(mpp_pe() == mpp_root_pe() .and. present(name)) then
+        write(stdout(),*) "unstruct domain name = ", trim(name)
+        write(stdout(),*) UG_domain%list(:)%compute%size
+     endif
+
      pos = mpp_pe() - mpp_root_pe() 
      UG_domain%pe = mpp_pe()
      UG_domain%pos = pos
@@ -175,16 +181,16 @@
      UG_domain%io_layout = ngroup
 !----------
 
-     call mpp_compute_extent(1, ndivs_tile(tile_id), ngroup, ibegin(1:ngroup), iend(1:ngroup))
+     call mpp_compute_extent(1, ndivs_tile(tile_id), ngroup, ibegin(0:ngroup-1), iend(0:ngroup-1))
      my_pos = UG_domain%pe - UG_domain%tile_root_pe + 1
-     do n = 1, ngroup
+     do n = 0, ngroup-1
         if( my_pos .GE. ibegin(n) .AND. my_pos .LE. iend(n) ) then
            group_id = n
            exit
         endif
      enddo
      
-     UG_domain%io_domain%tile_id            = group_id
+     UG_domain%io_domain%tile_id            = group_id+1
      UG_domain%io_domain%compute            = UG_domain%compute
      UG_domain%io_domain%pe                 = UG_domain%pe
      UG_domain%io_domain%pos                = my_pos - ibegin(group_id) + 1
@@ -204,7 +210,7 @@
         UG_domain%io_domain%list(n)%compute = UG_domain%list(pos)%compute
         UG_domain%io_domain%list(n)%pos = n
         UG_domain%io_domain%list(n)%pe = UG_domain%list(pos)%pe
-        UG_domain%io_domain%list(n)%tile_id = group_id
+        UG_domain%io_domain%list(n)%tile_id = group_id+1
      enddo    
  
      call compute_overlap_SG2UG(UG_domain, SG_domain)
@@ -424,7 +430,7 @@ return
     if( PRESENT(size) )then
        if( any(shape(size).NE.shape(domain%list)) ) &
            call mpp_error( FATAL, 'mpp_get_UG_compute_domains: size array size does not match domain.' )
-           size(:) = domain%list(:)%compute%size
+       size(:) = domain%list(:)%compute%size
     end if
     return
   end subroutine mpp_get_UG_compute_domains
