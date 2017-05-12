@@ -496,7 +496,7 @@
 
     subroutine mpp_get_iospec( unit, iospec )
       integer, intent(in) :: unit
-      character(len=*), intent(out) :: iospec
+      character(len=*), intent(inout) :: iospec
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_IOSPEC: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_IOSPEC: invalid unit number.' )

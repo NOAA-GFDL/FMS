@@ -34,7 +34,7 @@ module mpp_parameter_mod
   public :: AGRID, GLOBAL, CYCLIC, DOMAIN_ID_BASE, CENTER, CORNER
   public :: MAX_DOMAIN_FIELDS, MAX_TILES
   public :: ZERO, NINETY, MINUS_NINETY, ONE_HUNDRED_EIGHTY
-  public :: NONBLOCK_UPDATE_TAG, EDGEUPDATE, EDGEONLY
+  public :: NONBLOCK_UPDATE_TAG, EDGEUPDATE, EDGEONLY, NONSYMEDGEUPDATE, NONSYMEDGE
 
   !--- public paramters which is used by mpp_domains_mod and its components. 
   !--- All othere modules should import these parameters from mpp_io_mod. 
@@ -76,6 +76,7 @@ module mpp_parameter_mod
   integer, parameter :: WEST=2, EAST=3, SOUTH=4, NORTH=5, SCALAR_BIT=6, CENTER=7, CORNER=8
   integer, parameter :: SOUTH_WEST=7, SOUTH_EAST=8, NORTH_WEST=9, NORTH_EAST=10
   integer, parameter :: EDGEONLY = 11
+  integer, parameter :: NONSYMEDGE = 12
   integer, parameter :: SEND=1, RECV=2
   integer, parameter :: GLOBAL_DATA_DOMAIN=2**GLOBAL, CYCLIC_GLOBAL_DOMAIN=2**CYCLIC
   integer, parameter :: AGRID=0, BGRID=1, CGRID=2, DGRID=3
@@ -89,7 +90,7 @@ module mpp_parameter_mod
   integer, parameter :: FOLD_SOUTH_EDGE=2**SOUTH, FOLD_NORTH_EDGE=2**NORTH
   integer, parameter :: WUPDATE=2**WEST, EUPDATE=2**EAST, SUPDATE=2**SOUTH, NUPDATE=2**NORTH
   integer, parameter :: XUPDATE=WUPDATE+EUPDATE, YUPDATE=SUPDATE+NUPDATE, SCALAR_PAIR=2**SCALAR_BIT
-  integer, parameter :: EDGEUPDATE=2**EDGEONLY
+  integer, parameter :: EDGEUPDATE=2**EDGEONLY, NONSYMEDGEUPDATE=2**NONSYMEDGE
   integer, parameter :: ZERO=0, NINETY=90, MINUS_NINETY=-90, ONE_HUNDRED_EIGHTY=180
   integer, parameter :: NONBLOCK_UPDATE_TAG = 2
 

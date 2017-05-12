@@ -312,6 +312,18 @@
 #undef MPP_GATHER_1D_
 #undef MPP_GATHER_1DV_
 #undef MPP_TYPE_
+#define MPP_TYPE_ logical
+#define MPP_GATHER_1D_ mpp_gather_logical_1d
+#define MPP_GATHER_1DV_ mpp_gather_logical_1dv
+#undef  MPP_GATHER_PELIST_2D_
+#undef  MPP_GATHER_PELIST_3D_
+#define MPP_GATHER_PELIST_2D_ mpp_gather_pelist_logical_2d
+#define MPP_GATHER_PELIST_3D_ mpp_gather_pelist_logical_3d
+#include <mpp_gather.h>
+
+#undef MPP_GATHER_1D_
+#undef MPP_GATHER_1DV_
+#undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
 #define MPP_GATHER_1D_ mpp_gather_int4_1d
 #define MPP_GATHER_1DV_ mpp_gather_int4_1dv
