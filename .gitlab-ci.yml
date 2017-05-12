@@ -454,7 +454,7 @@ build:ncrc4:cce:debug:
     - module load cray-netcdf
     - module load cray-hdf5
     - list_paths -o pathnames_fms .
-    - mkmf -m Makefile -p libfms_${myBuild}.a -t $FRE_COMMANDS_HOME/site/$FRE_SYSTEM_SITE/cray.mk -c "$CPPFLAGS" -Iinclude -Impp/include pathnames_fms
+    - mkmf -m Makefile -p libfms_${myBuild}.a -t $FRE_COMMANDS_HOME/site/$FRE_SYSTEM_SITE/cray.mk -c "$CPPFLAGS" -Iinclude -Impp -Ifms pathnames_fms
     - make OPENMP=Y DEBUG=Y libfms_${myBuild}.a
   artifacts:
     paths:
@@ -479,7 +479,7 @@ build:ncrc4:cce:repro:
     - module load cray-netcdf
     - module load cray-hdf5
     - list_paths -o pathnames_fms .
-    - mkmf -m Makefile -p libfms_${myBuild}.a -t $FRE_COMMANDS_HOME/site/$FRE_SYSTEM_SITE/cray.mk -c "$CPPFLAGS" -Iinclude -Impp/include pathnames_fms
+    - mkmf -m Makefile -p libfms_${myBuild}.a -t $FRE_COMMANDS_HOME/site/$FRE_SYSTEM_SITE/cray.mk -c "$CPPFLAGS" -Iinclude -Impp -Ifms pathnames_fms
     - make OPENMP=Y REPRO=Y libfms_${myBuild}.a
   artifacts:
     paths:
@@ -504,7 +504,7 @@ build:ncrc4:cce:prod:
     - module load cray-netcdf
     - module load cray-hdf5
     - list_paths -o pathnames_fms .
-    - mkmf -m Makefile -p libfms_${myBuild}.a -t $FRE_COMMANDS_HOME/site/$FRE_SYSTEM_SITE/cray.mk -c "$CPPFLAGS" -Iinclude -Impp/include pathnames_fms
+    - mkmf -m Makefile -p libfms_${myBuild}.a -t $FRE_COMMANDS_HOME/site/$FRE_SYSTEM_SITE/cray.mk -c "$CPPFLAGS" -Iinclude -Impp -Ifms pathnames_fms
     - make OPENMP=Y libfms_${myBuild}.a
   artifacts:
     paths:
