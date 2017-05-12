@@ -1075,7 +1075,7 @@
 #define MPP_WRITE_2DDECOMP_4D_ mpp_write_2ddecomp_r4d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
-#include <mpp_write_2Ddecomp.h>
+#include "mpp_write_2Ddecomp.h"
 
 #undef MPP_WRITE_COMPRESSED_1D_
 #define MPP_WRITE_COMPRESSED_1D_ mpp_write_compressed_r1d
@@ -1085,13 +1085,13 @@
 #define MPP_WRITE_COMPRESSED_3D_ mpp_write_compressed_r3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
-#include <mpp_write_compressed.h>
+#include "mpp_write_compressed.h"
 
 #undef MPP_WRITE_UNLIMITED_AXIS_1D_
 #define MPP_WRITE_UNLIMITED_AXIS_1D_ mpp_write_unlimited_axis_r1d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
-#include <mpp_write_unlimited_axis.h>
+#include "mpp_write_unlimited_axis.h"
 
 #undef MPP_WRITE_
 #define MPP_WRITE_ mpp_write_r0D
@@ -1101,7 +1101,7 @@
 #define MPP_RANK_ !
 #undef MPP_WRITE_RECORD_
 #define MPP_WRITE_RECORD_ call write_record( unit, field, 1, (/data/), tstamp)
-#include <mpp_write.h>
+#include "mpp_write.h"
 
 #undef MPP_WRITE_
 #define MPP_WRITE_ mpp_write_r1D
@@ -1111,7 +1111,7 @@
 #define MPP_WRITE_RECORD_ call write_record( unit, field, size(data(:)), data, tstamp)
 #undef MPP_RANK_
 #define MPP_RANK_ (:)
-#include <mpp_write.h>
+#include "mpp_write.h"
 
 #undef MPP_WRITE_
 #define MPP_WRITE_ mpp_write_r2D
@@ -1121,7 +1121,7 @@
 #define MPP_WRITE_RECORD_ call write_record( unit, field, size(data(:,:)), data, tstamp )
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:)
-#include <mpp_write.h>
+#include "mpp_write.h"
 
 #undef MPP_WRITE_
 #define MPP_WRITE_ mpp_write_r3D
@@ -1131,7 +1131,7 @@
 #define MPP_WRITE_RECORD_ call write_record( unit, field, size(data(:,:,:)), data, tstamp)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:)
-#include <mpp_write.h>
+#include "mpp_write.h"
 
 #undef MPP_WRITE_
 #define MPP_WRITE_ mpp_write_r4D
@@ -1141,7 +1141,7 @@
 #define MPP_WRITE_RECORD_ call write_record( unit, field, size(data(:,:,:,:)), data, tstamp)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:,:)
-#include <mpp_write.h>
+#include "mpp_write.h"
 
     subroutine mpp_write_axis( unit, axis )
       integer, intent(in) :: unit

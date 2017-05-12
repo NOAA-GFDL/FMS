@@ -2536,19 +2536,19 @@ end interface
   end interface  
 
   ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include <file_version.h>
   public version
 
 
 contains
 
-#include <mpp_define_nest_domains.inc>
-#include <mpp_domains_util.inc>
-#include <mpp_domains_comm.inc>
-#include <mpp_domains_define.inc>
-#include <mpp_domains_misc.inc>
-#include <mpp_domains_reduce.inc>
-#include <mpp_unstruct_domain.inc>
+#include "include/mpp_define_nest_domains.inc"
+#include "include/mpp_domains_util.inc"
+#include "include/mpp_domains_comm.inc"
+#include "include/mpp_domains_define.inc"
+#include "include/mpp_domains_misc.inc"
+#include "include/mpp_domains_reduce.inc"
+#include "include/mpp_unstruct_domain.inc"
 
 end module mpp_domains_mod
 

@@ -1036,7 +1036,7 @@ type :: atttype
   integer :: pack_size ! = 1 when compiling with -r8 and = 2 when compiling with -r4.
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include <file_version.h>
 
 !----------
 !ug support
@@ -1059,16 +1059,16 @@ end interface mpp_io_unstructured_read
 
 contains
 
-#include <mpp_io_util.inc>
-#include <mpp_io_misc.inc>
-#include <mpp_io_connect.inc>
-#include <mpp_io_read.inc>
-#include <mpp_io_write.inc>
+#include "include/mpp_io_util.inc"
+#include "include/mpp_io_misc.inc"
+#include "include/mpp_io_connect.inc"
+#include "include/mpp_io_read.inc"
+#include "include/mpp_io_write.inc"
 
 !----------
 !ug support
-#include <mpp_io_unstructured_write.inc>
-#include <mpp_io_unstructured_read.inc>
+#include "include/mpp_io_unstructured_write.inc"
+#include "include/mpp_io_unstructured_read.inc"
 !----------
 
 end module mpp_io_mod

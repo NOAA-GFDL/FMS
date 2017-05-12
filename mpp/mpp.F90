@@ -1256,7 +1256,7 @@ private
 !***********************************************************************
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include <file_version.h>
   public version
 
   integer, parameter :: MAX_REQUEST_MIN  = 10000
@@ -1268,9 +1268,9 @@ private
   namelist /mpp_nml/ etc_unit_is_stderr, request_multiply, mpp_record_timing_data, sync_all_clocks
 
   contains
-#include <system_clock.h>
-#include <mpp_util.inc>
-#include <mpp_comm.inc>
+#include "include/system_clock.h"
+#include "include/mpp_util.inc"
+#include "include/mpp_comm.inc"
 
   end module mpp_mod
 

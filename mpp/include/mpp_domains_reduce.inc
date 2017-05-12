@@ -22,7 +22,7 @@
 #define REDUCE_LOC_ maxloc
 #undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_max
-#include <mpp_global_reduce.h>
+#include "mpp_global_reduce.h"
 
 #undef MPP_GLOBAL_REDUCE_2D_
 #define MPP_GLOBAL_REDUCE_2D_ mpp_global_min_r8_2d
@@ -40,7 +40,7 @@
 #define REDUCE_LOC_ minloc
 #undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_min
-#include <mpp_global_reduce.h>
+#include "mpp_global_reduce.h"
 
 #ifdef OVERLOAD_R4
 #undef MPP_GLOBAL_REDUCE_2D_
@@ -59,7 +59,7 @@
 #define REDUCE_LOC_ maxloc
 #undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_max
-#include <mpp_global_reduce.h>
+#include "mpp_global_reduce.h"
 
 #undef MPP_GLOBAL_REDUCE_2D_
 #define MPP_GLOBAL_REDUCE_2D_ mpp_global_min_r4_2d
@@ -77,7 +77,7 @@
 #define REDUCE_LOC_ minloc
 #undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_min
-#include <mpp_global_reduce.h>
+#include "mpp_global_reduce.h"
 #endif
 
 #ifndef no_8byte_integers
@@ -97,7 +97,7 @@
 #define REDUCE_LOC_ maxloc
 #undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_max
-#include <mpp_global_reduce.h>
+#include "mpp_global_reduce.h"
 
 #undef MPP_GLOBAL_REDUCE_2D_
 #define MPP_GLOBAL_REDUCE_2D_ mpp_global_min_i8_2d
@@ -115,7 +115,7 @@
 #define REDUCE_LOC_ minloc
 #undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_min
-#include <mpp_global_reduce.h>
+#include "mpp_global_reduce.h"
 #endif
 
 #undef MPP_GLOBAL_REDUCE_2D_
@@ -134,7 +134,7 @@
 #define REDUCE_LOC_ maxloc
 #undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_max
-#include <mpp_global_reduce.h>
+#include "mpp_global_reduce.h"
 
 #undef MPP_GLOBAL_REDUCE_2D_
 #define MPP_GLOBAL_REDUCE_2D_ mpp_global_min_i4_2d
@@ -152,7 +152,7 @@
 #define REDUCE_LOC_ minloc
 #undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_min
-#include <mpp_global_reduce.h>
+#include "mpp_global_reduce.h"
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -166,7 +166,7 @@
 #define MPP_EXTRA_INDICES_
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_global_sum.h>
+#include "mpp_global_sum.h"
 
 #undef MPP_GLOBAL_SUM_
 #define MPP_GLOBAL_SUM_ mpp_global_sum_r8_3d
@@ -174,7 +174,7 @@
 #define MPP_EXTRA_INDICES_ ,:
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_global_sum.h>
+#include "mpp_global_sum.h"
 
 #undef MPP_GLOBAL_SUM_
 #define MPP_GLOBAL_SUM_ mpp_global_sum_r8_4d
@@ -182,7 +182,7 @@
 #define MPP_EXTRA_INDICES_ ,:,:
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_global_sum.h>
+#include "mpp_global_sum.h"
 
 #undef MPP_GLOBAL_SUM_
 #define MPP_GLOBAL_SUM_ mpp_global_sum_r8_5d
@@ -190,7 +190,7 @@
 #define MPP_EXTRA_INDICES_ ,:,:,:
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_global_sum.h>
+#include "mpp_global_sum.h"
 
 #ifdef OVERLOAD_R4
 #undef MPP_GLOBAL_SUM_
@@ -199,7 +199,7 @@
 #define MPP_EXTRA_INDICES_
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
-#include <mpp_global_sum.h>
+#include "mpp_global_sum.h"
 
 #undef MPP_GLOBAL_SUM_
 #define MPP_GLOBAL_SUM_ mpp_global_sum_r4_3d
@@ -207,7 +207,7 @@
 #define MPP_EXTRA_INDICES_ ,:
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
-#include <mpp_global_sum.h>
+#include "mpp_global_sum.h"
 
 #undef MPP_GLOBAL_SUM_
 #define MPP_GLOBAL_SUM_ mpp_global_sum_r4_4d
@@ -215,7 +215,7 @@
 #define MPP_EXTRA_INDICES_ ,:,:
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
-#include <mpp_global_sum.h>
+#include "mpp_global_sum.h"
 
 #undef MPP_GLOBAL_SUM_
 #define MPP_GLOBAL_SUM_ mpp_global_sum_r4_5d
@@ -223,7 +223,7 @@
 #define MPP_EXTRA_INDICES_ ,:,:,:
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
-#include <mpp_global_sum.h>
+#include "mpp_global_sum.h"
 #endif
 
 #undef DO_EFP_SUM_
@@ -234,7 +234,7 @@
 #define MPP_EXTRA_INDICES_
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
-#include <mpp_global_sum.h>
+#include "mpp_global_sum.h"
 
 #undef MPP_GLOBAL_SUM_
 #define MPP_GLOBAL_SUM_ mpp_global_sum_i8_3d
@@ -242,7 +242,7 @@
 #define MPP_EXTRA_INDICES_ ,:
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
-#include <mpp_global_sum.h>
+#include "mpp_global_sum.h"
 
 #undef MPP_GLOBAL_SUM_
 #define MPP_GLOBAL_SUM_ mpp_global_sum_i8_4d
@@ -250,7 +250,7 @@
 #define MPP_EXTRA_INDICES_ ,:,:
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
-#include <mpp_global_sum.h>
+#include "mpp_global_sum.h"
 
 #undef MPP_GLOBAL_SUM_
 #define MPP_GLOBAL_SUM_ mpp_global_sum_i8_5d
@@ -258,7 +258,7 @@
 #define MPP_EXTRA_INDICES_ ,:,:,:
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
-#include <mpp_global_sum.h>
+#include "mpp_global_sum.h"
 #endif
 
 #undef MPP_GLOBAL_SUM_
@@ -267,7 +267,7 @@
 #define MPP_EXTRA_INDICES_
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
-#include <mpp_global_sum.h>
+#include "mpp_global_sum.h"
 
 #undef MPP_GLOBAL_SUM_
 #define MPP_GLOBAL_SUM_ mpp_global_sum_i4_3d
@@ -275,7 +275,7 @@
 #define MPP_EXTRA_INDICES_ ,:
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
-#include <mpp_global_sum.h>
+#include "mpp_global_sum.h"
 
 #undef MPP_GLOBAL_SUM_
 #define MPP_GLOBAL_SUM_ mpp_global_sum_i4_4d
@@ -283,7 +283,7 @@
 #define MPP_EXTRA_INDICES_ ,:,:
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
-#include <mpp_global_sum.h>
+#include "mpp_global_sum.h"
 
 #undef MPP_GLOBAL_SUM_
 #define MPP_GLOBAL_SUM_ mpp_global_sum_i4_5d
@@ -291,7 +291,7 @@
 #define MPP_EXTRA_INDICES_ ,:,:,:
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
-#include <mpp_global_sum.h>
+#include "mpp_global_sum.h"
 
 
 !gag
@@ -307,7 +307,7 @@
 #define MPP_EXTRA_INDICES_
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_global_sum_tl.h>
+#include "mpp_global_sum_tl.h"
 
 #undef MPP_GLOBAL_SUM_TL_
 #define MPP_GLOBAL_SUM_TL_ mpp_global_sum_tl_r8_3d
@@ -315,7 +315,7 @@
 #define MPP_EXTRA_INDICES_ ,:
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_global_sum_tl.h>
+#include "mpp_global_sum_tl.h"
 
 #undef MPP_GLOBAL_SUM_TL_
 #define MPP_GLOBAL_SUM_TL_ mpp_global_sum_tl_r8_4d
@@ -323,7 +323,7 @@
 #define MPP_EXTRA_INDICES_ ,:,:
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_global_sum_tl.h>
+#include "mpp_global_sum_tl.h"
 
 #undef MPP_GLOBAL_SUM_TL_
 #define MPP_GLOBAL_SUM_TL_ mpp_global_sum_tl_r8_5d
@@ -331,7 +331,7 @@
 #define MPP_EXTRA_INDICES_ ,:,:,:
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_global_sum_tl.h>
+#include "mpp_global_sum_tl.h"
 
 #ifdef OVERLOAD_R4
 #undef MPP_GLOBAL_SUM_TL_
@@ -340,7 +340,7 @@
 #define MPP_EXTRA_INDICES_
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
-#include <mpp_global_sum_tl.h>
+#include "mpp_global_sum_tl.h"
 
 #undef MPP_GLOBAL_SUM_TL_
 #define MPP_GLOBAL_SUM_TL_ mpp_global_sum_tl_r4_3d
@@ -348,7 +348,7 @@
 #define MPP_EXTRA_INDICES_ ,:
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
-#include <mpp_global_sum_tl.h>
+#include "mpp_global_sum_tl.h"
 
 #undef MPP_GLOBAL_SUM_TL_
 #define MPP_GLOBAL_SUM_TL_ mpp_global_sum_tl_r4_4d
@@ -356,7 +356,7 @@
 #define MPP_EXTRA_INDICES_ ,:,:
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
-#include <mpp_global_sum_tl.h>
+#include "mpp_global_sum_tl.h"
 
 #undef MPP_GLOBAL_SUM_TL_
 #define MPP_GLOBAL_SUM_TL_ mpp_global_sum_tl_r4_5d
@@ -364,7 +364,7 @@
 #define MPP_EXTRA_INDICES_ ,:,:,:
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
-#include <mpp_global_sum_tl.h>
+#include "mpp_global_sum_tl.h"
 #endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -383,7 +383,7 @@
 #define MPP_GLOBAL_FIELD_5D_ mpp_global_field2D_r8_5d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_global_field.h>
+#include "mpp_global_field.h"
 
 #ifdef OVERLOAD_C8
 #undef MPP_GLOBAL_FIELD_2D_
@@ -396,7 +396,7 @@
 #define MPP_GLOBAL_FIELD_5D_ mpp_global_field2D_c8_5d
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
-#include <mpp_global_field.h>
+#include "mpp_global_field.h"
 #endif
 
 #ifndef no_8byte_integers
@@ -410,7 +410,7 @@
 #define MPP_GLOBAL_FIELD_5D_ mpp_global_field2D_i8_5d
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
-#include <mpp_global_field.h>
+#include "mpp_global_field.h"
 
 #undef MPP_GLOBAL_FIELD_2D_
 #define MPP_GLOBAL_FIELD_2D_ mpp_global_field2D_l8_2d
@@ -422,7 +422,7 @@
 #define MPP_GLOBAL_FIELD_5D_ mpp_global_field2D_l8_5d
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(LONG_KIND)
-#include <mpp_global_field.h>
+#include "mpp_global_field.h"
 #endif
 
 #ifdef OVERLOAD_R4
@@ -436,7 +436,7 @@
 #define MPP_GLOBAL_FIELD_5D_ mpp_global_field2D_r4_5d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
-#include <mpp_global_field.h>
+#include "mpp_global_field.h"
 #endif
 
 #ifdef OVERLOAD_C4
@@ -450,7 +450,7 @@
 #define MPP_GLOBAL_FIELD_5D_ mpp_global_field2D_c4_5d
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
-#include <mpp_global_field.h>
+#include "mpp_global_field.h"
 #endif
 
 #undef MPP_GLOBAL_FIELD_2D_
@@ -463,7 +463,7 @@
 #define MPP_GLOBAL_FIELD_5D_ mpp_global_field2D_i4_5d
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
-#include <mpp_global_field.h>
+#include "mpp_global_field.h"
 
 #undef MPP_GLOBAL_FIELD_2D_
 #define MPP_GLOBAL_FIELD_2D_ mpp_global_field2D_l4_2d
@@ -475,21 +475,21 @@
 #define MPP_GLOBAL_FIELD_5D_ mpp_global_field2D_l4_5d
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(INT_KIND)
-#include <mpp_global_field.h>
+#include "mpp_global_field.h"
 
 !****************************************************
 #undef MPP_DO_GLOBAL_FIELD_3D_
 #define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_r8_3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_do_global_field.h>                                    
+#include "mpp_do_global_field.h"                                    
 
 #ifdef OVERLOAD_C8
 #undef MPP_DO_GLOBAL_FIELD_3D_
 #define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_c8_3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
-#include <mpp_do_global_field.h>                                    
+#include "mpp_do_global_field.h"                                    
 #endif
 
 #ifndef no_8byte_integers
@@ -497,14 +497,14 @@
 #define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_i8_3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
-#include <mpp_do_global_field.h>                                    
+#include "mpp_do_global_field.h"                                    
 
 #undef MPP_DO_GLOBAL_FIELD_3D_
 #define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_l8_3d
 #define LOGICAL_VARIABLE
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(LONG_KIND)
-#include <mpp_do_global_field.h>                                    
+#include "mpp_do_global_field.h"                                    
 #undef LOGICAL_VARIABLE
 #endif
 
@@ -513,7 +513,7 @@
 #define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_r4_3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
-#include <mpp_do_global_field.h>                                    
+#include "mpp_do_global_field.h"                                    
 #endif
 
 #ifdef OVERLOAD_C4
@@ -521,20 +521,20 @@
 #define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_c4_3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
-#include <mpp_do_global_field.h>                                    
+#include "mpp_do_global_field.h"                                    
 #endif
 
 #undef MPP_DO_GLOBAL_FIELD_3D_
 #define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_i4_3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
-#include <mpp_do_global_field.h>                                    
+#include "mpp_do_global_field.h"                                    
 
 #undef MPP_DO_GLOBAL_FIELD_3D_
 #define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_l4_3d
 #define LOGICAL_VARIABLE
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(INT_KIND)
-#include <mpp_do_global_field.h>
+#include "mpp_do_global_field.h"
 #undef LOGICAL_VARIABLE
 
