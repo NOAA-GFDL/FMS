@@ -11,7 +11,7 @@ module mpp_data_mod
   private
 
 ! Include variable "version" to be written to log file.
-#include <file_version.h>
+#include<file_version.h>
   public version
 
 #if defined(use_libSMA) || defined(use_MPI_SMA)
@@ -37,12 +37,12 @@ module mpp_data_mod
   !-------------------------------------------------------------------------------!
 
 #ifdef use_libSMA
-#include "include/mpp_data_sma.inc"
+#include <mpp_data_sma.inc>
 #else
 #ifdef use_libMPI
-#include "include/mpp_data_mpi.inc"
+#include <mpp_data_mpi.inc>
 #else
-#include "include/mpp_data_nocomm.inc"
+#include <mpp_data_nocomm.inc>
 #endif
 #endif
 

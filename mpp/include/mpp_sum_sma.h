@@ -34,4 +34,4 @@
     end subroutine MPP_SUM_
 
 !#######################################################################
-#include "mpp_sum.inc"
+#include <mpp_sum.inc>

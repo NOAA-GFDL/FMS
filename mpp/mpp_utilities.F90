@@ -2,7 +2,7 @@ module mpp_utilities_mod
 
 !-----------------------------------------------------------------------
 ! Include variable "version" to be written to log file.
-#include <file_version.h>
+#include<file_version.h>
 !-----------------------------------------------------------------------
 
   public :: mpp_array_global_min_max
