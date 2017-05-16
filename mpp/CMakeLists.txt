@@ -14,19 +14,19 @@ set(${PROJECT_NAME}_SOURCES
   mpp_pset.F90
   mpp_utilities.F90
   )
-  
+
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 add_library(${PROJECT_NAME} OBJECT ${${PROJECT_NAME}_SOURCES})
 
-if (NETCDF_FOUND OR NETCDFF_FOUND)
+if (NETCDF_Fortran_FOUND AND NETCDF_C_FOUND)
   target_compile_definitions(${PROJECT_NAME} PUBLIC "use_netCDF")
-  include_directories(${NETCDF_INCLUDE_PATH} ${NETCDFF_INCLUDE_PATH})
-endif (NETCDF_FOUND OR NETCDFF_FOUND)
+  include_directories(${NETCDF_C_INCLUDE_PATH} ${NETCDF_Fortran_INCLUDE_PATH})
+endif (NETCDF_Fortran_FOUND AND NETCDF_C_FOUND)
 
-if (MPI_C_FOUND OR MPI_Fortran_FOUND)
+if (MPI_C_FOUND AND MPI_Fortran_FOUND)
   target_compile_definitions(${PROJECT_NAME} PUBLIC "use_MPI")
   include_directories(${MPI_C_INCLUDE_PATH} ${MPI_Fortran_INCLUDE_PATH})
-endif (MPI_C_FOUND OR MPI_Fortran_FOUND)
+endif (MPI_C_FOUND AND MPI_Fortran_FOUND)
 
-# Expose public includes to other subprojects through a cache variable.
-set(${PROJECT_NAME}_INCLUDE_PATH ${PROJECT_BINARY_DIR}
-  CACHE INTERNAL "${PROJECT_NAME}: Include Directories" FORCE)
