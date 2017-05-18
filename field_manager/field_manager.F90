@@ -4451,8 +4451,14 @@ if (associated(temp_list_p)) then  !{
 !        Check if the field_type is the same as previously
 !        If not then reset max_index to 0
 !
-    if (temp_field_p%field_type /= integer_type ) then
-        temp_field_p%max_index = 0
+    if (temp_field_p%field_type == real_type ) then
+       ! promote integer input to real
+       field_index = fm_new_value_real(name, real(value), create, index, append)
+       return
+    else if (temp_field_p%field_type /= integer_type ) then
+      !  slm: why would we reset index? Is it not an error to have a "list" defined
+      !  with different types in more than one place? 
+      temp_field_p%max_index = 0
       if (temp_field_p%field_type /= null_type ) then  !{
         if (verb .gt. verb_level_warn) then  !{
           write (out_unit,*) trim(warn_header),                   &
@@ -4917,8 +4923,20 @@ if (associated(temp_list_p)) then  !{
 !        Check if the field_type is the same as previously
 !        If not then reset max_index to 0
 !
-    if (temp_field_p%field_type /= real_type ) then
-        temp_field_p%max_index = 0
+    if (temp_field_p%field_type == integer_type) then
+       ! promote integer field to real
+       allocate(temp_field_p%r_value(size(temp_field_p%i_value)))
+       do i = 1, size(temp_field_p%i_value)
+          temp_field_p%r_value(i) = temp_field_p%i_value(i)
+       enddo
+       temp_field_p%field_type = real_type
+       deallocate(temp_field_p%i_value)
+    else if (temp_field_p%field_type /= real_type ) then
+      ! slm: why reset index to 0? does it make any sense? It sounds like this is the
+      ! case where the values in the array have different types, so is it not an error?
+      ! Or, alternatively, if string follows a real value, should not be the entire
+      ! array converted to string type?
+      temp_field_p%max_index = 0
       if (temp_field_p%field_type /= null_type ) then  !{
         if (verb .gt. verb_level_warn) then  !{
           write (out_unit,*) trim(warn_header),                   &
