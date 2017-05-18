@@ -36,7 +36,7 @@ MODULE diag_axis_mod
        & get_tile_count, get_axes_shift, get_diag_axis_name,&
        & get_axis_num, get_diag_axis_domain_name, diag_axis_add_attribute,&
        & get_domainUG, axis_compatible_check, axis_is_compressed, &
-       & get_compressed_axes_ids
+       & get_compressed_axes_ids, get_axis_reqfld
 
   ! Module variables
   ! Parameters
@@ -98,7 +98,7 @@ CONTAINS
   !   </OVERVIEW>
   !   <TEMPLATE>
   !     INTEGER FUNCTION diag_axis_init(name, data, units, cart_name, long_name,
-  !           direction, set_name, edges, Domain, Domain2, aux, tile_count)
+  !           direction, set_name, edges, Domain, Domain2, aux, req, tile_count)
   !   </TEMPLATE>
   !   <DESCRIPTION>
   !     <TT>diag_axis_init</TT> initializes an axis and returns the axis ID that
@@ -130,9 +130,12 @@ CONTAINS
   !   <IN NAME="aux" TYPE="CHARACTER(len=*), OPTIONAL">
   !     Auxiliary name, can only be <TT>geolon_t</TT> or <TT>geolat_t</TT>
   !   </IN>
+  !   <IN NAME="req" TYPE="CHARACTER(len=*), OPTIONAL">
+  !     Required field names.
+  !   </IN>
   !   <IN NAME="tile_count" TYPE="INTEGER, OPTIONAL" />
   INTEGER FUNCTION diag_axis_init(name, DATA, units, cart_name, long_name, direction,&
-       & set_name, edges, Domain, Domain2, DomainU, aux, tile_count)
+       & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count)
     CHARACTER(len=*), INTENT(in) :: name
     REAL, DIMENSION(:), INTENT(in) :: DATA
     CHARACTER(len=*), INTENT(in) :: units
@@ -142,7 +145,7 @@ CONTAINS
     TYPE(domain1d), INTENT(in), OPTIONAL :: Domain
     TYPE(domain2d), INTENT(in), OPTIONAL :: Domain2
     TYPE(domainUG), INTENT(in), OPTIONAL :: DomainU
-    CHARACTER(len=*), INTENT(in), OPTIONAL :: aux
+    CHARACTER(len=*), INTENT(in), OPTIONAL :: aux, req
     INTEGER, INTENT(in), OPTIONAL :: tile_count
 
     TYPE(domain1d) :: domain_x, domain_y
@@ -269,6 +272,13 @@ CONTAINS
     ELSE
        Axes(diag_axis_init)%aux = 'none'
     END IF
+
+    IF ( PRESENT(req) ) THEN
+       Axes(diag_axis_init)%req = TRIM(req)
+    ELSE
+       Axes(diag_axis_init)%req = 'none'
+    END IF
+
 
     !---- axis direction (-1, 0, or +1) ----
     IF ( PRESENT(direction) )THEN
@@ -708,12 +718,31 @@ CONTAINS
   !     the auxiliary names is <TT>geolon_t</TT> or <TT>geolat_t</TT>.
   !   </DESCRIPTION>
   !   <IN NAME="id" TYPE="INTEGER">Axis ID</IN>
-  CHARACTER(len=138) FUNCTION get_axis_aux(id)
+  CHARACTER(len=128) FUNCTION get_axis_aux(id)
     INTEGER, INTENT(in) :: id
 
     CALL valid_id_check(id, 'get_axis_aux')
     get_axis_aux =  Axes(id)%aux
   END FUNCTION get_axis_aux
+  ! </FUNCTION>
+
+  ! <FUNCTION NAME="get_axis_reqfld">
+  !   <OVERVIEW>
+  !     Return the required field names for the axis.
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     CHARACTER(len=128) FUNCTION get_axis_reqfld(id)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !     Returns the required field names for the axis.
+  !   </DESCRIPTION>
+  !   <IN NAME="id" TYPE="INTEGER">Axis ID</IN>
+  CHARACTER(len=128) FUNCTION get_axis_reqfld(id)
+    INTEGER, INTENT(in) :: id
+
+    CALL valid_id_check(id, 'get_axis_reqfld')
+    get_axis_reqfld =  Axes(id)%req
+  END FUNCTION get_axis_reqfld
   ! </FUNCTION>
 
   ! <FUNCTION NAME="get_axis_global_length">

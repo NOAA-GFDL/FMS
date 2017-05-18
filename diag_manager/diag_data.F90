@@ -567,6 +567,8 @@ MODULE diag_data_mod
   !   </DATA>
   !   <DATA NAME="aux" TYPE="CHARACTER(len=128)">
   !   </DATA>
+  !   <DATA NAME="req" TYPE="CHARACTER(len=128)">
+  !   </DATA>
   !   <DATA NAME="tile_count" TYPE="INTEGER">
   !   </DATA>
   !   <DATA NAME="attributes" TYPE="TYPE(diag_atttype), DIMENSION(:)">
@@ -588,7 +590,7 @@ MODULE diag_data_mod
      TYPE(domain2d) :: Domain2
      TYPE(domain2d), dimension(MAX_SUBAXES) :: subaxis_domain2
      type(domainUG) :: DomainUG
-     CHARACTER(len=128) :: aux
+     CHARACTER(len=128) :: aux, req
      INTEGER :: tile_count
      TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
      INTEGER :: num_attributes
