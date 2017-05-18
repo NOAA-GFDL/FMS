@@ -74,6 +74,7 @@
       if (ANY(field%checksum /= default_field%checksum) ) compute_chksum = .TRUE.
 
       if (compute_chksum) then
+#ifdef use_netCDF
 	 if (field%type==NF_INT) then
             if (field%fill == MPP_FILL_DOUBLE .or. field%fill == real(MPP_FILL_INT) ) then
                chk = mpp_chksum( ceiling(data), mask_val=MPP_FILL_INT )
@@ -86,6 +87,7 @@
 	 else !!real data
 	    chk = mpp_chksum(data,mask_val=field%fill)
 	 end if
+#endif
 	 !!compare
          if ( print_compressed_chksum) then
             if ( mpp_pe() == mpp_root_pe() ) then 
@@ -164,6 +166,7 @@
       if (ANY(field%checksum /= default_field%checksum) ) compute_chksum = .TRUE.
 
       if (compute_chksum) then
+#ifdef use_netCDF
 	 if (field%type==NF_INT) then
 	    if (field%fill == MPP_FILL_DOUBLE .or. field%fill == real(MPP_FILL_INT) ) then
                chk = mpp_chksum( ceiling(data), mask_val=MPP_FILL_INT )
@@ -176,6 +179,7 @@
 	 else !!real
 	    chk = mpp_chksum(data,mask_val=field%fill)
 	 end if
+#endif
 	 !!compare
          if ( print_compressed_chksum) then
             if ( mpp_pe() == mpp_root_pe() ) then 

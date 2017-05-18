@@ -34,7 +34,7 @@ MODULE diag_data_mod
   ! </DESCRIPTION>
 
   USE time_manager_mod, ONLY: time_type
-  USE mpp_domains_mod, ONLY: domain1d, domain2d
+  USE mpp_domains_mod, ONLY: domain1d, domain2d, domainUG
   USE mpp_io_mod, ONLY: fieldtype
   USE fms_mod, ONLY: WARNING, write_version_number
 #ifdef use_netCDF
@@ -138,6 +138,7 @@ MODULE diag_data_mod
   TYPE diag_fieldtype
      TYPE(fieldtype) :: Field
      TYPE(domain2d) :: Domain
+     TYPE(domainUG) :: DomainU
      REAL :: miss, miss_pack
      LOGICAL :: miss_present, miss_pack_present
      INTEGER :: tile_count
@@ -295,6 +296,11 @@ MODULE diag_data_mod
      TYPE(diag_fieldtype):: f_avg_start, f_avg_end, f_avg_nitems, f_bounds
      TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
      INTEGER :: num_attributes
+!----------
+!ug support
+     logical(INT_KIND) :: use_domainUG = .false.
+     logical(INT_KIND) :: use_domain2D = .false.
+!----------
   END TYPE file_type
   ! </TYPE>
 
@@ -516,6 +522,10 @@ MODULE diag_data_mod
      TYPE(time_type) :: Time_of_prev_field_data
      TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
      INTEGER :: num_attributes
+!----------
+!ug support
+     logical :: reduced_k_unstruct = .false.
+!----------
   END TYPE output_field_type
   ! </TYPE>
 
@@ -557,6 +567,8 @@ MODULE diag_data_mod
   !   </DATA>
   !   <DATA NAME="aux" TYPE="CHARACTER(len=128)">
   !   </DATA>
+  !   <DATA NAME="req" TYPE="CHARACTER(len=128)">
+  !   </DATA>
   !   <DATA NAME="tile_count" TYPE="INTEGER">
   !   </DATA>
   !   <DATA NAME="attributes" TYPE="TYPE(diag_atttype), DIMENSION(:)">
@@ -577,7 +589,8 @@ MODULE diag_data_mod
      TYPE(domain1d) :: Domain
      TYPE(domain2d) :: Domain2
      TYPE(domain2d), dimension(MAX_SUBAXES) :: subaxis_domain2
-     CHARACTER(len=128) :: aux
+     type(domainUG) :: DomainUG
+     CHARACTER(len=128) :: aux, req
      INTEGER :: tile_count
      TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
      INTEGER :: num_attributes
@@ -636,6 +649,12 @@ MODULE diag_data_mod
   ! </DATA>
   ! <DATA NAME="do_diag_field_log" TYPE="LOGICAL" DEFAULT=".FALSE." />
   ! <DATA NAME="write_bytes_in_file" TYPE="LOGICAL" DEFAULT=".FALSE." />
+  ! <DATA NAME="flush_nc_files" TYPE="LOGICAL" DEFAULT=".FALSE.">
+  !   Indicate if diag_manager should force the flush of the netCDF diagnostic
+  !   files to disk Note: changing this to .TRUE. can greatly reduce the model
+  !   performance as at each write to the netCDF diagnostic file, the model must
+  !   wait until the flush to disk finishes.
+  ! </DATA>
   ! <DATA NAME="debug_diag_manager" TYPE="LOGICAL" DEFAULT=".FALSE." />
   ! <DATA NAME="max_num_axis_sets" TYPE="INTEGER" DEFAULT="25" />
   ! <DATA NAME="use_cmor" TYPE="LOGICAL" DEFAULT=".FALSE.">
@@ -677,7 +696,12 @@ MODULE diag_data_mod
   LOGICAL :: do_diag_field_log = .FALSE.
   LOGICAL :: write_bytes_in_file = .FALSE.
   LOGICAL :: debug_diag_manager = .FALSE.
-  LOGICAL :: conserve_water = .TRUE. ! Undocumented namelist to control flushing of output files.
+  LOGICAL :: flush_nc_files = .FALSE. !< Control if diag_manager will force a
+                                      !! flush of the netCDF file on each write.
+                                      !! Note: changing this to .TRUE. can greatly
+                                      !! reduce the performance of the model, as the
+                                      !! model must wait until the flush to disk has
+                                      !! completed.
   INTEGER :: max_num_axis_sets = 25
   LOGICAL :: use_cmor = .FALSE.
   LOGICAL :: issue_oor_warnings = .TRUE.

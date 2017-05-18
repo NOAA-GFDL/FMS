@@ -12,13 +12,15 @@ MODULE diag_output_mod
 
   USE mpp_io_mod, ONLY: axistype, fieldtype, mpp_io_init, mpp_open,  mpp_write_meta,&
        & mpp_write, mpp_flush, mpp_close, mpp_get_id, MPP_WRONLY, MPP_OVERWR,&
-       & MPP_NETCDF, MPP_MULTI, MPP_SINGLE
+       & MPP_NETCDF, MPP_MULTI, MPP_SINGLE, mpp_io_unstructured_write
   USE mpp_domains_mod, ONLY: domain1d, domain2d, mpp_define_domains, mpp_get_pelist,&
        &  mpp_get_global_domain, mpp_get_compute_domains, null_domain1d, null_domain2d,&
+       & domainUG, null_domainUG,&
        & OPERATOR(.NE.), mpp_get_layout, OPERATOR(.EQ.)
   USE mpp_mod, ONLY: mpp_npes, mpp_pe
   USE diag_axis_mod, ONLY: diag_axis_init, get_diag_axis, get_axis_length,&
-       & get_axis_global_length, get_domain1d, get_domain2d, get_axis_aux, get_tile_count
+       & get_axis_global_length, get_domain1d, get_domain2d, get_axis_aux, get_tile_count,&
+       & get_domainUG
   USE diag_data_mod, ONLY: diag_fieldtype, diag_global_att_type, CMOR_MISSING_VALUE, diag_atttype
   USE time_manager_mod, ONLY: get_calendar_type, valid_calendar_types
   USE fms_mod, ONLY: error_mesg, mpp_pe, write_version_number, fms_error_handler, FATAL
@@ -26,6 +28,12 @@ MODULE diag_output_mod
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
 #endif
+
+  use mpp_domains_mod, only: mpp_get_UG_io_domain
+  use mpp_domains_mod, only: mpp_get_UG_domain_npes
+  use mpp_domains_mod, only: mpp_get_UG_domain_pelist
+  use mpp_mod,         only: mpp_gather
+  use mpp_mod,         only: uppercase
 
   IMPLICIT NONE
 
@@ -76,14 +84,16 @@ CONTAINS
   !   </OUT>
   !   <IN NAME="all_scalar_or_1d" TYPE="LOGICAL" />
   !   <IN NAME="domain" TYPE="TYPE(domain2d)" />
+  !   <IN NAME="domainU" TYPE="TYPE(domainUG)" />The unstructure domain </IN>
   SUBROUTINE diag_output_init(file_name, FORMAT, file_title, file_unit,&
-       & all_scalar_or_1d, domain, attributes)
+       & all_scalar_or_1d, domain, domainU, attributes)
     CHARACTER(len=*), INTENT(in)  :: file_name, file_title
     INTEGER         , INTENT(in)  :: FORMAT
     INTEGER         , INTENT(out) :: file_unit
     LOGICAL         , INTENT(in)  :: all_scalar_or_1d
     TYPE(domain2d)  , INTENT(in)  :: domain
     TYPE(diag_atttype), INTENT(in), DIMENSION(:), OPTIONAL :: attributes
+    TYPE(domainUG), INTENT(in)    :: domainU
 
     INTEGER :: form, threading, fileset, i
     TYPE(diag_global_att_type) :: gAtt
@@ -92,8 +102,8 @@ CONTAINS
     IF ( .NOT.module_is_initialized ) THEN
        CALL mpp_io_init ()
        module_is_initialized = .TRUE.
+       CALL write_version_number("DIAG_OUTPUT_MOD", version)
     END IF
-    CALL write_version_number("DIAG_OUTPUT_MOD", version)
 
     !---- set up output file ----
     SELECT CASE (FORMAT)
@@ -111,13 +121,22 @@ CONTAINS
        fileset   = MPP_SINGLE
     END IF
 
+    
+!> Check to make sure that only domain2D or domainUG is used.  If both are not null, then FATAL
+    if (domain .NE. NULL_DOMAIN2D .AND. domainU .NE. NULL_DOMAINUG)&
+          & CALL error_mesg('diag_output_init', "Domain2D and DomainUG can not be used at the same time in "//&
+          & trim(file_name), FATAL)
+
     !---- open output file (return file_unit id) -----
-    IF ( domain .EQ. NULL_DOMAIN2D ) THEN
-       CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
-            & threading=threading, fileset=fileset)
-    ELSE
+    IF ( domain .NE. NULL_DOMAIN2D ) THEN
        CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
             & threading=threading, fileset=fileset, domain=domain)
+    ELSEif (domainU .NE. NULL_DOMAINUG) THEN
+       CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
+            & threading=threading, fileset=fileset, domain_UG=domainU)
+    ELSE
+       CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
+            & threading=threading, fileset=fileset)
     END IF
 
     !---- write global attributes ----
@@ -170,6 +189,8 @@ CONTAINS
 
     TYPE(domain1d)       :: Domain
 
+    TYPE(domainUG)       :: domainU
+
     CHARACTER(len=mxch)  :: axis_name, axis_units
     CHARACTER(len=mxchl) :: axis_long_name
     CHARACTER(len=1)     :: axis_cart_name
@@ -183,6 +204,11 @@ CONTAINS
     INTEGER              :: gbegin, gend, gsize, ndivs
     LOGICAL              :: time_ops1
     CHARACTER(len=2048)  :: err_msg
+    type(domainUG),pointer                     :: io_domain
+    integer(INT_KIND)                          :: io_domain_npes
+    integer(INT_KIND),dimension(:),allocatable :: io_pelist
+    integer(INT_KIND),dimension(:),allocatable :: unstruct_axis_sizes
+    real,dimension(:),allocatable              :: unstruct_axis_data
 
     ! Make sure err_msg is initialized
     err_msg = ''
@@ -222,7 +248,7 @@ CONTAINS
        ALLOCATE(axis_data(length))
 
        CALL get_diag_axis(id_axis, axis_name, axis_units, axis_long_name,&
-            & axis_cart_name, axis_direction, axis_edges, Domain, axis_data,&
+            & axis_cart_name, axis_direction, axis_edges, Domain, DomainU, axis_data,&
             & num_attributes, attributes)
 
        IF ( Domain .NE. null_domain1d ) THEN
@@ -236,8 +262,57 @@ CONTAINS
           END IF
        ELSE
           IF ( length > 0 ) THEN
-             CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
+
+            !For an unstructured dimension, only the root rank of the io_domain
+            !pelist will perform the wirte, so a gather of the unstructured
+            !axis size and axis data is required.
+             if (uppercase(trim(axis_cart_name)) .eq. "U") then
+                 if (DomainU .eq. null_domainUG) then
+                     call error_mesg("diag_output_mod::write_axis_meta_data", &
+                                     "A non-nul domainUG is required to" &
+                                     //" write unstructured axis metadata.", &
+                                     FATAL)
+                 endif
+                 io_domain => null()
+                 io_domain => mpp_get_UG_io_domain(DomainU)
+                 io_domain_npes = mpp_get_UG_domain_npes(io_domain)
+                 allocate(io_pelist(io_domain_npes))
+                 call mpp_get_UG_domain_pelist(io_domain, &
+                                               io_pelist)
+                 allocate(unstruct_axis_sizes(io_domain_npes))
+                 unstruct_axis_sizes = 0
+                 call mpp_gather((/size(axis_data)/), &
+                                 unstruct_axis_sizes, &
+                                 io_pelist)
+                 if (mpp_pe() .eq. io_pelist(1)) then
+                     allocate(unstruct_axis_data(sum(unstruct_axis_sizes)))
+                 else
+                     allocate(unstruct_axis_data(1))
+                 endif
+                 unstruct_axis_data = 0.0
+                 call mpp_gather(axis_data, &
+                                 size(axis_data), &
+                                 unstruct_axis_data, &
+                                 unstruct_axis_sizes, &
+                                 io_pelist)
+                 call mpp_write_meta(file_unit, &
+                                     Axis_types(num_axis_in_file), &
+                                     axis_name, &
+                                     axis_units, &
+                                     axis_long_name, &
+                                     axis_cart_name, &
+                                     axis_direction, &
+                                     data=unstruct_axis_data)
+                 deallocate(io_pelist)
+                 deallocate(unstruct_axis_sizes)
+                 deallocate(unstruct_axis_data)
+                 io_domain => null()
+
+             else
+                 CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
                   & axis_units, axis_long_name, axis_cart_name, axis_direction, DATA=axis_data)
+             endif
+
           ELSE
              CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
                   & axis_units, axis_long_name, axis_cart_name, axis_direction)
@@ -296,7 +371,7 @@ CONTAINS
        length = get_axis_global_length ( id_axis )
        ALLOCATE(axis_data(length))
        CALL get_diag_axis(id_axis, axis_name, axis_units, axis_long_name, axis_cart_name,&
-            & axis_direction, axis_edges, Domain, axis_data, num_attributes, attributes)
+            & axis_direction, axis_edges, Domain, DomainU, axis_data, num_attributes, attributes)
 
        !  ---- write edges attribute to original axis ----
        CALL mpp_write_meta(file_unit, mpp_get_id(Axis_types(num_axis_in_file)),&
@@ -399,7 +474,8 @@ CONTAINS
   !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL">Standard name of field</IN>
   !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIONAL" />
   FUNCTION write_field_meta_data ( file_unit, name, axes, units, long_name, range, pack, mval,&
-       & avg_name, time_method, standard_name, interp_method, attributes, num_attributes) result ( Field )
+       & avg_name, time_method, standard_name, interp_method, attributes, num_attributes,     &
+       & use_UGdomain) result ( Field )
     INTEGER, INTENT(in) :: file_unit, axes(:)
     CHARACTER(len=*), INTENT(in) :: name, units, long_name
     REAL, OPTIONAL, INTENT(in) :: RANGE(2), mval
@@ -408,6 +484,7 @@ CONTAINS
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method
     TYPE(diag_atttype), DIMENSION(:), _ALLOCATABLE, OPTIONAL, INTENT(in) :: attributes
     INTEGER, OPTIONAL, INTENT(in) :: num_attributes
+    LOGICAL, OPTIONAL, INTENT(in) :: use_UGdomain
 
     CHARACTER(len=128) :: standard_name2
     CHARACTER(len=1280) :: att_str
@@ -421,6 +498,7 @@ CONTAINS
     INTEGER :: i, indexx, num, ipack, np, att_len
     LOGICAL :: use_range
     INTEGER :: axis_indices(SIZE(axes))
+    logical :: use_UGdomain_local
 
     !---- Initialize err_msg to bank ----
     err_msg = ''
@@ -432,6 +510,9 @@ CONTAINS
     ELSE
        standard_name2 = 'none'
     END IF
+
+    use_UGdomain_local = .false.
+    if(present(use_UGdomain)) use_UGdomain_local = use_UGdomain
 
     num = SIZE(axes(:))
     ! <ERROR STATUS="FATAL">number of axes < 1</ERROR>
@@ -456,7 +537,7 @@ CONTAINS
     END DO
 
     !  Create coordinate attribute
-    IF ( num >= 2 ) THEN
+    IF ( num >= 2 .OR. (num==1 .and. use_UGdomain_local) ) THEN
        coord_att = ' '
        DO i = 1, num
           aux_axes(i) = get_axis_aux(axes(i))
@@ -612,6 +693,7 @@ CONTAINS
     !---- get axis domain ----
     Field%Domain = get_domain2d ( axes )
     Field%tile_count = get_tile_count ( axes )
+    Field%DomainU = get_domainUG ( axes(1) )
 
   END FUNCTION write_field_meta_data
   ! </FUNCTION>
@@ -738,6 +820,15 @@ CONTAINS
           CALL mpp_write(file_unit, Field%Field, Field%Domain, DATA, time, &
                       tile_count=Field%tile_count, default_data=CMOR_MISSING_VALUE)
        END IF
+    ELSEIF ( Field%DomainU .NE. null_domainUG ) THEN
+       IF( Field%miss_present ) THEN
+          CALL mpp_io_unstructured_write(file_unit, Field%Field, Field%DomainU, DATA, tstamp=time, &
+                       default_data=Field%miss_pack)
+       ELSE
+          CALL mpp_io_unstructured_write(file_unit, Field%Field, Field%DomainU, DATA, tstamp=time, &
+                       default_data=CMOR_MISSING_VALUE)
+       END IF
+
     ELSE
        CALL mpp_write(file_unit, Field%Field, DATA, time)
     END IF
