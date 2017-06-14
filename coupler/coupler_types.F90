@@ -239,7 +239,7 @@ character(len=48), parameter                    :: mod_name = 'coupler_types_mod
 
 type, public    :: coupler_3d_values_type
   character(len=fm_field_name_len)                      :: name = ' ' !< name
-  real, pointer, dimension(:,:,:)                       :: values => NULL() !< values
+  real, pointer, contiguous, dimension(:,:,:)           :: values => NULL() !< values
   logical                                               :: mean = .true. !< mean
   logical                                               :: override = .false. !< override
   integer                                               :: id_diag = 0 !< id_diag
@@ -275,7 +275,7 @@ end type coupler_3d_bc_type
 
 type, public    :: coupler_2d_values_type
   character(len=fm_field_name_len)                      :: name = ' ' !< name
-  real, pointer, dimension(:,:)                         :: values => NULL() !< values
+  real, pointer, contiguous, dimension(:,:)             :: values => NULL() !< values
   logical                                               :: mean = .true. !< mean
   logical                                               :: override = .false. !< override
   integer                                               :: id_diag = 0 !< id_diag
