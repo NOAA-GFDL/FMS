@@ -1346,7 +1346,7 @@ CONTAINS
     INTEGER, intent(in) :: cm_ind !< index of the output_field in the associated file
 
     INTEGER :: year, month, day, hour, minute, second
-    INTEGER :: num_axes
+    INTEGER :: n
     CHARACTER(len=25) :: date_prefix
     CHARACTER(len=256) :: asso_file_name
 
@@ -1376,12 +1376,10 @@ CONTAINS
     ! frepp does.
     !CALL get_instance_filename(TRIM(asso_file_name), asso_file_name)
 
-    ! Get the file name with the tile number (if required)
-    num_axes = output_fields(cm_ind)%num_axes
-    CALL get_mosaic_tile_file(TRIM(asso_file_name), asso_file_name,&
-         & is_no_domain=.FALSE.,&
-         & domain=get_domain2d(output_fields(cm_ind)%axes(1:num_axes)),&
-         & tile_count=get_tile_count(output_fields(cm_ind)%axes(1:num_axes)))
+    ! Append .nc suffix, if needed. Note that we no longer try to append cubic sphere tile
+    ! number to the name of the associated file.
+    n = max(len_trim(asso_file_name),3)
+    if (asso_file_name(n-2:n).NE.'.nc') asso_file_name = trim(asso_file_name)//'.nc'
 
     ! Should look like :associated_files = " output_name: output_file_name " ;
     CALL prepend_attribute(files(file_num), 'associated_files',&
