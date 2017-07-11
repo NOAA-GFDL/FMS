@@ -1129,7 +1129,7 @@ subroutine coupler_type_spawn_1d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
       allocate ( var_out%bc(n)%field(var_out%bc(n)%num_fields) )
       do m = 1, var_out%bc(n)%num_fields
         if (present(suffix)) then
-          var_out%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // suffix
+          var_out%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
         else
           var_out%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
         endif
@@ -1288,7 +1288,7 @@ subroutine coupler_type_spawn_2d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
       allocate ( var_out%bc(n)%field(var_out%bc(n)%num_fields) )
       do m = 1, var_out%bc(n)%num_fields
         if (present(suffix)) then
-          var_out%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // suffix
+          var_out%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
         else 
           var_out%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
         endif
@@ -1447,7 +1447,7 @@ subroutine coupler_type_spawn_3d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
       allocate ( var_out%bc(n)%field(var_out%bc(n)%num_fields) )
       do m = 1, var_out%bc(n)%num_fields
         if (present(suffix)) then
-          var_out%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // suffix
+          var_out%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
         else
           var_out%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
         endif
@@ -1531,11 +1531,11 @@ subroutine write_coupler_type_2d_chksums(var, outunit, name_lead)
 
   do n = 1, var%num_bcs ; do m = 1, var%bc(n)%num_fields
     if (present(name_lead)) then
-      var_name = trim(name_lead)//trim(var%bc(n)%name)//'%'//trim(var%bc(n)%field(m)%name)
+      var_name = trim(name_lead)//trim(var%bc(n)%field(m)%name)
     else
-      var_name = trim(var%bc(n)%name)//'%'//trim(var%bc(n)%field(m)%name)
+      var_name = trim(var%bc(n)%field(m)%name)
     endif
-    write(outunit, '("   CHECKSUM::",A32," = ",Z20)') var_name, mpp_chksum(var%bc(n)%field(m)%values)
+    write(outunit, '("   CHECKSUM:: ",A40," = ",Z20)') trim(var_name), mpp_chksum(var%bc(n)%field(m)%values)
   enddo ; enddo
 
 end subroutine write_coupler_type_2d_chksums
@@ -1551,11 +1551,11 @@ subroutine write_coupler_type_3d_chksums(var, outunit, name_lead)
 
   do n = 1, var%num_bcs ; do m = 1, var%bc(n)%num_fields
     if (present(name_lead)) then
-      var_name = trim(name_lead)//trim(var%bc(n)%name)//'%'//trim(var%bc(n)%field(m)%name)
+      var_name = trim(name_lead)//trim(var%bc(n)%field(m)%name)
     else
-      var_name = trim(var%bc(n)%name)//'%'//trim(var%bc(n)%field(m)%name)
+      var_name = trim(var%bc(n)%field(m)%name)
     endif
-    write(outunit, '("   CHECKSUM::",A32," = ",Z20)') var_name, mpp_chksum(var%bc(n)%field(m)%values)
+    write(outunit, '("   CHECKSUM:: ",A40," = ",Z20)') var_name, mpp_chksum(var%bc(n)%field(m)%values)
   enddo ; enddo
 
 end subroutine write_coupler_type_3d_chksums
