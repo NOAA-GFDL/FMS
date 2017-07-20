@@ -131,7 +131,7 @@ CONTAINS
     IF ( domain .NE. NULL_DOMAIN2D ) THEN
        CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
             & threading=threading, fileset=fileset, domain=domain)
-    ELSEif (domainU .NE. NULL_DOMAINUG) THEN
+    ELSE IF (domainU .NE. NULL_DOMAINUG) THEN
        CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
             & threading=threading, fileset=fileset, domain_UG=domainU)
     ELSE
