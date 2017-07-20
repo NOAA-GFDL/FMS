@@ -1,4 +1,4 @@
-module coupler_types_mod  !{
+module coupler_types_mod
 !-----------------------------------------------------------------------
 !                   GNU General Public License
 ! This file is a part of MOM.
@@ -175,9 +175,13 @@ module coupler_types_mod  !{
 !! </table>
 
 use fms_mod,           only: write_version_number
+use fms_io_mod,        only: restart_file_type, register_restart_field
+use fms_io_mod,        only: query_initialized, restore_state
 use field_manager_mod, only: fm_field_name_len, fm_string_len
 use time_manager_mod,  only: time_type
-use diag_manager_mod,  only: register_diag_field
+use diag_manager_mod,  only: register_diag_field, send_data
+use data_override_mod, only: data_override
+use mpp_domains_mod,   only: domain2D, mpp_redistribute
 use mpp_mod,           only: stdout, mpp_error, FATAL, mpp_chksum
 
 
@@ -188,15 +192,12 @@ implicit none ; private
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 !-----------------------------------------------------------------------
-real, parameter :: bound_tol = 1e-7
-
-!
-!----------------------------------------------------------------------
-!
 
 public  coupler_types_init
 public  coupler_type_copy, coupler_type_spawn, coupler_type_set_diags
-public  write_coupler_type_chksums
+public  coupler_type_write_chksums, coupler_type_send_data, coupler_type_data_override
+public  coupler_type_register_restarts, coupler_type_restore_state
+public  coupler_type_copy_data, coupler_type_redistribute_data
 
 public  coupler_type_copy_1d_2d
 public  coupler_type_copy_1d_3d
@@ -213,16 +214,20 @@ character(len=48), parameter                    :: mod_name = 'coupler_types_mod
 !
 
 type, public    :: coupler_3d_values_type
-  character(len=fm_field_name_len)                      :: name = ' ' !< name
-  real, pointer, dimension(:,:,:)                       :: values => NULL() !< values
-  logical                                               :: mean = .true. !< mean
-  logical                                               :: override = .false. !< override
-  integer                                               :: id_diag = 0 !< id_diag
-  character(len=fm_string_len)                          :: long_name = ' ' !< long_name
-  character(len=fm_string_len)                          :: units = ' ' !< units
+  character(len=fm_field_name_len)  :: name = ' '  !< The diagnostic name for this array
+  real, pointer, dimension(:,:,:)   :: values => NULL() !< The pointer to the array of values
+  logical                           :: mean = .true. !< mean
+  logical                           :: override = .false. !< override
+  integer                           :: id_diag = 0 !< The diagnostic id for this array
+  character(len=fm_string_len)      :: long_name = ' ' !< The diagnostic long_name for this array
+  character(len=fm_string_len)      :: units = ' ' !< The units for this array
+  integer                           :: id_rest = 0 !< The id of this array in the restart field
+  logical                           :: may_init = .true. !< If true, there is an internal method
+                                                   !! that can be used to initialize this field
+                                                   !! if it can not be read from a restart file
 end type coupler_3d_values_type
 
-type, public    :: coupler_3d_field_type  !{
+type, public    :: coupler_3d_field_type
   character(len=fm_field_name_len)                      :: name = ' ' !< name
   integer                                               :: num_fields = 0 !< num_fields
   type(coupler_3d_values_type), pointer, dimension(:)   :: field => NULL() !< field
@@ -233,15 +238,17 @@ type, public    :: coupler_3d_field_type  !{
   integer                                               :: atm_tr_index = 0 !< atm_tr_index
   character(len=fm_string_len)                          :: ice_restart_file = ' ' !< ice_restart_file
   character(len=fm_string_len)                          :: ocean_restart_file = ' ' !< ocean_restart_file
+  type(restart_file_type), pointer                      :: rest_type => NULL() !< A pointer to the restart_file_type
+                                                                               !! that is used for this field.
   logical                                               :: use_atm_pressure !< use_atm_pressure
   logical                                               :: use_10m_wind_speed !< use_10m_wind_speed
   logical                                               :: pass_through_ice !< pass_through_ice
   real                                                  :: mol_wt = 0.0 !< mol_wt
 end type coupler_3d_field_type
 
-type, public    :: coupler_3d_bc_type  !{
-  integer                                               :: num_bcs = 0 !< num_bcs
-  type(coupler_3d_field_type), pointer, dimension(:)    :: bc => NULL() !< bc
+type, public    :: coupler_3d_bc_type
+  integer                                            :: num_bcs = 0  !< The number of boundary condition fields
+  type(coupler_3d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary condition fields
 end type coupler_3d_bc_type
 
 !
@@ -249,16 +256,20 @@ end type coupler_3d_bc_type
 !
 
 type, public    :: coupler_2d_values_type
-  character(len=fm_field_name_len)                      :: name = ' ' !< name
-  real, pointer, dimension(:,:)                         :: values => NULL() !< values
-  logical                                               :: mean = .true. !< mean
-  logical                                               :: override = .false. !< override
-  integer                                               :: id_diag = 0 !< id_diag
-  character(len=fm_string_len)                          :: long_name = ' ' !< long_name
-  character(len=fm_string_len)                          :: units = ' ' !< units
+  character(len=fm_field_name_len)  :: name = ' '  !< The diagnostic name for this array
+  real, pointer, dimension(:,:)     :: values => NULL() !< The pointer to the array of values
+  logical                           :: mean = .true. !< mean
+  logical                           :: override = .false. !< override
+  integer                           :: id_diag = 0 !< The diagnostic id for this array
+  character(len=fm_string_len)      :: long_name = ' ' !< The diagnostic long_name for this array
+  character(len=fm_string_len)      :: units = ' ' !< The units for this array
+  integer                           :: id_rest = 0 !< The id of this array in the restart field
+  logical                           :: may_init = .true. !< If true, there is an internal method
+                                                   !! that can be used to initialize this field
+                                                   !! if it can not be read from a restart file
 end type coupler_2d_values_type
 
-type, public    :: coupler_2d_field_type  !{
+type, public    :: coupler_2d_field_type
   character(len=fm_field_name_len)                      :: name = ' ' !< name
   integer                                               :: num_fields = 0 !< num_fields
   type(coupler_2d_values_type), pointer, dimension(:)   :: field => NULL() !< field
@@ -269,15 +280,17 @@ type, public    :: coupler_2d_field_type  !{
   integer                                               :: atm_tr_index = 0 !< atm_tr_index
   character(len=fm_string_len)                          :: ice_restart_file = ' ' !< ice_restart_file
   character(len=fm_string_len)                          :: ocean_restart_file = ' ' !< ocean_restart_file
+  type(restart_file_type), pointer                      :: rest_type => NULL() !< A pointer to the restart_file_type
+                                                                               !! that is used for this field.
   logical                                               :: use_atm_pressure !< use_atm_pressure
   logical                                               :: use_10m_wind_speed !< use_10m_wind_speed
   logical                                               :: pass_through_ice !< pass_through_ice
   real                                                  :: mol_wt = 0.0 !< mol_wt
 end type coupler_2d_field_type
 
-type, public    :: coupler_2d_bc_type  !{
-  integer                                               :: num_bcs = 0 !< num_bcs
-  type(coupler_2d_field_type), pointer, dimension(:)    :: bc => NULL() !< bc
+type, public    :: coupler_2d_bc_type
+  integer                                            :: num_bcs = 0  !< The number of boundary condition fields
+  type(coupler_2d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary condition fields
 end type coupler_2d_bc_type
 
 !
@@ -285,16 +298,19 @@ end type coupler_2d_bc_type
 !
 
 type, public    :: coupler_1d_values_type
-  character(len=fm_field_name_len)                      :: name = ' ' !< name
-  real, pointer, dimension(:)                           :: values => NULL() !< values
-  logical                                               :: mean = .true. !< mean
-  logical                                               :: override = .false. !< override
-  integer                                               :: id_diag = 0 !< id_diag
-  character(len=fm_string_len)                          :: long_name = ' ' !< long_name
-  character(len=fm_string_len)                          :: units = ' ' !< units
+  character(len=fm_field_name_len)  :: name = ' '  !< The diagnostic name for this array
+  real, pointer, dimension(:)       :: values => NULL() !< The pointer to the array of values
+  logical                           :: mean = .true. !< mean
+  logical                           :: override = .false. !< override
+  integer                           :: id_diag = 0 !< The diagnostic id for this array
+  character(len=fm_string_len)      :: long_name = ' ' !< The diagnostic long_name for this array
+  character(len=fm_string_len)      :: units = ' ' !< The units for this array
+  logical                           :: may_init = .true. !< If true, there is an internal method
+                                                   !! that can be used to initialize this field
+                                                   !! if it can not be read from a restart file
 end type coupler_1d_values_type
 
-type, public    :: coupler_1d_field_type  !{
+type, public    :: coupler_1d_field_type
   character(len=fm_field_name_len)                      :: name = ' ' !< name
   integer                                               :: num_fields = 0 !< num_fields
   type(coupler_1d_values_type), pointer, dimension(:)   :: field => NULL() !< field
@@ -311,9 +327,9 @@ type, public    :: coupler_1d_field_type  !{
   real                                                  :: mol_wt = 0.0 !< mol_wt
 end type coupler_1d_field_type
 
-type, public    :: coupler_1d_bc_type  !{
-  integer                                               :: num_bcs = 0 !< num_bcs
-  type(coupler_1d_field_type), pointer, dimension(:)    :: bc => NULL() !< bc
+type, public    :: coupler_1d_bc_type
+  integer                                            :: num_bcs = 0  !< The number of boundary condition fields
+  type(coupler_1d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary condition fields
 end type coupler_1d_bc_type
 
 !
@@ -345,33 +361,59 @@ logical, save   :: module_is_initialized = .false.
 !> This is the interface to spawn one coupler_bc_type into another and then
 !! register diagnostics associated with the new type.
 interface  coupler_type_copy
-  module procedure coupler_type_copy_1d_2d
-  module procedure coupler_type_copy_1d_3d
+  module procedure coupler_type_copy_1d_2d, coupler_type_copy_1d_3d
 end interface coupler_type_copy
 
 !> This is the interface to spawn one coupler_bc_type into another.
 interface  coupler_type_spawn
-  module procedure coupler_type_spawn_1d_2d
-  module procedure coupler_type_spawn_1d_3d
-  module procedure coupler_type_spawn_2d_2d
-  module procedure coupler_type_spawn_2d_3d
-  module procedure coupler_type_spawn_3d_2d
-  module procedure coupler_type_spawn_3d_3d
+  module procedure CT_spawn_1d_2d, CT_spawn_2d_2d, CT_spawn_3d_2d
+  module procedure CT_spawn_1d_3d, CT_spawn_2d_3d, CT_spawn_3d_3d
 end interface coupler_type_spawn
+
+!> This is the interface to copy the field data from one coupler_bc_type
+!! to another of the same rank, size and decomposition.
+interface coupler_type_copy_data
+  module procedure CT_copy_data_2d, CT_copy_data_3d
+end interface coupler_type_copy_data
+
+!> This is the interface to redistribute the field data from one coupler_bc_type
+!! to another of the same rank and global size, but a different decomposition.
+interface coupler_type_redistribute_data
+  module procedure CT_redistribute_data_2d, CT_redistribute_data_3d
+end interface coupler_type_redistribute_data
 
 !> This is the interface to set diagnostics for the arrays in a coupler_bc_type.
 interface coupler_type_set_diags
-  module procedure coupler_type_set_diags_2d
-  module procedure coupler_type_set_diags_3d
+  module procedure CT_set_diags_2d, CT_set_diags_3d
 end interface coupler_type_set_diags
 
+!> This is the interface to write out checksums for the elements of a coupler_bc_type.
+interface coupler_type_write_chksums
+  module procedure CT_write_chksums_2d, CT_write_chksums_3d
+end interface coupler_type_write_chksums
 
-!> This is the interface to write out checksums for the elements of a coupler_bc_type
-interface write_coupler_type_chksums
-  module procedure write_coupler_type_2d_chksums
-  module procedure write_coupler_type_3d_chksums
-end interface write_coupler_type_chksums
+!> This is the interface to write out diagnostics of the arrays in a coupler_bc_type.
+interface coupler_type_send_data
+  module procedure CT_send_data_2d, CT_send_data_3d
+end interface coupler_type_send_data
 
+!> This is the interface to override the values of the arrays in a coupler_bc_type.
+interface coupler_type_data_override
+  module procedure CT_data_override_2d, CT_data_override_3d
+end interface coupler_type_data_override
+
+!> This is the interface to register the fields in a coupler_bc_type to be saved
+!! in restart files.
+interface coupler_type_register_restarts
+  module procedure CT_register_restarts_2d, CT_register_restarts_3d
+  module procedure CT_register_restarts_to_file_2d, CT_register_restarts_to_file_3d
+end interface coupler_type_register_restarts
+
+!> This is the interface to read in the fields in a coupler_bc_type that have
+!! been saved in restart files.
+interface coupler_type_restore_state
+  module procedure CT_restore_state_2d, CT_restore_state_3d
+end interface coupler_type_restore_state
 
 contains
 
@@ -932,10 +974,10 @@ subroutine coupler_type_copy_1d_2d(var_in, var_out, is, ie, js, je,     &
   endif
 
   if (var_in%num_bcs > 0) &
-    call coupler_type_spawn_1d_2d(var_in, var_out, is, ie, js, je, suffix)
+    call CT_spawn_1d_2d(var_in, var_out, is, ie, js, je, suffix)
 
   if ((var_out%num_bcs > 0) .and. (diag_name .ne. ' ')) &
-    call coupler_type_set_diags_2d(var_out, diag_name, axes, time)
+    call CT_set_diags_2d(var_out, diag_name, axes, time)
 
 end subroutine  coupler_type_copy_1d_2d
 
@@ -983,10 +1025,10 @@ subroutine coupler_type_copy_1d_3d(var_in, var_out, is, ie, js, je, kd, &
   endif
 
   if (var_in%num_bcs > 0) &
-    call coupler_type_spawn_1d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
+    call CT_spawn_1d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
 
   if ((var_out%num_bcs > 0) .and. (diag_name .ne. ' ')) &
-    call coupler_type_set_diags_3d(var_out, diag_name, axes, time)
+    call CT_set_diags_3d(var_out, diag_name, axes, time)
 
 end subroutine  coupler_type_copy_1d_3d
 
@@ -1003,7 +1045,7 @@ end subroutine  coupler_type_copy_1d_3d
 !! \throw FATAL, "var_out%bc already associated"
 !! \throw FATAL, "var_out%bc([n])%field already associated"
 !! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
-subroutine coupler_type_spawn_1d_2d(var_in, var_out, is, ie, js, je, suffix)
+subroutine CT_spawn_1d_2d(var_in, var_out, is, ie, js, je, suffix)
 
   type(coupler_1d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
   type(coupler_2d_bc_type), intent(inout) :: var_out !< structure into which to copy information
@@ -1013,7 +1055,7 @@ subroutine coupler_type_spawn_1d_2d(var_in, var_out, is, ie, js, je, suffix)
   integer, intent(in)                     :: je !< upper bound of second dimension
   character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
 
-  character(len=64), parameter    :: sub_name = 'coupler_type_spawn_1d_2d'
+  character(len=64), parameter    :: sub_name = 'CT_spawn_1d_2d'
   character(len=256), parameter   :: error_header =                               &
        '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
   character(len=128)      :: error_msg
@@ -1054,6 +1096,7 @@ subroutine coupler_type_spawn_1d_2d(var_in, var_out, is, ie, js, je, suffix)
         endif
         var_out%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
         var_out%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
+        var_out%bc(n)%field(m)%may_init = var_in%bc(n)%field(m)%may_init
         var_out%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
         if (associated(var_out%bc(n)%field(m)%values)) then
           write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field(', m, ')%values already associated'
@@ -1066,11 +1109,11 @@ subroutine coupler_type_spawn_1d_2d(var_in, var_out, is, ie, js, je, suffix)
 
   endif
 
-end subroutine  coupler_type_spawn_1d_2d
+end subroutine  CT_spawn_1d_2d
 
 
 !#######################################################################
-!> \brief Generate one coupler type using another as a template. 1-D to 3-D version for generic coupler_type_spawn.
+!> \brief Generate one coupler type using another as a template. 1-D to 3-D version for generic CT_spawn.
 !!
 !! Template:
 !!
@@ -1082,7 +1125,7 @@ end subroutine  coupler_type_spawn_1d_2d
 !! \throw FATAL, "var_out%bc already associated"
 !! \throw FATAL, "var_out%bc([n])%field already associated"
 !! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
-subroutine coupler_type_spawn_1d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
+subroutine CT_spawn_1d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
 
   type(coupler_1d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
   type(coupler_3d_bc_type), intent(inout) :: var_out !< structure into which to copy information
@@ -1093,7 +1136,7 @@ subroutine coupler_type_spawn_1d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
   integer, intent(in)                     :: kd !< third dimension
   character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
 
-  character(len=64), parameter    :: sub_name = 'coupler_type_spawn_1d_3d'
+  character(len=64), parameter    :: sub_name = 'CT_spawn_1d_3d'
   character(len=256), parameter   :: error_header =                               &
      '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
   character(len=256)      :: error_msg
@@ -1135,6 +1178,7 @@ subroutine coupler_type_spawn_1d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
         endif
         var_out%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
         var_out%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
+        var_out%bc(n)%field(m)%may_init = var_in%bc(n)%field(m)%may_init
         var_out%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
         if (associated(var_out%bc(n)%field(m)%values)) then
           write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field(', m, ')%values already associated'
@@ -1147,10 +1191,10 @@ subroutine coupler_type_spawn_1d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
 
   endif
 
-end subroutine  coupler_type_spawn_1d_3d
+end subroutine  CT_spawn_1d_3d
 
 !#######################################################################
-!> \brief Generate one coupler type using another as a template. 2-D to 2-D version for generic coupler_type_spawn.
+!> \brief Generate one coupler type using another as a template. 2-D to 2-D version for generic CT_spawn.
 !!
 !! Template:
 !!
@@ -1162,7 +1206,7 @@ end subroutine  coupler_type_spawn_1d_3d
 !! \throw FATAL, "var_out%bc already associated"
 !! \throw FATAL, "var_out%bc([n])%field already associated"
 !! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
-subroutine coupler_type_spawn_2d_2d(var_in, var_out, is, ie, js, je, suffix)
+subroutine CT_spawn_2d_2d(var_in, var_out, is, ie, js, je, suffix)
 
   type(coupler_2d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
   type(coupler_2d_bc_type), intent(inout) :: var_out !< structure into which to copy information
@@ -1172,7 +1216,7 @@ subroutine coupler_type_spawn_2d_2d(var_in, var_out, is, ie, js, je, suffix)
   integer, intent(in)                     :: je !< upper bound of second dimension
   character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
 
-  character(len=64), parameter    :: sub_name = 'coupler_type_spawn_2d_2d'
+  character(len=64), parameter    :: sub_name = 'CT_spawn_2d_2d'
   character(len=256), parameter   :: error_header =                               &
        '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
   character(len=128)      :: error_msg
@@ -1213,6 +1257,7 @@ subroutine coupler_type_spawn_2d_2d(var_in, var_out, is, ie, js, je, suffix)
         endif
         var_out%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
         var_out%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
+        var_out%bc(n)%field(m)%may_init = var_in%bc(n)%field(m)%may_init
         var_out%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
         if (associated(var_out%bc(n)%field(m)%values)) then
           write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field(', m, ')%values already associated'
@@ -1225,11 +1270,11 @@ subroutine coupler_type_spawn_2d_2d(var_in, var_out, is, ie, js, je, suffix)
 
   endif
 
-end subroutine  coupler_type_spawn_2d_2d
+end subroutine  CT_spawn_2d_2d
 
 
 !#######################################################################
-!> \brief Generate one coupler type using another as a template. 2-D to 3-D version for generic coupler_type_spawn.
+!> \brief Generate one coupler type using another as a template. 2-D to 3-D version for generic CT_spawn.
 !!
 !! Template:
 !!
@@ -1241,7 +1286,7 @@ end subroutine  coupler_type_spawn_2d_2d
 !! \throw FATAL, "var_out%bc already associated"
 !! \throw FATAL, "var_out%bc([n])%field already associated"
 !! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
-subroutine coupler_type_spawn_2d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
+subroutine CT_spawn_2d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
 
   type(coupler_2d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
   type(coupler_3d_bc_type), intent(inout) :: var_out !< structure into which to copy information
@@ -1252,7 +1297,7 @@ subroutine coupler_type_spawn_2d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
   integer, intent(in)                     :: kd !< third dimension
   character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
 
-  character(len=64), parameter    :: sub_name = 'coupler_type_spawn_2d_3d'
+  character(len=64), parameter    :: sub_name = 'CT_spawn_2d_3d'
   character(len=256), parameter   :: error_header =                               &
      '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
   character(len=256)      :: error_msg
@@ -1289,11 +1334,12 @@ subroutine coupler_type_spawn_2d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
       do m = 1, var_out%bc(n)%num_fields
         if (present(suffix)) then
           var_out%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
-        else 
+        else
           var_out%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
         endif
         var_out%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
         var_out%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
+        var_out%bc(n)%field(m)%may_init = var_in%bc(n)%field(m)%may_init
         var_out%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
         if (associated(var_out%bc(n)%field(m)%values)) then
           write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field(', m, ')%values already associated'
@@ -1306,10 +1352,10 @@ subroutine coupler_type_spawn_2d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
 
   endif
 
-end subroutine  coupler_type_spawn_2d_3d
+end subroutine  CT_spawn_2d_3d
 
 !#######################################################################
-!> \brief Generate one coupler type using another as a template. 3-D to 2-D version for generic coupler_type_spawn.
+!> \brief Generate one coupler type using another as a template. 3-D to 2-D version for generic CT_spawn.
 !!
 !! Template:
 !!
@@ -1321,7 +1367,7 @@ end subroutine  coupler_type_spawn_2d_3d
 !! \throw FATAL, "var_out%bc already associated"
 !! \throw FATAL, "var_out%bc([n])%field already associated"
 !! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
-subroutine coupler_type_spawn_3d_2d(var_in, var_out, is, ie, js, je, suffix)
+subroutine CT_spawn_3d_2d(var_in, var_out, is, ie, js, je, suffix)
 
   type(coupler_3d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
   type(coupler_2d_bc_type), intent(inout) :: var_out !< structure into which to copy information
@@ -1331,7 +1377,7 @@ subroutine coupler_type_spawn_3d_2d(var_in, var_out, is, ie, js, je, suffix)
   integer, intent(in)                     :: je !< upper bound of second dimension
   character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
 
-  character(len=64), parameter    :: sub_name = 'coupler_type_spawn_1d_2d'
+  character(len=64), parameter    :: sub_name = 'CT_spawn_1d_2d'
   character(len=256), parameter   :: error_header =                               &
        '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
   character(len=128)      :: error_msg
@@ -1372,6 +1418,7 @@ subroutine coupler_type_spawn_3d_2d(var_in, var_out, is, ie, js, je, suffix)
         endif
         var_out%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
         var_out%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
+        var_out%bc(n)%field(m)%may_init = var_in%bc(n)%field(m)%may_init
         var_out%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
         if (associated(var_out%bc(n)%field(m)%values)) then
           write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field(', m, ')%values already associated'
@@ -1384,11 +1431,11 @@ subroutine coupler_type_spawn_3d_2d(var_in, var_out, is, ie, js, je, suffix)
 
   endif
 
-end subroutine  coupler_type_spawn_3d_2d
+end subroutine  CT_spawn_3d_2d
 
 
 !#######################################################################
-!> \brief Generate one coupler type using another as a template. 3-D to 3-D version for generic coupler_type_spawn.
+!> \brief Generate one coupler type using another as a template. 3-D to 3-D version for generic CT_spawn.
 !!
 !! Template:
 !!
@@ -1400,7 +1447,7 @@ end subroutine  coupler_type_spawn_3d_2d
 !! \throw FATAL, "var_out%bc already associated"
 !! \throw FATAL, "var_out%bc([n])%field already associated"
 !! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
-subroutine coupler_type_spawn_3d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
+subroutine CT_spawn_3d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
 
   type(coupler_3d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
   type(coupler_3d_bc_type), intent(inout) :: var_out !< structure into which to copy information
@@ -1411,7 +1458,7 @@ subroutine coupler_type_spawn_3d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
   integer, intent(in)                     :: kd !< third dimension
   character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
 
-  character(len=64), parameter    :: sub_name = 'coupler_type_spawn_3d_3d'
+  character(len=64), parameter    :: sub_name = 'CT_spawn_3d_3d'
   character(len=256), parameter   :: error_header =                               &
      '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
   character(len=256)      :: error_msg
@@ -1453,6 +1500,7 @@ subroutine coupler_type_spawn_3d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
         endif
         var_out%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
         var_out%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
+        var_out%bc(n)%field(m)%may_init = var_in%bc(n)%field(m)%may_init
         var_out%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
         if (associated(var_out%bc(n)%field(m)%values)) then
           write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field(', m, ')%values already associated'
@@ -1465,11 +1513,247 @@ subroutine coupler_type_spawn_3d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
 
   endif
 
-end subroutine  coupler_type_spawn_3d_3d
+end subroutine  CT_spawn_3d_3d
+
+!> This subroutine does a direct copy of the data in all elements of one
+!! coupler_2d_bc_type into another.  Both must have the same array sizes.
+subroutine CT_copy_data_2d(var_in, var_out, &
+                           exclude_flux_type, only_flux_type, pass_through_ice)
+  type(coupler_2d_bc_type),   intent(in)    :: var_in  !< BC_type structure with the data to copy
+  type(coupler_2d_bc_type),   intent(inout) :: var_out !< The recipient BC_type structure
+  character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types of fluxes to exclude from this copy.
+  character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types of fluxes to include from this copy.
+  logical,          optional, intent(in)    :: pass_through_ice !< If true, only copy BCs whose
+                                                       !! value of pass_through ice matches this
+  logical :: copy_bc, first_copy
+  integer :: m, n
+
+  first_copy = .true.
+  do n = 1, var_in%num_bcs
+    copy_bc = .true.
+    if (copy_bc .and. present(exclude_flux_type)) &
+      copy_bc = .not.(trim(var_in%bc(n)%flux_type) == trim(exclude_flux_type))
+    if (copy_bc .and. present(only_flux_type)) &
+      copy_bc = (trim(var_in%bc(n)%flux_type) == trim(only_flux_type))
+    if (copy_bc .and. present(pass_through_ice)) &
+      copy_bc = (pass_through_ice .eqv. var_in%bc(n)%pass_through_ice)
+    if (.not.copy_bc) cycle
+
+    do m = 1, var_in%bc(n)%num_fields
+      if ( associated(var_out%bc(n)%field(m)%values) ) then
+        if (first_copy) then ; first_copy = .false.
+          if ((size(var_in%bc(n)%field(m)%values,1) /= size(var_out%bc(n)%field(m)%values,1)) .or. &
+              (size(var_in%bc(n)%field(m)%values,2) /= size(var_out%bc(n)%field(m)%values,2))) then
+            ! A more consciencious implementation would include a more descriptive error message.
+            call mpp_error(FATAL, "CT_copy_data_2d: There is an array size mismatch when copying "//&
+                           trim(var_out%bc(n)%field(m)%name))
+          endif
+        endif
+
+        var_out%bc(n)%field(m)%values(:,:) = var_in%bc(n)%field(m)%values(:,:)
+      endif
+    enddo
+  enddo
+
+end subroutine CT_copy_data_2d
+
+!> This subroutine does a direct copy of the data in all elements of one
+!! coupler_3d_bc_type into another.  Both types must have the same array sizes.
+subroutine CT_copy_data_3d(var_in, var_out, &
+                           exclude_flux_type, only_flux_type, pass_through_ice)
+  type(coupler_3d_bc_type),   intent(in)    :: var_in  !< BC_type structure with the data to copy
+  type(coupler_3d_bc_type),   intent(inout) :: var_out !< The recipient BC_type structure
+  character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types of fluxes to exclude from this copy.
+  character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types of fluxes to include from this copy.
+  logical,          optional, intent(in)    :: pass_through_ice !< If true, only copy BCs whose
+                                                       !! value of pass_through ice matches this
+  logical :: copy_bc, first_copy
+  integer :: m, n
+
+  first_copy = .true.
+  do n = 1, var_in%num_bcs
+    copy_bc = .true.
+    if (copy_bc .and. present(exclude_flux_type)) &
+      copy_bc = .not.(trim(var_in%bc(n)%flux_type) == trim(exclude_flux_type))
+    if (copy_bc .and. present(only_flux_type)) &
+      copy_bc = (trim(var_in%bc(n)%flux_type) == trim(only_flux_type))
+    if (copy_bc .and. present(pass_through_ice)) &
+      copy_bc = (pass_through_ice .eqv. var_in%bc(n)%pass_through_ice)
+    if (.not.copy_bc) cycle
+
+    do m = 1, var_in%bc(n)%num_fields
+      if ( associated(var_out%bc(n)%field(m)%values) ) then
+        if (first_copy) then ; first_copy = .false.
+          if ((size(var_in%bc(n)%field(m)%values,1) /= size(var_out%bc(n)%field(m)%values,1)) .or. &
+              (size(var_in%bc(n)%field(m)%values,2) /= size(var_out%bc(n)%field(m)%values,2)) .or. &
+              (size(var_in%bc(n)%field(m)%values,3) /= size(var_out%bc(n)%field(m)%values,3))) then
+            ! A more consciencious implementation would include a more descriptive error message.
+            call mpp_error(FATAL, "CT_copy_data_3d: There is an array size mismatch when copying "//&
+                           trim(var_out%bc(n)%field(m)%name))
+          endif
+        endif
+
+        var_out%bc(n)%field(m)%values(:,:,:) = var_in%bc(n)%field(m)%values(:,:,:)
+      endif
+    enddo
+  enddo
+
+end subroutine CT_copy_data_3d
+
+!> This subroutine redistributes the data in all elements of one coupler_2d_bc_type
+!! into another, which may be on different processors with a different decomposition.
+subroutine CT_redistribute_data_2d(var_in, domain_in, var_out, domain_out, complete)
+  type(coupler_2d_bc_type), intent(in)    :: var_in     !< BC_type structure with the data to copy (intent in)
+  type(domain2D),           intent(in)    :: domain_in  !< The FMS domain for the input structure
+  type(coupler_2d_bc_type), intent(inout) :: var_out    !< The recipient BC_type structure (data intent out)
+  type(domain2D),           intent(in)    :: domain_out !< The FMS domain for the output structure
+  logical,        optional, intent(in)    :: complete   !< If true, complete the updates
+
+  real, pointer, dimension(:,:) :: null_ptr2D => NULL()
+  logical :: do_in, do_out, do_complete
+  integer :: m, n, fc, fc_in, fc_out
+
+  do_complete = .true. ; if (present(complete)) do_complete = complete
+
+  ! Figure out whether this PE has valid input or output fields or both.
+  do_in = .true.  ! could become associated(var_in)
+  do_out = .true. ! could become associated(var_out)
+
+  fc_in = 0 ; fc_out = 0
+  if (do_in) then ; do n = 1, var_in%num_bcs ; do m = 1, var_in%bc(n)%num_fields
+    if (associated(var_in%bc(n)%field(m)%values)) fc_in = fc_in + 1
+  enddo ; enddo ; endif
+  if (fc_in == 0) do_in = .false.
+  if (do_out) then ; do n = 1, var_out%num_bcs ; do m = 1, var_out%bc(n)%num_fields
+    if (associated(var_out%bc(n)%field(m)%values)) fc_out = fc_out + 1
+  enddo ; enddo ; endif
+  if (fc_out == 0) do_out = .false.
+
+  if (do_in .and. do_out) then
+    if (var_in%num_bcs /= var_out%num_bcs) call mpp_error(FATAL, &
+      "Mismatch in num_bcs in CT_copy_data_2d.")
+    if (fc_in /= fc_out) call mpp_error(FATAL, &
+      "Mismatch in the total number of fields in CT_copy_data_2d.")
+  endif
+
+  if (.not.(do_in .or. do_out)) return
+
+  fc = 0
+  if (do_in .and. do_out) then
+    do n = 1, var_in%num_bcs ; do m = 1, var_in%bc(n)%num_fields
+      if ( associated(var_in%bc(n)%field(m)%values) .neqv. &
+           associated(var_out%bc(n)%field(m)%values) ) &
+        call mpp_error(FATAL, &
+          "Mismatch in which fields ar associated in CT_copy_data_2d.")
+
+      if ( associated(var_in%bc(n)%field(m)%values) ) then
+        fc = fc + 1
+        call mpp_redistribute(domain_in, var_in%bc(n)%field(m)%values, &
+                              domain_out, var_out%bc(n)%field(m)%values, &
+                              complete=(do_complete.and.(fc==fc_in)) )
+      endif
+    enddo ; enddo
+  elseif (do_in) then
+    do n = 1, var_in%num_bcs ; do m = 1, var_in%bc(n)%num_fields
+      if ( associated(var_in%bc(n)%field(m)%values) ) then
+        fc = fc + 1
+        call mpp_redistribute(domain_in, var_in%bc(n)%field(m)%values, &
+                              domain_out, null_ptr2D, &
+                              complete=(do_complete.and.(fc==fc_in)) )
+      endif
+    enddo ; enddo
+  elseif (do_out) then
+    do n = 1, var_out%num_bcs ; do m = 1, var_out%bc(n)%num_fields
+      if ( associated(var_out%bc(n)%field(m)%values) ) then
+        fc = fc + 1
+        call mpp_redistribute(domain_in, null_ptr2D, &
+                              domain_out, var_out%bc(n)%field(m)%values, &
+                              complete=(do_complete.and.(fc==fc_out)) )
+      endif
+    enddo ; enddo
+  endif
+
+end subroutine CT_redistribute_data_2d
+
+
+!> This subroutine redistributes the data in all elements of one coupler_2d_bc_type
+!! into another, which may be on different processors with a different decomposition.
+subroutine CT_redistribute_data_3d(var_in, domain_in, var_out, domain_out, complete)
+  type(coupler_3d_bc_type), intent(in)    :: var_in     !< BC_type structure with the data to copy (intent in)
+  type(domain2D),           intent(in)    :: domain_in  !< The FMS domain for the input structure
+  type(coupler_3d_bc_type), intent(inout) :: var_out    !< The recipient BC_type structure (data intent out)
+  type(domain2D),           intent(in)    :: domain_out !< The FMS domain for the output structure
+  logical,        optional, intent(in)    :: complete   !< If true, complete the updates
+
+  real, pointer, dimension(:,:,:) :: null_ptr3D => NULL()
+  logical :: do_in, do_out, do_complete
+  integer :: m, n, fc, fc_in, fc_out
+
+  do_complete = .true. ; if (present(complete)) do_complete = complete
+
+  ! Figure out whether this PE has valid input or output fields or both.
+  do_in = .true.  ! could become associated(var_in)
+  do_out = .true. ! could become associated(var_out)
+
+  fc_in = 0 ; fc_out = 0
+  if (do_in) then ; do n = 1, var_in%num_bcs ; do m = 1, var_in%bc(n)%num_fields
+    if (associated(var_in%bc(n)%field(m)%values)) fc_in = fc_in + 1
+  enddo ; enddo ; endif
+  if (fc_in == 0) do_in = .false.
+  if (do_out) then ; do n = 1, var_out%num_bcs ; do m = 1, var_out%bc(n)%num_fields
+    if (associated(var_out%bc(n)%field(m)%values)) fc_out = fc_out + 1
+  enddo ; enddo ; endif
+  if (fc_out == 0) do_out = .false.
+
+  if (do_in .and. do_out) then
+    if (var_in%num_bcs /= var_out%num_bcs) call mpp_error(FATAL, &
+      "Mismatch in num_bcs in CT_copy_data_3d.")
+    if (fc_in /= fc_out) call mpp_error(FATAL, &
+      "Mismatch in the total number of fields in CT_copy_data_3d.")
+  endif
+
+  if (.not.(do_in .or. do_out)) return
+
+  fc = 0
+  if (do_in .and. do_out) then
+    do n = 1, var_in%num_bcs ; do m = 1, var_in%bc(n)%num_fields
+      if ( associated(var_in%bc(n)%field(m)%values) .neqv. &
+           associated(var_out%bc(n)%field(m)%values) ) &
+        call mpp_error(FATAL, &
+          "Mismatch in which fields ar associated in CT_copy_data_3d.")
+
+      if ( associated(var_in%bc(n)%field(m)%values) ) then
+        fc = fc + 1
+        call mpp_redistribute(domain_in, var_in%bc(n)%field(m)%values, &
+                              domain_out, var_out%bc(n)%field(m)%values, &
+                              complete=(do_complete.and.(fc==fc_in)) )
+      endif
+    enddo ; enddo
+  elseif (do_in) then
+    do n = 1, var_in%num_bcs ; do m = 1, var_in%bc(n)%num_fields
+      if ( associated(var_in%bc(n)%field(m)%values) ) then
+        fc = fc + 1
+        call mpp_redistribute(domain_in, var_in%bc(n)%field(m)%values, &
+                              domain_out, null_ptr3D, &
+                              complete=(do_complete.and.(fc==fc_in)) )
+      endif
+    enddo ; enddo
+  elseif (do_out) then
+    do n = 1, var_out%num_bcs ; do m = 1, var_out%bc(n)%num_fields
+      if ( associated(var_out%bc(n)%field(m)%values) ) then
+        fc = fc + 1
+        call mpp_redistribute(domain_in, null_ptr3D, &
+                              domain_out, var_out%bc(n)%field(m)%values, &
+                              complete=(do_complete.and.(fc==fc_out)) )
+      endif
+    enddo ; enddo
+  endif
+
+end subroutine CT_redistribute_data_3d
 
 
 !> This routine registers the diagnostics of a coupler_2d_bc_type.
-subroutine coupler_type_set_diags_2d(var, diag_name, axes, time)
+subroutine CT_set_diags_2d(var, diag_name, axes, time)
   type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure for which to register diagnostics
   character(len=*),         intent(in)    :: diag_name !< name for diagnostic file--if blank, then don't register the fields
   integer, dimension(:),    intent(in)    :: axes !< array of axes identifiers for diagnostic variable registration
@@ -1477,7 +1761,7 @@ subroutine coupler_type_set_diags_2d(var, diag_name, axes, time)
 
   integer :: m, n
 
-  if (diag_name .eq. ' ') return 
+  if (diag_name .eq. ' ') return
 
   if (size(axes) < 2) then
     call mpp_error(FATAL, '==>Error from ' // trim(mod_name) //&
@@ -1492,10 +1776,10 @@ subroutine coupler_type_set_diags_2d(var, diag_name, axes, time)
     enddo
   enddo
 
-end subroutine coupler_type_set_diags_2d
+end subroutine CT_set_diags_2d
 
 !> This routine registers the diagnostics of a coupler_3d_bc_type.
-subroutine coupler_type_set_diags_3d(var, diag_name, axes, time)
+subroutine CT_set_diags_3d(var, diag_name, axes, time)
   type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure for which to register diagnostics
   character(len=*),         intent(in)    :: diag_name !< name for diagnostic file--if blank, then don't register the fields
   integer, dimension(:),    intent(in)    :: axes !< array of axes identifiers for diagnostic variable registration
@@ -1503,7 +1787,7 @@ subroutine coupler_type_set_diags_3d(var, diag_name, axes, time)
 
   integer :: m, n
 
-  if (diag_name .eq. ' ') return 
+  if (diag_name .eq. ' ') return
 
   if (size(axes) < 3) then
     call mpp_error(FATAL, '==>Error from ' // trim(mod_name) //&
@@ -1518,10 +1802,354 @@ subroutine coupler_type_set_diags_3d(var, diag_name, axes, time)
     enddo
   enddo
 
-end subroutine coupler_type_set_diags_3d
+end subroutine CT_set_diags_3d
+
+!> This subroutine writes out all diagnostics of elements of a coupler_2d_bc_type
+subroutine CT_send_data_2d(var, Time)
+  type(coupler_2d_bc_type), intent(in) :: var  !< BC_type structure with the diagnostics to write
+  type(time_type),          intent(in) :: time !< The current model time
+
+  integer :: m, n
+  logical :: used
+
+  do n = 1, var%num_bcs ; do m = 1, var%bc(n)%num_fields
+    used = send_data(var%bc(n)%field(m)%id_diag, var%bc(n)%field(m)%values, Time)
+  enddo ; enddo
+
+end subroutine CT_send_data_2d
+
+!> This subroutine writes out all diagnostics of elements of a coupler_2d_bc_type
+subroutine CT_send_data_3d(var, Time)
+  type(coupler_3d_bc_type), intent(in) :: var  !< BC_type structure with the diagnostics to write
+  type(time_type),          intent(in) :: time !< The current model time
+
+  integer :: m, n
+  logical :: used
+
+  do n = 1, var%num_bcs ; do m = 1, var%bc(n)%num_fields
+    used = send_data(var%bc(n)%field(m)%id_diag, var%bc(n)%field(m)%values, Time)
+  enddo ; enddo
+
+end subroutine CT_send_data_3d
+
+!> This subroutine registers the fields in a coupler_2d_bc_type to be saved
+!! in restart files specified in the field table.
+subroutine CT_register_restarts_2d(var, bc_rest_files, num_rest_files, mpp_domain, ocean_restart)
+  type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
+  type(restart_file_type),  dimension(:), pointer :: bc_rest_files !< Structures describing the restart files
+  integer,                  intent(out) :: num_rest_files !< The number of restart files to use
+  type(domain2D),           intent(in)  :: mpp_domain     !< The FMS domain to use for this registration call
+  logical,        optional, intent(in)  :: ocean_restart  !< If true, use the ocean restart file name.
+
+  character(len=80), dimension(max(1,var%num_bcs)) :: rest_file_names
+  character(len=80) :: file_nm
+  logical :: ocn_rest
+  integer :: f, n, m
+
+  ocn_rest = .true. ; if (present(ocean_restart)) ocn_rest = ocean_restart
+
+  ! Determine the number and names of the restart files
+  num_rest_files = 0
+  do n = 1, var%num_bcs
+    if (var%bc(n)%num_fields <= 0) cycle
+    file_nm = trim(var%bc(n)%ice_restart_file)
+    if (ocn_rest) file_nm = trim(var%bc(n)%ocean_restart_file)
+    do f = 1, num_rest_files
+      if (trim(file_nm) == trim(rest_file_names(f))) exit
+    enddo
+    if (f>num_rest_files) then
+      num_rest_files = num_rest_files + 1
+      rest_file_names(f) = trim(file_nm)
+    endif
+  enddo
+
+  if (num_rest_files == 0) return
+
+  ! Register the fields with the restart files
+  allocate(bc_rest_files(num_rest_files))
+  do n = 1, var%num_bcs
+    if (var%bc(n)%num_fields <= 0) cycle
+
+    file_nm = trim(var%bc(n)%ice_restart_file)
+    if (ocn_rest) file_nm = trim(var%bc(n)%ocean_restart_file)
+    do f = 1, num_rest_files
+      if (trim(file_nm) == trim(rest_file_names(f))) exit
+    enddo
+
+    var%bc(n)%rest_type => bc_rest_files(f)
+    do m = 1, var%bc(n)%num_fields
+      var%bc(n)%field(m)%id_rest = register_restart_field(bc_rest_files(f), &
+              rest_file_names(f), var%bc(n)%field(m)%name, var%bc(n)%field(m)%values, &
+              mpp_domain, mandatory=.not.var%bc(n)%field(m)%may_init )
+    enddo
+  enddo
+
+end subroutine CT_register_restarts_2d
+
+!> This subroutine registers the fields in a coupler_2d_bc_type to be saved
+!! in the specified restart file.
+subroutine CT_register_restarts_to_file_2d(var, file_name, rest_file, mpp_domain)
+  type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
+  character(len=*),         intent(in)    :: file_name !< The name of the restart file
+  type(restart_file_type),  pointer       :: rest_file !< A (possibly associated) structure describing the restart file
+  type(domain2D),           intent(in)    :: mpp_domain !< The FMS domain to use for this registration call
+
+  integer :: n, m
+
+  ! Register the fields with the restart file
+  if (.not.associated(rest_file)) allocate(rest_file)
+  do n = 1, var%num_bcs
+    if (var%bc(n)%num_fields <= 0) cycle
+
+    var%bc(n)%rest_type => rest_file
+    do m = 1, var%bc(n)%num_fields
+      var%bc(n)%field(m)%id_rest = register_restart_field(rest_file, &
+              file_name, var%bc(n)%field(m)%name, var%bc(n)%field(m)%values, &
+              mpp_domain, mandatory=.not.var%bc(n)%field(m)%may_init )
+    enddo
+  enddo
+
+end subroutine CT_register_restarts_to_file_2d
+
+!> This subroutine registers the fields in a coupler_3d_bc_type to be saved
+!! in restart files specified in the field table.
+subroutine CT_register_restarts_3d(var, bc_rest_files, num_rest_files, mpp_domain, ocean_restart)
+  type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
+  type(restart_file_type),  dimension(:), pointer :: bc_rest_files !< Structures describing the restart files
+  integer,                  intent(out)   :: num_rest_files !< The number of restart files to use
+  type(domain2D),           intent(in)    :: mpp_domain     !< The FMS domain to use for this registration call
+  logical,        optional, intent(in)    :: ocean_restart  !< If true, use the ocean restart file name.
+
+  character(len=80), dimension(max(1,var%num_bcs)) :: rest_file_names
+  character(len=80) :: file_nm
+  logical :: ocn_rest
+  integer :: f, n, m, id_restart
+
+  ocn_rest = .true. ; if (present(ocean_restart)) ocn_rest = ocean_restart
+
+  ! Determine the number and names of the restart files
+  num_rest_files = 0
+  do n = 1, var%num_bcs
+    if (var%bc(n)%num_fields <= 0) cycle
+    file_nm = trim(var%bc(n)%ice_restart_file)
+    if (ocn_rest) file_nm = trim(var%bc(n)%ocean_restart_file)
+    do f = 1, num_rest_files
+      if (trim(file_nm) == trim(rest_file_names(f))) exit
+    enddo
+    if (f>num_rest_files) then
+      num_rest_files = num_rest_files + 1
+      rest_file_names(f) = trim(file_nm)
+    endif
+  enddo
+
+  if (num_rest_files == 0) return
+
+  ! Register the fields with the restart files
+  allocate(bc_rest_files(num_rest_files))
+  do n = 1, var%num_bcs
+    if (var%bc(n)%num_fields <= 0) cycle
+    file_nm = trim(var%bc(n)%ice_restart_file)
+    if (ocn_rest) file_nm = trim(var%bc(n)%ocean_restart_file)
+    do f = 1, num_rest_files
+      if (trim(file_nm) == trim(rest_file_names(f))) exit
+    enddo
+
+    var%bc(n)%rest_type => bc_rest_files(f)
+    do m = 1, var%bc(n)%num_fields
+      var%bc(n)%field(m)%id_rest = register_restart_field(bc_rest_files(f), &
+              rest_file_names(f), var%bc(n)%field(m)%name, var%bc(n)%field(m)%values, &
+              mpp_domain, mandatory=.not.var%bc(n)%field(m)%may_init )
+    enddo
+  enddo
+
+end subroutine CT_register_restarts_3d
+
+!> This subroutine registers the fields in a coupler_3d_bc_type to be saved
+!! in the specified restart file.
+subroutine CT_register_restarts_to_file_3d(var, file_name, rest_file, mpp_domain)
+  type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
+  character(len=*),         intent(in)  :: file_name !< The name of the restart file
+  type(restart_file_type),  pointer     :: rest_file !< A (possibly associated) structure describing the restart file
+  type(domain2D),           intent(in)  :: mpp_domain     !< The FMS domain to use for this registration call
+
+  integer :: n, m
+
+  ! Register the fields with the restart file
+  if (.not.associated(rest_file)) allocate(rest_file)
+  do n = 1, var%num_bcs
+    if (var%bc(n)%num_fields <= 0) cycle
+
+    var%bc(n)%rest_type => rest_file
+    do m = 1, var%bc(n)%num_fields
+      var%bc(n)%field(m)%id_rest = register_restart_field(rest_file, &
+              file_name, var%bc(n)%field(m)%name, var%bc(n)%field(m)%values, &
+              mpp_domain, mandatory=.not.var%bc(n)%field(m)%may_init )
+    enddo
+  enddo
+
+end subroutine CT_register_restarts_to_file_3d
+
+!> This subroutine reads in the fields in a coupler_2d_bc_type that have
+!! been saved in restart files.
+subroutine CT_restore_state_2d(var, directory, all_or_nothing, &
+                                         all_required, test_by_field)
+  type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to restore from restart files
+  character(len=*), optional, intent(in)  :: directory !< A directory where the restart files should
+                                                  !! be found.  The default for FMS is 'INPUT'.
+  logical,        optional, intent(in)    :: all_or_nothing !< If true and there are non-mandatory
+                                                  !! restart fields, it is still an error if some
+                                                  !! fields are read successfully but others are not.
+  logical,        optional, intent(in)    :: all_required !< If true, all fields must be successfully
+                                                  !! read from the restart file, even if they were
+                                                  !! registered as not mandatory.
+  logical,        optional, intent(in)    :: test_by_field !< If true, all or none of the variables
+                                                  !! in a single field must be read successfully.
+
+  integer :: n, m, num_fld
+  character(len=80) :: unset_varname
+  logical :: any_set, all_set, all_var_set, any_var_set, var_set
+
+  any_set = .false. ; all_set = .true. ; num_fld = 0 ; unset_varname = ""
+
+  do n = 1, var%num_bcs
+    any_var_set = .false. ; all_var_set = .true.
+    do m = 1, var%bc(n)%num_fields
+      var_set = .false.
+      if (var%bc(n)%field(m)%id_rest > 0) then
+        var_set = query_initialized(var%bc(n)%rest_type, var%bc(n)%field(m)%id_rest)
+        if (.not.var_set) then
+          call restore_state(var%bc(n)%rest_type, var%bc(n)%field(m)%id_rest, &
+                             directory=directory, nonfatal_missing_files=.true.)
+          var_set = query_initialized(var%bc(n)%rest_type, var%bc(n)%field(m)%id_rest)
+        endif
+      endif
+
+      if (.not.var_set) unset_varname = trim(var%bc(n)%field(m)%name)
+      if (var_set) any_set = .true.
+      if (all_set) all_set = var_set
+      if (var_set) any_var_set = .true.
+      if (all_var_set) all_var_set = var_set
+    enddo
+
+    num_fld = num_fld + var%bc(n)%num_fields
+    if ((var%bc(n)%num_fields > 0) .and. present(test_by_field)) then
+      if (test_by_field .and. (all_var_set .neqv. any_var_set)) call mpp_error(FATAL, &
+             "CT_restore_state_2d: test_by_field is true, and "//&
+             trim(unset_varname)//" was not read but some other fields in "//&
+             trim(trim(var%bc(n)%name))//" were.")
+    endif
+  enddo
+
+  if ((num_fld > 0) .and. present(all_or_nothing)) then
+    if (all_or_nothing .and. (all_set .neqv. any_set)) call mpp_error(FATAL, &
+           "CT_restore_state_2d: all_or_nothing is true, and "//&
+           trim(unset_varname)//" was not read but some other fields were.")
+  endif
+
+  if (present(all_required)) then ; if (all_required .and. .not.all_set) then
+    call mpp_error(FATAL, "CT_restore_state_2d: all_required is true, but "//&
+           trim(unset_varname)//" was not read from its restart file.")
+  endif ; endif
+
+end subroutine CT_restore_state_2d
+
+
+!> This subroutine reads in the fields in a coupler_3d_bc_type that have
+!! been saved in restart files.
+subroutine CT_restore_state_3d(var, directory, all_or_nothing, &
+                                         all_required, test_by_field)
+  type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to restore from restart files
+  character(len=*), optional, intent(in)  :: directory !< A directory where the restart files should
+                                                  !! be found.  The default for FMS is 'INPUT'.
+  logical,        optional, intent(in)    :: all_or_nothing !< If true and there are non-mandatory
+                                                  !! restart fields, it is still an error if some
+                                                  !! fields are read successfully but others are not.
+  logical,        optional, intent(in)    :: all_required !< If true, all fields must be successfully
+                                                  !! read from the restart file, even if they were
+                                                  !! registered as not mandatory.
+  logical,        optional, intent(in)    :: test_by_field !< If true, all or none of the variables
+                                                  !! in a single field must be read successfully.
+
+  integer :: n, m, num_fld
+  character(len=80) :: unset_varname
+  logical :: any_set, all_set, all_var_set, any_var_set, var_set
+
+  any_set = .false. ; all_set = .true. ; num_fld = 0 ; unset_varname = ""
+
+  do n = 1, var%num_bcs
+    any_var_set = .false. ; all_var_set = .true.
+    do m = 1, var%bc(n)%num_fields
+      var_set = .false.
+      if (var%bc(n)%field(m)%id_rest > 0) then
+        var_set = query_initialized(var%bc(n)%rest_type, var%bc(n)%field(m)%id_rest)
+        if (.not.var_set) then
+          call restore_state(var%bc(n)%rest_type, var%bc(n)%field(m)%id_rest, &
+                             directory=directory, nonfatal_missing_files=.true.)
+          var_set = query_initialized(var%bc(n)%rest_type, var%bc(n)%field(m)%id_rest)
+        endif
+      endif
+
+      if (.not.var_set) unset_varname = trim(var%bc(n)%field(m)%name)
+
+      if (var_set) any_set = .true.
+      if (all_set) all_set = var_set
+      if (var_set) any_var_set = .true.
+      if (all_var_set) all_var_set = var_set
+    enddo
+
+    num_fld = num_fld + var%bc(n)%num_fields
+    if ((var%bc(n)%num_fields > 0) .and. present(test_by_field)) then
+      if (test_by_field .and. (all_var_set .neqv. any_var_set)) call mpp_error(FATAL, &
+             "CT_restore_state_3d: test_by_field is true, and "//&
+             trim(unset_varname)//" was not read but some other fields in "//&
+             trim(trim(var%bc(n)%name))//" were.")
+    endif
+  enddo
+
+  if ((num_fld > 0) .and. present(all_or_nothing)) then
+    if (all_or_nothing .and. (all_set .neqv. any_set)) call mpp_error(FATAL, &
+           "CT_restore_state_3d: all_or_nothing is true, and "//&
+           trim(unset_varname)//" was not read but some other fields were.")
+  endif
+
+  if (present(all_required)) then ; if (all_required .and. .not.all_set) then
+    call mpp_error(FATAL, "CT_restore_state_3d: all_required is true, but "//&
+           trim(unset_varname)//" was not read from its restart file.")
+  endif ; endif
+
+end subroutine CT_restore_state_3d
+
+
+!> This subroutine potentially overrides the values in a coupler_2d_bc_type
+subroutine CT_data_override_2d(gridname, var, Time)
+  character(len=3),         intent(in) :: gridname !< 3-character long model grid ID
+  type(coupler_2d_bc_type), intent(in) :: var  !< BC_type structure to override
+  type(time_type),          intent(in) :: time !< The current model time
+
+  integer :: m, n
+
+  do n = 1, var%num_bcs ; do m = 1, var%bc(n)%num_fields
+    call data_override(gridname, var%bc(n)%field(m)%name, var%bc(n)%field(m)%values, Time)
+  enddo ; enddo
+
+end subroutine CT_data_override_2d
+
+!> This subroutine potentially overrides the values in a coupler_3d_bc_type
+subroutine CT_data_override_3d(gridname, var, Time)
+  character(len=3),         intent(in) :: gridname !< 3-character long model grid ID
+  type(coupler_3d_bc_type), intent(in) :: var  !< BC_type structure to override
+  type(time_type),          intent(in) :: time !< The current model time
+
+  integer :: m, n
+
+  do n = 1, var%num_bcs ; do m = 1, var%bc(n)%num_fields
+    call data_override(gridname, var%bc(n)%field(m)%name, var%bc(n)%field(m)%values, Time)
+  enddo ; enddo
+
+end subroutine CT_data_override_3d
 
 !> This subroutine writes out checksums for the elements of a coupler_2d_bc_type
-subroutine write_coupler_type_2d_chksums(var, outunit, name_lead)
+subroutine CT_write_chksums_2d(var, outunit, name_lead)
   type(coupler_2d_bc_type),   intent(in) :: var  !< BC_type structure for which to register diagnostics
   integer,                    intent(in) :: outunit !< The index of a open output file
   character(len=*), optional, intent(in) :: name_lead !< An optional prefix for the variable names
@@ -1538,10 +2166,10 @@ subroutine write_coupler_type_2d_chksums(var, outunit, name_lead)
     write(outunit, '("   CHECKSUM:: ",A40," = ",Z20)') trim(var_name), mpp_chksum(var%bc(n)%field(m)%values)
   enddo ; enddo
 
-end subroutine write_coupler_type_2d_chksums
+end subroutine CT_write_chksums_2d
 
 !> This subroutine writes out checksums for the elements of a coupler_3d_bc_type
-subroutine write_coupler_type_3d_chksums(var, outunit, name_lead)
+subroutine CT_write_chksums_3d(var, outunit, name_lead)
   type(coupler_3d_bc_type),   intent(in) :: var  !< BC_type structure for which to register diagnostics
   integer,                    intent(in) :: outunit !< The index of a open output file
   character(len=*), optional, intent(in) :: name_lead !< An optional prefix for the variable names
@@ -1558,6 +2186,6 @@ subroutine write_coupler_type_3d_chksums(var, outunit, name_lead)
     write(outunit, '("   CHECKSUM:: ",A40," = ",Z20)') var_name, mpp_chksum(var%bc(n)%field(m)%values)
   enddo ; enddo
 
-end subroutine write_coupler_type_3d_chksums
+end subroutine CT_write_chksums_3d
 
 end module coupler_types_mod
