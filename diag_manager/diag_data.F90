@@ -638,7 +638,7 @@ MODULE diag_data_mod
   ! <DATA NAME="max_output_fields" TYPE="INTEGER" DEFAULT="300">
   !   Maximum number of output fields.  Increase via the diag_manager_nml namelist.
   ! </DATA>
-  ! <DATA NAME="max_input_fields" TYPE="INTEGER" DEFAULT="300">
+  ! <DATA NAME="max_input_fields" TYPE="INTEGER" DEFAULT="600">
   !   Maximum number of input fields.  Increase via the diag_manager_nml namelist.
   ! </DATA>
   ! <DATA NAME="max_out_per_in_field" TYPE="INTEGER" DEFAULT="150">
@@ -690,7 +690,7 @@ MODULE diag_data_mod
   LOGICAL :: mix_snapshot_average_fields =.FALSE.
   INTEGER :: max_files = 31 !< Maximum number of output files allowed.  Increase via diag_manager_nml.
   INTEGER :: max_output_fields = 300 !< Maximum number of output fields.  Increase via diag_manager_nml.
-  INTEGER :: max_input_fields = 300 !< Maximum number of input fields.  Increase via diag_manager_nml.
+  INTEGER :: max_input_fields = 600 !< Maximum number of input fields.  Increase via diag_manager_nml.
   INTEGER :: max_out_per_in_field = 150 !< Maximum number of output_fields per input_field.  Increase via diag_manager_nml.
   INTEGER :: max_axes = 60 !< Maximum number of independent axes.
   LOGICAL :: do_diag_field_log = .FALSE.
