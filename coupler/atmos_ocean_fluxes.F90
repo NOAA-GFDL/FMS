@@ -525,8 +525,9 @@ subroutine atmos_ocean_fluxes_init(gas_fluxes, gas_fields_atm, gas_fields_ice, v
 
   !>       Determine the number of flux fields.
   gas_fluxes%num_bcs = fm_util_get_length('/coupler_mod/fluxes/')
-  gas_fields_atm%num_bcs = gas_fluxes%num_bcs
-  gas_fields_ice%num_bcs = gas_fluxes%num_bcs
+  gas_fluxes%set = .true.
+  gas_fields_atm%num_bcs = gas_fluxes%num_bcs ; gas_fields_atm%set = .true.
+  gas_fields_ice%num_bcs = gas_fluxes%num_bcs ; gas_fields_ice%set = .true.
   if (gas_fluxes%num_bcs .lt. 0) then
     call mpp_error(FATAL, trim(error_header) // ' Could not get number of fluxes')
   elseif (gas_fluxes%num_bcs .eq. 0) then

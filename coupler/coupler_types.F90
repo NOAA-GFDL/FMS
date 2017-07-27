@@ -199,7 +199,7 @@ public  coupler_type_write_chksums, coupler_type_send_data, coupler_type_data_ov
 public  coupler_type_register_restarts, coupler_type_restore_state
 public  coupler_type_increment_data, coupler_type_rescale_data
 public  coupler_type_copy_data, coupler_type_redistribute_data
-public  coupler_type_destructor
+public  coupler_type_destructor, coupler_type_initialized
 
 public  coupler_type_copy_1d_2d
 public  coupler_type_copy_1d_3d
@@ -251,6 +251,7 @@ end type coupler_3d_field_type
 type, public :: coupler_3d_bc_type
   integer                                            :: num_bcs = 0  !< The number of boundary condition fields
   type(coupler_3d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary condition fields
+  logical    :: set = .false.       !< If true, this type has been initialized
   integer    :: isd, isc, iec, ied  !< The i-direction data and computational domain index ranges for this type
   integer    :: jsd, jsc, jec, jed  !< The j-direction data and computational domain index ranges for this type
   integer    :: ks, ke              !< The k-direction index ranges for this type
@@ -296,6 +297,7 @@ end type coupler_2d_field_type
 type, public    :: coupler_2d_bc_type
   integer                                            :: num_bcs = 0  !< The number of boundary condition fields
   type(coupler_2d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary condition fields
+  logical    :: set = .false.       !< If true, this type has been initialized
   integer    :: isd, isc, iec, ied  !< The i-direction data and computational domain index ranges for this type
   integer    :: jsd, jsc, jec, jed  !< The j-direction data and computational domain index ranges for this type
 end type coupler_2d_bc_type
@@ -337,6 +339,7 @@ end type coupler_1d_field_type
 type, public    :: coupler_1d_bc_type
   integer                                            :: num_bcs = 0  !< The number of boundary condition fields
   type(coupler_1d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary condition fields
+  logical    :: set = .false.       !< If true, this type has been initialized
 end type coupler_1d_bc_type
 
 !
@@ -433,6 +436,11 @@ end interface coupler_type_register_restarts
 interface coupler_type_restore_state
   module procedure CT_restore_state_2d, CT_restore_state_3d
 end interface coupler_type_restore_state
+
+!> This function interface indicates whether a coupler_bc_type has been initialized.
+interface coupler_type_initialized
+  module procedure CT_initialized_1d, CT_initialized_2d, CT_initialized_3d
+end interface coupler_type_initialized
 
 !> This is the interface to deallocate any data associated with a coupler_bc_type.
 interface coupler_type_destructor
@@ -992,19 +1000,19 @@ subroutine coupler_type_copy_1d_2d(var_in, var_out, is, ie, js, je,     &
   character(len=400)      :: error_msg
   integer                 :: m, n
 
-  if (var_out%num_bcs .ne. 0) then
-    ! It is an error if output fields is not zero, because it means this type has already been populated.
-    call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
+  if (var_out%num_bcs > 0) then
+    ! It is an error if the number of output fields exceeds zero, because it means this
+    ! type has already been populated.
+    call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
   endif
 
-  if (var_in%num_bcs > 0) &
+  if (var_in%num_bcs >= 0) &
     call CT_spawn_1d_2d(var_in, var_out, (/ is, is, ie, ie /), (/ js, js, je, je /), suffix)
 
   if ((var_out%num_bcs > 0) .and. (diag_name .ne. ' ')) &
     call CT_set_diags_2d(var_out, diag_name, axes, time)
 
 end subroutine  coupler_type_copy_1d_2d
-
 
 !#######################################################################
 !> \brief Copy fields from one coupler type to another. 1-D to 3-D version for generic coupler_type_copy.
@@ -1043,18 +1051,20 @@ subroutine coupler_type_copy_1d_3d(var_in, var_out, is, ie, js, je, kd, &
   integer                 :: m, n
 
 
-  if (var_out%num_bcs .ne. 0) then
-    ! It is an error if output fields is not zero, because it means this type has already been populated.
-    call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
+  if (var_out%num_bcs > 0) then
+    ! It is an error if the number of output fields exceeds zero, because it means this
+    ! type has already been populated.
+    call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
   endif
 
-  if (var_in%num_bcs > 0) &
+  if (var_in%num_bcs >= 0) &
     call CT_spawn_1d_3d(var_in, var_out,  (/ is, is, ie, ie /), (/ js, js, je, je /), (/1, kd/), suffix)
 
   if ((var_out%num_bcs > 0) .and. (diag_name .ne. ' ')) &
     call CT_set_diags_3d(var_out, diag_name, axes, time)
 
 end subroutine  coupler_type_copy_1d_3d
+
 
 !#######################################################################
 !> \brief Generate one coupler type using another as a template. 1-D to 2-D version for generic coupler_type_spawn.
@@ -1069,7 +1079,7 @@ end subroutine  coupler_type_copy_1d_3d
 !! \throw FATAL, "var_out%bc already associated"
 !! \throw FATAL, "var_out%bc([n])%field already associated"
 !! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
-subroutine CT_spawn_1d_2d(var_in, var, idim, jdim, suffix)
+subroutine CT_spawn_1d_2d(var_in, var, idim, jdim, suffix, as_needed)
 
   type(coupler_1d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
   type(coupler_2d_bc_type), intent(inout) :: var     !< structure into which to copy information
@@ -1078,6 +1088,8 @@ subroutine CT_spawn_1d_2d(var_in, var, idim, jdim, suffix)
   integer, dimension(4),    intent(in)    :: jdim    !< The data and computational domain extents of
                                                      !! the second dimension in a non-decreasing list
   character(len=*), optional, intent(in)  :: suffix  !< optional suffix to make the name identifier unique
+  logical,          optional, intent(in)  :: as_needed !< Only do the spawn if the target type (var)
+                                                     !! is not set and the parent type (var_in) is set.
 
   character(len=64), parameter    :: sub_name = 'CT_spawn_1d_2d'
   character(len=256), parameter   :: error_header =                               &
@@ -1085,12 +1097,16 @@ subroutine CT_spawn_1d_2d(var_in, var, idim, jdim, suffix)
   character(len=400)      :: error_msg
   integer                 :: m, n
 
-  if (var%num_bcs .ne. 0) then
-    ! It is an error if output fields is not zero, because it means this type has already been populated.
-    call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
-  endif
+  if (present(as_needed)) then ; if (as_needed) then
+    if ((var%set) .or. (.not.var_in%set)) return
+  endif ; endif
 
-  var%num_bcs = var_in%num_bcs
+  if (var%set) &
+    call mpp_error(FATAL, trim(error_header) // ' The output type has already been initialized.')
+  if (.not.var_in%set) &
+    call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
+
+  var%num_bcs = var_in%num_bcs ; var%set = .true.
 
   if ((idim(1) > idim(2)) .or. (idim(3) > idim(4))) then
     write (error_msg, *) trim(error_header), ' Disordered i-dimension index bound list ', idim
@@ -1103,7 +1119,7 @@ subroutine CT_spawn_1d_2d(var_in, var, idim, jdim, suffix)
   var%isd = idim(1) ; var%isc = idim(2) ; var%iec = idim(3) ; var%ied = idim(4)
   var%jsd = jdim(1) ; var%jsc = jdim(2) ; var%jec = jdim(3) ; var%jed = jdim(4)
 
-  if (var_in%num_bcs .ne. 0) then
+  if (var%num_bcs > 0) then
     if (associated(var%bc)) then
       call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
     endif
@@ -1150,7 +1166,6 @@ subroutine CT_spawn_1d_2d(var_in, var, idim, jdim, suffix)
 
 end subroutine  CT_spawn_1d_2d
 
-
 !#######################################################################
 !> \brief Generate one coupler type using another as a template. 1-D to 3-D version for generic CT_spawn.
 !!
@@ -1164,7 +1179,7 @@ end subroutine  CT_spawn_1d_2d
 !! \throw FATAL, "var%bc already associated"
 !! \throw FATAL, "var%bc([n])%field already associated"
 !! \throw FATAL, "var%bc([n])%field([m])%values already associated"
-subroutine CT_spawn_1d_3d(var_in, var, idim, jdim, kdim, suffix)
+subroutine CT_spawn_1d_3d(var_in, var, idim, jdim, kdim, suffix, as_needed)
 
   type(coupler_1d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
   type(coupler_3d_bc_type), intent(inout) :: var     !< structure into which to copy information
@@ -1175,6 +1190,8 @@ subroutine CT_spawn_1d_3d(var_in, var, idim, jdim, kdim, suffix)
   integer, dimension(2),    intent(in)    :: kdim    !< The array extents of the third dimension in
                                                      !! a non-decreasing list
   character(len=*), optional, intent(in)  :: suffix  !< optional suffix to make the name identifier unique
+  logical,          optional, intent(in)  :: as_needed !< Only do the spawn if the target type (var)
+                                                     !! is not set and the parent type (var_in) is set.
 
   character(len=64), parameter    :: sub_name = 'CT_spawn_1d_3d'
   character(len=256), parameter   :: error_header =                               &
@@ -1182,13 +1199,16 @@ subroutine CT_spawn_1d_3d(var_in, var, idim, jdim, kdim, suffix)
   character(len=400)      :: error_msg
   integer                 :: m, n
 
+  if (present(as_needed)) then ; if (as_needed) then
+    if ((var%set) .or. (.not.var_in%set)) return
+  endif ; endif
 
-  if (var%num_bcs .ne. 0) then
-    ! It is an error if output fields is not zero, because it means this type has already been populated.
-    call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
-  endif
+  if (var%set) &
+    call mpp_error(FATAL, trim(error_header) // ' The output type has already been initialized.')
+  if (.not.var_in%set) &
+    call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
-  var%num_bcs = var_in%num_bcs
+  var%num_bcs = var_in%num_bcs ; var%set = .true.
 
   ! Store the array extents that are to be used with this bc_type.
   if ((idim(1) > idim(2)) .or. (idim(3) > idim(4))) then
@@ -1207,7 +1227,7 @@ subroutine CT_spawn_1d_3d(var_in, var, idim, jdim, kdim, suffix)
   var%jsd = jdim(1) ; var%jsc = jdim(2) ; var%jec = jdim(3) ; var%jed = jdim(4)
   var%ks  = kdim(1) ; var%ke  = kdim(2)
 
-  if (var_in%num_bcs .ne. 0) then
+  if (var%num_bcs > 0) then
     if (associated(var%bc)) then
       call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
     endif
@@ -1267,7 +1287,7 @@ end subroutine  CT_spawn_1d_3d
 !! \throw FATAL, "var%bc already associated"
 !! \throw FATAL, "var%bc([n])%field already associated"
 !! \throw FATAL, "var%bc([n])%field([m])%values already associated"
-subroutine CT_spawn_2d_2d(var_in, var, idim, jdim, suffix)
+subroutine CT_spawn_2d_2d(var_in, var, idim, jdim, suffix, as_needed)
 
   type(coupler_2d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
   type(coupler_2d_bc_type), intent(inout) :: var     !< structure into which to copy information
@@ -1276,6 +1296,8 @@ subroutine CT_spawn_2d_2d(var_in, var, idim, jdim, suffix)
   integer, dimension(4),    intent(in)    :: jdim    !< The data and computational domain extents of
                                                      !! the second dimension in a non-decreasing list
   character(len=*), optional, intent(in)  :: suffix  !< optional suffix to make the name identifier unique
+  logical,          optional, intent(in)  :: as_needed !< Only do the spawn if the target type (var)
+                                                     !! is not set and the parent type (var_in) is set.
 
   character(len=64), parameter    :: sub_name = 'CT_spawn_2d_2d'
   character(len=256), parameter   :: error_header =                               &
@@ -1283,12 +1305,16 @@ subroutine CT_spawn_2d_2d(var_in, var, idim, jdim, suffix)
   character(len=400)      :: error_msg
   integer                 :: m, n
 
-  if (var%num_bcs .ne. 0) then
-    ! It is an error if output fields is not zero, because it means this type has already been populated.
-    call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
-  endif
+  if (present(as_needed)) then ; if (as_needed) then
+    if ((var%set) .or. (.not.var_in%set)) return
+  endif ; endif
 
-  var%num_bcs = var_in%num_bcs
+  if (var%set) &
+    call mpp_error(FATAL, trim(error_header) // ' The output type has already been initialized.')
+  if (.not.var_in%set) &
+    call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
+
+  var%num_bcs = var_in%num_bcs ; var%set = .true.
 
   if ((idim(1) > idim(2)) .or. (idim(3) > idim(4))) then
     write (error_msg, *) trim(error_header), ' Disordered i-dimension index bound list ', idim
@@ -1301,7 +1327,7 @@ subroutine CT_spawn_2d_2d(var_in, var, idim, jdim, suffix)
   var%isd = idim(1) ; var%isc = idim(2) ; var%iec = idim(3) ; var%ied = idim(4)
   var%jsd = jdim(1) ; var%jsc = jdim(2) ; var%jec = jdim(3) ; var%jed = jdim(4)
 
-  if (var_in%num_bcs .ne. 0) then
+  if (var%num_bcs > 0) then
     if (associated(var%bc)) then
       call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
     endif
@@ -1348,7 +1374,6 @@ subroutine CT_spawn_2d_2d(var_in, var, idim, jdim, suffix)
 
 end subroutine  CT_spawn_2d_2d
 
-
 !#######################################################################
 !> \brief Generate one coupler type using another as a template. 2-D to 3-D version for generic CT_spawn.
 !!
@@ -1362,7 +1387,7 @@ end subroutine  CT_spawn_2d_2d
 !! \throw FATAL, "var%bc already associated"
 !! \throw FATAL, "var%bc([n])%field already associated"
 !! \throw FATAL, "var%bc([n])%field([m])%values already associated"
-subroutine CT_spawn_2d_3d(var_in, var, idim, jdim, kdim, suffix)
+subroutine CT_spawn_2d_3d(var_in, var, idim, jdim, kdim, suffix, as_needed)
 
   type(coupler_2d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
   type(coupler_3d_bc_type), intent(inout) :: var     !< structure into which to copy information
@@ -1373,6 +1398,8 @@ subroutine CT_spawn_2d_3d(var_in, var, idim, jdim, kdim, suffix)
   integer, dimension(2),    intent(in)    :: kdim    !< The array extents of the third dimension in
                                                      !! a non-decreasing list
   character(len=*), optional, intent(in)  :: suffix  !< optional suffix to make the name identifier unique
+  logical,          optional, intent(in)  :: as_needed !< Only do the spawn if the target type (var)
+                                                     !! is not set and the parent type (var_in) is set.
 
   character(len=64), parameter    :: sub_name = 'CT_spawn_2d_3d'
   character(len=256), parameter   :: error_header =                               &
@@ -1380,13 +1407,16 @@ subroutine CT_spawn_2d_3d(var_in, var, idim, jdim, kdim, suffix)
   character(len=400)      :: error_msg
   integer                 :: m, n
 
+  if (present(as_needed)) then ; if (as_needed) then
+    if ((var%set) .or. (.not.var_in%set)) return
+  endif ; endif
 
-  if (var%num_bcs .ne. 0) then
-    ! It is an error if output fields is not zero, because it means this type has already been populated.
-    call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
-  endif
+  if (var%set) &
+    call mpp_error(FATAL, trim(error_header) // ' The output type has already been initialized.')
+  if (.not.var_in%set) &
+    call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
-  var%num_bcs = var_in%num_bcs
+  var%num_bcs = var_in%num_bcs ; var%set = .true.
 
   ! Store the array extents that are to be used with this bc_type.
   if ((idim(1) > idim(2)) .or. (idim(3) > idim(4))) then
@@ -1405,7 +1435,7 @@ subroutine CT_spawn_2d_3d(var_in, var, idim, jdim, kdim, suffix)
   var%jsd = jdim(1) ; var%jsc = jdim(2) ; var%jec = jdim(3) ; var%jed = jdim(4)
   var%ks  = kdim(1) ; var%ke = kdim(2)
 
-  if (var_in%num_bcs .ne. 0) then
+  if (var%num_bcs > 0) then
     if (associated(var%bc)) then
       call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
     endif
@@ -1465,7 +1495,7 @@ end subroutine  CT_spawn_2d_3d
 !! \throw FATAL, "var%bc already associated"
 !! \throw FATAL, "var%bc([n])%field already associated"
 !! \throw FATAL, "var%bc([n])%field([m])%values already associated"
-subroutine CT_spawn_3d_2d(var_in, var, idim, jdim, suffix)
+subroutine CT_spawn_3d_2d(var_in, var, idim, jdim, suffix, as_needed)
 
   type(coupler_3d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
   type(coupler_2d_bc_type), intent(inout) :: var     !< structure into which to copy information
@@ -1474,6 +1504,8 @@ subroutine CT_spawn_3d_2d(var_in, var, idim, jdim, suffix)
   integer, dimension(4),    intent(in)    :: jdim    !< The data and computational domain extents of
                                                      !! the second dimension in a non-decreasing list
   character(len=*), optional, intent(in)  :: suffix  !< optional suffix to make the name identifier unique
+  logical,          optional, intent(in)  :: as_needed !< Only do the spawn if the target type (var)
+                                                     !! is not set and the parent type (var_in) is set.
 
   character(len=64), parameter    :: sub_name = 'CT_spawn_1d_2d'
   character(len=256), parameter   :: error_header =                               &
@@ -1481,12 +1513,16 @@ subroutine CT_spawn_3d_2d(var_in, var, idim, jdim, suffix)
   character(len=400)      :: error_msg
   integer                 :: m, n
 
-  if (var%num_bcs .ne. 0) then
-    ! It is an error if output fields is not zero, because it means this type has already been populated.
-    call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
-  endif
+  if (present(as_needed)) then ; if (as_needed) then
+    if ((var%set) .or. (.not.var_in%set)) return
+  endif ; endif
 
-  var%num_bcs = var_in%num_bcs
+  if (var%set) &
+    call mpp_error(FATAL, trim(error_header) // ' The output type has already been initialized.')
+  if (.not.var_in%set) &
+    call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
+
+  var%num_bcs = var_in%num_bcs ; var%set = .true.
 
   if ((idim(1) > idim(2)) .or. (idim(3) > idim(4))) then
     write (error_msg, *) trim(error_header), ' Disordered i-dimension index bound list ', idim
@@ -1499,7 +1535,7 @@ subroutine CT_spawn_3d_2d(var_in, var, idim, jdim, suffix)
   var%isd = idim(1) ; var%isc = idim(2) ; var%iec = idim(3) ; var%ied = idim(4)
   var%jsd = jdim(1) ; var%jsc = jdim(2) ; var%jec = jdim(3) ; var%jed = jdim(4)
 
-  if (var_in%num_bcs .ne. 0) then
+  if (var%num_bcs > 0) then
     if (associated(var%bc)) then
       call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
     endif
@@ -1546,7 +1582,6 @@ subroutine CT_spawn_3d_2d(var_in, var, idim, jdim, suffix)
 
 end subroutine  CT_spawn_3d_2d
 
-
 !#######################################################################
 !> \brief Generate one coupler type using another as a template. 3-D to 3-D version for generic CT_spawn.
 !!
@@ -1560,7 +1595,7 @@ end subroutine  CT_spawn_3d_2d
 !! \throw FATAL, "var%bc already associated"
 !! \throw FATAL, "var%bc([n])%field already associated"
 !! \throw FATAL, "var%bc([n])%field([m])%values already associated"
-subroutine CT_spawn_3d_3d(var_in, var, idim, jdim, kdim, suffix)
+subroutine CT_spawn_3d_3d(var_in, var, idim, jdim, kdim, suffix, as_needed)
 
   type(coupler_3d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
   type(coupler_3d_bc_type), intent(inout) :: var     !< structure into which to copy information
@@ -1571,6 +1606,8 @@ subroutine CT_spawn_3d_3d(var_in, var, idim, jdim, kdim, suffix)
   integer, dimension(2),    intent(in)    :: kdim    !< The array extents of the third dimension in
                                                      !! a non-decreasing list
   character(len=*), optional, intent(in)  :: suffix  !< optional suffix to make the name identifier unique
+  logical,          optional, intent(in)  :: as_needed !< Only do the spawn if the target type (var)
+                                                     !! is not set and the parent type (var_in) is set.
 
   character(len=64), parameter    :: sub_name = 'CT_spawn_3d_3d'
   character(len=256), parameter   :: error_header =                               &
@@ -1578,13 +1615,16 @@ subroutine CT_spawn_3d_3d(var_in, var, idim, jdim, kdim, suffix)
   character(len=400)      :: error_msg
   integer                 :: m, n
 
+  if (present(as_needed)) then ; if (as_needed) then
+    if ((var%set) .or. (.not.var_in%set)) return
+  endif ; endif
 
-  if (var%num_bcs .ne. 0) then
-    ! It is an error if output fields is not zero, because it means this type has already been populated.
-    call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
-  endif
+  if (var%set) &
+    call mpp_error(FATAL, trim(error_header) // ' The output type has already been initialized.')
+  if (.not.var_in%set) &
+    call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
-  var%num_bcs = var_in%num_bcs
+  var%num_bcs = var_in%num_bcs ; var%set = .true.
 
   if ((idim(1) > idim(2)) .or. (idim(3) > idim(4))) then
     write (error_msg, *) trim(error_header), ' Disordered i-dimension index bound list ', idim
@@ -1602,7 +1642,7 @@ subroutine CT_spawn_3d_3d(var_in, var, idim, jdim, kdim, suffix)
   var%jsd = jdim(1) ; var%jsc = jdim(2) ; var%jec = jdim(3) ; var%jed = jdim(4)
   var%ks  = kdim(1) ; var%ke  = kdim(2)
 
-  if (var_in%num_bcs .ne. 0) then
+  if (var%num_bcs > 0) then
     if (associated(var%bc)) then
       call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
     endif
@@ -1648,6 +1688,7 @@ subroutine CT_spawn_3d_3d(var_in, var, idim, jdim, kdim, suffix)
   endif
 
 end subroutine  CT_spawn_3d_3d
+
 
 !> This subroutine does a direct copy of the data in all elements of one
 !! coupler_2d_bc_type into another.  Both must have the same array sizes.
@@ -1697,9 +1738,10 @@ subroutine CT_copy_data_2d(var_in, var, halo_size, bc_index, field_index, &
       call mpp_error(FATAL, "CT_copy_data_2d: Excessive i-direction halo size for the output structure.")
     if ((var%jsc-var%jsd < halo) .or. (var%jed-var%jec < halo)) &
       call mpp_error(FATAL, "CT_copy_data_2d: Excessive j-direction halo size for the output structure.")
+
+    i_off = var_in%isc - var%isc ; j_off = var_in%jsc - var%jsc
   endif
 
-  i_off = var_in%isc - var%isc ; j_off = var_in%jsc - var%jsc
   do n = n1, n2
 
     copy_bc = .true.
@@ -1773,9 +1815,10 @@ subroutine CT_copy_data_3d(var_in, var, halo_size, bc_index, field_index, &
       call mpp_error(FATAL, "CT_copy_data_3d: Excessive i-direction halo size for the output structure.")
     if ((var%jsc-var%jsd < halo) .or. (var%jed-var%jec < halo)) &
       call mpp_error(FATAL, "CT_copy_data_3d: Excessive j-direction halo size for the output structure.")
+
+    i_off = var_in%isc - var%isc ; j_off = var_in%jsc - var%jsc ; k_off = var_in%ks - var%ks
   endif
 
-  i_off = var_in%isc - var%isc ; j_off = var_in%jsc - var%jsc ; k_off = var_in%ks - var%ks
   do n = n1, n2
 
     copy_bc = .true.
@@ -1798,7 +1841,6 @@ subroutine CT_copy_data_3d(var_in, var, halo_size, bc_index, field_index, &
   enddo
 
 end subroutine CT_copy_data_3d
-
 
 !> This subroutine does a direct copy of the data in all elements of a
 !! coupler_2d_bc_type into a coupler_3d_bc_type.  Both types must have the same
@@ -1883,6 +1925,7 @@ subroutine CT_copy_data_2d_3d(var_in, var, halo_size, bc_index, field_index, &
 
 end subroutine CT_copy_data_2d_3d
 
+
 !> This subroutine redistributes the data in all elements of one coupler_2d_bc_type
 !! into another, which may be on different processors with a different decomposition.
 subroutine CT_redistribute_data_2d(var_in, domain_in, var_out, domain_out, complete)
@@ -1899,8 +1942,8 @@ subroutine CT_redistribute_data_2d(var_in, domain_in, var_out, domain_out, compl
   do_complete = .true. ; if (present(complete)) do_complete = complete
 
   ! Figure out whether this PE has valid input or output fields or both.
-  do_in = .true.  ! could become associated(var_in)
-  do_out = .true. ! could become associated(var_out)
+  do_in = var_in%set
+  do_out = var_out%set
 
   fc_in = 0 ; fc_out = 0
   if (do_in) then ; do n = 1, var_in%num_bcs ; do m = 1, var_in%bc(n)%num_fields
@@ -1958,7 +2001,6 @@ subroutine CT_redistribute_data_2d(var_in, domain_in, var_out, domain_out, compl
 
 end subroutine CT_redistribute_data_2d
 
-
 !> This subroutine redistributes the data in all elements of one coupler_2d_bc_type
 !! into another, which may be on different processors with a different decomposition.
 subroutine CT_redistribute_data_3d(var_in, domain_in, var_out, domain_out, complete)
@@ -1975,8 +2017,8 @@ subroutine CT_redistribute_data_3d(var_in, domain_in, var_out, domain_out, compl
   do_complete = .true. ; if (present(complete)) do_complete = complete
 
   ! Figure out whether this PE has valid input or output fields or both.
-  do_in = .true.  ! could become associated(var_in)
-  do_out = .true. ! could become associated(var_out)
+  do_in = var_in%set
+  do_out = var_out%set
 
   fc_in = 0 ; fc_out = 0
   if (do_in) then ; do n = 1, var_in%num_bcs ; do m = 1, var_in%bc(n)%num_fields
@@ -2189,6 +2231,7 @@ subroutine CT_rescale_data_3d(var, scale, halo_size, bc_index, field_index, &
 
 end subroutine CT_rescale_data_3d
 
+
 !> This subroutine does a direct increment of the data in all elements of one
 !! coupler_2d_bc_type into another.  Both must have the same array sizes.
 subroutine CT_increment_data_2d_2d(var_in, var, halo_size, bc_index, field_index, &
@@ -2242,9 +2285,10 @@ subroutine CT_increment_data_2d_2d(var_in, var, halo_size, bc_index, field_index
       call mpp_error(FATAL, "CT_increment_data_2d: Excessive i-direction halo size for the output structure.")
     if ((var%jsc-var%jsd < halo) .or. (var%jed-var%jec < halo)) &
       call mpp_error(FATAL, "CT_increment_data_2d: Excessive j-direction halo size for the output structure.")
+
+    i_off = var_in%isc - var%isc ; j_off = var_in%jsc - var%jsc
   endif
 
-  i_off = var_in%isc - var%isc ; j_off = var_in%jsc - var%jsc
   do n = n1, n2
 
     increment_bc = .true.
@@ -2325,9 +2369,10 @@ subroutine CT_increment_data_3d_3d(var_in, var, halo_size, bc_index, field_index
       call mpp_error(FATAL, "CT_increment_data_3d: Excessive i-direction halo size for the output structure.")
     if ((var%jsc-var%jsd < halo) .or. (var%jed-var%jec < halo)) &
       call mpp_error(FATAL, "CT_increment_data_3d: Excessive j-direction halo size for the output structure.")
+
+    i_off = var_in%isc - var%isc ; j_off = var_in%jsc - var%jsc ; k_off = var_in%ks - var%ks
   endif
 
-  i_off = var_in%isc - var%isc ; j_off = var_in%jsc - var%jsc ; k_off = var_in%ks - var%ks
   do n = n1, n2
 
     increment_bc = .true.
@@ -2433,9 +2478,9 @@ subroutine CT_increment_data_2d_3d(var_in, weights, var, halo_size, bc_index, fi
     else
       call mpp_error(FATAL, "CT_increment_data_2d_3d: weights array must be the j-size of a computational or data domain.")
     endif
-  endif
 
-  io1 = var_in%isc - var%isc ; jo1 = var_in%jsc - var%jsc ; kow = 1 - var_in%ks
+    io1 = var_in%isc - var%isc ; jo1 = var_in%jsc - var%jsc ; kow = 1 - var_in%ks
+  endif
 
   do n = n1, n2
 
@@ -2461,6 +2506,7 @@ subroutine CT_increment_data_2d_3d(var_in, weights, var, halo_size, bc_index, fi
 
 end subroutine CT_increment_data_2d_3d
 
+
 !> This routine registers the diagnostics of a coupler_2d_bc_type.
 subroutine CT_set_diags_2d(var, diag_name, axes, time)
   type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure for which to register diagnostics
@@ -2470,7 +2516,7 @@ subroutine CT_set_diags_2d(var, diag_name, axes, time)
 
   integer :: m, n
 
-  if (diag_name .eq. ' ') return
+  if (diag_name == ' ') return
 
   if (size(axes) < 2) then
     call mpp_error(FATAL, '==>Error from ' // trim(mod_name) //&
@@ -2496,7 +2542,7 @@ subroutine CT_set_diags_3d(var, diag_name, axes, time)
 
   integer :: m, n
 
-  if (diag_name .eq. ' ') return
+  if (diag_name == ' ') return
 
   if (size(axes) < 3) then
     call mpp_error(FATAL, '==>Error from ' // trim(mod_name) //&
@@ -2512,6 +2558,7 @@ subroutine CT_set_diags_3d(var, diag_name, axes, time)
   enddo
 
 end subroutine CT_set_diags_3d
+
 
 !> This subroutine writes out all diagnostics of elements of a coupler_2d_bc_type
 subroutine CT_send_data_2d(var, Time)
@@ -2540,6 +2587,7 @@ subroutine CT_send_data_3d(var, Time)
   enddo ; enddo
 
 end subroutine CT_send_data_3d
+
 
 !> This subroutine registers the fields in a coupler_2d_bc_type to be saved
 !! in restart files specified in the field table.
@@ -2698,6 +2746,7 @@ subroutine CT_register_restarts_to_file_3d(var, file_name, rest_file, mpp_domain
 
 end subroutine CT_register_restarts_to_file_3d
 
+
 !> This subroutine reads in the fields in a coupler_2d_bc_type that have
 !! been saved in restart files.
 subroutine CT_restore_state_2d(var, directory, all_or_nothing, &
@@ -2761,7 +2810,6 @@ subroutine CT_restore_state_2d(var, directory, all_or_nothing, &
   endif ; endif
 
 end subroutine CT_restore_state_2d
-
 
 !> This subroutine reads in the fields in a coupler_3d_bc_type that have
 !! been saved in restart files.
@@ -2857,6 +2905,7 @@ subroutine CT_data_override_3d(gridname, var, Time)
 
 end subroutine CT_data_override_3d
 
+
 !> This subroutine writes out checksums for the elements of a coupler_2d_bc_type
 subroutine CT_write_chksums_2d(var, outunit, name_lead)
   type(coupler_2d_bc_type),   intent(in) :: var  !< BC_type structure for which to register diagnostics
@@ -2899,6 +2948,32 @@ subroutine CT_write_chksums_3d(var, outunit, name_lead)
 
 end subroutine CT_write_chksums_3d
 
+
+!> This function indicates whether a coupler_1d_bc_type has been initialized.
+function CT_initialized_1d(var)
+  type(coupler_1d_bc_type), intent(in) :: var  !< BC_type structure to be deconstructed
+  logical :: CT_initialized_1d  !< The return value, indicating whether this type has been initialized
+  
+  CT_initialized_1d = var%set
+end function CT_initialized_1d
+
+!> This function indicates whether a coupler_2d_bc_type has been initialized.
+function CT_initialized_2d(var)
+  type(coupler_2d_bc_type), intent(in) :: var  !< BC_type structure to be deconstructed
+  logical :: CT_initialized_2d  !< The return value, indicating whether this type has been initialized
+  
+  CT_initialized_2d = var%set
+end function CT_initialized_2d
+
+!> This function indicates whether a coupler_3d_bc_type has been initialized.
+function CT_initialized_3d(var)
+  type(coupler_3d_bc_type), intent(in) :: var  !< BC_type structure to be deconstructed
+  logical :: CT_initialized_3d  !< The return value, indicating whether this type has been initialized
+  
+  CT_initialized_3d = var%set
+end function CT_initialized_3d
+
+
 !> This subroutine deallocates all data associated with a coupler_1d_bc_type
 subroutine CT_destructor_1d(var)
   type(coupler_1d_bc_type), intent(inout) :: var  !< BC_type structure to be deconstructed
@@ -2915,7 +2990,7 @@ subroutine CT_destructor_1d(var)
     deallocate ( var%bc )
   endif
 
-  var%num_bcs = 0
+  var%num_bcs = 0 ; var%set = .false.
 
 end subroutine CT_destructor_1d
 
@@ -2935,12 +3010,12 @@ subroutine CT_destructor_2d(var)
     deallocate ( var%bc )
   endif
 
-  var%num_bcs = 0
+  var%num_bcs = 0 ; var%set = .false.
 
 end subroutine CT_destructor_2d
 
 
-!> This subroutine deallocates all data associated with a coupler_2d_bc_type
+!> This subroutine deallocates all data associated with a coupler_3d_bc_type
 subroutine CT_destructor_3d(var)
   type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to be deconstructed
 
@@ -2956,7 +3031,7 @@ subroutine CT_destructor_3d(var)
     deallocate ( var%bc )
   endif
 
-  var%num_bcs = 0
+  var%num_bcs = 0 ; var%set = .false.
 
 end subroutine CT_destructor_3d
 
