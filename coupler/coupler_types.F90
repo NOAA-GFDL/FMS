@@ -197,7 +197,9 @@ public  coupler_types_init
 public  coupler_type_copy, coupler_type_spawn, coupler_type_set_diags
 public  coupler_type_write_chksums, coupler_type_send_data, coupler_type_data_override
 public  coupler_type_register_restarts, coupler_type_restore_state
+public  coupler_type_increment_data, coupler_type_rescale_data
 public  coupler_type_copy_data, coupler_type_redistribute_data
+public  coupler_type_destructor
 
 public  coupler_type_copy_1d_2d
 public  coupler_type_copy_1d_3d
@@ -213,7 +215,7 @@ character(len=48), parameter                    :: mod_name = 'coupler_types_mod
 !       3-d fields
 !
 
-type, public    :: coupler_3d_values_type
+type, public :: coupler_3d_values_type
   character(len=fm_field_name_len)  :: name = ' '  !< The diagnostic name for this array
   real, pointer, dimension(:,:,:)   :: values => NULL() !< The pointer to the array of values
   logical                           :: mean = .true. !< mean
@@ -227,7 +229,7 @@ type, public    :: coupler_3d_values_type
                                                    !! if it can not be read from a restart file
 end type coupler_3d_values_type
 
-type, public    :: coupler_3d_field_type
+type, public :: coupler_3d_field_type
   character(len=fm_field_name_len)                      :: name = ' ' !< name
   integer                                               :: num_fields = 0 !< num_fields
   type(coupler_3d_values_type), pointer, dimension(:)   :: field => NULL() !< field
@@ -246,9 +248,12 @@ type, public    :: coupler_3d_field_type
   real                                                  :: mol_wt = 0.0 !< mol_wt
 end type coupler_3d_field_type
 
-type, public    :: coupler_3d_bc_type
+type, public :: coupler_3d_bc_type
   integer                                            :: num_bcs = 0  !< The number of boundary condition fields
   type(coupler_3d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary condition fields
+  integer    :: isd, isc, iec, ied  !< The i-direction data and computational domain index ranges for this type
+  integer    :: jsd, jsc, jec, jed  !< The j-direction data and computational domain index ranges for this type
+  integer    :: ks, ke              !< The k-direction index ranges for this type
 end type coupler_3d_bc_type
 
 !
@@ -291,6 +296,8 @@ end type coupler_2d_field_type
 type, public    :: coupler_2d_bc_type
   integer                                            :: num_bcs = 0  !< The number of boundary condition fields
   type(coupler_2d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary condition fields
+  integer    :: isd, isc, iec, ied  !< The i-direction data and computational domain index ranges for this type
+  integer    :: jsd, jsc, jec, jed  !< The j-direction data and computational domain index ranges for this type
 end type coupler_2d_bc_type
 
 !
@@ -341,9 +348,9 @@ integer, public :: ind_u10 !< ind_u10
 integer, public :: ind_psurf !< ind_psurf
 integer, public :: ind_pcair !< ind_pcair
 integer, public :: ind_csurf !< ind_csurf
-integer, public :: ind_alpha !< ind_alpha
-integer, public :: ind_sc_no !< ind_sc_no
-integer, public :: ind_flux !< ind_flux
+integer, public :: ind_alpha !< The index of the solubility array for a tracer
+integer, public :: ind_sc_no !< The index for the Schmidt number for a tracer flux
+integer, public :: ind_flux  !< The index for the tracer flux
 integer, public :: ind_deltap !< ind_deltap
 integer, public :: ind_kw !< ind_kw
 integer, public :: ind_deposition !< ind_deposition
@@ -373,7 +380,7 @@ end interface coupler_type_spawn
 !> This is the interface to copy the field data from one coupler_bc_type
 !! to another of the same rank, size and decomposition.
 interface coupler_type_copy_data
-  module procedure CT_copy_data_2d, CT_copy_data_3d
+  module procedure CT_copy_data_2d, CT_copy_data_3d, CT_copy_data_2d_3d
 end interface coupler_type_copy_data
 
 !> This is the interface to redistribute the field data from one coupler_bc_type
@@ -381,6 +388,18 @@ end interface coupler_type_copy_data
 interface coupler_type_redistribute_data
   module procedure CT_redistribute_data_2d, CT_redistribute_data_3d
 end interface coupler_type_redistribute_data
+
+!> This is the interface to rescale the field data in a coupler_bc_type.
+interface coupler_type_rescale_data
+  module procedure CT_rescale_data_2d, CT_rescale_data_3d
+end interface coupler_type_rescale_data
+
+!> This is the interface to increment the field data from one coupler_bc_type
+!! with the data from another.  Both must have the same horizontal size and
+!! decomposition, but a 2d type may be incremented by a 2d or 3d type
+interface coupler_type_increment_data
+  module procedure CT_increment_data_2d_2d, CT_increment_data_3d_3d, CT_increment_data_2d_3d
+end interface coupler_type_increment_data
 
 !> This is the interface to set diagnostics for the arrays in a coupler_bc_type.
 interface coupler_type_set_diags
@@ -414,6 +433,11 @@ end interface coupler_type_register_restarts
 interface coupler_type_restore_state
   module procedure CT_restore_state_2d, CT_restore_state_3d
 end interface coupler_type_restore_state
+
+!> This is the interface to deallocate any data associated with a coupler_bc_type.
+interface coupler_type_destructor
+  module procedure CT_destructor_1d, CT_destructor_2d, CT_destructor_3d
+end interface coupler_type_destructor
 
 contains
 
@@ -965,7 +989,7 @@ subroutine coupler_type_copy_1d_2d(var_in, var_out, is, ie, js, je,     &
   character(len=64), parameter    :: sub_name = 'coupler_type_copy_1d_2d'
   character(len=256), parameter   :: error_header =                               &
        '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
-  character(len=128)      :: error_msg
+  character(len=400)      :: error_msg
   integer                 :: m, n
 
   if (var_out%num_bcs .ne. 0) then
@@ -974,7 +998,7 @@ subroutine coupler_type_copy_1d_2d(var_in, var_out, is, ie, js, je,     &
   endif
 
   if (var_in%num_bcs > 0) &
-    call CT_spawn_1d_2d(var_in, var_out, is, ie, js, je, suffix)
+    call CT_spawn_1d_2d(var_in, var_out, (/ is, is, ie, ie /), (/ js, js, je, je /), suffix)
 
   if ((var_out%num_bcs > 0) .and. (diag_name .ne. ' ')) &
     call CT_set_diags_2d(var_out, diag_name, axes, time)
@@ -1015,7 +1039,7 @@ subroutine coupler_type_copy_1d_3d(var_in, var_out, is, ie, js, je, kd, &
   character(len=64), parameter    :: sub_name = 'coupler_type_copy_1d_3d'
   character(len=256), parameter   :: error_header =                               &
      '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
-  character(len=256)      :: error_msg
+  character(len=400)      :: error_msg
   integer                 :: m, n
 
 
@@ -1025,7 +1049,7 @@ subroutine coupler_type_copy_1d_3d(var_in, var_out, is, ie, js, je, kd, &
   endif
 
   if (var_in%num_bcs > 0) &
-    call CT_spawn_1d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
+    call CT_spawn_1d_3d(var_in, var_out,  (/ is, is, ie, ie /), (/ js, js, je, je /), (/1, kd/), suffix)
 
   if ((var_out%num_bcs > 0) .and. (diag_name .ne. ' ')) &
     call CT_set_diags_3d(var_out, diag_name, axes, time)
@@ -1038,72 +1062,87 @@ end subroutine  coupler_type_copy_1d_3d
 !! Template:
 !!
 !! ~~~~~~~~~~{.f90}
-!!   call coupler_type_spawn(var_in, var_out, is, ie, js, je, suffix = 'something')
+!!   call coupler_type_spawn(var_in, var_out, idim, jdim, suffix = 'something')
 !! ~~~~~~~~~~
 !!
 !! \throw FATAL, "Number of output fields is non-zero"
 !! \throw FATAL, "var_out%bc already associated"
 !! \throw FATAL, "var_out%bc([n])%field already associated"
 !! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
-subroutine CT_spawn_1d_2d(var_in, var_out, is, ie, js, je, suffix)
+subroutine CT_spawn_1d_2d(var_in, var, idim, jdim, suffix)
 
   type(coupler_1d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
-  type(coupler_2d_bc_type), intent(inout) :: var_out !< structure into which to copy information
-  integer, intent(in)                     :: is !< lower bound of first dimension
-  integer, intent(in)                     :: ie !< upper bound of first dimension
-  integer, intent(in)                     :: js !< lower bound of second dimension
-  integer, intent(in)                     :: je !< upper bound of second dimension
-  character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
+  type(coupler_2d_bc_type), intent(inout) :: var     !< structure into which to copy information
+  integer, dimension(4),    intent(in)    :: idim    !< The data and computational domain extents of
+                                                     !! the first dimension in a non-decreasing list
+  integer, dimension(4),    intent(in)    :: jdim    !< The data and computational domain extents of
+                                                     !! the second dimension in a non-decreasing list
+  character(len=*), optional, intent(in)  :: suffix  !< optional suffix to make the name identifier unique
 
   character(len=64), parameter    :: sub_name = 'CT_spawn_1d_2d'
   character(len=256), parameter   :: error_header =                               &
        '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
-  character(len=128)      :: error_msg
+  character(len=400)      :: error_msg
   integer                 :: m, n
 
-  if (var_out%num_bcs .ne. 0) then
+  if (var%num_bcs .ne. 0) then
     ! It is an error if output fields is not zero, because it means this type has already been populated.
     call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
   endif
 
-  var_out%num_bcs = var_in%num_bcs
+  var%num_bcs = var_in%num_bcs
+
+  if ((idim(1) > idim(2)) .or. (idim(3) > idim(4))) then
+    write (error_msg, *) trim(error_header), ' Disordered i-dimension index bound list ', idim
+    call mpp_error(FATAL, trim(error_msg))
+  endif
+  if ((jdim(1) > jdim(2)) .or. (jdim(3) > jdim(4))) then
+    write (error_msg, *) trim(error_header), ' Disordered j-dimension index bound list  ', jdim
+    call mpp_error(FATAL, trim(error_msg))
+  endif
+  var%isd = idim(1) ; var%isc = idim(2) ; var%iec = idim(3) ; var%ied = idim(4)
+  var%jsd = jdim(1) ; var%jsc = jdim(2) ; var%jec = jdim(3) ; var%jed = jdim(4)
 
   if (var_in%num_bcs .ne. 0) then
-    if (associated(var_out%bc)) then
-      call mpp_error(FATAL, trim(error_header) // ' var_out%bc already associated')
+    if (associated(var%bc)) then
+      call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
     endif
-    allocate ( var_out%bc(var_out%num_bcs) )
-    do n = 1, var_out%num_bcs
-      var_out%bc(n)%name = var_in%bc(n)%name
-      var_out%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
-      var_out%bc(n)%ice_restart_file = var_in%bc(n)%ice_restart_file
-      var_out%bc(n)%ocean_restart_file = var_in%bc(n)%ocean_restart_file
-      var_out%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
-      var_out%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
-      var_out%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
-      var_out%bc(n)%mol_wt = var_in%bc(n)%mol_wt
-      var_out%bc(n)%num_fields = var_in%bc(n)%num_fields
-      if (associated(var_out%bc(n)%field)) then
-        write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field already associated'
+    allocate ( var%bc(var%num_bcs) )
+    do n = 1, var%num_bcs
+      var%bc(n)%name = var_in%bc(n)%name
+      var%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
+      var%bc(n)%flux_type = var_in%bc(n)%flux_type
+      var%bc(n)%implementation = var_in%bc(n)%implementation
+      var%bc(n)%ice_restart_file = var_in%bc(n)%ice_restart_file
+      var%bc(n)%ocean_restart_file = var_in%bc(n)%ocean_restart_file
+      var%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
+      var%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
+      var%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
+      var%bc(n)%mol_wt = var_in%bc(n)%mol_wt
+      var%bc(n)%num_fields = var_in%bc(n)%num_fields
+      if (associated(var%bc(n)%field)) then
+        write (error_msg, *) trim(error_header), ' var%bc(', n, ')%field already associated'
         call mpp_error(FATAL, trim(error_msg))
       endif
-      allocate ( var_out%bc(n)%field(var_out%bc(n)%num_fields) )
-      do m = 1, var_out%bc(n)%num_fields
+      allocate ( var%bc(n)%field(var%bc(n)%num_fields) )
+      do m = 1, var%bc(n)%num_fields
         if (present(suffix)) then
-          var_out%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
+          var%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
         else
-          var_out%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
+          var%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
         endif
-        var_out%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
-        var_out%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
-        var_out%bc(n)%field(m)%may_init = var_in%bc(n)%field(m)%may_init
-        var_out%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
-        if (associated(var_out%bc(n)%field(m)%values)) then
-          write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field(', m, ')%values already associated'
+        var%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
+        var%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
+        var%bc(n)%field(m)%may_init = var_in%bc(n)%field(m)%may_init
+        var%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
+        if (associated(var%bc(n)%field(m)%values)) then
+          write (error_msg, *) trim(error_header), ' var%bc(', n, ')%field(', m, ')%values already associated'
           call mpp_error(FATAL, trim(error_msg))
         endif
-        allocate ( var_out%bc(n)%field(m)%values(is:ie,js:je) )
-        var_out%bc(n)%field(m)%values = 0.0
+        if ((var%isd<=var%ied) .and. (var%jsd<=var%jed)) then
+          allocate ( var%bc(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed) )
+          var%bc(n)%field(m)%values(:,:) = 0.0
+        endif
       enddo
     enddo
 
@@ -1118,74 +1157,96 @@ end subroutine  CT_spawn_1d_2d
 !! Template:
 !!
 !! ~~~~~~~~~~{.f90}
-!!   call coupler_type_spawn(var_in, var_out, is, ie, js, je, kd, suffix = 'something')
+!!   call coupler_type_spawn(var_in, var, idim, jdim, kdim, suffix = 'something')
 !! ~~~~~~~~~~
 !!
 !! \throw FATAL, "Number of output fields is non-zero"
-!! \throw FATAL, "var_out%bc already associated"
-!! \throw FATAL, "var_out%bc([n])%field already associated"
-!! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
-subroutine CT_spawn_1d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
+!! \throw FATAL, "var%bc already associated"
+!! \throw FATAL, "var%bc([n])%field already associated"
+!! \throw FATAL, "var%bc([n])%field([m])%values already associated"
+subroutine CT_spawn_1d_3d(var_in, var, idim, jdim, kdim, suffix)
 
   type(coupler_1d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
-  type(coupler_3d_bc_type), intent(inout) :: var_out !< structure into which to copy information
-  integer, intent(in)                     :: is !< lower bound of first dimension
-  integer, intent(in)                     :: ie !< upper bound of first dimension
-  integer, intent(in)                     :: js !< lower bound of second dimension
-  integer, intent(in)                     :: je !< upper bound of second dimension
-  integer, intent(in)                     :: kd !< third dimension
-  character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
+  type(coupler_3d_bc_type), intent(inout) :: var     !< structure into which to copy information
+  integer, dimension(4),    intent(in)    :: idim    !< The data and computational domain extents of
+                                                     !! the first dimension in a non-decreasing list
+  integer, dimension(4),    intent(in)    :: jdim    !< The data and computational domain extents of
+                                                     !! the second dimension in a non-decreasing list
+  integer, dimension(2),    intent(in)    :: kdim    !< The array extents of the third dimension in
+                                                     !! a non-decreasing list
+  character(len=*), optional, intent(in)  :: suffix  !< optional suffix to make the name identifier unique
 
   character(len=64), parameter    :: sub_name = 'CT_spawn_1d_3d'
   character(len=256), parameter   :: error_header =                               &
      '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
-  character(len=256)      :: error_msg
+  character(len=400)      :: error_msg
   integer                 :: m, n
 
 
-  if (var_out%num_bcs .ne. 0) then
+  if (var%num_bcs .ne. 0) then
     ! It is an error if output fields is not zero, because it means this type has already been populated.
     call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
   endif
 
-  var_out%num_bcs = var_in%num_bcs
+  var%num_bcs = var_in%num_bcs
+
+  ! Store the array extents that are to be used with this bc_type.
+  if ((idim(1) > idim(2)) .or. (idim(3) > idim(4))) then
+    write (error_msg, *) trim(error_header), ' Disordered i-dimension index bound list ', idim
+    call mpp_error(FATAL, trim(error_msg))
+  endif
+  if ((jdim(1) > jdim(2)) .or. (jdim(3) > jdim(4))) then
+    write (error_msg, *) trim(error_header), ' Disordered j-dimension index bound list  ', jdim
+    call mpp_error(FATAL, trim(error_msg))
+  endif
+  if (kdim(1) > kdim(2)) then
+    write (error_msg, *) trim(error_header), ' Disordered k-dimension index bound list  ', kdim
+    call mpp_error(FATAL, trim(error_msg))
+  endif
+  var%isd = idim(1) ; var%isc = idim(2) ; var%iec = idim(3) ; var%ied = idim(4)
+  var%jsd = jdim(1) ; var%jsc = jdim(2) ; var%jec = jdim(3) ; var%jed = jdim(4)
+  var%ks  = kdim(1) ; var%ke  = kdim(2)
 
   if (var_in%num_bcs .ne. 0) then
-    if (associated(var_out%bc)) then
-      call mpp_error(FATAL, trim(error_header) // ' var_out%bc already associated')
+    if (associated(var%bc)) then
+      call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
     endif
-    allocate ( var_out%bc(var_out%num_bcs) )
-    do n = 1, var_out%num_bcs
-      var_out%bc(n)%name = var_in%bc(n)%name
-      var_out%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
-      var_out%bc(n)%ice_restart_file = var_in%bc(n)%ice_restart_file
-      var_out%bc(n)%ocean_restart_file = var_in%bc(n)%ocean_restart_file
-      var_out%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
-      var_out%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
-      var_out%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
-      var_out%bc(n)%mol_wt = var_in%bc(n)%mol_wt
-      var_out%bc(n)%num_fields = var_in%bc(n)%num_fields
-      if (associated(var_out%bc(n)%field)) then
-        write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field already associated'
+    allocate ( var%bc(var%num_bcs) )
+    do n = 1, var%num_bcs
+      var%bc(n)%name = var_in%bc(n)%name
+      var%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
+      var%bc(n)%flux_type = var_in%bc(n)%flux_type
+      var%bc(n)%implementation = var_in%bc(n)%implementation
+      var%bc(n)%ice_restart_file = var_in%bc(n)%ice_restart_file
+      var%bc(n)%ocean_restart_file = var_in%bc(n)%ocean_restart_file
+      var%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
+      var%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
+      var%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
+      var%bc(n)%mol_wt = var_in%bc(n)%mol_wt
+      var%bc(n)%num_fields = var_in%bc(n)%num_fields
+      if (associated(var%bc(n)%field)) then
+        write (error_msg, *) trim(error_header), ' var%bc(', n, ')%field already associated'
         call mpp_error(FATAL, trim(error_msg))
       endif
-      allocate ( var_out%bc(n)%field(var_out%bc(n)%num_fields) )
-      do m = 1, var_out%bc(n)%num_fields
+      allocate ( var%bc(n)%field(var%bc(n)%num_fields) )
+      do m = 1, var%bc(n)%num_fields
         if (present(suffix)) then
-          var_out%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
+          var%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
         else
-          var_out%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
+          var%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
         endif
-        var_out%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
-        var_out%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
-        var_out%bc(n)%field(m)%may_init = var_in%bc(n)%field(m)%may_init
-        var_out%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
-        if (associated(var_out%bc(n)%field(m)%values)) then
-          write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field(', m, ')%values already associated'
+        var%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
+        var%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
+        var%bc(n)%field(m)%may_init = var_in%bc(n)%field(m)%may_init
+        var%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
+        if (associated(var%bc(n)%field(m)%values)) then
+          write (error_msg, *) trim(error_header), ' var%bc(', n, ')%field(', m, ')%values already associated'
           call mpp_error(FATAL, trim(error_msg))
         endif
-        allocate ( var_out%bc(n)%field(m)%values(is:ie,js:je,kd) )
-        var_out%bc(n)%field(m)%values = 0.0
+        if ((var%isd<=var%ied) .and. (var%jsd<=var%jed) .and. (var%ks<=var%ke)) then
+          allocate ( var%bc(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed,var%ks:var%ke) )
+          var%bc(n)%field(m)%values(:,:,:) = 0.0
+        endif
       enddo
     enddo
 
@@ -1199,72 +1260,87 @@ end subroutine  CT_spawn_1d_3d
 !! Template:
 !!
 !! ~~~~~~~~~~{.f90}
-!!   call coupler_type_spawn(var_in, var_out, is, ie, js, je, suffix = 'something')
+!!   call coupler_type_spawn(var_in, var, idim, jdim, suffix = 'something')
 !! ~~~~~~~~~~
 !!
 !! \throw FATAL, "Number of output fields is non-zero"
-!! \throw FATAL, "var_out%bc already associated"
-!! \throw FATAL, "var_out%bc([n])%field already associated"
-!! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
-subroutine CT_spawn_2d_2d(var_in, var_out, is, ie, js, je, suffix)
+!! \throw FATAL, "var%bc already associated"
+!! \throw FATAL, "var%bc([n])%field already associated"
+!! \throw FATAL, "var%bc([n])%field([m])%values already associated"
+subroutine CT_spawn_2d_2d(var_in, var, idim, jdim, suffix)
 
   type(coupler_2d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
-  type(coupler_2d_bc_type), intent(inout) :: var_out !< structure into which to copy information
-  integer, intent(in)                     :: is !< lower bound of first dimension
-  integer, intent(in)                     :: ie !< upper bound of first dimension
-  integer, intent(in)                     :: js !< lower bound of second dimension
-  integer, intent(in)                     :: je !< upper bound of second dimension
-  character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
+  type(coupler_2d_bc_type), intent(inout) :: var     !< structure into which to copy information
+  integer, dimension(4),    intent(in)    :: idim    !< The data and computational domain extents of
+                                                     !! the first dimension in a non-decreasing list
+  integer, dimension(4),    intent(in)    :: jdim    !< The data and computational domain extents of
+                                                     !! the second dimension in a non-decreasing list
+  character(len=*), optional, intent(in)  :: suffix  !< optional suffix to make the name identifier unique
 
   character(len=64), parameter    :: sub_name = 'CT_spawn_2d_2d'
   character(len=256), parameter   :: error_header =                               &
        '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
-  character(len=128)      :: error_msg
+  character(len=400)      :: error_msg
   integer                 :: m, n
 
-  if (var_out%num_bcs .ne. 0) then
+  if (var%num_bcs .ne. 0) then
     ! It is an error if output fields is not zero, because it means this type has already been populated.
     call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
   endif
 
-  var_out%num_bcs = var_in%num_bcs
+  var%num_bcs = var_in%num_bcs
+
+  if ((idim(1) > idim(2)) .or. (idim(3) > idim(4))) then
+    write (error_msg, *) trim(error_header), ' Disordered i-dimension index bound list ', idim
+    call mpp_error(FATAL, trim(error_msg))
+  endif
+  if ((jdim(1) > jdim(2)) .or. (jdim(3) > jdim(4))) then
+    write (error_msg, *) trim(error_header), ' Disordered j-dimension index bound list  ', jdim
+    call mpp_error(FATAL, trim(error_msg))
+  endif
+  var%isd = idim(1) ; var%isc = idim(2) ; var%iec = idim(3) ; var%ied = idim(4)
+  var%jsd = jdim(1) ; var%jsc = jdim(2) ; var%jec = jdim(3) ; var%jed = jdim(4)
 
   if (var_in%num_bcs .ne. 0) then
-    if (associated(var_out%bc)) then
-      call mpp_error(FATAL, trim(error_header) // ' var_out%bc already associated')
+    if (associated(var%bc)) then
+      call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
     endif
-    allocate ( var_out%bc(var_out%num_bcs) )
-    do n = 1, var_out%num_bcs
-      var_out%bc(n)%name = var_in%bc(n)%name
-      var_out%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
-      var_out%bc(n)%ice_restart_file = var_in%bc(n)%ice_restart_file
-      var_out%bc(n)%ocean_restart_file = var_in%bc(n)%ocean_restart_file
-      var_out%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
-      var_out%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
-      var_out%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
-      var_out%bc(n)%mol_wt = var_in%bc(n)%mol_wt
-      var_out%bc(n)%num_fields = var_in%bc(n)%num_fields
-      if (associated(var_out%bc(n)%field)) then
-        write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field already associated'
+    allocate ( var%bc(var%num_bcs) )
+    do n = 1, var%num_bcs
+      var%bc(n)%name = var_in%bc(n)%name
+      var%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
+      var%bc(n)%flux_type = var_in%bc(n)%flux_type
+      var%bc(n)%implementation = var_in%bc(n)%implementation
+      var%bc(n)%ice_restart_file = var_in%bc(n)%ice_restart_file
+      var%bc(n)%ocean_restart_file = var_in%bc(n)%ocean_restart_file
+      var%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
+      var%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
+      var%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
+      var%bc(n)%mol_wt = var_in%bc(n)%mol_wt
+      var%bc(n)%num_fields = var_in%bc(n)%num_fields
+      if (associated(var%bc(n)%field)) then
+        write (error_msg, *) trim(error_header), ' var%bc(', n, ')%field already associated'
         call mpp_error(FATAL, trim(error_msg))
       endif
-      allocate ( var_out%bc(n)%field(var_out%bc(n)%num_fields) )
-      do m = 1, var_out%bc(n)%num_fields
+      allocate ( var%bc(n)%field(var%bc(n)%num_fields) )
+      do m = 1, var%bc(n)%num_fields
         if (present(suffix)) then
-          var_out%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
+          var%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
         else
-          var_out%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
+          var%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
         endif
-        var_out%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
-        var_out%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
-        var_out%bc(n)%field(m)%may_init = var_in%bc(n)%field(m)%may_init
-        var_out%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
-        if (associated(var_out%bc(n)%field(m)%values)) then
-          write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field(', m, ')%values already associated'
+        var%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
+        var%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
+        var%bc(n)%field(m)%may_init = var_in%bc(n)%field(m)%may_init
+        var%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
+        if (associated(var%bc(n)%field(m)%values)) then
+          write (error_msg, *) trim(error_header), ' var%bc(', n, ')%field(', m, ')%values already associated'
           call mpp_error(FATAL, trim(error_msg))
         endif
-        allocate ( var_out%bc(n)%field(m)%values(is:ie,js:je) )
-        var_out%bc(n)%field(m)%values = 0.0
+        if ((var%isd<=var%ied) .and. (var%jsd<=var%jed)) then
+          allocate ( var%bc(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed) )
+          var%bc(n)%field(m)%values(:,:) = 0.0
+        endif
       enddo
     enddo
 
@@ -1279,74 +1355,96 @@ end subroutine  CT_spawn_2d_2d
 !! Template:
 !!
 !! ~~~~~~~~~~{.f90}
-!!   call coupler_type_spawn(var_in, var_out, is, ie, js, je, kd, suffix = 'something')
+!!   call coupler_type_spawn(var_in, var, idim, jdim, kdim, suffix = 'something')
 !! ~~~~~~~~~~
 !!
 !! \throw FATAL, "Number of output fields is non-zero"
-!! \throw FATAL, "var_out%bc already associated"
-!! \throw FATAL, "var_out%bc([n])%field already associated"
-!! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
-subroutine CT_spawn_2d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
+!! \throw FATAL, "var%bc already associated"
+!! \throw FATAL, "var%bc([n])%field already associated"
+!! \throw FATAL, "var%bc([n])%field([m])%values already associated"
+subroutine CT_spawn_2d_3d(var_in, var, idim, jdim, kdim, suffix)
 
   type(coupler_2d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
-  type(coupler_3d_bc_type), intent(inout) :: var_out !< structure into which to copy information
-  integer, intent(in)                     :: is !< lower bound of first dimension
-  integer, intent(in)                     :: ie !< upper bound of first dimension
-  integer, intent(in)                     :: js !< lower bound of second dimension
-  integer, intent(in)                     :: je !< upper bound of second dimension
-  integer, intent(in)                     :: kd !< third dimension
-  character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
+  type(coupler_3d_bc_type), intent(inout) :: var     !< structure into which to copy information
+  integer, dimension(4),    intent(in)    :: idim    !< The data and computational domain extents of
+                                                     !! the first dimension in a non-decreasing list
+  integer, dimension(4),    intent(in)    :: jdim    !< The data and computational domain extents of
+                                                     !! the second dimension in a non-decreasing list
+  integer, dimension(2),    intent(in)    :: kdim    !< The array extents of the third dimension in
+                                                     !! a non-decreasing list
+  character(len=*), optional, intent(in)  :: suffix  !< optional suffix to make the name identifier unique
 
   character(len=64), parameter    :: sub_name = 'CT_spawn_2d_3d'
   character(len=256), parameter   :: error_header =                               &
      '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
-  character(len=256)      :: error_msg
+  character(len=400)      :: error_msg
   integer                 :: m, n
 
 
-  if (var_out%num_bcs .ne. 0) then
+  if (var%num_bcs .ne. 0) then
     ! It is an error if output fields is not zero, because it means this type has already been populated.
     call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
   endif
 
-  var_out%num_bcs = var_in%num_bcs
+  var%num_bcs = var_in%num_bcs
+
+  ! Store the array extents that are to be used with this bc_type.
+  if ((idim(1) > idim(2)) .or. (idim(3) > idim(4))) then
+    write (error_msg, *) trim(error_header), ' Disordered i-dimension index bound list ', idim
+    call mpp_error(FATAL, trim(error_msg))
+  endif
+  if ((jdim(1) > jdim(2)) .or. (jdim(3) > jdim(4))) then
+    write (error_msg, *) trim(error_header), ' Disordered j-dimension index bound list  ', jdim
+    call mpp_error(FATAL, trim(error_msg))
+  endif
+  if (kdim(1) > kdim(2)) then
+    write (error_msg, *) trim(error_header), ' Disordered k-dimension index bound list  ', kdim
+    call mpp_error(FATAL, trim(error_msg))
+  endif
+  var%isd = idim(1) ; var%isc = idim(2) ; var%iec = idim(3) ; var%ied = idim(4)
+  var%jsd = jdim(1) ; var%jsc = jdim(2) ; var%jec = jdim(3) ; var%jed = jdim(4)
+  var%ks  = kdim(1) ; var%ke = kdim(2)
 
   if (var_in%num_bcs .ne. 0) then
-    if (associated(var_out%bc)) then
-      call mpp_error(FATAL, trim(error_header) // ' var_out%bc already associated')
+    if (associated(var%bc)) then
+      call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
     endif
-    allocate ( var_out%bc(var_out%num_bcs) )
-    do n = 1, var_out%num_bcs
-      var_out%bc(n)%name = var_in%bc(n)%name
-      var_out%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
-      var_out%bc(n)%ice_restart_file = var_in%bc(n)%ice_restart_file
-      var_out%bc(n)%ocean_restart_file = var_in%bc(n)%ocean_restart_file
-      var_out%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
-      var_out%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
-      var_out%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
-      var_out%bc(n)%mol_wt = var_in%bc(n)%mol_wt
-      var_out%bc(n)%num_fields = var_in%bc(n)%num_fields
-      if (associated(var_out%bc(n)%field)) then
-        write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field already associated'
+    allocate ( var%bc(var%num_bcs) )
+    do n = 1, var%num_bcs
+      var%bc(n)%name = var_in%bc(n)%name
+      var%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
+      var%bc(n)%flux_type = var_in%bc(n)%flux_type
+      var%bc(n)%implementation = var_in%bc(n)%implementation
+      var%bc(n)%ice_restart_file = var_in%bc(n)%ice_restart_file
+      var%bc(n)%ocean_restart_file = var_in%bc(n)%ocean_restart_file
+      var%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
+      var%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
+      var%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
+      var%bc(n)%mol_wt = var_in%bc(n)%mol_wt
+      var%bc(n)%num_fields = var_in%bc(n)%num_fields
+      if (associated(var%bc(n)%field)) then
+        write (error_msg, *) trim(error_header), ' var%bc(', n, ')%field already associated'
         call mpp_error(FATAL, trim(error_msg))
       endif
-      allocate ( var_out%bc(n)%field(var_out%bc(n)%num_fields) )
-      do m = 1, var_out%bc(n)%num_fields
+      allocate ( var%bc(n)%field(var%bc(n)%num_fields) )
+      do m = 1, var%bc(n)%num_fields
         if (present(suffix)) then
-          var_out%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
+          var%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
         else
-          var_out%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
+          var%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
         endif
-        var_out%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
-        var_out%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
-        var_out%bc(n)%field(m)%may_init = var_in%bc(n)%field(m)%may_init
-        var_out%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
-        if (associated(var_out%bc(n)%field(m)%values)) then
-          write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field(', m, ')%values already associated'
+        var%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
+        var%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
+        var%bc(n)%field(m)%may_init = var_in%bc(n)%field(m)%may_init
+        var%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
+        if (associated(var%bc(n)%field(m)%values)) then
+          write (error_msg, *) trim(error_header), ' var%bc(', n, ')%field(', m, ')%values already associated'
           call mpp_error(FATAL, trim(error_msg))
         endif
-        allocate ( var_out%bc(n)%field(m)%values(is:ie,js:je,kd) )
-        var_out%bc(n)%field(m)%values = 0.0
+        if ((var%isd<=var%ied) .and. (var%jsd<=var%jed) .and. (var%ks<=var%ke)) then
+          allocate ( var%bc(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed,var%ks:var%ke) )
+          var%bc(n)%field(m)%values(:,:,:) = 0.0
+        endif
       enddo
     enddo
 
@@ -1360,72 +1458,87 @@ end subroutine  CT_spawn_2d_3d
 !! Template:
 !!
 !! ~~~~~~~~~~{.f90}
-!!   call coupler_type_spawn(var_in, var_out, is, ie, js, je, suffix = 'something')
+!!   call coupler_type_spawn(var_in, var, idim, jdim, suffix = 'something')
 !! ~~~~~~~~~~
 !!
 !! \throw FATAL, "Number of output fields is non-zero"
-!! \throw FATAL, "var_out%bc already associated"
-!! \throw FATAL, "var_out%bc([n])%field already associated"
-!! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
-subroutine CT_spawn_3d_2d(var_in, var_out, is, ie, js, je, suffix)
+!! \throw FATAL, "var%bc already associated"
+!! \throw FATAL, "var%bc([n])%field already associated"
+!! \throw FATAL, "var%bc([n])%field([m])%values already associated"
+subroutine CT_spawn_3d_2d(var_in, var, idim, jdim, suffix)
 
   type(coupler_3d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
-  type(coupler_2d_bc_type), intent(inout) :: var_out !< structure into which to copy information
-  integer, intent(in)                     :: is !< lower bound of first dimension
-  integer, intent(in)                     :: ie !< upper bound of first dimension
-  integer, intent(in)                     :: js !< lower bound of second dimension
-  integer, intent(in)                     :: je !< upper bound of second dimension
-  character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
+  type(coupler_2d_bc_type), intent(inout) :: var     !< structure into which to copy information
+  integer, dimension(4),    intent(in)    :: idim    !< The data and computational domain extents of
+                                                     !! the first dimension in a non-decreasing list
+  integer, dimension(4),    intent(in)    :: jdim    !< The data and computational domain extents of
+                                                     !! the second dimension in a non-decreasing list
+  character(len=*), optional, intent(in)  :: suffix  !< optional suffix to make the name identifier unique
 
   character(len=64), parameter    :: sub_name = 'CT_spawn_1d_2d'
   character(len=256), parameter   :: error_header =                               &
        '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
-  character(len=128)      :: error_msg
+  character(len=400)      :: error_msg
   integer                 :: m, n
 
-  if (var_out%num_bcs .ne. 0) then
+  if (var%num_bcs .ne. 0) then
     ! It is an error if output fields is not zero, because it means this type has already been populated.
     call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
   endif
 
-  var_out%num_bcs = var_in%num_bcs
+  var%num_bcs = var_in%num_bcs
+
+  if ((idim(1) > idim(2)) .or. (idim(3) > idim(4))) then
+    write (error_msg, *) trim(error_header), ' Disordered i-dimension index bound list ', idim
+    call mpp_error(FATAL, trim(error_msg))
+  endif
+  if ((jdim(1) > jdim(2)) .or. (jdim(3) > jdim(4))) then
+    write (error_msg, *) trim(error_header), ' Disordered j-dimension index bound list  ', jdim
+    call mpp_error(FATAL, trim(error_msg))
+  endif
+  var%isd = idim(1) ; var%isc = idim(2) ; var%iec = idim(3) ; var%ied = idim(4)
+  var%jsd = jdim(1) ; var%jsc = jdim(2) ; var%jec = jdim(3) ; var%jed = jdim(4)
 
   if (var_in%num_bcs .ne. 0) then
-    if (associated(var_out%bc)) then
-      call mpp_error(FATAL, trim(error_header) // ' var_out%bc already associated')
+    if (associated(var%bc)) then
+      call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
     endif
-    allocate ( var_out%bc(var_out%num_bcs) )
-    do n = 1, var_out%num_bcs
-      var_out%bc(n)%name = var_in%bc(n)%name
-      var_out%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
-      var_out%bc(n)%ice_restart_file = var_in%bc(n)%ice_restart_file
-      var_out%bc(n)%ocean_restart_file = var_in%bc(n)%ocean_restart_file
-      var_out%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
-      var_out%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
-      var_out%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
-      var_out%bc(n)%mol_wt = var_in%bc(n)%mol_wt
-      var_out%bc(n)%num_fields = var_in%bc(n)%num_fields
-      if (associated(var_out%bc(n)%field)) then
-        write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field already associated'
+    allocate ( var%bc(var%num_bcs) )
+    do n = 1, var%num_bcs
+      var%bc(n)%name = var_in%bc(n)%name
+      var%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
+      var%bc(n)%flux_type = var_in%bc(n)%flux_type
+      var%bc(n)%implementation = var_in%bc(n)%implementation
+      var%bc(n)%ice_restart_file = var_in%bc(n)%ice_restart_file
+      var%bc(n)%ocean_restart_file = var_in%bc(n)%ocean_restart_file
+      var%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
+      var%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
+      var%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
+      var%bc(n)%mol_wt = var_in%bc(n)%mol_wt
+      var%bc(n)%num_fields = var_in%bc(n)%num_fields
+      if (associated(var%bc(n)%field)) then
+        write (error_msg, *) trim(error_header), ' var%bc(', n, ')%field already associated'
         call mpp_error(FATAL, trim(error_msg))
       endif
-      allocate ( var_out%bc(n)%field(var_out%bc(n)%num_fields) )
-      do m = 1, var_out%bc(n)%num_fields
+      allocate ( var%bc(n)%field(var%bc(n)%num_fields) )
+      do m = 1, var%bc(n)%num_fields
         if (present(suffix)) then
-          var_out%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
+          var%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
         else
-          var_out%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
+          var%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
         endif
-        var_out%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
-        var_out%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
-        var_out%bc(n)%field(m)%may_init = var_in%bc(n)%field(m)%may_init
-        var_out%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
-        if (associated(var_out%bc(n)%field(m)%values)) then
-          write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field(', m, ')%values already associated'
+        var%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
+        var%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
+        var%bc(n)%field(m)%may_init = var_in%bc(n)%field(m)%may_init
+        var%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
+        if (associated(var%bc(n)%field(m)%values)) then
+          write (error_msg, *) trim(error_header), ' var%bc(', n, ')%field(', m, ')%values already associated'
           call mpp_error(FATAL, trim(error_msg))
         endif
-        allocate ( var_out%bc(n)%field(m)%values(is:ie,js:je) )
-        var_out%bc(n)%field(m)%values = 0.0
+        if ((var%isd<=var%ied) .and. (var%jsd<=var%jed)) then
+          allocate ( var%bc(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed) )
+          var%bc(n)%field(m)%values(:,:) = 0.0
+        endif
       enddo
     enddo
 
@@ -1440,74 +1553,95 @@ end subroutine  CT_spawn_3d_2d
 !! Template:
 !!
 !! ~~~~~~~~~~{.f90}
-!!   call coupler_type_spawn(var_in, var_out, is, ie, js, je, kd, suffix = 'something')
+!!   call coupler_type_spawn(var_in, var, idim, jdim, kdim, suffix = 'something')
 !! ~~~~~~~~~~
 !!
 !! \throw FATAL, "Number of output fields is non-zero"
-!! \throw FATAL, "var_out%bc already associated"
-!! \throw FATAL, "var_out%bc([n])%field already associated"
-!! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
-subroutine CT_spawn_3d_3d(var_in, var_out, is, ie, js, je, kd, suffix)
+!! \throw FATAL, "var%bc already associated"
+!! \throw FATAL, "var%bc([n])%field already associated"
+!! \throw FATAL, "var%bc([n])%field([m])%values already associated"
+subroutine CT_spawn_3d_3d(var_in, var, idim, jdim, kdim, suffix)
 
   type(coupler_3d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
-  type(coupler_3d_bc_type), intent(inout) :: var_out !< structure into which to copy information
-  integer, intent(in)                     :: is !< lower bound of first dimension
-  integer, intent(in)                     :: ie !< upper bound of first dimension
-  integer, intent(in)                     :: js !< lower bound of second dimension
-  integer, intent(in)                     :: je !< upper bound of second dimension
-  integer, intent(in)                     :: kd !< third dimension
-  character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
+  type(coupler_3d_bc_type), intent(inout) :: var     !< structure into which to copy information
+  integer, dimension(4),    intent(in)    :: idim    !< The data and computational domain extents of
+                                                     !! the first dimension in a non-decreasing list
+  integer, dimension(4),    intent(in)    :: jdim    !< The data and computational domain extents of
+                                                     !! the second dimension in a non-decreasing list
+  integer, dimension(2),    intent(in)    :: kdim    !< The array extents of the third dimension in
+                                                     !! a non-decreasing list
+  character(len=*), optional, intent(in)  :: suffix  !< optional suffix to make the name identifier unique
 
   character(len=64), parameter    :: sub_name = 'CT_spawn_3d_3d'
   character(len=256), parameter   :: error_header =                               &
      '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
-  character(len=256)      :: error_msg
+  character(len=400)      :: error_msg
   integer                 :: m, n
 
 
-  if (var_out%num_bcs .ne. 0) then
+  if (var%num_bcs .ne. 0) then
     ! It is an error if output fields is not zero, because it means this type has already been populated.
     call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
   endif
 
-  var_out%num_bcs = var_in%num_bcs
+  var%num_bcs = var_in%num_bcs
+
+  if ((idim(1) > idim(2)) .or. (idim(3) > idim(4))) then
+    write (error_msg, *) trim(error_header), ' Disordered i-dimension index bound list ', idim
+    call mpp_error(FATAL, trim(error_msg))
+  endif
+  if ((jdim(1) > jdim(2)) .or. (jdim(3) > jdim(4))) then
+    write (error_msg, *) trim(error_header), ' Disordered j-dimension index bound list  ', jdim
+    call mpp_error(FATAL, trim(error_msg))
+  endif
+  if (kdim(1) > kdim(2)) then
+    write (error_msg, *) trim(error_header), ' Disordered k-dimension index bound list  ', kdim
+    call mpp_error(FATAL, trim(error_msg))
+  endif
+  var%isd = idim(1) ; var%isc = idim(2) ; var%iec = idim(3) ; var%ied = idim(4)
+  var%jsd = jdim(1) ; var%jsc = jdim(2) ; var%jec = jdim(3) ; var%jed = jdim(4)
+  var%ks  = kdim(1) ; var%ke  = kdim(2)
 
   if (var_in%num_bcs .ne. 0) then
-    if (associated(var_out%bc)) then
-      call mpp_error(FATAL, trim(error_header) // ' var_out%bc already associated')
+    if (associated(var%bc)) then
+      call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
     endif
-    allocate ( var_out%bc(var_out%num_bcs) )
-    do n = 1, var_out%num_bcs
-      var_out%bc(n)%name = var_in%bc(n)%name
-      var_out%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
-      var_out%bc(n)%ice_restart_file = var_in%bc(n)%ice_restart_file
-      var_out%bc(n)%ocean_restart_file = var_in%bc(n)%ocean_restart_file
-      var_out%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
-      var_out%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
-      var_out%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
-      var_out%bc(n)%mol_wt = var_in%bc(n)%mol_wt
-      var_out%bc(n)%num_fields = var_in%bc(n)%num_fields
-      if (associated(var_out%bc(n)%field)) then
-        write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field already associated'
+    allocate ( var%bc(var%num_bcs) )
+    do n = 1, var%num_bcs
+      var%bc(n)%name = var_in%bc(n)%name
+      var%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
+      var%bc(n)%flux_type = var_in%bc(n)%flux_type
+      var%bc(n)%implementation = var_in%bc(n)%implementation
+      var%bc(n)%ice_restart_file = var_in%bc(n)%ice_restart_file
+      var%bc(n)%ocean_restart_file = var_in%bc(n)%ocean_restart_file
+      var%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
+      var%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
+      var%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
+      var%bc(n)%mol_wt = var_in%bc(n)%mol_wt
+      var%bc(n)%num_fields = var_in%bc(n)%num_fields
+      if (associated(var%bc(n)%field)) then
+        write (error_msg, *) trim(error_header), ' var%bc(', n, ')%field already associated'
         call mpp_error(FATAL, trim(error_msg))
       endif
-      allocate ( var_out%bc(n)%field(var_out%bc(n)%num_fields) )
-      do m = 1, var_out%bc(n)%num_fields
+      allocate ( var%bc(n)%field(var%bc(n)%num_fields) )
+      do m = 1, var%bc(n)%num_fields
         if (present(suffix)) then
-          var_out%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
+          var%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
         else
-          var_out%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
+          var%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
         endif
-        var_out%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
-        var_out%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
-        var_out%bc(n)%field(m)%may_init = var_in%bc(n)%field(m)%may_init
-        var_out%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
-        if (associated(var_out%bc(n)%field(m)%values)) then
-          write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field(', m, ')%values already associated'
+        var%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
+        var%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
+        var%bc(n)%field(m)%may_init = var_in%bc(n)%field(m)%may_init
+        var%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
+        if (associated(var%bc(n)%field(m)%values)) then
+          write (error_msg, *) trim(error_header), ' var%bc(', n, ')%field(', m, ')%values already associated'
           call mpp_error(FATAL, trim(error_msg))
         endif
-        allocate ( var_out%bc(n)%field(m)%values(is:ie,js:je,kd) )
-        var_out%bc(n)%field(m)%values = 0.0
+        if ((var%isd<=var%ied) .and. (var%jsd<=var%jed) .and. (var%ks<=var%ke)) then
+          allocate ( var%bc(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed,var%ks:var%ke) )
+          var%bc(n)%field(m)%values(:,:,:) = 0.0
+        endif
       enddo
     enddo
 
@@ -1517,40 +1651,72 @@ end subroutine  CT_spawn_3d_3d
 
 !> This subroutine does a direct copy of the data in all elements of one
 !! coupler_2d_bc_type into another.  Both must have the same array sizes.
-subroutine CT_copy_data_2d(var_in, var_out, &
+subroutine CT_copy_data_2d(var_in, var, halo_size, bc_index, field_index, &
                            exclude_flux_type, only_flux_type, pass_through_ice)
   type(coupler_2d_bc_type),   intent(in)    :: var_in  !< BC_type structure with the data to copy
-  type(coupler_2d_bc_type),   intent(inout) :: var_out !< The recipient BC_type structure
+  type(coupler_2d_bc_type),   intent(inout) :: var !< The recipient BC_type structure
+  integer,          optional, intent(in)    :: halo_size !< The extent of the halo to copy; 0 by default
+  integer,          optional, intent(in)    :: bc_index  !< The index of the boundary condition
+                                                       !! that is being copied
+  integer,          optional, intent(in)    :: field_index !< The index of the field in the
+                                                       !! boundary condition that is being copied
   character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types of fluxes to exclude from this copy.
   character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types of fluxes to include from this copy.
   logical,          optional, intent(in)    :: pass_through_ice !< If true, only copy BCs whose
                                                        !! value of pass_through ice matches this
-  logical :: copy_bc, first_copy
-  integer :: m, n
+  logical :: copy_bc
+  integer :: i, j, m, n, n1, n2, halo, i_off, j_off
 
-  first_copy = .true.
-  do n = 1, var_in%num_bcs
+  if (present(bc_index)) then
+    if (bc_index > var_in%num_bcs) &
+      call mpp_error(FATAL, "CT_copy_data_2d: bc_index is present and exceeds var_in%num_bcs.")
+    if (present(field_index)) then ; if (field_index > var_in%bc(bc_index)%num_fields) &
+      call mpp_error(FATAL, "CT_copy_data_2d: field_index is present and exceeds num_fields for" //&
+                     trim(var_in%bc(bc_index)%name) )
+    endif
+  elseif (present(field_index)) then
+    call mpp_error(FATAL, "CT_copy_data_2d: bc_index must be present if field_index is present.")
+  endif
+
+  halo = 0 ; if (present(halo_size)) halo = halo_size
+
+  n1 = 1 ; n2 = var_in%num_bcs
+  if (present(bc_index)) then ; n1 = bc_index ; n2 = bc_index ; endif
+
+  if (n2 >= n1) then
+    ! A more consciencious implementation would include a more descriptive error messages.
+    if ((var_in%iec-var_in%isc) /= (var%iec-var%isc)) &
+      call mpp_error(FATAL, "CT_copy_data_2d: There is an i-direction computional domain size mismatch.")
+    if ((var_in%jec-var_in%jsc) /= (var%jec-var%jsc)) &
+      call mpp_error(FATAL, "CT_copy_data_2d: There is a j-direction computional domain size mismatch.")
+    if ((var_in%isc-var_in%isd < halo) .or. (var_in%ied-var_in%iec < halo)) &
+      call mpp_error(FATAL, "CT_copy_data_2d: Excessive i-direction halo size for the input structure.")
+    if ((var_in%jsc-var_in%jsd < halo) .or. (var_in%jed-var_in%jec < halo)) &
+      call mpp_error(FATAL, "CT_copy_data_2d: Excessive j-direction halo size for the input structure.")
+    if ((var%isc-var%isd < halo) .or. (var%ied-var%iec < halo)) &
+      call mpp_error(FATAL, "CT_copy_data_2d: Excessive i-direction halo size for the output structure.")
+    if ((var%jsc-var%jsd < halo) .or. (var%jed-var%jec < halo)) &
+      call mpp_error(FATAL, "CT_copy_data_2d: Excessive j-direction halo size for the output structure.")
+  endif
+
+  i_off = var_in%isc - var%isc ; j_off = var_in%jsc - var%jsc
+  do n = n1, n2
+
     copy_bc = .true.
     if (copy_bc .and. present(exclude_flux_type)) &
-      copy_bc = .not.(trim(var_in%bc(n)%flux_type) == trim(exclude_flux_type))
+      copy_bc = .not.(trim(var%bc(n)%flux_type) == trim(exclude_flux_type))
     if (copy_bc .and. present(only_flux_type)) &
-      copy_bc = (trim(var_in%bc(n)%flux_type) == trim(only_flux_type))
+      copy_bc = (trim(var%bc(n)%flux_type) == trim(only_flux_type))
     if (copy_bc .and. present(pass_through_ice)) &
-      copy_bc = (pass_through_ice .eqv. var_in%bc(n)%pass_through_ice)
+      copy_bc = (pass_through_ice .eqv. var%bc(n)%pass_through_ice)
     if (.not.copy_bc) cycle
 
-    do m = 1, var_in%bc(n)%num_fields
-      if ( associated(var_out%bc(n)%field(m)%values) ) then
-        if (first_copy) then ; first_copy = .false.
-          if ((size(var_in%bc(n)%field(m)%values,1) /= size(var_out%bc(n)%field(m)%values,1)) .or. &
-              (size(var_in%bc(n)%field(m)%values,2) /= size(var_out%bc(n)%field(m)%values,2))) then
-            ! A more consciencious implementation would include a more descriptive error message.
-            call mpp_error(FATAL, "CT_copy_data_2d: There is an array size mismatch when copying "//&
-                           trim(var_out%bc(n)%field(m)%name))
-          endif
-        endif
-
-        var_out%bc(n)%field(m)%values(:,:) = var_in%bc(n)%field(m)%values(:,:)
+    do m = 1, var%bc(n)%num_fields
+      if (present(field_index)) then ; if (m /= field_index) cycle ; endif
+      if ( associated(var%bc(n)%field(m)%values) ) then
+        do j=var%jsc-halo,var%jec+halo ; do i=var%isc-halo,var%iec+halo
+          var%bc(n)%field(m)%values(i,j) = var_in%bc(n)%field(m)%values(i+i_off,j+j_off)
+        enddo ; enddo
       endif
     enddo
   enddo
@@ -1559,19 +1725,141 @@ end subroutine CT_copy_data_2d
 
 !> This subroutine does a direct copy of the data in all elements of one
 !! coupler_3d_bc_type into another.  Both types must have the same array sizes.
-subroutine CT_copy_data_3d(var_in, var_out, &
+subroutine CT_copy_data_3d(var_in, var, halo_size, bc_index, field_index, &
                            exclude_flux_type, only_flux_type, pass_through_ice)
   type(coupler_3d_bc_type),   intent(in)    :: var_in  !< BC_type structure with the data to copy
-  type(coupler_3d_bc_type),   intent(inout) :: var_out !< The recipient BC_type structure
+  type(coupler_3d_bc_type),   intent(inout) :: var !< The recipient BC_type structure
+  integer,          optional, intent(in)    :: halo_size !< The extent of the halo to copy; 0 by default
+  integer,          optional, intent(in)    :: bc_index  !< The index of the boundary condition
+                                                       !! that is being copied
+  integer,          optional, intent(in)    :: field_index !< The index of the field in the
+                                                       !! boundary condition that is being copied
   character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types of fluxes to exclude from this copy.
   character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types of fluxes to include from this copy.
   logical,          optional, intent(in)    :: pass_through_ice !< If true, only copy BCs whose
                                                        !! value of pass_through ice matches this
-  logical :: copy_bc, first_copy
-  integer :: m, n
+  logical :: copy_bc
+  integer :: i, j, k, m, n, n1, n2, halo, i_off, j_off, k_off
 
-  first_copy = .true.
-  do n = 1, var_in%num_bcs
+  if (present(bc_index)) then
+    if (bc_index > var_in%num_bcs) &
+      call mpp_error(FATAL, "CT_copy_data_3d: bc_index is present and exceeds var_in%num_bcs.")
+    if (present(field_index)) then ; if (field_index > var_in%bc(bc_index)%num_fields) &
+      call mpp_error(FATAL, "CT_copy_data_3d: field_index is present and exceeds num_fields for" //&
+                     trim(var_in%bc(bc_index)%name) )
+    endif
+  elseif (present(field_index)) then
+    call mpp_error(FATAL, "CT_copy_data_3d: bc_index must be present if field_index is present.")
+  endif
+
+  halo = 0 ; if (present(halo_size)) halo = halo_size
+
+  n1 = 1 ; n2 = var_in%num_bcs
+  if (present(bc_index)) then ; n1 = bc_index ; n2 = bc_index ; endif
+
+  if (n2 >= n1) then
+    ! A more consciencious implementation would include a more descriptive error messages.
+    if ((var_in%iec-var_in%isc) /= (var%iec-var%isc)) &
+      call mpp_error(FATAL, "CT_copy_data_3d: There is an i-direction computional domain size mismatch.")
+    if ((var_in%jec-var_in%jsc) /= (var%jec-var%jsc)) &
+      call mpp_error(FATAL, "CT_copy_data_3d: There is a j-direction computional domain size mismatch.")
+    if ((var_in%ke-var_in%ks) /= (var%ke-var%ks)) &
+      call mpp_error(FATAL, "CT_copy_data_3d: There is a k-direction computional domain size mismatch.")
+    if ((var_in%isc-var_in%isd < halo) .or. (var_in%ied-var_in%iec < halo)) &
+      call mpp_error(FATAL, "CT_copy_data_3d: Excessive i-direction halo size for the input structure.")
+    if ((var_in%jsc-var_in%jsd < halo) .or. (var_in%jed-var_in%jec < halo)) &
+      call mpp_error(FATAL, "CT_copy_data_3d: Excessive j-direction halo size for the input structure.")
+    if ((var%isc-var%isd < halo) .or. (var%ied-var%iec < halo)) &
+      call mpp_error(FATAL, "CT_copy_data_3d: Excessive i-direction halo size for the output structure.")
+    if ((var%jsc-var%jsd < halo) .or. (var%jed-var%jec < halo)) &
+      call mpp_error(FATAL, "CT_copy_data_3d: Excessive j-direction halo size for the output structure.")
+  endif
+
+  i_off = var_in%isc - var%isc ; j_off = var_in%jsc - var%jsc ; k_off = var_in%ks - var%ks
+  do n = n1, n2
+
+    copy_bc = .true.
+    if (copy_bc .and. present(exclude_flux_type)) &
+      copy_bc = .not.(trim(var%bc(n)%flux_type) == trim(exclude_flux_type))
+    if (copy_bc .and. present(only_flux_type)) &
+      copy_bc = (trim(var%bc(n)%flux_type) == trim(only_flux_type))
+    if (copy_bc .and. present(pass_through_ice)) &
+      copy_bc = (pass_through_ice .eqv. var%bc(n)%pass_through_ice)
+    if (.not.copy_bc) cycle
+
+    do m = 1, var_in%bc(n)%num_fields
+      if (present(field_index)) then ; if (m /= field_index) cycle ; endif
+      if ( associated(var%bc(n)%field(m)%values) ) then
+        do k=var%ks,var%ke ; do j=var%jsc-halo,var%jec+halo ; do i=var%isc-halo,var%iec+halo
+          var%bc(n)%field(m)%values(i,j,k) = var_in%bc(n)%field(m)%values(i+i_off,j+j_off,k+k_off)
+        enddo ; enddo ; enddo
+      endif
+    enddo
+  enddo
+
+end subroutine CT_copy_data_3d
+
+
+!> This subroutine does a direct copy of the data in all elements of a
+!! coupler_2d_bc_type into a coupler_3d_bc_type.  Both types must have the same
+!! array sizes for their first two dimensions, while the extent of the 3rd dimension
+!! that is being filled may be specified via optional arguments.
+subroutine CT_copy_data_2d_3d(var_in, var, halo_size, bc_index, field_index, &
+                           exclude_flux_type, only_flux_type, pass_through_ice, &
+                           ind3_start, ind3_end)
+  type(coupler_2d_bc_type),   intent(in)    :: var_in  !< BC_type structure with the data to copy
+  type(coupler_3d_bc_type),   intent(inout) :: var !< The recipient BC_type structure
+  integer,          optional, intent(in)    :: halo_size !< The extent of the halo to copy; 0 by default
+  integer,          optional, intent(in)    :: bc_index  !< The index of the boundary condition
+                                                       !! that is being copied
+  integer,          optional, intent(in)    :: field_index !< The index of the field in the
+                                                       !! boundary condition that is being copied
+  character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types of fluxes to exclude from this copy.
+  character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types of fluxes to include from this copy.
+  logical,          optional, intent(in)    :: pass_through_ice !< If true, only copy BCs whose
+                                                       !! value of pass_through ice matches this
+  integer,          optional, intent(in)    :: ind3_start  !< The starting value of the 3rd
+                                                       !! index of the 3d type to fill in.
+  integer,          optional, intent(in)    :: ind3_end    !< The ending value of the 3rd
+                                                       !! index of the 3d type to fill in.
+  logical :: copy_bc
+  integer :: i, j, k, m, n, n1, n2, halo, i_off, j_off, ks, ke
+
+  if (present(bc_index)) then
+    if (bc_index > var_in%num_bcs) &
+      call mpp_error(FATAL, "CT_copy_data_2d_3d: bc_index is present and exceeds var_in%num_bcs.")
+    if (present(field_index)) then ; if (field_index > var_in%bc(bc_index)%num_fields) &
+      call mpp_error(FATAL, "CT_copy_data_2d_3d: field_index is present and exceeds num_fields for" //&
+                     trim(var_in%bc(bc_index)%name) )
+    endif
+  elseif (present(field_index)) then
+    call mpp_error(FATAL, "CT_copy_data_2d_3d: bc_index must be present if field_index is present.")
+  endif
+
+  halo = 0 ; if (present(halo_size)) halo = halo_size
+
+  n1 = 1 ; n2 = var_in%num_bcs
+  if (present(bc_index)) then ; n1 = bc_index ; n2 = bc_index ; endif
+
+  if (n2 >= n1) then
+    ! A more consciencious implementation would include a more descriptive error messages.
+    if ((var_in%iec-var_in%isc) /= (var%iec-var%isc)) &
+      call mpp_error(FATAL, "CT_copy_data_2d_3d: There is an i-direction computional domain size mismatch.")
+    if ((var_in%jec-var_in%jsc) /= (var%jec-var%jsc)) &
+      call mpp_error(FATAL, "CT_copy_data_2d_3d: There is a j-direction computional domain size mismatch.")
+    if ((var_in%isc-var_in%isd < halo) .or. (var_in%ied-var_in%iec < halo)) &
+      call mpp_error(FATAL, "CT_copy_data_2d_3d: Excessive i-direction halo size for the input structure.")
+    if ((var_in%jsc-var_in%jsd < halo) .or. (var_in%jed-var_in%jec < halo)) &
+      call mpp_error(FATAL, "CT_copy_data_2d_3d: Excessive j-direction halo size for the input structure.")
+    if ((var%isc-var%isd < halo) .or. (var%ied-var%iec < halo)) &
+      call mpp_error(FATAL, "CT_copy_data_2d_3d: Excessive i-direction halo size for the output structure.")
+    if ((var%jsc-var%jsd < halo) .or. (var%jed-var%jec < halo)) &
+      call mpp_error(FATAL, "CT_copy_data_2d_3d: Excessive j-direction halo size for the output structure.")
+  endif
+
+  i_off = var_in%isc - var%isc ; j_off = var_in%jsc - var%jsc
+  do n = n1, n2
+
     copy_bc = .true.
     if (copy_bc .and. present(exclude_flux_type)) &
       copy_bc = .not.(trim(var_in%bc(n)%flux_type) == trim(exclude_flux_type))
@@ -1582,23 +1870,18 @@ subroutine CT_copy_data_3d(var_in, var_out, &
     if (.not.copy_bc) cycle
 
     do m = 1, var_in%bc(n)%num_fields
-      if ( associated(var_out%bc(n)%field(m)%values) ) then
-        if (first_copy) then ; first_copy = .false.
-          if ((size(var_in%bc(n)%field(m)%values,1) /= size(var_out%bc(n)%field(m)%values,1)) .or. &
-              (size(var_in%bc(n)%field(m)%values,2) /= size(var_out%bc(n)%field(m)%values,2)) .or. &
-              (size(var_in%bc(n)%field(m)%values,3) /= size(var_out%bc(n)%field(m)%values,3))) then
-            ! A more consciencious implementation would include a more descriptive error message.
-            call mpp_error(FATAL, "CT_copy_data_3d: There is an array size mismatch when copying "//&
-                           trim(var_out%bc(n)%field(m)%name))
-          endif
-        endif
-
-        var_out%bc(n)%field(m)%values(:,:,:) = var_in%bc(n)%field(m)%values(:,:,:)
+      if (present(field_index)) then ; if (m /= field_index) cycle ; endif
+      if ( associated(var%bc(n)%field(m)%values) ) then
+        ks = var%ks ; if (present(ind3_start)) ks = max(ks, ind3_start)
+        ke = var%ke ; if (present(ind3_end)) ke = max(ke, ind3_end)
+        do k=ks,ke ; do j=var%jsc-halo,var%jec+halo ; do i=var%isc-halo,var%iec+halo
+          var%bc(n)%field(m)%values(i,j,k) = var_in%bc(n)%field(m)%values(i+i_off,j+j_off)
+        enddo ; enddo ; enddo
       endif
     enddo
   enddo
 
-end subroutine CT_copy_data_3d
+end subroutine CT_copy_data_2d_3d
 
 !> This subroutine redistributes the data in all elements of one coupler_2d_bc_type
 !! into another, which may be on different processors with a different decomposition.
@@ -1633,7 +1916,7 @@ subroutine CT_redistribute_data_2d(var_in, domain_in, var_out, domain_out, compl
     if (var_in%num_bcs /= var_out%num_bcs) call mpp_error(FATAL, &
       "Mismatch in num_bcs in CT_copy_data_2d.")
     if (fc_in /= fc_out) call mpp_error(FATAL, &
-      "Mismatch in the total number of fields in CT_copy_data_2d.")
+      "Mismatch in the total number of fields in CT_redistribute_data_2d.")
   endif
 
   if (.not.(do_in .or. do_out)) return
@@ -1644,7 +1927,7 @@ subroutine CT_redistribute_data_2d(var_in, domain_in, var_out, domain_out, compl
       if ( associated(var_in%bc(n)%field(m)%values) .neqv. &
            associated(var_out%bc(n)%field(m)%values) ) &
         call mpp_error(FATAL, &
-          "Mismatch in which fields ar associated in CT_copy_data_2d.")
+          "Mismatch in which fields are associated in CT_redistribute_data_2d.")
 
       if ( associated(var_in%bc(n)%field(m)%values) ) then
         fc = fc + 1
@@ -1709,7 +1992,7 @@ subroutine CT_redistribute_data_3d(var_in, domain_in, var_out, domain_out, compl
     if (var_in%num_bcs /= var_out%num_bcs) call mpp_error(FATAL, &
       "Mismatch in num_bcs in CT_copy_data_3d.")
     if (fc_in /= fc_out) call mpp_error(FATAL, &
-      "Mismatch in the total number of fields in CT_copy_data_3d.")
+      "Mismatch in the total number of fields in CT_redistribute_data_3d.")
   endif
 
   if (.not.(do_in .or. do_out)) return
@@ -1720,7 +2003,7 @@ subroutine CT_redistribute_data_3d(var_in, domain_in, var_out, domain_out, compl
       if ( associated(var_in%bc(n)%field(m)%values) .neqv. &
            associated(var_out%bc(n)%field(m)%values) ) &
         call mpp_error(FATAL, &
-          "Mismatch in which fields ar associated in CT_copy_data_3d.")
+          "Mismatch in which fields are associated in CT_redistribute_data_3d.")
 
       if ( associated(var_in%bc(n)%field(m)%values) ) then
         fc = fc + 1
@@ -1751,6 +2034,432 @@ subroutine CT_redistribute_data_3d(var_in, domain_in, var_out, domain_out, compl
 
 end subroutine CT_redistribute_data_3d
 
+
+!> This subroutine rescales the fields in the elements of a coupler_2d_bc_type
+!! by multiplying by a factor scale.  If scale is 0, this is a direct
+!! assignment to 0, so that NaNs will not persist.
+subroutine CT_rescale_data_2d(var, scale, halo_size, bc_index, field_index, &
+                           exclude_flux_type, only_flux_type, pass_through_ice)
+  type(coupler_2d_bc_type),   intent(inout) :: var !< The BC_type structure whose fields are being rescaled
+  real,                       intent(in)    :: scale   !< A scaling factor to multiply fields by
+  integer,          optional, intent(in)    :: halo_size !< The extent of the halo to copy; 0 by default or
+                                                         !! the full arrays if scale is 0.
+  integer,          optional, intent(in)    :: bc_index  !< The index of the boundary condition
+                                                       !! that is being copied
+  integer,          optional, intent(in)    :: field_index !< The index of the field in the
+                                                       !! boundary condition that is being copied
+  character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types of fluxes to exclude from this copy.
+  character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types of fluxes to include from this copy.
+  logical,          optional, intent(in)    :: pass_through_ice !< If true, only copy BCs whose
+                                                       !! value of pass_through ice matches this
+  logical :: do_bc
+  integer :: i, j, m, n, n1, n2, halo
+
+  if (present(bc_index)) then
+    if (bc_index > var%num_bcs) &
+      call mpp_error(FATAL, "CT_rescale_data_2d: bc_index is present and exceeds var%num_bcs.")
+    if (present(field_index)) then ; if (field_index > var%bc(bc_index)%num_fields) &
+      call mpp_error(FATAL, "CT_rescale_data_2d: field_index is present and exceeds num_fields for" //&
+                     trim(var%bc(bc_index)%name) )
+    endif
+  elseif (present(field_index)) then
+    call mpp_error(FATAL, "CT_rescale_data_2d: bc_index must be present if field_index is present.")
+  endif
+
+  halo = 0 ; if (present(halo_size)) halo = halo_size
+
+  n1 = 1 ; n2 = var%num_bcs
+  if (present(bc_index)) then ; n1 = bc_index ; n2 = bc_index ; endif
+
+  if (n2 >= n1) then
+    ! A more consciencious implementation would include a more descriptive error messages.
+    if ((var%isc-var%isd < halo) .or. (var%ied-var%iec < halo)) &
+      call mpp_error(FATAL, "CT_rescale_data_2d: Excessive i-direction halo size.")
+    if ((var%jsc-var%jsd < halo) .or. (var%jed-var%jec < halo)) &
+      call mpp_error(FATAL, "CT_rescale_data_2d: Excessive j-direction halo size.")
+  endif
+
+  do n = n1, n2
+
+    do_bc = .true.
+    if (do_bc .and. present(exclude_flux_type)) &
+      do_bc = .not.(trim(var%bc(n)%flux_type) == trim(exclude_flux_type))
+    if (do_bc .and. present(only_flux_type)) &
+      do_bc = (trim(var%bc(n)%flux_type) == trim(only_flux_type))
+    if (do_bc .and. present(pass_through_ice)) &
+      do_bc = (pass_through_ice .eqv. var%bc(n)%pass_through_ice)
+    if (.not.do_bc) cycle
+
+    do m = 1, var%bc(n)%num_fields
+      if (present(field_index)) then ; if (m /= field_index) cycle ; endif
+      if ( associated(var%bc(n)%field(m)%values) ) then
+        if (scale == 0.0) then
+          if (present(halo_size)) then
+            do j=var%jsc-halo,var%jec+halo ; do i=var%isc-halo,var%iec+halo
+              var%bc(n)%field(m)%values(i,j) = 0.0
+            enddo ; enddo
+          else
+            var%bc(n)%field(m)%values(:,:) = 0.0
+          endif
+        else
+          do j=var%jsc-halo,var%jec+halo ; do i=var%isc-halo,var%iec+halo
+            var%bc(n)%field(m)%values(i,j) = scale * var%bc(n)%field(m)%values(i,j)
+          enddo ; enddo
+        endif
+      endif
+    enddo
+  enddo
+
+end subroutine CT_rescale_data_2d
+
+!> This subroutine rescales the fields in the elements of a coupler_3d_bc_type
+!! by multiplying by a factor scale.  If scale is 0, this is a direct
+!! assignment to 0, so that NaNs will not persist.
+subroutine CT_rescale_data_3d(var, scale, halo_size, bc_index, field_index, &
+                           exclude_flux_type, only_flux_type, pass_through_ice)
+  type(coupler_3d_bc_type),   intent(inout) :: var !< The BC_type structure whose fields are being rescaled
+  real,                       intent(in)    :: scale   !< A scaling factor to multiply fields by
+  integer,          optional, intent(in)    :: halo_size !< The extent of the halo to copy; 0 by default or
+                                                         !! the full arrays if scale is 0.
+  integer,          optional, intent(in)    :: bc_index  !< The index of the boundary condition
+                                                       !! that is being copied
+  integer,          optional, intent(in)    :: field_index !< The index of the field in the
+                                                       !! boundary condition that is being copied
+  character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types of fluxes to exclude from this copy.
+  character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types of fluxes to include from this copy.
+  logical,          optional, intent(in)    :: pass_through_ice !< If true, only copy BCs whose
+                                                       !! value of pass_through ice matches this
+  logical :: do_bc
+  integer :: i, j, k, m, n, n1, n2, halo
+
+  if (present(bc_index)) then
+    if (bc_index > var%num_bcs) &
+      call mpp_error(FATAL, "CT_rescale_data_2d: bc_index is present and exceeds var%num_bcs.")
+    if (present(field_index)) then ; if (field_index > var%bc(bc_index)%num_fields) &
+      call mpp_error(FATAL, "CT_rescale_data_2d: field_index is present and exceeds num_fields for" //&
+                     trim(var%bc(bc_index)%name) )
+    endif
+  elseif (present(field_index)) then
+    call mpp_error(FATAL, "CT_rescale_data_2d: bc_index must be present if field_index is present.")
+  endif
+
+  halo = 0 ; if (present(halo_size)) halo = halo_size
+
+  n1 = 1 ; n2 = var%num_bcs
+  if (present(bc_index)) then ; n1 = bc_index ; n2 = bc_index ; endif
+
+  if (n2 >= n1) then
+    ! A more consciencious implementation would include a more descriptive error messages.
+    if ((var%isc-var%isd < halo) .or. (var%ied-var%iec < halo)) &
+      call mpp_error(FATAL, "CT_rescale_data_3d: Excessive i-direction halo size.")
+    if ((var%jsc-var%jsd < halo) .or. (var%jed-var%jec < halo)) &
+      call mpp_error(FATAL, "CT_rescale_data_3d: Excessive j-direction halo size.")
+  endif
+
+  do n = n1, n2
+
+    do_bc = .true.
+    if (do_bc .and. present(exclude_flux_type)) &
+      do_bc = .not.(trim(var%bc(n)%flux_type) == trim(exclude_flux_type))
+    if (do_bc .and. present(only_flux_type)) &
+      do_bc = (trim(var%bc(n)%flux_type) == trim(only_flux_type))
+    if (do_bc .and. present(pass_through_ice)) &
+      do_bc = (pass_through_ice .eqv. var%bc(n)%pass_through_ice)
+    if (.not.do_bc) cycle
+
+    do m = 1, var%bc(n)%num_fields
+      if (present(field_index)) then ; if (m /= field_index) cycle ; endif
+      if ( associated(var%bc(n)%field(m)%values) ) then
+        if (scale == 0.0) then
+          if (present(halo_size)) then
+            do k=var%ks,var%ke ; do j=var%jsc-halo,var%jec+halo ; do i=var%isc-halo,var%iec+halo
+              var%bc(n)%field(m)%values(i,j,k) = 0.0
+            enddo ; enddo ; enddo
+          else
+            var%bc(n)%field(m)%values(:,:,:) = 0.0
+          endif
+        else
+          do k=var%ks,var%ke ; do j=var%jsc-halo,var%jec+halo ; do i=var%isc-halo,var%iec+halo
+            var%bc(n)%field(m)%values(i,j,k) = scale * var%bc(n)%field(m)%values(i,j,k)
+          enddo ; enddo ; enddo
+        endif
+      endif
+    enddo
+  enddo
+
+end subroutine CT_rescale_data_3d
+
+!> This subroutine does a direct increment of the data in all elements of one
+!! coupler_2d_bc_type into another.  Both must have the same array sizes.
+subroutine CT_increment_data_2d_2d(var_in, var, halo_size, bc_index, field_index, &
+                           scale_factor, exclude_flux_type, only_flux_type, pass_through_ice)
+  type(coupler_2d_bc_type),   intent(in)    :: var_in  !< BC_type structure with the data to add to the other type
+  type(coupler_2d_bc_type),   intent(inout) :: var !< The BC_type structure whose fields are being incremented
+  integer,          optional, intent(in)    :: halo_size !< The extent of the halo to increment; 0 by default
+  integer,          optional, intent(in)    :: bc_index  !< The index of the boundary condition
+                                                       !! that is being copied
+  integer,          optional, intent(in)    :: field_index !< The index of the field in the
+                                                       !! boundary condition that is being copied
+  real,             optional, intent(in)    :: scale_factor  !< A scaling factor for the data that is being added
+  character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types of fluxes to exclude from this increment.
+  character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types of fluxes to include from this increment.
+  logical,          optional, intent(in)    :: pass_through_ice !< If true, only increment BCs whose
+                                                       !! value of pass_through ice matches this
+
+  real :: scale
+  logical :: increment_bc
+  integer :: i, j, m, n, n1, n2, halo, i_off, j_off
+
+  scale = 1.0 ; if (present(scale_factor)) scale = scale_factor
+
+  if (present(bc_index)) then
+    if (bc_index > var_in%num_bcs) &
+      call mpp_error(FATAL, "CT_increment_data_2d_2d: bc_index is present and exceeds var_in%num_bcs.")
+    if (present(field_index)) then ; if (field_index > var_in%bc(bc_index)%num_fields) &
+      call mpp_error(FATAL, "CT_increment_data_2d_2d: field_index is present and exceeds num_fields for" //&
+                     trim(var_in%bc(bc_index)%name) )
+    endif
+  elseif (present(field_index)) then
+    call mpp_error(FATAL, "CT_increment_data_2d_2d: bc_index must be present if field_index is present.")
+  endif
+
+  halo = 0 ; if (present(halo_size)) halo = halo_size
+
+  n1 = 1 ; n2 = var_in%num_bcs
+  if (present(bc_index)) then ; n1 = bc_index ; n2 = bc_index ; endif
+
+  if (n2 >= n1) then
+    ! A more consciencious implementation would include a more descriptive error messages.
+    if ((var_in%iec-var_in%isc) /= (var%iec-var%isc)) &
+      call mpp_error(FATAL, "CT_increment_data_2d: There is an i-direction computional domain size mismatch.")
+    if ((var_in%jec-var_in%jsc) /= (var%jec-var%jsc)) &
+      call mpp_error(FATAL, "CT_increment_data_2d: There is a j-direction computional domain size mismatch.")
+    if ((var_in%isc-var_in%isd < halo) .or. (var_in%ied-var_in%iec < halo)) &
+      call mpp_error(FATAL, "CT_increment_data_2d: Excessive i-direction halo size for the input structure.")
+    if ((var_in%jsc-var_in%jsd < halo) .or. (var_in%jed-var_in%jec < halo)) &
+      call mpp_error(FATAL, "CT_increment_data_2d: Excessive j-direction halo size for the input structure.")
+    if ((var%isc-var%isd < halo) .or. (var%ied-var%iec < halo)) &
+      call mpp_error(FATAL, "CT_increment_data_2d: Excessive i-direction halo size for the output structure.")
+    if ((var%jsc-var%jsd < halo) .or. (var%jed-var%jec < halo)) &
+      call mpp_error(FATAL, "CT_increment_data_2d: Excessive j-direction halo size for the output structure.")
+  endif
+
+  i_off = var_in%isc - var%isc ; j_off = var_in%jsc - var%jsc
+  do n = n1, n2
+
+    increment_bc = .true.
+    if (increment_bc .and. present(exclude_flux_type)) &
+      increment_bc = .not.(trim(var%bc(n)%flux_type) == trim(exclude_flux_type))
+    if (increment_bc .and. present(only_flux_type)) &
+      increment_bc = (trim(var%bc(n)%flux_type) == trim(only_flux_type))
+    if (increment_bc .and. present(pass_through_ice)) &
+      increment_bc = (pass_through_ice .eqv. var%bc(n)%pass_through_ice)
+    if (.not.increment_bc) cycle
+
+    do m = 1, var_in%bc(n)%num_fields
+      if (present(field_index)) then ; if (m /= field_index) cycle ; endif
+      if ( associated(var%bc(n)%field(m)%values) ) then
+        do j=var%jsc-halo,var%jec+halo ; do i=var%isc-halo,var%iec+halo
+          var%bc(n)%field(m)%values(i,j) =  var%bc(n)%field(m)%values(i,j) + &
+                          scale * var_in%bc(n)%field(m)%values(i+i_off,j+j_off)
+        enddo ; enddo
+      endif
+    enddo
+  enddo
+
+end subroutine CT_increment_data_2d_2d
+
+
+!> This subroutine does a direct increment of the data in all elements of one
+!! coupler_3d_bc_type into another.  Both must have the same array sizes.
+subroutine CT_increment_data_3d_3d(var_in, var, halo_size, bc_index, field_index, &
+                           scale_factor, exclude_flux_type, only_flux_type, pass_through_ice)
+  type(coupler_3d_bc_type),   intent(in)    :: var_in  !< BC_type structure with the data to add to the other type
+  type(coupler_3d_bc_type),   intent(inout) :: var !< The BC_type structure whose fields are being incremented
+  integer,          optional, intent(in)    :: halo_size !< The extent of the halo to copy; 0 by default
+  integer,          optional, intent(in)    :: bc_index  !< The index of the boundary condition
+                                                       !! that is being copied
+  integer,          optional, intent(in)    :: field_index !< The index of the field in the
+                                                       !! boundary condition that is being copied
+  real,             optional, intent(in)    :: scale_factor  !< A scaling factor for the data that is being added
+  character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types of fluxes to exclude from this increment.
+  character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types of fluxes to include from this increment.
+  logical,          optional, intent(in)    :: pass_through_ice !< If true, only increment BCs whose
+                                                       !! value of pass_through ice matches this
+
+  real :: scale
+  logical :: increment_bc
+  integer :: i, j, k, m, n, n1, n2, halo, i_off, j_off, k_off
+
+  scale = 1.0 ; if (present(scale_factor)) scale = scale_factor
+
+  if (present(bc_index)) then
+    if (bc_index > var_in%num_bcs) &
+      call mpp_error(FATAL, "CT_increment_data_3d_3d: bc_index is present and exceeds var_in%num_bcs.")
+    if (present(field_index)) then ; if (field_index > var_in%bc(bc_index)%num_fields) &
+      call mpp_error(FATAL, "CT_increment_data_3d_3d: field_index is present and exceeds num_fields for" //&
+                     trim(var_in%bc(bc_index)%name) )
+    endif
+  elseif (present(field_index)) then
+    call mpp_error(FATAL, "CT_increment_data_3d_3d: bc_index must be present if field_index is present.")
+  endif
+
+  halo = 0 ; if (present(halo_size)) halo = halo_size
+
+  n1 = 1 ; n2 = var_in%num_bcs
+  if (present(bc_index)) then ; n1 = bc_index ; n2 = bc_index ; endif
+
+  if (n2 >= n1) then
+    ! A more consciencious implementation would include a more descriptive error messages.
+    if ((var_in%iec-var_in%isc) /= (var%iec-var%isc)) &
+      call mpp_error(FATAL, "CT_increment_data_3d: There is an i-direction computional domain size mismatch.")
+    if ((var_in%jec-var_in%jsc) /= (var%jec-var%jsc)) &
+      call mpp_error(FATAL, "CT_increment_data_3d: There is a j-direction computional domain size mismatch.")
+    if ((var_in%ke-var_in%ks) /= (var%ke-var%ks)) &
+      call mpp_error(FATAL, "CT_increment_data_3d: There is a k-direction computional domain size mismatch.")
+    if ((var_in%isc-var_in%isd < halo) .or. (var_in%ied-var_in%iec < halo)) &
+      call mpp_error(FATAL, "CT_increment_data_3d: Excessive i-direction halo size for the input structure.")
+    if ((var_in%jsc-var_in%jsd < halo) .or. (var_in%jed-var_in%jec < halo)) &
+      call mpp_error(FATAL, "CT_increment_data_3d: Excessive j-direction halo size for the input structure.")
+    if ((var%isc-var%isd < halo) .or. (var%ied-var%iec < halo)) &
+      call mpp_error(FATAL, "CT_increment_data_3d: Excessive i-direction halo size for the output structure.")
+    if ((var%jsc-var%jsd < halo) .or. (var%jed-var%jec < halo)) &
+      call mpp_error(FATAL, "CT_increment_data_3d: Excessive j-direction halo size for the output structure.")
+  endif
+
+  i_off = var_in%isc - var%isc ; j_off = var_in%jsc - var%jsc ; k_off = var_in%ks - var%ks
+  do n = n1, n2
+
+    increment_bc = .true.
+    if (increment_bc .and. present(exclude_flux_type)) &
+      increment_bc = .not.(trim(var%bc(n)%flux_type) == trim(exclude_flux_type))
+    if (increment_bc .and. present(only_flux_type)) &
+      increment_bc = (trim(var%bc(n)%flux_type) == trim(only_flux_type))
+    if (increment_bc .and. present(pass_through_ice)) &
+      increment_bc = (pass_through_ice .eqv. var%bc(n)%pass_through_ice)
+    if (.not.increment_bc) cycle
+
+    do m = 1, var_in%bc(n)%num_fields
+      if (present(field_index)) then ; if (m /= field_index) cycle ; endif
+      if ( associated(var%bc(n)%field(m)%values) ) then
+        do k=var%ks,var%ke ; do j=var%jsc-halo,var%jec+halo ; do i=var%isc-halo,var%iec+halo
+          var%bc(n)%field(m)%values(i,j,k) = var%bc(n)%field(m)%values(i,j,k) + &
+                       scale * var_in%bc(n)%field(m)%values(i+i_off,j+j_off,k+k_off)
+        enddo ; enddo ; enddo
+      endif
+    enddo
+  enddo
+
+end subroutine CT_increment_data_3d_3d
+
+!> This subroutine does increments the data in the elements of a coupler_2d_bc_type
+!! with the weighed average of the elements of a coupler_3d_bc_type. Both must have
+!! the same horizontal array sizes and the normalized weight array must match the
+!! array sizes of the coupler_3d_bc_type.
+subroutine CT_increment_data_2d_3d(var_in, weights, var, halo_size, bc_index, field_index, &
+                           scale_factor, exclude_flux_type, only_flux_type, pass_through_ice)
+  type(coupler_3d_bc_type),   intent(in)    :: var_in  !< BC_type structure with the data to add to the other type
+  real, dimension(:,:,:),     intent(in)    :: weights !< An array of normalized weights for the 3d-data to
+                                                       !! increment the 2d-data.  There is no renormalization,
+                                                       !! so if the weights do not sum to 1 in the 3rd dimension
+                                                       !! there may be adverse consequences!
+  type(coupler_2d_bc_type),   intent(inout) :: var !< The BC_type structure whose fields are being incremented
+  integer,          optional, intent(in)    :: halo_size !< The extent of the halo to copy; 0 by default
+  integer,          optional, intent(in)    :: bc_index  !< The index of the boundary condition
+                                                       !! that is being copied
+  integer,          optional, intent(in)    :: field_index !< The index of the field in the
+                                                       !! boundary condition that is being copied
+  real,             optional, intent(in)    :: scale_factor  !< A scaling factor for the data that is being added
+  character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types of fluxes to exclude from this increment.
+  character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types of fluxes to include from this increment.
+  logical,          optional, intent(in)    :: pass_through_ice !< If true, only increment BCs whose
+                                                       !! value of pass_through ice matches this
+
+  real :: scale
+  logical :: increment_bc
+  integer :: i, j, k, m, n, n1, n2, halo
+  integer :: io1, jo1, iow, jow, kow  ! Offsets to account for different index conventions.
+
+  scale = 1.0 ; if (present(scale_factor)) scale = scale_factor
+
+  if (present(bc_index)) then
+    if (bc_index > var_in%num_bcs) &
+      call mpp_error(FATAL, "CT_increment_data_2d_3d: bc_index is present and exceeds var_in%num_bcs.")
+    if (present(field_index)) then ; if (field_index > var_in%bc(bc_index)%num_fields) &
+      call mpp_error(FATAL, "CT_increment_data_2d_3d: field_index is present and exceeds num_fields for" //&
+                     trim(var_in%bc(bc_index)%name) )
+    endif
+  elseif (present(field_index)) then
+    call mpp_error(FATAL, "CT_increment_data_2d_3d: bc_index must be present if field_index is present.")
+  endif
+
+  halo = 0 ; if (present(halo_size)) halo = halo_size
+
+  n1 = 1 ; n2 = var_in%num_bcs
+  if (present(bc_index)) then ; n1 = bc_index ; n2 = bc_index ; endif
+
+  if (n2 >= n1) then
+    ! A more consciencious implementation would include a more descriptive error messages.
+    if ((var_in%iec-var_in%isc) /= (var%iec-var%isc)) &
+      call mpp_error(FATAL, "CT_increment_data_2d_3d: There is an i-direction computional domain size mismatch.")
+    if ((var_in%jec-var_in%jsc) /= (var%jec-var%jsc)) &
+      call mpp_error(FATAL, "CT_increment_data_2d_3d: There is a j-direction computional domain size mismatch.")
+    if ((1+var_in%ke-var_in%ks) /= size(weights,3)) &
+      call mpp_error(FATAL, "CT_increment_data_2d_3d: There is a k-direction size mismatch with the weights array.")
+    if ((var_in%isc-var_in%isd < halo) .or. (var_in%ied-var_in%iec < halo)) &
+      call mpp_error(FATAL, "CT_increment_data_2d_3d: Excessive i-direction halo size for the input structure.")
+    if ((var_in%jsc-var_in%jsd < halo) .or. (var_in%jed-var_in%jec < halo)) &
+      call mpp_error(FATAL, "CT_increment_data_2d_3d: Excessive j-direction halo size for the input structure.")
+    if ((var%isc-var%isd < halo) .or. (var%ied-var%iec < halo)) &
+      call mpp_error(FATAL, "CT_increment_data_2d_3d: Excessive i-direction halo size for the output structure.")
+    if ((var%jsc-var%jsd < halo) .or. (var%jed-var%jec < halo)) &
+      call mpp_error(FATAL, "CT_increment_data_2d_3d: Excessive j-direction halo size for the output structure.")
+
+    if ((1+var%iec-var%isc) == size(weights,1)) then
+      iow = 1 - var%isc
+    elseif ((1+var%ied-var%isd) == size(weights,1)) then
+      iow = 1 - var%isd
+    elseif ((1+var_in%ied-var_in%isd) == size(weights,1)) then
+      iow = 1 + (var_in%isc - var_in%isd) - var%isc
+    else
+      call mpp_error(FATAL, "CT_increment_data_2d_3d: weights array must be the i-size of a computational or data domain.")
+    endif
+    if ((1+var%jec-var%jsc) == size(weights,2)) then
+      jow = 1 - var%jsc
+    elseif ((1+var%jed-var%jsd) == size(weights,2)) then
+      jow = 1 - var%jsd
+    elseif ((1+var_in%jed-var_in%jsd) == size(weights,2)) then
+      jow = 1 + (var_in%jsc - var_in%jsd) - var%jsc
+    else
+      call mpp_error(FATAL, "CT_increment_data_2d_3d: weights array must be the j-size of a computational or data domain.")
+    endif
+  endif
+
+  io1 = var_in%isc - var%isc ; jo1 = var_in%jsc - var%jsc ; kow = 1 - var_in%ks
+
+  do n = n1, n2
+
+    increment_bc = .true.
+    if (increment_bc .and. present(exclude_flux_type)) &
+      increment_bc = .not.(trim(var_in%bc(n)%flux_type) == trim(exclude_flux_type))
+    if (increment_bc .and. present(only_flux_type)) &
+      increment_bc = (trim(var_in%bc(n)%flux_type) == trim(only_flux_type))
+    if (increment_bc .and. present(pass_through_ice)) &
+      increment_bc = (pass_through_ice .eqv. var_in%bc(n)%pass_through_ice)
+    if (.not.increment_bc) cycle
+
+    do m = 1, var_in%bc(n)%num_fields
+      if (present(field_index)) then ; if (m /= field_index) cycle ; endif
+      if ( associated(var%bc(n)%field(m)%values) ) then
+        do k=var_in%ks,var_in%ke ; do j=var%jsc-halo,var%jec+halo ; do i=var%isc-halo,var%iec+halo
+          var%bc(n)%field(m)%values(i,j) = var%bc(n)%field(m)%values(i,j) + &
+                     (scale * weights(i+iow,j+jow,k+kow)) * var_in%bc(n)%field(m)%values(i+io1,j+io1,k)
+        enddo ; enddo ; enddo
+      endif
+    enddo
+  enddo
+
+end subroutine CT_increment_data_2d_3d
 
 !> This routine registers the diagnostics of a coupler_2d_bc_type.
 subroutine CT_set_diags_2d(var, diag_name, axes, time)
@@ -2163,7 +2872,8 @@ subroutine CT_write_chksums_2d(var, outunit, name_lead)
     else
       var_name = trim(var%bc(n)%field(m)%name)
     endif
-    write(outunit, '("   CHECKSUM:: ",A40," = ",Z20)') trim(var_name), mpp_chksum(var%bc(n)%field(m)%values)
+    write(outunit, '("   CHECKSUM:: ",A40," = ",Z20)') trim(var_name), &
+      mpp_chksum(var%bc(n)%field(m)%values(var%isc:var%iec,var%jsc:var%jec) )
   enddo ; enddo
 
 end subroutine CT_write_chksums_2d
@@ -2183,9 +2893,71 @@ subroutine CT_write_chksums_3d(var, outunit, name_lead)
     else
       var_name = trim(var%bc(n)%field(m)%name)
     endif
-    write(outunit, '("   CHECKSUM:: ",A40," = ",Z20)') var_name, mpp_chksum(var%bc(n)%field(m)%values)
+    write(outunit, '("   CHECKSUM:: ",A40," = ",Z20)') var_name, &
+      mpp_chksum(var%bc(n)%field(m)%values(var%isc:var%iec,var%jsc:var%jec,:) )
   enddo ; enddo
 
 end subroutine CT_write_chksums_3d
+
+!> This subroutine deallocates all data associated with a coupler_1d_bc_type
+subroutine CT_destructor_1d(var)
+  type(coupler_1d_bc_type), intent(inout) :: var  !< BC_type structure to be deconstructed
+
+  integer :: m, n
+ 
+  if (var%num_bcs > 0) then
+    do n = 1, var%num_bcs
+      do m = 1, var%bc(n)%num_fields
+        deallocate ( var%bc(n)%field(m)%values )
+      enddo
+      deallocate ( var%bc(n)%field )
+    enddo
+    deallocate ( var%bc )
+  endif
+
+  var%num_bcs = 0
+
+end subroutine CT_destructor_1d
+
+!> This subroutine deallocates all data associated with a coupler_2d_bc_type
+subroutine CT_destructor_2d(var)
+  type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to be deconstructed
+
+  integer :: m, n
+ 
+  if (var%num_bcs > 0) then
+    do n = 1, var%num_bcs
+      do m = 1, var%bc(n)%num_fields
+        deallocate ( var%bc(n)%field(m)%values )
+      enddo
+      deallocate ( var%bc(n)%field )
+    enddo
+    deallocate ( var%bc )
+  endif
+
+  var%num_bcs = 0
+
+end subroutine CT_destructor_2d
+
+
+!> This subroutine deallocates all data associated with a coupler_2d_bc_type
+subroutine CT_destructor_3d(var)
+  type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to be deconstructed
+
+  integer :: m, n
+ 
+  if (var%num_bcs > 0) then
+    do n = 1, var%num_bcs
+      do m = 1, var%bc(n)%num_fields
+        deallocate ( var%bc(n)%field(m)%values )
+      enddo
+      deallocate ( var%bc(n)%field )
+    enddo
+    deallocate ( var%bc )
+  endif
+
+  var%num_bcs = 0
+
+end subroutine CT_destructor_3d
 
 end module coupler_types_mod
