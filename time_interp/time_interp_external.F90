@@ -66,7 +66,7 @@ module time_interp_external_mod
 
   public init_external_field, time_interp_external, time_interp_external_init, &
        time_interp_external_exit, get_external_field_size, get_time_axis
-  public set_override_region, reset_src_data_region
+  public set_override_region, reset_src_data_region, get_external_field_axes
 
   private find_buf_index,&
          set_time_modulo
@@ -1235,7 +1235,36 @@ end subroutine realloc_fields
       get_external_field_size(4) = field(index)%siz(4)
 
     end function get_external_field_size
-!</FUNCTION> NAME="get_external_field"
+!</FUNCTION> NAME="get_external_field_size"
+
+!<FUNCTION NAME="get_external_field_axes" TYPE="axistype" DIM="(4)">
+!
+!<DESCRIPTION>
+! return field axes after call to init_external_field.
+! Ordering is X/Y/Z/T.
+!</DESCRIPTION>
+!
+!<IN NAME="index" TYPE="integer">
+! returned from previous call to init_external_field.
+!</IN>
+
+
+    function get_external_field_axes(index)
+
+      integer :: index
+      type(axistype), dimension(4) :: get_external_field_axes
+      
+      if (index .lt. 1 .or. index .gt. num_fields) &
+           call mpp_error(FATAL,'invalid index in call to get_external_field_size')
+
+
+      get_external_field_axes(1) = field(index)%axes(1)
+      get_external_field_axes(2) = field(index)%axes(2)
+      get_external_field_axes(3) = field(index)%axes(3)
+      get_external_field_axes(4) = field(index)%axes(4)
+
+    end function get_external_field_axes
+!</FUNCTION> NAME="get_external_field_axes"
 
 ! ===========================================================================
 subroutine get_time_axis(index, time)
