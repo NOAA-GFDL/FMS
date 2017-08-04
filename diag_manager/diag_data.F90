@@ -638,7 +638,7 @@ MODULE diag_data_mod
   ! <DATA NAME="max_output_fields" TYPE="INTEGER" DEFAULT="300">
   !   Maximum number of output fields.  Increase via the diag_manager_nml namelist.
   ! </DATA>
-  ! <DATA NAME="max_input_fields" TYPE="INTEGER" DEFAULT="300">
+  ! <DATA NAME="max_input_fields" TYPE="INTEGER" DEFAULT="600">
   !   Maximum number of input fields.  Increase via the diag_manager_nml namelist.
   ! </DATA>
   ! <DATA NAME="max_out_per_in_field" TYPE="INTEGER" DEFAULT="150">
@@ -668,7 +668,7 @@ MODULE diag_data_mod
   !   Cause a fatal error if the output field has a value outside the
   !   given range for a variable.
   ! </DATA>
-  ! <DATA NAME="max_field_attributes" TYPE="INTEGER" DEFAULT="2">
+  ! <DATA NAME="max_field_attributes" TYPE="INTEGER" DEFAULT="4">
   !   Maximum number of user definable attributes per field.
   ! </DATA>
   ! <DATA NAME="max_file_attributes" TYPE="INTEGER" DEFAULT="2">
@@ -690,7 +690,7 @@ MODULE diag_data_mod
   LOGICAL :: mix_snapshot_average_fields =.FALSE.
   INTEGER :: max_files = 31 !< Maximum number of output files allowed.  Increase via diag_manager_nml.
   INTEGER :: max_output_fields = 300 !< Maximum number of output fields.  Increase via diag_manager_nml.
-  INTEGER :: max_input_fields = 300 !< Maximum number of input fields.  Increase via diag_manager_nml.
+  INTEGER :: max_input_fields = 600 !< Maximum number of input fields.  Increase via diag_manager_nml.
   INTEGER :: max_out_per_in_field = 150 !< Maximum number of output_fields per input_field.  Increase via diag_manager_nml.
   INTEGER :: max_axes = 60 !< Maximum number of independent axes.
   LOGICAL :: do_diag_field_log = .FALSE.
@@ -708,7 +708,7 @@ MODULE diag_data_mod
   LOGICAL :: oor_warnings_fatal = .FALSE.
   LOGICAL :: region_out_use_alt_value = .TRUE.
 
-  INTEGER :: max_field_attributes = 2 !< Maximum number of user definable attributes per field.
+  INTEGER :: max_field_attributes = 4 !< Maximum number of user definable attributes per field. Liptak: Changed from 2 to 4 20170718
   INTEGER :: max_file_attributes = 2 !< Maximum number of user definable global attributes per file.
   INTEGER :: max_axis_attributes = 4 !< Maximum number of user definable attributes per axis.
   LOGICAL :: prepend_date = .TRUE. !< Should the history file have the start date prepended to the file name
