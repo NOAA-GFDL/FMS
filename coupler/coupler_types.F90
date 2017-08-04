@@ -372,6 +372,8 @@ logical, save   :: module_is_initialized = .false.
 !! register diagnostics associated with the new type.
 interface  coupler_type_copy
   module procedure coupler_type_copy_1d_2d, coupler_type_copy_1d_3d
+  module procedure coupler_type_copy_2d_2d, coupler_type_copy_2d_3d
+  module procedure coupler_type_copy_3d_2d, coupler_type_copy_3d_3d
 end interface coupler_type_copy
 
 !> This is the interface to spawn one coupler_bc_type into another.
@@ -977,7 +979,7 @@ end subroutine  coupler_types_init  !}
 !! Template:
 !!
 !! ~~~~~~~~~~{.f90}
-!!   call coupler_type_copy(var_in, var_out, is, ie, js, je, kd, &
+!!   call coupler_type_copy(var_in, var_out, is, ie, js, je, &
 !!        diag_name, axes, time, suffix = 'something')
 !! ~~~~~~~~~~
 subroutine coupler_type_copy_1d_2d(var_in, var_out, is, ie, js, je,     &
@@ -1064,6 +1066,194 @@ subroutine coupler_type_copy_1d_3d(var_in, var_out, is, ie, js, je, kd, &
     call CT_set_diags_3d(var_out, diag_name, axes, time)
 
 end subroutine  coupler_type_copy_1d_3d
+
+!#######################################################################
+!> \brief Copy fields from one coupler type to another. 2-D to 2-D version for generic coupler_type_copy.
+!!
+!! Template:
+!!
+!! ~~~~~~~~~~{.f90}
+!!   call coupler_type_copy(var_in, var_out, is, ie, js, je, &
+!!        diag_name, axes, time, suffix = 'something')
+!! ~~~~~~~~~~
+subroutine coupler_type_copy_2d_2d(var_in, var_out, is, ie, js, je,     &
+     diag_name, axes, time, suffix)
+
+  type(coupler_2d_bc_type), intent(in)    :: var_in !< variable to copy information from
+  type(coupler_2d_bc_type), intent(inout) :: var_out !< variable to copy information to
+  integer, intent(in)                     :: is !< lower bound of first dimension
+  integer, intent(in)                     :: ie !< upper bound of first dimension
+  integer, intent(in)                     :: js !< lower bound of second dimension
+  integer, intent(in)                     :: je !< upper bound of second dimension
+  character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+  integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
+  type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
+  character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
+
+  character(len=64), parameter    :: sub_name = 'coupler_type_copy_2d_2d'
+  character(len=256), parameter   :: error_header =                               &
+       '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
+  character(len=400)      :: error_msg
+  integer                 :: m, n
+
+  if (var_out%num_bcs > 0) then
+    ! It is an error if the number of output fields exceeds zero, because it means this
+    ! type has already been populated.
+    call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
+  endif
+
+  if (var_in%num_bcs >= 0) &
+    call CT_spawn_2d_2d(var_in, var_out, (/ is, is, ie, ie /), (/ js, js, je, je /), suffix)
+
+  if ((var_out%num_bcs > 0) .and. (diag_name .ne. ' ')) &
+    call CT_set_diags_2d(var_out, diag_name, axes, time)
+
+end subroutine  coupler_type_copy_2d_2d
+
+!#######################################################################
+!> \brief Copy fields from one coupler type to another. 2-D to 3-D version for generic coupler_type_copy.
+!!
+!! Template:
+!!
+!! ~~~~~~~~~~{.f90}
+!!   call coupler_type_copy(var_in, var_out, is, ie, js, je, kd, &
+!!        diag_name, axes, time, suffix = 'something')
+!! ~~~~~~~~~~
+!!
+!! \throw FATAL, "Number of output fields is non-zero"
+!! \throw FATAL, "var_out%bc already associated"
+!! \throw FATAL, "var_out%bc([n])%field already associated"
+!! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
+!! \throw FATAL, "axes less than 3 elements"
+subroutine coupler_type_copy_2d_3d(var_in, var_out, is, ie, js, je, kd, &
+     diag_name, axes, time, suffix)
+
+  type(coupler_2d_bc_type), intent(in)    :: var_in !< variable to copy information from
+  type(coupler_3d_bc_type), intent(inout) :: var_out !< variable to copy information to
+  integer, intent(in)                     :: is !< lower bound of first dimension
+  integer, intent(in)                     :: ie !< upper bound of first dimension
+  integer, intent(in)                     :: js !< lower bound of second dimension
+  integer, intent(in)                     :: je !< upper bound of second dimension
+  integer, intent(in)                     :: kd !< third dimension
+  character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+  integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
+  type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
+  character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
+
+  character(len=64), parameter    :: sub_name = 'coupler_type_copy_2d_3d'
+  character(len=256), parameter   :: error_header =                               &
+     '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
+  character(len=400)      :: error_msg
+  integer                 :: m, n
+
+
+  if (var_out%num_bcs > 0) then
+    ! It is an error if the number of output fields exceeds zero, because it means this
+    ! type has already been populated.
+    call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
+  endif
+
+  if (var_in%num_bcs >= 0) &
+    call CT_spawn_2d_3d(var_in, var_out,  (/ is, is, ie, ie /), (/ js, js, je, je /), (/1, kd/), suffix)
+
+  if ((var_out%num_bcs > 0) .and. (diag_name .ne. ' ')) &
+    call CT_set_diags_3d(var_out, diag_name, axes, time)
+
+end subroutine  coupler_type_copy_2d_3d
+
+!#######################################################################
+!> \brief Copy fields from one coupler type to another. 3-D to 2-D version for generic coupler_type_copy.
+!!
+!! Template:
+!!
+!! ~~~~~~~~~~{.f90}
+!!   call coupler_type_copy(var_in, var_out, is, ie, js, je, &
+!!        diag_name, axes, time, suffix = 'something')
+!! ~~~~~~~~~~
+subroutine coupler_type_copy_3d_2d(var_in, var_out, is, ie, js, je,     &
+     diag_name, axes, time, suffix)
+
+  type(coupler_3d_bc_type), intent(in)    :: var_in !< variable to copy information from
+  type(coupler_2d_bc_type), intent(inout) :: var_out !< variable to copy information to
+  integer, intent(in)                     :: is !< lower bound of first dimension
+  integer, intent(in)                     :: ie !< upper bound of first dimension
+  integer, intent(in)                     :: js !< lower bound of second dimension
+  integer, intent(in)                     :: je !< upper bound of second dimension
+  character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+  integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
+  type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
+  character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
+
+  character(len=64), parameter    :: sub_name = 'coupler_type_copy_3d_2d'
+  character(len=256), parameter   :: error_header =                               &
+       '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
+  character(len=400)      :: error_msg
+  integer                 :: m, n
+
+  if (var_out%num_bcs > 0) then
+    ! It is an error if the number of output fields exceeds zero, because it means this
+    ! type has already been populated.
+    call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
+  endif
+
+  if (var_in%num_bcs >= 0) &
+    call CT_spawn_3d_2d(var_in, var_out, (/ is, is, ie, ie /), (/ js, js, je, je /), suffix)
+
+  if ((var_out%num_bcs > 0) .and. (diag_name .ne. ' ')) &
+    call CT_set_diags_2d(var_out, diag_name, axes, time)
+
+end subroutine  coupler_type_copy_3d_2d
+
+!#######################################################################
+!> \brief Copy fields from one coupler type to another. 3-D to 3-D version for generic coupler_type_copy.
+!!
+!! Template:
+!!
+!! ~~~~~~~~~~{.f90}
+!!   call coupler_type_copy(var_in, var_out, is, ie, js, je, kd, &
+!!        diag_name, axes, time, suffix = 'something')
+!! ~~~~~~~~~~
+!!
+!! \throw FATAL, "Number of output fields is non-zero"
+!! \throw FATAL, "var_out%bc already associated"
+!! \throw FATAL, "var_out%bc([n])%field already associated"
+!! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
+!! \throw FATAL, "axes less than 3 elements"
+subroutine coupler_type_copy_3d_3d(var_in, var_out, is, ie, js, je, kd, &
+     diag_name, axes, time, suffix)
+
+  type(coupler_3d_bc_type), intent(in)    :: var_in !< variable to copy information from
+  type(coupler_3d_bc_type), intent(inout) :: var_out !< variable to copy information to
+  integer, intent(in)                     :: is !< lower bound of first dimension
+  integer, intent(in)                     :: ie !< upper bound of first dimension
+  integer, intent(in)                     :: js !< lower bound of second dimension
+  integer, intent(in)                     :: je !< upper bound of second dimension
+  integer, intent(in)                     :: kd !< third dimension
+  character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+  integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
+  type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
+  character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
+
+  character(len=64), parameter    :: sub_name = 'coupler_type_copy_3d_3d'
+  character(len=256), parameter   :: error_header =                               &
+     '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
+  character(len=400)      :: error_msg
+  integer                 :: m, n
+
+
+  if (var_out%num_bcs > 0) then
+    ! It is an error if the number of output fields exceeds zero, because it means this
+    ! type has already been populated.
+    call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
+  endif
+
+  if (var_in%num_bcs >= 0) &
+    call CT_spawn_3d_3d(var_in, var_out,  (/ is, is, ie, ie /), (/ js, js, je, je /), (/1, kd/), suffix)
+
+  if ((var_out%num_bcs > 0) .and. (diag_name .ne. ' ')) &
+    call CT_set_diags_3d(var_out, diag_name, axes, time)
+
+end subroutine  coupler_type_copy_3d_3d
 
 
 !#######################################################################
