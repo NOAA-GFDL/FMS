@@ -217,7 +217,9 @@ character(len=48), parameter                    :: mod_name = 'coupler_types_mod
 
 type, public :: coupler_3d_values_type
   character(len=fm_field_name_len)  :: name = ' '  !< The diagnostic name for this array
-  real, pointer, dimension(:,:,:)   :: values => NULL() !< The pointer to the array of values
+  real, pointer, contiguous, dimension(:,:,:) :: values => NULL() !< The pointer to the
+                                                   !! array of values for this field; this
+                                                   !! should be changed to allocatable
   logical                           :: mean = .true. !< mean
   logical                           :: override = .false. !< override
   integer                           :: id_diag = 0 !< The diagnostic id for this array
@@ -263,7 +265,9 @@ end type coupler_3d_bc_type
 
 type, public    :: coupler_2d_values_type
   character(len=fm_field_name_len)  :: name = ' '  !< The diagnostic name for this array
-  real, pointer, dimension(:,:)     :: values => NULL() !< The pointer to the array of values
+  real, pointer, contiguous, dimension(:,:) :: values => NULL() !< The pointer to the
+                                                   !! array of values for this field; this
+                                                   !! should be changed to allocatable
   logical                           :: mean = .true. !< mean
   logical                           :: override = .false. !< override
   integer                           :: id_diag = 0 !< The diagnostic id for this array
