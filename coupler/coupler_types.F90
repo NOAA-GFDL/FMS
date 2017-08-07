@@ -343,20 +343,22 @@ end type coupler_1d_bc_type
 
 !
 !----------------------------------------------------------------------
-!
+!   The following public parameters can help in selecting the sub-elements of a
+! coupler type.  There are duplicate values because different boundary
+! conditions have different sub-elements.
+! Note: These should be parameters, but doing so would break openMP directives.
 
-! The quality of documentation in these comments is pathetic.
-integer, public :: ind_u10 !< ind_u10
-integer, public :: ind_psurf !< ind_psurf
-integer, public :: ind_pcair !< ind_pcair
-integer, public :: ind_csurf !< ind_csurf
-integer, public :: ind_alpha !< The index of the solubility array for a tracer
-integer, public :: ind_sc_no !< The index for the Schmidt number for a tracer flux
-integer, public :: ind_flux  !< The index for the tracer flux
-integer, public :: ind_deltap !< ind_deltap
-integer, public :: ind_kw !< ind_kw
-integer, public :: ind_deposition !< ind_deposition
-integer, public :: ind_runoff !< ind_runoff
+integer, public :: ind_pcair = 1 !< The index of the atmospheric concentration
+integer, public :: ind_u10 = 2   !< The index of the 10 m wind speed
+integer, public :: ind_psurf = 3 !< The index of the surface atmospheric pressure
+integer, public :: ind_alpha = 1 !< The index of the solubility array for a tracer
+integer, public :: ind_csurf = 2 !< The index of the ocean surface concentration
+integer, public :: ind_sc_no = 3 !< The index for the Schmidt number for a tracer flux
+integer, public :: ind_flux = 1  !< The index for the tracer flux
+integer, public :: ind_deltap= 2 !< The index for ocean-air gas partial pressure change
+integer, public :: ind_kw = 3    !< The index for the piston velocity
+integer, public :: ind_deposition = 1 !< The index for the atmospheric deposition flux
+integer, public :: ind_runoff = 1 !< The index for a runoff flux
 
 !----------------------------------------------------------------------
 !        Interface definitions for overloaded routines
@@ -534,8 +536,8 @@ character(len=256), parameter   :: error_header =                               
 !-----------------------------------------------------------------------
 !
 
-integer                 :: field_index, outunit
-character(len=128)      :: error_msg
+integer            :: outunit
+character(len=128) :: error_msg
 logical, save   :: module_is_initialized = .false.
 
 !
@@ -628,22 +630,14 @@ if (fm_new_list('air_sea_gas_flux_generic/atm') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/atm" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_pcair = field_index
 call fm_util_set_value('air_sea_gas_flux_generic/atm/name',      'pcair',                     index = ind_pcair)
 call fm_util_set_value('air_sea_gas_flux_generic/atm/long_name', 'Atmospheric concentration', index = ind_pcair)
 call fm_util_set_value('air_sea_gas_flux_generic/atm/units',     'mol/mol',                   index = ind_pcair)
 
-field_index = field_index + 1
-ind_u10 = field_index
 call fm_util_set_value('air_sea_gas_flux_generic/atm/name',      'u10',                index = ind_u10)
 call fm_util_set_value('air_sea_gas_flux_generic/atm/long_name', 'Wind speed at 10 m', index = ind_u10)
 call fm_util_set_value('air_sea_gas_flux_generic/atm/units',     'm/s',                index = ind_u10)
 
-field_index = field_index + 1
-ind_psurf = field_index
 call fm_util_set_value('air_sea_gas_flux_generic/atm/name',      'psurf',                        index = ind_psurf)
 call fm_util_set_value('air_sea_gas_flux_generic/atm/long_name', 'Surface atmospheric pressure', index = ind_psurf)
 call fm_util_set_value('air_sea_gas_flux_generic/atm/units',     'Pa',                           index = ind_psurf)
@@ -654,25 +648,17 @@ if (fm_new_list('air_sea_gas_flux_generic/ice') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/ice" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_alpha = field_index
-call fm_util_set_value('air_sea_gas_flux_generic/ice/name',      'alpha',                                                index = ind_alpha)
+call fm_util_set_value('air_sea_gas_flux_generic/ice/name',      'alpha',                        index = ind_alpha)
 call fm_util_set_value('air_sea_gas_flux_generic/ice/long_name', 'Solubility w.r.t. atmosphere', index = ind_alpha)
-call fm_util_set_value('air_sea_gas_flux_generic/ice/units',     'mol/m^3/atm',                                          index = ind_alpha)
+call fm_util_set_value('air_sea_gas_flux_generic/ice/units',     'mol/m^3/atm',                  index = ind_alpha)
 
-field_index = field_index + 1
-ind_csurf = field_index
-call fm_util_set_value('air_sea_gas_flux_generic/ice/name',      'csurf',                                         index = ind_csurf)
+call fm_util_set_value('air_sea_gas_flux_generic/ice/name',      'csurf',               index = ind_csurf)
 call fm_util_set_value('air_sea_gas_flux_generic/ice/long_name', 'Ocean concentration', index = ind_csurf)
-call fm_util_set_value('air_sea_gas_flux_generic/ice/units',     'mol/m^3',                                       index = ind_csurf)
+call fm_util_set_value('air_sea_gas_flux_generic/ice/units',     'mol/m^3',             index = ind_csurf)
 
-field_index = field_index + 1
-ind_sc_no = field_index
-call fm_util_set_value('air_sea_gas_flux_generic/ice/name',      'sc_no',                                         index = ind_sc_no)
+call fm_util_set_value('air_sea_gas_flux_generic/ice/name',      'sc_no',          index = ind_sc_no)
 call fm_util_set_value('air_sea_gas_flux_generic/ice/long_name', 'Schmidt number', index = ind_sc_no)
-call fm_util_set_value('air_sea_gas_flux_generic/ice/units',     'dimensionless',                                       index = ind_sc_no)
+call fm_util_set_value('air_sea_gas_flux_generic/ice/units',     'dimensionless',  index = ind_sc_no)
 
 !>       Add the flux output field(s).
 
@@ -680,22 +666,14 @@ if (fm_new_list('air_sea_gas_flux_generic/flux') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/flux" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_flux = field_index
 call fm_util_set_value('air_sea_gas_flux_generic/flux/name',      'flux',         index = ind_flux)
 call fm_util_set_value('air_sea_gas_flux_generic/flux/long_name', 'Surface flux', index = ind_flux)
 call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'mol/m^2/s',    index = ind_flux)
 
-field_index = field_index + 1
-ind_deltap = field_index
 call fm_util_set_value('air_sea_gas_flux_generic/flux/name',      'deltap',         index = ind_deltap)
 call fm_util_set_value('air_sea_gas_flux_generic/flux/long_name', 'Ocean-air delta pressure', index = ind_deltap)
 call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'uatm',    index = ind_deltap)
 
-field_index = field_index + 1
-ind_kw = field_index
 call fm_util_set_value('air_sea_gas_flux_generic/flux/name',      'kw',         index = ind_kw)
 call fm_util_set_value('air_sea_gas_flux_generic/flux/long_name', 'Piston velocity', index = ind_kw)
 call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'm/s',    index = ind_kw)
@@ -742,22 +720,14 @@ if (fm_new_list('air_sea_gas_flux/atm') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux/atm" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_pcair = field_index
 call fm_util_set_value('air_sea_gas_flux/atm/name',      'pcair',                     index = ind_pcair)
 call fm_util_set_value('air_sea_gas_flux/atm/long_name', 'Atmospheric concentration', index = ind_pcair)
 call fm_util_set_value('air_sea_gas_flux/atm/units',     'mol/mol',                   index = ind_pcair)
 
-field_index = field_index + 1
-ind_u10 = field_index
 call fm_util_set_value('air_sea_gas_flux/atm/name',      'u10',                index = ind_u10)
 call fm_util_set_value('air_sea_gas_flux/atm/long_name', 'Wind speed at 10 m', index = ind_u10)
 call fm_util_set_value('air_sea_gas_flux/atm/units',     'm/s',                index = ind_u10)
 
-field_index = field_index + 1
-ind_psurf = field_index
 call fm_util_set_value('air_sea_gas_flux/atm/name',      'psurf',                        index = ind_psurf)
 call fm_util_set_value('air_sea_gas_flux/atm/long_name', 'Surface atmospheric pressure', index = ind_psurf)
 call fm_util_set_value('air_sea_gas_flux/atm/units',     'Pa',                           index = ind_psurf)
@@ -768,16 +738,10 @@ if (fm_new_list('air_sea_gas_flux/ice') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux/ice" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_alpha = field_index
 call fm_util_set_value('air_sea_gas_flux/ice/name',      'alpha',                                                index = ind_alpha)
 call fm_util_set_value('air_sea_gas_flux/ice/long_name', 'Solubility from atmosphere times Schmidt number term', index = ind_alpha)
 call fm_util_set_value('air_sea_gas_flux/ice/units',     'mol/m^3/atm',                                          index = ind_alpha)
 
-field_index = field_index + 1
-ind_csurf = field_index
 call fm_util_set_value('air_sea_gas_flux/ice/name',      'csurf',                                         index = ind_csurf)
 call fm_util_set_value('air_sea_gas_flux/ice/long_name', 'Ocean concentration times Schmidt number term', index = ind_csurf)
 call fm_util_set_value('air_sea_gas_flux/ice/units',     'mol/m^3',                                       index = ind_csurf)
@@ -788,10 +752,6 @@ if (fm_new_list('air_sea_gas_flux/flux') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux/flux" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_flux = field_index
 call fm_util_set_value('air_sea_gas_flux/flux/name',      'flux',         index = ind_flux)
 call fm_util_set_value('air_sea_gas_flux/flux/long_name', 'Surface flux', index = ind_flux)
 call fm_util_set_value('air_sea_gas_flux/flux/units',     'mol/m^2/s',    index = ind_flux)
@@ -834,10 +794,6 @@ if (fm_new_list('air_sea_deposition/atm') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_deposition/atm" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_deposition = field_index
 call fm_util_set_value('air_sea_deposition/atm/name',      'deposition',             index = ind_deposition)
 call fm_util_set_value('air_sea_deposition/atm/long_name', 'Atmospheric deposition', index = ind_deposition)
 call fm_util_set_value('air_sea_deposition/atm/units',     'kg/m^2/s',               index = ind_deposition)
@@ -847,8 +803,6 @@ call fm_util_set_value('air_sea_deposition/atm/units',     'kg/m^2/s',          
 if (fm_new_list('air_sea_deposition/ice') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_deposition/ice" list')
 endif  !}
-
-field_index = 0
 
 call fm_util_set_value('air_sea_deposition/ice/name',      ' ', index = 0)
 call fm_util_set_value('air_sea_deposition/ice/long_name', ' ', index = 0)
@@ -860,10 +814,6 @@ if (fm_new_list('air_sea_deposition/flux') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_deposition/flux" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_flux = field_index
 call fm_util_set_value('air_sea_deposition/flux/name',      'flux',               index = ind_flux)
 call fm_util_set_value('air_sea_deposition/flux/long_name', 'Surface deposition', index = ind_flux)
 call fm_util_set_value('air_sea_deposition/flux/units',     'mol/m^2/s',          index = ind_flux)
@@ -902,10 +852,6 @@ if (fm_new_list('land_sea_runoff/atm') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "land_sea_runoff/atm" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_runoff = field_index
 call fm_util_set_value('land_sea_runoff/atm/name',      'runoff',                       index = ind_runoff)
 call fm_util_set_value('land_sea_runoff/atm/long_name', 'Concentration in land runoff', index = ind_runoff)
 call fm_util_set_value('land_sea_runoff/atm/units',     'mol/m^3',                      index = ind_runoff)
@@ -915,8 +861,6 @@ call fm_util_set_value('land_sea_runoff/atm/units',     'mol/m^3',              
 if (fm_new_list('land_sea_runoff/ice') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "land_sea_runoff/ice" list')
 endif  !}
-
-field_index = 0
 
 call fm_util_set_value('land_sea_runoff/ice/name',      ' ', index = 0)
 call fm_util_set_value('land_sea_runoff/ice/long_name', ' ', index = 0)
@@ -928,10 +872,6 @@ if (fm_new_list('land_sea_runoff/flux') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "land_sea_runoff/flux" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_flux = field_index
 call fm_util_set_value('land_sea_runoff/flux/name',      'flux',                         index = ind_flux)
 call fm_util_set_value('land_sea_runoff/flux/long_name', 'Concentration in land runoff', index = ind_flux)
 call fm_util_set_value('land_sea_runoff/flux/units',     'mol/m^3',                      index = ind_flux)
