@@ -168,16 +168,11 @@ module coupler_types_mod
 !!     <td>fms_mod</td>
 !!     <td>write_version_number</td>
 !!   </tr>
-!!   <tr>
-!!     <td>field_manager_mod</td>
-!!     <td>fm_field_name_len, fm_string_len, fm_dump_list</td>
-!!   </tr>
 !! </table>
 
 use fms_mod,           only: write_version_number
 use fms_io_mod,        only: restart_file_type, register_restart_field
 use fms_io_mod,        only: query_initialized, restore_state
-use field_manager_mod, only: fm_field_name_len, fm_string_len
 use time_manager_mod,  only: time_type
 use diag_manager_mod,  only: register_diag_field, send_data
 use data_override_mod, only: data_override
@@ -216,38 +211,38 @@ character(len=48), parameter                    :: mod_name = 'coupler_types_mod
 !
 
 type, public :: coupler_3d_values_type
-  character(len=fm_field_name_len)  :: name = ' '  !< The diagnostic name for this array
+  character(len=48)       :: name = ' '  !< The diagnostic name for this array
   real, pointer, contiguous, dimension(:,:,:) :: values => NULL() !< The pointer to the
-                                                   !! array of values for this field; this
-                                                   !! should be changed to allocatable
-  logical                           :: mean = .true. !< mean
-  logical                           :: override = .false. !< override
-  integer                           :: id_diag = 0 !< The diagnostic id for this array
-  character(len=fm_string_len)      :: long_name = ' ' !< The diagnostic long_name for this array
-  character(len=fm_string_len)      :: units = ' ' !< The units for this array
-  integer                           :: id_rest = 0 !< The id of this array in the restart field
-  logical                           :: may_init = .true. !< If true, there is an internal method
-                                                   !! that can be used to initialize this field
-                                                   !! if it can not be read from a restart file
+                                         !! array of values for this field; this
+                                         !! should be changed to allocatable
+  logical                 :: mean = .true. !< mean
+  logical                 :: override = .false. !< override
+  integer                 :: id_diag = 0 !< The diagnostic id for this array
+  character(len=128)      :: long_name = ' ' !< The diagnostic long_name for this array
+  character(len=128)      :: units = ' ' !< The units for this array
+  integer                 :: id_rest = 0 !< The id of this array in the restart field
+  logical                 :: may_init = .true. !< If true, there is an internal method
+                                         !! that can be used to initialize this field
+                                         !! if it can not be read from a restart file
 end type coupler_3d_values_type
 
 type, public :: coupler_3d_field_type
-  character(len=fm_field_name_len)                      :: name = ' ' !< name
-  integer                                               :: num_fields = 0 !< num_fields
-  type(coupler_3d_values_type), pointer, dimension(:)   :: field => NULL() !< field
-  character(len=fm_string_len)                          :: flux_type = ' ' !< flux_type
-  character(len=fm_string_len)                          :: implementation = ' ' !< implementation
-  real, pointer, dimension(:)                           :: param => NULL() !< param
-  logical, pointer, dimension(:)                        :: flag => NULL() !< flag
-  integer                                               :: atm_tr_index = 0 !< atm_tr_index
-  character(len=fm_string_len)                          :: ice_restart_file = ' ' !< ice_restart_file
-  character(len=fm_string_len)                          :: ocean_restart_file = ' ' !< ocean_restart_file
-  type(restart_file_type), pointer                      :: rest_type => NULL() !< A pointer to the restart_file_type
-                                                                               !! that is used for this field.
-  logical                                               :: use_atm_pressure !< use_atm_pressure
-  logical                                               :: use_10m_wind_speed !< use_10m_wind_speed
-  logical                                               :: pass_through_ice !< pass_through_ice
-  real                                                  :: mol_wt = 0.0 !< mol_wt
+  character(len=48)                 :: name = ' ' !< name
+  integer                           :: num_fields = 0 !< num_fields
+  type(coupler_3d_values_type), pointer, dimension(:) :: field => NULL() !< field
+  character(len=128)                :: flux_type = ' ' !< flux_type
+  character(len=128)                :: implementation = ' ' !< implementation
+  real, pointer, dimension(:)       :: param => NULL() !< param
+  logical, pointer, dimension(:)    :: flag => NULL() !< flag
+  integer                           :: atm_tr_index = 0 !< atm_tr_index
+  character(len=128)                :: ice_restart_file = ' ' !< ice_restart_file
+  character(len=128)                :: ocean_restart_file = ' ' !< ocean_restart_file
+  type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
+                                                           !! that is used for this field.
+  logical                           :: use_atm_pressure !< use_atm_pressure
+  logical                           :: use_10m_wind_speed !< use_10m_wind_speed
+  logical                           :: pass_through_ice !< pass_through_ice
+  real                              :: mol_wt = 0.0 !< mol_wt
 end type coupler_3d_field_type
 
 type, public :: coupler_3d_bc_type
@@ -264,38 +259,38 @@ end type coupler_3d_bc_type
 !
 
 type, public    :: coupler_2d_values_type
-  character(len=fm_field_name_len)  :: name = ' '  !< The diagnostic name for this array
+  character(len=48)       :: name = ' '  !< The diagnostic name for this array
   real, pointer, contiguous, dimension(:,:) :: values => NULL() !< The pointer to the
-                                                   !! array of values for this field; this
-                                                   !! should be changed to allocatable
-  logical                           :: mean = .true. !< mean
-  logical                           :: override = .false. !< override
-  integer                           :: id_diag = 0 !< The diagnostic id for this array
-  character(len=fm_string_len)      :: long_name = ' ' !< The diagnostic long_name for this array
-  character(len=fm_string_len)      :: units = ' ' !< The units for this array
-  integer                           :: id_rest = 0 !< The id of this array in the restart field
-  logical                           :: may_init = .true. !< If true, there is an internal method
-                                                   !! that can be used to initialize this field
-                                                   !! if it can not be read from a restart file
+                                         !! array of values for this field; this
+                                         !! should be changed to allocatable
+  logical                 :: mean = .true. !< mean
+  logical                 :: override = .false. !< override
+  integer                 :: id_diag = 0 !< The diagnostic id for this array
+  character(len=128)      :: long_name = ' ' !< The diagnostic long_name for this array
+  character(len=128)      :: units = ' ' !< The units for this array
+  integer                 :: id_rest = 0 !< The id of this array in the restart field
+  logical                 :: may_init = .true. !< If true, there is an internal method
+                                         !! that can be used to initialize this field
+                                         !! if it can not be read from a restart file
 end type coupler_2d_values_type
 
 type, public    :: coupler_2d_field_type
-  character(len=fm_field_name_len)                      :: name = ' ' !< name
-  integer                                               :: num_fields = 0 !< num_fields
+  character(len=48)                 :: name = ' ' !< name
+  integer                           :: num_fields = 0 !< num_fields
   type(coupler_2d_values_type), pointer, dimension(:)   :: field => NULL() !< field
-  character(len=fm_string_len)                          :: flux_type = ' ' !< flux_type
-  character(len=fm_string_len)                          :: implementation = ' ' !< implementation
-  real, pointer, dimension(:)                           :: param => NULL() !< param
-  logical, pointer, dimension(:)                        :: flag => NULL() !< flag
-  integer                                               :: atm_tr_index = 0 !< atm_tr_index
-  character(len=fm_string_len)                          :: ice_restart_file = ' ' !< ice_restart_file
-  character(len=fm_string_len)                          :: ocean_restart_file = ' ' !< ocean_restart_file
-  type(restart_file_type), pointer                      :: rest_type => NULL() !< A pointer to the restart_file_type
-                                                                               !! that is used for this field.
-  logical                                               :: use_atm_pressure !< use_atm_pressure
-  logical                                               :: use_10m_wind_speed !< use_10m_wind_speed
-  logical                                               :: pass_through_ice !< pass_through_ice
-  real                                                  :: mol_wt = 0.0 !< mol_wt
+  character(len=128)                :: flux_type = ' ' !< flux_type
+  character(len=128)                :: implementation = ' ' !< implementation
+  real, pointer, dimension(:)       :: param => NULL() !< param
+  logical, pointer, dimension(:)    :: flag => NULL() !< flag
+  integer                           :: atm_tr_index = 0 !< atm_tr_index
+  character(len=128)                :: ice_restart_file = ' ' !< ice_restart_file
+  character(len=128)                :: ocean_restart_file = ' ' !< ocean_restart_file
+  type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
+                                                          !! that is used for this field.
+  logical                           :: use_atm_pressure !< use_atm_pressure
+  logical                           :: use_10m_wind_speed !< use_10m_wind_speed
+  logical                           :: pass_through_ice !< pass_through_ice
+  real                              :: mol_wt = 0.0 !< mol_wt
 end type coupler_2d_field_type
 
 type, public    :: coupler_2d_bc_type
@@ -311,33 +306,33 @@ end type coupler_2d_bc_type
 !
 
 type, public    :: coupler_1d_values_type
-  character(len=fm_field_name_len)  :: name = ' '  !< The diagnostic name for this array
-  real, pointer, dimension(:)       :: values => NULL() !< The pointer to the array of values
-  logical                           :: mean = .true. !< mean
-  logical                           :: override = .false. !< override
-  integer                           :: id_diag = 0 !< The diagnostic id for this array
-  character(len=fm_string_len)      :: long_name = ' ' !< The diagnostic long_name for this array
-  character(len=fm_string_len)      :: units = ' ' !< The units for this array
-  logical                           :: may_init = .true. !< If true, there is an internal method
-                                                   !! that can be used to initialize this field
-                                                   !! if it can not be read from a restart file
+  character(len=48)           :: name = ' '  !< The diagnostic name for this array
+  real, pointer, dimension(:) :: values => NULL() !< The pointer to the array of values
+  logical                     :: mean = .true. !< mean
+  logical                     :: override = .false. !< override
+  integer                     :: id_diag = 0 !< The diagnostic id for this array
+  character(len=128)          :: long_name = ' ' !< The diagnostic long_name for this array
+  character(len=128)          :: units = ' ' !< The units for this array
+  logical                     :: may_init = .true. !< If true, there is an internal method
+                                             !! that can be used to initialize this field
+                                             !! if it can not be read from a restart file
 end type coupler_1d_values_type
 
 type, public    :: coupler_1d_field_type
-  character(len=fm_field_name_len)                      :: name = ' ' !< name
-  integer                                               :: num_fields = 0 !< num_fields
+  character(len=48)              :: name = ' ' !< name
+  integer                        :: num_fields = 0 !< num_fields
   type(coupler_1d_values_type), pointer, dimension(:)   :: field => NULL() !< field
-  character(len=fm_string_len)                          :: flux_type = ' ' !< flux_type
-  character(len=fm_string_len)                          :: implementation = ' ' !< implementation
-  real, pointer, dimension(:)                           :: param => NULL() !< param
-  logical, pointer, dimension(:)                        :: flag => NULL() !< flag
-  integer                                               :: atm_tr_index = 0 !< atm_tr_index
-  character(len=fm_string_len)                          :: ice_restart_file = ' ' !< ice_restart_file
-  character(len=fm_string_len)                          :: ocean_restart_file = ' ' !< ocean_restart_file
-  logical                                               :: use_atm_pressure !< use_atm_pressure
-  logical                                               :: use_10m_wind_speed !< use_10m_wind_speed
-  logical                                               :: pass_through_ice !< pass_through_ice
-  real                                                  :: mol_wt = 0.0 !< mol_wt
+  character(len=128)             :: flux_type = ' ' !< flux_type
+  character(len=128)             :: implementation = ' ' !< implementation
+  real, pointer, dimension(:)    :: param => NULL() !< param
+  logical, pointer, dimension(:) :: flag => NULL() !< flag
+  integer                        :: atm_tr_index = 0 !< atm_tr_index
+  character(len=128)             :: ice_restart_file = ' ' !< ice_restart_file
+  character(len=128)             :: ocean_restart_file = ' ' !< ocean_restart_file
+  logical                        :: use_atm_pressure !< use_atm_pressure
+  logical                        :: use_10m_wind_speed !< use_10m_wind_speed
+  logical                        :: pass_through_ice !< pass_through_ice
+  real                           :: mol_wt = 0.0 !< mol_wt
 end type coupler_1d_field_type
 
 type, public    :: coupler_1d_bc_type
@@ -363,14 +358,9 @@ integer, public :: ind_kw !< ind_kw
 integer, public :: ind_deposition !< ind_deposition
 integer, public :: ind_runoff !< ind_runoff
 
-logical, save   :: module_is_initialized = .false.
-
-!
 !----------------------------------------------------------------------
 !        Interface definitions for overloaded routines
-!
 !----------------------------------------------------------------------
-!
 
 !> This is the interface to spawn one coupler_bc_type into another and then
 !! register diagnostics associated with the new type.
@@ -546,6 +536,7 @@ character(len=256), parameter   :: error_header =                               
 
 integer                 :: field_index, outunit
 character(len=128)      :: error_msg
+logical, save   :: module_is_initialized = .false.
 
 !
 ! =====================================================================
