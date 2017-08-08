@@ -72,6 +72,9 @@ contains
 
     pe = mpp_pe()
     npes = mpp_npes()
+    if (npes < ensemble_size) then
+      call mpp_error(FATAL,'npes must be >= ensemble_size')
+    endif
     total_npes_pm = npes/ensemble_size
     if (mod(npes, total_npes_pm) /= 0) call mpp_error(FATAL,'ensemble_size must be divis by npes')
 

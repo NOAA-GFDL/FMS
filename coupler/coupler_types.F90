@@ -168,16 +168,11 @@ module coupler_types_mod
 !!     <td>fms_mod</td>
 !!     <td>write_version_number</td>
 !!   </tr>
-!!   <tr>
-!!     <td>field_manager_mod</td>
-!!     <td>fm_field_name_len, fm_string_len, fm_dump_list</td>
-!!   </tr>
 !! </table>
 
 use fms_mod,           only: write_version_number
 use fms_io_mod,        only: restart_file_type, register_restart_field
 use fms_io_mod,        only: query_initialized, restore_state
-use field_manager_mod, only: fm_field_name_len, fm_string_len
 use time_manager_mod,  only: time_type
 use diag_manager_mod,  only: register_diag_field, send_data
 use data_override_mod, only: data_override
@@ -216,36 +211,38 @@ character(len=48), parameter                    :: mod_name = 'coupler_types_mod
 !
 
 type, public :: coupler_3d_values_type
-  character(len=fm_field_name_len)  :: name = ' '  !< The diagnostic name for this array
-  real, pointer, dimension(:,:,:)   :: values => NULL() !< The pointer to the array of values
-  logical                           :: mean = .true. !< mean
-  logical                           :: override = .false. !< override
-  integer                           :: id_diag = 0 !< The diagnostic id for this array
-  character(len=fm_string_len)      :: long_name = ' ' !< The diagnostic long_name for this array
-  character(len=fm_string_len)      :: units = ' ' !< The units for this array
-  integer                           :: id_rest = 0 !< The id of this array in the restart field
-  logical                           :: may_init = .true. !< If true, there is an internal method
-                                                   !! that can be used to initialize this field
-                                                   !! if it can not be read from a restart file
+  character(len=48)       :: name = ' '  !< The diagnostic name for this array
+  real, pointer, contiguous, dimension(:,:,:) :: values => NULL() !< The pointer to the
+                                         !! array of values for this field; this
+                                         !! should be changed to allocatable
+  logical                 :: mean = .true. !< mean
+  logical                 :: override = .false. !< override
+  integer                 :: id_diag = 0 !< The diagnostic id for this array
+  character(len=128)      :: long_name = ' ' !< The diagnostic long_name for this array
+  character(len=128)      :: units = ' ' !< The units for this array
+  integer                 :: id_rest = 0 !< The id of this array in the restart field
+  logical                 :: may_init = .true. !< If true, there is an internal method
+                                         !! that can be used to initialize this field
+                                         !! if it can not be read from a restart file
 end type coupler_3d_values_type
 
 type, public :: coupler_3d_field_type
-  character(len=fm_field_name_len)                      :: name = ' ' !< name
-  integer                                               :: num_fields = 0 !< num_fields
-  type(coupler_3d_values_type), pointer, dimension(:)   :: field => NULL() !< field
-  character(len=fm_string_len)                          :: flux_type = ' ' !< flux_type
-  character(len=fm_string_len)                          :: implementation = ' ' !< implementation
-  real, pointer, dimension(:)                           :: param => NULL() !< param
-  logical, pointer, dimension(:)                        :: flag => NULL() !< flag
-  integer                                               :: atm_tr_index = 0 !< atm_tr_index
-  character(len=fm_string_len)                          :: ice_restart_file = ' ' !< ice_restart_file
-  character(len=fm_string_len)                          :: ocean_restart_file = ' ' !< ocean_restart_file
-  type(restart_file_type), pointer                      :: rest_type => NULL() !< A pointer to the restart_file_type
-                                                                               !! that is used for this field.
-  logical                                               :: use_atm_pressure !< use_atm_pressure
-  logical                                               :: use_10m_wind_speed !< use_10m_wind_speed
-  logical                                               :: pass_through_ice !< pass_through_ice
-  real                                                  :: mol_wt = 0.0 !< mol_wt
+  character(len=48)                 :: name = ' ' !< name
+  integer                           :: num_fields = 0 !< num_fields
+  type(coupler_3d_values_type), pointer, dimension(:) :: field => NULL() !< field
+  character(len=128)                :: flux_type = ' ' !< flux_type
+  character(len=128)                :: implementation = ' ' !< implementation
+  real, pointer, dimension(:)       :: param => NULL() !< param
+  logical, pointer, dimension(:)    :: flag => NULL() !< flag
+  integer                           :: atm_tr_index = 0 !< atm_tr_index
+  character(len=128)                :: ice_restart_file = ' ' !< ice_restart_file
+  character(len=128)                :: ocean_restart_file = ' ' !< ocean_restart_file
+  type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
+                                                           !! that is used for this field.
+  logical                           :: use_atm_pressure !< use_atm_pressure
+  logical                           :: use_10m_wind_speed !< use_10m_wind_speed
+  logical                           :: pass_through_ice !< pass_through_ice
+  real                              :: mol_wt = 0.0 !< mol_wt
 end type coupler_3d_field_type
 
 type, public :: coupler_3d_bc_type
@@ -262,36 +259,38 @@ end type coupler_3d_bc_type
 !
 
 type, public    :: coupler_2d_values_type
-  character(len=fm_field_name_len)  :: name = ' '  !< The diagnostic name for this array
-  real, pointer, dimension(:,:)     :: values => NULL() !< The pointer to the array of values
-  logical                           :: mean = .true. !< mean
-  logical                           :: override = .false. !< override
-  integer                           :: id_diag = 0 !< The diagnostic id for this array
-  character(len=fm_string_len)      :: long_name = ' ' !< The diagnostic long_name for this array
-  character(len=fm_string_len)      :: units = ' ' !< The units for this array
-  integer                           :: id_rest = 0 !< The id of this array in the restart field
-  logical                           :: may_init = .true. !< If true, there is an internal method
-                                                   !! that can be used to initialize this field
-                                                   !! if it can not be read from a restart file
+  character(len=48)       :: name = ' '  !< The diagnostic name for this array
+  real, pointer, contiguous, dimension(:,:) :: values => NULL() !< The pointer to the
+                                         !! array of values for this field; this
+                                         !! should be changed to allocatable
+  logical                 :: mean = .true. !< mean
+  logical                 :: override = .false. !< override
+  integer                 :: id_diag = 0 !< The diagnostic id for this array
+  character(len=128)      :: long_name = ' ' !< The diagnostic long_name for this array
+  character(len=128)      :: units = ' ' !< The units for this array
+  integer                 :: id_rest = 0 !< The id of this array in the restart field
+  logical                 :: may_init = .true. !< If true, there is an internal method
+                                         !! that can be used to initialize this field
+                                         !! if it can not be read from a restart file
 end type coupler_2d_values_type
 
 type, public    :: coupler_2d_field_type
-  character(len=fm_field_name_len)                      :: name = ' ' !< name
-  integer                                               :: num_fields = 0 !< num_fields
+  character(len=48)                 :: name = ' ' !< name
+  integer                           :: num_fields = 0 !< num_fields
   type(coupler_2d_values_type), pointer, dimension(:)   :: field => NULL() !< field
-  character(len=fm_string_len)                          :: flux_type = ' ' !< flux_type
-  character(len=fm_string_len)                          :: implementation = ' ' !< implementation
-  real, pointer, dimension(:)                           :: param => NULL() !< param
-  logical, pointer, dimension(:)                        :: flag => NULL() !< flag
-  integer                                               :: atm_tr_index = 0 !< atm_tr_index
-  character(len=fm_string_len)                          :: ice_restart_file = ' ' !< ice_restart_file
-  character(len=fm_string_len)                          :: ocean_restart_file = ' ' !< ocean_restart_file
-  type(restart_file_type), pointer                      :: rest_type => NULL() !< A pointer to the restart_file_type
-                                                                               !! that is used for this field.
-  logical                                               :: use_atm_pressure !< use_atm_pressure
-  logical                                               :: use_10m_wind_speed !< use_10m_wind_speed
-  logical                                               :: pass_through_ice !< pass_through_ice
-  real                                                  :: mol_wt = 0.0 !< mol_wt
+  character(len=128)                :: flux_type = ' ' !< flux_type
+  character(len=128)                :: implementation = ' ' !< implementation
+  real, pointer, dimension(:)       :: param => NULL() !< param
+  logical, pointer, dimension(:)    :: flag => NULL() !< flag
+  integer                           :: atm_tr_index = 0 !< atm_tr_index
+  character(len=128)                :: ice_restart_file = ' ' !< ice_restart_file
+  character(len=128)                :: ocean_restart_file = ' ' !< ocean_restart_file
+  type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
+                                                          !! that is used for this field.
+  logical                           :: use_atm_pressure !< use_atm_pressure
+  logical                           :: use_10m_wind_speed !< use_10m_wind_speed
+  logical                           :: pass_through_ice !< pass_through_ice
+  real                              :: mol_wt = 0.0 !< mol_wt
 end type coupler_2d_field_type
 
 type, public    :: coupler_2d_bc_type
@@ -307,33 +306,33 @@ end type coupler_2d_bc_type
 !
 
 type, public    :: coupler_1d_values_type
-  character(len=fm_field_name_len)  :: name = ' '  !< The diagnostic name for this array
-  real, pointer, dimension(:)       :: values => NULL() !< The pointer to the array of values
-  logical                           :: mean = .true. !< mean
-  logical                           :: override = .false. !< override
-  integer                           :: id_diag = 0 !< The diagnostic id for this array
-  character(len=fm_string_len)      :: long_name = ' ' !< The diagnostic long_name for this array
-  character(len=fm_string_len)      :: units = ' ' !< The units for this array
-  logical                           :: may_init = .true. !< If true, there is an internal method
-                                                   !! that can be used to initialize this field
-                                                   !! if it can not be read from a restart file
+  character(len=48)           :: name = ' '  !< The diagnostic name for this array
+  real, pointer, dimension(:) :: values => NULL() !< The pointer to the array of values
+  logical                     :: mean = .true. !< mean
+  logical                     :: override = .false. !< override
+  integer                     :: id_diag = 0 !< The diagnostic id for this array
+  character(len=128)          :: long_name = ' ' !< The diagnostic long_name for this array
+  character(len=128)          :: units = ' ' !< The units for this array
+  logical                     :: may_init = .true. !< If true, there is an internal method
+                                             !! that can be used to initialize this field
+                                             !! if it can not be read from a restart file
 end type coupler_1d_values_type
 
 type, public    :: coupler_1d_field_type
-  character(len=fm_field_name_len)                      :: name = ' ' !< name
-  integer                                               :: num_fields = 0 !< num_fields
+  character(len=48)              :: name = ' ' !< name
+  integer                        :: num_fields = 0 !< num_fields
   type(coupler_1d_values_type), pointer, dimension(:)   :: field => NULL() !< field
-  character(len=fm_string_len)                          :: flux_type = ' ' !< flux_type
-  character(len=fm_string_len)                          :: implementation = ' ' !< implementation
-  real, pointer, dimension(:)                           :: param => NULL() !< param
-  logical, pointer, dimension(:)                        :: flag => NULL() !< flag
-  integer                                               :: atm_tr_index = 0 !< atm_tr_index
-  character(len=fm_string_len)                          :: ice_restart_file = ' ' !< ice_restart_file
-  character(len=fm_string_len)                          :: ocean_restart_file = ' ' !< ocean_restart_file
-  logical                                               :: use_atm_pressure !< use_atm_pressure
-  logical                                               :: use_10m_wind_speed !< use_10m_wind_speed
-  logical                                               :: pass_through_ice !< pass_through_ice
-  real                                                  :: mol_wt = 0.0 !< mol_wt
+  character(len=128)             :: flux_type = ' ' !< flux_type
+  character(len=128)             :: implementation = ' ' !< implementation
+  real, pointer, dimension(:)    :: param => NULL() !< param
+  logical, pointer, dimension(:) :: flag => NULL() !< flag
+  integer                        :: atm_tr_index = 0 !< atm_tr_index
+  character(len=128)             :: ice_restart_file = ' ' !< ice_restart_file
+  character(len=128)             :: ocean_restart_file = ' ' !< ocean_restart_file
+  logical                        :: use_atm_pressure !< use_atm_pressure
+  logical                        :: use_10m_wind_speed !< use_10m_wind_speed
+  logical                        :: pass_through_ice !< pass_through_ice
+  real                           :: mol_wt = 0.0 !< mol_wt
 end type coupler_1d_field_type
 
 type, public    :: coupler_1d_bc_type
@@ -344,34 +343,33 @@ end type coupler_1d_bc_type
 
 !
 !----------------------------------------------------------------------
-!
+!   The following public parameters can help in selecting the sub-elements of a
+! coupler type.  There are duplicate values because different boundary
+! conditions have different sub-elements.
+! Note: These should be parameters, but doing so would break openMP directives.
 
-! The quality of documentation in these comments is pathetic.
-integer, public :: ind_u10 !< ind_u10
-integer, public :: ind_psurf !< ind_psurf
-integer, public :: ind_pcair !< ind_pcair
-integer, public :: ind_csurf !< ind_csurf
-integer, public :: ind_alpha !< The index of the solubility array for a tracer
-integer, public :: ind_sc_no !< The index for the Schmidt number for a tracer flux
-integer, public :: ind_flux  !< The index for the tracer flux
-integer, public :: ind_deltap !< ind_deltap
-integer, public :: ind_kw !< ind_kw
-integer, public :: ind_deposition !< ind_deposition
-integer, public :: ind_runoff !< ind_runoff
+integer, public :: ind_pcair = 1 !< The index of the atmospheric concentration
+integer, public :: ind_u10 = 2   !< The index of the 10 m wind speed
+integer, public :: ind_psurf = 3 !< The index of the surface atmospheric pressure
+integer, public :: ind_alpha = 1 !< The index of the solubility array for a tracer
+integer, public :: ind_csurf = 2 !< The index of the ocean surface concentration
+integer, public :: ind_sc_no = 3 !< The index for the Schmidt number for a tracer flux
+integer, public :: ind_flux = 1  !< The index for the tracer flux
+integer, public :: ind_deltap= 2 !< The index for ocean-air gas partial pressure change
+integer, public :: ind_kw = 3    !< The index for the piston velocity
+integer, public :: ind_deposition = 1 !< The index for the atmospheric deposition flux
+integer, public :: ind_runoff = 1 !< The index for a runoff flux
 
-logical, save   :: module_is_initialized = .false.
-
-!
 !----------------------------------------------------------------------
 !        Interface definitions for overloaded routines
-!
 !----------------------------------------------------------------------
-!
 
 !> This is the interface to spawn one coupler_bc_type into another and then
 !! register diagnostics associated with the new type.
 interface  coupler_type_copy
   module procedure coupler_type_copy_1d_2d, coupler_type_copy_1d_3d
+  module procedure coupler_type_copy_2d_2d, coupler_type_copy_2d_3d
+  module procedure coupler_type_copy_3d_2d, coupler_type_copy_3d_3d
 end interface coupler_type_copy
 
 !> This is the interface to spawn one coupler_bc_type into another.
@@ -538,8 +536,9 @@ character(len=256), parameter   :: error_header =                               
 !-----------------------------------------------------------------------
 !
 
-integer                 :: field_index, outunit
-character(len=128)      :: error_msg
+integer            :: outunit
+character(len=128) :: error_msg
+logical, save   :: module_is_initialized = .false.
 
 !
 ! =====================================================================
@@ -631,22 +630,14 @@ if (fm_new_list('air_sea_gas_flux_generic/atm') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/atm" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_pcair = field_index
 call fm_util_set_value('air_sea_gas_flux_generic/atm/name',      'pcair',                     index = ind_pcair)
 call fm_util_set_value('air_sea_gas_flux_generic/atm/long_name', 'Atmospheric concentration', index = ind_pcair)
 call fm_util_set_value('air_sea_gas_flux_generic/atm/units',     'mol/mol',                   index = ind_pcair)
 
-field_index = field_index + 1
-ind_u10 = field_index
 call fm_util_set_value('air_sea_gas_flux_generic/atm/name',      'u10',                index = ind_u10)
 call fm_util_set_value('air_sea_gas_flux_generic/atm/long_name', 'Wind speed at 10 m', index = ind_u10)
 call fm_util_set_value('air_sea_gas_flux_generic/atm/units',     'm/s',                index = ind_u10)
 
-field_index = field_index + 1
-ind_psurf = field_index
 call fm_util_set_value('air_sea_gas_flux_generic/atm/name',      'psurf',                        index = ind_psurf)
 call fm_util_set_value('air_sea_gas_flux_generic/atm/long_name', 'Surface atmospheric pressure', index = ind_psurf)
 call fm_util_set_value('air_sea_gas_flux_generic/atm/units',     'Pa',                           index = ind_psurf)
@@ -657,25 +648,17 @@ if (fm_new_list('air_sea_gas_flux_generic/ice') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/ice" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_alpha = field_index
-call fm_util_set_value('air_sea_gas_flux_generic/ice/name',      'alpha',                                                index = ind_alpha)
+call fm_util_set_value('air_sea_gas_flux_generic/ice/name',      'alpha',                        index = ind_alpha)
 call fm_util_set_value('air_sea_gas_flux_generic/ice/long_name', 'Solubility w.r.t. atmosphere', index = ind_alpha)
-call fm_util_set_value('air_sea_gas_flux_generic/ice/units',     'mol/m^3/atm',                                          index = ind_alpha)
+call fm_util_set_value('air_sea_gas_flux_generic/ice/units',     'mol/m^3/atm',                  index = ind_alpha)
 
-field_index = field_index + 1
-ind_csurf = field_index
-call fm_util_set_value('air_sea_gas_flux_generic/ice/name',      'csurf',                                         index = ind_csurf)
+call fm_util_set_value('air_sea_gas_flux_generic/ice/name',      'csurf',               index = ind_csurf)
 call fm_util_set_value('air_sea_gas_flux_generic/ice/long_name', 'Ocean concentration', index = ind_csurf)
-call fm_util_set_value('air_sea_gas_flux_generic/ice/units',     'mol/m^3',                                       index = ind_csurf)
+call fm_util_set_value('air_sea_gas_flux_generic/ice/units',     'mol/m^3',             index = ind_csurf)
 
-field_index = field_index + 1
-ind_sc_no = field_index
-call fm_util_set_value('air_sea_gas_flux_generic/ice/name',      'sc_no',                                         index = ind_sc_no)
+call fm_util_set_value('air_sea_gas_flux_generic/ice/name',      'sc_no',          index = ind_sc_no)
 call fm_util_set_value('air_sea_gas_flux_generic/ice/long_name', 'Schmidt number', index = ind_sc_no)
-call fm_util_set_value('air_sea_gas_flux_generic/ice/units',     'dimensionless',                                       index = ind_sc_no)
+call fm_util_set_value('air_sea_gas_flux_generic/ice/units',     'dimensionless',  index = ind_sc_no)
 
 !>       Add the flux output field(s).
 
@@ -683,22 +666,14 @@ if (fm_new_list('air_sea_gas_flux_generic/flux') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/flux" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_flux = field_index
 call fm_util_set_value('air_sea_gas_flux_generic/flux/name',      'flux',         index = ind_flux)
 call fm_util_set_value('air_sea_gas_flux_generic/flux/long_name', 'Surface flux', index = ind_flux)
 call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'mol/m^2/s',    index = ind_flux)
 
-field_index = field_index + 1
-ind_deltap = field_index
 call fm_util_set_value('air_sea_gas_flux_generic/flux/name',      'deltap',         index = ind_deltap)
 call fm_util_set_value('air_sea_gas_flux_generic/flux/long_name', 'Ocean-air delta pressure', index = ind_deltap)
 call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'uatm',    index = ind_deltap)
 
-field_index = field_index + 1
-ind_kw = field_index
 call fm_util_set_value('air_sea_gas_flux_generic/flux/name',      'kw',         index = ind_kw)
 call fm_util_set_value('air_sea_gas_flux_generic/flux/long_name', 'Piston velocity', index = ind_kw)
 call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'm/s',    index = ind_kw)
@@ -745,22 +720,14 @@ if (fm_new_list('air_sea_gas_flux/atm') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux/atm" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_pcair = field_index
 call fm_util_set_value('air_sea_gas_flux/atm/name',      'pcair',                     index = ind_pcair)
 call fm_util_set_value('air_sea_gas_flux/atm/long_name', 'Atmospheric concentration', index = ind_pcair)
 call fm_util_set_value('air_sea_gas_flux/atm/units',     'mol/mol',                   index = ind_pcair)
 
-field_index = field_index + 1
-ind_u10 = field_index
 call fm_util_set_value('air_sea_gas_flux/atm/name',      'u10',                index = ind_u10)
 call fm_util_set_value('air_sea_gas_flux/atm/long_name', 'Wind speed at 10 m', index = ind_u10)
 call fm_util_set_value('air_sea_gas_flux/atm/units',     'm/s',                index = ind_u10)
 
-field_index = field_index + 1
-ind_psurf = field_index
 call fm_util_set_value('air_sea_gas_flux/atm/name',      'psurf',                        index = ind_psurf)
 call fm_util_set_value('air_sea_gas_flux/atm/long_name', 'Surface atmospheric pressure', index = ind_psurf)
 call fm_util_set_value('air_sea_gas_flux/atm/units',     'Pa',                           index = ind_psurf)
@@ -771,16 +738,10 @@ if (fm_new_list('air_sea_gas_flux/ice') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux/ice" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_alpha = field_index
 call fm_util_set_value('air_sea_gas_flux/ice/name',      'alpha',                                                index = ind_alpha)
 call fm_util_set_value('air_sea_gas_flux/ice/long_name', 'Solubility from atmosphere times Schmidt number term', index = ind_alpha)
 call fm_util_set_value('air_sea_gas_flux/ice/units',     'mol/m^3/atm',                                          index = ind_alpha)
 
-field_index = field_index + 1
-ind_csurf = field_index
 call fm_util_set_value('air_sea_gas_flux/ice/name',      'csurf',                                         index = ind_csurf)
 call fm_util_set_value('air_sea_gas_flux/ice/long_name', 'Ocean concentration times Schmidt number term', index = ind_csurf)
 call fm_util_set_value('air_sea_gas_flux/ice/units',     'mol/m^3',                                       index = ind_csurf)
@@ -791,10 +752,6 @@ if (fm_new_list('air_sea_gas_flux/flux') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux/flux" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_flux = field_index
 call fm_util_set_value('air_sea_gas_flux/flux/name',      'flux',         index = ind_flux)
 call fm_util_set_value('air_sea_gas_flux/flux/long_name', 'Surface flux', index = ind_flux)
 call fm_util_set_value('air_sea_gas_flux/flux/units',     'mol/m^2/s',    index = ind_flux)
@@ -837,10 +794,6 @@ if (fm_new_list('air_sea_deposition/atm') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_deposition/atm" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_deposition = field_index
 call fm_util_set_value('air_sea_deposition/atm/name',      'deposition',             index = ind_deposition)
 call fm_util_set_value('air_sea_deposition/atm/long_name', 'Atmospheric deposition', index = ind_deposition)
 call fm_util_set_value('air_sea_deposition/atm/units',     'kg/m^2/s',               index = ind_deposition)
@@ -850,8 +803,6 @@ call fm_util_set_value('air_sea_deposition/atm/units',     'kg/m^2/s',          
 if (fm_new_list('air_sea_deposition/ice') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_deposition/ice" list')
 endif  !}
-
-field_index = 0
 
 call fm_util_set_value('air_sea_deposition/ice/name',      ' ', index = 0)
 call fm_util_set_value('air_sea_deposition/ice/long_name', ' ', index = 0)
@@ -863,10 +814,6 @@ if (fm_new_list('air_sea_deposition/flux') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_deposition/flux" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_flux = field_index
 call fm_util_set_value('air_sea_deposition/flux/name',      'flux',               index = ind_flux)
 call fm_util_set_value('air_sea_deposition/flux/long_name', 'Surface deposition', index = ind_flux)
 call fm_util_set_value('air_sea_deposition/flux/units',     'mol/m^2/s',          index = ind_flux)
@@ -905,10 +852,6 @@ if (fm_new_list('land_sea_runoff/atm') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "land_sea_runoff/atm" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_runoff = field_index
 call fm_util_set_value('land_sea_runoff/atm/name',      'runoff',                       index = ind_runoff)
 call fm_util_set_value('land_sea_runoff/atm/long_name', 'Concentration in land runoff', index = ind_runoff)
 call fm_util_set_value('land_sea_runoff/atm/units',     'mol/m^3',                      index = ind_runoff)
@@ -918,8 +861,6 @@ call fm_util_set_value('land_sea_runoff/atm/units',     'mol/m^3',              
 if (fm_new_list('land_sea_runoff/ice') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "land_sea_runoff/ice" list')
 endif  !}
-
-field_index = 0
 
 call fm_util_set_value('land_sea_runoff/ice/name',      ' ', index = 0)
 call fm_util_set_value('land_sea_runoff/ice/long_name', ' ', index = 0)
@@ -931,10 +872,6 @@ if (fm_new_list('land_sea_runoff/flux') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "land_sea_runoff/flux" list')
 endif  !}
 
-field_index = 0
-
-field_index = field_index + 1
-ind_flux = field_index
 call fm_util_set_value('land_sea_runoff/flux/name',      'flux',                         index = ind_flux)
 call fm_util_set_value('land_sea_runoff/flux/long_name', 'Concentration in land runoff', index = ind_flux)
 call fm_util_set_value('land_sea_runoff/flux/units',     'mol/m^3',                      index = ind_flux)
@@ -977,7 +914,7 @@ end subroutine  coupler_types_init  !}
 !! Template:
 !!
 !! ~~~~~~~~~~{.f90}
-!!   call coupler_type_copy(var_in, var_out, is, ie, js, je, kd, &
+!!   call coupler_type_copy(var_in, var_out, is, ie, js, je, &
 !!        diag_name, axes, time, suffix = 'something')
 !! ~~~~~~~~~~
 subroutine coupler_type_copy_1d_2d(var_in, var_out, is, ie, js, je,     &
@@ -1064,6 +1001,194 @@ subroutine coupler_type_copy_1d_3d(var_in, var_out, is, ie, js, je, kd, &
     call CT_set_diags_3d(var_out, diag_name, axes, time)
 
 end subroutine  coupler_type_copy_1d_3d
+
+!#######################################################################
+!> \brief Copy fields from one coupler type to another. 2-D to 2-D version for generic coupler_type_copy.
+!!
+!! Template:
+!!
+!! ~~~~~~~~~~{.f90}
+!!   call coupler_type_copy(var_in, var_out, is, ie, js, je, &
+!!        diag_name, axes, time, suffix = 'something')
+!! ~~~~~~~~~~
+subroutine coupler_type_copy_2d_2d(var_in, var_out, is, ie, js, je,     &
+     diag_name, axes, time, suffix)
+
+  type(coupler_2d_bc_type), intent(in)    :: var_in !< variable to copy information from
+  type(coupler_2d_bc_type), intent(inout) :: var_out !< variable to copy information to
+  integer, intent(in)                     :: is !< lower bound of first dimension
+  integer, intent(in)                     :: ie !< upper bound of first dimension
+  integer, intent(in)                     :: js !< lower bound of second dimension
+  integer, intent(in)                     :: je !< upper bound of second dimension
+  character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+  integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
+  type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
+  character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
+
+  character(len=64), parameter    :: sub_name = 'coupler_type_copy_2d_2d'
+  character(len=256), parameter   :: error_header =                               &
+       '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
+  character(len=400)      :: error_msg
+  integer                 :: m, n
+
+  if (var_out%num_bcs > 0) then
+    ! It is an error if the number of output fields exceeds zero, because it means this
+    ! type has already been populated.
+    call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
+  endif
+
+  if (var_in%num_bcs >= 0) &
+    call CT_spawn_2d_2d(var_in, var_out, (/ is, is, ie, ie /), (/ js, js, je, je /), suffix)
+
+  if ((var_out%num_bcs > 0) .and. (diag_name .ne. ' ')) &
+    call CT_set_diags_2d(var_out, diag_name, axes, time)
+
+end subroutine  coupler_type_copy_2d_2d
+
+!#######################################################################
+!> \brief Copy fields from one coupler type to another. 2-D to 3-D version for generic coupler_type_copy.
+!!
+!! Template:
+!!
+!! ~~~~~~~~~~{.f90}
+!!   call coupler_type_copy(var_in, var_out, is, ie, js, je, kd, &
+!!        diag_name, axes, time, suffix = 'something')
+!! ~~~~~~~~~~
+!!
+!! \throw FATAL, "Number of output fields is non-zero"
+!! \throw FATAL, "var_out%bc already associated"
+!! \throw FATAL, "var_out%bc([n])%field already associated"
+!! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
+!! \throw FATAL, "axes less than 3 elements"
+subroutine coupler_type_copy_2d_3d(var_in, var_out, is, ie, js, je, kd, &
+     diag_name, axes, time, suffix)
+
+  type(coupler_2d_bc_type), intent(in)    :: var_in !< variable to copy information from
+  type(coupler_3d_bc_type), intent(inout) :: var_out !< variable to copy information to
+  integer, intent(in)                     :: is !< lower bound of first dimension
+  integer, intent(in)                     :: ie !< upper bound of first dimension
+  integer, intent(in)                     :: js !< lower bound of second dimension
+  integer, intent(in)                     :: je !< upper bound of second dimension
+  integer, intent(in)                     :: kd !< third dimension
+  character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+  integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
+  type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
+  character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
+
+  character(len=64), parameter    :: sub_name = 'coupler_type_copy_2d_3d'
+  character(len=256), parameter   :: error_header =                               &
+     '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
+  character(len=400)      :: error_msg
+  integer                 :: m, n
+
+
+  if (var_out%num_bcs > 0) then
+    ! It is an error if the number of output fields exceeds zero, because it means this
+    ! type has already been populated.
+    call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
+  endif
+
+  if (var_in%num_bcs >= 0) &
+    call CT_spawn_2d_3d(var_in, var_out,  (/ is, is, ie, ie /), (/ js, js, je, je /), (/1, kd/), suffix)
+
+  if ((var_out%num_bcs > 0) .and. (diag_name .ne. ' ')) &
+    call CT_set_diags_3d(var_out, diag_name, axes, time)
+
+end subroutine  coupler_type_copy_2d_3d
+
+!#######################################################################
+!> \brief Copy fields from one coupler type to another. 3-D to 2-D version for generic coupler_type_copy.
+!!
+!! Template:
+!!
+!! ~~~~~~~~~~{.f90}
+!!   call coupler_type_copy(var_in, var_out, is, ie, js, je, &
+!!        diag_name, axes, time, suffix = 'something')
+!! ~~~~~~~~~~
+subroutine coupler_type_copy_3d_2d(var_in, var_out, is, ie, js, je,     &
+     diag_name, axes, time, suffix)
+
+  type(coupler_3d_bc_type), intent(in)    :: var_in !< variable to copy information from
+  type(coupler_2d_bc_type), intent(inout) :: var_out !< variable to copy information to
+  integer, intent(in)                     :: is !< lower bound of first dimension
+  integer, intent(in)                     :: ie !< upper bound of first dimension
+  integer, intent(in)                     :: js !< lower bound of second dimension
+  integer, intent(in)                     :: je !< upper bound of second dimension
+  character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+  integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
+  type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
+  character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
+
+  character(len=64), parameter    :: sub_name = 'coupler_type_copy_3d_2d'
+  character(len=256), parameter   :: error_header =                               &
+       '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
+  character(len=400)      :: error_msg
+  integer                 :: m, n
+
+  if (var_out%num_bcs > 0) then
+    ! It is an error if the number of output fields exceeds zero, because it means this
+    ! type has already been populated.
+    call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
+  endif
+
+  if (var_in%num_bcs >= 0) &
+    call CT_spawn_3d_2d(var_in, var_out, (/ is, is, ie, ie /), (/ js, js, je, je /), suffix)
+
+  if ((var_out%num_bcs > 0) .and. (diag_name .ne. ' ')) &
+    call CT_set_diags_2d(var_out, diag_name, axes, time)
+
+end subroutine  coupler_type_copy_3d_2d
+
+!#######################################################################
+!> \brief Copy fields from one coupler type to another. 3-D to 3-D version for generic coupler_type_copy.
+!!
+!! Template:
+!!
+!! ~~~~~~~~~~{.f90}
+!!   call coupler_type_copy(var_in, var_out, is, ie, js, je, kd, &
+!!        diag_name, axes, time, suffix = 'something')
+!! ~~~~~~~~~~
+!!
+!! \throw FATAL, "Number of output fields is non-zero"
+!! \throw FATAL, "var_out%bc already associated"
+!! \throw FATAL, "var_out%bc([n])%field already associated"
+!! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
+!! \throw FATAL, "axes less than 3 elements"
+subroutine coupler_type_copy_3d_3d(var_in, var_out, is, ie, js, je, kd, &
+     diag_name, axes, time, suffix)
+
+  type(coupler_3d_bc_type), intent(in)    :: var_in !< variable to copy information from
+  type(coupler_3d_bc_type), intent(inout) :: var_out !< variable to copy information to
+  integer, intent(in)                     :: is !< lower bound of first dimension
+  integer, intent(in)                     :: ie !< upper bound of first dimension
+  integer, intent(in)                     :: js !< lower bound of second dimension
+  integer, intent(in)                     :: je !< upper bound of second dimension
+  integer, intent(in)                     :: kd !< third dimension
+  character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+  integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
+  type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
+  character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
+
+  character(len=64), parameter    :: sub_name = 'coupler_type_copy_3d_3d'
+  character(len=256), parameter   :: error_header =                               &
+     '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
+  character(len=400)      :: error_msg
+  integer                 :: m, n
+
+
+  if (var_out%num_bcs > 0) then
+    ! It is an error if the number of output fields exceeds zero, because it means this
+    ! type has already been populated.
+    call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
+  endif
+
+  if (var_in%num_bcs >= 0) &
+    call CT_spawn_3d_3d(var_in, var_out,  (/ is, is, ie, ie /), (/ js, js, je, je /), (/1, kd/), suffix)
+
+  if ((var_out%num_bcs > 0) .and. (diag_name .ne. ' ')) &
+    call CT_set_diags_3d(var_out, diag_name, axes, time)
+
+end subroutine  coupler_type_copy_3d_3d
 
 
 !#######################################################################
