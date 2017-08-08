@@ -51,10 +51,12 @@ include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 
 find_program(NCDF_CONFIG_C
   NAMES nc-config
+  HINTS ${NETCDF}/bin
   DOC "Executable for finding NetCDF configuration options")
 
 find_program(NCDF_CONFIG_Fortran
   NAMES nf-config
+  HINTS ${NETCDF}/bin
   DOC "Executable for finding NetCDF Fortran configuration options")
 
 # If we could not find the netCDF configuration program, then the user
