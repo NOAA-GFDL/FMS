@@ -2687,7 +2687,7 @@ subroutine CT_extract_data_2d(var_in, bc_index, field_index, array_out, &
             (2*halo + 1 + var_in%iec - var_in%isc)
       call mpp_error(FATAL, trim(error_msg))
     endif
-    i_off = 1 - (var_in%isc-halo)  
+    i_off = 1 - (var_in%isc-halo)
   endif
 
   ! Do error checking on the j-dimension and determine the array offsets.
@@ -2720,7 +2720,7 @@ subroutine CT_extract_data_2d(var_in, bc_index, field_index, array_out, &
             (2*halo + 1 + var_in%jec - var_in%jsc)
       call mpp_error(FATAL, trim(error_msg))
     endif
-    j_off = 1 - (var_in%jsc-halo)  
+    j_off = 1 - (var_in%jsc-halo)
   endif
 
   do j=var_in%jsc-halo,var_in%jec+halo ; do i=var_in%isc-halo,var_in%iec+halo
@@ -2806,7 +2806,7 @@ subroutine CT_extract_data_3d_2d(var_in, bc_index, field_index, k_in, array_out,
             (2*halo + 1 + var_in%iec - var_in%isc)
       call mpp_error(FATAL, trim(error_msg))
     endif
-    i_off = 1 - (var_in%isc-halo)  
+    i_off = 1 - (var_in%isc-halo)
   endif
 
   ! Do error checking on the j-dimension and determine the array offsets.
@@ -2839,7 +2839,7 @@ subroutine CT_extract_data_3d_2d(var_in, bc_index, field_index, k_in, array_out,
             (2*halo + 1 + var_in%jec - var_in%jsc)
       call mpp_error(FATAL, trim(error_msg))
     endif
-    j_off = 1 - (var_in%jsc-halo)  
+    j_off = 1 - (var_in%jsc-halo)
   endif
 
   if ((k_in > var_in%ke) .or. (k_in < var_in%ks)) then
@@ -2930,7 +2930,7 @@ subroutine CT_extract_data_3d(var_in, bc_index, field_index, array_out, &
             (2*halo + 1 + var_in%iec - var_in%isc)
       call mpp_error(FATAL, trim(error_msg))
     endif
-    i_off = 1 - (var_in%isc-halo)  
+    i_off = 1 - (var_in%isc-halo)
   endif
 
   ! Do error checking on the j-dimension and determine the array offsets.
@@ -2963,7 +2963,7 @@ subroutine CT_extract_data_3d(var_in, bc_index, field_index, array_out, &
             (2*halo + 1 + var_in%jec - var_in%jsc)
       call mpp_error(FATAL, trim(error_msg))
     endif
-    j_off = 1 - (var_in%jsc-halo)  
+    j_off = 1 - (var_in%jsc-halo)
   endif
 
   if (size(array_out,3) /= 1 + var_in%ke - var_in%ks) then
@@ -3054,7 +3054,7 @@ subroutine CT_set_data_2d(array_in, bc_index, field_index, var, &
             (2*halo + 1 + var%iec - var%isc)
       call mpp_error(FATAL, trim(error_msg))
     endif
-    i_off = 1 - (var%isc-halo)  
+    i_off = 1 - (var%isc-halo)
   endif
 
   ! Do error checking on the j-dimension and determine the array offsets.
@@ -3087,7 +3087,7 @@ subroutine CT_set_data_2d(array_in, bc_index, field_index, var, &
             (2*halo + 1 + var%jec - var%jsc)
       call mpp_error(FATAL, trim(error_msg))
     endif
-    j_off = 1 - (var%jsc-halo)  
+    j_off = 1 - (var%jsc-halo)
   endif
 
   do j=var%jsc-halo,var%jec+halo ; do i=var%isc-halo,var%iec+halo
@@ -3170,7 +3170,7 @@ subroutine CT_set_data_2d_3d(array_in, bc_index, field_index, k_out, var, &
             (2*halo + 1 + var%iec - var%isc)
       call mpp_error(FATAL, trim(error_msg))
     endif
-    i_off = 1 - (var%isc-halo)  
+    i_off = 1 - (var%isc-halo)
   endif
 
   ! Do error checking on the j-dimension and determine the array offsets.
@@ -3203,7 +3203,7 @@ subroutine CT_set_data_2d_3d(array_in, bc_index, field_index, k_out, var, &
             (2*halo + 1 + var%jec - var%jsc)
       call mpp_error(FATAL, trim(error_msg))
     endif
-    j_off = 1 - (var%jsc-halo)  
+    j_off = 1 - (var%jsc-halo)
   endif
 
   if ((k_out > var%ke) .or. (k_out < var%ks)) then
@@ -3291,7 +3291,7 @@ subroutine CT_set_data_3d(array_in, bc_index, field_index, var, &
             (2*halo + 1 + var%iec - var%isc)
       call mpp_error(FATAL, trim(error_msg))
     endif
-    i_off = 1 - (var%isc-halo)  
+    i_off = 1 - (var%isc-halo)
   endif
 
   ! Do error checking on the j-dimension and determine the array offsets.
@@ -3324,7 +3324,7 @@ subroutine CT_set_data_3d(array_in, bc_index, field_index, var, &
             (2*halo + 1 + var%jec - var%jsc)
       call mpp_error(FATAL, trim(error_msg))
     endif
-    j_off = 1 - (var%jsc-halo)  
+    j_off = 1 - (var%jsc-halo)
   endif
 
   if (size(array_in,3) /= 1 + var%ke - var%ks) then
@@ -3336,7 +3336,7 @@ subroutine CT_set_data_3d(array_in, bc_index, field_index, var, &
   k_off = 1 - var%ks
 
   do k=var%ks,var%ke ; do j=var%jsc-halo,var%jec+halo ; do i=var%isc-halo,var%iec+halo
-    var%bc(bc_index)%field(field_index)%values(i,j,k) = scale * array_in(i+i_off,j+j_off,k+k_off) 
+    var%bc(bc_index)%field(field_index)%values(i,j,k) = scale * array_in(i+i_off,j+j_off,k+k_off)
   enddo ; enddo ; enddo
 
 end subroutine CT_set_data_3d
@@ -3788,7 +3788,7 @@ end subroutine CT_write_chksums_3d
 function CT_initialized_1d(var)
   type(coupler_1d_bc_type), intent(in) :: var  !< BC_type structure to be deconstructed
   logical :: CT_initialized_1d  !< The return value, indicating whether this type has been initialized
-  
+
   CT_initialized_1d = var%set
 end function CT_initialized_1d
 
@@ -3796,7 +3796,7 @@ end function CT_initialized_1d
 function CT_initialized_2d(var)
   type(coupler_2d_bc_type), intent(in) :: var  !< BC_type structure to be deconstructed
   logical :: CT_initialized_2d  !< The return value, indicating whether this type has been initialized
-  
+
   CT_initialized_2d = var%set
 end function CT_initialized_2d
 
@@ -3804,7 +3804,7 @@ end function CT_initialized_2d
 function CT_initialized_3d(var)
   type(coupler_3d_bc_type), intent(in) :: var  !< BC_type structure to be deconstructed
   logical :: CT_initialized_3d  !< The return value, indicating whether this type has been initialized
-  
+
   CT_initialized_3d = var%set
 end function CT_initialized_3d
 
@@ -3814,7 +3814,7 @@ subroutine CT_destructor_1d(var)
   type(coupler_1d_bc_type), intent(inout) :: var  !< BC_type structure to be deconstructed
 
   integer :: m, n
- 
+
   if (var%num_bcs > 0) then
     do n = 1, var%num_bcs
       do m = 1, var%bc(n)%num_fields
@@ -3834,7 +3834,7 @@ subroutine CT_destructor_2d(var)
   type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to be deconstructed
 
   integer :: m, n
- 
+
   if (var%num_bcs > 0) then
     do n = 1, var%num_bcs
       do m = 1, var%bc(n)%num_fields
@@ -3855,7 +3855,7 @@ subroutine CT_destructor_3d(var)
   type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to be deconstructed
 
   integer :: m, n
- 
+
   if (var%num_bcs > 0) then
     do n = 1, var%num_bcs
       do m = 1, var%bc(n)%num_fields
