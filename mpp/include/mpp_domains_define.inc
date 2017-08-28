@@ -7994,6 +7994,12 @@ subroutine check_overlap_pe_order(domain, overlap, name)
   integer                       :: m
   integer                       :: pe1, pe2
 
+  !---make sure overlap%nsend and overlap%nrecv is no larger than MAXLIST
+  if( overlap%nsend > MAXLIST) call mpp_error(FATAL, &
+             "mpp_domains_define.inc(check_overlap_pe_order): overlap%nsend > MAXLIST, increase MAXLIST")
+  if( overlap%nrecv > MAXLIST) call mpp_error(FATAL, &
+             "mpp_domains_define.inc(check_overlap_pe_order): overlap%nrecv > MAXLIST, increase MAXLIST")
+
   do m = 2, overlap%nsend
      pe1 = overlap%send(m-1)%pe
      pe2 = overlap%send(m)%pe
