@@ -65,7 +65,7 @@ module time_interp_external_mod
   logical, private :: debug_this_module = .false.
 
   public init_external_field, time_interp_external, time_interp_external_init, &
-       time_interp_external_exit, get_external_field_size, get_time_axis
+       time_interp_external_exit, get_external_field_size, get_time_axis, get_external_field_missing
   public set_override_region, reset_src_data_region, get_external_field_axes
 
   private find_buf_index,&
@@ -99,6 +99,7 @@ module time_interp_external_mod
      integer :: tdim
      integer :: numwindows
      logical, dimension(:,:), pointer :: need_compute=>NULL()
+     real    :: missing ! missing value
   end type ext_fieldtype
 
   type, private :: filetype
@@ -225,8 +226,8 @@ module time_interp_external_mod
       integer,          intent(out), optional :: ierr
       integer,          intent(in),  optional :: nwindows
       logical, optional                       :: ignore_axis_atts
+      real                                    :: missing
       
-
       integer :: init_external_field
       
       type(fieldtype), dimension(:), allocatable :: flds
@@ -343,7 +344,7 @@ module time_interp_external_mod
       do i=1,nvar
          call mpp_get_atts(flds(i),name=name,units=fld_units,ndim=ndim,siz=siz_in)
          call mpp_get_tavg_info(unit,flds(i),flds,tstamp,tstart,tend,tavg)
-
+         call mpp_get_atts(flds(i),missing=missing)
          ! why does it convert case of the field name?
          if (trim(lowercase(name)) /= trim(lowercase(fieldname))) cycle
 
@@ -390,6 +391,7 @@ module time_interp_external_mod
          field(num_fields)%siz = 1
          field(num_fields)%ndim = ndim
          field(num_fields)%tdim = 4
+         field(num_fields)%missing = missing
          do j=1,field(num_fields)%ndim
             cart = 'N'
             call get_axis_cart(fld_axes(j), cart)
@@ -766,7 +768,8 @@ module time_interp_external_mod
             where(field(index)%mask(isc:iec,jsc:jec,:,i1))
                data(isw:iew,jsw:jew,:) = field(index)%data(isc:iec,jsc:jec,:,i1)
             elsewhere
-               data(isw:iew,jsw:jew,:) = time_interp_missing !field(index)%missing? Balaji
+!               data(isw:iew,jsw:jew,:) = time_interp_missing !field(index)%missing? Balaji
+               data(isw:iew,jsw:jew,:) = field(index)%missing
             end where
          else
             where(field(index)%mask(isc:iec,jsc:jec,:,i1))
@@ -822,7 +825,8 @@ module time_interp_external_mod
                data(isw:iew,jsw:jew,:) = field(index)%data(isc:iec,jsc:jec,:,i1)*w1 + &
                     field(index)%data(isc:iec,jsc:jec,:,i2)*w2
             elsewhere
-               data(isw:iew,jsw:jew,:) = time_interp_missing !field(index)%missing? Balaji
+!               data(isw:iew,jsw:jew,:) = time_interp_missing !field(index)%missing? Balaji
+               data(isw:iew,jsw:jew,:) = field(index)%missing
             end where
          else
             where(field(index)%mask(isc:iec,jsc:jec,:,i1).and.field(index)%mask(isc:iec,jsc:jec,:,i2))
@@ -1236,6 +1240,33 @@ end subroutine realloc_fields
 
     end function get_external_field_size
 !</FUNCTION> NAME="get_external_field_size"
+
+
+!<FUNCTION NAME="get_external_field_missing" TYPE="real">
+!
+!<DESCRIPTION>
+! return missing value
+!</DESCRIPTION>
+!
+!<IN NAME="index" TYPE="integer">
+! returned from previous call to init_external_field.
+!</IN>
+
+    function get_external_field_missing(index)
+
+      integer :: index
+      real :: missing
+      real :: get_external_field_missing
+      
+      if (index .lt. 1 .or. index .gt. num_fields) &
+           call mpp_error(FATAL,'invalid index in call to get_external_field_size')
+
+
+!      call mpp_get_atts(field(index)%field,missing=missing)
+      get_external_field_missing = field(index)%missing
+
+    end function get_external_field_missing
+!</FUNCTION> NAME="get_external_field_missing"
 
 !<FUNCTION NAME="get_external_field_axes" TYPE="axistype" DIM="(4)">
 !
