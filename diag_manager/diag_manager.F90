@@ -162,7 +162,7 @@ MODULE diag_manager_mod
   !     If <TT>.TRUE.</TT> then <TT>diag_manager_mod</TT> will issue a <TT>FATAL</TT> error if any values for the output field are
   !     outside the given range.
   !   </DATA>
-  !   <DATA NAME="max_field_attributes" TYPE="INTEGER" DEFAULT="2">
+  !   <DATA NAME="max_field_attributes" TYPE="INTEGER" DEFAULT="4">   
   !     Maximum number of user definable attributes per field.
   !   </DATA>
   !   <DATA NAME="max_file_attributes" TYPE="INTEGER" DEFAULT="2">
