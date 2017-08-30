@@ -227,7 +227,7 @@ module mpp_domains_mod
 
   integer, parameter :: NAME_LENGTH = 64
   integer, parameter :: MAXLIST = 100
-  integer, parameter :: MAXOVERLAP = 100
+  integer, parameter :: MAXOVERLAP = 200
   integer, parameter :: FIELD_S = 0
   integer, parameter :: FIELD_X = 1
   integer, parameter :: FIELD_Y = 2
