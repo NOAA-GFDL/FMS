@@ -390,6 +390,10 @@ logical, save   :: module_is_initialized = .false.
 interface  coupler_type_copy  !{
   module procedure  coupler_type_copy_1d_2d
   module procedure  coupler_type_copy_1d_3d
+  module procedure  coupler_type_copy_2d_2d
+  module procedure  coupler_type_copy_2d_3d
+  module procedure  coupler_type_copy_3d_2d
+  module procedure  coupler_type_copy_3d_3d
 end interface  coupler_type_copy  !}
 
 !
@@ -1204,5 +1208,552 @@ endif  !}
 return
 
 end subroutine  coupler_type_copy_1d_3d  !}
+
+
+!#######################################################################
+!> \brief Copy fields from one coupler type to another. 2-D to 2-D version for generic coupler_type_copy.
+!!
+!! Template:
+!!
+!! ~~~~~~~~~~{.f90}
+!!   call coupler_type_copy(var_in, var_out, is, ie, js, je, kd, &
+!!        diag_name, axes, time, suffix = 'something')
+!! ~~~~~~~~~~
+subroutine coupler_type_copy_2d_2d(var_in, var_out, is, ie, js, je,     &
+     diag_name, axes, time, suffix)  !{
+
+!
+!-----------------------------------------------------------------------
+!     modules
+!-----------------------------------------------------------------------
+!
+
+use time_manager_mod, only: time_type
+use diag_manager_mod, only: register_diag_field
+use mpp_mod,          only: mpp_error, FATAL
+
+implicit none
+
+!
+!-----------------------------------------------------------------------
+!     arguments
+!-----------------------------------------------------------------------
+!
+
+type(coupler_2d_bc_type), intent(in)    :: var_in !< variable to copy information from
+type(coupler_2d_bc_type), intent(inout) :: var_out !< variable to copy information to
+integer, intent(in)                     :: is !< lower bound of first dimension
+integer, intent(in)                     :: ie !< upper bound of first dimension
+integer, intent(in)                     :: js !< lower bound of second dimension
+integer, intent(in)                     :: je !< upper bound of second dimension
+character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
+type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
+character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
+
+!
+!-----------------------------------------------------------------------
+!     local parameters
+!-----------------------------------------------------------------------
+!
+
+character(len=64), parameter    :: sub_name = 'coupler_type_copy_1d_2d'
+character(len=256), parameter   :: error_header =                               &
+     '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
+
+!
+!-----------------------------------------------------------------------
+!     local variables
+!-----------------------------------------------------------------------
+!
+
+character(len=128)      :: error_msg
+integer                 :: m
+integer                 :: n
+
+!
+! =====================================================================
+!     begin executable code
+! =====================================================================
+!
+
+!
+!       Error if output fields is not zero
+!
+
+if (var_out%num_bcs .ne. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
+endif  !}
+
+var_out%num_bcs = var_in%num_bcs
+
+!
+!       Return if no input fields
+!
+
+if (var_in%num_bcs .ne. 0) then  !{
+  if (associated(var_out%bc)) then  !{
+    call mpp_error(FATAL, trim(error_header) // ' var_out%bc already associated')
+  endif  !}
+  allocate ( var_out%bc(var_out%num_bcs) )
+  do n = 1, var_out%num_bcs  !{
+    var_out%bc(n)%name = var_in%bc(n)%name
+    var_out%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
+    var_out%bc(n)%ice_restart_file = var_in%bc(n)%ice_restart_file
+    var_out%bc(n)%ocean_restart_file = var_in%bc(n)%ocean_restart_file
+    var_out%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
+    var_out%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
+    var_out%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
+    var_out%bc(n)%mol_wt = var_in%bc(n)%mol_wt
+    var_out%bc(n)%num_fields = var_in%bc(n)%num_fields
+    if (associated(var_out%bc(n)%field)) then  !{
+      write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field already associated'
+      call mpp_error(FATAL, trim(error_msg))
+    endif  !}
+    allocate ( var_out%bc(n)%field(var_out%bc(n)%num_fields) )
+    do m = 1, var_out%bc(n)%num_fields  !{
+      if (present(suffix)) then  !{
+        var_out%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
+      else  !}{
+        var_out%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
+      endif  !}
+      var_out%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
+      var_out%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
+      var_out%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
+      if (associated(var_out%bc(n)%field(m)%values)) then  !{
+        write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field(', m, ')%values already associated'
+        call mpp_error(FATAL, trim(error_msg))
+      endif  !}
+      allocate ( var_out%bc(n)%field(m)%values(is:ie,js:je) )
+      var_out%bc(n)%field(m)%values = 0.0
+      if (diag_name .ne. ' ') then  !{
+        if (size(axes) .lt. 2) then  !{
+          call mpp_error(FATAL, trim(error_header) // ' axes less than 2 elements')
+        endif  !}
+        var_out%bc(n)%field(m)%id_diag = register_diag_field(diag_name,                &
+             var_out%bc(n)%field(m)%name, axes(1:2), Time,                             &
+             var_out%bc(n)%field(m)%long_name, var_out%bc(n)%field(m)%units )
+      endif  !}
+    enddo  !} m
+  enddo  !} n
+
+endif  !}
+
+return
+
+end subroutine  coupler_type_copy_2d_2d  !}
+
+
+!#######################################################################
+!> \brief Copy fields from one coupler type to another. 2-D to 3-D version for generic coupler_type_copy.
+!!
+!! Template:
+!!
+!! ~~~~~~~~~~{.f90}
+!!   call coupler_type_copy(var_in, var_out, is, ie, js, je, kd, &
+!!        diag_name, axes, time, suffix = 'something')
+!! ~~~~~~~~~~
+!!
+!! \throw FATAL, "Number of output fields is non-zero"
+!! \throw FATAL, "var_out%bc already associated"
+!! \throw FATAL, "var_out%bc([n])%field already associated"
+!! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
+!! \throw FATAL, "axes less than 3 elements"
+subroutine coupler_type_copy_2d_3d(var_in, var_out, is, ie, js, je, kd, &
+     diag_name, axes, time, suffix)  !{
+
+!
+!-----------------------------------------------------------------------
+!     modules
+!-----------------------------------------------------------------------
+!
+
+use time_manager_mod, only: time_type
+use diag_manager_mod, only: register_diag_field
+use mpp_mod,          only: mpp_error, FATAL
+
+implicit none
+
+!
+!-----------------------------------------------------------------------
+!     arguments
+!-----------------------------------------------------------------------
+!
+type(coupler_2d_bc_type), intent(in)    :: var_in !< variable to copy information from
+type(coupler_3d_bc_type), intent(inout) :: var_out !< variable to copy information to
+integer, intent(in)                     :: is !< lower bound of first dimension
+integer, intent(in)                     :: ie !< upper bound of first dimension
+integer, intent(in)                     :: js !< lower bound of second dimension
+integer, intent(in)                     :: je !< upper bound of second dimension
+integer, intent(in)                     :: kd !< third dimension
+character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
+type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
+character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
+
+!
+!-----------------------------------------------------------------------
+!     local parameters
+!-----------------------------------------------------------------------
+!
+
+character(len=64), parameter    :: sub_name = 'coupler_type_copy_1d_3d'
+character(len=256), parameter   :: error_header =                               &
+     '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
+
+!
+!-----------------------------------------------------------------------
+!     local variables
+!-----------------------------------------------------------------------
+!
+
+character(len=128)      :: error_msg
+integer                 :: m
+integer                 :: n
+
+!
+! =====================================================================
+!     begin executable code
+! =====================================================================
+!
+
+!
+!       Error if output fields is not zero
+!
+
+if (var_out%num_bcs .ne. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
+endif  !}
+
+var_out%num_bcs = var_in%num_bcs
+
+!
+!       Return if no input fields
+!
+
+if (var_in%num_bcs .ne. 0) then  !{
+  if (associated(var_out%bc)) then  !{
+    call mpp_error(FATAL, trim(error_header) // ' var_out%bc already associated')
+  endif  !}
+  allocate ( var_out%bc(var_out%num_bcs) )
+  do n = 1, var_out%num_bcs  !{
+    var_out%bc(n)%name = var_in%bc(n)%name
+    var_out%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
+    var_out%bc(n)%ice_restart_file = var_in%bc(n)%ice_restart_file
+    var_out%bc(n)%ocean_restart_file = var_in%bc(n)%ocean_restart_file
+    var_out%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
+    var_out%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
+    var_out%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
+    var_out%bc(n)%mol_wt = var_in%bc(n)%mol_wt
+    var_out%bc(n)%num_fields = var_in%bc(n)%num_fields
+    if (associated(var_out%bc(n)%field)) then  !{
+      write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field already associated'
+      call mpp_error(FATAL, trim(error_msg))
+    endif  !}
+    allocate ( var_out%bc(n)%field(var_out%bc(n)%num_fields) )
+    do m = 1, var_out%bc(n)%num_fields  !{
+      if (present(suffix)) then  !{
+        var_out%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // suffix
+      else  !}{
+        var_out%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
+      endif  !}
+      var_out%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
+      var_out%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
+      var_out%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
+      if (associated(var_out%bc(n)%field(m)%values)) then  !{
+        write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field(', m, ')%values already associated'
+        call mpp_error(FATAL, trim(error_msg))
+      endif  !}
+      allocate ( var_out%bc(n)%field(m)%values(is:ie,js:je,kd) )
+      var_out%bc(n)%field(m)%values = 0.0
+      if (diag_name .ne. ' ') then  !{
+        if (size(axes) .lt. 3) then  !{
+          call mpp_error(FATAL, trim(error_header) // ' axes less than 3 elements')
+        endif  !}
+        var_out%bc(n)%field(m)%id_diag = register_diag_field(diag_name,                &
+             var_out%bc(n)%field(m)%name, axes(1:3), Time,                             &
+             var_out%bc(n)%field(m)%long_name, var_out%bc(n)%field(m)%units )
+      endif  !}
+    enddo  !} m
+  enddo  !} n
+
+endif  !}
+
+return
+
+end subroutine  coupler_type_copy_2d_3d  !}
+
+
+!#######################################################################
+!> \brief Copy fields from one coupler type to another. 3-D to 2-D version for generic coupler_type_copy.
+!!
+!! Template:
+!!
+!! ~~~~~~~~~~{.f90}
+!!   call coupler_type_copy(var_in, var_out, is, ie, js, je, kd, &
+!!        diag_name, axes, time, suffix = 'something')
+!! ~~~~~~~~~~
+subroutine coupler_type_copy_3d_2d(var_in, var_out, is, ie, js, je,     &
+     diag_name, axes, time, suffix)  !{
+
+!
+!-----------------------------------------------------------------------
+!     modules
+!-----------------------------------------------------------------------
+!
+
+use time_manager_mod, only: time_type
+use diag_manager_mod, only: register_diag_field
+use mpp_mod,          only: mpp_error, FATAL
+
+implicit none
+
+!
+!-----------------------------------------------------------------------
+!     arguments
+!-----------------------------------------------------------------------
+!
+
+type(coupler_3d_bc_type), intent(in)    :: var_in !< variable to copy information from
+type(coupler_2d_bc_type), intent(inout) :: var_out !< variable to copy information to
+integer, intent(in)                     :: is !< lower bound of first dimension
+integer, intent(in)                     :: ie !< upper bound of first dimension
+integer, intent(in)                     :: js !< lower bound of second dimension
+integer, intent(in)                     :: je !< upper bound of second dimension
+character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
+type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
+character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
+
+!
+!-----------------------------------------------------------------------
+!     local parameters
+!-----------------------------------------------------------------------
+!
+
+character(len=64), parameter    :: sub_name = 'coupler_type_copy_1d_2d'
+character(len=256), parameter   :: error_header =                               &
+     '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
+
+!
+!-----------------------------------------------------------------------
+!     local variables
+!-----------------------------------------------------------------------
+!
+
+character(len=128)      :: error_msg
+integer                 :: m
+integer                 :: n
+
+!
+! =====================================================================
+!     begin executable code
+! =====================================================================
+!
+
+!
+!       Error if output fields is not zero
+!
+
+if (var_out%num_bcs .ne. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
+endif  !}
+
+var_out%num_bcs = var_in%num_bcs
+
+!
+!       Return if no input fields
+!
+
+if (var_in%num_bcs .ne. 0) then  !{
+  if (associated(var_out%bc)) then  !{
+    call mpp_error(FATAL, trim(error_header) // ' var_out%bc already associated')
+  endif  !}
+  allocate ( var_out%bc(var_out%num_bcs) )
+  do n = 1, var_out%num_bcs  !{
+    var_out%bc(n)%name = var_in%bc(n)%name
+    var_out%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
+    var_out%bc(n)%ice_restart_file = var_in%bc(n)%ice_restart_file
+    var_out%bc(n)%ocean_restart_file = var_in%bc(n)%ocean_restart_file
+    var_out%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
+    var_out%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
+    var_out%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
+    var_out%bc(n)%mol_wt = var_in%bc(n)%mol_wt
+    var_out%bc(n)%num_fields = var_in%bc(n)%num_fields
+    if (associated(var_out%bc(n)%field)) then  !{
+      write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field already associated'
+      call mpp_error(FATAL, trim(error_msg))
+    endif  !}
+    allocate ( var_out%bc(n)%field(var_out%bc(n)%num_fields) )
+    do m = 1, var_out%bc(n)%num_fields  !{
+      if (present(suffix)) then  !{
+        var_out%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
+      else  !}{
+        var_out%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
+      endif  !}
+      var_out%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
+      var_out%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
+      var_out%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
+      if (associated(var_out%bc(n)%field(m)%values)) then  !{
+        write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field(', m, ')%values already associated'
+        call mpp_error(FATAL, trim(error_msg))
+      endif  !}
+      allocate ( var_out%bc(n)%field(m)%values(is:ie,js:je) )
+      var_out%bc(n)%field(m)%values = 0.0
+      if (diag_name .ne. ' ') then  !{
+        if (size(axes) .lt. 2) then  !{
+          call mpp_error(FATAL, trim(error_header) // ' axes less than 2 elements')
+        endif  !}
+        var_out%bc(n)%field(m)%id_diag = register_diag_field(diag_name,                &
+             var_out%bc(n)%field(m)%name, axes(1:2), Time,                             &
+             var_out%bc(n)%field(m)%long_name, var_out%bc(n)%field(m)%units )
+      endif  !}
+    enddo  !} m
+  enddo  !} n
+
+endif  !}
+
+return
+
+end subroutine  coupler_type_copy_3d_2d  !}
+
+!#######################################################################
+!> \brief Copy fields from one coupler type to another. 3-D to 3-D version for generic coupler_type_copy.
+!!
+!! Template:
+!!
+!! ~~~~~~~~~~{.f90}
+!!   call coupler_type_copy(var_in, var_out, is, ie, js, je, kd, &
+!!        diag_name, axes, time, suffix = 'something')
+!! ~~~~~~~~~~
+!!
+!! \throw FATAL, "Number of output fields is non-zero"
+!! \throw FATAL, "var_out%bc already associated"
+!! \throw FATAL, "var_out%bc([n])%field already associated"
+!! \throw FATAL, "var_out%bc([n])%field([m])%values already associated"
+!! \throw FATAL, "axes less than 3 elements"
+subroutine coupler_type_copy_3d_3d(var_in, var_out, is, ie, js, je, kd, &
+     diag_name, axes, time, suffix)  !{
+
+!
+!-----------------------------------------------------------------------
+!     modules
+!-----------------------------------------------------------------------
+!
+
+use time_manager_mod, only: time_type
+use diag_manager_mod, only: register_diag_field
+use mpp_mod,          only: mpp_error, FATAL
+
+implicit none
+
+!
+!-----------------------------------------------------------------------
+!     arguments
+!-----------------------------------------------------------------------
+!
+type(coupler_3d_bc_type), intent(in)    :: var_in !< variable to copy information from
+type(coupler_3d_bc_type), intent(inout) :: var_out !< variable to copy information to
+integer, intent(in)                     :: is !< lower bound of first dimension
+integer, intent(in)                     :: ie !< upper bound of first dimension
+integer, intent(in)                     :: js !< lower bound of second dimension
+integer, intent(in)                     :: je !< upper bound of second dimension
+integer, intent(in)                     :: kd !< third dimension
+character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
+type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
+character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
+
+!
+!-----------------------------------------------------------------------
+!     local parameters
+!-----------------------------------------------------------------------
+!
+
+character(len=64), parameter    :: sub_name = 'coupler_type_copy_1d_3d'
+character(len=256), parameter   :: error_header =                               &
+     '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
+
+!
+!-----------------------------------------------------------------------
+!     local variables
+!-----------------------------------------------------------------------
+!
+
+character(len=128)      :: error_msg
+integer                 :: m
+integer                 :: n
+
+!
+! =====================================================================
+!     begin executable code
+! =====================================================================
+!
+
+!
+!       Error if output fields is not zero
+!
+
+if (var_out%num_bcs .ne. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Number of output fields is non-zero')
+endif  !}
+
+var_out%num_bcs = var_in%num_bcs
+
+!
+!       Return if no input fields
+!
+
+if (var_in%num_bcs .ne. 0) then  !{
+  if (associated(var_out%bc)) then  !{
+    call mpp_error(FATAL, trim(error_header) // ' var_out%bc already associated')
+  endif  !}
+  allocate ( var_out%bc(var_out%num_bcs) )
+  do n = 1, var_out%num_bcs  !{
+    var_out%bc(n)%name = var_in%bc(n)%name
+    var_out%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
+    var_out%bc(n)%ice_restart_file = var_in%bc(n)%ice_restart_file
+    var_out%bc(n)%ocean_restart_file = var_in%bc(n)%ocean_restart_file
+    var_out%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
+    var_out%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
+    var_out%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
+    var_out%bc(n)%mol_wt = var_in%bc(n)%mol_wt
+    var_out%bc(n)%num_fields = var_in%bc(n)%num_fields
+    if (associated(var_out%bc(n)%field)) then  !{
+      write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field already associated'
+      call mpp_error(FATAL, trim(error_msg))
+    endif  !}
+    allocate ( var_out%bc(n)%field(var_out%bc(n)%num_fields) )
+    do m = 1, var_out%bc(n)%num_fields  !{
+      if (present(suffix)) then  !{
+        var_out%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // suffix
+      else  !}{
+        var_out%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
+      endif  !}
+      var_out%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
+      var_out%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
+      var_out%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
+      if (associated(var_out%bc(n)%field(m)%values)) then  !{
+        write (error_msg, *) trim(error_header), ' var_out%bc(', n, ')%field(', m, ')%values already associated'
+        call mpp_error(FATAL, trim(error_msg))
+      endif  !}
+      allocate ( var_out%bc(n)%field(m)%values(is:ie,js:je,kd) )
+      var_out%bc(n)%field(m)%values = 0.0
+      if (diag_name .ne. ' ') then  !{
+        if (size(axes) .lt. 3) then  !{
+          call mpp_error(FATAL, trim(error_header) // ' axes less than 3 elements')
+        endif  !}
+        var_out%bc(n)%field(m)%id_diag = register_diag_field(diag_name,                &
+             var_out%bc(n)%field(m)%name, axes(1:3), Time,                             &
+             var_out%bc(n)%field(m)%long_name, var_out%bc(n)%field(m)%units )
+      endif  !}
+    enddo  !} m
+  enddo  !} n
+
+endif  !}
+
+return
+
+end subroutine  coupler_type_copy_3d_3d  !}
 
 end module coupler_types_mod  !}

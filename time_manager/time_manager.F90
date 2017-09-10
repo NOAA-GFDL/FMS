@@ -90,6 +90,7 @@ public operator(+),  operator(-),   operator(*),   operator(/),  &
 ! Subroutines and functions operating on time_type
 public set_time, increment_time, decrement_time, get_time, interval_alarm
 public repeat_alarm, time_type_to_real, real_to_time_type
+public time_list_error
 
 ! List of available calendar types
 public    THIRTY_DAY_MONTHS,    JULIAN,    GREGORIAN,  NOLEAP,   NO_CALENDAR, INVALID_CALENDAR
@@ -3264,6 +3265,19 @@ function date_to_string(time, err_msg)
   endif
 
 end function date_to_string
+
+!> \author Tom Robinson
+!! \email thomas.robinson@noaa.gov
+!! \brief This routine converts the integer t%days to a string
+subroutine time_list_error (T,Terr)
+  type(time_type),  intent(in)            :: t     !< time_type input
+  character(len=:),   allocatable         :: terr  !< String holding the t%days
+!> Allocate the string
+  allocate (character(len=10) :: terr)
+!> Write the integer to the string
+  write (terr,'(I0)') t%days
+end subroutine time_list_error
+
 
 end module time_manager_mod
 

@@ -32,7 +32,8 @@ use time_manager_mod, only: time_type, get_date, set_date, set_time, &
                             operator(+), operator(-), operator(>),   &
                             operator(<), operator( // ), operator( / ),  &
                             operator(>=), operator(<=), operator( * ), &
-                            operator(==), print_date, print_time
+                            operator(==), print_date, print_time,&
+                            time_list_error, date_to_string
 
 use          fms_mod, only: write_version_number, &
                             error_mesg, FATAL, stdout, stdlog, &
@@ -671,6 +672,7 @@ character(len=*), intent(out), optional :: err_msg
 
 integer :: n, hr, mn, se, mtime
 type(time_type) :: T, Ts, Te, Td, Period, Time_mod
+character(len=:),allocatable :: terr, tserr, teerr
 
   if ( .not. module_is_initialized ) call time_interp_init
 
@@ -736,7 +738,14 @@ type(time_type) :: T, Ts, Te, Td, Period, Time_mod
 ! time falls before starting list value
   else if ( T < Ts ) then
      if (mtime == NONE) then
-        if(fms_error_handler ('time_interp_list','time before range of list',err_msg)) return
+        call time_list_error(T,terr)
+        call time_list_error(Ts,tserr)
+        call time_list_error(Te,teerr)
+        if(fms_error_handler ('time_interp_list',&
+           'time '//trim(terr)//' ('//date_to_string(T)//' is before range of list '//trim(tserr)//'-'//trim(teerr)//&
+           '('//date_to_string(Ts)//' - '//date_to_string(Te)//')',&
+           err_msg)) return
+        deallocate(terr,tserr,teerr)
      endif
      Td = Te-Ts
      weight = 1. - ((Ts-T) // (Period-Td))
@@ -762,7 +771,14 @@ type(time_type) :: T, Ts, Te, Td, Period, Time_mod
 ! time falls after ending list value
   else if ( T > Te ) then
      if (mtime == NONE) then
-        if(fms_error_handler ('time_interp_list','time after range of list',err_msg)) return
+        call time_list_error(T,terr)
+        call time_list_error(Ts,tserr)
+        call time_list_error(Te,teerr)
+        if(fms_error_handler ('time_interp_list',&
+           'time '//trim(terr)//' ('//date_to_string(T)//' is after range of list '//trim(tserr)//'-'//trim(teerr)//&
+           '('//date_to_string(Ts)//' - '//date_to_string(Te)//')',&
+           err_msg)) return
+        deallocate(terr,tserr,teerr)
      endif
      Td = Te-Ts
      weight = (T-Te) // (Period-Td)
