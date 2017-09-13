@@ -3399,12 +3399,14 @@ subroutine CT_send_data_2d(var, Time)
   logical :: used
 
   do n = 1, var%num_bcs ; do m = 1, var%bc(n)%num_fields
-    used = send_data(var%bc(n)%field(m)%id_diag, var%bc(n)%field(m)%values, Time)
+    if (var%bc(n)%field(m)%id_diag > 0) then
+      used = send_data(var%bc(n)%field(m)%id_diag, var%bc(n)%field(m)%values, Time)
+    endif
   enddo ; enddo
 
 end subroutine CT_send_data_2d
 
-!> This subroutine writes out all diagnostics of elements of a coupler_2d_bc_type
+!> This subroutine writes out all diagnostics of elements of a coupler_3d_bc_type
 subroutine CT_send_data_3d(var, Time)
   type(coupler_3d_bc_type), intent(in) :: var  !< BC_type structure with the diagnostics to write
   type(time_type),          intent(in) :: time !< The current model time
@@ -3413,7 +3415,9 @@ subroutine CT_send_data_3d(var, Time)
   logical :: used
 
   do n = 1, var%num_bcs ; do m = 1, var%bc(n)%num_fields
-    used = send_data(var%bc(n)%field(m)%id_diag, var%bc(n)%field(m)%values, Time)
+    if (var%bc(n)%field(m)%id_diag > 0) then
+      used = send_data(var%bc(n)%field(m)%id_diag, var%bc(n)%field(m)%values, Time)
+    endif
   enddo ; enddo
 
 end subroutine CT_send_data_3d
