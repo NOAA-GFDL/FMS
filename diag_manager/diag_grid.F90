@@ -503,6 +503,12 @@ CONTAINS
         !For a single point, use the a-grid longitude and latitude
         !values.
 
+        myTile = diag_global_grid%tile_number
+        ntiles = diag_global_grid%ntiles
+
+        allocate(ijMin(ntiles,2))
+        ijMin = 0
+
         !Find the i,j indices of the a-grid point nearest to the
         !my_lonStart,latStart point.
         CALL find_nearest_agrid_index(latStart, &
@@ -532,15 +538,21 @@ CONTAINS
         ENDIF
 
         IF (rank_buf .EQ. mpp_pe()) THEN
-            istart = minI
-            jstart = minJ
-        ELSE
-            istart = 0
-            jstart = 0
+            ijMin(mytile,1) = minI + diag_global_grid%myXbegin - 1
+            ijMin(mytile,2) = minJ + diag_global_grid%myYbegin - 1
         ENDIF
+
+        DO i = 1,ntiles
+            CALL mpp_max(ijMin(i,1))
+            CALL mpp_max(ijMin(i,2))
+        ENDDO
+
+        istart = ijMin(mytile,1)
+        jstart = ijMin(mytile,2)
         iend = istart
         jend = jstart
 
+        DEALLOCATE(ijMin)
     ELSE
 
         myTile = diag_global_grid%tile_number
