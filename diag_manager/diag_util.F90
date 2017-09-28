@@ -282,8 +282,12 @@ CONTAINS
        ALLOCATE(global_lat(global_axis_size))
        CALL get_diag_axis_data(axes(1),global_lon)
        CALL get_diag_axis_data(axes(2),global_lat)
-       IF (   (gstart_indx(1) > 0 .AND. gstart_indx(2) > 0) .AND. &
-            & (gend_indx(1) > 0 .AND. gend_indx(2) > 0) ) THEN
+
+       !Potential fix for out-of-bounds error for global_lon and global_lat.
+       IF ((gstart_indx(1) .GT. 0 .AND. gstart_indx(2) .GT. 0) .AND. &
+           (gstart_indx(1) .LE. global_axis_size .AND. gstart_indx(2) .LE. global_axis_size) .AND. &
+           (gend_indx(1) .GT. 0 .AND. gend_indx(2) .GT. 0) .AND. &
+           (gend_indx(1) .LE. global_axis_size .AND. gend_indx(2) .LE. global_axis_size)) THEN
           ALLOCATE(subaxis_x(gstart_indx(1):gend_indx(1)))
           ALLOCATE(subaxis_y(gstart_indx(2):gend_indx(2)))
           subaxis_x=global_lon(gstart_indx(1):gend_indx(1))
