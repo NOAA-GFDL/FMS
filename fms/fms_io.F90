@@ -3424,9 +3424,12 @@ end subroutine save_restart_border
 !  variables are set through register_restart_field (region option)
 !
 !-------------------------------------------------------------------------------
-subroutine restore_state_border(fileObj, directory)
-  type(restart_file_type), intent(inout)       :: fileObj
-  character(len=*),      intent(in), optional  :: directory
+subroutine restore_state_border(fileObj, directory, nonfatal_missing_files)
+  type(restart_file_type),    intent(inout) :: fileObj    !< The restart_file_type object that has
+                                                          !! information about the restarts
+  character(len=*), optional, intent(in)    :: directory  !< The directory in which to seek restart files
+  logical,          optional, intent(in)    :: nonfatal_missing_files !< If true, the inability to find
+                                                  !! the expected restart file is not necessarily fatal
 ! Arguments:
 !  (in)      directory - The directory where the restart or save
 !                        files should be found. The default is 'INPUT'
@@ -3450,12 +3453,16 @@ subroutine restore_state_border(fileObj, directory)
   integer(LONG_KIND), dimension(3)    :: checksum_file
   integer(LONG_KIND)                  :: checksum_data
   logical                             :: is_there_a_checksum
+  logical                             :: fatal_missing_files
 
   if (.not.associated(fileObj%var)) call mpp_error(FATAL, "fms_io(restore_state_border): " // &
       "restart_file_type data must be initialized by calling register_restart_field before using it")
 
   dir = 'INPUT'
   if(present(directory)) dir = directory
+
+  fatal_missing_files = .true.
+  if (present(nonfatal_missing_files)) fatal_missing_files = .not.nonfatal_missing_files
 
   if(len_trim(dir) > 0) then
      restartpath = trim(dir)//"/"// trim(fileObj%name)
@@ -3464,89 +3471,97 @@ subroutine restore_state_border(fileObj, directory)
   end if
 
 !--- first open the restart files
-!--- NOTE: For distributed restart file, we are assuming there is only one file exist.
+!--- NOTE: For distributed restart files, we are assuming there is only one file that might exist.
 
   inquire (file=trim(restartpath), exist=fexist)
-  if (.not.fexist) call mpp_error(FATAL, "fms_io(restore_state_border): unable to find any restart &
-                                 &files specified by "//trim(restartpath))
-  call mpp_open(unit,trim(restartpath),action=MPP_RDONLY,form=MPP_NETCDF,threading=MPP_SINGLE,&
-                fileset=MPP_SINGLE, is_root_pe=fileObj%is_root_pe)
+  if (.not.fexist) then ; if (fatal_missing_files) then
+     call mpp_error(FATAL, "fms_io(restore_state_border): unable to find any restart files "// &
+        "specified by "//trim(restartpath))
+  elseif (mpp_pe() == mpp_root_pe()) then
+     call mpp_error(WARNING, "fms_io(restore_state_border): unable to find any restart files "// &
+        "specified by "//trim(restartpath))
+  endif ; endif
 
-! Read each variable from the first file in which it is found.
-  call mpp_get_info(unit, ndim, nvar, natt, ntime)
+  if (fexist) then
+    call mpp_open(unit,trim(restartpath),action=MPP_RDONLY,form=MPP_NETCDF,threading=MPP_SINGLE,&
+                  fileset=MPP_SINGLE, is_root_pe=fileObj%is_root_pe)
 
-  allocate(fields(nvar))
-  call mpp_get_fields(unit,fields(1:nvar))
+  ! Read each variable from the first file in which it is found.
+    call mpp_get_info(unit, ndim, nvar, natt, ntime)
 
-  do j=1,fileObj%nvar
-    cur_var => fileObj%var(j)
-! cycle the loop for pes not a member of the current pelist
-    if (.not.ANY(mpp_pe().eq.cur_var%pelist(:))) cycle
-    isc = cur_var%is
-    iec = cur_var%ie
-    jsc = cur_var%js
-    jec = cur_var%je
-! set up indices for local array segment pointer (pointer is 1-based)
-    i1 = 1 + cur_var%x_halo
-    i2 = i1 + (iec-isc)
-    j1 = 1 + cur_var%y_halo
-    j2 = j1 + (jec-jsc)
-! set up index shifts for global array r*d (1-based, but potentially needs offsets: i_add, j_add)
-    i_add = cur_var%ishift
-    j_add = cur_var%jshift
-    do l=1, nvar
-      call mpp_get_atts(fields(l),name=varname)
-      if (lowercase(trim(varname)) == lowercase(trim(cur_var%name))) then
-        cur_var%initialized = .true.
-        check_exist = mpp_attribute_exist(fields(l),"checksum")
-        checksum_file = 0
-        is_there_a_checksum = .false.
-        if ( check_exist  ) then
-          call mpp_get_atts(fields(l),checksum=checksum_file)
-          is_there_a_checksum = .true.
-        endif
-        if (.NOT. checksum_required) is_there_a_checksum = .false. ! Do not need to do data checksumming.
+    allocate(fields(nvar))
+    call mpp_get_fields(unit,fields(1:nvar))
 
-        do k = 1, cur_var%siz(4)
-          tlev = k
-! read the field and scatter it to the rest of the pelist
-          if (Associated(fileObj%p2dr(k,j)%p)) then
-            i_glob = cur_var%gsiz(1)
-            j_glob = cur_var%gsiz(2)
-            if (fileObj%is_root_pe) allocate(r2d(i_glob, j_glob))
-            call mpp_read(unit, fields(l), r2d, tlev)
-            call mpp_scatter(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, cur_var%pelist, &
-                             fileObj%p2dr(k,j)%p(i1:i2,j1:j2), r2d, fileObj%is_root_pe)
-            if ((fileObj%is_root_pe) .and. (is_there_a_checksum)) checksum_data = mpp_chksum(r2d, (/mpp_pe()/) )
-            if (allocated(r2d)) deallocate(r2d)
-          else if (Associated(fileObj%p3dr(k,j)%p)) then
-            i_glob = cur_var%gsiz(1)
-            j_glob = cur_var%gsiz(2)
-            k_glob = cur_var%gsiz(3)
-            if (fileObj%is_root_pe) allocate(r3d(i_glob, j_glob, k_glob))
-            call mpp_read(unit, fields(l), r3d, tlev)
-            call mpp_scatter(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, k_glob, cur_var%pelist, &
-                             fileObj%p3dr(k,j)%p(i1:i2,j1:j2,:), r3d, fileObj%is_root_pe)
-            if ((fileObj%is_root_pe) .and. (is_there_a_checksum)) checksum_data = mpp_chksum(r3d, (/mpp_pe()/) )
-            if (allocated(r3d)) deallocate(r3d)
-          else
-            call mpp_error(FATAL, "fms_io(retore_state_border): no pointer associated with data of field "// &
-                  trim(cur_var%name)//" in file "//trim(fileObj%name) )
-          end if
-          if ((fileObj%is_root_pe) .and. (is_there_a_checksum) .and. (checksum_file(k)/=checksum_data)) then
-            write (mesg,'(a,Z16,a,Z16,a)') "Checksum of input field "// uppercase(trim(varname))//" ", checksum_data,&
-                         " does not match value ", checksum_file(k), " stored in "//uppercase(trim(fileObj%name)//"." )
-            call mpp_error(FATAL, "fms_io(restore_state_border): "//trim(mesg) )
+    do j=1,fileObj%nvar
+      cur_var => fileObj%var(j)
+  ! cycle the loop for pes not a member of the current pelist
+      if (.not.ANY(mpp_pe().eq.cur_var%pelist(:))) cycle
+      isc = cur_var%is
+      iec = cur_var%ie
+      jsc = cur_var%js
+      jec = cur_var%je
+  ! set up indices for local array segment pointer (pointer is 1-based)
+      i1 = 1 + cur_var%x_halo
+      i2 = i1 + (iec-isc)
+      j1 = 1 + cur_var%y_halo
+      j2 = j1 + (jec-jsc)
+  ! set up index shifts for global array r*d (1-based, but potentially needs offsets: i_add, j_add)
+      i_add = cur_var%ishift
+      j_add = cur_var%jshift
+      do l=1, nvar
+        call mpp_get_atts(fields(l),name=varname)
+        if (lowercase(trim(varname)) == lowercase(trim(cur_var%name))) then
+          cur_var%initialized = .true.
+          check_exist = mpp_attribute_exist(fields(l),"checksum")
+          checksum_file = 0
+          is_there_a_checksum = .false.
+          if ( check_exist  ) then
+            call mpp_get_atts(fields(l),checksum=checksum_file)
+            is_there_a_checksum = .true.
           endif
-        end do
-        exit ! Start search for next restart variable.
-      endif
+          if (.NOT. checksum_required) is_there_a_checksum = .false. ! Do not need to do data checksumming.
+
+          do k = 1, cur_var%siz(4)
+            tlev = k
+  ! read the field and scatter it to the rest of the pelist
+            if (Associated(fileObj%p2dr(k,j)%p)) then
+              i_glob = cur_var%gsiz(1)
+              j_glob = cur_var%gsiz(2)
+              if (fileObj%is_root_pe) allocate(r2d(i_glob, j_glob))
+              call mpp_read(unit, fields(l), r2d, tlev)
+              call mpp_scatter(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, cur_var%pelist, &
+                               fileObj%p2dr(k,j)%p(i1:i2,j1:j2), r2d, fileObj%is_root_pe)
+              if ((fileObj%is_root_pe) .and. (is_there_a_checksum)) checksum_data = mpp_chksum(r2d, (/mpp_pe()/) )
+              if (allocated(r2d)) deallocate(r2d)
+            else if (Associated(fileObj%p3dr(k,j)%p)) then
+              i_glob = cur_var%gsiz(1)
+              j_glob = cur_var%gsiz(2)
+              k_glob = cur_var%gsiz(3)
+              if (fileObj%is_root_pe) allocate(r3d(i_glob, j_glob, k_glob))
+              call mpp_read(unit, fields(l), r3d, tlev)
+              call mpp_scatter(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, k_glob, cur_var%pelist, &
+                               fileObj%p3dr(k,j)%p(i1:i2,j1:j2,:), r3d, fileObj%is_root_pe)
+              if ((fileObj%is_root_pe) .and. (is_there_a_checksum)) checksum_data = mpp_chksum(r3d, (/mpp_pe()/) )
+              if (allocated(r3d)) deallocate(r3d)
+            else
+              call mpp_error(FATAL, "fms_io(retore_state_border): no pointer associated with data of field "// &
+                    trim(cur_var%name)//" in file "//trim(fileObj%name) )
+            end if
+            if ((fileObj%is_root_pe) .and. (is_there_a_checksum) .and. (checksum_file(k)/=checksum_data)) then
+              write (mesg,'(a,Z16,a,Z16,a)') "Checksum of input field "// uppercase(trim(varname))//" ", checksum_data,&
+                           " does not match value ", checksum_file(k), " stored in "//uppercase(trim(fileObj%name)//"." )
+              call mpp_error(FATAL, "fms_io(restore_state_border): "//trim(mesg) )
+            endif
+          end do
+          exit ! Start search for next restart variable.
+        endif
+      enddo
     enddo
-  enddo
 
-  deallocate(fields)
+    deallocate(fields)
 
-  call close_file(unit)
+    call close_file(unit)
+  endif ! fexist is true
 
   cur_var =>NULL()
 
@@ -3655,9 +3670,12 @@ end subroutine write_chksum
 !    generated files.  All restart variables are read from the first
 !    file in the input filename list in which they are found.
 
-subroutine restore_state_all(fileObj, directory)
-  type(restart_file_type), intent(inout)       :: fileObj
-  character(len=*),      intent(in), optional  :: directory
+subroutine restore_state_all(fileObj, directory, nonfatal_missing_files)
+  type(restart_file_type),    intent(inout) :: fileObj    !< The restart_file_type object that has
+                                                          !! information about the restarts
+  character(len=*), optional, intent(in)    :: directory  !< The directory in which to seek restart files
+  logical,          optional, intent(in)    :: nonfatal_missing_files !< If true, the inability to find
+                                                  !! the expected restart file is not necessarily fatal
 
 ! Arguments:
 !  (in)      directory - The directory where the restart or save
@@ -3694,12 +3712,16 @@ subroutine restore_state_all(fileObj, directory)
   integer(LONG_KIND), dimension(3)    :: checksum_file
   integer(LONG_KIND)                  :: checksum_data
   logical                             :: is_there_a_checksum
+  logical                             :: fatal_missing_files
 
   if (.not.associated(fileObj%var)) call mpp_error(FATAL, "fms_io(restore_state_all): " // &
       "restart_file_type data must be initialized by calling register_restart_field before using it")
 
   dir = 'INPUT'
   if(present(directory)) dir = directory
+
+  fatal_missing_files = .true.
+  if (present(nonfatal_missing_files)) fatal_missing_files = .not.nonfatal_missing_files
 
   num_restart = 0
   nfile = 0
@@ -3770,8 +3792,13 @@ subroutine restore_state_all(fileObj, directory)
         num_restart = num_restart + 1
      end do
   end if
-  if(nfile == 0) call mpp_error(FATAL, "fms_io(restore_state_all): unable to find any restart files "// &
-       "specified by "//trim(restartpath))
+  if (nfile == 0) then ; if (fatal_missing_files) then
+     call mpp_error(FATAL, "fms_io(restore_state_all): unable to find any restart files "// &
+        "specified by "//trim(restartpath))
+  elseif (mpp_pe() == mpp_root_pe()) then
+     call mpp_error(WARNING, "fms_io(restore_state_all): unable to find any restart files "// &
+        "specified by "//trim(restartpath))
+  endif ; endif
 
 
   ! Read each variable from the first file in which it is found.
@@ -3970,10 +3997,14 @@ end subroutine restore_state_all
 !    generated files.  All restart variables are read from the first
 !    file in the input filename list in which they are found.
 
-subroutine restore_state_one_field(fileObj, id_field, directory)
-  type(restart_file_type), intent(inout)       :: fileObj
-  integer,                 intent(in)          :: id_field
-  character(len=*),      intent(in), optional  :: directory
+subroutine restore_state_one_field(fileObj, id_field, directory, nonfatal_missing_files)
+  type(restart_file_type),    intent(inout) :: fileObj    !< The restart_file_type object that has
+                                                          !! information about the restarts
+  integer,                    intent(in)    :: id_field   !< The field id of a variable that was
+                                                  !! returned by a previous call to register_restart_field
+  character(len=*), optional, intent(in)    :: directory  !< The directory in which to seek restart files
+  logical,          optional, intent(in)    :: nonfatal_missing_files !< If true, the inability to find
+                                                  !! the expected restart file is not necessarily fatal
 
 ! Arguments:
 !  (in)      directory - The directory where the restart or save
@@ -4010,11 +4041,16 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
   integer(LONG_KIND), dimension(3)    :: checksum_file ! There should be no more than 3 timelevels in a restart file.
   integer(LONG_KIND)                  :: checksum_data
   logical                             :: is_there_a_checksum
+  logical                             :: fatal_missing_files
+
   if (.not.associated(fileObj%var)) call mpp_error(FATAL, "fms_io(restore_state_one_field): " // &
       "restart_file_type data must be initialized by calling register_restart_field before using it")
 
   dir = 'INPUT'
   if(present(directory)) dir = directory
+
+  fatal_missing_files = .true.
+  if (present(nonfatal_missing_files)) fatal_missing_files = .not.nonfatal_missing_files
 
   cur_var => fileObj%var(id_field)
   domain_present = cur_var%domain_present
@@ -4103,8 +4139,13 @@ subroutine restore_state_one_field(fileObj, id_field, directory)
         num_restart = num_restart + 1
      end do
   end if
-  if(nfile == 0) call mpp_error(FATAL, "fms_io(restore_state_one_field): unable to find any restart files "// &
-       "specified by "//trim(restartpath))
+  if (nfile == 0) then ; if (fatal_missing_files) then
+     call mpp_error(FATAL, "fms_io(restore_state_all): unable to find any restart files "// &
+        "specified by "//trim(restartpath))
+  elseif (mpp_pe() == mpp_root_pe()) then
+     call mpp_error(WARNING, "fms_io(restore_state_all): unable to find any restart files "// &
+        "specified by "//trim(restartpath))
+  endif ; endif
 
 
   ! Read each variable from the first file in which it is found.

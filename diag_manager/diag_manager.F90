@@ -162,7 +162,7 @@ MODULE diag_manager_mod
   !     If <TT>.TRUE.</TT> then <TT>diag_manager_mod</TT> will issue a <TT>FATAL</TT> error if any values for the output field are
   !     outside the given range.
   !   </DATA>
-  !   <DATA NAME="max_field_attributes" TYPE="INTEGER" DEFAULT="4">   
+  !   <DATA NAME="max_field_attributes" TYPE="INTEGER" DEFAULT="4">
   !     Maximum number of user definable attributes per field.
   !   </DATA>
   !   <DATA NAME="max_file_attributes" TYPE="INTEGER" DEFAULT="2">
@@ -234,7 +234,7 @@ MODULE diag_manager_mod
   PRIVATE
   PUBLIC :: diag_manager_init, send_data, send_tile_averaged_data, diag_manager_end,&
        & register_diag_field, register_static_field, diag_axis_init, get_base_time, get_base_date,&
-       & need_data, average_tiles, DIAG_ALL, DIAG_OCEAN, DIAG_OTHER, get_date_dif, DIAG_SECONDS,&
+       & need_data, DIAG_ALL, DIAG_OCEAN, DIAG_OTHER, get_date_dif, DIAG_SECONDS,&
        & DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, get_diag_global_att,&
        & set_diag_global_att, diag_field_add_attribute, diag_field_add_cell_measures,&
        & get_diag_field_id, diag_axis_add_attribute
@@ -1346,7 +1346,7 @@ CONTAINS
     INTEGER, intent(in) :: cm_ind !< index of the output_field in the associated file
 
     INTEGER :: year, month, day, hour, minute, second
-    INTEGER :: num_axes
+    INTEGER :: n
     CHARACTER(len=25) :: date_prefix
     CHARACTER(len=256) :: asso_file_name
 
@@ -1376,12 +1376,10 @@ CONTAINS
     ! frepp does.
     !CALL get_instance_filename(TRIM(asso_file_name), asso_file_name)
 
-    ! Get the file name with the tile number (if required)
-    num_axes = output_fields(cm_ind)%num_axes
-    CALL get_mosaic_tile_file(TRIM(asso_file_name), asso_file_name,&
-         & is_no_domain=.FALSE.,&
-         & domain=get_domain2d(output_fields(cm_ind)%axes(1:num_axes)),&
-         & tile_count=get_tile_count(output_fields(cm_ind)%axes(1:num_axes)))
+    ! Append .nc suffix, if needed. Note that we no longer try to append cubic sphere tile
+    ! number to the name of the associated file.
+    n = max(len_trim(asso_file_name),3)
+    if (asso_file_name(n-2:n).NE.'.nc') asso_file_name = trim(asso_file_name)//'.nc'
 
     ! Should look like :associated_files = " output_name: output_file_name " ;
     CALL prepend_attribute(files(file_num), 'associated_files',&
@@ -3171,9 +3169,16 @@ CONTAINS
 
     REAL, DIMENSION(SIZE(field,1)) :: out(SIZE(field,1))
 
+    ! If id is < 0 it means that this field is not registered, simply return
+    IF ( id <= 0 ) THEN
+       send_tile_averaged_data1d = .FALSE.
+       RETURN
+    END IF
+
     CALL average_tiles1d (id, field, area, mask, out)
     send_tile_averaged_data1d = send_data(id, out, time=time, mask=ANY(mask,DIM=2))
   END FUNCTION send_tile_averaged_data1d
+
   ! <SUBROUTINE NAME="average_tiles1d">
   !   <OVERVIEW>
   !   </OVERVIEW>
@@ -3197,6 +3202,16 @@ CONTAINS
     INTEGER  :: it ! iterator over tile number
     REAL, DIMENSION(SIZE(x,1)) :: s ! area accumulator
     REAL :: local_missing_value
+
+    ! # FATAL if diag_field_id is less than 0, indicates field was not in diag_table.
+    ! The calling functions should not have passed in an invalid diag_field_id
+    IF ( diag_field_id <= 0 ) THEN
+       ! <ERROR STATUS="FATAL">
+       !   diag_field_id less than 0.  Contact developers.
+       ! </ERROR>
+       CALL error_mesg('diag_manager_mod::average_tiles1d',&
+            & "diag_field_id less than 0.  Contact developers.", FATAL)
+    END IF
 
     ! Initialize local_missing_value
     IF ( input_fields(diag_field_id)%missing_value_present ) THEN
@@ -3239,6 +3254,12 @@ CONTAINS
 
     REAL, DIMENSION(SIZE(field,1),SIZE(field,2)) :: out(SIZE(field,1), SIZE(field,2))
 
+    ! If id is < 0 it means that this field is not registered, simply return
+    IF ( id <= 0 ) THEN
+       send_tile_averaged_data2d = .FALSE.
+       RETURN
+    END IF
+
     CALL average_tiles(id, field, area, mask, out)
     send_tile_averaged_data2d = send_data(id, out, time, mask=ANY(mask,DIM=3))
   END FUNCTION send_tile_averaged_data2d
@@ -3260,6 +3281,12 @@ CONTAINS
     REAL, DIMENSION(SIZE(field,1),SIZE(field,2),SIZE(field,4)) :: out
     LOGICAL, DIMENSION(SIZE(field,1),SIZE(field,2),SIZE(field,4)) :: mask3
     INTEGER :: it
+
+    ! If id is < 0 it means that this field is not registered, simply return
+    IF ( id <= 0 ) THEN
+       send_tile_averaged_data3d = .FALSE.
+       RETURN
+    END IF
 
     DO it=1, SIZE(field,4)
        CALL average_tiles(id, field(:,:,:,it), area, mask, out(:,:,it) )
@@ -3297,6 +3324,16 @@ CONTAINS
     INTEGER  :: it ! iterator over tile number
     REAL, DIMENSION(SIZE(x,1),SIZE(x,2)) :: s ! area accumulator
     REAL :: local_missing_value
+
+    ! # FATAL if diag_field_id is less than 0, indicates field was not in diag_table.
+    ! The calling functions should not have passed in an invalid diag_field_id
+    IF ( diag_field_id <= 0 ) THEN
+       ! <ERROR STATUS="FATAL">
+       !   diag_field_id less than 0.  Contact developers.
+       ! </ERROR>
+       CALL error_mesg('diag_manager_mod::average_tiles',&
+            & "diag_field_id less than 0.  Contact developers.", FATAL)
+    END IF
 
     ! Initialize local_missing_value
     IF ( input_fields(diag_field_id)%missing_value_present ) THEN
@@ -4717,7 +4754,7 @@ if (test_number == 100) then
    !Set the diag_time variable to be 01/01/1990 at 00:00:00 (midnight).
     call set_calendar_type(JULIAN)
     time = set_date(1990,1,1,0,0,0)
-   CALL unstruct_test (nx, ny, nz, npes, ntiles_x, 2, time,io_tile_factor) 
+   CALL unstruct_test (nx, ny, nz, npes, ntiles_x, 2, time,io_tile_factor)
 else
 !!!!!! ALL OTHER TESTS !!!!!!
   IF ( test_number == 12 ) THEN
@@ -5637,7 +5674,7 @@ CONTAINS
             enddo
         enddo
        !> Set in namelist is "I/O tile factor".  The number of ranks that
-       !! participate in I/O for a tile is equal to: 
+       !! participate in I/O for a tile is equal to:
        !!
        !! num_io_ranks_on_a_tile = num_ranks_on_the_tile / "I/O tile factor".
        !!
@@ -5685,7 +5722,7 @@ allocate(rsf_diag_1d_id(1))
                                                    "U", &
                                                    long_name="mapping indices", &
                                                    domainU=domain_ug)
-   call diag_axis_add_attribute(unstructured_axis_diag_id(l),'compress','grid_xt grid_yt') 
+   call diag_axis_add_attribute(unstructured_axis_diag_id(l),'compress','grid_xt grid_yt')
 
 !write(6,*) "ID U",unstructured_axis_diag_id
        !Add the x-, y-, and z-axes to the restart file.  Until a bug in
@@ -5702,7 +5739,7 @@ allocate(rsf_diag_1d_id(1))
 !        do j = 1,ny/4
 !            y_axis_data(j) = real(j)
 !        enddo
-!      
+!
 !     else
 !        do j = 1,ny/4
 !            y_axis_data(j) = real(j+ny/4)
@@ -5788,7 +5825,7 @@ allocate(rsf_diag_1d_id(1))
             enddo
         enddo
 
-     !> Latitude and Longitude 
+     !> Latitude and Longitude
      allocate(lat(ny/num_domain_tiles_y),lon(nx))
      do i=1,nx
           lon(i) = real(i)*360.0/real(nx)
@@ -5859,7 +5896,7 @@ ENDIF !L.ne.1
        if (.not.allocated(unstructured_real_2D_field_data)) allocate(unstructured_real_2D_field_data(unstructured_axis_data_size,nz))
        unstructured_real_2D_field_data = unstructured_real_2D_field_data_ref
 !       allocate(unstructured_real_2D_field_data(unstructured_axis_data_size,nx))
-!       unstructured_real_2D_field_data = 1 
+!       unstructured_real_2D_field_data = 1
 
        !Add a real 3D field to the restart file.  This field is of the form:
        !field = field(unstructured,z,cc).
@@ -5900,13 +5937,13 @@ ENDIF !L.ne.1
                                                       real(1)
             unstructured_real_scalar_field_data = unstructured_real_scalar_field_data_ref
 
-           !Update the data. 
+           !Update the data.
            if (rsf_diag_id .gt. 0) then
                used = send_data(rsf_diag_id, &
                                 unstructured_real_scalar_field_data, &
                                 diag_time)
            endif
-         IF (SIZE(rsf_diag_1d_id) == 1) THEN 
+         IF (SIZE(rsf_diag_1d_id) == 1) THEN
           used = send_data(rsf_diag_1d_id(1), &
                                 unstructured_real_1D_field_data, &
                                 diag_time)
