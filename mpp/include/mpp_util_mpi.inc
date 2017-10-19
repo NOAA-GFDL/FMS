@@ -73,6 +73,11 @@ function get_peset(pelist)
   if( .NOT.PRESENT(pelist) )then !set it to current_peset_num
      get_peset = current_peset_num; return
   end if
+!z1l: bring the following back to solve hang issue
+!     if calling mpp_chksum for individual processor and running on multiple processor.
+  if( size(pelist(:)).EQ.1 .AND. npes.GT.1 )then    !collective ops on single PEs should return
+     get_peset = 0; return
+  end if
 
   !--- first make sure pelist is monotonically increasing.
   if (size(pelist(:)) .GT. 1) then
