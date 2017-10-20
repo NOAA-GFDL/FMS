@@ -1,46 +1,226 @@
-module station_data_mod 
-! <CONTACT EMAIL="Giang.Nong@gfdl.noaa.gov">
-!   Giang Nong
-! </CONTACT>
-! <OVERVIEW>
-! This module is used for outputing model results in a list
-! of stations (not gridded arrrays). The user needs to supply
-! a list of stations with lat, lon values of each station.
-! Data at a single point (I,J) that is closest to each station will
-! be written to a file. No interpolation is made when a station
-! is between two or more grid points.<BR/>
-! In the output file, a 3D field will have a format of array(n1,n2) and
-! a 2D field is array(n1) where n1 is number of stations and n2 is number
-! of vertical levels or depths.
-! </OVERVIEW>
-! <DESCRIPTION>
-! Here are some basic steps of how to use station_data_mod <BR/>
-!1/Call <TT>data_station_init</TT>  <BR/>
-! user needs to supply 2 tables: list_stations and station_data_table as follows:<BR/>
-! example of  list of stations (# sign means comment)<BR/>
-!               #  station_id          lat    lon <BR/>
-!                   station_1          20.4   100.8 <BR/>
-! example of station_data_table (# sign means comment) <BR/>
-! # General descriptor <BR/>
-! Am2p14 station data <BR/>
+!> \mainpage
+!! \author Giang Nong <Giang.Nong@gfdl.noaa.gov>
+!!
+!! \brief This module is used for outputing model results in a list
+!!        of stations (not gridded arrays). The user needs to supply
+!!        a list of stations with lat, lon values of each station.
+!!        Data at a single point (I,J) that is closest to each station will
+!!        be written to a file. No interpolation is made when a station
+!!        is between two or more grid points.<br>
+!!        In the output file, a 3D field will have a format of array(n1,n2) and
+!!        a 2D field is array(n1) where n1 is number of stations and n2 is number
+!!        of vertical levels or depths.
+!!
+!!
+!! Here are some basic steps of how to use station_data_mod:<br>
+!!
+!! <ol>
+!!   <li> Call <tt>data_station_init</tt><br>
+!!        User needs to supply 2 tables: <tt>list_stations</tt> and <tt>station_data_table</tt> as follows:<br>
+!!     <table border="0">
+!!       <tr>
+!!         <td>Example of <tt>list_stations</tt>: &nbsp; &nbsp; &nbsp;</td>
+!!         <td>Example of <tt>station_data_table</tt>:</td>
+!!       </tr>
+!!       <tr>
+!!         <td>
+!!           <table border="0">
+!!             <tr>
+!!               <td>station_id &nbsp;</td>
+!!               <td>lat &nbsp;</td>
+!!               <td>lon</td>
+!!             </tr>
+!!             <tr>
+!!               <td>station_1</td>
+!!               <td>20.4</td>
+!!               <td>100.8</td>
+!!             </tr>
+!!             <tr>
+!!               <td>&nbsp;</td>
+!!               <td>&nbsp;</td>
+!!               <td>&nbsp;</td>
+!!             </tr>
+!!             <tr>
+!!               <td>&nbsp;</td>
+!!               <td>&nbsp;</td>
+!!               <td>&nbsp;</td>
+!!             </tr>
+!!             <tr>
+!!               <td>&nbsp;</td>
+!!               <td>&nbsp;</td>
+!!               <td>&nbsp;</td>
+!!             </tr>
+!!             <tr>
+!!               <td>&nbsp;</td>
+!!               <td>&nbsp;</td>
+!!               <td>&nbsp;</td>
+!!             </tr>
+!!             <tr>
+!!               <td>&nbsp;</td>
+!!               <td>&nbsp;</td>
+!!               <td>&nbsp;</td>
+!!             </tr>
+!!             <tr>
+!!               <td>&nbsp;</td>
+!!               <td>&nbsp;</td>
+!!               <td>&nbsp;</td>
+!!             </tr>
+!!             <tr>
+!!               <td>&nbsp;</td>
+!!               <td>&nbsp;</td>
+!!               <td>&nbsp;</td>
+!!             </tr>
+!!             <tr>
+!!               <td>&nbsp;</td>
+!!               <td>&nbsp;</td>
+!!               <td>&nbsp;</td>
+!!             </tr>
+!!             <tr>
+!!               <td>&nbsp;</td>
+!!               <td>&nbsp;</td>
+!!               <td>&nbsp;</td>
+!!             </tr>
+!!           </table>
+!!         </td>
+!!         <td>
+!!           <table border="0">
+!!             <tr>
+!!               <td>General descriptor:</td>
+!!             </tr>
+!!             <tr>
+!!               <td>&nbsp; &nbsp; Am2p14 station data</td>
+!!             </tr>
+!!             <tr>
+!!               <td>Start time (should be the same as model's initial time):</td>
+!!             </tr>
+!!             <tr>
+!!               <td>&nbsp; &nbsp; 19800101</td>
+!!             </tr>
+!!             <tr>
+!!               <td>File information:</td>
+!!             </tr>
+!!             <tr>
+!!               <td>
+!!                 <table border="0">
+!!                   <tr>
+!!                     <td>filename &nbsp;</td>
+!!                     <td>output_frequency &nbsp;</td>
+!!                     <td>frequency_unit &nbsp;</td>
+!!                     <td>time_axis_unit</td>
+!!                   </tr>
+!!                   <tr>
+!!                     <td>"ocean_day"</td>
+!!                     <td>1</td>
+!!                     <td>"days"</td>
+!!                     <td>"hours"</td>
+!!                   </tr>
+!!                 </table>
+!!               </td>
+!!             </tr>
+!!             <tr>
+!!               <td>Field information:</td>
+!!             </tr>
+!!             <tr>
+!!               <td>
+!!                 <table border="0">
+!!                   <tr>
+!!                     <td>module &nbsp;</td>
+!!                     <td>field_name &nbsp;</td>
+!!                     <td>filename &nbsp;</td>
+!!                     <td>time_method &nbsp;</td>
+!!                     <td>pack</td>
+!!                   </tr>
+!!                   <tr>
+!!                     <td>Ice_mod</td>
+!!                     <td>temperature</td>
+!!                     <td>ocean_day</td>
+!!                     <td>.true.</td>
+!!                     <td>2</td>
+!!                   </tr>
+!!                   <tr>
+!!                     <td>Ice_mod</td>
+!!                     <td>pressure</td>
+!!                     <td>ocean_day</td>
+!!                     <td>.false.</td>
+!!                     <td>2</td> 
+!!                   </tr>
+!!                 </table>
+!!               </td>
+!!             </tr>
+!!           </table>
+!!         </td>
+!!       </tr>
+!!     </table>
+!!   </li>
+!!   <li> Call <tt>register_station_field</tt> to register each field that needs to be written to a file, the call
+!!        <tt>register_station_field</tt> returns a field_id that will be used later in <tt>send_station_data</tt><br>
+!!   </li>
+!!   <li> Call <tt>send_station_data</tt> will send data at each station in the list
+!!        to a file <br>
+!!   </li>
+!!   <li> Finally, call <tt>station_data_end</tt> after the last time step.<br>
+!!   </li>
+!! </ol>
+!! Modules Included:
+!! <table>
+!!   <tr>
+!!     <th>Module Name</th>
+!!     <th>Functions Included</th>
+!!   </tr>
+!!   <tr>
+!!     <td>axis_utils_mod</td>
+!!     <td>nearest_index</td>
+!!   </tr>
+!!   <tr>
+!!     <td>mpp_io_mod</td>
+!!     <td>mpp_open, MPP_RDONLY, MPP_ASCII, mpp_close, MPP_OVERRWR, MPP_NETCDF,
+!!         mpp_write_meta, MPP_SINGLE, mpp_write, fieldtype, mpp_flush</td>
+!!   </tr>
+!!   <tr>
+!!     <td>fms_mod</td>
+!!     <td>error_mesg, FATAL, WARNING, stdlog, write_version_number, mpp_pe, lowercase,
+!!         stdout, close_file, open_namelist_file, check_nml_error</td>
+!!   </tr>
+!!   <tr>
+!!     <td>mpp_mod</td>
+!!     <td>mpp_npes,  mpp_sync, mpp_root_pe, mpp_send, mpp_recv, mpp_max,
+!!         mpp_get_current_pelist, input_nml_file, COMM_TAG_1, COMM_TAG_2,
+!!         COMM_TAG_3, COMM_TAG_4</td>
+!!   </tr>
+!!   <tr>
+!!     <td>mpp_domains_mod</td>
+!!     <td>domain2d, mpp_get_compute_domain</td>
+!!   </tr>
+!!   <tr>
+!!     <td>diag_axis_mod</td>
+!!     <td>diag_axis_init</td>
+!!    </tr>
+!!    <tr>
+!!      <td>diag_output_mod</td>
+!!      <td>write_axis_meta_data, write_field_meta_data, diag_fieldtype,
+!!          done_meta_data</td>
+!!    </tr>
+!!    <tr>
+!!      <td>diag_manager_mod</td>
+!!      <td>get_date_dif, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS,
+!!          DIAG_MONTHS, DIAG_YEARS</td>
+!!    </tr>
+!!    <tr>
+!!      <td>diag_util_mod</td>
+!!      <td>diag_time_inc</td>
+!!    </tr>
+!!    <tr>
+!!      <td>time_manager_mod</td>
+!!      <td>operator(>), operator(>=), time_type, get_calendar_type, NO_CALENDAR,
+!!          set_time set_date, increment_date, increment_time</td>
+!!    </tr>
+!! </table>
 
-!#  start time (should be the same as model's initial time) <BR/>
-! 19800101 <BR/>
-!# file inforamtion <BR/>
-!#   filename,    output_frequency, frequency_unit, time_axis_unit <BR/>
-!   "ocean_day"         1              "days"           "hours" <BR/>
-!# field information <BR/>
-!# module     field_name    filename    time_method   pack <BR/>
-!  Ice_mod    temperature   ocean_day     . true.       2 <BR/>
-!  Ice_mod    pressure      ocean_day      .false.      2    <BR/>
-! 2/
-! Call register_station_field to register each field that needs to be written to a file, the call
-! <TT>register_station_field</TT> returns a field_id that will be used later in send_station_data <BR/>
-! 3/
-! Call <TT> send_station_data</TT> will send data at each station in the list
-! to a file <BR/>
-! 4/ Finally, call <TT>station_data_end</TT> after the last time step.<BR/>
-! </DESCRIPTION>
+
+module station_data_mod 
+
+
+
 use axis_utils_mod, only: nearest_index
 use mpp_io_mod,    only : mpp_open, MPP_RDONLY, MPP_ASCII, mpp_close,MPP_OVERWR,MPP_NETCDF, &
                           mpp_write_meta, MPP_SINGLE, mpp_write, fieldtype,mpp_flush
@@ -57,8 +237,21 @@ use diag_manager_mod,only : get_date_dif, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS
 use diag_util_mod,only    : diag_time_inc
 use time_manager_mod, only: operator(>),operator(>=),time_type,get_calendar_type,NO_CALENDAR,set_time, &
                             set_date, increment_date, increment_time
+
+!--------------------------------------------------------------------
+
 implicit none
 private
+
+!--------------------------------------------------------------------
+!----------- Version number for this module -------------------------
+
+! Include variable "version" to be written to log file.
+#include<file_version.h>
+
+!--------------------------------------------------------------------
+!-------------------------   Namelist   -----------------------------
+
 integer, parameter  :: max_fields_per_file = 150
 integer, parameter  :: max_files = 31
 integer             :: num_files = 0
@@ -76,8 +269,7 @@ character (len=10)  :: time_unit_list(6) = (/'seconds   ', 'minutes   ', &
      'hours     ', 'days      ', 'months    ', 'years     '/)
 integer, parameter  :: EVERY_TIME =  0
 integer, parameter  :: END_OF_RUN = -1
-! Include variable "version" to be written to log file.
-#include<file_version.h>
+
 character(len=256)  :: global_descriptor
 character (len = 7) :: avg_name = 'average'
 integer             :: total_pe
@@ -132,26 +324,57 @@ type (station_type),allocatable         :: stations(:)
 type(diag_fieldtype),save               :: diag_field
 public register_station_field, send_station_data, station_data_init, station_data_end
 
+
+!--------------------------------------------------------------------
+!------------------------   Interfaces   ----------------------------
+
+
+!> \page register_station_field register_station_field Interface
+!!
+!! \brief register_station_field is similar to register_diag_field of diag_manager_mod.
+!!        All arguments are inputs that user needs to supply, some are optional. The
+!!        names of input args are self-describing. <br>
+!!        levels is absent for 2D fields. <br>
+!!        Note that pair (module_name, fieldname) must be unique in the
+!!        station_data_table of a fatal error will occur. <br>
+!!        A field id is returned from this call that will be used later in
+!!        send_station_data
 interface register_station_field
     module procedure register_station_field2d
     module procedure register_station_field3d
 end interface
+
+
+!> \page send_station_data send_station_data Interface
+!!
+!! \brief Data should have the size of compute domain(isc:iec,jcs:jec)<br>
+!!        time is model's time<br>
+!!        field_id is returned from <tt>register_station_field</tt><br>
+!!        Only data at stations will be sent to root_pe which, in turn, sends
+!!        to output file
 interface send_station_data
     module procedure send_station_data_2d
     module procedure send_station_data_3d
 end interface
-contains
 
-! <INTERFACE NAME="station_data_init">
-! <TEMPLATE>
-! station_data_init()
-! </TEMPLATE>
-!   <DESCRIPTION>
-! read in lat. lon of each station<BR/>
-! create station_id based on lat, lon<BR/>
-! read station_data_table, initialize output_fields and output files<BR/>
-!   </DESCRIPTION>
-! </INTERFACE>
+!--------------------------------------------------------------------
+
+
+                            contains
+
+
+
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+!
+!                       Public Subroutines
+!
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+!> \brief Read in lat and lon of each station <br>
+!>        Create station_id based on lat, lon <br>
+!>        Read station_data_table, initialize output_fields and output files
 subroutine station_data_init()
 
 character(len=128)    :: station_name
@@ -294,7 +517,16 @@ namelist /station_data_nml/ max_output_fields, max_stations,init_verbose
 99  continue
     call error_mesg('station_data_init','error reading station_datatable',FATAL)
 end subroutine station_data_init
-!----------------------------------------------------------------------
+
+
+
+
+!> \brief check_duplicate_output_fields takes the data pairs
+!>        (output_name and output_file) and (module_name and output_name) and
+!>        ensures each pair is unique.
+!>
+!> \throw FATAL, "ERROR1 in station_data_table: module/field <module/name> duplicated"
+!> \throw FATAL, "ERROR2 in station_data_table: module/field <module/name> duplicated"
 subroutine check_duplicate_output_fields()
 ! pair(output_name and output_file) should be unique in data_station_table, ERROR1
 ! pair(module_name and output_name) should be unique in data_station_table, ERROR2
@@ -318,7 +550,14 @@ do i = 1, num_output_fields-1
    enddo
 enddo
 end subroutine check_duplicate_output_fields
-!----------------------------------------------------------------------
+
+
+!> \brief get_station_id is passed the station's distinct lat and lon
+!>        to determine what the station's id is.
+!>
+!> \param [in] <lat> Latitude of station
+!> \param [in] <lon> Longitude of station
+!> \param [out] <get_station_id> Unique ID of station
 function get_station_id(lat,lon)
   integer         :: get_station_id, i
   real, intent(in):: lat,lon
@@ -336,7 +575,17 @@ function get_station_id(lat,lon)
   stations(num_stations)%local_i = -1 ; stations(num_stations)%local_j = -1
   get_station_id = num_stations
 end function get_station_id
-!----------------------------------------------------------------------
+
+
+!> \brief init_file initializes files to write station data to. Data is formatted as
+!>       number of units of measurement at X output frequency over amount of time dt
+!>
+!> \param [in] <filename> Filename to use when initializing file
+!> \param [in] <output_freq> Output frequency of substance
+!> \param [in] <output_units> Number of units of substance being recorded
+!> \param [in] <time_units> Length of time being recorded
+!>
+!> \throw FATAL, "init_file or max_files exceeded, increase max_files"
 subroutine init_file(filename, output_freq, output_units, time_units)
   character(len=*), intent(in) :: filename
   integer, intent(in)          :: output_freq, output_units, time_units
@@ -363,7 +612,20 @@ subroutine init_file(filename, output_freq, output_units, time_units)
        set_name=trim(filename))
 end subroutine init_file
 
-!--------------------------------------------------------------------------
+
+!> \brief init_output_field initializes output_field attributes
+!>
+!> \param [in] <module_name>
+!> \param [in] <field_name>
+!> \param [in] <file_name>
+!> \param [in] <time method>
+!>
+!> \throw FATAL, "max_output_fields exceeded, increase it via nml"
+!> \throw FATAL, "file <filename.ext> is NOT found in station_data_table"
+!> \throw FATAL, "max_fields_per_file exceeded"
+!> \throw FATAL, "time_method MAX is not supported"
+!> \throw FATAL, "time_method MIN is not supported"
+!> \throw FATAL, "error in time_method of field field_name"
 subroutine init_output_field(module_name,field_name,file_name,time_method,pack)
   character(len=*), intent(in)           :: module_name, field_name, file_name
   character(len=*), intent(in)           :: time_method
@@ -438,7 +700,10 @@ subroutine init_output_field(module_name,field_name,file_name,time_method,pack)
       .or.output_fields(out_num)%time_average
  output_fields(out_num)%time_method = trim(time_method)
 end subroutine init_output_field
-!--------------------------------------------------------------------------
+
+!> \brief find_file finds the index of a requested file
+!!
+!! \param [in] <name> Name of the file
 function find_file(name)
 integer                      :: find_file
 character(len=*), intent(in) :: name
@@ -452,23 +717,20 @@ do i = 1, num_files
    end if
 end do
 end function find_file
-! <INTERFACE NAME="register_station_field">
-! <TEMPLATE>
-! register_station_field (module_name,fieldname,glo_lat,glo_lon,levels,init_time, 
-!     domain,longname,units) <BR/>
-! </TEMPLATE>
-!   <DESCRIPTION>
-! This function is similar to register_diag_field of diag_manager_mod. All arguments
-! are inputs that user needs to supply, some are optional. The names of input args are
-! self-describing.<BR/> levels is absent for 2D fields. <BR/>
-! Note that pair (module_name, fieldname) must be unique in the 
-! station_data_table or a fatal error will occur. <BR/>
-! A field id is returned from this call that will be used later in send_station_data. <BR/>
-!   </DESCRIPTION>
-! </INTERFACE>
 
 
-!--------------------------------------------------------------------------
+!> \brief register_station_field2d registers a new station field with user input.<br>
+!>       register_station_field2d is overloaded by register_station_field3d as a part
+!>        of the register_station_field interface.
+!>
+!> \param [in] <module_name> Module name of the station being registered
+!> \param [in] <fieldname> Field name of the tation being registered
+!> \param [in] <glo_lat> Global latitude location of the station
+!> \param [in] <glo_lon> Global longitude location of the station
+!> \param [in] <init_time> Initial time of the station
+!> \param [in] <domain> Optional 2d domain representation
+!> \param [in] <longname> Optional longname to identify station
+!> \param [in] <units> Optional units for station measurement data
 function register_station_field2d (module_name,fieldname,glo_lat,glo_lon,init_time, &
      domain,longname,units)
   integer                                :: register_station_field2d
@@ -483,8 +745,27 @@ function register_station_field2d (module_name,fieldname,glo_lat,glo_lon,init_ti
   register_station_field2d = register_station_field3d (module_name,fieldname,glo_lat,glo_lon,&
        levels,init_time,domain,longname,units)
 end function register_station_field2d
-!--------------------------------------------------------------------------
 
+
+!> \brief register_station_field3d registers a new station field with user input.<br>
+!>        register_station_field3d is overloaded by register_station_field2d as a part
+!>        of the register_station_field interface.
+!>
+!> \param [in] <module_name> Module name of the station being registered
+!> \param [in] <fieldname> Field name of the tation being registered
+!> \param [in] <glo_lat> Global latitude location of the station
+!> \param [in] <glo_lon> Global longitude location of the station
+!> \param [in] <levels> Global elevation location of the station
+!> \param [in] <init_time> Initial time of the station
+!> \param [in] <domain> Optional 2d domain representation
+!> \param [in] <longname> Optional longname to identify station
+!> \param [in] <units> Optional units for station measurement data
+!>
+!> \throw FATAL, "outside global latitude values"
+!> \throw FATAL, "outside global longitude values"
+!> \throw FATAL, "Error in global index of station"
+!> \throw WARNING, "<module_name>/<field_name> NOT found in station_data table"
+!> \throw FATAL, "Error in determining local_num_station"
 function register_station_field3d (module_name,fieldname,glo_lat,glo_lon,levels,init_time, &
      domain,longname,units)
 
@@ -611,8 +892,12 @@ function register_station_field3d (module_name,fieldname,glo_lat,glo_lon,levels,
 
 end function register_station_field3d
 
-!-------------------------------------------------------------------------
 
+!> \brief find_output_field returns the index of the reuqested field within the
+!>        output_fields array.
+!>
+!> \param [in] <module_name> Module name of the requested station
+!> \param [in] <field_name> Field name of the requested staiton
 function find_output_field(module_name, field_name)
   integer find_output_field
   character(len=*), intent(in) :: module_name, field_name
@@ -629,7 +914,13 @@ function find_output_field(module_name, field_name)
   end do
 end function find_output_field
 
-!-------------------------------------------------------------------------
+
+!> \brief opening_file opens a file and writes axis meta_data for all files
+!>        (only on ROOT PE, do nothing on other PEs)
+!>
+!> \param [in] <file> File to be opened
+!>
+!> \throw FATAL, "<output_name> has axis_id = -1"
 subroutine opening_file(file)
 ! open file, write axis meta_data for all files (only on ROOT PE, 
 !                        do nothing on other PEs)
@@ -709,18 +1000,16 @@ subroutine opening_file(file)
  endif
  call done_meta_data(files(file)%file_unit)
 end subroutine opening_file 
-! <INTERFACE NAME="send_station_data">
-! <TEMPLATE>
-! send_station_data(field_id, data, time)
-! </TEMPLATE>
-!   <DESCRIPTION>
-! data should have the size of compute domain(isc:iec,jsc:jec)<BR/>
-! time is model's time<BR/>
-! field_id is returned from <TT>register_station_field</TT><BR/>
-! only data at stations will be be sent to root_pe which, in turn, sends to output file
-!   </DESCRIPTION>
-! </INTERFACE>
-!-------------------------------------------------------------------------
+
+
+!> \brief send_station_data_2d sends data to the root PE, which then sends
+!>        data to staton_data_out to be sent to files.<br>
+!>        send_station_data_2d is overloaded by send_station_data_3d as a
+!>        part of the send_station_data interface.
+!>
+!> \param [in] <field_id> Field id of the station data being recorded
+!> \param [in] <data> Data of the station being recorded
+!> \param [in] <time> Time of the station being recorded
 subroutine send_station_data_2d(field_id, data, time)
   integer, intent(in)         :: field_id
   real,    intent(in)         :: data(:,:)
@@ -730,7 +1019,21 @@ subroutine send_station_data_2d(field_id, data, time)
   data3d(:,:,1) = data
   call send_station_data_3d(field_id, data3d, time)
 end subroutine send_station_data_2d
-!-------------------------------------------------------------------------
+
+
+!> \brief send_station_data_3d sends data to the root PE, which then sends
+!>        data to staton_data_out to be sent to files.<br>
+!>        send_station_data_3d is overloaded by send_station_data_2d as a
+!>        part of the send_station_data interface.
+!>
+!> \param [in] <field_id> Field id of the station data being recorded
+!> \param [in] <data> Data of the station being recorded
+!> \param [in] <time> Time of the station being recorded
+!>
+!> \throw FATAL, "Station data NOT initialized"
+!> \throw FATAL, "counter=0 for averaged field"
+!> \throw FATAL, "Global field contains MISSING field"
+!> \throw FATAL, "Local index out of range for field"
 subroutine send_station_data_3d(field_id, data, time)
  
   integer, intent(in)         :: field_id
@@ -823,8 +1126,15 @@ subroutine send_station_data_3d(field_id, data, time)
   if(output_fields(field_id)%time_average) &
        output_fields(field_id)%counter = output_fields(field_id)%counter + 1
 end subroutine send_station_data_3d
-!------------------------------------------------------------------------
 
+
+!> \brief station_data_out is responsible for sending station data to files.
+!>
+!> \param [in] <file> Integer identifying the file to be output
+!> \param [in] <field> Integer identifying the filed to be output
+!> \param [in] <data> Data to be output
+!> \param [in] <time> Time of output
+!> \param [in] <final_call_in> Optional logical expression
 subroutine station_data_out(file, field, data, time,final_call_in)
 
   integer, intent(in)          :: file, field
@@ -873,17 +1183,15 @@ subroutine station_data_out(file, field, data, time,final_call_in)
       endif
    endif
 end subroutine station_data_out
-! <INTERFACE NAME="station_data_end">
-! <TEMPLATE>
-! station_data_end(time)
-! </TEMPLATE>
-!   <DESCRIPTION>
-! Must be called <TT> after the last time step</TT> to write the buffer content
-!   </DESCRIPTION>
-! </INTERFACE>
 
 
-!-----------------------------------------------------------------------------
+!> \brief Must be called <tt>after the last time step</tt> to write the buffer
+!>        content
+!>
+!> \param [in] <time> Model's time
+!>
+!> \throw FATAL, "counter=0 for averaged field"
+!> \throw FATAL, "Global field contains MISSING field"
 subroutine station_data_end(time)
 
   type(time_type), intent(in) :: time            !model's time
@@ -949,7 +1257,7 @@ subroutine station_data_end(time)
   enddo    ! file
   if(mpp_pe() == mpp_root_pe()) deallocate(global_field%buffer)
 end subroutine station_data_end
-!-----------------------------------------------------------------------------------
+
 
 end module station_data_mod
 
