@@ -108,6 +108,7 @@ public days_in_month
 public leap_year
 public length_of_year
 public days_in_year
+public day_of_year
 public month_name
 
 public valid_calendar_types
@@ -2913,6 +2914,20 @@ end function length_of_year_no_leap
 
 ! END OF length_of_year BLOCK
 !==========================================================================
+
+!==========================================================================
+! return number of day in year; Jan 1st is day 1, not zero!
+function day_of_year(time)
+  integer :: day_of_year
+  type(time_type), intent(in) :: Time
+
+  integer :: second, minute, hour, day, month, year
+  type(time_type) :: t
+  
+  call get_date(time,year,month,day,hour,minute,second)
+  t = time-set_date(year,1,1,0,0,0)
+  day_of_year = t%days + 1
+end
 
 ! START OF days_in_year BLOCK
 ! <FUNCTION NAME="days_in_year">
