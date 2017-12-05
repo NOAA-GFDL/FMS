@@ -486,7 +486,7 @@ CONTAINS
     INTEGER, OPTIONAL, INTENT(in) :: num_attributes
     LOGICAL, OPTIONAL, INTENT(in) :: use_UGdomain
 
-    CHARACTER(len=128) :: standard_name2
+    CHARACTER(len=256) :: standard_name2
     CHARACTER(len=1280) :: att_str
     TYPE(diag_fieldtype) :: Field
     LOGICAL :: coord_present

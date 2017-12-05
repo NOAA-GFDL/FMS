@@ -282,8 +282,12 @@ CONTAINS
        ALLOCATE(global_lat(global_axis_size))
        CALL get_diag_axis_data(axes(1),global_lon)
        CALL get_diag_axis_data(axes(2),global_lat)
-       IF (   (gstart_indx(1) > 0 .AND. gstart_indx(2) > 0) .AND. &
-            & (gend_indx(1) > 0 .AND. gend_indx(2) > 0) ) THEN
+
+       !Potential fix for out-of-bounds error for global_lon and global_lat.
+       IF ((gstart_indx(1) .GT. 0 .AND. gstart_indx(2) .GT. 0) .AND. &
+           (gstart_indx(1) .LE. global_axis_size .AND. gstart_indx(2) .LE. global_axis_size) .AND. &
+           (gend_indx(1) .GT. 0 .AND. gend_indx(2) .GT. 0) .AND. &
+           (gend_indx(1) .LE. global_axis_size .AND. gend_indx(2) .LE. global_axis_size)) THEN
           ALLOCATE(subaxis_x(gstart_indx(1):gend_indx(1)))
           ALLOCATE(subaxis_y(gstart_indx(2):gend_indx(2)))
           subaxis_x=global_lon(gstart_indx(1):gend_indx(1))
@@ -1778,33 +1782,50 @@ CONTAINS
        END IF
     END DO
 
-    IF( .NOT.all_scalar_or_1d ) THEN
-        IF (domainU .ne. null_domainUG .AND. domain2 .ne. null_domain2D) then
-            CALL error_mesg('diag_util_mod::opening_file',&
-                            'Domain2 and DomainU are somehow both set.', FATAL)
-        ELSEIF ( domainU .eq. null_domainUG) then
-            IF ( domain2 .EQ. NULL_DOMAIN2D ) then
+    IF (.NOT. all_scalar_or_1d) THEN
+        IF (domainU .NE. null_domainUG .AND. domain2 .NE. null_domain2D) THEN
+            CALL error_mesg('diag_util_mod::opening_file', &
+                            'Domain2 and DomainU are somehow both set.', &
+                            FATAL)
+        ELSEIF (domainU .EQ. null_domainUG) THEN
+            IF (domain2 .EQ. NULL_DOMAIN2D) THEN
                 CALL return_domain(domain2)
-            endif
-            IF ( domain2 .EQ. NULL_DOMAIN2D ) THEN
-               ! <ERROR STATUS="FATAL">
-               !   Domain not defined through set_domain interface; cannot retrieve tile info
-               ! </ERROR>
-                CALL error_mesg('diag_util_mod::opening_file',&
-                                'Domain not defined through set_domain interface;' &
-                                //' cannot retrieve tile info',FATAL)
             ENDIF
-            ntileMe = mpp_get_current_ntile(domain2)
-            ALLOCATE(tile_id(ntileMe))
-            tile_id = mpp_get_tile_id(domain2)
-            fname = TRIM(filename)
-            IF ( mpp_get_ntile_count(domain2) > 1 ) THEN
-               CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(files(file)%tile_count))
-            else if( tile_id(1) > 1 ) then
-               CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(1))
-            endif
-            DEALLOCATE(tile_id)
-        endif
+
+            IF (domain2 .EQ. NULL_DOMAIN2D) THEN
+
+                !Fix for the corner-case when you have a file that contains
+                !2D field(s) that is not associated with a domain tile, as
+                !is usually assumed.
+
+                !This is very confusing, but I will try to explain.  The
+                !all_scalar_or_1d flag determines if the file name is associated
+                !with a domain (i.e. has ".tilex." in the file name).  A value
+                !of .FALSE. for the all_scalar_or_1d flag signals that the
+                !file name is associated with a domain tile.  Normally,
+                !files that contain at least one two-dimensional field are
+                !assumed to be associated with a specific domain tile, and
+                !thus have the value of the all_scalar_or_1d flag set to
+                !.FALSE.  It is possible, however, to have a file that contains
+                !two-dimensional fields that is not associated with a domain tile
+                !(i.e., if you make it into this branch.).  If that is the
+                !case, then reset the all_scalar_or_1d flag back to .TRUE.
+                !Got that?
+                all_scalar_or_1d = .TRUE.
+
+            ELSE
+                ntileMe = mpp_get_current_ntile(domain2)
+                ALLOCATE(tile_id(ntileMe))
+                tile_id = mpp_get_tile_id(domain2)
+                fname = TRIM(filename)
+                IF ( mpp_get_ntile_count(domain2) > 1 ) THEN
+                   CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(files(file)%tile_count))
+                ELSEIF ( tile_id(1) > 1 ) then
+                   CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(1))
+                ENDIF
+                DEALLOCATE(tile_id)
+            ENDIF
+        ENDIF
     ENDIF
     IF ( domainU .ne. null_domainUG) then
 !          ntileMe = mpp_get_UG_current_ntile(domainU)

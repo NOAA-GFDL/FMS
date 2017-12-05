@@ -316,7 +316,7 @@ MODULE diag_data_mod
   !   </DATA>
   !   <DATA NAME="units" TYPE="CHARACTER(len=128)">
   !   </DATA>
-  !   <DATA NAME="standard_name" TYPE="CHARACTER(len=128)">
+  !   <DATA NAME="standard_name" TYPE="CHARACTER(len=256)">
   !   </DATA>
   !   <DATA NAME="interp_method" TYPE="CHARACTER(len=64)">
   !   </DATA>
@@ -363,7 +363,8 @@ MODULE diag_data_mod
   !     send_data calls.
   !   </DATA>
   TYPE input_field_type
-     CHARACTER(len=128) :: module_name, field_name, long_name, units, standard_name
+     CHARACTER(len=128) :: module_name, field_name, long_name, units
+     CHARACTER(len=256) :: standard_name
      CHARACTER(len=64) :: interp_method
      INTEGER, DIMENSION(3) :: axes
      INTEGER :: num_axes

@@ -433,7 +433,7 @@ type :: atttype
      character(len=128)      :: name
      character(len=128)      :: units
      character(len=256)      :: longname
-     character(len=128)      :: standard_name   ! CF standard name
+     character(len=256)      :: standard_name   ! CF standard name
      real                    :: min, max, missing, fill, scale, add
      integer                 :: pack
      integer(LONG_KIND), dimension(3) :: checksum
