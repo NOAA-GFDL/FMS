@@ -1,0 +1,64 @@
+
+\begin{DoxyCode}
+\textcolor{comment}{call interpolator (sulfate, model\_time, p\_half, model\_data, name, is, js, clim\_units)}
+\textcolor{comment}{call interpolator (o3, model\_time, p\_half, model\_data, "ozone", is, js)}
+\end{DoxyCode}
+
+
+The first option is used to generate sulfate models.
+
+The sulfate data is set by 
+\begin{DoxyCode}
+\textcolor{keywordtype}{type}(interpolate\_type), \textcolor{keywordtype}{intent(inout)} :: sulfate
+\end{DoxyCode}
+ The name of the model is set by 
+\begin{DoxyCode}
+\textcolor{comment}{character(len=*), intent(in) :: name}
+\end{DoxyCode}
+ The units used in this model are outputted to 
+\begin{DoxyCode}
+\textcolor{comment}{character(len=*), intent(out), optional :: clim\_units}
+\end{DoxyCode}
+
+
+The second option is generate ozone models.
+
+The ozone data is set by 
+\begin{DoxyCode}
+\textcolor{keywordtype}{type}(interpolate\_type), \textcolor{keywordtype}{intent(inout)} :: o3
+\end{DoxyCode}
+
+
+Both of these options use the following variables in the model.
+
+The time used in the model is set by
+
+
+\begin{DoxyCode}
+\textcolor{keywordtype}{type}(time\_type), \textcolor{keywordtype}{intent(in)} :: model\_time
+\end{DoxyCode}
+ The model pressure field is set by 
+\begin{DoxyCode}
+\textcolor{keywordtype}{real}, \textcolor{keywordtype}{intent(in)}, \textcolor{keywordtype}{dimension(:,:,:)} :: p\_half
+\end{DoxyCode}
+
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in,out}  & {\em $<$clim\+\_\+type$>$} & The interpolate type previously defined by a call to interpolator\+\_\+init \\
+\hline
+\mbox{\tt in}  & {\em $<$field\+\_\+name$>$} & The name of a field that you wish to interpolate \\
+\hline
+\mbox{\tt in}  & {\em $<$\+Time$>$} & The model time that you wish to interpolate to \\
+\hline
+\mbox{\tt in}  & {\em $<$phalf$>$} & The half level model pressure field \\
+\hline
+\mbox{\tt in}  & {\em $<$is$>$} & Index for the physics window \\
+\hline
+\mbox{\tt in}  & {\em $<$js$>$} & Index for the physics window \\
+\hline
+\mbox{\tt out}  & {\em $<$interp\+\_\+data$>$} & The model fields with the interpolated climatology data \\
+\hline
+\mbox{\tt out}  & {\em $<$clim\+\_\+units$>$} & The units of field\+\_\+name \\
+\hline
+\end{DoxyParams}

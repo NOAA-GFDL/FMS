@@ -1,0 +1,489 @@
+\hypertarget{structinterpolator__mod_1_1interpolate__type}{}\section{interpolator\+\_\+mod\+:\+:interpolate\+\_\+type Type Reference}
+\label{structinterpolator__mod_1_1interpolate__type}\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+
+
+Redundant climatology data between fields.  
+
+
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+real, dimension(\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_a6c09c87fb6fa9738a5f6a960f08c7ab5}{lat} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+real, dimension(\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_aa199d288af9a7662eec0aa306b1a2e53}{lon} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+real, dimension(\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_a4fda8f1922dd8709fa3a7df4a20a16e8}{latb} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+real, dimension(\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_aa3e56228c9f9a0a8fc27048b98769b04}{lonb} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+real, dimension(\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_a0b204dd7555282e3d37f14e10ba6dada}{levs} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+real, dimension(\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_ae760359b9696766024b45cc969081d08}{halflevs} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+type(horiz\+\_\+interp\+\_\+type) \hyperlink{structinterpolator__mod_1_1interpolate__type_a0f5d0480dff201de597cb91ea42ba90d}{interph}
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+type(time\+\_\+type), dimension(\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_a91e808f3c80097c7bec24ab0b7613be4}{time\+\_\+slice} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em An array of the times within the climatology. \end{DoxyCompactList}\item 
+integer \hyperlink{structinterpolator__mod_1_1interpolate__type_ae8fc6840a65ff8cdfd353d1738c413e3}{unit}
+\begin{DoxyCompactList}\small\item\em Unit number on which file is being read. \end{DoxyCompactList}\item 
+character(\hyperlink{namespaceinterpolator__mod_a6bd2ec3395203e1b6aba0610bfbfe16b}{len}=64) \hyperlink{structinterpolator__mod_1_1interpolate__type_a61ac3f0354a4bbf051d0e6cbb8064849}{file\+\_\+name}
+\begin{DoxyCompactList}\small\item\em Climatology filename. \end{DoxyCompactList}\item 
+integer \hyperlink{structinterpolator__mod_1_1interpolate__type_ac5138e6458c5e16272c0959ba192e1ee}{time\+\_\+flag}
+\begin{DoxyCompactList}\small\item\em Linear or seaonal interpolation? \end{DoxyCompactList}\item 
+integer \hyperlink{structinterpolator__mod_1_1interpolate__type_acf6864662d79f232f60044928ecd0854}{level\+\_\+type}
+\begin{DoxyCompactList}\small\item\em Pressure or Sigma level. \end{DoxyCompactList}\item 
+integer \hyperlink{structinterpolator__mod_1_1interpolate__type_a700a5794c8cbe684438e65b2572a58fa}{is}
+\item 
+integer \hyperlink{structinterpolator__mod_1_1interpolate__type_a233573d8b270417860caa4907e6c30f0}{ie}
+\item 
+integer \hyperlink{structinterpolator__mod_1_1interpolate__type_aa1b2ed303e0d712c218d589863795d51}{js}
+\item 
+integer \hyperlink{structinterpolator__mod_1_1interpolate__type_aed85b6d49fbc4c8c4b39ac3d9853931a}{je}
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+integer \hyperlink{structinterpolator__mod_1_1interpolate__type_a1fc99882648137c3318d3ba71758b4c0}{vertical\+\_\+indices}
+\begin{DoxyCompactList}\small\item\em direction of vertical data axis \end{DoxyCompactList}\item 
+logical \hyperlink{structinterpolator__mod_1_1interpolate__type_acaa874a35f905cc36e6915f527ac60b1}{climatological\+\_\+year}
+\begin{DoxyCompactList}\small\item\em Is data for year = 0000? \end{DoxyCompactList}\item 
+type(fieldtype), dimension(\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_af11c6e332932f59196bcb03ca3100dc0}{field\+\_\+type} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em Net\+C\+DF field type. \end{DoxyCompactList}\item 
+character(\hyperlink{namespaceinterpolator__mod_a6bd2ec3395203e1b6aba0610bfbfe16b}{len}=64), dimension(\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_af8884a32f9588a0fab78c9ae4bbd5cbb}{field\+\_\+name} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em name of this field \end{DoxyCompactList}\item 
+integer, dimension(\+:,\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_ac908a66dfd23a08bac5287c82088585f}{time\+\_\+init} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em second index is the number of time\+\_\+slices being kept. 2 or ntime. \end{DoxyCompactList}\item 
+integer, dimension(\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_a9f58037b78bd083d1f02b69a7e7951fd}{mr} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em Flag for conversion of climatology to mixing ratio. \end{DoxyCompactList}\item 
+integer, dimension(\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_a4a8a789a637ebebe856231b397458393}{out\+\_\+of\+\_\+bounds} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em Flag for when surface pressure is out of bounds. \end{DoxyCompactList}\item 
+integer, dimension(\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_a7257d09acb88219d06e28f21bc05db60}{vert\+\_\+interp} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em Flag for type of vertical interpolation. \end{DoxyCompactList}\item 
+real, dimension(\+:,\+:,\+:,\+:,\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_ae1ce24a33a1e06060a1033dcd2f433cc}{data} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em (nlatmod,nlonmod,nlevclim,size(time\+\_\+init,2),nfields) \end{DoxyCompactList}\item 
+real, dimension(\+:,\+:,\+:,\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_ae6916b2c97f2a40660d4c9ab3c476c6f}{pmon\+\_\+pyear} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+real, dimension(\+:,\+:,\+:,\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_a5df101410d4543d33a3bf2743dffdfad}{pmon\+\_\+nyear} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+real, dimension(\+:,\+:,\+:,\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_ab8ee99b5abce68cb89b89921cad4615e}{nmon\+\_\+nyear} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+real, dimension(\+:,\+:,\+:,\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_a868f55c1d2e4a978ef6b544c1ebaa61f}{nmon\+\_\+pyear} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+integer, dimension(\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_a0cd8d140914a66872498299f16f88599}{indexm} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+integer, dimension(\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_aacfd7db8972fa74b2ac1c925b06a5750}{indexp} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+integer, dimension(\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_a7e69d0cea8c2da152768794faf331ca7}{climatology} =$>$N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+type(time\+\_\+type), dimension(\+:,\+:), pointer \hyperlink{structinterpolator__mod_1_1interpolate__type_adb46f9ffb550fcecd7790530e5f1f083}{clim\+\_\+times} =$>$ N\+U\+LL()
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+logical \hyperlink{structinterpolator__mod_1_1interpolate__type_a8970892896a81150bbb88c4e8aa1c585}{separate\+\_\+time\+\_\+vary\+\_\+calc}
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+real \hyperlink{structinterpolator__mod_1_1interpolate__type_a3b4782d908f8ac72a49fdf05b005a481}{tweight}
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+real \hyperlink{structinterpolator__mod_1_1interpolate__type_adbb2014144021403a46c95b819f51238}{tweight1}
+\begin{DoxyCompactList}\small\item\em The time weight between the climatology years. \end{DoxyCompactList}\item 
+real \hyperlink{structinterpolator__mod_1_1interpolate__type_a8a643252841aba06a7e723a127c40de8}{tweight2}
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+real \hyperlink{structinterpolator__mod_1_1interpolate__type_ac69c4d87ddcbe4dbc02ab4a6f8f7a455}{tweight3}
+\begin{DoxyCompactList}\small\item\em The time weight between the month. \end{DoxyCompactList}\item 
+integer \hyperlink{structinterpolator__mod_1_1interpolate__type_ab6fa11384a6e40ef92a0b445bd89feef}{itaum}
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\item 
+integer \hyperlink{structinterpolator__mod_1_1interpolate__type_ad9b22dee923011a98e719ed2a7482b6f}{itaup}
+\begin{DoxyCompactList}\small\item\em No description. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Redundant climatology data between fields. 
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_adb46f9ffb550fcecd7790530e5f1f083}\label{structinterpolator__mod_1_1interpolate__type_adb46f9ffb550fcecd7790530e5f1f083}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!clim\+\_\+times@{clim\+\_\+times}}
+\index{clim\+\_\+times@{clim\+\_\+times}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{clim\+\_\+times}{clim\_times}}
+{\footnotesize\ttfamily type(time\+\_\+type), dimension(\+:,\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::clim\+\_\+times =$>$ N\+U\+LL()}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_acaa874a35f905cc36e6915f527ac60b1}\label{structinterpolator__mod_1_1interpolate__type_acaa874a35f905cc36e6915f527ac60b1}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!climatological\+\_\+year@{climatological\+\_\+year}}
+\index{climatological\+\_\+year@{climatological\+\_\+year}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{climatological\+\_\+year}{climatological\_year}}
+{\footnotesize\ttfamily logical interpolator\+\_\+mod\+::interpolate\+\_\+type\+::climatological\+\_\+year}
+
+
+
+Is data for year = 0000? 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_a7e69d0cea8c2da152768794faf331ca7}\label{structinterpolator__mod_1_1interpolate__type_a7e69d0cea8c2da152768794faf331ca7}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!climatology@{climatology}}
+\index{climatology@{climatology}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{climatology}{climatology}}
+{\footnotesize\ttfamily integer, dimension(\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::climatology =$>$N\+U\+LL()}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_ae1ce24a33a1e06060a1033dcd2f433cc}\label{structinterpolator__mod_1_1interpolate__type_ae1ce24a33a1e06060a1033dcd2f433cc}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!data@{data}}
+\index{data@{data}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{data}{data}}
+{\footnotesize\ttfamily real, dimension(\+:,\+:,\+:,\+:,\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::data =$>$N\+U\+LL()}
+
+
+
+(nlatmod,nlonmod,nlevclim,size(time\+\_\+init,2),nfields) 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_af8884a32f9588a0fab78c9ae4bbd5cbb}\label{structinterpolator__mod_1_1interpolate__type_af8884a32f9588a0fab78c9ae4bbd5cbb}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!field\+\_\+name@{field\+\_\+name}}
+\index{field\+\_\+name@{field\+\_\+name}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{field\+\_\+name}{field\_name}}
+{\footnotesize\ttfamily character(\hyperlink{namespaceinterpolator__mod_a6bd2ec3395203e1b6aba0610bfbfe16b}{len}=64), dimension(\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::field\+\_\+name =$>$N\+U\+LL()}
+
+
+
+name of this field 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_af11c6e332932f59196bcb03ca3100dc0}\label{structinterpolator__mod_1_1interpolate__type_af11c6e332932f59196bcb03ca3100dc0}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!field\+\_\+type@{field\+\_\+type}}
+\index{field\+\_\+type@{field\+\_\+type}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{field\+\_\+type}{field\_type}}
+{\footnotesize\ttfamily type(fieldtype), dimension(\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::field\+\_\+type =$>$N\+U\+LL()}
+
+
+
+Net\+C\+DF field type. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_a61ac3f0354a4bbf051d0e6cbb8064849}\label{structinterpolator__mod_1_1interpolate__type_a61ac3f0354a4bbf051d0e6cbb8064849}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!file\+\_\+name@{file\+\_\+name}}
+\index{file\+\_\+name@{file\+\_\+name}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{file\+\_\+name}{file\_name}}
+{\footnotesize\ttfamily character(\hyperlink{namespaceinterpolator__mod_a6bd2ec3395203e1b6aba0610bfbfe16b}{len}=64) interpolator\+\_\+mod\+::interpolate\+\_\+type\+::file\+\_\+name}
+
+
+
+Climatology filename. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_ae760359b9696766024b45cc969081d08}\label{structinterpolator__mod_1_1interpolate__type_ae760359b9696766024b45cc969081d08}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!halflevs@{halflevs}}
+\index{halflevs@{halflevs}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{halflevs}{halflevs}}
+{\footnotesize\ttfamily real, dimension(\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::halflevs =$>$N\+U\+LL()}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_a233573d8b270417860caa4907e6c30f0}\label{structinterpolator__mod_1_1interpolate__type_a233573d8b270417860caa4907e6c30f0}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!ie@{ie}}
+\index{ie@{ie}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{ie}{ie}}
+{\footnotesize\ttfamily integer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::ie}
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_a0cd8d140914a66872498299f16f88599}\label{structinterpolator__mod_1_1interpolate__type_a0cd8d140914a66872498299f16f88599}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!indexm@{indexm}}
+\index{indexm@{indexm}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{indexm}{indexm}}
+{\footnotesize\ttfamily integer, dimension(\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::indexm =$>$N\+U\+LL()}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_aacfd7db8972fa74b2ac1c925b06a5750}\label{structinterpolator__mod_1_1interpolate__type_aacfd7db8972fa74b2ac1c925b06a5750}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!indexp@{indexp}}
+\index{indexp@{indexp}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{indexp}{indexp}}
+{\footnotesize\ttfamily integer, dimension(\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::indexp =$>$N\+U\+LL()}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_a0f5d0480dff201de597cb91ea42ba90d}\label{structinterpolator__mod_1_1interpolate__type_a0f5d0480dff201de597cb91ea42ba90d}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!interph@{interph}}
+\index{interph@{interph}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{interph}{interph}}
+{\footnotesize\ttfamily type(horiz\+\_\+interp\+\_\+type) interpolator\+\_\+mod\+::interpolate\+\_\+type\+::interph}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_a700a5794c8cbe684438e65b2572a58fa}\label{structinterpolator__mod_1_1interpolate__type_a700a5794c8cbe684438e65b2572a58fa}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!is@{is}}
+\index{is@{is}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{is}{is}}
+{\footnotesize\ttfamily integer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::is}
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_ab6fa11384a6e40ef92a0b445bd89feef}\label{structinterpolator__mod_1_1interpolate__type_ab6fa11384a6e40ef92a0b445bd89feef}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!itaum@{itaum}}
+\index{itaum@{itaum}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{itaum}{itaum}}
+{\footnotesize\ttfamily integer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::itaum}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_ad9b22dee923011a98e719ed2a7482b6f}\label{structinterpolator__mod_1_1interpolate__type_ad9b22dee923011a98e719ed2a7482b6f}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!itaup@{itaup}}
+\index{itaup@{itaup}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{itaup}{itaup}}
+{\footnotesize\ttfamily integer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::itaup}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_aed85b6d49fbc4c8c4b39ac3d9853931a}\label{structinterpolator__mod_1_1interpolate__type_aed85b6d49fbc4c8c4b39ac3d9853931a}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!je@{je}}
+\index{je@{je}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{je}{je}}
+{\footnotesize\ttfamily integer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::je}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_aa1b2ed303e0d712c218d589863795d51}\label{structinterpolator__mod_1_1interpolate__type_aa1b2ed303e0d712c218d589863795d51}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!js@{js}}
+\index{js@{js}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{js}{js}}
+{\footnotesize\ttfamily integer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::js}
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_a6c09c87fb6fa9738a5f6a960f08c7ab5}\label{structinterpolator__mod_1_1interpolate__type_a6c09c87fb6fa9738a5f6a960f08c7ab5}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!lat@{lat}}
+\index{lat@{lat}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{lat}{lat}}
+{\footnotesize\ttfamily real, dimension(\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::lat =$>$N\+U\+LL()}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_a4fda8f1922dd8709fa3a7df4a20a16e8}\label{structinterpolator__mod_1_1interpolate__type_a4fda8f1922dd8709fa3a7df4a20a16e8}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!latb@{latb}}
+\index{latb@{latb}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{latb}{latb}}
+{\footnotesize\ttfamily real, dimension(\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::latb =$>$N\+U\+LL()}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_acf6864662d79f232f60044928ecd0854}\label{structinterpolator__mod_1_1interpolate__type_acf6864662d79f232f60044928ecd0854}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!level\+\_\+type@{level\+\_\+type}}
+\index{level\+\_\+type@{level\+\_\+type}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{level\+\_\+type}{level\_type}}
+{\footnotesize\ttfamily integer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::level\+\_\+type}
+
+
+
+Pressure or Sigma level. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_a0b204dd7555282e3d37f14e10ba6dada}\label{structinterpolator__mod_1_1interpolate__type_a0b204dd7555282e3d37f14e10ba6dada}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!levs@{levs}}
+\index{levs@{levs}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{levs}{levs}}
+{\footnotesize\ttfamily real, dimension(\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::levs =$>$N\+U\+LL()}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_aa199d288af9a7662eec0aa306b1a2e53}\label{structinterpolator__mod_1_1interpolate__type_aa199d288af9a7662eec0aa306b1a2e53}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!lon@{lon}}
+\index{lon@{lon}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{lon}{lon}}
+{\footnotesize\ttfamily real, dimension(\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::lon =$>$N\+U\+LL()}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_aa3e56228c9f9a0a8fc27048b98769b04}\label{structinterpolator__mod_1_1interpolate__type_aa3e56228c9f9a0a8fc27048b98769b04}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!lonb@{lonb}}
+\index{lonb@{lonb}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{lonb}{lonb}}
+{\footnotesize\ttfamily real, dimension(\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::lonb =$>$N\+U\+LL()}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_a9f58037b78bd083d1f02b69a7e7951fd}\label{structinterpolator__mod_1_1interpolate__type_a9f58037b78bd083d1f02b69a7e7951fd}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!mr@{mr}}
+\index{mr@{mr}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{mr}{mr}}
+{\footnotesize\ttfamily integer, dimension(\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::mr =$>$N\+U\+LL()}
+
+
+
+Flag for conversion of climatology to mixing ratio. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_ab8ee99b5abce68cb89b89921cad4615e}\label{structinterpolator__mod_1_1interpolate__type_ab8ee99b5abce68cb89b89921cad4615e}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!nmon\+\_\+nyear@{nmon\+\_\+nyear}}
+\index{nmon\+\_\+nyear@{nmon\+\_\+nyear}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{nmon\+\_\+nyear}{nmon\_nyear}}
+{\footnotesize\ttfamily real, dimension(\+:,\+:,\+:,\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::nmon\+\_\+nyear =$>$N\+U\+LL()}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_a868f55c1d2e4a978ef6b544c1ebaa61f}\label{structinterpolator__mod_1_1interpolate__type_a868f55c1d2e4a978ef6b544c1ebaa61f}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!nmon\+\_\+pyear@{nmon\+\_\+pyear}}
+\index{nmon\+\_\+pyear@{nmon\+\_\+pyear}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{nmon\+\_\+pyear}{nmon\_pyear}}
+{\footnotesize\ttfamily real, dimension(\+:,\+:,\+:,\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::nmon\+\_\+pyear =$>$N\+U\+LL()}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_a4a8a789a637ebebe856231b397458393}\label{structinterpolator__mod_1_1interpolate__type_a4a8a789a637ebebe856231b397458393}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!out\+\_\+of\+\_\+bounds@{out\+\_\+of\+\_\+bounds}}
+\index{out\+\_\+of\+\_\+bounds@{out\+\_\+of\+\_\+bounds}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{out\+\_\+of\+\_\+bounds}{out\_of\_bounds}}
+{\footnotesize\ttfamily integer, dimension(\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::out\+\_\+of\+\_\+bounds =$>$N\+U\+LL()}
+
+
+
+Flag for when surface pressure is out of bounds. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_a5df101410d4543d33a3bf2743dffdfad}\label{structinterpolator__mod_1_1interpolate__type_a5df101410d4543d33a3bf2743dffdfad}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!pmon\+\_\+nyear@{pmon\+\_\+nyear}}
+\index{pmon\+\_\+nyear@{pmon\+\_\+nyear}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{pmon\+\_\+nyear}{pmon\_nyear}}
+{\footnotesize\ttfamily real, dimension(\+:,\+:,\+:,\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::pmon\+\_\+nyear =$>$N\+U\+LL()}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_ae6916b2c97f2a40660d4c9ab3c476c6f}\label{structinterpolator__mod_1_1interpolate__type_ae6916b2c97f2a40660d4c9ab3c476c6f}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!pmon\+\_\+pyear@{pmon\+\_\+pyear}}
+\index{pmon\+\_\+pyear@{pmon\+\_\+pyear}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{pmon\+\_\+pyear}{pmon\_pyear}}
+{\footnotesize\ttfamily real, dimension(\+:,\+:,\+:,\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::pmon\+\_\+pyear =$>$N\+U\+LL()}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_a8970892896a81150bbb88c4e8aa1c585}\label{structinterpolator__mod_1_1interpolate__type_a8970892896a81150bbb88c4e8aa1c585}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!separate\+\_\+time\+\_\+vary\+\_\+calc@{separate\+\_\+time\+\_\+vary\+\_\+calc}}
+\index{separate\+\_\+time\+\_\+vary\+\_\+calc@{separate\+\_\+time\+\_\+vary\+\_\+calc}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{separate\+\_\+time\+\_\+vary\+\_\+calc}{separate\_time\_vary\_calc}}
+{\footnotesize\ttfamily logical interpolator\+\_\+mod\+::interpolate\+\_\+type\+::separate\+\_\+time\+\_\+vary\+\_\+calc}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_ac5138e6458c5e16272c0959ba192e1ee}\label{structinterpolator__mod_1_1interpolate__type_ac5138e6458c5e16272c0959ba192e1ee}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!time\+\_\+flag@{time\+\_\+flag}}
+\index{time\+\_\+flag@{time\+\_\+flag}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{time\+\_\+flag}{time\_flag}}
+{\footnotesize\ttfamily integer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::time\+\_\+flag}
+
+
+
+Linear or seaonal interpolation? 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_ac908a66dfd23a08bac5287c82088585f}\label{structinterpolator__mod_1_1interpolate__type_ac908a66dfd23a08bac5287c82088585f}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!time\+\_\+init@{time\+\_\+init}}
+\index{time\+\_\+init@{time\+\_\+init}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{time\+\_\+init}{time\_init}}
+{\footnotesize\ttfamily integer, dimension(\+:,\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::time\+\_\+init =$>$N\+U\+LL()}
+
+
+
+second index is the number of time\+\_\+slices being kept. 2 or ntime. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_a91e808f3c80097c7bec24ab0b7613be4}\label{structinterpolator__mod_1_1interpolate__type_a91e808f3c80097c7bec24ab0b7613be4}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!time\+\_\+slice@{time\+\_\+slice}}
+\index{time\+\_\+slice@{time\+\_\+slice}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{time\+\_\+slice}{time\_slice}}
+{\footnotesize\ttfamily type(time\+\_\+type), dimension(\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::time\+\_\+slice =$>$N\+U\+LL()}
+
+
+
+An array of the times within the climatology. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_a3b4782d908f8ac72a49fdf05b005a481}\label{structinterpolator__mod_1_1interpolate__type_a3b4782d908f8ac72a49fdf05b005a481}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!tweight@{tweight}}
+\index{tweight@{tweight}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{tweight}{tweight}}
+{\footnotesize\ttfamily real interpolator\+\_\+mod\+::interpolate\+\_\+type\+::tweight}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_adbb2014144021403a46c95b819f51238}\label{structinterpolator__mod_1_1interpolate__type_adbb2014144021403a46c95b819f51238}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!tweight1@{tweight1}}
+\index{tweight1@{tweight1}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{tweight1}{tweight1}}
+{\footnotesize\ttfamily real interpolator\+\_\+mod\+::interpolate\+\_\+type\+::tweight1}
+
+
+
+The time weight between the climatology years. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_a8a643252841aba06a7e723a127c40de8}\label{structinterpolator__mod_1_1interpolate__type_a8a643252841aba06a7e723a127c40de8}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!tweight2@{tweight2}}
+\index{tweight2@{tweight2}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{tweight2}{tweight2}}
+{\footnotesize\ttfamily real interpolator\+\_\+mod\+::interpolate\+\_\+type\+::tweight2}
+
+
+
+No description. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_ac69c4d87ddcbe4dbc02ab4a6f8f7a455}\label{structinterpolator__mod_1_1interpolate__type_ac69c4d87ddcbe4dbc02ab4a6f8f7a455}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!tweight3@{tweight3}}
+\index{tweight3@{tweight3}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{tweight3}{tweight3}}
+{\footnotesize\ttfamily real interpolator\+\_\+mod\+::interpolate\+\_\+type\+::tweight3}
+
+
+
+The time weight between the month. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_ae8fc6840a65ff8cdfd353d1738c413e3}\label{structinterpolator__mod_1_1interpolate__type_ae8fc6840a65ff8cdfd353d1738c413e3}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!unit@{unit}}
+\index{unit@{unit}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{unit}{unit}}
+{\footnotesize\ttfamily integer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::unit}
+
+
+
+Unit number on which file is being read. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_a7257d09acb88219d06e28f21bc05db60}\label{structinterpolator__mod_1_1interpolate__type_a7257d09acb88219d06e28f21bc05db60}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!vert\+\_\+interp@{vert\+\_\+interp}}
+\index{vert\+\_\+interp@{vert\+\_\+interp}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{vert\+\_\+interp}{vert\_interp}}
+{\footnotesize\ttfamily integer, dimension(\+:), pointer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::vert\+\_\+interp =$>$N\+U\+LL()}
+
+
+
+Flag for type of vertical interpolation. 
+
+\mbox{\Hypertarget{structinterpolator__mod_1_1interpolate__type_a1fc99882648137c3318d3ba71758b4c0}\label{structinterpolator__mod_1_1interpolate__type_a1fc99882648137c3318d3ba71758b4c0}} 
+\index{interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}!vertical\+\_\+indices@{vertical\+\_\+indices}}
+\index{vertical\+\_\+indices@{vertical\+\_\+indices}!interpolator\+\_\+mod\+::interpolate\+\_\+type@{interpolator\+\_\+mod\+::interpolate\+\_\+type}}
+\subsubsection{\texorpdfstring{vertical\+\_\+indices}{vertical\_indices}}
+{\footnotesize\ttfamily integer interpolator\+\_\+mod\+::interpolate\+\_\+type\+::vertical\+\_\+indices}
+
+
+
+direction of vertical data axis 
+
+
+
+The documentation for this type was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+\hyperlink{interpolator_8_f90}{interpolator.\+F90}\end{DoxyCompactItemize}
