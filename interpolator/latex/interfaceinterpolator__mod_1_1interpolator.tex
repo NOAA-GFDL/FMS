@@ -1,0 +1,314 @@
+\hypertarget{interfaceinterpolator__mod_1_1interpolator}{}\section{interpolator\+\_\+mod\+:\+:interpolator Interface Reference}
+\label{interfaceinterpolator__mod_1_1interpolator}\index{interpolator\+\_\+mod\+::interpolator@{interpolator\+\_\+mod\+::interpolator}}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+subroutine \hyperlink{interfaceinterpolator__mod_1_1interpolator_ae79df7db04c5ee92ce397eec4312d9ca}{interpolator\+\_\+4d} (clim\+\_\+type, Time, phalf, interp\+\_\+data, field\+\_\+name, is, js, clim\+\_\+units)
+\begin{DoxyCompactList}\small\item\em interpolator\+\_\+4D receives a field name as input and interpolates the field to model a 4D grid and time axis. \end{DoxyCompactList}\item 
+subroutine \hyperlink{interfaceinterpolator__mod_1_1interpolator_ad7d266557fa3f3eb86bb255494351966}{interpolator\+\_\+3d} (clim\+\_\+type, Time, phalf, interp\+\_\+data, field\+\_\+name, is, js, clim\+\_\+units)
+\begin{DoxyCompactList}\small\item\em interpolator\+\_\+3D receives a field name as input and interpolates the field to model a 3D grid and time axis. \end{DoxyCompactList}\item 
+subroutine \hyperlink{interfaceinterpolator__mod_1_1interpolator_ac82067012c474cd9d2a28e09e0f4e6d0}{interpolator\+\_\+2d} (clim\+\_\+type, Time, interp\+\_\+data, field\+\_\+name, is, js, clim\+\_\+units)
+\begin{DoxyCompactList}\small\item\em interpolator\+\_\+2D receives a field name as input and interpolates the field to model a 2D grid and time axis. \end{DoxyCompactList}\item 
+subroutine \hyperlink{interfaceinterpolator__mod_1_1interpolator_a962960829f0f07d3a87e017f0b5cd58d}{interpolator\+\_\+4d\+\_\+no\+\_\+time\+\_\+axis} (clim\+\_\+type, phalf, interp\+\_\+data, field\+\_\+name, is, js, clim\+\_\+units)
+\begin{DoxyCompactList}\small\item\em interpolator\+\_\+4\+D\+\_\+no\+\_\+time\+\_\+axis receives a field name as input and interpolates the field to model a 4D grid. \end{DoxyCompactList}\item 
+subroutine \hyperlink{interfaceinterpolator__mod_1_1interpolator_ab6c66439c87afee2373fe8fa164b138b}{interpolator\+\_\+3d\+\_\+no\+\_\+time\+\_\+axis} (clim\+\_\+type, phalf, interp\+\_\+data, field\+\_\+name, is, js, clim\+\_\+units)
+\begin{DoxyCompactList}\small\item\em interpolator\+\_\+3\+D\+\_\+no\+\_\+time\+\_\+axis receives a field name as input and interpolates the field to model a 3D grid. \end{DoxyCompactList}\item 
+subroutine \hyperlink{interfaceinterpolator__mod_1_1interpolator_a4a8d87918b5abb9c6765a83d412557be}{interpolator\+\_\+2d\+\_\+no\+\_\+time\+\_\+axis} (clim\+\_\+type, interp\+\_\+data, field\+\_\+name, is, js, clim\+\_\+units)
+\begin{DoxyCompactList}\small\item\em interpolator\+\_\+2\+D\+\_\+no\+\_\+time\+\_\+axis receives a field name as input and interpolates the field to model a 2D grid. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Member Function/\+Subroutine Documentation}
+\mbox{\Hypertarget{interfaceinterpolator__mod_1_1interpolator_ac82067012c474cd9d2a28e09e0f4e6d0}\label{interfaceinterpolator__mod_1_1interpolator_ac82067012c474cd9d2a28e09e0f4e6d0}} 
+\index{interpolator\+\_\+mod\+::interpolator@{interpolator\+\_\+mod\+::interpolator}!interpolator\+\_\+2d@{interpolator\+\_\+2d}}
+\index{interpolator\+\_\+2d@{interpolator\+\_\+2d}!interpolator\+\_\+mod\+::interpolator@{interpolator\+\_\+mod\+::interpolator}}
+\subsubsection{\texorpdfstring{interpolator\+\_\+2d()}{interpolator\_2d()}}
+{\footnotesize\ttfamily subroutine interpolator\+\_\+mod\+::interpolator\+::interpolator\+\_\+2d (\begin{DoxyParamCaption}\item[{type(\hyperlink{structinterpolator__mod_1_1interpolate__type}{interpolate\+\_\+type}), intent(inout)}]{clim\+\_\+type,  }\item[{type(time\+\_\+type), intent(in)}]{Time,  }\item[{real, dimension(\+:,\+:), intent(out)}]{interp\+\_\+data,  }\item[{character(\hyperlink{namespaceinterpolator__mod_a6bd2ec3395203e1b6aba0610bfbfe16b}{len}=$\ast$), intent(in)}]{field\+\_\+name,  }\item[{integer, intent(in), optional}]{is,  }\item[{integer, intent(in), optional}]{js,  }\item[{character(\hyperlink{namespaceinterpolator__mod_a6bd2ec3395203e1b6aba0610bfbfe16b}{len}=$\ast$), intent(out), optional}]{clim\+\_\+units }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+interpolator\+\_\+2D receives a field name as input and interpolates the field to model a 2D grid and time axis. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in,out}  & {\em $<$clim\+\_\+type$>$} & The interpolate type previously defined by a call to interpolator\+\_\+init \\
+\hline
+\mbox{\tt in}  & {\em $<$field\+\_\+name$>$} & The name of a field that you wish to interpolate \\
+\hline
+\mbox{\tt in}  & {\em $<$\+Time$>$} & The model time that you wish to interpolate to \\
+\hline
+\mbox{\tt in}  & {\em $<$is$>$} & O\+P\+T\+I\+O\+N\+AL\+: Index for the physics window \\
+\hline
+\mbox{\tt in}  & {\em $<$js$>$} & O\+P\+T\+I\+O\+N\+AL\+: Index for the physics window \\
+\hline
+\mbox{\tt out}  & {\em $<$interp\+\_\+data$>$} & The model fields with the interpolated climatology data \\
+\hline
+\mbox{\tt out}  & {\em $<$clim\+\_\+units$>$} & O\+P\+T\+I\+O\+N\+AL\+: The units of field\+\_\+name\\
+\hline
+\end{DoxyParams}
+
+\begin{DoxyExceptions}{Exceptions}
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+2\+D \+: You must call interpolator\+\_\+init
+                before calling interpolator\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+2\+D 1\+:  file=\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+2\+D 2\+:  file=\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+2\+D 3\+:  file=\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+2\+D 4\+:  file=\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+2\+D 5\+:  file=\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+2\+D \+: No data from the previous climatology
+                time but we have the next time. How did this happen?\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}\+Interpolator\+: the field name is not contained in this
+                intepolate\+\_\+type\+: \char`\"{} \\
+\hline
+\end{DoxyExceptions}
+\mbox{\Hypertarget{interfaceinterpolator__mod_1_1interpolator_a4a8d87918b5abb9c6765a83d412557be}\label{interfaceinterpolator__mod_1_1interpolator_a4a8d87918b5abb9c6765a83d412557be}} 
+\index{interpolator\+\_\+mod\+::interpolator@{interpolator\+\_\+mod\+::interpolator}!interpolator\+\_\+2d\+\_\+no\+\_\+time\+\_\+axis@{interpolator\+\_\+2d\+\_\+no\+\_\+time\+\_\+axis}}
+\index{interpolator\+\_\+2d\+\_\+no\+\_\+time\+\_\+axis@{interpolator\+\_\+2d\+\_\+no\+\_\+time\+\_\+axis}!interpolator\+\_\+mod\+::interpolator@{interpolator\+\_\+mod\+::interpolator}}
+\subsubsection{\texorpdfstring{interpolator\+\_\+2d\+\_\+no\+\_\+time\+\_\+axis()}{interpolator\_2d\_no\_time\_axis()}}
+{\footnotesize\ttfamily subroutine interpolator\+\_\+mod\+::interpolator\+::interpolator\+\_\+2d\+\_\+no\+\_\+time\+\_\+axis (\begin{DoxyParamCaption}\item[{type(\hyperlink{structinterpolator__mod_1_1interpolate__type}{interpolate\+\_\+type}), intent(inout)}]{clim\+\_\+type,  }\item[{real, dimension(\+:,\+:), intent(out)}]{interp\+\_\+data,  }\item[{character(\hyperlink{namespaceinterpolator__mod_a6bd2ec3395203e1b6aba0610bfbfe16b}{len}=$\ast$), intent(in)}]{field\+\_\+name,  }\item[{integer, intent(in), optional}]{is,  }\item[{integer, intent(in), optional}]{js,  }\item[{character(\hyperlink{namespaceinterpolator__mod_a6bd2ec3395203e1b6aba0610bfbfe16b}{len}=$\ast$), intent(out), optional}]{clim\+\_\+units }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+interpolator\+\_\+2\+D\+\_\+no\+\_\+time\+\_\+axis receives a field name as input and interpolates the field to model a 2D grid. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in,out}  & {\em $<$clim\+\_\+type$>$} & The interpolate type previously defined by a call to interpolator\+\_\+init \\
+\hline
+\mbox{\tt in}  & {\em $<$field\+\_\+name$>$} & The name of a field that you wish to interpolate \\
+\hline
+\mbox{\tt in}  & {\em $<$is$>$} & O\+P\+T\+I\+O\+N\+AL\+: Index for the physics window \\
+\hline
+\mbox{\tt in}  & {\em $<$js$>$} & O\+P\+T\+I\+O\+N\+AL\+: Index for the physics window \\
+\hline
+\mbox{\tt out}  & {\em $<$interp\+\_\+data$>$} & The model fields with the interpolated climatology data \\
+\hline
+\mbox{\tt out}  & {\em $<$clim\+\_\+units$>$} & O\+P\+T\+I\+O\+N\+AL\+: The units of field\+\_\+name\\
+\hline
+\end{DoxyParams}
+
+\begin{DoxyExceptions}{Exceptions}
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+2\+D\+\_\+no\+\_\+time\+\_\+axis \+: You must call
+                interpolator\+\_\+init before calling interpolator\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}\+Interpolator\+: the field name is not contained in this
+                intepolate\+\_\+type\+: \char`\"{} \\
+\hline
+\end{DoxyExceptions}
+\mbox{\Hypertarget{interfaceinterpolator__mod_1_1interpolator_ad7d266557fa3f3eb86bb255494351966}\label{interfaceinterpolator__mod_1_1interpolator_ad7d266557fa3f3eb86bb255494351966}} 
+\index{interpolator\+\_\+mod\+::interpolator@{interpolator\+\_\+mod\+::interpolator}!interpolator\+\_\+3d@{interpolator\+\_\+3d}}
+\index{interpolator\+\_\+3d@{interpolator\+\_\+3d}!interpolator\+\_\+mod\+::interpolator@{interpolator\+\_\+mod\+::interpolator}}
+\subsubsection{\texorpdfstring{interpolator\+\_\+3d()}{interpolator\_3d()}}
+{\footnotesize\ttfamily subroutine interpolator\+\_\+mod\+::interpolator\+::interpolator\+\_\+3d (\begin{DoxyParamCaption}\item[{type(\hyperlink{structinterpolator__mod_1_1interpolate__type}{interpolate\+\_\+type}), intent(inout)}]{clim\+\_\+type,  }\item[{type(time\+\_\+type), intent(in)}]{Time,  }\item[{real, dimension(\+:,\+:,\+:), intent(in)}]{phalf,  }\item[{real, dimension(\+:,\+:,\+:), intent(out)}]{interp\+\_\+data,  }\item[{character(\hyperlink{namespaceinterpolator__mod_a6bd2ec3395203e1b6aba0610bfbfe16b}{len}=$\ast$), intent(in)}]{field\+\_\+name,  }\item[{integer, intent(in), optional}]{is,  }\item[{integer, intent(in), optional}]{js,  }\item[{character(\hyperlink{namespaceinterpolator__mod_a6bd2ec3395203e1b6aba0610bfbfe16b}{len}=$\ast$), intent(out), optional}]{clim\+\_\+units }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+interpolator\+\_\+3D receives a field name as input and interpolates the field to model a 3D grid and time axis. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in,out}  & {\em $<$clim\+\_\+type$>$} & The interpolate type previously defined by a call to interpolator\+\_\+init \\
+\hline
+\mbox{\tt in}  & {\em $<$field\+\_\+name$>$} & The name of a field that you wish to interpolate \\
+\hline
+\mbox{\tt in}  & {\em $<$\+Time$>$} & The model time that you wish to interpolate to \\
+\hline
+\mbox{\tt in}  & {\em $<$phalf$>$} & The half level model pressure field \\
+\hline
+\mbox{\tt in}  & {\em $<$is$>$} & O\+P\+T\+I\+O\+N\+AL\+: Index for the physics window \\
+\hline
+\mbox{\tt in}  & {\em $<$js$>$} & O\+P\+T\+I\+O\+N\+AL\+: Index for the physics window \\
+\hline
+\mbox{\tt out}  & {\em $<$interp\+\_\+data$>$} & The model fields with the interpolated climatology data \\
+\hline
+\mbox{\tt out}  & {\em $<$clim\+\_\+units$>$} & O\+P\+T\+I\+O\+N\+AL\+: The units of field\+\_\+name\\
+\hline
+\end{DoxyParams}
+
+\begin{DoxyExceptions}{Exceptions}
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+3\+D \+: You must call interpolator\+\_\+init
+                before calling interpolator\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+3\+D 1\+:  file=\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+3\+D 2\+:  file=\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+3\+D 3\+:  file=\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+3\+D 4\+:  file=\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+3\+D 5\+:  file=\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+3\+D \+: No data from the previous climatology
+                time but we have the next time. How did this happen?\char`\"{} \\
+\hline
+{\em N\+O\+TE} & \char`\"{}\+Interpolator\+: model surface pressure is greater than
+              climatology surface pressure for \char`\"{} \\
+\hline
+{\em N\+O\+TE} & \char`\"{}\+Interpolator\+: model top pressure is less than
+                climatology top pressure for \char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}\+Interpolator\+: the field name is not contained in this
+                intepolate\+\_\+type\+: \char`\"{} \\
+\hline
+\end{DoxyExceptions}
+\mbox{\Hypertarget{interfaceinterpolator__mod_1_1interpolator_ab6c66439c87afee2373fe8fa164b138b}\label{interfaceinterpolator__mod_1_1interpolator_ab6c66439c87afee2373fe8fa164b138b}} 
+\index{interpolator\+\_\+mod\+::interpolator@{interpolator\+\_\+mod\+::interpolator}!interpolator\+\_\+3d\+\_\+no\+\_\+time\+\_\+axis@{interpolator\+\_\+3d\+\_\+no\+\_\+time\+\_\+axis}}
+\index{interpolator\+\_\+3d\+\_\+no\+\_\+time\+\_\+axis@{interpolator\+\_\+3d\+\_\+no\+\_\+time\+\_\+axis}!interpolator\+\_\+mod\+::interpolator@{interpolator\+\_\+mod\+::interpolator}}
+\subsubsection{\texorpdfstring{interpolator\+\_\+3d\+\_\+no\+\_\+time\+\_\+axis()}{interpolator\_3d\_no\_time\_axis()}}
+{\footnotesize\ttfamily subroutine interpolator\+\_\+mod\+::interpolator\+::interpolator\+\_\+3d\+\_\+no\+\_\+time\+\_\+axis (\begin{DoxyParamCaption}\item[{type(\hyperlink{structinterpolator__mod_1_1interpolate__type}{interpolate\+\_\+type}), intent(inout)}]{clim\+\_\+type,  }\item[{real, dimension(\+:,\+:,\+:), intent(in)}]{phalf,  }\item[{real, dimension(\+:,\+:,\+:), intent(out)}]{interp\+\_\+data,  }\item[{character(\hyperlink{namespaceinterpolator__mod_a6bd2ec3395203e1b6aba0610bfbfe16b}{len}=$\ast$), intent(in)}]{field\+\_\+name,  }\item[{integer, intent(in), optional}]{is,  }\item[{integer, intent(in), optional}]{js,  }\item[{character(\hyperlink{namespaceinterpolator__mod_a6bd2ec3395203e1b6aba0610bfbfe16b}{len}=$\ast$), intent(out), optional}]{clim\+\_\+units }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+interpolator\+\_\+3\+D\+\_\+no\+\_\+time\+\_\+axis receives a field name as input and interpolates the field to model a 3D grid. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in,out}  & {\em $<$clim\+\_\+type$>$} & The interpolate type previously defined by a call to interpolator\+\_\+init \\
+\hline
+\mbox{\tt in}  & {\em $<$field\+\_\+name$>$} & The name of a field that you wish to interpolate \\
+\hline
+\mbox{\tt in}  & {\em $<$phalf$>$} & The half level model pressure field \\
+\hline
+\mbox{\tt in}  & {\em $<$is$>$} & O\+P\+T\+I\+O\+N\+AL\+: Index for the physics window \\
+\hline
+\mbox{\tt in}  & {\em $<$js$>$} & O\+P\+T\+I\+O\+N\+AL\+: Index for the physics window \\
+\hline
+\mbox{\tt out}  & {\em $<$interp\+\_\+data$>$} & The model fields with the interpolated climatology data \\
+\hline
+\mbox{\tt out}  & {\em $<$clim\+\_\+units$>$} & O\+P\+T\+I\+O\+N\+AL\+: The units of field\+\_\+name\\
+\hline
+\end{DoxyParams}
+
+\begin{DoxyExceptions}{Exceptions}
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+3\+D\+\_\+no\+\_\+time\+\_\+axis \+: You must call
+                interpolator\+\_\+init before calling interpolator\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+mod\+: cannot use 4\+D interface to
+                interpolator for this file\char`\"{} \\
+\hline
+{\em N\+O\+TE} & \char`\"{}\+Interpolator\+: model surface pressure is greater than
+                climatology surface pressure for \char`\"{} \\
+\hline
+{\em N\+O\+TE} & \char`\"{}\+Interpolator\+: model top pressure is less than
+                climatology top pressure for \char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}\+Interpolator\+: the field name is not contained in this
+                intepolate\+\_\+type\+: \char`\"{} \\
+\hline
+\end{DoxyExceptions}
+\mbox{\Hypertarget{interfaceinterpolator__mod_1_1interpolator_ae79df7db04c5ee92ce397eec4312d9ca}\label{interfaceinterpolator__mod_1_1interpolator_ae79df7db04c5ee92ce397eec4312d9ca}} 
+\index{interpolator\+\_\+mod\+::interpolator@{interpolator\+\_\+mod\+::interpolator}!interpolator\+\_\+4d@{interpolator\+\_\+4d}}
+\index{interpolator\+\_\+4d@{interpolator\+\_\+4d}!interpolator\+\_\+mod\+::interpolator@{interpolator\+\_\+mod\+::interpolator}}
+\subsubsection{\texorpdfstring{interpolator\+\_\+4d()}{interpolator\_4d()}}
+{\footnotesize\ttfamily subroutine interpolator\+\_\+mod\+::interpolator\+::interpolator\+\_\+4d (\begin{DoxyParamCaption}\item[{type(\hyperlink{structinterpolator__mod_1_1interpolate__type}{interpolate\+\_\+type}), intent(inout)}]{clim\+\_\+type,  }\item[{type(time\+\_\+type), intent(in)}]{Time,  }\item[{real, dimension(\+:,\+:,\+:), intent(in)}]{phalf,  }\item[{real, dimension(\+:,\+:,\+:,\+:), intent(out)}]{interp\+\_\+data,  }\item[{character(\hyperlink{namespaceinterpolator__mod_a6bd2ec3395203e1b6aba0610bfbfe16b}{len}=$\ast$), intent(in)}]{field\+\_\+name,  }\item[{integer, intent(in), optional}]{is,  }\item[{integer, intent(in), optional}]{js,  }\item[{character(\hyperlink{namespaceinterpolator__mod_a6bd2ec3395203e1b6aba0610bfbfe16b}{len}=$\ast$), intent(out), optional}]{clim\+\_\+units }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+interpolator\+\_\+4D receives a field name as input and interpolates the field to model a 4D grid and time axis. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in,out}  & {\em $<$clim\+\_\+type$>$} & The interpolate type previously defined by a call to interpolator\+\_\+init \\
+\hline
+\mbox{\tt in}  & {\em $<$field\+\_\+name$>$} & The name of a field that you wish to interpolate \\
+\hline
+\mbox{\tt in}  & {\em $<$\+Time$>$} & The model time that you wish to interpolate to \\
+\hline
+\mbox{\tt in}  & {\em $<$phalf$>$} & The half level model pressure field \\
+\hline
+\mbox{\tt in}  & {\em $<$is$>$} & O\+P\+T\+I\+O\+N\+AL\+: Index for the physics window \\
+\hline
+\mbox{\tt in}  & {\em $<$js$>$} & O\+P\+T\+I\+O\+N\+AL\+: Index for the physics window \\
+\hline
+\mbox{\tt out}  & {\em $<$interp\+\_\+data$>$} & The model fields with the interpolated climatology data \\
+\hline
+\mbox{\tt out}  & {\em $<$clim\+\_\+units$>$} & O\+P\+T\+I\+O\+N\+AL\+: The units of field\+\_\+name\\
+\hline
+\end{DoxyParams}
+
+\begin{DoxyExceptions}{Exceptions}
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+4\+D \+: You must call interpolator\+\_\+init
+                before calling interpolator\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+mod\+: cannot use 4\+D interface to interpolator for this file\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+4\+D 1\+:  file=\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+4\+D 2\+:  file=\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+4\+D 3\+:  file=\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+4\+D 4\+:  file=\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+4\+D 5\+:  file=\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+3\+D \+: No data from the previous climatology
+                time but we have the next time. How did this happen?\char`\"{} \\
+\hline
+{\em N\+O\+TE} & \char`\"{}\+Interpolator\+: model surface pressure is greater than
+              climatology surface pressure for \char`\"{} \\
+\hline
+{\em N\+O\+TE} & \char`\"{}\+Interpolator\+: model top pressure is less than
+                climatology top pressure for \char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}\+Interpolator\+: the field name is not contained in this
+                intepolate\+\_\+type\+: \char`\"{} \\
+\hline
+\end{DoxyExceptions}
+\mbox{\Hypertarget{interfaceinterpolator__mod_1_1interpolator_a962960829f0f07d3a87e017f0b5cd58d}\label{interfaceinterpolator__mod_1_1interpolator_a962960829f0f07d3a87e017f0b5cd58d}} 
+\index{interpolator\+\_\+mod\+::interpolator@{interpolator\+\_\+mod\+::interpolator}!interpolator\+\_\+4d\+\_\+no\+\_\+time\+\_\+axis@{interpolator\+\_\+4d\+\_\+no\+\_\+time\+\_\+axis}}
+\index{interpolator\+\_\+4d\+\_\+no\+\_\+time\+\_\+axis@{interpolator\+\_\+4d\+\_\+no\+\_\+time\+\_\+axis}!interpolator\+\_\+mod\+::interpolator@{interpolator\+\_\+mod\+::interpolator}}
+\subsubsection{\texorpdfstring{interpolator\+\_\+4d\+\_\+no\+\_\+time\+\_\+axis()}{interpolator\_4d\_no\_time\_axis()}}
+{\footnotesize\ttfamily subroutine interpolator\+\_\+mod\+::interpolator\+::interpolator\+\_\+4d\+\_\+no\+\_\+time\+\_\+axis (\begin{DoxyParamCaption}\item[{type(\hyperlink{structinterpolator__mod_1_1interpolate__type}{interpolate\+\_\+type}), intent(inout)}]{clim\+\_\+type,  }\item[{real, dimension(\+:,\+:,\+:), intent(in)}]{phalf,  }\item[{real, dimension(\+:,\+:,\+:,\+:), intent(out)}]{interp\+\_\+data,  }\item[{character(\hyperlink{namespaceinterpolator__mod_a6bd2ec3395203e1b6aba0610bfbfe16b}{len}=$\ast$), intent(in)}]{field\+\_\+name,  }\item[{integer, intent(in), optional}]{is,  }\item[{integer, intent(in), optional}]{js,  }\item[{character(\hyperlink{namespaceinterpolator__mod_a6bd2ec3395203e1b6aba0610bfbfe16b}{len}=$\ast$), intent(out), optional}]{clim\+\_\+units }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+interpolator\+\_\+4\+D\+\_\+no\+\_\+time\+\_\+axis receives a field name as input and interpolates the field to model a 4D grid. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in,out}  & {\em $<$clim\+\_\+type$>$} & The interpolate type previously defined by a call to interpolator\+\_\+init \\
+\hline
+\mbox{\tt in}  & {\em $<$field\+\_\+name$>$} & The name of a field that you wish to interpolate \\
+\hline
+\mbox{\tt in}  & {\em $<$phalf$>$} & The half level model pressure field \\
+\hline
+\mbox{\tt in}  & {\em $<$is$>$} & O\+P\+T\+I\+O\+N\+AL\+: Index for the physics window \\
+\hline
+\mbox{\tt in}  & {\em $<$js$>$} & O\+P\+T\+I\+O\+N\+AL\+: Index for the physics window \\
+\hline
+\mbox{\tt out}  & {\em $<$interp\+\_\+data$>$} & The model fields with the interpolated climatology data \\
+\hline
+\mbox{\tt out}  & {\em $<$clim\+\_\+units$>$} & O\+P\+T\+I\+O\+N\+AL\+: The units of field\+\_\+name\\
+\hline
+\end{DoxyParams}
+
+\begin{DoxyExceptions}{Exceptions}
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+4\+D\+\_\+no\+\_\+time\+\_\+axis \+: You must call
+                interpolator\+\_\+init before calling interpolator\char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}interpolator\+\_\+mod\+: cannot use 4\+D interface to
+                interpolator for this file\char`\"{} \\
+\hline
+{\em N\+O\+TE} & \char`\"{}\+Interpolator\+: model surface pressure is greater than
+                surface pressure of input data for \char`\"{} \\
+\hline
+{\em N\+O\+TE} & \char`\"{}\+Interpolator\+: model top pressure is less than surface
+                pressure of input data for \char`\"{} \\
+\hline
+{\em F\+A\+T\+AL} & \char`\"{}\+Interpolator\+: the field name is not contained in this
+                intepolate\+\_\+type\+: \char`\"{} \\
+\hline
+\end{DoxyExceptions}
+
+
+The documentation for this interface was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+\hyperlink{interpolator_8_f90}{interpolator.\+F90}\end{DoxyCompactItemize}
