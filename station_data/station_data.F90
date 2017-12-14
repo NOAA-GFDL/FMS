@@ -1,5 +1,5 @@
-!> \mainpage
-!! \author Giang Nong <Giang.Nong@gfdl.noaa.gov>
+
+!> \author Giang Nong <Giang.Nong@gfdl.noaa.gov>
 !!
 !! \brief This module is used for outputing model results in a list
 !!        of stations (not gridded arrays). The user needs to supply
@@ -215,8 +215,6 @@
 !!          set_time set_date, increment_date, increment_time</td>
 !!    </tr>
 !! </table>
-
-
 module station_data_mod 
 
 
@@ -373,8 +371,8 @@ end interface
 
 
 !> \brief Read in lat and lon of each station <br>
-!>        Create station_id based on lat, lon <br>
-!>        Read station_data_table, initialize output_fields and output files
+!!        Create station_id based on lat, lon <br>
+!!        Read station_data_table, initialize output_fields and output files
 subroutine station_data_init()
 
 character(len=128)    :: station_name
@@ -406,7 +404,7 @@ namelist /station_data_nml/ max_output_fields, max_stations,init_verbose
   allocate(pelist(total_pe))
   call mpp_get_current_pelist(pelist, pelist_name) 
 
-! read namelist
+  !> read namelist
 #ifdef INTERNAL_FILE_NML
   read (input_nml_file, station_data_nml, iostat=io_status)
   ierr = check_nml_error(io_status, 'station_data_nml')
@@ -423,7 +421,7 @@ namelist /station_data_nml/ max_output_fields, max_stations,init_verbose
   write(logunit, station_data_nml)
 
   allocate(output_fields(max_output_fields), stations(max_stations))
-! read list of stations
+  !> read list of stations
   if(init_verbose) then
      logunit = stdout()
      write(logunit, *) ' '
@@ -456,19 +454,19 @@ namelist /station_data_nml/ max_output_fields, max_stations,init_verbose
   logunit = stdout()
   if(init_verbose)  write(logunit, *)'*****************************************************************'
      
-! read station_data table
+  !> read station_data table
   call mpp_open(iunit, 'station_data_table',form=MPP_ASCII,action=MPP_RDONLY)
-! Read in the global file labeling string
+  !> Read in the global file labeling string
   read(iunit, *, end = 99, err=99) global_descriptor
 
-! Read in the base date
+  !> Read in the base date
   read(iunit, *, end = 99, err = 99) base_year, base_month, base_day, &
        base_hour, base_minute, base_second
   if (get_calendar_type() /= NO_CALENDAR) then
      base_time = set_date(base_year, base_month, base_day, base_hour, &
           base_minute, base_second)
   else
-! No calendar - ignore year and month
+  !> If no calendar, ignore year and month
      base_time = set_time(base_hour*3600+base_minute*60+base_second, base_day)
      base_year  = 0
      base_month = 0
@@ -522,11 +520,11 @@ end subroutine station_data_init
 
 
 !> \brief check_duplicate_output_fields takes the data pairs
-!>        (output_name and output_file) and (module_name and output_name) and
-!>        ensures each pair is unique.
-!>
-!> \throw FATAL, "ERROR1 in station_data_table: module/field <module/name> duplicated"
-!> \throw FATAL, "ERROR2 in station_data_table: module/field <module/name> duplicated"
+!!        (output_name and output_file) and (module_name and output_name) and
+!!        ensures each pair is unique.
+!!
+!! \throw FATAL, "ERROR1 in station_data_table: module/field <module/name> duplicated"
+!! \throw FATAL, "ERROR2 in station_data_table: module/field <module/name> duplicated"
 subroutine check_duplicate_output_fields()
 ! pair(output_name and output_file) should be unique in data_station_table, ERROR1
 ! pair(module_name and output_name) should be unique in data_station_table, ERROR2
@@ -553,14 +551,12 @@ end subroutine check_duplicate_output_fields
 
 
 !> \brief get_station_id is passed the station's distinct lat and lon
-!>        to determine what the station's id is.
-!>
-!> \param [in] <lat> Latitude of station
-!> \param [in] <lon> Longitude of station
-!> \param [out] <get_station_id> Unique ID of station
+!!        to determine what the station's id is.
 function get_station_id(lat,lon)
-  integer         :: get_station_id, i
-  real, intent(in):: lat,lon
+  integer         :: i
+  integer         :: get_station_id !< Unique ID of station
+  real, intent(in):: lat !< Latitude of station
+  real, intent(in):: lon !< Longitude of station
 ! each station should have distinct lat and lon
   get_station_id = -1
   do i = 1, num_stations
@@ -578,17 +574,14 @@ end function get_station_id
 
 
 !> \brief init_file initializes files to write station data to. Data is formatted as
-!>       number of units of measurement at X output frequency over amount of time dt
-!>
-!> \param [in] <filename> Filename to use when initializing file
-!> \param [in] <output_freq> Output frequency of substance
-!> \param [in] <output_units> Number of units of substance being recorded
-!> \param [in] <time_units> Length of time being recorded
-!>
-!> \throw FATAL, "init_file or max_files exceeded, increase max_files"
+!!       number of units of measurement at X output frequency over amount of time dt
+!!
+!! \throw FATAL, "init_file or max_files exceeded, increase max_files"
 subroutine init_file(filename, output_freq, output_units, time_units)
-  character(len=*), intent(in) :: filename
-  integer, intent(in)          :: output_freq, output_units, time_units
+  character(len=*), intent(in) :: filename     !< Filename to use when initializing file
+  integer, intent(in)          :: output_freq  !< Output frequency of substance
+  integer, intent(in)          :: output_units !< Number of units of substance being recorded
+  integer, intent(in)          :: time_units   !< Length of time being recorded
   character(len=128)           :: time_units_str
   real, dimension(1)           :: tdata
 
@@ -602,7 +595,7 @@ subroutine init_file(filename, output_freq, output_units, time_units)
   files(num_files)%num_fields = 0
   files(num_files)%last_flush = base_time
   files(num_files)%file_unit = -1
-!---- register axis_id and time boundaries id
+  !> register axis_id and time boundaries id
   write(time_units_str, 11) trim(time_unit_list(files(num_files)%time_units)), base_year, &
        base_month, base_day, base_hour, base_minute, base_second
 11 format(a, ' since ', i4.4, '-', i2.2, '-', i2.2, ' ', i2.2, ':', i2.2, ':', i2.2)
@@ -614,25 +607,20 @@ end subroutine init_file
 
 
 !> \brief init_output_field initializes output_field attributes
-!>
-!> \param [in] <module_name>
-!> \param [in] <field_name>
-!> \param [in] <file_name>
-!> \param [in] <time method>
-!>
-!> \throw FATAL, "max_output_fields exceeded, increase it via nml"
-!> \throw FATAL, "file <filename.ext> is NOT found in station_data_table"
-!> \throw FATAL, "max_fields_per_file exceeded"
-!> \throw FATAL, "time_method MAX is not supported"
-!> \throw FATAL, "time_method MIN is not supported"
-!> \throw FATAL, "error in time_method of field field_name"
+!!
+!! \throw FATAL, "max_output_fields exceeded, increase it via nml"
+!! \throw FATAL, "file <filename.ext> is NOT found in station_data_table"
+!! \throw FATAL, "max_fields_per_file exceeded"
+!! \throw FATAL, "time_method MAX is not supported"
+!! \throw FATAL, "time_method MIN is not supported"
+!! \throw FATAL, "error in time_method of field field_name"
 subroutine init_output_field(module_name,field_name,file_name,time_method,pack)
   character(len=*), intent(in)           :: module_name, field_name, file_name
   character(len=*), intent(in)           :: time_method
   integer, intent(in)                    :: pack
   integer                                :: out_num, file_num,num_fields, method_selected, l1 
   character(len=8)                       :: t_method
-! Get a number for this output field
+  !> Get a number for this output field
   num_output_fields = num_output_fields + 1
   if(num_output_fields > max_output_fields) &
        call error_mesg('station_data', 'max_output_fields exceeded, increase it via nml', FATAL)
@@ -641,7 +629,7 @@ subroutine init_output_field(module_name,field_name,file_name,time_method,pack)
    if(file_num < 0) &
         call error_mesg('station_data,init_output_field', 'file '//trim(file_name) &
         //' is NOT found in station_data_table', FATAL)
-! Insert this field into list of fields of this file
+   !> Insert this field into list of fields of this file
    files(file_num)%num_fields = files(file_num)%num_fields + 1
    if(files(file_num)%num_fields > max_fields_per_file) &
         call error_mesg('station_data, init_output_field', 'max_fields_per_file exceeded ', FATAL)
@@ -720,25 +708,19 @@ end function find_file
 
 
 !> \brief register_station_field2d registers a new station field with user input.<br>
-!>       register_station_field2d is overloaded by register_station_field3d as a part
-!>        of the register_station_field interface.
-!>
-!> \param [in] <module_name> Module name of the station being registered
-!> \param [in] <fieldname> Field name of the tation being registered
-!> \param [in] <glo_lat> Global latitude location of the station
-!> \param [in] <glo_lon> Global longitude location of the station
-!> \param [in] <init_time> Initial time of the station
-!> \param [in] <domain> Optional 2d domain representation
-!> \param [in] <longname> Optional longname to identify station
-!> \param [in] <units> Optional units for station measurement data
+!!        register_station_field2d is overloaded by register_station_field3d as a part
+!!        of the register_station_field interface.
 function register_station_field2d (module_name,fieldname,glo_lat,glo_lon,init_time, &
      domain,longname,units)
   integer                                :: register_station_field2d
-  character(len=*), intent(in)           :: module_name, fieldname
-  real,dimension(:), intent(in)          :: glo_lat,glo_lon
-  type(domain2d), intent(in)             :: domain
-  type(time_type), intent(in)            :: init_time
-  character(len=*), optional, intent(in) :: longname, units
+  character(len=*), intent(in)           :: module_name !< Module name of the station being registered
+  character(len=*), intent(in)           :: fieldname   !< Field name of the tation being registered
+  real,dimension(:), intent(in)          :: glo_lat     !< Global latitude location of the station
+  real,dimension(:), intent(in)          :: glo_lon     !< Global longitude location of the station
+  type(domain2d), intent(in)             :: domain      !< Optional 2d domain representation
+  type(time_type), intent(in)            :: init_time   !< Initial time of the station
+  character(len=*), optional, intent(in) :: longname    !< Optional longname to identify station
+  character(len=*), optional, intent(in) :: units       !< Optional units for station measurement data
   real                                   :: levels(1:1)
 
   levels = 0.
@@ -748,39 +730,33 @@ end function register_station_field2d
 
 
 !> \brief register_station_field3d registers a new station field with user input.<br>
-!>        register_station_field3d is overloaded by register_station_field2d as a part
-!>        of the register_station_field interface.
-!>
-!> \param [in] <module_name> Module name of the station being registered
-!> \param [in] <fieldname> Field name of the tation being registered
-!> \param [in] <glo_lat> Global latitude location of the station
-!> \param [in] <glo_lon> Global longitude location of the station
-!> \param [in] <levels> Global elevation location of the station
-!> \param [in] <init_time> Initial time of the station
-!> \param [in] <domain> Optional 2d domain representation
-!> \param [in] <longname> Optional longname to identify station
-!> \param [in] <units> Optional units for station measurement data
-!>
-!> \throw FATAL, "outside global latitude values"
-!> \throw FATAL, "outside global longitude values"
-!> \throw FATAL, "Error in global index of station"
-!> \throw WARNING, "<module_name>/<field_name> NOT found in station_data table"
-!> \throw FATAL, "Error in determining local_num_station"
+!!        register_station_field3d is overloaded by register_station_field2d as a part
+!!        of the register_station_field interface.
+!!
+!! \throw FATAL, "outside global latitude values"
+!! \throw FATAL, "outside global longitude values"
+!! \throw FATAL, "Error in global index of station"
+!! \throw WARNING, "<module_name>/<field_name> NOT found in station_data table"
+!! \throw FATAL, "Error in determining local_num_station"
 function register_station_field3d (module_name,fieldname,glo_lat,glo_lon,levels,init_time, &
      domain,longname,units)
 
-! write field meta data on ROOT PE only
-! allocate buffer
+  !> write field meta data on ROOT PE only
+  !> allocate buffer
   integer                                :: register_station_field3d
-  character(len=*), intent(in)           :: module_name, fieldname
-  real,dimension(:), intent(in)          :: glo_lat,glo_lon,levels !in X,Y,Z direction respectively
-  type(domain2d), intent(in)             :: domain
-  type(time_type), intent(in)            :: init_time
-  character(len=*), optional, intent(in) :: longname,units
+  character(len=*), intent(in)           :: module_name !< Module name of the station being registered
+  character(len=*), intent(in)           :: fieldname !< Field name of the tation being registered
+  real,dimension(:), intent(in)          :: glo_lat   !< Global latitude location of the station (in X direction)
+  real,dimension(:), intent(in)          :: glo_lon   !< Global longitude location of the station (in Y direction)
+  real,dimension(:), intent(in)          :: levels    !< Global elevation location of the station (in Z direction)
+  type(domain2d), intent(in)             :: domain    !< Optional 2d domain representation
+  type(time_type), intent(in)            :: init_time !< Initial time of the station
+  character(len=*), optional, intent(in) :: longname  !< Optional longname to identify station
+  character(len=*), optional, intent(in) :: units     !< Optional units for station measurement data
   integer                                :: i,ii, nlat, nlon,nlevel, isc, iec, jsc, jec
   character(len=128)                     :: error_msg
-  integer                                :: local_num_stations ! number of stations on this PE
-  integer                                :: out_num ! position of this field in array output_fields
+  integer                                :: local_num_stations !< number of stations on this PE
+  integer                                :: out_num   !< position of this field in array output_fields
   integer                                :: file_num, freq, output_units, outunit
   real, allocatable                      :: station_values(:), level_values(:)
   character(len=128)                     :: longname2,units2
@@ -802,7 +778,7 @@ function register_station_field3d (module_name,fieldname,glo_lat,glo_lon,levels,
   do i = 1, nlevel
      level_values(i) = real(i)
   enddo
-! determine global index of this field in all stations
+  !> determine global index of this field in all stations
   outunit = stdout()
   do i = 1,num_stations
      station_values(i) = real(i)
@@ -821,7 +797,7 @@ function register_station_field3d (module_name,fieldname,glo_lat,glo_lon,levels,
      if(stations(i)%global_i<0 .or. stations(i)%global_j<0) &
           call error_mesg ('register_station_field', 'Error in global index of station',FATAL)
   enddo
-! determine local index of this field in all stations , local index starts from 1
+  !> determine local index of this field in all stations , local index starts from 1
   call mpp_get_compute_domain(domain, isc,iec,jsc,jec)
   local_num_stations = 0
   do i = 1,num_stations
@@ -833,7 +809,7 @@ function register_station_field3d (module_name,fieldname,glo_lat,glo_lon,levels,
         local_num_stations = local_num_stations +1    
      endif
   enddo
-! get the position of this field in the array output_fields
+  !> get the position of this field in the array output_fields
   out_num = find_output_field(module_name, fieldname)  
   if(out_num < 0 .and. mpp_pe() == mpp_root_pe()) then 
      call error_mesg ('register_station_field', &
@@ -846,7 +822,7 @@ function register_station_field3d (module_name,fieldname,glo_lat,glo_lon,levels,
      allocate(output_fields(out_num)%station_id(local_num_stations))
      allocate(output_fields(out_num)%buffer(local_num_stations,nlevel))
      output_fields(out_num)%buffer = EMPTY
-! fill out list of available stations in this PE 
+     !> fill out list of available stations in this PE 
      ii=0
      do i = 1,num_stations       
         if(stations(i)%need_compute) then
@@ -873,7 +849,7 @@ function register_station_field3d (module_name,fieldname,glo_lat,glo_lon,levels,
   output_fields(out_num)%long_name = longname2
   output_fields(out_num)%units = units2
   output_fields(out_num)%nlevel = nlevel
-! deal with axes
+  !> deal with axes
  
   output_fields(out_num)%axes(1) = diag_axis_init('Stations',station_values,'station number', 'X')
   if(nlevel == 1) then
@@ -894,13 +870,11 @@ end function register_station_field3d
 
 
 !> \brief find_output_field returns the index of the reuqested field within the
-!>        output_fields array.
-!>
-!> \param [in] <module_name> Module name of the requested station
-!> \param [in] <field_name> Field name of the requested staiton
+!!        output_fields array.
 function find_output_field(module_name, field_name)
   integer find_output_field
-  character(len=*), intent(in) :: module_name, field_name
+  character(len=*), intent(in) :: module_name !< Module name of the requested station
+  character(len=*), intent(in) :: field_name  !< Field name of the requested station
   integer                      :: i
 
   find_output_field = -1
@@ -916,15 +890,13 @@ end function find_output_field
 
 
 !> \brief opening_file opens a file and writes axis meta_data for all files
-!>        (only on ROOT PE, do nothing on other PEs)
-!>
-!> \param [in] <file> File to be opened
-!>
-!> \throw FATAL, "<output_name> has axis_id = -1"
+!!        (only on ROOT PE, do nothing on other PEs)
+!!
+!! \throw FATAL, "<output_name> has axis_id = -1"
 subroutine opening_file(file)
 ! open file, write axis meta_data for all files (only on ROOT PE, 
 !                        do nothing on other PEs)
- integer, intent(in)  :: file
+ integer, intent(in)  :: file !< File to be opened
  character(len=128)   :: time_units
  integer              :: j,field_num,num_axes,axes(5),k
  logical              :: time_ops
@@ -1003,17 +975,13 @@ end subroutine opening_file
 
 
 !> \brief send_station_data_2d sends data to the root PE, which then sends
-!>        data to staton_data_out to be sent to files.<br>
-!>        send_station_data_2d is overloaded by send_station_data_3d as a
-!>        part of the send_station_data interface.
-!>
-!> \param [in] <field_id> Field id of the station data being recorded
-!> \param [in] <data> Data of the station being recorded
-!> \param [in] <time> Time of the station being recorded
+!!        data to staton_data_out to be sent to files.<br>
+!!        send_station_data_2d is overloaded by send_station_data_3d as a
+!!        part of the send_station_data interface.
 subroutine send_station_data_2d(field_id, data, time)
-  integer, intent(in)         :: field_id
-  real,    intent(in)         :: data(:,:)
-  type(time_type), intent(in) :: time
+  integer, intent(in)         :: field_id  !< Field id of the station data being recorded
+  real,    intent(in)         :: data(:,:) !< Data of the station being recorded
+  type(time_type), intent(in) :: time      !< Time of the station being recorded
   real                        :: data3d(size(data,1),size(data,2),1)
 
   data3d(:,:,1) = data
@@ -1022,27 +990,23 @@ end subroutine send_station_data_2d
 
 
 !> \brief send_station_data_3d sends data to the root PE, which then sends
-!>        data to staton_data_out to be sent to files.<br>
-!>        send_station_data_3d is overloaded by send_station_data_2d as a
-!>        part of the send_station_data interface.
-!>
-!> \param [in] <field_id> Field id of the station data being recorded
-!> \param [in] <data> Data of the station being recorded
-!> \param [in] <time> Time of the station being recorded
-!>
-!> \throw FATAL, "Station data NOT initialized"
-!> \throw FATAL, "counter=0 for averaged field"
-!> \throw FATAL, "Global field contains MISSING field"
-!> \throw FATAL, "Local index out of range for field"
+!!        data to staton_data_out to be sent to files.<br>
+!!        send_station_data_3d is overloaded by send_station_data_2d as a
+!!        part of the send_station_data interface.
+!!
+!! \throw FATAL, "Station data NOT initialized"
+!! \throw FATAL, "counter=0 for averaged field"
+!! \throw FATAL, "Global field contains MISSING field"
+!! \throw FATAL, "Local index out of range for field"
 subroutine send_station_data_3d(field_id, data, time)
  
-  integer, intent(in)         :: field_id
-  real,    intent(in)         :: data(:,:,:)
-  type(time_type), intent(in) :: time
+  integer, intent(in)         :: field_id    !< Field id of the station data being recorded
+  real,    intent(in)         :: data(:,:,:) !< Data of the station being recorded
+  type(time_type), intent(in) :: time        !< Time of the station being recorded
   integer                     :: freq,units,file_num,local_num_stations,i,ii, max_counter
   integer                     :: index_x, index_y, station_id
-  integer, allocatable        :: station_ids(:)  ! root_pe only,  to receive local station_ids
-  real,    allocatable        :: tmp_buffer(:,:) ! root_pe only, to receive local buffer from each PE
+  integer, allocatable        :: station_ids(:)  !< root_pe only, to receive local station_ids
+  real,    allocatable        :: tmp_buffer(:,:) !< root_pe only, to receive local buffer from each PE
   
 
   if (.not.module_is_initialized) &
@@ -1055,7 +1019,7 @@ subroutine send_station_data_3d(field_id, data, time)
   endif
   freq = files(file_num)%output_freq
   units = files(file_num)%output_units
-! compare time with next_output
+  !> compare time with next_output
 
   if (time > output_fields(field_id)%next_output .and. freq /= END_OF_RUN) then  ! time to write out     
 ! ALL PEs, including root PE, must send data to root PE        
@@ -1066,12 +1030,12 @@ subroutine send_station_data_3d(field_id, data, time)
         call mpp_send(output_fields(field_id)%buffer(1,1),plen=size(output_fields(field_id)%buffer),&
              to_pe=mpp_root_pe())
      endif   
-! get max_counter if the field is averaged
+     !> get max_counter if the field is averaged
      if(output_fields(field_id)%time_average) then
         max_counter = output_fields(field_id)%counter
         call mpp_max(max_counter, pelist)
      endif
-! receive local data from all PEs 
+     !> receive local data from all PEs 
      if(mpp_pe() == mpp_root_pe()) then
         do i = 1,size(pelist)           
            call mpp_recv(local_num_stations,glen=1,from_pe=pelist(i),tag=COMM_TAG_1)
@@ -1086,14 +1050,14 @@ subroutine send_station_data_3d(field_id, data, time)
               deallocate(station_ids, tmp_buffer)
            endif
         enddo
-! send global_buffer content to file
+        !> send global_buffer content to file
         if(output_fields(field_id)%time_average) then  
            if(max_counter == 0 ) &
                 call error_mesg ('send_station_data','counter=0 for averaged field '// &
                 output_fields(field_id)%output_name, FATAL)
            global_field%buffer = global_field%buffer/real(max_counter)
         endif
-! check if global_field contains any missing values
+        !> check if global_field contains any missing values
         if(any(global_field%buffer == MISSING)) &
              call error_mesg ('send_station_data','Global_field contains MISSING, field '// &
              output_fields(field_id)%output_name, FATAL)
@@ -1101,7 +1065,7 @@ subroutine send_station_data_3d(field_id, data, time)
         global_field%buffer = MISSING
      endif
      call mpp_sync()
-! clear buffer, increment next_output time and reset counter on ALL PEs
+     !> clear buffer, increment next_output time and reset counter on ALL PEs
      if(output_fields(field_id)%num_station>0)  output_fields(field_id)%buffer = EMPTY
      output_fields(field_id)%last_output = output_fields(field_id)%next_output
      output_fields(field_id)%next_output =  diag_time_inc(output_fields(field_id)%next_output,&
@@ -1109,7 +1073,7 @@ subroutine send_station_data_3d(field_id, data, time)
      output_fields(field_id)%counter = 0; max_counter = 0
     
   endif
-! accumulate buffer only
+  !> accumulate buffer only
   do i = 1 , output_fields(field_id)%num_station
      station_id = output_fields(field_id)%station_id(i)
      index_x = stations(station_id)%local_i; index_y = stations(station_id)%local_j
@@ -1129,18 +1093,13 @@ end subroutine send_station_data_3d
 
 
 !> \brief station_data_out is responsible for sending station data to files.
-!>
-!> \param [in] <file> Integer identifying the file to be output
-!> \param [in] <field> Integer identifying the filed to be output
-!> \param [in] <data> Data to be output
-!> \param [in] <time> Time of output
-!> \param [in] <final_call_in> Optional logical expression
 subroutine station_data_out(file, field, data, time,final_call_in)
 
-  integer, intent(in)          :: file, field
-  real, intent(inout)          :: data(:, :)
-  type(time_type), intent(in)  :: time
-  logical, optional, intent(in):: final_call_in
+  integer, intent(in)          :: file       !< Integer identifying the file to be output
+  integer, intent(in)          :: field      !< Integer identifying the filed to be output
+  real, intent(inout)          :: data(:, :) !< Data to be output
+  type(time_type), intent(in)  :: time       !< Time of output
+  logical, optional, intent(in):: final_call_in !< Optional logical expression
   logical                      :: final_call
   integer                      :: i, num
   real :: dif, time_data(2, 1, 1), dt_time(1, 1, 1), start_dif, end_dif
@@ -1186,19 +1145,17 @@ end subroutine station_data_out
 
 
 !> \brief Must be called <tt>after the last time step</tt> to write the buffer
-!>        content
-!>
-!> \param [in] <time> Model's time
-!>
-!> \throw FATAL, "counter=0 for averaged field"
-!> \throw FATAL, "Global field contains MISSING field"
+!!        content
+!!
+!! \throw FATAL, "counter=0 for averaged field"
+!! \throw FATAL, "Global field contains MISSING field"
 subroutine station_data_end(time)
 
-  type(time_type), intent(in) :: time            !model's time
+  type(time_type), intent(in) :: time            !< model's time
   integer                     :: freq, max_counter, local_num_stations
   integer                     :: file, nfield, field, pe, col
-  integer, allocatable        :: station_ids(:)  ! root_pe only,  to receive local station_ids
-  real,    allocatable        :: tmp_buffer(:,:) ! root_pe only, to receive local buffer from each PE
+  integer, allocatable        :: station_ids(:)  !< root_pe only, to receive local station_ids
+  real,    allocatable        :: tmp_buffer(:,:) !< root_pe only, to receive local buffer from each PE
 
   do file = 1, num_files
      freq = files(file)%output_freq
@@ -1206,7 +1163,7 @@ subroutine station_data_end(time)
         field = files(file)%fields(nfield)
         if(.not. output_fields(field)%register) cycle
         if(time >= output_fields(field)%next_output .or. freq == END_OF_RUN) then
-! ALL PEs, including root PE, must send data to root PE        
+           !> ALL PEs, including root PE, must send data to root PE        
            call mpp_send(output_fields(field)%num_station,plen=1,to_pe=mpp_root_pe(),tag=COMM_TAG_2)
            if(output_fields(field)%num_station > 0) then
               call mpp_send(output_fields(field)%station_id(1),plen=size(output_fields(field)%station_id),&
@@ -1214,12 +1171,12 @@ subroutine station_data_end(time)
               call mpp_send(output_fields(field)%buffer(1,1),plen=size(output_fields(field)%buffer),&
                    to_pe=mpp_root_pe(),tag=COMM_TAG_4)
            endif
-! get max_counter if the field is averaged
+           !> get max_counter if the field is averaged
            if(output_fields(field)%time_average) then
               max_counter = output_fields(field)%counter
               call mpp_max(max_counter, pelist)
            endif
-! only root PE receives local data from all PEs 
+           !> only root PE receives local data from all PEs 
            if(mpp_pe() == mpp_root_pe()) then
               do pe = 1,size(pelist)           
                  call mpp_recv(local_num_stations,glen=1,from_pe=pelist(pe),tag=COMM_TAG_2)
@@ -1234,14 +1191,14 @@ subroutine station_data_end(time)
                     deallocate(station_ids, tmp_buffer)
                  endif
               enddo
-! send global_buffer content to file
+              !> send global_buffer content to file
               if(output_fields(field)%time_average)then           
                  if(max_counter == 0 )&
                       call error_mesg ('send_station_end','counter=0 for averaged field '// &
                       output_fields(field)%output_name, FATAL)
                  global_field%buffer = global_field%buffer/real(max_counter)
               endif
-! check if global_field contains any missing values
+              !> check if global_field contains any missing values
               if(any(global_field%buffer == MISSING)) &
                    call error_mesg ('send_station_end','Global_field contains MISSING, field '// &
                    output_fields(field)%output_name, FATAL)              
@@ -1250,7 +1207,7 @@ subroutine station_data_end(time)
            endif
            call mpp_sync()
         endif
-!deallocate field buffer
+        !> deallocate field buffer
         if(output_fields(field)%num_station>0) &
              deallocate(output_fields(field)%buffer, output_fields(field)%station_id)
      enddo ! nfield
