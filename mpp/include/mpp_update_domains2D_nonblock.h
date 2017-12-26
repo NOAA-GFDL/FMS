@@ -874,7 +874,16 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_V_( id_update, fieldx, fieldy, domain,
   if( PRESENT(gridtype) ) grid_offset_type = gridtype
 
   update_flags = XUPDATE+YUPDATE   !default
-  if( PRESENT(flags) )update_flags = flags
+  if( PRESENT(flags) ) then
+     update_flags = flags
+     ! The following test is so that SCALAR_PAIR can be used alone with the
+     ! same default update pattern as without.
+     if (BTEST(update_flags,SCALAR_BIT)) then
+        if (.NOT.(BTEST(update_flags,WEST) .OR. BTEST(update_flags,EAST) &
+             .OR. BTEST(update_flags,NORTH) .OR. BTEST(update_flags,SOUTH))) &
+             update_flags = update_flags + XUPDATE+YUPDATE   !default with SCALAR_PAIR
+     end if
+  end if
 
   !check to make sure the consistency of halo size, position and flags.
   if( nonblock_data(id_update)%update_flags .NE. update_flags ) call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D_V: "// &
