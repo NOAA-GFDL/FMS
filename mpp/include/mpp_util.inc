@@ -1304,11 +1304,12 @@ end function rarray_to_char
 ! read(input_nml_file, nml=<name_nml>, iostat=status)
 !
 ! 
-  subroutine read_input_nml()
+  subroutine read_input_nml(pelist_name_in)
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
+    character(len=32), intent(in), optional :: pelist_name_in
 ! private variables
     integer :: log_unit
     integer :: num_lines, i
@@ -1322,7 +1323,11 @@ end function rarray_to_char
     endif
 
 ! the following code is necessary for using alternate namelist files (nests, stretched grids, etc)
-    pelist_name = mpp_get_current_pelist_name()
+    if (PRESENT(pelist_name_in)) then
+      pelist_name = pelist_name_in
+     else
+      pelist_name = mpp_get_current_pelist_name()
+    endif
     filename='input_'//trim(pelist_name)//'.nml'
     inquire(FILE=filename, EXIST=file_exist)
     if (.not. file_exist ) then
