@@ -45,6 +45,7 @@ real, public, parameter :: WTMH2O = WTMAIR*(RDGAS/RVGAS) !pjp OK to change value
 real, public, parameter :: WTMOZONE =  47.99820 !< Molecular weight of ozone [AMU]
 real, public, parameter :: WTMC     =  12.00000 !< Molecular weight of carbon [AMU]
 real, public, parameter :: WTMCO2   =  44.00995 !< Molecular weight of carbon dioxide [AMU]
+real, public, parameter :: WTMCH4   =  16.0425 !< Molecular weight of methane [AMU]
 real, public, parameter :: WTMO2    =  31.9988 !< Molecular weight of molecular oxygen [AMU]
 real, public, parameter :: WTMCFC11 = 137.3681 !< Molecular weight of CFC-11 (CCl3F) [AMU]
 real, public, parameter :: WTMCFC12 = 120.9135 !< Molecular weight of CFC-21 (CCl2F2) [AMU]
