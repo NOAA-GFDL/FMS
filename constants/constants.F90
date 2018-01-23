@@ -73,6 +73,8 @@ real, public, parameter :: RADIAN  = RAD_TO_DEG !< Equal to RAD_TO_DEG. Named RA
 real, public, parameter :: C2DBARS = 1.e-4 !< Converts rho*g*z (in mks) to dbars: 1dbar = 10^4 (kg/m^3)(m/s^2)m [dbars]
 real, public, parameter :: KELVIN  = 273.15 !< Degrees Kelvin at zero Celsius [K]
 real, public, parameter :: EPSLN   = 1.0e-40 !< A small number to prevent divide by zero exceptions [N/A]
+
+real, public, parameter :: WTMN    = 14.0067 !g/mol
 !-----------------------------------------------------------------------
 public :: constants_init
 

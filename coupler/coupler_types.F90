@@ -602,6 +602,15 @@ if (fm_new_list('air_sea_gas_flux_generic/implementation/ocmip2') .le. 0) then  
 endif  !}
 call fm_util_set_value('air_sea_gas_flux_generic/implementation/ocmip2/num_parameters', 2)
 
+!f1p
+
+if (fm_new_list('air_sea_gas_flux_generic/implementation/ocmip2_vmr') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/implementation/ocmip2_vmr" list')
+endif  !}
+call fm_util_set_value('air_sea_gas_flux_generic/implementation/ocmip2_vmr/num_parameters', 2)
+
+!>
+
 !>       Add some scalar quantaties.
 
 call fm_util_set_value('air_sea_gas_flux_generic/num_flags', 0)
