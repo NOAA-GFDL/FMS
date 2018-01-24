@@ -187,22 +187,22 @@ end subroutine MPP_UPDATE_NEST_FINE_4D_
 
 
 
-subroutine MPP_UPDATE_NEST_COARSE_2D_(field, nest_domain, buffer, complete, position, name, tile_count) 
-      MPP_TYPE_,             intent(in)      :: field(:,:)
+subroutine MPP_UPDATE_NEST_COARSE_2D_(field_in, nest_domain, field_out, complete, position, name, tile_count) 
+      MPP_TYPE_,             intent(in)      :: field_in(:,:)
       type(nest_domain_type), intent(inout)  :: nest_domain
-      MPP_TYPE_,             intent(inout)   :: buffer(:,:)
+      MPP_TYPE_,             intent(inout)   :: field_out(:,:)
       logical,          intent(in), optional :: complete
       integer,          intent(in), optional :: position
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
 
-      MPP_TYPE_ :: field3D(size(field,1),size(field,2),1)
-      MPP_TYPE_ :: buffer3D(size(buffer,1),size(buffer,2),1)
-      pointer( ptr, field3D )
-      pointer( ptr_b, buffer3D)
-      ptr = LOC(field)
-      ptr_b = LOC(buffer)
-      call mpp_update_nest_coarse( field3D, nest_domain, buffer3D, complete, position, name, tile_count) 
+      MPP_TYPE_ :: field3D_in(size(field_in,1),size(field_in,2),1)
+      MPP_TYPE_ :: field3D_out(size(field_out,1),size(field_out,2),1) 
+      pointer( ptr_in, field3D_in )
+      pointer( ptr_out, field3D_out)
+      ptr_in = LOC(field_in)
+      ptr_out = LOC(field_out)
+      call mpp_update_nest_coarse( field3D_in, nest_domain, field3D_out, complete, position, name, tile_count) 
 
       return
 
@@ -210,10 +210,12 @@ subroutine MPP_UPDATE_NEST_COARSE_2D_(field, nest_domain, buffer, complete, posi
 end subroutine MPP_UPDATE_NEST_COARSE_2D_
 
 
-subroutine MPP_UPDATE_NEST_COARSE_3D_(field, nest_domain, buffer, complete, position, name, tile_count) 
-   MPP_TYPE_,             intent(in)      :: field(:,:,:)
+!--- field_in is the data on fine grid pelist to be passed to coarse grid pelist.
+!--- field_in and field_out are all on the coarse grid. field_in is remapped from fine grid to coarse grid.
+subroutine MPP_UPDATE_NEST_COARSE_3D_(field_in, nest_domain, field_out, complete, position, name, tile_count) 
+   MPP_TYPE_,             intent(in)      :: field_in(:,:,:)
    type(nest_domain_type), intent(inout)  :: nest_domain
-   MPP_TYPE_,             intent(inout)   :: buffer(:,:,:)
+   MPP_TYPE_,             intent(inout)   :: field_out(:,:,:)
    logical,          intent(in), optional :: complete
    integer,          intent(in), optional :: position
    character(len=*), intent(in), optional :: name
@@ -221,15 +223,16 @@ subroutine MPP_UPDATE_NEST_COARSE_3D_(field, nest_domain, buffer, complete, posi
 
    MPP_TYPE_        :: d_type
    type(nestSpec), pointer :: update=>NULL()
-   integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS),save :: f_addrs=-9999
-   integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS),save :: b_addrs=-9999
+   integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS),save :: fin_addrs=-9999
+   integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS),save :: fout_addrs=-9999
    character(len=3) :: text
    logical          :: is_complete, set_mismatch
    integer          :: tile
    integer          :: update_position
-   integer          :: buffersz, buffersz_save=0
-   integer          :: isize, jsize, ksize, l_size
-   integer, save    :: isize_save=0, jsize_save=0, ksize_save=0
+   integer          :: isize_in, jsize_in, l_size
+   integer          :: isize_out, jsize_out, ksize
+   integer, save    :: isize_in_save=0, jsize_in_save=0, ksize_save=0
+   integer, save    :: isize_out_save=0, jsize_out_save=0
    integer, save    :: update_position_save=0
    integer, save    :: list=0 
 
@@ -252,22 +255,32 @@ subroutine MPP_UPDATE_NEST_COARSE_3D_(field, nest_domain, buffer, complete, posi
       call mpp_error(FATAL,'MPP_UPDATE_NEST_COARSE_3D: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
    endif
 
-   f_addrs(list) = LOC(field)
-   b_addrs(list) = LOC(buffer)
+   isize_in = 0; jsize_in = 0
+   isize_out = 0; jsize_out = 0
 
-   buffersz = size(buffer)
-   isize=size(field,1); jsize=size(field,2); ksize = size(field,3)
+   if(nest_domain%is_fine_pe) then
+      fin_addrs(list) = LOC(field_in)
+      isize_in=size(field_in,1); jsize_in=size(field_in,2)
+      ksize = size(field_in,3)
+   endif
+   if(nest_domain%is_coarse_pe) then
+      fout_addrs(list) = LOC(field_out)
+      isize_out=size(field_out,1); jsize_out=size(field_out,2)
+      ksize = size(field_out,3)
+   endif
+
    if(list == 1)then
-      isize_save = isize; jsize_save = jsize; ksize_save = ksize
+      isize_in_save = isize_in; jsize_in_save = jsize_in; ksize_save = ksize
+      isize_out_save = isize_out; jsize_out_save = jsize_out
       update_position_save = update_position
-      buffersz_save = buffersz
    else
       set_mismatch = .false.
-      set_mismatch = set_mismatch .OR. (isize_save /= isize)
-      set_mismatch = set_mismatch .OR. (jsize_save /= jsize)
+      set_mismatch = set_mismatch .OR. (isize_in_save /= isize_in)
+      set_mismatch = set_mismatch .OR. (jsize_in_save /= jsize_in)
       set_mismatch = set_mismatch .OR. (ksize_save /= ksize)
+      set_mismatch = set_mismatch .OR. (isize_out_save /= isize_out)
+      set_mismatch = set_mismatch .OR. (jsize_out_save /= jsize_out)
       set_mismatch = set_mismatch .OR. (update_position_save /= update_position)
-      set_mismatch = set_mismatch .OR. (buffersz_save /= buffersz)
 
       if(set_mismatch)then
          write( text,'(i2)' ) list
@@ -282,30 +295,43 @@ subroutine MPP_UPDATE_NEST_COARSE_3D_(field, nest_domain, buffer, complete, posi
       
    if(is_complete)then
       update => search_F2C_nest_overlap(nest_domain, update_position)
-      call mpp_do_update_nest_coarse(f_addrs(1:l_size), nest_domain, update, d_type, ksize, &
-            b_addrs(1:l_size))
+      if(nest_domain%is_fine_pe) then
+         if(isize_in .NE. update%xsize_c .OR. jsize_in .NE. update%ysize_c) then
+           print*,"isize_in,jsize_in=", isize_in, jsize_in, update%xsize_c, update%ysize_c, mpp_pe()
+           call mpp_error(FATAL, "MPP_UPDATE_NEST_COARSE_3D_: "// &
+                "size of field_in does not match size specified in nest_domain_type")
+         endif
+      endif
+      if(nest_domain%is_coarse_pe) then
+         if(isize_out .NE. update%xsize_c .OR. jsize_out .NE. update%ysize_c) then
+           print*,"isize_out,jsize_out=", isize_out, jsize_out, update%xsize_c, update%ysize_c, mpp_pe()
+           call mpp_error(FATAL, "MPP_UPDATE_NEST_COARSE_3D_: " // &
+                "size of field_out does not match size specified in nest_domain_type")
+         endif
+      endif
+
+      call mpp_do_update_nest_coarse(fin_addrs(1:l_size), fout_addrs(1:l_size), nest_domain, update, d_type, ksize)
    endif
 
 end subroutine MPP_UPDATE_NEST_COARSE_3D_
 
 !###############################################################################
-subroutine MPP_UPDATE_NEST_COARSE_4D_(field, nest_domain, buffer, complete, position, name, tile_count) 
-      MPP_TYPE_,             intent(in)      :: field(:,:,:,:)
+subroutine MPP_UPDATE_NEST_COARSE_4D_(field_in, nest_domain, field_out, complete, position, name, tile_count) 
+      MPP_TYPE_,             intent(in)      :: field_in(:,:,:,:)
       type(nest_domain_type), intent(inout)  :: nest_domain
-      MPP_TYPE_,             intent(inout)   :: buffer(:,:,:,:)
+      MPP_TYPE_,             intent(inout)   :: field_out(:,:,:,:)
       logical,          intent(in), optional :: complete
       integer,          intent(in), optional :: position
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
 
-      MPP_TYPE_ :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4))
-      MPP_TYPE_ :: buffer3D(size(buffer,1),size(buffer,2),size(buffer,3)*size(buffer,4))
-
-      pointer( ptr, field3D )
-      pointer( ptr_b, buffer3D)
-      ptr = LOC(field)
-      ptr_b = LOC(buffer)
-      call mpp_update_nest_coarse( field3D, nest_domain, buffer3D, complete, position, name, tile_count) 
+      MPP_TYPE_ :: field3D_in(size(field_in,1),size(field_in,2),size(field_in,3)*size(field_in,4))
+      MPP_TYPE_ :: field3D_out(size(field_out,1),size(field_out,2),size(field_out,3)*size(field_out,4))
+      pointer( ptr_in, field3D_in )
+      pointer( ptr_out, field3D_out )
+      ptr_in = LOC(field_in)
+      ptr_out = LOC(field_out)
+      call mpp_update_nest_coarse( field3D_in, nest_domain, field3D_out, complete, position, name, tile_count) 
 
       return
 
