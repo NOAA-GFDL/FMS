@@ -94,7 +94,7 @@ program test
                                jcount_coarse, extra_halo, npes_fine_list, npes_coarse, mix_2D_3D, test_get_nbr, &
                                test_edge_update, test_cubic_grid_redistribute, ensemble_size, &
                                layout_cubic, layout_ensemble, nthreads, test_boundary, &
-                               layout_tripolar, test_group, test_global_sum, test_subset
+                               layout_tripolar, test_group, test_global_sum, test_subset, refine_ratio
   integer :: i, j, k, n
   integer :: layout(2)
   integer :: id
