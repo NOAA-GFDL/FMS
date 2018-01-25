@@ -1,5 +1,3 @@
-#include <fms_platform.h>
-
 MODULE diag_data_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
@@ -45,6 +43,8 @@ MODULE diag_data_mod
   IMPLICIT NONE
 
   PUBLIC
+
+#include <fms_platform.h>
 
   ! <!-- PARAMETERS for diag_data.F90 -->
   ! <DATA NAME="MAX_FIELDS_PER_FILE" TYPE="INTEGER, PARAMETER" DEFAULT="300">
