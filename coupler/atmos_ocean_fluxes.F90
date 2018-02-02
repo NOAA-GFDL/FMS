@@ -81,9 +81,9 @@ use coupler_types_mod, only: ind_alpha, ind_csurf, ind_sc_no
 use coupler_types_mod, only: ind_pcair, ind_u10, ind_psurf
 use coupler_types_mod, only: ind_deposition
 use coupler_types_mod, only: ind_runoff
-use coupler_types_mod, only: ind_flux, ind_deltap, ind_kw
+use coupler_types_mod, only: ind_flux, ind_deltap, ind_kw, ind_flux0
 
-use constants_mod,     only: WTMAIR
+use constants_mod,     only: WTMAIR,rdgas
 
 use field_manager_mod, only: fm_path_name_len, fm_string_len, fm_exists, fm_get_index
 use field_manager_mod, only: fm_new_list, fm_get_current_list, fm_change_list
@@ -767,7 +767,7 @@ end subroutine  atmos_ocean_fluxes_init
 !! \throw FATAL, "Bad parameter ([gas_fluxes%bc(n)%param(1)]) for land_sea_runoff for [name]"
 !! \throw FATAL, "Unknown flux type ([flux_type]) for [name]"
 subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
-                                   gas_fluxes, seawater, pwt, sphum_correction,dt)
+                                   gas_fluxes, seawater, tsurf,pwt,  sphum_correction,dt)
   type(coupler_1d_bc_type), intent(in)    :: gas_fields_atm !< Structure containing atmospheric surface
                                                         !! variables that are used in the calculation
                                                         !! of the atmosphere-ocean gas fluxes.
@@ -779,7 +779,7 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
                                                         !! related to the calculation of these fluxes.
   real, dimension(:),       intent(in)    :: seawater   !< 1 for the open water category, 0 if ice or land.
 
-  real, dimension(:),       intent(in)    :: pwt !(in kg/m2)
+  real, dimension(:),       intent(in)    :: tsurf, pwt !(in kg/m2)
   real, dimension(:),       intent(in)    :: sphum_correction
 
   real,                     intent(in)    :: dt
@@ -847,21 +847,22 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
             endif
           enddo  ! i
 
-        elseif (gas_fluxes%bc(n)%implementation .eq. 'ocmip2_vmr') then
+        elseif (gas_fluxes%bc(n)%implementation .eq. 'duce_vmr') then
            
-           if (mpp_root_pe().eq.mpp_pe()) write(*,*) 'ocmip2_vmr'
-
           do i = 1, length
             if (seawater(i) == 1.) then
-               gas_fluxes%bc(n)%field(ind_kw)%values(i) = gas_fluxes%bc(n)%param(1) * gas_fields_atm%bc(n)%field(ind_u10)%values(i)**2
+
+               gas_fluxes%bc(n)%field(ind_kw)%values(i) = &
+                    gas_fields_atm%bc(n)%field(ind_u10)%values(i)/(770.+45.*gas_fields_atm%bc(n)%mol_wt**(1./3.)) * &
+                    101325./(rdgas*wtmair*1e-3*tsurf(i)*gas_fields_ice%bc(n)%field(ind_alpha)%values(i))
+!alpha: mol/m3/atm
               cair(i) = &
                    gas_fields_ice%bc(n)%field(ind_alpha)%values(i) * &
                    gas_fields_atm%bc(n)%field(ind_pCair)%values(i) * &
-                   gas_fields_atm%bc(n)%field(ind_psurf)%values(i) * gas_fluxes%bc(n)%param(2)
+                   gas_fields_atm%bc(n)%field(ind_psurf)%values(i) * 9.86923e-6
               cair(i) = max(cair(i),0.)
-              gas_fluxes%bc(n)%field(ind_flux)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i) * &
-                   sqrt(660. / (gas_fields_ice%bc(n)%field(ind_sc_no)%values(i) + epsln)) * &
-                   (max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.) - cair(i))
+              gas_fluxes%bc(n)%field(ind_flux)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i)  * (max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.) - cair(i))
+              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i) * max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.)
               gas_fluxes%bc(n)%field(ind_deltap)%values(i) = (max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.) - cair(i)) / &
                    (gas_fields_ice%bc(n)%field(ind_alpha)%values(i) * permeg + epsln)
 
@@ -873,11 +874,11 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
             else
               gas_fluxes%bc(n)%field(ind_kw)%values(i) = 0.0
               gas_fluxes%bc(n)%field(ind_flux)%values(i) = 0.0
+              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = 0.0
               gas_fluxes%bc(n)%field(ind_deltap)%values(i) = 0.0
               cair(i) = 0.0
             endif
           enddo  ! i
-
         else
           call mpp_error(FATAL, ' Unknown implementation (' // trim(gas_fluxes%bc(n)%implementation) // &
                ') for ' // trim(gas_fluxes%bc(n)%name))

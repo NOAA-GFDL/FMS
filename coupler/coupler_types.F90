@@ -332,6 +332,7 @@ integer, public :: ind_sc_no = 3 !< The index for the Schmidt number for a trace
 integer, public :: ind_flux = 1  !< The index for the tracer flux
 integer, public :: ind_deltap= 2 !< The index for ocean-air gas partial pressure change
 integer, public :: ind_kw = 3    !< The index for the piston velocity
+integer, public :: ind_flux0 = 4 !< The index for the piston velocity
 integer, public :: ind_deposition = 1 !< The index for the atmospheric deposition flux
 integer, public :: ind_runoff = 1 !< The index for a runoff flux
 
@@ -604,10 +605,10 @@ call fm_util_set_value('air_sea_gas_flux_generic/implementation/ocmip2/num_param
 
 !f1p
 
-if (fm_new_list('air_sea_gas_flux_generic/implementation/ocmip2_vmr') .le. 0) then  !{
-  call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/implementation/ocmip2_vmr" list')
+if (fm_new_list('air_sea_gas_flux_generic/implementation/duce_vmr') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/implementation/duce_vmr" list')
 endif  !}
-call fm_util_set_value('air_sea_gas_flux_generic/implementation/ocmip2_vmr/num_parameters', 2)
+call fm_util_set_value('air_sea_gas_flux_generic/implementation/duce_vmr/num_parameters', 1)
 
 !>
 
@@ -671,6 +672,10 @@ call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'uatm',    ind
 call fm_util_set_value('air_sea_gas_flux_generic/flux/name',      'kw',         index = ind_kw)
 call fm_util_set_value('air_sea_gas_flux_generic/flux/long_name', 'Piston velocity', index = ind_kw)
 call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'm/s',    index = ind_kw)
+
+ call fm_util_set_value('air_sea_gas_flux_generic/flux/name',      'flux0',         index = ind_flux0)
+ call fm_util_set_value('air_sea_gas_flux_generic/flux/long_name', 'Surface flux no atm', index = ind_flux0)
+ call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'mol/m^2/s',    index = ind_flux0)
 
 !
 !>       Define the air_sea_gas_flux type and add it.
