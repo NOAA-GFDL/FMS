@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 
 module topography_mod
 
@@ -141,7 +159,7 @@ end interface
 ! <FUNCTION NAME="get_topog_mean">
 
 !   <OVERVIEW>
-!     Returns a "realistic" mean surface height field. 
+!     Returns a "realistic" mean surface height field.
 !   </OVERVIEW>
 !   <DESCRIPTION>
 !     Returns realistic mountains on a latitude-longtude grid.
@@ -230,8 +248,8 @@ end interface
 ! <FUNCTION NAME="get_topog_stdev">
 
 !   <OVERVIEW>
-!     Returns a standard deviation of higher resolution topography with 
-!     the given model grid boxes. 
+!     Returns a standard deviation of higher resolution topography with
+!     the given model grid boxes.
 !   </OVERVIEW>
 !   <DESCRIPTION>
 !     Returns the standard deviation of the "finer" input topography data set,
@@ -839,7 +857,7 @@ end interface
  subroutine determine_ocean_points ( pctwater )
  real, intent(inout) :: pctwater(:,:)
  logical :: ocean(size(pctwater,1),size(pctwater,2))
- integer :: i, j, m, n, im, ip, jm, jp, new 
+ integer :: i, j, m, n, im, ip, jm, jp, new
 
  real :: ocean_pct_crit = .500
 
@@ -852,21 +870,21 @@ end interface
   ! all other grid boxes have <= 99 percent water
 
   ! set a mask for ocean grid boxes
-    ocean = (pctwater > .999) 
+    ocean = (pctwater > .999)
     new = count(ocean)
 
   ! set land grid boxes that have sufficient amount of water
   ! to ocean grid boxes when they are adjacent to ocean points
   ! iterate until there are no new ocean points
-    do 
-    if (new == 0) exit 
-    new = 0 
+    do
+    if (new == 0) exit
+    new = 0
 
        do j = 1, n
        do i = 1, m
           if (.not.ocean(i,j) .and. pctwater(i,j) > ocean_pct_crit) then
              im = i-1; ip = i+1; jm = j-1; jp = j+1
-             if (im == 0)   im = m  
+             if (im == 0)   im = m
              if (ip == m+1) ip = 1
              if (jm == 0)   jm = 1
              if (jp == n+1) jp = n
@@ -889,7 +907,7 @@ end interface
  end subroutine determine_ocean_points
 
 !#######################################################################
-! reads the namelist file, write namelist to log file, 
+! reads the namelist file, write namelist to log file,
 ! and initializes constants
 
 subroutine read_namelist
@@ -927,37 +945,37 @@ end module topography_mod
 
 ! <INFO>
 
-!   <TESTPROGRAM NAME="">  
-!  
+!   <TESTPROGRAM NAME="">
+!
 !  To run this program you will need the topography and percent water
 !  data sets and use the following namelist (in file input.nml).
-!  
+!
 !   &amp;gaussian_topog_nml
 !     height = 5000., 3000., 3000., 3000.,
 !     olon   =   90.,  255.,  285.,    0.,
 !     olat   =   45.,   45.,  -15.,  -90.,
 !     wlon   =   15.,   10.,    5.,  180.,
 !     wlat   =   15.,   25.,   25.,   20., /
-!  
+!
 !  program test
-!  
+!
 !  ! test program for topography and gaussian_topog modules
-!  <PRE>  
+!  <PRE>
 !  use topography_mod
 !  implicit none
-!  
+!
 !  integer, parameter :: nlon=24, nlat=18
 !  real :: x(nlon), y(nlat), xb(nlon+1), yb(nlat+1), z(nlon,nlat)
 !  real :: hpi, rtd
 !  integer :: i,j
 !  logical :: a
-!  
+!
 !  ! gaussian mountain parameters
 !  real, parameter :: ht=4000.
 !  real, parameter :: x0=90., y0=45. ! origin in degrees
 !  real, parameter :: xw=15., yw=15. ! half-width in degees
 !  real, parameter :: xr=30., yr= 0. ! ridge-width in degrees
-!  
+!
 !  ! create lat/lon grid in radians
 !    hpi = acos(0.0)
 !    rtd = 90./hpi ! rad to deg
@@ -976,25 +994,25 @@ end module topography_mod
 !  ! test topography_mod routines
 !    a = get_topog_mean(xb,yb,z)
 !    call printz ('get_topog_mean')
-!  
+!
 !    a = get_water_frac(xb,yb,z)
 !    z = z*100. ! in percent
 !    call printz ('get_water_frac')
-!  
+!
 !    a = get_ocean_frac(xb,yb,z)
 !    z = z*100. ! in percent
 !    call printz ('get_ocean_frac')
-!  
+!
 !  ! test gaussian_topog_mod routines
 !    a = .true.
 !    z = get_gaussian_topog(x,y,ht,x0,y0,xw,yw,xr,yr)
 !    call printz ('get_gaussian_topog')
-!  
+!
 !    call gaussian_topog_init (x,y,z)
 !    call printz ('gaussian_topog_init')
-!  
+!
 !  contains
-!  
+!
 !  ! simple printout of topog/water array
 !    subroutine printz (lab)
 !    character(len=*), intent(in) :: lab
@@ -1010,17 +1028,17 @@ end module topography_mod
 !        print '(i3,25i5)', nint(y(j)*rtd), (nint(z(i,j)),i=1,nlon)
 !      enddo
 !    end subroutine printz
-!  
+!
 !  end program test
 !   </PRE>
 !   </TESTPROGRAM>
 
-!   <BUG>                  
+!   <BUG>
 !      Water mask produces some possible erroneous water points along
 !      the coast of Antarctic (at about 90W).
 !   </BUG>
 
 !   <FUTURE>Use of netcdf data sets. </FUTURE>
 !   <FUTURE>Incorporate other topography and ocean data sets. </FUTURE>
-! 
+!
 ! </INFO>

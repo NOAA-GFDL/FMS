@@ -1,3 +1,23 @@
+<!--
+***********************************************************************
+*                   GNU Lesser General Public License
+*
+* This file is part of the GFDL Flexible Modeling System (FMS).
+*
+* FMS is free software: you can redistribute it and/or modify it under
+* the terms of the GNU Lesser General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or (at
+* your option) any later version.
+*
+* FMS is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+* for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+***********************************************************************
+-->
 <html>
 <head>
 <META http-equiv="Content-Type" content="text/html; charset=EUC-JP">
@@ -21,7 +41,7 @@
           <a href="#NAMELIST">NAMELIST </a>~
           <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
           <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
-          <a href="#REFERENCES">REFERENCES </a>~ 
+          <a href="#REFERENCES">REFERENCES </a>~
           <a href="#NOTES">NOTES</a></font>
 <hr>
 <h2>Module topography_mod</h2>
@@ -80,7 +100,7 @@
 <dd>   Returns a "realistic" mean surface height field. </dd>
 <dt>
 <a href="#get_topog_stdev">get_topog_stdev</a>:</dt>
-<dd>   Returns a standard deviation of higher resolution topography with 
+<dd>   Returns a standard deviation of higher resolution topography with
    the given model grid boxes. </dd>
 <dt>
 <a href="#get_ocean_frac">get_ocean_frac</a>:</dt>
@@ -114,8 +134,8 @@
 <li>
 <a name="get_topog_mean"></a>
 <h4>get_topog_mean</h4>
-<pre> 
-<b>get_topog_mean</b> 
+<pre>
+<b>get_topog_mean</b>
 </pre>
 <dl>
 <dt>
@@ -163,8 +183,8 @@
 <li>
 <a name="get_topog_stdev"></a>
 <h4>get_topog_stdev</h4>
-<pre> 
-<b>get_topog_stdev</b> 
+<pre>
+<b>get_topog_stdev</b>
 </pre>
 <dl>
 <dt>
@@ -212,8 +232,8 @@
 <li>
 <a name="get_ocean_frac"></a>
 <h4>get_ocean_frac</h4>
-<pre> 
-<b>get_ocean_frac</b> 
+<pre>
+<b>get_ocean_frac</b>
 </pre>
 <dl>
 <dt>
@@ -258,8 +278,8 @@
 <li>
 <a name="get_ocean_mask"></a>
 <h4>get_ocean_mask</h4>
-<pre> 
-<b>get_ocean_mask</b> 
+<pre>
+<b>get_ocean_mask</b>
 </pre>
 <dl>
 <dt>
@@ -304,8 +324,8 @@
 <li>
 <a name="get_water_frac"></a>
 <h4>get_water_frac</h4>
-<pre> 
-<b>get_water_frac</b> 
+<pre>
+<b>get_water_frac</b>
 </pre>
 <dl>
 <dt>
@@ -350,8 +370,8 @@
 <li>
 <a name="get_water_mask"></a>
 <h4>get_water_mask</h4>
-<pre> 
-<b>get_water_mask</b> 
+<pre>
+<b>get_water_mask</b>
 </pre>
 <dl>
 <dt>
@@ -450,7 +470,7 @@
                      [real :: blon(nlon+1), blat(nlat+1)]
 
      data       = The topography or percent water data.
-                    [real :: data(nlon,nlat)]</pre> 
+                    [real :: data(nlon,nlat)]</pre>
 </dd>
 </dl>
 <br>
@@ -541,19 +561,19 @@
 <br>
    test program for topography and gaussian_topog modules <pre>  use topography_mod
   implicit none
-  
+
   integer, parameter :: nlon=24, nlat=18
   real :: x(nlon), y(nlat), xb(nlon+1), yb(nlat+1), z(nlon,nlat)
   real :: hpi, rtd
   integer :: i,j
   logical :: a
-  
+
  gaussian mountain parameters
   real, parameter :: ht=4000.
   real, parameter :: x0=90., y0=45. ! origin in degrees
   real, parameter :: xw=15., yw=15. ! half-width in degees
   real, parameter :: xr=30., yr= 0. ! ridge-width in degrees
-  
+
  create lat/lon grid in radians
     hpi = acos(0.0)
     rtd = 90./hpi ! rad to deg
@@ -572,25 +592,25 @@
  test topography_mod routines
     a = get_topog_mean(xb,yb,z)
     call printz ('get_topog_mean')
-  
+
     a = get_water_frac(xb,yb,z)
     z = z*100. ! in percent
     call printz ('get_water_frac')
-  
+
     a = get_ocean_frac(xb,yb,z)
     z = z*100. ! in percent
     call printz ('get_ocean_frac')
-  
+
  test gaussian_topog_mod routines
     a = .true.
     z = get_gaussian_topog(x,y,ht,x0,y0,xw,yw,xr,yr)
     call printz ('get_gaussian_topog')
-  
+
     call gaussian_topog_init (x,y,z)
     call printz ('gaussian_topog_init')
-  
+
   contains
-  
+
  simple printout of topog/water array
     subroutine printz (lab)
     character(len=*), intent(in) :: lab
@@ -606,8 +626,8 @@
         print '(i3,25i5)', nint(y(j)*rtd), (nint(z(i,j)),i=1,nlon)
       enddo
     end subroutine printz
-  
-  end program test</pre> 
+
+  end program test</pre>
 </dd>
 </dl>
 </div>
