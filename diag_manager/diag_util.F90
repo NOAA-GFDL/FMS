@@ -2549,7 +2549,7 @@ CONTAINS
        CALL diag_data_out(file, i, output_fields(i)%buffer, files(file)%last_flush, .TRUE., .TRUE.)
     END DO
     ! Close up this file
-    IF ( files(file)%file_unit.NE.1 ) then
+    IF ( files(file)%file_unit.NE.-1 ) then
       ! File is stil open.  This is to protect when the diag_table has no Fields
       ! going to this file, and it was never opened (b/c diag_data_out was not
       ! called)
