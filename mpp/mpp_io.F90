@@ -590,7 +590,7 @@ type :: atttype
      module procedure mpp_read_2ddecomp_r2d_r8
      module procedure mpp_read_2ddecomp_r3d_r8
      module procedure mpp_read_2ddecomp_r4d_r8
-#ENDIF
+#endif
   end interface
 
 !***********************************************************************
@@ -904,7 +904,7 @@ type :: atttype
      module procedure mpp_write_2ddecomp_r2d_r8
      module procedure mpp_write_2ddecomp_r3d_r8
      module procedure mpp_write_2ddecomp_r4d_r8
-#ENDIF
+#endif
      module procedure mpp_write_r0D
      module procedure mpp_write_r1D
      module procedure mpp_write_r2D
