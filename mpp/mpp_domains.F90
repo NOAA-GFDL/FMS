@@ -1796,6 +1796,10 @@ end interface
   interface mpp_pass_SG_to_UG
      module procedure mpp_pass_SG_to_UG_r8_2d
      module procedure mpp_pass_SG_to_UG_r8_3d
+#ifdef OVERLOAD_R4
+     module procedure mpp_pass_SG_to_UG_r4_2d
+     module procedure mpp_pass_SG_to_UG_r4_3d
+#endif
      module procedure mpp_pass_SG_to_UG_i4_2d
      module procedure mpp_pass_SG_to_UG_i4_3d
      module procedure mpp_pass_SG_to_UG_l4_2d
@@ -1805,6 +1809,10 @@ end interface
   interface mpp_pass_UG_to_SG
      module procedure mpp_pass_UG_to_SG_r8_2d
      module procedure mpp_pass_UG_to_SG_r8_3d
+#ifdef OVERLOAD_R4
+     module procedure mpp_pass_UG_to_SG_r4_2d
+     module procedure mpp_pass_UG_to_SG_r4_3d
+#endif
      module procedure mpp_pass_UG_to_SG_i4_2d
      module procedure mpp_pass_UG_to_SG_i4_3d
      module procedure mpp_pass_UG_to_SG_l4_2d
