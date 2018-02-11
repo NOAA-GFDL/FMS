@@ -342,6 +342,11 @@ contains
     integer, allocatable, dimension(:)   :: i_src, j_src, i_dst, j_dst
     real,    allocatable, dimension(:)   :: xgrid_area, clon, clat
     real,    allocatable, dimension(:,:) :: dst_area, lon_src, lat_src
+    real,    allocatable, dimension(:)   :: lat_in_flip
+    real,    allocatable, dimension(:,:) :: mask_src_flip
+    integer :: nincrease, ndecrease
+    logical :: flip_lat
+
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
          'horiz_interp_conserve_new_1dx2d: horiz_interp_conserve_init is not called')
@@ -362,20 +367,68 @@ contains
     allocate(i_src(maxxgrid), j_src(maxxgrid), i_dst(maxxgrid), j_dst(maxxgrid) )
     allocate( xgrid_area(maxxgrid), dst_area(nlon_out, nlat_out) )
 
+    !--- check if source latitude is flipped 
+    nincrease = 0
+    ndecrease = 0
+    do j = 1, nlat_in
+       if( lat_in(j+1) > lat_in(j) ) then
+          nincrease = nincrease + 1
+       else if ( lat_in(j+1) < lat_in(j) ) then
+          ndecrease = ndecrease + 1
+       endif
+    enddo
+
+    if(nincrease == nlat_in) then
+       flip_lat = .false.
+    else if(ndecrease == nlat_in) then
+       flip_lat = .true.
+    else
+       call mpp_error(FATAL, 'horiz_interp_conserve_mod: nlat_in should be equal to nincreaase or ndecrease')
+    endif
+
     if( .not. great_circle_algorithm ) then
-       nxgrid = create_xgrid_1DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in, lat_in, lon_out, lat_out, &
-                                          mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
+       if(flip_lat) then
+          allocate(lat_in_flip(nlat_in+1), mask_src_flip(nlon_in,nlat_in))
+          do j = 1, nlat_in+1
+             lat_in_flip(j) = lat_in(nlat_in+2-j)
+          enddo
+          do j = 1, nlat_in
+             mask_src_flip(:,j) = mask_src(:,nlat_in+1-j)
+          enddo
+          nxgrid = create_xgrid_1DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in, lat_in_flip, lon_out, lat_out, &
+                                             mask_src_flip, i_src, j_src, i_dst, j_dst, xgrid_area)
+          deallocate(lat_in_flip, mask_src_flip)
+       else
+          nxgrid = create_xgrid_1DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in, lat_in, lon_out, lat_out, &
+                                             mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
+       endif
     else
        allocate(lon_src(nlon_in+1,nlat_in+1), lat_src(nlon_in+1,nlat_in+1))
-       allocate(clon(maxxgrid), clat(maxxgrid))       
-       do j = 1, nlat_in+1
-          do i = 1, nlon_in+1
-             lon_src(i,j) = lon_in(i)
-             lat_src(i,j) = lat_in(j)
+       allocate(clon(maxxgrid), clat(maxxgrid))     
+       if(flip_lat) then  
+          allocate(mask_src_flip(nlon_in,nlat_in))
+          do j = 1, nlat_in+1
+             do i = 1, nlon_in+1
+                lon_src(i,j) = lon_in(i)
+                lat_src(i,j) = lat_in(nlat_in+2-j)
+             enddo
           enddo
-       enddo
-       nxgrid =  create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_src, lat_src, lon_out, lat_out, &
-                                          mask_src, i_src, j_src, i_dst, j_dst, xgrid_area, clon, clat)
+          do j = 1, nlat_in
+             mask_src_flip(:,j) = mask_src(:,nlat_in+1-j)
+          enddo
+          nxgrid =  create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_src, lat_src, lon_out, lat_out, &
+                                             mask_src_flip, i_src, j_src, i_dst, j_dst, xgrid_area, clon, clat)
+          deallocate(mask_src_flip)
+       else
+          do j = 1, nlat_in+1
+             do i = 1, nlon_in+1
+                lon_src(i,j) = lon_in(i)
+                lat_src(i,j) = lat_in(j)
+             enddo
+          enddo
+          nxgrid =  create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_src, lat_src, lon_out, lat_out, &
+                                             mask_src, i_src, j_src, i_dst, j_dst, xgrid_area, clon, clat)
+       endif
        deallocate(lon_src, lat_src, clon, clat)
     endif
     allocate(Interp%i_src(nxgrid), Interp%j_src(nxgrid) )
@@ -385,6 +438,7 @@ contains
     Interp%nxgrid   = nxgrid
     Interp%i_src = i_src(1:nxgrid)+1 ! in C, the starting index is 0
     Interp%j_src = j_src(1:nxgrid)+1
+    if(flip_lat) Interp%j_src = nlat_in+1-Interp%j_src
     Interp%i_dst = i_dst(1:nxgrid)+1
     Interp%j_dst = j_dst(1:nxgrid)+1
 

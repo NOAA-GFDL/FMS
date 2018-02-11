@@ -457,8 +457,8 @@ CONTAINS
                         & CALL error_mesg("diag_table_mod::parse_diag_table",&
                         & TRIM(local_err_msg)//" (line: "//TRIM(line_number)//").", WARNING)
                    CYCLE parser
-                ELSE IF ( (diag_subset_output == DIAG_OTHER .AND. VERIFY('ocean', lowercase(temp_file%file_name)) == 0).OR.&
-                     &    (diag_subset_output == DIAG_OCEAN .AND. VERIFY('ocean', lowercase(temp_file%file_name)) /= 0) ) THEN
+                ELSE IF ( (diag_subset_output == DIAG_OTHER .AND. INDEX(lowercase(temp_file%file_name), "ocean") .NE. 0).OR.&
+                     &    (diag_subset_output == DIAG_OCEAN .AND. INDEX(lowercase(temp_file%file_name), "ocean") .EQ. 0) ) THEN
                    CYCLE parser
                 ELSE IF ( temp_file%new_file_freq > 0 ) THEN ! Call the init_file subroutine.  The '1' is for the tile_count
                    CALL init_file(temp_file%file_name, temp_file%output_freq, temp_file%iOutput_freq_units, temp_file%file_format,&
@@ -485,8 +485,8 @@ CONTAINS
                         & CALL error_mesg("diag_table_mod::Parse_diag_table",&
                         & TRIM(local_err_msg)//" (line: "//TRIM(line_number)//").",WARNING)
                    CYCLE parser
-                ELSE IF ( (diag_subset_output == DIAG_OTHER .AND. VERIFY('ocean', lowercase(temp_field%file_name)) == 0).OR.&
-                     &    (diag_subset_output == DIAG_OCEAN .AND. VERIFY('ocean', lowercase(temp_field%file_name)) /= 0) ) THEN
+                ELSE IF ( (diag_subset_output == DIAG_OTHER .AND. INDEX(lowercase(temp_field%file_name), "ocean") .NE. 0).OR.&
+                     &    (diag_subset_output == DIAG_OCEAN .AND. INDEX(lowercase(temp_field%file_name), "ocean") .EQ. 0) ) THEN
                    CYCLE parser
                 ELSE IF ( lowercase(TRIM(temp_field%spatial_ops)) == 'none' ) THEN
                    CALL init_input_field(temp_field%module_name, temp_field%field_name, 1)

@@ -20,7 +20,7 @@
 #define MPP_TYPE_ real
 #include <mpp_read_2Ddecomp.h>
 
-#ifdef OVERLOAD_R4
+#ifdef OVERLOAD_R8
 #undef READ_RECORD_CORE_
 #define READ_RECORD_CORE_ mpp_read_record_core_r8
 #undef READ_RECORD_
@@ -369,7 +369,7 @@
       return
     end subroutine mpp_read_region_r3D
 
-#ifdef OVERLOAD_R4
+#ifdef OVERLOAD_R8
     subroutine read_record_core_r8(unit, field, nwords, data, start, axsiz)
       integer,         intent(in)    :: unit
       type(fieldtype), intent(in)    :: field

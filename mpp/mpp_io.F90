@@ -327,12 +327,24 @@ use mpp_domains_mod,    only : domain1d, domain2d, NULL_DOMAIN1D, mpp_domains_in
 use mpp_domains_mod,    only : mpp_get_global_domain, mpp_get_compute_domain
 use mpp_domains_mod,    only : mpp_get_data_domain, mpp_get_memory_domain, mpp_get_pelist
 use mpp_domains_mod,    only : mpp_update_domains, mpp_global_field, mpp_domain_is_symmetry
-use mpp_domains_mod,    only : operator( .NE. ), mpp_get_domain_shift
+use mpp_domains_mod,    only : operator( .NE. ), mpp_get_domain_shift, mpp_get_UG_compute_domains
 use mpp_domains_mod,    only : mpp_get_io_domain, mpp_domain_is_tile_root_pe, mpp_get_domain_tile_root_pe
 use mpp_domains_mod,    only : mpp_get_tile_id, mpp_get_tile_npes, mpp_get_io_domain_layout
 use mpp_domains_mod,    only : mpp_get_domain_name, mpp_get_domain_npes
 use mpp_parameter_mod,  only : MPP_FILL_DOUBLE,MPP_FILL_INT
 use mpp_mod,            only : mpp_chksum
+
+!----------
+!ug support
+use mpp_domains_mod, only: domainUG, &
+                           mpp_get_UG_io_domain, &
+                           mpp_domain_UG_is_tile_root_pe, &
+                           mpp_get_UG_domain_tile_id, &
+                           mpp_get_UG_domain_npes, &
+                           mpp_get_io_domain_UG_layout, &
+                           mpp_get_UG_compute_domain, &
+                           mpp_get_UG_domain_pelist
+!----------
 
 implicit none
 private
@@ -421,7 +433,7 @@ type :: atttype
      character(len=128)      :: name
      character(len=128)      :: units
      character(len=256)      :: longname
-     character(len=128)      :: standard_name   ! CF standard name
+     character(len=256)      :: standard_name   ! CF standard name
      real                    :: min, max, missing, fill, scale, add
      integer                 :: pack
      integer(LONG_KIND), dimension(3) :: checksum
@@ -459,6 +471,10 @@ type :: atttype
      type(fieldtype), pointer :: var(:) =>NULL()
      type(atttype), pointer   :: att(:) =>NULL()
      type(domain2d), pointer  :: domain =>NULL()
+!----------
+!ug support
+     type(domainUG),pointer :: domain_ug => null() !Is this actually pointed to?
+!----------
   end type filetype
 
 !***********************************************************************
@@ -568,7 +584,7 @@ type :: atttype
      module procedure mpp_read_text
      module procedure mpp_read_region_r2D
      module procedure mpp_read_region_r3D
-#ifdef OVERLOAD_R4
+#ifdef OVERLOAD_R8
      module procedure mpp_read_region_r2D_r8
      module procedure mpp_read_region_r3D_r8
      module procedure mpp_read_2ddecomp_r2d_r8
@@ -875,7 +891,7 @@ type :: atttype
 
   interface write_record
      module procedure write_record_default
-#ifdef OVERLOAD_R4
+#ifdef OVERLOAD_R8
      module procedure write_record_r8
 #endif
   end interface
@@ -884,7 +900,7 @@ type :: atttype
      module procedure mpp_write_2ddecomp_r2d
      module procedure mpp_write_2ddecomp_r3d
      module procedure mpp_write_2ddecomp_r4d
-#ifdef OVERLOAD_R4
+#ifdef OVERLOAD_R8
      module procedure mpp_write_2ddecomp_r2d_r8
      module procedure mpp_write_2ddecomp_r3d_r8
      module procedure mpp_write_2ddecomp_r4d_r8
@@ -1043,6 +1059,25 @@ type :: atttype
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
+!----------
+!ug support
+public :: mpp_io_unstructured_write
+public :: mpp_io_unstructured_read
+
+interface mpp_io_unstructured_write
+    module procedure mpp_io_unstructured_write_r_1D
+    module procedure mpp_io_unstructured_write_r_2D
+    module procedure mpp_io_unstructured_write_r_3D
+    module procedure mpp_io_unstructured_write_r_4D
+end interface mpp_io_unstructured_write
+
+interface mpp_io_unstructured_read
+    module procedure mpp_io_unstructured_read_r_1D
+    module procedure mpp_io_unstructured_read_r_2D
+    module procedure mpp_io_unstructured_read_r_3D
+end interface mpp_io_unstructured_read
+!----------
+
 contains
 
 #include <mpp_io_util.inc>
@@ -1050,5 +1085,11 @@ contains
 #include <mpp_io_connect.inc>
 #include <mpp_io_read.inc>
 #include <mpp_io_write.inc>
+
+!----------
+!ug support
+#include <mpp_io_unstructured_write.inc>
+#include <mpp_io_unstructured_read.inc>
+!----------
 
 end module mpp_io_mod

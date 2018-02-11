@@ -280,6 +280,8 @@ subroutine MPP_CREATE_GROUP_UPDATE_3D_V_( group, fieldx, fieldy, domain, flags, 
      group%jsize_y  = jsize_y
      group%ksize_v  = ksize_x
      update_edge_only = BTEST(update_flags, EDGEONLY)
+     group%nonsym_edge = .false.
+
      recv(1) = BTEST(update_flags,EAST)
      recv(3) = BTEST(update_flags,SOUTH)
      recv(5) = BTEST(update_flags,WEST)
@@ -301,7 +303,29 @@ subroutine MPP_CREATE_GROUP_UPDATE_3D_V_( group, fieldx, fieldy, domain, flags, 
         recv(6) = recv(5) .AND. recv(7)
         recv(8) = recv(7) .AND. recv(1)
      endif
-     group%recv_v = recv
+     group%recv_x = recv
+     group%recv_y = recv
+
+     !--- NONSYMEDGE is only for non-symmetric domain and CGRID/DGRID
+     if( .not. domain%symmetry .and. (update_gridtype==CGRID_NE .OR. update_gridtype==DGRID_NE)) then
+        group%nonsym_edge = BTEST(update_flags, NONSYMEDGE)
+     endif
+     if( group%nonsym_edge ) then
+        group%recv_x(2:8:2) = .false.
+        group%recv_y(2:8:2) = .false.
+        if(update_gridtype==CGRID_NE) then
+           group%recv_x(3) = .false.
+           group%recv_x(7) = .false.
+           group%recv_y(1) = .false.
+           group%recv_y(5) = .false.
+        else if(update_gridtype==DGRID_NE) then
+           group%recv_x(1) = .false.
+           group%recv_x(5) = .false.
+           group%recv_y(3) = .false.
+           group%recv_y(7) = .false.
+        endif
+     endif
+
      select case(group%gridtype)
      case (AGRID)
         position_x = CENTER
@@ -374,14 +398,14 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   MPP_TYPE_,                   intent(in)    :: d_type
 
   integer   :: nscalar, nvector, nlist
-  logical   :: recv_v(8)
+  logical   :: recv_y(8)
   integer   :: nsend, nrecv, flags_v
   integer   :: msgsize
   integer   :: from_pe, to_pe, buffer_pos, pos
   integer   :: ksize, is, ie, js, je
   integer   :: n, l, m, i, j, k, buffer_start_pos, nk
   integer   :: shift, gridtype, midpoint
-  integer   :: npack, nunpack, rotation
+  integer   :: npack, nunpack, rotation, isd
   character(len=8)            :: text
 
   MPP_TYPE_ :: buffer(mpp_domains_stack_size)
@@ -411,7 +435,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   else
      call mpp_error(FATAL, "MPP_DO_GROUP_UPDATE: nscalar and nvector are all 0")
   endif
-  if(nvector > 0) recv_v = group%recv_v
+  if(nvector > 0) recv_y = group%recv_y
 
   ptr = LOC(mpp_domains_stack)
 
@@ -500,7 +524,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
         ! other half may have the wrong sign
         !off west edge, when update north or west direction
         j = domain%y(1)%global%end+shift
-        if ( recv_v(7) .OR. recv_v(5) ) then
+        if ( recv_y(7) .OR. recv_y(5) ) then
            select case(gridtype)
            case(BGRID_NE)
               if(domain%symmetry) then
@@ -525,13 +549,14 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
               end if
            case(CGRID_NE)
               is = domain%x(1)%global%begin
-              if( is.GT.domain%x(1)%data%begin )then
+              isd = domain%x(1)%compute%begin - group%whalo_v
+              if( is.GT.isd )then
                  if( 2*is-domain%x(1)%data%begin-1.GT.domain%x(1)%data%end ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
                  do l=1,nvector
                     ptr_fieldy = group%addrs_y(l)
                     do k = 1,ksize
-                       do i = domain%x(1)%data%begin,is-1
+                       do i = isd,is-1
                           fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
                        end do
                     end do
@@ -542,7 +567,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
         !off east edge
         is = domain%x(1)%global%end
         if(domain%x(1)%cyclic .AND. is.LT.domain%x(1)%data%end )then
-           ie = domain%x(1)%data%end
+           ie = domain%x(1)%compute%end+group%ehalo_v
            is = is + 1
            select case(gridtype)
            case(BGRID_NE)
@@ -701,8 +726,8 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   integer   :: k, buffer_pos, msgsize, pos, m, n, l
   integer   :: is, ie, js, je, dir, ksize, i, j
   integer   :: shift, gridtype, midpoint, flags_v
-  integer   :: nunpack, rotation, buffer_start_pos, nk
-  logical   :: recv_v(8)
+  integer   :: nunpack, rotation, buffer_start_pos, nk, isd
+  logical   :: recv_y(8)
   MPP_TYPE_ :: buffer(size(mpp_domains_stack_nonblock(:)))
   MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize_s)
   MPP_TYPE_ :: fieldx(group%is_x:group%ie_x,group%js_x:group%je_x, group%ksize_v)
@@ -723,7 +748,7 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   else
      ksize = group%ksize_v
   endif
-  if(nvector > 0) recv_v = group%recv_v
+  if(nvector > 0) recv_y = group%recv_y
   ptr = LOC(mpp_domains_stack_nonblock)
 
   if(num_nonblock_group_update < 1) call mpp_error(FATAL, &
@@ -775,7 +800,7 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
         ! other half may have the wrong sign
         !off west edge, when update north or west direction
         j = domain%y(1)%global%end+shift
-        if ( recv_v(7) .OR. recv_v(5) ) then
+        if ( recv_y(7) .OR. recv_y(5) ) then
            select case(gridtype)
            case(BGRID_NE)
               if(domain%symmetry) then
@@ -800,13 +825,14 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
               end if
            case(CGRID_NE)
               is = domain%x(1)%global%begin
-              if( is.GT.domain%x(1)%data%begin )then
+              isd = domain%x(1)%compute%begin - group%whalo_v
+              if( is.GT.isd)then
                  if( 2*is-domain%x(1)%data%begin-1.GT.domain%x(1)%data%end ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
                  do l=1,nvector
                     ptr_fieldy = group%addrs_y(l)
                     do k = 1,ksize
-                       do i = domain%x(1)%data%begin,is-1
+                       do i = isd,is-1
                           fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
                        end do
                     end do
@@ -817,7 +843,7 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
         !off east edge
         is = domain%x(1)%global%end
         if(domain%x(1)%cyclic .AND. is.LT.domain%x(1)%data%end )then
-           ie = domain%x(1)%data%end
+           ie = domain%x(1)%compute%end+group%ehalo_v
            is = is + 1
            select case(gridtype)
            case(BGRID_NE)

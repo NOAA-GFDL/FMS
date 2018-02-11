@@ -90,6 +90,7 @@
     if( mpp_domain2D_eq )mpp_domain2D_eq = size(a%list(:)).EQ.size(b%list(:))
     if( mpp_domain2D_eq )mpp_domain2D_eq = ALL(a%list%pe.EQ.b%list%pe)
     if( mpp_domain2D_eq )mpp_domain2D_eq = ALL(a%io_layout .EQ. b%io_layout)
+    if( mpp_domain2D_eq )mpp_domain2D_eq = a%symmetry .eqv. b%symmetry
 
     return
   end function mpp_domain2D_eq
@@ -874,16 +875,23 @@ end subroutine mpp_get_domain_shift
     integer,                    intent(in) :: position
     type(overlapSpec),          pointer    :: search_update_overlap
     type(overlapSpec),          pointer    :: update_ref
+    type(overlapSpec), pointer :: check => NULL()
+    integer :: ishift, jshift, shift
 
+    shift = 0; if(domain%symmetry) shift = 1
     select case(position)
     case (CENTER)
        update_ref => domain%update_T
+       ishift = 0; jshift = 0
     case (CORNER)
        update_ref => domain%update_C
+       ishift = shift; jshift = shift
     case (NORTH)
        update_ref => domain%update_N
+       ishift = 0; jshift = shift
     case (EAST)
        update_ref => domain%update_E
+       ishift = shift; jshift = 0
     case default
        call mpp_error(FATAL,"mpp_domains_util.inc(search_update_overlap): position should be CENTER|CORNER|EAST|NORTH")
     end select
@@ -899,7 +907,12 @@ end subroutine mpp_get_domain_shift
        if(.NOT. ASSOCIATED(search_update_overlap%next)) then
           allocate(search_update_overlap%next)
           search_update_overlap => search_update_overlap%next
-          call set_overlaps(domain, update_ref, search_update_overlap, whalo, ehalo, shalo, nhalo )
+          if(domain%fold .NE. 0) then
+             call compute_overlaps(domain, position, search_update_overlap, check, &
+                                   ishift, jshift, 0, 0, whalo, ehalo, shalo, nhalo)
+          else
+             call set_overlaps(domain, update_ref, search_update_overlap, whalo, ehalo, shalo, nhalo )
+          endif
           exit
        else
           search_update_overlap => search_update_overlap%next
@@ -1630,7 +1643,8 @@ end subroutine mpp_get_tile_compute_domains
      integer   :: nrecv_s, nrecv_x, nrecv_y
      integer   :: update_buffer_pos, tot_recv_size, tot_send_size
      integer   :: msgsize_s, msgsize_x, msgsize_y, msgsize
-     logical   :: recv_s(8), send_s(8), recv_v(8), send_v(8)
+     logical   :: recv_s(8), send_s(8)
+     logical   :: recv_x(8), send_x(8), recv_y(8), send_y(8)
      integer   :: ntot, n, l, m, ksize
      integer   :: i_s, i_x, i_y, rank_s, rank_x, rank_y, rank
      integer   :: ind_s(3*MAXOVERLAP)
@@ -1684,8 +1698,10 @@ end subroutine mpp_get_tile_compute_domains
         send_s = recv_s
      endif
      if(nvector > 0) then
-        recv_v = group%recv_v
-        send_v = recv_v
+        recv_x = group%recv_x
+        send_x = recv_x
+        recv_y = group%recv_y
+        send_y = recv_y
      end if
      nlist   = size(domain%list(:))
      group%initialized = .true.
@@ -1801,9 +1817,9 @@ end subroutine mpp_get_tile_compute_domains
         m = ind_s(l)
         if(m>0) msgsize_s = get_mesgsize(update_s%recv(m), recv_s)*ksize*nscalar
         m = ind_x(l)
-        if(m>0) msgsize_x = get_mesgsize(update_x%recv(m), recv_v)*ksize*nvector
+        if(m>0) msgsize_x = get_mesgsize(update_x%recv(m), recv_x)*ksize*nvector
         m = ind_y(l)
-        if(m>0) msgsize_y = get_mesgsize(update_y%recv(m), recv_v)*ksize*nvector
+        if(m>0) msgsize_y = get_mesgsize(update_y%recv(m), recv_y)*ksize*nvector
         msgsize = msgsize_s + msgsize_x + msgsize_y
         if( msgsize.GT.0 )then
            tot_recv_size = tot_recv_size + msgsize
@@ -1850,7 +1866,7 @@ end subroutine mpp_get_tile_compute_domains
            overptr => update_x%recv(m)
            do n = 1, overptr%count
               dir = overptr%dir(n)
-              if(recv_v(dir)) then
+              if(recv_x(dir)) then
                  nunpack = nunpack + 1
                  if(nunpack > MAXOVERLAP) call mpp_error(FATAL,  &
                    "set_group_update: nunpack is greater than MAXOVERLAP, increase MAXOVERLAP 2")
@@ -1872,7 +1888,7 @@ end subroutine mpp_get_tile_compute_domains
            overptr => update_y%recv(m)
            do n = 1, overptr%count
               dir = overptr%dir(n)
-              if(recv_v(dir)) then
+              if(recv_y(dir)) then
                  nunpack = nunpack + 1
                  if(nunpack > MAXOVERLAP) call mpp_error(FATAL,  &
                    "set_group_update: nunpack is greater than MAXOVERLAP, increase MAXOVERLAP 3")
@@ -1955,9 +1971,9 @@ end subroutine mpp_get_tile_compute_domains
         m = ind_s(l)
         if(m>0) msgsize_s = get_mesgsize(update_s%send(m), send_s)*ksize*nscalar
         m = ind_x(l)
-        if(m>0) msgsize_x = get_mesgsize(update_x%send(m), send_v)*ksize*nvector
+        if(m>0) msgsize_x = get_mesgsize(update_x%send(m), send_x)*ksize*nvector
         m = ind_y(l)
-        if(m>0) msgsize_y = get_mesgsize(update_y%send(m), send_v)*ksize*nvector
+        if(m>0) msgsize_y = get_mesgsize(update_y%send(m), send_y)*ksize*nvector
         msgsize = msgsize_s + msgsize_x + msgsize_y
         if( msgsize.GT.0 )then
            tot_send_size = tot_send_size + msgsize
@@ -2005,7 +2021,13 @@ end subroutine mpp_get_tile_compute_domains
            overptr => update_x%send(m)
            do n = 1, overptr%count
               dir = overptr%dir(n)
-              if(send_v(dir)) then
+              !--- nonsym_edge update is not for rotation of 90 or -90 degree ( cubic sphere grid )
+              if( group%nonsym_edge .and. (overptr%rotation(n)==NINETY .or. &
+                                          overptr%rotation(n)==MINUS_NINETY) ) then
+                 call mpp_error(FATAL, 'set_group_update: flags=NONSYMEDGEUPDATE is not compatible '// &
+                                       'with 90 or -90 degree rotation (normally cubic sphere grid' )
+              endif
+              if(send_x(dir)) then
                  npack = npack + 1
                  if(npack > MAXOVERLAP) call mpp_error(FATAL,  &
                    "set_group_update: npack is greater than MAXOVERLAP, increase MAXOVERLAP 2")
@@ -2027,7 +2049,12 @@ end subroutine mpp_get_tile_compute_domains
            overptr => update_y%send(m)
            do n = 1, overptr%count
               dir = overptr%dir(n)
-              if(send_v(dir)) then
+              if( group%nonsym_edge .and. (overptr%rotation(n)==NINETY .or. &
+                                          overptr%rotation(n)==MINUS_NINETY) ) then
+                 call mpp_error(FATAL, 'set_group_update: flags=NONSYMEDGEUPDATE is not compatible '// &
+                                       'with 90 or -90 degree rotation (normally cubic sphere grid' )
+              endif
+              if(send_y(dir)) then
                  npack = npack + 1
                  if(npack > MAXOVERLAP) call mpp_error(FATAL,  &
                    "set_group_update: npack is greater than MAXOVERLAP, increase MAXOVERLAP 3")

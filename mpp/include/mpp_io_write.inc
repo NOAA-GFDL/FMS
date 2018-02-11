@@ -4,11 +4,11 @@
 !                                                                            !
 !                             MPP_WRITE_META                                 !
 !                                                                            !
-!This series of routines is used to describe the contents of the file        !
-!being written on <unit>. Each file can contain any number of fields,        !
-!which can be functions of 0-3 spatial axes and 0-1 time axes. Axis          !
-!descriptors are stored in the <axistype> structure and field                !
-!descriptors in the <fieldtype> structure.                                   !
+! This series of routines is used to describe the contents of the file       !
+! being written on <unit>. Each file can contain any number of fields,       !
+! which can be functions of 0-3 spatial axes and 0-1 time axes. Axis         !
+! descriptors are stored in the <axistype> structure and field               !
+! descriptors in the <fieldtype> structure.                                  !
 !                                                                            !
 !  type, public :: axistype                                                  !
 !     sequence                                                               !
@@ -16,7 +16,7 @@
 !     character(len=128) :: units                                            !
 !     character(len=256) :: longname                                         !
 !     integer :: sense           !+/-1, depth or height?                     !
-!     type(domain1D) :: domain                                      !
+!     type(domain1D) :: domain                                               !
 !     real, pointer :: data(:) !axis values (not used if time axis)          !
 !     integer :: id                                                          !
 !  end type axistype                                                         !
@@ -26,17 +26,17 @@
 !     character(len=128) :: name                                             !
 !     character(len=128) :: units                                            !
 !     character(len=256) :: longname                                         !
-!     character(len=128) :: standard_name  !CF standard name                 !
+!     character(len=256) :: standard_name  !CF standard name                 !
 !     real :: min, max, missing, fill, scale, add                            !
 !     type(axistype), pointer :: axis(:)                                     !
 !     integer :: id                                                          !
 !  end type fieldtype                                                        !
 !                                                                            !
-!The metadata contained in the type is always written for each axis and      !
-!field. Any other metadata one wishes to attach to an axis or field          !
-!can subsequently be passed to mpp_write_meta using the ID, as shown below.  !
+! The metadata contained in the type is always written for each axis and     !
+! field. Any other metadata one wishes to attach to an axis or field         !
+! can subsequently be passed to mpp_write_meta using the ID, as shown below. !
 !                                                                            !
-!mpp_write_meta can take several forms:                                      !
+! mpp_write_meta can take several forms:                                     !
 !                                                                            !
 !  mpp_write_meta( unit, name, rval=rval, pack=pack )                        !
 !  mpp_write_meta( unit, name, ival=ival )                                   !
@@ -47,9 +47,9 @@
 !      integer, intent(in), optional :: ival(:)                              !
 !      character(len=*), intent(in), optional :: cval                        !
 !                                                                            !
-!    This form defines global metadata associated with the file as a         !
-!    whole. The attribute is named <name> and can take on a real, integer    !
-!    or character value. <rval> and <ival> can be scalar or 1D arrays.       !
+! This form defines global metadata associated with the file as a            !
+! whole. The attribute is named <name> and can take on a real, integer       !
+! or character value. <rval> and <ival> can be scalar or 1D arrays.          !
 !                                                                            !
 !  mpp_write_meta( unit, id, name, rval=rval, pack=pack )                    !
 !  mpp_write_meta( unit, id, name, ival=ival )                               !
@@ -60,55 +60,55 @@
 !      integer, intent(in), optional :: ival(:)                              !
 !      character(len=*), intent(in), optional :: cval                        !
 !                                                                            !
-!    This form defines metadata associated with a previously defined         !
-!    axis or field, identified to mpp_write_meta by its unique ID <id>.      !
-!    The attribute is named <name> and can take on a real, integer           !
-!    or character value. <rval> and <ival> can be scalar or 1D arrays.       !
-!    This need not be called for attributes already contained in             !
-!    the type.                                                               !
+! This form defines metadata associated with a previously defined            !
+! axis or field, identified to mpp_write_meta by its unique ID <id>.         !
+! The attribute is named <name> and can take on a real, integer              !
+! or character value. <rval> and <ival> can be scalar or 1D arrays.          !
+! This need not be called for attributes already contained in                !
+! the type.                                                                  !
 !                                                                            !
-!    PACK can take values 1,2,4,8. This only has meaning when writing        !
-!    floating point numbers. The value of PACK defines the number of words   !
-!    written into 8 bytes. For pack=4 and pack=8, an integer value is        !
-!    written: rval is assumed to have been scaled to the appropriate dynamic !
-!    range.                                                                  !
-!    PACK currently only works for netCDF files, and is ignored otherwise.   !
+! PACK can take values 1,2,4,8. This only has meaning when writing           !
+! floating point numbers. The value of PACK defines the number of words      !
+! written into 8 bytes. For pack=4 and pack=8, an integer value is           !
+! written: rval is assumed to have been scaled to the appropriate dynamic    !
+! range.                                                                     !
+! PACK currently only works for netCDF files, and is ignored otherwise.      !
 !                                                                            !
-!   subroutine mpp_write_meta_axis( unit, axis, name, units, longname, &     !
+!  subroutine mpp_write_meta_axis( unit, axis, name, units, longname, &      !
 !        cartesian, sense, domain, data )                                    !
 !     integer, intent(in) :: unit                                            !
 !     type(axistype), intent(inout) :: axis                                  !
 !     character(len=*), intent(in) :: name, units, longname                  !
 !     character(len=*), intent(in), optional :: cartesian                    !
 !     integer, intent(in), optional :: sense                                 !
-!     type(domain1D), intent(in), optional :: domain                 !
+!     type(domain1D), intent(in), optional :: domain                         !
 !     real, intent(in), optional :: data(:)                                  !
 !                                                                            !
-!    This form defines a time or space axis. Metadata corresponding to the   !
-!    type above are written to the file on <unit>. A unique ID for subsequent!
-!    references to this axis is returned in axis%id. If the <domain>         !
-!    element is present, this is recognized as a distributed data axis       !
-!    and domain decomposition information is also written if required (the   !
-!    domain decomposition info is required for multi-fileset multi-threaded  !
-!    I/O). If the <datLINK> element is allocated, it is considered to be a space!
-!    axis, otherwise it is a time axis with an unlimited dimension. Only one !
-!    time axis is allowed per file.                                          !
+! This form defines a time or space axis. Metadata corresponding to the      !
+! type above are written to the file on <unit>. A unique ID for subsequent   !
+! references to this axis is returned in axis%id. If the <domain>            !
+! element is present, this is recognized as a distributed data axis          !
+! and domain decomposition information is also written if required (the      !
+! domain decomposition info is required for multi-fileset multi-threaded     !
+! I/O). If the <datLINK> element is allocated, it is considered to be a      !
+! space axis, otherwise it is a time axis with an unlimited dimension.       !
+! Only one time axis is allowed per file.                                    !
 !                                                                            !
-!   subroutine mpp_write_meta_field( unit, field, axes, name, units, longname!
+!  subroutine mpp_write_meta_field( unit, field, axes, name, units, longname !
 !       stanadard_name, min, max, missing, fill, scale, add, pack)           !
 !     integer, intent(in) :: unit                                            !
 !     type(fieldtype), intent(out) :: field                                  !
 !     type(axistype), intent(in) :: axes(:)                                  !
-!     character(len=*), intent(in) :: name, units, longname,standard_name    !
+!     character(len=*), intent(in) :: name, units, longname, standard_name   !
 !     real, intent(in), optional :: min, max, missing, fill, scale, add      !
 !     integer, intent(in), optional :: pack                                  !
 !                                                                            !
-!    This form defines a field. Metadata corresponding to the type           !
-!    above are written to the file on <unit>. A unique ID for subsequent     !
-!    references to this field is returned in field%id. At least one axis     !
-!    must be associated, 0D variables are not considered. mpp_write_meta     !
-!    must previously have been called on all axes associated with this       !
-!    field.                                                                  !
+! This form defines a field. Metadata corresponding to the type              !
+! above are written to the file on <unit>. A unique ID for subsequent        !
+! references to this field is returned in field%id. At least one axis        !
+! must be associated, 0D variables are not considered. mpp_write_meta        !
+! must previously have been called on all axes associated with this          !
+! field.                                                                     !
 !                                                                            !
 ! The mpp_write_meta package also includes subroutines write_attribute and   !
 ! write_attribute_netcdf, that are private to this module.                   !
@@ -557,6 +557,7 @@
       allocate(axis%idata(axis%len))
        axis%idata = data
 !write metadata
+#ifdef use_netCDF
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
           error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, axis%len, axis%did )
           call netcdf_err( error, mpp_file(unit), axis )
@@ -565,6 +566,7 @@
       else
           call mpp_error( FATAL, 'MPP_WRITE_META_AXIS_I1D: Only netCDF format is currently supported.' )
       end if
+#endif
 !write axis attributes
       call mpp_write_meta( unit, axis%id, 'long_name', cval=axis%longname) ; axis%natt = axis%natt + 1
       if (lowercase(trim(axis%units)).ne.'none' .OR. .NOT.cf_compliance) then
@@ -622,6 +624,7 @@
       allocate(axis%idata(1))
       axis%idata = data
 !write metadata
+#ifdef use_netCDF
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
           error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, NF_UNLIMITED, axis%did )
           call netcdf_err( error, mpp_file(unit), axis )
@@ -630,6 +633,7 @@
       else
           call mpp_error( FATAL, 'MPP_WRITE_META_AXIS_UNLIMITED: Only netCDF format is currently supported.' )
       end if
+#endif
 !write axis attributes
       if(present(longname)) then
          call mpp_write_meta(unit,axis%id,'long_name',cval=axis%longname); axis%natt=axis%natt+1
@@ -651,7 +655,7 @@
 
 
     subroutine mpp_write_meta_field( unit, field, axes, name, units, longname,&
-         min, max, missing, fill, scale, add, pack, time_method,standard_name, checksum)
+         min, max, missing, fill, scale, add, pack, time_method, standard_name, checksum)
 !define field: must have already called mpp_write_meta(axis) for each axis
       integer, intent(in) :: unit
       type(fieldtype), intent(inout) :: field
@@ -838,7 +842,7 @@
          else if (field%pack==0) then ! some safety checks for integer fills
             if ( present(scale).OR.present(add) ) then
                call mpp_error(FATAL,"add,scale not currently implimented for pack=0 int handling, try reals instead.")
-            else 
+            else
                ! Trust No One
                call mpp_write_meta( unit, field%id, '_FillValue', ival=MPP_FILL_INT, pack=pack )
             end if
@@ -1039,7 +1043,7 @@
 !  mpp_write( unit, field, data, tstamp )                              !
 !     integer, intent(in) :: unit                                      !
 !     type(fieldtype), intent(in) :: field                             !
-!     real(DOUBLE_KIND), optional :: tstamp                                         !
+!     real(DOUBLE_KIND), optional :: tstamp                            !
 !     data is real and can be scalar or of rank 1-3.                   !
 !                                                                      !
 ! For distributed data, use                                            !
@@ -1048,7 +1052,7 @@
 !     integer, intent(in) :: unit                                      !
 !     type(fieldtype), intent(in) :: field                             !
 !     type(domain2D), intent(in) :: domain                             !
-!     real(DOUBLE_KIND), optional :: tstamp                                         !
+!     real(DOUBLE_KIND), optional :: tstamp                            !
 !     data is real and can be of rank 2 or 3.                          !
 !                                                                      !
 !  mpp_write( unit, axis )                                             !
@@ -1075,7 +1079,7 @@
 #define MPP_TYPE_ real
 #include <mpp_write_2Ddecomp.h>
 
-#ifdef OVERLOAD_R4
+#ifdef OVERLOAD_R8
 #define WRITE_RECORD_ write_record_r8
 #undef MPP_WRITE_2DDECOMP_2D_
 #undef MPP_WRITE_2DDECOMP_2D_

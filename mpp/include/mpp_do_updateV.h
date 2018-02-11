@@ -51,6 +51,7 @@
            call mpp_error( FATAL, 'MPP_DO_UPDATE_V: Incompatible grid offset and fold.' )
 
       update_edge_only = BTEST(update_flags, EDGEONLY)
+      recv = .false.
       recv(1) = BTEST(update_flags,EAST)
       recv(3) = BTEST(update_flags,SOUTH)
       recv(5) = BTEST(update_flags,WEST)
