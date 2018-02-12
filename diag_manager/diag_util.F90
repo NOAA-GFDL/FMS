@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-include <fms_platform.h>
+#include <fms_platform.h>
 
 MODULE diag_util_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">

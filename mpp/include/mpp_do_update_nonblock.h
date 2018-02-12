@@ -2,7 +2,7 @@
 !***********************************************************************
 !*                   GNU Lesser General Public License
 !*
-!* This file is part of the GFDL Flexible Modeling system (FMS).
+!* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
 !* FMS is free software: you can redistribute it and/or modify it under
 !* the terms of the GNU Lesser General Public License as published by
@@ -15,8 +15,7 @@
 !* for more details.
 !*
 !* You should have received a copy of the GNU Lesser General Public
-!* License along with the FV3 dynamical core.
-!* If not, see <http://www.gnu.org/licenses/>.
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 subroutine MPP_START_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, ke_max, ke_list, flags, reuse_id_update, name)
   integer,                    intent(in) :: id_update
