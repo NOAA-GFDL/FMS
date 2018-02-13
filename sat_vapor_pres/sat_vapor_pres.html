@@ -1,3 +1,23 @@
+<!--
+***********************************************************************
+*                   GNU Lesser General Public License
+*
+* This file is part of the GFDL Flexible Modeling System (FMS).
+*
+* FMS is free software: you can redistribute it and/or modify it under
+* the terms of the GNU Lesser General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or (at
+* your option) any later version.
+*
+* FMS is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+* for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+***********************************************************************
+-->
 <html>
 <head>
 <META http-equiv="Content-Type" content="text/html; charset=EUC-JP">
@@ -21,7 +41,7 @@
           <a href="#NAMELIST">NAMELIST </a>~
           <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
           <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
-          <a href="#REFERENCES">REFERENCES </a>~ 
+          <a href="#REFERENCES">REFERENCES </a>~
           <a href="#NOTES">NOTES</a></font>
 <hr>
 <h2>Module sat_vapor_pres_mod</h2>
@@ -41,7 +61,7 @@
 <hr>
 <h4>OVERVIEW</h4>
 <!-- BEGIN OVERVIEW -->
-<p class="text">   Routines for determining the saturation vapor pressure (<tt>ES</tt>) 
+<p class="text">   Routines for determining the saturation vapor pressure (<tt>ES</tt>)
    and the derivative of <tt>ES</tt>   with respect to temperature. </p>
 <!-- END OVERVIEW -->
 <a name="DESCRIPTION"></a>
@@ -340,7 +360,7 @@
 <div>
 <dl>
 <dt>test_sat_vapor_pres</dt>
-<dd> 
+<dd>
 <pre>use sat_vapor_pres_mod
 implicit none
 
@@ -385,7 +405,7 @@ contains
  end function compute_des
 ----------------------------------
 
-end program test_sat_vapor_pres</pre> 
+end program test_sat_vapor_pres</pre>
 </dd>
 </dl>
 </div>
@@ -418,7 +438,7 @@ end program test_sat_vapor_pres</pre>
    values of <tt>ES</tt>   over ice are used, between 0C and 100C values of<tt>   ES</tt>   over water are used, between -20C and 0C blended values of <tt>ES</tt>   (over water and over ice) are used.
    <br>
 <br>
-   There are three tables constructed: <tt>ES</tt>, first derivative 
+   There are three tables constructed: <tt>ES</tt>, first derivative
    (<tt>ES'</tt>), and
    second derivative (<tt>ES</tt>'').  The ES table is constructed directly from
    the equations in the Smithsonian tables. The <tt>ES</tt>' table is constructed
@@ -427,8 +447,8 @@ end program test_sat_vapor_pres</pre>
    <br>
 <br>
    3. <b>Determination of <tt>es</tt>   and <tt>es'</tt>   from lookup tables</b>
-<br>   Values of the saturation vapor pressure (<tt>es</tt>) and the 
-   derivative (<tt>es'</tt>) are determined at temperature (T) from the lookup 
+<br>   Values of the saturation vapor pressure (<tt>es</tt>) and the
+   derivative (<tt>es'</tt>) are determined at temperature (T) from the lookup
    tables (<tt>ES</tt>, <tt>ES'</tt>, <tt>ES''</tt>)
    using the following formula. <pre>    es (T) = ES(t) + ES'(t) * dt + 0.5 * ES''(t) * dt**2
     es'(T) = ES'(t) + ES''(t) * dt
@@ -439,7 +459,7 @@ end program test_sat_vapor_pres</pre>
               [integer, default: tcmin = -160]
 
     tcmax   The maximum temperature (in deg C) in the lookup tables.
-              [integer, default: tcmin = +100]</pre> 
+              [integer, default: tcmin = +100]</pre>
 </div>
 <br>
 <!-- END NOTES -->

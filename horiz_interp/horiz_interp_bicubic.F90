@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 module horiz_interp_bicubic_mod
 
   use mpp_mod,               only: mpp_error, FATAL, stdout, mpp_pe, mpp_root_pe
@@ -5,7 +23,7 @@ module horiz_interp_bicubic_mod
   use horiz_interp_type_mod, only: horiz_interp_type
   use constants_mod,         only: PI
 
-  
+
  implicit none
 
 ! This module delivers methods for bicubic interpolation from a
@@ -14,27 +32,27 @@ module horiz_interp_bicubic_mod
 !
 !       bcuint
 !       bcucof
-! 
+!
 ! are methods taken from
 !
 !       W. H. Press, S. A. Teukolski, W. T. Vetterling and B. P. Flannery,
 !       Numerical Recipies in FORTRAN, The Art of Scientific Computing.
 !       Cambridge University Press, 1992
-!       
+!
 ! written by
 !       martin.schmidt@io-warnemuende.de (2004)
 ! revied by
 !       martin.schmidt@io-warnemuende.de (2004)
 !
 ! Version 1.0.0.2005-07-06
-! The module is thought to interact with MOM-4. 
+! The module is thought to interact with MOM-4.
 ! Alle benotigten Felder werden extern von MOM verwaltet, da sie
 ! nicht fur alle interpolierten Daten die gleiche Dimension haben mussen.
 
    private
-   
+
    public  :: horiz_interp_bicubic, horiz_interp_bicubic_new, horiz_interp_bicubic_del, fill_xy
-   public  :: horiz_interp_bicubic_init   
+   public  :: horiz_interp_bicubic_init
 
   interface horiz_interp_bicubic_new
     module procedure horiz_interp_bicubic_new_1d
@@ -45,31 +63,31 @@ module horiz_interp_bicubic_mod
 #include<file_version.h>
    logical            :: module_is_initialized = .FALSE.
    integer            :: verbose_bicubic = 0
-   
+
 !     Grid variables
 !     xc, yc : co-ordinates of the coarse grid
 !     xf, yf : co-ordinates of the fine grid
 !     fc     : variable to be interpolated at the coarse grid
-!     dfc_x  : x-derivative of fc at the coarse grid 
-!     dfc_y  : y-derivative of fc at the coarse grid 
-!     dfc_xy : x-y-derivative of fc at the coarse grid 
+!     dfc_x  : x-derivative of fc at the coarse grid
+!     dfc_y  : y-derivative of fc at the coarse grid
+!     dfc_xy : x-y-derivative of fc at the coarse grid
 !     ff     : variable to be interpolated at the fine grid
-!     dff_x  : x-derivative of fc at the fine grid 
-!     dff_y  : y-derivative of fc at the fine grid 
-!     dff_xy : x-y-derivative of fc at the fine grid 
-      
+!     dff_x  : x-derivative of fc at the fine grid
+!     dff_y  : y-derivative of fc at the fine grid
+!     dff_xy : x-y-derivative of fc at the fine grid
+
 
    logical            :: initialized_bicubic = .false.
-   
-   
-   real, save         :: missing = -1e33 
-   real               :: tpi  
- 
+
+
+   real, save         :: missing = -1e33
+   real               :: tpi
+
    interface fill_xy
       module procedure fill_xy
    end interface
 
-   
+
    contains
 
   !#######################################################################
@@ -77,7 +95,7 @@ module horiz_interp_bicubic_mod
   !  <OVERVIEW>
   !     writes version number to logfile.out
   !  </OVERVIEW>
-  !  <DESCRIPTION>       
+  !  <DESCRIPTION>
   !     writes version number to logfile.out
   !  </DESCRIPTION>
 
@@ -106,9 +124,9 @@ module horiz_interp_bicubic_mod
   !     call horiz_interp_bicubic_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose_bicubic, src_modulo )
 
   !   </TEMPLATE>
-  !   
+  !
   !   <IN NAME="lon_in" TYPE="real, dimension(:,:)" UNITS="radians">
-  !      Longitude (in radians) for source data grid. 
+  !      Longitude (in radians) for source data grid.
   !   </IN>
 
   !   <IN NAME="lat_in" TYPE="real, dimension(:,:)" UNITS="radians">
@@ -116,11 +134,11 @@ module horiz_interp_bicubic_mod
   !   </IN>
 
   !   <IN NAME="lon_out" TYPE="real, dimension(:,:)" UNITS="radians" >
-  !      Longitude (in radians) for source data grid. 
+  !      Longitude (in radians) for source data grid.
   !   </IN>
 
   !   <IN NAME="lat_out" TYPE="real, dimension(:,:)" UNITS="radians" >
-  !      Latitude (in radians) for source data grid. 
+  !      Latitude (in radians) for source data grid.
   !   </IN>
 
   !   <IN NAME="src_modulo" TYPE="logical, optional">
@@ -133,8 +151,8 @@ module horiz_interp_bicubic_mod
   !   </IN>
 
   !   <INOUT NAME="Interp" TYPE="type(horiz_interp_type)" >
-  !      A derived-type variable containing indices and weights used for subsequent 
-  !      interpolations. To reinitialize this variable for a different grid-to-grid 
+  !      A derived-type variable containing indices and weights used for subsequent
+  !      interpolations. To reinitialize this variable for a different grid-to-grid
   !      interpolation you must first use the "horiz_interp_bicubic_del" interface.
   !   </INOUT>
 
@@ -147,27 +165,27 @@ module horiz_interp_bicubic_mod
     real, intent(in),  dimension(:,:)      :: lon_out, lat_out
     integer, intent(in),          optional :: verbose
     logical, intent(in),          optional :: src_modulo
-    integer                                :: i, j, ip1, im1, jp1, jm1 
+    integer                                :: i, j, ip1, im1, jp1, jm1
     logical                                :: src_is_modulo
     integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
     integer                                :: jcl, jcu, icl, icu, jj
     real                                   :: xz, yz
     integer                                :: unit
-  
+
     if(present(verbose)) verbose_bicubic = verbose
-    src_is_modulo = .false. 
+    src_is_modulo = .false.
     if (present(src_modulo)) src_is_modulo = src_modulo
 
     if(size(lon_out,1) /= size(lat_out,1) .or. size(lon_out,2) /= size(lat_out,2) ) &
          call mpp_error(FATAL,'horiz_interp_bilinear_mod: when using bilinear ' // &
-         'interplation, the output grids should be geographical grids')    
+         'interplation, the output grids should be geographical grids')
 
-    !--- get the grid size 
+    !--- get the grid size
     nlon_in  = size(lon_in)   ; nlat_in  = size(lat_in)
     nlon_out = size(lon_out,1); nlat_out = size(lat_out,2)
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
     Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
-!   use wti(:,:,1) for x-derivative, wti(:,:,2) for y-derivative, wti(:,:,3) for xy-derivative  
+!   use wti(:,:,1) for x-derivative, wti(:,:,2) for y-derivative, wti(:,:,3) for xy-derivative
     allocate ( Interp%wti    (nlon_in, nlat_in, 3) )
     allocate ( Interp%lon_in (nlon_in) )
     allocate ( Interp%lat_in (nlat_in) )
@@ -175,7 +193,7 @@ module horiz_interp_bicubic_mod
     allocate ( Interp%rat_y  (nlon_out, nlat_out) )
     allocate ( Interp%i_lon  (nlon_out, nlat_out, 2) )
     allocate ( Interp%j_lat  (nlon_out, nlat_out, 2) )
-    
+
     Interp%lon_in = lon_in
     Interp%lat_in = lat_in
 
@@ -191,18 +209,18 @@ module horiz_interp_bicubic_mod
          write (unit,'(/," Longitude of fine grid points (radian): xf(i) i=1, ",i4)') Interp%nlat_dst
          write (unit,'(1x,10f10.4)') (lon_out(jj,i),jj=1,Interp%nlon_dst)
        enddo
-       do i=1, Interp%nlon_dst 
+       do i=1, Interp%nlon_dst
          write (unit,*)
          write (unit,'(/," Latitude of fine grid points (radian):  yf(j) j=1, ",i4)') Interp%nlon_dst
          write (unit,'(1x,10f10.4)') (lat_out(i,jj),jj=1,Interp%nlat_dst)
        enddo
-    endif  
-      
+    endif
+
 
 !---------------------------------------------------------------------------
 !     Find the x-derivative. Use central differences and forward or
 !     backward steps at the boundaries
-    
+
     do j=1,nlat_in
       do i=1,nlon_in
         ip1=min(i+1,nlon_in)
@@ -210,10 +228,10 @@ module horiz_interp_bicubic_mod
         Interp%wti(i,j,1) = 1./(Interp%lon_in(ip1)-Interp%lon_in(im1))
       enddo
     enddo
-      
-      
+
+
 !---------------------------------------------------------------------------
-     
+
 !     Find the y-derivative. Use central differences and forward or
 !     backward steps at the boundaries
       do j=1,nlat_in
@@ -223,9 +241,9 @@ module horiz_interp_bicubic_mod
           Interp%wti(i,j,2) = 1./(Interp%lat_in(jp1)-Interp%lat_in(jm1))
         enddo
       enddo
-   
+
 !---------------------------------------------------------------------------
-     
+
 !     Find the xy-derivative. Use central differences and forward or
 !     backward steps at the boundaries
       do j=1,nlat_in
@@ -238,7 +256,7 @@ module horiz_interp_bicubic_mod
         enddo
       enddo
 !---------------------------------------------------------------------------
-!     Now for each point at the dest-grid find the boundary points of 
+!     Now for each point at the dest-grid find the boundary points of
 !     the source grid
       do j=1, nlat_out
         do i=1,nlon_out
@@ -254,7 +272,7 @@ module horiz_interp_bicubic_mod
              jcl = nlat_in
              jcu = nlat_in
           else
-             jcl = indl(Interp%lat_in, yz) 
+             jcl = indl(Interp%lat_in, yz)
              jcu = indu(Interp%lat_in, yz)
           endif
 
@@ -267,15 +285,15 @@ module horiz_interp_bicubic_mod
             icl = nlon_in
             icu = 1
             Interp%rat_x(i,j) = (xz - Interp%lon_in(icl))/(Interp%lon_in(icu) - Interp%lon_in(icl) + tpi)
-          else 
-            icl = indl(Interp%lon_in, xz) 
-            icu = indu(Interp%lon_in, xz) 
+          else
+            icl = indl(Interp%lon_in, xz)
+            icu = indu(Interp%lon_in, xz)
             Interp%rat_x(i,j) = (xz - Interp%lon_in(icl))/(Interp%lon_in(icu) - Interp%lon_in(icl))
           endif
           Interp%j_lat(i,j,1) = jcl
           Interp%j_lat(i,j,2) = jcu
-          Interp%i_lon(i,j,1) = icl 
-          Interp%i_lon(i,j,2) = icu 
+          Interp%i_lon(i,j,1) = icl
+          Interp%i_lon(i,j,2) = icu
           if(jcl == jcu) then
              Interp%rat_y(i,j) = 0.0
           else
@@ -298,7 +316,7 @@ module horiz_interp_bicubic_mod
     real, intent(in),  dimension(:)        :: lon_out, lat_out
     integer, intent(in),          optional :: verbose
     logical, intent(in),          optional :: src_modulo
-    integer                                :: i, j, ip1, im1, jp1, jm1 
+    integer                                :: i, j, ip1, im1, jp1, jm1
     logical                                :: src_is_modulo
     integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
     integer                                :: jcl, jcu, icl, icu, jj
@@ -306,10 +324,10 @@ module horiz_interp_bicubic_mod
     integer                                :: unit
 
     if(present(verbose)) verbose_bicubic = verbose
-    src_is_modulo = .false. 
+    src_is_modulo = .false.
     if (present(src_modulo)) src_is_modulo = src_modulo
 
-    !--- get the grid size 
+    !--- get the grid size
     nlon_in  = size(lon_in) ; nlat_in  = size(lat_in)
     nlon_out = size(lon_out); nlat_out = size(lat_out)
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
@@ -321,7 +339,7 @@ module horiz_interp_bicubic_mod
     allocate ( Interp%rat_y   (nlon_out, nlat_out) )
     allocate ( Interp%i_lon   (nlon_out, nlat_out, 2) )
     allocate ( Interp%j_lat   (nlon_out, nlat_out, 2) )
-    
+
     Interp%lon_in = lon_in
     Interp%lat_in = lat_in
 
@@ -337,13 +355,13 @@ module horiz_interp_bicubic_mod
        write (unit,'(1x,10f10.4)') (lon_out(jj),jj=1,Interp%nlon_dst)
        write (unit,'(/," Latitude of fine grid points (radian):  yf(j) j=1, ",i4)') Interp%nlon_dst
        write (unit,'(1x,10f10.4)') (lat_out(jj),jj=1,Interp%nlat_dst)
-    endif  
-      
+    endif
+
 
 !---------------------------------------------------------------------------
 !     Find the x-derivative. Use central differences and forward or
 !     backward steps at the boundaries
-    
+
     do j=1,nlat_in
       do i=1,nlon_in
         ip1=min(i+1,nlon_in)
@@ -351,10 +369,10 @@ module horiz_interp_bicubic_mod
         Interp%wti(i,j,1) = 1./(lon_in(ip1)-lon_in(im1))
       enddo
     enddo
-      
-      
+
+
 !---------------------------------------------------------------------------
-     
+
 !     Find the y-derivative. Use central differences and forward or
 !     backward steps at the boundaries
       do j=1,nlat_in
@@ -364,9 +382,9 @@ module horiz_interp_bicubic_mod
           Interp%wti(i,j,2) = 1./(lat_in(jp1)-lat_in(jm1))
         enddo
       enddo
-   
+
 !---------------------------------------------------------------------------
-     
+
 !     Find the xy-derivative. Use central differences and forward or
 !     backward steps at the boundaries
       do j=1,nlat_in
@@ -379,7 +397,7 @@ module horiz_interp_bicubic_mod
         enddo
       enddo
 !---------------------------------------------------------------------------
-!     Now for each point at the dest-grid find the boundary points of 
+!     Now for each point at the dest-grid find the boundary points of
 !     the source grid
       do j=1, nlat_out
         yz  = lat_out(j)
@@ -392,7 +410,7 @@ module horiz_interp_bicubic_mod
            jcl = nlat_in
            jcu = nlat_in
         else
-           jcl = indl(lat_in, yz) 
+           jcl = indl(lat_in, yz)
            jcu = indu(lat_in, yz)
         endif
         do i=1,nlon_out
@@ -406,17 +424,17 @@ module horiz_interp_bicubic_mod
             icl = nlon_in
             icu = 1
             Interp%rat_x(i,j) = (xz - Interp%lon_in(icl))/(Interp%lon_in(icu) - Interp%lon_in(icl) + tpi)
-          else 
-            icl = indl(lon_in, xz) 
-            icu = indu(lon_in, xz) 
+          else
+            icl = indl(lon_in, xz)
+            icu = indu(lon_in, xz)
             Interp%rat_x(i,j) = (xz - Interp%lon_in(icl))/(Interp%lon_in(icu) - Interp%lon_in(icl))
           endif
-          icl = indl(lon_in, xz) 
-          icu = indu(lon_in, xz) 
+          icl = indl(lon_in, xz)
+          icu = indu(lon_in, xz)
           Interp%j_lat(i,j,1) = jcl
           Interp%j_lat(i,j,2) = jcu
-          Interp%i_lon(i,j,1) = icl 
-          Interp%i_lon(i,j,2) = icu 
+          Interp%i_lon(i,j,1) = icl
+          Interp%i_lon(i,j,2) = icu
           if(jcl == jcu) then
              Interp%rat_y(i,j) = 0.0
           else
@@ -430,7 +448,7 @@ module horiz_interp_bicubic_mod
       enddo
 
   end subroutine horiz_interp_bicubic_new_1d
-   
+
   subroutine horiz_interp_bicubic( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value, missing_permit)
     type (horiz_interp_type), intent(in)        :: Interp
     real, intent(in),  dimension(:,:)           :: data_in
@@ -448,14 +466,14 @@ module horiz_interp_bicubic_mod
     integer :: iclp1, icup1, jclp1, jcup1
     integer :: iclm1, icum1, jclm1, jcum1
     integer :: i,j
-         
+
     if ( present(verbose) ) verbose_bicubic = verbose
 !    fill_in = .false.
 !    if ( present(fill) ) fill_in = fill
-!   use dfc_x and dfc_y as workspace      
+!   use dfc_x and dfc_y as workspace
 !    if ( fill_in ) call fill_xy(fc(ics:ice,jcs:jce), ics, ice, jcs, jce, maxpass=2)
 !    where ( data_in .le. missing ) data_in(:,:) = 0.
-!!  
+!!
     do j=1, Interp%nlat_dst
       do i=1, Interp%nlon_dst
         yz  = Interp%rat_y(i,j)
@@ -505,8 +523,8 @@ module horiz_interp_bicubic_mod
                 - data_in(icup1,jcum1) ) * Interp%wti(icu,jcu,3)
         y12(4)= ( data_in(iclp1,jcup1) + data_in(iclm1,jcum1) - data_in(iclm1,jcup1) &
                 - data_in(iclp1,jcum1) ) * Interp%wti(icl,jcu,3)
-        
-        call bcuint(y,y1,y2,y12,xcl,xcu,ycl,ycu,xz,yz,val,val1,val2) 
+
+        call bcuint(y,y1,y2,y12,xcl,xcu,ycl,ycu,xz,yz,val,val1,val2)
         data_out   (i,j) = val
         if(present(mask_out)) mask_out(i,j) = 1.
 !!        dff_x(i,j) = val1
@@ -515,10 +533,10 @@ module horiz_interp_bicubic_mod
     enddo
   return
   end subroutine horiz_interp_bicubic
-     
-   
+
+
 !---------------------------------------------------------------------------
-     
+
    subroutine bcuint(y,y1,y2,y12,x1l,x1u,x2l,x2u,t,u,ansy,ansy1,ansy2)
       real ansy,ansy1,ansy2,x1l,x1u,x2l,x2u,y(4),y1(4),y12(4),y2(4)
 !     uses bcucof
@@ -539,7 +557,7 @@ module horiz_interp_bicubic_mod
 !  (c) copr. 1986-92 numerical recipes software -3#(-)f.
    end subroutine bcuint
 !---------------------------------------------------------------------------
-     
+
    subroutine bcucof(y,y1,y2,y12,d1,d2,c)
       real d1,d2,c(4,4),y(4),y1(4),y12(4),y2(4)
       integer i,j,k,l
@@ -584,8 +602,8 @@ module horiz_interp_bicubic_mod
 
 !-----------------------------------------------------------------------
 
-    function indl(xc, xf) 
-! find the lower neighbour of xf in field xc, return is the index      
+    function indl(xc, xf)
+! find the lower neighbour of xf in field xc, return is the index
     real, intent(in) :: xc(1:)
     real, intent(in) :: xf
     integer             :: indl
@@ -600,9 +618,9 @@ module horiz_interp_bicubic_mod
     end function indl
 
 !-----------------------------------------------------------------------
-      
-    function indu(xc, xf) 
-! find the upper neighbour of xf in field xc, return is the index      
+
+    function indu(xc, xf)
+! find the upper neighbour of xf in field xc, return is the index
     real, intent(in) :: xc(1:)
     real, intent(in) :: xf
     integer             :: indu
@@ -614,7 +632,7 @@ module horiz_interp_bicubic_mod
        call mpp_error(FATAL,'Error in indu')
     return
     end function indu
-    
+
 !-----------------------------------------------------------------------
 
     subroutine fill_xy(fi, ics, ice, jcs, jce, mask, maxpass)
@@ -629,8 +647,8 @@ module horiz_interp_bicubic_mod
       real    :: tavr
       integer :: ipass = 0
       integer :: inl, inr, jnl, jnu, i, j, is, js,  iavr
-      
-      
+
+
       ready = .false.
 
       work_new(:,:) = fi(:,:)
@@ -734,7 +752,7 @@ module horiz_interp_bicubic_mod
         fi(:,:) = work_new(:,:)
       endif
       return
-    end subroutine fill_xy      
+    end subroutine fill_xy
 
   subroutine horiz_interp_bicubic_del( Interp )
 
@@ -751,5 +769,3 @@ module horiz_interp_bicubic_mod
   end subroutine horiz_interp_bicubic_del
 
 end module horiz_interp_bicubic_mod
-
-       

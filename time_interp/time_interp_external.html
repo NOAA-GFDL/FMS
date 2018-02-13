@@ -1,3 +1,23 @@
+<!--
+***********************************************************************
+*                   GNU Lesser General Public License
+*
+* This file is part of the GFDL Flexible Modeling System (FMS).
+*
+* FMS is free software: you can redistribute it and/or modify it under
+* the terms of the GNU Lesser General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or (at
+* your option) any later version.
+*
+* FMS is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+* for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+***********************************************************************
+-->
 <html>
 <head>
 <META http-equiv="Content-Type" content="text/html; charset=EUC-JP">
@@ -21,7 +41,7 @@
           <a href="#NAMELIST">NAMELIST </a>~
           <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
           <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
-          <a href="#REFERENCES">REFERENCES </a>~ 
+          <a href="#REFERENCES">REFERENCES </a>~
           <a href="#NOTES">NOTES</a></font>
 <hr>
 <h2>Module time_interp_external_mod</h2>
@@ -54,7 +74,7 @@
    data are defined over data domain for domain2d data
    (halo values are NOT updated by this module)
    <br>
-<br> 
+<br>
 </div>
 <br>
 <!-- END DESCRIPTION -->
@@ -136,14 +156,14 @@
 <b>DESCRIPTION</b>
 </dt>
 <dd>   initialize an external field.  Buffer entire field to memory (default) or
-   store "num_io_buffers" in memory to reduce memory allocations. 
-   distributed reads are supported using the optional "domain" flag.  
+   store "num_io_buffers" in memory to reduce memory allocations.
+   distributed reads are supported using the optional "domain" flag.
    Units conversion via the optional "desired_units" flag using udunits_mod.
    <br>
 <br>
    Return integer id of field for future calls to time_interp_external.
    <br>
-<br> 
+<br>
 </dd>
 <br>
 <br>
@@ -169,7 +189,7 @@
 <td valign="top" align="left"><tt>domain&nbsp;&nbsp;&nbsp;</tt></td><td>   domain flag (optional) <br>&nbsp;&nbsp;&nbsp;<span class="type">[mpp_domains_mod:domain2d]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>desired_units&nbsp;&nbsp;&nbsp;</tt></td><td>   Target units for data (optional), e.g. convert from deg_K to deg_C.  
+<td valign="top" align="left"><tt>desired_units&nbsp;&nbsp;&nbsp;</tt></td><td>   Target units for data (optional), e.g. convert from deg_K to deg_C.
    Failure to convert using udunits will result in failure of this module. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character(len=*)]</span></td>
 </tr>
 <tr>
@@ -215,7 +235,7 @@
 <b>DESCRIPTION</b>
 </dt>
 <dd>   Provide data from external file interpolated to current model time.
-   Data may be local to current processor or global, depending on 
+   Data may be local to current processor or global, depending on
    "init_external_field" flags. </dd>
 <br>
 <br>

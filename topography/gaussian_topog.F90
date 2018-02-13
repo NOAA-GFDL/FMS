@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 
 module gaussian_topog_mod
 
@@ -55,7 +73,7 @@ public :: gaussian_topog_init, get_gaussian_topog
 !     <TT>gaussian_topog_init</TT> is called.  The namelist variables
 !     are dimensioned (by 10), so that multiple mountains can be generated.
 !
-!     Internal parameter mxmtns = 10. By default no mountains are generated. 
+!     Internal parameter mxmtns = 10. By default no mountains are generated.
 !    </DATA>
 
    integer, parameter :: maxmts = 10
@@ -137,7 +155,7 @@ integer :: n
     zsurf = zsurf + get_gaussian_topog ( lon, lat, height(n), &
                 olon(n), olat(n), wlon(n), wlat(n), rlon(n), rlat(n))
   enddo
- module_is_initialized = .TRUE.                    
+ module_is_initialized = .TRUE.
 
 end subroutine gaussian_topog_init
 ! </SUBROUTINE>
