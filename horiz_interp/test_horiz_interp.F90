@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 #ifdef TEST_HORIZ_INTERP
 !z1l: currently only test bilinear interpolation.
 
@@ -11,7 +29,7 @@ program test
   use mpp_io_mod,       only : mpp_get_axes, mpp_get_axis_data, mpp_get_atts
   use mpp_io_mod,       only : MPP_RDONLY, MPP_NETCDF, MPP_MULTI, MPP_SINGLE, MPP_OVERWR
   use mpp_io_mod,       only : mpp_get_att_name, mpp_get_att_char, mpp_get_att_type, mpp_get_att_real
-  use mpp_io_mod,       only : mpp_write_meta, axistype, fieldtype, mpp_write, mpp_close 
+  use mpp_io_mod,       only : mpp_write_meta, axistype, fieldtype, mpp_write, mpp_close
   use mpp_domains_mod,  only : mpp_update_domains, mpp_define_domains, domain1d
   use mpp_domains_mod,  only : domain2d, mpp_define_layout, mpp_get_compute_domain
   use mpp_domains_mod,  only : mpp_get_domain_components, mpp_define_mosaic, mpp_define_io_domain
@@ -89,7 +107,7 @@ implicit none
   !--- currently only test for first time level. The following will read the input data,
   !--- do the remapping and write out data
   call process_data()
-  
+
   call mpp_close(src_unit)
 
   call fms_io_exit
@@ -124,9 +142,9 @@ contains
      call mpp_write_meta( unit, field, (/xaxis, yaxis, zaxis, taxis/), field_name, 'none', 'none', missing=missing_value)
      if(write_remap_index) then
         call mpp_write_meta( unit, field_istart, (/xaxis, yaxis/), "istart", 'none', 'none')
-        call mpp_write_meta( unit, field_iend, (/xaxis, yaxis/), "iend", 'none', 'none')     
+        call mpp_write_meta( unit, field_iend, (/xaxis, yaxis/), "iend", 'none', 'none')
         call mpp_write_meta( unit, field_jstart, (/xaxis, yaxis/), "jstart", 'none', 'none')
-        call mpp_write_meta( unit, field_jend, (/xaxis, yaxis/), "jend", 'none', 'none')    
+        call mpp_write_meta( unit, field_jend, (/xaxis, yaxis/), "jend", 'none', 'none')
      endif
 
      call mpp_write( unit, xaxis )
@@ -157,11 +175,11 @@ contains
      else if(trim(interp_method) == "bilinear" .and. use_2d_version) then
         write(stdout(),*) "use 2-D version of bilinear interpolation"
         call horiz_interp_new(Interp, x_src_2d*D2R, y_src_2d*D2R, x_dst*D2R, y_dst*D2R, &
-          interp_method = trim(interp_method) )    
+          interp_method = trim(interp_method) )
      else
         write(stdout(),*) "use 1-D version of interpolation"
         call horiz_interp_new(Interp, x_src*D2R, y_src*D2R, x_dst*D2R, y_dst*D2R, &
-          interp_method = trim(interp_method), grid_at_center = .true. )    
+          interp_method = trim(interp_method), grid_at_center = .true. )
      endif
 
      if(write_remap_index) then
@@ -189,7 +207,7 @@ contains
 
      call mpp_close(unit)
      deallocate(src_data, dst_data)
-  
+
   end subroutine process_data
 
 
@@ -229,12 +247,12 @@ contains
     call mpp_get_compute_domain(Domain, is, ie, js, je)
 
     allocate(tmp(2*is-1:2*ie+1,2*js-1:2*je+1))
- 
+
     start = 1; nread = 1
     start(1) = 2*is-1; nread(1) = 2*(ie-is+1)+1
     start(2) = 2*js-1; nread(2) = 2*(je-js+1)+1
 
-    call read_data(tile_file, "x", tmp, start, nread, domain) 
+    call read_data(tile_file, "x", tmp, start, nread, domain)
     if(trim(interp_method) == 'conservative' ) then
        allocate(x_dst(is:ie+1,js:je+1), y_dst(is:ie+1,js:je+1))
        do j = js, je+1
@@ -250,7 +268,7 @@ contains
           enddo
        enddo
     endif
-    call read_data(tile_file, "y", tmp, start, nread, domain)   
+    call read_data(tile_file, "y", tmp, start, nread, domain)
 
     if(trim(interp_method) == 'conservative' ) then
        do j = js, je+1
@@ -364,7 +382,7 @@ contains
     type(axistype) :: axis_bounds(2)
 
     call mpp_get_info(src_unit, ndim, nvar, natt, ntimes)
-    
+
     allocate(fields(nvar))
     call mpp_get_fields(src_unit, fields)
     src_field_index = 0
@@ -436,6 +454,6 @@ end program test
 
 #else
 module null_test_horiz_interp
-end module  
+end module
 
-#endif 
+#endif

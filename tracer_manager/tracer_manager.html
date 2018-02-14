@@ -1,3 +1,23 @@
+<!--
+***********************************************************************
+*                   GNU Lesser General Public License
+*
+* This file is part of the GFDL Flexible Modeling System (FMS).
+*
+* FMS is free software: you can redistribute it and/or modify it under
+* the terms of the GNU Lesser General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or (at
+* your option) any later version.
+*
+* FMS is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+* for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+***********************************************************************
+-->
 <html>
 <head>
 <META http-equiv="Content-Type" content="text/html; charset=EUC-JP">
@@ -21,7 +41,7 @@
           <a href="#NAMELIST">NAMELIST </a>~
           <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
           <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
-          <a href="#REFERENCES">REFERENCES </a>~ 
+          <a href="#REFERENCES">REFERENCES </a>~
           <a href="#NOTES">NOTES</a></font>
 <hr>
 <h2>Module tracer_manager_mod</h2>
@@ -52,21 +72,21 @@
 <div>   This code is a grouping of calls which will allow the simple
    introduction of tracers into the FMS framework. It is designed to
    allow users of a variety of component models interact easily with
-   the dynamical core of the model. 
+   the dynamical core of the model.
    <br>
 <br>
    In calling the tracer manager routines the user must provide a
    parameter identifying the model that the user is working with. This
-   parameter is defined within field_manager as MODEL_X 
+   parameter is defined within field_manager as MODEL_X
    where X is one of [ATMOS, OCEAN, LAND, ICE].
    <br>
 <br>
-   In many of these calls the argument list includes model and tracer_index. These 
-   are the parameter corresponding to the component model and the tracer_index N is 
-   the Nth tracer within the component model. Therefore a call with MODEL_ATMOS and 5 
+   In many of these calls the argument list includes model and tracer_index. These
+   are the parameter corresponding to the component model and the tracer_index N is
+   the Nth tracer within the component model. Therefore a call with MODEL_ATMOS and 5
    is different from a call with MODEL_OCEAN and 5.
    <br>
-<br> 
+<br>
 </div>
 <br>
 <!-- END DESCRIPTION -->
@@ -126,7 +146,7 @@
 <dd>   A function to query the "methods" associated with each tracer. </dd>
 <dt>
 <a href="#set_tracer_atts">set_tracer_atts</a>:</dt>
-<dd>   A subroutine to allow the user set the tracer longname and units from the 
+<dd>   A subroutine to allow the user set the tracer longname and units from the
    tracer initialization routine. </dd>
 <dt>
 <a href="#set_tracer_method">set_tracer_method</a>:</dt>
@@ -158,7 +178,7 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   This routine writes the version to the logfile and 
+<dd>   This routine writes the version to the logfile and
    sets the module initialization flag. </dd>
 <br>
 <br>
@@ -343,7 +363,7 @@
    (Note that subroutine get_tracer_indices returns these subsets) <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer, optional, dimension(:)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>verbose&nbsp;&nbsp;&nbsp;</tt></td><td>   A flag to allow the message saying that a tracer with this name has not 
+<td valign="top" align="left"><tt>verbose&nbsp;&nbsp;&nbsp;</tt></td><td>   A flag to allow the message saying that a tracer with this name has not
    been found. This should only be used for debugging purposes. <br>&nbsp;&nbsp;&nbsp;<span class="type">[logical, optional]</span></td>
 </tr>
 </table>
@@ -356,7 +376,7 @@
 <table border="0">
 <tr>
 <td valign="top" align="left"><tt>get_tracer_index&nbsp;&nbsp;&nbsp;</tt></td><td>   integer function:
-   The index of the tracer named "name". 
+   The index of the tracer named "name".
    If no tracer by that name exists then the returned value is NO_TRACER.
    logical function:
    If no tracer by that name exists then the returned value is .false.,
@@ -518,7 +538,7 @@
 <dd>
 <table border="0">
 <tr>
-<td valign="top" align="left"><tt>check_if_prognostic&nbsp;&nbsp;&nbsp;</tt></td><td>   A logical flag set TRUE if the tracer is 
+<td valign="top" align="left"><tt>check_if_prognostic&nbsp;&nbsp;&nbsp;</tt></td><td>   A logical flag set TRUE if the tracer is
    prognostic. <br>&nbsp;&nbsp;&nbsp;<span class="type">[logical]</span></td>
 </tr>
 </table>
@@ -535,7 +555,7 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   If the profile type is 'fixed' then the tracer field values are set 
+<dd>   If the profile type is 'fixed' then the tracer field values are set
    equal to the surface value.
    If the profile type is 'profile' then the top/bottom of model and
    surface values are read and an exponential profile is calculated,
@@ -553,7 +573,7 @@
    <br>
 <br>
    "profile_type","profile","surface_value = 1e-12, top_value = 1e-15"
-   In a 15 layer model this would return values of surf_value = 1e-12 and 
+   In a 15 layer model this would return values of surf_value = 1e-12 and
    multiplier = 0.6309573 i.e 1e-15 = 1e-12*(0.6309573^15)
    In this case the model should be MODEL_ATMOS as you have a "top" value.
    <br>
@@ -631,12 +651,12 @@
 <table border="0">
 <tr>
 <td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>   A string containing the modified name to be used with
-   method_type. i.e. "2nd_order" might be the default for 
-   advection. One could use "4th_order" here to modify 
+   method_type. i.e. "2nd_order" might be the default for
+   advection. One could use "4th_order" here to modify
    that behaviour. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>control&nbsp;&nbsp;&nbsp;</tt></td><td>   A string containing the modified parameters that are 
+<td valign="top" align="left"><tt>control&nbsp;&nbsp;&nbsp;</tt></td><td>   A string containing the modified parameters that are
    associated with the method_type and name. <br>&nbsp;&nbsp;&nbsp;<span class="type">[character, optional]</span></td>
 </tr>
 <tr>
@@ -651,7 +671,7 @@
 <b>NOTE</b>
 </dt>
 <dd>   At present the tracer manager module allows the initialization of a tracer
-   profile if a restart does not exist for that tracer. 
+   profile if a restart does not exist for that tracer.
    Options for this routine are as follows
    <br>
 <br>
@@ -664,7 +684,7 @@
    |profile_type |profile      |surface_value = X, bottom_value = Y |(ocean)
    ==================================================================
    <br>
-<br> 
+<br>
 </dd>
 <br>
 <br>
@@ -679,10 +699,10 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   A function to allow the user set the tracer longname and units from the 
-   tracer initialization routine. It seems sensible that the user who is 
-   coding the tracer code will know what units they are working in and it 
-   is probably safer to set the value in the tracer code rather than in 
+<dd>   A function to allow the user set the tracer longname and units from the
+   tracer initialization routine. It seems sensible that the user who is
+   coding the tracer code will know what units they are working in and it
+   is probably safer to set the value in the tracer code rather than in
    the field table. </dd>
 <br>
 <br>
@@ -833,7 +853,7 @@
 <dd>
 <span class="errmsg">tracer with this name not found: X</span>
 </dd>
-<dd> 
+<dd>
 </dd>
 </dl>
 <br>

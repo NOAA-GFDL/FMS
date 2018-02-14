@@ -1,3 +1,23 @@
+<!--
+***********************************************************************
+*                   GNU Lesser General Public License
+*
+* This file is part of the GFDL Flexible Modeling System (FMS).
+*
+* FMS is free software: you can redistribute it and/or modify it under
+* the terms of the GNU Lesser General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or (at
+* your option) any later version.
+*
+* FMS is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+* for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+***********************************************************************
+-->
 <html>
 <head>
 <META http-equiv="Content-Type" content="text/html; charset=EUC-JP">
@@ -21,7 +41,7 @@
           <a href="#NAMELIST">NAMELIST </a>~
           <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
           <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
-          <a href="#REFERENCES">REFERENCES </a>~ 
+          <a href="#REFERENCES">REFERENCES </a>~
           <a href="#NOTES">NOTES</a></font>
 <hr>
 <h2>Module tridiagonal_mod</h2>
@@ -58,12 +78,12 @@
 
        real, intent(out), dimension(:,:,:) :: X
        real, intent(in),  dimension(:,:,:) :: D
-       real, optional,    dimension(:,:,:) :: A,B,C</pre>   For simplicity (?), A and C are assumed to be dimensioned the same size 
+       real, optional,    dimension(:,:,:) :: A,B,C</pre>   For simplicity (?), A and C are assumed to be dimensioned the same size
    as B, D, and X, although any input values for A(N) and C(1) are ignored.
    (some checks are needed here)
    <br>
 <br>
-   If A is not present, it is assumed that the matrix (A,B.C) has not been changed 
+   If A is not present, it is assumed that the matrix (A,B.C) has not been changed
    since the last call to tri_invert.
    <br>
 <br>

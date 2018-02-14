@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 module horiz_interp_bilinear_mod
 
   ! <CONTACT EMAIL="Zhi.Liang@noaa.gov"> Zhi Liang </CONTACT>
@@ -50,7 +68,7 @@ contains
   !  <OVERVIEW>
   !     writes version number to logfile.out
   !  </OVERVIEW>
-  !  <DESCRIPTION>       
+  !  <DESCRIPTION>
   !     writes version number to logfile.out
   !  </DESCRIPTION>
 
@@ -84,7 +102,7 @@ contains
 
     warns = 0
     if(present(verbose)) warns = verbose
-    src_is_modulo = .true. 
+    src_is_modulo = .true.
     if (present(src_modulo)) src_is_modulo = src_modulo
 
     hpi = 0.5*pi
@@ -112,7 +130,7 @@ contains
 
     if(src_is_modulo) then
        if(lon_in(nlon_in) - lon_in(1) .gt. tpi + epsln) &
-            call mpp_error(FATAL,'horiz_interp_bilinear_mod: '// & 
+            call mpp_error(FATAL,'horiz_interp_bilinear_mod: '// &
             'The range of source grid longitude should be no larger than tpi')
 
        if(lon_in(1) .lt. 0.0 .OR. lon_in(nlon_in) > tpi ) then
@@ -142,7 +160,7 @@ contains
           glt_min = min(lat,glt_min);  glt_max = max(lat,glt_max)
           gln_min = min(lon,gln_min);  gln_max = max(lon,gln_max)
 
-          is = indp(lon, lon_in ) 
+          is = indp(lon, lon_in )
           if( lon_in(is) .gt. lon ) is = max(is-1,1)
           if( lon_in(is) .eq. lon .and. is .eq. nlon_in) is = max(is - 1,1)
           ie = min(is+1,nlon_in)
@@ -150,7 +168,7 @@ contains
              wtw = ( lon_in(ie) - lon) / (lon_in(ie) - lon_in(is) )
           else
              !     east or west of the last data value. this could be because a
-             !     cyclic condition is needed or the dataset is too small. 
+             !     cyclic condition is needed or the dataset is too small.
              ln_err = 1
              ie = 1
              is = nlon_in
@@ -162,7 +180,7 @@ contains
           endif
           wte = 1. - wtw
 
-          js = indp(lat, lat_in ) 
+          js = indp(lat, lat_in )
 
           if( lat_in(js) .gt. lat ) js = max(js - 1, 1)
           if( lat_in(js) .eq. lat .and. js .eq. nlat_in) js = max(js - 1, 1)
@@ -208,7 +226,7 @@ contains
             '==> Warning: the geographic data set does not extend far   ',&
             '             enough north or south - extrapolation from    ',&
             '             the nearest data was applied. this may create ',&
-            '             artificial gradients near a geographic pole   ' 
+            '             artificial gradients near a geographic pole   '
        write (unit,'(/,(1x,a,2f8.4))')                             &
             '    data required between latitudes:', glt_min, glt_max,   &
             '      data set is between latitudes:', lat_in(1), lat_in(nlat_in)
@@ -232,9 +250,9 @@ contains
   !     call horiz_interp_bilinear_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, src_modulo )
 
   !   </TEMPLATE>
-  !   
+  !
   !   <IN NAME="lon_in" TYPE="real, dimension(:,:)" UNITS="radians">
-  !      Longitude (in radians) for source data grid. 
+  !      Longitude (in radians) for source data grid.
   !   </IN>
 
   !   <IN NAME="lat_in" TYPE="real, dimension(:,:)" UNITS="radians">
@@ -242,11 +260,11 @@ contains
   !   </IN>
 
   !   <IN NAME="lon_out" TYPE="real, dimension(:,:)" UNITS="radians" >
-  !      Longitude (in radians) for source data grid. 
+  !      Longitude (in radians) for source data grid.
   !   </IN>
 
   !   <IN NAME="lat_out" TYPE="real, dimension(:,:)" UNITS="radians" >
-  !      Latitude (in radians) for source data grid. 
+  !      Latitude (in radians) for source data grid.
   !   </IN>
 
   !   <IN NAME="src_modulo" TYPE="logical, optional">
@@ -259,8 +277,8 @@ contains
   !   </IN>
 
   !   <INOUT NAME="Interp" TYPE="type(horiz_interp_type)" >
-  !      A derived-type variable containing indices and weights used for subsequent 
-  !      interpolations. To reinitialize this variable for a different grid-to-grid 
+  !      A derived-type variable containing indices and weights used for subsequent
+  !      interpolations. To reinitialize this variable for a different grid-to-grid
   !      interpolation you must first use the "horiz_interp_del" interface.
   !   </INOUT>
 
@@ -275,7 +293,7 @@ contains
     logical, intent(in),          optional :: src_modulo
     logical, intent(in),          optional :: new_search
     logical, intent(in),          optional :: no_crash_when_not_found
-    integer                                :: warns 
+    integer                                :: warns
     logical                                :: src_is_modulo
     integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
     integer                                :: m, n, is, ie, js, je, num_solution
@@ -290,7 +308,7 @@ contains
 
     warns = 0
     if(present(verbose)) warns = verbose
-    src_is_modulo = .true. 
+    src_is_modulo = .true.
     if (present(src_modulo)) src_is_modulo = src_modulo
     use_new_search = .false.
     if (present(new_search)) use_new_search = new_search
@@ -300,13 +318,13 @@ contains
     ! make sure lon and lat has the same dimension
     if(size(lon_out,1) /= size(lat_out,1) .or. size(lon_out,2) /= size(lat_out,2) ) &
          call mpp_error(FATAL,'horiz_interp_bilinear_mod: when using bilinear ' // &
-         'interplation, the output grids should be geographical grids')    
+         'interplation, the output grids should be geographical grids')
 
     if(size(lon_in,1) /= size(lat_in,1) .or. size(lon_in,2) /= size(lat_in,2) ) &
          call mpp_error(FATAL,'horiz_interp_bilinear_mod: when using bilinear '// &
-         'interplation, the input grids should be geographical grids')  
+         'interplation, the input grids should be geographical grids')
 
-    !--- get the grid size 
+    !--- get the grid size
     nlon_in  = size(lon_in,1) ; nlat_in  = size(lat_in,2)
     nlon_out = size(lon_out,1); nlat_out = size(lon_out,2)
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
@@ -378,12 +396,12 @@ contains
           lon1 = lon_in(is,js); lat1 = lat_in(is,js);
           lon2 = lon_in(ie,js); lat2 = lat_in(ie,js);
           lon3 = lon_in(ie,je); lat3 = lat_in(ie,je);
-          lon4 = lon_in(is,je); lat4 = lat_in(is,je); 
+          lon4 = lon_in(is,je); lat4 = lat_in(is,je);
           if(lon .lt. lon_min) then
              lon1 = lon1 -tpi; lon4 = lon4 - tpi
           else if(lon .gt. lon_max) then
              lon2 = lon2 +tpi; lon3 = lon3 + tpi
-          endif                      
+          endif
           a1 = lon2-lon1
           b1 = lon4-lon1
           c1 = lon1+lon3-lon4-lon2
@@ -434,17 +452,17 @@ contains
            if(abs(x) < epsln2) x = 0.0
            if(abs(1.0-x) < epsln2) x = 1.0
            ! x and y should be between 0 and 1.
-           !! Added for ECDA 
+           !! Added for ECDA
            if(use_new_search) then
              if (x < 0.0) x = 0.0 ! snz
              if (y < 0.0) y = 0.0 ! snz
              if (x > 1.0) x = 1.0
              if (y > 1.0) y = 1.0
-           endif 
+           endif
            if( x>1. .or. x<0. .or. y>1. .or. y < 0.) call mpp_error(FATAL, &
                 "horiz_interp_bilinear_mod: weight should be between 0 and 1")
-           Interp % wti(m,n,1)=1.0-x; Interp % wti(m,n,2)=x   
-           Interp % wtj(m,n,1)=1.0-y; Interp % wtj(m,n,2)=y          
+           Interp % wti(m,n,1)=1.0-x; Interp % wti(m,n,2)=x
+           Interp % wtj(m,n,1)=1.0-y; Interp % wtj(m,n,2)=y
        enddo
     enddo
 
@@ -452,7 +470,7 @@ contains
   ! </SUBROUTINE>
 
   !#######################################################################
-  ! this routine will search the source grid to fine the grid box that encloses 
+  ! this routine will search the source grid to fine the grid box that encloses
   ! each destination grid.
   subroutine find_neighbor( Interp, lon_in, lat_in, lon_out, lat_out, src_modulo )
     type(horiz_interp_type), intent(inout) :: Interp
@@ -510,7 +528,7 @@ contains
                    lon1 = lon_in(i,  j);   lat1 = lat_in(i,j)
                    lon2 = lon_in(ip1,j);   lat2 = lat_in(ip1,j)
                    lon3 = lon_in(ip1,jp1); lat3 = lat_in(ip1,jp1)
-                   lon4 = lon_in(i,  jp1); lat4 = lat_in(i,  jp1)  
+                   lon4 = lon_in(i,  jp1); lat4 = lat_in(i,  jp1)
 
                    if(lon .lt. lon_min .or. lon .gt. lon_max) then
                       if(i .ne. nlon_in) then
@@ -584,7 +602,7 @@ contains
                    if(src_modulo) then
                       if( istart < 1)       istart = istart + nlon_in
                       if( iend   > nlon_in) iend   = iend   - nlon_in
-                   else 
+                   else
                       istart = max(istart,1)
                       iend   = min(iend, nlon_in)
                    endif
@@ -623,7 +641,7 @@ contains
 
                 end if
 
-                !--- find the surrouding points             
+                !--- find the surrouding points
                 do l = 1, npts
                    i = ilon(l)
                    j = jlat(l)
@@ -640,7 +658,7 @@ contains
                    lon1 = lon_in(i,  j);   lat1 = lat_in(i,j)
                    lon2 = lon_in(ip1,j);   lat2 = lat_in(ip1,j)
                    lon3 = lon_in(ip1,jp1); lat3 = lat_in(ip1,jp1)
-                   lon4 = lon_in(i,  jp1); lat4 = lat_in(i,  jp1)  
+                   lon4 = lon_in(i,  jp1); lat4 = lat_in(i,  jp1)
 
                    if(lon .lt. lon_min .or. lon .gt. lon_max) then
                       if(i .ne. nlon_in) then
@@ -659,7 +677,7 @@ contains
                          if(lat .le. intersect(lon3,lat3,lon4,lat4,lon))then !north
                             if(lon .ge. intersect(lat4,lon4,lat1,lon1,lat))then ! west
                                found = .true.
-                               is=i; js=j  
+                               is=i; js=j
                                Interp % i_lon (m,n,1) = i; Interp % i_lon (m,n,2) = ip1
                                Interp % j_lat (m,n,1) = j; Interp % j_lat (m,n,2) = jp1
                                exit
@@ -675,7 +693,7 @@ contains
               print *,'lon,lat=',lon*180./PI,lat*180./PI
               print *,'npts=',npts
               print *,'is,ie= ',istart,iend
-              print *,'js,je= ',jstart,jend              
+              print *,'js,je= ',jstart,jend
               print *,'lon_in(is,js)=',lon_in(istart,jstart)*180./PI
               print *,'lon_in(ie,js)=',lon_in(iend,jstart)*180./PI
               print *,'lat_in(is,js)=',lat_in(istart,jstart)*180./PI
@@ -683,8 +701,8 @@ contains
               print *,'lon_in(is,je)=',lon_in(istart,jend)*180./PI
               print *,'lon_in(ie,je)=',lon_in(iend,jend)*180./PI
               print *,'lat_in(is,je)=',lat_in(istart,jend)*180./PI
-              print *,'lat_in(ie,je)=',lat_in(iend,jend)*180./PI                  
-              
+              print *,'lat_in(ie,je)=',lat_in(iend,jend)*180./PI
+
              call mpp_error(FATAL, &
                   'find_neighbor: the destination point is not inside the source grid' )
           endif
@@ -694,14 +712,14 @@ contains
   end subroutine find_neighbor
 
   !#######################################################################
-  ! 
+  !
   ! The function will return true if the point x,y is inside a polygon, or
   ! NO if it is not.  If the point is exactly on the edge of a polygon,
   ! the function will return .true.
   !
-  ! real polyx(:) : longitude coordinates of corners 
+  ! real polyx(:) : longitude coordinates of corners
   ! real polyx(:) : latitude  coordinates of corners
-  ! real x,y      : point to be tested 
+  ! real x,y      : point to be tested
   ! ??? How to deal with truncation error.
   !
   function inside_polygon(polyx, polyy, x, y)
@@ -732,7 +750,7 @@ contains
   end function inside_polygon
 
   !#######################################################################
-  ! this routine will search the source grid to fine the grid box that encloses 
+  ! this routine will search the source grid to fine the grid box that encloses
   ! each destination grid.
   subroutine find_neighbor_new( Interp, lon_in, lat_in, lon_out, lat_out, src_modulo, no_crash )
     type(horiz_interp_type), intent(inout) :: Interp
@@ -746,10 +764,10 @@ contains
     real                                   :: lon_min, lon_max, lon, lat, tpi
     logical                                :: found
     real                                   :: polyx(4), polyy(4)
-    real                                   :: min_lon, min_lat, max_lon, max_lat    
+    real                                   :: min_lon, min_lat, max_lon, max_lat
 
     integer, parameter :: step_div=8
-    
+
     tpi = 2.0*pi
     nlon_in  = size(lon_in,1) ; nlat_in  = size(lat_in,2)
     nlon_out = size(lon_out,1); nlat_out = size(lon_out,2)
@@ -790,11 +808,11 @@ contains
                          cycle
                       endif
                    endif
-                   
+
                    polyx(1) = lon_in(i,  j);   polyy(1) = lat_in(i,j)
                    polyx(2) = lon_in(ip1,j);   polyy(2) = lat_in(ip1,j)
                    polyx(3) = lon_in(ip1,jp1); polyy(3) = lat_in(ip1,jp1)
-                   polyx(4) = lon_in(i,  jp1); polyy(4) = lat_in(i,  jp1) 
+                   polyx(4) = lon_in(i,  jp1); polyy(4) = lat_in(i,  jp1)
                    if(lon .lt. lon_min .or. lon .gt. lon_max) then
                       if(i .ne. nlon_in) then
                          cycle
@@ -806,7 +824,7 @@ contains
                          endif
                       endif
                    endif
- 
+
                    min_lon = minval(polyx)
                    max_lon = maxval(polyx)
                    min_lat = minval(polyy)
@@ -815,8 +833,8 @@ contains
 !                       lat .GE. min_lat .AND. lat .LE. max_lat ) then
 !                      print*, 'i =', i, 'j = ', j
 !                      print '(5f15.11)', lon, polyx
-!                      print '(5f15.11)', lat, polyy    
-!                   endif 
+!                      print '(5f15.11)', lat, polyy
+!                   endif
 
                    if(inside_polygon(polyx, polyy, lon, lat)) then
                       found = .true.
@@ -867,7 +885,7 @@ contains
                       jlat(npts) = jstart
                       npts       = npts + 1
                       ilon(npts) = i
-                      jlat(npts) = jend                         
+                      jlat(npts) = jend
                    enddo
 
                    !--- right and left boundary -----------------------------------------------
@@ -876,7 +894,7 @@ contains
                    if(src_modulo) then
                       if( istart < 1)       istart = istart + nlon_in
                       if( iend   > nlon_in) iend   = iend   - nlon_in
-                   else 
+                   else
                       istart = max(istart,1)
                       iend   = min(iend, nlon_in)
                    endif
@@ -892,7 +910,7 @@ contains
                   end do
                 end if
 
-                !--- find the surrouding points             
+                !--- find the surrouding points
                 do l = 1, npts
                    i = ilon(l)
                    j = jlat(l)
@@ -909,7 +927,7 @@ contains
                    polyx(1) = lon_in(i,  j);   polyy(1) = lat_in(i,j)
                    polyx(2) = lon_in(ip1,j);   polyy(2) = lat_in(ip1,j)
                    polyx(3) = lon_in(ip1,jp1); polyy(3) = lat_in(ip1,jp1)
-                   polyx(4) = lon_in(i,  jp1); polyy(4) = lat_in(i,  jp1)  
+                   polyx(4) = lon_in(i,  jp1); polyy(4) = lat_in(i,  jp1)
                    if(inside_polygon(polyx, polyy, lon, lat)) then
                       found = .true.
                       Interp % i_lon (m,n,1) = i; Interp % i_lon (m,n,2) = ip1
@@ -953,13 +971,13 @@ contains
   !      Subroutine for performing the horizontal interpolation between two grids.
   !   </OVERVIEW>
   !   <DESCRIPTION>
-  !     Subroutine for performing the horizontal interpolation between two grids. 
+  !     Subroutine for performing the horizontal interpolation between two grids.
   !     horiz_interp_bilinear_new must be called before calling this routine.
   !   </DESCRIPTION>
   !   <TEMPLATE>
   !     call horiz_interp_bilinear ( Interp, data_in, data_out, verbose, mask_in,mask_out, missing_value, missing_permit)
   !   </TEMPLATE>
-  !   
+  !
   !   <IN NAME="Interp" TYPE="type(horiz_interp_type)">
   !     Derived-type variable containing interpolation indices and weights.
   !     Returned by a previous call to horiz_interp_bilinear_new.
@@ -973,8 +991,8 @@ contains
   !   </IN>
   !   <IN NAME="mask_in" TYPE="real, dimension(:,:),optional">
   !      Input mask, must be the same size as the input data. The real value of
-  !      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points 
-  !      that should not be used or have missing data. 
+  !      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points
+  !      that should not be used or have missing data.
   !   </IN>
   !   <IN NAME="missing_value" TYPE="real, optional">
   !      Use the missing_value to indicate missing data.
@@ -1102,7 +1120,7 @@ contains
                 f4 = data_in(is,je)
                 w = wtw
                 s = wts
-             else if(num_missing == 3) then  !--- three missing value 
+             else if(num_missing == 3) then  !--- three missing value
                 if(.not. is_missing(1) ) then
                    data_out(m,n) = data_in(is,js)
                 else if(.not. is_missing(2) ) then
@@ -1197,16 +1215,16 @@ contains
                    else
                       f3 = 0.5*(data_in(ie,je)+data_in(is,je))
                    endif
-                else 
+                else
                    call mpp_error(FATAL, &
                       "horiz_interp_bilinear_mod: the point should be in one of the four zone")
                 endif
              endif
 
-             data_out(m,n) = f3 + (f4-f3)*w + (f2-f3)*s + ((f1-f2)+(f3-f4))*w*s 
+             data_out(m,n) = f3 + (f4-f3)*w + (f2-f3)*s + ((f1-f2)+(f3-f4))*w*s
             if(present(mask_out)) mask_out(m,n) = 1.0
           enddo
-       enddo       
+       enddo
     else
        do n = 1, nlat_out
           do m = 1, nlon_out
@@ -1240,7 +1258,7 @@ contains
              dwtsum = data_in(is,js)*mask(is,js)*wtw*wts &
                   + data_in(ie,js)*mask(ie,js)*wte*wts &
                   + data_in(ie,je)*mask(ie,je)*wte*wtn &
-                  + data_in(is,je)*mask(is,je)*wtw*wtn 
+                  + data_in(is,je)*mask(is,je)*wtw*wtn
              wtsum  = mask(is,js)*wtw*wts + mask(ie,js)*wte*wts  &
                   + mask(ie,je)*wte*wtn + mask(is,je)*wtw*wtn
 
@@ -1249,13 +1267,13 @@ contains
              if(num_missing .gt. max_missing ) then
                 data_out(m,n) = missing_value
                 if(present(mask_out)) mask_out(m,n) = 0.0
-             else if(wtsum .lt. epsln) then 
+             else if(wtsum .lt. epsln) then
                 if(present(missing_value)) then
                    data_out(m,n) = missing_value
                 else
                    data_out(m,n) = 0.0
                 endif
-                if(present(mask_out)) mask_out(m,n) = 0.0      
+                if(present(mask_out)) mask_out(m,n) = 0.0
              else
                 data_out(m,n) = dwtsum/wtsum
                 if(present(mask_out)) mask_out(m,n) = wtsum
@@ -1362,7 +1380,7 @@ contains
           write (unit,*) &
                ' => Error: array must be monotonically increasing in "indp"' , &
                '           when searching for nearest element to value=',value
-          write (unit,*) '           array(i) < array(i-1) for i=',i 
+          write (unit,*) '           array(i) < array(i-1) for i=',i
           write (unit,*) '           array(i) for i=1..ia follows:'
           call abort()
        endif

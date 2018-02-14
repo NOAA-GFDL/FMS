@@ -1,5 +1,25 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
+<!--
+***********************************************************************
+*                   GNU Lesser General Public License
+*
+* This file is part of the GFDL Flexible Modeling System (FMS).
+*
+* FMS is free software: you can redistribute it and/or modify it under
+* the terms of the GNU Lesser General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or (at
+* your option) any later version.
+*
+* FMS is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+* for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+***********************************************************************
+-->
 <head>
   <title>Module grid_mod</title>
   <link type="text/css" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" rel="stylesheet">
@@ -12,7 +32,7 @@
           <a href="#NAMELIST">NAMELIST </a>~
           <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
           <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
-          <a href="#REFERENCES">REFERENCES </a>~ 
+          <a href="#REFERENCES">REFERENCES </a>~
           <a href="#NOTES">NOTES</a></font>
 
 <hr>
@@ -45,12 +65,12 @@ file parsing and to provide a unified interface for access to the grid data.
 
 At the same time, it allows the developers of the grid specifications to keep enhancing the
 internal structure transparently for the users of this module, as long as the
-interfaces of the module subroutines are preserved. 
+interfaces of the module subroutines are preserved.
 </div>
 
 <h4>OTHER MODULES USED</h4>
 <div>
-<pre>  constants_mod 
+<pre>  constants_mod
         fms_mod
      mosaic_mod
 mpp_domains_mod </pre>
@@ -86,7 +106,7 @@ mpp_domains_mod </pre>
          pre-mosaic grid spec files returns 1.
          </dd>
       <dt><b>INPUT</b></dt><dd>
-<table border="0"> 
+<table border="0">
    <tr>
       <td valign="top"><tt>component</tt></td>
       <td>A name of the component, 'ATM', 'OCN', or 'LND'<br>
@@ -95,7 +115,7 @@ mpp_domains_mod </pre>
 </table>
          </dd>
       <dt><b>OUTPUT</b></dt><dd>
-<table border="0"> 
+<table border="0">
    <tr>
       <td valign="top"><tt>ntiles</tt></td><td>number of mosaic tiles for the component<br>
       <span class="type">[integer]</span></td>
@@ -113,10 +133,10 @@ subroutine get_grid_size(component,tile,nx,ny)</pre>
    <dl>
       <dt><b>DESCRIPTION</b></dt><dd>
          Given a component name, returns the size of the grid for all mosaic tiles, or for the
-	 specified tile. 
+	 specified tile.
          </dd>
       <dt><b>INPUT</b></dt><dd>
-<table border="0"> 
+<table border="0">
    <tr>
       <td valign="top"><tt>component</tt></td><td>A name of the component: 'ATM', 'OCN', or 'LND'<br>
          <span class="type">[character(len=*)]</span></td>
@@ -127,10 +147,10 @@ subroutine get_grid_size(component,tile,nx,ny)</pre>
 </table>
          </dd>
       <dt><b>OUTPUT</b></dt><dd>
-<table border="0"> 
+<table border="0">
    <tr>
       <td valign="top"><tt>nx, ny</tt></td>
-      <td>number of grid cell along respective axis, either for all mosaic tiles, 
+      <td>number of grid cell along respective axis, either for all mosaic tiles,
           or for a specified mosaic tile<br>
           <span class="type">[integer]</span><br>
           <span class="type">[integer, dimension(:)]</span>
@@ -150,7 +170,7 @@ subroutine get_grid_size(component,tile,nx,ny)</pre>
          for the specified mosaic tile.
       </dd>
       <dt><b>INPUT</b></dt><dd>
-<table border="0"> 
+<table border="0">
    <tr>
       <td valign="top"><tt>component</tt></td>
       <td>A name of the component, 'ATM', 'OCN', or 'LND'<br><span class="type">[character(len=*)]</span></td>
@@ -161,7 +181,7 @@ subroutine get_grid_size(component,tile,nx,ny)</pre>
 </table>
          </dd>
       <dt><b>OUTPUT</b></dt><dd>
-<table border="0"> 
+<table border="0">
    <tr>
       <td valign="top"><tt>glon</tt></td>
       <td>longitudes of grid cell centers, degree<br><span class="type">[real, dimension(:,:)]</span></td>
@@ -183,7 +203,7 @@ subroutine get_grid_size(component,tile,nx,ny)</pre>
          for the specified mosaic tile.
       </dd>
       <dt><b>INPUT</b></dt><dd>
-<table border="0"> 
+<table border="0">
    <tr>
       <td valign="top"><tt>component</tt></td>
       <td>A name of the component, 'ATM', 'OCN', or 'LND'<br><span class="type">[character(len=*)]</span></td>
@@ -194,7 +214,7 @@ subroutine get_grid_size(component,tile,nx,ny)</pre>
 </table>
          </dd>
       <dt><b>OUTPUT</b></dt><dd>
-<table border="0"> 
+<table border="0">
    <tr>
       <td valign="top"><tt>glonb</tt></td>
       <td>longitudes of grid cell vertices, degree<br><span class="type">[real, dimension(:,:)]</span></td>
@@ -218,7 +238,7 @@ subroutine get_grid_size(component,tile,nx,ny)</pre>
 	 land actually present in the grid cell.
       </dd>
       <dt><b>INPUT</b></dt><dd>
-<table border="0"> 
+<table border="0">
    <tr>
       <td valign="top"><tt>component</tt></td>
       <td>A name of the component, 'ATM', 'OCN', or 'LND'<br><span class="type">[character(len=*)]</span></td>
@@ -229,7 +249,7 @@ subroutine get_grid_size(component,tile,nx,ny)</pre>
 </table>
          </dd>
       <dt><b>OUTPUT</b></dt><dd>
-<table border="0"> 
+<table border="0">
    <tr>
       <td valign="top"><tt>cellarea</tt></td>
       <td>array of grid cell areas, m2<br><span class="type">[real, dimension(:,:)]</span></td>
@@ -252,7 +272,7 @@ subroutine get_grid_size(component,tile,nx,ny)</pre>
 	 area returned by <tt>get_grid_cell_area</tt>
       </dd>
       <dt><b>INPUT</b></dt><dd>
-<table border="0"> 
+<table border="0">
    <tr>
       <td valign="top"><tt>component</tt></td>
       <td>A name of the component, 'ATM', 'OCN', or 'LND'<br><span class="type">[character(len=*)]</span></td>
@@ -263,7 +283,7 @@ subroutine get_grid_size(component,tile,nx,ny)</pre>
 </table>
          </dd>
       <dt><b>OUTPUT</b></dt><dd>
-<table border="0"> 
+<table border="0">
    <tr>
       <td valign="top"><tt>area</tt></td>
       <td>array of grid cell areas, m2<br><span class="type">[real, dimension(:,:)]</span></td>

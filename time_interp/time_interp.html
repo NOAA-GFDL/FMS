@@ -1,3 +1,23 @@
+<!--
+***********************************************************************
+*                   GNU Lesser General Public License
+*
+* This file is part of the GFDL Flexible Modeling System (FMS).
+*
+* FMS is free software: you can redistribute it and/or modify it under
+* the terms of the GNU Lesser General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or (at
+* your option) any later version.
+*
+* FMS is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+* for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+***********************************************************************
+-->
 <html>
 <head>
 <META http-equiv="Content-Type" content="text/html; charset=EUC-JP">
@@ -21,7 +41,7 @@
           <a href="#NAMELIST">NAMELIST </a>~
           <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
           <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
-          <a href="#REFERENCES">REFERENCES </a>~ 
+          <a href="#REFERENCES">REFERENCES </a>~
           <a href="#NOTES">NOTES</a></font>
 <hr>
 <h2>Module time_interp_mod</h2>
@@ -125,7 +145,7 @@
    N is between (Time-Time_end)/Period and (Time-Time_beg)/Period
    That is, N is the integer that results in Time_adjusted that is between Time_beg and Time_end.
    <br>
-<br> 
+<br>
 </dd>
 <br>
 <br>
@@ -154,7 +174,7 @@
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type, dimension(:)]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>modtime&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<td valign="top" align="left"><tt>modtime&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
@@ -189,42 +209,42 @@
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>year1&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<td valign="top" align="left"><tt>year1&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>year2&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<td valign="top" align="left"><tt>year2&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>month1&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<td valign="top" align="left"><tt>month1&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>month2&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<td valign="top" align="left"><tt>month2&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>day1&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<td valign="top" align="left"><tt>day1&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>day2&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<td valign="top" align="left"><tt>day2&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>index1&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<td valign="top" align="left"><tt>index1&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>index2&nbsp;&nbsp;&nbsp;</tt></td><td> 
+<td valign="top" align="left"><tt>index2&nbsp;&nbsp;&nbsp;</tt></td><td>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span>
 <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
 </tr>
@@ -234,9 +254,9 @@
 <dt>
 <b>NOTE</b>
 </dt>
-<dd>   Examples: <pre>       Time: Jan 01 00z    weight = 0.0 
-       Time: Jul 01        weight ~ 0.5 
-       Time: Dec 31 23z    weight ~ 1.0</pre> 
+<dd>   Examples: <pre>       Time: Jan 01 00z    weight = 0.0
+       Time: Jul 01        weight ~ 0.5
+       Time: Dec 31 23z    weight ~ 1.0</pre>
 </dd>
 <br>
 <br>
@@ -428,7 +448,7 @@
 <br>   The following private parameters are set by this module: <pre>           seconds per minute = 60
            minutes per hour   = 60
            hours   per day    = 24
-           months  per year   = 12</pre> 
+           months  per year   = 12</pre>
 </div>
 <br>
 <!-- END NOTES -->
