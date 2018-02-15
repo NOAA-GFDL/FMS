@@ -61,7 +61,7 @@ SRCS_F90 = \
 		   ./fms/fms.F90                                                     \
 		   ./fms/fms_io.F90                                                  \
 		   ./fms/test_fms_io.F90                                             \
-		   ./fv3gfs/constants.F90                                             \
+		   ./constants/constants.F90                                         \
 		   ./horiz_interp/horiz_interp.F90                                   \
 		   ./horiz_interp/horiz_interp_bicubic.F90                           \
 		   ./horiz_interp/horiz_interp_bilinear.F90                          \
