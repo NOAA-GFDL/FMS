@@ -1727,13 +1727,15 @@ function register_restart_field_r2d8(fileObj, filename, fieldname, data, domain,
   logical                                        :: is_compressed
   integer                                        :: index_field
   integer                                        :: register_restart_field_r2d8
+  real(FLOAT_KIND)                               :: data_default_r4
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_r2d8): need to call fms_io_init')
   is_compressed = .false.
   if(present(compressed)) is_compressed=compressed
+  if(present(data_default)) data_default_r4=data_default
   call setup_one_field(fileObj, filename, fieldname, (/size(data,1), size(data,2), 1, 1/), &
                        index_field, domain, mandatory, no_domain, is_compressed, &
-                       position, tile_count, real(data_default), longname, units, compressed_axis, &
+                       position, tile_count, data_default_r4, longname, units, compressed_axis, &
                        read_only=read_only, owns_data=restart_owns_data)
   fileObj%p2dr8(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 2
@@ -1765,16 +1767,15 @@ function register_restart_field_r3d8(fileObj, filename, fieldname, data, domain,
   logical                                        :: is_compressed
   integer                                        :: index_field
   integer                                        :: register_restart_field_r3d8
+  real(FLOAT_KIND)                               :: data_default_r4
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_r3d8): need to call fms_io_init')
-  if(present(compressed)) then
-    is_compressed=compressed
-  else
-    is_compressed = .false.
-  endif
+  is_compressed = .false.
+  if(present(compressed)) is_compressed=compressed
+  if(present(data_default)) data_default_r4=data_default
   call setup_one_field(fileObj, filename, fieldname, (/size(data,1), size(data,2), size(data,3), 1/), &
                        index_field, domain, mandatory, no_domain, is_compressed, &
-                       position, tile_count, real(data_default), longname, units, compressed_axis, &
+                       position, tile_count, data_default_r4, longname, units, compressed_axis, &
                        read_only=read_only, owns_data=restart_owns_data)
   fileObj%p3dr8(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 3
