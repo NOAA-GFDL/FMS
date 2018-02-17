@@ -144,6 +144,8 @@ subroutine fms_io_unstructured_setup_one_field(fileObj, &
         allocate(fileObj%p2dr(MAX_TIME_LEVEL_REGISTER,max_fields))
         allocate(fileObj%p3dr(MAX_TIME_LEVEL_REGISTER,max_fields))
         allocate(fileObj%p4dr(MAX_TIME_LEVEL_REGISTER,max_fields))
+        allocate(fileObj%p2dr8(MAX_TIME_LEVEL_REGISTER,max_fields))
+        allocate(fileObj%p3dr8(MAX_TIME_LEVEL_REGISTER,max_fields))
         allocate(fileObj%p0di(MAX_TIME_LEVEL_REGISTER,max_fields))
         allocate(fileObj%p1di(MAX_TIME_LEVEL_REGISTER,max_fields))
         allocate(fileObj%p2di(MAX_TIME_LEVEL_REGISTER,max_fields))

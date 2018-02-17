@@ -311,8 +311,8 @@ type restart_file_type
    type(Ptr1Dr),   dimension(:,:), pointer  :: p1dr => NULL()
    type(Ptr2Dr),   dimension(:,:), pointer  :: p2dr => NULL()
    type(Ptr3Dr),   dimension(:,:), pointer  :: p3dr => NULL()
-   type(Ptr2Dr8),   dimension(:,:), pointer  :: p2dr8 => NULL()
-   type(Ptr3Dr8),   dimension(:,:), pointer  :: p3dr8 => NULL()
+   type(Ptr2Dr8),  dimension(:,:), pointer  :: p2dr8 => NULL()
+   type(Ptr3Dr8),  dimension(:,:), pointer  :: p3dr8 => NULL()
    type(Ptr4Dr),   dimension(:,:), pointer  :: p4dr => NULL()
    type(Ptr0Di),   dimension(:,:), pointer  :: p0di => NULL()
    type(Ptr1Di),   dimension(:,:), pointer  :: p1di => NULL()
@@ -575,6 +575,10 @@ interface fms_io_unstructured_register_restart_field
     module procedure fms_io_unstructured_register_restart_field_r_1d
     module procedure fms_io_unstructured_register_restart_field_r_2d
     module procedure fms_io_unstructured_register_restart_field_r_3d
+#ifdef OVERLOAD_R8
+    module procedure fms_io_unstructured_register_restart_field_r8_2d
+    module procedure fms_io_unstructured_register_restart_field_r8_3d
+#endif
     module procedure fms_io_unstructured_register_restart_field_i_0d
     module procedure fms_io_unstructured_register_restart_field_i_1d
     module procedure fms_io_unstructured_register_restart_field_i_2d
@@ -1699,12 +1703,12 @@ function register_restart_field_r3d(fileObj, filename, fieldname, data, domain, 
 end function register_restart_field_r3d
 
 
-!-------------------------------------------------------------------------------
-!
-!   The routine will register a 2-D real restart file field with one time level
-!
-!-------------------------------------------------------------------------------
 #ifdef OVERLOAD_R8
+!-------------------------------------------------------------------------------
+!
+!   The routine will register a 2-D double_kind restart file field with one time level
+!
+!-------------------------------------------------------------------------------
 function register_restart_field_r2d8(fileObj, filename, fieldname, data, domain, mandatory, no_domain, &
                                     compressed, position, tile_count, data_default, longname, units, &
                                     compressed_axis, read_only, restart_owns_data)
@@ -1712,7 +1716,7 @@ function register_restart_field_r2d8(fileObj, filename, fieldname, data, domain,
   character(len=*),           intent(in)         :: filename, fieldname
   real(DOUBLE_KIND),     dimension(:,:),   intent(in), target :: data
   type(domain2d),   optional, intent(in), target :: domain
-  real,             optional, intent(in)         :: data_default
+  real(DOUBLE_KIND),             optional, intent(in)         :: data_default
   logical,          optional, intent(in)         :: no_domain
   logical,          optional, intent(in)         :: compressed
   integer,          optional, intent(in)         :: position, tile_count
@@ -1729,7 +1733,7 @@ function register_restart_field_r2d8(fileObj, filename, fieldname, data, domain,
   if(present(compressed)) is_compressed=compressed
   call setup_one_field(fileObj, filename, fieldname, (/size(data,1), size(data,2), 1, 1/), &
                        index_field, domain, mandatory, no_domain, is_compressed, &
-                       position, tile_count, data_default, longname, units, compressed_axis, &
+                       position, tile_count, real(data_default), longname, units, compressed_axis, &
                        read_only=read_only, owns_data=restart_owns_data)
   fileObj%p2dr8(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 2
@@ -1740,7 +1744,7 @@ end function register_restart_field_r2d8
 
 !-------------------------------------------------------------------------------
 !
-!   The routine will register a 3-D real restart file field with one time level
+!   The routine will register a 3-D double_kind restart file field with one time level
 !
 !-------------------------------------------------------------------------------
 function register_restart_field_r3d8(fileObj, filename, fieldname, data, domain, mandatory, &
@@ -1750,7 +1754,7 @@ function register_restart_field_r3d8(fileObj, filename, fieldname, data, domain,
   character(len=*),           intent(in)         :: filename, fieldname
   real(DOUBLE_KIND),     dimension(:,:,:), intent(in), target :: data
   type(domain2d),   optional, intent(in), target :: domain
-  real,             optional, intent(in)         :: data_default
+  real(DOUBLE_KIND),             optional, intent(in)         :: data_default
   logical,          optional, intent(in)         :: no_domain
   integer,          optional, intent(in)         :: position, tile_count
   logical,          optional, intent(in)         :: mandatory
@@ -1770,7 +1774,7 @@ function register_restart_field_r3d8(fileObj, filename, fieldname, data, domain,
   endif
   call setup_one_field(fileObj, filename, fieldname, (/size(data,1), size(data,2), size(data,3), 1/), &
                        index_field, domain, mandatory, no_domain, is_compressed, &
-                       position, tile_count, data_default, longname, units, compressed_axis, &
+                       position, tile_count, real(data_default), longname, units, compressed_axis, &
                        read_only=read_only, owns_data=restart_owns_data)
   fileObj%p3dr8(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 3
@@ -2108,12 +2112,12 @@ function register_restart_field_r3d_2level(fileObj, filename, fieldname, data1, 
 
 end function register_restart_field_r3d_2level
 
-!-------------------------------------------------------------------------------
-!
-!   The routine will register a 3-D real restart file field with two time level
-!
-!-------------------------------------------------------------------------------
 #ifdef OVERLOAD_R8
+!-------------------------------------------------------------------------------
+!
+!   The routine will register a 2-D double_kind restart file field with two time level
+!
+!-------------------------------------------------------------------------------
 function register_restart_field_r2d8_2level(fileObj, filename, fieldname, data1, data2, domain, mandatory, &
                              no_domain, position, tile_count, data_default, longname, units, read_only)
   type(restart_file_type), intent(inout)         :: fileObj
@@ -2145,7 +2149,7 @@ end function register_restart_field_r2d8_2level
 
 !-------------------------------------------------------------------------------
 !
-!   The routine will register a 3-D real restart file field with two time level
+!   The routine will register a 3-D double_kind restart file field with two time level
 !
 !-------------------------------------------------------------------------------
 function register_restart_field_r3d8_2level(fileObj, filename, fieldname, data1, data2, domain, mandatory, &
