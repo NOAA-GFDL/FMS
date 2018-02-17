@@ -942,7 +942,7 @@ function fms_io_unstructured_register_restart_field_r8_3d(fileObj, &
     restart_index = index_field
 
     return
-end function fms_io_unstructured_register_restart_field_r8_3d8
+end function fms_io_unstructured_register_restart_field_r8_3d
 #endif
 
 !------------------------------------------------------------------------------
