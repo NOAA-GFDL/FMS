@@ -45,9 +45,11 @@ real, public, parameter :: WTMH2O = WTMAIR*(RDGAS/RVGAS) !pjp OK to change value
 real, public, parameter :: WTMOZONE =  47.99820 !< Molecular weight of ozone [AMU]
 real, public, parameter :: WTMC     =  12.00000 !< Molecular weight of carbon [AMU]
 real, public, parameter :: WTMCO2   =  44.00995 !< Molecular weight of carbon dioxide [AMU]
+real, public, parameter :: WTMCH4   =  16.0425 !< Molecular weight of methane [AMU]
 real, public, parameter :: WTMO2    =  31.9988 !< Molecular weight of molecular oxygen [AMU]
 real, public, parameter :: WTMCFC11 = 137.3681 !< Molecular weight of CFC-11 (CCl3F) [AMU]
 real, public, parameter :: WTMCFC12 = 120.9135 !< Molecular weight of CFC-21 (CCl2F2) [AMU]
+real, public, parameter :: WTMN     =  14.0067 !< Molecular weight of Nitrogen [AMU]
 real, public, parameter :: DIFFAC = 1.660000E+00 !< Diffusivity factor [dimensionless]
 real, public, parameter :: SECONDS_PER_DAY  = 8.640000E+04 !< Seconds in a day [s]
 real, public, parameter :: SECONDS_PER_HOUR = 3600. !< Seconds in an hour [s]
@@ -73,8 +75,6 @@ real, public, parameter :: RADIAN  = RAD_TO_DEG !< Equal to RAD_TO_DEG. Named RA
 real, public, parameter :: C2DBARS = 1.e-4 !< Converts rho*g*z (in mks) to dbars: 1dbar = 10^4 (kg/m^3)(m/s^2)m [dbars]
 real, public, parameter :: KELVIN  = 273.15 !< Degrees Kelvin at zero Celsius [K]
 real, public, parameter :: EPSLN   = 1.0e-40 !< A small number to prevent divide by zero exceptions [N/A]
-
-real, public, parameter :: WTMN    = 14.0067 !g/mol
 !-----------------------------------------------------------------------
 public :: constants_init
 
