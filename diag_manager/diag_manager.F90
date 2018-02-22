@@ -260,7 +260,7 @@ MODULE diag_manager_mod
   ! Public interfaces from diag_grid_mod
   PUBLIC :: diag_grid_init, diag_grid_end
   PUBLIC :: diag_manager_set_time_end, diag_send_complete
-  PUBLIC :: diag_send_complete_extra
+  PUBLIC :: diag_send_complete_instant
   ! Public interfaces from diag_data_mod
   PUBLIC :: DIAG_FIELD_NOT_FOUND
 
@@ -3536,7 +3536,15 @@ CONTAINS
   END SUBROUTINE diag_manager_set_time_end
 
   !-----------------------------------------------------------------------
-  SUBROUTINE diag_send_complete_extra(time)
+  !>@brief The subroutine 'diag_send_complete_instant' allows the user to 
+  !! save diagnostic data on variable intervals (user defined in code logic)
+  !! to the same file.  The argument (time_type) will be written to the 
+  !! time axis correspondingly.
+  !>@details The user is responsible for any averaging of accumulated data
+  !! as this routine is not designed for instantaneous values.  This routine
+  !! works only for send_data calls within OpenMP regions as they are buffered
+  !! until the complete signal is given.
+  SUBROUTINE diag_send_complete_instant(time)
     TYPE (time_type), INTENT(in) :: time
     !--- local variables
     integer :: file, j, freq, in_num, file_num, out_num
@@ -3555,7 +3563,7 @@ CONTAINS
         END DO
       END IF
     END DO
-  END SUBROUTINE diag_send_complete_extra
+  END SUBROUTINE diag_send_complete_instant
 
   !-----------------------------------------------------------------------
   SUBROUTINE diag_send_complete(time_step, err_msg)
