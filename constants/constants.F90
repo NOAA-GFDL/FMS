@@ -41,18 +41,12 @@ real,               public, parameter :: TFREEZE = 273.15_r8_kind     !< Freezin
 #else
 
 #ifdef SMALL_EARTH
-#ifdef DCMIP
-       real, private, paramter :: small_fac =  1._r8_kind / 120._r8_kind #only needed for supercell test
-#else
-#ifdef HIWPP
-#ifdef SUPER_K
-       real, private, parameter :: small_fac = 1._r8_kind / 120._r8_kind
-#else
+#if defined(DCMIP) || (defined(HIWPP) && defined(SUPER_K))
+ real, private, parameter :: small_fac =  1._r8_kind / 120._r8_kind #only needed for supercell test
+#elif defined(HIWPP)
  real, private, parameter :: small_fac = 1._r8_kind / 166.7_r8_kind
-#endif
 #else
  real, private, parameter :: small_fac = 1._r8_kind / 10._r8_kind
-#endif
 #endif
 #else
  real, private, parameter :: small_fac = 1._r8_kind
