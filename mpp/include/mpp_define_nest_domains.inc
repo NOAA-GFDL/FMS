@@ -877,8 +877,6 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
                call allocate_nest_overlap(overLaplist(nsend), MAXOVERLAP)
                call insert_nest_overlap(overLaplist(nsend), nest_domain%pelist_coarse(n), &
                        is_coarse, ie_coarse, js_coarse, je_coarse, dir, ZERO)
-               write(mpp_pe()+1000,*) "send:", is_coarse, ie_coarse, js_coarse, je_coarse, nest_domain%pelist_coarse(n)
-               call flush(mpp_pe()+1000)
             endif
          endif
       enddo
@@ -922,9 +920,6 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
                   call allocate_nest_overlap(overLaplist(nrecv), MAXOVERLAP)
                   call insert_nest_overlap(overLaplist(nrecv), nest_domain%pelist_fine(n), &
                        is_coarse, ie_coarse, js_coarse, je_coarse, dir, ZERO)
-              write(mpp_pe()+1000,*) "recv:", is_coarse, ie_coarse, js_coarse, je_coarse, nest_domain%pelist_fine(n)
-               call flush(mpp_pe()+1000)
-                  
                endif
             enddo
          endif
