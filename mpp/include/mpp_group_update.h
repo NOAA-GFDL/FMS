@@ -268,6 +268,13 @@ subroutine MPP_CREATE_GROUP_UPDATE_3D_V_( group, fieldx, fieldy, domain, flags, 
 
   update_flags = XUPDATE+YUPDATE   !default
   if( PRESENT(flags) )update_flags = flags
+  ! The following test is so that SCALAR_PAIR can be used alone with the
+  ! same default update pattern as without.
+  if (BTEST(update_flags,SCALAR_BIT)) then
+     if (.NOT.(BTEST(update_flags,WEST) .OR. BTEST(update_flags,EAST) &
+          .OR. BTEST(update_flags,NORTH) .OR. BTEST(update_flags,SOUTH))) &
+        update_flags = update_flags + XUPDATE+YUPDATE   !default with SCALAR_PAIR
+  end if
 
   group%nvector = group%nvector + 1
   nvector = group%nvector
