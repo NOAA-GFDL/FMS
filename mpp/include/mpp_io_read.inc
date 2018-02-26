@@ -390,11 +390,11 @@
 
 #ifdef OVERLOAD_R8
     subroutine read_record_core_r8(unit, field, nwords, data, start, axsiz)
-      integer,         intent(in)    :: unit
-      type(fieldtype), intent(in)    :: field
-      integer,         intent(in)    :: nwords
-      real(kind=8),            intent(inout) :: data(nwords)
-      integer,         intent(in)    :: start(:), axsiz(:)
+      integer,                intent(in)    :: unit
+      type(fieldtype),        intent(in)    :: field
+      integer,                intent(in)    :: nwords
+      real(kind=DOUBLE_KIND), intent(inout) :: data(nwords)
+      integer,                intent(in)    :: start(:), axsiz(:)
 
       integer(SHORT_KIND) :: i2vals(nwords)
 !rab used in conjunction with transfer intrinsic to determine size of a variable
@@ -486,10 +486,10 @@
     end subroutine read_record_core_r8
 
     subroutine mpp_read_region_r2D_r8(unit, field, data, start, nread)
-      integer,         intent(in) :: unit
-      type(fieldtype), intent(in) :: field
-      real(kind=8),    intent(inout) :: data(:,:)
-      integer,         intent(in) :: start(:), nread(:)
+      integer,                intent(in) :: unit
+      type(fieldtype),        intent(in) :: field
+      real(kind=DOUBLE_KIND), intent(inout) :: data(:,:)
+      integer,                intent(in) :: start(:), nread(:)
 
       if(size(start(:)) .NE. 4 .OR. size(nread(:)) .NE. 4) call mpp_error(FATAL, &
           "mpp_io_read.inc(mpp_read_region_r2D_r8): size of start and nread must be 4")
@@ -505,10 +505,10 @@
     end subroutine mpp_read_region_r2D_r8
 
     subroutine mpp_read_region_r3D_r8(unit, field, data, start, nread)
-      integer,         intent(in) :: unit
-      type(fieldtype), intent(in) :: field
-      real(kind=8),    intent(inout) :: data(:,:,:)
-      integer,         intent(in) :: start(:), nread(:)
+      integer,                intent(in) :: unit
+      type(fieldtype),        intent(in) :: field
+      real(kind=DOUBLE_KIND), intent(inout) :: data(:,:,:)
+      integer,                intent(in) :: start(:), nread(:)
 
       if(size(start(:)) .NE. 4 .OR. size(nread(:)) .NE. 4) call mpp_error(FATAL, &
           "mpp_io_read.inc(mpp_read_region_r3D_r8): size of start and nread must be 4")
