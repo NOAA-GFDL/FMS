@@ -1,22 +1,21 @@
-! ----------------------------------------------------------------
-!                   GNU General Public License
-! This file is a part of MOM.
-
-! MOM is free software; you can redistribute it and/or modify it and
-! are expected to follow the terms of the GNU General Public License
-! as published by the Free Software Foundation; either version 2 of
-! the License, or (at your option) any later version.
-
-! MOM is distributed in the hope that it will be useful, but WITHOUT
-! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-! License for more details.
-
-! For the full text of the GNU General Public License,
-! write to: Free Software Foundation, Inc.,
-!           675 Mass Ave, Cambridge, MA 02139, USA.
-! or see:   http://www.gnu.org/licenses/gpl.html
-!-----------------------------------------------------------------------
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 
 !> \author Richard Slater <Richard.Slater@noaa.gov>
 !! \author John Dunne <John.Dunne@noaa.gov>

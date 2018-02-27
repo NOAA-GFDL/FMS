@@ -1,5 +1,24 @@
 ! -*-f90-*-
 
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                            !
 !                             MPP_WRITE_META                                 !
@@ -1067,6 +1086,8 @@
 ! performs the actual write. This routine is private to this module.   !
 !                                                                      !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#undef WRITE_RECORD_
+#define WRITE_RECORD_ write_record_default
 #undef MPP_WRITE_2DDECOMP_2D_
 #define MPP_WRITE_2DDECOMP_2D_ mpp_write_2ddecomp_r2d
 #undef MPP_WRITE_2DDECOMP_3D_
@@ -1076,6 +1097,20 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
 #include <mpp_write_2Ddecomp.h>
+
+#ifdef OVERLOAD_R8
+#define WRITE_RECORD_ write_record_r8
+#undef MPP_WRITE_2DDECOMP_2D_
+#undef MPP_WRITE_2DDECOMP_2D_
+#define MPP_WRITE_2DDECOMP_2D_ mpp_write_2ddecomp_r2d_r8
+#undef MPP_WRITE_2DDECOMP_3D_
+#define MPP_WRITE_2DDECOMP_3D_ mpp_write_2ddecomp_r3d_r8
+#undef MPP_WRITE_2DDECOMP_4D_
+#define MPP_WRITE_2DDECOMP_4D_ mpp_write_2ddecomp_r4d_r8
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(DOUBLE_KIND)
+#include <mpp_write_2Ddecomp.h>
+#endif
 
 #undef MPP_WRITE_COMPRESSED_1D_
 #define MPP_WRITE_COMPRESSED_1D_ mpp_write_compressed_r1d
@@ -1100,7 +1135,7 @@
 #undef MPP_RANK_
 #define MPP_RANK_ !
 #undef MPP_WRITE_RECORD_
-#define MPP_WRITE_RECORD_ call write_record( unit, field, 1, (/data/), tstamp)
+#define MPP_WRITE_RECORD_ call write_record_default( unit, field, 1, (/data/), tstamp)
 #include <mpp_write.h>
 
 #undef MPP_WRITE_
@@ -1108,7 +1143,7 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
 #undef MPP_WRITE_RECORD_
-#define MPP_WRITE_RECORD_ call write_record( unit, field, size(data(:)), data, tstamp)
+#define MPP_WRITE_RECORD_ call write_record_default( unit, field, size(data(:)), data, tstamp)
 #undef MPP_RANK_
 #define MPP_RANK_ (:)
 #include <mpp_write.h>
@@ -1118,7 +1153,7 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
 #undef MPP_WRITE_RECORD_
-#define MPP_WRITE_RECORD_ call write_record( unit, field, size(data(:,:)), data, tstamp )
+#define MPP_WRITE_RECORD_ call write_record_default( unit, field, size(data(:,:)), data, tstamp )
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:)
 #include <mpp_write.h>
@@ -1128,7 +1163,7 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
 #undef MPP_WRITE_RECORD_
-#define MPP_WRITE_RECORD_ call write_record( unit, field, size(data(:,:,:)), data, tstamp)
+#define MPP_WRITE_RECORD_ call write_record_default( unit, field, size(data(:,:,:)), data, tstamp)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:)
 #include <mpp_write.h>
@@ -1138,7 +1173,7 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
 #undef MPP_WRITE_RECORD_
-#define MPP_WRITE_RECORD_ call write_record( unit, field, size(data(:,:,:,:)), data, tstamp)
+#define MPP_WRITE_RECORD_ call write_record_default( unit, field, size(data(:,:,:,:)), data, tstamp)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:,:)
 #include <mpp_write.h>
@@ -1186,197 +1221,6 @@
       call mpp_clock_end(mpp_write_clock)
       return
     end subroutine mpp_write_axis
-
-    subroutine write_record( unit, field, nwords, data, time_in, domain, tile_count)
-!routine that is finally called by all mpp_write routines to perform the write
-!a non-netCDF record contains:
-!      field ID
-!      a set of 4 coordinates (is:ie,js:je) giving the data subdomain
-!      a timelevel and a timestamp (=NULLTIME if field is static)
-!      3D real data (stored as 1D)
-!if you are using direct access I/O, the RECL argument to OPEN must be large enough for the above
-!in a global direct access file, record position on PE is given by %record.
-
-!Treatment of timestamp:
-!   We assume that static fields have been passed without a timestamp.
-!   Here that is converted into a timestamp of NULLTIME.
-!   For non-netCDF fields, field is treated no differently, but is written
-!   with a timestamp of NULLTIME. There is no check in the code to prevent
-!   the user from repeatedly writing a static field.
-
-      integer,           intent(in)           :: unit, nwords
-      type(fieldtype),   intent(in)           :: field
-      real,              intent(in)           :: data(nwords)
-      real,              intent(in), optional :: time_in
-      type(domain2D),    intent(in), optional :: domain
-      integer,           intent(in), optional :: tile_count
-      integer, dimension(size(field%axes(:))) :: start, axsiz
-      real(DOUBLE_KIND) :: time
-      integer :: time_level
-      logical :: newtime
-      integer :: subdomain(4)
-      integer :: packed_data(nwords)
-      integer :: i, is, ie, js, je
-
-      real(FLOAT_KIND) :: data_r4(nwords)
-      pointer( ptr1, data_r4)
-      pointer( ptr2, packed_data)
-
-      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(unit)%write_on_this_pe) return
-      if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
-      if( .NOT.mpp_file(unit)%initialized )then
-!this is the first call to mpp_write
-!we now declare the file to be initialized
-!if this is netCDF we switch file from DEFINE mode to DATA mode
-          if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
-#ifdef use_netCDF
-!NOFILL is probably required for parallel: any circumstances in which not advisable?
-              error = NF_SET_FILL( mpp_file(unit)%ncid, NF_NOFILL, i ); call netcdf_err( error, mpp_file(unit) )
-              if( mpp_file(unit)%action.EQ.MPP_WRONLY )then
-                 if(header_buffer_val>0) then
-                    error = NF__ENDDEF(mpp_file(unit)%ncid,header_buffer_val,4,0,4)
-                 else
-                    error = NF_ENDDEF(mpp_file(unit)%ncid)
-                 endif
-              endif
-              call netcdf_err( error, mpp_file(unit) )
-#endif
-          else
-              call mpp_write_meta( unit, 'END', cval='metadata' )
-          end if
-          mpp_file(unit)%initialized = .TRUE.
-          if( verbose )print '(a,i6,a)', 'MPP_WRITE: PE=', pe, ' initialized file '//trim(mpp_file(unit)%name)//'.'
-      end if
-
-!initialize time: by default assume NULLTIME
-      time = NULLTIME
-      time_level = -1
-      newtime = .FALSE.
-      if( PRESENT(time_in) )time = time_in
-!increment time level if new time
-      if( time.GT.mpp_file(unit)%time+EPSILON(time) )then !new time
-          mpp_file(unit)%time_level = mpp_file(unit)%time_level + 1
-          mpp_file(unit)%time = time
-          newtime = .TRUE.
-      end if
-      if( verbose )print '(a,2i6,2i5,es13.5)', 'MPP_WRITE: PE, unit, %id, %time_level, %time=',&
-           pe, unit, mpp_file(unit)%id, mpp_file(unit)%time_level, mpp_file(unit)%time
-
-      if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
-!define netCDF data block to be written:
-!  time axis: START = time level
-!             AXSIZ = 1
-!  space axis: if there is no domain info
-!              START = 1
-!              AXSIZ = field%size(axis)
-!          if there IS domain info:
-!              start of domain is compute%start_index for multi-file I/O
-!                                 global%start_index for all other cases
-!              this number must be converted to 1 for NF_PUT_VAR
-!                  (netCDF fortran calls are with reference to 1),
-!          So, START = compute%start_index - <start of domain> + 1
-!              AXSIZ = usually compute%size
-!          However, if compute%start_index-compute%end_index+1.NE.compute%size,
-!              we assume that the call is passing a subdomain.
-!              To pass a subdomain, you must pass a domain2D object that satisfies the following:
-!                  global%start_index must contain the <start of domain> as defined above;
-!                  the data domain and compute domain must refer to the subdomain being passed.
-!              In this case, START = compute%start_index - <start of domain> + 1
-!                            AXSIZ = compute%start_index - compute%end_index + 1
-! NOTE: passing of subdomains will fail for multi-PE single-threaded I/O,
-!       since that attempts to gather all data on PE 0.
-          start = 1
-          do i = 1,size(field%axes(:))
-             axsiz(i) = field%size(i)
-             if( i.EQ.field%time_axis_index )start(i) = mpp_file(unit)%time_level
-             start(i) = max(start(i),1)
-          end do
-
-          if( debug )print '(a,2i6,12i6)', 'WRITE_RECORD: PE, unit, start, axsiz=', pe, unit, start, axsiz
-#ifdef use_netCDF
-!write time information if new time
-          if( newtime )then
-              if( KIND(time).EQ.DOUBLE_KIND )then
-                  error = NF_PUT_VAR1_DOUBLE( mpp_file(unit)%ncid, mpp_file(unit)%id, mpp_file(unit)%time_level, time )
-              else if( KIND(time).EQ.FLOAT_KIND )then
-                  error = NF_PUT_VAR1_REAL  ( mpp_file(unit)%ncid, mpp_file(unit)%id, mpp_file(unit)%time_level, time )
-              end if
-          end if
-          if( field%pack == 0 )then
-              if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
-              ptr2 = LOC(mpp_io_stack(1))
-              packed_data = CEILING(data)
-              error = NF_PUT_VARA_INT   ( mpp_file(unit)%ncid, field%id, start, axsiz, packed_data )
-          elseif( field%pack.GT.0 .and. field%pack.LE.2 )then
-              if( KIND(data).EQ.DOUBLE_KIND )then
-                  error = NF_PUT_VARA_DOUBLE( mpp_file(unit)%ncid, field%id, start, axsiz, data )
-              else if( KIND(data).EQ.FLOAT_KIND )then
-                  error = NF_PUT_VARA_REAL  ( mpp_file(unit)%ncid, field%id, start, axsiz, data )
-              end if
-          else              !convert to integer using scale and add: no error check on packed data representation
-              if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
-              ptr2 = LOC(mpp_io_stack(1))
-              packed_data = nint((data-field%add)/field%scale)
-              error = NF_PUT_VARA_INT   ( mpp_file(unit)%ncid, field%id, start, axsiz, packed_data )
-          end if
-          call netcdf_err( error, mpp_file(unit), field=field )
-#endif
-      else                      !non-netCDF
-!subdomain contains (/is,ie,js,je/)
-          if( PRESENT(domain) )then
-              call mpp_get_compute_domain(domain, is, ie, js, je)
-              subdomain(:) = (/ is, ie, js, je /)
-          else
-              subdomain(:) = -1    ! -1 means use global value from axis metadata
-          end if
-          if( mpp_file(unit)%format.EQ.MPP_ASCII )then
-!implies sequential access
-              write( unit,* )field%id, subdomain, time_level, time, data
-          else                      !MPP_IEEE32 or MPP_NATIVE
-              if( mpp_file(unit)%access.EQ.MPP_SEQUENTIAL )then
-#ifdef __sgi
-                  if( mpp_file(unit)%format.EQ.MPP_IEEE32 )then
-                      if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
-                      ptr1 = LOC(mpp_io_stack(1))
-                      data_r4 = data !IEEE conversion layer on SGI until assign -N ieee_32 is supported
-                      write(unit)field%id, subdomain, time_level, time, data_r4
-                  else
-                      write(unit)field%id, subdomain, time_level, time, data
-                  end if
-#else
-                  write(unit)field%id, subdomain, time_level, time, data
-#endif
-              else                  !MPP_DIRECT
-#ifdef __sgi
-                  if( mpp_file(unit)%format.EQ.MPP_IEEE32 )then
-                      if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
-                      ptr1 = LOC(mpp_io_stack(1))
-                      data_r4 = data !IEEE conversion layer on SGI until assign -N ieee_32 is supported
-                      write( unit, rec=mpp_file(unit)%record )field%id, subdomain, time_level, time, data_r4
-                  else
-                      write( unit, rec=mpp_file(unit)%record )field%id, subdomain, time_level, time, data
-                  end if
-#else
-                  write( unit, rec=mpp_file(unit)%record )field%id, subdomain, time_level, time, data
-#endif
-                  if( debug )print '(a,i6,a,i6)', 'MPP_WRITE: PE=', pe, ' wrote record ', mpp_file(unit)%record
-              end if
-          end if
-      end if
-
-!recompute current record for direct access I/O
-      if( mpp_file(unit)%access.EQ.MPP_DIRECT )then
-          if( mpp_file(unit)%fileset.EQ.MPP_SINGLE )then
-!assumes all PEs participate in I/O: modify later
-              mpp_file(unit)%record = mpp_file(unit)%record + records_per_pe*npes
-          else
-              mpp_file(unit)%record = mpp_file(unit)%record + records_per_pe
-          end if
-      end if
-
-      return
-    end subroutine write_record
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
