@@ -17,8 +17,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-#include <fms_platform.h>
-
 MODULE diag_axis_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
@@ -60,6 +58,7 @@ MODULE diag_axis_mod
   ! Module variables
   ! Parameters
   ! Include variable "version" to be written to log file.
+#include <fms_platform.h>
 #include<file_version.h>
 
 !----------

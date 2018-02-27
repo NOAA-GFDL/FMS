@@ -17,8 +17,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-#include <fms_platform.h>
-
 MODULE diag_util_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
@@ -132,7 +130,8 @@ MODULE diag_util_mod
   ! </INTERFACE>
 
   ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include <fms_platform.h>
+#include <file_version.h>
 
   LOGICAL :: module_initialized = .FALSE.
 
