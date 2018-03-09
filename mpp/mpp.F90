@@ -1269,7 +1269,7 @@ private
 ! parameter defining length of character variables 
   integer, parameter :: INPUT_STR_LENGTH = 256
 ! public variable needed for reading input.nml from an internal file
-  character(len=INPUT_STR_LENGTH), dimension(:), allocatable, public :: input_nml_file
+  character(len=INPUT_STR_LENGTH), dimension(:), allocatable, target, public :: input_nml_file
   logical :: read_ascii_file_on = .FALSE.
 !***********************************************************************
 

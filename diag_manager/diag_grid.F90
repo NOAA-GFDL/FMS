@@ -17,8 +17,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-#include <fms_platform.h>
-
 MODULE diag_grid_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
@@ -80,6 +78,7 @@ MODULE diag_grid_mod
 
   ! Parameters
   ! Include variable "version" to be written to log file.
+#include <fms_platform.h>
 #include<file_version.h>
 
   ! Derived data types
@@ -1320,8 +1319,20 @@ CONTAINS
                                 diag_global_grid%aglo_lat(i,j), &
                                 diag_global_grid%aglo_lon(i,j))
             IF (dist .LT. minimum_distance) THEN
-                minI = i
-                minJ = j
+
+                !These number shouldn't be hardcoded, but they have to
+                !match the ones in diag_grid_init.
+                if (diag_global_grid%tile_number .eq. 4 .or. &
+                        diag_global_grid%tile_number .eq. 5) then
+
+                    !Because of transpose in diag_grid_init.
+                    minI = j
+                    minJ = i
+
+                else
+                    minI = i
+                    minJ = j
+                endif
                 minimum_distance = dist
             ENDIF
         ENDDO

@@ -17,8 +17,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-#include <fms_platform.h>
-
 MODULE diag_util_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
@@ -71,7 +69,7 @@ MODULE diag_util_mod
        & domainUG, null_domainUG
   USE time_manager_mod,ONLY: time_type, OPERATOR(==), OPERATOR(>), NO_CALENDAR, increment_date,&
        & increment_time, get_calendar_type, get_date, get_time, leap_year, OPERATOR(-),&
-       & OPERATOR(<), OPERATOR(>=), OPERATOR(<=)
+       & OPERATOR(<), OPERATOR(>=), OPERATOR(<=), OPERATOR(==)
   USE mpp_io_mod, ONLY: mpp_close
   USE mpp_mod, ONLY: mpp_npes
   USE fms_io_mod, ONLY: get_instance_filename, get_mosaic_tile_file_ug
@@ -132,7 +130,8 @@ MODULE diag_util_mod
   ! </INTERFACE>
 
   ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include <fms_platform.h>
+#include <file_version.h>
 
   LOGICAL :: module_initialized = .FALSE.
 
@@ -1055,10 +1054,10 @@ CONTAINS
   !   <IN NAME="start_time" TYPE="TYPE(time_type), OPTIONAL">Time when the file is to start </IN>
   !   <IN NAME="file_duration" TYPE="INTEGER, OPTIONAL">How long file is to be used.</IN>
   !   <IN NAME="file_duration_units" TYPE="INTEGER, OPTIONAL">File duration unit.  (MIN, HOURS, DAYS, etc.)</IN>
-  SUBROUTINE init_file(name, output_freq, output_units, FORMAT, time_units, long_name, tile_count,&
+  SUBROUTINE init_file(name, output_freq, output_units, format, time_units, long_name, tile_count,&
        & new_file_freq, new_file_freq_units, start_time, file_duration, file_duration_units)
     CHARACTER(len=*), INTENT(in) :: name, long_name
-    INTEGER, INTENT(in) :: output_freq, output_units, FORMAT, time_units
+    INTEGER, INTENT(in) :: output_freq, output_units, format, time_units
     INTEGER, INTENT(in) :: tile_count
     INTEGER, INTENT(in), OPTIONAL :: new_file_freq, new_file_freq_units
     INTEGER, INTENT(in), OPTIONAL :: file_duration, file_duration_units
@@ -1066,8 +1065,77 @@ CONTAINS
 
     INTEGER :: new_file_freq1, new_file_freq_units1
     INTEGER :: file_duration1, file_duration_units1
+    INTEGER :: n
+    LOGICAL :: same_file_err !< .FALSE. indicates that if the file name had
+                             !! previously been registered, this new file
+                             !! contained differences from the previous.
     REAL, DIMENSION(1) :: tdata
     CHARACTER(len=128) :: time_units_str
+
+    ! Check if this file has already been defined
+    same_file_err=.FALSE. ! To indicate that if this file was previously defined
+                          ! no differences in this registration was detected.
+    DO n=1,num_files
+      IF ( TRIM(files(n)%name) == TRIM(name) ) THEN
+        ! File is defined, check if all inputs are the same
+        ! Start with the required parameters
+        IF ( files(n)%output_freq.NE.output_freq .OR.&
+           & files(n)%output_units.NE.output_units .OR.&
+           & files(n)%format.NE.format .OR.&
+           & files(n)%time_units.NE.time_units .OR.&
+           & TRIM(files(n)%long_name).NE.TRIM(long_name) .OR.&
+           & files(n)%tile_count.NE.tile_count ) THEN
+           same_file_err=.TRUE.
+        END IF
+
+        ! Now check the OPTIONAL parameters
+        IF ( PRESENT(new_file_freq) ) THEN
+           IF ( files(n)%new_file_freq.NE.new_file_freq ) THEN
+             same_file_err=.TRUE.
+           END IF
+        END IF
+
+        IF ( PRESENT(new_file_freq_units) ) THEN
+          IF ( files(n)%new_file_freq_units.NE.new_file_freq_units ) THEN
+            same_file_err=.TRUE.
+          END IF
+        END IF
+
+        IF ( PRESENT(start_time) ) THEN
+          IF ( files(n)%start_time==start_time ) THEN
+            same_file_err=.TRUE.
+          END IF
+        END IF
+
+        IF ( PRESENT(file_duration) ) THEN
+          IF ( files(n)%duration.NE.file_duration) THEN
+            same_file_err=.TRUE.
+          END IF
+        END IF
+
+        IF ( PRESENT(file_duration_units) ) THEN
+          IF ( files(n)%duration_units.NE.file_duration_units ) THEN
+            same_file_err=.TRUE.
+          END IF
+        END IF
+
+        ! If the same file was defined twice, simply return, else FATAL
+        IF ( same_file_err ) THEN
+          ! Something in this file is not identical to the previously defined
+          ! file of the same name.  FATAL
+          CALL error_mesg('diag_util_mod::init_file',&
+                  & 'The file "'//TRIM(name)//'" is defined multiple times in&
+                  & the diag_table.', FATAL)
+        ELSE
+          ! Issue a note that the same file is defined multiple times
+          CALL error_mesg('diag_util_mod::init_file',&
+                  & 'The file "'//TRIM(name)//'" is defined multiple times in&
+                  & the diag_table.', NOTE)
+          ! Return to the calling function
+          RETURN
+        END IF
+      END IF
+    END DO
 
     ! Get a number for this file
     num_files = num_files + 1
@@ -2493,14 +2561,19 @@ CONTAINS
        input_num = output_fields(i)%input_field
        ! skip fields that were not registered
        IF ( .NOT.input_fields(input_num)%register ) CYCLE
-       if( output_fields(i)%local_output .AND. .NOT. output_fields(i)%need_compute) CYCLE
+       IF ( output_fields(i)%local_output .AND. .NOT. output_fields(i)%need_compute) CYCLE
        ! only output static fields here
        IF ( .NOT.output_fields(i)%static ) CYCLE
        CALL diag_data_out(file, i, output_fields(i)%buffer, files(file)%last_flush, .TRUE., .TRUE.)
     END DO
     ! Close up this file
-    CALL mpp_close(files(file)%file_unit)
-    files(file)%file_unit = -1
+    IF ( files(file)%file_unit.NE.-1 ) then
+      ! File is stil open.  This is to protect when the diag_table has no Fields
+      ! going to this file, and it was never opened (b/c diag_data_out was not
+      ! called)
+      CALL mpp_close(files(file)%file_unit)
+      files(file)%file_unit = -1
+    END IF
   END SUBROUTINE write_static
   ! </SUBROUTINE>
 

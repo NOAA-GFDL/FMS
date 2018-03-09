@@ -17,8 +17,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-#include <fms_platform.h>
-
 MODULE diag_manager_mod
   ! <CONTACT EMAIL="Matthew.Harrison@gfdl.noaa.gov">
   !   Matt Harrison
@@ -260,12 +258,13 @@ MODULE diag_manager_mod
   ! Public interfaces from diag_grid_mod
   PUBLIC :: diag_grid_init, diag_grid_end
   PUBLIC :: diag_manager_set_time_end, diag_send_complete
-  PUBLIC :: diag_send_complete_extra
+  PUBLIC :: diag_send_complete_instant
   ! Public interfaces from diag_data_mod
   PUBLIC :: DIAG_FIELD_NOT_FOUND
 
   ! version number of this module
   ! Include variable "version" to be written to log file.
+#include <fms_platform.h>
 #include<file_version.h>
 
   type(time_type) :: Time_end
@@ -360,7 +359,7 @@ MODULE diag_manager_mod
      MODULE PROCEDURE send_data_1d
      MODULE PROCEDURE send_data_2d
      MODULE PROCEDURE send_data_3d
-#ifdef OVERLOAD_R4
+#ifdef OVERLOAD_R8
      MODULE PROCEDURE send_data_2d_r8
      MODULE PROCEDURE send_data_3d_r8
 #endif
@@ -1557,7 +1556,7 @@ CONTAINS
   END FUNCTION send_data_2d
   ! </FUNCTION>
 
-#ifdef OVERLOAD_R4
+#ifdef OVERLOAD_R8
   ! <FUNCTION NAME="send_data_2d_r8" INTERFACE="send_data">
   LOGICAL FUNCTION send_data_2d_r8(diag_field_id, field, time, is_in, js_in, &
        & mask, rmask, ie_in, je_in, weight, err_msg)
@@ -3536,7 +3535,15 @@ CONTAINS
   END SUBROUTINE diag_manager_set_time_end
 
   !-----------------------------------------------------------------------
-  SUBROUTINE diag_send_complete_extra(time)
+  !>@brief The subroutine 'diag_send_complete_instant' allows the user to 
+  !! save diagnostic data on variable intervals (user defined in code logic)
+  !! to the same file.  The argument (time_type) will be written to the 
+  !! time axis correspondingly.
+  !>@details The user is responsible for any averaging of accumulated data
+  !! as this routine is not designed for instantaneous values.  This routine
+  !! works only for send_data calls within OpenMP regions as they are buffered
+  !! until the complete signal is given.
+  SUBROUTINE diag_send_complete_instant(time)
     TYPE (time_type), INTENT(in) :: time
     !--- local variables
     integer :: file, j, freq, in_num, file_num, out_num
@@ -3555,7 +3562,7 @@ CONTAINS
         END DO
       END IF
     END DO
-  END SUBROUTINE diag_send_complete_extra
+  END SUBROUTINE diag_send_complete_instant
 
   !-----------------------------------------------------------------------
   SUBROUTINE diag_send_complete(time_step, err_msg)

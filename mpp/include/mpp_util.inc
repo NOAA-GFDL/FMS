@@ -1323,16 +1323,17 @@ end function rarray_to_char
 ! read(input_nml_file, nml=<name_nml>, iostat=status)
 !
 ! 
-  subroutine read_input_nml()
+  subroutine read_input_nml(pelist_name_in)
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
+    character(len=*), intent(in), optional :: pelist_name_in
 ! private variables
     integer :: log_unit
     integer :: num_lines, i
     logical :: file_exist
-    character(len=32) :: pelist_name
+    character(len=len(peset(current_peset_num)%name)) :: pelist_name
     character(len=128) :: filename
 
 ! check the status of input_nml_file
@@ -1341,7 +1342,17 @@ end function rarray_to_char
     endif
 
 ! the following code is necessary for using alternate namelist files (nests, stretched grids, etc)
-    pelist_name = mpp_get_current_pelist_name()
+    if (PRESENT(pelist_name_in)) then
+      ! test to make sure length of pelist_name_in is <= pelist_name
+      if (LEN(pelist_name_in) > LEN(pelist_name)) then
+        call mpp_error(FATAL,  &
+           "mpp_util.inc: read_input_nml optional argument pelist_name_in has size greater than local pelist_name")
+      else
+        pelist_name = pelist_name_in
+      endif
+    else
+      pelist_name = mpp_get_current_pelist_name()
+    endif
     filename='input_'//trim(pelist_name)//'.nml'
     inquire(FILE=filename, EXIST=file_exist)
     if (.not. file_exist ) then
