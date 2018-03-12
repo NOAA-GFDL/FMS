@@ -1864,8 +1864,7 @@ end function  create_field  !}
 !     success = dump_list(list_p, recursive= .true., depth=0)
 !   </TEMPLATE>
 !
-recursive function dump_list(list_p, recursive, depth)                &
-          result (success)  !{
+logical recursive function dump_list(list_p, recursive, depth, out_unit) result(success)
 !
 !   <IN NAME="list_p" TYPE="type(field_def), pointer">
 !     A pointer to the field, the contents of which will be printed out.
@@ -1884,14 +1883,12 @@ recursive function dump_list(list_p, recursive, depth)                &
 !   </OUT>
 !
 !        Function definition
-!
-logical                             :: success
-!
+
 !        arguments
-!
-type (field_def), pointer           :: list_p
-logical, intent(in)                 :: recursive
-integer, intent(in)                 :: depth
+type (field_def), pointer :: list_p
+logical, intent(in)       :: recursive
+integer, intent(in)       :: depth
+integer, intent(in)       :: out_unit
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -1913,7 +1910,6 @@ integer                             :: j
 integer                             :: last
 integer                             :: nf
 integer                             :: nl
-integer                             :: out_unit
 character(len=fm_field_name_len)    :: num
 character(len=fm_field_name_len)    :: scratch
 type (field_def), pointer           :: this_field_p
@@ -1921,7 +1917,6 @@ type (field_def), pointer           :: this_field_p
 !        Check for a valid list
 !
 
-out_unit = stdout()
 this_field_p => NULL()
 
 if (.not. associated(list_p)) then  !{
@@ -1970,7 +1965,7 @@ else  !}{
 !
       if (recursive) then  !{
 ! If recursive is true, then this routine will find and dump sub-fields.
-        if (.not. dump_list(this_field_p, .true., depthp1)) then  !{
+        if (.not. dump_list(this_field_p, .true., depthp1, out_unit)) then  !{
           success = .false.
           exit
         endif  !}
@@ -2114,6 +2109,7 @@ endif  !}
 end function dump_list  !}
 ! </FUNCTION> NAME="dump_list"
 !</PRIVATE>
+
 !#######################################################################
 !#######################################################################
 
@@ -2742,9 +2738,10 @@ end function  fm_change_root  !}
 !     success = fm_dump_list(name, recursive = .true.) 
 !   </TEMPLATE>
 !
-function  fm_dump_list(name, recursive)                        &
-          result (success)  !{
-!
+logical function  fm_dump_list(name, recursive, unit) result (success)
+  character(len=*), intent(in)  :: name
+  logical, intent(in), optional :: recursive
+  integer, intent(in), optional :: unit ! file to print to
 !   <OUT NAME="success" TYPE="logical">
 !     A flag to indicate whether the function operated with (FALSE) or 
 !     without (TRUE) errors.
@@ -2756,78 +2753,48 @@ function  fm_dump_list(name, recursive)                        &
 !     If present and .true., then a recursive listing of fields will be
 !     performed.
 !   </IN>
-!
-!        Function definition
-!
-logical        :: success
-!
-!        arguments
-!
-character(len=*), intent(in)           :: name
-logical,          intent(in), optional :: recursive
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=12), parameter :: sub_name     = 'fm_dump_list'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
+  ! ---- local parameters
+  character(len=12), parameter :: sub_name     = 'fm_dump_list'
+  character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
                                                '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-logical                         :: recursive_t
-type (field_def), pointer, save :: temp_list_p 
-integer                         :: out_unit
+  ! ---- local variables
+  logical                         :: recursive_t
+  type (field_def), pointer, save :: temp_list_p 
+  integer                         :: out_unit
 
-out_unit = stdout()
-!
-!        Check whether to do things recursively
-!
-if (present(recursive)) then  !{
-  recursive_t = recursive
-else  !}{
+  if (present(unit)) then
+     out_unit = unit
+  else
+     out_unit = stdout()
+  endif
+
   recursive_t = .false.
-endif  !}
-!
-!        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
-  call initialize
-endif  !}
+  if (present(recursive)) recursive_t = recursive
+  if (.not. module_is_initialized) call initialize()
 
-if (name .eq. ' ') then  !{
-!
-!        If list is empty, then dump the current list
-!
-  temp_list_p => current_list_p
-  success = .true.
-else  !}{
-!
-!        Get a pointer to the list
-!
-  temp_list_p => find_list(name, current_list_p, .false.)
-  if (associated(temp_list_p)) then  !{
+  if (name .eq. ' ') then 
+    ! If list is empty, then dump the current list
+    temp_list_p => current_list_p
     success = .true.
-  else  !}{
-!
-!        Error following the path
-!
-
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                        &
-           'Could not follow path for ', trim(name)
-    endif  !}
-    success = .false.
-  endif  !}
-endif  !}
-!
-!        Dump the list
-!
-if (success) then  !{
-  success = dump_list(temp_list_p, recursive_t, 0)
-endif  !}
-
-end function  fm_dump_list  !}
+  else  
+    ! Get a pointer to the list
+    temp_list_p => find_list(name, current_list_p, .false.)
+    if (associated(temp_list_p)) then
+       success = .true.
+    else 
+       ! Error following the path
+       if (verb .gt. verb_level_warn) then
+          write (out_unit,*) trim(warn_header), 'Could not follow path for ', trim(name)
+       endif
+       success = .false.
+    endif
+  endif
+  ! Dump the list
+  if (success) then
+      success = dump_list(temp_list_p, recursive_t, 0, out_unit)
+  endif
+end function  fm_dump_list
 ! </FUNCTION> NAME="fm_dump_list"
 
 !#######################################################################
