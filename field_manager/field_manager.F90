@@ -1915,7 +1915,8 @@ logical recursive function dump_list(list_p, recursive, depth, out_unit) result(
 
   !  Increment the indentation depth
   ! The following max function is to work around an error in the IBM compiler for len_trim
-  depthp1 = depth + max(len_trim(list_p%name),0) + len_trim(list_sep)
+  ! depthp1 = depth + max(len_trim(list_p%name),0) + len_trim(list_sep)
+  depthp1 = depth + 6
 
   this_field_p => list_p%first_field
 
