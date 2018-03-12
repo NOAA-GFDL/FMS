@@ -83,8 +83,6 @@ use coupler_types_mod, only: ind_deposition
 use coupler_types_mod, only: ind_runoff
 use coupler_types_mod, only: ind_flux, ind_deltap, ind_kw, ind_flux0
 
-use constants_mod,     only: WTMAIR,rdgas
-
 use field_manager_mod, only: fm_path_name_len, fm_string_len, fm_exists, fm_get_index
 use field_manager_mod, only: fm_new_list, fm_get_current_list, fm_change_list
 use field_manager_mod, only: fm_field_name_len, fm_type_name_len, fm_dump_list
@@ -767,7 +765,7 @@ end subroutine  atmos_ocean_fluxes_init
 !! \throw FATAL, "Bad parameter ([gas_fluxes%bc(n)%param(1)]) for land_sea_runoff for [name]"
 !! \throw FATAL, "Unknown flux type ([flux_type]) for [name]"
 subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
-                                   gas_fluxes, seawater, tsurf,pwt,  sphum_correction,dt)
+                                   gas_fluxes, seawater)
   type(coupler_1d_bc_type), intent(in)    :: gas_fields_atm !< Structure containing atmospheric surface
                                                         !! variables that are used in the calculation
                                                         !! of the atmosphere-ocean gas fluxes.
@@ -778,11 +776,6 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
                                                         !! the atmosphere and the ocean and parameters
                                                         !! related to the calculation of these fluxes.
   real, dimension(:),       intent(in)    :: seawater   !< 1 for the open water category, 0 if ice or land.
-
-  real, dimension(:),       intent(in)    :: tsurf, pwt !(in kg/m2)
-  real, dimension(:),       intent(in)    :: sphum_correction
-
-  real,                     intent(in)    :: dt
 
   character(len=64), parameter    :: sub_name = 'atmos_ocean_fluxes_calc'
   character(len=256), parameter   :: error_header = &
@@ -797,7 +790,6 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
 
   real, parameter :: epsln=1.0e-30
   real, parameter :: permeg=1.0e-6
-
 
   !       Return if no fluxes to be calculated
   if (gas_fluxes%num_bcs .le. 0) return
@@ -865,12 +857,6 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
               gas_fluxes%bc(n)%field(ind_flux0)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i) * max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.)
               gas_fluxes%bc(n)%field(ind_deltap)%values(i) = (max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.) - cair(i)) / &
                    (gas_fields_ice%bc(n)%field(ind_alpha)%values(i) * permeg + epsln)
-
-              if (gas_fluxes%bc(n)%field(ind_flux)%values(i).lt.0.) then
-                 gas_fluxes%bc(n)%field(ind_flux)%values(i) = max(gas_fluxes%bc(n)%field(ind_flux)%values(i), &
-                      -gas_fields_atm%bc(n)%field(ind_pCair)%values(i)/(WTMAIR*1.e-3*sphum_correction(i))*pwt(i)/dt)
-              end if
-
             else
               gas_fluxes%bc(n)%field(ind_kw)%values(i) = 0.0
               gas_fluxes%bc(n)%field(ind_flux)%values(i) = 0.0
