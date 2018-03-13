@@ -5364,7 +5364,7 @@ logical function in_box_me(i, j, grid)
   integer :: g
 
   if(grid%is_ug) then
-     g = (j-1)*grid%im + i
+     g = (j-1)*grid%ni + i
      in_box_me = (g>=grid%gs_me) .and. (g<=grid%ge_me)
   else
      in_box_me = (i>=grid%is_me) .and. (i<=grid%ie_me) .and. (j>=grid%js_me) .and. (j<=grid%je_me)
@@ -5379,24 +5379,13 @@ logical function in_box_nbr(i, j, grid, p)
   integer :: g
 
   if(grid%is_ug) then
-     g = (j-1)*grid%im + i
+     g = (j-1)*grid%ni + i
      in_box_nbr = (g>=grid%gs(p)) .and. (g<=grid%ge(p))
   else
      in_box_nbr = (i>=grid%is(p)) .and. (i<=grid%ie(p)) .and. (j>=grid%js(p)) .and. (j<=grid%je(p))
   endif
 
 end function in_box_nbr
-
-!######################################################################
-logical function in_box_ug(i, j, gs, ge, ni)
-  integer, intent(in) :: i, j, gs, ge, ni
-  integer :: g  
-
-  g = (j-1)*ni + i
-  in_box_ug = (g>=gs) .and. (g<=ge)
-
-end function in_box_ug
-
 
 
 end module xgrid_mod
