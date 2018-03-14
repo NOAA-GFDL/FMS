@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 module horiz_interp_conserve_mod
 
   ! <CONTACT EMAIL="Bruce.Wyman@noaa.gov"> Bruce Wyman </CONTACT>
@@ -11,21 +29,21 @@ module horiz_interp_conserve_mod
 
   ! <DESCRIPTION>
   !     This module can conservatively interpolate data from any logically rectangular grid
-  !     to any rectangular grid. The interpolation scheme is area-averaging 
+  !     to any rectangular grid. The interpolation scheme is area-averaging
   !     conservative scheme. There is an optional mask field for missing input data in both
-  !     horiz_interp__conserveinit and horiz_interp_conserve. For efficiency purpose, mask should only be 
-  !     kept in horiz_interp_init (will remove the mask in horiz_interp in the future). 
+  !     horiz_interp__conserveinit and horiz_interp_conserve. For efficiency purpose, mask should only be
+  !     kept in horiz_interp_init (will remove the mask in horiz_interp in the future).
   !     There are 1-D and 2-D version of horiz_interp_conserve_init for 1-D and 2-D grid.
-  !     There is a optional argument mask in horiz_interp_conserve_init_2d and no mask should 
+  !     There is a optional argument mask in horiz_interp_conserve_init_2d and no mask should
   !     to passed into horiz_interp_conserv. optional argument mask will not be passed into
-  !     horiz_interp_conserve_init_1d and optional argument mask may be passed into 
-  !     horiz_interp_conserve (For the purpose of reproduce Memphis??? results).   
-  !     An optional output mask field may be used in conjunction with the input mask to show 
+  !     horiz_interp_conserve_init_1d and optional argument mask may be passed into
+  !     horiz_interp_conserve (For the purpose of reproduce Memphis??? results).
+  !     An optional output mask field may be used in conjunction with the input mask to show
   !     where output data exists.
   ! </DESCRIPTION>
 
   use mpp_mod,               only: mpp_send, mpp_recv, mpp_pe, mpp_root_pe, mpp_npes
-  use mpp_mod,               only: mpp_error, FATAL,  mpp_sync_self 
+  use mpp_mod,               only: mpp_error, FATAL,  mpp_sync_self
   use mpp_mod,               only: COMM_TAG_1, COMM_TAG_2
   use fms_mod,               only: write_version_number
   use fms_io_mod,            only: get_great_circle_algorithm
@@ -48,35 +66,35 @@ module horiz_interp_conserve_mod
   !      Allocates space and initializes a derived-type variable
   !      that contains pre-computed interpolation indices and weights
   !      for improved performance of multiple interpolations between
-  !      the same grids. 
+  !      the same grids.
 
   !   </DESCRIPTION>
   !   <IN NAME="lon_in" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians">
-  !      Longitude (in radians) for source data grid. 
+  !      Longitude (in radians) for source data grid.
   !   </IN>
   !   <IN NAME="lat_in" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians">
   !      Latitude (in radians) for source data grid.
   !   </IN>
   !   <IN NAME="lon_out" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians" >
-  !      Longitude (in radians) for destination data grid. 
+  !      Longitude (in radians) for destination data grid.
   !   </IN>
   !   <IN NAME="lat_out" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians" >
-  !      Latitude (in radians) for destination data grid. 
+  !      Latitude (in radians) for destination data grid.
   !   </IN>
   !   <IN NAME="verbose" TYPE="integer, optional" >
   !      flag for the amount of print output.
   !   </IN>
   !   <IN NAME="mask_in" TYPE="real, dimension(:,:),optional">
   !      Input mask.  must be the size (size(lon_in)-1, size(lon. The real value of
-  !      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points 
+  !      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points
   !      that should not be used or have missing data.
   !   </IN>
   !   <OUT NAME="mask_out" TYPE="real, dimension(:,:),optional">
   !      Output mask that specifies whether data was computed.
   !   </OUT>
   !   <INOUT NAME="Interp" TYPE="type(horiz_interp_type)" >
-  !      A derived-type variable containing indices and weights used for subsequent 
-  !      interpolations. To reinitialize this variable for a different grid-to-grid 
+  !      A derived-type variable containing indices and weights used for subsequent
+  !      interpolations. To reinitialize this variable for a different grid-to-grid
   !      interpolation you must first use the "horiz_interp_del" interface.
   !   </INOUT>
   interface horiz_interp_conserve_new
@@ -86,7 +104,7 @@ module horiz_interp_conserve_mod
      module procedure horiz_interp_conserve_new_2dx2d
   end interface
   ! </INTERFACE>
-  public :: horiz_interp_conserve_init 
+  public :: horiz_interp_conserve_init
   public :: horiz_interp_conserve_new, horiz_interp_conserve, horiz_interp_conserve_del
 
   integer :: pe, root_pe
@@ -104,7 +122,7 @@ contains
   !  <OVERVIEW>
   !     writes version number to logfile.out
   !  </OVERVIEW>
-  !  <DESCRIPTION>       
+  !  <DESCRIPTION>
   !     writes version number to logfile.out
   !  </DESCRIPTION>
 
@@ -367,7 +385,7 @@ contains
     allocate(i_src(maxxgrid), j_src(maxxgrid), i_dst(maxxgrid), j_dst(maxxgrid) )
     allocate( xgrid_area(maxxgrid), dst_area(nlon_out, nlat_out) )
 
-    !--- check if source latitude is flipped 
+    !--- check if source latitude is flipped
     nincrease = 0
     ndecrease = 0
     do j = 1, nlat_in
@@ -404,8 +422,8 @@ contains
        endif
     else
        allocate(lon_src(nlon_in+1,nlat_in+1), lat_src(nlon_in+1,nlat_in+1))
-       allocate(clon(maxxgrid), clat(maxxgrid))     
-       if(flip_lat) then  
+       allocate(clon(maxxgrid), clat(maxxgrid))
+       if(flip_lat) then
           allocate(mask_src_flip(nlon_in,nlat_in))
           do j = 1, nlat_in+1
              do i = 1, nlon_in+1
@@ -445,8 +463,8 @@ contains
     ! sum over exchange grid area to get destination grid area
     dst_area = 0.
     do i = 1, nxgrid
-       dst_area(Interp%i_dst(i), Interp%j_dst(i)) = dst_area(Interp%i_dst(i), Interp%j_dst(i)) + xgrid_area(i)       
-    end do    
+       dst_area(Interp%i_dst(i), Interp%j_dst(i)) = dst_area(Interp%i_dst(i), Interp%j_dst(i)) + xgrid_area(i)
+    end do
 
     do i = 1, nxgrid
        Interp%area_frac_dst(i) = xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) )
@@ -506,12 +524,12 @@ contains
     allocate(i_src(maxxgrid), j_src(maxxgrid), i_dst(maxxgrid), j_dst(maxxgrid) )
     allocate( xgrid_area(maxxgrid), dst_area(nlon_out, nlat_out) )
 
-    if( .not. great_circle_algorithm ) then    
+    if( .not. great_circle_algorithm ) then
        nxgrid = create_xgrid_2DX1D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in, lat_in, lon_out, lat_out, &
                                        mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
     else
        allocate(lon_dst(nlon_out+1, nlat_out+1), lat_dst(nlon_out+1, nlat_out+1) )
-       allocate(clon(maxxgrid), clat(maxxgrid))   
+       allocate(clon(maxxgrid), clat(maxxgrid))
        do j = 1, nlat_out+1
           do i = 1, nlon_out+1
              lon_dst(i,j) = lon_out(i)
@@ -535,8 +553,8 @@ contains
     ! sum over exchange grid area to get destination grid area
     dst_area = 0.
     do i = 1, nxgrid
-       dst_area(Interp%i_dst(i), Interp%j_dst(i)) = dst_area(Interp%i_dst(i), Interp%j_dst(i)) + xgrid_area(i)       
-    end do    
+       dst_area(Interp%i_dst(i), Interp%j_dst(i)) = dst_area(Interp%i_dst(i), Interp%j_dst(i)) + xgrid_area(i)
+    end do
 
     do i = 1, nxgrid
        Interp%area_frac_dst(i) = xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) )
@@ -597,11 +615,11 @@ contains
     allocate(i_src(maxxgrid), j_src(maxxgrid), i_dst(maxxgrid), j_dst(maxxgrid) )
     allocate( xgrid_area(maxxgrid), dst_area(nlon_out, nlat_out) )
 
-    if( .not. great_circle_algorithm ) then   
+    if( .not. great_circle_algorithm ) then
        nxgrid = create_xgrid_2DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in, lat_in, lon_out, lat_out, &
-                                       mask_src, i_src, j_src, i_dst, j_dst, xgrid_area) 
+                                       mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
     else
-       allocate(clon(maxxgrid), clat(maxxgrid))   
+       allocate(clon(maxxgrid), clat(maxxgrid))
        nxgrid =  create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_in, lat_in, lon_out, lat_out, &
                                           mask_src, i_src, j_src, i_dst, j_dst, xgrid_area, clon, clat)
        deallocate(clon, clat)
@@ -620,8 +638,8 @@ contains
     ! sum over exchange grid area to get destination grid area
     dst_area = 0.
     do i = 1, nxgrid
-       dst_area(Interp%i_dst(i), Interp%j_dst(i)) = dst_area(Interp%i_dst(i), Interp%j_dst(i)) + xgrid_area(i)       
-    end do    
+       dst_area(Interp%i_dst(i), Interp%j_dst(i)) = dst_area(Interp%i_dst(i), Interp%j_dst(i)) + xgrid_area(i)
+    end do
 
     do i = 1, nxgrid
        Interp%area_frac_dst(i) = xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) )
@@ -649,13 +667,13 @@ contains
   !      Subroutine for performing the horizontal interpolation between two grids.
   !   </OVERVIEW>
   !   <DESCRIPTION>
-  !     Subroutine for performing the horizontal interpolation between two grids. 
+  !     Subroutine for performing the horizontal interpolation between two grids.
   !     horiz_interp_conserve_new must be called before calling this routine.
   !   </DESCRIPTION>
   !   <TEMPLATE>
   !     call horiz_interp_conserve ( Interp, data_in, data_out, verbose, mask_in, mask_out)
   !   </TEMPLATE>
-  !   
+  !
   !   <IN NAME="Interp" TYPE="type(horiz_interp_type)">
   !     Derived-type variable containing interpolation indices and weights.
   !     Returned by a previous call to horiz_interp_new.
@@ -670,7 +688,7 @@ contains
   !   </IN>
   !   <IN NAME="mask_in" TYPE="real, dimension(:,:),optional">
   !      Input mask, must be the same size as the input data. The real value of
-  !      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points 
+  !      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points
   !      that should not be used or have missing data. mask_in will be applied only
   !      when horiz_interp_conserve_new_1d is called. mask_in will be passed into
   !      horiz_interp_conserve_new_2d.
@@ -708,7 +726,7 @@ contains
     case (2)
        if(present(mask_in) .OR. present(mask_out) ) call mpp_error(FATAL,  &
             'horiz_interp_conserve: for version 2, mask_in and mask_out must be passed in horiz_interp_new, not in horiz_interp')
-       call horiz_interp_conserve_version2(Interp, data_in, data_out, verbose)     
+       call horiz_interp_conserve_version2(Interp, data_in, data_out, verbose)
     end select
 
   end subroutine horiz_interp_conserve
@@ -868,7 +886,7 @@ contains
     type (horiz_interp_type), intent(in) :: Interp
     real,    intent(in),  dimension(:,:) :: data_in
     real,    intent(out), dimension(:,:) :: data_out
-    integer, intent(in),        optional :: verbose  
+    integer, intent(in),        optional :: verbose
     integer :: i, i_src, j_src, i_dst, j_dst
 
     data_out = 0.0
@@ -877,7 +895,7 @@ contains
        i_dst = Interp%i_dst(i); j_dst = Interp%j_dst(i)
        data_out(i_dst, j_dst) = data_out(i_dst, j_dst) + data_in(i_src,j_src)*Interp%area_frac_dst(i)
     end do
-    
+
   end subroutine horiz_interp_conserve_version2
 
   !#######################################################################
@@ -906,7 +924,7 @@ contains
 
     type (horiz_interp_type), intent(inout) :: Interp
 
-    select case(Interp%version)  
+    select case(Interp%version)
     case (1)
        if(associated(Interp%area_src)) deallocate(Interp%area_src)
        if(associated(Interp%area_dst)) deallocate(Interp%area_dst)
@@ -958,7 +976,7 @@ contains
        high = maxval(dat(:,:))
     endif
 
-    ! other pe send local min, max, avg to the root pe and 
+    ! other pe send local min, max, avg to the root pe and
     ! root pe receive these information
 
     if(pe == root_pe) then
@@ -985,7 +1003,7 @@ contains
        call mpp_send(buffer_int(1),plen=1,to_pe=root_pe, tag=COMM_TAG_2)
     endif
 
-    call mpp_sync_self()   
+    call mpp_sync_self()
 
   end subroutine stats
 
@@ -1012,7 +1030,7 @@ contains
     integer :: id, jd
     !-----------------------------------------------------------------------
 
-    id=size(area,1); jd=size(area,2) 
+    id=size(area,1); jd=size(area,2)
 
     wt=area
     wt( 1,:)=wt( 1,:)*facis
@@ -1039,5 +1057,3 @@ contains
   !#######################################################################
 
 end module horiz_interp_conserve_mod
-
-

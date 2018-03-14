@@ -1,3 +1,22 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 !----------
 !ug support
 
@@ -110,11 +129,11 @@ subroutine mpp_io_unstructured_write_r_1D(funit, &
             cdata(i) = rbuff(i)
         enddo
         field%size(1) = nelems
-        call write_record(funit, &
-                          field, &
-                          nelems, &
-                          cdata, &
-                          tstamp)
+        call write_record_default(funit, &
+                                  field, &
+                                  nelems, &
+                                  cdata, &
+                                  tstamp)
         deallocate(cdata)
     endif
 
@@ -267,11 +286,11 @@ subroutine mpp_io_unstructured_write_r_2D(funit, &
             enddo
         enddo
         field%size(1) = nelems
-        call write_record(funit, &
-                          field, &
-                          nelems*dim_size_2, &
-                          cdata, &
-                          tstamp)
+        call write_record_default(funit, &
+                                  field, &
+                                  nelems*dim_size_2, &
+                                  cdata, &
+                                  tstamp)
         deallocate(cdata)
     endif
 
@@ -435,11 +454,11 @@ subroutine mpp_io_unstructured_write_r_3D(funit, &
             enddo
         enddo
         field%size(1) = nelems
-        call write_record(funit, &
-                          field, &
-                          nelems*dim_size_2*dim_size_3, &
-                          cdata, &
-                          tstamp)
+        call write_record_default(funit, &
+                                  field, &
+                                  nelems*dim_size_2*dim_size_3, &
+                                  cdata, &
+                                  tstamp)
         deallocate(cdata)
     endif
 
@@ -622,11 +641,11 @@ subroutine mpp_io_unstructured_write_r_4D(funit, &
             enddo
         enddo
         field%size(1) = nelems
-        call write_record(funit, &
-                          field, &
-                          nelems*size_fdata_dim_2*size_fdata_dim_3*size_fdata_dim_4, &
-                          cdata, &
-                          tstamp)
+        call write_record_default(funit, &
+                                  field, &
+                                  nelems*size_fdata_dim_2*size_fdata_dim_3*size_fdata_dim_4, &
+                                  cdata, &
+                                  tstamp)
         deallocate(cdata)
     endif
 

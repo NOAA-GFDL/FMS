@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 !-----------------------------------------------------------------------
 !                 Parallel I/O for message-passing codes
 !
@@ -584,6 +602,13 @@ type :: atttype
      module procedure mpp_read_text
      module procedure mpp_read_region_r2D
      module procedure mpp_read_region_r3D
+#ifdef OVERLOAD_R8
+     module procedure mpp_read_region_r2D_r8
+     module procedure mpp_read_region_r3D_r8
+     module procedure mpp_read_2ddecomp_r2d_r8
+     module procedure mpp_read_2ddecomp_r3d_r8
+     module procedure mpp_read_2ddecomp_r4d_r8
+#endif
   end interface
 
 !***********************************************************************
@@ -880,10 +905,24 @@ type :: atttype
 !    complete.
 ! </NOTE>
 ! </INTERFACE>
+
+
+  interface write_record
+     module procedure write_record_default
+#ifdef OVERLOAD_R8
+     module procedure write_record_r8
+#endif
+  end interface
+
   interface mpp_write
      module procedure mpp_write_2ddecomp_r2d
      module procedure mpp_write_2ddecomp_r3d
      module procedure mpp_write_2ddecomp_r4d
+#ifdef OVERLOAD_R8
+     module procedure mpp_write_2ddecomp_r2d_r8
+     module procedure mpp_write_2ddecomp_r3d_r8
+     module procedure mpp_write_2ddecomp_r4d_r8
+#endif
      module procedure mpp_write_r0D
      module procedure mpp_write_r1D
      module procedure mpp_write_r2D

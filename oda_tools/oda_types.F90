@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 module oda_types_mod
 #ifndef MAX_LEVS_FILE_
 #define MAX_LEVS_FILE_ 50
@@ -9,22 +27,22 @@ module oda_types_mod
 
 !============================================================
 ! This module contains type declarations and default values
-! for oda modules.  
+! for oda modules.
 !============================================================
-  
+
 ! Contact: Matthew.Harrison@gfdl.noaa.gov
 
   use time_manager_mod, only : time_type, set_time
   use mpp_mod, only : stdout
   use mpp_domains_mod, only : domain2d
-  
+
   implicit none
 
   private
 
-  integer, parameter, public :: MAX_LEVELS_FILE = MAX_LEVS_FILE_ !< Controls record length for optimal storage  
+  integer, parameter, public :: MAX_LEVELS_FILE = MAX_LEVS_FILE_ !< Controls record length for optimal storage
   integer, parameter, public :: MAX_NEIGHBORS = 100 !< Maximum number of neighbors for QC or analysis for profiles
-  integer, parameter, public :: MAX_LINKS = MAX_LINKS_ !< Maximum number of records per profile for storage for profiles  
+  integer, parameter, public :: MAX_LINKS = MAX_LINKS_ !< Maximum number of records per profile for storage for profiles
 
   ! Additional Pramaeters needed for snz's ECDA
   integer, parameter, public :: DROP_PROFILER = 10
@@ -46,7 +64,7 @@ module oda_types_mod
   integer, save, public :: TEMP_ID = 1
   integer, save, public :: SALT_ID = 2
 
-  ! List of variables for ODA   
+  ! List of variables for ODA
 #ifndef ENABLE_ECDA
   real, parameter, public :: MISSING_VALUE = -1.e20
 #else
@@ -57,7 +75,7 @@ module oda_types_mod
   type, public :: forward_model_type
      real, dimension(:,:,:,:), pointer :: wgt ! interpolation weights
   end type forward_model_type
-  
+
   type, public :: ocean_profile_type
      integer :: variable !< variable ids are defined by the ocean_types module (e.g. TEMP_ID, SALT_ID)
      integer :: inst_type !< instrument types are defined by platform class (e.g. MOORING, DROP, etc.) and instrument type (XBT, CDT, etc.)
@@ -71,13 +89,13 @@ module oda_types_mod
      real    :: database_id
      integer :: levels
      integer :: profile_flag ! an overall flag for the profile
-     integer :: profile_flag_s ! an overall flag for the profile salinity     
+     integer :: profile_flag_s ! an overall flag for the profile salinity
      real :: lat, lon
      logical :: accepted
      integer :: nlinks
      type(ocean_profile_type), pointer, dimension(:) :: next ! Large profiles are stored as linked list.
      integer, dimension(MAX_NEIGHBORS) :: nbr_index
-     real, dimension(MAX_NEIGHBORS) :: nbr_dist ! distance in radians 
+     real, dimension(MAX_NEIGHBORS) :: nbr_dist ! distance in radians
      real, dimension(:), pointer :: depth, data_t, data_s
      real, dimension(:), pointer :: data
      integer, dimension(:), pointer :: flag_t
@@ -85,10 +103,10 @@ module oda_types_mod
      logical, dimension(:), pointer :: flag
      real    :: temp_err, salt_err ! measurement error
      real, dimension(:), pointer :: ms_t ! ms temperature by level
-     real, dimension(:), pointer :: ms_s ! ms salinity by level  
+     real, dimension(:), pointer :: ms_s ! ms salinity by level
      real, dimension(:), pointer :: ms_inv
      real, dimension(:), pointer :: ms
-     type(time_type) :: time 
+     type(time_type) :: time
      integer         :: yyyy
      integer         :: mmdd
      type(time_type), pointer :: Model_time ! each profile can be associated with a first-guess field with an associated time and grid
@@ -114,7 +132,7 @@ module oda_types_mod
      real, pointer, dimension(:,:) :: data2 => NULL()
      real, dimension(:,:), pointer :: ms2 => NULL()
      real, dimension(:,:), pointer :: i_index2=>NULL(), j_index2=>NULL() ! model indices
-     real :: k_index          
+     real :: k_index
      type(forward_model_type) :: Forward_model
      type(time_type) :: time
      integer :: yyyy
@@ -122,7 +140,7 @@ module oda_types_mod
      character(len=8) :: wmo_id
      type(time_type), pointer :: Model_time => NULL()
      type(grid_type), pointer :: Model_grid => NULL()
-     ! positive difference between current model time 
+     ! positive difference between current model time
      ! and observation time
      type(time_type) :: tdiff
   end type ocean_surface_type
@@ -136,7 +154,7 @@ module oda_types_mod
      real, pointer, dimension(:,:) :: lw_flux => NULL()
      real, pointer, dimension(:,:) :: sw_flux_vis_dir => NULL()
      real, pointer, dimension(:,:) :: sw_flux_vis_dif => NULL()
-     real, pointer, dimension(:,:) :: sw_flux_nir_dir => NULL() 
+     real, pointer, dimension(:,:) :: sw_flux_nir_dir => NULL()
      real, pointer, dimension(:,:) :: sw_flux_nir_dif => NULL()
   end type da_flux_type
 
@@ -181,7 +199,7 @@ module oda_types_mod
      type(grid_type), pointer :: grid => NULL()
      real, pointer, dimension(:,:) :: ex=>NULL(), vr=>NULL()
   end type field_dist_type_2d
-     
+
   type, public :: ocean_dist_type
      type(field_dist_type_3d) :: temp,salt,u,v
      type(field_dist_type_2d) :: eta
@@ -192,11 +210,11 @@ module oda_types_mod
   end type obs_clim_type
 
   public init_obs
-  
+
   interface init_obs
      module procedure init_obs_profile
   end interface
-  
+
   contains
 
     subroutine init_obs_profile(profile)
@@ -231,7 +249,7 @@ module oda_types_mod
       profile%salt_err = -1.0
       profile%time = set_time(0,0)
       profile%yyyy = 0
-      profile%mmdd = 0      
+      profile%mmdd = 0
       if (associated(profile%model_time)) deallocate(profile%model_time)
       if (associated(profile%model_grid)) deallocate(profile%model_grid)
       profile%i_index = -1
@@ -240,7 +258,7 @@ module oda_types_mod
       profile%tdiff = set_time(0,0)
 
       return
-      
+
     end subroutine init_obs_profile
-    
+
 end module oda_types_mod

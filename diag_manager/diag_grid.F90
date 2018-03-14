@@ -1,4 +1,21 @@
-#include <fms_platform.h>
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 
 MODULE diag_grid_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
@@ -61,6 +78,7 @@ MODULE diag_grid_mod
 
   ! Parameters
   ! Include variable "version" to be written to log file.
+#include <fms_platform.h>
 #include<file_version.h>
 
   ! Derived data types
@@ -1301,8 +1319,20 @@ CONTAINS
                                 diag_global_grid%aglo_lat(i,j), &
                                 diag_global_grid%aglo_lon(i,j))
             IF (dist .LT. minimum_distance) THEN
-                minI = i
-                minJ = j
+
+                !These number shouldn't be hardcoded, but they have to
+                !match the ones in diag_grid_init.
+                if (diag_global_grid%tile_number .eq. 4 .or. &
+                        diag_global_grid%tile_number .eq. 5) then
+
+                    !Because of transpose in diag_grid_init.
+                    minI = j
+                    minJ = i
+
+                else
+                    minI = i
+                    minJ = j
+                endif
                 minimum_distance = dist
             ENDIF
         ENDDO

@@ -516,7 +516,7 @@ build:ncrc4:cce:prod:
 #
 # Intel 16 Compilers
 # **********************************************************************
-build:theia:intel16:debug:
+.build:theia:intel16:debug:
   stage: build
   tags:
     - theia
@@ -541,7 +541,7 @@ build:theia:intel16:debug:
       - libfms_${myBuild}.a
       - ./*.mod
 
-build:theia:intel16:repro:
+.build:theia:intel16:repro:
   stage: build
   tags:
     - theia
@@ -566,7 +566,7 @@ build:theia:intel16:repro:
       - libfms_${myBuild}.a
       - ./*.mod
 
-build:theia:intel16:prod:
+.build:theia:intel16:prod:
   stage: build
   tags:
     - theia
