@@ -846,7 +846,7 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
             if (seawater(i) == 1.) then
 
                gas_fluxes%bc(n)%field(ind_kw)%values(i) = &
-                    gas_fields_atm%bc(n)%field(ind_u10)%values(i)/(770.+45.*gas_fields_atm%bc(n)%mol_wt**(1./3.)) * &
+                    gas_fields_atm%bc(n)%field(ind_u10)%values(i)/(770.+45.*gas_fluxes%bc(n)%param(1)**(1./3.)) * &
                     101325./(rdgas*wtmair*1e-3*tsurf(i)*gas_fields_ice%bc(n)%field(ind_alpha)%values(i))
 !alpha: mol/m3/atm
               cair(i) = &
