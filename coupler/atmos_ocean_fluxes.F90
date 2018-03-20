@@ -81,7 +81,7 @@ use coupler_types_mod, only: ind_pcair, ind_u10, ind_psurf
 use coupler_types_mod, only: ind_deposition
 use coupler_types_mod, only: ind_runoff
 use coupler_types_mod, only: ind_flux, ind_deltap, ind_kw!, ind_flux0
-use constants_mod,     only: WTMAIR,rdgas
+use constants_mod,     only: WTMAIR,rdgas,vonkarm
 
 use field_manager_mod, only: fm_path_name_len, fm_string_len, fm_exists, fm_get_index
 use field_manager_mod, only: fm_new_list, fm_get_current_list, fm_change_list
@@ -765,7 +765,7 @@ end subroutine  atmos_ocean_fluxes_init
 !! \throw FATAL, "Bad parameter ([gas_fluxes%bc(n)%param(1)]) for land_sea_runoff for [name]"
 !! \throw FATAL, "Unknown flux type ([flux_type]) for [name]"
 subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
-                                   gas_fluxes, seawater, tsurf)
+                                   gas_fluxes, seawater, tsurf, ustar, cd_m)
   type(coupler_1d_bc_type), intent(in)    :: gas_fields_atm !< Structure containing atmospheric surface
                                                         !! variables that are used in the calculation
                                                         !! of the atmosphere-ocean gas fluxes.
@@ -777,6 +777,7 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
                                                         !! related to the calculation of these fluxes.
   real, dimension(:),       intent(in)    :: seawater   !< 1 for the open water category, 0 if ice or land.
   real, dimension(:),       intent(in)    :: tsurf
+  real, dimension(:), intent(in), optional :: ustar, cd_m
 
   character(len=64), parameter    :: sub_name = 'atmos_ocean_fluxes_calc'
   character(len=256), parameter   :: error_header = &
@@ -791,6 +792,7 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
 
   real, parameter :: epsln=1.0e-30
   real, parameter :: permeg=1.0e-6
+  real :: salt !f1p should be dynamic
 
   !       Return if no fluxes to be calculated
   if (gas_fluxes%num_bcs .le. 0) return
@@ -840,7 +842,7 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
             endif
           enddo  ! i
 
-        elseif (gas_fluxes%bc(n)%implementation .eq. 'duce_vmr') then
+        elseif (gas_fluxes%bc(n)%implementation .eq. 'duce') then
            
           do i = 1, length
             if (seawater(i) == 1.) then
@@ -866,6 +868,45 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
               cair(i) = 0.0
             endif
           enddo  ! i
+
+
+        elseif (gas_fluxes%bc(n)%implementation .eq. 'johnson') then
+
+           !f1p: not sure how to pass salinity. For now, just force at 35.
+           salt = 35.
+           
+          do i = 1, length
+            if (seawater(i) == 1.) then
+
+!               calc_kw(tk,p,u10,salt,h,vb,mw,ustar,cd_m) 
+               gas_fluxes%bc(n)%field(ind_kw)%values(i) =                &
+                    calc_kw(tsurf(i),                                    &
+                    gas_fields_atm%bc(n)%field(ind_psurf)%values(i),     &
+                    gas_fields_atm%bc(n)%field(ind_u10)%values(i),       &
+                    salt,                                                &
+                    101325./(rdgas*wtmair*1e-3*tsurf(i)*gas_fields_ice%bc(n)%field(ind_alpha)%values(i)),&
+                    gas_fluxes%bc(n)%param(2), &
+                    gas_fluxes%bc(n)%param(1), &
+                    ustar=ustar(i), cd_m=cd_m(i))
+
+              cair(i) = &
+                   gas_fields_ice%bc(n)%field(ind_alpha)%values(i) * &
+                   gas_fields_atm%bc(n)%field(ind_pCair)%values(i) * &
+                   gas_fields_atm%bc(n)%field(ind_psurf)%values(i) * 9.86923e-6
+              cair(i) = max(cair(i),0.)
+              gas_fluxes%bc(n)%field(ind_flux)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i)  * (max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.) - cair(i))
+!              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i) * max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.)
+              gas_fluxes%bc(n)%field(ind_deltap)%values(i) = (max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.) - cair(i)) / &
+                   (gas_fields_ice%bc(n)%field(ind_alpha)%values(i) * permeg + epsln)
+            else
+              gas_fluxes%bc(n)%field(ind_kw)%values(i) = 0.0
+              gas_fluxes%bc(n)%field(ind_flux)%values(i) = 0.0
+!              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = 0.0
+              gas_fluxes%bc(n)%field(ind_deltap)%values(i) = 0.0
+              cair(i) = 0.0
+            endif
+          enddo  ! i
+
         else
           call mpp_error(FATAL, ' Unknown implementation (' // trim(gas_fluxes%bc(n)%implementation) // &
                ') for ' // trim(gas_fluxes%bc(n)%name))
@@ -1065,5 +1106,217 @@ subroutine atmos_ocean_dep_fluxes_calc(gas_fields_atm, gas_fields_ice, &
   enddo  ! n
 
 end subroutine  atmos_ocean_dep_fluxes_calc
+
+!from johnson ocean science 2010
+function calc_kw(tk,p,u10,salt,h,vb,mw,ustar,cd_m)  result(kw)
+  !from liss (1974)                                                                             
+  !f = kg(cg - hcl)                                                                            
+  !where cg and cl are the bulk gas and liquid concentrations and h is the henry's constant (h = cgs/cls, unitless)                                                                            
+  !1/kg = 1/ka + h/kl    
+  !tc: in c (temperature at surface)                                                   
+  !p : in pa (pressure at surface)   
+  !u10 : in m/s (wind speed at surface)                                                        
+  !vb : molar volume                 
+  !mw : molecular weight (g/mol)     
+  real, intent(in)  :: tk,p,u10,salt,h,vb,mw
+  real, intent(in), optional :: ustar,cd_m
+  real :: ra,rl,tc,kw
+  real, parameter :: epsln=1.0e-30
+
+  tc = tk-273.15
+  ra=1./max(h*saltout_correction(h,vb,salt)*calc_ka(tc,p,mw,vb,u10,ustar,cd_m),epsln)
+  rl=1./max(calc_kl(tc,u10,salt,vb),epsln)
+  kw = 1./max(ra+rl,epsln)
+end function calc_kw
+
+function calc_kg(tk,p,u10,salt,h,vb,mw,ustar,cd_m)  result(kg)
+  !from liss (1974)                                                                             
+  !f = kg(cg - hcl)                                                                            
+  !where cg and cl are the bulk gas and liquid concentrations and h is the henry's constant (h = cgs/cls, unitless)                                                                            
+  !1/kg = 1/ka + h/kl    
+  !tc: in c (temperature at surface)                                                   
+  !p : in pa (pressure at surface)   
+  !u10 : in m/s (wind speed at surface)                                                        
+  !vb : molar volume                 
+  !mw : molecular weight (g/mol)     
+  real, intent(in)  :: tk,p,u10,salt,h,vb,mw
+  real, intent(in), optional :: ustar,cd_m
+  real :: ra,rl,tc,kg
+  tc = tk-273.15  
+  ra=1./calc_ka(tc,p,mw,vb,u10,ustar,cd_m)
+  rl=saltout_correction(h,vb,salt)*h/calc_kl(tc,u10,salt,vb)
+  kg = 1./(ra+rl)
+end function calc_kg
+
+function calc_ka(t,p,mw,vb,u10,ustar,cd_m) result(k)
+  real, intent(in) :: t,p, mw, vb, u10 !t in c, p in pa                               
+  real, intent(in), optional :: ustar,cd_m
+  real             :: sc, k  
+  real             :: ustar_t,cd_m_t
+
+  if (.not. present(ustar)) then
+     !drag coefficient                                                                         
+     cd_m_t     = 0.61e-3 +0.063e-3*u10
+     !friction velocity        
+     ustar_t  = u10*sqrt(cd_m_t)
+  else
+     cd_m_t=cd_m
+     ustar_t=ustar
+  end if
+  sc=schmidt_g(t,p,mw,vb)    
+  k=1e-3+ustar_t/(13.3*sqrt(sc)+1/sqrt(cd_m_t)-5.+log(sc)/(2.*vonkarm))  
+end function calc_ka
+
+function calc_kl(t,v,s,vb)result(k)
+  real,intent(in)::t,s,v,vb
+  real::k,sc,scco2
+  !nightingale2000
+  sc=schmidt_w(t,s,vb)
+  k = (((0.222*v**2)+0.333*v)*(sc/600.)**(-0.5))/(100*3600)
+end function calc_kl
+
+function schmidt_g(t,p,mw,vb) result(sc)
+  !schmidt number of the gas in the air                                                     
+  !t in c                                                                                    
+  real, intent(in) :: t,p,mw,vb
+  real             :: sc,d,v
+  d=d_air(t,p,mw,vb)
+  v=v_air(t)
+  sc = v / d
+end function schmidt_g
+
+function d_air(t,p,mw,vb) result(d)
+  !from fuller 1966
+  real, intent(in) :: t  !t in c                                                             
+  real, intent(in) :: p  !t in pa                                                             
+  real, intent(in) :: mw !mw in g/mol                                                     
+  real, intent(in) :: vb !diffusion coefficient (cm3/mol)                                     
+  real, parameter :: ma = 28.97d0 !mw air in g/mol                                            
+  real, parameter :: va = 20.1d0  !cm3/mol (diffusion volume for air)                         
+  real            :: d
+  real            :: pa
+  !convert p to atm                                                                          
+  pa = 9.8692d-6*p
+  d = 1d-3 * (t+273.15d0)**(1.75d0)*sqrt(1d0/ma + 1d0/mw)/(pa*(va**(1d0/3d0)+vb**(1d0/3d0))**2d0)
+  !d is in cm2/s convert to m2/s                                                             
+  d=d*1d-4
+end function d_air
+
+function p_air(t) result(p)
+  !kinematic viscosity in air                                                                                                                                                                    
+  real, intent(in) :: t
+  real             :: p,sd_0,sd_1,sd_2,sd_3
+  sd_0 = 1.293393662d0
+  sd_1 = -5.538444326d-3
+  sd_2 = 3.860201577d-5
+  sd_3 = -5.2536065d-7
+  p = sd_0+(sd_1*t)+(sd_2*t**2)+(sd_3*t**3)
+end function p_air
+
+function v_air(t) result(v)
+  !kinematic viscosity in air (m2/s)                                                                                                                                                             
+  real, intent(in) :: t
+  real             :: v
+  v = n_air(t)/p_air(t)
+end function v_air
+
+function d_hm(t,s,vb) result(d)
+  real, intent(in) :: t,s,vb
+  real             :: d, epsilonstar
+  ! hayduk 1982                                                                              
+  epsilonstar = (9.58d0/vb)-1.12d0
+  d=1.25d-8*(vb**(-0.19d0)-0.292d0)*((t+273.15d0)**(1.52d0))*((n_sw(t,s))**epsilonstar)
+end function d_hm
+
+function schmidt_w(t,s,vb) result(sc)
+  !schmidt number of the gas in the water                                                    
+  real, intent(in) :: t,s,vb
+  real             :: sc
+  sc=2d0*v_sw(t,s)/(d_hm(t,s,vb)+d_wc(t,s,vb))
+end function schmidt_w
+
+function n_air(t) result(n)
+  !dynamic viscosity in air                                                                  
+  real, intent(in) :: t
+  real             :: sv_0,sv_1,sv_2,sv_3,sv_4,n
+  sv_0 = 1.715747771d-5
+  sv_1 = 4.722402075d-8
+  sv_2 = -3.663027156d-10
+  sv_3 = 1.873236686d-12
+  sv_4 = -8.050218737d-14
+  ! in n.s/m^2 (pa.s)                                                                        
+  n = sv_0+(sv_1*t)+(sv_2*t**2)+(sv_3*t**3)+(sv_4*t**4)
+end function n_air
+
+function v_sw(t,s) result(v)
+  real, intent(in) :: t,s
+  real             :: n,p,v
+  n=n_sw(t,s)*1d-3
+  p=p_sw(t,s)
+  v = 1d4*n/p
+end function  v_sw
+
+function d_wc(t,s,vb) result(d)
+  real, intent(in) :: t,s,vb
+  real             :: d
+  real, parameter  :: phi = 2.6
+  !wilkie and chang 1955
+  d = ((t+273.15)*7.4d-8*(phi*18.01)**0.5)/((n_sw(t,s))*(vb**0.6))
+end function d_wc
+
+function p_sw(t,s) result(p)
+  !density of sea water                                                                           !millero and poisson (1981)                                                               
+  real, intent(in) :: t,s
+  real             :: p, a, b, c
+  a = 0.824493d0-(4.0899d-3*t)+(7.6438d-5*(t**2))-(8.2467d-7*(t**3))+(5.3875d-9*(t**4))
+  b = -5.72466d-3+(1.0277d-4*t)-(1.6546d-6*(t**2))
+  c = 4.8314d-4
+  ! density of pure water
+  p = 999.842594d0+(6.793952d-2*t)-(9.09529d-3*(t**2))+(1.001685d-4*(t**3))-(1.120083d-6*(t**4))+(6.536332d-9*(t**5))
+  !salinity correction
+  p = (p+(a*s)+(b*(s**(1.5d0)))+(c*s))
+end function p_sw
+
+function n_sw(t,s) result(n)
+  !dynamic viscosity                                   
+  !laliberte 2007                                      
+  real :: n
+  real, intent(in) :: t,s !temperature (c) and salinity
+  !salt in the order nacl,kcl,cacl2,mgcl2,mgso4      
+  real, parameter :: mass_fraction(5) = (/ 0.798,0.022,0.033,0.047,0.1 /)
+  real, parameter :: v1(5) = (/ 16.22 , 6.4883, 32.028, 24.032, 72.269/)
+  real, parameter :: v2(5) = (/ 1.3229 , 1.3175, 0.78792, 2.2694, 2.2238/)
+  real, parameter :: v3(5) = (/ 1.4849 , -0.7785, -1.1495,  3.7108, 6.6037/)
+  real, parameter :: v4(5) = (/ 0.0074691 , 0.09272, 0.0026995,  0.021853, 0.0079004/)
+  real, parameter :: v5(5) = (/ 30.78 , -1.3, 780860., -1.1236, 3340.1/)
+  real, parameter :: v6(5) = (/ 2.0583 , 2.0811, 5.8442,0.14474, 6.1304/)
+
+  real :: n_0,ln_n_m,w_i_ln_n_i_tot,ni,w_i_tot,w_i
+  integer :: i
+  w_i_tot=0
+  w_i_ln_n_i_tot=0
+  do i=1,5
+     w_i = mass_fraction(i)*s/1000
+     w_i_tot = w_i+w_i_tot
+  enddo
+  do i=1,5
+     w_i = mass_fraction(i)*s/1000
+     ni = (exp(((v1(i)*w_i_tot**v2(i))+v3(i))/((v4(i)*t) + 1)))/((v5(i)*(w_i_tot**v6(i)))+1)
+     w_i_ln_n_i_tot = w_i_ln_n_i_tot + (w_i*log(ni))
+  enddo
+  n_0 = (t+246)/(137.37+(5.2842*t)+(0.05594*(t**2)))
+  ln_n_m = (1-w_i_tot)*log(n_0)+w_i_ln_n_i_tot
+  n = exp(ln_n_m)
+end function n_sw
+
+function saltout_correction(kh,vb,salt) result(C)
+  real, intent(in) :: Kh,vb,salt
+  real*8 :: T,log_kh,theta2    
+  real :: theta,C
+  log_kh = log(kh)
+  theta = (7.3353282561828962e-04 + (3.3961477466551352e-05*log_kh) + (-2.4088830102075734e-06*(log_kh)**2) + (1.5711393120941302e-07*(log_kh)**3))*log(vb)
+  C = 10**(theta*salt)    
+end function saltout_correction
+
 
 end module  atmos_ocean_fluxes_mod

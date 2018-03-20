@@ -624,10 +624,15 @@ call fm_util_set_value('air_sea_gas_flux_generic/implementation/ocmip2/num_param
 
 !f1p
 
-if (fm_new_list('air_sea_gas_flux_generic/implementation/duce_vmr') .le. 0) then  !{
+if (fm_new_list('air_sea_gas_flux_generic/implementation/duce') .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/implementation/duce_vmr" list')
 endif  !}
-call fm_util_set_value('air_sea_gas_flux_generic/implementation/duce_vmr/num_parameters', 1)
+call fm_util_set_value('air_sea_gas_flux_generic/implementation/duce/num_parameters', 1)
+
+if (fm_new_list('air_sea_gas_flux_generic/implementation/johnson') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/implementation/johnson" list')
+endif  !}
+call fm_util_set_value('air_sea_gas_flux_generic/implementation/johnson/num_parameters', 2)
 
 !>
 
