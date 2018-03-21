@@ -80,7 +80,7 @@ use coupler_types_mod, only: ind_alpha, ind_csurf, ind_sc_no
 use coupler_types_mod, only: ind_pcair, ind_u10, ind_psurf
 use coupler_types_mod, only: ind_deposition
 use coupler_types_mod, only: ind_runoff
-use coupler_types_mod, only: ind_flux, ind_deltap, ind_kw!, ind_flux0
+use coupler_types_mod, only: ind_flux, ind_deltap, ind_kw, ind_flux0
 use constants_mod,     only: WTMAIR,rdgas,vonkarm
 
 use field_manager_mod, only: fm_path_name_len, fm_string_len, fm_exists, fm_get_index
@@ -832,11 +832,15 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
               gas_fluxes%bc(n)%field(ind_flux)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i) * &
                    sqrt(660. / (gas_fields_ice%bc(n)%field(ind_sc_no)%values(i) + epsln)) * &
                    (gas_fields_ice%bc(n)%field(ind_csurf)%values(i) - cair(i))
+              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i) * &
+                   sqrt(660. / (gas_fields_ice%bc(n)%field(ind_sc_no)%values(i) + epsln)) * &
+                   gas_fields_ice%bc(n)%field(ind_csurf)%values(i)
               gas_fluxes%bc(n)%field(ind_deltap)%values(i) = (gas_fields_ice%bc(n)%field(ind_csurf)%values(i) - cair(i)) / &
                    (gas_fields_ice%bc(n)%field(ind_alpha)%values(i) * permeg + epsln)
             else
               gas_fluxes%bc(n)%field(ind_kw)%values(i) = 0.0
               gas_fluxes%bc(n)%field(ind_flux)%values(i) = 0.0
+              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = 0.0
               gas_fluxes%bc(n)%field(ind_deltap)%values(i) = 0.0
               cair(i) = 0.0
             endif
@@ -857,13 +861,13 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
                    gas_fields_atm%bc(n)%field(ind_psurf)%values(i) * 9.86923e-6
               cair(i) = max(cair(i),0.)
               gas_fluxes%bc(n)%field(ind_flux)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i)  * (max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.) - cair(i))
-!              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i) * max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.)
+              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i) * max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.)
               gas_fluxes%bc(n)%field(ind_deltap)%values(i) = (max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.) - cair(i)) / &
                    (gas_fields_ice%bc(n)%field(ind_alpha)%values(i) * permeg + epsln)
             else
               gas_fluxes%bc(n)%field(ind_kw)%values(i) = 0.0
               gas_fluxes%bc(n)%field(ind_flux)%values(i) = 0.0
-!              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = 0.0
+              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = 0.0
               gas_fluxes%bc(n)%field(ind_deltap)%values(i) = 0.0
               cair(i) = 0.0
             endif
@@ -877,6 +881,16 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
            
           do i = 1, length
             if (seawater(i) == 1.) then
+
+               ! if (mpp_pe().eq.mpp_root_pe()) then
+               !    write(*,*) 'tsurf=',tsurf(i)
+               !    write(*,*) 'psurf=',gas_fields_atm%bc(n)%field(ind_psurf)%values(i)
+               !    write(*,*) 'u10=',gas_fields_atm%bc(n)%field(ind_u10)%values(i)
+               !    write(*,*) 'salt=',salt
+               !    write(*,*) 'h=',101325./(rdgas*wtmair*1e-3*tsurf(i)*gas_fields_ice%bc(n)%field(ind_alpha)%values(i))
+               !    write(*,*) 'mw=',gas_fluxes%bc(n)%param(2)
+               !    write(*,*) 'vb=',gas_fluxes%bc(n)%param(1)
+               ! end if
 
 !               calc_kw(tk,p,u10,salt,h,vb,mw,ustar,cd_m) 
                gas_fluxes%bc(n)%field(ind_kw)%values(i) =                &
@@ -895,13 +909,13 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
                    gas_fields_atm%bc(n)%field(ind_psurf)%values(i) * 9.86923e-6
               cair(i) = max(cair(i),0.)
               gas_fluxes%bc(n)%field(ind_flux)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i)  * (max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.) - cair(i))
-!              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i) * max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.)
+              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i) * max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.)
               gas_fluxes%bc(n)%field(ind_deltap)%values(i) = (max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.) - cair(i)) / &
                    (gas_fields_ice%bc(n)%field(ind_alpha)%values(i) * permeg + epsln)
             else
               gas_fluxes%bc(n)%field(ind_kw)%values(i) = 0.0
               gas_fluxes%bc(n)%field(ind_flux)%values(i) = 0.0
-!              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = 0.0
+              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = 0.0
               gas_fluxes%bc(n)%field(ind_deltap)%values(i) = 0.0
               cair(i) = 0.0
             endif
@@ -1122,7 +1136,6 @@ function calc_kw(tk,p,u10,salt,h,vb,mw,ustar,cd_m)  result(kw)
   real, intent(in), optional :: ustar,cd_m
   real :: ra,rl,tc,kw
   real, parameter :: epsln=1.0e-30
-
   tc = tk-273.15
   ra=1./max(h*saltout_correction(h,vb,salt)*calc_ka(tc,p,mw,vb,u10,ustar,cd_m),epsln)
   rl=1./max(calc_kl(tc,u10,salt,vb),epsln)
