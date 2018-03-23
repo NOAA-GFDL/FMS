@@ -792,7 +792,7 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
 
   real, parameter :: epsln=1.0e-30
   real, parameter :: permeg=1.0e-6
-  real :: salt !f1p should be dynamic
+  real :: salt,hn,cs !f1p should be dynamic
 
   !       Return if no fluxes to be calculated
   if (gas_fluxes%num_bcs .le. 0) return
@@ -892,26 +892,28 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
                !    write(*,*) 'vb=',gas_fluxes%bc(n)%param(1)
                ! end if
 
+               hn = 101325./(rdgas*wtmair*1e-3*tsurf(i)*gas_fields_ice%bc(n)%field(ind_alpha)%values(i)) !unitless
+               cs = saltout_correction(hn,gas_fluxes%bc(n)%param(2),salt)
 !               calc_kw(tk,p,u10,salt,h,vb,mw,ustar,cd_m) 
                gas_fluxes%bc(n)%field(ind_kw)%values(i) =                &
                     calc_kw(tsurf(i),                                    &
                     gas_fields_atm%bc(n)%field(ind_psurf)%values(i),     &
                     gas_fields_atm%bc(n)%field(ind_u10)%values(i),       &
                     salt,                                                &
-                    101325./(rdgas*wtmair*1e-3*tsurf(i)*gas_fields_ice%bc(n)%field(ind_alpha)%values(i)),&
+                    hn*cs,                     &
                     gas_fluxes%bc(n)%param(2), &
                     gas_fluxes%bc(n)%param(1), &
                     ustar=ustar(i), cd_m=cd_m(i))
 
               cair(i) = &
-                   gas_fields_ice%bc(n)%field(ind_alpha)%values(i) * &
+                   gas_fields_ice%bc(n)%field(ind_alpha)%values(i)/cs * &
                    gas_fields_atm%bc(n)%field(ind_pCair)%values(i) * &
                    gas_fields_atm%bc(n)%field(ind_psurf)%values(i) * 9.86923e-6
               cair(i) = max(cair(i),0.)
               gas_fluxes%bc(n)%field(ind_flux)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i)  * (max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.) - cair(i))
               gas_fluxes%bc(n)%field(ind_flux0)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i) * max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.)
               gas_fluxes%bc(n)%field(ind_deltap)%values(i) = (max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.) - cair(i)) / &
-                   (gas_fields_ice%bc(n)%field(ind_alpha)%values(i) * permeg + epsln)
+                   (gas_fields_ice%bc(n)%field(ind_alpha)%values(i)/cs * permeg + epsln)
             else
               gas_fluxes%bc(n)%field(ind_kw)%values(i) = 0.0
               gas_fluxes%bc(n)%field(ind_flux)%values(i) = 0.0
@@ -1137,7 +1139,7 @@ function calc_kw(tk,p,u10,salt,h,vb,mw,ustar,cd_m)  result(kw)
   real :: ra,rl,tc,kw
   real, parameter :: epsln=1.0e-30
   tc = tk-273.15
-  ra=1./max(h*saltout_correction(h,vb,salt)*calc_ka(tc,p,mw,vb,u10,ustar,cd_m),epsln)
+  ra=1./max(h*calc_ka(tc,p,mw,vb,u10,ustar,cd_m),epsln)
   rl=1./max(calc_kl(tc,u10,salt,vb),epsln)
   kw = 1./max(ra+rl,epsln)
 end function calc_kw
@@ -1157,7 +1159,7 @@ function calc_kg(tk,p,u10,salt,h,vb,mw,ustar,cd_m)  result(kg)
   real :: ra,rl,tc,kg
   tc = tk-273.15  
   ra=1./calc_ka(tc,p,mw,vb,u10,ustar,cd_m)
-  rl=saltout_correction(h,vb,salt)*h/calc_kl(tc,u10,salt,vb)
+  rl=h/calc_kl(tc,u10,salt,vb)
   kg = 1./(ra+rl)
 end function calc_kg
 
@@ -1169,7 +1171,7 @@ function calc_ka(t,p,mw,vb,u10,ustar,cd_m) result(k)
 
   if (.not. present(ustar)) then
      !drag coefficient                                                                         
-     cd_m_t     = 0.61e-3 +0.063e-3*u10
+     cd_m_t     = 6.1e-4 +0.63e-4*u10
      !friction velocity        
      ustar_t  = u10*sqrt(cd_m_t)
   else
@@ -1322,14 +1324,14 @@ function n_sw(t,s) result(n)
   n = exp(ln_n_m)
 end function n_sw
 
-function saltout_correction(kh,vb,salt) result(C)
-  real, intent(in) :: Kh,vb,salt
-  real*8 :: T,log_kh,theta2    
-  real :: theta,C
-  log_kh = log(kh)
-  theta = (7.3353282561828962e-04 + (3.3961477466551352e-05*log_kh) + (-2.4088830102075734e-06*(log_kh)**2) + (1.5711393120941302e-07*(log_kh)**3))*log(vb)
-  C = 10**(theta*salt)    
-end function saltout_correction
+  function saltout_correction(kh,vb,salt) result(C)
+    real, intent(in) :: Kh,vb,salt
+    real*8 :: T,log_kh,theta2    
+    real :: theta,C
+    log_kh = log(kh)
+    theta = (7.3353282561828962e-04 + (3.3961477466551352e-05*log_kh) + (-2.4088830102075734e-06*(log_kh)**2) + (1.5711393120941302e-07*(log_kh)**3))*log(vb)
+    C = 10**(theta*salt)    
+  end function saltout_correction
 
 
 end module  atmos_ocean_fluxes_mod
