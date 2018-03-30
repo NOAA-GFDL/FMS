@@ -1339,15 +1339,16 @@ subroutine CT_spawn_1d_3d(var_in, var, idim, jdim, kdim, suffix, as_needed)
     write (error_msg, *) trim(error_header), ' Disordered j-dimension index bound list  ', jdim
     call mpp_error(FATAL, trim(error_msg))
   endif
-  if (kdim(1) > kdim(2)) then
-    write (error_msg, *) trim(error_header), ' Disordered k-dimension index bound list  ', kdim
-    call mpp_error(FATAL, trim(error_msg))
-  endif
   var%isd = idim(1) ; var%isc = idim(2) ; var%iec = idim(3) ; var%ied = idim(4)
   var%jsd = jdim(1) ; var%jsc = jdim(2) ; var%jec = jdim(3) ; var%jed = jdim(4)
   var%ks  = kdim(1) ; var%ke  = kdim(2)
 
   if (var%num_bcs > 0) then
+    if (kdim(1) > kdim(2)) then
+      write (error_msg, *) trim(error_header), ' Disordered k-dimension index bound list  ', kdim
+      call mpp_error(FATAL, trim(error_msg))
+    endif
+
     if (associated(var%bc)) then
       call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
     endif
