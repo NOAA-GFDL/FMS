@@ -2662,21 +2662,26 @@ subroutine set_comm_put1(xmap)
      enddo
   endif
 
+
   mypos = mpp_pe()-mpp_root_pe()
-  do n = 0, npes-1
-     p = mod(mypos+npes-n, npes)
-     call mpp_recv(recv_size(p), glen=1, from_pe=pelist(p), block=.false., tag=COMM_TAG_5)
-  enddo
 
-  !--- send data
-  do n = 0, npes-1
-     p = mod(mypos+n, npes)
-     call mpp_send(send_size(p), plen=1, to_pe=pelist(p), tag=COMM_TAG_5)
-  enddo
+  if (do_alltoall) then
+     call mpp_alltoall(send_size, 1, recv_size, 1)
+  else
+     do n = 0, npes-1
+        p = mod(mypos+npes-n, npes)
+        call mpp_recv(recv_size(p), glen=1, from_pe=pelist(p), block=.false., tag=COMM_TAG_5)
+     enddo
 
-  call mpp_sync_self(check=EVENT_RECV)
-  call mpp_sync_self()
+     !--- send data
+     do n = 0, npes-1
+        p = mod(mypos+n, npes)
+        call mpp_send(send_size(p), plen=1, to_pe=pelist(p), tag=COMM_TAG_5)
+     enddo
 
+     call mpp_sync_self(check=EVENT_RECV)
+     call mpp_sync_self()
+  endif
   !--- recv for put_1_to_xgrid
   nrecv = count( send_size> 0)  
   comm%nrecv = nrecv
