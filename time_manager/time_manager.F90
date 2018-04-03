@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 module time_manager_mod
 
 ! <CONTACT EMAIL="fms@gfdl.noaa.gov">
@@ -108,6 +126,7 @@ public days_in_month
 public leap_year
 public length_of_year
 public days_in_year
+public day_of_year
 public month_name
 
 public valid_calendar_types
@@ -2913,6 +2932,20 @@ end function length_of_year_no_leap
 
 ! END OF length_of_year BLOCK
 !==========================================================================
+
+!==========================================================================
+! return number of day in year; Jan 1st is day 1, not zero!
+function day_of_year(time)
+  integer :: day_of_year
+  type(time_type), intent(in) :: Time
+
+  integer :: second, minute, hour, day, month, year
+  type(time_type) :: t
+  
+  call get_date(time,year,month,day,hour,minute,second)
+  t = time-set_date(year,1,1,0,0,0)
+  day_of_year = t%days + 1
+end
 
 ! START OF days_in_year BLOCK
 ! <FUNCTION NAME="days_in_year">

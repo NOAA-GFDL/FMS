@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 
 module sat_vapor_pres_mod
 
@@ -9,8 +27,8 @@ module sat_vapor_pres_mod
 !
 !      routines for computing the saturation vapor pressure (es),
 !      the specific humidity (qs) and vapor mixing ratio (mrs) at
-!      a specified relative humidity, the derivatives of es, qs and mrs 
-!      with respect to temperature, and initialization of the 
+!      a specified relative humidity, the derivatives of es, qs and mrs
+!      with respect to temperature, and initialization of the
 !      look-up table.
 !
 !-----------------------------------------------------------------------
@@ -30,7 +48,7 @@ module sat_vapor_pres_mod
 !
 !              call lookup_es2_des2 (temp, es, des, err_msg)
 !
-!              call compute_qs (temp, press, qs, q, hc, dqsdT, esat, 
+!              call compute_qs (temp, press, qs, q, hc, dqsdT, esat,
 !                               err_msg, es_over_liq)
 !
 !              call compute_mrs (temp, press, mrs, mr, hc, dmrsdT, esat,
@@ -41,12 +59,12 @@ module sat_vapor_pres_mod
 !      temp    intent in       temperature in degrees kelvin
 !      es      intent out      saturation vapor pressure in Pascals
 !      des     intent out      derivative of saturation vapor pressure
-!                              with respect to temperature 
+!                              with respect to temperature
 !                              (Pascals/degree)
 !      press   intent in       atmospheric pressure in Pascals
 !      qs      intent out      specific humidity at relative humidity hc
 !                              (kg(vapor) / kg(moist air)
-!      mrs     intent out      mixing ratio at relative humidity hc     
+!      mrs     intent out      mixing ratio at relative humidity hc
 !                              (kg(vapor) / kg(dry air)
 !
 !   optional arguments
@@ -55,13 +73,13 @@ module sat_vapor_pres_mod
 !                              (kg(vapor) / kg(moist air)
 !      hc      intent in       relative humidity at which output
 !                              fields are desired: default is 100 %
-!      dqsdT   intent out      derivative of saturation specific 
-!                              humidity with respect to temperature 
+!      dqsdT   intent out      derivative of saturation specific
+!                              humidity with respect to temperature
 !                              (kg(vapor) / kg(moist air) /degree)
-!      mr      intent in       vapor mixing ratio        
+!      mr      intent in       vapor mixing ratio
 !                              (kg(vapor) / kg(dry air)
 !      dmrsdT  intent out      derivative of saturation mixing ratio
-!                              with respect to temperature 
+!                              with respect to temperature
 !                              (kg(vapor) / kg(dry air) /degree)
 !      esat    intent out      saturation vapor pressure
 !                              (Pascals)
@@ -78,9 +96,9 @@ module sat_vapor_pres_mod
 ! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
 
 ! <OVERVIEW>
-!   Routines for determining the saturation vapor pressure 
-!   (<TT>ES</TT>), saturation vapor specific humidity and saturation 
-!   vapor mixing ratio, and their derivatives with respect to 
+!   Routines for determining the saturation vapor pressure
+!   (<TT>ES</TT>), saturation vapor specific humidity and saturation
+!   vapor mixing ratio, and their derivatives with respect to
 !   temperature.
 ! </OVERVIEW>
 
@@ -98,9 +116,9 @@ module sat_vapor_pres_mod
 !   humidity and saturation mixing ratio for vapor, and their deriv-
 !   atives with respect to temperature.  By default, the values returned
 !   are those at saturation; optionally, values of q and mr at a spec-
-!   ified relative humidity may instead be returned. Two forms are 
-!   available; the approximate form that has been traditionally used in 
-!   GCMs, and an exact form provided by SJ Lin in which saturation is 
+!   ified relative humidity may instead be returned. Two forms are
+!   available; the approximate form that has been traditionally used in
+!   GCMs, and an exact form provided by SJ Lin in which saturation is
 !   reached while maintaining constant pressure and temperature.
 
 !   This version was written for non-vector machines.
@@ -139,7 +157,7 @@ private
                            ! use lookup_es, lookup_des instead
 
 !-----------------------------------------------------------------------
- 
+
 ! <INTERFACE NAME="lookup_es">
 
 !   <OVERVIEW>
@@ -230,11 +248,11 @@ private
  end interface
 
 !-----------------------------------------------------------------------
- 
+
 ! <INTERFACE NAME="lookup_es_des">
 
 !   <OVERVIEW>
-!     For the given temperatures, returns the saturation vapor pressure 
+!     For the given temperatures, returns the saturation vapor pressure
 !     and the derivative of saturation vapor pressure with respect to
 !     temperature.
 !   </OVERVIEW>
@@ -281,7 +299,7 @@ private
  interface lookup_es2
    module procedure lookup_es2_0d, lookup_es2_1d, lookup_es2_2d, lookup_es2_3d
  end interface
- 
+
  interface lookup_des2
    module procedure lookup_des2_0d, lookup_des2_1d, lookup_des2_2d, lookup_des2_3d
  end interface
@@ -294,7 +312,7 @@ private
  interface lookup_es3
    module procedure lookup_es3_0d, lookup_es3_1d, lookup_es3_2d, lookup_es3_3d
  end interface
- 
+
  interface lookup_des3
    module procedure lookup_des3_0d, lookup_des3_1d, lookup_des3_2d, lookup_des3_3d
  end interface
@@ -304,12 +322,12 @@ private
  end interface
 
 !-----------------------------------------------------------------------
- 
+
 ! <INTERFACE NAME="compute_qs">
 
 !   <OVERVIEW>
-!     For the given temperatures, pressures and optionally vapor 
-!     specific humidity, returns the specific humidity at saturation 
+!     For the given temperatures, pressures and optionally vapor
+!     specific humidity, returns the specific humidity at saturation
 !     (optionally at relative humidity hc instead of at saturation) and
 !     optionally the derivative of saturation specific humidity w.r.t.
 !     temperature, and the saturation vapor pressure.
@@ -318,14 +336,14 @@ private
 !     For the input temperature and pressure these routines return the
 !     specific humidity (qsat) at saturation (unless optional argument
 !     hc is used to specify the relative humidity at which qsat should
-!     apply) and, if desired, the derivative of qsat w.r.t temperature 
-!     (dqsdT) and / or the saturation vapor pressure (esat). If the 
-!     optional input argument specific humidity (q) is present, the 
+!     apply) and, if desired, the derivative of qsat w.r.t temperature
+!     (dqsdT) and / or the saturation vapor pressure (esat). If the
+!     optional input argument specific humidity (q) is present, the
 !     exact expression for qs is used; if q is not present the tradit-
-!     ional form (valid at saturation) is used. if the optional qsat 
-!     derivative argument is present, the derivative of qsat w.r.t. 
-!     temperature will also be returned, defined consistent with the 
-!     expression used for qsat. The return values are derived from 
+!     ional form (valid at saturation) is used. if the optional qsat
+!     derivative argument is present, the derivative of qsat w.r.t.
+!     temperature will also be returned, defined consistent with the
+!     expression used for qsat. The return values are derived from
 !     lookup tables (see notes below).
 !   </DESCRIPTION>
 !   <TEMPLATE>
@@ -352,7 +370,7 @@ private
 !   </IN>
 !   <OUT NAME="dqsdT" UNITS="kg(vapor) / kg(moist air) / degree" TYPE="real" DIM="(scalar),(:),(:,:),(:,:,:)">
 !     Derivative of saturation specific humidity w.r.t. temperature
-!                 in kg(vapor) / kg(moist air) / degree. May be a 
+!                 in kg(vapor) / kg(moist air) / degree. May be a
 !                 scalar, 1d, 2d, or 3d array.
 !                 Must have the same order and size as temp.
 !   </OUT>
@@ -379,12 +397,12 @@ private
  end interface
 
 !-----------------------------------------------------------------------
- 
+
 ! <INTERFACE NAME="compute_mrs">
 
 !   <OVERVIEW>
-!     For the given temperatures, pressures and optionally vapor 
-!     mixing ratio, returns the  vapor mixing ratio at saturation 
+!     For the given temperatures, pressures and optionally vapor
+!     mixing ratio, returns the  vapor mixing ratio at saturation
 !     (optionally at relative humidity hc instead of at saturation) and
 !     optionally the derivative of saturation vapor mixing ratio w.r.t.
 !     temperature, and the saturation vapor pressure.
@@ -393,18 +411,18 @@ private
 !     For the input temperature and pressure these routines return the
 !     vapor mixing ratio (mrsat) at saturation (unless optional argument
 !     hc is used to specify the relative humidity at which mrsat should
-!     apply) and, if desired, the derivative of mrsat w.r.t temperature 
-!     (dmrsdT) and / or the saturation vapor pressure (esat). If the 
-!     optional input argument specific humidity (mr) is present, the 
+!     apply) and, if desired, the derivative of mrsat w.r.t temperature
+!     (dmrsdT) and / or the saturation vapor pressure (esat). If the
+!     optional input argument specific humidity (mr) is present, the
 !     exact expression for mrs is used; if qr is not present the tradit-
-!     ional form (valid at saturation) is used. if the optional mrsat 
-!     derivative argument is present, the derivative of mrsat w.r.t. 
-!     temperature will also be returned, defined consistent with the 
-!     expression used for mrsat. The return values are derived from 
+!     ional form (valid at saturation) is used. if the optional mrsat
+!     derivative argument is present, the derivative of mrsat w.r.t.
+!     temperature will also be returned, defined consistent with the
+!     expression used for mrsat. The return values are derived from
 !     lookup tables (see notes below).
 !   </DESCRIPTION>
 !   <TEMPLATE>
-!     call compute_mrs( temp, press, mrsat, mr, hc, dmrsdT, esat, 
+!     call compute_mrs( temp, press, mrsat, mr, hc, dmrsdT, esat,
 !                       err_msg )
 !   </TEMPLATE>
 !   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(scalar),(:),(:,:),(:,:,:)">
@@ -428,7 +446,7 @@ private
 !   </IN>
 !   <OUT NAME="dmrsdT" UNITS="kg(vapor) / kg(dry air) / degree" TYPE="real" DIM="(scalar),(:),(:,:),(:,:,:)">
 !     Derivative of saturation vapor mixing ratio w.r.t. temperature
-!                 in kg(vapor) / kg(dry air) / degree. May be a 
+!                 in kg(vapor) / kg(dry air) / degree. May be a
 !                 scalar, 1d, 2d, or 3d array.
 !                 Must have the same order and size as temp.
 !   </OUT>
@@ -458,7 +476,7 @@ private
 ! <INTERFACE NAME="compute_es">
 
 !   <OVERVIEW>
-!     For the given temperatures, computes the saturation vapor pressures. 
+!     For the given temperatures, computes the saturation vapor pressures.
 !   </OVERVIEW>
 !   <DESCRIPTION>
 !     Computes saturation vapor pressure for the given temperature using
@@ -1028,7 +1046,7 @@ contains
  character(len=54) :: err_msg_local
  integer :: nbad
 !-----------------------------------------------
-   
+
    if (.not.module_is_initialized) then
       if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
    endif
@@ -1163,7 +1181,7 @@ contains
  character(len=54) :: err_msg_local
  integer :: nbad
 !-----------------------------------------------
-   
+
    if (.not.module_is_initialized) then
       if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
    endif
@@ -1298,7 +1316,7 @@ contains
  character(len=54) :: err_msg_local
  integer :: nbad
 !-----------------------------------------------
-   
+
    if (.not.module_is_initialized) then
       if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
    endif
@@ -1816,7 +1834,7 @@ contains
    endif
 
  end subroutine compute_qs_0d
- 
+
 !#######################################################################
 
 ! <SUBROUTINE NAME="compute_qs_1d" INTERFACE="compute_qs">
@@ -1897,7 +1915,7 @@ real,  intent(in),              optional :: hc
  real, intent(in)                        :: temp(:,:), press(:,:)
  real, intent(out)                       :: qsat(:,:)
  real, intent(in),              optional :: q(:,:)
- real, intent(in),              optional :: hc      
+ real, intent(in),              optional :: hc
  real, intent(out),             optional :: dqsdT(:,:), esat(:,:)
  character(len=*), intent(out), optional :: err_msg
  logical,intent(in),            optional :: es_over_liq
@@ -1958,7 +1976,7 @@ real,  intent(in),              optional :: hc
  real, intent(in)                        :: temp(:,:,:), press(:,:,:)
  real, intent(out)                       :: qsat(:,:,:)
  real, intent(in),              optional :: q(:,:,:)
- real, intent(in),              optional :: hc           
+ real, intent(in),              optional :: hc
  real, intent(out),             optional :: dqsdT(:,:,:), esat(:,:,:)
  character(len=*), intent(out), optional :: err_msg
  logical,intent(in),            optional :: es_over_liq
@@ -2018,7 +2036,7 @@ real,  intent(in),              optional :: hc
  subroutine compute_mrs_0d ( temp, press, mrsat, mr, hc, dmrsdT, esat, &
                             err_msg, es_over_liq, es_over_liq_and_ice )
 
- real, intent(in)                        :: temp, press             
+ real, intent(in)                        :: temp, press
  real, intent(out)                       :: mrsat
  real, intent(in),              optional :: mr, hc
  real, intent(out),             optional :: dmrsdT, esat
@@ -2077,10 +2095,10 @@ real,  intent(in),              optional :: hc
  subroutine compute_mrs_1d ( temp, press, mrsat, mr, hc, dmrsdT, esat,&
                             err_msg, es_over_liq, es_over_liq_and_ice )
 
- real, intent(in)                        :: temp(:), press(:)       
+ real, intent(in)                        :: temp(:), press(:)
  real, intent(out)                       :: mrsat(:)
  real, intent(in),              optional :: mr(:)
- real, intent(in),              optional :: hc     
+ real, intent(in),              optional :: hc
  real, intent(out),             optional :: dmrsdT(:), esat(:)
  character(len=*), intent(out), optional :: err_msg
  logical,intent(in),            optional :: es_over_liq
@@ -2139,10 +2157,10 @@ real,  intent(in),              optional :: hc
  subroutine compute_mrs_2d ( temp, press, mrsat, mr, hc, dmrsdT, esat,&
                             err_msg, es_over_liq, es_over_liq_and_ice )
 
- real, intent(in)                        :: temp(:,:), press(:,:)    
+ real, intent(in)                        :: temp(:,:), press(:,:)
  real, intent(out)                       :: mrsat(:,:)
  real, intent(in),              optional :: mr(:,:)
- real, intent(in),              optional :: hc         
+ real, intent(in),              optional :: hc
  real, intent(out),             optional :: dmrsdT(:,:), esat(:,:)
  character(len=*), intent(out), optional :: err_msg
  logical,intent(in),            optional :: es_over_liq
@@ -2201,10 +2219,10 @@ real,  intent(in),              optional :: hc
  subroutine compute_mrs_3d ( temp, press, mrsat, mr, hc, dmrsdT, esat,&
                             err_msg, es_over_liq, es_over_liq_and_ice )
 
- real, intent(in)                        :: temp(:,:,:), press(:,:,:)  
+ real, intent(in)                        :: temp(:,:,:), press(:,:,:)
  real, intent(out)                       :: mrsat(:,:,:)
  real, intent(in),              optional :: mr(:,:,:)
- real, intent(in),              optional :: hc           
+ real, intent(in),              optional :: hc
  real, intent(out),             optional :: dmrsdT(:,:,:), esat(:,:,:)
  character(len=*), intent(out), optional :: err_msg
  logical,intent(in),            optional :: es_over_liq
@@ -2256,7 +2274,7 @@ real,  intent(in),              optional :: hc
 ! <SUBROUTINE NAME="sat_vapor_pres_init">
 
 !   <OVERVIEW>
-!     Initializes the lookup tables for saturation vapor pressure. 
+!     Initializes the lookup tables for saturation vapor pressure.
 !   </OVERVIEW>
 !   <DESCRIPTION>
 !     Initializes the lookup tables for saturation vapor pressure.
@@ -2318,9 +2336,9 @@ real,  intent(in),              optional :: hc
 
   if(do_simple) then
     tcmin = -173
-    tcmax =  350  
+    tcmax =  350
   endif
-  nsize = (tcmax-tcmin)*esres+1 
+  nsize = (tcmax-tcmin)*esres+1
   nlim  = nsize-1
   call sat_vapor_pres_init_k(nsize, real(tcmin), real(tcmax), TFREEZE, HLV, &
                              RVGAS, ES0, err_msg_local, use_exact_qs, do_simple, &
@@ -2489,7 +2507,7 @@ subroutine show_all_bad_0d ( temp )
  if (ind < 0 .or. ind > nlim) then
    write(unit,'(a,e10.3,a,i6)') 'Bad temperature=',temp,' pe=',mpp_pe()
  endif
- 
+
  end subroutine show_all_bad_0d
 
 !--------------------------------------------------------------
@@ -2552,11 +2570,11 @@ end module sat_vapor_pres_mod
 
 ! <INFO>
 
-!   <REFERENCE>            
+!   <REFERENCE>
 !     Smithsonian Meteorological Tables Page 350.
 !   </REFERENCE>
 
-!   <BUG>                  
+!   <BUG>
 !     No error checking is done to make sure that the size of the
 !     input and output fields match.
 !   </BUG>
@@ -2575,7 +2593,7 @@ end module sat_vapor_pres_mod
 !    over water are used, between -20C and 0C blended values of <TT>ES</TT>
 !    (over water and over ice) are used.
 !
-!    There are three tables constructed: <TT>ES</TT>, first derivative 
+!    There are three tables constructed: <TT>ES</TT>, first derivative
 !       (<TT>ES'</TT>), and
 !    second derivative (<TT>ES</TT>'').  The ES table is constructed directly from
 !    the equations in the Smithsonian tables. The <TT>ES</TT>' table is constructed
@@ -2583,8 +2601,8 @@ end module sat_vapor_pres_mod
 !    is estimated by using centered differencing of the <TT>ES</TT>' table.
 !
 !     3. <B>Determination of <TT>es</TT> and <TT>es'</TT> from lookup tables</B><BR/>
-!         Values of the saturation vapor pressure (<TT>es</TT>) and the 
-!    derivative (<TT>es'</TT>) are determined at temperature (T) from the lookup 
+!         Values of the saturation vapor pressure (<TT>es</TT>) and the
+!    derivative (<TT>es'</TT>) are determined at temperature (T) from the lookup
 !    tables (<TT>ES</TT>, <TT>ES'</TT>, <TT>ES''</TT>)
 !    using the following formula.
 !<PRE>
@@ -2657,4 +2675,3 @@ end module sat_vapor_pres_mod
 !</PRE>
 !   </TESTPROGRAM>
 ! </INFO>
-

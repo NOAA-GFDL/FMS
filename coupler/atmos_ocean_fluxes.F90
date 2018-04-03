@@ -1,22 +1,21 @@
-! ----------------------------------------------------------------
-!                   GNU General Public License
-! This file is a part of MOM.
-
-! MOM is free software; you can redistribute it and/or modify it and
-! are expected to follow the terms of the GNU General Public License
-! as published by the Free Software Foundation; either version 2 of
-! the License, or (at your option) any later version.
-
-! MOM is distributed in the hope that it will be useful, but WITHOUT
-! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-! License for more details.
-
-! For the full text of the GNU General Public License,
-! write to: Free Software Foundation, Inc.,
-!           675 Mass Ave, Cambridge, MA 02139, USA.
-! or see:   http://www.gnu.org/licenses/gpl.html
-!-----------------------------------------------------------------------
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 
 !> \author Richard Slater <Richard.Slater@noaa.gov>
 !! \author John Dunne <John.Dunne@noaa.gov>
@@ -73,6 +72,7 @@ module  atmos_ocean_fluxes_mod
 !!   </tr>
 !! </table>
 use mpp_mod,           only: stdout, stdlog, mpp_error, FATAL, mpp_sum, mpp_npes
+use mpp_mod,           only: mpp_pe,mpp_root_pe
 use fms_mod,           only: write_version_number
 
 use coupler_types_mod, only: coupler_1d_bc_type
@@ -80,7 +80,8 @@ use coupler_types_mod, only: ind_alpha, ind_csurf, ind_sc_no
 use coupler_types_mod, only: ind_pcair, ind_u10, ind_psurf
 use coupler_types_mod, only: ind_deposition
 use coupler_types_mod, only: ind_runoff
-use coupler_types_mod, only: ind_flux, ind_deltap, ind_kw
+use coupler_types_mod, only: ind_flux, ind_deltap, ind_kw, ind_flux0
+use constants_mod,     only: WTMAIR,rdgas,vonkarm
 
 use field_manager_mod, only: fm_path_name_len, fm_string_len, fm_exists, fm_get_index
 use field_manager_mod, only: fm_new_list, fm_get_current_list, fm_change_list
@@ -103,6 +104,8 @@ public  :: atmos_ocean_fluxes_init
 public  :: aof_set_coupler_flux
 
 character(len=48), parameter    :: mod_name = 'atmos_ocean_fluxes_mod'
+real, parameter :: epsln=1.0e-30
+
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
@@ -764,7 +767,7 @@ end subroutine  atmos_ocean_fluxes_init
 !! \throw FATAL, "Bad parameter ([gas_fluxes%bc(n)%param(1)]) for land_sea_runoff for [name]"
 !! \throw FATAL, "Unknown flux type ([flux_type]) for [name]"
 subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
-                                   gas_fluxes, seawater)
+                                   gas_fluxes, seawater, tsurf, ustar, cd_m)
   type(coupler_1d_bc_type), intent(in)    :: gas_fields_atm !< Structure containing atmospheric surface
                                                         !! variables that are used in the calculation
                                                         !! of the atmosphere-ocean gas fluxes.
@@ -775,6 +778,8 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
                                                         !! the atmosphere and the ocean and parameters
                                                         !! related to the calculation of these fluxes.
   real, dimension(:),       intent(in)    :: seawater   !< 1 for the open water category, 0 if ice or land.
+  real, dimension(:),       intent(in)    :: tsurf
+  real, dimension(:), intent(in), optional :: ustar, cd_m
 
   character(len=64), parameter    :: sub_name = 'atmos_ocean_fluxes_calc'
   character(len=256), parameter   :: error_header = &
@@ -786,8 +791,6 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
   real, dimension(:), allocatable         :: kw
   real, dimension(:), allocatable         :: cair
   character(len=128)                      :: error_string
-
-  real, parameter :: epsln=1.0e-30
   real, parameter :: permeg=1.0e-6
 
   !       Return if no fluxes to be calculated
@@ -820,7 +823,7 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
         if (gas_fluxes%bc(n)%implementation .eq. 'ocmip2') then
           do i = 1, length
             if (seawater(i) == 1.) then
-              gas_fluxes%bc(n)%field(ind_kw)%values(i) = gas_fluxes%bc(n)%param(1) * gas_fields_atm%bc(n)%field(ind_u10)%values(i)**2
+               gas_fluxes%bc(n)%field(ind_kw)%values(i) = gas_fluxes%bc(n)%param(1) * gas_fields_atm%bc(n)%field(ind_u10)%values(i)**2
               cair(i) = &
                    gas_fields_ice%bc(n)%field(ind_alpha)%values(i) * &
                    gas_fields_atm%bc(n)%field(ind_pCair)%values(i) * &
@@ -828,15 +831,83 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
               gas_fluxes%bc(n)%field(ind_flux)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i) * &
                    sqrt(660. / (gas_fields_ice%bc(n)%field(ind_sc_no)%values(i) + epsln)) * &
                    (gas_fields_ice%bc(n)%field(ind_csurf)%values(i) - cair(i))
+              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i) * &
+                   sqrt(660. / (gas_fields_ice%bc(n)%field(ind_sc_no)%values(i) + epsln)) * &
+                   gas_fields_ice%bc(n)%field(ind_csurf)%values(i)
               gas_fluxes%bc(n)%field(ind_deltap)%values(i) = (gas_fields_ice%bc(n)%field(ind_csurf)%values(i) - cair(i)) / &
                    (gas_fields_ice%bc(n)%field(ind_alpha)%values(i) * permeg + epsln)
             else
               gas_fluxes%bc(n)%field(ind_kw)%values(i) = 0.0
               gas_fluxes%bc(n)%field(ind_flux)%values(i) = 0.0
+              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = 0.0
               gas_fluxes%bc(n)%field(ind_deltap)%values(i) = 0.0
               cair(i) = 0.0
             endif
           enddo  ! i
+
+        elseif (gas_fluxes%bc(n)%implementation .eq. 'duce') then
+           
+          do i = 1, length
+            if (seawater(i) == 1.) then
+
+               gas_fluxes%bc(n)%field(ind_kw)%values(i) = &
+                    gas_fields_atm%bc(n)%field(ind_u10)%values(i)/(770.+45.*gas_fluxes%bc(n)%param(1)**(1./3.)) * &
+                    101325./(rdgas*wtmair*1e-3*tsurf(i)*gas_fields_ice%bc(n)%field(ind_alpha)%values(i))
+!alpha: mol/m3/atm
+              cair(i) = &
+                   gas_fields_ice%bc(n)%field(ind_alpha)%values(i) * &
+                   gas_fields_atm%bc(n)%field(ind_pCair)%values(i) * &
+                   gas_fields_atm%bc(n)%field(ind_psurf)%values(i) * 9.86923e-6
+              cair(i) = max(cair(i),0.)
+              gas_fluxes%bc(n)%field(ind_flux)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i)  * (max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.) - cair(i))
+              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i) * max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.)
+              gas_fluxes%bc(n)%field(ind_deltap)%values(i) = (max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.) - cair(i)) / &
+                   (gas_fields_ice%bc(n)%field(ind_alpha)%values(i) * permeg + epsln)
+            else
+              gas_fluxes%bc(n)%field(ind_kw)%values(i) = 0.0
+              gas_fluxes%bc(n)%field(ind_flux)%values(i) = 0.0
+              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = 0.0
+              gas_fluxes%bc(n)%field(ind_deltap)%values(i) = 0.0
+              cair(i) = 0.0
+            endif
+          enddo  ! i
+
+
+        elseif (gas_fluxes%bc(n)%implementation .eq. 'johnson') then
+
+           !f1p: not sure how to pass salinity. For now, just force at 35.
+           
+          do i = 1, length
+            if (seawater(i) == 1.) then
+!calc_kw(tk,p,u10,h,vb,mw,sc_w,ustar,cd_m)
+               gas_fluxes%bc(n)%field(ind_kw)%values(i) =                &
+                    calc_kw(tsurf(i),                                    &
+                    gas_fields_atm%bc(n)%field(ind_psurf)%values(i),     &
+                    gas_fields_atm%bc(n)%field(ind_u10)%values(i),       &
+                    101325./(rdgas*wtmair*1e-3*tsurf(i)*gas_fields_ice%bc(n)%field(ind_alpha)%values(i)),    &
+                    gas_fluxes%bc(n)%param(2), &
+                    gas_fluxes%bc(n)%param(1), &
+                    gas_fields_ice%bc(n)%field(ind_sc_no)%values(i), &
+                    ustar=ustar(i), cd_m=cd_m(i))
+
+              cair(i) = &
+                   gas_fields_ice%bc(n)%field(ind_alpha)%values(i) * &
+                   gas_fields_atm%bc(n)%field(ind_pCair)%values(i) * &
+                   gas_fields_atm%bc(n)%field(ind_psurf)%values(i) * 9.86923e-6
+              cair(i) = max(cair(i),0.)
+              gas_fluxes%bc(n)%field(ind_flux)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i)  * (max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.) - cair(i))
+              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = gas_fluxes%bc(n)%field(ind_kw)%values(i) * max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.)
+              gas_fluxes%bc(n)%field(ind_deltap)%values(i) = (max(gas_fields_ice%bc(n)%field(ind_csurf)%values(i),0.) - cair(i)) / &
+                   (gas_fields_ice%bc(n)%field(ind_alpha)%values(i) * permeg + epsln)
+            else
+              gas_fluxes%bc(n)%field(ind_kw)%values(i) = 0.0
+              gas_fluxes%bc(n)%field(ind_flux)%values(i) = 0.0
+              gas_fluxes%bc(n)%field(ind_flux0)%values(i) = 0.0
+              gas_fluxes%bc(n)%field(ind_deltap)%values(i) = 0.0
+              cair(i) = 0.0
+            endif
+          enddo  ! i
+
         else
           call mpp_error(FATAL, ' Unknown implementation (' // trim(gas_fluxes%bc(n)%implementation) // &
                ') for ' // trim(gas_fluxes%bc(n)%name))
@@ -944,7 +1015,7 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
     deallocate(kw)
     deallocate(cair)
   endif
-
+    
 end subroutine  atmos_ocean_fluxes_calc
 
 !> \brief atmos_ocean_dep_fluxes_calc
@@ -976,7 +1047,6 @@ subroutine atmos_ocean_dep_fluxes_calc(gas_fields_atm, gas_fields_ice, &
   real, dimension(:), allocatable         :: cair
   character(len=128)                      :: error_string
 
-  real, parameter :: epsln=1.0e-30
   real, parameter :: permeg=1.0e-6
 
   !       Return if no fluxes to be calculated
@@ -1036,5 +1106,129 @@ subroutine atmos_ocean_dep_fluxes_calc(gas_fields_atm, gas_fields_ice, &
   enddo  ! n
 
 end subroutine  atmos_ocean_dep_fluxes_calc
+
+!from johnson ocean science 2010
+function calc_kw(tk,p,u10,h,vb,mw,sc_w,ustar,cd_m)  result(kw)
+  !from liss (1974)                                                                             
+  !f = kg(cg - hcl)                                                                            
+  !where cg and cl are the bulk gas and liquid concentrations and h is the henry's constant (h = cgs/cls, unitless)                                                                            
+  !1/kg = 1/ka + h/kl    
+  !tc: in c (temperature at surface)                                                   
+  !p : in pa (pressure at surface)   
+  !u10 : in m/s (wind speed at surface)                                                        
+  !vb : molar volume                 
+  !mw : molecular weight (g/mol)     
+  real, intent(in)  :: tk,p,u10,h,vb,mw,sc_w
+  real, intent(in), optional :: ustar,cd_m
+  real :: ra,rl,tc,kw
+  tc = tk-273.15
+  ra=1./max(h*calc_ka(tc,p,mw,vb,u10,ustar,cd_m),epsln)
+  rl=1./max(calc_kl(tc,u10,sc_w),epsln)
+  kw = 1./max(ra+rl,epsln)
+end function calc_kw
+
+function calc_kg(tk,p,u10,h,vb,mw,sc_w,ustar,cd_m)  result(kg)
+  !from liss (1974)                                                                             
+  !f = kg(cg - hcl)                                                                            
+  !where cg and cl are the bulk gas and liquid concentrations and h is the henry's constant (h = cgs/cls, unitless)                                                                            
+  !1/kg = 1/ka + h/kl    
+  !tc: in c (temperature at surface)                                                   
+  !p : in pa (pressure at surface)   
+  !u10 : in m/s (wind speed at surface)                                                        
+  !vb : molar volume                 
+  !mw : molecular weight (g/mol)     
+  !sc_w: schmidt number (water)
+  real, intent(in)  :: tk,p,u10,h,vb,mw,sc_w
+  real, intent(in), optional :: ustar,cd_m
+  real :: ra,rl,tc,kg
+  tc = tk-273.15  
+  ra=1./calc_ka(tc,p,mw,vb,u10,ustar,cd_m)
+  rl=h/calc_kl(tc,u10,sc_w)
+  kg = 1./(ra+rl)
+end function calc_kg
+
+function calc_ka(t,p,mw,vb,u10,ustar,cd_m) result(k)
+  real, intent(in) :: t,p, mw, vb, u10 !t in c, p in pa                               
+  real, intent(in), optional :: ustar,cd_m
+  real             :: sc, k  
+  real             :: ustar_t,cd_m_t
+
+  if (.not. present(ustar)) then
+     !drag coefficient                                                                         
+     cd_m_t     = 6.1e-4 +0.63e-4*u10
+     !friction velocity        
+     ustar_t  = u10*sqrt(cd_m_t)
+  else
+     cd_m_t=cd_m
+     ustar_t=ustar
+  end if
+  sc=schmidt_g(t,p,mw,vb)    
+  k=1e-3+ustar_t/(13.3*sqrt(sc)+1/sqrt(cd_m_t)-5.+log(sc)/(2.*vonkarm))  
+end function calc_ka
+
+function calc_kl(t,v,sc)result(k)
+  real,intent(in)::t,v,sc
+  real :: k
+  !nightingale2000
+  k = (((0.222*v**2)+0.333*v)*(max(sc,epsln)/600.)**(-0.5))/(100.*3600.)
+end function calc_kl
+
+function schmidt_g(t,p,mw,vb) result(sc)
+  !schmidt number of the gas in the air                                                     
+  !t in c                                                                                    
+  real, intent(in) :: t,p,mw,vb
+  real             :: sc,d,v
+  d=d_air(t,p,mw,vb)
+  v=v_air(t)
+  sc = v / d
+end function schmidt_g
+
+function d_air(t,p,mw,vb) result(d)
+  !from fuller 1966
+  real, intent(in) :: t  !t in c                                                             
+  real, intent(in) :: p  !t in pa                                                             
+  real, intent(in) :: mw !mw in g/mol                                                     
+  real, intent(in) :: vb !diffusion coefficient (cm3/mol)                                     
+  real, parameter :: ma = 28.97d0 !mw air in g/mol                                            
+  real, parameter :: va = 20.1d0  !cm3/mol (diffusion volume for air)                         
+  real            :: d
+  real            :: pa
+  !convert p to atm                                                                          
+  pa = 9.8692d-6*p
+  d = 1d-3 * (t+273.15d0)**(1.75d0)*sqrt(1d0/ma + 1d0/mw)/(pa*(va**(1d0/3d0)+vb**(1d0/3d0))**2d0)
+  !d is in cm2/s convert to m2/s                                                             
+  d=d*1d-4
+end function d_air
+
+function p_air(t) result(p)
+  !kinematic viscosity in air                                                                                                                                                                    
+  real, intent(in) :: t
+  real             :: p,sd_0,sd_1,sd_2,sd_3
+  sd_0 = 1.293393662d0
+  sd_1 = -5.538444326d-3
+  sd_2 = 3.860201577d-5
+  sd_3 = -5.2536065d-7
+  p = sd_0+(sd_1*t)+(sd_2*t**2)+(sd_3*t**3)
+end function p_air
+
+function v_air(t) result(v)
+  !kinematic viscosity in air (m2/s)                                                                                                                                                             
+  real, intent(in) :: t
+  real             :: v
+  v = n_air(t)/p_air(t)
+end function v_air
+
+function n_air(t) result(n)
+  !dynamic viscosity in air                                                                  
+  real, intent(in) :: t
+  real             :: sv_0,sv_1,sv_2,sv_3,sv_4,n
+  sv_0 = 1.715747771d-5
+  sv_1 = 4.722402075d-8
+  sv_2 = -3.663027156d-10
+  sv_3 = 1.873236686d-12
+  sv_4 = -8.050218737d-14
+  ! in n.s/m^2 (pa.s)                                                                        
+  n = sv_0+(sv_1*t)+(sv_2*t**2)+(sv_3*t**3)+(sv_4*t**4)
+end function n_air
 
 end module  atmos_ocean_fluxes_mod

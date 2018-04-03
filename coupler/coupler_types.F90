@@ -1,6 +1,25 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 module coupler_types_mod
 !-----------------------------------------------------------------------
-! This file is part of MOM6. See LICENSE.md for the license.
+! This file is part of MOM6.
 !-----------------------------------------------------------------------
 !
 !> \brief This module contains type declarations for the coupler.
@@ -332,6 +351,7 @@ integer, public :: ind_sc_no = 3 !< The index for the Schmidt number for a trace
 integer, public :: ind_flux = 1  !< The index for the tracer flux
 integer, public :: ind_deltap= 2 !< The index for ocean-air gas partial pressure change
 integer, public :: ind_kw = 3    !< The index for the piston velocity
+integer, public :: ind_flux0 = 4 !< The index for the piston velocity
 integer, public :: ind_deposition = 1 !< The index for the atmospheric deposition flux
 integer, public :: ind_runoff = 1 !< The index for a runoff flux
 
@@ -602,6 +622,20 @@ if (fm_new_list('air_sea_gas_flux_generic/implementation/ocmip2') .le. 0) then  
 endif  !}
 call fm_util_set_value('air_sea_gas_flux_generic/implementation/ocmip2/num_parameters', 2)
 
+!f1p
+
+if (fm_new_list('air_sea_gas_flux_generic/implementation/duce') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/implementation/duce" list')
+endif  !}
+call fm_util_set_value('air_sea_gas_flux_generic/implementation/duce/num_parameters', 1)
+
+if (fm_new_list('air_sea_gas_flux_generic/implementation/johnson') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/implementation/johnson" list')
+endif  !}
+call fm_util_set_value('air_sea_gas_flux_generic/implementation/johnson/num_parameters', 2)
+
+!>
+
 !>       Add some scalar quantaties.
 
 call fm_util_set_value('air_sea_gas_flux_generic/num_flags', 0)
@@ -662,6 +696,10 @@ call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'uatm',    ind
 call fm_util_set_value('air_sea_gas_flux_generic/flux/name',      'kw',         index = ind_kw)
 call fm_util_set_value('air_sea_gas_flux_generic/flux/long_name', 'Piston velocity', index = ind_kw)
 call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'm/s',    index = ind_kw)
+
+ call fm_util_set_value('air_sea_gas_flux_generic/flux/name',      'flux0',         index = ind_flux0)
+ call fm_util_set_value('air_sea_gas_flux_generic/flux/long_name', 'Surface flux no atm', index = ind_flux0)
+ call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'mol/m^2/s',    index = ind_flux0)
 
 !
 !>       Define the air_sea_gas_flux type and add it.

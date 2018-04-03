@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 module horiz_interp_spherical_mod
 
   ! <CONTACT EMAIL="Matthew.Harrison@noaa.gov"> Matthew Harrison </CONTACT>
@@ -11,7 +29,7 @@ module horiz_interp_spherical_mod
 
   ! <DESCRIPTION>
   !     This module can interpolate data from rectangular/tripolar grid
-  !     to rectangular/tripolar grid. The interpolation scheme is inverse-distance-weighted 
+  !     to rectangular/tripolar grid. The interpolation scheme is inverse-distance-weighted
   !     scheme.    There is an optional mask field for missing input data.
   !     An optional output mask field may be used in conjunction with
   !     the input mask to show where output data exists.
@@ -32,7 +50,7 @@ module horiz_interp_spherical_mod
   public :: horiz_interp_spherical_new, horiz_interp_spherical, horiz_interp_spherical_del
   public :: horiz_interp_spherical_init, horiz_interp_spherical_wght
 
-  integer, parameter :: max_neighbors = 400 
+  integer, parameter :: max_neighbors = 400
   real,    parameter :: max_dist_default = 0.1  ! radians
   integer, parameter :: num_nbrs_default = 4
   real,    parameter :: large=1.e20
@@ -47,11 +65,11 @@ module horiz_interp_spherical_mod
   !  indicate the searching method to find the nearest neighbor points. Its value
   !  can be "radial_search" and "full_search", with default value "radial_search".
   !  when search_method is "radial_search", the search may be not quite accurate for some cases.
-  !  Normally the search will be ok if you chose suitable max_dist.  
+  !  Normally the search will be ok if you chose suitable max_dist.
   !  When search_method is "full_search", it will be always accurate, but will be slower
-  !  comparing to "radial_search". Normally these two search algorithm will produce same 
-  !  results other than order of operation. "radial_search" are recommended to use. 
-  !  The purpose to add "full_search" is in case you think you interpolation results is 
+  !  comparing to "radial_search". Normally these two search algorithm will produce same
+  !  results other than order of operation. "radial_search" are recommended to use.
+  !  The purpose to add "full_search" is in case you think you interpolation results is
   !  not right, you have other option to verify.
   ! </DATA>
   !</NAMELIST>
@@ -71,7 +89,7 @@ contains
   !  <OVERVIEW>
   !     writes version number to logfile.out
   !  </OVERVIEW>
-  !  <DESCRIPTION>       
+  !  <DESCRIPTION>
   !     writes version number to logfile.out
   !  </DESCRIPTION>
 
@@ -83,7 +101,7 @@ contains
     call write_version_number("horiz_interp_spherical_mod", version)
 #ifdef INTERNAL_FILE_NML
       read (input_nml_file, horiz_interp_spherical_nml, iostat=io)
-      ierr = check_nml_error(io,'horiz_interp_spherical_nml') 
+      ierr = check_nml_error(io,'horiz_interp_spherical_nml')
 #else
     if (file_exist('input.nml')) then
        unit = open_namelist_file ( )
@@ -116,9 +134,9 @@ end subroutine horiz_interp_spherical_init
   !   <TEMPLATE>
   !     call horiz_interp_spherical_new(Interp, lon_in,lat_in,lon_out,lat_out, num_nbrs, max_dist, src_modulo)
   !   </TEMPLATE>
-  !   
+  !
   !   <IN NAME="lon_in" TYPE="real, dimension(:,:)" UNITS="radians">
-  !      Longitude (in radians) for source data grid. 
+  !      Longitude (in radians) for source data grid.
   !   </IN>
 
   !   <IN NAME="lat_in" TYPE="real, dimension(:,:)" UNITS="radians">
@@ -126,19 +144,19 @@ end subroutine horiz_interp_spherical_init
   !   </IN>
 
   !   <IN NAME="lon_out" TYPE="real, dimension(:,:)" UNITS="radians" >
-  !      Longitude (in radians) for source data grid. 
+  !      Longitude (in radians) for source data grid.
   !   </IN>
 
   !   <IN NAME="lat_out" TYPE="real, dimension(:,:)" UNITS="radians" >
-  !      Latitude (in radians) for source data grid. 
+  !      Latitude (in radians) for source data grid.
   !   </IN>
 
   !   <IN NAME="num_nbrs" TYPE="integer, optional">
   !     Number of nearest neighbors for regridding. When number of neighbors within
-  !     the radius max_dist ( namelist variable) is less than num_nbrs, All the neighbors 
+  !     the radius max_dist ( namelist variable) is less than num_nbrs, All the neighbors
   !     will be used to interpolate onto destination grid. when number of neighbors within
   !     the radius max_dist ( namelist variable) is greater than num_nbrs, at least "num_nbrs"
-  !     neighbors will be used to remap onto destination grid. 
+  !     neighbors will be used to remap onto destination grid.
   !   </IN>
 
   !   <IN NAME="max_dist" TYPE="real, optional" UNITS="radians">
@@ -151,8 +169,8 @@ end subroutine horiz_interp_spherical_init
   !   </IN>
 
   !   <INOUT NAME="Interp" TYPE="type(horiz_interp_type)">
-  !      A derived-type variable containing indices and weights used for subsequent 
-  !      interpolations. To reinitialize this variable for a different grid-to-grid 
+  !      A derived-type variable containing indices and weights used for subsequent
+  !      interpolations. To reinitialize this variable for a different grid-to-grid
   !      interpolation you must first use the "horiz_interp_del" interface.
   !   </INOUT>
 
@@ -168,10 +186,10 @@ end subroutine horiz_interp_spherical_init
     integer :: i, j, n
     integer :: map_dst_xsize, map_dst_ysize, map_src_xsize, map_src_ysize
     integer :: map_src_size, num_neighbors
-    real    :: max_src_dist, tpi, hpi 
+    real    :: max_src_dist, tpi, hpi
     logical :: src_is_modulo
     real    :: min_theta_dst, max_theta_dst, min_phi_dst, max_phi_dst
-    real    :: min_theta_src, max_theta_src, min_phi_src, max_phi_src 
+    real    :: min_theta_src, max_theta_src, min_phi_src, max_phi_src
     integer :: map_src_add(size(lon_out,1),size(lon_out,2),max_neighbors)
     real    :: map_src_dist(size(lon_out,1),size(lon_out,2),max_neighbors)
     integer :: num_found(size(lon_out,1),size(lon_out,2))
@@ -188,7 +206,7 @@ end subroutine horiz_interp_spherical_init
 
     num_neighbors = num_nbrs_default
     if(present(num_nbrs)) num_neighbors = num_nbrs
-    if (num_neighbors <= 0) call mpp_error(FATAL,'horiz_interp_spherical_mod: num_neighbors must be > 0') 
+    if (num_neighbors <= 0) call mpp_error(FATAL,'horiz_interp_spherical_mod: num_neighbors must be > 0')
 
     max_src_dist = max_dist_default
     if (PRESENT(max_dist)) max_src_dist = max_dist
@@ -223,7 +241,7 @@ end subroutine horiz_interp_spherical_init
     where(phi_dst < -hpi) phi_dst = -hpi
     where(phi_dst > hpi)  phi_dst =  hpi
     where(phi_src < -hpi) phi_src = -hpi
-    where(phi_src > hpi)  phi_src =  hpi    
+    where(phi_src > hpi)  phi_src =  hpi
 
     do j=1,map_dst_ysize
        do i=1,map_dst_xsize
@@ -244,7 +262,7 @@ end subroutine horiz_interp_spherical_init
     if (min_phi_dst < min_phi_src) print *, '=> WARNING:  latitute of dest grid exceeds src'
     if (max_phi_dst > max_phi_src) print *, '=> WARNING:  latitute of dest grid exceeds src'
     ! when src is cyclic, no need to print out the following warning.
-    if(.not. src_is_modulo) then    
+    if(.not. src_is_modulo) then
        if (min_theta_dst < min_theta_src) print *, '=> WARNING : longitude of dest grid exceeds src'
        if (max_theta_dst > max_theta_src) print *, '=> WARNING : longitude of dest grid exceeds src'
     endif
@@ -271,14 +289,14 @@ end subroutine horiz_interp_spherical_init
     select case(trim(search_method))
     case ("radial_search") ! will be efficient, but may be not so accurate for some cases
        call radial_search(theta_src, phi_src, theta_dst, phi_dst, map_src_xsize, map_src_ysize, &
-            map_src_add, map_src_dist, num_found, num_neighbors,max_src_dist,src_is_modulo)    
+            map_src_add, map_src_dist, num_found, num_neighbors,max_src_dist,src_is_modulo)
     case ("full_search")   ! always accurate, but less efficient.
        call full_search(theta_src, phi_src, theta_dst, phi_dst, map_src_add, map_src_dist, &
             num_found, num_neighbors,max_src_dist )
     case default
        call mpp_error(FATAL,"horiz_interp_spherical_new: nml search_method = "// &
                   trim(search_method)//" is not a valid namelist option")
-    end select    
+    end select
 
     do j=1,map_dst_ysize
        do i=1,map_dst_xsize
@@ -316,13 +334,13 @@ end subroutine horiz_interp_spherical_init
   !      Subroutine for performing the horizontal interpolation between two grids.
   !   </OVERVIEW>
   !   <DESCRIPTION>
-  !     Subroutine for performing the horizontal interpolation between two grids. 
+  !     Subroutine for performing the horizontal interpolation between two grids.
   !     horiz_interp_spherical_new must be called before calling this routine.
   !   </DESCRIPTION>
   !   <TEMPLATE>
   !     call horiz_interp_spherical( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value)
   !   </TEMPLATE>
-  !   
+  !
   !   <IN NAME="Interp" TYPE="type(horiz_interp_type)">
   !     Derived-type variable containing interpolation indices and weights.
   !     Returned by a previous call to horiz_interp_spherical_new.
@@ -336,8 +354,8 @@ end subroutine horiz_interp_spherical_init
   !   </IN>
   !   <IN NAME="mask_in" TYPE="real, dimension(:,:),optional">
   !      Input mask, must be the same size as the input data. The real value of
-  !      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points 
-  !      that should not be used or have missing data. 
+  !      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points
+  !      that should not be used or have missing data.
   !   </IN>
   !   <IN NAME="missing_value" TYPE="real, optional">
   !      Use the missing_value to indicate missing data.
@@ -370,12 +388,12 @@ end subroutine horiz_interp_spherical_init
     iverbose = 0;  if (present(verbose)) iverbose = verbose
 
     nlon_in  = Interp%nlon_src; nlat_in  = Interp%nlat_src
-    nlon_out = Interp%nlon_dst; nlat_out = Interp%nlat_dst   
+    nlon_out = Interp%nlon_dst; nlat_out = Interp%nlat_dst
 
     if(size(data_in,1) .ne. nlon_in .or. size(data_in,2) .ne. nlat_in ) &
          call mpp_error(FATAL,'horiz_interp_spherical_mod: size of input array incorrect')
 
-    if(size(data_out,1) .ne. nlon_out .or. size(data_out,2) .ne. nlat_out ) & 
+    if(size(data_out,1) .ne. nlon_out .or. size(data_out,2) .ne. nlat_out ) &
          call mpp_error(FATAL,'horiz_interp_spherical_mod: size of output array incorrect')
 
     mask_src = 1.0; mask_dst = 1.0
@@ -385,11 +403,11 @@ end subroutine horiz_interp_spherical_init
        do m=1,nlon_out
           ! neighbors are sorted nearest to farthest
           ! check nearest to see if it is a land point
-          num_found = Interp%num_found(m,n) 
+          num_found = Interp%num_found(m,n)
           if(num_found == 0 ) then
              mask_dst(m,n) = 0.0
-          else          
-             i1 = Interp%i_lon(m,n,1); j1 = Interp%j_lat(m,n,1) 
+          else
+             i1 = Interp%i_lon(m,n,1); j1 = Interp%j_lat(m,n,1)
              if (mask_src(i1,j1) .lt. 0.5) then
                 mask_dst(m,n) = 0.0
              endif
@@ -682,7 +700,7 @@ end subroutine horiz_interp_spherical_init
                             endif
                          enddo
 
-                         ! ***************************right boundary ******************************* 
+                         ! ***************************right boundary *******************************
                          i_right = i0+n
                          if (i_right > map_src_xsize) then
                             if (src_is_modulo) then
@@ -720,7 +738,7 @@ end subroutine horiz_interp_spherical_init
                             i_right2 = map_src_xsize
                          else
                             i_left1 = i_left
-                            i_right1 = i_right                            
+                            i_right1 = i_right
                          endif
 
                          jj = j0 - n - 1
@@ -902,7 +920,7 @@ end subroutine horiz_interp_spherical_init
     ! this is a simple, enough way to calculate distance on the sphere
     ! first, construct cartesian vectors r1 and r2
     ! then calculate the cross-product which is proportional to the area
-    ! between the 2 vectors.  The angular distance is arcsin of the 
+    ! between the 2 vectors.  The angular distance is arcsin of the
     ! distancealong the sphere
     !
     ! theta is longitude and phi is latitude
@@ -945,7 +963,7 @@ end subroutine horiz_interp_spherical_init
         spherical_distance = 0.0
         return
     endif
-  
+
     dot = cos(phi1)*cos(phi2)*cos(theta1-theta2) + sin(phi1)*sin(phi2)
     if(dot > 1. ) dot = 1.
     if(dot < -1.) dot = -1.

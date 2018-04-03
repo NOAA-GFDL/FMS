@@ -1,3 +1,22 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 module field_manager_mod
 #ifndef MAXFIELDS_ 
 #define MAXFIELDS_ 150
@@ -216,7 +235,9 @@ public :: fm_get_value_logical !   as above (overloaded function)
 public :: fm_get_value_real    !   as above (overloaded function)
 public :: fm_get_value_string  !   as above (overloaded function)
 public :: fm_intersection      ! (lists, num_lists) return fm_array_list pointer
+public :: fm_init_loop         ! (list, iter)
 public :: fm_loop_over_list    ! (list, name, type, index) return success
+                               ! (iter, name, type, index) return success
 public :: fm_new_list          ! (list [, create] [, keep]) return index
 public :: fm_new_value         ! (entry, value [, create] [, index]) return index !! generic
 public :: fm_new_value_integer !   as above (overloaded function)
@@ -385,6 +406,11 @@ type, public :: method_type_very_short
 end type
 ! </TYPE> NAME="method_type_very_short"
 
+! iterator over the field manager list
+type, public :: fm_list_iter_type
+   type(field_def), pointer    :: ptr => NULL()  ! pointer to the current field
+end type fm_list_iter_type
+
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        Public types
@@ -428,6 +454,11 @@ interface  fm_get_value  !{
   module procedure  fm_get_value_real
   module procedure  fm_get_value_string
 end interface  !}
+
+interface fm_loop_over_list
+  module procedure  fm_loop_over_list_new
+  module procedure  fm_loop_over_list_old
+end interface
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        Private parameters
@@ -1852,8 +1883,7 @@ end function  create_field  !}
 !     success = dump_list(list_p, recursive= .true., depth=0)
 !   </TEMPLATE>
 !
-recursive function dump_list(list_p, recursive, depth)                &
-          result (success)  !{
+logical recursive function dump_list(list_p, recursive, depth, out_unit) result(success)
 !
 !   <IN NAME="list_p" TYPE="type(field_def), pointer">
 !     A pointer to the field, the contents of which will be printed out.
@@ -1870,238 +1900,136 @@ recursive function dump_list(list_p, recursive, depth)                &
 !     A flag to indicate whether the function operated with (FALSE) or 
 !     without (TRUE) errors.
 !   </OUT>
-!
-!        Function definition
-!
-logical                             :: success
-!
-!        arguments
-!
-type (field_def), pointer           :: list_p
-logical, intent(in)                 :: recursive
-integer, intent(in)                 :: depth
+  type (field_def), pointer :: list_p
+  logical, intent(in)       :: recursive
+  integer, intent(in)       :: depth
+  integer, intent(in)       :: out_unit
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-integer,                  parameter :: max_depth    = 128
-character(len=max_depth), parameter :: blank        = '    '
-character(len=9),  parameter :: sub_name     = 'dump_list'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_name)    //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-integer                             :: depthp1
-integer                             :: first
-integer                             :: i
-integer                             :: j
-integer                             :: last
-integer                             :: nf
-integer                             :: nl
-integer                             :: out_unit
-character(len=fm_field_name_len)    :: num
-character(len=fm_field_name_len)    :: scratch
-type (field_def), pointer           :: this_field_p
-!
-!        Check for a valid list
-!
+  ! ---- local constants
+  character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) // '(dump_list): '
+  ! ---- local variables
+  integer                             :: depthp1
+  integer                             :: j
+  character(len=fm_field_name_len)    :: num, scratch
+  type (field_def), pointer           :: this_field_p
+  character(len=depth+fm_field_name_len) :: blank
+  
+  blank = ' ' ! initialize blank string
 
-out_unit = stdout()
-this_field_p => NULL()
-
-if (.not. associated(list_p)) then  !{
-
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header), 'Invalid list pointer'
-  endif  !}
+  ! Check for a valid list
   success = .false.
-elseif (list_p%field_type .ne. list_type) then  !}{
+  if (.not. associated(list_p)) then
+    if (verb > verb_level_warn) write (out_unit,*) trim(warn_header), 'Invalid list pointer'
+    return
+  elseif (list_p%field_type .ne. list_type) then
+    if (verb > verb_level_warn) write (out_unit,*) trim(warn_header), trim(list_p%name), ' is not a list'
+    return
+  endif
 
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header),               &
-                       trim(list_p%name), ' is not a list'
-  endif  !}
-  success = .false.
-else  !}{
-!
-!        set the default return value
-!
+  ! set the default return value
   success = .true.
-!
-!        Print the name of this list
-!
+
+  ! Print the name of this list
   write (out_unit,'(a,a,a)') blank(1:depth), trim(list_p%name), list_sep
-!
-!        Increment the indentation depth
-!
-  if (depth .eq. max_depth) then  !{
-    if (verb .gt. verb_level_note) then  !{
-      write (out_unit,*) trim(note_header),                        &
-          'Indentation depth exceeded'
-    endif  !}
-  else  !}{
-    ! The following max function is to work around an error in the IBM compiler for len_trim
-    depthp1 = depth + max(len_trim(list_p%name),0) + len_trim(list_sep)
-  endif  !}
+
+  !  Increment the indentation depth
+  ! The following max function is to work around an error in the IBM compiler for len_trim
+  ! depthp1 = depth + max(len_trim(list_p%name),0) + len_trim(list_sep)
+  depthp1 = depth + 6
 
   this_field_p => list_p%first_field
 
-  do while (associated(this_field_p))  !{
+  do while (associated(this_field_p))
 
-    select case(this_field_p%field_type)
-    case(list_type)
-!
-!        If this is a list, then call dump_list
-!
-      if (recursive) then  !{
-! If recursive is true, then this routine will find and dump sub-fields.
-        if (.not. dump_list(this_field_p, .true., depthp1)) then  !{
-          success = .false.
-          exit
-        endif  !}
-      else  !}{ ! Otherwise it will print out the name of this field.
-        write (out_unit,'(a,a,a)') blank(1:depthp1),               &
-                trim(this_field_p%name), list_sep
-      endif  !}
+     select case(this_field_p%field_type)
+     case(list_type)
+       ! If this is a list, then call dump_list
+       if (recursive) then
+          ! If recursive is true, then this routine will find and dump sub-fields.
+          success =  dump_list(this_field_p, .true., depthp1, out_unit)
+          if (.not.success) exit ! quit immediately in case of error
+       else ! Otherwise it will print out the name of this field.
+          write (out_unit,'(a,a,a)') blank(1:depthp1), trim(this_field_p%name), list_sep
+       endif
 
-    case(integer_type)
+     case(integer_type)
+         if (this_field_p%max_index .eq. 0) then
+            write (out_unit,'(a,a,a)') blank(1:depthp1),  trim(this_field_p%name), ' = NULL'
+         elseif (this_field_p%max_index .eq. 1) then
+            write (scratch,*) this_field_p%i_value(1)
+            write (out_unit,'(a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), ' = ', &
+                   trim(adjustl(scratch))
+         else  ! Write out the array of values for this field.
+            do j = 1, this_field_p%max_index
+               write (scratch,*) this_field_p%i_value(j)
+               write (num,*) j
+               write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), &
+                      '[', trim(adjustl(num)), '] = ', trim(adjustl(scratch))
+           enddo 
+         endif
 
-         if (this_field_p%max_index .eq. 0) then  !{
-         ! Write out the solitary value for this field.
-          write (out_unit,'(a,a,a)') blank(1:depthp1),             &
-               trim(this_field_p%name), ' = NULL'
-        elseif (this_field_p%max_index .eq. 1) then  !}{
-          write (scratch,*) this_field_p%i_value(1)
-          call strip_front_blanks(scratch)
-          write (out_unit,'(a,a,a,a)') blank(1:depthp1),           &
-                trim(this_field_p%name), ' = ', trim(scratch)
+     case(logical_type)
+         if (this_field_p%max_index .eq. 0) then
+            write (out_unit,'(a,a,a)') blank(1:depthp1),  trim(this_field_p%name), ' = NULL'
+         elseif (this_field_p%max_index .eq. 1) then
+            write (scratch,'(l1)') this_field_p%l_value(1)
+            write (out_unit,'(a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), ' = ', &
+                   trim(adjustl(scratch))
+         else  ! Write out the array of values for this field.
+            do j = 1, this_field_p%max_index
+               write (scratch,'(l1)') this_field_p%l_value(j)
+               write (num,*) j
+               write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), &
+                      '[', trim(adjustl(num)), '] = ', trim(adjustl(scratch))
+            enddo 
+         endif
 
-        else  !}{ Write out the array of values for this field.
-          do j = 1, this_field_p%max_index - 1  !{
-            write (scratch,*) this_field_p%i_value(j)
-            call strip_front_blanks(scratch)
-            write (num,*) j
-            call strip_front_blanks(num)
-            write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1),     &
-                 trim(this_field_p%name), '[', trim(num),          &
-                 '] = ', trim(scratch)
-          enddo  !} j
-          write (scratch,*) this_field_p%i_value(this_field_p%max_index)
-          call strip_front_blanks(scratch)
-          write (num,*) this_field_p%max_index
-          call strip_front_blanks(num)
-          write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1),       &
-               trim(this_field_p%name), '[', trim(num),            &
-               '] = ', trim(scratch)
-        endif  !}
+     case(real_type)
+         if (this_field_p%max_index .eq. 0) then
+            write (out_unit,'(a,a,a)') blank(1:depthp1),  trim(this_field_p%name), ' = NULL'
+         elseif (this_field_p%max_index .eq. 1) then
+            write (scratch,*) this_field_p%r_value(1)
+            write (out_unit,'(a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), ' = ', &
+                   trim(adjustl(scratch))
+         else  ! Write out the array of values for this field.
+            do j = 1, this_field_p%max_index
+               write (scratch,*) this_field_p%r_value(j)
+               write (num,*) j
+               write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), &
+                      '[', trim(adjustl(num)), '] = ', trim(adjustl(scratch))
+            enddo 
+         endif
 
+     case(string_type)
+         if (this_field_p%max_index .eq. 0) then
+            write (out_unit,'(a,a,a)') blank(1:depthp1),  trim(this_field_p%name), ' = NULL'
+         elseif (this_field_p%max_index .eq. 1) then
+            write (out_unit,'(a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), ' = ', &
+                   ''''//trim(this_field_p%s_value(1))//''''
+         else  ! Write out the array of values for this field.
+            do j = 1, this_field_p%max_index
+               write (num,*) j
+               write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), &
+                      '[', trim(adjustl(num)), '] = ', ''''//trim(this_field_p%s_value(j))//''''
+            enddo 
+         endif
 
+     case default
+         if (verb .gt. verb_level_warn) then
+            write (out_unit,*) trim(warn_header), 'Undefined type for ', trim(this_field_p%name)
+         endif
+         success = .false.
+         exit
 
-    case(logical_type)
+     end select
 
-        if (this_field_p%max_index .eq. 0) then  !{
-         ! Write out the solitary value for this field.
-          write (out_unit,'(a,a,a)') blank(1:depthp1),             &
-               trim(this_field_p%name), ' = NULL'
-        elseif (this_field_p%max_index .eq. 1) then  !}{
-          write (out_unit,'(a,a,a,l1)') blank(1:depthp1),          &
-               trim(this_field_p%name), ' = ',                     &
-               this_field_p%l_value(1)
-        else  !}{ Write out the array of values for this field.
-          do j = 1, this_field_p%max_index - 1  !{
-            write (num,*) j
-            call strip_front_blanks(num)
-            write (out_unit,'(a,a,a,a,a,l1)') blank(1:depthp1),    &
-                 trim(this_field_p%name), '[', trim(num),          &
-                 '] = ', this_field_p%l_value(j)
-          enddo  !} j
-          write (num,*) this_field_p%max_index
-          call strip_front_blanks(num)
+     this_field_p => this_field_p%next
+  enddo
 
-       write (out_unit,'(a,a,a,a,a,l1)') blank(1:depthp1),         &
-               trim(this_field_p%name), '[', trim(num),            &
-               '] = ', this_field_p%l_value(this_field_p%max_index)
-        endif  !}
-
-
-    case(real_type)
-
-        if (this_field_p%max_index .eq. 0) then  !{
-         ! Write out the solitary value for this field.
-          write (out_unit,'(a,a,a)') blank(1:depthp1),             &
-               trim(this_field_p%name), ' = NULL'
-        elseif (this_field_p%max_index .eq. 1) then  !}{
-          write (scratch,*) this_field_p%r_value(1)
-          call strip_front_blanks(scratch)
-          write (out_unit,'(a,a,a,a)') blank(1:depthp1),           &
-                  trim(this_field_p%name), ' = ', trim(scratch)
-        else  !}{ Write out the array of values for this field.
-          do j = 1, this_field_p%max_index - 1  !{
-            write (scratch,*) this_field_p%r_value(j)
-            call strip_front_blanks(scratch)
-            write (num,*) j
-            call strip_front_blanks(num)
-            write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1),     &
-                 trim(this_field_p%name), '[', trim(num),          &
-                 '] = ', trim(scratch)
-          enddo  !} j
-          write (scratch,*) this_field_p%r_value(this_field_p%max_index)
-          call strip_front_blanks(scratch)
-          write (num,*) this_field_p%max_index
-          call strip_front_blanks(num)
-          write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1),       &
-               trim(this_field_p%name), '[', trim(num),            &
-               '] = ', trim(scratch)
-        endif  !}
-
-    case(string_type)
-        if (this_field_p%max_index .eq. 0) then  !{
-         ! Write out the solitary value for this field.
-          write (out_unit,'(a,a,a)') blank(1:depthp1),             &
-               trim(this_field_p%name), ' = NULL'
-        elseif (this_field_p%max_index .eq. 1) then  !}{
-        write (out_unit,'(a,a,a,a,a)') blank(1:depthp1),           &
-                trim(this_field_p%name), ' = ''',                  &
-               trim(this_field_p%s_value(1)), ''''
-        else  !}{ Write out the array of values for this field.
-          do j = 1, this_field_p%max_index - 1  !{
-            write (num,*) j
-            call strip_front_blanks(num)
-            write (out_unit,'(a,a,a,a,a,a,a)') blank(1:depthp1),   &
-                 trim(this_field_p%name), '[', trim(num),          &
-                 '] = ''', trim(this_field_p%s_value(j)), ''''
-          enddo  !} j
-          write (num,*) this_field_p%max_index
-          call strip_front_blanks(num)
-          write (out_unit,'(a,a,a,a,a,a,a)') blank(1:depthp1),     &
-               trim(this_field_p%name), '[', trim(num),            &
-               '] = ''',                                           &
-               trim(this_field_p%s_value(this_field_p%max_index)), &
-               ''''
-        endif  !}
-
-    case default
-
-        if (verb .gt. verb_level_warn) then  !{
-          write (out_unit,*) trim(warn_header),                    &
-                  'Undefined type for ',                           &
-                  trim(this_field_p%name)
-        endif  !}
-        success = .false.
-        exit
-
-    end select
-
-    this_field_p => this_field_p%next
-  enddo  !}
-endif  !}
-
-end function dump_list  !}
+end function dump_list
 ! </FUNCTION> NAME="dump_list"
 !</PRIVATE>
+
 !#######################################################################
 !#######################################################################
 
@@ -2730,9 +2658,10 @@ end function  fm_change_root  !}
 !     success = fm_dump_list(name, recursive = .true.) 
 !   </TEMPLATE>
 !
-function  fm_dump_list(name, recursive)                        &
-          result (success)  !{
-!
+logical function  fm_dump_list(name, recursive, unit) result (success)
+  character(len=*), intent(in)  :: name
+  logical, intent(in), optional :: recursive
+  integer, intent(in), optional :: unit ! file to print to
 !   <OUT NAME="success" TYPE="logical">
 !     A flag to indicate whether the function operated with (FALSE) or 
 !     without (TRUE) errors.
@@ -2744,78 +2673,48 @@ function  fm_dump_list(name, recursive)                        &
 !     If present and .true., then a recursive listing of fields will be
 !     performed.
 !   </IN>
-!
-!        Function definition
-!
-logical        :: success
-!
-!        arguments
-!
-character(len=*), intent(in)           :: name
-logical,          intent(in), optional :: recursive
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=12), parameter :: sub_name     = 'fm_dump_list'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
+  ! ---- local parameters
+  character(len=12), parameter :: sub_name     = 'fm_dump_list'
+  character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
                                                '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-logical                         :: recursive_t
-type (field_def), pointer, save :: temp_list_p 
-integer                         :: out_unit
+  ! ---- local variables
+  logical                         :: recursive_t
+  type (field_def), pointer, save :: temp_list_p 
+  integer                         :: out_unit
 
-out_unit = stdout()
-!
-!        Check whether to do things recursively
-!
-if (present(recursive)) then  !{
-  recursive_t = recursive
-else  !}{
+  if (present(unit)) then
+     out_unit = unit
+  else
+     out_unit = stdout()
+  endif
+
   recursive_t = .false.
-endif  !}
-!
-!        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
-  call initialize
-endif  !}
+  if (present(recursive)) recursive_t = recursive
+  if (.not. module_is_initialized) call initialize()
 
-if (name .eq. ' ') then  !{
-!
-!        If list is empty, then dump the current list
-!
-  temp_list_p => current_list_p
-  success = .true.
-else  !}{
-!
-!        Get a pointer to the list
-!
-  temp_list_p => find_list(name, current_list_p, .false.)
-  if (associated(temp_list_p)) then  !{
+  if (name .eq. ' ') then 
+    ! If list is empty, then dump the current list
+    temp_list_p => current_list_p
     success = .true.
-  else  !}{
-!
-!        Error following the path
-!
-
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                        &
-           'Could not follow path for ', trim(name)
-    endif  !}
-    success = .false.
-  endif  !}
-endif  !}
-!
-!        Dump the list
-!
-if (success) then  !{
-  success = dump_list(temp_list_p, recursive_t, 0)
-endif  !}
-
-end function  fm_dump_list  !}
+  else  
+    ! Get a pointer to the list
+    temp_list_p => find_list(name, current_list_p, .false.)
+    if (associated(temp_list_p)) then
+       success = .true.
+    else 
+       ! Error following the path
+       if (verb .gt. verb_level_warn) then
+          write (out_unit,*) trim(warn_header), 'Could not follow path for ', trim(name)
+       endif
+       success = .false.
+    endif
+  endif
+  ! Dump the list
+  if (success) then
+      success = dump_list(temp_list_p, recursive_t, 0, out_unit)
+  endif
+end function  fm_dump_list
 ! </FUNCTION> NAME="fm_dump_list"
 
 !#######################################################################
@@ -3979,7 +3878,7 @@ end function fm_intersection  !}
 !     success = fm_loop_over_list(list, name, field_type, index)
 !   </TEMPLATE>
 !
-function  fm_loop_over_list(list, name, field_type, index)        &
+function  fm_loop_over_list_old(list, name, field_type, index)        &
           result (success)  !{
 !   <OUT NAME="success" TYPE="logical">
 !     A flag to indicate whether the function operated with (FALSE) or 
@@ -4102,8 +4001,51 @@ function  set_list_stuff()                                                &
 end function  set_list_stuff  !}
 ! </FUNCTION> NAME="set_list_stuff"
 
-end function  fm_loop_over_list  !}
+end function  fm_loop_over_list_old
 ! </FUNCTION> NAME="fm_loop_over_list"
+
+!#######################################################################
+! given a name of the list, prepares an iterator over the list content.
+! If the name of the given list is blank, then the current list is used
+subroutine fm_init_loop(loop_list, iter)
+  character(len=*)       , intent(in)  :: loop_list ! name of the list to iterate over
+  type(fm_list_iter_type), intent(out) :: iter     ! loop iterator
+  
+  if (.not.module_is_initialized) call initialize
+  
+  if (loop_list==' ') then ! looping over current list
+     iter%ptr => current_list_p%first_field
+  else
+     iter%ptr => find_list(loop_list,current_list_p,.false.)
+     if (associated(iter%ptr)) iter%ptr => iter%ptr%first_field
+  endif
+end subroutine fm_init_loop
+
+!#######################################################################
+! given a list iterator, returns information about curren list element
+! and advances the iterator to the next list element. At the end of the 
+! list, returns FALSE
+function fm_loop_over_list_new(iter, name, field_type, index) &
+         result (success) ; logical success
+  type (fm_list_iter_type), intent(inout) :: iter ! list iterator
+  character(len=*), intent(out) :: name       ! name of the current list item
+  character(len=*), intent(out) :: field_type ! type of the field
+  integer         , intent(out) :: index      ! index in the list
+
+  if (.not.module_is_initialized) call initialize
+  if (associated(iter%ptr)) then
+     name       = iter%ptr%name
+     field_type = field_type_name(iter%ptr%field_type)
+     index      = iter%ptr%index
+     success    = .TRUE.
+     iter%ptr => iter%ptr%next
+  else
+     name       = ' '
+     field_type = ' '
+     index      = 0
+     success    = .FALSE.
+  endif
+end function fm_loop_over_list_new
 
 !#######################################################################
 !#######################################################################
@@ -4396,8 +4338,14 @@ if (associated(temp_list_p)) then  !{
 !        Check if the field_type is the same as previously
 !        If not then reset max_index to 0
 !
-    if (temp_field_p%field_type /= integer_type ) then
-        temp_field_p%max_index = 0
+    if (temp_field_p%field_type == real_type ) then
+       ! promote integer input to real
+       field_index = fm_new_value_real(name, real(value), create, index, append)
+       return
+    else if (temp_field_p%field_type /= integer_type ) then
+      !  slm: why would we reset index? Is it not an error to have a "list" defined
+      !  with different types in more than one place? 
+      temp_field_p%max_index = 0
       if (temp_field_p%field_type /= null_type ) then  !{
         if (verb .gt. verb_level_warn) then  !{
           write (out_unit,*) trim(warn_header),                   &
@@ -4862,8 +4810,20 @@ if (associated(temp_list_p)) then  !{
 !        Check if the field_type is the same as previously
 !        If not then reset max_index to 0
 !
-    if (temp_field_p%field_type /= real_type ) then
-        temp_field_p%max_index = 0
+    if (temp_field_p%field_type == integer_type) then
+       ! promote integer field to real
+       allocate(temp_field_p%r_value(size(temp_field_p%i_value)))
+       do i = 1, size(temp_field_p%i_value)
+          temp_field_p%r_value(i) = temp_field_p%i_value(i)
+       enddo
+       temp_field_p%field_type = real_type
+       deallocate(temp_field_p%i_value)
+    else if (temp_field_p%field_type /= real_type ) then
+      ! slm: why reset index to 0? does it make any sense? It sounds like this is the
+      ! case where the values in the array have different types, so is it not an error?
+      ! Or, alternatively, if string follows a real value, should not be the entire
+      ! array converted to string type?
+      temp_field_p%max_index = 0
       if (temp_field_p%field_type /= null_type ) then  !{
         if (verb .gt. verb_level_warn) then  !{
           write (out_unit,*) trim(warn_header),                   &

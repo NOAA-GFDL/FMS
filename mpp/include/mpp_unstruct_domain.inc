@@ -1,3 +1,22 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
   !#####################################################################
   subroutine mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, grid_nlev, ndivs, npes_io_group, grid_index, name)
      type(domainUG),   intent(inout) :: UG_domain
@@ -783,6 +802,20 @@ end subroutine mpp_deallocate_domainUG
 #undef mpp_pass_UG_to_SG_3D_
 #define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_r8_3d
 #include <mpp_unstruct_pass_data.h>
+
+#ifdef OVERLOAD_R4
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(FLOAT_KIND)
+#undef mpp_pass_SG_to_UG_2D_
+#define mpp_pass_SG_to_UG_2D_ mpp_pass_SG_to_UG_r4_2d
+#undef mpp_pass_SG_to_UG_3D_
+#define mpp_pass_SG_to_UG_3D_ mpp_pass_SG_to_UG_r4_3d
+#undef mpp_pass_UG_to_SG_2D_
+#define mpp_pass_UG_to_SG_2D_ mpp_pass_UG_to_SG_r4_2d
+#undef mpp_pass_UG_to_SG_3D_
+#define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_r4_3d
+#include <mpp_unstruct_pass_data.h>
+#endif
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
