@@ -18,29 +18,61 @@
 !***********************************************************************
 
 
+!###############################################################################
+!> \namespace fft_mod
+!!
+!! \author Bruce Wyman <Bruce.Wyman@noaa.gov>
+!!
+!! \brief fft_mod performs simultaneous fast Fourier transforms (FFTs) between
+!!        real grid space and complex Fourier space.
+!!
+!! This routine computes multiple 1-dimensional FFTs and inverse FFTs.
+!! There are 2d and 3d versions between type real grid point space
+!! and type complex Fourier space. There are single (32-bit) and
+!! full (64-bit) versions.
+!!
+!! On Cray and SGI systems, vendor-specific scientific library
+!! routines are used, otherwise a user may choose a NAG library version
+!! or stand-alone version using Temperton's FFT.
+!!
+!! fft uses the SCILIB on SGICRAY, otherwise the NAG library or
+!! a standalone version of Temperton's fft is used:
+!!      - SCFFTM and CSFFTM are used on Crays
+!!      - DZFFTM and ZDFFTM are used on SGIs
+!!
+!! The following NAG routines are used: c06fpf, c06gqf, c06fqf.
+!! These routine names may be slightly different on different
+!! platforms.
+!!
+!! Modules Included:
+!!
+!! <table>
+!!   <tr>
+!!     <th> Module Name </th>
+!!     <th> Conditions </th>
+!!     <th> Functions Included </th>
+!!   </tr>
+!!   <tr>
+!!     <td> platform_mod </td>
+!!     <td> </td>
+!!     <td> R8_KIND, R4_KIND </td>
+!!   </tr>
+!!   <tr>
+!!     <td> fms_mod </td>
+!!     <td> </td>
+!!     <td> write_version_number, error_mesg, FATAL <\td>
+!!   </tr>
+!!   <tr>
+!!     <td> fft99_mod </td>
+!!     <td> if not on SGICRAY </td>
+!!     <td> fft991, set99 </td>
+!!   </tr>
+!! </table>
+
 module fft_mod
 
-! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
-!   Bruce Wyman
-! </CONTACT>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!     Performs simultaneous fast Fourier transforms (FFTs) between
-!     real grid space and complex Fourier space.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!     This routine computes multiple 1-dimensional FFTs and inverse FFTs.
-!     There are 2d and 3d versions between type real grid point space
-!     and type complex Fourier space. There are single (32-bit) and
-!     full (64-bit) versions.
-!
-!     On Cray and SGI systems, vendor-specific scientific library
-!     routines are used, otherwise a user may choose a NAG library version
-!     or stand-alone version using Temperton's FFT.
-! </DESCRIPTION>
+!> \addtogroup fft_mod
+!! @{
 
 !-----------------------------------------------------------------------
 !these are used to determine hardware/OS/compiler
@@ -75,115 +107,110 @@ private
 
 public :: fft_init, fft_end, fft_grid_to_fourier, fft_fourier_to_grid
 
-! <INTERFACE NAME="fft_grid_to_fourier">
-
-!   <OVERVIEW>
-!     Given multiple sequences of real data values, this routine
-!     computes the complex Fourier transform for all sequences.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Given multiple sequences of real data values, this routine
-!     computes the complex Fourier transform for all sequences.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     fourier = fft_grid_to_fourier ( grid )
-!   </TEMPLATE>
-!   <IN NAME="grid">
-!     Multiple sequence of real data values. The first dimension
-!     must be n+1 (where n is the size of a single sequence).
-!   </IN>
-!   <OUT NAME="fourier">
-!     Multiple sequences of transformed data in complex Fourier space.
-!     The first dimension must equal n/2+1 (where n is the size
-!     of a single sequence). The remaining dimensions must be the
-!     same size as the input argument "grid".
-!   </OUT>
-!   <NOTE>
-!     The complex Fourier components are passed in the following format.
-!     <PRE>
-!        fourier (1)     = cmplx ( a(0), b(0) )
-!        fourier (2)     = cmplx ( a(1), b(1) )
-!            :              :
-!            :              :
-!        fourier (n/2+1) = cmplx ( a(n/2), b(n/2) )
-!     </PRE>
-!   where n = length of each real transform
-!   </NOTE>
-!   <ERROR MSG="fft_init must be called" STATUS="Error">
-!     The initialization routine fft_init must be called before routines
-!     fft_grid_to_fourier. 
-!   </ERROR>
-!   <ERROR MSG="size of first dimension of input data is wrong" STATUS="Error">
-!     The real grid point field must have a first dimension equal to n+1
-!      (where n is the size of each real transform). This message occurs
-!      when using the SGI/Cray fft.
-!   </ERROR>
-!   <ERROR MSG="length of input data too small" STATUS="Error">
-!      The real grid point field must have a first dimension equal to n
-!      (where n is the size of each real transform). This message occurs
-!      when using the NAG or Temperton fft.
-!   </ERROR>
-!   <ERROR MSG="float kind not supported for nag fft" STATUS="Error">
-!      32-bit real data is not supported when using the NAG fft. You
-!      may try modifying this part of the code by uncommenting the
-!      calls to the NAG library or less consider using the Temperton fft.
-!   </ERROR>
+!###############################################################################
+!> \page fft_grid_to_fourier Interface: fft_grid_to_fourier
+!!
+!! \brief Given multiple sequences of real data values, this routine
+!!        computes the complex Fourier transform for all sequences.
+!!
+!! Contains \ref fft_grid_to_fourier_float_2d
+!!
+!! \code{.f90}
+!! fourier = fft_grid_to_fourier ( grid )
+!! \endcode
+!!
+!! \param [in] <grid> Multiple sequence of real data values. The first dimension
+!!        must be n+1 (where n is the size of a single sequence).
+!!
+!! \param [out] <fourier> Multiple sequences of transformed data in complex
+!!        Fourier space. The first dimension must equal n/2+1 (where n is the
+!!        size of a single sequence). The remaining dimensions must be the
+!!        same size as the input argument "grid".
+!!
+!! The complex Fourier components are passed in the following format (where n
+!! is length of each real transform).
+!! <table>
+!!   <tr>
+!!     <td> fourier (1) </td> <td> = cmplx ( a(0), b(0) ) </td>
+!!   </tr>
+!!   <tr>
+!!     <td> fourier (2) </td> <td> = cmplx ( a(1), b(1) ) </td>
+!!   </tr>
+!!   <tr>
+!!     <td> : </td> <td> : </td>
+!!   </tr>
+!!   <tr>
+!!     <td> fourier (n/2+1) </td> <td> = cmplx ( a(n/2), b(n/2) ) </td>
+!!   </tr>
+!! </table>
+!!
+!! \throw Error `"fft_init must be called"`
+!!        The initialization routine fft_init must be called before routines
+!!        fft_grid_to_fourier.
+!!
+!! \throw Error `"size of first dimension of input data is wrong"`
+!!        The real grid point field must have a first dimension equal to n+1
+!!        (where n is the size of each real transform). This message occurs
+!!        when using the SGI/Cray fft.
+!!
+!! \throw Error `"length of input data too small"`
+!!        The real grid point field must have a first dimension equal to n
+!!        (where n is the size of each real transform). This message occurs
+!!        when using the NAG or Temperton fft.
+!!
+!! \throw Error `"float kind not supported for nag fft"`
+!!        32-bit real data is not supported when using the NAG fft. You
+!!        may try modifying this part of the code by uncommenting the
+!!        calls to the NAG library or less consider using the Temperton fft.
+!!
 interface fft_grid_to_fourier
   module procedure fft_grid_to_fourier_float_2d, fft_grid_to_fourier_double_2d, &
                    fft_grid_to_fourier_float_3d, fft_grid_to_fourier_double_3d
 end interface
-! </INTERFACE>
 
-! <INTERFACE NAME="fft_fourier_to_grid">
-
-!   <OVERVIEW>
-!     Given multiple sequences of Fourier space transforms,
-!     this routine computes the inverse transform and returns
-!     the real data values for all sequences.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Given multiple sequences of Fourier space transforms,
-!     this routine computes the inverse transform and returns
-!     the real data values for all sequences.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     grid = fft_fourier_to_grid ( fourier )
-!   </TEMPLATE>
-!   <IN NAME="fourier">
-!     Multiple sequence complex Fourier space transforms.
-!     The first dimension must equal n/2+1 (where n is the
-!     size of a single real data sequence).
-!   </IN>
-!   <OUT NAME="grid">
-!     Multiple sequence of real data values. The first dimension
-!     must be n+1 (where n is the size of a single sequence).
-!     The remaining dimensions must be the same size as the input
-!     argument "fourier".
-!   </OUT>
-!   <ERROR MSG="fft_init must be called" STATUS="Error">
-!     The initialization routine fft_init must be called before routines fft_fourier_to_grid.
-!   </ERROR>
-!   <ERROR MSG="size of first dimension of input data is wrong" STATUS="Error">
-!      The complex Fourier field must have a first dimension equal to
-!      n/2+1 (where n is the size of each real transform). This message
-!      occurs when using the SGI/Cray fft. 
-!   </ERROR>
-!   <ERROR MSG="length of input data too small" STATUS="Error">
-!      The complex Fourier field must have a first dimension greater
-!      than or equal to n/2+1 (where n is the size of each real
-!      transform). This message occurs when using the NAG or Temperton fft. 
-!   </ERROR>
-!   <ERROR MSG="float kind not supported for nag fft" STATUS="Error">
-!      float kind not supported for nag fft 
-!      32-bit real data is not supported when using the NAG fft. You
-!      may try modifying this part of the code by uncommenting the
-!      calls to the NAG library or less consider using the Temperton fft.
-!   </ERROR>
+!###############################################################################
+!> \page fft_fourier_to_grid Interface: fft_fourier_to_grid
+!!
+!! \brief Given multiple sequences of Fourier space transforms,
+!!        this routine computes the inverse transform and returns
+!!        the real data values for all sequences.
+!!
+!! \code{.f90}
+!! grid = fft_fourier_to_grid ( fourier )
+!! \endcode
+!!
+!! \param [in] <fourier> Multiple sequence complex Fourier space transforms.
+!!        The first dimension must equal n/2+1 (where n is the
+!!        size of a single real data sequence).
+!!
+!! \param [out] <grid> Multiple sequence of real data values. The first
+!!        dimension must be n+1 (where n is the size of a single sequence).
+!!        The remaining dimensions must be the same size as the input
+!!        argument "fourier".
+!!
+!! \throw Error `"fft_init must be called"`
+!!        The initialization routine fft_init must be called before routines
+!!        fft_fourier_to_grid.
+!!
+!! \throw Error `"size of first dimension of input data is wrong"`
+!!        The complex Fourier field must have a first dimension equal to
+!!        n/2+1 (where n is the size of each real transform). This message
+!!        occurs when using the SGI/Cray fft.
+!!
+!! \throw Error `"length of input data too small"`
+!!        The complex Fourier field must have a first dimension greater
+!!        than or equal to n/2+1 (where n is the size of each real
+!!        transform). This message occurs when using the NAG or Temperton fft.
+!!
+!! \throw Error `"float kind not supported for nag fft"`
+!!        32-bit real data is not supported when using the NAG fft. You may try
+!!        modifying this part of the code by uncommenting the calls to the NAG
+!!        library or less consider using the Temperton fft.
+!!
 interface fft_fourier_to_grid
   module procedure fft_fourier_to_grid_float_2d, fft_fourier_to_grid_double_2d, &
                    fft_fourier_to_grid_float_3d, fft_fourier_to_grid_double_3d
 end interface
-! </INTERFACE>
 
 !---------------------- private data -----------------------------------
 
@@ -202,42 +229,47 @@ logical :: module_is_initialized=.false.
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
-!-----------------------------------------------------------------------
-!
-!                    WRAPPER FOR FFT
-!
-!   Provides fast fourier transtorm (FFT) between real grid
-!   space and complex fourier space.
-!
-!   The complex fourier components are passed in the following format.
-!
-!        fourier (1)     = cmplx ( a(0), b(0) )
-!        fourier (2)     = cmplx ( a(1), b(1) )
-!            :              :
-!            :              :
-!        fourier (n/2+1) = cmplx ( a(n/2), b(n/2) )
-!
-!   where n = length of each real transform
-!
-!   fft uses the SCILIB on SGICRAY, otherwise the NAG library or
-!   a standalone version of Temperton's fft is used
-!     SCFFTM and CSFFTM are used on Crays
-!     DZFFTM and ZDFFTM are used on SGIs
-!   The following NAG routines are used: c06fpf, c06gqf, c06fqf.
-!   These routine names may be slightly different on different 
-!   platforms.
-!
-!-----------------------------------------------------------------------
-
 contains
 
-!#######################################################################
 
-! <FUNCTION NAME="fft_grid_to_fourier_float_2d" INTERFACE="fft_grid_to_fourier">
-!   <IN NAME="grid" TYPE="real(R4_KIND)" DIM="(:,:)"></IN>
-!   <OUT NAME="fourier" TYPE="complex(R4_KIND)" DIM="(lenc,size(grid,2))"> </OUT>
 
-! </FUNCTION>
+!###############################################################################
+!> \fn fft_grid_to_fourier_float_2d
+!!
+!! \brief A function that returns multiple transforms in complex
+!!        fourier space, the first dimension must equal n/2+1 (where n is the
+!!        size of each real transform). The remaining dimensions must be the
+!!        same size as the input argument "grid".
+!!
+!! \code{.f90}
+!! real   (R4_KIND), intent(in), dimension(:,:)   :: grid
+!! complex(R4_KIND), dimension(lenc,size(grid,2)) :: fourier
+!! \endcode
+!!
+!! \param [in] <grid> Multiple transforms in grid point space, the first
+!!        dimension must be n+1 (where n is the size of each real transform).
+!!
+!! \param [out] <fourier>
+!!
+!! \throw Error `"fft_init must be called"`
+!!        The initialization routine fft_init must be called before routines
+!!        fft_grid_to_fourier.
+!!
+!! \throw Error `"size of first dimension of input data is wrong"`
+!!        The real grid point field must have a first dimension equal to n+1
+!!        (where n is the size of each real transform). This message occurs
+!!        when using the SGI/Cray fft.
+!!
+!! \throw Error `"length of input data too small"`
+!!        The real grid point field must have a first dimension equal to n
+!!        (where n is the size of each real transform). This message occurs
+!!        when using the NAG or Temperton fft.
+!!
+!! \throw Error `"float kind not supported for nag fft"`
+!!        32-bit real data is not supported when using the NAG fft. You
+!!        may try modifying this part of the code by uncommenting the
+!!        calls to the NAG library or less consider using the Temperton fft.
+!!
  function fft_grid_to_fourier_float_2d (grid) result (fourier)
 
 !-----------------------------------------------------------------------
@@ -245,21 +277,6 @@ contains
    real   (R4_KIND), intent(in),  dimension(:,:)  :: grid
    complex(R4_KIND), dimension(lenc,size(grid,2)) :: fourier
 
-!-----------------------------------------------------------------------
-!
-!  input
-!  -----
-!   grid = Multiple transforms in grid point space, the first dimension
-!          must be n+1 (where n is the size of each real transform).
-!
-!  returns
-!  -------
-!    Multiple transforms in complex fourier space, the first dimension
-!    must equal n/2+1 (where n is the size of each real transform).
-!    The remaining dimensions must be the same size as the input
-!    argument "grid".
-!
-!-----------------------------------------------------------------------
 #ifdef SGICRAY
 #  ifdef _CRAY
 !  local storage for cray fft
@@ -276,8 +293,8 @@ contains
 !  local storage for temperton fft
    real, dimension(leng2,size(grid,2)) :: data
    real, dimension(leng1,size(grid,2)) :: work
-#  endif   
-#endif   
+#  endif
+#endif
 
 #if defined(SGICRAY) || defined(NAGFFT)
    real(R4_KIND) :: scale
@@ -348,13 +365,46 @@ contains
 
  end function fft_grid_to_fourier_float_2d
 
-!#######################################################################
 
-! <FUNCTION NAME="fft_fourier_to_grid_float_2d" INTERFACE="fft_fourier_to_grid">
-!   <IN NAME="fourier" TYPE="real(R4_KIND)" DIM="(:,:)"></IN>
-!   <OUT NAME="grid" TYPE="complex(R4_KIND)" DIM="(leng1,size(fourier,2))"> </OUT>
 
-! </FUNCTION>
+!###############################################################################
+!> \fn fft_fourier_to_grid_float_2d
+!!
+!! \brief A function that multiple transforms in grid point space, the first
+!!        dimension must be n+1 (where n is the size of each real transform).
+!!        The remaining dimensions must be the same size as the input
+!!        argument "fourier".
+!!
+!! \code{.f90}
+!! complex(R4_KIND), intent(in),  dimension(:,:)      :: fourier
+!! real   (R4_KIND), dimension(leng1,size(fourier,2)) :: grid
+!! \endcode
+!!
+!! \param [in] <fourier> Multiple transforms in complex fourier space, the
+!!        first dimension must equal n/2+1 (where n is the size of each
+!!        real transform).
+!!
+!! \param [out] <grid>
+!!
+!! \throw Error `"fft_init must be called"`
+!!        The initialization routine fft_init must be called before routines
+!!        fft_fourier_to_grid.
+!!
+!! \throw Error `"size of first dimension of input data is wrong"`
+!!        The complex Fourier field must have a first dimension equal to
+!!        n/2+1 (where n is the size of each real transform). This message
+!!        occurs when using the SGI/Cray fft.
+!!
+!! \throw Error `"length of input data too small"`
+!!        The complex Fourier field must have a first dimension greater
+!!        than or equal to n/2+1 (where n is the size of each real
+!!        transform). This message occurs when using the NAG or Temperton fft.
+!!
+!! \throw Error `"float kind not supported for nag fft"`
+!!        32-bit real data is not supported when using the NAG fft. You may try
+!!        modifying this part of the code by uncommenting the calls to the NAG
+!!        library or less consider using the Temperton fft.
+!!
  function fft_fourier_to_grid_float_2d (fourier) result (grid)
 
 !-----------------------------------------------------------------------
@@ -362,22 +412,6 @@ contains
    complex(R4_KIND),  intent(in),  dimension(:,:)     :: fourier
    real   (R4_KIND), dimension(leng1,size(fourier,2)) :: grid
 
-!-----------------------------------------------------------------------
-!
-!  input
-!  -----
-!  fourier = Multiple transforms in complex fourier space, the first 
-!            dimension must equal n/2+1 (where n is the size of each
-!            real transform).
-!
-!  returns
-!  -------
-!    Multiple transforms in grid point space, the first dimension
-!    must be n+1 (where n is the size of each real transform).
-!    The remaining dimensions must be the same size as the input
-!    argument "fourier".
-!
-!-----------------------------------------------------------------------
 #ifdef SGICRAY
 #  ifdef _CRAY
 !  local storage for cray fft
@@ -394,8 +428,8 @@ contains
 !  local storage for temperton fft
    real, dimension(leng2,size(fourier,2)) :: data
    real, dimension(leng1,size(fourier,2)) :: work
-#  endif   
-#endif   
+#  endif
+#endif
 
 #if defined(SGICRAY) || defined(NAGFFT)
    real(R4_KIND) :: scale
@@ -472,12 +506,45 @@ contains
 
  end function fft_fourier_to_grid_float_2d
 
-!#######################################################################
-! <FUNCTION NAME="fft_grid_to_fourier_double_2d" INTERFACE="fft_grid_to_fourier">
-!   <IN NAME="grid" TYPE="real(R8_KIND)" DIM="(:,:)"></IN>
-!   <OUT NAME="fourier" TYPE="complex(R8_KIND)" DIM="(lenc,size(grid,2))"> </OUT>
 
-! </FUNCTION>
+
+!###############################################################################
+!> \fn fft_grid_to_fourier_double_2d
+!!
+!! \brief A function that returns multiple transforms in complex fourier space,
+!!        the first dimension must equal n/2+1 (where n is the size of each real
+!!        transform). The remaining dimensions must be the same size as the
+!!        input argument "grid".
+!!
+!! \code{.f90}
+!! real   (R8_KIND), intent(in), dimension(:,:)   :: grid
+!! complex(R8_KIND), dimension(lenc,size(grid,2)) :: fourier
+!! \endcode
+!!
+!! \param [in] <grid> Multiple transforms in grid point space, the first
+!!        dimension must be n+1 (where n is the size of each real transform).
+!!
+!! \param [out] <fourier>
+!!
+!! \throw Error `"fft_init must be called"`
+!!        The initialization routine fft_init must be called before routines
+!!        fft_grid_to_fourier.
+!!
+!! \throw Error `"size of first dimension of input data is wrong"`
+!!        The real grid point field must have a first dimension equal to n+1
+!!        (where n is the size of each real transform). This message occurs
+!!        when using the SGI/Cray fft.
+!!
+!! \throw Error `"length of input data too small"`
+!!        The real grid point field must have a first dimension equal to n
+!!        (where n is the size of each real transform). This message occurs
+!!        when using the NAG or Temperton fft.
+!!
+!! \throw Error `"float kind not supported for nag fft"`
+!!        32-bit real data is not supported when using the NAG fft. You
+!!        may try modifying this part of the code by uncommenting the
+!!        calls to the NAG library or less consider using the Temperton fft.
+!!
  function fft_grid_to_fourier_double_2d (grid) result (fourier)
 
 !-----------------------------------------------------------------------
@@ -485,21 +552,6 @@ contains
    real   (R8_KIND), intent(in),  dimension(:,:)  :: grid
    complex(R8_KIND), dimension(lenc,size(grid,2)) :: fourier
 
-!-----------------------------------------------------------------------
-!
-!  input
-!  -----
-!   grid = Multiple transforms in grid point space, the first dimension
-!          must be n+1 (where n is the size of each real transform).
-!
-!  returns
-!  -------
-!    Multiple transforms in complex fourier space, the first dimension
-!    must equal n/2+1 (where n is the size of each real transform).
-!    The remaining dimensions must be the same size as the input
-!    argument "grid".
-!
-!-----------------------------------------------------------------------
 #ifdef SGICRAY
 #  ifdef _CRAY
 !  local storage for cray fft
@@ -516,8 +568,8 @@ contains
 !  local storage for temperton fft
    real, dimension(leng2,size(grid,2)) :: data
    real, dimension(leng1,size(grid,2)) :: work
-#  endif   
-#endif   
+#  endif
+#endif
 
 #if defined(SGICRAY) || defined(NAGFFT)
    real(R8_KIND) :: scale
@@ -588,13 +640,47 @@ contains
 
  end function fft_grid_to_fourier_double_2d
 
-!#######################################################################
 
-! <FUNCTION NAME="fft_fourier_to_grid_double_2d" INTERFACE="fft_fourier_to_grid">
-!   <IN NAME="fourier" TYPE="real(R8_KIND)" DIM="(:,:)"></IN>
-!   <OUT NAME="grid" TYPE="complex(R8_KIND)" DIM="(leng1,size(fourier,2))"> </OUT>
 
-! </FUNCTION>
+!###############################################################################
+!> \fn fft_fourier_to_grid_double_2d
+!!
+!! \brief A function that returns multiple transforms in grid point space, the
+!!        first dimension must be n+1 (where n is the size of each real
+!!        transform). The remaining dimensions must be the same size as the
+!!        input argument "fourier".
+!!
+!! \code{.f90}
+!! complex(R8_KIND), intent(in), dimension(:,:)       :: fourier
+!! real   (R8_KIND), dimension(leng1,size(fourier,2)) :: grid
+!!
+!! \endcode
+!!
+!! \param [in] <fourier> Multiple transforms in complex fourier space, the
+!!        first dimension must equal n/2+1 (where n is the size of each
+!!        real transform).
+!!
+!! \param [out] <grid>
+!!
+!! \throw Error `"fft_init must be called"`
+!!        The initialization routine fft_init must be called before routines
+!!        fft_fourier_to_grid.
+!!
+!! \throw Error `"size of first dimension of input data is wrong"`
+!!        The complex Fourier field must have a first dimension equal to
+!!        n/2+1 (where n is the size of each real transform). This message
+!!        occurs when using the SGI/Cray fft.
+!!
+!! \throw Error `"length of input data too small"`
+!!        The complex Fourier field must have a first dimension greater
+!!        than or equal to n/2+1 (where n is the size of each real
+!!        transform). This message occurs when using the NAG or Temperton fft.
+!!
+!! \throw Error `"float kind not supported for nag fft"`
+!!        32-bit real data is not supported when using the NAG fft. You may try
+!!        modifying this part of the code by uncommenting the calls to the NAG
+!!        library or less consider using the Temperton fft.
+!!
  function fft_fourier_to_grid_double_2d (fourier) result (grid)
 
 !-----------------------------------------------------------------------
@@ -602,22 +688,6 @@ contains
    complex(R8_KIND),  intent(in),  dimension(:,:)     :: fourier
    real   (R8_KIND), dimension(leng1,size(fourier,2)) :: grid
 
-!-----------------------------------------------------------------------
-!
-!  input
-!  -----
-!  fourier = Multiple transforms in complex fourier space, the first 
-!            dimension must equal n/2+1 (where n is the size of each
-!            real transform).
-!
-!  returns
-!  -------
-!    Multiple transforms in grid point space, the first dimension
-!    must be n+1 (where n is the size of each real transform).
-!    The remaining dimensions must be the same size as the input
-!    argument "fourier".
-!
-!-----------------------------------------------------------------------
 #ifdef SGICRAY
 #  ifdef _CRAY
 !  local storage for cray fft
@@ -634,8 +704,8 @@ contains
 !  local storage for temperton fft
    real, dimension(leng2,size(fourier,2)) :: data
    real, dimension(leng1,size(fourier,2)) :: work
-#  endif   
-#endif   
+#  endif
+#endif
 
 #if defined(SGICRAY) || defined(NAGFFT)
    real(R8_KIND) :: scale
@@ -715,15 +785,23 @@ contains
 
  end function fft_fourier_to_grid_double_2d
 
-!#######################################################################
+!###############################################################################
 !                   interface overloads
-!#######################################################################
-! <FUNCTION NAME="fft_grid_to_fourier_float_3d" INTERFACE="fft_grid_to_fourier">
-!   <IN NAME="grid" TYPE="real(R4_KIND)" DIM="(:,:,:)"></IN>
-!   <OUT NAME="fourier" TYPE="complex(R4_KIND)" DIM="(lenc,size(grid,2),size(grid,3))"> </OUT>
+!###############################################################################
 
-! </FUNCTION>
 
+!###############################################################################
+!> \fn fft_grid_to_fourier_float_3d
+!!
+!! \code{.f90}
+!! real   (R4_KIND), intent(in), dimension(:,:,:)              :: grid
+!! complex(R4_KIND), dimension(lenc,size(grid,2),size(grid,3)) :: fourier
+!! \endcode
+!!
+!! \param [in] <grid>
+!!
+!! \param [out] <fourier>
+!!
  function fft_grid_to_fourier_float_3d (grid) result (fourier)
 
 !-----------------------------------------------------------------------
@@ -740,13 +818,20 @@ contains
 
  end function fft_grid_to_fourier_float_3d
 
-!#######################################################################
 
-! <FUNCTION NAME="fft_fourier_to_grid_float_3d" INTERFACE="fft_fourier_to_grid">
-!   <IN NAME="fourier" TYPE="real(R4_KIND)" DIM="(:,:,:)"></IN>
-!   <OUT NAME="grid" TYPE="complex(R4_KIND)" DIM="(leng1,size(fourier,2),size(fourier,3))"> </OUT>
 
-! </FUNCTION>
+!###############################################################################
+!> \fn fft_fourier_to_grid_float_3d
+!!
+!! \code{.f90}
+!! complex(R4_KIND), intent(in), dimension(:,:,:)                     :: fourier
+!! real   (R4_KIND), dimension(leng1,size(fourier,2),size(fourier,3)) :: grid
+!! \endcode
+!!
+!! \param [in] <fourier>
+!!
+!! \param [out] <grid>
+!!
  function fft_fourier_to_grid_float_3d (fourier) result (grid)
 
 !-----------------------------------------------------------------------
@@ -763,13 +848,20 @@ contains
 
  end function fft_fourier_to_grid_float_3d
 
-!#######################################################################
 
-! <FUNCTION NAME="fft_grid_to_fourier_double_3d" INTERFACE="fft_grid_to_fourier">
-!   <IN NAME="grid" TYPE="real(R8_KIND)" DIM="(:,:,:)"></IN>
-!   <OUT NAME="fourier" TYPE="complex(R8_KIND)" DIM="(lenc,size(grid,2),size(grid,3))"> </OUT>
 
-! </FUNCTION>
+!###############################################################################
+!> \fn fft_grid_to_fourier_double_3d
+!!
+!! \code{.f90}
+!! real   (R8_KIND), intent(in), dimension(:,:,:)              :: grid
+!! complex(R8_KIND), dimension(lenc,size(grid,2),size(grid,3)) :: fourier
+!! \endcode
+!!
+!! \param [in] <grid>
+!!
+!! \param [out] <fourier>
+!!
  function fft_grid_to_fourier_double_3d (grid) result (fourier)
 
 !-----------------------------------------------------------------------
@@ -786,13 +878,30 @@ contains
 
  end function fft_grid_to_fourier_double_3d
 
+
 !#######################################################################
-
-! <FUNCTION NAME="fft_fourier_to_grid_double_3d" INTERFACE="fft_fourier_to_grid">
-!   <IN NAME="fourier" TYPE="real(R8_KIND)" DIM="(:,:,:)"></IN>
-!   <OUT NAME="grid" TYPE="complex(R8_KIND)" DIM="(leng1,size(fourier,2),size(fourier,3))"> </OUT>
-
-! </FUNCTION>
+!> \fn fft_fourier_to_grid_double_3d
+!!
+!! \param [in] <fourier>
+!! \param [out] <grid>
+!!
+!! \code{.f90}
+!! complex(R8_KIND), intent(in), dimension(:,:,:) :: fourier
+!!
+!! real(R8_KIND), dimension(leng1,size(fourier,2),size(fourier,3)) :: grid
+!! \endcode
+!!
+!! \note The original documentation for this method contradicts the actual code.
+!!       The type of `fourier` is `complex(R8_KIND)` while the type of `grid` is
+!!       `real(R8_KIND)`. Here is the original documentation:
+!!
+!! \code
+!! <FUNCTION NAME="fft_fourier_to_grid_double_3d" INTERFACE="fft_fourier_to_grid">
+!!   <IN NAME="fourier" TYPE="real(R8_KIND)" DIM="(:,:,:)"></IN>
+!!   <OUT NAME="grid" TYPE="complex(R8_KIND)" DIM="(leng1,size(fourier,2),size(fourier,3))"> </OUT>
+!! </FUNCTION>
+!! \endcode
+!!
  function fft_fourier_to_grid_double_3d (fourier) result (grid)
 
 !-----------------------------------------------------------------------
@@ -809,36 +918,38 @@ contains
 
  end function fft_fourier_to_grid_double_3d
 
-!#######################################################################
 
-! <SUBROUTINE NAME="fft_init">
 
-!   <OVERVIEW>
-!     This routine must be called to initialize the size of a
-!        single transform and setup trigonometric constants.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     This routine must be called once to initialize the size of a
-!   single transform. To change the size of the transform the
-!   routine fft_exit must be called before re-initialing with fft_init.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call fft_init ( n )
-!   </TEMPLATE>
-!   <IN NAME="n" TYPE="integer" >
-!     The number of real values in a single sequence of data.
-!        The resulting transformed data will have n/2+1 pairs of
-!        complex values.
-!   </IN>
+!###############################################################################
+!> \fn fft_init
+!!
+!! \brief This routine must be called to initialize the size of a
+!!        single transform and setup trigonometric constants.
+!!
+!! This routine must be called once to initialize the size of a
+!! single transform. To change the size of the transform the
+!! routine fft_exit must be called before re-initialing with fft_init.
+!!
+!!
+!! \code{.f90}
+!! integer, intent(in) :: n
+!! \endcode
+!!
+!! \param [in] <n> The number of real values in a single sequence of data.
+!!        The resulting transformed data will have n/2+1 pairs of
+!!        complex values.
+!!
+!! \throw Error `"attempted to reinitialize fft"`
+!!        You must call fft_exit before calling fft_init for a second time.
+!!
+! <TEMPLATE>
+!      call fft_init ( n )
+! </TEMPLATE>
  subroutine fft_init (n)
 
 !-----------------------------------------------------------------------
    integer, intent(in) :: n
-!-----------------------------------------------------------------------
-!
-!   n = size (length) of each transform
-!
-!-----------------------------------------------------------------------
+
 #ifdef SGICRAY
    real   (R4_KIND) ::  dummy4(1)
    complex(R4_KIND) :: cdummy4(1)
@@ -854,11 +965,6 @@ contains
 #endif
 !-----------------------------------------------------------------------
 !   --- fourier transform initialization ----
-
-!   <ERROR MSG="attempted to reinitialize fft"
-!          STATUS="FATAL">
-!     You must call fft_exit before calling fft_init for a second time.
-!   </ERROR>
 
       if (module_is_initialized) &
       call error_handler ('fft_init', 'attempted to reinitialize fft')
@@ -914,32 +1020,26 @@ contains
 !-----------------------------------------------------------------------
 
  end subroutine fft_init
-! </SUBROUTINE>
 
-!#######################################################################
-! <SUBROUTINE NAME="fft_end">
 
-!   <OVERVIEW>
-!     This routine is called to unset the transform size and deallocate memory.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     This routine is called to unset the transform size and
-!   deallocate memory. It can not be called unless fft_init
-!   has already been called. There are no arguments.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call fft_end
-!   </TEMPLATE>
-!   <ERROR MSG="attempt to un-initialize fft that has not been initialized" STATUS="Error">
-!     You can not call fft_end unless fft_init has been called.
-!   </ERROR>
+!###############################################################################
+!> \fn fft_end
+!!
+!! \brief This routine is called to unset the transform size and deallocate
+!!        memory.
+!!
+!! This routine is called to unset the transform size and
+!! deallocate memory. It can not be called unless fft_init
+!! has already been called. There are no arguments.
+!!
+!! \throw Error `"attempt to un-initialize fft that has not been initialized"`
+!!        You can not call fft_end unless fft_init has been called.
+!!
+! <TEMPLATE>
+!      call fft_end
+! </TEMPLATE>
  subroutine fft_end
 
-!-----------------------------------------------------------------------
-!
-!   unsets transform size and deallocates memory
-!
-!-----------------------------------------------------------------------
 !   --- fourier transform un-initialization ----
 
       if (.not.module_is_initialized) &
@@ -957,9 +1057,9 @@ contains
 !-----------------------------------------------------------------------
 
  end subroutine fft_end
-! </SUBROUTINE>
 
-!#######################################################################
+
+
 ! wrapper for handling errors
 
  subroutine error_handler ( routine, message )
@@ -973,7 +1073,7 @@ contains
 
  end subroutine error_handler
 
-!#######################################################################
+
 
 end module fft_mod
 
@@ -1014,35 +1114,37 @@ integer :: ntrans(2) = (/ 60, 90 /)
 end program test
 #endif
 
+!! @} end of the fft_mod module
+
 ! <INFO>
-!   <REFERENCE>        
+!   <REFERENCE>
 !     For the SGI/Cray version refer to the manual pages for
-!     DZFFTM, ZDFFTM, SCFFTM, and CSFFTM. 
+!     DZFFTM, ZDFFTM, SCFFTM, and CSFFTM.
 !   </REFERENCE>
 !   <REFERENCE>
 !     For the NAG version refer to the NAG documentation for
-!     routines C06FPF, C06FQF, and C06GQF. 
+!     routines C06FPF, C06FQF, and C06GQF.
 !   </REFERENCE>
-!   <PRECOMP FLAG="-D NAGFFT">  
+!   <PRECOMP FLAG="-D NAGFFT">
 !      -D NAGFFT
 !      On non-Cray/SGI machines, set to use the NAG library FFT routines.
 !      Otherwise the Temperton FFT is used by default.
-!   </PRECOMP> 
+!   </PRECOMP>
 !   <PRECOMP FLAG="-D test_fft">
 !      Provides source code for a simple test program.
 !   The program generates several sequences of real data.
 !   This data is transformed to Fourier space and back to real data,
 !   then compared to the original real data.
 !   </PRECOMP>
-!   <LOADER FLAG="-lscs">   
+!   <LOADER FLAG="-lscs">
 !     On SGI machines the scientific library needs to be loaded by
 !     linking with:
 !   </LOADER>
-!   <LOADER FLAG="-L/usr/local/lib -lnag">    
+!   <LOADER FLAG="-L/usr/local/lib -lnag">
 !     If using the NAG library, the following loader options (or
 !     something similar) may be necessary:
 !   </LOADER>
-!   <NOTE>             
+!   <NOTE>
 !     The routines are overloaded for 2d and 3d versions.
 !     The 2d versions copy data into 3d arrays then calls the 3d interface.
 !
