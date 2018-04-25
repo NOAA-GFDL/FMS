@@ -285,7 +285,7 @@ contains
 !!        may try modifying this part of the code by uncommenting the
 !!        calls to the NAG library or less consider using the Temperton fft.
 !!
-function fft_grid_to_fourier_float_2d_ (grid) result (fourier)
+function fft_grid_to_fourier_float_2d (grid) result (fourier)
 
 !-----------------------------------------------------------------------
 
