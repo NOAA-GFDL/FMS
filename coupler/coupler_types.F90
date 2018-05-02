@@ -351,6 +351,7 @@ integer, public :: ind_sc_no = 3 !< The index for the Schmidt number for a trace
 integer, public :: ind_flux = 1  !< The index for the tracer flux
 integer, public :: ind_deltap= 2 !< The index for ocean-air gas partial pressure change
 integer, public :: ind_kw = 3    !< The index for the piston velocity
+integer, public :: ind_flux0 = 4 !< The index for the piston velocity
 integer, public :: ind_deposition = 1 !< The index for the atmospheric deposition flux
 integer, public :: ind_runoff = 1 !< The index for a runoff flux
 
@@ -621,6 +622,20 @@ if (fm_new_list('air_sea_gas_flux_generic/implementation/ocmip2') .le. 0) then  
 endif  !}
 call fm_util_set_value('air_sea_gas_flux_generic/implementation/ocmip2/num_parameters', 2)
 
+!f1p
+
+if (fm_new_list('air_sea_gas_flux_generic/implementation/duce') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/implementation/duce" list')
+endif  !}
+call fm_util_set_value('air_sea_gas_flux_generic/implementation/duce/num_parameters', 1)
+
+if (fm_new_list('air_sea_gas_flux_generic/implementation/johnson') .le. 0) then  !{
+  call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/implementation/johnson" list')
+endif  !}
+call fm_util_set_value('air_sea_gas_flux_generic/implementation/johnson/num_parameters', 2)
+
+!>
+
 !>       Add some scalar quantaties.
 
 call fm_util_set_value('air_sea_gas_flux_generic/num_flags', 0)
@@ -681,6 +696,10 @@ call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'uatm',    ind
 call fm_util_set_value('air_sea_gas_flux_generic/flux/name',      'kw',         index = ind_kw)
 call fm_util_set_value('air_sea_gas_flux_generic/flux/long_name', 'Piston velocity', index = ind_kw)
 call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'm/s',    index = ind_kw)
+
+ call fm_util_set_value('air_sea_gas_flux_generic/flux/name',      'flux0',         index = ind_flux0)
+ call fm_util_set_value('air_sea_gas_flux_generic/flux/long_name', 'Surface flux no atm', index = ind_flux0)
+ call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'mol/m^2/s',    index = ind_flux0)
 
 !
 !>       Define the air_sea_gas_flux type and add it.
@@ -1339,15 +1358,16 @@ subroutine CT_spawn_1d_3d(var_in, var, idim, jdim, kdim, suffix, as_needed)
     write (error_msg, *) trim(error_header), ' Disordered j-dimension index bound list  ', jdim
     call mpp_error(FATAL, trim(error_msg))
   endif
-  if (kdim(1) > kdim(2)) then
-    write (error_msg, *) trim(error_header), ' Disordered k-dimension index bound list  ', kdim
-    call mpp_error(FATAL, trim(error_msg))
-  endif
   var%isd = idim(1) ; var%isc = idim(2) ; var%iec = idim(3) ; var%ied = idim(4)
   var%jsd = jdim(1) ; var%jsc = jdim(2) ; var%jec = jdim(3) ; var%jed = jdim(4)
   var%ks  = kdim(1) ; var%ke  = kdim(2)
 
   if (var%num_bcs > 0) then
+    if (kdim(1) > kdim(2)) then
+      write (error_msg, *) trim(error_header), ' Disordered k-dimension index bound list  ', kdim
+      call mpp_error(FATAL, trim(error_msg))
+    endif
+
     if (associated(var%bc)) then
       call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
     endif
