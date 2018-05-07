@@ -99,7 +99,7 @@ program test
   logical :: test_subset = .false.
   logical :: test_unstruct = .false.
   integer :: nthreads = 1
-  logical :: test_adjoint = .true.
+  logical :: test_adjoint = .false.
 
   namelist / test_mpp_domains_nml / nx, ny, nz, stackmax, debug, mpes, check_parallel, &
                                whalo, ehalo, shalo, nhalo, x_cyclic_offset, y_cyclic_offset, &
@@ -111,7 +111,7 @@ program test
                                test_edge_update, test_cubic_grid_redistribute, ensemble_size, &
                                layout_cubic, layout_ensemble, nthreads, test_boundary, &
                                layout_tripolar, test_group, test_global_sum, test_subset, test_unstruct, &
-                               test_nonsym_edge, test_halosize_performance
+                               test_nonsym_edge, test_halosize_performance, nthreads, test_adjoint
   integer :: i, j, k
   integer :: layout(2)
   integer :: id
