@@ -887,8 +887,8 @@ subroutine atmos_ocean_fluxes_calc(gas_fields_atm, gas_fields_ice, &
                     101325./(rdgas*wtmair*1e-3*tsurf(i)*gas_fields_ice%bc(n)%field(ind_alpha)%values(i)),    &
                     gas_fluxes%bc(n)%param(2), &
                     gas_fluxes%bc(n)%param(1), &
-                    gas_fields_ice%bc(n)%field(ind_sc_no)%values(i), &
-                    ustar=ustar(i), cd_m=cd_m(i))
+                    gas_fields_ice%bc(n)%field(ind_sc_no)%values(i)&
+                    )
 
               cair(i) = &
                    gas_fields_ice%bc(n)%field(ind_alpha)%values(i) * &
