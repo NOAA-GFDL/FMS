@@ -5636,9 +5636,7 @@ integer                         :: out_unit
 !
 !        Initialize the field manager if needed
 !
-if (.not. module_is_initialized) then  !{
-  call initialize
-endif  !}
+if (.not. module_is_initialized) call initialize
 name_loc = lowercase(name)
 call find_base(name_loc, path, base)
 
@@ -5688,11 +5686,11 @@ end function  fm_query_method  !}
 ! <PRIVATE><FUNCTION NAME="query_method">
 !
 ! <OVERVIEW>
-!    A private function that can recursively recover values for parameters 
+!    A private function that can recursively recover values for parameters
 !    associated with a field.
 ! </OVERVIEW>
 ! <DESCRIPTION>
-!    A private function that can recursively recover values for parameters 
+!    A private function that can recursively recover values for parameters
 !    associated with a field.
 ! </DESCRIPTION>
 !   <TEMPLATE>
@@ -5700,9 +5698,10 @@ end function  fm_query_method  !}
 !   </TEMPLATE>
 !
 recursive function query_method(list_p, recursive, name, method_name, method_control) &
-          result (success)  !{
+          result (success)
+logical :: success
 !   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or 
+!     A flag to indicate whether the function operated with (FALSE) or
 !     without (TRUE) errors.
 !   </OUT>
 !   <IN NAME="list_p" TYPE="type (field_def), pointer">
@@ -5720,7 +5719,6 @@ recursive function query_method(list_p, recursive, name, method_name, method_con
 !
 !        Function definition
 !
-logical                       :: success
 !
 !        arguments
 !
@@ -5728,95 +5726,68 @@ type (field_def), pointer     :: list_p
 logical,          intent(in)  :: recursive
 character(len=*), intent(in)  :: name
 character(len=*), intent(out) :: method_name, method_control
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+! local parameters
 character(len=12), parameter :: sub_name     = 'query_method'
 character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
                                                '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-integer                         :: depthp1
-integer                         :: first
+! local variables
 integer                         :: i
-integer                         :: last
 character(len=64)               :: scratch
-type (field_def), pointer :: this_field_p 
+type (field_def), pointer :: this_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
 
-!
-!        Check for a valid list
-!
-if (.not. associated(list_p)) then  !{
+!  Check for a valid list
+if (.not. associated(list_p)) then
   if (verb .gt. verb_level_warn) then
     write (out_unit,*) trim(warn_header), 'Invalid list pointer'
   endif
   success = .false.
-elseif (list_p%field_type .ne. list_type) then  !}{
+elseif (list_p%field_type .ne. list_type) then
   if (verb .gt. verb_level_warn) then
     write (out_unit,*) trim(warn_header), trim(list_p%name)//' is not a list'
   endif
   success = .false.
-else  !}{
-!
-!        set the default return value
-!
+else
+
+  ! set the default return value
   success = .true.
 
   this_field_p => list_p%first_field
 
-  do while (associated(this_field_p))  !{
+  do while (associated(this_field_p))
     select case(this_field_p%field_type)
     case(list_type)
-!
-!        If this is a list, then this is the method name
-!
-      if (recursive) then  !{
-        if (.not. query_method(this_field_p, .true., this_field_p%name, method_name, method_control)) then  !{
+      ! If this is a list, then this is the method name
+      if (recursive) then
+        if (.not. query_method(this_field_p, .true., this_field_p%name, method_name, method_control)) then
           success = .false.
           exit
-        else  !}{
-          !write (method_name,'(a,a)') method_name(1:LEN_TRIM(method_name)), &
-          i = LEN_TRIM(method_name)
-          if ( i .gt. 0 ) then
-            write (method_name,'(a,a)') method_name(1:i), &
-                    trim(this_field_p%name)
-          else
-            write (method_name,'(a)') trim(this_field_p%name)
-          endif        
-        endif  !}
-      endif  !}
+        else
+          method_name = trim(method_name)//trim(this_field_p%name)
+          ! TODO: check length
+        endif
+      endif
 
     case(integer_type)
         write (scratch,*) this_field_p%i_value
-        call strip_front_blanks(scratch)
-        write (method_control,'(a,a,a,a,a)') trim(method_control),comma, &
-                trim(this_field_p%name), ' = ', trim(scratch)
-
+        call concat_strings(method_control, comma//trim(this_field_p%name)//' = '//trim(adjustl(scratch)))
 
     case(logical_type)
-
-        write (method_control,'(a,a,a,a,l1)') trim(method_control),comma, &
-                trim(this_field_p%name), ' = ', this_field_p%l_value
+        write (scratch,'(l1)')this_field_p%l_value
+        call concat_strings(method_control, comma//trim(this_field_p%name)//' = '//trim(adjustl(scratch)))
 
     case(real_type)
-
         write (scratch,*) this_field_p%r_value
-        call strip_front_blanks(scratch)
-        write (method_control,'(a,a,a,a,a)') trim(method_control),comma, &
-                trim(this_field_p%name), ' = ', trim(scratch)
-
+        call concat_strings(method_control, comma//trim(this_field_p%name)//' = '//trim(adjustl(scratch)))
 
     case(string_type)
-        write (method_control,'(a,a,a,a,a,$)') trim(method_control),comma, &
-                trim(this_field_p%name), ' = ',trim(this_field_p%s_value(1))
+        call concat_strings(method_control, comma//trim(this_field_p%name)//' = '//trim(this_field_p%s_value(1)))
         do i = 2, this_field_p%max_index
-          write (method_control,'(a,a,$)') comma//trim(this_field_p%s_value(i))
+           call concat_strings(method_control, comma//trim(this_field_p%s_value(i)))
         enddo
-
 
     case default
         if (verb .gt. verb_level_warn) then
@@ -5825,12 +5796,31 @@ else  !}{
         success = .false.
         exit
 
-    end select 
+    end select
     this_field_p => this_field_p%next
-  enddo  !}
-endif  !}
+  enddo
+endif
 
-end function query_method  !}
+end function query_method
+
+!#######################################################################
+! private function: appends str2 to the end of str1, with length check
+subroutine concat_strings(str1,str2)
+   character(*), intent(inout) :: str1
+   character(*), intent(in)    :: str2
+
+   character(64) :: n1,n2 ! for error reporting
+
+   if (len_trim(str1)+len_trim(str2)>len(str1)) then
+      write(n1,*)len(str1)
+      write(n2,*)len_trim(str1)+len_trim(str2)
+      call mpp_error(FATAL,'length of output string ('//trim(adjustl(n1))&
+           //') is not enough for the result of concatenation (len='&
+           //trim(adjustl(n2))//')')
+   endif
+   str1 = trim(str1)//trim(str2)
+end subroutine concat_strings
+
 ! </FUNCTION> NAME="query_method"
 !</PRIVATE>
 
