@@ -504,8 +504,8 @@ private
 !-----------------------------------------------------------------------
 !  parameters for table size and resolution
 
- integer :: tcmin = -160  ! minimum temperature (degC) in lookup table
- integer :: tcmax =  100  ! maximum temperature (degC) in lookup table
+ integer, public :: tcmin = -160  ! minimum temperature (degC) in lookup table
+ integer, public :: tcmax =  100  ! maximum temperature (degC) in lookup table
  integer :: esres =  10   ! table resolution (increments per degree)
  integer :: nsize  ! (tcmax-tcmin)*esres+1    !  lookup table size
  integer :: nlim   ! nsize-1
@@ -517,7 +517,7 @@ private
 
 ! The default values below preserve the behavior of omsk and earlier revisions.
  logical :: show_bad_value_count_by_slice=.true.
- logical :: show_all_bad_values=.false.
+ logical :: show_all_bad_values=.true. ! Changed LMH 22may2018
  logical :: use_exact_qs = .false.
  logical :: do_simple             =.false.
  logical :: construct_table_wrt_liq = .false.
