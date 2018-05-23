@@ -158,7 +158,10 @@ $(LIBRARY): $(OBJS)
 clean:
 	@echo "Cleaning fms ... "
 	@echo
-	$(RM) -f $(LIBRARY) *__genmod.f90 *.o */*.o *.mod *.lst *.i depend ../*/*.o
+	cd .. ; \
+	ls -1 */*.a */*.o */*.mod */depend \
+	  | grep -vE 'INSTALL|\.git' | xargs rm -f ; \
+	rm -rf FMS_INSTALL
 
 MKDEPENDS = ./mkDepends.pl
 include ./make.rules
