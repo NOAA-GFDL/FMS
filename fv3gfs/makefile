@@ -160,8 +160,8 @@ clean:
 	@echo
 	cd .. ; \
 	ls -1 */*.a */*.o */*.mod */depend \
-	  | grep -vE 'INSTALL|\.git' | xargs rm -f ; \
-	rm -rf FMS_INSTALL
+	  | grep -vE 'INSTALL|\.git' | xargs rm -f || true ; \
+	rm -rf FMS_INSTALL || true
 
 MKDEPENDS = ./mkDepends.pl
 include ./make.rules
