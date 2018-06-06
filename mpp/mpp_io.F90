@@ -352,6 +352,11 @@ use mpp_domains_mod,    only : mpp_get_domain_name, mpp_get_domain_npes
 use mpp_parameter_mod,  only : MPP_FILL_DOUBLE,MPP_FILL_INT
 use mpp_mod,            only : mpp_chksum
 
+!#ifdef use_netCDF && PAR_ACCESS
+#ifdef use_netCDF 
+use mpi
+#endif
+
 !----------
 !ug support
 use mpp_domains_mod, only: domainUG, &
@@ -478,6 +483,8 @@ type :: atttype
      logical            :: io_domain_exist    ! indicate if io_domain exist or not.
      integer            :: id       !variable ID of time axis associated with file (only one time axis per file)
      integer            :: recdimid !dim ID of time axis associated with file (only one time axis per file)
+!ccyr
+     integer            :: iocomm 
      real(DOUBLE_KIND), pointer :: time_values(:) =>NULL() ! time axis values are stored here instead of axis%data
                                                   ! since mpp_write assumes these values are not time values.
                                                   ! Not used in mpp_write
@@ -1063,8 +1070,17 @@ type :: atttype
   integer            :: deflate_level = -1
   logical            :: cf_compliance = .false.
 
+
+  ! TODO: Move parallel_netcdf to fms_io.F90 (also rename?)
+  logical            :: parallel_netcdf = .false.
+  logical            :: pnetcdf = .false.
+  logical            :: parallel_chunk = .false.
+  integer            :: chunk_layout(2) = (/1,1/)
+
   namelist /mpp_io_nml/header_buffer_val, global_field_on_root_pe, io_clocks_on, &
-                       shuffle, deflate_level, cf_compliance
+                       shuffle, deflate_level, cf_compliance,&
+!ccyr
+			parallel_netcdf, parallel_chunk,pnetcdf,chunk_layout
 
   real(DOUBLE_KIND), allocatable :: mpp_io_stack(:)
   type(axistype),save            :: default_axis      !provided to users with default components

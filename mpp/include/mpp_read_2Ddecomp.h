@@ -43,6 +43,14 @@
       if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
 
 #ifdef use_netCDF
+!ccyr
+!      if (parallel_netcdf) then
+!         error = nf_var_par_access(mpp_file(unit)%ncid, field%id, nf_collective)
+!	 if(mpp_pe() == mpp_root_pe()) print *,trim(mpp_file(unit)%name),' start= ',start,' axsiz= ',axsiz
+!         call netcdf_err( error, mpp_file(unit), string=' nf_var_par_access:LN604@ mpp_io_read')
+!         print *, 'READ_RECORD: PE= ',pe, ' file =',trim(mpp_file(unit)%name)," var = ",trim(field%name),' start= ', start,' axsiz= ', axsiz
+!      endif
+
       word_sz = size(transfer(data(1),one_byte))
 
           select case (field%type)

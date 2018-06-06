@@ -546,6 +546,23 @@ end function rarray_to_char
     return
   end subroutine mpp_declare_pelist
 
+!ccyr
+  subroutine mpp_declare_pelist_id( pelist, id,npe,name)
+    integer,                    intent(in) :: pelist(:)
+    integer,         intent(out):: id,npe
+    character(len=*), intent(in), optional :: name
+    integer :: i
+
+    if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_DECLARE_PELIST: You must first call mpp_init.' )
+    i = get_peset(pelist)
+    write( peset(i)%name,'(a,i2.2)' ) 'PElist', i !default name
+    if( PRESENT(name) )peset(i)%name = name
+    id=peset(i)%id
+    npe=size(peset(i)%list(:))
+    return
+  end subroutine mpp_declare_pelist_id
+
+
   !#####################################################################
   ! <SUBROUTINE NAME="mpp_set_current_pelist">
   !  <OVERVIEW>

@@ -294,6 +294,14 @@
       error = NF_DEF_VAR( mpp_file(unit)%ncid, name, NF_INT, 1, did, id )
       call netcdf_err( error, mpp_file(unit), string=' axis varable '//trim(name))
 
+!ccyr this is correct function
+      if (.not.pnetcdf.and.parallel_netcdf) then
+         error = NF_DEF_VAR_FILL(mpp_file(unit)%ncid, id,NF_NOFILL,1 )
+         call netcdf_err( error, mpp_file(unit), string='NF_DEF_VAR_FILL:LN282' )
+         error = nf_var_par_access(mpp_file(unit)%ncid, id, nf_collective)
+         call netcdf_err( error, mpp_file(unit), string=' nf_var_par_access in subroutine mpp_def_dim_int')
+      endif
+
       error = NF_PUT_ATT_TEXT( mpp_file(unit)%ncid, id, 'long_name', len_trim(longname), longname )
       call netcdf_err( error, mpp_file(unit), string=' Attribute=long_name' )
 
@@ -303,6 +311,9 @@
          else
             error = NF_ENDDEF(mpp_file(unit)%ncid)
          endif
+!ccyr
+      if (parallel_netcdf) error = nf_var_par_access(mpp_file(unit)%ncid, id, nf_collective)
+      call netcdf_err( error, mpp_file(unit), string=' nf_var_par_access in subroutine mpp_def_dim')
       endif
       call netcdf_err( error, mpp_file(unit), string=' subroutine mpp_def_dim')
       error = NF_PUT_VARA_INT ( mpp_file(unit)%ncid, id, 1, size(data), data )
@@ -342,6 +353,9 @@
          endif
       endif
       call netcdf_err( error, mpp_file(unit), string=' subroutine mpp_def_dim')
+!ccyr
+      if (parallel_netcdf) error = nf_var_par_access(mpp_file(unit)%ncid, id, nf_collective)
+      call netcdf_err( error, mpp_file(unit), string=' nf_var_par_access in subroutine mpp_def_dim')
       error = NF_PUT_VARA_INT ( mpp_file(unit)%ncid, id, 1, size(data), data )
       call netcdf_err( error, mpp_file(unit), string=' axis varable '//trim(name))
       error = NF_REDEF(mpp_file(unit)%ncid)
@@ -450,6 +464,13 @@
                  error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_FLOAT, 1, axis%did, axis%id )
               endif
               call netcdf_err( error, mpp_file(unit), axis )
+!ccyr this is correct function
+             if(.not.pnetcdf.and.parallel_netcdf) then
+              error = NF_DEF_VAR_FILL(mpp_file(unit)%ncid, axis%id,NF_NOFILL,1 )
+              call netcdf_err(error, mpp_file(unit), axis,string='NF_DEF_VAR_FILL ERROR: LN441')
+              error = NF_VAR_PAR_ACCESS(mpp_file(unit)%ncid, axis%id,NF_COLLECTIVE)
+              call netcdf_err(error, mpp_file(unit), axis,string='NF_VAR_PAR_ACCESS ERROR: LN443')
+              endif
           else                            !time axis
               if( mpp_file(unit)%id.NE.-1 ) &
                    call mpp_error( FATAL, 'MPP_WRITE_META_AXIS: There is already a time axis for this file.' )
@@ -461,6 +482,13 @@
                  error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_FLOAT, 1, axis%did, axis%id )
               endif
               call netcdf_err( error, mpp_file(unit), axis )
+!ccyr this is correct function
+             if (.not.pnetcdf.and.parallel_netcdf) then
+                error = NF_DEF_VAR_FILL(mpp_file(unit)%ncid, axis%id,NF_NOFILL,1 )
+                call netcdf_err(error, mpp_file(unit), axis,string='NF_DEF_VAR_FILL ERROR: LN458')
+                error = NF_VAR_PAR_ACCESS(mpp_file(unit)%ncid, axis%id,NF_COLLECTIVE)
+                call netcdf_err(error, mpp_file(unit), axis,string='NF_VAR_PAR_ACCESS ERROR: LN462')
+             endif
               mpp_file(unit)%id = axis%id !file ID is the same as time axis varID
           end if
 #endif
@@ -582,6 +610,13 @@
           call netcdf_err( error, mpp_file(unit), axis )
           error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_INT, 1, axis%did, axis%id )
           call netcdf_err( error, mpp_file(unit), axis )
+!ccyr this is correct function
+          if (.not.pnetcdf.and.parallel_netcdf) then
+             error = NF_DEF_VAR_FILL(mpp_file(unit)%ncid, axis%id,NF_NOFILL,1 )
+             call netcdf_err(error, mpp_file(unit), axis,string='NF_DEF_VAR_FILL  ERROR: LN570')
+          error = NF_VAR_PAR_ACCESS(mpp_file(unit)%ncid, axis%id,NF_COLLECTIVE)
+          call netcdf_err(error, mpp_file(unit), axis,string='NF_VAR_PAR_ACCESS ERROR: LN572')
+          endif
       else
           call mpp_error( FATAL, 'MPP_WRITE_META_AXIS_I1D: Only netCDF format is currently supported.' )
       end if
@@ -649,6 +684,13 @@
           call netcdf_err( error, mpp_file(unit), axis )
           error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_INT, 0, axis%did, axis%id )
           call netcdf_err( error, mpp_file(unit), axis )
+!ccyr this is correct function
+          if (.not.pnetcdf.and.parallel_netcdf) then
+             error = NF_DEF_VAR_FILL(mpp_file(unit)%ncid, axis%id,NF_NOFILL,1 )
+             call netcdf_err(error, mpp_file(unit), axis,string='NF_VAR_PAR_FILL ERROR: LN639')
+             error = NF_VAR_PAR_ACCESS(mpp_file(unit)%ncid, axis%id,NF_COLLECTIVE)
+             call netcdf_err(error, mpp_file(unit), axis,string='NF_VAR_PAR_ACCESS ERROR: LN642')
+          endif
       else
           call mpp_error( FATAL, 'MPP_WRITE_META_AXIS_UNLIMITED: Only netCDF format is currently supported.' )
       end if
@@ -690,7 +732,9 @@
       real :: a, b
       integer :: i, istat, ishift, jshift
       character(len=64) :: checksum_char
-
+!ccyr
+      integer, allocatable :: chunksize(:)
+      integer :: ie,is
 !      call mpp_clock_begin(mpp_write_clock)
 
       !--- figure out the location of data, this is needed in mpp_write.
@@ -800,10 +844,38 @@
           call netcdf_err( error, mpp_file(unit), field=field )
           deallocate(axis_id)
 #ifndef use_netCDF3
-          if(shuffle .NE. 0 .OR. deflate .NE. 0) then
+          if(shuffle .NE. 0 .OR. deflate .NE. 0 .AND. .not.pnetcdf) then
              error = NF_DEF_VAR_DEFLATE(mpp_file(unit)%ncid, field%id, shuffle, deflate, deflate_level)
              call netcdf_err( error, mpp_file(unit), field=field )
           endif
+!ccyr
+          if ( parallel_netcdf ) then
+             if (.not.pnetcdf) then
+                if ( parallel_chunk ) then             
+                   allocate(chunksize(size(axes(:))))
+                   do i = 1, size(axes(:))
+                         if (i < 3)  then
+                            chunksize(i)=size(axes(i)%data)/chunk_layout(i)
+                      else ! Unlimited
+                         chunksize(i) = 1
+                      end if
+                      if(mpp_pe() == mpp_root_pe()) print '(a,a,x,a,a,x,a,a,x,a,3i8,x,a,i6,a,i10,a,2i6)','File=',trim(mpp_file(unit)%name), &
+                      'Var=',trim(field%name),'Dim=',trim(axes(i)%name), 'range=',i,ie,is,'dim_size=',size(axes(i)%data),' chunksize=',chunksize(i), &
+                      ' chunk_layout=',chunk_layout 
+                   end do
+                   if (size(axes(:)) >3) then                 
+                      error = NF_DEF_VAR_CHUNKING(mpp_file(unit)%ncid, field%id,NF_CHUNKED, chunksize)
+                      if(mpp_pe() == mpp_root_pe()) print *,'def var chunking',trim(field%name),'  ',trim(mpp_file(unit)%name)
+                      call netcdf_err(error, mpp_file(unit), field=field,string=' NF_DEF_VAR_CHUNKING ERROR: LN821')
+                   endif
+                   deallocate(chunksize)
+                end if
+                error = NF_DEF_VAR_FILL(mpp_file(unit)%ncid, field%id,NF_NOFILL,1 )
+                call netcdf_err( error, mpp_file(unit), field=field ,string=' NF_DEF_VAR_FILL ERROR: NF_NOFILL LN790')
+                if (parallel_netcdf)  error = nf_var_par_access(mpp_file(unit)%ncid, field%id, nf_collective)
+                call netcdf_err( error, mpp_file(unit), field=field,string=' nf_var_par_access in subroutine mpp_def_dim_int')
+             end if
+          end if
 #endif
 #endif
       else
@@ -1322,11 +1394,23 @@
               call netcdf_err( error, mpp_file(unit), axis )
               error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_FLOAT, 1, axis%did, axis%id )
               call netcdf_err( error, mpp_file(unit), axis )
+!ccyr this is correct function
+              if (.not.pnetcdf) then
+                 error = NF_DEF_VAR_FILL(mpp_file(unit)%ncid, axis%id,NF_NOFILL,1 )
+              call netcdf_err( error, mpp_file(unit), axis,string='NF_DEF_VAR_FILL:LN1576' )
+              endif
           else                            !time axis
               error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, NF_UNLIMITED, axis%did )
               call netcdf_err( error, mpp_file(unit), axis )
               error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_DOUBLE, 1, axis%did, axis%id )
               call netcdf_err( error, mpp_file(unit), axis )
+!ccyr this is correct function
+              if (.not.pnetcdf.and.parallel_netcdf) then
+                 error = NF_DEF_VAR_FILL(mpp_file(unit)%ncid, axis%id,NF_NOFILL,1 )
+                 call netcdf_err( error, mpp_file(unit), axis,string='NF_DEF_VAR_FILL:LN1578' )
+                 error = nf_var_par_access(mpp_file(unit)%ncid, axis%id, nf_collective)
+                 call netcdf_err( error, mpp_file(unit), string=' nf_var_par_access in subroutine mpp_def_dim_int')
+                 endif
               mpp_file(unit)%id = axis%id !file ID is the same as time axis varID
               mpp_file(unit)%recdimid = axis%did ! record dimension id
           end if
@@ -1448,6 +1532,11 @@
               case default
                   call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: only legal packing values are 1,2,4,8.' )
           end select
+!ccyr this is correct function
+          if (.not.pnetcdf) then
+             error = NF_DEF_VAR_FILL(mpp_file(unit)%ncid, field%id,NF_NOFILL,1 )
+             call netcdf_err( error, mpp_file(unit),string='NF_DEF_VAR_FILL:LN1706' )
+          endif
           deallocate( axis_id )
 #endif
       else

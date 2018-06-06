@@ -231,7 +231,8 @@ private
   public :: mpp_get_current_pelist, mpp_set_current_pelist, mpp_get_current_pelist_name
   public :: mpp_clock_id, mpp_clock_set_grain, mpp_record_timing_data, get_unit
   public :: read_ascii_file, read_input_nml, mpp_clock_begin, mpp_clock_end
-  public :: get_ascii_file_num_lines
+!ccyr
+  public :: get_ascii_file_num_lines, mpp_declare_pelist_id
   public :: mpp_record_time_start, mpp_record_time_end
 
   !--- public interface from mpp_comm.h ------------------------------
