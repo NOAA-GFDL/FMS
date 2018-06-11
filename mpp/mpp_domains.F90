@@ -1664,6 +1664,9 @@ module mpp_domains_mod
      module procedure mpp_update_nest_fine_r8_2d
      module procedure mpp_update_nest_fine_r8_3d
      module procedure mpp_update_nest_fine_r8_4d
+     module procedure mpp_update_nest_fine_r8_2dv
+     module procedure mpp_update_nest_fine_r8_3dv
+     module procedure mpp_update_nest_fine_r8_4dv
 #ifdef OVERLOAD_C8
      module procedure mpp_update_nest_fine_c8_2d
      module procedure mpp_update_nest_fine_c8_3d
@@ -1691,6 +1694,7 @@ module mpp_domains_mod
 
   interface mpp_do_update_nest_fine
      module procedure mpp_do_update_nest_fine_r8_3d
+     module procedure mpp_do_update_nest_fine_r8_3dv
 #ifdef OVERLOAD_C8
      module procedure mpp_do_update_nest_fine_c8_3d
 #endif
@@ -1710,6 +1714,9 @@ module mpp_domains_mod
      module procedure mpp_update_nest_coarse_r8_2d
      module procedure mpp_update_nest_coarse_r8_3d
      module procedure mpp_update_nest_coarse_r8_4d
+     module procedure mpp_update_nest_coarse_r8_2dv
+     module procedure mpp_update_nest_coarse_r8_3dv
+     module procedure mpp_update_nest_coarse_r8_4dv
 #ifdef OVERLOAD_C8
      module procedure mpp_update_nest_coarse_c8_2d
      module procedure mpp_update_nest_coarse_c8_3d
@@ -1737,6 +1744,7 @@ module mpp_domains_mod
 
   interface mpp_do_update_nest_coarse
      module procedure mpp_do_update_nest_coarse_r8_3d
+     module procedure mpp_do_update_nest_coarse_r8_3dv
 #ifdef OVERLOAD_C8
      module procedure mpp_do_update_nest_coarse_c8_3d
 #endif
@@ -2527,6 +2535,11 @@ end interface
   interface mpp_get_layout
      module procedure mpp_get_layout1D
      module procedure mpp_get_layout2D
+  end interface
+
+  interface check_data_size
+     module procedure check_data_size_1d
+     module procedure check_data_size_2d
   end interface
 
   ! <INTERFACE NAME="mpp_nullify_domain_list">
