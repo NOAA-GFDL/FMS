@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
     subroutine MPP_WRITE_COMPRESSED_1D_(unit, field, domain, data, nelems_io, tstamp, default_data)
       integer, intent(in) :: unit
       type(fieldtype), intent(inout) :: field
@@ -106,7 +124,7 @@
          enddo; enddo
          ! cludge for now; need resizing accessor
          field%size(1) = nelems
-         call write_record( unit, field, nelems*nz, cdata, tstamp)
+         call write_record_default( unit, field, nelems*nz, cdata, tstamp)
          deallocate(rbuff,cdata)
       endif
 

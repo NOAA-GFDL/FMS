@@ -1,27 +1,21 @@
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!                                                                   !!
-!!                   GNU General Public License                      !!
-!!                                                                   !!
-!! This file is part of the Flexible Modeling System (FMS).          !!
-!!                                                                   !!
-!! FMS is free software; you can redistribute it and/or modify       !!
-!! it and are expected to follow the terms of the GNU General Public !!
-!! License as published by the Free Software Foundation.             !!
-!!                                                                   !!
-!! FMS is distributed in the hope that it will be useful,            !!
-!! but WITHOUT ANY WARRANTY; without even the implied warranty of    !!
-!! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the     !!
-!! GNU General Public License for more details.                      !!
-!!                                                                   !!
-!! You should have received a copy of the GNU General Public License !!
-!! along with FMS; if not, write to:                                 !!
-!!          Free Software Foundation, Inc.                           !!
-!!          59 Temple Place, Suite 330                               !!
-!!          Boston, MA  02111-1307  USA                              !!
-!! or see:                                                           !!
-!!          http://www.gnu.org/licenses/gpl.txt                      !!
-!!                                                                   !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 module horiz_interp_mod
 
 ! <CONTACT EMAIL="Zhi.Liang@noaa.gov"> Zhi Liang </CONTACT>
@@ -36,14 +30,14 @@ module horiz_interp_mod
 ! <DESCRIPTION>
 !     This module can interpolate data from any logically rectangular grid
 !     to any logically rectangular grid. Four interpolation schems are used here:
-!     conservative, bilinear, bicubic and inverse of square distance weighted. 
-!     The four interpolation schemes are implemented seperately in 
+!     conservative, bilinear, bicubic and inverse of square distance weighted.
+!     The four interpolation schemes are implemented seperately in
 !     horiz_interp_conserver_mod, horiz_interp_blinear_mod, horiz_interp_bicubic_mod
 !     and horiz_interp_spherical_mod. bicubic interpolation requires the source grid
-!     is regular lon/lat grid. User can choose the interpolation method in the 
+!     is regular lon/lat grid. User can choose the interpolation method in the
 !     public interface horiz_interp_new through optional argument interp_method,
 !     with acceptable value "conservative", "bilinear", "bicubic" and "spherical".
-!     The default value is "conservative". There is an optional mask field for 
+!     The default value is "conservative". There is an optional mask field for
 !     missing input data. An optional output mask field may be used in conjunction with
 !     the input mask to show where output data exists.
 ! </DESCRIPTION>
@@ -92,34 +86,34 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
 !      are doing a single grid-to-grid interpolation.
 !   </DESCRIPTION>
 !   <IN NAME="lon_in" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians">
-!      Longitude (in radians) for source data grid. You can pass 1-D lon_in to 
-!      represent the geographical longitude of regular lon/lat grid, or just 
-!      pass geographical longitude(lon_in is 2-D). The grid location may be 
+!      Longitude (in radians) for source data grid. You can pass 1-D lon_in to
+!      represent the geographical longitude of regular lon/lat grid, or just
+!      pass geographical longitude(lon_in is 2-D). The grid location may be
 !      located at grid cell edge or center, decided by optional argument "grid_at_center".
 !   </IN>
 !   <IN NAME="lat_in" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians">
-!      Latitude (in radians) for source data grid. You can pass 1-D lat_in to 
-!      represent the geographical latitude of regular lon/lat grid, or just 
-!      pass geographical latitude(lat_in is 2-D). The grid location may be 
+!      Latitude (in radians) for source data grid. You can pass 1-D lat_in to
+!      represent the geographical latitude of regular lon/lat grid, or just
+!      pass geographical latitude(lat_in is 2-D). The grid location may be
 !      located at grid cell edge or center, decided by optional argument "grid_at_center".
 !   </IN>
 !   <IN NAME="lon_out" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians" >
-!      Longitude (in radians) for destination data grid. You can pass 1-D lon_out to 
-!      represent the geographical longitude of regular lon/lat grid, or just 
-!      pass geographical longitude(lon_out is 2-D). The grid location may be 
+!      Longitude (in radians) for destination data grid. You can pass 1-D lon_out to
+!      represent the geographical longitude of regular lon/lat grid, or just
+!      pass geographical longitude(lon_out is 2-D). The grid location may be
 !      located at grid cell edge or center, decided by optional argument "grid_at_center".
 !   </IN>
 !   <IN NAME="lat_out" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians" >
-!      Latitude (in radians) for destination data grid. You can pass 1-D lat_out to 
-!      represent the geographical latitude of regular lon/lat grid, or just 
-!      pass geographical latitude(lat_out is 2-D). The grid location may be 
+!      Latitude (in radians) for destination data grid. You can pass 1-D lat_out to
+!      represent the geographical latitude of regular lon/lat grid, or just
+!      pass geographical latitude(lat_out is 2-D). The grid location may be
 !      located at grid cell edge or center, decided by optional argument "grid_at_center".
 !   </IN>
 !   <IN NAME="verbose" TYPE="integer">
 !      Integer flag that controls the amount of printed output.
 !      verbose = 0, no output; = 1, min,max,means; = 2, still more
 !   </IN>
-!   <IN NAME="interp_method" TYPE="character(len=*)" > 
+!   <IN NAME="interp_method" TYPE="character(len=*)" >
 !      interpolation method, = "conservative", using conservation scheme,
 !      = "bilinear", using bilinear interpolation, = "spherical",using spherical regrid.
 !      = "bicubic", using bicubic interpolation. The default value is "convervative".
@@ -128,13 +122,13 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
 !      Indicate the source data grid is cyclic or not.
 !   </IN>
 !   <IN NAME = "grid_at_center" >
-!      Indicate the data is on the center of grid box or the edge of grid box. 
+!      Indicate the data is on the center of grid box or the edge of grid box.
 !      When true, the data is on the center of grid box. default vaule is false.
 !      This option is only available when interp_method = "bilinear" or "bicubic".
 !   </IN>
 !   <OUT NAME="Interp" >
-!      A derived-type variable containing indices and weights used for subsequent 
-!      interpolations. To reinitialize this variable for a different grid-to-grid 
+!      A derived-type variable containing indices and weights used for subsequent
+!      interpolations. To reinitialize this variable for a different grid-to-grid
 !      interpolation you must first use the "horiz_interp_del" interface.
 !   </OUT>
 
@@ -171,8 +165,8 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
 !   </IN>
 !   <IN NAME="mask_in">
 !      Input mask, must be the same size as the input data. The real value of
-!      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points 
-!      that should not be used or have missing data. It is Not needed for 
+!      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points
+!      that should not be used or have missing data. It is Not needed for
 !      spherical regrid.
 !   </IN>
 !   <IN NAME="missing_value" >
@@ -183,11 +177,11 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
 !      should be between 0 and 3.
 !   </IN>
 !   <IN NAME="lon_in, lat_in" >
-!      longitude and latitude (in radians) of source grid. More explanation can 
+!      longitude and latitude (in radians) of source grid. More explanation can
 !      be found in the documentation of horiz_interp_new.
 !   </IN>
 !   <IN NAME="lon_out, lat_out" >
-!      longitude and latitude (in radians) of destination grid. More explanation can 
+!      longitude and latitude (in radians) of destination grid. More explanation can
 !      be found in the documentation of horiz_interp_new.
 !   </IN>
 !   <OUT NAME="data_out">
@@ -223,11 +217,11 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
  !--- namelist interface
  !<NAMELIST NAME="horiz_interp_nml">
  ! <DATA NAME="reproduce_siena" TYPE="logical" DEFAULT=".FALSE." >
- !   Set reproduce_siena = .true. to reproduce siena results. 
- !   Set reproduce_siena = .false. to decrease truncation error 
+ !   Set reproduce_siena = .true. to reproduce siena results.
+ !   Set reproduce_siena = .false. to decrease truncation error
  !   in routine poly_area in file mosaic_util.c. The truncation error of
  !   second order conservative remapping might be big for high resolution
- !   grid.  
+ !   grid.
  ! </DATA>
  !</NAMELIST>
 
@@ -248,7 +242,7 @@ contains
 !  <OVERVIEW>
 !     writes version number to logfile.out
 !  </OVERVIEW>
-!  <DESCRIPTION>       
+!  <DESCRIPTION>
 !     writes version number to logfile.out
 !  </DESCRIPTION>
 
@@ -382,7 +376,7 @@ contains
        center = .false.
        if(present(grid_at_center) ) center = grid_at_center
        !No need to expand to 2d, horiz_interp_bicubic_new does 1d-1d
-       if(center) then 
+       if(center) then
           call horiz_interp_bicubic_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
             verbose, src_modulo)
        else
@@ -475,7 +469,7 @@ contains
       if(PRESENT(is_latlon_out)) then
          dst_is_latlon = is_latlon_out
       else
-         dst_is_latlon = is_lat_lon(lon_out, lat_out) 
+         dst_is_latlon = is_lat_lon(lon_out, lat_out)
       end if
       if(dst_is_latlon ) then
          if(present(mask_in)) then
@@ -604,12 +598,12 @@ contains
       else if(dst_is_latlon) then
          call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out(:,1), lat_out(1,:), &
               verbose=verbose, mask_in=mask_in, mask_out=mask_out )
-      else 
+      else
          call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
               verbose=verbose, mask_in=mask_in, mask_out=mask_out )
       end if
 
-   case ("spherical") 
+   case ("spherical")
       Interp%interp_method = SPHERICA
       call horiz_interp_spherical_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                     num_nbrs, max_dist, src_modulo )
@@ -619,7 +613,7 @@ contains
                                         verbose, src_modulo )
    case default
       call mpp_error(FATAL,'when source grid are 2d, interp_method should be spherical or bilinear')
-   end select     
+   end select
 
 !-----------------------------------------------------------------------
    Interp%I_am_initialized = .true.
@@ -668,7 +662,7 @@ contains
          src_is_latlon = is_latlon_in
       else
          src_is_latlon = is_lat_lon(lon_in, lat_in)
-      end if      
+      end if
 
       if(src_is_latlon) then
          if(present(mask_in)) then
@@ -715,7 +709,7 @@ contains
 !   <OUT NAME="data_out" TYPE="real" DIM="(:,:),(:,:,:)"> </OUT>
 !   <OUT NAME="mask_out" TYPE="real,optional" DIM="(:,:),(:,:,:)"> </OUT>
 
-!<PUBLICROUTINE INTERFACE="horiz_interp"> 
+!<PUBLICROUTINE INTERFACE="horiz_interp">
  subroutine horiz_interp_base_2d ( Interp, data_in, data_out, verbose, &
                                    mask_in, mask_out, missing_value, missing_permit, &
                                    err_msg, new_missing_handle )
@@ -780,7 +774,7 @@ contains
    integer :: n
 
    if(present(err_msg)) err_msg = ''
-   if(.not.Interp%I_am_initialized) then          
+   if(.not.Interp%I_am_initialized) then
      if(fms_error_handler('horiz_interp','The horiz_interp_type variable is not initialized',err_msg)) return
    endif
 
@@ -807,17 +801,17 @@ contains
          endif
      endif
    enddo
-  
+
    return
 !-----------------------------------------------------------------------
  end subroutine horiz_interp_base_3d
 
 !#######################################################################
-!<PUBLICROUTINE INTERFACE="horiz_interp"> 
+!<PUBLICROUTINE INTERFACE="horiz_interp">
  subroutine horiz_interp_solo_1d ( data_in, lon_in, lat_in, lon_out, lat_out,    &
                                    data_out, verbose, mask_in, mask_out,         &
                                    interp_method, missing_value, missing_permit, &
-                                   num_nbrs, max_dist,src_modulo, grid_at_center  )              
+                                   num_nbrs, max_dist,src_modulo, grid_at_center  )
 !</PUBLICROUTINE>
 !-----------------------------------------------------------------------
 !   interpolates from a rectangular grid to rectangular grid.
@@ -984,7 +978,7 @@ contains
                                        missing_permit,  num_nbrs, max_dist, src_modulo)
 !-----------------------------------------------------------------------
 !
-!   interpolates from any grid to rectangular longitude/latitude grid. 
+!   interpolates from any grid to rectangular longitude/latitude grid.
 !   interp_method should be "spherical".
 !   horiz_interp_new don't need to be called before calling this routine.
 !
@@ -993,7 +987,7 @@ contains
       real, intent(in),  dimension(:,:) :: lon_in , lat_in
       real, intent(in),  dimension(:)   :: lon_out, lat_out
       real, intent(out), dimension(:,:) :: data_out
-   integer, intent(in),                   optional :: verbose  
+   integer, intent(in),                   optional :: verbose
       real, intent(in),   dimension(:,:), optional :: mask_in
       real, intent(out),  dimension(:,:), optional :: mask_out
    character(len=*), intent(in),          optional :: interp_method
@@ -1090,7 +1084,7 @@ contains
      real    :: tpi
 !-----------------------------------------------------------------------
    call horiz_interp_init
- 
+
    tpi = 2.*pi
    nlon_in = size(data_in,1)
    nlat_in = size(data_in,2)
@@ -1148,7 +1142,7 @@ contains
 !  releases space used by horiz_interp_type variables
 !  must be called before re-initializing the same variable
 !-----------------------------------------------------------------------
-   select case(Interp % interp_method) 
+   select case(Interp % interp_method)
    case (CONSERVE)
       call horiz_interp_conserve_del(Interp )
    case (BILINEAR)
@@ -1230,7 +1224,7 @@ contains
 end module horiz_interp_mod
 
 ! <INFO>
-!   <NOTE>             
+!   <NOTE>
 !       Has not been checked with grids that do not cover the sphere.
 !
 !       Has not been checked with the optional mask arguments.
@@ -1240,7 +1234,7 @@ end module horiz_interp_mod
 !       This can be done by increasing the value of module variable
 !       num_iters (default 4).
 !   </NOTE>
-!   <TESTPROGRAM>  
+!   <TESTPROGRAM>
 !     <PRE>
 !       program test
 !       use horiz_interp_mod
@@ -1249,27 +1243,27 @@ end module horiz_interp_mod
 !       real :: zi(nxi,nyi), zo(nxo,nyo)                       ! data
 !       real :: xi(nxi+1), yi(nyi+1), xo(nxo+1), yo(nyo+1)     ! grid edges
 !       real :: pi, tpi, hpi, dx, dy
-!     
+!
 !       ! constants
 !         hpi = acos(0.0)
 !          pi = hpi*2.0
 !         tpi = hpi*4.0
-!     
+!
 !       ! grid setup: west to east, south to north
 !         dx = tpi/real(nxi); call setaxis (0.,dx,xi);   xi(nxi+1) = xi(1)+tpi
 !         dx = tpi/real(nxo); call setaxis (0.,dx,xo);   xo(nxo+1) = xo(1)+tpi
 !         dy =  pi/real(nyi); call setaxis (-hpi,dy,yi); yi(nyi+1) = hpi
 !         dy =  pi/real(nyo); call setaxis (-hpi,dy,yo); yo(nyo+1) = hpi
-!     
+!
 !       ! random data on the input grid
 !         call random_number (zi)
-!     
+!
 !       ! interpolate (flipping y-axis)
 !         call horiz_interp (zi(:,1:nyi:+1), xi, yi(1:nyi+1:+1), xo, yo(1:nyo+1:+1), zo, verbose=2)
 !         call horiz_interp (zi(:,nyi:1:-1), xi, yi(nyi+1:1:-1), xo, yo(1:nyo+1:+1), zo, verbose=2)
 !         call horiz_interp (zi(:,nyi:1:-1), xi, yi(nyi+1:1:-1), xo, yo(nyo+1:1:-1), zo, verbose=2)
 !         call horiz_interp (zi(:,1:nyi:+1), xi, yi(1:nyi+1:+1), xo, yo(nyo+1:1:-1), zo, verbose=2)
-!     
+!
 !       contains
 !     ! set up a sequence of numbers
 !         subroutine setaxis (xo,dx,x)
@@ -1281,7 +1275,7 @@ end module horiz_interp_mod
 !             x(i) = x(i-1)+dx
 !           enddo
 !         end subroutine setaxis
-!     
+!
 !       end program test
 !     </PRE>
 !   </TESTPROGRAM>
@@ -1355,9 +1349,9 @@ implicit none
   call mpp_get_compute_domain(domain,isc,iec,jsc,jec)
 
   !--- test conservative horiz_interp with a simple test. the source grid is the region
-  !    (0:360,-90:90) with grid size ni_src, nj_src ( default 360X180). and the destination 
-  !    is the region (-280:80, -90:90) with grid size ni_dstXnj_dst( default 144X72). 
-  !    integer checksum and global sum will be printed out for both the 1D and 2D version. 
+  !    (0:360,-90:90) with grid size ni_src, nj_src ( default 360X180). and the destination
+  !    is the region (-280:80, -90:90) with grid size ni_dstXnj_dst( default 144X72).
+  !    integer checksum and global sum will be printed out for both the 1D and 2D version.
 
   allocate(lon2D_src(ni_src+1, nj_src+1), lat2D_src(ni_src+1, nj_src+1) )
   allocate(lon1D_src(ni_src+1), lat1D_src(nj_src+1), data_src(ni_src, nj_src) )
@@ -1367,10 +1361,10 @@ implicit none
   allocate(data1_dst(isc:iec, jsc:jec), data2_dst(isc:iec, jsc:jec) )
   allocate(data3_dst(isc:iec, jsc:jec), data4_dst(isc:iec, jsc:jec) )
 
-  ! set up longitude and latitude of source/destination grid.   
-  dlon_src = (lon_src_end-lon_src_beg)/ni_src 
+  ! set up longitude and latitude of source/destination grid.
+  dlon_src = (lon_src_end-lon_src_beg)/ni_src
   dlat_src = (lat_src_end-lat_src_beg)/nj_src
-  dlon_dst = (lon_dst_end-lon_dst_beg)/ni_dst 
+  dlon_dst = (lon_dst_end-lon_dst_beg)/ni_dst
   dlat_dst = (lat_dst_end-lat_dst_beg)/nj_dst
 
   do i = 1, ni_src+1
@@ -1464,7 +1458,7 @@ implicit none
   end do
 
   if(mpp_pe() == mpp_root_pe()) call mpp_error(NOTE,   &
-       "The test that verify 1dx2d version horiz_interp can reproduce 1dx1d version of horiz_interp is succesful") 
+       "The test that verify 1dx2d version horiz_interp can reproduce 1dx1d version of horiz_interp is succesful")
 
   do j = jsc, jsc
      do i = isc, iec
@@ -1478,7 +1472,7 @@ implicit none
   end do
 
   if(mpp_pe() == mpp_root_pe()) call mpp_error(NOTE,   &
-       "The test that verify 2dx1d version horiz_interp can reproduce 1dx1d version of horiz_interp is succesful") 
+       "The test that verify 2dx1d version horiz_interp can reproduce 1dx1d version of horiz_interp is succesful")
 
   do j = jsc, jsc
      do i = isc, iec
@@ -1492,7 +1486,7 @@ implicit none
   end do
 
   if(mpp_pe() == mpp_root_pe()) call mpp_error(NOTE,   &
-       "The test that verify 2dx2d version horiz_interp can reproduce 1dx1d version of horiz_interp is succesful") 
+       "The test that verify 2dx2d version horiz_interp can reproduce 1dx1d version of horiz_interp is succesful")
 
   call mpp_io_exit
   call mpp_exit

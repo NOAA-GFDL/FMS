@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 #ifdef test_mpp_domains
 program test
   use mpp_mod,         only : FATAL, WARNING, MPP_DEBUG, NOTE, MPP_CLOCK_SYNC,MPP_CLOCK_DETAILED
@@ -7,7 +25,7 @@ program test
   use mpp_mod,         only : mpp_init, mpp_exit, mpp_chksum, stdout, stderr
   use mpp_mod,         only : input_nml_file
   use mpp_mod,         only : mpp_get_current_pelist, mpp_broadcast
-  use mpp_domains_mod, only : GLOBAL_DATA_DOMAIN, BITWISE_EXACT_SUM, BGRID_NE, CGRID_NE, DGRID_NE
+  use mpp_domains_mod, only : GLOBAL_DATA_DOMAIN, BITWISE_EXACT_SUM, BGRID_NE, CGRID_NE, DGRID_NE, AGRID
   use mpp_domains_mod, only : FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE, FOLD_WEST_EDGE, FOLD_EAST_EDGE
   use mpp_domains_mod, only : MPP_DOMAIN_TIME, CYCLIC_GLOBAL_DOMAIN, NUPDATE,EUPDATE, XUPDATE, YUPDATE, SCALAR_PAIR
   use mpp_domains_mod, only : domain1D, domain2D, DomainCommunicator2D, BITWISE_EFP_SUM
@@ -134,7 +152,6 @@ program test
       if (io_status > 0) then
          call mpp_error(FATAL,'=>test_mpp_domains: Error reading input.nml')
       endif
-
 
   select case(trim(warn_level))
   case("fatal")
@@ -2198,6 +2215,61 @@ contains
 
     deallocate(x, y, a, b, x_save, y_save)
 
+
+    !------------------------------------------------------------------
+    !              vector update : AGRID vector and scalar pair
+    !------------------------------------------------------------------
+    allocate( x (ism:iem,jsm:jem,nz,ntile_per_pe) )
+    allocate( y (ism:iem,jsm:jem,nz,ntile_per_pe) )
+    allocate( a (ism:iem,jsm:jem,nz,ntile_per_pe) )
+    allocate( b (ism:iem,jsm:jem,nz,ntile_per_pe) )
+    allocate( x_save (ism:iem,jsm:jem,nz,ntile_per_pe) )
+    allocate( y_save (ism:iem,jsm:jem,nz,ntile_per_pe) )
+
+
+    x = 0
+    y = 0
+    do l = 1, ntile_per_pe
+       do k = 1, nz
+          do j = jsc, jec
+             do i = isc, iec+shift
+                x(i,j,k,l) = 1.0e3 + tile(l) + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+             end do
+          end do
+          do j = jsc, jec+shift
+             do i = isc, iec
+                y(i,j,k,l) = 2.0e3 + tile(l) + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+             end do
+          end do
+       end do
+    enddo
+
+    a  = x; b  = y
+    x_save  = x; y_save  = y
+
+    call mpp_update_domains( x, y, domain, gridtype=AGRID)
+
+    id_update_single =  mpp_start_update_domains(a, b, domain, gridtype=AGRID)
+    call mpp_complete_update_domains(id_update_single, a, b, domain, gridtype=AGRID)
+
+    !--- compare checksum
+    call compare_checksums( x(:,:,:,1), a(:,:,:,1), type//' AGRID X')
+    call compare_checksums( y(:,:,:,1), b(:,:,:,1), type//' AGRID Y')
+
+    x = x_save; y = y_save
+    a = x_save; b = y_save
+
+    call mpp_update_domains( x, y, domain, gridtype=AGRID, flags = SCALAR_PAIR)
+
+    id_update_single =  mpp_start_update_domains(a, b, domain, gridtype=AGRID, flags = SCALAR_PAIR)
+    call mpp_complete_update_domains(id_update_single, a, b, domain, gridtype=AGRID, flags = SCALAR_PAIR)
+
+    !--- compare checksum
+    call compare_checksums( x(:,:,:,1), a(:,:,:,1), type//' AGRID SCALAR-PAIR X')
+    call compare_checksums( y(:,:,:,1), b(:,:,:,1), type//' AGRID SCALAR-PAIR Y')
+
+    deallocate(x, y, a, b, x_save, y_save)
+
     nx = nx_save
     ny = ny_save
 
@@ -2854,8 +2926,70 @@ contains
 
     call mpp_clear_group_update(group_update)
 
+    !-----------------------------------------------------------------------------
+    !                   test for AGRID vector and scalar pair
+    !-----------------------------------------------------------------------------
+    deallocate(x1, y1)
+    deallocate(x2, y2)
 
+    allocate( x1(ism:iem,jsm:jem, nz, num_fields) )
+    allocate( y1(ism:iem,jsm:jem, nz, num_fields) )
+    allocate( x2(ism:iem,jsm:jem, nz, num_fields) )
+    allocate( y2(ism:iem,jsm:jem, nz, num_fields) )
 
+    x1 = 0; y1 = 0
+    do l = 1, num_fields
+       x1(isc:iec,jsc:jec,:,l) = base(isc:iec,jsc:jec,:) + l*1e3 + 1e6
+       y1(isc:iec,jsc:jec,:,l) = base(isc:iec,jsc:jec,:) + l*1e3 + 2*1e6
+    enddo
+    x2 = x1; y2 = y1
+
+    do l =1, num_fields
+       call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=AGRID)
+    end do
+
+    do l = 1, num_fields
+       call mpp_update_domains( x2(:,:,:,l), y2(:,:,:,l), domain, gridtype=AGRID, complete=l==num_fields )
+    enddo
+
+    call mpp_start_group_update(group_update, domain, a1(isc,jsc,1,1))
+    call mpp_complete_group_update(group_update, domain, a1(isc,jsc,1,1))
+
+    !--- compare checksum
+    do l = 1, num_fields
+       write(text, '(i3.3)') l
+       call compare_checksums(x1(isd:ied,jsd:jed,:,l),x2(isd:ied,jsd:jed,:,l),type//' AGRID X'//text)
+       call compare_checksums(y1(isd:ied,jsd:jed,:,l),y2(isd:ied,jsd:jed,:,l),type//' AGRID Y'//text)
+    enddo
+
+    call mpp_clear_group_update(group_update)
+
+    x1 = 0; y1 = 0
+    do l = 1, num_fields
+       x1(isc:iec,jsc:jec,:,l) = base(isc:iec,jsc:jec,:) + l*1e3 + 1e6
+       y1(isc:iec,jsc:jec,:,l) = base(isc:iec,jsc:jec,:) + l*1e3 + 2*1e6
+    enddo
+    x2 = x1; y2 = y1
+
+    do l =1, num_fields
+       call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=AGRID, flags=SCALAR_PAIR)
+    end do
+
+    do l = 1, num_fields
+       call mpp_update_domains( x2(:,:,:,l), y2(:,:,:,l), domain, gridtype=AGRID, flags=SCALAR_PAIR, complete=l==num_fields)
+    enddo
+
+    call mpp_start_group_update(group_update, domain, x1(isc,jsc,1,1))
+    call mpp_complete_group_update(group_update, domain, x1(isc,jsc,1,1))
+
+    !--- compare checksum
+    do l = 1, num_fields
+       write(text, '(i3.3)') l
+       call compare_checksums(x1(isd:ied,jsd:jed,:,l),x2(isd:ied,jsd:jed,:,l),type//' AGRID SCALAR_PAIR X'//text)
+       call compare_checksums(y1(isd:ied,jsd:jed,:,l),y2(isd:ied,jsd:jed,:,l),type//' AGRID SCALAR_PAIR Y'//text)
+    enddo
+
+    call mpp_clear_group_update(group_update)
 
     deallocate(pe_start, pe_end, tile1, tile2)
     deallocate(istart1, iend1, jstart1, jend1)

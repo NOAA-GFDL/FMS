@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 ! -*-f90-*-
 subroutine MPP_CREATE_GROUP_UPDATE_2D_(group, field, domain, flags, position, &
      whalo, ehalo, shalo, nhalo)
@@ -250,6 +268,13 @@ subroutine MPP_CREATE_GROUP_UPDATE_3D_V_( group, fieldx, fieldy, domain, flags, 
 
   update_flags = XUPDATE+YUPDATE   !default
   if( PRESENT(flags) )update_flags = flags
+  ! The following test is so that SCALAR_PAIR can be used alone with the
+  ! same default update pattern as without.
+  if (BTEST(update_flags,SCALAR_BIT)) then
+     if (.NOT.(BTEST(update_flags,WEST) .OR. BTEST(update_flags,EAST) &
+          .OR. BTEST(update_flags,NORTH) .OR. BTEST(update_flags,SOUTH))) &
+        update_flags = update_flags + XUPDATE+YUPDATE   !default with SCALAR_PAIR
+  end if
 
   group%nvector = group%nvector + 1
   nvector = group%nvector

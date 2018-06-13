@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 module mosaic_mod
 
 ! <CONTACT EMAIL="Zhi.Liang@noaa.gov">
@@ -12,7 +30,7 @@ module mosaic_mod
 
 ! <DESCRIPTION>
 !    <TT>mosaic_mod</TT> implements some utility routines to read mosaic information.
-!    The information includes number of tiles and contacts in the mosaic, 
+!    The information includes number of tiles and contacts in the mosaic,
 !    mosaic grid resolution of each tile, mosaic contact information, mosaic exchange
 !    grid information. Each routine will call a C-version routine to get these information.
 ! </DESCRIPTION>
@@ -58,16 +76,16 @@ contains
 
 ! <SUBROUTINE NAME="mosaic_init">
 !   <OVERVIEW>
-!     Initialize the mosaic_mod. 
+!     Initialize the mosaic_mod.
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!     Initialization routine for the mosaic module. It writes the 
+!     Initialization routine for the mosaic module. It writes the
 !     version information to the log file.
 !   </DESCRIPTION>
 !   <TEMPLATE>
 !     call mosaic_init ( )
 !   </TEMPLATE>
-subroutine mosaic_init() 
+subroutine mosaic_init()
 
   if (module_is_initialized) return
   module_is_initialized = .TRUE.
@@ -98,7 +116,7 @@ end subroutine mosaic_init
 
     get_mosaic_xgrid_size = dimension_size(xgrid_file, "ncells", no_domain=.TRUE.)
 
-    return   
+    return
 
   end function get_mosaic_xgrid_size
 ! </FUNCTION>
@@ -166,13 +184,13 @@ end subroutine mosaic_init
     call read_compressed(xgrid_file, 'tile2_cell', tile2_cell, start=start, nread=nread, threading=MPP_MULTI)
 
      do n = 1, nxgrid
-       i1(n) = tile1_cell(1,n) 
+       i1(n) = tile1_cell(1,n)
        j1(n) = tile1_cell(2,n)
-       i2(n) = tile2_cell(1,n) 
+       i2(n) = tile2_cell(1,n)
        j2(n) = tile2_cell(2,n)
        area(n) = area(n)/garea
     end do
-    
+
     return
 
   end subroutine get_mosaic_xgrid
@@ -194,7 +212,7 @@ end subroutine mosaic_init
   !   </IN>
   function get_mosaic_ntiles(mosaic_file)
     character(len=*), intent(in) :: mosaic_file
-    integer                      :: get_mosaic_ntiles 
+    integer                      :: get_mosaic_ntiles
 
     get_mosaic_ntiles = dimension_size(mosaic_file, "ntiles")
 
@@ -219,9 +237,9 @@ end subroutine mosaic_init
   !   </IN>
   function get_mosaic_ncontacts( mosaic_file)
     character(len=*), intent(in) :: mosaic_file
-    integer                      :: get_mosaic_ncontacts 
+    integer                      :: get_mosaic_ncontacts
 
-    character(len=len_trim(mosaic_file)+1) :: mfile    
+    character(len=len_trim(mosaic_file)+1) :: mfile
     integer                                :: strlen
     integer                                :: read_mosaic_ncontacts
 
@@ -262,7 +280,7 @@ end subroutine mosaic_init
     integer, dimension(:), intent(inout) :: nx, ny
 
     character(len=MAX_FILE) :: gridfile
-    integer                 :: ntiles, n    
+    integer                 :: ntiles, n
 
     ntiles = get_mosaic_ntiles(mosaic_file)
     if(ntiles .NE. size(nx(:)) .OR. ntiles .NE. size(ny(:)) ) then
@@ -343,7 +361,7 @@ end subroutine mosaic_init
     logical :: found
 
     ntiles = get_mosaic_ntiles(mosaic_file)
-    allocate(gridtiles(ntiles))    
+    allocate(gridtiles(ntiles))
     do n = 1, ntiles
       call read_data(mosaic_file, 'gridtiles', gridtiles(n), level=n)
     enddo
@@ -352,37 +370,37 @@ end subroutine mosaic_init
 
     do n = 1, ncontacts
       call read_data(mosaic_file, "contacts", contacts, level=n)
-      nstr = parse_string(contacts, ":", strlist)      
+      nstr = parse_string(contacts, ":", strlist)
       if(nstr .NE. 4) call mpp_error(FATAL, &
          "mosaic_mod(get_mosaic_contact): number of elements in contact seperated by :/:: should be 4")
       found = .false.
       do m = 1, ntiles
-        if(trim(gridtiles(m)) == trim(strlist(2)) ) then !found the tile name 
+        if(trim(gridtiles(m)) == trim(strlist(2)) ) then !found the tile name
           found = .true.
           tile1(n) = m
           exit
         endif
       enddo
-    
+
       if(.not.found) call mpp_error(FATAL, &
          "mosaic_mod(get_mosaic_contact):the first tile name specified in contact is not found in tile list")
 
       found = .false.
       do m = 1, ntiles
-        if(trim(gridtiles(m)) == trim(strlist(4)) ) then !found the tile name 
+        if(trim(gridtiles(m)) == trim(strlist(4)) ) then !found the tile name
           found = .true.
           tile2(n) = m
           exit
         endif
       enddo
-    
+
       if(.not.found) call mpp_error(FATAL, &
          "mosaic_mod(get_mosaic_contact):the second tile name specified in contact is not found in tile list")
 
       call read_data(mosaic_file, "contact_index", contacts, level=n)
       nstr = parse_string(contacts, ":,", strlist)
       if(nstr .NE. 8) then
-        if(mpp_pe()==mpp_root_pe()) then 
+        if(mpp_pe()==mpp_root_pe()) then
           print*, "nstr is ", nstr
           print*, "contacts is ", contacts
           do m = 1, nstr
@@ -450,12 +468,12 @@ function transfer_to_model_index(istart, iend, refine_ratio)
       transfer_to_model_index = 0
       istart = (istart_in + 1)/refine_ratio
       iend   = istart
-   else 
+   else
       transfer_to_model_index = 1
       if( iend_in > istart_in ) then
         istart = istart_in + 1
         iend   = iend_in
-      else 
+      else
         istart = istart_in
         iend   = iend_in + 1
       endif
@@ -476,7 +494,7 @@ end function transfer_to_model_index
   !     calculate grid cell area.
   !   </OVERVIEW>
   !   <DESCRIPTION>
-  !     calculate the grid cell area. The purpose of this routine is to make 
+  !     calculate the grid cell area. The purpose of this routine is to make
   !     sure the consistency between model grid area and exchange grid area.
   !   </DESCRIPTION>
   !   <TEMPLATE>
@@ -516,7 +534,7 @@ end function transfer_to_model_index
   !     calculate grid cell area using great cirlce algorithm
   !   </OVERVIEW>
   !   <DESCRIPTION>
-  !     calculate the grid cell area. The purpose of this routine is to make 
+  !     calculate the grid cell area. The purpose of this routine is to make
   !     sure the consistency between model grid area and exchange grid area.
   !   </DESCRIPTION>
   !   <TEMPLATE>
@@ -536,7 +554,7 @@ end function transfer_to_model_index
      real, dimension(:,:), intent(in)    :: lat
      real, dimension(:,:), intent(inout) :: area
      integer                             :: nlon, nlat
-     
+
 
      nlon = size(area,1)
      nlat = size(area,2)
@@ -620,7 +638,7 @@ end function transfer_to_model_index
   end function parse_string
 
 
-     
+
 end module mosaic_mod
 
 

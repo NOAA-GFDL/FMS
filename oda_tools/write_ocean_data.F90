@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 module write_ocean_data_mod
 
  use mpp_io_mod, only : fieldtype, axistype, mpp_open,&
@@ -11,7 +29,7 @@ module write_ocean_data_mod
  implicit none
 
  private
- 
+
  type(fieldtype), save :: lon_field, lat_field, time_field, data_t_field, data_s_field, &
       project_field,probe_field,ref_inst_field, fix_depth_field, database_id_field,&
       profile_flag_field, profile_flag_s_field, temp_err_field, salt_err_field, &
@@ -27,16 +45,16 @@ module write_ocean_data_mod
  integer,save :: nvar_out
 
  integer, save :: sta_num(max_files), unit_num(max_files), nfiles
- 
+
  type(time_type) :: ref_time, time
 
  logical :: module_is_initialized=.false.
- 
+
  public :: open_profile_file, write_profile, close_profile_file, &
       write_ocean_data_init
- 
+
 #include <netcdf.inc>
- 
+
 contains
 
 function open_profile_file(name, nvar, grid_lon, grid_lat,thread,fset)
@@ -47,7 +65,7 @@ function open_profile_file(name, nvar, grid_lon, grid_lat,thread,fset)
   integer, intent(in), optional :: thread, fset
 
   integer :: i, open_profile_file, unit
-  integer :: threading, fileset  
+  integer :: threading, fileset
   character(len=128) :: units, time_units
   real, dimension(max_levels_file) :: array
 
@@ -249,15 +267,15 @@ if (ASSOCIATED(profile%Model_Grid)) grid_ptr = .true.
 if (grid_ptr) then
     call mpp_get_compute_domain(profile%Model_Grid%Dom, isc, iec, jsc, jec)
     if (floor(profile%i_index) .lt. isc .or. floor(profile%i_index) .gt. iec) return
-    if (floor(profile%j_index) .lt. jsc .or. floor(profile%j_index) .gt. jec) return    
+    if (floor(profile%j_index) .lt. jsc .or. floor(profile%j_index) .gt. jec) return
 endif
 
 if (profile%nvar == 2) then
     data_s(1:levels)   = profile%data_s(1:levels)
     flag_s(1:levels)=profile%flag_s(1:levels)
 endif
-  
-depth(1:levels)=profile%depth(1:levels) 
+
+depth(1:levels)=profile%depth(1:levels)
 time = profile%time - ref_time
 call get_time(time, secs, days)
 days_since = days + secs/86400.
@@ -277,14 +295,14 @@ days_since = days + secs/86400.
  profile_flag = profile%profile_flag
  call mpp_write(unit,profile_flag_field,profile_flag,station)
  profile_flag = profile%profile_flag_s
- if (nvar_out .eq. 2) call mpp_write(unit,profile_flag_s_field,profile_flag,station) 
+ if (nvar_out .eq. 2) call mpp_write(unit,profile_flag_s_field,profile_flag,station)
  call mpp_write(unit,lon_field,profile%lon,station)
  call mpp_write(unit,lat_field,profile%lat,station)
  call mpp_write(unit,time_field,days_since,station)
  tmp_s = real(profile%yyyy)
  call mpp_write(unit,yyyy_field,tmp_s,station)
  tmp_s = real(profile%mmdd)
- call mpp_write(unit,mmdd_field,tmp_s,station) 
+ call mpp_write(unit,mmdd_field,tmp_s,station)
  call mpp_write(unit,temp_err_field,profile%temp_err,station)
  if (nvar_out .eq. 2) call mpp_write(unit,salt_err_field,profile%salt_err,station)
  nlinks = 0
@@ -315,24 +333,24 @@ do i = 1, nlinks
    endif
    data_t = missing_value; data_s = missing_value; depth = missing_value
    flag_t=missing_value;flag_s=missing_value
-   
+
    data_t(1:levels)=profile%data_t((max_levels_file*i)+1:(max_levels_file*i)+levels)
-   flag_t(1:levels)=profile%flag_t((max_levels_file*i)+1:(max_levels_file*i)+levels)    
+   flag_t(1:levels)=profile%flag_t((max_levels_file*i)+1:(max_levels_file*i)+levels)
 
    if (profile%nvar == 2) then
        data_s(1:levels)   = profile%data_s((max_levels_file*i)+1:(max_levels_file*i)+levels)
        flag_s(1:levels)= profile%flag_s((max_levels_file*i)+1:(max_levels_file*i)+levels)
 
    endif
-       
-       
+
+
    depth(1:levels)=profile%depth((max_levels_file*i)+1:(max_levels_file*i)+levels)
 
-   call mpp_write(unit,nvar_field,nvar,station)   
+   call mpp_write(unit,nvar_field,nvar,station)
    call mpp_write(unit,data_t_field,data_t,station)
    if (nvar_out .eq. 2) call mpp_write(unit,data_s_field,data_s,station)
    call mpp_write(unit,depth_field,depth,station)
-   
+
    call mpp_write(unit,project_field,profile%project,station)
    call mpp_write(unit,probe_field,profile%probe,station)
    call mpp_write(unit,ref_inst_field,profile%ref_inst,station)
@@ -342,14 +360,14 @@ do i = 1, nlinks
    profile_flag = profile%profile_flag
    call mpp_write(unit,profile_flag_field,profile_flag,station)
    profile_flag = profile%profile_flag_s
-   if (nvar_out .eq. 2)   call mpp_write(unit,profile_flag_s_field,profile_flag,station) 
+   if (nvar_out .eq. 2)   call mpp_write(unit,profile_flag_s_field,profile_flag,station)
    call mpp_write(unit,lon_field,profile%lon,station)
    call mpp_write(unit,lat_field,profile%lat,station)
    call mpp_write(unit,time_field,days_since,station)
    tmp_s = real(profile%yyyy)
    call mpp_write(unit,yyyy_field,tmp_s,station)
    tmp_s = real(profile%mmdd)
-   call mpp_write(unit,mmdd_field,tmp_s,station)   
+   call mpp_write(unit,mmdd_field,tmp_s,station)
    call mpp_write(unit,temp_err_field,profile%temp_err,station)
    if (nvar_out .eq. 2)   call mpp_write(unit,salt_err_field,profile%salt_err,station)
 
@@ -363,7 +381,7 @@ do i = 1, nlinks
    else
        call mpp_write(unit,link_field,0.,station)
    endif
-   
+
 enddo
 
 end subroutine write_profile
@@ -383,9 +401,7 @@ subroutine write_ocean_data_init()
   sta_num=0;unit_num=0;nfiles=0
 
   return
-  
+
 end subroutine write_ocean_data_init
 
 end module write_ocean_data_mod
-  
-  

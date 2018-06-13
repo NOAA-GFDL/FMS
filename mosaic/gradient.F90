@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 module gradient_mod
 ! <CONTACT EMAIL="Zhi.Liang@noaa.gov">
 !   Zhi Liang
@@ -11,7 +29,7 @@ module gradient_mod
 
 ! <DESCRIPTION>
 !    <TT>gradient_mod</TT> implements some utility routines to calculate gradient.
-!    Currently only gradient on cubic grid is implemented. Also a public interface 
+!    Currently only gradient on cubic grid is implemented. Also a public interface
 !    is provided to calculate grid information needed to calculate gradient.
 
 use mpp_mod,       only : mpp_error, FATAL

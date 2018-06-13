@@ -1,3 +1,22 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 #ifdef TEST_XGRID
 ! Now only test some simple test, will test cubic grid mosaic in the future.
 
@@ -716,7 +735,7 @@ contains
     integer, allocatable, dimension(:)       :: npts_tile, grid_index, ntiles_grid
     integer :: ntiles, nx, ny, ntotal_land, l, is_ug, ie_ug
     type(domainUG) :: ug_domain
-    type(xmap_type) :: Xmap_ug
+    type(xmap_type) :: Xmap_ug, Xmap_runoff_ug
 
     if(ntile_lnd .NE. 6) call mpp_error(FATAL, &
          "test_xgrid: when test_unstruct is true, ntile_lnd must be 6")
@@ -769,12 +788,17 @@ contains
     allocate(ntiles_grid(ntotal_land))
     ntiles_grid = 1
     !--- define the unstructured grid domain
-    call mpp_define_unstruct_domain(UG_domain, Lnd_domain, npts_tile, ntiles_grid, mpp_npes(), &
-         1, grid_index, name="LAND unstruct")
-    call mpp_get_UG_compute_domain(UG_domain, is_ug, ie_ug)
+    if(lnd_pe) then
+       call mpp_set_current_pelist(lnd_pelist)
+       call mpp_define_unstruct_domain(UG_domain, Lnd_domain, npts_tile, ntiles_grid, mpp_npes(), &
+            1, grid_index, name="LAND unstruct")
+       call mpp_get_UG_compute_domain(UG_domain, is_ug, ie_ug)
+    endif
+    call mpp_set_current_pelist()
 
     call setup_xmap(Xmap_ug, (/ 'ATM', 'OCN', 'LND' /), (/ Atm_domain, Ice_domain, Lnd_domain /), &
          grid_file, atm_grid, lnd_ug_domain=UG_domain)
+
     !--- set frac area if nk_lnd or nk_ocn is greater than 1.
     if(nk_lnd > 0 .AND. lnd_pe) then
        allocate(tmp2d(is_ug:ie_ug,nk_lnd))
@@ -789,19 +813,39 @@ contains
 
 !    call setup_xmap(Xmap_runoff_ug, (/ 'LND', 'OCN'/), (/ Lnd_domain, Ice_domain/), grid_file, lnd_ug_domain=UG_domain )
     allocate(atm_data_ug(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
-    allocate(lnd_data_ug(is_ug:ie_ug, nk_lnd) )
-    allocate(ice_data_ug(isc_ice:iec_ice, jsc_ice:jec_ice, nk_ice) )
     allocate(atm_data_ug_1(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
     allocate(atm_data_ug_2(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
     allocate(atm_data_ug_3(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
 
     allocate(atm_data_in(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
     allocate(atm_data_sg(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
-    allocate(lnd_data_sg(isc_lnd:iec_lnd, jsc_lnd:jec_lnd, nk_lnd) )
-    allocate(ice_data_sg(isc_ice:iec_ice, jsc_ice:jec_ice, nk_ice) )
     allocate(atm_data_sg_1(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
     allocate(atm_data_sg_2(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
     allocate(atm_data_sg_3(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
+    atm_data_in  = 0
+    atm_data_sg = 0
+    atm_data_sg_1 = 0
+    atm_data_sg_2 = 0
+    atm_data_sg_3 = 0
+    atm_data_ug = 0
+    atm_data_ug_1 = 0
+    atm_data_ug_2 = 0
+    atm_data_ug_3 = 0
+
+
+    if(lnd_pe) then 
+       allocate(lnd_data_ug(is_ug:ie_ug, nk_lnd) )
+       allocate(lnd_data_sg(isc_lnd:iec_lnd, jsc_lnd:jec_lnd, nk_lnd) )
+       lnd_data_sg = 0
+       lnd_data_ug = 0
+    endif
+    if(ice_pe) then
+       allocate(ice_data_ug(isc_ice:iec_ice, jsc_ice:jec_ice, nk_ice) )
+       allocate(ice_data_sg(isc_ice:iec_ice, jsc_ice:jec_ice, nk_ice) )
+       ice_data_sg = 0
+       ice_data_ug = 0
+    endif
+
     nxgrid = max(xgrid_count(Xmap), 1)
     allocate(x_1(nxgrid), x_2(nxgrid))
     allocate(x_3(nxgrid), x_4(nxgrid))
@@ -810,19 +854,6 @@ contains
     x_3 = 0
     x_4 = 0
 
-    atm_data_in  = 0
-    atm_data_sg = 0
-    lnd_data_sg = 0
-    ice_data_sg = 0
-    atm_data_sg_1 = 0
-    atm_data_sg_2 = 0
-    atm_data_sg_3 = 0
-    atm_data_ug = 0
-    lnd_data_ug = 0
-    ice_data_ug = 0
-    atm_data_ug_1 = 0
-    atm_data_ug_2 = 0
-    atm_data_ug_3 = 0
     call random_number(atm_data_in)
     call put_to_xgrid(atm_data_in, 'ATM', x_1, Xmap, remap_method=remap_method)
     call put_to_xgrid(atm_data_in+1, 'ATM', x_2, Xmap, remap_method=remap_method, complete=.false.)
@@ -866,12 +897,19 @@ contains
     call compare_chksum_2D(atm_data_ug_3, atm_data_ug_3, "atm_data_out_3")
     allocate(tmp_sg(isc_lnd:iec_lnd,jsc_lnd:jec_lnd,nk_lnd))
     tmp_sg = 0
-    call mpp_pass_ug_to_sg(ug_domain, lnd_data_ug, tmp_sg)
-    call compare_chksum(tmp_sg, lnd_data_sg, "lnd_data_out")
+    if(lnd_pe) then
+       call mpp_set_current_pelist(lnd_pelist)
+       call mpp_pass_ug_to_sg(ug_domain, lnd_data_ug, tmp_sg)
+       call compare_chksum(tmp_sg, lnd_data_sg, "lnd_data_out")
+       deallocate(lnd_data_sg,lnd_data_ug)
+    endif
+    call mpp_set_current_pelist()
+
+    if(ice_pe) deallocate(ice_data_sg, ice_data_ug)
     deallocate(tmp_sg, x_1, x_2, x_3, x_4, y_1, y_2, y_3, y_4)
-    deallocate(atm_data_in, atm_data_sg, lnd_data_sg, ice_data_sg)
+    deallocate(atm_data_in, atm_data_sg)
     deallocate(atm_data_sg_1, atm_data_sg_2, atm_data_sg_3)
-    deallocate(atm_data_ug, lnd_data_ug, ice_data_ug)
+    deallocate(atm_data_ug)
     deallocate(atm_data_ug_1, atm_data_ug_2, atm_data_ug_3)
 
   end subroutine test_unstruct_exchange
@@ -900,7 +938,6 @@ contains
 
     sum1 = mpp_chksum( a, (/pe/) )
     sum2 = mpp_chksum( b, (/pe/) )
-
     if( sum1.EQ.sum2 )then
         if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )
         !--- in some case, even though checksum agree, the two arrays 

@@ -1,3 +1,22 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
   !#####################################################################
   subroutine mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, grid_nlev, ndivs, npes_io_group, grid_index, name)
      type(domainUG),   intent(inout) :: UG_domain
@@ -110,7 +129,6 @@
         pe_end(n) = te
         ioff = ioff+ npts_tile(n)
      enddo
-
      allocate(UG_domain%list(0:ndivs-1))
      do p = 0, ndivs-1
         UG_domain%list(p)%compute%begin = ibegin(p)
@@ -560,7 +578,7 @@ return
       logical :: native         !true if I'm on the pelist of this domain
       integer :: listsize, listpos
       integer :: n
-      integer, dimension(5) :: msg, info         !pe and compute domain of each item in list
+      integer, dimension(7) :: msg, info         !pe and compute domain of each item in list
       integer                :: errunit
 
       errunit = stderr()
@@ -590,6 +608,8 @@ return
           domain%ntiles = -1
           domain%compute%begin =  1
           domain%compute%end   = -1
+          domain%compute%begin_index =  1
+          domain%compute%end_index   = -1
           domain%global %begin = -1
           domain%global %end   = -1
           domain%tile_id       = -1
@@ -600,12 +620,14 @@ return
       info(2) = domain%pos
       info(3) = domain%tile_id
       call mpp_get_UG_compute_domain( domain, info(4), info(5))
+      info(6) = domain%compute%begin_index
+      info(7) = domain%compute%end_index
 !broadcast your info across current pelist and unpack if needed
       listpos = 0
       do n = 0,mpp_npes()-1
          msg = info
          if( mpp_pe().EQ.pes(n) .AND. debug )write( errunit,* )'PE ', mpp_pe(), 'broadcasting msg ', msg
-         call mpp_broadcast( msg, 5, pes(n) )
+         call mpp_broadcast( msg, 7, pes(n) )
 !no need to unpack message if native
 !no need to unpack message from non-native PE
          if( .NOT.native .AND. msg(1).NE.NULL_PE )then
@@ -614,6 +636,8 @@ return
              domain%list(listpos)%tile_id       = msg(3)
              domain%list(listpos)%compute%begin = msg(4)
              domain%list(listpos)%compute%end   = msg(5)
+             domain%list(listpos)%compute%begin_index = msg(6)
+             domain%list(listpos)%compute%end_index   = msg(7)
              listpos = listpos + 1
              if( debug )write( errunit,* )'PE ', mpp_pe(), 'received domain from PE ', msg(1), 'ls,le=', msg(4:5)
          end if
@@ -778,6 +802,20 @@ end subroutine mpp_deallocate_domainUG
 #undef mpp_pass_UG_to_SG_3D_
 #define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_r8_3d
 #include <mpp_unstruct_pass_data.h>
+
+#ifdef OVERLOAD_R4
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(FLOAT_KIND)
+#undef mpp_pass_SG_to_UG_2D_
+#define mpp_pass_SG_to_UG_2D_ mpp_pass_SG_to_UG_r4_2d
+#undef mpp_pass_SG_to_UG_3D_
+#define mpp_pass_SG_to_UG_3D_ mpp_pass_SG_to_UG_r4_3d
+#undef mpp_pass_UG_to_SG_2D_
+#define mpp_pass_UG_to_SG_2D_ mpp_pass_UG_to_SG_r4_2d
+#undef mpp_pass_UG_to_SG_3D_
+#define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_r4_3d
+#include <mpp_unstruct_pass_data.h>
+#endif
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)

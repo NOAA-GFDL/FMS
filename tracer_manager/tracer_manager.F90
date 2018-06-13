@@ -1,3 +1,22 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 module tracer_manager_mod
 ! <CONTACT EMAIL="William.Cooke@noaa.gov">
 !   William Cooke
@@ -27,16 +46,16 @@ module tracer_manager_mod
 !     This code is a grouping of calls which will allow the simple
 !     introduction of tracers into the FMS framework. It is designed to
 !     allow users of a variety of component models interact easily with
-!     the dynamical core of the model. 
-!     
+!     the dynamical core of the model.
+!
 !     In calling the tracer manager routines the user must provide a
 !     parameter identifying the model that the user is working with. This
-!     parameter is defined within field_manager as MODEL_X 
+!     parameter is defined within field_manager as MODEL_X
 !     where X is one of [ATMOS, OCEAN, LAND, ICE].
 !
-!     In many of these calls the argument list includes model and tracer_index. These 
-!     are the parameter corresponding to the component model and the tracer_index N is 
-!     the Nth tracer within the component model. Therefore a call with MODEL_ATMOS and 5 
+!     In many of these calls the argument list includes model and tracer_index. These
+!     are the parameter corresponding to the component model and the tracer_index N is
+!     the Nth tracer within the component model. Therefore a call with MODEL_ATMOS and 5
 !     is different from a call with MODEL_OCEAN and 5.
 !
 ! </DESCRIPTION>
@@ -161,7 +180,7 @@ contains
 !      It is included only for backward compatability.
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!     This routine writes the version to the logfile and 
+!     This routine writes the version to the logfile and
 !     sets the module initialization flag.
 !   </DESCRIPTION>
 !   <TEMPLATE>
@@ -176,7 +195,7 @@ integer :: model, num_tracers, num_prog, num_diag
   call write_version_number ("TRACER_MANAGER_MOD", version)
   call field_manager_init()
   TRACER_ARRAY = NOTRACER
-  do model=1,NUM_MODELS 
+  do model=1,NUM_MODELS
     call get_tracer_meta_data(model, num_tracers, num_prog, num_diag)
   enddo
 
@@ -187,7 +206,7 @@ end subroutine tracer_manager_init
 ! <SUBROUTINE NAME="get_tracer_meta_data">
 !   <OVERVIEW>
 ! read tracer table and store tracer information associated with "model"
-! in "tracers" array. 
+! in "tracers" array.
 !   </OVERVIEW>
 subroutine get_tracer_meta_data(model, num_tracers,num_prog,num_diag)
 
@@ -215,7 +234,7 @@ if (model .ne. MODEL_ATMOS .and. model .ne. MODEL_LAND .and. &
     model .ne. MODEL_COUPLER) call mpp_error(FATAL,'tracer_manager_init : invalid model type')
 
 ! One should only call get_tracer_meta_data once for each model type
-! Therefore need to set up an array to stop the subroutine being 
+! Therefore need to set up an array to stop the subroutine being
 ! unnecssarily called multiple times.
 
 if ( model_registered(model) ) then
@@ -223,7 +242,7 @@ if ( model_registered(model) ) then
 ! Fill in the values from the previous registration and return.
   num_tracers = total_tracers(model)
   num_prog    = prog_tracers(model)
-  num_diag    = diag_tracers(model) 
+  num_diag    = diag_tracers(model)
   return
 endif
 
@@ -277,7 +296,7 @@ do n=1,nfields
          methods = default_method ! initialize methods array
          call get_field_methods(n,methods)
          do j=1,num_methods
-            select case (methods(j)%method_type) 
+            select case (methods(j)%method_type)
             case ('units')
                tracers(num_tracer_fields)%tracer_units   = methods(j)%method_name
             case ('longname')
@@ -305,9 +324,9 @@ do n=1,nfields
          flag_type = query_method ('tracer_type',model,total_tracers(model),name_type)
          if (flag_type .and. name_type == 'diagnostic') then
             tracers(num_tracer_fields)%is_prognostic = .false.
-         else   
+         else
             tracers(num_tracer_fields)%is_prognostic = .true.
-         endif   
+         endif
          if (tracers(num_tracer_fields)%is_prognostic) then
             num_prog = num_prog+1
          else
@@ -327,7 +346,7 @@ do n = 1, num_tracer_fields !{
       write(warnmesg, '("tracer_manager_init: Number of tracers will exceed MAX_TRACER_FIELDS with &
                        &multiple (",I3," instances) setup of tracer ",A)') tracers(n)%instances,tracers(n)%tracer_name
       call mpp_error(FATAL, warnmesg)
-    endif                        
+    endif
 
     do i = 2, tracers(n)%instances !{
       num_tracer_fields = num_tracer_fields + 1
@@ -336,7 +355,7 @@ do n = 1, num_tracer_fields !{
       ! Copy the original tracer type to the multiple instances.
       tracers(num_tracer_fields) = tracers(n)
       if ( query_method ('instances', model,model_tracer_number(model,n),name, control)) then !{
-          
+
         if (i .lt. 10) then  !{
            write (suffnam,'(''suffix'',i1)') i
            siz_inst = parse(control, suffnam,digit)
@@ -344,7 +363,7 @@ do n = 1, num_tracer_fields !{
              write (digit,'(''_'',i1)') i
            else
              digit = "_"//trim(digit)
-           endif  
+           endif
         elseif (i .lt. 100) then  !}{
            write (suffnam,'(''suffix'',i2)') i
            siz_inst = parse(control, suffnam,digit)
@@ -377,7 +396,7 @@ do n = 1, num_tracer_fields !{
         index_list_name = fm_copy_list(trim(list_name),digit, create = .true.)
         tracers(num_tracer_fields)%tracer_name = trim(tracers(num_tracer_fields)%tracer_name)//trim(digit)
       endif !}
-         
+
       if (tracers(num_tracer_fields)%is_prognostic) then !{
          num_prog = num_prog+1
       else !}{
@@ -385,7 +404,7 @@ do n = 1, num_tracer_fields !{
       endif !}
     enddo !}
     ! Multiple instances of tracers were found so need to rename the original tracer.
-    digit = "_1" 
+    digit = "_1"
     siz_inst = parse(control, "suffix1",digit)
     if (siz_inst > 0 ) then !{
       digit = "_"//trim(digit)
@@ -403,7 +422,7 @@ do n=1,nfields
       call get_field_methods(n,methods)
       do j=1,num_methods
 
-         if (.not.get_tracer_index(mod,methods(j)%method_type,m)) then 
+         if (.not.get_tracer_index(mod,methods(j)%method_type,m)) then
            call mpp_error(FATAL,'tracer_manager_init: The instances keyword was found for undefined tracer '&
            //trim(methods(j)%method_type))
          else
@@ -419,7 +438,7 @@ do n=1,nfields
            write(warnmesg, '("tracer_manager_init: Number of tracers will exceed MAX_TRACER_FIELDS with &
                        &multiple (",I3," instances) setup of tracer ",A)') tracers(m)%instances,tracers(m)%tracer_name
            call mpp_error(FATAL, warnmesg)
-         endif                        
+         endif
 ! We have found a valid tracer that has more than one instantiation.
 ! We need to modify that tracer name to tracer_1 and add extra tracers for the extra instantiations.
          if (instances .eq. 1) then
@@ -428,14 +447,14 @@ do n=1,nfields
              digit = '_1'
            else
              digit = "_"//trim(digit)
-           endif  
+           endif
          endif
          do i = 2, instances
            num_tracer_fields = num_tracer_fields + 1
            total_tracers(model) = total_tracers(model) + 1
            TRACER_ARRAY(model,total_tracers(model))  = num_tracer_fields
            tracers(num_tracer_fields)                =  tracers(m)
-           
+
            if (i .lt. 10) then  !{
              write (suffnam,'(''suffix'',i1)') i
              siz_inst = parse(methods(j)%method_control, suffnam,digit)
@@ -443,7 +462,7 @@ do n=1,nfields
                write (digit,'(''_'',i1)') i
              else
                digit = "_"//trim(digit)
-             endif  
+             endif
           elseif (i .lt. 100) then  !}{
              write (suffnam,'(''suffix'',i2)') i
              siz_inst = parse(methods(j)%method_control, suffnam,digit)
@@ -489,7 +508,7 @@ do n=1,nfields
           digit = '_1'
         else
           digit = "_"//trim(digit)
-        endif  
+        endif
         fm_success = fm_modify_name(trim(list_name), trim(tracers(m)%tracer_name)//trim(digit))
         tracers(m)%tracer_name    =  trim(tracers(m)%tracer_name)//trim(digit)
       enddo
@@ -503,11 +522,11 @@ prog_tracers(model)     = num_prog
 diag_tracers(model)     = num_diag
 model_registered(model) = .TRUE.
 
-! Now sort through the tracer fields and sort them so that the 
+! Now sort through the tracer fields and sort them so that the
 ! prognostic tracers are first.
 
 do n=1, num_tracers
-  if (.not.check_if_prognostic(model,n) .and. n.le.num_prog) then 
+  if (.not.check_if_prognostic(model,n) .and. n.le.num_prog) then
   ! This is a diagnostic tracer so find a prognostic tracer to swop with
     do m = n, num_tracers
        if (check_if_prognostic(model,m) .and. .not.check_if_prognostic(model,n)) then
@@ -756,12 +775,12 @@ end subroutine get_tracer_indices
 !     (Note that subroutine get_tracer_indices returns these subsets)
 !   </IN>
 !   <IN NAME="verbose" TYPE="logical, optional">
-!     A flag to allow the message saying that a tracer with this name has not 
+!     A flag to allow the message saying that a tracer with this name has not
 !     been found. This should only be used for debugging purposes.
 !   </IN>
 !   <OUT NAME="get_tracer_index" TYPE="integer">
 !     integer function:
-!       The index of the tracer named "name". 
+!       The index of the tracer named "name".
 !       If no tracer by that name exists then the returned value is NO_TRACER.
 !     logical function:
 !       If no tracer by that name exists then the returned value is .false.,
@@ -808,7 +827,7 @@ if (verbose_local) then
   endif
 ! </ERROR>
 endif
-   
+
 return
 
 end function get_tracer_index_integer
@@ -1045,7 +1064,7 @@ end function get_tracer_name
 !     Tracer number
 !   </IN>
 !   <OUT NAME="check_if_prognostic" TYPE="logical">
-!     A logical flag set TRUE if the tracer is 
+!     A logical flag set TRUE if the tracer is
 !                        prognostic.
 !   </OUT>
 function check_if_prognostic(model, n, err_msg)
@@ -1130,7 +1149,7 @@ end function adjust_positive_def
 !     Subroutine to set the tracer field to the wanted profile.
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!     If the profile type is 'fixed' then the tracer field values are set 
+!     If the profile type is 'fixed' then the tracer field values are set
 ! equal to the surface value.
 ! If the profile type is 'profile' then the top/bottom of model and
 ! surface values are read and an exponential profile is calculated,
@@ -1146,7 +1165,7 @@ end function adjust_positive_def
 !  One can use these to initialize the entire field with a value of 1e-12.
 !
 !  "profile_type","profile","surface_value = 1e-12, top_value = 1e-15"
-!   In a 15 layer model this would return values of surf_value = 1e-12 and 
+!   In a 15 layer model this would return values of surf_value = 1e-12 and
 !   multiplier = 0.6309573 i.e 1e-15 = 1e-12*(0.6309573^15)
 !   In this case the model should be MODEL_ATMOS as you have a "top" value.
 !
@@ -1230,7 +1249,7 @@ if ( query_method ( 'profile_type',model,n,scheme,control)) then
 
 ! If profile type is profile then set the surface value to the input
 ! value and calculate the vertical multiplier.
-! 
+!
 ! Assume an exponential decay/increase from the surface to the top level
 !  C = C0 exp ( -multiplier* level_number)
 !  => multiplier = exp [ ln(Ctop/Csurf)/number_of_levels]
@@ -1295,12 +1314,12 @@ end subroutine set_tracer_profile
 !   </IN>
 !   <OUT NAME="name" TYPE="character">
 !     A string containing the modified name to be used with
-!     method_type. i.e. "2nd_order" might be the default for 
-!     advection. One could use "4th_order" here to modify 
+!     method_type. i.e. "2nd_order" might be the default for
+!     advection. One could use "4th_order" here to modify
 !     that behaviour.
 !   </OUT>
 !   <OUT NAME="control" TYPE="character, optional">
-!     A string containing the modified parameters that are 
+!     A string containing the modified parameters that are
 !     associated with the method_type and name.
 !   </OUT>
 !   <OUT NAME="query_method" TYPE="logical">
@@ -1311,7 +1330,7 @@ end subroutine set_tracer_profile
 
 !<NOTE>
 !  At present the tracer manager module allows the initialization of a tracer
-!  profile if a restart does not exist for that tracer. 
+!  profile if a restart does not exist for that tracer.
 !  Options for this routine are as follows
 !
 !  Tracer profile setup
@@ -1326,20 +1345,20 @@ end subroutine set_tracer_profile
 !</NOTE>
  function query_method  (method_type, model, n, name, control, err_msg)
 !
-!  A function to query the schemes associated with each tracer. 
-!  
+!  A function to query the schemes associated with each tracer.
+!
 !  INTENT IN
 !   method_type  : The method that is being requested.
 !   model        : The model that you are calling this function from.
 !   n            : The tracer number.
 !  INTENT OUT
 !   name         : A string containing the modified name to be used with
-!                  method_type. i.e. "2nd_order" might be the default for 
-!                  advection. One could use "4th_order" here to modify 
+!                  method_type. i.e. "2nd_order" might be the default for
+!                  advection. One could use "4th_order" here to modify
 !                  that behaviour.
-!   control      : A string containing the modified parameters that are 
+!   control      : A string containing the modified parameters that are
 !                  associated with the method_type and name.
-!   query_method : A flag to show whether method_type exists with regard 
+!   query_method : A flag to show whether method_type exists with regard
 !                  to tracer n. If method_type is not present then one
 !                  must have default values.
 
@@ -1350,8 +1369,9 @@ end subroutine set_tracer_profile
  logical                                 :: query_method
 
  integer :: n1
- character(len=256) :: list_name, control_tr
- character(len=11)  :: chn
+ character(len=256) :: list_name
+ character(len=1024):: control_tr
+ character(len=16)  :: chn,chn1
  character(len=128) :: err_msg_local
 
  if(.not.module_is_initialized) call tracer_manager_init
@@ -1385,21 +1405,32 @@ end subroutine set_tracer_profile
  control_tr = ''
  query_method = fm_query_method(list_name, name, control_tr)
 
- if ( present(control)) control = trim(control_tr)
+ if ( present(control) ) then
+    if ( len_trim(control_tr)>len(control) ) then
+       write(chn,*)len(control)
+       write(chn1,*)len_trim(control_tr)
+       if(error_handler('query_method', &
+           ' Output string length ('//trim(adjustl(chn)) &
+               // ') is not enough to return all "control" parameters ("'//trim(control_tr) &
+               // '", length='//trim(adjustl(chn1))//')', &
+           err_msg)) return
+    endif
+    control = trim(control_tr)
+ endif
 
  end function query_method
 !</FUNCTION>
 
 !<SUBROUTINE NAME="set_tracer_atts">
 !   <OVERVIEW>
-!     A subroutine to allow the user set the tracer longname and units from the 
+!     A subroutine to allow the user set the tracer longname and units from the
 !     tracer initialization routine.
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!     A function to allow the user set the tracer longname and units from the 
-!     tracer initialization routine. It seems sensible that the user who is 
-!     coding the tracer code will know what units they are working in and it 
-!     is probably safer to set the value in the tracer code rather than in 
+!     A function to allow the user set the tracer longname and units from the
+!     tracer initialization routine. It seems sensible that the user who is
+!     coding the tracer code will know what units they are working in and it
+!     is probably safer to set the value in the tracer code rather than in
 !     the field table.
 !   </DESCRIPTION>
 !   <TEMPLATE>
@@ -1432,19 +1463,19 @@ if ( get_tracer_index(model,name,n) ) then
     tracers(TRACER_ARRAY(model,n))%tracer_units   = units
     tracers(TRACER_ARRAY(model,n))%tracer_longname = longname
   select case(model)
-    case(MODEL_COUPLER) 
+    case(MODEL_COUPLER)
       list_name = "/coupler_mod/tracer/"//trim(name)
-    case(MODEL_ATMOS) 
+    case(MODEL_ATMOS)
       list_name = "/atmos_mod/tracer/"//trim(name)
-    case(MODEL_OCEAN) 
+    case(MODEL_OCEAN)
       list_name = "/ocean_mod/tracer/"//trim(name)
-    case(MODEL_LAND) 
+    case(MODEL_LAND)
       list_name = "/land_mod/tracer/"//trim(name)
-    case(MODEL_ICE) 
+    case(MODEL_ICE)
       list_name = "/ice_mod/tracer/"//trim(name)
-    case DEFAULT 
+    case DEFAULT
       list_name = "/"//trim(name)
-  end select      
+  end select
 
 ! Method_type is a list, method_name is a name of a parameter and method_control has the value.
 !    list_name = trim(list_name)//"/longname"
@@ -1456,8 +1487,8 @@ if ( get_tracer_index(model,name,n) ) then
     if ( present(units) ) then
       if (units .ne. "" ) index = fm_new_value('units',units)
     endif
-  endif  
-    
+  endif
+
 else
     call mpp_error(NOTE,'set_tracer_atts : Trying to set longname and/or units for non-existent tracer : '//trim(name))
 endif
@@ -1466,11 +1497,11 @@ end subroutine set_tracer_atts
 !</SUBROUTINE>
 
 !<SUBROUTINE NAME="set_tracer_method">
-!   <OVERVIEW> 
+!   <OVERVIEW>
 !      A subroutine to allow the user to set some tracer specific methods.
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!      A subroutine to allow the user to set methods for a specific tracer. 
+!      A subroutine to allow the user to set methods for a specific tracer.
 !   </DESCRIPTION>
 !   <TEMPLATE>
 !     call set_tracer_method(model, name, method_type, method_name, method_control)
@@ -1491,7 +1522,7 @@ end subroutine set_tracer_atts
 !   <IN NAME="method_control" TYPE="character">
 !     The control parameters of the method to be set.
 !   </IN>
-     
+
 subroutine set_tracer_method(model, name, method_type, method_name, method_control)
 
 integer, intent(in)                    :: model
@@ -1521,7 +1552,7 @@ if ( get_tracer_index(model,name,n) ) then
       list_name = "/ice_mod/tracer/"//trim(name)
     case DEFAULT
       list_name = "/"//trim(name)
-  end select      
+  end select
 
   if ( method_control .ne. "" ) then
 ! Method_type is a list, method_name is a name of a parameter and method_control has the value.
@@ -1545,7 +1576,7 @@ character(len=*), intent(out), optional :: err_msg
 
 if(present(err_msg)) then
   err_msg = err_msg_local
-  error_handler = .true.    
+  error_handler = .true.
 else
   call mpp_error(FATAL,trim(routine)//': '//trim(err_msg_local))
 endif
