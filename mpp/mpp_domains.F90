@@ -1699,6 +1699,9 @@ module mpp_domains_mod
      module procedure mpp_update_nest_fine_r4_2d
      module procedure mpp_update_nest_fine_r4_3d
      module procedure mpp_update_nest_fine_r4_4d
+     module procedure mpp_update_nest_fine_r4_2dv
+     module procedure mpp_update_nest_fine_r4_3dv
+     module procedure mpp_update_nest_fine_r4_4dv
 #endif
 #ifdef OVERLOAD_C4
      module procedure mpp_update_nest_fine_c4_2d
@@ -1721,6 +1724,7 @@ module mpp_domains_mod
 #endif
 #ifdef OVERLOAD_R4
      module procedure mpp_do_update_nest_fine_r4_3d
+     module procedure mpp_do_update_nest_fine_r4_3dv
 #endif
 #ifdef OVERLOAD_C4
      module procedure mpp_do_update_nest_fine_c4_3d
@@ -1749,6 +1753,9 @@ module mpp_domains_mod
      module procedure mpp_update_nest_coarse_r4_2d
      module procedure mpp_update_nest_coarse_r4_3d
      module procedure mpp_update_nest_coarse_r4_4d
+     module procedure mpp_update_nest_coarse_r4_2dv
+     module procedure mpp_update_nest_coarse_r4_3dv
+     module procedure mpp_update_nest_coarse_r4_4dv
 #endif
 #ifdef OVERLOAD_C4
      module procedure mpp_update_nest_coarse_c4_2d
@@ -1771,6 +1778,7 @@ module mpp_domains_mod
 #endif
 #ifdef OVERLOAD_R4
      module procedure mpp_do_update_nest_coarse_r4_3d
+     module procedure mpp_do_update_nest_coarse_r4_3dv
 #endif
 #ifdef OVERLOAD_C4
      module procedure mpp_do_update_nest_coarse_c4_3d

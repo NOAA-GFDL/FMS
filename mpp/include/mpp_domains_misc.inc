@@ -1353,6 +1353,7 @@ end subroutine init_nonblock_type
 
 #ifdef OVERLOAD_R4
 #undef VECTOR_FIELD_
+#define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #undef MPP_UPDATE_NEST_FINE_2D_
@@ -1361,12 +1362,24 @@ end subroutine init_nonblock_type
 #define MPP_UPDATE_NEST_FINE_3D_ mpp_update_nest_fine_r4_3D
 #undef MPP_UPDATE_NEST_FINE_4D_
 #define MPP_UPDATE_NEST_FINE_4D_ mpp_update_nest_fine_r4_4D
+#undef MPP_UPDATE_NEST_FINE_2D_V_
+#define MPP_UPDATE_NEST_FINE_2D_V_ mpp_update_nest_fine_r4_2Dv
+#undef MPP_UPDATE_NEST_FINE_3D_V_
+#define MPP_UPDATE_NEST_FINE_3D_V_ mpp_update_nest_fine_r4_3Dv
+#undef MPP_UPDATE_NEST_FINE_4D_V_
+#define MPP_UPDATE_NEST_FINE_4D_V_ mpp_update_nest_fine_r4_4Dv
 #undef MPP_UPDATE_NEST_COARSE_2D_
 #define MPP_UPDATE_NEST_COARSE_2D_ mpp_update_nest_coarse_r4_2D
 #undef MPP_UPDATE_NEST_COARSE_3D_
 #define MPP_UPDATE_NEST_COARSE_3D_ mpp_update_nest_coarse_r4_3D
 #undef MPP_UPDATE_NEST_COARSE_4D_
 #define MPP_UPDATE_NEST_COARSE_4D_ mpp_update_nest_coarse_r4_4D
+#undef MPP_UPDATE_NEST_COARSE_2D_V_
+#define MPP_UPDATE_NEST_COARSE_2D_V_ mpp_update_nest_coarse_r4_2Dv
+#undef MPP_UPDATE_NEST_COARSE_3D_V_
+#define MPP_UPDATE_NEST_COARSE_3D_V_ mpp_update_nest_coarse_r4_3Dv
+#undef MPP_UPDATE_NEST_COARSE_4D_V_
+#define MPP_UPDATE_NEST_COARSE_4D_V_ mpp_update_nest_coarse_r4_4Dv
 #include <mpp_update_nest_domains.h>
 #endif
 
@@ -1444,12 +1457,17 @@ end subroutine init_nonblock_type
 
 #ifdef OVERLOAD_R4
 #undef VECTOR_FIELD_
+#define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #undef MPP_DO_UPDATE_NEST_FINE_3D_
 #define MPP_DO_UPDATE_NEST_FINE_3D_ mpp_do_update_nest_fine_r4_3D
+#undef MPP_DO_UPDATE_NEST_FINE_3D_V_
+#define MPP_DO_UPDATE_NEST_FINE_3D_V_ mpp_do_update_nest_fine_r4_3Dv
 #undef MPP_DO_UPDATE_NEST_COARSE_3D_
 #define MPP_DO_UPDATE_NEST_COARSE_3D_ mpp_do_update_nest_coarse_r4_3D
+#undef MPP_DO_UPDATE_NEST_COARSE_3D_V_
+#define MPP_DO_UPDATE_NEST_COARSE_3D_V_ mpp_do_update_nest_coarse_r4_3Dv
 #include <mpp_do_update_nest.h>
 #endif
 
