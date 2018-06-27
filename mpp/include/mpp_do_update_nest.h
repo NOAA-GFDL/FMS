@@ -18,7 +18,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 subroutine MPP_DO_UPDATE_NEST_FINE_3D_(f_addrs, nest_domain, update, d_type, ke, wb_addrs, eb_addrs, &
-                                   sb_addrs, nb_addrs, flags)
+                                   sb_addrs, nb_addrs, flags, xbegin, xend, ybegin, yend)
   integer(LONG_KIND),         intent(in) :: f_addrs(:)
   type(nest_domain_type),     intent(in) :: nest_domain
   type(nestSpec),          intent(in) :: update
@@ -29,6 +29,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_(f_addrs, nest_domain, update, d_type, ke,
   integer(LONG_KIND),         intent(in) :: sb_addrs(:)
   integer(LONG_KIND),         intent(in) :: nb_addrs(:)
   integer,                    intent(in) :: flags
+  integer,                    intent(in) :: xbegin, xend, ybegin, yend
 
   character(len=8)            :: text
   type(overlap_type), pointer :: overPtr => NULL()
@@ -38,7 +39,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_(f_addrs, nest_domain, update, d_type, ke,
   integer   :: is, ie, js, je, l_size
   integer   :: buffer_pos, msgsize
   integer   :: buffer_recv_size, pos
-  MPP_TYPE_ :: field(update%xbegin:update%xend, update%ybegin:update%yend,ke)  
+  MPP_TYPE_ :: field(xbegin:xend, ybegin:yend,ke)  
   MPP_TYPE_ :: wbuffer(update%west%is_you :update%west%ie_you,  update%west%js_you :update%west%je_you, ke)
   MPP_TYPE_ :: ebuffer(update%east%is_you :update%east%ie_you,  update%east%js_you :update%east%je_you, ke)
   MPP_TYPE_ :: sbuffer(update%south%is_you:update%south%ie_you, update%south%js_you:update%south%je_you,ke)

@@ -87,6 +87,7 @@ subroutine MPP_UPDATE_NEST_FINE_3D_(field, nest_domain, wbuffer, sbuffer, ebuffe
    integer, save    :: wbuffersz_save=0, ebuffersz_save=0, sbuffersz_save=0, nbuffersz_save=0
    integer, save    :: add_halo_save=0, update_flags_save=0, update_position_save=0
    integer, save    :: list=0 
+   integer          :: xbegin, xend, ybegin, yend
 
    add_halo = 0
    if(present(extra_halo)) add_halo = add_halo
@@ -121,6 +122,20 @@ subroutine MPP_UPDATE_NEST_FINE_3D_(field, nest_domain, wbuffer, sbuffer, ebuffe
    wbuffersz = size(wbuffer); ebuffersz = size(ebuffer)
    sbuffersz = size(sbuffer); nbuffersz = size(nbuffer)
    isize=size(field,1); jsize=size(field,2); ksize = size(field,3)
+
+   !---check data is on data domain or compute domain
+   if( nest_domain%is_coarse_pe ) then
+      call mpp_get_data_domain(nest_domain%domain_coarse, xbegin, xend, ybegin, yend, position=update_position)
+      if(isize .NE. xend-xbegin+1 .OR. jsize .NE. yend-ybegin+1) then
+         call mpp_get_compute_domain(nest_domain%domain_coarse, xbegin, xend, ybegin, yend, position=update_position)
+         if(isize .NE. xend-xbegin+1 .OR. jsize .NE. yend-ybegin+1) then
+            call mpp_error(FATAL,'MPP_UPDATE_NEST_FINE_3D_: field is neither on data domain nor on compute domain')
+         endif
+      endif
+   else
+      xbegin = 1; xend = 1
+      ybegin = 1; yend = 1
+   endif
    if(list == 1)then
       isize_save = isize; jsize_save = jsize; ksize_save = ksize
       update_position_save = update_position
@@ -155,7 +170,8 @@ subroutine MPP_UPDATE_NEST_FINE_3D_(field, nest_domain, wbuffer, sbuffer, ebuffe
    if(is_complete)then
       update => search_C2F_nest_overlap(nest_domain, add_halo, update_position)
       call mpp_do_update_nest_fine(f_addrs(1:l_size), nest_domain, update, d_type, ksize, &
-            wb_addrs(1:l_size), eb_addrs(1:l_size), sb_addrs(1:l_size), nb_addrs(1:l_size), update_flags )
+            wb_addrs(1:l_size), eb_addrs(1:l_size), sb_addrs(1:l_size), nb_addrs(1:l_size), update_flags, &
+            xbegin, xend, ybegin, yend )
 
    endif
 
